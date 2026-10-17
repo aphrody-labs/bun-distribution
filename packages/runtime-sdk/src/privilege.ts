@@ -86,16 +86,8 @@ export function canSudoNonInteractive(): boolean {
  */
 export function getElevationState(): ElevationState {
   const elevated = isElevated();
-  const uid = nativeGetuid
-    ? nativeGetuid()
-    : typeof process.getuid === "function"
-      ? process.getuid()
-      : null;
-  const euid = nativeGeteuid
-    ? nativeGeteuid()
-    : typeof process.geteuid === "function"
-      ? process.geteuid()
-      : null;
+  const uid = nativeGetuid ? nativeGetuid() : typeof process.getuid === "function" ? process.getuid() : null;
+  const euid = nativeGeteuid ? nativeGeteuid() : typeof process.geteuid === "function" ? process.geteuid() : null;
 
   return {
     isElevated: elevated,

@@ -3,23 +3,54 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mfsensorgroup.dll!MFCreateCameraControlMonitor */
-  MFCreateCameraControlMonitor(symbolicLink: string | Win32Pointer, callback: Win32Pointer, ppCameraControlMonitor: Win32Pointer): number;
+  MFCreateCameraControlMonitor(
+    symbolicLink: string | Win32Pointer,
+    callback: Win32Pointer,
+    ppCameraControlMonitor: Win32Pointer,
+  ): number;
   /** mfsensorgroup.dll!MFCreateCameraOcclusionStateMonitor */
-  MFCreateCameraOcclusionStateMonitor(symbolicLink: string | Win32Pointer, callback: Win32Pointer, occlusionStateMonitor: Win32Pointer): number;
+  MFCreateCameraOcclusionStateMonitor(
+    symbolicLink: string | Win32Pointer,
+    callback: Win32Pointer,
+    occlusionStateMonitor: Win32Pointer,
+  ): number;
   /** mfsensorgroup.dll!MFCreateRelativePanelWatcher */
-  MFCreateRelativePanelWatcher(videoDeviceId: string | Win32Pointer, displayMonitorDeviceId: string | Win32Pointer, ppRelativePanelWatcher: Win32Pointer): number;
+  MFCreateRelativePanelWatcher(
+    videoDeviceId: string | Win32Pointer,
+    displayMonitorDeviceId: string | Win32Pointer,
+    ppRelativePanelWatcher: Win32Pointer,
+  ): number;
   /** mfsensorgroup.dll!MFCreateSensorActivityMonitor */
   MFCreateSensorActivityMonitor(pCallback: Win32Pointer, ppActivityMonitor: Win32Pointer): number;
   /** mfsensorgroup.dll!MFCreateSensorGroup */
   MFCreateSensorGroup(SensorGroupSymbolicLink: string | Win32Pointer, ppSensorGroup: Win32Pointer): number;
   /** mfsensorgroup.dll!MFCreateSensorProfile */
-  MFCreateSensorProfile(ProfileType: Win32Pointer, ProfileIndex: number, Constraints: string | Win32Pointer, ppProfile: Win32Pointer): number;
+  MFCreateSensorProfile(
+    ProfileType: Win32Pointer,
+    ProfileIndex: number,
+    Constraints: string | Win32Pointer,
+    ppProfile: Win32Pointer,
+  ): number;
   /** mfsensorgroup.dll!MFCreateSensorProfileCollection */
   MFCreateSensorProfileCollection(ppSensorProfile: Win32Pointer): number;
   /** mfsensorgroup.dll!MFCreateSensorStream */
-  MFCreateSensorStream(StreamId: number, pAttributes: Win32Pointer, pMediaTypeCollection: Win32Pointer, ppStream: Win32Pointer): number;
+  MFCreateSensorStream(
+    StreamId: number,
+    pAttributes: Win32Pointer,
+    pMediaTypeCollection: Win32Pointer,
+    ppStream: Win32Pointer,
+  ): number;
   /** mfsensorgroup.dll!MFCreateVirtualCamera */
-  MFCreateVirtualCamera(type: number, lifetime: number, access: number, friendlyName: string | Win32Pointer, sourceId: string | Win32Pointer, categories: Win32Pointer, categoryCount: number, virtualCamera: Win32Pointer): number;
+  MFCreateVirtualCamera(
+    type: number,
+    lifetime: number,
+    access: number,
+    friendlyName: string | Win32Pointer,
+    sourceId: string | Win32Pointer,
+    categories: Win32Pointer,
+    categoryCount: number,
+    virtualCamera: Win32Pointer,
+  ): number;
   /** mfsensorgroup.dll!MFIsVirtualCameraTypeSupported */
   MFIsVirtualCameraTypeSupported(type: number, supported: Win32Pointer): number;
 }

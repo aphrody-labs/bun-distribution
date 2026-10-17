@@ -29,19 +29,9 @@ import { computeRmsBuckets, type SampleBucket } from "./waveform-summary";
 import { shouldMaintainPitch } from "../retime/rate";
 import { getSourceTimeAtClipTime } from "../retime/resolve";
 import { renderRetimedBuffer } from "../retime/audio-stretch";
-import type {
-  AudioElement,
-  VideoElement,
-  LibraryAudioElement,
-  RetimeConfig,
-  SceneTracks,
-} from "../timeline/types";
+import type { AudioElement, VideoElement, LibraryAudioElement, RetimeConfig, SceneTracks } from "../timeline/types";
 import type { AudioCapableElement } from "../timeline/audio-state";
-import {
-  hasAnimatedVolume,
-  isElementMuted,
-  resolveEffectiveAudioGain,
-} from "../timeline/audio-state";
+import { hasAnimatedVolume, isElementMuted, resolveEffectiveAudioGain } from "../timeline/audio-state";
 import { doesElementHaveEnabledAudio } from "../timeline/audio-separation";
 import { canElementHaveAudio, hasMediaId } from "../timeline/element-utils";
 import { canTrackHaveAudio } from "../timeline/track-capabilities";
@@ -103,9 +93,7 @@ export function createAudioContext({
   sampleRate?: number;
 } = {}): AudioContext {
   const AudioContextConstructor =
-    window.AudioContext ||
-    (window as typeof window & { webkitAudioContext?: typeof AudioContext })
-      .webkitAudioContext;
+    window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 
   return new AudioContextConstructor(sampleRate ? { sampleRate } : undefined);
 }
@@ -144,7 +132,7 @@ export function collectAudibleCandidates({
   mediaAssets: MediaAsset[];
 }): AudibleElementCandidate[] {
   const allTracks = [...tracks.overlay, tracks.main, ...tracks.audio];
-  const mediaMap = new Map(mediaAssets.map((a) => [a.id, a]));
+  const mediaMap = new Map(mediaAssets.map(a => [a.id, a]));
   const candidates: AudibleElementCandidate[] = [];
 
   for (const track of allTracks) {
@@ -154,9 +142,7 @@ export function collectAudibleCandidates({
       if (!canElementHaveAudio(element)) continue;
       if (element.duration <= 0) continue;
 
-      const mediaAsset = hasMediaId(element)
-        ? (mediaMap.get(element.mediaId) ?? null)
-        : null;
+      const mediaAsset = hasMediaId(element) ? (mediaMap.get(element.mediaId) ?? null) : null;
       if (!doesElementHaveEnabledAudio({ element, mediaAsset })) continue;
 
       candidates.push({ element, mediaAsset });
@@ -166,16 +152,8 @@ export function collectAudibleCandidates({
   return candidates;
 }
 
-export function timelineHasAudio({
-  tracks,
-  mediaAssets,
-}: {
-  tracks: SceneTracks;
-  mediaAssets: MediaAsset[];
-}): boolean {
-  return collectAudibleCandidates({ tracks, mediaAssets }).some(
-    ({ element }) => !isElementMuted({ element }),
-  );
+export function timelineHasAudio({ tracks, mediaAssets }: { tracks: SceneTracks; mediaAssets: MediaAsset[] }): boolean {
+  return collectAudibleCandidates({ tracks, mediaAssets }).some(({ element }) => !isElementMuted({ element }));
 }
 
 export async function collectAudioElements({
@@ -188,9 +166,7 @@ export async function collectAudioElements({
   audioContext: AudioContext;
 }): Promise<CollectedAudioElement[]> {
   const candidates = collectAudibleCandidates({ tracks, mediaAssets });
-  const mediaMap = new Map<string, MediaAsset>(
-    mediaAssets.map((media) => [media.id, media]),
-  );
+  const mediaMap = new Map<string, MediaAsset>(mediaAssets.map(media => [media.id, media]));
   const pendingElements: Array<Promise<CollectedAudioElement | null>> = [];
 
   for (const { element, mediaAsset } of candidates) {
@@ -200,7 +176,7 @@ export async function collectAudioElements({
           element,
           mediaMap,
           audioContext,
-        }).then((audioBuffer) => {
+        }).then(audioBuffer => {
           if (!audioBuffer) return null;
           return {
             timelineElement: element,
@@ -229,7 +205,7 @@ export async function collectAudioElements({
         resolveAudioBufferForAsset({
           asset: mediaAsset,
           audioContext,
-        }).then((audioBuffer) => {
+        }).then(audioBuffer => {
           if (!audioBuffer) return null;
           return {
             timelineElement: element,
@@ -268,9 +244,7 @@ export async function collectAudioMixSources({
 }): Promise<AudioMixSource[]> {
   const orderedTracks = [...tracks.overlay, tracks.main, ...tracks.audio];
   const audioMixSources: AudioMixSource[] = [];
-  const mediaMap = new Map<string, MediaAsset>(
-    mediaAssets.map((asset) => [asset.id, asset]),
-  );
+  const mediaMap = new Map<string, MediaAsset>(mediaAssets.map(asset => [asset.id, asset]));
   const pendingLibrarySources: Array<Promise<AudioMixSource | null>> = [];
 
   for (const track of orderedTracks) {
@@ -279,9 +253,7 @@ export async function collectAudioMixSources({
     for (const element of track.elements) {
       if (!canElementHaveAudio(element)) continue;
       if (isElementMuted({ element })) continue;
-      const mediaAsset = hasMediaId(element)
-        ? (mediaMap.get(element.mediaId) ?? null)
-        : null;
+      const mediaAsset = hasMediaId(element) ? (mediaMap.get(element.mediaId) ?? null) : null;
       if (!doesElementHaveEnabledAudio({ element, mediaAsset })) continue;
       const volume = resolveEffectiveAudioGain({
         element,
@@ -301,18 +273,14 @@ export async function collectAudioMixSources({
             }),
           );
         } else {
-          pendingLibrarySources.push(
-            fetchLibraryAudioSource({ element, volume }),
-          );
+          pendingLibrarySources.push(fetchLibraryAudioSource({ element, volume }));
         }
         continue;
       }
 
       if (element.type === "video") {
         if (mediaAsset && mediaSupportsAudio({ media: mediaAsset })) {
-          audioMixSources.push(
-            collectMediaAudioSource({ element, mediaAsset, volume }),
-          );
+          audioMixSources.push(collectMediaAudioSource({ element, mediaAsset, volume }));
         }
       }
     }
@@ -335,9 +303,7 @@ export async function collectAudioClips({
 }): Promise<AudioClipSource[]> {
   const orderedTracks = [...tracks.overlay, tracks.main, ...tracks.audio];
   const clips: AudioClipSource[] = [];
-  const mediaMap = new Map<string, MediaAsset>(
-    mediaAssets.map((asset) => [asset.id, asset]),
-  );
+  const mediaMap = new Map<string, MediaAsset>(mediaAssets.map(asset => [asset.id, asset]));
   const pendingLibraryClips: Array<Promise<AudioClipSource | null>> = [];
 
   for (const track of orderedTracks) {
@@ -346,9 +312,7 @@ export async function collectAudioClips({
     for (const element of track.elements) {
       if (!canElementHaveAudio(element)) continue;
 
-      const mediaAsset = hasMediaId(element)
-        ? (mediaMap.get(element.mediaId) ?? null)
-        : null;
+      const mediaAsset = hasMediaId(element) ? (mediaMap.get(element.mediaId) ?? null) : null;
       if (!doesElementHaveEnabledAudio({ element, mediaAsset })) continue;
 
       const muted = isTrackMuted || isElementMuted({ element });
@@ -372,9 +336,7 @@ export async function collectAudioClips({
             }),
           );
         } else {
-          pendingLibraryClips.push(
-            fetchLibraryAudioClip({ element, muted, volume }),
-          );
+          pendingLibraryClips.push(fetchLibraryAudioClip({ element, muted, volume }));
         }
         continue;
       }
@@ -428,11 +390,7 @@ export async function createTimelineAudioBuffer({
   const outputChannels = 2;
   const durationSeconds = duration / TICKS_PER_SECOND;
   const outputLength = Math.ceil(durationSeconds * sampleRate);
-  const outputBuffer = context.createBuffer(
-    outputChannels,
-    outputLength,
-    sampleRate,
-  );
+  const outputBuffer = context.createBuffer(outputChannels, outputLength, sampleRate);
 
   for (const element of audioElements) {
     if (element.muted) continue;
@@ -501,23 +459,15 @@ export function getSampleBucketRange({
   bucketEnd: number;
 } {
   const rangeLength = Math.max(0, endSample - startSample);
-  const bucketStart =
-    startSample + Math.floor((bucketIndex * rangeLength) / bucketCount);
-  const bucketEnd =
-    startSample + Math.floor(((bucketIndex + 1) * rangeLength) / bucketCount);
+  const bucketStart = startSample + Math.floor((bucketIndex * rangeLength) / bucketCount);
+  const bucketEnd = startSample + Math.floor(((bucketIndex + 1) * rangeLength) / bucketCount);
   return {
     bucketStart,
     bucketEnd: Math.max(bucketStart, bucketEnd),
   };
 }
 
-export function extractRmsBuckets({
-  buffer,
-  buckets,
-}: {
-  buffer: AudioBuffer;
-  buckets: SampleBucket[];
-}): number[] {
+export function extractRmsBuckets({ buffer, buckets }: { buffer: AudioBuffer; buckets: SampleBucket[] }): number[] {
   return computeRmsBuckets({ buffer, buckets });
 }
 
@@ -622,41 +572,23 @@ async function resolveAudioBufferForAsset({
     if (chunks.length === 0) return null;
 
     const nativeSampleRate = chunks[0].sampleRate;
-    const numChannels = Math.min(
-      MAX_AUDIO_CHANNELS,
-      chunks[0].numberOfChannels,
-    );
+    const numChannels = Math.min(MAX_AUDIO_CHANNELS, chunks[0].numberOfChannels);
 
-    const nativeChannels = Array.from(
-      { length: numChannels },
-      () => new Float32Array(totalSamples),
-    );
+    const nativeChannels = Array.from({ length: numChannels }, () => new Float32Array(totalSamples));
     let offset = 0;
     for (const chunk of chunks) {
       for (let channel = 0; channel < numChannels; channel++) {
-        const sourceData = chunk.getChannelData(
-          Math.min(channel, chunk.numberOfChannels - 1),
-        );
+        const sourceData = chunk.getChannelData(Math.min(channel, chunk.numberOfChannels - 1));
         nativeChannels[channel].set(sourceData, offset);
       }
       offset += chunk.length;
     }
 
     // OfflineAudioContext gives high-quality resampling to playback rate.
-    const outputSamples = Math.ceil(
-      totalSamples * (targetSampleRate / nativeSampleRate),
-    );
-    const offlineContext = new OfflineAudioContext(
-      numChannels,
-      outputSamples,
-      targetSampleRate,
-    );
+    const outputSamples = Math.ceil(totalSamples * (targetSampleRate / nativeSampleRate));
+    const offlineContext = new OfflineAudioContext(numChannels, outputSamples, targetSampleRate);
 
-    const nativeBuffer = audioContext.createBuffer(
-      numChannels,
-      totalSamples,
-      nativeSampleRate,
-    );
+    const nativeBuffer = audioContext.createBuffer(numChannels, totalSamples, nativeSampleRate);
     for (let ch = 0; ch < numChannels; ch++) {
       nativeBuffer.copyToChannel(nativeChannels[ch], ch);
     }
@@ -861,8 +793,7 @@ function mixAudioChannels({
       if (outputIndex >= outputLength) break;
 
       const clipTime = i / sampleRate;
-      const sourceTime =
-        trimStart + getSourceTimeAtClipTime({ clipTime, retime });
+      const sourceTime = trimStart + getSourceTimeAtClipTime({ clipTime, retime });
       const sourceIndex = sourceTime * buffer.sampleRate;
       if (sourceIndex >= sourceData.length) break;
 
@@ -875,10 +806,7 @@ function mixAudioChannels({
             localTime: clipTime,
           })
         : element.volume;
-      outputData[outputIndex] +=
-        (sourceData[lowerIndex] * (1 - fraction) +
-          sourceData[upperIndex] * fraction) *
-        gain;
+      outputData[outputIndex] += (sourceData[lowerIndex] * (1 - fraction) + sourceData[upperIndex] * fraction) * gain;
     }
   }
 }

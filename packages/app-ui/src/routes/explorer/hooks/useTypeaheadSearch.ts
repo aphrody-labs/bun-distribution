@@ -11,11 +11,7 @@ interface UseTypeaheadSearchProps {
  * Reusable typeahead search hook for file lists
  * Allows quick navigation by typing file names
  */
-export function useTypeaheadSearch({
-  files,
-  onMatch,
-  enabled = true,
-}: UseTypeaheadSearchProps) {
+export function useTypeaheadSearch({ files, onMatch, enabled = true }: UseTypeaheadSearchProps) {
   const searchStringRef = useRef("");
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -27,19 +23,9 @@ export function useTypeaheadSearch({
       // No modifiers except Shift (for capitals)
       // Skip if target is an input element
       const target = e.target as HTMLElement;
-      const isInputElement =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable;
+      const isInputElement = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
 
-      if (
-        !isInputElement &&
-        e.key.length === 1 &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        files.length > 0
-      ) {
+      if (!isInputElement && e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey && files.length > 0) {
         // Clear previous timeout
         if (searchTimeoutRef.current) {
           clearTimeout(searchTimeoutRef.current);
@@ -49,7 +35,7 @@ export function useTypeaheadSearch({
         searchStringRef.current += e.key.toLowerCase();
 
         // Find first file that matches the search string
-        const matchIndex = files.findIndex((file) => {
+        const matchIndex = files.findIndex(file => {
           const fileName = file.name.toLowerCase();
           return fileName.startsWith(searchStringRef.current);
         });
@@ -59,9 +45,7 @@ export function useTypeaheadSearch({
           onMatch(files[matchIndex], matchIndex);
 
           // Scroll to the matched file
-          const element = document.querySelector(
-            `[data-file-id="${files[matchIndex].id}"]`,
-          );
+          const element = document.querySelector(`[data-file-id="${files[matchIndex].id}"]`);
           if (element) {
             element.scrollIntoView({ block: "nearest", behavior: "smooth" });
           }

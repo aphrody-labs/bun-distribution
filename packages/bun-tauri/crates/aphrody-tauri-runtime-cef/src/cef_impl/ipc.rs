@@ -8,14 +8,14 @@ use cef::*;
 use tauri_runtime::{UserEvent, webview::DetachedWebview};
 
 use crate::{
-  cef_impl::client::TauriCefBrowserClient, runtime::CefRuntime, webview::CefWebviewDispatcher,
+    cef_impl::client::TauriCefBrowserClient, runtime::CefRuntime, webview::CefWebviewDispatcher,
 };
 
 const IPC_MESSAGE_NAME: &str = "tauri:ipc";
 const IPC_POST_MESSAGE_FUNCTION: &str = "postMessage";
 
 pub(crate) type IpcHandler<T> =
-  dyn Fn(DetachedWebview<T, CefRuntime<T>>, http::Request<String>) + Send;
+    dyn Fn(DetachedWebview<T, CefRuntime<T>>, http::Request<String>) + Send;
 
 wrap_v8_handler! {
   struct IpcPostMessageV8Handler;
@@ -75,35 +75,35 @@ wrap_v8_handler! {
 }
 
 fn install_ipc_post_message(context: Option<&mut V8Context>) {
-  let Some(window) = context.and_then(|context| context.global()) else {
-    return;
-  };
-  let attributes = sys::cef_v8_propertyattribute_t(
-    [
-      sys::cef_v8_propertyattribute_t::V8_PROPERTY_ATTRIBUTE_READONLY,
-      sys::cef_v8_propertyattribute_t::V8_PROPERTY_ATTRIBUTE_DONTENUM,
-      sys::cef_v8_propertyattribute_t::V8_PROPERTY_ATTRIBUTE_DONTDELETE,
-    ]
-    .into_iter()
-    .fold(0, |acc, attr| acc | attr.0),
-  )
-  .into();
-  let Some(mut ipc) = v8_value_create_object(None, None) else {
-    return;
-  };
-  let mut handler = IpcPostMessageV8Handler::new();
-  let post_message_name = CefString::from(IPC_POST_MESSAGE_FUNCTION);
-  let Some(mut post_message) =
-    v8_value_create_function(Some(&post_message_name), Some(&mut handler))
-  else {
-    return;
-  };
-  ipc.set_value_bykey(
-    Some(&post_message_name),
-    Some(&mut post_message),
-    attributes,
-  );
-  window.set_value_bykey(Some(&CefString::from("ipc")), Some(&mut ipc), attributes);
+    let Some(window) = context.and_then(|context| context.global()) else {
+        return;
+    };
+    let attributes = sys::cef_v8_propertyattribute_t(
+        [
+            sys::cef_v8_propertyattribute_t::V8_PROPERTY_ATTRIBUTE_READONLY,
+            sys::cef_v8_propertyattribute_t::V8_PROPERTY_ATTRIBUTE_DONTENUM,
+            sys::cef_v8_propertyattribute_t::V8_PROPERTY_ATTRIBUTE_DONTDELETE,
+        ]
+        .into_iter()
+        .fold(0, |acc, attr| acc | attr.0),
+    )
+    .into();
+    let Some(mut ipc) = v8_value_create_object(None, None) else {
+        return;
+    };
+    let mut handler = IpcPostMessageV8Handler::new();
+    let post_message_name = CefString::from(IPC_POST_MESSAGE_FUNCTION);
+    let Some(mut post_message) =
+        v8_value_create_function(Some(&post_message_name), Some(&mut handler))
+    else {
+        return;
+    };
+    ipc.set_value_bykey(
+        Some(&post_message_name),
+        Some(&mut post_message),
+        attributes,
+    );
+    window.set_value_bykey(Some(&CefString::from("ipc")), Some(&mut ipc), attributes);
 }
 
 wrap_render_process_handler! {
@@ -122,47 +122,47 @@ wrap_render_process_handler! {
 }
 
 pub(crate) fn on_process_message_received<T: UserEvent>(
-  client: &TauriCefBrowserClient<T>,
-  frame: Option<&mut Frame>,
-  source_process: ProcessId,
-  message: Option<&mut ProcessMessage>,
+    client: &TauriCefBrowserClient<T>,
+    frame: Option<&mut Frame>,
+    source_process: ProcessId,
+    message: Option<&mut ProcessMessage>,
 ) -> std::os::raw::c_int {
-  if source_process != ProcessId::RENDERER {
-    return 0;
-  }
-  let Some(message) = message else {
-    return 0;
-  };
-  if CefString::from(&message.name()).to_string() != IPC_MESSAGE_NAME {
-    return 0;
-  }
-  let Some(handler) = client.handlers.ipc_handler.as_ref() else {
-    return 1;
-  };
-  let Some(args) = message.argument_list() else {
-    return 1;
-  };
+    if source_process != ProcessId::RENDERER {
+        return 0;
+    }
+    let Some(message) = message else {
+        return 0;
+    };
+    if CefString::from(&message.name()).to_string() != IPC_MESSAGE_NAME {
+        return 0;
+    }
+    let Some(handler) = client.handlers.ipc_handler.as_ref() else {
+        return 1;
+    };
+    let Some(args) = message.argument_list() else {
+        return 1;
+    };
 
-  let mut url = CefString::from(&args.string(0)).to_string();
-  if url.is_empty()
-    && let Some(frame) = frame
-  {
-    url = CefString::from(&frame.url()).to_string();
-  }
-  let body = CefString::from(&args.string(1)).to_string();
+    let mut url = CefString::from(&args.string(0)).to_string();
+    if url.is_empty()
+        && let Some(frame) = frame
+    {
+        url = CefString::from(&frame.url()).to_string();
+    }
+    let body = CefString::from(&args.string(1)).to_string();
 
-  if let Ok(request) = http::Request::builder().uri(url).body(body) {
-    handler(
-      DetachedWebview {
-        label: client.label.clone(),
-        dispatcher: CefWebviewDispatcher {
-          window_id: Arc::new(Mutex::new(client.window_id)),
-          webview_id: client.webview_id,
-          context: client.context.clone(),
-        },
-      },
-      request,
-    );
-  }
-  1
+    if let Ok(request) = http::Request::builder().uri(url).body(body) {
+        handler(
+            DetachedWebview {
+                label: client.label.clone(),
+                dispatcher: CefWebviewDispatcher {
+                    window_id: Arc::new(Mutex::new(client.window_id)),
+                    webview_id: client.webview_id,
+                    context: client.context.clone(),
+                },
+            },
+            request,
+        );
+    }
+    1
 }

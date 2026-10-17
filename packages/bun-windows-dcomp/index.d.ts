@@ -17,11 +17,21 @@ interface Functions {
   /** dcomp.dll!DCompositionCreateDevice3 */
   DCompositionCreateDevice3(renderingDevice: Win32Pointer, iid: Win32Pointer, dcompositionDevice: Win32Pointer): number;
   /** dcomp.dll!DCompositionCreateSurfaceHandle */
-  DCompositionCreateSurfaceHandle(desiredAccess: number, securityAttributes: Win32Pointer, surfaceHandle: Win32Pointer): number;
+  DCompositionCreateSurfaceHandle(
+    desiredAccess: number,
+    securityAttributes: Win32Pointer,
+    surfaceHandle: Win32Pointer,
+  ): number;
   /** dcomp.dll!DCompositionGetFrameId */
   DCompositionGetFrameId(frameIdType: number, frameId: Win32Pointer): number;
   /** dcomp.dll!DCompositionGetStatistics */
-  DCompositionGetStatistics(frameId: number | bigint, frameStats: Win32Pointer, targetIdCount: number, targetIds: Win32Pointer, actualTargetIdCount: Win32Pointer): number;
+  DCompositionGetStatistics(
+    frameId: number | bigint,
+    frameStats: Win32Pointer,
+    targetIdCount: number,
+    targetIds: Win32Pointer,
+    actualTargetIdCount: Win32Pointer,
+  ): number;
   /** dcomp.dll!DCompositionGetTargetStatistics */
   DCompositionGetTargetStatistics(frameId: number | bigint, targetId: Win32Pointer, targetStats: Win32Pointer): number;
   /** dcomp.dll!DCompositionWaitForCompositorClock */

@@ -37,23 +37,12 @@ function StarIcon({
   return (
     <span className={`relative inline-block ${className ?? ""}`} aria-hidden>
       {/* Contour vide */}
-      <svg
-        viewBox="0 0 24 24"
-        className="absolute inset-0 text-white/20"
-        fill="currentColor"
-      >
+      <svg viewBox="0 0 24 24" className="absolute inset-0 text-white/20" fill="currentColor">
         <path d="M12 2.5l2.9 6.1 6.7.9-4.9 4.6 1.3 6.6L12 17.5 6 20.7l1.3-6.6L2.4 9.5l6.7-.9L12 2.5z" />
       </svg>
       {/* Remplissage orange */}
-      <span
-        className="absolute inset-0 overflow-hidden"
-        style={{ width: `${pct}%` }}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          className="h-full w-auto text-dbz-orange"
-          fill="currentColor"
-        >
+      <span className="absolute inset-0 overflow-hidden" style={{ width: `${pct}%` }}>
+        <svg viewBox="0 0 24 24" className="h-full w-auto text-dbz-orange" fill="currentColor">
           <path d="M12 2.5l2.9 6.1 6.7.9-4.9 4.6 1.3 6.6L12 17.5 6 20.7l1.3-6.6L2.4 9.5l6.7-.9L12 2.5z" />
         </svg>
       </span>
@@ -78,13 +67,9 @@ export function Stars({
     <div
       className={`inline-flex items-center gap-0.5 ${className}`}
       role={interactive ? "radiogroup" : "img"}
-      aria-label={
-        interactive
-          ? label
-          : `${label} : ${value > 0 ? value.toFixed(1).replace(/\.0$/, "") : "—"} sur 5`
-      }
+      aria-label={interactive ? label : `${label} : ${value > 0 ? value.toFixed(1).replace(/\.0$/, "") : "—"} sur 5`}
     >
-      {[1, 2, 3, 4, 5].map((n) => {
+      {[1, 2, 3, 4, 5].map(n => {
         const fill = Math.max(0, Math.min(1, display - (n - 1)));
         if (!interactive) {
           return <StarIcon key={n} fill={fill} className={sz} />;

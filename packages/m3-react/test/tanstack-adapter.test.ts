@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, it } from "bun:test";
-import {
-  mapTanStackColumnsToM3,
-  mapM3SortToTanStack,
-  mapTanStackSortToM3,
-} from "../adapters/tanstack";
+import { mapTanStackColumnsToM3, mapM3SortToTanStack, mapTanStackSortToM3 } from "../adapters/tanstack";
 
 describe("TanStack Table Adapter for M3", () => {
   it("maps TanStack column definitions to M3 table columns", () => {

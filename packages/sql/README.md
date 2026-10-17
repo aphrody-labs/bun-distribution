@@ -54,7 +54,7 @@ their values.
 import { createSql, withTransaction } from "@aphrody/sql/postgres";
 
 const sql = createSql(url, { applicationName: "aphrody-train" });
-await withTransaction(sql, async (tx) => tx`SELECT 1`, {
+await withTransaction(sql, async tx => tx`SELECT 1`, {
   readOnly: true,
   statementTimeoutMs: 5000,
 });

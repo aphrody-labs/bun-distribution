@@ -11,7 +11,9 @@ repository = "https://github.com/aphrody-labs/bun"
 authors = ["aphrody-code"]
 
 [workspace.dependencies]
-tauri = { version = "=1.4.4", path = "crates/aphrody-tauri", package = "aphrody-tauri", default-features = false, features = ["compression"] }
+tauri = { version = "=1.4.4", path = "crates/aphrody-tauri", package = "aphrody-tauri", default-features = false, features = [
+  "compression",
+] }
 tauri-runtime = { version = "1.4.4", path = "crates/aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
 tauri-runtime-cef = { version = "=1.4.4", path = "crates/aphrody-tauri-runtime-cef", package = "aphrody-tauri-runtime-cef" }
 tauri-plugin = { version = "=1.4.4", path = "crates/aphrody-tauri-plugin", package = "aphrody-tauri-plugin" }
@@ -60,7 +62,16 @@ tar = "0.4.46"
 tempfile = "3.27.0"
 thiserror = "2.0.20"
 time = { version = "0.3", features = ["macros", "formatting", "parsing", "serde"] }
-tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util"] }
+tokio = { version = "1.53.1", features = [
+  "process",
+  "rt-multi-thread",
+  "macros",
+  "time",
+  "signal",
+  "sync",
+  "fs",
+  "io-util",
+] }
 toml = "1.1.5"
 toml_edit = "0.25.15"
 tracing = "0.1.44"

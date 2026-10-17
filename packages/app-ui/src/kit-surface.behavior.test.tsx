@@ -3,29 +3,21 @@ import { afterEach, expect, test } from "bun:test";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
-import {
-  clearKitCatalogsForTesting,
-  type KitCatalog,
-  type KitEvent,
-} from "./kit-bridge";
+import { clearKitCatalogsForTesting, type KitCatalog, type KitEvent } from "./kit-bridge";
 import { KitSurface } from "./routes/kit/KitSurface";
 
 let root: Root | undefined;
 const host = document.createElement("div");
 document.body.append(host);
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-const originalInternals = Object.getOwnPropertyDescriptor(
-  window,
-  "__TAURI_INTERNALS__",
-);
+const originalInternals = Object.getOwnPropertyDescriptor(window, "__TAURI_INTERNALS__");
 
 afterEach(async () => {
   clearKitCatalogsForTesting();
   await act(async () => root?.unmount());
   root = undefined;
   host.replaceChildren();
-  if (originalInternals)
-    Object.defineProperty(window, "__TAURI_INTERNALS__", originalInternals);
+  if (originalInternals) Object.defineProperty(window, "__TAURI_INTERNALS__", originalInternals);
   else Reflect.deleteProperty(window, "__TAURI_INTERNALS__");
 });
 
@@ -40,8 +32,7 @@ const catalog: KitCatalog = {
   admin: true,
 };
 
-const flush = () =>
-  act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+const flush = () => act(async () => new Promise(resolve => setTimeout(resolve, 0)));
 
 test("a kit run asks its typed OUI in an M3 dialog and shows the log", async () => {
   const calls: Array<{ command: string; args: Record<string, unknown> }> = [];
@@ -57,10 +48,7 @@ test("a kit run asks its typed OUI in an M3 dialog and shows the log", async () 
             onmessage: (event: KitEvent) => void;
           };
           const kitArgs = args.args as string[];
-          if (kitArgs[0] === "catalog")
-            queueMicrotask(() =>
-              channel.onmessage({ type: "catalog", catalog }),
-            );
+          if (kitArgs[0] === "catalog") queueMicrotask(() => channel.onmessage({ type: "catalog", catalog }));
           else {
             send = channel.onmessage;
             queueMicrotask(() =>
@@ -101,40 +89,27 @@ test("a kit run asks its typed OUI in an M3 dialog and shows the log", async () 
   );
   await flush();
   expect(host.textContent).toContain("Libérer de la mémoire");
-  const launch = [...host.querySelectorAll("button")].find((button) =>
-    button.textContent?.includes("Lancer"),
-  )!;
+  const launch = [...host.querySelectorAll("button")].find(button => button.textContent?.includes("Lancer"))!;
   await act(async () => launch.click());
   await flush();
   const dialog = host.querySelector("dialog")!;
   expect(dialog.textContent).toContain("Tape OUI");
-  const confirm = [...dialog.querySelectorAll("button")].find(
-    (button) => button.type === "submit",
-  )!;
+  const confirm = [...dialog.querySelectorAll("button")].find(button => button.type === "submit")!;
   expect(confirm.disabled).toBe(true);
   const field = dialog.querySelector("input")!;
   await act(async () => {
-    const setter = Object.getOwnPropertyDescriptor(
-      HTMLInputElement.prototype,
-      "value",
-    )!.set!;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
     setter.call(field, "OUI");
     field.dispatchEvent(new Event("input", { bubbles: true }));
   });
   expect(confirm.disabled).toBe(false);
   await act(async () => confirm.click());
   await flush();
-  expect(
-    calls.find((call) => call.command === "aphrody_kit_answer")?.args,
-  ).toMatchObject({
+  expect(calls.find(call => call.command === "aphrody_kit_answer")?.args).toMatchObject({
     answer: "OUI",
   });
   expect(
-    calls.find(
-      (call) =>
-        call.command === "aphrody_kit_start" &&
-        (call.args.args as string[])[0] === "run",
-    )?.args,
+    calls.find(call => call.command === "aphrody_kit_start" && (call.args.args as string[])[0] === "run")?.args,
   ).toMatchObject({
     kit: "omar",
     args: ["run", "pc.3", "{}"],

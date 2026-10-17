@@ -37,67 +37,51 @@ export function buildSplatSettle(splat: SplatMesh): EntranceHandle | null {
   // a 180° flip, so local +Y is not world up).
   splat.updateWorldMatrix(true, false);
   const worldQuat = splat.getWorldQuaternion(new THREE.Quaternion());
-  const upLocal = new THREE.Vector3(0, 1, 0).applyQuaternion(
-    worldQuat.invert(),
-  );
+  const upLocal = new THREE.Vector3(0, 1, 0).applyQuaternion(worldQuat.invert());
 
   const uProgress = dyno.dynoFloat(0);
   const previousModifier = splat.objectModifier;
 
-  const modifier = dyno.dynoBlock(
-    { gsplat: dyno.Gsplat },
-    { gsplat: dyno.Gsplat },
-    ({ gsplat }) => {
-      if (!gsplat) throw new Error("splat settle: gsplat undefined");
-      const split = dyno.splitGsplat(gsplat);
-      const center = split.outputs.center; // vec3, object space
-      const opacity = split.outputs.opacity; // float
-      const scales = split.outputs.scales; // vec3
+  const modifier = dyno.dynoBlock({ gsplat: dyno.Gsplat }, { gsplat: dyno.Gsplat }, ({ gsplat }) => {
+    if (!gsplat) throw new Error("splat settle: gsplat undefined");
+    const split = dyno.splitGsplat(gsplat);
+    const center = split.outputs.center; // vec3, object space
+    const opacity = split.outputs.opacity; // float
+    const scales = split.outputs.scales; // vec3
 
-      // Normalized distance of this gaussian from the splat centroid (0..~1).
-      const nd = dyno.div(dyno.length(center), dyno.dynoFloat(radius));
+    // Normalized distance of this gaussian from the splat centroid (0..~1).
+    const nd = dyno.div(dyno.length(center), dyno.dynoFloat(radius));
 
-      // Reveal wavefront: gaussians with normalized distance below the growing
-      // threshold are settled. `reveal` goes 1 (arrived) → 0 (not yet).
-      const edge0 = dyno.sub(uProgress, dyno.dynoFloat(SOFT_EDGE));
-      const reveal = dyno.sub(
-        dyno.dynoFloat(1),
-        dyno.smoothstep(edge0, uProgress, nd),
-      );
-      const notArrived = dyno.sub(dyno.dynoFloat(1), reveal);
+    // Reveal wavefront: gaussians with normalized distance below the growing
+    // threshold are settled. `reveal` goes 1 (arrived) → 0 (not yet).
+    const edge0 = dyno.sub(uProgress, dyno.dynoFloat(SOFT_EDGE));
+    const reveal = dyno.sub(dyno.dynoFloat(1), dyno.smoothstep(edge0, uProgress, nd));
+    const notArrived = dyno.sub(dyno.dynoFloat(1), reveal);
 
-      // Height drop: un-arrived gaussians sit `DROP_FACTOR * radius` above their
-      // home along world-up, and fall into place as they reveal.
-      const fall = dyno.mul(
-        dyno.dynoVec3(upLocal),
-        dyno.mul(dyno.dynoFloat(radius * DROP_FACTOR), notArrived),
-      );
-      const newCenter = dyno.add(center, fall);
+    // Height drop: un-arrived gaussians sit `DROP_FACTOR * radius` above their
+    // home along world-up, and fall into place as they reveal.
+    const fall = dyno.mul(dyno.dynoVec3(upLocal), dyno.mul(dyno.dynoFloat(radius * DROP_FACTOR), notArrived));
+    const newCenter = dyno.add(center, fall);
 
-      const newOpacity = dyno.mul(opacity, reveal);
-      const popScale = dyno.clamp(
-        reveal,
-        dyno.dynoFloat(MIN_SCALE),
-        dyno.dynoFloat(1),
-      );
-      const newScales = dyno.mul(scales, popScale);
+    const newOpacity = dyno.mul(opacity, reveal);
+    const popScale = dyno.clamp(reveal, dyno.dynoFloat(MIN_SCALE), dyno.dynoFloat(1));
+    const newScales = dyno.mul(scales, popScale);
 
-      return {
-        gsplat: dyno.combineGsplat({
-          gsplat,
-          center: newCenter,
-          opacity: newOpacity,
-          scales: newScales,
-        }),
-      };
-    },
-  );
+    return {
+      gsplat: dyno.combineGsplat({
+        gsplat,
+        center: newCenter,
+        opacity: newOpacity,
+        scales: newScales,
+      }),
+    };
+  });
 
   splat.objectModifier = modifier;
   splat.updateGenerator();
 
   return {
-    setProgress: (t) => {
+    setProgress: t => {
       // Ease the wavefront so it settles softly, and push a touch past 1 so the
       // outermost gaussians (nd ≈ 1) fully arrive by the end.
       uProgress.value = easeInOutCubic(t) * (1 + SOFT_EDGE);

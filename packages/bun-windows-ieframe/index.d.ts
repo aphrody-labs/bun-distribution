@@ -9,7 +9,15 @@ interface Functions {
   /** ieframe.dll!IECreateDirectory */
   IECreateDirectory(lpPathName: string | Win32Pointer, lpSecurityAttributes: Win32Pointer): number;
   /** ieframe.dll!IECreateFile */
-  IECreateFile(lpFileName: string | Win32Pointer, dwDesiredAccess: number, dwShareMode: number, lpSecurityAttributes: Win32Pointer, dwCreationDisposition: number, dwFlagsAndAttributes: number, hTemplateFile: Win32Pointer): number | null;
+  IECreateFile(
+    lpFileName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    lpSecurityAttributes: Win32Pointer,
+    dwCreationDisposition: number,
+    dwFlagsAndAttributes: number,
+    hTemplateFile: Win32Pointer,
+  ): number | null;
   /** ieframe.dll!IEDeleteFile */
   IEDeleteFile(lpFileName: string | Win32Pointer): number;
   /** ieframe.dll!IEDisassociateThreadWithTab */
@@ -17,9 +25,19 @@ interface Functions {
   /** ieframe.dll!IEFindFirstFile */
   IEFindFirstFile(lpFileName: string | Win32Pointer, lpFindFileData: Win32Pointer): number | null;
   /** ieframe.dll!IEGetFileAttributesEx */
-  IEGetFileAttributesEx(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFileInformation: Win32Pointer): number;
+  IEGetFileAttributesEx(
+    lpFileName: string | Win32Pointer,
+    fInfoLevelId: number,
+    lpFileInformation: Win32Pointer,
+  ): number;
   /** ieframe.dll!IEGetProtectedModeCookie */
-  IEGetProtectedModeCookie(lpszURL: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer, pcchCookieData: Win32Pointer, dwFlags: number): number;
+  IEGetProtectedModeCookie(
+    lpszURL: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+    pcchCookieData: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** ieframe.dll!IEGetWriteableFolderPath */
   IEGetWriteableFolderPath(clsidFolderID: Win32Pointer, lppwstrPath: Win32Pointer): number;
   /** ieframe.dll!IEGetWriteableLowHKCU */
@@ -35,27 +53,79 @@ interface Functions {
   /** ieframe.dll!IELaunchURL */
   IELaunchURL(lpwstrUrl: string | Win32Pointer, lpProcInfo: Win32Pointer, lpInfo: Win32Pointer): number;
   /** ieframe.dll!IEMoveFileEx */
-  IEMoveFileEx(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, dwFlags: number): number;
+  IEMoveFileEx(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** ieframe.dll!IERefreshElevationPolicy */
   IERefreshElevationPolicy(): number;
   /** ieframe.dll!IERegCreateKeyEx */
-  IERegCreateKeyEx(lpSubKey: string | Win32Pointer, Reserved: number, lpClass: string | Win32Pointer, dwOptions: number, samDesired: number, lpSecurityAttributes: Win32Pointer, phkResult: Win32Pointer, lpdwDisposition: Win32Pointer): number;
+  IERegCreateKeyEx(
+    lpSubKey: string | Win32Pointer,
+    Reserved: number,
+    lpClass: string | Win32Pointer,
+    dwOptions: number,
+    samDesired: number,
+    lpSecurityAttributes: Win32Pointer,
+    phkResult: Win32Pointer,
+    lpdwDisposition: Win32Pointer,
+  ): number;
   /** ieframe.dll!IERegSetValueEx */
-  IERegSetValueEx(lpSubKey: string | Win32Pointer, lpValueName: string | Win32Pointer, Reserved: number, dwType: number, lpData: Win32Pointer, cbData: number): number;
+  IERegSetValueEx(
+    lpSubKey: string | Win32Pointer,
+    lpValueName: string | Win32Pointer,
+    Reserved: number,
+    dwType: number,
+    lpData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** ieframe.dll!IERegisterWritableRegistryKey */
   IERegisterWritableRegistryKey(guid: Win32StructInit, lpSubkey: string | Win32Pointer, fSubkeyAllowed: number): number;
   /** ieframe.dll!IERegisterWritableRegistryValue */
-  IERegisterWritableRegistryValue(guid: Win32StructInit, lpPath: string | Win32Pointer, lpValueName: string | Win32Pointer, dwType: number, lpData: Win32Pointer, cbMaxData: number): number;
+  IERegisterWritableRegistryValue(
+    guid: Win32StructInit,
+    lpPath: string | Win32Pointer,
+    lpValueName: string | Win32Pointer,
+    dwType: number,
+    lpData: Win32Pointer,
+    cbMaxData: number,
+  ): number;
   /** ieframe.dll!IERemoveDirectory */
   IERemoveDirectory(lpPathName: string | Win32Pointer): number;
   /** ieframe.dll!IESaveFile */
   IESaveFile(hState: Win32Pointer, lpwstrSourceFile: string | Win32Pointer): number;
   /** ieframe.dll!IESetProtectedModeCookie */
-  IESetProtectedModeCookie(lpszURL: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer, dwFlags: number): number;
+  IESetProtectedModeCookie(
+    lpszURL: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** ieframe.dll!IEShowOpenFileDialog */
-  IEShowOpenFileDialog(hwnd: Win32Pointer, lpwstrFileName: string | Win32Pointer, cchMaxFileName: number, lpwstrInitialDir: string | Win32Pointer, lpwstrFilter: string | Win32Pointer, lpwstrDefExt: string | Win32Pointer, dwFilterIndex: number, dwFlags: number, phFile: Win32Pointer): number;
+  IEShowOpenFileDialog(
+    hwnd: Win32Pointer,
+    lpwstrFileName: string | Win32Pointer,
+    cchMaxFileName: number,
+    lpwstrInitialDir: string | Win32Pointer,
+    lpwstrFilter: string | Win32Pointer,
+    lpwstrDefExt: string | Win32Pointer,
+    dwFilterIndex: number,
+    dwFlags: number,
+    phFile: Win32Pointer,
+  ): number;
   /** ieframe.dll!IEShowSaveFileDialog */
-  IEShowSaveFileDialog(hwnd: Win32Pointer, lpwstrInitialFileName: string | Win32Pointer, lpwstrInitialDir: string | Win32Pointer, lpwstrFilter: string | Win32Pointer, lpwstrDefExt: string | Win32Pointer, dwFilterIndex: number, dwFlags: number, lppwstrDestinationFilePath: Win32Pointer, phState: Win32Pointer): number;
+  IEShowSaveFileDialog(
+    hwnd: Win32Pointer,
+    lpwstrInitialFileName: string | Win32Pointer,
+    lpwstrInitialDir: string | Win32Pointer,
+    lpwstrFilter: string | Win32Pointer,
+    lpwstrDefExt: string | Win32Pointer,
+    dwFilterIndex: number,
+    dwFlags: number,
+    lppwstrDestinationFilePath: Win32Pointer,
+    phState: Win32Pointer,
+  ): number;
   /** ieframe.dll!IETrackingProtectionEnabled */
   IETrackingProtectionEnabled(): number;
   /** ieframe.dll!IEUnregisterWritableRegistry */

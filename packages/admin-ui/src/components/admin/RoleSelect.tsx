@@ -25,11 +25,8 @@ export function RoleBadge({ roleId }: { roleId: string }) {
     queryFn: () => api.get<{ roles: Role[]; count: number }>("/discord/roles"),
     staleTime: 30_000,
   });
-  const role = data?.roles.find((r) => r.id === roleId);
-  const color =
-    role && role.color !== 0
-      ? `#${role.color.toString(16).padStart(6, "0")}`
-      : "#71717a";
+  const role = data?.roles.find(r => r.id === roleId);
+  const color = role && role.color !== 0 ? `#${role.color.toString(16).padStart(6, "0")}` : "#71717a";
   return (
     <span className="inline-flex items-center gap-1.5">
       <span
@@ -80,16 +77,13 @@ export function RoleSelect({
     let list = data?.roles ?? [];
     // `excludeManaged` vise les rôles d'intégration (bots) — le rôle de boost
     // serveur reste sélectionnable (gating, boosts XP, accès staff…).
-    if (excludeManaged)
-      list = list.filter((r) => !r.managed || r.premiumSubscriber);
-    if (!includeEveryone) list = list.filter((r) => r.name !== "@everyone");
+    if (excludeManaged) list = list.filter(r => !r.managed || r.premiumSubscriber);
+    if (!includeEveryone) list = list.filter(r => r.name !== "@everyone");
     return [...list].toSorted((a, b) => b.position - a.position);
   }, [data, excludeManaged, includeEveryone]);
 
-  const selected = roles.find((r) => r.id === value);
-  const dotColor = selected
-    ? `#${selected.color.toString(16).padStart(6, "0")}`
-    : "transparent";
+  const selected = roles.find(r => r.id === value);
+  const dotColor = selected ? `#${selected.color.toString(16).padStart(6, "0")}` : "transparent";
 
   return (
     <div className={`flex items-center gap-2 ${className ?? ""}`}>
@@ -105,18 +99,16 @@ export function RoleSelect({
       <select
         className="input flex-1"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         required={required}
         disabled={disabled || isLoading}
       >
         <option value="">{isLoading ? "Chargement…" : placeholder}</option>
-        {roles.map((r) => (
+        {roles.map(r => (
           <option key={r.id} value={r.id}>
             {r.name}
             {r.premiumSubscriber ? " · boost" : ""}
-            {r.color !== 0
-              ? ` · #${r.color.toString(16).padStart(6, "0")}`
-              : ""}
+            {r.color !== 0 ? ` · #${r.color.toString(16).padStart(6, "0")}` : ""}
           </option>
         ))}
       </select>

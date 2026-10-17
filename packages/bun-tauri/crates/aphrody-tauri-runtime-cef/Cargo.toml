@@ -16,11 +16,7 @@ rust-version = "1.95"
 # `dox` checks source without requiring a qualified native CEF distribution.
 features = ["cef/dox", "devtools", "unstable"]
 default-target = "x86_64-unknown-linux-gnu"
-targets = [
-  "x86_64-unknown-linux-gnu",
-  "x86_64-pc-windows-msvc",
-  "x86_64-apple-darwin",
-]
+targets = ["x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc", "x86_64-apple-darwin"]
 
 [lib]
 name = "tauri_runtime_cef"
@@ -30,10 +26,15 @@ name = "macos-application-bootstrap"
 harness = false
 
 [dependencies]
-tauri = { version = "1.4.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false, features = ["gtk4"] }
+tauri = { version = "1.4.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false, features = [
+  "gtk4",
+] }
 tauri-macros = { version = "~1.4.4", path = "../aphrody-tauri-macros", package = "aphrody-tauri-macros" }
 base64 = "0.22"
-cef = { path = "../../../../toolchains/bun/src/browser/cef-rs/cef", version = "=154.5.0", features = ["build-util", "linux-x11"] }
+cef = { path = "../../../../toolchains/bun/src/browser/cef-rs/cef", version = "=154.5.0", features = [
+  "build-util",
+  "linux-x11",
+] }
 # Not actually used directly, just locking it.
 cef-dll-sys = { path = "../../../../toolchains/bun/src/browser/cef-rs/sys", version = "=154.5.0", default-features = false }
 dirs = "6"
@@ -47,11 +48,11 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 sha2 = "0.10"
 tauri-runtime = { version = "~1.4.4", path = "../aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["html-manipulation"] }
-url = { workspace = true }
-winit = { version = "0.31.0-beta.3", package = "tauri-winit", default-features = false, features = [
-  "gtk4",
+tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+  "html-manipulation",
 ] }
+url = { workspace = true }
+winit = { version = "0.31.0-beta.3", package = "tauri-winit", default-features = false, features = ["gtk4"] }
 
 [target."cfg(windows)".dependencies]
 softbuffer = { version = "0.4", default-features = false }
@@ -71,10 +72,7 @@ windows = { version = "0.62", features = [
 # `kill(pid, 0)` and `gethostname`, to read Chromium's process singleton lock.
 libc = { workspace = true }
 objc2 = "0.6"
-objc2-application-services = { version = "0.3", default-features = false, features = [
-  "HIServices",
-  "Processes",
-] }
+objc2-application-services = { version = "0.3", default-features = false, features = ["HIServices", "Processes"] }
 objc2-app-kit = { version = "0.3", default-features = false, features = [
   "NSApplication",
   "NSBezierPath",
@@ -94,16 +92,10 @@ objc2-app-kit = { version = "0.3", default-features = false, features = [
   "objc2-core-graphics",
   "objc2-quartz-core",
 ] }
-objc2-quartz-core = { version = "0.3", default-features = false, features = [
-  "CALayer",
-  "objc2-core-graphics",
-] }
+objc2-quartz-core = { version = "0.3", default-features = false, features = ["CALayer", "objc2-core-graphics"] }
 # CFRunLoop gives the run-loop observer that delivers event-loop wake-ups, see
 # `platform::macos::MainThreadWake`.
-objc2-core-foundation = { version = "0.3", default-features = false, features = [
-  "CFRunLoop",
-  "std",
-] }
+objc2-core-foundation = { version = "0.3", default-features = false, features = ["CFRunLoop", "std"] }
 objc2-foundation = { version = "0.3", default-features = false, features = [
   "NSArray",
   # NSDate gates the performSelector:withObject:afterDelay: binding used to

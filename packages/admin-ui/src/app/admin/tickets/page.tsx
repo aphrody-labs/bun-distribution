@@ -1,12 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Lock,
-  Ticket as TicketIcon,
-  RefreshCw,
-  ExternalLink,
-} from "lucide-react";
+import { Lock, Ticket as TicketIcon, RefreshCw, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
 import { TicketAccessPanel } from "./TicketAccessPanel";
@@ -23,10 +18,7 @@ interface TicketRow {
   createdAt: string;
 }
 
-const KIND_LABEL: Record<
-  TicketRow["kind"],
-  { label: string; color: string; description: string }
-> = {
+const KIND_LABEL: Record<TicketRow["kind"], { label: string; color: string; description: string }> = {
   report: {
     label: "Signalement",
     color: "text-red-400 border-red-500/40",
@@ -57,9 +49,7 @@ export default function TicketsPage() {
     queryKey: ["tickets", filter],
     queryFn: () =>
       api.get<{ rows: TicketRow[]; total: number }>(
-        filter === "all"
-          ? "/tickets"
-          : `/tickets?closed=${filter === "closed"}`,
+        filter === "all" ? "/tickets" : `/tickets?closed=${filter === "closed"}`,
       ),
   });
 
@@ -73,8 +63,7 @@ export default function TicketsPage() {
       <header>
         <h1 className="text-4xl font-saiyan text-dbz-orange mb-2">TICKETS</h1>
         <p className="text-sm text-white/60 mb-1">
-          Gérez les tickets d&apos;assistance ouverts par les membres du
-          serveur.
+          Gérez les tickets d&apos;assistance ouverts par les membres du serveur.
         </p>
         <p className="text-xs text-white/50 uppercase tracking-widest">
           Un ticket = un salon Discord dédié entre le membre et les modérateurs
@@ -87,7 +76,7 @@ export default function TicketsPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <TicketIcon className="h-5 w-5 text-dbz-blue-light" />
           <div className="flex gap-2">
-            {(["open", "closed", "all"] as const).map((f) => (
+            {(["open", "closed", "all"] as const).map(f => (
               <button
                 key={f}
                 type="button"
@@ -115,9 +104,7 @@ export default function TicketsPage() {
 
       {tickets.isLoading && (
         <div className="dbz-panel p-8 text-center">
-          <p className="font-saiyan text-dbz-orange text-xl mb-2">
-            CHARGEMENT…
-          </p>
+          <p className="font-saiyan text-dbz-orange text-xl mb-2">CHARGEMENT…</p>
           <p className="text-sm text-white/50">Récupération des tickets.</p>
         </div>
       )}
@@ -126,42 +113,34 @@ export default function TicketsPage() {
         <div className="dbz-panel p-6 text-center border-l-4 border-red-500">
           <p className="font-saiyan text-red-400 mb-2">Erreur de chargement</p>
           <p className="text-sm text-white/50">
-            Impossible de récupérer les tickets. Vérifiez que le bot est en
-            ligne.
+            Impossible de récupérer les tickets. Vérifiez que le bot est en ligne.
           </p>
         </div>
       )}
 
-      {!tickets.isLoading &&
-        !tickets.isError &&
-        tickets.data?.rows.length === 0 && (
-          <div className="dbz-panel p-8 text-center">
-            <p className="font-saiyan text-dbz-yellow text-xl mb-2">
-              AUCUN TICKET
-            </p>
-            <p className="text-sm text-white/50">
-              {filter === "open"
-                ? "Aucun ticket ouvert. Tout va bien !"
-                : filter === "closed"
-                  ? "Aucun ticket fermé pour le moment."
-                  : "Aucun ticket enregistré."}
-            </p>
-          </div>
-        )}
+      {!tickets.isLoading && !tickets.isError && tickets.data?.rows.length === 0 && (
+        <div className="dbz-panel p-8 text-center">
+          <p className="font-saiyan text-dbz-yellow text-xl mb-2">AUCUN TICKET</p>
+          <p className="text-sm text-white/50">
+            {filter === "open"
+              ? "Aucun ticket ouvert. Tout va bien !"
+              : filter === "closed"
+                ? "Aucun ticket fermé pour le moment."
+                : "Aucun ticket enregistré."}
+          </p>
+        </div>
+      )}
 
       {close.isError && (
         <div className="dbz-panel p-3 border-l-4 border-red-500">
           <p className="text-sm text-red-400">
-            Erreur lors de la fermeture :{" "}
-            {close.error instanceof Error
-              ? close.error.message
-              : "erreur inconnue"}
+            Erreur lors de la fermeture : {close.error instanceof Error ? close.error.message : "erreur inconnue"}
           </p>
         </div>
       )}
 
       <div className="space-y-3">
-        {tickets.data?.rows.map((t) => {
+        {tickets.data?.rows.map(t => {
           const meta = KIND_LABEL[t.kind] ?? {
             label: t.kind,
             color: "text-white/50 border-white/10",
@@ -185,14 +164,8 @@ export default function TicketsPage() {
                 <div className="flex-1 min-w-0">
                   {/* En-tête */}
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span
-                      className={`font-semibold text-sm ${meta.color.split(" ")[0]}`}
-                    >
-                      {meta.label}
-                    </span>
-                    <span className="text-xs text-white/50 font-mono">
-                      #{t.id}
-                    </span>
+                    <span className={`font-semibold text-sm ${meta.color.split(" ")[0]}`}>{meta.label}</span>
+                    <span className="text-xs text-white/50 font-mono">#{t.id}</span>
                     {t.closed ? (
                       <span className="px-2 py-0.5 text-xs font-bold bg-white/5 text-white/50 border border-white/10 rounded uppercase">
                         Fermé
@@ -204,11 +177,7 @@ export default function TicketsPage() {
                     )}
                   </div>
 
-                  {meta.description && (
-                    <p className="text-xs text-white/50 mb-2">
-                      {meta.description}
-                    </p>
-                  )}
+                  {meta.description && <p className="text-xs text-white/50 mb-2">{meta.description}</p>}
 
                   {/* Dates */}
                   <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-white/50 mb-2">
@@ -227,10 +196,7 @@ export default function TicketsPage() {
                     </span>
                     <span>
                       Membre :{" "}
-                      <span
-                        className="font-mono text-white/60"
-                        title={`Identifiant Discord : ${t.ownerId}`}
-                      >
+                      <span className="font-mono text-white/60" title={`Identifiant Discord : ${t.ownerId}`}>
                         {t.ownerId}
                       </span>
                     </span>
@@ -246,10 +212,7 @@ export default function TicketsPage() {
                           <>
                             {" "}
                             par{" "}
-                            <span
-                              className="font-mono text-white/60"
-                              title={`Identifiant Discord : ${t.closedBy}`}
-                            >
+                            <span className="font-mono text-white/60" title={`Identifiant Discord : ${t.closedBy}`}>
                               {t.closedBy}
                             </span>
                           </>

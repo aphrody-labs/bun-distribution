@@ -11,8 +11,8 @@ import { schemeFromSeed, type SchemeVariant } from "../src/dynamic-color.js";
 
 function relativeLuminance(hex: string): number {
   const channels = [1, 3, 5]
-    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
-    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    .map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
   return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 }
 
@@ -55,23 +55,14 @@ describe("contrastLevel — higher level improves ratio on key pairs", () => {
 
         let improved = 0;
         for (const [bg, fg] of KEY_PAIRS) {
-          const stdRatio = contrast(
-            standard[`--md-sys-color-${bg}`]!,
-            standard[`--md-sys-color-${fg}`]!,
-          );
-          const hiRatio = contrast(
-            high[`--md-sys-color-${bg}`]!,
-            high[`--md-sys-color-${fg}`]!,
-          );
+          const stdRatio = contrast(standard[`--md-sys-color-${bg}`]!, standard[`--md-sys-color-${fg}`]!);
+          const hiRatio = contrast(high[`--md-sys-color-${bg}`]!, high[`--md-sys-color-${fg}`]!);
           if (hiRatio > stdRatio + 0.01) improved++;
           // Never regresses below standard AA (4.5) at high contrast.
           expect(hiRatio).toBeGreaterThanOrEqual(4.5);
         }
         // At least some pairs must have improved contrast.
-        expect(
-          improved,
-          `no pairs improved for ${seed} ${dark ? "dark" : "light"}`,
-        ).toBeGreaterThan(0);
+        expect(improved, `no pairs improved for ${seed} ${dark ? "dark" : "light"}`).toBeGreaterThan(0);
       });
     }
   }
@@ -95,18 +86,9 @@ describe("contrastLevel — negative values accepted", () => {
     const med = schemeFromSeed("#6750a4", { contrastLevel: 0.5 });
     const hi = schemeFromSeed("#6750a4", { contrastLevel: 1 });
 
-    const ratioStd = contrast(
-      std["--md-sys-color-surface"]!,
-      std["--md-sys-color-on-surface"]!,
-    );
-    const ratioMed = contrast(
-      med["--md-sys-color-surface"]!,
-      med["--md-sys-color-on-surface"]!,
-    );
-    const ratioHi = contrast(
-      hi["--md-sys-color-surface"]!,
-      hi["--md-sys-color-on-surface"]!,
-    );
+    const ratioStd = contrast(std["--md-sys-color-surface"]!, std["--md-sys-color-on-surface"]!);
+    const ratioMed = contrast(med["--md-sys-color-surface"]!, med["--md-sys-color-on-surface"]!);
+    const ratioHi = contrast(hi["--md-sys-color-surface"]!, hi["--md-sys-color-on-surface"]!);
 
     // Medium should be at least as good as standard.
     expect(ratioMed).toBeGreaterThanOrEqual(ratioStd - 0.1);
@@ -129,10 +111,7 @@ describe("contrastLevel — all variants reach AAA (7:1) on surface/on-surface a
           dark,
           contrastLevel: 1,
         });
-        const ratio = contrast(
-          scheme["--md-sys-color-surface"]!,
-          scheme["--md-sys-color-on-surface"]!,
-        );
+        const ratio = contrast(scheme["--md-sys-color-surface"]!, scheme["--md-sys-color-on-surface"]!);
         expect(
           ratio,
           `on-surface/surface (${variant}, ${dark ? "dark" : "light"}) = ${ratio.toFixed(2)}:1`,

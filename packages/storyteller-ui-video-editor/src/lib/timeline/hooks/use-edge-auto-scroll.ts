@@ -44,10 +44,7 @@ export function useEdgeAutoScroll({
 
       const viewportWidth = rulerViewport.clientWidth;
       const intrinsicContentWidth = rulerViewport.scrollWidth;
-      const effectiveContentWidth = Math.max(
-        contentWidth,
-        intrinsicContentWidth,
-      );
+      const effectiveContentWidth = Math.max(contentWidth, intrinsicContentWidth);
       const scrollMax = Math.max(0, effectiveContentWidth - viewportWidth);
 
       let scrollSpeed = 0;
@@ -56,20 +53,14 @@ export function useEdgeAutoScroll({
         const edgeDistance = Math.max(0, mouseXRelative);
         const intensity = 1 - edgeDistance / edgeThreshold;
         scrollSpeed = -maxScrollSpeed * intensity;
-      } else if (
-        mouseXRelative > viewportWidth - edgeThreshold &&
-        rulerViewport.scrollLeft < scrollMax
-      ) {
+      } else if (mouseXRelative > viewportWidth - edgeThreshold && rulerViewport.scrollLeft < scrollMax) {
         const edgeDistance = Math.max(0, viewportWidth - mouseXRelative);
         const intensity = 1 - edgeDistance / edgeThreshold;
         scrollSpeed = maxScrollSpeed * intensity;
       }
 
       if (scrollSpeed !== 0) {
-        const newScrollLeft = Math.max(
-          0,
-          Math.min(scrollMax, rulerViewport.scrollLeft + scrollSpeed),
-        );
+        const newScrollLeft = Math.max(0, Math.min(scrollMax, rulerViewport.scrollLeft + scrollSpeed));
         rulerViewport.scrollLeft = newScrollLeft;
         tracksViewport.scrollLeft = newScrollLeft;
       }
@@ -85,13 +76,5 @@ export function useEdgeAutoScroll({
         rafRef.current = null;
       }
     };
-  }, [
-    isActive,
-    getMouseClientX,
-    rulerScrollRef,
-    tracksScrollRef,
-    contentWidth,
-    edgeThreshold,
-    maxScrollSpeed,
-  ]);
+  }, [isActive, getMouseClientX, rulerScrollRef, tracksScrollRef, contentWidth, edgeThreshold, maxScrollSpeed]);
 }

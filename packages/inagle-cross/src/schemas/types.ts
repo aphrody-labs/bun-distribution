@@ -9,7 +9,17 @@
 
 /** Famille de type d'une colonne. */
 export type CrossColumnKind =
-  "int" | "float" | "bool" | "string" | "enum" | "ref" | "array" | "list" | "dict" | "struct" | "localizationKey";
+  | "int"
+  | "float"
+  | "bool"
+  | "string"
+  | "enum"
+  | "ref"
+  | "array"
+  | "list"
+  | "dict"
+  | "struct"
+  | "localizationKey";
 
 export interface CrossColumn {
   name: string;

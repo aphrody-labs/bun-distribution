@@ -16,16 +16,12 @@ import {
 } from "@material/material-color-utilities";
 import { join } from "node:path";
 
-const OUT = join(
-  import.meta.dir,
-  "../../../../crates/ui/m3-tokens/tests/fixtures/mcu-fidelity.json",
-);
+const OUT = join(import.meta.dir, "../../../../crates/ui/m3-tokens/tests/fixtures/mcu-fidelity.json");
 
 // Creator site, pet, plus seeds covering the dislike branch (dark yellow-green), warm, cool,
 // near-grey and very light colours.
 const SEEDS = [
-  0xff951ae2, 0xff8c6c88, 0xff6b8e23, 0xff556b2f, 0xffce422b, 0xff1a73e8,
-  0xfff59e0b, 0xff808080, 0xffe6e6c8,
+  0xff951ae2, 0xff8c6c88, 0xff6b8e23, 0xff556b2f, 0xffce422b, 0xff1a73e8, 0xfff59e0b, 0xff808080, 0xffe6e6c8,
 ];
 const ROLES = [
   "primary",
@@ -84,10 +80,7 @@ const ROLES = [
   "neutralVariantPaletteKeyColor",
 ] as const;
 const colors = MaterialDynamicColors as unknown as Record<string, DynamicColor>;
-const VARIANTS: [
-  string,
-  new (h: Hct, dark: boolean, level: number) => DynamicScheme,
-][] = [
+const VARIANTS: [string, new (h: Hct, dark: boolean, level: number) => DynamicScheme][] = [
   ["fidelity", SchemeFidelity],
   ["content", SchemeContent],
 ];
@@ -98,17 +91,12 @@ for (const seed of SEEDS) {
     for (const contrast of [-1, 0, 0.5, 1]) {
       for (const dark of [false, true]) {
         const scheme = new Scheme(Hct.fromInt(seed), dark, contrast);
-        const roles = Object.fromEntries(
-          ROLES.map((r) => [r, colors[r]!.getArgb(scheme)]),
-        );
+        const roles = Object.fromEntries(ROLES.map(r => [r, colors[r]!.getArgb(scheme)]));
         schemes.push({ seed, variant, dark, contrast, roles });
       }
     }
   }
 }
 
-await Bun.write(
-  OUT,
-  `${JSON.stringify({ source: "@material/material-color-utilities 0.4.0", schemes })}\n`,
-);
+await Bun.write(OUT, `${JSON.stringify({ source: "@material/material-color-utilities 0.4.0", schemes })}\n`);
 console.log(`wrote ${OUT}: ${schemes.length} schemes`);

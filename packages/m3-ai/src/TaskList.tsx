@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 AND MIT
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/ai/src/TaskList.tsx), MIT, rebuilt on Material Design 3.
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-  Icon,
-} from "@aphrody/m3-primitives";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger, Icon } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { useMemo } from "react";
 
@@ -63,9 +58,7 @@ export function TaskList({
   }, [tasks, groups]);
 
   return (
-    <div
-      className={clsx("flex flex-col bg-surface text-on-surface", className)}
-    >
+    <div className={clsx("flex flex-col bg-surface text-on-surface", className)}>
       {/* Column header */}
       <div
         className="grid items-center border-b border-outline-variant text-label-medium text-on-surface-variant"
@@ -81,16 +74,12 @@ export function TaskList({
       </div>
 
       {/* Groups */}
-      {groups.map((status) => {
+      {groups.map(status => {
         const items = grouped.get(status) ?? [];
         const isOpen = !collapsedGroups?.has(status);
 
         return (
-          <Collapsible
-            key={status}
-            open={isOpen}
-            onOpenChange={() => onToggleGroup?.(status)}
-          >
+          <Collapsible key={status} open={isOpen} onOpenChange={() => onToggleGroup?.(status)}>
             <CollapsibleTrigger
               className={clsx(
                 "grid w-full items-center rounded-none border-b border-outline-variant bg-surface-container-low",
@@ -105,10 +94,7 @@ export function TaskList({
                 <Icon
                   name="chevron_right"
                   size={20}
-                  className={clsx(
-                    "shrink-0 transition-transform duration-300 ease-emphasized",
-                    isOpen && "rotate-90",
-                  )}
+                  className={clsx("shrink-0 transition-transform duration-300 ease-emphasized", isOpen && "rotate-90")}
                 />
               </span>
               <span className="flex items-center justify-center">
@@ -116,15 +102,13 @@ export function TaskList({
               </span>
               <span className="col-span-5 flex items-center gap-1.5 text-left">
                 {TASK_STATUS_LABEL[status]}
-                <span className="text-body-small text-on-surface-variant">
-                  ({items.length})
-                </span>
+                <span className="text-body-small text-on-surface-variant">({items.length})</span>
               </span>
             </CollapsibleTrigger>
 
             <CollapsibleContent>
               {items.length > 0 ? (
-                items.map((task) => (
+                items.map(task => (
                   <TaskRow
                     key={task.id}
                     task={task}

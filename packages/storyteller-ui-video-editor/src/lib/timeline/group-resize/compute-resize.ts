@@ -1,7 +1,4 @@
-import {
-  getSourceSpanAtClipTime,
-  getTimelineDurationForSourceSpan,
-} from "../../retime";
+import { getSourceSpanAtClipTime, getTimelineDurationForSourceSpan } from "../../retime";
 import {
   addMediaTime,
   clampMediaTime,
@@ -32,12 +29,7 @@ import type {
 // single snapped value — per-field rounding doesn't compose when
 // sourceDuration isn't itself frame-aligned.
 
-export function computeGroupResize({
-  members,
-  side,
-  deltaTime,
-  fps,
-}: ComputeGroupResizeArgs): GroupResizeResult {
+export function computeGroupResize({ members, side, deltaTime, fps }: ComputeGroupResizeArgs): GroupResizeResult {
   if (members.length === 0) {
     return { deltaTime: ZERO_MEDIA_TIME, updates: [] };
   }
@@ -72,9 +64,7 @@ export function computeGroupResize({
     });
     if (memberMaximum !== null) {
       maximumDeltaTime =
-        maximumDeltaTime === null
-          ? memberMaximum
-          : minMediaTime({ a: maximumDeltaTime, b: memberMaximum });
+        maximumDeltaTime === null ? memberMaximum : minMediaTime({ a: maximumDeltaTime, b: memberMaximum });
     }
   }
 
@@ -110,7 +100,7 @@ export function computeGroupResize({
 
   return {
     deltaTime: Object.is(finalDeltaTime, -0) ? ZERO_MEDIA_TIME : finalDeltaTime,
-    updates: members.map((member) =>
+    updates: members.map(member =>
       buildResizeUpdate({
         member,
         side,
@@ -308,11 +298,7 @@ function getDurationForVisibleSourceSpan({
   });
 }
 
-function getSourceDuration({
-  member,
-}: {
-  member: GroupResizeMember;
-}): MediaTime {
+function getSourceDuration({ member }: { member: GroupResizeMember }): MediaTime {
   if (member.sourceDuration != null) {
     return member.sourceDuration;
   }

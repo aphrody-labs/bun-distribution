@@ -24,11 +24,8 @@ export interface ModelUnavailableProps {
 }
 
 /** Clamp a progress fraction to 0..1; non-finite values give `null` (indeterminate). */
-export function clampProgress(
-  progress: number | null | undefined,
-): number | null {
-  if (progress === null || progress === undefined || !Number.isFinite(progress))
-    return null;
+export function clampProgress(progress: number | null | undefined): number | null {
+  if (progress === null || progress === undefined || !Number.isFinite(progress)) return null;
   return Math.min(1, Math.max(0, progress));
 }
 
@@ -44,11 +41,7 @@ export function ModelUnavailable({
   const value = clampProgress(progress);
   const busy = phase !== "unavailable";
   const title =
-    phase === "downloading"
-      ? l.modelDownloading
-      : phase === "loading"
-        ? l.modelLoading
-        : l.modelUnavailable;
+    phase === "downloading" ? l.modelDownloading : phase === "loading" ? l.modelLoading : l.modelUnavailable;
   const percent = value === null ? null : Math.round(value * 100);
 
   return (
@@ -59,9 +52,7 @@ export function ModelUnavailable({
       aria-busy={busy || undefined}
       className={clsx(
         "m3-model-unavailable flex flex-col gap-3 rounded-large px-4 py-4",
-        busy
-          ? "bg-surface-container-high text-on-surface"
-          : "bg-error-container text-on-error-container",
+        busy ? "bg-surface-container-high text-on-surface" : "bg-error-container text-on-error-container",
         className,
       )}
     >
@@ -73,14 +64,10 @@ export function ModelUnavailable({
         )}
         <div className="min-w-0 flex-1">
           <p className="m-0 text-title-medium">{title}</p>
-          {reason ? (
-            <p className="m-0 mt-1 text-body-medium opacity-90">{reason}</p>
-          ) : null}
+          {reason ? <p className="m-0 mt-1 text-body-medium opacity-90">{reason}</p> : null}
         </div>
         {percent !== null ? (
-          <span className="shrink-0 text-label-large">
-            {formatLabel(l.progressPercent, { percent })}
-          </span>
+          <span className="shrink-0 text-label-large">{formatLabel(l.progressPercent, { percent })}</span>
         ) : null}
       </div>
       {busy && value !== null ? (

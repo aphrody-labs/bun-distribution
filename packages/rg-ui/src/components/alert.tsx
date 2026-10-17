@@ -9,15 +9,12 @@ const alertVariants = cva(
     variants: {
       variant: {
         default: "bg-background text-foreground",
-        destructive:
-          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+        destructive: "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
         // Les tokens du design system sont `succes` et `alerte` (nommage FR,
         // cf. styles.css). `success`/`warning` n'existent pas : ces deux
         // variantes rendaient une bordure et un texte transparents.
-        success:
-          "border-succes/50 text-succes dark:border-succes [&>svg]:text-succes",
-        warning:
-          "border-alerte/50 text-alerte dark:border-alerte [&>svg]:text-alerte",
+        success: "border-succes/50 text-succes dark:border-succes [&>svg]:text-succes",
+        warning: "border-alerte/50 text-alerte dark:border-alerte [&>svg]:text-alerte",
       },
     },
     defaultVariants: {
@@ -42,30 +39,14 @@ function Alert({
   );
 }
 
-function AlertTitle({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLHeadingElement>) {
+function AlertTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h5
-      data-slot="alert-title"
-      className={cn("mb-1 font-medium leading-none tracking-tight", className)}
-      {...props}
-    />
+    <h5 data-slot="alert-title" className={cn("mb-1 font-medium leading-none tracking-tight", className)} {...props} />
   );
 }
 
-function AlertDescription({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLParagraphElement>) {
-  return (
-    <div
-      data-slot="alert-description"
-      className={cn("text-sm [&_p]:leading-relaxed", className)}
-      {...props}
-    />
-  );
+function AlertDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+  return <div data-slot="alert-description" className={cn("text-sm [&_p]:leading-relaxed", className)} {...props} />;
 }
 
 export { Alert, AlertDescription, AlertTitle };

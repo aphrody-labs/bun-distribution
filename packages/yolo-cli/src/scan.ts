@@ -45,13 +45,10 @@ Options:
 
 Options may appear before or after dir. Use -- before a dir starting with -.`;
 
-function parseList(
-  value: string | undefined,
-  option: string,
-): string[] | undefined {
+function parseList(value: string | undefined, option: string): string[] | undefined {
   if (value === undefined) return undefined;
-  const items = value.split(",").map((item) => item.trim());
-  if (items.some((item) => item.length === 0)) {
+  const items = value.split(",").map(item => item.trim());
+  if (items.some(item => item.length === 0)) {
     throw new Error(`${option} requires a non-empty comma-separated list`);
   }
   return items;
@@ -89,10 +86,7 @@ export async function runScanCommand(
       throw new Error("Choose one output format: --json or --md");
     }
 
-    const target =
-      positionals[0] === undefined
-        ? root
-        : resolve(process.cwd(), positionals[0]);
+    const target = positionals[0] === undefined ? root : resolve(process.cwd(), positionals[0]);
     if (values.ingest) {
       const delegated = await runAphrody([
         "home",
@@ -102,9 +96,7 @@ export async function runScanCommand(
         ...(values.label ? ["--label", values.label] : []),
       ]);
       if (delegated.code !== 0) {
-        console.error(
-          `yolo scan error: ${delegated.stderr.trim() || "aphrody home index failed"}`,
-        );
+        console.error(`yolo scan error: ${delegated.stderr.trim() || "aphrody home index failed"}`);
         return delegated.code;
       }
       out(delegated.stdout.trimEnd());
@@ -118,11 +110,7 @@ export async function runScanCommand(
     let parallel: number | undefined;
     if (values.parallel !== undefined) {
       parallel = Number(values.parallel);
-      if (
-        !/^\d+$/.test(values.parallel) ||
-        !Number.isSafeInteger(parallel) ||
-        parallel <= 0
-      ) {
+      if (!/^\d+$/.test(values.parallel) || !Number.isSafeInteger(parallel) || parallel <= 0) {
         throw new Error("--parallel requires a positive safe integer");
       }
     }
@@ -143,7 +131,5 @@ export async function runScanCommand(
 }
 
 if (import.meta.main) {
-  void runScanCommand(process.argv.slice(2), process.cwd()).then(
-    (code) => (process.exitCode = code),
-  );
+  void runScanCommand(process.argv.slice(2), process.cwd()).then(code => (process.exitCode = code));
 }

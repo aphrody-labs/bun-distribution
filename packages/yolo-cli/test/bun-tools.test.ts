@@ -1,25 +1,21 @@
 import { afterEach, expect, test } from "bun:test";
-import {
-  existsSync,
-  mkdtempSync,
-  mkdirSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { bunToolArgv, runBunTool } from "../src/bun-tools";
 
 const temporary: string[] = [];
 afterEach(() => {
-  for (const dir of temporary.splice(0))
-    rmSync(dir, { recursive: true, force: true });
+  for (const dir of temporary.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
 test("available built-ins keep their native route and exact arguments", () => {
-  expect(
-    bunToolArgv("bun", "rename", ["a b", "--dry-run"], false, "missing"),
-  ).toEqual(["bun", "rename", "a b", "--dry-run"]);
+  expect(bunToolArgv("bun", "rename", ["a b", "--dry-run"], false, "missing")).toEqual([
+    "bun",
+    "rename",
+    "a b",
+    "--dry-run",
+  ]);
 });
 
 test("missing built-in uses only the explicitly configured fork owner", () => {
@@ -29,12 +25,13 @@ test("missing built-in uses only the explicitly configured fork owner", () => {
   mkdirSync(directory, { recursive: true });
   const entry = join(directory, "devtools.ts");
   writeFileSync(entry, "// existing fork owner fixture\n");
-  expect(
-    bunToolArgv("bun", "parse", ["file with spaces.ts"], true, fork),
-  ).toEqual(["bun", entry, "parse", "file with spaces.ts"]);
-  expect(() =>
-    bunToolArgv("bun", "rename", [], true, join(fork, "absent")),
-  ).toThrow("no devtools owner");
+  expect(bunToolArgv("bun", "parse", ["file with spaces.ts"], true, fork)).toEqual([
+    "bun",
+    entry,
+    "parse",
+    "file with spaces.ts",
+  ]);
+  expect(() => bunToolArgv("bun", "rename", [], true, join(fork, "absent"))).toThrow("no devtools owner");
 });
 
 test("capability discovery cannot execute a checkout package script", async () => {

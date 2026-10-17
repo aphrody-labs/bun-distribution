@@ -18,14 +18,7 @@ import { clientFromTcpSocket } from "../../src/bun";
 // oxlint-disable-next-line import/no-unassigned-import -- setup DOM à effet de bord, exécuté avant les autres imports
 import "./setup";
 
-import {
-  describe,
-  test,
-  expect,
-  beforeAll,
-  afterAll,
-  afterEach,
-} from "bun:test";
+import { describe, test, expect, beforeAll, afterAll, afterEach } from "bun:test";
 import { readFile } from "fs/promises";
 import { rename } from "fs/promises";
 import { join } from "path";
@@ -76,12 +69,8 @@ beforeAll(async () => {
   console.log(`[TS] Library set to: ${bridgeConfig.library_id}`);
 
   // Hook into the subscription manager to collect all events
-  const originalCreateSubscription = (client as any).subscriptionManager
-    .createSubscription;
-  (client as any).subscriptionManager.createSubscription = function (
-    filter: any,
-    callback: any,
-  ) {
+  const originalCreateSubscription = (client as any).subscriptionManager.createSubscription;
+  (client as any).subscriptionManager.createSubscription = function (filter: any, callback: any) {
     const wrappedCallback = (event: any) => {
       allEventsReceived.push({
         timestamp: new Date().toISOString(),
@@ -97,9 +86,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   // Log all events at the end for debugging
-  console.log(
-    `[TS] ===== ALL EVENTS RECEIVED (${allEventsReceived.length}) =====`,
-  );
+  console.log(`[TS] ===== ALL EVENTS RECEIVED (${allEventsReceived.length}) =====`);
   allEventsReceived.forEach((item, idx) => {
     console.log(`[TS] Event ${idx + 1} at ${item.timestamp}:`);
     console.log(`[TS]   Filter:`, JSON.stringify(item.filter, null, 2));
@@ -184,10 +171,7 @@ describe("useNormalizedQuery - Folder Rename Integration", () => {
     });
 
     console.log("[TS] Initial root listing:", rootResult.current.data);
-    console.log(
-      "[TS] Initial original_folder contents:",
-      folderResult.current.data,
-    );
+    console.log("[TS] Initial original_folder contents:", folderResult.current.data);
 
     // Verify initial state
     const initialRootData = rootResult.current.data as { files: any[] };
@@ -207,7 +191,7 @@ describe("useNormalizedQuery - Folder Rename Integration", () => {
     await rename(originalPath, renamedPath);
 
     // Wait for watcher to detect and emit events
-    await new Promise((resolve) => setTimeout(resolve, 8000));
+    await new Promise(resolve => setTimeout(resolve, 8000));
 
     // Verify cache updated correctly
     const finalRootData = rootResult.current.data as { files: any[] };
@@ -220,9 +204,7 @@ describe("useNormalizedQuery - Folder Rename Integration", () => {
     expect(originalStillExists).toBeUndefined();
 
     // Renamed folder should exist in root
-    const renamedFolder = finalRootData.files.find(
-      (f: any) => f.name === "renamed_folder" && f.kind === "Directory",
-    );
+    const renamedFolder = finalRootData.files.find((f: any) => f.name === "renamed_folder" && f.kind === "Directory");
     expect(renamedFolder).toBeDefined();
 
     // UUID should be preserved (folder identity maintained)

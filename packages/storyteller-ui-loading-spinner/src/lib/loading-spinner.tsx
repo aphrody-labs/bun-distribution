@@ -7,9 +7,7 @@ interface LoadingSpinnerProps {
 }
 
 export const LoadingSpinner = ({ className }: LoadingSpinnerProps) => {
-  return (
-    <LoaderCircleIcon className={twMerge("h-6 w-6 animate-spin", className)} />
-  );
+  return <LoaderCircleIcon className={twMerge("h-6 w-6 animate-spin", className)} />;
 };
 
 export default LoadingSpinner;

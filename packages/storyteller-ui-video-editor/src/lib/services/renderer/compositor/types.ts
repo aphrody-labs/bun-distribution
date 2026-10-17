@@ -41,9 +41,7 @@ export type LayerMaskDescriptor = {
   inverted: boolean;
 };
 
-export type TextureCanvasDrawFn = (
-  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
-) => void;
+export type TextureCanvasDrawFn = (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => void;
 
 /**
  * A layer texture whose pixels come from somewhere outside the renderer —
@@ -73,5 +71,4 @@ export type RenderedTextureDescriptor = {
   draw: TextureCanvasDrawFn;
 };
 
-export type TextureUploadDescriptor =
-  ExternalTextureDescriptor | RenderedTextureDescriptor;
+export type TextureUploadDescriptor = ExternalTextureDescriptor | RenderedTextureDescriptor;

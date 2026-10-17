@@ -86,36 +86,18 @@ export const BoardGridToolbar = ({
 
         {/* Add cluster */}
         <div className="flex items-center gap-1">
-          <ToolbarIconButton
-            icon={UploadIcon}
-            label="Upload"
-            onClick={onUpload}
-          />
-          {canPickLibrary && (
-            <ToolbarIconButton
-              icon={ImagesIcon}
-              label="From library"
-              onClick={onLibrary}
-            />
-          )}
-          <ToolbarIconButton
-            icon={StickyNoteIcon}
-            label="Add note"
-            onClick={onAddNote}
-          />
+          <ToolbarIconButton icon={UploadIcon} label="Upload" onClick={onUpload} />
+          {canPickLibrary && <ToolbarIconButton icon={ImagesIcon} label="From library" onClick={onLibrary} />}
+          <ToolbarIconButton icon={StickyNoteIcon} label="Add note" onClick={onAddNote} />
           <ColorPickerPopover onAdd={onAddColor} />
-          <ToolbarIconButton
-            icon={LayersIcon}
-            label="New section"
-            onClick={onNewSection}
-          />
+          <ToolbarIconButton icon={LayersIcon} label="New section" onClick={onNewSection} />
         </div>
 
         <ToolbarDivider />
 
         {/* Density segmented control */}
         <div className="flex items-center gap-0.5 rounded-full bg-base-fg/5 p-0.5">
-          {DENSITY_ORDER.map((d) => {
+          {DENSITY_ORDER.map(d => {
             const active = d === density;
             return (
               <button
@@ -127,9 +109,7 @@ export const BoardGridToolbar = ({
                 className={[
                   "flex h-7 w-7 items-center justify-center rounded-full transition-colors duration-150",
                   "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                  active
-                    ? "bg-base-fg/15 text-base-fg"
-                    : "text-base-fg/50 hover:text-base-fg",
+                  active ? "bg-base-fg/15 text-base-fg" : "text-base-fg/50 hover:text-base-fg",
                 ].join(" ")}
               >
                 <DynamicIcon icon={DENSITY_ICON[d]} className="h-3.5 w-3.5" />
@@ -143,11 +123,7 @@ export const BoardGridToolbar = ({
         {/* Rating filter — cycles off → ≥1 … ≥5 → off (Lightroom-style sift). */}
         <button
           type="button"
-          title={
-            ratingFilter > 0
-              ? `Showing ${ratingFilter}+ stars`
-              : "Filter by rating"
-          }
+          title={ratingFilter > 0 ? `Showing ${ratingFilter}+ stars` : "Filter by rating"}
           aria-label="Filter by rating"
           onClick={onCycleRatingFilter}
           className={[
@@ -159,9 +135,7 @@ export const BoardGridToolbar = ({
           ].join(" ")}
         >
           <StarIcon className="h-3.5 w-3.5" />
-          <span className="text-xs font-semibold tabular-nums">
-            {ratingFilter > 0 ? `${ratingFilter}+` : "All"}
-          </span>
+          <span className="text-xs font-semibold tabular-nums">{ratingFilter > 0 ? `${ratingFilter}+` : "All"}</span>
         </button>
 
         <ToolbarDivider />
@@ -180,13 +154,7 @@ export const BoardGridToolbar = ({
 
 // Inline-editable board title — click to rename (mirrors SectionHeader). Commits
 // on Enter / blur, Escape cancels; empty or unchanged input is ignored.
-const BoardTitle = ({
-  name,
-  onRename,
-}: {
-  name: string;
-  onRename: (name: string) => void;
-}) => {
+const BoardTitle = ({ name, onRename }: { name: string; onRename: (name: string) => void }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -209,8 +177,8 @@ const BoardTitle = ({
       <input
         ref={inputRef}
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
+        onChange={e => setDraft(e.target.value)}
+        onKeyDown={e => {
           if (e.key === "Enter") commit();
           else if (e.key === "Escape") setEditing(false);
         }}

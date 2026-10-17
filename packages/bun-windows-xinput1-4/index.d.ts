@@ -5,7 +5,13 @@ interface Functions {
   /** xinput1_4.dll!XInputEnable */
   XInputEnable(enable: number): void;
   /** xinput1_4.dll!XInputGetAudioDeviceIds */
-  XInputGetAudioDeviceIds(dwUserIndex: number, pRenderDeviceId: string | Win32Pointer, pRenderCount: Win32Pointer, pCaptureDeviceId: string | Win32Pointer, pCaptureCount: Win32Pointer): number;
+  XInputGetAudioDeviceIds(
+    dwUserIndex: number,
+    pRenderDeviceId: string | Win32Pointer,
+    pRenderCount: Win32Pointer,
+    pCaptureDeviceId: string | Win32Pointer,
+    pCaptureCount: Win32Pointer,
+  ): number;
   /** xinput1_4.dll!XInputGetBatteryInformation */
   XInputGetBatteryInformation(dwUserIndex: number, devType: number, pBatteryInformation: Win32Pointer): number;
   /** xinput1_4.dll!XInputGetCapabilities */

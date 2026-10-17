@@ -1,11 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import {
-  CheckIcon,
-  Maximize2Icon,
-  StarIcon,
-  Trash2Icon,
-  WandSparklesIcon,
-} from "lucide-react";
+import { CheckIcon, Maximize2Icon, StarIcon, Trash2Icon, WandSparklesIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { BoardItem } from "../boards/boardTypes";
 import { hostnameOf } from "../boards/linkMeta";
@@ -71,9 +65,7 @@ const BoardCardInner = ({
   onCommitText,
 }: Props) => {
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const [entering, setEntering] = useState(
-    Boolean(animateIn) && !prefersReducedMotion(),
-  );
+  const [entering, setEntering] = useState(Boolean(animateIn) && !prefersReducedMotion());
   useEffect(() => {
     if (!entering) return undefined;
     const r = requestAnimationFrame(() => setEntering(false));
@@ -83,11 +75,7 @@ const BoardCardInner = ({
 
   // Pull DOM focus here when the grid hands us focus via arrow navigation.
   useEffect(() => {
-    if (
-      focused &&
-      rootRef.current &&
-      document.activeElement !== rootRef.current
-    ) {
+    if (focused && rootRef.current && document.activeElement !== rootRef.current) {
       rootRef.current.focus();
     }
   }, [focused]);
@@ -114,19 +102,15 @@ const BoardCardInner = ({
         opacity: entering ? 0 : 1,
         transform: entering ? "translateY(8px)" : undefined,
       }}
-      onPointerDown={(e) => {
+      onPointerDown={e => {
         // Left-click selects; modifier-click extends. Action buttons stop
         // propagation so they don't double as a select.
         if (e.button !== 0) return;
         onSelect(item.id, e.shiftKey || e.metaKey || e.ctrlKey);
       }}
-      onDoubleClick={() =>
-        item.kind === "text" && onEditText
-          ? onEditText(item.id)
-          : onOpen(item.id)
-      }
+      onDoubleClick={() => (item.kind === "text" && onEditText ? onEditText(item.id) : onOpen(item.id))}
       onFocus={() => onFocusCard?.(item.id)}
-      onKeyDown={(e) => onKeyNav?.(item.id, e)}
+      onKeyDown={e => onKeyNav?.(item.id, e)}
     >
       {/* Outer shell — double-bezel. Lifts slightly on hover; ring turns to the
           brand blue when selected. */}
@@ -146,11 +130,7 @@ const BoardCardInner = ({
       >
         {/* Inner core — concentric radius, holds the content. */}
         <div className="relative h-full w-full overflow-hidden rounded-[14px] bg-ui-panel shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
-          <CardContent
-            item={item}
-            editing={editing}
-            onCommitText={onCommitText}
-          />
+          <CardContent item={item} editing={editing} onCommitText={onCommitText} />
 
           {/* Rating — persistent when set (Lightroom-style triage marker).
               No backdrop-blur: this tile lives in a virtualized scroll
@@ -184,23 +164,11 @@ const BoardCardInner = ({
           {/* Action rail — solid scrim pill (no blur in the scroll container),
               fades up on hover. */}
           <div className="absolute right-2 top-2 flex translate-y-1 items-center gap-1 rounded-full border border-white/15 bg-black/65 p-0.5 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-            <RailButton
-              label="Open"
-              icon={Maximize2Icon}
-              onClick={() => onOpen(item.id)}
-            />
+            <RailButton label="Open" icon={Maximize2Icon} onClick={() => onOpen(item.id)} />
             {item.kind === "image" && (
-              <RailButton
-                label="Use as reference"
-                icon={WandSparklesIcon}
-                onClick={() => onUseReference(item.id)}
-              />
+              <RailButton label="Use as reference" icon={WandSparklesIcon} onClick={() => onUseReference(item.id)} />
             )}
-            <RailButton
-              label="Delete"
-              icon={Trash2Icon}
-              onClick={() => onDelete(item.id)}
-            />
+            <RailButton label="Delete" icon={Trash2Icon} onClick={() => onDelete(item.id)} />
           </div>
         </div>
       </div>
@@ -208,22 +176,14 @@ const BoardCardInner = ({
   );
 };
 
-const RailButton = ({
-  label,
-  icon,
-  onClick,
-}: {
-  label: string;
-  icon: typeof CheckIcon;
-  onClick: () => void;
-}) => (
+const RailButton = ({ label, icon, onClick }: { label: string; icon: typeof CheckIcon; onClick: () => void }) => (
   <button
     type="button"
     aria-label={label}
     title={label}
     className="flex h-7 w-7 items-center justify-center rounded-full text-white/85 transition-colors duration-150 hover:bg-white/15 hover:text-white focus:outline-none focus-visible:bg-white/15 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/70"
-    onPointerDown={(e) => e.stopPropagation()}
-    onClick={(e) => {
+    onPointerDown={e => e.stopPropagation()}
+    onClick={e => {
       e.stopPropagation();
       onClick();
     }}
@@ -273,10 +233,7 @@ const CardContent = ({
       );
     case "text":
       return editing && onCommitText ? (
-        <NoteEditor
-          initial={item.text}
-          onCommit={(text) => onCommitText(item.id, text)}
-        />
+        <NoteEditor initial={item.text} onCommit={text => onCommitText(item.id, text)} />
       ) : (
         // Extra top padding clears the selection check (top-left) so it never
         // overlaps the first line of the note.
@@ -285,7 +242,7 @@ const CardContent = ({
             // Clicking the text itself shouldn't toggle the card's selection —
             // stop the pointer-down from reaching the card root. Double-click
             // (a separate event) still bubbles, so it opens the editor.
-            onPointerDown={(e) => e.stopPropagation()}
+            onPointerDown={e => e.stopPropagation()}
             className="whitespace-pre-wrap text-sm leading-relaxed text-base-fg/90"
           >
             {item.text || "Note"}
@@ -299,27 +256,18 @@ const CardContent = ({
           target="_blank"
           rel="noreferrer"
           className="flex h-full w-full flex-col"
-          onPointerDown={(e) => e.stopPropagation()}
+          onPointerDown={e => e.stopPropagation()}
         >
           {item.image && (
-            <img
-              src={item.image}
-              alt=""
-              draggable={false}
-              className="min-h-0 flex-1 select-none object-cover"
-            />
+            <img src={item.image} alt="" draggable={false} className="min-h-0 flex-1 select-none object-cover" />
           )}
           <div className="flex items-center gap-2.5 px-3 py-2.5">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-base-fg/8">
               <Favicon url={item.url} className="h-4 w-4" />
             </span>
             <span className="flex min-w-0 flex-col">
-              <span className="truncate text-xs font-medium text-base-fg/90">
-                {item.title || hostnameOf(item.url)}
-              </span>
-              <span className="truncate text-[10px] text-base-fg/45">
-                {hostnameOf(item.url)}
-              </span>
+              <span className="truncate text-xs font-medium text-base-fg/90">{item.title || hostnameOf(item.url)}</span>
+              <span className="truncate text-[10px] text-base-fg/45">{hostnameOf(item.url)}</span>
             </span>
           </div>
         </a>
@@ -332,13 +280,7 @@ const CardContent = ({
 // Inline note editor. Autofocuses, commits on blur or Enter (Shift+Enter inserts
 // a newline), reverts on Escape. Pointer events are stopped so typing/selecting
 // inside the textarea never triggers card selection, drag, or marquee.
-const NoteEditor = ({
-  initial,
-  onCommit,
-}: {
-  initial: string;
-  onCommit: (text: string) => void;
-}) => {
+const NoteEditor = ({ initial, onCommit }: { initial: string; onCommit: (text: string) => void }) => {
   const ref = useRef<HTMLTextAreaElement | null>(null);
   const [draft, setDraft] = useState(initial);
 
@@ -353,15 +295,15 @@ const NoteEditor = ({
     <div
       // Matches the static note: top padding clears the selection check.
       className="h-full w-full px-4 pb-4 pt-10"
-      onPointerDown={(e) => e.stopPropagation()}
-      onDoubleClick={(e) => e.stopPropagation()}
+      onPointerDown={e => e.stopPropagation()}
+      onDoubleClick={e => e.stopPropagation()}
     >
       <textarea
         ref={ref}
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={e => setDraft(e.target.value)}
         onBlur={() => onCommit(draft.trim())}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           e.stopPropagation();
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();

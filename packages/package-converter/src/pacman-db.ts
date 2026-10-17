@@ -4,10 +4,7 @@
 import { Database } from "bun:sqlite";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import {
-  repositoryUrls,
-  type PacmanRepository,
-} from "../../../factory/arch/index.ts";
+import { repositoryUrls, type PacmanRepository } from "../../../factory/arch/index.ts";
 import { decodedFile, download } from "./remote.ts";
 import { tarStream } from "./tar.ts";
 
@@ -58,9 +55,7 @@ export function parseDependency(text: string): Dependency {
 }
 
 /** `libfoo.so=1-64` is an automatic soname provide; returns `libfoo.so.1` and 64. */
-export function sonameProvide(
-  dependency: Dependency,
-): { soname: string; bits: 32 | 64 } | undefined {
+export function sonameProvide(dependency: Dependency): { soname: string; bits: 32 | 64 } | undefined {
   if (!dependency.name.endsWith(".so")) return undefined;
   const match = /^(.*?)-(32|64)$/.exec(dependency.version ?? "");
   const version = match ? match[1]! : (dependency.version ?? "");
@@ -182,12 +177,8 @@ export async function syncRepository(
     join(directory, `${repository.name}.${kind}`),
     { maxBytes: 512 << 20, timeoutMs: 600_000 },
   );
-  const insertPackage = db.prepare(
-    `INSERT INTO pacman_pkg VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-  );
-  const insertProvide = db.prepare(
-    `INSERT INTO pacman_provide VALUES (?,?,?,?)`,
-  );
+  const insertPackage = db.prepare(`INSERT INTO pacman_pkg VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
+  const insertProvide = db.prepare(`INSERT INTO pacman_provide VALUES (?,?,?,?)`);
   const insertSoname = db.prepare(`INSERT INTO pacman_soname VALUES (?,?,?,?)`);
   const insertFile = db.prepare(`INSERT INTO pacman_file VALUES (?,?,?)`);
   const owners = new Map<string, string>();
@@ -212,16 +203,8 @@ export async function syncRepository(
       const version = one("VERSION");
       const filename = one("FILENAME");
       const sha256 = one("SHA256SUM");
-      if (
-        !name ||
-        !version ||
-        !filename ||
-        !sha256 ||
-        !/^[a-f0-9]{64}$/.test(sha256)
-      )
-        throw new Error(
-          `${repository.name}: incomplete desc in ${directoryName}`,
-        );
+      if (!name || !version || !filename || !sha256 || !/^[a-f0-9]{64}$/.test(sha256))
+        throw new Error(`${repository.name}: incomplete desc in ${directoryName}`);
       owners.set(directoryName, name);
       packages++;
       rows.push(() => {
@@ -249,33 +232,20 @@ export async function syncRepository(
         insertProvide.run(name, repository.name, name, version);
         for (const provide of fields.PROVIDES ?? []) {
           const dependency = parseDependency(provide);
-          insertProvide.run(
-            dependency.name,
-            repository.name,
-            name,
-            dependency.version ?? null,
-          );
+          insertProvide.run(dependency.name, repository.name, name, dependency.version ?? null);
           const soname = sonameProvide(dependency);
-          if (soname)
-            insertSoname.run(soname.soname, soname.bits, repository.name, name);
+          if (soname) insertSoname.run(soname.soname, soname.bits, repository.name, name);
         }
       });
     } else if (member === "files") {
       pendingFiles.set(
         directoryName,
-        (parseDesc(text).FILES ?? []).filter(
-          (path) => LIB64.test(path) || LIB32.test(path) || BIN.test(path),
-        ),
+        (parseDesc(text).FILES ?? []).filter(path => LIB64.test(path) || LIB32.test(path) || BIN.test(path)),
       );
     }
   }
   db.transaction(() => {
-    for (const table of [
-      "pacman_pkg",
-      "pacman_provide",
-      "pacman_soname",
-      "pacman_file",
-    ])
+    for (const table of ["pacman_pkg", "pacman_provide", "pacman_soname", "pacman_file"])
       db.prepare(`DELETE FROM ${table} WHERE repo = ?`).run(repository.name);
     for (const row of rows) row();
     for (const [directoryName, paths] of pendingFiles) {
@@ -290,9 +260,7 @@ export async function syncRepository(
         files++;
       }
     }
-    db.prepare(
-      `INSERT OR REPLACE INTO pacman_repo VALUES (?,?,?,?,?,?,?,?,?,?)`,
-    ).run(
+    db.prepare(`INSERT OR REPLACE INTO pacman_repo VALUES (?,?,?,?,?,?,?,?,?,?)`).run(
       repository.name,
       priority,
       repository.family,
@@ -320,11 +288,7 @@ export class PacmanIndex {
   constructor(readonly db: Database) {}
 
   repositories(): Array<PacmanRepository & { priority: number }> {
-    return (
-      this.db
-        .prepare(`SELECT * FROM pacman_repo ORDER BY priority`)
-        .all() as Row[]
-    ).map((row) => ({
+    return (this.db.prepare(`SELECT * FROM pacman_repo ORDER BY priority`).all() as Row[]).map(row => ({
       name: row.name as string,
       family: row.family as PacmanRepository["family"],
       arch: row.arch as string,
@@ -337,9 +301,7 @@ export class PacmanIndex {
   /** Exact name, first repository in pacman.conf order wins (pacman semantics). */
   get(name: string, repo?: string): PacmanPackage | undefined {
     const row = this.db
-      .prepare(
-        `${SELECT} WHERE p.name = ? ${repo ? "AND p.repo = ?" : ""} ORDER BY r.priority LIMIT 1`,
-      )
+      .prepare(`${SELECT} WHERE p.name = ? ${repo ? "AND p.repo = ?" : ""} ORDER BY r.priority LIMIT 1`)
       .get(...(repo ? [name, repo] : [name])) as Row | null;
     return row ? packageRow(row) : undefined;
   }
@@ -365,45 +327,34 @@ export class PacmanIndex {
 
   sonames(pkg: PacmanPackage): Array<{ soname: string; bits: 32 | 64 }> {
     return this.db
-      .prepare(
-        `SELECT DISTINCT soname, bits FROM pacman_soname WHERE repo = ? AND name = ?`,
-      )
+      .prepare(`SELECT DISTINCT soname, bits FROM pacman_soname WHERE repo = ? AND name = ?`)
       .all(pkg.repo, pkg.name) as Array<{ soname: string; bits: 32 | 64 }>;
   }
 
   binaries(pkg: PacmanPackage): string[] {
     return (
       this.db
-        .prepare(
-          `SELECT path FROM pacman_file WHERE repo = ? AND name = ? AND path LIKE 'usr/bin/%'`,
-        )
+        .prepare(`SELECT path FROM pacman_file WHERE repo = ? AND name = ? AND path LIKE 'usr/bin/%'`)
         .all(pkg.repo, pkg.name) as Array<{ path: string }>
-    ).map((row) => row.path);
+    ).map(row => row.path);
   }
 
   hasFiles(pkg: PacmanPackage): boolean {
     return !!this.db
-      .prepare(
-        `SELECT files_sha256 FROM pacman_repo WHERE name = ? AND files_sha256 IS NOT NULL`,
-      )
+      .prepare(`SELECT files_sha256 FROM pacman_repo WHERE name = ? AND files_sha256 IS NOT NULL`)
       .get(pkg.repo);
   }
 
   /** Resolve a requested name: exact package, else a single unambiguous provider. */
   resolve(name: string): PacmanPackage {
-    const [repo, bare] = name.includes("/")
-      ? name.split("/", 2)
-      : [undefined, name];
+    const [repo, bare] = name.includes("/") ? name.split("/", 2) : [undefined, name];
     const exact = this.get(bare!, repo);
     if (exact) return exact;
-    const providers = this.providers(bare!).filter(
-      (pkg) => !repo || pkg.repo === repo,
-    );
-    if (!providers.length)
-      throw new Error(`${name}: not found in the synced pacman databases`);
+    const providers = this.providers(bare!).filter(pkg => !repo || pkg.repo === repo);
+    if (!providers.length) throw new Error(`${name}: not found in the synced pacman databases`);
     if (providers.length > 1)
       throw new Error(
-        `${name} is virtual; choose one provider: ${providers.map((pkg) => `${pkg.repo}/${pkg.name}`).join(", ")}`,
+        `${name} is virtual; choose one provider: ${providers.map(pkg => `${pkg.repo}/${pkg.name}`).join(", ")}`,
       );
     return providers[0]!;
   }
@@ -430,13 +381,7 @@ export function vercmp(left: string, right: string): number {
       const q = y[index]!;
       const numeric = /^\d/.test(p);
       if (numeric !== /^\d/.test(q)) return numeric ? 1 : -1;
-      const difference = numeric
-        ? Math.sign(Number(BigInt(p) - BigInt(q)))
-        : p < q
-          ? -1
-          : p > q
-            ? 1
-            : 0;
+      const difference = numeric ? Math.sign(Number(BigInt(p) - BigInt(q))) : p < q ? -1 : p > q ? 1 : 0;
       if (difference) return difference;
     }
     if (x.length === y.length) return 0;
@@ -448,7 +393,6 @@ export function vercmp(left: string, right: string): number {
   const b = split(right);
   if (a.epoch !== b.epoch) return Math.sign(a.epoch - b.epoch);
   const version = segments(a.version, b.version);
-  if (version || a.release === undefined || b.release === undefined)
-    return version;
+  if (version || a.release === undefined || b.release === undefined) return version;
   return segments(a.release, b.release);
 }

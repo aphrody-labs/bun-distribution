@@ -1,22 +1,8 @@
 "use client";
 
 import * as React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "./dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "./drawer";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./dialog";
+import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "./drawer";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { cn } from "../lib/utils";
 
@@ -55,16 +41,11 @@ export function ResponsiveDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           data-slot="responsive-dialog-content"
-          className={cn(
-            "max-w-2xl max-h-[90vh] overflow-y-auto sm:max-w-[600px]",
-            contentClassName,
-          )}
+          className={cn("max-w-2xl max-h-[90vh] overflow-y-auto sm:max-w-[600px]", contentClassName)}
         >
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
-            {description && (
-              <DialogDescription>{description}</DialogDescription>
-            )}
+            {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
           {children}
           {footer && <DialogFooter>{footer}</DialogFooter>}
@@ -75,20 +56,13 @@ export function ResponsiveDialog({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent
-        data-slot="responsive-dialog-drawer"
-        className="max-h-[90vh]"
-      >
+      <DrawerContent data-slot="responsive-dialog-drawer" className="max-h-[90vh]">
         <DrawerHeader className="text-left">
           <DrawerTitle>{title}</DrawerTitle>
           {description && <DrawerDescription>{description}</DrawerDescription>}
         </DrawerHeader>
         <div className="px-4 overflow-y-auto">{children}</div>
-        {footer ? (
-          <DrawerFooter>{footer}</DrawerFooter>
-        ) : (
-          <DrawerFooter className="pt-2" />
-        )}
+        {footer ? <DrawerFooter>{footer}</DrawerFooter> : <DrawerFooter className="pt-2" />}
       </DrawerContent>
     </Drawer>
   );

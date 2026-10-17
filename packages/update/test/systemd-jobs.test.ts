@@ -1,22 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, expect, spyOn, test } from "bun:test";
-import {
-  existsSync,
-  mkdtempSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Ctx } from "../src/context.ts";
-import {
-  activateLocalJobs,
-  assertLocalJobsListener,
-  assertLocalJobsReceipt,
-} from "../src/systemd.ts";
+import { activateLocalJobs, assertLocalJobsListener, assertLocalJobsReceipt } from "../src/systemd.ts";
 import type { SpawnSyncResult } from "../src/process.ts";
 
 const temporary: string[] = [];
@@ -27,8 +15,7 @@ afterEach(() => {
   else process.env.APHRODY_YOLO_ROOT = savedRoot;
   if (savedUnits === undefined) delete process.env.APHRODY_SYSTEMD_USER_DIR;
   else process.env.APHRODY_SYSTEMD_USER_DIR = savedUnits;
-  for (const root of temporary.splice(0))
-    rmSync(root, { recursive: true, force: true });
+  for (const root of temporary.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
 function fixture(apply: boolean) {
@@ -37,12 +24,7 @@ function fixture(apply: boolean) {
   const units = join(home, "installed");
   const renderer = join(home, "yolo/packages/engine/core/src/units");
   const privateRoot = join(home, ".aphrody/private");
-  for (const path of [
-    units,
-    renderer,
-    join(privateRoot, "mcp-environment"),
-    join(home, ".local/bin"),
-  ])
+  for (const path of [units, renderer, join(privateRoot, "mcp-environment"), join(home, ".local/bin")])
     mkdirSync(path, { recursive: true, mode: 0o700 });
   writeFileSync(
     join(privateRoot, "mcp-environment/aphrody.json"),
@@ -50,16 +32,12 @@ function fixture(apply: boolean) {
     { mode: 0o600 },
   );
   const bytes = "qualified-native-fixture";
-  for (const name of ["aphrody", "aphrody-mcp"])
-    writeFileSync(join(home, ".local/bin", name), bytes);
+  for (const name of ["aphrody", "aphrody-mcp"]) writeFileSync(join(home, ".local/bin", name), bytes);
   const pin = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
-  const names = [
-    "aphrody-local-mcp.service",
-    "aphrody-jobs-worker-wsl.service",
-  ];
+  const names = ["aphrody-local-mcp.service", "aphrody-jobs-worker-wsl.service"];
   writeFileSync(
     join(renderer, "index.ts"),
-    `export const renderAll = () => ${JSON.stringify(names.map((file) => ({ file, text: "[Service]\nExecStart=qualified\n" })))};`,
+    `export const renderAll = () => ${JSON.stringify(names.map(file => ({ file, text: "[Service]\nExecStart=qualified\n" })))};`,
   );
   process.env.APHRODY_YOLO_ROOT = join(home, "yolo");
   process.env.APHRODY_SYSTEMD_USER_DIR = units;
@@ -102,11 +80,7 @@ function fixture(apply: boolean) {
   context.run = run;
   const request = (async (url, init) =>
     new Response("", {
-      status: String(url).endsWith("/healthz")
-        ? 200
-        : init?.headers
-          ? 401
-          : 500,
+      status: String(url).endsWith("/healthz") ? 200 : init?.headers ? 401 : 500,
     })) as typeof fetch;
   return {
     home,
@@ -124,11 +98,7 @@ function fixture(apply: boolean) {
 }
 
 test("only the selected unit's exact loopback PID can reuse the endpoint", () => {
-  assertLocalJobsListener(
-    'LISTEN 0 128 127.0.0.1:8791 0.0.0.0:* users:(("native",pid=100,fd=8))',
-    "100",
-    true,
-  );
+  assertLocalJobsListener('LISTEN 0 128 127.0.0.1:8791 0.0.0.0:* users:(("native",pid=100,fd=8))', "100", true);
   for (const [rows, pid, active] of [
     ["LISTEN 127.0.0.1:8791 users:(pid=1000)", "100", true],
     ["LISTEN 0.0.0.0:8791 users:(pid=100)", "100", true],
@@ -145,9 +115,7 @@ test("jobs qualification refuses malformed, unavailable or ambiguous queue recei
       result: { content: [{ type: "text", text: JSON.stringify(valid) }] },
     }),
   );
-  assertLocalJobsReceipt(
-    JSON.stringify({ result: { structuredContent: valid } }),
-  );
+  assertLocalJobsReceipt(JSON.stringify({ result: { structuredContent: valid } }));
   for (const receipt of [
     {},
     { ...valid, count: 1 },
@@ -167,9 +135,7 @@ test("jobs qualification refuses malformed, unavailable or ambiguous queue recei
     ).toThrow();
   }
   expect(() =>
-    assertLocalJobsReceipt(
-      JSON.stringify({ result: { isError: true, structuredContent: valid } }),
-    ),
+    assertLocalJobsReceipt(JSON.stringify({ result: { isError: true, structuredContent: valid } })),
   ).toThrow();
   expect(() =>
     assertLocalJobsReceipt(
@@ -213,16 +179,12 @@ test("dry run writes no bearer, config or units and rejects an unqualified binar
 test("authentication failure restores selected prior units and leaves the PC service untouched", async () => {
   const f = fixture(true);
   writeFileSync(join(f.units, f.names[0]!), "previous native MCP\n");
-  writeFileSync(
-    join(f.units, "aphrody-pc-agent.service"),
-    "protected PC owner\n",
-  );
+  writeFileSync(join(f.units, "aphrody-pc-agent.service"), "protected PC owner\n");
   f.active.add(f.names[0]!);
   f.enabled.add(f.names[0]!);
   const log = spyOn(console, "log").mockImplementation(() => {});
   try {
-    const failure = (async () =>
-      new Response("", { status: 200 })) as typeof fetch;
+    const failure = (async () => new Response("", { status: 200 })) as typeof fetch;
     await expect(
       activateLocalJobs(f.context, f.pin, {
         home: f.home,
@@ -232,19 +194,13 @@ test("authentication failure restores selected prior units and leaves the PC ser
         fetch: failure,
       }),
     ).rejects.toThrow("prior selected user units restored");
-    expect(readFileSync(join(f.units, f.names[0]!), "utf8")).toBe(
-      "previous native MCP\n",
-    );
+    expect(readFileSync(join(f.units, f.names[0]!), "utf8")).toBe("previous native MCP\n");
     expect(existsSync(join(f.units, f.names[1]!))).toBe(false);
     expect(f.active.has(f.names[0]!)).toBe(true);
     expect(f.active.has(f.names[1]!)).toBe(false);
     expect(f.enabled.has(f.names[0]!)).toBe(true);
-    expect(
-      readFileSync(join(f.units, "aphrody-pc-agent.service"), "utf8"),
-    ).toBe("protected PC owner\n");
-    expect(
-      f.calls.some((call) => call.includes("aphrody-pc-agent.service")),
-    ).toBe(false);
+    expect(readFileSync(join(f.units, "aphrody-pc-agent.service"), "utf8")).toBe("protected PC owner\n");
+    expect(f.calls.some(call => call.includes("aphrody-pc-agent.service"))).toBe(false);
   } finally {
     log.mockRestore();
   }
@@ -267,20 +223,11 @@ test("successful activation retains its purpose-bound bearer and keeps client co
     await activateLocalJobs(f.context, f.pin, options);
     expect(readFileSync(bearer, "utf8")).toBe(before);
     for (const path of [bearer, join(f.privateRoot, "jobs/wsl.toml")])
-      if (process.platform !== "win32")
-        expect(statSync(path).mode & 0o777).toBe(0o600);
-    expect(
-      readFileSync(join(f.privateRoot, "jobs/wsl.toml"), "utf8"),
-    ).toContain("127.0.0.1:8791/mcp");
-    expect(
-      readFileSync(join(f.privateRoot, "jobs/wsl.toml"), "utf8"),
-    ).toContain("[mcp_servers.aphrody.http_headers]");
-    expect(f.names.every((unit) => f.active.has(unit))).toBe(true);
-    expect(
-      log.mock.calls.some((call) =>
-        String(call[0]).includes("workerReady remains false"),
-      ),
-    ).toBe(true);
+      if (process.platform !== "win32") expect(statSync(path).mode & 0o777).toBe(0o600);
+    expect(readFileSync(join(f.privateRoot, "jobs/wsl.toml"), "utf8")).toContain("127.0.0.1:8791/mcp");
+    expect(readFileSync(join(f.privateRoot, "jobs/wsl.toml"), "utf8")).toContain("[mcp_servers.aphrody.http_headers]");
+    expect(f.names.every(unit => f.active.has(unit))).toBe(true);
+    expect(log.mock.calls.some(call => String(call[0]).includes("workerReady remains false"))).toBe(true);
   } finally {
     log.mockRestore();
   }

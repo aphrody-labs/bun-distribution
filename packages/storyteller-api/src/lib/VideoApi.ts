@@ -26,11 +26,7 @@ interface GenerateVideoStyleTransferRequest {
 }
 
 export class VideoApi extends ApiManager {
-  public async EnqueueStudio({
-    enqueueVideo,
-  }: {
-    enqueueVideo: GenerateVideoStyleTransferRequest;
-  }): Promise<
+  public async EnqueueStudio({ enqueueVideo }: { enqueueVideo: GenerateVideoStyleTransferRequest }): Promise<
     ApiResponse<{
       inference_job_token?: string;
       inference_job_token_type?: string;
@@ -40,9 +36,7 @@ export class VideoApi extends ApiManager {
 
     const body = {
       ...enqueueVideo,
-      ...(enqueueVideo.creator_set_visibility
-        ? {}
-        : { creator_set_visibility: Visibility.Public }),
+      ...(enqueueVideo.creator_set_visibility ? {} : { creator_set_visibility: Visibility.Public }),
     };
 
     return await this.post<
@@ -54,7 +48,7 @@ export class VideoApi extends ApiManager {
         BadInput?: string;
       }
     >({ endpoint, body: body })
-      .then((response) => ({
+      .then(response => ({
         success: Boolean(response.success ?? false),
         data: {
           inference_job_token: response.inference_job_token,
@@ -62,7 +56,7 @@ export class VideoApi extends ApiManager {
         },
         errorMessage: response.BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         console.log(err.message);
         return { success: false, error_reason: err.message };
       });

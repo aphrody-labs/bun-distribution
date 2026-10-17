@@ -8,20 +8,20 @@
  * @module
  */
 
-import { invoke } from '../api/core'
+import { invoke } from "../api/core";
 
 /** @ignore */
 declare global {
   interface Window {
     __TAURI_OS_PLUGIN_INTERNALS__: {
-      eol: string
-      os_type: OsType
-      platform: Platform
-      family: Family
-      version: string
-      arch: Arch
-      exe_extension: string
-    }
+      eol: string;
+      os_type: OsType;
+      platform: Platform;
+      family: Family;
+      version: string;
+      arch: Arch;
+      exe_extension: string;
+    };
   }
 }
 
@@ -29,37 +29,37 @@ declare global {
  * A string describing the specific operating system in use, as returned by {@link platform}.
  */
 type Platform =
-  | 'linux'
-  | 'macos'
-  | 'ios'
-  | 'freebsd'
-  | 'dragonfly'
-  | 'netbsd'
-  | 'openbsd'
-  | 'solaris'
-  | 'android'
-  | 'windows'
+  | "linux"
+  | "macos"
+  | "ios"
+  | "freebsd"
+  | "dragonfly"
+  | "netbsd"
+  | "openbsd"
+  | "solaris"
+  | "android"
+  | "windows";
 
 /**
  * A coarse-grained operating system category, as returned by {@link type}.
  */
-type OsType = 'linux' | 'windows' | 'macos' | 'ios' | 'android'
+type OsType = "linux" | "windows" | "macos" | "ios" | "android";
 
 /**
  * A string describing the specific operating system architecture in use, as returned by {@link arch}.
  */
 type Arch =
-  | 'x86'
-  | 'x86_64'
-  | 'arm'
-  | 'aarch64'
-  | 'mips'
-  | 'mips64'
-  | 'powerpc'
-  | 'powerpc64'
-  | 'riscv64'
-  | 's390x'
-  | 'sparc64'
+  | "x86"
+  | "x86_64"
+  | "arm"
+  | "aarch64"
+  | "mips"
+  | "mips64"
+  | "powerpc"
+  | "powerpc64"
+  | "riscv64"
+  | "s390x"
+  | "sparc64";
 
 /**
  * Returns the operating system-specific end-of-line marker.
@@ -76,7 +76,7 @@ type Arch =
  * @since 2.0.0
  * */
 function eol(): string {
-  return window.__TAURI_OS_PLUGIN_INTERNALS__.eol
+  return window.__TAURI_OS_PLUGIN_INTERNALS__.eol;
 }
 
 /**
@@ -94,7 +94,7 @@ function eol(): string {
  *
  */
 function platform(): Platform {
-  return window.__TAURI_OS_PLUGIN_INTERNALS__.platform
+  return window.__TAURI_OS_PLUGIN_INTERNALS__.platform;
 }
 
 /**
@@ -109,13 +109,13 @@ function platform(): Platform {
  * @since 2.0.0
  */
 function version(): string {
-  return window.__TAURI_OS_PLUGIN_INTERNALS__.version
+  return window.__TAURI_OS_PLUGIN_INTERNALS__.version;
 }
 
 /**
  * A string describing the operating system family, as returned by {@link family}.
  */
-type Family = 'unix' | 'windows'
+type Family = "unix" | "windows";
 
 /**
  * Returns the current operating system family. Possible values are `'unix'`, `'windows'`.
@@ -129,7 +129,7 @@ type Family = 'unix' | 'windows'
  * @since 2.0.0
  */
 function family(): Family {
-  return window.__TAURI_OS_PLUGIN_INTERNALS__.family
+  return window.__TAURI_OS_PLUGIN_INTERNALS__.family;
 }
 
 /**
@@ -144,7 +144,7 @@ function family(): Family {
  * @since 2.0.0
  */
 function type(): OsType {
-  return window.__TAURI_OS_PLUGIN_INTERNALS__.os_type
+  return window.__TAURI_OS_PLUGIN_INTERNALS__.os_type;
 }
 
 /**
@@ -160,7 +160,7 @@ function type(): OsType {
  * @since 2.0.0
  */
 function arch(): Arch {
-  return window.__TAURI_OS_PLUGIN_INTERNALS__.arch
+  return window.__TAURI_OS_PLUGIN_INTERNALS__.arch;
 }
 
 /**
@@ -175,7 +175,7 @@ function arch(): Arch {
  * @since 2.0.0
  */
 function exeExtension(): string {
-  return window.__TAURI_OS_PLUGIN_INTERNALS__.exe_extension
+  return window.__TAURI_OS_PLUGIN_INTERNALS__.exe_extension;
 }
 
 /**
@@ -193,7 +193,7 @@ function exeExtension(): string {
  * @since 2.0.0
  */
 async function locale(): Promise<string | null> {
-  return await invoke('plugin:os|locale')
+  return await invoke("plugin:os|locale");
 }
 
 /**
@@ -208,18 +208,8 @@ async function locale(): Promise<string | null> {
  * @since 2.0.0
  */
 async function hostname(): Promise<string | null> {
-  return await invoke('plugin:os|hostname')
+  return await invoke("plugin:os|hostname");
 }
 
-export {
-  eol,
-  platform,
-  family,
-  version,
-  type,
-  arch,
-  locale,
-  exeExtension,
-  hostname
-}
-export type { Platform, OsType, Arch, Family }
+export { eol, platform, family, version, type, arch, locale, exeExtension, hostname };
+export type { Platform, OsType, Arch, Family };

@@ -27,10 +27,7 @@ export class VisibilityAction implements UndoableAction {
   }
 
   private write(visible: boolean): void {
-    const obj = this.editor.activeScene.scene.getObjectByProperty(
-      "uuid",
-      this.uuid,
-    );
+    const obj = this.editor.activeScene.scene.getObjectByProperty("uuid", this.uuid);
     if (!obj) return;
     obj.visible = visible;
     obj.userData["visible"] = visible;

@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import {
-  renderAll,
-  renderService,
-  renderTimer,
-  unitCatalog,
-  unitFiles,
-} from "../src/units/index.ts";
+import { renderAll, renderService, renderTimer, unitCatalog, unitFiles } from "../src/units/index.ts";
 
 test("every catalog entry renders a service, timers pair with their service", () => {
   const files = unitFiles();
@@ -14,7 +8,7 @@ test("every catalog entry renders a service, timers pair with their service", ()
     expect(files).toContain(`${e.name}.service`);
     expect(files.includes(`${e.name}.timer`)).toBe(!!e.timer);
   }
-  expect(new Set(renderAll().map((u) => u.file)).size).toBe(renderAll().length);
+  expect(new Set(renderAll().map(u => u.file)).size).toBe(renderAll().length);
 });
 
 test("service rendering: derived Type, default Install, oneshot has none", () => {

@@ -25,10 +25,9 @@ export default function Next({ adaptive }: PageProps) {
     void fetch("/api/next?seed=" + encodeURIComponent(seedColor), {
       signal: controller.signal,
     })
-      .then(async (response) => {
+      .then(async response => {
         const payload = await response.json();
-        if (!response.ok)
-          throw new Error(payload.error ?? "Next output is unavailable.");
+        if (!response.ok) throw new Error(payload.error ?? "Next output is unavailable.");
         if (!controller.signal.aborted) {
           setResult(payload as NextOutput);
           setNotice("Generated from the current theme and this site's origin.");
@@ -37,11 +36,7 @@ export default function Next({ adaptive }: PageProps) {
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
-          setNotice(
-            error instanceof Error
-              ? error.message
-              : "Next output is unavailable.",
-          );
+          setNotice(error instanceof Error ? error.message : "Next output is unavailable.");
       });
     return () => controller.abort();
   }, [seedColor]);
@@ -73,33 +68,15 @@ export default function Next({ adaptive }: PageProps) {
             <select
               className="h-12 rounded-small border border-outline bg-surface px-3"
               value={selected}
-              onChange={(event) =>
-                setSelected(event.target.value as keyof NextOutput)
-              }
+              onChange={event => setSelected(event.target.value as keyof NextOutput)}
             >
-              {(
-                [
-                  "metadata",
-                  "viewport",
-                  "schemeCss",
-                  "config",
-                  "robots",
-                  "sitemap",
-                  "jsonLd",
-                ] as const
-              ).map((name) => (
+              {(["metadata", "viewport", "schemeCss", "config", "robots", "sitemap", "jsonLd"] as const).map(name => (
                 <option key={name}>{name}</option>
               ))}
             </select>
           </label>
-          <output className="block text-body-medium text-on-surface-variant">
-            {notice}
-          </output>
-          <Code>
-            {typeof output === "string"
-              ? output
-              : JSON.stringify(output ?? {}, null, 2)}
-          </Code>
+          <output className="block text-body-medium text-on-surface-variant">{notice}</output>
+          <Code>{typeof output === "string" ? output : JSON.stringify(output ?? {}, null, 2)}</Code>
         </Card>
       </Section>
       {result ? (

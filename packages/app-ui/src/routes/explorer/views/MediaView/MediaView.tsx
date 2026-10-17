@@ -13,41 +13,16 @@ import { useExplorerFiles } from "../../hooks/useExplorerFiles";
 function isMediaFile(file: File): boolean {
   if (!file.extension) return false;
   const ext = file.extension.toLowerCase();
-  const imageExts = [
-    "jpg",
-    "jpeg",
-    "png",
-    "gif",
-    "webp",
-    "heic",
-    "heif",
-    "svg",
-    "bmp",
-    "tiff",
-  ];
+  const imageExts = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "svg", "bmp", "tiff"];
   const videoExts = ["mp4", "mov", "avi", "mkv", "webm", "m4v", "flv", "wmv"];
   return imageExts.includes(ext) || videoExts.includes(ext);
 }
 
 export function MediaView() {
-  const {
-    currentPath,
-    viewSettings,
-    sortBy,
-    setSortBy,
-    setCurrentFiles,
-    mode,
-    scrollPosition,
-    setScrollPosition,
-  } = useExplorer();
-  const {
-    selectFile,
-    focusedIndex,
-    setFocusedIndex,
-    setSelectedFiles,
-    selectedFileIds,
-    restoreSelectionFromFiles,
-  } = useSelection();
+  const { currentPath, viewSettings, sortBy, setSortBy, setCurrentFiles, mode, scrollPosition, setScrollPosition } =
+    useExplorer();
+  const { selectFile, focusedIndex, setFocusedIndex, setSelectedFiles, selectedFileIds, restoreSelectionFromFiles } =
+    useSelection();
 
   // Set default sort to "datetaken" when entering media view
   useEffect(() => {
@@ -195,9 +170,7 @@ export function MediaView() {
   // Keyboard navigation for media view
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)
-      ) {
+      if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         return;
       }
       if (files.length === 0) return;
@@ -206,10 +179,7 @@ export function MediaView() {
 
       // Calculate columns based on container width
       const itemWidth = gridSize + gapSize;
-      const cols =
-        containerWidth > 0
-          ? Math.max(4, Math.floor(containerWidth / itemWidth))
-          : 8;
+      const cols = containerWidth > 0 ? Math.max(4, Math.floor(containerWidth / itemWidth)) : 8;
 
       let newIndex = focusedIndex;
 
@@ -228,9 +198,7 @@ export function MediaView() {
         setSelectedFiles([files[newIndex]]);
 
         // Scroll selected item into view
-        const element = document.querySelector(
-          `[data-file-id="${files[newIndex].id}"]`,
-        );
+        const element = document.querySelector(`[data-file-id="${files[newIndex].id}"]`);
         if (element) {
           element.scrollIntoView({
             block: "nearest",
@@ -242,15 +210,7 @@ export function MediaView() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    files,
-    focusedIndex,
-    gridSize,
-    gapSize,
-    containerWidth,
-    setFocusedIndex,
-    setSelectedFiles,
-  ]);
+  }, [files, focusedIndex, gridSize, gapSize, containerWidth, setFocusedIndex, setSelectedFiles]);
 
   // Calculate columns and actual item size to fill available space
   const { columns, actualItemSize } = useMemo(() => {
@@ -293,8 +253,7 @@ export function MediaView() {
 
   // Scroll to bottom on mount (inverted scroll - show most recent first)
   useEffect(() => {
-    if (rowCount === 0 || !parentRef.current || didInitialScroll.current)
-      return;
+    if (rowCount === 0 || !parentRef.current || didInitialScroll.current) return;
     didInitialScroll.current = true;
     if (scrollPosition.top > 0 || scrollPosition.left > 0) {
       rowVirtualizer.scrollToOffset(scrollPosition.top);
@@ -332,15 +291,11 @@ export function MediaView() {
       }
     }
 
-    if (firstRowIndex === undefined || lastRowIndex === undefined)
-      return undefined;
+    if (firstRowIndex === undefined || lastRowIndex === undefined) return undefined;
 
     // Convert row indices to item indices
     let firstItemIndex = firstRowIndex * columns;
-    let lastItemIndex = Math.min(
-      lastRowIndex * columns + columns,
-      files.length - 1,
-    );
+    let lastItemIndex = Math.min(lastRowIndex * columns + columns, files.length - 1);
 
     // Find first valid date
     let firstDate: Date | undefined;
@@ -385,11 +340,7 @@ export function MediaView() {
   // NOW we can do conditional returns after all hooks are called
   // Show loading state (only for non-search mode, search uses explorerFiles)
   if (!isSearchMode && mediaQuery.isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full text-on-surface-variant">
-        Loading media...
-      </div>
-    );
+    return <div className="flex items-center justify-center h-full text-on-surface-variant">Loading media...</div>;
   }
 
   // Show empty state
@@ -397,9 +348,7 @@ export function MediaView() {
     return (
       <div className="flex flex-col items-center justify-center h-full text-on-surface-variant gap-2">
         <div className="text-title-medium">No location selected</div>
-        <div className="text-body-medium">
-          Select a location from the sidebar to view media
-        </div>
+        <div className="text-body-medium">Select a location from the sidebar to view media</div>
       </div>
     );
   }
@@ -409,9 +358,7 @@ export function MediaView() {
       <div className="flex flex-col items-center justify-center h-full text-on-surface-variant gap-2">
         <div className="text-title-medium">No media files found</div>
         <div className="text-body-medium">
-          {isSearchMode
-            ? "No images or videos match your search"
-            : "No images or videos in this location"}
+          {isSearchMode ? "No images or videos match your search" : "No images or videos in this location"}
         </div>
       </div>
     );
@@ -437,7 +384,7 @@ export function MediaView() {
           willChange: "contents",
         }}
       >
-        {virtualRows.map((virtualRow) => {
+        {virtualRows.map(virtualRow => {
           // Calculate items in this row
           const startIndex = virtualRow.index * columns;
           const endIndex = Math.min(startIndex + columns, files.length);

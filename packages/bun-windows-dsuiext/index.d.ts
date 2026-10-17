@@ -9,7 +9,11 @@ interface Functions {
   /** dsuiext.dll!DsBrowseForContainerW */
   DsBrowseForContainer(pInfo: Win32Pointer): number;
   /** dsuiext.dll!DsGetFriendlyClassName */
-  DsGetFriendlyClassName(pszObjectClass: string | Win32Pointer, pszBuffer: string | Win32Pointer, cchBuffer: number): number;
+  DsGetFriendlyClassName(
+    pszObjectClass: string | Win32Pointer,
+    pszBuffer: string | Win32Pointer,
+    cchBuffer: number,
+  ): number;
   /** dsuiext.dll!DsGetIcon */
   DsGetIcon(dwFlags: number, pszObjectClass: string | Win32Pointer, cxImage: number, cyImage: number): number | null;
 }

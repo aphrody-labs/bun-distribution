@@ -1,9 +1,5 @@
 import { resolveStickerId } from "../../../stickers";
-import {
-  VisualNode,
-  type ResolvedVisualSourceNodeState,
-  type VisualNodeParams,
-} from "./visual-node";
+import { VisualNode, type ResolvedVisualSourceNodeState, type VisualNodeParams } from "./visual-node";
 
 export interface StickerNodeParams extends VisualNodeParams {
   stickerId: string;
@@ -19,11 +15,7 @@ interface CachedStickerSource {
 
 const stickerSourceCache = new Map<string, Promise<CachedStickerSource>>();
 
-export function loadStickerSource({
-  stickerId,
-}: {
-  stickerId: string;
-}): Promise<CachedStickerSource> {
+export function loadStickerSource({ stickerId }: { stickerId: string }): Promise<CachedStickerSource> {
   const cached = stickerSourceCache.get(stickerId);
   if (cached) return cached;
 
@@ -37,8 +29,7 @@ export function loadStickerSource({
 
     await new Promise<void>((resolve, reject) => {
       image.onload = () => resolve();
-      image.onerror = () =>
-        reject(new Error(`Failed to load sticker: ${stickerId}`));
+      image.onerror = () => reject(new Error(`Failed to load sticker: ${stickerId}`));
       image.src = url;
     });
 
@@ -53,7 +44,4 @@ export function loadStickerSource({
   return promise;
 }
 
-export class StickerNode extends VisualNode<
-  StickerNodeParams,
-  ResolvedVisualSourceNodeState
-> {}
+export class StickerNode extends VisualNode<StickerNodeParams, ResolvedVisualSourceNodeState> {}

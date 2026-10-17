@@ -32,45 +32,25 @@ describe("parseIconSpecifier", () => {
   });
   test("bad names, styles and weights are errors", () => {
     expect(() => parseIconSpecifier("Home")).toThrow(/invalid icon name/);
-    expect(() => parseIconSpecifier("../x")).toThrow(
-      /invalid icon name|style must be/,
-    );
-    expect(() => parseIconSpecifier("fancy/home")).toThrow(
-      /style must be one of/,
-    );
+    expect(() => parseIconSpecifier("../x")).toThrow(/invalid icon name|style must be/);
+    expect(() => parseIconSpecifier("fancy/home")).toThrow(/style must be one of/);
     expect(() => parseIconSpecifier("home?wght=450")).toThrow(/wght must be/);
   });
   test("file names follow the catalogue spelling", () => {
-    expect(
-      iconFile({ name: "home", style: "outlined", fill: false, weight: 400 }),
-    ).toBe("home_24px.svg");
-    expect(
-      iconFile({ name: "home", style: "outlined", fill: true, weight: 400 }),
-    ).toBe("home_fill1_24px.svg");
-    expect(
-      iconFile({ name: "home", style: "outlined", fill: false, weight: 300 }),
-    ).toBe("home_wght300_24px.svg");
-    expect(
-      iconFile({ name: "home", style: "outlined", fill: true, weight: 300 }),
-    ).toBe("home_wght300fill1_24px.svg");
+    expect(iconFile({ name: "home", style: "outlined", fill: false, weight: 400 })).toBe("home_24px.svg");
+    expect(iconFile({ name: "home", style: "outlined", fill: true, weight: 400 })).toBe("home_fill1_24px.svg");
+    expect(iconFile({ name: "home", style: "outlined", fill: false, weight: 300 })).toBe("home_wght300_24px.svg");
+    expect(iconFile({ name: "home", style: "outlined", fill: true, weight: 300 })).toBe("home_wght300fill1_24px.svg");
   });
 });
 
 describe("readIcon", () => {
   const root = iconsRoot() ?? null;
   test.skipIf(!root)("reads real SVG markup from the forked catalogue", () => {
-    const svg = readIcon(
-      { name: "home", style: "outlined", fill: false, weight: 400 },
-      root,
-    );
+    const svg = readIcon({ name: "home", style: "outlined", fill: false, weight: 400 }, root);
     expect(svg).toStartWith("<svg");
     expect(svg).toContain('viewBox="0 -960 960 960"');
-    expect(
-      readIcon(
-        { name: "home", style: "rounded", fill: true, weight: 400 },
-        root,
-      ),
-    ).not.toBe(svg);
+    expect(readIcon({ name: "home", style: "rounded", fill: true, weight: 400 }, root)).not.toBe(svg);
     expect(() =>
       readIcon(
         {
@@ -84,12 +64,7 @@ describe("readIcon", () => {
     ).toThrow(/no icon outlined\/no_such_symbol_xyz_24px\.svg/);
   });
   test("without a catalogue readIcon points to loadIcon", () => {
-    expect(() =>
-      readIcon(
-        { name: "home", style: "outlined", fill: false, weight: 400 },
-        null,
-      ),
-    ).toThrow(/use loadIcon/);
+    expect(() => readIcon({ name: "home", style: "outlined", fill: false, weight: 400 }, null)).toThrow(/use loadIcon/);
   });
   test("CDN variants follow the gstatic layout", () => {
     expect(
@@ -100,15 +75,8 @@ describe("readIcon", () => {
         weight: 400,
       }),
     ).toBe("default");
-    expect(
-      iconVariant({ name: "home", style: "outlined", fill: true, weight: 300 }),
-    ).toBe("wght300fill1");
-    expect(
-      iconUrl(
-        { name: "home", style: "rounded", fill: true, weight: 400 },
-        "https://cdn.aphrody.com/",
-      ),
-    ).toBe(
+    expect(iconVariant({ name: "home", style: "outlined", fill: true, weight: 300 })).toBe("wght300fill1");
+    expect(iconUrl({ name: "home", style: "rounded", fill: true, weight: 400 }, "https://cdn.aphrody.com/")).toBe(
       "https://cdn.aphrody.com/s/i/short-term/release/materialsymbolsrounded/home/fill1/24px.svg",
     );
   });
@@ -119,8 +87,7 @@ describe("readIcon", () => {
       fetch(request) {
         const { pathname } = new URL(request.url);
         requests.push(pathname);
-        if (pathname.includes("/no_such_symbol_xyz/"))
-          return new Response("missing", { status: 404 });
+        if (pathname.includes("/no_such_symbol_xyz/")) return new Response("missing", { status: 404 });
         return new Response(
           `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><title>${pathname}</title></svg>`,
         );
@@ -150,12 +117,7 @@ describe("readIcon", () => {
       expect(iconCacheFile(home, "https://other.example")).not.toBe(file);
       expect(await Bun.file(file).text()).toBe(svg);
       expect(await loadIcon(home, null)).toBe(svg);
-      expect(
-        await loadIcon(
-          { name: "home", style: "rounded", fill: true, weight: 400 },
-          null,
-        ),
-      ).not.toBe(svg);
+      expect(await loadIcon({ name: "home", style: "rounded", fill: true, weight: 400 }, null)).not.toBe(svg);
       await expect(
         loadIcon(
           {

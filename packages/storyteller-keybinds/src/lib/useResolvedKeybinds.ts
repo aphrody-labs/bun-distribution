@@ -19,22 +19,16 @@ export interface ResolvedKeybinds {
 // object's identity changes whenever bindings change, so engine hooks that list
 // it in a dependency array re-attach with the new bindings.
 export function useResolvedKeybinds(): ResolvedKeybinds {
-  const selectedPreset = useKeybindsStore((s) => s.selectedPreset);
-  const overrides = useKeybindsStore((s) => s.overrides);
+  const selectedPreset = useKeybindsStore(s => s.selectedPreset);
+  const overrides = useKeybindsStore(s => s.overrides);
 
   return useMemo(() => {
     const forAction = (id: ActionId): Binding[] =>
-      overrides[id] ??
-      PRESETS[selectedPreset].bindings[id] ??
-      BASE_BINDINGS[id] ??
-      [];
+      overrides[id] ?? PRESETS[selectedPreset].bindings[id] ?? BASE_BINDINGS[id] ?? [];
 
-    const matchAction = (
-      e: KeyboardEvent,
-      surface: Surface,
-    ): ActionId | null => {
+    const matchAction = (e: KeyboardEvent, surface: Surface): ActionId | null => {
       for (const action of ACTIONS_BY_SURFACE[surface]) {
-        if (forAction(action.id).some((bd) => bindingMatchesEvent(bd, e))) {
+        if (forAction(action.id).some(bd => bindingMatchesEvent(bd, e))) {
           return action.id;
         }
       }

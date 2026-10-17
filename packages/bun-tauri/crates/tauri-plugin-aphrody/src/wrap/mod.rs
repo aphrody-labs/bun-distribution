@@ -60,7 +60,13 @@ fn start_bundle<R: Runtime>(
     app: &AppHandle<R>,
     config: &WrapConfig,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    serve::start(app, config.bundle.as_ref().ok_or("the bundle section is missing")?)
+    serve::start(
+        app,
+        config
+            .bundle
+            .as_ref()
+            .ok_or("the bundle section is missing")?,
+    )
 }
 
 #[cfg(not(feature = "wrap-bundle"))]
@@ -77,9 +83,13 @@ fn start_local<R: Runtime>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let origin = match config.mode {
         Mode::Bundle => start_bundle(app, config)?,
-        Mode::Sidecar => {
-            sidecar::start(app, config.sidecar.as_ref().ok_or("the sidecar section is missing")?)?
-        },
+        Mode::Sidecar => sidecar::start(
+            app,
+            config
+                .sidecar
+                .as_ref()
+                .ok_or("the sidecar section is missing")?,
+        )?,
         Mode::Remote => return Err("remote mode has no local origin".into()),
     };
     let start = Url::parse(&origin)?.join(&config.start)?;
@@ -102,18 +112,20 @@ fn start<R: Runtime>(
             let start = Url::parse(&config.start)?;
             let policy = Arc::new(Policy::new(&config.origins, &[]));
             window::build(app, &config, start, policy)?;
-        },
+        }
         Mode::Bundle | Mode::Sidecar => {
             // A sidecar can take seconds to answer: keep the event loop free meanwhile.
             let app = app.clone();
-            std::thread::Builder::new().name("aphrody-wrap-start".into()).spawn(move || {
-                if let Err(error) = start_local(&app, &config) {
-                    eprintln!("aphrody-tauri-wrap: {error}");
-                    sidecar::stop(&app);
-                    app.exit(1);
-                }
-            })?;
-        },
+            std::thread::Builder::new()
+                .name("aphrody-wrap-start".into())
+                .spawn(move || {
+                    if let Err(error) = start_local(&app, &config) {
+                        eprintln!("aphrody-tauri-wrap: {error}");
+                        sidecar::stop(&app);
+                        app.exit(1);
+                    }
+                })?;
+        }
     }
     Ok(())
 }

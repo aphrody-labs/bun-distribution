@@ -1,20 +1,7 @@
-import type {
-  AnimationChannel,
-  AnimationPath,
-  ChannelData,
-  ElementAnimations,
-  ElementKeyframe,
-} from "./types";
+import type { AnimationChannel, AnimationPath, ChannelData, ElementAnimations, ElementKeyframe } from "./types";
 import { formatLinearRgba } from "../params";
-import {
-  getChannelEntriesFromData,
-  isAnimationStorageKey,
-} from "./channel-data";
-import {
-  getChannelValueAtTime,
-  getScalarSegmentInterpolation,
-  isScalarChannel,
-} from "./interpolation";
+import { getChannelEntriesFromData, isAnimationStorageKey } from "./channel-data";
+import { getChannelValueAtTime, getScalarSegmentInterpolation, isScalarChannel } from "./interpolation";
 import { isAnimationPath } from "./path";
 
 // Read-only queries over element animations. The properties panel and
@@ -40,38 +27,27 @@ interface ChannelKeyframeMatch {
   keyframe: AnimationChannel["keys"][number];
 }
 
-function getChannelKeyframeMatches({
-  data,
-}: {
-  data: ChannelData | undefined;
-}): ChannelKeyframeMatch[] {
-  return getChannelEntriesFromData({ data }).flatMap(
-    ([componentKey, channel], componentIndex) => {
-      if (channel.keys.length === 0) {
-        return [];
-      }
+function getChannelKeyframeMatches({ data }: { data: ChannelData | undefined }): ChannelKeyframeMatch[] {
+  return getChannelEntriesFromData({ data }).flatMap(([componentKey, channel], componentIndex) => {
+    if (channel.keys.length === 0) {
+      return [];
+    }
 
-      return channel.keys.map((keyframe) => ({
-        componentKey,
-        componentIndex,
-        channel,
-        keyframe,
-      }));
-    },
-  );
+    return channel.keys.map(keyframe => ({
+      componentKey,
+      componentIndex,
+      channel,
+      keyframe,
+    }));
+  });
 }
 
-function getUniqueChannelKeyframeMatches({
-  data,
-}: {
-  data: ChannelData | undefined;
-}): ChannelKeyframeMatch[] {
+function getUniqueChannelKeyframeMatches({ data }: { data: ChannelData | undefined }): ChannelKeyframeMatch[] {
   const sortedMatches = getChannelKeyframeMatches({
     data,
   }).sort(
     (leftMatch, rightMatch) =>
-      leftMatch.keyframe.time - rightMatch.keyframe.time ||
-      leftMatch.componentIndex - rightMatch.componentIndex,
+      leftMatch.keyframe.time - rightMatch.keyframe.time || leftMatch.componentIndex - rightMatch.componentIndex,
   );
   const uniqueMatches: ChannelKeyframeMatch[] = [];
 
@@ -95,18 +71,10 @@ function getPreferredChannelKeyframeMatch({
 }: {
   matches: ChannelKeyframeMatch[];
 }): ChannelKeyframeMatch | null {
-  return (
-    matches.find((match) => match.componentIndex === 0) ?? matches[0] ?? null
-  );
+  return matches.find(match => match.componentIndex === 0) ?? matches[0] ?? null;
 }
 
-function getChannelValue({
-  channel,
-  time,
-}: {
-  channel: AnimationChannel;
-  time: number;
-}) {
+function getChannelValue({ channel, time }: { channel: AnimationChannel; time: number }) {
   const fallbackValue = getChannelFallbackValue({ channel });
   if (typeof fallbackValue === "number") {
     return getChannelValueAtTime({
@@ -122,13 +90,7 @@ function getChannelValue({
   });
 }
 
-function getComposedChannelDataValueAtTime({
-  data,
-  time,
-}: {
-  data: ChannelData | undefined;
-  time: number;
-}) {
+function getComposedChannelDataValueAtTime({ data, time }: { data: ChannelData | undefined; time: number }) {
   const entries = getChannelEntriesFromData({ data });
   if (entries.length === 0) {
     return null;
@@ -138,10 +100,7 @@ function getComposedChannelDataValueAtTime({
   }
 
   const componentValues = Object.fromEntries(
-    entries.map(([componentKey, channel]) => [
-      componentKey,
-      getChannelValue({ channel, time }),
-    ]),
+    entries.map(([componentKey, channel]) => [componentKey, getChannelValue({ channel, time })]),
   );
   if (
     typeof componentValues.r === "number" &&
@@ -202,11 +161,7 @@ function toElementKeyframe({
   };
 }
 
-export function getElementKeyframes({
-  animations,
-}: {
-  animations: ElementAnimations | undefined;
-}): ElementKeyframe[] {
+export function getElementKeyframes({ animations }: { animations: ElementAnimations | undefined }): ElementKeyframe[] {
   if (!animations) {
     return [];
   }
@@ -220,7 +175,7 @@ export function getElementKeyframes({
 
       return getUniqueChannelKeyframeMatches({
         data,
-      }).flatMap((keyframeMatch) => {
+      }).flatMap(keyframeMatch => {
         const keyframe = toElementKeyframe({
           data,
           propertyPath,
@@ -242,9 +197,7 @@ export function hasKeyframesForPath({
   animations: ElementAnimations | undefined;
   propertyPath: AnimationPath;
 }): boolean {
-  return getChannelEntriesFromData({ data: animations?.[propertyPath] }).some(
-    ([, channel]) => channel.keys.length > 0,
-  );
+  return getChannelEntriesFromData({ data: animations?.[propertyPath] }).some(([, channel]) => channel.keys.length > 0);
 }
 
 export function getKeyframeAtTime({
@@ -262,9 +215,7 @@ export function getKeyframeAtTime({
   }
 
   const keyframeMatch = getPreferredChannelKeyframeMatch({
-    matches: getChannelKeyframeMatches({ data }).filter(
-      ({ keyframe }) => keyframe.time === time,
-    ),
+    matches: getChannelKeyframeMatches({ data }).filter(({ keyframe }) => keyframe.time === time),
   });
   if (!keyframeMatch) {
     return null;
@@ -292,9 +243,7 @@ export function getKeyframeById({
   }
 
   const keyframeMatch = getPreferredChannelKeyframeMatch({
-    matches: getChannelKeyframeMatches({ data }).filter(
-      ({ keyframe }) => keyframe.id === keyframeId,
-    ),
+    matches: getChannelKeyframeMatches({ data }).filter(({ keyframe }) => keyframe.id === keyframeId),
   });
   if (!keyframeMatch) {
     return null;

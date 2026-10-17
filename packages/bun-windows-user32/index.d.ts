@@ -11,7 +11,13 @@ interface Functions {
   /** user32.dll!AdjustWindowRectEx */
   AdjustWindowRectEx(lpRect: Win32Pointer, dwStyle: number, bMenu: number, dwExStyle: number): number;
   /** user32.dll!AdjustWindowRectExForDpi */
-  AdjustWindowRectExForDpi(lpRect: Win32Pointer, dwStyle: number, bMenu: number, dwExStyle: number, dpi: number): number;
+  AdjustWindowRectExForDpi(
+    lpRect: Win32Pointer,
+    dwStyle: number,
+    bMenu: number,
+    dwExStyle: number,
+    dpi: number,
+  ): number;
   /** user32.dll!AllowSetForegroundWindow */
   AllowSetForegroundWindow(dwProcessId: number): number;
   /** user32.dll!AnimateWindow */
@@ -19,11 +25,26 @@ interface Functions {
   /** user32.dll!AnyPopup */
   AnyPopup(): number;
   /** user32.dll!AppendMenuA */
-  AppendMenuA(hMenu: Win32Pointer, uFlags: number, uIDNewItem: number | bigint, lpNewItem: string | Win32Pointer): number;
+  AppendMenuA(
+    hMenu: Win32Pointer,
+    uFlags: number,
+    uIDNewItem: number | bigint,
+    lpNewItem: string | Win32Pointer,
+  ): number;
   /** user32.dll!AppendMenuW */
-  AppendMenuW(hMenu: Win32Pointer, uFlags: number, uIDNewItem: number | bigint, lpNewItem: string | Win32Pointer): number;
+  AppendMenuW(
+    hMenu: Win32Pointer,
+    uFlags: number,
+    uIDNewItem: number | bigint,
+    lpNewItem: string | Win32Pointer,
+  ): number;
   /** user32.dll!AppendMenuW */
-  AppendMenu(hMenu: Win32Pointer, uFlags: number, uIDNewItem: number | bigint, lpNewItem: string | Win32Pointer): number;
+  AppendMenu(
+    hMenu: Win32Pointer,
+    uFlags: number,
+    uIDNewItem: number | bigint,
+    lpNewItem: string | Win32Pointer,
+  ): number;
   /** user32.dll!ApplyWindowAction */
   ApplyWindowAction(hwnd: Win32Pointer, pAction: Win32Pointer): number;
   /** user32.dll!AreDpiAwarenessContextsEqual */
@@ -41,19 +62,64 @@ interface Functions {
   /** user32.dll!BringWindowToTop */
   BringWindowToTop(hWnd: Win32Pointer): number;
   /** user32.dll!BroadcastSystemMessageA */
-  BroadcastSystemMessageA(flags: number, lpInfo: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint): number;
+  BroadcastSystemMessageA(
+    flags: number,
+    lpInfo: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+  ): number;
   /** user32.dll!BroadcastSystemMessageExA */
-  BroadcastSystemMessageExA(flags: number, lpInfo: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint, pbsmInfo: Win32Pointer): number;
+  BroadcastSystemMessageExA(
+    flags: number,
+    lpInfo: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+    pbsmInfo: Win32Pointer,
+  ): number;
   /** user32.dll!BroadcastSystemMessageExW */
-  BroadcastSystemMessageExW(flags: number, lpInfo: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint, pbsmInfo: Win32Pointer): number;
+  BroadcastSystemMessageExW(
+    flags: number,
+    lpInfo: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+    pbsmInfo: Win32Pointer,
+  ): number;
   /** user32.dll!BroadcastSystemMessageExW */
-  BroadcastSystemMessageEx(flags: number, lpInfo: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint, pbsmInfo: Win32Pointer): number;
+  BroadcastSystemMessageEx(
+    flags: number,
+    lpInfo: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+    pbsmInfo: Win32Pointer,
+  ): number;
   /** user32.dll!BroadcastSystemMessageW */
-  BroadcastSystemMessageW(flags: number, lpInfo: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint): number;
+  BroadcastSystemMessageW(
+    flags: number,
+    lpInfo: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+  ): number;
   /** user32.dll!BroadcastSystemMessageW */
-  BroadcastSystemMessage(flags: number, lpInfo: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint): number;
+  BroadcastSystemMessage(
+    flags: number,
+    lpInfo: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+  ): number;
   /** user32.dll!CalculatePopupWindowPosition */
-  CalculatePopupWindowPosition(anchorPoint: Win32Pointer, windowSize: Win32Pointer, flags: number, excludeRect: Win32Pointer, popupWindowPosition: Win32Pointer): number;
+  CalculatePopupWindowPosition(
+    anchorPoint: Win32Pointer,
+    windowSize: Win32Pointer,
+    flags: number,
+    excludeRect: Win32Pointer,
+    popupWindowPosition: Win32Pointer,
+  ): number;
   /** user32.dll!CallMsgFilterA */
   CallMsgFilterA(lpMsg: Win32Pointer, nCode: number): number;
   /** user32.dll!CallMsgFilterW */
@@ -63,39 +129,104 @@ interface Functions {
   /** user32.dll!CallNextHookEx */
   CallNextHookEx(hhk: Win32Pointer, nCode: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
   /** user32.dll!CallWindowProcA */
-  CallWindowProcA(lpPrevWndFunc: Win32Callback, hWnd: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
+  CallWindowProcA(
+    lpPrevWndFunc: Win32Callback,
+    hWnd: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!CallWindowProcW */
-  CallWindowProcW(lpPrevWndFunc: Win32Callback, hWnd: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
+  CallWindowProcW(
+    lpPrevWndFunc: Win32Callback,
+    hWnd: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!CallWindowProcW */
-  CallWindowProc(lpPrevWndFunc: Win32Callback, hWnd: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
+  CallWindowProc(
+    lpPrevWndFunc: Win32Callback,
+    hWnd: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!CancelShutdown */
   CancelShutdown(): number;
   /** user32.dll!CascadeWindows */
-  CascadeWindows(hwndParent: Win32Pointer, wHow: number, lpRect: Win32Pointer, cKids: number, lpKids: Win32Pointer): number;
+  CascadeWindows(
+    hwndParent: Win32Pointer,
+    wHow: number,
+    lpRect: Win32Pointer,
+    cKids: number,
+    lpKids: Win32Pointer,
+  ): number;
   /** user32.dll!ChangeClipboardChain */
   ChangeClipboardChain(hWndRemove: Win32Pointer, hWndNewNext: Win32Pointer): number;
   /** user32.dll!ChangeDisplaySettingsA */
   ChangeDisplaySettingsA(lpDevMode: Win32Pointer, dwFlags: number): number;
   /** user32.dll!ChangeDisplaySettingsExA */
-  ChangeDisplaySettingsExA(lpszDeviceName: string | Win32Pointer, lpDevMode: Win32Pointer, hwnd: Win32Pointer, dwflags: number, lParam: Win32Pointer): number;
+  ChangeDisplaySettingsExA(
+    lpszDeviceName: string | Win32Pointer,
+    lpDevMode: Win32Pointer,
+    hwnd: Win32Pointer,
+    dwflags: number,
+    lParam: Win32Pointer,
+  ): number;
   /** user32.dll!ChangeDisplaySettingsExW */
-  ChangeDisplaySettingsExW(lpszDeviceName: string | Win32Pointer, lpDevMode: Win32Pointer, hwnd: Win32Pointer, dwflags: number, lParam: Win32Pointer): number;
+  ChangeDisplaySettingsExW(
+    lpszDeviceName: string | Win32Pointer,
+    lpDevMode: Win32Pointer,
+    hwnd: Win32Pointer,
+    dwflags: number,
+    lParam: Win32Pointer,
+  ): number;
   /** user32.dll!ChangeDisplaySettingsExW */
-  ChangeDisplaySettingsEx(lpszDeviceName: string | Win32Pointer, lpDevMode: Win32Pointer, hwnd: Win32Pointer, dwflags: number, lParam: Win32Pointer): number;
+  ChangeDisplaySettingsEx(
+    lpszDeviceName: string | Win32Pointer,
+    lpDevMode: Win32Pointer,
+    hwnd: Win32Pointer,
+    dwflags: number,
+    lParam: Win32Pointer,
+  ): number;
   /** user32.dll!ChangeDisplaySettingsW */
   ChangeDisplaySettingsW(lpDevMode: Win32Pointer, dwFlags: number): number;
   /** user32.dll!ChangeDisplaySettingsW */
   ChangeDisplaySettings(lpDevMode: Win32Pointer, dwFlags: number): number;
   /** user32.dll!ChangeMenuA */
-  ChangeMenuA(hMenu: Win32Pointer, cmd: number, lpszNewItem: string | Win32Pointer, cmdInsert: number, flags: number): number;
+  ChangeMenuA(
+    hMenu: Win32Pointer,
+    cmd: number,
+    lpszNewItem: string | Win32Pointer,
+    cmdInsert: number,
+    flags: number,
+  ): number;
   /** user32.dll!ChangeMenuW */
-  ChangeMenuW(hMenu: Win32Pointer, cmd: number, lpszNewItem: string | Win32Pointer, cmdInsert: number, flags: number): number;
+  ChangeMenuW(
+    hMenu: Win32Pointer,
+    cmd: number,
+    lpszNewItem: string | Win32Pointer,
+    cmdInsert: number,
+    flags: number,
+  ): number;
   /** user32.dll!ChangeMenuW */
-  ChangeMenu(hMenu: Win32Pointer, cmd: number, lpszNewItem: string | Win32Pointer, cmdInsert: number, flags: number): number;
+  ChangeMenu(
+    hMenu: Win32Pointer,
+    cmd: number,
+    lpszNewItem: string | Win32Pointer,
+    cmdInsert: number,
+    flags: number,
+  ): number;
   /** user32.dll!ChangeWindowMessageFilter */
   ChangeWindowMessageFilter(message: number, dwFlag: number): number;
   /** user32.dll!ChangeWindowMessageFilterEx */
-  ChangeWindowMessageFilterEx(hwnd: Win32Pointer, message: number, action: number, pChangeFilterStruct: Win32Pointer): number;
+  ChangeWindowMessageFilterEx(
+    hwnd: Win32Pointer,
+    message: number,
+    action: number,
+    pChangeFilterStruct: Win32Pointer,
+  ): number;
   /** user32.dll!CharLowerA */
   CharLowerA(lpsz: string | Win32Pointer): number | null;
   /** user32.dll!CharLowerBuffA */
@@ -119,7 +250,12 @@ interface Functions {
   /** user32.dll!CharPrevA */
   CharPrevA(lpszStart: string | Win32Pointer, lpszCurrent: string | Win32Pointer): number | null;
   /** user32.dll!CharPrevExA */
-  CharPrevExA(CodePage: number, lpStart: string | Win32Pointer, lpCurrentChar: string | Win32Pointer, dwFlags: number): number | null;
+  CharPrevExA(
+    CodePage: number,
+    lpStart: string | Win32Pointer,
+    lpCurrentChar: string | Win32Pointer,
+    dwFlags: number,
+  ): number | null;
   /** user32.dll!CharPrevW */
   CharPrevW(lpszStart: string | Win32Pointer, lpszCurrent: string | Win32Pointer): number | null;
   /** user32.dll!CharPrevW */
@@ -205,45 +341,186 @@ interface Functions {
   /** user32.dll!CreateCaret */
   CreateCaret(hWnd: Win32Pointer, hBitmap: Win32Pointer, nWidth: number, nHeight: number): number;
   /** user32.dll!CreateCursor */
-  CreateCursor(hInst: Win32Pointer, xHotSpot: number, yHotSpot: number, nWidth: number, nHeight: number, pvANDPlane: Win32Pointer, pvXORPlane: Win32Pointer): number | null;
+  CreateCursor(
+    hInst: Win32Pointer,
+    xHotSpot: number,
+    yHotSpot: number,
+    nWidth: number,
+    nHeight: number,
+    pvANDPlane: Win32Pointer,
+    pvXORPlane: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateDesktopA */
-  CreateDesktopA(lpszDesktop: string | Win32Pointer, lpszDevice: string | Win32Pointer, pDevmode: Win32Pointer, dwFlags: number, dwDesiredAccess: number, lpsa: Win32Pointer): number | null;
+  CreateDesktopA(
+    lpszDesktop: string | Win32Pointer,
+    lpszDevice: string | Win32Pointer,
+    pDevmode: Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+    lpsa: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateDesktopExA */
-  CreateDesktopExA(lpszDesktop: string | Win32Pointer, lpszDevice: string | Win32Pointer, pDevmode: Win32Pointer, dwFlags: number, dwDesiredAccess: number, lpsa: Win32Pointer, ulHeapSize: number, pvoid: Win32Pointer): number | null;
+  CreateDesktopExA(
+    lpszDesktop: string | Win32Pointer,
+    lpszDevice: string | Win32Pointer,
+    pDevmode: Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+    lpsa: Win32Pointer,
+    ulHeapSize: number,
+    pvoid: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateDesktopExW */
-  CreateDesktopExW(lpszDesktop: string | Win32Pointer, lpszDevice: string | Win32Pointer, pDevmode: Win32Pointer, dwFlags: number, dwDesiredAccess: number, lpsa: Win32Pointer, ulHeapSize: number, pvoid: Win32Pointer): number | null;
+  CreateDesktopExW(
+    lpszDesktop: string | Win32Pointer,
+    lpszDevice: string | Win32Pointer,
+    pDevmode: Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+    lpsa: Win32Pointer,
+    ulHeapSize: number,
+    pvoid: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateDesktopExW */
-  CreateDesktopEx(lpszDesktop: string | Win32Pointer, lpszDevice: string | Win32Pointer, pDevmode: Win32Pointer, dwFlags: number, dwDesiredAccess: number, lpsa: Win32Pointer, ulHeapSize: number, pvoid: Win32Pointer): number | null;
+  CreateDesktopEx(
+    lpszDesktop: string | Win32Pointer,
+    lpszDevice: string | Win32Pointer,
+    pDevmode: Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+    lpsa: Win32Pointer,
+    ulHeapSize: number,
+    pvoid: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateDesktopW */
-  CreateDesktopW(lpszDesktop: string | Win32Pointer, lpszDevice: string | Win32Pointer, pDevmode: Win32Pointer, dwFlags: number, dwDesiredAccess: number, lpsa: Win32Pointer): number | null;
+  CreateDesktopW(
+    lpszDesktop: string | Win32Pointer,
+    lpszDevice: string | Win32Pointer,
+    pDevmode: Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+    lpsa: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateDesktopW */
-  CreateDesktop(lpszDesktop: string | Win32Pointer, lpszDevice: string | Win32Pointer, pDevmode: Win32Pointer, dwFlags: number, dwDesiredAccess: number, lpsa: Win32Pointer): number | null;
+  CreateDesktop(
+    lpszDesktop: string | Win32Pointer,
+    lpszDevice: string | Win32Pointer,
+    pDevmode: Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+    lpsa: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateDialogIndirectParamA */
-  CreateDialogIndirectParamA(hInstance: Win32Pointer, lpTemplate: Win32Pointer, hWndParent: Win32Pointer, lpDialogFunc: Win32Callback, dwInitParam: number | bigint): number | null;
+  CreateDialogIndirectParamA(
+    hInstance: Win32Pointer,
+    lpTemplate: Win32Pointer,
+    hWndParent: Win32Pointer,
+    lpDialogFunc: Win32Callback,
+    dwInitParam: number | bigint,
+  ): number | null;
   /** user32.dll!CreateDialogIndirectParamW */
-  CreateDialogIndirectParamW(hInstance: Win32Pointer, lpTemplate: Win32Pointer, hWndParent: Win32Pointer, lpDialogFunc: Win32Callback, dwInitParam: number | bigint): number | null;
+  CreateDialogIndirectParamW(
+    hInstance: Win32Pointer,
+    lpTemplate: Win32Pointer,
+    hWndParent: Win32Pointer,
+    lpDialogFunc: Win32Callback,
+    dwInitParam: number | bigint,
+  ): number | null;
   /** user32.dll!CreateDialogIndirectParamW */
-  CreateDialogIndirectParam(hInstance: Win32Pointer, lpTemplate: Win32Pointer, hWndParent: Win32Pointer, lpDialogFunc: Win32Callback, dwInitParam: number | bigint): number | null;
+  CreateDialogIndirectParam(
+    hInstance: Win32Pointer,
+    lpTemplate: Win32Pointer,
+    hWndParent: Win32Pointer,
+    lpDialogFunc: Win32Callback,
+    dwInitParam: number | bigint,
+  ): number | null;
   /** user32.dll!CreateDialogParamA */
-  CreateDialogParamA(hInstance: Win32Pointer, lpTemplateName: string | Win32Pointer, hWndParent: Win32Pointer, lpDialogFunc: Win32Callback, dwInitParam: number | bigint): number | null;
+  CreateDialogParamA(
+    hInstance: Win32Pointer,
+    lpTemplateName: string | Win32Pointer,
+    hWndParent: Win32Pointer,
+    lpDialogFunc: Win32Callback,
+    dwInitParam: number | bigint,
+  ): number | null;
   /** user32.dll!CreateDialogParamW */
-  CreateDialogParamW(hInstance: Win32Pointer, lpTemplateName: string | Win32Pointer, hWndParent: Win32Pointer, lpDialogFunc: Win32Callback, dwInitParam: number | bigint): number | null;
+  CreateDialogParamW(
+    hInstance: Win32Pointer,
+    lpTemplateName: string | Win32Pointer,
+    hWndParent: Win32Pointer,
+    lpDialogFunc: Win32Callback,
+    dwInitParam: number | bigint,
+  ): number | null;
   /** user32.dll!CreateDialogParamW */
-  CreateDialogParam(hInstance: Win32Pointer, lpTemplateName: string | Win32Pointer, hWndParent: Win32Pointer, lpDialogFunc: Win32Callback, dwInitParam: number | bigint): number | null;
+  CreateDialogParam(
+    hInstance: Win32Pointer,
+    lpTemplateName: string | Win32Pointer,
+    hWndParent: Win32Pointer,
+    lpDialogFunc: Win32Callback,
+    dwInitParam: number | bigint,
+  ): number | null;
   /** user32.dll!CreateIcon */
-  CreateIcon(hInstance: Win32Pointer, nWidth: number, nHeight: number, cPlanes: number, cBitsPixel: number, lpbANDbits: Win32Pointer, lpbXORbits: Win32Pointer): number | null;
+  CreateIcon(
+    hInstance: Win32Pointer,
+    nWidth: number,
+    nHeight: number,
+    cPlanes: number,
+    cBitsPixel: number,
+    lpbANDbits: Win32Pointer,
+    lpbXORbits: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateIconFromResource */
   CreateIconFromResource(presbits: Win32Pointer, dwResSize: number, fIcon: number, dwVer: number): number | null;
   /** user32.dll!CreateIconFromResourceEx */
-  CreateIconFromResourceEx(presbits: Win32Pointer, dwResSize: number, fIcon: number, dwVer: number, cxDesired: number, cyDesired: number, Flags: number): number | null;
+  CreateIconFromResourceEx(
+    presbits: Win32Pointer,
+    dwResSize: number,
+    fIcon: number,
+    dwVer: number,
+    cxDesired: number,
+    cyDesired: number,
+    Flags: number,
+  ): number | null;
   /** user32.dll!CreateIconIndirect */
   CreateIconIndirect(piconinfo: Win32Pointer): number | null;
   /** user32.dll!CreateMDIWindowA */
-  CreateMDIWindowA(lpClassName: string | Win32Pointer, lpWindowName: string | Win32Pointer, dwStyle: number, X: number, Y: number, nWidth: number, nHeight: number, hWndParent: Win32Pointer, hInstance: Win32Pointer, lParam: number | bigint): number | null;
+  CreateMDIWindowA(
+    lpClassName: string | Win32Pointer,
+    lpWindowName: string | Win32Pointer,
+    dwStyle: number,
+    X: number,
+    Y: number,
+    nWidth: number,
+    nHeight: number,
+    hWndParent: Win32Pointer,
+    hInstance: Win32Pointer,
+    lParam: number | bigint,
+  ): number | null;
   /** user32.dll!CreateMDIWindowW */
-  CreateMDIWindowW(lpClassName: string | Win32Pointer, lpWindowName: string | Win32Pointer, dwStyle: number, X: number, Y: number, nWidth: number, nHeight: number, hWndParent: Win32Pointer, hInstance: Win32Pointer, lParam: number | bigint): number | null;
+  CreateMDIWindowW(
+    lpClassName: string | Win32Pointer,
+    lpWindowName: string | Win32Pointer,
+    dwStyle: number,
+    X: number,
+    Y: number,
+    nWidth: number,
+    nHeight: number,
+    hWndParent: Win32Pointer,
+    hInstance: Win32Pointer,
+    lParam: number | bigint,
+  ): number | null;
   /** user32.dll!CreateMDIWindowW */
-  CreateMDIWindow(lpClassName: string | Win32Pointer, lpWindowName: string | Win32Pointer, dwStyle: number, X: number, Y: number, nWidth: number, nHeight: number, hWndParent: Win32Pointer, hInstance: Win32Pointer, lParam: number | bigint): number | null;
+  CreateMDIWindow(
+    lpClassName: string | Win32Pointer,
+    lpWindowName: string | Win32Pointer,
+    dwStyle: number,
+    X: number,
+    Y: number,
+    nWidth: number,
+    nHeight: number,
+    hWndParent: Win32Pointer,
+    hInstance: Win32Pointer,
+    lParam: number | bigint,
+  ): number | null;
   /** user32.dll!CreateMenu */
   CreateMenu(): number | null;
   /** user32.dll!CreatePopupMenu */
@@ -251,17 +528,71 @@ interface Functions {
   /** user32.dll!CreateSyntheticPointerDevice */
   CreateSyntheticPointerDevice(pointerType: number, maxCount: number, mode: number): number | null;
   /** user32.dll!CreateWindowExA */
-  CreateWindowExA(dwExStyle: number, lpClassName: string | Win32Pointer, lpWindowName: string | Win32Pointer, dwStyle: number, X: number, Y: number, nWidth: number, nHeight: number, hWndParent: Win32Pointer, hMenu: Win32Pointer, hInstance: Win32Pointer, lpParam: Win32Pointer): number | null;
+  CreateWindowExA(
+    dwExStyle: number,
+    lpClassName: string | Win32Pointer,
+    lpWindowName: string | Win32Pointer,
+    dwStyle: number,
+    X: number,
+    Y: number,
+    nWidth: number,
+    nHeight: number,
+    hWndParent: Win32Pointer,
+    hMenu: Win32Pointer,
+    hInstance: Win32Pointer,
+    lpParam: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateWindowExW */
-  CreateWindowExW(dwExStyle: number, lpClassName: string | Win32Pointer, lpWindowName: string | Win32Pointer, dwStyle: number, X: number, Y: number, nWidth: number, nHeight: number, hWndParent: Win32Pointer, hMenu: Win32Pointer, hInstance: Win32Pointer, lpParam: Win32Pointer): number | null;
+  CreateWindowExW(
+    dwExStyle: number,
+    lpClassName: string | Win32Pointer,
+    lpWindowName: string | Win32Pointer,
+    dwStyle: number,
+    X: number,
+    Y: number,
+    nWidth: number,
+    nHeight: number,
+    hWndParent: Win32Pointer,
+    hMenu: Win32Pointer,
+    hInstance: Win32Pointer,
+    lpParam: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateWindowExW */
-  CreateWindowEx(dwExStyle: number, lpClassName: string | Win32Pointer, lpWindowName: string | Win32Pointer, dwStyle: number, X: number, Y: number, nWidth: number, nHeight: number, hWndParent: Win32Pointer, hMenu: Win32Pointer, hInstance: Win32Pointer, lpParam: Win32Pointer): number | null;
+  CreateWindowEx(
+    dwExStyle: number,
+    lpClassName: string | Win32Pointer,
+    lpWindowName: string | Win32Pointer,
+    dwStyle: number,
+    X: number,
+    Y: number,
+    nWidth: number,
+    nHeight: number,
+    hWndParent: Win32Pointer,
+    hMenu: Win32Pointer,
+    hInstance: Win32Pointer,
+    lpParam: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateWindowStationA */
-  CreateWindowStationA(lpwinsta: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number, lpsa: Win32Pointer): number | null;
+  CreateWindowStationA(
+    lpwinsta: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+    lpsa: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateWindowStationW */
-  CreateWindowStationW(lpwinsta: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number, lpsa: Win32Pointer): number | null;
+  CreateWindowStationW(
+    lpwinsta: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+    lpsa: Win32Pointer,
+  ): number | null;
   /** user32.dll!CreateWindowStationW */
-  CreateWindowStation(lpwinsta: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number, lpsa: Win32Pointer): number | null;
+  CreateWindowStation(
+    lpwinsta: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+    lpsa: Win32Pointer,
+  ): number | null;
   /** user32.dll!DdeAbandonTransaction */
   DdeAbandonTransaction(idInst: number, hConv: Win32Pointer, idTransaction: number): number;
   /** user32.dll!DdeAccessData */
@@ -269,15 +600,38 @@ interface Functions {
   /** user32.dll!DdeAddData */
   DdeAddData(hData: Win32Pointer, pSrc: Win32Pointer, cb: number, cbOff: number): number | null;
   /** user32.dll!DdeClientTransaction */
-  DdeClientTransaction(pData: Win32Pointer, cbData: number, hConv: Win32Pointer, hszItem: Win32Pointer, wFmt: number, wType: number, dwTimeout: number, pdwResult: Win32Pointer): number | null;
+  DdeClientTransaction(
+    pData: Win32Pointer,
+    cbData: number,
+    hConv: Win32Pointer,
+    hszItem: Win32Pointer,
+    wFmt: number,
+    wType: number,
+    dwTimeout: number,
+    pdwResult: Win32Pointer,
+  ): number | null;
   /** user32.dll!DdeCmpStringHandles */
   DdeCmpStringHandles(hsz1: Win32Pointer, hsz2: Win32Pointer): number;
   /** user32.dll!DdeConnect */
   DdeConnect(idInst: number, hszService: Win32Pointer, hszTopic: Win32Pointer, pCC: Win32Pointer): number | null;
   /** user32.dll!DdeConnectList */
-  DdeConnectList(idInst: number, hszService: Win32Pointer, hszTopic: Win32Pointer, hConvList: Win32Pointer, pCC: Win32Pointer): number | null;
+  DdeConnectList(
+    idInst: number,
+    hszService: Win32Pointer,
+    hszTopic: Win32Pointer,
+    hConvList: Win32Pointer,
+    pCC: Win32Pointer,
+  ): number | null;
   /** user32.dll!DdeCreateDataHandle */
-  DdeCreateDataHandle(idInst: number, pSrc: Win32Pointer, cb: number, cbOff: number, hszItem: Win32Pointer, wFmt: number, afCmd: number): number | null;
+  DdeCreateDataHandle(
+    idInst: number,
+    pSrc: Win32Pointer,
+    cb: number,
+    cbOff: number,
+    hszItem: Win32Pointer,
+    wFmt: number,
+    afCmd: number,
+  ): number | null;
   /** user32.dll!DdeCreateStringHandleA */
   DdeCreateStringHandleA(idInst: number, psz: string | Win32Pointer, iCodePage: number): number | null;
   /** user32.dll!DdeCreateStringHandleW */
@@ -317,11 +671,29 @@ interface Functions {
   /** user32.dll!DdeQueryNextServer */
   DdeQueryNextServer(hConvList: Win32Pointer, hConvPrev: Win32Pointer): number | null;
   /** user32.dll!DdeQueryStringA */
-  DdeQueryStringA(idInst: number, hsz: Win32Pointer, psz: string | Win32Pointer, cchMax: number, iCodePage: number): number;
+  DdeQueryStringA(
+    idInst: number,
+    hsz: Win32Pointer,
+    psz: string | Win32Pointer,
+    cchMax: number,
+    iCodePage: number,
+  ): number;
   /** user32.dll!DdeQueryStringW */
-  DdeQueryStringW(idInst: number, hsz: Win32Pointer, psz: string | Win32Pointer, cchMax: number, iCodePage: number): number;
+  DdeQueryStringW(
+    idInst: number,
+    hsz: Win32Pointer,
+    psz: string | Win32Pointer,
+    cchMax: number,
+    iCodePage: number,
+  ): number;
   /** user32.dll!DdeQueryStringW */
-  DdeQueryString(idInst: number, hsz: Win32Pointer, psz: string | Win32Pointer, cchMax: number, iCodePage: number): number;
+  DdeQueryString(
+    idInst: number,
+    hsz: Win32Pointer,
+    psz: string | Win32Pointer,
+    cchMax: number,
+    iCodePage: number,
+  ): number;
   /** user32.dll!DdeReconnect */
   DdeReconnect(hConv: Win32Pointer): number | null;
   /** user32.dll!DdeSetQualityOfService */
@@ -339,11 +711,29 @@ interface Functions {
   /** user32.dll!DefDlgProcW */
   DefDlgProc(hDlg: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
   /** user32.dll!DefFrameProcA */
-  DefFrameProcA(hWnd: Win32Pointer, hWndMDIClient: Win32Pointer, uMsg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
+  DefFrameProcA(
+    hWnd: Win32Pointer,
+    hWndMDIClient: Win32Pointer,
+    uMsg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!DefFrameProcW */
-  DefFrameProcW(hWnd: Win32Pointer, hWndMDIClient: Win32Pointer, uMsg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
+  DefFrameProcW(
+    hWnd: Win32Pointer,
+    hWndMDIClient: Win32Pointer,
+    uMsg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!DefFrameProcW */
-  DefFrameProc(hWnd: Win32Pointer, hWndMDIClient: Win32Pointer, uMsg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
+  DefFrameProc(
+    hWnd: Win32Pointer,
+    hWndMDIClient: Win32Pointer,
+    uMsg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!DefMDIChildProcA */
   DefMDIChildProcA(hWnd: Win32Pointer, uMsg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
   /** user32.dll!DefMDIChildProcW */
@@ -359,7 +749,16 @@ interface Functions {
   /** user32.dll!DefWindowProcW */
   DefWindowProc(hWnd: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
   /** user32.dll!DeferWindowPos */
-  DeferWindowPos(hWinPosInfo: Win32Pointer, hWnd: Win32Pointer, hWndInsertAfter: Win32Pointer, x: number, y: number, cx: number, cy: number, uFlags: number): number | null;
+  DeferWindowPos(
+    hWinPosInfo: Win32Pointer,
+    hWnd: Win32Pointer,
+    hWndInsertAfter: Win32Pointer,
+    x: number,
+    y: number,
+    cx: number,
+    cy: number,
+    uFlags: number,
+  ): number | null;
   /** user32.dll!DeleteMenu */
   DeleteMenu(hMenu: Win32Pointer, uPosition: number, uFlags: number): number;
   /** user32.dll!DeregisterShellHookWindow */
@@ -379,17 +778,53 @@ interface Functions {
   /** user32.dll!DestroyWindow */
   DestroyWindow(hWnd: Win32Pointer): number;
   /** user32.dll!DialogBoxIndirectParamA */
-  DialogBoxIndirectParamA(hInstance: Win32Pointer, hDialogTemplate: Win32Pointer, hWndParent: Win32Pointer, lpDialogFunc: Win32Callback, dwInitParam: number | bigint): number | bigint;
+  DialogBoxIndirectParamA(
+    hInstance: Win32Pointer,
+    hDialogTemplate: Win32Pointer,
+    hWndParent: Win32Pointer,
+    lpDialogFunc: Win32Callback,
+    dwInitParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!DialogBoxIndirectParamW */
-  DialogBoxIndirectParamW(hInstance: Win32Pointer, hDialogTemplate: Win32Pointer, hWndParent: Win32Pointer, lpDialogFunc: Win32Callback, dwInitParam: number | bigint): number | bigint;
+  DialogBoxIndirectParamW(
+    hInstance: Win32Pointer,
+    hDialogTemplate: Win32Pointer,
+    hWndParent: Win32Pointer,
+    lpDialogFunc: Win32Callback,
+    dwInitParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!DialogBoxIndirectParamW */
-  DialogBoxIndirectParam(hInstance: Win32Pointer, hDialogTemplate: Win32Pointer, hWndParent: Win32Pointer, lpDialogFunc: Win32Callback, dwInitParam: number | bigint): number | bigint;
+  DialogBoxIndirectParam(
+    hInstance: Win32Pointer,
+    hDialogTemplate: Win32Pointer,
+    hWndParent: Win32Pointer,
+    lpDialogFunc: Win32Callback,
+    dwInitParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!DialogBoxParamA */
-  DialogBoxParamA(hInstance: Win32Pointer, lpTemplateName: string | Win32Pointer, hWndParent: Win32Pointer, lpDialogFunc: Win32Callback, dwInitParam: number | bigint): number | bigint;
+  DialogBoxParamA(
+    hInstance: Win32Pointer,
+    lpTemplateName: string | Win32Pointer,
+    hWndParent: Win32Pointer,
+    lpDialogFunc: Win32Callback,
+    dwInitParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!DialogBoxParamW */
-  DialogBoxParamW(hInstance: Win32Pointer, lpTemplateName: string | Win32Pointer, hWndParent: Win32Pointer, lpDialogFunc: Win32Callback, dwInitParam: number | bigint): number | bigint;
+  DialogBoxParamW(
+    hInstance: Win32Pointer,
+    lpTemplateName: string | Win32Pointer,
+    hWndParent: Win32Pointer,
+    lpDialogFunc: Win32Callback,
+    dwInitParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!DialogBoxParamW */
-  DialogBoxParam(hInstance: Win32Pointer, lpTemplateName: string | Win32Pointer, hWndParent: Win32Pointer, lpDialogFunc: Win32Callback, dwInitParam: number | bigint): number | bigint;
+  DialogBoxParam(
+    hInstance: Win32Pointer,
+    lpTemplateName: string | Win32Pointer,
+    hWndParent: Win32Pointer,
+    lpDialogFunc: Win32Callback,
+    dwInitParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!DisableProcessWindowsGhosting */
   DisableProcessWindowsGhosting(): void;
   /** user32.dll!DispatchMessageA */
@@ -403,23 +838,74 @@ interface Functions {
   /** user32.dll!DisplayConfigSetDeviceInfo */
   DisplayConfigSetDeviceInfo(setPacket: Win32Pointer): number;
   /** user32.dll!DlgDirListA */
-  DlgDirListA(hDlg: Win32Pointer, lpPathSpec: string | Win32Pointer, nIDListBox: number, nIDStaticPath: number, uFileType: number): number;
+  DlgDirListA(
+    hDlg: Win32Pointer,
+    lpPathSpec: string | Win32Pointer,
+    nIDListBox: number,
+    nIDStaticPath: number,
+    uFileType: number,
+  ): number;
   /** user32.dll!DlgDirListComboBoxA */
-  DlgDirListComboBoxA(hDlg: Win32Pointer, lpPathSpec: string | Win32Pointer, nIDComboBox: number, nIDStaticPath: number, uFiletype: number): number;
+  DlgDirListComboBoxA(
+    hDlg: Win32Pointer,
+    lpPathSpec: string | Win32Pointer,
+    nIDComboBox: number,
+    nIDStaticPath: number,
+    uFiletype: number,
+  ): number;
   /** user32.dll!DlgDirListComboBoxW */
-  DlgDirListComboBoxW(hDlg: Win32Pointer, lpPathSpec: string | Win32Pointer, nIDComboBox: number, nIDStaticPath: number, uFiletype: number): number;
+  DlgDirListComboBoxW(
+    hDlg: Win32Pointer,
+    lpPathSpec: string | Win32Pointer,
+    nIDComboBox: number,
+    nIDStaticPath: number,
+    uFiletype: number,
+  ): number;
   /** user32.dll!DlgDirListComboBoxW */
-  DlgDirListComboBox(hDlg: Win32Pointer, lpPathSpec: string | Win32Pointer, nIDComboBox: number, nIDStaticPath: number, uFiletype: number): number;
+  DlgDirListComboBox(
+    hDlg: Win32Pointer,
+    lpPathSpec: string | Win32Pointer,
+    nIDComboBox: number,
+    nIDStaticPath: number,
+    uFiletype: number,
+  ): number;
   /** user32.dll!DlgDirListW */
-  DlgDirListW(hDlg: Win32Pointer, lpPathSpec: string | Win32Pointer, nIDListBox: number, nIDStaticPath: number, uFileType: number): number;
+  DlgDirListW(
+    hDlg: Win32Pointer,
+    lpPathSpec: string | Win32Pointer,
+    nIDListBox: number,
+    nIDStaticPath: number,
+    uFileType: number,
+  ): number;
   /** user32.dll!DlgDirListW */
-  DlgDirList(hDlg: Win32Pointer, lpPathSpec: string | Win32Pointer, nIDListBox: number, nIDStaticPath: number, uFileType: number): number;
+  DlgDirList(
+    hDlg: Win32Pointer,
+    lpPathSpec: string | Win32Pointer,
+    nIDListBox: number,
+    nIDStaticPath: number,
+    uFileType: number,
+  ): number;
   /** user32.dll!DlgDirSelectComboBoxExA */
-  DlgDirSelectComboBoxExA(hwndDlg: Win32Pointer, lpString: string | Win32Pointer, cchOut: number, idComboBox: number): number;
+  DlgDirSelectComboBoxExA(
+    hwndDlg: Win32Pointer,
+    lpString: string | Win32Pointer,
+    cchOut: number,
+    idComboBox: number,
+  ): number;
   /** user32.dll!DlgDirSelectComboBoxExW */
-  DlgDirSelectComboBoxExW(hwndDlg: Win32Pointer, lpString: string | Win32Pointer, cchOut: number, idComboBox: number): number;
+  DlgDirSelectComboBoxExW(
+    hwndDlg: Win32Pointer,
+    lpString: string | Win32Pointer,
+    cchOut: number,
+    idComboBox: number,
+  ): number;
   /** user32.dll!DlgDirSelectComboBoxExW */
-  DlgDirSelectComboBoxEx(hwndDlg: Win32Pointer, lpString: string | Win32Pointer, cchOut: number, idComboBox: number): number;
+  DlgDirSelectComboBoxEx(
+    hwndDlg: Win32Pointer,
+    lpString: string | Win32Pointer,
+    cchOut: number,
+    idComboBox: number,
+  ): number;
   /** user32.dll!DlgDirSelectExA */
   DlgDirSelectExA(hwndDlg: Win32Pointer, lpString: string | Win32Pointer, chCount: number, idListBox: number): number;
   /** user32.dll!DlgDirSelectExW */
@@ -429,7 +915,13 @@ interface Functions {
   /** user32.dll!DragDetect */
   DragDetect(hwnd: Win32Pointer, pt: Win32StructInit): number;
   /** user32.dll!DragObject */
-  DragObject(hwndParent: Win32Pointer, hwndFrom: Win32Pointer, fmt: number, data: number | bigint, hcur: Win32Pointer): number;
+  DragObject(
+    hwndParent: Win32Pointer,
+    hwndFrom: Win32Pointer,
+    fmt: number,
+    data: number | bigint,
+    hcur: Win32Pointer,
+  ): number;
   /** user32.dll!DrawAnimatedRects */
   DrawAnimatedRects(hwnd: Win32Pointer, idAni: number, lprcFrom: Win32Pointer, lprcTo: Win32Pointer): number;
   /** user32.dll!DrawCaption */
@@ -443,27 +935,109 @@ interface Functions {
   /** user32.dll!DrawIcon */
   DrawIcon(hDC: Win32Pointer, X: number, Y: number, hIcon: Win32Pointer): number;
   /** user32.dll!DrawIconEx */
-  DrawIconEx(hdc: Win32Pointer, xLeft: number, yTop: number, hIcon: Win32Pointer, cxWidth: number, cyWidth: number, istepIfAniCur: number, hbrFlickerFreeDraw: Win32Pointer, diFlags: number): number;
+  DrawIconEx(
+    hdc: Win32Pointer,
+    xLeft: number,
+    yTop: number,
+    hIcon: Win32Pointer,
+    cxWidth: number,
+    cyWidth: number,
+    istepIfAniCur: number,
+    hbrFlickerFreeDraw: Win32Pointer,
+    diFlags: number,
+  ): number;
   /** user32.dll!DrawMenuBar */
   DrawMenuBar(hWnd: Win32Pointer): number;
   /** user32.dll!DrawStateA */
-  DrawStateA(hdc: Win32Pointer, hbrFore: Win32Pointer, qfnCallBack: Win32Callback, lData: number | bigint, wData: number | bigint, x: number, y: number, cx: number, cy: number, uFlags: number): number;
+  DrawStateA(
+    hdc: Win32Pointer,
+    hbrFore: Win32Pointer,
+    qfnCallBack: Win32Callback,
+    lData: number | bigint,
+    wData: number | bigint,
+    x: number,
+    y: number,
+    cx: number,
+    cy: number,
+    uFlags: number,
+  ): number;
   /** user32.dll!DrawStateW */
-  DrawStateW(hdc: Win32Pointer, hbrFore: Win32Pointer, qfnCallBack: Win32Callback, lData: number | bigint, wData: number | bigint, x: number, y: number, cx: number, cy: number, uFlags: number): number;
+  DrawStateW(
+    hdc: Win32Pointer,
+    hbrFore: Win32Pointer,
+    qfnCallBack: Win32Callback,
+    lData: number | bigint,
+    wData: number | bigint,
+    x: number,
+    y: number,
+    cx: number,
+    cy: number,
+    uFlags: number,
+  ): number;
   /** user32.dll!DrawStateW */
-  DrawState(hdc: Win32Pointer, hbrFore: Win32Pointer, qfnCallBack: Win32Callback, lData: number | bigint, wData: number | bigint, x: number, y: number, cx: number, cy: number, uFlags: number): number;
+  DrawState(
+    hdc: Win32Pointer,
+    hbrFore: Win32Pointer,
+    qfnCallBack: Win32Callback,
+    lData: number | bigint,
+    wData: number | bigint,
+    x: number,
+    y: number,
+    cx: number,
+    cy: number,
+    uFlags: number,
+  ): number;
   /** user32.dll!DrawTextA */
-  DrawTextA(hdc: Win32Pointer, lpchText: string | Win32Pointer, cchText: number, lprc: Win32Pointer, format: number): number;
+  DrawTextA(
+    hdc: Win32Pointer,
+    lpchText: string | Win32Pointer,
+    cchText: number,
+    lprc: Win32Pointer,
+    format: number,
+  ): number;
   /** user32.dll!DrawTextExA */
-  DrawTextExA(hdc: Win32Pointer, lpchText: string | Win32Pointer, cchText: number, lprc: Win32Pointer, format: number, lpdtp: Win32Pointer): number;
+  DrawTextExA(
+    hdc: Win32Pointer,
+    lpchText: string | Win32Pointer,
+    cchText: number,
+    lprc: Win32Pointer,
+    format: number,
+    lpdtp: Win32Pointer,
+  ): number;
   /** user32.dll!DrawTextExW */
-  DrawTextExW(hdc: Win32Pointer, lpchText: string | Win32Pointer, cchText: number, lprc: Win32Pointer, format: number, lpdtp: Win32Pointer): number;
+  DrawTextExW(
+    hdc: Win32Pointer,
+    lpchText: string | Win32Pointer,
+    cchText: number,
+    lprc: Win32Pointer,
+    format: number,
+    lpdtp: Win32Pointer,
+  ): number;
   /** user32.dll!DrawTextExW */
-  DrawTextEx(hdc: Win32Pointer, lpchText: string | Win32Pointer, cchText: number, lprc: Win32Pointer, format: number, lpdtp: Win32Pointer): number;
+  DrawTextEx(
+    hdc: Win32Pointer,
+    lpchText: string | Win32Pointer,
+    cchText: number,
+    lprc: Win32Pointer,
+    format: number,
+    lpdtp: Win32Pointer,
+  ): number;
   /** user32.dll!DrawTextW */
-  DrawTextW(hdc: Win32Pointer, lpchText: string | Win32Pointer, cchText: number, lprc: Win32Pointer, format: number): number;
+  DrawTextW(
+    hdc: Win32Pointer,
+    lpchText: string | Win32Pointer,
+    cchText: number,
+    lprc: Win32Pointer,
+    format: number,
+  ): number;
   /** user32.dll!DrawTextW */
-  DrawText(hdc: Win32Pointer, lpchText: string | Win32Pointer, cchText: number, lprc: Win32Pointer, format: number): number;
+  DrawText(
+    hdc: Win32Pointer,
+    lpchText: string | Win32Pointer,
+    cchText: number,
+    lprc: Win32Pointer,
+    format: number,
+  ): number;
   /** user32.dll!EmptyClipboard */
   EmptyClipboard(): number;
   /** user32.dll!EnableMenuItem */
@@ -499,21 +1073,56 @@ interface Functions {
   /** user32.dll!EnumDesktopsW */
   EnumDesktops(hwinsta: Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint): number;
   /** user32.dll!EnumDisplayDevicesA */
-  EnumDisplayDevicesA(lpDevice: string | Win32Pointer, iDevNum: number, lpDisplayDevice: Win32Pointer, dwFlags: number): number;
+  EnumDisplayDevicesA(
+    lpDevice: string | Win32Pointer,
+    iDevNum: number,
+    lpDisplayDevice: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** user32.dll!EnumDisplayDevicesW */
-  EnumDisplayDevicesW(lpDevice: string | Win32Pointer, iDevNum: number, lpDisplayDevice: Win32Pointer, dwFlags: number): number;
+  EnumDisplayDevicesW(
+    lpDevice: string | Win32Pointer,
+    iDevNum: number,
+    lpDisplayDevice: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** user32.dll!EnumDisplayDevicesW */
-  EnumDisplayDevices(lpDevice: string | Win32Pointer, iDevNum: number, lpDisplayDevice: Win32Pointer, dwFlags: number): number;
+  EnumDisplayDevices(
+    lpDevice: string | Win32Pointer,
+    iDevNum: number,
+    lpDisplayDevice: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** user32.dll!EnumDisplayMonitors */
-  EnumDisplayMonitors(hdc: Win32Pointer, lprcClip: Win32Pointer, lpfnEnum: Win32Callback, dwData: number | bigint): number;
+  EnumDisplayMonitors(
+    hdc: Win32Pointer,
+    lprcClip: Win32Pointer,
+    lpfnEnum: Win32Callback,
+    dwData: number | bigint,
+  ): number;
   /** user32.dll!EnumDisplaySettingsA */
   EnumDisplaySettingsA(lpszDeviceName: string | Win32Pointer, iModeNum: number, lpDevMode: Win32Pointer): number;
   /** user32.dll!EnumDisplaySettingsExA */
-  EnumDisplaySettingsExA(lpszDeviceName: string | Win32Pointer, iModeNum: number, lpDevMode: Win32Pointer, dwFlags: number): number;
+  EnumDisplaySettingsExA(
+    lpszDeviceName: string | Win32Pointer,
+    iModeNum: number,
+    lpDevMode: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** user32.dll!EnumDisplaySettingsExW */
-  EnumDisplaySettingsExW(lpszDeviceName: string | Win32Pointer, iModeNum: number, lpDevMode: Win32Pointer, dwFlags: number): number;
+  EnumDisplaySettingsExW(
+    lpszDeviceName: string | Win32Pointer,
+    iModeNum: number,
+    lpDevMode: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** user32.dll!EnumDisplaySettingsExW */
-  EnumDisplaySettingsEx(lpszDeviceName: string | Win32Pointer, iModeNum: number, lpDevMode: Win32Pointer, dwFlags: number): number;
+  EnumDisplaySettingsEx(
+    lpszDeviceName: string | Win32Pointer,
+    iModeNum: number,
+    lpDevMode: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** user32.dll!EnumDisplaySettingsW */
   EnumDisplaySettingsW(lpszDeviceName: string | Win32Pointer, iModeNum: number, lpDevMode: Win32Pointer): number;
   /** user32.dll!EnumDisplaySettingsW */
@@ -543,9 +1152,18 @@ interface Functions {
   /** user32.dll!EqualRect */
   EqualRect(lprc1: Win32Pointer, lprc2: Win32Pointer): number;
   /** user32.dll!EvaluateProximityToPolygon */
-  EvaluateProximityToPolygon(numVertices: number, controlPolygon: Win32Pointer, pHitTestingInput: Win32Pointer, pProximityEval: Win32Pointer): number;
+  EvaluateProximityToPolygon(
+    numVertices: number,
+    controlPolygon: Win32Pointer,
+    pHitTestingInput: Win32Pointer,
+    pProximityEval: Win32Pointer,
+  ): number;
   /** user32.dll!EvaluateProximityToRect */
-  EvaluateProximityToRect(controlBoundingBox: Win32Pointer, pHitTestingInput: Win32Pointer, pProximityEval: Win32Pointer): number;
+  EvaluateProximityToRect(
+    controlBoundingBox: Win32Pointer,
+    pHitTestingInput: Win32Pointer,
+    pProximityEval: Win32Pointer,
+  ): number;
   /** user32.dll!ExcludeUpdateRgn */
   ExcludeUpdateRgn(hDC: Win32Pointer, hWnd: Win32Pointer): number;
   /** user32.dll!ExitWindowsEx */
@@ -555,11 +1173,26 @@ interface Functions {
   /** user32.dll!FindWindowA */
   FindWindowA(lpClassName: string | Win32Pointer, lpWindowName: string | Win32Pointer): number | null;
   /** user32.dll!FindWindowExA */
-  FindWindowExA(hWndParent: Win32Pointer, hWndChildAfter: Win32Pointer, lpszClass: string | Win32Pointer, lpszWindow: string | Win32Pointer): number | null;
+  FindWindowExA(
+    hWndParent: Win32Pointer,
+    hWndChildAfter: Win32Pointer,
+    lpszClass: string | Win32Pointer,
+    lpszWindow: string | Win32Pointer,
+  ): number | null;
   /** user32.dll!FindWindowExW */
-  FindWindowExW(hWndParent: Win32Pointer, hWndChildAfter: Win32Pointer, lpszClass: string | Win32Pointer, lpszWindow: string | Win32Pointer): number | null;
+  FindWindowExW(
+    hWndParent: Win32Pointer,
+    hWndChildAfter: Win32Pointer,
+    lpszClass: string | Win32Pointer,
+    lpszWindow: string | Win32Pointer,
+  ): number | null;
   /** user32.dll!FindWindowExW */
-  FindWindowEx(hWndParent: Win32Pointer, hWndChildAfter: Win32Pointer, lpszClass: string | Win32Pointer, lpszWindow: string | Win32Pointer): number | null;
+  FindWindowEx(
+    hWndParent: Win32Pointer,
+    hWndChildAfter: Win32Pointer,
+    lpszClass: string | Win32Pointer,
+    lpszWindow: string | Win32Pointer,
+  ): number | null;
   /** user32.dll!FindWindowW */
   FindWindowW(lpClassName: string | Win32Pointer, lpWindowName: string | Win32Pointer): number | null;
   /** user32.dll!FindWindowW */
@@ -575,11 +1208,29 @@ interface Functions {
   /** user32.dll!GetActiveWindow */
   GetActiveWindow(): number | null;
   /** user32.dll!GetAltTabInfoA */
-  GetAltTabInfoA(hwnd: Win32Pointer, iItem: number, pati: Win32Pointer, pszItemText: string | Win32Pointer, cchItemText: number): number;
+  GetAltTabInfoA(
+    hwnd: Win32Pointer,
+    iItem: number,
+    pati: Win32Pointer,
+    pszItemText: string | Win32Pointer,
+    cchItemText: number,
+  ): number;
   /** user32.dll!GetAltTabInfoW */
-  GetAltTabInfoW(hwnd: Win32Pointer, iItem: number, pati: Win32Pointer, pszItemText: string | Win32Pointer, cchItemText: number): number;
+  GetAltTabInfoW(
+    hwnd: Win32Pointer,
+    iItem: number,
+    pati: Win32Pointer,
+    pszItemText: string | Win32Pointer,
+    cchItemText: number,
+  ): number;
   /** user32.dll!GetAltTabInfoW */
-  GetAltTabInfo(hwnd: Win32Pointer, iItem: number, pati: Win32Pointer, pszItemText: string | Win32Pointer, cchItemText: number): number;
+  GetAltTabInfo(
+    hwnd: Win32Pointer,
+    iItem: number,
+    pati: Win32Pointer,
+    pszItemText: string | Win32Pointer,
+    cchItemText: number,
+  ): number;
   /** user32.dll!GetAncestor */
   GetAncestor(hwnd: Win32Pointer, gaFlags: number): number | null;
   /** user32.dll!GetAsyncKeyState */
@@ -679,7 +1330,11 @@ interface Functions {
   /** user32.dll!GetDisplayAutoRotationPreferences */
   GetDisplayAutoRotationPreferences(pOrientation: Win32Pointer): number;
   /** user32.dll!GetDisplayConfigBufferSizes */
-  GetDisplayConfigBufferSizes(flags: number, numPathArrayElements: Win32Pointer, numModeInfoArrayElements: Win32Pointer): number;
+  GetDisplayConfigBufferSizes(
+    flags: number,
+    numPathArrayElements: Win32Pointer,
+    numModeInfoArrayElements: Win32Pointer,
+  ): number;
   /** user32.dll!GetDlgCtrlID */
   GetDlgCtrlID(hWnd: Win32Pointer): number;
   /** user32.dll!GetDlgItem */
@@ -709,7 +1364,14 @@ interface Functions {
   /** user32.dll!GetGUIThreadInfo */
   GetGUIThreadInfo(idThread: number, pgui: Win32Pointer): number;
   /** user32.dll!GetGestureConfig */
-  GetGestureConfig(hwnd: Win32Pointer, dwReserved: number, dwFlags: number, pcIDs: Win32Pointer, pGestureConfig: Win32Pointer, cbSize: number): number;
+  GetGestureConfig(
+    hwnd: Win32Pointer,
+    dwReserved: number,
+    dwFlags: number,
+    pcIDs: Win32Pointer,
+    pGestureConfig: Win32Pointer,
+    cbSize: number,
+  ): number;
   /** user32.dll!GetGestureExtraArgs */
   GetGestureExtraArgs(hGestureInfo: Win32Pointer, cbExtraArgs: number, pExtraArgs: Win32Pointer): number;
   /** user32.dll!GetGestureInfo */
@@ -755,7 +1417,12 @@ interface Functions {
   /** user32.dll!GetLastInputInfo */
   GetLastInputInfo(plii: Win32Pointer): number;
   /** user32.dll!GetLayeredWindowAttributes */
-  GetLayeredWindowAttributes(hwnd: Win32Pointer, pcrKey: Win32Pointer, pbAlpha: Win32Pointer, pdwFlags: Win32Pointer): number;
+  GetLayeredWindowAttributes(
+    hwnd: Win32Pointer,
+    pcrKey: Win32Pointer,
+    pbAlpha: Win32Pointer,
+    pdwFlags: Win32Pointer,
+  ): number;
   /** user32.dll!GetListBoxInfo */
   GetListBoxInfo(hwnd: Win32Pointer): number;
   /** user32.dll!GetMenu */
@@ -785,11 +1452,29 @@ interface Functions {
   /** user32.dll!GetMenuState */
   GetMenuState(hMenu: Win32Pointer, uId: number, uFlags: number): number;
   /** user32.dll!GetMenuStringA */
-  GetMenuStringA(hMenu: Win32Pointer, uIDItem: number, lpString: string | Win32Pointer, cchMax: number, flags: number): number;
+  GetMenuStringA(
+    hMenu: Win32Pointer,
+    uIDItem: number,
+    lpString: string | Win32Pointer,
+    cchMax: number,
+    flags: number,
+  ): number;
   /** user32.dll!GetMenuStringW */
-  GetMenuStringW(hMenu: Win32Pointer, uIDItem: number, lpString: string | Win32Pointer, cchMax: number, flags: number): number;
+  GetMenuStringW(
+    hMenu: Win32Pointer,
+    uIDItem: number,
+    lpString: string | Win32Pointer,
+    cchMax: number,
+    flags: number,
+  ): number;
   /** user32.dll!GetMenuStringW */
-  GetMenuString(hMenu: Win32Pointer, uIDItem: number, lpString: string | Win32Pointer, cchMax: number, flags: number): number;
+  GetMenuString(
+    hMenu: Win32Pointer,
+    uIDItem: number,
+    lpString: string | Win32Pointer,
+    cchMax: number,
+    flags: number,
+  ): number;
   /** user32.dll!GetMessageA */
   GetMessageA(lpMsg: Win32Pointer, hWnd: Win32Pointer, wMsgFilterMin: number, wMsgFilterMax: number): number;
   /** user32.dll!GetMessageExtraInfo */
@@ -809,7 +1494,13 @@ interface Functions {
   /** user32.dll!GetMonitorInfoW */
   GetMonitorInfo(hMonitor: Win32Pointer, lpmi: Win32Pointer): number;
   /** user32.dll!GetMouseMovePointsEx */
-  GetMouseMovePointsEx(cbSize: number, lppt: Win32Pointer, lpptBuf: Win32Pointer, nBufPoints: number, resolution: number): number;
+  GetMouseMovePointsEx(
+    cbSize: number,
+    lppt: Win32Pointer,
+    lpptBuf: Win32Pointer,
+    nBufPoints: number,
+    resolution: number,
+  ): number;
   /** user32.dll!GetNextDlgGroupItem */
   GetNextDlgGroupItem(hDlg: Win32Pointer, hCtl: Win32Pointer, bPrevious: number): number | null;
   /** user32.dll!GetNextDlgTabItem */
@@ -827,7 +1518,11 @@ interface Functions {
   /** user32.dll!GetPointerDeviceCursors */
   GetPointerDeviceCursors(device: Win32Pointer, cursorCount: Win32Pointer, deviceCursors: Win32Pointer): number;
   /** user32.dll!GetPointerDeviceProperties */
-  GetPointerDeviceProperties(device: Win32Pointer, propertyCount: Win32Pointer, pointerProperties: Win32Pointer): number;
+  GetPointerDeviceProperties(
+    device: Win32Pointer,
+    propertyCount: Win32Pointer,
+    pointerProperties: Win32Pointer,
+  ): number;
   /** user32.dll!GetPointerDeviceRects */
   GetPointerDeviceRects(device: Win32Pointer, pointerDeviceRect: Win32Pointer, displayRect: Win32Pointer): number;
   /** user32.dll!GetPointerDevices */
@@ -835,15 +1530,30 @@ interface Functions {
   /** user32.dll!GetPointerFrameInfo */
   GetPointerFrameInfo(pointerId: number, pointerCount: Win32Pointer, pointerInfo: Win32Pointer): number;
   /** user32.dll!GetPointerFrameInfoHistory */
-  GetPointerFrameInfoHistory(pointerId: number, entriesCount: Win32Pointer, pointerCount: Win32Pointer, pointerInfo: Win32Pointer): number;
+  GetPointerFrameInfoHistory(
+    pointerId: number,
+    entriesCount: Win32Pointer,
+    pointerCount: Win32Pointer,
+    pointerInfo: Win32Pointer,
+  ): number;
   /** user32.dll!GetPointerFramePenInfo */
   GetPointerFramePenInfo(pointerId: number, pointerCount: Win32Pointer, penInfo: Win32Pointer): number;
   /** user32.dll!GetPointerFramePenInfoHistory */
-  GetPointerFramePenInfoHistory(pointerId: number, entriesCount: Win32Pointer, pointerCount: Win32Pointer, penInfo: Win32Pointer): number;
+  GetPointerFramePenInfoHistory(
+    pointerId: number,
+    entriesCount: Win32Pointer,
+    pointerCount: Win32Pointer,
+    penInfo: Win32Pointer,
+  ): number;
   /** user32.dll!GetPointerFrameTouchInfo */
   GetPointerFrameTouchInfo(pointerId: number, pointerCount: Win32Pointer, touchInfo: Win32Pointer): number;
   /** user32.dll!GetPointerFrameTouchInfoHistory */
-  GetPointerFrameTouchInfoHistory(pointerId: number, entriesCount: Win32Pointer, pointerCount: Win32Pointer, touchInfo: Win32Pointer): number;
+  GetPointerFrameTouchInfoHistory(
+    pointerId: number,
+    entriesCount: Win32Pointer,
+    pointerCount: Win32Pointer,
+    touchInfo: Win32Pointer,
+  ): number;
   /** user32.dll!GetPointerInfo */
   GetPointerInfo(pointerId: number, pointerInfo: Win32Pointer): number;
   /** user32.dll!GetPointerInfoHistory */
@@ -877,7 +1587,13 @@ interface Functions {
   /** user32.dll!GetRawInputBuffer */
   GetRawInputBuffer(pData: Win32Pointer, pcbSize: Win32Pointer, cbSizeHeader: number): number;
   /** user32.dll!GetRawInputData */
-  GetRawInputData(hRawInput: Win32Pointer, uiCommand: number, pData: Win32Pointer, pcbSize: Win32Pointer, cbSizeHeader: number): number;
+  GetRawInputData(
+    hRawInput: Win32Pointer,
+    uiCommand: number,
+    pData: Win32Pointer,
+    pcbSize: Win32Pointer,
+    cbSizeHeader: number,
+  ): number;
   /** user32.dll!GetRawInputDeviceInfoA */
   GetRawInputDeviceInfoA(hDevice: Win32Pointer, uiCommand: number, pData: Win32Pointer, pcbSize: Win32Pointer): number;
   /** user32.dll!GetRawInputDeviceInfoW */
@@ -887,7 +1603,13 @@ interface Functions {
   /** user32.dll!GetRawInputDeviceList */
   GetRawInputDeviceList(pRawInputDeviceList: Win32Pointer, puiNumDevices: Win32Pointer, cbSize: number): number;
   /** user32.dll!GetRawPointerDeviceData */
-  GetRawPointerDeviceData(pointerId: number, historyCount: number, propertiesCount: number, pProperties: Win32Pointer, pValues: Win32Pointer): number;
+  GetRawPointerDeviceData(
+    pointerId: number,
+    historyCount: number,
+    propertiesCount: number,
+    pProperties: Win32Pointer,
+    pValues: Win32Pointer,
+  ): number;
   /** user32.dll!GetRegisteredRawInputDevices */
   GetRegisteredRawInputDevices(pRawInputDevices: Win32Pointer, puiNumDevices: Win32Pointer, cbSize: number): number;
   /** user32.dll!GetScrollBarInfo */
@@ -915,11 +1637,29 @@ interface Functions {
   /** user32.dll!GetSystemMetricsForDpi */
   GetSystemMetricsForDpi(nIndex: number, dpi: number): number;
   /** user32.dll!GetTabbedTextExtentA */
-  GetTabbedTextExtentA(hdc: Win32Pointer, lpString: string | Win32Pointer, chCount: number, nTabPositions: number, lpnTabStopPositions: Win32Pointer): number;
+  GetTabbedTextExtentA(
+    hdc: Win32Pointer,
+    lpString: string | Win32Pointer,
+    chCount: number,
+    nTabPositions: number,
+    lpnTabStopPositions: Win32Pointer,
+  ): number;
   /** user32.dll!GetTabbedTextExtentW */
-  GetTabbedTextExtentW(hdc: Win32Pointer, lpString: string | Win32Pointer, chCount: number, nTabPositions: number, lpnTabStopPositions: Win32Pointer): number;
+  GetTabbedTextExtentW(
+    hdc: Win32Pointer,
+    lpString: string | Win32Pointer,
+    chCount: number,
+    nTabPositions: number,
+    lpnTabStopPositions: Win32Pointer,
+  ): number;
   /** user32.dll!GetTabbedTextExtentW */
-  GetTabbedTextExtent(hdc: Win32Pointer, lpString: string | Win32Pointer, chCount: number, nTabPositions: number, lpnTabStopPositions: Win32Pointer): number;
+  GetTabbedTextExtent(
+    hdc: Win32Pointer,
+    lpString: string | Win32Pointer,
+    chCount: number,
+    nTabPositions: number,
+    lpnTabStopPositions: Win32Pointer,
+  ): number;
   /** user32.dll!GetThreadDesktop */
   GetThreadDesktop(dwThreadId: number): number | null;
   /** user32.dll!GetThreadDpiAwarenessContext */
@@ -941,13 +1681,37 @@ interface Functions {
   /** user32.dll!GetUpdatedClipboardFormats */
   GetUpdatedClipboardFormats(lpuiFormats: Win32Pointer, cFormats: number, pcFormatsOut: Win32Pointer): number;
   /** user32.dll!GetUserObjectInformationA */
-  GetUserObjectInformationA(hObj: Win32Pointer, nIndex: number, pvInfo: Win32Pointer, nLength: number, lpnLengthNeeded: Win32Pointer): number;
+  GetUserObjectInformationA(
+    hObj: Win32Pointer,
+    nIndex: number,
+    pvInfo: Win32Pointer,
+    nLength: number,
+    lpnLengthNeeded: Win32Pointer,
+  ): number;
   /** user32.dll!GetUserObjectInformationW */
-  GetUserObjectInformationW(hObj: Win32Pointer, nIndex: number, pvInfo: Win32Pointer, nLength: number, lpnLengthNeeded: Win32Pointer): number;
+  GetUserObjectInformationW(
+    hObj: Win32Pointer,
+    nIndex: number,
+    pvInfo: Win32Pointer,
+    nLength: number,
+    lpnLengthNeeded: Win32Pointer,
+  ): number;
   /** user32.dll!GetUserObjectInformationW */
-  GetUserObjectInformation(hObj: Win32Pointer, nIndex: number, pvInfo: Win32Pointer, nLength: number, lpnLengthNeeded: Win32Pointer): number;
+  GetUserObjectInformation(
+    hObj: Win32Pointer,
+    nIndex: number,
+    pvInfo: Win32Pointer,
+    nLength: number,
+    lpnLengthNeeded: Win32Pointer,
+  ): number;
   /** user32.dll!GetUserObjectSecurity */
-  GetUserObjectSecurity(hObj: Win32Pointer, pSIRequested: Win32Pointer, pSID: Win32Pointer, nLength: number, lpnLengthNeeded: Win32Pointer): number;
+  GetUserObjectSecurity(
+    hObj: Win32Pointer,
+    pSIRequested: Win32Pointer,
+    pSID: Win32Pointer,
+    nLength: number,
+    lpnLengthNeeded: Win32Pointer,
+  ): number;
   /** user32.dll!GetWindow */
   GetWindow(hWnd: Win32Pointer, uCmd: number): number | null;
   /** user32.dll!GetWindowContextHelpId */
@@ -961,7 +1725,13 @@ interface Functions {
   /** user32.dll!GetWindowDpiHostingBehavior */
   GetWindowDpiHostingBehavior(hwnd: Win32Pointer): number;
   /** user32.dll!GetWindowFeedbackSetting */
-  GetWindowFeedbackSetting(hwnd: Win32Pointer, feedback: number, dwFlags: number, pSize: Win32Pointer, config: Win32Pointer): number;
+  GetWindowFeedbackSetting(
+    hwnd: Win32Pointer,
+    feedback: number,
+    dwFlags: number,
+    pSize: Win32Pointer,
+    config: Win32Pointer,
+  ): number;
   /** user32.dll!GetWindowInfo */
   GetWindowInfo(hwnd: Win32Pointer, pwi: Win32Pointer): number;
   /** user32.dll!GetWindowLongA */
@@ -1007,11 +1777,41 @@ interface Functions {
   /** user32.dll!GetWindowWord */
   GetWindowWord(hWnd: Win32Pointer, nIndex: number): number;
   /** user32.dll!GrayStringA */
-  GrayStringA(hDC: Win32Pointer, hBrush: Win32Pointer, lpOutputFunc: Win32Callback, lpData: number | bigint, nCount: number, X: number, Y: number, nWidth: number, nHeight: number): number;
+  GrayStringA(
+    hDC: Win32Pointer,
+    hBrush: Win32Pointer,
+    lpOutputFunc: Win32Callback,
+    lpData: number | bigint,
+    nCount: number,
+    X: number,
+    Y: number,
+    nWidth: number,
+    nHeight: number,
+  ): number;
   /** user32.dll!GrayStringW */
-  GrayStringW(hDC: Win32Pointer, hBrush: Win32Pointer, lpOutputFunc: Win32Callback, lpData: number | bigint, nCount: number, X: number, Y: number, nWidth: number, nHeight: number): number;
+  GrayStringW(
+    hDC: Win32Pointer,
+    hBrush: Win32Pointer,
+    lpOutputFunc: Win32Callback,
+    lpData: number | bigint,
+    nCount: number,
+    X: number,
+    Y: number,
+    nWidth: number,
+    nHeight: number,
+  ): number;
   /** user32.dll!GrayStringW */
-  GrayString(hDC: Win32Pointer, hBrush: Win32Pointer, lpOutputFunc: Win32Callback, lpData: number | bigint, nCount: number, X: number, Y: number, nWidth: number, nHeight: number): number;
+  GrayString(
+    hDC: Win32Pointer,
+    hBrush: Win32Pointer,
+    lpOutputFunc: Win32Callback,
+    lpData: number | bigint,
+    nCount: number,
+    X: number,
+    Y: number,
+    nWidth: number,
+    nHeight: number,
+  ): number;
   /** user32.dll!HideCaret */
   HideCaret(hWnd: Win32Pointer): number;
   /** user32.dll!HiliteMenuItem */
@@ -1051,7 +1851,13 @@ interface Functions {
   /** user32.dll!InjectTouchInput */
   InjectTouchInput(count: number, contacts: Win32Pointer): number;
   /** user32.dll!InsertMenuA */
-  InsertMenuA(hMenu: Win32Pointer, uPosition: number, uFlags: number, uIDNewItem: number | bigint, lpNewItem: string | Win32Pointer): number;
+  InsertMenuA(
+    hMenu: Win32Pointer,
+    uPosition: number,
+    uFlags: number,
+    uIDNewItem: number | bigint,
+    lpNewItem: string | Win32Pointer,
+  ): number;
   /** user32.dll!InsertMenuItemA */
   InsertMenuItemA(hmenu: Win32Pointer, item: number, fByPosition: number, lpmi: Win32Pointer): number;
   /** user32.dll!InsertMenuItemW */
@@ -1059,9 +1865,21 @@ interface Functions {
   /** user32.dll!InsertMenuItemW */
   InsertMenuItem(hmenu: Win32Pointer, item: number, fByPosition: number, lpmi: Win32Pointer): number;
   /** user32.dll!InsertMenuW */
-  InsertMenuW(hMenu: Win32Pointer, uPosition: number, uFlags: number, uIDNewItem: number | bigint, lpNewItem: string | Win32Pointer): number;
+  InsertMenuW(
+    hMenu: Win32Pointer,
+    uPosition: number,
+    uFlags: number,
+    uIDNewItem: number | bigint,
+    lpNewItem: string | Win32Pointer,
+  ): number;
   /** user32.dll!InsertMenuW */
-  InsertMenu(hMenu: Win32Pointer, uPosition: number, uFlags: number, uIDNewItem: number | bigint, lpNewItem: string | Win32Pointer): number;
+  InsertMenu(
+    hMenu: Win32Pointer,
+    uPosition: number,
+    uFlags: number,
+    uIDNewItem: number | bigint,
+    lpNewItem: string | Win32Pointer,
+  ): number;
   /** user32.dll!InternalGetWindowText */
   InternalGetWindowText(hWnd: Win32Pointer, pString: string | Win32Pointer, cchMaxCount: number): number;
   /** user32.dll!IntersectRect */
@@ -1179,11 +1997,32 @@ interface Functions {
   /** user32.dll!LoadIconW */
   LoadIcon(hInstance: Win32Pointer, lpIconName: string | Win32Pointer): number | null;
   /** user32.dll!LoadImageA */
-  LoadImageA(hInst: Win32Pointer, name: string | Win32Pointer, type: number, cx: number, cy: number, fuLoad: number): number | null;
+  LoadImageA(
+    hInst: Win32Pointer,
+    name: string | Win32Pointer,
+    type: number,
+    cx: number,
+    cy: number,
+    fuLoad: number,
+  ): number | null;
   /** user32.dll!LoadImageW */
-  LoadImageW(hInst: Win32Pointer, name: string | Win32Pointer, type: number, cx: number, cy: number, fuLoad: number): number | null;
+  LoadImageW(
+    hInst: Win32Pointer,
+    name: string | Win32Pointer,
+    type: number,
+    cx: number,
+    cy: number,
+    fuLoad: number,
+  ): number | null;
   /** user32.dll!LoadImageW */
-  LoadImage(hInst: Win32Pointer, name: string | Win32Pointer, type: number, cx: number, cy: number, fuLoad: number): number | null;
+  LoadImage(
+    hInst: Win32Pointer,
+    name: string | Win32Pointer,
+    type: number,
+    cx: number,
+    cy: number,
+    fuLoad: number,
+  ): number | null;
   /** user32.dll!LoadKeyboardLayoutA */
   LoadKeyboardLayoutA(pwszKLID: string | Win32Pointer, Flags: number): number | null;
   /** user32.dll!LoadKeyboardLayoutW */
@@ -1221,7 +2060,13 @@ interface Functions {
   /** user32.dll!LookupIconIdFromDirectory */
   LookupIconIdFromDirectory(presbits: Win32Pointer, fIcon: number): number;
   /** user32.dll!LookupIconIdFromDirectoryEx */
-  LookupIconIdFromDirectoryEx(presbits: Win32Pointer, fIcon: number, cxDesired: number, cyDesired: number, Flags: number): number;
+  LookupIconIdFromDirectoryEx(
+    presbits: Win32Pointer,
+    fIcon: number,
+    cxDesired: number,
+    cyDesired: number,
+    Flags: number,
+  ): number;
   /** user32.dll!MapDialogRect */
   MapDialogRect(hDlg: Win32Pointer, lpRect: Win32Pointer): number;
   /** user32.dll!MapVirtualKeyA */
@@ -1243,13 +2088,36 @@ interface Functions {
   /** user32.dll!MessageBeep */
   MessageBeep(uType: number): number;
   /** user32.dll!MessageBoxA */
-  MessageBoxA(hWnd: Win32Pointer, lpText: string | Win32Pointer, lpCaption: string | Win32Pointer, uType: number): number;
+  MessageBoxA(
+    hWnd: Win32Pointer,
+    lpText: string | Win32Pointer,
+    lpCaption: string | Win32Pointer,
+    uType: number,
+  ): number;
   /** user32.dll!MessageBoxExA */
-  MessageBoxExA(hWnd: Win32Pointer, lpText: string | Win32Pointer, lpCaption: string | Win32Pointer, uType: number, wLanguageId: number): number;
+  MessageBoxExA(
+    hWnd: Win32Pointer,
+    lpText: string | Win32Pointer,
+    lpCaption: string | Win32Pointer,
+    uType: number,
+    wLanguageId: number,
+  ): number;
   /** user32.dll!MessageBoxExW */
-  MessageBoxExW(hWnd: Win32Pointer, lpText: string | Win32Pointer, lpCaption: string | Win32Pointer, uType: number, wLanguageId: number): number;
+  MessageBoxExW(
+    hWnd: Win32Pointer,
+    lpText: string | Win32Pointer,
+    lpCaption: string | Win32Pointer,
+    uType: number,
+    wLanguageId: number,
+  ): number;
   /** user32.dll!MessageBoxExW */
-  MessageBoxEx(hWnd: Win32Pointer, lpText: string | Win32Pointer, lpCaption: string | Win32Pointer, uType: number, wLanguageId: number): number;
+  MessageBoxEx(
+    hWnd: Win32Pointer,
+    lpText: string | Win32Pointer,
+    lpCaption: string | Win32Pointer,
+    uType: number,
+    wLanguageId: number,
+  ): number;
   /** user32.dll!MessageBoxIndirectA */
   MessageBoxIndirectA(lpmbp: Win32Pointer): number;
   /** user32.dll!MessageBoxIndirectW */
@@ -1257,15 +2125,43 @@ interface Functions {
   /** user32.dll!MessageBoxIndirectW */
   MessageBoxIndirect(lpmbp: Win32Pointer): number;
   /** user32.dll!MessageBoxW */
-  MessageBoxW(hWnd: Win32Pointer, lpText: string | Win32Pointer, lpCaption: string | Win32Pointer, uType: number): number;
+  MessageBoxW(
+    hWnd: Win32Pointer,
+    lpText: string | Win32Pointer,
+    lpCaption: string | Win32Pointer,
+    uType: number,
+  ): number;
   /** user32.dll!MessageBoxW */
-  MessageBox(hWnd: Win32Pointer, lpText: string | Win32Pointer, lpCaption: string | Win32Pointer, uType: number): number;
+  MessageBox(
+    hWnd: Win32Pointer,
+    lpText: string | Win32Pointer,
+    lpCaption: string | Win32Pointer,
+    uType: number,
+  ): number;
   /** user32.dll!ModifyMenuA */
-  ModifyMenuA(hMnu: Win32Pointer, uPosition: number, uFlags: number, uIDNewItem: number | bigint, lpNewItem: string | Win32Pointer): number;
+  ModifyMenuA(
+    hMnu: Win32Pointer,
+    uPosition: number,
+    uFlags: number,
+    uIDNewItem: number | bigint,
+    lpNewItem: string | Win32Pointer,
+  ): number;
   /** user32.dll!ModifyMenuW */
-  ModifyMenuW(hMnu: Win32Pointer, uPosition: number, uFlags: number, uIDNewItem: number | bigint, lpNewItem: string | Win32Pointer): number;
+  ModifyMenuW(
+    hMnu: Win32Pointer,
+    uPosition: number,
+    uFlags: number,
+    uIDNewItem: number | bigint,
+    lpNewItem: string | Win32Pointer,
+  ): number;
   /** user32.dll!ModifyMenuW */
-  ModifyMenu(hMnu: Win32Pointer, uPosition: number, uFlags: number, uIDNewItem: number | bigint, lpNewItem: string | Win32Pointer): number;
+  ModifyMenu(
+    hMnu: Win32Pointer,
+    uPosition: number,
+    uFlags: number,
+    uIDNewItem: number | bigint,
+    lpNewItem: string | Win32Pointer,
+  ): number;
   /** user32.dll!MonitorFromPoint */
   MonitorFromPoint(pt: Win32StructInit, dwFlags: number): number | null;
   /** user32.dll!MonitorFromRect */
@@ -1275,9 +2171,21 @@ interface Functions {
   /** user32.dll!MoveWindow */
   MoveWindow(hWnd: Win32Pointer, X: number, Y: number, nWidth: number, nHeight: number, bRepaint: number): number;
   /** user32.dll!MsgWaitForMultipleObjects */
-  MsgWaitForMultipleObjects(nCount: number, pHandles: Win32Pointer, fWaitAll: number, dwMilliseconds: number, dwWakeMask: number): number;
+  MsgWaitForMultipleObjects(
+    nCount: number,
+    pHandles: Win32Pointer,
+    fWaitAll: number,
+    dwMilliseconds: number,
+    dwWakeMask: number,
+  ): number;
   /** user32.dll!MsgWaitForMultipleObjectsEx */
-  MsgWaitForMultipleObjectsEx(nCount: number, pHandles: Win32Pointer, dwMilliseconds: number, dwWakeMask: number, dwFlags: number): number;
+  MsgWaitForMultipleObjectsEx(
+    nCount: number,
+    pHandles: Win32Pointer,
+    dwMilliseconds: number,
+    dwWakeMask: number,
+    dwFlags: number,
+  ): number;
   /** user32.dll!NotifyWinEvent */
   NotifyWinEvent(event: number, hwnd: Win32Pointer, idObject: number, idChild: number): void;
   /** user32.dll!OemKeyScan */
@@ -1299,11 +2207,26 @@ interface Functions {
   /** user32.dll!OpenClipboard */
   OpenClipboard(hWndNewOwner: Win32Pointer): number;
   /** user32.dll!OpenDesktopA */
-  OpenDesktopA(lpszDesktop: string | Win32Pointer, dwFlags: number, fInherit: number, dwDesiredAccess: number): number | null;
+  OpenDesktopA(
+    lpszDesktop: string | Win32Pointer,
+    dwFlags: number,
+    fInherit: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** user32.dll!OpenDesktopW */
-  OpenDesktopW(lpszDesktop: string | Win32Pointer, dwFlags: number, fInherit: number, dwDesiredAccess: number): number | null;
+  OpenDesktopW(
+    lpszDesktop: string | Win32Pointer,
+    dwFlags: number,
+    fInherit: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** user32.dll!OpenDesktopW */
-  OpenDesktop(lpszDesktop: string | Win32Pointer, dwFlags: number, fInherit: number, dwDesiredAccess: number): number | null;
+  OpenDesktop(
+    lpszDesktop: string | Win32Pointer,
+    dwFlags: number,
+    fInherit: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** user32.dll!OpenIcon */
   OpenIcon(hWnd: Win32Pointer): number;
   /** user32.dll!OpenInputDesktop */
@@ -1321,11 +2244,29 @@ interface Functions {
   /** user32.dll!PaintDesktop */
   PaintDesktop(hdc: Win32Pointer): number;
   /** user32.dll!PeekMessageA */
-  PeekMessageA(lpMsg: Win32Pointer, hWnd: Win32Pointer, wMsgFilterMin: number, wMsgFilterMax: number, wRemoveMsg: number): number;
+  PeekMessageA(
+    lpMsg: Win32Pointer,
+    hWnd: Win32Pointer,
+    wMsgFilterMin: number,
+    wMsgFilterMax: number,
+    wRemoveMsg: number,
+  ): number;
   /** user32.dll!PeekMessageW */
-  PeekMessageW(lpMsg: Win32Pointer, hWnd: Win32Pointer, wMsgFilterMin: number, wMsgFilterMax: number, wRemoveMsg: number): number;
+  PeekMessageW(
+    lpMsg: Win32Pointer,
+    hWnd: Win32Pointer,
+    wMsgFilterMin: number,
+    wMsgFilterMax: number,
+    wRemoveMsg: number,
+  ): number;
   /** user32.dll!PeekMessageW */
-  PeekMessage(lpMsg: Win32Pointer, hWnd: Win32Pointer, wMsgFilterMin: number, wMsgFilterMax: number, wRemoveMsg: number): number;
+  PeekMessage(
+    lpMsg: Win32Pointer,
+    hWnd: Win32Pointer,
+    wMsgFilterMin: number,
+    wMsgFilterMax: number,
+    wRemoveMsg: number,
+  ): number;
   /** user32.dll!PhysicalToLogicalPoint */
   PhysicalToLogicalPoint(hWnd: Win32Pointer, lpPoint: Win32Pointer): number;
   /** user32.dll!PhysicalToLogicalPointForPerMonitorDPI */
@@ -1347,15 +2288,49 @@ interface Functions {
   /** user32.dll!PrintWindow */
   PrintWindow(hwnd: Win32Pointer, hdcBlt: Win32Pointer, nFlags: number): number;
   /** user32.dll!PrivateExtractIconsA */
-  PrivateExtractIconsA(szFileName: string | Win32Pointer, nIconIndex: number, cxIcon: number, cyIcon: number, phicon: Win32Pointer, piconid: Win32Pointer, nIcons: number, flags: number): number;
+  PrivateExtractIconsA(
+    szFileName: string | Win32Pointer,
+    nIconIndex: number,
+    cxIcon: number,
+    cyIcon: number,
+    phicon: Win32Pointer,
+    piconid: Win32Pointer,
+    nIcons: number,
+    flags: number,
+  ): number;
   /** user32.dll!PrivateExtractIconsW */
-  PrivateExtractIconsW(szFileName: string | Win32Pointer, nIconIndex: number, cxIcon: number, cyIcon: number, phicon: Win32Pointer, piconid: Win32Pointer, nIcons: number, flags: number): number;
+  PrivateExtractIconsW(
+    szFileName: string | Win32Pointer,
+    nIconIndex: number,
+    cxIcon: number,
+    cyIcon: number,
+    phicon: Win32Pointer,
+    piconid: Win32Pointer,
+    nIcons: number,
+    flags: number,
+  ): number;
   /** user32.dll!PrivateExtractIconsW */
-  PrivateExtractIcons(szFileName: string | Win32Pointer, nIconIndex: number, cxIcon: number, cyIcon: number, phicon: Win32Pointer, piconid: Win32Pointer, nIcons: number, flags: number): number;
+  PrivateExtractIcons(
+    szFileName: string | Win32Pointer,
+    nIconIndex: number,
+    cxIcon: number,
+    cyIcon: number,
+    phicon: Win32Pointer,
+    piconid: Win32Pointer,
+    nIcons: number,
+    flags: number,
+  ): number;
   /** user32.dll!PtInRect */
   PtInRect(lprc: Win32Pointer, pt: Win32StructInit): number;
   /** user32.dll!QueryDisplayConfig */
-  QueryDisplayConfig(flags: number, numPathArrayElements: Win32Pointer, pathArray: Win32Pointer, numModeInfoArrayElements: Win32Pointer, modeInfoArray: Win32Pointer, currentTopologyId: Win32Pointer): number;
+  QueryDisplayConfig(
+    flags: number,
+    numPathArrayElements: Win32Pointer,
+    pathArray: Win32Pointer,
+    numModeInfoArrayElements: Win32Pointer,
+    modeInfoArray: Win32Pointer,
+    currentTopologyId: Win32Pointer,
+  ): number;
   /** user32.dll!RealChildWindowFromPoint */
   RealChildWindowFromPoint(hwndParent: Win32Pointer, ptParentClientCoords: Win32StructInit): number | null;
   /** user32.dll!RealGetWindowClassA */
@@ -1403,7 +2378,11 @@ interface Functions {
   /** user32.dll!RegisterPointerInputTargetEx */
   RegisterPointerInputTargetEx(hwnd: Win32Pointer, pointerType: number, fObserve: number): number;
   /** user32.dll!RegisterPowerSettingNotification */
-  RegisterPowerSettingNotification(hRecipient: Win32Pointer, PowerSettingGuid: Win32Pointer, Flags: number): number | bigint;
+  RegisterPowerSettingNotification(
+    hRecipient: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Flags: number,
+  ): number | bigint;
   /** user32.dll!RegisterRawInputDevices */
   RegisterRawInputDevices(pRawInputDevices: Win32Pointer, uiNumDevices: number, cbSize: number): number;
   /** user32.dll!RegisterShellHookWindow */
@@ -1437,21 +2416,68 @@ interface Functions {
   /** user32.dll!ReplyMessage */
   ReplyMessage(lResult: number | bigint): number;
   /** user32.dll!ReuseDDElParam */
-  ReuseDDElParam(lParam: number | bigint, msgIn: number, msgOut: number, uiLo: number | bigint, uiHi: number | bigint): number | bigint;
+  ReuseDDElParam(
+    lParam: number | bigint,
+    msgIn: number,
+    msgOut: number,
+    uiLo: number | bigint,
+    uiHi: number | bigint,
+  ): number | bigint;
   /** user32.dll!ScreenToClient */
   ScreenToClient(hWnd: Win32Pointer, lpPoint: Win32Pointer): number;
   /** user32.dll!ScrollDC */
-  ScrollDC(hDC: Win32Pointer, dx: number, dy: number, lprcScroll: Win32Pointer, lprcClip: Win32Pointer, hrgnUpdate: Win32Pointer, lprcUpdate: Win32Pointer): number;
+  ScrollDC(
+    hDC: Win32Pointer,
+    dx: number,
+    dy: number,
+    lprcScroll: Win32Pointer,
+    lprcClip: Win32Pointer,
+    hrgnUpdate: Win32Pointer,
+    lprcUpdate: Win32Pointer,
+  ): number;
   /** user32.dll!ScrollWindow */
-  ScrollWindow(hWnd: Win32Pointer, XAmount: number, YAmount: number, lpRect: Win32Pointer, lpClipRect: Win32Pointer): number;
+  ScrollWindow(
+    hWnd: Win32Pointer,
+    XAmount: number,
+    YAmount: number,
+    lpRect: Win32Pointer,
+    lpClipRect: Win32Pointer,
+  ): number;
   /** user32.dll!ScrollWindowEx */
-  ScrollWindowEx(hWnd: Win32Pointer, dx: number, dy: number, prcScroll: Win32Pointer, prcClip: Win32Pointer, hrgnUpdate: Win32Pointer, prcUpdate: Win32Pointer, flags: number): number;
+  ScrollWindowEx(
+    hWnd: Win32Pointer,
+    dx: number,
+    dy: number,
+    prcScroll: Win32Pointer,
+    prcClip: Win32Pointer,
+    hrgnUpdate: Win32Pointer,
+    prcUpdate: Win32Pointer,
+    flags: number,
+  ): number;
   /** user32.dll!SendDlgItemMessageA */
-  SendDlgItemMessageA(hDlg: Win32Pointer, nIDDlgItem: number, Msg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
+  SendDlgItemMessageA(
+    hDlg: Win32Pointer,
+    nIDDlgItem: number,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!SendDlgItemMessageW */
-  SendDlgItemMessageW(hDlg: Win32Pointer, nIDDlgItem: number, Msg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
+  SendDlgItemMessageW(
+    hDlg: Win32Pointer,
+    nIDDlgItem: number,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!SendDlgItemMessageW */
-  SendDlgItemMessage(hDlg: Win32Pointer, nIDDlgItem: number, Msg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
+  SendDlgItemMessage(
+    hDlg: Win32Pointer,
+    nIDDlgItem: number,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+  ): number | bigint;
   /** user32.dll!SendIMEMessageExA */
   SendIMEMessageExA(param0: Win32Pointer, param1: number | bigint): number | bigint;
   /** user32.dll!SendIMEMessageExW */
@@ -1463,17 +2489,62 @@ interface Functions {
   /** user32.dll!SendMessageA */
   SendMessageA(hWnd: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
   /** user32.dll!SendMessageCallbackA */
-  SendMessageCallbackA(hWnd: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint, lpResultCallBack: Win32Callback, dwData: number | bigint): number;
+  SendMessageCallbackA(
+    hWnd: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+    lpResultCallBack: Win32Callback,
+    dwData: number | bigint,
+  ): number;
   /** user32.dll!SendMessageCallbackW */
-  SendMessageCallbackW(hWnd: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint, lpResultCallBack: Win32Callback, dwData: number | bigint): number;
+  SendMessageCallbackW(
+    hWnd: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+    lpResultCallBack: Win32Callback,
+    dwData: number | bigint,
+  ): number;
   /** user32.dll!SendMessageCallbackW */
-  SendMessageCallback(hWnd: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint, lpResultCallBack: Win32Callback, dwData: number | bigint): number;
+  SendMessageCallback(
+    hWnd: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+    lpResultCallBack: Win32Callback,
+    dwData: number | bigint,
+  ): number;
   /** user32.dll!SendMessageTimeoutA */
-  SendMessageTimeoutA(hWnd: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint, fuFlags: number, uTimeout: number, lpdwResult: Win32Pointer): number | bigint;
+  SendMessageTimeoutA(
+    hWnd: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+    fuFlags: number,
+    uTimeout: number,
+    lpdwResult: Win32Pointer,
+  ): number | bigint;
   /** user32.dll!SendMessageTimeoutW */
-  SendMessageTimeoutW(hWnd: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint, fuFlags: number, uTimeout: number, lpdwResult: Win32Pointer): number | bigint;
+  SendMessageTimeoutW(
+    hWnd: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+    fuFlags: number,
+    uTimeout: number,
+    lpdwResult: Win32Pointer,
+  ): number | bigint;
   /** user32.dll!SendMessageTimeoutW */
-  SendMessageTimeout(hWnd: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint, fuFlags: number, uTimeout: number, lpdwResult: Win32Pointer): number | bigint;
+  SendMessageTimeout(
+    hWnd: Win32Pointer,
+    Msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+    fuFlags: number,
+    uTimeout: number,
+    lpdwResult: Win32Pointer,
+  ): number | bigint;
   /** user32.dll!SendMessageW */
   SendMessageW(hWnd: Win32Pointer, Msg: number, wParam: number | bigint, lParam: number | bigint): number | bigint;
   /** user32.dll!SendMessageW */
@@ -1487,7 +2558,11 @@ interface Functions {
   /** user32.dll!SetActiveWindow */
   SetActiveWindow(hWnd: Win32Pointer): number | null;
   /** user32.dll!SetAdditionalForegroundBoostProcesses */
-  SetAdditionalForegroundBoostProcesses(topLevelWindow: Win32Pointer, processHandleCount: number, processHandleArray: Win32Pointer): number;
+  SetAdditionalForegroundBoostProcesses(
+    topLevelWindow: Win32Pointer,
+    processHandleCount: number,
+    processHandleArray: Win32Pointer,
+  ): number;
   /** user32.dll!SetCapture */
   SetCapture(hWnd: Win32Pointer): number | null;
   /** user32.dll!SetCaretBlinkTime */
@@ -1513,7 +2588,13 @@ interface Functions {
   /** user32.dll!SetClipboardViewer */
   SetClipboardViewer(hWndNewViewer: Win32Pointer): number | null;
   /** user32.dll!SetCoalescableTimer */
-  SetCoalescableTimer(hWnd: Win32Pointer, nIDEvent: number | bigint, uElapse: number, lpTimerFunc: Win32Callback, uToleranceDelay: number): number | bigint;
+  SetCoalescableTimer(
+    hWnd: Win32Pointer,
+    nIDEvent: number | bigint,
+    uElapse: number,
+    lpTimerFunc: Win32Callback,
+    uToleranceDelay: number,
+  ): number | bigint;
   /** user32.dll!SetCursor */
   SetCursor(hCursor: Win32Pointer): number | null;
   /** user32.dll!SetCursorPos */
@@ -1527,7 +2608,13 @@ interface Functions {
   /** user32.dll!SetDisplayAutoRotationPreferences */
   SetDisplayAutoRotationPreferences(orientation: number): number;
   /** user32.dll!SetDisplayConfig */
-  SetDisplayConfig(numPathArrayElements: number, pathArray: Win32Pointer, numModeInfoArrayElements: number, modeInfoArray: Win32Pointer, flags: number): number;
+  SetDisplayConfig(
+    numPathArrayElements: number,
+    pathArray: Win32Pointer,
+    numModeInfoArrayElements: number,
+    modeInfoArray: Win32Pointer,
+    flags: number,
+  ): number;
   /** user32.dll!SetDlgItemInt */
   SetDlgItemInt(hDlg: Win32Pointer, nIDDlgItem: number, uValue: number, bSigned: number): number;
   /** user32.dll!SetDlgItemTextA */
@@ -1543,7 +2630,13 @@ interface Functions {
   /** user32.dll!SetForegroundWindow */
   SetForegroundWindow(hWnd: Win32Pointer): number;
   /** user32.dll!SetGestureConfig */
-  SetGestureConfig(hwnd: Win32Pointer, dwReserved: number, cIDs: number, pGestureConfig: Win32Pointer, cbSize: number): number;
+  SetGestureConfig(
+    hwnd: Win32Pointer,
+    dwReserved: number,
+    cIDs: number,
+    pGestureConfig: Win32Pointer,
+    cbSize: number,
+  ): number;
   /** user32.dll!SetKeyboardState */
   SetKeyboardState(lpKeyState: Win32Pointer): number;
   /** user32.dll!SetLastErrorEx */
@@ -1559,7 +2652,13 @@ interface Functions {
   /** user32.dll!SetMenuInfo */
   SetMenuInfo(param0: Win32Pointer, param1: Win32Pointer): number;
   /** user32.dll!SetMenuItemBitmaps */
-  SetMenuItemBitmaps(hMenu: Win32Pointer, uPosition: number, uFlags: number, hBitmapUnchecked: Win32Pointer, hBitmapChecked: Win32Pointer): number;
+  SetMenuItemBitmaps(
+    hMenu: Win32Pointer,
+    uPosition: number,
+    uFlags: number,
+    hBitmapUnchecked: Win32Pointer,
+    hBitmapChecked: Win32Pointer,
+  ): number;
   /** user32.dll!SetMenuItemInfoA */
   SetMenuItemInfoA(hmenu: Win32Pointer, item: number, fByPositon: number, lpmii: Win32Pointer): number;
   /** user32.dll!SetMenuItemInfoW */
@@ -1621,13 +2720,27 @@ interface Functions {
   /** user32.dll!SetUserObjectSecurity */
   SetUserObjectSecurity(hObj: Win32Pointer, pSIRequested: Win32Pointer, pSID: Win32Pointer): number;
   /** user32.dll!SetWinEventHook */
-  SetWinEventHook(eventMin: number, eventMax: number, hmodWinEventProc: Win32Pointer, pfnWinEventProc: Win32Callback, idProcess: number, idThread: number, dwFlags: number): number | null;
+  SetWinEventHook(
+    eventMin: number,
+    eventMax: number,
+    hmodWinEventProc: Win32Pointer,
+    pfnWinEventProc: Win32Callback,
+    idProcess: number,
+    idThread: number,
+    dwFlags: number,
+  ): number | null;
   /** user32.dll!SetWindowContextHelpId */
   SetWindowContextHelpId(param0: Win32Pointer, param1: number): number;
   /** user32.dll!SetWindowDisplayAffinity */
   SetWindowDisplayAffinity(hWnd: Win32Pointer, dwAffinity: number): number;
   /** user32.dll!SetWindowFeedbackSetting */
-  SetWindowFeedbackSetting(hwnd: Win32Pointer, feedback: number, dwFlags: number, size: number, configuration: Win32Pointer): number;
+  SetWindowFeedbackSetting(
+    hwnd: Win32Pointer,
+    feedback: number,
+    dwFlags: number,
+    size: number,
+    configuration: Win32Pointer,
+  ): number;
   /** user32.dll!SetWindowLongA */
   SetWindowLongA(hWnd: Win32Pointer, nIndex: number, dwNewLong: number): number;
   /** user32.dll!SetWindowLongPtrA */
@@ -1643,7 +2756,15 @@ interface Functions {
   /** user32.dll!SetWindowPlacement */
   SetWindowPlacement(hWnd: Win32Pointer, lpwndpl: Win32Pointer): number;
   /** user32.dll!SetWindowPos */
-  SetWindowPos(hWnd: Win32Pointer, hWndInsertAfter: Win32Pointer, X: number, Y: number, cx: number, cy: number, uFlags: number): number;
+  SetWindowPos(
+    hWnd: Win32Pointer,
+    hWndInsertAfter: Win32Pointer,
+    X: number,
+    Y: number,
+    cx: number,
+    cy: number,
+    uFlags: number,
+  ): number;
   /** user32.dll!SetWindowRgn */
   SetWindowRgn(hWnd: Win32Pointer, hRgn: Win32Pointer, bRedraw: number): number;
   /** user32.dll!SetWindowTextA */
@@ -1699,33 +2820,109 @@ interface Functions {
   /** user32.dll!SystemParametersInfoA */
   SystemParametersInfoA(uiAction: number, uiParam: number, pvParam: Win32Pointer, fWinIni: number): number;
   /** user32.dll!SystemParametersInfoForDpi */
-  SystemParametersInfoForDpi(uiAction: number, uiParam: number, pvParam: Win32Pointer, fWinIni: number, dpi: number): number;
+  SystemParametersInfoForDpi(
+    uiAction: number,
+    uiParam: number,
+    pvParam: Win32Pointer,
+    fWinIni: number,
+    dpi: number,
+  ): number;
   /** user32.dll!SystemParametersInfoW */
   SystemParametersInfoW(uiAction: number, uiParam: number, pvParam: Win32Pointer, fWinIni: number): number;
   /** user32.dll!SystemParametersInfoW */
   SystemParametersInfo(uiAction: number, uiParam: number, pvParam: Win32Pointer, fWinIni: number): number;
   /** user32.dll!TabbedTextOutA */
-  TabbedTextOutA(hdc: Win32Pointer, x: number, y: number, lpString: string | Win32Pointer, chCount: number, nTabPositions: number, lpnTabStopPositions: Win32Pointer, nTabOrigin: number): number;
+  TabbedTextOutA(
+    hdc: Win32Pointer,
+    x: number,
+    y: number,
+    lpString: string | Win32Pointer,
+    chCount: number,
+    nTabPositions: number,
+    lpnTabStopPositions: Win32Pointer,
+    nTabOrigin: number,
+  ): number;
   /** user32.dll!TabbedTextOutW */
-  TabbedTextOutW(hdc: Win32Pointer, x: number, y: number, lpString: string | Win32Pointer, chCount: number, nTabPositions: number, lpnTabStopPositions: Win32Pointer, nTabOrigin: number): number;
+  TabbedTextOutW(
+    hdc: Win32Pointer,
+    x: number,
+    y: number,
+    lpString: string | Win32Pointer,
+    chCount: number,
+    nTabPositions: number,
+    lpnTabStopPositions: Win32Pointer,
+    nTabOrigin: number,
+  ): number;
   /** user32.dll!TabbedTextOutW */
-  TabbedTextOut(hdc: Win32Pointer, x: number, y: number, lpString: string | Win32Pointer, chCount: number, nTabPositions: number, lpnTabStopPositions: Win32Pointer, nTabOrigin: number): number;
+  TabbedTextOut(
+    hdc: Win32Pointer,
+    x: number,
+    y: number,
+    lpString: string | Win32Pointer,
+    chCount: number,
+    nTabPositions: number,
+    lpnTabStopPositions: Win32Pointer,
+    nTabOrigin: number,
+  ): number;
   /** user32.dll!TileWindows */
-  TileWindows(hwndParent: Win32Pointer, wHow: number, lpRect: Win32Pointer, cKids: number, lpKids: Win32Pointer): number;
+  TileWindows(
+    hwndParent: Win32Pointer,
+    wHow: number,
+    lpRect: Win32Pointer,
+    cKids: number,
+    lpKids: Win32Pointer,
+  ): number;
   /** user32.dll!ToAscii */
   ToAscii(uVirtKey: number, uScanCode: number, lpKeyState: Win32Pointer, lpChar: Win32Pointer, uFlags: number): number;
   /** user32.dll!ToAsciiEx */
-  ToAsciiEx(uVirtKey: number, uScanCode: number, lpKeyState: Win32Pointer, lpChar: Win32Pointer, uFlags: number, dwhkl: Win32Pointer): number;
+  ToAsciiEx(
+    uVirtKey: number,
+    uScanCode: number,
+    lpKeyState: Win32Pointer,
+    lpChar: Win32Pointer,
+    uFlags: number,
+    dwhkl: Win32Pointer,
+  ): number;
   /** user32.dll!ToUnicode */
-  ToUnicode(wVirtKey: number, wScanCode: number, lpKeyState: Win32Pointer, pwszBuff: string | Win32Pointer, cchBuff: number, wFlags: number): number;
+  ToUnicode(
+    wVirtKey: number,
+    wScanCode: number,
+    lpKeyState: Win32Pointer,
+    pwszBuff: string | Win32Pointer,
+    cchBuff: number,
+    wFlags: number,
+  ): number;
   /** user32.dll!ToUnicodeEx */
-  ToUnicodeEx(wVirtKey: number, wScanCode: number, lpKeyState: Win32Pointer, pwszBuff: string | Win32Pointer, cchBuff: number, wFlags: number, dwhkl: Win32Pointer): number;
+  ToUnicodeEx(
+    wVirtKey: number,
+    wScanCode: number,
+    lpKeyState: Win32Pointer,
+    pwszBuff: string | Win32Pointer,
+    cchBuff: number,
+    wFlags: number,
+    dwhkl: Win32Pointer,
+  ): number;
   /** user32.dll!TrackMouseEvent */
   TrackMouseEvent(lpEventTrack: Win32Pointer): number;
   /** user32.dll!TrackPopupMenu */
-  TrackPopupMenu(hMenu: Win32Pointer, uFlags: number, x: number, y: number, nReserved: number, hWnd: Win32Pointer, prcRect: Win32Pointer): number;
+  TrackPopupMenu(
+    hMenu: Win32Pointer,
+    uFlags: number,
+    x: number,
+    y: number,
+    nReserved: number,
+    hWnd: Win32Pointer,
+    prcRect: Win32Pointer,
+  ): number;
   /** user32.dll!TrackPopupMenuEx */
-  TrackPopupMenuEx(hMenu: Win32Pointer, uFlags: number, x: number, y: number, hwnd: Win32Pointer, lptpm: Win32Pointer): number;
+  TrackPopupMenuEx(
+    hMenu: Win32Pointer,
+    uFlags: number,
+    x: number,
+    y: number,
+    hwnd: Win32Pointer,
+    lptpm: Win32Pointer,
+  ): number;
   /** user32.dll!TranslateAcceleratorA */
   TranslateAcceleratorA(hWnd: Win32Pointer, hAccTable: Win32Pointer, lpMsg: Win32Pointer): number;
   /** user32.dll!TranslateAcceleratorW */
@@ -1769,7 +2966,17 @@ interface Functions {
   /** user32.dll!UnregisterTouchWindow */
   UnregisterTouchWindow(hwnd: Win32Pointer): number;
   /** user32.dll!UpdateLayeredWindow */
-  UpdateLayeredWindow(hWnd: Win32Pointer, hdcDst: Win32Pointer, pptDst: Win32Pointer, psize: Win32Pointer, hdcSrc: Win32Pointer, pptSrc: Win32Pointer, crKey: number, pblend: Win32Pointer, dwFlags: number): number;
+  UpdateLayeredWindow(
+    hWnd: Win32Pointer,
+    hdcDst: Win32Pointer,
+    pptDst: Win32Pointer,
+    psize: Win32Pointer,
+    hdcSrc: Win32Pointer,
+    pptSrc: Win32Pointer,
+    crKey: number,
+    pblend: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** user32.dll!UpdateLayeredWindowIndirect */
   UpdateLayeredWindowIndirect(hWnd: Win32Pointer, pULWInfo: Win32Pointer): number;
   /** user32.dll!UpdateWindow */

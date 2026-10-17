@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { EngineContext } from "../../../contexts/EngineContext/EngineContext";
@@ -17,13 +10,9 @@ interface NewSceneFromTemplateProps {
   onSceneSelect: (token: string) => void;
 }
 
-export const NewSceneFromTemplate = ({
-  onSceneSelect,
-}: NewSceneFromTemplateProps) => {
+export const NewSceneFromTemplate = ({ onSceneSelect }: NewSceneFromTemplateProps) => {
   const editor = useContext(EngineContext);
-  const [featuredScenes, setFeaturedScenes] = useState<
-    SceneTypes[] | undefined
-  >(undefined);
+  const [featuredScenes, setFeaturedScenes] = useState<SceneTypes[] | undefined>(undefined);
   const [bottomGradientOpacity, setBottomGradientOpacity] = useState(1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +27,7 @@ export const NewSceneFromTemplate = ({
       },
     ];
     const modMediaInfoToScenes = (results: MediaInfo[]): SceneTypes[] =>
-      results.map((s) => ({
+      results.map(s => ({
         token: s.token,
         name: s.maybe_title ?? "Untitled",
         updated_at: dayjs(s.updated_at).format("MMM D, YYYY HH:mm:ss"),
@@ -51,17 +40,11 @@ export const NewSceneFromTemplate = ({
       filterEngineCategories: [FilterEngineCategories.SCENE],
     });
     if (response.success && response.data) {
-      setFeaturedScenes([
-        ...modMediaInfoToScenes(response.data),
-        ...dummyScenes,
-      ]);
+      setFeaturedScenes([...modMediaInfoToScenes(response.data), ...dummyScenes]);
       return;
     }
     setFeaturedScenes(dummyScenes);
-    editor.adapter.showToast(
-      ToastTypes.ERROR,
-      response.errorMessage || "Unknown Error in Listing Feature Scenes",
-    );
+    editor.adapter.showToast(ToastTypes.ERROR, response.errorMessage || "Unknown Error in Listing Feature Scenes");
   }, [editor]);
 
   useEffect(() => {
@@ -76,8 +59,7 @@ export const NewSceneFromTemplate = ({
   const handleScroll = () => {
     const element = scrollContainerRef.current;
     if (element) {
-      const atBottom =
-        element.scrollHeight - element.scrollTop <= element.clientHeight + 1;
+      const atBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + 1;
       const hasOverflow = element.scrollHeight > element.clientHeight;
       setBottomGradientOpacity(hasOverflow && !atBottom ? 1 : 0);
     }
@@ -103,14 +85,8 @@ export const NewSceneFromTemplate = ({
           </div>
         )}
         {featuredScenes && (
-          <div
-            className="overflow-y-auto overflow-x-hidden"
-            ref={scrollContainerRef}
-          >
-            <ScenePicker
-              scenes={featuredScenes}
-              onSceneSelect={handleSceneSelect}
-            />
+          <div className="overflow-y-auto overflow-x-hidden" ref={scrollContainerRef}>
+            <ScenePicker scenes={featuredScenes} onSceneSelect={handleSceneSelect} />
           </div>
         )}
         <div

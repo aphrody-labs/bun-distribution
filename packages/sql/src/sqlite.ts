@@ -39,10 +39,7 @@ function isMemoryPath(path: string): boolean {
 }
 
 /** Opens a SQLite database with the Aphrody pragmas applied. */
-export function openSqlite(
-  path: string,
-  options: OpenSqliteOptions = {},
-): Database {
+export function openSqlite(path: string, options: OpenSqliteOptions = {}): Database {
   const readonly = options.readonly ?? false;
   const db = readonly
     ? new Database(path, {
@@ -59,9 +56,7 @@ export function openSqlite(
   try {
     const busy = options.busyTimeoutMs ?? SQLITE_BUSY_TIMEOUT_MS;
     if (!Number.isInteger(busy) || busy < 0) {
-      throw new RangeError(
-        `busyTimeoutMs must be a non-negative integer (got ${busy}).`,
-      );
+      throw new RangeError(`busyTimeoutMs must be a non-negative integer (got ${busy}).`);
     }
     db.run(`PRAGMA busy_timeout = ${busy}`);
     if (!readonly && !isMemoryPath(path)) db.run("PRAGMA journal_mode = WAL");

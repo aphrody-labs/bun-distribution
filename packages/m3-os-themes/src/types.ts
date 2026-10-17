@@ -1,18 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { SchemeVariant } from "@aphrody/m3-tokens/dynamic-color";
-import type {
-  NativeThemeExport,
-  NativeSchemeVariant,
-} from "@aphrody/m3-tokens/native-theme";
+import type { NativeThemeExport, NativeSchemeVariant } from "@aphrody/m3-tokens/native-theme";
 
 export type Mode = "light" | "dark";
 export type Target = "windows" | "gnome" | "cosmic" | "chromium";
-export const TARGETS: readonly Target[] = [
-  "windows",
-  "gnome",
-  "cosmic",
-  "chromium",
-];
+export const TARGETS: readonly Target[] = ["windows", "gnome", "cosmic", "chromium"];
 
 /** What the installer activates: a fixed mode, or follow the system (`auto`). */
 export type ActiveMode = Mode | "auto";

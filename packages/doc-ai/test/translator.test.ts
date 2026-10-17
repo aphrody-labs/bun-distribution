@@ -9,7 +9,7 @@ import {
 import type { LlmClient } from "../src/llm.js";
 import type { SegmentTranslator } from "../src/translator.js";
 
-const upper: SegmentTranslator = async (t) => t.toUpperCase();
+const upper: SegmentTranslator = async t => t.toUpperCase();
 const failing: SegmentTranslator = async () => {
   throw new Error("nope");
 };
@@ -44,7 +44,7 @@ const dontTranslate = 1;
 describe("planMarkdownJobs (structure preservation)", () => {
   test("skips code blocks, comments, divider rows and non-text frontmatter keys", () => {
     const { jobs } = planMarkdownJobs(DOC);
-    const texts = jobs.map((j) => j.text);
+    const texts = jobs.map(j => j.text);
     expect(texts).toContain("Hello"); // frontmatter title value
     expect(texts).toContain("A widget"); // frontmatter description value
     expect(texts).not.toContain("keep-me"); // non-translatable frontmatter key
@@ -54,16 +54,16 @@ describe("planMarkdownJobs (structure preservation)", () => {
     expect(texts).toContain("foo");
     expect(texts).toContain("bar");
     // code block contents never become jobs
-    expect(texts.some((t) => t.includes("dontTranslate"))).toBe(false);
+    expect(texts.some(t => t.includes("dontTranslate"))).toBe(false);
     // comment lines never become jobs
-    expect(texts.some((t) => t.includes("a comment"))).toBe(false);
+    expect(texts.some(t => t.includes("a comment"))).toBe(false);
     // the |---|---| divider is preserved (not a job)
     expect(texts).not.toContain("---");
   });
 
   test("is deterministic", () => {
-    const a = planMarkdownJobs(DOC).jobs.map((j) => j.text);
-    const b = planMarkdownJobs(DOC).jobs.map((j) => j.text);
+    const a = planMarkdownJobs(DOC).jobs.map(j => j.text);
+    const b = planMarkdownJobs(DOC).jobs.map(j => j.text);
     expect(a).toEqual(b);
   });
 });
@@ -99,7 +99,7 @@ describe("translateMarkdownOffline (deterministic no-op default)", () => {
     const warnings: string[] = [];
     const out = await translateMarkdownOffline(DOC, "fr", {
       segmentTranslator: failing,
-      warn: (m) => warnings.push(m),
+      warn: m => warnings.push(m),
       batchSize: 2,
     });
     expect(out).toContain("# Heading One");
@@ -146,10 +146,10 @@ describe("translateMarkdown (public API, injected client)", () => {
     const out = await translateMarkdown(DOC, "en", {
       client,
       retry: { retries: 1 },
-      warn: (m) => warnings.push(m),
+      warn: m => warnings.push(m),
     });
     expect(out).toBe(DOC);
-    expect(warnings.some((w) => w.includes("falling back"))).toBe(true);
+    expect(warnings.some(w => w.includes("falling back"))).toBe(true);
   });
 
   test("falls back when the client returns empty text", async () => {
@@ -173,12 +173,12 @@ describe("buildTranslatePrompt", () => {
 
 describe("requireOnline", () => {
   test("rejects missing clients rather than copying source content", async () => {
-    await expect(
-      translateMarkdown(DOC, "fr", { client: null, requireOnline: true }),
-    ).rejects.toThrow("requires a configured LLM client");
-    await expect(
-      translateMarkdown(DOC, "fr", { env: {}, requireOnline: true }),
-    ).rejects.toThrow("requires a configured LLM client");
+    await expect(translateMarkdown(DOC, "fr", { client: null, requireOnline: true })).rejects.toThrow(
+      "requires a configured LLM client",
+    );
+    await expect(translateMarkdown(DOC, "fr", { env: {}, requireOnline: true })).rejects.toThrow(
+      "requires a configured LLM client",
+    );
   });
 
   test("propagates client errors without invoking offline fallback", async () => {
@@ -194,7 +194,7 @@ describe("requireOnline", () => {
         requireOnline: true,
         retry: { retries: 0 },
         offline: {
-          segmentTranslator: async (text) => {
+          segmentTranslator: async text => {
             offlineCalls++;
             return text;
           },
@@ -206,7 +206,7 @@ describe("requireOnline", () => {
 
   test("rejects empty and whitespace responses", async () => {
     await Promise.all(
-      ["", "  \n"].map(async (response) => {
+      ["", "  \n"].map(async response => {
         await expect(
           translateMarkdown(DOC, "fr", {
             client: { complete: async () => response },

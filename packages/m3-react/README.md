@@ -62,13 +62,13 @@ function LoginForm() {
       <MdOutlinedTextField
         label="Email"
         value={email}
-        onInput={(e) => setEmail((e.target as HTMLInputElement).value)}
+        onInput={e => setEmail((e.target as HTMLInputElement).value)}
       />
 
       <label>
         <MdCheckbox
           checked={accept}
-          onChange={(e) => setAccept((e.target as HTMLInputElement).checked)}
+          onChange={e => setAccept((e.target as HTMLInputElement).checked)}
         />
         J'accepte
       </label>
@@ -93,7 +93,7 @@ import {
   MdIcon,
 } from "@aphrody/m3-react";
 
-<MdDialog open onClosed={(e) => console.log((e.target as any).returnValue)}>
+<MdDialog open onClosed={e => console.log((e.target as any).returnValue)}>
   <div slot="headline">Supprimer ?</div>
   <form slot="content" method="dialog">
     Cette action est irréversible.

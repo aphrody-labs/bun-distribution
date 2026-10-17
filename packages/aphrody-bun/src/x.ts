@@ -245,8 +245,7 @@ function parseJson(text: string, what: string): Record<string, unknown> {
 
 function failure(value: Record<string, unknown>): XNativeError {
   const error = value.error;
-  if (error && typeof error === "object" && "message" in error)
-    return new XNativeError(error as XNativeErrorInfo);
+  if (error && typeof error === "object" && "message" in error) return new XNativeError(error as XNativeErrorInfo);
   return new XNativeError({ message: String(error ?? "native call failed"), kind: "other" });
 }
 
@@ -297,10 +296,7 @@ export interface XClientHandle {
  * `null`/`undefined` to let Rust discover the credentials as `aphrody x` does (`X_COOKIE_STRING`,
  * `~/.aphrody/x-session.json`, `X_AUTH_TOKEN` + `X_CT0`). Throws `XNativeError` when it cannot.
  */
-export function xClientOpen(
-  session: XSessionInput = null,
-  options: XClientOptions = {},
-): XClientHandle {
+export function xClientOpen(session: XSessionInput = null, options: XClientOptions = {}): XClientHandle {
   const lib = loadLib().symbols;
   const reply = parseJson(
     readOwnedString(
@@ -427,11 +423,7 @@ export function xBatchSubmit(
   });
   const reply = parseJson(
     readOwnedString(
-      loadLib().symbols.aphrody_web_x_batch_submit(
-        client,
-        cstr(jsonText(ops, "ops")),
-        cstr(JSON.stringify(wire)),
-      ),
+      loadLib().symbols.aphrody_web_x_batch_submit(client, cstr(jsonText(ops, "ops")), cstr(JSON.stringify(wire))),
     ),
     "x batch submit",
   );
@@ -441,10 +433,7 @@ export function xBatchSubmit(
 
 /** Take up to `max` finished results of a batch. The last poll (`done`) forgets the batch. */
 export function xBatchPoll(batch: number, max = 256): XBatchPoll {
-  const reply = parseJson(
-    readOwnedString(loadLib().symbols.aphrody_web_x_batch_poll(batch, max)),
-    "x batch poll",
-  );
+  const reply = parseJson(readOwnedString(loadLib().symbols.aphrody_web_x_batch_poll(batch, max)), "x batch poll");
   if (reply.ok === false) throw failure(reply);
   return reply as unknown as XBatchPoll;
 }

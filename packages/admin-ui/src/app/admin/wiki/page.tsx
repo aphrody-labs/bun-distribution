@@ -20,17 +20,17 @@ export default async function AdminWikiPage() {
   ]);
 
   // Sérialise l'arbre pour le Client Component (recherche live).
-  const tree = categories.map((cat) => ({
+  const tree = categories.map(cat => ({
     id: cat.id,
     name: cat.name,
     slug: cat.slug,
     order: cat.order,
-    pages: cat.pages.map((p) => ({ id: p.id, title: p.title, slug: p.slug })),
-    children: cat.children.map((sub) => ({
+    pages: cat.pages.map(p => ({ id: p.id, title: p.title, slug: p.slug })),
+    children: cat.children.map(sub => ({
       id: sub.id,
       name: sub.name,
       slug: sub.slug,
-      pages: sub.pages.map((p) => ({ id: p.id, title: p.title, slug: p.slug })),
+      pages: sub.pages.map(p => ({ id: p.id, title: p.title, slug: p.slug })),
     })),
   }));
 

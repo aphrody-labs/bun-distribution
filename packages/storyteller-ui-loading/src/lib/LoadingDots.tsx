@@ -20,12 +20,7 @@ export const LoadingDotsBricks = (props: LoadingDotsProps) => {
   return <LoadingDots {...props} type="bricks" />;
 };
 
-export function LoadingDots({
-  className,
-  isShowing = true,
-  type = "typing",
-  message,
-}: LoadingDotsInnerProps) {
+export function LoadingDots({ className, isShowing = true, type = "typing", message }: LoadingDotsInnerProps) {
   const classNames = twMerge(
     "w-full h-full flex flex-col justify-center items-center bg-ui-background gap-6",
     className,

@@ -18,10 +18,7 @@ import { GenerationProvider } from "@storyteller/api-enums";
 
 import { ImageModel } from "../classes/ImageModel.js";
 import { VideoModel } from "../classes/VideoModel.js";
-import {
-  ModelCreator,
-  modelCreatorFromBackend,
-} from "../classes/metadata/ModelCreator.js";
+import { ModelCreator, modelCreatorFromBackend } from "../classes/metadata/ModelCreator.js";
 import { SizeIconOption, SizeOption } from "../classes/metadata/SizeOption.js";
 import { CommonAspectRatio } from "../classes/properties/CommonAspectRatio.js";
 import { CommonResolution } from "../classes/properties/CommonResolution.js";
@@ -114,8 +111,8 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
 ): T[] => {
   // Backend model ids and overlay `tauriId`s share the same identifier space
   // (the 2026-07 id migration retired all aliasing).
-  const overlayByTauriId = new Map(overlay.map((m) => [m.tauriId, m]));
-  const knownTauriIds = new Set(listing.map((m) => m.model));
+  const overlayByTauriId = new Map(overlay.map(m => [m.tauriId, m]));
+  const knownTauriIds = new Set(listing.map(m => m.model));
   const offeredTauriIds = new Set(offeredModelIds);
 
   // Capability lookup — prefer the enabled detail entry when duplicated.
@@ -148,17 +145,11 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
   for (const tauriId of offeredModelIds) {
     if (seenTauriIds.has(tauriId) || ADMIN_ONLY_MODELS.has(tauriId)) continue;
     seenTauriIds.add(tauriId);
-    result.push(
-      merge({ model: tauriId } as L, tauriId, overlayByTauriId.get(tauriId)),
-    );
+    result.push(merge({ model: tauriId } as L, tauriId, overlayByTauriId.get(tauriId)));
   }
   // Append frontend-only models the backend has never heard of.
   for (const m of overlay) {
-    if (
-      !ADMIN_ONLY_MODELS.has(m.tauriId) &&
-      !knownTauriIds.has(m.tauriId) &&
-      !seenTauriIds.has(m.tauriId)
-    ) {
+    if (!ADMIN_ONLY_MODELS.has(m.tauriId) && !knownTauriIds.has(m.tauriId) && !seenTauriIds.has(m.tauriId)) {
       result.push(m);
     }
   }
@@ -167,11 +158,7 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
 
 // ── 1:1 merge constructors (API capability > overlay; presentation ← overlay)
 
-const mergedImageModel = (
-  m: ListingImageModel,
-  tauriId: string,
-  o: ImageModel | undefined,
-): ImageModel => {
+const mergedImageModel = (m: ListingImageModel, tauriId: string, o: ImageModel | undefined): ImageModel => {
   const aspectRatios = m.aspect_ratio_options ?? [];
   const resolutions = m.resolution_options ?? [];
   const qualityOptions = m.quality_options ?? [];
@@ -200,9 +187,7 @@ const mergedImageModel = (
     canEditAngles: o?.canEditAngles ?? false,
 
     // Desktop-native provider knowledge.
-    providers: ["midjourney_7", "midjourney_7_niji", "midjourney_8"].includes(
-      tauriId,
-    )
+    providers: ["midjourney_7", "midjourney_7_niji", "midjourney_8"].includes(tauriId)
       ? [GenerationProvider.Artcraft, GenerationProvider.Midjourney]
       : o?.getProviders(),
 
@@ -210,44 +195,22 @@ const mergedImageModel = (
     // fallback where the backend config leaves a field unset.
     maxPromptLength: m.text_prompt_max_length ?? o?.maxPromptLength,
     maxGenerationCount: m.batch_size_max ?? o?.maxGenerationCount ?? 4,
-    defaultGenerationCount:
-      m.batch_size_default ?? o?.defaultGenerationCount ?? 1,
-    predefinedGenerationCounts:
-      m.batch_size_options ?? o?.predefinedGenerationCounts,
+    defaultGenerationCount: m.batch_size_default ?? o?.defaultGenerationCount ?? 1,
+    predefinedGenerationCounts: m.batch_size_options ?? o?.predefinedGenerationCounts,
     canUseImagePrompt: m.image_refs_supported ?? o?.canUseImagePrompt ?? false,
     maxImagePromptCount: m.image_refs_max ?? o?.maxImagePromptCount ?? 1,
-    canChangeAspectRatio:
-      aspectRatios.length > 0 || (o?.canChangeAspectRatio ?? false),
-    aspectRatios:
-      aspectRatios.length > 0
-        ? (aspectRatios as CommonAspectRatio[])
-        : o?.aspectRatios,
-    defaultAspectRatio:
-      (m.aspect_ratio_default as CommonAspectRatio | undefined) ??
-      o?.defaultAspectRatio,
-    canChangeResolution:
-      resolutions.length > 0 || (o?.canChangeResolution ?? false),
-    resolutions:
-      resolutions.length > 0
-        ? (resolutions as CommonResolution[])
-        : o?.resolutions,
-    defaultResolution:
-      (m.resolution_default as CommonResolution | undefined) ??
-      o?.defaultResolution,
-    qualityOptions:
-      qualityOptions.length > 0
-        ? (qualityOptions as CommonQuality[])
-        : o?.qualityOptions,
-    defaultQuality:
-      (m.default_quality as CommonQuality | undefined) ?? o?.defaultQuality,
+    canChangeAspectRatio: aspectRatios.length > 0 || (o?.canChangeAspectRatio ?? false),
+    aspectRatios: aspectRatios.length > 0 ? (aspectRatios as CommonAspectRatio[]) : o?.aspectRatios,
+    defaultAspectRatio: (m.aspect_ratio_default as CommonAspectRatio | undefined) ?? o?.defaultAspectRatio,
+    canChangeResolution: resolutions.length > 0 || (o?.canChangeResolution ?? false),
+    resolutions: resolutions.length > 0 ? (resolutions as CommonResolution[]) : o?.resolutions,
+    defaultResolution: (m.resolution_default as CommonResolution | undefined) ?? o?.defaultResolution,
+    qualityOptions: qualityOptions.length > 0 ? (qualityOptions as CommonQuality[]) : o?.qualityOptions,
+    defaultQuality: (m.default_quality as CommonQuality | undefined) ?? o?.defaultQuality,
   });
 };
 
-const mergedVideoModel = (
-  m: ListingVideoModel,
-  tauriId: string,
-  o: VideoModel | undefined,
-): VideoModel => {
+const mergedVideoModel = (m: ListingVideoModel, tauriId: string, o: VideoModel | undefined): VideoModel => {
   const aspectRatios = m.aspect_ratio_options ?? [];
   const fullName = m.full_name ?? o?.fullName ?? m.model;
 
@@ -262,8 +225,7 @@ const mergedVideoModel = (
     // Presentation. The video API DOES have descriptions (extra_info_short /
     // extra_info) — prefer them so backend copy reaches the picker.
     selectorName: o?.selectorName ?? fullName,
-    selectorDescription:
-      m.extra_info_short ?? m.extra_info ?? o?.selectorDescription ?? "",
+    selectorDescription: m.extra_info_short ?? m.extra_info ?? o?.selectorDescription ?? "",
     selectorBadges: o?.selectorBadges ?? [],
     tags: o?.tags ?? [],
     progressBarTime: o?.progressBarTime,
@@ -279,15 +241,12 @@ const mergedVideoModel = (
     endFrame: m.ending_keyframe_supported ?? o?.endFrame ?? false,
     requiresImage: m.starting_keyframe_required ?? o?.requiresImage ?? false,
     textToVideoSupported: m.text_to_video_supported ?? o?.textToVideoSupported,
-    generateWithSound:
-      m.show_generate_with_sound_toggle ?? o?.generateWithSound,
+    generateWithSound: m.show_generate_with_sound_toggle ?? o?.generateWithSound,
     durationOptions: m.duration_seconds_options ?? o?.durationOptions,
     defaultDuration: m.duration_seconds_default ?? o?.defaultDuration,
     minDuration: m.duration_seconds_min ?? o?.minDuration,
     maxDuration: m.duration_seconds_max ?? o?.maxDuration,
-    maxDurationWithImageReferences:
-      m.duration_seconds_max_with_image_references ??
-      o?.maxDurationWithImageReferences,
+    maxDurationWithImageReferences: m.duration_seconds_max_with_image_references ?? o?.maxDurationWithImageReferences,
     bitrateOptions: m.bitrate_options ?? o?.bitrateOptions,
     defaultBitrate: m.bitrate_default ?? o?.defaultBitrate,
     outputFormatOptions: m.output_format_options ?? o?.outputFormatOptions,
@@ -295,28 +254,18 @@ const mergedVideoModel = (
     generationCountOptions: m.batch_size_options ?? o?.generationCountOptions,
     defaultGenerationCount: m.batch_size_default ?? o?.defaultGenerationCount,
     defaultAspectRatio: m.aspect_ratio_default ?? o?.defaultAspectRatio,
-    supportsReferenceMode:
-      m.image_references_supported ?? o?.supportsReferenceMode,
+    supportsReferenceMode: m.image_references_supported ?? o?.supportsReferenceMode,
     maxReferenceImages: m.image_references_max ?? o?.maxReferenceImages,
     maxReferenceVideos: m.video_references_max ?? o?.maxReferenceVideos,
-    maxVideoRefDuration:
-      m.video_references_max_total_duration_seconds ?? o?.maxVideoRefDuration,
+    maxVideoRefDuration: m.video_references_max_total_duration_seconds ?? o?.maxVideoRefDuration,
     maxReferenceAudios: m.audio_references_max ?? o?.maxReferenceAudios,
-    maxAudioRefDuration:
-      m.audio_references_max_total_duration_seconds ?? o?.maxAudioRefDuration,
-    resolutionOptions:
-      m.resolution_options?.map(resolutionLabel) ?? o?.resolutionOptions,
-    defaultResolution: m.resolution_default
-      ? resolutionLabel(m.resolution_default)
-      : o?.defaultResolution,
+    maxAudioRefDuration: m.audio_references_max_total_duration_seconds ?? o?.maxAudioRefDuration,
+    resolutionOptions: m.resolution_options?.map(resolutionLabel) ?? o?.resolutionOptions,
+    defaultResolution: m.resolution_default ? resolutionLabel(m.resolution_default) : o?.defaultResolution,
     // Aspect handling: API aspect ratios drive the modern picker; legacy
     // models (grok/sora native size UI) keep their overlay sizeOptions.
-    sizeOptions:
-      aspectRatios.length > 0
-        ? aspectRatios.map(sizeOptionForAspectRatio)
-        : o?.sizeOptions,
-    supportsCommonAspectRatio:
-      aspectRatios.length > 0 || (o?.supportsCommonAspectRatio ?? false),
+    sizeOptions: aspectRatios.length > 0 ? aspectRatios.map(sizeOptionForAspectRatio) : o?.sizeOptions,
+    supportsCommonAspectRatio: aspectRatios.length > 0 || (o?.supportsCommonAspectRatio ?? false),
   });
 };
 

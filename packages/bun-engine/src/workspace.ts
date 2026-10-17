@@ -4,15 +4,7 @@ import { frontendRoutes } from "./frontend/api";
 import { consolePlugins, formatPlugins } from "./plugins";
 
 const root = join(import.meta.dir, "..", "..", "..");
-const cargo = join(
-  root,
-  "toolchains",
-  "bun",
-  "scripts",
-  "build",
-  "rust",
-  "cargo-serial.ts",
-);
+const cargo = join(root, "toolchains", "bun", "scripts", "build", "rust", "cargo-serial.ts");
 
 export const compileTargets = [
   "bun-linux-x64",
@@ -38,9 +30,7 @@ export interface WorkspaceServerOptions {
   port?: number;
 }
 
-export function isCompileTarget(
-  value: string | undefined,
-): value is CompileTarget {
+export function isCompileTarget(value: string | undefined): value is CompileTarget {
   return compileTargets.includes(value as CompileTarget);
 }
 
@@ -66,17 +56,9 @@ export async function testWorkspace(): Promise<number> {
   return run(["bun", cargo, "--msvc", "test", "--workspace"]);
 }
 
-export async function compileWorkspace(
-  options: CompileWorkspaceOptions = {},
-): Promise<number> {
-  const extension =
-    options.target?.startsWith("bun-windows-") || process.platform === "win32"
-      ? ".exe"
-      : "";
-  const outfile = join(
-    root,
-    options.outfile ?? join("build", "bin", `bun-engine${extension}`),
-  );
+export async function compileWorkspace(options: CompileWorkspaceOptions = {}): Promise<number> {
+  const extension = options.target?.startsWith("bun-windows-") || process.platform === "win32" ? ".exe" : "";
+  const outfile = join(root, options.outfile ?? join("build", "bin", `bun-engine${extension}`));
   await Bun.$`mkdir -p ${dirname(outfile)}`.quiet();
 
   const result = await Bun.build({
@@ -84,18 +66,13 @@ export async function compileWorkspace(
     compile: {
       ...(options.target ? { target: options.target as never } : {}),
       outfile,
-      assets: [
-        join(root, "packages", "bun-engine", "web", "app"),
-        join(root, "packages", "bun-engine", "config"),
-      ],
+      assets: [join(root, "packages", "bun-engine", "web", "app"), join(root, "packages", "bun-engine", "config")],
       execArgv: ["--smol"],
       autoloadTsconfig: false,
       autoloadPackageJson: false,
       autoloadDotenv: false,
       autoloadBunfig: false,
-      ...(options.bytecodeOrder
-        ? { bytecodeOrder: options.bytecodeOrder }
-        : {}),
+      ...(options.bytecodeOrder ? { bytecodeOrder: options.bytecodeOrder } : {}),
     },
     bytecode: true,
     minify: true,
@@ -112,9 +89,7 @@ export async function compileWorkspace(
   return 0;
 }
 
-export async function compilePackageManager(
-  outfile = join("build", "bin", "bep.exe"),
-): Promise<number> {
+export async function compilePackageManager(outfile = join("build", "bin", "bep.exe")): Promise<number> {
   const output = join(root, outfile);
   await Bun.$`mkdir -p ${dirname(output)}`.quiet();
   const result = await Bun.build({
@@ -132,19 +107,13 @@ export async function compilePackageManager(
   return 0;
 }
 
-export function createWorkspaceServer(
-  options: WorkspaceServerOptions = {},
-): Bun.Server<undefined> {
-  const port =
-    options.port ?? Number.parseInt(Bun.env.BUN_ENGINE_WEB_PORT ?? "50080", 10);
-  const hostname =
-    options.hostname ?? Bun.env.BUN_ENGINE_WEB_HOST ?? "127.0.0.1";
+export function createWorkspaceServer(options: WorkspaceServerOptions = {}): Bun.Server<undefined> {
+  const port = options.port ?? Number.parseInt(Bun.env.BUN_ENGINE_WEB_PORT ?? "50080", 10);
+  const hostname = options.hostname ?? Bun.env.BUN_ENGINE_WEB_HOST ?? "127.0.0.1";
   if (!Number.isInteger(port) || port < 0 || port > 65_535) {
     throw new RangeError(`invalid Bun Engine web port: ${port}`);
   }
-  const manifest = Bun.file(
-    join(root, "packages", "bun-engine", "config", "workspace.json"),
-  );
+  const manifest = Bun.file(join(root, "packages", "bun-engine", "config", "workspace.json"));
   return Bun.serve({
     hostname,
     port,

@@ -6,13 +6,7 @@
  * and Multi-Agent active consumer coordination under Bun & systemd.
  */
 import type { Database } from "bun:sqlite";
-import {
-  existsSync,
-  mkdirSync,
-  writeFileSync,
-  renameSync,
-  rmSync,
-} from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, renameSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { recordTrainingSample } from "../ledger/index";
@@ -50,8 +44,7 @@ export interface AutoSyncOptions {
 
 const positiveLimit = (value: number | undefined, fallback: number): number => {
   const result = value ?? fallback;
-  if (!Number.isSafeInteger(result) || result < 1)
-    throw new RangeError("Monitor limits must be positive integers");
+  if (!Number.isSafeInteger(result) || result < 1) throw new RangeError("Monitor limits must be positive integers");
   return result;
 };
 
@@ -80,33 +73,19 @@ export class AutoSyncEngine {
     this.#cacheTtlMs = positiveLimit(options.docCacheTtlMs, 3600000);
     this.#cacheMaxEntries = positiveLimit(options.docCacheMaxEntries, 128);
     this.#beaconPaths = options.beaconPaths ?? [
-      join(
-        homedir(),
-        "src",
-        "aphrody",
-        ".coord",
-        "shared",
-        "YOLO-DAEMON-SYNC.json",
-      ),
+      join(homedir(), "src", "aphrody", ".coord", "shared", "YOLO-DAEMON-SYNC.json"),
       join(homedir(), ".aphrody", "ai", "yolo-sync.json"),
       join(findRepoRoot(), "var", "yolo-sync.json"),
     ];
     const yoloRoot = findRepoRoot();
     const aphrodyRoot = join(homedir(), "src", "aphrody");
-    this.#trackedRepos = options.trackedRepos ?? [
-      yoloRoot,
-      ...(existsSync(aphrodyRoot) ? [aphrodyRoot] : []),
-    ];
+    this.#trackedRepos = options.trackedRepos ?? [yoloRoot, ...(existsSync(aphrodyRoot) ? [aphrodyRoot] : [])];
   }
 
   async getGitState(repoPath: string): Promise<GitRepoState> {
     const canonical = resolve(repoPath);
     const name = basename(canonical);
-    const repoName =
-      this.#trackedRepos.filter((path) => basename(resolve(path)) === name)
-        .length > 1
-        ? canonical
-        : name;
+    const repoName = this.#trackedRepos.filter(path => basename(resolve(path)) === name).length > 1 ? canonical : name;
     const run = async (args: string[]) => {
       const proc = Bun.spawn(["git", "-C", canonical, ...args], {
         windowsHide: true,
@@ -116,10 +95,7 @@ export class AutoSyncEngine {
       });
       const timer = setTimeout(() => proc.kill(), this.#gitTimeoutMs);
       try {
-        const [output, code] = await Promise.all([
-          new Response(proc.stdout).text(),
-          proc.exited,
-        ]);
+        const [output, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
         if (code !== 0) throw new Error(`git ${args[0]} failed (${code})`);
         return output.trim();
       } finally {
@@ -129,16 +105,10 @@ export class AutoSyncEngine {
     try {
       // One spawn: porcelain v2 carries the head commit and branch in its `# branch.*` headers.
       const statusText = await run(["status", "--porcelain=v2", "--branch"]);
-      const header = (key: string) =>
-        statusText
-          .match(new RegExp(`^# branch\\.${key} (.+)$`, "m"))?.[1]
-          ?.trim();
-      const lines = statusText
-        .split("\n")
-        .filter((line) => line && !line.startsWith("#"));
+      const header = (key: string) => statusText.match(new RegExp(`^# branch\\.${key} (.+)$`, "m"))?.[1]?.trim();
+      const lines = statusText.split("\n").filter(line => line && !line.startsWith("#"));
       const commit = header("oid");
-      if (!commit || commit === "(initial)")
-        throw new Error("git rev-parse failed (no commit)");
+      if (!commit || commit === "(initial)") throw new Error("git rev-parse failed (no commit)");
       const head = header("head");
       return {
         repo: repoName,
@@ -196,18 +166,10 @@ export class AutoSyncEngine {
       }
 
       // 2. Incremental codebase indexer if commit changed or forced
-      if (
-        !state.error &&
-        (commitChanged || forceIndex) &&
-        this.#redis?.isConnected
-      ) {
+      if (!state.error && (commitChanged || forceIndex) && this.#redis?.isConnected) {
         try {
           // oxlint-disable-next-line no-await-in-loop -- indexing is sequential per repo: it updates shared Redis keys and the lastCommits cache in order
-          const indexRes = await indexCodebaseToRedis(
-            repoPath,
-            state.commit,
-            this.#redis,
-          );
+          const indexRes = await indexCodebaseToRedis(repoPath, state.commit, this.#redis);
           totalIndexed += indexRes.updatedFiles;
           this.#lastCommits.set(resolve(repoPath), state.commit);
         } catch {
@@ -226,8 +188,7 @@ export class AutoSyncEngine {
           sampleId: `sync-${Date.now()}`,
           profile: "yolo",
           domain: "auto-sync-engine",
-          instruction:
-            "Synchronize repositories, Git status, and context beacon",
+          instruction: "Synchronize repositories, Git status, and context beacon",
           inputContext: JSON.stringify(this.#trackedRepos),
           action: "runSyncCycle",
           outcome: JSON.stringify({
@@ -252,10 +213,7 @@ export class AutoSyncEngine {
     };
   }
 
-  writeContextBeacon(
-    repos: Record<string, GitRepoState>,
-    timestamp: string,
-  ): boolean {
+  writeContextBeacon(repos: Record<string, GitRepoState>, timestamp: string): boolean {
     const beacon = {
       schema: "yolo.sync.beacon/1",
       generated_at: timestamp,
@@ -292,29 +250,20 @@ export class AutoSyncEngine {
     return written;
   }
 
-  cachedDocQuery(
-    query: string,
-    fetcher: () => Promise<string>,
-  ): Promise<string> {
+  cachedDocQuery(query: string, fetcher: () => Promise<string>): Promise<string> {
     const cacheKey = `yolo:cache:docs:${query.trim().toLowerCase()}`;
     const existing = this.#cache.get(cacheKey);
     if (existing && existing.expires > Date.now()) {
       this.#docCacheHits++;
       return Promise.resolve(existing.value);
     }
-    if (this.#docRequests.has(cacheKey))
-      return this.#docRequests.get(cacheKey)!;
-    const request = this.#fetchDoc(cacheKey, fetcher).finally(() =>
-      this.#docRequests.delete(cacheKey),
-    );
+    if (this.#docRequests.has(cacheKey)) return this.#docRequests.get(cacheKey)!;
+    const request = this.#fetchDoc(cacheKey, fetcher).finally(() => this.#docRequests.delete(cacheKey));
     this.#docRequests.set(cacheKey, request);
     return request;
   }
 
-  async #fetchDoc(
-    cacheKey: string,
-    fetcher: () => Promise<string>,
-  ): Promise<string> {
+  async #fetchDoc(cacheKey: string, fetcher: () => Promise<string>): Promise<string> {
     let value: string | null = null;
     if (this.#redis?.isConnected) {
       try {
@@ -328,19 +277,14 @@ export class AutoSyncEngine {
       value = await fetcher();
       if (this.#redis?.isConnected) {
         try {
-          await this.#redis.set(
-            cacheKey,
-            value,
-            Math.ceil(this.#cacheTtlMs / 1000),
-          );
+          await this.#redis.set(cacheKey, value, Math.ceil(this.#cacheTtlMs / 1000));
         } catch {
           /* Retain the bounded memory cache. */
         }
       }
     }
     this.#cache.delete(cacheKey);
-    while (this.#cache.size >= this.#cacheMaxEntries)
-      this.#cache.delete(this.#cache.keys().next().value!);
+    while (this.#cache.size >= this.#cacheMaxEntries) this.#cache.delete(this.#cache.keys().next().value!);
     this.#cache.set(cacheKey, {
       value,
       expires: Date.now() + this.#cacheTtlMs,
@@ -349,8 +293,7 @@ export class AutoSyncEngine {
   }
 
   startPeriodic(intervalMs = this.#intervalMs): void {
-    if (!Number.isSafeInteger(intervalMs) || intervalMs < 1)
-      throw new RangeError("Invalid sync interval");
+    if (!Number.isSafeInteger(intervalMs) || intervalMs < 1) throw new RangeError("Invalid sync interval");
     if (this.#timer) return;
     void this.runSyncCycle().catch(() => {});
     this.#timer = setInterval(() => {

@@ -15,14 +15,10 @@ import type { MediaType } from "./types";
 const MEDIA_MIME_PREFIXES: MediaType[] = ["image", "video", "audio"];
 
 function isMediaMimeType({ type }: { type: string }): boolean {
-  return MEDIA_MIME_PREFIXES.some((prefix) => type.startsWith(`${prefix}/`));
+  return MEDIA_MIME_PREFIXES.some(prefix => type.startsWith(`${prefix}/`));
 }
 
-function extractMediaFilesFromClipboard({
-  clipboardData,
-}: {
-  clipboardData: DataTransfer | null;
-}): File[] {
+function extractMediaFilesFromClipboard({ clipboardData }: { clipboardData: DataTransfer | null }): File[] {
   if (!clipboardData?.items) return [];
 
   const files: File[] = [];
@@ -93,10 +89,7 @@ export function usePasteMedia() {
                 name: asset.name,
                 duration,
                 startTime,
-                buffer:
-                  asset.type === "audio"
-                    ? new AudioBuffer({ length: 1, sampleRate: 44100 })
-                    : undefined,
+                buffer: asset.type === "audio" ? new AudioBuffer({ length: 1, sampleRate: 44100 }) : undefined,
               });
 
               const insertCmd = new InsertElementCommand({
@@ -109,7 +102,7 @@ export function usePasteMedia() {
 
             return {
               uploadedCount: processedAssets.length,
-              assetNames: processedAssets.map((asset) => asset.name),
+              assetNames: processedAssets.map(asset => asset.name),
             };
           },
         });

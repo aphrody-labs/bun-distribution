@@ -3,19 +3,86 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** secur32.dll!AcceptSecurityContext */
-  AcceptSecurityContext(phCredential: Win32Pointer, phContext: Win32Pointer, pInput: Win32Pointer, fContextReq: number, TargetDataRep: number, phNewContext: Win32Pointer, pOutput: Win32Pointer, pfContextAttr: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  AcceptSecurityContext(
+    phCredential: Win32Pointer,
+    phContext: Win32Pointer,
+    pInput: Win32Pointer,
+    fContextReq: number,
+    TargetDataRep: number,
+    phNewContext: Win32Pointer,
+    pOutput: Win32Pointer,
+    pfContextAttr: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!AcquireCredentialsHandleA */
-  AcquireCredentialsHandleA(pszPrincipal: string | Win32Pointer, pszPackage: string | Win32Pointer, fCredentialUse: number, pvLogonId: Win32Pointer, pAuthData: Win32Pointer, pGetKeyFn: Win32Callback, pvGetKeyArgument: Win32Pointer, phCredential: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  AcquireCredentialsHandleA(
+    pszPrincipal: string | Win32Pointer,
+    pszPackage: string | Win32Pointer,
+    fCredentialUse: number,
+    pvLogonId: Win32Pointer,
+    pAuthData: Win32Pointer,
+    pGetKeyFn: Win32Callback,
+    pvGetKeyArgument: Win32Pointer,
+    phCredential: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!AcquireCredentialsHandleW */
-  AcquireCredentialsHandleW(pszPrincipal: string | Win32Pointer, pszPackage: string | Win32Pointer, fCredentialUse: number, pvLogonId: Win32Pointer, pAuthData: Win32Pointer, pGetKeyFn: Win32Callback, pvGetKeyArgument: Win32Pointer, phCredential: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  AcquireCredentialsHandleW(
+    pszPrincipal: string | Win32Pointer,
+    pszPackage: string | Win32Pointer,
+    fCredentialUse: number,
+    pvLogonId: Win32Pointer,
+    pAuthData: Win32Pointer,
+    pGetKeyFn: Win32Callback,
+    pvGetKeyArgument: Win32Pointer,
+    phCredential: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!AcquireCredentialsHandleW */
-  AcquireCredentialsHandle(pszPrincipal: string | Win32Pointer, pszPackage: string | Win32Pointer, fCredentialUse: number, pvLogonId: Win32Pointer, pAuthData: Win32Pointer, pGetKeyFn: Win32Callback, pvGetKeyArgument: Win32Pointer, phCredential: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  AcquireCredentialsHandle(
+    pszPrincipal: string | Win32Pointer,
+    pszPackage: string | Win32Pointer,
+    fCredentialUse: number,
+    pvLogonId: Win32Pointer,
+    pAuthData: Win32Pointer,
+    pGetKeyFn: Win32Callback,
+    pvGetKeyArgument: Win32Pointer,
+    phCredential: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!AddCredentialsA */
-  AddCredentialsA(hCredentials: Win32Pointer, pszPrincipal: string | Win32Pointer, pszPackage: string | Win32Pointer, fCredentialUse: number, pAuthData: Win32Pointer, pGetKeyFn: Win32Callback, pvGetKeyArgument: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  AddCredentialsA(
+    hCredentials: Win32Pointer,
+    pszPrincipal: string | Win32Pointer,
+    pszPackage: string | Win32Pointer,
+    fCredentialUse: number,
+    pAuthData: Win32Pointer,
+    pGetKeyFn: Win32Callback,
+    pvGetKeyArgument: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!AddCredentialsW */
-  AddCredentialsW(hCredentials: Win32Pointer, pszPrincipal: string | Win32Pointer, pszPackage: string | Win32Pointer, fCredentialUse: number, pAuthData: Win32Pointer, pGetKeyFn: Win32Callback, pvGetKeyArgument: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  AddCredentialsW(
+    hCredentials: Win32Pointer,
+    pszPrincipal: string | Win32Pointer,
+    pszPackage: string | Win32Pointer,
+    fCredentialUse: number,
+    pAuthData: Win32Pointer,
+    pGetKeyFn: Win32Callback,
+    pvGetKeyArgument: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!AddCredentialsW */
-  AddCredentials(hCredentials: Win32Pointer, pszPrincipal: string | Win32Pointer, pszPackage: string | Win32Pointer, fCredentialUse: number, pAuthData: Win32Pointer, pGetKeyFn: Win32Callback, pvGetKeyArgument: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  AddCredentials(
+    hCredentials: Win32Pointer,
+    pszPrincipal: string | Win32Pointer,
+    pszPackage: string | Win32Pointer,
+    fCredentialUse: number,
+    pAuthData: Win32Pointer,
+    pGetKeyFn: Win32Callback,
+    pvGetKeyArgument: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!AddSecurityPackageA */
   AddSecurityPackageA(pszPackageName: string | Win32Pointer, pOptions: Win32Pointer): number;
   /** secur32.dll!AddSecurityPackageW */
@@ -25,17 +92,49 @@ interface Functions {
   /** secur32.dll!ApplyControlToken */
   ApplyControlToken(phContext: Win32Pointer, pInput: Win32Pointer): number;
   /** secur32.dll!ChangeAccountPasswordA */
-  ChangeAccountPasswordA(pszPackageName: Win32Pointer, pszDomainName: Win32Pointer, pszAccountName: Win32Pointer, pszOldPassword: Win32Pointer, pszNewPassword: Win32Pointer, bImpersonating: number, dwReserved: number, pOutput: Win32Pointer): number;
+  ChangeAccountPasswordA(
+    pszPackageName: Win32Pointer,
+    pszDomainName: Win32Pointer,
+    pszAccountName: Win32Pointer,
+    pszOldPassword: Win32Pointer,
+    pszNewPassword: Win32Pointer,
+    bImpersonating: number,
+    dwReserved: number,
+    pOutput: Win32Pointer,
+  ): number;
   /** secur32.dll!ChangeAccountPasswordW */
-  ChangeAccountPasswordW(pszPackageName: Win32Pointer, pszDomainName: Win32Pointer, pszAccountName: Win32Pointer, pszOldPassword: Win32Pointer, pszNewPassword: Win32Pointer, bImpersonating: number, dwReserved: number, pOutput: Win32Pointer): number;
+  ChangeAccountPasswordW(
+    pszPackageName: Win32Pointer,
+    pszDomainName: Win32Pointer,
+    pszAccountName: Win32Pointer,
+    pszOldPassword: Win32Pointer,
+    pszNewPassword: Win32Pointer,
+    bImpersonating: number,
+    dwReserved: number,
+    pOutput: Win32Pointer,
+  ): number;
   /** secur32.dll!ChangeAccountPasswordW */
-  ChangeAccountPassword(pszPackageName: Win32Pointer, pszDomainName: Win32Pointer, pszAccountName: Win32Pointer, pszOldPassword: Win32Pointer, pszNewPassword: Win32Pointer, bImpersonating: number, dwReserved: number, pOutput: Win32Pointer): number;
+  ChangeAccountPassword(
+    pszPackageName: Win32Pointer,
+    pszDomainName: Win32Pointer,
+    pszAccountName: Win32Pointer,
+    pszOldPassword: Win32Pointer,
+    pszNewPassword: Win32Pointer,
+    bImpersonating: number,
+    dwReserved: number,
+    pOutput: Win32Pointer,
+  ): number;
   /** secur32.dll!CompleteAuthToken */
   CompleteAuthToken(phContext: Win32Pointer, pToken: Win32Pointer): number;
   /** secur32.dll!CredMarshalTargetInfo */
   CredMarshalTargetInfo(InTargetInfo: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
   /** secur32.dll!CredUnmarshalTargetInfo */
-  CredUnmarshalTargetInfo(Buffer: Win32Pointer, BufferSize: number, RetTargetInfo: Win32Pointer, RetActualSize: Win32Pointer): number;
+  CredUnmarshalTargetInfo(
+    Buffer: Win32Pointer,
+    BufferSize: number,
+    RetTargetInfo: Win32Pointer,
+    RetActualSize: Win32Pointer,
+  ): number;
   /** secur32.dll!DecryptMessage */
   DecryptMessage(phContext: Win32Pointer, pMessage: Win32Pointer, MessageSeqNo: number, pfQOP: Win32Pointer): number;
   /** secur32.dll!DeleteSecurityContext */
@@ -55,7 +154,12 @@ interface Functions {
   /** secur32.dll!EnumerateSecurityPackagesW */
   EnumerateSecurityPackages(pcPackages: Win32Pointer, ppPackageInfo: Win32Pointer): number;
   /** secur32.dll!ExportSecurityContext */
-  ExportSecurityContext(phContext: Win32Pointer, fFlags: number, pPackedContext: Win32Pointer, pToken: Win32Pointer): number;
+  ExportSecurityContext(
+    phContext: Win32Pointer,
+    fFlags: number,
+    pPackedContext: Win32Pointer,
+    pToken: Win32Pointer,
+  ): number;
   /** secur32.dll!FreeContextBuffer */
   FreeContextBuffer(pvContextBuffer: Win32Pointer): number;
   /** secur32.dll!FreeCredentialsHandle */
@@ -75,11 +179,26 @@ interface Functions {
   /** secur32.dll!ImpersonateSecurityContext */
   ImpersonateSecurityContext(phContext: Win32Pointer): number;
   /** secur32.dll!ImportSecurityContextA */
-  ImportSecurityContextA(pszPackage: string | Win32Pointer, pPackedContext: Win32Pointer, Token: Win32Pointer, phContext: Win32Pointer): number;
+  ImportSecurityContextA(
+    pszPackage: string | Win32Pointer,
+    pPackedContext: Win32Pointer,
+    Token: Win32Pointer,
+    phContext: Win32Pointer,
+  ): number;
   /** secur32.dll!ImportSecurityContextW */
-  ImportSecurityContextW(pszPackage: string | Win32Pointer, pPackedContext: Win32Pointer, Token: Win32Pointer, phContext: Win32Pointer): number;
+  ImportSecurityContextW(
+    pszPackage: string | Win32Pointer,
+    pPackedContext: Win32Pointer,
+    Token: Win32Pointer,
+    phContext: Win32Pointer,
+  ): number;
   /** secur32.dll!ImportSecurityContextW */
-  ImportSecurityContext(pszPackage: string | Win32Pointer, pPackedContext: Win32Pointer, Token: Win32Pointer, phContext: Win32Pointer): number;
+  ImportSecurityContext(
+    pszPackage: string | Win32Pointer,
+    pPackedContext: Win32Pointer,
+    Token: Win32Pointer,
+    phContext: Win32Pointer,
+  ): number;
   /** secur32.dll!InitSecurityInterfaceA */
   InitSecurityInterfaceA(): number | null;
   /** secur32.dll!InitSecurityInterfaceW */
@@ -87,13 +206,60 @@ interface Functions {
   /** secur32.dll!InitSecurityInterfaceW */
   InitSecurityInterface(): number | null;
   /** secur32.dll!InitializeSecurityContextA */
-  InitializeSecurityContextA(phCredential: Win32Pointer, phContext: Win32Pointer, pszTargetName: Win32Pointer, fContextReq: number, Reserved1: number, TargetDataRep: number, pInput: Win32Pointer, Reserved2: number, phNewContext: Win32Pointer, pOutput: Win32Pointer, pfContextAttr: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  InitializeSecurityContextA(
+    phCredential: Win32Pointer,
+    phContext: Win32Pointer,
+    pszTargetName: Win32Pointer,
+    fContextReq: number,
+    Reserved1: number,
+    TargetDataRep: number,
+    pInput: Win32Pointer,
+    Reserved2: number,
+    phNewContext: Win32Pointer,
+    pOutput: Win32Pointer,
+    pfContextAttr: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!InitializeSecurityContextW */
-  InitializeSecurityContextW(phCredential: Win32Pointer, phContext: Win32Pointer, pszTargetName: Win32Pointer, fContextReq: number, Reserved1: number, TargetDataRep: number, pInput: Win32Pointer, Reserved2: number, phNewContext: Win32Pointer, pOutput: Win32Pointer, pfContextAttr: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  InitializeSecurityContextW(
+    phCredential: Win32Pointer,
+    phContext: Win32Pointer,
+    pszTargetName: Win32Pointer,
+    fContextReq: number,
+    Reserved1: number,
+    TargetDataRep: number,
+    pInput: Win32Pointer,
+    Reserved2: number,
+    phNewContext: Win32Pointer,
+    pOutput: Win32Pointer,
+    pfContextAttr: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!InitializeSecurityContextW */
-  InitializeSecurityContext(phCredential: Win32Pointer, phContext: Win32Pointer, pszTargetName: Win32Pointer, fContextReq: number, Reserved1: number, TargetDataRep: number, pInput: Win32Pointer, Reserved2: number, phNewContext: Win32Pointer, pOutput: Win32Pointer, pfContextAttr: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  InitializeSecurityContext(
+    phCredential: Win32Pointer,
+    phContext: Win32Pointer,
+    pszTargetName: Win32Pointer,
+    fContextReq: number,
+    Reserved1: number,
+    TargetDataRep: number,
+    pInput: Win32Pointer,
+    Reserved2: number,
+    phNewContext: Win32Pointer,
+    pOutput: Win32Pointer,
+    pfContextAttr: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!LsaCallAuthenticationPackage */
-  LsaCallAuthenticationPackage(LsaHandle: Win32Pointer, AuthenticationPackage: number, ProtocolSubmitBuffer: Win32Pointer, SubmitBufferLength: number, ProtocolReturnBuffer: Win32Pointer, ReturnBufferLength: Win32Pointer, ProtocolStatus: Win32Pointer): number;
+  LsaCallAuthenticationPackage(
+    LsaHandle: Win32Pointer,
+    AuthenticationPackage: number,
+    ProtocolSubmitBuffer: Win32Pointer,
+    SubmitBufferLength: number,
+    ProtocolReturnBuffer: Win32Pointer,
+    ReturnBufferLength: Win32Pointer,
+    ProtocolStatus: Win32Pointer,
+  ): number;
   /** secur32.dll!LsaConnectUntrusted */
   LsaConnectUntrusted(LsaHandle: Win32Pointer): number;
   /** secur32.dll!LsaDeregisterLogonProcess */
@@ -105,9 +271,28 @@ interface Functions {
   /** secur32.dll!LsaGetLogonSessionData */
   LsaGetLogonSessionData(LogonId: Win32Pointer, ppLogonSessionData: Win32Pointer): number;
   /** secur32.dll!LsaLogonUser */
-  LsaLogonUser(LsaHandle: Win32Pointer, OriginName: Win32Pointer, LogonType: number, AuthenticationPackage: number, AuthenticationInformation: Win32Pointer, AuthenticationInformationLength: number, LocalGroups: Win32Pointer, SourceContext: Win32Pointer, ProfileBuffer: Win32Pointer, ProfileBufferLength: Win32Pointer, LogonId: Win32Pointer, Token: Win32Pointer, Quotas: Win32Pointer, SubStatus: Win32Pointer): number;
+  LsaLogonUser(
+    LsaHandle: Win32Pointer,
+    OriginName: Win32Pointer,
+    LogonType: number,
+    AuthenticationPackage: number,
+    AuthenticationInformation: Win32Pointer,
+    AuthenticationInformationLength: number,
+    LocalGroups: Win32Pointer,
+    SourceContext: Win32Pointer,
+    ProfileBuffer: Win32Pointer,
+    ProfileBufferLength: Win32Pointer,
+    LogonId: Win32Pointer,
+    Token: Win32Pointer,
+    Quotas: Win32Pointer,
+    SubStatus: Win32Pointer,
+  ): number;
   /** secur32.dll!LsaLookupAuthenticationPackage */
-  LsaLookupAuthenticationPackage(LsaHandle: Win32Pointer, PackageName: Win32Pointer, AuthenticationPackage: Win32Pointer): number;
+  LsaLookupAuthenticationPackage(
+    LsaHandle: Win32Pointer,
+    PackageName: Win32Pointer,
+    AuthenticationPackage: Win32Pointer,
+  ): number;
   /** secur32.dll!LsaRegisterLogonProcess */
   LsaRegisterLogonProcess(LogonProcessName: Win32Pointer, LsaHandle: Win32Pointer, SecurityMode: Win32Pointer): number;
   /** secur32.dll!LsaRegisterPolicyChangeNotification */
@@ -139,7 +324,17 @@ interface Functions {
   /** secur32.dll!RevertSecurityContext */
   RevertSecurityContext(phContext: Win32Pointer): number;
   /** secur32.dll!SaslAcceptSecurityContext */
-  SaslAcceptSecurityContext(phCredential: Win32Pointer, phContext: Win32Pointer, pInput: Win32Pointer, fContextReq: number, TargetDataRep: number, phNewContext: Win32Pointer, pOutput: Win32Pointer, pfContextAttr: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  SaslAcceptSecurityContext(
+    phCredential: Win32Pointer,
+    phContext: Win32Pointer,
+    pInput: Win32Pointer,
+    fContextReq: number,
+    TargetDataRep: number,
+    phNewContext: Win32Pointer,
+    pOutput: Win32Pointer,
+    pfContextAttr: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!SaslEnumerateProfilesA */
   SaslEnumerateProfilesA(ProfileList: Win32Pointer, ProfileCount: Win32Pointer): number;
   /** secur32.dll!SaslEnumerateProfilesW */
@@ -147,7 +342,13 @@ interface Functions {
   /** secur32.dll!SaslEnumerateProfilesW */
   SaslEnumerateProfiles(ProfileList: Win32Pointer, ProfileCount: Win32Pointer): number;
   /** secur32.dll!SaslGetContextOption */
-  SaslGetContextOption(ContextHandle: Win32Pointer, Option: number, Value: Win32Pointer, Size: number, Needed: Win32Pointer): number;
+  SaslGetContextOption(
+    ContextHandle: Win32Pointer,
+    Option: number,
+    Value: Win32Pointer,
+    Size: number,
+    Needed: Win32Pointer,
+  ): number;
   /** secur32.dll!SaslGetProfilePackageA */
   SaslGetProfilePackageA(ProfileName: string | Win32Pointer, PackageInfo: Win32Pointer): number;
   /** secur32.dll!SaslGetProfilePackageW */
@@ -161,11 +362,50 @@ interface Functions {
   /** secur32.dll!SaslIdentifyPackageW */
   SaslIdentifyPackage(pInput: Win32Pointer, PackageInfo: Win32Pointer): number;
   /** secur32.dll!SaslInitializeSecurityContextA */
-  SaslInitializeSecurityContextA(phCredential: Win32Pointer, phContext: Win32Pointer, pszTargetName: string | Win32Pointer, fContextReq: number, Reserved1: number, TargetDataRep: number, pInput: Win32Pointer, Reserved2: number, phNewContext: Win32Pointer, pOutput: Win32Pointer, pfContextAttr: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  SaslInitializeSecurityContextA(
+    phCredential: Win32Pointer,
+    phContext: Win32Pointer,
+    pszTargetName: string | Win32Pointer,
+    fContextReq: number,
+    Reserved1: number,
+    TargetDataRep: number,
+    pInput: Win32Pointer,
+    Reserved2: number,
+    phNewContext: Win32Pointer,
+    pOutput: Win32Pointer,
+    pfContextAttr: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!SaslInitializeSecurityContextW */
-  SaslInitializeSecurityContextW(phCredential: Win32Pointer, phContext: Win32Pointer, pszTargetName: string | Win32Pointer, fContextReq: number, Reserved1: number, TargetDataRep: number, pInput: Win32Pointer, Reserved2: number, phNewContext: Win32Pointer, pOutput: Win32Pointer, pfContextAttr: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  SaslInitializeSecurityContextW(
+    phCredential: Win32Pointer,
+    phContext: Win32Pointer,
+    pszTargetName: string | Win32Pointer,
+    fContextReq: number,
+    Reserved1: number,
+    TargetDataRep: number,
+    pInput: Win32Pointer,
+    Reserved2: number,
+    phNewContext: Win32Pointer,
+    pOutput: Win32Pointer,
+    pfContextAttr: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!SaslInitializeSecurityContextW */
-  SaslInitializeSecurityContext(phCredential: Win32Pointer, phContext: Win32Pointer, pszTargetName: string | Win32Pointer, fContextReq: number, Reserved1: number, TargetDataRep: number, pInput: Win32Pointer, Reserved2: number, phNewContext: Win32Pointer, pOutput: Win32Pointer, pfContextAttr: Win32Pointer, ptsExpiry: Win32Pointer): number;
+  SaslInitializeSecurityContext(
+    phCredential: Win32Pointer,
+    phContext: Win32Pointer,
+    pszTargetName: string | Win32Pointer,
+    fContextReq: number,
+    Reserved1: number,
+    TargetDataRep: number,
+    pInput: Win32Pointer,
+    Reserved2: number,
+    phNewContext: Win32Pointer,
+    pOutput: Win32Pointer,
+    pfContextAttr: Win32Pointer,
+    ptsExpiry: Win32Pointer,
+  ): number;
   /** secur32.dll!SaslSetContextOption */
   SaslSetContextOption(ContextHandle: Win32Pointer, Option: number, Value: Win32Pointer, Size: number): number;
   /** secur32.dll!SetContextAttributesA */
@@ -175,25 +415,59 @@ interface Functions {
   /** secur32.dll!SetContextAttributesW */
   SetContextAttributes(phContext: Win32Pointer, ulAttribute: number, pBuffer: Win32Pointer, cbBuffer: number): number;
   /** secur32.dll!SetCredentialsAttributesA */
-  SetCredentialsAttributesA(phCredential: Win32Pointer, ulAttribute: number, pBuffer: Win32Pointer, cbBuffer: number): number;
+  SetCredentialsAttributesA(
+    phCredential: Win32Pointer,
+    ulAttribute: number,
+    pBuffer: Win32Pointer,
+    cbBuffer: number,
+  ): number;
   /** secur32.dll!SetCredentialsAttributesW */
-  SetCredentialsAttributesW(phCredential: Win32Pointer, ulAttribute: number, pBuffer: Win32Pointer, cbBuffer: number): number;
+  SetCredentialsAttributesW(
+    phCredential: Win32Pointer,
+    ulAttribute: number,
+    pBuffer: Win32Pointer,
+    cbBuffer: number,
+  ): number;
   /** secur32.dll!SetCredentialsAttributesW */
-  SetCredentialsAttributes(phCredential: Win32Pointer, ulAttribute: number, pBuffer: Win32Pointer, cbBuffer: number): number;
+  SetCredentialsAttributes(
+    phCredential: Win32Pointer,
+    ulAttribute: number,
+    pBuffer: Win32Pointer,
+    cbBuffer: number,
+  ): number;
   /** secur32.dll!SspiCompareAuthIdentities */
-  SspiCompareAuthIdentities(AuthIdentity1: Win32Pointer, AuthIdentity2: Win32Pointer, SameSuppliedUser: Win32Pointer, SameSuppliedIdentity: Win32Pointer): number;
+  SspiCompareAuthIdentities(
+    AuthIdentity1: Win32Pointer,
+    AuthIdentity2: Win32Pointer,
+    SameSuppliedUser: Win32Pointer,
+    SameSuppliedIdentity: Win32Pointer,
+  ): number;
   /** secur32.dll!SspiCopyAuthIdentity */
   SspiCopyAuthIdentity(AuthData: Win32Pointer, AuthDataCopy: Win32Pointer): number;
   /** secur32.dll!SspiDecryptAuthIdentity */
   SspiDecryptAuthIdentity(EncryptedAuthData: Win32Pointer): number;
   /** secur32.dll!SspiEncodeAuthIdentityAsStrings */
-  SspiEncodeAuthIdentityAsStrings(pAuthIdentity: Win32Pointer, ppszUserName: Win32Pointer, ppszDomainName: Win32Pointer, ppszPackedCredentialsString: Win32Pointer): number;
+  SspiEncodeAuthIdentityAsStrings(
+    pAuthIdentity: Win32Pointer,
+    ppszUserName: Win32Pointer,
+    ppszDomainName: Win32Pointer,
+    ppszPackedCredentialsString: Win32Pointer,
+  ): number;
   /** secur32.dll!SspiEncodeStringsAsAuthIdentity */
-  SspiEncodeStringsAsAuthIdentity(pszUserName: string | Win32Pointer, pszDomainName: string | Win32Pointer, pszPackedCredentialsString: string | Win32Pointer, ppAuthIdentity: Win32Pointer): number;
+  SspiEncodeStringsAsAuthIdentity(
+    pszUserName: string | Win32Pointer,
+    pszDomainName: string | Win32Pointer,
+    pszPackedCredentialsString: string | Win32Pointer,
+    ppAuthIdentity: Win32Pointer,
+  ): number;
   /** secur32.dll!SspiEncryptAuthIdentity */
   SspiEncryptAuthIdentity(AuthData: Win32Pointer): number;
   /** secur32.dll!SspiExcludePackage */
-  SspiExcludePackage(AuthIdentity: Win32Pointer, pszPackageName: string | Win32Pointer, ppNewAuthIdentity: Win32Pointer): number;
+  SspiExcludePackage(
+    AuthIdentity: Win32Pointer,
+    pszPackageName: string | Win32Pointer,
+    ppNewAuthIdentity: Win32Pointer,
+  ): number;
   /** secur32.dll!SspiFreeAuthIdentity */
   SspiFreeAuthIdentity(AuthData: Win32Pointer): void;
   /** secur32.dll!SspiGetTargetHostName */
@@ -203,23 +477,62 @@ interface Functions {
   /** secur32.dll!SspiLocalFree */
   SspiLocalFree(DataBuffer: Win32Pointer): void;
   /** secur32.dll!SspiMarshalAuthIdentity */
-  SspiMarshalAuthIdentity(AuthIdentity: Win32Pointer, AuthIdentityLength: Win32Pointer, AuthIdentityByteArray: Win32Pointer): number;
+  SspiMarshalAuthIdentity(
+    AuthIdentity: Win32Pointer,
+    AuthIdentityLength: Win32Pointer,
+    AuthIdentityByteArray: Win32Pointer,
+  ): number;
   /** secur32.dll!SspiPrepareForCredRead */
-  SspiPrepareForCredRead(AuthIdentity: Win32Pointer, pszTargetName: string | Win32Pointer, pCredmanCredentialType: Win32Pointer, ppszCredmanTargetName: Win32Pointer): number;
+  SspiPrepareForCredRead(
+    AuthIdentity: Win32Pointer,
+    pszTargetName: string | Win32Pointer,
+    pCredmanCredentialType: Win32Pointer,
+    ppszCredmanTargetName: Win32Pointer,
+  ): number;
   /** secur32.dll!SspiPrepareForCredWrite */
-  SspiPrepareForCredWrite(AuthIdentity: Win32Pointer, pszTargetName: string | Win32Pointer, pCredmanCredentialType: Win32Pointer, ppszCredmanTargetName: Win32Pointer, ppszCredmanUserName: Win32Pointer, ppCredentialBlob: Win32Pointer, pCredentialBlobSize: Win32Pointer): number;
+  SspiPrepareForCredWrite(
+    AuthIdentity: Win32Pointer,
+    pszTargetName: string | Win32Pointer,
+    pCredmanCredentialType: Win32Pointer,
+    ppszCredmanTargetName: Win32Pointer,
+    ppszCredmanUserName: Win32Pointer,
+    ppCredentialBlob: Win32Pointer,
+    pCredentialBlobSize: Win32Pointer,
+  ): number;
   /** secur32.dll!SspiUnmarshalAuthIdentity */
-  SspiUnmarshalAuthIdentity(AuthIdentityLength: number, AuthIdentityByteArray: string | Win32Pointer, ppAuthIdentity: Win32Pointer): number;
+  SspiUnmarshalAuthIdentity(
+    AuthIdentityLength: number,
+    AuthIdentityByteArray: string | Win32Pointer,
+    ppAuthIdentity: Win32Pointer,
+  ): number;
   /** secur32.dll!SspiValidateAuthIdentity */
   SspiValidateAuthIdentity(AuthData: Win32Pointer): number;
   /** secur32.dll!SspiZeroAuthIdentity */
   SspiZeroAuthIdentity(AuthData: Win32Pointer): void;
   /** secur32.dll!TranslateNameA */
-  TranslateNameA(lpAccountName: string | Win32Pointer, AccountNameFormat: number, DesiredNameFormat: number, lpTranslatedName: string | Win32Pointer, nSize: Win32Pointer): number;
+  TranslateNameA(
+    lpAccountName: string | Win32Pointer,
+    AccountNameFormat: number,
+    DesiredNameFormat: number,
+    lpTranslatedName: string | Win32Pointer,
+    nSize: Win32Pointer,
+  ): number;
   /** secur32.dll!TranslateNameW */
-  TranslateNameW(lpAccountName: string | Win32Pointer, AccountNameFormat: number, DesiredNameFormat: number, lpTranslatedName: string | Win32Pointer, nSize: Win32Pointer): number;
+  TranslateNameW(
+    lpAccountName: string | Win32Pointer,
+    AccountNameFormat: number,
+    DesiredNameFormat: number,
+    lpTranslatedName: string | Win32Pointer,
+    nSize: Win32Pointer,
+  ): number;
   /** secur32.dll!TranslateNameW */
-  TranslateName(lpAccountName: string | Win32Pointer, AccountNameFormat: number, DesiredNameFormat: number, lpTranslatedName: string | Win32Pointer, nSize: Win32Pointer): number;
+  TranslateName(
+    lpAccountName: string | Win32Pointer,
+    AccountNameFormat: number,
+    DesiredNameFormat: number,
+    lpTranslatedName: string | Win32Pointer,
+    nSize: Win32Pointer,
+  ): number;
   /** secur32.dll!VerifySignature */
   VerifySignature(phContext: Win32Pointer, pMessage: Win32Pointer, MessageSeqNo: number, pfQOP: Win32Pointer): number;
 }

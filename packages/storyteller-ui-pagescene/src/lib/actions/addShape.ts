@@ -4,16 +4,8 @@ import { MediaItem } from "../models";
 import { CreateAction } from "../engine/editor/actions/CreateAction";
 import { ObjectAddedEvent } from "../engine/events/EngineEvent";
 
-export async function addShape(
-  editor: Editor,
-  item: MediaItem,
-  position?: THREE.Vector3,
-): Promise<string | undefined> {
-  const obj = await editor.sceneManager?.create(
-    "Parim",
-    item.media_id,
-    position ?? new THREE.Vector3(),
-  );
+export async function addShape(editor: Editor, item: MediaItem, position?: THREE.Vector3): Promise<string | undefined> {
+  const obj = await editor.sceneManager?.create("Parim", item.media_id, position ?? new THREE.Vector3());
   if (!obj) return undefined;
   // Stash the geometry key (Box / Sphere / PointLight / ...) so undo/redo
   // can re-route through scene.instantiate's name switch. obj.name gets

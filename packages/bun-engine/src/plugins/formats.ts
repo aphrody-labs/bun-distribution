@@ -1,8 +1,5 @@
 import type { BunPlugin } from "bun";
-import {
-  extensionFilter,
-  setupRomLoader,
-} from "../../../bun-loaders/src/rom.ts";
+import { extensionFilter, setupRomLoader } from "../../../bun-loaders/src/rom.ts";
 
 export interface BinaryFormatLoader {
   id: string;
@@ -31,28 +28,19 @@ const formats = [
   ["webassembly", ["wasm"], "file"],
 ] as const;
 
-function formatLoader(
-  id: string,
-  extensions: readonly string[],
-  kind: "image" | "file",
-): BinaryFormatLoader {
+function formatLoader(id: string, extensions: readonly string[], kind: "image" | "file"): BinaryFormatLoader {
   const plugin: BunPlugin = {
     name: `bun-engine:loader:${id}`,
     setup(build) {
       if (kind === "image") return setupRomLoader(build, extensions);
-      build.onLoad(
-        { filter: extensionFilter(extensions), namespace: "file" },
-        async ({ path }) => ({
-          contents: await Bun.file(path).arrayBuffer(),
-          loader: "file",
-        }),
-      );
+      build.onLoad({ filter: extensionFilter(extensions), namespace: "file" }, async ({ path }) => ({
+        contents: await Bun.file(path).arrayBuffer(),
+        loader: "file",
+      }));
     },
   };
   return { id, extensions, kind, plugin };
 }
 
-export const binaryFormatLoaders = formats.map(([id, extensions, kind]) =>
-  formatLoader(id, extensions, kind),
-);
+export const binaryFormatLoaders = formats.map(([id, extensions, kind]) => formatLoader(id, extensions, kind));
 export const formatPlugins = binaryFormatLoaders.map(({ plugin }) => plugin);

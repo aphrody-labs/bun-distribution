@@ -32,14 +32,7 @@ import { ROLES } from "./native-theme";
 
 export { ROLES };
 
-export {
-  argbFromHex,
-  hexFromArgb,
-  Hct,
-  MaterialDynamicColors,
-  type DynamicColor,
-  type DynamicScheme,
-};
+export { argbFromHex, hexFromArgb, Hct, MaterialDynamicColors, type DynamicColor, type DynamicScheme };
 
 // ---------------------------------------------------------------------------
 // Variant type
@@ -58,14 +51,7 @@ export {
  * | `neutral`      | Near-greyscale, very low chroma                             |
  * | `monochrome`   | Pure greyscale — zero chroma                               |
  */
-export type SchemeVariant =
-  | "tonalSpot"
-  | "content"
-  | "fidelity"
-  | "expressive"
-  | "vibrant"
-  | "neutral"
-  | "monochrome";
+export type SchemeVariant = "tonalSpot" | "content" | "fidelity" | "expressive" | "vibrant" | "neutral" | "monochrome";
 
 /** Options shared by every scheme-deriving function. */
 export interface SchemeOptions {
@@ -97,10 +83,7 @@ export type ColorRoleMap = Record<string, string>;
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-const dynamicColors = MaterialDynamicColors as unknown as Record<
-  string,
-  DynamicColor | undefined
->;
+const dynamicColors = MaterialDynamicColors as unknown as Record<string, DynamicColor | undefined>;
 
 /** `onPrimaryContainer` -> `on-primary-container`. */
 function kebab(role: string): string {
@@ -111,9 +94,7 @@ function kebab(role: string): string {
 function resolveContrast(opts: SchemeOptions): number {
   const contrast = opts.contrastLevel ?? opts.contrast ?? 0;
   if (!Number.isFinite(contrast) || contrast < -1 || contrast > 1) {
-    throw new RangeError(
-      "M3 contrast must be a finite number between -1 and 1",
-    );
+    throw new RangeError("M3 contrast must be a finite number between -1 and 1");
   }
   return contrast;
 }
@@ -123,16 +104,11 @@ export function normalizeSeedHex(seed: string): string {
   const match = /^#?([\da-f]{3}|[\da-f]{6})$/i.exec(seed.trim());
   if (!match) throw new TypeError(`Invalid M3 seed color: ${seed}`);
   const digits = match[1]!;
-  return `#${(digits.length === 3 ? [...digits].map((digit) => digit + digit).join("") : digits).toLowerCase()}`;
+  return `#${(digits.length === 3 ? [...digits].map(digit => digit + digit).join("") : digits).toLowerCase()}`;
 }
 
 /** Build the MCU DynamicScheme for the requested variant. */
-function buildScheme(
-  hct: Hct,
-  isDark: boolean,
-  contrastLevel: number,
-  variant: SchemeVariant,
-): DynamicScheme {
+function buildScheme(hct: Hct, isDark: boolean, contrastLevel: number, variant: SchemeVariant): DynamicScheme {
   switch (variant) {
     case "content":
       return new SchemeContent(hct, isDark, contrastLevel);
@@ -167,10 +143,7 @@ function buildScheme(
  * @param opts    Optional: `dark`, `contrastLevel` (or legacy `contrast`), `variant`.
  * @returns `{ "--md-sys-color-primary": "#…", … }` (~47 roles).
  */
-export function schemeFromSeed(
-  seedHex: string,
-  opts: SchemeOptions = {},
-): ColorRoleMap {
+export function schemeFromSeed(seedHex: string, opts: SchemeOptions = {}): ColorRoleMap {
   const dark = opts.dark ?? false;
   const contrastLevel = resolveContrast(opts);
   const variant = opts.variant ?? "tonalSpot";
@@ -182,9 +155,7 @@ export function schemeFromSeed(
   for (const role of ROLES) {
     const dynamicColor = dynamicColors[role];
     if (!dynamicColor) continue;
-    out[`--md-sys-color-${kebab(role)}`] = hexFromArgb(
-      dynamicColor.getArgb(scheme),
-    );
+    out[`--md-sys-color-${kebab(role)}`] = hexFromArgb(dynamicColor.getArgb(scheme));
   }
   return out;
 }
@@ -211,21 +182,11 @@ export interface CssFromSeedOptions extends SchemeOptions {
  * switch uses other selectors (e.g. a dark-by-default `:root, .dark` and a
  * `.light` class) pass `lightSelector` / `darkSelector`.
  */
-export function cssFromSeed(
-  seedHex: string,
-  opts: CssFromSeedOptions = {},
-): string {
-  const {
-    lightSelector = ":root",
-    darkSelector = ':root[data-theme="dark"]',
-    ...scheme
-  } = opts;
+export function cssFromSeed(seedHex: string, opts: CssFromSeedOptions = {}): string {
+  const { lightSelector = ":root", darkSelector = ':root[data-theme="dark"]', ...scheme } = opts;
   const light = schemeFromSeed(seedHex, { ...scheme, dark: false });
   const dark = schemeFromSeed(seedHex, { ...scheme, dark: true });
-  if (
-    lightSelector === ":root" &&
-    darkSelector === ':root[data-theme="dark"]'
-  ) {
+  if (lightSelector === ":root" && darkSelector === ':root[data-theme="dark"]') {
     return (
       `:root {\n  color-scheme: light dark;\n${declarations(light)}\n}\n\n` +
       `@media (prefers-color-scheme: dark) {\n  :root:not([data-theme]) {\n${declarations(dark, "    ")}\n  }\n}\n\n` +
@@ -249,13 +210,8 @@ export interface ApplyOptions extends SchemeOptions {
  * Apply a seed's roles for one mode directly onto an element's inline style
  * (overriding any stylesheet `:root` values). Browser-only; a no-op in SSR.
  */
-export function applyDynamicColor(
-  seedHex: string,
-  opts: ApplyOptions = {},
-): void {
-  const target =
-    opts.target ??
-    (typeof document !== "undefined" ? document.documentElement : null);
+export function applyDynamicColor(seedHex: string, opts: ApplyOptions = {}): void {
+  const target = opts.target ?? (typeof document !== "undefined" ? document.documentElement : null);
   if (!target) return;
   const vars = schemeFromSeed(seedHex, opts);
   for (const [k, v] of Object.entries(vars)) target.style.setProperty(k, v);
@@ -263,12 +219,9 @@ export function applyDynamicColor(
 
 /** Remove every `--md-sys-color-*` role this module may have set inline. */
 export function clearDynamicColor(target?: HTMLElement | null): void {
-  const el =
-    target ??
-    (typeof document !== "undefined" ? document.documentElement : null);
+  const el = target ?? (typeof document !== "undefined" ? document.documentElement : null);
   if (!el) return;
-  for (const role of ROLES)
-    el.style.removeProperty(`--md-sys-color-${kebab(role)}`);
+  for (const role of ROLES) el.style.removeProperty(`--md-sys-color-${kebab(role)}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -336,10 +289,7 @@ export function exportTailwindTheme(): string {
  * followed by the shadcn/ui alias block (`exportShadcnAliases`) and the
  * Tailwind v4 `@theme inline` block (`exportTailwindTheme`).
  */
-export function exportFusionCss(
-  seedHex: string,
-  opts: CssFromSeedOptions = {},
-): string {
+export function exportFusionCss(seedHex: string, opts: CssFromSeedOptions = {}): string {
   const m3Css = cssFromSeed(seedHex, opts);
   const shadcn = exportShadcnAliases();
   const tailwind = exportTailwindTheme();

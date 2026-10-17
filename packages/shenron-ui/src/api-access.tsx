@@ -24,16 +24,11 @@ export function ApiAccess({
   const copy = useCallback((key: string, value: string) => {
     void navigator.clipboard?.writeText(value).then(() => {
       setCopied(key);
-      setTimeout(
-        () => setCopied((current) => (current === key ? null : current)),
-        1600,
-      );
+      setTimeout(() => setCopied(current => (current === key ? null : current)), 1600);
     });
   }, []);
   const absolute = (value: string) =>
-    typeof window === "undefined"
-      ? value
-      : new URL(value, window.location.origin).toString();
+    typeof window === "undefined" ? value : new URL(value, window.location.origin).toString();
   const text = {
     title: "API access",
     copy: "Copy curl command for",
@@ -43,19 +38,14 @@ export function ApiAccess({
   };
   const lines = [{ label: "JSON", path }, ...variants];
   return (
-    <section
-      className={`rounded-xl border border-white/10 bg-white/[0.02] p-4 ${className}`}
-      aria-label={text.title}
-    >
+    <section className={`rounded-xl border border-white/10 bg-white/[0.02] p-4 ${className}`} aria-label={text.title}>
       <div className="mb-3 flex items-center gap-2">
         <Terminal className="h-4 w-4 text-dbz-orange" aria-hidden="true" />
-        <h2 className="font-display text-sm font-semibold tracking-wide text-white">
-          {text.title}
-        </h2>
+        <h2 className="font-display text-sm font-semibold tracking-wide text-white">{text.title}</h2>
         <span className="text-xs text-white/45">{description}</span>
       </div>
       <ul className="space-y-2">
-        {lines.map((line) => (
+        {lines.map(line => (
           <li key={line.path} className="flex items-center gap-2">
             <span className="w-20 shrink-0 text-[11px] font-semibold uppercase tracking-wider text-white/40">
               {line.label}
@@ -85,10 +75,7 @@ export function ApiAccess({
       {entryPath ? (
         <p className="mt-3 text-[11px] leading-relaxed text-white/40">
           {text.entry}{" "}
-          <a
-            href={entryPath}
-            className="text-white/60 underline underline-offset-2"
-          >
+          <a href={entryPath} className="text-white/60 underline underline-offset-2">
             {entryPath}
           </a>
           .

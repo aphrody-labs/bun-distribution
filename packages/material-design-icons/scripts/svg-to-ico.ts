@@ -11,12 +11,7 @@ import { symbolSvgPath, type SymbolStyle } from "../src/index.ts";
 /** The Tauri CLI: the nearest `node_modules/.bin/tauri` above `cwd`, else `tauri` on PATH. */
 export function tauriCli(cwd: string = process.cwd()): string | null {
   for (let dir = resolve(cwd); ; dir = dirname(dir)) {
-    const local = join(
-      dir,
-      "node_modules",
-      ".bin",
-      process.platform === "win32" ? "tauri.exe" : "tauri",
-    );
+    const local = join(dir, "node_modules", ".bin", process.platform === "win32" ? "tauri.exe" : "tauri");
     if (existsSync(local)) return local;
     if (dirname(dir) === dir) return Bun.which("tauri");
   }
@@ -36,9 +31,7 @@ export function runSvgToIco(args: string[]): number {
     return 2;
   }
   const out = resolve(flag("out", "src-tauri/icons")!);
-  let svg = input.endsWith(".svg")
-    ? resolve(input)
-    : symbolSvgPath(input, flag("style", "outlined") as SymbolStyle);
+  let svg = input.endsWith(".svg") ? resolve(input) : symbolSvgPath(input, flag("style", "outlined") as SymbolStyle);
   if (!existsSync(svg)) {
     console.error(`svg not found: ${svg}`);
     return 1;
@@ -46,17 +39,12 @@ export function runSvgToIco(args: string[]): number {
   const fill = flag("fill");
   if (fill) {
     const tmp = join(mkdtempSync(join(tmpdir(), "m3-icon-")), "icon.svg");
-    writeFileSync(
-      tmp,
-      readFileSync(svg, "utf8").replace(/<svg /, `<svg fill="${fill}" `),
-    );
+    writeFileSync(tmp, readFileSync(svg, "utf8").replace(/<svg /, `<svg fill="${fill}" `));
     svg = tmp;
   }
   const tauri = tauriCli();
   if (!tauri) {
-    console.error(
-      "svg-to-ico: no Tauri CLI (install @tauri-apps/cli in the app, or put `tauri` on PATH)",
-    );
+    console.error("svg-to-ico: no Tauri CLI (install @tauri-apps/cli in the app, or put `tauri` on PATH)");
     return 127;
   }
   const run = Bun.spawnSync([tauri, "icon", svg, "-o", out], {

@@ -9,14 +9,7 @@ import {
   useTable,
 } from "@tanstack/react-table";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
 
 // v9: the feature set is explicit. Selection and visibility back the
 // `getIsSelected()` / `getVisibleCells()` calls below; no sorting/filtering/paging.
@@ -32,10 +25,7 @@ interface DataTableProps<TData extends RowData, TValue> {
   data: TData[];
 }
 
-export function DataTable<TData extends RowData, TValue>({
-  columns,
-  data,
-}: DataTableProps<TData, TValue>) {
+export function DataTable<TData extends RowData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
   const table = useTable({
     features,
     data,
@@ -49,14 +39,12 @@ export function DataTable<TData extends RowData, TValue>({
     <div className="rounded-md border">
       <Table>
         <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
+          {table.getHeaderGroups().map(headerGroup => (
             <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
+              {headerGroup.headers.map(header => {
                 return (
                   <TableHead key={header.id}>
-                    {header.isPlaceholder ? null : (
-                      <table.FlexRender header={header} />
-                    )}
+                    {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                   </TableHead>
                 );
               })}
@@ -65,12 +53,9 @@ export function DataTable<TData extends RowData, TValue>({
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-              >
-                {row.getVisibleCells().map((cell) => (
+            table.getRowModel().rows.map(row => (
+              <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                {row.getVisibleCells().map(cell => (
                   <TableCell key={cell.id}>
                     <table.FlexRender cell={cell} />
                   </TableCell>

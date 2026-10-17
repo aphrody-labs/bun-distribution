@@ -5,11 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import packageMetadata from "../package.json";
 import { NativeInference } from "../src/inference";
-import {
-  NATIVE_ABI_VERSIONS,
-  nativeHostTriple,
-  nativeTargetLibc,
-} from "../src/native-artifact";
+import { NATIVE_ABI_VERSIONS, nativeHostTriple, nativeTargetLibc } from "../src/native-artifact";
 
 const directories: string[] = [];
 const previousLibrary = process.env.APHRODY_INFERENCE_LIBRARY;
@@ -17,8 +13,7 @@ const previousDevelopment = process.env.APHRODY_FFI_DEV;
 afterEach(() => {
   process.env.APHRODY_INFERENCE_LIBRARY = previousLibrary;
   process.env.APHRODY_FFI_DEV = previousDevelopment;
-  for (const directory of directories.splice(0))
-    rmSync(directory, { recursive: true, force: true });
+  for (const directory of directories.splice(0)) rmSync(directory, { recursive: true, force: true });
 });
 
 function untrustedArtifact() {
@@ -39,9 +34,9 @@ function untrustedArtifact() {
 
 test("standalone inference rejects an unmanifested library before loading native code", async () => {
   untrustedArtifact();
-  await expect(
-    NativeInference.open({ model: "fixture-model", profile: "aphrody" }),
-  ).rejects.toThrow("Native manifest missing");
+  await expect(NativeInference.open({ model: "fixture-model", profile: "aphrody" })).rejects.toThrow(
+    "Native manifest missing",
+  );
 });
 
 test("standalone inference rejects a changed release artifact before loading native code", async () => {
@@ -73,7 +68,7 @@ test("standalone inference rejects a changed release artifact before loading nat
       consumerSmoke: "passed",
     }),
   );
-  await expect(
-    NativeInference.open({ model: "fixture-model", profile: "aphrody" }),
-  ).rejects.toThrow("Native artifact hash/size mismatch");
+  await expect(NativeInference.open({ model: "fixture-model", profile: "aphrody" })).rejects.toThrow(
+    "Native artifact hash/size mismatch",
+  );
 });

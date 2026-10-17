@@ -1,10 +1,7 @@
 import { useEffect } from "react";
 import Konva from "konva";
 import { useMoodboardStore } from "../MoodboardStore";
-import {
-  DroppedGalleryItem,
-  GALLERY_MOODBOARD_DROP_EVENT,
-} from "../../galleryDrop";
+import { DroppedGalleryItem, GALLERY_MOODBOARD_DROP_EVENT } from "../../galleryDrop";
 
 interface GalleryMoodboardDropDetail {
   item: DroppedGalleryItem;
@@ -12,7 +9,7 @@ interface GalleryMoodboardDropDetail {
 }
 
 const measure = (url: string): Promise<{ w: number; h: number }> =>
-  new Promise((resolve) => {
+  new Promise(resolve => {
     const i = new window.Image();
     i.crossOrigin = "anonymous";
     i.onload = () => resolve({ w: i.naturalWidth, h: i.naturalHeight });
@@ -23,11 +20,8 @@ const measure = (url: string): Promise<{ w: number; h: number }> =>
 // Listens for gallery-moodboard-drop CustomEvents dispatched by the
 // PageEditor when the user drops a gallery item over the canvas. Mirrors
 // PageDraw's gallery-2d-drop listener pattern but scoped to moodboard.
-export const useGalleryDropEvent = (
-  active: boolean,
-  stageRef: React.RefObject<Konva.Stage | null>,
-) => {
-  const addImage = useMoodboardStore((s) => s.addImage);
+export const useGalleryDropEvent = (active: boolean, stageRef: React.RefObject<Konva.Stage | null>) => {
+  const addImage = useMoodboardStore(s => s.addImage);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -53,7 +47,6 @@ export const useGalleryDropEvent = (
     };
 
     window.addEventListener(GALLERY_MOODBOARD_DROP_EVENT, handler);
-    return () =>
-      window.removeEventListener(GALLERY_MOODBOARD_DROP_EVENT, handler);
+    return () => window.removeEventListener(GALLERY_MOODBOARD_DROP_EVENT, handler);
   }, [active, addImage, stageRef]);
 };

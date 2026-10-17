@@ -12,12 +12,7 @@
 // from an installed native artifact; local builds require APHRODY_FFI_DEV=1.
 
 import { CString, type Pointer } from "bun:ffi";
-import {
-  closeNativeLibrary,
-  loadNativeLibrary,
-  EXPECTED_ABI_VERSION,
-  EXPECTED_WEB_ABI_VERSION,
-} from "./library";
+import { closeNativeLibrary, loadNativeLibrary, EXPECTED_ABI_VERSION, EXPECTED_WEB_ABI_VERSION } from "./library";
 export { EXPECTED_ABI_VERSION, EXPECTED_WEB_ABI_VERSION };
 
 const ENCODER = new TextEncoder();
@@ -47,7 +42,7 @@ export function loadLib(): FfiLibrary {
 /** @internal Read and release a string owned by the native library (shared by the sub-bindings). */
 export function readOwnedString(
   ptr: bigint | Pointer | null,
-  free: (ptr: bigint | Pointer) => void = (value) => loadLib().symbols.aphrody_string_free(value),
+  free: (ptr: bigint | Pointer) => void = value => loadLib().symbols.aphrody_string_free(value),
 ): string {
   if (!ptr) throw new Error("aphrody-ffi returned a null string");
   try {
@@ -63,15 +58,13 @@ function readOptionalOwnedString(ptr: bigint | Pointer | null): string | null {
 
 /** @internal Register a submitted native job so closing the library with live jobs is refused. */
 export function trackJob(id: number): number {
-  if (!Number.isSafeInteger(id) || id <= 0)
-    throw new Error(`native job submission failed (id ${id})`);
+  if (!Number.isSafeInteger(id) || id <= 0) throw new Error(`native job submission failed (id ${id})`);
   liveJobIds.add(id);
   return id;
 }
 
 function validateJobId(id: number): void {
-  if (!Number.isSafeInteger(id) || id <= 0)
-    throw new RangeError("native job id must be a positive safe integer");
+  if (!Number.isSafeInteger(id) || id <= 0) throw new RangeError("native job id must be a positive safe integer");
 }
 
 /** Extract structured page content through the shared Rust extractor. */
@@ -93,10 +86,7 @@ export function webExtractMain(
 /** Convert HTML with the same native library used by the Aphrody CLI. */
 export function webHtmlToMarkdown(html: string, baseUrl?: string): string {
   return readOwnedString(
-    loadLib().symbols.aphrody_web_html_to_markdown(
-      cstr(html),
-      baseUrl === undefined ? null : cstr(baseUrl),
-    ),
+    loadLib().symbols.aphrody_web_html_to_markdown(cstr(html), baseUrl === undefined ? null : cstr(baseUrl)),
   );
 }
 
@@ -119,13 +109,10 @@ export function webStripTags(html: string): string {
 export function webExtractLinks(html: string, baseUrl?: string): string[] {
   const value: unknown = JSON.parse(
     readOwnedString(
-      loadLib().symbols.aphrody_web_extract_links(
-        cstr(html),
-        baseUrl === undefined ? null : cstr(baseUrl),
-      ),
+      loadLib().symbols.aphrody_web_extract_links(cstr(html), baseUrl === undefined ? null : cstr(baseUrl)),
     ),
   );
-  if (!Array.isArray(value) || value.some((link) => typeof link !== "string"))
+  if (!Array.isArray(value) || value.some(link => typeof link !== "string"))
     throw new Error("native link extraction returned an invalid result");
   return value;
 }
@@ -155,8 +142,7 @@ export class WebHttpClient {
   async fetch(url: string, options: WebHttpRequestOptions = {}): Promise<Response> {
     const headers = new Headers(options.headers);
     if (options.cookies !== undefined) {
-      if (headers.has("cookie"))
-        throw new TypeError("supply cookies through either headers or cookies");
+      if (headers.has("cookie")) throw new TypeError("supply cookies through either headers or cookies");
       headers.set("cookie", options.cookies);
     }
     const timeoutMs = options.timeoutMs ?? this.options.timeoutMs ?? 30_000;
@@ -170,9 +156,7 @@ export class WebHttpClient {
       stealth: this.options.stealth ?? false,
       timeoutMs,
     };
-    const id = trackJob(
-      Number(loadLib().symbols.aphrody_web_http_request_submit(cstr(JSON.stringify(request)))),
-    );
+    const id = trackJob(Number(loadLib().symbols.aphrody_web_http_request_submit(cstr(JSON.stringify(request)))));
     const value: unknown = JSON.parse(await webJobWait(id, timeoutMs + 1000));
     if (!value || typeof value !== "object" || !("ok" in value) || value.ok !== true) {
       const message =
@@ -222,17 +206,13 @@ export class WebDomTree {
   }
 
   querySelector(selector: string): string | null {
-    return readOptionalOwnedString(
-      loadLib().symbols.aphrody_web_query_selector(this.#handle(), cstr(selector)),
-    );
+    return readOptionalOwnedString(loadLib().symbols.aphrody_web_query_selector(this.#handle(), cstr(selector)));
   }
 
   querySelectorAll(selector: string): string[] {
-    const payload = readOwnedString(
-      loadLib().symbols.aphrody_web_query_selector_all(this.#handle(), cstr(selector)),
-    );
+    const payload = readOwnedString(loadLib().symbols.aphrody_web_query_selector_all(this.#handle(), cstr(selector)));
     const result: unknown = JSON.parse(payload);
-    if (!Array.isArray(result) || result.some((item) => typeof item !== "string")) {
+    if (!Array.isArray(result) || result.some(item => typeof item !== "string")) {
       throw new Error("native DOM query returned an invalid result");
     }
     return result;
@@ -259,9 +239,7 @@ export function webParseHtml(html: string): WebDomTree {
 
 /** Blocking native Obscura fetch. Use the Submit variant in async applications. */
 export function webObscuraFetch(url: string, stealth = false, timeoutMs = 30000): string {
-  return readOwnedString(
-    loadLib().symbols.aphrody_web_obscura_fetch(cstr(url), stealth ? 1 : 0, timeoutMs),
-  );
+  return readOwnedString(loadLib().symbols.aphrody_web_obscura_fetch(cstr(url), stealth ? 1 : 0, timeoutMs));
 }
 
 /** Blocking DNS reconnaissance. Use the Submit variant in async applications. */
@@ -282,60 +260,32 @@ export function webGeminiAsk(cookiePath: string, prompt: string, model?: string)
 
 /** Blocking X user lookup. Use the Submit variant in async applications. */
 export function webXUser(authToken: string, ct0: string, handle: string): string {
-  return readOwnedString(
-    loadLib().symbols.aphrody_web_x_user_by_screen_name(cstr(authToken), cstr(ct0), cstr(handle)),
-  );
+  return readOwnedString(loadLib().symbols.aphrody_web_x_user_by_screen_name(cstr(authToken), cstr(ct0), cstr(handle)));
 }
 
 /** Blocking X user timeline lookup. Use the Submit variant in async applications. */
 export function webXTweets(authToken: string, ct0: string, handle: string, count = 20): string {
-  return readOwnedString(
-    loadLib().symbols.aphrody_web_x_user_tweets(cstr(authToken), cstr(ct0), cstr(handle), count),
-  );
+  return readOwnedString(loadLib().symbols.aphrody_web_x_user_tweets(cstr(authToken), cstr(ct0), cstr(handle), count));
 }
 
 /** Blocking X community lookup. Use the Submit variant in async applications. */
 export function webXCommunity(authToken: string, ct0: string, communityId: string): string {
   return readOwnedString(
-    loadLib().symbols.aphrody_web_x_community_by_rest_id(
-      cstr(authToken),
-      cstr(ct0),
-      cstr(communityId),
-    ),
+    loadLib().symbols.aphrody_web_x_community_by_rest_id(cstr(authToken), cstr(ct0), cstr(communityId)),
   );
 }
 
 /** Blocking X community timeline lookup. Use the Submit variant in async applications. */
-export function webXCommunityTweets(
-  authToken: string,
-  ct0: string,
-  communityId: string,
-  count = 20,
-): string {
+export function webXCommunityTweets(authToken: string, ct0: string, communityId: string, count = 20): string {
   return readOwnedString(
-    loadLib().symbols.aphrody_web_x_community_tweets(
-      cstr(authToken),
-      cstr(ct0),
-      cstr(communityId),
-      count,
-    ),
+    loadLib().symbols.aphrody_web_x_community_tweets(cstr(authToken), cstr(ct0), cstr(communityId), count),
   );
 }
 
 /** Blocking X community info and timeline lookup. Use the Submit variant in async applications. */
-export function webXCommunityInfoAndTweets(
-  authToken: string,
-  ct0: string,
-  communityId: string,
-  count = 20,
-): string {
+export function webXCommunityInfoAndTweets(authToken: string, ct0: string, communityId: string, count = 20): string {
   return readOwnedString(
-    loadLib().symbols.aphrody_web_x_community_info_and_tweets(
-      cstr(authToken),
-      cstr(ct0),
-      cstr(communityId),
-      count,
-    ),
+    loadLib().symbols.aphrody_web_x_community_info_and_tweets(cstr(authToken), cstr(ct0), cstr(communityId), count),
   );
 }
 
@@ -360,9 +310,7 @@ export class WebVectorIndex {
   }
 
   static open(path: string, dim: number, params: Record<string, unknown> = {}): WebVectorIndex {
-    const handle = Number(
-      loadLib().symbols.aphrody_web_index_open(cstr(path), dim, cstr(JSON.stringify(params)), 1),
-    );
+    const handle = Number(loadLib().symbols.aphrody_web_index_open(cstr(path), dim, cstr(JSON.stringify(params)), 1));
     if (!handle) throw new Error(`index open failed: ${webIndexError()}`);
     return new WebVectorIndex(handle, path, webIndexError().startsWith("corrupt"));
   }
@@ -380,8 +328,7 @@ export class WebVectorIndex {
   }
 
   add(key: number, vector: Float32Array): void {
-    if (!Number.isSafeInteger(key) || key < 0)
-      throw new RangeError("index key must be a non-negative safe integer");
+    if (!Number.isSafeInteger(key) || key < 0) throw new RangeError("index key must be a non-negative safe integer");
     if (loadLib().symbols.aphrody_web_index_add(this.#id(), key, vector, vector.length) !== 0) {
       throw new Error(`index add failed: ${webIndexError()}`);
     }
@@ -398,29 +345,15 @@ export class WebVectorIndex {
       }
       flat.set(vector, i * dim);
     });
-    const nativeKeys = BigUint64Array.from(keys, (key) => BigInt(key));
-    if (
-      loadLib().symbols.aphrody_web_index_add_batch(
-        this.#id(),
-        nativeKeys,
-        flat,
-        keys.length,
-        dim,
-      ) !== 0
-    ) {
+    const nativeKeys = BigUint64Array.from(keys, key => BigInt(key));
+    if (loadLib().symbols.aphrody_web_index_add_batch(this.#id(), nativeKeys, flat, keys.length, dim) !== 0) {
       throw new Error(`index batch failed: ${webIndexError()}`);
     }
   }
 
-  search(
-    query: Float32Array,
-    k: number,
-    ef = Math.max(128, k * 2),
-  ): Array<{ key: number; score: number }> {
+  search(query: Float32Array, k: number, ef = Math.max(128, k * 2)): Array<{ key: number; score: number }> {
     const result = JSON.parse(
-      readOwnedString(
-        loadLib().symbols.aphrody_web_index_search(this.#id(), query, query.length, k, ef),
-      ),
+      readOwnedString(loadLib().symbols.aphrody_web_index_search(this.#id(), query, query.length, k, ef)),
     ) as Array<{ key: number; score: number }> | { error: string };
     if (!Array.isArray(result)) throw new Error(`index search failed: ${result.error}`);
     return result;
@@ -438,9 +371,10 @@ export class WebVectorIndex {
       throw new Error(`index compact failed: ${webIndexError()}`);
   }
   stats(): Record<string, unknown> {
-    return JSON.parse(
-      readOwnedString(loadLib().symbols.aphrody_web_index_stats(this.#id())),
-    ) as Record<string, unknown>;
+    return JSON.parse(readOwnedString(loadLib().symbols.aphrody_web_index_stats(this.#id()))) as Record<
+      string,
+      unknown
+    >;
   }
   close(): void {
     if (!this.#handle) return;
@@ -509,49 +443,24 @@ export function webJobPendingCount(): number {
   return loadLib().symbols.aphrody_web_job_pending_count();
 }
 
-export function webEmbedSubmit(
-  texts: readonly string[],
-  kind = "passage",
-  timeoutMs = 30000,
-): number {
+export function webEmbedSubmit(texts: readonly string[], kind = "passage", timeoutMs = 30000): number {
   return trackJob(
-    Number(
-      loadLib().symbols.aphrody_web_embed_submit(
-        cstr(JSON.stringify(texts)),
-        cstr(kind),
-        timeoutMs,
-      ),
-    ),
+    Number(loadLib().symbols.aphrody_web_embed_submit(cstr(JSON.stringify(texts)), cstr(kind), timeoutMs)),
   );
 }
 
-export function webRerankSubmit(
-  query: string,
-  passages: readonly string[],
-  timeoutMs = 30000,
-): number {
+export function webRerankSubmit(query: string, passages: readonly string[], timeoutMs = 30000): number {
   return trackJob(
-    Number(
-      loadLib().symbols.aphrody_web_rerank_submit(
-        cstr(query),
-        cstr(JSON.stringify(passages)),
-        timeoutMs,
-      ),
-    ),
+    Number(loadLib().symbols.aphrody_web_rerank_submit(cstr(query), cstr(JSON.stringify(passages)), timeoutMs)),
   );
 }
 
 export function webEmbedInfo(): Record<string, unknown> {
-  return JSON.parse(readOwnedString(loadLib().symbols.aphrody_web_embed_info())) as Record<
-    string,
-    unknown
-  >;
+  return JSON.parse(readOwnedString(loadLib().symbols.aphrody_web_embed_info())) as Record<string, unknown>;
 }
 
 export function webEmbedInstallSubmit(modelId: string, timeoutMs = 600000): number {
-  return trackJob(
-    Number(loadLib().symbols.aphrody_web_embed_install_submit(cstr(modelId), timeoutMs)),
-  );
+  return trackJob(Number(loadLib().symbols.aphrody_web_embed_install_submit(cstr(modelId), timeoutMs)));
 }
 
 /** Read cookies from an explicitly selected local Chromium profile. */
@@ -562,11 +471,7 @@ export function webGetChromiumCookies(
 ): Array<Record<string, unknown>> {
   const value = JSON.parse(
     readOwnedString(
-      loadLib().symbols.aphrody_web_get_chromium_cookies(
-        cstr(userDataPath),
-        cstr(profile),
-        cstr(hostKey),
-      ),
+      loadLib().symbols.aphrody_web_get_chromium_cookies(cstr(userDataPath), cstr(profile), cstr(hostKey)),
     ),
   ) as Array<Record<string, unknown>> | { error: string };
   if (!Array.isArray(value)) throw new Error(value.error);
@@ -575,11 +480,7 @@ export function webGetChromiumCookies(
 
 /** Start a native HTTP fetch without blocking Bun's event loop. Poll via webJobTake. */
 export function webObscuraFetchSubmit(url: string, stealth = false, timeoutMs = 30000): number {
-  return trackJob(
-    Number(
-      loadLib().symbols.aphrody_web_obscura_fetch_submit(cstr(url), stealth ? 1 : 0, timeoutMs),
-    ),
-  );
+  return trackJob(Number(loadLib().symbols.aphrody_web_obscura_fetch_submit(cstr(url), stealth ? 1 : 0, timeoutMs)));
 }
 
 /** Extract media URLs from HTML or player JavaScript without a network request. */
@@ -610,11 +511,7 @@ export function webMediaResolveSubmit(
 ): number {
   return trackJob(
     Number(
-      loadLib().symbols.aphrody_web_media_resolve_submit(
-        cstr(embedUrl),
-        cstr(JSON.stringify(options)),
-        timeoutMs,
-      ),
+      loadLib().symbols.aphrody_web_media_resolve_submit(cstr(embedUrl), cstr(JSON.stringify(options)), timeoutMs),
     ),
   );
 }
@@ -623,12 +520,7 @@ export function webDnsReconSubmit(domain: string, timeoutMs = 30000): number {
   return trackJob(Number(loadLib().symbols.aphrody_web_dns_recon_submit(cstr(domain), timeoutMs)));
 }
 
-export function webGeminiAskSubmit(
-  cookiePath: string,
-  prompt: string,
-  model?: string,
-  timeoutMs = 30000,
-): number {
+export function webGeminiAskSubmit(cookiePath: string, prompt: string, model?: string, timeoutMs = 30000): number {
   return trackJob(
     Number(
       loadLib().symbols.aphrody_web_gemini_web_ask_submit(
@@ -641,20 +533,10 @@ export function webGeminiAskSubmit(
   );
 }
 
-export function webXUserSubmit(
-  authToken: string,
-  ct0: string,
-  handle: string,
-  timeoutMs = 30000,
-): number {
+export function webXUserSubmit(authToken: string, ct0: string, handle: string, timeoutMs = 30000): number {
   return trackJob(
     Number(
-      loadLib().symbols.aphrody_web_x_user_by_screen_name_submit(
-        cstr(authToken),
-        cstr(ct0),
-        cstr(handle),
-        timeoutMs,
-      ),
+      loadLib().symbols.aphrody_web_x_user_by_screen_name_submit(cstr(authToken), cstr(ct0), cstr(handle), timeoutMs),
     ),
   );
 }
@@ -668,23 +550,12 @@ export function webXTweetsSubmit(
 ): number {
   return trackJob(
     Number(
-      loadLib().symbols.aphrody_web_x_user_tweets_submit(
-        cstr(authToken),
-        cstr(ct0),
-        cstr(handle),
-        count,
-        timeoutMs,
-      ),
+      loadLib().symbols.aphrody_web_x_user_tweets_submit(cstr(authToken), cstr(ct0), cstr(handle), count, timeoutMs),
     ),
   );
 }
 
-export function webXCommunitySubmit(
-  authToken: string,
-  ct0: string,
-  communityId: string,
-  timeoutMs = 30000,
-): number {
+export function webXCommunitySubmit(authToken: string, ct0: string, communityId: string, timeoutMs = 30000): number {
   return trackJob(
     Number(
       loadLib().symbols.aphrody_web_x_community_by_rest_id_submit(
@@ -737,11 +608,7 @@ export function webXCommunityInfoAndTweetsSubmit(
   );
 }
 
-export function webXAlgorithmRank(
-  candidates: unknown[],
-  context: Record<string, unknown>,
-  topK: number,
-): unknown {
+export function webXAlgorithmRank(candidates: unknown[], context: Record<string, unknown>, topK: number): unknown {
   const result = readOwnedString(
     loadLib().symbols.aphrody_web_x_algorithm_rank(
       cstr(JSON.stringify(candidates)),
@@ -753,7 +620,7 @@ export function webXAlgorithmRank(
 }
 
 function validateCliArgs(args: string[]): void {
-  if (!Array.isArray(args) || args.some((arg) => typeof arg !== "string" || arg.includes("\0"))) {
+  if (!Array.isArray(args) || args.some(arg => typeof arg !== "string" || arg.includes("\0"))) {
     throw new TypeError("CLI arguments must be strings without NUL characters");
   }
 }
@@ -823,9 +690,7 @@ export function runCaptured(args: string[]): CapturedResult {
 export function assertCompatible(): void {
   const actual = abiVersion();
   if (actual !== EXPECTED_ABI_VERSION) {
-    throw new Error(
-      `aphrody-ffi ABI mismatch: binding expects ${EXPECTED_ABI_VERSION}, library reports ${actual}`,
-    );
+    throw new Error(`aphrody-ffi ABI mismatch: binding expects ${EXPECTED_ABI_VERSION}, library reports ${actual}`);
   }
 }
 

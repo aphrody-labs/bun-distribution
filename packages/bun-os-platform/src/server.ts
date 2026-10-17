@@ -15,25 +15,17 @@ import { plugins } from "./plugins";
 import { currentTheme, loadTheme, themeCss } from "./theme";
 import { type TransferEvent, transfers } from "./transfer";
 
-type Handler = (
-  request: Request & { params?: Record<string, string> },
-) => Response | Promise<Response>;
+type Handler = (request: Request & { params?: Record<string, string> }) => Response | Promise<Response>;
 export type Guard = (handler: Handler) => Handler;
 
-const json = (
-  value: unknown,
-  status = 200,
-  headers: Record<string, string> = {},
-) =>
+const json = (value: unknown, status = 200, headers: Record<string, string> = {}) =>
   Response.json(value, {
     status,
     headers: { "cache-control": "no-store", ...headers },
   });
 
 function cookie(request: Request, name: string): string | null {
-  const m = request.headers
-    .get("cookie")
-    ?.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  const m = request.headers.get("cookie")?.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
   return m?.[1] ? decodeURIComponent(m[1]) : null;
 }
 
@@ -47,27 +39,20 @@ export function requestLocale(request: Request) {
 }
 
 /** A localizer for a web request (server-rendered strings, errors). */
-export function requestLocalizer(
-  request: Request,
-  domains: string[] = ["common", "play"],
-) {
+export function requestLocalizer(request: Request, domains: string[] = ["common", "play"]) {
   return localizer(requestLocale(request).chain, domains);
 }
 
 const MAX_INSPECT_BYTES = 512 * 1024 * 1024;
 
-export function platformRoutes(
-  options: { guard?: Guard; domains?: string[] } = {},
-) {
-  const guard: Guard = options.guard ?? ((h) => h);
+export function platformRoutes(options: { guard?: Guard; domains?: string[] } = {}) {
+  const guard: Guard = options.guard ?? (h => h);
   const allowed = new Set(options.domains ?? ["common", "play", "engine"]);
   return {
     "/api/platform/i18n": {
       GET: (request: Request) => {
         const url = new URL(request.url);
-        const domains = (url.searchParams.get("domains") ?? "common")
-          .split(",")
-          .filter((d) => allowed.has(d));
+        const domains = (url.searchParams.get("domains") ?? "common").split(",").filter(d => allowed.has(d));
         const n = requestLocale(request);
         const sources: Record<string, string[]> = {};
         for (const tag of n.chain) sources[tag] = catalogSources(tag, domains);
@@ -101,18 +86,18 @@ export function platformRoutes(
         const registry = await plugins();
         const l10n = requestLocalizer(request);
         return json({
-          plugins: registry.plugins.map((p) => ({
+          plugins: registry.plugins.map(p => ({
             name: p.manifest.name,
             version: p.manifest.version,
             trust: p.trust,
             permissions: p.manifest.permissions,
           })),
-          blocked: registry.blocked.map((b) => ({
+          blocked: registry.blocked.map(b => ({
             name: b.name,
             reason: b.reason,
           })),
           menu: registry.menuFor(l10n),
-          themes: registry.themes.map((t) => ({
+          themes: registry.themes.map(t => ({
             id: t.id,
             name: t.name ?? null,
             plugin: t.plugin,
@@ -121,7 +106,7 @@ export function platformRoutes(
       },
     },
     "/api/platform/plugins/run": {
-      POST: guard(async (request) => {
+      POST: guard(async request => {
         const body = (await request.json()) as {
           command: string;
           args?: Record<string, unknown>;
@@ -133,13 +118,10 @@ export function platformRoutes(
     },
     /** Body: the file bytes; `?name=` keeps the user's file name. Detection + preview, nothing stored. */
     "/api/platform/files/inspect": {
-      POST: guard(async (request) => {
+      POST: guard(async request => {
         const length = Number(request.headers.get("content-length") ?? 0);
-        if (length > MAX_INSPECT_BYTES)
-          return json({ error: "file too large to inspect" }, 413);
-        const name = (
-          new URL(request.url).searchParams.get("name") ?? "upload.bin"
-        ).replace(/[\\/:*?"<>|]/g, "_");
+        if (length > MAX_INSPECT_BYTES) return json({ error: "file too large to inspect" }, 413);
+        const name = (new URL(request.url).searchParams.get("name") ?? "upload.bin").replace(/[\\/:*?"<>|]/g, "_");
         const dir = mkdtempSync(join(tmpdir(), "bun-os-inspect-"));
         try {
           const path = join(dir, name);
@@ -160,12 +142,10 @@ export function platformRoutes(
     },
     "/api/platform/transfers": {
       GET: guard(async () => json((await transfers()).list())),
-      POST: guard(async (request) =>
-        json((await transfers()).enqueue((await request.json()) as never), 202),
-      ),
+      POST: guard(async request => json((await transfers()).enqueue((await request.json()) as never), 202)),
     },
     "/api/platform/transfers/:id/:action": {
-      POST: guard(async (request) => {
+      POST: guard(async request => {
         const { id = "", action = "" } = request.params ?? {};
         const service = await transfers();
         if (action === "pause") service.pause(id);
@@ -179,12 +159,9 @@ export function platformRoutes(
 }
 
 /** Forwards transfer progress to a realtime publisher (play's WebSocket topic `transfers`). */
-export async function attachTransfers(
-  publish: (event: TransferEvent) => void,
-): Promise<() => void> {
+export async function attachTransfers(publish: (event: TransferEvent) => void): Promise<() => void> {
   const service = await transfers();
-  const listener = (e: Event) =>
-    publish((e as CustomEvent<TransferEvent>).detail);
+  const listener = (e: Event) => publish((e as CustomEvent<TransferEvent>).detail);
   service.addEventListener("progress", listener);
   return () => service.removeEventListener("progress", listener);
 }

@@ -30,35 +30,21 @@ export interface DesignReport {
 
 /** Compile a design brief and optionally write the generated files. */
 export async function designApp(options: DesignOptions): Promise<DesignReport> {
-  if (!options.prompt.trim())
-    throw new Error("m3-bun design: the brief is empty");
-  const { DesignCompiler } = await loadTool(
-    "@aphrody/m3-design",
-    () => import("@aphrody/m3-design"),
-  );
-  const { loadDesignSystemFromDisk } =
-    await import("@aphrody/m3-design/src/node.ts");
+  if (!options.prompt.trim()) throw new Error("m3-bun design: the brief is empty");
+  const { DesignCompiler } = await loadTool("@aphrody/m3-design", () => import("@aphrody/m3-design"));
+  const { loadDesignSystemFromDisk } = await import("@aphrody/m3-design/src/node.ts");
   const validateSpec = options.validate
-    ? (
-        await loadTool(
-          "@aphrody/bun",
-          () => import("@aphrody/m3-design/src/native.ts"),
-        )
-      ).nativeSpecValidator
+    ? (await loadTool("@aphrody/bun", () => import("@aphrody/m3-design/src/native.ts"))).nativeSpecValidator
     : undefined;
   const compiler = new DesignCompiler({
     loadDesignSystem: loadDesignSystemFromDisk,
     ...(validateSpec ? { validateSpec } : {}),
   });
-  const result = compiler.compile(
-    options.prompt,
-    options.color,
-    options.designSystem,
-  );
+  const result = compiler.compile(options.prompt, options.color, options.designSystem);
   const written = options.out
     ? await writeFiles(
         resolve(options.out),
-        result.files.map((file) => ({
+        result.files.map(file => ({
           path: file.path,
           content: file.content,
         })),
@@ -67,7 +53,7 @@ export async function designApp(options: DesignOptions): Promise<DesignReport> {
   return {
     brief: result.brief,
     seed: result.theme.seed,
-    files: result.files.map((file) => ({
+    files: result.files.map(file => ({
       path: file.path,
       bytes: Buffer.byteLength(file.content),
     })),

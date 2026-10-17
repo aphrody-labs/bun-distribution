@@ -48,8 +48,7 @@ export type ChatStreamEvent =
   | { type: "finish"; reason: string }
   | { type: "done" };
 
-export type ChatStreamErrorKind =
-  "network" | "http" | "aborted" | "parse" | "stream";
+export type ChatStreamErrorKind = "network" | "http" | "aborted" | "parse" | "stream";
 
 /** Typed failure of a chat request. `unavailable` marks a model that cannot answer right now. */
 export class ChatStreamError extends Error {
@@ -57,20 +56,12 @@ export class ChatStreamError extends Error {
   readonly status?: number;
   readonly unavailable: boolean;
 
-  constructor(
-    kind: ChatStreamErrorKind,
-    message: string,
-    options: { status?: number; cause?: unknown } = {},
-  ) {
-    super(
-      message,
-      options.cause === undefined ? undefined : { cause: options.cause },
-    );
+  constructor(kind: ChatStreamErrorKind, message: string, options: { status?: number; cause?: unknown } = {}) {
+    super(message, options.cause === undefined ? undefined : { cause: options.cause });
     this.name = "ChatStreamError";
     this.kind = kind;
     this.status = options.status;
-    this.unavailable =
-      kind === "network" || isUnavailableStatus(options.status);
+    this.unavailable = kind === "network" || isUnavailableStatus(options.status);
   }
 }
 
@@ -159,15 +150,13 @@ export function parseChatCompletionChunk(payload: string): ChatStreamEvent[] {
     });
   }
   if (chunk.error) {
-    const message =
-      typeof chunk.error === "string" ? chunk.error : chunk.error.message;
+    const message = typeof chunk.error === "string" ? chunk.error : chunk.error.message;
     throw new ChatStreamError("stream", message || "stream error");
   }
   const events: ChatStreamEvent[] = [];
   for (const choice of chunk.choices ?? []) {
     const delta = choice.delta;
-    if (delta?.reasoning_content)
-      events.push({ type: "reasoning", text: delta.reasoning_content });
+    if (delta?.reasoning_content) events.push({ type: "reasoning", text: delta.reasoning_content });
     if (delta?.content) events.push({ type: "content", text: delta.content });
     if (delta?.refusal) events.push({ type: "refusal", text: delta.refusal });
     for (const call of delta?.tool_calls ?? []) {
@@ -179,11 +168,9 @@ export function parseChatCompletionChunk(payload: string): ChatStreamEvent[] {
         arguments: call.function?.arguments,
       });
     }
-    if (choice.finish_reason)
-      events.push({ type: "finish", reason: choice.finish_reason });
+    if (choice.finish_reason) events.push({ type: "finish", reason: choice.finish_reason });
   }
-  if (Array.isArray(chunk.citations))
-    events.push({ type: "citations", citations: chunk.citations });
+  if (Array.isArray(chunk.citations)) events.push({ type: "citations", citations: chunk.citations });
   if (chunk.refusal === true) events.push({ type: "refusal" });
   return events;
 }
@@ -211,10 +198,8 @@ export function accumulateToolCall(
 }
 
 /** The request body messages, in the OpenAI wire shape. */
-export function toOpenAIMessages(
-  messages: readonly ChatMessage[],
-): Record<string, unknown>[] {
-  return messages.map((message) => {
+export function toOpenAIMessages(messages: readonly ChatMessage[]): Record<string, unknown>[] {
+  return messages.map(message => {
     const wire: Record<string, unknown> = {
       role: message.role,
       content: message.content,
@@ -270,8 +255,7 @@ export async function* streamChatCompletion(
       signal: options.signal,
     });
   } catch (cause) {
-    if (options.signal?.aborted)
-      throw new ChatStreamError("aborted", "request aborted", { cause });
+    if (options.signal?.aborted) throw new ChatStreamError("aborted", "request aborted", { cause });
     throw new ChatStreamError("network", "chat endpoint unreachable", {
       cause,
     });
@@ -287,11 +271,10 @@ export async function* streamChatCompletion(
       status: response.status,
     });
   }
-  if (!response.body)
-    throw new ChatStreamError("stream", "response has no body");
+  if (!response.body) throw new ChatStreamError("stream", "response has no body");
 
   const queue: string[] = [];
-  const parser = createSseParser((data) => queue.push(data));
+  const parser = createSseParser(data => queue.push(data));
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   try {
@@ -301,8 +284,7 @@ export async function* streamChatCompletion(
         // oxlint-disable-next-line no-await-in-loop -- SSE chunks are read in order, one at a time.
         result = await reader.read();
       } catch (cause) {
-        if (options.signal?.aborted)
-          throw new ChatStreamError("aborted", "request aborted", { cause });
+        if (options.signal?.aborted) throw new ChatStreamError("aborted", "request aborted", { cause });
         throw new ChatStreamError("stream", "stream interrupted", { cause });
       }
       if (result.done) {
@@ -376,19 +358,13 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return {
         status: "streaming",
         error: null,
-        messages: [
-          ...state.messages,
-          action.user,
-          { id: action.assistantId, role: "assistant", content: "" },
-        ],
+        messages: [...state.messages, action.user, { id: action.assistantId, role: "assistant", content: "" }],
       };
     case "event":
       return {
         ...state,
-        messages: state.messages.map((message) =>
-          message.id === action.assistantId
-            ? applyEvent(message, action.event)
-            : message,
+        messages: state.messages.map(message =>
+          message.id === action.assistantId ? applyEvent(message, action.event) : message,
         ),
       };
     case "finish":
@@ -398,10 +374,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       // An empty assistant turn left by a failed request is dropped.
       const last = state.messages.at(-1);
       const messages =
-        last &&
-        last.role === "assistant" &&
-        !last.content &&
-        !last.toolCalls?.length
+        last && last.role === "assistant" && !last.content && !last.toolCalls?.length
           ? state.messages.slice(0, -1)
           : state.messages;
       return {

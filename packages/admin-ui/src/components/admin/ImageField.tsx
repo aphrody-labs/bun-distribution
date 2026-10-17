@@ -1,14 +1,7 @@
 "use client";
 
 import { FolderOpen, ImageOff, Loader2, Search, Upload, X } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ClipboardEvent,
-  type DragEvent,
-} from "react";
+import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { api } from "@aphrody/admin-ui/client";
 import { assetUrl } from "@/lib/assets";
 
@@ -38,12 +31,7 @@ interface GalleryFile {
  * `POST /api/admin/upload` (admin-gated, relais vers le bot) et stocke le chemin
  * DB renvoyé (`./assets/wiki/<subdir>/<uuid>.<ext>`).
  */
-export function ImageField({
-  value,
-  onChange,
-  subdir = "uploads",
-  column,
-}: Props) {
+export function ImageField({ value, onChange, subdir = "uploads", column }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   // Garde anti-concurrence (ref → pas de dépendance/closure obsolète dans upload).
   const busyRef = useRef(false);
@@ -110,33 +98,27 @@ export function ImageField({
       const url = e.dataTransfer
         .getData("text/uri-list")
         .split("\n")
-        .find((line) => line && !line.startsWith("#"))
+        .find(line => line && !line.startsWith("#"))
         ?.trim();
       if (url && /^https?:\/\//i.test(url)) {
         onChange(url);
         setError(null);
         return;
       }
-      setError(
-        "Déposez une image depuis votre ordinateur ou un lien d’image http(s).",
-      );
+      setError("Déposez une image depuis votre ordinateur ou un lien d’image http(s).");
     },
     [onChange, upload],
   );
 
   const onPaste = useCallback(
     (e: ClipboardEvent<HTMLDivElement>) => {
-      const file = Array.from(e.clipboardData.files).find((f) =>
-        f.type.startsWith("image/"),
-      );
+      const file = Array.from(e.clipboardData.files).find(f => f.type.startsWith("image/"));
       if (file) {
         e.preventDefault();
         void upload(file);
         return;
       }
-      const url =
-        e.clipboardData.getData("text/uri-list").trim() ||
-        e.clipboardData.getData("text/plain").trim();
+      const url = e.clipboardData.getData("text/uri-list").trim() || e.clipboardData.getData("text/plain").trim();
       if (/^https?:\/\//i.test(url)) {
         e.preventDefault();
         onChange(url);
@@ -154,21 +136,20 @@ export function ImageField({
         tabIndex={0}
         aria-label={`Déposer ou choisir une image${column ? ` pour ${column}` : ""}`}
         onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             inputRef.current?.click();
           }
         }}
-        onDragOver={(e) => {
+        onDragOver={e => {
           e.preventDefault();
           if (!dragging) setDragging(true);
         }}
-        onDragLeave={(e) => {
+        onDragLeave={e => {
           e.preventDefault();
           // Ignore les dragleave vers un élément enfant (sinon flicker du surlignage).
-          if (!e.currentTarget.contains(e.relatedTarget as Node | null))
-            setDragging(false);
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
         }}
         onDrop={onDrop}
         onPaste={onPaste}
@@ -190,7 +171,7 @@ export function ImageField({
               src={preview}
               alt=""
               className="h-full w-full object-cover"
-              onError={(e) => {
+              onError={e => {
                 (e.currentTarget as HTMLImageElement).style.display = "none";
               }}
             />
@@ -208,17 +189,13 @@ export function ImageField({
               "Relâchez pour envoyer l'image"
             ) : (
               <>
-                <span className="font-semibold text-dbz-orange">
-                  Glisser-déposer
-                </span>{" "}
-                une image ou son lien, coller, ou cliquer pour parcourir
+                <span className="font-semibold text-dbz-orange">Glisser-déposer</span> une image ou son lien, coller, ou
+                cliquer pour parcourir
               </>
             )}
           </p>
           <p className="truncate text-[11px] text-white/50">
-            {value
-              ? value
-              : "Image ou lien https · PNG · JPG · WebP · GIF — max 50 Mo"}
+            {value ? value : "Image ou lien https · PNG · JPG · WebP · GIF — max 50 Mo"}
           </p>
         </div>
 
@@ -227,7 +204,7 @@ export function ImageField({
           type="file"
           accept={ACCEPT}
           className="hidden"
-          onChange={(e) => {
+          onChange={e => {
             const file = e.target.files?.[0];
             if (file) void upload(file);
             e.target.value = "";
@@ -276,7 +253,7 @@ export function ImageField({
         className="input font-mono text-xs"
         value={value}
         placeholder="./assets/… ou https:/…"
-        onChange={(e) => onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
       />
 
       {error && <p className="text-xs text-red-400">{error}</p>}
@@ -284,7 +261,7 @@ export function ImageField({
       {galleryOpen && (
         <GalleryPicker
           onClose={() => setGalleryOpen(false)}
-          onPick={(path) => {
+          onPick={path => {
             onChange(path);
             setError(null);
             setGalleryOpen(false);
@@ -296,13 +273,7 @@ export function ImageField({
 }
 
 /** Galerie des images déjà uploadées (wiki) — `GET /api/assets/list?dir=wiki`. */
-function GalleryPicker({
-  onClose,
-  onPick,
-}: {
-  onClose: () => void;
-  onPick: (path: string) => void;
-}) {
+function GalleryPicker({ onClose, onPick }: { onClose: () => void; onPick: (path: string) => void }) {
   const [files, setFiles] = useState<GalleryFile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
@@ -311,7 +282,7 @@ function GalleryPicker({
     let alive = true;
     api
       .get<{ files: GalleryFile[] }>("/assets/list?dir=wiki")
-      .then((data) => {
+      .then(data => {
         if (alive) setFiles(data.files ?? []);
       })
       .catch((e: Error) => {
@@ -323,9 +294,7 @@ function GalleryPicker({
   }, []);
 
   const shown = (files ?? [])
-    .filter((f) =>
-      filter ? f.name.toLowerCase().includes(filter.toLowerCase()) : true,
-    )
+    .filter(f => (filter ? f.name.toLowerCase().includes(filter.toLowerCase()) : true))
     .slice(0, 240);
 
   return (
@@ -333,29 +302,19 @@ function GalleryPicker({
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur"
       onClick={onClose}
     >
-      <div
-        className="dbz-panel flex max-h-[85vh] w-full max-w-4xl flex-col p-5"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="dbz-panel flex max-h-[85vh] w-full max-w-4xl flex-col p-5" onClick={e => e.stopPropagation()}>
         <div className="mb-3 flex items-center gap-3">
-          <h3 className="font-saiyan text-lg uppercase text-dbz-orange">
-            Galerie d'images
-          </h3>
+          <h3 className="font-saiyan text-lg uppercase text-dbz-orange">Galerie d'images</h3>
           <div className="relative ml-auto">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-white/50" />
             <input
               className="input h-8 w-56 pl-7 text-xs"
               placeholder="Filtrer par nom…"
               value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              onChange={e => setFilter(e.target.value)}
             />
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn btn-ghost px-2"
-            aria-label="Fermer"
-          >
+          <button type="button" onClick={onClose} className="btn btn-ghost px-2" aria-label="Fermer">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -367,12 +326,10 @@ function GalleryPicker({
             <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
           </div>
         ) : shown.length === 0 ? (
-          <p className="py-12 text-center text-sm text-white/50">
-            Aucune image trouvée.
-          </p>
+          <p className="py-12 text-center text-sm text-white/50">Aucune image trouvée.</p>
         ) : (
           <div className="grid flex-1 grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4 md:grid-cols-6">
-            {shown.map((f) => (
+            {shown.map(f => (
               <button
                 key={f.path}
                 type="button"
@@ -388,9 +345,7 @@ function GalleryPicker({
                     className="h-full w-full object-cover transition-transform group-hover:scale-105"
                   />
                 </span>
-                <span className="block truncate px-1 py-0.5 text-[9px] text-white/50">
-                  {f.name}
-                </span>
+                <span className="block truncate px-1 py-0.5 text-[9px] text-white/50">{f.name}</span>
               </button>
             ))}
           </div>

@@ -1,24 +1,8 @@
-export function clamp({
-  value,
-  min,
-  max,
-}: {
-  value: number;
-  min: number;
-  max: number;
-}): number {
+export function clamp({ value, min, max }: { value: number; min: number; max: number }): number {
   return Math.max(min, Math.min(max, value));
 }
 
-export function clampRound({
-  value,
-  min,
-  max,
-}: {
-  value: number;
-  min: number;
-  max: number;
-}): number {
+export function clampRound({ value, min, max }: { value: number; min: number; max: number }): number {
   return Math.round(clamp({ value, min, max }));
 }
 
@@ -31,13 +15,7 @@ export function getFractionDigitsForStep({ step }: { step: number }): number {
   return fractionalPart.length;
 }
 
-export function snapToStep({
-  value,
-  step,
-}: {
-  value: number;
-  step: number;
-}): number {
+export function snapToStep({ value, step }: { value: number; step: number }): number {
   if (step <= 0) return value;
   const snappedValue = Math.round(value / step) * step;
   return Number(snappedValue.toFixed(getFractionDigitsForStep({ step })));
@@ -66,10 +44,7 @@ export function formatNumberForDisplay({
   minFractionDigits?: number;
   maxFractionDigits?: number;
 }): string {
-  const resolvedMaxFractionDigits = Math.max(
-    0,
-    fractionDigits ?? maxFractionDigits,
-  );
+  const resolvedMaxFractionDigits = Math.max(0, fractionDigits ?? maxFractionDigits);
   const resolvedMinFractionDigits = Math.min(
     Math.max(0, fractionDigits ?? minFractionDigits),
     resolvedMaxFractionDigits,
@@ -84,25 +59,16 @@ export function formatNumberForDisplay({
   const normalizedIntegerPart = Number(fixedValue) === 0 ? "0" : integerPart;
   let trimmedFractionPart = fractionPart;
 
-  while (
-    trimmedFractionPart.length > resolvedMinFractionDigits &&
-    trimmedFractionPart.endsWith("0")
-  ) {
+  while (trimmedFractionPart.length > resolvedMinFractionDigits && trimmedFractionPart.endsWith("0")) {
     trimmedFractionPart = trimmedFractionPart.slice(0, -1);
   }
 
-  return trimmedFractionPart
-    ? `${normalizedIntegerPart}.${trimmedFractionPart}`
-    : normalizedIntegerPart;
+  return trimmedFractionPart ? `${normalizedIntegerPart}.${trimmedFractionPart}` : normalizedIntegerPart;
 }
 
 // Safely evaluates an arithmetic expression without eval/new Function.
 // Supports +, -, *, /, parentheses, and decimal numbers.
-export function evaluateMathExpression({
-  input,
-}: {
-  input: string;
-}): number | null {
+export function evaluateMathExpression({ input }: { input: string }): number | null {
   const sanitized = input.trim();
   if (!/^[\d.\s+\-*/()]+$/.test(sanitized)) return null;
   try {

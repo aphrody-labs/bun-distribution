@@ -7,24 +7,17 @@ test("native RAG preserves six source identities and fixed domain/tool selection
   const results = Array.from({ length: 7 }, (_, index) => ({
     sourceId: `source-${index}`,
   }));
-  const payload = await searchLocalRag(
-    selection,
-    "Son Goku",
-    6,
-    async (request, options) => {
-      expect(request).toEqual({
-        config: selection.config,
-        server: "shenron-rag",
-        tool: "aphrody_shenron_rag_search",
-        arguments: { q: "Son Goku", limit: 6 },
-      });
-      expect(options.timeoutMs).toBe(30_000);
-      return { result: { structuredContent: { results } } };
-    },
-  );
-  expect(payload.results.map((item) => item.sourceId)).toEqual(
-    results.slice(0, 6).map((item) => item.sourceId),
-  );
+  const payload = await searchLocalRag(selection, "Son Goku", 6, async (request, options) => {
+    expect(request).toEqual({
+      config: selection.config,
+      server: "shenron-rag",
+      tool: "aphrody_shenron_rag_search",
+      arguments: { q: "Son Goku", limit: 6 },
+    });
+    expect(options.timeoutMs).toBe(30_000);
+    return { result: { structuredContent: { results } } };
+  });
+  expect(payload.results.map(item => item.sourceId)).toEqual(results.slice(0, 6).map(item => item.sourceId));
 });
 test("native RAG supports standard text JSON but refuses tool errors and malformed records", () => {
   expect(
@@ -62,11 +55,7 @@ test("native RAG refuses cross-domain configuration and unbounded requests befor
     { ...selection, query: "Goku", limit: 9 },
   ];
   await Promise.all(
-    requests.map((request) =>
-      expect(
-        searchLocalRag(request, request.query, request.limit, transport),
-      ).rejects.toThrow(),
-    ),
+    requests.map(request => expect(searchLocalRag(request, request.query, request.limit, transport)).rejects.toThrow()),
   );
   expect(calls).toBe(0);
 });

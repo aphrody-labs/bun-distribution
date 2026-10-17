@@ -15,15 +15,11 @@ import {
 export function useGraphEditorController() {
   const editor = useEditor();
   const renderTracks = useEditor(
-    (currentEditor) =>
-      currentEditor.timeline.getPreviewTracks() ??
-      currentEditor.scenes.getActiveScene().tracks,
+    currentEditor => currentEditor.timeline.getPreviewTracks() ?? currentEditor.scenes.getActiveScene().tracks,
   );
   const { selectedKeyframes } = useKeyframeSelection();
   const [open, setOpen] = useState(false);
-  const [activeComponentKey, setActiveComponentKey] = useState<string | null>(
-    null,
-  );
+  const [activeComponentKey, setActiveComponentKey] = useState<string | null>(null);
   const hasPreviewRef = useRef(false);
 
   const state = useMemo<GraphEditorSelectionState>(
@@ -39,10 +35,7 @@ export function useGraphEditorController() {
   const stateKey =
     state.status === "ready"
       ? `${state.trackId}:${state.elementId}:${state.activeComponentKey}:${state.segments
-          .map(
-            (segment) =>
-              `${segment.propertyPath}:${segment.keyframeId}:${segment.context.componentKey}`,
-          )
+          .map(segment => `${segment.propertyPath}:${segment.keyframeId}:${segment.context.componentKey}`)
           .join("|")}`
       : `${state.status}:${state.reason}:${state.activeComponentKey ?? "none"}`;
   const previousStateKeyRef = useRef(stateKey);
@@ -137,7 +130,7 @@ export function useGraphEditorController() {
       }
 
       editor.timeline.updateKeyframeCurves({
-        keyframes: state.segments.flatMap((segment) => {
+        keyframes: state.segments.flatMap(segment => {
           const patches = buildGraphEditorCurvePatches({
             context: segment.context,
             cubicBezier: nextValue,
@@ -147,7 +140,7 @@ export function useGraphEditorController() {
             return [];
           }
 
-          return segment.allContexts.flatMap((context) =>
+          return segment.allContexts.flatMap(context =>
             patches.map(({ keyframeId, patch }) => ({
               trackId: state.trackId,
               elementId: state.elementId,

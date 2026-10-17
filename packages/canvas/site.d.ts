@@ -23,16 +23,10 @@ export type BrowserCanvasElement = typeof globalThis extends {
   ? Element
   : { width: number; height: number; getContext(contextId: string): unknown };
 export declare function isBrowserCanvasAvailable(): boolean;
-export declare function selectCanvasBackend(
-  preferred?: CanvasBackend,
-): CanvasBackend;
-export declare function createM3CanvasSurface(
-  options?: Partial<M3CanvasSurface>,
-): M3CanvasSurface;
+export declare function selectCanvasBackend(preferred?: CanvasBackend): CanvasBackend;
+export declare function createM3CanvasSurface(options?: Partial<M3CanvasSurface>): M3CanvasSurface;
 export declare function configureBrowserCanvas(
   canvas: BrowserCanvasElement,
   options: AphrodyCanvasOptions,
 ): BrowserCanvasElement;
-export declare function createBrowserCanvas(
-  options: AphrodyCanvasOptions,
-): BrowserCanvasElement;
+export declare function createBrowserCanvas(options: AphrodyCanvasOptions): BrowserCanvasElement;

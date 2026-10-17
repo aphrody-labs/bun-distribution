@@ -17,25 +17,13 @@ export interface RemoteDownloadOptions {
   remoteDir?: string | undefined;
 }
 
-const SSH = [
-  "ssh",
-  "-o",
-  "ConnectTimeout=15",
-  "-o",
-  "BatchMode=yes",
-  "-o",
-  "ServerAliveInterval=30",
-];
+const SSH = ["ssh", "-o", "ConnectTimeout=15", "-o", "BatchMode=yes", "-o", "ServerAliveInterval=30"];
 
 async function run(cmd: string[], timeoutMs: number) {
   const p = Bun.spawn(cmd, { stdout: "pipe", stderr: "pipe" });
   const t = setTimeout(() => p.kill(), timeoutMs);
   try {
-    const [out, err, code] = await Promise.all([
-      p.stdout.text(),
-      p.stderr.text(),
-      p.exited,
-    ]);
+    const [out, err, code] = await Promise.all([p.stdout.text(), p.stderr.text(), p.exited]);
     return { out, err, code };
   } finally {
     clearTimeout(t);
@@ -43,8 +31,7 @@ async function run(cmd: string[], timeoutMs: number) {
 }
 
 export async function remoteDownload(o: RemoteDownloadOptions) {
-  if (!Number.isInteger(o.appid) || !o.dest)
-    throw new Error("remote-download <appid> --host <h> --dest <dir>");
+  if (!Number.isInteger(o.appid) || !o.dest) throw new Error("remote-download <appid> --host <h> --dest <dir>");
   const streams = o.streams ?? 16;
   const remoteDir = o.remoteDir ?? `/var/tmp/steam/${o.appid}`;
   const steamcmd = o.steamcmd ?? "steamcmd";
@@ -58,9 +45,7 @@ export async function remoteDownload(o: RemoteDownloadOptions) {
     7_300_000,
   );
   if (install.code !== 0)
-    throw new Error(
-      `steamcmd on ${o.host} failed (${install.code}): ${install.err.trim().slice(-400)}`,
-    );
+    throw new Error(`steamcmd on ${o.host} failed (${install.code}): ${install.err.trim().slice(-400)}`);
   const remoteMs = performance.now() - t0;
 
   mkdirSync(o.dest, { recursive: true });
@@ -91,23 +76,11 @@ export async function remoteDownload(o: RemoteDownloadOptions) {
   } else {
     tool = "scp";
     pull = await run(
-      [
-        "scp",
-        "-r",
-        "-o",
-        "BatchMode=yes",
-        "-o",
-        "Compression=no",
-        `${o.host}:${remoteDir}/.`,
-        o.dest,
-      ],
+      ["scp", "-r", "-o", "BatchMode=yes", "-o", "Compression=no", `${o.host}:${remoteDir}/.`, o.dest],
       7_200_000,
     );
   }
-  if (pull.code !== 0)
-    throw new Error(
-      `${tool} pull failed (${pull.code}): ${pull.err.trim().slice(-400)}`,
-    );
+  if (pull.code !== 0) throw new Error(`${tool} pull failed (${pull.code}): ${pull.err.trim().slice(-400)}`);
   return {
     appid: o.appid,
     host: o.host,

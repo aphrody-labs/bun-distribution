@@ -15,7 +15,7 @@ export function inboxDir(): string {
   return dir;
 }
 
-const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
+const sleep = (ms: number) => new Promise(done => setTimeout(done, ms));
 
 async function settled(path: string): Promise<boolean> {
   let size = -1;
@@ -32,12 +32,15 @@ async function settled(path: string): Promise<boolean> {
 /** Ingests one inbox entry and clears it; failures are parked in .rejected with a note. */
 export async function processInboxEntry(path: string, options: IngestOptions = {}): Promise<IngestResult[]> {
   const results = await ingestPaths([path], { ...options, via: options.via ?? "inbox" });
-  const failed = results.filter((result) => result.error);
+  const failed = results.filter(result => result.error);
   if (failed.length && failed.length === results.length) {
     const rejected = join(inboxDir(), ".rejected");
     await mkdir(rejected, { recursive: true });
     await rename(path, join(rejected, basename(path))).catch(() => {});
-    await Bun.write(join(rejected, `${basename(path)}.error.txt`), failed.map((item) => `${item.input}: ${item.error}`).join("\n"));
+    await Bun.write(
+      join(rejected, `${basename(path)}.error.txt`),
+      failed.map(item => `${item.input}: ${item.error}`).join("\n"),
+    );
   } else {
     await rm(path, { recursive: true, force: true });
   }

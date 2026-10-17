@@ -9,17 +9,17 @@
  * @module
  */
 
-import { invoke } from '../../../../js/api/core'
+import { invoke } from "../../../../js/api/core";
 
 window.alert = function (message?: string) {
-  void invoke('plugin:dialog|message', {
-    message: String(message)
-  })
-}
+  void invoke("plugin:dialog|message", {
+    message: String(message),
+  });
+};
 
 // @ts-expect-error tauri does not have sync IPC :(
 window.confirm = async function (message: string) {
-  return await invoke('plugin:dialog|confirm', {
-    message: message.toString()
-  })
-}
+  return await invoke("plugin:dialog|confirm", {
+    message: message.toString(),
+  });
+};

@@ -6,9 +6,7 @@ import { CodexChat, promptBarShape } from "./codex-chat";
 import { Rail } from "./rail-drawer";
 
 const appCss = await Bun.file(new URL("./app.css", import.meta.url)).text();
-const chatSrc = await Bun.file(
-  new URL("./codex-chat.tsx", import.meta.url),
-).text();
+const chatSrc = await Bun.file(new URL("./codex-chat.tsx", import.meta.url)).text();
 
 const baseProps = {
   turns: [],
@@ -28,18 +26,10 @@ const baseProps = {
 
 describe("Gemini prompt bar", () => {
   test("corner state follows content and conversation", () => {
-    expect(
-      promptBarShape({ hasTurns: false, scrolled: false, hasContent: false }),
-    ).toBe("empty");
-    expect(
-      promptBarShape({ hasTurns: false, scrolled: false, hasContent: true }),
-    ).toBe("content");
-    expect(
-      promptBarShape({ hasTurns: true, scrolled: false, hasContent: true }),
-    ).toBe("docked");
-    expect(
-      promptBarShape({ hasTurns: false, scrolled: true, hasContent: false }),
-    ).toBe("docked");
+    expect(promptBarShape({ hasTurns: false, scrolled: false, hasContent: false })).toBe("empty");
+    expect(promptBarShape({ hasTurns: false, scrolled: false, hasContent: true })).toBe("content");
+    expect(promptBarShape({ hasTurns: true, scrolled: false, hasContent: true })).toBe("docked");
+    expect(promptBarShape({ hasTurns: false, scrolled: true, hasContent: false })).toBe("docked");
   });
 
   test("CSS maps each state to the brand corner tokens", () => {
@@ -50,9 +40,7 @@ describe("Gemini prompt bar", () => {
     expect(appCss).toMatch(
       /\.app-prompt-bar\[data-shape="docked"\]\s*\{\s*border-radius:\s*var\(--app-shape-prompt-docked\);\s*\}/,
     );
-    expect(appCss).toContain(
-      "border: 1px solid var(--md-sys-color-outline-variant);",
-    );
+    expect(appCss).toContain("border: 1px solid var(--md-sys-color-outline-variant);");
     expect(appCss).toMatch(
       /field-sizing:\s*content;\s*height:\s*auto;\s*min-block-size:\s*1lh;\s*max-block-size:\s*10lh;/,
     );
@@ -63,10 +51,7 @@ describe("Gemini prompt bar", () => {
     const html = renderToStaticMarkup(createElement(CodexChat, baseProps));
     expect(html).toContain('class="app-greeting"');
     // Greeting is not a message: no copy, dislike or fork actions; sparkle sits inside the heading.
-    const feed = html.slice(
-      html.indexOf("app-reading-column"),
-      html.indexOf("app-prompt-bar"),
-    );
+    const feed = html.slice(html.indexOf("app-reading-column"), html.indexOf("app-prompt-bar"));
     expect(feed).not.toContain("content_copy");
     expect(feed).not.toContain("thumb_down");
     expect(feed).not.toContain("call_split");
@@ -81,37 +66,25 @@ describe("Gemini layout invariants", () => {
     const uses = appCss.match(/var\(--app-title-gradient\)/g) ?? [];
     expect(uses.length).toBe(1);
     const greeting = appCss.slice(appCss.indexOf(".app-greeting-text {"));
-    expect(greeting.slice(0, greeting.indexOf("}"))).toContain(
-      "var(--app-title-gradient)",
-    );
+    expect(greeting.slice(0, greeting.indexOf("}"))).toContain("var(--app-title-gradient)");
     expect(chatSrc.match(/TITLE_GRADIENT_STOPS/g)?.length).toBe(3); // import + two uses inside SparkleMark
   });
 
   test("springs drive only user-triggered morphs, with fallback and reduced motion", () => {
-    const supports = appCss.slice(
-      appCss.indexOf("@supports (transition-timing-function: linear(0, 1))"),
-    );
+    const supports = appCss.slice(appCss.indexOf("@supports (transition-timing-function: linear(0, 1))"));
     expect(supports).toContain("var(--app-motion-spring-default-spatial)");
-    expect(
-      appCss.indexOf(
-        "cubic-bezier(0.2, 0, 0, 1);\n}\n.app-prompt-bar[data-shape",
-      ),
-    ).toBeGreaterThan(0);
-    const reduced = appCss.slice(
-      appCss.lastIndexOf("@media (prefers-reduced-motion: reduce)"),
-    );
+    expect(appCss.indexOf("cubic-bezier(0.2, 0, 0, 1);\n}\n.app-prompt-bar[data-shape")).toBeGreaterThan(0);
+    const reduced = appCss.slice(appCss.lastIndexOf("@media (prefers-reduced-motion: reduce)"));
     expect(reduced).toContain(".app-prompt-bar");
     expect(reduced).toMatch(/\.app-rail-panel\s*\{\s*transition:\s*none;\s*\}/);
     expect(appCss).toContain("@supports (animation-timeline: scroll())");
   });
 
   test("shape tokens are loaded so rounded-full and the typescale resolve", () => {
-    expect(
-      appCss.indexOf('@import "@aphrody/m3-tokens/m3-tokens.css"'),
-    ).toBeGreaterThan(0);
-    expect(
-      appCss.indexOf('@import "@aphrody/m3-tokens/m3-tokens.css"'),
-    ).toBeLessThan(appCss.indexOf('@import "./brand.css"'));
+    expect(appCss.indexOf('@import "@aphrody/m3-tokens/m3-tokens.css"')).toBeGreaterThan(0);
+    expect(appCss.indexOf('@import "@aphrody/m3-tokens/m3-tokens.css"')).toBeLessThan(
+      appCss.indexOf('@import "./brand.css"'),
+    );
   });
 
   test("greeting uses a display size on the h2, not the body role or the 18px floor", () => {
@@ -128,31 +101,21 @@ describe("Gemini layout invariants", () => {
   });
 
   test("chips never wrap and collapse to icons on narrow windows", () => {
-    expect(appCss).toContain(
-      "white-space: nowrap;\n  border-radius: var(--app-shape-chip);",
-    );
-    expect(appCss).toMatch(
-      /@media \(max-width: 839px\) \{\n  \.app-chip-label \{[^}]*clip-path: inset\(50%\)/,
-    );
+    expect(appCss).toContain("white-space: nowrap;\n  border-radius: var(--app-shape-chip);");
+    expect(appCss).toMatch(/@media \(max-width: 839px\) \{\n  \.app-chip-label \{[^}]*clip-path: inset\(50%\)/);
     expect(chatSrc).toContain("Niveau d'accès : ");
     expect(chatSrc).toContain("app-chip-label font-semibold");
   });
 
   test("LOW_VISION 18px floor stays in place", () => {
-    expect(appCss).toContain(
-      "font-size: max(var(--aphrody-base-font-size, 18px), 1em);",
-    );
+    expect(appCss).toContain("font-size: max(var(--aphrody-base-font-size, 18px), 1em);");
   });
 
   test("rail is inert and collapsed when hidden", () => {
-    const closed = renderToStaticMarkup(
-      createElement(Rail, { expanded: false, label: "Rail" }, "x"),
-    );
+    const closed = renderToStaticMarkup(createElement(Rail, { expanded: false, label: "Rail" }, "x"));
     expect(closed).toContain('data-expanded="false"');
     expect(closed).toContain("inert");
-    const open = renderToStaticMarkup(
-      createElement(Rail, { expanded: true, label: "Rail" }, "x"),
-    );
+    const open = renderToStaticMarkup(createElement(Rail, { expanded: true, label: "Rail" }, "x"));
     expect(open).toContain('data-expanded="true"');
     expect(open).not.toContain("inert");
   });

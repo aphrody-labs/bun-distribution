@@ -7,28 +7,11 @@
  * Credential contract: only account names and boolean flags are read or written. Passwords,
  * refresh tokens, `ConnectCache` values and `local.vdf` are never read, logged or returned.
  */
-import {
-  processes as winProcesses,
-  registry as winRegistry,
-} from "bun:windows";
+import { processes as winProcesses, registry as winRegistry } from "bun:windows";
 import { readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  HKCU_STEAM,
-  IS_WINDOWS,
-  linuxRegistryVdf,
-  norm,
-  resolveSteamRoot,
-} from "./paths.js";
-import {
-  type KvObject,
-  kvEnsure,
-  kvKey,
-  kvObj,
-  kvStr,
-  parseTextKv,
-  stringifyTextKv,
-} from "./vdf.js";
+import { HKCU_STEAM, IS_WINDOWS, linuxRegistryVdf, norm, resolveSteamRoot } from "./paths.js";
+import { type KvObject, kvEnsure, kvKey, kvObj, kvStr, parseTextKv, stringifyTextKv } from "./vdf.js";
 
 /** Reads and parses a text VDF file, or `null` when it does not exist. */
 export function readVdf(path: string): KvObject | null {
@@ -50,15 +33,13 @@ export function writeVdf(path: string, doc: KvObject): void {
 export function isSteamRunning(): boolean {
   if (IS_WINDOWS) {
     try {
-      return winProcesses
-        .list()
-        .some((p) => p.name.toLowerCase() === "steam.exe");
+      return winProcesses.list().some(p => p.name.toLowerCase() === "steam.exe");
     } catch {
       return false;
     }
   }
   try {
-    return readdirSync("/proc").some((pid) => {
+    return readdirSync("/proc").some(pid => {
       if (!/^\d+$/.test(pid)) return false;
       try {
         return readFileSync(`/proc/${pid}/comm`, "utf8").trim() === "steam";
@@ -89,9 +70,7 @@ function regValue(name: string): string | number | null {
   try {
     const v = winRegistry.get(HKCU_STEAM, name);
     if (!v) return null;
-    return typeof v.value === "string" || typeof v.value === "number"
-      ? v.value
-      : null;
+    return typeof v.value === "string" || typeof v.value === "number" ? v.value : null;
   } catch {
     return null;
   }
@@ -172,9 +151,7 @@ export interface ChangePlan {
 
 function assertClientStopped(force?: boolean): void {
   if (!force && isSteamRunning())
-    throw new Error(
-      "Steam is running and rewrites its configuration on exit; close it first (or pass --force)",
-    );
+    throw new Error("Steam is running and rewrites its configuration on exit; close it first (or pass --force)");
 }
 
 /**
@@ -191,14 +168,9 @@ export function setAutoLogin(
   const doc = readVdf(usersPath) ?? {};
   const users = kvEnsure(doc, "users");
   const match = Object.entries(users).find(
-    ([, u]) =>
-      typeof u !== "string" &&
-      kvStr(u, "AccountName")?.toLowerCase() === account.toLowerCase(),
+    ([, u]) => typeof u !== "string" && kvStr(u, "AccountName")?.toLowerCase() === account.toLowerCase(),
   );
-  if (!match)
-    throw new Error(
-      `${account} is not remembered by this Steam client; sign in once in Steam first`,
-    );
+  if (!match) throw new Error(`${account} is not remembered by this Steam client; sign in once in Steam first`);
   if (!opts.dryRun) assertClientStopped(opts.force);
   const usersPlan: ChangePlan = {
     file: usersPath,
@@ -273,9 +245,7 @@ export interface CompatMapping {
 }
 
 /** Per-game compatibility tool choices (`CompatToolMapping`); app `0` is the global default. */
-export function compatToolMapping(
-  configPath = clientConfigPath(),
-): CompatMapping[] {
+export function compatToolMapping(configPath = clientConfigPath()): CompatMapping[] {
   const map = kvObj(readVdf(configPath), ...STEAM_STORE, "CompatToolMapping");
   return Object.entries(map ?? {}).flatMap(([appId, v]) =>
     typeof v === "string"

@@ -20,10 +20,7 @@ function PopoverPopup({
 }) {
   return (
     <PopoverPortal>
-      <PopoverPrimitive.Positioner
-        sideOffset={sideOffset}
-        className="z-50 outline-none"
-      >
+      <PopoverPrimitive.Positioner sideOffset={sideOffset} className="z-50 outline-none">
         <PopoverPrimitive.Popup
           className={cn(
             "relative z-50 w-72 rounded-xl border-2 border-black bg-[#0e0e14] p-4 text-gray-100 shadow-[4px_4px_0px_#000] outline-none select-none transition-all duration-150",
@@ -40,39 +37,17 @@ function PopoverPopup({
   );
 }
 
-function PopoverTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Title>) {
+function PopoverTitle({ className, ...props }: React.ComponentProps<typeof PopoverPrimitive.Title>) {
   return (
     <PopoverPrimitive.Title
-      className={cn(
-        "font-saiyan text-lg font-bold tracking-wider text-white mb-2",
-        className,
-      )}
+      className={cn("font-saiyan text-lg font-bold tracking-wider text-white mb-2", className)}
       {...props}
     />
   );
 }
 
-function PopoverDescription({
-  className,
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Description>) {
-  return (
-    <PopoverPrimitive.Description
-      className={cn("text-xs text-gray-300 leading-relaxed", className)}
-      {...props}
-    />
-  );
+function PopoverDescription({ className, ...props }: React.ComponentProps<typeof PopoverPrimitive.Description>) {
+  return <PopoverPrimitive.Description className={cn("text-xs text-gray-300 leading-relaxed", className)} {...props} />;
 }
 
-export {
-  Popover,
-  PopoverTrigger,
-  PopoverPortal,
-  PopoverPopup,
-  PopoverTitle,
-  PopoverDescription,
-  PopoverClose,
-};
+export { Popover, PopoverTrigger, PopoverPortal, PopoverPopup, PopoverTitle, PopoverDescription, PopoverClose };

@@ -50,9 +50,7 @@ beforeAll(async () => {
   // Use the device slug from the daemon, not hostname() which may differ
   deviceSlug = bridgeConfig.device_slug;
   console.log(`[TS] Device slug (from daemon): ${deviceSlug}`);
-  console.log(
-    `[TS] Hostname for comparison: ${hostname().toLowerCase().replace(/\s+/g, "-")}`,
-  );
+  console.log(`[TS] Hostname for comparison: ${hostname().toLowerCase().replace(/\s+/g, "-")}`);
 });
 
 describe("Ephemeral Directory Event Streaming", () => {
@@ -79,19 +77,11 @@ describe("Ephemeral Directory Event Streaming", () => {
     const transport = new TcpSocketTransport(bridgeConfig.socket_addr);
     const unsubscribe = await transport.subscribe(
       (event: any) => {
-        console.log(
-          `[TS] EVENT received:`,
-          JSON.stringify(event).slice(0, 200),
-        );
+        console.log(`[TS] EVENT received:`, JSON.stringify(event).slice(0, 200));
         receivedEvents.push(event);
       },
       {
-        event_types: [
-          "ResourceChanged",
-          "ResourceChangedBatch",
-          "ResourceDeleted",
-          "Refresh",
-        ],
+        event_types: ["ResourceChanged", "ResourceChangedBatch", "ResourceDeleted", "Refresh"],
         filter: {
           resource_type: "file",
           path_scope: pathScope,
@@ -104,7 +94,7 @@ describe("Ephemeral Directory Event Streaming", () => {
     console.log(`[TS] Subscription active`);
 
     // Small delay to ensure subscription is fully registered on daemon
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 100));
 
     // Step 2: Query the directory listing (triggers ephemeral indexing)
     console.log(`[TS] Querying directory listing for: ${ephemeralPath}`);
@@ -116,10 +106,7 @@ describe("Ephemeral Directory Event Streaming", () => {
       folders_first: true,
     });
 
-    console.log(
-      `[TS] Query returned:`,
-      JSON.stringify(queryResult).slice(0, 200),
-    );
+    console.log(`[TS] Query returned:`, JSON.stringify(queryResult).slice(0, 200));
 
     // The query may return empty (indexer dispatched async) or may return
     // cached results if a previous run populated the cache.
@@ -130,13 +117,11 @@ describe("Ephemeral Directory Event Streaming", () => {
     const deadline = Date.now() + 10_000;
     while (Date.now() < deadline) {
       if (receivedEvents.length > 0) {
-        console.log(
-          `[TS] Got ${receivedEvents.length} event(s) after ${Date.now() - (deadline - 10_000)}ms`,
-        );
+        console.log(`[TS] Got ${receivedEvents.length} event(s) after ${Date.now() - (deadline - 10_000)}ms`);
         break;
       }
       // oxlint-disable-next-line no-await-in-loop -- polling for events at a fixed interval until the deadline
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise(r => setTimeout(r, 50));
     }
 
     // Step 4: Verify events arrived
@@ -164,9 +149,7 @@ describe("Ephemeral Directory Event Streaming", () => {
     }
 
     const totalFiles = queryFiles.length + eventFiles.length;
-    console.log(
-      `[TS] Files from query: ${queryFiles.length}, from events: ${eventFiles.length}`,
-    );
+    console.log(`[TS] Files from query: ${queryFiles.length}, from events: ${eventFiles.length}`);
 
     if (queryFiles.length > 0) {
       console.log(
@@ -185,9 +168,7 @@ describe("Ephemeral Directory Event Streaming", () => {
 
     // If the query returned empty, ALL files must come from events
     if (queryFiles.length === 0) {
-      console.log(
-        `[TS] Query returned empty — verifying events delivered all files`,
-      );
+      console.log(`[TS] Query returned empty — verifying events delivered all files`);
       expect(eventFiles.length).toBeGreaterThanOrEqual(5);
     }
 
@@ -221,32 +202,21 @@ describe("Ephemeral Directory Event Streaming", () => {
       folders_first: true,
     });
 
-    console.log(
-      `[TS] Query returned:`,
-      JSON.stringify(queryResult).slice(0, 200),
-    );
+    console.log(`[TS] Query returned:`, JSON.stringify(queryResult).slice(0, 200));
 
     // Small delay to let events buffer (but not expire — 5s retention)
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 500));
 
     // Step 2: Subscribe AFTER query (late subscriber)
     const replayedEvents: any[] = [];
     const transport = new TcpSocketTransport(bridgeConfig.socket_addr);
     const unsubscribe = await transport.subscribe(
       (event: any) => {
-        console.log(
-          `[TS] REPLAYED event:`,
-          JSON.stringify(event).slice(0, 200),
-        );
+        console.log(`[TS] REPLAYED event:`, JSON.stringify(event).slice(0, 200));
         replayedEvents.push(event);
       },
       {
-        event_types: [
-          "ResourceChanged",
-          "ResourceChangedBatch",
-          "ResourceDeleted",
-          "Refresh",
-        ],
+        event_types: ["ResourceChanged", "ResourceChangedBatch", "ResourceDeleted", "Refresh"],
         filter: {
           resource_type: "file",
           path_scope: pathScope,
@@ -257,14 +227,11 @@ describe("Ephemeral Directory Event Streaming", () => {
     );
 
     // Wait a bit for replayed events to arrive
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 1000));
 
     console.log(`[TS] Replayed events: ${replayedEvents.length}`);
     for (const [i, event] of replayedEvents.entries()) {
-      console.log(
-        `[TS] Replayed ${i + 1}:`,
-        JSON.stringify(event).slice(0, 300),
-      );
+      console.log(`[TS] Replayed ${i + 1}:`, JSON.stringify(event).slice(0, 300));
     }
 
     unsubscribe();
@@ -285,19 +252,13 @@ describe("Ephemeral Directory Event Streaming", () => {
     }
 
     const total = queryFiles.length + replayFiles.length;
-    console.log(
-      `[TS] Buffer replay: ${queryFiles.length} from query, ${replayFiles.length} from replay`,
-    );
+    console.log(`[TS] Buffer replay: ${queryFiles.length} from query, ${replayFiles.length} from replay`);
 
     // We expect the file to arrive via either query (cache hit from test 1)
     // or buffer replay. Log clearly which path succeeded.
     if (total === 0) {
-      console.error(
-        `[TS] FAILURE: No files from query or buffer replay for ${subPath}`,
-      );
-      console.error(
-        `[TS] This means the EventBuffer is not replaying events to late subscribers`,
-      );
+      console.error(`[TS] FAILURE: No files from query or buffer replay for ${subPath}`);
+      console.error(`[TS] This means the EventBuffer is not replaying events to late subscribers`);
     }
 
     expect(total).toBeGreaterThanOrEqual(1);

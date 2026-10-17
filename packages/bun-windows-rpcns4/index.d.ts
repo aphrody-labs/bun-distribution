@@ -13,33 +13,105 @@ interface Functions {
   /** rpcns4.dll!RpcIfIdVectorFree */
   RpcIfIdVectorFree(IfIdVector: Win32Pointer): number;
   /** rpcns4.dll!RpcNsBindingExportA */
-  RpcNsBindingExportA(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, BindingVec: Win32Pointer, ObjectUuidVec: Win32Pointer): number;
+  RpcNsBindingExportA(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    BindingVec: Win32Pointer,
+    ObjectUuidVec: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingExportPnPA */
-  RpcNsBindingExportPnPA(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjectVector: Win32Pointer): number;
+  RpcNsBindingExportPnPA(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjectVector: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingExportPnPW */
-  RpcNsBindingExportPnPW(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjectVector: Win32Pointer): number;
+  RpcNsBindingExportPnPW(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjectVector: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingExportPnPW */
-  RpcNsBindingExportPnP(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjectVector: Win32Pointer): number;
+  RpcNsBindingExportPnP(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjectVector: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingExportW */
-  RpcNsBindingExportW(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, BindingVec: Win32Pointer, ObjectUuidVec: Win32Pointer): number;
+  RpcNsBindingExportW(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    BindingVec: Win32Pointer,
+    ObjectUuidVec: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingExportW */
-  RpcNsBindingExport(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, BindingVec: Win32Pointer, ObjectUuidVec: Win32Pointer): number;
+  RpcNsBindingExport(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    BindingVec: Win32Pointer,
+    ObjectUuidVec: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingImportBeginA */
-  RpcNsBindingImportBeginA(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjUuid: Win32Pointer, ImportContext: Win32Pointer): number;
+  RpcNsBindingImportBeginA(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjUuid: Win32Pointer,
+    ImportContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingImportBeginW */
-  RpcNsBindingImportBeginW(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjUuid: Win32Pointer, ImportContext: Win32Pointer): number;
+  RpcNsBindingImportBeginW(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjUuid: Win32Pointer,
+    ImportContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingImportBeginW */
-  RpcNsBindingImportBegin(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjUuid: Win32Pointer, ImportContext: Win32Pointer): number;
+  RpcNsBindingImportBegin(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjUuid: Win32Pointer,
+    ImportContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingImportDone */
   RpcNsBindingImportDone(ImportContext: Win32Pointer): number;
   /** rpcns4.dll!RpcNsBindingImportNext */
   RpcNsBindingImportNext(ImportContext: Win32Pointer, Binding: Win32Pointer): number;
   /** rpcns4.dll!RpcNsBindingLookupBeginA */
-  RpcNsBindingLookupBeginA(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjUuid: Win32Pointer, BindingMaxCount: number, LookupContext: Win32Pointer): number;
+  RpcNsBindingLookupBeginA(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjUuid: Win32Pointer,
+    BindingMaxCount: number,
+    LookupContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingLookupBeginW */
-  RpcNsBindingLookupBeginW(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjUuid: Win32Pointer, BindingMaxCount: number, LookupContext: Win32Pointer): number;
+  RpcNsBindingLookupBeginW(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjUuid: Win32Pointer,
+    BindingMaxCount: number,
+    LookupContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingLookupBeginW */
-  RpcNsBindingLookupBegin(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjUuid: Win32Pointer, BindingMaxCount: number, LookupContext: Win32Pointer): number;
+  RpcNsBindingLookupBegin(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjUuid: Win32Pointer,
+    BindingMaxCount: number,
+    LookupContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingLookupDone */
   RpcNsBindingLookupDone(LookupContext: Win32Pointer): number;
   /** rpcns4.dll!RpcNsBindingLookupNext */
@@ -47,17 +119,47 @@ interface Functions {
   /** rpcns4.dll!RpcNsBindingSelect */
   RpcNsBindingSelect(BindingVec: Win32Pointer, Binding: Win32Pointer): number;
   /** rpcns4.dll!RpcNsBindingUnexportA */
-  RpcNsBindingUnexportA(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjectUuidVec: Win32Pointer): number;
+  RpcNsBindingUnexportA(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjectUuidVec: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingUnexportPnPA */
-  RpcNsBindingUnexportPnPA(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjectVector: Win32Pointer): number;
+  RpcNsBindingUnexportPnPA(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjectVector: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingUnexportPnPW */
-  RpcNsBindingUnexportPnPW(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjectVector: Win32Pointer): number;
+  RpcNsBindingUnexportPnPW(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjectVector: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingUnexportPnPW */
-  RpcNsBindingUnexportPnP(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjectVector: Win32Pointer): number;
+  RpcNsBindingUnexportPnP(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjectVector: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingUnexportW */
-  RpcNsBindingUnexportW(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjectUuidVec: Win32Pointer): number;
+  RpcNsBindingUnexportW(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjectUuidVec: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsBindingUnexportW */
-  RpcNsBindingUnexport(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfSpec: Win32Pointer, ObjectUuidVec: Win32Pointer): number;
+  RpcNsBindingUnexport(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+    ObjectUuidVec: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsEntryExpandNameA */
   RpcNsEntryExpandNameA(EntryNameSyntax: number, EntryName: string | Win32Pointer, ExpandedName: Win32Pointer): number;
   /** rpcns4.dll!RpcNsEntryExpandNameW */
@@ -65,11 +167,23 @@ interface Functions {
   /** rpcns4.dll!RpcNsEntryExpandNameW */
   RpcNsEntryExpandName(EntryNameSyntax: number, EntryName: string | Win32Pointer, ExpandedName: Win32Pointer): number;
   /** rpcns4.dll!RpcNsEntryObjectInqBeginA */
-  RpcNsEntryObjectInqBeginA(EntryNameSyntax: number, EntryName: string | Win32Pointer, InquiryContext: Win32Pointer): number;
+  RpcNsEntryObjectInqBeginA(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    InquiryContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsEntryObjectInqBeginW */
-  RpcNsEntryObjectInqBeginW(EntryNameSyntax: number, EntryName: string | Win32Pointer, InquiryContext: Win32Pointer): number;
+  RpcNsEntryObjectInqBeginW(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    InquiryContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsEntryObjectInqBeginW */
-  RpcNsEntryObjectInqBegin(EntryNameSyntax: number, EntryName: string | Win32Pointer, InquiryContext: Win32Pointer): number;
+  RpcNsEntryObjectInqBegin(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    InquiryContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsEntryObjectInqDone */
   RpcNsEntryObjectInqDone(InquiryContext: Win32Pointer): number;
   /** rpcns4.dll!RpcNsEntryObjectInqNext */
@@ -81,17 +195,47 @@ interface Functions {
   /** rpcns4.dll!RpcNsGroupDeleteW */
   RpcNsGroupDelete(GroupNameSyntax: number, GroupName: string | Win32Pointer): number;
   /** rpcns4.dll!RpcNsGroupMbrAddA */
-  RpcNsGroupMbrAddA(GroupNameSyntax: number, GroupName: string | Win32Pointer, MemberNameSyntax: number, MemberName: string | Win32Pointer): number;
+  RpcNsGroupMbrAddA(
+    GroupNameSyntax: number,
+    GroupName: string | Win32Pointer,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsGroupMbrAddW */
-  RpcNsGroupMbrAddW(GroupNameSyntax: number, GroupName: string | Win32Pointer, MemberNameSyntax: number, MemberName: string | Win32Pointer): number;
+  RpcNsGroupMbrAddW(
+    GroupNameSyntax: number,
+    GroupName: string | Win32Pointer,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsGroupMbrAddW */
-  RpcNsGroupMbrAdd(GroupNameSyntax: number, GroupName: string | Win32Pointer, MemberNameSyntax: number, MemberName: string | Win32Pointer): number;
+  RpcNsGroupMbrAdd(
+    GroupNameSyntax: number,
+    GroupName: string | Win32Pointer,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsGroupMbrInqBeginA */
-  RpcNsGroupMbrInqBeginA(GroupNameSyntax: number, GroupName: string | Win32Pointer, MemberNameSyntax: number, InquiryContext: Win32Pointer): number;
+  RpcNsGroupMbrInqBeginA(
+    GroupNameSyntax: number,
+    GroupName: string | Win32Pointer,
+    MemberNameSyntax: number,
+    InquiryContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsGroupMbrInqBeginW */
-  RpcNsGroupMbrInqBeginW(GroupNameSyntax: number, GroupName: string | Win32Pointer, MemberNameSyntax: number, InquiryContext: Win32Pointer): number;
+  RpcNsGroupMbrInqBeginW(
+    GroupNameSyntax: number,
+    GroupName: string | Win32Pointer,
+    MemberNameSyntax: number,
+    InquiryContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsGroupMbrInqBeginW */
-  RpcNsGroupMbrInqBegin(GroupNameSyntax: number, GroupName: string | Win32Pointer, MemberNameSyntax: number, InquiryContext: Win32Pointer): number;
+  RpcNsGroupMbrInqBegin(
+    GroupNameSyntax: number,
+    GroupName: string | Win32Pointer,
+    MemberNameSyntax: number,
+    InquiryContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsGroupMbrInqDone */
   RpcNsGroupMbrInqDone(InquiryContext: Win32Pointer): number;
   /** rpcns4.dll!RpcNsGroupMbrInqNextA */
@@ -101,17 +245,50 @@ interface Functions {
   /** rpcns4.dll!RpcNsGroupMbrInqNextW */
   RpcNsGroupMbrInqNext(InquiryContext: Win32Pointer, MemberName: Win32Pointer): number;
   /** rpcns4.dll!RpcNsGroupMbrRemoveA */
-  RpcNsGroupMbrRemoveA(GroupNameSyntax: number, GroupName: string | Win32Pointer, MemberNameSyntax: number, MemberName: string | Win32Pointer): number;
+  RpcNsGroupMbrRemoveA(
+    GroupNameSyntax: number,
+    GroupName: string | Win32Pointer,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsGroupMbrRemoveW */
-  RpcNsGroupMbrRemoveW(GroupNameSyntax: number, GroupName: string | Win32Pointer, MemberNameSyntax: number, MemberName: string | Win32Pointer): number;
+  RpcNsGroupMbrRemoveW(
+    GroupNameSyntax: number,
+    GroupName: string | Win32Pointer,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsGroupMbrRemoveW */
-  RpcNsGroupMbrRemove(GroupNameSyntax: number, GroupName: string | Win32Pointer, MemberNameSyntax: number, MemberName: string | Win32Pointer): number;
+  RpcNsGroupMbrRemove(
+    GroupNameSyntax: number,
+    GroupName: string | Win32Pointer,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsMgmtBindingUnexportA */
-  RpcNsMgmtBindingUnexportA(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfId: Win32Pointer, VersOption: number, ObjectUuidVec: Win32Pointer): number;
+  RpcNsMgmtBindingUnexportA(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfId: Win32Pointer,
+    VersOption: number,
+    ObjectUuidVec: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsMgmtBindingUnexportW */
-  RpcNsMgmtBindingUnexportW(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfId: Win32Pointer, VersOption: number, ObjectUuidVec: Win32Pointer): number;
+  RpcNsMgmtBindingUnexportW(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfId: Win32Pointer,
+    VersOption: number,
+    ObjectUuidVec: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsMgmtBindingUnexportW */
-  RpcNsMgmtBindingUnexport(EntryNameSyntax: number, EntryName: string | Win32Pointer, IfId: Win32Pointer, VersOption: number, ObjectUuidVec: Win32Pointer): number;
+  RpcNsMgmtBindingUnexport(
+    EntryNameSyntax: number,
+    EntryName: string | Win32Pointer,
+    IfId: Win32Pointer,
+    VersOption: number,
+    ObjectUuidVec: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsMgmtEntryCreateA */
   RpcNsMgmtEntryCreateA(EntryNameSyntax: number, EntryName: string | Win32Pointer): number;
   /** rpcns4.dll!RpcNsMgmtEntryCreateW */
@@ -143,31 +320,118 @@ interface Functions {
   /** rpcns4.dll!RpcNsProfileDeleteW */
   RpcNsProfileDelete(ProfileNameSyntax: number, ProfileName: string | Win32Pointer): number;
   /** rpcns4.dll!RpcNsProfileEltAddA */
-  RpcNsProfileEltAddA(ProfileNameSyntax: number, ProfileName: string | Win32Pointer, IfId: Win32Pointer, MemberNameSyntax: number, MemberName: string | Win32Pointer, Priority: number, Annotation: string | Win32Pointer): number;
+  RpcNsProfileEltAddA(
+    ProfileNameSyntax: number,
+    ProfileName: string | Win32Pointer,
+    IfId: Win32Pointer,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+    Priority: number,
+    Annotation: string | Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsProfileEltAddW */
-  RpcNsProfileEltAddW(ProfileNameSyntax: number, ProfileName: string | Win32Pointer, IfId: Win32Pointer, MemberNameSyntax: number, MemberName: string | Win32Pointer, Priority: number, Annotation: string | Win32Pointer): number;
+  RpcNsProfileEltAddW(
+    ProfileNameSyntax: number,
+    ProfileName: string | Win32Pointer,
+    IfId: Win32Pointer,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+    Priority: number,
+    Annotation: string | Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsProfileEltAddW */
-  RpcNsProfileEltAdd(ProfileNameSyntax: number, ProfileName: string | Win32Pointer, IfId: Win32Pointer, MemberNameSyntax: number, MemberName: string | Win32Pointer, Priority: number, Annotation: string | Win32Pointer): number;
+  RpcNsProfileEltAdd(
+    ProfileNameSyntax: number,
+    ProfileName: string | Win32Pointer,
+    IfId: Win32Pointer,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+    Priority: number,
+    Annotation: string | Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsProfileEltInqBeginA */
-  RpcNsProfileEltInqBeginA(ProfileNameSyntax: number, ProfileName: string | Win32Pointer, InquiryType: number, IfId: Win32Pointer, VersOption: number, MemberNameSyntax: number, MemberName: string | Win32Pointer, InquiryContext: Win32Pointer): number;
+  RpcNsProfileEltInqBeginA(
+    ProfileNameSyntax: number,
+    ProfileName: string | Win32Pointer,
+    InquiryType: number,
+    IfId: Win32Pointer,
+    VersOption: number,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+    InquiryContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsProfileEltInqBeginW */
-  RpcNsProfileEltInqBeginW(ProfileNameSyntax: number, ProfileName: string | Win32Pointer, InquiryType: number, IfId: Win32Pointer, VersOption: number, MemberNameSyntax: number, MemberName: string | Win32Pointer, InquiryContext: Win32Pointer): number;
+  RpcNsProfileEltInqBeginW(
+    ProfileNameSyntax: number,
+    ProfileName: string | Win32Pointer,
+    InquiryType: number,
+    IfId: Win32Pointer,
+    VersOption: number,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+    InquiryContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsProfileEltInqBeginW */
-  RpcNsProfileEltInqBegin(ProfileNameSyntax: number, ProfileName: string | Win32Pointer, InquiryType: number, IfId: Win32Pointer, VersOption: number, MemberNameSyntax: number, MemberName: string | Win32Pointer, InquiryContext: Win32Pointer): number;
+  RpcNsProfileEltInqBegin(
+    ProfileNameSyntax: number,
+    ProfileName: string | Win32Pointer,
+    InquiryType: number,
+    IfId: Win32Pointer,
+    VersOption: number,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+    InquiryContext: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsProfileEltInqDone */
   RpcNsProfileEltInqDone(InquiryContext: Win32Pointer): number;
   /** rpcns4.dll!RpcNsProfileEltInqNextA */
-  RpcNsProfileEltInqNextA(InquiryContext: Win32Pointer, IfId: Win32Pointer, MemberName: Win32Pointer, Priority: Win32Pointer, Annotation: Win32Pointer): number;
+  RpcNsProfileEltInqNextA(
+    InquiryContext: Win32Pointer,
+    IfId: Win32Pointer,
+    MemberName: Win32Pointer,
+    Priority: Win32Pointer,
+    Annotation: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsProfileEltInqNextW */
-  RpcNsProfileEltInqNextW(InquiryContext: Win32Pointer, IfId: Win32Pointer, MemberName: Win32Pointer, Priority: Win32Pointer, Annotation: Win32Pointer): number;
+  RpcNsProfileEltInqNextW(
+    InquiryContext: Win32Pointer,
+    IfId: Win32Pointer,
+    MemberName: Win32Pointer,
+    Priority: Win32Pointer,
+    Annotation: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsProfileEltInqNextW */
-  RpcNsProfileEltInqNext(InquiryContext: Win32Pointer, IfId: Win32Pointer, MemberName: Win32Pointer, Priority: Win32Pointer, Annotation: Win32Pointer): number;
+  RpcNsProfileEltInqNext(
+    InquiryContext: Win32Pointer,
+    IfId: Win32Pointer,
+    MemberName: Win32Pointer,
+    Priority: Win32Pointer,
+    Annotation: Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsProfileEltRemoveA */
-  RpcNsProfileEltRemoveA(ProfileNameSyntax: number, ProfileName: string | Win32Pointer, IfId: Win32Pointer, MemberNameSyntax: number, MemberName: string | Win32Pointer): number;
+  RpcNsProfileEltRemoveA(
+    ProfileNameSyntax: number,
+    ProfileName: string | Win32Pointer,
+    IfId: Win32Pointer,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsProfileEltRemoveW */
-  RpcNsProfileEltRemoveW(ProfileNameSyntax: number, ProfileName: string | Win32Pointer, IfId: Win32Pointer, MemberNameSyntax: number, MemberName: string | Win32Pointer): number;
+  RpcNsProfileEltRemoveW(
+    ProfileNameSyntax: number,
+    ProfileName: string | Win32Pointer,
+    IfId: Win32Pointer,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+  ): number;
   /** rpcns4.dll!RpcNsProfileEltRemoveW */
-  RpcNsProfileEltRemove(ProfileNameSyntax: number, ProfileName: string | Win32Pointer, IfId: Win32Pointer, MemberNameSyntax: number, MemberName: string | Win32Pointer): number;
+  RpcNsProfileEltRemove(
+    ProfileNameSyntax: number,
+    ProfileName: string | Win32Pointer,
+    IfId: Win32Pointer,
+    MemberNameSyntax: number,
+    MemberName: string | Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

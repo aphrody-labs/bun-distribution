@@ -50,9 +50,7 @@ export interface MoodboardPersistenceAdapter {
     documentJson: string;
   }) => Promise<{ success: boolean; token?: string; errorMessage?: string }>;
   listBoards: () => Promise<{ success: boolean; boards?: RemoteBoardMeta[] }>;
-  loadBoard: (
-    token: string,
-  ) => Promise<{ success: boolean; documentJson?: string }>;
+  loadBoard: (token: string) => Promise<{ success: boolean; documentJson?: string }>;
   deleteBoard?: (token: string) => Promise<boolean>;
   /** Batch-resolve media tokens to display URLs, for items whose blob src
    *  couldn't be persisted. Missing tokens are simply absent from the map. */

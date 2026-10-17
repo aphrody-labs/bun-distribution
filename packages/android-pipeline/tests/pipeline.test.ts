@@ -12,10 +12,7 @@ describe("Android artifact classification", () => {
   });
 
   test("does not claim opaque conversion", () => {
-    const artifact = classifyAndroidEntries([
-      "AndroidManifest.xml",
-      "classes.dex",
-    ]);
+    const artifact = classifyAndroidEntries(["AndroidManifest.xml", "classes.dex"]);
     expect(planLowering(artifact, "wasm").convertible).toBeFalse();
     expect(planLowering(artifact, "elf", true)).toMatchObject({
       convertible: true,

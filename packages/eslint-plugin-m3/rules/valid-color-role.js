@@ -17,16 +17,14 @@ export default {
   meta: {
     type: "problem",
     docs: {
-      description:
-        "var(--md-sys-color-*) must reference a real M3 color role emitted by material-web.",
+      description: "var(--md-sys-color-*) must reference a real M3 color role emitted by material-web.",
     },
     schema: [],
   },
   create(context) {
     /** Vérifie une chaîne arbitraire et signale chaque rôle inconnu. */
     function checkString(node, raw) {
-      if (typeof raw !== "string" || raw.indexOf("--md-sys-color-") === -1)
-        return;
+      if (typeof raw !== "string" || raw.indexOf("--md-sys-color-") === -1) return;
       VAR_RE.lastIndex = 0;
       const seen = new Set();
       let m;

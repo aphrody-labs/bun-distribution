@@ -35,30 +35,18 @@ export interface RemotePlayState {
 
 function tail(path: string, lines: number): string[] {
   try {
-    return readFileSync(path, "utf8")
-      .split(/\r?\n/)
-      .filter(Boolean)
-      .slice(-lines);
+    return readFileSync(path, "utf8").split(/\r?\n/).filter(Boolean).slice(-lines);
   } catch {
     return [];
   }
 }
 
 /** Known Remote Play peers and the last `lines` log events of both Remote Play logs. */
-export function remotePlayState(
-  steamRoot = resolveSteamRoot(),
-  lines = 20,
-): RemotePlayState {
-  const cache =
-    kvObj(
-      readVdf(join(steamRoot, "config", "remoteclients.vdf")),
-      "RemoteClientCache",
-    ) ?? {};
+export function remotePlayState(steamRoot = resolveSteamRoot(), lines = 20): RemotePlayState {
+  const cache = kvObj(readVdf(join(steamRoot, "config", "remoteclients.vdf")), "RemoteClientCache") ?? {};
   const clients = Object.entries(cache).flatMap(([id, v]) => {
     if (typeof v === "string") return [];
-    const safe = Object.fromEntries(
-      Object.entries(v).filter(([k]) => !SECRET_KEY.test(k)),
-    );
+    const safe = Object.fromEntries(Object.entries(v).filter(([k]) => !SECRET_KEY.test(k)));
     return [
       {
         id,
@@ -66,9 +54,7 @@ export function remotePlayState(
         lastUpdated: Number(kvStr(safe, "LastUpdated")) || null,
         lastResult: kvStr(safe, "lastresult"),
         publicIp: kvStr(safe, "ippublic"),
-        apps: Object.values(kvObj(safe, "apps") ?? {}).filter(
-          (a): a is string => typeof a === "string",
-        ),
+        apps: Object.values(kvObj(safe, "apps") ?? {}).filter((a): a is string => typeof a === "string"),
       },
     ];
   });

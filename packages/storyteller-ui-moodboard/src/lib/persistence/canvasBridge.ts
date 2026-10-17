@@ -2,11 +2,7 @@ import { useMoodboardStore } from "../canvas/MoodboardStore";
 import { useMoodboardHistoryStore } from "../canvas/MoodboardHistoryStore";
 import { useBoardLibraryStore } from "../boards/BoardLibraryStore";
 import { withDirtySuppressed } from "./dirtySuppression";
-import {
-  EMPTY_CANVAS_DOCUMENT,
-  persistableCanvas,
-  type MoodboardCanvasDocument,
-} from "./documents";
+import { EMPTY_CANVAS_DOCUMENT, persistableCanvas, type MoodboardCanvasDocument } from "./documents";
 
 // The Konva canvas store is a single global surface with no board concept.
 // This bridge keys canvas documents by board id and mirrors them to
@@ -44,9 +40,7 @@ export function captureCanvasDocument(): MoodboardCanvasDocument {
 // grid spacing, and snap; selection and undo history reset. canvasSize is
 // deliberately not applied — the stage re-measures its container. Runs with
 // dirty tracking suppressed: swapping a board's canvas in is not an edit.
-export function applyCanvasDocument(
-  document: MoodboardCanvasDocument | null,
-): void {
+export function applyCanvasDocument(document: MoodboardCanvasDocument | null): void {
   const doc = document ?? EMPTY_CANVAS_DOCUMENT;
   withDirtySuppressed(() => {
     useMoodboardHistoryStore.getState().clear();
@@ -61,18 +55,13 @@ export function applyCanvasDocument(
   });
 }
 
-export function setCanvasForBoard(
-  boardId: string,
-  document: MoodboardCanvasDocument,
-): void {
+export function setCanvasForBoard(boardId: string, document: MoodboardCanvasDocument): void {
   ensureLoaded();
   canvasByBoard.set(boardId, document);
   schedulePersist();
 }
 
-export function getCanvasForBoard(
-  boardId: string,
-): MoodboardCanvasDocument | null {
+export function getCanvasForBoard(boardId: string): MoodboardCanvasDocument | null {
   ensureLoaded();
   return canvasByBoard.get(boardId) ?? null;
 }

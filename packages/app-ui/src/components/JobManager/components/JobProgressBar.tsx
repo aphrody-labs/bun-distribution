@@ -15,8 +15,7 @@ interface JobProgressBarProps {
  */
 export function JobProgressBar({ progress, status }: JobProgressBarProps) {
   // Only show progress bar for running, paused jobs, or completed jobs with some visual feedback
-  const showProgress =
-    status === "running" || status === "paused" || status === "completed";
+  const showProgress = status === "running" || status === "paused" || status === "completed";
 
   if (!showProgress) {
     return <div style={{ height: PROGRESS_BAR_HEIGHT }} />;
@@ -25,9 +24,7 @@ export function JobProgressBar({ progress, status }: JobProgressBarProps) {
   const isCompleted = status === "completed";
   const isPending = status === "running" && progress === 0;
   // Completed jobs recede to the outline role; running/paused use their status role
-  const color = isCompleted
-    ? "var(--md-sys-color-outline-variant)"
-    : JOB_STATUS_COLORS[status];
+  const color = isCompleted ? "var(--md-sys-color-outline-variant)" : JOB_STATUS_COLORS[status];
   const displayProgress = Math.min(Math.max(progress, 0), 1);
 
   return (

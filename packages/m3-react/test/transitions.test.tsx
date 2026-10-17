@@ -3,10 +3,7 @@ import * as React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { Collapse, Fade, Grow, Slide, Zoom } from "../transitions/index.js";
-import {
-  isVisible,
-  resolveTimeout,
-} from "../transitions/use-transition-state.js";
+import { isVisible, resolveTimeout } from "../transitions/use-transition-state.js";
 
 // --- Pure helpers (no DOM) -------------------------------------------------
 
@@ -120,9 +117,7 @@ describe("Grow / Zoom / Slide / Collapse", () => {
       // Either the child is cloned with a transition (Fade/Grow/Zoom/Slide)
       // or it sits inside an animated wrapper (Collapse) — assert some
       // rendered element carries a transition.
-      const animated = [...el.querySelectorAll<HTMLElement>("*")].some(
-        (n) => n.style.transition.length > 0,
-      );
+      const animated = [...el.querySelectorAll<HTMLElement>("*")].some(n => n.style.transition.length > 0);
       expect(animated).toBe(true);
       // reset between iterations
       if (root) flushSync(() => root!.unmount());

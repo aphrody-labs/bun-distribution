@@ -91,5 +91,6 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlanDetails[] = [
   },
 ];
 
-export const SUBSCRIPTION_PLANS_BY_SLUG: Map<string, SubscriptionPlanDetails> =
-  new Map(SUBSCRIPTION_PLANS.map((plan) => [plan.slug, plan]));
+export const SUBSCRIPTION_PLANS_BY_SLUG: Map<string, SubscriptionPlanDetails> = new Map(
+  SUBSCRIPTION_PLANS.map(plan => [plan.slug, plan]),
+);

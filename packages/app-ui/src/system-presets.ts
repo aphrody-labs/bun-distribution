@@ -9,8 +9,7 @@ export interface SystemPreset {
 export const SYSTEM_PRESETS: Record<string, SystemPreset> = {
   default: {
     label: "Default assistant",
-    prompt:
-      "You are Aphrody, an advanced AI software engineering assistant running on local hardware.",
+    prompt: "You are Aphrody, an advanced AI software engineering assistant running on local hardware.",
   },
   engineer: {
     label: "Autonomous engineer",
@@ -28,17 +27,16 @@ export const SYSTEM_PRESETS: Record<string, SystemPreset> = {
   },
 };
 
-export const TOKEN_LIMIT_OPTIONS = [
-  1024, 2048, 4096, 8192, 16384, 32768,
-] as const;
+export const TOKEN_LIMIT_OPTIONS = [1024, 2048, 4096, 8192, 16384, 32768] as const;
 
-export function filterSessionsList<
-  T extends { id: string; preview?: string; cwd?: string },
->(sessions: T[], query: string): T[] {
+export function filterSessionsList<T extends { id: string; preview?: string; cwd?: string }>(
+  sessions: T[],
+  query: string,
+): T[] {
   if (!query.trim()) return sessions;
   const q = query.toLowerCase();
   return sessions.filter(
-    (s) =>
+    s =>
       (s.preview?.toLowerCase().includes(q) ?? false) ||
       s.id.toLowerCase().includes(q) ||
       (s.cwd?.toLowerCase().includes(q) ?? false),

@@ -46,7 +46,7 @@ console.log("Created library:", newLibrary);
 await client.subscribe(["JobStarted", "JobProgress", "JobCompleted"]);
 
 // Listen for events (fully typed)
-client.on("event", (event) => {
+client.on("event", event => {
   switch (event) {
     case "CoreStarted":
       console.log("Daemon started");
@@ -66,7 +66,7 @@ client.on("event", (event) => {
   }
 });
 
-client.on("error", (error) => {
+client.on("error", error => {
   console.error("Client error:", error);
 });
 

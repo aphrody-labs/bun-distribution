@@ -44,10 +44,7 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "pagescene.edit.toggleSnapping": [b("KeyN")],
   "pagescene.view.toggleGrid": [b("KeyH")],
   "pagescene.edit.undo": [b("KeyZ", { ctrl: true })],
-  "pagescene.edit.redo": [
-    b("KeyZ", { ctrl: true, shift: true }),
-    b("KeyY", { ctrl: true }),
-  ],
+  "pagescene.edit.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
   "pagescene.edit.copy": [b("KeyC", { ctrl: true })],
   "pagescene.edit.paste": [b("KeyV", { ctrl: true })],
 
@@ -80,22 +77,13 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "pagedraw.tools.mask": [b("Digit4")],
   "pagedraw.tools.eraser": [b("Digit5")],
   // MS-Paint-style size keys; numpad variants included.
-  "pagedraw.tools.brushSizeUp": [
-    b("Equal", { ctrl: true }),
-    b("NumpadAdd", { ctrl: true }),
-  ],
-  "pagedraw.tools.brushSizeDown": [
-    b("Minus", { ctrl: true }),
-    b("NumpadSubtract", { ctrl: true }),
-  ],
+  "pagedraw.tools.brushSizeUp": [b("Equal", { ctrl: true }), b("NumpadAdd", { ctrl: true })],
+  "pagedraw.tools.brushSizeDown": [b("Minus", { ctrl: true }), b("NumpadSubtract", { ctrl: true })],
   "pagedraw.edit.delete": [b("Delete"), b("Backspace")],
   "pagedraw.edit.copy": [b("KeyC", { ctrl: true })],
   "pagedraw.edit.paste": [b("KeyV", { ctrl: true })],
   "pagedraw.history.undo": [b("KeyZ", { ctrl: true })],
-  "pagedraw.history.redo": [
-    b("KeyZ", { ctrl: true, shift: true }),
-    b("KeyY", { ctrl: true }),
-  ],
+  "pagedraw.history.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
 
   // Moodboard — preset-independent (Figma-style).
   "moodboard.tools.select": [b("KeyV")],
@@ -108,10 +96,7 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "moodboard.edit.ungroup": [b("KeyG", { ctrl: true, shift: true })],
   "moodboard.view.fitToContent": [b("Digit1", { shift: true })],
   "moodboard.history.undo": [b("KeyZ", { ctrl: true })],
-  "moodboard.history.redo": [
-    b("KeyZ", { ctrl: true, shift: true }),
-    b("KeyY", { ctrl: true }),
-  ],
+  "moodboard.history.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
   "moodboard.view.resetViewport": [b("Digit0", { ctrl: true })],
 
   // Moodboard grid — Lightroom triage row + viewer navigation.
@@ -132,15 +117,13 @@ export const PRESETS: Record<PresetId, Preset> = {
   gamer: {
     id: "gamer",
     label: "Gamer",
-    description:
-      "Game-style free camera — WASD to move, Q/E down/up, arrows to look. The current Artcraft default.",
+    description: "Game-style free camera — WASD to move, Q/E down/up, arrows to look. The current Artcraft default.",
     bindings: {}, // BASE is the gamer scheme.
   },
   blender: {
     id: "blender",
     label: "Blender-like",
-    description:
-      "Familiar to Blender users — G/R/S for grab/rotate/scale and X/Y/Z axis locking during a transform.",
+    description: "Familiar to Blender users — G/R/S for grab/rotate/scale and X/Y/Z axis locking during a transform.",
     bindings: {
       // Camera moves off WASD/QE onto the numpad (Blender's navigation cluster),
       // with the top-row digits as the laptop-friendly "Emulate Numpad" mirror.

@@ -1,10 +1,7 @@
 import { useEffect } from "react";
 import { useBoardLibraryStore } from "../boards/BoardLibraryStore";
 import { measureImage } from "../boards/measureMedia";
-import {
-  DroppedGalleryItem,
-  GALLERY_MOODBOARD_DROP_EVENT,
-} from "../galleryDrop";
+import { DroppedGalleryItem, GALLERY_MOODBOARD_DROP_EVENT } from "../galleryDrop";
 
 interface GalleryMoodboardDropDetail {
   item: DroppedGalleryItem;
@@ -35,7 +32,6 @@ export const useGalleryBoardDrop = (active: boolean) => {
     };
 
     window.addEventListener(GALLERY_MOODBOARD_DROP_EVENT, handler);
-    return () =>
-      window.removeEventListener(GALLERY_MOODBOARD_DROP_EVENT, handler);
+    return () => window.removeEventListener(GALLERY_MOODBOARD_DROP_EVENT, handler);
   }, [active]);
 };

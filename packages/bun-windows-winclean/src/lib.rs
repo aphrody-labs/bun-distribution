@@ -11,8 +11,8 @@ mod defender;
 pub mod dispatch;
 mod eventlog;
 pub mod filesystem;
-pub mod gaming;
 pub mod gamepad;
+pub mod gaming;
 mod generated;
 pub mod memory;
 mod notification;
@@ -116,11 +116,15 @@ impl Winclean {
     pub fn call_raw(&self, tool: &str, args_json: &str) -> Result<String> {
         let arguments: serde_json::Value = serde_json::from_str(args_json)?;
         let result = match dispatch::call_rust(tool, arguments) {
-            Ok(value) => {
-                ToolResult { content: Vec::new(), structured_content: Some(value), is_error: false }
+            Ok(value) => ToolResult {
+                content: Vec::new(),
+                structured_content: Some(value),
+                is_error: false,
             },
             Err(error) => ToolResult {
-                content: vec![Content::Text { text: error.to_string() }],
+                content: vec![Content::Text {
+                    text: error.to_string(),
+                }],
                 structured_content: None,
                 is_error: true,
             },
@@ -193,7 +197,11 @@ impl ToolResult {
     }
 
     pub fn ok(self) -> Result<Self> {
-        if self.is_error { Err(Error::Tool(self.text())) } else { Ok(self) }
+        if self.is_error {
+            Err(Error::Tool(self.text()))
+        } else {
+            Ok(self)
+        }
     }
 
     pub fn json<T: DeserializeOwned>(&self) -> Result<T> {
@@ -218,7 +226,10 @@ impl ToolResult {
                 Content::Image { data, mime_type } => base64::engine::general_purpose::STANDARD
                     .decode(data)
                     .ok()
-                    .map(|bytes| Blob { mime_type: mime_type.clone(), bytes }),
+                    .map(|bytes| Blob {
+                        mime_type: mime_type.clone(),
+                        bytes,
+                    }),
                 _ => None,
             })
             .collect()

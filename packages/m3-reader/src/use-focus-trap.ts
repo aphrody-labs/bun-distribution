@@ -19,37 +19,22 @@ interface FocusLease {
 }
 
 // The document scroll lock is shared; only the last activated modal handles keys.
-const activeTraps = new WeakMap<
-  Document,
-  { stack: FocusLease[]; previousOverflow: string }
->();
+const activeTraps = new WeakMap<Document, { stack: FocusLease[]; previousOverflow: string }>();
 
 /** Native tab stops, excluding controls hidden or disabled through their ancestors. */
 function isTabbable(element: HTMLElement): boolean {
-  if (
-    element.tabIndex < 0 ||
-    element.matches(":disabled, input[type='hidden']")
-  )
-    return false;
+  if (element.tabIndex < 0 || element.matches(":disabled, input[type='hidden']")) return false;
   if (element.closest("[hidden], [inert]")) return false;
   const view = element.ownerDocument.defaultView;
   const visibility = view?.getComputedStyle(element).visibility;
   if (visibility === "hidden" || visibility === "collapse") return false;
-  for (
-    let ancestor: HTMLElement | null = element;
-    ancestor;
-    ancestor = ancestor.parentElement
-  ) {
+  for (let ancestor: HTMLElement | null = element; ancestor; ancestor = ancestor.parentElement) {
     if (view?.getComputedStyle(ancestor).display === "none") return false;
   }
   return true;
 }
 
-export function useFocusTrap(
-  panelRef: RefObject<HTMLElement | null>,
-  active: boolean,
-  onEscape?: () => void,
-): void {
+export function useFocusTrap(panelRef: RefObject<HTMLElement | null>, active: boolean, onEscape?: () => void): void {
   // `onEscape` est presque toujours une lambda écrite dans le JSX de l'appelant
   // (`() => setLightbox(false)`), donc une NOUVELLE fonction à chaque rendu. En
   // dépendance d'effet, elle rejouait tout le montage du piège à chaque rendu
@@ -92,9 +77,7 @@ export function useFocusTrap(
       if (e.key !== "Tab") return;
       const currentPanel = panelRef.current;
       if (!currentPanel) return;
-      const items = [
-        ...currentPanel.querySelectorAll<HTMLElement>(FOCUSABLE),
-      ].filter(isTabbable);
+      const items = [...currentPanel.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(isTabbable);
       if (items.length === 0) {
         e.preventDefault();
         currentPanel.focus();
@@ -136,8 +119,7 @@ export function useFocusTrap(
       }
       if (wasTop) {
         const previous = lease.previousFocused;
-        if (previous?.isConnected && (!top || top.panel.contains(previous)))
-          previous.focus();
+        if (previous?.isConnected && (!top || top.panel.contains(previous))) previous.focus();
         else top?.panel.focus();
       }
     };

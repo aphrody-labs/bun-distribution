@@ -134,7 +134,7 @@ async function openState(cols: number, rows: number): Promise<State> {
         /* A torn newest slot may leave the previous valid slot. */
       }
     }
-    if (handles.some((handle) => handle.getSize() > 0)) {
+    if (handles.some(handle => handle.getSize() > 0)) {
       throw new Error("both OPFS shell images are invalid; existing data was preserved");
     }
     return {
@@ -164,7 +164,7 @@ function persist(state: State): void {
 export function startOpfsWorker(scope: WorkerScope): void {
   let state: State | null = null;
   let queue = Promise.resolve();
-  scope.addEventListener("message", (event) => {
+  scope.addEventListener("message", event => {
     queue = queue
       .then(async () => {
         const request = event.data;

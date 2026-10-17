@@ -16,11 +16,7 @@ const MASTER_LIMITER_ATTACK_SECONDS = 0.001;
 const MASTER_LIMITER_RELEASE_SECONDS = 0.12;
 const MASTER_OUTPUT_HEADROOM = 0.98;
 
-export function getAudioBufferPeak({
-  audioBuffer,
-}: {
-  audioBuffer: AudioBuffer;
-}): number {
+export function getAudioBufferPeak({ audioBuffer }: { audioBuffer: AudioBuffer }): number {
   let peak = 0;
 
   for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
@@ -63,11 +59,7 @@ export function createAudioMasteringChain({
   return { input };
 }
 
-export async function applyAudioMasteringToBuffer({
-  audioBuffer,
-}: {
-  audioBuffer: AudioBuffer;
-}): Promise<AudioBuffer> {
+export async function applyAudioMasteringToBuffer({ audioBuffer }: { audioBuffer: AudioBuffer }): Promise<AudioBuffer> {
   if (getAudioBufferPeak({ audioBuffer }) <= MASTER_OUTPUT_HEADROOM) {
     return audioBuffer;
   }
@@ -95,20 +87,11 @@ export async function applyAudioMasteringToBuffer({
   return renderedBuffer;
 }
 
-function clampAudioBufferPeak({
-  audioBuffer,
-  maxPeak,
-}: {
-  audioBuffer: AudioBuffer;
-  maxPeak: number;
-}): void {
+function clampAudioBufferPeak({ audioBuffer, maxPeak }: { audioBuffer: AudioBuffer; maxPeak: number }): void {
   for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
     const channelData = audioBuffer.getChannelData(channel);
     for (let index = 0; index < channelData.length; index++) {
-      channelData[index] = Math.max(
-        -maxPeak,
-        Math.min(maxPeak, channelData[index]),
-      );
+      channelData[index] = Math.max(-maxPeak, Math.min(maxPeak, channelData[index]));
     }
   }
 }

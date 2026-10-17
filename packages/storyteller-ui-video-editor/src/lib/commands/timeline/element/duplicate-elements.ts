@@ -1,15 +1,8 @@
-import {
-  Command,
-  createElementSelectionResult,
-  type CommandResult,
-} from "../../base-command";
+import { Command, createElementSelectionResult, type CommandResult } from "../../base-command";
 import type { SceneTracks, TimelineElement } from "../../../timeline/types";
 import { generateUUID } from "../../../utils/id";
 import { EditorCore } from "../../../core";
-import {
-  applyPlacement,
-  resolveTrackPlacement,
-} from "../../../timeline/placement";
+import { applyPlacement, resolveTrackPlacement } from "../../../timeline/placement";
 import { cloneAnimations } from "../../../animation";
 import type { MediaTime } from "../../../wasm";
 
@@ -34,22 +27,14 @@ export class DuplicateElementsCommand extends Command {
 
     let updatedTracks = this.savedState;
 
-    for (const track of [
-      ...this.savedState.overlay,
-      this.savedState.main,
-      ...this.savedState.audio,
-    ]) {
-      const elementsToDuplicate = this.elements.filter(
-        (elementEntry) => elementEntry.trackId === track.id,
-      );
+    for (const track of [...this.savedState.overlay, this.savedState.main, ...this.savedState.audio]) {
+      const elementsToDuplicate = this.elements.filter(elementEntry => elementEntry.trackId === track.id);
 
       if (elementsToDuplicate.length === 0) {
         continue;
       }
 
-      const elementIdsToDuplicate = new Set(
-        elementsToDuplicate.map((element) => element.elementId),
-      );
+      const elementIdsToDuplicate = new Set(elementsToDuplicate.map(element => element.elementId));
       const newTrackElements: TimelineElement[] = [];
 
       for (const element of track.elements) {

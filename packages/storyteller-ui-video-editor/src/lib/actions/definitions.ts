@@ -174,30 +174,18 @@ const ACTION_DEFAULT_SHORTCUTS = [
   ["duplicate-selected", ["ctrl+d"]],
   ["undo", ["ctrl+z"]],
   ["redo", ["ctrl+shift+z", "ctrl+y"]],
-] as const satisfies ReadonlyArray<
-  readonly [TActionWithOptionalArgs, readonly ShortcutKey[]]
->;
+] as const satisfies ReadonlyArray<readonly [TActionWithOptionalArgs, readonly ShortcutKey[]]>;
 
-const ACTION_DEFAULT_SHORTCUTS_BY_ACTION = new Map<
-  TAction,
-  readonly ShortcutKey[]
->(ACTION_DEFAULT_SHORTCUTS);
+const ACTION_DEFAULT_SHORTCUTS_BY_ACTION = new Map<TAction, readonly ShortcutKey[]>(ACTION_DEFAULT_SHORTCUTS);
 
-export function getActionDefinition({
-  action,
-}: {
-  action: TAction;
-}): TActionDefinition {
+export function getActionDefinition({ action }: { action: TAction }): TActionDefinition {
   return {
     ...ACTIONS[action],
     defaultShortcuts: ACTION_DEFAULT_SHORTCUTS_BY_ACTION.get(action),
   };
 }
 
-export function getDefaultShortcuts(): Map<
-  ShortcutKey,
-  TActionWithOptionalArgs
-> {
+export function getDefaultShortcuts(): Map<ShortcutKey, TActionWithOptionalArgs> {
   const shortcuts = new Map<ShortcutKey, TActionWithOptionalArgs>();
 
   for (const [action, defaultShortcuts] of ACTION_DEFAULT_SHORTCUTS) {

@@ -57,26 +57,16 @@ test("mode switches preserve scans2/10/381 through row measurements and release 
           }) as unknown as Virtualizer<HTMLDivElement, Element>,
         [],
       );
-      const restoring = useModePageRestoration(
-        mode,
-        current,
-        scroll,
-        virtualizer,
-        container,
-      );
+      const restoring = useModePageRestoration(mode, current, scroll, virtualizer, container);
       useVerticalScrollSync(mode, scroll, virtualizer, setCurrent, restoring);
       return (
         <div ref={container}>
           <output>{current + 1}</output>
-          <button
-            onClick={() => setMode(mode === "paged" ? "vertical" : "paged")}
-          >
-            mode
-          </button>
+          <button onClick={() => setMode(mode === "paged" ? "vertical" : "paged")}>mode</button>
           {mode === "vertical" ? (
             <div
               data-scroll
-              ref={(el) => {
+              ref={el => {
                 scroll.current = el;
                 if (el)
                   Object.defineProperty(el, "clientHeight", {

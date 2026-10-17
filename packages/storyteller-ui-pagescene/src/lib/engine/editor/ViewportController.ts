@@ -39,9 +39,7 @@ export class ViewportController {
 
   containerMayReset() {
     if (!this.container) {
-      console.warn(
-        "ViewportController - Container does not exist, querying from DOM via document.getElementById",
-      );
+      console.warn("ViewportController - Container does not exist, querying from DOM via document.getElementById");
       this.container = document.getElementById("video-scene-container");
     }
   }
@@ -82,7 +80,7 @@ export class ViewportController {
 
     this.engine.getRenderer()?.setPixelRatio(window.devicePixelRatio);
 
-    this.observer = new ResizeObserver((entries) => {
+    this.observer = new ResizeObserver(entries => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         const camera = this.engine.getCamera();

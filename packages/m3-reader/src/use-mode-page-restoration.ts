@@ -17,8 +17,7 @@ export function useModePageRestoration(
   const restore = useRef<(() => void) | null>(null);
 
   useLayoutEffect(() => {
-    const enteringVertical =
-      previousMode.current === "paged" && mode === "vertical";
+    const enteringVertical = previousMode.current === "paged" && mode === "vertical";
     previousMode.current = mode;
     if (!enteringVertical) return;
     const scroll = scrollRef.current;
@@ -26,8 +25,7 @@ export function useModePageRestoration(
     const container = containerRef.current ?? scroll;
     restoring.current = true;
     const anchor = () => {
-      if (restoring.current)
-        virtualizer.scrollToIndex(current, { align: "start" });
+      if (restoring.current) virtualizer.scrollToIndex(current, { align: "start" });
     };
     restore.current = anchor;
     const release = () => {
@@ -36,17 +34,9 @@ export function useModePageRestoration(
     };
     const onKey = (event: KeyboardEvent) => {
       if (
-        [
-          "ArrowUp",
-          "ArrowDown",
-          "ArrowLeft",
-          "ArrowRight",
-          "PageUp",
-          "PageDown",
-          "Home",
-          "End",
-          " ",
-        ].includes(event.key)
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "PageUp", "PageDown", "Home", "End", " "].includes(
+          event.key,
+        )
       )
         release();
     };
@@ -56,8 +46,7 @@ export function useModePageRestoration(
         passive: true,
       });
     container.addEventListener("keydown", onKey, true);
-    const observer =
-      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(anchor);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(anchor);
     observer?.observe(scroll);
     if (scroll.firstElementChild) observer?.observe(scroll.firstElementChild);
     anchor();

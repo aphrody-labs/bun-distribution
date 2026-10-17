@@ -47,12 +47,8 @@ describe("text similarity", () => {
   it("is 1 for equal and for empty texts, lower as words diverge", () => {
     expect(textSimilarity("a b c d", "a b c d")).toBe(1);
     expect(textSimilarity("", "")).toBe(1);
-    expect(
-      textSimilarity("one two three four five", "one two three nine ten"),
-    ).toBeLessThan(0.5);
-    expect(normalizeText("  Hello\n\nWORLD 12:01  ", [/\d\d:\d\d/])).toBe(
-      "hello world",
-    );
+    expect(textSimilarity("one two three four five", "one two three nine ten")).toBeLessThan(0.5);
+    expect(normalizeText("  Hello\n\nWORLD 12:01  ", [/\d\d:\d\d/])).toBe("hello world");
   });
 });
 
@@ -77,29 +73,18 @@ describe("compareSnapshots", () => {
     });
     const report = compareSnapshots("/pricing", snapshot(), wrapped);
     expect(report.status).toBe("fail");
-    const checks = report.findings
-      .filter((finding) => finding.severity === "regression")
-      .map((finding) => finding.check);
+    const checks = report.findings.filter(finding => finding.severity === "regression").map(finding => finding.check);
     expect(checks).toEqual(expect.arrayContaining(["title", "text", "tree"]));
   });
 
   it("fails when an API request of the browser never happens in the app, but only notes a missing asset", () => {
     const wrapped = snapshot({
-      resources: [
-        { name: "https://example.com/other.js", initiator: "script" },
-      ],
+      resources: [{ name: "https://example.com/other.js", initiator: "script" }],
     });
     const report = compareSnapshots("/pricing", snapshot(), wrapped);
-    const requests = report.findings.filter(
-      (finding) => finding.check === "requests",
-    );
-    expect(
-      requests.find((finding) => finding.message.includes("/api/plans"))
-        ?.severity,
-    ).toBe("regression");
-    expect(
-      requests.find((finding) => finding.message.includes("app.js"))?.severity,
-    ).toBe("info");
+    const requests = report.findings.filter(finding => finding.check === "requests");
+    expect(requests.find(finding => finding.message.includes("/api/plans"))?.severity).toBe("regression");
+    expect(requests.find(finding => finding.message.includes("app.js"))?.severity).toBe("info");
   });
 
   it("maps the loopback origin of a bundle to the public origin", () => {
@@ -117,14 +102,8 @@ describe("compareSnapshots", () => {
   });
 
   it("flags a different final route", () => {
-    const report = compareSnapshots(
-      "/pricing",
-      snapshot(),
-      snapshot({ url: "https://example.com/login" }),
-    );
-    expect(report.findings.some((finding) => finding.check === "route")).toBe(
-      true,
-    );
+    const report = compareSnapshots("/pricing", snapshot(), snapshot({ url: "https://example.com/login" }));
+    expect(report.findings.some(finding => finding.check === "route")).toBe(true);
   });
 });
 
@@ -171,15 +150,9 @@ describe("verifyPolicy", () => {
     icons: [],
     manifest: null,
     frameworks: [],
-    origins: [
-      "https://shop.example.com",
-      "https://sso.example.org",
-      "https://accounts.google.com",
-    ],
+    origins: ["https://shop.example.com", "https://sso.example.org", "https://accounts.google.com"],
     redirectOrigins: ["https://shop.example.com", "https://sso.example.org"],
-    idps: [
-      { id: "google", kind: "idp", origin: "https://accounts.google.com" },
-    ],
+    idps: [{ id: "google", kind: "idp", origin: "https://accounts.google.com" }],
     signals: [],
     links: ["/cart", "/help"],
     formOrigins: ["https://pay.example.net"],
@@ -195,22 +168,14 @@ describe("verifyPolicy", () => {
   it("accepts what the plan allows and reports a form that would leave the app", () => {
     const plan: ConversionPlan = planConversion(probe);
     const findings = verifyPolicy(plan);
-    expect(
-      findings.filter((finding) => finding.message.includes("redirect")),
-    ).toEqual([]);
-    expect(
-      findings.filter((finding) => finding.message.includes("sign-in")),
-    ).toEqual([]);
-    expect(findings.map((finding) => finding.message).join("\n")).toContain(
+    expect(findings.filter(finding => finding.message.includes("redirect"))).toEqual([]);
+    expect(findings.filter(finding => finding.message.includes("sign-in"))).toEqual([]);
+    expect(findings.map(finding => finding.message).join("\n")).toContain(
       "form action https://pay.example.net/ would be sent to the system browser",
     );
   });
 
   it("passes once the origin is allowed", () => {
-    expect(
-      verifyPolicy(
-        planConversion(probe, { allowOrigins: ["https://pay.example.net"] }),
-      ),
-    ).toEqual([]);
+    expect(verifyPolicy(planConversion(probe, { allowOrigins: ["https://pay.example.net"] }))).toEqual([]);
   });
 });

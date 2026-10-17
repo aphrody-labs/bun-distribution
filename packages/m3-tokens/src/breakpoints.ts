@@ -8,8 +8,7 @@
  */
 
 /** M3 window size class, classifying a viewport **width** in dp/px. */
-export type WindowSizeClass =
-  "compact" | "medium" | "expanded" | "large" | "extra-large";
+export type WindowSizeClass = "compact" | "medium" | "expanded" | "large" | "extra-large";
 
 /** Lower-bound width (dp) of each window size class. */
 export const BREAKPOINTS = {
@@ -44,11 +43,7 @@ export const HEIGHT_BREAKPOINTS = {
 } as const satisfies Record<WindowHeightClass, number>;
 
 /** Height classes ordered smallest to largest. */
-export const WINDOW_HEIGHT_CLASSES: readonly WindowHeightClass[] = [
-  "compact",
-  "medium",
-  "expanded",
-];
+export const WINDOW_HEIGHT_CLASSES: readonly WindowHeightClass[] = ["compact", "medium", "expanded"];
 
 /** Classify a height (dp/px) into its M3 window height class. */
 export function classifyHeight(height: number): WindowHeightClass {
@@ -84,8 +79,7 @@ export function marginFor(sizeClass: WindowSizeClass): number {
 /** Recommended navigation component: bottom bar (compact), collapsed rail (medium/expanded), expanded rail (large+). */
 export function navigationFor(sizeClass: WindowSizeClass): NavigationKind {
   if (sizeClass === "compact") return "bar";
-  if (sizeClass === "medium" || sizeClass === "expanded")
-    return "rail-collapsed";
+  if (sizeClass === "medium" || sizeClass === "expanded") return "rail-collapsed";
   return "rail-expanded";
 }
 
@@ -102,17 +96,15 @@ export function panesFor(sizeClass: WindowSizeClass): 1 | 2 | 3 {
  * values (`@media (--md-expanded) { … }`, `var(--md-breakpoint-large)`).
  */
 export function breakpointsCss(): string {
-  const customMedia = WINDOW_SIZE_CLASSES.filter((c) => c !== "compact")
-    .map((c) => `@custom-media --md-${c} ${mediaQuery(c)};`)
+  const customMedia = WINDOW_SIZE_CLASSES.filter(c => c !== "compact")
+    .map(c => `@custom-media --md-${c} ${mediaQuery(c)};`)
     .join("\n");
-  const vars = WINDOW_SIZE_CLASSES.map(
-    (c) => `  --md-breakpoint-${c}: ${BREAKPOINTS[c]}px;`,
-  ).join("\n");
-  const heightMedia = WINDOW_HEIGHT_CLASSES.filter((c) => c !== "compact")
-    .map((c) => `@custom-media --md-height-${c} ${heightMediaQuery(c)};`)
+  const vars = WINDOW_SIZE_CLASSES.map(c => `  --md-breakpoint-${c}: ${BREAKPOINTS[c]}px;`).join("\n");
+  const heightMedia = WINDOW_HEIGHT_CLASSES.filter(c => c !== "compact")
+    .map(c => `@custom-media --md-height-${c} ${heightMediaQuery(c)};`)
     .join("\n");
-  const heightVars = WINDOW_HEIGHT_CLASSES.map(
-    (c) => `  --md-breakpoint-height-${c}: ${HEIGHT_BREAKPOINTS[c]}px;`,
-  ).join("\n");
+  const heightVars = WINDOW_HEIGHT_CLASSES.map(c => `  --md-breakpoint-height-${c}: ${HEIGHT_BREAKPOINTS[c]}px;`).join(
+    "\n",
+  );
   return `${customMedia}\n${heightMedia}\n\n:root {\n${vars}\n${heightVars}\n}\n`;
 }

@@ -7,15 +7,37 @@ interface Functions {
   /** virtdisk.dll!ApplySnapshotVhdSet */
   ApplySnapshotVhdSet(VirtualDiskHandle: Win32Pointer, Parameters: Win32Pointer, Flags: number): number;
   /** virtdisk.dll!AttachVirtualDisk */
-  AttachVirtualDisk(VirtualDiskHandle: Win32Pointer, SecurityDescriptor: Win32Pointer, Flags: number, ProviderSpecificFlags: number, Parameters: Win32Pointer, Overlapped: Win32Pointer): number;
+  AttachVirtualDisk(
+    VirtualDiskHandle: Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    Flags: number,
+    ProviderSpecificFlags: number,
+    Parameters: Win32Pointer,
+    Overlapped: Win32Pointer,
+  ): number;
   /** virtdisk.dll!BreakMirrorVirtualDisk */
   BreakMirrorVirtualDisk(VirtualDiskHandle: Win32Pointer): number;
   /** virtdisk.dll!CompactVirtualDisk */
-  CompactVirtualDisk(VirtualDiskHandle: Win32Pointer, Flags: number, Parameters: Win32Pointer, Overlapped: Win32Pointer): number;
+  CompactVirtualDisk(
+    VirtualDiskHandle: Win32Pointer,
+    Flags: number,
+    Parameters: Win32Pointer,
+    Overlapped: Win32Pointer,
+  ): number;
   /** virtdisk.dll!CompleteForkVirtualDisk */
   CompleteForkVirtualDisk(VirtualDiskHandle: Win32Pointer): number;
   /** virtdisk.dll!CreateVirtualDisk */
-  CreateVirtualDisk(VirtualStorageType: Win32Pointer, Path: string | Win32Pointer, VirtualDiskAccessMask: number, SecurityDescriptor: Win32Pointer, Flags: number, ProviderSpecificFlags: number, Parameters: Win32Pointer, Overlapped: Win32Pointer, Handle: Win32Pointer): number;
+  CreateVirtualDisk(
+    VirtualStorageType: Win32Pointer,
+    Path: string | Win32Pointer,
+    VirtualDiskAccessMask: number,
+    SecurityDescriptor: Win32Pointer,
+    Flags: number,
+    ProviderSpecificFlags: number,
+    Parameters: Win32Pointer,
+    Overlapped: Win32Pointer,
+    Handle: Win32Pointer,
+  ): number;
   /** virtdisk.dll!DeleteSnapshotVhdSet */
   DeleteSnapshotVhdSet(VirtualDiskHandle: Win32Pointer, Parameters: Win32Pointer, Flags: number): number;
   /** virtdisk.dll!DeleteVirtualDiskMetadata */
@@ -23,41 +45,123 @@ interface Functions {
   /** virtdisk.dll!DetachVirtualDisk */
   DetachVirtualDisk(VirtualDiskHandle: Win32Pointer, Flags: number, ProviderSpecificFlags: number): number;
   /** virtdisk.dll!EnumerateVirtualDiskMetadata */
-  EnumerateVirtualDiskMetadata(VirtualDiskHandle: Win32Pointer, NumberOfItems: Win32Pointer, Items: Win32Pointer): number;
+  EnumerateVirtualDiskMetadata(
+    VirtualDiskHandle: Win32Pointer,
+    NumberOfItems: Win32Pointer,
+    Items: Win32Pointer,
+  ): number;
   /** virtdisk.dll!ExpandVirtualDisk */
-  ExpandVirtualDisk(VirtualDiskHandle: Win32Pointer, Flags: number, Parameters: Win32Pointer, Overlapped: Win32Pointer): number;
+  ExpandVirtualDisk(
+    VirtualDiskHandle: Win32Pointer,
+    Flags: number,
+    Parameters: Win32Pointer,
+    Overlapped: Win32Pointer,
+  ): number;
   /** virtdisk.dll!ForkVirtualDisk */
-  ForkVirtualDisk(VirtualDiskHandle: Win32Pointer, Flags: number, Parameters: Win32Pointer, Overlapped: Win32Pointer): number;
+  ForkVirtualDisk(
+    VirtualDiskHandle: Win32Pointer,
+    Flags: number,
+    Parameters: Win32Pointer,
+    Overlapped: Win32Pointer,
+  ): number;
   /** virtdisk.dll!GetAllAttachedVirtualDiskPhysicalPaths */
-  GetAllAttachedVirtualDiskPhysicalPaths(PathsBufferSizeInBytes: Win32Pointer, PathsBuffer: string | Win32Pointer): number;
+  GetAllAttachedVirtualDiskPhysicalPaths(
+    PathsBufferSizeInBytes: Win32Pointer,
+    PathsBuffer: string | Win32Pointer,
+  ): number;
   /** virtdisk.dll!GetStorageDependencyInformation */
-  GetStorageDependencyInformation(ObjectHandle: Win32Pointer, Flags: number, StorageDependencyInfoSize: number, StorageDependencyInfo: Win32Pointer, SizeUsed: Win32Pointer): number;
+  GetStorageDependencyInformation(
+    ObjectHandle: Win32Pointer,
+    Flags: number,
+    StorageDependencyInfoSize: number,
+    StorageDependencyInfo: Win32Pointer,
+    SizeUsed: Win32Pointer,
+  ): number;
   /** virtdisk.dll!GetVirtualDiskInformation */
-  GetVirtualDiskInformation(VirtualDiskHandle: Win32Pointer, VirtualDiskInfoSize: Win32Pointer, VirtualDiskInfo: Win32Pointer, SizeUsed: Win32Pointer): number;
+  GetVirtualDiskInformation(
+    VirtualDiskHandle: Win32Pointer,
+    VirtualDiskInfoSize: Win32Pointer,
+    VirtualDiskInfo: Win32Pointer,
+    SizeUsed: Win32Pointer,
+  ): number;
   /** virtdisk.dll!GetVirtualDiskMetadata */
-  GetVirtualDiskMetadata(VirtualDiskHandle: Win32Pointer, Item: Win32Pointer, MetaDataSize: Win32Pointer, MetaData: Win32Pointer): number;
+  GetVirtualDiskMetadata(
+    VirtualDiskHandle: Win32Pointer,
+    Item: Win32Pointer,
+    MetaDataSize: Win32Pointer,
+    MetaData: Win32Pointer,
+  ): number;
   /** virtdisk.dll!GetVirtualDiskOperationProgress */
-  GetVirtualDiskOperationProgress(VirtualDiskHandle: Win32Pointer, Overlapped: Win32Pointer, Progress: Win32Pointer): number;
+  GetVirtualDiskOperationProgress(
+    VirtualDiskHandle: Win32Pointer,
+    Overlapped: Win32Pointer,
+    Progress: Win32Pointer,
+  ): number;
   /** virtdisk.dll!GetVirtualDiskPhysicalPath */
-  GetVirtualDiskPhysicalPath(VirtualDiskHandle: Win32Pointer, DiskPathSizeInBytes: Win32Pointer, DiskPath: string | Win32Pointer): number;
+  GetVirtualDiskPhysicalPath(
+    VirtualDiskHandle: Win32Pointer,
+    DiskPathSizeInBytes: Win32Pointer,
+    DiskPath: string | Win32Pointer,
+  ): number;
   /** virtdisk.dll!MergeVirtualDisk */
-  MergeVirtualDisk(VirtualDiskHandle: Win32Pointer, Flags: number, Parameters: Win32Pointer, Overlapped: Win32Pointer): number;
+  MergeVirtualDisk(
+    VirtualDiskHandle: Win32Pointer,
+    Flags: number,
+    Parameters: Win32Pointer,
+    Overlapped: Win32Pointer,
+  ): number;
   /** virtdisk.dll!MirrorVirtualDisk */
-  MirrorVirtualDisk(VirtualDiskHandle: Win32Pointer, Flags: number, Parameters: Win32Pointer, Overlapped: Win32Pointer): number;
+  MirrorVirtualDisk(
+    VirtualDiskHandle: Win32Pointer,
+    Flags: number,
+    Parameters: Win32Pointer,
+    Overlapped: Win32Pointer,
+  ): number;
   /** virtdisk.dll!ModifyVhdSet */
   ModifyVhdSet(VirtualDiskHandle: Win32Pointer, Parameters: Win32Pointer, Flags: number): number;
   /** virtdisk.dll!OpenVirtualDisk */
-  OpenVirtualDisk(VirtualStorageType: Win32Pointer, Path: string | Win32Pointer, VirtualDiskAccessMask: number, Flags: number, Parameters: Win32Pointer, Handle: Win32Pointer): number;
+  OpenVirtualDisk(
+    VirtualStorageType: Win32Pointer,
+    Path: string | Win32Pointer,
+    VirtualDiskAccessMask: number,
+    Flags: number,
+    Parameters: Win32Pointer,
+    Handle: Win32Pointer,
+  ): number;
   /** virtdisk.dll!QueryChangesVirtualDisk */
-  QueryChangesVirtualDisk(VirtualDiskHandle: Win32Pointer, ChangeTrackingId: string | Win32Pointer, ByteOffset: number | bigint, ByteLength: number | bigint, Flags: number, Ranges: Win32Pointer, RangeCount: Win32Pointer, ProcessedLength: Win32Pointer): number;
+  QueryChangesVirtualDisk(
+    VirtualDiskHandle: Win32Pointer,
+    ChangeTrackingId: string | Win32Pointer,
+    ByteOffset: number | bigint,
+    ByteLength: number | bigint,
+    Flags: number,
+    Ranges: Win32Pointer,
+    RangeCount: Win32Pointer,
+    ProcessedLength: Win32Pointer,
+  ): number;
   /** virtdisk.dll!RawSCSIVirtualDisk */
-  RawSCSIVirtualDisk(VirtualDiskHandle: Win32Pointer, Parameters: Win32Pointer, Flags: number, Response: Win32Pointer): number;
+  RawSCSIVirtualDisk(
+    VirtualDiskHandle: Win32Pointer,
+    Parameters: Win32Pointer,
+    Flags: number,
+    Response: Win32Pointer,
+  ): number;
   /** virtdisk.dll!ResizeVirtualDisk */
-  ResizeVirtualDisk(VirtualDiskHandle: Win32Pointer, Flags: number, Parameters: Win32Pointer, Overlapped: Win32Pointer): number;
+  ResizeVirtualDisk(
+    VirtualDiskHandle: Win32Pointer,
+    Flags: number,
+    Parameters: Win32Pointer,
+    Overlapped: Win32Pointer,
+  ): number;
   /** virtdisk.dll!SetVirtualDiskInformation */
   SetVirtualDiskInformation(VirtualDiskHandle: Win32Pointer, VirtualDiskInfo: Win32Pointer): number;
   /** virtdisk.dll!SetVirtualDiskMetadata */
-  SetVirtualDiskMetadata(VirtualDiskHandle: Win32Pointer, Item: Win32Pointer, MetaDataSize: number, MetaData: Win32Pointer): number;
+  SetVirtualDiskMetadata(
+    VirtualDiskHandle: Win32Pointer,
+    Item: Win32Pointer,
+    MetaDataSize: number,
+    MetaData: Win32Pointer,
+  ): number;
   /** virtdisk.dll!TakeSnapshotVhdSet */
   TakeSnapshotVhdSet(VirtualDiskHandle: Win32Pointer, Parameters: Win32Pointer, Flags: number): number;
 }

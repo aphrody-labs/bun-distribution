@@ -6,11 +6,7 @@ import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
 import { Ctx } from "./context.ts";
 import { spawnSync, type SpawnSyncResult } from "./process.ts";
-import {
-  durablePrivateWrite,
-  ownedPrivateFile,
-  ownerPrivate,
-} from "./systemd.ts";
+import { durablePrivateWrite, ownedPrivateFile, ownerPrivate } from "./systemd.ts";
 
 export interface NativeJobHost {
   id: "vps" | "dbfr" | "wsl";
@@ -51,55 +47,29 @@ const targets = {
 } as const;
 type Run = (command: string, args: string[]) => SpawnSyncResult;
 
-function runtimeIdentity(
-  host: NativeJobHost,
-  pin: string,
-  home: string,
-  run: Run,
-): string {
+function runtimeIdentity(host: NativeJobHost, pin: string, home: string, run: Run): string {
   const native = join(home, ".local/bin/aphrody");
   if (host.id === "wsl") {
-    const units = [
-      "aphrody-local-mcp.service",
-      "aphrody-jobs-worker-wsl.service",
-    ];
+    const units = ["aphrody-local-mcp.service", "aphrody-jobs-worker-wsl.service"];
     for (const unit of units)
-      if (
-        run("systemctl", ["--user", "is-active", "--quiet", unit]).status !== 0
-      )
+      if (run("systemctl", ["--user", "is-active", "--quiet", unit]).status !== 0)
         throw new Error("Current WSL runtime is inactive");
-    const hashes = run("sha256sum", [
-      native,
-      join(home, ".local/bin/aphrody-mcp"),
-    ]);
+    const hashes = run("sha256sum", [native, join(home, ".local/bin/aphrody-mcp")]);
     if (
       hashes.status !== 0 ||
       hashes.stdout.trim().split("\n").length !== 2 ||
       hashes.stdout
         .trim()
         .split("\n")
-        .some((line) => line.split(/\s+/)[0] !== pin)
+        .some(line => line.split(/\s+/)[0] !== pin)
     )
       throw new Error("Current WSL binary differs from its qualified pin");
-    const pids = units.map((unit) =>
-      run("systemctl", [
-        "--user",
-        "show",
-        unit,
-        "--property=MainPID",
-        "--value",
-      ]),
-    );
-    if (
-      pids.some(
-        (result) =>
-          result.status !== 0 || !/^[1-9]\d*$/.test(result.stdout.trim()),
-      )
-    )
+    const pids = units.map(unit => run("systemctl", ["--user", "show", unit, "--property=MainPID", "--value"]));
+    if (pids.some(result => result.status !== 0 || !/^[1-9]\d*$/.test(result.stdout.trim())))
       throw new Error("Current WSL runtime has no live PID");
     const running = run(
       "sha256sum",
-      pids.map((result) => `/proc/${result.stdout.trim()}/exe`),
+      pids.map(result => `/proc/${result.stdout.trim()}/exe`),
     );
     if (
       running.status !== 0 ||
@@ -107,29 +77,17 @@ function runtimeIdentity(
       running.stdout
         .trim()
         .split("\n")
-        .some((line) => line.split(/\s+/)[0] !== pin)
+        .some(line => line.split(/\s+/)[0] !== pin)
     )
-      throw new Error(
-        "Current WSL running executable differs from its qualified pin",
-      );
-    return pids.map((result) => result.stdout.trim()).join(" ");
+      throw new Error("Current WSL running executable differs from its qualified pin");
+    return pids.map(result => result.stdout.trim()).join(" ");
   }
   const unit = targets[host.id].unit,
     worker = `aphrody-jobs-worker-${host.id}.service`;
   const command = `set -e; systemctl is-active --quiet ${unit} ${worker}; echo ${pin}'  /home/ubuntu/.local/bin/aphrody-mcp' | sha256sum -c --quiet -; echo ${pin}'  /home/ubuntu/.local/bin/aphrody' | sha256sum -c --quiet -; mcp_pid=$(systemctl show ${unit} --property=MainPID --value); worker_pid=$(systemctl show ${worker} --property=MainPID --value); echo ${pin}'  /proc/'$mcp_pid'/exe' | sudo -n sha256sum -c --quiet -; echo ${pin}'  /proc/'$worker_pid'/exe' | sudo -n sha256sum -c --quiet -; printf '%s %s\\n' "$mcp_pid" "$worker_pid"`;
-  const result = run(native, [
-    "infra",
-    "ssh",
-    "exec",
-    "--host",
-    host.id,
-    "--cmd",
-    command,
-  ]);
+  const result = run(native, ["infra", "ssh", "exec", "--host", host.id, "--cmd", command]);
   if (result.status !== 0 || !/^[1-9]\d* [1-9]\d*\n?$/.test(result.stdout))
-    throw new Error(
-      `Current ${host.id} runtime, pin or live PIDs are unavailable`,
-    );
+    throw new Error(`Current ${host.id} runtime, pin or live PIDs are unavailable`);
   return result.stdout.trim();
 }
 interface QualificationIntent {
@@ -161,11 +119,9 @@ export function prepareNativeJobHostClients(
     !/^[a-f0-9]{64}$/.test(pin) ||
     !ids.length ||
     new Set(ids).size !== ids.length ||
-    ids.some((id) => !Object.hasOwn(targets, id))
+    ids.some(id => !Object.hasOwn(targets, id))
   )
-    throw new Error(
-      "Explicit qualified pin and unique supported host identities required",
-    );
+    throw new Error("Explicit qualified pin and unique supported host identities required");
   const home = options.home ?? homedir();
   const directory = join(home, ".aphrody/private/jobs");
   const hosts = ids.map((id): NativeJobHost => ({
@@ -177,10 +133,7 @@ export function prepareNativeJobHostClients(
   }));
   if (!context.apply) return hosts;
   privateDirectory(home);
-  durablePrivateWrite(
-    join(directory, "hosts.json"),
-    `${JSON.stringify(hosts, null, 2)}\n`,
-  );
+  durablePrivateWrite(join(directory, "hosts.json"), `${JSON.stringify(hosts, null, 2)}\n`);
   const run =
     options.run ??
     ((command, args) =>
@@ -195,15 +148,9 @@ export function prepareNativeJobHostClients(
       const result = /^APHRODY_MCP_HTTP_TOKEN=([a-f0-9]{64})\n?$/.exec(
         ownedPrivateFile(join(directory, "wsl-mcp.env")),
       );
-      if (!result)
-        throw new Error(
-          "WSL bearer is unavailable; activate its declared user units first",
-        );
+      if (!result) throw new Error("WSL bearer is unavailable; activate its declared user units first");
       bearer = result[1]!;
-      if (!existsSync(host.config))
-        throw new Error(
-          "WSL client must come from its qualified user-unit owner",
-        );
+      if (!existsSync(host.config)) throw new Error("WSL client must come from its qualified user-unit owner");
     } else {
       const command = `set -e; systemctl is-active --quiet ${targets[host.id].unit} aphrody-jobs-worker-${host.id}.service; echo ${pin}'  /home/ubuntu/.local/bin/aphrody-mcp' | sha256sum -c --quiet -; echo ${pin}'  /home/ubuntu/.local/bin/aphrody' | sha256sum -c --quiet -; sudo -n sed -n 's/^APHRODY_MCP_HTTP_TOKEN=//p' /etc/aphrody/aphrody-mcp-http.env`;
       const result = run(join(home, ".local/bin/aphrody"), [
@@ -216,9 +163,7 @@ export function prepareNativeJobHostClients(
         command,
       ]);
       if (result.status !== 0 || !/^[a-f0-9]{64}\n?$/.test(result.stdout))
-        throw new Error(
-          `Selected ${host.id} native pin, units or protected bearer unavailable`,
-        );
+        throw new Error(`Selected ${host.id} native pin, units or protected bearer unavailable`);
       bearer = result.stdout.trim();
     }
     if (existsSync(host.config)) ownedPrivateFile(host.config);
@@ -227,10 +172,7 @@ export function prepareNativeJobHostClients(
       `[mcp_servers.aphrody]\nurl = "${targets[host.id].url}"\n[mcp_servers.aphrody.http_headers]\nHost = "${targets[host.id].authority}"\nAuthorization = "Bearer ${bearer}"\n`,
     );
   }
-  durablePrivateWrite(
-    join(directory, "hosts.json"),
-    `${JSON.stringify(hosts, null, 2)}\n`,
-  );
+  durablePrivateWrite(join(directory, "hosts.json"), `${JSON.stringify(hosts, null, 2)}\n`);
   return hosts;
 }
 
@@ -244,21 +186,11 @@ function decode(envelope: unknown): Record<string, unknown> {
       };
     }
   )?.result;
-  const text =
-    result?.content?.filter((item) => item.type === "text" && item.text) ?? [];
-  if (
-    !result ||
-    result.isError === true ||
-    (result.structuredContent === undefined && text.length !== 1)
-  )
+  const text = result?.content?.filter(item => item.type === "text" && item.text) ?? [];
+  if (!result || result.isError === true || (result.structuredContent === undefined && text.length !== 1))
     throw new Error("Native MCP returned no unambiguous receipt");
   const value = result.structuredContent ?? JSON.parse(text[0]!.text!);
-  if (
-    value === null ||
-    typeof value !== "object" ||
-    Array.isArray(value) ||
-    "error" in value
-  )
+  if (value === null || typeof value !== "object" || Array.isArray(value) || "error" in value)
     throw new Error("Native job owner rejected the request");
   return value as Record<string, unknown>;
 }
@@ -277,8 +209,7 @@ export async function qualifyNativeJobHostClients(
     now?: () => number;
   },
 ): Promise<NativeJobHost[]> {
-  if (!/^[a-f0-9]{64}$/.test(options.pin))
-    throw new Error("Explicit qualified runtime pin required");
+  if (!/^[a-f0-9]{64}$/.test(options.pin)) throw new Error("Explicit qualified runtime pin required");
   const attempts = options.attempts ?? 30;
   if (!Number.isInteger(attempts) || attempts < 1 || attempts > 30)
     throw new Error("Qualification requires 1-30 bounded probes");
@@ -295,15 +226,9 @@ export async function qualifyNativeJobHostClients(
   const deadline = now() + 15 * 60 * 1000;
   const checkDeadline = () => {
     options.signal?.throwIfAborted();
-    if (now() >= deadline)
-      throw new Error(
-        "Native qualification global deadline expired; hosts remain unqualified",
-      );
+    if (now() >= deadline) throw new Error("Native qualification global deadline expired; hosts remain unqualified");
   };
-  if (
-    !hosts.length ||
-    new Set(hosts.map((host) => host.id)).size !== hosts.length
-  )
+  if (!hosts.length || new Set(hosts.map(host => host.id)).size !== hosts.length)
     throw new Error("Unique prepared host identities required");
   for (const host of hosts) {
     if (
@@ -318,7 +243,7 @@ export async function qualifyNativeJobHostClients(
   durablePrivateWrite(
     join(directory, "hosts.json"),
     `${JSON.stringify(
-      hosts.map((host) => ({ ...host, workerReady: false })),
+      hosts.map(host => ({ ...host, workerReady: false })),
       null,
       2,
     )}\n`,
@@ -336,9 +261,7 @@ export async function qualifyNativeJobHostClients(
     try {
       config = Bun.TOML.parse(ownedPrivateFile(host.config));
     } catch {
-      throw new Error(
-        "Native job client configuration is unavailable or malformed",
-      );
+      throw new Error("Native job client configuration is unavailable or malformed");
     }
     const server = config.mcp_servers?.aphrody;
     if (
@@ -347,9 +270,7 @@ export async function qualifyNativeJobHostClients(
       typeof server.http_headers.Authorization !== "string" ||
       !/^Bearer [a-f0-9]{64}$/.test(server.http_headers.Authorization)
     )
-      throw new Error(
-        "Job client differs from its purpose-bound declared route and loopback authority",
-      );
+      throw new Error("Job client differs from its purpose-bound declared route and loopback authority");
     if (
       !Object.hasOwn(targets, host.id) ||
       !isAbsolute(host.config) ||
@@ -398,16 +319,12 @@ export async function qualifyNativeJobHostClients(
           };
     durablePrivateWrite(proofPath, `${JSON.stringify(proof)}\n`);
     const listing = await call("aphrody_job_status", {});
-    const queue = listing.queue as
-      { queued?: unknown; running?: unknown } | undefined;
+    const queue = listing.queue as { queued?: unknown; running?: unknown } | undefined;
     if (
       !Array.isArray(listing.jobs) ||
       listing.count !== listing.jobs.length ||
       ![queue?.queued, queue?.running].every(
-        (value) =>
-          typeof value === "number" &&
-          Number.isSafeInteger(value) &&
-          value >= 0,
+        value => typeof value === "number" && Number.isSafeInteger(value) && value >= 0,
       )
     )
       throw new Error("Native queue is unavailable");
@@ -438,10 +355,7 @@ export async function qualifyNativeJobHostClients(
       if (job?.state === "failed" || job?.state === "cancelled")
         throw new Error("Native read-only qualification job did not succeed");
       if (job?.state === "succeeded") {
-        const messages =
-          (status.logs as Array<{ message: string }> | undefined)?.map(
-            (line) => line.message,
-          ) ?? [];
+        const messages = (status.logs as Array<{ message: string }> | undefined)?.map(line => line.message) ?? [];
         if (
           job.attempts !== 1 ||
           job.idempotency_key !== proof.key ||
@@ -451,33 +365,17 @@ export async function qualifyNativeJobHostClients(
           !messages.includes("running native Web pipeline") ||
           !messages.includes("succeeded")
         )
-          throw new Error(
-            "Native job lacks its real placement, lease and finish proof",
-          );
+          throw new Error("Native job lacks its real placement, lease and finish proof");
         finished = true;
       } else await (options.sleep ?? Bun.sleep)(1000);
     }
-    if (!finished)
-      throw new Error(
-        "Native worker readiness probe expired; host remains unqualified",
-      );
-    if (
-      runtimeIdentity(host, options.pin, home, run) !== pids ||
-      now() - proof.createdAt >= 300000
-    )
-      throw new Error(
-        "Native worker changed or readiness proof expired during qualification",
-      );
+    if (!finished) throw new Error("Native worker readiness probe expired; host remains unqualified");
+    if (runtimeIdentity(host, options.pin, home, run) !== pids || now() - proof.createdAt >= 300000)
+      throw new Error("Native worker changed or readiness proof expired during qualification");
     checkDeadline();
-    durablePrivateWrite(
-      proofPath,
-      `${JSON.stringify({ ...proof, completedAt: now() })}\n`,
-    );
+    durablePrivateWrite(proofPath, `${JSON.stringify({ ...proof, completedAt: now() })}\n`);
     qualified.push({ ...host, workerReady: true });
   }
-  durablePrivateWrite(
-    join(directory, "hosts.json"),
-    `${JSON.stringify(qualified, null, 2)}\n`,
-  );
+  durablePrivateWrite(join(directory, "hosts.json"), `${JSON.stringify(qualified, null, 2)}\n`);
   return qualified;
 }

@@ -12,11 +12,7 @@ interface SpaceSwitcherProps {
   onSwitch: (spaceId: string) => void;
 }
 
-export function SpaceSwitcher({
-  spaces,
-  currentSpace,
-  onSwitch,
-}: SpaceSwitcherProps) {
+export function SpaceSwitcher({ spaces, currentSpace, onSwitch }: SpaceSwitcherProps) {
   const openCreateSpaceDialog = useCreateSpaceDialog();
   const spaceName = currentSpace?.name || "Aphrody";
 
@@ -31,9 +27,7 @@ export function SpaceSwitcher({
           {/* Avatar Aphrody */}
           <AphrodyAvatar size={32} />
           <div className="flex flex-1 flex-col overflow-hidden">
-            <span className="truncate text-label-large font-semibold text-on-surface">
-              {spaceName}
-            </span>
+            <span className="truncate text-label-large font-semibold text-on-surface">{spaceName}</span>
           </div>
           <span className="material-symbol text-title-small text-on-surface-variant group-hover:text-on-surface transition-colors">
             expand_more
@@ -42,7 +36,7 @@ export function SpaceSwitcher({
       </DropdownMenu.Trigger>
       <DropdownMenu.Content className="min-w-(--anchor-width) p-1 bg-surface-container border border-outline-variant rounded-medium shadow-lg z-50">
         {spaces && spaces.length > 1
-          ? spaces.map((space) => (
+          ? spaces.map(space => (
               <DropdownMenu.Item
                 key={space.id}
                 onClick={() => onSwitch(space.id)}
@@ -54,18 +48,13 @@ export function SpaceSwitcher({
                 )}
               >
                 <div className="flex items-center gap-2.5">
-                  <div
-                    className="size-2.5 rounded-full"
-                    style={{ backgroundColor: space.color || "#3b82f6" }}
-                  />
+                  <div className="size-2.5 rounded-full" style={{ backgroundColor: space.color || "#3b82f6" }} />
                   <span>{space.name}</span>
                 </div>
               </DropdownMenu.Item>
             ))
           : null}
-        {spaces && spaces.length > 1 && (
-          <DropdownMenu.Separator className="border-outline-variant/40 my-1" />
-        )}
+        {spaces && spaces.length > 1 && <DropdownMenu.Separator className="border-outline-variant/40 my-1" />}
         <DropdownMenu.Item
           onClick={() => openCreateSpaceDialog()}
           className="hover:bg-secondary-container/40 text-on-surface rounded-small px-3 py-2 text-label-large font-medium cursor-pointer flex items-center"

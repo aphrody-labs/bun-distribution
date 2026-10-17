@@ -49,7 +49,7 @@ function inside(child: string, parent: string): boolean {
 /** True when `path` is (or resolves into) a private store. */
 export function isPrivatePath(path: string): boolean {
   const target = canonical(path);
-  return privateRoots().some((root) => inside(target, canonical(root)));
+  return privateRoots().some(root => inside(target, canonical(root)));
 }
 
 /** Refuses a directory that would publish a private store: inside one, or containing one. */
@@ -88,7 +88,7 @@ export interface Rejection {
 /** Why `path` (repository-relative, forward slashes) may not be committed, if it may not. */
 export function rejectPath(path: string): string | undefined {
   const name = path.split("/").pop() ?? path;
-  if (blockedPaths.some((pattern) => pattern.test(path))) return "inside a private dump store";
+  if (blockedPaths.some(pattern => pattern.test(path))) return "inside a private dump store";
   if (blockedNames.test(name)) return "console BIOS, firmware or key file name";
   const ext = /\.([a-z0-9]+)$/i.exec(name)?.[1]?.toLowerCase();
   if (ext && blockedExtensions.has(ext)) return `.${ext} is a ROM, disc image or key extension`;
@@ -107,7 +107,7 @@ function ownedBlobs(blobs: string[]): Set<string> {
         "SELECT gitBlob FROM owned WHERE gitBlob IN (SELECT value FROM json_each(?))",
       )
       .all(JSON.stringify(blobs));
-    return new Set(rows.map((row) => row.gitBlob));
+    return new Set(rows.map(row => row.gitBlob));
   } finally {
     db.close();
   }
@@ -118,9 +118,12 @@ function ownedBlobs(blobs: string[]): Set<string> {
  * equals an owned dump (renamed or extension-less copies), without reading file contents.
  */
 export function checkStaged(cwd = repoRoot): Rejection[] {
-  const out = Bun.spawnSync(["git", "-C", cwd, "diff", "--cached", "--raw", "--no-abbrev", "-z", "--no-renames", "--diff-filter=ACMR"], {
-    stderr: "pipe",
-  });
+  const out = Bun.spawnSync(
+    ["git", "-C", cwd, "diff", "--cached", "--raw", "--no-abbrev", "-z", "--no-renames", "--diff-filter=ACMR"],
+    {
+      stderr: "pipe",
+    },
+  );
   if (!out.success) throw new Error(`git diff --cached failed: ${out.stderr.toString().trim()}`);
   const fields = out.stdout.toString().split("\0");
   const entries: Array<{ path: string; blob: string }> = [];
@@ -134,9 +137,9 @@ export function checkStaged(cwd = repoRoot): Rejection[] {
     const why = rejectPath(entry.path);
     if (why) rejections.push({ path: entry.path, why });
   }
-  const owned = ownedBlobs(entries.map((entry) => entry.blob));
+  const owned = ownedBlobs(entries.map(entry => entry.blob));
   for (const entry of entries)
-    if (owned.has(entry.blob) && !rejections.some((item) => item.path === entry.path))
+    if (owned.has(entry.blob) && !rejections.some(item => item.path === entry.path))
       rejections.push({ path: entry.path, why: "content is an owned dump from the private store" });
   return rejections;
 }
@@ -149,7 +152,7 @@ export async function installHook(cwd = repoRoot): Promise<string> {
   const current = (await Bun.file(file).exists()) ? await Bun.file(file).text() : "";
   if (current.includes(marker)) return file;
   const next = current
-    ? current.replace(/^(#![^\n]*\n)?/, (shebang) => `${shebang || "#!/bin/sh\n"}${line}`)
+    ? current.replace(/^(#![^\n]*\n)?/, shebang => `${shebang || "#!/bin/sh\n"}${line}`)
     : `#!/bin/sh\n${line}`;
   await Bun.write(file, next);
   if (process.platform !== "win32") chmodSync(file, 0o755);

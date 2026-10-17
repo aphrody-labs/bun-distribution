@@ -9,12 +9,7 @@ interface LocationsGroupProps {
   sortableListeners?: any;
 }
 
-export function LocationsGroup({
-  isCollapsed,
-  onToggle,
-  sortableAttributes,
-  sortableListeners,
-}: LocationsGroupProps) {
+export function LocationsGroup({ isCollapsed, onToggle, sortableAttributes, sortableListeners }: LocationsGroupProps) {
   const { data: locationsData } = useNormalizedQuery({
     query: "locations.list",
     input: null, // Unit struct serializes as null, not {}

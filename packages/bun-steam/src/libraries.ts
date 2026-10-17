@@ -4,23 +4,9 @@
  * `appmanifest_*.acf`, candidate disks, and moving a library to a faster disk.
  */
 import { storage as winStorage } from "bun:windows";
-import {
-  cpSync,
-  existsSync,
-  readdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  statfsSync,
-  statSync,
-} from "node:fs";
+import { cpSync, existsSync, readdirSync, readFileSync, renameSync, rmSync, statfsSync, statSync } from "node:fs";
 import { join, parse, resolve } from "node:path";
-import {
-  isSteamRunning,
-  readVdf,
-  type ChangePlan,
-  writeVdf,
-} from "./config.js";
+import { isSteamRunning, readVdf, type ChangePlan, writeVdf } from "./config.js";
 import { IS_WINDOWS, isDir, norm, resolveSteamRoot } from "./paths.js";
 import { kvObj, kvStr, parseTextKv } from "./vdf.js";
 
@@ -81,9 +67,7 @@ export interface InstalledGame {
 }
 
 /** Installed games from every library's `appmanifest_*.acf`. */
-export function installedGames(
-  steamRoot = resolveSteamRoot(),
-): InstalledGame[] {
+export function installedGames(steamRoot = resolveSteamRoot()): InstalledGame[] {
   const out: InstalledGame[] = [];
   for (const lib of listLibraries(steamRoot)) {
     const steamapps = join(lib.path, "steamapps");
@@ -91,16 +75,11 @@ export function installedGames(
     for (const f of readdirSync(steamapps)) {
       if (!/^appmanifest_\d+\.acf$/.test(f)) continue;
       try {
-        const st = kvObj(
-          parseTextKv(readFileSync(join(steamapps, f), "utf8")),
-          "AppState",
-        );
+        const st = kvObj(parseTextKv(readFileSync(join(steamapps, f), "utf8")), "AppState");
         out.push({
           appId: Number(kvStr(st, "appid")),
           name: kvStr(st, "name") ?? "",
-          installDir: norm(
-            join(steamapps, "common", kvStr(st, "installdir") ?? ""),
-          ),
+          installDir: norm(join(steamapps, "common", kvStr(st, "installdir") ?? "")),
           library: lib.path,
           sizeOnDisk: Number(kvStr(st, "SizeOnDisk") ?? 0),
           stateFlags: Number(kvStr(st, "StateFlags") ?? 0),
@@ -126,8 +105,8 @@ export function candidateDisks(): Disk[] {
   if (IS_WINDOWS)
     return winStorage
       .drives()
-      .filter((d) => d.type === "fixed")
-      .map((d) => ({
+      .filter(d => d.type === "fixed")
+      .map(d => ({
         root: norm(d.root),
         type: d.type,
         freeBytes: d.availableBytes,
@@ -136,11 +115,8 @@ export function candidateDisks(): Disk[] {
   const seen = new Set<string>();
   return readFileSync("/proc/mounts", "utf8")
     .split("\n")
-    .map((l) => l.split(" "))
-    .filter(
-      ([dev, mnt]) =>
-        dev?.startsWith("/dev/") && mnt && !/^\/(boot|snap)/.test(mnt),
-    )
+    .map(l => l.split(" "))
+    .filter(([dev, mnt]) => dev?.startsWith("/dev/") && mnt && !/^\/(boot|snap)/.test(mnt))
     .flatMap(([dev, mnt, type]) => {
       if (seen.has(dev!)) return [];
       seen.add(dev!);
@@ -166,8 +142,7 @@ function treeBytes(path: string): number {
 
 const sameVolume = (a: string, b: string): boolean =>
   IS_WINDOWS
-    ? parse(resolve(a)).root.toLowerCase() ===
-      parse(resolve(b)).root.toLowerCase()
+    ? parse(resolve(a)).root.toLowerCase() === parse(resolve(b)).root.toLowerCase()
     : statSync(a).dev === statSync(existsSync(b) ? b : resolve(b, "..")).dev;
 
 /**
@@ -183,39 +158,28 @@ export function moveLibrary(
   const steamRoot = opts.steamRoot ?? resolveSteamRoot();
   const src = norm(resolve(from));
   const dst = norm(resolve(to));
-  const lib = listLibraries(steamRoot).find(
-    (l) => l.path.toLowerCase() === src.toLowerCase(),
-  );
+  const lib = listLibraries(steamRoot).find(l => l.path.toLowerCase() === src.toLowerCase());
   if (!lib) throw new Error(`${src} is not a library of ${steamRoot}`);
   if (lib.isSteamRoot)
-    throw new Error(
-      "the Steam install library cannot move; add a new library on the fast disk instead",
-    );
-  if (
-    existsSync(join(dst, "steamapps")) &&
-    readdirSync(join(dst, "steamapps")).length
-  )
+    throw new Error("the Steam install library cannot move; add a new library on the fast disk instead");
+  if (existsSync(join(dst, "steamapps")) && readdirSync(join(dst, "steamapps")).length)
     throw new Error(`${dst}/steamapps already exists and is not empty`);
   const bytes = treeBytes(join(src, "steamapps"));
   const { free } = space(existsSync(dst) ? dst : resolve(dst, ".."));
   if (free !== null && !sameVolume(src, dst) && free < bytes)
     throw new Error(`${dst}: ${free} bytes free, ${bytes} needed`);
   const plans: ChangePlan[] = libraryFiles(steamRoot)
-    .filter((f) => existsSync(f))
-    .map((file) => ({
+    .filter(f => existsSync(f))
+    .map(file => ({
       file: norm(file),
-      changes: [
-        { key: `libraryfolders/${lib.index}/path`, from: src, to: dst },
-      ],
+      changes: [{ key: `libraryfolders/${lib.index}/path`, from: src, to: dst }],
       applied: false,
     }));
   plans.unshift({
     file: `${src}/steamapps`,
     changes: [
       {
-        key: sameVolume(src, dst)
-          ? "rename"
-          : `copy+verify+delete (${bytes} bytes)`,
+        key: sameVolume(src, dst) ? "rename" : `copy+verify+delete (${bytes} bytes)`,
         from: `${src}/steamapps`,
         to: `${dst}/steamapps`,
       },
@@ -223,8 +187,7 @@ export function moveLibrary(
     applied: false,
   });
   if (opts.dryRun) return plans;
-  if (!opts.force && isSteamRunning())
-    throw new Error("Steam is running; close it before moving a library");
+  if (!opts.force && isSteamRunning()) throw new Error("Steam is running; close it before moving a library");
 
   const move = (a: string, b: string) => {
     if (!existsSync(a)) return;

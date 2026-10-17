@@ -15,7 +15,11 @@ interface Functions {
   /** wdstptc.dll!WdsTransportClientInitialize */
   WdsTransportClientInitialize(): number;
   /** wdstptc.dll!WdsTransportClientInitializeSession */
-  WdsTransportClientInitializeSession(pSessionRequest: Win32Pointer, pCallerData: Win32Pointer, hSessionKey: Win32Pointer): number;
+  WdsTransportClientInitializeSession(
+    pSessionRequest: Win32Pointer,
+    pCallerData: Win32Pointer,
+    hSessionKey: Win32Pointer,
+  ): number;
   /** wdstptc.dll!WdsTransportClientQueryStatus */
   WdsTransportClientQueryStatus(hSessionKey: Win32Pointer, puStatus: Win32Pointer, puErrorCode: Win32Pointer): number;
   /** wdstptc.dll!WdsTransportClientRegisterCallback */

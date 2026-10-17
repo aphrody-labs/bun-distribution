@@ -26,7 +26,7 @@ export function resolveEffectPasses({
   if (definition.renderer.buildPasses) {
     return definition.renderer.buildPasses({ effectParams, width, height });
   }
-  return definition.renderer.passes.map((pass) => ({
+  return definition.renderer.passes.map(pass => ({
     shader: pass.shader,
     uniforms: pass.uniforms({ effectParams, width, height }),
   }));
@@ -34,11 +34,7 @@ export function resolveEffectPasses({
 
 export const EFFECT_TARGET_ELEMENT_TYPES = VISUAL_ELEMENT_TYPES;
 
-export function buildDefaultEffectInstance({
-  effectType,
-}: {
-  effectType: string;
-}): Effect {
+export function buildDefaultEffectInstance({ effectType }: { effectType: string }): Effect {
   const definition = effectsRegistry.get(effectType);
   const params: ParamValues = buildDefaultParamValues(definition.params);
 

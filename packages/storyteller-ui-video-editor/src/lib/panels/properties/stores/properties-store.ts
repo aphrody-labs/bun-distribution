@@ -7,13 +7,12 @@ interface PropertiesState {
   setTransformScaleLocked: (args: { locked: boolean }) => void;
 }
 
-export const usePropertiesStore = create<PropertiesState>()((set) => ({
+export const usePropertiesStore = create<PropertiesState>()(set => ({
   activeTabPerType: {},
   setActiveTab: ({ elementType, tabId }) =>
-    set((state) => ({
+    set(state => ({
       activeTabPerType: { ...state.activeTabPerType, [elementType]: tabId },
     })),
   isTransformScaleLocked: false,
-  setTransformScaleLocked: ({ locked }) =>
-    set({ isTransformScaleLocked: locked }),
+  setTransformScaleLocked: ({ locked }) => set({ isTransformScaleLocked: locked }),
 }));

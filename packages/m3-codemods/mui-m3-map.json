@@ -174,14 +174,7 @@
     "CssBaseline": "pas d-element md -> reset CSS + import des tokens M3",
     "ScopedCssBaseline": "pas d-element md -> reset CSS scopé + tokens M3"
   },
-  "propsDroppedWithTodo": [
-    "color",
-    "disableElevation",
-    "disableRipple",
-    "fullWidth",
-    "size",
-    "sx"
-  ],
+  "propsDroppedWithTodo": ["color", "disableElevation", "disableRipple", "fullWidth", "size", "sx"],
   "icons": {
     "strategy": "PascalCase MUI -> snake_case Material Symbols (déterministe, ~96% validé). Suffixe Outlined/Rounded/Sharp -> style ; TwoTone -> Outlined. Validation contre material-symbols-names.json.",
     "target": "md-icon (texte enfant = nom de glyphe Material Symbols)",

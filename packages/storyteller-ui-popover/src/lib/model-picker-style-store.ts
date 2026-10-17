@@ -14,9 +14,9 @@ interface ModelPickerStyleState {
 
 export const useModelPickerStyleStore = create<ModelPickerStyleState>()(
   persist(
-    (set) => ({
+    set => ({
       style: "grouped",
-      setStyle: (style) => set({ style }),
+      setStyle: style => set({ style }),
     }),
     { name: "artcraft-model-picker-style" },
   ),

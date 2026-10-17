@@ -18,28 +18,28 @@ use crate::macros::wrap_with_args;
 /// next to the app's and Ctrl+T a tab in a window the app does not own. An app
 /// window has no tab strip for the rest to act on.
 const WINDOW_AND_TAB_COMMANDS: &[&CStr] = &[
-  cef::resources::IDC_NEW_WINDOW,
-  cef::resources::IDC_NEW_INCOGNITO_WINDOW,
-  cef::resources::IDC_NEW_TAB,
-  cef::resources::IDC_NEW_TAB_TO_RIGHT,
-  cef::resources::IDC_DUPLICATE_TAB,
-  cef::resources::IDC_RESTORE_TAB,
-  cef::resources::IDC_MOVE_TAB_TO_NEW_WINDOW,
-  cef::resources::IDC_MOVE_TAB_NEXT,
-  cef::resources::IDC_MOVE_TAB_PREVIOUS,
-  cef::resources::IDC_SHOW_AS_TAB,
-  cef::resources::IDC_SELECT_NEXT_TAB,
-  cef::resources::IDC_SELECT_PREVIOUS_TAB,
-  cef::resources::IDC_SELECT_LAST_TAB,
-  cef::resources::IDC_SELECT_TAB_0,
-  cef::resources::IDC_SELECT_TAB_1,
-  cef::resources::IDC_SELECT_TAB_2,
-  cef::resources::IDC_SELECT_TAB_3,
-  cef::resources::IDC_SELECT_TAB_4,
-  cef::resources::IDC_SELECT_TAB_5,
-  cef::resources::IDC_SELECT_TAB_6,
-  cef::resources::IDC_SELECT_TAB_7,
-  cef::resources::IDC_TAB_SEARCH,
+    cef::resources::IDC_NEW_WINDOW,
+    cef::resources::IDC_NEW_INCOGNITO_WINDOW,
+    cef::resources::IDC_NEW_TAB,
+    cef::resources::IDC_NEW_TAB_TO_RIGHT,
+    cef::resources::IDC_DUPLICATE_TAB,
+    cef::resources::IDC_RESTORE_TAB,
+    cef::resources::IDC_MOVE_TAB_TO_NEW_WINDOW,
+    cef::resources::IDC_MOVE_TAB_NEXT,
+    cef::resources::IDC_MOVE_TAB_PREVIOUS,
+    cef::resources::IDC_SHOW_AS_TAB,
+    cef::resources::IDC_SELECT_NEXT_TAB,
+    cef::resources::IDC_SELECT_PREVIOUS_TAB,
+    cef::resources::IDC_SELECT_LAST_TAB,
+    cef::resources::IDC_SELECT_TAB_0,
+    cef::resources::IDC_SELECT_TAB_1,
+    cef::resources::IDC_SELECT_TAB_2,
+    cef::resources::IDC_SELECT_TAB_3,
+    cef::resources::IDC_SELECT_TAB_4,
+    cef::resources::IDC_SELECT_TAB_5,
+    cef::resources::IDC_SELECT_TAB_6,
+    cef::resources::IDC_SELECT_TAB_7,
+    cef::resources::IDC_TAB_SEARCH,
 ];
 
 /// Commands that treat the app's UI as a web document to be exported.
@@ -48,13 +48,13 @@ const WINDOW_AND_TAB_COMMANDS: &[&CStr] = &[
 /// app's own bundled markup, and `IDC_OPEN_FILE` replaces that UI with a local
 /// document in the same webview. `WebviewDispatch::print` still prints on request.
 const DOCUMENT_COMMANDS: &[&CStr] = &[
-  cef::resources::IDC_PRINT,
-  cef::resources::IDC_BASIC_PRINT,
-  cef::resources::IDC_SAVE_PAGE,
-  cef::resources::IDC_VIEW_SOURCE,
-  cef::resources::IDC_OPEN_FILE,
-  cef::resources::IDC_CREATE_SHORTCUT,
-  cef::resources::IDC_INSTALL_PWA,
+    cef::resources::IDC_PRINT,
+    cef::resources::IDC_BASIC_PRINT,
+    cef::resources::IDC_SAVE_PAGE,
+    cef::resources::IDC_VIEW_SOURCE,
+    cef::resources::IDC_OPEN_FILE,
+    cef::resources::IDC_CREATE_SHORTCUT,
+    cef::resources::IDC_INSTALL_PWA,
 ];
 
 /// Commands that move focus into browser chrome the window does not have.
@@ -64,15 +64,15 @@ const DOCUMENT_COMMANDS: &[&CStr] = &[
 /// and `IDC_OPEN_CURRENT_URL` additionally navigate the webview away from the
 /// app's UI.
 const BROWSER_CHROME_COMMANDS: &[&CStr] = &[
-  cef::resources::IDC_FOCUS_LOCATION,
-  cef::resources::IDC_FOCUS_SEARCH,
-  cef::resources::IDC_FOCUS_TOOLBAR,
-  cef::resources::IDC_FOCUS_MENU_BAR,
-  cef::resources::IDC_FOCUS_BOOKMARKS,
-  cef::resources::IDC_OPEN_CURRENT_URL,
-  cef::resources::IDC_HOME,
-  cef::resources::IDC_SEARCH,
-  cef::resources::IDC_SHOW_APP_MENU,
+    cef::resources::IDC_FOCUS_LOCATION,
+    cef::resources::IDC_FOCUS_SEARCH,
+    cef::resources::IDC_FOCUS_TOOLBAR,
+    cef::resources::IDC_FOCUS_MENU_BAR,
+    cef::resources::IDC_FOCUS_BOOKMARKS,
+    cef::resources::IDC_OPEN_CURRENT_URL,
+    cef::resources::IDC_HOME,
+    cef::resources::IDC_SEARCH,
+    cef::resources::IDC_SHOW_APP_MENU,
 ];
 
 /// Commands that walk the webview's session history.
@@ -92,21 +92,21 @@ const HISTORY_COMMANDS: &[&CStr] = &[cef::resources::IDC_BACK, cef::resources::I
 /// accelerator was pressed in, and expose the browsing data of every webview
 /// sharing the request context.
 const BROWSER_SURFACE_COMMANDS: &[&CStr] = &[
-  cef::resources::IDC_SHOW_HISTORY,
-  cef::resources::IDC_SHOW_DOWNLOADS,
-  cef::resources::IDC_SHOW_BOOKMARK_MANAGER,
-  cef::resources::IDC_SHOW_BOOKMARK_BAR,
-  cef::resources::IDC_BOOKMARK_THIS_TAB,
-  cef::resources::IDC_BOOKMARK_ALL_TABS,
-  cef::resources::IDC_OPTIONS,
-  cef::resources::IDC_CLEAR_BROWSING_DATA,
-  cef::resources::IDC_IMPORT_SETTINGS,
-  cef::resources::IDC_TASK_MANAGER,
-  cef::resources::IDC_TASK_MANAGER_SHORTCUT,
-  cef::resources::IDC_SHOW_SIGNIN,
-  cef::resources::IDC_ABOUT,
-  cef::resources::IDC_FEEDBACK,
-  cef::resources::IDC_HELP_PAGE_VIA_KEYBOARD,
+    cef::resources::IDC_SHOW_HISTORY,
+    cef::resources::IDC_SHOW_DOWNLOADS,
+    cef::resources::IDC_SHOW_BOOKMARK_MANAGER,
+    cef::resources::IDC_SHOW_BOOKMARK_BAR,
+    cef::resources::IDC_BOOKMARK_THIS_TAB,
+    cef::resources::IDC_BOOKMARK_ALL_TABS,
+    cef::resources::IDC_OPTIONS,
+    cef::resources::IDC_CLEAR_BROWSING_DATA,
+    cef::resources::IDC_IMPORT_SETTINGS,
+    cef::resources::IDC_TASK_MANAGER,
+    cef::resources::IDC_TASK_MANAGER_SHORTCUT,
+    cef::resources::IDC_SHOW_SIGNIN,
+    cef::resources::IDC_ABOUT,
+    cef::resources::IDC_FEEDBACK,
+    cef::resources::IDC_HELP_PAGE_VIA_KEYBOARD,
 ];
 
 /// Commands that open DevTools.
@@ -119,11 +119,11 @@ const BROWSER_SURFACE_COMMANDS: &[&CStr] = &[
 /// `tauri_runtime::webview::devtools_shortcut_script` - is injected only into Alloy
 /// style webviews, which keep none of this accelerator table, so nothing competes here.
 const DEVTOOLS_COMMANDS: &[&CStr] = &[
-  cef::resources::IDC_DEV_TOOLS,
-  cef::resources::IDC_DEV_TOOLS_CONSOLE,
-  cef::resources::IDC_DEV_TOOLS_DEVICES,
-  cef::resources::IDC_DEV_TOOLS_INSPECT,
-  cef::resources::IDC_DEV_TOOLS_TOGGLE,
+    cef::resources::IDC_DEV_TOOLS,
+    cef::resources::IDC_DEV_TOOLS_CONSOLE,
+    cef::resources::IDC_DEV_TOOLS_DEVICES,
+    cef::resources::IDC_DEV_TOOLS_INSPECT,
+    cef::resources::IDC_DEV_TOOLS_TOGGLE,
 ];
 
 /// Commands that change the page zoom.
@@ -137,20 +137,20 @@ const DEVTOOLS_COMMANDS: &[&CStr] = &[
 /// polyfill `tauri` injects on Linux and macOS when the attribute is true, which
 /// makes a keyboard zoom step twice there.
 const ZOOM_COMMANDS: &[&CStr] = &[
-  cef::resources::IDC_ZOOM_PLUS,
-  cef::resources::IDC_ZOOM_MINUS,
-  cef::resources::IDC_ZOOM_NORMAL,
+    cef::resources::IDC_ZOOM_PLUS,
+    cef::resources::IDC_ZOOM_MINUS,
+    cef::resources::IDC_ZOOM_NORMAL,
 ];
 
 /// The IDC names of one [`ChromeCommandGroup`].
 fn group_commands(group: ChromeCommandGroup) -> &'static [&'static CStr] {
-  match group {
-    ChromeCommandGroup::WindowAndTab => WINDOW_AND_TAB_COMMANDS,
-    ChromeCommandGroup::Document => DOCUMENT_COMMANDS,
-    ChromeCommandGroup::BrowserChrome => BROWSER_CHROME_COMMANDS,
-    ChromeCommandGroup::BrowserSurface => BROWSER_SURFACE_COMMANDS,
-    ChromeCommandGroup::History => HISTORY_COMMANDS,
-  }
+    match group {
+        ChromeCommandGroup::WindowAndTab => WINDOW_AND_TAB_COMMANDS,
+        ChromeCommandGroup::Document => DOCUMENT_COMMANDS,
+        ChromeCommandGroup::BrowserChrome => BROWSER_CHROME_COMMANDS,
+        ChromeCommandGroup::BrowserSurface => BROWSER_SURFACE_COMMANDS,
+        ChromeCommandGroup::History => HISTORY_COMMANDS,
+    }
 }
 
 /// This build's numeric ids for the commands the runtime can swallow, one entry per
@@ -160,21 +160,21 @@ fn group_commands(group: ChromeCommandGroup) -> &'static [&'static CStr] {
 /// IDC names — which do not change between builds — once for the whole process
 /// rather than on every keystroke.
 struct BlockedCommands {
-  groups: Vec<(ChromeCommandGroup, Vec<c_int>)>,
-  devtools: Vec<c_int>,
-  zoom: Vec<c_int>,
+    groups: Vec<(ChromeCommandGroup, Vec<c_int>)>,
+    devtools: Vec<c_int>,
+    zoom: Vec<c_int>,
 }
 
 fn blocked_commands() -> &'static BlockedCommands {
-  static COMMANDS: OnceLock<BlockedCommands> = OnceLock::new();
-  COMMANDS.get_or_init(|| BlockedCommands {
-    groups: ChromeCommandGroup::ALL
-      .iter()
-      .map(|group| (*group, command_ids(&[group_commands(*group)])))
-      .collect(),
-    devtools: command_ids(&[DEVTOOLS_COMMANDS]),
-    zoom: command_ids(&[ZOOM_COMMANDS]),
-  })
+    static COMMANDS: OnceLock<BlockedCommands> = OnceLock::new();
+    COMMANDS.get_or_init(|| BlockedCommands {
+        groups: ChromeCommandGroup::ALL
+            .iter()
+            .map(|group| (*group, command_ids(&[group_commands(*group)])))
+            .collect(),
+        devtools: command_ids(&[DEVTOOLS_COMMANDS]),
+        zoom: command_ids(&[ZOOM_COMMANDS]),
+    })
 }
 
 /// The numeric ids of `groups` in the running CEF build.
@@ -183,12 +183,12 @@ fn blocked_commands() -> &'static BlockedCommands {
 /// retired by a later Chromium stops being blocked rather than blocking whatever
 /// command -1 happens to reach.
 fn command_ids(groups: &[&[&CStr]]) -> Vec<c_int> {
-  groups
-    .iter()
-    .flat_map(|names| names.iter())
-    .map(|name| unsafe { cef::sys::cef_id_for_command_id_name(name.as_ptr()) })
-    .filter(|id| *id != -1)
-    .collect()
+    groups
+        .iter()
+        .flat_map(|names| names.iter())
+        .map(|name| unsafe { cef::sys::cef_id_for_command_id_name(name.as_ptr()) })
+        .filter(|id| *id != -1)
+        .collect()
 }
 
 wrap_with_args! {
@@ -277,42 +277,41 @@ wrap_with_args! {
 }
 
 impl TauriCefCommandHandler {
-  /// Whether `browser` is the native browser this client's webview owns.
-  ///
-  /// CEF routes browsers this webview does not own through this very client — a
-  /// DevTools window opened on it is the standing case — and their commands are
-  /// theirs to run.
-  ///
-  /// Answers `false` when the identity cannot be established, so a browser this
-  /// webview may not own never has its commands swallowed. That makes the blocking
-  /// best-effort rather than a security boundary; what must not be reachable (the
-  /// renderer sandbox, the command line lockdown, DevTools when the webview
-  /// disabled them) is enforced elsewhere.
-  fn owns(&self, browser: Option<&mut Browser>) -> bool {
-    browser
-      .map(|browser| {
-        self
-          .frame_navigation_state
-          .has_browser_id(browser.identifier())
-      })
-      .unwrap_or(false)
-  }
+    /// Whether `browser` is the native browser this client's webview owns.
+    ///
+    /// CEF routes browsers this webview does not own through this very client — a
+    /// DevTools window opened on it is the standing case — and their commands are
+    /// theirs to run.
+    ///
+    /// Answers `false` when the identity cannot be established, so a browser this
+    /// webview may not own never has its commands swallowed. That makes the blocking
+    /// best-effort rather than a security boundary; what must not be reachable (the
+    /// renderer sandbox, the command line lockdown, DevTools when the webview
+    /// disabled them) is enforced elsewhere.
+    fn owns(&self, browser: Option<&mut Browser>) -> bool {
+        browser
+            .map(|browser| {
+                self.frame_navigation_state
+                    .has_browser_id(browser.identifier())
+            })
+            .unwrap_or(false)
+    }
 
-  /// Whether this webview swallows `command_id`.
-  ///
-  /// Anything not named in the tables above runs unchanged: clipboard, find in
-  /// page, text selection, undo and redo, fullscreen and reload are all things an
-  /// app window legitimately uses. A group the webview named in
-  /// `allowed_chrome_commands` is skipped entirely, so its commands run the way
-  /// they would in a browser.
-  fn blocks(&self, command_id: c_int) -> bool {
-    let commands = blocked_commands();
-    commands
-      .groups
-      .iter()
-      .filter(|(group, _)| !self.allowed_chrome_commands.contains(group))
-      .any(|(_, ids)| ids.contains(&command_id))
-      || (!self.devtools_enabled && commands.devtools.contains(&command_id))
-      || (!self.zoom_hotkeys_enabled && commands.zoom.contains(&command_id))
-  }
+    /// Whether this webview swallows `command_id`.
+    ///
+    /// Anything not named in the tables above runs unchanged: clipboard, find in
+    /// page, text selection, undo and redo, fullscreen and reload are all things an
+    /// app window legitimately uses. A group the webview named in
+    /// `allowed_chrome_commands` is skipped entirely, so its commands run the way
+    /// they would in a browser.
+    fn blocks(&self, command_id: c_int) -> bool {
+        let commands = blocked_commands();
+        commands
+            .groups
+            .iter()
+            .filter(|(group, _)| !self.allowed_chrome_commands.contains(group))
+            .any(|(_, ids)| ids.contains(&command_id))
+            || (!self.devtools_enabled && commands.devtools.contains(&command_id))
+            || (!self.zoom_hotkeys_enabled && commands.zoom.contains(&command_id))
+    }
 }

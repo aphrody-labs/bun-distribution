@@ -17,9 +17,7 @@ interface ErrorBody {
 }
 
 export class UserReferralCodesApi extends ApiManager {
-  public ListReferralCodes(): Promise<
-    ApiResponse<{ referral_codes: ReferralCodeEntry[] }>
-  > {
+  public ListReferralCodes(): Promise<ApiResponse<{ referral_codes: ReferralCodeEntry[] }>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/user_referral_codes/list`;
     return this.jsonFetch<
       {
@@ -27,7 +25,7 @@ export class UserReferralCodesApi extends ApiManager {
         referral_codes?: ReferralCodeEntry[];
       } & ErrorBody
     >(endpoint, { method: "GET" })
-      .then((response) => {
+      .then(response => {
         if (!response.success) {
           return {
             success: false,
@@ -39,16 +37,14 @@ export class UserReferralCodesApi extends ApiManager {
           data: { referral_codes: response.referral_codes ?? [] },
         };
       })
-      .catch((err) => ({ success: false, errorMessage: err.message }));
+      .catch(err => ({ success: false, errorMessage: err.message }));
   }
 
   public CreateReferralCode({
     code,
   }: {
     code: string;
-  }): Promise<
-    ApiResponse<{ token: string; code: string; code_lowercase: string }>
-  > {
+  }): Promise<ApiResponse<{ token: string; code: string; code_lowercase: string }>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/user_referral_codes/create`;
     return this.jsonFetch<
       {
@@ -58,7 +54,7 @@ export class UserReferralCodesApi extends ApiManager {
         code_lowercase?: string;
       } & ErrorBody
     >(endpoint, { method: "POST", body: { code } })
-      .then((response) => {
+      .then(response => {
         if (!response.success || !response.token) {
           return {
             success: false,
@@ -74,19 +70,15 @@ export class UserReferralCodesApi extends ApiManager {
           },
         };
       })
-      .catch((err) => ({ success: false, errorMessage: err.message }));
+      .catch(err => ({ success: false, errorMessage: err.message }));
   }
 
-  public DeleteReferralCode({
-    token,
-  }: {
-    token: string;
-  }): Promise<ApiResponse<null>> {
+  public DeleteReferralCode({ token }: { token: string }): Promise<ApiResponse<null>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/user_referral_codes/code/${encodeURIComponent(token)}`;
     return this.jsonFetch<{ success: boolean } & ErrorBody>(endpoint, {
       method: "DELETE",
     })
-      .then((response) => {
+      .then(response => {
         if (!response.success) {
           return {
             success: false,
@@ -95,15 +87,12 @@ export class UserReferralCodesApi extends ApiManager {
         }
         return { success: true };
       })
-      .catch((err) => ({ success: false, errorMessage: err.message }));
+      .catch(err => ({ success: false, errorMessage: err.message }));
   }
 
   // Parses JSON for both 2xx and 4xx so `BadInputWithSimpleMessage` text
   // reaches the caller. The base ApiManager.fetch throws on non-2xx.
-  private async jsonFetch<T>(
-    endpoint: string,
-    { method, body }: { method: string; body?: unknown },
-  ): Promise<T> {
+  private async jsonFetch<T>(endpoint: string, { method, body }: { method: string; body?: unknown }): Promise<T> {
     const response = await fetch(endpoint, {
       method,
       headers: buildSessionHeaders({

@@ -15,11 +15,7 @@ export function findTrackInSceneTracks({
     return tracks.main;
   }
 
-  return (
-    tracks.overlay.find((track) => track.id === trackId) ??
-    tracks.audio.find((track) => track.id === trackId) ??
-    null
-  );
+  return tracks.overlay.find(track => track.id === trackId) ?? tracks.audio.find(track => track.id === trackId) ?? null;
 }
 
 export function updateTrackInSceneTracks({
@@ -38,27 +34,19 @@ export function updateTrackInSceneTracks({
     };
   }
 
-  const overlayTrackIndex = tracks.overlay.findIndex(
-    (track) => track.id === trackId,
-  );
+  const overlayTrackIndex = tracks.overlay.findIndex(track => track.id === trackId);
   if (overlayTrackIndex >= 0) {
     return {
       ...tracks,
-      overlay: tracks.overlay.map((track, index) =>
-        index === overlayTrackIndex ? update(track) : track,
-      ),
+      overlay: tracks.overlay.map((track, index) => (index === overlayTrackIndex ? update(track) : track)),
     };
   }
 
-  const audioTrackIndex = tracks.audio.findIndex(
-    (track) => track.id === trackId,
-  );
+  const audioTrackIndex = tracks.audio.findIndex(track => track.id === trackId);
   if (audioTrackIndex >= 0) {
     return {
       ...tracks,
-      audio: tracks.audio.map((track, index) =>
-        index === audioTrackIndex ? update(track) : track,
-      ),
+      audio: tracks.audio.map((track, index) => (index === audioTrackIndex ? update(track) : track)),
     };
   }
 
@@ -76,7 +64,7 @@ function updateElementInTrack<TTrack extends TimelineTrack>({
   update: (element: TimelineElement) => TimelineElement;
   elementPredicate?: (element: TimelineElement) => boolean;
 }): TTrack {
-  const nextElements = track.elements.map((element) => {
+  const nextElements = track.elements.map(element => {
     if (element.id !== elementId) {
       return element;
     }
@@ -117,9 +105,7 @@ export function updateElementInSceneTracks({
     };
   }
 
-  const overlayTrackIndex = tracks.overlay.findIndex(
-    (track) => track.id === trackId,
-  );
+  const overlayTrackIndex = tracks.overlay.findIndex(track => track.id === trackId);
   if (overlayTrackIndex >= 0) {
     return {
       ...tracks,
@@ -136,9 +122,7 @@ export function updateElementInSceneTracks({
     };
   }
 
-  const audioTrackIndex = tracks.audio.findIndex(
-    (track) => track.id === trackId,
-  );
+  const audioTrackIndex = tracks.audio.findIndex(track => track.id === trackId);
   if (audioTrackIndex >= 0) {
     return {
       ...tracks,

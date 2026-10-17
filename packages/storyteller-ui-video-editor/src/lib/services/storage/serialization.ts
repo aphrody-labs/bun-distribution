@@ -1,11 +1,7 @@
 import type { MediaAsset } from "../../media/types";
 import type { TProject } from "../../project/types";
 import type { AudioTrack, TScene } from "../../timeline/types";
-import type {
-  MediaAssetData,
-  SerializedProject,
-  SerializedScene,
-} from "./types";
+import type { MediaAssetData, SerializedProject, SerializedScene } from "./types";
 
 // JSON document shape persisted by ProjectStorageAdapter implementations.
 // TProject only references media by `mediaId`, so the document carries a
@@ -42,9 +38,7 @@ export function serializeProjectDocument({
 // Accepts both the versioned document shape and legacy envelopes whose
 // `data` was a raw TProject (IndexedDB rows structured-cloned before the
 // document wrapper existed — their Date fields may still be real Dates).
-export function deserializeProjectDocument(
-  data: unknown,
-): { project: TProject; media: MediaAssetData[] } | null {
+export function deserializeProjectDocument(data: unknown): { project: TProject; media: MediaAssetData[] } | null {
   if (!data || typeof data !== "object") return null;
 
   if ("metadata" in data) {
@@ -103,7 +97,7 @@ function serializeScene(scene: TScene): SerializedScene {
 function stripAudioBuffers(track: AudioTrack): AudioTrack {
   return {
     ...track,
-    elements: track.elements.map((element) => {
+    elements: track.elements.map(element => {
       if (!element.buffer) return element;
       const { buffer: _buffer, ...rest } = element;
       return rest as typeof element;
@@ -119,7 +113,7 @@ function reviveProject(project: SerializedProject | TProject): TProject {
       createdAt: toDate(project.metadata.createdAt),
       updatedAt: toDate(project.metadata.updatedAt),
     },
-    scenes: project.scenes.map((scene) => ({
+    scenes: project.scenes.map(scene => ({
       ...scene,
       createdAt: toDate(scene.createdAt),
       updatedAt: toDate(scene.updatedAt),

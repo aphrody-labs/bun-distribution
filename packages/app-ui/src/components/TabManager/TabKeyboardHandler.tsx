@@ -7,15 +7,7 @@ import { useKeybind } from "../../hooks/useKeybind";
  * Uses the keybind system to listen for tab-related shortcuts and trigger actions.
  */
 export function TabKeyboardHandler() {
-  const {
-    createTab,
-    closeTab,
-    nextTab,
-    previousTab,
-    selectTabAtIndex,
-    tabs,
-    activeTabId,
-  } = useTabManager();
+  const { createTab, closeTab, nextTab, previousTab, selectTabAtIndex, tabs, activeTabId } = useTabManager();
 
   // New Tab (Cmd+T)
   useKeybind("global.newTab", () => {

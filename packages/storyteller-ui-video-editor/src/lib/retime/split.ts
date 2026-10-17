@@ -5,22 +5,11 @@ import { getSourceTimeAtClipTime } from "./resolve";
 // passes the retime config to both halves unchanged. Variable-rate
 // retime (when added) would need to split the rate curve here.
 
-export function getSourceSpanAtClipTime({
-  clipTime,
-  retime,
-}: {
-  clipTime: number;
-  retime?: RetimeConfig;
-}): number {
+export function getSourceSpanAtClipTime({ clipTime, retime }: { clipTime: number; retime?: RetimeConfig }): number {
   return Math.max(0, getSourceTimeAtClipTime({ clipTime, retime }));
 }
 
-export function splitRetimeAtClipTime({
-  retime,
-}: {
-  retime?: RetimeConfig;
-  splitClipTime: number;
-}): {
+export function splitRetimeAtClipTime({ retime }: { retime?: RetimeConfig; splitClipTime: number }): {
   left: RetimeConfig | undefined;
   right: RetimeConfig | undefined;
 } {

@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 import { realSystem } from "../../src/admin/lib/system.ts";
@@ -25,19 +19,7 @@ import {
 import { samplePack, testContext } from "./helpers.ts";
 
 test("shellQuote survives every shell metacharacter", async () => {
-  for (const value of [
-    "plain",
-    "with space",
-    "it's",
-    "$(id)",
-    "`id`",
-    "a;b",
-    'a"b',
-    "a\\b",
-    "*",
-    "-n",
-    "",
-  ]) {
+  for (const value of ["plain", "with space", "it's", "$(id)", "`id`", "a;b", 'a"b', "a\\b", "*", "-n", ""]) {
     const proc = Bun.spawnSync(["sh", "-c", `printf %s ${shellQuote(value)}`], {
       windowsHide: true,
     });
@@ -53,28 +35,20 @@ test("ssh_config has one alias per host and pins nothing it does not know", () =
   expect(text).toContain("StrictHostKeyChecking accept-new");
   expect(text).toContain("IdentitiesOnly yes");
   expect(text).not.toContain("\\");
-  const pinned = renderSshConfig(
-    samplePack({ hostKeys: ["198.51.100.1 ssh-ed25519 AAAAFake"] }),
-    ctx.paths,
-  );
+  const pinned = renderSshConfig(samplePack({ hostKeys: ["198.51.100.1 ssh-ed25519 AAAAFake"] }), ctx.paths);
   expect(pinned).toContain("StrictHostKeyChecking yes");
 });
 
 test("the Include block is added once, refreshed in place, and removable without touching the rest", () => {
   const original = "Host github.com\n  User git\n";
-  const once = withIncludeBlock(
-    original,
-    "C:\\Users\\Omar\\.aphrody\\omar\\ssh_config",
-  );
+  const once = withIncludeBlock(original, "C:\\Users\\Omar\\.aphrody\\omar\\ssh_config");
   expect(
     once.startsWith(
       '# >>> aphrody-omar >>>\nInclude "C:/Users/Omar/.aphrody/omar/ssh_config"\n# <<< aphrody-omar <<<\n',
     ),
   ).toBe(true);
   expect(once.endsWith(original)).toBe(true);
-  expect(
-    withIncludeBlock(once, "C:\\Users\\Omar\\.aphrody\\omar\\ssh_config"),
-  ).toBe(once);
+  expect(withIncludeBlock(once, "C:\\Users\\Omar\\.aphrody\\omar\\ssh_config")).toBe(once);
   expect(removeIncludeBlock(once)).toBe(original);
   expect(removeIncludeBlock(withIncludeBlock("", "/x"))).toBe("");
   const crlf = withIncludeBlock("Host a\r\n  User b\r\n", "/x");
@@ -87,28 +61,14 @@ test("writeSshFiles saves the user's ssh config before changing it and is idempo
   mkdirSync(dirname(ctx.paths.userSshConfig), { recursive: true });
   writeFileSync(ctx.paths.userSshConfig, "Host old\n  User me\n");
   const pack = samplePack({ hostKeys: ["198.51.100.1 ssh-ed25519 AAAAFake"] });
-  const first = await writeSshFiles(
-    pack,
-    ctx.paths,
-    new Date("2026-10-06T12:00:00Z"),
-  );
+  const first = await writeSshFiles(pack, ctx.paths, new Date("2026-10-06T12:00:00Z"));
   expect(first.changedUserConfig).toBe(true);
   expect(readFileSync(first.backup!, "utf8")).toBe("Host old\n  User me\n");
   expect(readFileSync(ctx.paths.userSshConfig, "utf8")).toContain("Host old");
-  expect(readFileSync(ctx.paths.knownHostsFile, "utf8")).toBe(
-    "198.51.100.1 ssh-ed25519 AAAAFake\n",
-  );
-  const second = await writeSshFiles(
-    pack,
-    ctx.paths,
-    new Date("2026-10-06T12:05:00Z"),
-  );
+  expect(readFileSync(ctx.paths.knownHostsFile, "utf8")).toBe("198.51.100.1 ssh-ed25519 AAAAFake\n");
+  const second = await writeSshFiles(pack, ctx.paths, new Date("2026-10-06T12:05:00Z"));
   expect(second.changedUserConfig).toBe(false);
-  expect(
-    readdirSync(dirname(ctx.paths.userSshConfig)).filter((name) =>
-      name.includes("avant-aphrody"),
-    ),
-  ).toHaveLength(1);
+  expect(readdirSync(dirname(ctx.paths.userSshConfig)).filter(name => name.includes("avant-aphrody"))).toHaveLength(1);
 });
 
 test("sshArgv sends the script on stdin and quotes every argument", () => {
@@ -131,15 +91,9 @@ const fail = (stderr: string, code = 255, timedOut = false) =>
 test("ssh failures are told apart in plain words", () => {
   expect(fail("omar@x: Permission denied (publickey).")).toBe("cle-refusee");
   expect(fail("Host key verification failed.")).toBe("hote-inconnu");
-  expect(fail("@@@ WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED! @@@")).toBe(
-    "hote-inconnu",
-  );
-  expect(fail("ssh: connect to host x port 22: Connection timed out")).toBe(
-    "injoignable",
-  );
-  expect(fail("ssh: connect to host x port 22: Connection refused")).toBe(
-    "injoignable",
-  );
+  expect(fail("@@@ WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED! @@@")).toBe("hote-inconnu");
+  expect(fail("ssh: connect to host x port 22: Connection timed out")).toBe("injoignable");
+  expect(fail("ssh: connect to host x port 22: Connection refused")).toBe("injoignable");
   expect(fail("", 124, true)).toBe("delai");
   expect(fail("something odd")).toBe("autre");
   expect(fail("remote script failed", 3)).toBeUndefined();
@@ -166,8 +120,6 @@ test("ensureSshKey creates an ed25519 key once and never overwrites it (real ssh
 });
 
 test("machineLabel keeps only safe characters", () => {
-  expect(machineLabel({ COMPUTERNAME: "PC d'Omar (salon)" })).toBe(
-    "PC-d-Omar--salon-",
-  );
+  expect(machineLabel({ COMPUTERNAME: "PC d'Omar (salon)" })).toBe("PC-d-Omar--salon-");
   expect(machineLabel({})).toBe("pc");
 });

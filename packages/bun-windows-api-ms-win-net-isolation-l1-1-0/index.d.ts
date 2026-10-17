@@ -3,19 +3,39 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-net-isolation-l1-1-0.dll!NetworkIsolationDiagnoseConnectFailureAndGetInfo */
-  NetworkIsolationDiagnoseConnectFailureAndGetInfo(wszServerName: string | Win32Pointer, netIsoError: Win32Pointer): number;
+  NetworkIsolationDiagnoseConnectFailureAndGetInfo(
+    wszServerName: string | Win32Pointer,
+    netIsoError: Win32Pointer,
+  ): number;
   /** api-ms-win-net-isolation-l1-1-0.dll!NetworkIsolationEnumAppContainers */
-  NetworkIsolationEnumAppContainers(Flags: number, pdwNumPublicAppCs: Win32Pointer, ppPublicAppCs: Win32Pointer): number;
+  NetworkIsolationEnumAppContainers(
+    Flags: number,
+    pdwNumPublicAppCs: Win32Pointer,
+    ppPublicAppCs: Win32Pointer,
+  ): number;
   /** api-ms-win-net-isolation-l1-1-0.dll!NetworkIsolationFreeAppContainers */
   NetworkIsolationFreeAppContainers(pPublicAppCs: Win32Pointer): number;
   /** api-ms-win-net-isolation-l1-1-0.dll!NetworkIsolationGetAppContainerConfig */
   NetworkIsolationGetAppContainerConfig(pdwNumPublicAppCs: Win32Pointer, appContainerSids: Win32Pointer): number;
   /** api-ms-win-net-isolation-l1-1-0.dll!NetworkIsolationRegisterForAppContainerChanges */
-  NetworkIsolationRegisterForAppContainerChanges(flags: number, callback: Win32Callback, context: Win32Pointer, registrationObject: Win32Pointer): number;
+  NetworkIsolationRegisterForAppContainerChanges(
+    flags: number,
+    callback: Win32Callback,
+    context: Win32Pointer,
+    registrationObject: Win32Pointer,
+  ): number;
   /** api-ms-win-net-isolation-l1-1-0.dll!NetworkIsolationSetAppContainerConfig */
   NetworkIsolationSetAppContainerConfig(dwNumPublicAppCs: number, appContainerSids: Win32Pointer): number;
   /** api-ms-win-net-isolation-l1-1-0.dll!NetworkIsolationSetupAppContainerBinaries */
-  NetworkIsolationSetupAppContainerBinaries(applicationContainerSid: Win32Pointer, packageFullName: string | Win32Pointer, packageFolder: string | Win32Pointer, displayName: string | Win32Pointer, bBinariesFullyComputed: number, binaries: Win32Pointer, binariesCount: number): number;
+  NetworkIsolationSetupAppContainerBinaries(
+    applicationContainerSid: Win32Pointer,
+    packageFullName: string | Win32Pointer,
+    packageFolder: string | Win32Pointer,
+    displayName: string | Win32Pointer,
+    bBinariesFullyComputed: number,
+    binaries: Win32Pointer,
+    binariesCount: number,
+  ): number;
   /** api-ms-win-net-isolation-l1-1-0.dll!NetworkIsolationUnregisterForAppContainerChanges */
   NetworkIsolationUnregisterForAppContainerChanges(registrationObject: Win32Pointer): number;
 }

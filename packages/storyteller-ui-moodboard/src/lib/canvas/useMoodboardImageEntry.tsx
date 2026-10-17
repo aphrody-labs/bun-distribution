@@ -29,8 +29,8 @@ export const useMoodboardImageEntry = (
   adapter: MoodboardAdapter,
   stageRef: React.RefObject<Konva.Stage | null>,
 ): UseMoodboardImageEntryReturn => {
-  const addImage = useMoodboardStore((s) => s.addImage);
-  const addVideo = useMoodboardStore((s) => s.addVideo);
+  const addImage = useMoodboardStore(s => s.addImage);
+  const addVideo = useMoodboardStore(s => s.addVideo);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -82,18 +82,11 @@ export const useMoodboardImageEntry = (
 
   const modals = (
     <>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={handleFileChange}
-      />
+      <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
       {adapter.renderLibraryPicker?.({
         open: pickerOpen,
         onClose: () => setPickerOpen(false),
-        onPick: (items) => void handlePicked(items),
+        onPick: items => void handlePicked(items),
       })}
     </>
   );

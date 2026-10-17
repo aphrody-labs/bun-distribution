@@ -1,17 +1,9 @@
 "use client";
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import type {
-  HTMLMotionProps,
-  MotionStyle,
-  Transition,
-  Variants,
-} from "motion/react";
+import type { HTMLMotionProps, MotionStyle, Transition, Variants } from "motion/react";
 import { m3Easings, m3Durations } from "../easings";
-import {
-  motionVariants,
-  useM3ReducedMotion,
-} from "../hooks/useM3ReducedMotion";
+import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion";
 
 export type M3TransitionPattern =
   | "fade"
@@ -21,10 +13,7 @@ export type M3TransitionPattern =
   | "shared-axis-z"
   | "collapse";
 
-export interface M3TransitionProps extends Omit<
-  HTMLMotionProps<"div">,
-  "variants" | "style"
-> {
+export interface M3TransitionProps extends Omit<HTMLMotionProps<"div">, "variants" | "style"> {
   style?: MotionStyle;
   /**
    * Unique key representing the active view/content. Changing this key triggers the transition.
@@ -54,10 +43,7 @@ export interface M3TransitionProps extends Omit<
 const OFFSET = 30;
 const SCALE_OFFSET = 0.08;
 
-function buildVariants(
-  pattern: M3TransitionPattern,
-  forward: boolean,
-): Variants {
+function buildVariants(pattern: M3TransitionPattern, forward: boolean): Variants {
   const enterTransition: Transition = {
     ease: m3Easings.emphasizedDecelerate,
     duration: m3Durations.medium2,
@@ -206,28 +192,11 @@ function buildVariants(
  * The `stateKey` prop drives AnimatePresence re-mounts.
  */
 export const M3Transition = React.forwardRef<HTMLDivElement, M3TransitionProps>(
-  (
-    {
-      stateKey,
-      pattern = "fade",
-      forward = true,
-      mode = "wait",
-      variants,
-      children,
-      style,
-      ...props
-    },
-    ref,
-  ) => {
+  ({ stateKey, pattern = "fade", forward = true, mode = "wait", variants, children, style, ...props }, ref) => {
     const reduced = useM3ReducedMotion();
-    const resolvedVariants = motionVariants(
-      variants ?? buildVariants(pattern, forward),
-      reduced,
-    );
+    const resolvedVariants = motionVariants(variants ?? buildVariants(pattern, forward), reduced);
     const baseStyle: MotionStyle =
-      pattern === "collapse"
-        ? { overflow: "hidden" }
-        : { willChange: "opacity, transform" };
+      pattern === "collapse" ? { overflow: "hidden" } : { willChange: "opacity, transform" };
     const resolvedStyle: MotionStyle = { ...baseStyle, ...style };
 
     return (

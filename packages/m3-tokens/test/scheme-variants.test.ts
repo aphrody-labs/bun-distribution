@@ -1,10 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  ROLES,
-  schemeFromSeed,
-  cssFromSeed,
-  type SchemeVariant,
-} from "../src/dynamic-color.js";
+import { ROLES, schemeFromSeed, cssFromSeed, type SchemeVariant } from "../src/dynamic-color.js";
 
 const HEX = /^#[0-9a-f]{6}$/;
 const SEED = "#6750A4";
@@ -30,10 +25,7 @@ describe("schemeFromSeed — variant completeness", () => {
         const map = schemeFromSeed(SEED, { variant, dark });
         expect(Object.keys(map)).toHaveLength(ROLES.length);
         for (const [name, value] of Object.entries(map)) {
-          expect(
-            name.startsWith("--md-sys-color-"),
-            `${name} must start with --md-sys-color-`,
-          ).toBe(true);
+          expect(name.startsWith("--md-sys-color-"), `${name} must start with --md-sys-color-`).toBe(true);
           expect(value, `${name} must be a valid hex`).toMatch(HEX);
         }
       });
@@ -51,40 +43,30 @@ describe("schemeFromSeed — variants are distinguishable", () => {
     const mono = schemeFromSeed(SEED, { variant: "monochrome" });
     // Monochrome primary should be grey — all channels equal.
     const monoHex = mono["--md-sys-color-primary"]!.slice(1);
-    const [r, g, b] = [0, 2, 4].map((i) =>
-      parseInt(monoHex.slice(i, i + 2), 16),
-    );
+    const [r, g, b] = [0, 2, 4].map(i => parseInt(monoHex.slice(i, i + 2), 16));
     expect(Math.abs(r - g) + Math.abs(g - b)).toBeLessThan(10);
     // TonalSpot primary is chromatic — differs from monochrome.
-    expect(ts["--md-sys-color-primary"]).not.toBe(
-      mono["--md-sys-color-primary"],
-    );
+    expect(ts["--md-sys-color-primary"]).not.toBe(mono["--md-sys-color-primary"]);
   });
 
   test("tonalSpot vs neutral: neutral has less chroma in primary", () => {
     // Both produce different primaries from the same seed.
     const ts = schemeFromSeed(SEED, { variant: "tonalSpot" });
     const neutral = schemeFromSeed(SEED, { variant: "neutral" });
-    expect(ts["--md-sys-color-primary"]).not.toBe(
-      neutral["--md-sys-color-primary"],
-    );
+    expect(ts["--md-sys-color-primary"]).not.toBe(neutral["--md-sys-color-primary"]);
   });
 
   test("vibrant vs content: vibrant pushes higher chroma", () => {
     const vibrant = schemeFromSeed(SEED, { variant: "vibrant" });
     const content = schemeFromSeed(SEED, { variant: "content" });
     // They must differ on at least primary.
-    expect(vibrant["--md-sys-color-primary"]).not.toBe(
-      content["--md-sys-color-primary"],
-    );
+    expect(vibrant["--md-sys-color-primary"]).not.toBe(content["--md-sys-color-primary"]);
   });
 
   test("expressive tertiary differs from tonalSpot tertiary (detached hue)", () => {
     const ts = schemeFromSeed(SEED, { variant: "tonalSpot" });
     const exp = schemeFromSeed(SEED, { variant: "expressive" });
-    expect(ts["--md-sys-color-tertiary"]).not.toBe(
-      exp["--md-sys-color-tertiary"],
-    );
+    expect(ts["--md-sys-color-tertiary"]).not.toBe(exp["--md-sys-color-tertiary"]);
   });
 
   test("fidelity and content produce different tertiaries", () => {
@@ -106,9 +88,7 @@ describe("schemeFromSeed — dark/light per variant", () => {
     test(`${variant}: surface differs between light and dark`, () => {
       const light = schemeFromSeed(SEED, { variant, dark: false });
       const dark = schemeFromSeed(SEED, { variant, dark: true });
-      expect(light["--md-sys-color-surface"]).not.toBe(
-        dark["--md-sys-color-surface"],
-      );
+      expect(light["--md-sys-color-surface"]).not.toBe(dark["--md-sys-color-surface"]);
     });
   }
 });

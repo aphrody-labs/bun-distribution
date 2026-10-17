@@ -34,8 +34,8 @@
 //! back on.
 
 use cef::{
-  CefString, ContentSettingTypes, ContentSettingValues, ImplDictionaryValue, ImplListValue,
-  ImplPreferenceManager, ImplRequestContext, ImplValue, RequestContext, Value,
+    CefString, ContentSettingTypes, ContentSettingValues, ImplDictionaryValue, ImplListValue,
+    ImplPreferenceManager, ImplRequestContext, ImplValue, RequestContext, Value,
 };
 
 /// Builds the `error` out-parameter that every
@@ -50,7 +50,7 @@ use cef::{
 /// the owned variant, which converts to a real, writable pointer and frees
 /// whatever CEF stores in it when the string is dropped.
 pub(crate) fn set_preference_error_slot() -> CefString {
-  CefString::from("")
+    CefString::from("")
 }
 
 /// `devtools.availability`, the profile preference `DevToolsWindow::AllowDevToolsFor`
@@ -100,16 +100,16 @@ pub(crate) const REMOTE_DEBUGGING_ALLOWED: &str = "devtools.remote_debugging.all
 ///
 /// `safebrowsing.enabled` is deliberately absent - see the module docs.
 const PREFERENCES: &[(&str, bool)] = &[
-  ("credentials_enable_service", false),
-  ("profile.password_manager_leak_detection", false),
-  ("autofill.profile_enabled", false),
-  ("autofill.credit_card_enabled", false),
-  ("translate.enabled", false),
-  ("alternate_error_pages.enabled", false),
-  ("search.suggest_enabled", false),
-  ("privacy_sandbox.m1.topics_enabled", false),
-  ("privacy_sandbox.m1.fledge_enabled", false),
-  ("privacy_sandbox.m1.ad_measurement_enabled", false),
+    ("credentials_enable_service", false),
+    ("profile.password_manager_leak_detection", false),
+    ("autofill.profile_enabled", false),
+    ("autofill.credit_card_enabled", false),
+    ("translate.enabled", false),
+    ("alternate_error_pages.enabled", false),
+    ("search.suggest_enabled", false),
+    ("privacy_sandbox.m1.topics_enabled", false),
+    ("privacy_sandbox.m1.fledge_enabled", false),
+    ("privacy_sandbox.m1.ad_measurement_enabled", false),
 ];
 
 /// Converts a JSON value into the `CefValue` the preference API takes.
@@ -120,56 +120,58 @@ const PREFERENCES: &[(&str, bool)] = &[
 /// CEF will not allocate, which is the only failure mode: every JSON shape has a
 /// `base::Value` counterpart.
 fn to_cef_value(value: &serde_json::Value) -> Option<Value> {
-  let cef_value = cef::value_create()?;
+    let cef_value = cef::value_create()?;
 
-  match value {
-    serde_json::Value::Null => {
-      cef_value.set_null();
-    }
-    serde_json::Value::Bool(value) => {
-      cef_value.set_bool(i32::from(*value));
-    }
-    serde_json::Value::Number(number) => {
-      // Chromium stores an integer preference as an int and refuses a double in its
-      // place, so an integral JSON number has to stay integral. `as_i64` answers only
-      // for numbers that really are integers.
-      match number.as_i64() {
-        Some(integer) => {
-          let Ok(integer) = i32::try_from(integer) else {
-            log::debug!("preference value {integer} does not fit in the int Chromium stores");
-            return None;
-          };
-          cef_value.set_int(integer);
+    match value {
+        serde_json::Value::Null => {
+            cef_value.set_null();
         }
-        None => {
-          cef_value.set_double(number.as_f64()?);
+        serde_json::Value::Bool(value) => {
+            cef_value.set_bool(i32::from(*value));
         }
-      }
+        serde_json::Value::Number(number) => {
+            // Chromium stores an integer preference as an int and refuses a double in its
+            // place, so an integral JSON number has to stay integral. `as_i64` answers only
+            // for numbers that really are integers.
+            match number.as_i64() {
+                Some(integer) => {
+                    let Ok(integer) = i32::try_from(integer) else {
+                        log::debug!(
+                            "preference value {integer} does not fit in the int Chromium stores"
+                        );
+                        return None;
+                    };
+                    cef_value.set_int(integer);
+                }
+                None => {
+                    cef_value.set_double(number.as_f64()?);
+                }
+            }
+        }
+        serde_json::Value::String(string) => {
+            cef_value.set_string(Some(&CefString::from(string.as_str())));
+        }
+        serde_json::Value::Array(items) => {
+            let list = cef::list_value_create()?;
+            for (index, item) in items.iter().enumerate() {
+                let mut item = to_cef_value(item)?;
+                list.set_value(index, Some(&mut item));
+            }
+            let mut list = list;
+            cef_value.set_list(Some(&mut list));
+        }
+        serde_json::Value::Object(entries) => {
+            let dictionary = cef::dictionary_value_create()?;
+            for (key, entry) in entries {
+                let mut entry = to_cef_value(entry)?;
+                dictionary.set_value(Some(&CefString::from(key.as_str())), Some(&mut entry));
+            }
+            let mut dictionary = dictionary;
+            cef_value.set_dictionary(Some(&mut dictionary));
+        }
     }
-    serde_json::Value::String(string) => {
-      cef_value.set_string(Some(&CefString::from(string.as_str())));
-    }
-    serde_json::Value::Array(items) => {
-      let list = cef::list_value_create()?;
-      for (index, item) in items.iter().enumerate() {
-        let mut item = to_cef_value(item)?;
-        list.set_value(index, Some(&mut item));
-      }
-      let mut list = list;
-      cef_value.set_list(Some(&mut list));
-    }
-    serde_json::Value::Object(entries) => {
-      let dictionary = cef::dictionary_value_create()?;
-      for (key, entry) in entries {
-        let mut entry = to_cef_value(entry)?;
-        dictionary.set_value(Some(&CefString::from(key.as_str())), Some(&mut entry));
-      }
-      let mut dictionary = dictionary;
-      cef_value.set_dictionary(Some(&mut dictionary));
-    }
-  }
 
-  Some(cef_value)
+    Some(cef_value)
 }
 
 /// Applies [`PREFERENCES`], then `overrides`, to `request_context`.
@@ -182,16 +184,16 @@ fn to_cef_value(value: &serde_json::Value) -> Option<Value> {
 /// options that write one. They are written last so that naming a preference this module
 /// disables turns it back on, and so that a repeated name keeps its last value.
 pub(crate) fn apply_app_webview_preferences(
-  request_context: &RequestContext,
-  overrides: &[(String, serde_json::Value)],
+    request_context: &RequestContext,
+    overrides: &[(String, serde_json::Value)],
 ) {
-  let defaults = PREFERENCES
-    .iter()
-    .map(|(name, enabled)| ((*name).to_string(), serde_json::Value::Bool(*enabled)));
+    let defaults = PREFERENCES
+        .iter()
+        .map(|(name, enabled)| ((*name).to_string(), serde_json::Value::Bool(*enabled)));
 
-  for (name, value) in defaults.chain(overrides.iter().cloned()) {
-    let _ = set_preference(request_context, &name, &value);
-  }
+    for (name, value) in defaults.chain(overrides.iter().cloned()) {
+        let _ = set_preference(request_context, &name, &value);
+    }
 }
 
 /// Applies the application's default content settings to `request_context`.
@@ -200,12 +202,12 @@ pub(crate) fn apply_app_webview_preferences(
 /// application-wide policy an embedder wants: a page cannot ask for a permission whose
 /// default is `BLOCK`, and one whose default is `ALLOW` never prompts.
 pub(crate) fn apply_default_content_settings(
-  request_context: &RequestContext,
-  settings: &[(ContentSettingTypes, ContentSettingValues)],
+    request_context: &RequestContext,
+    settings: &[(ContentSettingTypes, ContentSettingValues)],
 ) {
-  for (content_type, value) in settings {
-    request_context.set_content_setting(None, None, *content_type, *value);
-  }
+    for (content_type, value) in settings {
+        request_context.set_content_setting(None, None, *content_type, *value);
+    }
 }
 
 /// Writes one preference on any store that has a preference manager, skipping it when
@@ -217,28 +219,28 @@ pub(crate) fn apply_default_content_settings(
 /// standing case — checks the return value and says more.
 #[must_use]
 pub(crate) fn set_preference<M: ImplPreferenceManager>(
-  manager: &M,
-  name: &str,
-  value: &serde_json::Value,
+    manager: &M,
+    name: &str,
+    value: &serde_json::Value,
 ) -> bool {
-  if manager.can_set_preference(Some(&name.into())) != 1 {
-    log::debug!("the CEF preference store does not allow setting the {name} preference");
-    return false;
-  }
+    if manager.can_set_preference(Some(&name.into())) != 1 {
+        log::debug!("the CEF preference store does not allow setting the {name} preference");
+        return false;
+    }
 
-  let Some(value) = to_cef_value(value) else {
-    log::debug!("failed to build a CEF value for the {name} preference");
-    return false;
-  };
+    let Some(value) = to_cef_value(value) else {
+        log::debug!("failed to build a CEF value for the {name} preference");
+        return false;
+    };
 
-  let mut value = value;
-  let mut error = set_preference_error_slot();
-  if manager.set_preference(Some(&name.into()), Some(&mut value), Some(&mut error)) != 1 {
-    log::debug!("failed to apply the {name} preference: {error}");
-    return false;
-  }
+    let mut value = value;
+    let mut error = set_preference_error_slot();
+    if manager.set_preference(Some(&name.into()), Some(&mut value), Some(&mut error)) != 1 {
+        log::debug!("failed to apply the {name} preference: {error}");
+        return false;
+    }
 
-  true
+    true
 }
 
 /// Applies the preferences that live in Chromium's local state rather than in a profile.
@@ -246,51 +248,53 @@ pub(crate) fn set_preference<M: ImplPreferenceManager>(
 /// Called once the CEF context is initialized, which is when
 /// `cef::preference_manager_get_global()` starts answering.
 pub(crate) fn apply_global_preferences(overrides: &[(String, serde_json::Value)]) {
-  if overrides.is_empty() {
-    return;
-  }
+    if overrides.is_empty() {
+        return;
+    }
 
-  let Some(manager) = cef::preference_manager_get_global() else {
-    log::debug!("the global CEF preference manager is unavailable; skipping global preferences");
-    return;
-  };
+    let Some(manager) = cef::preference_manager_get_global() else {
+        log::debug!(
+            "the global CEF preference manager is unavailable; skipping global preferences"
+        );
+        return;
+    };
 
-  for (name, value) in overrides {
-    let _ = set_preference(&manager, name, value);
-  }
+    for (name, value) in overrides {
+        let _ = set_preference(&manager, name, value);
+    }
 }
 
 #[cfg(test)]
 mod tests {
-  use super::*;
+    use super::*;
 
-  #[test]
-  fn the_disabled_preferences_are_all_disabled() {
-    // Every entry exists to turn something off; an entry set to `true` would be a
-    // default this module has no business asserting.
-    for (name, enabled) in PREFERENCES {
-      assert!(!enabled, "{name} is listed as a preference forced off");
+    #[test]
+    fn the_disabled_preferences_are_all_disabled() {
+        // Every entry exists to turn something off; an entry set to `true` would be a
+        // default this module has no business asserting.
+        for (name, enabled) in PREFERENCES {
+            assert!(!enabled, "{name} is listed as a preference forced off");
+        }
     }
-  }
 
-  #[test]
-  fn safe_browsing_is_not_disabled_by_default() {
-    assert!(
-      !PREFERENCES
-        .iter()
-        .any(|(name, _)| *name == "safebrowsing.enabled"),
-      "Safe Browsing stays on unless the application asks otherwise; see the module docs"
-    );
-  }
-
-  #[test]
-  fn the_privacy_sandbox_apis_are_pinned_off() {
-    for api in [
-      "privacy_sandbox.m1.topics_enabled",
-      "privacy_sandbox.m1.fledge_enabled",
-      "privacy_sandbox.m1.ad_measurement_enabled",
-    ] {
-      assert!(PREFERENCES.iter().any(|(name, _)| *name == api));
+    #[test]
+    fn safe_browsing_is_not_disabled_by_default() {
+        assert!(
+            !PREFERENCES
+                .iter()
+                .any(|(name, _)| *name == "safebrowsing.enabled"),
+            "Safe Browsing stays on unless the application asks otherwise; see the module docs"
+        );
     }
-  }
+
+    #[test]
+    fn the_privacy_sandbox_apis_are_pinned_off() {
+        for api in [
+            "privacy_sandbox.m1.topics_enabled",
+            "privacy_sandbox.m1.fledge_enabled",
+            "privacy_sandbox.m1.ad_measurement_enabled",
+        ] {
+            assert!(PREFERENCES.iter().any(|(name, _)| *name == api));
+        }
+    }
 }

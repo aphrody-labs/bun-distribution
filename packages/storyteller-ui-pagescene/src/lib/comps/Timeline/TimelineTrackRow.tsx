@@ -1,25 +1,11 @@
 import { useContext, useRef } from "react";
 import { DynamicIcon } from "@storyteller/icons";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
-import {
-  addKeyframe,
-  beginTimelineEdit,
-  commitTimelineEdit,
-  moveKeyframe,
-  seekTimeline,
-} from "../../actions";
+import { addKeyframe, beginTimelineEdit, commitTimelineEdit, moveKeyframe, seekTimeline } from "../../actions";
 import type { TimelineUndoSnapshot } from "../../engine/editor/TimelineController";
-import {
-  usePageSceneStore,
-  type OutlinerItem,
-  type TimelineTrack,
-} from "../../PageSceneStore";
+import { usePageSceneStore, type OutlinerItem, type TimelineTrack } from "../../PageSceneStore";
 import { DEFAULT_TIMELINE_FPS } from "../../engine/timeline/types";
-import {
-  fractionToTime,
-  quantizeToFrame,
-  timeToFraction,
-} from "./timelineUtils";
+import { fractionToTime, quantizeToFrame, timeToFraction } from "./timelineUtils";
 
 interface TimelineTrackRowProps {
   item: OutlinerItem;
@@ -27,11 +13,7 @@ interface TimelineTrackRowProps {
   duration: number;
 }
 
-export const TimelineTrackRow = ({
-  item,
-  track,
-  duration,
-}: TimelineTrackRowProps) => {
+export const TimelineTrackRow = ({ item, track, duration }: TimelineTrackRowProps) => {
   const editor = useContext(EngineContext);
   const laneRef = useRef<HTMLDivElement>(null);
   const draggingId = useRef<string | null>(null);
@@ -39,16 +21,10 @@ export const TimelineTrackRow = ({
   // pointer-up (moveKeyframe during the drag is a raw live-preview).
   const dragUndo = useRef<TimelineUndoSnapshot | null>(null);
 
-  const selectedKeyframeId = usePageSceneStore(
-    (s) => s.timelineSelectedKeyframeId,
-  );
-  const setSelectedKeyframe = usePageSceneStore(
-    (s) => s.setTimelineSelectedKeyframe,
-  );
-  const easingKeyframeId = usePageSceneStore((s) => s.timelineEasingKeyframeId);
-  const setEasingKeyframe = usePageSceneStore(
-    (s) => s.setTimelineEasingKeyframe,
-  );
+  const selectedKeyframeId = usePageSceneStore(s => s.timelineSelectedKeyframeId);
+  const setSelectedKeyframe = usePageSceneStore(s => s.setTimelineSelectedKeyframe);
+  const easingKeyframeId = usePageSceneStore(s => s.timelineEasingKeyframeId);
+  const setEasingKeyframe = usePageSceneStore(s => s.setTimelineEasingKeyframe);
 
   const keyframes = track?.keyframes ?? [];
   const sorted = [...keyframes].sort((a, b) => a.time - b.time);
@@ -58,12 +34,8 @@ export const TimelineTrackRow = ({
     if (!lane) return 0;
     const rect = lane.getBoundingClientRect();
     // Keyframes live on the timeline's frame grid, same as scrubbing.
-    const fps =
-      editor?.timelineController.getTimeline()?.fps ?? DEFAULT_TIMELINE_FPS;
-    return quantizeToFrame(
-      fractionToTime((clientX - rect.left) / rect.width, duration),
-      fps,
-    );
+    const fps = editor?.timelineController.getTimeline()?.fps ?? DEFAULT_TIMELINE_FPS;
+    return quantizeToFrame(fractionToTime((clientX - rect.left) / rect.width, duration), fps);
   };
 
   const selectKeyframe = (id: string, time: number) => {
@@ -92,13 +64,9 @@ export const TimelineTrackRow = ({
       <div
         ref={laneRef}
         className="relative h-9 flex-1 rounded-lg bg-white/5"
-        onPointerMove={(e) => {
+        onPointerMove={e => {
           if (!draggingId.current || !editor) return;
-          moveKeyframe(
-            editor,
-            draggingId.current,
-            laneTimeFromEvent(e.clientX),
-          );
+          moveKeyframe(editor, draggingId.current, laneTimeFromEvent(e.clientX));
         }}
         onPointerUp={endDrag}
         onPointerLeave={endDrag}
@@ -119,10 +87,7 @@ export const TimelineTrackRow = ({
             stored on the left keyframe) */}
         {sorted.slice(0, -1).map((kf, i) => {
           const next = sorted[i + 1];
-          const mid =
-            (timeToFraction(kf.time, duration) +
-              timeToFraction(next.time, duration)) /
-            2;
+          const mid = (timeToFraction(kf.time, duration) + timeToFraction(next.time, duration)) / 2;
           const active = easingKeyframeId === kf.id;
           return (
             <button
@@ -139,17 +104,13 @@ export const TimelineTrackRow = ({
               onClick={() => setEasingKeyframe(active ? null : kf.id)}
             >
               <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-                <path
-                  d="M1 9 C 5 9, 7 1, 11 1"
-                  stroke="currentColor"
-                  strokeWidth="1.25"
-                />
+                <path d="M1 9 C 5 9, 7 1, 11 1" stroke="currentColor" strokeWidth="1.25" />
               </svg>
             </button>
           );
         })}
 
-        {sorted.map((kf) => {
+        {sorted.map(kf => {
           const selected = kf.id === selectedKeyframeId;
           return (
             <div
@@ -159,12 +120,10 @@ export const TimelineTrackRow = ({
               data-keyframe
               title={`${kf.time.toFixed(2)}s`}
               className={`absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 cursor-grab rounded-[2px] border transition-colors ${
-                selected
-                  ? "border-brand-primary bg-brand-primary"
-                  : "border-white/70 bg-white"
+                selected ? "border-brand-primary bg-brand-primary" : "border-white/70 bg-white"
               }`}
               style={{ left: `${timeToFraction(kf.time, duration) * 100}%` }}
-              onPointerDown={(e) => {
+              onPointerDown={e => {
                 e.currentTarget.setPointerCapture(e.pointerId);
                 draggingId.current = kf.id;
                 if (editor) dragUndo.current = beginTimelineEdit(editor);

@@ -47,13 +47,10 @@ export function MobileGate({ children }: MobileGateProps) {
 
       <div className="flex flex-1 flex-col justify-center gap-5 px-7">
         <div className="flex flex-col gap-3">
-          <h1 className="text-foreground text-3xl font-bold tracking-tight">
-            Desktop only (for now)
-          </h1>
+          <h1 className="text-foreground text-3xl font-bold tracking-tight">Desktop only (for now)</h1>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            This editor isn't optimized for mobile or iPad yet. Things will
-            break and the layout will be a mess. Come back on a desktop for the
-            real experience.
+            This editor isn't optimized for mobile or iPad yet. Things will break and the layout will be a mess. Come
+            back on a desktop for the real experience.
           </p>
         </div>
         <div className="flex items-center gap-3">

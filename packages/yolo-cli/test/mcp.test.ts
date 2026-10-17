@@ -10,7 +10,7 @@ describe("Yolo tool host of aphrody-mcp", () => {
   test("lists unique tool definitions with input schemas", () => {
     const tools = listTools();
     expect(tools.length).toBeGreaterThan(0);
-    expect(new Set(tools.map((tool) => tool.name)).size).toBe(tools.length);
+    expect(new Set(tools.map(tool => tool.name)).size).toBe(tools.length);
     for (const tool of tools) expect(tool.inputSchema.type).toBe("object");
   });
   test("returns an error result for an unknown tool", async () => {
@@ -19,19 +19,13 @@ describe("Yolo tool host of aphrody-mcp", () => {
     expect(result.content[0]?.text).toContain("unknown_tool");
   });
   test("CLI rejects malformed JSON before invoking a capability", async () => {
-    const process = Bun.spawn(
-      ["bun", "src/index.ts", "tool", "call", "unknown_tool", "{"],
-      {
-        windowsHide: true,
-        cwd: resolve(import.meta.dir, ".."),
-        stdout: "pipe",
-        stderr: "pipe",
-      },
-    );
-    const [stdout, status] = await Promise.all([
-      new Response(process.stdout).text(),
-      process.exited,
-    ]);
+    const process = Bun.spawn(["bun", "src/index.ts", "tool", "call", "unknown_tool", "{"], {
+      windowsHide: true,
+      cwd: resolve(import.meta.dir, ".."),
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const [stdout, status] = await Promise.all([new Response(process.stdout).text(), process.exited]);
     expect(status).toBe(0);
     expect(JSON.parse(stdout).content[0].text).toBe("arguments are not JSON");
     expect(JSON.parse(stdout).isError).toBe(true);

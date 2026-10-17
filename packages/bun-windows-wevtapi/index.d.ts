@@ -3,11 +3,21 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** wevtapi.dll!EvtArchiveExportedLog */
-  EvtArchiveExportedLog(Session: number | bigint, LogFilePath: string | Win32Pointer, Locale: number, Flags: number): number;
+  EvtArchiveExportedLog(
+    Session: number | bigint,
+    LogFilePath: string | Win32Pointer,
+    Locale: number,
+    Flags: number,
+  ): number;
   /** wevtapi.dll!EvtCancel */
   EvtCancel(Object: number | bigint): number;
   /** wevtapi.dll!EvtClearLog */
-  EvtClearLog(Session: number | bigint, ChannelPath: string | Win32Pointer, TargetFilePath: string | Win32Pointer, Flags: number): number;
+  EvtClearLog(
+    Session: number | bigint,
+    ChannelPath: string | Win32Pointer,
+    TargetFilePath: string | Win32Pointer,
+    Flags: number,
+  ): number;
   /** wevtapi.dll!EvtClose */
   EvtClose(Object: number | bigint): number;
   /** wevtapi.dll!EvtCreateBookmark */
@@ -15,35 +25,115 @@ interface Functions {
   /** wevtapi.dll!EvtCreateRenderContext */
   EvtCreateRenderContext(ValuePathsCount: number, ValuePaths: Win32Pointer, Flags: number): number | bigint;
   /** wevtapi.dll!EvtExportLog */
-  EvtExportLog(Session: number | bigint, Path: string | Win32Pointer, Query: string | Win32Pointer, TargetFilePath: string | Win32Pointer, Flags: number): number;
+  EvtExportLog(
+    Session: number | bigint,
+    Path: string | Win32Pointer,
+    Query: string | Win32Pointer,
+    TargetFilePath: string | Win32Pointer,
+    Flags: number,
+  ): number;
   /** wevtapi.dll!EvtFormatMessage */
-  EvtFormatMessage(PublisherMetadata: number | bigint, Event: number | bigint, MessageId: number, ValueCount: number, Values: Win32Pointer, Flags: number, BufferSize: number, Buffer: string | Win32Pointer, BufferUsed: Win32Pointer): number;
+  EvtFormatMessage(
+    PublisherMetadata: number | bigint,
+    Event: number | bigint,
+    MessageId: number,
+    ValueCount: number,
+    Values: Win32Pointer,
+    Flags: number,
+    BufferSize: number,
+    Buffer: string | Win32Pointer,
+    BufferUsed: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtGetChannelConfigProperty */
-  EvtGetChannelConfigProperty(ChannelConfig: number | bigint, PropertyId: number, Flags: number, PropertyValueBufferSize: number, PropertyValueBuffer: Win32Pointer, PropertyValueBufferUsed: Win32Pointer): number;
+  EvtGetChannelConfigProperty(
+    ChannelConfig: number | bigint,
+    PropertyId: number,
+    Flags: number,
+    PropertyValueBufferSize: number,
+    PropertyValueBuffer: Win32Pointer,
+    PropertyValueBufferUsed: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtGetEventInfo */
-  EvtGetEventInfo(Event: number | bigint, PropertyId: number, PropertyValueBufferSize: number, PropertyValueBuffer: Win32Pointer, PropertyValueBufferUsed: Win32Pointer): number;
+  EvtGetEventInfo(
+    Event: number | bigint,
+    PropertyId: number,
+    PropertyValueBufferSize: number,
+    PropertyValueBuffer: Win32Pointer,
+    PropertyValueBufferUsed: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtGetEventMetadataProperty */
-  EvtGetEventMetadataProperty(EventMetadata: number | bigint, PropertyId: number, Flags: number, EventMetadataPropertyBufferSize: number, EventMetadataPropertyBuffer: Win32Pointer, EventMetadataPropertyBufferUsed: Win32Pointer): number;
+  EvtGetEventMetadataProperty(
+    EventMetadata: number | bigint,
+    PropertyId: number,
+    Flags: number,
+    EventMetadataPropertyBufferSize: number,
+    EventMetadataPropertyBuffer: Win32Pointer,
+    EventMetadataPropertyBufferUsed: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtGetExtendedStatus */
   EvtGetExtendedStatus(BufferSize: number, Buffer: string | Win32Pointer, BufferUsed: Win32Pointer): number;
   /** wevtapi.dll!EvtGetLogInfo */
-  EvtGetLogInfo(Log: number | bigint, PropertyId: number, PropertyValueBufferSize: number, PropertyValueBuffer: Win32Pointer, PropertyValueBufferUsed: Win32Pointer): number;
+  EvtGetLogInfo(
+    Log: number | bigint,
+    PropertyId: number,
+    PropertyValueBufferSize: number,
+    PropertyValueBuffer: Win32Pointer,
+    PropertyValueBufferUsed: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtGetObjectArrayProperty */
-  EvtGetObjectArrayProperty(ObjectArray: number | bigint, PropertyId: number, ArrayIndex: number, Flags: number, PropertyValueBufferSize: number, PropertyValueBuffer: Win32Pointer, PropertyValueBufferUsed: Win32Pointer): number;
+  EvtGetObjectArrayProperty(
+    ObjectArray: number | bigint,
+    PropertyId: number,
+    ArrayIndex: number,
+    Flags: number,
+    PropertyValueBufferSize: number,
+    PropertyValueBuffer: Win32Pointer,
+    PropertyValueBufferUsed: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtGetObjectArraySize */
   EvtGetObjectArraySize(ObjectArray: number | bigint, ObjectArraySize: Win32Pointer): number;
   /** wevtapi.dll!EvtGetPublisherMetadataProperty */
-  EvtGetPublisherMetadataProperty(PublisherMetadata: number | bigint, PropertyId: number, Flags: number, PublisherMetadataPropertyBufferSize: number, PublisherMetadataPropertyBuffer: Win32Pointer, PublisherMetadataPropertyBufferUsed: Win32Pointer): number;
+  EvtGetPublisherMetadataProperty(
+    PublisherMetadata: number | bigint,
+    PropertyId: number,
+    Flags: number,
+    PublisherMetadataPropertyBufferSize: number,
+    PublisherMetadataPropertyBuffer: Win32Pointer,
+    PublisherMetadataPropertyBufferUsed: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtGetQueryInfo */
-  EvtGetQueryInfo(QueryOrSubscription: number | bigint, PropertyId: number, PropertyValueBufferSize: number, PropertyValueBuffer: Win32Pointer, PropertyValueBufferUsed: Win32Pointer): number;
+  EvtGetQueryInfo(
+    QueryOrSubscription: number | bigint,
+    PropertyId: number,
+    PropertyValueBufferSize: number,
+    PropertyValueBuffer: Win32Pointer,
+    PropertyValueBufferUsed: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtNext */
-  EvtNext(ResultSet: number | bigint, EventsSize: number, Events: Win32Pointer, Timeout: number, Flags: number, Returned: Win32Pointer): number;
+  EvtNext(
+    ResultSet: number | bigint,
+    EventsSize: number,
+    Events: Win32Pointer,
+    Timeout: number,
+    Flags: number,
+    Returned: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtNextChannelPath */
-  EvtNextChannelPath(ChannelEnum: number | bigint, ChannelPathBufferSize: number, ChannelPathBuffer: string | Win32Pointer, ChannelPathBufferUsed: Win32Pointer): number;
+  EvtNextChannelPath(
+    ChannelEnum: number | bigint,
+    ChannelPathBufferSize: number,
+    ChannelPathBuffer: string | Win32Pointer,
+    ChannelPathBufferUsed: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtNextEventMetadata */
   EvtNextEventMetadata(EventMetadataEnum: number | bigint, Flags: number): number | bigint;
   /** wevtapi.dll!EvtNextPublisherId */
-  EvtNextPublisherId(PublisherEnum: number | bigint, PublisherIdBufferSize: number, PublisherIdBuffer: string | Win32Pointer, PublisherIdBufferUsed: Win32Pointer): number;
+  EvtNextPublisherId(
+    PublisherEnum: number | bigint,
+    PublisherIdBufferSize: number,
+    PublisherIdBuffer: string | Win32Pointer,
+    PublisherIdBufferUsed: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtOpenChannelConfig */
   EvtOpenChannelConfig(Session: number | bigint, ChannelPath: string | Win32Pointer, Flags: number): number | bigint;
   /** wevtapi.dll!EvtOpenChannelEnum */
@@ -55,21 +145,60 @@ interface Functions {
   /** wevtapi.dll!EvtOpenPublisherEnum */
   EvtOpenPublisherEnum(Session: number | bigint, Flags: number): number | bigint;
   /** wevtapi.dll!EvtOpenPublisherMetadata */
-  EvtOpenPublisherMetadata(Session: number | bigint, PublisherId: string | Win32Pointer, LogFilePath: string | Win32Pointer, Locale: number, Flags: number): number | bigint;
+  EvtOpenPublisherMetadata(
+    Session: number | bigint,
+    PublisherId: string | Win32Pointer,
+    LogFilePath: string | Win32Pointer,
+    Locale: number,
+    Flags: number,
+  ): number | bigint;
   /** wevtapi.dll!EvtOpenSession */
   EvtOpenSession(LoginClass: number, Login: Win32Pointer, Timeout: number, Flags: number): number | bigint;
   /** wevtapi.dll!EvtQuery */
-  EvtQuery(Session: number | bigint, Path: string | Win32Pointer, Query: string | Win32Pointer, Flags: number): number | bigint;
+  EvtQuery(
+    Session: number | bigint,
+    Path: string | Win32Pointer,
+    Query: string | Win32Pointer,
+    Flags: number,
+  ): number | bigint;
   /** wevtapi.dll!EvtRender */
-  EvtRender(Context: number | bigint, Fragment: number | bigint, Flags: number, BufferSize: number, Buffer: Win32Pointer, BufferUsed: Win32Pointer, PropertyCount: Win32Pointer): number;
+  EvtRender(
+    Context: number | bigint,
+    Fragment: number | bigint,
+    Flags: number,
+    BufferSize: number,
+    Buffer: Win32Pointer,
+    BufferUsed: Win32Pointer,
+    PropertyCount: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtSaveChannelConfig */
   EvtSaveChannelConfig(ChannelConfig: number | bigint, Flags: number): number;
   /** wevtapi.dll!EvtSeek */
-  EvtSeek(ResultSet: number | bigint, Position: number | bigint, Bookmark: number | bigint, Timeout: number, Flags: number): number;
+  EvtSeek(
+    ResultSet: number | bigint,
+    Position: number | bigint,
+    Bookmark: number | bigint,
+    Timeout: number,
+    Flags: number,
+  ): number;
   /** wevtapi.dll!EvtSetChannelConfigProperty */
-  EvtSetChannelConfigProperty(ChannelConfig: number | bigint, PropertyId: number, Flags: number, PropertyValue: Win32Pointer): number;
+  EvtSetChannelConfigProperty(
+    ChannelConfig: number | bigint,
+    PropertyId: number,
+    Flags: number,
+    PropertyValue: Win32Pointer,
+  ): number;
   /** wevtapi.dll!EvtSubscribe */
-  EvtSubscribe(Session: number | bigint, SignalEvent: Win32Pointer, ChannelPath: string | Win32Pointer, Query: string | Win32Pointer, Bookmark: number | bigint, Context: Win32Pointer, Callback: Win32Callback, Flags: number): number | bigint;
+  EvtSubscribe(
+    Session: number | bigint,
+    SignalEvent: Win32Pointer,
+    ChannelPath: string | Win32Pointer,
+    Query: string | Win32Pointer,
+    Bookmark: number | bigint,
+    Context: Win32Pointer,
+    Callback: Win32Callback,
+    Flags: number,
+  ): number | bigint;
   /** wevtapi.dll!EvtUpdateBookmark */
   EvtUpdateBookmark(Bookmark: number | bigint, Event: number | bigint): number;
 }

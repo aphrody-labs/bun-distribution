@@ -80,16 +80,7 @@ export const docker: Target = {
       { path: "docker-compose.yml", content: compose(c) },
       {
         path: ".dockerignore",
-        content: [
-          "node_modules",
-          ".git",
-          "dist",
-          "bin",
-          "deploy",
-          "**/*.log",
-          ".env*",
-          "",
-        ].join("\n"),
+        content: ["node_modules", ".git", "dist", "bin", "deploy", "**/*.log", ".env*", ""].join("\n"),
       },
     ];
   },

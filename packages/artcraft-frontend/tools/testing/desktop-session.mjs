@@ -7,9 +7,7 @@ import { installBrowserFixture } from "../performance/browser-fixture.mjs";
 
 const url = new URL(process.argv[2] || "http://127.0.0.1:5193");
 if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)) {
-  throw new Error(
-    "Use the local development or preview URL printed by the launcher.",
-  );
+  throw new Error("Use the local development or preview URL printed by the launcher.");
 }
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 try {
@@ -18,59 +16,41 @@ try {
   });
   await context.addInitScript(installBrowserFixture);
   await context.addInitScript(installSessionFixture);
-  await context.route("**/*", (route) => {
+  await context.route("**/*", route => {
     const target = route.request().url();
-    return target.startsWith(url.origin) || target.startsWith("blob:")
-      ? route.continue()
-      : route.abort();
+    return target.startsWith(url.origin) || target.startsWith("blob:") ? route.continue() : route.abort();
   });
   const page = await context.newPage();
   const errors = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("pageerror", error => errors.push(error.message));
   const home = async () => {
     await page.goto(url.href);
-    await expect(
-      page.getByRole("heading", { name: "What will you craft today?" }),
-    ).toBeVisible({ timeout: 60000 });
-    await expect(
-      page.getByRole("button", { name: "42 Credits" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "What will you craft today?" })).toBeVisible({ timeout: 60000 });
+    await expect(page.getByRole("button", { name: "42 Credits" })).toBeVisible();
   };
   const account = async () => {
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     await page.getByRole("button", { name: "Accounts", exact: true }).click();
-    await expect(
-      page.getByText("Session Smoke Account", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Log Out", exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText("Session Smoke Account", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log Out", exact: true })).toBeVisible();
   };
 
   await home();
   await account();
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "My Library" }).click();
-  await expect(
-    page.getByRole("img", { name: "Session smoke image", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("img", { name: "Session smoke image", exact: true })).toBeVisible();
   await expect
     .poll(() =>
       page
         .getByRole("img", { name: "Session smoke image", exact: true })
-        .evaluate((image) => image.complete && image.naturalWidth > 0),
+        .evaluate(image => image.complete && image.naturalWidth > 0),
     )
     .toBe(true);
-  await expect(
-    page.getByText("Log in to browse and use your library."),
-  ).toHaveCount(0);
+  await expect(page.getByText("Log in to browse and use your library.")).toHaveCount(0);
   await page.keyboard.press("Escape");
-  await page
-    .getByRole("button", { name: "Create Image Generate AI images" })
-    .click();
-  await expect(
-    page.getByRole("img", { name: "Session smoke image", exact: true }),
-  ).toBeVisible();
+  await page.getByRole("button", { name: "Create Image Generate AI images" }).click();
+  await expect(page.getByRole("img", { name: "Session smoke image", exact: true })).toBeVisible();
   await account();
   await page.keyboard.press("Escape");
   for (const [card, heading] of [
@@ -79,27 +59,16 @@ try {
   ]) {
     await home();
     await page.getByRole("button", { name: card }).click();
-    await expect(
-      page.getByRole("heading", { name: heading, exact: true }).first(),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: heading, exact: true }).first()).toBeVisible();
   }
   await account();
   await page.getByRole("button", { name: "Log Out", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Create your account" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create your account" })).toBeVisible();
   await page.getByRole("button", { name: "Log in", exact: true }).click();
-  await page
-    .getByPlaceholder("you@example.com or username")
-    .fill("session_smoke");
-  await page
-    .getByPlaceholder("Min. 8 characters")
-    .fill("fixture-password-only");
+  await page.getByPlaceholder("you@example.com or username").fill("session_smoke");
+  await page.getByPlaceholder("Min. 8 characters").fill("fixture-password-only");
   await page.getByRole("button", { name: "Log in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome back" })).toHaveCount(
-    0,
-    { timeout: 10000 },
-  );
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toHaveCount(0, { timeout: 10000 });
   await account();
   assert.deepEqual(errors, [], "Application runtime errors");
   console.log(
@@ -139,8 +108,7 @@ function installSessionFixture() {
     stats: { positive_rating_count: 0, bookmark_count: 0 },
   };
   window.__TAURI_INTERNALS__.invoke = async (command, args) => {
-    if (command === "storyteller_get_login_session_command")
-      return loggedIn ? user : null;
+    if (command === "storyteller_get_login_session_command") return loggedIn ? user : null;
     if (command === "storyteller_password_login_command") {
       loggedIn = true;
       return user;
@@ -149,8 +117,7 @@ function installSessionFixture() {
       loggedIn = false;
       return;
     }
-    if (command === "get_app_info_command")
-      return { payload: { storyteller_host: "https://api.storyteller.ai" } };
+    if (command === "get_app_info_command") return { payload: { storyteller_host: "https://api.storyteller.ai" } };
     if (command === "storyteller_get_credits_command")
       return {
         payload: {
@@ -197,10 +164,7 @@ function installSessionFixture() {
     }
     if (command === "plugin:http|fetch_read_body") {
       const response = responses.get(args.rid);
-      args.streamChannel.onmessage([
-        ...new TextEncoder().encode(JSON.stringify(response.body)),
-        0,
-      ]);
+      args.streamChannel.onmessage([...new TextEncoder().encode(JSON.stringify(response.body)), 0]);
       args.streamChannel.onmessage([1]);
       responses.delete(args.rid);
       return;

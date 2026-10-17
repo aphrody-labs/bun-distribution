@@ -31,14 +31,8 @@ describe("terminal key input", () => {
   });
 
   test("maps control shortcuts, preserves alt input and ignores meta shortcuts", () => {
-    expect(
-      keyToInput({ key: "l", ctrlKey: true, metaKey: false, altKey: false }),
-    ).toBe("\x0c");
-    expect(
-      keyToInput({ key: "x", ctrlKey: false, metaKey: false, altKey: true }),
-    ).toBe("\x1bx");
-    expect(
-      keyToInput({ key: "v", ctrlKey: false, metaKey: true, altKey: false }),
-    ).toBeNull();
+    expect(keyToInput({ key: "l", ctrlKey: true, metaKey: false, altKey: false })).toBe("\x0c");
+    expect(keyToInput({ key: "x", ctrlKey: false, metaKey: false, altKey: true })).toBe("\x1bx");
+    expect(keyToInput({ key: "v", ctrlKey: false, metaKey: true, altKey: false })).toBeNull();
   });
 });

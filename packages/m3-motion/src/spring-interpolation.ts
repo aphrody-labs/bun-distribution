@@ -317,7 +317,7 @@ export function springToWaapiKeyframes(
 
   const keyframes = opts?.property
     ? buildKeyframes(samples, opts.property, opts.format, opts.unit)
-    : samples.map((s) => ({ offset: s.offset }) as Keyframe);
+    : samples.map(s => ({ offset: s.offset }) as Keyframe);
 
   return {
     samples,
@@ -353,7 +353,7 @@ function buildKeyframes(
   unit?: string,
 ): Keyframe[] {
   const suffix = unit ?? "";
-  return samples.map((s) => {
+  return samples.map(s => {
     const css = format ? format(s.value) : `${s.value}${suffix}`;
     // `Keyframe` indexes string property names, so a dynamic key is valid.
     return { offset: s.offset, [property]: css } as Keyframe;
@@ -383,10 +383,8 @@ export interface SpringPresetLike {
  */
 export function springFromPreset(preset: SpringPresetLike): SpringParams {
   return {
-    stiffness:
-      preset.stiffness != null && preset.stiffness > 0 ? preset.stiffness : 220,
-    damping:
-      preset.damping != null && preset.damping >= 0 ? preset.damping : 17,
+    stiffness: preset.stiffness != null && preset.stiffness > 0 ? preset.stiffness : 220,
+    damping: preset.damping != null && preset.damping >= 0 ? preset.damping : 17,
     mass: preset.mass != null && preset.mass > 0 ? preset.mass : DEFAULT_MASS,
   };
 }

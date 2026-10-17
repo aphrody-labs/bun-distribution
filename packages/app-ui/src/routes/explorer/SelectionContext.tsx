@@ -1,12 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useMemo,
-  useEffect,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
 import { usePlatform } from "../../contexts/PlatformContext";
 import type { File } from "@aphrody/drive-client";
 import { useClipboard } from "../../hooks/useClipboard";
@@ -18,20 +10,12 @@ interface SelectionContextValue {
   selectedFileIds: Set<string>;
   isSelected: (fileId: string) => boolean;
   setSelectedFiles: (files: File[]) => void;
-  selectFile: (
-    file: File,
-    files: File[],
-    multi?: boolean,
-    range?: boolean,
-  ) => void;
+  selectFile: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
   clearSelection: () => void;
   selectAll: (files: File[]) => void;
   focusedIndex: number;
   setFocusedIndex: (index: number) => void;
-  moveFocus: (
-    direction: "up" | "down" | "left" | "right",
-    files: File[],
-  ) => void;
+  moveFocus: (direction: "up" | "down" | "left" | "right", files: File[]) => void;
   // Rename state
   renamingFileId: string | null;
   startRename: (fileId: string) => void;
@@ -49,10 +33,7 @@ interface SelectionProviderProps {
   isActiveTab?: boolean;
 }
 
-export function SelectionProvider({
-  children,
-  isActiveTab = true,
-}: SelectionProviderProps) {
+export function SelectionProvider({ children, isActiveTab = true }: SelectionProviderProps) {
   const platform = usePlatform();
   useClipboard();
   const tabManager = useTabManager();
@@ -81,16 +62,13 @@ export function SelectionProvider({
   // Supports both direct values and updater functions
   const setSelectedFiles = useCallback(
     (filesOrUpdater: File[] | ((prev: File[]) => File[])) => {
-      setSelectedFilesInternal((prev) => {
-        const nextFiles =
-          typeof filesOrUpdater === "function"
-            ? filesOrUpdater(prev)
-            : filesOrUpdater;
+      setSelectedFilesInternal(prev => {
+        const nextFiles = typeof filesOrUpdater === "function" ? filesOrUpdater(prev) : filesOrUpdater;
 
         // Sync to TabManager
         updateSelectionIds(
           activeTabId,
-          nextFiles.map((f) => f.id),
+          nextFiles.map(f => f.id),
         );
 
         return nextFiles;
@@ -104,10 +82,10 @@ export function SelectionProvider({
   useEffect(() => {
     if (!isActiveTab) return;
 
-    const fileIds = selectedFiles.map((f) => f.id);
+    const fileIds = selectedFiles.map(f => f.id);
 
     if (platform.setSelectedFileIds) {
-      platform.setSelectedFileIds(fileIds).catch((err) => {
+      platform.setSelectedFileIds(fileIds).catch(err => {
         console.error("Failed to sync selected files to platform:", err);
       });
     }
@@ -146,20 +124,20 @@ export function SelectionProvider({
 
   const selectFile = useCallback(
     (file: File, files: File[], multi = false, range = false) => {
-      const fileIndex = files.findIndex((f) => f.id === file.id);
+      const fileIndex = files.findIndex(f => f.id === file.id);
 
       if (range) {
-        setLastSelectedIndex((prevLastIndex) => {
+        setLastSelectedIndex(prevLastIndex => {
           if (prevLastIndex !== -1) {
             const start = Math.min(prevLastIndex, fileIndex);
             const end = Math.max(prevLastIndex, fileIndex);
             const rangeFiles = files.slice(start, end + 1);
 
-            setSelectedFiles((prev) => {
+            setSelectedFiles(prev => {
               // If there's already a multi-file selection, add the range (Finder behavior)
               if (prev.length > 1) {
                 // Create a map for O(1) lookup
-                const existingIds = new Set(prev.map((f) => f.id));
+                const existingIds = new Set(prev.map(f => f.id));
                 const combined = [...prev];
 
                 // Add new range files that aren't already selected
@@ -180,10 +158,10 @@ export function SelectionProvider({
         });
         setFocusedIndex(fileIndex);
       } else if (multi) {
-        setSelectedFiles((prev) => {
-          const isSelected = prev.some((f) => f.id === file.id);
+        setSelectedFiles(prev => {
+          const isSelected = prev.some(f => f.id === file.id);
           if (isSelected) {
-            return prev.filter((f) => f.id !== file.id);
+            return prev.filter(f => f.id !== file.id);
           } else {
             return [...prev, file];
           }
@@ -203,16 +181,13 @@ export function SelectionProvider({
     (direction: "up" | "down" | "left" | "right", files: File[]) => {
       if (files.length === 0) return;
 
-      setFocusedIndex((currentFocusedIndex) => {
+      setFocusedIndex(currentFocusedIndex => {
         let newIndex = currentFocusedIndex;
 
         if (direction === "up") newIndex = Math.max(0, currentFocusedIndex - 1);
-        if (direction === "down")
-          newIndex = Math.min(files.length - 1, currentFocusedIndex + 1);
-        if (direction === "left")
-          newIndex = Math.max(0, currentFocusedIndex - 1);
-        if (direction === "right")
-          newIndex = Math.min(files.length - 1, currentFocusedIndex + 1);
+        if (direction === "down") newIndex = Math.min(files.length - 1, currentFocusedIndex + 1);
+        if (direction === "left") newIndex = Math.max(0, currentFocusedIndex - 1);
+        if (direction === "right") newIndex = Math.min(files.length - 1, currentFocusedIndex + 1);
 
         if (newIndex !== currentFocusedIndex) {
           setSelectedFiles([files[newIndex]]);
@@ -244,16 +219,14 @@ export function SelectionProvider({
     async (newName: string) => {
       if (!renamingFileId) return;
 
-      const file = selectedFiles.find((f) => f.id === renamingFileId);
+      const file = selectedFiles.find(f => f.id === renamingFileId);
       if (!file) {
         setRenamingFileId(null);
         return;
       }
 
       // Don't submit if name is empty or unchanged
-      const currentFullName = file.extension
-        ? `${file.name}.${file.extension}`
-        : file.name;
+      const currentFullName = file.extension ? `${file.name}.${file.extension}` : file.name;
       if (!newName.trim() || newName === currentFullName) {
         setRenamingFileId(null);
         return;
@@ -275,7 +248,7 @@ export function SelectionProvider({
   );
 
   // Cancel rename when selection changes
-  if (renamingFileId && !selectedFiles.some((f) => f.id === renamingFileId)) {
+  if (renamingFileId && !selectedFiles.some(f => f.id === renamingFileId)) {
     setRenamingFileId(null);
   }
 
@@ -283,17 +256,14 @@ export function SelectionProvider({
   const selectedFileIds = useMemo(() => new Set(storedIds), [storedIds]);
 
   // Stable function for checking if a file is selected
-  const isSelected = useCallback(
-    (fileId: string) => selectedFileIds.has(fileId),
-    [selectedFileIds],
-  );
+  const isSelected = useCallback((fileId: string) => selectedFileIds.has(fileId), [selectedFileIds]);
 
   // Restore File objects for selected IDs when files become available
   const restoreSelectionFromFiles = useCallback(
     (files: File[]) => {
       if (storedIds.length === 0) return;
 
-      const fileMap = new Map(files.map((f) => [f.id, f]));
+      const fileMap = new Map(files.map(f => [f.id, f]));
       const matchingFiles: File[] = [];
 
       for (const id of storedIds) {
@@ -305,15 +275,12 @@ export function SelectionProvider({
 
       // Only update if we found matching files and they're different from current
       if (matchingFiles.length > 0) {
-        setSelectedFilesInternal((prev) => {
-          const prevIds = new Set(prev.map((f) => f.id));
-          const newIds = new Set(matchingFiles.map((f) => f.id));
+        setSelectedFilesInternal(prev => {
+          const prevIds = new Set(prev.map(f => f.id));
+          const newIds = new Set(matchingFiles.map(f => f.id));
 
           // Skip update if selection already matches
-          if (
-            prevIds.size === newIds.size &&
-            [...newIds].every((id) => prevIds.has(id))
-          ) {
+          if (prevIds.size === newIds.size && [...newIds].every(id => prevIds.has(id))) {
             return prev;
           }
 
@@ -366,16 +333,11 @@ export function SelectionProvider({
     ],
   );
 
-  return (
-    <SelectionContext.Provider value={value}>
-      {children}
-    </SelectionContext.Provider>
-  );
+  return <SelectionContext.Provider value={value}>{children}</SelectionContext.Provider>;
 }
 
 export function useSelection() {
   const context = useContext(SelectionContext);
-  if (!context)
-    throw new Error("useSelection must be used within SelectionProvider");
+  if (!context) throw new Error("useSelection must be used within SelectionProvider");
   return context;
 }

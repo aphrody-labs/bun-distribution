@@ -20,7 +20,11 @@ import type { SubmenuOptions } from "./submenu";
 export type ItemKind = "MenuItem" | "Predefined" | "Check" | "Icon" | "Submenu" | "Menu";
 
 type MenuItemOptionsAlias =
-  MenuItemOptions | SubmenuOptions | IconMenuItemOptions | PredefinedMenuItemOptions | CheckMenuItemOptions;
+  | MenuItemOptions
+  | SubmenuOptions
+  | IconMenuItemOptions
+  | PredefinedMenuItemOptions
+  | CheckMenuItemOptions;
 
 function injectChannel(i: MenuItemOptionsAlias): MenuItemOptionsAlias & {
   handler?: Channel<string>;

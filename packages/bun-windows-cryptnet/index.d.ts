@@ -3,15 +3,59 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** cryptnet.dll!CryptGetObjectUrl */
-  CryptGetObjectUrl(pszUrlOid: string | Win32Pointer, pvPara: Win32Pointer, dwFlags: number, pUrlArray: Win32Pointer, pcbUrlArray: Win32Pointer, pUrlInfo: Win32Pointer, pcbUrlInfo: Win32Pointer, pvReserved: Win32Pointer): number;
+  CryptGetObjectUrl(
+    pszUrlOid: string | Win32Pointer,
+    pvPara: Win32Pointer,
+    dwFlags: number,
+    pUrlArray: Win32Pointer,
+    pcbUrlArray: Win32Pointer,
+    pUrlInfo: Win32Pointer,
+    pcbUrlInfo: Win32Pointer,
+    pvReserved: Win32Pointer,
+  ): number;
   /** cryptnet.dll!CryptInstallCancelRetrieval */
-  CryptInstallCancelRetrieval(pfnCancel: Win32Callback, pvArg: Win32Pointer, dwFlags: number, pvReserved: Win32Pointer): number;
+  CryptInstallCancelRetrieval(
+    pfnCancel: Win32Callback,
+    pvArg: Win32Pointer,
+    dwFlags: number,
+    pvReserved: Win32Pointer,
+  ): number;
   /** cryptnet.dll!CryptRetrieveObjectByUrlA */
-  CryptRetrieveObjectByUrlA(pszUrl: string | Win32Pointer, pszObjectOid: string | Win32Pointer, dwRetrievalFlags: number, dwTimeout: number, ppvObject: Win32Pointer, hAsyncRetrieve: number | bigint, pCredentials: Win32Pointer, pvVerify: Win32Pointer, pAuxInfo: Win32Pointer): number;
+  CryptRetrieveObjectByUrlA(
+    pszUrl: string | Win32Pointer,
+    pszObjectOid: string | Win32Pointer,
+    dwRetrievalFlags: number,
+    dwTimeout: number,
+    ppvObject: Win32Pointer,
+    hAsyncRetrieve: number | bigint,
+    pCredentials: Win32Pointer,
+    pvVerify: Win32Pointer,
+    pAuxInfo: Win32Pointer,
+  ): number;
   /** cryptnet.dll!CryptRetrieveObjectByUrlW */
-  CryptRetrieveObjectByUrlW(pszUrl: string | Win32Pointer, pszObjectOid: string | Win32Pointer, dwRetrievalFlags: number, dwTimeout: number, ppvObject: Win32Pointer, hAsyncRetrieve: number | bigint, pCredentials: Win32Pointer, pvVerify: Win32Pointer, pAuxInfo: Win32Pointer): number;
+  CryptRetrieveObjectByUrlW(
+    pszUrl: string | Win32Pointer,
+    pszObjectOid: string | Win32Pointer,
+    dwRetrievalFlags: number,
+    dwTimeout: number,
+    ppvObject: Win32Pointer,
+    hAsyncRetrieve: number | bigint,
+    pCredentials: Win32Pointer,
+    pvVerify: Win32Pointer,
+    pAuxInfo: Win32Pointer,
+  ): number;
   /** cryptnet.dll!CryptRetrieveObjectByUrlW */
-  CryptRetrieveObjectByUrl(pszUrl: string | Win32Pointer, pszObjectOid: string | Win32Pointer, dwRetrievalFlags: number, dwTimeout: number, ppvObject: Win32Pointer, hAsyncRetrieve: number | bigint, pCredentials: Win32Pointer, pvVerify: Win32Pointer, pAuxInfo: Win32Pointer): number;
+  CryptRetrieveObjectByUrl(
+    pszUrl: string | Win32Pointer,
+    pszObjectOid: string | Win32Pointer,
+    dwRetrievalFlags: number,
+    dwTimeout: number,
+    ppvObject: Win32Pointer,
+    hAsyncRetrieve: number | bigint,
+    pCredentials: Win32Pointer,
+    pvVerify: Win32Pointer,
+    pAuxInfo: Win32Pointer,
+  ): number;
   /** cryptnet.dll!CryptUninstallCancelRetrieval */
   CryptUninstallCancelRetrieval(dwFlags: number, pvReserved: Win32Pointer): number;
 }

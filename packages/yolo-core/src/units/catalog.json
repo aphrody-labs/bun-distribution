@@ -55,11 +55,7 @@
       "service": {
         "WorkingDirectory": "%h/.aphrody",
         "ExecStart": "%h/.local/bin/aphrody job run --forever --host wsl --worker wsl-native --concurrency 2",
-        "Environment": [
-          "APHRODY_HOME=%h/.aphrody",
-          "APHRODY_AGENT_DOMAIN=aphrody",
-          "APHRODY_PROFILE=aphrody"
-        ],
+        "Environment": ["APHRODY_HOME=%h/.aphrody", "APHRODY_AGENT_DOMAIN=aphrody", "APHRODY_PROFILE=aphrody"],
         "Restart": "on-failure",
         "RestartSec": "10",
         "TimeoutStopSec": "30",
@@ -202,10 +198,7 @@
         "Description": "Shenron dbfr read-only native Markdown Drive projection and memory reconciliation",
         "After": "network-online.target",
         "Wants": "network-online.target",
-        "ConditionPathExists": [
-          "%h/.aphrody/workspaces/dbfr",
-          "%h/aphrody/.env"
-        ]
+        "ConditionPathExists": ["%h/.aphrody/workspaces/dbfr", "%h/aphrody/.env"]
       },
       "service": {
         "WorkingDirectory": "%h/aphrody",
@@ -233,11 +226,7 @@
       },
       "service": {
         "WorkingDirectory": "%h/aphrody",
-        "Environment": [
-          "APHRODY_AGENT_DOMAIN=%i",
-          "APHRODY_PROFILE=%i",
-          "APHRODY_WORKSPACE=%h/.aphrody/workspaces/%i"
-        ],
+        "Environment": ["APHRODY_AGENT_DOMAIN=%i", "APHRODY_PROFILE=%i", "APHRODY_WORKSPACE=%h/.aphrody/workspaces/%i"],
         "ExecStart": "%h/.local/bin/aphrody ai sync-sessions --watch --interval-secs 30 --json --shared-workspace %h/aphrody",
         "Restart": "on-failure",
         "RestartSec": "10",
@@ -270,10 +259,7 @@
         "Description": "Verified resumable backup of dbfr Shenron trained models and datasets",
         "After": "network-online.target",
         "Wants": "network-online.target",
-        "ConditionPathExists": [
-          "%h/aphrody/.env",
-          "%h/.aphrody/private/shenron/home/models"
-        ],
+        "ConditionPathExists": ["%h/aphrody/.env", "%h/.aphrody/private/shenron/home/models"],
         "StartLimitIntervalSec": "900",
         "StartLimitBurst": "5"
       },
@@ -386,10 +372,7 @@
       "unit": "aphrody-kernel.service",
       "name": "local-app.conf",
       "service": {
-        "ExecStart": [
-          "",
-          "%h/.local/share/aphrody/local-app/current/bin/aphrody-kernel serve --no-browser"
-        ],
+        "ExecStart": ["", "%h/.local/share/aphrody/local-app/current/bin/aphrody-kernel serve --no-browser"],
         "Environment": "PATH=%h/.local/share/aphrody/local-app/current/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
       },
       "comment": "Preserve the existing kernel unit and endpoint; select the verified local release."

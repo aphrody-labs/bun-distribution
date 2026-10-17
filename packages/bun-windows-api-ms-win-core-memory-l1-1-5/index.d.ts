@@ -3,7 +3,16 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-memory-l1-1-5.dll!MapViewOfFileNuma2 */
-  MapViewOfFileNuma2(FileMappingHandle: Win32Pointer, ProcessHandle: Win32Pointer, Offset: number | bigint, BaseAddress: Win32Pointer, ViewSize: number | bigint, AllocationType: number, PageProtection: number, PreferredNode: number): Win32Struct;
+  MapViewOfFileNuma2(
+    FileMappingHandle: Win32Pointer,
+    ProcessHandle: Win32Pointer,
+    Offset: number | bigint,
+    BaseAddress: Win32Pointer,
+    ViewSize: number | bigint,
+    AllocationType: number,
+    PageProtection: number,
+    PreferredNode: number,
+  ): Win32Struct;
   /** api-ms-win-core-memory-l1-1-5.dll!UnmapViewOfFile2 */
   UnmapViewOfFile2(Process: Win32Pointer, BaseAddress: Win32StructInit, UnmapFlags: number): number;
   /** api-ms-win-core-memory-l1-1-5.dll!VirtualUnlockEx */

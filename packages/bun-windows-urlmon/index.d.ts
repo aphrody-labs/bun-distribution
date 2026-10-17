@@ -3,13 +3,44 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** urlmon.dll!CoGetClassObjectFromURL */
-  CoGetClassObjectFromURL(rCLASSID: Win32Pointer, szCODE: string | Win32Pointer, dwFileVersionMS: number, dwFileVersionLS: number, szTYPE: string | Win32Pointer, pBindCtx: Win32Pointer, dwClsContext: number, pvReserved: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  CoGetClassObjectFromURL(
+    rCLASSID: Win32Pointer,
+    szCODE: string | Win32Pointer,
+    dwFileVersionMS: number,
+    dwFileVersionLS: number,
+    szTYPE: string | Win32Pointer,
+    pBindCtx: Win32Pointer,
+    dwClsContext: number,
+    pvReserved: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** urlmon.dll!CoInternetCombineIUri */
-  CoInternetCombineIUri(pBaseUri: Win32Pointer, pRelativeUri: Win32Pointer, dwCombineFlags: number, ppCombinedUri: Win32Pointer, dwReserved: number | bigint): number;
+  CoInternetCombineIUri(
+    pBaseUri: Win32Pointer,
+    pRelativeUri: Win32Pointer,
+    dwCombineFlags: number,
+    ppCombinedUri: Win32Pointer,
+    dwReserved: number | bigint,
+  ): number;
   /** urlmon.dll!CoInternetCombineUrl */
-  CoInternetCombineUrl(pwzBaseUrl: string | Win32Pointer, pwzRelativeUrl: string | Win32Pointer, dwCombineFlags: number, pszResult: string | Win32Pointer, cchResult: number, pcchResult: Win32Pointer, dwReserved: number): number;
+  CoInternetCombineUrl(
+    pwzBaseUrl: string | Win32Pointer,
+    pwzRelativeUrl: string | Win32Pointer,
+    dwCombineFlags: number,
+    pszResult: string | Win32Pointer,
+    cchResult: number,
+    pcchResult: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** urlmon.dll!CoInternetCombineUrlEx */
-  CoInternetCombineUrlEx(pBaseUri: Win32Pointer, pwzRelativeUrl: string | Win32Pointer, dwCombineFlags: number, ppCombinedUri: Win32Pointer, dwReserved: number | bigint): number;
+  CoInternetCombineUrlEx(
+    pBaseUri: Win32Pointer,
+    pwzRelativeUrl: string | Win32Pointer,
+    dwCombineFlags: number,
+    ppCombinedUri: Win32Pointer,
+    dwReserved: number | bigint,
+  ): number;
   /** urlmon.dll!CoInternetCompareUrl */
   CoInternetCompareUrl(pwzUrl1: string | Win32Pointer, pwzUrl2: string | Win32Pointer, dwFlags: number): number;
   /** urlmon.dll!CoInternetCreateSecurityManager */
@@ -19,29 +50,84 @@ interface Functions {
   /** urlmon.dll!CoInternetGetProtocolFlags */
   CoInternetGetProtocolFlags(pwzUrl: string | Win32Pointer, pdwFlags: Win32Pointer, dwReserved: number): number;
   /** urlmon.dll!CoInternetGetSecurityUrl */
-  CoInternetGetSecurityUrl(pwszUrl: string | Win32Pointer, ppwszSecUrl: Win32Pointer, psuAction: number, dwReserved: number): number;
+  CoInternetGetSecurityUrl(
+    pwszUrl: string | Win32Pointer,
+    ppwszSecUrl: Win32Pointer,
+    psuAction: number,
+    dwReserved: number,
+  ): number;
   /** urlmon.dll!CoInternetGetSecurityUrlEx */
-  CoInternetGetSecurityUrlEx(pUri: Win32Pointer, ppSecUri: Win32Pointer, psuAction: number, dwReserved: number | bigint): number;
+  CoInternetGetSecurityUrlEx(
+    pUri: Win32Pointer,
+    ppSecUri: Win32Pointer,
+    psuAction: number,
+    dwReserved: number | bigint,
+  ): number;
   /** urlmon.dll!CoInternetGetSession */
   CoInternetGetSession(dwSessionMode: number, ppIInternetSession: Win32Pointer, dwReserved: number): number;
   /** urlmon.dll!CoInternetIsFeatureEnabled */
   CoInternetIsFeatureEnabled(FeatureEntry: number, dwFlags: number): number;
   /** urlmon.dll!CoInternetIsFeatureEnabledForIUri */
-  CoInternetIsFeatureEnabledForIUri(FeatureEntry: number, dwFlags: number, pIUri: Win32Pointer, pSecMgr: Win32Pointer): number;
+  CoInternetIsFeatureEnabledForIUri(
+    FeatureEntry: number,
+    dwFlags: number,
+    pIUri: Win32Pointer,
+    pSecMgr: Win32Pointer,
+  ): number;
   /** urlmon.dll!CoInternetIsFeatureEnabledForUrl */
-  CoInternetIsFeatureEnabledForUrl(FeatureEntry: number, dwFlags: number, szURL: string | Win32Pointer, pSecMgr: Win32Pointer): number;
+  CoInternetIsFeatureEnabledForUrl(
+    FeatureEntry: number,
+    dwFlags: number,
+    szURL: string | Win32Pointer,
+    pSecMgr: Win32Pointer,
+  ): number;
   /** urlmon.dll!CoInternetIsFeatureZoneElevationEnabled */
-  CoInternetIsFeatureZoneElevationEnabled(szFromURL: string | Win32Pointer, szToURL: string | Win32Pointer, pSecMgr: Win32Pointer, dwFlags: number): number;
+  CoInternetIsFeatureZoneElevationEnabled(
+    szFromURL: string | Win32Pointer,
+    szToURL: string | Win32Pointer,
+    pSecMgr: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** urlmon.dll!CoInternetParseIUri */
-  CoInternetParseIUri(pIUri: Win32Pointer, ParseAction: number, dwFlags: number, pwzResult: string | Win32Pointer, cchResult: number, pcchResult: Win32Pointer, dwReserved: number | bigint): number;
+  CoInternetParseIUri(
+    pIUri: Win32Pointer,
+    ParseAction: number,
+    dwFlags: number,
+    pwzResult: string | Win32Pointer,
+    cchResult: number,
+    pcchResult: Win32Pointer,
+    dwReserved: number | bigint,
+  ): number;
   /** urlmon.dll!CoInternetParseUrl */
-  CoInternetParseUrl(pwzUrl: string | Win32Pointer, ParseAction: number, dwFlags: number, pszResult: string | Win32Pointer, cchResult: number, pcchResult: Win32Pointer, dwReserved: number): number;
+  CoInternetParseUrl(
+    pwzUrl: string | Win32Pointer,
+    ParseAction: number,
+    dwFlags: number,
+    pszResult: string | Win32Pointer,
+    cchResult: number,
+    pcchResult: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** urlmon.dll!CoInternetQueryInfo */
-  CoInternetQueryInfo(pwzUrl: string | Win32Pointer, QueryOptions: number, dwQueryFlags: number, pvBuffer: Win32Pointer, cbBuffer: number, pcbBuffer: Win32Pointer, dwReserved: number): number;
+  CoInternetQueryInfo(
+    pwzUrl: string | Win32Pointer,
+    QueryOptions: number,
+    dwQueryFlags: number,
+    pvBuffer: Win32Pointer,
+    cbBuffer: number,
+    pcbBuffer: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** urlmon.dll!CoInternetSetFeatureEnabled */
   CoInternetSetFeatureEnabled(FeatureEntry: number, dwFlags: number, fEnable: number): number;
   /** urlmon.dll!CompareSecurityIds */
-  CompareSecurityIds(pbSecurityId1: Win32Pointer, dwLen1: number, pbSecurityId2: Win32Pointer, dwLen2: number, dwReserved: number): number;
+  CompareSecurityIds(
+    pbSecurityId1: Win32Pointer,
+    dwLen1: number,
+    pbSecurityId2: Win32Pointer,
+    dwLen2: number,
+    dwReserved: number,
+  ): number;
   /** urlmon.dll!CompatFlagsFromClsid */
   CompatFlagsFromClsid(pclsid: Win32Pointer, pdwCompatFlags: Win32Pointer, pdwMiscStatusFlags: Win32Pointer): number;
   /** urlmon.dll!CopyBindInfo */
@@ -51,11 +137,23 @@ interface Functions {
   /** urlmon.dll!CreateAsyncBindCtx */
   CreateAsyncBindCtx(reserved: number, pBSCb: Win32Pointer, pEFetc: Win32Pointer, ppBC: Win32Pointer): number;
   /** urlmon.dll!CreateAsyncBindCtxEx */
-  CreateAsyncBindCtxEx(pbc: Win32Pointer, dwOptions: number, pBSCb: Win32Pointer, pEnum: Win32Pointer, ppBC: Win32Pointer, reserved: number): number;
+  CreateAsyncBindCtxEx(
+    pbc: Win32Pointer,
+    dwOptions: number,
+    pBSCb: Win32Pointer,
+    pEnum: Win32Pointer,
+    ppBC: Win32Pointer,
+    reserved: number,
+  ): number;
   /** urlmon.dll!CreateFormatEnumerator */
   CreateFormatEnumerator(cfmtetc: number, rgfmtetc: Win32Pointer, ppenumfmtetc: Win32Pointer): number;
   /** urlmon.dll!CreateIUriBuilder */
-  CreateIUriBuilder(pIUri: Win32Pointer, dwFlags: number, dwReserved: number | bigint, ppIUriBuilder: Win32Pointer): number;
+  CreateIUriBuilder(
+    pIUri: Win32Pointer,
+    dwFlags: number,
+    dwReserved: number | bigint,
+    ppIUriBuilder: Win32Pointer,
+  ): number;
   /** urlmon.dll!CreateURLMoniker */
   CreateURLMoniker(pMkCtx: Win32Pointer, szURL: string | Win32Pointer, ppmk: Win32Pointer): number;
   /** urlmon.dll!CreateURLMonikerEx */
@@ -65,9 +163,22 @@ interface Functions {
   /** urlmon.dll!CreateUri */
   CreateUri(pwzURI: string | Win32Pointer, dwFlags: number, dwReserved: number | bigint, ppURI: Win32Pointer): number;
   /** urlmon.dll!CreateUriFromMultiByteString */
-  CreateUriFromMultiByteString(pszANSIInputUri: string | Win32Pointer, dwEncodingFlags: number, dwCodePage: number, dwCreateFlags: number, dwReserved: number | bigint, ppUri: Win32Pointer): number;
+  CreateUriFromMultiByteString(
+    pszANSIInputUri: string | Win32Pointer,
+    dwEncodingFlags: number,
+    dwCodePage: number,
+    dwCreateFlags: number,
+    dwReserved: number | bigint,
+    ppUri: Win32Pointer,
+  ): number;
   /** urlmon.dll!CreateUriWithFragment */
-  CreateUriWithFragment(pwzURI: string | Win32Pointer, pwzFragment: string | Win32Pointer, dwFlags: number, dwReserved: number | bigint, ppURI: Win32Pointer): number;
+  CreateUriWithFragment(
+    pwzURI: string | Win32Pointer,
+    pwzFragment: string | Win32Pointer,
+    dwFlags: number,
+    dwReserved: number | bigint,
+    ppURI: Win32Pointer,
+  ): number;
   /** urlmon.dll!FaultInIEFeature */
   FaultInIEFeature(hWnd: Win32Pointer, pClassSpec: Win32Pointer, pQuery: Win32Pointer, dwFlags: number): number;
   /** urlmon.dll!FindMediaType */
@@ -75,9 +186,26 @@ interface Functions {
   /** urlmon.dll!FindMediaTypeClass */
   FindMediaTypeClass(pBC: Win32Pointer, szType: string | Win32Pointer, pclsID: Win32Pointer, reserved: number): number;
   /** urlmon.dll!FindMimeFromData */
-  FindMimeFromData(pBC: Win32Pointer, pwzUrl: string | Win32Pointer, pBuffer: Win32Pointer, cbSize: number, pwzMimeProposed: string | Win32Pointer, dwMimeFlags: number, ppwzMimeOut: Win32Pointer, dwReserved: number): number;
+  FindMimeFromData(
+    pBC: Win32Pointer,
+    pwzUrl: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+    cbSize: number,
+    pwzMimeProposed: string | Win32Pointer,
+    dwMimeFlags: number,
+    ppwzMimeOut: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** urlmon.dll!GetClassFileOrMime */
-  GetClassFileOrMime(pBC: Win32Pointer, szFilename: string | Win32Pointer, pBuffer: Win32Pointer, cbSize: number, szMime: string | Win32Pointer, dwReserved: number, pclsid: Win32Pointer): number;
+  GetClassFileOrMime(
+    pBC: Win32Pointer,
+    szFilename: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+    cbSize: number,
+    szMime: string | Win32Pointer,
+    dwReserved: number,
+    pclsid: Win32Pointer,
+  ): number;
   /** urlmon.dll!GetClassURL */
   GetClassURL(szURL: string | Win32Pointer, pClsID: Win32Pointer): number;
   /** urlmon.dll!GetComponentIDFromCLSSPEC */
@@ -93,9 +221,27 @@ interface Functions {
   /** urlmon.dll!HlinkNavigateString */
   HlinkNavigateString(pUnk: Win32Pointer, szTarget: string | Win32Pointer): number;
   /** urlmon.dll!HlinkSimpleNavigateToMoniker */
-  HlinkSimpleNavigateToMoniker(pmkTarget: Win32Pointer, szLocation: string | Win32Pointer, szTargetFrameName: string | Win32Pointer, pUnk: Win32Pointer, pbc: Win32Pointer, param5: Win32Pointer, grfHLNF: number, dwReserved: number): number;
+  HlinkSimpleNavigateToMoniker(
+    pmkTarget: Win32Pointer,
+    szLocation: string | Win32Pointer,
+    szTargetFrameName: string | Win32Pointer,
+    pUnk: Win32Pointer,
+    pbc: Win32Pointer,
+    param5: Win32Pointer,
+    grfHLNF: number,
+    dwReserved: number,
+  ): number;
   /** urlmon.dll!HlinkSimpleNavigateToString */
-  HlinkSimpleNavigateToString(szTarget: string | Win32Pointer, szLocation: string | Win32Pointer, szTargetFrameName: string | Win32Pointer, pUnk: Win32Pointer, pbc: Win32Pointer, param5: Win32Pointer, grfHLNF: number, dwReserved: number): number;
+  HlinkSimpleNavigateToString(
+    szTarget: string | Win32Pointer,
+    szLocation: string | Win32Pointer,
+    szTargetFrameName: string | Win32Pointer,
+    pUnk: Win32Pointer,
+    pbc: Win32Pointer,
+    param5: Win32Pointer,
+    grfHLNF: number,
+    dwReserved: number,
+  ): number;
   /** urlmon.dll!IEGetUserPrivateNamespaceName */
   IEGetUserPrivateNamespaceName(): number | null;
   /** urlmon.dll!IEInstallScope */
@@ -111,15 +257,31 @@ interface Functions {
   /** urlmon.dll!IsValidURL */
   IsValidURL(pBC: Win32Pointer, szURL: string | Win32Pointer, dwReserved: number): number;
   /** urlmon.dll!MkParseDisplayNameEx */
-  MkParseDisplayNameEx(pbc: Win32Pointer, szDisplayName: string | Win32Pointer, pchEaten: Win32Pointer, ppmk: Win32Pointer): number;
+  MkParseDisplayNameEx(
+    pbc: Win32Pointer,
+    szDisplayName: string | Win32Pointer,
+    pchEaten: Win32Pointer,
+    ppmk: Win32Pointer,
+  ): number;
   /** urlmon.dll!ObtainUserAgentString */
   ObtainUserAgentString(dwOption: number, pszUAOut: string | Win32Pointer, cbSize: Win32Pointer): number;
   /** urlmon.dll!RegisterBindStatusCallback */
-  RegisterBindStatusCallback(pBC: Win32Pointer, pBSCb: Win32Pointer, ppBSCBPrev: Win32Pointer, dwReserved: number): number;
+  RegisterBindStatusCallback(
+    pBC: Win32Pointer,
+    pBSCb: Win32Pointer,
+    ppBSCBPrev: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** urlmon.dll!RegisterFormatEnumerator */
   RegisterFormatEnumerator(pBC: Win32Pointer, pEFetc: Win32Pointer, reserved: number): number;
   /** urlmon.dll!RegisterMediaTypeClass */
-  RegisterMediaTypeClass(pBC: Win32Pointer, ctypes: number, rgszTypes: Win32Pointer, rgclsID: Win32Pointer, reserved: number): number;
+  RegisterMediaTypeClass(
+    pBC: Win32Pointer,
+    ctypes: number,
+    rgszTypes: Win32Pointer,
+    rgclsID: Win32Pointer,
+    reserved: number,
+  ): number;
   /** urlmon.dll!RegisterMediaTypes */
   RegisterMediaTypes(ctypes: number, rgszTypes: Win32Pointer, rgcfTypes: Win32Pointer): number;
   /** urlmon.dll!ReleaseBindInfo */
@@ -131,25 +293,87 @@ interface Functions {
   /** urlmon.dll!SetAccessForIEAppContainer */
   SetAccessForIEAppContainer(hObject: Win32Pointer, ieObjectType: number, dwAccessMask: number): number;
   /** urlmon.dll!SetSoftwareUpdateAdvertisementState */
-  SetSoftwareUpdateAdvertisementState(szDistUnit: string | Win32Pointer, dwAdState: number, dwAdvertisedVersionMS: number, dwAdvertisedVersionLS: number): number;
+  SetSoftwareUpdateAdvertisementState(
+    szDistUnit: string | Win32Pointer,
+    dwAdState: number,
+    dwAdvertisedVersionMS: number,
+    dwAdvertisedVersionLS: number,
+  ): number;
   /** urlmon.dll!URLDownloadToCacheFileA */
-  URLDownloadToCacheFileA(param0: Win32Pointer, param1: string | Win32Pointer, param2: string | Win32Pointer, cchFileName: number, param4: number, param5: Win32Pointer): number;
+  URLDownloadToCacheFileA(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: string | Win32Pointer,
+    cchFileName: number,
+    param4: number,
+    param5: Win32Pointer,
+  ): number;
   /** urlmon.dll!URLDownloadToCacheFileW */
-  URLDownloadToCacheFileW(param0: Win32Pointer, param1: string | Win32Pointer, param2: string | Win32Pointer, cchFileName: number, param4: number, param5: Win32Pointer): number;
+  URLDownloadToCacheFileW(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: string | Win32Pointer,
+    cchFileName: number,
+    param4: number,
+    param5: Win32Pointer,
+  ): number;
   /** urlmon.dll!URLDownloadToCacheFileW */
-  URLDownloadToCacheFile(param0: Win32Pointer, param1: string | Win32Pointer, param2: string | Win32Pointer, cchFileName: number, param4: number, param5: Win32Pointer): number;
+  URLDownloadToCacheFile(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: string | Win32Pointer,
+    cchFileName: number,
+    param4: number,
+    param5: Win32Pointer,
+  ): number;
   /** urlmon.dll!URLDownloadToFileA */
-  URLDownloadToFileA(param0: Win32Pointer, param1: string | Win32Pointer, param2: string | Win32Pointer, param3: number, param4: Win32Pointer): number;
+  URLDownloadToFileA(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: string | Win32Pointer,
+    param3: number,
+    param4: Win32Pointer,
+  ): number;
   /** urlmon.dll!URLDownloadToFileW */
-  URLDownloadToFileW(param0: Win32Pointer, param1: string | Win32Pointer, param2: string | Win32Pointer, param3: number, param4: Win32Pointer): number;
+  URLDownloadToFileW(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: string | Win32Pointer,
+    param3: number,
+    param4: Win32Pointer,
+  ): number;
   /** urlmon.dll!URLDownloadToFileW */
-  URLDownloadToFile(param0: Win32Pointer, param1: string | Win32Pointer, param2: string | Win32Pointer, param3: number, param4: Win32Pointer): number;
+  URLDownloadToFile(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: string | Win32Pointer,
+    param3: number,
+    param4: Win32Pointer,
+  ): number;
   /** urlmon.dll!URLOpenBlockingStreamA */
-  URLOpenBlockingStreamA(param0: Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: number, param4: Win32Pointer): number;
+  URLOpenBlockingStreamA(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: number,
+    param4: Win32Pointer,
+  ): number;
   /** urlmon.dll!URLOpenBlockingStreamW */
-  URLOpenBlockingStreamW(param0: Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: number, param4: Win32Pointer): number;
+  URLOpenBlockingStreamW(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: number,
+    param4: Win32Pointer,
+  ): number;
   /** urlmon.dll!URLOpenBlockingStreamW */
-  URLOpenBlockingStream(param0: Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: number, param4: Win32Pointer): number;
+  URLOpenBlockingStream(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: number,
+    param4: Win32Pointer,
+  ): number;
   /** urlmon.dll!URLOpenPullStreamA */
   URLOpenPullStreamA(param0: Win32Pointer, param1: string | Win32Pointer, param2: number, param3: Win32Pointer): number;
   /** urlmon.dll!URLOpenPullStreamW */
@@ -163,7 +387,13 @@ interface Functions {
   /** urlmon.dll!URLOpenStreamW */
   URLOpenStream(param0: Win32Pointer, param1: string | Win32Pointer, param2: number, param3: Win32Pointer): number;
   /** urlmon.dll!UrlMkGetSessionOption */
-  UrlMkGetSessionOption(dwOption: number, pBuffer: Win32Pointer, dwBufferLength: number, pdwBufferLengthOut: Win32Pointer, dwReserved: number): number;
+  UrlMkGetSessionOption(
+    dwOption: number,
+    pBuffer: Win32Pointer,
+    dwBufferLength: number,
+    pdwBufferLengthOut: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** urlmon.dll!UrlMkSetSessionOption */
   UrlMkSetSessionOption(dwOption: number, pBuffer: Win32Pointer, dwBufferLength: number, dwReserved: number): number;
   /** urlmon.dll!WriteHitLogging */

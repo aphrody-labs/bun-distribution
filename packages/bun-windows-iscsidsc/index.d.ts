@@ -9,23 +9,95 @@ interface Functions {
   /** iscsidsc.dll!AddISNSServerW */
   AddISNSServer(Address: string | Win32Pointer): number;
   /** iscsidsc.dll!AddIScsiConnectionA */
-  AddIScsiConnectionA(UniqueSessionId: Win32Pointer, Reserved: Win32Pointer, InitiatorPortNumber: number, TargetPortal: Win32Pointer, SecurityFlags: number | bigint, LoginOptions: Win32Pointer, KeySize: number, Key: string | Win32Pointer, ConnectionId: Win32Pointer): number;
+  AddIScsiConnectionA(
+    UniqueSessionId: Win32Pointer,
+    Reserved: Win32Pointer,
+    InitiatorPortNumber: number,
+    TargetPortal: Win32Pointer,
+    SecurityFlags: number | bigint,
+    LoginOptions: Win32Pointer,
+    KeySize: number,
+    Key: string | Win32Pointer,
+    ConnectionId: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!AddIScsiConnectionW */
-  AddIScsiConnectionW(UniqueSessionId: Win32Pointer, Reserved: Win32Pointer, InitiatorPortNumber: number, TargetPortal: Win32Pointer, SecurityFlags: number | bigint, LoginOptions: Win32Pointer, KeySize: number, Key: string | Win32Pointer, ConnectionId: Win32Pointer): number;
+  AddIScsiConnectionW(
+    UniqueSessionId: Win32Pointer,
+    Reserved: Win32Pointer,
+    InitiatorPortNumber: number,
+    TargetPortal: Win32Pointer,
+    SecurityFlags: number | bigint,
+    LoginOptions: Win32Pointer,
+    KeySize: number,
+    Key: string | Win32Pointer,
+    ConnectionId: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!AddIScsiConnectionW */
-  AddIScsiConnection(UniqueSessionId: Win32Pointer, Reserved: Win32Pointer, InitiatorPortNumber: number, TargetPortal: Win32Pointer, SecurityFlags: number | bigint, LoginOptions: Win32Pointer, KeySize: number, Key: string | Win32Pointer, ConnectionId: Win32Pointer): number;
+  AddIScsiConnection(
+    UniqueSessionId: Win32Pointer,
+    Reserved: Win32Pointer,
+    InitiatorPortNumber: number,
+    TargetPortal: Win32Pointer,
+    SecurityFlags: number | bigint,
+    LoginOptions: Win32Pointer,
+    KeySize: number,
+    Key: string | Win32Pointer,
+    ConnectionId: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!AddIScsiSendTargetPortalA */
-  AddIScsiSendTargetPortalA(InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, LoginOptions: Win32Pointer, SecurityFlags: number | bigint, Portal: Win32Pointer): number;
+  AddIScsiSendTargetPortalA(
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    LoginOptions: Win32Pointer,
+    SecurityFlags: number | bigint,
+    Portal: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!AddIScsiSendTargetPortalW */
-  AddIScsiSendTargetPortalW(InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, LoginOptions: Win32Pointer, SecurityFlags: number | bigint, Portal: Win32Pointer): number;
+  AddIScsiSendTargetPortalW(
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    LoginOptions: Win32Pointer,
+    SecurityFlags: number | bigint,
+    Portal: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!AddIScsiSendTargetPortalW */
-  AddIScsiSendTargetPortal(InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, LoginOptions: Win32Pointer, SecurityFlags: number | bigint, Portal: Win32Pointer): number;
+  AddIScsiSendTargetPortal(
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    LoginOptions: Win32Pointer,
+    SecurityFlags: number | bigint,
+    Portal: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!AddIScsiStaticTargetA */
-  AddIScsiStaticTargetA(TargetName: string | Win32Pointer, TargetAlias: string | Win32Pointer, TargetFlags: number, Persist: number, Mappings: Win32Pointer, LoginOptions: Win32Pointer, PortalGroup: Win32Pointer): number;
+  AddIScsiStaticTargetA(
+    TargetName: string | Win32Pointer,
+    TargetAlias: string | Win32Pointer,
+    TargetFlags: number,
+    Persist: number,
+    Mappings: Win32Pointer,
+    LoginOptions: Win32Pointer,
+    PortalGroup: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!AddIScsiStaticTargetW */
-  AddIScsiStaticTargetW(TargetName: string | Win32Pointer, TargetAlias: string | Win32Pointer, TargetFlags: number, Persist: number, Mappings: Win32Pointer, LoginOptions: Win32Pointer, PortalGroup: Win32Pointer): number;
+  AddIScsiStaticTargetW(
+    TargetName: string | Win32Pointer,
+    TargetAlias: string | Win32Pointer,
+    TargetFlags: number,
+    Persist: number,
+    Mappings: Win32Pointer,
+    LoginOptions: Win32Pointer,
+    PortalGroup: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!AddIScsiStaticTargetW */
-  AddIScsiStaticTarget(TargetName: string | Win32Pointer, TargetAlias: string | Win32Pointer, TargetFlags: number, Persist: number, Mappings: Win32Pointer, LoginOptions: Win32Pointer, PortalGroup: Win32Pointer): number;
+  AddIScsiStaticTarget(
+    TargetName: string | Win32Pointer,
+    TargetAlias: string | Win32Pointer,
+    TargetFlags: number,
+    Persist: number,
+    Mappings: Win32Pointer,
+    LoginOptions: Win32Pointer,
+    PortalGroup: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!AddPersistentIScsiDeviceA */
   AddPersistentIScsiDeviceA(DevicePath: string | Win32Pointer): number;
   /** iscsidsc.dll!AddPersistentIScsiDeviceW */
@@ -47,11 +119,26 @@ interface Functions {
   /** iscsidsc.dll!GetDevicesForIScsiSessionW */
   GetDevicesForIScsiSession(UniqueSessionId: Win32Pointer, DeviceCount: Win32Pointer, Devices: Win32Pointer): number;
   /** iscsidsc.dll!GetIScsiIKEInfoA */
-  GetIScsiIKEInfoA(InitiatorName: string | Win32Pointer, InitiatorPortNumber: number, Reserved: Win32Pointer, AuthInfo: Win32Pointer): number;
+  GetIScsiIKEInfoA(
+    InitiatorName: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    Reserved: Win32Pointer,
+    AuthInfo: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!GetIScsiIKEInfoW */
-  GetIScsiIKEInfoW(InitiatorName: string | Win32Pointer, InitiatorPortNumber: number, Reserved: Win32Pointer, AuthInfo: Win32Pointer): number;
+  GetIScsiIKEInfoW(
+    InitiatorName: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    Reserved: Win32Pointer,
+    AuthInfo: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!GetIScsiIKEInfoW */
-  GetIScsiIKEInfo(InitiatorName: string | Win32Pointer, InitiatorPortNumber: number, Reserved: Win32Pointer, AuthInfo: Win32Pointer): number;
+  GetIScsiIKEInfo(
+    InitiatorName: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    Reserved: Win32Pointer,
+    AuthInfo: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!GetIScsiInitiatorNodeNameA */
   GetIScsiInitiatorNodeNameA(InitiatorNodeName: string | Win32Pointer): number;
   /** iscsidsc.dll!GetIScsiInitiatorNodeNameW */
@@ -67,19 +154,79 @@ interface Functions {
   /** iscsidsc.dll!GetIScsiSessionListW */
   GetIScsiSessionList(BufferSize: Win32Pointer, SessionCount: Win32Pointer, SessionInfo: Win32Pointer): number;
   /** iscsidsc.dll!GetIScsiTargetInformationA */
-  GetIScsiTargetInformationA(TargetName: string | Win32Pointer, DiscoveryMechanism: string | Win32Pointer, InfoClass: number, BufferSize: Win32Pointer, Buffer: Win32Pointer): number;
+  GetIScsiTargetInformationA(
+    TargetName: string | Win32Pointer,
+    DiscoveryMechanism: string | Win32Pointer,
+    InfoClass: number,
+    BufferSize: Win32Pointer,
+    Buffer: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!GetIScsiTargetInformationW */
-  GetIScsiTargetInformationW(TargetName: string | Win32Pointer, DiscoveryMechanism: string | Win32Pointer, InfoClass: number, BufferSize: Win32Pointer, Buffer: Win32Pointer): number;
+  GetIScsiTargetInformationW(
+    TargetName: string | Win32Pointer,
+    DiscoveryMechanism: string | Win32Pointer,
+    InfoClass: number,
+    BufferSize: Win32Pointer,
+    Buffer: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!GetIScsiTargetInformationW */
-  GetIScsiTargetInformation(TargetName: string | Win32Pointer, DiscoveryMechanism: string | Win32Pointer, InfoClass: number, BufferSize: Win32Pointer, Buffer: Win32Pointer): number;
+  GetIScsiTargetInformation(
+    TargetName: string | Win32Pointer,
+    DiscoveryMechanism: string | Win32Pointer,
+    InfoClass: number,
+    BufferSize: Win32Pointer,
+    Buffer: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!GetIScsiVersionInformation */
   GetIScsiVersionInformation(VersionInfo: Win32Pointer): number;
   /** iscsidsc.dll!LoginIScsiTargetA */
-  LoginIScsiTargetA(TargetName: string | Win32Pointer, IsInformationalSession: number, InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, TargetPortal: Win32Pointer, SecurityFlags: number | bigint, Mappings: Win32Pointer, LoginOptions: Win32Pointer, KeySize: number, Key: string | Win32Pointer, IsPersistent: number, UniqueSessionId: Win32Pointer, UniqueConnectionId: Win32Pointer): number;
+  LoginIScsiTargetA(
+    TargetName: string | Win32Pointer,
+    IsInformationalSession: number,
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    TargetPortal: Win32Pointer,
+    SecurityFlags: number | bigint,
+    Mappings: Win32Pointer,
+    LoginOptions: Win32Pointer,
+    KeySize: number,
+    Key: string | Win32Pointer,
+    IsPersistent: number,
+    UniqueSessionId: Win32Pointer,
+    UniqueConnectionId: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!LoginIScsiTargetW */
-  LoginIScsiTargetW(TargetName: string | Win32Pointer, IsInformationalSession: number, InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, TargetPortal: Win32Pointer, SecurityFlags: number | bigint, Mappings: Win32Pointer, LoginOptions: Win32Pointer, KeySize: number, Key: string | Win32Pointer, IsPersistent: number, UniqueSessionId: Win32Pointer, UniqueConnectionId: Win32Pointer): number;
+  LoginIScsiTargetW(
+    TargetName: string | Win32Pointer,
+    IsInformationalSession: number,
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    TargetPortal: Win32Pointer,
+    SecurityFlags: number | bigint,
+    Mappings: Win32Pointer,
+    LoginOptions: Win32Pointer,
+    KeySize: number,
+    Key: string | Win32Pointer,
+    IsPersistent: number,
+    UniqueSessionId: Win32Pointer,
+    UniqueConnectionId: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!LoginIScsiTargetW */
-  LoginIScsiTarget(TargetName: string | Win32Pointer, IsInformationalSession: number, InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, TargetPortal: Win32Pointer, SecurityFlags: number | bigint, Mappings: Win32Pointer, LoginOptions: Win32Pointer, KeySize: number, Key: string | Win32Pointer, IsPersistent: number, UniqueSessionId: Win32Pointer, UniqueConnectionId: Win32Pointer): number;
+  LoginIScsiTarget(
+    TargetName: string | Win32Pointer,
+    IsInformationalSession: number,
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    TargetPortal: Win32Pointer,
+    SecurityFlags: number | bigint,
+    Mappings: Win32Pointer,
+    LoginOptions: Win32Pointer,
+    KeySize: number,
+    Key: string | Win32Pointer,
+    IsPersistent: number,
+    UniqueSessionId: Win32Pointer,
+    UniqueConnectionId: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!LogoutIScsiTarget */
   LogoutIScsiTarget(UniqueSessionId: Win32Pointer): number;
   /** iscsidsc.dll!RefreshISNSServerA */
@@ -89,11 +236,23 @@ interface Functions {
   /** iscsidsc.dll!RefreshISNSServerW */
   RefreshISNSServer(Address: string | Win32Pointer): number;
   /** iscsidsc.dll!RefreshIScsiSendTargetPortalA */
-  RefreshIScsiSendTargetPortalA(InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, Portal: Win32Pointer): number;
+  RefreshIScsiSendTargetPortalA(
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    Portal: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!RefreshIScsiSendTargetPortalW */
-  RefreshIScsiSendTargetPortalW(InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, Portal: Win32Pointer): number;
+  RefreshIScsiSendTargetPortalW(
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    Portal: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!RefreshIScsiSendTargetPortalW */
-  RefreshIScsiSendTargetPortal(InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, Portal: Win32Pointer): number;
+  RefreshIScsiSendTargetPortal(
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    Portal: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!RemoveISNSServerA */
   RemoveISNSServerA(Address: string | Win32Pointer): number;
   /** iscsidsc.dll!RemoveISNSServerW */
@@ -103,17 +262,44 @@ interface Functions {
   /** iscsidsc.dll!RemoveIScsiConnection */
   RemoveIScsiConnection(UniqueSessionId: Win32Pointer, ConnectionId: Win32Pointer): number;
   /** iscsidsc.dll!RemoveIScsiPersistentTargetA */
-  RemoveIScsiPersistentTargetA(InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, TargetName: string | Win32Pointer, Portal: Win32Pointer): number;
+  RemoveIScsiPersistentTargetA(
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    TargetName: string | Win32Pointer,
+    Portal: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!RemoveIScsiPersistentTargetW */
-  RemoveIScsiPersistentTargetW(InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, TargetName: string | Win32Pointer, Portal: Win32Pointer): number;
+  RemoveIScsiPersistentTargetW(
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    TargetName: string | Win32Pointer,
+    Portal: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!RemoveIScsiPersistentTargetW */
-  RemoveIScsiPersistentTarget(InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, TargetName: string | Win32Pointer, Portal: Win32Pointer): number;
+  RemoveIScsiPersistentTarget(
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    TargetName: string | Win32Pointer,
+    Portal: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!RemoveIScsiSendTargetPortalA */
-  RemoveIScsiSendTargetPortalA(InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, Portal: Win32Pointer): number;
+  RemoveIScsiSendTargetPortalA(
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    Portal: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!RemoveIScsiSendTargetPortalW */
-  RemoveIScsiSendTargetPortalW(InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, Portal: Win32Pointer): number;
+  RemoveIScsiSendTargetPortalW(
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    Portal: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!RemoveIScsiSendTargetPortalW */
-  RemoveIScsiSendTargetPortal(InitiatorInstance: string | Win32Pointer, InitiatorPortNumber: number, Portal: Win32Pointer): number;
+  RemoveIScsiSendTargetPortal(
+    InitiatorInstance: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    Portal: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!RemoveIScsiStaticTargetA */
   RemoveIScsiStaticTargetA(TargetName: string | Win32Pointer): number;
   /** iscsidsc.dll!RemoveIScsiStaticTargetW */
@@ -133,9 +319,17 @@ interface Functions {
   /** iscsidsc.dll!RemoveRadiusServerW */
   RemoveRadiusServer(Address: string | Win32Pointer): number;
   /** iscsidsc.dll!ReportActiveIScsiTargetMappingsA */
-  ReportActiveIScsiTargetMappingsA(BufferSize: Win32Pointer, MappingCount: Win32Pointer, Mappings: Win32Pointer): number;
+  ReportActiveIScsiTargetMappingsA(
+    BufferSize: Win32Pointer,
+    MappingCount: Win32Pointer,
+    Mappings: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!ReportActiveIScsiTargetMappingsW */
-  ReportActiveIScsiTargetMappingsW(BufferSize: Win32Pointer, MappingCount: Win32Pointer, Mappings: Win32Pointer): number;
+  ReportActiveIScsiTargetMappingsW(
+    BufferSize: Win32Pointer,
+    MappingCount: Win32Pointer,
+    Mappings: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!ReportActiveIScsiTargetMappingsW */
   ReportActiveIScsiTargetMappings(BufferSize: Win32Pointer, MappingCount: Win32Pointer, Mappings: Win32Pointer): number;
   /** iscsidsc.dll!ReportISNSServerListA */
@@ -151,29 +345,71 @@ interface Functions {
   /** iscsidsc.dll!ReportIScsiInitiatorListW */
   ReportIScsiInitiatorList(BufferSize: Win32Pointer, Buffer: string | Win32Pointer): number;
   /** iscsidsc.dll!ReportIScsiPersistentLoginsA */
-  ReportIScsiPersistentLoginsA(Count: Win32Pointer, PersistentLoginInfo: Win32Pointer, BufferSizeInBytes: Win32Pointer): number;
+  ReportIScsiPersistentLoginsA(
+    Count: Win32Pointer,
+    PersistentLoginInfo: Win32Pointer,
+    BufferSizeInBytes: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!ReportIScsiPersistentLoginsW */
-  ReportIScsiPersistentLoginsW(Count: Win32Pointer, PersistentLoginInfo: Win32Pointer, BufferSizeInBytes: Win32Pointer): number;
+  ReportIScsiPersistentLoginsW(
+    Count: Win32Pointer,
+    PersistentLoginInfo: Win32Pointer,
+    BufferSizeInBytes: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!ReportIScsiPersistentLoginsW */
-  ReportIScsiPersistentLogins(Count: Win32Pointer, PersistentLoginInfo: Win32Pointer, BufferSizeInBytes: Win32Pointer): number;
+  ReportIScsiPersistentLogins(
+    Count: Win32Pointer,
+    PersistentLoginInfo: Win32Pointer,
+    BufferSizeInBytes: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!ReportIScsiSendTargetPortalsA */
   ReportIScsiSendTargetPortalsA(PortalCount: Win32Pointer, PortalInfo: Win32Pointer): number;
   /** iscsidsc.dll!ReportIScsiSendTargetPortalsExA */
-  ReportIScsiSendTargetPortalsExA(PortalCount: Win32Pointer, PortalInfoSize: Win32Pointer, PortalInfo: Win32Pointer): number;
+  ReportIScsiSendTargetPortalsExA(
+    PortalCount: Win32Pointer,
+    PortalInfoSize: Win32Pointer,
+    PortalInfo: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!ReportIScsiSendTargetPortalsExW */
-  ReportIScsiSendTargetPortalsExW(PortalCount: Win32Pointer, PortalInfoSize: Win32Pointer, PortalInfo: Win32Pointer): number;
+  ReportIScsiSendTargetPortalsExW(
+    PortalCount: Win32Pointer,
+    PortalInfoSize: Win32Pointer,
+    PortalInfo: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!ReportIScsiSendTargetPortalsExW */
-  ReportIScsiSendTargetPortalsEx(PortalCount: Win32Pointer, PortalInfoSize: Win32Pointer, PortalInfo: Win32Pointer): number;
+  ReportIScsiSendTargetPortalsEx(
+    PortalCount: Win32Pointer,
+    PortalInfoSize: Win32Pointer,
+    PortalInfo: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!ReportIScsiSendTargetPortalsW */
   ReportIScsiSendTargetPortalsW(PortalCount: Win32Pointer, PortalInfo: Win32Pointer): number;
   /** iscsidsc.dll!ReportIScsiSendTargetPortalsW */
   ReportIScsiSendTargetPortals(PortalCount: Win32Pointer, PortalInfo: Win32Pointer): number;
   /** iscsidsc.dll!ReportIScsiTargetPortalsA */
-  ReportIScsiTargetPortalsA(InitiatorName: string | Win32Pointer, TargetName: string | Win32Pointer, TargetPortalTag: Win32Pointer, ElementCount: Win32Pointer, Portals: Win32Pointer): number;
+  ReportIScsiTargetPortalsA(
+    InitiatorName: string | Win32Pointer,
+    TargetName: string | Win32Pointer,
+    TargetPortalTag: Win32Pointer,
+    ElementCount: Win32Pointer,
+    Portals: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!ReportIScsiTargetPortalsW */
-  ReportIScsiTargetPortalsW(InitiatorName: string | Win32Pointer, TargetName: string | Win32Pointer, TargetPortalTag: Win32Pointer, ElementCount: Win32Pointer, Portals: Win32Pointer): number;
+  ReportIScsiTargetPortalsW(
+    InitiatorName: string | Win32Pointer,
+    TargetName: string | Win32Pointer,
+    TargetPortalTag: Win32Pointer,
+    ElementCount: Win32Pointer,
+    Portals: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!ReportIScsiTargetPortalsW */
-  ReportIScsiTargetPortals(InitiatorName: string | Win32Pointer, TargetName: string | Win32Pointer, TargetPortalTag: Win32Pointer, ElementCount: Win32Pointer, Portals: Win32Pointer): number;
+  ReportIScsiTargetPortals(
+    InitiatorName: string | Win32Pointer,
+    TargetName: string | Win32Pointer,
+    TargetPortalTag: Win32Pointer,
+    ElementCount: Win32Pointer,
+    Portals: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!ReportIScsiTargetsA */
   ReportIScsiTargetsA(ForceUpdate: number, BufferSize: Win32Pointer, Buffer: string | Win32Pointer): number;
   /** iscsidsc.dll!ReportIScsiTargetsW */
@@ -193,19 +429,59 @@ interface Functions {
   /** iscsidsc.dll!ReportRadiusServerListW */
   ReportRadiusServerList(BufferSizeInChar: Win32Pointer, Buffer: string | Win32Pointer): number;
   /** iscsidsc.dll!SendScsiInquiry */
-  SendScsiInquiry(UniqueSessionId: Win32Pointer, Lun: number | bigint, EvpdCmddt: number, PageCode: number, ScsiStatus: Win32Pointer, ResponseSize: Win32Pointer, ResponseBuffer: Win32Pointer, SenseSize: Win32Pointer, SenseBuffer: Win32Pointer): number;
+  SendScsiInquiry(
+    UniqueSessionId: Win32Pointer,
+    Lun: number | bigint,
+    EvpdCmddt: number,
+    PageCode: number,
+    ScsiStatus: Win32Pointer,
+    ResponseSize: Win32Pointer,
+    ResponseBuffer: Win32Pointer,
+    SenseSize: Win32Pointer,
+    SenseBuffer: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!SendScsiReadCapacity */
-  SendScsiReadCapacity(UniqueSessionId: Win32Pointer, Lun: number | bigint, ScsiStatus: Win32Pointer, ResponseSize: Win32Pointer, ResponseBuffer: Win32Pointer, SenseSize: Win32Pointer, SenseBuffer: Win32Pointer): number;
+  SendScsiReadCapacity(
+    UniqueSessionId: Win32Pointer,
+    Lun: number | bigint,
+    ScsiStatus: Win32Pointer,
+    ResponseSize: Win32Pointer,
+    ResponseBuffer: Win32Pointer,
+    SenseSize: Win32Pointer,
+    SenseBuffer: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!SendScsiReportLuns */
-  SendScsiReportLuns(UniqueSessionId: Win32Pointer, ScsiStatus: Win32Pointer, ResponseSize: Win32Pointer, ResponseBuffer: Win32Pointer, SenseSize: Win32Pointer, SenseBuffer: Win32Pointer): number;
+  SendScsiReportLuns(
+    UniqueSessionId: Win32Pointer,
+    ScsiStatus: Win32Pointer,
+    ResponseSize: Win32Pointer,
+    ResponseBuffer: Win32Pointer,
+    SenseSize: Win32Pointer,
+    SenseBuffer: Win32Pointer,
+  ): number;
   /** iscsidsc.dll!SetIScsiGroupPresharedKey */
   SetIScsiGroupPresharedKey(KeyLength: number, Key: Win32Pointer, Persist: number): number;
   /** iscsidsc.dll!SetIScsiIKEInfoA */
-  SetIScsiIKEInfoA(InitiatorName: string | Win32Pointer, InitiatorPortNumber: number, AuthInfo: Win32Pointer, Persist: number): number;
+  SetIScsiIKEInfoA(
+    InitiatorName: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    AuthInfo: Win32Pointer,
+    Persist: number,
+  ): number;
   /** iscsidsc.dll!SetIScsiIKEInfoW */
-  SetIScsiIKEInfoW(InitiatorName: string | Win32Pointer, InitiatorPortNumber: number, AuthInfo: Win32Pointer, Persist: number): number;
+  SetIScsiIKEInfoW(
+    InitiatorName: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    AuthInfo: Win32Pointer,
+    Persist: number,
+  ): number;
   /** iscsidsc.dll!SetIScsiIKEInfoW */
-  SetIScsiIKEInfo(InitiatorName: string | Win32Pointer, InitiatorPortNumber: number, AuthInfo: Win32Pointer, Persist: number): number;
+  SetIScsiIKEInfo(
+    InitiatorName: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    AuthInfo: Win32Pointer,
+    Persist: number,
+  ): number;
   /** iscsidsc.dll!SetIScsiInitiatorCHAPSharedSecret */
   SetIScsiInitiatorCHAPSharedSecret(SharedSecretLength: number, SharedSecret: Win32Pointer): number;
   /** iscsidsc.dll!SetIScsiInitiatorNodeNameA */
@@ -217,11 +493,29 @@ interface Functions {
   /** iscsidsc.dll!SetIScsiInitiatorRADIUSSharedSecret */
   SetIScsiInitiatorRADIUSSharedSecret(SharedSecretLength: number, SharedSecret: Win32Pointer): number;
   /** iscsidsc.dll!SetIScsiTunnelModeOuterAddressA */
-  SetIScsiTunnelModeOuterAddressA(InitiatorName: string | Win32Pointer, InitiatorPortNumber: number, DestinationAddress: string | Win32Pointer, OuterModeAddress: string | Win32Pointer, Persist: number): number;
+  SetIScsiTunnelModeOuterAddressA(
+    InitiatorName: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    DestinationAddress: string | Win32Pointer,
+    OuterModeAddress: string | Win32Pointer,
+    Persist: number,
+  ): number;
   /** iscsidsc.dll!SetIScsiTunnelModeOuterAddressW */
-  SetIScsiTunnelModeOuterAddressW(InitiatorName: string | Win32Pointer, InitiatorPortNumber: number, DestinationAddress: string | Win32Pointer, OuterModeAddress: string | Win32Pointer, Persist: number): number;
+  SetIScsiTunnelModeOuterAddressW(
+    InitiatorName: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    DestinationAddress: string | Win32Pointer,
+    OuterModeAddress: string | Win32Pointer,
+    Persist: number,
+  ): number;
   /** iscsidsc.dll!SetIScsiTunnelModeOuterAddressW */
-  SetIScsiTunnelModeOuterAddress(InitiatorName: string | Win32Pointer, InitiatorPortNumber: number, DestinationAddress: string | Win32Pointer, OuterModeAddress: string | Win32Pointer, Persist: number): number;
+  SetIScsiTunnelModeOuterAddress(
+    InitiatorName: string | Win32Pointer,
+    InitiatorPortNumber: number,
+    DestinationAddress: string | Win32Pointer,
+    OuterModeAddress: string | Win32Pointer,
+    Persist: number,
+  ): number;
   /** iscsidsc.dll!SetupPersistentIScsiDevices */
   SetupPersistentIScsiDevices(): number;
   /** iscsidsc.dll!SetupPersistentIScsiVolumes */

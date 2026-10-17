@@ -1,9 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import {
-  useLibraryQuery,
-  useLibraryMutation,
-  useSpacedriveClient,
-} from "../../../contexts/SpacedriveContext";
+import { useLibraryQuery, useLibraryMutation, useSpacedriveClient } from "../../../contexts/SpacedriveContext";
 import type { JobListItem } from "../types";
 
 export function useJobManager() {
@@ -55,8 +51,8 @@ export function useJobManager() {
         const progressData = event.JobProgress;
         if (!progressData) return;
 
-        setJobs((prev) =>
-          prev.map((job) => {
+        setJobs(prev =>
+          prev.map(job => {
             if (job.id !== progressData.job_id) return job;
 
             const generic = progressData.generic_progress;
@@ -89,7 +85,7 @@ export function useJobManager() {
       ],
     };
 
-    client.subscribeFiltered(filter, handleEvent).then((unsub) => {
+    client.subscribeFiltered(filter, handleEvent).then(unsub => {
       if (isCancelled) {
         unsub();
       } else {

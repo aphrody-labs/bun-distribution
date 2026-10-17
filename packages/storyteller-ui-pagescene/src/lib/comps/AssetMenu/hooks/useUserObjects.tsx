@@ -2,10 +2,7 @@ import { useCallback, useContext, useState, useRef } from "react";
 import { EngineContext } from "../../../contexts/EngineContext/EngineContext";
 import { FetchStatus } from "../../../enums";
 import type { FilterEngineCategories, FilterMediaType } from "../../../enums";
-import {
-  FetchMediaItemStates,
-  fetchUserMediaItems,
-} from "../utilities/fetchMediaItems";
+import { FetchMediaItemStates, fetchUserMediaItems } from "../utilities/fetchMediaItems";
 
 interface useUserObjectsProps {
   defaultErrorMessage: string;
@@ -21,23 +18,17 @@ export const useUserObjects = (props: useUserObjectsProps) => {
   const failedFetches = useRef<number>(0);
   const firstFetch = useRef<FetchStatus>(FetchStatus.READY);
 
-  const [
-    {
-      mediaItems: userObjects,
-      status: userFetchStatus,
-      nextPage: nextUserObjects,
-    },
-    setUserFetch,
-  ] = useState<FetchMediaItemStates>({
-    mediaItems: undefined,
-    status: FetchStatus.READY,
-  });
+  const [{ mediaItems: userObjects, status: userFetchStatus, nextPage: nextUserObjects }, setUserFetch] =
+    useState<FetchMediaItemStates>({
+      mediaItems: undefined,
+      status: FetchStatus.READY,
+    });
 
   const fetchUserObjects = useCallback(
     async (nextPageIndex?: number) => {
       if (!editor) return;
       let breakFlag = false;
-      setUserFetch((curr) => {
+      setUserFetch(curr => {
         if (curr.status === FetchStatus.IN_PROGRESS) {
           breakFlag = true;
           return curr;
@@ -51,12 +42,7 @@ export const useUserObjects = (props: useUserObjectsProps) => {
         return;
       }
 
-      const {
-        filterEngineCategories,
-        filterMediaTypes,
-        defaultErrorMessage,
-        suppressErrorToast,
-      } = props;
+      const { filterEngineCategories, filterMediaTypes, defaultErrorMessage, suppressErrorToast } = props;
       const result = await fetchUserMediaItems(
         {
           filterEngineCategories,
@@ -77,7 +63,7 @@ export const useUserObjects = (props: useUserObjectsProps) => {
         firstFetch.current = FetchStatus.SUCCESS;
       }
 
-      setUserFetch((curr) => ({
+      setUserFetch(curr => ({
         status: result.status,
         mediaItems: result.mediaItems
           ? curr.mediaItems && nextPageIndex

@@ -32,9 +32,7 @@ const MoodboardBackgroundInner = ({
 }: Props) => {
   const baseOnScreen = spacing * zoom;
   const lodStep =
-    baseOnScreen >= MIN_SCREEN_SPACING
-      ? 0
-      : Math.ceil(Math.log2(MIN_SCREEN_SPACING / Math.max(baseOnScreen, 1e-6)));
+    baseOnScreen >= MIN_SCREEN_SPACING ? 0 : Math.ceil(Math.log2(MIN_SCREEN_SPACING / Math.max(baseOnScreen, 1e-6)));
   const effectiveSpacing = spacing * Math.pow(2, lodStep);
   const radius = dotRadiusPx / Math.max(zoom, 1e-6);
 
@@ -44,10 +42,8 @@ const MoodboardBackgroundInner = ({
       y={0}
       listening={false}
       sceneFunc={(ctx: Konva.Context, shape) => {
-        const startX =
-          Math.floor(viewport.x / effectiveSpacing) * effectiveSpacing;
-        const startY =
-          Math.floor(viewport.y / effectiveSpacing) * effectiveSpacing;
+        const startX = Math.floor(viewport.x / effectiveSpacing) * effectiveSpacing;
+        const startY = Math.floor(viewport.y / effectiveSpacing) * effectiveSpacing;
         const endX = viewport.x + viewport.width;
         const endY = viewport.y + viewport.height;
         ctx.fillStyle = dotColor;

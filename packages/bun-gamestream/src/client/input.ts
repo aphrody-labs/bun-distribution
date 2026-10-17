@@ -43,7 +43,7 @@ export function captureInput(
   // Relative motion is accumulated and flushed once per animation frame.
   let dx = 0;
   let dy = 0;
-  stage.addEventListener("pointermove", (event) => {
+  stage.addEventListener("pointermove", event => {
     if (locked()) {
       dx += event.movementX;
       dy += event.movementY;
@@ -56,16 +56,12 @@ export function captureInput(
       y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
     });
   });
-  stage.addEventListener("pointerdown", (event) =>
-    emit({ t: "mb", b: event.button, d: true }),
-  );
-  stage.addEventListener("pointerup", (event) =>
-    emit({ t: "mb", b: event.button, d: false }),
-  );
-  stage.addEventListener("contextmenu", (event) => event.preventDefault());
+  stage.addEventListener("pointerdown", event => emit({ t: "mb", b: event.button, d: true }));
+  stage.addEventListener("pointerup", event => emit({ t: "mb", b: event.button, d: false }));
+  stage.addEventListener("contextmenu", event => event.preventDefault());
   stage.addEventListener(
     "wheel",
-    (event) => {
+    event => {
       event.preventDefault();
       if (event.deltaY !== 0) emit({ t: "mw", dy: Math.sign(event.deltaY) });
     },
@@ -91,12 +87,8 @@ export function captureInput(
     }
     for (const pad of navigator.getGamepads()) {
       if (!pad || pad.mapping !== "standard") continue;
-      const b = pad.buttons.map(
-        (button) => Math.round(button.value * 100) / 100,
-      );
-      const a = pad.axes.map((axis) =>
-        Math.abs(axis) < 0.05 ? 0 : Math.round(axis * 1000) / 1000,
-      );
+      const b = pad.buttons.map(button => Math.round(button.value * 100) / 100);
+      const a = pad.axes.map(axis => (Math.abs(axis) < 0.05 ? 0 : Math.round(axis * 1000) / 1000));
       const key = `${b.join()}|${a.join()}`;
       if (last.get(pad.index) === key) continue;
       last.set(pad.index, key);

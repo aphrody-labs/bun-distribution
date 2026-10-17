@@ -1,8 +1,5 @@
 import { useEffect } from "react";
-import {
-  isEventFromEditableElement,
-  useResolvedKeybinds,
-} from "@storyteller/keybinds";
+import { isEventFromEditableElement, useResolvedKeybinds } from "@storyteller/keybinds";
 
 // Unified 2D-editor keyboard handling, resolved from the shared keybinds store
 // (so Settings → Keybinds can rebind these). Replaces the three ad-hoc hooks
@@ -22,9 +19,7 @@ export interface PagedrawKeybindHandlers {
   onBrushSizeDown: () => void;
 }
 
-export const usePagedrawKeybinds = (
-  handlers: PagedrawKeybindHandlers,
-): void => {
+export const usePagedrawKeybinds = (handlers: PagedrawKeybindHandlers): void => {
   const { matchAction } = useResolvedKeybinds();
   const {
     undo,

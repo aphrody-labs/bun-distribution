@@ -33,7 +33,11 @@ fn root(hive: Hive) -> HKEY {
 }
 
 fn check(status: WIN32_ERROR, context: impl FnOnce() -> String) -> io::Result<()> {
-    if status == ERROR_SUCCESS { Ok(()) } else { Err(win32_error(status, &context())) }
+    if status == ERROR_SUCCESS {
+        Ok(())
+    } else {
+        Err(win32_error(status, &context()))
+    }
 }
 
 /// An open registry key, closed on drop.
@@ -68,7 +72,9 @@ fn open(hive: Hive, subkey: &str, access: REG_SAM_FLAGS) -> io::Result<Key> {
     let mut handle = HKEY::default();
     // SAFETY: `name` is NUL-terminated and `handle` receives the opened key.
     let status = unsafe { RegOpenKeyExW(root(hive), pcwstr(&name), None, access, &mut handle) };
-    check(status, || format!("open registry key {}\\{subkey}", hive.long_name()))?;
+    check(status, || {
+        format!("open registry key {}\\{subkey}", hive.long_name())
+    })?;
     Ok(Key(handle))
 }
 
@@ -90,7 +96,9 @@ pub(crate) fn create(hive: Hive, subkey: &str) -> io::Result<Key> {
             None,
         )
     };
-    check(status, || format!("create registry key {}\\{subkey}", hive.long_name()))?;
+    check(status, || {
+        format!("create registry key {}\\{subkey}", hive.long_name())
+    })?;
     Ok(Key(handle))
 }
 
@@ -123,7 +131,11 @@ pub(crate) fn query_value(key: &Key, name: &str) -> io::Result<RawValue> {
         }
         check(status, || format!("read registry value '{name}'"))?;
         buffer.truncate(size as usize);
-        return Ok(RawValue { name: name.to_owned(), kind: kind.0, data: buffer });
+        return Ok(RawValue {
+            name: name.to_owned(),
+            kind: kind.0,
+            data: buffer,
+        });
     }
 }
 
@@ -236,7 +248,13 @@ pub(crate) fn set_value(key: &Key, name: &str, kind: u32, data: &[u8]) -> io::Re
     let wide_name = wide(name);
     // SAFETY: `wide_name` is NUL-terminated and `data` is a valid byte slice.
     let status = unsafe {
-        RegSetValueExW(key.0, pcwstr(&wide_name), None, REG_VALUE_TYPE(kind), Some(data))
+        RegSetValueExW(
+            key.0,
+            pcwstr(&wide_name),
+            None,
+            REG_VALUE_TYPE(kind),
+            Some(data),
+        )
     };
     check(status, || format!("write registry value '{name}'"))
 }
@@ -260,5 +278,7 @@ pub(crate) fn delete_tree(hive: Hive, subkey: &str) -> io::Result<()> {
     let name = wide(subkey);
     // SAFETY: `name` is NUL-terminated and names a sub-key of a predefined root.
     let status = unsafe { RegDeleteTreeW(root(hive), pcwstr(&name)) };
-    check(status, || format!("delete registry key {}\\{subkey}", hive.long_name()))
+    check(status, || {
+        format!("delete registry key {}\\{subkey}", hive.long_name())
+    })
 }

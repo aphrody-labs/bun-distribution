@@ -1,7 +1,7 @@
 //! IPC monitoring commands.
 
-use crate::mcp_bridge::monitor::{current_timestamp, IPCEvent, IPCMonitorState};
-use tauri::{command, Runtime, State, WebviewWindow};
+use crate::mcp_bridge::monitor::{IPCEvent, IPCMonitorState, current_timestamp};
+use tauri::{Runtime, State, WebviewWindow, command};
 
 /// Starts IPC monitoring to capture Tauri command calls.
 ///

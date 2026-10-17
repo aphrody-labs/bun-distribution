@@ -5,15 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import type { Target } from "@aphrody/m3-os-themes";
-import {
-  ROOT,
-  listPackages,
-  listTemplates,
-  lookupTokens,
-  researchLinks,
-  searchDocs,
-  validateTokens,
-} from "./catalog";
+import { ROOT, listPackages, listTemplates, lookupTokens, researchLinks, searchDocs, validateTokens } from "./catalog";
 
 // The theme generators (16 ms with m3-tokens) and the symbol catalogue are loaded by the tools that use them, not at
 // start-up: listing the tools never waits for them.
@@ -38,33 +30,24 @@ const text = (t: string): ToolResult => ({
 
 const themeInput = {
   seed: z.string().describe("Seed colour #rrggbb"),
-  target: z
-    .enum(["windows", "gnome", "cosmic", "chromium", "all"])
-    .default("all"),
+  target: z.enum(["windows", "gnome", "cosmic", "chromium", "all"]).default("all"),
   name: z.string().default("Aphrody"),
 };
 
-const limit = (fallback: number) =>
-  z.number().int().min(1).max(500).default(fallback);
+const limit = (fallback: number) => z.number().int().min(1).max(500).default(fallback);
 
 function tool<S extends z.ZodRawShape>(
   name: string,
   description: string,
   shape: S,
-  run: (
-    args: z.infer<z.ZodObject<S>>,
-    signal?: AbortSignal,
-  ) => Promise<ToolResult> | ToolResult,
+  run: (args: z.infer<z.ZodObject<S>>, signal?: AbortSignal) => Promise<ToolResult> | ToolResult,
 ): M3Tool {
   return { name, description, shape, run: run as M3Tool["run"] };
 }
 
 export const M3_TOOLS: M3Tool[] = [
-  tool(
-    "m3_list_packages",
-    "List the aphrody-m3 workspace packages with versions.",
-    {},
-    () => text(listPackages().join("\n")),
+  tool("m3_list_packages", "List the aphrody-m3 workspace packages with versions.", {}, () =>
+    text(listPackages().join("\n")),
   ),
   tool(
     "m3_token_lookup",
@@ -73,7 +56,7 @@ export const M3_TOOLS: M3Tool[] = [
     ({ query, limit: maximum }) =>
       text(
         lookupTokens(query, maximum)
-          .map((t) => `${t.name}: ${t.value}  [${t.source}]`)
+          .map(t => `${t.name}: ${t.value}  [${t.source}]`)
           .join("\n"),
       ),
   ),
@@ -97,7 +80,7 @@ export const M3_TOOLS: M3Tool[] = [
       const targets: readonly Target[] = target === "all" ? TARGETS : [target];
       return text(
         generate({ name, seed, mode: "auto" }, targets)
-          .map((f) => f.path)
+          .map(f => f.path)
           .join("\n"),
       );
     },
@@ -109,15 +92,9 @@ export const M3_TOOLS: M3Tool[] = [
     async ({ seed, target, name, path }) => {
       const { TARGETS, generate } = await osThemes();
       const targets: readonly Target[] = target === "all" ? TARGETS : [target];
-      const file = generate({ name, seed, mode: "auto" }, targets).find(
-        (f) => f.path === path,
-      );
+      const file = generate({ name, seed, mode: "auto" }, targets).find(f => f.path === path);
       if (!file) return text(`unknown path ${path}`);
-      return text(
-        typeof file.content === "string"
-          ? file.content
-          : `(binary, ${file.content.length} bytes)`,
-      );
+      return text(typeof file.content === "string" ? file.content : `(binary, ${file.content.length} bytes)`);
     },
   ),
   tool(
@@ -135,11 +112,8 @@ export const M3_TOOLS: M3Tool[] = [
       return text(`${r.files.join("\n")}\n\n${r.links.join("\n")}`);
     },
   ),
-  tool(
-    "m3_list_templates",
-    "List UI templates, examples and Tauri example apps.",
-    {},
-    () => text(listTemplates().join("\n")),
+  tool("m3_list_templates", "List UI templates, examples and Tauri example apps.", {}, () =>
+    text(listTemplates().join("\n")),
   ),
   tool(
     "m3_symbol_svg",
@@ -163,9 +137,7 @@ export const M3_TOOLS: M3Tool[] = [
     async ({ name, style, weight, filled }) => {
       const { symbolSvgPath } = await symbols();
       const p = symbolSvgPath(name, style, weight, filled);
-      return existsSync(p)
-        ? text(`${p}\n${readFileSync(p, "utf8")}`)
-        : text(`not found: ${p}`);
+      return existsSync(p) ? text(`${p}\n${readFileSync(p, "utf8")}`) : text(`not found: ${p}`);
     },
   ),
   tool(
@@ -175,11 +147,7 @@ export const M3_TOOLS: M3Tool[] = [
     async ({ query, limit: maximum }) => {
       const { searchSymbols, symbolNames } = await symbols();
       const hits = searchSymbols(query, maximum);
-      return text(
-        hits.length > 0
-          ? hits.join("\n")
-          : `no match among ${symbolNames().length} symbols`,
-      );
+      return text(hits.length > 0 ? hits.join("\n") : `no match among ${symbolNames().length} symbols`);
     },
   ),
   tool(
@@ -231,7 +199,7 @@ export function listM3Tools(): {
   description: string;
   inputSchema: unknown;
 }[] {
-  return M3_TOOLS.map((t) => ({
+  return M3_TOOLS.map(t => ({
     name: t.name,
     description: t.description,
     inputSchema: z.toJSONSchema(z.object(t.shape)),
@@ -239,12 +207,8 @@ export function listM3Tools(): {
 }
 
 /** Validate the arguments with the tool's schema, then run it; failures are `isError` results. */
-export async function callM3Tool(
-  name: string,
-  args: unknown,
-  signal?: AbortSignal,
-): Promise<ToolResult> {
-  const found = M3_TOOLS.find((t) => t.name === name);
+export async function callM3Tool(name: string, args: unknown, signal?: AbortSignal): Promise<ToolResult> {
+  const found = M3_TOOLS.find(t => t.name === name);
   if (!found) return { ...text(`unknown tool ${name}`), isError: true };
   const parsed = z.object(found.shape).safeParse(args ?? {});
   if (!parsed.success) return { ...text(parsed.error.message), isError: true };

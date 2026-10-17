@@ -19,11 +19,7 @@ import {
 const CUSTOM_MASK_ANCHOR_SIZE = 7;
 import { Rotate01Icon, FeatherIcon } from "@hugeicons/core-free-icons";
 
-export function MaskHandles({
-  onSnapLinesChange,
-}: {
-  onSnapLinesChange?: (lines: SnapLine[]) => void;
-}) {
+export function MaskHandles({ onSnapLinesChange }: { onSnapLinesChange?: (lines: SnapLine[]) => void }) {
   const viewport = usePreviewViewport();
   const {
     selectedWithMask,
@@ -38,13 +34,7 @@ export function MaskHandles({
 
   if (!selectedWithMask) return null;
 
-  const toOverlay = ({
-    canvasX,
-    canvasY,
-  }: {
-    canvasX: number;
-    canvasY: number;
-  }) =>
+  const toOverlay = ({ canvasX, canvasY }: { canvasX: number; canvasY: number }) =>
     viewport.canvasToOverlay({
       canvasX,
       canvasY,
@@ -67,13 +57,7 @@ export function MaskHandles({
 
     handlePointerUp();
   };
-  const handleMaskPointerDown = ({
-    event,
-    handleId,
-  }: {
-    event: React.PointerEvent;
-    handleId: MaskHandleId;
-  }) => {
+  const handleMaskPointerDown = ({ event, handleId }: { event: React.PointerEvent; handleId: MaskHandleId }) => {
     if (viewport.handlePanPointerDown({ event })) {
       return;
     }
@@ -89,10 +73,7 @@ export function MaskHandles({
   };
 
   return (
-    <div
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-      aria-hidden
-    >
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       {isCreatingFreeformPathMask ? (
         <div
           className="absolute inset-0 pointer-events-auto"
@@ -103,12 +84,11 @@ export function MaskHandles({
           onPointerCancel={onPointerUp}
         />
       ) : null}
-      {overlays.map((overlay) => {
+      {overlays.map(overlay => {
         const overlayHandleId = overlay.handleId;
         const pointerHandlers = overlayHandleId
           ? {
-              onPointerDown: (event: React.PointerEvent) =>
-                handleMaskPointerDown({ event, handleId: overlayHandleId }),
+              onPointerDown: (event: React.PointerEvent) => handleMaskPointerDown({ event, handleId: overlayHandleId }),
               onPointerMove,
               onPointerUp,
             }
@@ -173,12 +153,8 @@ export function MaskHandles({
             <CanvasPathOutline
               key={overlay.id}
               pathData={overlay.pathData}
-              translateX={
-                overlay.coordinateSpace === "canvas" ? canvasOrigin.x : 0
-              }
-              translateY={
-                overlay.coordinateSpace === "canvas" ? canvasOrigin.y : 0
-              }
+              translateX={overlay.coordinateSpace === "canvas" ? canvasOrigin.x : 0}
+              translateY={overlay.coordinateSpace === "canvas" ? canvasOrigin.y : 0}
               scaleX={overlay.coordinateSpace === "canvas" ? scaleX : 1}
               scaleY={overlay.coordinateSpace === "canvas" ? scaleY : 1}
               cursor={overlay.cursor}
@@ -191,7 +167,7 @@ export function MaskHandles({
 
         return null;
       })}
-      {handlePositions.map((handle) => {
+      {handlePositions.map(handle => {
         const screen = toOverlay({ canvasX: handle.x, canvasY: handle.y });
         const key = maskHandleIdKey({ id: handle.id });
 
@@ -201,9 +177,7 @@ export function MaskHandles({
               key={key}
               icon={Rotate01Icon}
               screen={screen}
-              onPointerDown={(event) =>
-                handleMaskPointerDown({ event, handleId: handle.id })
-              }
+              onPointerDown={event => handleMaskPointerDown({ event, handleId: handle.id })}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
             />
@@ -216,9 +190,7 @@ export function MaskHandles({
               key={key}
               icon={FeatherIcon}
               screen={screen}
-              onPointerDown={(event) =>
-                handleMaskPointerDown({ event, handleId: handle.id })
-              }
+              onPointerDown={event => handleMaskPointerDown({ event, handleId: handle.id })}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
             />
@@ -232,9 +204,7 @@ export function MaskHandles({
               edge="right"
               screen={screen}
               rotation={handle.rotation ?? 0}
-              onPointerDown={(event) =>
-                handleMaskPointerDown({ event, handleId: handle.id })
-              }
+              onPointerDown={event => handleMaskPointerDown({ event, handleId: handle.id })}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
             />
@@ -248,9 +218,7 @@ export function MaskHandles({
               edge="bottom"
               screen={screen}
               rotation={handle.rotation ?? 0}
-              onPointerDown={(event) =>
-                handleMaskPointerDown({ event, handleId: handle.id })
-              }
+              onPointerDown={event => handleMaskPointerDown({ event, handleId: handle.id })}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
             />
@@ -264,9 +232,7 @@ export function MaskHandles({
               screen={screen}
               size={CUSTOM_MASK_ANCHOR_SIZE}
               isSelected={handle.isSelected}
-              onPointerDown={(event) =>
-                handleMaskPointerDown({ event, handleId: handle.id })
-              }
+              onPointerDown={event => handleMaskPointerDown({ event, handleId: handle.id })}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
             />
@@ -278,9 +244,7 @@ export function MaskHandles({
             <CornerHandle
               key={key}
               screen={screen}
-              onPointerDown={(event) =>
-                handleMaskPointerDown({ event, handleId: handle.id })
-              }
+              onPointerDown={event => handleMaskPointerDown({ event, handleId: handle.id })}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
             />
@@ -292,9 +256,7 @@ export function MaskHandles({
             key={key}
             cursor={handle.cursor}
             screen={screen}
-            onPointerDown={(event) =>
-              handleMaskPointerDown({ event, handleId: handle.id })
-            }
+            onPointerDown={event => handleMaskPointerDown({ event, handleId: handle.id })}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
           />

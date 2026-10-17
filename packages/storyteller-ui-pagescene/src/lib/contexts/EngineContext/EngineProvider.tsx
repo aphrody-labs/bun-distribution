@@ -29,13 +29,7 @@ interface Props {
 // decides when this provider is mounted (e.g. only when the 3D tab is
 // active). When the canvases unmount, callback refs nulled in
 // PageSceneStore drive the cleanup branch of this effect.
-export const EngineProvider = ({
-  sceneToken,
-  adapter,
-  cacheJsonString,
-  onSceneSerialized,
-  children,
-}: Props) => {
+export const EngineProvider = ({ sceneToken, adapter, cacheJsonString, onSceneSerialized, children }: Props) => {
   const [editor, setEditor] = useState<Editor | null>(null);
   // Hold the latest cache + serialize callback in refs so the engine
   // lifecycle effect can read them in cleanup without re-running on
@@ -50,9 +44,9 @@ export const EngineProvider = ({
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
 
-  const sceneContainer = usePageSceneStore((s) => s.sceneContainerEl);
-  const editorCanvas = usePageSceneStore((s) => s.editorCanvasEl);
-  const camViewCanvas = usePageSceneStore((s) => s.camViewCanvasEl);
+  const sceneContainer = usePageSceneStore(s => s.sceneContainerEl);
+  const editorCanvas = usePageSceneStore(s => s.editorCanvasEl);
+  const camViewCanvas = usePageSceneStore(s => s.camViewCanvasEl);
 
   useEffect(() => {
     // Engine construction happens once all three DOM nodes are
@@ -100,7 +94,5 @@ export const EngineProvider = ({
     };
   }, [sceneToken, sceneContainer, editorCanvas, camViewCanvas]);
 
-  return (
-    <EngineContext.Provider value={editor}>{children}</EngineContext.Provider>
-  );
+  return <EngineContext.Provider value={editor}>{children}</EngineContext.Provider>;
 };

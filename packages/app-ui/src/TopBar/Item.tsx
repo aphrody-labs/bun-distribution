@@ -18,14 +18,7 @@ interface TopBarItemProps {
   submenuContent?: React.ReactNode;
 }
 
-export function TopBarItem({
-  id,
-  label,
-  priority = "normal",
-  onClick,
-  children,
-  submenuContent,
-}: TopBarItemProps) {
+export function TopBarItem({ id, label, priority = "normal", onClick, children, submenuContent }: TopBarItemProps) {
   const { registerItem, unregisterItem } = useTopBar();
   const position = useTopBarPosition();
 
@@ -41,16 +34,7 @@ export function TopBarItem({
       element: children,
       submenuContent,
     });
-  }, [
-    id,
-    label,
-    priority,
-    position,
-    onClick,
-    registerItem,
-    children,
-    submenuContent,
-  ]);
+  }, [id, label, priority, position, onClick, registerItem, children, submenuContent]);
 
   // Unregister on unmount
   useEffect(() => {

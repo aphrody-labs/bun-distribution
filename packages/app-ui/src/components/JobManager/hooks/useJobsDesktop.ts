@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { sounds } from "@aphrody/assets/sounds";
-import {
-  useJobs as useJobsCore,
-  type UseJobsReturn,
-  type ExtendedJobListItem,
-} from "@aphrody/drive-client";
+import { useJobs as useJobsCore, type UseJobsReturn, type ExtendedJobListItem } from "@aphrody/drive-client";
 import { useVolumeIndexingStore } from "../../../stores/volumeIndexingStore";
 import { useAphrodyJobStore } from "../../../stores/aphrodyJobStore";
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -25,10 +21,10 @@ const SOUND_THROTTLE_MS = 5000;
  */
 export function useJobs(): UseJobsReturn {
   const { setVolumeJob, clearVolumeJob } = useVolumeIndexingStore();
-  const aphrodyJobs = useAphrodyJobStore((s) => s.jobs);
-  const pauseAphrodyJob = useAphrodyJobStore((s) => s.pauseJob);
-  const resumeAphrodyJob = useAphrodyJobStore((s) => s.resumeJob);
-  const cancelAphrodyJob = useAphrodyJobStore((s) => s.cancelJob);
+  const aphrodyJobs = useAphrodyJobStore(s => s.jobs);
+  const pauseAphrodyJob = useAphrodyJobStore(s => s.pauseJob);
+  const resumeAphrodyJob = useAphrodyJobStore(s => s.resumeJob);
+  const cancelAphrodyJob = useAphrodyJobStore(s => s.cancelJob);
 
   const jobs = useJobsCore({
     onJobCompleted: (jobId, jobType) => {
@@ -52,7 +48,7 @@ export function useJobs(): UseJobsReturn {
 
   // Play completion sound for Aphrody AI jobs
   useEffect(() => {
-    aphrodyJobs.forEach((aj) => {
+    aphrodyJobs.forEach(aj => {
       if (aj.status === "completed" && !completedJobSounds.has(aj.id)) {
         completedJobSounds.add(aj.id);
         const now = Date.now();
@@ -68,7 +64,7 @@ export function useJobs(): UseJobsReturn {
   // Map Aphrody AI jobs to ExtendedJobListItem structure
   const mappedAphrodyJobs: ExtendedJobListItem[] = useMemo(() => {
     return aphrodyJobs.map(
-      (aj) =>
+      aj =>
         ({
           id: aj.id,
           device_id: "0",
@@ -106,21 +102,16 @@ export function useJobs(): UseJobsReturn {
   }, [mappedAphrodyJobs, jobs.jobs]);
 
   const combinedActiveCount = useMemo(() => {
-    return combinedJobs.filter(
-      (j) =>
-        j.status === "running" ||
-        j.status === "paused" ||
-        j.status === "queued",
-    ).length;
+    return combinedJobs.filter(j => j.status === "running" || j.status === "paused" || j.status === "queued").length;
   }, [combinedJobs]);
 
   const combinedHasRunning = useMemo(() => {
-    return combinedJobs.some((j) => j.status === "running");
+    return combinedJobs.some(j => j.status === "running");
   }, [combinedJobs]);
 
   const handlePause = useCallback(
     async (jobId: string) => {
-      if (aphrodyJobs.some((j) => j.id === jobId)) {
+      if (aphrodyJobs.some(j => j.id === jobId)) {
         await pauseAphrodyJob(jobId);
       } else {
         await jobs.pause(jobId);
@@ -131,7 +122,7 @@ export function useJobs(): UseJobsReturn {
 
   const handleResume = useCallback(
     async (jobId: string) => {
-      if (aphrodyJobs.some((j) => j.id === jobId)) {
+      if (aphrodyJobs.some(j => j.id === jobId)) {
         await resumeAphrodyJob(jobId);
       } else {
         await jobs.resume(jobId);
@@ -142,7 +133,7 @@ export function useJobs(): UseJobsReturn {
 
   const handleCancel = useCallback(
     async (jobId: string) => {
-      if (aphrodyJobs.some((j) => j.id === jobId)) {
+      if (aphrodyJobs.some(j => j.id === jobId)) {
         await cancelAphrodyJob(jobId);
       } else {
         await jobs.cancel(jobId);
@@ -153,7 +144,7 @@ export function useJobs(): UseJobsReturn {
 
   const handleGetSpeedHistory = useCallback(
     (jobId: string) => {
-      if (aphrodyJobs.some((j) => j.id === jobId)) {
+      if (aphrodyJobs.some(j => j.id === jobId)) {
         return [];
       }
       return jobs.getSpeedHistory(jobId);
@@ -169,7 +160,7 @@ export function useJobs(): UseJobsReturn {
 
   // Track volume indexing jobs
   useEffect(() => {
-    jobs.jobs.forEach((job) => {
+    jobs.jobs.forEach(job => {
       if (job.name === "indexer" && job.status === "running") {
         const context = job.action_context?.context as any;
         const volumeFingerprint = context?.volume_fingerprint;
@@ -182,15 +173,10 @@ export function useJobs(): UseJobsReturn {
 
   // Clear volume jobs on completion/failure/cancellation
   useEffect(() => {
-    const runningIndexerJobs = jobs.jobs.filter(
-      (j) => j.name === "indexer" && j.status === "running",
-    );
+    const runningIndexerJobs = jobs.jobs.filter(j => j.name === "indexer" && j.status === "running");
 
-    jobsRef.current.forEach((prevJob) => {
-      if (
-        prevJob.name === "indexer" &&
-        !runningIndexerJobs.find((j) => j.id === prevJob.id)
-      ) {
+    jobsRef.current.forEach(prevJob => {
+      if (prevJob.name === "indexer" && !runningIndexerJobs.find(j => j.id === prevJob.id)) {
         const context = prevJob.action_context?.context as any;
         const volumeFingerprint = context?.volume_fingerprint;
         if (volumeFingerprint && typeof volumeFingerprint === "string") {

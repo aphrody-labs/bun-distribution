@@ -1,21 +1,8 @@
-import {
-  CameraAspectRatio,
-  fromEngineActions,
-  QueueNames,
-  toEngineActions,
-  toTimelineActions,
-} from "../enums";
-import {
-  IGenerationOptions,
-  MediaItem,
-  QueueClip,
-  QueueKeyframe,
-  UpdateTime,
-} from "../interfaces";
+import { CameraAspectRatio, fromEngineActions, QueueNames, toEngineActions, toTimelineActions } from "../enums";
+import { IGenerationOptions, MediaItem, QueueClip, QueueKeyframe, UpdateTime } from "../interfaces";
 import { ToastDataType } from "./toast";
 
-export type UnionedActionTypes =
-  fromEngineActions | toEngineActions | toTimelineActions;
+export type UnionedActionTypes = fromEngineActions | toEngineActions | toTimelineActions;
 
 export type UnionedDataTypes =
   | QueueClip
@@ -32,10 +19,7 @@ export type QueueSubscribeType = {
   data: UnionedDataTypes;
 };
 
-export type SubscribeHandler = (entry: {
-  action: UnionedActionTypes;
-  data: UnionedDataTypes;
-}) => void;
+export type SubscribeHandler = (entry: { action: UnionedActionTypes; data: UnionedDataTypes }) => void;
 
 class Queue {
   private _queues: Record<
@@ -81,18 +65,12 @@ class Queue {
     // leading to potential race conditions
     // FIXME: Add some sort of queue loop using internal event and add queue locks using promises to serialize queue publishes
     if (this._subscribers[queueName]) {
-      this._subscribers[queueName].forEach((subcribeHandler) =>
-        subcribeHandler(this._queues[queueName][0]),
-      );
+      this._subscribers[queueName].forEach(subcribeHandler => subcribeHandler(this._queues[queueName][0]));
       this._queues[queueName].shift();
     }
   }
 
-  public subscribe(
-    queueName: QueueNames,
-    id: string,
-    onMessage: (entry: QueueSubscribeType) => void,
-  ) {
+  public subscribe(queueName: QueueNames, id: string, onMessage: (entry: QueueSubscribeType) => void) {
     // Queues for all QueueNames should be initialized above but this is a safeguard for future enum additions
     // Make sure the queue exists
     if (!this._subscribers[queueName]) {
@@ -103,9 +81,7 @@ class Queue {
     this._subscribers[queueName].set(id, onMessage);
 
     while (this._queues[queueName]?.length) {
-      this._subscribers[queueName].forEach((subscribeHandler) =>
-        subscribeHandler(this._queues[queueName][0]),
-      );
+      this._subscribers[queueName].forEach(subscribeHandler => subscribeHandler(this._queues[queueName][0]));
       this._queues[queueName].shift();
     }
   }

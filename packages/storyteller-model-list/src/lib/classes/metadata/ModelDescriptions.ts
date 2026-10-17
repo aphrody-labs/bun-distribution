@@ -87,10 +87,7 @@ const MODEL_INFOS: Record<string, string> = {
  *  object (which only exists after the single atomic models fetch resolves), a
  *  row never renders with the manual value and then swaps to the API one, so
  *  there's no flicker, including before the API has returned. */
-export function getModelDescription(
-  modelId: string,
-  apiDescription?: string | null,
-): string {
+export function getModelDescription(modelId: string, apiDescription?: string | null): string {
   if (apiDescription) return apiDescription;
   return MODEL_DESCRIPTIONS[modelId] ?? "";
 }

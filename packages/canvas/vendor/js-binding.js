@@ -21,7 +21,7 @@ const isMusl = () => {
   return musl;
 };
 
-const isFileMusl = (f) => f.includes("libc.musl-") || f.includes("ld-musl-");
+const isFileMusl = f => f.includes("libc.musl-") || f.includes("ld-musl-");
 
 const isMuslFromFilesystem = () => {
   try {
@@ -53,9 +53,7 @@ const isMuslFromReport = () => {
 
 const isMuslFromChildProcess = () => {
   try {
-    return require("child_process")
-      .execSync("ldd --version", { encoding: "utf8" })
-      .includes("musl");
+    return require("child_process").execSync("ldd --version", { encoding: "utf8" }).includes("musl");
   } catch (e) {
     // If we reach this case, we don't know if the system is musl or not, so is better to just fallback to false
     return false;
@@ -93,9 +91,7 @@ function requireNative() {
         loadErrors.push(e);
       }
     } else {
-      loadErrors.push(
-        new Error(`Unsupported architecture on Android ${process.arch}`),
-      );
+      loadErrors.push(new Error(`Unsupported architecture on Android ${process.arch}`));
     }
   } else if (process.platform === "win32") {
     if (process.arch === "x64") {
@@ -148,9 +144,7 @@ function requireNative() {
         loadErrors.push(e);
       }
     } else {
-      loadErrors.push(
-        new Error(`Unsupported architecture on Windows: ${process.arch}`),
-      );
+      loadErrors.push(new Error(`Unsupported architecture on Windows: ${process.arch}`));
     }
   } else if (process.platform === "darwin") {
     try {
@@ -186,9 +180,7 @@ function requireNative() {
         loadErrors.push(e);
       }
     } else {
-      loadErrors.push(
-        new Error(`Unsupported architecture on macOS: ${process.arch}`),
-      );
+      loadErrors.push(new Error(`Unsupported architecture on macOS: ${process.arch}`));
     }
   } else if (process.platform === "freebsd") {
     if (process.arch === "x64") {
@@ -214,9 +206,7 @@ function requireNative() {
         loadErrors.push(e);
       }
     } else {
-      loadErrors.push(
-        new Error(`Unsupported architecture on FreeBSD: ${process.arch}`),
-      );
+      loadErrors.push(new Error(`Unsupported architecture on FreeBSD: ${process.arch}`));
     }
   } else if (process.platform === "linux") {
     if (process.arch === "x64") {
@@ -362,9 +352,7 @@ function requireNative() {
         loadErrors.push(e);
       }
     } else {
-      loadErrors.push(
-        new Error(`Unsupported architecture on Linux: ${process.arch}`),
-      );
+      loadErrors.push(new Error(`Unsupported architecture on Linux: ${process.arch}`));
     }
   } else if (process.platform === "openharmony") {
     if (process.arch === "arm64") {
@@ -402,16 +390,10 @@ function requireNative() {
         loadErrors.push(e);
       }
     } else {
-      loadErrors.push(
-        new Error(`Unsupported architecture on OpenHarmony: ${process.arch}`),
-      );
+      loadErrors.push(new Error(`Unsupported architecture on OpenHarmony: ${process.arch}`));
     }
   } else {
-    loadErrors.push(
-      new Error(
-        `Unsupported OS: ${process.platform}, architecture: ${process.arch}`,
-      ),
-    );
+    loadErrors.push(new Error(`Unsupported OS: ${process.platform}, architecture: ${process.arch}`));
   }
 }
 
@@ -463,8 +445,7 @@ module.exports.GlobalFonts = nativeBinding.GlobalFonts;
 module.exports.CanvasElement = nativeBinding.CanvasElement;
 module.exports.CanvasGradient = nativeBinding.CanvasGradient;
 module.exports.CanvasPattern = nativeBinding.CanvasPattern;
-module.exports.CanvasRenderingContext2D =
-  nativeBinding.CanvasRenderingContext2D;
+module.exports.CanvasRenderingContext2D = nativeBinding.CanvasRenderingContext2D;
 module.exports.FontKey = nativeBinding.FontKey;
 module.exports.Image = nativeBinding.Image;
 module.exports.ImageData = nativeBinding.ImageData;

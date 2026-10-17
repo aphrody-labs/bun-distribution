@@ -54,15 +54,10 @@ test("the pack mirrors the grants of the peer: hosts with ssh, services with a p
 });
 
 test("a peer without ssh grants, an unknown peer, a hostile block or an unknown train host are refused", () => {
-  expect(() =>
-    buildAccessPack(TUNNEL, { peer: "wsl", wgBlock: BLOCK }),
-  ).not.toThrow();
-  expect(() =>
-    buildAccessPack(
-      { ...TUNNEL, grants: { omar: ["mcp-http"] } },
-      { peer: "omar" },
-    ),
-  ).toThrow("aucun accès SSH");
+  expect(() => buildAccessPack(TUNNEL, { peer: "wsl", wgBlock: BLOCK })).not.toThrow();
+  expect(() => buildAccessPack({ ...TUNNEL, grants: { omar: ["mcp-http"] } }, { peer: "omar" })).toThrow(
+    "aucun accès SSH",
+  );
   expect(() => buildAccessPack(TUNNEL, { peer: "ghost" })).toThrow("inconnu");
   expect(() =>
     buildAccessPack(TUNNEL, {
@@ -84,26 +79,17 @@ test("the pack never contains a private key and is written outside the repositor
   expect(JSON.stringify(pack)).not.toMatch(/PrivateKey/i);
   const repo = mkdtempSync(join(tmpdir(), "repo-"));
   mkdirSync(join(repo, "sub"));
-  expect(() => assertOutsideRepo(join(repo, "pack.json"), repo)).toThrow(
-    "refus",
-  );
-  expect(() =>
-    assertOutsideRepo(join(repo, "sub", "deeper", "pack.json"), repo),
-  ).toThrow("refus");
+  expect(() => assertOutsideRepo(join(repo, "pack.json"), repo)).toThrow("refus");
+  expect(() => assertOutsideRepo(join(repo, "sub", "deeper", "pack.json"), repo)).toThrow("refus");
   const outside = mkdtempSync(join(tmpdir(), "private-"));
-  expect(() =>
-    assertOutsideRepo(join(outside, "pack.json"), repo),
-  ).not.toThrow();
+  expect(() => assertOutsideRepo(join(outside, "pack.json"), repo)).not.toThrow();
 });
 
 test("the command writes a mode 600 file that the kit itself accepts", async () => {
   const dir = mkdtempSync(join(tmpdir(), "make-access-"));
   writeFileSync(join(dir, "tunnel.json"), JSON.stringify(TUNNEL));
   writeFileSync(join(dir, "block.txt"), BLOCK);
-  writeFileSync(
-    join(dir, "hosts.txt"),
-    "# comment\n198.51.100.1 ssh-ed25519 AAAAFakeKey\n",
-  );
+  writeFileSync(join(dir, "hosts.txt"), "# comment\n198.51.100.1 ssh-ed25519 AAAAFakeKey\n");
   const out = join(dir, "out", "aphrody-omar-acces.json");
   const proc = Bun.spawnSync(
     [

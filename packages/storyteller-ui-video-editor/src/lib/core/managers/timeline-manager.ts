@@ -1,35 +1,15 @@
 import type { EditorCore } from "../index";
 import type { ElementBounds } from "../../preview/element-bounds";
 import type { ParamValues, ParamValue } from "../../params";
-import type {
-  SceneTracks,
-  TrackType,
-  TimelineTrack,
-  TimelineElement,
-  RetimeConfig,
-} from "../../timeline/types";
+import type { SceneTracks, TrackType, TimelineTrack, TimelineElement, RetimeConfig } from "../../timeline/types";
 import { calculateTotalDuration } from "../../timeline/calculate-duration";
 import { TimelineDragSource } from "../../timeline/drag-source";
 import { findTrackInSceneTracks } from "../../timeline/track-element-update";
-import {
-  lastFrameMediaTime,
-  type MediaTime,
-  ZERO_MEDIA_TIME,
-} from "../../wasm";
-import {
-  canElementBeHidden,
-  canElementHaveAudio,
-} from "../../timeline/element-utils";
+import { lastFrameMediaTime, type MediaTime, ZERO_MEDIA_TIME } from "../../wasm";
+import { canElementBeHidden, canElementHaveAudio } from "../../timeline/element-utils";
 import { isElementMuted } from "../../timeline/audio-state";
-import type {
-  AnimationPath,
-  AnimationInterpolation,
-  ScalarCurveKeyframePatch,
-} from "../../animation/types";
-import {
-  getElementLocalTime,
-  resolveAnimationPathValueAtTime,
-} from "../../animation";
+import type { AnimationPath, AnimationInterpolation, ScalarCurveKeyframePatch } from "../../animation/types";
+import { getElementLocalTime, resolveAnimationPathValueAtTime } from "../../animation";
 import { resolveAnimationTarget } from "../../timeline/animation-targets";
 import { BatchCommand } from "../../commands";
 import {
@@ -62,10 +42,7 @@ import {
   ToggleSourceAudioSeparationCommand,
 } from "../../commands/timeline";
 import type { InsertElementParams } from "../../commands/timeline/element/insert-element";
-import type {
-  PlannedElementMove,
-  PlannedTrackCreation,
-} from "../../timeline/group-move";
+import type { PlannedElementMove, PlannedTrackCreation } from "../../timeline/group-move";
 
 export class TimelineManager {
   private listeners = new Set<() => void>();
@@ -159,13 +136,7 @@ export class TimelineManager {
     });
   }
 
-  moveElements({
-    moves,
-    createTracks,
-  }: {
-    moves: PlannedElementMove[];
-    createTracks?: PlannedTrackCreation[];
-  }): void {
+  moveElements({ moves, createTracks }: { moves: PlannedElementMove[]; createTracks?: PlannedTrackCreation[] }): void {
     if (moves.length === 0) {
       return;
     }
@@ -235,14 +206,11 @@ export class TimelineManager {
   }: {
     elements: { trackId: string; elementId: string }[];
   }): Array<{ track: TimelineTrack; element: TimelineElement }> {
-    const result: Array<{ track: TimelineTrack; element: TimelineElement }> =
-      [];
+    const result: Array<{ track: TimelineTrack; element: TimelineElement }> = [];
 
     for (const { trackId, elementId } of elements) {
       const track = this.getTrackById({ trackId });
-      const element = track?.elements.find(
-        (trackElement) => trackElement.id === elementId,
-      );
+      const element = track?.elements.find(trackElement => trackElement.id === elementId);
 
       if (track && element) {
         result.push({ track, element });
@@ -252,22 +220,12 @@ export class TimelineManager {
     return result;
   }
 
-  deleteElements({
-    elements,
-  }: {
-    elements: { trackId: string; elementId: string }[];
-  }): void {
+  deleteElements({ elements }: { elements: { trackId: string; elementId: string }[] }): void {
     const command = new DeleteElementsCommand({ elements });
     this.editor.command.execute({ command });
   }
 
-  toggleSourceAudioSeparation({
-    trackId,
-    elementId,
-  }: {
-    trackId: string;
-    elementId: string;
-  }): void {
+  toggleSourceAudioSeparation({ trackId, elementId }: { trackId: string; elementId: string }): void {
     const command = new ToggleSourceAudioSeparationCommand({
       trackId,
       elementId,
@@ -318,15 +276,7 @@ export class TimelineManager {
     return command.getEffectId() ?? "";
   }
 
-  removeClipEffect({
-    trackId,
-    elementId,
-    effectId,
-  }: {
-    trackId: string;
-    elementId: string;
-    effectId: string;
-  }): void {
+  removeClipEffect({ trackId, elementId, effectId }: { trackId: string; elementId: string; effectId: string }): void {
     const command = new RemoveClipEffectCommand({
       trackId,
       elementId,
@@ -335,15 +285,7 @@ export class TimelineManager {
     this.editor.command.execute({ command });
   }
 
-  removeMask({
-    trackId,
-    elementId,
-    maskId,
-  }: {
-    trackId: string;
-    elementId: string;
-    maskId: string;
-  }): void {
+  removeMask({ trackId, elementId, maskId }: { trackId: string; elementId: string; maskId: string }): void {
     const command = new RemoveMaskCommand({
       trackId,
       elementId,
@@ -427,15 +369,7 @@ export class TimelineManager {
     }
   }
 
-  toggleClipEffect({
-    trackId,
-    elementId,
-    effectId,
-  }: {
-    trackId: string;
-    elementId: string;
-    effectId: string;
-  }): void {
+  toggleClipEffect({ trackId, elementId, effectId }: { trackId: string; elementId: string; effectId: string }): void {
     const command = new ToggleClipEffectCommand({
       trackId,
       elementId,
@@ -444,15 +378,7 @@ export class TimelineManager {
     this.editor.command.execute({ command });
   }
 
-  toggleMaskInverted({
-    trackId,
-    elementId,
-    maskId,
-  }: {
-    trackId: string;
-    elementId: string;
-    maskId: string;
-  }): void {
+  toggleMaskInverted({ trackId, elementId, maskId }: { trackId: string; elementId: string; maskId: string }): void {
     const command = new ToggleMaskInvertedCommand({
       trackId,
       elementId,
@@ -499,15 +425,7 @@ export class TimelineManager {
     }
 
     const commands = keyframes.map(
-      ({
-        trackId,
-        elementId,
-        propertyPath,
-        time,
-        value,
-        interpolation,
-        keyframeId,
-      }) =>
+      ({ trackId, elementId, propertyPath, time, value, interpolation, keyframeId }) =>
         new UpsertKeyframeCommand({
           trackId,
           elementId,
@@ -518,8 +436,7 @@ export class TimelineManager {
           keyframeId,
         }),
     );
-    const command =
-      commands.length === 1 ? commands[0] : new BatchCommand(commands);
+    const command = commands.length === 1 ? commands[0] : new BatchCommand(commands);
     this.editor.command.execute({ command });
   }
 
@@ -581,12 +498,10 @@ export class TimelineManager {
           elementId,
           propertyPath,
           keyframeId,
-          valueAtPlayhead:
-            valueAtPlayheadMap.get(`${elementId}:${propertyPath}`) ?? null,
+          valueAtPlayhead: valueAtPlayheadMap.get(`${elementId}:${propertyPath}`) ?? null,
         }),
     );
-    const command =
-      commands.length === 1 ? commands[0] : new BatchCommand(commands);
+    const command = commands.length === 1 ? commands[0] : new BatchCommand(commands);
     this.editor.command.execute({ command });
   }
 
@@ -640,8 +555,7 @@ export class TimelineManager {
           patch,
         }),
     );
-    const command =
-      commands.length === 1 ? commands[0] : new BatchCommand(commands);
+    const command = commands.length === 1 ? commands[0] : new BatchCommand(commands);
     this.editor.command.execute({ command });
   }
 
@@ -717,10 +631,7 @@ export class TimelineManager {
     for (const { elementId, updates: elementUpdates } of updates) {
       const existingOverlay = this.previewOverlay.get(elementId);
       const changed = Object.entries(elementUpdates).some(([key, value]) => {
-        return !Object.is(
-          existingOverlay?.[key as keyof TimelineElement],
-          value,
-        );
+        return !Object.is(existingOverlay?.[key as keyof TimelineElement], value);
       });
       if (changed) {
         changedOverlayCount += 1;
@@ -748,8 +659,7 @@ export class TimelineManager {
     if (!committedTracks) {
       return;
     }
-    const afterTracks =
-      this.previewTracks ?? this.applyPreviewOverlay(committedTracks);
+    const afterTracks = this.previewTracks ?? this.applyPreviewOverlay(committedTracks);
     const command = new TracksSnapshotCommand({
       before: committedTracks,
       after: afterTracks,
@@ -777,11 +687,7 @@ export class TimelineManager {
     return command.getDuplicatedElements();
   }
 
-  toggleElementsVisibility({
-    elements,
-  }: {
-    elements: { trackId: string; elementId: string }[];
-  }): void {
+  toggleElementsVisibility({ elements }: { elements: { trackId: string; elementId: string }[] }): void {
     const shouldHide = elements.some(({ trackId, elementId }) => {
       const element = this.getElementByRef({ trackId, elementId });
       return element && canElementBeHidden(element) && !element.hidden;
@@ -805,16 +711,10 @@ export class TimelineManager {
     this.updateElements({ updates: nextUpdates });
   }
 
-  toggleElementsMuted({
-    elements,
-  }: {
-    elements: { trackId: string; elementId: string }[];
-  }): void {
+  toggleElementsMuted({ elements }: { elements: { trackId: string; elementId: string }[] }): void {
     const shouldMute = elements.some(({ trackId, elementId }) => {
       const element = this.getElementByRef({ trackId, elementId });
-      return (
-        element && canElementHaveAudio(element) && !isElementMuted({ element })
-      );
+      return element && canElementHaveAudio(element) && !isElementMuted({ element });
     });
 
     const nextUpdates = elements.flatMap(({ trackId, elementId }) => {
@@ -836,11 +736,7 @@ export class TimelineManager {
   }
 
   getPreviewTracks(): SceneTracks | null {
-    return (
-      this.previewTracks ??
-      this.editor.scenes.getActiveSceneOrNull()?.tracks ??
-      null
-    );
+    return this.previewTracks ?? this.editor.scenes.getActiveSceneOrNull()?.tracks ?? null;
   }
 
   subscribe(listener: () => void): () => void {
@@ -856,49 +752,33 @@ export class TimelineManager {
   }
 
   private notify(): void {
-    this.listeners.forEach((fn) => {
+    this.listeners.forEach(fn => {
       fn();
     });
   }
 
-  private getElementByRef({
-    trackId,
-    elementId,
-  }: {
-    trackId: string;
-    elementId: string;
-  }): TimelineElement | undefined {
-    return this.getTrackById({ trackId })?.elements.find(
-      (element) => element.id === elementId,
-    );
+  private getElementByRef({ trackId, elementId }: { trackId: string; elementId: string }): TimelineElement | undefined {
+    return this.getTrackById({ trackId })?.elements.find(element => element.id === elementId);
   }
 
-  private findTrackIdForElement({
-    elementId,
-  }: {
-    elementId: string;
-  }): string | null {
+  private findTrackIdForElement({ elementId }: { elementId: string }): string | null {
     const activeScene = this.editor.scenes.getActiveSceneOrNull();
     if (!activeScene) {
       return null;
     }
 
-    if (
-      activeScene.tracks.main.elements.some(
-        (element) => element.id === elementId,
-      )
-    ) {
+    if (activeScene.tracks.main.elements.some(element => element.id === elementId)) {
       return activeScene.tracks.main.id;
     }
 
     for (const track of activeScene.tracks.overlay) {
-      if (track.elements.some((element) => element.id === elementId)) {
+      if (track.elements.some(element => element.id === elementId)) {
         return track.id;
       }
     }
 
     for (const track of activeScene.tracks.audio) {
-      if (track.elements.some((element) => element.id === elementId)) {
+      if (track.elements.some(element => element.id === elementId)) {
         return track.id;
       }
     }
@@ -909,30 +789,24 @@ export class TimelineManager {
   private applyPreviewOverlay(tracks: SceneTracks): SceneTracks {
     if (this.previewOverlay.size === 0) return tracks;
 
-    const applyTrackOverlay = <TTrack extends TimelineTrack>(
-      track: TTrack,
-    ): TTrack => {
-      const hasOverlay = track.elements.some((element) =>
-        this.previewOverlay.has(element.id),
-      );
+    const applyTrackOverlay = <TTrack extends TimelineTrack>(track: TTrack): TTrack => {
+      const hasOverlay = track.elements.some(element => this.previewOverlay.has(element.id));
       if (!hasOverlay) {
         return track;
       }
 
-      const nextElements = track.elements.map((element) => {
+      const nextElements = track.elements.map(element => {
         const overlay = this.previewOverlay.get(element.id);
-        return overlay
-          ? ({ ...element, ...overlay } as TimelineElement)
-          : element;
+        return overlay ? ({ ...element, ...overlay } as TimelineElement) : element;
       });
 
       return { ...track, elements: nextElements } as TTrack;
     };
 
     return {
-      overlay: tracks.overlay.map((track) => applyTrackOverlay(track)),
+      overlay: tracks.overlay.map(track => applyTrackOverlay(track)),
       main: applyTrackOverlay(tracks.main),
-      audio: tracks.audio.map((track) => applyTrackOverlay(track)),
+      audio: tracks.audio.map(track => applyTrackOverlay(track)),
     };
   }
 }

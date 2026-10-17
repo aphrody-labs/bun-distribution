@@ -57,7 +57,15 @@ mod imp {
         let empty = BSTR::new();
         // SAFETY: local connection with the caller's credentials.
         let services = unsafe {
-            locator.ConnectServer(&BSTR::from(NAMESPACE), &empty, &empty, &empty, 0, &empty, None)
+            locator.ConnectServer(
+                &BSTR::from(NAMESPACE),
+                &empty,
+                &empty,
+                &empty,
+                0,
+                &empty,
+                None,
+            )
         }
         .map_err(|error| {
             let mut mapped =
@@ -105,7 +113,10 @@ mod imp {
         // SAFETY: room for one object; `returned` receives the count.
         let hr = unsafe { enumerator.Next(WBEM_INFINITE, &mut objects, &mut returned) };
         if hr.is_err() {
-            return Err(hresult_error(&windows::core::Error::from(hr), "WMI enumeration"));
+            return Err(hresult_error(
+                &windows::core::Error::from(hr),
+                "WMI enumeration",
+            ));
         }
         let [object] = objects;
         Ok(if returned == 0 { None } else { object })
@@ -140,7 +151,10 @@ mod imp {
     }
 
     fn timestamp(value: Value) -> Value {
-        value.as_str().and_then(cim_datetime_to_rfc3339).map_or(Value::Null, Value::String)
+        value
+            .as_str()
+            .and_then(cim_datetime_to_rfc3339)
+            .map_or(Value::Null, Value::String)
     }
 
     pub(super) fn status() -> io::Result<Value> {
@@ -153,7 +167,10 @@ mod imp {
              FROM MSFT_MpComputerStatus",
         )?;
         let status = next(&statuses)?.ok_or_else(|| {
-            io::Error::new(io::ErrorKind::NotFound, "MSFT_MpComputerStatus returned no instance")
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                "MSFT_MpComputerStatus returned no instance",
+            )
         })?;
         // Counting the threat catalogue is best effort: some policies hide it from non-admins.
         let threat_count =
@@ -184,7 +201,10 @@ mod imp {
     use serde_json::Value;
 
     pub(super) fn status() -> io::Result<Value> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "Defender is Windows-only"))
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "Defender is Windows-only",
+        ))
     }
 }
 
@@ -194,7 +214,9 @@ mod tests {
     #[test]
     fn defender_is_unsupported_off_windows() {
         assert_eq!(
-            super::get_defender_status().expect_err("unsupported").kind(),
+            super::get_defender_status()
+                .expect_err("unsupported")
+                .kind(),
             std::io::ErrorKind::Unsupported
         );
     }
@@ -204,19 +226,30 @@ mod tests {
     #[ignore = "requires Windows Defender"]
     fn defender_status_reads_mp_computer_status() {
         let status = super::get_defender_status().expect("query MSFT_MpComputerStatus");
-        for field in ["AntivirusEnabled", "RealTimeProtectionEnabled", "BehaviorMonitorEnabled"] {
+        for field in [
+            "AntivirusEnabled",
+            "RealTimeProtectionEnabled",
+            "BehaviorMonitorEnabled",
+        ] {
             assert!(status[field].is_boolean(), "{field}: {status}");
         }
         assert!(status["TamperProtected"].is_boolean(), "{status}");
-        let version = status["AntivirusSignatureVersion"].as_str().expect("signature version");
+        let version = status["AntivirusSignatureVersion"]
+            .as_str()
+            .expect("signature version");
         assert!(version.split('.').count() == 4, "{version}");
         for field in ["LastQuickScanStartUtc", "LastFullScanStartUtc"] {
             assert!(
                 status[field].is_null()
-                    || status[field].as_str().is_some_and(|value| value.ends_with('Z')),
+                    || status[field]
+                        .as_str()
+                        .is_some_and(|value| value.ends_with('Z')),
                 "{field}: {status}"
             );
         }
-        assert!(status["ThreatCount"].is_null() || status["ThreatCount"].is_u64(), "{status}");
+        assert!(
+            status["ThreatCount"].is_null() || status["ThreatCount"].is_u64(),
+            "{status}"
+        );
     }
 }

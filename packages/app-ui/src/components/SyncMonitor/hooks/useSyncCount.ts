@@ -15,14 +15,11 @@ export function useSyncCount() {
   if (data !== seenData) {
     setSeenData(data);
     if (data) {
-      const onlineCount = data.peers.filter((p) => p.isOnline).length;
+      const onlineCount = data.peers.filter(p => p.isOnline).length;
       setOnlinePeerCount(onlineCount);
 
       const state = data.currentState;
-      const syncing =
-        (typeof state === "object" &&
-          ("Backfilling" in state || "CatchingUp" in state)) ||
-        false;
+      const syncing = (typeof state === "object" && ("Backfilling" in state || "CatchingUp" in state)) || false;
       setIsSyncing(syncing);
     }
   }

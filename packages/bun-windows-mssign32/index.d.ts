@@ -7,21 +7,99 @@ interface Functions {
   /** mssign32.dll!SignerFreeSignerContext */
   SignerFreeSignerContext(pSignerContext: Win32Pointer): number;
   /** mssign32.dll!SignerSign */
-  SignerSign(pSubjectInfo: Win32Pointer, pSignerCert: Win32Pointer, pSignatureInfo: Win32Pointer, pProviderInfo: Win32Pointer, pwszHttpTimeStamp: string | Win32Pointer, psRequest: Win32Pointer, pSipData: Win32Pointer): number;
+  SignerSign(
+    pSubjectInfo: Win32Pointer,
+    pSignerCert: Win32Pointer,
+    pSignatureInfo: Win32Pointer,
+    pProviderInfo: Win32Pointer,
+    pwszHttpTimeStamp: string | Win32Pointer,
+    psRequest: Win32Pointer,
+    pSipData: Win32Pointer,
+  ): number;
   /** mssign32.dll!SignerSignEx */
-  SignerSignEx(dwFlags: number, pSubjectInfo: Win32Pointer, pSignerCert: Win32Pointer, pSignatureInfo: Win32Pointer, pProviderInfo: Win32Pointer, pwszHttpTimeStamp: string | Win32Pointer, psRequest: Win32Pointer, pSipData: Win32Pointer, ppSignerContext: Win32Pointer): number;
+  SignerSignEx(
+    dwFlags: number,
+    pSubjectInfo: Win32Pointer,
+    pSignerCert: Win32Pointer,
+    pSignatureInfo: Win32Pointer,
+    pProviderInfo: Win32Pointer,
+    pwszHttpTimeStamp: string | Win32Pointer,
+    psRequest: Win32Pointer,
+    pSipData: Win32Pointer,
+    ppSignerContext: Win32Pointer,
+  ): number;
   /** mssign32.dll!SignerSignEx2 */
-  SignerSignEx2(dwFlags: number, pSubjectInfo: Win32Pointer, pSignerCert: Win32Pointer, pSignatureInfo: Win32Pointer, pProviderInfo: Win32Pointer, dwTimestampFlags: number, pszTimestampAlgorithmOid: string | Win32Pointer, pwszHttpTimeStamp: string | Win32Pointer, psRequest: Win32Pointer, pSipData: Win32Pointer, ppSignerContext: Win32Pointer, pCryptoPolicy: Win32Pointer, pReserved: Win32Pointer): number;
+  SignerSignEx2(
+    dwFlags: number,
+    pSubjectInfo: Win32Pointer,
+    pSignerCert: Win32Pointer,
+    pSignatureInfo: Win32Pointer,
+    pProviderInfo: Win32Pointer,
+    dwTimestampFlags: number,
+    pszTimestampAlgorithmOid: string | Win32Pointer,
+    pwszHttpTimeStamp: string | Win32Pointer,
+    psRequest: Win32Pointer,
+    pSipData: Win32Pointer,
+    ppSignerContext: Win32Pointer,
+    pCryptoPolicy: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** mssign32.dll!SignerSignEx3 */
-  SignerSignEx3(dwFlags: number, pSubjectInfo: Win32Pointer, pSignerCert: Win32Pointer, pSignatureInfo: Win32Pointer, pProviderInfo: Win32Pointer, dwTimestampFlags: number, pszTimestampAlgorithmOid: string | Win32Pointer, pwszHttpTimeStamp: string | Win32Pointer, psRequest: Win32Pointer, pSipData: Win32Pointer, ppSignerContext: Win32Pointer, pCryptoPolicy: Win32Pointer, pDigestSignInfo: Win32Pointer, pReserved: Win32Pointer): number;
+  SignerSignEx3(
+    dwFlags: number,
+    pSubjectInfo: Win32Pointer,
+    pSignerCert: Win32Pointer,
+    pSignatureInfo: Win32Pointer,
+    pProviderInfo: Win32Pointer,
+    dwTimestampFlags: number,
+    pszTimestampAlgorithmOid: string | Win32Pointer,
+    pwszHttpTimeStamp: string | Win32Pointer,
+    psRequest: Win32Pointer,
+    pSipData: Win32Pointer,
+    ppSignerContext: Win32Pointer,
+    pCryptoPolicy: Win32Pointer,
+    pDigestSignInfo: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** mssign32.dll!SignerTimeStamp */
-  SignerTimeStamp(pSubjectInfo: Win32Pointer, pwszHttpTimeStamp: string | Win32Pointer, psRequest: Win32Pointer, pSipData: Win32Pointer): number;
+  SignerTimeStamp(
+    pSubjectInfo: Win32Pointer,
+    pwszHttpTimeStamp: string | Win32Pointer,
+    psRequest: Win32Pointer,
+    pSipData: Win32Pointer,
+  ): number;
   /** mssign32.dll!SignerTimeStampEx */
-  SignerTimeStampEx(dwFlags: number, pSubjectInfo: Win32Pointer, pwszHttpTimeStamp: string | Win32Pointer, psRequest: Win32Pointer, pSipData: Win32Pointer, ppSignerContext: Win32Pointer): number;
+  SignerTimeStampEx(
+    dwFlags: number,
+    pSubjectInfo: Win32Pointer,
+    pwszHttpTimeStamp: string | Win32Pointer,
+    psRequest: Win32Pointer,
+    pSipData: Win32Pointer,
+    ppSignerContext: Win32Pointer,
+  ): number;
   /** mssign32.dll!SignerTimeStampEx2 */
-  SignerTimeStampEx2(dwFlags: number, pSubjectInfo: Win32Pointer, pwszHttpTimeStamp: string | Win32Pointer, dwAlgId: number, psRequest: Win32Pointer, pSipData: Win32Pointer, ppSignerContext: Win32Pointer): number;
+  SignerTimeStampEx2(
+    dwFlags: number,
+    pSubjectInfo: Win32Pointer,
+    pwszHttpTimeStamp: string | Win32Pointer,
+    dwAlgId: number,
+    psRequest: Win32Pointer,
+    pSipData: Win32Pointer,
+    ppSignerContext: Win32Pointer,
+  ): number;
   /** mssign32.dll!SignerTimeStampEx3 */
-  SignerTimeStampEx3(dwFlags: number, dwIndex: number, pSubjectInfo: Win32Pointer, pwszHttpTimeStamp: string | Win32Pointer, pszAlgorithmOid: string | Win32Pointer, psRequest: Win32Pointer, pSipData: Win32Pointer, ppSignerContext: Win32Pointer, pCryptoPolicy: Win32Pointer, pReserved: Win32Pointer): number;
+  SignerTimeStampEx3(
+    dwFlags: number,
+    dwIndex: number,
+    pSubjectInfo: Win32Pointer,
+    pwszHttpTimeStamp: string | Win32Pointer,
+    pszAlgorithmOid: string | Win32Pointer,
+    psRequest: Win32Pointer,
+    pSipData: Win32Pointer,
+    ppSignerContext: Win32Pointer,
+    pCryptoPolicy: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -1,24 +1,9 @@
 import { lstat, realpath } from "node:fs/promises";
 import { isAbsolute } from "node:path";
-import {
-  hashContent,
-  hashFile,
-  isObject,
-  runProcess,
-  type RuntimePin,
-} from "@aphrody/bun-workspace";
+import { hashContent, hashFile, isObject, runProcess, type RuntimePin } from "@aphrody/bun-workspace";
 import { validateAssetReference } from "@aphrody/bun-workspace/assets";
-import {
-  hostMatchesTarget,
-  validDigest,
-  validateAppManifest,
-} from "./manifest.ts";
-import {
-  ArtifactError,
-  type AppManifest,
-  type ArtifactTarget,
-  type SharedAssetsReference,
-} from "./types.ts";
+import { hostMatchesTarget, validDigest, validateAppManifest } from "./manifest.ts";
+import { ArtifactError, type AppManifest, type ArtifactTarget, type SharedAssetsReference } from "./types.ts";
 
 const maxMetadataBytes = 1024 * 1024;
 const maxExecutableBytes = 2 * 1024 * 1024 * 1024;
@@ -55,10 +40,7 @@ export interface VerifiedAppArtifact {
 }
 
 function invalid(): never {
-  throw new ArtifactError(
-    "VERIFICATION_FAILED",
-    "The application build receipt does not match its artifact.",
-  );
+  throw new ArtifactError("VERIFICATION_FAILED", "The application build receipt does not match its artifact.");
 }
 
 function matchesRuntime(value: unknown, expected: RuntimePin): boolean {
@@ -70,42 +52,24 @@ function matchesRuntime(value: unknown, expected: RuntimePin): boolean {
   );
 }
 
-function matchesAssets(
-  value: unknown,
-  expected: SharedAssetsReference | undefined,
-): boolean {
+function matchesAssets(value: unknown, expected: SharedAssetsReference | undefined): boolean {
   if (value === undefined || value === null) return expected === undefined;
   try {
     const reference = validateAssetReference(value);
-    return (
-      reference.sha256 === expected?.sha256 && reference.url === expected.url
-    );
+    return reference.sha256 === expected?.sha256 && reference.url === expected.url;
   } catch {
     return false;
   }
 }
 
-async function regularFile(
-  path: unknown,
-  maximum: number,
-): Promise<{ path: string; size: number }> {
-  if (typeof path !== "string" || !isAbsolute(path) || path.includes("\0"))
-    invalid();
+async function regularFile(path: unknown, maximum: number): Promise<{ path: string; size: number }> {
+  if (typeof path !== "string" || !isAbsolute(path) || path.includes("\0")) invalid();
   const metadata = await lstat(path);
-  if (
-    !metadata.isFile() ||
-    metadata.isSymbolicLink() ||
-    metadata.size < 1 ||
-    metadata.size > maximum
-  )
-    invalid();
+  if (!metadata.isFile() || metadata.isSymbolicLink() || metadata.size < 1 || metadata.size > maximum) invalid();
   return { path: await realpath(path), size: metadata.size };
 }
 
-async function metadataBytes(
-  path: string,
-  signal: AbortSignal,
-): Promise<Uint8Array> {
+async function metadataBytes(path: string, signal: AbortSignal): Promise<Uint8Array> {
   const reader = Bun.file(path).stream().getReader();
   const chunks: Uint8Array[] = [];
   let size = 0;
@@ -153,10 +117,7 @@ export async function verifyAppArtifact(
     (options.execute !== undefined && typeof options.execute !== "boolean") ||
     (options.signal !== undefined && !(options.signal instanceof AbortSignal))
   ) {
-    throw new ArtifactError(
-      "INVALID_OPTIONS",
-      "Select an application and a bounded verification deadline.",
-    );
+    throw new ArtifactError("INVALID_OPTIONS", "Select an application and a bounded verification deadline.");
   }
   const controller = new AbortController();
   const interrupt = () => controller.abort();
@@ -175,9 +136,7 @@ export async function verifyAppArtifact(
       report.results.length > 14
     )
       invalid();
-    const selected = report.results.filter(
-      (result) => isObject(result) && result.appId === options.appId,
-    );
+    const selected = report.results.filter(result => isObject(result) && result.appId === options.appId);
     if (selected.length !== 1) invalid();
     const result = selected[0];
     if (
@@ -191,7 +150,7 @@ export async function verifyAppArtifact(
       invalid();
     const artifact = result.artifact;
     const manifest = validateAppManifest(artifact.manifest);
-    const engine = manifest.native.find((file) => file.kind === "engine")!;
+    const engine = manifest.native.find(file => file.kind === "engine")!;
     const native = result.nativeReceipt;
     if (
       artifact.qualification !== "built" ||
@@ -228,38 +187,19 @@ export async function verifyAppArtifact(
       )
         invalid();
     }
-    if (
-      typeof artifact.path !== "string" ||
-      typeof artifact.manifestPath !== "string"
-    )
-      invalid();
-    const binary = await regularFile(
-      options.binary ?? artifact.path,
-      maxExecutableBytes,
-    );
-    const sidecar = await regularFile(
-      options.manifestPath ?? artifact.manifestPath,
-      maxMetadataBytes,
-    );
+    if (typeof artifact.path !== "string" || typeof artifact.manifestPath !== "string") invalid();
+    const binary = await regularFile(options.binary ?? artifact.path, maxExecutableBytes);
+    const sidecar = await regularFile(options.manifestPath ?? artifact.manifestPath, maxMetadataBytes);
     if (binary.size !== artifact.size) invalid();
     const bytes = await metadataBytes(sidecar.path, signal);
     if (hashContent(bytes) !== artifact.manifestSha256) invalid();
-    const saved = validateAppManifest(
-      JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)),
-    );
+    const saved = validateAppManifest(JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)));
     if (JSON.stringify(saved) !== JSON.stringify(manifest)) invalid();
-    if (
-      (await hashFile(binary.path, { signal, maxBytes: artifact.size })) !==
-      artifact.sha256
-    )
-      invalid();
+    if ((await hashFile(binary.path, { signal, maxBytes: artifact.size })) !== artifact.sha256) invalid();
     const execute = options.execute !== false;
     if (execute) {
       if (!hostMatchesTarget(manifest.target)) {
-        throw new ArtifactError(
-          "TARGET_MISMATCH",
-          "Native verification requires the application's target host.",
-        );
+        throw new ArtifactError("TARGET_MISMATCH", "Native verification requires the application's target host.");
       }
       // Discovery receives platform paths only, never injected provider credentials.
       const env: Record<string, string | undefined> = {};
@@ -278,17 +218,13 @@ export async function verifyAppArtifact(
         "APHRODY_APP_DATA",
       ])
         env[key] = Bun.env[key];
-      const processResult = await runProcess(
-        [binary.path, "--doctor"],
-        process.cwd(),
-        {
-          timeoutMs,
-          maxOutputBytes: 256 * 1024,
-          signal,
-          stderr: "discard",
-          env,
-        },
-      );
+      const processResult = await runProcess([binary.path, "--doctor"], process.cwd(), {
+        timeoutMs,
+        maxOutputBytes: 256 * 1024,
+        signal,
+        stderr: "discard",
+        env,
+      });
       if (processResult.code !== 0) invalid();
       const doctor: unknown = JSON.parse(processResult.stdout.trim());
       if (
@@ -302,16 +238,11 @@ export async function verifyAppArtifact(
         doctor.engine.version !== manifest.engine.version ||
         doctor.engine.sourceRevision !== manifest.source.revision ||
         doctor.embeddedFiles !== manifest.native.length ||
-        doctor.nativeBytes !==
-          manifest.native.reduce((total, file) => total + file.size, 0) ||
+        doctor.nativeBytes !== manifest.native.reduce((total, file) => total + file.size, 0) ||
         !matchesAssets(doctor.sharedAssets, manifest.sharedAssets)
       )
         invalid();
-      if (
-        (await hashFile(binary.path, { signal, maxBytes: artifact.size })) !==
-        artifact.sha256
-      )
-        invalid();
+      if ((await hashFile(binary.path, { signal, maxBytes: artifact.size })) !== artifact.sha256) invalid();
       if (
         (await hashFile(sidecar.path, {
           signal,
@@ -346,15 +277,8 @@ export async function verifyAppArtifact(
     };
   } catch (error) {
     if (error instanceof ArtifactError) throw error;
-    if (signal.aborted)
-      throw new ArtifactError(
-        "INTERRUPTED",
-        "Application artifact verification was interrupted.",
-      );
-    throw new ArtifactError(
-      "VERIFICATION_FAILED",
-      "Application artifact verification failed.",
-    );
+    if (signal.aborted) throw new ArtifactError("INTERRUPTED", "Application artifact verification was interrupted.");
+    throw new ArtifactError("VERIFICATION_FAILED", "Application artifact verification failed.");
   } finally {
     options.signal?.removeEventListener("abort", interrupt);
     clearTimeout(timer);

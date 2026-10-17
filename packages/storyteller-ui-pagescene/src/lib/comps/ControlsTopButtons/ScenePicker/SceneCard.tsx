@@ -16,12 +16,7 @@ interface SceneCardProps {
   showDate?: boolean;
 }
 
-export const SceneCard: React.FC<SceneCardProps> = ({
-  scene,
-  onSceneSelect,
-  selectedSceneId,
-  showDate,
-}) => {
+export const SceneCard: React.FC<SceneCardProps> = ({ scene, onSceneSelect, selectedSceneId, showDate }) => {
   const editor = useContext(EngineContext);
   const [loadError, setLoadError] = useState(false);
 
@@ -52,9 +47,7 @@ export const SceneCard: React.FC<SceneCardProps> = ({
       onClick={() => handleSelected(scene)}
     >
       <img
-        src={
-          imageThumbnailUrl && !loadError ? imageThumbnailUrl : tempThumbnail
-        }
+        src={imageThumbnailUrl && !loadError ? imageThumbnailUrl : tempThumbnail}
         className="aspect-video object-cover"
         crossOrigin="anonymous"
         alt={scene.name}
@@ -64,12 +57,8 @@ export const SceneCard: React.FC<SceneCardProps> = ({
       <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-t from-black/80 to-transparent" />
       <div className="absolute bottom-[8px] left-[10px] text-start text-sm drop-shadow-md">
         <div className="flex flex-col">
-          <span className="w-60 truncate text-sm font-medium">
-            {scene.name}
-          </span>
-          {showDate && (
-            <span className="text-xs opacity-70">{scene.updated_at}</span>
-          )}
+          <span className="w-60 truncate text-sm font-medium">{scene.name}</span>
+          {showDate && <span className="text-xs opacity-70">{scene.updated_at}</span>}
         </div>
       </div>
       <svg

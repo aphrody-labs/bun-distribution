@@ -11,14 +11,7 @@
  *
  * Dry-run by default; `--apply` writes to `--out`; `--check` diffs against `--out`.
  */
-import {
-  chmodSync,
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readdirSync,
-  rmSync,
-} from "node:fs";
+import { chmodSync, existsSync, lstatSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { basename, dirname, join, posix, resolve } from "node:path";
 
 export interface SourceConfig {
@@ -93,8 +86,7 @@ const BARE_KEY = /^[A-Za-z0-9_-]+$/;
 
 export function serializeToml(value: unknown): string {
   if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "boolean" || typeof value === "number")
-    return String(value);
+  if (typeof value === "boolean" || typeof value === "number") return String(value);
   if (Array.isArray(value)) return `[${value.map(serializeToml).join(", ")}]`;
   if (value !== null && typeof value === "object") {
     const entries = Object.entries(value as Table);
@@ -165,10 +157,7 @@ function scanSections(lines: readonly string[]): Section[] {
 }
 
 /** Ranges `[start, end)` of `key = value` entries (multi-line aware) in a section body. */
-function entryRanges(
-  lines: readonly string[],
-  section: Section,
-): { key: string; start: number; end: number }[] {
+function entryRanges(lines: readonly string[], section: Section): { key: string; start: number; end: number }[] {
   const out: { key: string; start: number; end: number }[] = [];
   let i = section.start + 1;
   while (i < section.end) {
@@ -191,8 +180,7 @@ function entryRanges(
 }
 
 const DEP_SECTION = /^(target\..+\.)?(dev-|build-)?dependencies$/;
-const DEP_DETAIL_SECTION =
-  /^(target\..+\.)?(dev-|build-)?dependencies\.("[^"]+"|[A-Za-z0-9_-]+)$/;
+const DEP_DETAIL_SECTION = /^(target\..+\.)?(dev-|build-)?dependencies\.("[^"]+"|[A-Za-z0-9_-]+)$/;
 
 function parseEntry(text: string): { key: string; value: unknown } {
   const parsed = Bun.TOML.parse(text) as Table;
@@ -202,9 +190,7 @@ function parseEntry(text: string): { key: string; value: unknown } {
 }
 
 function asSpec(value: unknown): Table {
-  return typeof value === "string"
-    ? { version: value }
-    : { ...(value as Table) };
+  return typeof value === "string" ? { version: value } : { ...(value as Table) };
 }
 
 function relativeDir(from: string, to: string): string {
@@ -222,12 +208,7 @@ function mergeWorkspaceDependency(member: Table, ws: Table): Table {
   for (const [key, value] of Object.entries(member)) {
     if (key === "workspace") continue;
     if (key === "features") {
-      out.features = [
-        ...new Set([
-          ...((ws.features as string[] | undefined) ?? []),
-          ...(value as string[]),
-        ]),
-      ];
+      out.features = [...new Set([...((ws.features as string[] | undefined) ?? []), ...(value as string[])])];
     } else if (key === "default-features") {
       if (ws["default-features"] !== false) out["default-features"] = value;
     } else out[key] = value;
@@ -239,18 +220,14 @@ function mergeWorkspaceDependency(member: Table, ws: Table): Table {
 // Manifest transformation
 // ---------------------------------------------------------------------------------------------
 
-const resolvePath = (path: string, base: string): string =>
-  posix.normalize(posix.join(base, path));
+const resolvePath = (path: string, base: string): string => posix.normalize(posix.join(base, path));
 
 export interface TransformResult {
   readonly text: string;
   readonly warnings: readonly string[];
 }
 
-export function transformManifest(
-  text: string,
-  ctx: TransformContext,
-): TransformResult {
+export function transformManifest(text: string, ctx: TransformContext): TransformResult {
   const warnings: string[] = [];
   const crate = ctx.crate;
   let lines = text.split("\n");
@@ -262,69 +239,42 @@ export function transformManifest(
   }
   const drop = /^(workspace(\..*)?|profile(\..*)?|patch(\..*)?|replace)$/;
   for (const section of scanSections(lines).toReversed()) {
-    if (drop.test(section.name))
-      lines.splice(section.start, section.end - section.start);
+    if (drop.test(section.name)) lines.splice(section.start, section.end - section.start);
   }
-  while (
-    lines.length > 0 &&
-    lines[lines.length - 1] === "" &&
-    lines[lines.length - 2] === ""
-  )
-    lines.pop();
+  while (lines.length > 0 && lines[lines.length - 1] === "" && lines[lines.length - 2] === "") lines.pop();
 
-  const replaceRange = (
-    start: number,
-    end: number,
-    replacement: string[],
-  ): void => {
+  const replaceRange = (start: number, end: number, replacement: string[]): void => {
     lines.splice(start, end - start, ...replacement);
   };
 
   // 2. [package]
   let sections = scanSections(lines);
-  const pkg = sections.find((s) => s.name === "package");
+  const pkg = sections.find(s => s.name === "package");
   if (pkg === undefined) throw new Error(`${crate.name}: missing [package]`);
   for (const entry of entryRanges(lines, pkg).toReversed()) {
     const raw = (lines.slice(entry.start, entry.end) as string[]).join("\n");
-    const dotted =
-      /^\s*([A-Za-z0-9_-]+)\.workspace\s*=\s*true\s*(?:#.*)?$/.exec(raw);
-    const inline =
-      /^\s*([A-Za-z0-9_-]+)\s*=\s*\{\s*workspace\s*=\s*true\s*\}\s*(?:#.*)?$/.exec(
-        raw,
-      );
+    const dotted = /^\s*([A-Za-z0-9_-]+)\.workspace\s*=\s*true\s*(?:#.*)?$/.exec(raw);
+    const inline = /^\s*([A-Za-z0-9_-]+)\s*=\s*\{\s*workspace\s*=\s*true\s*\}\s*(?:#.*)?$/.exec(raw);
     const field = dotted?.[1] ?? inline?.[1];
     if (field !== undefined) {
-      const value =
-        field === "repository" ? ctx.cfg.repository : ctx.wsPackage[field];
-      if (value === undefined)
-        throw new Error(
-          `${crate.name}: workspace.package.${field} is not defined`,
-        );
-      replaceRange(entry.start, entry.end, [
-        `${field} = ${serializeToml(value)}`,
-      ]);
+      const value = field === "repository" ? ctx.cfg.repository : ctx.wsPackage[field];
+      if (value === undefined) throw new Error(`${crate.name}: workspace.package.${field} is not defined`);
+      replaceRange(entry.start, entry.end, [`${field} = ${serializeToml(value)}`]);
     } else if (entry.key === "name") {
-      replaceRange(entry.start, entry.end, [
-        `name = ${JSON.stringify(crate.newName)}`,
-      ]);
+      replaceRange(entry.start, entry.end, [`name = ${JSON.stringify(crate.newName)}`]);
     } else if (entry.key === "documentation") {
-      replaceRange(entry.start, entry.end, [
-        raw.replace(`docs.rs/${crate.name}`, `docs.rs/${crate.newName}`),
-      ]);
+      replaceRange(entry.start, entry.end, [raw.replace(`docs.rs/${crate.name}`, `docs.rs/${crate.newName}`)]);
     }
   }
   // repository always points to the monorepo (set after materialization).
   sections = scanSections(lines);
-  const pkg2 = sections.find((s) => s.name === "package") as Section;
-  const repo = entryRanges(lines, pkg2).find((e) => e.key === "repository");
-  if (repo !== undefined)
-    replaceRange(repo.start, repo.end, [
-      `repository = ${JSON.stringify(ctx.cfg.repository)}`,
-    ]);
+  const pkg2 = sections.find(s => s.name === "package") as Section;
+  const repo = entryRanges(lines, pkg2).find(e => e.key === "repository");
+  if (repo !== undefined) replaceRange(repo.start, repo.end, [`repository = ${JSON.stringify(ctx.cfg.repository)}`]);
 
   // 3. [lints] workspace = true
   sections = scanSections(lines);
-  const lints = sections.find((s) => s.name === "lints");
+  const lints = sections.find(s => s.name === "lints");
   if (lints !== undefined) {
     const body = lines.slice(lints.start + 1, lints.end).join("\n");
     if (/^\s*workspace\s*=\s*true\s*$/m.test(body)) {
@@ -332,9 +282,7 @@ export function transformManifest(
       for (const [tool, rules] of Object.entries(ctx.wsLints ?? {})) {
         replacement.push(`[lints.${tool}]`);
         for (const [rule, level] of Object.entries(rules as Table)) {
-          replacement.push(
-            `${BARE_KEY.test(rule) ? rule : JSON.stringify(rule)} = ${serializeToml(level)}`,
-          );
+          replacement.push(`${BARE_KEY.test(rule) ? rule : JSON.stringify(rule)} = ${serializeToml(level)}`);
         }
         replacement.push("");
       }
@@ -344,10 +292,7 @@ export function transformManifest(
 
   // 4. Dependencies
   const crateSrcAbs = crate.srcDir;
-  const rewriteDependency = (
-    key: string,
-    input: Table,
-  ): { spec: Table; changed: boolean } => {
+  const rewriteDependency = (key: string, input: Table): { spec: Table; changed: boolean } => {
     let spec = { ...input };
     let pathBase = crateSrcAbs;
     const realName = (spec.package as string | undefined) ?? key;
@@ -355,10 +300,7 @@ export function transformManifest(
 
     if (spec.workspace === true) {
       const wsEntry = ctx.wsDeps[key];
-      if (wsEntry === undefined)
-        throw new Error(
-          `${crate.name}: workspace dependency "${key}" is not defined`,
-        );
+      if (wsEntry === undefined) throw new Error(`${crate.name}: workspace dependency "${key}" is not defined`);
       spec = mergeWorkspaceDependency(spec, asSpec(wsEntry));
       pathBase = ctx.wsRootDir;
       changed = true;
@@ -366,15 +308,10 @@ export function transformManifest(
 
     let target: CrateInfo | undefined;
     if (typeof spec.path === "string") {
-      target = ctx.byDir.get(
-        `${crate.source}:${resolvePath(spec.path, pathBase)}`,
-      );
-      if (target === undefined && ctx.byName.has(realName))
-        target = ctx.byName.get(realName);
+      target = ctx.byDir.get(`${crate.source}:${resolvePath(spec.path, pathBase)}`);
+      if (target === undefined && ctx.byName.has(realName)) target = ctx.byName.get(realName);
       if (target === undefined)
-        warnings.push(
-          `${crate.name}: path dependency "${key}" (${spec.path}) is not an imported crate`,
-        );
+        warnings.push(`${crate.name}: path dependency "${key}" (${spec.path}) is not an imported crate`);
     } else if (ctx.byName.has(realName)) {
       target = ctx.byName.get(realName);
     }
@@ -382,16 +319,13 @@ export function transformManifest(
     if (target !== undefined) {
       spec.path = relativeDir(crate.newDir, target.newDir);
       spec.package = target.newName;
-      if (typeof spec.version === "string")
-        spec.version = alignVersion(spec.version, target.version);
+      if (typeof spec.version === "string") spec.version = alignVersion(spec.version, target.version);
       changed = true;
     }
 
     const ordered: Table = {};
-    for (const k of ["version", "path", "package"])
-      if (spec[k] !== undefined) ordered[k] = spec[k];
-    for (const [k, v] of Object.entries(spec))
-      if (ordered[k] === undefined) ordered[k] = v;
+    for (const k of ["version", "path", "package"]) if (spec[k] !== undefined) ordered[k] = spec[k];
+    for (const [k, v] of Object.entries(spec)) if (ordered[k] === undefined) ordered[k] = v;
     return { spec: ordered, changed };
   };
 
@@ -404,79 +338,49 @@ export function transformManifest(
         );
       const depKey = (m?.[1] ?? m?.[2] ?? "").replace(/"/g, "");
       const body = lines.slice(section.start + 1, section.end).join("\n");
-      const { spec, changed } = rewriteDependency(
-        depKey,
-        Bun.TOML.parse(body) as Table,
-      );
+      const { spec, changed } = rewriteDependency(depKey, Bun.TOML.parse(body) as Table);
       if (!changed) continue;
       const rendered = Object.entries(spec).map(
-        ([k, v]) =>
-          `${BARE_KEY.test(k) ? k : JSON.stringify(k)} = ${serializeToml(v)}`,
+        ([k, v]) => `${BARE_KEY.test(k) ? k : JSON.stringify(k)} = ${serializeToml(v)}`,
       );
       replaceRange(section.start + 1, section.end, [...rendered, ""]);
       continue;
     }
     if (!DEP_SECTION.test(section.name)) continue;
     for (const entry of entryRanges(lines, section).toReversed()) {
-      const { key, value } = parseEntry(
-        lines.slice(entry.start, entry.end).join("\n"),
-      );
+      const { key, value } = parseEntry(lines.slice(entry.start, entry.end).join("\n"));
       const { spec, changed } = rewriteDependency(key, asSpec(value));
       if (!changed) continue;
       const keys = Object.keys(spec);
-      const out =
-        keys.length === 1 && keys[0] === "version"
-          ? serializeToml(spec.version)
-          : serializeToml(spec);
-      replaceRange(entry.start, entry.end, [
-        `${BARE_KEY.test(key) ? key : JSON.stringify(key)} = ${out}`,
-      ]);
+      const out = keys.length === 1 && keys[0] === "version" ? serializeToml(spec.version) : serializeToml(spec);
+      replaceRange(entry.start, entry.end, [`${BARE_KEY.test(key) ? key : JSON.stringify(key)} = ${out}`]);
     }
   }
 
   // 5. [lib] / [[bin]] names stay unchanged
   sections = scanSections(lines);
   const libName = crate.name.replace(/-/g, "_");
-  const libSection = sections.find((s) => s.name === "lib" && !s.isArray);
+  const libSection = sections.find(s => s.name === "lib" && !s.isArray);
   const hasLibFile = ctx.hasFile(posix.join(crate.srcDir, "src/lib.rs"));
   if (libSection !== undefined) {
-    const hasName = entryRanges(lines, libSection).some(
-      (e) => e.key === "name",
-    );
-    if (!hasName)
-      lines.splice(
-        libSection.start + 1,
-        0,
-        `name = ${JSON.stringify(libName)}`,
-      );
+    const hasName = entryRanges(lines, libSection).some(e => e.key === "name");
+    if (!hasName) lines.splice(libSection.start + 1, 0, `name = ${JSON.stringify(libName)}`);
   }
   const append: string[] = [];
-  if (libSection === undefined && hasLibFile)
-    append.push("[lib]", `name = ${JSON.stringify(libName)}`, "");
+  if (libSection === undefined && hasLibFile) append.push("[lib]", `name = ${JSON.stringify(libName)}`, "");
   sections = scanSections(lines);
   const hasMainFile = ctx.hasFile(posix.join(crate.srcDir, "src/main.rs"));
-  const bins = sections.filter((s) => s.name === "bin" && s.isArray);
-  const coversMain = bins.some((s) =>
-    entryRanges(lines, s).some(
-      (e) =>
-        e.key === "path" &&
-        /["']src\/main\.rs["']/.test(lines[e.start] as string),
-    ),
+  const bins = sections.filter(s => s.name === "bin" && s.isArray);
+  const coversMain = bins.some(s =>
+    entryRanges(lines, s).some(e => e.key === "path" && /["']src\/main\.rs["']/.test(lines[e.start] as string)),
   );
   if (hasMainFile && !coversMain) {
-    append.push(
-      "[[bin]]",
-      `name = ${JSON.stringify(crate.name)}`,
-      `path = "src/main.rs"`,
-      "",
-    );
+    append.push("[[bin]]", `name = ${JSON.stringify(crate.name)}`, `path = "src/main.rs"`, "");
   }
   if (append.length > 0) {
     // Insert right after the last package-related section.
     sections = scanSections(lines);
-    const pkgSections = sections.filter(
-      (s) => s.name === "package" || s.name.startsWith("package."),
-    );
+    const pkgSections = sections.filter(s => s.name === "package" || s.name.startsWith("package."));
     const last = pkgSections[pkgSections.length - 1] as Section;
     let at = last.end;
     while (at > last.start + 1 && lines[at - 1] === "") at--;
@@ -488,9 +392,7 @@ export function transformManifest(
   // Validate that the result is still valid TOML with the expected identity.
   const reparsed = Bun.TOML.parse(joined) as Table;
   if ((reparsed.package as Table).name !== crate.newName) {
-    throw new Error(
-      `${crate.name}: transformed manifest has unexpected package name`,
-    );
+    throw new Error(`${crate.name}: transformed manifest has unexpected package name`);
   }
   return { text: joined, warnings };
 }
@@ -527,8 +429,7 @@ async function git(cwd: string, args: string[]): Promise<string> {
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  if (code !== 0)
-    throw new Error(`git ${args.join(" ")} failed in ${cwd}: ${err.trim()}`);
+  if (code !== 0) throw new Error(`git ${args.join(" ")} failed in ${cwd}: ${err.trim()}`);
   return out;
 }
 
@@ -536,16 +437,13 @@ function walk(dir: string, base = dir, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const abs = join(dir, entry.name);
     if (entry.isDirectory()) walk(abs, base, acc);
-    else
-      acc.push(
-        posix.relative(base.split("\\").join("/"), abs.split("\\").join("/")),
-      );
+    else acc.push(posix.relative(base.split("\\").join("/"), abs.split("\\").join("/")));
   }
   return acc;
 }
 
 function globMatch(patterns: readonly string[], path: string): boolean {
-  return patterns.some((p) => new Bun.Glob(p).match(path));
+  return patterns.some(p => new Bun.Glob(p).match(path));
 }
 
 const asList = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
@@ -557,7 +455,7 @@ export async function loadVendorConfig(path: string): Promise<VendorConfig> {
     repository: String(raw.repository ?? ""),
     out: String(raw.out ?? "crates"),
     exclude: asList<string>(raw.exclude),
-    sources: asList<Table>(raw.source).map((s) => ({
+    sources: asList<Table>(raw.source).map(s => ({
       name: String(s.name),
       crates: asList<string>(s.crates),
       excludeCrates: asList<string>(s.exclude_crates),
@@ -565,12 +463,12 @@ export async function loadVendorConfig(path: string): Promise<VendorConfig> {
       rename: (s.rename ?? {}) as Record<string, string>,
       rustfmt: s.rustfmt === undefined ? undefined : String(s.rustfmt),
     })),
-    copy: asList<Table>(raw.copy).map((c) => ({
+    copy: asList<Table>(raw.copy).map(c => ({
       from: String(c.from),
       to: String(c.to),
       exclude: asList<string>(c.exclude),
     })),
-    rewrite: asList<Table>(raw.rewrite).map((r) => ({
+    rewrite: asList<Table>(raw.rewrite).map(r => ({
       files: String(r.files),
       from: String(r.from),
       to: String(r.to),
@@ -595,16 +493,10 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
   // Materialize the committed HEAD of each submodule.
   for (const source of cfg.sources) {
     const repo = resolve(rootDir, "vendor", source.name);
-    if (!existsSync(repo))
-      throw new Error(`Source repository not found: vendor/${source.name}`);
+    if (!existsSync(repo)) throw new Error(`Source repository not found: vendor/${source.name}`);
     // oxlint-disable-next-line no-await-in-loop -- sources are validated in config order; a dirty checkout must abort before any later source is touched
-    const dirty = (
-      await git(repo, ["status", "--porcelain", "--untracked-files=no"])
-    ).trim();
-    if (dirty !== "")
-      throw new Error(
-        `vendor/${source.name} has uncommitted changes; commit or reset them first`,
-      );
+    const dirty = (await git(repo, ["status", "--porcelain", "--untracked-files=no"])).trim();
+    if (dirty !== "") throw new Error(`vendor/${source.name} has uncommitted changes; commit or reset them first`);
     // oxlint-disable-next-line no-await-in-loop -- rev-parse runs per source in config order, after the same dirty-tree guard
     const sha = (await git(repo, ["rev-parse", "HEAD"])).trim();
     const dir = resolve(options.cacheDir, source.name);
@@ -625,17 +517,12 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
     const all = walk(checkout).toSorted();
     fileLists.set(source.name, all);
     for (const file of all) {
-      if (basename(file) !== "Cargo.toml" || file.includes("node_modules/"))
-        continue;
+      if (basename(file) !== "Cargo.toml" || file.includes("node_modules/")) continue;
       const dir = posix.dirname(file);
-      const matches = source.crates.some((p) =>
-        p === "." ? dir === "." : new Bun.Glob(p).match(dir),
-      );
+      const matches = source.crates.some(p => (p === "." ? dir === "." : new Bun.Glob(p).match(dir)));
       if (!matches || globMatch(source.excludeCrates ?? [], dir)) continue;
       // oxlint-disable-next-line no-await-in-loop -- crates are collected in directory-walk order, which the generated vendor manifest records
-      const manifest = Bun.TOML.parse(
-        await Bun.file(join(checkout, file)).text(),
-      ) as Table;
+      const manifest = Bun.TOML.parse(await Bun.file(join(checkout, file)).text()) as Table;
       const pkg = manifest.package as Table | undefined;
       if (pkg === undefined) continue;
       const name = String(pkg.name);
@@ -646,10 +533,7 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
         name,
         newName: `${cfg.prefix}${source.rename?.[name] ?? name}`,
         version,
-        newDir: posix.join(
-          cfg.out,
-          `${cfg.prefix}${source.rename?.[name] ?? name}`,
-        ),
+        newDir: posix.join(cfg.out, `${cfg.prefix}${source.rename?.[name] ?? name}`),
       };
       crates.push(info);
       manifests.set(`${source.name}:${dir}`, manifest);
@@ -659,14 +543,10 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
   const byName = new Map<string, CrateInfo>();
   for (const c of crates) {
     if (byName.has(c.name))
-      throw new Error(
-        `Duplicate crate name "${c.name}" in ${c.source} and ${byName.get(c.name)?.source}`,
-      );
+      throw new Error(`Duplicate crate name "${c.name}" in ${c.source} and ${byName.get(c.name)?.source}`);
     byName.set(c.name, c);
   }
-  const byDir = new Map(
-    crates.map((c) => [`${c.source}:${c.srcDir}`, c] as const),
-  );
+  const byDir = new Map(crates.map(c => [`${c.source}:${c.srcDir}`, c] as const));
 
   const files = new Map<string, OutputFile>();
   const put = (path: string, data: Uint8Array | string, mode = 0o644): void => {
@@ -688,7 +568,7 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
         (Bun.TOML.parse(await Bun.file(rootManifestPath).text()) as Table)
       : {};
     const ws = (rootManifest.workspace ?? {}) as Table;
-    const mine = crates.filter((c) => c.source === source.name);
+    const mine = crates.filter(c => c.source === source.name);
     const srcExclude = [...cfg.exclude, ...(source.exclude ?? [])];
 
     for (const file of list) {
@@ -696,19 +576,11 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
       // The owner is the deepest imported crate directory containing the file.
       let owner: CrateInfo | undefined;
       for (const c of mine) {
-        const inside =
-          c.srcDir === "." ||
-          file === c.srcDir ||
-          file.startsWith(`${c.srcDir}/`);
-        if (
-          inside &&
-          (owner === undefined || c.srcDir.length > owner.srcDir.length)
-        )
-          owner = c;
+        const inside = c.srcDir === "." || file === c.srcDir || file.startsWith(`${c.srcDir}/`);
+        if (inside && (owner === undefined || c.srcDir.length > owner.srcDir.length)) owner = c;
       }
       if (owner === undefined) continue;
-      const rel =
-        owner.srcDir === "." ? file : file.slice(owner.srcDir.length + 1);
+      const rel = owner.srcDir === "." ? file : file.slice(owner.srcDir.length + 1);
       const dest = posix.join(owner.newDir, rel);
       const abs = join(checkout, file);
       if (rel === "Cargo.toml") {
@@ -722,7 +594,7 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
           wsDeps: (ws.dependencies ?? {}) as Table,
           wsLints: ws.lints as Table | undefined,
           wsRootDir: ".",
-          hasFile: (p) => present.has(p),
+          hasFile: p => present.has(p),
         });
         warnings.push(...result.warnings);
         put(dest, result.text);
@@ -746,13 +618,11 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
             .split("\n")
             // nightly-only options only produce warnings on the stable toolchain
             .filter(
-              (line) =>
-                !/^\s*#?\s*(imports_granularity|wrap_comments|normalize_comments|license_template_path)\b/.test(
-                  line,
-                ),
+              line =>
+                !/^\s*#?\s*(imports_granularity|wrap_comments|normalize_comments|license_template_path)\b/.test(line),
             )
             .join("\n");
-    for (const c of crates.filter((o) => o.source === source.name)) {
+    for (const c of crates.filter(o => o.source === source.name)) {
       put(posix.join(c.newDir, "rustfmt.toml"), style);
     }
   }
@@ -763,17 +633,15 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
     const [sourceName, ...rest] = copy.from.split(":");
     const sub = rest.join(":");
     const checkout = checkouts.get(sourceName as string);
-    if (checkout === undefined)
-      throw new Error(`[[copy]] unknown source "${sourceName}"`);
+    if (checkout === undefined) throw new Error(`[[copy]] unknown source "${sourceName}"`);
     const absFrom = join(checkout, sub);
-    if (!existsSync(absFrom))
-      throw new Error(`[[copy]] path not found: ${copy.from}`);
+    if (!existsSync(absFrom)) throw new Error(`[[copy]] path not found: ${copy.from}`);
     const isDirectory = lstatSync(absFrom).isDirectory();
     if (isDirectory) copyDirs.push(copy.to);
     const items = isDirectory
       ? walk(absFrom)
-          .filter((f) => !globMatch(copy.exclude ?? [], f))
-          .map((f) => [join(absFrom, f), posix.join(copy.to, f)] as const)
+          .filter(f => !globMatch(copy.exclude ?? [], f))
+          .map(f => [join(absFrom, f), posix.join(copy.to, f)] as const)
       : [[absFrom, copy.to] as const];
     for (const [from, to] of items) {
       put(
@@ -789,11 +657,7 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
   const decoder = new TextDecoder();
   for (const c of crates) {
     const siblings = crates.filter(
-      (o) =>
-        o.source === c.source &&
-        o !== c &&
-        posix.dirname(o.srcDir) === posix.dirname(c.srcDir) &&
-        o.srcDir !== ".",
+      o => o.source === c.source && o !== c && posix.dirname(o.srcDir) === posix.dirname(c.srcDir) && o.srcDir !== ".",
     );
     if (siblings.length === 0) continue;
     for (const [path, file] of files) {
@@ -821,10 +685,7 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
       put(path, text.split(rule.from).join(rule.to), file.mode);
       hits++;
     }
-    if (hits === 0)
-      warnings.push(
-        `[[rewrite]] matched nothing: ${rule.files} (${rule.from})`,
-      );
+    if (hits === 0) warnings.push(`[[rewrite]] matched nothing: ${rule.files} (${rule.from})`);
   }
 
   // Verify relative file references that must resolve inside the new layout.
@@ -833,23 +694,16 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
     const text = decoder
       .decode(file.data)
       .split("\n")
-      .filter((line) => !line.trimStart().startsWith("//"))
+      .filter(line => !line.trimStart().startsWith("//"))
       .join("\n");
-    for (const m of text.matchAll(
-      /\binclude(?:_str|_bytes)?!\(\s*"([^"$]+)"\s*\)/g,
-    )) {
-      const target = posix.normalize(
-        posix.join(posix.dirname(path), m[1] as string),
-      );
-      if (!files.has(target))
-        warnings.push(
-          `${path}: include of "${m[1]}" does not resolve (${target})`,
-        );
+    for (const m of text.matchAll(/\binclude(?:_str|_bytes)?!\(\s*"([^"$]+)"\s*\)/g)) {
+      const target = posix.normalize(posix.join(posix.dirname(path), m[1] as string));
+      if (!files.has(target)) warnings.push(`${path}: include of "${m[1]}" does not resolve (${target})`);
     }
   }
 
-  const crateDirs = new Set(crates.map((c) => c.newDir));
-  const removedDirs = options.previousDirs.filter((d) => !crateDirs.has(d));
+  const crateDirs = new Set(crates.map(c => c.newDir));
+  const removedDirs = options.previousDirs.filter(d => !crateDirs.has(d));
   return { files, crates, sources, warnings, removedDirs, copyDirs };
 }
 
@@ -858,7 +712,7 @@ export function renderLock(result: ImportResult): string {
     version: 1,
     generator: "yolo import",
     sources: result.sources,
-    crates: result.crates.map((c) => ({
+    crates: result.crates.map(c => ({
       name: c.name,
       package: c.newName,
       version: c.version,
@@ -870,32 +724,16 @@ export function renderLock(result: ImportResult): string {
   return `${JSON.stringify(lock, null, 2)}\n`;
 }
 
-export function renderCratesDoc(
-  result: ImportResult,
-  cfg: VendorConfig,
-): string {
+export function renderCratesDoc(result: ImportResult, cfg: VendorConfig): string {
   const rows = result.crates
-    .map(
-      (c) =>
-        `| \`${c.newName}\` | \`${c.name}\` | ${c.version || "-"} | \`${c.source}\` | \`${c.newDir}\` |`,
-    )
+    .map(c => `| \`${c.newName}\` | \`${c.name}\` | ${c.version || "-"} | \`${c.source}\` | \`${c.newDir}\` |`)
     .join("\n");
-  const sha = result.sources
-    .map((s) => `- \`${s.name}\`: \`${s.sha.slice(0, 12)}\``)
-    .join("\n");
+  const sha = result.sources.map(s => `- \`${s.name}\`: \`${s.sha.slice(0, 12)}\``).join("\n");
   return `# Imported crates\n\n_Generated by \`yolo import\` from \`vendor.toml\`. Do not edit by hand._\n\nPackages are prefixed with \`${cfg.prefix}\`; library and binary names are unchanged.\n\n| Package | Upstream crate | Version | Source | Directory |\n| :--- | :--- | :--- | :--- | :--- |\n${rows}\n\n## Source commits\n\n${sha}\n`;
 }
 
-async function writeOutputs(
-  outRoot: string,
-  result: ImportResult,
-  extra: Map<string, string>,
-): Promise<void> {
-  for (const dir of [
-    ...result.removedDirs,
-    ...result.crates.map((c) => c.newDir),
-    ...result.copyDirs,
-  ]) {
+async function writeOutputs(outRoot: string, result: ImportResult, extra: Map<string, string>): Promise<void> {
+  for (const dir of [...result.removedDirs, ...result.crates.map(c => c.newDir), ...result.copyDirs]) {
     rmSync(resolve(outRoot, dir), { recursive: true, force: true });
   }
   for (const [path, file] of result.files) {
@@ -914,45 +752,29 @@ async function writeOutputs(
 }
 
 /** Lists every Cargo manifest of the sources and whether it is imported (`yolo import --scan`). */
-export async function scanSources(
-  rootDir: string,
-  cfg: VendorConfig,
-): Promise<number> {
+export async function scanSources(rootDir: string, cfg: VendorConfig): Promise<number> {
   let missed = 0;
   for (const source of cfg.sources) {
     const repo = resolve(rootDir, "vendor", source.name);
     // oxlint-disable-next-line no-await-in-loop -- sources are listed in config order; each listing feeds the ordered manifest set
-    const listing = await git(repo, [
-      "ls-files",
-      "-z",
-      "--",
-      "Cargo.toml",
-      "**/Cargo.toml",
-    ]);
+    const listing = await git(repo, ["ls-files", "-z", "--", "Cargo.toml", "**/Cargo.toml"]);
     const manifests = listing.split("\0").filter(Boolean).toSorted();
     console.log(`\x1b[1m${source.name}\x1b[0m (${manifests.length} manifests)`);
     for (const file of manifests) {
       const dir = posix.dirname(file);
       const imported =
-        source.crates.some((p) =>
-          p === "." ? dir === "." : new Bun.Glob(p).match(dir),
-        ) && !globMatch(source.excludeCrates ?? [], dir);
+        source.crates.some(p => (p === "." ? dir === "." : new Bun.Glob(p).match(dir))) &&
+        !globMatch(source.excludeCrates ?? [], dir);
       let name = "";
       try {
         // oxlint-disable-next-line no-await-in-loop -- manifests are parsed one by one in listing order to keep the reported names deterministic
-        const manifest = Bun.TOML.parse(
-          await Bun.file(join(repo, file)).text(),
-        ) as Table;
-        name = String(
-          (manifest.package as Table | undefined)?.name ?? "(workspace root)",
-        );
+        const manifest = Bun.TOML.parse(await Bun.file(join(repo, file)).text()) as Table;
+        name = String((manifest.package as Table | undefined)?.name ?? "(workspace root)");
       } catch {
         name = "(unparsable)";
       }
       if (!imported) missed++;
-      console.log(
-        `  ${imported ? "\x1b[32m✔ imported\x1b[0m" : "\x1b[33m· skipped \x1b[0m"} ${file}  ${name}`,
-      );
+      console.log(`  ${imported ? "\x1b[32m✔ imported\x1b[0m" : "\x1b[33m· skipped \x1b[0m"} ${file}  ${name}`);
     }
   }
   console.log(`${missed} manifest(s) not imported.`);
@@ -960,10 +782,7 @@ export async function scanSources(
 }
 
 /** `yolo import [--apply] [--check] [--scan] [--out <dir>] [--config <file>]` */
-export async function runImportCommand(
-  args: readonly string[],
-  rootDir: string = process.cwd(),
-): Promise<number> {
+export async function runImportCommand(args: readonly string[], rootDir: string = process.cwd()): Promise<number> {
   let apply = false;
   let check = false;
   let scan = false;
@@ -995,9 +814,7 @@ export async function runImportCommand(
   if (scan) return scanSources(rootDir, config);
   const lockPath = resolve(out, "vendor.lock");
   const previous = existsSync(lockPath)
-    ? ((
-        (await Bun.file(lockPath).json()) as { crates?: { dir: string }[] }
-      ).crates?.map((c) => c.dir) ?? [])
+    ? (((await Bun.file(lockPath).json()) as { crates?: { dir: string }[] }).crates?.map(c => c.dir) ?? [])
     : [];
   const started = Bun.nanoseconds();
   const result = await runImport({
@@ -1018,9 +835,7 @@ export async function runImportCommand(
 
   if (check) {
     const diffs: string[] = [];
-    const expected = new Map<string, Uint8Array>(
-      [...result.files].map(([p, f]) => [p, f.data] as const),
-    );
+    const expected = new Map<string, Uint8Array>([...result.files].map(([p, f]) => [p, f.data] as const));
     for (const [p, t] of extra) expected.set(p, new TextEncoder().encode(t));
     for (const [path, data] of expected) {
       const abs = resolve(out, path);
@@ -1030,13 +845,9 @@ export async function runImportCommand(
       }
       // oxlint-disable-next-line no-await-in-loop -- verification reads one file at a time so diffs are reported in path order
       const actual = new Uint8Array(await Bun.file(abs).arrayBuffer());
-      if (Bun.hash.wyhash(actual) !== Bun.hash.wyhash(data))
-        diffs.push(`differs: ${path}`);
+      if (Bun.hash.wyhash(actual) !== Bun.hash.wyhash(data)) diffs.push(`differs: ${path}`);
     }
-    for (const dir of [
-      ...result.crates.map((c) => c.newDir),
-      ...result.copyDirs,
-    ]) {
+    for (const dir of [...result.crates.map(c => c.newDir), ...result.copyDirs]) {
       const abs = resolve(out, dir);
       if (!existsSync(abs)) continue;
       for (const f of walk(abs)) {
@@ -1046,18 +857,12 @@ export async function runImportCommand(
     }
     for (const d of diffs.slice(0, 50)) console.log(`  ${d}`);
     if (diffs.length > 50) console.log(`  … ${diffs.length - 50} more`);
-    console.log(
-      diffs.length === 0
-        ? "In sync with the sources."
-        : `${diffs.length} difference(s).`,
-    );
+    console.log(diffs.length === 0 ? "In sync with the sources." : `${diffs.length} difference(s).`);
     return diffs.length === 0 ? 0 : 1;
   }
 
   if (!apply) {
-    console.log(
-      "Dry-run only. Re-run with --apply (and --out <worktree>) to write.",
-    );
+    console.log("Dry-run only. Re-run with --apply (and --out <worktree>) to write.");
     return 0;
   }
   await writeOutputs(out, result, extra);

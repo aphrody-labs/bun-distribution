@@ -1,16 +1,8 @@
 // SPDX-License-Identifier: MIT
 import { hashContent } from "@aphrody/bun-workspace/hash";
 
-export type Ecosystem =
-  "debian" | "ubuntu" | "cosmic" | "alpm" | "msys2" | "mingw" | "cygwin";
-export type InputFormat =
-  | "deb"
-  | "deb822"
-  | "pkginfo"
-  | "srcinfo"
-  | "cygwin"
-  | "alpm-archive"
-  | "source-archive";
+export type Ecosystem = "debian" | "ubuntu" | "cosmic" | "alpm" | "msys2" | "mingw" | "cygwin";
+export type InputFormat = "deb" | "deb822" | "pkginfo" | "srcinfo" | "cygwin" | "alpm-archive" | "source-archive";
 export type Fields = Record<string, string[]>;
 
 export interface SourceArtifact {
@@ -64,9 +56,7 @@ export interface Inspection {
     format: InputFormat;
   };
   packages: PackageRecord[];
-  payload: Array<
-    Omit<PayloadEntry, "data"> & { size: number; sha256?: string; abi?: Abi }
-  >;
+  payload: Array<Omit<PayloadEntry, "data"> & { size: number; sha256?: string; abi?: Abi }>;
 }
 
 export interface Limits {
@@ -89,10 +79,8 @@ export const decoder = new TextDecoder("utf-8", { fatal: true });
 export const sha256 = hashContent;
 
 export function safePath(value: string): string {
-  if (value.startsWith("/") || /[\\:\0\r\n]/.test(value))
-    throw new Error(`Unsafe archive path: ${value}`);
-  const parts = value.split("/").filter((part) => part !== "." && part !== "");
-  if (!parts.length || parts.some((part) => part === ".."))
-    throw new Error(`Unsafe archive path: ${value}`);
+  if (value.startsWith("/") || /[\\:\0\r\n]/.test(value)) throw new Error(`Unsafe archive path: ${value}`);
+  const parts = value.split("/").filter(part => part !== "." && part !== "");
+  if (!parts.length || parts.some(part => part === "..")) throw new Error(`Unsafe archive path: ${value}`);
   return parts.join("/");
 }

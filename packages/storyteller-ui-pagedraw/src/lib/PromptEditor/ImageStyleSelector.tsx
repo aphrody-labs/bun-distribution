@@ -1,9 +1,7 @@
 import React, { useRef } from "react";
 import { ImageStyleSelectorProps } from "./types";
 
-const ImageStyleSelector: React.FC<ImageStyleSelectorProps> = ({
-  onImageSelect,
-}) => {
+const ImageStyleSelector: React.FC<ImageStyleSelectorProps> = ({ onImageSelect }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,13 +15,7 @@ const ImageStyleSelector: React.FC<ImageStyleSelectorProps> = ({
 
   return (
     <>
-      <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        accept="image/*"
-        onChange={handleFileChange}
-      />
+      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
     </>
   );
 };

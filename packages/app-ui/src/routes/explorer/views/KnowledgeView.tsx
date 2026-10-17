@@ -1,9 +1,4 @@
-import {
-  Icon,
-  renderIcon,
-  m3FocusRing,
-  m3StateLayer,
-} from "@aphrody/m3-primitives";
+import { Icon, renderIcon, m3FocusRing, m3StateLayer } from "@aphrody/m3-primitives";
 import type { IconSource } from "@aphrody/m3-primitives";
 import { KnowledgeInspector } from "../../../components/Inspector/variants/KnowledgeInspector";
 import { useExplorer } from "../context";
@@ -92,16 +87,13 @@ export function KnowledgeView() {
     enabled: !!currentPath,
   });
 
-  const files = useMemo(
-    () => (directoryQuery.data?.files || []) as File[],
-    [directoryQuery.data?.files],
-  );
+  const files = useMemo(() => (directoryQuery.data?.files || []) as File[], [directoryQuery.data?.files]);
 
   // Group files by content kind
   const filesByKind = useMemo(() => {
     const groups = new Map<ContentKind, File[]>();
 
-    files.forEach((file) => {
+    files.forEach(file => {
       const kind = getContentKind(file) || "unknown";
       if (!groups.has(kind)) {
         groups.set(kind, []);
@@ -117,13 +109,10 @@ export function KnowledgeView() {
 
   // Collect all unique tags
   const allTags = useMemo(() => {
-    const tagMap = new Map<
-      string,
-      { id: string; name: string; color: string; count: number }
-    >();
+    const tagMap = new Map<string, { id: string; name: string; color: string; count: number }>();
 
-    files.forEach((file) => {
-      file.tags?.forEach((tag) => {
+    files.forEach(file => {
+      file.tags?.forEach(tag => {
         if (tagMap.has(tag.id)) {
           tagMap.get(tag.id)!.count++;
         } else {
@@ -147,19 +136,10 @@ export function KnowledgeView() {
         <div className="max-w-5xl space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3">
-            <Icon
-              name="auto_awesome"
-              size={32}
-              filled
-              className="text-primary"
-            />
+            <Icon name="auto_awesome" size={32} filled className="text-primary" />
             <div>
-              <h1 className="text-headline-small text-on-surface">
-                Knowledge view
-              </h1>
-              <p className="text-body-medium text-on-surface-variant">
-                AI-powered insights for {files.length} items
-              </p>
+              <h1 className="text-headline-small text-on-surface">Knowledge view</h1>
+              <p className="text-body-medium text-on-surface-variant">AI-powered insights for {files.length} items</p>
             </div>
           </div>
 
@@ -167,12 +147,7 @@ export function KnowledgeView() {
           <Section title="Content" icon="folder">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {filesByKind.map(([kind, kindFiles]) => (
-                <ContentPile
-                  key={kind}
-                  kind={kind}
-                  files={kindFiles.slice(0, 3)}
-                  totalCount={kindFiles.length}
-                />
+                <ContentPile key={kind} kind={kind} files={kindFiles.slice(0, 3)} totalCount={kindFiles.length} />
               ))}
             </div>
           </Section>
@@ -181,7 +156,7 @@ export function KnowledgeView() {
           {allTags.length > 0 && (
             <Section title="Tags" icon="sell">
               <div className="flex flex-wrap gap-2">
-                {allTags.map((tag) => (
+                {allTags.map(tag => (
                   <button
                     key={tag.id}
                     className={clsx(
@@ -196,12 +171,8 @@ export function KnowledgeView() {
                         backgroundColor: tag.color,
                       }}
                     />
-                    <span className="text-label-large text-on-surface-variant">
-                      {tag.name}
-                    </span>
-                    <span className="text-body-small text-on-surface-variant">
-                      ({tag.count})
-                    </span>
+                    <span className="text-label-large text-on-surface-variant">{tag.name}</span>
+                    <span className="text-body-small text-on-surface-variant">({tag.count})</span>
                   </button>
                 ))}
               </div>
@@ -214,32 +185,21 @@ export function KnowledgeView() {
             <Section title="Summary" icon="auto_awesome">
               <div className="space-y-2 text-body-medium text-on-surface-variant">
                 <p>
-                  This directory contains {files.length} items across{" "}
-                  {filesByKind.length} content types.
+                  This directory contains {files.length} items across {filesByKind.length} content types.
                 </p>
                 {filesByKind.length > 0 && (
                   <p>
-                    Most common type: {CONTENT_KIND_LABELS[filesByKind[0][0]]} (
-                    {filesByKind[0][1].length} items)
+                    Most common type: {CONTENT_KIND_LABELS[filesByKind[0][0]]} ({filesByKind[0][1].length} items)
                   </p>
                 )}
-                {allTags.length > 0 && (
-                  <p>
-                    Tagged items:{" "}
-                    {allTags.reduce((sum, tag) => sum + tag.count, 0)}
-                  </p>
-                )}
+                {allTags.length > 0 && <p>Tagged items: {allTags.reduce((sum, tag) => sum + tag.count, 0)}</p>}
               </div>
             </Section>
 
             {/* Conversations */}
             <Section title="Conversations" icon="chat">
               <div className="grid grid-cols-2 gap-2">
-                <ConversationCard
-                  title="Organize photos"
-                  preview="Can you help sort these by date?"
-                  time="2h ago"
-                />
+                <ConversationCard title="Organize photos" preview="Can you help sort these by date?" time="2h ago" />
                 <ConversationCard
                   title="Find duplicates"
                   preview="Looking for duplicate files in..."
@@ -252,30 +212,10 @@ export function KnowledgeView() {
           {/* Intelligence Sidecars */}
           <Section title="Intelligence" icon="database">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <SidecarItem
-                kind="OCR Text"
-                variant="Extracted text from 12 images"
-                status="ready"
-                size="2.4 MB"
-              />
-              <SidecarItem
-                kind="Thumbnails"
-                variant="Generated for 48 media files"
-                status="ready"
-                size="8.1 MB"
-              />
-              <SidecarItem
-                kind="Video Transcripts"
-                variant="Speech-to-text from 3 videos"
-                status="pending"
-                size="—"
-              />
-              <SidecarItem
-                kind="Embeddings"
-                variant="Semantic vectors for search"
-                status="ready"
-                size="14.2 MB"
-              />
+              <SidecarItem kind="OCR Text" variant="Extracted text from 12 images" status="ready" size="2.4 MB" />
+              <SidecarItem kind="Thumbnails" variant="Generated for 48 media files" status="ready" size="8.1 MB" />
+              <SidecarItem kind="Video Transcripts" variant="Speech-to-text from 3 videos" status="pending" size="—" />
+              <SidecarItem kind="Embeddings" variant="Semantic vectors for search" status="ready" size="14.2 MB" />
             </div>
           </Section>
         </div>
@@ -293,15 +233,7 @@ export function KnowledgeView() {
   );
 }
 
-function Section({
-  title,
-  icon,
-  children,
-}: {
-  title: string;
-  icon: IconSource;
-  children: React.ReactNode;
-}) {
+function Section({ title, icon, children }: { title: string; icon: IconSource; children: React.ReactNode }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
@@ -317,15 +249,7 @@ function Section({
   );
 }
 
-function ContentPile({
-  kind,
-  files,
-  totalCount,
-}: {
-  kind: ContentKind;
-  files: File[];
-  totalCount: number;
-}) {
+function ContentPile({ kind, files, totalCount }: { kind: ContentKind; files: File[]; totalCount: number }) {
   const iconName = CONTENT_KIND_ICONS[kind];
   const label = CONTENT_KIND_LABELS[kind];
 
@@ -359,12 +283,7 @@ function ContentPile({
           ))
         ) : (
           <div className="flex items-center justify-center w-full h-full">
-            <Icon
-              name={iconName}
-              size={48}
-              weight={200}
-              className="text-outline"
-            />
+            <Icon name={iconName} size={48} weight={200} className="text-outline" />
           </div>
         )}
       </div>
@@ -372,23 +291,13 @@ function ContentPile({
       {/* Label */}
       <div className="text-center">
         <div className="text-label-medium text-on-surface">{label}</div>
-        <div className="text-label-small text-on-surface-variant">
-          {totalCount} items
-        </div>
+        <div className="text-label-small text-on-surface-variant">{totalCount} items</div>
       </div>
     </button>
   );
 }
 
-function ConversationCard({
-  title,
-  preview,
-  time,
-}: {
-  title: string;
-  preview: string;
-  time: string;
-}) {
+function ConversationCard({ title, preview, time }: { title: string; preview: string; time: string }) {
   return (
     <button
       className={clsx(
@@ -401,9 +310,7 @@ function ConversationCard({
         <div className="text-title-small text-on-surface truncate">{title}</div>
         <Icon name="auto_awesome" size={12} filled className="text-primary" />
       </div>
-      <p className="text-body-small text-on-surface-variant line-clamp-2">
-        {preview}
-      </p>
+      <p className="text-body-small text-on-surface-variant line-clamp-2">{preview}</p>
       <span className="text-label-small text-outline">{time}</span>
     </button>
   );
@@ -433,10 +340,8 @@ function SidecarItem({
       <span
         className={clsx(
           "text-label-small px-2 py-0.5 rounded-small shrink-0",
-          status === "ready" &&
-            "bg-secondary-container text-on-secondary-container",
-          status === "pending" &&
-            "bg-surface-container-highest text-on-surface-variant",
+          status === "ready" && "bg-secondary-container text-on-secondary-container",
+          status === "pending" && "bg-surface-container-highest text-on-surface-variant",
         )}
       >
         {status}

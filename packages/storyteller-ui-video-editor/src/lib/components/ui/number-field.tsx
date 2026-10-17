@@ -28,15 +28,7 @@ type ScrubClamp = {
   max?: number;
 };
 
-function clampScrubValue({
-  value,
-  min,
-  max,
-}: {
-  value: number;
-  min?: number;
-  max?: number;
-}): number {
+function clampScrubValue({ value, min, max }: { value: number; min?: number; max?: number }): number {
   if (min != null && max != null) return clamp({ value, min, max });
   if (min != null) return Math.max(min, value);
   if (max != null) return Math.min(max, value);
@@ -52,10 +44,8 @@ function getActiveRange({
   direction: number;
   ranges: readonly ScrubRange[];
 }): ScrubRange | undefined {
-  return ranges.find((range) =>
-    direction > 0
-      ? value >= range.from && value < range.to
-      : value > range.from && value <= range.to,
+  return ranges.find(range =>
+    direction > 0 ? value >= range.from && value < range.to : value > range.from && value <= range.to,
   );
 }
 
@@ -82,8 +72,7 @@ function scrubAcrossRanges({
     if (!range) break;
 
     const boundary = direction > 0 ? range.to : range.from;
-    const pixelsToBoundary =
-      Math.abs(boundary - currentValue) * range.pixelsPerUnit;
+    const pixelsToBoundary = Math.abs(boundary - currentValue) * range.pixelsPerUnit;
 
     if (Math.abs(remainingPixels) <= pixelsToBoundary) {
       currentValue += remainingPixels / range.pixelsPerUnit;
@@ -97,10 +86,7 @@ function scrubAcrossRanges({
   return clampScrubValue({ value: currentValue, min, max });
 }
 
-interface NumberFieldProps extends Omit<
-  ComponentProps<"input">,
-  "size" | "type"
-> {
+interface NumberFieldProps extends Omit<ComponentProps<"input">, "size" | "type"> {
   icon?: React.ReactNode;
   suffix?: string;
   suffixClassName?: string;
@@ -143,9 +129,7 @@ function NumberField({
   const cumulativeDeltaRef = useRef(0);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [suffixLeft, setSuffixLeft] = useState(0);
-  const ghostValue = Array.isArray(value)
-    ? value.join(", ")
-    : String(value ?? "");
+  const ghostValue = Array.isArray(value) ? value.join(", ") : String(value ?? "");
 
   useLayoutEffect(() => {
     if (!suffix) {
@@ -156,8 +140,7 @@ function NumberField({
     if (ghostRef.current.textContent !== ghostValue) {
       ghostRef.current.textContent = ghostValue;
     }
-    const paddingLeft =
-      parseFloat(getComputedStyle(inputRef.current).paddingLeft) || 0;
+    const paddingLeft = parseFloat(getComputedStyle(inputRef.current).paddingLeft) || 0;
     setSuffixLeft(paddingLeft + ghostRef.current.offsetWidth);
   }, [ghostValue, suffix]);
 
@@ -191,8 +174,7 @@ function NumberField({
             min: scrubClamp?.min,
             max: scrubClamp?.max,
           })
-        : startValueRef.current +
-          cumulativeDeltaRef.current * DRAG_SENSITIVITIES[dragSensitivity];
+        : startValueRef.current + cumulativeDeltaRef.current * DRAG_SENSITIVITIES[dragSensitivity];
       onScrub(newValue);
     };
 
@@ -217,10 +199,9 @@ function NumberField({
       disabled={disabled}
       value={value}
       className="text-sm leading-none bg-transparent outline-none min-w-0 flex-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-      onMouseDown={(event) => {
+      onMouseDown={event => {
         const inputElement = event.currentTarget;
-        const shouldPreventNativeCaretPlacement =
-          event.button === 0 && document.activeElement !== inputElement;
+        const shouldPreventNativeCaretPlacement = event.button === 0 && document.activeElement !== inputElement;
         if (shouldPreventNativeCaretPlacement) {
           event.preventDefault();
           inputElement.focus();
@@ -228,17 +209,17 @@ function NumberField({
         }
         onMouseDown?.(event);
       }}
-      onFocus={(event) => {
+      onFocus={event => {
         setIsInputFocused(true);
         event.currentTarget.select();
         onFocus?.(event);
       }}
-      onKeyDown={(event) => {
+      onKeyDown={event => {
         const shouldBlurInput = event.key === "Enter" || event.key === "Escape";
         if (shouldBlurInput) event.currentTarget.blur();
         onKeyDown?.(event);
       }}
-      onBlur={(event) => {
+      onBlur={event => {
         setIsInputFocused(false);
         onBlur?.(event);
       }}
@@ -263,7 +244,7 @@ function NumberField({
             aria-label="Drag to adjust value"
             disabled={disabled}
             className="text-muted-foreground [&_svg]:size-3.5! shrink-0 select-none pl-2.5 text-sm leading-none cursor-ew-resize"
-            onMouseDown={(event) => event.preventDefault()}
+            onMouseDown={event => event.preventDefault()}
             onPointerDown={handleIconPointerDown}
           >
             {icon}
@@ -305,12 +286,7 @@ function NumberField({
       </span>
       {onReset && !isDefault && (
         <div className="shrink-0 pr-2 flex items-center">
-          <Button
-            variant="text"
-            size="text"
-            aria-label="Reset to default"
-            onClick={onReset}
-          >
+          <Button variant="text" size="text" aria-label="Reset to default" onClick={onReset}>
             <HugeiconsIcon icon={ArrowTurnBackwardIcon} className="size-3.5!" />
           </Button>
         </div>

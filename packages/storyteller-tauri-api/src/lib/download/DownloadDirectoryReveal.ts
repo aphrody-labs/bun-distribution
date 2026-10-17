@@ -7,9 +7,6 @@ export interface DownloadDirectoryRevealSuccess extends CommandResult {
 
 export interface DownloadDirectoryRevealPayload {}
 
-export const DownloadDirectoryReveal =
-  async (): Promise<DownloadDirectoryRevealSuccess> => {
-    return (await invoke(
-      "download_directory_reveal_command",
-    )) as DownloadDirectoryRevealSuccess;
-  };
+export const DownloadDirectoryReveal = async (): Promise<DownloadDirectoryRevealSuccess> => {
+  return (await invoke("download_directory_reveal_command")) as DownloadDirectoryRevealSuccess;
+};

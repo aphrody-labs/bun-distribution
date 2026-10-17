@@ -4,24 +4,10 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { findNativeBinary } from "@aphrody/paths";
-import {
-  apiCall,
-  apiDiff,
-  apiMethod,
-  apiSearch,
-  apiShow,
-  apiSources,
-  apiSync,
-} from "./apiindex.js";
+import { apiCall, apiDiff, apiMethod, apiSearch, apiShow, apiSources, apiSync } from "./apiindex.js";
 import { parseAppInfo, parsePackageInfo } from "./appinfo.js";
 import { type AuditReport, recordAudit, runAudit } from "./audit.js";
-import {
-  compatToolMapping,
-  loginUsers,
-  readClientConfig,
-  setAutoLogin,
-  setCompatTool,
-} from "./config.js";
+import { compatToolMapping, loginUsers, readClientConfig, setAutoLogin, setCompatTool } from "./config.js";
 import { openSteamDb } from "./db.js";
 import {
   launchOptionsString,
@@ -31,12 +17,7 @@ import {
   rungameidUri,
   setLaunchOptions,
 } from "./launch.js";
-import {
-  candidateDisks,
-  installedGames,
-  listLibraries,
-  moveLibrary,
-} from "./libraries.js";
+import { candidateDisks, installedGames, listLibraries, moveLibrary } from "./libraries.js";
 import { opClassify, opScan, opSql, opStats } from "./ops.js";
 import { openIdLoginUrl, openIdVerify, recordAuthSession } from "./openid.js";
 import { resolveSteamRoot } from "./paths.js";
@@ -62,12 +43,7 @@ import {
   writeBinaryKv,
   type BinKvObject,
 } from "./vdf.js";
-import {
-  rebuildCatalog,
-  recordLocalInstalled,
-  recordRemoteInstalled,
-  searchApps,
-} from "./search.js";
+import { rebuildCatalog, recordLocalInstalled, recordRemoteInstalled, searchApps } from "./search.js";
 import { tune } from "./tune.js";
 import { syncAppList, syncStoreApps } from "./webapi.js";
 
@@ -106,14 +82,12 @@ scan | stats | sql "<SELECT>" | store <appid...> | classify <file>
 openid login <return_to> | openid verify <query> | remote-download <appid> --dest D [--host vps]
 options: --root <steam dir> --steamcmd <exe> --account <name> --db <path> --force`;
 
-const replacer = (_: string, v: unknown) =>
-  typeof v === "bigint" ? v.toString() : v;
+const replacer = (_: string, v: unknown) => (typeof v === "bigint" ? v.toString() : v);
 
 /** Entry point for `bun-steam ...` and `re steam ...`. Returns the process exit code. */
 export async function main(argv: string[]): Promise<number> {
   if (argv[0] === "depot") return depot(argv.slice(1));
-  if (argv[0] === "steamcmd" && argv[1] === "run")
-    return steamcmdRaw(argv.slice(2));
+  if (argv[0] === "steamcmd" && argv[1] === "run") return steamcmdRaw(argv.slice(2));
   const { values, positionals } = parseArgs({
     args: argv,
     allowPositionals: true,
@@ -172,11 +146,7 @@ export async function main(argv: string[]): Promise<number> {
     },
   });
   const print = (v: unknown) =>
-    console.log(
-      values.json || typeof v !== "string"
-        ? JSON.stringify(v, replacer, values.json ? undefined : 2)
-        : v,
-    );
+    console.log(values.json || typeof v !== "string" ? JSON.stringify(v, replacer, values.json ? undefined : 2) : v);
   const log = (m: string) => console.error(m);
   const root = values.root ? resolveSteamRoot(values.root) : resolveSteamRoot();
   const dry = {
@@ -192,11 +162,7 @@ export async function main(argv: string[]): Promise<number> {
   const index = {
     db: values.db,
     root: values.root,
-    hashMax: values["no-hash"]
-      ? 0
-      : values["hash-max"]
-        ? Number(values["hash-max"])
-        : undefined,
+    hashMax: values["no-hash"] ? 0 : values["hash-max"] ? Number(values["hash-max"]) : undefined,
   };
   const [cmd, sub, ...rest] = positionals;
   const flavor = (s?: string): ProtonFlavor => {
@@ -211,14 +177,13 @@ export async function main(argv: string[]): Promise<number> {
           client: readClientConfig(root),
           steamcmd: steamcmdStatus(values.steamcmd),
           libraries: listLibraries(root),
-          compatTools: listCompatTools(root).map((t) => t.internalName),
+          compatTools: listCompatTools(root).map(t => t.internalName),
         });
         break;
       case "client":
         if (!sub || sub === "show") print(readClientConfig(root));
         else if (sub === "users") print(loginUsers(root));
-        else if (sub === "autologin" && rest[0])
-          print(setAutoLogin(rest[0], dry));
+        else if (sub === "autologin" && rest[0]) print(setAutoLogin(rest[0], dry));
         else throw new Error("client [show|users|autologin <account>]");
         break;
       case "steamcmd": {
@@ -233,18 +198,14 @@ export async function main(argv: string[]): Promise<number> {
           });
           print(run);
           return run.exitCode;
-        } else
-          throw new Error(
-            "steamcmd [status|update <appid>|run <+cmd args>...]",
-          );
+        } else throw new Error("steamcmd [status|update <appid>|run <+cmd args>...]");
         break;
       }
       case "libraries":
         if (!sub || sub === "list") print(listLibraries(root));
         else if (sub === "games") print(installedGames(root));
         else if (sub === "disks") print(candidateDisks());
-        else if (sub === "move" && rest[0] && rest[1])
-          print(moveLibrary(rest[0], rest[1], dry));
+        else if (sub === "move" && rest[0] && rest[1]) print(moveLibrary(rest[0], rest[1], dry));
         else throw new Error("libraries [list|games|disks|move <from> <to>]");
         break;
       case "proton":
@@ -292,20 +253,13 @@ export async function main(argv: string[]): Promise<number> {
               ...(values.config ? { configPath: values.config } : {}),
             }),
           );
-        else
-          throw new Error(
-            "proton [list|catalog|latest|install|update|valve|runtimes|mapping|set]",
-          );
+        else throw new Error("proton [list|catalog|latest|install|update|valve|runtimes|mapping|set]");
         break;
       case "launch": {
         const tuning = launchTuning({
           steamRoot: root,
           cacheDir: values.cache,
-          llvmpipe: values.llvmpipe
-            ? true
-            : values["no-llvmpipe"]
-              ? false
-              : "auto",
+          llvmpipe: values.llvmpipe ? true : values["no-llvmpipe"] ? false : "auto",
           threads: values.threads ? Number(values.threads) : undefined,
           runtimesDir: values.runtimes,
         });
@@ -327,8 +281,7 @@ export async function main(argv: string[]): Promise<number> {
                   current: readLaunchOptions(rest[0], root),
                 },
           );
-        } else if (sub === "run" && rest[0])
-          print(await openSteamUri(rungameidUri(rest[0])));
+        } else if (sub === "run" && rest[0]) print(await openSteamUri(rungameidUri(rest[0])));
         else throw new Error("launch [env|options <appid>|run <appid>]");
         break;
       }
@@ -337,17 +290,12 @@ export async function main(argv: string[]): Promise<number> {
           values.host && values.host !== "local"
             ? await remoteAudit(
                 values.host,
-                argv.filter(
-                  (a, i) =>
-                    a !== "audit" && a !== "--host" && argv[i - 1] !== "--host",
-                ),
+                argv.filter((a, i) => a !== "audit" && a !== "--host" && argv[i - 1] !== "--host"),
               )
             : await runAudit({
                 steamRoot: values.root ? root : undefined,
                 cellId: values.cell ? Number(values.cell) : undefined,
-                diskMiB: values["disk-mb"]
-                  ? Number(values["disk-mb"])
-                  : undefined,
+                diskMiB: values["disk-mb"] ? Number(values["disk-mb"]) : undefined,
                 libraries: values.library,
                 log: values.json ? undefined : log,
               });
@@ -356,8 +304,7 @@ export async function main(argv: string[]): Promise<number> {
           recordAudit(db, report);
           db.close();
         }
-        if (values.out)
-          await Bun.write(values.out, JSON.stringify(report, null, 2));
+        if (values.out) await Bun.write(values.out, JSON.stringify(report, null, 2));
         print(report);
         break;
       }
@@ -402,11 +349,7 @@ export async function main(argv: string[]): Promise<number> {
             local: recordLocalInstalled(db, root),
           };
           if (values.host && values.host !== "local")
-            out[values.host] = await recordRemoteInstalled(
-              db,
-              values.host,
-              values["remote-root"],
-            );
+            out[values.host] = await recordRemoteInstalled(db, values.host, values["remote-root"]);
           print(out);
         } finally {
           db.close();
@@ -417,11 +360,7 @@ export async function main(argv: string[]): Promise<number> {
         print(remotePlayState(root, values.lines ? Number(values.lines) : 20));
         break;
       case "vdf":
-        print(
-          sub === "write"
-            ? writeVdfFile(rest[0], rest[1], !!values.binary)
-            : readVdfFile(sub, values),
-        );
+        print(sub === "write" ? writeVdfFile(rest[0], rest[1], !!values.binary) : readVdfFile(sub, values));
         break;
       case "scan":
         print(await opScan(index, log));
@@ -438,35 +377,22 @@ export async function main(argv: string[]): Promise<number> {
           if (sub === "sync") {
             const r = await apiSync(db, {
               steamRoot: values.root ? root : undefined,
-              storeLimit: values["store-limit"]
-                ? Number(values["store-limit"])
-                : undefined,
+              storeLimit: values["store-limit"] ? Number(values["store-limit"]) : undefined,
               log: values.json ? undefined : log,
             });
-            print(
-              values.applist ? { ...r, applist: await syncAppList(db) } : r,
-            );
-          } else if (sub === "search" && rest.length)
-            print(apiSearch(db, rest.join(" ")));
+            print(values.applist ? { ...r, applist: await syncAppList(db) } : r);
+          } else if (sub === "search" && rest.length) print(apiSearch(db, rest.join(" ")));
           else if (sub === "show" && rest[0]) print(apiShow(db, rest[0]));
-          else if (sub === "diff")
-            print(apiDiff(db, rest[0] ? Number(rest[0]) : undefined));
+          else if (sub === "diff") print(apiDiff(db, rest[0] ? Number(rest[0]) : undefined));
           else if (sub === "sources") print(apiSources(db));
           else if (sub === "call" && rest[0]) {
             const args = Object.fromEntries(
-              rest.slice(1).flatMap((a) => {
+              rest.slice(1).flatMap(a => {
                 const i = a.indexOf("=");
                 return i > 0 ? [[a.slice(0, i), a.slice(i + 1)]] : [];
               }),
             );
-            print(
-              await apiCall(
-                db,
-                rest[0],
-                args,
-                values.version ? Number(values.version) : undefined,
-              ),
-            );
+            print(await apiCall(db, rest[0], args, values.version ? Number(values.version) : undefined));
           } else if (sub === "method" && rest[0]) print(apiMethod(db, rest[0]));
           else
             throw new Error(
@@ -522,14 +448,8 @@ export async function main(argv: string[]): Promise<number> {
   return 0;
 }
 
-function readVdfFile(
-  file: string | undefined,
-  f: Record<string, unknown>,
-): unknown {
-  if (!file)
-    throw new Error(
-      "vdf <file> [--binary|--appinfo|--packageinfo|--shortcuts]",
-    );
+function readVdfFile(file: string | undefined, f: Record<string, unknown>): unknown {
+  if (!file) throw new Error("vdf <file> [--binary|--appinfo|--packageinfo|--shortcuts]");
   const bytes = readFileSync(file);
   if (f.appinfo) return parseAppInfo(bytes);
   if (f.packageinfo) return parsePackageInfo(bytes);
@@ -539,20 +459,12 @@ function readVdfFile(
 }
 
 /** Typed binary JSON (`{ "type": "int32", "value": 1 }` leaves) or plain text-VDF JSON. */
-function writeVdfFile(
-  input: string | undefined,
-  out: string | undefined,
-  binary: boolean,
-) {
+function writeVdfFile(input: string | undefined, out: string | undefined, binary: boolean) {
   if (!input || !out) throw new Error("vdf write <in.json> <out> [--binary]");
   const doc = JSON.parse(readFileSync(input, "utf8"), (_, v) =>
-    v && typeof v === "object" && (v.type === "uint64" || v.type === "int64")
-      ? { ...v, value: BigInt(v.value) }
-      : v,
+    v && typeof v === "object" && (v.type === "uint64" || v.type === "int64") ? { ...v, value: BigInt(v.value) } : v,
   );
-  const bytes = binary
-    ? writeBinaryKv(doc as BinKvObject)
-    : stringifyTextKv(doc as KvObject);
+  const bytes = binary ? writeBinaryKv(doc as BinKvObject) : stringifyTextKv(doc as KvObject);
   writeFileSync(out, bytes);
   return { out, bytes: bytes.length };
 }
@@ -562,22 +474,20 @@ function writeVdfFile(
  * commands over the cached session (parsed by hand so steamcmd flags such as `-beta` pass through).
  */
 async function steamcmdRaw(args: string[]): Promise<number> {
-  const opts: { account?: string | undefined; steamcmd?: string | undefined } =
-    {};
+  const opts: { account?: string | undefined; steamcmd?: string | undefined } = {};
   let json = false;
   const groups: string[][] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
     if (a === "--json") json = true;
-    else if (a === "--account" || a === "--steamcmd")
-      opts[a === "--account" ? "account" : "steamcmd"] = args[++i];
+    else if (a === "--account" || a === "--steamcmd") opts[a === "--account" ? "account" : "steamcmd"] = args[++i];
     else if (a.startsWith("+")) groups.push([a.slice(1)]);
     else groups.at(-1)?.push(a);
   }
   try {
     const run = await runSteamcmd(groups, {
       ...opts,
-      onLine: json ? undefined : (l) => console.error(l),
+      onLine: json ? undefined : l => console.error(l),
     });
     console.log(JSON.stringify(run, null, json ? undefined : 2));
     return run.exitCode;
@@ -605,28 +515,21 @@ async function remoteAudit(host: string, args: string[]): Promise<AuditReport> {
   const remote = `/tmp/bun-steam-audit-${process.pid}.js`;
   const ssh = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=15"];
   try {
-    if (
-      (await Bun.spawn(["scp", "-q", ...ssh, local, `${host}:${remote}`])
-        .exited) !== 0
-    )
+    if ((await Bun.spawn(["scp", "-q", ...ssh, local, `${host}:${remote}`]).exited) !== 0)
       throw new Error(`scp to ${host} failed`);
-    const forward = args.filter(
-      (a) => a !== "--json" && a !== "--no-record" && !a.startsWith("--out"),
-    );
+    const forward = args.filter(a => a !== "--json" && a !== "--no-record" && !a.startsWith("--out"));
     const proc = Bun.spawn(
       [
         "ssh",
         ...ssh,
         host,
-        `nice -n 10 bun ${remote} audit --json --no-record ${forward.map((a) => `'${a.replaceAll("'", "")}'`).join(" ")}; rm -f ${remote}`,
+        `nice -n 10 bun ${remote} audit --json --no-record ${forward.map(a => `'${a.replaceAll("'", "")}'`).join(" ")}; rm -f ${remote}`,
       ],
       { stdout: "pipe", stderr: "inherit" },
     );
     const text = await new Response(proc.stdout).text();
     await proc.exited;
-    const report = JSON.parse(
-      text.trim().split(/\r?\n/).pop()!,
-    ) as AuditReport & { error?: string };
+    const report = JSON.parse(text.trim().split(/\r?\n/).pop()!) as AuditReport & { error?: string };
     if (report.error) throw new Error(`${host}: ${report.error}`);
     return report;
   } finally {

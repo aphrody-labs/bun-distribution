@@ -486,10 +486,7 @@ export function getBoxMaskOverlays({
   pathData,
   showBoundingBox = true,
 }: {
-  params: Pick<
-    RectangleMaskParams,
-    "centerX" | "centerY" | "width" | "height" | "rotation"
-  >;
+  params: Pick<RectangleMaskParams, "centerX" | "centerY" | "width" | "height" | "rotation">;
   bounds: ElementBounds;
   pathData?: string;
   showBoundingBox?: boolean;

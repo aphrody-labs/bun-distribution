@@ -13,15 +13,33 @@ interface Functions {
   /** activeds.dll!ADsEncodeBinaryData */
   ADsEncodeBinaryData(pbSrcData: Win32Pointer, dwSrcLen: number, ppszDestData: Win32Pointer): number;
   /** activeds.dll!ADsEnumerateNext */
-  ADsEnumerateNext(pEnumVariant: Win32Pointer, cElements: number, pvar: Win32Pointer, pcElementsFetched: Win32Pointer): number;
+  ADsEnumerateNext(
+    pEnumVariant: Win32Pointer,
+    cElements: number,
+    pvar: Win32Pointer,
+    pcElementsFetched: Win32Pointer,
+  ): number;
   /** activeds.dll!ADsFreeEnumerator */
   ADsFreeEnumerator(pEnumVariant: Win32Pointer): number;
   /** activeds.dll!ADsGetLastError */
-  ADsGetLastError(lpError: Win32Pointer, lpErrorBuf: string | Win32Pointer, dwErrorBufLen: number, lpNameBuf: string | Win32Pointer, dwNameBufLen: number): number;
+  ADsGetLastError(
+    lpError: Win32Pointer,
+    lpErrorBuf: string | Win32Pointer,
+    dwErrorBufLen: number,
+    lpNameBuf: string | Win32Pointer,
+    dwNameBufLen: number,
+  ): number;
   /** activeds.dll!ADsGetObject */
   ADsGetObject(lpszPathName: string | Win32Pointer, riid: Win32Pointer, ppObject: Win32Pointer): number;
   /** activeds.dll!ADsOpenObject */
-  ADsOpenObject(lpszPathName: string | Win32Pointer, lpszUserName: string | Win32Pointer, lpszPassword: string | Win32Pointer, dwReserved: number, riid: Win32Pointer, ppObject: Win32Pointer): number;
+  ADsOpenObject(
+    lpszPathName: string | Win32Pointer,
+    lpszUserName: string | Win32Pointer,
+    lpszPassword: string | Win32Pointer,
+    dwReserved: number,
+    riid: Win32Pointer,
+    ppObject: Win32Pointer,
+  ): number;
   /** activeds.dll!ADsSetLastError */
   ADsSetLastError(dwErr: number, pszError: string | Win32Pointer, pszProvider: string | Win32Pointer): void;
   /** activeds.dll!AdsFreeAdsValues */
@@ -33,19 +51,39 @@ interface Functions {
   /** activeds.dll!AllocADsStr */
   AllocADsStr(pStr: string | Win32Pointer): number | null;
   /** activeds.dll!BinarySDToSecurityDescriptor */
-  BinarySDToSecurityDescriptor(pSecurityDescriptor: Win32Pointer, pVarsec: Win32Pointer, pszServerName: string | Win32Pointer, userName: string | Win32Pointer, passWord: string | Win32Pointer, dwFlags: number): number;
+  BinarySDToSecurityDescriptor(
+    pSecurityDescriptor: Win32Pointer,
+    pVarsec: Win32Pointer,
+    pszServerName: string | Win32Pointer,
+    userName: string | Win32Pointer,
+    passWord: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** activeds.dll!FreeADsMem */
   FreeADsMem(pMem: Win32Pointer): number;
   /** activeds.dll!FreeADsStr */
   FreeADsStr(pStr: string | Win32Pointer): number;
   /** activeds.dll!PropVariantToAdsType */
-  PropVariantToAdsType(pVariant: Win32Pointer, dwNumVariant: number, ppAdsValues: Win32Pointer, pdwNumValues: Win32Pointer): number;
+  PropVariantToAdsType(
+    pVariant: Win32Pointer,
+    dwNumVariant: number,
+    ppAdsValues: Win32Pointer,
+    pdwNumValues: Win32Pointer,
+  ): number;
   /** activeds.dll!ReallocADsMem */
   ReallocADsMem(pOldMem: Win32Pointer, cbOld: number, cbNew: number): number | null;
   /** activeds.dll!ReallocADsStr */
   ReallocADsStr(ppStr: Win32Pointer, pStr: string | Win32Pointer): number;
   /** activeds.dll!SecurityDescriptorToBinarySD */
-  SecurityDescriptorToBinarySD(vVarSecDes: Win32StructInit, ppSecurityDescriptor: Win32Pointer, pdwSDLength: Win32Pointer, pszServerName: string | Win32Pointer, userName: string | Win32Pointer, passWord: string | Win32Pointer, dwFlags: number): number;
+  SecurityDescriptorToBinarySD(
+    vVarSecDes: Win32StructInit,
+    ppSecurityDescriptor: Win32Pointer,
+    pdwSDLength: Win32Pointer,
+    pszServerName: string | Win32Pointer,
+    userName: string | Win32Pointer,
+    passWord: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

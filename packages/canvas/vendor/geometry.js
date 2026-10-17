@@ -27,11 +27,7 @@ class DOMPoint {
   }
 
   matrixTransform(matrix) {
-    if (
-      (matrix.is2D || matrix instanceof SVGMatrix) &&
-      this.z === 0 &&
-      this.w === 1
-    ) {
+    if ((matrix.is2D || matrix instanceof SVGMatrix) && this.z === 0 && this.w === 1) {
       return new DOMPoint(
         this.x * matrix.a + this.y * matrix.c + matrix.e,
         this.x * matrix.b + this.y * matrix.d + matrix.f,
@@ -40,22 +36,10 @@ class DOMPoint {
       );
     } else {
       return new DOMPoint(
-        this.x * matrix.m11 +
-          this.y * matrix.m21 +
-          this.z * matrix.m31 +
-          this.w * matrix.m41,
-        this.x * matrix.m12 +
-          this.y * matrix.m22 +
-          this.z * matrix.m32 +
-          this.w * matrix.m42,
-        this.x * matrix.m13 +
-          this.y * matrix.m23 +
-          this.z * matrix.m33 +
-          this.w * matrix.m43,
-        this.x * matrix.m14 +
-          this.y * matrix.m24 +
-          this.z * matrix.m34 +
-          this.w * matrix.m44,
+        this.x * matrix.m11 + this.y * matrix.m21 + this.z * matrix.m31 + this.w * matrix.m41,
+        this.x * matrix.m12 + this.y * matrix.m22 + this.z * matrix.m32 + this.w * matrix.m42,
+        this.x * matrix.m13 + this.y * matrix.m23 + this.z * matrix.m33 + this.w * matrix.m43,
+        this.x * matrix.m14 + this.y * matrix.m24 + this.z * matrix.m34 + this.w * matrix.m44,
       );
     }
   }
@@ -85,12 +69,7 @@ class DOMRect {
   }
 
   static fromRect(otherRect) {
-    return new DOMRect(
-      otherRect.x,
-      otherRect.y,
-      otherRect.width,
-      otherRect.height,
-    );
+    return new DOMRect(otherRect.x, otherRect.y, otherRect.width, otherRect.height);
   }
 
   get top() {
@@ -124,10 +103,7 @@ class DOMRect {
 }
 
 for (const propertyName of ["top", "right", "bottom", "left"]) {
-  const propertyDescriptor = Object.getOwnPropertyDescriptor(
-    DOMRect.prototype,
-    propertyName,
-  );
+  const propertyDescriptor = Object.getOwnPropertyDescriptor(DOMRect.prototype, propertyName);
   propertyDescriptor.enumerable = true;
   Object.defineProperty(DOMRect.prototype, propertyName, propertyDescriptor);
 }
@@ -177,24 +153,7 @@ function parseMatrix(init) {
 
   parsed = parsed.map(parseFloat);
 
-  return [
-    parsed[0],
-    parsed[1],
-    0,
-    0,
-    parsed[2],
-    parsed[3],
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-    parsed[4],
-    parsed[5],
-    0,
-    1,
-  ];
+  return [parsed[0], parsed[1], 0, 0, parsed[2], parsed[3], 0, 0, 0, 0, 1, 0, parsed[4], parsed[5], 0, 1];
 }
 
 function parseMatrix3d(init) {
@@ -243,7 +202,7 @@ const setNumber3D = (receiver, index, value) => {
   receiver[VALUES][index] = value;
 };
 
-const newInstance = (values) => {
+const newInstance = values => {
   const instance = Object.create(DOMMatrix.prototype);
   instance.constructor = DOMMatrix;
   instance[IS_2D] = true;
@@ -443,14 +402,12 @@ class DOMMatrix {
   }
 
   static fromFloat32Array(init) {
-    if (!(init instanceof Float32Array))
-      throw new TypeError("Expected Float32Array");
+    if (!(init instanceof Float32Array)) throw new TypeError("Expected Float32Array");
     return new DOMMatrix(init);
   }
 
   static fromFloat64Array(init) {
-    if (!(init instanceof Float64Array))
-      throw new TypeError("Expected Float64Array");
+    if (!(init instanceof Float64Array)) throw new TypeError("Expected Float64Array");
     return new DOMMatrix(init);
   }
 
@@ -459,9 +416,7 @@ class DOMMatrix {
   constructor(init) {
     this[IS_2D] = true;
 
-    this[VALUES] = new Float64Array([
-      1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
-    ]);
+    this[VALUES] = new Float64Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
     // Parse CSS transformList
     if (typeof init === "string") {
@@ -515,12 +470,7 @@ class DOMMatrix {
 
   dump() {
     const mat = this[VALUES];
-    console.info([
-      mat.slice(0, 4),
-      mat.slice(4, 8),
-      mat.slice(8, 12),
-      mat.slice(12, 16),
-    ]);
+    console.info([mat.slice(0, 4), mat.slice(4, 8), mat.slice(8, 12), mat.slice(12, 16)]);
   }
 
   [inspect.custom](depth) {
@@ -530,26 +480,7 @@ class DOMMatrix {
     if (this.is2D) {
       return `DOMMatrix ${inspect({ a, b, c, d, e, f, is2D, isIdentity }, { colors: true })}`;
     } else {
-      const {
-        m11,
-        m12,
-        m13,
-        m14,
-        m21,
-        m22,
-        m23,
-        m24,
-        m31,
-        m32,
-        m33,
-        m34,
-        m41,
-        m42,
-        m43,
-        m44,
-        is2D,
-        isIdentity,
-      } = this;
+      const { m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44, is2D, isIdentity } = this;
       return `DOMMatrix ${inspect(
         {
           a,
@@ -611,10 +542,7 @@ class DOMMatrix {
   }
 
   translateSelf(tx = 0, ty = 0, tz = 0) {
-    this[VALUES] = multiply(
-      [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, tx, ty, tz, 1],
-      this[VALUES],
-    );
+    this[VALUES] = multiply([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, tx, ty, tz, 1], this[VALUES]);
 
     if (tz !== 0) {
       this[IS_2D] = false;
@@ -624,23 +552,11 @@ class DOMMatrix {
   }
 
   scale(scaleX, scaleY, scaleZ, originX, originY, originZ) {
-    return newInstance(this[VALUES]).scaleSelf(
-      scaleX,
-      scaleY,
-      scaleZ,
-      originX,
-      originY,
-      originZ,
-    );
+    return newInstance(this[VALUES]).scaleSelf(scaleX, scaleY, scaleZ, originX, originY, originZ);
   }
 
   scale3d(scale, originX, originY, originZ) {
-    return newInstance(this[VALUES]).scale3dSelf(
-      scale,
-      originX,
-      originY,
-      originZ,
-    );
+    return newInstance(this[VALUES]).scale3dSelf(scale, originX, originY, originZ);
   }
 
   scale3dSelf(scale, originX, originY, originZ) {
@@ -659,10 +575,7 @@ class DOMMatrix {
     if (typeof scaleY !== "number") scaleY = scaleX;
     if (typeof scaleZ !== "number") scaleZ = 1;
 
-    this[VALUES] = multiply(
-      [scaleX, 0, 0, 0, 0, scaleY, 0, 0, 0, 0, scaleZ, 0, 0, 0, 0, 1],
-      this[VALUES],
-    );
+    this[VALUES] = multiply([scaleX, 0, 0, 0, 0, scaleY, 0, 0, 0, 0, scaleZ, 0, 0, 0, 0, 1], this[VALUES]);
 
     this.translateSelf(-originX, -originY, -originZ);
 
@@ -706,26 +619,17 @@ class DOMMatrix {
     let c = Math.cos(rotZ);
     let s = Math.sin(rotZ);
 
-    this[VALUES] = multiply(
-      [c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-      this[VALUES],
-    );
+    this[VALUES] = multiply([c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], this[VALUES]);
 
     c = Math.cos(rotY);
     s = Math.sin(rotY);
 
-    this[VALUES] = multiply(
-      [c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1],
-      this[VALUES],
-    );
+    this[VALUES] = multiply([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1], this[VALUES]);
 
     c = Math.cos(rotX);
     s = Math.sin(rotX);
 
-    this[VALUES] = multiply(
-      [1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1],
-      this[VALUES],
-    );
+    this[VALUES] = multiply([1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1], this[VALUES]);
 
     return this;
   }
@@ -795,10 +699,7 @@ class DOMMatrix {
 
     const t = Math.tan(sx * RAD_PER_DEGREE);
 
-    this[VALUES] = multiply(
-      [1, 0, 0, 0, t, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-      this[VALUES],
-    );
+    this[VALUES] = multiply([1, 0, 0, 0, t, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], this[VALUES]);
 
     return this;
   }
@@ -814,24 +715,17 @@ class DOMMatrix {
 
     const t = Math.tan(sy * RAD_PER_DEGREE);
 
-    this[VALUES] = multiply(
-      [1, t, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-      this[VALUES],
-    );
+    this[VALUES] = multiply([1, t, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], this[VALUES]);
 
     return this;
   }
 
   flipX() {
-    return newInstance(
-      multiply([-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], this[VALUES]),
-    );
+    return newInstance(multiply([-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], this[VALUES]));
   }
 
   flipY() {
-    return newInstance(
-      multiply([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], this[VALUES]),
-    );
+    return newInstance(multiply([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], this[VALUES]));
   }
 
   inverse() {
@@ -840,8 +734,7 @@ class DOMMatrix {
 
   invertSelf() {
     if (this[IS_2D]) {
-      const det =
-        this[VALUES][A] * this[VALUES][D] - this[VALUES][B] * this[VALUES][C];
+      const det = this[VALUES][A] * this[VALUES][D] - this[VALUES][B] * this[VALUES][C];
 
       // Invertable
       if (det !== 0) {
@@ -849,14 +742,8 @@ class DOMMatrix {
         const newB = -this[VALUES][B] / det;
         const newC = -this[VALUES][C] / det;
         const newD = this[VALUES][A] / det;
-        const newE =
-          (this[VALUES][C] * this[VALUES][F] -
-            this[VALUES][D] * this[VALUES][E]) /
-          det;
-        const newF =
-          (this[VALUES][B] * this[VALUES][E] -
-            this[VALUES][A] * this[VALUES][F]) /
-          det;
+        const newE = (this[VALUES][C] * this[VALUES][F] - this[VALUES][D] * this[VALUES][E]) / det;
+        const newF = (this[VALUES][B] * this[VALUES][E] - this[VALUES][A] * this[VALUES][F]) / det;
 
         this.a = newA;
         this.b = newB;
@@ -872,24 +759,7 @@ class DOMMatrix {
       else {
         this[IS_2D] = false;
 
-        this[VALUES] = [
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-          NaN,
-        ];
+        this[VALUES] = [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN];
 
         return this;
       }
@@ -915,14 +785,10 @@ class DOMMatrix {
 
     const values = this[VALUES];
 
-    const nx =
-      values[M11] * x + values[M21] * y + values[M31] * z + values[M41] * w;
-    const ny =
-      values[M12] * x + values[M22] * y + values[M32] * z + values[M42] * w;
-    const nz =
-      values[M13] * x + values[M23] * y + values[M33] * z + values[M43] * w;
-    const nw =
-      values[M14] * x + values[M24] * y + values[M34] * z + values[M44] * w;
+    const nx = values[M11] * x + values[M21] * y + values[M31] * z + values[M41] * w;
+    const ny = values[M12] * x + values[M22] * y + values[M32] * z + values[M42] * w;
+    const nz = values[M13] * x + values[M23] * y + values[M33] * z + values[M43] * w;
+    const nw = values[M14] * x + values[M24] * y + values[M34] * z + values[M44] * w;
 
     return new DOMPoint(nx, ny, nz, nw);
   }
@@ -999,10 +865,7 @@ for (const propertyName of [
   "is2D",
   "isIdentity",
 ]) {
-  const propertyDescriptor = Object.getOwnPropertyDescriptor(
-    DOMMatrix.prototype,
-    propertyName,
-  );
+  const propertyDescriptor = Object.getOwnPropertyDescriptor(DOMMatrix.prototype, propertyName);
   propertyDescriptor.enumerable = true;
   Object.defineProperty(DOMMatrix.prototype, propertyName, propertyDescriptor);
 }

@@ -91,21 +91,15 @@ function resolveWrapper(
     const name = (variant && vm.byValue[variant]) || vm.default;
     return { kind: "wrapper", name };
   }
-  if (SIMPLE_COMPONENTS[muiComp])
-    return { kind: "wrapper", name: SIMPLE_COMPONENTS[muiComp] };
-  if (RENAME_CHILDREN[muiComp])
-    return { kind: "wrapper", name: RENAME_CHILDREN[muiComp] };
+  if (SIMPLE_COMPONENTS[muiComp]) return { kind: "wrapper", name: SIMPLE_COMPONENTS[muiComp] };
+  if (RENAME_CHILDREN[muiComp]) return { kind: "wrapper", name: RENAME_CHILDREN[muiComp] };
   const layout = LAYOUT_COMPONENTS[muiComp];
   if (layout) {
-    return layout.startsWith("Md")
-      ? { kind: "wrapper", name: layout }
-      : { kind: "layout", name: layout };
+    return layout.startsWith("Md") ? { kind: "wrapper", name: layout } : { kind: "layout", name: layout };
   }
   const slotted = SLOTTED_CHILDREN[muiComp];
-  if (slotted)
-    return { kind: "layout", name: slotted.replaceWith, note: muiComp };
-  if (GAP_COMPONENTS[muiComp])
-    return { kind: "gap", note: GAP_COMPONENTS[muiComp] };
+  if (slotted) return { kind: "layout", name: slotted.replaceWith, note: muiComp };
+  if (GAP_COMPONENTS[muiComp]) return { kind: "gap", note: GAP_COMPONENTS[muiComp] };
   return { kind: "unknown" };
 }
 
@@ -138,10 +132,7 @@ function transformProps(pass: Pass, node: JsxNode): void {
       pass.addedIcons.set(node, added);
     }
     if (prop === "endIcon") {
-      todos.add(
-        node,
-        'endIcon -> md-button n-a qu-un slot "icon" : repositionner manuellement (slot trailing).',
-      );
+      todos.add(node, 'endIcon -> md-button n-a qu-un slot "icon" : repositionner manuellement (slot trailing).');
     }
   }
 
@@ -163,42 +154,25 @@ function transformProps(pass: Pass, node: JsxNode): void {
         "prop `sx` retiree : convertir en classes Tailwind (host/layout) + tokens --md-sys-* (le shadow DOM n-est pas atteignable par Tailwind, cf. §6).",
       );
     } else {
-      todos.add(
-        node,
-        `prop \`${prop}\` retiree : pas d-equivalent direct md (gerer via tokens/density/theme).`,
-      );
+      todos.add(node, `prop \`${prop}\` retiree : pas d-equivalent direct md (gerer via tokens/density/theme).`);
     }
     removeAttr(edits, node, prop);
   }
 }
 
 /** `<md-icon slot="icon">{…}</md-icon>` par expression, avec les transformations faites à l'intérieur. */
-function iconChildren(
-  pass: Pass,
-  icons: { start: number; end: number }[],
-): string {
-  return icons
-    .map(
-      (r) =>
-        `<md-icon slot="icon">{${pass.edits.render(r.start, r.end)}}</md-icon>`,
-    )
-    .join("");
+function iconChildren(pass: Pass, icons: { start: number; end: number }[]): string {
+  return icons.map(r => `<md-icon slot="icon">{${pass.edits.render(r.start, r.end)}}</md-icon>`).join("");
 }
 
 /** L'élément a un enfant direct `<md-icon>` (ajouté ou déjà présent) : import d'effet de bord requis. */
 function hasMdIconChild(pass: Pass, node: JsxNode): boolean {
   if ((pass.addedIcons.get(node)?.length ?? 0) > 0) return true;
-  return node.children.some(
-    (c) => c.kind === "element" && jsxName(c) === "md-icon",
-  );
+  return node.children.some(c => c.kind === "element" && jsxName(c) === "md-icon");
 }
 
 /** Point d'entree du moteur, appele par chaque transform. */
-export function runEngine(
-  file: FileInfo,
-  _api: unknown,
-  options: Options & EngineOptions,
-): string {
+export function runEngine(file: FileInfo, _api: unknown, options: Options & EngineOptions): string {
   const src = file.source;
   assertTsx(src, file.path ?? "source");
   const scan = scanTsx(src);
@@ -263,10 +237,7 @@ export function runEngine(
       // gap/unknown : on NE transforme PAS et on GARDE l'import MUI (le JSX
       // reste référencé). Marqueur pour traitement manuel.
       if (resolved.kind === "gap") {
-        todos.add(
-          node,
-          `${muiComp} : ${resolved.note}. Aucune transformation auto (cf. 05-gap-analysis.md).`,
-        );
+        todos.add(node, `${muiComp} : ${resolved.note}. Aucune transformation auto (cf. 05-gap-analysis.md).`);
       }
       continue;
     }
@@ -306,16 +277,14 @@ export function runEngine(
   // 2bis) Icônes slottées en tête des enfants, marqueurs MIGRATION-TODO, après la traversée.
   const children = new JsxChildren();
   for (const node of migratedNodes) children.touch(node);
-  for (const [node, icons] of pass.addedIcons)
-    children.prepend(node, () => iconChildren(pass, icons));
+  for (const [node, icons] of pass.addedIcons) children.prepend(node, () => iconChildren(pass, icons));
   todos.flush(edits, children);
   children.flush(edits);
 
   // 3) Nettoyage des imports MUI : retire SEULEMENT les specifiers migrés.
   //    Si un import n'a plus aucun specifier, on supprime la déclaration ;
   //    sinon on la conserve (ex : gap component encore référencé).
-  for (const decl of muiImports)
-    filterSpecifiers(edits, decl, (spec) => !migratedLocals.has(spec.local));
+  for (const decl of muiImports) filterSpecifiers(edits, decl, spec => !migratedLocals.has(spec.local));
 
   // 4) Insertion de l'import @aphrody/m3-react (après le prologue de directives).
   const blocks: string[] = [];

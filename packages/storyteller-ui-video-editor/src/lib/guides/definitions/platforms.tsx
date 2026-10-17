@@ -1,13 +1,7 @@
 import type { GuideDefinition } from "../types";
 import { TikTokLayout } from "./tiktok-layout";
 
-function PlatformLogo({
-  domain,
-  className = "size-4",
-}: {
-  domain: string;
-  className?: string;
-}) {
+function PlatformLogo({ domain, className = "size-4" }: { domain: string; className?: string }) {
   return (
     <img
       src={`https://cdn.brandfetch.io/${domain}/w/64/h/64`}
@@ -24,15 +18,7 @@ function PlatformGuidePreview({ domain }: { domain: string }) {
   return <PlatformLogo domain={domain} />;
 }
 
-function platformGuide({
-  id,
-  label,
-  domain,
-}: {
-  id: string;
-  label: string;
-  domain: string;
-}): GuideDefinition {
+function platformGuide({ id, label, domain }: { id: string; label: string; domain: string }): GuideDefinition {
   return {
     id,
     label,

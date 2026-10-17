@@ -33,19 +33,15 @@ export const MIN_SDK = 24;
 function newestChild(directory: string): string | undefined {
   if (!existsSync(directory)) return undefined;
   const names = readdirSync(directory, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
+    .filter(entry => entry.isDirectory())
+    .map(entry => entry.name)
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   const name = names.at(-1);
   return name ? join(directory, name) : undefined;
 }
 
-function firstExisting(
-  candidates: readonly (string | undefined)[],
-): string | undefined {
-  return candidates.find(
-    (candidate): candidate is string => !!candidate && existsSync(candidate),
-  );
+function firstExisting(candidates: readonly (string | undefined)[]): string | undefined {
+  return candidates.find((candidate): candidate is string => !!candidate && existsSync(candidate));
 }
 
 /** Locate the Android SDK, NDK, adb, sdkmanager, Gradle and JDK on this host. */
@@ -62,28 +58,16 @@ export function resolveToolchain(project?: string): AndroidToolchain {
     process.env.ANDROID_HOME ??
     join(homedir(), "Android", "Sdk");
   const ndk =
-    firstExisting([
-      process.env.ANDROID_NDK_HOME,
-      process.env.ANDROID_NDK_ROOT,
-    ]) ?? newestChild(join(sdk, "ndk"));
-  const cmdline = firstExisting([
-    join(sdk, "cmdline-tools", "latest"),
-    newestChild(join(sdk, "cmdline-tools")),
-  ]);
-  const wrapper =
-    project &&
-    existsSync(join(project, "gradle", "wrapper", "gradle-wrapper.jar"));
-  const gradleDists = join(
-    process.env.GRADLE_USER_HOME ?? join(homedir(), ".gradle"),
-    "wrapper",
-    "dists",
-  );
+    firstExisting([process.env.ANDROID_NDK_HOME, process.env.ANDROID_NDK_ROOT]) ?? newestChild(join(sdk, "ndk"));
+  const cmdline = firstExisting([join(sdk, "cmdline-tools", "latest"), newestChild(join(sdk, "cmdline-tools"))]);
+  const wrapper = project && existsSync(join(project, "gradle", "wrapper", "gradle-wrapper.jar"));
+  const gradleDists = join(process.env.GRADLE_USER_HOME ?? join(homedir(), ".gradle"), "wrapper", "dists");
   const distGradle = existsSync(gradleDists)
     ? readdirSync(gradleDists)
-        .filter((name) => name.startsWith("gradle-"))
+        .filter(name => name.startsWith("gradle-"))
         .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
         .reverse()
-        .flatMap((dist) => {
+        .flatMap(dist => {
           const hash = newestChild(join(gradleDists, dist));
           const home = hash && newestChild(hash);
           return home ? [join(home, "bin", `gradle${script}`)] : [];
@@ -91,8 +75,7 @@ export function resolveToolchain(project?: string): AndroidToolchain {
     : [];
   const gradle = firstExisting([
     wrapper ? join(project, `gradlew${script}`) : undefined,
-    process.env.GRADLE_HOME &&
-      join(process.env.GRADLE_HOME, "bin", `gradle${script}`),
+    process.env.GRADLE_HOME && join(process.env.GRADLE_HOME, "bin", `gradle${script}`),
     Bun.which("gradle") ?? undefined,
     ...distGradle,
   ]);
@@ -115,9 +98,7 @@ export function resolveToolchain(project?: string): AndroidToolchain {
 }
 
 /** Environment with ANDROID_HOME, ANDROID_NDK_HOME and JAVA_HOME pointing at the resolved toolchain. */
-export function toolchainEnv(
-  toolchain: AndroidToolchain,
-): Record<string, string | undefined> {
+export function toolchainEnv(toolchain: AndroidToolchain): Record<string, string | undefined> {
   return {
     ...process.env,
     ANDROID_HOME: toolchain.sdk,
@@ -141,10 +122,7 @@ export async function run(
   return await child.exited;
 }
 
-async function capture(
-  command: string[],
-  env?: Record<string, string | undefined>,
-): Promise<string> {
+async function capture(command: string[], env?: Record<string, string | undefined>): Promise<string> {
   const child = Bun.spawn(command, { env, stdout: "pipe", stderr: "inherit" });
   const [text, code] = await Promise.all([child.stdout.text(), child.exited]);
   if (code !== 0) throw new Error(`${command[0]} exited with ${code}`);
@@ -152,18 +130,14 @@ async function capture(
 }
 
 /** Install the NDK through sdkmanager when it is missing. */
-export async function ensureNdk(
-  toolchain: AndroidToolchain,
-  version?: string,
-): Promise<string> {
+export async function ensureNdk(toolchain: AndroidToolchain, version?: string): Promise<string> {
   if (toolchain.ndk && !version) return toolchain.ndk;
   const wanted = version ?? (await latestNdk(toolchain));
   const target = join(toolchain.sdk, "ndk", wanted);
   if (existsSync(target)) return target;
-  const code = await run(
-    [toolchain.sdkmanager, `--sdk_root=${toolchain.sdk}`, `ndk;${wanted}`],
-    { env: toolchainEnv(toolchain) },
-  );
+  const code = await run([toolchain.sdkmanager, `--sdk_root=${toolchain.sdk}`, `ndk;${wanted}`], {
+    env: toolchainEnv(toolchain),
+  });
   if (code !== 0) throw new Error(`sdkmanager failed to install ndk;${wanted}`);
   return target;
 }
@@ -173,43 +147,20 @@ async function latestNdk(toolchain: AndroidToolchain): Promise<string> {
     [toolchain.sdkmanager, `--sdk_root=${toolchain.sdk}`, "--list"],
     toolchainEnv(toolchain),
   );
-  const versions = [...listing.matchAll(/^\s*ndk;(\d+\.\d+\.\d+)\s/gm)].map(
-    (match) => match[1]!,
-  );
-  const latest = versions
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-    .at(-1);
+  const versions = [...listing.matchAll(/^\s*ndk;(\d+\.\d+\.\d+)\s/gm)].map(match => match[1]!);
+  const latest = versions.sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).at(-1);
   if (!latest) throw new Error("sdkmanager listed no NDK package");
   return latest;
 }
 
 /** NDK clang wrapper used as the Cargo linker for a Rust Android triple. */
-export function ndkLinker(
-  ndk: string,
-  triple: AndroidTriple,
-  api = MIN_SDK,
-): string {
-  const host = windows
-    ? "windows-x86_64"
-    : process.platform === "darwin"
-      ? "darwin-x86_64"
-      : "linux-x86_64";
-  return join(
-    ndk,
-    "toolchains",
-    "llvm",
-    "prebuilt",
-    host,
-    "bin",
-    `${triple}${api}-clang${windows ? ".cmd" : ""}`,
-  );
+export function ndkLinker(ndk: string, triple: AndroidTriple, api = MIN_SDK): string {
+  const host = windows ? "windows-x86_64" : process.platform === "darwin" ? "darwin-x86_64" : "linux-x86_64";
+  return join(ndk, "toolchains", "llvm", "prebuilt", host, "bin", `${triple}${api}-clang${windows ? ".cmd" : ""}`);
 }
 
 /** Cargo environment that links `triple` with the NDK. */
-export function cargoAndroidEnv(
-  ndk: string,
-  triple: AndroidTriple,
-): Record<string, string> {
+export function cargoAndroidEnv(ndk: string, triple: AndroidTriple): Record<string, string> {
   const key = triple.toUpperCase().replaceAll("-", "_");
   const linker = ndkLinker(ndk, triple);
   return {
@@ -226,29 +177,19 @@ export function cargoAndroidEnv(
  */
 export async function msvcEnv(): Promise<Record<string, string>> {
   if (!windows || process.env.VCINSTALLDIR) return {};
-  const listing = JSON.parse(
-    await capture([process.execPath, "msvc", "list", "--json"]),
-  ) as {
+  const listing = JSON.parse(await capture([process.execPath, "msvc", "list", "--json"])) as {
     instances?: {
       toolsets?: { version: string; dir: string; default?: boolean }[];
     }[];
   };
   const toolset = (listing.instances ?? [])
-    .flatMap((instance) => instance.toolsets ?? [])
+    .flatMap(instance => instance.toolsets ?? [])
     .sort(
       (a, b) =>
-        Number(!!b.default) - Number(!!a.default) ||
-        b.version.localeCompare(a.version, undefined, { numeric: true }),
+        Number(!!b.default) - Number(!!a.default) || b.version.localeCompare(a.version, undefined, { numeric: true }),
     )
-    .find((candidate) =>
-      existsSync(join(candidate.dir, "lib", "x64", "msvcrt.lib")),
-    );
-  const output = await capture([
-    process.execPath,
-    "msvc",
-    "env",
-    ...(toolset ? ["--toolset", toolset.version] : []),
-  ]);
+    .find(candidate => existsSync(join(candidate.dir, "lib", "x64", "msvcrt.lib")));
+  const output = await capture([process.execPath, "msvc", "env", ...(toolset ? ["--toolset", toolset.version] : [])]);
   return JSON.parse(output) as Record<string, string>;
 }
 
@@ -294,32 +235,17 @@ export async function buildNative(options: {
         env: { ...host, ...cargoAndroidEnv(ndk, triple) },
       },
     );
-    if (code !== 0)
-      throw new Error(
-        `cargo build ${options.crate} for ${triple} failed (${code})`,
-      );
-    const built = join(
-      options.workspace,
-      "target",
-      triple,
-      profile,
-      `lib${options.library}.so`,
-    );
-    await Bun.write(
-      join(options.jniLibs, abi, `lib${options.library}.so`),
-      Bun.file(built),
-    );
+    if (code !== 0) throw new Error(`cargo build ${options.crate} for ${triple} failed (${code})`);
+    const built = join(options.workspace, "target", triple, profile, `lib${options.library}.so`);
+    await Bun.write(join(options.jniLibs, abi, `lib${options.library}.so`), Bun.file(built));
   }
 }
 
 /** Build an Android Gradle project, optionally embedding prebuilt `libbun.so` files. */
-export async function build(
-  options: BuildOptions & { workspace: string },
-): Promise<string> {
+export async function build(options: BuildOptions & { workspace: string }): Promise<string> {
   const toolchain = resolveToolchain(options.project);
   const abis = options.abis ?? ABIS;
-  const jniLibs =
-    options.jniLibs ?? join(options.workspace, "target", "android", "jniLibs");
+  const jniLibs = options.jniLibs ?? join(options.workspace, "target", "android", "jniLibs");
   if (options.native !== false) {
     await buildNative({
       workspace: options.workspace,
@@ -333,10 +259,7 @@ export async function build(
   for (const [abi, path] of Object.entries(options.libbun ?? {})) {
     if (path) await Bun.write(join(jniLibs, abi, "libbun.so"), Bun.file(path));
   }
-  if (!toolchain.gradle)
-    throw new Error(
-      "Gradle not found: set GRADLE_HOME or add a Gradle wrapper",
-    );
+  if (!toolchain.gradle) throw new Error("Gradle not found: set GRADLE_HOME or add a Gradle wrapper");
   const variant = options.variant ?? "debug";
   const task = `assemble${variant[0]!.toUpperCase()}${variant.slice(1)}`;
   const code = await run([toolchain.gradle, task, "--console=plain"], {
@@ -344,31 +267,19 @@ export async function build(
     env: toolchainEnv(toolchain),
   });
   if (code !== 0) throw new Error(`gradle ${task} failed (${code})`);
-  return join(
-    options.project,
-    "app",
-    "build",
-    "outputs",
-    "apk",
-    variant,
-    `app-${variant}.apk`,
-  );
+  return join(options.project, "app", "build", "outputs", "apk", variant, `app-${variant}.apk`);
 }
 
 /** Connected devices and emulators reported by `adb devices -l`. */
-export async function devices(
-  toolchain = resolveToolchain(),
-): Promise<AndroidDevice[]> {
+export async function devices(toolchain = resolveToolchain()): Promise<AndroidDevice[]> {
   const output = await capture([toolchain.adb, "devices", "-l"]);
   return output
     .split(/\r?\n/)
     .slice(1)
-    .filter((line) => line.trim())
-    .map((line) => {
+    .filter(line => line.trim())
+    .map(line => {
       const [serial = "", state = "", ...rest] = line.trim().split(/\s+/);
-      const properties = Object.fromEntries(
-        rest.map((item) => item.split(":", 2) as [string, string]),
-      );
+      const properties = Object.fromEntries(rest.map(item => item.split(":", 2) as [string, string]));
       return { serial, state, properties };
     });
 }
@@ -377,20 +288,12 @@ function adbArgs(toolchain: AndroidToolchain, serial?: string): string[] {
   return serial ? [toolchain.adb, "-s", serial] : [toolchain.adb];
 }
 
-export async function install(
-  apk: string,
-  serial?: string,
-  toolchain = resolveToolchain(),
-): Promise<number> {
+export async function install(apk: string, serial?: string, toolchain = resolveToolchain()): Promise<number> {
   return await run([...adbArgs(toolchain, serial), "install", "-r", apk]);
 }
 
 /** Launch the application's launcher activity through the monkey launcher intent. */
-export async function launch(
-  packageName: string,
-  serial?: string,
-  toolchain = resolveToolchain(),
-): Promise<number> {
+export async function launch(packageName: string, serial?: string, toolchain = resolveToolchain()): Promise<number> {
   return await run([
     ...adbArgs(toolchain, serial),
     "shell",
@@ -425,6 +328,6 @@ export async function exec(
   return await run([
     ...adb,
     "shell",
-    `chmod 755 ${remote} && ${remote} ${args.map((arg) => `'${arg.replaceAll("'", "'\\''")}'`).join(" ")}`,
+    `chmod 755 ${remote} && ${remote} ${args.map(arg => `'${arg.replaceAll("'", "'\\''")}'`).join(" ")}`,
   ]);
 }

@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-export function useFullscreen({
-  containerRef,
-}: {
-  containerRef: React.RefObject<HTMLElement | null>;
-}) {
+export function useFullscreen({ containerRef }: { containerRef: React.RefObject<HTMLElement | null> }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {

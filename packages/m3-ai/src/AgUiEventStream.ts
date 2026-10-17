@@ -22,12 +22,7 @@ import {
   type SubagentErrorEvent,
   type RunErrorEvent,
 } from "./ag-ui";
-import {
-  type TranscriptStep,
-  type TranscriptItem,
-  pairTranscriptSteps,
-  tryParseJson,
-} from "./types";
+import { type TranscriptStep, type TranscriptItem, pairTranscriptSteps, tryParseJson } from "./types";
 
 // ---------------------------------------------------------------------------
 // A2A Coordination Fleet Types
@@ -164,17 +159,13 @@ export class AgUiEventAccumulator {
       case EventType.TOOL_CALL_RESULT: {
         const tcResult = event as ToolCallResultEvent;
         const resultContent =
-          typeof tcResult.content === "string"
-            ? tcResult.content
-            : JSON.stringify(tcResult.content);
+          typeof tcResult.content === "string" ? tcResult.content : JSON.stringify(tcResult.content);
 
         // Check if tool result contains A2UI operations
         this.inspectA2uiOperations(tcResult.content);
 
         const toolName =
-          this.toolCallNames.get(tcResult.toolCallId) ||
-          (tcResult.metadata?.toolName as string) ||
-          "tool";
+          this.toolCallNames.get(tcResult.toolCallId) || (tcResult.metadata?.toolName as string) || "tool";
         this.steps.push({
           type: "tool_result",
           call_id: tcResult.toolCallId,
@@ -246,12 +237,9 @@ export class AgUiEventAccumulator {
    */
   private inspectA2uiOperations(content: unknown): void {
     if (!content) return;
-    const parsed =
-      typeof content === "string" ? tryParseJson(content) : content;
+    const parsed = typeof content === "string" ? tryParseJson(content) : content;
     if (parsed && typeof parsed === "object" && "a2ui_operations" in parsed) {
-      const ops = (
-        parsed as { a2ui_operations: Array<Record<string, unknown>> }
-      ).a2ui_operations;
+      const ops = (parsed as { a2ui_operations: Array<Record<string, unknown>> }).a2ui_operations;
       if (Array.isArray(ops)) {
         for (const op of ops) {
           if (op.createSurface && typeof op.createSurface === "object") {
@@ -265,10 +253,7 @@ export class AgUiEventAccumulator {
               components: [],
               dataModel: {},
             });
-          } else if (
-            op.updateComponents &&
-            typeof op.updateComponents === "object"
-          ) {
+          } else if (op.updateComponents && typeof op.updateComponents === "object") {
             const update = op.updateComponents as {
               surfaceId: string;
               components: unknown[];
@@ -277,10 +262,7 @@ export class AgUiEventAccumulator {
             if (existing) {
               existing.components = update.components;
             }
-          } else if (
-            op.updateDataModel &&
-            typeof op.updateDataModel === "object"
-          ) {
+          } else if (op.updateDataModel && typeof op.updateDataModel === "object") {
             const update = op.updateDataModel as {
               surfaceId: string;
               value: unknown;
@@ -342,9 +324,7 @@ export class AgUiEventAccumulator {
 /**
  * Converts a static list of AG-UI events into TranscriptSteps.
  */
-export function agUiEventsToTranscriptSteps(
-  events: BaseEvent[],
-): TranscriptStep[] {
+export function agUiEventsToTranscriptSteps(events: BaseEvent[]): TranscriptStep[] {
   const acc = new AgUiEventAccumulator();
   for (const event of events) {
     acc.push(event);
@@ -355,9 +335,7 @@ export function agUiEventsToTranscriptSteps(
 /**
  * Converts a static list of AG-UI events into paired TranscriptItems.
  */
-export function agUiEventsToTranscriptItems(
-  events: BaseEvent[],
-): TranscriptItem[] {
+export function agUiEventsToTranscriptItems(events: BaseEvent[]): TranscriptItem[] {
   const acc = new AgUiEventAccumulator();
   for (const event of events) {
     acc.push(event);
@@ -446,18 +424,11 @@ export function coordEnvelopeToAgUiEvent(envelope: CoordEnvelope): BaseEvent {
 /**
  * Translates an AG-UI BaseEvent into an Aphrody A2A CoordEnvelope mailbox message.
  */
-export function agUiEventToCoordEnvelope(
-  event: BaseEvent,
-  from: string,
-  to: string = "fleet",
-): CoordEnvelope {
+export function agUiEventToCoordEnvelope(event: BaseEvent, from: string, to: string = "fleet"): CoordEnvelope {
   const ts = new Date().toISOString();
   const id = `env-${Date.now().toString(16)}`;
 
-  if (
-    event.type === EventType.CUSTOM &&
-    (event as any).name?.startsWith("a2a_")
-  ) {
+  if (event.type === EventType.CUSTOM && (event as any).name?.startsWith("a2a_")) {
     const val = (event as any).value || {};
     const kind = (event as any).name.replace(/^a2a_/, "");
     return {
@@ -498,10 +469,7 @@ export function agUiEventToCoordEnvelope(
       to,
       kind: "fact",
       topic: (res.metadata?.toolName as string) || `tool:${res.toolCallId}`,
-      body:
-        typeof res.content === "string"
-          ? res.content
-          : JSON.stringify(res.content),
+      body: typeof res.content === "string" ? res.content : JSON.stringify(res.content),
       re: res.toolCallId,
     };
   }

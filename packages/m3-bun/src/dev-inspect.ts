@@ -28,18 +28,11 @@ interface Inspector {
   send(method: string, params?: object): Promise<unknown>;
   on(
     event: "Console.messageAdded",
-    listener: (event: {
-      message: { level: string; text: string; parameters?: RemoteObject[] };
-    }) => void,
+    listener: (event: { message: { level: string; text: string; parameters?: RemoteObject[] } }) => void,
   ): unknown;
   on(
     event: "LifecycleReporter.error",
-    listener: (event: {
-      name: string;
-      message: string;
-      urls: string[];
-      lineColumns: number[];
-    }) => void,
+    listener: (event: { name: string; message: string; urls: string[]; lineColumns: number[] }) => void,
   ): unknown;
   close(): void;
 }
@@ -76,11 +69,7 @@ export interface M3InspectOptions {
 }
 
 export interface M3Inspected {
-  readonly child: Subprocess<
-    "ignore",
-    "inherit" | "pipe" | "ignore",
-    "inherit" | "pipe" | "ignore"
-  >;
+  readonly child: Subprocess<"ignore", "inherit" | "pipe" | "ignore", "inherit" | "pipe" | "ignore">;
   /** Inspector WebSocket of the child (`ws://127.0.0.1:<port>/<id>`). */
   readonly inspectorUrl: string;
   /** Resolves once the relay is attached. */
@@ -100,9 +89,7 @@ const LEVELS: Record<string, M3ConsoleLevel> = {
 };
 
 /** Run `options.cmd` under the inspector and relay its console and uncaught exceptions. */
-export async function launchInspected(
-  options: M3InspectOptions,
-): Promise<M3Inspected> {
+export async function launchInspected(options: M3InspectOptions): Promise<M3Inspected> {
   const [dap, protocol] = await Promise.all([
     loadOptional<Dap>("@aphrody/bun-debug-adapter-protocol", FEATURE),
     loadOptional<Protocol>("@aphrody/bun-inspector-protocol", FEATURE),
@@ -128,35 +115,22 @@ export async function launchInspected(
   });
   void child.exited.then(() => {
     signal.close();
-    return received.reject(
-      new Error(
-        `m3-bun ${FEATURE}: the program exited before its inspector listened`,
-      ),
-    );
+    return received.reject(new Error(`m3-bun ${FEATURE}: the program exited before its inspector listened`));
   });
 
   const inspector = received.promise.then(async () => {
     const client = new protocol.WebSocketInspector(inspectorUrl);
     client.on("Console.messageAdded", ({ message }) => {
       const text = message.parameters?.length
-        ? message.parameters
-            .map((value) => protocol.remoteObjectToString(value, true))
-            .join(" ")
+        ? message.parameters.map(value => protocol.remoteObjectToString(value, true)).join(" ")
         : message.text;
       options.onConsole?.({ level: LEVELS[message.level] ?? "log", text });
     });
-    client.on(
-      "LifecycleReporter.error",
-      ({ name, message, urls, lineColumns }) => {
-        const frames = urls.map(
-          (url, i) =>
-            `${url}:${lineColumns[i * 2] ?? 0}:${lineColumns[i * 2 + 1] ?? 0}`,
-        );
-        options.onException?.({ name, message, frames });
-      },
-    );
-    if (!(await client.start()))
-      throw new Error(`m3-bun ${FEATURE}: cannot attach to ${inspectorUrl}`);
+    client.on("LifecycleReporter.error", ({ name, message, urls, lineColumns }) => {
+      const frames = urls.map((url, i) => `${url}:${lineColumns[i * 2] ?? 0}:${lineColumns[i * 2 + 1] ?? 0}`);
+      options.onException?.({ name, message, frames });
+    });
+    if (!(await client.start())) throw new Error(`m3-bun ${FEATURE}: cannot attach to ${inspectorUrl}`);
     await Promise.all([
       client.send("Inspector.enable"),
       client.send("Runtime.enable"),
@@ -176,7 +150,7 @@ export async function launchInspected(
     attached: inspector.then(() => undefined),
     async stop() {
       void inspector.then(
-        (client) => client.close(),
+        client => client.close(),
         () => {},
       );
       child.kill();
@@ -194,11 +168,7 @@ export interface M3InspectorFrontend {
 }
 
 /** Serve the WebKit Web Inspector of `@aphrody/web-inspector-bun`, connected to the inspector at `ws`. */
-export function serveInspectorFrontend(options: {
-  ws: string;
-  port?: number;
-  hostname?: string;
-}): M3InspectorFrontend {
+export function serveInspectorFrontend(options: { ws: string; port?: number; hostname?: string }): M3InspectorFrontend {
   const dir = packageDir("@aphrody/web-inspector-bun", FEATURE);
   // The frontend's own pages carry inline scripts; the default CSP would block them.
   const app = createM3App({

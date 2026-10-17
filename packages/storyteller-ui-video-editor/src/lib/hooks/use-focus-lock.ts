@@ -5,22 +5,14 @@ type FocusLockCursor = "text" | "default" | "pointer" | "crosshair";
 
 const DATA_ATTR = "data-focus-locked";
 
-function buildFocusLockCSS({
-  cursor,
-  allowSelector,
-}: {
-  cursor: FocusLockCursor;
-  allowSelector?: string;
-}) {
+function buildFocusLockCSS({ cursor, allowSelector }: { cursor: FocusLockCursor; allowSelector?: string }) {
   const rules = [
     `*, *::before, *::after { pointer-events: none !important; cursor: ${cursor} !important; }`,
     `[${DATA_ATTR}], [${DATA_ATTR}] * { pointer-events: auto !important; cursor: auto !important; }`,
   ];
 
   if (allowSelector) {
-    rules.push(
-      `${allowSelector} { pointer-events: auto !important; cursor: auto !important; }`,
-    );
+    rules.push(`${allowSelector} { pointer-events: auto !important; cursor: auto !important; }`);
   }
 
   return rules.join("\n");
@@ -56,10 +48,7 @@ export function useFocusLock<T extends HTMLElement = HTMLElement>({
       const target = event.target;
       if (target instanceof Node && container.contains(target)) return;
 
-      const isAllowedTarget =
-        allowSelector &&
-        target instanceof Element &&
-        target.closest(allowSelector);
+      const isAllowedTarget = allowSelector && target instanceof Element && target.closest(allowSelector);
       if (isAllowedTarget) return;
 
       onDismissRef.current();
@@ -68,11 +57,7 @@ export function useFocusLock<T extends HTMLElement = HTMLElement>({
     document.addEventListener("pointerdown", handleOutsidePointerDown, true);
 
     return () => {
-      document.removeEventListener(
-        "pointerdown",
-        handleOutsidePointerDown,
-        true,
-      );
+      document.removeEventListener("pointerdown", handleOutsidePointerDown, true);
       container.removeAttribute(DATA_ATTR);
       focusLockStyle.remove();
     };

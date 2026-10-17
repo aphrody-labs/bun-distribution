@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** dinput8.dll!DirectInput8Create */
-  DirectInput8Create(hinst: Win32Pointer, dwVersion: number, riidltf: Win32Pointer, ppvOut: Win32Pointer, punkOuter: Win32Pointer): number;
+  DirectInput8Create(
+    hinst: Win32Pointer,
+    dwVersion: number,
+    riidltf: Win32Pointer,
+    ppvOut: Win32Pointer,
+    punkOuter: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

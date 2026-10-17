@@ -23,10 +23,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
 import { ChannelSelect } from "@aphrody/admin-ui/components/admin/ChannelSelect";
 import { RoleSelect } from "@aphrody/admin-ui/components/admin/RoleSelect";
-import {
-  JsonEditor,
-  looksLikeJson,
-} from "@aphrody/admin-ui/components/admin/JsonEditor";
+import { JsonEditor, looksLikeJson } from "@aphrody/admin-ui/components/admin/JsonEditor";
 
 interface SettingDef {
   key: string;
@@ -45,10 +42,7 @@ interface CurrentSetting {
   value: string;
 }
 
-const CATEGORY_META: Record<
-  string,
-  { label: string; icon: React.ElementType; desc: string }
-> = {
+const CATEGORY_META: Record<string, { label: string; icon: React.ElementType; desc: string }> = {
   xp: {
     label: "XP & niveaux",
     icon: Trophy,
@@ -107,10 +101,7 @@ const CATEGORY_META: Record<
 };
 
 const TICKET_KINDS = ["report", "achat", "shop", "abus"] as const;
-const TICKET_KIND_META: Record<
-  (typeof TICKET_KINDS)[number],
-  { emoji: string; label: string }
-> = {
+const TICKET_KIND_META: Record<(typeof TICKET_KINDS)[number], { emoji: string; label: string }> = {
   report: { emoji: "🚨", label: "Signaler" },
   achat: { emoji: "🛒", label: "Achat" },
   shop: { emoji: "🏪", label: "Shop" },
@@ -143,10 +134,7 @@ export default function SettingsPage() {
 
   const current = useQuery({
     queryKey: ["settings", "current"],
-    queryFn: () =>
-      api.get<{ rows: CurrentSetting[]; total?: number }>(
-        "/database/guild_settings?limit=500",
-      ),
+    queryFn: () => api.get<{ rows: CurrentSetting[]; total?: number }>("/database/guild_settings?limit=500"),
   });
 
   const [toast, setToast] = useState<{
@@ -160,14 +148,12 @@ export default function SettingsPage() {
   }, [toast]);
 
   const set = useMutation({
-    mutationFn: (data: { key: string; value: string }) =>
-      api.post("/services/settings/set", data),
+    mutationFn: (data: { key: string; value: string }) => api.post("/services/settings/set", data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["settings"] });
       setToast({ type: "success", msg: "Paramètre enregistré." });
     },
-    onError: (err: Error) =>
-      setToast({ type: "error", msg: `Échec : ${err.message}` }),
+    onError: (err: Error) => setToast({ type: "error", msg: `Échec : ${err.message}` }),
   });
   const unset = useMutation({
     mutationFn: (key: string) => api.post("/services/settings/unset", { key }),
@@ -175,8 +161,7 @@ export default function SettingsPage() {
       qc.invalidateQueries({ queryKey: ["settings"] });
       setToast({ type: "success", msg: "Retour à la valeur par défaut." });
     },
-    onError: (err: Error) =>
-      setToast({ type: "error", msg: `Échec : ${err.message}` }),
+    onError: (err: Error) => setToast({ type: "error", msg: `Échec : ${err.message}` }),
   });
 
   const valueMap = useMemo(() => {
@@ -193,7 +178,7 @@ export default function SettingsPage() {
       if (!byCat.has(cat)) byCat.set(cat, []);
       byCat.get(cat)!.push(k);
     }
-    return CATEGORY_ORDER.filter((c) => byCat.has(c)).map((c) => ({
+    return CATEGORY_ORDER.filter(c => byCat.has(c)).map(c => ({
       category: c,
       keys: byCat.get(c)!,
     }));
@@ -203,8 +188,7 @@ export default function SettingsPage() {
   const xpBoostRoles = useMemo(() => {
     const out: { roleId: string; multiplier: string }[] = [];
     for (const [k, v] of valueMap) {
-      if (k.startsWith("xp.boost.role."))
-        out.push({ roleId: k.slice(14), multiplier: v });
+      if (k.startsWith("xp.boost.role.")) out.push({ roleId: k.slice(14), multiplier: v });
     }
     return out;
   }, [valueMap]);
@@ -230,12 +214,7 @@ export default function SettingsPage() {
     return out;
   }, [valueMap]);
 
-  if (schema.isLoading)
-    return (
-      <div className="text-zinc-500 text-sm">
-        Chargement de la configuration…
-      </div>
-    );
+  if (schema.isLoading) return <div className="text-zinc-500 text-sm">Chargement de la configuration…</div>;
 
   return (
     <div className="space-y-4">
@@ -253,20 +232,15 @@ export default function SettingsPage() {
       <div className="dbz-panel p-4">
         <div className="flex items-center gap-2 mb-2">
           <SettingsIcon className="h-5 w-5 text-dbz-orange" />
-          <h2 className="text-lg font-saiyan text-dbz-orange uppercase">
-            Configuration du bot
-          </h2>
+          <h2 className="text-lg font-saiyan text-dbz-orange uppercase">Configuration du bot</h2>
         </div>
         <p className="text-sm text-zinc-300">
-          Tous les réglages du bot sont regroupés ici : quels salons utiliser,
-          quels rôles assigner, combien d'XP gagner par message… Chaque valeur a
-          un défaut intégré ; vous ne modifiez que ce que vous souhaitez
-          personnaliser.
+          Tous les réglages du bot sont regroupés ici : quels salons utiliser, quels rôles assigner, combien d'XP gagner
+          par message… Chaque valeur a un défaut intégré ; vous ne modifiez que ce que vous souhaitez personnaliser.
         </p>
         <p className="mt-1 text-xs text-dbz-blue-light">
-          {schema.data?.keys.filter((k) => !k.prefix).length ?? 0} paramètres ·
-          {overriddenCount} personnalisé{overriddenCount > 1 ? "s" : ""} · les
-          valeurs par défaut s'appliquent si rien n'est défini · cache bot 30 s
+          {schema.data?.keys.filter(k => !k.prefix).length ?? 0} paramètres ·{overriddenCount} personnalisé
+          {overriddenCount > 1 ? "s" : ""} · les valeurs par défaut s'appliquent si rien n'est défini · cache bot 30 s
         </p>
       </div>
 
@@ -277,11 +251,9 @@ export default function SettingsPage() {
           keys={keys}
           valueMap={valueMap}
           onSet={(key, value) => set.mutate({ key, value })}
-          onUnset={(key) => unset.mutate(key)}
+          onUnset={key => unset.mutate(key)}
           xpBoostRoles={category === "xp" ? xpBoostRoles : undefined}
-          ticketAccessRoles={
-            category === "tickets" ? ticketAccessRoles : undefined
-          }
+          ticketAccessRoles={category === "tickets" ? ticketAccessRoles : undefined}
           pending={set.isPending || unset.isPending}
         />
       ))}
@@ -316,19 +288,15 @@ function CategorySection({
   // `meta` est une union (CATEGORY_META[...] ?? fallback) dont l'intersection des
   // props composant donne `never` sous les types React canary → cast explicite.
   const Icon = meta.icon as React.ComponentType<{ className?: string }>;
-  const [open, setOpen] = useState(
-    category === "features" || category === "channels",
-  );
-  const overridden = keys.filter(
-    (k) => !k.prefix && valueMap.has(k.key),
-  ).length;
-  const total = keys.filter((k) => !k.prefix).length;
+  const [open, setOpen] = useState(category === "features" || category === "channels");
+  const overridden = keys.filter(k => !k.prefix && valueMap.has(k.key)).length;
+  const total = keys.filter(k => !k.prefix).length;
 
   return (
     <div className="card p-0">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(o => !o)}
         className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-zinc-900/40"
       >
         <Icon className="h-5 w-5 shrink-0 text-brand-400" />
@@ -338,12 +306,8 @@ function CategorySection({
           {category === "tickets" && ticketAccessRoles && (
             <TicketAccessEditor
               entries={ticketAccessRoles}
-              onSet={(kind, roleId) =>
-                onSet(`${TICKET_ACCESS_PREFIX}${kind}.${roleId}`, "1")
-              }
-              onUnset={(kind, roleId) =>
-                onUnset(`${TICKET_ACCESS_PREFIX}${kind}.${roleId}`)
-              }
+              onSet={(kind, roleId) => onSet(`${TICKET_ACCESS_PREFIX}${kind}.${roleId}`, "1")}
+              onUnset={(kind, roleId) => onUnset(`${TICKET_ACCESS_PREFIX}${kind}.${roleId}`)}
               pending={pending}
             />
           )}
@@ -351,21 +315,19 @@ function CategorySection({
         <span className="badge">
           {overridden} / {total} surchargé{overridden > 1 ? "s" : ""}
         </span>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div className="border-t border-zinc-800 p-4">
           <div className="space-y-2">
             {keys
-              .filter((k) => !k.prefix)
-              .map((k) => (
+              .filter(k => !k.prefix)
+              .map(k => (
                 <SettingRow
                   key={k.key}
                   def={k}
                   current={valueMap.get(k.key)}
-                  onSet={(v) => onSet(k.key, v)}
+                  onSet={v => onSet(k.key, v)}
                   onUnset={() => onUnset(k.key)}
                   pending={pending}
                 />
@@ -375,7 +337,7 @@ function CategorySection({
             <XpBoostRoleEditor
               entries={xpBoostRoles}
               onSet={(roleId, mult) => onSet(`xp.boost.role.${roleId}`, mult)}
-              onUnset={(roleId) => onUnset(`xp.boost.role.${roleId}`)}
+              onUnset={roleId => onUnset(`xp.boost.role.${roleId}`)}
               pending={pending}
             />
           )}
@@ -409,24 +371,15 @@ function SettingRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <code className="text-sm font-medium">{def.key}</code>
-            {isOverridden && (
-              <span className="badge badge-warning">surchargé</span>
-            )}
+            {isOverridden && <span className="badge badge-warning">surchargé</span>}
             {!isOverridden && def.default !== undefined && (
-              <span className="text-xs text-zinc-500">
-                défaut : {String(def.default)}
-              </span>
+              <span className="text-xs text-zinc-500">défaut : {String(def.default)}</span>
             )}
           </div>
           <p className="mt-0.5 text-xs text-zinc-400">{def.description}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {!editing && (
-            <SettingValuePreview
-              def={def}
-              value={current ?? def.default?.toString() ?? ""}
-            />
-          )}
+          {!editing && <SettingValuePreview def={def} value={current ?? def.default?.toString() ?? ""} />}
           <button
             type="button"
             onClick={() => {
@@ -488,14 +441,7 @@ function SettingValueInput({
           : def.channelType === "any"
             ? [0, 2, 4, 5, 13, 15]
             : [0, 5, 15];
-    return (
-      <ChannelSelect
-        value={value}
-        onChange={onChange}
-        types={types}
-        className="flex-1"
-      />
-    );
+    return <ChannelSelect value={value} onChange={onChange} types={types} className="flex-1" />;
   }
   if (def.type === "snowflake" && def.key.startsWith("role.")) {
     return <RoleSelect value={value} onChange={onChange} className="flex-1" />;
@@ -505,18 +451,14 @@ function SettingValueInput({
       <input
         className="input flex-1 font-mono text-xs"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         placeholder="snowflake (17-20 chiffres)"
       />
     );
   }
   if (def.type === "bool") {
     return (
-      <select
-        className="input flex-1"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
+      <select className="input flex-1" value={value} onChange={e => onChange(e.target.value)}>
         <option value="">— Choisir —</option>
         <option value="true">true (activé)</option>
         <option value="false">false (désactivé)</option>
@@ -532,7 +474,7 @@ function SettingValueInput({
         min={def.min}
         max={def.max}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
       />
     );
   }
@@ -541,20 +483,11 @@ function SettingValueInput({
   if (def.type === "string" && isJsonKey) {
     return <JsonEditor value={value} onChange={onChange} rows={6} />;
   }
-  return (
-    <input
-      className="input flex-1"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
-  );
+  return <input className="input flex-1" value={value} onChange={e => onChange(e.target.value)} />;
 }
 
 function GifPreview({ url }: { url: string }) {
-  if (!/^https:\/\//i.test(url))
-    return (
-      <span className="text-xs italic text-zinc-600">URL https requise</span>
-    );
+  if (!/^https:\/\//i.test(url)) return <span className="text-xs italic text-zinc-600">URL https requise</span>;
   return (
     <div className="flex items-center gap-2">
       {}
@@ -562,32 +495,19 @@ function GifPreview({ url }: { url: string }) {
         src={url}
         alt=""
         className="h-10 w-16 rounded border border-zinc-800 object-cover"
-        onError={(e) => {
+        onError={e => {
           (e.currentTarget as HTMLImageElement).style.display = "none";
         }}
       />
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className="text-xs text-zinc-400 hover:text-brand-400"
-        title={url}
-      >
+      <a href={url} target="_blank" rel="noreferrer" className="text-xs text-zinc-400 hover:text-brand-400" title={url}>
         <ExternalLink className="h-3 w-3" />
       </a>
     </div>
   );
 }
 
-function SettingValuePreview({
-  def,
-  value,
-}: {
-  def: SettingDef;
-  value: string;
-}) {
-  if (!value)
-    return <span className="text-xs italic text-zinc-600">non défini</span>;
+function SettingValuePreview({ def, value }: { def: SettingDef; value: string }) {
+  if (!value) return <span className="text-xs italic text-zinc-600">non défini</span>;
   if (def.key.startsWith("gif.")) {
     return <GifPreview url={value} />;
   }
@@ -599,61 +519,37 @@ function SettingValuePreview({
   }
   if (def.type === "bool") {
     const on = value === "true" || value === "1";
-    return (
-      <span className={`badge ${on ? "badge-success" : "badge-error"}`}>
-        {on ? "ON" : "OFF"}
-      </span>
-    );
+    return <span className={`badge ${on ? "badge-success" : "badge-error"}`}>{on ? "ON" : "OFF"}</span>;
   }
   if (def.type === "int" || def.type === "float") {
     return (
-      <code className="rounded bg-zinc-800 px-2 py-1 text-xs font-mono">
-        {Number(value).toLocaleString("fr-FR")}
-      </code>
+      <code className="rounded bg-zinc-800 px-2 py-1 text-xs font-mono">{Number(value).toLocaleString("fr-FR")}</code>
     );
   }
-  return (
-    <code className="rounded bg-zinc-800 px-2 py-1 text-xs font-mono">
-      {value}
-    </code>
-  );
+  return <code className="rounded bg-zinc-800 px-2 py-1 text-xs font-mono">{value}</code>;
 }
 
 function ChannelInline({ channelId }: { channelId: string }) {
   const { data } = useQuery({
     queryKey: ["discord", "channels"],
-    queryFn: () =>
-      api.get<{ channels: { id: string; name: string; type: number }[] }>(
-        "/discord/channels",
-      ),
+    queryFn: () => api.get<{ channels: { id: string; name: string; type: number }[] }>("/discord/channels"),
     staleTime: 30_000,
   });
-  const c = data?.channels.find((x) => x.id === channelId);
-  return (
-    <code className="rounded bg-zinc-800 px-2 py-1 text-xs">
-      {c ? `#${c.name}` : channelId}
-    </code>
-  );
+  const c = data?.channels.find(x => x.id === channelId);
+  return <code className="rounded bg-zinc-800 px-2 py-1 text-xs">{c ? `#${c.name}` : channelId}</code>;
 }
 
 function RoleInline({ roleId }: { roleId: string }) {
   const { data } = useQuery({
     queryKey: ["discord", "roles"],
-    queryFn: () =>
-      api.get<{ roles: { id: string; name: string; color: number }[] }>(
-        "/discord/roles",
-      ),
+    queryFn: () => api.get<{ roles: { id: string; name: string; color: number }[] }>("/discord/roles"),
     staleTime: 30_000,
   });
-  const r = data?.roles.find((x) => x.id === roleId);
+  const r = data?.roles.find(x => x.id === roleId);
   return (
     <code
       className="rounded bg-zinc-800 px-2 py-1 text-xs"
-      style={
-        r && r.color !== 0
-          ? { color: `#${r.color.toString(16).padStart(6, "0")}` }
-          : undefined
-      }
+      style={r && r.color !== 0 ? { color: `#${r.color.toString(16).padStart(6, "0")}` } : undefined}
     >
       {r ? `@${r.name}` : roleId}
     </code>
@@ -679,22 +575,15 @@ function XpBoostRoleEditor({
         Multiplicateurs XP par rôle ({entries.length})
       </h4>
       <p className="mb-3 text-xs text-zinc-500">
-        Si un membre a plusieurs rôles boostés, on prend le <strong>max</strong>{" "}
-        (ne stack pas).
+        Si un membre a plusieurs rôles boostés, on prend le <strong>max</strong> (ne stack pas).
       </p>
       <div className="space-y-2">
-        {entries.map((e) => (
+        {entries.map(e => (
           <div key={e.roleId} className="flex items-center gap-2">
             <RoleInline roleId={e.roleId} />
             <span className="text-xs text-zinc-500">×</span>
-            <code className="rounded bg-zinc-800 px-2 py-1 text-xs">
-              {e.multiplier}
-            </code>
-            <button
-              type="button"
-              onClick={() => onUnset(e.roleId)}
-              className="btn btn-ghost px-2 text-red-400"
-            >
+            <code className="rounded bg-zinc-800 px-2 py-1 text-xs">{e.multiplier}</code>
+            <button type="button" onClick={() => onUnset(e.roleId)} className="btn btn-ghost px-2 text-red-400">
               <Trash2 className="h-3 w-3" />
             </button>
           </div>
@@ -708,7 +597,7 @@ function XpBoostRoleEditor({
           step="0.1"
           min="0.1"
           value={mult}
-          onChange={(e) => setMult(e.target.value)}
+          onChange={e => setMult(e.target.value)}
           placeholder="1.5"
         />
         <button
@@ -745,10 +634,7 @@ function TicketAccessEditor({
   const current = entries[kind] ?? [];
 
   const sync = useMutation({
-    mutationFn: () =>
-      api.post<{ ok: boolean; updated: number; skipped: number }>(
-        "/tickets/sync-access",
-      ),
+    mutationFn: () => api.post<{ ok: boolean; updated: number; skipped: number }>("/tickets/sync-access"),
   });
 
   return (
@@ -757,13 +643,12 @@ function TicketAccessEditor({
         Accès staff par type de ticket
       </h4>
       <p className="mb-3 text-xs text-zinc-500">
-        Rôles ajoutés ici = accès (voir + écrire) aux <strong>nouveaux</strong>{" "}
-        tickets de ce type dès leur ouverture. Les Administrateurs voient déjà
-        tout (bypass Discord). Pour appliquer aussi aux tickets déjà ouverts,
-        utiliser le bouton de resync ci-dessous.
+        Rôles ajoutés ici = accès (voir + écrire) aux <strong>nouveaux</strong> tickets de ce type dès leur ouverture.
+        Les Administrateurs voient déjà tout (bypass Discord). Pour appliquer aussi aux tickets déjà ouverts, utiliser
+        le bouton de resync ci-dessous.
       </p>
       <div className="mb-3 flex flex-wrap gap-2">
-        {TICKET_KINDS.map((k) => (
+        {TICKET_KINDS.map(k => (
           <button
             key={k}
             type="button"
@@ -771,27 +656,21 @@ function TicketAccessEditor({
             className={`btn ${kind === k ? "btn-primary" : "btn-ghost"}`}
           >
             {TICKET_KIND_META[k].emoji} {TICKET_KIND_META[k].label}
-            <span className="ml-1 text-xs opacity-70">
-              ({(entries[k] ?? []).length})
-            </span>
+            <span className="ml-1 text-xs opacity-70">({(entries[k] ?? []).length})</span>
           </button>
         ))}
       </div>
       <div className="space-y-2">
         {current.length === 0 && (
           <p className="text-xs italic text-zinc-600">
-            Aucun rôle configuré pour « {TICKET_KIND_META[kind].label} » — seul
-            l'auteur du ticket (+ Administrateur) le voit.
+            Aucun rôle configuré pour « {TICKET_KIND_META[kind].label} » — seul l'auteur du ticket (+ Administrateur) le
+            voit.
           </p>
         )}
-        {current.map((rid) => (
+        {current.map(rid => (
           <div key={rid} className="flex items-center gap-2">
             <RoleInline roleId={rid} />
-            <button
-              type="button"
-              onClick={() => onUnset(kind, rid)}
-              className="btn btn-ghost px-2 text-red-400"
-            >
+            <button type="button" onClick={() => onUnset(kind, rid)} className="btn btn-ghost px-2 text-red-400">
               <Trash2 className="h-3 w-3" />
             </button>
           </div>
@@ -813,29 +692,18 @@ function TicketAccessEditor({
         </button>
       </div>
       <div className="mt-3 flex items-center gap-2 border-t border-zinc-800 pt-3">
-        <button
-          type="button"
-          onClick={() => sync.mutate()}
-          disabled={sync.isPending}
-          className="btn btn-ghost"
-        >
-          <RefreshCw
-            className={`h-3 w-3 ${sync.isPending ? "animate-spin" : ""}`}
-          />
+        <button type="button" onClick={() => sync.mutate()} disabled={sync.isPending} className="btn btn-ghost">
+          <RefreshCw className={`h-3 w-3 ${sync.isPending ? "animate-spin" : ""}`} />
           Appliquer aux tickets déjà ouverts
         </button>
         {sync.data && (
           <span className="text-xs text-zinc-400">
             {sync.data.updated} salon(s) mis à jour
-            {sync.data.skipped > 0
-              ? ` · ${sync.data.skipped} introuvable(s)`
-              : ""}
+            {sync.data.skipped > 0 ? ` · ${sync.data.skipped} introuvable(s)` : ""}
           </span>
         )}
         {sync.isError && (
-          <span className="text-xs text-red-400">
-            {sync.error instanceof Error ? sync.error.message : "échec"}
-          </span>
+          <span className="text-xs text-red-400">{sync.error instanceof Error ? sync.error.message : "échec"}</span>
         )}
       </div>
     </div>

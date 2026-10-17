@@ -12,15 +12,7 @@ import { cn } from "../../lib/utils";
 import { Badge } from "../badge";
 import { Button } from "../button";
 import { Card, CardContent, CardHeader, CardTitle } from "../card";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../form";
 import { Input } from "../input";
 import { Label } from "../label";
 import { Slider } from "../slider";
@@ -69,10 +61,7 @@ const schema = z.object({
   banner_url: z.string().optional().or(z.literal("")),
   banner_position: z.coerce.number().int().min(0).max(100).default(50),
   poste: z.string().nullable().default(null),
-  bio: z
-    .string()
-    .max(BIO_MAX, `La bio ne peut pas dépasser ${BIO_MAX} caractères.`)
-    .optional(),
+  bio: z.string().max(BIO_MAX, `La bio ne peut pas dépasser ${BIO_MAX} caractères.`).optional(),
   full_name: z.string().optional(),
   twitter_handle: z.string().optional(),
   username: z
@@ -159,15 +148,13 @@ export function AccountProfileForm({
     if (current.includes(id)) {
       form.setValue(
         "badges",
-        current.filter((b) => b !== id),
+        current.filter(b => b !== id),
         { shouldDirty: true },
       );
       return;
     }
     if (current.length >= MAX_BADGES) {
-      toast.error(
-        `Tu ne peux pas afficher plus de ${MAX_BADGES} badges à la fois.`,
-      );
+      toast.error(`Tu ne peux pas afficher plus de ${MAX_BADGES} badges à la fois.`);
       return;
     }
     form.setValue("badges", [...current, id], { shouldDirty: true });
@@ -202,15 +189,9 @@ export function AccountProfileForm({
                       Nom d'utilisateur
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="pseudo"
-                        autoComplete="username"
-                        {...field}
-                      />
+                      <Input placeholder="pseudo" autoComplete="username" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      Unique. Apparaît dans l'URL de ton profil.
-                    </FormDescription>
+                    <FormDescription>Unique. Apparaît dans l'URL de ton profil.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -222,11 +203,7 @@ export function AccountProfileForm({
                   <FormItem>
                     <FormLabel>Nom complet</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Prénom Nom"
-                        autoComplete="name"
-                        {...field}
-                      />
+                      <Input placeholder="Prénom Nom" autoComplete="name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -266,12 +243,7 @@ export function AccountProfileForm({
                   <FormItem>
                     <FormLabel>Site web</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="https://exemple.com"
-                        inputMode="url"
-                        autoComplete="url"
-                        {...field}
-                      />
+                      <Input placeholder="https://exemple.com" inputMode="url" autoComplete="url" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -296,12 +268,8 @@ export function AccountProfileForm({
               <>
                 <div className="space-y-4 border-t border-border pt-6">
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">
-                      Bannière de profil
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Arrière-plan affiché en haut de ton profil public.
-                    </p>
+                    <h3 className="text-sm font-semibold text-foreground">Bannière de profil</h3>
+                    <p className="text-xs text-muted-foreground">Arrière-plan affiché en haut de ton profil public.</p>
                   </div>
 
                   {/* Aperçu réel plutôt qu'une vignette de catalogue : ce qu'on
@@ -316,12 +284,7 @@ export function AccountProfileForm({
                         style={{ objectPosition: `50% ${cadrage}%` }}
                       />
                     ) : (
-                      <div
-                        className={cn(
-                          "absolute inset-0",
-                          BANNIERE_DEFAUT.className,
-                        )}
-                      />
+                      <div className={cn("absolute inset-0", BANNIERE_DEFAUT.className)} />
                     )}
                     <span className="absolute inset-0 flex items-end bg-foreground/40 p-2 text-[10px] leading-tight font-bold text-background">
                       {bannerUrl ? "Bannière choisie" : BANNIERE_DEFAUT.name}
@@ -333,15 +296,9 @@ export function AccountProfileForm({
                   {bannerUrl && (
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
-                        <Label htmlFor="banniere-cadrage">
-                          Cadrage vertical
-                        </Label>
+                        <Label htmlFor="banniere-cadrage">Cadrage vertical</Label>
                         <span className="text-xs text-muted-foreground">
-                          {cadrage === 0
-                            ? "Haut de l'image"
-                            : cadrage === 100
-                              ? "Bas de l'image"
-                              : `${cadrage} %`}
+                          {cadrage === 0 ? "Haut de l'image" : cadrage === 100 ? "Bas de l'image" : `${cadrage} %`}
                         </span>
                       </div>
                       <Slider
@@ -350,19 +307,15 @@ export function AccountProfileForm({
                         max={100}
                         step={1}
                         value={[cadrage]}
-                        onValueChange={(valeurs) =>
-                          form.setValue(
-                            "banner_position",
-                            Number(valeurs[0] ?? 50),
-                            {
-                              shouldDirty: true,
-                            },
-                          )
+                        onValueChange={valeurs =>
+                          form.setValue("banner_position", Number(valeurs[0] ?? 50), {
+                            shouldDirty: true,
+                          })
                         }
                       />
                       <p className="text-xs text-muted-foreground">
-                        Une illustration du jeu est bien plus haute que la bande
-                        affichée : déplace-la pour choisir ce qui reste visible.
+                        Une illustration du jeu est bien plus haute que la bande affichée : déplace-la pour choisir ce
+                        qui reste visible.
                       </p>
                     </div>
                   )}
@@ -417,7 +370,7 @@ export function AccountProfileForm({
                     open={galerieOuverte}
                     onOpenChange={setGalerieOuverte}
                     valeur={bannerUrl}
-                    onChoisir={(url) => {
+                    onChoisir={url => {
                       setCustomBanner(false);
                       form.setValue("banner_url", url, { shouldDirty: true });
                     }}
@@ -431,15 +384,9 @@ export function AccountProfileForm({
                         <FormItem>
                           <FormLabel>URL de ta bannière</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="https://…"
-                              inputMode="url"
-                              {...field}
-                            />
+                            <Input placeholder="https://…" inputMode="url" {...field} />
                           </FormControl>
-                          <FormDescription>
-                            Format recommandé : 1200 × 400 px.
-                          </FormDescription>
+                          <FormDescription>Format recommandé : 1200 × 400 px.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -449,16 +396,13 @@ export function AccountProfileForm({
 
                 <div className="space-y-4 border-t border-border pt-6">
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">
-                      Poste
-                    </h3>
+                    <h3 className="text-sm font-semibold text-foreground">Poste</h3>
                     <p className="text-xs text-muted-foreground">
-                      Affiché sur ta carte, comme sur une fiche de joueur du
-                      jeu.
+                      Affiché sur ta carte, comme sur une fiche de joueur du jeu.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {POSTES_CHOISISSABLES.map((entree) => {
+                    {POSTES_CHOISISSABLES.map(entree => {
                       const choisi = posteChoisi === entree.valeur;
                       return (
                         <button
@@ -488,10 +432,7 @@ export function AccountProfileForm({
                   <div>
                     <h3 className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
                       Badges de profil
-                      <Badge
-                        variant="outline"
-                        className="rounded-full text-[10px] font-bold"
-                      >
+                      <Badge variant="outline" className="rounded-full text-[10px] font-bold">
                         {badges.length} / {MAX_BADGES} sélectionnés
                       </Badge>
                     </h3>
@@ -501,7 +442,7 @@ export function AccountProfileForm({
                   </div>
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {AVAILABLE_BADGES.map((badge) => {
+                    {AVAILABLE_BADGES.map(badge => {
                       const selected = badges.includes(badge.id);
                       return (
                         <button
@@ -516,25 +457,13 @@ export function AccountProfileForm({
                               : "border-border hover:border-muted-foreground/30 hover:bg-muted/40",
                           )}
                         >
-                          <span
-                            className={cn(
-                              "shrink-0 rounded-xl border p-2",
-                              badge.tone,
-                            )}
-                          >
+                          <span className={cn("shrink-0 rounded-xl border p-2", badge.tone)}>
                             {/* Icône extraite du jeu, pas un pictogramme générique.
 														    eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={badge.iconeUrl}
-                              alt=""
-                              aria-hidden
-                              className="size-5"
-                            />
+                            <img src={badge.iconeUrl} alt="" aria-hidden className="size-5" />
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className="block text-sm font-bold text-foreground">
-                              {badge.label}
-                            </span>
+                            <span className="block text-sm font-bold text-foreground">{badge.label}</span>
                             <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
                               {badge.description}
                             </span>
@@ -547,13 +476,7 @@ export function AccountProfileForm({
                                 : "border-muted-foreground/30",
                             )}
                           >
-                            {selected && (
-                              <Check
-                                className="size-3"
-                                strokeWidth={3}
-                                aria-hidden
-                              />
-                            )}
+                            {selected && <Check className="size-3" strokeWidth={3} aria-hidden />}
                           </span>
                         </button>
                       );
@@ -564,14 +487,8 @@ export function AccountProfileForm({
             )}
 
             <div className="flex justify-end border-t border-border pt-6">
-              <Button
-                type="submit"
-                disabled={form.formState.isSubmitting}
-                className="rounded-full px-8"
-              >
-                {form.formState.isSubmitting
-                  ? "Enregistrement…"
-                  : "Enregistrer le profil"}
+              <Button type="submit" disabled={form.formState.isSubmitting} className="rounded-full px-8">
+                {form.formState.isSubmitting ? "Enregistrement…" : "Enregistrer le profil"}
               </Button>
             </div>
           </form>

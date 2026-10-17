@@ -15,14 +15,7 @@
  */
 
 import type { SVGProps } from "react";
-import {
-  BOITE_ICONE,
-  GEOMETRIES,
-  POINTE_ICONE,
-  TRAIT_ICONE,
-  type GeometrieIcone,
-  type NomIcone,
-} from "./geometries";
+import { BOITE_ICONE, GEOMETRIES, POINTE_ICONE, TRAIT_ICONE, type GeometrieIcone, type NomIcone } from "./geometries";
 
 export type ProprietesIcone = Omit<SVGProps<SVGSVGElement>, "children"> & {
   /** Côté du carré rendu, en pixels. Défaut 24, comme lucide. */
@@ -50,20 +43,14 @@ export function Glyphe({
   // `aplats` n'existent alors pas sur toutes les branches de l'union. On relit
   // la table par le contrat commun, qui les déclare optionnels.
   const geo: GeometrieIcone = GEOMETRIES[nom];
-  const trait = absoluteStrokeWidth
-    ? (Number(strokeWidth) * BOITE_ICONE) / Number(size)
-    : strokeWidth;
+  const trait = absoluteStrokeWidth ? (Number(strokeWidth) * BOITE_ICONE) / Number(size) : strokeWidth;
   // L'en-tête promet qu'`aria-label` OU `role="img"` lève le masquage ; le code
   // ne regardait qu'`aria-label`, si bien qu'une icône nommée par
   // `aria-labelledby` — ou déclarée `role="img"` — restait invisible aux lecteurs
   // d'écran, sans rien signaler. (`children` étant exclu de `ProprietesIcone`, un
   // `<title>` interne n'est pas une option : le nom vient forcément d'une prop.)
-  const roleAnnonce =
-    reste.role !== undefined &&
-    reste.role !== "presentation" &&
-    reste.role !== "none";
-  const estAnnoncee =
-    Boolean(reste["aria-label"] ?? reste["aria-labelledby"]) || roleAnnonce;
+  const roleAnnonce = reste.role !== undefined && reste.role !== "presentation" && reste.role !== "none";
+  const estAnnoncee = Boolean(reste["aria-label"] ?? reste["aria-labelledby"]) || roleAnnonce;
 
   return (
     <svg
@@ -80,10 +67,10 @@ export function Glyphe({
       aria-hidden={estAnnoncee ? undefined : true}
       {...reste}
     >
-      {geo.traits?.map((d) => (
+      {geo.traits?.map(d => (
         <path key={d} d={d} />
       ))}
-      {geo.aplats?.map((d) => (
+      {geo.aplats?.map(d => (
         <path key={d} d={d} fill={color ?? "currentColor"} stroke="none" />
       ))}
     </svg>

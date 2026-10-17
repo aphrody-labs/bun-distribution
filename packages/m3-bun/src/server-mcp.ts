@@ -42,10 +42,7 @@ async function toolHost(args: string[]): Promise<string> {
     new Response(child.stderr).text(),
     child.exited,
   ]);
-  if (code !== 0)
-    throw new Error(
-      `m3-bun ${FEATURE}: tool-host ${args[0]} exited with ${code}: ${stderr.trim()}`,
-    );
+  if (code !== 0) throw new Error(`m3-bun ${FEATURE}: tool-host ${args[0]} exited with ${code}: ${stderr.trim()}`);
   return stdout;
 }
 
@@ -53,23 +50,15 @@ async function toolHost(args: string[]): Promise<string> {
 export function m3McpRoutes(options: M3McpOptions = {}): M3Routes {
   const path = (options.path ?? "/api/m3/mcp").replace(/\/+$/, "");
   const list = async (): Promise<unknown> =>
+    options.isolate ? JSON.parse(await toolHost(["list"])) : (await mcp()).listM3Tools();
+  const call = async (name: string, args: unknown, signal: AbortSignal): Promise<ToolResult> =>
     options.isolate
-      ? JSON.parse(await toolHost(["list"]))
-      : (await mcp()).listM3Tools();
-  const call = async (
-    name: string,
-    args: unknown,
-    signal: AbortSignal,
-  ): Promise<ToolResult> =>
-    options.isolate
-      ? (JSON.parse(
-          await toolHost(["call", name, JSON.stringify(args)]),
-        ) as ToolResult)
+      ? (JSON.parse(await toolHost(["call", name, JSON.stringify(args)])) as ToolResult)
       : (await mcp()).callM3Tool(name, args, signal);
   return {
     [path]: { GET: async () => Response.json({ tools: await list() }) },
     [`${path}/:tool`]: {
-      POST: async (request) => {
+      POST: async request => {
         let args: unknown = {};
         const text = await request.text();
         if (text.trim() !== "") {

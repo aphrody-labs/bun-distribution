@@ -19,13 +19,7 @@ test("homepage exposes a labelled native search and retains product resource des
   expect(html).toContain('for="aphrody-home-search"');
   expect(html).toContain('type="search"');
   expect(html).toContain('aria-live="polite"');
-  for (const href of [
-    "/os",
-    "/docs",
-    "/templates",
-    "/material-3/components",
-    "https://downloads.aphrody.com/",
-  ]) {
+  for (const href of ["/os", "/docs", "/templates", "/material-3/components", "https://downloads.aphrody.com/"]) {
     expect(html).toContain(`href="${href}"`);
   }
   expect(html).toContain("No account cookies");
@@ -69,25 +63,16 @@ test("public search redacts failure, stays in Aphrody and retries the real backe
     );
     const input = host.querySelector("input")!;
     await act(async () => {
-      Object.getOwnPropertyDescriptor(
-        HTMLInputElement.prototype,
-        "value",
-      )!.set!.call(input, "TypeScript 7 & Bun");
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "TypeScript 7 & Bun");
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
     await act(async () =>
-      host
-        .querySelector("form")!
-        .dispatchEvent(
-          new Event("submit", { bubbles: true, cancelable: true }),
-        ),
+      host.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
     );
     expect(requested).toHaveLength(1);
     expect(requested[0]).toStartWith("/api/search?");
     const alert = host.querySelector('[role="alert"]')!;
-    expect(
-      new URL(requested[0], "https://aphrody.com").searchParams.get("hl"),
-    ).toBe("fr");
+    expect(new URL(requested[0], "https://aphrody.com").searchParams.get("hl")).toBe("fr");
     expect(alert.textContent).toContain(productSearchMessages.fr.unavailable);
     expect(alert.textContent).not.toContain("private backend diagnostics");
     const link = alert.querySelector("a")!;
@@ -130,12 +115,8 @@ test("every supported locale translates the complete public surface and preserve
       expect(html).toContain(text.privacy);
       expect(html).toContain(text.docs);
       expect(html).not.toContain('href="/studio?section=drive"');
-      expect(Object.keys(text).toSorted()).toEqual(
-        Object.keys(productSearchMessages.en).toSorted(),
-      );
-      expect(
-        Object.values(text).every((value) => value.trim().length > 0),
-      ).toBe(true);
+      expect(Object.keys(text).toSorted()).toEqual(Object.keys(productSearchMessages.en).toSorted());
+      expect(Object.values(text).every(value => value.trim().length > 0)).toBe(true);
       expect(html).not.toContain("Search images, news, videos and books");
     }
   } finally {

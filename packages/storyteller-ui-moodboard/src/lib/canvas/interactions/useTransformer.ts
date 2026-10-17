@@ -14,15 +14,13 @@ interface NodePatch {
 // scaleX/scaleY into width/height — and for groups, propagates the scale
 // into each child's position/size so the resize sticks (Figma/Excalidraw
 // behavior) instead of snapping back when the Group's scale resets to 1.
-export const useTransformer = (
-  stageRef: React.RefObject<Konva.Stage | null>,
-) => {
+export const useTransformer = (stageRef: React.RefObject<Konva.Stage | null>) => {
   const transformerRef = useRef<Konva.Transformer | null>(null);
-  const selectedIds = useMoodboardStore((s) => s.selectedIds);
+  const selectedIds = useMoodboardStore(s => s.selectedIds);
   // rootOrder is included so a re-attach happens after group()/ungroup()
   // reparents Konva nodes — without it, findOne can return stale results.
-  const rootOrder = useMoodboardStore((s) => s.rootOrder);
-  const editingTextId = useMoodboardStore((s) => s.transient.editingTextId);
+  const rootOrder = useMoodboardStore(s => s.rootOrder);
+  const editingTextId = useMoodboardStore(s => s.transient.editingTextId);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -32,7 +30,7 @@ export const useTransformer = (
     // findOne — otherwise the new Group node may not exist yet.
     const raf = requestAnimationFrame(() => {
       const selectedNodes: Konva.Node[] = [];
-      selectedIds.forEach((id) => {
+      selectedIds.forEach(id => {
         // Plain `#id` lookup — Konva's selector parser strips all spaces, so
         // a CSS.escape'd id (e.g. `\38 abc...` for a UUID starting with `8`)
         // ends up being compared as `\38abc...` and never matches. Our ids
@@ -57,7 +55,7 @@ export const useTransformer = (
 
       const patches: NodePatch[] = [];
 
-      transformer.nodes().forEach((node) => {
+      transformer.nodes().forEach(node => {
         const id = node.id();
         if (!id) return;
         const scaleX = node.scaleX();
@@ -83,9 +81,7 @@ export const useTransformer = (
             // Text inside a scaled group needs fontSize to track the scale,
             // otherwise the text stays the same size and overflows / floats.
             if (child.kind === "text") {
-              (
-                childPatch as Partial<MoodboardNode> & { fontSize?: number }
-              ).fontSize = child.fontSize * uniformScale;
+              (childPatch as Partial<MoodboardNode> & { fontSize?: number }).fontSize = child.fontSize * uniformScale;
             }
             patches.push({ id: childId, patch: childPatch });
           }
@@ -118,7 +114,7 @@ export const useTransformer = (
       // once — keeps the visual transition from "scaled preview" to "baked
       // result" tight, with no flicker.
       if (patches.length === 0) return;
-      useMoodboardStore.setState((s) => {
+      useMoodboardStore.setState(s => {
         const nodes = { ...s.nodes };
         for (const { id, patch } of patches) {
           const existing = nodes[id];

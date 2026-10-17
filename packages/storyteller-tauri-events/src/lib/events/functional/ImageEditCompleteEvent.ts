@@ -16,23 +16,18 @@ export interface EditedImage {
   maybe_thumbnail_template?: string;
 }
 
-export const useImageEditCompleteEvent = (
-  asyncCallback: (event: ImageEditCompleteEvent) => Promise<void>,
-) => {
+export const useImageEditCompleteEvent = (asyncCallback: (event: ImageEditCompleteEvent) => Promise<void>) => {
   useEffect(() => {
     let isUnmounted = false;
     let unlisten: Promise<UnlistenFn>;
 
     const setup = async () => {
-      unlisten = listen<BasicEventWrapper<ImageEditCompleteEvent>>(
-        EVENT_NAME,
-        async (wrappedEvent) => {
-          await asyncCallback(wrappedEvent.payload.data);
-        },
-      );
+      unlisten = listen<BasicEventWrapper<ImageEditCompleteEvent>>(EVENT_NAME, async wrappedEvent => {
+        await asyncCallback(wrappedEvent.payload.data);
+      });
 
       if (isUnmounted) {
-        unlisten.then((f) => f()); // Unsubscribe if unmounted early.
+        unlisten.then(f => f()); // Unsubscribe if unmounted early.
       }
     };
 
@@ -40,7 +35,7 @@ export const useImageEditCompleteEvent = (
 
     return () => {
       isUnmounted = true;
-      unlisten.then((f) => f());
+      unlisten.then(f => f());
     };
   }, []);
 };

@@ -11,18 +11,12 @@ export interface SpringCss {
 }
 
 /** Position of the spring at time `t` seconds, from 0 at rest to 1 at target. */
-export function springPosition(
-  damping: number,
-  stiffness: number,
-  t: number,
-): number {
+export function springPosition(damping: number, stiffness: number, t: number): number {
   const w0 = Math.sqrt(stiffness);
   if (damping < 1) {
     const wd = w0 * Math.sqrt(1 - damping * damping);
     const decay = Math.exp(-damping * w0 * t);
-    return (
-      1 - decay * (Math.cos(wd * t) + ((damping * w0) / wd) * Math.sin(wd * t))
-    );
+    return 1 - decay * (Math.cos(wd * t) + ((damping * w0) / wd) * Math.sin(wd * t));
   }
   if (damping === 1) return 1 - Math.exp(-w0 * t) * (1 + w0 * t);
   const root = Math.sqrt(damping * damping - 1);
@@ -37,8 +31,7 @@ const SETTLE = 0.002;
 export function springSettleMs(damping: number, stiffness: number): number {
   let last = 0;
   for (let ms = 0; ms <= 4000; ms += 1) {
-    if (Math.abs(1 - springPosition(damping, stiffness, ms / 1000)) > SETTLE)
-      last = ms;
+    if (Math.abs(1 - springPosition(damping, stiffness, ms / 1000)) > SETTLE) last = ms;
   }
   return Math.ceil((last + 1) / 10) * 10;
 }
@@ -46,11 +39,7 @@ export function springSettleMs(damping: number, stiffness: number): number {
 const round = (n: number): string => String(Math.round(n * 1e4) / 1e4);
 
 /** Sample a spring (damping ratio, stiffness; mass 1) into `points + 1` evenly spaced `linear()` stops. */
-export function springToCss(
-  damping: number,
-  stiffness: number,
-  points = 32,
-): SpringCss {
+export function springToCss(damping: number, stiffness: number, points = 32): SpringCss {
   const durationMs = springSettleMs(damping, stiffness);
   const stops: string[] = [];
   for (let i = 0; i <= points; i += 1) {
@@ -59,13 +48,7 @@ export function springToCss(
         ? "1"
         : i === 0
           ? "0"
-          : round(
-              springPosition(
-                damping,
-                stiffness,
-                (durationMs / 1000) * (i / points),
-              ),
-            ),
+          : round(springPosition(damping, stiffness, (durationMs / 1000) * (i / points))),
     );
   }
   return { easing: `linear(${stops.join(", ")})`, durationMs };

@@ -21,11 +21,8 @@ export function EffectsView() {
 
 function EffectsGrid({ effects }: { effects: EffectDefinition[] }) {
   return (
-    <div
-      className="grid gap-2"
-      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))" }}
-    >
-      {effects.map((effect) => (
+    <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))" }}>
+      {effects.map(effect => (
         <EffectItem key={effect.type} effect={effect} />
       ))}
     </div>

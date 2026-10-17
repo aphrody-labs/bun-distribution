@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** powrprof.dll!CallNtPowerInformation */
-  CallNtPowerInformation(InformationLevel: number, InputBuffer: Win32Pointer, InputBufferLength: number, OutputBuffer: Win32Pointer, OutputBufferLength: number): number;
+  CallNtPowerInformation(
+    InformationLevel: number,
+    InputBuffer: Win32Pointer,
+    InputBufferLength: number,
+    OutputBuffer: Win32Pointer,
+    OutputBufferLength: number,
+  ): number;
   /** powrprof.dll!CanUserWritePwrScheme */
   CanUserWritePwrScheme(): number;
   /** powrprof.dll!DeletePwrScheme */
@@ -11,7 +17,13 @@ interface Functions {
   /** powrprof.dll!DevicePowerClose */
   DevicePowerClose(): number;
   /** powrprof.dll!DevicePowerEnumDevices */
-  DevicePowerEnumDevices(QueryIndex: number, QueryInterpretationFlags: number, QueryFlags: number, pReturnBuffer: Win32Pointer, pBufferSize: Win32Pointer): number;
+  DevicePowerEnumDevices(
+    QueryIndex: number,
+    QueryInterpretationFlags: number,
+    QueryFlags: number,
+    pReturnBuffer: Win32Pointer,
+    pBufferSize: Win32Pointer,
+  ): number;
   /** powrprof.dll!DevicePowerOpen */
   DevicePowerOpen(DebugMask: number): number;
   /** powrprof.dll!DevicePowerSetDeviceState */
@@ -37,9 +49,18 @@ interface Functions {
   /** powrprof.dll!PowerCanRestoreIndividualDefaultPowerScheme */
   PowerCanRestoreIndividualDefaultPowerScheme(SchemeGuid: Win32Pointer): number;
   /** powrprof.dll!PowerCreatePossibleSetting */
-  PowerCreatePossibleSetting(RootSystemPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, PossibleSettingIndex: number): number;
+  PowerCreatePossibleSetting(
+    RootSystemPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    PossibleSettingIndex: number,
+  ): number;
   /** powrprof.dll!PowerCreateSetting */
-  PowerCreateSetting(RootSystemPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer): number;
+  PowerCreateSetting(
+    RootSystemPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerDeleteScheme */
   PowerDeleteScheme(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer): number;
   /** powrprof.dll!PowerDeterminePlatformRole */
@@ -47,9 +68,21 @@ interface Functions {
   /** powrprof.dll!PowerDeterminePlatformRoleEx */
   PowerDeterminePlatformRoleEx(Version: number): number;
   /** powrprof.dll!PowerDuplicateScheme */
-  PowerDuplicateScheme(RootPowerKey: Win32Pointer, SourceSchemeGuid: Win32Pointer, DestinationSchemeGuid: Win32Pointer): number;
+  PowerDuplicateScheme(
+    RootPowerKey: Win32Pointer,
+    SourceSchemeGuid: Win32Pointer,
+    DestinationSchemeGuid: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerEnumerate */
-  PowerEnumerate(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, AccessFlags: number, Index: number, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  PowerEnumerate(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    AccessFlags: number,
+    Index: number,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerGetActiveScheme */
   PowerGetActiveScheme(UserRootPowerKey: Win32Pointer, ActivePolicyGuid: Win32Pointer): number;
   /** powrprof.dll!PowerGetUserConfiguredACPowerMode */
@@ -57,7 +90,11 @@ interface Functions {
   /** powrprof.dll!PowerGetUserConfiguredDCPowerMode */
   PowerGetUserConfiguredDCPowerMode(PowerModeGuid: Win32Pointer): number;
   /** powrprof.dll!PowerImportPowerScheme */
-  PowerImportPowerScheme(RootPowerKey: Win32Pointer, ImportFileNamePath: string | Win32Pointer, DestinationSchemeGuid: Win32Pointer): number;
+  PowerImportPowerScheme(
+    RootPowerKey: Win32Pointer,
+    ImportFileNamePath: string | Win32Pointer,
+    DestinationSchemeGuid: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerIsSettingRangeDefined */
   PowerIsSettingRangeDefined(SubKeyGuid: Win32Pointer, SettingGuid: Win32Pointer): number;
   /** powrprof.dll!PowerOpenSystemPowerKey */
@@ -65,43 +102,156 @@ interface Functions {
   /** powrprof.dll!PowerOpenUserPowerKey */
   PowerOpenUserPowerKey(phUserPowerKey: Win32Pointer, Access: number, OpenExisting: number): number;
   /** powrprof.dll!PowerReadACDefaultIndex */
-  PowerReadACDefaultIndex(RootPowerKey: Win32Pointer, SchemePersonalityGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, AcDefaultIndex: Win32Pointer): number;
+  PowerReadACDefaultIndex(
+    RootPowerKey: Win32Pointer,
+    SchemePersonalityGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    AcDefaultIndex: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadACValue */
-  PowerReadACValue(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Type: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  PowerReadACValue(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Type: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadACValueIndex */
-  PowerReadACValueIndex(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, AcValueIndex: Win32Pointer): number;
+  PowerReadACValueIndex(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    AcValueIndex: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadDCDefaultIndex */
-  PowerReadDCDefaultIndex(RootPowerKey: Win32Pointer, SchemePersonalityGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, DcDefaultIndex: Win32Pointer): number;
+  PowerReadDCDefaultIndex(
+    RootPowerKey: Win32Pointer,
+    SchemePersonalityGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    DcDefaultIndex: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadDCValue */
-  PowerReadDCValue(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Type: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  PowerReadDCValue(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Type: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadDCValueIndex */
-  PowerReadDCValueIndex(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, DcValueIndex: Win32Pointer): number;
+  PowerReadDCValueIndex(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    DcValueIndex: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadDescription */
-  PowerReadDescription(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  PowerReadDescription(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadFriendlyName */
-  PowerReadFriendlyName(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  PowerReadFriendlyName(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadIconResourceSpecifier */
-  PowerReadIconResourceSpecifier(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  PowerReadIconResourceSpecifier(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadPossibleDescription */
-  PowerReadPossibleDescription(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, PossibleSettingIndex: number, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  PowerReadPossibleDescription(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    PossibleSettingIndex: number,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadPossibleFriendlyName */
-  PowerReadPossibleFriendlyName(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, PossibleSettingIndex: number, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  PowerReadPossibleFriendlyName(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    PossibleSettingIndex: number,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadPossibleValue */
-  PowerReadPossibleValue(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Type: Win32Pointer, PossibleSettingIndex: number, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  PowerReadPossibleValue(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Type: Win32Pointer,
+    PossibleSettingIndex: number,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadSettingAttributes */
   PowerReadSettingAttributes(SubGroupGuid: Win32Pointer, PowerSettingGuid: Win32Pointer): number;
   /** powrprof.dll!PowerReadValueIncrement */
-  PowerReadValueIncrement(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, ValueIncrement: Win32Pointer): number;
+  PowerReadValueIncrement(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    ValueIncrement: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadValueMax */
-  PowerReadValueMax(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, ValueMaximum: Win32Pointer): number;
+  PowerReadValueMax(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    ValueMaximum: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadValueMin */
-  PowerReadValueMin(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, ValueMinimum: Win32Pointer): number;
+  PowerReadValueMin(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    ValueMinimum: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerReadValueUnitsSpecifier */
-  PowerReadValueUnitsSpecifier(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  PowerReadValueUnitsSpecifier(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerRegisterForEffectivePowerModeNotifications */
-  PowerRegisterForEffectivePowerModeNotifications(Version: number, Callback: Win32Callback, Context: Win32Pointer, RegistrationHandle: Win32Pointer): number;
+  PowerRegisterForEffectivePowerModeNotifications(
+    Version: number,
+    Callback: Win32Callback,
+    Context: Win32Pointer,
+    RegistrationHandle: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerRegisterSuspendResumeNotification */
-  PowerRegisterSuspendResumeNotification(Flags: number, Recipient: Win32Pointer, RegistrationHandle: Win32Pointer): number;
+  PowerRegisterSuspendResumeNotification(
+    Flags: number,
+    Recipient: Win32Pointer,
+    RegistrationHandle: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerRemovePowerSetting */
   PowerRemovePowerSetting(PowerSettingSubKeyGuid: Win32Pointer, PowerSettingGuid: Win32Pointer): number;
   /** powrprof.dll!PowerReplaceDefaultPowerSchemes */
@@ -123,7 +273,12 @@ interface Functions {
   /** powrprof.dll!PowerSettingAccessCheckEx */
   PowerSettingAccessCheckEx(AccessFlags: number, PowerGuid: Win32Pointer, AccessType: number): number;
   /** powrprof.dll!PowerSettingRegisterNotification */
-  PowerSettingRegisterNotification(SettingGuid: Win32Pointer, Flags: number, Recipient: Win32Pointer, RegistrationHandle: Win32Pointer): number;
+  PowerSettingRegisterNotification(
+    SettingGuid: Win32Pointer,
+    Flags: number,
+    Recipient: Win32Pointer,
+    RegistrationHandle: Win32Pointer,
+  ): number;
   /** powrprof.dll!PowerSettingUnregisterNotification */
   PowerSettingUnregisterNotification(RegistrationHandle: number | bigint): number;
   /** powrprof.dll!PowerUnregisterFromEffectivePowerModeNotifications */
@@ -131,35 +286,123 @@ interface Functions {
   /** powrprof.dll!PowerUnregisterSuspendResumeNotification */
   PowerUnregisterSuspendResumeNotification(RegistrationHandle: number | bigint): number;
   /** powrprof.dll!PowerWriteACDefaultIndex */
-  PowerWriteACDefaultIndex(RootSystemPowerKey: Win32Pointer, SchemePersonalityGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, DefaultAcIndex: number): number;
+  PowerWriteACDefaultIndex(
+    RootSystemPowerKey: Win32Pointer,
+    SchemePersonalityGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    DefaultAcIndex: number,
+  ): number;
   /** powrprof.dll!PowerWriteACValueIndex */
-  PowerWriteACValueIndex(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, AcValueIndex: number): number;
+  PowerWriteACValueIndex(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    AcValueIndex: number,
+  ): number;
   /** powrprof.dll!PowerWriteDCDefaultIndex */
-  PowerWriteDCDefaultIndex(RootSystemPowerKey: Win32Pointer, SchemePersonalityGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, DefaultDcIndex: number): number;
+  PowerWriteDCDefaultIndex(
+    RootSystemPowerKey: Win32Pointer,
+    SchemePersonalityGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    DefaultDcIndex: number,
+  ): number;
   /** powrprof.dll!PowerWriteDCValueIndex */
-  PowerWriteDCValueIndex(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, DcValueIndex: number): number;
+  PowerWriteDCValueIndex(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    DcValueIndex: number,
+  ): number;
   /** powrprof.dll!PowerWriteDescription */
-  PowerWriteDescription(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Buffer: Win32Pointer, BufferSize: number): number;
+  PowerWriteDescription(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: number,
+  ): number;
   /** powrprof.dll!PowerWriteFriendlyName */
-  PowerWriteFriendlyName(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Buffer: Win32Pointer, BufferSize: number): number;
+  PowerWriteFriendlyName(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: number,
+  ): number;
   /** powrprof.dll!PowerWriteIconResourceSpecifier */
-  PowerWriteIconResourceSpecifier(RootPowerKey: Win32Pointer, SchemeGuid: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Buffer: Win32Pointer, BufferSize: number): number;
+  PowerWriteIconResourceSpecifier(
+    RootPowerKey: Win32Pointer,
+    SchemeGuid: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: number,
+  ): number;
   /** powrprof.dll!PowerWritePossibleDescription */
-  PowerWritePossibleDescription(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, PossibleSettingIndex: number, Buffer: Win32Pointer, BufferSize: number): number;
+  PowerWritePossibleDescription(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    PossibleSettingIndex: number,
+    Buffer: Win32Pointer,
+    BufferSize: number,
+  ): number;
   /** powrprof.dll!PowerWritePossibleFriendlyName */
-  PowerWritePossibleFriendlyName(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, PossibleSettingIndex: number, Buffer: Win32Pointer, BufferSize: number): number;
+  PowerWritePossibleFriendlyName(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    PossibleSettingIndex: number,
+    Buffer: Win32Pointer,
+    BufferSize: number,
+  ): number;
   /** powrprof.dll!PowerWritePossibleValue */
-  PowerWritePossibleValue(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Type: number, PossibleSettingIndex: number, Buffer: Win32Pointer, BufferSize: number): number;
+  PowerWritePossibleValue(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Type: number,
+    PossibleSettingIndex: number,
+    Buffer: Win32Pointer,
+    BufferSize: number,
+  ): number;
   /** powrprof.dll!PowerWriteSettingAttributes */
   PowerWriteSettingAttributes(SubGroupGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Attributes: number): number;
   /** powrprof.dll!PowerWriteValueIncrement */
-  PowerWriteValueIncrement(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, ValueIncrement: number): number;
+  PowerWriteValueIncrement(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    ValueIncrement: number,
+  ): number;
   /** powrprof.dll!PowerWriteValueMax */
-  PowerWriteValueMax(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, ValueMaximum: number): number;
+  PowerWriteValueMax(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    ValueMaximum: number,
+  ): number;
   /** powrprof.dll!PowerWriteValueMin */
-  PowerWriteValueMin(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, ValueMinimum: number): number;
+  PowerWriteValueMin(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    ValueMinimum: number,
+  ): number;
   /** powrprof.dll!PowerWriteValueUnitsSpecifier */
-  PowerWriteValueUnitsSpecifier(RootPowerKey: Win32Pointer, SubGroupOfPowerSettingsGuid: Win32Pointer, PowerSettingGuid: Win32Pointer, Buffer: Win32Pointer, BufferSize: number): number;
+  PowerWriteValueUnitsSpecifier(
+    RootPowerKey: Win32Pointer,
+    SubGroupOfPowerSettingsGuid: Win32Pointer,
+    PowerSettingGuid: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: number,
+  ): number;
   /** powrprof.dll!ReadGlobalPwrPolicy */
   ReadGlobalPwrPolicy(pGlobalPowerPolicy: Win32Pointer): number;
   /** powrprof.dll!ReadProcessorPwrScheme */
@@ -177,7 +420,12 @@ interface Functions {
   /** powrprof.dll!WriteProcessorPwrScheme */
   WriteProcessorPwrScheme(uiID: number, pMachineProcessorPowerPolicy: Win32Pointer): number;
   /** powrprof.dll!WritePwrScheme */
-  WritePwrScheme(puiID: Win32Pointer, lpszSchemeName: string | Win32Pointer, lpszDescription: string | Win32Pointer, lpScheme: Win32Pointer): number;
+  WritePwrScheme(
+    puiID: Win32Pointer,
+    lpszSchemeName: string | Win32Pointer,
+    lpszDescription: string | Win32Pointer,
+    lpScheme: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

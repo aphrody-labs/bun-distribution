@@ -32,9 +32,7 @@ export function useBotId(defaultId = "shenron") {
 
   useEffect(() => {
     const onPop = () => {
-      setId(
-        new URLSearchParams(window.location.search).get("bot") ?? defaultId,
-      );
+      setId(new URLSearchParams(window.location.search).get("bot") ?? defaultId);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -74,11 +72,8 @@ export function BotSelector({ value, onChange, className }: BotSelectorProps) {
   if (isLoading) {
     return (
       <div className={`flex gap-2 ${className ?? ""}`}>
-        {["a", "b", "c", "d", "e", "f"].map((k) => (
-          <div
-            key={k}
-            className="h-10 w-32 animate-pulse rounded-lg bg-dbz-card"
-          />
+        {["a", "b", "c", "d", "e", "f"].map(k => (
+          <div key={k} className="h-10 w-32 animate-pulse rounded-lg bg-dbz-card" />
         ))}
       </div>
     );
@@ -88,7 +83,7 @@ export function BotSelector({ value, onChange, className }: BotSelectorProps) {
 
   return (
     <div className={`flex flex-wrap gap-2 ${className ?? ""}`}>
-      {bots.map((b) => {
+      {bots.map(b => {
         const active = b.id === value;
         return (
           <button
@@ -103,18 +98,12 @@ export function BotSelector({ value, onChange, className }: BotSelectorProps) {
             }`}
           >
             {b.avatar ? (
-              <img
-                src={b.avatar}
-                alt=""
-                className={`h-6 w-6 rounded-full ${b.online ? "" : "grayscale"}`}
-              />
+              <img src={b.avatar} alt="" className={`h-6 w-6 rounded-full ${b.online ? "" : "grayscale"}`} />
             ) : (
               <div className="h-6 w-6 rounded-full bg-dbz-border" />
             )}
             <span className="font-medium">{b.name}</span>
-            <span
-              className={`h-2 w-2 rounded-full ${b.online ? "bg-emerald-400" : "bg-red-500"}`}
-            />
+            <span className={`h-2 w-2 rounded-full ${b.online ? "bg-emerald-400" : "bg-red-500"}`} />
           </button>
         );
       })}

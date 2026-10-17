@@ -5,19 +5,56 @@ interface Functions {
   /** txfw32.dll!TxfGetThreadMiniVersionForCreate */
   TxfGetThreadMiniVersionForCreate(MiniVersion: Win32Pointer): void;
   /** txfw32.dll!TxfLogCreateFileReadContext */
-  TxfLogCreateFileReadContext(LogPath: string | Win32Pointer, BeginningLsn: Win32StructInit, EndingLsn: Win32StructInit, TxfFileId: Win32Pointer, TxfLogContext: Win32Pointer): number;
+  TxfLogCreateFileReadContext(
+    LogPath: string | Win32Pointer,
+    BeginningLsn: Win32StructInit,
+    EndingLsn: Win32StructInit,
+    TxfFileId: Win32Pointer,
+    TxfLogContext: Win32Pointer,
+  ): number;
   /** txfw32.dll!TxfLogCreateRangeReadContext */
-  TxfLogCreateRangeReadContext(LogPath: string | Win32Pointer, BeginningLsn: Win32StructInit, EndingLsn: Win32StructInit, BeginningVirtualClock: Win32Pointer, EndingVirtualClock: Win32Pointer, RecordTypeMask: number, TxfLogContext: Win32Pointer): number;
+  TxfLogCreateRangeReadContext(
+    LogPath: string | Win32Pointer,
+    BeginningLsn: Win32StructInit,
+    EndingLsn: Win32StructInit,
+    BeginningVirtualClock: Win32Pointer,
+    EndingVirtualClock: Win32Pointer,
+    RecordTypeMask: number,
+    TxfLogContext: Win32Pointer,
+  ): number;
   /** txfw32.dll!TxfLogDestroyReadContext */
   TxfLogDestroyReadContext(TxfLogContext: Win32Pointer): number;
   /** txfw32.dll!TxfLogReadRecords */
-  TxfLogReadRecords(TxfLogContext: Win32Pointer, BufferLength: number, Buffer: Win32Pointer, BytesUsed: Win32Pointer, RecordCount: Win32Pointer): number;
+  TxfLogReadRecords(
+    TxfLogContext: Win32Pointer,
+    BufferLength: number,
+    Buffer: Win32Pointer,
+    BytesUsed: Win32Pointer,
+    RecordCount: Win32Pointer,
+  ): number;
   /** txfw32.dll!TxfLogRecordGetFileName */
-  TxfLogRecordGetFileName(RecordBuffer: Win32Pointer, RecordBufferLengthInBytes: number, NameBuffer: string | Win32Pointer, NameBufferLengthInBytes: Win32Pointer, TxfId: Win32Pointer): number;
+  TxfLogRecordGetFileName(
+    RecordBuffer: Win32Pointer,
+    RecordBufferLengthInBytes: number,
+    NameBuffer: string | Win32Pointer,
+    NameBufferLengthInBytes: Win32Pointer,
+    TxfId: Win32Pointer,
+  ): number;
   /** txfw32.dll!TxfLogRecordGetGenericType */
-  TxfLogRecordGetGenericType(RecordBuffer: Win32Pointer, RecordBufferLengthInBytes: number, GenericType: Win32Pointer, VirtualClock: Win32Pointer): number;
+  TxfLogRecordGetGenericType(
+    RecordBuffer: Win32Pointer,
+    RecordBufferLengthInBytes: number,
+    GenericType: Win32Pointer,
+    VirtualClock: Win32Pointer,
+  ): number;
   /** txfw32.dll!TxfReadMetadataInfo */
-  TxfReadMetadataInfo(FileHandle: Win32Pointer, TxfFileId: Win32Pointer, LastLsn: Win32Pointer, TransactionState: Win32Pointer, LockingTransaction: Win32Pointer): number;
+  TxfReadMetadataInfo(
+    FileHandle: Win32Pointer,
+    TxfFileId: Win32Pointer,
+    LastLsn: Win32Pointer,
+    TransactionState: Win32Pointer,
+    LockingTransaction: Win32Pointer,
+  ): number;
   /** txfw32.dll!TxfSetThreadMiniVersionForCreate */
   TxfSetThreadMiniVersionForCreate(MiniVersion: number): void;
 }

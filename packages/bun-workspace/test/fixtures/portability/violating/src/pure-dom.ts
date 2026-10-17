@@ -1,3 +1,3 @@
 export function title(): string {
-	return document.title;
+  return document.title;
 }

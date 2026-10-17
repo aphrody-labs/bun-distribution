@@ -1,12 +1,4 @@
-import {
-  MouseEvent,
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { MouseEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { PauseIcon, PlayIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import WaveSurfer from "wavesurfer.js";
@@ -54,15 +46,11 @@ export function WaveformAudioPlayer({
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(
-    durationMillis ? durationMillis / 1000 : 0,
-  );
+  const [duration, setDuration] = useState(durationMillis ? durationMillis / 1000 : 0);
   // "pending" until the card scrolls into view, then "ready" once wavesurfer
   // has drawn, or "failed" if fetch/decode errored (CORS etc.) — playback
   // still works through the bare <audio> element in that case.
-  const [waveState, setWaveState] = useState<"pending" | "ready" | "failed">(
-    "pending",
-  );
+  const [waveState, setWaveState] = useState<"pending" | "ready" | "failed">("pending");
   const [volume, setVolume] = useState(100);
   const [showVolume, setShowVolume] = useState(false);
 
@@ -184,8 +172,8 @@ export function WaveformAudioPlayer({
     }
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
+      entries => {
+        if (entries.some(entry => entry.isIntersecting)) {
           observer.disconnect();
           initWaveSurfer();
         }
@@ -251,7 +239,7 @@ export function WaveformAudioPlayer({
     <div
       ref={rootRef}
       className={`flex items-center gap-2.5 ${compact ? "px-2.5 py-2" : "px-3 py-2.5"} ${className}`}
-      onClick={(event) => event.stopPropagation()}
+      onClick={event => event.stopPropagation()}
     >
       <button
         type="button"
@@ -266,20 +254,12 @@ export function WaveformAudioPlayer({
       </button>
 
       <div className="relative min-w-0 flex-1" style={{ height: waveHeight }}>
-        {showWave && (
-          <div ref={waveContainerRef} className="absolute inset-0" />
-        )}
+        {showWave && <div ref={waveContainerRef} className="absolute inset-0" />}
         {(waveState === "pending" || waveState === "failed") && (
-          <div
-            className="absolute inset-0 flex cursor-pointer items-center gap-[1.5px]"
-            onClick={handleBarSeek}
-          >
+          <div className="absolute inset-0 flex cursor-pointer items-center gap-[1.5px]" onClick={handleBarSeek}>
             {waveState === "failed" ? (
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/20">
-                <div
-                  className="h-full rounded-full bg-primary"
-                  style={{ width: `${progressRatio * 100}%` }}
-                />
+                <div className="h-full rounded-full bg-primary" style={{ width: `${progressRatio * 100}%` }} />
               </div>
             ) : (
               placeholderBars.map((barHeight, index) => (
@@ -294,35 +274,22 @@ export function WaveformAudioPlayer({
         )}
       </div>
 
-      <span
-        className={`shrink-0 tabular-nums text-white/70 ${compact ? "text-[11px]" : "text-xs"}`}
-      >
-        {formatTime(currentTime)} /{" "}
-        {duration > 0 ? formatTime(duration) : "-:--"}
+      <span className={`shrink-0 tabular-nums text-white/70 ${compact ? "text-[11px]" : "text-xs"}`}>
+        {formatTime(currentTime)} / {duration > 0 ? formatTime(duration) : "-:--"}
       </span>
 
       <div className="relative shrink-0">
         <button
           type="button"
           aria-label="Volume"
-          onClick={() => setShowVolume((visible) => !visible)}
+          onClick={() => setShowVolume(visible => !visible)}
           className="flex h-7 w-7 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
         >
-          <DynamicIcon
-            icon={volume === 0 ? VolumeXIcon : Volume2Icon}
-            className="h-3.5 w-3.5"
-          />
+          <DynamicIcon icon={volume === 0 ? VolumeXIcon : Volume2Icon} className="h-3.5 w-3.5" />
         </button>
         {showVolume && (
           <div className="absolute bottom-full right-0 z-20 mb-2 w-28 rounded-lg border border-white/10 bg-neutral-900/95 px-3 py-2.5 shadow-xl backdrop-blur">
-            <SliderV2
-              min={0}
-              max={100}
-              step={1}
-              value={volume}
-              onChange={handleVolumeChange}
-              variant="filled"
-            />
+            <SliderV2 min={0} max={100} step={1} value={volume} onChange={handleVolumeChange} variant="filled" />
           </div>
         )}
       </div>

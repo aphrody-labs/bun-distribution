@@ -12,11 +12,7 @@ interface SortMenuPanelProps {
   viewMode: "grid" | "list" | "media" | "column";
 }
 
-export function SortMenuPanel({
-  sortBy,
-  onSortChange,
-  viewMode,
-}: SortMenuPanelProps) {
+export function SortMenuPanel({ sortBy, onSortChange, viewMode }: SortMenuPanelProps) {
   const sortOptions =
     viewMode === "media"
       ? [
@@ -56,7 +52,7 @@ export function SortMenuPanel({
       </div>
 
       <div className="pt-2">
-        {sortOptions.map((option) => {
+        {sortOptions.map(option => {
           const isActive = sortBy === option.value;
 
           return (
@@ -94,12 +90,7 @@ interface SortMenuProps {
   className?: string;
 }
 
-export function SortMenu({
-  sortBy,
-  onSortChange,
-  viewMode,
-  className,
-}: SortMenuProps) {
+export function SortMenu({ sortBy, onSortChange, viewMode, className }: SortMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -131,21 +122,14 @@ export function SortMenu({
 
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isOpen]);
 
   return (
     <>
       <div className={clsx(className)}>
-        <CircleButton
-          ref={buttonRef}
-          icon="sort"
-          onClick={() => setIsOpen(!isOpen)}
-          active={isOpen}
-          title="Sort"
-        />
+        <CircleButton ref={buttonRef} icon="sort" onClick={() => setIsOpen(!isOpen)} active={isOpen} title="Sort" />
       </div>
 
       {isOpen &&
@@ -177,11 +161,7 @@ export function SortMenu({
               }}
               className="z-50"
             >
-              <SortMenuPanel
-                sortBy={sortBy}
-                onSortChange={onSortChange}
-                viewMode={viewMode}
-              />
+              <SortMenuPanel sortBy={sortBy} onSortChange={onSortChange} viewMode={viewMode} />
             </motion.div>
           </AnimatePresence>,
           document.body,

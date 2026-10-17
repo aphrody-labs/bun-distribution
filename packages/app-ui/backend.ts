@@ -3,11 +3,7 @@ import { isIP } from "node:net";
 
 export function isLoopbackHost(value: string): boolean {
   const hostname = value.toLowerCase().replace(/^\[|\]$/g, "");
-  return (
-    hostname === "localhost" ||
-    hostname === "::1" ||
-    (isIP(hostname) === 4 && hostname.startsWith("127."))
-  );
+  return hostname === "localhost" || hostname === "::1" || (isIP(hostname) === 4 && hostname.startsWith("127."));
 }
 
 /** The same native app-server transport serves the preview and M3 development UI. */
@@ -27,9 +23,6 @@ export function appServerProxy(
     throw new Error("APHRODY_APP_SERVER_URL must be a loopback HTTP origin.");
   }
   return Object.fromEntries(
-    ["/rpc", "/events", "/notifications", "/health", "/healthz"].map((path) => [
-      path,
-      url.origin,
-    ]),
+    ["/rpc", "/events", "/notifications", "/health", "/healthz"].map(path => [path, url.origin]),
   );
 }

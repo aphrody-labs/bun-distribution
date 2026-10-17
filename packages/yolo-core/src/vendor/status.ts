@@ -39,31 +39,20 @@ export async function resolveGitDir(worktree: string): Promise<string> {
   const dotGit = resolve(worktree, ".git");
   if (!existsSync(dotGit)) return dotGit;
   if (!statSync(dotGit).isFile()) return dotGit;
-  const pointer = (await Bun.file(dotGit).text())
-    .trim()
-    .replace(/^gitdir:\s*/, "");
+  const pointer = (await Bun.file(dotGit).text()).trim().replace(/^gitdir:\s*/, "");
   return resolve(worktree, pointer);
 }
 
 /** Git object id (SHA-1 or SHA-256), lower-cased; undefined for any other text. */
 const oid = (text: string): string | undefined =>
-  /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(text)
-    ? text.toLowerCase()
-    : undefined;
+  /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(text) ? text.toLowerCase() : undefined;
 
 /** Resolve full HEAD through loose/packed refs and the common directory of a linked worktree. */
-export async function readGitHead(
-  worktree: string,
-): Promise<string | undefined> {
+export async function readGitHead(worktree: string): Promise<string | undefined> {
   const gitDir = await resolveGitDir(worktree);
   const commonFile = Bun.file(join(gitDir, "commondir"));
-  const commonDir = (await commonFile.exists())
-    ? resolve(gitDir, (await commonFile.text()).trim())
-    : gitDir;
-  const resolveRef = async (
-    value: string,
-    depth: number,
-  ): Promise<string | undefined> => {
+  const commonDir = (await commonFile.exists()) ? resolve(gitDir, (await commonFile.text()).trim()) : gitDir;
+  const resolveRef = async (value: string, depth: number): Promise<string | undefined> => {
     const direct = oid(value);
     if (direct) return direct;
     if (depth > 8 || !value.startsWith("ref:")) return undefined;
@@ -71,20 +60,20 @@ export async function readGitHead(
     if (
       !ref.startsWith("refs/") ||
       ref.includes("\\") ||
-      ref.split("/").some((part) => !part || part === "." || part === "..")
+      ref.split("/").some(part => !part || part === "." || part === "..")
     )
       return undefined;
     // Candidate locations are read concurrently, then consulted in precedence order (gitDir, then commonDir).
     const looseTexts = await Promise.all(
-      [...new Set([gitDir, commonDir])].map(async (dir) => {
+      [...new Set([gitDir, commonDir])].map(async dir => {
         const loose = Bun.file(join(dir, ref));
         return (await loose.exists()) ? loose.text() : undefined;
       }),
     );
-    const looseText = looseTexts.find((text) => text !== undefined);
+    const looseText = looseTexts.find(text => text !== undefined);
     if (looseText !== undefined) return resolveRef(looseText.trim(), depth + 1);
     const packedTexts = await Promise.all(
-      [...new Set([commonDir, gitDir])].map(async (dir) => {
+      [...new Set([commonDir, gitDir])].map(async dir => {
         const packed = Bun.file(join(dir, "packed-refs"));
         return (await packed.exists()) ? packed.text() : undefined;
       }),
@@ -99,9 +88,7 @@ export async function readGitHead(
     return undefined;
   };
   const head = Bun.file(join(gitDir, "HEAD"));
-  return (await head.exists())
-    ? resolveRef((await head.text()).trim(), 0)
-    : undefined;
+  return (await head.exists()) ? resolveRef((await head.text()).trim(), 0) : undefined;
 }
 
 /**
@@ -135,19 +122,15 @@ function countFiles(dir: string, limit: number): number {
 /**
  * Inspect monorepo submodules and forks using Bun file I/O & wyhash checksums.
  */
-export async function inspectPackages(
-  vendorDir?: string,
-): Promise<readonly SubmoduleStatus[]> {
+export async function inspectPackages(vendorDir?: string): Promise<readonly SubmoduleStatus[]> {
   const vDir = vendorDir ?? resolve(yoloHome(), "vendor");
   const catalog = Bun.file(resolve(vDir, "../tools/config/vendor.json"));
   const pkgs: string[] = (await catalog.exists())
-    ? ((await catalog.json()) as { sources: { name: string }[] }).sources.map(
-        (source) => source.name,
-      )
+    ? ((await catalog.json()) as { sources: { name: string }[] }).sources.map(source => source.name)
     : existsSync(vDir)
       ? readdirSync(vDir, { withFileTypes: true })
-          .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
-          .map((entry) => entry.name)
+          .filter(entry => entry.isDirectory() && !entry.name.startsWith("."))
+          .map(entry => entry.name)
           .toSorted()
       : [];
   // Each package is independent local I/O; results keep the catalog order of Promise.all.
@@ -198,8 +181,8 @@ export async function readVendorStatus(
   const pkgs = inspected ?? (await inspectPackages(resolve(rootDir, "vendor")));
   return {
     crates: lock.crates.length,
-    sources: lock.sources.map((source) => {
-      const headSha = pkgs.find((p) => p.name === source.name)?.headCommit;
+    sources: lock.sources.map(source => {
+      const headSha = pkgs.find(p => p.name === source.name)?.headCommit;
       return {
         name: source.name,
         lockedSha: source.sha,
@@ -210,15 +193,10 @@ export async function readVendorStatus(
   };
 }
 
-export async function collectStatusReport(
-  rootDir: string = yoloHome(),
-): Promise<StatusReport> {
+export async function collectStatusReport(rootDir: string = yoloHome()): Promise<StatusReport> {
   // Inspect the submodules once: the vendor comparison reuses the result instead of scanning them a second time.
   const packages = await inspectPackages(resolve(rootDir, "vendor"));
-  const [vendor, cargo] = await Promise.all([
-    readVendorStatus(rootDir, packages),
-    readWorkspaceCargo(rootDir),
-  ]);
+  const [vendor, cargo] = await Promise.all([readVendorStatus(rootDir, packages), readWorkspaceCargo(rootDir)]);
   return {
     schema: "yolo.status/1",
     timestamp: new Date().toISOString(),
@@ -260,9 +238,7 @@ export function renderStatusMarkdown(report: StatusReport): string {
     );
     for (const s of report.vendor.sources) {
       const syncStatus = s.inSync ? "✔ in sync" : "⚠ drift";
-      lines.push(
-        `| \`${s.name}\` | \`${s.lockedSha.slice(0, 10)}\` | ${syncStatus} |`,
-      );
+      lines.push(`| \`${s.name}\` | \`${s.lockedSha.slice(0, 10)}\` | ${syncStatus} |`);
     }
   }
 

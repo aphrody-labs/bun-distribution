@@ -1,13 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import {
-  chmod,
-  mkdir,
-  mkdtemp,
-  readFile,
-  readdir,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -45,11 +37,7 @@ let clip: string;
 let longClip: string;
 let bin: string;
 
-async function script(
-  dir: string,
-  name: string,
-  body: string,
-): Promise<string> {
+async function script(dir: string, name: string, body: string): Promise<string> {
   const path = join(dir, name);
   await writeFile(path, `#!/bin/sh\n${body}\n`);
   await chmod(path, 0o755);
@@ -128,7 +116,7 @@ describe("asr chunking and merge", () => {
       },
     ]);
     const chunks = planChunks(1_300_000, 600, 5);
-    expect(chunks.map((c) => [c.start, c.length])).toEqual([
+    expect(chunks.map(c => [c.start, c.length])).toEqual([
       [0, 600_000],
       [595_000, 600_000],
       [1_190_000, 110_000],
@@ -157,7 +145,7 @@ describe("asr chunking and merge", () => {
         ],
       },
     ]);
-    expect(merged.map((s) => s.text)).toEqual(["最初", "重なり", "最後"]);
+    expect(merged.map(s => s.text)).toEqual(["最初", "重なり", "最後"]);
   });
 
   test("mergeChunks collapses hallucinated loops but keeps a legitimate repeat", () => {
@@ -168,13 +156,9 @@ describe("asr chunking and merge", () => {
       seg(2000, 3000, "ありがとう"),
       seg(3000, 4000, "ありがとう"),
     ];
-    expect(
-      mergeChunks([{ chunk: only as never, segments: loop }]),
-    ).toHaveLength(1);
+    expect(mergeChunks([{ chunk: only as never, segments: loop }])).toHaveLength(1);
     const repeat = [seg(0, 1000, "はい"), seg(9000, 10_000, "はい")];
-    expect(
-      mergeChunks([{ chunk: only as never, segments: repeat }]),
-    ).toHaveLength(2);
+    expect(mergeChunks([{ chunk: only as never, segments: repeat }])).toHaveLength(2);
   });
 
   test("splitLongSegments cuts at the widest word gap when words are known", () => {
@@ -185,26 +169,17 @@ describe("asr chunking and merge", () => {
       { start: 3000, end: 3500, word: "of " },
       { start: 3500, end: 4000, word: "meter." },
     ];
-    const out = splitLongSegments(
-      [{ start: 0, end: 4000, text: "He ran out of meter.", words }],
-      12,
-    );
-    expect(out.map((s) => s.text)).toEqual(["He ran out", "of meter."]);
+    const out = splitLongSegments([{ start: 0, end: 4000, text: "He ran out of meter.", words }], 12);
+    expect(out.map(s => s.text)).toEqual(["He ran out", "of meter."]);
     expect(out[0]?.end).toBe(1500);
     expect(out[1]?.start).toBe(3000);
     expect(splitLongSegments([seg(0, 1000, "short")], 12)).toHaveLength(1);
   });
 
   test("endpoint url forms", () => {
-    expect(endpointUrl("http://h:8080")).toBe(
-      "http://h:8080/v1/audio/transcriptions",
-    );
-    expect(endpointUrl("http://h:8080/v1/")).toBe(
-      "http://h:8080/v1/audio/transcriptions",
-    );
-    expect(endpointUrl("http://h/v1/audio/transcriptions")).toBe(
-      "http://h/v1/audio/transcriptions",
-    );
+    expect(endpointUrl("http://h:8080")).toBe("http://h:8080/v1/audio/transcriptions");
+    expect(endpointUrl("http://h:8080/v1/")).toBe("http://h:8080/v1/audio/transcriptions");
+    expect(endpointUrl("http://h/v1/audio/transcriptions")).toBe("http://h/v1/audio/transcriptions");
   });
 });
 
@@ -226,35 +201,20 @@ describe("asr detection order", () => {
       expect(noModel.notes.join(" ")).toMatch(/aucun modèle ggml/);
 
       await script(only, "uv", "exit 0");
-      expect((await detectAsr(asr(), env)).selected?.backend).toBe(
-        "faster-whisper",
-      );
+      expect((await detectAsr(asr(), env)).selected?.backend).toBe("faster-whisper");
 
       const model = join(home, "ggml-base.bin");
       await writeFile(model, "x");
       const flagged = await detectAsr(asr({ whisperModel: model }), env);
       expect(flagged.selected).toMatchObject({ backend: "whisper-cli", model });
       await mkdir(join(home, ".cache", "whisper"), { recursive: true });
-      await writeFile(
-        join(home, ".cache", "whisper", "ggml-large-v3.bin"),
-        "x",
-      );
+      await writeFile(join(home, ".cache", "whisper", "ggml-large-v3.bin"), "x");
       await writeFile(join(home, ".cache", "whisper", "ggml-tiny.bin"), "x");
-      expect((await detectAsr(asr(), env)).selected?.model).toBe(
-        join(home, ".cache", "whisper", "ggml-large-v3.bin"),
-      );
+      expect((await detectAsr(asr(), env)).selected?.model).toBe(join(home, ".cache", "whisper", "ggml-large-v3.bin"));
 
-      expect(
-        (await detectAsr(asr({ url: "http://127.0.0.1:1/v1" }), env)).selected
-          ?.backend,
-      ).toBe("endpoint");
-      expect(
-        (await detectAsr(asr({ backend: "faster-whisper" }), env)).selected
-          ?.backend,
-      ).toBe("faster-whisper");
-      expect(
-        (await detectAsr(asr({ backend: "endpoint" }), env)).selected,
-      ).toBeUndefined();
+      expect((await detectAsr(asr({ url: "http://127.0.0.1:1/v1" }), env)).selected?.backend).toBe("endpoint");
+      expect((await detectAsr(asr({ backend: "faster-whisper" }), env)).selected?.backend).toBe("faster-whisper");
+      expect((await detectAsr(asr({ backend: "endpoint" }), env)).selected).toBeUndefined();
     },
   );
 });
@@ -264,52 +224,49 @@ describe("asr detection order", () => {
 // ---------------------------------------------------------------------------------------------
 
 describe("asr backends", () => {
-  test.skipIf(!posix || !haveFfmpeg)(
-    "whisper-cli: chunks, offsets, overlap, language and cache",
-    async () => {
-      const dir = await mkdtemp(join(work, "wc-"));
-      const log = join(dir, "calls.log");
-      const fake = await script(
-        dir,
-        "whisper-cli",
-        `while [ $# -gt 0 ]; do case "$1" in -f) wav="$2"; shift 2;; -of) prefix="$2"; shift 2;; -l) lang="$2"; shift 2;; *) shift;; esac; done
+  test.skipIf(!posix || !haveFfmpeg)("whisper-cli: chunks, offsets, overlap, language and cache", async () => {
+    const dir = await mkdtemp(join(work, "wc-"));
+    const log = join(dir, "calls.log");
+    const fake = await script(
+      dir,
+      "whisper-cli",
+      `while [ $# -gt 0 ]; do case "$1" in -f) wav="$2"; shift 2;; -of) prefix="$2"; shift 2;; -l) lang="$2"; shift 2;; *) shift;; esac; done
 echo "$(basename "$wav") $lang" >> "${log}"
 printf '1\\n00:00:02,000 --> 00:00:04,000\\nこんにちは %s\\n\\n' "$(basename "$wav" .wav)" > "$prefix.srt"
 echo "auto-detected language: ja (p = 0.99)" >&2`,
-      );
-      const model = join(dir, "ggml-test.bin");
-      await writeFile(model, "x");
-      const cache = new Cache(join(dir, "cache"), true);
-      const selection = {
-        backend: "whisper-cli" as const,
-        program: fake,
-        model,
-        detail: "fake",
-      };
-      const options = asr({ chunkSeconds: 30, overlapSeconds: 5 });
-      expect(await probeDuration(longClip)).toBeGreaterThan(39_000);
-      const first = await transcribeMedia(longClip, selection, options, {
-        cache,
-        env: process.env,
-        log: () => {},
-      });
-      expect(first.chunks).toBe(2);
-      expect(first.language).toBe("ja");
-      expect(first.cues.map((c) => [c.start, c.end, c.text])).toEqual([
-        [2000, 4000, "こんにちは chunk-0001"],
-        [27_000, 29_000, "こんにちは chunk-0002"],
-      ]);
-      expect((await readFile(log, "utf8")).trim().split("\n")).toHaveLength(2);
-      const again = await transcribeMedia(longClip, selection, options, {
-        cache,
-        env: process.env,
-        log: () => {},
-      });
-      expect(again.cachedChunks).toBe(2);
-      expect(again.cues).toEqual(first.cues);
-      expect((await readFile(log, "utf8")).trim().split("\n")).toHaveLength(2);
-    },
-  );
+    );
+    const model = join(dir, "ggml-test.bin");
+    await writeFile(model, "x");
+    const cache = new Cache(join(dir, "cache"), true);
+    const selection = {
+      backend: "whisper-cli" as const,
+      program: fake,
+      model,
+      detail: "fake",
+    };
+    const options = asr({ chunkSeconds: 30, overlapSeconds: 5 });
+    expect(await probeDuration(longClip)).toBeGreaterThan(39_000);
+    const first = await transcribeMedia(longClip, selection, options, {
+      cache,
+      env: process.env,
+      log: () => {},
+    });
+    expect(first.chunks).toBe(2);
+    expect(first.language).toBe("ja");
+    expect(first.cues.map(c => [c.start, c.end, c.text])).toEqual([
+      [2000, 4000, "こんにちは chunk-0001"],
+      [27_000, 29_000, "こんにちは chunk-0002"],
+    ]);
+    expect((await readFile(log, "utf8")).trim().split("\n")).toHaveLength(2);
+    const again = await transcribeMedia(longClip, selection, options, {
+      cache,
+      env: process.env,
+      log: () => {},
+    });
+    expect(again.cachedChunks).toBe(2);
+    expect(again.cues).toEqual(first.cues);
+    expect((await readFile(log, "utf8")).trim().split("\n")).toHaveLength(2);
+  });
 
   test.skipIf(!posix || !haveFfmpeg || !havePython)(
     "faster-whisper: the inline uv script runs and its JSON is read (stubbed library)",
@@ -340,11 +297,7 @@ class WhisperModel:
         return iter([S(0.2, 1.5, "こんにちは世界", words)]), Info()
 `,
       );
-      const uv = await script(
-        dir,
-        "uv",
-        `[ "$1" = run ] && [ "$2" = --script ] || exit 9\nshift 2\nexec python3 "$@"`,
-      );
+      const uv = await script(dir, "uv", `[ "$1" = run ] && [ "$2" = --script ] || exit 9\nshift 2\nexec python3 "$@"`);
       const result = await transcribeMedia(
         clip,
         {
@@ -361,13 +314,9 @@ class WhisperModel:
         },
       );
       expect(result.language).toBe("ja");
-      expect(result.cues.map((c) => [c.start, c.end, c.text])).toEqual([
-        [200, 1500, "こんにちは世界"],
-      ]);
+      expect(result.cues.map(c => [c.start, c.end, c.text])).toEqual([[200, 1500, "こんにちは世界"]]);
       expect(FASTER_WHISPER_SCRIPT).toContain("# /// script");
-      expect(FASTER_WHISPER_SCRIPT).toContain(
-        'dependencies = ["faster-whisper',
-      );
+      expect(FASTER_WHISPER_SCRIPT).toContain('dependencies = ["faster-whisper');
     },
   );
 
@@ -437,38 +386,28 @@ class WhisperModel:
     },
   );
 
-  test.skipIf(!haveFfmpeg)(
-    "no speech and tool failures are explicit",
-    async () => {
-      const server = Bun.serve({
-        port: 0,
-        fetch: () =>
-          Response.json({
-            language: "ja",
-            segments: [{ start: 0, end: 1, text: "♪" }],
-          }),
-      });
-      try {
-        await expect(
-          transcribeMedia(
-            clip,
-            { backend: "endpoint", detail: "x" },
-            asr({ url: `http://127.0.0.1:${server.port}` }),
-            {
-              cache: new Cache(join(work, "ns-cache"), false),
-              env: process.env,
-              log: () => {},
-            },
-          ),
-        ).rejects.toThrow(/aucune parole/);
-      } finally {
-        server.stop(true);
-      }
-      await expect(exec(["/definitely/not/a/tool"])).rejects.toBeInstanceOf(
-        ToolError,
-      );
-    },
-  );
+  test.skipIf(!haveFfmpeg)("no speech and tool failures are explicit", async () => {
+    const server = Bun.serve({
+      port: 0,
+      fetch: () =>
+        Response.json({
+          language: "ja",
+          segments: [{ start: 0, end: 1, text: "♪" }],
+        }),
+    });
+    try {
+      await expect(
+        transcribeMedia(clip, { backend: "endpoint", detail: "x" }, asr({ url: `http://127.0.0.1:${server.port}` }), {
+          cache: new Cache(join(work, "ns-cache"), false),
+          env: process.env,
+          log: () => {},
+        }),
+      ).rejects.toThrow(/aucune parole/);
+    } finally {
+      server.stop(true);
+    }
+    await expect(exec(["/definitely/not/a/tool"])).rejects.toBeInstanceOf(ToolError);
+  });
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -495,18 +434,14 @@ async function frameBrightness(file: string, second: number): Promise<number> {
     ],
     { windowsHide: true, stdout: "pipe", stderr: "pipe" },
   );
-  const bytes = new Uint8Array(
-    await new Response(proc.stdout as ReadableStream).arrayBuffer(),
-  );
+  const bytes = new Uint8Array(await new Response(proc.stdout as ReadableStream).arrayBuffer());
   await proc.exited;
   let max = 0;
   for (const value of bytes) if (value > max) max = value;
   return max;
 }
 
-async function streams(
-  file: string,
-): Promise<{ codec_type: string; tags?: Record<string, string> }[]> {
+async function streams(file: string): Promise<{ codec_type: string; tags?: Record<string, string> }[]> {
   const result = await exec([
     "ffprobe",
     "-v",
@@ -545,64 +480,49 @@ describe("burn and mux", () => {
       await Bun.write(input, Bun.file(clip));
       await writeFile(subs, SRT);
       await burnSubtitles({ input, subtitles: subs, output });
-      expect((await streams(output)).map((s) => s.codec_type)).toEqual(
-        expect.arrayContaining(["video", "audio"]),
-      );
+      expect((await streams(output)).map(s => s.codec_type)).toEqual(expect.arrayContaining(["video", "audio"]));
       expect(await frameBrightness(input, 1)).toBeLessThan(40);
       expect(await frameBrightness(output, 1)).toBeGreaterThan(150);
       expect(await readdir(dir)).toContain("out; (1).mp4");
     },
   );
 
-  test.skipIf(!haveFfmpeg)(
-    "burn also works with an ASS file and fails loudly on a bad input",
-    async () => {
-      const out = join(work, "ass-out.mp4");
-      const ass = join(work, "s.ass");
-      const { toAss } =
-        await import("../../src/creator/commands/video-translate/subtitles.ts");
-      await writeFile(
-        ass,
-        toAss([{ id: 1, start: 200, end: 2800, text: "HELLO THERE" }], {
-          height: 240,
-        }),
-      );
-      await burnSubtitles({ input: clip, subtitles: ass, output: out });
-      expect(await frameBrightness(out, 1)).toBeGreaterThan(150);
-      await expect(
-        burnSubtitles({
-          input: join(work, "missing.mp4"),
-          subtitles: ass,
-          output: join(work, "x.mp4"),
-        }),
-      ).rejects.toBeInstanceOf(ToolError);
-    },
-  );
+  test.skipIf(!haveFfmpeg)("burn also works with an ASS file and fails loudly on a bad input", async () => {
+    const out = join(work, "ass-out.mp4");
+    const ass = join(work, "s.ass");
+    const { toAss } = await import("../../src/creator/commands/video-translate/subtitles.ts");
+    await writeFile(
+      ass,
+      toAss([{ id: 1, start: 200, end: 2800, text: "HELLO THERE" }], {
+        height: 240,
+      }),
+    );
+    await burnSubtitles({ input: clip, subtitles: ass, output: out });
+    expect(await frameBrightness(out, 1)).toBeGreaterThan(150);
+    await expect(
+      burnSubtitles({
+        input: join(work, "missing.mp4"),
+        subtitles: ass,
+        output: join(work, "x.mp4"),
+      }),
+    ).rejects.toBeInstanceOf(ToolError);
+  });
 
-  test.skipIf(!haveFfmpeg)(
-    "mux adds an English soft-sub track and keeps video and audio",
-    async () => {
-      const subs = join(work, "mux.srt");
-      await writeFile(subs, SRT);
-      const probed = await Promise.all(
-        ["mux.mkv", "mux.mp4"].map(async (name) => {
-          const output = join(work, name);
-          await muxSubtitles({ input: clip, subtitles: subs, output });
-          return streams(output);
-        }),
-      );
-      for (const found of probed) {
-        expect(found.map((s) => s.codec_type).toSorted()).toEqual([
-          "audio",
-          "subtitle",
-          "video",
-        ]);
-        expect(
-          found.find((s) => s.codec_type === "subtitle")?.tags?.language,
-        ).toBe("eng");
-      }
-    },
-  );
+  test.skipIf(!haveFfmpeg)("mux adds an English soft-sub track and keeps video and audio", async () => {
+    const subs = join(work, "mux.srt");
+    await writeFile(subs, SRT);
+    const probed = await Promise.all(
+      ["mux.mkv", "mux.mp4"].map(async name => {
+        const output = join(work, name);
+        await muxSubtitles({ input: clip, subtitles: subs, output });
+        return streams(output);
+      }),
+    );
+    for (const found of probed) {
+      expect(found.map(s => s.codec_type).toSorted()).toEqual(["audio", "subtitle", "video"]);
+      expect(found.find(s => s.codec_type === "subtitle")?.tags?.language).toBe("eng");
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -615,22 +535,19 @@ function llmServer() {
     port: 0,
     async fetch(request) {
       const url = new URL(request.url);
-      if (url.pathname.endsWith("/models"))
-        return Response.json({ data: [{ id: "fake" }] });
+      if (url.pathname.endsWith("/models")) return Response.json({ data: [{ id: "fake" }] });
       calls += 1;
       const body = (await request.json()) as {
         messages: { role: string; content: string }[];
       };
-      const first = body.messages.find((m) => m.role === "user")?.content ?? "";
+      const first = body.messages.find(m => m.role === "user")?.content ?? "";
       let content = "Summary.";
       if (first.includes("TRANSLATE THESE CUES")) {
-        const items = JSON.parse(
-          /TRANSLATE THESE CUES[^\n]*\n(.*)\n/.exec(first)?.[1] ?? "[]",
-        ) as {
+        const items = JSON.parse(/TRANSLATE THESE CUES[^\n]*\n(.*)\n/.exec(first)?.[1] ?? "[]") as {
           id: number;
         }[];
         content = JSON.stringify(
-          items.map((item) => ({
+          items.map(item => ({
             id: item.id,
             text: `Translated line ${item.id}.`,
           })),
@@ -672,20 +589,11 @@ echo "auto-detected language: ja (p = 0.97)" >&2`,
       const logs: string[] = [];
       const out: string[] = [];
       try {
-        const args = [
-          input,
-          "--llm-url",
-          llm.url,
-          "--llm-model",
-          "fake",
-          "--whisper-model",
-          model,
-          "--mux",
-        ];
+        const args = [input, "--llm-url", llm.url, "--llm-model", "fake", "--whisper-model", model, "--mux"];
         expect(
           await runPipeline(parseConfig(args).config as never, {
             env,
-            io: { log: (l) => void logs.push(l), out: (l) => void out.push(l) },
+            io: { log: l => void logs.push(l), out: l => void out.push(l) },
           }),
         ).toBe(0);
         expect(logs.join("\n")).toMatch(/ASR : whisper-cli/);
@@ -695,22 +603,16 @@ echo "auto-detected language: ja (p = 0.97)" >&2`,
         expect(text).toContain("Translated line 1.");
         expect(text).toContain("00:00:00,300 --> ");
         const video = join(dir, "match.en.softsub.mkv");
-        expect((await streams(video)).map((s) => s.codec_type)).toContain(
-          "subtitle",
-        );
+        expect((await streams(video)).map(s => s.codec_type)).toContain("subtitle");
         expect(out.join("\n")).toContain(video);
         expect(await Bun.file(input).bytes()).toEqual(before);
-        expect((await readFile(log, "utf8")).trim().split("\n")).toHaveLength(
-          1,
-        );
+        expect((await readFile(log, "utf8")).trim().split("\n")).toHaveLength(1);
         const calls = llm.calls();
         await runPipeline(parseConfig([...args, "--resume"]).config as never, {
           env,
           io: { log: () => {}, out: () => {} },
         });
-        expect((await readFile(log, "utf8")).trim().split("\n")).toHaveLength(
-          1,
-        );
+        expect((await readFile(log, "utf8")).trim().split("\n")).toHaveLength(1);
         expect(llm.calls()).toBe(calls);
       } finally {
         llm.stop();
@@ -817,9 +719,7 @@ printf '1\\n00:00:00,300 --> 00:00:01,400\\nこんにちは\\n\\n' > "$prefix.sr
           }),
         ).rejects.toThrow(/aucun moteur de reconnaissance vocale/);
       }
-      expect(() => parseConfig(["x.mp4", "--asr", "bogus"])).toThrow(
-        UsageError,
-      );
+      expect(() => parseConfig(["x.mp4", "--asr", "bogus"])).toThrow(UsageError);
     } finally {
       llm.stop();
     }
@@ -848,7 +748,7 @@ printf '1\\n00:00:00,300 --> 00:00:01,400\\nこんにちは\\n\\n' > "$prefix.sr
         expect(
           await runPipeline(config as never, {
             env: process.env,
-            io: { log: () => {}, out: (l) => void out.push(l) },
+            io: { log: () => {}, out: l => void out.push(l) },
           }),
         ).toBe(0);
         const plan = out.join("\n");

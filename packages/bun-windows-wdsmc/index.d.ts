@@ -5,7 +5,12 @@ interface Functions {
   /** wdsmc.dll!WdsTransportServerAllocateBuffer */
   WdsTransportServerAllocateBuffer(hProvider: Win32Pointer, ulBufferSize: number): number | null;
   /** wdsmc.dll!WdsTransportServerCompleteRead */
-  WdsTransportServerCompleteRead(hProvider: Win32Pointer, ulBytesRead: number, pvUserData: Win32Pointer, hReadResult: number): number;
+  WdsTransportServerCompleteRead(
+    hProvider: Win32Pointer,
+    ulBytesRead: number,
+    pvUserData: Win32Pointer,
+    hReadResult: number,
+  ): number;
   /** wdsmc.dll!WdsTransportServerFreeBuffer */
   WdsTransportServerFreeBuffer(hProvider: Win32Pointer, pvBuffer: Win32Pointer): number;
   /** wdsmc.dll!WdsTransportServerRegisterCallback */
@@ -13,7 +18,12 @@ interface Functions {
   /** wdsmc.dll!WdsTransportServerTrace */
   WdsTransportServerTrace(hProvider: Win32Pointer, Severity: number, pwszFormat: string | Win32Pointer): number;
   /** wdsmc.dll!WdsTransportServerTraceV */
-  WdsTransportServerTraceV(hProvider: Win32Pointer, Severity: number, pwszFormat: string | Win32Pointer, Params: Win32Pointer): number;
+  WdsTransportServerTraceV(
+    hProvider: Win32Pointer,
+    Severity: number,
+    pwszFormat: string | Win32Pointer,
+    Params: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

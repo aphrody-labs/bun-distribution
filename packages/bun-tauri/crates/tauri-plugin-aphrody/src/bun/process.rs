@@ -24,7 +24,9 @@ struct LogLine {
 }
 
 fn free_port() -> std::io::Result<u16> {
-    Ok(TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?.local_addr()?.port())
+    Ok(TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?
+        .local_addr()?
+        .port())
 }
 
 fn sidecar_path(name: &str) -> std::io::Result<PathBuf> {
@@ -87,7 +89,11 @@ impl BunProcess {
         if let Some(err) = child.stderr.take() {
             forward(app.clone(), "stderr", err);
         }
-        let mut process = BunProcess { child, port, command };
+        let mut process = BunProcess {
+            child,
+            port,
+            command,
+        };
 
         let timeout = Duration::from_millis(config.ready_timeout_ms.unwrap_or(15_000));
         let deadline = Instant::now() + timeout;

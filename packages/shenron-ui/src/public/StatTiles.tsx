@@ -35,9 +35,7 @@ export function StatTiles({
 }) {
   if (items.length === 0) return null;
   return (
-    <dl
-      className={`grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 ${className}`}
-    >
+    <dl className={`grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 ${className}`}>
       {items.map((item, index) => {
         const body = (
           <>
@@ -47,9 +45,7 @@ export function StatTiles({
             <dd className="mt-1.5 font-display text-[clamp(1.375rem,1.1rem+1.2vw,1.875rem)] font-bold leading-none tabular-nums text-white">
               {item.value === null ? "—" : nf.format(item.value)}
             </dd>
-            {item.hint && (
-              <p className="mt-1 text-[0.6875rem] text-white/35">{item.hint}</p>
-            )}
+            {item.hint && <p className="mt-1 text-[0.6875rem] text-white/35">{item.hint}</p>}
           </>
         );
         // La clé était le libellé ; traduit, ce n'est plus une chaîne. Le
@@ -63,10 +59,7 @@ export function StatTiles({
             {body}
           </Link>
         ) : (
-          <div
-            key={index}
-            className="rounded-xl border border-white/[0.08] bg-dbz-card/80 p-3.5 sm:p-4"
-          >
+          <div key={index} className="rounded-xl border border-white/[0.08] bg-dbz-card/80 p-3.5 sm:p-4">
             {body}
           </div>
         );

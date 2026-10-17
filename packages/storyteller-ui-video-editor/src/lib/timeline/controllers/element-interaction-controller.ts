@@ -1,11 +1,5 @@
 import type { MouseEvent as ReactMouseEvent } from "react";
-import {
-  buildMoveGroup,
-  resolveGroupMove,
-  snapGroupEdges,
-  type GroupMoveResult,
-  type MoveGroup,
-} from "../group-move";
+import { buildMoveGroup, resolveGroupMove, snapGroupEdges, type GroupMoveResult, type MoveGroup } from "../group-move";
 import { BASE_TIMELINE_PIXELS_PER_SECOND } from "../scale";
 import {
   maxMediaTime,
@@ -22,14 +16,7 @@ import { computeDropTarget } from "../components/drop-target";
 import { getMouseTimeFromClientX } from "../drag-utils";
 import { generateUUID } from "../../utils/id";
 import type { SnapPoint } from "../snapping";
-import type {
-  DropTarget,
-  ElementRef,
-  ElementDragView,
-  SceneTracks,
-  TimelineElement,
-  TimelineTrack,
-} from "../types";
+import type { DropTarget, ElementRef, ElementDragView, SceneTracks, TimelineElement, TimelineTrack } from "../types";
 
 const MOUSE_BUTTON_RIGHT = 2;
 
@@ -154,13 +141,7 @@ function orderedTracks(sceneTracks: SceneTracks): TimelineTrack[] {
   return [...sceneTracks.overlay, sceneTracks.main, ...sceneTracks.audio];
 }
 
-function movedPastDragThreshold({
-  current,
-  origin,
-}: {
-  current: Point;
-  origin: Point;
-}): boolean {
+function movedPastDragThreshold({ current, origin }: { current: Point; origin: Point }): boolean {
   return (
     Math.abs(current.x - origin.x) > TIMELINE_DRAG_THRESHOLD_PX ||
     Math.abs(current.y - origin.y) > TIMELINE_DRAG_THRESHOLD_PX
@@ -214,21 +195,16 @@ function resolveDropTarget({
   snappedTime: MediaTime;
   verticalDragDirection: "up" | "down" | null;
 }): DropTarget | null {
-  const containerRect = viewport
-    .getTracksContainerEl()
-    ?.getBoundingClientRect();
+  const containerRect = viewport.getTracksContainerEl()?.getBoundingClientRect();
   const scrollContainer = viewport.getTracksScrollEl();
   if (!containerRect || !scrollContainer) return null;
 
   const sourceTrack = orderedTracks(tracks).find(({ id }) => id === trackId);
-  const movingElement = sourceTrack?.elements.find(
-    ({ id }) => id === elementId,
-  );
+  const movingElement = sourceTrack?.elements.find(({ id }) => id === elementId);
   if (!movingElement) return null;
 
   const scrollRect = scrollContainer.getBoundingClientRect();
-  const headerHeight =
-    viewport.getHeaderEl()?.getBoundingClientRect().height ?? 0;
+  const headerHeight = viewport.getHeaderEl()?.getBoundingClientRect().height ?? 0;
 
   return computeDropTarget({
     elementType: movingElement.type,
@@ -376,9 +352,7 @@ export class ElementInteractionController {
       this.deps.selection.handleClick({ ...ref, isMultiKey: true });
     }
 
-    const selectedElements = this.deps.selection.isSelected(ref)
-      ? this.deps.selection.getSelected()
-      : [ref];
+    const selectedElements = this.deps.selection.isSelected(ref) ? this.deps.selection.getSelected() : [ref];
 
     this.session = {
       kind: "pending",
@@ -418,10 +392,7 @@ export class ElementInteractionController {
     if (event.metaKey || event.ctrlKey || event.shiftKey) return;
 
     const ref = { trackId: track.id, elementId: element.id };
-    if (
-      !this.deps.selection.isSelected(ref) ||
-      this.deps.selection.getSelected().length > 1
-    ) {
+    if (!this.deps.selection.isSelected(ref) || this.deps.selection.getSelected().length > 1) {
       this.deps.selection.select(ref);
       return;
     }
@@ -450,13 +421,10 @@ export class ElementInteractionController {
     this.notify();
   }
 
-  private snapResult({
-    frameSnappedTime,
-    group,
-  }: {
-    frameSnappedTime: MediaTime;
-    group: MoveGroup;
-  }): { snappedTime: MediaTime; snapPoint: SnapPoint | null } {
+  private snapResult({ frameSnappedTime, group }: { frameSnappedTime: MediaTime; group: MoveGroup }): {
+    snappedTime: MediaTime;
+    snapPoint: SnapPoint | null;
+  } {
     const { snap, input, scene, viewport, playback } = this.deps;
 
     if (!snap.isEnabled() || input.isShiftHeld()) {
@@ -707,16 +675,10 @@ export class ElementInteractionController {
       return;
     }
 
-    const didMove = groupMoveResult.moves.some((move) => {
-      const member = moveGroup.members.find(
-        (m) => m.elementId === move.elementId,
-      );
-      const originalStartTime =
-        mousedown.startElementTime + (member?.timeOffset ?? 0);
-      return (
-        member?.trackId !== move.targetTrackId ||
-        originalStartTime !== move.newStartTime
-      );
+    const didMove = groupMoveResult.moves.some(move => {
+      const member = moveGroup.members.find(m => m.elementId === move.elementId);
+      const originalStartTime = mousedown.startElementTime + (member?.timeOffset ?? 0);
+      return member?.trackId !== move.targetTrackId || originalStartTime !== move.newStartTime;
     });
 
     if (didMove || groupMoveResult.createTracks.length > 0) {

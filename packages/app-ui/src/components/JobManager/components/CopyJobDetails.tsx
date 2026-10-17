@@ -27,10 +27,7 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
     input: { job_id: job.id },
   });
 
-  const files = useMemo(
-    () => metadata?.metadata?.files || [],
-    [metadata?.metadata?.files],
-  );
+  const files = useMemo(() => metadata?.metadata?.files || [], [metadata?.metadata?.files]);
   const fileObjects = metadata?.metadata?.file_objects || [];
 
   // Refetch when completed count changes OR when current file changes
@@ -40,20 +37,14 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
     const currentPath = cp?.Physical?.path || generic?.message || "";
 
     const completedChanged = currentCompleted !== prevCompletedRef.current;
-    const currentFileChanged =
-      currentPath !== prevCurrentPathRef.current && currentPath !== "";
+    const currentFileChanged = currentPath !== prevCurrentPathRef.current && currentPath !== "";
 
     if (completedChanged || currentFileChanged) {
       prevCompletedRef.current = currentCompleted;
       prevCurrentPathRef.current = currentPath;
       refetch();
     }
-  }, [
-    generic?.completion?.completed,
-    generic?.current_path,
-    generic?.message,
-    refetch,
-  ]);
+  }, [generic?.completion?.completed, generic?.current_path, generic?.message, refetch]);
 
   // Auto-scroll to center the currently copying file
   useEffect(() => {
@@ -64,14 +55,13 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
     const currentPath: string | undefined = cp?.Physical?.path;
     if (!currentPath) return;
 
-    const currentIndex = files.findIndex((f) => {
+    const currentIndex = files.findIndex(f => {
       const sp = f.source_path as any;
       const filePath: string | undefined = sp?.Physical?.path;
       return filePath === currentPath;
     });
 
-    if (currentIndex === -1 || currentIndex === prevScrollIndexRef.current)
-      return;
+    if (currentIndex === -1 || currentIndex === prevScrollIndexRef.current) return;
 
     prevScrollIndexRef.current = currentIndex;
 
@@ -92,16 +82,12 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
   }, [files, generic?.current_path]);
 
   if (!generic) {
-    return (
-      <div className="p-4 text-body-small text-outline">
-        No progress data available
-      </div>
-    );
+    return <div className="p-4 text-body-small text-outline">No progress data available</div>;
   }
 
   // Create a map of entry_id → File for quick lookup
   const fileMap = new Map<string, File>();
-  fileObjects.forEach((file) => {
+  fileObjects.forEach(file => {
     fileMap.set(file.id, file);
   });
 
@@ -113,9 +99,7 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
       {/* File queue */}
       {files.length > 0 && (
         <div>
-          <div className="text-title-small text-on-surface mb-2">
-            Transfer queue
-          </div>
+          <div className="text-title-small text-on-surface mb-2">Transfer queue</div>
           <div
             ref={scrollContainerRef}
             className="space-y-0 max-h-[200px] overflow-y-auto border border-outline-variant rounded-medium"
@@ -130,9 +114,7 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
                   key={index}
                   className={clsx(
                     "flex items-center gap-3 px-3 py-2 transition-opacity",
-                    isEven
-                      ? "bg-surface-container-low"
-                      : "bg-surface-container-lowest",
+                    isEven ? "bg-surface-container-low" : "bg-surface-container-lowest",
                     index === 0 && "rounded-t-medium",
                     index === files.length - 1 && "rounded-b-medium",
                     file.status === "completed" && "opacity-50",
@@ -140,25 +122,11 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
                 >
                   {/* Status icon */}
                   {file.status === "completed" ? (
-                    <Icon
-                      name="check_circle"
-                      size={14}
-                      filled
-                      className="text-on-surface-variant flex-shrink-0"
-                    />
+                    <Icon name="check_circle" size={14} filled className="text-on-surface-variant flex-shrink-0" />
                   ) : file.status === "copying" ? (
-                    <Icon
-                      name="progress_activity"
-                      size={14}
-                      className="text-primary animate-spin flex-shrink-0"
-                    />
+                    <Icon name="progress_activity" size={14} className="text-primary animate-spin flex-shrink-0" />
                   ) : file.status === "failed" ? (
-                    <Icon
-                      name="close"
-                      size={14}
-                      weight={600}
-                      className="text-error flex-shrink-0"
-                    />
+                    <Icon name="close" size={14} weight={600} className="text-error flex-shrink-0" />
                   ) : file.status === "skipped" ? (
                     <Icon
                       name="radio_button_unchecked"
@@ -167,30 +135,18 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
                       className="text-on-surface-variant flex-shrink-0"
                     />
                   ) : (
-                    <Icon
-                      name="radio_button_unchecked"
-                      size={14}
-                      className="text-outline flex-shrink-0"
-                    />
+                    <Icon name="radio_button_unchecked" size={14} className="text-outline flex-shrink-0" />
                   )}
 
                   {/* Thumbnail (if File object available) */}
-                  {fileObj && (
-                    <Thumb
-                      file={fileObj}
-                      size={32}
-                      className="flex-shrink-0"
-                      iconScale={0.7}
-                    />
-                  )}
+                  {fileObj && <Thumb file={fileObj} size={32} className="flex-shrink-0" iconScale={0.7} />}
 
                   {/* File name and path */}
                   <div className="flex-1 min-w-0">
                     <div
                       className={clsx(
                         "text-body-medium truncate",
-                        file.status === "completed" &&
-                          "text-on-surface-variant",
+                        file.status === "completed" && "text-on-surface-variant",
                         file.status === "copying" && "text-on-surface",
                         file.status === "failed" && "text-error",
                         file.status === "skipped" && "text-on-surface-variant",

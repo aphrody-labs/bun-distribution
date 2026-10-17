@@ -1,14 +1,8 @@
 import { Vec2 } from "../types";
 
-const cross = (ax: number, ay: number, bx: number, by: number) =>
-  ax * by - ay * bx;
+const cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay * bx;
 
-export const segmentsIntersect = (
-  p1: Vec2,
-  p2: Vec2,
-  p3: Vec2,
-  p4: Vec2,
-): boolean => {
+export const segmentsIntersect = (p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2): boolean => {
   const d1x = p2.x - p1.x;
   const d1y = p2.y - p1.y;
   const d2x = p4.x - p3.x;

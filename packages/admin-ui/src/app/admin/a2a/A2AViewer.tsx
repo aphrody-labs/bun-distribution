@@ -27,13 +27,9 @@ const POLL_MAX_INTERVAL_MS = 30_000;
 
 type SendStatus = { tone: "pending" | "ok" | "error"; text: string };
 
-async function readJson(
-  res: Response,
-): Promise<Record<string, unknown> | null> {
+async function readJson(res: Response): Promise<Record<string, unknown> | null> {
   const data: unknown = await res.json().catch(() => null);
-  return data && typeof data === "object" && !Array.isArray(data)
-    ? (data as Record<string, unknown>)
-    : null;
+  return data && typeof data === "object" && !Array.isArray(data) ? (data as Record<string, unknown>) : null;
 }
 
 export function A2AViewer() {
@@ -55,7 +51,7 @@ export function A2AViewer() {
       intervalMs: POLL_INTERVAL_MS,
       maxIntervalMs: POLL_MAX_INTERVAL_MS,
       isVisible: () => document.visibilityState === "visible",
-      run: async (signal) => {
+      run: async signal => {
         setSyncing(true);
         try {
           const res = await fetch(ADMIN_A2A_URL, {
@@ -66,10 +62,7 @@ export function A2AViewer() {
           const data = await readJson(res);
           if (signal.aborted) return "ok";
           if (!res.ok) {
-            const next = describeA2AFailure(
-              res.status,
-              typeof data?.error === "string" ? data.error : null,
-            );
+            const next = describeA2AFailure(res.status, typeof data?.error === "string" ? data.error : null);
             setFailure(next);
             return next.terminal ? "halt" : "error";
           }
@@ -80,11 +73,7 @@ export function A2AViewer() {
           setEnvelopes(data.envelopes as Envelope[]);
           setLoaded(true);
           setFailure(null);
-          setLastSyncAt(
-            typeof data.fetchedAt === "string"
-              ? data.fetchedAt
-              : new Date().toISOString(),
-          );
+          setLastSyncAt(typeof data.fetchedAt === "string" ? data.fetchedAt : new Date().toISOString());
           return "ok";
         } catch {
           if (signal.aborted) return "ok";
@@ -96,8 +85,7 @@ export function A2AViewer() {
       },
     });
     pollerRef.current = poller;
-    const onVisibilityChange = () =>
-      poller.setVisible(document.visibilityState === "visible");
+    const onVisibilityChange = () => poller.setVisible(document.visibilityState === "visible");
     document.addEventListener("visibilitychange", onVisibilityChange);
     poller.start();
     return () => {
@@ -138,10 +126,7 @@ export function A2AViewer() {
         setInstruction("");
         retry();
       } else {
-        const next = describeA2AFailure(
-          res.status,
-          typeof data?.error === "string" ? data.error : null,
-        );
+        const next = describeA2AFailure(res.status, typeof data?.error === "string" ? data.error : null);
         setLastStatus({ tone: "error", text: `✗ ${next.text}` });
       }
     } catch {
@@ -154,7 +139,7 @@ export function A2AViewer() {
     }
   };
 
-  const filteredEnvelopes = envelopes.filter((env) => {
+  const filteredEnvelopes = envelopes.filter(env => {
     if (filterPeer === "all") return true;
     return env.from === filterPeer || env.to === filterPeer;
   });
@@ -166,49 +151,27 @@ export function A2AViewer() {
       {/* En-tête Statut A2A */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-xl border border-border bg-card/60">
-          <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
-            Protocole
-          </span>
+          <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Protocole</span>
           <div className="text-xl font-bold mt-1 text-primary">A2A 1.0.0</div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            ai.json v1 • .coord Mailbox
-          </div>
+          <div className="text-xs text-muted-foreground mt-0.5">ai.json v1 • .coord Mailbox</div>
         </div>
         <div className="p-4 rounded-xl border border-border bg-card/60">
-          <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
-            Hub Principal
-          </span>
-          <div className="text-xl font-bold mt-1 text-primary">
-            Shenron Core
-          </div>
+          <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Hub Principal</span>
+          <div className="text-xl font-bold mt-1 text-primary">Shenron Core</div>
           {/* mcp.dragonballfr.com a été retiré le 2026-09-25 (shenron-mcp fusionné
 					    dans aphrody-mcp dragonball.*, sans hôte HTTP public). */}
-          <div className="text-xs text-muted-foreground mt-0.5">
-            aphrody-mcp (dragonball.*)
-          </div>
+          <div className="text-xs text-muted-foreground mt-0.5">aphrody-mcp (dragonball.*)</div>
         </div>
         <div className="p-4 rounded-xl border border-border bg-card/60">
-          <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
-            Doctrine
-          </span>
-          <div className="text-xl font-bold mt-1 text-emerald-400">
-            YOLO Zero-HITL
-          </div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            Format Bimodal • #bot-admin
-          </div>
+          <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Doctrine</span>
+          <div className="text-xl font-bold mt-1 text-emerald-400">YOLO Zero-HITL</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Format Bimodal • #bot-admin</div>
         </div>
         <div className="p-4 rounded-xl border border-border bg-card/60">
-          <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
-            Enveloppes Actives
-          </span>
-          <div className="text-xl font-bold mt-1 text-amber-400">
-            {loaded ? envelopes.length : "—"}
-          </div>
+          <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Enveloppes Actives</span>
+          <div className="text-xl font-bold mt-1 text-amber-400">{loaded ? envelopes.length : "—"}</div>
           <div className="text-xs text-muted-foreground mt-0.5">
-            {syncedAt
-              ? `Synchronisé à ${syncedAt}`
-              : "Canal fichier & RPC unifié"}
+            {syncedAt ? `Synchronisé à ${syncedAt}` : "Canal fichier & RPC unifié"}
           </div>
         </div>
       </div>
@@ -221,20 +184,16 @@ export function A2AViewer() {
         <form onSubmit={handleSend} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="text-xs font-semibold text-muted-foreground block mb-1">
-                Cible A2A
-              </label>
+              <label className="text-xs font-semibold text-muted-foreground block mb-1">Cible A2A</label>
               <select
                 value={target}
-                onChange={(e) => {
-                  const next = A2A_ADMIN_TARGETS.find(
-                    (entry) => entry.id === e.target.value,
-                  );
+                onChange={e => {
+                  const next = A2A_ADMIN_TARGETS.find(entry => entry.id === e.target.value);
                   if (next) setTarget(next.id);
                 }}
                 className="w-full bg-background border border-input rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary"
               >
-                {A2A_ADMIN_TARGETS.map((entry) => (
+                {A2A_ADMIN_TARGETS.map(entry => (
                   <option key={entry.id} value={entry.id}>
                     {entry.label}
                   </option>
@@ -242,20 +201,16 @@ export function A2AViewer() {
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-muted-foreground block mb-1">
-                Nature de l'ordre
-              </label>
+              <label className="text-xs font-semibold text-muted-foreground block mb-1">Nature de l'ordre</label>
               <select
                 value={kind}
-                onChange={(e) => {
-                  const next = A2A_ADMIN_KINDS.find(
-                    (entry) => entry.id === e.target.value,
-                  );
+                onChange={e => {
+                  const next = A2A_ADMIN_KINDS.find(entry => entry.id === e.target.value);
                   if (next) setKind(next.id);
                 }}
                 className="w-full bg-background border border-input rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary"
               >
-                {A2A_ADMIN_KINDS.map((entry) => (
+                {A2A_ADMIN_KINDS.map(entry => (
                   <option key={entry.id} value={entry.id}>
                     {entry.label}
                   </option>
@@ -268,9 +223,7 @@ export function A2AViewer() {
                 disabled={sending || !instruction.trim()}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 py-2 rounded-lg text-sm transition disabled:opacity-50"
               >
-                {sending
-                  ? "Transmission en cours..."
-                  : "🚀 Émettre l'Ordre A2A"}
+                {sending ? "Transmission en cours..." : "🚀 Émettre l'Ordre A2A"}
               </button>
             </div>
           </div>
@@ -278,7 +231,7 @@ export function A2AViewer() {
             <textarea
               rows={2}
               value={instruction}
-              onChange={(e) => setInstruction(e.target.value)}
+              onChange={e => setInstruction(e.target.value)}
               aria-label="Instruction à transmettre"
               placeholder="Instruction technique à transmettre aux pairs A2A..."
               className="w-full bg-background border border-input rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary"
@@ -300,19 +253,13 @@ export function A2AViewer() {
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-base flex items-center gap-2">
             <span>📡 Flux des Enveloppes A2A (.coord)</span>
-            {loaded && (
-              <span className="text-xs text-muted-foreground">
-                ({filteredEnvelopes.length} messages)
-              </span>
-            )}
+            {loaded && <span className="text-xs text-muted-foreground">({filteredEnvelopes.length} messages)</span>}
           </h3>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              Filtrer par pair :
-            </span>
+            <span className="text-xs text-muted-foreground">Filtrer par pair :</span>
             <select
               value={filterPeer}
-              onChange={(e) => setFilterPeer(e.target.value)}
+              onChange={e => setFilterPeer(e.target.value)}
               aria-label="Filtrer par pair"
               className="bg-background border border-input rounded px-2 py-1 text-xs"
             >
@@ -334,9 +281,7 @@ export function A2AViewer() {
           >
             <span>
               {failure.text}
-              {loaded && syncedAt
-                ? ` Les enveloppes affichées datent de ${syncedAt}.`
-                : ""}
+              {loaded && syncedAt ? ` Les enveloppes affichées datent de ${syncedAt}.` : ""}
             </span>
             <button
               type="button"
@@ -351,9 +296,7 @@ export function A2AViewer() {
 
         {!loaded ? (
           failure ? null : (
-            <div className="text-sm text-muted-foreground py-8 text-center">
-              Chargement des enveloppes A2A...
-            </div>
+            <div className="text-sm text-muted-foreground py-8 text-center">Chargement des enveloppes A2A...</div>
           )
         ) : filteredEnvelopes.length === 0 ? (
           <div className="text-sm text-muted-foreground py-8 text-center border border-dashed rounded-xl">
@@ -391,32 +334,20 @@ export function A2AViewer() {
                 >
                   <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-[#79c0ff]">
-                        {env.from}
-                      </span>
+                      <span className="font-bold text-[#79c0ff]">{env.from}</span>
                       <span className="text-muted-foreground">→</span>
-                      <span className="font-bold text-[#79c0ff]/80">
-                        {env.to}
-                      </span>
+                      <span className="font-bold text-[#79c0ff]/80">{env.to}</span>
                       <span
                         className={`px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider ${badgeStyle}`}
                       >
                         {env.kind || "?"}
                       </span>
-                      <span className="text-muted-foreground/60 text-[10px]">
-                        ({env.id})
-                      </span>
+                      <span className="text-muted-foreground/60 text-[10px]">({env.id})</span>
                     </div>
-                    <span className="text-muted-foreground text-[11px]">
-                      {formatEnvelopeTime(env.ts)}
-                    </span>
+                    <span className="text-muted-foreground text-[11px]">{formatEnvelopeTime(env.ts)}</span>
                   </div>
 
-                  {env.topic && (
-                    <div className="font-semibold text-sm text-[#e6edf3]">
-                      {env.topic}
-                    </div>
-                  )}
+                  {env.topic && <div className="font-semibold text-sm text-[#e6edf3]">{env.topic}</div>}
 
                   {env.body && (
                     <div className="text-xs text-[#8b949e] whitespace-pre-wrap break-words bg-[#161b22] p-2.5 rounded border border-[#21262d] max-h-48 overflow-y-auto">

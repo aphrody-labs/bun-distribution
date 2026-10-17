@@ -5,7 +5,13 @@ interface Functions {
   /** directml.dll!DMLCreateDevice */
   DMLCreateDevice(d3d12Device: Win32Pointer, flags: number, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** directml.dll!DMLCreateDevice1 */
-  DMLCreateDevice1(d3d12Device: Win32Pointer, flags: number, minimumFeatureLevel: number, riid: Win32Pointer, ppv: Win32Pointer): number;
+  DMLCreateDevice1(
+    d3d12Device: Win32Pointer,
+    flags: number,
+    minimumFeatureLevel: number,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

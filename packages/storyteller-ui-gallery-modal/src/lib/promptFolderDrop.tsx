@@ -1,7 +1,4 @@
-import {
-  showActionReminder,
-  isActionReminderOpen,
-} from "@storyteller/ui-action-reminder-modal";
+import { showActionReminder, isActionReminderOpen } from "@storyteller/ui-action-reminder-modal";
 
 export interface FolderDropPromptOptions {
   count: number;
@@ -15,12 +12,7 @@ export interface FolderDropPromptOptions {
  * come from another folder (folder → folder). "Move here" removes them from the
  * source; "Add a copy" keeps them in both; the X / backdrop cancels.
  */
-export function promptFolderDrop({
-  count,
-  targetFolderName,
-  onMove,
-  onAdd,
-}: FolderDropPromptOptions): void {
+export function promptFolderDrop({ count, targetFolderName, onMove, onAdd }: FolderDropPromptOptions): void {
   const plural = count === 1 ? "" : "s";
   const dest = targetFolderName ? ` to "${targetFolderName}"` : "";
   showActionReminder({
@@ -28,8 +20,8 @@ export function promptFolderDrop({
     title: `Move or copy ${count} item${plural}?`,
     message: (
       <p className="text-sm text-white/70">
-        Move{dest} removes {count === 1 ? "it" : "them"} from the current
-        folder. Add a copy keeps {count === 1 ? "it" : "them"} in both.
+        Move{dest} removes {count === 1 ? "it" : "them"} from the current folder. Add a copy keeps{" "}
+        {count === 1 ? "it" : "them"} in both.
       </p>
     ),
     primaryActionText: "Move here",

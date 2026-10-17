@@ -144,9 +144,7 @@ export interface Comparison {
   by_tag_recall5_regressions: Record<string, MetricDelta>;
 }
 
-export type GateResult =
-  | { ok: true }
-  | { ok: false; failure: { expr: string; actual: number; threshold: number } };
+export type GateResult = { ok: true } | { ok: false; failure: { expr: string; actual: number; threshold: number } };
 
 export interface Manifest {
   abi: number;

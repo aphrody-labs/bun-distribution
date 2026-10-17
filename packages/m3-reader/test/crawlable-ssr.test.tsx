@@ -24,12 +24,7 @@ const editions = [
 describe("crawlable SSR markup (m3-reader)", () => {
   test("CollectionReader is a named region with hooks and no dangling aria-controls", () => {
     const html = renderToStaticMarkup(
-      <CollectionReader
-        title="Collection"
-        editions={editions}
-        {...labels}
-        renderChapter={() => <p>body</p>}
-      />,
+      <CollectionReader title="Collection" editions={editions} {...labels} renderChapter={() => <p>body</p>} />,
     );
     expect(html).toContain('aria-label="Collection"');
     expect(html).toContain('data-m3-component="CollectionReader"');
@@ -39,12 +34,7 @@ describe("crawlable SSR markup (m3-reader)", () => {
 
   test("MangaReader is a labelled region whose pages are images with alternatives and whose chapter links are real", () => {
     const html = renderToStaticMarkup(
-      <MangaReader
-        title="Chapter 1"
-        pages={["a.jpg", "b.jpg"]}
-        prevHref="/c/0"
-        nextHref="/c/2"
-      />,
+      <MangaReader title="Chapter 1" pages={["a.jpg", "b.jpg"]} prevHref="/c/0" nextHref="/c/2" />,
     );
     expect(html).toContain('role="region"');
     expect(html).toContain('aria-label="Chapter 1"');

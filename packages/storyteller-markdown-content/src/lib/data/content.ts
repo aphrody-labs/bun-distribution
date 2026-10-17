@@ -31,15 +31,14 @@ export const getNewsPosts = (): NewsPostData[] => {
       };
     })
     .sort((a, b) => {
-      if (a.date && b.date)
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (a.date && b.date) return new Date(b.date).getTime() - new Date(a.date).getTime();
       return 0; // consistent output
     });
 };
 
 export const getNewsPostBySlug = (slug: string): NewsPostData | null => {
   const posts = getNewsPosts();
-  return posts.find((p) => p.slug === slug) || null;
+  return posts.find(p => p.slug === slug) || null;
 };
 
 // FAQ
@@ -75,7 +74,7 @@ export const getFaqItems = (): FaqItem[] => {
 
 export const getFaqItemBySlug = (slug: string): FaqItem | null => {
   const items = getFaqItems();
-  return items.find((i) => i.slug === slug) || null;
+  return items.find(i => i.slug === slug) || null;
 };
 
 // TUTORIALS
@@ -113,7 +112,7 @@ export const getTutorialItems = (): TutorialItem[] => {
       aliases: frontmatter.aliases
         ? frontmatter.aliases
             .split(/[\s,]+/)
-            .map((s) => s.trim().toLowerCase())
+            .map(s => s.trim().toLowerCase())
             .filter(Boolean)
         : [],
       body,
@@ -125,7 +124,5 @@ export const getTutorialItems = (): TutorialItem[] => {
 export const getTutorialItemBySlug = (slug: string): TutorialItem | null => {
   const items = getTutorialItems();
   const wanted = slug.toLowerCase();
-  return (
-    items.find((t) => t.slug === wanted || t.aliases?.includes(wanted)) || null
-  );
+  return items.find(t => t.slug === wanted || t.aliases?.includes(wanted)) || null;
 };

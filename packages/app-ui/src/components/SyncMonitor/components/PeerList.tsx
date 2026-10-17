@@ -13,19 +13,15 @@ export function PeerList({ peers }: PeerListProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4">
         <Circle className="size-8 text-outline mb-2" weight="duotone" />
-        <p className="text-body-medium text-on-surface-variant text-center">
-          No paired devices
-        </p>
-        <p className="text-body-small text-outline text-center mt-1">
-          Pair a device to start syncing
-        </p>
+        <p className="text-body-medium text-on-surface-variant text-center">No paired devices</p>
+        <p className="text-body-small text-outline text-center mt-1">Pair a device to start syncing</p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-2 p-2">
-      {peers.map((peer) => (
+      {peers.map(peer => (
         <PeerCard key={peer.deviceId} peer={peer} />
       ))}
     </div>
@@ -43,23 +39,14 @@ function PeerCard({ peer }: { peer: SyncPeerActivity }) {
     <div className="bg-surface-container rounded-small p-3 border border-outline-variant">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div
-            className={clsx(
-              "size-2 rounded-full",
-              peer.isOnline ? "bg-success" : "bg-outline",
-            )}
-          />
-          <span className="text-label-large font-medium text-on-surface">
-            {peer.deviceName}
-          </span>
+          <div className={clsx("size-2 rounded-full", peer.isOnline ? "bg-success" : "bg-outline")} />
+          <span className="text-label-large font-medium text-on-surface">{peer.deviceName}</span>
         </div>
 
         {peer.watermarkLagMs && peer.watermarkLagMs > 60000 && (
           <Lightning className="size-4 text-warning" weight="fill" />
         )}
-        <span>
-          {peer.isOnline ? "Online" : `Last seen ${timeAgo(peer.lastSeen)}`}
-        </span>
+        <span>{peer.isOnline ? "Online" : `Last seen ${timeAgo(peer.lastSeen)}`}</span>
       </div>
 
       <div className="flex items-center gap-2 mt-2 text-body-small text-outline">

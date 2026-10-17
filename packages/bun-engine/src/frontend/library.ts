@@ -4,19 +4,10 @@
 import { Database } from "bun:sqlite";
 import { existsSync, mkdirSync, statSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
-import {
-  defaultFirmwareStore,
-  type FirmwareManifest,
-} from "../firmware/import";
+import { defaultFirmwareStore, type FirmwareManifest } from "../firmware/import";
 import * as pm from "../pm";
 import { repoRoot, usrRoot } from "../usr";
-import {
-  detectSystem,
-  extensionOf,
-  loadSystems,
-  type SystemDefinition,
-  systemsForConsole,
-} from "./systems";
+import { detectSystem, extensionOf, loadSystems, type SystemDefinition, systemsForConsole } from "./systems";
 
 const maxHashBytes = 256 * 1024 * 1024;
 export const databaseDir = join(repoRoot, "vendor", "libretro-database");
@@ -54,9 +45,7 @@ export interface Game {
 
 /** The bep project the frontend manages: BEP_PROJECT, else a library project inside usr/. */
 export function projectDir(): string {
-  return resolve(
-    Bun.env.BEP_PROJECT ?? join(usrRoot(), "var", "lib", "bep", "library"),
-  );
+  return resolve(Bun.env.BEP_PROJECT ?? join(usrRoot(), "var", "lib", "bep", "library"));
 }
 
 let queue: Promise<unknown> = Promise.resolve();
@@ -114,18 +103,10 @@ export function db(): Database {
     year TEXT, region TEXT, serial TEXT)`);
   database.run("CREATE INDEX IF NOT EXISTS dat_roms_crc ON dat_roms (crc)");
   database.run("CREATE INDEX IF NOT EXISTS dat_roms_md5 ON dat_roms (md5)");
-  database.run(
-    "CREATE TABLE IF NOT EXISTS defaults (system TEXT PRIMARY KEY, route TEXT NOT NULL)",
-  );
-  const seeded = database
-    .query<{ n: number }, []>("SELECT count(*) AS n FROM sources")
-    .get()!.n;
+  database.run("CREATE TABLE IF NOT EXISTS defaults (system TEXT PRIMARY KEY, route TEXT NOT NULL)");
+  const seeded = database.query<{ n: number }, []>("SELECT count(*) AS n FROM sources").get()!.n;
   if (!seeded) {
-    database
-      .query(
-        "INSERT INTO sources (kind, path) VALUES ('bep', ''), ('store', ''), ('free', '*')",
-      )
-      .run();
+    database.query("INSERT INTO sources (kind, path) VALUES ('bep', ''), ('store', ''), ('free', '*')").run();
   }
   return database;
 }
@@ -134,28 +115,17 @@ export function listSources(): Source[] {
   return db().query<Source, []>("SELECT * FROM sources ORDER BY id").all();
 }
 
-export async function addFolder(
-  path: string,
-  system?: string,
-): Promise<Source> {
+export async function addFolder(path: string, system?: string): Promise<Source> {
   const dir = resolve(path);
-  if (!existsSync(dir) || !statSync(dir).isDirectory())
-    throw new Error(`${dir} is not a directory`);
-  if (
-    system &&
-    !(await loadSystems()).systems.some((item) => item.id === system)
-  )
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) throw new Error(`${dir} is not a directory`);
+  if (system && !(await loadSystems()).systems.some(item => item.id === system))
     throw new Error(`unknown system ${system}`);
   db()
     .query(
       "INSERT INTO sources (kind, path, system) VALUES ('folder', ?1, ?2) ON CONFLICT (kind, path) DO UPDATE SET system = ?2",
     )
     .run(dir, system ?? null);
-  return db()
-    .query<Source, [string]>(
-      "SELECT * FROM sources WHERE kind = 'folder' AND path = ?",
-    )
-    .get(dir)!;
+  return db().query<Source, [string]>("SELECT * FROM sources WHERE kind = 'folder' AND path = ?").get(dir)!;
 }
 
 export function removeSource(id: number): void {
@@ -165,19 +135,14 @@ export function removeSource(id: number): void {
 /** Tokenizes a clrmamepro DAT: parentheses, quoted strings and bare words. */
 function* tokens(text: string): Generator<string> {
   const re = /"((?:[^"\\]|\\.)*)"|([()])|([^\s()"]+)/g;
-  for (let match = re.exec(text); match; match = re.exec(text))
-    yield match[1] ?? match[2] ?? match[3]!;
+  for (let match = re.exec(text); match; match = re.exec(text)) yield match[1] ?? match[2] ?? match[3]!;
 }
 
 type DatNode = Map<string, Array<string | DatNode>>;
 
 function parseBlock(stream: Generator<string>): DatNode {
   const node: DatNode = new Map();
-  for (
-    let key = stream.next();
-    !key.done && key.value !== ")";
-    key = stream.next()
-  ) {
+  for (let key = stream.next(); !key.done && key.value !== ")"; key = stream.next()) {
     const value = stream.next();
     if (value.done) break;
     const entry = value.value === "(" ? parseBlock(stream) : value.value;
@@ -199,9 +164,7 @@ async function importDat(relativeDat: string): Promise<number> {
   if (!existsSync(path)) return 0;
   const mtime = Math.trunc(statSync(path).mtimeMs);
   const known = db()
-    .query<{ mtime: number; entries: number }, [string]>(
-      "SELECT mtime, entries FROM dat_files WHERE path = ?",
-    )
+    .query<{ mtime: number; entries: number }, [string]>("SELECT mtime, entries FROM dat_files WHERE path = ?")
     .get(relativeDat);
   if (known?.mtime === mtime) return known.entries;
   const stream = tokens(await Bun.file(path).text());
@@ -233,9 +196,7 @@ async function importDat(relativeDat: string): Promise<number> {
         entries++;
       }
     }
-    db()
-      .query("INSERT OR REPLACE INTO dat_files VALUES (?, ?, ?)")
-      .run(relativeDat, mtime, entries);
+    db().query("INSERT OR REPLACE INTO dat_files VALUES (?, ?, ?)").run(relativeDat, mtime, entries);
   })();
   return entries;
 }
@@ -255,8 +216,7 @@ export function ensureDatabase(): boolean {
     "--",
     "vendor/libretro-database",
   ]);
-  if (submodule.success && existsSync(join(databaseDir, "metadat")))
-    return true;
+  if (submodule.success && existsSync(join(databaseDir, "metadat"))) return true;
   const url = Bun.spawnSync([
     "git",
     "-C",
@@ -269,16 +229,7 @@ export function ensureDatabase(): boolean {
     .stdout.toString()
     .trim();
   if (!url) return false;
-  const clone = Bun.spawnSync([
-    "git",
-    "clone",
-    "--depth",
-    "1",
-    "--filter=blob:none",
-    "--sparse",
-    url,
-    databaseDir,
-  ]);
+  const clone = Bun.spawnSync(["git", "clone", "--depth", "1", "--filter=blob:none", "--sparse", url, databaseDir]);
   if (!clone.success) return false;
   Bun.spawnSync([
     "git",
@@ -299,11 +250,7 @@ interface Hashes {
   headerless?: string;
 }
 
-async function hashFile(
-  path: string,
-  ext: string,
-  system: SystemDefinition,
-): Promise<Hashes | undefined> {
+async function hashFile(path: string, ext: string, system: SystemDefinition): Promise<Hashes | undefined> {
   const file = Bun.file(path);
   if (file.size === 0 || file.size > maxHashBytes) return undefined;
   const bytes = await file.bytes();
@@ -313,8 +260,7 @@ async function hashFile(
     md5: new Bun.CryptoHasher("md5").update(bytes).digest("hex"),
   };
   const header = system.headerBytes?.[ext];
-  if (header && bytes.length > header)
-    hashes.headerless = hex(Bun.hash.crc32(bytes.subarray(header)));
+  if (header && bytes.length > header) hashes.headerless = hex(Bun.hash.crc32(bytes.subarray(header)));
   return hashes;
 }
 
@@ -329,10 +275,7 @@ export interface DatRow {
   serial: string | null;
 }
 
-function matchDat(
-  system: SystemDefinition,
-  hashes: Hashes | undefined,
-): DatRow | undefined {
+function matchDat(system: SystemDefinition, hashes: Hashes | undefined): DatRow | undefined {
   if (!hashes || !system.dats.length) return undefined;
   const dats = JSON.stringify(system.dats);
   const byCrc = db().query<DatRow, [string, string]>(
@@ -377,7 +320,9 @@ export async function verifyDump(
       : null);
   const serial = dump.serial?.trim()
     ? db()
-        .query<DatRow, { serial: string; dats: string }>(`SELECT * FROM dat_roms WHERE ${scoped} AND serial = $serial LIMIT 50`)
+        .query<DatRow, { serial: string; dats: string }>(
+          `SELECT * FROM dat_roms WHERE ${scoped} AND serial = $serial LIMIT 50`,
+        )
         .all({ serial: dump.serial.trim(), dats })
     : [];
   return { ...(match ? { match } : {}), serial };
@@ -435,7 +380,7 @@ async function* candidates(): AsyncGenerator<Candidate> {
         // Owned dumps of systems without a catalog console are filed under the system id.
         const system =
           (await systemsForConsole(rom.console))[0] ??
-          (await loadSystems()).systems.find((item) => item.id === rom.console);
+          (await loadSystems()).systems.find(item => item.id === rom.console);
         const candidate = {
           path: join(dirname(path), rom.file),
           system: system!,
@@ -505,9 +450,7 @@ export async function scanLibrary(): Promise<ScanSummary> {
   for (const system of (await loadSystems()).systems)
     for (const dat of system.dats) summary.dats[dat] ??= await importDat(dat);
   const scan = Date.now();
-  const existing = db().query<Game, [string]>(
-    "SELECT * FROM games WHERE path = ?",
-  );
+  const existing = db().query<Game, [string]>("SELECT * FROM games WHERE path = ?");
   const upsert = db()
     .query(`INSERT INTO games (system, path, file, name, source, size, mtime, crc, md5, title, description,
       developer, year, region, serial, dat, scan)
@@ -523,13 +466,7 @@ export async function scanLibrary(): Promise<ScanSummary> {
     const ext = extensionOf(path);
     const previous = existing.get(path);
     let hashes: Hashes | undefined;
-    if (
-      previous &&
-      previous.size === stat.size &&
-      previous.mtime === mtime &&
-      previous.crc &&
-      previous.md5
-    ) {
+    if (previous && previous.size === stat.size && previous.mtime === mtime && previous.crc && previous.md5) {
       hashes = { crc: previous.crc, md5: previous.md5 };
       const header = candidate.system.headerBytes?.[ext];
       if (header) hashes = await hashFile(path, ext, candidate.system);
@@ -542,9 +479,7 @@ export async function scanLibrary(): Promise<ScanSummary> {
     upsert.run({
       system: candidate.system.id,
       path,
-      file: relative(repoRoot, path).startsWith("..")
-        ? path
-        : relative(repoRoot, path),
+      file: relative(repoRoot, path).startsWith("..") ? path : relative(repoRoot, path),
       name: candidate.name,
       source: candidate.source,
       size: stat.size,
@@ -561,12 +496,9 @@ export async function scanLibrary(): Promise<ScanSummary> {
       scan,
     });
     summary.games++;
-    summary.systems[candidate.system.id] =
-      (summary.systems[candidate.system.id] ?? 0) + 1;
+    summary.systems[candidate.system.id] = (summary.systems[candidate.system.id] ?? 0) + 1;
   }
-  summary.removed = db()
-    .query("DELETE FROM games WHERE scan <> ?")
-    .run(scan).changes;
+  summary.removed = db().query("DELETE FROM games WHERE scan <> ?").run(scan).changes;
   summary.ms = Math.round(performance.now() - started);
   return summary;
 }
@@ -578,35 +510,23 @@ export function gamesFor(system?: string): Game[] {
           "SELECT * FROM games WHERE system = ? ORDER BY favorite DESC, coalesce(title, name) COLLATE NOCASE",
         )
         .all(system)
-    : db()
-        .query<Game, []>(
-          "SELECT * FROM games ORDER BY system, coalesce(title, name) COLLATE NOCASE",
-        )
-        .all();
+    : db().query<Game, []>("SELECT * FROM games ORDER BY system, coalesce(title, name) COLLATE NOCASE").all();
 }
 
 export function gameById(id: number): Game {
-  const game = db()
-    .query<Game, [number]>("SELECT * FROM games WHERE id = ?")
-    .get(id);
+  const game = db().query<Game, [number]>("SELECT * FROM games WHERE id = ?").get(id);
   if (!game) throw new Error(`no game ${id}`);
   return game;
 }
 
 /** A game by library id or by file path (added to the library on the fly). */
-export async function findGame(
-  idOrPath: string,
-  system?: string,
-): Promise<Game> {
+export async function findGame(idOrPath: string, system?: string): Promise<Game> {
   if (/^\d+$/.test(idOrPath)) return gameById(Number(idOrPath));
   const path = resolve(idOrPath);
-  const known = db()
-    .query<Game, [string]>("SELECT * FROM games WHERE path = ?")
-    .get(path);
+  const known = db().query<Game, [string]>("SELECT * FROM games WHERE path = ?").get(path);
   if (known) return known;
   const detected = await detectSystem(basename(path), system);
-  if (!detected)
-    throw new Error(`cannot tell the system of ${path}; pass --system`);
+  if (!detected) throw new Error(`cannot tell the system of ${path}; pass --system`);
   const stat = statSync(path);
   db()
     .query(
@@ -621,18 +541,14 @@ export async function findGame(
       Math.trunc(stat.mtimeMs),
       Date.now(),
     );
-  return db()
-    .query<Game, [string]>("SELECT * FROM games WHERE path = ?")
-    .get(path)!;
+  return db().query<Game, [string]>("SELECT * FROM games WHERE path = ?").get(path)!;
 }
 
 export function systemCounts(): Record<string, number> {
   const rows = db()
-    .query<{ system: string; n: number }, []>(
-      "SELECT system, count(*) AS n FROM games GROUP BY system",
-    )
+    .query<{ system: string; n: number }, []>("SELECT system, count(*) AS n FROM games GROUP BY system")
     .all();
-  return Object.fromEntries(rows.map((row) => [row.system, row.n]));
+  return Object.fromEntries(rows.map(row => [row.system, row.n]));
 }
 
 export function setFavorite(id: number, favorite: boolean): void {
@@ -647,26 +563,17 @@ export function setGameRoute(id: number, route: string | null): void {
 
 export function recordPlay(id: number): void {
   db()
-    .query(
-      "UPDATE games SET playCount = playCount + 1, lastPlayed = ? WHERE id = ?",
-    )
+    .query("UPDATE games SET playCount = playCount + 1, lastPlayed = ? WHERE id = ?")
     .run(new Date().toISOString(), id);
 }
 
 export function defaultRoute(system: string): string | null {
   return (
-    db()
-      .query<{ route: string }, [string]>(
-        "SELECT route FROM defaults WHERE system = ?",
-      )
-      .get(system)?.route ?? null
+    db().query<{ route: string }, [string]>("SELECT route FROM defaults WHERE system = ?").get(system)?.route ?? null
   );
 }
 
 export function setDefaultRoute(system: string, route: string | null): void {
-  if (route)
-    db()
-      .query("INSERT OR REPLACE INTO defaults VALUES (?, ?)")
-      .run(system, route);
+  if (route) db().query("INSERT OR REPLACE INTO defaults VALUES (?, ?)").run(system, route);
   else db().query("DELETE FROM defaults WHERE system = ?").run(system);
 }

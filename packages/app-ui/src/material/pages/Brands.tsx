@@ -1,26 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useEffect, useRef, useState } from "react";
-import {
-  AphrodyAvatar,
-  AphrodyPet,
-  PET,
-  type PetAnimation,
-} from "@aphrody/identity";
+import { AphrodyAvatar, AphrodyPet, PET, type PetAnimation } from "@aphrody/identity";
 import { PET_ATLAS_URL } from "@aphrody/identity/atlas";
-import {
-  configureBrowserCanvas,
-  createM3CanvasSurface,
-  selectCanvasBackend,
-} from "@aphrody/canvas/browser";
+import { configureBrowserCanvas, createM3CanvasSurface, selectCanvasBackend } from "@aphrody/canvas/browser";
 import { getIcon } from "@aphrody/assets/util";
 import { useM3Theme } from "@aphrody/m3-theme/react";
 import nieKit, { resolved as nieResolved } from "m3:optional/@aphrody/nie-ui";
 import { Card, Code, Page, Section } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
 
-const kits = [
-  { name: "@aphrody/nie-ui", resolved: nieResolved, namespace: nieKit },
-];
+const kits = [{ name: "@aphrody/nie-ui", resolved: nieResolved, namespace: nieKit }];
 export default function Brands({ adaptive }: PageProps) {
   const theme = useM3Theme();
   const [animation, setAnimation] = useState<PetAnimation>("idle");
@@ -38,15 +27,11 @@ export default function Brands({ adaptive }: PageProps) {
     const style = getComputedStyle(element);
     const ratio = devicePixelRatio || 1;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    context.fillStyle = style
-      .getPropertyValue("--md-sys-color-surface-container")
-      .trim();
+    context.fillStyle = style.getPropertyValue("--md-sys-color-surface-container").trim();
     context.fillRect(0, 0, 420, 180);
     context.fillStyle = style.getPropertyValue("--md-sys-color-primary").trim();
     context.fillRect(20, 20, 380, 140);
-    context.fillStyle = style
-      .getPropertyValue("--md-sys-color-on-primary")
-      .trim();
+    context.fillStyle = style.getPropertyValue("--md-sys-color-on-primary").trim();
     context.font = "500 24px " + style.fontFamily;
     context.fillText("Aphrody M3", 40, 82);
     context.font = "400 16px " + style.fontFamily;
@@ -64,15 +49,11 @@ export default function Brands({ adaptive }: PageProps) {
           <p className="text-body-medium text-on-surface-variant">
             Optional modules report their actual resolution in this workspace.
           </p>
-          {kits.map((kit) => (
+          {kits.map(kit => (
             <div key={kit.name} className="mt-3">
               <p className="text-label-large">{kit.name}</p>
-              <p className="text-body-medium">
-                {kit.resolved ? "Resolved" : "External host package"}
-              </p>
-              {kit.namespace ? (
-                <Code>{Object.keys(kit.namespace).join("\n")}</Code>
-              ) : null}
+              <p className="text-body-medium">{kit.resolved ? "Resolved" : "External host package"}</p>
+              {kit.namespace ? <Code>{Object.keys(kit.namespace).join("\n")}</Code> : null}
             </div>
           ))}
         </Card>
@@ -80,12 +61,8 @@ export default function Brands({ adaptive }: PageProps) {
     >
       <Section title="Aphrody identity">
         <Card className="flex flex-wrap items-center gap-5">
-          {[32, 64, 96].map((size) => (
-            <AphrodyAvatar
-              key={size}
-              size={size}
-              label={"Aphrody emblem at " + size + " pixels"}
-            />
+          {[32, 64, 96].map(size => (
+            <AphrodyAvatar key={size} size={size} label={"Aphrody emblem at " + size + " pixels"} />
           ))}
           <div>
             <h3 className="text-title-large">Aphrody</h3>
@@ -105,21 +82,14 @@ export default function Brands({ adaptive }: PageProps) {
             <select
               className="h-12 rounded-small border border-outline bg-surface px-3"
               value={animation}
-              onChange={(event) =>
-                setAnimation(event.target.value as PetAnimation)
-              }
+              onChange={event => setAnimation(event.target.value as PetAnimation)}
             >
-              {Object.keys(PET.tracks).map((name) => (
+              {Object.keys(PET.tracks).map(name => (
                 <option key={name}>{name}</option>
               ))}
             </select>
           </label>
-          <AphrodyPet
-            atlasUrl={PET_ATLAS_URL}
-            animation={animation}
-            height={160}
-            label="Aphrody animated pet"
-          />
+          <AphrodyPet atlasUrl={PET_ATLAS_URL} animation={animation} height={160} label="Aphrody animated pet" />
         </Card>
       </Section>
       <Section
@@ -154,19 +124,17 @@ export default function Brands({ adaptive }: PageProps) {
       </Section>
       <Section title="Shared file assets">
         <div className="grid grid-cols-3 gap-3 expanded:grid-cols-6">
-          {["Document", "Image", "Audio", "Video", "Code", "Archive"].map(
-            (kind) => (
-              <Card key={kind} className="flex flex-col items-center gap-2">
-                <img
-                  src={String(getIcon(kind, theme.resolvedTheme === "dark"))}
-                  width={48}
-                  height={48}
-                  alt={kind + " file icon"}
-                />
-                <span className="text-label-large">{kind}</span>
-              </Card>
-            ),
-          )}
+          {["Document", "Image", "Audio", "Video", "Code", "Archive"].map(kind => (
+            <Card key={kind} className="flex flex-col items-center gap-2">
+              <img
+                src={String(getIcon(kind, theme.resolvedTheme === "dark"))}
+                width={48}
+                height={48}
+                alt={kind + " file icon"}
+              />
+              <span className="text-label-large">{kind}</span>
+            </Card>
+          ))}
         </div>
       </Section>
     </Page>

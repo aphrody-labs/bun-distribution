@@ -16,17 +16,9 @@ export type {
 export { kindFromMime } from "./kind-from-mime";
 export type { ProjectStorageAdapter } from "./project-storage";
 export type { MediaSourceAdapter } from "./media-source";
-export type {
-  AssetGalleryAdapter,
-  MediaPickerSelection,
-} from "./asset-gallery";
+export type { AssetGalleryAdapter, MediaPickerSelection } from "./asset-gallery";
 export type { AuthUserAdapter } from "./auth-user";
-export type {
-  ExportSinkAdapter,
-  ExportSinkOptions,
-  ExportSinkProgressEvent,
-  ExportDestination,
-} from "./export-sink";
+export type { ExportSinkAdapter, ExportSinkOptions, ExportSinkProgressEvent, ExportDestination } from "./export-sink";
 export type { ToastAdapter, ToastOptions } from "./toast";
 export type { SoundsAdapter, SoundsSearchResult } from "./sounds";
 

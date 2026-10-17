@@ -10,11 +10,7 @@ interface VolumeSizeBarProps {
 /**
  * Visual size bar for volumes showing used/available space
  */
-export function VolumeSizeBar({
-  totalBytes,
-  availableBytes,
-  className,
-}: VolumeSizeBarProps) {
+export function VolumeSizeBar({ totalBytes, availableBytes, className }: VolumeSizeBarProps) {
   const usedBytes = totalBytes - availableBytes;
   const usedPercentage = (usedBytes / totalBytes) * 100;
 
@@ -22,10 +18,7 @@ export function VolumeSizeBar({
     <div className={clsx("w-full px-2 py-1", className)}>
       {/* Size bar */}
       <div className="relative h-1.5 bg-surface-container rounded-full overflow-hidden mb-1.5">
-        <div
-          className="h-full rounded-full transition-all bg-primary"
-          style={{ width: `${usedPercentage}%` }}
-        />
+        <div className="h-full rounded-full transition-all bg-primary" style={{ width: `${usedPercentage}%` }} />
       </div>
 
       {/* Size text */}

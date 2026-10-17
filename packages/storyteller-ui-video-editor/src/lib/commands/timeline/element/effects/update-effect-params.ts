@@ -15,7 +15,7 @@ function updateEffectParamsOnElement({
   params: Partial<ParamValues>;
 }): VisualElement {
   const currentEffects = element.effects ?? [];
-  const updated = currentEffects.map((effect) => {
+  const updated = currentEffects.map(effect => {
     if (effect.id !== effectId) {
       return effect;
     }
@@ -66,7 +66,7 @@ export class UpdateClipEffectParamsCommand extends Command {
       trackId: this.trackId,
       elementId: this.elementId,
       elementPredicate: isVisualElement,
-      update: (element) => {
+      update: element => {
         return updateEffectParamsOnElement({
           element: element as VisualElement,
           effectId: this.effectId,

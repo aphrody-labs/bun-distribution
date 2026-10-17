@@ -63,8 +63,8 @@ export const ItemElement = ({ item }: Props) => {
     // any skinned object (creatures, rigged uploads). Click-to-add rejecting
     // what a drop accepts read as broken.
     const target = selectedId
-      ? (store.characters.find((c) => c.id === selectedId) ??
-        store.outlinerItems.find((o) => o.id === selectedId && o.hasSkeleton))
+      ? (store.characters.find(c => c.id === selectedId) ??
+        store.outlinerItems.find(o => o.id === selectedId && o.hasSkeleton))
       : undefined;
     if (!target) {
       editor.adapter.showToast(
@@ -76,10 +76,7 @@ export const ItemElement = ({ item }: Props) => {
     // atTime 0 → resolveFreeStart snaps to the earliest free slot on the row.
     const laneId = addClipToCharacter(editor, target.id, item, 0);
     if (!laneId) {
-      editor.adapter.showToast(
-        ToastTypes.WARNING,
-        `No room left on ${target.name}'s timeline for "${item.name}".`,
-      );
+      editor.adapter.showToast(ToastTypes.WARNING, `No room left on ${target.name}'s timeline for "${item.name}".`);
       return;
     }
     // Successful add: honor the same "Reopen after adding" preference drags
@@ -96,8 +93,7 @@ export const ItemElement = ({ item }: Props) => {
       {item.media_type && (
         <Badge
           label={
-            item.type === AssetType.CHARACTER ||
-            item.type === AssetType.ANIMATION
+            item.type === AssetType.CHARACTER || item.type === AssetType.ANIMATION
               ? mapCharacterObjectType(item.media_type)
               : item.type === AssetType.EXPRESSION
                 ? patchExpressionObjectType(item.media_type)
@@ -109,9 +105,7 @@ export const ItemElement = ({ item }: Props) => {
 
       <div
         className="pointer-events-none relative aspect-[16/12] w-full select-none overflow-hidden rounded-none border border-white/15 bg-brand-secondary-600 object-cover object-center transition-all group-hover:border-brand-primary"
-        onPointerDown={(event) =>
-          dragAndDrop.onPointerDown(event, item, editor)
-        }
+        onPointerDown={event => dragAndDrop.onPointerDown(event, item, editor)}
         onClick={handleClick}
         style={{ cursor: "grab", pointerEvents: "auto" }}
       >
@@ -129,9 +123,7 @@ export const ItemElement = ({ item }: Props) => {
              so it reads as a deliberate placeholder, not a load failure. */
           <div className="flex h-full w-full items-center justify-center bg-brand-secondary-500/60">
             <DynamicIcon
-              icon={
-                item.type === AssetType.ANIMATION ? FootprintsIcon : BoxIcon
-              }
+              icon={item.type === AssetType.ANIMATION ? FootprintsIcon : BoxIcon}
               className="text-2xl text-white/30"
             />
           </div>

@@ -4,7 +4,9 @@ fn main() -> bun_windows_winclean::Result<()> {
     println!("winclean {} (Bun Windows SDK)", runtime.version()?);
     let observation = runtime
         .computer_observe(
-            &bun_windows_winclean::ComputerObserveArgs::new().window_handle(0).max_elements(40),
+            &bun_windows_winclean::ComputerObserveArgs::new()
+                .window_handle(0)
+                .max_elements(40),
         )?
         .ok()?;
     if let Some(png) = observation.images().first() {

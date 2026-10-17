@@ -3,9 +3,17 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mstask.dll!GetNetScheduleAccountInformation */
-  GetNetScheduleAccountInformation(pwszServerName: string | Win32Pointer, ccAccount: number, wszAccount: string | Win32Pointer): number;
+  GetNetScheduleAccountInformation(
+    pwszServerName: string | Win32Pointer,
+    ccAccount: number,
+    wszAccount: string | Win32Pointer,
+  ): number;
   /** mstask.dll!SetNetScheduleAccountInformation */
-  SetNetScheduleAccountInformation(pwszServerName: string | Win32Pointer, pwszAccount: string | Win32Pointer, pwszPassword: string | Win32Pointer): number;
+  SetNetScheduleAccountInformation(
+    pwszServerName: string | Win32Pointer,
+    pwszAccount: string | Win32Pointer,
+    pwszPassword: string | Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

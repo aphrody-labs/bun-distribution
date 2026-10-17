@@ -17,12 +17,6 @@ export function canMaintainPitch({ rate }: { rate: number }): boolean {
   return Number.isFinite(rate) && rate > 0;
 }
 
-export function shouldMaintainPitch({
-  rate,
-  maintainPitch,
-}: {
-  rate: number;
-  maintainPitch?: boolean;
-}): boolean {
+export function shouldMaintainPitch({ rate, maintainPitch }: { rate: number; maintainPitch?: boolean }): boolean {
   return maintainPitch === true && canMaintainPitch({ rate });
 }

@@ -3,7 +3,22 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** eappprxy.dll!EapHostPeerBeginSession */
-  EapHostPeerBeginSession(dwFlags: number, eapType: Win32StructInit, pAttributeArray: Win32Pointer, hTokenImpersonateUser: Win32Pointer, dwSizeofConnectionData: number, pConnectionData: Win32Pointer, dwSizeofUserData: number, pUserData: Win32Pointer, dwMaxSendPacketSize: number, pConnectionId: Win32Pointer, func: Win32Callback, pContextData: Win32Pointer, pSessionId: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerBeginSession(
+    dwFlags: number,
+    eapType: Win32StructInit,
+    pAttributeArray: Win32Pointer,
+    hTokenImpersonateUser: Win32Pointer,
+    dwSizeofConnectionData: number,
+    pConnectionData: Win32Pointer,
+    dwSizeofUserData: number,
+    pUserData: Win32Pointer,
+    dwMaxSendPacketSize: number,
+    pConnectionId: Win32Pointer,
+    func: Win32Callback,
+    pContextData: Win32Pointer,
+    pSessionId: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappprxy.dll!EapHostPeerClearConnection */
   EapHostPeerClearConnection(pConnectionId: Win32Pointer, ppEapError: Win32Pointer): number;
   /** eappprxy.dll!EapHostPeerEndSession */
@@ -13,29 +28,87 @@ interface Functions {
   /** eappprxy.dll!EapHostPeerFreeRuntimeMemory */
   EapHostPeerFreeRuntimeMemory(pData: Win32Pointer): void;
   /** eappprxy.dll!EapHostPeerGetAuthStatus */
-  EapHostPeerGetAuthStatus(sessionHandle: number, authParam: number, pcbAuthData: Win32Pointer, ppAuthData: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerGetAuthStatus(
+    sessionHandle: number,
+    authParam: number,
+    pcbAuthData: Win32Pointer,
+    ppAuthData: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappprxy.dll!EapHostPeerGetDataToUnplumbCredentials */
-  EapHostPeerGetDataToUnplumbCredentials(pConnectionIdThatLastSavedCreds: Win32Pointer, phCredentialImpersonationToken: Win32Pointer, sessionHandle: number, ppEapError: Win32Pointer, fSaveToCredMan: Win32Pointer): number;
+  EapHostPeerGetDataToUnplumbCredentials(
+    pConnectionIdThatLastSavedCreds: Win32Pointer,
+    phCredentialImpersonationToken: Win32Pointer,
+    sessionHandle: number,
+    ppEapError: Win32Pointer,
+    fSaveToCredMan: Win32Pointer,
+  ): number;
   /** eappprxy.dll!EapHostPeerGetEncryptedPassword */
-  EapHostPeerGetEncryptedPassword(dwSizeofPassword: number, szPassword: string | Win32Pointer, ppszEncPassword: Win32Pointer): number;
+  EapHostPeerGetEncryptedPassword(
+    dwSizeofPassword: number,
+    szPassword: string | Win32Pointer,
+    ppszEncPassword: Win32Pointer,
+  ): number;
   /** eappprxy.dll!EapHostPeerGetIdentity */
-  EapHostPeerGetIdentity(dwVersion: number, dwFlags: number, eapMethodType: Win32StructInit, dwSizeofConnectionData: number, pConnectionData: Win32Pointer, dwSizeofUserData: number, pUserData: Win32Pointer, hTokenImpersonateUser: Win32Pointer, pfInvokeUI: Win32Pointer, pdwSizeOfUserDataOut: Win32Pointer, ppUserDataOut: Win32Pointer, ppwszIdentity: Win32Pointer, ppEapError: Win32Pointer, ppvReserved: Win32Pointer): number;
+  EapHostPeerGetIdentity(
+    dwVersion: number,
+    dwFlags: number,
+    eapMethodType: Win32StructInit,
+    dwSizeofConnectionData: number,
+    pConnectionData: Win32Pointer,
+    dwSizeofUserData: number,
+    pUserData: Win32Pointer,
+    hTokenImpersonateUser: Win32Pointer,
+    pfInvokeUI: Win32Pointer,
+    pdwSizeOfUserDataOut: Win32Pointer,
+    ppUserDataOut: Win32Pointer,
+    ppwszIdentity: Win32Pointer,
+    ppEapError: Win32Pointer,
+    ppvReserved: Win32Pointer,
+  ): number;
   /** eappprxy.dll!EapHostPeerGetResponseAttributes */
   EapHostPeerGetResponseAttributes(sessionHandle: number, pAttribs: Win32Pointer, ppEapError: Win32Pointer): number;
   /** eappprxy.dll!EapHostPeerGetResult */
   EapHostPeerGetResult(sessionHandle: number, reason: number, ppResult: Win32Pointer, ppEapError: Win32Pointer): number;
   /** eappprxy.dll!EapHostPeerGetSendPacket */
-  EapHostPeerGetSendPacket(sessionHandle: number, pcbSendPacket: Win32Pointer, ppSendPacket: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerGetSendPacket(
+    sessionHandle: number,
+    pcbSendPacket: Win32Pointer,
+    ppSendPacket: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappprxy.dll!EapHostPeerGetUIContext */
-  EapHostPeerGetUIContext(sessionHandle: number, pdwSizeOfUIContextData: Win32Pointer, ppUIContextData: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerGetUIContext(
+    sessionHandle: number,
+    pdwSizeOfUIContextData: Win32Pointer,
+    ppUIContextData: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappprxy.dll!EapHostPeerInitialize */
   EapHostPeerInitialize(): number;
   /** eappprxy.dll!EapHostPeerProcessReceivedPacket */
-  EapHostPeerProcessReceivedPacket(sessionHandle: number, cbReceivePacket: number, pReceivePacket: Win32Pointer, pEapOutput: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerProcessReceivedPacket(
+    sessionHandle: number,
+    cbReceivePacket: number,
+    pReceivePacket: Win32Pointer,
+    pEapOutput: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappprxy.dll!EapHostPeerSetResponseAttributes */
-  EapHostPeerSetResponseAttributes(sessionHandle: number, pAttribs: Win32Pointer, pEapOutput: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerSetResponseAttributes(
+    sessionHandle: number,
+    pAttribs: Win32Pointer,
+    pEapOutput: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappprxy.dll!EapHostPeerSetUIContext */
-  EapHostPeerSetUIContext(sessionHandle: number, dwSizeOfUIContextData: number, pUIContextData: Win32Pointer, pEapOutput: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerSetUIContext(
+    sessionHandle: number,
+    dwSizeOfUIContextData: number,
+    pUIContextData: Win32Pointer,
+    pEapOutput: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappprxy.dll!EapHostPeerUninitialize */
   EapHostPeerUninitialize(): void;
 }

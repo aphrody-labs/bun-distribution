@@ -2,9 +2,9 @@
   "name": "@aphrody/bun-loaders",
   "version": "1.4.4",
   "private": true,
+  "description": "Bun.plugin loaders for C#, PowerShell, PE, APK, ROM, 3D, image and video files (inspection only).",
   "license": "MIT",
   "type": "module",
-  "description": "Bun.plugin loaders for C#, PowerShell, PE, APK, ROM, 3D, image and video files (inspection only).",
   "exports": {
     ".": "./src/index.ts",
     "./plugin": "./src/plugin.ts",

@@ -10,11 +10,7 @@
 // Core Protocol & Schema
 export * from "@ag-ui/core";
 export { EventEncoder, type EventEncoderParams } from "@ag-ui/encoder";
-export {
-  encode as encodeProto,
-  decode as decodeProto,
-  AGUI_MEDIA_TYPE,
-} from "@ag-ui/proto";
+export { encode as encodeProto, decode as decodeProto, AGUI_MEDIA_TYPE } from "@ag-ui/proto";
 
 // Client runtime & transformers
 export * from "@ag-ui/client";

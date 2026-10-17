@@ -5,15 +5,33 @@ interface Functions {
   /** winmm.dll!CloseDriver */
   CloseDriver(hDriver: Win32Pointer, lParam1: number | bigint, lParam2: number | bigint): number | bigint;
   /** winmm.dll!DefDriverProc */
-  DefDriverProc(dwDriverIdentifier: number | bigint, hdrvr: Win32Pointer, uMsg: number, lParam1: number | bigint, lParam2: number | bigint): number | bigint;
+  DefDriverProc(
+    dwDriverIdentifier: number | bigint,
+    hdrvr: Win32Pointer,
+    uMsg: number,
+    lParam1: number | bigint,
+    lParam2: number | bigint,
+  ): number | bigint;
   /** winmm.dll!DriverCallback */
-  DriverCallback(dwCallback: number | bigint, dwFlags: number, hDevice: Win32Pointer, dwMsg: number, dwUser: number | bigint, dwParam1: number | bigint, dwParam2: number | bigint): number;
+  DriverCallback(
+    dwCallback: number | bigint,
+    dwFlags: number,
+    hDevice: Win32Pointer,
+    dwMsg: number,
+    dwUser: number | bigint,
+    dwParam1: number | bigint,
+    dwParam2: number | bigint,
+  ): number;
   /** winmm.dll!DrvGetModuleHandle */
   DrvGetModuleHandle(hDriver: Win32Pointer): number | null;
   /** winmm.dll!GetDriverModuleHandle */
   GetDriverModuleHandle(hDriver: Win32Pointer): number | null;
   /** winmm.dll!OpenDriver */
-  OpenDriver(szDriverName: string | Win32Pointer, szSectionName: string | Win32Pointer, lParam2: number | bigint): number | null;
+  OpenDriver(
+    szDriverName: string | Win32Pointer,
+    szSectionName: string | Win32Pointer,
+    lParam2: number | bigint,
+  ): number | null;
   /** winmm.dll!PlaySoundA */
   PlaySoundA(pszSound: string | Win32Pointer, hmod: Win32Pointer, fdwSound: number): number;
   /** winmm.dll!PlaySoundW */
@@ -21,7 +39,12 @@ interface Functions {
   /** winmm.dll!PlaySoundW */
   PlaySound(pszSound: string | Win32Pointer, hmod: Win32Pointer, fdwSound: number): number;
   /** winmm.dll!SendDriverMessage */
-  SendDriverMessage(hDriver: Win32Pointer, message: number, lParam1: number | bigint, lParam2: number | bigint): number | bigint;
+  SendDriverMessage(
+    hDriver: Win32Pointer,
+    message: number,
+    lParam1: number | bigint,
+    lParam2: number | bigint,
+  ): number | bigint;
   /** winmm.dll!auxGetDevCapsA */
   auxGetDevCapsA(uDeviceID: number | bigint, pac: Win32Pointer, cbac: number): number;
   /** winmm.dll!auxGetDevCapsW */
@@ -97,11 +120,26 @@ interface Functions {
   /** winmm.dll!mciSendCommandW */
   mciSendCommand(mciId: number, uMsg: number, dwParam1: number | bigint, dwParam2: number | bigint): number;
   /** winmm.dll!mciSendStringA */
-  mciSendStringA(lpstrCommand: string | Win32Pointer, lpstrReturnString: string | Win32Pointer, uReturnLength: number, hwndCallback: Win32Pointer): number;
+  mciSendStringA(
+    lpstrCommand: string | Win32Pointer,
+    lpstrReturnString: string | Win32Pointer,
+    uReturnLength: number,
+    hwndCallback: Win32Pointer,
+  ): number;
   /** winmm.dll!mciSendStringW */
-  mciSendStringW(lpstrCommand: string | Win32Pointer, lpstrReturnString: string | Win32Pointer, uReturnLength: number, hwndCallback: Win32Pointer): number;
+  mciSendStringW(
+    lpstrCommand: string | Win32Pointer,
+    lpstrReturnString: string | Win32Pointer,
+    uReturnLength: number,
+    hwndCallback: Win32Pointer,
+  ): number;
   /** winmm.dll!mciSendStringW */
-  mciSendString(lpstrCommand: string | Win32Pointer, lpstrReturnString: string | Win32Pointer, uReturnLength: number, hwndCallback: Win32Pointer): number;
+  mciSendString(
+    lpstrCommand: string | Win32Pointer,
+    lpstrReturnString: string | Win32Pointer,
+    uReturnLength: number,
+    hwndCallback: Win32Pointer,
+  ): number;
   /** winmm.dll!mciSetDriverData */
   mciSetDriverData(wDeviceID: number, dwData: number | bigint): number;
   /** winmm.dll!mciSetYieldProc */
@@ -133,7 +171,13 @@ interface Functions {
   /** winmm.dll!midiInMessage */
   midiInMessage(hmi: Win32Pointer, uMsg: number, dw1: number | bigint, dw2: number | bigint): number;
   /** winmm.dll!midiInOpen */
-  midiInOpen(phmi: Win32Pointer, uDeviceID: number, dwCallback: number | bigint, dwInstance: number | bigint, fdwOpen: number): number;
+  midiInOpen(
+    phmi: Win32Pointer,
+    uDeviceID: number,
+    dwCallback: number | bigint,
+    dwInstance: number | bigint,
+    fdwOpen: number,
+  ): number;
   /** winmm.dll!midiInPrepareHeader */
   midiInPrepareHeader(hmi: Win32Pointer, pmh: Win32Pointer, cbmh: number): number;
   /** winmm.dll!midiInReset */
@@ -173,7 +217,13 @@ interface Functions {
   /** winmm.dll!midiOutMessage */
   midiOutMessage(hmo: Win32Pointer, uMsg: number, dw1: number | bigint, dw2: number | bigint): number;
   /** winmm.dll!midiOutOpen */
-  midiOutOpen(phmo: Win32Pointer, uDeviceID: number, dwCallback: number | bigint, dwInstance: number | bigint, fdwOpen: number): number;
+  midiOutOpen(
+    phmo: Win32Pointer,
+    uDeviceID: number,
+    dwCallback: number | bigint,
+    dwInstance: number | bigint,
+    fdwOpen: number,
+  ): number;
   /** winmm.dll!midiOutPrepareHeader */
   midiOutPrepareHeader(hmo: Win32Pointer, pmh: Win32Pointer, cbmh: number): number;
   /** winmm.dll!midiOutReset */
@@ -187,7 +237,14 @@ interface Functions {
   /** winmm.dll!midiStreamClose */
   midiStreamClose(hms: Win32Pointer): number;
   /** winmm.dll!midiStreamOpen */
-  midiStreamOpen(phms: Win32Pointer, puDeviceID: Win32Pointer, cMidi: number, dwCallback: number | bigint, dwInstance: number | bigint, fdwOpen: number): number;
+  midiStreamOpen(
+    phms: Win32Pointer,
+    puDeviceID: Win32Pointer,
+    cMidi: number,
+    dwCallback: number | bigint,
+    dwInstance: number | bigint,
+    fdwOpen: number,
+  ): number;
   /** winmm.dll!midiStreamOut */
   midiStreamOut(hms: Win32Pointer, pmh: Win32Pointer, cbmh: number): number;
   /** winmm.dll!midiStreamPause */
@@ -233,11 +290,22 @@ interface Functions {
   /** winmm.dll!mixerMessage */
   mixerMessage(hmx: Win32Pointer, uMsg: number, dwParam1: number | bigint, dwParam2: number | bigint): number;
   /** winmm.dll!mixerOpen */
-  mixerOpen(phmx: Win32Pointer, uMxId: number, dwCallback: number | bigint, dwInstance: number | bigint, fdwOpen: number): number;
+  mixerOpen(
+    phmx: Win32Pointer,
+    uMxId: number,
+    dwCallback: number | bigint,
+    dwInstance: number | bigint,
+    fdwOpen: number,
+  ): number;
   /** winmm.dll!mixerSetControlDetails */
   mixerSetControlDetails(hmxobj: Win32Pointer, pmxcd: Win32Pointer, fdwDetails: number): number;
   /** winmm.dll!mmDrvInstall */
-  mmDrvInstall(hDriver: Win32Pointer, wszDrvEntry: string | Win32Pointer, drvMessage: Win32Callback, wFlags: number): number;
+  mmDrvInstall(
+    hDriver: Win32Pointer,
+    wszDrvEntry: string | Win32Pointer,
+    drvMessage: Win32Callback,
+    wFlags: number,
+  ): number;
   /** winmm.dll!mmGetCurrentTask */
   mmGetCurrentTask(): number;
   /** winmm.dll!mmTaskBlock */
@@ -277,15 +345,35 @@ interface Functions {
   /** winmm.dll!mmioRead */
   mmioRead(hmmio: Win32Pointer, pch: Win32Pointer, cch: number): number;
   /** winmm.dll!mmioRenameA */
-  mmioRenameA(pszFileName: string | Win32Pointer, pszNewFileName: string | Win32Pointer, pmmioinfo: Win32Pointer, fdwRename: number): number;
+  mmioRenameA(
+    pszFileName: string | Win32Pointer,
+    pszNewFileName: string | Win32Pointer,
+    pmmioinfo: Win32Pointer,
+    fdwRename: number,
+  ): number;
   /** winmm.dll!mmioRenameW */
-  mmioRenameW(pszFileName: string | Win32Pointer, pszNewFileName: string | Win32Pointer, pmmioinfo: Win32Pointer, fdwRename: number): number;
+  mmioRenameW(
+    pszFileName: string | Win32Pointer,
+    pszNewFileName: string | Win32Pointer,
+    pmmioinfo: Win32Pointer,
+    fdwRename: number,
+  ): number;
   /** winmm.dll!mmioRenameW */
-  mmioRename(pszFileName: string | Win32Pointer, pszNewFileName: string | Win32Pointer, pmmioinfo: Win32Pointer, fdwRename: number): number;
+  mmioRename(
+    pszFileName: string | Win32Pointer,
+    pszNewFileName: string | Win32Pointer,
+    pmmioinfo: Win32Pointer,
+    fdwRename: number,
+  ): number;
   /** winmm.dll!mmioSeek */
   mmioSeek(hmmio: Win32Pointer, lOffset: number, iOrigin: number): number;
   /** winmm.dll!mmioSendMessage */
-  mmioSendMessage(hmmio: Win32Pointer, uMsg: number, lParam1: number | bigint, lParam2: number | bigint): number | bigint;
+  mmioSendMessage(
+    hmmio: Win32Pointer,
+    uMsg: number,
+    lParam1: number | bigint,
+    lParam2: number | bigint,
+  ): number | bigint;
   /** winmm.dll!mmioSetBuffer */
   mmioSetBuffer(hmmio: Win32Pointer, pchBuffer: string | Win32Pointer, cchBuffer: number, fuBuffer: number): number;
   /** winmm.dll!mmioSetInfo */
@@ -317,7 +405,13 @@ interface Functions {
   /** winmm.dll!timeKillEvent */
   timeKillEvent(uTimerID: number): number;
   /** winmm.dll!timeSetEvent */
-  timeSetEvent(uDelay: number, uResolution: number, fptc: Win32Callback, dwUser: number | bigint, fuEvent: number): number;
+  timeSetEvent(
+    uDelay: number,
+    uResolution: number,
+    fptc: Win32Callback,
+    dwUser: number | bigint,
+    fuEvent: number,
+  ): number;
   /** winmm.dll!waveInAddBuffer */
   waveInAddBuffer(hwi: Win32Pointer, pwh: Win32Pointer, cbwh: number): number;
   /** winmm.dll!waveInClose */
@@ -343,7 +437,14 @@ interface Functions {
   /** winmm.dll!waveInMessage */
   waveInMessage(hwi: Win32Pointer, uMsg: number, dw1: number | bigint, dw2: number | bigint): number;
   /** winmm.dll!waveInOpen */
-  waveInOpen(phwi: Win32Pointer, uDeviceID: number, pwfx: Win32Pointer, dwCallback: number | bigint, dwInstance: number | bigint, fdwOpen: number): number;
+  waveInOpen(
+    phwi: Win32Pointer,
+    uDeviceID: number,
+    pwfx: Win32Pointer,
+    dwCallback: number | bigint,
+    dwInstance: number | bigint,
+    fdwOpen: number,
+  ): number;
   /** winmm.dll!waveInPrepareHeader */
   waveInPrepareHeader(hwi: Win32Pointer, pwh: Win32Pointer, cbwh: number): number;
   /** winmm.dll!waveInReset */
@@ -385,7 +486,14 @@ interface Functions {
   /** winmm.dll!waveOutMessage */
   waveOutMessage(hwo: Win32Pointer, uMsg: number, dw1: number | bigint, dw2: number | bigint): number;
   /** winmm.dll!waveOutOpen */
-  waveOutOpen(phwo: Win32Pointer, uDeviceID: number, pwfx: Win32Pointer, dwCallback: number | bigint, dwInstance: number | bigint, fdwOpen: number): number;
+  waveOutOpen(
+    phwo: Win32Pointer,
+    uDeviceID: number,
+    pwfx: Win32Pointer,
+    dwCallback: number | bigint,
+    dwInstance: number | bigint,
+    fdwOpen: number,
+  ): number;
   /** winmm.dll!waveOutPause */
   waveOutPause(hwo: Win32Pointer): number;
   /** winmm.dll!waveOutPrepareHeader */

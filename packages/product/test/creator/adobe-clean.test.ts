@@ -3,22 +3,16 @@ import { mkdir, mkdtemp, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import {
-  cache,
-  free,
-  pick,
-  type Io,
-  type ProcInfo,
-} from "../../src/creator/commands/adobe-clean.ts";
+import { cache, free, pick, type Io, type ProcInfo } from "../../src/creator/commands/adobe-clean.ts";
 
 function fakeIo(procs: ProcInfo[], env: Record<string, string>) {
   const logs: string[] = [];
   const killed: string[][] = [];
   const io: Io = {
     list: async () => procs,
-    kill: async (names) => void killed.push(names),
+    kill: async names => void killed.push(names),
     env,
-    log: (line) => void logs.push(line),
+    log: line => void logs.push(line),
   };
   return { io, logs, killed };
 }
@@ -28,7 +22,7 @@ test("pick matches names case-insensitively without .exe", () => {
     { name: "Photoshop.exe", pid: 1, bytes: 10 },
     { name: "notepad", pid: 2, bytes: 5 },
   ];
-  expect(pick(procs, ["Photoshop"]).map((p) => p.pid)).toEqual([1]);
+  expect(pick(procs, ["Photoshop"]).map(p => p.pid)).toEqual([1]);
 });
 
 test("free never closes helpers while a creative app runs", async () => {

@@ -7,10 +7,7 @@ import { cn } from "../lib/utils";
 
 const Tabs = TabsPrimitive.Root;
 
-function TabsList({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.List>) {
+function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
       className={cn(
@@ -22,10 +19,7 @@ function TabsList({
   );
 }
 
-function TabsTab({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.Tab>) {
+function TabsTab({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Tab>) {
   return (
     <TabsPrimitive.Tab
       className={cn(
@@ -40,10 +34,7 @@ function TabsTab({
   );
 }
 
-function TabsPanel({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.Panel>) {
+function TabsPanel({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Panel>) {
   return (
     <TabsPrimitive.Panel
       className={cn(

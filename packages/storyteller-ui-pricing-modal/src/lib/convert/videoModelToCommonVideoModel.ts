@@ -5,13 +5,9 @@ import { CommonVideoModel } from "@storyteller/api-enums";
 // case is a direct pass-through. The switch below only remains to translate
 // LEGACY tauri ids (old bookmarks/state); do not add new cases.
 
-const COMMON_VIDEO_MODEL_VALUES: Set<string> = new Set(
-  Object.values(CommonVideoModel),
-);
+const COMMON_VIDEO_MODEL_VALUES: Set<string> = new Set(Object.values(CommonVideoModel));
 
-export function videoModelToCommonVideoModel(
-  tauriId: string,
-): CommonVideoModel | null {
+export function videoModelToCommonVideoModel(tauriId: string): CommonVideoModel | null {
   if (COMMON_VIDEO_MODEL_VALUES.has(tauriId)) {
     return tauriId as CommonVideoModel;
   }

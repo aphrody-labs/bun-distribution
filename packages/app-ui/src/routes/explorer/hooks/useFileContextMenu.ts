@@ -20,10 +20,7 @@ interface UseFileContextMenuProps {
 }
 
 // Helper to run a mutation on each target file
-async function forEachTarget(
-  targets: File[],
-  fn: (f: File) => Promise<unknown>,
-) {
+async function forEachTarget(targets: File[], fn: (f: File) => Promise<unknown>) {
   for (const f of targets) {
     try {
       // oxlint-disable-next-line no-await-in-loop -- preserve ordered mutations per target file.
@@ -34,11 +31,7 @@ async function forEachTarget(
   }
 }
 
-export function useFileContextMenu({
-  file,
-  selectedFiles,
-  selected,
-}: UseFileContextMenuProps) {
+export function useFileContextMenu({ file, selectedFiles, selected }: UseFileContextMenuProps) {
   const { navigateToPath, currentPath, mode, openQuickPreview } = useExplorer();
   const platform = usePlatform();
   const refetchTagQueries = useRefetchTagQueries();
@@ -58,35 +51,25 @@ export function useFileContextMenu({
 
   // Get physical paths for file opening
   const getPhysicalPaths = () => {
-    const targets =
-      selected && selectedFiles.length > 0 ? selectedFiles : [file];
+    const targets = selected && selectedFiles.length > 0 ? selectedFiles : [file];
     return targets
-      .filter(
-        (f): f is File =>
-          f != null && f.sd_path != null && "Physical" in f.sd_path,
-      )
-      .map((f) => (f.sd_path as any).Physical.path);
+      .filter((f): f is File => f != null && f.sd_path != null && "Physical" in f.sd_path)
+      .map(f => (f.sd_path as any).Physical.path);
   };
 
   const physicalPaths = getPhysicalPaths();
-  const { apps, openWithDefault, openWithApp, openMultipleWithApp } =
-    useOpenWith(physicalPaths);
+  const { apps, openWithDefault, openWithApp, openMultipleWithApp } = useOpenWith(physicalPaths);
 
   // Get the files to operate on (multi-select or just this file)
   // Filters out virtual files (they're display-only, not real filesystem entries)
   const getTargetFiles = () => {
-    const targets =
-      selected && selectedFiles.length > 0 ? selectedFiles : [file];
+    const targets = selected && selectedFiles.length > 0 ? selectedFiles : [file];
     // Filter out virtual files - they cannot be copied/moved/deleted
     return targets.filter((f): f is File => f != null && !isVirtualFile(f));
   };
 
   // Check if any selected files are virtual (to disable certain operations)
-  const hasVirtualFiles = selected
-    ? selectedFiles.some((f) => isVirtualFile(f))
-    : file
-      ? isVirtualFile(file)
-      : false;
+  const hasVirtualFiles = selected ? selectedFiles.some(f => isVirtualFile(f)) : file ? isVirtualFile(file) : false;
 
   const askAphrody = useAskAphrody();
 
@@ -115,19 +98,14 @@ export function useFileContextMenu({
           }
         },
         keybind: "⌘O",
-        condition: () =>
-          !!file && (file.kind === "Directory" || file.kind === "File"),
+        condition: () => !!file && (file.kind === "Directory" || file.kind === "File"),
       },
       {
         type: "submenu",
         icon: "open_in_new",
         label: "Ouvrir avec",
-        condition: () =>
-          !!file &&
-          file.kind === "File" &&
-          "Physical" in file.sd_path &&
-          apps.length > 0,
-        submenu: apps.map((app) => ({
+        condition: () => !!file && file.kind === "File" && "Physical" in file.sd_path && apps.length > 0,
+        submenu: apps.map(app => ({
           label: app.name,
           onClick: async () => {
             if (!file) return;
@@ -163,15 +141,11 @@ export function useFileContextMenu({
           }
         },
         keybind: "⌘⇧R",
-        condition: () =>
-          !!file && "Physical" in file.sd_path && !!platform.revealFile,
+        condition: () => !!file && "Physical" in file.sd_path && !!platform.revealFile,
       },
       {
         icon: "share",
-        label:
-          selected && selectedFiles.length > 1
-            ? `Partager ${selectedFiles.length} éléments`
-            : "Partager",
+        label: selected && selectedFiles.length > 1 ? `Partager ${selectedFiles.length} éléments` : "Partager",
         onClick: async () => {
           const paths = physicalPaths;
           if (paths.length === 0) {
@@ -206,8 +180,7 @@ export function useFileContextMenu({
           startRename(file.id);
         },
         keybindId: "explorer.renameFile",
-        condition: () =>
-          !!file && selected && selectedFiles.length === 1 && !hasVirtualFiles,
+        condition: () => !!file && selected && selectedFiles.length === 1 && !hasVirtualFiles,
       },
       {
         icon: "create_new_folder",
@@ -240,7 +213,7 @@ export function useFileContextMenu({
             const result = await createFolder.mutateAsync({
               parent: currentPath,
               name: "Nouveau dossier",
-              items: targets.map((f) => f.sd_path),
+              items: targets.map(f => f.sd_path),
             });
             console.log("Created folder with items:", result);
           } catch (err) {
@@ -248,23 +221,19 @@ export function useFileContextMenu({
             toast.error(`Erreur de création du dossier : ${err}`);
           }
         },
-        condition: () =>
-          !!currentPath && selectedFiles.length > 0 && !hasVirtualFiles,
+        condition: () => !!currentPath && selectedFiles.length > 0 && !hasVirtualFiles,
       },
       { type: "separator" },
       {
         icon: "content_copy",
-        label:
-          selected && selectedFiles.length > 1
-            ? `Copier ${selectedFiles.length} éléments`
-            : "Copier",
+        label: selected && selectedFiles.length > 1 ? `Copier ${selectedFiles.length} éléments` : "Copier",
         onClick: () => {
           const targets = getTargetFiles();
           if (targets.length === 0) {
             console.warn("Cannot copy virtual files");
             return;
           }
-          const sdPaths = targets.map((f) => f.sd_path);
+          const sdPaths = targets.map(f => f.sd_path);
           clipboard.copyFiles(sdPaths, currentPath);
         },
         keybindId: "explorer.copy",
@@ -272,17 +241,14 @@ export function useFileContextMenu({
       },
       {
         icon: "content_cut",
-        label:
-          selected && selectedFiles.length > 1
-            ? `Couper ${selectedFiles.length} éléments`
-            : "Couper",
+        label: selected && selectedFiles.length > 1 ? `Couper ${selectedFiles.length} éléments` : "Couper",
         onClick: () => {
           const targets = getTargetFiles();
           if (targets.length === 0) {
             console.warn("Cannot cut virtual files");
             return;
           }
-          const sdPaths = targets.map((f) => f.sd_path);
+          const sdPaths = targets.map(f => f.sd_path);
           clipboard.cutFiles(sdPaths, currentPath);
         },
         keybindId: "explorer.cut",
@@ -306,10 +272,7 @@ export function useFileContextMenu({
           console.log("Destination:", currentPath);
           console.log("Source files (SdPath objects):");
           clipboard.files.forEach((clipboardFile, index) => {
-            console.log(
-              `  [${index}]:`,
-              JSON.stringify(clipboardFile, null, 2),
-            );
+            console.log(`  [${index}]:`, JSON.stringify(clipboardFile, null, 2));
           });
           console.groupEnd();
 
@@ -320,9 +283,7 @@ export function useFileContextMenu({
             onComplete: () => {
               // Clear clipboard after cut operation completes
               if (clipboard.operation === "cut") {
-                console.log(
-                  "[Clipboard] Operation completed, clearing clipboard",
-                );
+                console.log("[Clipboard] Operation completed, clearing clipboard");
                 clipboard.clearClipboard();
               } else {
                 console.log("[Clipboard] Copy operation completed");
@@ -345,7 +306,7 @@ export function useFileContextMenu({
             label: "Générer le Blurhash",
             onClick: async () => {
               const targets = getTargetFiles();
-              await forEachTarget(targets, (f) =>
+              await forEachTarget(targets, f =>
                 regenerateThumbnail.mutateAsync({
                   entry_uuid: f.id,
                   variants: null,
@@ -360,7 +321,7 @@ export function useFileContextMenu({
             label: "Régénérer la miniature",
             onClick: async () => {
               const targets = getTargetFiles();
-              await forEachTarget(targets, (f) =>
+              await forEachTarget(targets, f =>
                 regenerateThumbnail.mutateAsync({
                   entry_uuid: f.id,
                   variants: null,
@@ -382,7 +343,7 @@ export function useFileContextMenu({
             label: "Générer la bande de vignettes",
             onClick: async () => {
               const targets = getTargetFiles();
-              await forEachTarget(targets, (f) =>
+              await forEachTarget(targets, f =>
                 generateThumbstrip.mutateAsync({
                   entry_uuid: f.id,
                   variants: null,
@@ -390,15 +351,14 @@ export function useFileContextMenu({
                 }),
               );
             },
-            condition: () =>
-              !!file && !file.sidecars?.some((s) => s.kind === "thumbstrip"),
+            condition: () => !!file && !file.sidecars?.some(s => s.kind === "thumbstrip"),
           },
           {
             icon: "auto_awesome",
             label: "Générer le Blurhash",
             onClick: async () => {
               const targets = getTargetFiles();
-              await forEachTarget(targets, (f) =>
+              await forEachTarget(targets, f =>
                 regenerateThumbnail.mutateAsync({
                   entry_uuid: f.id,
                   variants: null,
@@ -413,7 +373,7 @@ export function useFileContextMenu({
             label: "Régénérer la miniature",
             onClick: async () => {
               const targets = getTargetFiles();
-              await forEachTarget(targets, (f) =>
+              await forEachTarget(targets, f =>
                 regenerateThumbnail.mutateAsync({
                   entry_uuid: f.id,
                   variants: null,
@@ -427,7 +387,7 @@ export function useFileContextMenu({
             label: "Générer un proxy",
             onClick: async () => {
               const targets = getTargetFiles();
-              await forEachTarget(targets, (f) =>
+              await forEachTarget(targets, f =>
                 generateProxy.mutateAsync({
                   entry_uuid: f.id,
                   resolution: null,
@@ -444,17 +404,14 @@ export function useFileContextMenu({
         type: "submenu",
         icon: "description",
         label: "Traitement documentaire",
-        condition: () =>
-          !!file &&
-          file.kind === "File" &&
-          ["pdf", "doc", "docx"].includes(file.extension || ""),
+        condition: () => !!file && file.kind === "File" && ["pdf", "doc", "docx"].includes(file.extension || ""),
         submenu: [
           {
             icon: "crop",
             label: "Régénérer la miniature",
             onClick: async () => {
               const targets = getTargetFiles();
-              await forEachTarget(targets, (f) =>
+              await forEachTarget(targets, f =>
                 regenerateThumbnail.mutateAsync({
                   entry_uuid: f.id,
                   variants: null,
@@ -476,7 +433,7 @@ export function useFileContextMenu({
             icon: "crop",
             label: "Régénérer toutes les miniatures",
             onClick: async () => {
-              await forEachTarget(selectedFiles, (f) =>
+              await forEachTarget(selectedFiles, f =>
                 regenerateThumbnail.mutateAsync({
                   entry_uuid: f.id,
                   variants: null,
@@ -489,7 +446,7 @@ export function useFileContextMenu({
             icon: "auto_awesome",
             label: "Générer les Blurhashes",
             onClick: async () => {
-              await forEachTarget(selectedFiles, (f) =>
+              await forEachTarget(selectedFiles, f =>
                 regenerateThumbnail.mutateAsync({
                   entry_uuid: f.id,
                   variants: null,
@@ -513,7 +470,7 @@ export function useFileContextMenu({
           if (targets.length === 0) return;
           try {
             await unapplyTags.mutateAsync({
-              entry_ids: targets.map((f) => f.id),
+              entry_ids: targets.map(f => f.id),
               tag_ids: [mode.tagId],
             });
           } catch (err) {
@@ -526,10 +483,7 @@ export function useFileContextMenu({
       { type: "separator" },
       {
         icon: "delete",
-        label:
-          selected && selectedFiles.length > 1
-            ? `Supprimer ${selectedFiles.length} éléments`
-            : "Supprimer",
+        label: selected && selectedFiles.length > 1 ? `Supprimer ${selectedFiles.length} éléments` : "Supprimer",
         onClick: async () => {
           const targets = getTargetFiles();
           await deleteFiles(targets, false);

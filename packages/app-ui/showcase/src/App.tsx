@@ -1,8 +1,4 @@
-import {
-  M3ThemeProvider,
-  useM3Theme,
-  type ThemeMode,
-} from "@aphrody/m3-theme/react";
+import { M3ThemeProvider, useM3Theme, type ThemeMode } from "@aphrody/m3-theme/react";
 import { useEffect } from "react";
 import { Shell } from "./shell/Shell.tsx";
 
@@ -32,11 +28,7 @@ function ThemePersistence() {
 
 export function App() {
   return (
-    <M3ThemeProvider
-      defaultSeedColor="#8c6c88"
-      defaultThemeMode={savedThemeMode()}
-      defaultVariant="tonalSpot"
-    >
+    <M3ThemeProvider defaultSeedColor="#8c6c88" defaultThemeMode={savedThemeMode()} defaultVariant="tonalSpot">
       <ThemePersistence />
       <Shell />
     </M3ThemeProvider>

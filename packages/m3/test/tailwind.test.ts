@@ -4,28 +4,20 @@ import { join, relative } from "node:path";
 import { tailwindM3Plugin } from "../src/tailwind.ts";
 import { FIXTURE, tempDir } from "./helpers.ts";
 
-async function buildCss(
-  source: string | null,
-  usePlugin: boolean,
-): Promise<string> {
+async function buildCss(source: string | null, usePlugin: boolean): Promise<string> {
   await using tmp = await tempDir();
   const entry = join(tmp.dir, "entry.ts");
-  const cssPath =
-    source === null ? join(FIXTURE, "app.css") : join(tmp.dir, "app.css");
+  const cssPath = source === null ? join(FIXTURE, "app.css") : join(tmp.dir, "app.css");
   if (source !== null) await Bun.write(cssPath, source);
   const specifier = relative(tmp.dir, cssPath).replaceAll("\\", "/");
-  await Bun.write(
-    entry,
-    `import ${JSON.stringify(specifier.startsWith(".") ? specifier : `./${specifier}`)};`,
-  );
+  await Bun.write(entry, `import ${JSON.stringify(specifier.startsWith(".") ? specifier : `./${specifier}`)};`);
   const result = await Bun.build({
     entrypoints: [entry],
     outdir: join(tmp.dir, "out"),
     plugins: usePlugin ? [tailwindM3Plugin()] : [],
   });
-  if (!result.success)
-    throw new AggregateError(result.logs, "CSS build failed");
-  const css = result.outputs.find((output) => output.path.endsWith(".css"));
+  if (!result.success) throw new AggregateError(result.logs, "CSS build failed");
+  const css = result.outputs.find(output => output.path.endsWith(".css"));
   if (!css) throw new Error("CSS build produced no CSS output");
   return (await css.text()).replace(/^\/\* .*app\.css \*\/\r?\n/, "");
 }

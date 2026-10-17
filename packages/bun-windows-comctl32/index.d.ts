@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** comctl32.dll!CreateMappedBitmap */
-  CreateMappedBitmap(hInstance: Win32Pointer, idBitmap: number | bigint, wFlags: number, lpColorMap: Win32Pointer, iNumMaps: number): number | null;
+  CreateMappedBitmap(
+    hInstance: Win32Pointer,
+    idBitmap: number | bigint,
+    wFlags: number,
+    lpColorMap: Win32Pointer,
+    iNumMaps: number,
+  ): number | null;
   /** comctl32.dll!CreatePropertySheetPageA */
   CreatePropertySheetPageA(constPropSheetPagePointer: Win32Pointer): number | null;
   /** comctl32.dll!CreatePropertySheetPageW */
@@ -11,15 +17,57 @@ interface Functions {
   /** comctl32.dll!CreatePropertySheetPageW */
   CreatePropertySheetPage(constPropSheetPagePointer: Win32Pointer): number | null;
   /** comctl32.dll!CreateStatusWindowA */
-  CreateStatusWindowA(style: number, lpszText: string | Win32Pointer, hwndParent: Win32Pointer, wID: number): number | null;
+  CreateStatusWindowA(
+    style: number,
+    lpszText: string | Win32Pointer,
+    hwndParent: Win32Pointer,
+    wID: number,
+  ): number | null;
   /** comctl32.dll!CreateStatusWindowW */
-  CreateStatusWindowW(style: number, lpszText: string | Win32Pointer, hwndParent: Win32Pointer, wID: number): number | null;
+  CreateStatusWindowW(
+    style: number,
+    lpszText: string | Win32Pointer,
+    hwndParent: Win32Pointer,
+    wID: number,
+  ): number | null;
   /** comctl32.dll!CreateStatusWindowW */
-  CreateStatusWindow(style: number, lpszText: string | Win32Pointer, hwndParent: Win32Pointer, wID: number): number | null;
+  CreateStatusWindow(
+    style: number,
+    lpszText: string | Win32Pointer,
+    hwndParent: Win32Pointer,
+    wID: number,
+  ): number | null;
   /** comctl32.dll!CreateToolbarEx */
-  CreateToolbarEx(hwnd: Win32Pointer, ws: number, wID: number, nBitmaps: number, hBMInst: Win32Pointer, wBMID: number | bigint, lpButtons: Win32Pointer, iNumButtons: number, dxButton: number, dyButton: number, dxBitmap: number, dyBitmap: number, uStructSize: number): number | null;
+  CreateToolbarEx(
+    hwnd: Win32Pointer,
+    ws: number,
+    wID: number,
+    nBitmaps: number,
+    hBMInst: Win32Pointer,
+    wBMID: number | bigint,
+    lpButtons: Win32Pointer,
+    iNumButtons: number,
+    dxButton: number,
+    dyButton: number,
+    dxBitmap: number,
+    dyBitmap: number,
+    uStructSize: number,
+  ): number | null;
   /** comctl32.dll!CreateUpDownControl */
-  CreateUpDownControl(dwStyle: number, x: number, y: number, cx: number, cy: number, hParent: Win32Pointer, nID: number, hInst: Win32Pointer, hBuddy: Win32Pointer, nUpper: number, nLower: number, nPos: number): number | null;
+  CreateUpDownControl(
+    dwStyle: number,
+    x: number,
+    y: number,
+    cx: number,
+    cy: number,
+    hParent: Win32Pointer,
+    nID: number,
+    hInst: Win32Pointer,
+    hBuddy: Win32Pointer,
+    nUpper: number,
+    nLower: number,
+    nPos: number,
+  ): number | null;
   /** comctl32.dll!DPA_Clone */
   DPA_Clone(hdpa: number | bigint, hdpaNew: number | bigint): number | bigint;
   /** comctl32.dll!DPA_Create */
@@ -49,11 +97,25 @@ interface Functions {
   /** comctl32.dll!DPA_LoadStream */
   DPA_LoadStream(phdpa: Win32Pointer, pfn: Win32Callback, pstream: Win32Pointer, pvInstData: Win32Pointer): number;
   /** comctl32.dll!DPA_Merge */
-  DPA_Merge(hdpaDest: number | bigint, hdpaSrc: number | bigint, dwFlags: number, pfnCompare: Win32Callback, pfnMerge: Win32Callback, lParam: number | bigint): number;
+  DPA_Merge(
+    hdpaDest: number | bigint,
+    hdpaSrc: number | bigint,
+    dwFlags: number,
+    pfnCompare: Win32Callback,
+    pfnMerge: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** comctl32.dll!DPA_SaveStream */
   DPA_SaveStream(hdpa: number | bigint, pfn: Win32Callback, pstream: Win32Pointer, pvInstData: Win32Pointer): number;
   /** comctl32.dll!DPA_Search */
-  DPA_Search(hdpa: number | bigint, pFind: Win32Pointer, iStart: number, pfnCompare: Win32Callback, lParam: number | bigint, options: number): number;
+  DPA_Search(
+    hdpa: number | bigint,
+    pFind: Win32Pointer,
+    iStart: number,
+    pfnCompare: Win32Callback,
+    lParam: number | bigint,
+    options: number,
+  ): number;
   /** comctl32.dll!DPA_SetPtr */
   DPA_SetPtr(hdpa: number | bigint, i: number, p: Win32Pointer): number;
   /** comctl32.dll!DPA_Sort */
@@ -91,7 +153,17 @@ interface Functions {
   /** comctl32.dll!DrawInsert */
   DrawInsert(handParent: Win32Pointer, hLB: Win32Pointer, nItem: number): void;
   /** comctl32.dll!DrawShadowText */
-  DrawShadowText(hdc: Win32Pointer, pszText: string | Win32Pointer, cch: number, prc: Win32Pointer, dwFlags: number, crText: number, crShadow: number, ixOffset: number, iyOffset: number): number;
+  DrawShadowText(
+    hdc: Win32Pointer,
+    pszText: string | Win32Pointer,
+    cch: number,
+    prc: Win32Pointer,
+    dwFlags: number,
+    crText: number,
+    crShadow: number,
+    ixOffset: number,
+    iyOffset: number,
+  ): number;
   /** comctl32.dll!DrawStatusTextA */
   DrawStatusTextA(hDC: Win32Pointer, lprc: Win32Pointer, pszText: string | Win32Pointer, uFlags: number): void;
   /** comctl32.dll!DrawStatusTextW */
@@ -123,7 +195,12 @@ interface Functions {
   /** comctl32.dll!GetMUILanguage */
   GetMUILanguage(): number;
   /** comctl32.dll!GetWindowSubclass */
-  GetWindowSubclass(hWnd: Win32Pointer, pfnSubclass: Win32Callback, uIdSubclass: number | bigint, pdwRefData: Win32Pointer): number;
+  GetWindowSubclass(
+    hWnd: Win32Pointer,
+    pfnSubclass: Win32Callback,
+    uIdSubclass: number | bigint,
+    pdwRefData: Win32Pointer,
+  ): number;
   /** comctl32.dll!HIMAGELIST_QueryInterface */
   HIMAGELIST_QueryInterface(himl: number | bigint, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** comctl32.dll!ImageList_Add */
@@ -133,9 +210,20 @@ interface Functions {
   /** comctl32.dll!ImageList_BeginDrag */
   ImageList_BeginDrag(himlTrack: number | bigint, iTrack: number, dxHotspot: number, dyHotspot: number): number;
   /** comctl32.dll!ImageList_CoCreateInstance */
-  ImageList_CoCreateInstance(rclsid: Win32Pointer, punkOuter: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  ImageList_CoCreateInstance(
+    rclsid: Win32Pointer,
+    punkOuter: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** comctl32.dll!ImageList_Copy */
-  ImageList_Copy(himlDst: number | bigint, iDst: number, himlSrc: number | bigint, iSrc: number, uFlags: number): number;
+  ImageList_Copy(
+    himlDst: number | bigint,
+    iDst: number,
+    himlSrc: number | bigint,
+    iSrc: number,
+    uFlags: number,
+  ): number;
   /** comctl32.dll!ImageList_Create */
   ImageList_Create(cx: number, cy: number, flags: number, cInitial: number, cGrow: number): number | bigint;
   /** comctl32.dll!ImageList_Destroy */
@@ -151,7 +239,18 @@ interface Functions {
   /** comctl32.dll!ImageList_Draw */
   ImageList_Draw(himl: number | bigint, i: number, hdcDst: Win32Pointer, x: number, y: number, fStyle: number): number;
   /** comctl32.dll!ImageList_DrawEx */
-  ImageList_DrawEx(himl: number | bigint, i: number, hdcDst: Win32Pointer, x: number, y: number, dx: number, dy: number, rgbBk: number, rgbFg: number, fStyle: number): number;
+  ImageList_DrawEx(
+    himl: number | bigint,
+    i: number,
+    hdcDst: Win32Pointer,
+    x: number,
+    y: number,
+    dx: number,
+    dy: number,
+    rgbBk: number,
+    rgbFg: number,
+    fStyle: number,
+  ): number;
   /** comctl32.dll!ImageList_DrawIndirect */
   ImageList_DrawIndirect(pimldp: Win32Pointer): number;
   /** comctl32.dll!ImageList_Duplicate */
@@ -171,13 +270,44 @@ interface Functions {
   /** comctl32.dll!ImageList_GetImageInfo */
   ImageList_GetImageInfo(himl: number | bigint, i: number, pImageInfo: Win32Pointer): number;
   /** comctl32.dll!ImageList_LoadImageA */
-  ImageList_LoadImageA(hi: Win32Pointer, lpbmp: string | Win32Pointer, cx: number, cGrow: number, crMask: number, uType: number, uFlags: number): number | bigint;
+  ImageList_LoadImageA(
+    hi: Win32Pointer,
+    lpbmp: string | Win32Pointer,
+    cx: number,
+    cGrow: number,
+    crMask: number,
+    uType: number,
+    uFlags: number,
+  ): number | bigint;
   /** comctl32.dll!ImageList_LoadImageW */
-  ImageList_LoadImageW(hi: Win32Pointer, lpbmp: string | Win32Pointer, cx: number, cGrow: number, crMask: number, uType: number, uFlags: number): number | bigint;
+  ImageList_LoadImageW(
+    hi: Win32Pointer,
+    lpbmp: string | Win32Pointer,
+    cx: number,
+    cGrow: number,
+    crMask: number,
+    uType: number,
+    uFlags: number,
+  ): number | bigint;
   /** comctl32.dll!ImageList_LoadImageW */
-  ImageList_LoadImage(hi: Win32Pointer, lpbmp: string | Win32Pointer, cx: number, cGrow: number, crMask: number, uType: number, uFlags: number): number | bigint;
+  ImageList_LoadImage(
+    hi: Win32Pointer,
+    lpbmp: string | Win32Pointer,
+    cx: number,
+    cGrow: number,
+    crMask: number,
+    uType: number,
+    uFlags: number,
+  ): number | bigint;
   /** comctl32.dll!ImageList_Merge */
-  ImageList_Merge(himl1: number | bigint, i1: number, himl2: number | bigint, i2: number, dx: number, dy: number): number | bigint;
+  ImageList_Merge(
+    himl1: number | bigint,
+    i1: number,
+    himl2: number | bigint,
+    i2: number,
+    dx: number,
+    dy: number,
+  ): number | bigint;
   /** comctl32.dll!ImageList_Read */
   ImageList_Read(pstm: Win32Pointer): number | bigint;
   /** comctl32.dll!ImageList_ReadEx */
@@ -215,11 +345,25 @@ interface Functions {
   /** comctl32.dll!LoadIconMetric */
   LoadIconMetric(hinst: Win32Pointer, pszName: string | Win32Pointer, lims: number, phico: Win32Pointer): number;
   /** comctl32.dll!LoadIconWithScaleDown */
-  LoadIconWithScaleDown(hinst: Win32Pointer, pszName: string | Win32Pointer, cx: number, cy: number, phico: Win32Pointer): number;
+  LoadIconWithScaleDown(
+    hinst: Win32Pointer,
+    pszName: string | Win32Pointer,
+    cx: number,
+    cy: number,
+    phico: Win32Pointer,
+  ): number;
   /** comctl32.dll!MakeDragList */
   MakeDragList(hLB: Win32Pointer): number;
   /** comctl32.dll!MenuHelp */
-  MenuHelp(uMsg: number, wParam: number | bigint, lParam: number | bigint, hMainMenu: Win32Pointer, hInst: Win32Pointer, hwndStatus: Win32Pointer, lpwIDs: Win32Pointer): void;
+  MenuHelp(
+    uMsg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+    hMainMenu: Win32Pointer,
+    hInst: Win32Pointer,
+    hwndStatus: Win32Pointer,
+    lpwIDs: Win32Pointer,
+  ): void;
   /** comctl32.dll!PropertySheetA */
   PropertySheetA(param0: Win32Pointer): number | bigint;
   /** comctl32.dll!PropertySheetW */
@@ -229,15 +373,34 @@ interface Functions {
   /** comctl32.dll!RemoveWindowSubclass */
   RemoveWindowSubclass(hWnd: Win32Pointer, pfnSubclass: Win32Callback, uIdSubclass: number | bigint): number;
   /** comctl32.dll!SetWindowSubclass */
-  SetWindowSubclass(hWnd: Win32Pointer, pfnSubclass: Win32Callback, uIdSubclass: number | bigint, dwRefData: number | bigint): number;
+  SetWindowSubclass(
+    hWnd: Win32Pointer,
+    pfnSubclass: Win32Callback,
+    uIdSubclass: number | bigint,
+    dwRefData: number | bigint,
+  ): number;
   /** comctl32.dll!ShowHideMenuCtl */
   ShowHideMenuCtl(hWnd: Win32Pointer, uFlags: number | bigint, lpInfo: Win32Pointer): number;
   /** comctl32.dll!Str_SetPtrW */
   Str_SetPtrW(ppsz: Win32Pointer, psz: string | Win32Pointer): number;
   /** comctl32.dll!TaskDialog */
-  TaskDialog(hwndOwner: Win32Pointer, hInstance: Win32Pointer, pszWindowTitle: string | Win32Pointer, pszMainInstruction: string | Win32Pointer, pszContent: string | Win32Pointer, dwCommonButtons: number, pszIcon: string | Win32Pointer, pnButton: Win32Pointer): number;
+  TaskDialog(
+    hwndOwner: Win32Pointer,
+    hInstance: Win32Pointer,
+    pszWindowTitle: string | Win32Pointer,
+    pszMainInstruction: string | Win32Pointer,
+    pszContent: string | Win32Pointer,
+    dwCommonButtons: number,
+    pszIcon: string | Win32Pointer,
+    pnButton: Win32Pointer,
+  ): number;
   /** comctl32.dll!TaskDialogIndirect */
-  TaskDialogIndirect(pTaskConfig: Win32Pointer, pnButton: Win32Pointer, pnRadioButton: Win32Pointer, pfVerificationFlagChecked: Win32Pointer): number;
+  TaskDialogIndirect(
+    pTaskConfig: Win32Pointer,
+    pnButton: Win32Pointer,
+    pnRadioButton: Win32Pointer,
+    pfVerificationFlagChecked: Win32Pointer,
+  ): number;
   /** comctl32.dll!UninitializeFlatSB */
   UninitializeFlatSB(param0: Win32Pointer): number;
   /** comctl32.dll!_TrackMouseEvent */

@@ -11,13 +11,7 @@ interface TagProps {
 }
 
 /** M3 input chip carrying a user tag colour. */
-export function Tag({
-  color,
-  children,
-  size = "sm",
-  className,
-  onRemove,
-}: TagProps) {
+export function Tag({ color, children, size = "sm", className, onRemove }: TagProps) {
   return (
     <span
       className={clsx(
@@ -29,18 +23,14 @@ export function Tag({
       style={{ backgroundColor: `${color}20`, color }}
     >
       <span
-        className={clsx(
-          "rounded-full",
-          size === "sm" && "size-1.5",
-          size === "md" && "size-2",
-        )}
+        className={clsx("rounded-full", size === "sm" && "size-1.5", size === "md" && "size-2")}
         style={{ backgroundColor: color }}
       />
       {children}
       {onRemove && (
         <button
           type="button"
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             onRemove();
           }}

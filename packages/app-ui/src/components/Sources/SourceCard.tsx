@@ -40,15 +40,9 @@ export function SourceCard({ source }: SourceCardProps) {
       className="border-outline-variant bg-surface-container hover:border-outline-variant/80 hover:bg-on-surface/8 group relative rounded-small border p-4 text-left transition-all"
     >
       <div className="mb-3 flex items-center gap-3">
-        <SourceTypeIcon
-          type={source.data_type}
-          svg={getIcon(source.adapter_id)}
-          size="md"
-        />
+        <SourceTypeIcon type={source.data_type} svg={getIcon(source.adapter_id)} size="md" />
         <div className="min-w-0 flex-1">
-          <h3 className="text-on-surface truncate text-label-large font-medium">
-            {source.name}
-          </h3>
+          <h3 className="text-on-surface truncate text-label-large font-medium">{source.name}</h3>
           <p className="text-outline text-body-small">{source.adapter_id}</p>
         </div>
         <SourceStatusBadge status={source.status} />
@@ -59,11 +53,7 @@ export function SourceCard({ source }: SourceCardProps) {
           {source.item_count.toLocaleString()} item
           {source.item_count !== 1 ? "s" : ""}
         </span>
-        <span>
-          {source.last_synced
-            ? formatRelative(source.last_synced)
-            : "Never synced"}
-        </span>
+        <span>{source.last_synced ? formatRelative(source.last_synced) : "Never synced"}</span>
       </div>
     </button>
   );

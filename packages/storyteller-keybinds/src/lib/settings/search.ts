@@ -6,16 +6,10 @@ import { ActionDef, Binding, KeyGroup } from "../types";
 // rendered glyph of each binding (⌘ ⇧ ↑ …), and cross-platform word synonyms
 // (so "ctrl" matches a ⌘ binding on macOS, "option" matches Alt, etc.).
 
-export function actionMatchesQuery(
-  action: ActionDef,
-  bindings: Binding[],
-  query: string,
-): boolean {
+export function actionMatchesQuery(action: ActionDef, bindings: Binding[], query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  const haystack = `${action.label} ${action.group} ${bindings
-    .map(bindingSearchText)
-    .join(" ")}`.toLowerCase();
+  const haystack = `${action.label} ${action.group} ${bindings.map(bindingSearchText).join(" ")}`.toLowerCase();
   // A compact pass strips spaces/`+` so "ctrl+z" / "⇧d" match contiguously…
   const compactHay = haystack.replace(/[\s+]/g, "");
   const compactQ = q.replace(/[\s+]/g, "");
@@ -24,12 +18,10 @@ export function actionMatchesQuery(
   return q
     .split(/\s+/)
     .filter(Boolean)
-    .every((term) => haystack.includes(term));
+    .every(term => haystack.includes(term));
 }
 
-export function groupActions(
-  actions: ActionDef[],
-): { group: KeyGroup; actions: ActionDef[] }[] {
+export function groupActions(actions: ActionDef[]): { group: KeyGroup; actions: ActionDef[] }[] {
   const out: { group: KeyGroup; actions: ActionDef[] }[] = [];
   const index = new Map<KeyGroup, number>();
   for (const action of actions) {

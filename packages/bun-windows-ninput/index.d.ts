@@ -5,21 +5,41 @@ interface Functions {
   /** ninput.dll!AddPointerInteractionContext */
   AddPointerInteractionContext(interactionContext: Win32Pointer, pointerId: number): number;
   /** ninput.dll!BufferPointerPacketsInteractionContext */
-  BufferPointerPacketsInteractionContext(interactionContext: Win32Pointer, entriesCount: number, pointerInfo: Win32Pointer): number;
+  BufferPointerPacketsInteractionContext(
+    interactionContext: Win32Pointer,
+    entriesCount: number,
+    pointerInfo: Win32Pointer,
+  ): number;
   /** ninput.dll!CreateInteractionContext */
   CreateInteractionContext(interactionContext: Win32Pointer): number;
   /** ninput.dll!DestroyInteractionContext */
   DestroyInteractionContext(interactionContext: Win32Pointer): number;
   /** ninput.dll!GetCrossSlideParameterInteractionContext */
-  GetCrossSlideParameterInteractionContext(interactionContext: Win32Pointer, threshold: number, distance: Win32Pointer): number;
+  GetCrossSlideParameterInteractionContext(
+    interactionContext: Win32Pointer,
+    threshold: number,
+    distance: Win32Pointer,
+  ): number;
   /** ninput.dll!GetHoldParameterInteractionContext */
   GetHoldParameterInteractionContext(interactionContext: Win32Pointer, parameter: number, value: Win32Pointer): number;
   /** ninput.dll!GetInertiaParameterInteractionContext */
-  GetInertiaParameterInteractionContext(interactionContext: Win32Pointer, inertiaParameter: number, value: Win32Pointer): number;
+  GetInertiaParameterInteractionContext(
+    interactionContext: Win32Pointer,
+    inertiaParameter: number,
+    value: Win32Pointer,
+  ): number;
   /** ninput.dll!GetInteractionConfigurationInteractionContext */
-  GetInteractionConfigurationInteractionContext(interactionContext: Win32Pointer, configurationCount: number, configuration: Win32Pointer): number;
+  GetInteractionConfigurationInteractionContext(
+    interactionContext: Win32Pointer,
+    configurationCount: number,
+    configuration: Win32Pointer,
+  ): number;
   /** ninput.dll!GetMouseWheelParameterInteractionContext */
-  GetMouseWheelParameterInteractionContext(interactionContext: Win32Pointer, parameter: number, value: Win32Pointer): number;
+  GetMouseWheelParameterInteractionContext(
+    interactionContext: Win32Pointer,
+    parameter: number,
+    value: Win32Pointer,
+  ): number;
   /** ninput.dll!GetPropertyInteractionContext */
   GetPropertyInteractionContext(interactionContext: Win32Pointer, contextProperty: number, value: Win32Pointer): number;
   /** ninput.dll!GetStateInteractionContext */
@@ -27,29 +47,58 @@ interface Functions {
   /** ninput.dll!GetTapParameterInteractionContext */
   GetTapParameterInteractionContext(interactionContext: Win32Pointer, parameter: number, value: Win32Pointer): number;
   /** ninput.dll!GetTranslationParameterInteractionContext */
-  GetTranslationParameterInteractionContext(interactionContext: Win32Pointer, parameter: number, value: Win32Pointer): number;
+  GetTranslationParameterInteractionContext(
+    interactionContext: Win32Pointer,
+    parameter: number,
+    value: Win32Pointer,
+  ): number;
   /** ninput.dll!ProcessBufferedPacketsInteractionContext */
   ProcessBufferedPacketsInteractionContext(interactionContext: Win32Pointer): number;
   /** ninput.dll!ProcessInertiaInteractionContext */
   ProcessInertiaInteractionContext(interactionContext: Win32Pointer): number;
   /** ninput.dll!ProcessPointerFramesInteractionContext */
-  ProcessPointerFramesInteractionContext(interactionContext: Win32Pointer, entriesCount: number, pointerCount: number, pointerInfo: Win32Pointer): number;
+  ProcessPointerFramesInteractionContext(
+    interactionContext: Win32Pointer,
+    entriesCount: number,
+    pointerCount: number,
+    pointerInfo: Win32Pointer,
+  ): number;
   /** ninput.dll!RegisterOutputCallbackInteractionContext */
-  RegisterOutputCallbackInteractionContext(interactionContext: Win32Pointer, outputCallback: Win32Callback, clientData: Win32Pointer): number;
+  RegisterOutputCallbackInteractionContext(
+    interactionContext: Win32Pointer,
+    outputCallback: Win32Callback,
+    clientData: Win32Pointer,
+  ): number;
   /** ninput.dll!RegisterOutputCallbackInteractionContext2 */
-  RegisterOutputCallbackInteractionContext2(interactionContext: Win32Pointer, outputCallback: Win32Callback, clientData: Win32Pointer): number;
+  RegisterOutputCallbackInteractionContext2(
+    interactionContext: Win32Pointer,
+    outputCallback: Win32Callback,
+    clientData: Win32Pointer,
+  ): number;
   /** ninput.dll!RemovePointerInteractionContext */
   RemovePointerInteractionContext(interactionContext: Win32Pointer, pointerId: number): number;
   /** ninput.dll!ResetInteractionContext */
   ResetInteractionContext(interactionContext: Win32Pointer): number;
   /** ninput.dll!SetCrossSlideParametersInteractionContext */
-  SetCrossSlideParametersInteractionContext(interactionContext: Win32Pointer, parameterCount: number, crossSlideParameters: Win32Pointer): number;
+  SetCrossSlideParametersInteractionContext(
+    interactionContext: Win32Pointer,
+    parameterCount: number,
+    crossSlideParameters: Win32Pointer,
+  ): number;
   /** ninput.dll!SetHoldParameterInteractionContext */
   SetHoldParameterInteractionContext(interactionContext: Win32Pointer, parameter: number, value: number): number;
   /** ninput.dll!SetInertiaParameterInteractionContext */
-  SetInertiaParameterInteractionContext(interactionContext: Win32Pointer, inertiaParameter: number, value: number): number;
+  SetInertiaParameterInteractionContext(
+    interactionContext: Win32Pointer,
+    inertiaParameter: number,
+    value: number,
+  ): number;
   /** ninput.dll!SetInteractionConfigurationInteractionContext */
-  SetInteractionConfigurationInteractionContext(interactionContext: Win32Pointer, configurationCount: number, configuration: Win32Pointer): number;
+  SetInteractionConfigurationInteractionContext(
+    interactionContext: Win32Pointer,
+    configurationCount: number,
+    configuration: Win32Pointer,
+  ): number;
   /** ninput.dll!SetMouseWheelParameterInteractionContext */
   SetMouseWheelParameterInteractionContext(interactionContext: Win32Pointer, parameter: number, value: number): number;
   /** ninput.dll!SetPivotInteractionContext */

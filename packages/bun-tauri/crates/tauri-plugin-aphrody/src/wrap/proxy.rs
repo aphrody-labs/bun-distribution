@@ -39,7 +39,11 @@ pub fn is_proxied(path: &str, prefixes: &[String]) -> bool {
 /// `scheme://host[:port]` of the backend followed by the request's path and query.
 #[must_use]
 pub fn backend_url(backend: &Url, path_and_query: &str) -> String {
-    format!("{}{}", backend.origin().ascii_serialization(), path_and_query)
+    format!(
+        "{}{}",
+        backend.origin().ascii_serialization(),
+        path_and_query
+    )
 }
 
 /// Request headers for the backend: hop-by-hop and `Accept-Encoding` dropped (the client negotiates
@@ -73,7 +77,9 @@ pub fn forward_request_headers(headers: &HeaderMap, backend: &Url, loopback: &st
 #[must_use]
 pub fn rewrite_set_cookie(value: &str) -> String {
     let mut parts = value.split(';').map(str::trim);
-    let Some(pair) = parts.next() else { return String::new() };
+    let Some(pair) = parts.next() else {
+        return String::new();
+    };
     if pair.starts_with("__Host-") || pair.starts_with("__Secure-") {
         return value.to_string();
     }
@@ -146,8 +152,14 @@ mod tests {
     #[test]
     fn rewrites_origin_and_referer_and_drops_hop_by_hop_headers() {
         let mut headers = HeaderMap::new();
-        headers.insert(header::ORIGIN, HeaderValue::from_static("http://127.0.0.1:4000"));
-        headers.insert(header::REFERER, HeaderValue::from_static("http://127.0.0.1:4000/cart?x=1"));
+        headers.insert(
+            header::ORIGIN,
+            HeaderValue::from_static("http://127.0.0.1:4000"),
+        );
+        headers.insert(
+            header::REFERER,
+            HeaderValue::from_static("http://127.0.0.1:4000/cart?x=1"),
+        );
         headers.insert(header::COOKIE, HeaderValue::from_static("sid=1"));
         headers.insert(header::HOST, HeaderValue::from_static("127.0.0.1:4000"));
         headers.insert(header::CONNECTION, HeaderValue::from_static("keep-alive"));
@@ -172,14 +184,20 @@ mod tests {
             "sid=abc; Path=/; HttpOnly; SameSite=Lax; Max-Age=60"
         );
         assert_eq!(rewrite_set_cookie("a=b"), "a=b");
-        assert_eq!(rewrite_set_cookie("t=1; SameSite=Strict; secure"), "t=1; SameSite=Strict");
+        assert_eq!(
+            rewrite_set_cookie("t=1; SameSite=Strict; secure"),
+            "t=1; SameSite=Strict"
+        );
     }
 
     #[test]
     fn leaves_prefixed_cookies_alone() {
         let raw = "__Host-sid=1; Secure; Path=/";
         assert_eq!(rewrite_set_cookie(raw), raw);
-        assert_eq!(rewrite_set_cookie("__Secure-x=1; Secure"), "__Secure-x=1; Secure");
+        assert_eq!(
+            rewrite_set_cookie("__Secure-x=1; Secure"),
+            "__Secure-x=1; Secure"
+        );
     }
 
     #[test]
@@ -194,7 +212,10 @@ mod tests {
             "https://api.example.com.evil.test/x"
         );
         assert_eq!(rewrite_location("/relative", &backend()), "/relative");
-        assert_eq!(rewrite_location("https://other.test/", &backend()), "https://other.test/");
+        assert_eq!(
+            rewrite_location("https://other.test/", &backend()),
+            "https://other.test/"
+        );
     }
 
     #[test]

@@ -27,7 +27,7 @@ export function Svg({
 
 /** A package chip: name and version from the inventory. */
 export function PackageChip({ name }: { name: string }) {
-  const info = PACKAGES.find((p) => p.name === name);
+  const info = PACKAGES.find(p => p.name === name);
   return (
     <span
       className="inline-flex items-center gap-1 rounded-small border border-outline-variant px-2 py-0.5 text-label-small text-on-surface-variant"
@@ -42,7 +42,7 @@ export function PackageChip({ name }: { name: string }) {
 export function Chips({ names }: { names: readonly string[] }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      {names.map((name) => (
+      {names.map(name => (
         <PackageChip key={name} name={name} />
       ))}
     </div>
@@ -66,11 +66,7 @@ export function Section({
       <header className="flex items-end justify-between gap-4">
         <div className="flex flex-col gap-0.5">
           <h2 className="text-title-large text-on-surface">{title}</h2>
-          {description ? (
-            <p className="text-body-medium text-on-surface-variant">
-              {description}
-            </p>
-          ) : null}
+          {description ? <p className="text-body-medium text-on-surface-variant">{description}</p> : null}
         </div>
         {aside}
       </header>
@@ -89,10 +85,7 @@ export function Card({
   style?: CSSProperties;
 }) {
   return (
-    <div
-      className={`rounded-large bg-surface-container p-4 ${className}`}
-      style={style}
-    >
+    <div className={`rounded-large bg-surface-container p-4 ${className}`} style={style}>
       {children}
     </div>
   );
@@ -102,15 +95,7 @@ export function Code({ children }: { children: ReactNode }) {
   return <pre className="m3-code m3-scroll max-h-72">{children}</pre>;
 }
 
-export function Swatch({
-  name,
-  value,
-  on,
-}: {
-  name: string;
-  value: string;
-  on?: string;
-}) {
+export function Swatch({ name, value, on }: { name: string; value: string; on?: string }) {
   return (
     <div className="flex flex-col gap-1">
       <div
@@ -120,9 +105,7 @@ export function Swatch({
       >
         {value}
       </div>
-      <span className="truncate text-label-small text-on-surface-variant">
-        {name}
-      </span>
+      <span className="truncate text-label-small text-on-surface-variant">{name}</span>
     </div>
   );
 }
@@ -146,23 +129,16 @@ export function Page({
   const showAside = aside && panes >= 2;
   return (
     <div className="mx-auto flex w-full max-w-[1800px] gap-6 p-(--m3-gutter)">
-      <article
-        className="flex min-w-0 flex-1 flex-col gap-6"
-        aria-labelledby="page-title"
-      >
+      <article className="flex min-w-0 flex-1 flex-col gap-6" aria-labelledby="page-title">
         <header className="flex flex-col gap-2">
           <h1 id="page-title" className="text-headline-large text-on-surface">
             {title}
           </h1>
-          <p className="max-w-3xl text-body-large text-on-surface-variant">
-            {summary}
-          </p>
+          <p className="max-w-3xl text-body-large text-on-surface-variant">{summary}</p>
           <Chips names={packages} />
         </header>
         {children}
-        {aside && !showAside ? (
-          <div className="flex flex-col gap-4">{aside}</div>
-        ) : null}
+        {aside && !showAside ? <div className="flex flex-col gap-4">{aside}</div> : null}
       </article>
       {showAside ? (
         <aside

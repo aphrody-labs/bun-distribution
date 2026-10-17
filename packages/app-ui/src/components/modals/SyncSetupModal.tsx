@@ -1,30 +1,9 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import {
-  ArrowsClockwise,
-  CheckCircle,
-  CircleNotch,
-  DeviceMobile,
-  Share,
-  SignIn,
-} from "@phosphor-icons/react";
-import type {
-  LibrarySyncAction,
-  PairedDeviceInfo,
-  RemoteLibraryInfo,
-} from "@aphrody/drive-client";
-import {
-  Icon,
-  Button,
-  Dialog,
-  dialogManager,
-  useDialog,
-} from "@aphrody/m3-primitives";
-import {
-  useCoreQuery,
-  useCoreMutation,
-  useSpacedriveClient,
-} from "../../contexts/SpacedriveContext";
+import { ArrowsClockwise, CheckCircle, CircleNotch, DeviceMobile, Share, SignIn } from "@phosphor-icons/react";
+import type { LibrarySyncAction, PairedDeviceInfo, RemoteLibraryInfo } from "@aphrody/drive-client";
+import { Icon, Button, Dialog, dialogManager, useDialog } from "@aphrody/m3-primitives";
+import { useCoreQuery, useCoreMutation, useSpacedriveClient } from "../../contexts/SpacedriveContext";
 
 interface SyncSetupDialogProps {
   id: number;
@@ -33,23 +12,16 @@ interface SyncSetupDialogProps {
 type SyncStep = "select-device" | "choose-action" | "confirm" | "executing";
 
 export function useSyncSetupDialog() {
-  return dialogManager.create((props: SyncSetupDialogProps) => (
-    <SyncSetupDialog {...props} />
-  ));
+  return dialogManager.create((props: SyncSetupDialogProps) => <SyncSetupDialog {...props} />);
 }
 
 function SyncSetupDialog(props: SyncSetupDialogProps) {
   const dialog = useDialog(props);
   const client = useSpacedriveClient();
   const [step, setStep] = useState<SyncStep>("select-device");
-  const [selectedDevice, setSelectedDevice] = useState<PairedDeviceInfo | null>(
-    null,
-  );
-  const [selectedAction, setSelectedAction] = useState<"share" | "join" | null>(
-    null,
-  );
-  const [selectedRemoteLibrary, setSelectedRemoteLibrary] =
-    useState<RemoteLibraryInfo | null>(null);
+  const [selectedDevice, setSelectedDevice] = useState<PairedDeviceInfo | null>(null);
+  const [selectedAction, setSelectedAction] = useState<"share" | "join" | null>(null);
+  const [selectedRemoteLibrary, setSelectedRemoteLibrary] = useState<RemoteLibraryInfo | null>(null);
 
   // Get current device info and library
   const {
@@ -105,10 +77,7 @@ function SyncSetupDialog(props: SyncSetupDialogProps) {
     setStep("choose-action");
   };
 
-  const handleActionSelect = (
-    action: "share" | "join",
-    library?: RemoteLibraryInfo,
-  ) => {
+  const handleActionSelect = (action: "share" | "join", library?: RemoteLibraryInfo) => {
     setSelectedAction(action);
     if (action === "join" && library) {
       setSelectedRemoteLibrary(library);
@@ -123,13 +92,7 @@ function SyncSetupDialog(props: SyncSetupDialogProps) {
       currentLibraryId,
       currentDeviceId,
     });
-    if (
-      !selectedDevice ||
-      !selectedAction ||
-      !currentLibraryId ||
-      !currentDeviceId
-    )
-      return;
+    if (!selectedDevice || !selectedAction || !currentLibraryId || !currentDeviceId) return;
 
     setStep("executing");
 
@@ -138,9 +101,7 @@ function SyncSetupDialog(props: SyncSetupDialogProps) {
     let remoteLibraryId: string | null = null;
 
     // Get current library info
-    const currentLibrary = coreStatus?.libraries.find(
-      (lib) => lib.id === currentLibraryId,
-    );
+    const currentLibrary = coreStatus?.libraries.find(lib => lib.id === currentLibraryId);
     const libraryName = currentLibrary?.name || "My Library";
 
     if (selectedAction === "share") {
@@ -209,12 +170,7 @@ function SyncSetupDialog(props: SyncSetupDialogProps) {
         );
 
       case "executing":
-        return (
-          <ExecutingStep
-            isLoading={syncSetupMutation.isPending}
-            error={syncSetupMutation.error?.message}
-          />
-        );
+        return <ExecutingStep isLoading={syncSetupMutation.isPending} error={syncSetupMutation.error?.message} />;
     }
   };
 
@@ -240,11 +196,7 @@ interface SelectDeviceStepProps {
   onSelect: (device: PairedDeviceInfo) => void;
 }
 
-function SelectDeviceStep({
-  devices,
-  isLoading,
-  onSelect,
-}: SelectDeviceStepProps) {
+function SelectDeviceStep({ devices, isLoading, onSelect }: SelectDeviceStepProps) {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -259,9 +211,7 @@ function SelectDeviceStep({
         <DeviceMobile size={48} className="text-outline" />
         <div className="text-center">
           <p className="text-on-surface-variant">No paired devices found</p>
-          <p className="text-body-medium text-outline">
-            Pair a device first using the "Pair Device" button
-          </p>
+          <p className="text-body-medium text-outline">Pair a device first using the "Pair Device" button</p>
         </div>
       </div>
     );
@@ -269,11 +219,9 @@ function SelectDeviceStep({
 
   return (
     <div className="space-y-4">
-      <p className="text-body-medium text-on-surface-variant">
-        Select a paired device to sync your library with:
-      </p>
+      <p className="text-body-medium text-on-surface-variant">Select a paired device to sync your library with:</p>
       <div className="space-y-2">
-        {devices.map((device) => (
+        {devices.map(device => (
           <button
             key={device.id}
             onClick={() => onSelect(device)}
@@ -286,17 +234,13 @@ function SelectDeviceStep({
                   <DeviceMobile size={20} />
                   <h3 className="font-medium text-on-surface">{device.name}</h3>
                   {device.isConnected && (
-                    <span className="rounded-full bg-success px-2 py-0.5 text-body-small text-white">
-                      Connected
-                    </span>
+                    <span className="rounded-full bg-success px-2 py-0.5 text-body-small text-white">Connected</span>
                   )}
                 </div>
                 <p className="mt-1 text-body-medium text-on-surface-variant">
                   {device.deviceType} • {device.osVersion}
                 </p>
-                <p className="text-body-small text-outline">
-                  Last seen: {new Date(device.lastSeen).toLocaleString()}
-                </p>
+                <p className="text-body-small text-outline">Last seen: {new Date(device.lastSeen).toLocaleString()}</p>
               </div>
             </div>
           </button>
@@ -312,10 +256,7 @@ interface ChooseActionStepProps {
   remoteLibraries: RemoteLibraryInfo[];
   isOnline: boolean;
   isLoading: boolean;
-  onSelectAction: (
-    action: "share" | "join",
-    library?: RemoteLibraryInfo,
-  ) => void;
+  onSelectAction: (action: "share" | "join", library?: RemoteLibraryInfo) => void;
   onBack: () => void;
 }
 
@@ -342,16 +283,9 @@ function ChooseActionStep({
         <DeviceMobile size={48} className="text-outline" />
         <div className="text-center">
           <p className="text-on-surface-variant">Device is offline</p>
-          <p className="text-body-medium text-outline">
-            {device.name} must be online to set up sync
-          </p>
+          <p className="text-body-medium text-outline">{device.name} must be online to set up sync</p>
         </div>
-        <Button
-          aria-label="Back"
-          title="Back"
-          variant="outline"
-          onClick={onBack}
-        >
+        <Button aria-label="Back" title="Back" variant="outline" onClick={onBack}>
           <Icon name="arrow_back" size={18} />
         </Button>
       </div>
@@ -362,8 +296,7 @@ function ChooseActionStep({
     <div className="space-y-4">
       <div>
         <p className="text-body-medium text-on-surface-variant">
-          Syncing with:{" "}
-          <span className="font-medium text-on-surface">{device.name}</span>
+          Syncing with: <span className="font-medium text-on-surface">{device.name}</span>
         </p>
       </div>
 
@@ -378,12 +311,9 @@ function ChooseActionStep({
           <div className="flex items-start gap-3">
             <Share size={24} className="mt-1 text-primary" />
             <div className="flex-1">
-              <h4 className="font-medium text-on-surface">
-                Share my library to this device
-              </h4>
+              <h4 className="font-medium text-on-surface">Share my library to this device</h4>
               <p className="mt-1 text-body-medium text-on-surface-variant">
-                Create a shared library from your local library. The other
-                device will receive a copy.
+                Create a shared library from your local library. The other device will receive a copy.
               </p>
             </div>
           </div>
@@ -392,10 +322,8 @@ function ChooseActionStep({
         {/* Join Remote Library */}
         {remoteLibraries.length > 0 ? (
           <div className="space-y-2">
-            <h4 className="text-label-large font-medium text-on-surface">
-              Or join a library from {device.name}:
-            </h4>
-            {remoteLibraries.map((library) => (
+            <h4 className="text-label-large font-medium text-on-surface">Or join a library from {device.name}:</h4>
+            {remoteLibraries.map(library => (
               <button
                 key={library.id}
                 onClick={() => onSelectAction("join", library)}
@@ -404,17 +332,13 @@ function ChooseActionStep({
                 <div className="flex items-start gap-3">
                   <SignIn size={24} className="mt-1 text-primary" />
                   <div className="flex-1">
-                    <h4 className="font-medium text-on-surface">
-                      {library.name}
-                    </h4>
+                    <h4 className="font-medium text-on-surface">{library.name}</h4>
                     <p className="mt-1 text-body-medium text-on-surface-variant">
                       {library.statistics.total_files.toLocaleString()} files •{" "}
-                      {library.statistics.location_count.toLocaleString()}{" "}
-                      locations
+                      {library.statistics.location_count.toLocaleString()} locations
                     </p>
                     <p className="text-body-small text-outline">
-                      Created:{" "}
-                      {new Date(library.createdAt).toLocaleDateString()}
+                      Created: {new Date(library.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -423,20 +347,13 @@ function ChooseActionStep({
           </div>
         ) : (
           <div className="rounded-small border border-outline-variant bg-surface-container p-4">
-            <p className="text-body-medium text-outline">
-              No libraries found on {device.name}
-            </p>
+            <p className="text-body-medium text-outline">No libraries found on {device.name}</p>
           </div>
         )}
       </div>
 
       <div className="flex justify-start">
-        <Button
-          aria-label="Back"
-          title="Back"
-          variant="outline"
-          onClick={onBack}
-        >
+        <Button aria-label="Back" title="Back" variant="outline" onClick={onBack}>
           <Icon name="arrow_back" size={18} />
         </Button>
       </div>
@@ -453,13 +370,7 @@ interface ConfirmStepProps {
   onConfirm: () => void;
 }
 
-function ConfirmStep({
-  device,
-  action,
-  remoteLibrary,
-  onBack,
-  onConfirm,
-}: ConfirmStepProps) {
+function ConfirmStep({ device, action, remoteLibrary, onBack, onConfirm }: ConfirmStepProps) {
   return (
     <div className="space-y-6">
       <div className="rounded-small bg-app-darkBox p-4">
@@ -478,9 +389,7 @@ function ConfirmStep({
           {action === "join" && remoteLibrary && (
             <div className="flex justify-between">
               <span className="text-on-surface-variant">Remote Library:</span>
-              <span className="font-medium text-on-surface">
-                {remoteLibrary.name}
-              </span>
+              <span className="font-medium text-on-surface">{remoteLibrary.name}</span>
             </div>
           )}
         </div>
@@ -495,13 +404,7 @@ function ConfirmStep({
       </div>
 
       <div className="flex gap-2">
-        <Button
-          aria-label="Back"
-          title="Back"
-          variant="outline"
-          onClick={onBack}
-          className="flex-1"
-        >
+        <Button aria-label="Back" title="Back" variant="outline" onClick={onBack} className="flex-1">
           <Icon name="arrow_back" size={18} />
         </Button>
         <Button variant="accent" onClick={onConfirm} className="flex-1">
@@ -544,9 +447,7 @@ function ExecutingStep({ isLoading, error }: ExecutingStepProps) {
       <CheckCircle size={48} className="text-success" />
       <div className="text-center">
         <p className="font-medium text-on-surface">Sync setup complete!</p>
-        <p className="text-body-medium text-on-surface-variant">
-          Your library is now syncing
-        </p>
+        <p className="text-body-medium text-on-surface-variant">Your library is now syncing</p>
       </div>
     </div>
   );

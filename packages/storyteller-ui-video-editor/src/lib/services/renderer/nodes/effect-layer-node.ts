@@ -13,7 +13,4 @@ export type ResolvedEffectLayerNodeState = {
   passes: EffectPass[];
 };
 
-export class EffectLayerNode extends BaseNode<
-  EffectLayerNodeParams,
-  ResolvedEffectLayerNodeState
-> {}
+export class EffectLayerNode extends BaseNode<EffectLayerNodeParams, ResolvedEffectLayerNodeState> {}

@@ -30,24 +30,14 @@ import { MediaFileDelete } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
 import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
-import {
-  useEffect,
-  useState,
-  ReactNode,
-  useMemo,
-  useCallback,
-  useRef,
-} from "react";
+import { useEffect, useState, ReactNode, useMemo, useCallback, useRef } from "react";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
 import type { Prompts, UserInfo } from "@storyteller/api";
 import { Gravatar } from "@storyteller/ui-gravatar";
 import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
-import {
-  showActionReminder,
-  isActionReminderOpen,
-} from "@storyteller/ui-action-reminder-modal";
+import { showActionReminder, isActionReminderOpen } from "@storyteller/ui-action-reminder-modal";
 import {
   getCreatorIconPathForModelId,
   getModelDisplayName,
@@ -82,38 +72,16 @@ interface LightboxModalProps {
   additionalInfo?: ReactNode;
   downloadUrl?: string;
   mediaId?: string;
-  onDownloadClicked?: (
-    url: string,
-    mediaClass?: string,
-    model?: string,
-  ) => Promise<void>;
-  onAddToSceneClicked?: (
-    url: string,
-    media_id: string | undefined,
-  ) => Promise<void>;
+  onDownloadClicked?: (url: string, mediaClass?: string, model?: string) => Promise<void>;
+  onAddToSceneClicked?: (url: string, media_id: string | undefined) => Promise<void>;
   mediaClass?: string;
   onPromptCopy?: (prompt: string) => void;
   onEditClicked?: (url: string, media_id?: string) => Promise<void> | void;
-  onTurnIntoVideoClicked?: (
-    url: string,
-    media_id?: string,
-  ) => Promise<void> | void;
-  onRemoveBackgroundClicked?: (
-    url: string,
-    media_id?: string,
-  ) => Promise<void> | void;
-  onMake3DObjectClicked?: (
-    url: string,
-    media_id?: string,
-  ) => Promise<void> | void;
-  onMake3DWorldClicked?: (
-    url: string,
-    media_id?: string,
-  ) => Promise<void> | void;
-  onRecreateClicked?: (data: {
-    promptData: Prompts;
-    mediaClass: string | undefined;
-  }) => void;
+  onTurnIntoVideoClicked?: (url: string, media_id?: string) => Promise<void> | void;
+  onRemoveBackgroundClicked?: (url: string, media_id?: string) => Promise<void> | void;
+  onMake3DObjectClicked?: (url: string, media_id?: string) => Promise<void> | void;
+  onMake3DWorldClicked?: (url: string, media_id?: string) => Promise<void> | void;
+  onRecreateClicked?: (data: { promptData: Prompts; mediaClass: string | undefined }) => void;
   batchImageToken?: string;
   onNavigatePrev?: () => void;
   onNavigateNext?: () => void;
@@ -180,9 +148,7 @@ export function LightboxModal({
   const [creator, setCreator] = useState<UserInfo | null>(null);
   const [shareCopied, setShareCopied] = useState<boolean>(false);
   const shareCopiedTimeoutRef = useRef<number | null>(null);
-  const [playingAudioToken, setPlayingAudioToken] = useState<string | null>(
-    null,
-  );
+  const [playingAudioToken, setPlayingAudioToken] = useState<string | null>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   const stopAudio = useCallback(() => {
@@ -313,9 +279,7 @@ export function LightboxModal({
     // Use requestAnimationFrame to ensure DOM has painted
     const raf = requestAnimationFrame(() => {
       if (promptRef.current) {
-        setIsPromptClamped(
-          promptRef.current.scrollHeight > promptRef.current.clientHeight,
-        );
+        setIsPromptClamped(promptRef.current.scrollHeight > promptRef.current.clientHeight);
       }
     });
     return () => cancelAnimationFrame(raf);
@@ -348,10 +312,7 @@ export function LightboxModal({
               url: file.media_links?.cdn_url,
               token: file.token,
             }))
-            .filter(
-              (item): item is { url: string; token: string } =>
-                Boolean(item.url) && Boolean(item.token),
-            );
+            .filter((item): item is { url: string; token: string } => Boolean(item.url) && Boolean(item.token));
 
           if (items.length > 0) {
             const primaryToken = mediaId;
@@ -365,8 +326,8 @@ export function LightboxModal({
               return 0;
             });
 
-            setBatchImages(sortedItems.map((item) => item.url));
-            setBatchTokens(sortedItems.map((item) => item.token));
+            setBatchImages(sortedItems.map(item => item.url));
+            setBatchTokens(sortedItems.map(item => item.token));
           } else {
             setBatchImages(null);
             setBatchTokens(null);
@@ -399,10 +360,7 @@ export function LightboxModal({
   }, [batchImages, imageUrls, imageUrl]);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const carouselOptions: EmblaOptionsType = useMemo(
-    () => ({ loop: false }),
-    [],
-  );
+  const carouselOptions: EmblaOptionsType = useMemo(() => ({ loop: false }), []);
   const [emblaMainRef, emblaMainApi] = useEmblaCarousel(carouselOptions);
   const [emblaThumbsRef, emblaThumbsApi] = useEmblaCarousel({
     containScroll: "keepSnaps",
@@ -424,8 +382,7 @@ export function LightboxModal({
         title: "Delete this media?",
         message: (
           <p className="text-sm text-white/70">
-            This will permanently remove the media from your library. This
-            action cannot be undone.
+            This will permanently remove the media from your library. This action cannot be undone.
           </p>
         ),
         primaryActionText: "Delete",
@@ -471,8 +428,7 @@ export function LightboxModal({
   }, [batchImageToken, imageUrl, emblaMainApi, emblaThumbsApi]);
 
   const selectedImageUrl = effectiveImageUrls[selectedIndex] ?? null;
-  const actionUrl =
-    actionUrls?.[selectedIndex] ?? selectedImageUrl ?? downloadUrl ?? undefined;
+  const actionUrl = actionUrls?.[selectedIndex] ?? selectedImageUrl ?? downloadUrl ?? undefined;
 
   const selectedMediaToken = useMemo(() => {
     const tokenFromBatch = batchTokens?.[selectedIndex];
@@ -511,9 +467,7 @@ export function LightboxModal({
   }, [selectedImageUrl]);
 
   const derivedMediaClass = useMemo(
-    () =>
-      mediaClass ??
-      (batchImages && batchImages.length > 0 ? "image" : mediaClass),
+    () => mediaClass ?? (batchImages && batchImages.length > 0 ? "image" : mediaClass),
     [mediaClass, batchImages],
   );
 
@@ -528,22 +482,14 @@ export function LightboxModal({
 
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        if (
-          emblaMainApi &&
-          effectiveImageUrls.length > 1 &&
-          emblaMainApi.canScrollPrev()
-        ) {
+        if (emblaMainApi && effectiveImageUrls.length > 1 && emblaMainApi.canScrollPrev()) {
           emblaMainApi.scrollPrev(true);
         } else {
           onNavigatePrev?.();
         }
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        if (
-          emblaMainApi &&
-          effectiveImageUrls.length > 1 &&
-          emblaMainApi.canScrollNext()
-        ) {
+        if (emblaMainApi && effectiveImageUrls.length > 1 && emblaMainApi.canScrollNext()) {
           emblaMainApi.scrollNext(true);
         } else {
           onNavigateNext?.();
@@ -558,13 +504,7 @@ export function LightboxModal({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    isOpen,
-    emblaMainApi,
-    effectiveImageUrls.length,
-    onNavigatePrev,
-    onNavigateNext,
-  ]);
+  }, [isOpen, emblaMainApi, effectiveImageUrls.length, onNavigatePrev, onNavigateNext]);
 
   return (
     <>
@@ -593,9 +533,7 @@ export function LightboxModal({
               <div className="flex h-full w-full items-center justify-center bg-black">
                 <span className="text-base-fg/60">Image not available</span>
               </div>
-            ) : mediaClass === "dimensional" ||
-              mediaClass === "mesh" ||
-              mediaClass === "splat" ? (
+            ) : mediaClass === "dimensional" || mediaClass === "mesh" || mediaClass === "splat" ? (
               <div className="h-full w-full">
                 <Viewer3D
                   key={selectedImageUrl}
@@ -616,7 +554,7 @@ export function LightboxModal({
                 // Give WebKit a dedicated compositing layer for paused frames,
                 // independent of the modal's transform/opacity animation.
                 style={{ transform: "translateZ(0)" }}
-                onLoadedData={(e) => {
+                onLoadedData={e => {
                   setMediaLoaded(true);
                   const el = e.currentTarget;
                   setMediaWidth(el.videoWidth);
@@ -632,44 +570,32 @@ export function LightboxModal({
                   <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center border border-white/15 bg-white/10">
                     <MusicIcon className="text-2xl text-white/70" />
                   </div>
-                  <WaveformAudioPlayer
-                    key={selectedImageUrl as string}
-                    src={selectedImageUrl as string}
-                  />
+                  <WaveformAudioPlayer key={selectedImageUrl as string} src={selectedImageUrl as string} />
                 </div>
               </div>
             ) : (
               <div className="flex h-full w-full flex-col justify-center">
-                <div
-                  className="embla relative w-full flex-1 overflow-hidden"
-                  ref={emblaMainRef}
-                >
+                <div className="embla relative w-full flex-1 overflow-hidden" ref={emblaMainRef}>
                   <div className="embla__container flex h-full">
                     {effectiveImageUrls.map((url, idx) => (
-                      <div
-                        className="embla__slide flex-[0_0_100%]"
-                        key={`${url}-${idx}`}
-                      >
+                      <div className="embla__slide flex-[0_0_100%]" key={`${url}-${idx}`}>
                         <div className="relative flex h-full items-center justify-center overflow-hidden bg-black">
                           <img
                             data-lightbox-modal="true"
                             src={addCorsParam(url) || url}
                             alt={`${imageAlt || "Generated image"} ${idx + 1}`}
                             className="h-full w-full object-contain"
-                            onError={(e) => {
+                            onError={e => {
                               onImageError?.();
                               if (idx === selectedIndex) {
                                 setMediaLoaded(true);
-                                e.currentTarget.src =
-                                  PLACEHOLDER_IMAGES.DEFAULT;
+                                e.currentTarget.src = PLACEHOLDER_IMAGES.DEFAULT;
                                 e.currentTarget.style.opacity = "0.3";
                                 // Set the `data-brokenurl` property for debugging the broken images:
-                                (
-                                  e.currentTarget as HTMLImageElement
-                                ).dataset.brokenurl = url || "";
+                                (e.currentTarget as HTMLImageElement).dataset.brokenurl = url || "";
                               }
                             }}
-                            onLoad={(e) => {
+                            onLoad={e => {
                               if (idx === selectedIndex) {
                                 setMediaLoaded(true);
                                 const img = e.currentTarget;
@@ -686,10 +612,7 @@ export function LightboxModal({
 
                 {effectiveImageUrls.length > 1 && (
                   <div className="mt-3 px-2 pb-2">
-                    <div
-                      className="embla-thumbs overflow-hidden"
-                      ref={emblaThumbsRef}
-                    >
+                    <div className="embla-thumbs overflow-hidden" ref={emblaThumbsRef}>
                       <div className="embla-thumbs__container flex justify-center gap-2">
                         {effectiveImageUrls.map((url, idx) => {
                           const isSelected = idx === selectedIndex;
@@ -734,7 +657,7 @@ export function LightboxModal({
             {/* Gallery navigation arrows – only visible on hover */}
             {onNavigatePrev && (
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   onNavigatePrev();
                 }}
@@ -746,7 +669,7 @@ export function LightboxModal({
             )}
             {onNavigateNext && (
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   onNavigateNext();
                 }}
@@ -769,9 +692,7 @@ export function LightboxModal({
                       username={creator.username}
                       email_hash={creator.email_gravatar_hash}
                       avatarIndex={creator.core_info.default_avatar.image_index}
-                      backgroundIndex={
-                        creator.core_info.default_avatar.color_index
-                      }
+                      backgroundIndex={creator.core_info.default_avatar.color_index}
                       className="rounded-none border-white/15"
                     />
                   ) : (
@@ -809,32 +730,22 @@ export function LightboxModal({
                       {!promptLoading && prompt && (
                         <button
                           className="flex items-center gap-1.5 text-xs text-base-fg/60 hover:text-base-fg transition-colors"
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             if (!prompt) return;
-                            navigator.clipboard
-                              .writeText(prompt)
-                              .catch(() => {});
+                            navigator.clipboard.writeText(prompt).catch(() => {});
                             toast.success("Prompt copied");
                             setPromptCopied(true);
                             if (promptCopiedTimeoutRef.current) {
-                              window.clearTimeout(
-                                promptCopiedTimeoutRef.current,
-                              );
+                              window.clearTimeout(promptCopiedTimeoutRef.current);
                             }
-                            promptCopiedTimeoutRef.current = window.setTimeout(
-                              () => {
-                                setPromptCopied(false);
-                                promptCopiedTimeoutRef.current = null;
-                              },
-                              1500,
-                            );
+                            promptCopiedTimeoutRef.current = window.setTimeout(() => {
+                              setPromptCopied(false);
+                              promptCopiedTimeoutRef.current = null;
+                            }, 1500);
                           }}
                         >
-                          <DynamicIcon
-                            icon={promptCopied ? CheckIcon : CopyIcon}
-                            className="h-3 w-3"
-                          />
+                          <DynamicIcon icon={promptCopied ? CheckIcon : CopyIcon} className="h-3 w-3" />
                           <span>{promptCopied ? "Copied!" : "Copy"}</span>
                         </button>
                       )}
@@ -847,51 +758,40 @@ export function LightboxModal({
                           <div className="h-3 w-3/5 bg-white/10" />
                         </div>
                       ) : (
-                        <div
-                          ref={promptRef}
-                          className={twMerge(
-                            !isPromptExpanded && "line-clamp-4",
-                          )}
-                        >
-                          {prompt || (
-                            <span className="text-sm text-base-fg">
-                              No prompt
-                            </span>
-                          )}
+                        <div ref={promptRef} className={twMerge(!isPromptExpanded && "line-clamp-4")}>
+                          {prompt || <span className="text-sm text-base-fg">No prompt</span>}
                         </div>
                       )}
                     </div>
 
-                    {!promptLoading &&
-                      prompt &&
-                      (isPromptClamped || isPromptExpanded) && (
-                        <button
-                          className="flex w-full items-center justify-center gap-1 text-xs text-base-fg/70 hover:text-base-fg transition-colors py-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsPromptExpanded((prev) => !prev);
-                          }}
+                    {!promptLoading && prompt && (isPromptClamped || isPromptExpanded) && (
+                      <button
+                        className="flex w-full items-center justify-center gap-1 text-xs text-base-fg/70 hover:text-base-fg transition-colors py-1"
+                        onClick={e => {
+                          e.stopPropagation();
+                          setIsPromptExpanded(prev => !prev);
+                        }}
+                      >
+                        <span>{isPromptExpanded ? "Hide" : "See all"}</span>
+                        <svg
+                          className={twMerge(
+                            "h-3 w-3 transition-transform duration-200",
+                            isPromptExpanded && "rotate-180",
+                          )}
+                          viewBox="0 0 12 12"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
                         >
-                          <span>{isPromptExpanded ? "Hide" : "See all"}</span>
-                          <svg
-                            className={twMerge(
-                              "h-3 w-3 transition-transform duration-200",
-                              isPromptExpanded && "rotate-180",
-                            )}
-                            viewBox="0 0 12 12"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M2.5 4.5L6 8L9.5 4.5"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </button>
-                      )}
+                          <path
+                            d="M2.5 4.5L6 8L9.5 4.5"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    )}
                   </div>
 
                   {promptLoading ? (
@@ -932,16 +832,12 @@ export function LightboxModal({
                           </div>
                           <div className="grid grid-cols-5 gap-1.5 w-fit">
                             {contextImages.map((contextImage, index) => {
-                              const isAudio =
-                                contextImage.semantic === "audioref";
-                              const isVideoRef =
-                                contextImage.semantic === "vid_ref";
-                              const { thumbnail, fullSize } =
-                                getContextImageThumbnail(contextImage, {
-                                  size: THUMBNAIL_SIZES.SMALL,
-                                });
-                              const isPlayingThis =
-                                playingAudioToken === contextImage.media_token;
+                              const isAudio = contextImage.semantic === "audioref";
+                              const isVideoRef = contextImage.semantic === "vid_ref";
+                              const { thumbnail, fullSize } = getContextImageThumbnail(contextImage, {
+                                size: THUMBNAIL_SIZES.SMALL,
+                              });
+                              const isPlayingThis = playingAudioToken === contextImage.media_token;
 
                               return (
                                 <Tooltip
@@ -957,7 +853,7 @@ export function LightboxModal({
                                       {!isAudio && !isVideoRef && (
                                         <button
                                           className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded-[3px] hover:bg-white/5"
-                                          onClick={(e) => {
+                                          onClick={e => {
                                             e.stopPropagation();
                                             setRefPreviewUrl(fullSize);
                                           }}
@@ -969,11 +865,9 @@ export function LightboxModal({
                                       {onNavigateToMedia && (
                                         <button
                                           className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded-[3px] hover:bg-white/5"
-                                          onClick={(e) => {
+                                          onClick={e => {
                                             e.stopPropagation();
-                                            onNavigateToMedia(
-                                              contextImage.media_token,
-                                            );
+                                            onNavigateToMedia(contextImage.media_token);
                                           }}
                                         >
                                           <LogOutIcon className="mr-1.5" />
@@ -987,10 +881,7 @@ export function LightboxModal({
                                     className="relative aspect-square w-12 overflow-hidden border border-white/15 bg-white/5 transition-colors hover:border-white/40 group cursor-pointer"
                                     onClick={() => {
                                       if (isAudio) {
-                                        handleAudioToggle(
-                                          contextImage.media_token,
-                                          contextImage.media_links.cdn_url,
-                                        );
+                                        handleAudioToggle(contextImage.media_token, contextImage.media_links.cdn_url);
                                       } else if (!isVideoRef) {
                                         setRefPreviewUrl(fullSize);
                                       }
@@ -999,9 +890,7 @@ export function LightboxModal({
                                     {isAudio ? (
                                       <div className="h-full w-full flex items-center justify-center bg-white/5">
                                         <DynamicIcon
-                                          icon={
-                                            isPlayingThis ? PauseIcon : PlayIcon
-                                          }
+                                          icon={isPlayingThis ? PauseIcon : PlayIcon}
                                           className="text-base-fg/70 text-lg"
                                         />
                                       </div>
@@ -1068,13 +957,12 @@ export function LightboxModal({
                 {onRecreateClicked &&
                   hasPromptToken &&
                   promptData &&
-                  (derivedMediaClass === "image" ||
-                    derivedMediaClass === "video") && (
+                  (derivedMediaClass === "image" || derivedMediaClass === "video") && (
                     <Button
                       className="w-full col-span-2 py-1.5 text-[13px]"
                       variant="primary"
                       icon={RotateCwIcon}
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                         gtagEvent("recreate_clicked");
                         onRecreateClicked({
@@ -1087,108 +975,86 @@ export function LightboxModal({
                     </Button>
                   )}
 
-                {onEditClicked &&
-                  actionUrl &&
-                  derivedMediaClass === "image" && (
-                    <Button
-                      className="w-full py-1.5 text-[13px]"
-                      variant="primary"
-                      icon={PencilIcon}
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        gtagEvent("edit_image_clicked");
-                        await onEditClicked(actionUrl, selectedMediaToken);
-                      }}
-                    >
-                      Edit Image
-                    </Button>
-                  )}
+                {onEditClicked && actionUrl && derivedMediaClass === "image" && (
+                  <Button
+                    className="w-full py-1.5 text-[13px]"
+                    variant="primary"
+                    icon={PencilIcon}
+                    onClick={async e => {
+                      e.stopPropagation();
+                      gtagEvent("edit_image_clicked");
+                      await onEditClicked(actionUrl, selectedMediaToken);
+                    }}
+                  >
+                    Edit Image
+                  </Button>
+                )}
 
-                {onTurnIntoVideoClicked &&
-                  actionUrl &&
-                  derivedMediaClass === "image" && (
-                    <Button
-                      className="w-full py-1.5 text-[13px]"
-                      variant="primary"
-                      icon={VideoIcon}
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        gtagEvent("turn_into_video_clicked");
-                        await onTurnIntoVideoClicked(
-                          actionUrl,
-                          selectedMediaToken,
-                        );
-                      }}
-                    >
-                      Make Video
-                    </Button>
-                  )}
+                {onTurnIntoVideoClicked && actionUrl && derivedMediaClass === "image" && (
+                  <Button
+                    className="w-full py-1.5 text-[13px]"
+                    variant="primary"
+                    icon={VideoIcon}
+                    onClick={async e => {
+                      e.stopPropagation();
+                      gtagEvent("turn_into_video_clicked");
+                      await onTurnIntoVideoClicked(actionUrl, selectedMediaToken);
+                    }}
+                  >
+                    Make Video
+                  </Button>
+                )}
 
-                {onRemoveBackgroundClicked &&
-                  actionUrl &&
-                  derivedMediaClass === "image" && (
-                    <Button
-                      className="w-full py-1.5 text-[13px]"
-                      variant="secondary"
-                      icon={WandSparklesIcon}
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        gtagEvent("remove_background_clicked");
-                        await onRemoveBackgroundClicked(
-                          actionUrl,
-                          selectedMediaToken,
-                        );
-                        onClose();
-                        onCloseGallery();
-                      }}
-                    >
-                      Remove BG
-                    </Button>
-                  )}
+                {onRemoveBackgroundClicked && actionUrl && derivedMediaClass === "image" && (
+                  <Button
+                    className="w-full py-1.5 text-[13px]"
+                    variant="secondary"
+                    icon={WandSparklesIcon}
+                    onClick={async e => {
+                      e.stopPropagation();
+                      gtagEvent("remove_background_clicked");
+                      await onRemoveBackgroundClicked(actionUrl, selectedMediaToken);
+                      onClose();
+                      onCloseGallery();
+                    }}
+                  >
+                    Remove BG
+                  </Button>
+                )}
 
-                {onMake3DObjectClicked &&
-                  actionUrl &&
-                  derivedMediaClass === "image" && (
-                    <Button
-                      className="w-full py-1.5 text-[13px]"
-                      variant="secondary"
-                      icon={BoxIcon}
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        gtagEvent("image_to_3d_clicked");
-                        await onMake3DObjectClicked(
-                          actionUrl,
-                          selectedMediaToken,
-                        );
-                        onClose();
-                        onCloseGallery();
-                      }}
-                    >
-                      Make 3D
-                    </Button>
-                  )}
+                {onMake3DObjectClicked && actionUrl && derivedMediaClass === "image" && (
+                  <Button
+                    className="w-full py-1.5 text-[13px]"
+                    variant="secondary"
+                    icon={BoxIcon}
+                    onClick={async e => {
+                      e.stopPropagation();
+                      gtagEvent("image_to_3d_clicked");
+                      await onMake3DObjectClicked(actionUrl, selectedMediaToken);
+                      onClose();
+                      onCloseGallery();
+                    }}
+                  >
+                    Make 3D
+                  </Button>
+                )}
 
-                {onMake3DWorldClicked &&
-                  actionUrl &&
-                  derivedMediaClass === "image" && (
-                    <Button
-                      className="w-full py-1.5 text-[13px]"
-                      variant="secondary"
-                      icon={GlobeIcon}
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        gtagEvent("image_to_3d_world_clicked");
-                        await onMake3DWorldClicked(
-                          actionUrl,
-                          selectedMediaToken,
-                        );
-                        onClose();
-                        onCloseGallery();
-                      }}
-                    >
-                      Make 3D World
-                    </Button>
-                  )}
+                {onMake3DWorldClicked && actionUrl && derivedMediaClass === "image" && (
+                  <Button
+                    className="w-full py-1.5 text-[13px]"
+                    variant="secondary"
+                    icon={GlobeIcon}
+                    onClick={async e => {
+                      e.stopPropagation();
+                      gtagEvent("image_to_3d_world_clicked");
+                      await onMake3DWorldClicked(actionUrl, selectedMediaToken);
+                      onClose();
+                      onCloseGallery();
+                    }}
+                  >
+                    Make 3D World
+                  </Button>
+                )}
 
                 {onDownloadClicked && actionUrl && (
                   <Button
@@ -1199,14 +1065,10 @@ export function LightboxModal({
                     }
                     variant="secondary"
                     icon={ArrowDownToLineIcon}
-                    onClick={async (e) => {
+                    onClick={async e => {
                       e.stopPropagation();
                       gtagEvent("download_clicked");
-                      await onDownloadClicked(
-                        actionUrl,
-                        mediaClass,
-                        modelType ?? undefined,
-                      );
+                      await onDownloadClicked(actionUrl, mediaClass, modelType ?? undefined);
                     }}
                   >
                     Download
@@ -1217,7 +1079,7 @@ export function LightboxModal({
                   <Button
                     className="w-full py-1.5 text-[13px]"
                     variant="secondary"
-                    onClick={async (e) => {
+                    onClick={async e => {
                       e.stopPropagation();
                       gtagEvent("add_to_scene_clicked");
                       await onAddToSceneClicked(actionUrl, selectedMediaToken);
@@ -1234,7 +1096,7 @@ export function LightboxModal({
                     className="w-full py-1.5 text-[13px]"
                     variant="secondary"
                     icon={shareCopied ? CheckIcon : LinkIcon}
-                    onClick={async (e) => {
+                    onClick={async e => {
                       e.stopPropagation();
                       gtagEvent("share_link_copied");
                       const shareUrl = `https://getartcraft.com/media/${selectedMediaToken}`;
@@ -1245,13 +1107,10 @@ export function LightboxModal({
                         if (shareCopiedTimeoutRef.current) {
                           window.clearTimeout(shareCopiedTimeoutRef.current);
                         }
-                        shareCopiedTimeoutRef.current = window.setTimeout(
-                          () => {
-                            setShareCopied(false);
-                            shareCopiedTimeoutRef.current = null;
-                          },
-                          1500,
-                        );
+                        shareCopiedTimeoutRef.current = window.setTimeout(() => {
+                          setShareCopied(false);
+                          shareCopiedTimeoutRef.current = null;
+                        }, 1500);
                       } catch {
                         toast.error("Unable to copy link");
                       }
@@ -1266,7 +1125,7 @@ export function LightboxModal({
                     icon={Trash2Icon}
                     className="w-full border border-red-500/20 bg-red-500/10 py-1.5 text-[13px] text-red-500 hover:bg-red-500/20"
                     variant="destructive"
-                    onClick={async (e) => {
+                    onClick={async e => {
                       e.stopPropagation();
                       gtagEvent("delete_media_clicked");
                       await onDeleteClicked(selectedMediaToken);
@@ -1378,30 +1237,12 @@ function InfoSection({
             }
           />
         )}
-        {aspectRatio && (
-          <InfoRow
-            label="Aspect Ratio"
-            value={formatAspectRatio(aspectRatio)}
-          />
-        )}
-        {resolution && (
-          <InfoRow label="Resolution" value={formatResolution(resolution)} />
-        )}
-        {durationSeconds != null && (
-          <InfoRow label="Duration" value={formatDuration(durationSeconds)} />
-        )}
-        {generateAudio != null && (
-          <InfoRow label="Audio" value={generateAudio ? "On" : "Off"} />
-        )}
-        {mediaWidth && mediaHeight && (
-          <InfoRow label="Size" value={`${mediaWidth} × ${mediaHeight}`} />
-        )}
-        {createdAt && (
-          <InfoRow
-            label="Created"
-            value={dayjs(createdAt).format("MMM D, YYYY h:mm:ss A")}
-          />
-        )}
+        {aspectRatio && <InfoRow label="Aspect Ratio" value={formatAspectRatio(aspectRatio)} />}
+        {resolution && <InfoRow label="Resolution" value={formatResolution(resolution)} />}
+        {durationSeconds != null && <InfoRow label="Duration" value={formatDuration(durationSeconds)} />}
+        {generateAudio != null && <InfoRow label="Audio" value={generateAudio ? "On" : "Off"} />}
+        {mediaWidth && mediaHeight && <InfoRow label="Size" value={`${mediaWidth} × ${mediaHeight}`} />}
+        {createdAt && <InfoRow label="Created" value={dayjs(createdAt).format("MMM D, YYYY h:mm:ss A")} />}
       </div>
     </div>
   );

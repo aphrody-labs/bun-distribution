@@ -14,10 +14,7 @@ import { Icon } from "./Icon";
  * M3 switch on Base UI (a native `<button>` with a hidden checkbox input). `md` and `lg` are the M3 baseline (track 52×32dp, handle 16dp off, 24dp on, 28dp
  * pressed); `sm` is a density step (track 40×24dp, handle 12 / 16 / 20dp) for dense desktop rows.
  */
-export interface SwitchProps
-  extends
-    VariantProps<typeof switchStyles>,
-    Omit<SwitchPrimitive.Root.Props, "className"> {
+export interface SwitchProps extends VariantProps<typeof switchStyles>, Omit<SwitchPrimitive.Root.Props, "className"> {
   className?: StateClassName<SwitchPrimitive.Root.State>;
   thumbClassName?: string;
   /** Show a `check` icon in the handle when selected (M3 "icons" switch). */
@@ -100,9 +97,7 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(
       ref={ref}
       className={withClassName(switchStyles({ size }), className)}
     >
-      <SwitchPrimitive.Thumb
-        className={thumbStyles({ size, className: thumbClassName })}
-      >
+      <SwitchPrimitive.Thumb className={thumbStyles({ size, className: thumbClassName })}>
         {icons && (
           <Icon
             name="check"

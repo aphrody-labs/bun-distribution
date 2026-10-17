@@ -1,7 +1,4 @@
-export const markdownToHtml = (
-  markdown: string,
-  basePath: string = "",
-): string => {
+export const markdownToHtml = (markdown: string, basePath: string = ""): string => {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   const htmlParts: string[] = [];
   let inList = false;
@@ -30,7 +27,7 @@ export const markdownToHtml = (
   const isVideoUrl = (url: string): boolean => {
     const videoExtensions = [".mp4", ".webm", ".ogg", ".mov", ".m4v", ".avi"];
     const lowerUrl = url.toLowerCase().split("?")[0]; // Remove query params for extension check
-    return videoExtensions.some((ext) => lowerUrl.endsWith(ext));
+    return videoExtensions.some(ext => lowerUrl.endsWith(ext));
   };
 
   // Extract YouTube video ID from various URL formats
@@ -91,11 +88,7 @@ export const markdownToHtml = (
   };
 
   // Render an image with optional size
-  const renderImage = (
-    url: string,
-    alt: string = "",
-    sizeStr: string = "",
-  ): string => {
+  const renderImage = (url: string, alt: string = "", sizeStr: string = ""): string => {
     const safeUrl = normalizeLink(url);
     const safeAlt = alt.replace(/"/g, "&quot;");
     const { width, height } = parseSize(sizeStr);
@@ -105,14 +98,12 @@ export const markdownToHtml = (
     let attrs = "";
 
     if (width) {
-      const w =
-        width.endsWith("%") || width.endsWith("px") ? width : `${width}px`;
+      const w = width.endsWith("%") || width.endsWith("px") ? width : `${width}px`;
       style += ` width: ${w};`;
       attrs += ` width="${width.replace("px", "")}"`;
     }
     if (height) {
-      const h =
-        height.endsWith("%") || height.endsWith("px") ? height : `${height}px`;
+      const h = height.endsWith("%") || height.endsWith("px") ? height : `${height}px`;
       style += ` height: ${h};`;
       attrs += ` height="${height.replace("px", "")}"`;
     }
@@ -219,9 +210,7 @@ export const markdownToHtml = (
     }
 
     // Image/GIF embed: @image(url, size) or @gif(url, size)
-    const imageMatch = ltrim.match(
-      /^@(image|gif)\(([^,)]+)(?:,\s*([^)]+))?\)\s*$/,
-    );
+    const imageMatch = ltrim.match(/^@(image|gif)\(([^,)]+)(?:,\s*([^)]+))?\)\s*$/);
     if (imageMatch) {
       flushParagraph();
       closeListIfOpen();

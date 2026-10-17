@@ -18,12 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../../../components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../../components/ui/tooltip";
 import { DEFAULT_NEW_ELEMENT_DURATION } from "../../../timeline/creation";
 import { mediaTimeFromSeconds, type MediaTime } from "../../../wasm";
 import { useEditor } from "../../../editor/use-editor";
@@ -35,12 +30,7 @@ import { SelectableSurface } from "../../../selection/selectable-surface";
 import { useSelection } from "../../../selection/context";
 import { useSelectionScope } from "../../../selection/hooks/use-selection-scope";
 import { buildElementFromMedia } from "../../../timeline/element-utils";
-import {
-  type MediaSortKey,
-  type MediaSortOrder,
-  type MediaViewMode,
-  useAssetsPanelStore,
-} from "../assets-panel-store";
+import { type MediaSortKey, type MediaSortOrder, type MediaViewMode, useAssetsPanelStore } from "../assets-panel-store";
 import { MASKABLE_ELEMENT_TYPES } from "../../../timeline/types";
 import type { MediaAsset } from "../../../media/types";
 import { cn } from "../../../utils/ui";
@@ -59,8 +49,8 @@ import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 export function MediaView() {
   const editor = useEditor();
   const { toast, mediaSource, assetGallery } = useEditorAdapters();
-  const mediaFiles = useEditor((e) => e.media.getAssets());
-  const activeProject = useEditor((e) => e.project.getActive());
+  const mediaFiles = useEditor(e => e.media.getAssets());
+  const activeProject = useEditor(e => e.project.getActive());
 
   const {
     mediaViewMode,
@@ -103,7 +93,7 @@ export function MediaView() {
           }
           return {
             uploadedCount: processedAssets.length,
-            assetNames: processedAssets.map((asset) => asset.name),
+            assetNames: processedAssets.map(asset => asset.name),
           };
         },
       });
@@ -115,12 +105,11 @@ export function MediaView() {
     }
   };
 
-  const { isDragOver, dragProps, openFilePicker, fileInputProps } =
-    useFileUpload({
-      accept: "image/*,video/*,audio/*",
-      multiple: true,
-      onFilesSelected: (files) => processFiles({ files }),
-    });
+  const { isDragOver, dragProps, openFilePicker, fileInputProps } = useFileUpload({
+    accept: "image/*,video/*,audio/*",
+    multiple: true,
+    onFilesSelected: files => processFiles({ files }),
+  });
 
   const handleBrowseGallery = async () => {
     if (!assetGallery || !activeProject) return;
@@ -154,11 +143,9 @@ export function MediaView() {
           // sequential awaits used to stall the toast progress bar for
           // the full pre-fetch loop.
           const fetched = await Promise.all(
-            selections.map(async (selection) => {
+            selections.map(async selection => {
               try {
-                const resolved = await mediaSource.resolveMedia(
-                  selection.handle,
-                );
+                const resolved = await mediaSource.resolveMedia(selection.handle);
                 const response = await fetch(resolved.url, {
                   signal: abort.signal,
                 });
@@ -174,35 +161,28 @@ export function MediaView() {
                   resolved,
                 };
               } catch (error) {
-                console.error(
-                  "Gallery import failed for",
-                  selection.name,
-                  error,
-                );
+                console.error("Gallery import failed for", selection.name, error);
                 toast.error(`Couldn't import ${selection.name}`, {
-                  description:
-                    error instanceof Error ? error.message : undefined,
+                  description: error instanceof Error ? error.message : undefined,
                 });
                 return null;
               }
             }),
           );
-          const successes = fetched.filter(
-            (entry): entry is NonNullable<typeof entry> => entry !== null,
-          );
+          const successes = fetched.filter((entry): entry is NonNullable<typeof entry> => entry !== null);
           if (successes.length === 0) {
             return { uploadedCount: 0, assetNames: [] };
           }
           const processedAssets = await processMediaAssets({
-            files: successes.map((entry) => entry.file),
+            files: successes.map(entry => entry.file),
             toast,
             mediaSource,
-            existingHandles: successes.map((entry) => entry.handle),
+            existingHandles: successes.map(entry => entry.handle),
             // Pass the already-resolved ResolvedMedia through so
             // processMediaAssets doesn't re-call resolveMedia (which
             // for the webapp adapter is a GetMediaFileByToken HTTP
             // roundtrip per asset).
-            existingResolved: successes.map((entry) => entry.resolved),
+            existingResolved: successes.map(entry => entry.resolved),
             onProgress: ({ progress }) => setProgress(progress),
           });
           for (const asset of processedAssets) {
@@ -213,7 +193,7 @@ export function MediaView() {
           }
           return {
             uploadedCount: processedAssets.length,
-            assetNames: processedAssets.map((asset) => asset.name),
+            assetNames: processedAssets.map(asset => asset.name),
           };
         },
       });
@@ -226,13 +206,7 @@ export function MediaView() {
     }
   };
 
-  const handleRemove = ({
-    event,
-    ids,
-  }: {
-    event: React.MouseEvent;
-    ids: string[];
-  }) => {
+  const handleRemove = ({ event, ids }: { event: React.MouseEvent; ids: string[] }) => {
     event.stopPropagation();
 
     if (!activeProject) return;
@@ -254,7 +228,7 @@ export function MediaView() {
   };
 
   const filteredMediaItems = useMemo(() => {
-    const filtered = mediaFiles.filter((item) => !item.ephemeral);
+    const filtered = mediaFiles.filter(item => !item.ephemeral);
 
     filtered.sort((a, b) => {
       let valueA: string | number;
@@ -289,7 +263,7 @@ export function MediaView() {
     return filtered;
   }, [mediaFiles, mediaSortBy, mediaSortOrder]);
   const orderedMediaIds = useMemo(() => {
-    return filteredMediaItems.map((item) => item.id);
+    return filteredMediaItems.map(item => item.id);
   }, [filteredMediaItems]);
 
   return (
@@ -315,12 +289,7 @@ export function MediaView() {
         {...dragProps}
       >
         {isDragOver || filteredMediaItems.length === 0 ? (
-          <MediaDragOverlay
-            isVisible={true}
-            isProcessing={isProcessing}
-            progress={progress}
-            onClick={openFilePicker}
-          />
+          <MediaDragOverlay isVisible={true} isProcessing={isProcessing} progress={progress} onClick={openFilePicker} />
         ) : (
           <SelectableSurface
             ariaLabel="Assets"
@@ -329,11 +298,7 @@ export function MediaView() {
             onRevealComplete={clearHighlight}
           >
             <MediaScopeRegistrar />
-            <MediaItemList
-              items={filteredMediaItems}
-              mode={mediaViewMode}
-              onRemove={handleRemove}
-            />
+            <MediaItemList items={filteredMediaItems} mode={mediaViewMode} onRemove={handleRemove} />
           </SelectableSurface>
         )}
       </PanelView>
@@ -359,17 +324,9 @@ function MediaAssetDraggable({
 }) {
   const editor = useEditor();
 
-  const addElementAtTime = ({
-    asset,
-    startTime,
-  }: {
-    asset: MediaAsset;
-    startTime: MediaTime;
-  }) => {
+  const addElementAtTime = ({ asset, startTime }: { asset: MediaAsset; startTime: MediaTime }) => {
     const duration =
-      asset.duration != null
-        ? mediaTimeFromSeconds({ seconds: asset.duration })
-        : DEFAULT_NEW_ELEMENT_DURATION;
+      asset.duration != null ? mediaTimeFromSeconds({ seconds: asset.duration }) : DEFAULT_NEW_ELEMENT_DURATION;
     const element = buildElementFromMedia({
       mediaId: asset.id,
       mediaType: asset.type,
@@ -397,9 +354,7 @@ function MediaAssetDraggable({
         }),
       }}
       shouldShowPlusOnDrag={false}
-      onAddToTimeline={({ currentTime }) =>
-        addElementAtTime({ asset: item, startTime: currentTime })
-      }
+      onAddToTimeline={({ currentTime }) => addElementAtTime({ asset: item, startTime: currentTime })}
       variant={variant}
       isRounded={isRounded}
     />
@@ -413,18 +368,11 @@ function MediaItemWithContextMenu({
 }: {
   item: MediaAsset;
   children: React.ReactNode;
-  onRemove: ({
-    event,
-    ids,
-  }: {
-    event: React.MouseEvent;
-    ids: string[];
-  }) => void;
+  onRemove: ({ event, ids }: { event: React.MouseEvent; ids: string[] }) => void;
 }) {
   const { isSelected, selectedIds } = useSelection();
   const idsToDelete = isSelected(item.id) ? selectedIds : [item.id];
-  const deleteLabel =
-    idsToDelete.length > 1 ? `Delete ${idsToDelete.length} items` : "Delete";
+  const deleteLabel = idsToDelete.length > 1 ? `Delete ${idsToDelete.length} items` : "Delete";
 
   return (
     <ContextMenu>
@@ -432,9 +380,7 @@ function MediaItemWithContextMenu({
       <ContextMenuContent>
         <ContextMenuItem
           variant="destructive"
-          onClick={(event: React.MouseEvent<HTMLDivElement>) =>
-            onRemove({ event, ids: idsToDelete })
-          }
+          onClick={(event: React.MouseEvent<HTMLDivElement>) => onRemove({ event, ids: idsToDelete })}
         >
           {deleteLabel}
         </ContextMenuItem>
@@ -450,34 +396,21 @@ function MediaItemList({
 }: {
   items: MediaAsset[];
   mode: MediaViewMode;
-  onRemove: ({
-    event,
-    ids,
-  }: {
-    event: React.MouseEvent;
-    ids: string[];
-  }) => void;
+  onRemove: ({ event, ids }: { event: React.MouseEvent; ids: string[] }) => void;
 }) {
   const isGrid = mode === "grid";
 
   return (
     <div
       className={cn(isGrid ? "grid gap-4" : "flex flex-col gap-1.5")}
-      style={
-        isGrid ? { gridTemplateColumns: "repeat(auto-fill, 7rem)" } : undefined
-      }
+      style={isGrid ? { gridTemplateColumns: "repeat(auto-fill, 7rem)" } : undefined}
     >
-      {items.map((item) => (
+      {items.map(item => (
         <MediaItemWithContextMenu item={item} onRemove={onRemove} key={item.id}>
           <SelectableItem className={cn(!isGrid && "w-full")} id={item.id}>
             <MediaAssetDraggable
               item={item}
-              preview={
-                <MediaPreview
-                  item={item}
-                  variant={isGrid ? "grid" : "compact"}
-                />
-              }
+              preview={<MediaPreview item={item} variant={isGrid ? "grid" : "compact"} />}
               variant={isGrid ? "card" : "compact"}
               isRounded={isGrid ? false : undefined}
             />
@@ -507,9 +440,7 @@ function MediaDurationBadge({ duration }: { duration?: number }) {
 function MediaDurationLabel({ duration }: { duration?: number }) {
   if (!duration) return null;
 
-  return (
-    <span className="text-xs opacity-70">{formatDuration({ duration })}</span>
-  );
+  return <span className="text-xs opacity-70">{formatDuration({ duration })}</span>;
 }
 
 function MediaTypePlaceholder({
@@ -539,13 +470,7 @@ function MediaTypePlaceholder({
   );
 }
 
-function MediaPreview({
-  item,
-  variant = "grid",
-}: {
-  item: MediaAsset;
-  variant?: "grid" | "compact";
-}) {
+function MediaPreview({ item, variant = "grid" }: { item: MediaAsset; variant?: "grid" | "compact" }) {
   const shouldShowDurationBadge = variant === "grid";
 
   if (item.type === "image") {
@@ -573,37 +498,19 @@ function MediaPreview({
             className="absolute inset-0 h-full w-full rounded object-cover"
             loading="lazy"
           />
-          {shouldShowDurationBadge ? (
-            <MediaDurationBadge duration={item.duration} />
-          ) : null}
+          {shouldShowDurationBadge ? <MediaDurationBadge duration={item.duration} /> : null}
         </div>
       );
     }
 
-    return (
-      <MediaTypePlaceholder
-        icon={Video01Icon}
-        label="Video"
-        duration={item.duration}
-        variant="muted"
-      />
-    );
+    return <MediaTypePlaceholder icon={Video01Icon} label="Video" duration={item.duration} variant="muted" />;
   }
 
   if (item.type === "audio") {
-    return (
-      <MediaTypePlaceholder
-        icon={MusicNote03Icon}
-        label="Audio"
-        duration={item.duration}
-        variant="bordered"
-      />
-    );
+    return <MediaTypePlaceholder icon={MusicNote03Icon} label="Audio" duration={item.duration} variant="bordered" />;
   }
 
-  return (
-    <MediaTypePlaceholder icon={Image02Icon} label="Unknown" variant="muted" />
-  );
+  return <MediaTypePlaceholder icon={Image02Icon} label="Unknown" variant="muted" />;
 }
 
 function MediaActions({
@@ -634,9 +541,7 @@ function MediaActions({
             <Button
               size="icon"
               variant="ghost"
-              onClick={() =>
-                setMediaViewMode(mediaViewMode === "grid" ? "list" : "grid")
-              }
+              onClick={() => setMediaViewMode(mediaViewMode === "grid" ? "list" : "grid")}
               disabled={isProcessing}
               className="items-center justify-center"
             >
@@ -648,23 +553,14 @@ function MediaActions({
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>
-              {mediaViewMode === "grid"
-                ? "Switch to list view"
-                : "Switch to grid view"}
-            </p>
+            <p>{mediaViewMode === "grid" ? "Switch to list view" : "Switch to grid view"}</p>
           </TooltipContent>
         </Tooltip>
         <Tooltip>
           <DropdownMenu>
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  disabled={isProcessing}
-                  className="items-center justify-center"
-                >
+                <Button size="icon" variant="ghost" disabled={isProcessing} className="items-center justify-center">
                   <HugeiconsIcon icon={Sorting19Icon} />
                 </Button>
               </DropdownMenuTrigger>
@@ -702,8 +598,7 @@ function MediaActions({
           </DropdownMenu>
           <TooltipContent>
             <p>
-              Sort by {sortBy} (
-              {sortOrder === "asc" ? "ascending" : "descending"})
+              Sort by {sortBy} ({sortOrder === "asc" ? "ascending" : "descending"})
             </p>
           </TooltipContent>
         </Tooltip>

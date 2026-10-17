@@ -10,13 +10,13 @@ dependencies. Native execution remains host-bound: the desktop and identity
 owners are `apps/aphrody-app` and `crates/aphrody-identity`. Workspace membership
 does not prove that a native desktop artifact has been built or launched.
 
-| Script              | Does                                                            |
-| ------------------- | --------------------------------------------------------------- |
+| Script              | Does                                                                         |
+| ------------------- | ---------------------------------------------------------------------------- |
 | `bun run dev`       | Native M3 development server on port 1421 (`tauri.conf.json` `build.devUrl`) |
-| `bun run build`     | `build.ts`: native M3 build into `apps/aphrody-app/ui-dist`     |
-| `bun run test`      | `bun test src` (layout parity, chat, history, brand theme, ...) |
-| `bun run typecheck` | Native `bun check -p tsconfig.json --noEmit`                    |
-| `bun run brand`     | regenerates the brand theme (`scripts/brand-theme.ts`)          |
+| `bun run build`     | `build.ts`: native M3 build into `apps/aphrody-app/ui-dist`                  |
+| `bun run test`      | `bun test src` (layout parity, chat, history, brand theme, ...)              |
+| `bun run typecheck` | Native `bun check -p tsconfig.json --noEmit`                                 |
+| `bun run brand`     | regenerates the brand theme (`scripts/brand-theme.ts`)                       |
 
 Configuration: `m3.config.ts` (entry `src/index.html`, Tauri `uiDist`), `bunfig.toml`.
 

@@ -3,7 +3,14 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** qwave.dll!QOSAddSocketToFlow */
-  QOSAddSocketToFlow(QOSHandle: Win32Pointer, Socket: number | bigint, DestAddr: Win32Pointer, TrafficType: number, Flags: number, FlowId: Win32Pointer): number;
+  QOSAddSocketToFlow(
+    QOSHandle: Win32Pointer,
+    Socket: number | bigint,
+    DestAddr: Win32Pointer,
+    TrafficType: number,
+    Flags: number,
+    FlowId: Win32Pointer,
+  ): number;
   /** qwave.dll!QOSCancel */
   QOSCancel(QOSHandle: Win32Pointer, Overlapped: Win32Pointer): number;
   /** qwave.dll!QOSCloseHandle */
@@ -13,13 +20,37 @@ interface Functions {
   /** qwave.dll!QOSEnumerateFlows */
   QOSEnumerateFlows(QOSHandle: Win32Pointer, Size: Win32Pointer, Buffer: Win32Pointer): number;
   /** qwave.dll!QOSNotifyFlow */
-  QOSNotifyFlow(QOSHandle: Win32Pointer, FlowId: number, Operation: number, Size: Win32Pointer, Buffer: Win32Pointer, Flags: number, Overlapped: Win32Pointer): number;
+  QOSNotifyFlow(
+    QOSHandle: Win32Pointer,
+    FlowId: number,
+    Operation: number,
+    Size: Win32Pointer,
+    Buffer: Win32Pointer,
+    Flags: number,
+    Overlapped: Win32Pointer,
+  ): number;
   /** qwave.dll!QOSQueryFlow */
-  QOSQueryFlow(QOSHandle: Win32Pointer, FlowId: number, Operation: number, Size: Win32Pointer, Buffer: Win32Pointer, Flags: number, Overlapped: Win32Pointer): number;
+  QOSQueryFlow(
+    QOSHandle: Win32Pointer,
+    FlowId: number,
+    Operation: number,
+    Size: Win32Pointer,
+    Buffer: Win32Pointer,
+    Flags: number,
+    Overlapped: Win32Pointer,
+  ): number;
   /** qwave.dll!QOSRemoveSocketFromFlow */
   QOSRemoveSocketFromFlow(QOSHandle: Win32Pointer, Socket: number | bigint, FlowId: number, Flags: number): number;
   /** qwave.dll!QOSSetFlow */
-  QOSSetFlow(QOSHandle: Win32Pointer, FlowId: number, Operation: number, Size: number, Buffer: Win32Pointer, Flags: number, Overlapped: Win32Pointer): number;
+  QOSSetFlow(
+    QOSHandle: Win32Pointer,
+    FlowId: number,
+    Operation: number,
+    Size: number,
+    Buffer: Win32Pointer,
+    Flags: number,
+    Overlapped: Win32Pointer,
+  ): number;
   /** qwave.dll!QOSStartTrackingClient */
   QOSStartTrackingClient(QOSHandle: Win32Pointer, DestAddr: Win32Pointer, Flags: number): number;
   /** qwave.dll!QOSStopTrackingClient */

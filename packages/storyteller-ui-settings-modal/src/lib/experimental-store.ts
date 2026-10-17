@@ -33,7 +33,7 @@ interface ExperimentalState {
   setStoryboardPageEnabled: (enabled: boolean) => void;
 }
 
-export const useExperimentalStore = create<ExperimentalState>((set) => ({
+export const useExperimentalStore = create<ExperimentalState>(set => ({
   enabled: readBoolFlag(ENABLED_STORAGE_KEY),
   storyboardPageEnabled: readBoolFlag(STORYBOARD_STORAGE_KEY),
   enable: () => {
@@ -52,5 +52,4 @@ export const useExperimentalStore = create<ExperimentalState>((set) => ({
   },
 }));
 
-export const useStoryboardPageEnabled = () =>
-  useExperimentalStore((s) => s.enabled && s.storyboardPageEnabled);
+export const useStoryboardPageEnabled = () => useExperimentalStore(s => s.enabled && s.storyboardPageEnabled);

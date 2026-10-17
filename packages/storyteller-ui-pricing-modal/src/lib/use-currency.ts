@@ -37,8 +37,8 @@ export const CURRENCY_OPTIONS: CurrencyOption[] = [
   { value: "CNY", label: "CNY (¥)", symbol: "¥", decimals: 2 },
 ];
 
-const SYMBOLS = CURRENCY_OPTIONS.filter((o) => o.value !== "USD")
-  .map((o) => o.value)
+const SYMBOLS = CURRENCY_OPTIONS.filter(o => o.value !== "USD")
+  .map(o => o.value)
   .join(",");
 
 // Fallback rates – kept in case the API is unreachable
@@ -57,7 +57,7 @@ const FALLBACK_RATES: Record<CurrencyCode, number> = {
 function loadSavedCurrency(): CurrencyCode {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (saved && CURRENCY_OPTIONS.some((o) => o.value === saved)) {
+    if (saved && CURRENCY_OPTIONS.some(o => o.value === saved)) {
       return saved as CurrencyCode;
     }
   } catch {
@@ -114,9 +114,7 @@ async function fetchRates(): Promise<Record<CurrencyCode, number>> {
 
   _ratesFetchPromise = (async () => {
     try {
-      const res = await fetch(
-        `https://api.frankfurter.dev/v1/latest?base=USD&symbols=${SYMBOLS}`,
-      );
+      const res = await fetch(`https://api.frankfurter.dev/v1/latest?base=USD&symbols=${SYMBOLS}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: FrankfurterResponse = await res.json();
       const rates: Record<CurrencyCode, number> = {
@@ -161,16 +159,13 @@ export interface UseCurrencyResult {
 }
 
 export function useCurrency(): UseCurrencyResult {
-  const [currency, setCurrencyState] =
-    useState<CurrencyCode>(loadSavedCurrency);
-  const [rates, setRates] = useState<Record<CurrencyCode, number>>(
-    () => loadCachedRates() ?? FALLBACK_RATES,
-  );
+  const [currency, setCurrencyState] = useState<CurrencyCode>(loadSavedCurrency);
+  const [rates, setRates] = useState<Record<CurrencyCode, number>>(() => loadCachedRates() ?? FALLBACK_RATES);
   const [ratesLoaded, setRatesLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    fetchRates().then((r) => {
+    fetchRates().then(r => {
       if (!cancelled) {
         setRates(r);
         setRatesLoaded(true);
@@ -183,14 +178,13 @@ export function useCurrency(): UseCurrencyResult {
 
   const setCurrency = useCallback((code: CurrencyCode | string | number) => {
     const str = String(code) as CurrencyCode;
-    if (CURRENCY_OPTIONS.some((o) => o.value === str)) {
+    if (CURRENCY_OPTIONS.some(o => o.value === str)) {
       setCurrencyState(str);
       saveCurrency(str);
     }
   }, []);
 
-  const currencyOption =
-    CURRENCY_OPTIONS.find((o) => o.value === currency) ?? CURRENCY_OPTIONS[0];
+  const currencyOption = CURRENCY_OPTIONS.find(o => o.value === currency) ?? CURRENCY_OPTIONS[0];
 
   const convert = useCallback(
     (usdAmount: number): number => {

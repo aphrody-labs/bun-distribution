@@ -70,8 +70,8 @@ export function ActionReminderModal({
       titleText = customTitle || "Link Your OpenAI Account";
       messageContent = customMessage || (
         <p>
-          To use this feature, please connect your OpenAI account. This allows
-          us to leverage your existing subscription.
+          To use this feature, please connect your OpenAI account. This allows us to leverage your existing
+          subscription.
         </p>
       );
       primaryActionBtnText = customPrimaryActionText || "Login with OpenAI";
@@ -81,8 +81,8 @@ export function ActionReminderModal({
     case "artcraftLogin":
       messageContent = customMessage || (
         <p className="text-sm text-white/70">
-          Please log in or sign up to ArtCraft to proceed. This will allow you
-          to save your work and access all features.
+          Please log in or sign up to ArtCraft to proceed. This will allow you to save your work and access all
+          features.
         </p>
       );
       primaryActionBtnText = customPrimaryActionText || "Login / Sign Up";
@@ -90,11 +90,7 @@ export function ActionReminderModal({
       primaryActionBtnClassName = customPrimaryActionBtnClassName || "";
       break;
     default:
-      messageContent = customMessage || (
-        <p className="text-sm text-white/70">
-          Please complete the required action.
-        </p>
-      );
+      messageContent = customMessage || <p className="text-sm text-white/70">Please complete the required action.</p>;
       primaryActionBtnText = customPrimaryActionText || "Proceed";
       primaryActionIcon = customPrimaryActionIcon || LogInIcon;
       primaryActionBtnClassName = customPrimaryActionBtnClassName || "";
@@ -106,16 +102,10 @@ export function ActionReminderModal({
 
   let modalSpecificClasses = "";
 
-  const finalModalClassName =
-    `${customModalClassName} ${modalSpecificClasses}`.trim();
+  const finalModalClassName = `${customModalClassName} ${modalSpecificClasses}`.trim();
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={titleText}
-      className={finalModalClassName}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={titleText} className={finalModalClassName}>
       <div>
         {customChildren ? (
           <div className="space-y-4">{customChildren}</div>

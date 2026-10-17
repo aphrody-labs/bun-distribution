@@ -44,13 +44,8 @@ export function Section({
 
   useEffect(() => {
     if (!sectionKey) return;
-    if (
-      process.env.NODE_ENV !== "production" &&
-      mountedSectionKeys.has(sectionKey)
-    ) {
-      console.error(
-        `[Section] duplicate sectionKey mounted simultaneously: "${sectionKey}"`,
-      );
+    if (process.env.NODE_ENV !== "production" && mountedSectionKeys.has(sectionKey)) {
+      console.error(`[Section] duplicate sectionKey mounted simultaneously: "${sectionKey}"`);
     }
     mountedSectionKeys.add(sectionKey);
     return () => {
@@ -89,14 +84,7 @@ interface SectionHeaderProps {
   className?: string;
 }
 
-export function SectionHeader({
-  children,
-  trailing,
-  leading,
-  actions,
-  onClick,
-  className,
-}: SectionHeaderProps) {
+export function SectionHeader({ children, trailing, leading, actions, onClick, className }: SectionHeaderProps) {
   const ctx = useSectionContext();
   const isCollapsible = ctx?.collapsible ?? false;
   const isOpen = ctx?.isOpen ?? true;
@@ -108,9 +96,7 @@ export function SectionHeader({
       icon={ArrowDownIcon}
       className={cn(
         "size-4 shrink-0 transition-transform duration-200 ease-out",
-        isOpen
-          ? "rotate-0 text-foreground"
-          : "-rotate-90 text-muted-foreground",
+        isOpen ? "rotate-0 text-foreground" : "-rotate-90 text-muted-foreground",
       )}
     />
   );
@@ -149,9 +135,7 @@ export function SectionHeader({
   );
 
   return (
-    <div
-      className={cn("flex h-11 w-full items-center gap-2 px-3.5", className)}
-    >
+    <div className={cn("flex h-11 w-full items-center gap-2 px-3.5", className)}>
       {innerContent}
       {trailingArea}
       {actions}
@@ -180,11 +164,7 @@ export function SectionTitle({
 
   if (onClick) {
     return (
-      <button
-        type="button"
-        className={cn("cursor-pointer", titleClass)}
-        onClick={onClick}
-      >
+      <button type="button" className={cn("cursor-pointer", titleClass)} onClick={onClick}>
         {children}
       </button>
     );
@@ -193,16 +173,8 @@ export function SectionTitle({
   return <span className={titleClass}>{children}</span>;
 }
 
-export function SectionFields({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={cn("flex flex-col gap-3.5", className)}>{children}</div>
-  );
+export function SectionFields({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={cn("flex flex-col gap-3.5", className)}>{children}</div>;
 }
 
 export function SectionField({
@@ -227,13 +199,7 @@ export function SectionField({
   );
 }
 
-export function SectionContent({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+export function SectionContent({ children, className }: { children: React.ReactNode; className?: string }) {
   const ctx = useSectionContext();
   const isCollapsible = ctx?.collapsible ?? false;
   const isOpen = ctx?.isOpen ?? true;

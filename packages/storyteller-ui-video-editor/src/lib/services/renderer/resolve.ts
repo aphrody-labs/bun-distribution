@@ -1,26 +1,17 @@
 import { mediaTimeToSeconds, roundMediaTime } from "../../wasm";
 import { getElementLocalTime } from "../../animation";
 import { resolveEffectParamsAtTime } from "../../animation/effect-param-channel";
-import {
-  buildGaussianBlurPasses,
-  intensityToSigma,
-} from "../../effects/definitions/blur";
+import { buildGaussianBlurPasses, intensityToSigma } from "../../effects/definitions/blur";
 import { effectsRegistry, resolveEffectPasses } from "../../effects";
 import type { Effect, EffectPass } from "../../effects/types";
 import { getSourceTimeAtClipTime } from "../../retime";
-import {
-  DEFAULT_GRAPHIC_SOURCE_SIZE,
-  resolveGraphicElementParamsAtTime,
-} from "../../graphics";
+import { DEFAULT_GRAPHIC_SOURCE_SIZE, resolveGraphicElementParamsAtTime } from "../../graphics";
 import {
   buildTextBackgroundFromElement,
   getTextMeasurementContext,
   measureTextElement,
 } from "../../text/measure-element";
-import {
-  resolveColorAtTime,
-  resolveOpacityAtTime,
-} from "../../animation/values";
+import { resolveColorAtTime, resolveOpacityAtTime } from "../../animation/values";
 import { resolveTransformAtTime } from "../../rendering/animation-values";
 import { videoCache } from "../video-cache/service";
 import type { CanvasRenderer } from "./canvas-renderer";
@@ -30,23 +21,13 @@ import {
   type BackdropSource,
   type ResolvedBlurBackgroundNodeState,
 } from "./nodes/blur-background-node";
-import {
-  EffectLayerNode,
-  type ResolvedEffectLayerNodeState,
-} from "./nodes/effect-layer-node";
-import {
-  GraphicNode,
-  type ResolvedGraphicNodeState,
-} from "./nodes/graphic-node";
+import { EffectLayerNode, type ResolvedEffectLayerNodeState } from "./nodes/effect-layer-node";
+import { GraphicNode, type ResolvedGraphicNodeState } from "./nodes/graphic-node";
 import { ImageNode, loadImageSource } from "./nodes/image-node";
 import { StickerNode, loadStickerSource } from "./nodes/sticker-node";
 import { TextNode, type ResolvedTextNodeState } from "./nodes/text-node";
 import { VideoNode } from "./nodes/video-node";
-import type {
-  ResolvedVisualNodeState,
-  ResolvedVisualSourceNodeState,
-  VisualNodeParams,
-} from "./nodes/visual-node";
+import type { ResolvedVisualNodeState, ResolvedVisualSourceNodeState, VisualNodeParams } from "./nodes/visual-node";
 
 type ResolveContext = {
   renderer: CanvasRenderer;
@@ -71,13 +52,7 @@ export async function resolveRenderTree({
   });
 }
 
-async function resolveNode({
-  node,
-  context,
-}: {
-  node: AnyBaseNode;
-  context: ResolveContext;
-}): Promise<void> {
+async function resolveNode({ node, context }: { node: AnyBaseNode; context: ResolveContext }): Promise<void> {
   if (node instanceof VideoNode) {
     node.resolved = await resolveVideoNode({ node, context });
   } else if (node instanceof ImageNode) {
@@ -94,9 +69,7 @@ async function resolveNode({
     node.resolved = resolveEffectLayerNode({ node, context });
   }
 
-  await Promise.all(
-    node.children.map((child) => resolveNode({ node: child, context })),
-  );
+  await Promise.all(node.children.map(child => resolveNode({ node: child, context })));
 }
 
 function resolveEffectPassGroups({
@@ -113,8 +86,8 @@ function resolveEffectPassGroups({
   height: number;
 }): EffectPass[][] {
   return (effects ?? [])
-    .filter((effect) => effect.enabled)
-    .map((effect) => {
+    .filter(effect => effect.enabled)
+    .map(effect => {
       const resolvedParams = resolveEffectParamsAtTime({
         effectId: effect.id,
         params: effect.params,
@@ -162,16 +135,9 @@ function resolveVisualState({
     animations: params.animations,
     localTime,
   });
-  const containScale = Math.min(
-    context.renderer.width / sourceWidth,
-    context.renderer.height / sourceHeight,
-  );
-  const effectWidth = Math.round(
-    Math.abs(sourceWidth * containScale * transform.scaleX),
-  );
-  const effectHeight = Math.round(
-    Math.abs(sourceHeight * containScale * transform.scaleY),
-  );
+  const containScale = Math.min(context.renderer.width / sourceWidth, context.renderer.height / sourceHeight);
+  const effectWidth = Math.round(Math.abs(sourceWidth * containScale * transform.scaleX));
+  const effectHeight = Math.round(Math.abs(sourceHeight * containScale * transform.scaleY));
 
   return {
     localTime,
@@ -318,17 +284,8 @@ function resolveGraphicNode({
   };
 }
 
-function resolveTextNode({
-  node,
-  context,
-}: {
-  node: TextNode;
-  context: ResolveContext;
-}): ResolvedTextNodeState | null {
-  if (
-    context.time < node.params.startTime ||
-    context.time >= node.params.startTime + node.params.duration
-  ) {
+function resolveTextNode({ node, context }: { node: TextNode; context: ResolveContext }): ResolvedTextNodeState | null {
+  if (context.time < node.params.startTime || context.time >= node.params.startTime + node.params.duration) {
     return null;
   }
 
@@ -351,10 +308,7 @@ function resolveTextNode({
       localTime,
     }),
     textColor: resolveColorAtTime({
-      baseColor:
-        typeof node.params.params.color === "string"
-          ? node.params.params.color
-          : "#ffffff",
+      baseColor: typeof node.params.params.color === "string" ? node.params.params.color : "#ffffff",
       animations: node.params.animations,
       propertyPath: "color",
       localTime,
@@ -466,10 +420,7 @@ function resolveEffectLayerNode({
   context: ResolveContext;
 }): ResolvedEffectLayerNodeState | null {
   const time = context.time;
-  if (
-    time < node.params.timeOffset - 1e-6 ||
-    time >= node.params.timeOffset + node.params.duration + 1e-6
-  ) {
+  if (time < node.params.timeOffset - 1e-6 || time >= node.params.timeOffset + node.params.duration + 1e-6) {
     return null;
   }
 

@@ -25,13 +25,8 @@ export class MediaManager {
   // project state. Returns the existing entry (idempotent no-op) when
   // the asset id is already in the bin so re-imports of the same gallery
   // token don't produce duplicate rows.
-  async addMediaAsset({
-    asset,
-  }: {
-    projectId?: string;
-    asset: MediaAsset;
-  }): Promise<MediaAsset | null> {
-    const existing = this.assets.find((a) => a.id === asset.id);
+  async addMediaAsset({ asset }: { projectId?: string; asset: MediaAsset }): Promise<MediaAsset | null> {
+    const existing = this.assets.find(a => a.id === asset.id);
     if (existing) {
       return existing;
     }
@@ -50,10 +45,7 @@ export class MediaManager {
       return asset;
     } catch (error) {
       console.error("Failed to register media asset:", error);
-      this.assets = [
-        ...this.assets.slice(0, insertIndex),
-        ...this.assets.slice(insertIndex + 1),
-      ];
+      this.assets = [...this.assets.slice(0, insertIndex), ...this.assets.slice(insertIndex + 1)];
       this.notify();
       this.editor.adapters.toast.error("Failed to add media", {
         description: error instanceof Error ? error.message : undefined,
@@ -66,13 +58,7 @@ export class MediaManager {
     this.removeMediaAssets({ projectId, ids: [id] });
   }
 
-  removeMediaAssets({
-    projectId,
-    ids,
-  }: {
-    projectId: string;
-    ids: string[];
-  }): void {
+  removeMediaAssets({ projectId, ids }: { projectId: string; ids: string[] }): void {
     const uniqueIds = [...new Set(ids)];
     if (uniqueIds.length === 0) {
       return;
@@ -86,7 +72,7 @@ export class MediaManager {
           })
         : new BatchCommand(
             uniqueIds.map(
-              (id) =>
+              id =>
                 new RemoveMediaAssetCommand({
                   projectId,
                   assetId: id,
@@ -106,7 +92,7 @@ export class MediaManager {
   clearProjectMedia(): void {
     waveformCache.clearAll();
 
-    this.assets.forEach((asset) => {
+    this.assets.forEach(asset => {
       if (asset.url) {
         URL.revokeObjectURL(asset.url);
       }
@@ -123,7 +109,7 @@ export class MediaManager {
     videoCache.clearAll();
     waveformCache.clearAll();
 
-    this.assets.forEach((asset) => {
+    this.assets.forEach(asset => {
       if (asset.url) {
         URL.revokeObjectURL(asset.url);
       }
@@ -155,7 +141,7 @@ export class MediaManager {
   }
 
   private notify(): void {
-    this.listeners.forEach((fn) => {
+    this.listeners.forEach(fn => {
       fn();
     });
   }

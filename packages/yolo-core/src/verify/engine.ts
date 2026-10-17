@@ -54,30 +54,13 @@ export const GATES: readonly Gate[] = [
   {
     id: "lint",
     title: "Bun native lint",
-    command: [
-      "bun",
-      "lint",
-      "scripts/",
-      "test/",
-      "packages/",
-      "crates/infra/aphrody/src/",
-      "m3/packages/",
-    ],
+    command: ["bun", "lint", "scripts/", "test/", "packages/", "crates/infra/aphrody/src/", "m3/packages/"],
     surfaces: TS,
   },
   {
     id: "fmt-check",
     title: "Bun native format check",
-    command: [
-      "bun",
-      "fmt",
-      "--check",
-      "scripts/",
-      "test/",
-      "packages/",
-      "crates/infra/aphrody/src/",
-      "m3/packages/",
-    ],
+    command: ["bun", "fmt", "--check", "scripts/", "test/", "packages/", "crates/infra/aphrody/src/", "m3/packages/"],
     surfaces: TS,
   },
   {
@@ -89,15 +72,7 @@ export const GATES: readonly Gate[] = [
   {
     id: "rust-fmt",
     title: "rustfmt --check (yolo-core and yolo-runtime)",
-    command: [
-      "cargo",
-      "fmt",
-      "--check",
-      "-p",
-      "yolo-core",
-      "-p",
-      "yolo-runtime",
-    ],
+    command: ["cargo", "fmt", "--check", "-p", "yolo-core", "-p", "yolo-runtime"],
     surfaces: [
       "crates/engine/yolo-core/**",
       "crates/engine/yolo-runtime/**",
@@ -115,46 +90,24 @@ export const GATES: readonly Gate[] = [
   {
     id: "import-check",
     title: "vendored crates equal a fresh import of the pinned submodules",
-    command: [
-      "bun",
-      "run",
-      "packages/engine/yolo/src/index.ts",
-      "import",
-      "--check",
-      "--out",
-      ".cache/vendor",
-    ],
+    command: ["bun", "run", "packages/engine/yolo/src/index.ts", "import", "--check", "--out", ".cache/vendor"],
     surfaces: ["vendor.toml", "vendor.lock", "crates/**", "vendor"],
-    precondition: (root) =>
-      existsSync(join(root, ".cache/vendor"))
-        ? null
-        : "the vendor worktree is missing (just vendor-worktree)",
+    precondition: root =>
+      existsSync(join(root, ".cache/vendor")) ? null : "the vendor worktree is missing (just vendor-worktree)",
   },
   {
     id: "python-lint",
     title: "ruff check (owned Python package)",
     command: ["ruff", "check", "packages/engine/python"],
     surfaces: ["packages/engine/python/**", "pyproject.toml"],
-    precondition: () =>
-      Bun.which("ruff") ? null : "ruff is not installed on PATH",
+    precondition: () => (Bun.which("ruff") ? null : "ruff is not installed on PATH"),
   },
   {
     id: "python-native",
     title: "installed PyO3 extension import (workspace environment)",
-    command: [
-      "uv",
-      "run",
-      "--package",
-      "yolo",
-      "--no-sync",
-      "--",
-      "python",
-      "-c",
-      "import yolo._yolo_native",
-    ],
+    command: ["uv", "run", "--package", "yolo", "--no-sync", "--", "python", "-c", "import yolo._yolo_native"],
     surfaces: ["packages/engine/python/**", "pyproject.toml", "uv.lock"],
-    precondition: () =>
-      Bun.which("uv") ? null : "uv is not installed on PATH",
+    precondition: () => (Bun.which("uv") ? null : "uv is not installed on PATH"),
   },
   {
     id: "python-test",
@@ -258,30 +211,21 @@ export interface Outcome {
 export type Runner = (gate: Gate) => Promise<Outcome>;
 
 /** The gates selected by `--changed`: those with a surface glob that matches a changed file. */
-export function selectChanged(
-  gates: readonly Gate[],
-  changed: readonly string[],
-): Gate[] {
-  return gates.filter((g) =>
-    g.surfaces.some((s) => changed.some((f) => new Bun.Glob(s).match(f))),
-  );
+export function selectChanged(gates: readonly Gate[], changed: readonly string[]): Gate[] {
+  return gates.filter(g => g.surfaces.some(s => changed.some(f => new Bun.Glob(s).match(f))));
 }
 
 /** Check that `needs` refer to selected gates and that the graph has no cycle; throws with the reason. */
 export function validateGraph(gates: readonly Gate[]): void {
-  const ids = new Set(gates.map((g) => g.id));
+  const ids = new Set(gates.map(g => g.id));
   for (const g of gates)
-    for (const n of g.needs ?? [])
-      if (!ids.has(n))
-        throw new Error(`gate ${g.id} needs ${n}, which is not selected`);
+    for (const n of g.needs ?? []) if (!ids.has(n)) throw new Error(`gate ${g.id} needs ${n}, which is not selected`);
   const state = new Map<string, 1 | 2>();
   const visit = (id: string, path: string[]): void => {
     if (state.get(id) === 2) return;
-    if (state.get(id) === 1)
-      throw new Error(`dependency cycle: ${[...path, id].join(" -> ")}`);
+    if (state.get(id) === 1) throw new Error(`dependency cycle: ${[...path, id].join(" -> ")}`);
     state.set(id, 1);
-    for (const n of gates.find((g) => g.id === id)?.needs ?? [])
-      visit(n, [...path, id]);
+    for (const n of gates.find(g => g.id === id)?.needs ?? []) visit(n, [...path, id]);
     state.set(id, 2);
   };
   for (const g of gates) visit(g.id, []);
@@ -306,13 +250,9 @@ export async function runGates(
     const existing = done.get(g.id);
     if (existing !== undefined) return existing;
     const p = (async (): Promise<GateResult> => {
-      const deps = await Promise.all(
-        (g.needs ?? []).map((n) =>
-          start(gates.find((x) => x.id === n) as Gate),
-        ),
-      );
+      const deps = await Promise.all((g.needs ?? []).map(n => start(gates.find(x => x.id === n) as Gate)));
       const base = { id: g.id, title: g.title, command: g.command };
-      const bad = deps.find((d) => d.status !== "pass");
+      const bad = deps.find(d => d.status !== "pass");
       if (bad !== undefined)
         return {
           ...base,
@@ -362,12 +302,11 @@ export function summarize(
   return {
     sumGateMs,
     speedup: wallMs > 0 ? Math.round((sumGateMs / wallMs) * 100) / 100 : 1,
-    ok: results.every((r) => r.status === "pass"),
+    ok: results.every(r => r.status === "pass"),
   };
 }
 
-const cell = (s: string): string =>
-  s.replaceAll("|", "\\|").replaceAll("\n", " ");
+const cell = (s: string): string => s.replaceAll("|", "\\|").replaceAll("\n", " ");
 
 export function renderMarkdown(r: Report): string {
   const lines = [
@@ -379,43 +318,31 @@ export function renderMarkdown(r: Report): string {
     "| gate | status | exit | start ms | ms | command |",
     "| :-- | :-- | --: | --: | --: | :-- |",
     ...r.gates.map(
-      (g) =>
+      g =>
         `| ${g.id} | ${g.status} | ${g.exitCode ?? "-"} | ${g.startMs} | ${g.durationMs} | \`${cell(g.command.join(" "))}\` |`,
     ),
   ];
-  for (const g of r.gates.filter((x) => x.detail !== "")) {
+  for (const g of r.gates.filter(x => x.detail !== "")) {
     lines.push(
       "",
       `## ${g.id}: ${g.status}`,
       "",
-      g.status === "skipped"
-        ? g.detail
-        : "```text\n" + g.detail.trimEnd() + "\n```",
+      g.status === "skipped" ? g.detail : "```text\n" + g.detail.trimEnd() + "\n```",
     );
   }
   lines.push("", "## Not run", "");
-  const skipped = r.gates
-    .filter((g) => g.status === "skipped")
-    .map((g) => `- ${g.id}: ${g.detail}`);
-  const rest = r.notRun.map((n) => `- ${n.id} (${n.title}): ${n.reason}`);
-  lines.push(
-    ...(skipped.length + rest.length === 0
-      ? ["- nothing"]
-      : [...skipped, ...rest]),
-  );
+  const skipped = r.gates.filter(g => g.status === "skipped").map(g => `- ${g.id}: ${g.detail}`);
+  const rest = r.notRun.map(n => `- ${n.id} (${n.title}): ${n.reason}`);
+  lines.push(...(skipped.length + rest.length === 0 ? ["- nothing"] : [...skipped, ...rest]));
   return lines.join("\n") + "\n";
 }
 
-export function renderList(
-  gates: readonly Gate[],
-  notRun: readonly NotRun[],
-  json: boolean,
-): string {
+export function renderList(gates: readonly Gate[], notRun: readonly NotRun[], json: boolean): string {
   if (json)
     return JSON.stringify(
       {
         schema: "yolo.verify.gates/1",
-        gates: gates.map((g) => ({
+        gates: gates.map(g => ({
           id: g.id,
           title: g.title,
           command: g.command,
@@ -430,18 +357,15 @@ export function renderList(
   return [
     "| gate | command | needs |",
     "| :-- | :-- | :-- |",
-    ...gates.map(
-      (g) =>
-        `| ${g.id} | \`${cell(g.command.join(" "))}\` | ${(g.needs ?? []).join(", ") || "-"} |`,
-    ),
+    ...gates.map(g => `| ${g.id} | \`${cell(g.command.join(" "))}\` | ${(g.needs ?? []).join(", ") || "-"} |`),
     "",
-    ...notRun.map((n) => `- not run locally: ${n.id}: ${n.reason}`),
+    ...notRun.map(n => `- not run locally: ${n.id}: ${n.reason}`),
   ].join("\n");
 }
 
 /** Spawn a gate with a timeout; the output kept is the last 4 KiB of stdout and stderr together. */
 export function spawnRunner(root: string, timeoutMs: number): Runner {
-  return async (gate) => {
+  return async gate => {
     // own process group, so a timeout kills the gate's children too instead of leaving them holding the pipes
     const proc = Bun.spawn([...gate.command], {
       windowsHide: true,
@@ -460,10 +384,7 @@ export function spawnRunner(root: string, timeoutMs: number): Runner {
         proc.kill("SIGKILL");
       }
     }, timeoutMs);
-    const [out, err] = await Promise.all([
-      new Response(proc.stdout).text(),
-      new Response(proc.stderr).text(),
-    ]);
+    const [out, err] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
     const code = await proc.exited;
     clearTimeout(timer);
     const output = `${out}${err}`.slice(-4096);
@@ -485,7 +406,7 @@ export function changedFiles(root: string): string[] {
   return git(root, "status", "--porcelain", "-uall")
     .split("\n")
     .filter(Boolean)
-    .map((l) => l.slice(3).replace(/^.* -> /, ""));
+    .map(l => l.slice(3).replace(/^.* -> /, ""));
 }
 
 export const reportDir = (root: string): string => join(root, "var/verify");
@@ -498,14 +419,7 @@ Run repository gates; heavy engine checks belong to the build factory. Reports a
 
 /** Validate the entire argv before reading reports, inspecting Git or starting a gate. */
 function parseVerifyArgs(args: readonly string[]): Map<string, string | true> {
-  const flags = new Set([
-    "--help",
-    "--json",
-    "--md",
-    "--list",
-    "--last",
-    "--changed",
-  ]);
+  const flags = new Set(["--help", "--json", "--md", "--list", "--last", "--changed"]);
   const values = new Set(["--only", "--parallel", "--timeout", "--out"]);
   const parsed = new Map<string, string | true>();
   for (let index = 0; index < args.length; index++) {
@@ -518,8 +432,7 @@ function parseVerifyArgs(args: readonly string[]): Map<string, string | true> {
       continue;
     }
     const value = args[++index];
-    if (!value || value.startsWith("-"))
-      throw new Error(`missing value for ${option}`);
+    if (!value || value.startsWith("-")) throw new Error(`missing value for ${option}`);
     parsed.set(option, value);
   }
   for (const [a, b] of [
@@ -527,39 +440,23 @@ function parseVerifyArgs(args: readonly string[]): Map<string, string | true> {
     ["--only", "--changed"],
     ["--list", "--last"],
   ]) {
-    if (parsed.has(a!) && parsed.has(b!))
-      throw new Error(`${a} and ${b} cannot be combined`);
+    if (parsed.has(a!) && parsed.has(b!)) throw new Error(`${a} and ${b} cannot be combined`);
   }
   if (parsed.has("--list") || parsed.has("--last")) {
-    for (const option of [
-      "--only",
-      "--changed",
-      "--parallel",
-      "--timeout",
-      "--out",
-    ])
+    for (const option of ["--only", "--changed", "--parallel", "--timeout", "--out"])
       if (parsed.has(option)) throw new Error(`${option} requires a gate run`);
   }
   const only = parsed.get("--only");
-  if (typeof only === "string" && only.split(",").some((name) => !name.trim()))
+  if (typeof only === "string" && only.split(",").some(name => !name.trim()))
     throw new Error("--only requires a comma-separated list of gate names");
   const parallel = parsed.get("--parallel");
-  if (
-    typeof parallel === "string" &&
-    (!Number.isSafeInteger(Number(parallel)) || Number(parallel) < 1)
-  )
+  if (typeof parallel === "string" && (!Number.isSafeInteger(Number(parallel)) || Number(parallel) < 1))
     throw new Error("--parallel must be a positive integer");
   const timeout = parsed.get("--timeout");
   if (typeof timeout === "string") {
     const milliseconds = Number(timeout) * 1000;
-    if (
-      !Number.isFinite(milliseconds) ||
-      milliseconds < 1 ||
-      milliseconds > 2_147_483_647
-    )
-      throw new Error(
-        "--timeout must be positive seconds between 0.001 and 2147483.647",
-      );
+    if (!Number.isFinite(milliseconds) || milliseconds < 1 || milliseconds > 2_147_483_647)
+      throw new Error("--timeout must be positive seconds between 0.001 and 2147483.647");
   }
   return parsed;
 }
@@ -616,48 +513,39 @@ export async function runVerifyCommand(
   const only = flag("--only");
   if (only !== undefined) {
     const want = only.split(",").filter(Boolean);
-    const unknown = want.filter((w) => !catalog.some((g) => g.id === w));
+    const unknown = want.filter(w => !catalog.some(g => g.id === w));
     if (unknown.length > 0) {
       err(`unknown gate(s): ${unknown.join(", ")} (see yolo verify --list)`);
       return 2;
     }
-    selected = catalog.filter((g) => want.includes(g.id));
+    selected = catalog.filter(g => want.includes(g.id));
     selection = "only";
   } else if (has("--changed")) {
     selected = selectChanged(catalog, changedFiles(root));
     selection = "changed";
   }
-  const selectedIds = new Set(selected.map((gate) => gate.id));
+  const selectedIds = new Set(selected.map(gate => gate.id));
   for (const gate of selected) {
     for (const id of gate.needs ?? []) {
       if (selectedIds.has(id)) continue;
-      const dependency = catalog.find((entry) => entry.id === id);
+      const dependency = catalog.find(entry => entry.id === id);
       if (dependency) {
         selectedIds.add(id);
         selected.push(dependency);
       }
     }
   }
-  selected = catalog.filter((gate) => selectedIds.has(gate.id));
-  const parallel = Math.max(
-    1,
-    Number(
-      flag("--parallel") ?? deps.cpus ?? navigator.hardwareConcurrency ?? 4,
-    ),
-  );
+  selected = catalog.filter(gate => selectedIds.has(gate.id));
+  const parallel = Math.max(1, Number(flag("--parallel") ?? deps.cpus ?? navigator.hardwareConcurrency ?? 4));
   const timeoutMs = Number(flag("--timeout") ?? 900) * 1000;
   const startedAt = new Date().toISOString();
 
   let outcome: Awaited<ReturnType<typeof runGates>>;
   try {
-    outcome = await runGates(
-      selected,
-      deps.run ?? spawnRunner(root, timeoutMs),
-      {
-        parallel,
-        root,
-      },
-    );
+    outcome = await runGates(selected, deps.run ?? spawnRunner(root, timeoutMs), {
+      parallel,
+      root,
+    });
   } catch (e) {
     err(`yolo verify: ${(e as Error).message}`);
     return 2;
@@ -683,8 +571,7 @@ export async function runVerifyCommand(
   writeFileSync(join(dir, "latest.json"), body);
   writeFileSync(join(dir, `${startedAt.replaceAll(/[:.]/g, "-")}.json`), body);
   const file = flag("--out");
-  if (file !== undefined)
-    writeFileSync(file, text + (text.endsWith("\n") ? "" : "\n"));
+  if (file !== undefined) writeFileSync(file, text + (text.endsWith("\n") ? "" : "\n"));
   out(text);
   return report.ok ? 0 : 1;
 }

@@ -1,8 +1,4 @@
-import type {
-  AppCapability,
-  RuntimeFacts,
-  RuntimePin,
-} from "@aphrody/bun-workspace";
+import type { AppCapability, RuntimeFacts, RuntimePin } from "@aphrody/bun-workspace";
 import type { AssetReference } from "@aphrody/bun-workspace/assets";
 
 export type ArtifactTarget =

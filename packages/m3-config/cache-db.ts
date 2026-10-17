@@ -64,9 +64,7 @@ export class M3UiCache {
    */
   get<T = unknown>(namespace: string, key: string): T | null {
     const row = this.db
-      .query<{ value: string }, [string, string]>(
-        "SELECT value FROM ui_cache WHERE namespace = ? AND key = ? LIMIT 1",
-      )
+      .query<{ value: string }, [string, string]>("SELECT value FROM ui_cache WHERE namespace = ? AND key = ? LIMIT 1")
       .get(namespace, key);
 
     if (!row) return null;
@@ -82,8 +80,7 @@ export class M3UiCache {
    */
   set<T = unknown>(namespace: string, key: string, value: T): void {
     const serialized = JSON.stringify(value);
-    if (serialized === undefined)
-      throw new TypeError("M3UiCache: value must be JSON serializable");
+    if (serialized === undefined) throw new TypeError("M3UiCache: value must be JSON serializable");
     const now = Date.now();
 
     this.db
@@ -101,9 +98,7 @@ export class M3UiCache {
    * Removes a specific key from the cache.
    */
   delete(namespace: string, key: string): boolean {
-    const result = this.db
-      .query("DELETE FROM ui_cache WHERE namespace = ? AND key = ?")
-      .run(namespace, key);
+    const result = this.db.query("DELETE FROM ui_cache WHERE namespace = ? AND key = ?").run(namespace, key);
     return result.changes > 0;
   }
 
@@ -112,9 +107,7 @@ export class M3UiCache {
    */
   clear(namespace?: string): number {
     if (namespace !== undefined) {
-      const result = this.db
-        .query("DELETE FROM ui_cache WHERE namespace = ?")
-        .run(namespace);
+      const result = this.db.query("DELETE FROM ui_cache WHERE namespace = ?").run(namespace);
       return result.changes;
     }
     const result = this.db.query("DELETE FROM ui_cache").run();
@@ -125,9 +118,7 @@ export class M3UiCache {
    * Returns cache metrics and entry counts.
    */
   stats(): CacheStats {
-    const totalRow = this.db
-      .query<{ total: number }, []>("SELECT COUNT(*) AS total FROM ui_cache")
-      .get();
+    const totalRow = this.db.query<{ total: number }, []>("SELECT COUNT(*) AS total FROM ui_cache").get();
     const total = totalRow?.total ?? 0;
 
     const nsRows = this.db
@@ -164,9 +155,7 @@ export function getSharedUiCache(path?: string): M3UiCache {
     const defaultPath =
       path ??
       process.env.APHRODY_UI_CACHE_PATH ??
-      (process.env.HOME
-        ? `${process.env.HOME}/.aphrody/cache/ui.sqlite`
-        : ":memory:");
+      (process.env.HOME ? `${process.env.HOME}/.aphrody/cache/ui.sqlite` : ":memory:");
     defaultInstance = new M3UiCache(defaultPath);
   }
   return defaultInstance;

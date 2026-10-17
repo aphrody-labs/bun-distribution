@@ -26,7 +26,6 @@ Default permissions for MCP Bridge plugin
 <th>Description</th>
 </tr>
 
-
 <tr>
 <td>
 

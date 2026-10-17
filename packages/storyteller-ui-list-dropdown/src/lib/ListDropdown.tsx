@@ -22,34 +22,21 @@ export const ListDropdown = ({ list, onSelect }: ListDropdownProps) => {
             <ChevronDownIcon aria-hidden="true" />
           </span>
         </Listbox.Button>
-        <Transition
-          as={Fragment}
-          leave="transition ease-in duration-100"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
+        <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
           <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-[3px] border border-ui-panel-border bg-ui-panel text-base focus:outline-none sm:text-sm">
             {list.map((item, itemIdx) => (
               <Listbox.Option
                 key={itemIdx}
                 className={({ active, selected }) =>
                   `relative cursor-pointer select-none py-2 pl-10 pr-4 transition-colors duration-150 ${
-                    active
-                      ? "bg-white text-black"
-                      : selected
-                        ? "bg-white/10 text-base-fg"
-                        : "text-base-fg/90"
+                    active ? "bg-white text-black" : selected ? "bg-white/10 text-base-fg" : "text-base-fg/90"
                   }`
                 }
                 value={item}
               >
                 {({ selected }) => (
                   <>
-                    <span
-                      className={`block truncate ${
-                        selected ? "font-medium" : "font-normal"
-                      }`}
-                    >
+                    <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>
                       {Object.values(item)[0]}
                     </span>
                     {selected ? (

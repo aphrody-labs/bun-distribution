@@ -1,10 +1,7 @@
 import * as THREE from "three";
 import { Pass } from "three/examples/jsm/postprocessing/Pass.js";
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass.js";
-import {
-  getSurfaceIdMaterial,
-  getDebugSurfaceIdMaterial,
-} from "./FindSurfaces.js";
+import { getSurfaceIdMaterial, getDebugSurfaceIdMaterial } from "./FindSurfaces.js";
 
 // Follows the structure of
 // 		https://github.com/mrdoob/three.js/blob/master/examples/jsm/postprocessing/OutlinePass.js
@@ -21,10 +18,7 @@ class CustomOutlinePass extends Pass {
 
     // Create a buffer to store the normals of the scene onto
     // or store the "surface IDs"
-    const surfaceBuffer = new THREE.WebGLRenderTarget(
-      this.resolution.x,
-      this.resolution.y,
-    );
+    const surfaceBuffer = new THREE.WebGLRenderTarget(this.resolution.x, this.resolution.y);
     surfaceBuffer.texture.format = THREE.RGBAFormat;
     surfaceBuffer.texture.type = THREE.HalfFloatType;
     surfaceBuffer.texture.minFilter = THREE.NearestFilter;
@@ -89,12 +83,9 @@ class CustomOutlinePass extends Pass {
     renderer.render(this.renderScene, this.renderCamera);
     this.renderScene.overrideMaterial = overrideMaterialValue;
 
-    this.fsQuad.material.uniforms["depthBuffer"].value =
-      readBuffer.depthTexture;
-    this.fsQuad.material.uniforms["surfaceBuffer"].value =
-      this.surfaceBuffer.texture;
-    this.fsQuad.material.uniforms["sceneColorBuffer"].value =
-      readBuffer.texture;
+    this.fsQuad.material.uniforms["depthBuffer"].value = readBuffer.depthTexture;
+    this.fsQuad.material.uniforms["surfaceBuffer"].value = this.surfaceBuffer.texture;
+    this.fsQuad.material.uniforms["sceneColorBuffer"].value = readBuffer.texture;
 
     renderer.setRenderTarget(writeBuffer);
     this.fsQuad.render(renderer);
@@ -261,12 +252,7 @@ class CustomOutlinePass extends Pass {
         cameraNear: { value: 0.1 },
         cameraFar: { value: 3 },
         screenSize: {
-          value: new THREE.Vector4(
-            this.resolution.x,
-            this.resolution.y,
-            1 / this.resolution.x,
-            1 / this.resolution.y,
-          ),
+          value: new THREE.Vector4(this.resolution.x, this.resolution.y, 1 / this.resolution.x, 1 / this.resolution.y),
         },
       },
       vertexShader: this.vertexShader,

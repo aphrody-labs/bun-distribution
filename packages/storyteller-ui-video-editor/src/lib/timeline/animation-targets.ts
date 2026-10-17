@@ -1,8 +1,4 @@
-import type {
-  AnimationInterpolation,
-  AnimationPath,
-  NumericSpec,
-} from "../animation/types";
+import type { AnimationInterpolation, AnimationPath, NumericSpec } from "../animation/types";
 import { parseEffectParamPath } from "../animation/effect-param-channel";
 import { parseGraphicParamPath } from "../animation/graphic-param-channel";
 import { effectsRegistry, registerDefaultEffects } from "../effects";
@@ -44,11 +40,7 @@ export interface AnimationPathDescriptor {
 
 // Leaf params expose a single component named "value". Composite
 // params don't carry numeric ranges yet — revisit when one does.
-function paramNumericRanges({
-  param,
-}: {
-  param: ParamDefinition;
-}): Partial<Record<string, NumericSpec>> | undefined {
+function paramNumericRanges({ param }: { param: ParamDefinition }): Partial<Record<string, NumericSpec>> | undefined {
   const range = getParamNumericRange({ param });
   return range ? { value: range } : undefined;
 }
@@ -101,7 +93,7 @@ function buildElementParamDescriptor({
   return buildParamDescriptor({
     param,
     baseParams: element.params,
-    setParams: (params) => ({
+    setParams: params => ({
       ...element,
       params,
     }),
@@ -122,9 +114,7 @@ function buildGraphicParamDescriptor({
   const definition = getGraphicDefinition({
     definitionId: element.definitionId,
   });
-  const param = definition.params.find(
-    (candidate) => candidate.key === paramKey,
-  );
+  const param = definition.params.find(candidate => candidate.key === paramKey);
   if (!param) {
     return null;
   }
@@ -132,7 +122,7 @@ function buildGraphicParamDescriptor({
   return buildParamDescriptor({
     param,
     baseParams: element.params,
-    setParams: (params) => ({
+    setParams: params => ({
       ...element,
       params,
     }),
@@ -152,18 +142,14 @@ function buildEffectParamDescriptor({
     return null;
   }
 
-  const effect = element.effects?.find(
-    (candidate) => candidate.id === effectId,
-  );
+  const effect = element.effects?.find(candidate => candidate.id === effectId);
   if (!effect) {
     return null;
   }
 
   registerDefaultEffects();
   const definition = effectsRegistry.get(effect.type);
-  const param = definition.params.find(
-    (candidate) => candidate.key === paramKey,
-  );
+  const param = definition.params.find(candidate => candidate.key === paramKey);
   if (!param) {
     return null;
   }
@@ -171,10 +157,10 @@ function buildEffectParamDescriptor({
   return buildParamDescriptor({
     param,
     baseParams: effect.params,
-    setParams: (params) => ({
+    setParams: params => ({
       ...element,
       effects:
-        element.effects?.map((candidate) =>
+        element.effects?.map(candidate =>
           candidate.id !== effectId
             ? candidate
             : {

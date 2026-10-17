@@ -3,15 +3,32 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-appmodel-runtime-l1-1-1.dll!GetApplicationUserModelIdFromToken */
-  GetApplicationUserModelIdFromToken(token: Win32Pointer, applicationUserModelIdLength: Win32Pointer, applicationUserModelId: string | Win32Pointer): number;
+  GetApplicationUserModelIdFromToken(
+    token: Win32Pointer,
+    applicationUserModelIdLength: Win32Pointer,
+    applicationUserModelId: string | Win32Pointer,
+  ): number;
   /** api-ms-win-appmodel-runtime-l1-1-1.dll!GetPackageFamilyNameFromToken */
-  GetPackageFamilyNameFromToken(token: Win32Pointer, packageFamilyNameLength: Win32Pointer, packageFamilyName: string | Win32Pointer): number;
+  GetPackageFamilyNameFromToken(
+    token: Win32Pointer,
+    packageFamilyNameLength: Win32Pointer,
+    packageFamilyName: string | Win32Pointer,
+  ): number;
   /** api-ms-win-appmodel-runtime-l1-1-1.dll!GetPackageFullNameFromToken */
-  GetPackageFullNameFromToken(token: Win32Pointer, packageFullNameLength: Win32Pointer, packageFullName: string | Win32Pointer): number;
+  GetPackageFullNameFromToken(
+    token: Win32Pointer,
+    packageFullNameLength: Win32Pointer,
+    packageFullName: string | Win32Pointer,
+  ): number;
   /** api-ms-win-appmodel-runtime-l1-1-1.dll!GetStagedPackageOrigin */
   GetStagedPackageOrigin(packageFullName: string | Win32Pointer, origin: Win32Pointer): number;
   /** api-ms-win-appmodel-runtime-l1-1-1.dll!OpenPackageInfoByFullNameForUser */
-  OpenPackageInfoByFullNameForUser(userSid: Win32Pointer, packageFullName: string | Win32Pointer, reserved: number, packageInfoReference: Win32Pointer): number;
+  OpenPackageInfoByFullNameForUser(
+    userSid: Win32Pointer,
+    packageFullName: string | Win32Pointer,
+    reserved: number,
+    packageInfoReference: Win32Pointer,
+  ): number;
   /** api-ms-win-appmodel-runtime-l1-1-1.dll!VerifyApplicationUserModelId */
   VerifyApplicationUserModelId(applicationUserModelId: string | Win32Pointer): number;
   /** api-ms-win-appmodel-runtime-l1-1-1.dll!VerifyPackageFamilyName */

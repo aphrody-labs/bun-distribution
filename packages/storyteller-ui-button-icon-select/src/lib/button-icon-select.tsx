@@ -18,15 +18,8 @@ interface ButtonIconSelectProps {
   buttonClassName?: string;
 }
 
-export function ButtonIconSelect({
-  options,
-  onOptionChange,
-  selectedOption,
-  buttonClassName,
-}: ButtonIconSelectProps) {
-  const [internalSelectedOption, setInternalSelectedOption] = useState<string>(
-    selectedOption || options[0].value,
-  );
+export function ButtonIconSelect({ options, onOptionChange, selectedOption, buttonClassName }: ButtonIconSelectProps) {
+  const [internalSelectedOption, setInternalSelectedOption] = useState<string>(selectedOption || options[0].value);
 
   useEffect(() => {
     setInternalSelectedOption(selectedOption || options[0].value);
@@ -43,13 +36,7 @@ export function ButtonIconSelect({
     <div className="flex space-x-1">
       {options.map(({ value, icon, text, tooltip }) =>
         tooltip ? (
-          <Tooltip
-            key={value}
-            content={tooltip}
-            position="bottom"
-            delay={300}
-            closeOnClick
-          >
+          <Tooltip key={value} content={tooltip} position="bottom" delay={300} closeOnClick>
             <button
               className={twMerge(
                 "flex h-9 items-center justify-center rounded-lg border text-sm outline-none transition-all duration-150 focus:outline-none",
@@ -62,9 +49,7 @@ export function ButtonIconSelect({
               onClick={() => handleOptionChange(value)}
             >
               <DynamicIcon icon={icon} />
-              {text && (
-                <span className="text-nowrap text-sm font-medium">{text}</span>
-              )}
+              {text && <span className="text-nowrap text-sm font-medium">{text}</span>}
             </button>
           </Tooltip>
         ) : (
@@ -81,9 +66,7 @@ export function ButtonIconSelect({
             onClick={() => handleOptionChange(value)}
           >
             <DynamicIcon icon={icon} />
-            {text && (
-              <span className="text-nowrap text-sm font-medium">{text}</span>
-            )}
+            {text && <span className="text-nowrap text-sm font-medium">{text}</span>}
           </button>
         ),
       )}

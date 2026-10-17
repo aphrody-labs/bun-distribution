@@ -1,12 +1,4 @@
-function svgCursor({
-  svg,
-  hotspotX,
-  hotspotY,
-}: {
-  svg: string;
-  hotspotX: number;
-  hotspotY: number;
-}): string {
+function svgCursor({ svg, hotspotX, hotspotY }: { svg: string; hotspotX: number; hotspotY: number }): string {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${hotspotX} ${hotspotY}, crosshair`;
 }
 

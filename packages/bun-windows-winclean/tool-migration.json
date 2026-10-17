@@ -191,34 +191,15 @@
   "owner_rules": [
     {
       "owner": "bun-re",
-      "prefixes": [
-        "analyze_pe",
-        "aob_scan",
-        "asar_",
-        "binary_",
-        "golang_scan"
-      ]
+      "prefixes": ["analyze_pe", "aob_scan", "asar_", "binary_", "golang_scan"]
     },
     {
       "owner": "aphrody-proc",
-      "prefixes": [
-        "mem_",
-        "kill_process",
-        "list_processes",
-        "set_process_",
-        "trim_process_",
-        "perf_",
-        "wait"
-      ]
+      "prefixes": ["mem_", "kill_process", "list_processes", "set_process_", "trim_process_", "perf_", "wait"]
     },
     {
       "owner": "aphrody-capture",
-      "prefixes": [
-        "computer_capture_screen",
-        "computer_record_clip",
-        "screenshot",
-        "window_capture"
-      ]
+      "prefixes": ["computer_capture_screen", "computer_record_clip", "screenshot", "window_capture"]
     },
     {
       "owner": "aphrody-fsindex",
@@ -236,15 +217,11 @@
     },
     {
       "owner": "aphrody-jobs",
-      "prefixes": [
-        "coord_"
-      ]
+      "prefixes": ["coord_"]
     },
     {
       "owner": "aphrody-winclean",
-      "prefixes": [
-        "*"
-      ]
+      "prefixes": ["*"]
     }
   ],
   "dispatch": "rust",
@@ -432,11 +409,6 @@
     "gaming_profile_status": "rust",
     "gaming_steam_launch": "rust"
   },
-  "native_rust_tools": [
-    "winml_get_version",
-    "winml_inspect_onnx",
-    "winml_list_providers",
-    "winml_run_float32"
-  ],
+  "native_rust_tools": ["winml_get_version", "winml_inspect_onnx", "winml_list_providers", "winml_run_float32"],
   "note": "The catalog is frozen for compatibility. Ownership is selected by the first matching rule; all 182 tools are implemented and dispatched by the Rust owner. dispatch_overrides and native_rust_tools remain as explicit migration evidence for compatibility tooling."
 }

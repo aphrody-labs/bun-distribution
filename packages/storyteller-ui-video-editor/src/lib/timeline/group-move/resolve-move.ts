@@ -1,24 +1,9 @@
 import type { SceneTracks } from "../types";
 import { getTrackTypeForElementType } from "../placement/compatibility";
 import { canPlaceTimeSpansOnTrack } from "../placement/overlap";
-import type {
-  GroupMoveResult,
-  MoveGroup,
-  PlannedElementMove,
-  PlannedTrackCreation,
-} from "./types";
-import {
-  getDisplayTracks,
-  getTrackPlacementByDisplayIndex,
-  getTrackPlacementById,
-} from "./track-placement";
-import {
-  addMediaTime,
-  maxMediaTime,
-  type MediaTime,
-  subMediaTime,
-  ZERO_MEDIA_TIME,
-} from "../../wasm";
+import type { GroupMoveResult, MoveGroup, PlannedElementMove, PlannedTrackCreation } from "./types";
+import { getDisplayTracks, getTrackPlacementByDisplayIndex, getTrackPlacementById } from "./track-placement";
+import { addMediaTime, maxMediaTime, type MediaTime, subMediaTime, ZERO_MEDIA_TIME } from "../../wasm";
 
 // Group-move solver. Handed an anchor target (either a specific
 // existing track or a request to create new tracks at a display
@@ -109,10 +94,9 @@ function resolveExistingTrackMove({
     targetTrackIdsByElementId,
   });
 
-  const moves = group.members.map((member) => ({
+  const moves = group.members.map(member => ({
     sourceTrackId: member.trackId,
-    targetTrackId:
-      targetTrackIdsByElementId.get(member.elementId) ?? member.trackId,
+    targetTrackId: targetTrackIdsByElementId.get(member.elementId) ?? member.trackId,
     elementId: member.elementId,
     newStartTime: addMediaTime({
       a: clampedAnchorStartTime,
@@ -148,22 +132,15 @@ function resolveNewTrackMove({
   newTrackIds: string[];
 }): GroupMoveResult | null {
   const sortedMembers = [...group.members].sort(
-    (leftMember, rightMember) =>
-      leftMember.displayIndex - rightMember.displayIndex,
+    (leftMember, rightMember) => leftMember.displayIndex - rightMember.displayIndex,
   );
-  const anchorMemberIndex = sortedMembers.findIndex(
-    (member) => member.elementId === group.anchor.elementId,
-  );
+  const anchorMemberIndex = sortedMembers.findIndex(member => member.elementId === group.anchor.elementId);
   if (anchorMemberIndex < 0 || newTrackIds.length < sortedMembers.length) {
     return null;
   }
 
-  const hasAudioMember = sortedMembers.some(
-    (member) => member.trackSection === "audio",
-  );
-  const hasNonAudioMember = sortedMembers.some(
-    (member) => member.trackSection !== "audio",
-  );
+  const hasAudioMember = sortedMembers.some(member => member.trackSection === "audio");
+  const hasNonAudioMember = sortedMembers.some(member => member.trackSection !== "audio");
   if (hasAudioMember && hasNonAudioMember) {
     return null;
   }
@@ -179,20 +156,15 @@ function resolveNewTrackMove({
         tracks,
         insertIndex: anchorInsertIndex - anchorMemberIndex,
       })
-    : Math.max(
-        0,
-        Math.min(anchorInsertIndex - anchorMemberIndex, tracks.overlay.length),
-      );
+    : Math.max(0, Math.min(anchorInsertIndex - anchorMemberIndex, tracks.overlay.length));
 
-  const createTracks: PlannedTrackCreation[] = sortedMembers.map(
-    (member, memberIndex) => ({
-      id: newTrackIds[memberIndex],
-      type: getTrackTypeForElementType({
-        elementType: member.elementType,
-      }),
-      index: blockStartIndex + memberIndex,
+  const createTracks: PlannedTrackCreation[] = sortedMembers.map((member, memberIndex) => ({
+    id: newTrackIds[memberIndex],
+    type: getTrackTypeForElementType({
+      elementType: member.elementType,
     }),
-  );
+    index: blockStartIndex + memberIndex,
+  }));
   const moves = sortedMembers.map((member, memberIndex) => ({
     sourceTrackId: member.trackId,
     targetTrackId: newTrackIds[memberIndex],
@@ -213,18 +185,9 @@ function resolveNewTrackMove({
   };
 }
 
-function clampAudioInsertIndex({
-  tracks,
-  insertIndex,
-}: {
-  tracks: SceneTracks;
-  insertIndex: number;
-}): number {
+function clampAudioInsertIndex({ tracks, insertIndex }: { tracks: SceneTracks; insertIndex: number }): number {
   const minimumAudioInsertIndex = tracks.overlay.length + 1;
-  return Math.max(
-    minimumAudioInsertIndex,
-    Math.min(insertIndex, minimumAudioInsertIndex + tracks.audio.length),
-  );
+  return Math.max(minimumAudioInsertIndex, Math.min(insertIndex, minimumAudioInsertIndex + tracks.audio.length));
 }
 
 function resolveExistingTrackIdsByElementId({
@@ -237,12 +200,9 @@ function resolveExistingTrackIdsByElementId({
   anchorTargetDisplayIndex: number;
 }): Map<string, string> | null {
   const sortedMembers = [...group.members].sort(
-    (leftMember, rightMember) =>
-      leftMember.displayIndex - rightMember.displayIndex,
+    (leftMember, rightMember) => leftMember.displayIndex - rightMember.displayIndex,
   );
-  const anchorMemberIndex = sortedMembers.findIndex(
-    (member) => member.elementId === group.anchor.elementId,
-  );
+  const anchorMemberIndex = sortedMembers.findIndex(member => member.elementId === group.anchor.elementId);
   if (anchorMemberIndex < 0) {
     return null;
   }
@@ -257,18 +217,11 @@ function resolveExistingTrackIdsByElementId({
     return null;
   }
 
-  targetTrackIdsByElementId.set(
-    group.anchor.elementId,
-    anchorPlacement.trackId,
-  );
+  targetTrackIdsByElementId.set(group.anchor.elementId, anchorPlacement.trackId);
   usedTrackIds.add(anchorPlacement.trackId);
 
   let upperBoundaryIndex = anchorTargetDisplayIndex;
-  for (
-    let memberIndex = anchorMemberIndex - 1;
-    memberIndex >= 0;
-    memberIndex -= 1
-  ) {
+  for (let memberIndex = anchorMemberIndex - 1; memberIndex >= 0; memberIndex -= 1) {
     const member = sortedMembers[memberIndex];
     const targetPlacement = findCompatibleTrackPlacement({
       tracks,
@@ -289,11 +242,7 @@ function resolveExistingTrackIdsByElementId({
   }
 
   let lowerBoundaryIndex = anchorTargetDisplayIndex;
-  for (
-    let memberIndex = anchorMemberIndex + 1;
-    memberIndex < sortedMembers.length;
-    memberIndex += 1
-  ) {
+  for (let memberIndex = anchorMemberIndex + 1; memberIndex < sortedMembers.length; memberIndex += 1) {
     const member = sortedMembers[memberIndex];
     const targetPlacement = findCompatibleTrackPlacement({
       tracks,
@@ -331,8 +280,7 @@ function findCompatibleTrackPlacement({
 }) {
   for (
     let displayIndex = startDisplayIndex;
-    displayIndex >= 0 &&
-    displayIndex < tracks.overlay.length + 1 + tracks.audio.length;
+    displayIndex >= 0 && displayIndex < tracks.overlay.length + 1 + tracks.audio.length;
     displayIndex += step
   ) {
     const placement = getTrackPlacementByDisplayIndex({
@@ -343,10 +291,7 @@ function findCompatibleTrackPlacement({
       continue;
     }
 
-    if (
-      placement.trackType === requiredTrackType &&
-      !usedTrackIds.has(placement.trackId)
-    ) {
+    if (placement.trackType === requiredTrackType && !usedTrackIds.has(placement.trackId)) {
       return placement;
     }
   }
@@ -383,28 +328,22 @@ function clampAnchorStartTime({
         : minimumStartTime,
     ZERO_MEDIA_TIME,
   );
-  let clampedAnchorStartTime =
-    anchorStartTime < minimumAnchorStartTime
-      ? minimumAnchorStartTime
-      : anchorStartTime;
+  let clampedAnchorStartTime = anchorStartTime < minimumAnchorStartTime ? minimumAnchorStartTime : anchorStartTime;
 
   const memberOnMainTrack = group.members.find(
-    (member) =>
-      targetTrackIdsByElementId.get(member.elementId) === tracks.main.id,
+    member => targetTrackIdsByElementId.get(member.elementId) === tracks.main.id,
   );
   if (!memberOnMainTrack) {
     return clampedAnchorStartTime;
   }
 
-  const movingElementIds = new Set(
-    group.members.map((member) => member.elementId),
-  );
+  const movingElementIds = new Set(group.members.map(member => member.elementId));
   const requestedMainStartTime = addMediaTime({
     a: clampedAnchorStartTime,
     b: memberOnMainTrack.timeOffset,
   });
   const earliestStationaryMainStartTime = tracks.main.elements
-    .filter((element) => !movingElementIds.has(element.id))
+    .filter(element => !movingElementIds.has(element.id))
     .reduce<MediaTime | null>((earliestStartTime, element) => {
       if (earliestStartTime == null || element.startTime < earliestStartTime) {
         return element.startTime;
@@ -412,10 +351,7 @@ function clampAnchorStartTime({
 
       return earliestStartTime;
     }, null);
-  if (
-    earliestStationaryMainStartTime == null ||
-    requestedMainStartTime <= earliestStationaryMainStartTime
-  ) {
+  if (earliestStationaryMainStartTime == null || requestedMainStartTime <= earliestStationaryMainStartTime) {
     clampedAnchorStartTime = maxMediaTime({
       a: minimumAnchorStartTime,
       b: subMediaTime({
@@ -435,11 +371,9 @@ function canApplyMovesToExistingTracks({
   tracks: SceneTracks;
   moves: PlannedElementMove[];
 }): boolean {
-  const movingElementIds = new Set(moves.map((move) => move.elementId));
+  const movingElementIds = new Set(moves.map(move => move.elementId));
   const sourceElements = new Map(
-    getDisplayTracks({ tracks }).flatMap((track) =>
-      track.elements.map((element) => [element.id, element] as const),
-    ),
+    getDisplayTracks({ tracks }).flatMap(track => track.elements.map(element => [element.id, element] as const)),
   );
   const movesByTargetTrackId = new Map<string, PlannedElementMove[]>();
   for (const move of moves) {
@@ -457,14 +391,12 @@ function canApplyMovesToExistingTracks({
       return false;
     }
 
-    const targetTrack = getDisplayTracks({ tracks })[
-      targetPlacement.displayIndex
-    ];
+    const targetTrack = getDisplayTracks({ tracks })[targetPlacement.displayIndex];
     if (!targetTrack) {
       return false;
     }
 
-    const timeSpans = targetMoves.map((move) => {
+    const timeSpans = targetMoves.map(move => {
       const sourceElement = sourceElements.get(move.elementId);
       return {
         startTime: move.newStartTime,
@@ -478,9 +410,7 @@ function canApplyMovesToExistingTracks({
     if (
       !canPlaceTimeSpansOnTrack({
         track: {
-          elements: targetTrack.elements.filter(
-            (element) => !movingElementIds.has(element.id),
-          ),
+          elements: targetTrack.elements.filter(element => !movingElementIds.has(element.id)),
         },
         timeSpans,
       })
@@ -497,17 +427,12 @@ function hasOverlappingTimeSpans({
 }: {
   timeSpans: Array<{ startTime: number; duration: number }>;
 }): boolean {
-  const sortedSpans = [...timeSpans].sort(
-    (leftSpan, rightSpan) => leftSpan.startTime - rightSpan.startTime,
-  );
+  const sortedSpans = [...timeSpans].sort((leftSpan, rightSpan) => leftSpan.startTime - rightSpan.startTime);
 
   for (let spanIndex = 1; spanIndex < sortedSpans.length; spanIndex += 1) {
     const previousSpan = sortedSpans[spanIndex - 1];
     const currentSpan = sortedSpans[spanIndex];
-    if (
-      previousSpan.startTime + previousSpan.duration >
-      currentSpan.startTime
-    ) {
+    if (previousSpan.startTime + previousSpan.duration > currentSpan.startTime) {
       return true;
     }
   }

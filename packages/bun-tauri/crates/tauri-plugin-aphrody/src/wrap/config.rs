@@ -132,7 +132,7 @@ impl WrapConfig {
                 if !matches!(url.scheme(), "http" | "https") {
                     return fail(format!("start must be http(s), got {}", url.scheme()));
                 }
-            },
+            }
             Mode::Bundle => {
                 if self.bundle.is_none() {
                     return fail("mode bundle needs a bundle section".into());
@@ -140,7 +140,7 @@ impl WrapConfig {
                 if !self.start.starts_with('/') {
                     return fail("start must be a path in bundle mode".into());
                 }
-            },
+            }
             Mode::Sidecar => {
                 if self.sidecar.is_none() {
                     return fail("mode sidecar needs a sidecar section".into());
@@ -148,9 +148,14 @@ impl WrapConfig {
                 if !self.start.starts_with('/') {
                     return fail("start must be a path in sidecar mode".into());
                 }
-            },
+            }
         }
-        let all = self.origins.app.iter().chain(&self.origins.auth).chain(&self.origins.embeds);
+        let all = self
+            .origins
+            .app
+            .iter()
+            .chain(&self.origins.auth)
+            .chain(&self.origins.embeds);
         for pattern in all {
             if Pattern::parse(pattern).is_none() {
                 return fail(format!(
@@ -158,7 +163,11 @@ impl WrapConfig {
                 ));
             }
         }
-        if let Some(backend) = self.bundle.as_ref().and_then(|bundle| bundle.backend.as_ref()) {
+        if let Some(backend) = self
+            .bundle
+            .as_ref()
+            .and_then(|bundle| bundle.backend.as_ref())
+        {
             let url = url::Url::parse(backend)
                 .map_err(|error| ConfigError(format!("backend: {error}")))?;
             if !matches!(url.scheme(), "http" | "https") {
@@ -204,11 +213,22 @@ mod tests {
 
     #[test]
     fn a_mode_needs_its_section_and_a_matching_start() {
-        let bundle =
-            remote().replace("\"remote\"", "\"bundle\"").replace("https://example.com/", "/");
-        assert!(WrapConfig::parse(&bundle).unwrap_err().to_string().contains("bundle section"));
+        let bundle = remote()
+            .replace("\"remote\"", "\"bundle\"")
+            .replace("https://example.com/", "/");
+        assert!(
+            WrapConfig::parse(&bundle)
+                .unwrap_err()
+                .to_string()
+                .contains("bundle section")
+        );
         let sidecar = remote().replace("\"remote\"", "\"sidecar\"");
-        assert!(WrapConfig::parse(&sidecar).unwrap_err().to_string().contains("sidecar section"));
+        assert!(
+            WrapConfig::parse(&sidecar)
+                .unwrap_err()
+                .to_string()
+                .contains("sidecar section")
+        );
         assert!(WrapConfig::parse(&remote().replace("https://example.com/", "/home")).is_err());
         assert!(
             WrapConfig::parse(&remote().replace("https://example.com/", "file:///etc/passwd"))
@@ -218,9 +238,10 @@ mod tests {
 
     #[test]
     fn refuses_an_origin_pattern_that_would_silently_match_nothing() {
-        let error = WrapConfig::parse(
-            &remote().replace("\"app\": [\"https://example.com\"]", "\"app\": [\"example.com\"]"),
-        )
+        let error = WrapConfig::parse(&remote().replace(
+            "\"app\": [\"https://example.com\"]",
+            "\"app\": [\"example.com\"]",
+        ))
         .unwrap_err();
         assert!(error.to_string().contains("example.com"));
     }

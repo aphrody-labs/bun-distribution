@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import {
-  useLibraryQuery,
-  useSpacedriveClient,
-} from "../../../contexts/SpacedriveContext";
+import { useLibraryQuery, useSpacedriveClient } from "../../../contexts/SpacedriveContext";
 import type { SyncPeerActivity, SyncActivity, SyncState } from "../types";
 
 interface SyncMonitorState {
@@ -56,7 +53,7 @@ export function useSyncMonitor() {
         normalizedState = "Uninitialized";
       }
 
-      setState((prev) => ({
+      setState(prev => ({
         ...prev,
         currentState: normalizedState,
         peers: data.peers.map((p: any): SyncPeerActivity => ({
@@ -84,7 +81,7 @@ export function useSyncMonitor() {
     const handleEvent = (event: any) => {
       if ("SyncStateChanged" in event) {
         const { newState } = event.SyncStateChanged;
-        setState((prev) => ({ ...prev, currentState: newState }));
+        setState(prev => ({ ...prev, currentState: newState }));
       } else if ("SyncActivity" in event) {
         const activity = event.SyncActivity;
         const activityType = activity.activityType;
@@ -115,7 +112,7 @@ export function useSyncMonitor() {
           description = "Catch-up completed";
         }
 
-        setState((prev) => ({
+        setState(prev => ({
           ...prev,
           recentActivity: [
             {
@@ -128,15 +125,12 @@ export function useSyncMonitor() {
           ],
         }));
       } else if ("SyncConnectionChanged" in event) {
-        const { peerDeviceId, peerName, connected } =
-          event.SyncConnectionChanged;
+        const { peerDeviceId, peerName, connected } = event.SyncConnectionChanged;
 
-        setState((prev) => ({
+        setState(prev => ({
           ...prev,
-          peers: prev.peers.map((p) =>
-            p.deviceId === peerDeviceId ? { ...p, isOnline: connected } : p,
-          ),
-          hasActivity: connected || prev.peers.some((p) => p.isOnline),
+          peers: prev.peers.map(p => (p.deviceId === peerDeviceId ? { ...p, isOnline: connected } : p)),
+          hasActivity: connected || prev.peers.some(p => p.isOnline),
           recentActivity: [
             {
               timestamp: event.SyncConnectionChanged.timestamp,
@@ -149,7 +143,7 @@ export function useSyncMonitor() {
         }));
       } else if ("SyncError" in event) {
         const { message } = event.SyncError;
-        setState((prev) => ({
+        setState(prev => ({
           ...prev,
           errorCount: prev.errorCount + 1,
           recentActivity: [
@@ -167,15 +161,10 @@ export function useSyncMonitor() {
     };
 
     const filter = {
-      event_types: [
-        "SyncStateChanged",
-        "SyncActivity",
-        "SyncConnectionChanged",
-        "SyncError",
-      ],
+      event_types: ["SyncStateChanged", "SyncActivity", "SyncConnectionChanged", "SyncError"],
     };
 
-    client.subscribeFiltered(filter, handleEvent).then((unsub) => {
+    client.subscribeFiltered(filter, handleEvent).then(unsub => {
       if (isCancelled) {
         unsub();
       } else {

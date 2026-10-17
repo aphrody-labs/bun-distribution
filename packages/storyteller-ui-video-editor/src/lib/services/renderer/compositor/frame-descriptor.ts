@@ -7,10 +7,7 @@ import { createCanvasSurface } from "../canvas-utils";
 import { BlurBackgroundNode } from "../nodes/blur-background-node";
 import { ColorNode } from "../nodes/color-node";
 import { EffectLayerNode } from "../nodes/effect-layer-node";
-import {
-  GraphicNode,
-  type ResolvedGraphicNodeState,
-} from "../nodes/graphic-node";
+import { GraphicNode, type ResolvedGraphicNodeState } from "../nodes/graphic-node";
 import { ImageNode } from "../nodes/image-node";
 import { RootNode } from "../nodes/root-node";
 import { StickerNode } from "../nodes/sticker-node";
@@ -99,7 +96,7 @@ async function collectNode({
       contentHash: `color:${node.params.color}:${width}x${height}`,
       width,
       height,
-      draw: (ctx) => {
+      draw: ctx => {
         if (/gradient\(/i.test(node.params.color)) {
           drawCssBackground({ ctx, width, height, css: node.params.color });
         } else {
@@ -148,22 +145,13 @@ async function collectNode({
       contentHash,
       width,
       height,
-      draw: (ctx) => {
-        const coverScale = Math.max(
-          width / backdropSource.width,
-          height / backdropSource.height,
-        );
+      draw: ctx => {
+        const coverScale = Math.max(width / backdropSource.width, height / backdropSource.height);
         const scaledWidth = backdropSource.width * coverScale;
         const scaledHeight = backdropSource.height * coverScale;
         const offsetX = (width - scaledWidth) / 2;
         const offsetY = (height - scaledHeight) / 2;
-        ctx.drawImage(
-          backdropSource.source,
-          offsetX,
-          offsetY,
-          scaledWidth,
-          scaledHeight,
-        );
+        ctx.drawImage(backdropSource.source, offsetX, offsetY, scaledWidth, scaledHeight);
       },
     });
     items.push({
@@ -309,7 +297,7 @@ function collectTextNode({
     contentHash,
     width,
     height,
-    draw: (ctx) => {
+    draw: ctx => {
       renderTextToContext({ node, ctx });
     },
   });
@@ -335,10 +323,7 @@ function computeVisualTransform({
   sourceWidth: number;
   sourceHeight: number;
 }): QuadTransformDescriptor {
-  const containScale = Math.min(
-    renderer.width / sourceWidth,
-    renderer.height / sourceHeight,
-  );
+  const containScale = Math.min(renderer.width / sourceWidth, renderer.height / sourceHeight);
   const scaledWidth = sourceWidth * containScale * resolved.transform.scaleX;
   const scaledHeight = sourceHeight * containScale * resolved.transform.scaleY;
   const absWidth = Math.abs(scaledWidth);
@@ -355,9 +340,7 @@ function computeVisualTransform({
   };
 }
 
-function fullCanvasTransform(
-  renderer: CanvasRenderer,
-): QuadTransformDescriptor {
+function fullCanvasTransform(renderer: CanvasRenderer): QuadTransformDescriptor {
   return {
     centerX: renderer.width / 2,
     centerY: renderer.height / 2,
@@ -398,9 +381,7 @@ function buildMaskArtifacts({
 
   const { body } = definition.renderer;
   const usesOpaqueFastPath =
-    body.kind === "drawWithFeather" &&
-    mask.params.feather === 0 &&
-    Boolean(body.opaqueFastPath);
+    body.kind === "drawWithFeather" && mask.params.feather === 0 && Boolean(body.opaqueFastPath);
   // drawWithFeather renderers encode feathering analytically in their canvas output
   // (e.g. split mask uses a linear gradient instead of JFA). The descriptor feather is
   // zeroed so the GPU compositor copies the mask texture as-is and does not run a second
@@ -410,12 +391,11 @@ function buildMaskArtifacts({
   const maskTextureId = `${path}:mask`;
   const { width: canvasWidth, height: canvasHeight } = renderer;
   const maskContentHash = `mask:${mask.type}:${JSON.stringify(mask.params)}:${transformHash(transform)}:${canvasWidth}x${canvasHeight}:body=${body.kind}:fastPath=${usesOpaqueFastPath}`;
-  const drawMask: TextureCanvasDrawFn = (ctx) => {
-    const { canvas: elementMaskCanvas, context: elementMaskCtx } =
-      createCanvasSurface({
-        width: Math.round(transform.width),
-        height: Math.round(transform.height),
-      });
+  const drawMask: TextureCanvasDrawFn = ctx => {
+    const { canvas: elementMaskCanvas, context: elementMaskCtx } = createCanvasSurface({
+      width: Math.round(transform.width),
+      height: Math.round(transform.height),
+    });
 
     switch (body.kind) {
       case "fillPath": {
@@ -474,7 +454,7 @@ function buildMaskArtifacts({
   if (hasStroke && stroke) {
     const strokeTextureId = `${path}:mask-stroke`;
     const strokeContentHash = `stroke:${mask.type}:${JSON.stringify(mask.params)}:${transformHash(transform)}:${canvasWidth}x${canvasHeight}:stroke=${stroke.kind}`;
-    const drawStroke: TextureCanvasDrawFn = (ctx) => {
+    const drawStroke: TextureCanvasDrawFn = ctx => {
       const { canvas: strokeCanvas, context: strokeCtx } = createCanvasSurface({
         width: Math.round(transform.width),
         height: Math.round(transform.height),
@@ -546,8 +526,7 @@ function drawTransformedCanvas({
   const y = transform.centerY - transform.height / 2;
   const flipX = transform.flipX ? -1 : 1;
   const flipY = transform.flipY ? -1 : 1;
-  const requiresTransform =
-    transform.rotationDegrees !== 0 || flipX !== 1 || flipY !== 1;
+  const requiresTransform = transform.rotationDegrees !== 0 || flipX !== 1 || flipY !== 1;
 
   ctx.save();
   if (requiresTransform) {

@@ -4,13 +4,7 @@ import { runProcess } from "@aphrody/bun-workspace/process";
 
 const root = resolve(import.meta.dir, "../..");
 const result = await runProcess(
-  [
-    process.execPath,
-    resolve(root, "scripts/build-packages.ts"),
-    "build",
-    "--package",
-    "ovh",
-  ],
+  [process.execPath, resolve(root, "scripts/build-packages.ts"), "build", "--package", "ovh"],
   root,
   { timeoutMs: 30000 },
 );

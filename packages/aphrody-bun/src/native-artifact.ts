@@ -1,13 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import {
-  closeSync,
-  existsSync,
-  fstatSync,
-  openSync,
-  readFileSync,
-  readSync,
-  statSync,
-} from "node:fs";
+import { closeSync, existsSync, fstatSync, openSync, readFileSync, readSync, statSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
 export const NATIVE_ABI_VERSIONS = {
@@ -42,18 +34,12 @@ export interface NativeArtifactManifest {
 }
 
 export function nativeHostTriple(): string | undefined {
-  const arch =
-    process.arch === "x64"
-      ? "x86_64"
-      : process.arch === "arm64"
-        ? "aarch64"
-        : undefined;
+  const arch = process.arch === "x64" ? "x86_64" : process.arch === "arm64" ? "aarch64" : undefined;
   if (!arch) return undefined;
   if (process.platform === "win32") return `${arch}-pc-windows-msvc`;
   if (process.platform === "darwin") return `${arch}-apple-darwin`;
   if (process.platform === "linux") {
-    const report = process.report?.getReport() as
-      { header?: { glibcVersionRuntime?: string } } | undefined;
+    const report = process.report?.getReport() as { header?: { glibcVersionRuntime?: string } } | undefined;
     return `${arch}-unknown-linux-${report?.header?.glibcVersionRuntime ? "gnu" : "musl"}`;
   }
   return undefined;
@@ -82,57 +68,35 @@ export function parseNativeArtifactManifest(
   const fail = (reason: string): never => {
     throw new Error(`Invalid native manifest for ${artifact}: ${reason}`);
   };
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    fail("expected an object");
+  if (!value || typeof value !== "object" || Array.isArray(value)) fail("expected an object");
   const data = value as Record<string, unknown>;
-  if (
-    data.schemaVersion !== 1 ||
-    data.package !== "@aphrody/bun" ||
-    data.crate !== "aphrody-ffi"
-  )
+  if (data.schemaVersion !== 1 || data.package !== "@aphrody/bun" || data.crate !== "aphrody-ffi")
     fail("unsupported artifact contract");
   if (data.packageVersion !== packageVersion) fail("package version mismatch");
-  if (data.target !== target || data.libc !== nativeTargetLibc(target))
-    fail("host triple/libc mismatch");
+  if (data.target !== target || data.libc !== nativeTargetLibc(target)) fail("host triple/libc mismatch");
   if (data.artifact !== basename(artifact)) fail("artifact filename mismatch");
-  if (typeof data.sha256 !== "string" || !SHA256.test(data.sha256))
-    fail("invalid SHA-256");
-  if (
-    typeof data.bytes !== "number" ||
-    !Number.isSafeInteger(data.bytes) ||
-    data.bytes <= 0
-  )
+  if (typeof data.sha256 !== "string" || !SHA256.test(data.sha256)) fail("invalid SHA-256");
+  if (typeof data.bytes !== "number" || !Number.isSafeInteger(data.bytes) || data.bytes <= 0)
     fail("invalid artifact size");
-  if (data.profile !== "debug" && data.profile !== "release")
-    fail("invalid build profile");
-  if (data.provenance !== "cargo-build" && data.provenance !== "existing-debug")
-    fail("invalid build provenance");
+  if (data.profile !== "debug" && data.profile !== "release") fail("invalid build profile");
+  if (data.provenance !== "cargo-build" && data.provenance !== "existing-debug") fail("invalid build provenance");
   if (data.provenance === "existing-debug" && data.profile !== "debug")
     fail("existing artifacts are restricted to debug development");
   const unknownBuild = data.provenance === "existing-debug";
+  if (typeof data.version !== "string" && !(unknownBuild && data.version === null)) fail("invalid crate version");
   if (
-    typeof data.version !== "string" &&
-    !(unknownBuild && data.version === null)
-  )
-    fail("invalid crate version");
-  if (
-    !(
-      Array.isArray(data.features) &&
-      data.features.every((feature) => typeof feature === "string")
-    ) &&
+    !(Array.isArray(data.features) && data.features.every(feature => typeof feature === "string")) &&
     !(unknownBuild && data.features === null)
   )
     fail("invalid build features");
-  if (!data.abi || typeof data.abi !== "object" || Array.isArray(data.abi))
-    fail("missing ABI versions");
+  if (!data.abi || typeof data.abi !== "object" || Array.isArray(data.abi)) fail("missing ABI versions");
   const abi = data.abi as Record<string, unknown>;
   for (const [symbol, expected] of Object.entries(NATIVE_ABI_VERSIONS)) {
     if (abi[symbol] !== expected) fail(`${symbol} ABI mismatch`);
   }
   if (
     data.buildSourceHead !== null &&
-    (typeof data.buildSourceHead !== "string" ||
-      !GIT_SHA.test(data.buildSourceHead))
+    (typeof data.buildSourceHead !== "string" || !GIT_SHA.test(data.buildSourceHead))
   )
     fail("invalid build source revision");
   if (
@@ -148,10 +112,7 @@ export function parseNativeArtifactManifest(
     !data.rustc.trim()
   )
     fail("missing build toolchain/lock provenance");
-  if (
-    data.consumerSmoke !== "passed" &&
-    !(development && data.consumerSmoke === "pending")
-  )
+  if (data.consumerSmoke !== "passed" && !(development && data.consumerSmoke === "pending"))
     fail("consumer smoke has not passed");
   if (
     !development &&
@@ -160,9 +121,7 @@ export function parseNativeArtifactManifest(
       data.observedSourceDirty ||
       data.buildSourceHead !== data.observedSourceHead)
   )
-    fail(
-      "a clean release is required; use APHRODY_FFI_DEV=1 for development artifacts",
-    );
+    fail("a clean release is required; use APHRODY_FFI_DEV=1 for development artifacts");
   return data as unknown as NativeArtifactManifest;
 }
 
@@ -174,8 +133,7 @@ export function hashNativeArtifact(path: string): {
   const fd = openSync(path, "r");
   try {
     const before = fstatSync(fd);
-    if (!before.isFile())
-      throw new Error(`Native artifact is not a regular file: ${path}`);
+    if (!before.isFile()) throw new Error(`Native artifact is not a regular file: ${path}`);
     const hash = new Bun.CryptoHasher("sha256");
     const chunk = new Uint8Array(1024 * 1024);
     let bytes = 0;
@@ -202,22 +160,14 @@ export function hashNativeArtifact(path: string): {
 }
 
 /** Overrides without manifests remain available only in explicit development mode. */
-export function verifyNativeArtifact(
-  path: string,
-  packageVersion: string,
-): NativeArtifactManifest | undefined {
+export function verifyNativeArtifact(path: string, packageVersion: string): NativeArtifactManifest | undefined {
   const manifestPath = join(dirname(path), "manifest.json");
   if (!existsSync(manifestPath)) {
     if (nativeDevelopmentEnabled()) return undefined;
-    throw new Error(
-      `Native manifest missing at ${manifestPath}; use APHRODY_FFI_DEV=1 for development artifacts`,
-    );
+    throw new Error(`Native manifest missing at ${manifestPath}; use APHRODY_FFI_DEV=1 for development artifacts`);
   }
   const target = nativeHostTriple();
-  if (!target)
-    throw new Error(
-      `Unsupported native host: ${process.platform}/${process.arch}`,
-    );
+  if (!target) throw new Error(`Unsupported native host: ${process.platform}/${process.arch}`);
   const manifest = parseNativeArtifactManifest(
     JSON.parse(readFileSync(manifestPath, "utf8")),
     path,

@@ -3,41 +3,134 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** msi.dll!MsiAdvertiseProductA */
-  MsiAdvertiseProductA(szPackagePath: string | Win32Pointer, szScriptfilePath: string | Win32Pointer, szTransforms: string | Win32Pointer, lgidLanguage: number): number;
+  MsiAdvertiseProductA(
+    szPackagePath: string | Win32Pointer,
+    szScriptfilePath: string | Win32Pointer,
+    szTransforms: string | Win32Pointer,
+    lgidLanguage: number,
+  ): number;
   /** msi.dll!MsiAdvertiseProductExA */
-  MsiAdvertiseProductExA(szPackagePath: string | Win32Pointer, szScriptfilePath: string | Win32Pointer, szTransforms: string | Win32Pointer, lgidLanguage: number, dwPlatform: number, dwOptions: number): number;
+  MsiAdvertiseProductExA(
+    szPackagePath: string | Win32Pointer,
+    szScriptfilePath: string | Win32Pointer,
+    szTransforms: string | Win32Pointer,
+    lgidLanguage: number,
+    dwPlatform: number,
+    dwOptions: number,
+  ): number;
   /** msi.dll!MsiAdvertiseProductExW */
-  MsiAdvertiseProductExW(szPackagePath: string | Win32Pointer, szScriptfilePath: string | Win32Pointer, szTransforms: string | Win32Pointer, lgidLanguage: number, dwPlatform: number, dwOptions: number): number;
+  MsiAdvertiseProductExW(
+    szPackagePath: string | Win32Pointer,
+    szScriptfilePath: string | Win32Pointer,
+    szTransforms: string | Win32Pointer,
+    lgidLanguage: number,
+    dwPlatform: number,
+    dwOptions: number,
+  ): number;
   /** msi.dll!MsiAdvertiseProductExW */
-  MsiAdvertiseProductEx(szPackagePath: string | Win32Pointer, szScriptfilePath: string | Win32Pointer, szTransforms: string | Win32Pointer, lgidLanguage: number, dwPlatform: number, dwOptions: number): number;
+  MsiAdvertiseProductEx(
+    szPackagePath: string | Win32Pointer,
+    szScriptfilePath: string | Win32Pointer,
+    szTransforms: string | Win32Pointer,
+    lgidLanguage: number,
+    dwPlatform: number,
+    dwOptions: number,
+  ): number;
   /** msi.dll!MsiAdvertiseProductW */
-  MsiAdvertiseProductW(szPackagePath: string | Win32Pointer, szScriptfilePath: string | Win32Pointer, szTransforms: string | Win32Pointer, lgidLanguage: number): number;
+  MsiAdvertiseProductW(
+    szPackagePath: string | Win32Pointer,
+    szScriptfilePath: string | Win32Pointer,
+    szTransforms: string | Win32Pointer,
+    lgidLanguage: number,
+  ): number;
   /** msi.dll!MsiAdvertiseProductW */
-  MsiAdvertiseProduct(szPackagePath: string | Win32Pointer, szScriptfilePath: string | Win32Pointer, szTransforms: string | Win32Pointer, lgidLanguage: number): number;
+  MsiAdvertiseProduct(
+    szPackagePath: string | Win32Pointer,
+    szScriptfilePath: string | Win32Pointer,
+    szTransforms: string | Win32Pointer,
+    lgidLanguage: number,
+  ): number;
   /** msi.dll!MsiAdvertiseScriptA */
-  MsiAdvertiseScriptA(szScriptFile: string | Win32Pointer, dwFlags: number, phRegData: Win32Pointer, fRemoveItems: number): number;
+  MsiAdvertiseScriptA(
+    szScriptFile: string | Win32Pointer,
+    dwFlags: number,
+    phRegData: Win32Pointer,
+    fRemoveItems: number,
+  ): number;
   /** msi.dll!MsiAdvertiseScriptW */
-  MsiAdvertiseScriptW(szScriptFile: string | Win32Pointer, dwFlags: number, phRegData: Win32Pointer, fRemoveItems: number): number;
+  MsiAdvertiseScriptW(
+    szScriptFile: string | Win32Pointer,
+    dwFlags: number,
+    phRegData: Win32Pointer,
+    fRemoveItems: number,
+  ): number;
   /** msi.dll!MsiAdvertiseScriptW */
-  MsiAdvertiseScript(szScriptFile: string | Win32Pointer, dwFlags: number, phRegData: Win32Pointer, fRemoveItems: number): number;
+  MsiAdvertiseScript(
+    szScriptFile: string | Win32Pointer,
+    dwFlags: number,
+    phRegData: Win32Pointer,
+    fRemoveItems: number,
+  ): number;
   /** msi.dll!MsiApplyMultiplePatchesA */
-  MsiApplyMultiplePatchesA(szPatchPackages: string | Win32Pointer, szProductCode: string | Win32Pointer, szPropertiesList: string | Win32Pointer): number;
+  MsiApplyMultiplePatchesA(
+    szPatchPackages: string | Win32Pointer,
+    szProductCode: string | Win32Pointer,
+    szPropertiesList: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiApplyMultiplePatchesW */
-  MsiApplyMultiplePatchesW(szPatchPackages: string | Win32Pointer, szProductCode: string | Win32Pointer, szPropertiesList: string | Win32Pointer): number;
+  MsiApplyMultiplePatchesW(
+    szPatchPackages: string | Win32Pointer,
+    szProductCode: string | Win32Pointer,
+    szPropertiesList: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiApplyMultiplePatchesW */
-  MsiApplyMultiplePatches(szPatchPackages: string | Win32Pointer, szProductCode: string | Win32Pointer, szPropertiesList: string | Win32Pointer): number;
+  MsiApplyMultiplePatches(
+    szPatchPackages: string | Win32Pointer,
+    szProductCode: string | Win32Pointer,
+    szPropertiesList: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiApplyPatchA */
-  MsiApplyPatchA(szPatchPackage: string | Win32Pointer, szInstallPackage: string | Win32Pointer, eInstallType: number, szCommandLine: string | Win32Pointer): number;
+  MsiApplyPatchA(
+    szPatchPackage: string | Win32Pointer,
+    szInstallPackage: string | Win32Pointer,
+    eInstallType: number,
+    szCommandLine: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiApplyPatchW */
-  MsiApplyPatchW(szPatchPackage: string | Win32Pointer, szInstallPackage: string | Win32Pointer, eInstallType: number, szCommandLine: string | Win32Pointer): number;
+  MsiApplyPatchW(
+    szPatchPackage: string | Win32Pointer,
+    szInstallPackage: string | Win32Pointer,
+    eInstallType: number,
+    szCommandLine: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiApplyPatchW */
-  MsiApplyPatch(szPatchPackage: string | Win32Pointer, szInstallPackage: string | Win32Pointer, eInstallType: number, szCommandLine: string | Win32Pointer): number;
+  MsiApplyPatch(
+    szPatchPackage: string | Win32Pointer,
+    szInstallPackage: string | Win32Pointer,
+    eInstallType: number,
+    szCommandLine: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiBeginTransactionA */
-  MsiBeginTransactionA(szName: string | Win32Pointer, dwTransactionAttributes: number, phTransactionHandle: Win32Pointer, phChangeOfOwnerEvent: Win32Pointer): number;
+  MsiBeginTransactionA(
+    szName: string | Win32Pointer,
+    dwTransactionAttributes: number,
+    phTransactionHandle: Win32Pointer,
+    phChangeOfOwnerEvent: Win32Pointer,
+  ): number;
   /** msi.dll!MsiBeginTransactionW */
-  MsiBeginTransactionW(szName: string | Win32Pointer, dwTransactionAttributes: number, phTransactionHandle: Win32Pointer, phChangeOfOwnerEvent: Win32Pointer): number;
+  MsiBeginTransactionW(
+    szName: string | Win32Pointer,
+    dwTransactionAttributes: number,
+    phTransactionHandle: Win32Pointer,
+    phChangeOfOwnerEvent: Win32Pointer,
+  ): number;
   /** msi.dll!MsiBeginTransactionW */
-  MsiBeginTransaction(szName: string | Win32Pointer, dwTransactionAttributes: number, phTransactionHandle: Win32Pointer, phChangeOfOwnerEvent: Win32Pointer): number;
+  MsiBeginTransaction(
+    szName: string | Win32Pointer,
+    dwTransactionAttributes: number,
+    phTransactionHandle: Win32Pointer,
+    phChangeOfOwnerEvent: Win32Pointer,
+  ): number;
   /** msi.dll!MsiCloseAllHandles */
   MsiCloseAllHandles(): number;
   /** msi.dll!MsiCloseHandle */
@@ -49,19 +142,46 @@ interface Functions {
   /** msi.dll!MsiCollectUserInfoW */
   MsiCollectUserInfo(szProduct: string | Win32Pointer): number;
   /** msi.dll!MsiConfigureFeatureA */
-  MsiConfigureFeatureA(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, eInstallState: number): number;
+  MsiConfigureFeatureA(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    eInstallState: number,
+  ): number;
   /** msi.dll!MsiConfigureFeatureW */
-  MsiConfigureFeatureW(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, eInstallState: number): number;
+  MsiConfigureFeatureW(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    eInstallState: number,
+  ): number;
   /** msi.dll!MsiConfigureFeatureW */
-  MsiConfigureFeature(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, eInstallState: number): number;
+  MsiConfigureFeature(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    eInstallState: number,
+  ): number;
   /** msi.dll!MsiConfigureProductA */
   MsiConfigureProductA(szProduct: string | Win32Pointer, iInstallLevel: number, eInstallState: number): number;
   /** msi.dll!MsiConfigureProductExA */
-  MsiConfigureProductExA(szProduct: string | Win32Pointer, iInstallLevel: number, eInstallState: number, szCommandLine: string | Win32Pointer): number;
+  MsiConfigureProductExA(
+    szProduct: string | Win32Pointer,
+    iInstallLevel: number,
+    eInstallState: number,
+    szCommandLine: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiConfigureProductExW */
-  MsiConfigureProductExW(szProduct: string | Win32Pointer, iInstallLevel: number, eInstallState: number, szCommandLine: string | Win32Pointer): number;
+  MsiConfigureProductExW(
+    szProduct: string | Win32Pointer,
+    iInstallLevel: number,
+    eInstallState: number,
+    szCommandLine: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiConfigureProductExW */
-  MsiConfigureProductEx(szProduct: string | Win32Pointer, iInstallLevel: number, eInstallState: number, szCommandLine: string | Win32Pointer): number;
+  MsiConfigureProductEx(
+    szProduct: string | Win32Pointer,
+    iInstallLevel: number,
+    eInstallState: number,
+    szCommandLine: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiConfigureProductW */
   MsiConfigureProductW(szProduct: string | Win32Pointer, iInstallLevel: number, eInstallState: number): number;
   /** msi.dll!MsiConfigureProductW */
@@ -69,31 +189,94 @@ interface Functions {
   /** msi.dll!MsiCreateRecord */
   MsiCreateRecord(cParams: number): number;
   /** msi.dll!MsiCreateTransformSummaryInfoA */
-  MsiCreateTransformSummaryInfoA(hDatabase: number, hDatabaseReference: number, szTransformFile: string | Win32Pointer, iErrorConditions: number, iValidation: number): number;
+  MsiCreateTransformSummaryInfoA(
+    hDatabase: number,
+    hDatabaseReference: number,
+    szTransformFile: string | Win32Pointer,
+    iErrorConditions: number,
+    iValidation: number,
+  ): number;
   /** msi.dll!MsiCreateTransformSummaryInfoW */
-  MsiCreateTransformSummaryInfoW(hDatabase: number, hDatabaseReference: number, szTransformFile: string | Win32Pointer, iErrorConditions: number, iValidation: number): number;
+  MsiCreateTransformSummaryInfoW(
+    hDatabase: number,
+    hDatabaseReference: number,
+    szTransformFile: string | Win32Pointer,
+    iErrorConditions: number,
+    iValidation: number,
+  ): number;
   /** msi.dll!MsiCreateTransformSummaryInfoW */
-  MsiCreateTransformSummaryInfo(hDatabase: number, hDatabaseReference: number, szTransformFile: string | Win32Pointer, iErrorConditions: number, iValidation: number): number;
+  MsiCreateTransformSummaryInfo(
+    hDatabase: number,
+    hDatabaseReference: number,
+    szTransformFile: string | Win32Pointer,
+    iErrorConditions: number,
+    iValidation: number,
+  ): number;
   /** msi.dll!MsiDatabaseApplyTransformA */
-  MsiDatabaseApplyTransformA(hDatabase: number, szTransformFile: string | Win32Pointer, iErrorConditions: number): number;
+  MsiDatabaseApplyTransformA(
+    hDatabase: number,
+    szTransformFile: string | Win32Pointer,
+    iErrorConditions: number,
+  ): number;
   /** msi.dll!MsiDatabaseApplyTransformW */
-  MsiDatabaseApplyTransformW(hDatabase: number, szTransformFile: string | Win32Pointer, iErrorConditions: number): number;
+  MsiDatabaseApplyTransformW(
+    hDatabase: number,
+    szTransformFile: string | Win32Pointer,
+    iErrorConditions: number,
+  ): number;
   /** msi.dll!MsiDatabaseApplyTransformW */
-  MsiDatabaseApplyTransform(hDatabase: number, szTransformFile: string | Win32Pointer, iErrorConditions: number): number;
+  MsiDatabaseApplyTransform(
+    hDatabase: number,
+    szTransformFile: string | Win32Pointer,
+    iErrorConditions: number,
+  ): number;
   /** msi.dll!MsiDatabaseCommit */
   MsiDatabaseCommit(hDatabase: number): number;
   /** msi.dll!MsiDatabaseExportA */
-  MsiDatabaseExportA(hDatabase: number, szTableName: string | Win32Pointer, szFolderPath: string | Win32Pointer, szFileName: string | Win32Pointer): number;
+  MsiDatabaseExportA(
+    hDatabase: number,
+    szTableName: string | Win32Pointer,
+    szFolderPath: string | Win32Pointer,
+    szFileName: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiDatabaseExportW */
-  MsiDatabaseExportW(hDatabase: number, szTableName: string | Win32Pointer, szFolderPath: string | Win32Pointer, szFileName: string | Win32Pointer): number;
+  MsiDatabaseExportW(
+    hDatabase: number,
+    szTableName: string | Win32Pointer,
+    szFolderPath: string | Win32Pointer,
+    szFileName: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiDatabaseExportW */
-  MsiDatabaseExport(hDatabase: number, szTableName: string | Win32Pointer, szFolderPath: string | Win32Pointer, szFileName: string | Win32Pointer): number;
+  MsiDatabaseExport(
+    hDatabase: number,
+    szTableName: string | Win32Pointer,
+    szFolderPath: string | Win32Pointer,
+    szFileName: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiDatabaseGenerateTransformA */
-  MsiDatabaseGenerateTransformA(hDatabase: number, hDatabaseReference: number, szTransformFile: string | Win32Pointer, iReserved1: number, iReserved2: number): number;
+  MsiDatabaseGenerateTransformA(
+    hDatabase: number,
+    hDatabaseReference: number,
+    szTransformFile: string | Win32Pointer,
+    iReserved1: number,
+    iReserved2: number,
+  ): number;
   /** msi.dll!MsiDatabaseGenerateTransformW */
-  MsiDatabaseGenerateTransformW(hDatabase: number, hDatabaseReference: number, szTransformFile: string | Win32Pointer, iReserved1: number, iReserved2: number): number;
+  MsiDatabaseGenerateTransformW(
+    hDatabase: number,
+    hDatabaseReference: number,
+    szTransformFile: string | Win32Pointer,
+    iReserved1: number,
+    iReserved2: number,
+  ): number;
   /** msi.dll!MsiDatabaseGenerateTransformW */
-  MsiDatabaseGenerateTransform(hDatabase: number, hDatabaseReference: number, szTransformFile: string | Win32Pointer, iReserved1: number, iReserved2: number): number;
+  MsiDatabaseGenerateTransform(
+    hDatabase: number,
+    hDatabaseReference: number,
+    szTransformFile: string | Win32Pointer,
+    iReserved1: number,
+    iReserved2: number,
+  ): number;
   /** msi.dll!MsiDatabaseGetPrimaryKeysA */
   MsiDatabaseGetPrimaryKeysA(hDatabase: number, szTableName: string | Win32Pointer, phRecord: Win32Pointer): number;
   /** msi.dll!MsiDatabaseGetPrimaryKeysW */
@@ -125,17 +308,47 @@ interface Functions {
   /** msi.dll!MsiDatabaseOpenViewW */
   MsiDatabaseOpenView(hDatabase: number, szQuery: string | Win32Pointer, phView: Win32Pointer): number;
   /** msi.dll!MsiDetermineApplicablePatchesA */
-  MsiDetermineApplicablePatchesA(szProductPackagePath: string | Win32Pointer, cPatchInfo: number, pPatchInfo: Win32Pointer): number;
+  MsiDetermineApplicablePatchesA(
+    szProductPackagePath: string | Win32Pointer,
+    cPatchInfo: number,
+    pPatchInfo: Win32Pointer,
+  ): number;
   /** msi.dll!MsiDetermineApplicablePatchesW */
-  MsiDetermineApplicablePatchesW(szProductPackagePath: string | Win32Pointer, cPatchInfo: number, pPatchInfo: Win32Pointer): number;
+  MsiDetermineApplicablePatchesW(
+    szProductPackagePath: string | Win32Pointer,
+    cPatchInfo: number,
+    pPatchInfo: Win32Pointer,
+  ): number;
   /** msi.dll!MsiDetermineApplicablePatchesW */
-  MsiDetermineApplicablePatches(szProductPackagePath: string | Win32Pointer, cPatchInfo: number, pPatchInfo: Win32Pointer): number;
+  MsiDetermineApplicablePatches(
+    szProductPackagePath: string | Win32Pointer,
+    cPatchInfo: number,
+    pPatchInfo: Win32Pointer,
+  ): number;
   /** msi.dll!MsiDeterminePatchSequenceA */
-  MsiDeterminePatchSequenceA(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, cPatchInfo: number, pPatchInfo: Win32Pointer): number;
+  MsiDeterminePatchSequenceA(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    cPatchInfo: number,
+    pPatchInfo: Win32Pointer,
+  ): number;
   /** msi.dll!MsiDeterminePatchSequenceW */
-  MsiDeterminePatchSequenceW(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, cPatchInfo: number, pPatchInfo: Win32Pointer): number;
+  MsiDeterminePatchSequenceW(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    cPatchInfo: number,
+    pPatchInfo: Win32Pointer,
+  ): number;
   /** msi.dll!MsiDeterminePatchSequenceW */
-  MsiDeterminePatchSequence(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, cPatchInfo: number, pPatchInfo: Win32Pointer): number;
+  MsiDeterminePatchSequence(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    cPatchInfo: number,
+    pPatchInfo: Win32Pointer,
+  ): number;
   /** msi.dll!MsiDoActionA */
   MsiDoActionA(hInstall: number, szAction: string | Win32Pointer): number;
   /** msi.dll!MsiDoActionW */
@@ -153,77 +366,296 @@ interface Functions {
   /** msi.dll!MsiEndTransaction */
   MsiEndTransaction(dwTransactionState: number): number;
   /** msi.dll!MsiEnumClientsA */
-  MsiEnumClientsA(szComponent: string | Win32Pointer, iProductIndex: number, lpProductBuf: string | Win32Pointer): number;
+  MsiEnumClientsA(
+    szComponent: string | Win32Pointer,
+    iProductIndex: number,
+    lpProductBuf: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumClientsExA */
-  MsiEnumClientsExA(szComponent: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwProductIndex: number, szProductBuf: string | Win32Pointer, pdwInstalledContext: Win32Pointer, szSid: string | Win32Pointer, pcchSid: Win32Pointer): number;
+  MsiEnumClientsExA(
+    szComponent: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwProductIndex: number,
+    szProductBuf: string | Win32Pointer,
+    pdwInstalledContext: Win32Pointer,
+    szSid: string | Win32Pointer,
+    pcchSid: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumClientsExW */
-  MsiEnumClientsExW(szComponent: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwProductIndex: number, szProductBuf: string | Win32Pointer, pdwInstalledContext: Win32Pointer, szSid: string | Win32Pointer, pcchSid: Win32Pointer): number;
+  MsiEnumClientsExW(
+    szComponent: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwProductIndex: number,
+    szProductBuf: string | Win32Pointer,
+    pdwInstalledContext: Win32Pointer,
+    szSid: string | Win32Pointer,
+    pcchSid: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumClientsExW */
-  MsiEnumClientsEx(szComponent: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwProductIndex: number, szProductBuf: string | Win32Pointer, pdwInstalledContext: Win32Pointer, szSid: string | Win32Pointer, pcchSid: Win32Pointer): number;
+  MsiEnumClientsEx(
+    szComponent: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwProductIndex: number,
+    szProductBuf: string | Win32Pointer,
+    pdwInstalledContext: Win32Pointer,
+    szSid: string | Win32Pointer,
+    pcchSid: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumClientsW */
-  MsiEnumClientsW(szComponent: string | Win32Pointer, iProductIndex: number, lpProductBuf: string | Win32Pointer): number;
+  MsiEnumClientsW(
+    szComponent: string | Win32Pointer,
+    iProductIndex: number,
+    lpProductBuf: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumClientsW */
-  MsiEnumClients(szComponent: string | Win32Pointer, iProductIndex: number, lpProductBuf: string | Win32Pointer): number;
+  MsiEnumClients(
+    szComponent: string | Win32Pointer,
+    iProductIndex: number,
+    lpProductBuf: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumComponentCostsA */
-  MsiEnumComponentCostsA(hInstall: number, szComponent: string | Win32Pointer, dwIndex: number, iState: number, szDriveBuf: string | Win32Pointer, pcchDriveBuf: Win32Pointer, piCost: Win32Pointer, piTempCost: Win32Pointer): number;
+  MsiEnumComponentCostsA(
+    hInstall: number,
+    szComponent: string | Win32Pointer,
+    dwIndex: number,
+    iState: number,
+    szDriveBuf: string | Win32Pointer,
+    pcchDriveBuf: Win32Pointer,
+    piCost: Win32Pointer,
+    piTempCost: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumComponentCostsW */
-  MsiEnumComponentCostsW(hInstall: number, szComponent: string | Win32Pointer, dwIndex: number, iState: number, szDriveBuf: string | Win32Pointer, pcchDriveBuf: Win32Pointer, piCost: Win32Pointer, piTempCost: Win32Pointer): number;
+  MsiEnumComponentCostsW(
+    hInstall: number,
+    szComponent: string | Win32Pointer,
+    dwIndex: number,
+    iState: number,
+    szDriveBuf: string | Win32Pointer,
+    pcchDriveBuf: Win32Pointer,
+    piCost: Win32Pointer,
+    piTempCost: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumComponentCostsW */
-  MsiEnumComponentCosts(hInstall: number, szComponent: string | Win32Pointer, dwIndex: number, iState: number, szDriveBuf: string | Win32Pointer, pcchDriveBuf: Win32Pointer, piCost: Win32Pointer, piTempCost: Win32Pointer): number;
+  MsiEnumComponentCosts(
+    hInstall: number,
+    szComponent: string | Win32Pointer,
+    dwIndex: number,
+    iState: number,
+    szDriveBuf: string | Win32Pointer,
+    pcchDriveBuf: Win32Pointer,
+    piCost: Win32Pointer,
+    piTempCost: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumComponentQualifiersA */
-  MsiEnumComponentQualifiersA(szComponent: string | Win32Pointer, iIndex: number, lpQualifierBuf: string | Win32Pointer, pcchQualifierBuf: Win32Pointer, lpApplicationDataBuf: string | Win32Pointer, pcchApplicationDataBuf: Win32Pointer): number;
+  MsiEnumComponentQualifiersA(
+    szComponent: string | Win32Pointer,
+    iIndex: number,
+    lpQualifierBuf: string | Win32Pointer,
+    pcchQualifierBuf: Win32Pointer,
+    lpApplicationDataBuf: string | Win32Pointer,
+    pcchApplicationDataBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumComponentQualifiersW */
-  MsiEnumComponentQualifiersW(szComponent: string | Win32Pointer, iIndex: number, lpQualifierBuf: string | Win32Pointer, pcchQualifierBuf: Win32Pointer, lpApplicationDataBuf: string | Win32Pointer, pcchApplicationDataBuf: Win32Pointer): number;
+  MsiEnumComponentQualifiersW(
+    szComponent: string | Win32Pointer,
+    iIndex: number,
+    lpQualifierBuf: string | Win32Pointer,
+    pcchQualifierBuf: Win32Pointer,
+    lpApplicationDataBuf: string | Win32Pointer,
+    pcchApplicationDataBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumComponentQualifiersW */
-  MsiEnumComponentQualifiers(szComponent: string | Win32Pointer, iIndex: number, lpQualifierBuf: string | Win32Pointer, pcchQualifierBuf: Win32Pointer, lpApplicationDataBuf: string | Win32Pointer, pcchApplicationDataBuf: Win32Pointer): number;
+  MsiEnumComponentQualifiers(
+    szComponent: string | Win32Pointer,
+    iIndex: number,
+    lpQualifierBuf: string | Win32Pointer,
+    pcchQualifierBuf: Win32Pointer,
+    lpApplicationDataBuf: string | Win32Pointer,
+    pcchApplicationDataBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumComponentsA */
   MsiEnumComponentsA(iComponentIndex: number, lpComponentBuf: string | Win32Pointer): number;
   /** msi.dll!MsiEnumComponentsExA */
-  MsiEnumComponentsExA(szUserSid: string | Win32Pointer, dwContext: number, dwIndex: number, szInstalledComponentCode: string | Win32Pointer, pdwInstalledContext: Win32Pointer, szSid: string | Win32Pointer, pcchSid: Win32Pointer): number;
+  MsiEnumComponentsExA(
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwIndex: number,
+    szInstalledComponentCode: string | Win32Pointer,
+    pdwInstalledContext: Win32Pointer,
+    szSid: string | Win32Pointer,
+    pcchSid: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumComponentsExW */
-  MsiEnumComponentsExW(szUserSid: string | Win32Pointer, dwContext: number, dwIndex: number, szInstalledComponentCode: string | Win32Pointer, pdwInstalledContext: Win32Pointer, szSid: string | Win32Pointer, pcchSid: Win32Pointer): number;
+  MsiEnumComponentsExW(
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwIndex: number,
+    szInstalledComponentCode: string | Win32Pointer,
+    pdwInstalledContext: Win32Pointer,
+    szSid: string | Win32Pointer,
+    pcchSid: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumComponentsExW */
-  MsiEnumComponentsEx(szUserSid: string | Win32Pointer, dwContext: number, dwIndex: number, szInstalledComponentCode: string | Win32Pointer, pdwInstalledContext: Win32Pointer, szSid: string | Win32Pointer, pcchSid: Win32Pointer): number;
+  MsiEnumComponentsEx(
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwIndex: number,
+    szInstalledComponentCode: string | Win32Pointer,
+    pdwInstalledContext: Win32Pointer,
+    szSid: string | Win32Pointer,
+    pcchSid: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumComponentsW */
   MsiEnumComponentsW(iComponentIndex: number, lpComponentBuf: string | Win32Pointer): number;
   /** msi.dll!MsiEnumComponentsW */
   MsiEnumComponents(iComponentIndex: number, lpComponentBuf: string | Win32Pointer): number;
   /** msi.dll!MsiEnumFeaturesA */
-  MsiEnumFeaturesA(szProduct: string | Win32Pointer, iFeatureIndex: number, lpFeatureBuf: string | Win32Pointer, lpParentBuf: string | Win32Pointer): number;
+  MsiEnumFeaturesA(
+    szProduct: string | Win32Pointer,
+    iFeatureIndex: number,
+    lpFeatureBuf: string | Win32Pointer,
+    lpParentBuf: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumFeaturesW */
-  MsiEnumFeaturesW(szProduct: string | Win32Pointer, iFeatureIndex: number, lpFeatureBuf: string | Win32Pointer, lpParentBuf: string | Win32Pointer): number;
+  MsiEnumFeaturesW(
+    szProduct: string | Win32Pointer,
+    iFeatureIndex: number,
+    lpFeatureBuf: string | Win32Pointer,
+    lpParentBuf: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumFeaturesW */
-  MsiEnumFeatures(szProduct: string | Win32Pointer, iFeatureIndex: number, lpFeatureBuf: string | Win32Pointer, lpParentBuf: string | Win32Pointer): number;
+  MsiEnumFeatures(
+    szProduct: string | Win32Pointer,
+    iFeatureIndex: number,
+    lpFeatureBuf: string | Win32Pointer,
+    lpParentBuf: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumPatchesA */
-  MsiEnumPatchesA(szProduct: string | Win32Pointer, iPatchIndex: number, lpPatchBuf: string | Win32Pointer, lpTransformsBuf: string | Win32Pointer, pcchTransformsBuf: Win32Pointer): number;
+  MsiEnumPatchesA(
+    szProduct: string | Win32Pointer,
+    iPatchIndex: number,
+    lpPatchBuf: string | Win32Pointer,
+    lpTransformsBuf: string | Win32Pointer,
+    pcchTransformsBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumPatchesExA */
-  MsiEnumPatchesExA(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwFilter: number, dwIndex: number, szPatchCode: string | Win32Pointer, szTargetProductCode: string | Win32Pointer, pdwTargetProductContext: Win32Pointer, szTargetUserSid: string | Win32Pointer, pcchTargetUserSid: Win32Pointer): number;
+  MsiEnumPatchesExA(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwFilter: number,
+    dwIndex: number,
+    szPatchCode: string | Win32Pointer,
+    szTargetProductCode: string | Win32Pointer,
+    pdwTargetProductContext: Win32Pointer,
+    szTargetUserSid: string | Win32Pointer,
+    pcchTargetUserSid: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumPatchesExW */
-  MsiEnumPatchesExW(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwFilter: number, dwIndex: number, szPatchCode: string | Win32Pointer, szTargetProductCode: string | Win32Pointer, pdwTargetProductContext: Win32Pointer, szTargetUserSid: string | Win32Pointer, pcchTargetUserSid: Win32Pointer): number;
+  MsiEnumPatchesExW(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwFilter: number,
+    dwIndex: number,
+    szPatchCode: string | Win32Pointer,
+    szTargetProductCode: string | Win32Pointer,
+    pdwTargetProductContext: Win32Pointer,
+    szTargetUserSid: string | Win32Pointer,
+    pcchTargetUserSid: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumPatchesExW */
-  MsiEnumPatchesEx(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwFilter: number, dwIndex: number, szPatchCode: string | Win32Pointer, szTargetProductCode: string | Win32Pointer, pdwTargetProductContext: Win32Pointer, szTargetUserSid: string | Win32Pointer, pcchTargetUserSid: Win32Pointer): number;
+  MsiEnumPatchesEx(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwFilter: number,
+    dwIndex: number,
+    szPatchCode: string | Win32Pointer,
+    szTargetProductCode: string | Win32Pointer,
+    pdwTargetProductContext: Win32Pointer,
+    szTargetUserSid: string | Win32Pointer,
+    pcchTargetUserSid: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumPatchesW */
-  MsiEnumPatchesW(szProduct: string | Win32Pointer, iPatchIndex: number, lpPatchBuf: string | Win32Pointer, lpTransformsBuf: string | Win32Pointer, pcchTransformsBuf: Win32Pointer): number;
+  MsiEnumPatchesW(
+    szProduct: string | Win32Pointer,
+    iPatchIndex: number,
+    lpPatchBuf: string | Win32Pointer,
+    lpTransformsBuf: string | Win32Pointer,
+    pcchTransformsBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumPatchesW */
-  MsiEnumPatches(szProduct: string | Win32Pointer, iPatchIndex: number, lpPatchBuf: string | Win32Pointer, lpTransformsBuf: string | Win32Pointer, pcchTransformsBuf: Win32Pointer): number;
+  MsiEnumPatches(
+    szProduct: string | Win32Pointer,
+    iPatchIndex: number,
+    lpPatchBuf: string | Win32Pointer,
+    lpTransformsBuf: string | Win32Pointer,
+    pcchTransformsBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumProductsA */
   MsiEnumProductsA(iProductIndex: number, lpProductBuf: string | Win32Pointer): number;
   /** msi.dll!MsiEnumProductsExA */
-  MsiEnumProductsExA(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwIndex: number, szInstalledProductCode: string | Win32Pointer, pdwInstalledContext: Win32Pointer, szSid: string | Win32Pointer, pcchSid: Win32Pointer): number;
+  MsiEnumProductsExA(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwIndex: number,
+    szInstalledProductCode: string | Win32Pointer,
+    pdwInstalledContext: Win32Pointer,
+    szSid: string | Win32Pointer,
+    pcchSid: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumProductsExW */
-  MsiEnumProductsExW(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwIndex: number, szInstalledProductCode: string | Win32Pointer, pdwInstalledContext: Win32Pointer, szSid: string | Win32Pointer, pcchSid: Win32Pointer): number;
+  MsiEnumProductsExW(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwIndex: number,
+    szInstalledProductCode: string | Win32Pointer,
+    pdwInstalledContext: Win32Pointer,
+    szSid: string | Win32Pointer,
+    pcchSid: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumProductsExW */
-  MsiEnumProductsEx(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwIndex: number, szInstalledProductCode: string | Win32Pointer, pdwInstalledContext: Win32Pointer, szSid: string | Win32Pointer, pcchSid: Win32Pointer): number;
+  MsiEnumProductsEx(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwIndex: number,
+    szInstalledProductCode: string | Win32Pointer,
+    pdwInstalledContext: Win32Pointer,
+    szSid: string | Win32Pointer,
+    pcchSid: Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumProductsW */
   MsiEnumProductsW(iProductIndex: number, lpProductBuf: string | Win32Pointer): number;
   /** msi.dll!MsiEnumProductsW */
   MsiEnumProducts(iProductIndex: number, lpProductBuf: string | Win32Pointer): number;
   /** msi.dll!MsiEnumRelatedProductsA */
-  MsiEnumRelatedProductsA(lpUpgradeCode: string | Win32Pointer, dwReserved: number, iProductIndex: number, lpProductBuf: string | Win32Pointer): number;
+  MsiEnumRelatedProductsA(
+    lpUpgradeCode: string | Win32Pointer,
+    dwReserved: number,
+    iProductIndex: number,
+    lpProductBuf: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumRelatedProductsW */
-  MsiEnumRelatedProductsW(lpUpgradeCode: string | Win32Pointer, dwReserved: number, iProductIndex: number, lpProductBuf: string | Win32Pointer): number;
+  MsiEnumRelatedProductsW(
+    lpUpgradeCode: string | Win32Pointer,
+    dwReserved: number,
+    iProductIndex: number,
+    lpProductBuf: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiEnumRelatedProductsW */
-  MsiEnumRelatedProducts(lpUpgradeCode: string | Win32Pointer, dwReserved: number, iProductIndex: number, lpProductBuf: string | Win32Pointer): number;
+  MsiEnumRelatedProducts(
+    lpUpgradeCode: string | Win32Pointer,
+    dwReserved: number,
+    iProductIndex: number,
+    lpProductBuf: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiEvaluateConditionA */
   MsiEvaluateConditionA(hInstall: number, szCondition: string | Win32Pointer): number;
   /** msi.dll!MsiEvaluateConditionW */
@@ -231,63 +663,216 @@ interface Functions {
   /** msi.dll!MsiEvaluateConditionW */
   MsiEvaluateCondition(hInstall: number, szCondition: string | Win32Pointer): number;
   /** msi.dll!MsiExtractPatchXMLDataA */
-  MsiExtractPatchXMLDataA(szPatchPath: string | Win32Pointer, dwReserved: number, szXMLData: string | Win32Pointer, pcchXMLData: Win32Pointer): number;
+  MsiExtractPatchXMLDataA(
+    szPatchPath: string | Win32Pointer,
+    dwReserved: number,
+    szXMLData: string | Win32Pointer,
+    pcchXMLData: Win32Pointer,
+  ): number;
   /** msi.dll!MsiExtractPatchXMLDataW */
-  MsiExtractPatchXMLDataW(szPatchPath: string | Win32Pointer, dwReserved: number, szXMLData: string | Win32Pointer, pcchXMLData: Win32Pointer): number;
+  MsiExtractPatchXMLDataW(
+    szPatchPath: string | Win32Pointer,
+    dwReserved: number,
+    szXMLData: string | Win32Pointer,
+    pcchXMLData: Win32Pointer,
+  ): number;
   /** msi.dll!MsiExtractPatchXMLDataW */
-  MsiExtractPatchXMLData(szPatchPath: string | Win32Pointer, dwReserved: number, szXMLData: string | Win32Pointer, pcchXMLData: Win32Pointer): number;
+  MsiExtractPatchXMLData(
+    szPatchPath: string | Win32Pointer,
+    dwReserved: number,
+    szXMLData: string | Win32Pointer,
+    pcchXMLData: Win32Pointer,
+  ): number;
   /** msi.dll!MsiFormatRecordA */
-  MsiFormatRecordA(hInstall: number, hRecord: number, szResultBuf: string | Win32Pointer, pcchResultBuf: Win32Pointer): number;
+  MsiFormatRecordA(
+    hInstall: number,
+    hRecord: number,
+    szResultBuf: string | Win32Pointer,
+    pcchResultBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiFormatRecordW */
-  MsiFormatRecordW(hInstall: number, hRecord: number, szResultBuf: string | Win32Pointer, pcchResultBuf: Win32Pointer): number;
+  MsiFormatRecordW(
+    hInstall: number,
+    hRecord: number,
+    szResultBuf: string | Win32Pointer,
+    pcchResultBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiFormatRecordW */
-  MsiFormatRecord(hInstall: number, hRecord: number, szResultBuf: string | Win32Pointer, pcchResultBuf: Win32Pointer): number;
+  MsiFormatRecord(
+    hInstall: number,
+    hRecord: number,
+    szResultBuf: string | Win32Pointer,
+    pcchResultBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetActiveDatabase */
   MsiGetActiveDatabase(hInstall: number): number;
   /** msi.dll!MsiGetComponentPathA */
-  MsiGetComponentPathA(szProduct: string | Win32Pointer, szComponent: string | Win32Pointer, lpPathBuf: string | Win32Pointer, pcchBuf: Win32Pointer): number;
+  MsiGetComponentPathA(
+    szProduct: string | Win32Pointer,
+    szComponent: string | Win32Pointer,
+    lpPathBuf: string | Win32Pointer,
+    pcchBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetComponentPathExA */
-  MsiGetComponentPathExA(szProductCode: string | Win32Pointer, szComponentCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, lpOutPathBuffer: string | Win32Pointer, pcchOutPathBuffer: Win32Pointer): number;
+  MsiGetComponentPathExA(
+    szProductCode: string | Win32Pointer,
+    szComponentCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    lpOutPathBuffer: string | Win32Pointer,
+    pcchOutPathBuffer: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetComponentPathExW */
-  MsiGetComponentPathExW(szProductCode: string | Win32Pointer, szComponentCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, lpOutPathBuffer: string | Win32Pointer, pcchOutPathBuffer: Win32Pointer): number;
+  MsiGetComponentPathExW(
+    szProductCode: string | Win32Pointer,
+    szComponentCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    lpOutPathBuffer: string | Win32Pointer,
+    pcchOutPathBuffer: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetComponentPathExW */
-  MsiGetComponentPathEx(szProductCode: string | Win32Pointer, szComponentCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, lpOutPathBuffer: string | Win32Pointer, pcchOutPathBuffer: Win32Pointer): number;
+  MsiGetComponentPathEx(
+    szProductCode: string | Win32Pointer,
+    szComponentCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    lpOutPathBuffer: string | Win32Pointer,
+    pcchOutPathBuffer: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetComponentPathW */
-  MsiGetComponentPathW(szProduct: string | Win32Pointer, szComponent: string | Win32Pointer, lpPathBuf: string | Win32Pointer, pcchBuf: Win32Pointer): number;
+  MsiGetComponentPathW(
+    szProduct: string | Win32Pointer,
+    szComponent: string | Win32Pointer,
+    lpPathBuf: string | Win32Pointer,
+    pcchBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetComponentPathW */
-  MsiGetComponentPath(szProduct: string | Win32Pointer, szComponent: string | Win32Pointer, lpPathBuf: string | Win32Pointer, pcchBuf: Win32Pointer): number;
+  MsiGetComponentPath(
+    szProduct: string | Win32Pointer,
+    szComponent: string | Win32Pointer,
+    lpPathBuf: string | Win32Pointer,
+    pcchBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetComponentStateA */
-  MsiGetComponentStateA(hInstall: number, szComponent: string | Win32Pointer, piInstalled: Win32Pointer, piAction: Win32Pointer): number;
+  MsiGetComponentStateA(
+    hInstall: number,
+    szComponent: string | Win32Pointer,
+    piInstalled: Win32Pointer,
+    piAction: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetComponentStateW */
-  MsiGetComponentStateW(hInstall: number, szComponent: string | Win32Pointer, piInstalled: Win32Pointer, piAction: Win32Pointer): number;
+  MsiGetComponentStateW(
+    hInstall: number,
+    szComponent: string | Win32Pointer,
+    piInstalled: Win32Pointer,
+    piAction: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetComponentStateW */
-  MsiGetComponentState(hInstall: number, szComponent: string | Win32Pointer, piInstalled: Win32Pointer, piAction: Win32Pointer): number;
+  MsiGetComponentState(
+    hInstall: number,
+    szComponent: string | Win32Pointer,
+    piInstalled: Win32Pointer,
+    piAction: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetDatabaseState */
   MsiGetDatabaseState(hDatabase: number): number;
   /** msi.dll!MsiGetFeatureCostA */
-  MsiGetFeatureCostA(hInstall: number, szFeature: string | Win32Pointer, iCostTree: number, iState: number, piCost: Win32Pointer): number;
+  MsiGetFeatureCostA(
+    hInstall: number,
+    szFeature: string | Win32Pointer,
+    iCostTree: number,
+    iState: number,
+    piCost: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFeatureCostW */
-  MsiGetFeatureCostW(hInstall: number, szFeature: string | Win32Pointer, iCostTree: number, iState: number, piCost: Win32Pointer): number;
+  MsiGetFeatureCostW(
+    hInstall: number,
+    szFeature: string | Win32Pointer,
+    iCostTree: number,
+    iState: number,
+    piCost: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFeatureCostW */
-  MsiGetFeatureCost(hInstall: number, szFeature: string | Win32Pointer, iCostTree: number, iState: number, piCost: Win32Pointer): number;
+  MsiGetFeatureCost(
+    hInstall: number,
+    szFeature: string | Win32Pointer,
+    iCostTree: number,
+    iState: number,
+    piCost: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFeatureInfoA */
-  MsiGetFeatureInfoA(hProduct: number, szFeature: string | Win32Pointer, lpAttributes: Win32Pointer, lpTitleBuf: string | Win32Pointer, pcchTitleBuf: Win32Pointer, lpHelpBuf: string | Win32Pointer, pcchHelpBuf: Win32Pointer): number;
+  MsiGetFeatureInfoA(
+    hProduct: number,
+    szFeature: string | Win32Pointer,
+    lpAttributes: Win32Pointer,
+    lpTitleBuf: string | Win32Pointer,
+    pcchTitleBuf: Win32Pointer,
+    lpHelpBuf: string | Win32Pointer,
+    pcchHelpBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFeatureInfoW */
-  MsiGetFeatureInfoW(hProduct: number, szFeature: string | Win32Pointer, lpAttributes: Win32Pointer, lpTitleBuf: string | Win32Pointer, pcchTitleBuf: Win32Pointer, lpHelpBuf: string | Win32Pointer, pcchHelpBuf: Win32Pointer): number;
+  MsiGetFeatureInfoW(
+    hProduct: number,
+    szFeature: string | Win32Pointer,
+    lpAttributes: Win32Pointer,
+    lpTitleBuf: string | Win32Pointer,
+    pcchTitleBuf: Win32Pointer,
+    lpHelpBuf: string | Win32Pointer,
+    pcchHelpBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFeatureInfoW */
-  MsiGetFeatureInfo(hProduct: number, szFeature: string | Win32Pointer, lpAttributes: Win32Pointer, lpTitleBuf: string | Win32Pointer, pcchTitleBuf: Win32Pointer, lpHelpBuf: string | Win32Pointer, pcchHelpBuf: Win32Pointer): number;
+  MsiGetFeatureInfo(
+    hProduct: number,
+    szFeature: string | Win32Pointer,
+    lpAttributes: Win32Pointer,
+    lpTitleBuf: string | Win32Pointer,
+    pcchTitleBuf: Win32Pointer,
+    lpHelpBuf: string | Win32Pointer,
+    pcchHelpBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFeatureStateA */
-  MsiGetFeatureStateA(hInstall: number, szFeature: string | Win32Pointer, piInstalled: Win32Pointer, piAction: Win32Pointer): number;
+  MsiGetFeatureStateA(
+    hInstall: number,
+    szFeature: string | Win32Pointer,
+    piInstalled: Win32Pointer,
+    piAction: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFeatureStateW */
-  MsiGetFeatureStateW(hInstall: number, szFeature: string | Win32Pointer, piInstalled: Win32Pointer, piAction: Win32Pointer): number;
+  MsiGetFeatureStateW(
+    hInstall: number,
+    szFeature: string | Win32Pointer,
+    piInstalled: Win32Pointer,
+    piAction: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFeatureStateW */
-  MsiGetFeatureState(hInstall: number, szFeature: string | Win32Pointer, piInstalled: Win32Pointer, piAction: Win32Pointer): number;
+  MsiGetFeatureState(
+    hInstall: number,
+    szFeature: string | Win32Pointer,
+    piInstalled: Win32Pointer,
+    piAction: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFeatureUsageA */
-  MsiGetFeatureUsageA(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, pdwUseCount: Win32Pointer, pwDateUsed: Win32Pointer): number;
+  MsiGetFeatureUsageA(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    pdwUseCount: Win32Pointer,
+    pwDateUsed: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFeatureUsageW */
-  MsiGetFeatureUsageW(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, pdwUseCount: Win32Pointer, pwDateUsed: Win32Pointer): number;
+  MsiGetFeatureUsageW(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    pdwUseCount: Win32Pointer,
+    pwDateUsed: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFeatureUsageW */
-  MsiGetFeatureUsage(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, pdwUseCount: Win32Pointer, pwDateUsed: Win32Pointer): number;
+  MsiGetFeatureUsage(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    pdwUseCount: Win32Pointer,
+    pwDateUsed: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFeatureValidStatesA */
   MsiGetFeatureValidStatesA(hInstall: number, szFeature: string | Win32Pointer, lpInstallStates: Win32Pointer): number;
   /** msi.dll!MsiGetFeatureValidStatesW */
@@ -301,17 +886,53 @@ interface Functions {
   /** msi.dll!MsiGetFileHashW */
   MsiGetFileHash(szFilePath: string | Win32Pointer, dwOptions: number, pHash: Win32Pointer): number;
   /** msi.dll!MsiGetFileSignatureInformationA */
-  MsiGetFileSignatureInformationA(szSignedObjectPath: string | Win32Pointer, dwFlags: number, ppcCertContext: Win32Pointer, pbHashData: Win32Pointer, pcbHashData: Win32Pointer): number;
+  MsiGetFileSignatureInformationA(
+    szSignedObjectPath: string | Win32Pointer,
+    dwFlags: number,
+    ppcCertContext: Win32Pointer,
+    pbHashData: Win32Pointer,
+    pcbHashData: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFileSignatureInformationW */
-  MsiGetFileSignatureInformationW(szSignedObjectPath: string | Win32Pointer, dwFlags: number, ppcCertContext: Win32Pointer, pbHashData: Win32Pointer, pcbHashData: Win32Pointer): number;
+  MsiGetFileSignatureInformationW(
+    szSignedObjectPath: string | Win32Pointer,
+    dwFlags: number,
+    ppcCertContext: Win32Pointer,
+    pbHashData: Win32Pointer,
+    pcbHashData: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFileSignatureInformationW */
-  MsiGetFileSignatureInformation(szSignedObjectPath: string | Win32Pointer, dwFlags: number, ppcCertContext: Win32Pointer, pbHashData: Win32Pointer, pcbHashData: Win32Pointer): number;
+  MsiGetFileSignatureInformation(
+    szSignedObjectPath: string | Win32Pointer,
+    dwFlags: number,
+    ppcCertContext: Win32Pointer,
+    pbHashData: Win32Pointer,
+    pcbHashData: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFileVersionA */
-  MsiGetFileVersionA(szFilePath: string | Win32Pointer, lpVersionBuf: string | Win32Pointer, pcchVersionBuf: Win32Pointer, lpLangBuf: string | Win32Pointer, pcchLangBuf: Win32Pointer): number;
+  MsiGetFileVersionA(
+    szFilePath: string | Win32Pointer,
+    lpVersionBuf: string | Win32Pointer,
+    pcchVersionBuf: Win32Pointer,
+    lpLangBuf: string | Win32Pointer,
+    pcchLangBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFileVersionW */
-  MsiGetFileVersionW(szFilePath: string | Win32Pointer, lpVersionBuf: string | Win32Pointer, pcchVersionBuf: Win32Pointer, lpLangBuf: string | Win32Pointer, pcchLangBuf: Win32Pointer): number;
+  MsiGetFileVersionW(
+    szFilePath: string | Win32Pointer,
+    lpVersionBuf: string | Win32Pointer,
+    pcchVersionBuf: Win32Pointer,
+    lpLangBuf: string | Win32Pointer,
+    pcchLangBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetFileVersionW */
-  MsiGetFileVersion(szFilePath: string | Win32Pointer, lpVersionBuf: string | Win32Pointer, pcchVersionBuf: Win32Pointer, lpLangBuf: string | Win32Pointer, pcchLangBuf: Win32Pointer): number;
+  MsiGetFileVersion(
+    szFilePath: string | Win32Pointer,
+    lpVersionBuf: string | Win32Pointer,
+    pcchVersionBuf: Win32Pointer,
+    lpLangBuf: string | Win32Pointer,
+    pcchLangBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetLanguage */
   MsiGetLanguage(hInstall: number): number;
   /** msi.dll!MsiGetLastErrorRecord */
@@ -319,23 +940,77 @@ interface Functions {
   /** msi.dll!MsiGetMode */
   MsiGetMode(hInstall: number, eRunMode: number): number;
   /** msi.dll!MsiGetPatchFileListA */
-  MsiGetPatchFileListA(szProductCode: string | Win32Pointer, szPatchPackages: string | Win32Pointer, pcFiles: Win32Pointer, pphFileRecords: Win32Pointer): number;
+  MsiGetPatchFileListA(
+    szProductCode: string | Win32Pointer,
+    szPatchPackages: string | Win32Pointer,
+    pcFiles: Win32Pointer,
+    pphFileRecords: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetPatchFileListW */
-  MsiGetPatchFileListW(szProductCode: string | Win32Pointer, szPatchPackages: string | Win32Pointer, pcFiles: Win32Pointer, pphFileRecords: Win32Pointer): number;
+  MsiGetPatchFileListW(
+    szProductCode: string | Win32Pointer,
+    szPatchPackages: string | Win32Pointer,
+    pcFiles: Win32Pointer,
+    pphFileRecords: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetPatchFileListW */
-  MsiGetPatchFileList(szProductCode: string | Win32Pointer, szPatchPackages: string | Win32Pointer, pcFiles: Win32Pointer, pphFileRecords: Win32Pointer): number;
+  MsiGetPatchFileList(
+    szProductCode: string | Win32Pointer,
+    szPatchPackages: string | Win32Pointer,
+    pcFiles: Win32Pointer,
+    pphFileRecords: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetPatchInfoA */
-  MsiGetPatchInfoA(szPatch: string | Win32Pointer, szAttribute: string | Win32Pointer, lpValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiGetPatchInfoA(
+    szPatch: string | Win32Pointer,
+    szAttribute: string | Win32Pointer,
+    lpValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetPatchInfoExA */
-  MsiGetPatchInfoExA(szPatchCode: string | Win32Pointer, szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, szProperty: string | Win32Pointer, lpValue: string | Win32Pointer, pcchValue: Win32Pointer): number;
+  MsiGetPatchInfoExA(
+    szPatchCode: string | Win32Pointer,
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    szProperty: string | Win32Pointer,
+    lpValue: string | Win32Pointer,
+    pcchValue: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetPatchInfoExW */
-  MsiGetPatchInfoExW(szPatchCode: string | Win32Pointer, szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, szProperty: string | Win32Pointer, lpValue: string | Win32Pointer, pcchValue: Win32Pointer): number;
+  MsiGetPatchInfoExW(
+    szPatchCode: string | Win32Pointer,
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    szProperty: string | Win32Pointer,
+    lpValue: string | Win32Pointer,
+    pcchValue: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetPatchInfoExW */
-  MsiGetPatchInfoEx(szPatchCode: string | Win32Pointer, szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, szProperty: string | Win32Pointer, lpValue: string | Win32Pointer, pcchValue: Win32Pointer): number;
+  MsiGetPatchInfoEx(
+    szPatchCode: string | Win32Pointer,
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    szProperty: string | Win32Pointer,
+    lpValue: string | Win32Pointer,
+    pcchValue: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetPatchInfoW */
-  MsiGetPatchInfoW(szPatch: string | Win32Pointer, szAttribute: string | Win32Pointer, lpValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiGetPatchInfoW(
+    szPatch: string | Win32Pointer,
+    szAttribute: string | Win32Pointer,
+    lpValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetPatchInfoW */
-  MsiGetPatchInfo(szPatch: string | Win32Pointer, szAttribute: string | Win32Pointer, lpValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiGetPatchInfo(
+    szPatch: string | Win32Pointer,
+    szAttribute: string | Win32Pointer,
+    lpValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetProductCodeA */
   MsiGetProductCodeA(szComponent: string | Win32Pointer, lpBuf39: string | Win32Pointer): number;
   /** msi.dll!MsiGetProductCodeW */
@@ -343,71 +1018,260 @@ interface Functions {
   /** msi.dll!MsiGetProductCodeW */
   MsiGetProductCode(szComponent: string | Win32Pointer, lpBuf39: string | Win32Pointer): number;
   /** msi.dll!MsiGetProductInfoA */
-  MsiGetProductInfoA(szProduct: string | Win32Pointer, szAttribute: string | Win32Pointer, lpValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiGetProductInfoA(
+    szProduct: string | Win32Pointer,
+    szAttribute: string | Win32Pointer,
+    lpValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetProductInfoExA */
-  MsiGetProductInfoExA(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, szProperty: string | Win32Pointer, szValue: string | Win32Pointer, pcchValue: Win32Pointer): number;
+  MsiGetProductInfoExA(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    szProperty: string | Win32Pointer,
+    szValue: string | Win32Pointer,
+    pcchValue: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetProductInfoExW */
-  MsiGetProductInfoExW(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, szProperty: string | Win32Pointer, szValue: string | Win32Pointer, pcchValue: Win32Pointer): number;
+  MsiGetProductInfoExW(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    szProperty: string | Win32Pointer,
+    szValue: string | Win32Pointer,
+    pcchValue: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetProductInfoExW */
-  MsiGetProductInfoEx(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, szProperty: string | Win32Pointer, szValue: string | Win32Pointer, pcchValue: Win32Pointer): number;
+  MsiGetProductInfoEx(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    szProperty: string | Win32Pointer,
+    szValue: string | Win32Pointer,
+    pcchValue: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetProductInfoFromScriptA */
-  MsiGetProductInfoFromScriptA(szScriptFile: string | Win32Pointer, lpProductBuf39: string | Win32Pointer, plgidLanguage: Win32Pointer, pdwVersion: Win32Pointer, lpNameBuf: string | Win32Pointer, pcchNameBuf: Win32Pointer, lpPackageBuf: string | Win32Pointer, pcchPackageBuf: Win32Pointer): number;
+  MsiGetProductInfoFromScriptA(
+    szScriptFile: string | Win32Pointer,
+    lpProductBuf39: string | Win32Pointer,
+    plgidLanguage: Win32Pointer,
+    pdwVersion: Win32Pointer,
+    lpNameBuf: string | Win32Pointer,
+    pcchNameBuf: Win32Pointer,
+    lpPackageBuf: string | Win32Pointer,
+    pcchPackageBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetProductInfoFromScriptW */
-  MsiGetProductInfoFromScriptW(szScriptFile: string | Win32Pointer, lpProductBuf39: string | Win32Pointer, plgidLanguage: Win32Pointer, pdwVersion: Win32Pointer, lpNameBuf: string | Win32Pointer, pcchNameBuf: Win32Pointer, lpPackageBuf: string | Win32Pointer, pcchPackageBuf: Win32Pointer): number;
+  MsiGetProductInfoFromScriptW(
+    szScriptFile: string | Win32Pointer,
+    lpProductBuf39: string | Win32Pointer,
+    plgidLanguage: Win32Pointer,
+    pdwVersion: Win32Pointer,
+    lpNameBuf: string | Win32Pointer,
+    pcchNameBuf: Win32Pointer,
+    lpPackageBuf: string | Win32Pointer,
+    pcchPackageBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetProductInfoFromScriptW */
-  MsiGetProductInfoFromScript(szScriptFile: string | Win32Pointer, lpProductBuf39: string | Win32Pointer, plgidLanguage: Win32Pointer, pdwVersion: Win32Pointer, lpNameBuf: string | Win32Pointer, pcchNameBuf: Win32Pointer, lpPackageBuf: string | Win32Pointer, pcchPackageBuf: Win32Pointer): number;
+  MsiGetProductInfoFromScript(
+    szScriptFile: string | Win32Pointer,
+    lpProductBuf39: string | Win32Pointer,
+    plgidLanguage: Win32Pointer,
+    pdwVersion: Win32Pointer,
+    lpNameBuf: string | Win32Pointer,
+    pcchNameBuf: Win32Pointer,
+    lpPackageBuf: string | Win32Pointer,
+    pcchPackageBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetProductInfoW */
-  MsiGetProductInfoW(szProduct: string | Win32Pointer, szAttribute: string | Win32Pointer, lpValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiGetProductInfoW(
+    szProduct: string | Win32Pointer,
+    szAttribute: string | Win32Pointer,
+    lpValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetProductInfoW */
-  MsiGetProductInfo(szProduct: string | Win32Pointer, szAttribute: string | Win32Pointer, lpValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiGetProductInfo(
+    szProduct: string | Win32Pointer,
+    szAttribute: string | Win32Pointer,
+    lpValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetProductPropertyA */
-  MsiGetProductPropertyA(hProduct: number, szProperty: string | Win32Pointer, lpValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiGetProductPropertyA(
+    hProduct: number,
+    szProperty: string | Win32Pointer,
+    lpValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetProductPropertyW */
-  MsiGetProductPropertyW(hProduct: number, szProperty: string | Win32Pointer, lpValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiGetProductPropertyW(
+    hProduct: number,
+    szProperty: string | Win32Pointer,
+    lpValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetProductPropertyW */
-  MsiGetProductProperty(hProduct: number, szProperty: string | Win32Pointer, lpValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiGetProductProperty(
+    hProduct: number,
+    szProperty: string | Win32Pointer,
+    lpValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetPropertyA */
-  MsiGetPropertyA(hInstall: number, szName: string | Win32Pointer, szValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiGetPropertyA(
+    hInstall: number,
+    szName: string | Win32Pointer,
+    szValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetPropertyW */
-  MsiGetPropertyW(hInstall: number, szName: string | Win32Pointer, szValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiGetPropertyW(
+    hInstall: number,
+    szName: string | Win32Pointer,
+    szValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetPropertyW */
-  MsiGetProperty(hInstall: number, szName: string | Win32Pointer, szValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiGetProperty(
+    hInstall: number,
+    szName: string | Win32Pointer,
+    szValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetShortcutTargetA */
-  MsiGetShortcutTargetA(szShortcutPath: string | Win32Pointer, szProductCode: string | Win32Pointer, szFeatureId: string | Win32Pointer, szComponentCode: string | Win32Pointer): number;
+  MsiGetShortcutTargetA(
+    szShortcutPath: string | Win32Pointer,
+    szProductCode: string | Win32Pointer,
+    szFeatureId: string | Win32Pointer,
+    szComponentCode: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetShortcutTargetW */
-  MsiGetShortcutTargetW(szShortcutPath: string | Win32Pointer, szProductCode: string | Win32Pointer, szFeatureId: string | Win32Pointer, szComponentCode: string | Win32Pointer): number;
+  MsiGetShortcutTargetW(
+    szShortcutPath: string | Win32Pointer,
+    szProductCode: string | Win32Pointer,
+    szFeatureId: string | Win32Pointer,
+    szComponentCode: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetShortcutTargetW */
-  MsiGetShortcutTarget(szShortcutPath: string | Win32Pointer, szProductCode: string | Win32Pointer, szFeatureId: string | Win32Pointer, szComponentCode: string | Win32Pointer): number;
+  MsiGetShortcutTarget(
+    szShortcutPath: string | Win32Pointer,
+    szProductCode: string | Win32Pointer,
+    szFeatureId: string | Win32Pointer,
+    szComponentCode: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetSourcePathA */
-  MsiGetSourcePathA(hInstall: number, szFolder: string | Win32Pointer, szPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiGetSourcePathA(
+    hInstall: number,
+    szFolder: string | Win32Pointer,
+    szPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetSourcePathW */
-  MsiGetSourcePathW(hInstall: number, szFolder: string | Win32Pointer, szPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiGetSourcePathW(
+    hInstall: number,
+    szFolder: string | Win32Pointer,
+    szPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetSourcePathW */
-  MsiGetSourcePath(hInstall: number, szFolder: string | Win32Pointer, szPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiGetSourcePath(
+    hInstall: number,
+    szFolder: string | Win32Pointer,
+    szPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetSummaryInformationA */
-  MsiGetSummaryInformationA(hDatabase: number, szDatabasePath: string | Win32Pointer, uiUpdateCount: number, phSummaryInfo: Win32Pointer): number;
+  MsiGetSummaryInformationA(
+    hDatabase: number,
+    szDatabasePath: string | Win32Pointer,
+    uiUpdateCount: number,
+    phSummaryInfo: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetSummaryInformationW */
-  MsiGetSummaryInformationW(hDatabase: number, szDatabasePath: string | Win32Pointer, uiUpdateCount: number, phSummaryInfo: Win32Pointer): number;
+  MsiGetSummaryInformationW(
+    hDatabase: number,
+    szDatabasePath: string | Win32Pointer,
+    uiUpdateCount: number,
+    phSummaryInfo: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetSummaryInformationW */
-  MsiGetSummaryInformation(hDatabase: number, szDatabasePath: string | Win32Pointer, uiUpdateCount: number, phSummaryInfo: Win32Pointer): number;
+  MsiGetSummaryInformation(
+    hDatabase: number,
+    szDatabasePath: string | Win32Pointer,
+    uiUpdateCount: number,
+    phSummaryInfo: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetTargetPathA */
-  MsiGetTargetPathA(hInstall: number, szFolder: string | Win32Pointer, szPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiGetTargetPathA(
+    hInstall: number,
+    szFolder: string | Win32Pointer,
+    szPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetTargetPathW */
-  MsiGetTargetPathW(hInstall: number, szFolder: string | Win32Pointer, szPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiGetTargetPathW(
+    hInstall: number,
+    szFolder: string | Win32Pointer,
+    szPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetTargetPathW */
-  MsiGetTargetPath(hInstall: number, szFolder: string | Win32Pointer, szPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiGetTargetPath(
+    hInstall: number,
+    szFolder: string | Win32Pointer,
+    szPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetUserInfoA */
-  MsiGetUserInfoA(szProduct: string | Win32Pointer, lpUserNameBuf: string | Win32Pointer, pcchUserNameBuf: Win32Pointer, lpOrgNameBuf: string | Win32Pointer, pcchOrgNameBuf: Win32Pointer, lpSerialBuf: string | Win32Pointer, pcchSerialBuf: Win32Pointer): number;
+  MsiGetUserInfoA(
+    szProduct: string | Win32Pointer,
+    lpUserNameBuf: string | Win32Pointer,
+    pcchUserNameBuf: Win32Pointer,
+    lpOrgNameBuf: string | Win32Pointer,
+    pcchOrgNameBuf: Win32Pointer,
+    lpSerialBuf: string | Win32Pointer,
+    pcchSerialBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetUserInfoW */
-  MsiGetUserInfoW(szProduct: string | Win32Pointer, lpUserNameBuf: string | Win32Pointer, pcchUserNameBuf: Win32Pointer, lpOrgNameBuf: string | Win32Pointer, pcchOrgNameBuf: Win32Pointer, lpSerialBuf: string | Win32Pointer, pcchSerialBuf: Win32Pointer): number;
+  MsiGetUserInfoW(
+    szProduct: string | Win32Pointer,
+    lpUserNameBuf: string | Win32Pointer,
+    pcchUserNameBuf: Win32Pointer,
+    lpOrgNameBuf: string | Win32Pointer,
+    pcchOrgNameBuf: Win32Pointer,
+    lpSerialBuf: string | Win32Pointer,
+    pcchSerialBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiGetUserInfoW */
-  MsiGetUserInfo(szProduct: string | Win32Pointer, lpUserNameBuf: string | Win32Pointer, pcchUserNameBuf: Win32Pointer, lpOrgNameBuf: string | Win32Pointer, pcchOrgNameBuf: Win32Pointer, lpSerialBuf: string | Win32Pointer, pcchSerialBuf: Win32Pointer): number;
+  MsiGetUserInfo(
+    szProduct: string | Win32Pointer,
+    lpUserNameBuf: string | Win32Pointer,
+    pcchUserNameBuf: Win32Pointer,
+    lpOrgNameBuf: string | Win32Pointer,
+    pcchOrgNameBuf: Win32Pointer,
+    lpSerialBuf: string | Win32Pointer,
+    pcchSerialBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiInstallMissingComponentA */
-  MsiInstallMissingComponentA(szProduct: string | Win32Pointer, szComponent: string | Win32Pointer, eInstallState: number): number;
+  MsiInstallMissingComponentA(
+    szProduct: string | Win32Pointer,
+    szComponent: string | Win32Pointer,
+    eInstallState: number,
+  ): number;
   /** msi.dll!MsiInstallMissingComponentW */
-  MsiInstallMissingComponentW(szProduct: string | Win32Pointer, szComponent: string | Win32Pointer, eInstallState: number): number;
+  MsiInstallMissingComponentW(
+    szProduct: string | Win32Pointer,
+    szComponent: string | Win32Pointer,
+    eInstallState: number,
+  ): number;
   /** msi.dll!MsiInstallMissingComponentW */
-  MsiInstallMissingComponent(szProduct: string | Win32Pointer, szComponent: string | Win32Pointer, eInstallState: number): number;
+  MsiInstallMissingComponent(
+    szProduct: string | Win32Pointer,
+    szComponent: string | Win32Pointer,
+    eInstallState: number,
+  ): number;
   /** msi.dll!MsiInstallMissingFileA */
   MsiInstallMissingFileA(szProduct: string | Win32Pointer, szFile: string | Win32Pointer): number;
   /** msi.dll!MsiInstallMissingFileW */
@@ -427,13 +1291,29 @@ interface Functions {
   /** msi.dll!MsiIsProductElevatedW */
   MsiIsProductElevated(szProduct: string | Win32Pointer, pfElevated: Win32Pointer): number;
   /** msi.dll!MsiJoinTransaction */
-  MsiJoinTransaction(hTransactionHandle: number, dwTransactionAttributes: number, phChangeOfOwnerEvent: Win32Pointer): number;
+  MsiJoinTransaction(
+    hTransactionHandle: number,
+    dwTransactionAttributes: number,
+    phChangeOfOwnerEvent: Win32Pointer,
+  ): number;
   /** msi.dll!MsiLocateComponentA */
-  MsiLocateComponentA(szComponent: string | Win32Pointer, lpPathBuf: string | Win32Pointer, pcchBuf: Win32Pointer): number;
+  MsiLocateComponentA(
+    szComponent: string | Win32Pointer,
+    lpPathBuf: string | Win32Pointer,
+    pcchBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiLocateComponentW */
-  MsiLocateComponentW(szComponent: string | Win32Pointer, lpPathBuf: string | Win32Pointer, pcchBuf: Win32Pointer): number;
+  MsiLocateComponentW(
+    szComponent: string | Win32Pointer,
+    lpPathBuf: string | Win32Pointer,
+    pcchBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiLocateComponentW */
-  MsiLocateComponent(szComponent: string | Win32Pointer, lpPathBuf: string | Win32Pointer, pcchBuf: Win32Pointer): number;
+  MsiLocateComponent(
+    szComponent: string | Win32Pointer,
+    lpPathBuf: string | Win32Pointer,
+    pcchBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiNotifySidChangeA */
   MsiNotifySidChangeA(pOldSid: string | Win32Pointer, pNewSid: string | Win32Pointer): number;
   /** msi.dll!MsiNotifySidChangeW */
@@ -441,11 +1321,23 @@ interface Functions {
   /** msi.dll!MsiNotifySidChangeW */
   MsiNotifySidChange(pOldSid: string | Win32Pointer, pNewSid: string | Win32Pointer): number;
   /** msi.dll!MsiOpenDatabaseA */
-  MsiOpenDatabaseA(szDatabasePath: string | Win32Pointer, szPersist: string | Win32Pointer, phDatabase: Win32Pointer): number;
+  MsiOpenDatabaseA(
+    szDatabasePath: string | Win32Pointer,
+    szPersist: string | Win32Pointer,
+    phDatabase: Win32Pointer,
+  ): number;
   /** msi.dll!MsiOpenDatabaseW */
-  MsiOpenDatabaseW(szDatabasePath: string | Win32Pointer, szPersist: string | Win32Pointer, phDatabase: Win32Pointer): number;
+  MsiOpenDatabaseW(
+    szDatabasePath: string | Win32Pointer,
+    szPersist: string | Win32Pointer,
+    phDatabase: Win32Pointer,
+  ): number;
   /** msi.dll!MsiOpenDatabaseW */
-  MsiOpenDatabase(szDatabasePath: string | Win32Pointer, szPersist: string | Win32Pointer, phDatabase: Win32Pointer): number;
+  MsiOpenDatabase(
+    szDatabasePath: string | Win32Pointer,
+    szPersist: string | Win32Pointer,
+    phDatabase: Win32Pointer,
+  ): number;
   /** msi.dll!MsiOpenPackageA */
   MsiOpenPackageA(szPackagePath: string | Win32Pointer, hProduct: Win32Pointer): number;
   /** msi.dll!MsiOpenPackageExA */
@@ -465,11 +1357,23 @@ interface Functions {
   /** msi.dll!MsiOpenProductW */
   MsiOpenProduct(szProduct: string | Win32Pointer, hProduct: Win32Pointer): number;
   /** msi.dll!MsiPreviewBillboardA */
-  MsiPreviewBillboardA(hPreview: number, szControlName: string | Win32Pointer, szBillboard: string | Win32Pointer): number;
+  MsiPreviewBillboardA(
+    hPreview: number,
+    szControlName: string | Win32Pointer,
+    szBillboard: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiPreviewBillboardW */
-  MsiPreviewBillboardW(hPreview: number, szControlName: string | Win32Pointer, szBillboard: string | Win32Pointer): number;
+  MsiPreviewBillboardW(
+    hPreview: number,
+    szControlName: string | Win32Pointer,
+    szBillboard: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiPreviewBillboardW */
-  MsiPreviewBillboard(hPreview: number, szControlName: string | Win32Pointer, szBillboard: string | Win32Pointer): number;
+  MsiPreviewBillboard(
+    hPreview: number,
+    szControlName: string | Win32Pointer,
+    szBillboard: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiPreviewDialogA */
   MsiPreviewDialogA(hPreview: number, szDialogName: string | Win32Pointer): number;
   /** msi.dll!MsiPreviewDialogW */
@@ -477,51 +1381,192 @@ interface Functions {
   /** msi.dll!MsiPreviewDialogW */
   MsiPreviewDialog(hPreview: number, szDialogName: string | Win32Pointer): number;
   /** msi.dll!MsiProcessAdvertiseScriptA */
-  MsiProcessAdvertiseScriptA(szScriptFile: string | Win32Pointer, szIconFolder: string | Win32Pointer, hRegData: Win32Pointer, fShortcuts: number, fRemoveItems: number): number;
+  MsiProcessAdvertiseScriptA(
+    szScriptFile: string | Win32Pointer,
+    szIconFolder: string | Win32Pointer,
+    hRegData: Win32Pointer,
+    fShortcuts: number,
+    fRemoveItems: number,
+  ): number;
   /** msi.dll!MsiProcessAdvertiseScriptW */
-  MsiProcessAdvertiseScriptW(szScriptFile: string | Win32Pointer, szIconFolder: string | Win32Pointer, hRegData: Win32Pointer, fShortcuts: number, fRemoveItems: number): number;
+  MsiProcessAdvertiseScriptW(
+    szScriptFile: string | Win32Pointer,
+    szIconFolder: string | Win32Pointer,
+    hRegData: Win32Pointer,
+    fShortcuts: number,
+    fRemoveItems: number,
+  ): number;
   /** msi.dll!MsiProcessAdvertiseScriptW */
-  MsiProcessAdvertiseScript(szScriptFile: string | Win32Pointer, szIconFolder: string | Win32Pointer, hRegData: Win32Pointer, fShortcuts: number, fRemoveItems: number): number;
+  MsiProcessAdvertiseScript(
+    szScriptFile: string | Win32Pointer,
+    szIconFolder: string | Win32Pointer,
+    hRegData: Win32Pointer,
+    fShortcuts: number,
+    fRemoveItems: number,
+  ): number;
   /** msi.dll!MsiProcessMessage */
   MsiProcessMessage(hInstall: number, eMessageType: number, hRecord: number): number;
   /** msi.dll!MsiProvideAssemblyA */
-  MsiProvideAssemblyA(szAssemblyName: string | Win32Pointer, szAppContext: string | Win32Pointer, dwInstallMode: number, dwAssemblyInfo: number, lpPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiProvideAssemblyA(
+    szAssemblyName: string | Win32Pointer,
+    szAppContext: string | Win32Pointer,
+    dwInstallMode: number,
+    dwAssemblyInfo: number,
+    lpPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiProvideAssemblyW */
-  MsiProvideAssemblyW(szAssemblyName: string | Win32Pointer, szAppContext: string | Win32Pointer, dwInstallMode: number, dwAssemblyInfo: number, lpPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiProvideAssemblyW(
+    szAssemblyName: string | Win32Pointer,
+    szAppContext: string | Win32Pointer,
+    dwInstallMode: number,
+    dwAssemblyInfo: number,
+    lpPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiProvideAssemblyW */
-  MsiProvideAssembly(szAssemblyName: string | Win32Pointer, szAppContext: string | Win32Pointer, dwInstallMode: number, dwAssemblyInfo: number, lpPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiProvideAssembly(
+    szAssemblyName: string | Win32Pointer,
+    szAppContext: string | Win32Pointer,
+    dwInstallMode: number,
+    dwAssemblyInfo: number,
+    lpPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiProvideComponentA */
-  MsiProvideComponentA(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, szComponent: string | Win32Pointer, dwInstallMode: number, lpPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiProvideComponentA(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    szComponent: string | Win32Pointer,
+    dwInstallMode: number,
+    lpPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiProvideComponentW */
-  MsiProvideComponentW(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, szComponent: string | Win32Pointer, dwInstallMode: number, lpPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiProvideComponentW(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    szComponent: string | Win32Pointer,
+    dwInstallMode: number,
+    lpPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiProvideComponentW */
-  MsiProvideComponent(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, szComponent: string | Win32Pointer, dwInstallMode: number, lpPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiProvideComponent(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    szComponent: string | Win32Pointer,
+    dwInstallMode: number,
+    lpPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiProvideQualifiedComponentA */
-  MsiProvideQualifiedComponentA(szCategory: string | Win32Pointer, szQualifier: string | Win32Pointer, dwInstallMode: number, lpPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiProvideQualifiedComponentA(
+    szCategory: string | Win32Pointer,
+    szQualifier: string | Win32Pointer,
+    dwInstallMode: number,
+    lpPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiProvideQualifiedComponentExA */
-  MsiProvideQualifiedComponentExA(szCategory: string | Win32Pointer, szQualifier: string | Win32Pointer, dwInstallMode: number, szProduct: string | Win32Pointer, dwUnused1: number, dwUnused2: number, lpPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiProvideQualifiedComponentExA(
+    szCategory: string | Win32Pointer,
+    szQualifier: string | Win32Pointer,
+    dwInstallMode: number,
+    szProduct: string | Win32Pointer,
+    dwUnused1: number,
+    dwUnused2: number,
+    lpPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiProvideQualifiedComponentExW */
-  MsiProvideQualifiedComponentExW(szCategory: string | Win32Pointer, szQualifier: string | Win32Pointer, dwInstallMode: number, szProduct: string | Win32Pointer, dwUnused1: number, dwUnused2: number, lpPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiProvideQualifiedComponentExW(
+    szCategory: string | Win32Pointer,
+    szQualifier: string | Win32Pointer,
+    dwInstallMode: number,
+    szProduct: string | Win32Pointer,
+    dwUnused1: number,
+    dwUnused2: number,
+    lpPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiProvideQualifiedComponentExW */
-  MsiProvideQualifiedComponentEx(szCategory: string | Win32Pointer, szQualifier: string | Win32Pointer, dwInstallMode: number, szProduct: string | Win32Pointer, dwUnused1: number, dwUnused2: number, lpPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiProvideQualifiedComponentEx(
+    szCategory: string | Win32Pointer,
+    szQualifier: string | Win32Pointer,
+    dwInstallMode: number,
+    szProduct: string | Win32Pointer,
+    dwUnused1: number,
+    dwUnused2: number,
+    lpPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiProvideQualifiedComponentW */
-  MsiProvideQualifiedComponentW(szCategory: string | Win32Pointer, szQualifier: string | Win32Pointer, dwInstallMode: number, lpPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiProvideQualifiedComponentW(
+    szCategory: string | Win32Pointer,
+    szQualifier: string | Win32Pointer,
+    dwInstallMode: number,
+    lpPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiProvideQualifiedComponentW */
-  MsiProvideQualifiedComponent(szCategory: string | Win32Pointer, szQualifier: string | Win32Pointer, dwInstallMode: number, lpPathBuf: string | Win32Pointer, pcchPathBuf: Win32Pointer): number;
+  MsiProvideQualifiedComponent(
+    szCategory: string | Win32Pointer,
+    szQualifier: string | Win32Pointer,
+    dwInstallMode: number,
+    lpPathBuf: string | Win32Pointer,
+    pcchPathBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiQueryComponentStateA */
-  MsiQueryComponentStateA(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, szComponentCode: string | Win32Pointer, pdwState: Win32Pointer): number;
+  MsiQueryComponentStateA(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    szComponentCode: string | Win32Pointer,
+    pdwState: Win32Pointer,
+  ): number;
   /** msi.dll!MsiQueryComponentStateW */
-  MsiQueryComponentStateW(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, szComponentCode: string | Win32Pointer, pdwState: Win32Pointer): number;
+  MsiQueryComponentStateW(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    szComponentCode: string | Win32Pointer,
+    pdwState: Win32Pointer,
+  ): number;
   /** msi.dll!MsiQueryComponentStateW */
-  MsiQueryComponentState(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, szComponentCode: string | Win32Pointer, pdwState: Win32Pointer): number;
+  MsiQueryComponentState(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    szComponentCode: string | Win32Pointer,
+    pdwState: Win32Pointer,
+  ): number;
   /** msi.dll!MsiQueryFeatureStateA */
   MsiQueryFeatureStateA(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer): number;
   /** msi.dll!MsiQueryFeatureStateExA */
-  MsiQueryFeatureStateExA(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, szFeature: string | Win32Pointer, pdwState: Win32Pointer): number;
+  MsiQueryFeatureStateExA(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    szFeature: string | Win32Pointer,
+    pdwState: Win32Pointer,
+  ): number;
   /** msi.dll!MsiQueryFeatureStateExW */
-  MsiQueryFeatureStateExW(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, szFeature: string | Win32Pointer, pdwState: Win32Pointer): number;
+  MsiQueryFeatureStateExW(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    szFeature: string | Win32Pointer,
+    pdwState: Win32Pointer,
+  ): number;
   /** msi.dll!MsiQueryFeatureStateExW */
-  MsiQueryFeatureStateEx(szProductCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, szFeature: string | Win32Pointer, pdwState: Win32Pointer): number;
+  MsiQueryFeatureStateEx(
+    szProductCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    szFeature: string | Win32Pointer,
+    pdwState: Win32Pointer,
+  ): number;
   /** msi.dll!MsiQueryFeatureStateW */
   MsiQueryFeatureStateW(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer): number;
   /** msi.dll!MsiQueryFeatureStateW */
@@ -541,15 +1586,35 @@ interface Functions {
   /** msi.dll!MsiRecordGetInteger */
   MsiRecordGetInteger(hRecord: number, iField: number): number;
   /** msi.dll!MsiRecordGetStringA */
-  MsiRecordGetStringA(hRecord: number, iField: number, szValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiRecordGetStringA(
+    hRecord: number,
+    iField: number,
+    szValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiRecordGetStringW */
-  MsiRecordGetStringW(hRecord: number, iField: number, szValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiRecordGetStringW(
+    hRecord: number,
+    iField: number,
+    szValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiRecordGetStringW */
-  MsiRecordGetString(hRecord: number, iField: number, szValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiRecordGetString(
+    hRecord: number,
+    iField: number,
+    szValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiRecordIsNull */
   MsiRecordIsNull(hRecord: number, iField: number): number;
   /** msi.dll!MsiRecordReadStream */
-  MsiRecordReadStream(hRecord: number, iField: number, szDataBuf: string | Win32Pointer, pcbDataBuf: Win32Pointer): number;
+  MsiRecordReadStream(
+    hRecord: number,
+    iField: number,
+    szDataBuf: string | Win32Pointer,
+    pcbDataBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiRecordSetInteger */
   MsiRecordSetInteger(hRecord: number, iField: number, iValue: number): number;
   /** msi.dll!MsiRecordSetStreamA */
@@ -565,11 +1630,23 @@ interface Functions {
   /** msi.dll!MsiRecordSetStringW */
   MsiRecordSetString(hRecord: number, iField: number, szValue: string | Win32Pointer): number;
   /** msi.dll!MsiReinstallFeatureA */
-  MsiReinstallFeatureA(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, dwReinstallMode: number): number;
+  MsiReinstallFeatureA(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    dwReinstallMode: number,
+  ): number;
   /** msi.dll!MsiReinstallFeatureW */
-  MsiReinstallFeatureW(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, dwReinstallMode: number): number;
+  MsiReinstallFeatureW(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    dwReinstallMode: number,
+  ): number;
   /** msi.dll!MsiReinstallFeatureW */
-  MsiReinstallFeature(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, dwReinstallMode: number): number;
+  MsiReinstallFeature(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    dwReinstallMode: number,
+  ): number;
   /** msi.dll!MsiReinstallProductA */
   MsiReinstallProductA(szProduct: string | Win32Pointer, szReinstallMode: number): number;
   /** msi.dll!MsiReinstallProductW */
@@ -577,11 +1654,26 @@ interface Functions {
   /** msi.dll!MsiReinstallProductW */
   MsiReinstallProduct(szProduct: string | Win32Pointer, szReinstallMode: number): number;
   /** msi.dll!MsiRemovePatchesA */
-  MsiRemovePatchesA(szPatchList: string | Win32Pointer, szProductCode: string | Win32Pointer, eUninstallType: number, szPropertyList: string | Win32Pointer): number;
+  MsiRemovePatchesA(
+    szPatchList: string | Win32Pointer,
+    szProductCode: string | Win32Pointer,
+    eUninstallType: number,
+    szPropertyList: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiRemovePatchesW */
-  MsiRemovePatchesW(szPatchList: string | Win32Pointer, szProductCode: string | Win32Pointer, eUninstallType: number, szPropertyList: string | Win32Pointer): number;
+  MsiRemovePatchesW(
+    szPatchList: string | Win32Pointer,
+    szProductCode: string | Win32Pointer,
+    eUninstallType: number,
+    szPropertyList: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiRemovePatchesW */
-  MsiRemovePatches(szPatchList: string | Win32Pointer, szProductCode: string | Win32Pointer, eUninstallType: number, szPropertyList: string | Win32Pointer): number;
+  MsiRemovePatches(
+    szPatchList: string | Win32Pointer,
+    szProductCode: string | Win32Pointer,
+    eUninstallType: number,
+    szPropertyList: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSequenceA */
   MsiSequenceA(hInstall: number, szTable: string | Win32Pointer, iSequenceMode: number): number;
   /** msi.dll!MsiSequenceW */
@@ -597,7 +1689,12 @@ interface Functions {
   /** msi.dll!MsiSetExternalUIA */
   MsiSetExternalUIA(puiHandler: Win32Callback, dwMessageFilter: number, pvContext: Win32Pointer): number | null;
   /** msi.dll!MsiSetExternalUIRecord */
-  MsiSetExternalUIRecord(puiHandler: Win32Callback, dwMessageFilter: number, pvContext: Win32Pointer, ppuiPrevHandler: Win32Callback): number;
+  MsiSetExternalUIRecord(
+    puiHandler: Win32Callback,
+    dwMessageFilter: number,
+    pvContext: Win32Pointer,
+    ppuiPrevHandler: Win32Callback,
+  ): number;
   /** msi.dll!MsiSetExternalUIW */
   MsiSetExternalUIW(puiHandler: Win32Callback, dwMessageFilter: number, pvContext: Win32Pointer): number | null;
   /** msi.dll!MsiSetExternalUIW */
@@ -633,107 +1730,419 @@ interface Functions {
   /** msi.dll!MsiSetTargetPathW */
   MsiSetTargetPath(hInstall: number, szFolder: string | Win32Pointer, szFolderPath: string | Win32Pointer): number;
   /** msi.dll!MsiSourceListAddMediaDiskA */
-  MsiSourceListAddMediaDiskA(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, dwDiskId: number, szVolumeLabel: string | Win32Pointer, szDiskPrompt: string | Win32Pointer): number;
+  MsiSourceListAddMediaDiskA(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    dwDiskId: number,
+    szVolumeLabel: string | Win32Pointer,
+    szDiskPrompt: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListAddMediaDiskW */
-  MsiSourceListAddMediaDiskW(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, dwDiskId: number, szVolumeLabel: string | Win32Pointer, szDiskPrompt: string | Win32Pointer): number;
+  MsiSourceListAddMediaDiskW(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    dwDiskId: number,
+    szVolumeLabel: string | Win32Pointer,
+    szDiskPrompt: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListAddMediaDiskW */
-  MsiSourceListAddMediaDisk(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, dwDiskId: number, szVolumeLabel: string | Win32Pointer, szDiskPrompt: string | Win32Pointer): number;
+  MsiSourceListAddMediaDisk(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    dwDiskId: number,
+    szVolumeLabel: string | Win32Pointer,
+    szDiskPrompt: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListAddSourceA */
-  MsiSourceListAddSourceA(szProduct: string | Win32Pointer, szUserName: string | Win32Pointer, dwReserved: number, szSource: string | Win32Pointer): number;
+  MsiSourceListAddSourceA(
+    szProduct: string | Win32Pointer,
+    szUserName: string | Win32Pointer,
+    dwReserved: number,
+    szSource: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListAddSourceExA */
-  MsiSourceListAddSourceExA(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, szSource: string | Win32Pointer, dwIndex: number): number;
+  MsiSourceListAddSourceExA(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    szSource: string | Win32Pointer,
+    dwIndex: number,
+  ): number;
   /** msi.dll!MsiSourceListAddSourceExW */
-  MsiSourceListAddSourceExW(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, szSource: string | Win32Pointer, dwIndex: number): number;
+  MsiSourceListAddSourceExW(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    szSource: string | Win32Pointer,
+    dwIndex: number,
+  ): number;
   /** msi.dll!MsiSourceListAddSourceExW */
-  MsiSourceListAddSourceEx(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, szSource: string | Win32Pointer, dwIndex: number): number;
+  MsiSourceListAddSourceEx(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    szSource: string | Win32Pointer,
+    dwIndex: number,
+  ): number;
   /** msi.dll!MsiSourceListAddSourceW */
-  MsiSourceListAddSourceW(szProduct: string | Win32Pointer, szUserName: string | Win32Pointer, dwReserved: number, szSource: string | Win32Pointer): number;
+  MsiSourceListAddSourceW(
+    szProduct: string | Win32Pointer,
+    szUserName: string | Win32Pointer,
+    dwReserved: number,
+    szSource: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListAddSourceW */
-  MsiSourceListAddSource(szProduct: string | Win32Pointer, szUserName: string | Win32Pointer, dwReserved: number, szSource: string | Win32Pointer): number;
+  MsiSourceListAddSource(
+    szProduct: string | Win32Pointer,
+    szUserName: string | Win32Pointer,
+    dwReserved: number,
+    szSource: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListClearAllA */
-  MsiSourceListClearAllA(szProduct: string | Win32Pointer, szUserName: string | Win32Pointer, dwReserved: number): number;
+  MsiSourceListClearAllA(
+    szProduct: string | Win32Pointer,
+    szUserName: string | Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** msi.dll!MsiSourceListClearAllExA */
-  MsiSourceListClearAllExA(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number): number;
+  MsiSourceListClearAllExA(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+  ): number;
   /** msi.dll!MsiSourceListClearAllExW */
-  MsiSourceListClearAllExW(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number): number;
+  MsiSourceListClearAllExW(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+  ): number;
   /** msi.dll!MsiSourceListClearAllExW */
-  MsiSourceListClearAllEx(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number): number;
+  MsiSourceListClearAllEx(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+  ): number;
   /** msi.dll!MsiSourceListClearAllW */
-  MsiSourceListClearAllW(szProduct: string | Win32Pointer, szUserName: string | Win32Pointer, dwReserved: number): number;
+  MsiSourceListClearAllW(
+    szProduct: string | Win32Pointer,
+    szUserName: string | Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** msi.dll!MsiSourceListClearAllW */
-  MsiSourceListClearAll(szProduct: string | Win32Pointer, szUserName: string | Win32Pointer, dwReserved: number): number;
+  MsiSourceListClearAll(
+    szProduct: string | Win32Pointer,
+    szUserName: string | Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** msi.dll!MsiSourceListClearMediaDiskA */
-  MsiSourceListClearMediaDiskA(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, dwDiskId: number): number;
+  MsiSourceListClearMediaDiskA(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    dwDiskId: number,
+  ): number;
   /** msi.dll!MsiSourceListClearMediaDiskW */
-  MsiSourceListClearMediaDiskW(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, dwDiskId: number): number;
+  MsiSourceListClearMediaDiskW(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    dwDiskId: number,
+  ): number;
   /** msi.dll!MsiSourceListClearMediaDiskW */
-  MsiSourceListClearMediaDisk(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, dwDiskId: number): number;
+  MsiSourceListClearMediaDisk(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    dwDiskId: number,
+  ): number;
   /** msi.dll!MsiSourceListClearSourceA */
-  MsiSourceListClearSourceA(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, szSource: string | Win32Pointer): number;
+  MsiSourceListClearSourceA(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    szSource: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListClearSourceW */
-  MsiSourceListClearSourceW(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, szSource: string | Win32Pointer): number;
+  MsiSourceListClearSourceW(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    szSource: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListClearSourceW */
-  MsiSourceListClearSource(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, szSource: string | Win32Pointer): number;
+  MsiSourceListClearSource(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    szSource: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListEnumMediaDisksA */
-  MsiSourceListEnumMediaDisksA(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, dwIndex: number, pdwDiskId: Win32Pointer, szVolumeLabel: string | Win32Pointer, pcchVolumeLabel: Win32Pointer, szDiskPrompt: string | Win32Pointer, pcchDiskPrompt: Win32Pointer): number;
+  MsiSourceListEnumMediaDisksA(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    dwIndex: number,
+    pdwDiskId: Win32Pointer,
+    szVolumeLabel: string | Win32Pointer,
+    pcchVolumeLabel: Win32Pointer,
+    szDiskPrompt: string | Win32Pointer,
+    pcchDiskPrompt: Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListEnumMediaDisksW */
-  MsiSourceListEnumMediaDisksW(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, dwIndex: number, pdwDiskId: Win32Pointer, szVolumeLabel: string | Win32Pointer, pcchVolumeLabel: Win32Pointer, szDiskPrompt: string | Win32Pointer, pcchDiskPrompt: Win32Pointer): number;
+  MsiSourceListEnumMediaDisksW(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    dwIndex: number,
+    pdwDiskId: Win32Pointer,
+    szVolumeLabel: string | Win32Pointer,
+    pcchVolumeLabel: Win32Pointer,
+    szDiskPrompt: string | Win32Pointer,
+    pcchDiskPrompt: Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListEnumMediaDisksW */
-  MsiSourceListEnumMediaDisks(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, dwIndex: number, pdwDiskId: Win32Pointer, szVolumeLabel: string | Win32Pointer, pcchVolumeLabel: Win32Pointer, szDiskPrompt: string | Win32Pointer, pcchDiskPrompt: Win32Pointer): number;
+  MsiSourceListEnumMediaDisks(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    dwIndex: number,
+    pdwDiskId: Win32Pointer,
+    szVolumeLabel: string | Win32Pointer,
+    pcchVolumeLabel: Win32Pointer,
+    szDiskPrompt: string | Win32Pointer,
+    pcchDiskPrompt: Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListEnumSourcesA */
-  MsiSourceListEnumSourcesA(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, dwIndex: number, szSource: string | Win32Pointer, pcchSource: Win32Pointer): number;
+  MsiSourceListEnumSourcesA(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    dwIndex: number,
+    szSource: string | Win32Pointer,
+    pcchSource: Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListEnumSourcesW */
-  MsiSourceListEnumSourcesW(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, dwIndex: number, szSource: string | Win32Pointer, pcchSource: Win32Pointer): number;
+  MsiSourceListEnumSourcesW(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    dwIndex: number,
+    szSource: string | Win32Pointer,
+    pcchSource: Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListEnumSourcesW */
-  MsiSourceListEnumSources(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, dwIndex: number, szSource: string | Win32Pointer, pcchSource: Win32Pointer): number;
+  MsiSourceListEnumSources(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    dwIndex: number,
+    szSource: string | Win32Pointer,
+    pcchSource: Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListForceResolutionA */
-  MsiSourceListForceResolutionA(szProduct: string | Win32Pointer, szUserName: string | Win32Pointer, dwReserved: number): number;
+  MsiSourceListForceResolutionA(
+    szProduct: string | Win32Pointer,
+    szUserName: string | Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** msi.dll!MsiSourceListForceResolutionExA */
-  MsiSourceListForceResolutionExA(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number): number;
+  MsiSourceListForceResolutionExA(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+  ): number;
   /** msi.dll!MsiSourceListForceResolutionExW */
-  MsiSourceListForceResolutionExW(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number): number;
+  MsiSourceListForceResolutionExW(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+  ): number;
   /** msi.dll!MsiSourceListForceResolutionExW */
-  MsiSourceListForceResolutionEx(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number): number;
+  MsiSourceListForceResolutionEx(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+  ): number;
   /** msi.dll!MsiSourceListForceResolutionW */
-  MsiSourceListForceResolutionW(szProduct: string | Win32Pointer, szUserName: string | Win32Pointer, dwReserved: number): number;
+  MsiSourceListForceResolutionW(
+    szProduct: string | Win32Pointer,
+    szUserName: string | Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** msi.dll!MsiSourceListForceResolutionW */
-  MsiSourceListForceResolution(szProduct: string | Win32Pointer, szUserName: string | Win32Pointer, dwReserved: number): number;
+  MsiSourceListForceResolution(
+    szProduct: string | Win32Pointer,
+    szUserName: string | Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** msi.dll!MsiSourceListGetInfoA */
-  MsiSourceListGetInfoA(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, szProperty: string | Win32Pointer, szValue: string | Win32Pointer, pcchValue: Win32Pointer): number;
+  MsiSourceListGetInfoA(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    szProperty: string | Win32Pointer,
+    szValue: string | Win32Pointer,
+    pcchValue: Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListGetInfoW */
-  MsiSourceListGetInfoW(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, szProperty: string | Win32Pointer, szValue: string | Win32Pointer, pcchValue: Win32Pointer): number;
+  MsiSourceListGetInfoW(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    szProperty: string | Win32Pointer,
+    szValue: string | Win32Pointer,
+    pcchValue: Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListGetInfoW */
-  MsiSourceListGetInfo(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, szProperty: string | Win32Pointer, szValue: string | Win32Pointer, pcchValue: Win32Pointer): number;
+  MsiSourceListGetInfo(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    szProperty: string | Win32Pointer,
+    szValue: string | Win32Pointer,
+    pcchValue: Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListSetInfoA */
-  MsiSourceListSetInfoA(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, szProperty: string | Win32Pointer, szValue: string | Win32Pointer): number;
+  MsiSourceListSetInfoA(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    szProperty: string | Win32Pointer,
+    szValue: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListSetInfoW */
-  MsiSourceListSetInfoW(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, szProperty: string | Win32Pointer, szValue: string | Win32Pointer): number;
+  MsiSourceListSetInfoW(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    szProperty: string | Win32Pointer,
+    szValue: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSourceListSetInfoW */
-  MsiSourceListSetInfo(szProductCodeOrPatchCode: string | Win32Pointer, szUserSid: string | Win32Pointer, dwContext: number, dwOptions: number, szProperty: string | Win32Pointer, szValue: string | Win32Pointer): number;
+  MsiSourceListSetInfo(
+    szProductCodeOrPatchCode: string | Win32Pointer,
+    szUserSid: string | Win32Pointer,
+    dwContext: number,
+    dwOptions: number,
+    szProperty: string | Win32Pointer,
+    szValue: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSummaryInfoGetPropertyA */
-  MsiSummaryInfoGetPropertyA(hSummaryInfo: number, uiProperty: number, puiDataType: Win32Pointer, piValue: Win32Pointer, pftValue: Win32Pointer, szValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiSummaryInfoGetPropertyA(
+    hSummaryInfo: number,
+    uiProperty: number,
+    puiDataType: Win32Pointer,
+    piValue: Win32Pointer,
+    pftValue: Win32Pointer,
+    szValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiSummaryInfoGetPropertyCount */
   MsiSummaryInfoGetPropertyCount(hSummaryInfo: number, puiPropertyCount: Win32Pointer): number;
   /** msi.dll!MsiSummaryInfoGetPropertyW */
-  MsiSummaryInfoGetPropertyW(hSummaryInfo: number, uiProperty: number, puiDataType: Win32Pointer, piValue: Win32Pointer, pftValue: Win32Pointer, szValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiSummaryInfoGetPropertyW(
+    hSummaryInfo: number,
+    uiProperty: number,
+    puiDataType: Win32Pointer,
+    piValue: Win32Pointer,
+    pftValue: Win32Pointer,
+    szValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiSummaryInfoGetPropertyW */
-  MsiSummaryInfoGetProperty(hSummaryInfo: number, uiProperty: number, puiDataType: Win32Pointer, piValue: Win32Pointer, pftValue: Win32Pointer, szValueBuf: string | Win32Pointer, pcchValueBuf: Win32Pointer): number;
+  MsiSummaryInfoGetProperty(
+    hSummaryInfo: number,
+    uiProperty: number,
+    puiDataType: Win32Pointer,
+    piValue: Win32Pointer,
+    pftValue: Win32Pointer,
+    szValueBuf: string | Win32Pointer,
+    pcchValueBuf: Win32Pointer,
+  ): number;
   /** msi.dll!MsiSummaryInfoPersist */
   MsiSummaryInfoPersist(hSummaryInfo: number): number;
   /** msi.dll!MsiSummaryInfoSetPropertyA */
-  MsiSummaryInfoSetPropertyA(hSummaryInfo: number, uiProperty: number, uiDataType: number, iValue: number, pftValue: Win32Pointer, szValue: string | Win32Pointer): number;
+  MsiSummaryInfoSetPropertyA(
+    hSummaryInfo: number,
+    uiProperty: number,
+    uiDataType: number,
+    iValue: number,
+    pftValue: Win32Pointer,
+    szValue: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSummaryInfoSetPropertyW */
-  MsiSummaryInfoSetPropertyW(hSummaryInfo: number, uiProperty: number, uiDataType: number, iValue: number, pftValue: Win32Pointer, szValue: string | Win32Pointer): number;
+  MsiSummaryInfoSetPropertyW(
+    hSummaryInfo: number,
+    uiProperty: number,
+    uiDataType: number,
+    iValue: number,
+    pftValue: Win32Pointer,
+    szValue: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiSummaryInfoSetPropertyW */
-  MsiSummaryInfoSetProperty(hSummaryInfo: number, uiProperty: number, uiDataType: number, iValue: number, pftValue: Win32Pointer, szValue: string | Win32Pointer): number;
+  MsiSummaryInfoSetProperty(
+    hSummaryInfo: number,
+    uiProperty: number,
+    uiDataType: number,
+    iValue: number,
+    pftValue: Win32Pointer,
+    szValue: string | Win32Pointer,
+  ): number;
   /** msi.dll!MsiUseFeatureA */
   MsiUseFeatureA(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer): number;
   /** msi.dll!MsiUseFeatureExA */
-  MsiUseFeatureExA(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, dwInstallMode: number, dwReserved: number): number;
+  MsiUseFeatureExA(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    dwInstallMode: number,
+    dwReserved: number,
+  ): number;
   /** msi.dll!MsiUseFeatureExW */
-  MsiUseFeatureExW(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, dwInstallMode: number, dwReserved: number): number;
+  MsiUseFeatureExW(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    dwInstallMode: number,
+    dwReserved: number,
+  ): number;
   /** msi.dll!MsiUseFeatureExW */
-  MsiUseFeatureEx(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer, dwInstallMode: number, dwReserved: number): number;
+  MsiUseFeatureEx(
+    szProduct: string | Win32Pointer,
+    szFeature: string | Win32Pointer,
+    dwInstallMode: number,
+    dwReserved: number,
+  ): number;
   /** msi.dll!MsiUseFeatureW */
   MsiUseFeatureW(szProduct: string | Win32Pointer, szFeature: string | Win32Pointer): number;
   /** msi.dll!MsiUseFeatureW */

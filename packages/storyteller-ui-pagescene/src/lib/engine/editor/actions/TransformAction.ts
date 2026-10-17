@@ -1,11 +1,6 @@
 import type Editor from "../../editor";
 import type { UndoableAction } from "../HistoryManager";
-import {
-  TransformSnap,
-  snapshotTransform,
-  transformsEqual,
-  writeTransform,
-} from "./snapshots";
+import { TransformSnap, snapshotTransform, transformsEqual, writeTransform } from "./snapshots";
 
 // Records a transform change. Caller holds the instance between the
 // drag/edit boundary callbacks (gizmo dragstart/dragend, panel input
@@ -39,10 +34,7 @@ export class TransformAction implements UndoableAction {
   // Capture the after-state from the live object. Returns true if it
   // differs from the before-state (worth recording).
   commit(): boolean {
-    const obj = this.editor.activeScene.scene.getObjectByProperty(
-      "uuid",
-      this.uuid,
-    );
+    const obj = this.editor.activeScene.scene.getObjectByProperty("uuid", this.uuid);
     if (!obj) return false;
     this.after = snapshotTransform(obj);
     return !transformsEqual(this.before, this.after);

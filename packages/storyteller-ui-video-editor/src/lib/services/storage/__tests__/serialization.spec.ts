@@ -5,11 +5,7 @@ import type { MediaAsset } from "../../../media/types";
 import type { TProject } from "../../../project/types";
 import type { AudioTrack } from "../../../timeline/types";
 import { ZERO_MEDIA_TIME } from "../../../wasm";
-import {
-  deserializeProjectDocument,
-  mediaAssetToData,
-  serializeProjectDocument,
-} from "../serialization";
+import { deserializeProjectDocument, mediaAssetToData, serializeProjectDocument } from "../serialization";
 
 const CREATED_AT = new Date("2026-07-01T10:00:00.000Z");
 const UPDATED_AT = new Date("2026-07-02T12:30:00.000Z");
@@ -32,9 +28,7 @@ describe("project document serialization", () => {
       },
     ];
 
-    const wire = JSON.parse(
-      JSON.stringify(serializeProjectDocument({ project, media })),
-    );
+    const wire = JSON.parse(JSON.stringify(serializeProjectDocument({ project, media })));
     const restored = deserializeProjectDocument(wire);
 
     expect(restored).not.toBeNull();

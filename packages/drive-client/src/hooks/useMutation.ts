@@ -1,9 +1,5 @@
 // @ts-nocheck
-import {
-  useMutation,
-  type UseMutationOptions,
-  type UseMutationResult,
-} from "@tanstack/react-query";
+import { useMutation, type UseMutationOptions, type UseMutationResult } from "@tanstack/react-query";
 import { useSpacedriveClient } from "./useClient";
 import type { CoreAction, LibraryAction } from "../generated/types";
 import { WIRE_METHODS } from "../generated/types";
@@ -27,29 +23,17 @@ import { WIRE_METHODS } from "../generated/types";
 export function useCoreMutation<T extends CoreAction["type"]>(
   type: T,
   options?: Omit<
-    UseMutationOptions<
-      Extract<CoreAction, { type: T }>["output"],
-      Error,
-      Extract<CoreAction, { type: T }>["input"]
-    >,
+    UseMutationOptions<Extract<CoreAction, { type: T }>["output"], Error, Extract<CoreAction, { type: T }>["input"]>,
     "mutationFn"
   >,
-): UseMutationResult<
-  Extract<CoreAction, { type: T }>["output"],
-  Error,
-  Extract<CoreAction, { type: T }>["input"]
-> {
+): UseMutationResult<Extract<CoreAction, { type: T }>["output"], Error, Extract<CoreAction, { type: T }>["input"]> {
   const client = useSpacedriveClient();
   const wireMethod = WIRE_METHODS.coreActions[type]; // ← Auto-generated!
 
   return useMutation({
-    mutationFn: (input) => client.execute(wireMethod, input),
+    mutationFn: input => client.execute(wireMethod, input),
     ...options,
-  }) as UseMutationResult<
-    Extract<CoreAction, { type: T }>["output"],
-    Error,
-    Extract<CoreAction, { type: T }>["input"]
-  >;
+  }) as UseMutationResult<Extract<CoreAction, { type: T }>["output"], Error, Extract<CoreAction, { type: T }>["input"]>;
 }
 
 /**
@@ -89,12 +73,10 @@ export function useLibraryMutation<T extends LibraryAction["type"]>(
   const wireMethod = WIRE_METHODS.libraryActions[type]; // ← Auto-generated!
 
   return useMutation({
-    mutationFn: (input) => {
+    mutationFn: input => {
       const libraryId = client.getCurrentLibraryId();
       if (!libraryId) {
-        throw new Error(
-          "No library selected. Use client.switchToLibrary() first.",
-        );
+        throw new Error("No library selected. Use client.switchToLibrary() first.");
       }
 
       // Client.execute() automatically adds library_id to the request

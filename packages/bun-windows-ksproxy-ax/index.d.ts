@@ -7,13 +7,26 @@ interface Functions {
   /** ksproxy.ax!KsGetMediaTypeCount */
   KsGetMediaTypeCount(FilterHandle: Win32Pointer, PinFactoryId: number, MediaTypeCount: Win32Pointer): number;
   /** ksproxy.ax!KsGetMultiplePinFactoryItems */
-  KsGetMultiplePinFactoryItems(FilterHandle: Win32Pointer, PinFactoryId: number, PropertyId: number, Items: Win32Pointer): number;
+  KsGetMultiplePinFactoryItems(
+    FilterHandle: Win32Pointer,
+    PinFactoryId: number,
+    PropertyId: number,
+    Items: Win32Pointer,
+  ): number;
   /** ksproxy.ax!KsOpenDefaultDevice */
   KsOpenDefaultDevice(Category: Win32Pointer, Access: number, DeviceHandle: Win32Pointer): number;
   /** ksproxy.ax!KsResolveRequiredAttributes */
   KsResolveRequiredAttributes(DataRange: Win32Pointer, Attributes: Win32Pointer): number;
   /** ksproxy.ax!KsSynchronousDeviceControl */
-  KsSynchronousDeviceControl(Handle: Win32Pointer, IoControl: number, InBuffer: Win32Pointer, InLength: number, OutBuffer: Win32Pointer, OutLength: number, BytesReturned: Win32Pointer): number;
+  KsSynchronousDeviceControl(
+    Handle: Win32Pointer,
+    IoControl: number,
+    InBuffer: Win32Pointer,
+    InLength: number,
+    OutBuffer: Win32Pointer,
+    OutLength: number,
+    BytesReturned: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

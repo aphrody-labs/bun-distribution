@@ -6,10 +6,7 @@ interface UseZoomPanOptions {
   zoomStep?: number;
 }
 
-export function useZoomPan(
-  containerRef: RefObject<HTMLElement>,
-  options: UseZoomPanOptions = {},
-) {
+export function useZoomPan(containerRef: RefObject<HTMLElement>, options: UseZoomPanOptions = {}) {
   const { minZoom = 1, maxZoom = 5, zoomStep = 0.1 } = options;
 
   const [zoom, setZoom] = useState(1);
@@ -25,11 +22,11 @@ export function useZoomPan(
 
   // Zoom in/out
   const zoomIn = useCallback(() => {
-    setZoom((z) => Math.min(maxZoom, z + zoomStep));
+    setZoom(z => Math.min(maxZoom, z + zoomStep));
   }, [maxZoom, zoomStep]);
 
   const zoomOut = useCallback(() => {
-    setZoom((z) => {
+    setZoom(z => {
       const newZoom = Math.max(minZoom, z - zoomStep);
       // Reset pan when zooming back to 1x
       if (newZoom === 1) {
@@ -56,7 +53,7 @@ export function useZoomPan(
       // Divide by 500 for responsive zoom: 100 deltaY = 0.2 zoom change
       const zoomChange = -e.deltaY / 500;
 
-      setZoom((z) => {
+      setZoom(z => {
         const newZoom = Math.max(minZoom, Math.min(maxZoom, z + zoomChange));
         // Reset pan when zooming back to 1x
         if (newZoom === 1) {

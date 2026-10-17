@@ -27,7 +27,7 @@
  * @module
  */
 
-import { SERIALIZE_TO_IPC_FN } from './core'
+import { SERIALIZE_TO_IPC_FN } from "./core";
 
 /**
  * A size represented in logical pixels.
@@ -39,30 +39,27 @@ import { SERIALIZE_TO_IPC_FN } from './core'
  * @since 2.0.0
  */
 class LogicalSize {
-  readonly type = 'Logical'
-  width: number
-  height: number
+  readonly type = "Logical";
+  width: number;
+  height: number;
 
-  constructor(width: number, height: number)
-  constructor(object: { Logical: { width: number; height: number } })
-  constructor(object: { width: number; height: number })
+  constructor(width: number, height: number);
+  constructor(object: { Logical: { width: number; height: number } });
+  constructor(object: { width: number; height: number });
   constructor(
-    ...args:
-      | [number, number]
-      | [{ width: number; height: number }]
-      | [{ Logical: { width: number; height: number } }]
+    ...args: [number, number] | [{ width: number; height: number }] | [{ Logical: { width: number; height: number } }]
   ) {
     if (args.length === 1) {
-      if ('Logical' in args[0]) {
-        this.width = args[0].Logical.width
-        this.height = args[0].Logical.height
+      if ("Logical" in args[0]) {
+        this.width = args[0].Logical.width;
+        this.height = args[0].Logical.height;
       } else {
-        this.width = args[0].width
-        this.height = args[0].height
+        this.width = args[0].width;
+        this.height = args[0].height;
       }
     } else {
-      this.width = args[0]
-      this.height = args[1]
+      this.width = args[0];
+      this.height = args[1];
     }
   }
 
@@ -82,19 +79,19 @@ class LogicalSize {
    * @since 2.0.0
    */
   toPhysical(scaleFactor: number): PhysicalSize {
-    return new PhysicalSize(this.width * scaleFactor, this.height * scaleFactor)
+    return new PhysicalSize(this.width * scaleFactor, this.height * scaleFactor);
   }
 
   [SERIALIZE_TO_IPC_FN]() {
     return {
       width: this.width,
-      height: this.height
-    }
+      height: this.height,
+    };
   }
 
   toJSON() {
     // eslint-disable-next-line security/detect-object-injection
-    return this[SERIALIZE_TO_IPC_FN]()
+    return this[SERIALIZE_TO_IPC_FN]();
   }
 }
 
@@ -110,30 +107,27 @@ class LogicalSize {
  * @since 2.0.0
  */
 class PhysicalSize {
-  readonly type = 'Physical'
-  width: number
-  height: number
+  readonly type = "Physical";
+  width: number;
+  height: number;
 
-  constructor(width: number, height: number)
-  constructor(object: { Physical: { width: number; height: number } })
-  constructor(object: { width: number; height: number })
+  constructor(width: number, height: number);
+  constructor(object: { Physical: { width: number; height: number } });
+  constructor(object: { width: number; height: number });
   constructor(
-    ...args:
-      | [number, number]
-      | [{ width: number; height: number }]
-      | [{ Physical: { width: number; height: number } }]
+    ...args: [number, number] | [{ width: number; height: number }] | [{ Physical: { width: number; height: number } }]
   ) {
     if (args.length === 1) {
-      if ('Physical' in args[0]) {
-        this.width = args[0].Physical.width
-        this.height = args[0].Physical.height
+      if ("Physical" in args[0]) {
+        this.width = args[0].Physical.width;
+        this.height = args[0].Physical.height;
       } else {
-        this.width = args[0].width
-        this.height = args[0].height
+        this.width = args[0].width;
+        this.height = args[0].height;
       }
     } else {
-      this.width = args[0]
-      this.height = args[1]
+      this.width = args[0];
+      this.height = args[1];
     }
   }
 
@@ -151,19 +145,19 @@ class PhysicalSize {
    * @since 2.0.0
    */
   toLogical(scaleFactor: number): LogicalSize {
-    return new LogicalSize(this.width / scaleFactor, this.height / scaleFactor)
+    return new LogicalSize(this.width / scaleFactor, this.height / scaleFactor);
   }
 
   [SERIALIZE_TO_IPC_FN]() {
     return {
       width: this.width,
-      height: this.height
-    }
+      height: this.height,
+    };
   }
 
   toJSON() {
     // eslint-disable-next-line security/detect-object-injection
-    return this[SERIALIZE_TO_IPC_FN]()
+    return this[SERIALIZE_TO_IPC_FN]();
   }
 }
 
@@ -199,10 +193,10 @@ class PhysicalSize {
  * @since 2.1.0
  */
 class Size {
-  size: LogicalSize | PhysicalSize
+  size: LogicalSize | PhysicalSize;
 
   constructor(size: LogicalSize | PhysicalSize) {
-    this.size = size
+    this.size = size;
   }
 
   /**
@@ -215,9 +209,7 @@ class Size {
    * @since 2.1.0
    */
   toLogical(scaleFactor: number): LogicalSize {
-    return this.size instanceof LogicalSize
-      ? this.size
-      : this.size.toLogical(scaleFactor)
+    return this.size instanceof LogicalSize ? this.size : this.size.toLogical(scaleFactor);
   }
 
   /**
@@ -230,23 +222,21 @@ class Size {
    * @since 2.1.0
    */
   toPhysical(scaleFactor: number): PhysicalSize {
-    return this.size instanceof PhysicalSize
-      ? this.size
-      : this.size.toPhysical(scaleFactor)
+    return this.size instanceof PhysicalSize ? this.size : this.size.toPhysical(scaleFactor);
   }
 
   [SERIALIZE_TO_IPC_FN]() {
     return {
       [`${this.size.type}`]: {
         width: this.size.width,
-        height: this.size.height
-      }
-    }
+        height: this.size.height,
+      },
+    };
   }
 
   toJSON() {
     // eslint-disable-next-line security/detect-object-injection
-    return this[SERIALIZE_TO_IPC_FN]()
+    return this[SERIALIZE_TO_IPC_FN]();
   }
 }
 
@@ -257,30 +247,25 @@ class Size {
  * @since 2.0.0
  */
 class LogicalPosition {
-  readonly type = 'Logical'
-  x: number
-  y: number
+  readonly type = "Logical";
+  x: number;
+  y: number;
 
-  constructor(x: number, y: number)
-  constructor(object: { Logical: { x: number; y: number } })
-  constructor(object: { x: number; y: number })
-  constructor(
-    ...args:
-      | [number, number]
-      | [{ x: number; y: number }]
-      | [{ Logical: { x: number; y: number } }]
-  ) {
+  constructor(x: number, y: number);
+  constructor(object: { Logical: { x: number; y: number } });
+  constructor(object: { x: number; y: number });
+  constructor(...args: [number, number] | [{ x: number; y: number }] | [{ Logical: { x: number; y: number } }]) {
     if (args.length === 1) {
-      if ('Logical' in args[0]) {
-        this.x = args[0].Logical.x
-        this.y = args[0].Logical.y
+      if ("Logical" in args[0]) {
+        this.x = args[0].Logical.x;
+        this.y = args[0].Logical.y;
       } else {
-        this.x = args[0].x
-        this.y = args[0].y
+        this.x = args[0].x;
+        this.y = args[0].y;
       }
     } else {
-      this.x = args[0]
-      this.y = args[1]
+      this.x = args[0];
+      this.y = args[1];
     }
   }
 
@@ -300,19 +285,19 @@ class LogicalPosition {
    * @since 2.0.0
    */
   toPhysical(scaleFactor: number): PhysicalPosition {
-    return new PhysicalPosition(this.x * scaleFactor, this.y * scaleFactor)
+    return new PhysicalPosition(this.x * scaleFactor, this.y * scaleFactor);
   }
 
   [SERIALIZE_TO_IPC_FN]() {
     return {
       x: this.x,
-      y: this.y
-    }
+      y: this.y,
+    };
   }
 
   toJSON() {
     // eslint-disable-next-line security/detect-object-injection
-    return this[SERIALIZE_TO_IPC_FN]()
+    return this[SERIALIZE_TO_IPC_FN]();
   }
 }
 
@@ -324,30 +309,25 @@ class LogicalPosition {
  * @since 2.0.0
  */
 class PhysicalPosition {
-  readonly type = 'Physical'
-  x: number
-  y: number
+  readonly type = "Physical";
+  x: number;
+  y: number;
 
-  constructor(x: number, y: number)
-  constructor(object: { Physical: { x: number; y: number } })
-  constructor(object: { x: number; y: number })
-  constructor(
-    ...args:
-      | [number, number]
-      | [{ x: number; y: number }]
-      | [{ Physical: { x: number; y: number } }]
-  ) {
+  constructor(x: number, y: number);
+  constructor(object: { Physical: { x: number; y: number } });
+  constructor(object: { x: number; y: number });
+  constructor(...args: [number, number] | [{ x: number; y: number }] | [{ Physical: { x: number; y: number } }]) {
     if (args.length === 1) {
-      if ('Physical' in args[0]) {
-        this.x = args[0].Physical.x
-        this.y = args[0].Physical.y
+      if ("Physical" in args[0]) {
+        this.x = args[0].Physical.x;
+        this.y = args[0].Physical.y;
       } else {
-        this.x = args[0].x
-        this.y = args[0].y
+        this.x = args[0].x;
+        this.y = args[0].y;
       }
     } else {
-      this.x = args[0]
-      this.y = args[1]
+      this.x = args[0];
+      this.y = args[1];
     }
   }
 
@@ -367,19 +347,19 @@ class PhysicalPosition {
    * @since 2.0.0
    */
   toLogical(scaleFactor: number): LogicalPosition {
-    return new LogicalPosition(this.x / scaleFactor, this.y / scaleFactor)
+    return new LogicalPosition(this.x / scaleFactor, this.y / scaleFactor);
   }
 
   [SERIALIZE_TO_IPC_FN]() {
     return {
       x: this.x,
-      y: this.y
-    }
+      y: this.y,
+    };
   }
 
   toJSON() {
     // eslint-disable-next-line security/detect-object-injection
-    return this[SERIALIZE_TO_IPC_FN]()
+    return this[SERIALIZE_TO_IPC_FN]();
   }
 }
 
@@ -415,10 +395,10 @@ class PhysicalPosition {
  * @since 2.1.0
  */
 class Position {
-  position: LogicalPosition | PhysicalPosition
+  position: LogicalPosition | PhysicalPosition;
 
   constructor(position: LogicalPosition | PhysicalPosition) {
-    this.position = position
+    this.position = position;
   }
 
   /**
@@ -431,9 +411,7 @@ class Position {
    * @since 2.1.0
    */
   toLogical(scaleFactor: number): LogicalPosition {
-    return this.position instanceof LogicalPosition
-      ? this.position
-      : this.position.toLogical(scaleFactor)
+    return this.position instanceof LogicalPosition ? this.position : this.position.toLogical(scaleFactor);
   }
 
   /**
@@ -446,31 +424,22 @@ class Position {
    * @since 2.1.0
    */
   toPhysical(scaleFactor: number): PhysicalPosition {
-    return this.position instanceof PhysicalPosition
-      ? this.position
-      : this.position.toPhysical(scaleFactor)
+    return this.position instanceof PhysicalPosition ? this.position : this.position.toPhysical(scaleFactor);
   }
 
   [SERIALIZE_TO_IPC_FN]() {
     return {
       [`${this.position.type}`]: {
         x: this.position.x,
-        y: this.position.y
-      }
-    }
+        y: this.position.y,
+      },
+    };
   }
 
   toJSON() {
     // eslint-disable-next-line security/detect-object-injection
-    return this[SERIALIZE_TO_IPC_FN]()
+    return this[SERIALIZE_TO_IPC_FN]();
   }
 }
 
-export {
-  LogicalPosition,
-  LogicalSize,
-  Size,
-  PhysicalPosition,
-  PhysicalSize,
-  Position
-}
+export { LogicalPosition, LogicalSize, Size, PhysicalPosition, PhysicalSize, Position };

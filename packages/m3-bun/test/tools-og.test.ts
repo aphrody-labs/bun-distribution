@@ -21,7 +21,7 @@ test("colorRoles reads the --md-sys-color declarations, first one wins", () => {
 });
 
 const hex = (data: Uint8ClampedArray, offset: number): string =>
-  `#${[...data.subarray(offset, offset + 3)].map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  `#${[...data.subarray(offset, offset + 3)].map(byte => byte.toString(16).padStart(2, "0")).join("")}`;
 
 describe.skipIf(!canvas?.isNativeCanvasAvailable())("ogImage", () => {
   test("draws a 1200 x 630 PNG in the theme roles of the app", async () => {
@@ -45,9 +45,7 @@ describe.skipIf(!canvas?.isNativeCanvasAvailable())("ogImage", () => {
     ctx.drawImage(image, 0, 0);
     const pixels = ctx.getImageData(0, 0, 1200, 630).data;
     expect(hex(pixels, 0)).toBe(report.colors.surface);
-    expect(hex(pixels, (629 * 1200 + 1199) * 4)).toBe(
-      report.colors.primaryContainer,
-    );
+    expect(hex(pixels, (629 * 1200 + 1199) * 4)).toBe(report.colors.primaryContainer);
   });
 
   test("dark scheme, custom size and WebP from the extension", async () => {
@@ -61,9 +59,7 @@ describe.skipIf(!canvas?.isNativeCanvasAvailable())("ogImage", () => {
       out,
     });
     expect(report.colors.surface).toBe("#141218");
-    expect(
-      new TextDecoder().decode((await Bun.file(out).bytes()).subarray(8, 12)),
-    ).toBe("WEBP");
+    expect(new TextDecoder().decode((await Bun.file(out).bytes()).subarray(8, 12))).toBe("WEBP");
   });
 
   test.skipIf(!exported)(
@@ -71,10 +67,7 @@ describe.skipIf(!canvas?.isNativeCanvasAvailable())("ogImage", () => {
     async () => {
       const dir = fixtureCopy();
       const config = join(dir, "m3.config.ts");
-      writeFileSync(
-        config,
-        readFileSync(config, "utf8").replace("#6750a4", "#8c6c88"),
-      );
+      writeFileSync(config, readFileSync(config, "utf8").replace("#6750a4", "#8c6c88"));
       const report = await ogImage({ dir, out: join(tmp(), "og.png") });
       const { light } = exported!.theme;
       expect(report.colors).toEqual({
@@ -87,12 +80,9 @@ describe.skipIf(!canvas?.isNativeCanvasAvailable())("ogImage", () => {
     },
   );
 
-  test.skipIf(native !== undefined)(
-    "the native engine without @aphrody/bun names the missing library",
-    async () => {
-      await expect(
-        ogImage({ dir: fixtureCopy(), out: join(tmp(), "og.png") }),
-      ).rejects.toThrow(/needs the @aphrody\/bun native library/);
-    },
-  );
+  test.skipIf(native !== undefined)("the native engine without @aphrody/bun names the missing library", async () => {
+    await expect(ogImage({ dir: fixtureCopy(), out: join(tmp(), "og.png") })).rejects.toThrow(
+      /needs the @aphrody\/bun native library/,
+    );
+  });
 });

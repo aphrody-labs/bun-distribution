@@ -3,19 +3,53 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** cryptxml.dll!CryptXmlAddObject */
-  CryptXmlAddObject(hSignatureOrObject: Win32Pointer, dwFlags: number, rgProperty: Win32Pointer, cProperty: number, pEncoded: Win32Pointer, ppObject: Win32Pointer): number;
+  CryptXmlAddObject(
+    hSignatureOrObject: Win32Pointer,
+    dwFlags: number,
+    rgProperty: Win32Pointer,
+    cProperty: number,
+    pEncoded: Win32Pointer,
+    ppObject: Win32Pointer,
+  ): number;
   /** cryptxml.dll!CryptXmlClose */
   CryptXmlClose(hCryptXml: Win32Pointer): number;
   /** cryptxml.dll!CryptXmlCreateReference */
-  CryptXmlCreateReference(hCryptXml: Win32Pointer, dwFlags: number, wszId: string | Win32Pointer, wszURI: string | Win32Pointer, wszType: string | Win32Pointer, pDigestMethod: Win32Pointer, cTransform: number, rgTransform: Win32Pointer, phReference: Win32Pointer): number;
+  CryptXmlCreateReference(
+    hCryptXml: Win32Pointer,
+    dwFlags: number,
+    wszId: string | Win32Pointer,
+    wszURI: string | Win32Pointer,
+    wszType: string | Win32Pointer,
+    pDigestMethod: Win32Pointer,
+    cTransform: number,
+    rgTransform: Win32Pointer,
+    phReference: Win32Pointer,
+  ): number;
   /** cryptxml.dll!CryptXmlDigestReference */
   CryptXmlDigestReference(hReference: Win32Pointer, dwFlags: number, pDataProviderIn: Win32Pointer): number;
   /** cryptxml.dll!CryptXmlEncode */
-  CryptXmlEncode(hCryptXml: Win32Pointer, dwCharset: number, rgProperty: Win32Pointer, cProperty: number, pvCallbackState: Win32Pointer, pfnWrite: Win32Callback): number;
+  CryptXmlEncode(
+    hCryptXml: Win32Pointer,
+    dwCharset: number,
+    rgProperty: Win32Pointer,
+    cProperty: number,
+    pvCallbackState: Win32Pointer,
+    pfnWrite: Win32Callback,
+  ): number;
   /** cryptxml.dll!CryptXmlEnumAlgorithmInfo */
-  CryptXmlEnumAlgorithmInfo(dwGroupId: number, dwFlags: number, pvArg: Win32Pointer, pfnEnumAlgInfo: Win32Callback): number;
+  CryptXmlEnumAlgorithmInfo(
+    dwGroupId: number,
+    dwFlags: number,
+    pvArg: Win32Pointer,
+    pfnEnumAlgInfo: Win32Callback,
+  ): number;
   /** cryptxml.dll!CryptXmlFindAlgorithmInfo */
-  CryptXmlFindAlgorithmInfo(dwFindByType: number, pvFindBy: Win32Pointer, dwGroupId: number, dwFlags: number): number | null;
+  CryptXmlFindAlgorithmInfo(
+    dwFindByType: number,
+    pvFindBy: Win32Pointer,
+    dwGroupId: number,
+    dwFlags: number,
+  ): number | null;
   /** cryptxml.dll!CryptXmlGetAlgorithmInfo */
   CryptXmlGetAlgorithmInfo(pXmlAlgorithm: Win32Pointer, dwFlags: number, ppAlgInfo: Win32Pointer): number;
   /** cryptxml.dll!CryptXmlGetDocContext */
@@ -31,13 +65,37 @@ interface Functions {
   /** cryptxml.dll!CryptXmlImportPublicKey */
   CryptXmlImportPublicKey(dwFlags: number, pKeyValue: Win32Pointer, phKey: Win32Pointer): number;
   /** cryptxml.dll!CryptXmlOpenToDecode */
-  CryptXmlOpenToDecode(pConfig: Win32Pointer, dwFlags: number, rgProperty: Win32Pointer, cProperty: number, pEncoded: Win32Pointer, phCryptXml: Win32Pointer): number;
+  CryptXmlOpenToDecode(
+    pConfig: Win32Pointer,
+    dwFlags: number,
+    rgProperty: Win32Pointer,
+    cProperty: number,
+    pEncoded: Win32Pointer,
+    phCryptXml: Win32Pointer,
+  ): number;
   /** cryptxml.dll!CryptXmlOpenToEncode */
-  CryptXmlOpenToEncode(pConfig: Win32Pointer, dwFlags: number, wszId: string | Win32Pointer, rgProperty: Win32Pointer, cProperty: number, pEncoded: Win32Pointer, phSignature: Win32Pointer): number;
+  CryptXmlOpenToEncode(
+    pConfig: Win32Pointer,
+    dwFlags: number,
+    wszId: string | Win32Pointer,
+    rgProperty: Win32Pointer,
+    cProperty: number,
+    pEncoded: Win32Pointer,
+    phSignature: Win32Pointer,
+  ): number;
   /** cryptxml.dll!CryptXmlSetHMACSecret */
   CryptXmlSetHMACSecret(hSignature: Win32Pointer, pbSecret: Win32Pointer, cbSecret: number): number;
   /** cryptxml.dll!CryptXmlSign */
-  CryptXmlSign(hSignature: Win32Pointer, hKey: number | bigint, dwKeySpec: number, dwFlags: number, dwKeyInfoSpec: number, pvKeyInfoSpec: Win32Pointer, pSignatureMethod: Win32Pointer, pCanonicalization: Win32Pointer): number;
+  CryptXmlSign(
+    hSignature: Win32Pointer,
+    hKey: number | bigint,
+    dwKeySpec: number,
+    dwFlags: number,
+    dwKeyInfoSpec: number,
+    pvKeyInfoSpec: Win32Pointer,
+    pSignatureMethod: Win32Pointer,
+    pCanonicalization: Win32Pointer,
+  ): number;
   /** cryptxml.dll!CryptXmlVerifySignature */
   CryptXmlVerifySignature(hSignature: Win32Pointer, hKey: Win32Pointer, dwFlags: number): number;
 }

@@ -8,13 +8,8 @@ export function parseStickerId({ stickerId }: { stickerId: string }): {
   }
 
   const separatorIndex = normalizedStickerId.indexOf(":");
-  if (
-    separatorIndex <= 0 ||
-    separatorIndex === normalizedStickerId.length - 1
-  ) {
-    throw new Error(
-      `Invalid sticker ID format: "${stickerId}". Expected "provider:value".`,
-    );
+  if (separatorIndex <= 0 || separatorIndex === normalizedStickerId.length - 1) {
+    throw new Error(`Invalid sticker ID format: "${stickerId}". Expected "provider:value".`);
   }
 
   const providerId = normalizedStickerId.slice(0, separatorIndex).trim();
@@ -23,12 +18,6 @@ export function parseStickerId({ stickerId }: { stickerId: string }): {
   return { providerId, providerValue };
 }
 
-export function buildStickerId({
-  providerId,
-  providerValue,
-}: {
-  providerId: string;
-  providerValue: string;
-}): string {
+export function buildStickerId({ providerId, providerValue }: { providerId: string; providerValue: string }): string {
   return `${providerId}:${providerValue}`;
 }

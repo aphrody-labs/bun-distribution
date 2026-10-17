@@ -28,19 +28,12 @@ export function m3Db(options: M3DbOptions | string = {}): Database {
   } = typeof options === "string" ? { path: options } : options;
   const memory = path === ":memory:" || path === "";
   if (!memory && !readonly) mkdirSync(dirname(path), { recursive: true });
-  const db = new Database(
-    path,
-    readonly
-      ? { readonly: true, strict: true }
-      : { create: true, strict: true },
-  );
+  const db = new Database(path, readonly ? { readonly: true, strict: true } : { create: true, strict: true });
   db.run(`PRAGMA busy_timeout = ${Math.max(0, Math.trunc(busyTimeout))}`);
   db.run("PRAGMA foreign_keys = ON");
   if (readonly) return db;
   if (!memory) db.run("PRAGMA journal_mode = WAL");
-  const current = (
-    db.query("PRAGMA user_version").get() as { user_version: number }
-  ).user_version;
+  const current = (db.query("PRAGMA user_version").get() as { user_version: number }).user_version;
   if (current > migrations.length)
     throw new Error(
       `m3Db: ${path} is at schema version ${current}, newer than the ${migrations.length} migrations of this build`,

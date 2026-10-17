@@ -149,11 +149,7 @@
       "origins": {
         "app": ["https://example.com"],
         "auth": [],
-        "embeds": [
-          "https://www.youtube.com",
-          "https://www.google.com/maps/*",
-          "https://*.typeform.com"
-        ],
+        "embeds": ["https://www.youtube.com", "https://www.google.com/maps/*", "https://*.typeform.com"],
         "external": "system"
       },
       "extraAllowed": [],

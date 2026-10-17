@@ -1,23 +1,12 @@
 import { useEffect, useMemo } from "react";
-import {
-  useResolvedKeybinds,
-  type KeybindContext,
-} from "@storyteller/keybinds";
+import { useResolvedKeybinds, type KeybindContext } from "@storyteller/keybinds";
 import type Editor from "../engine/editor";
 import { buildKeymap, dispatchBinding } from "../engine/keymap";
 import { usePageSceneStore } from "../PageSceneStore";
 
 // Editable inputs we *don't* want shortcut keys to fire from. Mirrors
 // the original MouseControls.isEventFromEditableElement guard.
-const EDITABLE_INPUT_TYPES = new Set([
-  "text",
-  "search",
-  "email",
-  "password",
-  "number",
-  "url",
-  "tel",
-]);
+const EDITABLE_INPUT_TYPES = new Set(["text", "search", "email", "password", "number", "url", "tel"]);
 
 const isEventFromEditableElement = (event: KeyboardEvent): boolean => {
   const target = event.target;
@@ -68,12 +57,8 @@ export const useViewportKeyboard = (editor: Editor | null) => {
       const keyframeId = store.timelineSelectedKeyframeId;
       const laneId = store.timelineSelectedClipLaneId;
       const timelineSelection =
-        (keyframeId !== null &&
-          store.timelineTracks.some((t) =>
-            t.keyframes.some((k) => k.id === keyframeId),
-          )) ||
-        (laneId !== null &&
-          store.timelineClipLanes.some((l) => l.id === laneId));
+        (keyframeId !== null && store.timelineTracks.some(t => t.keyframes.some(k => k.id === keyframeId))) ||
+        (laneId !== null && store.timelineClipLanes.some(l => l.id === laneId));
       const ctx: KeybindContext = {
         sceneMode: store.sceneMode,
         encoding: store.recordingProgress !== null,

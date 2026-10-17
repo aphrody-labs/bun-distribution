@@ -35,9 +35,7 @@ class EffectPreviewService {
     uniformDimensions?: { width: number; height: number };
   }): void {
     const size = PREVIEW_SIZE;
-    const targetCtx = targetCanvas.getContext(
-      "2d",
-    ) as CanvasRenderingContext2D | null;
+    const targetCtx = targetCanvas.getContext("2d") as CanvasRenderingContext2D | null;
     if (!targetCtx) {
       return;
     }
@@ -53,10 +51,7 @@ class EffectPreviewService {
 
     try {
       const definition = effectsRegistry.get(effectType);
-      const resolvedParams =
-        Object.keys(params).length > 0
-          ? params
-          : buildDefaultParamValues(definition.params);
+      const resolvedParams = Object.keys(params).length > 0 ? params : buildDefaultParamValues(definition.params);
 
       const passes = resolveEffectPasses({
         definition,
@@ -92,16 +87,8 @@ class EffectPreviewService {
     this.previewImageElement = image;
   }
 
-  private createTestSource({
-    width,
-    height,
-  }: {
-    width: number;
-    height: number;
-  }): OffscreenCanvas | null {
-    const isImageReady =
-      this.previewImageElement?.complete &&
-      (this.previewImageElement.naturalWidth ?? 0) > 0;
+  private createTestSource({ width, height }: { width: number; height: number }): OffscreenCanvas | null {
+    const isImageReady = this.previewImageElement?.complete && (this.previewImageElement.naturalWidth ?? 0) > 0;
     if (!isImageReady || !this.previewImageElement) {
       return null;
     }
@@ -111,18 +98,8 @@ class EffectPreviewService {
     return canvas;
   }
 
-  private getTestSource({
-    width,
-    height,
-  }: {
-    width: number;
-    height: number;
-  }): OffscreenCanvas | null {
-    if (
-      !this.testSourceCanvas ||
-      this.testSourceCanvas.width !== width ||
-      this.testSourceCanvas.height !== height
-    ) {
+  private getTestSource({ width, height }: { width: number; height: number }): OffscreenCanvas | null {
+    if (!this.testSourceCanvas || this.testSourceCanvas.width !== width || this.testSourceCanvas.height !== height) {
       this.testSourceCanvas = this.createTestSource({ width, height });
     }
     return this.testSourceCanvas;

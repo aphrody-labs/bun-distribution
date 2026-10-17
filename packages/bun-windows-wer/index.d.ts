@@ -9,15 +9,38 @@ interface Functions {
   /** wer.dll!WerRemoveExcludedApplication */
   WerRemoveExcludedApplication(pwzExeName: string | Win32Pointer, bAllUsers: number): number;
   /** wer.dll!WerReportAddDump */
-  WerReportAddDump(hReportHandle: Win32Pointer, hProcess: Win32Pointer, hThread: Win32Pointer, dumpType: number, pExceptionParam: Win32Pointer, pDumpCustomOptions: Win32Pointer, dwFlags: number): number;
+  WerReportAddDump(
+    hReportHandle: Win32Pointer,
+    hProcess: Win32Pointer,
+    hThread: Win32Pointer,
+    dumpType: number,
+    pExceptionParam: Win32Pointer,
+    pDumpCustomOptions: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wer.dll!WerReportAddFile */
-  WerReportAddFile(hReportHandle: Win32Pointer, pwzPath: string | Win32Pointer, repFileType: number, dwFileFlags: number): number;
+  WerReportAddFile(
+    hReportHandle: Win32Pointer,
+    pwzPath: string | Win32Pointer,
+    repFileType: number,
+    dwFileFlags: number,
+  ): number;
   /** wer.dll!WerReportCloseHandle */
   WerReportCloseHandle(hReportHandle: Win32Pointer): number;
   /** wer.dll!WerReportCreate */
-  WerReportCreate(pwzEventType: string | Win32Pointer, repType: number, pReportInformation: Win32Pointer, phReportHandle: Win32Pointer): number;
+  WerReportCreate(
+    pwzEventType: string | Win32Pointer,
+    repType: number,
+    pReportInformation: Win32Pointer,
+    phReportHandle: Win32Pointer,
+  ): number;
   /** wer.dll!WerReportSetParameter */
-  WerReportSetParameter(hReportHandle: Win32Pointer, dwparamID: number, pwzName: string | Win32Pointer, pwzValue: string | Win32Pointer): number;
+  WerReportSetParameter(
+    hReportHandle: Win32Pointer,
+    dwparamID: number,
+    pwzName: string | Win32Pointer,
+    pwzValue: string | Win32Pointer,
+  ): number;
   /** wer.dll!WerReportSetUIOption */
   WerReportSetUIOption(hReportHandle: Win32Pointer, repUITypeID: number, pwzValue: string | Win32Pointer): number;
   /** wer.dll!WerReportSubmit */
@@ -37,13 +60,30 @@ interface Functions {
   /** wer.dll!WerStorePurge */
   WerStorePurge(): number;
   /** wer.dll!WerStoreQueryReportMetadataV1 */
-  WerStoreQueryReportMetadataV1(hReportStore: Win32Pointer, pszReportKey: string | Win32Pointer, pReportMetadata: Win32Pointer): number;
+  WerStoreQueryReportMetadataV1(
+    hReportStore: Win32Pointer,
+    pszReportKey: string | Win32Pointer,
+    pReportMetadata: Win32Pointer,
+  ): number;
   /** wer.dll!WerStoreQueryReportMetadataV2 */
-  WerStoreQueryReportMetadataV2(hReportStore: Win32Pointer, pszReportKey: string | Win32Pointer, pReportMetadata: Win32Pointer): number;
+  WerStoreQueryReportMetadataV2(
+    hReportStore: Win32Pointer,
+    pszReportKey: string | Win32Pointer,
+    pReportMetadata: Win32Pointer,
+  ): number;
   /** wer.dll!WerStoreQueryReportMetadataV3 */
-  WerStoreQueryReportMetadataV3(hReportStore: Win32Pointer, pszReportKey: string | Win32Pointer, pReportMetadata: Win32Pointer): number;
+  WerStoreQueryReportMetadataV3(
+    hReportStore: Win32Pointer,
+    pszReportKey: string | Win32Pointer,
+    pReportMetadata: Win32Pointer,
+  ): number;
   /** wer.dll!WerStoreUploadReport */
-  WerStoreUploadReport(hReportStore: Win32Pointer, pszReportKey: string | Win32Pointer, dwFlags: number, pSubmitResult: Win32Pointer): number;
+  WerStoreUploadReport(
+    hReportStore: Win32Pointer,
+    pszReportKey: string | Win32Pointer,
+    dwFlags: number,
+    pSubmitResult: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

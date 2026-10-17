@@ -5,10 +5,7 @@
 
 import type { SVGProps } from "react";
 
-export interface PotaraEarringsProps extends Omit<
-  SVGProps<SVGSVGElement>,
-  "size"
-> {
+export interface PotaraEarringsProps extends Omit<SVGProps<SVGSVGElement>, "size"> {
   size?: number | string;
   orbColor?: "yellow" | "green";
   title?: string;
@@ -52,26 +49,10 @@ export function PotaraEarrings({
         strokeLinecap="round"
       />
       {/* Gold Connector Bead */}
-      <rect
-        x="42"
-        y="62"
-        width="16"
-        height="10"
-        rx="2"
-        fill="#ffb703"
-        stroke="#121417"
-        strokeWidth="2.5"
-      />
+      <rect x="42" y="62" width="16" height="10" rx="2" fill="#ffb703" stroke="#121417" strokeWidth="2.5" />
 
       {/* Fusion Glowing Orb */}
-      <circle
-        cx="50"
-        cy="90"
-        r="22"
-        fill={orbShadow}
-        stroke="#121417"
-        strokeWidth="3.5"
-      />
+      <circle cx="50" cy="90" r="22" fill={orbShadow} stroke="#121417" strokeWidth="3.5" />
       <circle cx="50" cy="90" r="19" fill={orbFill} />
 
       {/* Specular highlight glint */}

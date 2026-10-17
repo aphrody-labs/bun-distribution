@@ -59,8 +59,8 @@ fn main() {
 Afterwards all the plugin's APIs are available through the JavaScript guest bindings:
 
 ```javascript
-import { version } from '@aphrody/plugin-os'
-const osVersion = await version()
+import { version } from "@aphrody/plugin-os";
+const osVersion = await version();
 ```
 
 ## Contributing

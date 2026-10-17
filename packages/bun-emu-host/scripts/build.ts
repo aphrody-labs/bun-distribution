@@ -85,13 +85,9 @@ const args = process.argv.slice(2);
 const configureOnly = args.includes("--configure-only");
 const jobsIndex = args.indexOf("--jobs");
 const jobs = jobsIndex >= 0 ? Number(args[jobsIndex + 1]) : 4;
-const selected = args.filter(
-  (a, i) => !a.startsWith("--") && args[i - 1] !== "--jobs",
-);
-if (!selected.length || selected.some((c) => !(c in cores))) {
-  console.error(
-    `usage: build.ts <${Object.keys(cores).join("|")}>... [--configure-only] [--jobs N]`,
-  );
+const selected = args.filter((a, i) => !a.startsWith("--") && args[i - 1] !== "--jobs");
+if (!selected.length || selected.some(c => !(c in cores))) {
+  console.error(`usage: build.ts <${Object.keys(cores).join("|")}>... [--configure-only] [--jobs N]`);
   process.exit(2);
 }
 
@@ -147,15 +143,10 @@ async function msvcEnv(toolset: string): Promise<Record<string, string>> {
   const first = (list: string) => list.split(";")[0]!;
   if (toolset !== "14.44" && !existsSync(join(first(env.INCLUDE!), "vector"))) {
     const base = await read("14.44");
-    console.error(
-      `toolset ${toolset} has no STL/CRT; compiling against ${first(base.INCLUDE!)}`,
-    );
+    console.error(`toolset ${toolset} has no STL/CRT; compiling against ${first(base.INCLUDE!)}`);
     const stl = first(env.INCLUDE!);
     env.INCLUDE = env.INCLUDE!.replace(stl, first(base.INCLUDE!));
-    env.EXTERNAL_INCLUDE = (env.EXTERNAL_INCLUDE ?? "").replace(
-      stl,
-      first(base.INCLUDE!),
-    );
+    env.EXTERNAL_INCLUDE = (env.EXTERNAL_INCLUDE ?? "").replace(stl, first(base.INCLUDE!));
     env.LIB = env.LIB!.replace(first(env.LIB!), first(base.LIB!));
   }
   return env;
@@ -181,16 +172,11 @@ for (const core of selected) {
         `-DCMAKE_C_COMPILER=${cc}`,
         `-DCMAKE_CXX_COMPILER=${cxx}`,
         `-DCMAKE_PREFIX_PATH=${join(installRoot, triplet)}`,
-        ...(project
-          ? [
-              `-DCMAKE_PROJECT_${project}_INCLUDE=${join(pkg, "cmake/inject.cmake")}`,
-            ]
-          : []),
-        ...defines.map((d) => `-D${d}`),
+        ...(project ? [`-DCMAKE_PROJECT_${project}_INCLUDE=${join(pkg, "cmake/inject.cmake")}`] : []),
+        ...defines.map(d => `-D${d}`),
       ],
       env,
     );
   }
-  if (!configureOnly)
-    await run(["cmake", "--build", dir, "-j", String(jobs)], env);
+  if (!configureOnly) await run(["cmake", "--build", dir, "-j", String(jobs)], env);
 }

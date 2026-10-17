@@ -5,7 +5,12 @@ interface Functions {
   /** api-ms-win-shcore-scaling-l1-1-0.dll!GetScaleFactorForDevice */
   GetScaleFactorForDevice(deviceType: number): number;
   /** api-ms-win-shcore-scaling-l1-1-0.dll!RegisterScaleChangeNotifications */
-  RegisterScaleChangeNotifications(displayDevice: number, hwndNotify: Win32Pointer, uMsgNotify: number, pdwCookie: Win32Pointer): number;
+  RegisterScaleChangeNotifications(
+    displayDevice: number,
+    hwndNotify: Win32Pointer,
+    uMsgNotify: number,
+    pdwCookie: Win32Pointer,
+  ): number;
   /** api-ms-win-shcore-scaling-l1-1-0.dll!RevokeScaleChangeNotifications */
   RevokeScaleChangeNotifications(displayDevice: number, dwCookie: number): number;
 }

@@ -34,7 +34,10 @@ pub struct DirectoryListing {
 
 pub fn resolve_path(path: &str) -> io::Result<PathBuf> {
     if path.trim().is_empty() {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "path must be non-empty"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "path must be non-empty",
+        ));
     }
     let candidate = Path::new(path);
     if candidate.is_absolute() {
@@ -53,7 +56,11 @@ fn dirs_desktop() -> Option<PathBuf> {
 
 fn info(path: &Path) -> io::Result<FileInfo> {
     let metadata = fs::metadata(path)?;
-    let name = path.file_name().and_then(|value| value.to_str()).unwrap_or_default().to_owned();
+    let name = path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default()
+        .to_owned();
     let hidden = name.starts_with('.') || {
         #[cfg(windows)]
         {
@@ -109,7 +116,10 @@ pub fn list_directory_excluding(
 ) -> io::Result<DirectoryListing> {
     let root = resolve_path(path)?;
     if !root.is_dir() {
-        return Err(io::Error::new(io::ErrorKind::NotFound, "directory not found"));
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "directory not found",
+        ));
     }
     let mut entries = Vec::new();
     let mut truncated = false;
@@ -123,7 +133,10 @@ pub fn list_directory_excluding(
             if !exclude_patterns.is_empty() {
                 let name = item.file_name();
                 let name = name.to_string_lossy();
-                if exclude_patterns.iter().any(|pattern| wildcard_match(pattern, &name)) {
+                if exclude_patterns
+                    .iter()
+                    .any(|pattern| wildcard_match(pattern, &name))
+                {
                     continue;
                 }
             }
@@ -152,7 +165,12 @@ pub fn list_directory_excluding(
     }
     entries.sort_by(|left, right| left.path.cmp(&right.path));
     let count = entries.len();
-    Ok(DirectoryListing { root: root.display().to_string(), entries, count, truncated })
+    Ok(DirectoryListing {
+        root: root.display().to_string(),
+        entries,
+        count,
+        truncated,
+    })
 }
 
 pub fn search_files(path: &str, pattern: &str, recursive: bool) -> io::Result<DirectoryListing> {
@@ -198,11 +216,9 @@ pub fn search_files_indexed(path: &str, query: &str) -> io::Result<Option<Direct
             truncated: false,
         }));
     }
-    let connection = rusqlite::Connection::open_with_flags(
-        db_path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .map_err(|error| io::Error::other(error.to_string()))?;
+    let connection =
+        rusqlite::Connection::open_with_flags(db_path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .map_err(|error| io::Error::other(error.to_string()))?;
     let mut statement = connection
         .prepare(
             "SELECT f.path FROM files_fts JOIN files f ON f.rowid = files_fts.rowid \
@@ -210,7 +226,9 @@ pub fn search_files_indexed(path: &str, query: &str) -> io::Result<Option<Direct
         )
         .map_err(|error| io::Error::other(error.to_string()))?;
     let hits = statement
-        .query_map(rusqlite::params![fts, MAX_ENTRIES as i64], |row| row.get::<_, String>(0))
+        .query_map(rusqlite::params![fts, MAX_ENTRIES as i64], |row| {
+            row.get::<_, String>(0)
+        })
         .map_err(|error| io::Error::other(error.to_string()))?;
     let entries = hits
         .filter_map(Result::ok)
@@ -233,9 +251,16 @@ pub fn read_file(path: &str, offset: usize, limit: usize) -> io::Result<String> 
         return Ok(format!("Path: {}\nContent:\n{content}", resolved.display()));
     }
     let lines = content.lines().skip(offset);
-    let selected =
-        if limit == 0 { lines.collect::<Vec<_>>() } else { lines.take(limit).collect::<Vec<_>>() };
-    Ok(format!("Path: {}\nContent:\n{}", resolved.display(), selected.join("\n")))
+    let selected = if limit == 0 {
+        lines.collect::<Vec<_>>()
+    } else {
+        lines.take(limit).collect::<Vec<_>>()
+    };
+    Ok(format!(
+        "Path: {}\nContent:\n{}",
+        resolved.display(),
+        selected.join("\n")
+    ))
 }
 
 pub fn write_file(path: &str, content: &str, append: bool) -> io::Result<String> {
@@ -253,7 +278,11 @@ pub fn write_file(path: &str, content: &str, append: bool) -> io::Result<String>
     } else {
         fs::write(&resolved, content)?;
     }
-    Ok(format!("Wrote {} chars to '{}'.", content.chars().count(), resolved.display()))
+    Ok(format!(
+        "Wrote {} chars to '{}'.",
+        content.chars().count(),
+        resolved.display()
+    ))
 }
 
 pub fn delete_path(path: &str, recursive: bool) -> io::Result<String> {
@@ -287,11 +316,19 @@ pub fn copy_path(path: &str, destination: &str, overwrite: bool) -> io::Result<S
             fs::create_dir_all(parent)?;
         }
         fs::copy(&source, &target)?;
-        return Ok(format!("Copied file '{}' -> '{}'.", source.display(), target.display()));
+        return Ok(format!(
+            "Copied file '{}' -> '{}'.",
+            source.display(),
+            target.display()
+        ));
     }
     if source.is_dir() {
         copy_directory(&source, &target, overwrite)?;
-        return Ok(format!("Copied directory '{}' -> '{}'.", source.display(), target.display()));
+        return Ok(format!(
+            "Copied directory '{}' -> '{}'.",
+            source.display(),
+            target.display()
+        ));
     }
     Ok(format!("Source not found: '{}'.", source.display()))
 }
@@ -320,7 +357,11 @@ pub fn move_path(path: &str, destination: &str, overwrite: bool) -> io::Result<S
     }
     fs::rename(&source, &target)?;
     let kind = if target.is_dir() { "directory" } else { "file" };
-    Ok(format!("Moved {kind} '{}' -> '{}'.", source.display(), target.display()))
+    Ok(format!(
+        "Moved {kind} '{}' -> '{}'.",
+        source.display(),
+        target.display()
+    ))
 }
 
 fn copy_directory(source: &Path, target: &Path, overwrite: bool) -> io::Result<()> {
@@ -394,9 +435,19 @@ mod tests {
         .expect("MCP tool dispatch");
         let listing: DirectoryListing = serde_json::from_value(value).expect("listing schema");
 
-        assert!(!listing.entries.iter().any(|entry| entry.name == "node_modules"));
+        assert!(
+            !listing
+                .entries
+                .iter()
+                .any(|entry| entry.name == "node_modules")
+        );
         assert!(listing.entries.iter().any(|entry| entry.name == "main.ts"));
-        assert!(!listing.entries.iter().any(|entry| entry.name == "ignored.js"));
+        assert!(
+            !listing
+                .entries
+                .iter()
+                .any(|entry| entry.name == "ignored.js")
+        );
         assert!(!listing.truncated);
     }
 

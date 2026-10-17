@@ -22,13 +22,9 @@ export function SourcePathBar({ sourceName, itemCount }: SourcePathBarProps) {
 
       <CaretRight size={12} className="text-outline shrink-0 opacity-50" />
 
-      <span className="text-on-surface whitespace-nowrap text-label-medium font-medium">
-        {sourceName}
-      </span>
+      <span className="text-on-surface whitespace-nowrap text-label-medium font-medium">{sourceName}</span>
 
-      <span className="text-outline ml-1 whitespace-nowrap text-[11px]">
-        {itemCount.toLocaleString()} items
-      </span>
+      <span className="text-outline ml-1 whitespace-nowrap text-[11px]">{itemCount.toLocaleString()} items</span>
     </div>
   );
 }

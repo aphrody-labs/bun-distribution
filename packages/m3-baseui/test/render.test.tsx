@@ -47,13 +47,11 @@ import {
 } from "../src/index.ts";
 
 // The DOM comes from the happy-dom preload (bunfig.toml).
-(
-  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-).IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const { act } = await import("react");
 const { createRoot } = await import("react-dom/client");
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 let root: ReturnType<typeof createRoot> | undefined;
 
 async function mount(node: ReactNode): Promise<HTMLElement> {
@@ -71,10 +69,7 @@ async function mount(node: ReactNode): Promise<HTMLElement> {
 
 const q = <T extends Element = HTMLElement>(selector: string): T => {
   const el = document.querySelector<T>(selector);
-  if (!el)
-    throw new Error(
-      `no element matches ${selector}\n${document.body.innerHTML.slice(0, 1500)}`,
-    );
+  if (!el) throw new Error(`no element matches ${selector}\n${document.body.innerHTML.slice(0, 1500)}`);
   return el;
 };
 const click = (el: Element) =>
@@ -95,18 +90,14 @@ afterEach(async () => {
 function ToastAdder() {
   const manager = M3Toast.useToastManager();
   return (
-    <button
-      type="button"
-      id="add"
-      onClick={() => manager.add({ title: "Saved", description: "All good" })}
-    >
+    <button type="button" id="add" onClick={() => manager.add({ title: "Saved", description: "All good" })}>
       add
     </button>
   );
 }
 function ToastList() {
   const { toasts } = M3Toast.useToastManager();
-  return toasts.map((toast) => (
+  return toasts.map(toast => (
     <M3Toast.Root key={toast.id} toast={toast}>
       <M3Toast.Content>
         <M3Toast.Title />
@@ -119,15 +110,12 @@ function ToastList() {
 }
 
 describe("class merging", () => {
-  test("cx drops falsy values", () =>
-    expect(cx("a", false, undefined, null, "b")).toBe("a b"));
+  test("cx drops falsy values", () => expect(cx("a", false, undefined, null, "b")).toBe("a b"));
 
   test("mergeClassName keeps strings and state functions", () => {
     expect(mergeClassName("m3", "app")).toBe("m3 app");
     expect(mergeClassName("m3", undefined)).toBe("m3");
-    const fn = mergeClassName("m3", (s: { on: boolean }) =>
-      s.on ? "on" : undefined,
-    );
+    const fn = mergeClassName("m3", (s: { on: boolean }) => (s.on ? "on" : undefined));
     expect(typeof fn).toBe("function");
     expect((fn as (s: { on: boolean }) => string)({ on: true })).toBe("m3 on");
     expect((fn as (s: { on: boolean }) => string)({ on: false })).toBe("m3");
@@ -135,10 +123,7 @@ describe("class merging", () => {
 
   test("a Base UI part still takes a state-function className", async () => {
     await mount(
-      <M3Button
-        disabled
-        className={(state) => (state.disabled ? "is-off" : "is-on")}
-      >
+      <M3Button disabled className={state => (state.disabled ? "is-off" : "is-on")}>
         x
       </M3Button>,
     );
@@ -156,7 +141,7 @@ describe("closed forms and single elements", () => {
         <M3Button
           variant="tonal"
           size="lg"
-          ref={(el) => {
+          ref={el => {
             refs.el = el;
           }}
         >
@@ -171,9 +156,7 @@ describe("closed forms and single elements", () => {
       </>,
     );
     const [first, second, third] = [...document.querySelectorAll("button")];
-    expect(first!.className).toContain(
-      "m3-bui-button m3-bui-state m3-bui-button--tonal m3-bui-button--lg",
-    );
+    expect(first!.className).toContain("m3-bui-button m3-bui-state m3-bui-button--tonal m3-bui-button--lg");
     expect(refs.el).toBe(first!);
     expect(second!.hasAttribute("data-disabled")).toBe(true);
     expect(third!.className).not.toContain("--sm");
@@ -202,11 +185,7 @@ describe("closed forms and single elements", () => {
     expect(on!.querySelector(".m3-bui-checkbox__check")).not.toBeNull();
     expect(on!.querySelector(".m3-bui-checkbox__dash")).not.toBeNull();
     expect(mixed!.hasAttribute("data-indeterminate")).toBe(true);
-    expect(
-      mixed!
-        .querySelector(".m3-bui-checkbox__indicator")!
-        .hasAttribute("data-indeterminate"),
-    ).toBe(true);
+    expect(mixed!.querySelector(".m3-bui-checkbox__indicator")!.hasAttribute("data-indeterminate")).toBe(true);
     await click(on!);
     expect(on!.hasAttribute("data-checked")).toBe(false);
   });
@@ -297,9 +276,7 @@ describe("namespaced primitives", () => {
       </M3Tabs.Root>,
     );
     expect(q('[role="tablist"]').className).toContain("m3-bui-tabs__list");
-    expect(q('[role="tab"]').className).toContain(
-      "m3-bui-tabs__tab m3-bui-state",
-    );
+    expect(q('[role="tab"]').className).toContain("m3-bui-tabs__tab m3-bui-state");
     expect(has(".m3-bui-tabs__indicator")).toBe(true);
     expect(q('[role="tabpanel"]').textContent).toBe("panel a");
     await click(document.querySelectorAll('[role="tab"]')[1]!);
@@ -332,10 +309,7 @@ describe("namespaced primitives", () => {
       ".m3-bui-collapsible__trigger",
     ])
       expect(has(c)).toBe(true);
-    const [accordion, collapsible] = [
-      q(".m3-bui-accordion__trigger"),
-      q(".m3-bui-collapsible__trigger"),
-    ];
+    const [accordion, collapsible] = [q(".m3-bui-accordion__trigger"), q(".m3-bui-collapsible__trigger")];
     expect(accordion.getAttribute("aria-expanded")).toBe("false");
     await click(accordion);
     await click(collapsible);
@@ -438,8 +412,7 @@ describe("namespaced primitives", () => {
       </>,
     );
     expect(
-      q('input[type="range"]').getAttribute("aria-valuenow") ??
-        q('input[type="range"]').getAttribute("value"),
+      q('input[type="range"]').getAttribute("aria-valuenow") ?? q('input[type="range"]').getAttribute("value"),
     ).toBe("30");
     for (const c of [
       ".m3-bui-slider",
@@ -453,9 +426,7 @@ describe("namespaced primitives", () => {
       expect(has(c)).toBe(true);
     expect(q('[role="progressbar"]').className).toContain("m3-bui-progress");
     expect(q('[role="meter"]').className).toContain("m3-bui-progress");
-    expect(
-      document.querySelectorAll(".m3-bui-progress__indicator"),
-    ).toHaveLength(2);
+    expect(document.querySelectorAll(".m3-bui-progress__indicator")).toHaveLength(2);
     expect(q('[role="progressbar"]').getAttribute("aria-valuenow")).toBe("40");
   });
 
@@ -492,9 +463,7 @@ describe("namespaced primitives", () => {
       ".m3-bui-menubar",
     ])
       expect(has(c)).toBe(true);
-    expect(document.querySelectorAll(".m3-bui-toolbar__button")).toHaveLength(
-      2,
-    );
+    expect(document.querySelectorAll(".m3-bui-toolbar__button")).toHaveLength(2);
   });
 });
 
@@ -525,16 +494,12 @@ describe("popups (controlled open)", () => {
           <M3AlertDialog.Backdrop />
           <M3AlertDialog.Popup>
             <M3AlertDialog.Title>Sure?</M3AlertDialog.Title>
-            <M3AlertDialog.Description>
-              It cannot be undone.
-            </M3AlertDialog.Description>
+            <M3AlertDialog.Description>It cannot be undone.</M3AlertDialog.Description>
           </M3AlertDialog.Popup>
         </M3AlertDialog.Portal>
       </M3AlertDialog.Root>,
     );
-    expect(q('[role="alertdialog"]').className).toContain(
-      "m3-bui-dialog__popup",
-    );
+    expect(q('[role="alertdialog"]').className).toContain("m3-bui-dialog__popup");
     expect(has(".m3-bui-dialog__title")).toBe(true);
   });
 
@@ -589,9 +554,7 @@ describe("popups (controlled open)", () => {
         </M3PreviewCard.Root>
       </>,
     );
-    expect(
-      document.querySelectorAll(".m3-bui-popover__popup.m3-bui-popup"),
-    ).toHaveLength(2);
+    expect(document.querySelectorAll(".m3-bui-popover__popup.m3-bui-popup")).toHaveLength(2);
     expect(document.querySelectorAll(".m3-bui-positioner")).toHaveLength(2);
     expect(has(".m3-bui-popover__title")).toBe(true);
     expect(has(".m3-bui-popover__description")).toBe(true);
@@ -611,9 +574,7 @@ describe("popups (controlled open)", () => {
       </M3Tooltip.Provider>,
     );
     expect(q(".m3-bui-tooltip__popup").textContent).toBe("Save");
-    expect(q(".m3-bui-tooltip__popup").parentElement!.className).toContain(
-      "m3-bui-positioner",
-    );
+    expect(q(".m3-bui-tooltip__popup").parentElement!.className).toContain("m3-bui-positioner");
   });
 
   test("menu: items, checkbox and radio items, group label, separator", async () => {
@@ -640,12 +601,8 @@ describe("popups (controlled open)", () => {
         </M3Menu.Portal>
       </M3Menu.Root>,
     );
-    expect(q('[role="menu"]').className).toContain(
-      "m3-bui-menu__popup m3-bui-popup",
-    );
-    expect(q('[role="menuitem"]').className).toContain(
-      "m3-bui-menu__item m3-bui-item",
-    );
+    expect(q('[role="menu"]').className).toContain("m3-bui-menu__popup m3-bui-popup");
+    expect(q('[role="menuitem"]').className).toContain("m3-bui-menu__item m3-bui-item");
     expect(has('[role="menuitemcheckbox"].m3-bui-item')).toBe(true);
     expect(has('[role="menuitemradio"].m3-bui-item')).toBe(true);
     for (const c of [
@@ -773,9 +730,7 @@ describe("popups (controlled open)", () => {
       ".m3-bui-combobox__item.m3-bui-item",
     ])
       expect(has(c)).toBe(true);
-    expect(document.querySelectorAll(".m3-bui-combobox__popup")).toHaveLength(
-      2,
-    );
+    expect(document.querySelectorAll(".m3-bui-combobox__popup")).toHaveLength(2);
   });
 
   test("navigation menu renders its list, items and links", async () => {

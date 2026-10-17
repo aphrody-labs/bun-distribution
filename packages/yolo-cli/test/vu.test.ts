@@ -30,15 +30,11 @@ const supported = target !== null;
 const directories: string[] = [];
 
 afterEach(() => {
-  for (const dir of directories.splice(0))
-    rmSync(dir, { recursive: true, force: true });
+  for (const dir of directories.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
 /** A synthetic runtime artifact: the three executables, a library, a symlink and a manifest that lists them. */
-function artifact(
-  overrides: Record<string, unknown> = {},
-  nativeBinaries = false,
-): string {
+function artifact(overrides: Record<string, unknown> = {}, nativeBinaries = false): string {
   const artifactTarget = (overrides.target ?? target) as string;
   const windows = artifactTarget.endsWith("-windows-msvc");
   const withLink = !windows && process.platform !== "win32";
@@ -47,12 +43,10 @@ function artifact(
   mkdirSync(join(dir, "bin"), { recursive: true });
   mkdirSync(join(dir, "lib"), { recursive: true });
   mkdirSync(join(dir, "share/vu"), { recursive: true });
-  const files: Record<string, { sha256: string; bytes: number; mode: number }> =
-    {};
+  const files: Record<string, { sha256: string; bytes: number; mode: number }> = {};
   const add = (path: string, text: string, mode: number): void => {
     const destination = join(dir, path);
-    if (windows && nativeBinaries && path.endsWith(".exe"))
-      copyFileSync(process.execPath, destination);
+    if (windows && nativeBinaries && path.endsWith(".exe")) copyFileSync(process.execPath, destination);
     else writeFileSync(destination, text);
     chmodSync(join(dir, path), mode);
     const bytes = readFileSync(destination);
@@ -63,23 +57,10 @@ function artifact(
     };
   };
   add(vuExecutable("vu", artifactTarget), "#!/bin/sh\necho vu\n", 0o755);
-  add(
-    vuExecutable("uv", artifactTarget),
-    "#!/bin/sh\necho uv 0.12.23\n",
-    0o755,
-  );
-  add(
-    vuExecutable("ruff", artifactTarget),
-    "#!/bin/sh\necho ruff 0.16.10\n",
-    0o755,
-  );
-  add(
-    windows ? "bin/python312.dll" : "lib/libpython3.12.so.1.0",
-    "libpython",
-    0o755,
-  );
-  if (withLink)
-    symlinkSync("libpython3.12.so.1.0", join(dir, "lib/libpython3.12.so"));
+  add(vuExecutable("uv", artifactTarget), "#!/bin/sh\necho uv 0.12.23\n", 0o755);
+  add(vuExecutable("ruff", artifactTarget), "#!/bin/sh\necho ruff 0.16.10\n", 0o755);
+  add(windows ? "bin/python312.dll" : "lib/libpython3.12.so.1.0", "libpython", 0o755);
+  if (withLink) symlinkSync("libpython3.12.so.1.0", join(dir, "lib/libpython3.12.so"));
   writeFileSync(
     join(dir, "share/vu/manifest.json"),
     JSON.stringify({
@@ -111,12 +92,8 @@ describe.skipIf(!supported)("vu runtime artifact", () => {
     expect(vuExecutable("vu", "x86_64-pc-windows-msvc")).toBe("bin/vu.exe");
     expect(vuExecutable("uv", "x86_64-pc-windows-msvc")).toBe("bin/uv.exe");
     expect(vuExecutable("ruff", "x86_64-pc-windows-msvc")).toBe("bin/ruff.exe");
-    expect(vuExecutable("python", "x86_64-pc-windows-msvc")).toBe(
-      "bin/python.exe",
-    );
-    expect(vuExecutable("python", "x86_64-unknown-linux-gnu")).toBe(
-      "bin/python3",
-    );
+    expect(vuExecutable("python", "x86_64-pc-windows-msvc")).toBe("bin/python.exe");
+    expect(vuExecutable("python", "x86_64-unknown-linux-gnu")).toBe("bin/python3");
   });
 
   it("verifies an intact artifact (quick and full)", async () => {
@@ -129,37 +106,21 @@ describe.skipIf(!supported)("vu runtime artifact", () => {
 
   it("refuses a changed executable, a wrong target and a wrong CLI major", async () => {
     const changed = artifact();
-    writeFileSync(
-      join(changed, vuExecutable("uv")),
-      "#!/bin/sh\necho evil 0.0.0\n",
-    );
+    writeFileSync(join(changed, vuExecutable("uv")), "#!/bin/sh\necho evil 0.0.0\n");
     const bad = await verifyVuArtifact(changed);
     expect(bad.state).toBe("invalid");
-    expect(bad.state === "invalid" && bad.problems).toContain(
-      `sha256: ${vuExecutable("uv")}`,
+    expect(bad.state === "invalid" && bad.problems).toContain(`sha256: ${vuExecutable("uv")}`);
+
+    const otherTarget = target === "aarch64-apple-darwin" ? "x86_64-unknown-linux-gnu" : "aarch64-apple-darwin";
+    const wrongTarget = await verifyVuArtifact(artifact({ target: otherTarget }));
+    expect(wrongTarget.state === "invalid" && wrongTarget.problems.join(" ")).toContain(
+      `artifact targets ${otherTarget}`,
     );
 
-    const otherTarget =
-      target === "aarch64-apple-darwin"
-        ? "x86_64-unknown-linux-gnu"
-        : "aarch64-apple-darwin";
-    const wrongTarget = await verifyVuArtifact(
-      artifact({ target: otherTarget }),
-    );
-    expect(
-      wrongTarget.state === "invalid" && wrongTarget.problems.join(" "),
-    ).toContain(`artifact targets ${otherTarget}`);
+    const wrongMajor = await verifyVuArtifact(artifact({ compatibility: { cliMajor: EXPECTED_CLI_MAJOR + 1 } }));
+    expect(wrongMajor.state === "invalid" && wrongMajor.problems.join(" ")).toContain("CLI major");
 
-    const wrongMajor = await verifyVuArtifact(
-      artifact({ compatibility: { cliMajor: EXPECTED_CLI_MAJOR + 1 } }),
-    );
-    expect(
-      wrongMajor.state === "invalid" && wrongMajor.problems.join(" "),
-    ).toContain("CLI major");
-
-    const noCapability = await verifyVuArtifact(
-      artifact({ capabilities: ["uv"] }),
-    );
+    const noCapability = await verifyVuArtifact(artifact({ capabilities: ["uv"] }));
     expect(noCapability.state === "invalid" && noCapability.problems).toContain(
       "the manifest lacks the capability ruff",
     );
@@ -167,10 +128,7 @@ describe.skipIf(!supported)("vu runtime artifact", () => {
 
   it("checks every file only on request", async () => {
     const dir = artifact();
-    const library =
-      process.platform === "win32"
-        ? "bin/python312.dll"
-        : "lib/libpython3.12.so.1.0";
+    const library = process.platform === "win32" ? "bin/python312.dll" : "lib/libpython3.12.so.1.0";
     writeFileSync(join(dir, library), "tampered");
     writeFileSync(join(dir, "stray.txt"), "x");
     expect((await verifyVuArtifact(dir)).state).toBe("verified");
@@ -181,9 +139,7 @@ describe.skipIf(!supported)("vu runtime artifact", () => {
   });
 
   it("ignores bytecode caches, which CPython writes into the runtime while it is used", async () => {
-    expect(isDerivedPath("lib/python3.12/__pycache__/os.cpython-312.pyc")).toBe(
-      true,
-    );
+    expect(isDerivedPath("lib/python3.12/__pycache__/os.cpython-312.pyc")).toBe(true);
     expect(isDerivedPath("lib/python3.12/os.py")).toBe(false);
     const dir = artifact();
     mkdirSync(join(dir, "lib/__pycache__"), { recursive: true });
@@ -212,9 +168,7 @@ describe.skipIf(!supported)("vu runtime artifact", () => {
     const env = { VU_HOME: home };
     expect(vuHome(env)).toBe(home);
     expect(await resolveVu({ env })).toMatchObject({ state: "verified" });
-    expect(
-      await resolveVu({ env: { VU_HOME: join(home, "nowhere") } }),
-    ).toMatchObject({
+    expect(await resolveVu({ env: { VU_HOME: join(home, "nowhere") } })).toMatchObject({
       state: "absent",
     });
     expect(await resolveVu({ env: {}, artifact: dir })).toMatchObject({
@@ -223,29 +177,21 @@ describe.skipIf(!supported)("vu runtime artifact", () => {
   });
 
   it("puts the artifact's bin first in PATH", () => {
-    expect(pathWithVu("/opt/vu", "/usr/bin")).toBe(
-      `${join("/opt/vu", "bin")}${delimiter}/usr/bin`,
-    );
+    expect(pathWithVu("/opt/vu", "/usr/bin")).toBe(`${join("/opt/vu", "bin")}${delimiter}/usr/bin`);
     expect(pathWithVu("/opt/vu", undefined)).toBe(join("/opt/vu", "bin"));
   });
 
   it("verifies Windows .exe entries and POSIX manifest keys in both modes", async () => {
     const windowsTarget = "x86_64-pc-windows-msvc";
     const dir = artifact({ target: windowsTarget });
-    expect(
-      await verifyVuArtifact(dir, { target: windowsTarget }),
-    ).toMatchObject({
+    expect(await verifyVuArtifact(dir, { target: windowsTarget })).toMatchObject({
       state: "verified",
     });
-    expect(
-      await verifyVuArtifact(dir, { target: windowsTarget, full: true }),
-    ).toMatchObject({
+    expect(await verifyVuArtifact(dir, { target: windowsTarget, full: true })).toMatchObject({
       state: "verified",
     });
     rmSync(join(dir, "bin/uv.exe"));
-    expect(
-      await verifyVuArtifact(dir, { target: windowsTarget }),
-    ).toMatchObject({
+    expect(await verifyVuArtifact(dir, { target: windowsTarget })).toMatchObject({
       state: "invalid",
       problems: expect.arrayContaining(["missing: bin/uv.exe"]),
     });
@@ -271,26 +217,19 @@ describe.skipIf(!supported)("vu runtime artifact", () => {
       { files: { "bin\\uv": { sha256: "a".repeat(64), bytes: 0 } } },
       { links: { "bin/uv": null } },
       { links: { "bin/uv": "../../outside" } },
-    ].map((invalid) => ({ invalid })),
-  )(
-    "rejects malformed manifest data without throwing: %j",
-    async ({ invalid }) => {
-      const dir = artifact();
-      const path = join(dir, "share/vu/manifest.json");
-      const original = JSON.parse(readFileSync(path, "utf8"));
-      writeFileSync(
-        path,
-        JSON.stringify(
-          invalid === null || Array.isArray(invalid)
-            ? invalid
-            : { ...original, ...invalid },
-        ),
-      );
-      expect(await verifyVuArtifact(dir, { full: true })).toMatchObject({
-        state: "invalid",
-      });
-    },
-  );
+    ].map(invalid => ({ invalid })),
+  )("rejects malformed manifest data without throwing: %j", async ({ invalid }) => {
+    const dir = artifact();
+    const path = join(dir, "share/vu/manifest.json");
+    const original = JSON.parse(readFileSync(path, "utf8"));
+    writeFileSync(
+      path,
+      JSON.stringify(invalid === null || Array.isArray(invalid) ? invalid : { ...original, ...invalid }),
+    );
+    expect(await verifyVuArtifact(dir, { full: true })).toMatchObject({
+      state: "invalid",
+    });
+  });
 
   it("rejects unreadable manifests and non-file binaries without throwing", async () => {
     const dir = artifact();
@@ -308,16 +247,12 @@ describe.skipIf(!supported)("vu runtime artifact", () => {
     mkdirSync(binary);
     expect(await verifyVuArtifact(dir)).toMatchObject({
       state: "invalid",
-      problems: expect.arrayContaining([
-        `not a regular file: ${vuExecutable("vu")}`,
-      ]),
+      problems: expect.arrayContaining([`not a regular file: ${vuExecutable("vu")}`]),
     });
   });
 
   it("requires sidecar entries during a full verification", async () => {
-    expect(
-      await verifyVuArtifact(artifact({ files: {} }), { full: true }),
-    ).toMatchObject({
+    expect(await verifyVuArtifact(artifact({ files: {} }), { full: true })).toMatchObject({
       state: "invalid",
       problems: expect.arrayContaining([`not listed: ${vuExecutable("uv")}`]),
     });
@@ -339,11 +274,7 @@ describe.skipIf(!supported)("vu runtime artifact", () => {
     const outside = mkdtempSync(join(tmpdir(), "vu-outside-"));
     directories.push(outside);
     writeFileSync(join(outside, "outside.txt"), "outside");
-    symlinkSync(
-      outside,
-      join(dir, "lib/outside"),
-      process.platform === "win32" ? "junction" : "dir",
-    );
+    symlinkSync(outside, join(dir, "lib/outside"), process.platform === "win32" ? "junction" : "dir");
     const result = await verifyVuArtifact(dir, { full: true });
     expect(result).toMatchObject({
       state: "invalid",
@@ -356,17 +287,13 @@ describe.skipIf(!supported)("yolo py with the vu runtime", () => {
   it("delegates a Python verb through the manifested native executable", async () => {
     const dir = artifact();
     const calls: { command: string[]; path: string | undefined }[] = [];
-    const code = await runPythonCommand(
-      ["run", "--vu", dir, "script.py"],
-      process.cwd(),
-      {
-        env: { PATH: process.env.PATH },
-        run: async (command, options) => {
-          calls.push({ command, path: options.env.PATH });
-          return 13;
-        },
+    const code = await runPythonCommand(["run", "--vu", dir, "script.py"], process.cwd(), {
+      env: { PATH: process.env.PATH },
+      run: async (command, options) => {
+        calls.push({ command, path: options.env.PATH });
+        return 13;
       },
-    );
+    });
     expect(calls).toEqual([
       {
         command: [join(dir, vuExecutable("vu")), "run", "script.py"],
@@ -431,51 +358,33 @@ describe.skipIf(!supported)("yolo py with the vu runtime", () => {
       return 0;
     };
     const deps = { env: { PATH: "/usr/bin" }, run, out: () => {} };
-    expect(await runPythonCommand(["test", "--vu", dir], "/repo", deps)).toBe(
-      0,
-    );
-    expect(await runPythonCommand(["lint", "--vu", dir], "/repo", deps)).toBe(
-      0,
-    );
-    expect(
-      await runPythonCommand(["fmt", "--engine", "--vu", dir], "/repo", deps),
-    ).toBe(0);
-    expect(await runPythonCommand(["build", "--vu", dir], "/repo", deps)).toBe(
-      0,
-    );
-    expect(calls.map((call) => call.command.slice(0, 2))).toEqual([
+    expect(await runPythonCommand(["test", "--vu", dir], "/repo", deps)).toBe(0);
+    expect(await runPythonCommand(["lint", "--vu", dir], "/repo", deps)).toBe(0);
+    expect(await runPythonCommand(["fmt", "--engine", "--vu", dir], "/repo", deps)).toBe(0);
+    expect(await runPythonCommand(["build", "--vu", dir], "/repo", deps)).toBe(0);
+    expect(calls.map(call => call.command.slice(0, 2))).toEqual([
       [join(dir, vuExecutable("uv")), "run"],
       [join(dir, vuExecutable("ruff")), "check"],
       [join(dir, vuExecutable("ruff")), "format"],
       [join(dir, vuExecutable("uv")), "build"],
     ]);
-    expect(
-      calls.every(
-        (call) => call.path === `${join(dir, "bin")}${delimiter}/usr/bin`,
-      ),
-    ).toBe(true);
+    expect(calls.every(call => call.path === `${join(dir, "bin")}${delimiter}/usr/bin`)).toBe(true);
     expect(calls[2]?.command.at(-1)).toBe("packages/engine/python");
     expect(calls[0]?.command).toContain("py");
 
     writeFileSync(join(dir, vuExecutable("uv")), "#!/bin/sh\n");
     const before = calls.length;
-    expect(await runPythonCommand(["test", "--vu", dir], "/repo", deps)).toBe(
-      3,
-    );
+    expect(await runPythonCommand(["test", "--vu", dir], "/repo", deps)).toBe(3);
     expect(calls.length).toBe(before);
   });
 
   it("reports the runtime state in the JSON status", async () => {
     const dir = artifact({}, true);
     const lines: string[] = [];
-    const code = await runPythonCommand(
-      ["status", "--json", "--vu", dir],
-      "/repo",
-      {
-        env: { PATH: "/usr/bin" },
-        out: (line) => lines.push(line),
-      },
-    );
+    const code = await runPythonCommand(["status", "--json", "--vu", dir], "/repo", {
+      env: { PATH: "/usr/bin" },
+      out: line => lines.push(line),
+    });
     expect(code).toBe(0);
     const report = JSON.parse(lines.join("\n"));
     expect(report.toolSource).toBe("vu");
@@ -511,24 +420,19 @@ describe("vu alias of the single yolo executable", () => {
     expect(isVuArgv0("vux")).toBe(false);
   });
 
-  it.skipIf(!supported)(
-    "delegates to the verified artifact and returns its exit code",
-    async () => {
-      const dir = artifact();
-      writeFileSync(join(dir, vuExecutable("vu")), "#!/bin/sh\nexit 7\n");
-      // The synthetic manifest lists the original script, so verify with an artifact whose manifest matches.
-      const ok = artifact({}, true);
-      expect(
-        await runVu(["--version"], {
-          artifact: ok,
-          env: { ...process.env, BUN_BE_BUN: "1" },
-        }),
-      ).toBe(0);
-      expect(
-        await runVu([], { artifact: dir, env: { PATH: process.env["PATH"] } }),
-      ).toBe(1);
-    },
-  );
+  it.skipIf(!supported)("delegates to the verified artifact and returns its exit code", async () => {
+    const dir = artifact();
+    writeFileSync(join(dir, vuExecutable("vu")), "#!/bin/sh\nexit 7\n");
+    // The synthetic manifest lists the original script, so verify with an artifact whose manifest matches.
+    const ok = artifact({}, true);
+    expect(
+      await runVu(["--version"], {
+        artifact: ok,
+        env: { ...process.env, BUN_BE_BUN: "1" },
+      }),
+    ).toBe(0);
+    expect(await runVu([], { artifact: dir, env: { PATH: process.env["PATH"] } })).toBe(1);
+  });
 
   it.skipIf(!supported)("exits 127 without an installed runtime", async () => {
     const home = mkdtempSync(join(tmpdir(), "vu-none-"));
@@ -540,26 +444,23 @@ describe("vu alias of the single yolo executable", () => {
     ).toBe(127);
   });
 
-  it.skipIf(process.platform !== "win32")(
-    "runs a verified native .exe and preserves its exit code",
-    async () => {
-      const dir = artifact();
-      const binary = join(dir, "bin/vu.exe");
-      copyFileSync(process.execPath, binary);
-      const bytes = readFileSync(binary);
-      const path = join(dir, "share/vu/manifest.json");
-      const manifest = JSON.parse(readFileSync(path, "utf8"));
-      manifest.files["bin/vu.exe"] = {
-        sha256: new Bun.CryptoHasher("sha256").update(bytes).digest("hex"),
-        bytes: bytes.length,
-      };
-      writeFileSync(path, JSON.stringify(manifest));
-      expect(
-        await runVu(["-e", "process.exit(7)"], {
-          artifact: dir,
-          env: { ...process.env, BUN_BE_BUN: "1" },
-        }),
-      ).toBe(7);
-    },
-  );
+  it.skipIf(process.platform !== "win32")("runs a verified native .exe and preserves its exit code", async () => {
+    const dir = artifact();
+    const binary = join(dir, "bin/vu.exe");
+    copyFileSync(process.execPath, binary);
+    const bytes = readFileSync(binary);
+    const path = join(dir, "share/vu/manifest.json");
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    manifest.files["bin/vu.exe"] = {
+      sha256: new Bun.CryptoHasher("sha256").update(bytes).digest("hex"),
+      bytes: bytes.length,
+    };
+    writeFileSync(path, JSON.stringify(manifest));
+    expect(
+      await runVu(["-e", "process.exit(7)"], {
+        artifact: dir,
+        env: { ...process.env, BUN_BE_BUN: "1" },
+      }),
+    ).toBe(7);
+  });
 });

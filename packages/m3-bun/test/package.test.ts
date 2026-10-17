@@ -1,29 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, describe, expect, test } from "bun:test";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  statSync,
-  utimesSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
-import {
-  archiveDir,
-  bunArchiveSupported,
-  buildRootfs,
-  packageApp,
-  parseLdd,
-} from "../src/package.ts";
+import { archiveDir, bunArchiveSupported, buildRootfs, packageApp, parseLdd } from "../src/package.ts";
 import { sha256 } from "../src/util.ts";
 import { cleanup, fixtureCopy, tmp } from "./helpers.ts";
 
 afterAll(cleanup);
 
 const archiveSupported = await bunArchiveSupported();
-const archiver = async () =>
-  (await bunArchiveSupported()) ? "bun-archive" : "m3-bun";
+const archiver = async () => ((await bunArchiveSupported()) ? "bun-archive" : "m3-bun");
 
 const LDD = `\tlinux-vdso.so.1 (0x00007e85dea9f000)
 \tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007e85de800000)
@@ -82,10 +68,7 @@ describe("archiveDir", () => {
     const staging = tmp();
     writeFileSync(join(staging, "app.exe"), "MZ");
     mkdirSync(join(staging, "deploy"));
-    writeFileSync(
-      join(staging, "deploy", "x.conf"),
-      Buffer.alloc(4096, "x").toString(),
-    );
+    writeFileSync(join(staging, "deploy", "x.conf"), Buffer.alloc(4096, "x").toString());
     const archive = join(tmp(), "a.zip");
     expect(await archiveDir(staging, archive, "zip")).toBe(await archiver());
     const check = Bun.spawnSync(["unzip", "-t", basename(archive)], {
@@ -108,13 +91,11 @@ describe("bunArchiveSupported", () => {
       mkdirSync(join(staging, "deploy"));
       writeFileSync(join(staging, "deploy", "x.conf"), "x");
       const archives = await Promise.all(
-        (["tar.gz", "zip"] as const).map(async (format) => {
+        (["tar.gz", "zip"] as const).map(async format => {
           const archive = join(tmp(), `a.${format}`);
           return {
             writer: await archiveDir(staging, archive, format),
-            files: await new Bun.Archive(
-              await Bun.file(archive).bytes(),
-            ).files(),
+            files: await new Bun.Archive(await Bun.file(archive).bytes()).files(),
           };
         }),
       );
@@ -142,9 +123,7 @@ describe("packageApp", () => {
       out,
       deploy: true,
     });
-    expect(report.archive).toBe(
-      join(out, `hello-m3-1.2.3-${process.platform}-${process.arch}.tar.gz`),
-    );
+    expect(report.archive).toBe(join(out, `hello-m3-1.2.3-${process.platform}-${process.arch}.tar.gz`));
     expect(report.files).toEqual(
       expect.arrayContaining([
         "hello-m3",
@@ -157,12 +136,8 @@ describe("packageApp", () => {
       ]),
     );
     expect(report.archiver).toBe(await archiver());
-    expect(sha256(new Uint8Array(readFileSync(report.archive)))).toBe(
-      report.sha256,
-    );
-    expect(readFileSync(report.checksumFile, "utf8")).toBe(
-      `${report.sha256}  ${basename(report.archive)}\n`,
-    );
+    expect(sha256(new Uint8Array(readFileSync(report.archive)))).toBe(report.sha256);
+    expect(readFileSync(report.checksumFile, "utf8")).toBe(`${report.sha256}  ${basename(report.archive)}\n`);
     expect(statSync(report.archive).size).toBe(report.bytes);
     const extracted = tmp();
     Bun.spawnSync(["tar", "-xzf", relative(extracted, report.archive)], {
@@ -172,11 +147,8 @@ describe("packageApp", () => {
     expect(readFileSync(join(extracted, "SHA256SUMS"), "utf8")).toBe(
       `${sha256(new Uint8Array(readFileSync(stub)))}  hello-m3\n`,
     );
-    expect(readFileSync(join(extracted, "README.txt"), "utf8")).toContain(
-      "--healthcheck",
-    );
-    if (process.platform !== "win32")
-      expect(statSync(join(extracted, "hello-m3")).mode & 0o111).not.toBe(0);
+    expect(readFileSync(join(extracted, "README.txt"), "utf8")).toContain("--healthcheck");
+    if (process.platform !== "win32") expect(statSync(join(extracted, "hello-m3")).mode & 0o111).not.toBe(0);
     const listing = Bun.spawnSync(["tar", "-tvzf", basename(report.archive)], {
       windowsHide: true,
       cwd: dirname(report.archive),
@@ -198,9 +170,7 @@ describe("packageApp", () => {
       out: tmp(),
       target: "windows-x64",
     });
-    expect(report.archive.endsWith("hello-m3-1.2.3-windows-x64.zip")).toBe(
-      true,
-    );
+    expect(report.archive.endsWith("hello-m3-1.2.3-windows-x64.zip")).toBe(true);
     expect(report.files).toContain("hello-m3.exe");
   }, 60_000);
 });
@@ -213,21 +183,13 @@ describe("buildRootfs", () => {
       const report = await buildRootfs(Bun.which("true")!, dir);
       expect(report.libraries.length).toBeGreaterThanOrEqual(2);
       expect(statSync(join(dir, "app", "server")).mode & 0o111).not.toBe(0);
-      for (const lib of report.libraries)
-        expect(existsSync(join(dir, lib))).toBe(true);
-      expect(report.libraries.some((l) => /ld-linux|ld-musl/.test(l))).toBe(
-        true,
-      );
+      for (const lib of report.libraries) expect(existsSync(join(dir, lib))).toBe(true);
+      expect(report.libraries.some(l => /ld-linux|ld-musl/.test(l))).toBe(true);
     },
   );
-  test.skipIf(process.platform !== "linux")(
-    "a file ldd cannot read is an error that says why",
-    async () => {
-      const script = join(tmp(), "script.sh");
-      writeFileSync(script, "#!/bin/sh\n", { mode: 0o755 });
-      await expect(buildRootfs(script, join(tmp(), "rootfs"))).rejects.toThrow(
-        /ldd cannot read/,
-      );
-    },
-  );
+  test.skipIf(process.platform !== "linux")("a file ldd cannot read is an error that says why", async () => {
+    const script = join(tmp(), "script.sh");
+    writeFileSync(script, "#!/bin/sh\n", { mode: 0o755 });
+    await expect(buildRootfs(script, join(tmp(), "rootfs"))).rejects.toThrow(/ldd cannot read/);
+  });
 });

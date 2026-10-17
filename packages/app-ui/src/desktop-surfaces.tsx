@@ -7,12 +7,7 @@
 import { AphrodyPet, spriteStyle, type PetFrame, PET } from "@aphrody/identity";
 import { PET_ATLAS_URL } from "@aphrody/identity/atlas";
 import { Button, Icon } from "@aphrody/m3-primitives";
-import {
-  type PointerEvent as ReactPointerEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import {
   GAZE_RADIUS,
   gazeToward,
@@ -43,9 +38,7 @@ function listen<T>(name: string, handler: (payload: T) => void): () => void {
   let unlisten: (() => void) | undefined;
   let cancelled = false;
   const subscribe = async () => {
-    const stop = await window.__TAURI__?.event?.listen(name, (event) =>
-      handler(event.payload as T),
-    );
+    const stop = await window.__TAURI__?.event?.listen(name, event => handler(event.payload as T));
     if (cancelled) stop?.();
     else unlisten = stop;
   };
@@ -91,9 +84,7 @@ export function DesktopPet() {
   const [mode, setMode] = useState<PetMode>("idle");
   const [hovering, setHovering] = useState(false);
   const [gaze, setGaze] = useState<PetFrame | null>(null);
-  const press = useRef<{ x: number; y: number; dragging: boolean } | null>(
-    null,
-  );
+  const press = useRef<{ x: number; y: number; dragging: boolean } | null>(null);
 
   // Report the sprite rectangle so the native poller makes everything else click-through.
   useEffect(() => {
@@ -127,8 +118,7 @@ export function DesktopPet() {
       const result = await tauriInvoke<{ blocked: boolean }>("aphrody_pet", {
         action: { action: "step", dx },
       });
-      if (result?.blocked)
-        setMode(mode === "walk-left" ? "walk-right" : "walk-left");
+      if (result?.blocked) setMode(mode === "walk-left" ? "walk-right" : "walk-left");
     }, WALK_PERIOD);
     const stop = setTimeout(() => setMode("idle"), walkDuration());
     return () => {
@@ -140,18 +130,14 @@ export function DesktopPet() {
   // Follow the pointer with the eyes while idle.
   useEffect(
     () =>
-      listen<{ x: number; y: number }>(PET_CURSOR_EVENT, (cursor) => {
+      listen<{ x: number; y: number }>(PET_CURSOR_EVENT, cursor => {
         const rect = sprite.current?.getBoundingClientRect();
         if (!rect) return;
         const eyes = {
           x: rect.x + rect.width / 2,
           y: rect.y + rect.height * 0.36,
         };
-        const inside =
-          cursor.x >= rect.left &&
-          cursor.x < rect.right &&
-          cursor.y >= rect.top &&
-          cursor.y < rect.bottom;
+        const inside = cursor.x >= rect.left && cursor.x < rect.right && cursor.y >= rect.top && cursor.y < rect.bottom;
         setHovering(inside);
         setGaze(inside ? null : gazeToward(cursor, eyes, GAZE_RADIUS));
       }),
@@ -177,8 +163,7 @@ export function DesktopPet() {
   const onPointerUp = () => {
     const current = press.current;
     press.current = null;
-    if (current && !current.dragging)
-      void tauriInvoke("aphrody_pet", { action: { action: "open_main" } });
+    if (current && !current.dragging) void tauriInvoke("aphrody_pet", { action: { action: "open_main" } });
   };
 
   const scale = PET_HEIGHT / PET.atlas.cellHeight;
@@ -192,7 +177,7 @@ export function DesktopPet() {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onContextMenu={(event) => {
+        onContextMenu={event => {
           event.preventDefault();
           void tauriInvoke("aphrody_pet", { action: { action: "hide" } });
         }}
@@ -209,11 +194,7 @@ export function DesktopPet() {
             }}
           />
         ) : (
-          <AphrodyPet
-            atlasUrl={PET_ATLAS_URL}
-            animation={trackFor(mode, hovering)}
-            height={PET_HEIGHT}
-          />
+          <AphrodyPet atlasUrl={PET_ATLAS_URL} animation={trackFor(mode, hovering)} height={PET_HEIGHT} />
         )}
       </div>
     </main>
@@ -241,10 +222,7 @@ export function DesktopWidget() {
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
-    if (isTauri())
-      void tauriInvoke<string>("plugin:os|hostname").then((name) =>
-        setHost(name ?? ""),
-      );
+    if (isTauri()) void tauriInvoke<string>("plugin:os|hostname").then(name => setHost(name ?? ""));
     return () => clearInterval(timer);
   }, []);
 
@@ -261,12 +239,8 @@ export function DesktopWidget() {
       <section className="flex h-full flex-col gap-2 rounded-[24px] bg-surface-container/90 p-3 text-on-surface shadow-md backdrop-blur">
         <header
           className="flex cursor-grab items-center gap-2"
-          onPointerDown={(event) => {
-            if (
-              event.button === 0 &&
-              (event.target as HTMLElement).closest("button") === null
-            )
-              run("start_dragging");
+          onPointerDown={event => {
+            if (event.button === 0 && (event.target as HTMLElement).closest("button") === null) run("start_dragging");
           }}
         >
           <div
@@ -274,10 +248,7 @@ export function DesktopWidget() {
             style={{
               backgroundImage: `url("${PET_ATLAS_URL}")`,
               backgroundRepeat: "no-repeat",
-              ...spriteStyle(
-                PET.tracks.idle?.frames[0] ?? PET.directions[0]!,
-                36 / PET.atlas.cellHeight,
-              ),
+              ...spriteStyle(PET.tracks.idle?.frames[0] ?? PET.directions[0]!, 36 / PET.atlas.cellHeight),
             }}
           />
           <div className="flex min-w-0 flex-1 flex-col">
@@ -314,11 +285,7 @@ export function DesktopWidget() {
             <Icon name="bolt" size={18} />
             <span>Ask</span>
           </Button>
-          <Button
-            variant={state?.pet ? "tonal" : "outlined"}
-            size="sm"
-            onClick={() => run("toggle_pet")}
-          >
+          <Button variant={state?.pet ? "tonal" : "outlined"} size="sm" onClick={() => run("toggle_pet")}>
             <Icon name="pets" size={18} />
             <span>Pet</span>
           </Button>

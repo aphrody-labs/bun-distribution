@@ -56,9 +56,7 @@ function section(title: string, body: Section): string {
 
 export function renderService(e: UnitEntry): RenderedUnit {
   const service: Section = { Type: e.kind ?? "simple", ...e.service };
-  const install =
-    e.install ??
-    (e.kind === "oneshot" ? undefined : { WantedBy: "default.target" });
+  const install = e.install ?? (e.kind === "oneshot" ? undefined : { WantedBy: "default.target" });
   const parts = [
     section("Unit", e.unit),
     section("Service", service),
@@ -95,9 +93,7 @@ export function renderDropIn(d: DropIn): RenderedUnit {
 
 /** Every rendered unit file (services, timers, drop-ins), sorted by file name. */
 export function renderAll(cat: UnitCatalog = unitCatalog): RenderedUnit[] {
-  const out = cat.units.flatMap((e) =>
-    [renderService(e), renderTimer(e)].filter((x): x is RenderedUnit => !!x),
-  );
+  const out = cat.units.flatMap(e => [renderService(e), renderTimer(e)].filter((x): x is RenderedUnit => !!x));
   out.push(...cat.dropIns.map(renderDropIn));
   return out.toSorted((a, b) => a.file.localeCompare(b.file));
 }
@@ -105,5 +101,5 @@ export function renderAll(cat: UnitCatalog = unitCatalog): RenderedUnit[] {
 /** Unit file names only (no drop-ins), for install and drift listings. */
 export const unitFiles = (cat: UnitCatalog = unitCatalog): string[] =>
   renderAll(cat)
-    .filter((u) => !u.file.includes("/"))
-    .map((u) => u.file);
+    .filter(u => !u.file.includes("/"))
+    .map(u => u.file);

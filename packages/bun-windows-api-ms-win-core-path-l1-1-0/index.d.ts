@@ -5,25 +5,60 @@ interface Functions {
   /** api-ms-win-core-path-l1-1-0.dll!PathAllocCanonicalize */
   PathAllocCanonicalize(pszPathIn: string | Win32Pointer, dwFlags: number, ppszPathOut: Win32Pointer): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathAllocCombine */
-  PathAllocCombine(pszPathIn: string | Win32Pointer, pszMore: string | Win32Pointer, dwFlags: number, ppszPathOut: Win32Pointer): number;
+  PathAllocCombine(
+    pszPathIn: string | Win32Pointer,
+    pszMore: string | Win32Pointer,
+    dwFlags: number,
+    ppszPathOut: Win32Pointer,
+  ): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchAddBackslash */
   PathCchAddBackslash(pszPath: string | Win32Pointer, cchPath: number | bigint): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchAddBackslashEx */
-  PathCchAddBackslashEx(pszPath: string | Win32Pointer, cchPath: number | bigint, ppszEnd: Win32Pointer, pcchRemaining: Win32Pointer): number;
+  PathCchAddBackslashEx(
+    pszPath: string | Win32Pointer,
+    cchPath: number | bigint,
+    ppszEnd: Win32Pointer,
+    pcchRemaining: Win32Pointer,
+  ): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchAddExtension */
   PathCchAddExtension(pszPath: string | Win32Pointer, cchPath: number | bigint, pszExt: string | Win32Pointer): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchAppend */
   PathCchAppend(pszPath: string | Win32Pointer, cchPath: number | bigint, pszMore: string | Win32Pointer): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchAppendEx */
-  PathCchAppendEx(pszPath: string | Win32Pointer, cchPath: number | bigint, pszMore: string | Win32Pointer, dwFlags: number): number;
+  PathCchAppendEx(
+    pszPath: string | Win32Pointer,
+    cchPath: number | bigint,
+    pszMore: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchCanonicalize */
-  PathCchCanonicalize(pszPathOut: string | Win32Pointer, cchPathOut: number | bigint, pszPathIn: string | Win32Pointer): number;
+  PathCchCanonicalize(
+    pszPathOut: string | Win32Pointer,
+    cchPathOut: number | bigint,
+    pszPathIn: string | Win32Pointer,
+  ): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchCanonicalizeEx */
-  PathCchCanonicalizeEx(pszPathOut: string | Win32Pointer, cchPathOut: number | bigint, pszPathIn: string | Win32Pointer, dwFlags: number): number;
+  PathCchCanonicalizeEx(
+    pszPathOut: string | Win32Pointer,
+    cchPathOut: number | bigint,
+    pszPathIn: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchCombine */
-  PathCchCombine(pszPathOut: string | Win32Pointer, cchPathOut: number | bigint, pszPathIn: string | Win32Pointer, pszMore: string | Win32Pointer): number;
+  PathCchCombine(
+    pszPathOut: string | Win32Pointer,
+    cchPathOut: number | bigint,
+    pszPathIn: string | Win32Pointer,
+    pszMore: string | Win32Pointer,
+  ): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchCombineEx */
-  PathCchCombineEx(pszPathOut: string | Win32Pointer, cchPathOut: number | bigint, pszPathIn: string | Win32Pointer, pszMore: string | Win32Pointer, dwFlags: number): number;
+  PathCchCombineEx(
+    pszPathOut: string | Win32Pointer,
+    cchPathOut: number | bigint,
+    pszPathIn: string | Win32Pointer,
+    pszMore: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchFindExtension */
   PathCchFindExtension(pszPath: string | Win32Pointer, cchPath: number | bigint, ppszExt: Win32Pointer): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchIsRoot */
@@ -31,13 +66,22 @@ interface Functions {
   /** api-ms-win-core-path-l1-1-0.dll!PathCchRemoveBackslash */
   PathCchRemoveBackslash(pszPath: string | Win32Pointer, cchPath: number | bigint): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchRemoveBackslashEx */
-  PathCchRemoveBackslashEx(pszPath: string | Win32Pointer, cchPath: number | bigint, ppszEnd: Win32Pointer, pcchRemaining: Win32Pointer): number;
+  PathCchRemoveBackslashEx(
+    pszPath: string | Win32Pointer,
+    cchPath: number | bigint,
+    ppszEnd: Win32Pointer,
+    pcchRemaining: Win32Pointer,
+  ): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchRemoveExtension */
   PathCchRemoveExtension(pszPath: string | Win32Pointer, cchPath: number | bigint): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchRemoveFileSpec */
   PathCchRemoveFileSpec(pszPath: string | Win32Pointer, cchPath: number | bigint): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchRenameExtension */
-  PathCchRenameExtension(pszPath: string | Win32Pointer, cchPath: number | bigint, pszExt: string | Win32Pointer): number;
+  PathCchRenameExtension(
+    pszPath: string | Win32Pointer,
+    cchPath: number | bigint,
+    pszExt: string | Win32Pointer,
+  ): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchSkipRoot */
   PathCchSkipRoot(pszPath: string | Win32Pointer, ppszRootEnd: Win32Pointer): number;
   /** api-ms-win-core-path-l1-1-0.dll!PathCchStripPrefix */

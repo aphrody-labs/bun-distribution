@@ -30,10 +30,8 @@ const RESOLUTION_LABELS: Record<string, string> = {
   ten_eighty_p: "1080p",
 };
 
-export const formatAspectRatio = (value: string): string =>
-  ASPECT_RATIO_LABELS[value] ?? value;
+export const formatAspectRatio = (value: string): string => ASPECT_RATIO_LABELS[value] ?? value;
 
-export const formatResolution = (value: string): string =>
-  RESOLUTION_LABELS[value] ?? value;
+export const formatResolution = (value: string): string => RESOLUTION_LABELS[value] ?? value;
 
 export const formatDuration = (seconds: number): string => `${seconds}s`;

@@ -62,15 +62,11 @@ export class HistoryManager {
   }
 
   async undo(): Promise<void> {
-    return (this.serializing = this.serializing.then(() =>
-      this.undoInternal(),
-    ));
+    return (this.serializing = this.serializing.then(() => this.undoInternal()));
   }
 
   async redo(): Promise<void> {
-    return (this.serializing = this.serializing.then(() =>
-      this.redoInternal(),
-    ));
+    return (this.serializing = this.serializing.then(() => this.redoInternal()));
   }
 
   private async undoInternal(): Promise<void> {

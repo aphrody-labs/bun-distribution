@@ -12,15 +12,7 @@ export function hexToHsv({ hex }: { hex: string }): [number, number, number] {
   return [color.h ?? 0, color.s ?? 0, color.v ?? 0];
 }
 
-export function hsvToHex({
-  h,
-  s,
-  v,
-}: {
-  h: number;
-  s: number;
-  v: number;
-}): string {
+export function hsvToHex({ h, s, v }: { h: number; s: number; v: number }): string {
   const hex = formatHex({ mode: "hsv", h, s, v });
   return hex.slice(1);
 }
@@ -30,22 +22,14 @@ export function parseHexAlpha({ hex }: { hex: string }): {
   alpha: number;
 } {
   const color = parse(`#${hex}`);
-  const rgbHex = color
-    ? formatHex(color).slice(1)
-    : hex.slice(0, 6).toLowerCase();
+  const rgbHex = color ? formatHex(color).slice(1) : hex.slice(0, 6).toLowerCase();
   return {
     rgb: rgbHex,
     alpha: color?.alpha ?? 1,
   };
 }
 
-export function appendAlpha({
-  rgbHex,
-  alpha,
-}: {
-  rgbHex: string;
-  alpha: number;
-}): string {
+export function appendAlpha({ rgbHex, alpha }: { rgbHex: string; alpha: number }): string {
   if (alpha >= 1) return rgbHex;
   const hex8 = formatHex8({ mode: "rgb", r: 0, g: 0, b: 0, alpha });
   const alphaHex = hex8.slice(7, 9);
@@ -77,11 +61,7 @@ function colorToHexWithAlpha({ color }: { color: Rgb }): string {
   return hex;
 }
 
-export function extractColorFromText({
-  text,
-}: {
-  text: string;
-}): string | null {
+export function extractColorFromText({ text }: { text: string }): string | null {
   const cleaned = stripCssNoise({ text });
 
   const color = toRgb(cleaned);
@@ -104,13 +84,7 @@ export function extractColorFromText({
   return null;
 }
 
-export function formatColorValue({
-  hex,
-  format,
-}: {
-  hex: string;
-  format: ColorFormat;
-}): string {
+export function formatColorValue({ hex, format }: { hex: string; format: ColorFormat }): string {
   switch (format) {
     case "hex":
       return hex;
@@ -132,13 +106,7 @@ export function formatColorValue({
   }
 }
 
-export function parseColorInput({
-  input,
-  format,
-}: {
-  input: string;
-  format: ColorFormat;
-}): string | null {
+export function parseColorInput({ input, format }: { input: string; format: ColorFormat }): string | null {
   switch (format) {
     case "hex": {
       const cleaned = input.replace("#", "");
@@ -146,7 +114,7 @@ export function parseColorInput({
       return isValidHex ? cleaned : null;
     }
     case "rgb": {
-      const parts = input.split(",").map((part) => parseInt(part.trim(), 10));
+      const parts = input.split(",").map(part => parseInt(part.trim(), 10));
       if (parts.length < 3 || parts.some(Number.isNaN)) return null;
       const color = {
         mode: "rgb" as const,
@@ -157,7 +125,7 @@ export function parseColorInput({
       return formatHex(color).slice(1);
     }
     case "hsl": {
-      const parts = input.split(",").map((part) => parseFloat(part.trim()));
+      const parts = input.split(",").map(part => parseFloat(part.trim()));
       if (parts.length < 3 || parts.some(Number.isNaN)) return null;
       const color = {
         mode: "hsl" as const,
@@ -168,7 +136,7 @@ export function parseColorInput({
       return formatHex(color).slice(1);
     }
     case "hsv": {
-      const parts = input.split(",").map((part) => parseFloat(part.trim()));
+      const parts = input.split(",").map(part => parseFloat(part.trim()));
       if (parts.length < 3 || parts.some(Number.isNaN)) return null;
       const color = {
         mode: "hsv" as const,

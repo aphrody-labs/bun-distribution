@@ -5,13 +5,7 @@ import { Button } from "@aphrody/m3-primitives";
 import { Markdown } from "@aphrody/m3-ai";
 import { httpSchemeSheet } from "@aphrody/m3-theme";
 import { M3ThemeProvider } from "@aphrody/m3-theme/react";
-import {
-  Component,
-  Suspense,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { Component, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePlatform } from "../../contexts/PlatformContext";
 
@@ -21,27 +15,14 @@ import { PACKAGES } from "../../material/inventory";
 import { DESTINATIONS } from "../../material/nav";
 import { documentsFrom, templatesFrom, loadCatalog } from "./catalog";
 
-function ProductPage({
-  title,
-  summary,
-  children,
-}: {
-  title: string;
-  summary: string;
-  children: ReactNode;
-}) {
+function ProductPage({ title, summary, children }: { title: string; summary: string; children: ReactNode }) {
   return (
-    <article
-      className="product-page mx-auto flex w-full max-w-6xl flex-col gap-6 p-6"
-      aria-labelledby="product-title"
-    >
+    <article className="product-page mx-auto flex w-full max-w-6xl flex-col gap-6 p-6" aria-labelledby="product-title">
       <header className="flex flex-col gap-2">
         <h1 id="product-title" className="text-headline-large text-on-surface">
           {title}
         </h1>
-        <p className="max-w-3xl text-body-large text-on-surface-variant">
-          {summary}
-        </p>
+        <p className="max-w-3xl text-body-large text-on-surface-variant">{summary}</p>
       </header>
       {children}
     </article>
@@ -54,10 +35,7 @@ export function ProductHome() {
   return <ProductSearchHome />;
 }
 
-function useCatalog<T>(
-  path: "/api/docs" | "/api/templates",
-  parse: (value: unknown) => T[],
-) {
+function useCatalog<T>(path: "/api/docs" | "/api/templates", parse: (value: unknown) => T[]) {
   const [state, setState] = useState<{
     attempt: number;
     data?: T[];
@@ -69,7 +47,7 @@ function useCatalog<T>(
   useEffect(() => {
     const controller = new AbortController();
     void loadCatalog(path, parse, controller.signal)
-      .then((data) => {
+      .then(data => {
         if (!controller.signal.aborted) setState({ attempt: revision, data });
         return undefined;
       })
@@ -77,24 +55,20 @@ function useCatalog<T>(
         if (!controller.signal.aborted)
           setState({
             attempt: revision,
-            error:
-              error instanceof Error ? error.message : "Catalog unavailable.",
+            error: error instanceof Error ? error.message : "Catalog unavailable.",
           });
       });
     return () => controller.abort();
   }, [path, parse, revision]);
   return {
     ...(state.attempt === revision ? state : {}),
-    retry: () => retry((value) => value + 1),
+    retry: () => retry(value => value + 1),
   };
 }
 
 function CatalogState({ error, retry }: { error?: string; retry: () => void }) {
   return (
-    <div
-      className="rounded-large bg-surface-container p-6"
-      role={error ? "alert" : "status"}
-    >
+    <div className="rounded-large bg-surface-container p-6" role={error ? "alert" : "status"}>
       <p className="text-body-large">{error ?? "Loading catalog…"}</p>
       {error && (
         <Button type="button" variant="tonal" onClick={retry} className="mt-4">
@@ -108,15 +82,12 @@ function CatalogState({ error, retry }: { error?: string; retry: () => void }) {
 export function DocumentsRoute() {
   const { id } = useParams();
   const { data, error, retry } = useCatalog("/api/docs", documentsFrom);
-  const selected = data?.find((document) => document.id === id);
+  const selected = data?.find(document => document.id === id);
   return (
     <div className="h-full overflow-auto">
       <ProductPage
         title={selected?.title ?? "Documentation"}
-        summary={
-          selected?.summary ??
-          "Guides for Aphrody runtimes, Material 3 and the desktop workspace."
-        }
+        summary={selected?.summary ?? "Guides for Aphrody runtimes, Material 3 and the desktop workspace."}
       >
         {!data ? (
           <CatalogState error={error} retry={retry} />
@@ -140,19 +111,15 @@ export function DocumentsRoute() {
           )
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {data.map((document) => (
+            {data.map(document => (
               <Link
                 to={`/docs/${document.id}`}
                 key={document.id}
                 className="state-layer flex flex-col gap-3 rounded-large bg-surface-container p-6"
               >
-                <span className="text-label-large text-primary">
-                  {document.category}
-                </span>
+                <span className="text-label-large text-primary">{document.category}</span>
                 <h2 className="text-title-large">{document.title}</h2>
-                <p className="text-body-large text-on-surface-variant">
-                  {document.summary}
-                </p>
+                <p className="text-body-large text-on-surface-variant">{document.summary}</p>
                 <span className="text-label-large">{document.readTime}</span>
               </Link>
             ))}
@@ -167,7 +134,7 @@ export function DocumentsRoute() {
 export function TemplatesRoute() {
   const { id } = useParams();
   const { data, error, retry } = useCatalog("/api/templates", templatesFrom);
-  const selected = data?.find((template) => template.id === id);
+  const selected = data?.find(template => template.id === id);
   return (
     <div className="h-full overflow-auto">
       <ProductPage
@@ -185,27 +152,16 @@ export function TemplatesRoute() {
               <Link to="/templates" className="text-primary underline">
                 All templates
               </Link>
-              <section
-                className="select-text rounded-large bg-surface-container p-6"
-                aria-label="Create project"
-              >
+              <section className="select-text rounded-large bg-surface-container p-6" aria-label="Create project">
                 <h2 className="mb-3 text-title-large">Create this project</h2>
                 <pre className="overflow-auto rounded-medium bg-surface-container-high p-4">
                   <code>{selected.cliCommand}</code>
                 </pre>
               </section>
-              <section
-                aria-label="Template source"
-                className="flex flex-col gap-3"
-              >
-                {selected.files.map((file) => (
-                  <details
-                    key={file.path}
-                    className="select-text rounded-large bg-surface-container p-4"
-                  >
-                    <summary className="cursor-pointer text-title-medium">
-                      {file.path}
-                    </summary>
+              <section aria-label="Template source" className="flex flex-col gap-3">
+                {selected.files.map(file => (
+                  <details key={file.path} className="select-text rounded-large bg-surface-container p-4">
+                    <summary className="cursor-pointer text-title-medium">{file.path}</summary>
                     <pre className="mt-4 overflow-auto text-body-medium">
                       <code>{file.content}</code>
                     </pre>
@@ -223,18 +179,16 @@ export function TemplatesRoute() {
           )
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {data.map((template) => (
+            {data.map(template => (
               <Link
                 to={`/templates/${template.id}`}
                 key={template.id}
                 className="state-layer flex flex-col gap-3 rounded-large bg-surface-container p-6"
               >
                 <h2 className="text-title-large">{template.name}</h2>
-                <p className="text-body-large text-on-surface-variant">
-                  {template.tagline}
-                </p>
+                <p className="text-body-large text-on-surface-variant">{template.tagline}</p>
                 <div className="flex flex-wrap gap-2">
-                  {template.tags.map((tag) => (
+                  {template.tags.map(tag => (
                     <span
                       key={tag}
                       className="rounded-full bg-secondary-container px-3 py-1 text-label-large text-on-secondary-container"
@@ -253,10 +207,7 @@ export function TemplatesRoute() {
   );
 }
 
-class DemoBoundary extends Component<
-  { children: ReactNode },
-  { error: string | null }
-> {
+class DemoBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null as string | null };
   static getDerivedStateFromError(error: Error) {
     return { error: error.message };
@@ -287,27 +238,16 @@ export function MaterialRoute() {
   const adaptive = useAdaptive();
   const [target, setTarget] = useState<HTMLDivElement | null>(null);
   const selected =
-    page === "buttons"
-      ? "components"
-      : page && Object.hasOwn(PAGES, page)
-        ? (page as PageId)
-        : "overview";
+    page === "buttons" ? "components" : page && Object.hasOwn(PAGES, page) ? (page as PageId) : "overview";
   const Demo = PAGES[selected];
   return (
-    <div
-      ref={setTarget}
-      className="product-material h-full overflow-auto bg-surface text-on-surface"
-    >
+    <div ref={setTarget} className="product-material h-full overflow-auto bg-surface text-on-surface">
       {target && (
         <M3ThemeProvider
           target={target}
           defaultSeedColor={PET_COLORS.seed}
           sheet={rustSchemeSheet}
-          defaultThemeMode={
-            document.documentElement.classList.contains("dark")
-              ? "dark"
-              : "light"
-          }
+          defaultThemeMode={document.documentElement.classList.contains("dark") ? "dark" : "light"}
         >
           <div className="flex flex-wrap items-center gap-3 p-6">
             <label className="text-label-large" htmlFor="m3-demo-page">
@@ -317,9 +257,7 @@ export function MaterialRoute() {
               id="m3-demo-page"
               className="min-h-12 rounded-medium border border-outline bg-surface-container px-4 text-body-large"
               value={selected}
-              onChange={(event) =>
-                navigate(`/material-3/${event.target.value}`)
-              }
+              onChange={event => navigate(`/material-3/${event.target.value}`)}
             >
               {DESTINATIONS.map(({ id, label }) => (
                 <option key={id} value={id}>
@@ -332,11 +270,7 @@ export function MaterialRoute() {
             </span>
           </div>
           <DemoBoundary key={selected}>
-            <Suspense
-              fallback={
-                <output className="block p-6">Loading demonstration…</output>
-              }
-            >
+            <Suspense fallback={<output className="block p-6">Loading demonstration…</output>}>
               <Demo adaptive={adaptive} host="native" />
             </Suspense>
           </DemoBoundary>
@@ -349,10 +283,7 @@ export function MaterialRoute() {
 export function ProductNotFound() {
   return (
     <div className="h-full overflow-auto">
-      <ProductPage
-        title="Page not found"
-        summary="This address does not match a page in Aphrody."
-      >
+      <ProductPage title="Page not found" summary="This address does not match a page in Aphrody.">
         <Button href="/" variant="filled">
           Return to Aphrody
         </Button>

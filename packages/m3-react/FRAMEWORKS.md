@@ -87,7 +87,7 @@ export function Demo() {
       <MdOutlinedTextField
         label="Nom"
         value={name}
-        onInput={(e) => setName((e.target as HTMLInputElement).value)}
+        onInput={e => setName((e.target as HTMLInputElement).value)}
       />
       <MdTabs>
         <MdPrimaryTab>A</MdPrimaryTab>

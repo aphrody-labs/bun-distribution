@@ -59,21 +59,55 @@ interface Functions {
   /** wdsclientapi.dll!WdsCliGetTransferSize */
   WdsCliGetTransferSize(hIfh: Win32Pointer, pullValue: Win32Pointer): number;
   /** wdsclientapi.dll!WdsCliInitializeLog */
-  WdsCliInitializeLog(hSession: Win32Pointer, ulClientArchitecture: number, pwszClientId: string | Win32Pointer, pwszClientAddress: string | Win32Pointer): number;
+  WdsCliInitializeLog(
+    hSession: Win32Pointer,
+    ulClientArchitecture: number,
+    pwszClientId: string | Win32Pointer,
+    pwszClientAddress: string | Win32Pointer,
+  ): number;
   /** wdsclientapi.dll!WdsCliLog */
   WdsCliLog(hSession: Win32Pointer, ulLogLevel: number, ulMessageCode: number): number;
   /** wdsclientapi.dll!WdsCliObtainDriverPackages */
-  WdsCliObtainDriverPackages(hImage: Win32Pointer, ppwszServerName: Win32Pointer, pppwszDriverPackages: Win32Pointer, pulCount: Win32Pointer): number;
+  WdsCliObtainDriverPackages(
+    hImage: Win32Pointer,
+    ppwszServerName: Win32Pointer,
+    pppwszDriverPackages: Win32Pointer,
+    pulCount: Win32Pointer,
+  ): number;
   /** wdsclientapi.dll!WdsCliObtainDriverPackagesEx */
-  WdsCliObtainDriverPackagesEx(hSession: Win32Pointer, pwszMachineInfo: string | Win32Pointer, ppwszServerName: Win32Pointer, pppwszDriverPackages: Win32Pointer, pulCount: Win32Pointer): number;
+  WdsCliObtainDriverPackagesEx(
+    hSession: Win32Pointer,
+    pwszMachineInfo: string | Win32Pointer,
+    ppwszServerName: Win32Pointer,
+    pppwszDriverPackages: Win32Pointer,
+    pulCount: Win32Pointer,
+  ): number;
   /** wdsclientapi.dll!WdsCliRegisterTrace */
   WdsCliRegisterTrace(pfn: Win32Callback): number;
   /** wdsclientapi.dll!WdsCliSetTransferBufferSize */
   WdsCliSetTransferBufferSize(ulSizeInBytes: number): void;
   /** wdsclientapi.dll!WdsCliTransferFile */
-  WdsCliTransferFile(pwszServer: string | Win32Pointer, pwszNamespace: string | Win32Pointer, pwszRemoteFilePath: string | Win32Pointer, pwszLocalFilePath: string | Win32Pointer, dwFlags: number, dwReserved: number, pfnWdsCliCallback: Win32Callback, pvUserData: Win32Pointer, phTransfer: Win32Pointer): number;
+  WdsCliTransferFile(
+    pwszServer: string | Win32Pointer,
+    pwszNamespace: string | Win32Pointer,
+    pwszRemoteFilePath: string | Win32Pointer,
+    pwszLocalFilePath: string | Win32Pointer,
+    dwFlags: number,
+    dwReserved: number,
+    pfnWdsCliCallback: Win32Callback,
+    pvUserData: Win32Pointer,
+    phTransfer: Win32Pointer,
+  ): number;
   /** wdsclientapi.dll!WdsCliTransferImage */
-  WdsCliTransferImage(hImage: Win32Pointer, pwszLocalPath: string | Win32Pointer, dwFlags: number, dwReserved: number, pfnWdsCliCallback: Win32Callback, pvUserData: Win32Pointer, phTransfer: Win32Pointer): number;
+  WdsCliTransferImage(
+    hImage: Win32Pointer,
+    pwszLocalPath: string | Win32Pointer,
+    dwFlags: number,
+    dwReserved: number,
+    pfnWdsCliCallback: Win32Callback,
+    pvUserData: Win32Pointer,
+    phTransfer: Win32Pointer,
+  ): number;
   /** wdsclientapi.dll!WdsCliWaitForTransfer */
   WdsCliWaitForTransfer(hTransfer: Win32Pointer): number;
 }

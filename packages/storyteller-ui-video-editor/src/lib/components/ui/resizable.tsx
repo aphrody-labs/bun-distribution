@@ -4,14 +4,8 @@ import * as ResizablePrimitive from "react-resizable-panels";
 
 import { cn } from "../../utils/ui";
 
-const ResizablePanelGroup = ({
-  className,
-  ...props
-}: React.ComponentProps<typeof ResizablePrimitive.Group>) => (
-  <ResizablePrimitive.Group
-    className={cn("flex size-full", className)}
-    {...props}
-  />
+const ResizablePanelGroup = ({ className, ...props }: React.ComponentProps<typeof ResizablePrimitive.Group>) => (
+  <ResizablePrimitive.Group className={cn("flex size-full", className)} {...props} />
 );
 
 const ResizablePanel = ResizablePrimitive.Panel;

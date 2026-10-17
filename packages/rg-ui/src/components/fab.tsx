@@ -17,22 +17,15 @@ const fabVariants = cva(
   {
     variants: {
       variant: {
-        surface:
-          "bg-surface-container-high text-primary hover:bg-surface-container-highest",
-        primary:
-          "bg-primary-container text-on-primary-container hover:brightness-95 dark:hover:brightness-110",
-        secondary:
-          "bg-secondary-container text-on-secondary-container hover:brightness-95 dark:hover:brightness-110",
-        tertiary:
-          "bg-tertiary-container text-on-tertiary-container hover:brightness-95 dark:hover:brightness-110",
+        surface: "bg-surface-container-high text-primary hover:bg-surface-container-highest",
+        primary: "bg-primary-container text-on-primary-container hover:brightness-95 dark:hover:brightness-110",
+        secondary: "bg-secondary-container text-on-secondary-container hover:brightness-95 dark:hover:brightness-110",
+        tertiary: "bg-tertiary-container text-on-tertiary-container hover:brightness-95 dark:hover:brightness-110",
       },
       size: {
-        small:
-          "size-10 rounded-(--md-sys-shape-corner-large) [&_svg:not([class*='size-'])]:size-6",
-        medium:
-          "size-14 rounded-(--md-sys-shape-corner-extra-large) [&_svg:not([class*='size-'])]:size-6",
-        large:
-          "size-24 rounded-(--md-sys-shape-corner-extra-large) [&_svg:not([class*='size-'])]:size-9",
+        small: "size-10 rounded-(--md-sys-shape-corner-large) [&_svg:not([class*='size-'])]:size-6",
+        medium: "size-14 rounded-(--md-sys-shape-corner-extra-large) [&_svg:not([class*='size-'])]:size-6",
+        large: "size-24 rounded-(--md-sys-shape-corner-extra-large) [&_svg:not([class*='size-'])]:size-9",
       },
     },
     defaultVariants: {
@@ -42,16 +35,9 @@ const fabVariants = cva(
   },
 );
 
-type FabProps = React.ComponentProps<"button"> &
-  VariantProps<typeof fabVariants>;
+type FabProps = React.ComponentProps<"button"> & VariantProps<typeof fabVariants>;
 
-function Fab({
-  className,
-  variant,
-  size,
-  type = "button",
-  ...props
-}: FabProps) {
+function Fab({ className, variant, size, type = "button", ...props }: FabProps) {
   return (
     <button
       data-slot="fab"
@@ -69,14 +55,10 @@ const fabExtendedVariants = cva(
   {
     variants: {
       variant: {
-        surface:
-          "bg-surface-container-high text-primary hover:bg-surface-container-highest",
-        primary:
-          "bg-primary-container text-on-primary-container hover:brightness-95 dark:hover:brightness-110",
-        secondary:
-          "bg-secondary-container text-on-secondary-container hover:brightness-95 dark:hover:brightness-110",
-        tertiary:
-          "bg-tertiary-container text-on-tertiary-container hover:brightness-95 dark:hover:brightness-110",
+        surface: "bg-surface-container-high text-primary hover:bg-surface-container-highest",
+        primary: "bg-primary-container text-on-primary-container hover:brightness-95 dark:hover:brightness-110",
+        secondary: "bg-secondary-container text-on-secondary-container hover:brightness-95 dark:hover:brightness-110",
+        tertiary: "bg-tertiary-container text-on-tertiary-container hover:brightness-95 dark:hover:brightness-110",
       },
     },
     defaultVariants: {
@@ -90,14 +72,7 @@ type FabExtendedProps = React.ComponentProps<"button"> &
     icon?: React.ReactNode;
   };
 
-function FabExtended({
-  className,
-  variant,
-  icon,
-  children,
-  type = "button",
-  ...props
-}: FabExtendedProps) {
+function FabExtended({ className, variant, icon, children, type = "button", ...props }: FabExtendedProps) {
   return (
     <button
       data-slot="fab-extended"

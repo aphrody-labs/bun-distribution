@@ -1,13 +1,4 @@
-import {
-  lstat,
-  mkdir,
-  mkdtemp,
-  readdir,
-  readFile,
-  rename,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
@@ -60,7 +51,7 @@ const parseVersion = (v: string) =>
   v
     .split("-")[0]!
     .split(".")
-    .map((n) => Number.parseInt(n, 10) || 0);
+    .map(n => Number.parseInt(n, 10) || 0);
 
 /** Numeric semver comparison (prerelease tags are ignored). Returns >0 when `a` is newer than `b`. */
 export function compareVersions(a: string, b: string): number {
@@ -97,23 +88,14 @@ export async function fetchLatest(
   });
   if (!res.ok) throw new Error(`HTTP ${res.status} sur ${baseUrl}/latest.json`);
   const release = (await res.json()) as Release;
-  if (
-    release.schemaVersion !== 1 ||
-    !release.version ||
-    !Array.isArray(release.artifacts)
-  ) {
+  if (release.schemaVersion !== 1 || !release.version || !Array.isArray(release.artifacts)) {
     throw new Error("latest.json invalide");
   }
   return release;
 }
 
-export function pickUpdate(
-  release: Release,
-  platform = currentPlatform(),
-): ReleaseArtifact | undefined {
-  return release.artifacts.find(
-    (a) => a.kind === "update" && a.platform === platform,
-  );
+export function pickUpdate(release: Release, platform = currentPlatform()): ReleaseArtifact | undefined {
+  return release.artifacts.find(a => a.kind === "update" && a.platform === platform);
 }
 
 export async function downloadVerified(
@@ -127,22 +109,15 @@ export async function downloadVerified(
   if (!res.ok) throw new Error(`HTTP ${res.status} sur ${artifact.url}`);
   const bytes = new Uint8Array(await res.arrayBuffer());
   const sha = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
-  if (sha !== artifact.sha256.toLowerCase())
-    throw new Error(`SHA-256 invalide pour ${artifact.file}`);
-  if (bytes.byteLength !== artifact.size)
-    throw new Error(`taille invalide pour ${artifact.file}`);
+  if (sha !== artifact.sha256.toLowerCase()) throw new Error(`SHA-256 invalide pour ${artifact.file}`);
+  if (bytes.byteLength !== artifact.size) throw new Error(`taille invalide pour ${artifact.file}`);
   await mkdir(dirname(dest), { recursive: true });
   await writeFile(dest, bytes);
 }
 
 /** Extract a gzip-compressed ustar archive (regular files and folders only) into `dest`, without any external tool. */
-export async function extractTarGz(
-  archive: string,
-  dest: string,
-): Promise<void> {
-  const data = Bun.gunzipSync(
-    new Uint8Array(await Bun.file(archive).arrayBuffer()),
-  );
+export async function extractTarGz(archive: string, dest: string): Promise<void> {
+  const data = Bun.gunzipSync(new Uint8Array(await Bun.file(archive).arrayBuffer()));
   const decoder = new TextDecoder();
   const field = (start: number, length: number) =>
     decoder.decode(data.subarray(start, start + length)).replace(/\0.*$/s, "");
@@ -155,46 +130,31 @@ export async function extractTarGz(
   const seen = new Set<string>();
   let offset = 0;
   while (offset + 512 <= data.length) {
-    if (data.subarray(offset, offset + 512).every((byte) => byte === 0)) break;
+    if (data.subarray(offset, offset + 512).every(byte => byte === 0)) break;
     const prefix = field(offset + 345, 155);
     const name = (prefix ? `${prefix}/` : "") + field(offset, 100);
     const sizeField = field(offset + 124, 12).trim();
-    const size = /^[0-7]+$/.test(sizeField)
-      ? Number.parseInt(sizeField, 8)
-      : Number.NaN;
+    const size = /^[0-7]+$/.test(sizeField) ? Number.parseInt(sizeField, 8) : Number.NaN;
     const type = String.fromCharCode(data[offset + 156] || 48);
     const checksum = Number.parseInt(field(offset + 148, 8).trim(), 8);
     let sum = 0;
-    for (let i = 0; i < 512; i += 1)
-      sum += i >= 148 && i < 156 ? 32 : data[offset + i]!;
-    if (
-      checksum !== sum ||
-      !Number.isSafeInteger(size) ||
-      size < 0 ||
-      offset + 512 + size > data.length
-    )
+    for (let i = 0; i < 512; i += 1) sum += i >= 148 && i < 156 ? 32 : data[offset + i]!;
+    if (checksum !== sum || !Number.isSafeInteger(size) || size < 0 || offset + 512 + size > data.length)
       throw new Error(`archive tronquée ou en-tête invalide : ${name}`);
     offset += 512;
     const clean = name.replace(/^\.\//, "").replace(/\/$/, "");
-    if (!["0", "\0", "5"].includes(type))
-      throw new Error(`type d'entrée refusé : ${name}`);
+    if (!["0", "\0", "5"].includes(type)) throw new Error(`type d'entrée refusé : ${name}`);
     if (clean !== "" && clean !== ".") {
       if (
         clean.startsWith("/") ||
         clean.includes("\\") ||
         clean.includes(":") ||
-        [...clean].some((char) => char.charCodeAt(0) < 32) ||
+        [...clean].some(char => char.charCodeAt(0) < 32) ||
         /[<>"|?*]/.test(clean) ||
+        clean.split("/").some(part => part === ".." || part === "" || part === ".") ||
         clean
           .split("/")
-          .some((part) => part === ".." || part === "" || part === ".") ||
-        clean
-          .split("/")
-          .some(
-            (part) =>
-              /[. ]$/.test(part) ||
-              /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i.test(part),
-          ) ||
+          .some(part => /[. ]$/.test(part) || /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i.test(part)) ||
         seen.has(clean.toLowerCase())
       )
         throw new Error(`entrée refusée : ${name}`);
@@ -203,10 +163,7 @@ export async function extractTarGz(
     }
     offset += Math.ceil(size / 512) * 512;
   }
-  if (
-    offset + 1024 > data.length ||
-    !data.subarray(offset).every((byte) => byte === 0)
-  )
+  if (offset + 1024 > data.length || !data.subarray(offset).every(byte => byte === 0))
     throw new Error("fin d'archive invalide");
   // Validate every header before the first write, then reject pre-existing symlink parents.
   for (const entry of entries) {
@@ -227,10 +184,7 @@ export async function extractTarGz(
       // oxlint-disable-next-line no-await-in-loop -- écriture séquentielle (même raison : ordre de l'archive, parents créés avant fichiers)
       await mkdir(dirname(target), { recursive: true });
       // oxlint-disable-next-line no-await-in-loop -- écriture séquentielle (même raison : ordre de l'archive)
-      await writeFile(
-        target,
-        data.subarray(entry.offset, entry.offset + entry.size),
-      );
+      await writeFile(target, data.subarray(entry.offset, entry.offset + entry.size));
     }
   }
 }
@@ -248,8 +202,7 @@ export async function applyPack(
 ): Promise<void> {
   const move = operations.rename ?? rename;
   await mkdir(installDir, { recursive: true });
-  if ((await lstat(installDir)).isSymbolicLink())
-    throw new Error("dossier d’installation lié refusé");
+  if ((await lstat(installDir)).isSymbolicLink()) throw new Error("dossier d’installation lié refusé");
   const staging = await mkdtemp(join(dirname(installDir), ".update-"));
   const backup = await mkdtemp(join(dirname(installDir), ".rollback-"));
   const moved: string[] = [];
@@ -258,10 +211,7 @@ export async function applyPack(
   try {
     await extractTarGz(archive, staging);
     const entries = await readdir(staging);
-    if (
-      !entries.includes(exeName) ||
-      !(await lstat(join(staging, exeName))).isFile()
-    )
+    if (!entries.includes(exeName) || !(await lstat(join(staging, exeName))).isFile())
       throw new Error(`${exeName} absent de l'archive`);
     try {
       for (const entry of entries) {
@@ -316,10 +266,7 @@ export function stateFile(
   env: Record<string, string | undefined> = process.env,
   app: AppIdentity = CREATOR_APP,
 ): string {
-  const base =
-    env.LOCALAPPDATA ??
-    env.XDG_CACHE_HOME ??
-    join(env.HOME ?? homedir(), ".cache");
+  const base = env.LOCALAPPDATA ?? env.XDG_CACHE_HOME ?? join(env.HOME ?? homedir(), ".cache");
   return join(base, app.name, "update.json");
 }
 
@@ -361,10 +308,7 @@ export interface UpdateOptions {
  * Install the update described by an already fetched `release` when it is newer than `opts.version`.
  * `checkOnly` never modifies anything. Kits whose manifest has another shape convert it to a `Release` first.
  */
-export async function updateFromRelease(
-  release: Release,
-  opts: UpdateOptions = {},
-): Promise<UpdateResult> {
+export async function updateFromRelease(release: Release, opts: UpdateOptions = {}): Promise<UpdateResult> {
   const fetchImpl = opts.fetchImpl ?? fetch;
   const state = opts.statePath ?? stateFile();
   await writeState(state, { lastCheck: Date.now(), latest: release.version });
@@ -399,11 +343,7 @@ export async function updateFromRelease(
 
 /** Download and install the newest release when there is one. `checkOnly` never modifies anything. */
 export async function updateNow(opts: UpdateOptions): Promise<UpdateResult> {
-  const release = await fetchLatest(
-    opts.baseUrl,
-    opts.fetchImpl ?? fetch,
-    10_000,
-  );
+  const release = await fetchLatest(opts.baseUrl, opts.fetchImpl ?? fetch, 10_000);
   return updateFromRelease(release, opts);
 }
 

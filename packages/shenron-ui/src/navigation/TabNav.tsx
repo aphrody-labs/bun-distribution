@@ -50,7 +50,7 @@ export function TabNav({
       className={`-mx-[var(--shell-pad,1.5rem)] overflow-x-auto px-[var(--shell-pad,1.5rem)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
     >
       <ul className="flex min-w-max snap-x items-center gap-2">
-        {items.map((item) => {
+        {items.map(item => {
           const current = item.href === active;
           return (
             <li key={item.href} className="snap-start">
@@ -67,9 +67,7 @@ export function TabNav({
               >
                 {item.label}
                 {typeof item.count === "number" && (
-                  <span className={current ? "text-black/60" : "text-white/40"}>
-                    {nf.format(item.count)}
-                  </span>
+                  <span className={current ? "text-black/60" : "text-white/40"}>{nf.format(item.count)}</span>
                 )}
               </LinkComponent>
             </li>

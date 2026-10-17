@@ -44,24 +44,18 @@ export interface ServeM3Options {
   /** Maximum request body size in bytes (default 128MB). */
   maxRequestBodySize?: number;
   /** Handler for requests no route matched (default: 404). */
-  fetch?: (
-    req: Request,
-    server: Server<undefined>,
-  ) => Response | Promise<Response>;
+  fetch?: (req: Request, server: Server<undefined>) => Response | Promise<Response>;
   /** Base directory for relative `.html` paths (default: working directory). */
   cwd?: string;
 }
 
 /** Forward a request to `target`, keeping the path below the origin, the query, method, headers and body. */
-export function createProxy(
-  target: string,
-  label = "m3",
-): (req: Request) => Promise<Response> {
+export function createProxy(target: string, label = "m3"): (req: Request) => Promise<Response> {
   const upstream = new URL(target);
   if (upstream.protocol !== "http:" && upstream.protocol !== "https:") {
     throw new Error(`proxy target must use HTTP or HTTPS: ${target}`);
   }
-  return async (req) => {
+  return async req => {
     const url = new URL(req.url);
     const base = upstream.pathname.replace(/\/$/, "");
     // Assign the path rather than resolving a URL: a path starting with // must
@@ -91,30 +85,21 @@ export function createProxy(
       return await fetch(destination, {
         method: req.method,
         headers,
-        body:
-          req.method === "GET" || req.method === "HEAD"
-            ? undefined
-            : await req.arrayBuffer(),
+        body: req.method === "GET" || req.method === "HEAD" ? undefined : await req.arrayBuffer(),
         redirect: "manual",
         signal: req.signal,
       });
     } catch (error) {
-      return new Response(
-        `${label}: upstream unreachable at ${upstream.origin}: ${String(error)}`,
-        { status: 502 },
-      );
+      return new Response(`${label}: upstream unreachable at ${upstream.origin}: ${String(error)}`, { status: 502 });
     }
   };
 }
 
 /** `Bun.serve` routes for the proxy prefixes: each prefix answers itself and `prefix/*`. */
-export function proxyRoutes(
-  proxy: Record<string, string>,
-): Record<string, M3RouteValue> {
+export function proxyRoutes(proxy: Record<string, string>): Record<string, M3RouteValue> {
   const routes: Record<string, M3RouteValue> = {};
   for (const [prefix, target] of Object.entries(proxy)) {
-    if (!prefix.startsWith("/"))
-      throw new Error(`proxy prefix ${prefix} must start with "/"`);
+    if (!prefix.startsWith("/")) throw new Error(`proxy prefix ${prefix} must start with "/"`);
     const handler = createProxy(target);
     const clean = prefix.replace(/\/+$/, "");
     routes[clean || "/"] = handler;
@@ -125,8 +110,7 @@ export function proxyRoutes(
 
 async function importHtml(path: string, cwd: string): Promise<HTMLBundle> {
   const file = isAbsolute(path) ? path : resolve(cwd, path);
-  if (!file.endsWith(".html"))
-    throw new Error(`serveM3: ${path} is not an .html file`);
+  if (!file.endsWith(".html")) throw new Error(`serveM3: ${path} is not an .html file`);
   const mod = (await import(pathToFileURL(file).href)) as {
     default: HTMLBundle;
   };
@@ -136,8 +120,7 @@ async function importHtml(path: string, cwd: string): Promise<HTMLBundle> {
 /** Port from the options, then `PORT`, then 3000. */
 export function resolvePort(port?: number): number {
   if (port !== undefined) {
-    if (!Number.isInteger(port) || port < 0 || port > 65535)
-      throw new RangeError(`serveM3: invalid port ${port}`);
+    if (!Number.isInteger(port) || port < 0 || port > 65535) throw new RangeError(`serveM3: invalid port ${port}`);
     return port;
   }
   const fromEnv = Number(Bun.env.PORT);
@@ -151,9 +134,7 @@ export function resolvePort(port?: number): number {
 }
 
 /** Discover React pages and render each request as a streamed HTML response. */
-export async function fileRoutes(
-  pagesDir: string,
-): Promise<Record<string, M3RouteValue>> {
+export async function fileRoutes(pagesDir: string): Promise<Record<string, M3RouteValue>> {
   if (!existsSync(pagesDir) || !statSync(pagesDir).isDirectory()) {
     throw new Error(`serveM3: pagesDir is not a directory: ${pagesDir}`);
   }
@@ -169,33 +150,24 @@ export async function fileRoutes(
       .replace(/\.(tsx|jsx)$/, "")
       .split("/");
     if (segments.at(-1) === "index") segments.pop();
-    const parts = segments.map((segment) => {
+    const parts = segments.map(segment => {
       const param = /^\[([A-Za-z_][A-Za-z0-9_]*)\]$/.exec(segment);
       if (param) return `:${param[1]}`;
-      if (!/^[A-Za-z0-9_-]+$/.test(segment))
-        throw new Error(`serveM3: invalid page path: ${file}`);
+      if (!/^[A-Za-z0-9_-]+$/.test(segment)) throw new Error(`serveM3: invalid page path: ${file}`);
       return segment;
     });
     const route = `/${parts.join("/")}`;
-    if (routes[route])
-      throw new Error(`serveM3: duplicate page route: ${route}`);
+    if (routes[route]) throw new Error(`serveM3: duplicate page route: ${route}`);
     const url = pathToFileURL(resolve(pagesDir, file)).href;
-    routes[route] = async (request) => {
-      const [{ default: Page }, { createElement }, { renderToReadableStream }] =
-        await Promise.all([
-          import(url) as Promise<{ default: ComponentType<M3PageProps> }>,
-          import("react"),
-          import("react-dom/server"),
-        ]);
-      if (!Page)
-        throw new Error(
-          `serveM3: page has no default React component: ${file}`,
-        );
-      const params =
-        (request as Request & { params?: Record<string, string> }).params ?? {};
-      const stream = await renderToReadableStream(
-        createElement(Page, { request, params }),
-      );
+    routes[route] = async request => {
+      const [{ default: Page }, { createElement }, { renderToReadableStream }] = await Promise.all([
+        import(url) as Promise<{ default: ComponentType<M3PageProps> }>,
+        import("react"),
+        import("react-dom/server"),
+      ]);
+      if (!Page) throw new Error(`serveM3: page has no default React component: ${file}`);
+      const params = (request as Request & { params?: Record<string, string> }).params ?? {};
+      const stream = await renderToReadableStream(createElement(Page, { request, params }));
       return new Response(stream, {
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
@@ -205,61 +177,43 @@ export async function fileRoutes(
 }
 
 /** Assemble proxy and explicit routes, React pages, then the `/*` SPA fallback. */
-export async function buildRoutes(
-  options: ServeM3Options,
-): Promise<Record<string, M3RouteValue>> {
+export async function buildRoutes(options: ServeM3Options): Promise<Record<string, M3RouteValue>> {
   const cwd = options.cwd ?? process.cwd();
   const routes: Record<string, M3RouteValue> = {
     ...proxyRoutes(options.proxy ?? {}),
   };
   const extra = await Promise.all(
     Object.entries(options.routes ?? {}).map(
-      async ([path, value]) =>
-        [
-          path,
-          typeof value === "string" ? await importHtml(value, cwd) : value,
-        ] as const,
+      async ([path, value]) => [path, typeof value === "string" ? await importHtml(value, cwd) : value] as const,
     ),
   );
   for (const [path, value] of extra) routes[path] = value;
   if (options.pagesDir) {
-    const pagesDir = isAbsolute(options.pagesDir)
-      ? options.pagesDir
-      : resolve(cwd, options.pagesDir);
+    const pagesDir = isAbsolute(options.pagesDir) ? options.pagesDir : resolve(cwd, options.pagesDir);
     for (const [path, value] of Object.entries(await fileRoutes(pagesDir))) {
       const covered = Object.keys(routes).some(
-        (existing) =>
-          existing === path ||
-          (existing.endsWith("/*") && path.startsWith(existing.slice(0, -1))),
+        existing => existing === path || (existing.endsWith("/*") && path.startsWith(existing.slice(0, -1))),
       );
       if (!covered) routes[path] = value;
     }
   }
   if (options.index !== undefined) {
-    routes["/*"] =
-      typeof options.index === "string"
-        ? await importHtml(options.index, cwd)
-        : options.index;
+    routes["/*"] = typeof options.index === "string" ? await importHtml(options.index, cwd) : options.index;
   }
   return routes;
 }
 
 /** Start the server. */
-export async function serveM3(
-  options: ServeM3Options = {},
-): Promise<Server<undefined>> {
+export async function serveM3(options: ServeM3Options = {}): Promise<Server<undefined>> {
   const hmr = options.hmr ?? true;
   const routes = await buildRoutes(options);
-  const fallback =
-    options.fetch ?? (() => new Response("Not Found", { status: 404 }));
+  const fallback = options.fetch ?? (() => new Response("Not Found", { status: 404 }));
   return Bun.serve({
     port: resolvePort(options.port),
     ...(options.hostname ? { hostname: options.hostname } : {}),
     development: { hmr, console: hmr },
     idleTimeout: options.idleTimeout ?? 30,
-    ...(options.maxRequestBodySize !== undefined
-      ? { maxRequestBodySize: options.maxRequestBodySize }
-      : {}),
+    ...(options.maxRequestBodySize !== undefined ? { maxRequestBodySize: options.maxRequestBodySize } : {}),
     routes,
     fetch: fallback,
   });

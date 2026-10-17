@@ -30,22 +30,17 @@ interface IconEnvelope {
   error?: string;
 }
 
-function callJson(
-  symbol: (ptr: Buffer, len: number) => number | bigint | null,
-  payload: string,
-): IconEnvelope {
+function callJson(symbol: (ptr: Buffer, len: number) => number | bigint | null, payload: string): IconEnvelope {
   const buf = Buffer.from(payload);
   const ptr = symbol(buf, buf.length);
-  if (!ptr)
-    throw new Error("aphrody-bun icons FFI call returned a null pointer");
+  if (!ptr) throw new Error("aphrody-bun icons FFI call returned a null pointer");
   let envelope: IconEnvelope;
   try {
     envelope = JSON.parse(new CString(ptr as any).toString()) as IconEnvelope;
   } finally {
     lib.bun_rs_free_string(ptr as any);
   }
-  if (typeof envelope.ok !== "boolean")
-    throw new Error("aphrody-bun icons returned an invalid response");
+  if (typeof envelope.ok !== "boolean") throw new Error("aphrody-bun icons returned an invalid response");
   return envelope;
 }
 
@@ -54,13 +49,9 @@ function callJson(
  * variable font outlines by the `icons` module of `aphrody-bun` (no icon font shipped or loaded by the caller).
  */
 export function m3Icon(options: M3IconOptions): string {
-  const envelope = callJson(
-    lib.bun_rs_icon_svg as any,
-    JSON.stringify(options),
-  );
+  const envelope = callJson(lib.bun_rs_icon_svg as any, JSON.stringify(options));
   if (!envelope.ok) throw new Error(`m3Icon: ${envelope.error}`);
-  if (typeof envelope.svg !== "string")
-    throw new Error("m3Icon: native response omitted SVG");
+  if (typeof envelope.svg !== "string") throw new Error("m3Icon: native response omitted SVG");
   return envelope.svg;
 }
 
@@ -68,10 +59,7 @@ export function m3Icon(options: M3IconOptions): string {
 export function m3IconNames(style: M3IconStyle = "outlined"): string[] {
   const envelope = callJson(lib.bun_rs_icon_names as any, style);
   if (!envelope.ok) throw new Error(`m3IconNames: ${envelope.error}`);
-  if (
-    !Array.isArray(envelope.names) ||
-    envelope.names.some((name) => typeof name !== "string")
-  ) {
+  if (!Array.isArray(envelope.names) || envelope.names.some(name => typeof name !== "string")) {
     throw new Error("m3IconNames: native response omitted icon names");
   }
   return envelope.names;

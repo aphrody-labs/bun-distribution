@@ -3,7 +3,15 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** wlanui.dll!WlanUIEditProfile */
-  WlanUIEditProfile(dwClientVersion: number, wstrProfileName: string | Win32Pointer, pInterfaceGuid: Win32Pointer, hWnd: Win32Pointer, wlStartPage: number, pReserved: Win32Pointer, pWlanReasonCode: Win32Pointer): number;
+  WlanUIEditProfile(
+    dwClientVersion: number,
+    wstrProfileName: string | Win32Pointer,
+    pInterfaceGuid: Win32Pointer,
+    hWnd: Win32Pointer,
+    wlStartPage: number,
+    pReserved: Win32Pointer,
+    pWlanReasonCode: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -3,33 +3,79 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** userenv.dll!CreateAppContainerProfile */
-  CreateAppContainerProfile(pszAppContainerName: string | Win32Pointer, pszDisplayName: string | Win32Pointer, pszDescription: string | Win32Pointer, pCapabilities: Win32Pointer, dwCapabilityCount: number, ppSidAppContainerSid: Win32Pointer): number;
+  CreateAppContainerProfile(
+    pszAppContainerName: string | Win32Pointer,
+    pszDisplayName: string | Win32Pointer,
+    pszDescription: string | Win32Pointer,
+    pCapabilities: Win32Pointer,
+    dwCapabilityCount: number,
+    ppSidAppContainerSid: Win32Pointer,
+  ): number;
   /** userenv.dll!CreateEnvironmentBlock */
   CreateEnvironmentBlock(lpEnvironment: Win32Pointer, hToken: Win32Pointer, bInherit: number): number;
   /** userenv.dll!CreateProfile */
-  CreateProfile(pszUserSid: string | Win32Pointer, pszUserName: string | Win32Pointer, pszProfilePath: string | Win32Pointer, cchProfilePath: number): number;
+  CreateProfile(
+    pszUserSid: string | Win32Pointer,
+    pszUserName: string | Win32Pointer,
+    pszProfilePath: string | Win32Pointer,
+    cchProfilePath: number,
+  ): number;
   /** userenv.dll!DeleteAppContainerProfile */
   DeleteAppContainerProfile(pszAppContainerName: string | Win32Pointer): number;
   /** userenv.dll!DeleteProfileA */
-  DeleteProfileA(lpSidString: string | Win32Pointer, lpProfilePath: string | Win32Pointer, lpComputerName: string | Win32Pointer): number;
+  DeleteProfileA(
+    lpSidString: string | Win32Pointer,
+    lpProfilePath: string | Win32Pointer,
+    lpComputerName: string | Win32Pointer,
+  ): number;
   /** userenv.dll!DeleteProfileW */
-  DeleteProfileW(lpSidString: string | Win32Pointer, lpProfilePath: string | Win32Pointer, lpComputerName: string | Win32Pointer): number;
+  DeleteProfileW(
+    lpSidString: string | Win32Pointer,
+    lpProfilePath: string | Win32Pointer,
+    lpComputerName: string | Win32Pointer,
+  ): number;
   /** userenv.dll!DeleteProfileW */
-  DeleteProfile(lpSidString: string | Win32Pointer, lpProfilePath: string | Win32Pointer, lpComputerName: string | Win32Pointer): number;
+  DeleteProfile(
+    lpSidString: string | Win32Pointer,
+    lpProfilePath: string | Win32Pointer,
+    lpComputerName: string | Win32Pointer,
+  ): number;
   /** userenv.dll!DeriveAppContainerSidFromAppContainerName */
-  DeriveAppContainerSidFromAppContainerName(pszAppContainerName: string | Win32Pointer, ppsidAppContainerSid: Win32Pointer): number;
+  DeriveAppContainerSidFromAppContainerName(
+    pszAppContainerName: string | Win32Pointer,
+    ppsidAppContainerSid: Win32Pointer,
+  ): number;
   /** userenv.dll!DeriveRestrictedAppContainerSidFromAppContainerSidAndRestrictedName */
-  DeriveRestrictedAppContainerSidFromAppContainerSidAndRestrictedName(psidAppContainerSid: Win32Pointer, pszRestrictedAppContainerName: string | Win32Pointer, ppsidRestrictedAppContainerSid: Win32Pointer): number;
+  DeriveRestrictedAppContainerSidFromAppContainerSidAndRestrictedName(
+    psidAppContainerSid: Win32Pointer,
+    pszRestrictedAppContainerName: string | Win32Pointer,
+    ppsidRestrictedAppContainerSid: Win32Pointer,
+  ): number;
   /** userenv.dll!DestroyEnvironmentBlock */
   DestroyEnvironmentBlock(lpEnvironment: Win32Pointer): number;
   /** userenv.dll!EnterCriticalPolicySection */
   EnterCriticalPolicySection(bMachine: number): number | null;
   /** userenv.dll!ExpandEnvironmentStringsForUserA */
-  ExpandEnvironmentStringsForUserA(hToken: Win32Pointer, lpSrc: string | Win32Pointer, lpDest: string | Win32Pointer, dwSize: number): number;
+  ExpandEnvironmentStringsForUserA(
+    hToken: Win32Pointer,
+    lpSrc: string | Win32Pointer,
+    lpDest: string | Win32Pointer,
+    dwSize: number,
+  ): number;
   /** userenv.dll!ExpandEnvironmentStringsForUserW */
-  ExpandEnvironmentStringsForUserW(hToken: Win32Pointer, lpSrc: string | Win32Pointer, lpDest: string | Win32Pointer, dwSize: number): number;
+  ExpandEnvironmentStringsForUserW(
+    hToken: Win32Pointer,
+    lpSrc: string | Win32Pointer,
+    lpDest: string | Win32Pointer,
+    dwSize: number,
+  ): number;
   /** userenv.dll!ExpandEnvironmentStringsForUserW */
-  ExpandEnvironmentStringsForUser(hToken: Win32Pointer, lpSrc: string | Win32Pointer, lpDest: string | Win32Pointer, dwSize: number): number;
+  ExpandEnvironmentStringsForUser(
+    hToken: Win32Pointer,
+    lpSrc: string | Win32Pointer,
+    lpDest: string | Win32Pointer,
+    dwSize: number,
+  ): number;
   /** userenv.dll!FreeGPOListA */
   FreeGPOListA(pGPOList: Win32Pointer): number;
   /** userenv.dll!FreeGPOListW */
@@ -37,7 +83,11 @@ interface Functions {
   /** userenv.dll!FreeGPOListW */
   FreeGPOList(pGPOList: Win32Pointer): number;
   /** userenv.dll!GenerateGPNotification */
-  GenerateGPNotification(bMachine: number, lpwszMgmtProduct: string | Win32Pointer, dwMgmtProductOptions: number): number;
+  GenerateGPNotification(
+    bMachine: number,
+    lpwszMgmtProduct: string | Win32Pointer,
+    dwMgmtProductOptions: number,
+  ): number;
   /** userenv.dll!GetAllUsersProfileDirectoryA */
   GetAllUsersProfileDirectoryA(lpProfileDir: string | Win32Pointer, lpcchSize: Win32Pointer): number;
   /** userenv.dll!GetAllUsersProfileDirectoryW */
@@ -49,11 +99,29 @@ interface Functions {
   /** userenv.dll!GetAppContainerRegistryLocation */
   GetAppContainerRegistryLocation(desiredAccess: number, phAppContainerKey: Win32Pointer): number;
   /** userenv.dll!GetAppliedGPOListA */
-  GetAppliedGPOListA(dwFlags: number, pMachineName: string | Win32Pointer, pSidUser: Win32Pointer, pGuidExtension: Win32Pointer, ppGPOList: Win32Pointer): number;
+  GetAppliedGPOListA(
+    dwFlags: number,
+    pMachineName: string | Win32Pointer,
+    pSidUser: Win32Pointer,
+    pGuidExtension: Win32Pointer,
+    ppGPOList: Win32Pointer,
+  ): number;
   /** userenv.dll!GetAppliedGPOListW */
-  GetAppliedGPOListW(dwFlags: number, pMachineName: string | Win32Pointer, pSidUser: Win32Pointer, pGuidExtension: Win32Pointer, ppGPOList: Win32Pointer): number;
+  GetAppliedGPOListW(
+    dwFlags: number,
+    pMachineName: string | Win32Pointer,
+    pSidUser: Win32Pointer,
+    pGuidExtension: Win32Pointer,
+    ppGPOList: Win32Pointer,
+  ): number;
   /** userenv.dll!GetAppliedGPOListW */
-  GetAppliedGPOList(dwFlags: number, pMachineName: string | Win32Pointer, pSidUser: Win32Pointer, pGuidExtension: Win32Pointer, ppGPOList: Win32Pointer): number;
+  GetAppliedGPOList(
+    dwFlags: number,
+    pMachineName: string | Win32Pointer,
+    pSidUser: Win32Pointer,
+    pGuidExtension: Win32Pointer,
+    ppGPOList: Win32Pointer,
+  ): number;
   /** userenv.dll!GetDefaultUserProfileDirectoryA */
   GetDefaultUserProfileDirectoryA(lpProfileDir: string | Win32Pointer, lpcchSize: Win32Pointer): number;
   /** userenv.dll!GetDefaultUserProfileDirectoryW */
@@ -61,11 +129,32 @@ interface Functions {
   /** userenv.dll!GetDefaultUserProfileDirectoryW */
   GetDefaultUserProfileDirectory(lpProfileDir: string | Win32Pointer, lpcchSize: Win32Pointer): number;
   /** userenv.dll!GetGPOListA */
-  GetGPOListA(hToken: Win32Pointer, lpName: string | Win32Pointer, lpHostName: string | Win32Pointer, lpComputerName: string | Win32Pointer, dwFlags: number, pGPOList: Win32Pointer): number;
+  GetGPOListA(
+    hToken: Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpHostName: string | Win32Pointer,
+    lpComputerName: string | Win32Pointer,
+    dwFlags: number,
+    pGPOList: Win32Pointer,
+  ): number;
   /** userenv.dll!GetGPOListW */
-  GetGPOListW(hToken: Win32Pointer, lpName: string | Win32Pointer, lpHostName: string | Win32Pointer, lpComputerName: string | Win32Pointer, dwFlags: number, pGPOList: Win32Pointer): number;
+  GetGPOListW(
+    hToken: Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpHostName: string | Win32Pointer,
+    lpComputerName: string | Win32Pointer,
+    dwFlags: number,
+    pGPOList: Win32Pointer,
+  ): number;
   /** userenv.dll!GetGPOListW */
-  GetGPOList(hToken: Win32Pointer, lpName: string | Win32Pointer, lpHostName: string | Win32Pointer, lpComputerName: string | Win32Pointer, dwFlags: number, pGPOList: Win32Pointer): number;
+  GetGPOList(
+    hToken: Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpHostName: string | Win32Pointer,
+    lpComputerName: string | Win32Pointer,
+    dwFlags: number,
+    pGPOList: Win32Pointer,
+  ): number;
   /** userenv.dll!GetProfileType */
   GetProfileType(dwFlags: Win32Pointer): number;
   /** userenv.dll!GetProfilesDirectoryA */
@@ -91,7 +180,12 @@ interface Functions {
   /** userenv.dll!ProcessGroupPolicyCompleted */
   ProcessGroupPolicyCompleted(extensionId: Win32Pointer, pAsyncHandle: number | bigint, dwStatus: number): number;
   /** userenv.dll!ProcessGroupPolicyCompletedEx */
-  ProcessGroupPolicyCompletedEx(extensionId: Win32Pointer, pAsyncHandle: number | bigint, dwStatus: number, RsopStatus: number): number;
+  ProcessGroupPolicyCompletedEx(
+    extensionId: Win32Pointer,
+    pAsyncHandle: number | bigint,
+    dwStatus: number,
+    RsopStatus: number,
+  ): number;
   /** userenv.dll!RefreshPolicy */
   RefreshPolicy(bMachine: number): number;
   /** userenv.dll!RefreshPolicyEx */
@@ -99,13 +193,37 @@ interface Functions {
   /** userenv.dll!RegisterGPNotification */
   RegisterGPNotification(hEvent: Win32Pointer, bMachine: number): number;
   /** userenv.dll!RsopAccessCheckByType */
-  RsopAccessCheckByType(pSecurityDescriptor: Win32Pointer, pPrincipalSelfSid: Win32Pointer, pRsopToken: Win32Pointer, dwDesiredAccessMask: number, pObjectTypeList: Win32Pointer, ObjectTypeListLength: number, pGenericMapping: Win32Pointer, pPrivilegeSet: Win32Pointer, pdwPrivilegeSetLength: Win32Pointer, pdwGrantedAccessMask: Win32Pointer, pbAccessStatus: Win32Pointer): number;
+  RsopAccessCheckByType(
+    pSecurityDescriptor: Win32Pointer,
+    pPrincipalSelfSid: Win32Pointer,
+    pRsopToken: Win32Pointer,
+    dwDesiredAccessMask: number,
+    pObjectTypeList: Win32Pointer,
+    ObjectTypeListLength: number,
+    pGenericMapping: Win32Pointer,
+    pPrivilegeSet: Win32Pointer,
+    pdwPrivilegeSetLength: Win32Pointer,
+    pdwGrantedAccessMask: Win32Pointer,
+    pbAccessStatus: Win32Pointer,
+  ): number;
   /** userenv.dll!RsopFileAccessCheck */
-  RsopFileAccessCheck(pszFileName: string | Win32Pointer, pRsopToken: Win32Pointer, dwDesiredAccessMask: number, pdwGrantedAccessMask: Win32Pointer, pbAccessStatus: Win32Pointer): number;
+  RsopFileAccessCheck(
+    pszFileName: string | Win32Pointer,
+    pRsopToken: Win32Pointer,
+    dwDesiredAccessMask: number,
+    pdwGrantedAccessMask: Win32Pointer,
+    pbAccessStatus: Win32Pointer,
+  ): number;
   /** userenv.dll!RsopResetPolicySettingStatus */
   RsopResetPolicySettingStatus(dwFlags: number, pServices: Win32Pointer, pSettingInstance: Win32Pointer): number;
   /** userenv.dll!RsopSetPolicySettingStatus */
-  RsopSetPolicySettingStatus(dwFlags: number, pServices: Win32Pointer, pSettingInstance: Win32Pointer, nInfo: number, pStatus: Win32Pointer): number;
+  RsopSetPolicySettingStatus(
+    dwFlags: number,
+    pServices: Win32Pointer,
+    pSettingInstance: Win32Pointer,
+    nInfo: number,
+    pStatus: Win32Pointer,
+  ): number;
   /** userenv.dll!UnloadUserProfile */
   UnloadUserProfile(hToken: Win32Pointer, hProfile: Win32Pointer): number;
   /** userenv.dll!UnregisterGPNotification */

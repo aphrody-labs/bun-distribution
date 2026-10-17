@@ -8,19 +8,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { ChatComposer } from "../src/ChatComposer";
 import { InlineBranchCard } from "../src/InlineBranchCard";
 import { InlineWorkerCard } from "../src/InlineWorkerCard";
-import {
-  BlockMath,
-  CodeBlock,
-  InlineMath,
-  Markdown,
-  detectLanguage,
-} from "../src/Markdown";
+import { BlockMath, CodeBlock, InlineMath, Markdown, detectLanguage } from "../src/Markdown";
 import { MessageBubble } from "../src/MessageBubble";
-import {
-  ModelOptionList,
-  ModelSelector,
-  groupModelsByProvider,
-} from "../src/ModelSelector";
+import { ModelOptionList, ModelSelector, groupModelsByProvider } from "../src/ModelSelector";
 import { TaskCreateForm } from "../src/TaskCreateForm";
 import { TaskDetail } from "../src/TaskDetail";
 import { TaskList } from "../src/TaskList";
@@ -177,8 +167,7 @@ describe("types helpers", () => {
     expect(items).toHaveLength(4);
     expect(items[0]).toEqual({ kind: "text", text: "Listing files" });
     const [, a, b, c] = items;
-    if (a.kind !== "tool" || b.kind !== "tool" || c.kind !== "tool")
-      throw new Error("expected tools");
+    if (a.kind !== "tool" || b.kind !== "tool" || c.kind !== "tool") throw new Error("expected tools");
     expect(a.pair.status).toBe("completed");
     expect(a.pair.args).toEqual({ path: "README.md" });
     expect(a.pair.result).toEqual({ text: "x" });
@@ -255,9 +244,7 @@ describe("Markdown", () => {
     expect(html).toMatch(/<h3 class="[^"]*text-title-medium/);
     expect(html).toMatch(/<p class="[^"]*text-body-medium/);
     expect(html).toMatch(/<a class="[^"]*text-primary underline/);
-    expect(html).toMatch(
-      /<blockquote class="[^"]*border-l-4 border-outline-variant/,
-    );
+    expect(html).toMatch(/<blockquote class="[^"]*border-l-4 border-outline-variant/);
     expect(html).toMatch(
       /<pre class="[^"]*font-code[^"]*bg-surface-container-highest|<pre class="[^"]*bg-surface-container-highest[^"]*font-code/,
     );
@@ -272,12 +259,8 @@ describe("Markdown", () => {
   });
 
   test("raw HTML is escaped unless allowHtml", () => {
-    expect(
-      render(<Markdown content={'<span class="x">raw</span>'} />),
-    ).not.toContain('<span class="x">');
-    expect(
-      render(<Markdown content={'<span class="x">raw</span>'} allowHtml />),
-    ).toContain('<span class="x">');
+    expect(render(<Markdown content={'<span class="x">raw</span>'} />)).not.toContain('<span class="x">');
+    expect(render(<Markdown content={'<span class="x">raw</span>'} allowHtml />)).toContain('<span class="x">');
   });
 });
 
@@ -291,9 +274,7 @@ describe("CodeBlock", () => {
     expect(detectLanguage("sql").label).toBe("SQL");
     expect(detectLanguage("").label).toBe("Code");
 
-    const html = render(
-      <CodeBlock code="const x = 1;" language="typescript" />,
-    );
+    const html = render(<CodeBlock code="const x = 1;" language="typescript" />);
     expect(html).toContain("TypeScript");
     expect(html).toContain("content_copy");
     expect(html).toContain("Copy");
@@ -329,9 +310,7 @@ describe("CodeBlock", () => {
     const root = createRoot(host);
 
     flushSync(() => {
-      root.render(
-        <CodeBlock code={"npm install @aphrody/m3-ai\n"} language="bash" />,
-      );
+      root.render(<CodeBlock code={"npm install @aphrody/m3-ai\n"} language="bash" />);
     });
 
     expect(host.textContent).toContain("Bash");
@@ -342,7 +321,7 @@ describe("CodeBlock", () => {
     flushSync(() => {
       copyBtn.click();
     });
-    await new Promise((r) => setTimeout(r, 10));
+    await new Promise(r => setTimeout(r, 10));
     flushSync(() => {});
 
     expect(copiedText).toBe("npm install @aphrody/m3-ai");
@@ -351,7 +330,7 @@ describe("CodeBlock", () => {
     expect(host.innerHTML).toContain("text-success");
 
     // Wait for timeout to reset back
-    await new Promise((r) => setTimeout(r, 2100));
+    await new Promise(r => setTimeout(r, 2100));
     flushSync(() => {});
     expect(host.textContent).toContain("Copy");
     expect(host.innerHTML).toContain("content_copy");
@@ -371,16 +350,14 @@ describe("Math formula styling", () => {
   });
 
   test("formats Greek letters into Unicode glyphs", () => {
-    const md =
-      "Greek: $\\alpha, \\beta, \\gamma, \\pi, \\sigma, \\theta, \\lambda, \\Delta$";
+    const md = "Greek: $\\alpha, \\beta, \\gamma, \\pi, \\sigma, \\theta, \\lambda, \\Delta$";
     const html = render(<Markdown content={md} />);
     expect(html).toContain("font-serif italic font-medium text-primary");
     expect(html).toContain("α, β, γ, π, σ, θ, λ, Δ");
   });
 
   test("formats common mathematical operators", () => {
-    const md =
-      "Operators: $a \\times b \\div c \\pm d \\le e \\ge f \\approx g \\neq h \\le \\infty$";
+    const md = "Operators: $a \\times b \\div c \\pm d \\le e \\ge f \\approx g \\neq h \\le \\infty$";
     const html = render(<Markdown content={md} />);
     expect(html).toContain("×");
     expect(html).toContain("÷");
@@ -449,9 +426,7 @@ describe("MessageBubble", () => {
   });
 
   test("assistant turn is markdown on the surface with a copy action", () => {
-    const html = render(
-      <MessageBubble content="**Bold** reply" isUser={false} onCopy={noop} />,
-    );
+    const html = render(<MessageBubble content="**Bold** reply" isUser={false} onCopy={noop} />);
     expect(html).toContain("text-on-surface");
     expect(html).toContain("<strong");
     expect(html).toContain("content_copy");
@@ -488,32 +463,20 @@ describe("ChatComposer", () => {
   });
 
   test("shows stop while sending when onStop is given", () => {
-    const html = render(
-      <ChatComposer
-        draft="Hello"
-        onDraftChange={noop}
-        onSend={noop}
-        isSending
-        onStop={noop}
-      />,
-    );
+    const html = render(<ChatComposer draft="Hello" onDraftChange={noop} onSend={noop} isSending onStop={noop} />);
     expect(html).toContain('aria-label="Stop"');
     expect(html).not.toContain('aria-label="Send"');
   });
 
   test("hides send on an empty draft", () => {
-    const html = render(
-      <ChatComposer draft="  " onDraftChange={noop} onSend={noop} />,
-    );
+    const html = render(<ChatComposer draft="  " onDraftChange={noop} onSend={noop} />);
     expect(html).not.toContain('aria-label="Send"');
   });
 });
 
 describe("ModelSelector", () => {
   test("trigger shows the selected model", () => {
-    const html = render(
-      <ModelSelector models={models} value="gemini-pro" onChange={noop} />,
-    );
+    const html = render(<ModelSelector models={models} value="gemini-pro" onChange={noop} />);
     expect(html).toContain("Gemini Pro");
     expect(html).toContain("expand_more");
   });
@@ -522,37 +485,25 @@ describe("ModelSelector", () => {
     const grouped = groupModelsByProvider(models);
     expect(Object.keys(grouped)).toEqual(["Anthropic", "Google"]);
     expect(grouped.Google).toHaveLength(2);
-    expect(Object.keys(groupModelsByProvider(models, "flash"))).toEqual([
-      "Google",
-    ]);
-    expect(groupModelsByProvider(models, "anthropic").Anthropic).toHaveLength(
-      1,
-    );
+    expect(Object.keys(groupModelsByProvider(models, "flash"))).toEqual(["Google"]);
+    expect(groupModelsByProvider(models, "anthropic").Anthropic).toHaveLength(1);
   });
 
   test("option list is an M3 menu list", () => {
     const html = render(
-      <ModelOptionList
-        grouped={groupModelsByProvider(models)}
-        value="claude-opus"
-        onSelect={noop}
-      />,
+      <ModelOptionList grouped={groupModelsByProvider(models)} value="claude-opus" onSelect={noop} />,
     );
     expect(html).toContain("text-title-small");
     expect(html).toContain("text-label-large");
     expect(html).toContain("bg-secondary-container");
     expect(html).toContain('aria-selected="true"');
     expect(html).toMatch(/200\D000 tokens/);
-    expect(html).toMatch(
-      /rounded-small border border-outline-variant[^"]*text-label-small/,
-    );
+    expect(html).toMatch(/rounded-small border border-outline-variant[^"]*text-label-small/);
     expect(html).toContain("vision");
   });
 
   test("empty option list says so", () => {
-    expect(
-      render(<ModelOptionList grouped={{}} value="" onSelect={noop} />),
-    ).toContain("No models found");
+    expect(render(<ModelOptionList grouped={{}} value="" onSelect={noop} />)).toContain("No models found");
   });
 });
 
@@ -600,13 +551,7 @@ describe("Inline cards", () => {
 
   test("expanded worker card renders the transcript", () => {
     const html = render(
-      <InlineWorkerCard
-        title="Done"
-        status="completed"
-        toolCallCount={1}
-        transcript={transcript}
-        defaultExpanded
-      />,
+      <InlineWorkerCard title="Done" status="completed" toolCallCount={1} transcript={transcript} defaultExpanded />,
     );
     expect(html).toContain("bg-success-container");
     expect(html).toContain("text-body-small");
@@ -616,9 +561,7 @@ describe("Inline cards", () => {
   });
 
   test("branch card: thinking then done with conclusion", () => {
-    const running = render(
-      <InlineBranchCard description="Compare options" completedAt={null} />,
-    );
+    const running = render(<InlineBranchCard description="Compare options" completedAt={null} />);
     expect(running).toContain('role="progressbar"');
     expect(running).toContain("thinking");
     expect(running).toContain("bg-primary-container");
@@ -642,38 +585,19 @@ describe("Task components", () => {
     const done = render(<TaskStatusIcon status="done" />);
     expect(done).toContain("check_circle");
     expect(done).toContain("text-success");
-    expect(render(<TaskStatusIcon status="in_progress" />)).toContain(
-      "text-primary",
-    );
-    expect(render(<TaskStatusIcon status="backlog" />)).toContain(
-      "text-outline",
-    );
-    expect(render(<TaskStatusIcon status="pending_approval" />)).toContain(
-      "text-warning",
-    );
+    expect(render(<TaskStatusIcon status="in_progress" />)).toContain("text-primary");
+    expect(render(<TaskStatusIcon status="backlog" />)).toContain("text-outline");
+    expect(render(<TaskStatusIcon status="pending_approval" />)).toContain("text-warning");
 
-    expect(render(<TaskPriorityIcon priority="critical" />)).toContain(
-      "text-error",
-    );
-    expect(render(<TaskPriorityIcon priority="high" />)).toContain(
-      "text-warning",
-    );
-    expect(render(<TaskPriorityIcon priority="medium" />)).toContain(
-      "text-primary",
-    );
-    expect(render(<TaskPriorityIcon priority="low" />)).toContain(
-      "text-outline",
-    );
+    expect(render(<TaskPriorityIcon priority="critical" />)).toContain("text-error");
+    expect(render(<TaskPriorityIcon priority="high" />)).toContain("text-warning");
+    expect(render(<TaskPriorityIcon priority="medium" />)).toContain("text-primary");
+    expect(render(<TaskPriorityIcon priority="low" />)).toContain("text-outline");
   });
 
   test("task row is an M3 list item", () => {
     const html = render(
-      <TaskRow
-        task={makeTask()}
-        onClick={noop}
-        onDelete={noop}
-        resolveAgentName={(id) => id.toUpperCase()}
-      />,
+      <TaskRow task={makeTask()} onClick={noop} onDelete={noop} resolveAgentName={id => id.toUpperCase()} />,
     );
     expect(html).toContain("text-body-large");
     expect(html).toContain("text-body-small");
@@ -704,12 +628,7 @@ describe("Task components", () => {
       }),
     ];
     const html = render(
-      <TaskList
-        tasks={tasks}
-        onTaskClick={noop}
-        collapsedGroups={new Set(["backlog"])}
-        activeTaskId="t2"
-      />,
+      <TaskList tasks={tasks} onTaskClick={noop} collapsedGroups={new Set(["backlog"])} activeTaskId="t2" />,
     );
     expect(html).toContain("text-title-small");
     expect(html).toContain("In Progress");
@@ -722,13 +641,7 @@ describe("Task components", () => {
 
   test("task detail uses M3 headline, lists and buttons", () => {
     const html = render(
-      <TaskDetail
-        task={makeTask()}
-        onStatusChange={noop}
-        onDelete={noop}
-        onClose={noop}
-        onSubtaskToggle={noop}
-      />,
+      <TaskDetail task={makeTask()} onStatusChange={noop} onDelete={noop} onClose={noop} onSubtaskToggle={noop} />,
     );
     expect(html).toMatch(/<h2 class="[^"]*text-headline-small/);
     expect(html).toContain("Subtasks");
@@ -742,9 +655,7 @@ describe("Task components", () => {
   });
 
   test("task detail without handlers shows static properties", () => {
-    const html = render(
-      <TaskDetail task={makeTask({ description: null, status: "backlog" })} />,
-    );
+    const html = render(<TaskDetail task={makeTask({ description: null, status: "backlog" })} />);
     expect(html).toContain("Backlog");
     expect(html).toContain("No description");
     expect(html).not.toContain("Mark Done");

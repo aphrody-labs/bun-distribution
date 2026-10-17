@@ -14,8 +14,8 @@ import { TimelineBar } from "../Timeline";
 //             since videos are large) via producedArtifact.
 export const RecordControls = () => {
   const editor = useContext(EngineContext);
-  const timelineExists = usePageSceneStore((s) => s.timelineExists);
-  const recordingProgress = usePageSceneStore((s) => s.recordingProgress);
+  const timelineExists = usePageSceneStore(s => s.timelineExists);
+  const recordingProgress = usePageSceneStore(s => s.recordingProgress);
 
   const busy = recordingProgress !== null;
 
@@ -37,11 +37,7 @@ export const RecordControls = () => {
           Capture
         </button>
         <Tooltip
-          content={
-            timelineExists
-              ? "Render the timeline to video"
-              : "Add an animation timeline first"
-          }
+          content={timelineExists ? "Render the timeline to video" : "Add an animation timeline first"}
           position="top"
           delay={200}
         >

@@ -28,10 +28,7 @@ export const system = {
   stats(): SystemStats {
     return sharedRuntime().systemStats();
   },
-  bench(
-    iterations: number,
-    options?: { signal?: AbortSignal },
-  ): Promise<BenchmarkResult> {
+  bench(iterations: number, options?: { signal?: AbortSignal }): Promise<BenchmarkResult> {
     return sharedRuntime().benchmark(iterations, options);
   },
   info(): BuildInfo {
@@ -45,12 +42,7 @@ export const processes = {
   spawn(options: SpawnOptions): ManagedProcess {
     return sharedRuntime().spawn(options);
   },
-  probeHttp(
-    host: string,
-    port: number,
-    path = "/",
-    timeoutMs = 500,
-  ): Promise<number | undefined> {
+  probeHttp(host: string, port: number, path = "/", timeoutMs = 500): Promise<number | undefined> {
     return sharedRuntime().probeHttp(host, port, path, timeoutMs);
   },
 };

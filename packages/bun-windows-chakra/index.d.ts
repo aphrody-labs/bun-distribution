@@ -39,7 +39,12 @@ interface Functions {
   /** chakra.dll!JsCreateReferenceError */
   JsCreateReferenceError(message: Win32Pointer, error: Win32Pointer): number;
   /** chakra.dll!JsCreateRuntime */
-  JsCreateRuntime(attributes: number, runtimeVersion: number, threadService: Win32Callback, runtime: Win32Pointer): number;
+  JsCreateRuntime(
+    attributes: number,
+    runtimeVersion: number,
+    threadService: Win32Callback,
+    runtime: Win32Pointer,
+  ): number;
   /** chakra.dll!JsCreateSyntaxError */
   JsCreateSyntaxError(message: Win32Pointer, error: Win32Pointer): number;
   /** chakra.dll!JsCreateTypeError */
@@ -47,11 +52,21 @@ interface Functions {
   /** chakra.dll!JsCreateURIError */
   JsCreateURIError(message: Win32Pointer, error: Win32Pointer): number;
   /** chakra.dll!JsDefineProperty */
-  JsDefineProperty(object: Win32Pointer, propertyId: Win32Pointer, propertyDescriptor: Win32Pointer, result: Win32Pointer): number;
+  JsDefineProperty(
+    object: Win32Pointer,
+    propertyId: Win32Pointer,
+    propertyDescriptor: Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** chakra.dll!JsDeleteIndexedProperty */
   JsDeleteIndexedProperty(object: Win32Pointer, index: Win32Pointer): number;
   /** chakra.dll!JsDeleteProperty */
-  JsDeleteProperty(object: Win32Pointer, propertyId: Win32Pointer, useStrictRules: number, result: Win32Pointer): number;
+  JsDeleteProperty(
+    object: Win32Pointer,
+    propertyId: Win32Pointer,
+    useStrictRules: number,
+    result: Win32Pointer,
+  ): number;
   /** chakra.dll!JsDisableRuntimeExecution */
   JsDisableRuntimeExecution(runtime: Win32Pointer): number;
   /** chakra.dll!JsDisposeRuntime */
@@ -125,9 +140,20 @@ interface Functions {
   /** chakra.dll!JsNumberToDouble */
   JsNumberToDouble(value: Win32Pointer, doubleValue: Win32Pointer): number;
   /** chakra.dll!JsParseScript */
-  JsParseScript(script: string | Win32Pointer, sourceContext: number | bigint, sourceUrl: string | Win32Pointer, result: Win32Pointer): number;
+  JsParseScript(
+    script: string | Win32Pointer,
+    sourceContext: number | bigint,
+    sourceUrl: string | Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** chakra.dll!JsParseSerializedScript */
-  JsParseSerializedScript(script: string | Win32Pointer, buffer: Win32Pointer, sourceContext: number | bigint, sourceUrl: string | Win32Pointer, result: Win32Pointer): number;
+  JsParseSerializedScript(
+    script: string | Win32Pointer,
+    buffer: Win32Pointer,
+    sourceContext: number | bigint,
+    sourceUrl: string | Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** chakra.dll!JsPointerToString */
   JsPointerToString(stringValue: string | Win32Pointer, stringLength: number | bigint, value: Win32Pointer): number;
   /** chakra.dll!JsPreventExtension */
@@ -135,9 +161,20 @@ interface Functions {
   /** chakra.dll!JsRelease */
   JsRelease(ref: Win32Pointer, count: Win32Pointer): number;
   /** chakra.dll!JsRunScript */
-  JsRunScript(script: string | Win32Pointer, sourceContext: number | bigint, sourceUrl: string | Win32Pointer, result: Win32Pointer): number;
+  JsRunScript(
+    script: string | Win32Pointer,
+    sourceContext: number | bigint,
+    sourceUrl: string | Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** chakra.dll!JsRunSerializedScript */
-  JsRunSerializedScript(script: string | Win32Pointer, buffer: Win32Pointer, sourceContext: number | bigint, sourceUrl: string | Win32Pointer, result: Win32Pointer): number;
+  JsRunSerializedScript(
+    script: string | Win32Pointer,
+    buffer: Win32Pointer,
+    sourceContext: number | bigint,
+    sourceUrl: string | Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** chakra.dll!JsSerializeScript */
   JsSerializeScript(script: string | Win32Pointer, buffer: Win32Pointer, bufferSize: Win32Pointer): number;
   /** chakra.dll!JsSetCurrentContext */
@@ -153,9 +190,17 @@ interface Functions {
   /** chakra.dll!JsSetPrototype */
   JsSetPrototype(object: Win32Pointer, prototypeObject: Win32Pointer): number;
   /** chakra.dll!JsSetRuntimeBeforeCollectCallback */
-  JsSetRuntimeBeforeCollectCallback(runtime: Win32Pointer, callbackState: Win32Pointer, beforeCollectCallback: Win32Callback): number;
+  JsSetRuntimeBeforeCollectCallback(
+    runtime: Win32Pointer,
+    callbackState: Win32Pointer,
+    beforeCollectCallback: Win32Callback,
+  ): number;
   /** chakra.dll!JsSetRuntimeMemoryAllocationCallback */
-  JsSetRuntimeMemoryAllocationCallback(runtime: Win32Pointer, callbackState: Win32Pointer, allocationCallback: Win32Callback): number;
+  JsSetRuntimeMemoryAllocationCallback(
+    runtime: Win32Pointer,
+    callbackState: Win32Pointer,
+    allocationCallback: Win32Callback,
+  ): number;
   /** chakra.dll!JsSetRuntimeMemoryLimit */
   JsSetRuntimeMemoryLimit(runtime: Win32Pointer, memoryLimit: number | bigint): number;
   /** chakra.dll!JsStartDebugging */

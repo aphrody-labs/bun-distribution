@@ -5,18 +5,14 @@ export const THUMBNAIL_SIZES = {
   EXTRA_LARGE: 1024,
 } as const;
 
-export type ThumbnailSize =
-  (typeof THUMBNAIL_SIZES)[keyof typeof THUMBNAIL_SIZES];
+export type ThumbnailSize = (typeof THUMBNAIL_SIZES)[keyof typeof THUMBNAIL_SIZES];
 
 interface ThumbnailOptions {
   width?: ThumbnailSize | number;
   addCors?: boolean;
 }
 
-export function getThumbnailUrl(
-  urlTemplate: string | null | undefined,
-  options: ThumbnailOptions = {},
-): string | null {
+export function getThumbnailUrl(urlTemplate: string | null | undefined, options: ThumbnailOptions = {}): string | null {
   if (!urlTemplate) return null;
 
   const { width = THUMBNAIL_SIZES.MEDIUM, addCors = false } = options;
@@ -136,14 +132,10 @@ export function getContextImageThumbnail(
   const fullSizeWidth = THUMBNAIL_SIZES.EXTRA_LARGE;
 
   // For video refs, prefer the still-frame preview over the raw video CDN URL.
-  if (
-    !contextImage.media_links.maybe_thumbnail_template &&
-    contextImage.media_links.maybe_video_previews
-  ) {
+  if (!contextImage.media_links.maybe_thumbnail_template && contextImage.media_links.maybe_video_previews) {
     const vp = contextImage.media_links.maybe_video_previews;
     const thumbnail = vp.still_thumbnail_template
-      ? getThumbnailUrl(vp.still_thumbnail_template, { width: size }) ||
-        vp.still
+      ? getThumbnailUrl(vp.still_thumbnail_template, { width: size }) || vp.still
       : vp.still;
     const fullSize = vp.still_thumbnail_template
       ? getThumbnailUrl(vp.still_thumbnail_template, {
@@ -183,14 +175,7 @@ export function getPlaceholderForMediaClass(mediaClass?: string): string {
 }
 
 // File extensions for actual 3D-model assets (meshes + gaussian splats).
-export const MODEL_3D_EXTENSIONS = [
-  ".glb",
-  ".gltf",
-  ".fbx",
-  ".spz",
-  ".obj",
-  ".ply",
-];
+export const MODEL_3D_EXTENSIONS = [".glb", ".gltf", ".fbx", ".spz", ".obj", ".ply"];
 
 /** Whether a URL points at a real 3D-model asset (vs. e.g. a cover screenshot).
  *  Used to keep 3D-model cover images — which the backend can surface as
@@ -199,5 +184,5 @@ export const MODEL_3D_EXTENSIONS = [
 export function is3DModelUrl(url: string | null | undefined): boolean {
   if (!url) return false;
   const lower = url.toLowerCase();
-  return MODEL_3D_EXTENSIONS.some((ext) => lower.includes(ext));
+  return MODEL_3D_EXTENSIONS.some(ext => lower.includes(ext));
 }

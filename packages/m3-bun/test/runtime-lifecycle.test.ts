@@ -9,10 +9,7 @@ afterAll(cleanup);
 
 test("stopping a launched process is safe concurrently and after completion", async () => {
   const file = join(tmp(), "server.ts");
-  writeFileSync(
-    file,
-    'Bun.serve({port:Number(Bun.env.PORT),fetch:()=>new Response("ok")});\n',
-  );
+  writeFileSync(file, 'Bun.serve({port:Number(Bun.env.PORT),fetch:()=>new Response("ok")});\n');
   const port = freePort();
   const child = await launch(process.execPath, {
     args: [file],
@@ -29,10 +26,7 @@ test("cancelling startup stops and joins the spawned process", async () => {
   const dir = tmp();
   const file = join(dir, "idle.ts");
   const marker = join(dir, "pid");
-  writeFileSync(
-    file,
-    `await Bun.write(${JSON.stringify(marker)},String(process.pid));setInterval(()=>{},1000);\n`,
-  );
+  writeFileSync(file, `await Bun.write(${JSON.stringify(marker)},String(process.pid));setInterval(()=>{},1000);\n`);
   const controller = new AbortController();
   const reason = new Error("cancelled startup");
   const pending = launch(process.execPath, {
@@ -55,13 +49,7 @@ test("cancelling startup stops and joins the spawned process", async () => {
 }, 15_000);
 
 test("invalid readiness inputs fail before spawning a process", async () => {
-  await expect(launch("does-not-exist", { port: 0 })).rejects.toThrow(
-    "invalid readiness port",
-  );
-  await expect(
-    launch("does-not-exist", { port: 4000, path: "//other/health" }),
-  ).rejects.toThrow("absolute path");
-  await expect(
-    launch("does-not-exist", { port: 4000, timeoutMs: 0 }),
-  ).rejects.toThrow("positive");
+  await expect(launch("does-not-exist", { port: 0 })).rejects.toThrow("invalid readiness port");
+  await expect(launch("does-not-exist", { port: 4000, path: "//other/health" })).rejects.toThrow("absolute path");
+  await expect(launch("does-not-exist", { port: 4000, timeoutMs: 0 })).rejects.toThrow("positive");
 });

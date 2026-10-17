@@ -11,13 +11,7 @@ import { isTypableDOMElement } from "../utils/browser";
  */
 export function useKeybindingsListener() {
   const editor = useEditor();
-  const {
-    keybindings,
-    getKeybindingString,
-    overlayDepth,
-    isLoadingProject,
-    isRecording,
-  } = useKeybindingsStore();
+  const { keybindings, getKeybindingString, overlayDepth, isLoadingProject, isRecording } = useKeybindingsStore();
 
   useEffect(() => {
     const eventOptions: AddEventListenerOptions = { capture: true };
@@ -30,9 +24,7 @@ export function useKeybindingsListener() {
 
       const binding = getKeybindingString(ev);
       const activeElement = document.activeElement;
-      const isTextInput =
-        activeElement instanceof HTMLElement &&
-        isTypableDOMElement({ element: activeElement });
+      const isTextInput = activeElement instanceof HTMLElement && isTypableDOMElement({ element: activeElement });
       const boundAction = binding ? keybindings.get(binding) : undefined;
 
       if (normalizedKey === "escape" && isTextInput) {
@@ -76,12 +68,5 @@ export function useKeybindingsListener() {
     return () => {
       document.removeEventListener("keydown", handleKeyDown, eventOptions);
     };
-  }, [
-    keybindings,
-    getKeybindingString,
-    overlayDepth,
-    isLoadingProject,
-    isRecording,
-    editor,
-  ]);
+  }, [keybindings, getKeybindingString, overlayDepth, isLoadingProject, isRecording, editor]);
 }

@@ -1,20 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import {
-  useLibraryQuery,
-  useLibraryMutation,
-} from "../../contexts/SpacedriveContext";
+import { useLibraryQuery, useLibraryMutation } from "../../contexts/SpacedriveContext";
 import { useTabManager } from "../../components/TabManager/useTabManager";
 import { TopBarPortal, TopBarItem } from "../../TopBar";
-import {
-  Button,
-  CircleButton,
-  Icon,
-  Popover,
-  m3FocusRing,
-  usePopover,
-} from "@aphrody/m3-primitives";
+import { Button, CircleButton, Icon, Popover, m3FocusRing, usePopover } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 
 /** M3 menu item, dense (desktop density step). */
@@ -91,9 +81,7 @@ export function SourceDetail() {
   const deleteMutation = useLibraryMutation("sources.delete");
   const updateMutation = useLibraryMutation("adapters.update");
 
-  const adapterHasUpdate =
-    adapters?.find((a) => a.id === source?.adapter_id)?.update_available ??
-    false;
+  const adapterHasUpdate = adapters?.find(a => a.id === source?.adapter_id)?.update_available ?? false;
 
   // Sync tab title with source name
   const { activeTabId, updateTabTitle } = useTabManager();
@@ -108,7 +96,7 @@ export function SourceDetail() {
     if (!searchValue.trim()) return allItems;
     const q = searchValue.toLowerCase();
     return allItems.filter(
-      (item) =>
+      item =>
         item.title.toLowerCase().includes(q) ||
         item.subtitle?.toLowerCase().includes(q) ||
         item.preview?.toLowerCase().includes(q),
@@ -146,16 +134,15 @@ export function SourceDetail() {
 
   useEffect(() => {
     if (nextPage && loadingMore) {
-      setAllItems((prev) => [...prev, ...nextPage]);
-      setOffset((prev) => prev + nextPage.length);
+      setAllItems(prev => [...prev, ...nextPage]);
+      setOffset(prev => prev + nextPage.length);
       setHasMore(nextPage.length >= PAGE_SIZE);
       setLoadingMore(false);
     }
   }, [nextPage, loadingMore]);
 
   // Trigger load more when virtualizer reaches near the end
-  const lastVirtualItem =
-    virtualizer.getVirtualItems()[virtualizer.getVirtualItems().length - 1];
+  const lastVirtualItem = virtualizer.getVirtualItems()[virtualizer.getVirtualItems().length - 1];
   const lastVirtualIndex = lastVirtualItem?.index;
 
   useEffect(() => {
@@ -168,13 +155,7 @@ export function SourceDetail() {
     ) {
       setLoadingMore(true);
     }
-  }, [
-    lastVirtualIndex,
-    filteredItems.length,
-    hasMore,
-    loadingMore,
-    searchValue,
-  ]);
+  }, [lastVirtualIndex, filteredItems.length, hasMore, loadingMore, searchValue]);
 
   if (isLoading) {
     return (
@@ -202,17 +183,10 @@ export function SourceDetail() {
         left={
           <>
             <TopBarItem id="back" label="Back" priority="high">
-              <CircleButton
-                icon="arrow_back"
-                onClick={() => navigate("/sources")}
-                title="Back"
-              />
+              <CircleButton icon="arrow_back" onClick={() => navigate("/sources")} title="Back" />
             </TopBarItem>
             <TopBarItem id="source-path" label="Path" priority="high">
-              <SourcePathBar
-                sourceName={source.name}
-                itemCount={source.item_count}
-              />
+              <SourcePathBar sourceName={source.name} itemCount={source.item_count} />
             </TopBarItem>
           </>
         }
@@ -260,27 +234,20 @@ export function SourceDetail() {
           {updateMutation.data && (
             <div className="bg-primary-container rounded-small p-3">
               <p className="text-on-primary-container text-body-small">
-                Updated {updateMutation.data.adapter_id}: v
-                {updateMutation.data.old_version} &rarr; v
+                Updated {updateMutation.data.adapter_id}: v{updateMutation.data.old_version} &rarr; v
                 {updateMutation.data.new_version}
-                {updateMutation.data.schema_changed
-                  ? " (schema changed — will migrate on next sync)"
-                  : ""}
+                {updateMutation.data.schema_changed ? " (schema changed — will migrate on next sync)" : ""}
               </p>
             </div>
           )}
           {updateMutation.error && (
             <div className="rounded-small bg-error-container p-3">
-              <p className="text-body-small text-on-error-container">
-                Update failed: {String(updateMutation.error)}
-              </p>
+              <p className="text-body-small text-on-error-container">Update failed: {String(updateMutation.error)}</p>
             </div>
           )}
           {syncMutation.error && (
             <div className="rounded-small bg-error-container p-3">
-              <p className="text-body-small text-on-error-container">
-                Sync failed: {String(syncMutation.error)}
-              </p>
+              <p className="text-body-small text-on-error-container">Sync failed: {String(syncMutation.error)}</p>
             </div>
           )}
         </div>
@@ -289,16 +256,12 @@ export function SourceDetail() {
       {/* Virtualized items list */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {itemsLoading && (
-          <div className="text-on-surface-variant py-12 text-center text-body-medium">
-            Loading items...
-          </div>
+          <div className="text-on-surface-variant py-12 text-center text-body-medium">Loading items...</div>
         )}
 
         {!itemsLoading && filteredItems.length === 0 && (
           <div className="text-on-surface-variant py-12 text-center text-body-medium">
-            {searchValue
-              ? "No matching items"
-              : "No items yet. Run a sync to populate."}
+            {searchValue ? "No matching items" : "No items yet. Run a sync to populate."}
           </div>
         )}
 
@@ -309,7 +272,7 @@ export function SourceDetail() {
               position: "relative",
             }}
           >
-            {virtualizer.getVirtualItems().map((virtualRow) => {
+            {virtualizer.getVirtualItems().map(virtualRow => {
               const item = filteredItems[virtualRow.index];
               if (!item) return null;
               return (
@@ -324,41 +287,25 @@ export function SourceDetail() {
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
-                  <SourceDataRow
-                    title={item.title}
-                    preview={item.preview}
-                    subtitle={item.subtitle}
-                  />
+                  <SourceDataRow title={item.title} preview={item.preview} subtitle={item.subtitle} />
                 </div>
               );
             })}
           </div>
         )}
 
-        {loadingMore && (
-          <div className="text-outline py-4 text-center text-body-small">
-            Loading more...
-          </div>
-        )}
+        {loadingMore && <div className="text-outline py-4 text-center text-body-small">Loading more...</div>}
       </div>
 
       {/* Delete confirmation */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/32">
           <div className="bg-surface-container-high w-full max-w-sm rounded-extra-large p-6 shadow-md3-3">
-            <h3 className="text-on-surface text-headline-small">
-              Delete source
-            </h3>
+            <h3 className="text-on-surface text-headline-small">Delete source</h3>
             <p className="text-on-surface-variant mt-4 text-body-medium">
-              This will permanently delete{" "}
-              <strong className="text-on-surface">{source.name}</strong> and all
-              its data.
+              This will permanently delete <strong className="text-on-surface">{source.name}</strong> and all its data.
             </p>
-            {deleteMutation.error && (
-              <p className="mt-2 text-body-small text-error">
-                {String(deleteMutation.error)}
-              </p>
-            )}
+            {deleteMutation.error && <p className="mt-2 text-body-small text-error">{String(deleteMutation.error)}</p>}
             <div className="mt-6 flex justify-end gap-2">
               <Button
                 aria-label="Cancel"

@@ -2,16 +2,7 @@
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/forms/src/Form.tsx), MIT, rebuilt on Material Design 3.
 import { Icon } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
-import {
-  Children,
-  cloneElement,
-  createContext,
-  Fragment,
-  isValidElement,
-  useContext,
-  useId,
-  useMemo,
-} from "react";
+import { Children, cloneElement, createContext, Fragment, isValidElement, useContext, useId, useMemo } from "react";
 import {
   Controller,
   FormProvider,
@@ -30,9 +21,7 @@ type FormFieldContextValue<
   name: TName;
 };
 
-const FormFieldContext = createContext<FormFieldContextValue>(
-  {} as FormFieldContextValue,
-);
+const FormFieldContext = createContext<FormFieldContextValue>({} as FormFieldContextValue);
 
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
@@ -84,32 +73,17 @@ type FormItemContextValue = {
 /** Scans the element tree of one item for a `FormDescription`; nested items and the control have their own scope. */
 function mayHaveDescription(children: React.ReactNode): boolean {
   let found = false;
-  Children.forEach(children, (child) => {
+  Children.forEach(children, child => {
     if (found || !isValidElement(child)) return;
     const type = child.type as unknown;
     if (type === FormDescription) found = true;
-    else if (
-      type === FormControl ||
-      type === FormLabel ||
-      type === FormMessage ||
-      type === FormItem
-    )
-      return;
+    else if (type === FormControl || type === FormLabel || type === FormMessage || type === FormItem) return;
     else {
       // Host elements, fragments and wrappers that receive their content as children are scanned;
       // a self-closing custom component might render a description itself.
       const inner = (child.props as { children?: React.ReactNode }).children;
-      if (
-        typeof type === "string" ||
-        type === Fragment ||
-        typeof type === "function" ||
-        typeof type === "object"
-      ) {
-        if (
-          inner === undefined
-            ? typeof type !== "string" && type !== Fragment
-            : mayHaveDescription(inner)
-        )
+      if (typeof type === "string" || type === Fragment || typeof type === "function" || typeof type === "object") {
+        if (inner === undefined ? typeof type !== "string" && type !== Fragment : mayHaveDescription(inner))
           found = true;
       } else found = true;
     }
@@ -117,32 +91,20 @@ function mayHaveDescription(children: React.ReactNode): boolean {
   return found;
 }
 
-const FormItemContext = createContext<FormItemContextValue>(
-  {} as FormItemContextValue,
-);
+const FormItemContext = createContext<FormItemContextValue>({} as FormItemContextValue);
 
 /**
  * One field: label, control, then supporting text 4px below the control (M3 text-field anatomy).
  * Set `data-disabled` to dim the label and supporting text to 38 % along with the control.
  */
-const FormItem = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => {
+const FormItem = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
   const id = useId();
   const hasDescription = mayHaveDescription(props.children);
-  const itemContext = useMemo(
-    () => ({ id, hasDescription }),
-    [id, hasDescription],
-  );
+  const itemContext = useMemo(() => ({ id, hasDescription }), [id, hasDescription]);
 
   return (
     <FormItemContext.Provider value={itemContext}>
-      <div
-        className={clsx("group/field flex flex-col gap-1", className)}
-        data-m3-component="FormItem"
-        {...props}
-      />
+      <div className={clsx("group/field flex flex-col gap-1", className)} data-m3-component="FormItem" {...props} />
     </FormItemContext.Provider>
   );
 };
@@ -157,13 +119,7 @@ interface FormLabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
   variant?: "field" | "inline";
 }
 
-const FormLabel = ({
-  className,
-  children,
-  required,
-  variant = "field",
-  ...props
-}: FormLabelProps) => {
+const FormLabel = ({ className, children, required, variant = "field", ...props }: FormLabelProps) => {
   const { error, formItemId } = useFormField();
 
   return (
@@ -193,13 +149,9 @@ interface FormControlProps {
 }
 
 const FormControl = ({ children }: FormControlProps) => {
-  const { error, formItemId, formDescriptionId, formMessageId } =
-    useFormField();
+  const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
   const { hasDescription } = useContext(FormItemContext);
-  const describedBy = [
-    hasDescription !== false ? formDescriptionId : undefined,
-    error ? formMessageId : undefined,
-  ]
+  const describedBy = [hasDescription !== false ? formDescriptionId : undefined, error ? formMessageId : undefined]
     .filter(Boolean)
     .join(" ");
 
@@ -210,11 +162,7 @@ const FormControl = ({ children }: FormControlProps) => {
   const childProps = children.props as { "aria-describedby"?: string };
   const existingDescribed = childProps["aria-describedby"];
   const mergedDescribed = Array.from(
-    new Set(
-      [existingDescribed, describedBy]
-        .filter(Boolean)
-        .flatMap((value) => value!.split(/\s+/).filter(Boolean)),
-    ),
+    new Set([existingDescribed, describedBy].filter(Boolean).flatMap(value => value!.split(/\s+/).filter(Boolean))),
   ).join(" ");
 
   return cloneElement(children, {
@@ -225,31 +173,21 @@ const FormControl = ({ children }: FormControlProps) => {
 };
 
 /** M3 supporting text. Text fields add `px-4` so it lines up with the input text. */
-const FormDescription = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLParagraphElement>) => {
+const FormDescription = ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => {
   const { formDescriptionId } = useFormField();
 
   return (
     <p
       id={formDescriptionId}
       data-m3-component="FormDescription"
-      className={clsx(
-        "text-body-small text-on-surface-variant group-data-[disabled]/field:opacity-38",
-        className,
-      )}
+      className={clsx("text-body-small text-on-surface-variant group-data-[disabled]/field:opacity-38", className)}
       {...props}
     />
   );
 };
 
 /** M3 error supporting text, with a leading `error` icon. */
-const FormMessage = ({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLParagraphElement>) => {
+const FormMessage = ({ className, children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => {
   const { error, formMessageId } = useFormField();
   const body = error ? String(error.message) : children;
 
@@ -261,10 +199,7 @@ const FormMessage = ({
     <p
       id={formMessageId}
       data-m3-component="FormMessage"
-      className={clsx(
-        "flex items-start gap-1 text-body-small text-error",
-        className,
-      )}
+      className={clsx("flex items-start gap-1 text-body-small text-error", className)}
       {...props}
     >
       <Icon name="error" size={16} className="mt-px" />
@@ -274,15 +209,7 @@ const FormMessage = ({
 };
 
 /** Label, description and error message, stacked: the text side of an inline (checkbox, switch) field. */
-const FieldText = ({
-  label,
-  description,
-  required,
-}: {
-  label?: string;
-  description?: string;
-  required?: boolean;
-}) => (
+const FieldText = ({ label, description, required }: { label?: string; description?: string; required?: boolean }) => (
   <div className="flex flex-col gap-1">
     {label && (
       <FormLabel variant="inline" required={required}>
@@ -294,15 +221,5 @@ const FieldText = ({
   </div>
 );
 
-export {
-  FieldText,
-  useFormField,
-  Form,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-  FormField,
-};
+export { FieldText, useFormField, Form, FormItem, FormLabel, FormControl, FormDescription, FormMessage, FormField };
 export type { FormLabelProps };

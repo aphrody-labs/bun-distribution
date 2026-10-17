@@ -13,7 +13,14 @@ interface Functions {
   /** icu.dll!ucal_getHostTimeZone */
   ucal_getHostTimeZone(result: Win32Pointer, resultCapacity: number, ec: Win32Pointer): number;
   /** icu.dll!ucal_getTimeZoneOffsetFromLocal */
-  ucal_getTimeZoneOffsetFromLocal(cal: Win32Pointer, nonExistingTimeOpt: number, duplicatedTimeOpt: number, rawOffset: Win32Pointer, dstOffset: Win32Pointer, status: Win32Pointer): void;
+  ucal_getTimeZoneOffsetFromLocal(
+    cal: Win32Pointer,
+    nonExistingTimeOpt: number,
+    duplicatedTimeOpt: number,
+    rawOffset: Win32Pointer,
+    dstOffset: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icu.dll!ucfpos_close */
   ucfpos_close(ucfpos: Win32Pointer): void;
   /** icu.dll!ucfpos_constrainCategory */
@@ -37,7 +44,14 @@ interface Functions {
   /** icu.dll!ucfpos_setInt64IterationContext */
   ucfpos_setInt64IterationContext(ucfpos: Win32Pointer, context: number | bigint, ec: Win32Pointer): void;
   /** icu.dll!ucfpos_setState */
-  ucfpos_setState(ucfpos: Win32Pointer, category: number, field: number, start: number, limit: number, ec: Win32Pointer): void;
+  ucfpos_setState(
+    ucfpos: Win32Pointer,
+    category: number,
+    field: number,
+    start: number,
+    limit: number,
+    ec: Win32Pointer,
+  ): void;
   /** icu.dll!ucnv_clone */
   ucnv_clone(cnv: Win32Pointer, status: Win32Pointer): number | null;
   /** icu.dll!ucol_clone */
@@ -45,13 +59,29 @@ interface Functions {
   /** icu.dll!ucpmap_get */
   ucpmap_get(map: Win32Pointer, c: number): number;
   /** icu.dll!ucpmap_getRange */
-  ucpmap_getRange(map: Win32Pointer, start: number, option: number, surrogateValue: number, filter: Win32Pointer, context: Win32Pointer, pValue: Win32Pointer): number;
+  ucpmap_getRange(
+    map: Win32Pointer,
+    start: number,
+    option: number,
+    surrogateValue: number,
+    filter: Win32Pointer,
+    context: Win32Pointer,
+    pValue: Win32Pointer,
+  ): number;
   /** icu.dll!ucptrie_close */
   ucptrie_close(trie: Win32Pointer): void;
   /** icu.dll!ucptrie_get */
   ucptrie_get(trie: Win32Pointer, c: number): number;
   /** icu.dll!ucptrie_getRange */
-  ucptrie_getRange(trie: Win32Pointer, start: number, option: number, surrogateValue: number, filter: Win32Pointer, context: Win32Pointer, pValue: Win32Pointer): number;
+  ucptrie_getRange(
+    trie: Win32Pointer,
+    start: number,
+    option: number,
+    surrogateValue: number,
+    filter: Win32Pointer,
+    context: Win32Pointer,
+    pValue: Win32Pointer,
+  ): number;
   /** icu.dll!ucptrie_getType */
   ucptrie_getType(trie: Win32Pointer): number;
   /** icu.dll!ucptrie_getValueWidth */
@@ -63,17 +93,37 @@ interface Functions {
   /** icu.dll!ucptrie_internalU8PrevIndex */
   ucptrie_internalU8PrevIndex(trie: Win32Pointer, c: number, start: Win32Pointer, src: Win32Pointer): number;
   /** icu.dll!ucptrie_openFromBinary */
-  ucptrie_openFromBinary(type: number, valueWidth: number, data: Win32Pointer, length: number, pActualLength: Win32Pointer, pErrorCode: Win32Pointer): number | null;
+  ucptrie_openFromBinary(
+    type: number,
+    valueWidth: number,
+    data: Win32Pointer,
+    length: number,
+    pActualLength: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icu.dll!ucptrie_toBinary */
   ucptrie_toBinary(trie: Win32Pointer, data: Win32Pointer, capacity: number, pErrorCode: Win32Pointer): number;
   /** icu.dll!udatpg_getDefaultHourCycle */
   udatpg_getDefaultHourCycle(dtpg: Win32Pointer, pErrorCode: Win32Pointer): number;
   /** icu.dll!udatpg_getFieldDisplayName */
-  udatpg_getFieldDisplayName(dtpg: Win32Pointer, field: number, width: number, fieldName: Win32Pointer, capacity: number, pErrorCode: Win32Pointer): number;
+  udatpg_getFieldDisplayName(
+    dtpg: Win32Pointer,
+    field: number,
+    width: number,
+    fieldName: Win32Pointer,
+    capacity: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icu.dll!udtitvfmt_closeResult */
   udtitvfmt_closeResult(uresult: Win32Pointer): void;
   /** icu.dll!udtitvfmt_formatToResult */
-  udtitvfmt_formatToResult(formatter: Win32Pointer, fromDate: number, toDate: number, result: Win32Pointer, status: Win32Pointer): void;
+  udtitvfmt_formatToResult(
+    formatter: Win32Pointer,
+    fromDate: number,
+    toDate: number,
+    result: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icu.dll!udtitvfmt_getContext */
   udtitvfmt_getContext(formatter: Win32Pointer, type: number, status: Win32Pointer): number;
   /** icu.dll!udtitvfmt_openResult */
@@ -89,7 +139,14 @@ interface Functions {
   /** icu.dll!ulistfmt_closeResult */
   ulistfmt_closeResult(uresult: Win32Pointer): void;
   /** icu.dll!ulistfmt_formatStringsToResult */
-  ulistfmt_formatStringsToResult(listfmt: Win32Pointer, strings: Win32Pointer, stringLengths: Win32Pointer, stringCount: number, uresult: Win32Pointer, status: Win32Pointer): void;
+  ulistfmt_formatStringsToResult(
+    listfmt: Win32Pointer,
+    strings: Win32Pointer,
+    stringLengths: Win32Pointer,
+    stringCount: number,
+    uresult: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icu.dll!ulistfmt_openForType */
   ulistfmt_openForType(locale: string | Win32Pointer, type: number, width: number, status: Win32Pointer): number | null;
   /** icu.dll!ulistfmt_openResult */
@@ -99,7 +156,12 @@ interface Functions {
   /** icu.dll!uloc_openAvailableByType */
   uloc_openAvailableByType(type: number, status: Win32Pointer): number | null;
   /** icu.dll!umutablecptrie_buildImmutable */
-  umutablecptrie_buildImmutable(trie: Win32Pointer, type: number, valueWidth: number, pErrorCode: Win32Pointer): number | null;
+  umutablecptrie_buildImmutable(
+    trie: Win32Pointer,
+    type: number,
+    valueWidth: number,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icu.dll!umutablecptrie_clone */
   umutablecptrie_clone(other: Win32Pointer, pErrorCode: Win32Pointer): number | null;
   /** icu.dll!umutablecptrie_close */
@@ -111,27 +173,58 @@ interface Functions {
   /** icu.dll!umutablecptrie_get */
   umutablecptrie_get(trie: Win32Pointer, c: number): number;
   /** icu.dll!umutablecptrie_getRange */
-  umutablecptrie_getRange(trie: Win32Pointer, start: number, option: number, surrogateValue: number, filter: Win32Pointer, context: Win32Pointer, pValue: Win32Pointer): number;
+  umutablecptrie_getRange(
+    trie: Win32Pointer,
+    start: number,
+    option: number,
+    surrogateValue: number,
+    filter: Win32Pointer,
+    context: Win32Pointer,
+    pValue: Win32Pointer,
+  ): number;
   /** icu.dll!umutablecptrie_open */
   umutablecptrie_open(initialValue: number, errorValue: number, pErrorCode: Win32Pointer): number | null;
   /** icu.dll!umutablecptrie_set */
   umutablecptrie_set(trie: Win32Pointer, c: number, value: number, pErrorCode: Win32Pointer): void;
   /** icu.dll!umutablecptrie_setRange */
-  umutablecptrie_setRange(trie: Win32Pointer, start: number, end: number, value: number, pErrorCode: Win32Pointer): void;
+  umutablecptrie_setRange(
+    trie: Win32Pointer,
+    start: number,
+    end: number,
+    value: number,
+    pErrorCode: Win32Pointer,
+  ): void;
   /** icu.dll!unumf_close */
   unumf_close(uformatter: Win32Pointer): void;
   /** icu.dll!unumf_closeResult */
   unumf_closeResult(uresult: Win32Pointer): void;
   /** icu.dll!unumf_formatDecimal */
-  unumf_formatDecimal(uformatter: Win32Pointer, value: string | Win32Pointer, valueLen: number, uresult: Win32Pointer, ec: Win32Pointer): void;
+  unumf_formatDecimal(
+    uformatter: Win32Pointer,
+    value: string | Win32Pointer,
+    valueLen: number,
+    uresult: Win32Pointer,
+    ec: Win32Pointer,
+  ): void;
   /** icu.dll!unumf_formatDouble */
   unumf_formatDouble(uformatter: Win32Pointer, value: number, uresult: Win32Pointer, ec: Win32Pointer): void;
   /** icu.dll!unumf_formatInt */
   unumf_formatInt(uformatter: Win32Pointer, value: number | bigint, uresult: Win32Pointer, ec: Win32Pointer): void;
   /** icu.dll!unumf_openForSkeletonAndLocale */
-  unumf_openForSkeletonAndLocale(skeleton: Win32Pointer, skeletonLen: number, locale: string | Win32Pointer, ec: Win32Pointer): number | null;
+  unumf_openForSkeletonAndLocale(
+    skeleton: Win32Pointer,
+    skeletonLen: number,
+    locale: string | Win32Pointer,
+    ec: Win32Pointer,
+  ): number | null;
   /** icu.dll!unumf_openForSkeletonAndLocaleWithError */
-  unumf_openForSkeletonAndLocaleWithError(skeleton: Win32Pointer, skeletonLen: number, locale: string | Win32Pointer, perror: Win32Pointer, ec: Win32Pointer): number | null;
+  unumf_openForSkeletonAndLocaleWithError(
+    skeleton: Win32Pointer,
+    skeletonLen: number,
+    locale: string | Win32Pointer,
+    perror: Win32Pointer,
+    ec: Win32Pointer,
+  ): number | null;
   /** icu.dll!unumf_openResult */
   unumf_openResult(ec: Win32Pointer): number | null;
   /** icu.dll!unumf_resultAsValue */
@@ -141,7 +234,12 @@ interface Functions {
   /** icu.dll!unumf_resultNextFieldPosition */
   unumf_resultNextFieldPosition(uresult: Win32Pointer, ufpos: Win32Pointer, ec: Win32Pointer): number;
   /** icu.dll!unumf_resultToDecimalNumber */
-  unumf_resultToDecimalNumber(uresult: Win32Pointer, dest: string | Win32Pointer, destCapacity: number, ec: Win32Pointer): number;
+  unumf_resultToDecimalNumber(
+    uresult: Win32Pointer,
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    ec: Win32Pointer,
+  ): number;
   /** icu.dll!unumf_resultToString */
   unumf_resultToString(uresult: Win32Pointer, buffer: Win32Pointer, bufferCapacity: number, ec: Win32Pointer): number;
   /** icu.dll!unumrf_close */
@@ -149,29 +247,79 @@ interface Functions {
   /** icu.dll!unumrf_closeResult */
   unumrf_closeResult(uresult: Win32Pointer): void;
   /** icu.dll!unumrf_formatDecimalRange */
-  unumrf_formatDecimalRange(uformatter: Win32Pointer, first: string | Win32Pointer, firstLen: number, second: string | Win32Pointer, secondLen: number, uresult: Win32Pointer, ec: Win32Pointer): void;
+  unumrf_formatDecimalRange(
+    uformatter: Win32Pointer,
+    first: string | Win32Pointer,
+    firstLen: number,
+    second: string | Win32Pointer,
+    secondLen: number,
+    uresult: Win32Pointer,
+    ec: Win32Pointer,
+  ): void;
   /** icu.dll!unumrf_formatDoubleRange */
-  unumrf_formatDoubleRange(uformatter: Win32Pointer, first: number, second: number, uresult: Win32Pointer, ec: Win32Pointer): void;
+  unumrf_formatDoubleRange(
+    uformatter: Win32Pointer,
+    first: number,
+    second: number,
+    uresult: Win32Pointer,
+    ec: Win32Pointer,
+  ): void;
   /** icu.dll!unumrf_openForSkeletonWithCollapseAndIdentityFallback */
-  unumrf_openForSkeletonWithCollapseAndIdentityFallback(skeleton: Win32Pointer, skeletonLen: number, collapse: number, identityFallback: number, locale: string | Win32Pointer, perror: Win32Pointer, ec: Win32Pointer): number | null;
+  unumrf_openForSkeletonWithCollapseAndIdentityFallback(
+    skeleton: Win32Pointer,
+    skeletonLen: number,
+    collapse: number,
+    identityFallback: number,
+    locale: string | Win32Pointer,
+    perror: Win32Pointer,
+    ec: Win32Pointer,
+  ): number | null;
   /** icu.dll!unumrf_openResult */
   unumrf_openResult(ec: Win32Pointer): number | null;
   /** icu.dll!unumrf_resultAsValue */
   unumrf_resultAsValue(uresult: Win32Pointer, ec: Win32Pointer): number | null;
   /** icu.dll!unumrf_resultGetFirstDecimalNumber */
-  unumrf_resultGetFirstDecimalNumber(uresult: Win32Pointer, dest: string | Win32Pointer, destCapacity: number, ec: Win32Pointer): number;
+  unumrf_resultGetFirstDecimalNumber(
+    uresult: Win32Pointer,
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    ec: Win32Pointer,
+  ): number;
   /** icu.dll!unumrf_resultGetIdentityResult */
   unumrf_resultGetIdentityResult(uresult: Win32Pointer, ec: Win32Pointer): number;
   /** icu.dll!unumrf_resultGetSecondDecimalNumber */
-  unumrf_resultGetSecondDecimalNumber(uresult: Win32Pointer, dest: string | Win32Pointer, destCapacity: number, ec: Win32Pointer): number;
+  unumrf_resultGetSecondDecimalNumber(
+    uresult: Win32Pointer,
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    ec: Win32Pointer,
+  ): number;
   /** icu.dll!uplrules_selectFormatted */
-  uplrules_selectFormatted(uplrules: Win32Pointer, number: Win32Pointer, keyword: Win32Pointer, capacity: number, status: Win32Pointer): number;
+  uplrules_selectFormatted(
+    uplrules: Win32Pointer,
+    number: Win32Pointer,
+    keyword: Win32Pointer,
+    capacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icu.dll!ureldatefmt_closeResult */
   ureldatefmt_closeResult(ufrdt: Win32Pointer): void;
   /** icu.dll!ureldatefmt_formatNumericToResult */
-  ureldatefmt_formatNumericToResult(reldatefmt: Win32Pointer, offset: number, unit: number, result: Win32Pointer, status: Win32Pointer): void;
+  ureldatefmt_formatNumericToResult(
+    reldatefmt: Win32Pointer,
+    offset: number,
+    unit: number,
+    result: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icu.dll!ureldatefmt_formatToResult */
-  ureldatefmt_formatToResult(reldatefmt: Win32Pointer, offset: number, unit: number, result: Win32Pointer, status: Win32Pointer): void;
+  ureldatefmt_formatToResult(
+    reldatefmt: Win32Pointer,
+    offset: number,
+    unit: number,
+    result: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icu.dll!ureldatefmt_openResult */
   ureldatefmt_openResult(ec: Win32Pointer): number | null;
   /** icu.dll!ureldatefmt_resultAsValue */

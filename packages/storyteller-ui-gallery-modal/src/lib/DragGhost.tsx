@@ -50,12 +50,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-export function DragGhost({
-  getState,
-  width = 120,
-  height = 120,
-  crossOrigin,
-}: DragGhostProps) {
+export function DragGhost({ getState, width = 120, height = 120, crossOrigin }: DragGhostProps) {
   const [, force] = useState(0);
 
   // Keep the latest getState in a ref so the rAF loop (started once) always reads
@@ -97,7 +92,7 @@ export function DragGhost({
         tiltRef.current = 0;
       }
 
-      force((n) => (n + 1) & 0xffff);
+      force(n => (n + 1) & 0xffff);
       frame = requestAnimationFrame(update);
     }
     frame = requestAnimationFrame(update);
@@ -105,17 +100,11 @@ export function DragGhost({
   }, []);
 
   const state = getState();
-  if (
-    !state ||
-    appearStartRef.current === null ||
-    typeof document === "undefined"
-  ) {
+  if (!state || appearStartRef.current === null || typeof document === "undefined") {
     return null;
   }
 
-  const appear = easeOutCubic(
-    clamp((performance.now() - appearStartRef.current) / APPEAR_MS, 0, 1),
-  );
+  const appear = easeOutCubic(clamp((performance.now() - appearStartRef.current) / APPEAR_MS, 0, 1));
   const scale = 0.62 + 0.38 * appear;
 
   return ReactDOM.createPortal(
@@ -160,20 +149,8 @@ export function DragGhost({
             </svg>
           ) : (
             <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
-              <circle
-                cx="8"
-                cy="8"
-                r="5.4"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-              />
-              <path
-                d="M4.2 4.2 11.8 11.8"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
+              <circle cx="8" cy="8" r="5.4" fill="none" stroke="white" strokeWidth="2" />
+              <path d="M4.2 4.2 11.8 11.8" stroke="white" strokeWidth="2" strokeLinecap="round" />
             </svg>
           )}
         </div>

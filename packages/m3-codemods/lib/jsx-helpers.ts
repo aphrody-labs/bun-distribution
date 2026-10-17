@@ -15,9 +15,7 @@ export function attrStringValue(src: string, attr: JsxAttr): string | null {
   if (!v) return null; // attribut booléen (ex: disabled)
   if (v.kind === "string") return v.text;
   if (v.kind === "expr") {
-    const m = /^\s*(["'])((?:\\.|(?!\1)[^\\\n])*)\1\s*$/.exec(
-      src.slice(v.exprStart, v.exprEnd),
-    );
+    const m = /^\s*(["'])((?:\\.|(?!\1)[^\\\n])*)\1\s*$/.exec(src.slice(v.exprStart, v.exprEnd));
     if (m) return m[2]!.replace(/\\(.)/g, "$1");
   }
   return null;
@@ -25,7 +23,7 @@ export function attrStringValue(src: string, attr: JsxAttr): string | null {
 
 /** Premier attribut JSX (non spread) de ce nom. */
 export function findAttr(node: JsxNode, name: string): JsxAttr | null {
-  return node.attrs.find((a) => !a.spread && a.name === name) ?? null;
+  return node.attrs.find(a => !a.spread && a.name === name) ?? null;
 }
 
 /** Retire tous les attributs de ce nom (espaces qui les précèdent compris). Retourne true si retiré. */
@@ -41,14 +39,9 @@ export function removeAttr(edits: Edits, node: JsxNode, name: string): boolean {
 }
 
 /** Renomme l'élément JSX (balises ouvrante et fermante). */
-export function renameElement(
-  edits: Edits,
-  node: JsxNode,
-  newName: string,
-): void {
+export function renameElement(edits: Edits, node: JsxNode, newName: string): void {
   edits.replace(node.nameStart, node.nameEnd, newName);
-  if (node.closeNameStart >= 0)
-    edits.replace(node.closeNameStart, node.closeNameEnd, newName);
+  if (node.closeNameStart >= 0) edits.replace(node.closeNameStart, node.closeNameEnd, newName);
 }
 
 /**
@@ -66,14 +59,10 @@ export function onChangeUsesSecondArg(src: string, attr: JsxAttr): boolean {
     if (open !== -1) params = balanced(text, open);
   } else if (text.startsWith("(")) {
     const inner = balanced(text, 0);
-    if (
-      inner !== null &&
-      /^\s*(?::[^=]*)?=>/.test(text.slice(inner.length + 2))
-    )
-      params = inner;
+    if (inner !== null && /^\s*(?::[^=]*)?=>/.test(text.slice(inner.length + 2))) params = inner;
   }
   if (params === null) return false;
-  return splitTopLevel(params).filter((p) => p.trim()).length >= 2;
+  return splitTopLevel(params).filter(p => p.trim()).length >= 2;
 }
 
 /** Contenu entre la parenthèse ouvrante à `open` et sa fermante, ou null. */
@@ -101,13 +90,7 @@ function splitTopLevel(text: string): string[] {
   for (let i = 0; i < text.length; i++) {
     const c = text[i]!;
     if (c === "(" || c === "[" || c === "{" || c === "<") depth++;
-    else if (
-      c === ")" ||
-      c === "]" ||
-      c === "}" ||
-      (c === ">" && text[i - 1] !== "=")
-    )
-      depth--;
+    else if (c === ")" || c === "]" || c === "}" || (c === ">" && text[i - 1] !== "=")) depth--;
     else if (c === "," && depth === 0) {
       parts.push(text.slice(from, i));
       from = i + 1;
@@ -140,18 +123,14 @@ export class MigrationTodos {
   flush(edits: Edits, children: JsxChildren): void {
     for (const [node, all] of this.byNode) {
       const present = markersBefore(edits.src, node);
-      const texts = all.filter((t) => !present.has(t));
+      const texts = all.filter(t => !present.has(t));
       if (texts.length === 0) continue;
-      if (node.parent)
-        children.insertBefore(node, texts.map((t) => `{/*${t}*/}`).join(""));
+      if (node.parent) children.insertBefore(node, texts.map(t => `{/*${t}*/}`).join(""));
       else {
         // Parenthèses (ou accolades pour une valeur d'attribut) : le saut de ligne après le
         // commentaire ne doit pas couper un `return` par insertion automatique de `;`.
         const [open, close] = node.attrValue ? ["{", "}"] : ["(", ")"];
-        edits.insert(
-          node.start,
-          open + texts.map((t) => `/*${t}*/\n`).join(""),
-        );
+        edits.insert(node.start, open + texts.map(t => `/*${t}*/\n`).join(""));
         edits.insert(node.end, close);
       }
     }
@@ -224,7 +203,7 @@ export class JsxChildren {
       // Un élément auto-fermant n'a pas d'enfants à imprimer (recast perd aussi ces ajouts).
       if (parent.selfClosing || parent.closeStart < 0) continue;
       edits.replace(parent.openEnd, parent.closeStart, () => {
-        let out = (this.prefix.get(parent) ?? []).map((f) => f()).join("");
+        let out = (this.prefix.get(parent) ?? []).map(f => f()).join("");
         for (const child of parent.children) {
           if (child.kind === "text") {
             out += jsxText(edits.src.slice(child.start, child.end));

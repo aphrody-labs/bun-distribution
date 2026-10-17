@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import {
-  getLocale,
-  setLocale,
-  t,
-  SUPPORTED_LOCALES,
-  getCatalog,
-} from "../src/i18n.ts";
+import { getLocale, setLocale, t, SUPPORTED_LOCALES, getCatalog } from "../src/i18n.ts";
 
 describe("M3 i18n localization contract", () => {
   test("supported locales are en and fr", () => {
@@ -55,12 +49,8 @@ describe("M3 i18n localization contract", () => {
       expect(enKeys.toSorted()).toEqual(frKeys.toSorted());
 
       for (const key of enKeys) {
-        expect((en[ns] as Record<string, string>)[key].length).toBeGreaterThan(
-          0,
-        );
-        expect((fr[ns] as Record<string, string>)[key].length).toBeGreaterThan(
-          0,
-        );
+        expect((en[ns] as Record<string, string>)[key].length).toBeGreaterThan(0);
+        expect((fr[ns] as Record<string, string>)[key].length).toBeGreaterThan(0);
       }
     }
   });

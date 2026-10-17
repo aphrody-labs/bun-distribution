@@ -16,11 +16,7 @@ interface VolumesGroupProps {
 
 // Helper to render volume status indicator
 const getVolumeIndicator = (volume: Volume) => (
-  <>
-    {!volume.is_tracked && (
-      <EyeSlash size={14} weight="bold" className="text-outline/50" />
-    )}
-  </>
+  <>{!volume.is_tracked && <EyeSlash size={14} weight="bold" className="text-outline/50" />}</>
 );
 
 // Component for individual volume items with context menu
@@ -38,7 +34,7 @@ function VolumeItem({
   const contextMenu = useVolumeContextMenu({ volume });
 
   // Look up the device by ID to get the slug (not the UUID)
-  const device = devices.find((d) => d.id === volume.device_id);
+  const device = devices.find(d => d.id === volume.device_id);
   const deviceSlug = device?.slug;
 
   return (
@@ -108,9 +104,7 @@ export function VolumesGroup({
       {!isCollapsed && (
         <div className="space-y-0.5">
           {volumes.length === 0 ? (
-            <div className="text-outline px-2 py-1 text-body-small">
-              No volumes
-            </div>
+            <div className="text-outline px-2 py-1 text-body-small">No volumes</div>
           ) : (
             volumes.map((volume: Volume, index: number) => (
               <VolumeItem

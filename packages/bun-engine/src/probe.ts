@@ -12,25 +12,17 @@ export interface ProbeResult {
 }
 
 async function commandPath(name: string): Promise<string | null> {
-  const finder =
-    process.platform === "win32"
-      ? ["where.exe", name]
-      : ["sh", "-lc", "command -v " + name];
+  const finder = process.platform === "win32" ? ["where.exe", name] : ["sh", "-lc", "command -v " + name];
   const result = Bun.spawnSync({
     cmd: finder,
     stdout: "pipe",
     stderr: "ignore",
   });
-  return result.exitCode === 0
-    ? result.stdout.toString().trim().split(/\r?\n/)[0] || null
-    : null;
+  return result.exitCode === 0 ? result.stdout.toString().trim().split(/\r?\n/)[0] || null : null;
 }
 
 export async function probeHost(): Promise<ProbeResult> {
-  const client = join(
-    resolveSteamRoot(),
-    IS_WINDOWS ? "steam.exe" : "steam.sh",
-  );
+  const client = join(resolveSteamRoot(), IS_WINDOWS ? "steam.exe" : "steam.sh");
   const steam = existsSync(client) ? client : await commandPath("steam");
   const steamcmd = findSteamcmd()?.exe ?? null;
   const vulkan = await commandPath("vulkaninfo");
@@ -55,8 +47,6 @@ export async function probeHost(): Promise<ProbeResult> {
     steamcmd,
     vulkan,
     kernel,
-    userNamespaces: (await namespaces.exists())
-      ? (await namespaces.text()).trim()
-      : null,
+    userNamespaces: (await namespaces.exists()) ? (await namespaces.text()).trim() : null,
   };
 }

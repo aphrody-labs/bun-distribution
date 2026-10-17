@@ -9,11 +9,7 @@ import {
   updateTierlistAdmin,
   type UpdateTierlistAdminInput,
 } from "@/lib/tierlists";
-import {
-  sanitizeTiers,
-  type OfficialTierlistPayload,
-  type SaveTierlistResult,
-} from "@/lib/tierlist-input";
+import { sanitizeTiers, type OfficialTierlistPayload, type SaveTierlistResult } from "@/lib/tierlist-input";
 
 /** Invalide le cache CDN/ISR de toutes les surfaces qui affichent des tier lists. */
 function revalidateTierlistSurfaces(slug?: string | null): void {
@@ -28,14 +24,11 @@ function revalidateTierlistSurfaces(slug?: string | null): void {
  * l'éditeur admin. Renvoie un résultat typé que l'éditeur (client) affiche —
  * on ne `throw`/`redirect` pas ici pour garder l'UX inline.
  */
-export async function saveOfficialTierlist(
-  input: OfficialTierlistPayload,
-): Promise<SaveTierlistResult> {
+export async function saveOfficialTierlist(input: OfficialTierlistPayload): Promise<SaveTierlistResult> {
   const me = await requireAdmin();
 
   const title = (input.title ?? "").trim();
-  if (title.length < 2)
-    return { ok: false, error: "Donne un titre à la tier list." };
+  if (title.length < 2) return { ok: false, error: "Donne un titre à la tier list." };
 
   const sane = sanitizeTiers(input.tiers);
   if (!sane)

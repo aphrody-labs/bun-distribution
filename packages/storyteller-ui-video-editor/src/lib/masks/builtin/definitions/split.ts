@@ -1,14 +1,7 @@
 import { computeFeatherUpdate } from "../../param-update";
-import type {
-  MaskDefinition,
-  MaskParamUpdateArgs,
-  SplitMaskParams,
-} from "../../types";
+import type { MaskDefinition, MaskParamUpdateArgs, SplitMaskParams } from "../../types";
 import { halfPlaneSign, lineEdgeIntersection } from "../../utils";
-import {
-  getLineMaskHandlePositions,
-  getLineMaskOverlay,
-} from "../../handle-positions";
+import { getLineMaskHandlePositions, getLineMaskOverlay } from "../../handle-positions";
 import { snapSplitMaskInteraction } from "../../snap";
 
 // Split mask — bisects the canvas with a single rotated line. The
@@ -52,26 +45,15 @@ function splitLineGeometry({
   height: number;
 }): { normalX: number; normalY: number; lineX: number; lineY: number } {
   const angleRad = (rotation * Math.PI) / 180;
-  const normalX =
-    Math.abs(Math.cos(angleRad)) < NORMAL_SNAP_EPSILON ? 0 : Math.cos(angleRad);
-  const normalY =
-    Math.abs(Math.sin(angleRad)) < NORMAL_SNAP_EPSILON ? 0 : Math.sin(angleRad);
+  const normalX = Math.abs(Math.cos(angleRad)) < NORMAL_SNAP_EPSILON ? 0 : Math.cos(angleRad);
+  const normalY = Math.abs(Math.sin(angleRad)) < NORMAL_SNAP_EPSILON ? 0 : Math.sin(angleRad);
   const lineX = width / 2 + centerX * width;
   const lineY = height / 2 + centerY * height;
   return { normalX, normalY, lineX, lineY };
 }
 
-function pointsEqual({
-  a,
-  b,
-}: {
-  a: { x: number; y: number };
-  b: { x: number; y: number };
-}): boolean {
-  return (
-    Math.abs(a.x - b.x) <= INTERSECTION_EPSILON &&
-    Math.abs(a.y - b.y) <= INTERSECTION_EPSILON
-  );
+function pointsEqual({ a, b }: { a: { x: number; y: number }; b: { x: number; y: number } }): boolean {
+  return Math.abs(a.x - b.x) <= INTERSECTION_EPSILON && Math.abs(a.y - b.y) <= INTERSECTION_EPSILON;
 }
 
 // Walks the 4 canvas edges and finds where the split line crosses each.
@@ -116,10 +98,7 @@ export function getSplitMaskStrokeSegment({
       y2,
     });
 
-    if (
-      !hit ||
-      intersections.some((point) => pointsEqual({ a: point, b: hit }))
-    ) {
+    if (!hit || intersections.some(point => pointsEqual({ a: point, b: hit }))) {
       continue;
     }
 
@@ -172,16 +151,8 @@ function computeSplitMaskParamUpdate({
   if (handleId.kind === "rotation") {
     const pivotX = bounds.cx + startParams.centerX * bounds.width;
     const pivotY = bounds.cy + startParams.centerY * bounds.height;
-    const startAngle =
-      (Math.atan2(startCanvasY - pivotY, startCanvasX - pivotX) * 180) /
-      Math.PI;
-    const currentAngle =
-      (Math.atan2(
-        startCanvasY + deltaY - pivotY,
-        startCanvasX + deltaX - pivotX,
-      ) *
-        180) /
-      Math.PI;
+    const startAngle = (Math.atan2(startCanvasY - pivotY, startCanvasX - pivotX) * 180) / Math.PI;
+    const currentAngle = (Math.atan2(startCanvasY + deltaY - pivotY, startCanvasX + deltaX - pivotX) * 180) / Math.PI;
 
     let deltaAngle = currentAngle - startAngle;
     if (deltaAngle > 180) deltaAngle -= 360;
@@ -204,13 +175,7 @@ export const splitMaskDefinition: MaskDefinition<"split"> = {
     sizeMode: "none",
   },
   interaction: {
-    getInteraction({
-      params,
-      bounds,
-      displayScale,
-      scaleX: _scaleX,
-      scaleY: _scaleY,
-    }) {
+    getInteraction({ params, bounds, displayScale, scaleX: _scaleX, scaleY: _scaleY }) {
       return {
         handles: getLineMaskHandlePositions({
           centerX: params.centerX,
@@ -367,10 +332,7 @@ export const splitMaskDefinition: MaskDefinition<"split"> = {
             }
           }
 
-          if (
-            vertices.length < 3 ||
-            polygonArea({ vertices }) < MIN_POLYGON_AREA_PX
-          ) {
+          if (vertices.length < 3 || polygonArea({ vertices }) < MIN_POLYGON_AREA_PX) {
             return new Path2D();
           }
 

@@ -29,11 +29,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     maxPromptLength: 8000,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.Square,
-    aspectRatios: [
-      CommonAspectRatio.Square,
-      CommonAspectRatio.WideThreeByTwo,
-      CommonAspectRatio.TallTwoByThree,
-    ],
+    aspectRatios: [CommonAspectRatio.Square, CommonAspectRatio.WideThreeByTwo, CommonAspectRatio.TallTwoByThree],
   }),
   new ImageModel({
     id: "midjourney",
@@ -234,11 +230,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.TallTwoByThree,
       CommonAspectRatio.TallNineBySixteen,
     ],
-    resolutions: [
-      CommonResolution.OneK,
-      CommonResolution.TwoK,
-      CommonResolution.FourK,
-    ],
+    resolutions: [CommonResolution.OneK, CommonResolution.TwoK, CommonResolution.FourK],
   }),
   new ImageModel({
     id: "nano_banana_pro",
@@ -275,11 +267,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.TallTwoByThree,
       CommonAspectRatio.TallNineBySixteen,
     ],
-    resolutions: [
-      CommonResolution.OneK,
-      CommonResolution.TwoK,
-      CommonResolution.FourK,
-    ],
+    resolutions: [CommonResolution.OneK, CommonResolution.TwoK, CommonResolution.FourK],
   }),
   new ImageModel({
     id: "gpt_image_1",
@@ -301,11 +289,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     maxPromptLength: Infinity,
     canChangeAspectRatio: true,
     defaultQuality: CommonQuality.High,
-    qualityOptions: [
-      CommonQuality.High,
-      CommonQuality.Medium,
-      CommonQuality.Low,
-    ],
+    qualityOptions: [CommonQuality.High, CommonQuality.Medium, CommonQuality.Low],
   }),
   new ImageModel({
     id: "gpt_image_1p5",
@@ -326,17 +310,9 @@ export const IMAGE_MODELS: ImageModel[] = [
     maxPromptLength: Infinity,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.Square,
-    aspectRatios: [
-      CommonAspectRatio.Square,
-      CommonAspectRatio.Wide,
-      CommonAspectRatio.Tall,
-    ],
+    aspectRatios: [CommonAspectRatio.Square, CommonAspectRatio.Wide, CommonAspectRatio.Tall],
     defaultQuality: CommonQuality.High,
-    qualityOptions: [
-      CommonQuality.High,
-      CommonQuality.Medium,
-      CommonQuality.Low,
-    ],
+    qualityOptions: [CommonQuality.High, CommonQuality.Medium, CommonQuality.Low],
   }),
   new ImageModel({
     id: "gpt_image_2",
@@ -367,11 +343,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.WideSixteenByNine,
     ],
     defaultQuality: CommonQuality.High,
-    qualityOptions: [
-      CommonQuality.High,
-      CommonQuality.Medium,
-      CommonQuality.Low,
-    ],
+    qualityOptions: [CommonQuality.High, CommonQuality.Medium, CommonQuality.Low],
   }),
   new ImageModel({
     id: "gpt_image_2p5_flare",
@@ -402,12 +374,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.WideSixteenByNine,
     ],
     canChangeResolution: true,
-    resolutions: [
-      CommonResolution.OneK,
-      CommonResolution.TwoK,
-      CommonResolution.ThreeK,
-      CommonResolution.FourK,
-    ],
+    resolutions: [CommonResolution.OneK, CommonResolution.TwoK, CommonResolution.ThreeK, CommonResolution.FourK],
     defaultResolution: CommonResolution.OneK,
     defaultQuality: CommonQuality.High,
     qualityOptions: [
@@ -448,12 +415,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.WideSixteenByNine,
     ],
     canChangeResolution: true,
-    resolutions: [
-      CommonResolution.OneK,
-      CommonResolution.TwoK,
-      CommonResolution.ThreeK,
-      CommonResolution.FourK,
-    ],
+    resolutions: [CommonResolution.OneK, CommonResolution.TwoK, CommonResolution.ThreeK, CommonResolution.FourK],
     defaultResolution: CommonResolution.OneK,
     defaultQuality: CommonQuality.High,
     qualityOptions: [
@@ -670,9 +632,7 @@ export const IMAGE_MODELS: ImageModel[] = [
   }),
 ];
 
-export const IMAGE_MODELS_BY_ID: Map<string, ImageModel> = new Map(
-  IMAGE_MODELS.map((model) => [model.id, model]),
-);
+export const IMAGE_MODELS_BY_ID: Map<string, ImageModel> = new Map(IMAGE_MODELS.map(model => [model.id, model]));
 
 if (IMAGE_MODELS_BY_ID.size !== IMAGE_MODELS.length) {
   throw new Error("All image models must have unique IDs");

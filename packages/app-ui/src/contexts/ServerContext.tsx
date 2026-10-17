@@ -1,12 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  useEffect,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useState, useEffect, type ReactNode } from "react";
 import { usePlatform } from "./PlatformContext";
 import { useClient } from "./SpacedriveContext";
 
@@ -29,12 +21,7 @@ export interface ServerContextValue {
    * Build a sidecar URL for fetching thumbnails, thumbstrips, transcripts, etc.
    * Returns null if serverUrl or libraryId is not available.
    */
-  buildSidecarUrl: (
-    contentUuid: string,
-    kind: string,
-    variant: string,
-    format: string,
-  ) => string | null;
+  buildSidecarUrl: (contentUuid: string, kind: string, variant: string, format: string) => string | null;
 }
 
 export const ServerContext = createContext<ServerContextValue | null>(null);
@@ -64,13 +51,13 @@ export function ServerProvider({ children }: ServerProviderProps) {
     if (platform.getDaemonStatus) {
       platform
         .getDaemonStatus()
-        .then((status) => {
+        .then(status => {
           if (status.server_url) {
             setServerUrl(status.server_url);
           }
           return null;
         })
-        .catch((err) => {
+        .catch(err => {
           console.warn("[ServerContext] Failed to get daemon status:", err);
         });
     }
@@ -81,7 +68,7 @@ export function ServerProvider({ children }: ServerProviderProps) {
     if (platform.getCurrentLibraryId) {
       platform
         .getCurrentLibraryId()
-        .then((id) => {
+        .then(id => {
           if (id) {
             setLibraryId(id);
           }
@@ -96,12 +83,12 @@ export function ServerProvider({ children }: ServerProviderProps) {
   // Listen for library ID changes via platform events
   useEffect(() => {
     if (platform.onLibraryIdChanged) {
-      const unlistenPromise = platform.onLibraryIdChanged((newLibraryId) => {
+      const unlistenPromise = platform.onLibraryIdChanged(newLibraryId => {
         setLibraryId(newLibraryId);
       });
 
       return () => {
-        unlistenPromise.then((unlisten) => unlisten());
+        unlistenPromise.then(unlisten => unlisten());
       };
     }
   }, [platform]);
@@ -123,7 +110,7 @@ export function ServerProvider({ children }: ServerProviderProps) {
     if (platform.onDaemonConnected && platform.getDaemonStatus) {
       const unlistenPromise = platform.onDaemonConnected(() => {
         // Re-fetch daemon status when connection established
-        platform.getDaemonStatus!().then((status) => {
+        platform.getDaemonStatus!().then(status => {
           if (status.server_url) {
             setServerUrl(status.server_url);
           }
@@ -132,18 +119,13 @@ export function ServerProvider({ children }: ServerProviderProps) {
       });
 
       return () => {
-        unlistenPromise.then((unlisten) => unlisten());
+        unlistenPromise.then(unlisten => unlisten());
       };
     }
   }, [platform]);
 
   const buildSidecarUrl = useCallback(
-    (
-      contentUuid: string,
-      kind: string,
-      variant: string,
-      format: string,
-    ): string | null => {
+    (contentUuid: string, kind: string, variant: string, format: string): string | null => {
       if (!serverUrl || !libraryId) {
         return null;
       }
@@ -162,9 +144,7 @@ export function ServerProvider({ children }: ServerProviderProps) {
     [serverUrl, libraryId, buildSidecarUrl],
   );
 
-  return (
-    <ServerContext.Provider value={value}>{children}</ServerContext.Provider>
-  );
+  return <ServerContext.Provider value={value}>{children}</ServerContext.Provider>;
 }
 
 /**
@@ -195,8 +175,7 @@ export function useServer(): ServerContextValue {
 
   if (!context) {
     throw new Error(
-      "useServer must be used within a ServerProvider. " +
-        "Make sure ServerProvider is mounted above this component.",
+      "useServer must be used within a ServerProvider. " + "Make sure ServerProvider is mounted above this component.",
     );
   }
 

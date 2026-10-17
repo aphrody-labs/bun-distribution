@@ -8,18 +8,12 @@ const react = Bun.resolveSync("react", import.meta.dir);
 plugin({
   name: "swiper-react-peer",
   setup(build) {
-    build.onLoad(
-      { filter: /\/swiper@[^/]+\/node_modules\/swiper\/swiper-react\.mjs$/ },
-      async (args) => {
-        const source = await Bun.file(args.path).text();
-        return {
-          contents: source.replace(
-            /from\s+(['"])react\1/g,
-            `from ${JSON.stringify(react)}`,
-          ),
-          loader: "js",
-        };
-      },
-    );
+    build.onLoad({ filter: /\/swiper@[^/]+\/node_modules\/swiper\/swiper-react\.mjs$/ }, async args => {
+      const source = await Bun.file(args.path).text();
+      return {
+        contents: source.replace(/from\s+(['"])react\1/g, `from ${JSON.stringify(react)}`),
+        loader: "js",
+      };
+    });
   },
 });

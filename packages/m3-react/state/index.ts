@@ -12,12 +12,7 @@
  * @packageDocumentation
  */
 
-export {
-  WebTextFieldState,
-  useTextFieldState,
-  bindTextFieldState,
-  syncFromElement,
-} from "./use-text-field-state.js";
+export { WebTextFieldState, useTextFieldState, bindTextFieldState, syncFromElement } from "./use-text-field-state.js";
 export type {
   TextFieldSelection,
   TextFieldEditBuffer,

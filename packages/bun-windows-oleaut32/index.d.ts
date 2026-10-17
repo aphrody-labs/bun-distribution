@@ -27,19 +27,48 @@ interface Functions {
   /** oleaut32.dll!CreateErrorInfo */
   CreateErrorInfo(pperrinfo: Win32Pointer): number;
   /** oleaut32.dll!CreateStdDispatch */
-  CreateStdDispatch(punkOuter: Win32Pointer, pvThis: Win32Pointer, ptinfo: Win32Pointer, ppunkStdDisp: Win32Pointer): number;
+  CreateStdDispatch(
+    punkOuter: Win32Pointer,
+    pvThis: Win32Pointer,
+    ptinfo: Win32Pointer,
+    ppunkStdDisp: Win32Pointer,
+  ): number;
   /** oleaut32.dll!CreateTypeLib */
   CreateTypeLib(syskind: number, szFile: string | Win32Pointer, ppctlib: Win32Pointer): number;
   /** oleaut32.dll!CreateTypeLib2 */
   CreateTypeLib2(syskind: number, szFile: string | Win32Pointer, ppctlib: Win32Pointer): number;
   /** oleaut32.dll!DispCallFunc */
-  DispCallFunc(pvInstance: Win32Pointer, oVft: number | bigint, cc: number, vtReturn: number, cActuals: number, prgvt: Win32Pointer, prgpvarg: Win32Pointer, pvargResult: Win32Pointer): number;
+  DispCallFunc(
+    pvInstance: Win32Pointer,
+    oVft: number | bigint,
+    cc: number,
+    vtReturn: number,
+    cActuals: number,
+    prgvt: Win32Pointer,
+    prgpvarg: Win32Pointer,
+    pvargResult: Win32Pointer,
+  ): number;
   /** oleaut32.dll!DispGetIDsOfNames */
   DispGetIDsOfNames(ptinfo: Win32Pointer, rgszNames: Win32Pointer, cNames: number, rgdispid: Win32Pointer): number;
   /** oleaut32.dll!DispGetParam */
-  DispGetParam(pdispparams: Win32Pointer, position: number, vtTarg: number, pvarResult: Win32Pointer, puArgErr: Win32Pointer): number;
+  DispGetParam(
+    pdispparams: Win32Pointer,
+    position: number,
+    vtTarg: number,
+    pvarResult: Win32Pointer,
+    puArgErr: Win32Pointer,
+  ): number;
   /** oleaut32.dll!DispInvoke */
-  DispInvoke(_this: Win32Pointer, ptinfo: Win32Pointer, dispidMember: number, wFlags: number, pparams: Win32Pointer, pvarResult: Win32Pointer, pexcepinfo: Win32Pointer, puArgErr: Win32Pointer): number;
+  DispInvoke(
+    _this: Win32Pointer,
+    ptinfo: Win32Pointer,
+    dispidMember: number,
+    wFlags: number,
+    pparams: Win32Pointer,
+    pvarResult: Win32Pointer,
+    pexcepinfo: Win32Pointer,
+    puArgErr: Win32Pointer,
+  ): number;
   /** oleaut32.dll!DosDateTimeToVariantTime */
   DosDateTimeToVariantTime(wDosDate: number, wDosTime: number, pvtime: Win32Pointer): number;
   /** oleaut32.dll!GetActiveObject */
@@ -49,7 +78,14 @@ interface Functions {
   /** oleaut32.dll!GetErrorInfo */
   GetErrorInfo(dwReserved: number, pperrinfo: Win32Pointer): number;
   /** oleaut32.dll!GetRecordInfoFromGuids */
-  GetRecordInfoFromGuids(rGuidTypeLib: Win32Pointer, uVerMajor: number, uVerMinor: number, lcid: number, rGuidTypeInfo: Win32Pointer, ppRecInfo: Win32Pointer): number;
+  GetRecordInfoFromGuids(
+    rGuidTypeLib: Win32Pointer,
+    uVerMajor: number,
+    uVerMinor: number,
+    lcid: number,
+    rGuidTypeInfo: Win32Pointer,
+    ppRecInfo: Win32Pointer,
+  ): number;
   /** oleaut32.dll!GetRecordInfoFromTypeInfo */
   GetRecordInfoFromTypeInfo(pTypeInfo: Win32Pointer, ppRecInfo: Win32Pointer): number;
   /** oleaut32.dll!LHashValOfNameSys */
@@ -87,33 +123,83 @@ interface Functions {
   /** oleaut32.dll!OleCreatePictureIndirect */
   OleCreatePictureIndirect(lpPictDesc: Win32Pointer, riid: Win32Pointer, fOwn: number, lplpvObj: Win32Pointer): number;
   /** oleaut32.dll!OleCreatePropertyFrame */
-  OleCreatePropertyFrame(hwndOwner: Win32Pointer, x: number, y: number, lpszCaption: string | Win32Pointer, cObjects: number, ppUnk: Win32Pointer, cPages: number, pPageClsID: Win32Pointer, lcid: number, dwReserved: number, pvReserved: Win32Pointer): number;
+  OleCreatePropertyFrame(
+    hwndOwner: Win32Pointer,
+    x: number,
+    y: number,
+    lpszCaption: string | Win32Pointer,
+    cObjects: number,
+    ppUnk: Win32Pointer,
+    cPages: number,
+    pPageClsID: Win32Pointer,
+    lcid: number,
+    dwReserved: number,
+    pvReserved: Win32Pointer,
+  ): number;
   /** oleaut32.dll!OleCreatePropertyFrameIndirect */
   OleCreatePropertyFrameIndirect(lpParams: Win32Pointer): number;
   /** oleaut32.dll!OleIconToCursor */
   OleIconToCursor(hinstExe: Win32Pointer, hIcon: Win32Pointer): number | null;
   /** oleaut32.dll!OleLoadPicture */
-  OleLoadPicture(lpstream: Win32Pointer, lSize: number, fRunmode: number, riid: Win32Pointer, lplpvObj: Win32Pointer): number;
+  OleLoadPicture(
+    lpstream: Win32Pointer,
+    lSize: number,
+    fRunmode: number,
+    riid: Win32Pointer,
+    lplpvObj: Win32Pointer,
+  ): number;
   /** oleaut32.dll!OleLoadPictureEx */
-  OleLoadPictureEx(lpstream: Win32Pointer, lSize: number, fRunmode: number, riid: Win32Pointer, xSizeDesired: number, ySizeDesired: number, dwFlags: number, lplpvObj: Win32Pointer): number;
+  OleLoadPictureEx(
+    lpstream: Win32Pointer,
+    lSize: number,
+    fRunmode: number,
+    riid: Win32Pointer,
+    xSizeDesired: number,
+    ySizeDesired: number,
+    dwFlags: number,
+    lplpvObj: Win32Pointer,
+  ): number;
   /** oleaut32.dll!OleLoadPictureFile */
   OleLoadPictureFile(varFileName: Win32StructInit, lplpdispPicture: Win32Pointer): number;
   /** oleaut32.dll!OleLoadPictureFileEx */
-  OleLoadPictureFileEx(varFileName: Win32StructInit, xSizeDesired: number, ySizeDesired: number, dwFlags: number, lplpdispPicture: Win32Pointer): number;
+  OleLoadPictureFileEx(
+    varFileName: Win32StructInit,
+    xSizeDesired: number,
+    ySizeDesired: number,
+    dwFlags: number,
+    lplpdispPicture: Win32Pointer,
+  ): number;
   /** oleaut32.dll!OleLoadPicturePath */
-  OleLoadPicturePath(szURLorPath: string | Win32Pointer, punkCaller: Win32Pointer, dwReserved: number, clrReserved: number, riid: Win32Pointer, ppvRet: Win32Pointer): number;
+  OleLoadPicturePath(
+    szURLorPath: string | Win32Pointer,
+    punkCaller: Win32Pointer,
+    dwReserved: number,
+    clrReserved: number,
+    riid: Win32Pointer,
+    ppvRet: Win32Pointer,
+  ): number;
   /** oleaut32.dll!OleSavePictureFile */
   OleSavePictureFile(lpdispPicture: Win32Pointer, bstrFileName: string | Win32Pointer): number;
   /** oleaut32.dll!OleTranslateColor */
   OleTranslateColor(clr: number, hpal: Win32Pointer, lpcolorref: Win32Pointer): number;
   /** oleaut32.dll!QueryPathOfRegTypeLib */
-  QueryPathOfRegTypeLib(guid: Win32Pointer, wMaj: number, wMin: number, lcid: number, lpbstrPathName: Win32Pointer): number;
+  QueryPathOfRegTypeLib(
+    guid: Win32Pointer,
+    wMaj: number,
+    wMin: number,
+    lcid: number,
+    lpbstrPathName: Win32Pointer,
+  ): number;
   /** oleaut32.dll!RegisterActiveObject */
   RegisterActiveObject(punk: Win32Pointer, rclsid: Win32Pointer, dwFlags: number, pdwRegister: Win32Pointer): number;
   /** oleaut32.dll!RegisterTypeLib */
   RegisterTypeLib(ptlib: Win32Pointer, szFullPath: string | Win32Pointer, szHelpDir: string | Win32Pointer): number;
   /** oleaut32.dll!RegisterTypeLibForUser */
-  RegisterTypeLibForUser(ptlib: Win32Pointer, szFullPath: string | Win32Pointer, szHelpDir: string | Win32Pointer): number;
+  RegisterTypeLibForUser(
+    ptlib: Win32Pointer,
+    szFullPath: string | Win32Pointer,
+    szHelpDir: string | Win32Pointer,
+  ): number;
   /** oleaut32.dll!RevokeActiveObject */
   RevokeActiveObject(dwRegister: number, pvReserved: Win32Pointer): number;
   /** oleaut32.dll!SafeArrayAccessData */
@@ -207,7 +293,13 @@ interface Functions {
   /** oleaut32.dll!UnRegisterTypeLib */
   UnRegisterTypeLib(libID: Win32Pointer, wVerMajor: number, wVerMinor: number, lcid: number, syskind: number): number;
   /** oleaut32.dll!UnRegisterTypeLibForUser */
-  UnRegisterTypeLibForUser(libID: Win32Pointer, wMajorVerNum: number, wMinorVerNum: number, lcid: number, syskind: number): number;
+  UnRegisterTypeLibForUser(
+    libID: Win32Pointer,
+    wMajorVerNum: number,
+    wMinorVerNum: number,
+    lcid: number,
+    syskind: number,
+  ): number;
   /** oleaut32.dll!VARIANT_UserFree */
   VARIANT_UserFree(param0: Win32Pointer, param1: Win32Pointer): void;
   /** oleaut32.dll!VARIANT_UserFree64 */
@@ -445,17 +537,55 @@ interface Functions {
   /** oleaut32.dll!VarFix */
   VarFix(pvarIn: Win32Pointer, pvarResult: Win32Pointer): number;
   /** oleaut32.dll!VarFormat */
-  VarFormat(pvarIn: Win32Pointer, pstrFormat: string | Win32Pointer, iFirstDay: number, iFirstWeek: number, dwFlags: number, pbstrOut: Win32Pointer): number;
+  VarFormat(
+    pvarIn: Win32Pointer,
+    pstrFormat: string | Win32Pointer,
+    iFirstDay: number,
+    iFirstWeek: number,
+    dwFlags: number,
+    pbstrOut: Win32Pointer,
+  ): number;
   /** oleaut32.dll!VarFormatCurrency */
-  VarFormatCurrency(pvarIn: Win32Pointer, iNumDig: number, iIncLead: number, iUseParens: number, iGroup: number, dwFlags: number, pbstrOut: Win32Pointer): number;
+  VarFormatCurrency(
+    pvarIn: Win32Pointer,
+    iNumDig: number,
+    iIncLead: number,
+    iUseParens: number,
+    iGroup: number,
+    dwFlags: number,
+    pbstrOut: Win32Pointer,
+  ): number;
   /** oleaut32.dll!VarFormatDateTime */
   VarFormatDateTime(pvarIn: Win32Pointer, iNamedFormat: number, dwFlags: number, pbstrOut: Win32Pointer): number;
   /** oleaut32.dll!VarFormatFromTokens */
-  VarFormatFromTokens(pvarIn: Win32Pointer, pstrFormat: string | Win32Pointer, pbTokCur: Win32Pointer, dwFlags: number, pbstrOut: Win32Pointer, lcid: number): number;
+  VarFormatFromTokens(
+    pvarIn: Win32Pointer,
+    pstrFormat: string | Win32Pointer,
+    pbTokCur: Win32Pointer,
+    dwFlags: number,
+    pbstrOut: Win32Pointer,
+    lcid: number,
+  ): number;
   /** oleaut32.dll!VarFormatNumber */
-  VarFormatNumber(pvarIn: Win32Pointer, iNumDig: number, iIncLead: number, iUseParens: number, iGroup: number, dwFlags: number, pbstrOut: Win32Pointer): number;
+  VarFormatNumber(
+    pvarIn: Win32Pointer,
+    iNumDig: number,
+    iIncLead: number,
+    iUseParens: number,
+    iGroup: number,
+    dwFlags: number,
+    pbstrOut: Win32Pointer,
+  ): number;
   /** oleaut32.dll!VarFormatPercent */
-  VarFormatPercent(pvarIn: Win32Pointer, iNumDig: number, iIncLead: number, iUseParens: number, iGroup: number, dwFlags: number, pbstrOut: Win32Pointer): number;
+  VarFormatPercent(
+    pvarIn: Win32Pointer,
+    iNumDig: number,
+    iIncLead: number,
+    iUseParens: number,
+    iGroup: number,
+    dwFlags: number,
+    pbstrOut: Win32Pointer,
+  ): number;
   /** oleaut32.dll!VarI1FromBool */
   VarI1FromBool(boolIn: number, pcOut: string | Win32Pointer): number;
   /** oleaut32.dll!VarI1FromCy */
@@ -595,7 +725,13 @@ interface Functions {
   /** oleaut32.dll!VarOr */
   VarOr(pvarLeft: Win32Pointer, pvarRight: Win32Pointer, pvarResult: Win32Pointer): number;
   /** oleaut32.dll!VarParseNumFromStr */
-  VarParseNumFromStr(strIn: string | Win32Pointer, lcid: number, dwFlags: number, pnumprs: Win32Pointer, rgbDig: Win32Pointer): number;
+  VarParseNumFromStr(
+    strIn: string | Win32Pointer,
+    lcid: number,
+    dwFlags: number,
+    pnumprs: Win32Pointer,
+    rgbDig: Win32Pointer,
+  ): number;
   /** oleaut32.dll!VarPow */
   VarPow(pvarLeft: Win32Pointer, pvarRight: Win32Pointer, pvarResult: Win32Pointer): number;
   /** oleaut32.dll!VarR4CmpR8 */
@@ -669,7 +805,15 @@ interface Functions {
   /** oleaut32.dll!VarSub */
   VarSub(pvarLeft: Win32Pointer, pvarRight: Win32Pointer, pvarResult: Win32Pointer): number;
   /** oleaut32.dll!VarTokenizeFormatString */
-  VarTokenizeFormatString(pstrFormat: string | Win32Pointer, rgbTok: Win32Pointer, cbTok: number, iFirstDay: number, iFirstWeek: number, lcid: number, pcbActual: Win32Pointer): number;
+  VarTokenizeFormatString(
+    pstrFormat: string | Win32Pointer,
+    rgbTok: Win32Pointer,
+    cbTok: number,
+    iFirstDay: number,
+    iFirstWeek: number,
+    lcid: number,
+    pcbActual: Win32Pointer,
+  ): number;
   /** oleaut32.dll!VarUI1FromBool */
   VarUI1FromBool(boolIn: number, pbOut: Win32Pointer): number;
   /** oleaut32.dll!VarUI1FromCy */

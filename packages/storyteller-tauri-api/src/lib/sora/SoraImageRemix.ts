@@ -48,9 +48,7 @@ export type SoraImageRemixResult = SoraImageRemixSuccess | SoraImageRemixError;
 
 // Returns the Success and Error variants directly.
 // Throws on Network/Tauri errors.
-export const SoraImageRemix = async (
-  request: SoraImageRemixRequest,
-): Promise<SoraImageRemixResult> => {
+export const SoraImageRemix = async (request: SoraImageRemixRequest): Promise<SoraImageRemixResult> => {
   try {
     return (await invoke("sora_image_remix_command", {
       request: request,

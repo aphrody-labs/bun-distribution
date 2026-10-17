@@ -3,11 +3,19 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** sensorsutilsv2.dll!CollectionsListAllocateBufferAndSerialize */
-  CollectionsListAllocateBufferAndSerialize(SourceCollection: Win32Pointer, pTargetBufferSizeInBytes: Win32Pointer, pTargetBuffer: Win32Pointer): number;
+  CollectionsListAllocateBufferAndSerialize(
+    SourceCollection: Win32Pointer,
+    pTargetBufferSizeInBytes: Win32Pointer,
+    pTargetBuffer: Win32Pointer,
+  ): number;
   /** sensorsutilsv2.dll!CollectionsListCopyAndMarshall */
   CollectionsListCopyAndMarshall(Target: Win32Pointer, Source: Win32Pointer): number;
   /** sensorsutilsv2.dll!CollectionsListDeserializeFromBuffer */
-  CollectionsListDeserializeFromBuffer(SourceBufferSizeInBytes: number, SourceBuffer: Win32Pointer, TargetCollection: Win32Pointer): number;
+  CollectionsListDeserializeFromBuffer(
+    SourceBufferSizeInBytes: number,
+    SourceBuffer: Win32Pointer,
+    TargetCollection: Win32Pointer,
+  ): number;
   /** sensorsutilsv2.dll!CollectionsListGetFillableCount */
   CollectionsListGetFillableCount(BufferSizeBytes: number): number;
   /** sensorsutilsv2.dll!CollectionsListGetMarshalledSize */
@@ -19,7 +27,11 @@ interface Functions {
   /** sensorsutilsv2.dll!CollectionsListMarshall */
   CollectionsListMarshall(Target: Win32Pointer): number;
   /** sensorsutilsv2.dll!CollectionsListSerializeToBuffer */
-  CollectionsListSerializeToBuffer(SourceCollection: Win32Pointer, TargetBufferSizeInBytes: number, TargetBuffer: Win32Pointer): number;
+  CollectionsListSerializeToBuffer(
+    SourceCollection: Win32Pointer,
+    TargetBufferSizeInBytes: number,
+    TargetBuffer: Win32Pointer,
+  ): number;
   /** sensorsutilsv2.dll!CollectionsListSortSubscribedActivitiesByConfidence */
   CollectionsListSortSubscribedActivitiesByConfidence(thresholds: Win32Pointer, pCollection: Win32Pointer): number;
   /** sensorsutilsv2.dll!CollectionsListUpdateMarshalledPointer */
@@ -57,21 +69,52 @@ interface Functions {
   /** sensorsutilsv2.dll!PropKeyFindKeyGetInt64 */
   PropKeyFindKeyGetInt64(pList: Win32Pointer, pKey: Win32Pointer, pRetValue: Win32Pointer): number;
   /** sensorsutilsv2.dll!PropKeyFindKeyGetNthInt64 */
-  PropKeyFindKeyGetNthInt64(pList: Win32Pointer, pKey: Win32Pointer, Occurrence: number, pRetValue: Win32Pointer): number;
+  PropKeyFindKeyGetNthInt64(
+    pList: Win32Pointer,
+    pKey: Win32Pointer,
+    Occurrence: number,
+    pRetValue: Win32Pointer,
+  ): number;
   /** sensorsutilsv2.dll!PropKeyFindKeyGetNthUlong */
-  PropKeyFindKeyGetNthUlong(pList: Win32Pointer, pKey: Win32Pointer, Occurrence: number, pRetValue: Win32Pointer): number;
+  PropKeyFindKeyGetNthUlong(
+    pList: Win32Pointer,
+    pKey: Win32Pointer,
+    Occurrence: number,
+    pRetValue: Win32Pointer,
+  ): number;
   /** sensorsutilsv2.dll!PropKeyFindKeyGetNthUshort */
-  PropKeyFindKeyGetNthUshort(pList: Win32Pointer, pKey: Win32Pointer, Occurrence: number, pRetValue: Win32Pointer): number;
+  PropKeyFindKeyGetNthUshort(
+    pList: Win32Pointer,
+    pKey: Win32Pointer,
+    Occurrence: number,
+    pRetValue: Win32Pointer,
+  ): number;
   /** sensorsutilsv2.dll!PropKeyFindKeyGetPropVariant */
-  PropKeyFindKeyGetPropVariant(pList: Win32Pointer, pKey: Win32Pointer, TypeCheck: number, pValue: Win32Pointer): number;
+  PropKeyFindKeyGetPropVariant(
+    pList: Win32Pointer,
+    pKey: Win32Pointer,
+    TypeCheck: number,
+    pValue: Win32Pointer,
+  ): number;
   /** sensorsutilsv2.dll!PropKeyFindKeyGetUlong */
   PropKeyFindKeyGetUlong(pList: Win32Pointer, pKey: Win32Pointer, pRetValue: Win32Pointer): number;
   /** sensorsutilsv2.dll!PropKeyFindKeyGetUshort */
   PropKeyFindKeyGetUshort(pList: Win32Pointer, pKey: Win32Pointer, pRetValue: Win32Pointer): number;
   /** sensorsutilsv2.dll!PropKeyFindKeySetPropVariant */
-  PropKeyFindKeySetPropVariant(pList: Win32Pointer, pKey: Win32Pointer, TypeCheck: number, pValue: Win32Pointer): number;
+  PropKeyFindKeySetPropVariant(
+    pList: Win32Pointer,
+    pKey: Win32Pointer,
+    TypeCheck: number,
+    pValue: Win32Pointer,
+  ): number;
   /** sensorsutilsv2.dll!PropVariantGetInformation */
-  PropVariantGetInformation(PropVariantValue: Win32Pointer, PropVariantOffset: Win32Pointer, PropVariantSize: Win32Pointer, PropVariantPointer: Win32Pointer, RemappedType: Win32Pointer): number;
+  PropVariantGetInformation(
+    PropVariantValue: Win32Pointer,
+    PropVariantOffset: Win32Pointer,
+    PropVariantSize: Win32Pointer,
+    PropVariantPointer: Win32Pointer,
+    RemappedType: Win32Pointer,
+  ): number;
   /** sensorsutilsv2.dll!PropertiesListCopy */
   PropertiesListCopy(Target: Win32Pointer, Source: Win32Pointer): number;
   /** sensorsutilsv2.dll!PropertiesListGetFillableCount */

@@ -53,15 +53,7 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 
   private isCancelled = false;
 
-  constructor({
-    width,
-    height,
-    fps,
-    format,
-    quality,
-    shouldIncludeAudio,
-    audioBuffer,
-  }: ExportParams) {
+  constructor({ width, height, fps, format, quality, shouldIncludeAudio, audioBuffer }: ExportParams) {
     super();
     this.renderer = new CanvasRenderer({
       width,
@@ -79,20 +71,13 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
     this.isCancelled = true;
   }
 
-  async export({
-    rootNode,
-  }: {
-    rootNode: RootNode;
-  }): Promise<ArrayBuffer | null> {
+  async export({ rootNode }: { rootNode: RootNode }): Promise<ArrayBuffer | null> {
     const fps = this.renderer.fps;
     const fpsFloat = frameRateToFloat(fps);
-    const ticksPerFrame = Math.round(
-      (TICKS_PER_SECOND * fps.denominator) / fps.numerator,
-    );
+    const ticksPerFrame = Math.round((TICKS_PER_SECOND * fps.denominator) / fps.numerator);
     const frameCount = Math.floor(rootNode.duration / ticksPerFrame);
 
-    const outputFormat =
-      this.format === "webm" ? new WebMOutputFormat() : new Mp4OutputFormat();
+    const outputFormat = this.format === "webm" ? new WebMOutputFormat() : new Mp4OutputFormat();
 
     const output = new Output({
       format: outputFormat,

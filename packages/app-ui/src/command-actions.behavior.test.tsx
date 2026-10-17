@@ -5,12 +5,7 @@ import { afterEach, expect, test } from "bun:test";
 import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
-import {
-  DEFAULT_PREFERENCES,
-  loadPreferences,
-  savePreferences,
-  type Preferences,
-} from "./preferences";
+import { DEFAULT_PREFERENCES, loadPreferences, savePreferences, type Preferences } from "./preferences";
 
 const { QuickBar } = await import("./quickbar");
 const { CommandPalette } = await import("./CommandPalette");
@@ -37,15 +32,12 @@ async function fixture() {
   failStore = false;
   failRelay = false;
   const before = loadPreferences();
-  const descriptors = ["__TAURI__", "__TAURI_INTERNALS__"].map((key) => ({
+  const descriptors = ["__TAURI__", "__TAURI_INTERNALS__"].map(key => ({
     key,
     descriptor: Object.getOwnPropertyDescriptor(window, key),
   }));
   const clipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
-  const background = [
-    document.body.style.background,
-    document.documentElement.style.background,
-  ];
+  const background = [document.body.style.background, document.documentElement.style.background];
   const preferences: Preferences = {
     ...DEFAULT_PREFERENCES,
     onboarded: true,
@@ -72,9 +64,7 @@ async function fixture() {
       return null;
     }
     if (command === "aphrody_quickbar") return null;
-    throw new Error(
-      "Unexpected native command; inference forbidden: " + command,
-    );
+    throw new Error("Unexpected native command; inference forbidden: " + command);
   };
   Object.defineProperty(window, "__TAURI_INTERNALS__", {
     configurable: true,
@@ -95,10 +85,7 @@ async function fixture() {
     }
     if (clipboard) Object.defineProperty(navigator, "clipboard", clipboard);
     else Reflect.deleteProperty(navigator, "clipboard");
-    [
-      document.body.style.background,
-      document.documentElement.style.background,
-    ] = background;
+    [document.body.style.background, document.documentElement.style.background] = background;
   };
 }
 
@@ -108,7 +95,7 @@ async function mount(component: ReturnType<typeof createElement>) {
   root = createRoot(host);
   await act(async () => {
     root?.render(component);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise(resolve => setTimeout(resolve, 0));
   });
 }
 
@@ -120,25 +107,20 @@ function input() {
 
 async function type(value: string) {
   await act(async () => {
-    Object.getOwnPropertyDescriptor(
-      HTMLInputElement.prototype,
-      "value",
-    )!.set!.call(input(), value);
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input(), value);
     input().dispatchEvent(new Event("input", { bubbles: true }));
   });
 }
 
 async function choose(label: string) {
-  const option = [
-    ...(host?.querySelectorAll<HTMLElement>('[role="option"]') ?? []),
-  ].find((node) => node.textContent?.includes(label));
+  const option = [...(host?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])].find(node =>
+    node.textContent?.includes(label),
+  );
   if (!option) throw new Error("Missing action " + label);
   await act(async () => {
-    option.dispatchEvent(
-      new MouseEvent("mousedown", { bubbles: true, cancelable: true }),
-    );
+    option.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
     option.click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise(resolve => setTimeout(resolve, 0));
   });
 }
 
@@ -193,22 +175,14 @@ test("QuickBar hides nonrelayable navigation and keeps command failures visible 
   await type("> settings");
   expect(host?.querySelector('[role="option"]')).toBeNull();
   calls = [];
-  await act(async () =>
-    input().form?.dispatchEvent(
-      new Event("submit", { bubbles: true, cancelable: true }),
-    ),
-  );
-  expect(host?.querySelector('[role="alert"]')?.textContent).toContain(
-    "pas disponible",
-  );
+  await act(async () => input().form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+  expect(host?.querySelector('[role="alert"]')?.textContent).toContain("pas disponible");
   expect(calls).toEqual([]);
   failRelay = true;
   await type("> new");
   await choose("> new");
-  expect(host?.querySelector('[role="alert"]')?.textContent).toContain(
-    "main window unavailable",
-  );
-  expect(calls.some((call) => call.command === "aphrody_quickbar")).toBe(false);
+  expect(host?.querySelector('[role="alert"]')?.textContent).toContain("main window unavailable");
+  expect(calls.some(call => call.command === "aphrody_quickbar")).toBe(false);
 });
 
 test("QuickBar theme changes wait for storage and expose a rejected persistence operation", async () => {
@@ -217,9 +191,7 @@ test("QuickBar theme changes wait for storage and expose a rejected persistence 
   failStore = true;
   await type("> theme");
   await choose("> theme");
-  expect(host?.querySelector('[role="alert"]')?.textContent).toContain(
-    "storage refused",
-  );
+  expect(host?.querySelector('[role="alert"]')?.textContent).toContain("storage refused");
   expect(loadPreferences().theme).toBe("dark");
   failStore = false;
   await choose("> theme");
@@ -242,9 +214,7 @@ test("Palette Enter transfers the exact question to the composer without sending
       }),
     ),
   );
-  expect(
-    JSON.parse(host?.querySelector("#destination")?.textContent ?? "{}"),
-  ).toEqual({
+  expect(JSON.parse(host?.querySelector("#destination")?.textContent ?? "{}")).toEqual({
     pathname: "/chat",
     state: { initialPrompt: question },
   });
@@ -266,15 +236,11 @@ test("Palette clipboard and theme failures retain the dialog and expose the owne
   await type("2 + 2");
   await choose("2 + 2");
   expect(host?.querySelector('[role="dialog"]')).not.toBeNull();
-  expect(host?.querySelector('[role="alert"]')?.textContent).toContain(
-    "clipboard refused",
-  );
+  expect(host?.querySelector('[role="alert"]')?.textContent).toContain("clipboard refused");
   failStore = true;
   await type("> theme");
   await choose("> theme");
   expect(host?.querySelector('[role="dialog"]')).not.toBeNull();
-  expect(host?.querySelector('[role="alert"]')?.textContent).toContain(
-    "storage refused",
-  );
+  expect(host?.querySelector('[role="alert"]')?.textContent).toContain("storage refused");
   expect(loadPreferences().theme).toBe("dark");
 });

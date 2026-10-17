@@ -1,10 +1,7 @@
 import { useEffect, useState, type RefObject } from "react";
 import { useEditor } from "../../editor/use-editor";
 import { useCommittedRef } from "../../hooks/use-committed-ref";
-import {
-  SeekController,
-  type SeekConfig,
-} from "../controllers/seek-controller";
+import { SeekController, type SeekConfig } from "../controllers/seek-controller";
 import type { MediaTime } from "../../wasm";
 
 interface UseTimelineSeekProps {

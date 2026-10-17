@@ -25,25 +25,12 @@ export interface SnapResult {
 }
 
 // near edge, center, far edge — the three alignment anchors per axis.
-const xAnchors = (b: SnapBox): number[] => [
-  b.x,
-  b.x + b.width / 2,
-  b.x + b.width,
-];
-const yAnchors = (b: SnapBox): number[] => [
-  b.y,
-  b.y + b.height / 2,
-  b.y + b.height,
-];
+const xAnchors = (b: SnapBox): number[] => [b.x, b.x + b.width / 2, b.x + b.width];
+const yAnchors = (b: SnapBox): number[] => [b.y, b.y + b.height / 2, b.y + b.height];
 
 // Snaps `moving` against `others` within `threshold` (stage units). `grid`, when
 // set, snaps the top-left to the grid on any axis that found no node alignment.
-export const computeSnap = (
-  moving: SnapBox,
-  others: SnapBox[],
-  threshold: number,
-  grid: number | null,
-): SnapResult => {
+export const computeSnap = (moving: SnapBox, others: SnapBox[], threshold: number, grid: number | null): SnapResult => {
   let bestDX = threshold + 1;
   let snapX: number | null = null;
   let alignX = 0;

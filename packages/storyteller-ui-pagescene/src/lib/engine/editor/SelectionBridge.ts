@@ -12,11 +12,7 @@ import * as THREE from "three";
 import { AssetType, ClipGroup } from "../../enums";
 import type { SceneManager } from "../scene_manager_api";
 import type { EngineEventBus } from "../events/EngineEventBus";
-import {
-  InspectorPanelChangedEvent,
-  OutlinerRefreshedEvent,
-  SelectionChangedEvent,
-} from "../events/EngineEvent";
+import { InspectorPanelChangedEvent, OutlinerRefreshedEvent, SelectionChangedEvent } from "../events/EngineEvent";
 
 export type SelectionBridgeDeps = {
   // Lazy: SceneManager is created in Editor.initialize, after the bridge.
@@ -128,10 +124,7 @@ export class SelectionBridge {
       new InspectorPanelChangedEvent({
         // TODO: add metadata to determine whether this is a camera, an
         // object, or a character into prefab clips.
-        group:
-          mainSelected.name === this.engine.cameraName
-            ? ClipGroup.CAMERA
-            : ClipGroup.OBJECT,
+        group: mainSelected.name === this.engine.cameraName ? ClipGroup.CAMERA : ClipGroup.OBJECT,
         object_uuid: mainSelected.uuid,
         object_name: mainSelected.name,
         version: String(this.engine.version),
@@ -160,9 +153,7 @@ export class SelectionBridge {
   // four near-identical copies of this snippet that used to live in
   // Editor.initialize, newScene, loadScene, and deleteObject.
   refreshOutliner() {
-    const result = this.engine
-      .getSceneManager()
-      ?.render_outliner(this.engine.getCharactersByUuid());
+    const result = this.engine.getSceneManager()?.render_outliner(this.engine.getCharactersByUuid());
     if (result) this.engine.bus.emit(new OutlinerRefreshedEvent(result.items));
   }
 
@@ -175,9 +166,7 @@ export class SelectionBridge {
 
   getAssetType(selected: THREE.Object3D): AssetType {
     if (selected.type === "Mesh") {
-      return selected.name === this.engine.cameraName
-        ? AssetType.CAMERA
-        : AssetType.OBJECT;
+      return selected.name === this.engine.cameraName ? AssetType.CAMERA : AssetType.OBJECT;
     }
     return AssetType.CHARACTER;
   }

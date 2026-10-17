@@ -37,14 +37,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT NOT NULL);
 `;
 
-const fields = new Set([
-  "title",
-  "fps_limit",
-  "scaler",
-  "borderless",
-  "instant_resume",
-  "hud",
-]);
+const fields = new Set(["title", "fps_limit", "scaler", "borderless", "instant_resume", "hud"]);
 
 export function shellDatabasePath(): string {
   return join(usrRoot(), "var", "lib", "bep", "shell.db");
@@ -62,9 +55,7 @@ export function listProfiles(db = openProfiles()): Profile[] {
 }
 
 export function getProfile(key: string, db = openProfiles()): Profile | null {
-  return db
-    .query("SELECT * FROM profiles WHERE key = ?1")
-    .get(key) as Profile | null;
+  return db.query("SELECT * FROM profiles WHERE key = ?1").get(key) as Profile | null;
 }
 
 /** Inserts or updates `key` with `values` (only known fields; numbers for the flags). */
@@ -76,17 +67,16 @@ export function setProfile(
   const entries = Object.entries(values).filter(([name]) => fields.has(name));
   db.query("INSERT OR IGNORE INTO profiles (key) VALUES (?1)").run(key);
   for (const [name, value] of entries) {
-    db.query(
-      `UPDATE profiles SET ${name} = ?2, updated_at = datetime('now') WHERE key = ?1`,
-    ).run(key, value as string | number);
+    db.query(`UPDATE profiles SET ${name} = ?2, updated_at = datetime('now') WHERE key = ?1`).run(
+      key,
+      value as string | number,
+    );
   }
   return getProfile(key, db)!;
 }
 
 /** `field=value` pairs from the command line, numbers where the column is numeric. */
-export function parseAssignments(
-  args: string[],
-): Partial<Omit<Profile, "key" | "updated_at">> {
+export function parseAssignments(args: string[]): Partial<Omit<Profile, "key" | "updated_at">> {
   const values: Record<string, string | number> = {};
   for (const arg of args) {
     const at = arg.indexOf("=");
@@ -94,10 +84,7 @@ export function parseAssignments(
     const name = arg.slice(0, at);
     const raw = arg.slice(at + 1);
     if (!fields.has(name)) throw new Error(`unknown profile field ${name}`);
-    values[name] =
-      name === "title" || name === "scaler"
-        ? raw
-        : Number(raw === "on" ? 1 : raw === "off" ? 0 : raw);
+    values[name] = name === "title" || name === "scaler" ? raw : Number(raw === "on" ? 1 : raw === "off" ? 0 : raw);
   }
   return values;
 }

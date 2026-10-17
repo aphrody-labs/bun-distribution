@@ -259,7 +259,7 @@ export default function GeneratedArtifact() {
       const dialog = document.querySelector("md-dialog");
       if (dialog) (dialog as any).open = !(dialog as any).open;
     },
-    "select-item": (id) => {
+    "select-item": id => {
       console.log("Delegated select-item:", id);
     },
   };

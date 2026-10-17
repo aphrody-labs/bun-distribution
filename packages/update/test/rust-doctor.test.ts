@@ -37,9 +37,7 @@ const span = (file: string, line: number, applicability?: string) => ({
   suggestion_applicability: applicability ?? null,
 });
 const crateOf = (manifest: string, id: string) =>
-  manifest === "/repo/crates/ai/foo/Cargo.toml"
-    ? "aphrody-foo"
-    : crateFromPackageId(id);
+  manifest === "/repo/crates/ai/foo/Cargo.toml" ? "aphrody-foo" : crateFromPackageId(id);
 const pkg = (name: string, targets: (string | null)[]): MetaPackage => ({
   name,
   manifest_path: `/repo/${name}/Cargo.toml`,
@@ -104,14 +102,8 @@ describe("parseDiagnostics", () => {
       "{not json",
     ].join("\n");
     const d = parseDiagnostics(text, crateOf);
-    expect(d.map((x) => [x.level, x.code, x.crate, x.file, x.line])).toEqual([
-      [
-        "warning",
-        "unused_variables",
-        "aphrody-foo",
-        "crates/ai/foo/src/lib.rs",
-        12,
-      ],
+    expect(d.map(x => [x.level, x.code, x.crate, x.file, x.line])).toEqual([
+      ["warning", "unused_variables", "aphrody-foo", "crates/ai/foo/src/lib.rs", 12],
       ["error", "E0308", "aphrody-foo", "crates/ai/foo/src/lib.rs", 40],
     ]);
   });
@@ -160,11 +152,11 @@ describe("parseDiagnostics", () => {
         spans: [span("c.rs", 3, "MaybeIncorrect")],
       },
     });
-    expect(
-      parseDiagnostics([direct, child, manual].join("\n"), crateOf).map(
-        (x) => x.fixable,
-      ),
-    ).toEqual([true, true, false]);
+    expect(parseDiagnostics([direct, child, manual].join("\n"), crateOf).map(x => x.fixable)).toEqual([
+      true,
+      true,
+      false,
+    ]);
   });
 
   test("an internal compiler error counts as an error", () => {
@@ -182,19 +174,9 @@ describe("parseDiagnostics", () => {
 
 describe("crateFromPackageId", () => {
   test("handles the three id shapes Cargo prints", () => {
-    expect(
-      crateFromPackageId(
-        "path+file:///repo/crates/ai/engine#aphrody-engine@1.0.0",
-      ),
-    ).toBe("aphrody-engine");
-    expect(crateFromPackageId("path+file:///repo/crates/web/taffy#0.9.2")).toBe(
-      "taffy",
-    );
-    expect(
-      crateFromPackageId(
-        "registry+https://github.com/rust-lang/crates.io-index#serde@1.0.229",
-      ),
-    ).toBe("serde");
+    expect(crateFromPackageId("path+file:///repo/crates/ai/engine#aphrody-engine@1.0.0")).toBe("aphrody-engine");
+    expect(crateFromPackageId("path+file:///repo/crates/web/taffy#0.9.2")).toBe("taffy");
+    expect(crateFromPackageId("registry+https://github.com/rust-lang/crates.io-index#serde@1.0.229")).toBe("serde");
   });
 });
 
@@ -266,10 +248,7 @@ describe("targetPackages", () => {
     });
     expect(all.packages).toEqual(["plain", "web", "win"]);
     expect(all.excluded).toEqual([{ crate: "host", reason: "host only" }]);
-    expect(
-      targetPackages(packages, { triple: "x", packages: ["web", "web"] })
-        .packages,
-    ).toEqual(["web"]);
+    expect(targetPackages(packages, { triple: "x", packages: ["web", "web"] }).packages).toEqual(["web"]);
   });
 });
 
@@ -367,26 +346,25 @@ describe("format and git helpers", () => {
     expect(crateOfFile("docs/a.md", dirs)).toBeUndefined();
   });
   test("parsePorcelain keeps both sides of a rename and untracked paths", () => {
-    expect(
-      parsePorcelain(" M a/b.rs\n?? new/\nR  old.rs -> fresh.rs\n"),
-    ).toEqual(["a/b.rs", "new/", "old.rs", "fresh.rs"]);
+    expect(parsePorcelain(" M a/b.rs\n?? new/\nR  old.rs -> fresh.rs\n")).toEqual([
+      "a/b.rs",
+      "new/",
+      "old.rs",
+      "fresh.rs",
+    ]);
   });
   test("errorLines starts at the first error, or falls back to the tail", () => {
-    expect(
-      errorLines(
-        "Compiling x\nerror[E0432]: unresolved import\n --> src/lib.rs:1:5\nmore",
-        2,
-      ),
-    ).toEqual(["error[E0432]: unresolved import", " --> src/lib.rs:1:5"]);
+    expect(errorLines("Compiling x\nerror[E0432]: unresolved import\n --> src/lib.rs:1:5\nmore", 2)).toEqual([
+      "error[E0432]: unresolved import",
+      " --> src/lib.rs:1:5",
+    ]);
     expect(errorLines("a\nb\nc", 2)).toEqual(["b", "c"]);
   });
 });
 
 describe("newestLlvm", () => {
   test("picks the highest installed LLVM, numerically", () => {
-    expect(
-      newestLlvm(["llvm-18", "llvm-9", "llvm-23", "gcc", "llvm-toolchain"]),
-    ).toBe("llvm-23");
+    expect(newestLlvm(["llvm-18", "llvm-9", "llvm-23", "gcc", "llvm-toolchain"])).toBe("llvm-23");
     expect(newestLlvm(["gcc"])).toBeUndefined();
   });
 });
@@ -412,20 +390,11 @@ describe("classification", () => {
     expect(stageStatus([p("info")])).toBe("ok");
     expect(stageStatus([p("info"), p("warning")])).toBe("problems");
     expect(stageStatus([p("warning"), p("error")])).toBe("failed");
-    const t = totals([
-      stage([p("error"), p("warning")], 2),
-      stage([p("info"), p("warning")], 1),
-    ]);
+    const t = totals([stage([p("error"), p("warning")], 2), stage([p("info"), p("warning")], 1)]);
     expect(t).toEqual({ errors: 1, warnings: 2, notes: 1, fixed: 3 });
     expect(exitCode(t, false)).toBe(1);
-    expect(
-      exitCode({ errors: 0, warnings: 2, notes: 0, fixed: 0 }, false),
-    ).toBe(0);
-    expect(exitCode({ errors: 0, warnings: 2, notes: 0, fixed: 0 }, true)).toBe(
-      1,
-    );
-    expect(exitCode({ errors: 0, warnings: 0, notes: 5, fixed: 0 }, true)).toBe(
-      0,
-    );
+    expect(exitCode({ errors: 0, warnings: 2, notes: 0, fixed: 0 }, false)).toBe(0);
+    expect(exitCode({ errors: 0, warnings: 2, notes: 0, fixed: 0 }, true)).toBe(1);
+    expect(exitCode({ errors: 0, warnings: 0, notes: 5, fixed: 0 }, true)).toBe(0);
   });
 });

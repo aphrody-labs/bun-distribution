@@ -3,55 +3,176 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** peerdist.dll!PeerDistClientAddContentInformation */
-  PeerDistClientAddContentInformation(hPeerDist: number | bigint, hContentHandle: number | bigint, cbNumberOfBytes: number, pBuffer: Win32Pointer, lpOverlapped: Win32Pointer): number;
+  PeerDistClientAddContentInformation(
+    hPeerDist: number | bigint,
+    hContentHandle: number | bigint,
+    cbNumberOfBytes: number,
+    pBuffer: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistClientAddData */
-  PeerDistClientAddData(hPeerDist: number | bigint, hContentHandle: number | bigint, cbNumberOfBytes: number, pBuffer: Win32Pointer, lpOverlapped: Win32Pointer): number;
+  PeerDistClientAddData(
+    hPeerDist: number | bigint,
+    hContentHandle: number | bigint,
+    cbNumberOfBytes: number,
+    pBuffer: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistClientBlockRead */
-  PeerDistClientBlockRead(hPeerDist: number | bigint, hContentHandle: number | bigint, cbMaxNumberOfBytes: number, pBuffer: Win32Pointer, dwTimeoutInMilliseconds: number, lpOverlapped: Win32Pointer): number;
+  PeerDistClientBlockRead(
+    hPeerDist: number | bigint,
+    hContentHandle: number | bigint,
+    cbMaxNumberOfBytes: number,
+    pBuffer: Win32Pointer,
+    dwTimeoutInMilliseconds: number,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistClientCancelAsyncOperation */
-  PeerDistClientCancelAsyncOperation(hPeerDist: number | bigint, hContentHandle: number | bigint, pOverlapped: Win32Pointer): number;
+  PeerDistClientCancelAsyncOperation(
+    hPeerDist: number | bigint,
+    hContentHandle: number | bigint,
+    pOverlapped: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistClientCloseContent */
   PeerDistClientCloseContent(hPeerDist: number | bigint, hContentHandle: number | bigint): number;
   /** peerdist.dll!PeerDistClientCompleteContentInformation */
-  PeerDistClientCompleteContentInformation(hPeerDist: number | bigint, hContentHandle: number | bigint, lpOverlapped: Win32Pointer): number;
+  PeerDistClientCompleteContentInformation(
+    hPeerDist: number | bigint,
+    hContentHandle: number | bigint,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistClientFlushContent */
-  PeerDistClientFlushContent(hPeerDist: number | bigint, pContentTag: Win32Pointer, hCompletionPort: Win32Pointer, ulCompletionKey: number | bigint, lpOverlapped: Win32Pointer): number;
+  PeerDistClientFlushContent(
+    hPeerDist: number | bigint,
+    pContentTag: Win32Pointer,
+    hCompletionPort: Win32Pointer,
+    ulCompletionKey: number | bigint,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistClientGetInformationByHandle */
-  PeerDistClientGetInformationByHandle(hPeerDist: number | bigint, hContentHandle: number | bigint, PeerDistClientInfoClass: number, dwBufferSize: number, lpInformation: Win32Pointer): number;
+  PeerDistClientGetInformationByHandle(
+    hPeerDist: number | bigint,
+    hContentHandle: number | bigint,
+    PeerDistClientInfoClass: number,
+    dwBufferSize: number,
+    lpInformation: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistClientOpenContent */
-  PeerDistClientOpenContent(hPeerDist: number | bigint, pContentTag: Win32Pointer, hCompletionPort: Win32Pointer, ulCompletionKey: number | bigint, phContentHandle: Win32Pointer): number;
+  PeerDistClientOpenContent(
+    hPeerDist: number | bigint,
+    pContentTag: Win32Pointer,
+    hCompletionPort: Win32Pointer,
+    ulCompletionKey: number | bigint,
+    phContentHandle: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistClientStreamRead */
-  PeerDistClientStreamRead(hPeerDist: number | bigint, hContentHandle: number | bigint, cbMaxNumberOfBytes: number, pBuffer: Win32Pointer, dwTimeoutInMilliseconds: number, lpOverlapped: Win32Pointer): number;
+  PeerDistClientStreamRead(
+    hPeerDist: number | bigint,
+    hContentHandle: number | bigint,
+    cbMaxNumberOfBytes: number,
+    pBuffer: Win32Pointer,
+    dwTimeoutInMilliseconds: number,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistGetOverlappedResult */
-  PeerDistGetOverlappedResult(lpOverlapped: Win32Pointer, lpNumberOfBytesTransferred: Win32Pointer, bWait: number): number;
+  PeerDistGetOverlappedResult(
+    lpOverlapped: Win32Pointer,
+    lpNumberOfBytesTransferred: Win32Pointer,
+    bWait: number,
+  ): number;
   /** peerdist.dll!PeerDistGetStatus */
   PeerDistGetStatus(hPeerDist: number | bigint, pPeerDistStatus: Win32Pointer): number;
   /** peerdist.dll!PeerDistGetStatusEx */
   PeerDistGetStatusEx(hPeerDist: number | bigint, pPeerDistStatus: Win32Pointer): number;
   /** peerdist.dll!PeerDistRegisterForStatusChangeNotification */
-  PeerDistRegisterForStatusChangeNotification(hPeerDist: number | bigint, hCompletionPort: Win32Pointer, ulCompletionKey: number | bigint, lpOverlapped: Win32Pointer, pPeerDistStatus: Win32Pointer): number;
+  PeerDistRegisterForStatusChangeNotification(
+    hPeerDist: number | bigint,
+    hCompletionPort: Win32Pointer,
+    ulCompletionKey: number | bigint,
+    lpOverlapped: Win32Pointer,
+    pPeerDistStatus: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistRegisterForStatusChangeNotificationEx */
-  PeerDistRegisterForStatusChangeNotificationEx(hPeerDist: number | bigint, hCompletionPort: Win32Pointer, ulCompletionKey: number | bigint, lpOverlapped: Win32Pointer, pPeerDistStatus: Win32Pointer): number;
+  PeerDistRegisterForStatusChangeNotificationEx(
+    hPeerDist: number | bigint,
+    hCompletionPort: Win32Pointer,
+    ulCompletionKey: number | bigint,
+    lpOverlapped: Win32Pointer,
+    pPeerDistStatus: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistServerCancelAsyncOperation */
-  PeerDistServerCancelAsyncOperation(hPeerDist: number | bigint, cbContentIdentifier: number, pContentIdentifier: Win32Pointer, pOverlapped: Win32Pointer): number;
+  PeerDistServerCancelAsyncOperation(
+    hPeerDist: number | bigint,
+    cbContentIdentifier: number,
+    pContentIdentifier: Win32Pointer,
+    pOverlapped: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistServerCloseContentInformation */
   PeerDistServerCloseContentInformation(hPeerDist: number | bigint, hContentInfo: number | bigint): number;
   /** peerdist.dll!PeerDistServerCloseStreamHandle */
   PeerDistServerCloseStreamHandle(hPeerDist: number | bigint, hStream: number | bigint): number;
   /** peerdist.dll!PeerDistServerOpenContentInformation */
-  PeerDistServerOpenContentInformation(hPeerDist: number | bigint, cbContentIdentifier: number, pContentIdentifier: Win32Pointer, ullContentOffset: number | bigint, cbContentLength: number | bigint, hCompletionPort: Win32Pointer, ulCompletionKey: number | bigint, phContentInfo: Win32Pointer): number;
+  PeerDistServerOpenContentInformation(
+    hPeerDist: number | bigint,
+    cbContentIdentifier: number,
+    pContentIdentifier: Win32Pointer,
+    ullContentOffset: number | bigint,
+    cbContentLength: number | bigint,
+    hCompletionPort: Win32Pointer,
+    ulCompletionKey: number | bigint,
+    phContentInfo: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistServerOpenContentInformationEx */
-  PeerDistServerOpenContentInformationEx(hPeerDist: number | bigint, cbContentIdentifier: number, pContentIdentifier: Win32Pointer, ullContentOffset: number | bigint, cbContentLength: number | bigint, pRetrievalOptions: Win32Pointer, hCompletionPort: Win32Pointer, ulCompletionKey: number | bigint, phContentInfo: Win32Pointer): number;
+  PeerDistServerOpenContentInformationEx(
+    hPeerDist: number | bigint,
+    cbContentIdentifier: number,
+    pContentIdentifier: Win32Pointer,
+    ullContentOffset: number | bigint,
+    cbContentLength: number | bigint,
+    pRetrievalOptions: Win32Pointer,
+    hCompletionPort: Win32Pointer,
+    ulCompletionKey: number | bigint,
+    phContentInfo: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistServerPublishAddToStream */
-  PeerDistServerPublishAddToStream(hPeerDist: number | bigint, hStream: number | bigint, cbNumberOfBytes: number, pBuffer: Win32Pointer, lpOverlapped: Win32Pointer): number;
+  PeerDistServerPublishAddToStream(
+    hPeerDist: number | bigint,
+    hStream: number | bigint,
+    cbNumberOfBytes: number,
+    pBuffer: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistServerPublishCompleteStream */
-  PeerDistServerPublishCompleteStream(hPeerDist: number | bigint, hStream: number | bigint, lpOverlapped: Win32Pointer): number;
+  PeerDistServerPublishCompleteStream(
+    hPeerDist: number | bigint,
+    hStream: number | bigint,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistServerPublishStream */
-  PeerDistServerPublishStream(hPeerDist: number | bigint, cbContentIdentifier: number, pContentIdentifier: Win32Pointer, cbContentLength: number | bigint, pPublishOptions: Win32Pointer, hCompletionPort: Win32Pointer, ulCompletionKey: number | bigint, phStream: Win32Pointer): number;
+  PeerDistServerPublishStream(
+    hPeerDist: number | bigint,
+    cbContentIdentifier: number,
+    pContentIdentifier: Win32Pointer,
+    cbContentLength: number | bigint,
+    pPublishOptions: Win32Pointer,
+    hCompletionPort: Win32Pointer,
+    ulCompletionKey: number | bigint,
+    phStream: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistServerRetrieveContentInformation */
-  PeerDistServerRetrieveContentInformation(hPeerDist: number | bigint, hContentInfo: number | bigint, cbMaxNumberOfBytes: number, pBuffer: Win32Pointer, lpOverlapped: Win32Pointer): number;
+  PeerDistServerRetrieveContentInformation(
+    hPeerDist: number | bigint,
+    hContentInfo: number | bigint,
+    cbMaxNumberOfBytes: number,
+    pBuffer: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistServerUnpublish */
-  PeerDistServerUnpublish(hPeerDist: number | bigint, cbContentIdentifier: number, pContentIdentifier: Win32Pointer): number;
+  PeerDistServerUnpublish(
+    hPeerDist: number | bigint,
+    cbContentIdentifier: number,
+    pContentIdentifier: Win32Pointer,
+  ): number;
   /** peerdist.dll!PeerDistShutdown */
   PeerDistShutdown(hPeerDist: number | bigint): number;
   /** peerdist.dll!PeerDistStartup */

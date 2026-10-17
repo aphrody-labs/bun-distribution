@@ -24,9 +24,7 @@ const fake = {
     deleteKey: () => true,
   },
   services: {
-    list: () => [
-      { name: "EventLog", displayName: "Windows Event Log", state: "running" },
-    ],
+    list: () => [{ name: "EventLog", displayName: "Windows Event Log", state: "running" }],
     get: () => ({ startType: "auto" }),
     start: () => {},
     stop: () => {},
@@ -57,13 +55,7 @@ const fake = {
 } satisfies BunWindowsApi;
 
 test("adapts bun:windows registry, service and system DTOs", async () => {
-  expect(
-    await callBunWindows(
-      "get_registry_value",
-      { path: "HKCU:\\Software", name: "Mode" },
-      fake,
-    ),
-  ).toEqual({
+  expect(await callBunWindows("get_registry_value", { path: "HKCU:\\Software", name: "Mode" }, fake)).toEqual({
     handled: true,
     value: {
       Path: "HKCU:\\Software",

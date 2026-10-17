@@ -1,9 +1,5 @@
 import type { KeyCombo, Platform } from "./types";
-import {
-  getCurrentPlatform,
-  isInputFocused,
-  normalizeModifiers,
-} from "./platform";
+import { getCurrentPlatform, isInputFocused, normalizeModifiers } from "./platform";
 
 export type KeybindHandler = () => void | Promise<void>;
 
@@ -92,10 +88,7 @@ class WebKeybindListener {
   }
 
   private matchesCombo(e: KeyboardEvent, combo: KeyCombo): boolean {
-    const normalizedModifiers = normalizeModifiers(
-      combo.modifiers,
-      this.platform,
-    );
+    const normalizedModifiers = normalizeModifiers(combo.modifiers, this.platform);
 
     // Count required modifiers
     const requiredCmd = normalizedModifiers.includes("Cmd");

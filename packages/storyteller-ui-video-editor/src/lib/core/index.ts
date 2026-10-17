@@ -69,13 +69,10 @@ export class EditorCore {
       const tracks = activeScene.tracks;
       const prunedTracks = {
         ...tracks,
-        overlay: tracks.overlay.filter((track) => track.elements.length > 0),
-        audio: tracks.audio.filter((track) => track.elements.length > 0),
+        overlay: tracks.overlay.filter(track => track.elements.length > 0),
+        audio: tracks.audio.filter(track => track.elements.length > 0),
       };
-      if (
-        prunedTracks.overlay.length !== tracks.overlay.length ||
-        prunedTracks.audio.length !== tracks.audio.length
-      ) {
+      if (prunedTracks.overlay.length !== tracks.overlay.length || prunedTracks.audio.length !== tracks.audio.length) {
         this.timeline.updateTracks(prunedTracks);
       }
     });
@@ -87,11 +84,7 @@ export class EditorCore {
   // ("explicit initialize before VideoEditor mounts, then again from
   // EditorProvider") is safe — the host's adapter bundle stays in
   // effect. Hosts that want to swap adapters should call reset() first.
-  static initialize({
-    adapters,
-  }: {
-    adapters: VideoEditorAdapters;
-  }): EditorCore {
+  static initialize({ adapters }: { adapters: VideoEditorAdapters }): EditorCore {
     if (!EditorCore.instance) {
       EditorCore.instance = new EditorCore(adapters);
     }

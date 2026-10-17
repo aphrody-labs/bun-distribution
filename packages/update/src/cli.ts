@@ -37,9 +37,7 @@ export async function runUpdate(
 ): Promise<number> {
   const ri = argv.indexOf("--root");
   const root = resolve(ri >= 0 ? argv[ri + 1]! : process.cwd());
-  const args = argv.filter(
-    (a, i) => !(a === "--root" || (ri >= 0 && i === ri + 1)),
-  );
+  const args = argv.filter((a, i) => !(a === "--root" || (ri >= 0 && i === ri + 1)));
   const c = new Ctx(root, args.includes("--apply"), args.includes("--json"));
   const [mod = "check", ...rest] = args;
   switch (mod) {
@@ -52,9 +50,7 @@ export async function runUpdate(
       const pins = checkPins(c);
       let bad = 0;
       for (const r of pins) {
-        console.log(
-          `pin    ${r.tool.padEnd(10)} ${r.pin ?? "?"} ${r.drift.length ? `DRIFT ${r.drift.length}` : "ok"}`,
-        );
+        console.log(`pin    ${r.tool.padEnd(10)} ${r.pin ?? "?"} ${r.drift.length ? `DRIFT ${r.drift.length}` : "ok"}`);
         bad += r.drift.length;
       }
       for (const l of repoState(c.root)) console.log(`repo   ${l}`);
@@ -68,9 +64,7 @@ export async function runUpdate(
     case "cargo":
       return runCargo(c, rest);
     case "deps":
-      return runDepsSync(
-        rest.length ? [...rest, "--root", root] : ["plan", "--root", root],
-      );
+      return runDepsSync(rest.length ? [...rest, "--root", root] : ["plan", "--root", root]);
     case "systemd":
       return runSystemd(c, rest, ports);
     case "sources":
@@ -91,11 +85,7 @@ export async function runUpdate(
         await runSources(c, ["forks"]);
       }
       const code = runCargo(c, []);
-      await runDepsSync([
-        ...(c.apply ? ["run", "--apply"] : ["run"]),
-        "--root",
-        root,
-      ]);
+      await runDepsSync([...(c.apply ? ["run", "--apply"] : ["run"]), "--root", root]);
       if (c.apply) restart(c, [".bun/bin/bun", "aphrody"]);
       return code | (await runUpdate(["check", "--root", root]));
     }

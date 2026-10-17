@@ -1,9 +1,6 @@
 import { EditorCore } from "../../../../core";
 import { Command, type CommandResult } from "../../../base-command";
-import {
-  getFreeformPathClosedStateAfterPointRemoval,
-  removeFreeformPathPoints,
-} from "../../../../masks/freeform/path";
+import { getFreeformPathClosedStateAfterPointRemoval, removeFreeformPathPoints } from "../../../../masks/freeform/path";
 import type { FreeformPathMask } from "../../../../masks/types";
 import { isMaskableElement } from "../../../../timeline/element-utils";
 import { updateElementInSceneTracks } from "../../../../timeline/track-element-update";
@@ -46,7 +43,7 @@ function deletePointsFromElementMask({
 }): { element: MaskableElement; didDeletePoints: boolean } {
   const currentMasks = element.masks ?? [];
   let didDeletePoints = false;
-  const nextMasks = currentMasks.map((mask) => {
+  const nextMasks = currentMasks.map(mask => {
     if (mask.id !== maskId || mask.type !== "freeform") {
       return mask;
     }
@@ -100,7 +97,7 @@ export class DeleteFreeformPathMaskPointsCommand extends Command {
       trackId: this.trackId,
       elementId: this.elementId,
       elementPredicate: isMaskableElement,
-      update: (element) => {
+      update: element => {
         if (!isMaskableElement(element)) return element;
         const result = deletePointsFromElementMask({
           element,

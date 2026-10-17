@@ -17,9 +17,7 @@ function notifySubscribers() {
 }
 
 async function fetchMissing(tokens: readonly string[]): Promise<void> {
-  const missing = tokens.filter(
-    (t) => t && !promptCache.has(t) && !inFlight.has(t),
-  );
+  const missing = tokens.filter(t => t && !promptCache.has(t) && !inFlight.has(t));
   if (missing.length === 0) return;
   for (const t of missing) inFlight.add(t);
   try {
@@ -41,13 +39,11 @@ export function getCachedPrompt(token: string): Prompts | undefined {
   return promptCache.get(token);
 }
 
-export function usePrompts(
-  tokens: readonly (string | null | undefined)[],
-): Map<string, Prompts> {
+export function usePrompts(tokens: readonly (string | null | undefined)[]): Map<string, Prompts> {
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
-    const cb = () => forceUpdate((n) => n + 1);
+    const cb = () => forceUpdate(n => n + 1);
     subscribers.add(cb);
     return () => {
       subscribers.delete(cb);

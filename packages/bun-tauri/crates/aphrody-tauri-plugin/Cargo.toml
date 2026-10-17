@@ -17,20 +17,15 @@ features = ["build", "runtime"]
 name = "tauri_plugin"
 
 [features]
-build = [
-  "dep:anyhow",
-  "dep:serde",
-  "dep:serde_json",
-  "dep:glob",
-  "dep:plist",
-  "dep:walkdir",
-]
+build = ["dep:anyhow", "dep:serde", "dep:serde_json", "dep:glob", "dep:plist", "dep:walkdir"]
 runtime = []
 
 [dependencies]
 anyhow = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2"] }
+tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+  "build-2",
+] }
 serde_json = { workspace = true, optional = true }
 glob = { workspace = true, optional = true }
 schemars = { workspace = true, features = ["preserve_order"] }

@@ -40,8 +40,7 @@ export const circleButtonStyles = cva(
           "disabled:border-on-surface/12 disabled:text-on-surface/38",
         ],
         // M3 names
-        standard:
-          "border-transparent bg-transparent text-on-surface-variant disabled:text-on-surface/38",
+        standard: "border-transparent bg-transparent text-on-surface-variant disabled:text-on-surface/38",
         filled: [
           "border-transparent bg-primary text-on-primary",
           "disabled:bg-on-surface/12 disabled:text-on-surface/38",
@@ -72,9 +71,7 @@ export const circleButtonStyles = cva(
 const iconSizes = { sm: 18, md: 20, lg: 24 } as const;
 
 export interface CircleButtonProps
-  extends
-    Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "size">,
-    VariantProps<typeof circleButtonStyles> {
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "size">, VariantProps<typeof circleButtonStyles> {
   /** Material Symbols name, element or icon component (a Phosphor component still works). */
   icon?: IconSource | React.ElementType;
   /** @deprecated Use variant="active" or variant="accent" instead */
@@ -84,27 +81,11 @@ export interface CircleButtonProps
 }
 
 export const CircleButton = forwardRef<HTMLButtonElement, CircleButtonProps>(
-  (
-    {
-      icon,
-      active,
-      activeAccent,
-      variant,
-      size,
-      className,
-      children,
-      type = "button",
-      ...props
-    },
-    ref,
-  ) => {
+  ({ icon, active, activeAccent, variant, size, className, children, type = "button", ...props }, ref) => {
     // Resolve legacy active/activeAccent props to variant
-    const resolvedVariant =
-      variant ??
-      (active && activeAccent ? "accent" : active ? "active" : "default");
+    const resolvedVariant = variant ?? (active && activeAccent ? "accent" : active ? "active" : "default");
     const iconSize = iconSizes[size ?? "md"];
-    const selected =
-      resolvedVariant === "active" || resolvedVariant === "accent";
+    const selected = resolvedVariant === "active" || resolvedVariant === "accent";
 
     return (
       <button

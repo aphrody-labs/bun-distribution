@@ -38,7 +38,9 @@ fn observed() -> &'static Mutex<HashSet<String>> {
 }
 
 fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
-    mutex.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    mutex
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 /// The CEF dispatcher of a webview window, whether the app runs the runtime directly or behind
@@ -50,18 +52,25 @@ fn cef_dispatcher<R: Runtime>(
     if let Some(dynamic) =
         dispatcher.downcast_ref::<DynWebviewDispatcher<tauri::EventLoopMessage>>()
     {
-        return dynamic.downcast_ref::<CefWebviewDispatcher<tauri::EventLoopMessage>>().cloned();
+        return dynamic
+            .downcast_ref::<CefWebviewDispatcher<tauri::EventLoopMessage>>()
+            .cloned();
     }
-    dispatcher.downcast_ref::<CefWebviewDispatcher<tauri::EventLoopMessage>>().cloned()
+    dispatcher
+        .downcast_ref::<CefWebviewDispatcher<tauri::EventLoopMessage>>()
+        .cloned()
 }
 
 /// Decodes the `data` field of a `Page.captureScreenshot` result.
 fn png_from_result(result: &[u8]) -> Result<Vec<u8>, ScreenshotError> {
     let value: serde_json::Value = serde_json::from_slice(result)
         .map_err(|e| ScreenshotError::CaptureFailed(format!("Invalid DevTools result: {e}")))?;
-    let data = value.get("data").and_then(serde_json::Value::as_str).ok_or_else(|| {
-        ScreenshotError::CaptureFailed("DevTools result has no screenshot data".into())
-    })?;
+    let data = value
+        .get("data")
+        .and_then(serde_json::Value::as_str)
+        .ok_or_else(|| {
+            ScreenshotError::CaptureFailed("DevTools result has no screenshot data".into())
+        })?;
     base64::engine::general_purpose::STANDARD
         .decode(data)
         .map_err(|e| ScreenshotError::EncodeFailed(format!("Invalid screenshot encoding: {e}")))
@@ -83,7 +92,11 @@ pub async fn capture_viewport<R: Runtime>(
         move || -> Result<(), String> {
             if lock(observed()).insert(label.clone()) {
                 let registered = dispatcher.on_dev_tools_protocol(|protocol| {
-                    if let DevToolsProtocol::MethodResult { message_id, success, result } = protocol
+                    if let DevToolsProtocol::MethodResult {
+                        message_id,
+                        success,
+                        result,
+                    } = protocol
                     {
                         if let Some(waiting) = lock(pending()).remove(&message_id) {
                             let _ = waiting.send(if success {
@@ -118,17 +131,21 @@ pub async fn capture_viewport<R: Runtime>(
     }
 
     match tokio::time::timeout(CAPTURE_TIMEOUT, answer_rx).await {
-        Ok(Ok(Ok(result))) => Ok(Screenshot { data: png_from_result(&result)? }),
-        Ok(Ok(Err(error))) => {
-            Err(ScreenshotError::CaptureFailed(format!("Page.captureScreenshot failed: {error}")))
-        },
-        Ok(Err(_)) => Err(ScreenshotError::CaptureFailed("DevTools observer dropped".into())),
+        Ok(Ok(Ok(result))) => Ok(Screenshot {
+            data: png_from_result(&result)?,
+        }),
+        Ok(Ok(Err(error))) => Err(ScreenshotError::CaptureFailed(format!(
+            "Page.captureScreenshot failed: {error}"
+        ))),
+        Ok(Err(_)) => Err(ScreenshotError::CaptureFailed(
+            "DevTools observer dropped".into(),
+        )),
         Err(_) => {
             lock(pending()).remove(&message_id);
             // The webview may have been recreated under the same label: observe it again next time.
             lock(observed()).remove(&label);
             Err(ScreenshotError::Timeout)
-        },
+        }
     }
 }
 
@@ -140,7 +157,10 @@ mod tests {
     fn the_screenshot_data_field_is_decoded() {
         let encoded = base64::engine::general_purpose::STANDARD.encode([0x89, b'P', b'N', b'G']);
         let result = format!(r#"{{"data":"{encoded}"}}"#);
-        assert_eq!(png_from_result(result.as_bytes()).unwrap(), [0x89, b'P', b'N', b'G']);
+        assert_eq!(
+            png_from_result(result.as_bytes()).unwrap(),
+            [0x89, b'P', b'N', b'G']
+        );
     }
 
     #[test]

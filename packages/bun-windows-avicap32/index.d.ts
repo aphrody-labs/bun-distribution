@@ -3,17 +3,62 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** avicap32.dll!capCreateCaptureWindowA */
-  capCreateCaptureWindowA(lpszWindowName: string | Win32Pointer, dwStyle: number, x: number, y: number, nWidth: number, nHeight: number, hwndParent: Win32Pointer, nID: number): number | null;
+  capCreateCaptureWindowA(
+    lpszWindowName: string | Win32Pointer,
+    dwStyle: number,
+    x: number,
+    y: number,
+    nWidth: number,
+    nHeight: number,
+    hwndParent: Win32Pointer,
+    nID: number,
+  ): number | null;
   /** avicap32.dll!capCreateCaptureWindowW */
-  capCreateCaptureWindowW(lpszWindowName: string | Win32Pointer, dwStyle: number, x: number, y: number, nWidth: number, nHeight: number, hwndParent: Win32Pointer, nID: number): number | null;
+  capCreateCaptureWindowW(
+    lpszWindowName: string | Win32Pointer,
+    dwStyle: number,
+    x: number,
+    y: number,
+    nWidth: number,
+    nHeight: number,
+    hwndParent: Win32Pointer,
+    nID: number,
+  ): number | null;
   /** avicap32.dll!capCreateCaptureWindowW */
-  capCreateCaptureWindow(lpszWindowName: string | Win32Pointer, dwStyle: number, x: number, y: number, nWidth: number, nHeight: number, hwndParent: Win32Pointer, nID: number): number | null;
+  capCreateCaptureWindow(
+    lpszWindowName: string | Win32Pointer,
+    dwStyle: number,
+    x: number,
+    y: number,
+    nWidth: number,
+    nHeight: number,
+    hwndParent: Win32Pointer,
+    nID: number,
+  ): number | null;
   /** avicap32.dll!capGetDriverDescriptionA */
-  capGetDriverDescriptionA(wDriverIndex: number, lpszName: string | Win32Pointer, cbName: number, lpszVer: string | Win32Pointer, cbVer: number): number;
+  capGetDriverDescriptionA(
+    wDriverIndex: number,
+    lpszName: string | Win32Pointer,
+    cbName: number,
+    lpszVer: string | Win32Pointer,
+    cbVer: number,
+  ): number;
   /** avicap32.dll!capGetDriverDescriptionW */
-  capGetDriverDescriptionW(wDriverIndex: number, lpszName: string | Win32Pointer, cbName: number, lpszVer: string | Win32Pointer, cbVer: number): number;
+  capGetDriverDescriptionW(
+    wDriverIndex: number,
+    lpszName: string | Win32Pointer,
+    cbName: number,
+    lpszVer: string | Win32Pointer,
+    cbVer: number,
+  ): number;
   /** avicap32.dll!capGetDriverDescriptionW */
-  capGetDriverDescription(wDriverIndex: number, lpszName: string | Win32Pointer, cbName: number, lpszVer: string | Win32Pointer, cbVer: number): number;
+  capGetDriverDescription(
+    wDriverIndex: number,
+    lpszName: string | Win32Pointer,
+    cbName: number,
+    lpszVer: string | Win32Pointer,
+    cbVer: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

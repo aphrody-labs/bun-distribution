@@ -5,15 +5,43 @@ interface Functions {
   /** wintrust.dll!CryptCATAdminAcquireContext */
   CryptCATAdminAcquireContext(phCatAdmin: Win32Pointer, pgSubsystem: Win32Pointer, dwFlags: number): number;
   /** wintrust.dll!CryptCATAdminAcquireContext2 */
-  CryptCATAdminAcquireContext2(phCatAdmin: Win32Pointer, pgSubsystem: Win32Pointer, pwszHashAlgorithm: string | Win32Pointer, pStrongHashPolicy: Win32Pointer, dwFlags: number): number;
+  CryptCATAdminAcquireContext2(
+    phCatAdmin: Win32Pointer,
+    pgSubsystem: Win32Pointer,
+    pwszHashAlgorithm: string | Win32Pointer,
+    pStrongHashPolicy: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wintrust.dll!CryptCATAdminAddCatalog */
-  CryptCATAdminAddCatalog(hCatAdmin: number | bigint, pwszCatalogFile: string | Win32Pointer, pwszSelectBaseName: string | Win32Pointer, dwFlags: number): number | bigint;
+  CryptCATAdminAddCatalog(
+    hCatAdmin: number | bigint,
+    pwszCatalogFile: string | Win32Pointer,
+    pwszSelectBaseName: string | Win32Pointer,
+    dwFlags: number,
+  ): number | bigint;
   /** wintrust.dll!CryptCATAdminCalcHashFromFileHandle */
-  CryptCATAdminCalcHashFromFileHandle(hFile: Win32Pointer, pcbHash: Win32Pointer, pbHash: Win32Pointer, dwFlags: number): number;
+  CryptCATAdminCalcHashFromFileHandle(
+    hFile: Win32Pointer,
+    pcbHash: Win32Pointer,
+    pbHash: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wintrust.dll!CryptCATAdminCalcHashFromFileHandle2 */
-  CryptCATAdminCalcHashFromFileHandle2(hCatAdmin: number | bigint, hFile: Win32Pointer, pcbHash: Win32Pointer, pbHash: Win32Pointer, dwFlags: number): number;
+  CryptCATAdminCalcHashFromFileHandle2(
+    hCatAdmin: number | bigint,
+    hFile: Win32Pointer,
+    pcbHash: Win32Pointer,
+    pbHash: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wintrust.dll!CryptCATAdminEnumCatalogFromHash */
-  CryptCATAdminEnumCatalogFromHash(hCatAdmin: number | bigint, pbHash: Win32Pointer, cbHash: number, dwFlags: number, phPrevCatInfo: Win32Pointer): number | bigint;
+  CryptCATAdminEnumCatalogFromHash(
+    hCatAdmin: number | bigint,
+    pbHash: Win32Pointer,
+    cbHash: number,
+    dwFlags: number,
+    phPrevCatInfo: Win32Pointer,
+  ): number | bigint;
   /** wintrust.dll!CryptCATAdminPauseServiceForBackup */
   CryptCATAdminPauseServiceForBackup(dwFlags: number, fResume: number): number;
   /** wintrust.dll!CryptCATAdminReleaseCatalogContext */
@@ -21,23 +49,54 @@ interface Functions {
   /** wintrust.dll!CryptCATAdminReleaseContext */
   CryptCATAdminReleaseContext(hCatAdmin: number | bigint, dwFlags: number): number;
   /** wintrust.dll!CryptCATAdminRemoveCatalog */
-  CryptCATAdminRemoveCatalog(hCatAdmin: number | bigint, pwszCatalogFile: string | Win32Pointer, dwFlags: number): number;
+  CryptCATAdminRemoveCatalog(
+    hCatAdmin: number | bigint,
+    pwszCatalogFile: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wintrust.dll!CryptCATAdminResolveCatalogPath */
-  CryptCATAdminResolveCatalogPath(hCatAdmin: number | bigint, pwszCatalogFile: string | Win32Pointer, psCatInfo: Win32Pointer, dwFlags: number): number;
+  CryptCATAdminResolveCatalogPath(
+    hCatAdmin: number | bigint,
+    pwszCatalogFile: string | Win32Pointer,
+    psCatInfo: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wintrust.dll!CryptCATAllocSortedMemberInfo */
   CryptCATAllocSortedMemberInfo(hCatalog: Win32Pointer, pwszReferenceTag: string | Win32Pointer): number | null;
   /** wintrust.dll!CryptCATCDFClose */
   CryptCATCDFClose(pCDF: Win32Pointer): number;
   /** wintrust.dll!CryptCATCDFEnumAttributes */
-  CryptCATCDFEnumAttributes(pCDF: Win32Pointer, pMember: Win32Pointer, pPrevAttr: Win32Pointer, pfnParseError: Win32Callback): number | null;
+  CryptCATCDFEnumAttributes(
+    pCDF: Win32Pointer,
+    pMember: Win32Pointer,
+    pPrevAttr: Win32Pointer,
+    pfnParseError: Win32Callback,
+  ): number | null;
   /** wintrust.dll!CryptCATCDFEnumAttributesWithCDFTag */
-  CryptCATCDFEnumAttributesWithCDFTag(pCDF: Win32Pointer, pwszMemberTag: string | Win32Pointer, pMember: Win32Pointer, pPrevAttr: Win32Pointer, pfnParseError: Win32Callback): number | null;
+  CryptCATCDFEnumAttributesWithCDFTag(
+    pCDF: Win32Pointer,
+    pwszMemberTag: string | Win32Pointer,
+    pMember: Win32Pointer,
+    pPrevAttr: Win32Pointer,
+    pfnParseError: Win32Callback,
+  ): number | null;
   /** wintrust.dll!CryptCATCDFEnumCatAttributes */
-  CryptCATCDFEnumCatAttributes(pCDF: Win32Pointer, pPrevAttr: Win32Pointer, pfnParseError: Win32Callback): number | null;
+  CryptCATCDFEnumCatAttributes(
+    pCDF: Win32Pointer,
+    pPrevAttr: Win32Pointer,
+    pfnParseError: Win32Callback,
+  ): number | null;
   /** wintrust.dll!CryptCATCDFEnumMembers */
   CryptCATCDFEnumMembers(pCDF: Win32Pointer, pPrevMember: Win32Pointer, pfnParseError: Win32Callback): number | null;
   /** wintrust.dll!CryptCATCDFEnumMembersByCDFTagEx */
-  CryptCATCDFEnumMembersByCDFTagEx(pCDF: Win32Pointer, pwszPrevCDFTag: string | Win32Pointer, pfnParseError: Win32Callback, ppMember: Win32Pointer, fContinueOnError: number, pvReserved: Win32Pointer): number | null;
+  CryptCATCDFEnumMembersByCDFTagEx(
+    pCDF: Win32Pointer,
+    pwszPrevCDFTag: string | Win32Pointer,
+    pfnParseError: Win32Callback,
+    ppMember: Win32Pointer,
+    fContinueOnError: number,
+    pvReserved: Win32Pointer,
+  ): number | null;
   /** wintrust.dll!CryptCATCDFOpen */
   CryptCATCDFOpen(pwszFilePath: string | Win32Pointer, pfnParseError: Win32Callback): number | null;
   /** wintrust.dll!CryptCATCatalogInfoFromContext */
@@ -53,7 +112,11 @@ interface Functions {
   /** wintrust.dll!CryptCATFreeSortedMemberInfo */
   CryptCATFreeSortedMemberInfo(hCatalog: Win32Pointer, pCatMember: Win32Pointer): void;
   /** wintrust.dll!CryptCATGetAttrInfo */
-  CryptCATGetAttrInfo(hCatalog: Win32Pointer, pCatMember: Win32Pointer, pwszReferenceTag: string | Win32Pointer): number | null;
+  CryptCATGetAttrInfo(
+    hCatalog: Win32Pointer,
+    pCatMember: Win32Pointer,
+    pwszReferenceTag: string | Win32Pointer,
+  ): number | null;
   /** wintrust.dll!CryptCATGetCatAttrInfo */
   CryptCATGetCatAttrInfo(hCatalog: Win32Pointer, pwszReferenceTag: string | Win32Pointer): number | null;
   /** wintrust.dll!CryptCATGetMemberInfo */
@@ -61,33 +124,90 @@ interface Functions {
   /** wintrust.dll!CryptCATHandleFromStore */
   CryptCATHandleFromStore(pCatStore: Win32Pointer): number | null;
   /** wintrust.dll!CryptCATOpen */
-  CryptCATOpen(pwszFileName: string | Win32Pointer, fdwOpenFlags: number, hProv: number | bigint, dwPublicVersion: number, dwEncodingType: number): number | null;
+  CryptCATOpen(
+    pwszFileName: string | Win32Pointer,
+    fdwOpenFlags: number,
+    hProv: number | bigint,
+    dwPublicVersion: number,
+    dwEncodingType: number,
+  ): number | null;
   /** wintrust.dll!CryptCATPersistStore */
   CryptCATPersistStore(hCatalog: Win32Pointer): number;
   /** wintrust.dll!CryptCATPutAttrInfo */
-  CryptCATPutAttrInfo(hCatalog: Win32Pointer, pCatMember: Win32Pointer, pwszReferenceTag: string | Win32Pointer, dwAttrTypeAndAction: number, cbData: number, pbData: Win32Pointer): number | null;
+  CryptCATPutAttrInfo(
+    hCatalog: Win32Pointer,
+    pCatMember: Win32Pointer,
+    pwszReferenceTag: string | Win32Pointer,
+    dwAttrTypeAndAction: number,
+    cbData: number,
+    pbData: Win32Pointer,
+  ): number | null;
   /** wintrust.dll!CryptCATPutCatAttrInfo */
-  CryptCATPutCatAttrInfo(hCatalog: Win32Pointer, pwszReferenceTag: string | Win32Pointer, dwAttrTypeAndAction: number, cbData: number, pbData: Win32Pointer): number | null;
+  CryptCATPutCatAttrInfo(
+    hCatalog: Win32Pointer,
+    pwszReferenceTag: string | Win32Pointer,
+    dwAttrTypeAndAction: number,
+    cbData: number,
+    pbData: Win32Pointer,
+  ): number | null;
   /** wintrust.dll!CryptCATPutMemberInfo */
-  CryptCATPutMemberInfo(hCatalog: Win32Pointer, pwszFileName: string | Win32Pointer, pwszReferenceTag: string | Win32Pointer, pgSubjectType: Win32Pointer, dwCertVersion: number, cbSIPIndirectData: number, pbSIPIndirectData: Win32Pointer): number | null;
+  CryptCATPutMemberInfo(
+    hCatalog: Win32Pointer,
+    pwszFileName: string | Win32Pointer,
+    pwszReferenceTag: string | Win32Pointer,
+    pgSubjectType: Win32Pointer,
+    dwCertVersion: number,
+    cbSIPIndirectData: number,
+    pbSIPIndirectData: Win32Pointer,
+  ): number | null;
   /** wintrust.dll!CryptCATStoreFromHandle */
   CryptCATStoreFromHandle(hCatalog: Win32Pointer): number | null;
   /** wintrust.dll!CryptSIPCreateIndirectData */
-  CryptSIPCreateIndirectData(pSubjectInfo: Win32Pointer, pcbIndirectData: Win32Pointer, pIndirectData: Win32Pointer): number;
+  CryptSIPCreateIndirectData(
+    pSubjectInfo: Win32Pointer,
+    pcbIndirectData: Win32Pointer,
+    pIndirectData: Win32Pointer,
+  ): number;
   /** wintrust.dll!CryptSIPGetCaps */
   CryptSIPGetCaps(pSubjInfo: Win32Pointer, pCaps: Win32Pointer): number;
   /** wintrust.dll!CryptSIPGetSealedDigest */
-  CryptSIPGetSealedDigest(pSubjectInfo: Win32Pointer, pSig: Win32Pointer, dwSig: number, pbDigest: Win32Pointer, pcbDigest: Win32Pointer): number;
+  CryptSIPGetSealedDigest(
+    pSubjectInfo: Win32Pointer,
+    pSig: Win32Pointer,
+    dwSig: number,
+    pbDigest: Win32Pointer,
+    pcbDigest: Win32Pointer,
+  ): number;
   /** wintrust.dll!CryptSIPGetSignedDataMsg */
-  CryptSIPGetSignedDataMsg(pSubjectInfo: Win32Pointer, pdwEncodingType: Win32Pointer, dwIndex: number, pcbSignedDataMsg: Win32Pointer, pbSignedDataMsg: Win32Pointer): number;
+  CryptSIPGetSignedDataMsg(
+    pSubjectInfo: Win32Pointer,
+    pdwEncodingType: Win32Pointer,
+    dwIndex: number,
+    pcbSignedDataMsg: Win32Pointer,
+    pbSignedDataMsg: Win32Pointer,
+  ): number;
   /** wintrust.dll!CryptSIPPutSignedDataMsg */
-  CryptSIPPutSignedDataMsg(pSubjectInfo: Win32Pointer, dwEncodingType: number, pdwIndex: Win32Pointer, cbSignedDataMsg: number, pbSignedDataMsg: Win32Pointer): number;
+  CryptSIPPutSignedDataMsg(
+    pSubjectInfo: Win32Pointer,
+    dwEncodingType: number,
+    pdwIndex: Win32Pointer,
+    cbSignedDataMsg: number,
+    pbSignedDataMsg: Win32Pointer,
+  ): number;
   /** wintrust.dll!CryptSIPRemoveSignedDataMsg */
   CryptSIPRemoveSignedDataMsg(pSubjectInfo: Win32Pointer, dwIndex: number): number;
   /** wintrust.dll!CryptSIPVerifyIndirectData */
   CryptSIPVerifyIndirectData(pSubjectInfo: Win32Pointer, pIndirectData: Win32Pointer): number;
   /** wintrust.dll!FindCertsByIssuer */
-  FindCertsByIssuer(pCertChains: Win32Pointer, pcbCertChains: Win32Pointer, pcCertChains: Win32Pointer, pbEncodedIssuerName: Win32Pointer, cbEncodedIssuerName: number, pwszPurpose: string | Win32Pointer, dwKeySpec: number): number;
+  FindCertsByIssuer(
+    pCertChains: Win32Pointer,
+    pcbCertChains: Win32Pointer,
+    pcCertChains: Win32Pointer,
+    pbEncodedIssuerName: Win32Pointer,
+    cbEncodedIssuerName: number,
+    pwszPurpose: string | Win32Pointer,
+    dwKeySpec: number,
+  ): number;
   /** wintrust.dll!IsCatalogFile */
   IsCatalogFile(hFile: Win32Pointer, pwszFileName: string | Win32Pointer): number;
   /** wintrust.dll!OpenPersonalTrustDBDialog */
@@ -103,7 +223,12 @@ interface Functions {
   /** wintrust.dll!WTHelperGetProvPrivateDataFromChain */
   WTHelperGetProvPrivateDataFromChain(pProvData: Win32Pointer, pgProviderID: Win32Pointer): number | null;
   /** wintrust.dll!WTHelperGetProvSignerFromChain */
-  WTHelperGetProvSignerFromChain(pProvData: Win32Pointer, idxSigner: number, fCounterSigner: number, idxCounterSigner: number): number | null;
+  WTHelperGetProvSignerFromChain(
+    pProvData: Win32Pointer,
+    idxSigner: number,
+    fCounterSigner: number,
+    idxCounterSigner: number,
+  ): number | null;
   /** wintrust.dll!WTHelperProvDataFromStateData */
   WTHelperProvDataFromStateData(hStateData: Win32Pointer): number | null;
   /** wintrust.dll!WinVerifyTrust */

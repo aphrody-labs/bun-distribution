@@ -3,12 +3,22 @@
   "version": "1.4.4",
   "private": false,
   "description": "Compte unique Rose Griffon : identité native et connexions liées (Discord, Patreon, Twitch, Google, Steam, Achilléa)",
+  "license": "Apache-2.0",
+  "files": [
+    "src",
+    "test",
+    "tsconfig.json"
+  ],
   "type": "module",
   "exports": {
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "scripts": {
     "lint": "bun lint -c ../rg-config/oxlintrc.json src",
@@ -18,15 +28,5 @@
   },
   "engines": {
     "bun": "=1.4.4"
-  },
-  "license": "Apache-2.0",
-  "files": [
-    "src",
-    "test",
-    "tsconfig.json"
-  ],
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   }
 }

@@ -11,7 +11,14 @@ interface Functions {
   /** elscore.dll!MappingGetServices */
   MappingGetServices(pOptions: Win32Pointer, prgServices: Win32Pointer, pdwServicesCount: Win32Pointer): number;
   /** elscore.dll!MappingRecognizeText */
-  MappingRecognizeText(pServiceInfo: Win32Pointer, pszText: string | Win32Pointer, dwLength: number, dwIndex: number, pOptions: Win32Pointer, pbag: Win32Pointer): number;
+  MappingRecognizeText(
+    pServiceInfo: Win32Pointer,
+    pszText: string | Win32Pointer,
+    dwLength: number,
+    dwIndex: number,
+    pOptions: Win32Pointer,
+    pbag: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

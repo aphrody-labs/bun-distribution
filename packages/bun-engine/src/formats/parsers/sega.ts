@@ -19,10 +19,7 @@ export function deinterleaveSmdBlock(block: Uint8Array): Uint8Array {
 
 export async function parseGenesis({ source, head }: ParseContext) {
   const interleaved = isInterleavedSmd(head, source.size);
-  const view = new BinaryView(
-    interleaved ? deinterleaveSmdBlock(head.subarray(0x200, 0x4200)) : head,
-    "be",
-  );
+  const view = new BinaryView(interleaved ? deinterleaveSmdBlock(head.subarray(0x200, 0x4200)) : head, "be");
   let checksum: number | undefined;
   if (!interleaved) {
     let sum = 0;
@@ -69,8 +66,7 @@ export async function parseGenesis({ source, head }: ParseContext) {
       overseasTitle: view.ascii(0x150, 48).replace(/\s+/g, " "),
       serial: view.ascii(0x180, 14),
       checksum: hex(view.u16(0x18e), 4),
-      checksumValid:
-        checksum === undefined ? undefined : checksum === view.u16(0x18e),
+      checksumValid: checksum === undefined ? undefined : checksum === view.u16(0x18e),
       devices: view.ascii(0x190, 16),
       romRange: [hex32(view.u32(0x1a0)), hex32(romEnd)],
       sram: view.equals(0x1b0, "RA"),

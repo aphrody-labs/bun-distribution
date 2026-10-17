@@ -42,7 +42,7 @@ export function RolePicker({
   });
 
   const roles = useMemo(() => data?.roles ?? [], [data]);
-  const selected = roles.find((r) => r.id === value);
+  const selected = roles.find(r => r.id === value);
 
   return (
     <div className={`flex items-center gap-2 ${className ?? ""}`}>
@@ -56,13 +56,11 @@ export function RolePicker({
       <select
         className="input flex-1"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         disabled={disabled || isLoading}
       >
-        <option value="">
-          {isLoading ? "Chargement..." : error ? "Erreur" : placeholder}
-        </option>
-        {roles.map((r) => (
+        <option value="">{isLoading ? "Chargement..." : error ? "Erreur" : placeholder}</option>
+        {roles.map(r => (
           <option key={r.id} value={r.id}>
             {r.name}
             {r.premiumSubscriber ? " · boost (non attribuable par le bot)" : ""}

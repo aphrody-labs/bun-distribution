@@ -6,12 +6,7 @@ import {
 } from "../../graphics";
 import type { ParamValues } from "../../params";
 import { buildStickerId, parseStickerId } from "../sticker-id";
-import type {
-  StickerBrowseResult,
-  StickerItem,
-  StickerProvider,
-  StickerSearchResult,
-} from "../types";
+import type { StickerBrowseResult, StickerItem, StickerProvider, StickerSearchResult } from "../types";
 
 const SHAPES_PROVIDER_ID = "shapes";
 
@@ -48,42 +43,25 @@ const LEGACY_SHAPE_PRESETS: Record<string, ShapeGraphicPreset> = {
 
 function getShapePresets(): ShapeGraphicPreset[] {
   registerDefaultGraphics();
-  return graphicsRegistry.getAll().map((definition) => ({
+  return graphicsRegistry.getAll().map(definition => ({
     shapeKey: definition.id,
     name: definition.name,
     definitionId: definition.id,
   }));
 }
 
-function getShapePreset({
-  shapeKey,
-}: {
-  shapeKey: string;
-}): ShapeGraphicPreset | null {
-  return (
-    getShapePresets().find((preset) => preset.shapeKey === shapeKey) ??
-    LEGACY_SHAPE_PRESETS[shapeKey] ??
-    null
-  );
+function getShapePreset({ shapeKey }: { shapeKey: string }): ShapeGraphicPreset | null {
+  return getShapePresets().find(preset => preset.shapeKey === shapeKey) ?? LEGACY_SHAPE_PRESETS[shapeKey] ?? null;
 }
 
-function getShapeParams({
-  preset,
-}: {
-  preset: ShapeGraphicPreset;
-}): ParamValues {
+function getShapeParams({ preset }: { preset: ShapeGraphicPreset }): ParamValues {
   return {
-    ...buildDefaultGraphicInstance({ definitionId: preset.definitionId })
-      .params,
+    ...buildDefaultGraphicInstance({ definitionId: preset.definitionId }).params,
     ...preset.params,
   };
 }
 
-export function parseShapeStickerId({
-  stickerId,
-}: {
-  stickerId: string;
-}): ShapeGraphicPreset | null {
+export function parseShapeStickerId({ stickerId }: { stickerId: string }): ShapeGraphicPreset | null {
   try {
     const { providerValue } = parseStickerId({ stickerId });
     return getShapePreset({ shapeKey: providerValue });
@@ -103,11 +81,7 @@ function buildShapeUrl({ shapeKey }: { shapeKey: string }): string {
   });
 }
 
-function toStickerItem({
-  preset,
-}: {
-  preset: ShapeGraphicPreset;
-}): StickerItem {
+function toStickerItem({ preset }: { preset: ShapeGraphicPreset }): StickerItem {
   return {
     id: buildStickerId({
       providerId: SHAPES_PROVIDER_ID,
@@ -123,24 +97,18 @@ function toStickerItem({
   };
 }
 
-function filterShapesByQuery({
-  query,
-}: {
-  query: string;
-}): ShapeGraphicPreset[] {
+function filterShapesByQuery({ query }: { query: string }): ShapeGraphicPreset[] {
   const normalizedQuery = query.trim().toLowerCase();
   const presets = getShapePresets();
   if (!normalizedQuery) {
     return presets;
   }
 
-  return presets.filter((preset) => {
+  return presets.filter(preset => {
     const definition = graphicsRegistry.get(preset.definitionId);
     return (
       preset.name.toLowerCase().includes(normalizedQuery) ||
-      definition.keywords.some((keyword) =>
-        keyword.toLowerCase().includes(normalizedQuery),
-      )
+      definition.keywords.some(keyword => keyword.toLowerCase().includes(normalizedQuery))
     );
   });
 }
@@ -166,29 +134,19 @@ function paginateShapes({
 
 export const shapesProvider: StickerProvider = {
   id: SHAPES_PROVIDER_ID,
-  async search({
-    query,
-    options,
-  }: {
-    query: string;
-    options?: { limit?: number };
-  }): Promise<StickerSearchResult> {
+  async search({ query, options }: { query: string; options?: { limit?: number } }): Promise<StickerSearchResult> {
     const filteredShapes = filterShapesByQuery({ query });
     const paged = paginateShapes({
       shapes: filteredShapes,
       options: { page: 1, limit: options?.limit ?? getShapePresets().length },
     });
     return {
-      items: paged.items.map((preset) => toStickerItem({ preset })),
+      items: paged.items.map(preset => toStickerItem({ preset })),
       total: paged.total,
       hasMore: paged.hasMore,
     };
   },
-  async browse({
-    options,
-  }: {
-    options?: { page?: number; limit?: number };
-  }): Promise<StickerBrowseResult> {
+  async browse({ options }: { options?: { page?: number; limit?: number } }): Promise<StickerBrowseResult> {
     const paged = paginateShapes({
       shapes: getShapePresets(),
       options,
@@ -197,19 +155,14 @@ export const shapesProvider: StickerProvider = {
       sections: [
         {
           id: "all",
-          items: paged.items.map((preset) => toStickerItem({ preset })),
+          items: paged.items.map(preset => toStickerItem({ preset })),
           hasMore: paged.hasMore,
           layout: "grid",
         },
       ],
     };
   },
-  resolveUrl({
-    stickerId,
-  }: {
-    stickerId: string;
-    options?: { width?: number; height?: number };
-  }): string {
+  resolveUrl({ stickerId }: { stickerId: string; options?: { width?: number; height?: number } }): string {
     const preset = parseShapeStickerId({ stickerId });
     return buildShapeUrl({ shapeKey: preset?.shapeKey ?? "rectangle" });
   },

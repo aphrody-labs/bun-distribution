@@ -45,16 +45,9 @@ function respond(request: Request, body: string): Response {
   if (path.endsWith("/UserByScreenName")) return Response.json(USER);
   if (path.endsWith("/FavoriteTweet")) {
     const id = JSON.parse(body || "{}")?.variables?.tweet_id;
-    if (id === "1002")
-      return Response.json(
-        { errors: [{ code: 139, message: "already favorited" }] },
-        { status: 403 },
-      );
+    if (id === "1002") return Response.json({ errors: [{ code: 139, message: "already favorited" }] }, { status: 403 });
     if (id === "1003")
-      return Response.json(
-        { errors: [{ code: 32, message: "could not authenticate you" }] },
-        { status: 401 },
-      );
+      return Response.json({ errors: [{ code: 32, message: "could not authenticate you" }] }, { status: 401 });
     return Response.json({ data: { favorite_tweet: "Done" } });
   }
   return Response.json({ data: {} });
@@ -107,7 +100,7 @@ native("local operations answer synchronously without a client", async () => {
     policy: unknown;
   }>(0, "meta");
   expect(meta.ops.length).toBeGreaterThan(100);
-  expect(meta.ops.some((op) => op.name === "create_tweet")).toBe(true);
+  expect(meta.ops.some(op => op.name === "create_tweet")).toBe(true);
 
   const refused = xCall(0, "search", { query: "x" });
   expect(refused.ok).toBe(false);
@@ -117,80 +110,66 @@ native("local operations answer synchronously without a client", async () => {
   }
 });
 
-native(
-  "opening a client validates the session and never echoes it",
-  async () => {
-    const { xClientClose, xClientOpen, XNativeError } =
-      await import("../src/x");
-    expect(() => xClientOpen({ auth_token: "only-one" } as never)).toThrow(
-      XNativeError,
-    );
-    const handle = await openClient();
-    expect(JSON.stringify(handle)).not.toContain("AUTH_TOKEN_PLACEHOLDER");
-    expect(handle.client).toBeGreaterThan(0);
-    expect(xClientClose(handle.client)).toBe(true);
-    expect(xClientClose(handle.client)).toBe(false);
-  },
-);
+native("opening a client validates the session and never echoes it", async () => {
+  const { xClientClose, xClientOpen, XNativeError } = await import("../src/x");
+  expect(() => xClientOpen({ auth_token: "only-one" } as never)).toThrow(XNativeError);
+  const handle = await openClient();
+  expect(JSON.stringify(handle)).not.toContain("AUTH_TOKEN_PLACEHOLDER");
+  expect(handle.client).toBeGreaterThan(0);
+  expect(xClientClose(handle.client)).toBe(true);
+  expect(xClientClose(handle.client)).toBe(false);
+});
 
-native(
-  "a job runs an operation through the loopback server with the rotating headers",
-  async () => {
-    const { xClientClose, xSubmit } = await import("../src/x");
-    const { client } = await openClient();
-    seen.length = 0;
-    const envelope = await xSubmit<{ screen_name: string; id: string }>(
-      client,
-      "user_by_screen_name",
-      { handle: "@aphrody_code" },
-      { id: "call-1" },
-    );
-    expect(envelope.ok).toBe(true);
-    if (envelope.ok) {
-      expect(envelope.id).toBe("call-1");
-      expect(envelope.data.screen_name).toBe("aphrody_code");
-      expect(envelope.attempts).toBe(1);
-    }
-    expect(seen[0]?.csrf).toBe("CT0_PLACEHOLDER");
-    xClientClose(client);
-  },
-);
+native("a job runs an operation through the loopback server with the rotating headers", async () => {
+  const { xClientClose, xSubmit } = await import("../src/x");
+  const { client } = await openClient();
+  seen.length = 0;
+  const envelope = await xSubmit<{ screen_name: string; id: string }>(
+    client,
+    "user_by_screen_name",
+    { handle: "@aphrody_code" },
+    { id: "call-1" },
+  );
+  expect(envelope.ok).toBe(true);
+  if (envelope.ok) {
+    expect(envelope.id).toBe("call-1");
+    expect(envelope.data.screen_name).toBe("aphrody_code");
+    expect(envelope.attempts).toBe(1);
+  }
+  expect(seen[0]?.csrf).toBe("CT0_PLACEHOLDER");
+  xClientClose(client);
+});
 
-native(
-  "failures are envelopes with a kind, and argument errors never reach the network",
-  async () => {
-    const { xClientClose, xSubmit } = await import("../src/x");
-    const { client } = await openClient();
-    seen.length = 0;
-    const duplicate = await xSubmit(client, "like", { id: "1002" });
-    expect(duplicate.ok).toBe(false);
-    if (!duplicate.ok) {
-      expect(duplicate.error.kind).toBe("terminal");
-      expect(duplicate.error.code).toBe(139);
-    }
-    const dead = await xSubmit(client, "like", { id: "1003" });
-    expect(dead.ok).toBe(false);
-    if (!dead.ok) expect(dead.error.kind).toBe("auth");
+native("failures are envelopes with a kind, and argument errors never reach the network", async () => {
+  const { xClientClose, xSubmit } = await import("../src/x");
+  const { client } = await openClient();
+  seen.length = 0;
+  const duplicate = await xSubmit(client, "like", { id: "1002" });
+  expect(duplicate.ok).toBe(false);
+  if (!duplicate.ok) {
+    expect(duplicate.error.kind).toBe("terminal");
+    expect(duplicate.error.code).toBe(139);
+  }
+  const dead = await xSubmit(client, "like", { id: "1003" });
+  expect(dead.ok).toBe(false);
+  if (!dead.ok) expect(dead.error.kind).toBe("auth");
 
-    seen.length = 0;
-    const missing = await xSubmit(client, "like", {});
-    expect(missing.ok).toBe(false);
-    if (!missing.ok) expect(missing.error.kind).toBe("invalid");
-    const unknown = await xSubmit(client, "no_such_operation", {});
-    expect(unknown.ok).toBe(false);
-    expect(seen.length).toBe(0);
-    xClientClose(client);
-  },
-);
+  seen.length = 0;
+  const missing = await xSubmit(client, "like", {});
+  expect(missing.ok).toBe(false);
+  if (!missing.ok) expect(missing.error.kind).toBe("invalid");
+  const unknown = await xSubmit(client, "no_such_operation", {});
+  expect(unknown.ok).toBe(false);
+  expect(seen.length).toBe(0);
+  xClientClose(client);
+});
 
 native("an aborted signal rejects and a closed client is unknown", async () => {
   const { xClientClose, xSubmit } = await import("../src/x");
   const { client } = await openClient();
   const controller = new AbortController();
   controller.abort();
-  await expect(
-    xSubmit(client, "whoami", {}, { signal: controller.signal }),
-  ).rejects.toBeDefined();
+  await expect(xSubmit(client, "whoami", {}, { signal: controller.signal })).rejects.toBeDefined();
   xClientClose(client);
   const unknown = await xSubmit(client, "whoami", {});
   expect(unknown.ok).toBe(false);
@@ -209,95 +188,81 @@ async function drain(batch: number) {
   }
 }
 
-native(
-  "a batch isolates failures, stops on a dead session and resumes from its checkpoint",
-  async () => {
-    const { xBatchSubmit, xClientClose } = await import("../src/x");
-    const { client } = await openClient();
-    const checkpoint = join(dir, "run.jsonl");
-    const ops = ["1001", "1002", "1004", "1005"].map((id) => ({
-      id: `like-${id}`,
+native("a batch isolates failures, stops on a dead session and resumes from its checkpoint", async () => {
+  const { xBatchSubmit, xClientClose } = await import("../src/x");
+  const { client } = await openClient();
+  const checkpoint = join(dir, "run.jsonl");
+  const ops = ["1001", "1002", "1004", "1005"].map(id => ({
+    id: `like-${id}`,
+    op: "like",
+    args: { id },
+  }));
+
+  seen.length = 0;
+  const first = xBatchSubmit(client, ops, { concurrency: 2, checkpoint });
+  expect(first.total).toBe(4);
+  const run1 = await drain(first.batch);
+  expect(run1.items).toHaveLength(4);
+  expect(run1.summary).toMatchObject({
+    total: 4,
+    ok: 3,
+    failed: 1,
+    resumed: 0,
+  });
+  const terminal = run1.items.find(item => item.id === "like-1002");
+  expect(terminal?.ok).toBe(false);
+  expect(readFileSync(checkpoint, "utf8").trim().split("\n")).toHaveLength(4);
+  expect(readFileSync(checkpoint, "utf8")).not.toContain("AUTH_TOKEN_PLACEHOLDER");
+  const calls = seen.length;
+
+  // The same batch again: every result is final, so every one is replayed, none is executed.
+  const second = xBatchSubmit(client, ops, { concurrency: 2, checkpoint });
+  const run2 = await drain(second.batch);
+  expect(run2.items).toHaveLength(4);
+  expect(run2.items.every(item => item.resumed === true)).toBe(true);
+  expect(run2.summary?.resumed).toBe(4);
+  expect(seen.length).toBe(calls);
+
+  // A dead session stops the dispatch: the rest is reported not_run.
+  const dead = xBatchSubmit(
+    client,
+    [
+      { id: "d1", op: "like", args: { id: "1003" } },
+      { id: "d2", op: "like", args: { id: "2001" } },
+      { id: "d3", op: "like", args: { id: "2002" } },
+    ],
+    { concurrency: 1 },
+  );
+  const run3 = await drain(dead.batch);
+  expect(run3.summary?.stopped_by).toBe("auth");
+  expect(run3.summary?.not_run).toBeGreaterThan(0);
+  xClientClose(client);
+});
+
+native("invalid batches are refused before anything runs, and a batch can be cancelled", async () => {
+  const { xBatchCancel, xBatchPoll, xBatchSubmit, xClientClose, XNativeError } = await import("../src/x");
+  const { client } = await openClient();
+  seen.length = 0;
+  expect(() =>
+    xBatchSubmit(client, [
+      { id: "x", op: "like", args: { id: "1" } },
+      { id: "x", op: "like", args: { id: "2" } },
+    ]),
+  ).toThrow(XNativeError);
+  expect(() => xBatchSubmit(0, [])).toThrow(/open client/);
+  expect(seen.length).toBe(0);
+
+  const many = xBatchSubmit(
+    client,
+    Array.from({ length: 200 }, (_, i) => ({
+      id: `n${i}`,
       op: "like",
-      args: { id },
-    }));
-
-    seen.length = 0;
-    const first = xBatchSubmit(client, ops, { concurrency: 2, checkpoint });
-    expect(first.total).toBe(4);
-    const run1 = await drain(first.batch);
-    expect(run1.items).toHaveLength(4);
-    expect(run1.summary).toMatchObject({
-      total: 4,
-      ok: 3,
-      failed: 1,
-      resumed: 0,
-    });
-    const terminal = run1.items.find((item) => item.id === "like-1002");
-    expect(terminal?.ok).toBe(false);
-    expect(readFileSync(checkpoint, "utf8").trim().split("\n")).toHaveLength(4);
-    expect(readFileSync(checkpoint, "utf8")).not.toContain(
-      "AUTH_TOKEN_PLACEHOLDER",
-    );
-    const calls = seen.length;
-
-    // The same batch again: every result is final, so every one is replayed, none is executed.
-    const second = xBatchSubmit(client, ops, { concurrency: 2, checkpoint });
-    const run2 = await drain(second.batch);
-    expect(run2.items).toHaveLength(4);
-    expect(run2.items.every((item) => item.resumed === true)).toBe(true);
-    expect(run2.summary?.resumed).toBe(4);
-    expect(seen.length).toBe(calls);
-
-    // A dead session stops the dispatch: the rest is reported not_run.
-    const dead = xBatchSubmit(
-      client,
-      [
-        { id: "d1", op: "like", args: { id: "1003" } },
-        { id: "d2", op: "like", args: { id: "2001" } },
-        { id: "d3", op: "like", args: { id: "2002" } },
-      ],
-      { concurrency: 1 },
-    );
-    const run3 = await drain(dead.batch);
-    expect(run3.summary?.stopped_by).toBe("auth");
-    expect(run3.summary?.not_run).toBeGreaterThan(0);
-    xClientClose(client);
-  },
-);
-
-native(
-  "invalid batches are refused before anything runs, and a batch can be cancelled",
-  async () => {
-    const {
-      xBatchCancel,
-      xBatchPoll,
-      xBatchSubmit,
-      xClientClose,
-      XNativeError,
-    } = await import("../src/x");
-    const { client } = await openClient();
-    seen.length = 0;
-    expect(() =>
-      xBatchSubmit(client, [
-        { id: "x", op: "like", args: { id: "1" } },
-        { id: "x", op: "like", args: { id: "2" } },
-      ]),
-    ).toThrow(XNativeError);
-    expect(() => xBatchSubmit(0, [])).toThrow(/open client/);
-    expect(seen.length).toBe(0);
-
-    const many = xBatchSubmit(
-      client,
-      Array.from({ length: 200 }, (_, i) => ({
-        id: `n${i}`,
-        op: "like",
-        args: { id: `${3000 + i}` },
-      })),
-      { concurrency: 1 },
-    );
-    expect(xBatchCancel(many.batch)).toBe(true);
-    expect(xBatchCancel(many.batch)).toBe(false);
-    expect(() => xBatchPoll(many.batch)).toThrow(XNativeError);
-    xClientClose(client);
-  },
-);
+      args: { id: `${3000 + i}` },
+    })),
+    { concurrency: 1 },
+  );
+  expect(xBatchCancel(many.batch)).toBe(true);
+  expect(xBatchCancel(many.batch)).toBe(false);
+  expect(() => xBatchPoll(many.batch)).toThrow(XNativeError);
+  xClientClose(client);
+});

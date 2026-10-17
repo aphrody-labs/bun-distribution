@@ -38,9 +38,5 @@ export class Ctx {
       seen: {},
       runs: [],
     });
-  saveJournal = (j: Journal) =>
-    this.write(
-      "tools/config/deps/journal.json",
-      `${JSON.stringify(j, null, 2)}\n`,
-    );
+  saveJournal = (j: Journal) => this.write("tools/config/deps/journal.json", `${JSON.stringify(j, null, 2)}\n`);
 }

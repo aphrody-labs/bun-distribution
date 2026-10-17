@@ -139,11 +139,7 @@ export class SaveManager {
     }
   }
 
-  public getSceneJson({
-    sceneGenerationMetadata,
-  }: {
-    sceneGenerationMetadata: SceneGenereationMetaData;
-  }) {
+  public getSceneJson({ sceneGenerationMetadata }: { sceneGenerationMetadata: SceneGenereationMetaData }) {
     const version = this.deps.getVersion();
     const scene = this.deps.getActiveScene();
     const camera = this.deps.getCamera();
@@ -155,9 +151,7 @@ export class SaveManager {
     // save time, override the render-camera entry (first non-"main") with the
     // live transform so a reload restores where the frustum actually is.
     const renderTransform = this.deps.getRenderCameraTransform();
-    const renderCameraId = this.deps
-      .getCameras()
-      .find((cam) => cam.id !== "main")?.id;
+    const renderCameraId = this.deps.getCameras().find(cam => cam.id !== "main")?.id;
     const camerasData = this.deps.getCameras().map((cam: Camera) => {
       const useLive = renderTransform && cam.id === renderCameraId;
       return {
@@ -178,14 +172,10 @@ export class SaveManager {
     const liveTimeline = this.deps.getTimeline();
     let timeline: TimelineData | null = null;
     if (liveTimeline) {
-      const liveUuids = new Set(scene.scene.children.map((c) => c.uuid));
+      const liveUuids = new Set(scene.scene.children.map(c => c.uuid));
       timeline = cloneTimeline(liveTimeline);
-      timeline.tracks = timeline.tracks.filter((t) =>
-        liveUuids.has(t.objectUuid),
-      );
-      timeline.clipLanes = timeline.clipLanes.filter((l) =>
-        liveUuids.has(l.objectUuid),
-      );
+      timeline.tracks = timeline.tracks.filter(t => liveUuids.has(t.objectUuid));
+      timeline.clipLanes = timeline.clipLanes.filter(l => liveUuids.has(l.objectUuid));
     }
 
     return {
@@ -221,9 +211,7 @@ export class SaveManager {
     // scene. canvas.toBlob yields a Blob directly, no toDataURL →
     // fetch → blob roundtrip. Adapters fire-and-forget the cover-image
     // PATCH internally, so this doesn't extend the save's critical path.
-    const sceneThumbnailPromise = captureCanvasThumbnail(
-      this.deps.getRenderer(),
-    );
+    const sceneThumbnailPromise = captureCanvasThumbnail(this.deps.getRenderer());
     const saveJson = JSON.stringify(sceneJson);
     const sceneThumbnail = await sceneThumbnailPromise;
 
@@ -257,16 +245,12 @@ export class SaveManager {
     }
   }
 
-  public async loadScene(
-    scene_media_token: string,
-  ): Promise<{ applied: boolean }> {
+  public async loadScene(scene_media_token: string): Promise<{ applied: boolean }> {
     const ticket = this.startLoad();
     this.deps.bus.emit(new EditorLoaderEvent(true));
     this.currentSceneMediaToken = scene_media_token;
     try {
-      const scene_json = await this.deps.loadSceneState(
-        this.currentSceneMediaToken,
-      );
+      const scene_json = await this.deps.loadSceneState(this.currentSceneMediaToken);
       if (ticket.cancelled) return { applied: false };
       const applied = await this.loadFromJson(scene_json, ticket);
       return { applied };
@@ -278,20 +262,12 @@ export class SaveManager {
     }
   }
 
-  private async loadFromJson(
-    scene_json: any,
-    ticket: LoadTicket,
-  ): Promise<boolean> {
+  private async loadFromJson(scene_json: any, ticket: LoadTicket): Promise<boolean> {
     const version = this.deps.getVersion();
     const scene = this.deps.getActiveScene();
     const proxyScene = new StoryTellerProxyScene(version, scene);
 
-    await proxyScene.loadFromSceneJson(
-      scene_json["scene"],
-      scene_json["skybox"],
-      scene_json["version"],
-      ticket,
-    );
+    await proxyScene.loadFromSceneJson(scene_json["scene"], scene_json["skybox"], scene_json["version"], ticket);
     if (ticket.cancelled) return false;
 
     const camera_data = scene_json["camera_data"];
@@ -316,9 +292,7 @@ export class SaveManager {
     }
 
     if (scene_json.selectedCameraId) {
-      this.deps.bus.emit(
-        new SelectedCameraChangedEvent(scene_json.selectedCameraId),
-      );
+      this.deps.bus.emit(new SelectedCameraChangedEvent(scene_json.selectedCameraId));
     }
 
     if (scene_json.positivePrompt) {
@@ -326,9 +300,7 @@ export class SaveManager {
     }
     if (scene_json.cameraAspectRatio) {
       this.deps.changeRenderCameraAspectRatio(scene_json.cameraAspectRatio);
-      this.deps.bus.emit(
-        new CameraAspectRatioChangedEvent(scene_json.cameraAspectRatio),
-      );
+      this.deps.bus.emit(new CameraAspectRatioChangedEvent(scene_json.cameraAspectRatio));
     }
 
     this.deps.setVersion(scene_json["version"]);
@@ -344,11 +316,7 @@ export class SaveManager {
     // through, so the previous scene's tracks/strips are never inherited
     // by a scene that saved none.
     const timeline = scene_json["timeline"];
-    if (
-      timeline &&
-      typeof timeline === "object" &&
-      Array.isArray(timeline.tracks)
-    ) {
+    if (timeline && typeof timeline === "object" && Array.isArray(timeline.tracks)) {
       this.deps.loadTimeline(timeline);
     } else {
       this.deps.resetTimeline();
@@ -362,14 +330,9 @@ export class SaveManager {
 // the image asynchronously without the toDataURL → base64 → fetch →
 // blob roundtrip the previous code path used, and yields the main
 // thread to the browser during encoding.
-function captureCanvasThumbnail(
-  renderer: THREE.WebGLRenderer | undefined,
-): Promise<Blob | undefined> {
+function captureCanvasThumbnail(renderer: THREE.WebGLRenderer | undefined): Promise<Blob | undefined> {
   if (!renderer) return Promise.resolve(undefined);
-  return new Promise((resolve) => {
-    renderer.domElement.toBlob(
-      (blob) => resolve(blob ?? undefined),
-      "image/png",
-    );
+  return new Promise(resolve => {
+    renderer.domElement.toBlob(blob => resolve(blob ?? undefined), "image/png");
   });
 }

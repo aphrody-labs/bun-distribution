@@ -310,8 +310,7 @@ function configuredLibraryOverride(): string | undefined {
 export function resolveNativeLibraryPath(): string | undefined {
   const override = configuredLibraryOverride();
   if (override) {
-    if (!existsSync(override))
-      throw new Error(`APHRODY_FFI_LIB points to a missing file: ${override}`);
+    if (!existsSync(override)) throw new Error(`APHRODY_FFI_LIB points to a missing file: ${override}`);
     return resolve(override);
   }
   const file = `${process.platform === "win32" ? "" : "lib"}aphrody_ffi.${suffix}`;
@@ -346,9 +345,7 @@ export function loadNativeLibrary(): NativeLibrary {
   const shared = sharedState[LIBRARY_KEY];
   const override = configuredLibraryOverride();
   if (shared && override && resolve(override) !== shared.path) {
-    throw new Error(
-      `aphrody_ffi is already loaded from ${shared.path}; native override selects ${resolve(override)}.`,
-    );
+    throw new Error(`aphrody_ffi is already loaded from ${shared.path}; native override selects ${resolve(override)}.`);
   }
   if (shared) return shared.library;
   const path = resolveNativeLibraryPath();
@@ -399,9 +396,7 @@ export function closeNativeLibrary(): void {
 
 /** @internal Query a loaded extension without opening a new native handle. */
 export function nativePipelinePendingCount(): number {
-  return Number(
-    sharedState[LIBRARY_KEY]?.pipeline?.symbols.aphrody_web_pipeline_pending_count() ?? 0,
-  );
+  return Number(sharedState[LIBRARY_KEY]?.pipeline?.symbols.aphrody_web_pipeline_pending_count() ?? 0);
 }
 
 /** Optional workflow symbols from the same verified native artifact. Old

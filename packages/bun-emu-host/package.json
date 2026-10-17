@@ -3,15 +3,12 @@
   "version": "1.4.4",
   "private": true,
   "license": "GPL-3.0-or-later",
-  "type": "module",
   "bin": {
     "bun-emu-host": "./src/cli.ts"
   },
+  "type": "module",
   "exports": {
     ".": "./src/index.ts"
-  },
-  "engines": {
-    "bun": "=1.4.4"
   },
   "scripts": {
     "build": "bun ./scripts/build.ts melonds",
@@ -20,5 +17,8 @@
     "build:azahar": "bun ./scripts/build.ts azahar",
     "build:kyty": "bun ./scripts/build.ts kyty",
     "typecheck": "bun check -p tsconfig.json --noEmit"
+  },
+  "engines": {
+    "bun": "=1.4.4"
   }
 }

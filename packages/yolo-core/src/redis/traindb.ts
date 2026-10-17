@@ -44,44 +44,27 @@ export interface TrainDatasetStats {
   };
 }
 
-function validateJson(
-  value: unknown,
-  parents = new Set<object>(),
-  depth = 0,
-): void {
-  if (depth > 64)
-    throw new TypeError("Training metadata exceeds maximum depth");
-  if (value === null || typeof value === "string" || typeof value === "boolean")
-    return;
+function validateJson(value: unknown, parents = new Set<object>(), depth = 0): void {
+  if (depth > 64) throw new TypeError("Training metadata exceeds maximum depth");
+  if (value === null || typeof value === "string" || typeof value === "boolean") return;
   if (typeof value === "number" && Number.isFinite(value)) return;
-  if (typeof value !== "object")
-    throw new TypeError("Training metadata must contain finite JSON values");
-  if (parents.has(value))
-    throw new TypeError("Training metadata must not contain cycles");
+  if (typeof value !== "object") throw new TypeError("Training metadata must contain finite JSON values");
+  if (parents.has(value)) throw new TypeError("Training metadata must not contain cycles");
   const prototype = Object.getPrototypeOf(value);
-  if (
-    !Array.isArray(value) &&
-    prototype !== null &&
-    prototype !== Object.prototype
-  )
+  if (!Array.isArray(value) && prototype !== null && prototype !== Object.prototype)
     throw new TypeError("Training metadata must contain plain JSON objects");
   if (Object.getOwnPropertySymbols(value).length > 0)
     throw new TypeError("Training metadata cannot contain symbol keys");
   parents.add(value);
-  for (const item of Array.isArray(value) ? value : Object.values(value))
-    validateJson(item, parents, depth + 1);
+  for (const item of Array.isArray(value) ? value : Object.values(value)) validateJson(item, parents, depth + 1);
   parents.delete(value);
 }
 
-function validateTrainingRecord(
-  value: unknown,
-  expectedId?: string,
-): Record<string, unknown> {
+function validateTrainingRecord(value: unknown, expectedId?: string): Record<string, unknown> {
   if (value === null || typeof value !== "object" || Array.isArray(value))
     throw new TypeError("Training record must be an object");
   const record = value as Record<string, unknown>;
-  if (typeof record.id !== "string")
-    throw new TypeError("Training record ID must be a string");
+  if (typeof record.id !== "string") throw new TypeError("Training record ID must be a string");
   validateRecordId(record.id);
   if (expectedId !== undefined && expectedId !== record.id)
     throw new TypeError("Training record ID differs from its index");
@@ -91,10 +74,7 @@ function validateTrainingRecord(
       : record.type === "triple"
         ? ["query", "positive", "negative"]
         : null;
-  if (
-    required === null ||
-    required.some((field) => typeof record[field] !== "string")
-  )
+  if (required === null || required.some(field => typeof record[field] !== "string"))
     throw new TypeError("Invalid training record type or fields");
   for (const field of ["input", "system", "thought"]) {
     if (record[field] !== undefined && typeof record[field] !== "string")
@@ -102,15 +82,12 @@ function validateTrainingRecord(
   }
   if (
     record.split !== undefined &&
-    (typeof record.split !== "string" ||
-      !["train", "val", "test"].includes(record.split))
+    (typeof record.split !== "string" || !["train", "val", "test"].includes(record.split))
   )
     throw new TypeError("Invalid training split");
   if (
     record.metadata !== undefined &&
-    (record.metadata === null ||
-      typeof record.metadata !== "object" ||
-      Array.isArray(record.metadata))
+    (record.metadata === null || typeof record.metadata !== "object" || Array.isArray(record.metadata))
   )
     throw new TypeError("Training metadata must be an object");
   if (record.metadata !== undefined) validateJson(record.metadata);
@@ -160,34 +137,13 @@ export class RedisTrainDb {
         return records;
       },
       write: async (id, value) => {
-        await client.sendCommand(
-          "EVAL",
-          WRITE_TRAINING,
-          2,
-          this.indexKey,
-          this.keyPrefix + id,
-          id,
-          value,
-        );
+        await client.sendCommand("EVAL", WRITE_TRAINING, 2, this.indexKey, this.keyPrefix + id, id, value);
       },
-      remove: async (id) => {
-        await client.sendCommand(
-          "EVAL",
-          REMOVE_RECORD,
-          2,
-          this.indexKey,
-          this.keyPrefix + id,
-          id,
-        );
+      remove: async id => {
+        await client.sendCommand("EVAL", REMOVE_RECORD, 2, this.indexKey, this.keyPrefix + id, id);
       },
       clear: async () => {
-        await client.sendCommand(
-          "EVAL",
-          CLEAR_RECORDS,
-          1,
-          this.indexKey,
-          this.keyPrefix,
-        );
+        await client.sendCommand("EVAL", CLEAR_RECORDS, 1, this.indexKey, this.keyPrefix);
       },
     });
   }
@@ -202,10 +158,7 @@ export class RedisTrainDb {
     return this.#records.persistenceState;
   }
 
-  async #put(
-    item: TrainInstruction | TrainTriple,
-    type: "instruction" | "triple",
-  ): Promise<void> {
+  async #put(item: TrainInstruction | TrainTriple, type: "instruction" | "triple"): Promise<void> {
     const value = { ...item, type };
     validateTrainingRecord(value);
     const serialized = JSON.stringify(value);
@@ -221,21 +174,16 @@ export class RedisTrainDb {
   async getRecord(id: string): Promise<Record<string, unknown> | null> {
     validateRecordId(id);
     const value = (await this.#records.values()).get(id);
-    return value === undefined
-      ? null
-      : validateTrainingRecord(JSON.parse(value), id);
+    return value === undefined ? null : validateTrainingRecord(JSON.parse(value), id);
   }
-  async listRecords(
-    limit = 50,
-    offset = 0,
-  ): Promise<Array<Record<string, unknown>>> {
+  async listRecords(limit = 50, offset = 0): Promise<Array<Record<string, unknown>>> {
     validatePageSize(limit, "limit");
     validatePageSize(offset, "offset");
     const values = await this.#records.values();
     return [...values.keys()]
       .toSorted(compareIds)
       .slice(offset, offset + limit)
-      .map((id) => validateTrainingRecord(JSON.parse(values.get(id)!), id));
+      .map(id => validateTrainingRecord(JSON.parse(values.get(id)!), id));
   }
   async getStats(): Promise<TrainDatasetStats> {
     const values = await this.#records.values();

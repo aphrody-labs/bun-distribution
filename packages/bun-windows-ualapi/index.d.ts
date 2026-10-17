@@ -5,7 +5,11 @@ interface Functions {
   /** ualapi.dll!UalInstrument */
   UalInstrument(Data: Win32Pointer): number;
   /** ualapi.dll!UalRegisterProduct */
-  UalRegisterProduct(wszProductName: string | Win32Pointer, wszRoleName: string | Win32Pointer, wszGuid: string | Win32Pointer): number;
+  UalRegisterProduct(
+    wszProductName: string | Win32Pointer,
+    wszRoleName: string | Win32Pointer,
+    wszGuid: string | Win32Pointer,
+  ): number;
   /** ualapi.dll!UalStart */
   UalStart(Data: Win32Pointer): number;
   /** ualapi.dll!UalStop */

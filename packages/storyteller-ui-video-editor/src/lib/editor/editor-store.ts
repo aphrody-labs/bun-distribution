@@ -20,12 +20,12 @@ interface EditorState {
   initializeApp: () => Promise<void>;
 }
 
-export const useEditorStore = create<EditorState>()((set) => ({
+export const useEditorStore = create<EditorState>()(set => ({
   isInitializing: true,
   isPanelsReady: false,
   canvasPresets: DEFAULT_CANVAS_PRESETS,
-  setInitializing: (loading) => set({ isInitializing: loading }),
-  setPanelsReady: (ready) => set({ isPanelsReady: ready }),
+  setInitializing: loading => set({ isInitializing: loading }),
+  setPanelsReady: ready => set({ isPanelsReady: ready }),
   initializeApp: async () => {
     set({ isInitializing: true, isPanelsReady: false });
     set({ isPanelsReady: true, isInitializing: false });

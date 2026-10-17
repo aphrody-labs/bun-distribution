@@ -18,13 +18,10 @@ export const mapFolderInfo = (f: FolderInfo): GalleryFolder => ({
   colorCode: f.maybe_color_code ?? null,
   // LARGE (512px): cover is full-bleed and collage cells render large enough
   // (esp. on retina / low column counts) that smaller sizes look blurry.
-  coverUrl: resolveFolderThumb(
-    f.maybe_custom_cover_thumbnail,
-    THUMBNAIL_SIZES.LARGE,
-  ),
+  coverUrl: resolveFolderThumb(f.maybe_custom_cover_thumbnail, THUMBNAIL_SIZES.LARGE),
   collageUrls: (f.last_media_thumbnails ?? [])
     .slice(0, 4)
-    .map((t) => resolveFolderThumb(t, THUMBNAIL_SIZES.LARGE))
+    .map(t => resolveFolderThumb(t, THUMBNAIL_SIZES.LARGE))
     .filter((u): u is string => !!u),
 });
 
@@ -42,11 +39,7 @@ export const galleryItemToCollageUrl = (item: GalleryItem): string | null =>
   null;
 
 /** Prepend new collage urls (dropping nulls), dedupe against existing, cap to `cap`. */
-export const mergeCollageUrls = (
-  existing: string[] | undefined,
-  newUrls: (string | null)[],
-  cap = 4,
-): string[] => {
+export const mergeCollageUrls = (existing: string[] | undefined, newUrls: (string | null)[], cap = 4): string[] => {
   const fresh = newUrls.filter((u): u is string => !!u);
   const seen = new Set(fresh);
   const merged = [...fresh];

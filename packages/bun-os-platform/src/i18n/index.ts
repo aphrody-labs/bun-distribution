@@ -9,13 +9,7 @@ import { parseAcceptLanguage } from "@rosegriffon/i18n";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { platformPaths, readSettings } from "../paths";
-import {
-  type CatalogSources,
-  fallbackChain,
-  type LocaleInfo,
-  Localizer,
-  lookupLocale,
-} from "./localizer";
+import { type CatalogSources, fallbackChain, type LocaleInfo, Localizer, lookupLocale } from "./localizer";
 
 export * from "./fluent";
 export * from "./localizer";
@@ -27,20 +21,16 @@ export function locales(extra: LocaleInfo[] = []): LocaleInfo[] {
   const file = join(platformPaths().baseLocales, "locales.json");
   const base = JSON.parse(readFileSync(file, "utf8")).locales as LocaleInfo[];
   const out = [...base];
-  for (const info of extra)
-    if (!out.some((l) => l.tag === info.tag)) out.push(info);
+  for (const info of extra) if (!out.some(l => l.tag === info.tag)) out.push(info);
   return out;
 }
 
 function ftlFiles(dir: string, domains?: readonly string[]): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
-    .filter(
-      (f) =>
-        f.endsWith(".ftl") && (!domains || domains.includes(f.slice(0, -4))),
-    )
+    .filter(f => f.endsWith(".ftl") && (!domains || domains.includes(f.slice(0, -4))))
     .sort()
-    .map((f) => readFileSync(join(dir, f), "utf8"));
+    .map(f => readFileSync(join(dir, f), "utf8"));
 }
 
 /** Extra `.ftl` sources by locale (plugins); appended after base and usr catalogs. */
@@ -50,10 +40,7 @@ export function contributeCatalog(tag: string, source: string): void {
 }
 
 /** Sources for one locale: base catalogs, then `usr/share/bun-os/locale`, then plugins. */
-export function catalogSources(
-  tag: string,
-  domains?: readonly string[],
-): string[] {
+export function catalogSources(tag: string, domains?: readonly string[]): string[] {
   const paths = platformPaths();
   return [
     ...ftlFiles(join(paths.baseLocales, tag), domains),
@@ -74,24 +61,9 @@ export function osLocales(): string[] {
       const MUI_LANGUAGE_NAME = 0x8;
       const count = new Uint32Array(1);
       const size = new Uint32Array(1);
-      if (
-        kernel32.GetUserPreferredUILanguages?.(
-          MUI_LANGUAGE_NAME,
-          count,
-          null,
-          size,
-        ) &&
-        size[0]
-      ) {
+      if (kernel32.GetUserPreferredUILanguages?.(MUI_LANGUAGE_NAME, count, null, size) && size[0]) {
         const buffer = new Uint16Array(size[0]);
-        if (
-          kernel32.GetUserPreferredUILanguages(
-            MUI_LANGUAGE_NAME,
-            count,
-            buffer,
-            size,
-          )
-        )
+        if (kernel32.GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, count, buffer, size))
           return String.fromCharCode(...buffer)
             .split("\0")
             .filter(Boolean);
@@ -101,12 +73,10 @@ export function osLocales(): string[] {
     }
   }
   const env = Bun.env;
-  const raw = env.LANGUAGE?.split(":") ?? [
-    env.LC_ALL ?? env.LC_MESSAGES ?? env.LANG ?? "",
-  ];
+  const raw = env.LANGUAGE?.split(":") ?? [env.LC_ALL ?? env.LC_MESSAGES ?? env.LANG ?? ""];
   return raw
-    .map((v) => v.replace(/\..*$/, "").replace(/@.*$/, "").replace(/_/g, "-"))
-    .filter((v) => v && v !== "C" && v !== "POSIX");
+    .map(v => v.replace(/\..*$/, "").replace(/@.*$/, "").replace(/_/g, "-"))
+    .filter(v => v && v !== "C" && v !== "POSIX");
 }
 
 export interface NegotiateInput {
@@ -125,19 +95,12 @@ export interface Negotiated {
   direction: "ltr" | "rtl";
 }
 
-export function negotiate(
-  input: NegotiateInput,
-  available: LocaleInfo[] = locales(),
-): Negotiated {
-  const tags = available.map((l) => l.tag);
-  const pick = (
-    source: Negotiated["source"],
-    requested: string[],
-  ): Negotiated | null => {
+export function negotiate(input: NegotiateInput, available: LocaleInfo[] = locales()): Negotiated {
+  const tags = available.map(l => l.tag);
+  const pick = (source: Negotiated["source"], requested: string[]): Negotiated | null => {
     const locale = lookupLocale(requested, tags);
     if (!locale) return null;
-    const direction =
-      available.find((l) => l.tag === locale)?.direction ?? "ltr";
+    const direction = available.find(l => l.tag === locale)?.direction ?? "ltr";
     return {
       locale,
       chain: fallbackChain(locale, available, DEFAULT_LOCALE),
@@ -151,8 +114,8 @@ export function negotiate(
       ? pick(
           "accept-language",
           parseAcceptLanguage(input.acceptLanguage)
-            .filter((p) => p.range !== "*" && p.quality > 0)
-            .map((p) => p.range),
+            .filter(p => p.range !== "*" && p.quality > 0)
+            .map(p => p.range),
         )
       : null) ??
     (input.os ? pick("os", osLocales()) : null) ?? {
@@ -165,10 +128,7 @@ export function negotiate(
 }
 
 /** A localizer for the negotiated chain over the given catalog domains. */
-export function localizer(
-  chain: string[],
-  domains?: readonly string[],
-): Localizer {
+export function localizer(chain: string[], domains?: readonly string[]): Localizer {
   const sources: CatalogSources = {};
   for (const tag of chain) sources[tag] = catalogSources(tag, domains);
   return new Localizer(chain, sources);

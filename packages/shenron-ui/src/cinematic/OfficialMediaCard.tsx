@@ -13,10 +13,7 @@ export interface OfficialMediaCardProps {
   className?: string;
 }
 
-const SERIES_COLORS: Record<
-  string,
-  { bg: string; text: string; border: string }
-> = {
+const SERIES_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   DB: {
     bg: "bg-amber-500",
     text: "text-amber-950",
@@ -55,8 +52,7 @@ export const OfficialMediaCard: React.FC<OfficialMediaCardProps> = ({
     >
       <div
         className={
-          "relative overflow-hidden bg-neutral-950 " +
-          (featured ? "md:w-3/5 min-h-[260px]" : "aspect-[16/9] w-full")
+          "relative overflow-hidden bg-neutral-950 " + (featured ? "md:w-3/5 min-h-[260px]" : "aspect-[16/9] w-full")
         }
       >
         <img
@@ -94,14 +90,8 @@ export const OfficialMediaCard: React.FC<OfficialMediaCardProps> = ({
       >
         <div>
           <div className="flex items-center justify-between text-xs mb-2">
-            <span className="text-[#f85b00] font-bold uppercase tracking-[1.68px]">
-              {category}
-            </span>
-            {date && (
-              <span className="text-neutral-400 font-mono text-[11px]">
-                {date}
-              </span>
-            )}
+            <span className="text-[#f85b00] font-bold uppercase tracking-[1.68px]">{category}</span>
+            {date && <span className="text-neutral-400 font-mono text-[11px]">{date}</span>}
           </div>
           <h3
             className={
@@ -113,9 +103,7 @@ export const OfficialMediaCard: React.FC<OfficialMediaCardProps> = ({
           </h3>
         </div>
         <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400 group-hover:text-white transition-colors">
-          <span className="font-semibold uppercase tracking-wider text-[11px]">
-            Consulter
-          </span>
+          <span className="font-semibold uppercase tracking-wider text-[11px]">Consulter</span>
           <span className="transform group-hover:translate-x-1.5 transition-transform duration-300 text-[#f85b00]">
             →
           </span>

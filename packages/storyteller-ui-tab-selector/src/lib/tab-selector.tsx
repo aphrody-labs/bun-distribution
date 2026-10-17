@@ -36,7 +36,7 @@ export const TabSelector: React.FC<TabSelectorProps> = ({
   listClassName,
 }) => {
   // Find the index of the active tab
-  const selectedIndex = tabs.findIndex((tab) => tab.id === activeTab);
+  const selectedIndex = tabs.findIndex(tab => tab.id === activeTab);
   const tabsRef = useRef<(HTMLElement | null)[]>([]);
   const [indicatorStyle, setIndicatorStyle] = useState({
     left: 0,
@@ -62,13 +62,7 @@ export const TabSelector: React.FC<TabSelectorProps> = ({
   }, [selectedIndex, tabs]);
 
   const TabGroupElement = (
-    <div
-      className={twMerge(
-        "w-full",
-        className,
-        disabled ? "cursor-not-allowed opacity-60" : "",
-      )}
-    >
+    <div className={twMerge("w-full", className, disabled ? "cursor-not-allowed opacity-60" : "")}>
       <TabGroup selectedIndex={selectedIndex} onChange={handleTabChange}>
         <TabList
           className={twMerge(
@@ -91,7 +85,7 @@ export const TabSelector: React.FC<TabSelectorProps> = ({
           {tabs.map((tab, index) => (
             <Tab
               key={tab.id}
-              ref={(el) => {
+              ref={el => {
                 if (el) {
                   tabsRef.current[index] = el;
                 }
@@ -101,9 +95,7 @@ export const TabSelector: React.FC<TabSelectorProps> = ({
                 twMerge(
                   "relative z-20 mx-0.5 min-w-max rounded-[2px] border-2 border-transparent px-4 py-0.5 text-center text-sm font-semibold transition-all duration-200 ease-in-out",
                   "focus-visible:outline-none focus-visible:ring-0",
-                  selected
-                    ? twMerge("text-black", selectedTabClassName)
-                    : "text-base-fg/70 hover:text-base-fg",
+                  selected ? twMerge("text-black", selectedTabClassName) : "text-base-fg/70 hover:text-base-fg",
                   disabled ? "cursor-not-allowed opacity-60" : "",
                   tabClassName,
                 )
@@ -120,12 +112,7 @@ export const TabSelector: React.FC<TabSelectorProps> = ({
   return (
     <>
       {disabled && (
-        <Tooltip
-          content={
-            disabledMessage ?? "Cannot change tab. Generation in progress."
-          }
-          position="bottom"
-        >
+        <Tooltip content={disabledMessage ?? "Cannot change tab. Generation in progress."} position="bottom">
           {TabGroupElement}
         </Tooltip>
       )}

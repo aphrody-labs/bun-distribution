@@ -63,9 +63,7 @@ export const rectangleGraphicDefinition: GraphicDefinition = {
     const drawWidth = Math.max(1, width - inset * 2);
     const drawHeight = Math.max(1, height - inset * 2);
     const radiusPercent = Math.max(0, Number(params.cornerRadius ?? 0));
-    const radius =
-      ((Math.min(drawWidth, drawHeight) / 2) * Math.min(radiusPercent, 50)) /
-      50;
+    const radius = ((Math.min(drawWidth, drawHeight) / 2) * Math.min(radiusPercent, 50)) / 50;
 
     ctx.clearRect(0, 0, width, height);
     const path = new Path2D();

@@ -7,8 +7,8 @@
 //! Don't depend on this crate directly, use the re-exported types from tauri instead.
 
 #![doc(
-  html_logo_url = "https://github.com/tauri-apps/tauri/raw/dev/.github/icon.png",
-  html_favicon_url = "https://github.com/tauri-apps/tauri/raw/dev/.github/icon.png"
+    html_logo_url = "https://github.com/tauri-apps/tauri/raw/dev/.github/icon.png",
+    html_favicon_url = "https://github.com/tauri-apps/tauri/raw/dev/.github/icon.png"
 )]
 
 use std::path::PathBuf;
@@ -110,7 +110,7 @@ mod context;
 /// It may have breaking changes in the future.
 #[proc_macro_attribute]
 pub fn command(attributes: TokenStream, item: TokenStream) -> TokenStream {
-  command::wrapper(attributes, item)
+    command::wrapper(attributes, item)
 }
 
 /// Marks a function as the entry point of a mobile application.
@@ -143,7 +143,7 @@ pub fn command(attributes: TokenStream, item: TokenStream) -> TokenStream {
 /// [`tauri_build::build`]: https://docs.rs/tauri-build/latest/tauri_build/fn.build.html
 #[proc_macro_attribute]
 pub fn mobile_entry_point(attributes: TokenStream, item: TokenStream) -> TokenStream {
-  mobile::entry_point(attributes, item)
+    mobile::entry_point(attributes, item)
 }
 
 /// Mark a function as the CEF entry point. It creates a main function that only runs
@@ -168,7 +168,7 @@ pub fn mobile_entry_point(attributes: TokenStream, item: TokenStream) -> TokenSt
 /// It may have breaking changes in the future.
 #[proc_macro_attribute]
 pub fn cef_entry_point(attributes: TokenStream, item: TokenStream) -> TokenStream {
-  cef::entry_point(attributes, item)
+    cef::entry_point(attributes, item)
 }
 
 /// Accepts a list of command functions. Creates a handler that allows commands to be called from JS with invoke().
@@ -200,7 +200,7 @@ pub fn cef_entry_point(attributes: TokenStream, item: TokenStream) -> TokenStrea
 /// It may have breaking changes in the future.
 #[proc_macro]
 pub fn generate_handler(item: TokenStream) -> TokenStream {
-  parse_macro_input!(item as command::Handler).into()
+    parse_macro_input!(item as command::Handler).into()
 }
 
 /// Reads a Tauri config file and generates a `::tauri::Context` based on the content.
@@ -282,9 +282,9 @@ pub fn generate_handler(item: TokenStream) -> TokenStream {
 /// It may have breaking changes in the future.
 #[proc_macro]
 pub fn generate_context(items: TokenStream) -> TokenStream {
-  // this macro is exported from the context module
-  let path = parse_macro_input!(items as ContextItems);
-  context::generate_context(path).into()
+    // this macro is exported from the context module
+    let path = parse_macro_input!(items as ContextItems);
+    context::generate_context(path).into()
 }
 
 /// Accepts a closure-like syntax to call arbitrary code on a menu item
@@ -345,8 +345,8 @@ pub fn generate_context(items: TokenStream) -> TokenStream {
 #[doc(hidden)]
 #[proc_macro]
 pub fn do_menu_item(input: TokenStream) -> TokenStream {
-  let tokens = parse_macro_input!(input as menu::DoMenuItemInput);
-  menu::do_menu_item(tokens).into()
+    let tokens = parse_macro_input!(input as menu::DoMenuItemInput);
+    menu::do_menu_item(tokens).into()
 }
 
 /// Convert a .png or .ico icon to an Image
@@ -376,31 +376,31 @@ pub fn do_menu_item(input: TokenStream) -> TokenStream {
 /// or else it's going to bloat your final executable
 #[proc_macro]
 pub fn include_image(tokens: TokenStream) -> TokenStream {
-  let path = match parse2::<LitStr>(tokens.into()) {
-    Ok(path) => path,
-    Err(err) => return err.into_compile_error().into(),
-  };
-  let path = PathBuf::from(path.value());
-  let resolved_path = if path.is_relative() {
-    if let Ok(base_dir) = std::env::var("CARGO_MANIFEST_DIR").map(PathBuf::from) {
-      base_dir.join(path)
+    let path = match parse2::<LitStr>(tokens.into()) {
+        Ok(path) => path,
+        Err(err) => return err.into_compile_error().into(),
+    };
+    let path = PathBuf::from(path.value());
+    let resolved_path = if path.is_relative() {
+        if let Ok(base_dir) = std::env::var("CARGO_MANIFEST_DIR").map(PathBuf::from) {
+            base_dir.join(path)
+        } else {
+            return quote!(compile_error!("$CARGO_MANIFEST_DIR is not defined")).into();
+        }
     } else {
-      return quote!(compile_error!("$CARGO_MANIFEST_DIR is not defined")).into();
+        path
+    };
+    if !resolved_path.exists() {
+        let error_string = format!(
+            "Provided Image path \"{}\" doesn't exists",
+            resolved_path.display()
+        );
+        return quote!(compile_error!(#error_string)).into();
     }
-  } else {
-    path
-  };
-  if !resolved_path.exists() {
-    let error_string = format!(
-      "Provided Image path \"{}\" doesn't exists",
-      resolved_path.display()
-    );
-    return quote!(compile_error!(#error_string)).into();
-  }
 
-  match CachedIcon::new(&quote!(::tauri), &resolved_path).map_err(|error| error.to_string()) {
-    Ok(icon) => icon.into_token_stream(),
-    Err(error) => quote!(compile_error!(#error)),
-  }
-  .into()
+    match CachedIcon::new(&quote!(::tauri), &resolved_path).map_err(|error| error.to_string()) {
+        Ok(icon) => icon.into_token_stream(),
+        Err(error) => quote!(compile_error!(#error)),
+    }
+    .into()
 }

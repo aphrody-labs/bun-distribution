@@ -2,11 +2,7 @@ import React, { useState, useRef } from "react";
 import { X } from "lucide-react";
 import { ImagePreviewProps } from "./types";
 
-const ImagePreview: React.FC<ImagePreviewProps> = ({
-  image,
-  onUpdate,
-  onRemove,
-}) => {
+const ImagePreview: React.FC<ImagePreviewProps> = ({ image, onUpdate, onRemove }) => {
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -50,11 +46,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => !isDragging && setShowControls(false)}
     >
-      <img
-        src={image.url}
-        alt="Style reference"
-        className="w-full h-full object-cover"
-      />
+      <img src={image.url} alt="Style reference" className="w-full h-full object-cover" />
 
       {showControls && (
         <>
@@ -70,13 +62,8 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
             className="absolute inset-0 bg-gradient-to-b from-transparent to-black bg-opacity-40 cursor-ns-resize"
             onMouseDown={handleMouseDown}
           >
-            <div
-              className="absolute left-0 right-0 h-0.5 bg-white"
-              style={{ bottom: `${image.weight * 100}%` }}
-            />
-            <div className="absolute bottom-1 right-1 text-xs font-medium text-white">
-              {image.weight.toFixed(1)}
-            </div>
+            <div className="absolute left-0 right-0 h-0.5 bg-white" style={{ bottom: `${image.weight * 100}%` }} />
+            <div className="absolute bottom-1 right-1 text-xs font-medium text-white">{image.weight.toFixed(1)}</div>
           </div>
         </>
       )}

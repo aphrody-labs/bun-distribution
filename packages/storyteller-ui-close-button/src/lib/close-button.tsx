@@ -7,11 +7,7 @@ interface CloseButtonProps {
   size?: "sm" | "md" | "lg";
 }
 
-export const CloseButton = ({
-  onClick,
-  className,
-  size = "md",
-}: CloseButtonProps) => {
+export const CloseButton = ({ onClick, className, size = "md" }: CloseButtonProps) => {
   const sizeClasses = {
     sm: "h-5 w-5 text-sm",
     md: "h-7 w-7 text-md",

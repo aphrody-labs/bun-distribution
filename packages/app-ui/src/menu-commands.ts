@@ -22,9 +22,7 @@ export const MENU_EVENTS: Record<MenuCommand, string> = {
 export const MENU_COMMAND_EVENT = "aphrody:menu-command";
 
 export function dispatchMenuCommand(command: MenuCommand): void {
-  window.dispatchEvent(
-    new CustomEvent<MenuCommand>(MENU_COMMAND_EVENT, { detail: command }),
-  );
+  window.dispatchEvent(new CustomEvent<MenuCommand>(MENU_COMMAND_EVENT, { detail: command }));
 }
 
 /** Display label of each accelerator (CmdOrCtrl on the native side). */
@@ -46,18 +44,13 @@ interface PlatformNavigator {
 }
 
 /** True on macOS (where the native menu owns the accelerators). */
-export function isMacPlatform(
-  nav: PlatformNavigator | undefined = globalThis.navigator,
-): boolean {
+export function isMacPlatform(nav: PlatformNavigator | undefined = globalThis.navigator): boolean {
   if (!nav) return false;
   const platform = nav.userAgentData?.platform || nav.platform || "";
   return /mac|iphone|ipad/i.test(platform);
 }
 
-type KeyLike = Pick<
-  KeyboardEvent,
-  "key" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey"
->;
+type KeyLike = Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey">;
 
 /** Map a non-macOS keydown to a menu command (Ctrl+N, Ctrl+O, Ctrl+Shift+O). */
 export function menuCommandForKey(event: KeyLike): MenuCommand | null {
@@ -71,7 +64,7 @@ export function menuCommandForKey(event: KeyLike): MenuCommand | null {
 /** Mount once in the shell: wires native menu events and the non-macOS accelerators. */
 export function useMenuCommands(): void {
   const navigate = useNavigate();
-  const requestNewSession = useChatStore((state) => state.requestNewSession);
+  const requestNewSession = useChatStore(state => state.requestNewSession);
 
   useEffect(() => {
     const run = async (command: MenuCommand) => {
@@ -81,9 +74,7 @@ export function useMenuCommands(): void {
         return;
       }
       const path =
-        command === "open-file"
-          ? await pickFile("Ouvrir un fichier")
-          : await pickDirectory("Ouvrir un dossier");
+        command === "open-file" ? await pickFile("Ouvrir un fichier") : await pickDirectory("Ouvrir un dossier");
       if (path) navigate(`/explorer?path=${encodeURIComponent(path)}`);
     };
 
@@ -94,9 +85,7 @@ export function useMenuCommands(): void {
         const { listen } = await import("@aphrody/tauri/api/event");
         const commands = Object.keys(MENU_EVENTS) as MenuCommand[];
         const handles = await Promise.all(
-          commands.map((command) =>
-            listen(MENU_EVENTS[command], () => void run(command)),
-          ),
+          commands.map(command => listen(MENU_EVENTS[command], () => void run(command))),
         );
         for (const unlisten of handles) {
           if (disposed) unlisten();

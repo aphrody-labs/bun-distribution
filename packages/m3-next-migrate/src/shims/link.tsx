@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 "use client";
 
-import {
-  forwardRef,
-  type AnchorHTMLAttributes,
-  type MouseEvent,
-  type ReactNode,
-} from "react";
+import { forwardRef, type AnchorHTMLAttributes, type MouseEvent, type ReactNode } from "react";
 import { useNextMigrateContext } from "./provider";
 
 export type UrlObject = {
@@ -15,10 +10,7 @@ export type UrlObject = {
   hash?: string;
 };
 
-export interface LinkProps extends Omit<
-  AnchorHTMLAttributes<HTMLAnchorElement>,
-  "href"
-> {
+export interface LinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> {
   href: string | UrlObject;
   as?: string | UrlObject;
   replace?: boolean;
@@ -33,14 +25,8 @@ export interface LinkProps extends Omit<
 function resolveHrefString(href: string | UrlObject): string {
   if (typeof href === "string") return href;
   const path = href.pathname || "/";
-  const params = href.query
-    ? new URLSearchParams(href.query as Record<string, string>).toString()
-    : "";
-  const hash = href.hash
-    ? href.hash.startsWith("#")
-      ? href.hash
-      : `#${href.hash}`
-    : "";
+  const params = href.query ? new URLSearchParams(href.query as Record<string, string>).toString() : "";
+  const hash = href.hash ? (href.hash.startsWith("#") ? href.hash : `#${href.hash}`) : "";
   const query = params ? `?${params}` : "";
   return `${path}${query}${hash}`;
 }

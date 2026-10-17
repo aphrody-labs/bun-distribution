@@ -104,11 +104,8 @@ export const BoardGrid = ({
   // null = flat masonry.
   const groups = useMemo<SectionGroup[] | null>(() => {
     if (!sections || sections.length === 0) return null;
-    const known = new Set(sections.map((s) => s.id));
-    const bySection = new Map<
-      string | null,
-      Array<{ id: string; aspect: number }>
-    >();
+    const known = new Set(sections.map(s => s.id));
+    const bySection = new Map<string | null, Array<{ id: string; aspect: number }>>();
     for (const it of items) {
       const key = it.sectionId && known.has(it.sectionId) ? it.sectionId : null;
       const entry = { id: it.id, aspect: it.aspect };
@@ -116,7 +113,7 @@ export const BoardGrid = ({
       if (arr) arr.push(entry);
       else bySection.set(key, [entry]);
     }
-    const named: SectionGroup[] = sections.map((s) => ({
+    const named: SectionGroup[] = sections.map(s => ({
       id: s.id,
       name: s.name,
       collapsed: Boolean(s.collapsed),
@@ -124,10 +121,7 @@ export const BoardGrid = ({
     }));
     const ungrouped = bySection.get(null) ?? [];
     return ungrouped.length > 0
-      ? [
-          { id: null, name: "Ungrouped", collapsed: false, items: ungrouped },
-          ...named,
-        ]
+      ? [{ id: null, name: "Ungrouped", collapsed: false, items: ungrouped }, ...named]
       : named;
   }, [items, sections]);
 
@@ -137,7 +131,7 @@ export const BoardGrid = ({
       return computeSectionedLayout(groups, w, DENSITY_CONFIG[density]);
     }
     const flat = computeMasonryLayout(
-      items.map((it) => ({ id: it.id, aspect: it.aspect })),
+      items.map(it => ({ id: it.id, aspect: it.aspect })),
       w,
       DENSITY_CONFIG[density],
     );
@@ -146,7 +140,7 @@ export const BoardGrid = ({
 
   const itemsById = useMemo(() => {
     const map: Record<string, BoardItem> = {};
-    items.forEach((it) => (map[it.id] = it));
+    items.forEach(it => (map[it.id] = it));
     return map;
   }, [items]);
 
@@ -227,12 +221,11 @@ export const BoardGrid = ({
     const onMove = (e: PointerEvent) => {
       if (!marqueeRef.current.active) return;
       const p = pointToContent(e.clientX, e.clientY);
-      setMarquee((m) => {
+      setMarquee(m => {
         if (!m) return m;
         if (
           !marqueeRef.current.moved &&
-          (Math.abs(p.x - m.x0) > MARQUEE_THRESHOLD ||
-            Math.abs(p.y - m.y0) > MARQUEE_THRESHOLD)
+          (Math.abs(p.x - m.x0) > MARQUEE_THRESHOLD || Math.abs(p.y - m.y0) > MARQUEE_THRESHOLD)
         ) {
           marqueeRef.current.moved = true;
         }
@@ -243,7 +236,7 @@ export const BoardGrid = ({
       const st = marqueeRef.current;
       if (!st.active) return;
       marqueeRef.current.active = false;
-      setMarquee((m) => {
+      setMarquee(m => {
         if (m && st.moved) {
           const hit = intersectIds(layout, m);
           onSelectMany(hit, st.additive);
@@ -266,11 +259,11 @@ export const BoardGrid = ({
       ref={scrollRef}
       className="h-full w-full overflow-y-auto overflow-x-hidden"
       style={{ padding: OUTER_PADDING }}
-      onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
+      onScroll={e => setScrollTop(e.currentTarget.scrollTop)}
       onPointerDown={handlePointerDown}
     >
       <div className="relative" style={{ height: layout.totalHeight }}>
-        {layout.bands.map((band) => (
+        {layout.bands.map(band => (
           <div
             key={band.id ?? "__ungrouped"}
             className="group/section absolute inset-x-0"
@@ -281,10 +274,8 @@ export const BoardGrid = ({
               count={band.count}
               collapsed={band.collapsed}
               editable={band.id !== null}
-              onToggleCollapse={() =>
-                band.id && onToggleSectionCollapsed?.(band.id)
-              }
-              onRename={(name) => band.id && onRenameSection?.(band.id, name)}
+              onToggleCollapse={() => band.id && onToggleSectionCollapsed?.(band.id)}
+              onRename={name => band.id && onRenameSection?.(band.id, name)}
               onDelete={() => band.id && onDeleteSection?.(band.id)}
             />
           </div>
@@ -335,21 +326,12 @@ export const BoardGrid = ({
   );
 };
 
-const intersectIds = (
-  layout: ReturnType<typeof computeMasonryLayout>,
-  m: Marquee,
-): string[] => {
+const intersectIds = (layout: ReturnType<typeof computeMasonryLayout>, m: Marquee): string[] => {
   const left = Math.min(m.x0, m.x1);
   const right = Math.max(m.x0, m.x1);
   const top = Math.min(m.y0, m.y1);
   const bottom = Math.max(m.y0, m.y1);
   return layout.positions
-    .filter(
-      (p) =>
-        p.x < right &&
-        p.x + p.width > left &&
-        p.y < bottom &&
-        p.y + p.height > top,
-    )
-    .map((p) => p.id);
+    .filter(p => p.x < right && p.x + p.width > left && p.y < bottom && p.y + p.height > top)
+    .map(p => p.id);
 };

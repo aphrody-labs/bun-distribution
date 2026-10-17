@@ -52,10 +52,7 @@ export async function recordVideo(editor: Editor): Promise<void> {
   try {
     const result = await recordTimeline(editor, {
       signal: cancelSignal,
-      onProgress: (pct) =>
-        usePageSceneStore
-          .getState()
-          .setRecordingProgress({ phase: "encoding", pct }),
+      onProgress: pct => usePageSceneStore.getState().setRecordingProgress({ phase: "encoding", pct }),
     });
     if (result) {
       const s = usePageSceneStore.getState();

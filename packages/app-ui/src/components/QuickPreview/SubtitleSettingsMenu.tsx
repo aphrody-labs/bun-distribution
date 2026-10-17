@@ -8,23 +8,13 @@ interface SubtitleSettingsMenuProps {
   onClose: () => void;
 }
 
-export function SubtitleSettingsMenu({
-  isOpen,
-  settings,
-  onSettingsChange,
-  onClose,
-}: SubtitleSettingsMenuProps) {
+export function SubtitleSettingsMenu({ isOpen, settings, onSettingsChange, onClose }: SubtitleSettingsMenuProps) {
   return (
     <AnimatePresence>
       {isOpen && (
         <>
           {/* Backdrop */}
-          <button
-            type="button"
-            aria-label="Close subtitle settings"
-            className="fixed inset-0 z-10"
-            onClick={onClose}
-          />
+          <button type="button" aria-label="Close subtitle settings" className="fixed inset-0 z-10" onClick={onClose} />
 
           {/* Settings Menu */}
           <motion.div
@@ -33,20 +23,16 @@ export function SubtitleSettingsMenu({
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.15 }}
             className="absolute bottom-20 right-6 z-20 w-72 rounded-small border border-outline-variant bg-surface-container/95 p-4 backdrop-blur-xl shadow-md3-5"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
-            <h3 className="mb-4 text-label-large font-semibold text-on-surface">
-              Subtitle settings
-            </h3>
+            <h3 className="mb-4 text-label-large font-semibold text-on-surface">Subtitle settings</h3>
 
             <div className="space-y-4">
               {/* Font Size */}
               <div>
                 <label className="mb-2 flex items-center justify-between text-body-small text-on-surface-variant">
                   <span>Font size</span>
-                  <span className="text-on-surface">
-                    {Math.round(settings.fontSize * 100)}%
-                  </span>
+                  <span className="text-on-surface">{Math.round(settings.fontSize * 100)}%</span>
                 </label>
                 <input
                   type="range"
@@ -54,7 +40,7 @@ export function SubtitleSettingsMenu({
                   max="2.5"
                   step="0.1"
                   value={settings.fontSize}
-                  onChange={(e) =>
+                  onChange={e =>
                     onSettingsChange({
                       ...settings,
                       fontSize: parseFloat(e.target.value),
@@ -68,9 +54,7 @@ export function SubtitleSettingsMenu({
               <div>
                 <label className="mb-2 flex items-center justify-between text-body-small text-on-surface-variant">
                   <span>Background opacity</span>
-                  <span className="text-on-surface">
-                    {Math.round(settings.backgroundOpacity * 100)}%
-                  </span>
+                  <span className="text-on-surface">{Math.round(settings.backgroundOpacity * 100)}%</span>
                 </label>
                 <input
                   type="range"
@@ -78,7 +62,7 @@ export function SubtitleSettingsMenu({
                   max="1"
                   step="0.1"
                   value={settings.backgroundOpacity}
-                  onChange={(e) =>
+                  onChange={e =>
                     onSettingsChange({
                       ...settings,
                       backgroundOpacity: parseFloat(e.target.value),
@@ -90,9 +74,7 @@ export function SubtitleSettingsMenu({
 
               {/* Position */}
               <div>
-                <span className="mb-2 block text-body-small text-on-surface-variant">
-                  Position
-                </span>
+                <span className="mb-2 block text-body-small text-on-surface-variant">Position</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() =>

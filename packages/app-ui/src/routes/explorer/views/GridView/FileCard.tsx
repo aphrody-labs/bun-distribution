@@ -22,12 +22,7 @@ interface FileCardProps {
   selected: boolean;
   focused: boolean;
   selectedFiles: File[];
-  selectFile: (
-    file: File,
-    files: File[],
-    multi?: boolean,
-    range?: boolean,
-  ) => void;
+  selectFile: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
 }
 
 export const FileCard = memo(
@@ -54,27 +49,18 @@ export const FileCard = memo(
 
     // Set up file opening for non-directory files
     const physicalPath =
-      file.kind === "File" && "Physical" in file.sd_path
-        ? [(file.sd_path as any).Physical.path]
-        : [];
+      file.kind === "File" && "Physical" in file.sd_path ? [(file.sd_path as any).Physical.path] : [];
     const { openWithDefault } = useOpenWith(physicalPath);
 
     // Active job tracking for progress indication
     const { jobs } = useJobsContext();
-    const activeJob = jobs.find((j) => {
+    const activeJob = jobs.find(j => {
       if (j.status !== "running" && j.status !== "queued") return false;
       const context = j.action_context?.context as any;
-      const targetName =
-        context?.target_name || (j.action_context?.action_input as any)?.target;
-      const targetPath =
-        j.current_path || (j.action_context?.action_input as any)?.path;
+      const targetName = context?.target_name || (j.action_context?.action_input as any)?.target;
+      const targetPath = j.current_path || (j.action_context?.action_input as any)?.path;
       if (targetName && targetName === file.name) return true;
-      if (
-        targetPath &&
-        physicalPath.length > 0 &&
-        targetPath === physicalPath[0]
-      )
-        return true;
+      if (targetPath && physicalPath.length > 0 && targetPath === physicalPath[0]) return true;
       return false;
     });
 
@@ -122,8 +108,7 @@ export const FileCard = memo(
       isDragging: dndIsDragging,
     } = useDraggableFile({
       file,
-      selectedFiles:
-        selected && selectedFiles.length > 0 ? selectedFiles : undefined,
+      selectedFiles: selected && selectedFiles.length > 0 ? selectedFiles : undefined,
       gridSize,
     });
 
@@ -149,17 +134,12 @@ export const FileCard = memo(
     const thumbSize = Math.max(gridSize * 0.6, 60);
 
     // Check if this is a virtual volume file
-    const isVolume =
-      isVirtualFile(file) &&
-      (file as any)._virtual?.type === "volume" &&
-      (file as any)._virtual?.data;
+    const isVolume = isVirtualFile(file) && (file as any)._virtual?.type === "volume" && (file as any)._virtual?.data;
 
     // Extract volume data
     const volumeData = isVolume ? (file as any)._virtual.data : null;
     const hasVolumeCapacity =
-      volumeData?.total_capacity != null &&
-      volumeData?.available_space != null &&
-      volumeData.total_capacity > 0;
+      volumeData?.total_capacity != null && volumeData?.available_space != null && volumeData.total_capacity > 0;
 
     return (
       <div
@@ -192,9 +172,7 @@ export const FileCard = memo(
           <div
             className={clsx(
               "rounded-medium p-2 flex flex-col items-center",
-              selected && !dndIsDragging
-                ? "bg-surface-container-highest"
-                : "bg-transparent",
+              selected && !dndIsDragging ? "bg-surface-container-highest" : "bg-transparent",
             )}
           >
             <FileComponent.Thumb file={file} size={thumbSize} />
@@ -212,19 +190,12 @@ export const FileCard = memo(
           </div>
           <div className="w-full flex flex-col items-center">
             {isRenaming ? (
-              <InlineNameEdit
-                file={file}
-                onSave={saveRename}
-                onCancel={cancelRename}
-                className="max-w-full"
-              />
+              <InlineNameEdit file={file} onSave={saveRename} onCancel={cancelRename} className="max-w-full" />
             ) : (
               <div
                 className={clsx(
                   "text-body-large truncate px-2 py-0.5 rounded-small inline-block max-w-full font-medium",
-                  selected && !dndIsDragging
-                    ? "bg-secondary-container text-on-secondary-container"
-                    : "text-on-surface",
+                  selected && !dndIsDragging ? "bg-secondary-container text-on-secondary-container" : "text-on-surface",
                 )}
               >
                 {file.name}
@@ -243,29 +214,20 @@ export const FileCard = memo(
 
             {/* Regular file size */}
             {showFileSize && !hasVolumeCapacity && file.size > 0 && (
-              <div className="text-body-large text-on-surface-variant mt-0.5">
-                {formatBytes(file.size)}
-              </div>
+              <div className="text-body-large text-on-surface-variant mt-0.5">{formatBytes(file.size)}</div>
             )}
 
             {/* Tag Indicators */}
             {file.tags && file.tags.length > 0 && (
-              <div
-                className="flex items-center gap-1 mt-1"
-                title={file.tags.map((t) => t.canonical_name).join(", ")}
-              >
-                {file.tags.slice(0, 3).map((tag) => (
+              <div className="flex items-center gap-1 mt-1" title={file.tags.map(t => t.canonical_name).join(", ")}>
+                {file.tags.slice(0, 3).map(tag => (
                   <TagDot
                     key={tag.id}
                     color={tag.color || "var(--md-sys-color-primary)"}
                     tooltip={tag.canonical_name}
                   />
                 ))}
-                {file.tags.length > 3 && (
-                  <span className="text-label-small text-outline">
-                    +{file.tags.length - 3}
-                  </span>
-                )}
+                {file.tags.length > 3 && <span className="text-label-small text-outline">+{file.tags.length - 3}</span>}
               </div>
             )}
           </div>

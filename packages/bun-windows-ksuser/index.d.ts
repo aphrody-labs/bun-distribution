@@ -3,21 +3,49 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** ksuser.dll!KsCreateAllocator */
-  KsCreateAllocator(ConnectionHandle: Win32Pointer, AllocatorFraming: Win32Pointer, AllocatorHandle: Win32Pointer): number;
+  KsCreateAllocator(
+    ConnectionHandle: Win32Pointer,
+    AllocatorFraming: Win32Pointer,
+    AllocatorHandle: Win32Pointer,
+  ): number;
   /** ksuser.dll!KsCreateAllocator2 */
-  KsCreateAllocator2(ConnectionHandle: Win32Pointer, AllocatorFraming: Win32Pointer, AllocatorHandle: Win32Pointer): number;
+  KsCreateAllocator2(
+    ConnectionHandle: Win32Pointer,
+    AllocatorFraming: Win32Pointer,
+    AllocatorHandle: Win32Pointer,
+  ): number;
   /** ksuser.dll!KsCreateClock */
   KsCreateClock(ConnectionHandle: Win32Pointer, ClockCreate: Win32Pointer, ClockHandle: Win32Pointer): number;
   /** ksuser.dll!KsCreateClock2 */
   KsCreateClock2(ConnectionHandle: Win32Pointer, ClockCreate: Win32Pointer, ClockHandle: Win32Pointer): number;
   /** ksuser.dll!KsCreatePin */
-  KsCreatePin(FilterHandle: Win32Pointer, Connect: Win32Pointer, DesiredAccess: number, ConnectionHandle: Win32Pointer): number;
+  KsCreatePin(
+    FilterHandle: Win32Pointer,
+    Connect: Win32Pointer,
+    DesiredAccess: number,
+    ConnectionHandle: Win32Pointer,
+  ): number;
   /** ksuser.dll!KsCreatePin2 */
-  KsCreatePin2(FilterHandle: Win32Pointer, Connect: Win32Pointer, DesiredAccess: number, ConnectionHandle: Win32Pointer): number;
+  KsCreatePin2(
+    FilterHandle: Win32Pointer,
+    Connect: Win32Pointer,
+    DesiredAccess: number,
+    ConnectionHandle: Win32Pointer,
+  ): number;
   /** ksuser.dll!KsCreateTopologyNode */
-  KsCreateTopologyNode(ParentHandle: Win32Pointer, NodeCreate: Win32Pointer, DesiredAccess: number, NodeHandle: Win32Pointer): number;
+  KsCreateTopologyNode(
+    ParentHandle: Win32Pointer,
+    NodeCreate: Win32Pointer,
+    DesiredAccess: number,
+    NodeHandle: Win32Pointer,
+  ): number;
   /** ksuser.dll!KsCreateTopologyNode2 */
-  KsCreateTopologyNode2(ParentHandle: Win32Pointer, NodeCreate: Win32Pointer, DesiredAccess: number, NodeHandle: Win32Pointer): number;
+  KsCreateTopologyNode2(
+    ParentHandle: Win32Pointer,
+    NodeCreate: Win32Pointer,
+    DesiredAccess: number,
+    NodeHandle: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

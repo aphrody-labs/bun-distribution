@@ -15,8 +15,7 @@
  * d'environnement continue de servir les annonces (une variable oubliée
  * n'annulerait pas silencieusement la monétisation).
  */
-export const ADSENSE_CLIENT =
-  process.env.NEXT_PUBLIC_ADSENSE_CLIENT?.trim() || "ca-pub-9468354003771276";
+export const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT?.trim() || "ca-pub-9468354003771276";
 
 /** Même identifiant sans le préfixe `ca-` : la forme attendue dans `ads.txt`. */
 export const ADSENSE_PUBLISHER = ADSENSE_CLIENT.replace(/^ca-/, "");

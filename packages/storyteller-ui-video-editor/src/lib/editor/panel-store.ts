@@ -27,17 +27,17 @@ interface PanelState {
 
 export const usePanelStore = create<PanelState>()(
   persist(
-    (set) => ({
+    set => ({
       ...PANEL_CONFIG,
       setPanel: ({ panel, size }) =>
-        set((state) => ({
+        set(state => ({
           panels: {
             ...state.panels,
             [panel]: size,
           },
         })),
-      setPanels: (sizes) =>
-        set((state) => ({
+      setPanels: sizes =>
+        set(state => ({
           panels: {
             ...state.panels,
             ...sizes,
@@ -48,7 +48,7 @@ export const usePanelStore = create<PanelState>()(
     {
       name: "panel-sizes",
       version: 2,
-      migrate: (persistedState) => {
+      migrate: persistedState => {
         const state = persistedState as
           | {
               panels?: Partial<PanelSizes> | null;
@@ -78,20 +78,14 @@ export const usePanelStore = create<PanelState>()(
         return {
           panels: {
             tools: state.tools ?? state.toolsPanel ?? PANEL_CONFIG.panels.tools,
-            preview:
-              state.preview ??
-              state.previewPanel ??
-              PANEL_CONFIG.panels.preview,
-            properties:
-              state.properties ??
-              state.propertiesPanel ??
-              PANEL_CONFIG.panels.properties,
+            preview: state.preview ?? state.previewPanel ?? PANEL_CONFIG.panels.preview,
+            properties: state.properties ?? state.propertiesPanel ?? PANEL_CONFIG.panels.properties,
             mainContent: state.mainContent ?? PANEL_CONFIG.panels.mainContent,
             timeline: state.timeline ?? PANEL_CONFIG.panels.timeline,
           },
         };
       },
-      partialize: (state) => ({
+      partialize: state => ({
         panels: state.panels,
       }),
     },

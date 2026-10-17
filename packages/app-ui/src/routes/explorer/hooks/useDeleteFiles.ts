@@ -12,21 +12,19 @@ export function useDeleteFiles() {
   const deleteFiles = useCallback(
     async (files: File[], permanent: boolean) => {
       if (files.length === 0) return false;
-      if (files.some((f) => !f.sd_path)) return false;
+      if (files.some(f => !f.sd_path)) return false;
       if (mutation.isPending) return false;
 
       const label = permanent ? "Permanently delete" : "Delete";
       const suffix = permanent ? " This cannot be undone." : "";
       const message =
-        files.length > 1
-          ? `${label} ${files.length} items?${suffix}`
-          : `${label} "${files[0].name}"?${suffix}`;
+        files.length > 1 ? `${label} ${files.length} items?${suffix}` : `${label} "${files[0].name}"?${suffix}`;
 
       if (!confirm(message)) return false;
 
       try {
         await mutation.mutateAsync({
-          targets: { paths: files.map((f) => f.sd_path) },
+          targets: { paths: files.map(f => f.sd_path) },
           permanent,
           recursive: true,
         });

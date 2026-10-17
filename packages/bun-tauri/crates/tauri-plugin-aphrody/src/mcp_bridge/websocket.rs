@@ -4,7 +4,9 @@
 //! between the Tauri application and external MCP clients. It broadcasts events
 //! to all connected clients and can receive commands from them.
 
-use crate::mcp_bridge::commands::{self, resolve_window_with_context, ScriptExecutor, WindowContext};
+use crate::mcp_bridge::commands::{
+    self, ScriptExecutor, WindowContext, resolve_window_with_context,
+};
 use crate::mcp_bridge::logging::{mcp_log_error, mcp_log_info};
 use crate::mcp_bridge::script_registry::{ScriptEntry, ScriptType, SharedScriptRegistry};
 use futures_util::{SinkExt, StreamExt};
@@ -16,9 +18,9 @@ use tokio::sync::{broadcast, mpsc};
 use tokio_tungstenite::{
     accept_hdr_async,
     tungstenite::{
+        Message,
         handshake::server::{ErrorResponse, Request, Response},
         http::StatusCode,
-        Message,
     },
 };
 
@@ -43,20 +45,18 @@ fn host_without_port(authority: &str) -> &str {
     if let Some(rest) = authority.strip_prefix('[') {
         return rest.split(']').next().map_or(authority, |inner| {
             // Keep the bracketed form recognised by `is_loopback_host`.
-            if inner == "::1" {
-                "::1"
-            } else {
-                inner
-            }
+            if inner == "::1" { "::1" } else { inner }
         });
     }
-    authority.rsplit_once(':').map_or(authority, |(host, port)| {
-        if port.chars().all(|c| c.is_ascii_digit()) {
-            host
-        } else {
-            authority
-        }
-    })
+    authority
+        .rsplit_once(':')
+        .map_or(authority, |(host, port)| {
+            if port.chars().all(|c| c.is_ascii_digit()) {
+                host
+            } else {
+                authority
+            }
+        })
 }
 
 /// Origin header host (`scheme://host[:port]`), if it parses.
@@ -350,12 +350,20 @@ async fn handle_invoke_tauri<R: Runtime>(app: &AppHandle<R>, id: &str, args: &Va
                 Ok(window) => {
                     let executor_state: tauri::State<'_, ScriptExecutor> = app.state();
                     match commands::execute_js(window, script.to_string(), executor_state).await {
-                        Ok(result) if result.get("success").and_then(Value::as_bool) == Some(true) => {
-                            success_response(id, result.get("data").cloned().unwrap_or(Value::Array(vec![])))
+                        Ok(result)
+                            if result.get("success").and_then(Value::as_bool) == Some(true) =>
+                        {
+                            success_response(
+                                id,
+                                result.get("data").cloned().unwrap_or(Value::Array(vec![])),
+                            )
                         }
                         Ok(result) => error_response(
                             id,
-                            result.get("error").and_then(Value::as_str).unwrap_or("could not read IPC events"),
+                            result
+                                .get("error")
+                                .and_then(Value::as_str)
+                                .unwrap_or("could not read IPC events"),
                         ),
                         Err(e) => error_response(id, e),
                     }
@@ -783,7 +791,7 @@ async fn dispatch_command<R: Runtime>(app: &AppHandle<R>, command: &Value) -> Va
 /// clients) and not worth surfacing as connection errors.
 fn is_benign_handshake_error(err: &tokio_tungstenite::tungstenite::Error) -> bool {
     use std::io::ErrorKind;
-    use tokio_tungstenite::tungstenite::{error::ProtocolError, Error};
+    use tokio_tungstenite::tungstenite::{Error, error::ProtocolError};
 
     match err {
         Error::ConnectionClosed | Error::AlreadyClosed => true,
@@ -823,7 +831,12 @@ async fn handle_connection<R: Runtime>(
     // `ErrorResponse` is the error type tungstenite's handshake callback imposes.
     #[allow(clippy::result_large_err)]
     let check = move |request: &Request, response: Response| -> Result<Response, ErrorResponse> {
-        let header = |name: &str| request.headers().get(name).and_then(|value| value.to_str().ok());
+        let header = |name: &str| {
+            request
+                .headers()
+                .get(name)
+                .and_then(|value| value.to_str().ok())
+        };
         let target = request
             .uri()
             .path_and_query()
@@ -1068,7 +1081,12 @@ mod security_tests {
 
     #[test]
     fn loopback_hosts_without_origin_pass_when_the_token_matches() {
-        for host in ["127.0.0.1:9333", "localhost:9333", "[::1]:9333", "127.0.0.1"] {
+        for host in [
+            "127.0.0.1:9333",
+            "localhost:9333",
+            "[::1]:9333",
+            "127.0.0.1",
+        ] {
             assert_eq!(
                 authorize_handshake(Some(host), None, None, "/?token=s3cret-token-value", TOKEN),
                 Ok(()),
@@ -1080,10 +1098,21 @@ mod security_tests {
     #[test]
     fn bearer_header_is_accepted_and_wrong_or_missing_tokens_are_rejected() {
         assert_eq!(
-            authorize_handshake(Some("127.0.0.1:1"), None, Some("Bearer s3cret-token-value"), "/", TOKEN),
+            authorize_handshake(
+                Some("127.0.0.1:1"),
+                None,
+                Some("Bearer s3cret-token-value"),
+                "/",
+                TOKEN
+            ),
             Ok(())
         );
-        for target in ["/", "/?token=", "/?token=wrong", "/?token=s3cret-token-valuX"] {
+        for target in [
+            "/",
+            "/?token=",
+            "/?token=wrong",
+            "/?token=s3cret-token-valuX",
+        ] {
             assert_eq!(
                 authorize_handshake(Some("127.0.0.1:1"), None, None, target, TOKEN),
                 Err("missing or invalid token"),
@@ -1091,7 +1120,10 @@ mod security_tests {
             );
         }
         // No token configured: only the Host and Origin checks apply.
-        assert_eq!(authorize_handshake(Some("127.0.0.1:1"), None, None, "/", None), Ok(()));
+        assert_eq!(
+            authorize_handshake(Some("127.0.0.1:1"), None, None, "/", None),
+            Ok(())
+        );
     }
 
     #[test]
@@ -1101,19 +1133,43 @@ mod security_tests {
             Err("missing Host header")
         );
         assert_eq!(
-            authorize_handshake(Some("evil.example:9333"), None, None, "/?token=s3cret-token-value", TOKEN),
+            authorize_handshake(
+                Some("evil.example:9333"),
+                None,
+                None,
+                "/?token=s3cret-token-value",
+                TOKEN
+            ),
             Err("Host is not a loopback name")
         );
         assert_eq!(
-            authorize_handshake(Some("127.0.0.1:1"), Some("https://evil.example"), None, "/?token=s3cret-token-value", TOKEN),
+            authorize_handshake(
+                Some("127.0.0.1:1"),
+                Some("https://evil.example"),
+                None,
+                "/?token=s3cret-token-value",
+                TOKEN
+            ),
             Err("Origin is not loopback")
         );
         assert_eq!(
-            authorize_handshake(Some("127.0.0.1:1"), Some("null"), None, "/?token=s3cret-token-value", TOKEN),
+            authorize_handshake(
+                Some("127.0.0.1:1"),
+                Some("null"),
+                None,
+                "/?token=s3cret-token-value",
+                TOKEN
+            ),
             Err("Origin is not loopback")
         );
         assert_eq!(
-            authorize_handshake(Some("127.0.0.1:1"), Some("http://localhost:3000"), None, "/?token=s3cret-token-value", TOKEN),
+            authorize_handshake(
+                Some("127.0.0.1:1"),
+                Some("http://localhost:3000"),
+                None,
+                "/?token=s3cret-token-value",
+                TOKEN
+            ),
             Ok(())
         );
     }

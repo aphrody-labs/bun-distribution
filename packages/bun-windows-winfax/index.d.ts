@@ -45,11 +45,23 @@ interface Functions {
   /** winfax.dll!FaxEnumPortsW */
   FaxEnumPorts(FaxHandle: Win32Pointer, PortInfo: Win32Pointer, PortsReturned: Win32Pointer): number;
   /** winfax.dll!FaxEnumRoutingMethodsA */
-  FaxEnumRoutingMethodsA(FaxPortHandle: Win32Pointer, RoutingMethod: Win32Pointer, MethodsReturned: Win32Pointer): number;
+  FaxEnumRoutingMethodsA(
+    FaxPortHandle: Win32Pointer,
+    RoutingMethod: Win32Pointer,
+    MethodsReturned: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxEnumRoutingMethodsW */
-  FaxEnumRoutingMethodsW(FaxPortHandle: Win32Pointer, RoutingMethod: Win32Pointer, MethodsReturned: Win32Pointer): number;
+  FaxEnumRoutingMethodsW(
+    FaxPortHandle: Win32Pointer,
+    RoutingMethod: Win32Pointer,
+    MethodsReturned: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxEnumRoutingMethodsW */
-  FaxEnumRoutingMethods(FaxPortHandle: Win32Pointer, RoutingMethod: Win32Pointer, MethodsReturned: Win32Pointer): number;
+  FaxEnumRoutingMethods(
+    FaxPortHandle: Win32Pointer,
+    RoutingMethod: Win32Pointer,
+    MethodsReturned: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxFreeBuffer */
   FaxFreeBuffer(Buffer: Win32Pointer): void;
   /** winfax.dll!FaxGetConfigurationA */
@@ -77,7 +89,14 @@ interface Functions {
   /** winfax.dll!FaxGetLoggingCategoriesW */
   FaxGetLoggingCategories(FaxHandle: Win32Pointer, Categories: Win32Pointer, NumberCategories: Win32Pointer): number;
   /** winfax.dll!FaxGetPageData */
-  FaxGetPageData(FaxHandle: Win32Pointer, JobId: number, Buffer: Win32Pointer, BufferSize: Win32Pointer, ImageWidth: Win32Pointer, ImageHeight: Win32Pointer): number;
+  FaxGetPageData(
+    FaxHandle: Win32Pointer,
+    JobId: number,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+    ImageWidth: Win32Pointer,
+    ImageHeight: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxGetPortA */
   FaxGetPortA(FaxPortHandle: Win32Pointer, PortInfo: Win32Pointer): number;
   /** winfax.dll!FaxGetPortW */
@@ -85,13 +104,34 @@ interface Functions {
   /** winfax.dll!FaxGetPortW */
   FaxGetPort(FaxPortHandle: Win32Pointer, PortInfo: Win32Pointer): number;
   /** winfax.dll!FaxGetRoutingInfoA */
-  FaxGetRoutingInfoA(FaxPortHandle: Win32Pointer, RoutingGuid: string | Win32Pointer, RoutingInfoBuffer: Win32Pointer, RoutingInfoBufferSize: Win32Pointer): number;
+  FaxGetRoutingInfoA(
+    FaxPortHandle: Win32Pointer,
+    RoutingGuid: string | Win32Pointer,
+    RoutingInfoBuffer: Win32Pointer,
+    RoutingInfoBufferSize: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxGetRoutingInfoW */
-  FaxGetRoutingInfoW(FaxPortHandle: Win32Pointer, RoutingGuid: string | Win32Pointer, RoutingInfoBuffer: Win32Pointer, RoutingInfoBufferSize: Win32Pointer): number;
+  FaxGetRoutingInfoW(
+    FaxPortHandle: Win32Pointer,
+    RoutingGuid: string | Win32Pointer,
+    RoutingInfoBuffer: Win32Pointer,
+    RoutingInfoBufferSize: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxGetRoutingInfoW */
-  FaxGetRoutingInfo(FaxPortHandle: Win32Pointer, RoutingGuid: string | Win32Pointer, RoutingInfoBuffer: Win32Pointer, RoutingInfoBufferSize: Win32Pointer): number;
+  FaxGetRoutingInfo(
+    FaxPortHandle: Win32Pointer,
+    RoutingGuid: string | Win32Pointer,
+    RoutingInfoBuffer: Win32Pointer,
+    RoutingInfoBufferSize: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxInitializeEventQueue */
-  FaxInitializeEventQueue(FaxHandle: Win32Pointer, CompletionPort: Win32Pointer, CompletionKey: number | bigint, hWnd: Win32Pointer, MessageStart: number): number;
+  FaxInitializeEventQueue(
+    FaxHandle: Win32Pointer,
+    CompletionPort: Win32Pointer,
+    CompletionKey: number | bigint,
+    hWnd: Win32Pointer,
+    MessageStart: number,
+  ): number;
   /** winfax.dll!FaxOpenPort */
   FaxOpenPort(FaxHandle: Win32Pointer, DeviceId: number, Flags: number, FaxPortHandle: Win32Pointer): number;
   /** winfax.dll!FaxPrintCoverPageA */
@@ -101,21 +141,69 @@ interface Functions {
   /** winfax.dll!FaxPrintCoverPageW */
   FaxPrintCoverPage(FaxContextInfo: Win32Pointer, CoverPageInfo: Win32Pointer): number;
   /** winfax.dll!FaxRegisterRoutingExtensionW */
-  FaxRegisterRoutingExtensionW(FaxHandle: Win32Pointer, ExtensionName: string | Win32Pointer, FriendlyName: string | Win32Pointer, ImageName: string | Win32Pointer, CallBack: Win32Callback, Context: Win32Pointer): number;
+  FaxRegisterRoutingExtensionW(
+    FaxHandle: Win32Pointer,
+    ExtensionName: string | Win32Pointer,
+    FriendlyName: string | Win32Pointer,
+    ImageName: string | Win32Pointer,
+    CallBack: Win32Callback,
+    Context: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxRegisterServiceProviderW */
-  FaxRegisterServiceProviderW(DeviceProvider: string | Win32Pointer, FriendlyName: string | Win32Pointer, ImageName: string | Win32Pointer, TspName: string | Win32Pointer): number;
+  FaxRegisterServiceProviderW(
+    DeviceProvider: string | Win32Pointer,
+    FriendlyName: string | Win32Pointer,
+    ImageName: string | Win32Pointer,
+    TspName: string | Win32Pointer,
+  ): number;
   /** winfax.dll!FaxSendDocumentA */
-  FaxSendDocumentA(FaxHandle: Win32Pointer, FileName: string | Win32Pointer, JobParams: Win32Pointer, CoverpageInfo: Win32Pointer, FaxJobId: Win32Pointer): number;
+  FaxSendDocumentA(
+    FaxHandle: Win32Pointer,
+    FileName: string | Win32Pointer,
+    JobParams: Win32Pointer,
+    CoverpageInfo: Win32Pointer,
+    FaxJobId: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxSendDocumentForBroadcastA */
-  FaxSendDocumentForBroadcastA(FaxHandle: Win32Pointer, FileName: string | Win32Pointer, FaxJobId: Win32Pointer, FaxRecipientCallback: Win32Callback, Context: Win32Pointer): number;
+  FaxSendDocumentForBroadcastA(
+    FaxHandle: Win32Pointer,
+    FileName: string | Win32Pointer,
+    FaxJobId: Win32Pointer,
+    FaxRecipientCallback: Win32Callback,
+    Context: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxSendDocumentForBroadcastW */
-  FaxSendDocumentForBroadcastW(FaxHandle: Win32Pointer, FileName: string | Win32Pointer, FaxJobId: Win32Pointer, FaxRecipientCallback: Win32Callback, Context: Win32Pointer): number;
+  FaxSendDocumentForBroadcastW(
+    FaxHandle: Win32Pointer,
+    FileName: string | Win32Pointer,
+    FaxJobId: Win32Pointer,
+    FaxRecipientCallback: Win32Callback,
+    Context: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxSendDocumentForBroadcastW */
-  FaxSendDocumentForBroadcast(FaxHandle: Win32Pointer, FileName: string | Win32Pointer, FaxJobId: Win32Pointer, FaxRecipientCallback: Win32Callback, Context: Win32Pointer): number;
+  FaxSendDocumentForBroadcast(
+    FaxHandle: Win32Pointer,
+    FileName: string | Win32Pointer,
+    FaxJobId: Win32Pointer,
+    FaxRecipientCallback: Win32Callback,
+    Context: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxSendDocumentW */
-  FaxSendDocumentW(FaxHandle: Win32Pointer, FileName: string | Win32Pointer, JobParams: Win32Pointer, CoverpageInfo: Win32Pointer, FaxJobId: Win32Pointer): number;
+  FaxSendDocumentW(
+    FaxHandle: Win32Pointer,
+    FileName: string | Win32Pointer,
+    JobParams: Win32Pointer,
+    CoverpageInfo: Win32Pointer,
+    FaxJobId: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxSendDocumentW */
-  FaxSendDocument(FaxHandle: Win32Pointer, FileName: string | Win32Pointer, JobParams: Win32Pointer, CoverpageInfo: Win32Pointer, FaxJobId: Win32Pointer): number;
+  FaxSendDocument(
+    FaxHandle: Win32Pointer,
+    FileName: string | Win32Pointer,
+    JobParams: Win32Pointer,
+    CoverpageInfo: Win32Pointer,
+    FaxJobId: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxSetConfigurationA */
   FaxSetConfigurationA(FaxHandle: Win32Pointer, FaxConfig: Win32Pointer): number;
   /** winfax.dll!FaxSetConfigurationW */
@@ -147,17 +235,47 @@ interface Functions {
   /** winfax.dll!FaxSetPortW */
   FaxSetPort(FaxPortHandle: Win32Pointer, PortInfo: Win32Pointer): number;
   /** winfax.dll!FaxSetRoutingInfoA */
-  FaxSetRoutingInfoA(FaxPortHandle: Win32Pointer, RoutingGuid: string | Win32Pointer, RoutingInfoBuffer: Win32Pointer, RoutingInfoBufferSize: number): number;
+  FaxSetRoutingInfoA(
+    FaxPortHandle: Win32Pointer,
+    RoutingGuid: string | Win32Pointer,
+    RoutingInfoBuffer: Win32Pointer,
+    RoutingInfoBufferSize: number,
+  ): number;
   /** winfax.dll!FaxSetRoutingInfoW */
-  FaxSetRoutingInfoW(FaxPortHandle: Win32Pointer, RoutingGuid: string | Win32Pointer, RoutingInfoBuffer: Win32Pointer, RoutingInfoBufferSize: number): number;
+  FaxSetRoutingInfoW(
+    FaxPortHandle: Win32Pointer,
+    RoutingGuid: string | Win32Pointer,
+    RoutingInfoBuffer: Win32Pointer,
+    RoutingInfoBufferSize: number,
+  ): number;
   /** winfax.dll!FaxSetRoutingInfoW */
-  FaxSetRoutingInfo(FaxPortHandle: Win32Pointer, RoutingGuid: string | Win32Pointer, RoutingInfoBuffer: Win32Pointer, RoutingInfoBufferSize: number): number;
+  FaxSetRoutingInfo(
+    FaxPortHandle: Win32Pointer,
+    RoutingGuid: string | Win32Pointer,
+    RoutingInfoBuffer: Win32Pointer,
+    RoutingInfoBufferSize: number,
+  ): number;
   /** winfax.dll!FaxStartPrintJobA */
-  FaxStartPrintJobA(PrinterName: string | Win32Pointer, PrintInfo: Win32Pointer, FaxJobId: Win32Pointer, FaxContextInfo: Win32Pointer): number;
+  FaxStartPrintJobA(
+    PrinterName: string | Win32Pointer,
+    PrintInfo: Win32Pointer,
+    FaxJobId: Win32Pointer,
+    FaxContextInfo: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxStartPrintJobW */
-  FaxStartPrintJobW(PrinterName: string | Win32Pointer, PrintInfo: Win32Pointer, FaxJobId: Win32Pointer, FaxContextInfo: Win32Pointer): number;
+  FaxStartPrintJobW(
+    PrinterName: string | Win32Pointer,
+    PrintInfo: Win32Pointer,
+    FaxJobId: Win32Pointer,
+    FaxContextInfo: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxStartPrintJobW */
-  FaxStartPrintJob(PrinterName: string | Win32Pointer, PrintInfo: Win32Pointer, FaxJobId: Win32Pointer, FaxContextInfo: Win32Pointer): number;
+  FaxStartPrintJob(
+    PrinterName: string | Win32Pointer,
+    PrintInfo: Win32Pointer,
+    FaxJobId: Win32Pointer,
+    FaxContextInfo: Win32Pointer,
+  ): number;
   /** winfax.dll!FaxUnregisterServiceProviderW */
   FaxUnregisterServiceProviderW(DeviceProvider: string | Win32Pointer): number;
 }

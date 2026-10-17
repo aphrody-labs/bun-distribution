@@ -47,7 +47,12 @@ interface Functions {
   /** avifil32.dll!AVIGetFromClipboard */
   AVIGetFromClipboard(lppf: Win32Pointer): number;
   /** avifil32.dll!AVIMakeCompressedStream */
-  AVIMakeCompressedStream(ppsCompressed: Win32Pointer, ppsSource: Win32Pointer, lpOptions: Win32Pointer, pclsidHandler: Win32Pointer): number;
+  AVIMakeCompressedStream(
+    ppsCompressed: Win32Pointer,
+    ppsSource: Win32Pointer,
+    lpOptions: Win32Pointer,
+    pclsidHandler: Win32Pointer,
+  ): number;
   /** avifil32.dll!AVIMakeFileFromStreams */
   AVIMakeFileFromStreams(ppfile: Win32Pointer, nStreams: number, papStreams: Win32Pointer): number;
   /** avifil32.dll!AVIMakeStreamFromClipboard */
@@ -55,21 +60,69 @@ interface Functions {
   /** avifil32.dll!AVIPutFileOnClipboard */
   AVIPutFileOnClipboard(pf: Win32Pointer): number;
   /** avifil32.dll!AVISaveA */
-  AVISaveA(szFile: string | Win32Pointer, pclsidHandler: Win32Pointer, lpfnCallback: Win32Callback, nStreams: number, pfile: Win32Pointer, lpOptions: Win32Pointer): number;
+  AVISaveA(
+    szFile: string | Win32Pointer,
+    pclsidHandler: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    nStreams: number,
+    pfile: Win32Pointer,
+    lpOptions: Win32Pointer,
+  ): number;
   /** avifil32.dll!AVISaveOptions */
-  AVISaveOptions(hwnd: Win32Pointer, uiFlags: number, nStreams: number, ppavi: Win32Pointer, plpOptions: Win32Pointer): number | bigint;
+  AVISaveOptions(
+    hwnd: Win32Pointer,
+    uiFlags: number,
+    nStreams: number,
+    ppavi: Win32Pointer,
+    plpOptions: Win32Pointer,
+  ): number | bigint;
   /** avifil32.dll!AVISaveOptionsFree */
   AVISaveOptionsFree(nStreams: number, plpOptions: Win32Pointer): number;
   /** avifil32.dll!AVISaveVA */
-  AVISaveVA(szFile: string | Win32Pointer, pclsidHandler: Win32Pointer, lpfnCallback: Win32Callback, nStreams: number, ppavi: Win32Pointer, plpOptions: Win32Pointer): number;
+  AVISaveVA(
+    szFile: string | Win32Pointer,
+    pclsidHandler: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    nStreams: number,
+    ppavi: Win32Pointer,
+    plpOptions: Win32Pointer,
+  ): number;
   /** avifil32.dll!AVISaveVW */
-  AVISaveVW(szFile: string | Win32Pointer, pclsidHandler: Win32Pointer, lpfnCallback: Win32Callback, nStreams: number, ppavi: Win32Pointer, plpOptions: Win32Pointer): number;
+  AVISaveVW(
+    szFile: string | Win32Pointer,
+    pclsidHandler: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    nStreams: number,
+    ppavi: Win32Pointer,
+    plpOptions: Win32Pointer,
+  ): number;
   /** avifil32.dll!AVISaveVW */
-  AVISaveV(szFile: string | Win32Pointer, pclsidHandler: Win32Pointer, lpfnCallback: Win32Callback, nStreams: number, ppavi: Win32Pointer, plpOptions: Win32Pointer): number;
+  AVISaveV(
+    szFile: string | Win32Pointer,
+    pclsidHandler: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    nStreams: number,
+    ppavi: Win32Pointer,
+    plpOptions: Win32Pointer,
+  ): number;
   /** avifil32.dll!AVISaveW */
-  AVISaveW(szFile: string | Win32Pointer, pclsidHandler: Win32Pointer, lpfnCallback: Win32Callback, nStreams: number, pfile: Win32Pointer, lpOptions: Win32Pointer): number;
+  AVISaveW(
+    szFile: string | Win32Pointer,
+    pclsidHandler: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    nStreams: number,
+    pfile: Win32Pointer,
+    lpOptions: Win32Pointer,
+  ): number;
   /** avifil32.dll!AVISaveW */
-  AVISave(szFile: string | Win32Pointer, pclsidHandler: Win32Pointer, lpfnCallback: Win32Callback, nStreams: number, pfile: Win32Pointer, lpOptions: Win32Pointer): number;
+  AVISave(
+    szFile: string | Win32Pointer,
+    pclsidHandler: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    nStreams: number,
+    pfile: Win32Pointer,
+    lpOptions: Win32Pointer,
+  ): number;
   /** avifil32.dll!AVIStreamAddRef */
   AVIStreamAddRef(pavi: Win32Pointer): number;
   /** avifil32.dll!AVIStreamBeginStreaming */
@@ -95,13 +148,42 @@ interface Functions {
   /** avifil32.dll!AVIStreamLength */
   AVIStreamLength(pavi: Win32Pointer): number;
   /** avifil32.dll!AVIStreamOpenFromFileA */
-  AVIStreamOpenFromFileA(ppavi: Win32Pointer, szFile: string | Win32Pointer, fccType: number, lParam: number, mode: number, pclsidHandler: Win32Pointer): number;
+  AVIStreamOpenFromFileA(
+    ppavi: Win32Pointer,
+    szFile: string | Win32Pointer,
+    fccType: number,
+    lParam: number,
+    mode: number,
+    pclsidHandler: Win32Pointer,
+  ): number;
   /** avifil32.dll!AVIStreamOpenFromFileW */
-  AVIStreamOpenFromFileW(ppavi: Win32Pointer, szFile: string | Win32Pointer, fccType: number, lParam: number, mode: number, pclsidHandler: Win32Pointer): number;
+  AVIStreamOpenFromFileW(
+    ppavi: Win32Pointer,
+    szFile: string | Win32Pointer,
+    fccType: number,
+    lParam: number,
+    mode: number,
+    pclsidHandler: Win32Pointer,
+  ): number;
   /** avifil32.dll!AVIStreamOpenFromFileW */
-  AVIStreamOpenFromFile(ppavi: Win32Pointer, szFile: string | Win32Pointer, fccType: number, lParam: number, mode: number, pclsidHandler: Win32Pointer): number;
+  AVIStreamOpenFromFile(
+    ppavi: Win32Pointer,
+    szFile: string | Win32Pointer,
+    fccType: number,
+    lParam: number,
+    mode: number,
+    pclsidHandler: Win32Pointer,
+  ): number;
   /** avifil32.dll!AVIStreamRead */
-  AVIStreamRead(pavi: Win32Pointer, lStart: number, lSamples: number, lpBuffer: Win32Pointer, cbBuffer: number, plBytes: Win32Pointer, plSamples: Win32Pointer): number;
+  AVIStreamRead(
+    pavi: Win32Pointer,
+    lStart: number,
+    lSamples: number,
+    lpBuffer: Win32Pointer,
+    cbBuffer: number,
+    plBytes: Win32Pointer,
+    plSamples: Win32Pointer,
+  ): number;
   /** avifil32.dll!AVIStreamReadData */
   AVIStreamReadData(pavi: Win32Pointer, fcc: number, lp: Win32Pointer, lpcb: Win32Pointer): number;
   /** avifil32.dll!AVIStreamReadFormat */
@@ -117,7 +199,16 @@ interface Functions {
   /** avifil32.dll!AVIStreamTimeToSample */
   AVIStreamTimeToSample(pavi: Win32Pointer, lTime: number): number;
   /** avifil32.dll!AVIStreamWrite */
-  AVIStreamWrite(pavi: Win32Pointer, lStart: number, lSamples: number, lpBuffer: Win32Pointer, cbBuffer: number, dwFlags: number, plSampWritten: Win32Pointer, plBytesWritten: Win32Pointer): number;
+  AVIStreamWrite(
+    pavi: Win32Pointer,
+    lStart: number,
+    lSamples: number,
+    lpBuffer: Win32Pointer,
+    cbBuffer: number,
+    dwFlags: number,
+    plSampWritten: Win32Pointer,
+    plBytesWritten: Win32Pointer,
+  ): number;
   /** avifil32.dll!AVIStreamWriteData */
   AVIStreamWriteData(pavi: Win32Pointer, fcc: number, lp: Win32Pointer, cb: number): number;
   /** avifil32.dll!CreateEditableStream */
@@ -129,7 +220,14 @@ interface Functions {
   /** avifil32.dll!EditStreamCut */
   EditStreamCut(pavi: Win32Pointer, plStart: Win32Pointer, plLength: Win32Pointer, ppResult: Win32Pointer): number;
   /** avifil32.dll!EditStreamPaste */
-  EditStreamPaste(pavi: Win32Pointer, plPos: Win32Pointer, plLength: Win32Pointer, pstream: Win32Pointer, lStart: number, lEnd: number): number;
+  EditStreamPaste(
+    pavi: Win32Pointer,
+    plPos: Win32Pointer,
+    plLength: Win32Pointer,
+    pstream: Win32Pointer,
+    lStart: number,
+    lEnd: number,
+  ): number;
   /** avifil32.dll!EditStreamSetInfoA */
   EditStreamSetInfoA(pavi: Win32Pointer, lpInfo: Win32Pointer, cbInfo: number): number;
   /** avifil32.dll!EditStreamSetInfoW */

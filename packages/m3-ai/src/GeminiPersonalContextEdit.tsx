@@ -4,13 +4,7 @@
 
 "use client";
 
-import {
-  Button,
-  DialogClose,
-  DialogContent,
-  DialogRoot,
-  Icon,
-} from "@aphrody/m3-primitives";
+import { Button, DialogClose, DialogContent, DialogRoot, Icon } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { useState } from "react";
 
@@ -60,10 +54,7 @@ export function GeminiPersonalContextEdit({
     open,
   });
   // Reset the draft before committing a changed source or open state, while preserving the editor node and focus.
-  if (
-    previousInputs.initialContext !== initialContext ||
-    previousInputs.open !== open
-  ) {
+  if (previousInputs.initialContext !== initialContext || previousInputs.open !== open) {
     setPreviousInputs({ initialContext, open });
     setContext(initialContext);
   }
@@ -98,9 +89,7 @@ export function GeminiPersonalContextEdit({
               <Icon name="psychology" size={24} className="text-primary" />
               {title}
             </h2>
-            <p className="text-body-medium text-on-surface-variant leading-relaxed">
-              {description}
-            </p>
+            <p className="text-body-medium text-on-surface-variant leading-relaxed">{description}</p>
           </div>
           <DialogClose asChild>
             <button
@@ -118,7 +107,7 @@ export function GeminiPersonalContextEdit({
           <div className="relative rounded-medium border-2 border-primary/60 bg-surface-container-low transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
             <textarea
               value={context}
-              onChange={(e) => setContext(e.target.value)}
+              onChange={e => setContext(e.target.value)}
               placeholder="e.g. Always respond in concise bullet points, write modern TypeScript with Bun, favor pure functions..."
               rows={6}
               aria-label="Personal context content"
@@ -149,12 +138,7 @@ export function GeminiPersonalContextEdit({
               Cancel
             </Button>
           </DialogClose>
-          <Button
-            variant="filled"
-            onClick={handleSave}
-            disabled={!canSave}
-            className="px-6"
-          >
+          <Button variant="filled" onClick={handleSave} disabled={!canSave} className="px-6">
             {isSaving ? "Saving..." : "Save"}
           </Button>
         </div>

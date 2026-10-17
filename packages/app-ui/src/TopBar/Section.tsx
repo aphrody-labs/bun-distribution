@@ -6,13 +6,7 @@ interface TopBarSectionProps {
   position: TopBarPosition;
 }
 
-function ItemWrapper({
-  id,
-  children,
-}: {
-  id: string;
-  children: React.ReactNode;
-}) {
+function ItemWrapper({ id, children }: { id: string; children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const { updateItemWidth } = useTopBar();
   const lastWidthRef = useRef<number>(0);
@@ -53,13 +47,7 @@ function ItemWrapper({
 
 export function TopBarSection({ position }: TopBarSectionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const {
-    items,
-    visibleItems,
-    overflowItems,
-    setLeftContainerRef,
-    setRightContainerRef,
-  } = useTopBar();
+  const { items, visibleItems, overflowItems, setLeftContainerRef, setRightContainerRef } = useTopBar();
 
   useLayoutEffect(() => {
     if (position === "left") {
@@ -69,28 +57,22 @@ export function TopBarSection({ position }: TopBarSectionProps) {
     }
   }, [position, setLeftContainerRef, setRightContainerRef]);
 
-  const positionItems = Array.from(items.values()).filter(
-    (item) => item.position === position,
-  );
+  const positionItems = Array.from(items.values()).filter(item => item.position === position);
 
-  const visible = positionItems.filter((item) => visibleItems.has(item.id));
+  const visible = positionItems.filter(item => visibleItems.has(item.id));
   const overflow = overflowItems.get(position) || [];
 
   const containerClass =
-    position === "center"
-      ? "flex-1 flex items-center justify-center gap-2"
-      : "flex items-center gap-2";
+    position === "center" ? "flex-1 flex items-center justify-center gap-2" : "flex items-center gap-2";
 
   return (
     <div ref={containerRef} className={containerClass}>
-      {visible.map((item) => (
+      {visible.map(item => (
         <ItemWrapper key={item.id} id={item.id}>
           {item.element}
         </ItemWrapper>
       ))}
-      {overflow.length > 0 && position !== "center" && (
-        <OverflowButton items={overflow} />
-      )}
+      {overflow.length > 0 && position !== "center" && <OverflowButton items={overflow} />}
     </div>
   );
 }

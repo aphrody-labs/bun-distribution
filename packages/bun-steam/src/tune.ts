@@ -6,23 +6,15 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AuditReport, Recommendation } from "./audit.js";
-import {
-  type ChangePlan,
-  clientConfigPath,
-  isSteamRunning,
-  readVdf,
-  writeVdf,
-} from "./config.js";
+import { type ChangePlan, clientConfigPath, isSteamRunning, readVdf, writeVdf } from "./config.js";
 import { norm } from "./paths.js";
 import { kvEnsure, kvKey } from "./vdf.js";
 
 const STORE = ["InstallConfigStore", "Software", "Valve", "Steam"];
 
 function setDevCfg(file: string, key: string, value: string | null): void {
-  const lines = existsSync(file)
-    ? readFileSync(file, "utf8").split(/\r?\n/)
-    : [];
-  const at = lines.findIndex((l) => l.trim().split(/\s+/)[0] === key);
+  const lines = existsSync(file) ? readFileSync(file, "utf8").split(/\r?\n/) : [];
+  const at = lines.findIndex(l => l.trim().split(/\s+/)[0] === key);
   if (value === null) {
     if (at >= 0) lines.splice(at, 1);
   } else if (at >= 0) lines[at] = `${key} ${value}`;
@@ -41,10 +33,8 @@ export function tune(
   opts: { apply?: boolean; force?: boolean; only?: string[] } = {},
 ): { plans: ChangePlan[]; manual: Recommendation[] } {
   const steamRoot = report.steamRoot;
-  const recs = report.recommendations.filter(
-    (r) => !opts.only || opts.only.includes(r.id),
-  );
-  const manual = recs.filter((r) => !r.apply);
+  const recs = report.recommendations.filter(r => !opts.only || opts.only.includes(r.id));
+  const manual = recs.filter(r => !r.apply);
   const configPath = clientConfigPath(steamRoot);
   const devPath = norm(join(steamRoot, "steam_dev.cfg"));
   const doc = readVdf(configPath);
@@ -64,7 +54,7 @@ export function tune(
       from =
         devText
           .split(/\r?\n/)
-          .map((l) => l.trim().split(/\s+/))
+          .map(l => l.trim().split(/\s+/))
           .find(([k]) => k === key)?.[1] ?? null;
     }
     plans.push({
@@ -74,11 +64,9 @@ export function tune(
     });
   }
   if (!opts.apply) return { plans, manual };
-  const touchesConfig = plans.some((p) => p.file === configPath);
+  const touchesConfig = plans.some(p => p.file === configPath);
   if (touchesConfig && !opts.force && isSteamRunning())
-    throw new Error(
-      "Steam is running and rewrites config.vdf on exit; close it, then run bun-steam tune --apply",
-    );
+    throw new Error("Steam is running and rewrites config.vdf on exit; close it, then run bun-steam tune --apply");
   for (const [i, r] of planned.entries()) {
     const { file, key, value } = r.apply!;
     if (file === "config.vdf" && store) {

@@ -11,7 +11,6 @@
 // TODO(v3): consider redesign the API to implement automatic stopAccessingSecurityScopedResource on iOS
 // this likely requires returning a handle to a resource so we can impl Drop for it
 
-
 use std::io::Read;
 #[cfg(target_os = "ios")]
 use std::sync::Mutex;
@@ -551,7 +550,7 @@ impl<R: Runtime, T: Manager<R>> FsExt<R> for T {
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R, Option<config::Config>> {
     PluginBuilder::<R, Option<config::Config>>::new("fs")
-        .invoke_handler(tauri::generate_handler![#![plugin(fs)] 
+        .invoke_handler(tauri::generate_handler![#![plugin(fs)]
             commands::create,
             commands::open,
             commands::copy_file,

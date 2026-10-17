@@ -249,7 +249,7 @@ impl Builder {
                 });
                 Ok(())
             })
-            .invoke_handler(tauri::generate_handler![#![plugin(opener)] 
+            .invoke_handler(tauri::generate_handler![#![plugin(opener)]
                 commands::open_url,
                 commands::open_path,
                 commands::reveal_items_in_dir,

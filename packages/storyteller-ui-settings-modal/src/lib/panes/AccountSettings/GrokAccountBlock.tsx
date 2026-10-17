@@ -4,15 +4,10 @@ import { useEffect, useState } from "react";
 import { LoaderCircleIcon } from "lucide-react";
 import { useRefreshAccountStateEvent } from "@storyteller/tauri-events";
 import { RefreshAccountStateEvent } from "@storyteller/tauri-events";
-import {
-  GrokGetCredentialInfo,
-  GrokGetCredentialInfoSuccess,
-} from "@storyteller/tauri-api";
+import { GrokGetCredentialInfo, GrokGetCredentialInfoSuccess } from "@storyteller/tauri-api";
 
 export const GrokAccountBlock = () => {
-  const [grokSession, setGrokSession] = useState<
-    GrokGetCredentialInfoSuccess | undefined
-  >(undefined);
+  const [grokSession, setGrokSession] = useState<GrokGetCredentialInfoSuccess | undefined>(undefined);
   const [isCheckingGrokSession, setIsCheckingGrokSession] = useState(false);
 
   const fetchSession = async () => {
@@ -64,9 +59,7 @@ export const GrokAccountBlock = () => {
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 flex-col gap-0.5">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
-          Grok account
-        </p>
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">Grok account</p>
         <p className="truncate text-sm font-medium text-base-fg/80">
           {grokSession?.payload?.maybe_email || "Not logged in"}
         </p>

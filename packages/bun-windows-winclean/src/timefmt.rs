@@ -28,7 +28,11 @@ fn civil_from_days(days: i64) -> (i64, u32, u32) {
     let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
     let month_index = (5 * day_of_year + 2) / 153;
     let day = (day_of_year - (153 * month_index + 2) / 5 + 1) as u32;
-    let month = if month_index < 10 { month_index + 3 } else { month_index - 9 } as u32;
+    let month = if month_index < 10 {
+        month_index + 3
+    } else {
+        month_index - 9
+    } as u32;
     let year = year_of_era + era * 400 + i64::from(month <= 2);
     (year, month, day)
 }
@@ -62,7 +66,10 @@ pub(crate) fn cim_datetime_to_rfc3339(value: &str) -> Option<String> {
     }
     let number = |range: std::ops::Range<usize>| -> Option<i64> {
         let digits = value.get(range)?;
-        digits.bytes().all(|byte| byte.is_ascii_digit()).then(|| digits.parse().ok())?
+        digits
+            .bytes()
+            .all(|byte| byte.is_ascii_digit())
+            .then(|| digits.parse().ok())?
     };
     let (year, month, day) = (number(0..4)?, number(4..6)?, number(6..8)?);
     let (hour, minute, second) = (number(8..10)?, number(10..12)?, number(12..14)?);
@@ -95,13 +102,20 @@ mod tests {
         assert_eq!(civil_from_days(19_723), (2024, 1, 1));
         for days in [-719_468, -1, 0, 59, 11_016, 20_000, 2_932_896] {
             let (year, month, day) = civil_from_days(days);
-            assert_eq!(days_from_civil(year, month, day), days, "{year}-{month}-{day}");
+            assert_eq!(
+                days_from_civil(year, month, day),
+                days,
+                "{year}-{month}-{day}"
+            );
         }
     }
 
     #[test]
     fn filetime_renders_like_the_event_log_system_time() {
-        assert_eq!(filetime_to_rfc3339(116_444_736_000_000_000), "1970-01-01T00:00:00.0000000Z");
+        assert_eq!(
+            filetime_to_rfc3339(116_444_736_000_000_000),
+            "1970-01-01T00:00:00.0000000Z"
+        );
         // 2024-02-29T12:34:56.1234567Z
         let ticks = 116_444_736_000_000_000u64 + 1_709_210_096 * 10_000_000 + 1_234_567;
         assert_eq!(filetime_to_rfc3339(ticks), "2024-02-29T12:34:56.1234567Z");

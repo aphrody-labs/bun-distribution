@@ -12,8 +12,7 @@ export interface Cue {
 
 export type SubtitleFormat = "srt" | "vtt" | "ass";
 
-const pad = (value: number, width: number): string =>
-  String(value).padStart(width, "0");
+const pad = (value: number, width: number): string => String(value).padStart(width, "0");
 
 export function formatTimestamp(ms: number, format: SubtitleFormat): string {
   const total = Math.max(0, Math.round(ms));
@@ -55,7 +54,7 @@ export function stripMarkup(text: string): string {
 export function normalizeText(text: string): string {
   return text
     .split(/\r?\n/)
-    .map((line) => line.replace(/\s+/g, " ").trim())
+    .map(line => line.replace(/\s+/g, " ").trim())
     .filter(Boolean)
     .join(" ");
 }
@@ -72,7 +71,7 @@ function parseBlocks(text: string, skip: (block: string) => boolean): Cue[] {
   for (const block of text.split(/\n{2,}/)) {
     if (skip(block)) continue;
     const rows = block.split("\n");
-    const at = rows.findIndex((row) => row.includes("-->"));
+    const at = rows.findIndex(row => row.includes("-->"));
     if (at < 0) continue;
     const [from, to] = (rows[at] ?? "").split("-->");
     const start = parseTimestamp(from ?? "");
@@ -102,24 +101,13 @@ function parseAss(text: string): Cue[] {
       columns = line
         .slice(7)
         .split(",")
-        .map((name) => name.trim().toLowerCase());
+        .map(name => name.trim().toLowerCase());
       continue;
     }
     if (!/^Dialogue:/i.test(line)) continue;
     const names = columns.length
       ? columns
-      : [
-          "layer",
-          "start",
-          "end",
-          "style",
-          "name",
-          "marginl",
-          "marginr",
-          "marginv",
-          "effect",
-          "text",
-        ];
+      : ["layer", "start", "end", "style", "name", "marginl", "marginr", "marginv", "effect", "text"];
     const parts = line.slice(9).split(",");
     const fields = parts.slice(0, names.length - 1);
     fields.push(parts.slice(names.length - 1).join(","));
@@ -142,9 +130,7 @@ export function parseSubtitles(input: string, hint?: SubtitleFormat): Cue[] {
   const format = hint ?? detectFormat(text);
   if (format === "ass") return parseAss(text);
   if (format === "vtt") {
-    return parseBlocks(text, (block) =>
-      /^(WEBVTT|NOTE|STYLE|REGION)\b/.test(block.trimStart()),
-    );
+    return parseBlocks(text, block => /^(WEBVTT|NOTE|STYLE|REGION)\b/.test(block.trimStart()));
   }
   return parseBlocks(text, () => false);
 }
@@ -171,21 +157,17 @@ export function toSrt(cues: Cue[], options: WriteOptions = {}): string {
   return body.join("\n");
 }
 
-const escapeVtt = (text: string): string =>
-  text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const escapeVtt = (text: string): string => text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
 export function toVtt(cues: Cue[], options: WriteOptions = {}): string {
   const body = cues.map((cue, index) => {
-    const text = escapeVtt(
-      lines(cue, options.bilingual ?? false).join("\n"),
-    ).replaceAll("-->", "->");
+    const text = escapeVtt(lines(cue, options.bilingual ?? false).join("\n")).replaceAll("-->", "->");
     return `${index + 1}\n${formatTimestamp(cue.start, "vtt")} --> ${formatTimestamp(cue.end, "vtt")}\n${text}\n`;
   });
   return `WEBVTT\n\n${body.join("\n")}`;
 }
 
-const escapeAss = (text: string): string =>
-  text.replace(/[{}]/g, (c) => (c === "{" ? "(" : ")"));
+const escapeAss = (text: string): string => text.replace(/[{}]/g, c => (c === "{" ? "(" : ")"));
 
 export function toAss(cues: Cue[], options: WriteOptions = {}): string {
   const height = options.height ?? 1080;
@@ -208,7 +190,7 @@ export function toAss(cues: Cue[], options: WriteOptions = {}): string {
     "[Events]",
     "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
   ];
-  const events = cues.map((cue) => {
+  const events = cues.map(cue => {
     const english = escapeAss(cue.text).split("\n").join("\\N");
     const text =
       options.bilingual && cue.orig
@@ -219,11 +201,7 @@ export function toAss(cues: Cue[], options: WriteOptions = {}): string {
   return `${[...header, ...events].join("\n")}\n`;
 }
 
-export function serialize(
-  cues: Cue[],
-  format: SubtitleFormat,
-  options: WriteOptions = {},
-): string {
+export function serialize(cues: Cue[], format: SubtitleFormat, options: WriteOptions = {}): string {
   if (format === "vtt") return toVtt(cues, options);
   if (format === "ass") return toAss(cues, options);
   return toSrt(cues, options);

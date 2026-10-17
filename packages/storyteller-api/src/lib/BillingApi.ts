@@ -16,14 +16,14 @@ export class BillingApi extends ApiManager {
       maybe_loyalty_program?: LoyaltyProgram;
       error_message?: string;
     }>({ endpoint: endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: {
           active_subscriptions: response.active_subscriptions || [],
           maybe_loyalty_program: response.maybe_loyalty_program,
         },
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -75,14 +75,14 @@ export class BillingApi extends ApiManager {
         ...(maybeReferralCode && { maybe_referral_code: maybeReferralCode }),
       },
     })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.stripe_checkout_redirect_url
           ? { stripeCheckoutRedirectUrl: response.stripe_checkout_redirect_url }
           : undefined,
         errorMessage: response.error_message,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -113,14 +113,14 @@ export class BillingApi extends ApiManager {
         cadence,
       },
     })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.stripe_checkout_redirect_url
           ? { stripeCheckoutRedirectUrl: response.stripe_checkout_redirect_url }
           : undefined,
         errorMessage: response.error_message,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -151,14 +151,12 @@ export class BillingApi extends ApiManager {
         cadence,
       },
     })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
-        data: response.stripe_portal_url
-          ? { stripePortalUrl: response.stripe_portal_url }
-          : undefined,
+        data: response.stripe_portal_url ? { stripePortalUrl: response.stripe_portal_url } : undefined,
         errorMessage: response.error_message,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -186,14 +184,14 @@ export class BillingApi extends ApiManager {
         credits_pack: creditsPack,
       },
     })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.stripe_checkout_redirect_url
           ? { stripeCheckoutRedirectUrl: response.stripe_checkout_redirect_url }
           : undefined,
         errorMessage: response.error_message,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -201,9 +199,7 @@ export class BillingApi extends ApiManager {
       });
   }
 
-  public async GetPortalUrl(): Promise<
-    ApiResponse<{ stripePortalUrl: string }>
-  > {
+  public async GetPortalUrl(): Promise<ApiResponse<{ stripePortalUrl: string }>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/stripe_artcraft/portal/manage_plan`;
 
     return await this.post<
@@ -217,14 +213,12 @@ export class BillingApi extends ApiManager {
       endpoint: endpoint,
       body: {},
     })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
-        data: response.stripe_portal_url
-          ? { stripePortalUrl: response.stripe_portal_url }
-          : undefined,
+        data: response.stripe_portal_url ? { stripePortalUrl: response.stripe_portal_url } : undefined,
         errorMessage: response.error_message,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,

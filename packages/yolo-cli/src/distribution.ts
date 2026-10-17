@@ -6,12 +6,7 @@
 import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
-import {
-  hostTarget,
-  loadArtifact,
-  runtimeHome,
-  verifyArtifact,
-} from "@aphrody/runtime-sdk/src/artifact.ts";
+import { hostTarget, loadArtifact, runtimeHome, verifyArtifact } from "@aphrody/runtime-sdk/src/artifact.ts";
 import { install, list, rollback } from "@aphrody/runtime-sdk/src/release.ts";
 import { Runtime } from "@aphrody/runtime-sdk";
 import { embeddedNativeLibraryPath } from "@aphrody/runtime-sdk/ffi";
@@ -31,10 +26,7 @@ export {
   type DoctorComponent,
   type DoctorReport,
 } from "@aphrody/yolo-core/src/sys/doctor.ts";
-import {
-  collectDoctorReport,
-  renderDoctorMarkdown,
-} from "@aphrody/yolo-core/src/sys/doctor.ts";
+import { collectDoctorReport, renderDoctorMarkdown } from "@aphrody/yolo-core/src/sys/doctor.ts";
 
 /** Checks the installation; returns 1 if something required is missing. */
 export function runDoctor(args: readonly string[] = []): number {
@@ -51,114 +43,77 @@ export function runDoctor(args: readonly string[] = []): number {
   }
 
   console.log(`\x1b[1myolo doctor\x1b[0m  home ${report.home}`);
-  ok(
-    `version ${report.yoloVersion}, target ${report.hostTarget}, Bun ${report.bunVersion}`,
-  );
+  ok(`version ${report.yoloVersion}, target ${report.hostTarget}, Bun ${report.bunVersion}`);
 
   for (const tool of report.tools) {
     if (tool.found) ok(`${tool.name} on PATH (yolo infra|ops|workflow|ship)`);
-    else
-      warn(
-        `${tool.name} not on PATH (Aphrody control plane commands unavailable)`,
-      );
+    else warn(`${tool.name} not on PATH (Aphrody control plane commands unavailable)`);
   }
 
   for (const tool of report.codeIntel) {
-    if (tool.found)
-      ok(`${tool.name} on PATH (code intelligence / context reduction)`);
-    else
-      warn(`${tool.name} not on PATH (run Aphrody toolchain-sync to install)`);
+    if (tool.found) ok(`${tool.name} on PATH (code intelligence / context reduction)`);
+    else warn(`${tool.name} not on PATH (run Aphrody toolchain-sync to install)`);
   }
 
   for (const comp of report.components) {
     if (comp.exists) ok(comp.label);
     else if (comp.required) bad(`${comp.label} missing (${comp.path})`);
-    else
-      warn(
-        `${comp.label} not installed: \`yolo create --with desktop\` needs it`,
-      );
+    else warn(`${comp.label} not installed: \`yolo create --with desktop\` needs it`);
   }
 
   if (report.runtime.installed && !report.runtime.error) {
-    ok(
-      `runtime ${report.runtime.version} (ABI ${report.runtime.abi}, ${report.runtime.active}) verified and loadable`,
-    );
+    ok(`runtime ${report.runtime.version} (ABI ${report.runtime.abi}, ${report.runtime.active}) verified and loadable`);
     ok(`capabilities: ${(report.runtime.capabilities ?? []).join(", ")}`);
-    if (!report.runtime.panicRecovery)
-      warn("runtime built without panic recovery");
+    if (!report.runtime.panicRecovery) warn("runtime built without panic recovery");
   } else {
     bad(`runtime: ${report.runtime.error ?? "not installed"}`);
   }
 
-  if (report.rollbackAvailable)
-    ok(`rollback available: ${report.rollbackAvailable}`);
+  if (report.rollbackAvailable) ok(`rollback available: ${report.rollbackAvailable}`);
   const bin = join(report.home, "bin");
   if (report.binOnPath) ok(`${bin} is on PATH`);
   else warn(`${bin} is not on PATH`);
 
   warn(
-    report.ghFound
-      ? "gh found (private release downloads)"
-      : "gh not found (public releases and GITHUB_TOKEN only)",
+    report.ghFound ? "gh found (private release downloads)" : "gh not found (public releases and GITHUB_TOKEN only)",
   );
 
   return report.ok ? 0 : 1;
 }
 
-export async function runRuntimeCommand(
-  args: readonly string[],
-): Promise<number> {
+export async function runRuntimeCommand(args: readonly string[]): Promise<number> {
   const [command = "list", argument] = args;
   switch (command) {
     case "install": {
-      if (argument === undefined)
-        throw new Error("usage: yolo runtime install <artifact-dir>");
-      console.log(
-        `Installed ${install(resolve(argument))} in ${join(runtimeHome(), hostTarget())}`,
-      );
+      if (argument === undefined) throw new Error("usage: yolo runtime install <artifact-dir>");
+      console.log(`Installed ${install(resolve(argument))} in ${join(runtimeHome(), hostTarget())}`);
       return 0;
     }
     case "rollback": {
       const result = rollback();
-      console.log(
-        `Rolled back: current=${result.current} previous=${result.previous ?? "-"}`,
-      );
+      console.log(`Rolled back: current=${result.current} previous=${result.previous ?? "-"}`);
       return 0;
     }
     case "list":
-      for (const e of list())
-        console.log(`${e.current ? "*" : e.previous ? "-" : " "} ${e.name}`);
+      for (const e of list()) console.log(`${e.current ? "*" : e.previous ? "-" : " "} ${e.name}`);
       return 0;
     case "verify": {
-      const current = list().find((e) => e.current);
+      const current = list().find(e => e.current);
       if (current === undefined) throw new Error("No installed artifact");
-      const manifest = verifyArtifact(
-        join(runtimeHome(), hostTarget(), current.name),
-      );
-      console.log(
-        `OK ${manifest.name} ${manifest.version} ABI ${manifest.abi} (${current.name})`,
-      );
+      const manifest = verifyArtifact(join(runtimeHome(), hostTarget(), current.name));
+      console.log(`OK ${manifest.name} ${manifest.version} ABI ${manifest.abi} (${current.name})`);
       return 0;
     }
     case "info": {
       using runtime =
-        !args.includes("--installed") &&
-        embeddedNativeLibraryPath("aphrody_ffi") !== null
+        !args.includes("--installed") && embeddedNativeLibraryPath("aphrody_ffi") !== null
           ? Runtime.load()
           : loadArtifact(join(runtimeHome(), hostTarget(), "current"));
-      console.log(
-        JSON.stringify(
-          { build: runtime.buildInfo(), capabilities: runtime.capabilities() },
-          null,
-          2,
-        ),
-      );
+      console.log(JSON.stringify({ build: runtime.buildInfo(), capabilities: runtime.capabilities() }, null, 2));
       return 0;
     }
     default:
-      console.error(
-        "usage: yolo runtime install <dir> | list | verify | rollback | info [--installed]",
-      );
+      console.error("usage: yolo runtime install <dir> | list | verify | rollback | info [--installed]");
       return 1;
   }
 }
@@ -187,10 +142,7 @@ const VERSION_PATTERN =
 
 function validVersion(value: string): boolean {
   const match = value.match(VERSION_PATTERN);
-  return (
-    match !== null &&
-    !(match[1]?.split(".").some((part) => /^0\d+$/.test(part)) ?? false)
-  );
+  return match !== null && !(match[1]?.split(".").some(part => /^0\d+$/.test(part)) ?? false);
 }
 
 async function githubRelease(
@@ -198,31 +150,22 @@ async function githubRelease(
   wanted: string | undefined,
   token: string | undefined,
 ): Promise<{ tag: string; assets: ReleaseAsset[] }> {
-  const selector =
-    wanted === undefined ? "latest" : `tags/${encodeURIComponent(wanted)}`;
-  const response = await fetch(
-    `https://api.github.com/repos/${repo}/releases/${selector}`,
-    {
-      headers: {
-        accept: "application/vnd.github+json",
-        "user-agent": "yolo-cli",
-        ...(token === undefined ? {} : { authorization: `Bearer ${token}` }),
-      },
-      signal: AbortSignal.timeout(20_000),
+  const selector = wanted === undefined ? "latest" : `tags/${encodeURIComponent(wanted)}`;
+  const response = await fetch(`https://api.github.com/repos/${repo}/releases/${selector}`, {
+    headers: {
+      accept: "application/vnd.github+json",
+      "user-agent": "yolo-cli",
+      ...(token === undefined ? {} : { authorization: `Bearer ${token}` }),
     },
-  );
-  if (!response.ok)
-    throw new Error(
-      `cannot read release ${wanted ?? "latest"} of ${repo}: HTTP ${response.status}`,
-    );
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!response.ok) throw new Error(`cannot read release ${wanted ?? "latest"} of ${repo}: HTTP ${response.status}`);
   const json = (await response.json()) as {
     tag_name?: unknown;
     assets?: unknown;
   };
   if (typeof json.tag_name !== "string" || !validVersion(json.tag_name)) {
-    throw new Error(
-      "Invalid release metadata: expected a semantic version tag",
-    );
+    throw new Error("Invalid release metadata: expected a semantic version tag");
   }
   if (wanted !== undefined && json.tag_name !== wanted) {
     throw new Error(`Requested release ${wanted}, received ${json.tag_name}`);
@@ -250,17 +193,14 @@ async function githubAsset(
   repo: string,
   token: string | undefined,
 ): Promise<Uint8Array> {
-  const matches = assets.filter((asset) => asset.name === name);
-  if (matches.length !== 1)
-    throw new Error(`Release must contain exactly one ${name} asset`);
+  const matches = assets.filter(asset => asset.name === name);
+  if (matches.length !== 1) throw new Error(`Release must contain exactly one ${name} asset`);
   const asset = matches[0] as ReleaseAsset;
   const url = new URL(asset.url);
   // Credentials belong only to GitHub's asset API, even if release metadata is malformed.
   if (
     url.origin !== "https://api.github.com" ||
-    !url.pathname
-      .toLowerCase()
-      .startsWith(`/repos/${repo.toLowerCase()}/releases/assets/`) ||
+    !url.pathname.toLowerCase().startsWith(`/repos/${repo.toLowerCase()}/releases/assets/`) ||
     !/^\d+$/.test(url.pathname.split("/").at(-1) ?? "") ||
     url.username !== "" ||
     url.password !== "" ||
@@ -277,8 +217,7 @@ async function githubAsset(
     },
     signal: AbortSignal.timeout(30_000),
   });
-  if (!response.ok)
-    throw new Error(`cannot download ${name}: HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`cannot download ${name}: HTTP ${response.status}`);
   return new Uint8Array(await response.arrayBuffer());
 }
 
@@ -297,9 +236,7 @@ function offlineVersion(dir: string): string {
     !validVersion(metadata.version) ||
     ("name" in metadata && metadata.name !== "yolo")
   ) {
-    throw new Error(
-      `Invalid release.json in ${dir}: expected a yolo semantic version`,
-    );
+    throw new Error(`Invalid release.json in ${dir}: expected a yolo semantic version`);
   }
   return metadata.version;
 }
@@ -312,8 +249,7 @@ function verifyInstaller(script: Uint8Array, sums: string, name: string): void {
     if (match === null) throw new Error("Invalid SHA256SUMS entry");
     if (match[2] === name) entries.push((match[1] as string).toLowerCase());
   }
-  if (entries.length !== 1)
-    throw new Error(`SHA256SUMS must contain exactly one ${name} entry`);
+  if (entries.length !== 1) throw new Error(`SHA256SUMS must contain exactly one ${name} entry`);
   const hash = new Bun.CryptoHasher("sha256").update(script).digest("hex");
   if (hash !== entries[0]) throw new Error(`Checksum mismatch for ${name}`);
 }
@@ -340,11 +276,7 @@ export async function runUpgrade(args: readonly string[]): Promise<number> {
     const arg = args[i] as string;
     const value = (): string => {
       const result = args[++i];
-      if (
-        result === undefined ||
-        result.trim() === "" ||
-        result.startsWith("--")
-      ) {
+      if (result === undefined || result.trim() === "" || result.startsWith("--")) {
         throw new Error(`${arg} requires a value`);
       }
       return result;
@@ -373,28 +305,18 @@ export async function runUpgrade(args: readonly string[]): Promise<number> {
   } else {
     tag = offlineVersion(releaseDir);
   }
-  if (
-    wanted !== undefined &&
-    wanted.replace(/^v/, "") !== tag.replace(/^v/, "")
-  ) {
-    throw new Error(
-      `Requested version ${wanted} does not match offline release ${tag}`,
-    );
+  if (wanted !== undefined && wanted.replace(/^v/, "") !== tag.replace(/^v/, "")) {
+    throw new Error(`Requested version ${wanted} does not match offline release ${tag}`);
   }
   const current = yoloVersion();
   console.log(`installed ${current}, available ${tag}`);
   if (checkOnly) return compareVersions(tag, current) > 0 ? 10 : 0;
-  if (
-    wanted === undefined &&
-    releaseDir === undefined &&
-    compareVersions(tag, current) <= 0
-  ) {
+  if (wanted === undefined && releaseDir === undefined && compareVersions(tag, current) <= 0) {
     console.log("Already up to date.");
     return 0;
   }
   // Windows has no `sh`: re-run install.ps1 under PowerShell (pwsh if present, else the built-in powershell.exe).
-  const installerName =
-    process.platform === "win32" ? "install.ps1" : "install.sh";
+  const installerName = process.platform === "win32" ? "install.ps1" : "install.sh";
   const [script, checksums] =
     releaseDir === undefined
       ? await Promise.all([
@@ -415,13 +337,7 @@ export async function runUpgrade(args: readonly string[]): Promise<number> {
   if (releaseDir !== undefined) env["YOLO_RELEASE_DIR"] = releaseDir;
   const command =
     process.platform === "win32"
-      ? [
-          Bun.which("pwsh") ?? "powershell.exe",
-          "-NoProfile",
-          "-NonInteractive",
-          "-Command",
-          "-",
-        ]
+      ? [Bun.which("pwsh") ?? "powershell.exe", "-NoProfile", "-NonInteractive", "-Command", "-"]
       : ["sh", "-s", "--"];
   const proc = Bun.spawn(command, {
     windowsHide: true,
@@ -436,29 +352,15 @@ export async function runUpgrade(args: readonly string[]): Promise<number> {
 /** `yolo uninstall [--yes]`: removes the installation directory (never anything else). */
 export function runUninstall(args: readonly string[]): number {
   const home = yoloHome();
-  const guarded = new Set([
-    resolve("/"),
-    resolve(homedir()),
-    resolve(homedir(), ".."),
-  ]);
-  if (
-    guarded.has(home) ||
-    !existsSync(join(home, "VERSION")) ||
-    !existsSync(join(home, "bin"))
-  ) {
-    console.error(
-      `Refusing to remove ${home}: it does not look like a yolo installation`,
-    );
+  const guarded = new Set([resolve("/"), resolve(homedir()), resolve(homedir(), "..")]);
+  if (guarded.has(home) || !existsSync(join(home, "VERSION")) || !existsSync(join(home, "bin"))) {
+    console.error(`Refusing to remove ${home}: it does not look like a yolo installation`);
     return 1;
   }
   const entries = readdirSync(home);
   if (!args.includes("--yes")) {
-    console.log(
-      `This removes ${home} (${entries.join(", ")}), including installed runtime artifacts.`,
-    );
-    console.log(
-      "Re-run with --yes to confirm. Remove the PATH line from your shell profile afterwards.",
-    );
+    console.log(`This removes ${home} (${entries.join(", ")}), including installed runtime artifacts.`);
+    console.log("Re-run with --yes to confirm. Remove the PATH line from your shell profile afterwards.");
     return 1;
   }
   rmSync(home, { recursive: true, force: true });

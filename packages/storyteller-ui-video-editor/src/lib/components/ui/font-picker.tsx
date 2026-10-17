@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useState,
-  useMemo,
-  useRef,
-  useEffect,
-  useCallback,
-  type CSSProperties,
-} from "react";
+import { useState, useMemo, useRef, useEffect, useCallback, type CSSProperties } from "react";
 import { List, type RowComponentProps } from "react-window";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { Input } from "./input";
@@ -41,32 +34,20 @@ interface FontPickerProps {
   className?: string;
 }
 
-export function FontPicker({
-  defaultValue,
-  onValueChange,
-  className,
-}: FontPickerProps) {
+export function FontPicker({ defaultValue, onValueChange, className }: FontPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<FontTab>("all");
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const {
-    atlas,
-    status,
-    fontNames,
-    retry: handleRetry,
-  } = useFontAtlas({ open });
+  const { atlas, status, fontNames, retry: handleRetry } = useFontAtlas({ open });
 
   const filteredFonts = useMemo(() => {
     if (!search) return fontNames;
     const query = search.toLowerCase();
-    return fontNames.filter((name) => name.toLowerCase().includes(query));
+    return fontNames.filter(name => name.toLowerCase().includes(query));
   }, [fontNames, search]);
 
-  const listHeight = Math.min(
-    MAX_LIST_HEIGHT,
-    filteredFonts.length * ROW_HEIGHT,
-  );
+  const listHeight = Math.min(MAX_LIST_HEIGHT, filteredFonts.length * ROW_HEIGHT);
 
   const handleSelect = useCallback(
     async ({ family }: { family: string }) => {
@@ -90,8 +71,7 @@ export function FontPicker({
     }
   }, [open]);
 
-  const activeTabLabel =
-    FONT_TABS.find((t) => t.key === activeTab)?.label.toLowerCase() ?? "";
+  const activeTabLabel = FONT_TABS.find(t => t.key === activeTab)?.label.toLowerCase() ?? "";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -115,11 +95,11 @@ export function FontPicker({
         className="w-72 p-0 overflow-hidden"
         align="start"
         side="left"
-        onOpenAutoFocus={(event) => {
+        onOpenAutoFocus={event => {
           event.preventDefault();
           searchInputRef.current?.focus();
         }}
-        onCloseAutoFocus={(event) => {
+        onCloseAutoFocus={event => {
           event.preventDefault();
           event.stopPropagation();
         }}
@@ -130,13 +110,13 @@ export function FontPicker({
             ref={searchInputRef}
             placeholder={`Search ${activeTabLabel}...`}
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={event => setSearch(event.target.value)}
             size="xs"
             className="w-full pl-5 bg-transparent border-none! shadow-none!"
           />
         </div>
         <div className="flex border-b px-3">
-          {FONT_TABS.map((tab) => (
+          {FONT_TABS.map(tab => (
             <button
               key={tab.key}
               type="button"
@@ -152,28 +132,18 @@ export function FontPicker({
             </button>
           ))}
         </div>
-        {status === "loading" && (
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            Loading fonts...
-          </div>
-        )}
+        {status === "loading" && <div className="py-8 text-center text-sm text-muted-foreground">Loading fonts...</div>}
         {status === "error" && (
           <div className="flex flex-col items-center gap-3 py-8 px-4">
-            <p className="text-sm text-muted-foreground text-center">
-              Failed to load font previews.
-            </p>
+            <p className="text-sm text-muted-foreground text-center">Failed to load font previews.</p>
             <Button variant="outline" size="sm" onClick={handleRetry}>
               Retry
             </Button>
           </div>
         )}
-        {status === "idle" &&
-          fontNames.length > 0 &&
-          filteredFonts.length === 0 && (
-            <div className="py-6 text-center text-sm text-muted-foreground">
-              No fonts found.
-            </div>
-          )}
+        {status === "idle" && fontNames.length > 0 && filteredFonts.length === 0 && (
+          <div className="py-6 text-center text-sm text-muted-foreground">No fonts found.</div>
+        )}
         {status === "idle" && atlas && filteredFonts.length > 0 && (
           <List
             rowCount={filteredFonts.length}
@@ -222,14 +192,7 @@ type FontRowProps = {
   onFontSelect: (params: { family: string }) => void;
 };
 
-function FontRow({
-  index,
-  style,
-  atlas,
-  filteredFonts,
-  selectedFont,
-  onFontSelect,
-}: RowComponentProps<FontRowProps>) {
+function FontRow({ index, style, atlas, filteredFonts, selectedFont, onFontSelect }: RowComponentProps<FontRowProps>) {
   const fontName = filteredFonts[index];
   const entry = atlas.fonts[fontName];
   const isSelected = fontName === selectedFont;
@@ -244,7 +207,7 @@ function FontRow({
         isSelected && "bg-popover-hover",
       )}
       onClick={() => onFontSelect({ family: fontName })}
-      onKeyDown={(event) => {
+      onKeyDown={event => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           onFontSelect({ family: fontName });
@@ -254,10 +217,7 @@ function FontRow({
     >
       <div className="min-w-0 overflow-hidden">
         {isSystemFont ? (
-          <span
-            className="text-xl text-foreground/85"
-            style={{ fontFamily: fontName }}
-          >
+          <span className="text-xl text-foreground/85" style={{ fontFamily: fontName }}>
             {fontName}
           </span>
         ) : (

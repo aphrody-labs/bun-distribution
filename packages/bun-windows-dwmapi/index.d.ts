@@ -5,7 +5,13 @@ interface Functions {
   /** dwmapi.dll!DwmAttachMilContent */
   DwmAttachMilContent(hwnd: Win32Pointer): number;
   /** dwmapi.dll!DwmDefWindowProc */
-  DwmDefWindowProc(hWnd: Win32Pointer, msg: number, wParam: number | bigint, lParam: number | bigint, plResult: Win32Pointer): number;
+  DwmDefWindowProc(
+    hWnd: Win32Pointer,
+    msg: number,
+    wParam: number | bigint,
+    lParam: number | bigint,
+    plResult: Win32Pointer,
+  ): number;
   /** dwmapi.dll!DwmDetachMilContent */
   DwmDetachMilContent(hwnd: Win32Pointer): number;
   /** dwmapi.dll!DwmEnableBlurBehindWindow */
@@ -27,11 +33,20 @@ interface Functions {
   /** dwmapi.dll!DwmGetGraphicsStreamTransformHint */
   DwmGetGraphicsStreamTransformHint(uIndex: number, pTransform: Win32Pointer): number;
   /** dwmapi.dll!DwmGetTransportAttributes */
-  DwmGetTransportAttributes(pfIsRemoting: Win32Pointer, pfIsConnected: Win32Pointer, pDwGeneration: Win32Pointer): number;
+  DwmGetTransportAttributes(
+    pfIsRemoting: Win32Pointer,
+    pfIsConnected: Win32Pointer,
+    pDwGeneration: Win32Pointer,
+  ): number;
   /** dwmapi.dll!DwmGetUnmetTabRequirements */
   DwmGetUnmetTabRequirements(appWindow: Win32Pointer, value: Win32Pointer): number;
   /** dwmapi.dll!DwmGetWindowAttribute */
-  DwmGetWindowAttribute(hwnd: Win32Pointer, dwAttribute: number, pvAttribute: Win32Pointer, cbAttribute: number): number;
+  DwmGetWindowAttribute(
+    hwnd: Win32Pointer,
+    dwAttribute: number,
+    pvAttribute: Win32Pointer,
+    cbAttribute: number,
+  ): number;
   /** dwmapi.dll!DwmInvalidateIconicBitmaps */
   DwmInvalidateIconicBitmaps(hwnd: Win32Pointer): number;
   /** dwmapi.dll!DwmIsCompositionEnabled */
@@ -47,13 +62,23 @@ interface Functions {
   /** dwmapi.dll!DwmSetDxFrameDuration */
   DwmSetDxFrameDuration(hwnd: Win32Pointer, cRefreshes: number): number;
   /** dwmapi.dll!DwmSetIconicLivePreviewBitmap */
-  DwmSetIconicLivePreviewBitmap(hwnd: Win32Pointer, hbmp: Win32Pointer, pptClient: Win32Pointer, dwSITFlags: number): number;
+  DwmSetIconicLivePreviewBitmap(
+    hwnd: Win32Pointer,
+    hbmp: Win32Pointer,
+    pptClient: Win32Pointer,
+    dwSITFlags: number,
+  ): number;
   /** dwmapi.dll!DwmSetIconicThumbnail */
   DwmSetIconicThumbnail(hwnd: Win32Pointer, hbmp: Win32Pointer, dwSITFlags: number): number;
   /** dwmapi.dll!DwmSetPresentParameters */
   DwmSetPresentParameters(hwnd: Win32Pointer, pPresentParams: Win32Pointer): number;
   /** dwmapi.dll!DwmSetWindowAttribute */
-  DwmSetWindowAttribute(hwnd: Win32Pointer, dwAttribute: number, pvAttribute: Win32Pointer, cbAttribute: number): number;
+  DwmSetWindowAttribute(
+    hwnd: Win32Pointer,
+    dwAttribute: number,
+    pvAttribute: Win32Pointer,
+    cbAttribute: number,
+  ): number;
   /** dwmapi.dll!DwmShowContact */
   DwmShowContact(dwPointerID: number, eShowContact: number): number;
   /** dwmapi.dll!DwmTetherContact */

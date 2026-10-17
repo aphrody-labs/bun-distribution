@@ -1,7 +1,7 @@
 //! Event emission.
 
 use serde_json::Value;
-use tauri::{command, AppHandle, Emitter, Runtime};
+use tauri::{AppHandle, Emitter, Runtime, command};
 
 /// Emits a custom event to the application.
 ///

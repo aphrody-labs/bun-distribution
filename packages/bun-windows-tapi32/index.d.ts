@@ -5,15 +5,33 @@ interface Functions {
   /** tapi32.dll!lineAccept */
   lineAccept(hCall: number, lpsUserUserInfo: string | Win32Pointer, dwSize: number): number;
   /** tapi32.dll!lineAddProvider */
-  lineAddProvider(lpszProviderFilename: string | Win32Pointer, hwndOwner: Win32Pointer, lpdwPermanentProviderID: Win32Pointer): number;
+  lineAddProvider(
+    lpszProviderFilename: string | Win32Pointer,
+    hwndOwner: Win32Pointer,
+    lpdwPermanentProviderID: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineAddProviderA */
-  lineAddProviderA(lpszProviderFilename: string | Win32Pointer, hwndOwner: Win32Pointer, lpdwPermanentProviderID: Win32Pointer): number;
+  lineAddProviderA(
+    lpszProviderFilename: string | Win32Pointer,
+    hwndOwner: Win32Pointer,
+    lpdwPermanentProviderID: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineAddProviderW */
-  lineAddProviderW(lpszProviderFilename: string | Win32Pointer, hwndOwner: Win32Pointer, lpdwPermanentProviderID: Win32Pointer): number;
+  lineAddProviderW(
+    lpszProviderFilename: string | Win32Pointer,
+    hwndOwner: Win32Pointer,
+    lpdwPermanentProviderID: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineAddToConference */
   lineAddToConference(hConfCall: number, hConsultCall: number): number;
   /** tapi32.dll!lineAgentSpecific */
-  lineAgentSpecific(hLine: number, dwAddressID: number, dwAgentExtensionIDIndex: number, lpParams: Win32Pointer, dwSize: number): number;
+  lineAgentSpecific(
+    hLine: number,
+    dwAddressID: number,
+    dwAgentExtensionIDIndex: number,
+    lpParams: Win32Pointer,
+    dwSize: number,
+  ): number;
   /** tapi32.dll!lineAnswer */
   lineAnswer(hCall: number, lpsUserUserInfo: string | Win32Pointer, dwSize: number): number;
   /** tapi32.dll!lineBlindTransfer */
@@ -25,7 +43,12 @@ interface Functions {
   /** tapi32.dll!lineClose */
   lineClose(hLine: number): number;
   /** tapi32.dll!lineCompleteCall */
-  lineCompleteCall(hCall: number, lpdwCompletionID: Win32Pointer, dwCompletionMode: number, dwMessageID: number): number;
+  lineCompleteCall(
+    hCall: number,
+    lpdwCompletionID: Win32Pointer,
+    dwCompletionMode: number,
+    dwMessageID: number,
+  ): number;
   /** tapi32.dll!lineCompleteTransfer */
   lineCompleteTransfer(hCall: number, hConsultCall: number, lphConfCall: Win32Pointer, dwTransferMode: number): number;
   /** tapi32.dll!lineConfigDialog */
@@ -33,27 +56,84 @@ interface Functions {
   /** tapi32.dll!lineConfigDialogA */
   lineConfigDialogA(dwDeviceID: number, hwndOwner: Win32Pointer, lpszDeviceClass: string | Win32Pointer): number;
   /** tapi32.dll!lineConfigDialogEdit */
-  lineConfigDialogEdit(dwDeviceID: number, hwndOwner: Win32Pointer, lpszDeviceClass: string | Win32Pointer, lpDeviceConfigIn: Win32Pointer, dwSize: number, lpDeviceConfigOut: Win32Pointer): number;
+  lineConfigDialogEdit(
+    dwDeviceID: number,
+    hwndOwner: Win32Pointer,
+    lpszDeviceClass: string | Win32Pointer,
+    lpDeviceConfigIn: Win32Pointer,
+    dwSize: number,
+    lpDeviceConfigOut: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineConfigDialogEditA */
-  lineConfigDialogEditA(dwDeviceID: number, hwndOwner: Win32Pointer, lpszDeviceClass: string | Win32Pointer, lpDeviceConfigIn: Win32Pointer, dwSize: number, lpDeviceConfigOut: Win32Pointer): number;
+  lineConfigDialogEditA(
+    dwDeviceID: number,
+    hwndOwner: Win32Pointer,
+    lpszDeviceClass: string | Win32Pointer,
+    lpDeviceConfigIn: Win32Pointer,
+    dwSize: number,
+    lpDeviceConfigOut: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineConfigDialogEditW */
-  lineConfigDialogEditW(dwDeviceID: number, hwndOwner: Win32Pointer, lpszDeviceClass: string | Win32Pointer, lpDeviceConfigIn: Win32Pointer, dwSize: number, lpDeviceConfigOut: Win32Pointer): number;
+  lineConfigDialogEditW(
+    dwDeviceID: number,
+    hwndOwner: Win32Pointer,
+    lpszDeviceClass: string | Win32Pointer,
+    lpDeviceConfigIn: Win32Pointer,
+    dwSize: number,
+    lpDeviceConfigOut: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineConfigDialogW */
   lineConfigDialogW(dwDeviceID: number, hwndOwner: Win32Pointer, lpszDeviceClass: string | Win32Pointer): number;
   /** tapi32.dll!lineConfigProvider */
   lineConfigProvider(hwndOwner: Win32Pointer, dwPermanentProviderID: number): number;
   /** tapi32.dll!lineCreateAgentA */
-  lineCreateAgentA(hLine: number, lpszAgentID: string | Win32Pointer, lpszAgentPIN: string | Win32Pointer, lphAgent: Win32Pointer): number;
+  lineCreateAgentA(
+    hLine: number,
+    lpszAgentID: string | Win32Pointer,
+    lpszAgentPIN: string | Win32Pointer,
+    lphAgent: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineCreateAgentSessionA */
-  lineCreateAgentSessionA(hLine: number, hAgent: number, lpszAgentPIN: string | Win32Pointer, dwWorkingAddressID: number, lpGroupID: Win32Pointer, lphAgentSession: Win32Pointer): number;
+  lineCreateAgentSessionA(
+    hLine: number,
+    hAgent: number,
+    lpszAgentPIN: string | Win32Pointer,
+    dwWorkingAddressID: number,
+    lpGroupID: Win32Pointer,
+    lphAgentSession: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineCreateAgentSessionW */
-  lineCreateAgentSessionW(hLine: number, hAgent: number, lpszAgentPIN: string | Win32Pointer, dwWorkingAddressID: number, lpGroupID: Win32Pointer, lphAgentSession: Win32Pointer): number;
+  lineCreateAgentSessionW(
+    hLine: number,
+    hAgent: number,
+    lpszAgentPIN: string | Win32Pointer,
+    dwWorkingAddressID: number,
+    lpGroupID: Win32Pointer,
+    lphAgentSession: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineCreateAgentSessionW */
-  lineCreateAgentSession(hLine: number, hAgent: number, lpszAgentPIN: string | Win32Pointer, dwWorkingAddressID: number, lpGroupID: Win32Pointer, lphAgentSession: Win32Pointer): number;
+  lineCreateAgentSession(
+    hLine: number,
+    hAgent: number,
+    lpszAgentPIN: string | Win32Pointer,
+    dwWorkingAddressID: number,
+    lpGroupID: Win32Pointer,
+    lphAgentSession: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineCreateAgentW */
-  lineCreateAgentW(hLine: number, lpszAgentID: string | Win32Pointer, lpszAgentPIN: string | Win32Pointer, lphAgent: Win32Pointer): number;
+  lineCreateAgentW(
+    hLine: number,
+    lpszAgentID: string | Win32Pointer,
+    lpszAgentPIN: string | Win32Pointer,
+    lphAgent: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineCreateAgentW */
-  lineCreateAgent(hLine: number, lpszAgentID: string | Win32Pointer, lpszAgentPIN: string | Win32Pointer, lphAgent: Win32Pointer): number;
+  lineCreateAgent(
+    hLine: number,
+    lpszAgentID: string | Win32Pointer,
+    lpszAgentPIN: string | Win32Pointer,
+    lphAgent: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineDeallocateCall */
   lineDeallocateCall(hCall: number): number;
   /** tapi32.dll!lineDevSpecific */
@@ -69,37 +149,140 @@ interface Functions {
   /** tapi32.dll!lineDrop */
   lineDrop(hCall: number, lpsUserUserInfo: string | Win32Pointer, dwSize: number): number;
   /** tapi32.dll!lineForward */
-  lineForward(hLine: number, bAllAddresses: number, dwAddressID: number, lpForwardList: Win32Pointer, dwNumRingsNoAnswer: number, lphConsultCall: Win32Pointer, lpCallParams: Win32Pointer): number;
+  lineForward(
+    hLine: number,
+    bAllAddresses: number,
+    dwAddressID: number,
+    lpForwardList: Win32Pointer,
+    dwNumRingsNoAnswer: number,
+    lphConsultCall: Win32Pointer,
+    lpCallParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineForwardA */
-  lineForwardA(hLine: number, bAllAddresses: number, dwAddressID: number, lpForwardList: Win32Pointer, dwNumRingsNoAnswer: number, lphConsultCall: Win32Pointer, lpCallParams: Win32Pointer): number;
+  lineForwardA(
+    hLine: number,
+    bAllAddresses: number,
+    dwAddressID: number,
+    lpForwardList: Win32Pointer,
+    dwNumRingsNoAnswer: number,
+    lphConsultCall: Win32Pointer,
+    lpCallParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineForwardW */
-  lineForwardW(hLine: number, bAllAddresses: number, dwAddressID: number, lpForwardList: Win32Pointer, dwNumRingsNoAnswer: number, lphConsultCall: Win32Pointer, lpCallParams: Win32Pointer): number;
+  lineForwardW(
+    hLine: number,
+    bAllAddresses: number,
+    dwAddressID: number,
+    lpForwardList: Win32Pointer,
+    dwNumRingsNoAnswer: number,
+    lphConsultCall: Win32Pointer,
+    lpCallParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGatherDigits */
-  lineGatherDigits(hCall: number, dwDigitModes: number, lpsDigits: string | Win32Pointer, dwNumDigits: number, lpszTerminationDigits: string | Win32Pointer, dwFirstDigitTimeout: number, dwInterDigitTimeout: number): number;
+  lineGatherDigits(
+    hCall: number,
+    dwDigitModes: number,
+    lpsDigits: string | Win32Pointer,
+    dwNumDigits: number,
+    lpszTerminationDigits: string | Win32Pointer,
+    dwFirstDigitTimeout: number,
+    dwInterDigitTimeout: number,
+  ): number;
   /** tapi32.dll!lineGatherDigitsA */
-  lineGatherDigitsA(hCall: number, dwDigitModes: number, lpsDigits: string | Win32Pointer, dwNumDigits: number, lpszTerminationDigits: string | Win32Pointer, dwFirstDigitTimeout: number, dwInterDigitTimeout: number): number;
+  lineGatherDigitsA(
+    hCall: number,
+    dwDigitModes: number,
+    lpsDigits: string | Win32Pointer,
+    dwNumDigits: number,
+    lpszTerminationDigits: string | Win32Pointer,
+    dwFirstDigitTimeout: number,
+    dwInterDigitTimeout: number,
+  ): number;
   /** tapi32.dll!lineGatherDigitsW */
-  lineGatherDigitsW(hCall: number, dwDigitModes: number, lpsDigits: string | Win32Pointer, dwNumDigits: number, lpszTerminationDigits: string | Win32Pointer, dwFirstDigitTimeout: number, dwInterDigitTimeout: number): number;
+  lineGatherDigitsW(
+    hCall: number,
+    dwDigitModes: number,
+    lpsDigits: string | Win32Pointer,
+    dwNumDigits: number,
+    lpszTerminationDigits: string | Win32Pointer,
+    dwFirstDigitTimeout: number,
+    dwInterDigitTimeout: number,
+  ): number;
   /** tapi32.dll!lineGenerateDigits */
   lineGenerateDigits(hCall: number, dwDigitMode: number, lpszDigits: string | Win32Pointer, dwDuration: number): number;
   /** tapi32.dll!lineGenerateDigitsA */
-  lineGenerateDigitsA(hCall: number, dwDigitMode: number, lpszDigits: string | Win32Pointer, dwDuration: number): number;
+  lineGenerateDigitsA(
+    hCall: number,
+    dwDigitMode: number,
+    lpszDigits: string | Win32Pointer,
+    dwDuration: number,
+  ): number;
   /** tapi32.dll!lineGenerateDigitsW */
-  lineGenerateDigitsW(hCall: number, dwDigitMode: number, lpszDigits: string | Win32Pointer, dwDuration: number): number;
+  lineGenerateDigitsW(
+    hCall: number,
+    dwDigitMode: number,
+    lpszDigits: string | Win32Pointer,
+    dwDuration: number,
+  ): number;
   /** tapi32.dll!lineGenerateTone */
-  lineGenerateTone(hCall: number, dwToneMode: number, dwDuration: number, dwNumTones: number, lpTones: Win32Pointer): number;
+  lineGenerateTone(
+    hCall: number,
+    dwToneMode: number,
+    dwDuration: number,
+    dwNumTones: number,
+    lpTones: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetAddressCaps */
-  lineGetAddressCaps(hLineApp: number, dwDeviceID: number, dwAddressID: number, dwAPIVersion: number, dwExtVersion: number, lpAddressCaps: Win32Pointer): number;
+  lineGetAddressCaps(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAddressID: number,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    lpAddressCaps: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetAddressCapsA */
-  lineGetAddressCapsA(hLineApp: number, dwDeviceID: number, dwAddressID: number, dwAPIVersion: number, dwExtVersion: number, lpAddressCaps: Win32Pointer): number;
+  lineGetAddressCapsA(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAddressID: number,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    lpAddressCaps: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetAddressCapsW */
-  lineGetAddressCapsW(hLineApp: number, dwDeviceID: number, dwAddressID: number, dwAPIVersion: number, dwExtVersion: number, lpAddressCaps: Win32Pointer): number;
+  lineGetAddressCapsW(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAddressID: number,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    lpAddressCaps: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetAddressID */
-  lineGetAddressID(hLine: number, lpdwAddressID: Win32Pointer, dwAddressMode: number, lpsAddress: string | Win32Pointer, dwSize: number): number;
+  lineGetAddressID(
+    hLine: number,
+    lpdwAddressID: Win32Pointer,
+    dwAddressMode: number,
+    lpsAddress: string | Win32Pointer,
+    dwSize: number,
+  ): number;
   /** tapi32.dll!lineGetAddressIDA */
-  lineGetAddressIDA(hLine: number, lpdwAddressID: Win32Pointer, dwAddressMode: number, lpsAddress: string | Win32Pointer, dwSize: number): number;
+  lineGetAddressIDA(
+    hLine: number,
+    lpdwAddressID: Win32Pointer,
+    dwAddressMode: number,
+    lpsAddress: string | Win32Pointer,
+    dwSize: number,
+  ): number;
   /** tapi32.dll!lineGetAddressIDW */
-  lineGetAddressIDW(hLine: number, lpdwAddressID: Win32Pointer, dwAddressMode: number, lpsAddress: string | Win32Pointer, dwSize: number): number;
+  lineGetAddressIDW(
+    hLine: number,
+    lpdwAddressID: Win32Pointer,
+    dwAddressMode: number,
+    lpsAddress: string | Win32Pointer,
+    dwSize: number,
+  ): number;
   /** tapi32.dll!lineGetAddressStatus */
   lineGetAddressStatus(hLine: number, dwAddressID: number, lpAddressStatus: Win32Pointer): number;
   /** tapi32.dll!lineGetAddressStatusA */
@@ -113,11 +296,29 @@ interface Functions {
   /** tapi32.dll!lineGetAgentActivityListW */
   lineGetAgentActivityList(hLine: number, dwAddressID: number, lpAgentActivityList: Win32Pointer): number;
   /** tapi32.dll!lineGetAgentCapsA */
-  lineGetAgentCapsA(hLineApp: number, dwDeviceID: number, dwAddressID: number, dwAppAPIVersion: number, lpAgentCaps: Win32Pointer): number;
+  lineGetAgentCapsA(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAddressID: number,
+    dwAppAPIVersion: number,
+    lpAgentCaps: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetAgentCapsW */
-  lineGetAgentCapsW(hLineApp: number, dwDeviceID: number, dwAddressID: number, dwAppAPIVersion: number, lpAgentCaps: Win32Pointer): number;
+  lineGetAgentCapsW(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAddressID: number,
+    dwAppAPIVersion: number,
+    lpAgentCaps: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetAgentCapsW */
-  lineGetAgentCaps(hLineApp: number, dwDeviceID: number, dwAddressID: number, dwAppAPIVersion: number, lpAgentCaps: Win32Pointer): number;
+  lineGetAgentCaps(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAddressID: number,
+    dwAppAPIVersion: number,
+    lpAgentCaps: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetAgentGroupListA */
   lineGetAgentGroupListA(hLine: number, dwAddressID: number, lpAgentGroupList: Win32Pointer): number;
   /** tapi32.dll!lineGetAgentGroupListW */
@@ -137,11 +338,32 @@ interface Functions {
   /** tapi32.dll!lineGetAgentStatusW */
   lineGetAgentStatus(hLine: number, dwAddressID: number, lpAgentStatus: Win32Pointer): number;
   /** tapi32.dll!lineGetAppPriority */
-  lineGetAppPriority(lpszAppFilename: string | Win32Pointer, dwMediaMode: number, lpExtensionID: Win32Pointer, dwRequestMode: number, lpExtensionName: Win32Pointer, lpdwPriority: Win32Pointer): number;
+  lineGetAppPriority(
+    lpszAppFilename: string | Win32Pointer,
+    dwMediaMode: number,
+    lpExtensionID: Win32Pointer,
+    dwRequestMode: number,
+    lpExtensionName: Win32Pointer,
+    lpdwPriority: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetAppPriorityA */
-  lineGetAppPriorityA(lpszAppFilename: string | Win32Pointer, dwMediaMode: number, lpExtensionID: Win32Pointer, dwRequestMode: number, lpExtensionName: Win32Pointer, lpdwPriority: Win32Pointer): number;
+  lineGetAppPriorityA(
+    lpszAppFilename: string | Win32Pointer,
+    dwMediaMode: number,
+    lpExtensionID: Win32Pointer,
+    dwRequestMode: number,
+    lpExtensionName: Win32Pointer,
+    lpdwPriority: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetAppPriorityW */
-  lineGetAppPriorityW(lpszAppFilename: string | Win32Pointer, dwMediaMode: number, lpExtensionID: Win32Pointer, dwRequestMode: number, lpExtensionName: Win32Pointer, lpdwPriority: Win32Pointer): number;
+  lineGetAppPriorityW(
+    lpszAppFilename: string | Win32Pointer,
+    dwMediaMode: number,
+    lpExtensionID: Win32Pointer,
+    dwRequestMode: number,
+    lpExtensionName: Win32Pointer,
+    lpdwPriority: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetCallInfo */
   lineGetCallInfo(hCall: number, lpCallInfo: Win32Pointer): number;
   /** tapi32.dll!lineGetCallInfoA */
@@ -159,11 +381,29 @@ interface Functions {
   /** tapi32.dll!lineGetCountryW */
   lineGetCountryW(dwCountryID: number, dwAPIVersion: number, lpLineCountryList: Win32Pointer): number;
   /** tapi32.dll!lineGetDevCaps */
-  lineGetDevCaps(hLineApp: number, dwDeviceID: number, dwAPIVersion: number, dwExtVersion: number, lpLineDevCaps: Win32Pointer): number;
+  lineGetDevCaps(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    lpLineDevCaps: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetDevCapsA */
-  lineGetDevCapsA(hLineApp: number, dwDeviceID: number, dwAPIVersion: number, dwExtVersion: number, lpLineDevCaps: Win32Pointer): number;
+  lineGetDevCapsA(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    lpLineDevCaps: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetDevCapsW */
-  lineGetDevCapsW(hLineApp: number, dwDeviceID: number, dwAPIVersion: number, dwExtVersion: number, lpLineDevCaps: Win32Pointer): number;
+  lineGetDevCapsW(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    lpLineDevCaps: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetDevConfig */
   lineGetDevConfig(dwDeviceID: number, lpDeviceConfig: Win32Pointer, lpszDeviceClass: string | Win32Pointer): number;
   /** tapi32.dll!lineGetDevConfigA */
@@ -177,11 +417,32 @@ interface Functions {
   /** tapi32.dll!lineGetGroupListW */
   lineGetGroupList(hLine: number, lpGroupList: Win32Pointer): number;
   /** tapi32.dll!lineGetID */
-  lineGetID(hLine: number, dwAddressID: number, hCall: number, dwSelect: number, lpDeviceID: Win32Pointer, lpszDeviceClass: string | Win32Pointer): number;
+  lineGetID(
+    hLine: number,
+    dwAddressID: number,
+    hCall: number,
+    dwSelect: number,
+    lpDeviceID: Win32Pointer,
+    lpszDeviceClass: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetIDA */
-  lineGetIDA(hLine: number, dwAddressID: number, hCall: number, dwSelect: number, lpDeviceID: Win32Pointer, lpszDeviceClass: string | Win32Pointer): number;
+  lineGetIDA(
+    hLine: number,
+    dwAddressID: number,
+    hCall: number,
+    dwSelect: number,
+    lpDeviceID: Win32Pointer,
+    lpszDeviceClass: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetIDW */
-  lineGetIDW(hLine: number, dwAddressID: number, hCall: number, dwSelect: number, lpDeviceID: Win32Pointer, lpszDeviceClass: string | Win32Pointer): number;
+  lineGetIDW(
+    hLine: number,
+    dwAddressID: number,
+    hCall: number,
+    dwSelect: number,
+    lpDeviceID: Win32Pointer,
+    lpszDeviceClass: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetIcon */
   lineGetIcon(dwDeviceID: number, lpszDeviceClass: string | Win32Pointer, lphIcon: Win32Pointer): number;
   /** tapi32.dll!lineGetIconA */
@@ -207,7 +468,12 @@ interface Functions {
   /** tapi32.dll!lineGetProviderListW */
   lineGetProviderListW(dwAPIVersion: number, lpProviderList: Win32Pointer): number;
   /** tapi32.dll!lineGetProxyStatus */
-  lineGetProxyStatus(hLineApp: number, dwDeviceID: number, dwAppAPIVersion: number, lpLineProxyReqestList: Win32Pointer): number;
+  lineGetProxyStatus(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAppAPIVersion: number,
+    lpLineProxyReqestList: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineGetQueueInfo */
   lineGetQueueInfo(hLine: number, dwQueueID: number, lpLineQueueInfo: Win32Pointer): number;
   /** tapi32.dll!lineGetQueueListA */
@@ -239,19 +505,67 @@ interface Functions {
   /** tapi32.dll!lineHold */
   lineHold(hCall: number): number;
   /** tapi32.dll!lineInitialize */
-  lineInitialize(lphLineApp: Win32Pointer, hInstance: Win32Pointer, lpfnCallback: Win32Callback, lpszAppName: string | Win32Pointer, lpdwNumDevs: Win32Pointer): number;
+  lineInitialize(
+    lphLineApp: Win32Pointer,
+    hInstance: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    lpszAppName: string | Win32Pointer,
+    lpdwNumDevs: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineInitializeExA */
-  lineInitializeExA(lphLineApp: Win32Pointer, hInstance: Win32Pointer, lpfnCallback: Win32Callback, lpszFriendlyAppName: string | Win32Pointer, lpdwNumDevs: Win32Pointer, lpdwAPIVersion: Win32Pointer, lpLineInitializeExParams: Win32Pointer): number;
+  lineInitializeExA(
+    lphLineApp: Win32Pointer,
+    hInstance: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    lpszFriendlyAppName: string | Win32Pointer,
+    lpdwNumDevs: Win32Pointer,
+    lpdwAPIVersion: Win32Pointer,
+    lpLineInitializeExParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineInitializeExW */
-  lineInitializeExW(lphLineApp: Win32Pointer, hInstance: Win32Pointer, lpfnCallback: Win32Callback, lpszFriendlyAppName: string | Win32Pointer, lpdwNumDevs: Win32Pointer, lpdwAPIVersion: Win32Pointer, lpLineInitializeExParams: Win32Pointer): number;
+  lineInitializeExW(
+    lphLineApp: Win32Pointer,
+    hInstance: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    lpszFriendlyAppName: string | Win32Pointer,
+    lpdwNumDevs: Win32Pointer,
+    lpdwAPIVersion: Win32Pointer,
+    lpLineInitializeExParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineInitializeExW */
-  lineInitializeEx(lphLineApp: Win32Pointer, hInstance: Win32Pointer, lpfnCallback: Win32Callback, lpszFriendlyAppName: string | Win32Pointer, lpdwNumDevs: Win32Pointer, lpdwAPIVersion: Win32Pointer, lpLineInitializeExParams: Win32Pointer): number;
+  lineInitializeEx(
+    lphLineApp: Win32Pointer,
+    hInstance: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    lpszFriendlyAppName: string | Win32Pointer,
+    lpdwNumDevs: Win32Pointer,
+    lpdwAPIVersion: Win32Pointer,
+    lpLineInitializeExParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineMakeCall */
-  lineMakeCall(hLine: number, lphCall: Win32Pointer, lpszDestAddress: string | Win32Pointer, dwCountryCode: number, lpCallParams: Win32Pointer): number;
+  lineMakeCall(
+    hLine: number,
+    lphCall: Win32Pointer,
+    lpszDestAddress: string | Win32Pointer,
+    dwCountryCode: number,
+    lpCallParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineMakeCallA */
-  lineMakeCallA(hLine: number, lphCall: Win32Pointer, lpszDestAddress: string | Win32Pointer, dwCountryCode: number, lpCallParams: Win32Pointer): number;
+  lineMakeCallA(
+    hLine: number,
+    lphCall: Win32Pointer,
+    lpszDestAddress: string | Win32Pointer,
+    dwCountryCode: number,
+    lpCallParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineMakeCallW */
-  lineMakeCallW(hLine: number, lphCall: Win32Pointer, lpszDestAddress: string | Win32Pointer, dwCountryCode: number, lpCallParams: Win32Pointer): number;
+  lineMakeCallW(
+    hLine: number,
+    lphCall: Win32Pointer,
+    lpszDestAddress: string | Win32Pointer,
+    dwCountryCode: number,
+    lpCallParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineMonitorDigits */
   lineMonitorDigits(hCall: number, dwDigitModes: number): number;
   /** tapi32.dll!lineMonitorMedia */
@@ -259,27 +573,104 @@ interface Functions {
   /** tapi32.dll!lineMonitorTones */
   lineMonitorTones(hCall: number, lpToneList: Win32Pointer, dwNumEntries: number): number;
   /** tapi32.dll!lineNegotiateAPIVersion */
-  lineNegotiateAPIVersion(hLineApp: number, dwDeviceID: number, dwAPILowVersion: number, dwAPIHighVersion: number, lpdwAPIVersion: Win32Pointer, lpExtensionID: Win32Pointer): number;
+  lineNegotiateAPIVersion(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAPILowVersion: number,
+    dwAPIHighVersion: number,
+    lpdwAPIVersion: Win32Pointer,
+    lpExtensionID: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineNegotiateExtVersion */
-  lineNegotiateExtVersion(hLineApp: number, dwDeviceID: number, dwAPIVersion: number, dwExtLowVersion: number, dwExtHighVersion: number, lpdwExtVersion: Win32Pointer): number;
+  lineNegotiateExtVersion(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    dwExtLowVersion: number,
+    dwExtHighVersion: number,
+    lpdwExtVersion: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineOpen */
-  lineOpen(hLineApp: number, dwDeviceID: number, lphLine: Win32Pointer, dwAPIVersion: number, dwExtVersion: number, dwCallbackInstance: number | bigint, dwPrivileges: number, dwMediaModes: number, lpCallParams: Win32Pointer): number;
+  lineOpen(
+    hLineApp: number,
+    dwDeviceID: number,
+    lphLine: Win32Pointer,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    dwCallbackInstance: number | bigint,
+    dwPrivileges: number,
+    dwMediaModes: number,
+    lpCallParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineOpenA */
-  lineOpenA(hLineApp: number, dwDeviceID: number, lphLine: Win32Pointer, dwAPIVersion: number, dwExtVersion: number, dwCallbackInstance: number | bigint, dwPrivileges: number, dwMediaModes: number, lpCallParams: Win32Pointer): number;
+  lineOpenA(
+    hLineApp: number,
+    dwDeviceID: number,
+    lphLine: Win32Pointer,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    dwCallbackInstance: number | bigint,
+    dwPrivileges: number,
+    dwMediaModes: number,
+    lpCallParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineOpenW */
-  lineOpenW(hLineApp: number, dwDeviceID: number, lphLine: Win32Pointer, dwAPIVersion: number, dwExtVersion: number, dwCallbackInstance: number | bigint, dwPrivileges: number, dwMediaModes: number, lpCallParams: Win32Pointer): number;
+  lineOpenW(
+    hLineApp: number,
+    dwDeviceID: number,
+    lphLine: Win32Pointer,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    dwCallbackInstance: number | bigint,
+    dwPrivileges: number,
+    dwMediaModes: number,
+    lpCallParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!linePark */
-  linePark(hCall: number, dwParkMode: number, lpszDirAddress: string | Win32Pointer, lpNonDirAddress: Win32Pointer): number;
+  linePark(
+    hCall: number,
+    dwParkMode: number,
+    lpszDirAddress: string | Win32Pointer,
+    lpNonDirAddress: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineParkA */
-  lineParkA(hCall: number, dwParkMode: number, lpszDirAddress: string | Win32Pointer, lpNonDirAddress: Win32Pointer): number;
+  lineParkA(
+    hCall: number,
+    dwParkMode: number,
+    lpszDirAddress: string | Win32Pointer,
+    lpNonDirAddress: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineParkW */
-  lineParkW(hCall: number, dwParkMode: number, lpszDirAddress: string | Win32Pointer, lpNonDirAddress: Win32Pointer): number;
+  lineParkW(
+    hCall: number,
+    dwParkMode: number,
+    lpszDirAddress: string | Win32Pointer,
+    lpNonDirAddress: Win32Pointer,
+  ): number;
   /** tapi32.dll!linePickup */
-  linePickup(hLine: number, dwAddressID: number, lphCall: Win32Pointer, lpszDestAddress: string | Win32Pointer, lpszGroupID: string | Win32Pointer): number;
+  linePickup(
+    hLine: number,
+    dwAddressID: number,
+    lphCall: Win32Pointer,
+    lpszDestAddress: string | Win32Pointer,
+    lpszGroupID: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!linePickupA */
-  linePickupA(hLine: number, dwAddressID: number, lphCall: Win32Pointer, lpszDestAddress: string | Win32Pointer, lpszGroupID: string | Win32Pointer): number;
+  linePickupA(
+    hLine: number,
+    dwAddressID: number,
+    lphCall: Win32Pointer,
+    lpszDestAddress: string | Win32Pointer,
+    lpszGroupID: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!linePickupW */
-  linePickupW(hLine: number, dwAddressID: number, lphCall: Win32Pointer, lpszDestAddress: string | Win32Pointer, lpszGroupID: string | Win32Pointer): number;
+  linePickupW(
+    hLine: number,
+    dwAddressID: number,
+    lphCall: Win32Pointer,
+    lpszDestAddress: string | Win32Pointer,
+    lpszGroupID: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!linePrepareAddToConference */
   linePrepareAddToConference(hConfCall: number, lphConsultCall: Win32Pointer, lpCallParams: Win32Pointer): number;
   /** tapi32.dll!linePrepareAddToConferenceA */
@@ -287,7 +678,14 @@ interface Functions {
   /** tapi32.dll!linePrepareAddToConferenceW */
   linePrepareAddToConferenceW(hConfCall: number, lphConsultCall: Win32Pointer, lpCallParams: Win32Pointer): number;
   /** tapi32.dll!lineProxyMessage */
-  lineProxyMessage(hLine: number, hCall: number, dwMsg: number, dwParam1: number, dwParam2: number, dwParam3: number): number;
+  lineProxyMessage(
+    hLine: number,
+    hCall: number,
+    dwMsg: number,
+    dwParam1: number,
+    dwParam2: number,
+    dwParam3: number,
+  ): number;
   /** tapi32.dll!lineProxyResponse */
   lineProxyResponse(hLine: number, lpProxyRequest: Win32Pointer, dwResult: number): number;
   /** tapi32.dll!lineRedirect */
@@ -297,7 +695,12 @@ interface Functions {
   /** tapi32.dll!lineRedirectW */
   lineRedirectW(hCall: number, lpszDestAddress: string | Win32Pointer, dwCountryCode: number): number;
   /** tapi32.dll!lineRegisterRequestRecipient */
-  lineRegisterRequestRecipient(hLineApp: number, dwRegistrationInstance: number, dwRequestMode: number, bEnable: number): number;
+  lineRegisterRequestRecipient(
+    hLineApp: number,
+    dwRegistrationInstance: number,
+    dwRequestMode: number,
+    bEnable: number,
+  ): number;
   /** tapi32.dll!lineReleaseUserUserInfo */
   lineReleaseUserUserInfo(hCall: number): number;
   /** tapi32.dll!lineRemoveFromConference */
@@ -315,41 +718,107 @@ interface Functions {
   /** tapi32.dll!lineSetAgentMeasurementPeriod */
   lineSetAgentMeasurementPeriod(hLine: number, hAgent: number, dwMeasurementPeriod: number): number;
   /** tapi32.dll!lineSetAgentSessionState */
-  lineSetAgentSessionState(hLine: number, hAgentSession: number, dwAgentSessionState: number, dwNextAgentSessionState: number): number;
+  lineSetAgentSessionState(
+    hLine: number,
+    hAgentSession: number,
+    dwAgentSessionState: number,
+    dwNextAgentSessionState: number,
+  ): number;
   /** tapi32.dll!lineSetAgentState */
   lineSetAgentState(hLine: number, dwAddressID: number, dwAgentState: number, dwNextAgentState: number): number;
   /** tapi32.dll!lineSetAgentStateEx */
   lineSetAgentStateEx(hLine: number, hAgent: number, dwAgentState: number, dwNextAgentState: number): number;
   /** tapi32.dll!lineSetAppPriority */
-  lineSetAppPriority(lpszAppFilename: string | Win32Pointer, dwMediaMode: number, lpExtensionID: Win32Pointer, dwRequestMode: number, lpszExtensionName: string | Win32Pointer, dwPriority: number): number;
+  lineSetAppPriority(
+    lpszAppFilename: string | Win32Pointer,
+    dwMediaMode: number,
+    lpExtensionID: Win32Pointer,
+    dwRequestMode: number,
+    lpszExtensionName: string | Win32Pointer,
+    dwPriority: number,
+  ): number;
   /** tapi32.dll!lineSetAppPriorityA */
-  lineSetAppPriorityA(lpszAppFilename: string | Win32Pointer, dwMediaMode: number, lpExtensionID: Win32Pointer, dwRequestMode: number, lpszExtensionName: string | Win32Pointer, dwPriority: number): number;
+  lineSetAppPriorityA(
+    lpszAppFilename: string | Win32Pointer,
+    dwMediaMode: number,
+    lpExtensionID: Win32Pointer,
+    dwRequestMode: number,
+    lpszExtensionName: string | Win32Pointer,
+    dwPriority: number,
+  ): number;
   /** tapi32.dll!lineSetAppPriorityW */
-  lineSetAppPriorityW(lpszAppFilename: string | Win32Pointer, dwMediaMode: number, lpExtensionID: Win32Pointer, dwRequestMode: number, lpszExtensionName: string | Win32Pointer, dwPriority: number): number;
+  lineSetAppPriorityW(
+    lpszAppFilename: string | Win32Pointer,
+    dwMediaMode: number,
+    lpExtensionID: Win32Pointer,
+    dwRequestMode: number,
+    lpszExtensionName: string | Win32Pointer,
+    dwPriority: number,
+  ): number;
   /** tapi32.dll!lineSetAppSpecific */
   lineSetAppSpecific(hCall: number, dwAppSpecific: number): number;
   /** tapi32.dll!lineSetCallData */
   lineSetCallData(hCall: number, lpCallData: Win32Pointer, dwSize: number): number;
   /** tapi32.dll!lineSetCallParams */
-  lineSetCallParams(hCall: number, dwBearerMode: number, dwMinRate: number, dwMaxRate: number, lpDialParams: Win32Pointer): number;
+  lineSetCallParams(
+    hCall: number,
+    dwBearerMode: number,
+    dwMinRate: number,
+    dwMaxRate: number,
+    lpDialParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineSetCallPrivilege */
   lineSetCallPrivilege(hCall: number, dwCallPrivilege: number): number;
   /** tapi32.dll!lineSetCallQualityOfService */
-  lineSetCallQualityOfService(hCall: number, lpSendingFlowspec: Win32Pointer, dwSendingFlowspecSize: number, lpReceivingFlowspec: Win32Pointer, dwReceivingFlowspecSize: number): number;
+  lineSetCallQualityOfService(
+    hCall: number,
+    lpSendingFlowspec: Win32Pointer,
+    dwSendingFlowspecSize: number,
+    lpReceivingFlowspec: Win32Pointer,
+    dwReceivingFlowspecSize: number,
+  ): number;
   /** tapi32.dll!lineSetCallTreatment */
   lineSetCallTreatment(hCall: number, dwTreatment: number): number;
   /** tapi32.dll!lineSetCurrentLocation */
   lineSetCurrentLocation(hLineApp: number, dwLocation: number): number;
   /** tapi32.dll!lineSetDevConfig */
-  lineSetDevConfig(dwDeviceID: number, lpDeviceConfig: Win32Pointer, dwSize: number, lpszDeviceClass: string | Win32Pointer): number;
+  lineSetDevConfig(
+    dwDeviceID: number,
+    lpDeviceConfig: Win32Pointer,
+    dwSize: number,
+    lpszDeviceClass: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!lineSetDevConfigA */
-  lineSetDevConfigA(dwDeviceID: number, lpDeviceConfig: Win32Pointer, dwSize: number, lpszDeviceClass: string | Win32Pointer): number;
+  lineSetDevConfigA(
+    dwDeviceID: number,
+    lpDeviceConfig: Win32Pointer,
+    dwSize: number,
+    lpszDeviceClass: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!lineSetDevConfigW */
-  lineSetDevConfigW(dwDeviceID: number, lpDeviceConfig: Win32Pointer, dwSize: number, lpszDeviceClass: string | Win32Pointer): number;
+  lineSetDevConfigW(
+    dwDeviceID: number,
+    lpDeviceConfig: Win32Pointer,
+    dwSize: number,
+    lpszDeviceClass: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!lineSetLineDevStatus */
   lineSetLineDevStatus(hLine: number, dwStatusToChange: number, fStatus: number): number;
   /** tapi32.dll!lineSetMediaControl */
-  lineSetMediaControl(hLine: number, dwAddressID: number, hCall: number, dwSelect: number, lpDigitList: Win32Pointer, dwDigitNumEntries: number, lpMediaList: Win32Pointer, dwMediaNumEntries: number, lpToneList: Win32Pointer, dwToneNumEntries: number, lpCallStateList: Win32Pointer, dwCallStateNumEntries: number): number;
+  lineSetMediaControl(
+    hLine: number,
+    dwAddressID: number,
+    hCall: number,
+    dwSelect: number,
+    lpDigitList: Win32Pointer,
+    dwDigitNumEntries: number,
+    lpMediaList: Win32Pointer,
+    dwMediaNumEntries: number,
+    lpToneList: Win32Pointer,
+    dwToneNumEntries: number,
+    lpCallStateList: Win32Pointer,
+    dwCallStateNumEntries: number,
+  ): number;
   /** tapi32.dll!lineSetMediaMode */
   lineSetMediaMode(hCall: number, dwMediaModes: number): number;
   /** tapi32.dll!lineSetNumRings */
@@ -359,19 +828,63 @@ interface Functions {
   /** tapi32.dll!lineSetStatusMessages */
   lineSetStatusMessages(hLine: number, dwLineStates: number, dwAddressStates: number): number;
   /** tapi32.dll!lineSetTerminal */
-  lineSetTerminal(hLine: number, dwAddressID: number, hCall: number, dwSelect: number, dwTerminalModes: number, dwTerminalID: number, bEnable: number): number;
+  lineSetTerminal(
+    hLine: number,
+    dwAddressID: number,
+    hCall: number,
+    dwSelect: number,
+    dwTerminalModes: number,
+    dwTerminalID: number,
+    bEnable: number,
+  ): number;
   /** tapi32.dll!lineSetTollList */
-  lineSetTollList(hLineApp: number, dwDeviceID: number, lpszAddressIn: string | Win32Pointer, dwTollListOption: number): number;
+  lineSetTollList(
+    hLineApp: number,
+    dwDeviceID: number,
+    lpszAddressIn: string | Win32Pointer,
+    dwTollListOption: number,
+  ): number;
   /** tapi32.dll!lineSetTollListA */
-  lineSetTollListA(hLineApp: number, dwDeviceID: number, lpszAddressIn: string | Win32Pointer, dwTollListOption: number): number;
+  lineSetTollListA(
+    hLineApp: number,
+    dwDeviceID: number,
+    lpszAddressIn: string | Win32Pointer,
+    dwTollListOption: number,
+  ): number;
   /** tapi32.dll!lineSetTollListW */
-  lineSetTollListW(hLineApp: number, dwDeviceID: number, lpszAddressInW: string | Win32Pointer, dwTollListOption: number): number;
+  lineSetTollListW(
+    hLineApp: number,
+    dwDeviceID: number,
+    lpszAddressInW: string | Win32Pointer,
+    dwTollListOption: number,
+  ): number;
   /** tapi32.dll!lineSetupConference */
-  lineSetupConference(hCall: number, hLine: number, lphConfCall: Win32Pointer, lphConsultCall: Win32Pointer, dwNumParties: number, lpCallParams: Win32Pointer): number;
+  lineSetupConference(
+    hCall: number,
+    hLine: number,
+    lphConfCall: Win32Pointer,
+    lphConsultCall: Win32Pointer,
+    dwNumParties: number,
+    lpCallParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineSetupConferenceA */
-  lineSetupConferenceA(hCall: number, hLine: number, lphConfCall: Win32Pointer, lphConsultCall: Win32Pointer, dwNumParties: number, lpCallParams: Win32Pointer): number;
+  lineSetupConferenceA(
+    hCall: number,
+    hLine: number,
+    lphConfCall: Win32Pointer,
+    lphConsultCall: Win32Pointer,
+    dwNumParties: number,
+    lpCallParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineSetupConferenceW */
-  lineSetupConferenceW(hCall: number, hLine: number, lphConfCall: Win32Pointer, lphConsultCall: Win32Pointer, dwNumParties: number, lpCallParams: Win32Pointer): number;
+  lineSetupConferenceW(
+    hCall: number,
+    hLine: number,
+    lphConfCall: Win32Pointer,
+    lphConsultCall: Win32Pointer,
+    dwNumParties: number,
+    lpCallParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineSetupTransfer */
   lineSetupTransfer(hCall: number, lphConsultCall: Win32Pointer, lpCallParams: Win32Pointer): number;
   /** tapi32.dll!lineSetupTransferA */
@@ -383,17 +896,59 @@ interface Functions {
   /** tapi32.dll!lineSwapHold */
   lineSwapHold(hActiveCall: number, hHeldCall: number): number;
   /** tapi32.dll!lineTranslateAddress */
-  lineTranslateAddress(hLineApp: number, dwDeviceID: number, dwAPIVersion: number, lpszAddressIn: string | Win32Pointer, dwCard: number, dwTranslateOptions: number, lpTranslateOutput: Win32Pointer): number;
+  lineTranslateAddress(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    lpszAddressIn: string | Win32Pointer,
+    dwCard: number,
+    dwTranslateOptions: number,
+    lpTranslateOutput: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineTranslateAddressA */
-  lineTranslateAddressA(hLineApp: number, dwDeviceID: number, dwAPIVersion: number, lpszAddressIn: string | Win32Pointer, dwCard: number, dwTranslateOptions: number, lpTranslateOutput: Win32Pointer): number;
+  lineTranslateAddressA(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    lpszAddressIn: string | Win32Pointer,
+    dwCard: number,
+    dwTranslateOptions: number,
+    lpTranslateOutput: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineTranslateAddressW */
-  lineTranslateAddressW(hLineApp: number, dwDeviceID: number, dwAPIVersion: number, lpszAddressIn: string | Win32Pointer, dwCard: number, dwTranslateOptions: number, lpTranslateOutput: Win32Pointer): number;
+  lineTranslateAddressW(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    lpszAddressIn: string | Win32Pointer,
+    dwCard: number,
+    dwTranslateOptions: number,
+    lpTranslateOutput: Win32Pointer,
+  ): number;
   /** tapi32.dll!lineTranslateDialog */
-  lineTranslateDialog(hLineApp: number, dwDeviceID: number, dwAPIVersion: number, hwndOwner: Win32Pointer, lpszAddressIn: string | Win32Pointer): number;
+  lineTranslateDialog(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    hwndOwner: Win32Pointer,
+    lpszAddressIn: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!lineTranslateDialogA */
-  lineTranslateDialogA(hLineApp: number, dwDeviceID: number, dwAPIVersion: number, hwndOwner: Win32Pointer, lpszAddressIn: string | Win32Pointer): number;
+  lineTranslateDialogA(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    hwndOwner: Win32Pointer,
+    lpszAddressIn: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!lineTranslateDialogW */
-  lineTranslateDialogW(hLineApp: number, dwDeviceID: number, dwAPIVersion: number, hwndOwner: Win32Pointer, lpszAddressIn: string | Win32Pointer): number;
+  lineTranslateDialogW(
+    hLineApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    hwndOwner: Win32Pointer,
+    lpszAddressIn: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!lineUncompleteCall */
   lineUncompleteCall(hLine: number, dwCompletionID: number): number;
   /** tapi32.dll!lineUnhold */
@@ -401,9 +956,19 @@ interface Functions {
   /** tapi32.dll!lineUnpark */
   lineUnpark(hLine: number, dwAddressID: number, lphCall: Win32Pointer, lpszDestAddress: string | Win32Pointer): number;
   /** tapi32.dll!lineUnparkA */
-  lineUnparkA(hLine: number, dwAddressID: number, lphCall: Win32Pointer, lpszDestAddress: string | Win32Pointer): number;
+  lineUnparkA(
+    hLine: number,
+    dwAddressID: number,
+    lphCall: Win32Pointer,
+    lpszDestAddress: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!lineUnparkW */
-  lineUnparkW(hLine: number, dwAddressID: number, lphCall: Win32Pointer, lpszDestAddress: string | Win32Pointer): number;
+  lineUnparkW(
+    hLine: number,
+    dwAddressID: number,
+    lphCall: Win32Pointer,
+    lpszDestAddress: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!phoneClose */
   phoneClose(hPhone: number): number;
   /** tapi32.dll!phoneConfigDialog */
@@ -423,11 +988,29 @@ interface Functions {
   /** tapi32.dll!phoneGetData */
   phoneGetData(hPhone: number, dwDataID: number, lpData: Win32Pointer, dwSize: number): number;
   /** tapi32.dll!phoneGetDevCaps */
-  phoneGetDevCaps(hPhoneApp: number, dwDeviceID: number, dwAPIVersion: number, dwExtVersion: number, lpPhoneCaps: Win32Pointer): number;
+  phoneGetDevCaps(
+    hPhoneApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    lpPhoneCaps: Win32Pointer,
+  ): number;
   /** tapi32.dll!phoneGetDevCapsA */
-  phoneGetDevCapsA(hPhoneApp: number, dwDeviceID: number, dwAPIVersion: number, dwExtVersion: number, lpPhoneCaps: Win32Pointer): number;
+  phoneGetDevCapsA(
+    hPhoneApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    lpPhoneCaps: Win32Pointer,
+  ): number;
   /** tapi32.dll!phoneGetDevCapsW */
-  phoneGetDevCapsW(hPhoneApp: number, dwDeviceID: number, dwAPIVersion: number, dwExtVersion: number, lpPhoneCaps: Win32Pointer): number;
+  phoneGetDevCapsW(
+    hPhoneApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    lpPhoneCaps: Win32Pointer,
+  ): number;
   /** tapi32.dll!phoneGetDisplay */
   phoneGetDisplay(hPhone: number, lpDisplay: Win32Pointer): number;
   /** tapi32.dll!phoneGetGain */
@@ -457,25 +1040,82 @@ interface Functions {
   /** tapi32.dll!phoneGetStatusA */
   phoneGetStatusA(hPhone: number, lpPhoneStatus: Win32Pointer): number;
   /** tapi32.dll!phoneGetStatusMessages */
-  phoneGetStatusMessages(hPhone: number, lpdwPhoneStates: Win32Pointer, lpdwButtonModes: Win32Pointer, lpdwButtonStates: Win32Pointer): number;
+  phoneGetStatusMessages(
+    hPhone: number,
+    lpdwPhoneStates: Win32Pointer,
+    lpdwButtonModes: Win32Pointer,
+    lpdwButtonStates: Win32Pointer,
+  ): number;
   /** tapi32.dll!phoneGetStatusW */
   phoneGetStatusW(hPhone: number, lpPhoneStatus: Win32Pointer): number;
   /** tapi32.dll!phoneGetVolume */
   phoneGetVolume(hPhone: number, dwHookSwitchDev: number, lpdwVolume: Win32Pointer): number;
   /** tapi32.dll!phoneInitialize */
-  phoneInitialize(lphPhoneApp: Win32Pointer, hInstance: Win32Pointer, lpfnCallback: Win32Callback, lpszAppName: string | Win32Pointer, lpdwNumDevs: Win32Pointer): number;
+  phoneInitialize(
+    lphPhoneApp: Win32Pointer,
+    hInstance: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    lpszAppName: string | Win32Pointer,
+    lpdwNumDevs: Win32Pointer,
+  ): number;
   /** tapi32.dll!phoneInitializeExA */
-  phoneInitializeExA(lphPhoneApp: Win32Pointer, hInstance: Win32Pointer, lpfnCallback: Win32Callback, lpszFriendlyAppName: string | Win32Pointer, lpdwNumDevs: Win32Pointer, lpdwAPIVersion: Win32Pointer, lpPhoneInitializeExParams: Win32Pointer): number;
+  phoneInitializeExA(
+    lphPhoneApp: Win32Pointer,
+    hInstance: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    lpszFriendlyAppName: string | Win32Pointer,
+    lpdwNumDevs: Win32Pointer,
+    lpdwAPIVersion: Win32Pointer,
+    lpPhoneInitializeExParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!phoneInitializeExW */
-  phoneInitializeExW(lphPhoneApp: Win32Pointer, hInstance: Win32Pointer, lpfnCallback: Win32Callback, lpszFriendlyAppName: string | Win32Pointer, lpdwNumDevs: Win32Pointer, lpdwAPIVersion: Win32Pointer, lpPhoneInitializeExParams: Win32Pointer): number;
+  phoneInitializeExW(
+    lphPhoneApp: Win32Pointer,
+    hInstance: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    lpszFriendlyAppName: string | Win32Pointer,
+    lpdwNumDevs: Win32Pointer,
+    lpdwAPIVersion: Win32Pointer,
+    lpPhoneInitializeExParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!phoneInitializeExW */
-  phoneInitializeEx(lphPhoneApp: Win32Pointer, hInstance: Win32Pointer, lpfnCallback: Win32Callback, lpszFriendlyAppName: string | Win32Pointer, lpdwNumDevs: Win32Pointer, lpdwAPIVersion: Win32Pointer, lpPhoneInitializeExParams: Win32Pointer): number;
+  phoneInitializeEx(
+    lphPhoneApp: Win32Pointer,
+    hInstance: Win32Pointer,
+    lpfnCallback: Win32Callback,
+    lpszFriendlyAppName: string | Win32Pointer,
+    lpdwNumDevs: Win32Pointer,
+    lpdwAPIVersion: Win32Pointer,
+    lpPhoneInitializeExParams: Win32Pointer,
+  ): number;
   /** tapi32.dll!phoneNegotiateAPIVersion */
-  phoneNegotiateAPIVersion(hPhoneApp: number, dwDeviceID: number, dwAPILowVersion: number, dwAPIHighVersion: number, lpdwAPIVersion: Win32Pointer, lpExtensionID: Win32Pointer): number;
+  phoneNegotiateAPIVersion(
+    hPhoneApp: number,
+    dwDeviceID: number,
+    dwAPILowVersion: number,
+    dwAPIHighVersion: number,
+    lpdwAPIVersion: Win32Pointer,
+    lpExtensionID: Win32Pointer,
+  ): number;
   /** tapi32.dll!phoneNegotiateExtVersion */
-  phoneNegotiateExtVersion(hPhoneApp: number, dwDeviceID: number, dwAPIVersion: number, dwExtLowVersion: number, dwExtHighVersion: number, lpdwExtVersion: Win32Pointer): number;
+  phoneNegotiateExtVersion(
+    hPhoneApp: number,
+    dwDeviceID: number,
+    dwAPIVersion: number,
+    dwExtLowVersion: number,
+    dwExtHighVersion: number,
+    lpdwExtVersion: Win32Pointer,
+  ): number;
   /** tapi32.dll!phoneOpen */
-  phoneOpen(hPhoneApp: number, dwDeviceID: number, lphPhone: Win32Pointer, dwAPIVersion: number, dwExtVersion: number, dwCallbackInstance: number | bigint, dwPrivilege: number): number;
+  phoneOpen(
+    hPhoneApp: number,
+    dwDeviceID: number,
+    lphPhone: Win32Pointer,
+    dwAPIVersion: number,
+    dwExtVersion: number,
+    dwCallbackInstance: number | bigint,
+    dwPrivilege: number,
+  ): number;
   /** tapi32.dll!phoneSetButtonInfo */
   phoneSetButtonInfo(hPhone: number, dwButtonLampID: number, lpButtonInfo: Win32Pointer): number;
   /** tapi32.dll!phoneSetButtonInfoA */
@@ -485,7 +1125,13 @@ interface Functions {
   /** tapi32.dll!phoneSetData */
   phoneSetData(hPhone: number, dwDataID: number, lpData: Win32Pointer, dwSize: number): number;
   /** tapi32.dll!phoneSetDisplay */
-  phoneSetDisplay(hPhone: number, dwRow: number, dwColumn: number, lpsDisplay: string | Win32Pointer, dwSize: number): number;
+  phoneSetDisplay(
+    hPhone: number,
+    dwRow: number,
+    dwColumn: number,
+    lpsDisplay: string | Win32Pointer,
+    dwSize: number,
+  ): number;
   /** tapi32.dll!phoneSetGain */
   phoneSetGain(hPhone: number, dwHookSwitchDev: number, dwGain: number): number;
   /** tapi32.dll!phoneSetHookSwitch */
@@ -509,17 +1155,65 @@ interface Functions {
   /** tapi32.dll!tapiRequestDrop */
   tapiRequestDrop(hwnd: Win32Pointer, wRequestID: number | bigint): number;
   /** tapi32.dll!tapiRequestMakeCall */
-  tapiRequestMakeCall(lpszDestAddress: string | Win32Pointer, lpszAppName: string | Win32Pointer, lpszCalledParty: string | Win32Pointer, lpszComment: string | Win32Pointer): number;
+  tapiRequestMakeCall(
+    lpszDestAddress: string | Win32Pointer,
+    lpszAppName: string | Win32Pointer,
+    lpszCalledParty: string | Win32Pointer,
+    lpszComment: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!tapiRequestMakeCallA */
-  tapiRequestMakeCallA(lpszDestAddress: string | Win32Pointer, lpszAppName: string | Win32Pointer, lpszCalledParty: string | Win32Pointer, lpszComment: string | Win32Pointer): number;
+  tapiRequestMakeCallA(
+    lpszDestAddress: string | Win32Pointer,
+    lpszAppName: string | Win32Pointer,
+    lpszCalledParty: string | Win32Pointer,
+    lpszComment: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!tapiRequestMakeCallW */
-  tapiRequestMakeCallW(lpszDestAddress: string | Win32Pointer, lpszAppName: string | Win32Pointer, lpszCalledParty: string | Win32Pointer, lpszComment: string | Win32Pointer): number;
+  tapiRequestMakeCallW(
+    lpszDestAddress: string | Win32Pointer,
+    lpszAppName: string | Win32Pointer,
+    lpszCalledParty: string | Win32Pointer,
+    lpszComment: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!tapiRequestMediaCall */
-  tapiRequestMediaCall(hwnd: Win32Pointer, wRequestID: number | bigint, lpszDeviceClass: string | Win32Pointer, lpDeviceID: string | Win32Pointer, dwSize: number, dwSecure: number, lpszDestAddress: string | Win32Pointer, lpszAppName: string | Win32Pointer, lpszCalledParty: string | Win32Pointer, lpszComment: string | Win32Pointer): number;
+  tapiRequestMediaCall(
+    hwnd: Win32Pointer,
+    wRequestID: number | bigint,
+    lpszDeviceClass: string | Win32Pointer,
+    lpDeviceID: string | Win32Pointer,
+    dwSize: number,
+    dwSecure: number,
+    lpszDestAddress: string | Win32Pointer,
+    lpszAppName: string | Win32Pointer,
+    lpszCalledParty: string | Win32Pointer,
+    lpszComment: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!tapiRequestMediaCallA */
-  tapiRequestMediaCallA(hwnd: Win32Pointer, wRequestID: number | bigint, lpszDeviceClass: string | Win32Pointer, lpDeviceID: string | Win32Pointer, dwSize: number, dwSecure: number, lpszDestAddress: string | Win32Pointer, lpszAppName: string | Win32Pointer, lpszCalledParty: string | Win32Pointer, lpszComment: string | Win32Pointer): number;
+  tapiRequestMediaCallA(
+    hwnd: Win32Pointer,
+    wRequestID: number | bigint,
+    lpszDeviceClass: string | Win32Pointer,
+    lpDeviceID: string | Win32Pointer,
+    dwSize: number,
+    dwSecure: number,
+    lpszDestAddress: string | Win32Pointer,
+    lpszAppName: string | Win32Pointer,
+    lpszCalledParty: string | Win32Pointer,
+    lpszComment: string | Win32Pointer,
+  ): number;
   /** tapi32.dll!tapiRequestMediaCallW */
-  tapiRequestMediaCallW(hwnd: Win32Pointer, wRequestID: number | bigint, lpszDeviceClass: string | Win32Pointer, lpDeviceID: string | Win32Pointer, dwSize: number, dwSecure: number, lpszDestAddress: string | Win32Pointer, lpszAppName: string | Win32Pointer, lpszCalledParty: string | Win32Pointer, lpszComment: string | Win32Pointer): number;
+  tapiRequestMediaCallW(
+    hwnd: Win32Pointer,
+    wRequestID: number | bigint,
+    lpszDeviceClass: string | Win32Pointer,
+    lpDeviceID: string | Win32Pointer,
+    dwSize: number,
+    dwSecure: number,
+    lpszDestAddress: string | Win32Pointer,
+    lpszAppName: string | Win32Pointer,
+    lpszCalledParty: string | Win32Pointer,
+    lpszComment: string | Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

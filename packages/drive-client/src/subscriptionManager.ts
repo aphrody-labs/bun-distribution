@@ -60,10 +60,7 @@ export class SubscriptionManager {
    * Reuses existing subscription if filter matches
    * Handles concurrent subscription requests for the same filter
    */
-  async subscribe(
-    filter: EventFilter,
-    callback: (event: Event) => void,
-  ): Promise<() => void> {
+  async subscribe(filter: EventFilter, callback: (event: Event) => void): Promise<() => void> {
     const key = this.getFilterKey(filter);
 
     // Check if subscription already exists
@@ -80,9 +77,7 @@ export class SubscriptionManager {
     // Check if subscription is being created (concurrent request)
     const pending = this.pendingSubscriptions.get(key);
     if (pending) {
-      console.log(
-        `[SubscriptionManager] Waiting for pending subscription: ${key}`,
-      );
+      console.log(`[SubscriptionManager] Waiting for pending subscription: ${key}`);
       // Wait for the in-progress subscription to complete
       entry = await pending;
       entry.listeners.add(callback);
@@ -93,18 +88,14 @@ export class SubscriptionManager {
     // Create new subscription.
     // The initial callback is added to listeners BEFORE transport.subscribe()
     // so that buffered events replayed during subscription setup are not lost.
-    console.log(
-      `[SubscriptionManager] Creating new subscription for key: ${key}`,
-    );
+    console.log(`[SubscriptionManager] Creating new subscription for key: ${key}`);
     const subscriptionPromise = this.createSubscription(key, filter, callback);
     this.pendingSubscriptions.set(key, subscriptionPromise);
 
     try {
       entry = await subscriptionPromise;
       entry.refCount++;
-      console.log(
-        `[SubscriptionManager] New subscription created, refCount: ${entry.refCount}`,
-      );
+      console.log(`[SubscriptionManager] New subscription created, refCount: ${entry.refCount}`);
       return this.createCleanup(key, callback);
     } finally {
       this.pendingSubscriptions.delete(key);
@@ -116,12 +107,7 @@ export class SubscriptionManager {
     filter: EventFilter,
     initialCallback: (event: Event) => void,
   ): Promise<SubscriptionEntry> {
-    const eventTypes = filter.event_types ?? [
-      "ResourceChanged",
-      "ResourceChangedBatch",
-      "ResourceDeleted",
-      "Refresh",
-    ];
+    const eventTypes = filter.event_types ?? ["ResourceChanged", "ResourceChangedBatch", "ResourceDeleted", "Refresh"];
 
     // Pre-create the entry with the initial listener so that events
     // replayed by the daemon during transport.subscribe() are captured.
@@ -134,11 +120,11 @@ export class SubscriptionManager {
     this.subscriptions.set(key, entry);
 
     const unsubscribe = await this.transport.subscribe(
-      (event) => {
+      event => {
         // Broadcast event to all listeners
         const currentEntry = this.subscriptions.get(key);
         if (currentEntry) {
-          currentEntry.listeners.forEach((listener) => listener(event));
+          currentEntry.listeners.forEach(listener => listener(event));
         }
       },
       {
@@ -156,16 +142,11 @@ export class SubscriptionManager {
     return entry;
   }
 
-  private createCleanup(
-    key: string,
-    callback: (event: Event) => void,
-  ): () => void {
+  private createCleanup(key: string, callback: (event: Event) => void): () => void {
     return () => {
       const currentEntry = this.subscriptions.get(key);
       if (!currentEntry) {
-        console.log(
-          `[SubscriptionManager] Cleanup called but entry not found for key: ${key}`,
-        );
+        console.log(`[SubscriptionManager] Cleanup called but entry not found for key: ${key}`);
         return;
       }
 
@@ -176,9 +157,7 @@ export class SubscriptionManager {
       );
 
       if (currentEntry.refCount === 0) {
-        console.log(
-          `[SubscriptionManager] RefCount reached 0, unsubscribing from key: ${key}`,
-        );
+        console.log(`[SubscriptionManager] RefCount reached 0, unsubscribing from key: ${key}`);
         currentEntry.unsubscribe();
         this.subscriptions.delete(key);
       }
@@ -191,13 +170,11 @@ export class SubscriptionManager {
   getStats() {
     return {
       activeSubscriptions: this.subscriptions.size,
-      subscriptions: Array.from(this.subscriptions.entries()).map(
-        ([key, entry]) => ({
-          key,
-          refCount: entry.refCount,
-          listenerCount: entry.listeners.size,
-        }),
-      ),
+      subscriptions: Array.from(this.subscriptions.entries()).map(([key, entry]) => ({
+        key,
+        refCount: entry.refCount,
+        listenerCount: entry.listeners.size,
+      })),
     };
   }
 
@@ -205,10 +182,8 @@ export class SubscriptionManager {
    * Force cleanup all subscriptions (for testing/cleanup)
    */
   destroy() {
-    console.log(
-      `[SubscriptionManager] Destroying ${this.subscriptions.size} subscriptions`,
-    );
-    this.subscriptions.forEach((entry) => entry.unsubscribe());
+    console.log(`[SubscriptionManager] Destroying ${this.subscriptions.size} subscriptions`);
+    this.subscriptions.forEach(entry => entry.unsubscribe());
     this.subscriptions.clear();
   }
 }

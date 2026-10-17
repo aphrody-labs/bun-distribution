@@ -16,9 +16,7 @@ import { compareFolders } from "./folderUtils";
 
 // Touch-first devices have no hover and narrow viewports — the folder submenu
 // expands inline (accordion) instead of flying out past the screen edge.
-const COARSE_POINTER =
-  typeof window !== "undefined" &&
-  window.matchMedia?.("(pointer: coarse)").matches === true;
+const COARSE_POINTER = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;
 
 export interface GalleryItemMenuItemsProps {
   item: GalleryItem;
@@ -63,7 +61,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
         <button
           type="button"
           className={ROW}
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             close();
             onOpen();
@@ -73,9 +71,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
           <span>
             {item.mediaClass === "video"
               ? "View video"
-              : item.mediaClass === "dimensional" ||
-                  item.mediaClass === "mesh" ||
-                  item.mediaClass === "splat"
+              : item.mediaClass === "dimensional" || item.mediaClass === "mesh" || item.mediaClass === "splat"
                 ? "View 3D"
                 : "View image"}
           </span>
@@ -86,7 +82,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
         <button
           type="button"
           className={ROW}
-          onClick={async (e) => {
+          onClick={async e => {
             e.stopPropagation();
             if (item.fullImage || item.thumbnail) {
               await onEditClicked(item.fullImage || item.thumbnail!, item.id);
@@ -103,19 +99,15 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
       {onAddToFolder && (
         <div
           className="relative"
-          onMouseEnter={
-            COARSE_POINTER ? undefined : () => setFolderSubmenuOpen(true)
-          }
-          onMouseLeave={
-            COARSE_POINTER ? undefined : () => setFolderSubmenuOpen(false)
-          }
+          onMouseEnter={COARSE_POINTER ? undefined : () => setFolderSubmenuOpen(true)}
+          onMouseLeave={COARSE_POINTER ? undefined : () => setFolderSubmenuOpen(false)}
         >
           <button
             type="button"
             className="flex w-full items-center justify-between gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-base-fg text-sm whitespace-nowrap"
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
-              setFolderSubmenuOpen((v) => !v);
+              setFolderSubmenuOpen(v => !v);
             }}
           >
             <div className="flex items-center gap-2">
@@ -168,7 +160,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
         <button
           type="button"
           className={ROW}
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             onRemoveFromFolder([item.id]);
             close();
@@ -183,7 +175,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
         <button
           type="button"
           className="flex w-full items-center gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-sm whitespace-nowrap"
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             close();
             onDelete();
@@ -214,12 +206,12 @@ const FolderList = ({
   <>
     {/* Same ordering as the sidebar / folder chips: starred first, then
         alphabetical. */}
-    {[...folders].sort(compareFolders).map((folder) => (
+    {[...folders].sort(compareFolders).map(folder => (
       <button
         key={folder.id}
         type="button"
         className="flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 hover:bg-ui-controls/60 text-base-fg text-sm"
-        onClick={(e) => {
+        onClick={e => {
           e.stopPropagation();
           onAddToFolder?.([item.id], folder.id);
           closeAll();
@@ -232,13 +224,11 @@ const FolderList = ({
         <span className="truncate">{folder.name}</span>
       </button>
     ))}
-    {folders.length > 0 && (
-      <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
-    )}
+    {folders.length > 0 && <div className="mx-1.5 my-1 border-t border-ui-panel-border" />}
     <button
       type="button"
       className="flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 hover:bg-ui-controls/60 text-base-fg/70 text-sm whitespace-nowrap"
-      onClick={(e) => {
+      onClick={e => {
         e.stopPropagation();
         closeAll();
         onCreateFolderFromMenu?.();

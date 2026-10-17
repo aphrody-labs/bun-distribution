@@ -6,9 +6,7 @@ import { SceneGenereationMetaData as SceneGenerationMetaData } from "./models/sc
 import Editor from "./engine/editor";
 import { usePageSceneStore } from "./PageSceneStore";
 
-export const getSceneGenerationMetaData = (
-  editorEngine: Editor,
-): SceneGenerationMetaData => {
+export const getSceneGenerationMetaData = (editorEngine: Editor): SceneGenerationMetaData => {
   // when this is called, editor engine is guaranteed by its caller
   const s = usePageSceneStore.getState();
   return {

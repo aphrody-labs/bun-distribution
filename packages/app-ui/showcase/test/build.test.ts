@@ -16,20 +16,16 @@ test("the showcase builds into html, favicon, script and stylesheet", async () =
     const report = await buildApp({ dir: app, outdir });
     expect(report.manifest.entry).toBe("index.html");
     const files = (await readdir(outdir, { recursive: true })).map(String);
-    const page = files.find((f) => f.endsWith("index.html"));
+    const page = files.find(f => f.endsWith("index.html"));
     expect(page).toBeDefined();
     const html = await Bun.file(join(outdir, page!)).text();
     const icon = /<link[^>]+rel="icon"[^>]+href="([^"]+)"/.exec(html)?.[1];
     expect(icon).toBeDefined();
-    expect(await Bun.file(resolve(outdir, page!, "..", icon!)).exists()).toBe(
-      true,
-    );
-    expect(files.some((f) => f.endsWith(".js"))).toBe(true);
-    const css = files.filter((f) => f.endsWith(".css"));
+    expect(await Bun.file(resolve(outdir, page!, "..", icon!)).exists()).toBe(true);
+    expect(files.some(f => f.endsWith(".js"))).toBe(true);
+    const css = files.filter(f => f.endsWith(".css"));
     expect(css.length).toBeGreaterThan(0);
-    const style = (
-      await Promise.all(css.map((f) => Bun.file(join(outdir, f)).text()))
-    ).join("\n");
+    const style = (await Promise.all(css.map(f => Bun.file(join(outdir, f)).text()))).join("\n");
     expect(style).toMatch(/--md-sys-color-surface|surface/);
   } finally {
     await rm(outdir, { recursive: true, force: true });

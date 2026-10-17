@@ -10,12 +10,7 @@ import type {
 } from "./types";
 import type { ParamValue } from "../params";
 import { mediaTime } from "../wasm";
-import {
-  getBezierPoint,
-  getDefaultLeftHandle,
-  getDefaultRightHandle,
-  solveBezierProgressForTime,
-} from "./bezier";
+import { getBezierPoint, getDefaultLeftHandle, getDefaultRightHandle, solveBezierProgressForTime } from "./bezier";
 import { clamp } from "../utils/math";
 
 // Per-channel value-at-time evaluator. Scalar channels support
@@ -27,13 +22,7 @@ import { clamp } from "../utils/math";
 // span, and fills in default tangent/segment modes — produces the shape
 // downstream code expects without mutating the source channel.
 
-function byTimeAscending({
-  leftTime,
-  rightTime,
-}: {
-  leftTime: number;
-  rightTime: number;
-}): number {
+function byTimeAscending({ leftTime, rightTime }: { leftTime: number; rightTime: number }): number {
   return leftTime - rightTime;
 }
 
@@ -109,11 +98,7 @@ function normalizeLeftHandle({
   };
 }
 
-function normalizeScalarKey({
-  key,
-}: {
-  key: ScalarAnimationKey;
-}): ScalarAnimationKey {
+function normalizeScalarKey({ key }: { key: ScalarAnimationKey }): ScalarAnimationKey {
   return {
     ...key,
     tangentMode: key.tangentMode ?? "flat",
@@ -121,13 +106,9 @@ function normalizeScalarKey({
   };
 }
 
-export function normalizeScalarChannel({
-  channel,
-}: {
-  channel: ScalarAnimationChannel;
-}): ScalarAnimationChannel {
+export function normalizeScalarChannel({ channel }: { channel: ScalarAnimationChannel }): ScalarAnimationChannel {
   const sortedKeys = [...channel.keys]
-    .map((key) => normalizeScalarKey({ key }))
+    .map(key => normalizeScalarKey({ key }))
     .sort((leftKey, rightKey) =>
       byTimeAscending({
         leftTime: leftKey.time,
@@ -164,11 +145,7 @@ export function normalizeScalarChannel({
   };
 }
 
-export function normalizeDiscreteChannel({
-  channel,
-}: {
-  channel: DiscreteAnimationChannel;
-}): DiscreteAnimationChannel {
+export function normalizeDiscreteChannel({ channel }: { channel: DiscreteAnimationChannel }): DiscreteAnimationChannel {
   return {
     ...channel,
     keys: [...channel.keys].sort((leftKeyframe, rightKeyframe) =>
@@ -180,38 +157,15 @@ export function normalizeDiscreteChannel({
   };
 }
 
-export function isScalarChannel(
-  channel: AnimationChannel,
-): channel is ScalarAnimationChannel {
-  return (
-    "extrapolation" in channel ||
-    channel.keys.some((keyframe) => "segmentToNext" in keyframe)
-  );
+export function isScalarChannel(channel: AnimationChannel): channel is ScalarAnimationChannel {
+  return "extrapolation" in channel || channel.keys.some(keyframe => "segmentToNext" in keyframe);
 }
 
-export function normalizeChannel({
-  channel,
-}: {
-  channel: ScalarAnimationChannel;
-}): ScalarAnimationChannel;
-export function normalizeChannel({
-  channel,
-}: {
-  channel: DiscreteAnimationChannel;
-}): DiscreteAnimationChannel;
-export function normalizeChannel({
-  channel,
-}: {
-  channel: AnimationChannel;
-}): AnimationChannel;
-export function normalizeChannel({
-  channel,
-}: {
-  channel: AnimationChannel;
-}): AnimationChannel {
-  return isScalarChannel(channel)
-    ? normalizeScalarChannel({ channel })
-    : normalizeDiscreteChannel({ channel });
+export function normalizeChannel({ channel }: { channel: ScalarAnimationChannel }): ScalarAnimationChannel;
+export function normalizeChannel({ channel }: { channel: DiscreteAnimationChannel }): DiscreteAnimationChannel;
+export function normalizeChannel({ channel }: { channel: AnimationChannel }): AnimationChannel;
+export function normalizeChannel({ channel }: { channel: AnimationChannel }): AnimationChannel {
+  return isScalarChannel(channel) ? normalizeScalarChannel({ channel }) : normalizeDiscreteChannel({ channel });
 }
 
 function extrapolateScalarEdge({
@@ -234,17 +188,10 @@ function extrapolateScalarEdge({
     return edgeKey.value;
   }
 
-  return (
-    edgeKey.value +
-    ((time - edgeKey.time) / span) * (neighborKey.value - edgeKey.value)
-  );
+  return edgeKey.value + ((time - edgeKey.time) / span) * (neighborKey.value - edgeKey.value);
 }
 
-export function getScalarSegmentInterpolation({
-  segment,
-}: {
-  segment: ScalarSegmentType;
-}): AnimationInterpolation {
+export function getScalarSegmentInterpolation({ segment }: { segment: ScalarSegmentType }): AnimationInterpolation {
   if (segment === "step") {
     return "hold";
   }
@@ -298,11 +245,7 @@ export function getScalarChannelValueAtTime({
     return lastKey.value;
   }
 
-  for (
-    let keyIndex = 0;
-    keyIndex < normalizedChannel.keys.length - 1;
-    keyIndex++
-  ) {
+  for (let keyIndex = 0; keyIndex < normalizedChannel.keys.length - 1; keyIndex++) {
     const leftKey = normalizedChannel.keys[keyIndex];
     const rightKey = normalizedChannel.keys[keyIndex + 1];
     if (time === rightKey.time) {
@@ -346,10 +289,8 @@ export function getScalarChannelValueAtTime({
       leftKey,
       rightKey,
     });
-    const rightHandle =
-      leftKey.rightHandle ?? getDefaultRightHandle({ leftKey, rightKey });
-    const leftHandle =
-      rightKey.leftHandle ?? getDefaultLeftHandle({ leftKey, rightKey });
+    const rightHandle = leftKey.rightHandle ?? getDefaultRightHandle({ leftKey, rightKey });
+    const leftHandle = rightKey.leftHandle ?? getDefaultLeftHandle({ leftKey, rightKey });
     return getBezierPoint({
       progress: curveProgress,
       p0: leftKey.value,

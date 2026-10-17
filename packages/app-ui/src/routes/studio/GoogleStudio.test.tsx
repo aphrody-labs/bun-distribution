@@ -53,9 +53,7 @@ test("native Studio preserves every owned search vertical while translating the 
       for (const vertical of ["web", "images", "news", "videos", "books"])
         expect(html).toContain(`value="${vertical}"`);
       expect(html).toContain(`lang="${language}"`);
-      expect(html).toContain(
-        language === "en" ? "Your search" : "Votre recherche",
-      );
+      expect(html).toContain(language === "en" ? "Your search" : "Votre recherche");
       expect(html).toContain('type="checkbox"');
       expect(html).not.toContain("Recherche Google");
     }

@@ -14,7 +14,7 @@ export const VideoGenerationCountPicker = ({
   currentCount,
   handleCountChange,
 }: VideoGenerationCountPickerProps) => {
-  const options: PopoverItem[] = counts.map((count) => ({
+  const options: PopoverItem[] = counts.map(count => ({
     label: String(count),
     selected: count === currentCount,
   }));
@@ -27,13 +27,7 @@ export const VideoGenerationCountPicker = ({
   };
 
   return (
-    <Tooltip
-      content="Number of generations"
-      position="top"
-      className="z-50"
-      closeOnClick={true}
-      delay={0}
-    >
+    <Tooltip content="Number of generations" position="top" className="z-50" closeOnClick={true} delay={0}>
       <PopoverMenu
         items={options}
         onSelect={onSelect}

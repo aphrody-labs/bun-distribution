@@ -4,12 +4,7 @@
 
 /** @ignore */
 
-import type {
-  invoke,
-  transformCallback,
-  convertFileSrc,
-  InvokeOptions
-} from './core'
+import type { invoke, transformCallback, convertFileSrc, InvokeOptions } from "./core";
 
 /** @ignore */
 declare global {
@@ -25,45 +20,45 @@ declare global {
      * const { event, window: tauriWindow, path } = window.__TAURI__;
      * ```
      */
-    __TAURI__?: typeof import('./index')
+    __TAURI__?: typeof import("./index");
     __TAURI_INTERNALS__: {
-      invoke: typeof invoke
-      transformCallback: typeof transformCallback
-      unregisterCallback: (id: number) => void
-      runCallback: (id: number, data: unknown) => void
-      callbacks: Map<number, (data: unknown) => void>
-      convertFileSrc: typeof convertFileSrc
+      invoke: typeof invoke;
+      transformCallback: typeof transformCallback;
+      unregisterCallback: (id: number) => void;
+      runCallback: (id: number, data: unknown) => void;
+      callbacks: Map<number, (data: unknown) => void>;
+      convertFileSrc: typeof convertFileSrc;
       ipc: (message: {
-        cmd: string
-        callback: number
-        error: number
-        payload: unknown
-        options?: InvokeOptions
-      }) => void
+        cmd: string;
+        callback: number;
+        error: number;
+        payload: unknown;
+        options?: InvokeOptions;
+      }) => void;
       metadata: {
-        currentWindow: WindowDef
-        currentWebview: WebviewDef
-      }
+        currentWindow: WindowDef;
+        currentWebview: WebviewDef;
+      };
       plugins: {
         path: {
-          sep: string
-          delimiter: string
-        }
-      }
-    }
+          sep: string;
+          delimiter: string;
+        };
+      };
+    };
     __TAURI_EVENT_PLUGIN_INTERNALS__: {
-      unregisterListener: (event: string, eventId: number) => void
-    }
+      unregisterListener: (event: string, eventId: number) => void;
+    };
   }
 }
 
 /** @ignore */
 interface WebviewDef {
-  windowLabel: string
-  label: string
+  windowLabel: string;
+  label: string;
 }
 
 /** @ignore */
 interface WindowDef {
-  label: string
+  label: string;
 }

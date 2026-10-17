@@ -16,8 +16,7 @@ export function getTimelineZoomMin({
   const safeContainerWidth = containerWidth ?? 1000;
   const contentRatioAtMinZoom = 1 - PADDING_MAX_RATIO;
   const availableWidth = safeContainerWidth * contentRatioAtMinZoom;
-  const zoomToFit =
-    availableWidth / (safeDurationSeconds * BASE_TIMELINE_PIXELS_PER_SECOND);
+  const zoomToFit = availableWidth / (safeDurationSeconds * BASE_TIMELINE_PIXELS_PER_SECOND);
 
   return Math.min(TIMELINE_ZOOM_MAX, zoomToFit);
 }
@@ -32,24 +31,13 @@ export function getTimelinePaddingPx({
   minZoom: number;
 }): number {
   const zoomPercent = getZoomPercent({ zoomLevel, minZoom });
-  const paddingTransitionPercent = Math.min(
-    zoomPercent / PADDING_MIN_AT_ZOOM_PERCENT,
-    1,
-  );
-  const paddingRatio =
-    PADDING_MAX_RATIO -
-    (PADDING_MAX_RATIO - PADDING_MIN_RATIO) * paddingTransitionPercent;
+  const paddingTransitionPercent = Math.min(zoomPercent / PADDING_MIN_AT_ZOOM_PERCENT, 1);
+  const paddingRatio = PADDING_MAX_RATIO - (PADDING_MAX_RATIO - PADDING_MIN_RATIO) * paddingTransitionPercent;
 
   return containerWidth * paddingRatio;
 }
 
-export function getZoomPercent({
-  zoomLevel,
-  minZoom,
-}: {
-  zoomLevel: number;
-  minZoom: number;
-}): number {
+export function getZoomPercent({ zoomLevel, minZoom }: { zoomLevel: number; minZoom: number }): number {
   return (zoomLevel - minZoom) / (TIMELINE_ZOOM_MAX - minZoom);
 }
 

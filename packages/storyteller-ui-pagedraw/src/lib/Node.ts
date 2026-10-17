@@ -144,7 +144,7 @@ export class Node {
       }
 
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = event => {
         const dataUrl = event.target?.result as string;
         if (dataUrl) {
           const img = new Image();

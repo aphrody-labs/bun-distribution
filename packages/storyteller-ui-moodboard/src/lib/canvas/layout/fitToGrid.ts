@@ -5,10 +5,7 @@ export interface LayoutPatch {
   patch: Partial<MoodboardNode>;
 }
 
-export const computeFitToGridPatches = (
-  nodes: MoodboardNode[],
-  gridSpacing: number,
-): LayoutPatch[] => {
+export const computeFitToGridPatches = (nodes: MoodboardNode[], gridSpacing: number): LayoutPatch[] => {
   if (gridSpacing <= 0) return [];
   const patches: LayoutPatch[] = [];
   for (const n of nodes) {

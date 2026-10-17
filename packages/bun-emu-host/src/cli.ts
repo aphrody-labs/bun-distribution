@@ -45,8 +45,7 @@ for (let i = 2; i < args.length; i++) {
 const plugin = new EmuCore(core);
 using emu = plugin.create();
 for (const [k, v] of config) emu.setConfig(k, v);
-for (const [kind, file] of firmware)
-  emu.loadFirmware(kind, new Uint8Array(await Bun.file(file).arrayBuffer()));
+for (const [kind, file] of firmware) emu.loadFirmware(kind, new Uint8Array(await Bun.file(file).arrayBuffer()));
 emu.loadContentPath(content);
 const started = performance.now();
 let ran = 0;
@@ -56,14 +55,8 @@ while (ran < frames && emu.runFrame()) {
   if (text) process.stdout.write(text);
 }
 const ms = performance.now() - started;
-console.log(
-  `${plugin.info.name} ${plugin.info.version}: ${ran} frames in ${ms.toFixed(0)} ms`,
-);
+console.log(`${plugin.info.name} ${plugin.info.version}: ${ran} frames in ${ms.toFixed(0)} ms`);
 if (out) {
   mkdirSync(out, { recursive: true });
-  await Promise.all(
-    emu
-      .screens()
-      .map((s, i) => Bun.write(join(out!, `screen${i}.ppm`), toPpm(s))),
-  );
+  await Promise.all(emu.screens().map((s, i) => Bun.write(join(out!, `screen${i}.ppm`), toPpm(s))));
 }

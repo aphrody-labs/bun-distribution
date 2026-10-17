@@ -45,9 +45,7 @@ export function useSearchParams(): URLSearchParams {
   return ctx.searchParams;
 }
 
-export function useParams<
-  T extends Record<string, string | string[]> = Record<string, string>,
->(): T {
+export function useParams<T extends Record<string, string | string[]> = Record<string, string>>(): T {
   const ctx = useNextMigrateContext();
   return (ctx.params || {}) as T;
 }

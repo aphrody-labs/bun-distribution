@@ -5,27 +5,92 @@ interface Functions {
   /** shlwapi.dll!AssocCreate */
   AssocCreate(clsid: Win32StructInit, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** shlwapi.dll!AssocGetPerceivedType */
-  AssocGetPerceivedType(pszExt: string | Win32Pointer, ptype: Win32Pointer, pflag: Win32Pointer, ppszType: Win32Pointer): number;
+  AssocGetPerceivedType(
+    pszExt: string | Win32Pointer,
+    ptype: Win32Pointer,
+    pflag: Win32Pointer,
+    ppszType: Win32Pointer,
+  ): number;
   /** shlwapi.dll!AssocIsDangerous */
   AssocIsDangerous(pszAssoc: string | Win32Pointer): number;
   /** shlwapi.dll!AssocQueryKeyA */
-  AssocQueryKeyA(flags: number, key: number, pszAssoc: string | Win32Pointer, pszExtra: string | Win32Pointer, phkeyOut: Win32Pointer): number;
+  AssocQueryKeyA(
+    flags: number,
+    key: number,
+    pszAssoc: string | Win32Pointer,
+    pszExtra: string | Win32Pointer,
+    phkeyOut: Win32Pointer,
+  ): number;
   /** shlwapi.dll!AssocQueryKeyW */
-  AssocQueryKeyW(flags: number, key: number, pszAssoc: string | Win32Pointer, pszExtra: string | Win32Pointer, phkeyOut: Win32Pointer): number;
+  AssocQueryKeyW(
+    flags: number,
+    key: number,
+    pszAssoc: string | Win32Pointer,
+    pszExtra: string | Win32Pointer,
+    phkeyOut: Win32Pointer,
+  ): number;
   /** shlwapi.dll!AssocQueryKeyW */
-  AssocQueryKey(flags: number, key: number, pszAssoc: string | Win32Pointer, pszExtra: string | Win32Pointer, phkeyOut: Win32Pointer): number;
+  AssocQueryKey(
+    flags: number,
+    key: number,
+    pszAssoc: string | Win32Pointer,
+    pszExtra: string | Win32Pointer,
+    phkeyOut: Win32Pointer,
+  ): number;
   /** shlwapi.dll!AssocQueryStringA */
-  AssocQueryStringA(flags: number, str: number, pszAssoc: string | Win32Pointer, pszExtra: string | Win32Pointer, pszOut: string | Win32Pointer, pcchOut: Win32Pointer): number;
+  AssocQueryStringA(
+    flags: number,
+    str: number,
+    pszAssoc: string | Win32Pointer,
+    pszExtra: string | Win32Pointer,
+    pszOut: string | Win32Pointer,
+    pcchOut: Win32Pointer,
+  ): number;
   /** shlwapi.dll!AssocQueryStringByKeyA */
-  AssocQueryStringByKeyA(flags: number, str: number, hkAssoc: Win32Pointer, pszExtra: string | Win32Pointer, pszOut: string | Win32Pointer, pcchOut: Win32Pointer): number;
+  AssocQueryStringByKeyA(
+    flags: number,
+    str: number,
+    hkAssoc: Win32Pointer,
+    pszExtra: string | Win32Pointer,
+    pszOut: string | Win32Pointer,
+    pcchOut: Win32Pointer,
+  ): number;
   /** shlwapi.dll!AssocQueryStringByKeyW */
-  AssocQueryStringByKeyW(flags: number, str: number, hkAssoc: Win32Pointer, pszExtra: string | Win32Pointer, pszOut: string | Win32Pointer, pcchOut: Win32Pointer): number;
+  AssocQueryStringByKeyW(
+    flags: number,
+    str: number,
+    hkAssoc: Win32Pointer,
+    pszExtra: string | Win32Pointer,
+    pszOut: string | Win32Pointer,
+    pcchOut: Win32Pointer,
+  ): number;
   /** shlwapi.dll!AssocQueryStringByKeyW */
-  AssocQueryStringByKey(flags: number, str: number, hkAssoc: Win32Pointer, pszExtra: string | Win32Pointer, pszOut: string | Win32Pointer, pcchOut: Win32Pointer): number;
+  AssocQueryStringByKey(
+    flags: number,
+    str: number,
+    hkAssoc: Win32Pointer,
+    pszExtra: string | Win32Pointer,
+    pszOut: string | Win32Pointer,
+    pcchOut: Win32Pointer,
+  ): number;
   /** shlwapi.dll!AssocQueryStringW */
-  AssocQueryStringW(flags: number, str: number, pszAssoc: string | Win32Pointer, pszExtra: string | Win32Pointer, pszOut: string | Win32Pointer, pcchOut: Win32Pointer): number;
+  AssocQueryStringW(
+    flags: number,
+    str: number,
+    pszAssoc: string | Win32Pointer,
+    pszExtra: string | Win32Pointer,
+    pszOut: string | Win32Pointer,
+    pcchOut: Win32Pointer,
+  ): number;
   /** shlwapi.dll!AssocQueryStringW */
-  AssocQueryString(flags: number, str: number, pszAssoc: string | Win32Pointer, pszExtra: string | Win32Pointer, pszOut: string | Win32Pointer, pcchOut: Win32Pointer): number;
+  AssocQueryString(
+    flags: number,
+    str: number,
+    pszAssoc: string | Win32Pointer,
+    pszExtra: string | Win32Pointer,
+    pszOut: string | Win32Pointer,
+    pcchOut: Win32Pointer,
+  ): number;
   /** shlwapi.dll!ChrCmpIA */
   ChrCmpIA(w1: number, w2: number): number;
   /** shlwapi.dll!ChrCmpIW */
@@ -39,7 +104,14 @@ interface Functions {
   /** shlwapi.dll!ColorRGBToHLS */
   ColorRGBToHLS(clrRGB: number, pwHue: Win32Pointer, pwLuminance: Win32Pointer, pwSaturation: Win32Pointer): void;
   /** shlwapi.dll!ConnectToConnectionPoint */
-  ConnectToConnectionPoint(punk: Win32Pointer, riidEvent: Win32Pointer, fConnect: number, punkTarget: Win32Pointer, pdwCookie: Win32Pointer, ppcpOut: Win32Pointer): number;
+  ConnectToConnectionPoint(
+    punk: Win32Pointer,
+    riidEvent: Win32Pointer,
+    fConnect: number,
+    punkTarget: Win32Pointer,
+    pdwCookie: Win32Pointer,
+    ppcpOut: Win32Pointer,
+  ): number;
   /** shlwapi.dll!GetAcceptLanguagesA */
   GetAcceptLanguagesA(pszLanguages: string | Win32Pointer, pcchLanguages: Win32Pointer): number;
   /** shlwapi.dll!GetAcceptLanguagesW */
@@ -75,17 +147,37 @@ interface Functions {
   /** shlwapi.dll!IUnknown_GetWindow */
   IUnknown_GetWindow(punk: Win32Pointer, phwnd: Win32Pointer): number;
   /** shlwapi.dll!IUnknown_QueryService */
-  IUnknown_QueryService(punk: Win32Pointer, guidService: Win32Pointer, riid: Win32Pointer, ppvOut: Win32Pointer): number;
+  IUnknown_QueryService(
+    punk: Win32Pointer,
+    guidService: Win32Pointer,
+    riid: Win32Pointer,
+    ppvOut: Win32Pointer,
+  ): number;
   /** shlwapi.dll!IUnknown_Set */
   IUnknown_Set(ppunk: Win32Pointer, punk: Win32Pointer): void;
   /** shlwapi.dll!IUnknown_SetSite */
   IUnknown_SetSite(punk: Win32Pointer, punkSite: Win32Pointer): number;
   /** shlwapi.dll!IntlStrEqWorkerA */
-  IntlStrEqWorkerA(fCaseSens: number, lpString1: string | Win32Pointer, lpString2: string | Win32Pointer, nChar: number): number;
+  IntlStrEqWorkerA(
+    fCaseSens: number,
+    lpString1: string | Win32Pointer,
+    lpString2: string | Win32Pointer,
+    nChar: number,
+  ): number;
   /** shlwapi.dll!IntlStrEqWorkerW */
-  IntlStrEqWorkerW(fCaseSens: number, lpString1: string | Win32Pointer, lpString2: string | Win32Pointer, nChar: number): number;
+  IntlStrEqWorkerW(
+    fCaseSens: number,
+    lpString1: string | Win32Pointer,
+    lpString2: string | Win32Pointer,
+    nChar: number,
+  ): number;
   /** shlwapi.dll!IntlStrEqWorkerW */
-  IntlStrEqWorker(fCaseSens: number, lpString1: string | Win32Pointer, lpString2: string | Win32Pointer, nChar: number): number;
+  IntlStrEqWorker(
+    fCaseSens: number,
+    lpString1: string | Win32Pointer,
+    lpString2: string | Win32Pointer,
+    nChar: number,
+  ): number;
   /** shlwapi.dll!IsCharSpaceA */
   IsCharSpaceA(wch: number): number;
   /** shlwapi.dll!IsCharSpaceW */
@@ -133,37 +225,91 @@ interface Functions {
   /** shlwapi.dll!PathCanonicalizeW */
   PathCanonicalize(pszBuf: string | Win32Pointer, pszPath: string | Win32Pointer): number;
   /** shlwapi.dll!PathCombineA */
-  PathCombineA(pszDest: string | Win32Pointer, pszDir: string | Win32Pointer, pszFile: string | Win32Pointer): number | null;
+  PathCombineA(
+    pszDest: string | Win32Pointer,
+    pszDir: string | Win32Pointer,
+    pszFile: string | Win32Pointer,
+  ): number | null;
   /** shlwapi.dll!PathCombineW */
-  PathCombineW(pszDest: string | Win32Pointer, pszDir: string | Win32Pointer, pszFile: string | Win32Pointer): number | null;
+  PathCombineW(
+    pszDest: string | Win32Pointer,
+    pszDir: string | Win32Pointer,
+    pszFile: string | Win32Pointer,
+  ): number | null;
   /** shlwapi.dll!PathCombineW */
-  PathCombine(pszDest: string | Win32Pointer, pszDir: string | Win32Pointer, pszFile: string | Win32Pointer): number | null;
+  PathCombine(
+    pszDest: string | Win32Pointer,
+    pszDir: string | Win32Pointer,
+    pszFile: string | Win32Pointer,
+  ): number | null;
   /** shlwapi.dll!PathCommonPrefixA */
-  PathCommonPrefixA(pszFile1: string | Win32Pointer, pszFile2: string | Win32Pointer, achPath: string | Win32Pointer): number;
+  PathCommonPrefixA(
+    pszFile1: string | Win32Pointer,
+    pszFile2: string | Win32Pointer,
+    achPath: string | Win32Pointer,
+  ): number;
   /** shlwapi.dll!PathCommonPrefixW */
-  PathCommonPrefixW(pszFile1: string | Win32Pointer, pszFile2: string | Win32Pointer, achPath: string | Win32Pointer): number;
+  PathCommonPrefixW(
+    pszFile1: string | Win32Pointer,
+    pszFile2: string | Win32Pointer,
+    achPath: string | Win32Pointer,
+  ): number;
   /** shlwapi.dll!PathCommonPrefixW */
-  PathCommonPrefix(pszFile1: string | Win32Pointer, pszFile2: string | Win32Pointer, achPath: string | Win32Pointer): number;
+  PathCommonPrefix(
+    pszFile1: string | Win32Pointer,
+    pszFile2: string | Win32Pointer,
+    achPath: string | Win32Pointer,
+  ): number;
   /** shlwapi.dll!PathCompactPathA */
   PathCompactPathA(hDC: Win32Pointer, pszPath: string | Win32Pointer, dx: number): number;
   /** shlwapi.dll!PathCompactPathExA */
-  PathCompactPathExA(pszOut: string | Win32Pointer, pszSrc: string | Win32Pointer, cchMax: number, dwFlags: number): number;
+  PathCompactPathExA(
+    pszOut: string | Win32Pointer,
+    pszSrc: string | Win32Pointer,
+    cchMax: number,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!PathCompactPathExW */
-  PathCompactPathExW(pszOut: string | Win32Pointer, pszSrc: string | Win32Pointer, cchMax: number, dwFlags: number): number;
+  PathCompactPathExW(
+    pszOut: string | Win32Pointer,
+    pszSrc: string | Win32Pointer,
+    cchMax: number,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!PathCompactPathExW */
-  PathCompactPathEx(pszOut: string | Win32Pointer, pszSrc: string | Win32Pointer, cchMax: number, dwFlags: number): number;
+  PathCompactPathEx(
+    pszOut: string | Win32Pointer,
+    pszSrc: string | Win32Pointer,
+    cchMax: number,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!PathCompactPathW */
   PathCompactPathW(hDC: Win32Pointer, pszPath: string | Win32Pointer, dx: number): number;
   /** shlwapi.dll!PathCompactPathW */
   PathCompactPath(hDC: Win32Pointer, pszPath: string | Win32Pointer, dx: number): number;
   /** shlwapi.dll!PathCreateFromUrlA */
-  PathCreateFromUrlA(pszUrl: string | Win32Pointer, pszPath: string | Win32Pointer, pcchPath: Win32Pointer, dwFlags: number): number;
+  PathCreateFromUrlA(
+    pszUrl: string | Win32Pointer,
+    pszPath: string | Win32Pointer,
+    pcchPath: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!PathCreateFromUrlAlloc */
   PathCreateFromUrlAlloc(pszIn: string | Win32Pointer, ppszOut: Win32Pointer, dwFlags: number): number;
   /** shlwapi.dll!PathCreateFromUrlW */
-  PathCreateFromUrlW(pszUrl: string | Win32Pointer, pszPath: string | Win32Pointer, pcchPath: Win32Pointer, dwFlags: number): number;
+  PathCreateFromUrlW(
+    pszUrl: string | Win32Pointer,
+    pszPath: string | Win32Pointer,
+    pcchPath: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!PathCreateFromUrlW */
-  PathCreateFromUrl(pszUrl: string | Win32Pointer, pszPath: string | Win32Pointer, pcchPath: Win32Pointer, dwFlags: number): number;
+  PathCreateFromUrl(
+    pszUrl: string | Win32Pointer,
+    pszPath: string | Win32Pointer,
+    pcchPath: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!PathFileExistsA */
   PathFileExistsA(pszPath: string | Win32Pointer): number;
   /** shlwapi.dll!PathFileExistsW */
@@ -345,11 +491,29 @@ interface Functions {
   /** shlwapi.dll!PathQuoteSpacesW */
   PathQuoteSpaces(lpsz: string | Win32Pointer): number;
   /** shlwapi.dll!PathRelativePathToA */
-  PathRelativePathToA(pszPath: string | Win32Pointer, pszFrom: string | Win32Pointer, dwAttrFrom: number, pszTo: string | Win32Pointer, dwAttrTo: number): number;
+  PathRelativePathToA(
+    pszPath: string | Win32Pointer,
+    pszFrom: string | Win32Pointer,
+    dwAttrFrom: number,
+    pszTo: string | Win32Pointer,
+    dwAttrTo: number,
+  ): number;
   /** shlwapi.dll!PathRelativePathToW */
-  PathRelativePathToW(pszPath: string | Win32Pointer, pszFrom: string | Win32Pointer, dwAttrFrom: number, pszTo: string | Win32Pointer, dwAttrTo: number): number;
+  PathRelativePathToW(
+    pszPath: string | Win32Pointer,
+    pszFrom: string | Win32Pointer,
+    dwAttrFrom: number,
+    pszTo: string | Win32Pointer,
+    dwAttrTo: number,
+  ): number;
   /** shlwapi.dll!PathRelativePathToW */
-  PathRelativePathTo(pszPath: string | Win32Pointer, pszFrom: string | Win32Pointer, dwAttrFrom: number, pszTo: string | Win32Pointer, dwAttrTo: number): number;
+  PathRelativePathTo(
+    pszPath: string | Win32Pointer,
+    pszFrom: string | Win32Pointer,
+    dwAttrFrom: number,
+    pszTo: string | Win32Pointer,
+    dwAttrTo: number,
+  ): number;
   /** shlwapi.dll!PathRemoveArgsA */
   PathRemoveArgsA(pszPath: string | Win32Pointer): void;
   /** shlwapi.dll!PathRemoveArgsW */
@@ -451,11 +615,26 @@ interface Functions {
   /** shlwapi.dll!SHAutoComplete */
   SHAutoComplete(hwndEdit: Win32Pointer, dwFlags: number): number;
   /** shlwapi.dll!SHCopyKeyA */
-  SHCopyKeyA(hkeySrc: Win32Pointer, pszSrcSubKey: string | Win32Pointer, hkeyDest: Win32Pointer, fReserved: number): number;
+  SHCopyKeyA(
+    hkeySrc: Win32Pointer,
+    pszSrcSubKey: string | Win32Pointer,
+    hkeyDest: Win32Pointer,
+    fReserved: number,
+  ): number;
   /** shlwapi.dll!SHCopyKeyW */
-  SHCopyKeyW(hkeySrc: Win32Pointer, pszSrcSubKey: string | Win32Pointer, hkeyDest: Win32Pointer, fReserved: number): number;
+  SHCopyKeyW(
+    hkeySrc: Win32Pointer,
+    pszSrcSubKey: string | Win32Pointer,
+    hkeyDest: Win32Pointer,
+    fReserved: number,
+  ): number;
   /** shlwapi.dll!SHCopyKeyW */
-  SHCopyKey(hkeySrc: Win32Pointer, pszSrcSubKey: string | Win32Pointer, hkeyDest: Win32Pointer, fReserved: number): number;
+  SHCopyKey(
+    hkeySrc: Win32Pointer,
+    pszSrcSubKey: string | Win32Pointer,
+    hkeyDest: Win32Pointer,
+    fReserved: number,
+  ): number;
   /** shlwapi.dll!SHCreateMemStream */
   SHCreateMemStream(pInit: Win32Pointer, cbInit: number): number | null;
   /** shlwapi.dll!SHCreateShellPalette */
@@ -463,7 +642,14 @@ interface Functions {
   /** shlwapi.dll!SHCreateStreamOnFileA */
   SHCreateStreamOnFileA(pszFile: string | Win32Pointer, grfMode: number, ppstm: Win32Pointer): number;
   /** shlwapi.dll!SHCreateStreamOnFileEx */
-  SHCreateStreamOnFileEx(pszFile: string | Win32Pointer, grfMode: number, dwAttributes: number, fCreate: number, pstmTemplate: Win32Pointer, ppstm: Win32Pointer): number;
+  SHCreateStreamOnFileEx(
+    pszFile: string | Win32Pointer,
+    grfMode: number,
+    dwAttributes: number,
+    fCreate: number,
+    pstmTemplate: Win32Pointer,
+    ppstm: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHCreateStreamOnFileW */
   SHCreateStreamOnFileW(pszFile: string | Win32Pointer, grfMode: number, ppstm: Win32Pointer): number;
   /** shlwapi.dll!SHCreateStreamOnFileW */
@@ -473,7 +659,13 @@ interface Functions {
   /** shlwapi.dll!SHCreateThreadRef */
   SHCreateThreadRef(pcRef: Win32Pointer, ppunk: Win32Pointer): number;
   /** shlwapi.dll!SHCreateThreadWithHandle */
-  SHCreateThreadWithHandle(pfnThreadProc: Win32Callback, pData: Win32Pointer, flags: number, pfnCallback: Win32Callback, pHandle: Win32Pointer): number;
+  SHCreateThreadWithHandle(
+    pfnThreadProc: Win32Callback,
+    pData: Win32Pointer,
+    flags: number,
+    pfnCallback: Win32Callback,
+    pHandle: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHDeleteEmptyKeyA */
   SHDeleteEmptyKeyA(hkey: Win32Pointer, pszSubKey: string | Win32Pointer): number;
   /** shlwapi.dll!SHDeleteEmptyKeyW */
@@ -499,11 +691,35 @@ interface Functions {
   /** shlwapi.dll!SHEnumKeyExW */
   SHEnumKeyEx(hkey: Win32Pointer, dwIndex: number, pszName: string | Win32Pointer, pcchName: Win32Pointer): number;
   /** shlwapi.dll!SHEnumValueA */
-  SHEnumValueA(hkey: Win32Pointer, dwIndex: number, pszValueName: string | Win32Pointer, pcchValueName: Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHEnumValueA(
+    hkey: Win32Pointer,
+    dwIndex: number,
+    pszValueName: string | Win32Pointer,
+    pcchValueName: Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHEnumValueW */
-  SHEnumValueW(hkey: Win32Pointer, dwIndex: number, pszValueName: string | Win32Pointer, pcchValueName: Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHEnumValueW(
+    hkey: Win32Pointer,
+    dwIndex: number,
+    pszValueName: string | Win32Pointer,
+    pcchValueName: Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHEnumValueW */
-  SHEnumValue(hkey: Win32Pointer, dwIndex: number, pszValueName: string | Win32Pointer, pcchValueName: Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHEnumValue(
+    hkey: Win32Pointer,
+    dwIndex: number,
+    pszValueName: string | Win32Pointer,
+    pcchValueName: Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHFormatDateTimeA */
   SHFormatDateTimeA(pft: Win32Pointer, pdwFlags: Win32Pointer, pszBuf: string | Win32Pointer, cchBuf: number): number;
   /** shlwapi.dll!SHFormatDateTimeW */
@@ -517,13 +733,40 @@ interface Functions {
   /** shlwapi.dll!SHGetThreadRef */
   SHGetThreadRef(ppunk: Win32Pointer): number;
   /** shlwapi.dll!SHGetValueA */
-  SHGetValueA(hkey: Win32Pointer, pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHGetValueA(
+    hkey: Win32Pointer,
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHGetValueW */
-  SHGetValueW(hkey: Win32Pointer, pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHGetValueW(
+    hkey: Win32Pointer,
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHGetValueW */
-  SHGetValue(hkey: Win32Pointer, pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHGetValue(
+    hkey: Win32Pointer,
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHGetViewStatePropertyBag */
-  SHGetViewStatePropertyBag(pidl: Win32Pointer, pszBagName: string | Win32Pointer, dwFlags: number, riid: Win32Pointer, ppv: Win32Pointer): number;
+  SHGetViewStatePropertyBag(
+    pidl: Win32Pointer,
+    pszBagName: string | Win32Pointer,
+    dwFlags: number,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHGlobalCounterDecrement */
   SHGlobalCounterDecrement(id: number): number;
   /** shlwapi.dll!SHGlobalCounterGetValue */
@@ -533,47 +776,160 @@ interface Functions {
   /** shlwapi.dll!SHIsLowMemoryMachine */
   SHIsLowMemoryMachine(dwType: number): number;
   /** shlwapi.dll!SHLoadIndirectString */
-  SHLoadIndirectString(pszSource: string | Win32Pointer, pszOutBuf: string | Win32Pointer, cchOutBuf: number, ppvReserved: Win32Pointer): number;
+  SHLoadIndirectString(
+    pszSource: string | Win32Pointer,
+    pszOutBuf: string | Win32Pointer,
+    cchOutBuf: number,
+    ppvReserved: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHLockShared */
   SHLockShared(hData: Win32Pointer, dwProcessId: number): number | null;
   /** shlwapi.dll!SHMessageBoxCheckA */
-  SHMessageBoxCheckA(hwnd: Win32Pointer, pszText: string | Win32Pointer, pszCaption: string | Win32Pointer, uType: number, iDefault: number, pszRegVal: string | Win32Pointer): number;
+  SHMessageBoxCheckA(
+    hwnd: Win32Pointer,
+    pszText: string | Win32Pointer,
+    pszCaption: string | Win32Pointer,
+    uType: number,
+    iDefault: number,
+    pszRegVal: string | Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHMessageBoxCheckW */
-  SHMessageBoxCheckW(hwnd: Win32Pointer, pszText: string | Win32Pointer, pszCaption: string | Win32Pointer, uType: number, iDefault: number, pszRegVal: string | Win32Pointer): number;
+  SHMessageBoxCheckW(
+    hwnd: Win32Pointer,
+    pszText: string | Win32Pointer,
+    pszCaption: string | Win32Pointer,
+    uType: number,
+    iDefault: number,
+    pszRegVal: string | Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHMessageBoxCheckW */
-  SHMessageBoxCheck(hwnd: Win32Pointer, pszText: string | Win32Pointer, pszCaption: string | Win32Pointer, uType: number, iDefault: number, pszRegVal: string | Win32Pointer): number;
+  SHMessageBoxCheck(
+    hwnd: Win32Pointer,
+    pszText: string | Win32Pointer,
+    pszCaption: string | Win32Pointer,
+    uType: number,
+    iDefault: number,
+    pszRegVal: string | Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHOpenRegStream2A */
-  SHOpenRegStream2A(hkey: Win32Pointer, pszSubkey: string | Win32Pointer, pszValue: string | Win32Pointer, grfMode: number): number | null;
+  SHOpenRegStream2A(
+    hkey: Win32Pointer,
+    pszSubkey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    grfMode: number,
+  ): number | null;
   /** shlwapi.dll!SHOpenRegStream2W */
-  SHOpenRegStream2W(hkey: Win32Pointer, pszSubkey: string | Win32Pointer, pszValue: string | Win32Pointer, grfMode: number): number | null;
+  SHOpenRegStream2W(
+    hkey: Win32Pointer,
+    pszSubkey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    grfMode: number,
+  ): number | null;
   /** shlwapi.dll!SHOpenRegStream2W */
-  SHOpenRegStream2(hkey: Win32Pointer, pszSubkey: string | Win32Pointer, pszValue: string | Win32Pointer, grfMode: number): number | null;
+  SHOpenRegStream2(
+    hkey: Win32Pointer,
+    pszSubkey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    grfMode: number,
+  ): number | null;
   /** shlwapi.dll!SHOpenRegStreamA */
-  SHOpenRegStreamA(hkey: Win32Pointer, pszSubkey: string | Win32Pointer, pszValue: string | Win32Pointer, grfMode: number): number | null;
+  SHOpenRegStreamA(
+    hkey: Win32Pointer,
+    pszSubkey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    grfMode: number,
+  ): number | null;
   /** shlwapi.dll!SHOpenRegStreamW */
-  SHOpenRegStreamW(hkey: Win32Pointer, pszSubkey: string | Win32Pointer, pszValue: string | Win32Pointer, grfMode: number): number | null;
+  SHOpenRegStreamW(
+    hkey: Win32Pointer,
+    pszSubkey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    grfMode: number,
+  ): number | null;
   /** shlwapi.dll!SHOpenRegStreamW */
-  SHOpenRegStream(hkey: Win32Pointer, pszSubkey: string | Win32Pointer, pszValue: string | Win32Pointer, grfMode: number): number | null;
+  SHOpenRegStream(
+    hkey: Win32Pointer,
+    pszSubkey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    grfMode: number,
+  ): number | null;
   /** shlwapi.dll!SHQueryInfoKeyA */
-  SHQueryInfoKeyA(hkey: Win32Pointer, pcSubKeys: Win32Pointer, pcchMaxSubKeyLen: Win32Pointer, pcValues: Win32Pointer, pcchMaxValueNameLen: Win32Pointer): number;
+  SHQueryInfoKeyA(
+    hkey: Win32Pointer,
+    pcSubKeys: Win32Pointer,
+    pcchMaxSubKeyLen: Win32Pointer,
+    pcValues: Win32Pointer,
+    pcchMaxValueNameLen: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHQueryInfoKeyW */
-  SHQueryInfoKeyW(hkey: Win32Pointer, pcSubKeys: Win32Pointer, pcchMaxSubKeyLen: Win32Pointer, pcValues: Win32Pointer, pcchMaxValueNameLen: Win32Pointer): number;
+  SHQueryInfoKeyW(
+    hkey: Win32Pointer,
+    pcSubKeys: Win32Pointer,
+    pcchMaxSubKeyLen: Win32Pointer,
+    pcValues: Win32Pointer,
+    pcchMaxValueNameLen: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHQueryInfoKeyW */
-  SHQueryInfoKey(hkey: Win32Pointer, pcSubKeys: Win32Pointer, pcchMaxSubKeyLen: Win32Pointer, pcValues: Win32Pointer, pcchMaxValueNameLen: Win32Pointer): number;
+  SHQueryInfoKey(
+    hkey: Win32Pointer,
+    pcSubKeys: Win32Pointer,
+    pcchMaxSubKeyLen: Win32Pointer,
+    pcValues: Win32Pointer,
+    pcchMaxValueNameLen: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHQueryValueExA */
-  SHQueryValueExA(hkey: Win32Pointer, pszValue: string | Win32Pointer, pdwReserved: Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHQueryValueExA(
+    hkey: Win32Pointer,
+    pszValue: string | Win32Pointer,
+    pdwReserved: Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHQueryValueExW */
-  SHQueryValueExW(hkey: Win32Pointer, pszValue: string | Win32Pointer, pdwReserved: Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHQueryValueExW(
+    hkey: Win32Pointer,
+    pszValue: string | Win32Pointer,
+    pdwReserved: Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHQueryValueExW */
-  SHQueryValueEx(hkey: Win32Pointer, pszValue: string | Win32Pointer, pdwReserved: Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHQueryValueEx(
+    hkey: Win32Pointer,
+    pszValue: string | Win32Pointer,
+    pdwReserved: Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHRegCloseUSKey */
   SHRegCloseUSKey(hUSKey: number | bigint): number;
   /** shlwapi.dll!SHRegCreateUSKeyA */
-  SHRegCreateUSKeyA(pszPath: string | Win32Pointer, samDesired: number, hRelativeUSKey: number | bigint, phNewUSKey: Win32Pointer, dwFlags: number): number;
+  SHRegCreateUSKeyA(
+    pszPath: string | Win32Pointer,
+    samDesired: number,
+    hRelativeUSKey: number | bigint,
+    phNewUSKey: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegCreateUSKeyW */
-  SHRegCreateUSKeyW(pwzPath: string | Win32Pointer, samDesired: number, hRelativeUSKey: number | bigint, phNewUSKey: Win32Pointer, dwFlags: number): number;
+  SHRegCreateUSKeyW(
+    pwzPath: string | Win32Pointer,
+    samDesired: number,
+    hRelativeUSKey: number | bigint,
+    phNewUSKey: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegCreateUSKeyW */
-  SHRegCreateUSKey(pwzPath: string | Win32Pointer, samDesired: number, hRelativeUSKey: number | bigint, phNewUSKey: Win32Pointer, dwFlags: number): number;
+  SHRegCreateUSKey(
+    pwzPath: string | Win32Pointer,
+    samDesired: number,
+    hRelativeUSKey: number | bigint,
+    phNewUSKey: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegDeleteEmptyUSKeyA */
   SHRegDeleteEmptyUSKeyA(hUSKey: number | bigint, pszSubKey: string | Win32Pointer, delRegFlags: number): number;
   /** shlwapi.dll!SHRegDeleteEmptyUSKeyW */
@@ -589,81 +945,343 @@ interface Functions {
   /** shlwapi.dll!SHRegDuplicateHKey */
   SHRegDuplicateHKey(hkey: Win32Pointer): number | null;
   /** shlwapi.dll!SHRegEnumUSKeyA */
-  SHRegEnumUSKeyA(hUSKey: number | bigint, dwIndex: number, pszName: string | Win32Pointer, pcchName: Win32Pointer, enumRegFlags: number): number;
+  SHRegEnumUSKeyA(
+    hUSKey: number | bigint,
+    dwIndex: number,
+    pszName: string | Win32Pointer,
+    pcchName: Win32Pointer,
+    enumRegFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegEnumUSKeyW */
-  SHRegEnumUSKeyW(hUSKey: number | bigint, dwIndex: number, pwzName: string | Win32Pointer, pcchName: Win32Pointer, enumRegFlags: number): number;
+  SHRegEnumUSKeyW(
+    hUSKey: number | bigint,
+    dwIndex: number,
+    pwzName: string | Win32Pointer,
+    pcchName: Win32Pointer,
+    enumRegFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegEnumUSKeyW */
-  SHRegEnumUSKey(hUSKey: number | bigint, dwIndex: number, pwzName: string | Win32Pointer, pcchName: Win32Pointer, enumRegFlags: number): number;
+  SHRegEnumUSKey(
+    hUSKey: number | bigint,
+    dwIndex: number,
+    pwzName: string | Win32Pointer,
+    pcchName: Win32Pointer,
+    enumRegFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegEnumUSValueA */
-  SHRegEnumUSValueA(hUSkey: number | bigint, dwIndex: number, pszValueName: string | Win32Pointer, pcchValueName: Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer, enumRegFlags: number): number;
+  SHRegEnumUSValueA(
+    hUSkey: number | bigint,
+    dwIndex: number,
+    pszValueName: string | Win32Pointer,
+    pcchValueName: Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+    enumRegFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegEnumUSValueW */
-  SHRegEnumUSValueW(hUSkey: number | bigint, dwIndex: number, pszValueName: string | Win32Pointer, pcchValueName: Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer, enumRegFlags: number): number;
+  SHRegEnumUSValueW(
+    hUSkey: number | bigint,
+    dwIndex: number,
+    pszValueName: string | Win32Pointer,
+    pcchValueName: Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+    enumRegFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegEnumUSValueW */
-  SHRegEnumUSValue(hUSkey: number | bigint, dwIndex: number, pszValueName: string | Win32Pointer, pcchValueName: Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer, enumRegFlags: number): number;
+  SHRegEnumUSValue(
+    hUSkey: number | bigint,
+    dwIndex: number,
+    pszValueName: string | Win32Pointer,
+    pcchValueName: Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+    enumRegFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegGetBoolUSValueA */
-  SHRegGetBoolUSValueA(pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, fIgnoreHKCU: number, fDefault: number): number;
+  SHRegGetBoolUSValueA(
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    fIgnoreHKCU: number,
+    fDefault: number,
+  ): number;
   /** shlwapi.dll!SHRegGetBoolUSValueW */
-  SHRegGetBoolUSValueW(pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, fIgnoreHKCU: number, fDefault: number): number;
+  SHRegGetBoolUSValueW(
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    fIgnoreHKCU: number,
+    fDefault: number,
+  ): number;
   /** shlwapi.dll!SHRegGetBoolUSValueW */
-  SHRegGetBoolUSValue(pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, fIgnoreHKCU: number, fDefault: number): number;
+  SHRegGetBoolUSValue(
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    fIgnoreHKCU: number,
+    fDefault: number,
+  ): number;
   /** shlwapi.dll!SHRegGetIntW */
   SHRegGetIntW(hk: Win32Pointer, pwzKey: string | Win32Pointer, iDefault: number): number;
   /** shlwapi.dll!SHRegGetPathA */
-  SHRegGetPathA(hKey: Win32Pointer, pcszSubKey: string | Win32Pointer, pcszValue: string | Win32Pointer, pszPath: string | Win32Pointer, dwFlags: number): number;
+  SHRegGetPathA(
+    hKey: Win32Pointer,
+    pcszSubKey: string | Win32Pointer,
+    pcszValue: string | Win32Pointer,
+    pszPath: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegGetPathW */
-  SHRegGetPathW(hKey: Win32Pointer, pcszSubKey: string | Win32Pointer, pcszValue: string | Win32Pointer, pszPath: string | Win32Pointer, dwFlags: number): number;
+  SHRegGetPathW(
+    hKey: Win32Pointer,
+    pcszSubKey: string | Win32Pointer,
+    pcszValue: string | Win32Pointer,
+    pszPath: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegGetPathW */
-  SHRegGetPath(hKey: Win32Pointer, pcszSubKey: string | Win32Pointer, pcszValue: string | Win32Pointer, pszPath: string | Win32Pointer, dwFlags: number): number;
+  SHRegGetPath(
+    hKey: Win32Pointer,
+    pcszSubKey: string | Win32Pointer,
+    pcszValue: string | Win32Pointer,
+    pszPath: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegGetUSValueA */
-  SHRegGetUSValueA(pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer, fIgnoreHKCU: number, pvDefaultData: Win32Pointer, dwDefaultDataSize: number): number;
+  SHRegGetUSValueA(
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+    fIgnoreHKCU: number,
+    pvDefaultData: Win32Pointer,
+    dwDefaultDataSize: number,
+  ): number;
   /** shlwapi.dll!SHRegGetUSValueW */
-  SHRegGetUSValueW(pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer, fIgnoreHKCU: number, pvDefaultData: Win32Pointer, dwDefaultDataSize: number): number;
+  SHRegGetUSValueW(
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+    fIgnoreHKCU: number,
+    pvDefaultData: Win32Pointer,
+    dwDefaultDataSize: number,
+  ): number;
   /** shlwapi.dll!SHRegGetUSValueW */
-  SHRegGetUSValue(pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer, fIgnoreHKCU: number, pvDefaultData: Win32Pointer, dwDefaultDataSize: number): number;
+  SHRegGetUSValue(
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+    fIgnoreHKCU: number,
+    pvDefaultData: Win32Pointer,
+    dwDefaultDataSize: number,
+  ): number;
   /** shlwapi.dll!SHRegGetValueA */
-  SHRegGetValueA(hkey: Win32Pointer, pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, srrfFlags: number, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHRegGetValueA(
+    hkey: Win32Pointer,
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    srrfFlags: number,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHRegGetValueFromHKCUHKLM */
-  SHRegGetValueFromHKCUHKLM(pwszKey: string | Win32Pointer, pwszValue: string | Win32Pointer, srrfFlags: number, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHRegGetValueFromHKCUHKLM(
+    pwszKey: string | Win32Pointer,
+    pwszValue: string | Win32Pointer,
+    srrfFlags: number,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHRegGetValueW */
-  SHRegGetValueW(hkey: Win32Pointer, pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, srrfFlags: number, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHRegGetValueW(
+    hkey: Win32Pointer,
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    srrfFlags: number,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHRegGetValueW */
-  SHRegGetValue(hkey: Win32Pointer, pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, srrfFlags: number, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  SHRegGetValue(
+    hkey: Win32Pointer,
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    srrfFlags: number,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** shlwapi.dll!SHRegOpenUSKeyA */
-  SHRegOpenUSKeyA(pszPath: string | Win32Pointer, samDesired: number, hRelativeUSKey: number | bigint, phNewUSKey: Win32Pointer, fIgnoreHKCU: number): number;
+  SHRegOpenUSKeyA(
+    pszPath: string | Win32Pointer,
+    samDesired: number,
+    hRelativeUSKey: number | bigint,
+    phNewUSKey: Win32Pointer,
+    fIgnoreHKCU: number,
+  ): number;
   /** shlwapi.dll!SHRegOpenUSKeyW */
-  SHRegOpenUSKeyW(pwzPath: string | Win32Pointer, samDesired: number, hRelativeUSKey: number | bigint, phNewUSKey: Win32Pointer, fIgnoreHKCU: number): number;
+  SHRegOpenUSKeyW(
+    pwzPath: string | Win32Pointer,
+    samDesired: number,
+    hRelativeUSKey: number | bigint,
+    phNewUSKey: Win32Pointer,
+    fIgnoreHKCU: number,
+  ): number;
   /** shlwapi.dll!SHRegOpenUSKeyW */
-  SHRegOpenUSKey(pwzPath: string | Win32Pointer, samDesired: number, hRelativeUSKey: number | bigint, phNewUSKey: Win32Pointer, fIgnoreHKCU: number): number;
+  SHRegOpenUSKey(
+    pwzPath: string | Win32Pointer,
+    samDesired: number,
+    hRelativeUSKey: number | bigint,
+    phNewUSKey: Win32Pointer,
+    fIgnoreHKCU: number,
+  ): number;
   /** shlwapi.dll!SHRegQueryInfoUSKeyA */
-  SHRegQueryInfoUSKeyA(hUSKey: number | bigint, pcSubKeys: Win32Pointer, pcchMaxSubKeyLen: Win32Pointer, pcValues: Win32Pointer, pcchMaxValueNameLen: Win32Pointer, enumRegFlags: number): number;
+  SHRegQueryInfoUSKeyA(
+    hUSKey: number | bigint,
+    pcSubKeys: Win32Pointer,
+    pcchMaxSubKeyLen: Win32Pointer,
+    pcValues: Win32Pointer,
+    pcchMaxValueNameLen: Win32Pointer,
+    enumRegFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegQueryInfoUSKeyW */
-  SHRegQueryInfoUSKeyW(hUSKey: number | bigint, pcSubKeys: Win32Pointer, pcchMaxSubKeyLen: Win32Pointer, pcValues: Win32Pointer, pcchMaxValueNameLen: Win32Pointer, enumRegFlags: number): number;
+  SHRegQueryInfoUSKeyW(
+    hUSKey: number | bigint,
+    pcSubKeys: Win32Pointer,
+    pcchMaxSubKeyLen: Win32Pointer,
+    pcValues: Win32Pointer,
+    pcchMaxValueNameLen: Win32Pointer,
+    enumRegFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegQueryInfoUSKeyW */
-  SHRegQueryInfoUSKey(hUSKey: number | bigint, pcSubKeys: Win32Pointer, pcchMaxSubKeyLen: Win32Pointer, pcValues: Win32Pointer, pcchMaxValueNameLen: Win32Pointer, enumRegFlags: number): number;
+  SHRegQueryInfoUSKey(
+    hUSKey: number | bigint,
+    pcSubKeys: Win32Pointer,
+    pcchMaxSubKeyLen: Win32Pointer,
+    pcValues: Win32Pointer,
+    pcchMaxValueNameLen: Win32Pointer,
+    enumRegFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegQueryUSValueA */
-  SHRegQueryUSValueA(hUSKey: number | bigint, pszValue: string | Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer, fIgnoreHKCU: number, pvDefaultData: Win32Pointer, dwDefaultDataSize: number): number;
+  SHRegQueryUSValueA(
+    hUSKey: number | bigint,
+    pszValue: string | Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+    fIgnoreHKCU: number,
+    pvDefaultData: Win32Pointer,
+    dwDefaultDataSize: number,
+  ): number;
   /** shlwapi.dll!SHRegQueryUSValueW */
-  SHRegQueryUSValueW(hUSKey: number | bigint, pszValue: string | Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer, fIgnoreHKCU: number, pvDefaultData: Win32Pointer, dwDefaultDataSize: number): number;
+  SHRegQueryUSValueW(
+    hUSKey: number | bigint,
+    pszValue: string | Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+    fIgnoreHKCU: number,
+    pvDefaultData: Win32Pointer,
+    dwDefaultDataSize: number,
+  ): number;
   /** shlwapi.dll!SHRegQueryUSValueW */
-  SHRegQueryUSValue(hUSKey: number | bigint, pszValue: string | Win32Pointer, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer, fIgnoreHKCU: number, pvDefaultData: Win32Pointer, dwDefaultDataSize: number): number;
+  SHRegQueryUSValue(
+    hUSKey: number | bigint,
+    pszValue: string | Win32Pointer,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+    fIgnoreHKCU: number,
+    pvDefaultData: Win32Pointer,
+    dwDefaultDataSize: number,
+  ): number;
   /** shlwapi.dll!SHRegSetPathA */
-  SHRegSetPathA(hKey: Win32Pointer, pcszSubKey: string | Win32Pointer, pcszValue: string | Win32Pointer, pcszPath: string | Win32Pointer, dwFlags: number): number;
+  SHRegSetPathA(
+    hKey: Win32Pointer,
+    pcszSubKey: string | Win32Pointer,
+    pcszValue: string | Win32Pointer,
+    pcszPath: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegSetPathW */
-  SHRegSetPathW(hKey: Win32Pointer, pcszSubKey: string | Win32Pointer, pcszValue: string | Win32Pointer, pcszPath: string | Win32Pointer, dwFlags: number): number;
+  SHRegSetPathW(
+    hKey: Win32Pointer,
+    pcszSubKey: string | Win32Pointer,
+    pcszValue: string | Win32Pointer,
+    pcszPath: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegSetPathW */
-  SHRegSetPath(hKey: Win32Pointer, pcszSubKey: string | Win32Pointer, pcszValue: string | Win32Pointer, pcszPath: string | Win32Pointer, dwFlags: number): number;
+  SHRegSetPath(
+    hKey: Win32Pointer,
+    pcszSubKey: string | Win32Pointer,
+    pcszValue: string | Win32Pointer,
+    pcszPath: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegSetUSValueA */
-  SHRegSetUSValueA(pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, dwType: number, pvData: Win32Pointer, cbData: number, dwFlags: number): number;
+  SHRegSetUSValueA(
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    dwType: number,
+    pvData: Win32Pointer,
+    cbData: number,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegSetUSValueW */
-  SHRegSetUSValueW(pwzSubKey: string | Win32Pointer, pwzValue: string | Win32Pointer, dwType: number, pvData: Win32Pointer, cbData: number, dwFlags: number): number;
+  SHRegSetUSValueW(
+    pwzSubKey: string | Win32Pointer,
+    pwzValue: string | Win32Pointer,
+    dwType: number,
+    pvData: Win32Pointer,
+    cbData: number,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegSetUSValueW */
-  SHRegSetUSValue(pwzSubKey: string | Win32Pointer, pwzValue: string | Win32Pointer, dwType: number, pvData: Win32Pointer, cbData: number, dwFlags: number): number;
+  SHRegSetUSValue(
+    pwzSubKey: string | Win32Pointer,
+    pwzValue: string | Win32Pointer,
+    dwType: number,
+    pvData: Win32Pointer,
+    cbData: number,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegWriteUSValueA */
-  SHRegWriteUSValueA(hUSKey: number | bigint, pszValue: string | Win32Pointer, dwType: number, pvData: Win32Pointer, cbData: number, dwFlags: number): number;
+  SHRegWriteUSValueA(
+    hUSKey: number | bigint,
+    pszValue: string | Win32Pointer,
+    dwType: number,
+    pvData: Win32Pointer,
+    cbData: number,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegWriteUSValueW */
-  SHRegWriteUSValueW(hUSKey: number | bigint, pwzValue: string | Win32Pointer, dwType: number, pvData: Win32Pointer, cbData: number, dwFlags: number): number;
+  SHRegWriteUSValueW(
+    hUSKey: number | bigint,
+    pwzValue: string | Win32Pointer,
+    dwType: number,
+    pvData: Win32Pointer,
+    cbData: number,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHRegWriteUSValueW */
-  SHRegWriteUSValue(hUSKey: number | bigint, pwzValue: string | Win32Pointer, dwType: number, pvData: Win32Pointer, cbData: number, dwFlags: number): number;
+  SHRegWriteUSValue(
+    hUSKey: number | bigint,
+    pwzValue: string | Win32Pointer,
+    dwType: number,
+    pvData: Win32Pointer,
+    cbData: number,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!SHReleaseThreadRef */
   SHReleaseThreadRef(): number;
   /** shlwapi.dll!SHSendMessageBroadcastA */
@@ -675,11 +1293,32 @@ interface Functions {
   /** shlwapi.dll!SHSetThreadRef */
   SHSetThreadRef(punk: Win32Pointer): number;
   /** shlwapi.dll!SHSetValueA */
-  SHSetValueA(hkey: Win32Pointer, pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, dwType: number, pvData: Win32Pointer, cbData: number): number;
+  SHSetValueA(
+    hkey: Win32Pointer,
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    dwType: number,
+    pvData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** shlwapi.dll!SHSetValueW */
-  SHSetValueW(hkey: Win32Pointer, pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, dwType: number, pvData: Win32Pointer, cbData: number): number;
+  SHSetValueW(
+    hkey: Win32Pointer,
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    dwType: number,
+    pvData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** shlwapi.dll!SHSetValueW */
-  SHSetValue(hkey: Win32Pointer, pszSubKey: string | Win32Pointer, pszValue: string | Win32Pointer, dwType: number, pvData: Win32Pointer, cbData: number): number;
+  SHSetValue(
+    hkey: Win32Pointer,
+    pszSubKey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    dwType: number,
+    pvData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** shlwapi.dll!SHSkipJunction */
   SHSkipJunction(pbc: Win32Pointer, pclsid: Win32Pointer): number;
   /** shlwapi.dll!SHStrDupA */
@@ -701,11 +1340,29 @@ interface Functions {
   /** shlwapi.dll!SHUnlockShared */
   SHUnlockShared(pvData: Win32Pointer): number;
   /** shlwapi.dll!ShellMessageBoxA */
-  ShellMessageBoxA(hAppInst: Win32Pointer, hWnd: Win32Pointer, lpcText: string | Win32Pointer, lpcTitle: string | Win32Pointer, fuStyle: number): number;
+  ShellMessageBoxA(
+    hAppInst: Win32Pointer,
+    hWnd: Win32Pointer,
+    lpcText: string | Win32Pointer,
+    lpcTitle: string | Win32Pointer,
+    fuStyle: number,
+  ): number;
   /** shlwapi.dll!ShellMessageBoxW */
-  ShellMessageBoxW(hAppInst: Win32Pointer, hWnd: Win32Pointer, lpcText: string | Win32Pointer, lpcTitle: string | Win32Pointer, fuStyle: number): number;
+  ShellMessageBoxW(
+    hAppInst: Win32Pointer,
+    hWnd: Win32Pointer,
+    lpcText: string | Win32Pointer,
+    lpcTitle: string | Win32Pointer,
+    fuStyle: number,
+  ): number;
   /** shlwapi.dll!ShellMessageBoxW */
-  ShellMessageBox(hAppInst: Win32Pointer, hWnd: Win32Pointer, lpcText: string | Win32Pointer, lpcTitle: string | Win32Pointer, fuStyle: number): number;
+  ShellMessageBox(
+    hAppInst: Win32Pointer,
+    hWnd: Win32Pointer,
+    lpcText: string | Win32Pointer,
+    lpcTitle: string | Win32Pointer,
+    fuStyle: number,
+  ): number;
   /** shlwapi.dll!StrCSpnA */
   StrCSpnA(pszStr: string | Win32Pointer, pszSet: string | Win32Pointer): number;
   /** shlwapi.dll!StrCSpnIA */
@@ -819,11 +1476,26 @@ interface Functions {
   /** shlwapi.dll!StrFromTimeIntervalW */
   StrFromTimeInterval(pszOut: string | Win32Pointer, cchMax: number, dwTimeMS: number, digits: number): number;
   /** shlwapi.dll!StrIsIntlEqualA */
-  StrIsIntlEqualA(fCaseSens: number, pszString1: string | Win32Pointer, pszString2: string | Win32Pointer, nChar: number): number;
+  StrIsIntlEqualA(
+    fCaseSens: number,
+    pszString1: string | Win32Pointer,
+    pszString2: string | Win32Pointer,
+    nChar: number,
+  ): number;
   /** shlwapi.dll!StrIsIntlEqualW */
-  StrIsIntlEqualW(fCaseSens: number, pszString1: string | Win32Pointer, pszString2: string | Win32Pointer, nChar: number): number;
+  StrIsIntlEqualW(
+    fCaseSens: number,
+    pszString1: string | Win32Pointer,
+    pszString2: string | Win32Pointer,
+    nChar: number,
+  ): number;
   /** shlwapi.dll!StrIsIntlEqualW */
-  StrIsIntlEqual(fCaseSens: number, pszString1: string | Win32Pointer, pszString2: string | Win32Pointer, nChar: number): number;
+  StrIsIntlEqual(
+    fCaseSens: number,
+    pszString1: string | Win32Pointer,
+    pszString2: string | Win32Pointer,
+    nChar: number,
+  ): number;
   /** shlwapi.dll!StrNCatA */
   StrNCatA(psz1: string | Win32Pointer, psz2: string | Win32Pointer, cchMax: number): number | null;
   /** shlwapi.dll!StrNCatW */
@@ -849,11 +1521,23 @@ interface Functions {
   /** shlwapi.dll!StrRChrW */
   StrRChr(pszStart: string | Win32Pointer, pszEnd: string | Win32Pointer, wMatch: number): number | null;
   /** shlwapi.dll!StrRStrIA */
-  StrRStrIA(pszSource: string | Win32Pointer, pszLast: string | Win32Pointer, pszSrch: string | Win32Pointer): number | null;
+  StrRStrIA(
+    pszSource: string | Win32Pointer,
+    pszLast: string | Win32Pointer,
+    pszSrch: string | Win32Pointer,
+  ): number | null;
   /** shlwapi.dll!StrRStrIW */
-  StrRStrIW(pszSource: string | Win32Pointer, pszLast: string | Win32Pointer, pszSrch: string | Win32Pointer): number | null;
+  StrRStrIW(
+    pszSource: string | Win32Pointer,
+    pszLast: string | Win32Pointer,
+    pszSrch: string | Win32Pointer,
+  ): number | null;
   /** shlwapi.dll!StrRStrIW */
-  StrRStrI(pszSource: string | Win32Pointer, pszLast: string | Win32Pointer, pszSrch: string | Win32Pointer): number | null;
+  StrRStrI(
+    pszSource: string | Win32Pointer,
+    pszLast: string | Win32Pointer,
+    pszSrch: string | Win32Pointer,
+  ): number | null;
   /** shlwapi.dll!StrRetToBSTR */
   StrRetToBSTR(pstr: Win32Pointer, pidl: Win32Pointer, pbstr: Win32Pointer): number;
   /** shlwapi.dll!StrRetToBufA */
@@ -915,23 +1599,71 @@ interface Functions {
   /** shlwapi.dll!StrTrimW */
   StrTrim(psz: string | Win32Pointer, pszTrimChars: string | Win32Pointer): number;
   /** shlwapi.dll!UrlApplySchemeA */
-  UrlApplySchemeA(pszIn: string | Win32Pointer, pszOut: string | Win32Pointer, pcchOut: Win32Pointer, dwFlags: number): number;
+  UrlApplySchemeA(
+    pszIn: string | Win32Pointer,
+    pszOut: string | Win32Pointer,
+    pcchOut: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlApplySchemeW */
-  UrlApplySchemeW(pszIn: string | Win32Pointer, pszOut: string | Win32Pointer, pcchOut: Win32Pointer, dwFlags: number): number;
+  UrlApplySchemeW(
+    pszIn: string | Win32Pointer,
+    pszOut: string | Win32Pointer,
+    pcchOut: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlApplySchemeW */
-  UrlApplyScheme(pszIn: string | Win32Pointer, pszOut: string | Win32Pointer, pcchOut: Win32Pointer, dwFlags: number): number;
+  UrlApplyScheme(
+    pszIn: string | Win32Pointer,
+    pszOut: string | Win32Pointer,
+    pcchOut: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlCanonicalizeA */
-  UrlCanonicalizeA(pszUrl: string | Win32Pointer, pszCanonicalized: string | Win32Pointer, pcchCanonicalized: Win32Pointer, dwFlags: number): number;
+  UrlCanonicalizeA(
+    pszUrl: string | Win32Pointer,
+    pszCanonicalized: string | Win32Pointer,
+    pcchCanonicalized: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlCanonicalizeW */
-  UrlCanonicalizeW(pszUrl: string | Win32Pointer, pszCanonicalized: string | Win32Pointer, pcchCanonicalized: Win32Pointer, dwFlags: number): number;
+  UrlCanonicalizeW(
+    pszUrl: string | Win32Pointer,
+    pszCanonicalized: string | Win32Pointer,
+    pcchCanonicalized: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlCanonicalizeW */
-  UrlCanonicalize(pszUrl: string | Win32Pointer, pszCanonicalized: string | Win32Pointer, pcchCanonicalized: Win32Pointer, dwFlags: number): number;
+  UrlCanonicalize(
+    pszUrl: string | Win32Pointer,
+    pszCanonicalized: string | Win32Pointer,
+    pcchCanonicalized: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlCombineA */
-  UrlCombineA(pszBase: string | Win32Pointer, pszRelative: string | Win32Pointer, pszCombined: string | Win32Pointer, pcchCombined: Win32Pointer, dwFlags: number): number;
+  UrlCombineA(
+    pszBase: string | Win32Pointer,
+    pszRelative: string | Win32Pointer,
+    pszCombined: string | Win32Pointer,
+    pcchCombined: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlCombineW */
-  UrlCombineW(pszBase: string | Win32Pointer, pszRelative: string | Win32Pointer, pszCombined: string | Win32Pointer, pcchCombined: Win32Pointer, dwFlags: number): number;
+  UrlCombineW(
+    pszBase: string | Win32Pointer,
+    pszRelative: string | Win32Pointer,
+    pszCombined: string | Win32Pointer,
+    pcchCombined: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlCombineW */
-  UrlCombine(pszBase: string | Win32Pointer, pszRelative: string | Win32Pointer, pszCombined: string | Win32Pointer, pcchCombined: Win32Pointer, dwFlags: number): number;
+  UrlCombine(
+    pszBase: string | Win32Pointer,
+    pszRelative: string | Win32Pointer,
+    pszCombined: string | Win32Pointer,
+    pcchCombined: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlCompareA */
   UrlCompareA(psz1: string | Win32Pointer, psz2: string | Win32Pointer, fIgnoreSlash: number): number;
   /** shlwapi.dll!UrlCompareW */
@@ -939,17 +1671,47 @@ interface Functions {
   /** shlwapi.dll!UrlCompareW */
   UrlCompare(psz1: string | Win32Pointer, psz2: string | Win32Pointer, fIgnoreSlash: number): number;
   /** shlwapi.dll!UrlCreateFromPathA */
-  UrlCreateFromPathA(pszPath: string | Win32Pointer, pszUrl: string | Win32Pointer, pcchUrl: Win32Pointer, dwFlags: number): number;
+  UrlCreateFromPathA(
+    pszPath: string | Win32Pointer,
+    pszUrl: string | Win32Pointer,
+    pcchUrl: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlCreateFromPathW */
-  UrlCreateFromPathW(pszPath: string | Win32Pointer, pszUrl: string | Win32Pointer, pcchUrl: Win32Pointer, dwFlags: number): number;
+  UrlCreateFromPathW(
+    pszPath: string | Win32Pointer,
+    pszUrl: string | Win32Pointer,
+    pcchUrl: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlCreateFromPathW */
-  UrlCreateFromPath(pszPath: string | Win32Pointer, pszUrl: string | Win32Pointer, pcchUrl: Win32Pointer, dwFlags: number): number;
+  UrlCreateFromPath(
+    pszPath: string | Win32Pointer,
+    pszUrl: string | Win32Pointer,
+    pcchUrl: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlEscapeA */
-  UrlEscapeA(pszUrl: string | Win32Pointer, pszEscaped: string | Win32Pointer, pcchEscaped: Win32Pointer, dwFlags: number): number;
+  UrlEscapeA(
+    pszUrl: string | Win32Pointer,
+    pszEscaped: string | Win32Pointer,
+    pcchEscaped: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlEscapeW */
-  UrlEscapeW(pszUrl: string | Win32Pointer, pszEscaped: string | Win32Pointer, pcchEscaped: Win32Pointer, dwFlags: number): number;
+  UrlEscapeW(
+    pszUrl: string | Win32Pointer,
+    pszEscaped: string | Win32Pointer,
+    pcchEscaped: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlEscapeW */
-  UrlEscape(pszUrl: string | Win32Pointer, pszEscaped: string | Win32Pointer, pcchEscaped: Win32Pointer, dwFlags: number): number;
+  UrlEscape(
+    pszUrl: string | Win32Pointer,
+    pszEscaped: string | Win32Pointer,
+    pcchEscaped: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlFixupW */
   UrlFixupW(pcszUrl: string | Win32Pointer, pszTranslatedUrl: string | Win32Pointer, cchMax: number): number;
   /** shlwapi.dll!UrlGetLocationA */
@@ -959,11 +1721,29 @@ interface Functions {
   /** shlwapi.dll!UrlGetLocationW */
   UrlGetLocation(pszURL: string | Win32Pointer): number | null;
   /** shlwapi.dll!UrlGetPartA */
-  UrlGetPartA(pszIn: string | Win32Pointer, pszOut: string | Win32Pointer, pcchOut: Win32Pointer, dwPart: number, dwFlags: number): number;
+  UrlGetPartA(
+    pszIn: string | Win32Pointer,
+    pszOut: string | Win32Pointer,
+    pcchOut: Win32Pointer,
+    dwPart: number,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlGetPartW */
-  UrlGetPartW(pszIn: string | Win32Pointer, pszOut: string | Win32Pointer, pcchOut: Win32Pointer, dwPart: number, dwFlags: number): number;
+  UrlGetPartW(
+    pszIn: string | Win32Pointer,
+    pszOut: string | Win32Pointer,
+    pcchOut: Win32Pointer,
+    dwPart: number,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlGetPartW */
-  UrlGetPart(pszIn: string | Win32Pointer, pszOut: string | Win32Pointer, pcchOut: Win32Pointer, dwPart: number, dwFlags: number): number;
+  UrlGetPart(
+    pszIn: string | Win32Pointer,
+    pszOut: string | Win32Pointer,
+    pcchOut: Win32Pointer,
+    dwPart: number,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlHashA */
   UrlHashA(pszUrl: string | Win32Pointer, pbHash: Win32Pointer, cbHash: number): number;
   /** shlwapi.dll!UrlHashW */
@@ -989,11 +1769,26 @@ interface Functions {
   /** shlwapi.dll!UrlIsW */
   UrlIs(pszUrl: string | Win32Pointer, UrlIs: number): number;
   /** shlwapi.dll!UrlUnescapeA */
-  UrlUnescapeA(pszUrl: string | Win32Pointer, pszUnescaped: string | Win32Pointer, pcchUnescaped: Win32Pointer, dwFlags: number): number;
+  UrlUnescapeA(
+    pszUrl: string | Win32Pointer,
+    pszUnescaped: string | Win32Pointer,
+    pcchUnescaped: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlUnescapeW */
-  UrlUnescapeW(pszUrl: string | Win32Pointer, pszUnescaped: string | Win32Pointer, pcchUnescaped: Win32Pointer, dwFlags: number): number;
+  UrlUnescapeW(
+    pszUrl: string | Win32Pointer,
+    pszUnescaped: string | Win32Pointer,
+    pcchUnescaped: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!UrlUnescapeW */
-  UrlUnescape(pszUrl: string | Win32Pointer, pszUnescaped: string | Win32Pointer, pcchUnescaped: Win32Pointer, dwFlags: number): number;
+  UrlUnescape(
+    pszUrl: string | Win32Pointer,
+    pszUnescaped: string | Win32Pointer,
+    pcchUnescaped: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shlwapi.dll!WhichPlatform */
   WhichPlatform(): number;
   /** shlwapi.dll!wnsprintfA */
@@ -1003,11 +1798,26 @@ interface Functions {
   /** shlwapi.dll!wnsprintfW */
   wnsprintf(pszDest: string | Win32Pointer, cchDest: number, pszFmt: string | Win32Pointer): number;
   /** shlwapi.dll!wvnsprintfA */
-  wvnsprintfA(pszDest: string | Win32Pointer, cchDest: number, pszFmt: string | Win32Pointer, arglist: Win32Pointer): number;
+  wvnsprintfA(
+    pszDest: string | Win32Pointer,
+    cchDest: number,
+    pszFmt: string | Win32Pointer,
+    arglist: Win32Pointer,
+  ): number;
   /** shlwapi.dll!wvnsprintfW */
-  wvnsprintfW(pszDest: string | Win32Pointer, cchDest: number, pszFmt: string | Win32Pointer, arglist: Win32Pointer): number;
+  wvnsprintfW(
+    pszDest: string | Win32Pointer,
+    cchDest: number,
+    pszFmt: string | Win32Pointer,
+    arglist: Win32Pointer,
+  ): number;
   /** shlwapi.dll!wvnsprintfW */
-  wvnsprintf(pszDest: string | Win32Pointer, cchDest: number, pszFmt: string | Win32Pointer, arglist: Win32Pointer): number;
+  wvnsprintf(
+    pszDest: string | Win32Pointer,
+    cchDest: number,
+    pszFmt: string | Win32Pointer,
+    arglist: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

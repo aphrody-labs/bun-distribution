@@ -3,9 +3,21 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-gaming-tcui-l1-1-1.dll!CheckGamingPrivilegeSilently */
-  CheckGamingPrivilegeSilently(privilegeId: number, scope: Win32Pointer, policy: Win32Pointer, hasPrivilege: Win32Pointer): number;
+  CheckGamingPrivilegeSilently(
+    privilegeId: number,
+    scope: Win32Pointer,
+    policy: Win32Pointer,
+    hasPrivilege: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-1.dll!CheckGamingPrivilegeWithUI */
-  CheckGamingPrivilegeWithUI(privilegeId: number, scope: Win32Pointer, policy: Win32Pointer, friendlyMessage: Win32Pointer, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  CheckGamingPrivilegeWithUI(
+    privilegeId: number,
+    scope: Win32Pointer,
+    policy: Win32Pointer,
+    friendlyMessage: Win32Pointer,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

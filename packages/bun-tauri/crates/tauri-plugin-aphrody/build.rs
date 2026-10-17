@@ -37,7 +37,11 @@ mod window_state;
 const APHRODY_COMMANDS: &[&str] = &["bun_info", "bun_request", "bun_restart"];
 
 fn enabled(feature: &str) -> bool {
-    std::env::var_os(format!("CARGO_FEATURE_{}", feature.to_uppercase().replace('-', "_"))).is_some()
+    std::env::var_os(format!(
+        "CARGO_FEATURE_{}",
+        feature.to_uppercase().replace('-', "_")
+    ))
+    .is_some()
 }
 
 fn main() {

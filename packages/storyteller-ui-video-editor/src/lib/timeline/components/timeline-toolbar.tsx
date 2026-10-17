@@ -1,29 +1,15 @@
 import { useEditor } from "../../editor/use-editor";
 import { useElementSelection } from "../hooks/element/use-element-selection";
-import {
-  TooltipProvider,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "../../components/ui/tooltip";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "../../components/ui/tooltip";
 import { Button } from "../../components/ui/button";
-import {
-  SplitButton,
-  SplitButtonLeft,
-  SplitButtonRight,
-  SplitButtonSeparator,
-} from "../../components/ui/split-button";
+import { SplitButton, SplitButtonLeft, SplitButtonRight, SplitButtonSeparator } from "../../components/ui/split-button";
 import { Slider } from "../../components/ui/slider";
 import { TIMELINE_ZOOM_BUTTON_FACTOR } from "./interaction";
 import { TIMELINE_ZOOM_MAX } from "../scale";
 import { sliderToZoom, zoomToSlider } from "../zoom-utils";
 import { ScenesView } from "../../components/editor/scenes-view";
 import { type TActionWithOptionalArgs, invokeAction } from "../../actions";
-import {
-  canToggleSourceAudio,
-  getSourceAudioActionLabel,
-  isSourceAudioSeparated,
-} from "../audio-separation";
+import { canToggleSourceAudio, getSourceAudioActionLabel, isSourceAudioSeparated } from "../audio-separation";
 import { hasMediaId } from "../element-utils";
 import { cn } from "../../utils/ui";
 import { useTimelineStore } from "../timeline-store";
@@ -77,7 +63,7 @@ export function TimelineToolbar({
         <ToolbarRightSection
           zoomLevel={zoomLevel}
           minZoom={minZoom}
-          onZoomChange={(zoom) => setZoomLevel({ zoom })}
+          onZoomChange={zoom => setZoomLevel({ zoom })}
           onZoom={handleZoom}
         />
       </div>
@@ -87,14 +73,10 @@ export function TimelineToolbar({
 
 function ToolbarLeftSection() {
   const editor = useEditor();
-  const mediaAssets = useEditor((currentEditor) =>
-    currentEditor.media.getAssets(),
-  );
+  const mediaAssets = useEditor(currentEditor => currentEditor.media.getAssets());
   const { selectedElements } = useElementSelection();
   const graphEditor = useGraphEditorController();
-  const isCurrentlyBookmarked = useEditor((e) =>
-    e.scenes.isBookmarked({ time: e.playback.getCurrentTime() }),
-  );
+  const isCurrentlyBookmarked = useEditor(e => e.scenes.isBookmarked({ time: e.playback.getCurrentTime() }));
   const selectedElement =
     selectedElements.length === 1
       ? (editor.timeline.getElementsWithTracks({
@@ -111,11 +93,10 @@ function ToolbarLeftSection() {
       return null;
     }
 
-    return mediaAssets.find((asset) => asset.id === element.mediaId) ?? null;
+    return mediaAssets.find(asset => asset.id === element.mediaId) ?? null;
   })();
   const canToggleSelectedSourceAudio =
-    !!selectedElement &&
-    canToggleSourceAudio(selectedElement.element, selectedMediaAsset);
+    !!selectedElement && canToggleSourceAudio(selectedElement.element, selectedMediaAsset);
   const sourceAudioLabel =
     selectedElement?.element.type === "video"
       ? getSourceAudioActionLabel({
@@ -128,13 +109,7 @@ function ToolbarLeftSection() {
       element: selectedElement.element,
     });
 
-  const handleAction = ({
-    action,
-    event,
-  }: {
-    action: TActionWithOptionalArgs;
-    event: React.MouseEvent;
-  }) => {
+  const handleAction = ({ action, event }: { action: TActionWithOptionalArgs; event: React.MouseEvent }) => {
     event.stopPropagation();
     invokeAction(action);
   };
@@ -157,30 +132,20 @@ function ToolbarLeftSection() {
         <ToolbarButton
           icon={<HugeiconsIcon icon={AlignRightIcon} />}
           tooltip="Split right"
-          onClick={({ event }) =>
-            handleAction({ action: "split-right", event })
-          }
+          onClick={({ event }) => handleAction({ action: "split-right", event })}
         />
 
         <ToolbarButton
-          icon={
-            <HugeiconsIcon
-              icon={isSelectedSourceAudioSeparated ? Unlink02Icon : Link02Icon}
-            />
-          }
+          icon={<HugeiconsIcon icon={isSelectedSourceAudioSeparated ? Unlink02Icon : Link02Icon} />}
           tooltip={sourceAudioLabel}
           disabled={!canToggleSelectedSourceAudio}
-          onClick={({ event }) =>
-            handleAction({ action: "toggle-source-audio", event })
-          }
+          onClick={({ event }) => handleAction({ action: "toggle-source-audio", event })}
         />
 
         <ToolbarButton
           icon={<HugeiconsIcon icon={Copy01Icon} />}
           tooltip="Duplicate element"
-          onClick={({ event }) =>
-            handleAction({ action: "duplicate-selected", event })
-          }
+          onClick={({ event }) => handleAction({ action: "duplicate-selected", event })}
         />
 
         <ToolbarButton
@@ -193,9 +158,7 @@ function ToolbarLeftSection() {
         <ToolbarButton
           icon={<HugeiconsIcon icon={Delete02Icon} />}
           tooltip="Delete element"
-          onClick={({ event }) =>
-            handleAction({ action: "delete-selected", event })
-          }
+          onClick={({ event }) => handleAction({ action: "delete-selected", event })}
         />
 
         <div className="bg-border mx-1 h-6 w-px" />
@@ -205,20 +168,14 @@ function ToolbarLeftSection() {
             icon={<HugeiconsIcon icon={Bookmark02Icon} />}
             isActive={isCurrentlyBookmarked}
             tooltip={isCurrentlyBookmarked ? "Remove bookmark" : "Add bookmark"}
-            onClick={({ event }) =>
-              handleAction({ action: "toggle-bookmark", event })
-            }
+            onClick={({ event }) => handleAction({ action: "toggle-bookmark", event })}
           />
         </Tooltip>
 
         <GraphEditorPopover
           open={graphEditor.open}
           onOpenChange={graphEditor.onOpenChange}
-          value={
-            graphEditor.state.status === "ready"
-              ? graphEditor.state.cubicBezier
-              : null
-          }
+          value={graphEditor.state.status === "ready" ? graphEditor.state.cubicBezier : null}
           message={graphEditor.state.message}
           componentOptions={graphEditor.state.componentOptions}
           activeComponentKey={graphEditor.state.activeComponentKey}
@@ -231,13 +188,7 @@ function ToolbarLeftSection() {
             icon={<HugeiconsIcon icon={Chart03Icon} />}
             tooltip={graphEditor.tooltip}
             disabled={!graphEditor.canOpen}
-            buttonWrapper={(button) =>
-              graphEditor.canOpen ? (
-                <PopoverTrigger asChild>{button}</PopoverTrigger>
-              ) : (
-                button
-              )
-            }
+            buttonWrapper={button => (graphEditor.canOpen ? <PopoverTrigger asChild>{button}</PopoverTrigger> : button)}
           />
         </GraphEditorPopover>
       </TooltipProvider>
@@ -275,10 +226,10 @@ function ToolbarRightSection({
   onZoomChange: (zoom: number) => void;
   onZoom: (options: { direction: "in" | "out" }) => void;
 }) {
-  const snappingEnabled = useTimelineStore((s) => s.snappingEnabled);
-  const rippleEditingEnabled = useTimelineStore((s) => s.rippleEditingEnabled);
-  const toggleSnapping = useTimelineStore((s) => s.toggleSnapping);
-  const toggleRippleEditing = useTimelineStore((s) => s.toggleRippleEditing);
+  const snappingEnabled = useTimelineStore(s => s.snappingEnabled);
+  const rippleEditingEnabled = useTimelineStore(s => s.rippleEditingEnabled);
+  const toggleSnapping = useTimelineStore(s => s.toggleSnapping);
+  const toggleRippleEditing = useTimelineStore(s => s.toggleRippleEditing);
 
   return (
     <div className="flex items-center gap-1">
@@ -301,28 +252,18 @@ function ToolbarRightSection({
       <div className="bg-border mx-1 h-6 w-px" />
 
       <div className="flex items-center gap-1">
-        <Button
-          variant="text"
-          size="icon"
-          onClick={() => onZoom({ direction: "out" })}
-        >
+        <Button variant="text" size="icon" onClick={() => onZoom({ direction: "out" })}>
           <HugeiconsIcon icon={SearchMinusIcon} />
         </Button>
         <Slider
           className="w-28"
           value={[zoomToSlider({ zoomLevel, minZoom })]}
-          onValueChange={(values) =>
-            onZoomChange(sliderToZoom({ sliderPosition: values[0], minZoom }))
-          }
+          onValueChange={values => onZoomChange(sliderToZoom({ sliderPosition: values[0], minZoom }))}
           min={0}
           max={1}
           step={0.005}
         />
-        <Button
-          variant="text"
-          size="icon"
-          onClick={() => onZoom({ direction: "in" })}
-        >
+        <Button variant="text" size="icon" onClick={() => onZoom({ direction: "in" })}>
           <HugeiconsIcon icon={SearchAddIcon} />
         </Button>
       </div>
@@ -350,11 +291,8 @@ function ToolbarButton({
       variant={isActive ? "secondary" : "text"}
       size="icon"
       disabled={disabled}
-      onClick={onClick ? (event) => onClick({ event }) : undefined}
-      className={cn(
-        "rounded-lg",
-        disabled ? "cursor-not-allowed opacity-50" : "",
-      )}
+      onClick={onClick ? event => onClick({ event }) : undefined}
+      className={cn("rounded-lg", disabled ? "cursor-not-allowed opacity-50" : "")}
     >
       {icon}
     </Button>

@@ -34,8 +34,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "string",
         },
         pattern: {
-          description:
-            "AOB pattern with hex bytes and wildcards, e.g. '48 89 5C 24 ? 48 89 74 24 ?'.",
+          description: "AOB pattern with hex bytes and wildcards, e.g. '48 89 5C 24 ? 48 89 74 24 ?'.",
           type: "string",
         },
         maxMatches: {
@@ -101,8 +100,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "string",
         },
         blockSize: {
-          description:
-            "Block size in bytes (default 4096, min 256, max 1048576).",
+          description: "Block size in bytes (default 4096, min 256, max 1048576).",
           type: "integer",
           default: 4096,
         },
@@ -127,8 +125,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           default: 4,
         },
         maxResults: {
-          description:
-            "Maximum strings to return (default 1000, capped at 50000).",
+          description: "Maximum strings to return (default 1000, capped at 50000).",
           type: "integer",
           default: 1000,
         },
@@ -179,8 +176,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         path: {
-          description:
-            "Absolute path to the PE file (.exe / .dll / .sys / .efi).",
+          description: "Absolute path to the PE file (.exe / .dll / .sys / .efi).",
           type: "string",
         },
       },
@@ -280,8 +276,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         windowHandle: {
-          description:
-            "Exact HWND from the latest observation (0 = current foreground window).",
+          description: "Exact HWND from the latest observation (0 = current foreground window).",
           type: "integer",
         },
         x: {
@@ -319,8 +314,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         windowHandle: {
-          description:
-            "Exact HWND from the latest observation (0 = current foreground window).",
+          description: "Exact HWND from the latest observation (0 = current foreground window).",
           type: "integer",
         },
         automationId: {
@@ -344,8 +338,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           default: null,
         },
         occurrence: {
-          description:
-            "Zero-based match to click when more than one element matches.",
+          description: "Zero-based match to click when more than one element matches.",
           type: "integer",
           default: -1,
         },
@@ -369,8 +362,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         windowHandle: {
-          description:
-            "Exact HWND from the latest observation (0 = current foreground window).",
+          description: "Exact HWND from the latest observation (0 = current foreground window).",
           type: "integer",
         },
         fromX: {
@@ -421,8 +413,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         windowHandle: {
-          description:
-            "Exact HWND from the latest observation (0 = current foreground window).",
+          description: "Exact HWND from the latest observation (0 = current foreground window).",
           type: "integer",
         },
         shortcut: {
@@ -461,8 +452,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           default: true,
         },
         outputPath: {
-          description:
-            "Optional PNG export path. When set, the captured observation is also written there.",
+          description: "Optional PNG export path. When set, the captured observation is also written there.",
           type: ["string", "null"],
           default: null,
         },
@@ -480,8 +470,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         windowHandle: {
-          description:
-            "Exact HWND from the latest observation (0 = foreground window).",
+          description: "Exact HWND from the latest observation (0 = foreground window).",
           type: "integer",
           default: 0,
         },
@@ -491,20 +480,17 @@ export const TOOL_CATALOG: ReadonlyArray<{
           default: "json",
         },
         language: {
-          description:
-            "Windows OCR language tag, for example fr-FR or en-US. Null uses the user profile languages.",
+          description: "Windows OCR language tag, for example fr-FR or en-US. Null uses the user profile languages.",
           type: ["string", "null"],
           default: null,
         },
         regionX: {
-          description:
-            "Region X relative to the captured window image (0 for full image).",
+          description: "Region X relative to the captured window image (0 for full image).",
           type: "integer",
           default: 0,
         },
         regionY: {
-          description:
-            "Region Y relative to the captured window image (0 for full image).",
+          description: "Region Y relative to the captured window image (0 for full image).",
           type: "integer",
           default: 0,
         },
@@ -519,8 +505,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           default: 0,
         },
         speak: {
-          description:
-            "Play the recognized text through the installed local Windows voice.",
+          description: "Play the recognized text through the installed local Windows voice.",
           type: "boolean",
           default: false,
         },
@@ -530,8 +515,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           default: null,
         },
         audioPath: {
-          description:
-            "Optional WAV export path when speak=true; otherwise a temporary WAV is created.",
+          description: "Optional WAV export path when speak=true; otherwise a temporary WAV is created.",
           type: ["string", "null"],
           default: null,
         },
@@ -549,14 +533,12 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         windowHandle: {
-          description:
-            "Exact HWND from the latest observation; 0 records the primary desktop.",
+          description: "Exact HWND from the latest observation; 0 records the primary desktop.",
           type: "integer",
           default: 0,
         },
         outputPath: {
-          description:
-            "Output AVI path; null creates a timestamped file in the user temp directory.",
+          description: "Output AVI path; null creates a timestamped file in the user temp directory.",
           type: ["string", "null"],
           default: null,
         },
@@ -584,8 +566,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         windowHandle: {
-          description:
-            "Exact HWND from the latest observation (0 = current foreground window).",
+          description: "Exact HWND from the latest observation (0 = current foreground window).",
           type: "integer",
         },
         x: {
@@ -632,8 +613,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "string",
         },
         audioPath: {
-          description:
-            "Optional WAV export path; otherwise a temporary WAV is created.",
+          description: "Optional WAV export path; otherwise a temporary WAV is created.",
           type: ["string", "null"],
           default: null,
         },
@@ -652,8 +632,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         windowHandle: {
-          description:
-            "Exact HWND from the latest observation (0 = current foreground window).",
+          description: "Exact HWND from the latest observation (0 = current foreground window).",
           type: "integer",
         },
         text: {
@@ -695,8 +674,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         markdown: {
-          description:
-            "Markdown content for the new CURRENT_TASK.md (overwrites the existing file).",
+          description: "Markdown content for the new CURRENT_TASK.md (overwrites the existing file).",
           type: "string",
         },
       },
@@ -705,8 +683,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "coord_query_stop",
-    description:
-      "Check the A2A kill switch — presence of .coord/STOP. Returns JSON {ok,stop:true|false}.",
+    description: "Check the A2A kill switch — presence of .coord/STOP. Returns JSON {ok,stop:true|false}.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -729,8 +706,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "coord_read_task",
-    description:
-      "Read the current .coord/CURRENT_TASK.md. Returns JSON {ok,content} (content='' when absent).",
+    description: "Read the current .coord/CURRENT_TASK.md. Returns JSON {ok,content} (content='' when absent).",
     inputSchema: {
       type: "object",
       properties: {},
@@ -744,13 +720,11 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         agent: {
-          description:
-            "Agent name (e.g. 'claude', 'gemini', 'aphrody-claude'). Case-insensitive on disk.",
+          description: "Agent name (e.g. 'claude', 'gemini', 'aphrody-claude'). Case-insensitive on disk.",
           type: "string",
         },
         status: {
-          description:
-            "Full multi-line status block. Trailing newline is normalised.",
+          description: "Full multi-line status block. Trailing newline is normalised.",
           type: "string",
         },
       },
@@ -782,14 +756,12 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "delete_path",
-    description:
-      "Deletes a file or directory. Set recursive=true for non-empty directories.",
+    description: "Deletes a file or directory. Set recursive=true for non-empty directories.",
     inputSchema: {
       type: "object",
       properties: {
         path: {
-          description:
-            "Absolute or relative path. Relative paths are resolved against the user's Desktop folder.",
+          description: "Absolute or relative path. Relative paths are resolved against the user's Desktop folder.",
           type: "string",
         },
         recursive: {
@@ -803,8 +775,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "delete_registry_entry",
-    description:
-      "Deletes a registry value (when name is set) or the entire key (when name is null/empty).",
+    description: "Deletes a registry value (when name is set) or the entire key (when name is null/empty).",
     inputSchema: {
       type: "object",
       properties: {
@@ -845,8 +816,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         path: {
-          description:
-            "Absolute task path, e.g. '\\Microsoft\\Windows\\Defender\\Windows Defender Scheduled Scan'.",
+          description: "Absolute task path, e.g. '\\Microsoft\\Windows\\Defender\\Windows Defender Scheduled Scan'.",
           type: "string",
         },
       },
@@ -864,8 +834,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         slotIndex: {
-          description:
-            "Slot index (0–7) used to reference this controller in subsequent calls.",
+          description: "Slot index (0–7) used to reference this controller in subsequent calls.",
           type: "integer",
           default: 0,
         },
@@ -991,8 +960,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         title: {
-          description:
-            "Case-insensitive substring of the target window title, used when hwnd is absent.",
+          description: "Case-insensitive substring of the target window title, used when hwnd is absent.",
           type: "string",
         },
         durationMs: {
@@ -1021,13 +989,11 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         title: {
-          description:
-            "Case-insensitive substring of the target window title, used when hwnd is absent.",
+          description: "Case-insensitive substring of the target window title, used when hwnd is absent.",
           type: "string",
         },
         outputPath: {
-          description:
-            "Optional PNG path written in addition to the returned image.",
+          description: "Optional PNG path written in addition to the returned image.",
           type: "string",
         },
         includeImage: {
@@ -1060,8 +1026,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         title: {
-          description:
-            "Case-insensitive substring of the target window title, used when hwnd is absent.",
+          description: "Case-insensitive substring of the target window title, used when hwnd is absent.",
           type: "string",
         },
         durationMs: {
@@ -1168,8 +1133,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "string",
         },
         scanCode: {
-          description:
-            "PC set-1 scan code, used instead of key for any other key.",
+          description: "PC set-1 scan code, used instead of key for any other key.",
           type: "integer",
         },
         extended: {
@@ -1182,8 +1146,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "string",
         },
         holdMs: {
-          description:
-            "Hold time in ms for tap/hold (tap 20, hold 250 by default).",
+          description: "Hold time in ms for tap/hold (tap 20, hold 250 by default).",
           type: "integer",
         },
         repeat: {
@@ -1201,8 +1164,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "gaming_mouse_button",
-    description:
-      "Presses a mouse button through SendInput (Linux: xdotool): down, up, or click with holdMs.",
+    description: "Presses a mouse button through SendInput (Linux: xdotool): down, up, or click with holdMs.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1313,8 +1275,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         processName: {
-          description:
-            "Game executable name used to find its window (e.g. game.exe).",
+          description: "Game executable name used to find its window (e.g. game.exe).",
           type: "string",
         },
         windowTitle: {
@@ -1337,8 +1298,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "get_active_power_plan",
-    description:
-      "Returns the GUID and friendly name of the active Windows power plan.",
+    description: "Returns the GUID and friendly name of the active Windows power plan.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -1369,8 +1329,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         intervalMs: {
-          description:
-            "Sample window in milliseconds. Clamped to [50, 2000]. Default 250.",
+          description: "Sample window in milliseconds. Clamped to [50, 2000]. Default 250.",
           type: "integer",
           default: 250,
         },
@@ -1400,8 +1359,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "get_file_info",
-    description:
-      "Returns metadata for a file or directory as JSON: size, dates, type, hidden flag.",
+    description: "Returns metadata for a file or directory as JSON: size, dates, type, hidden flag.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1433,8 +1391,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "get_memory_info",
-    description:
-      "Returns physical / virtual / page-file memory state as JSON via GlobalMemoryStatusEx.",
+    description: "Returns physical / virtual / page-file memory state as JSON via GlobalMemoryStatusEx.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -1442,8 +1399,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "get_network_adapters",
-    description:
-      "Lists network adapters (Name, Description, Status, MAC, link speed, IPv4 addresses) as JSON.",
+    description: "Lists network adapters (Name, Description, Status, MAC, link speed, IPv4 addresses) as JSON.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -1466,13 +1422,11 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         path: {
-          description:
-            "Key path including hive prefix, e.g. 'HKCU:\\Software\\MyApp'.",
+          description: "Key path including hive prefix, e.g. 'HKCU:\\Software\\MyApp'.",
           type: "string",
         },
         name: {
-          description:
-            "Value name. Use '(default)' for the default unnamed value.",
+          description: "Value name. Use '(default)' for the default unnamed value.",
           type: "string",
         },
       },
@@ -1481,8 +1435,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "get_system_profile",
-    description:
-      "Récupère le profil système complet pour vérifier l'état d'optimisation du poste.",
+    description: "Récupère le profil système complet pour vérifier l'état d'optimisation du poste.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -1548,8 +1501,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         scanCode: {
-          description:
-            "Scan code (decimal or 0x-prefixed hex, e.g. 0x1E for 'A').",
+          description: "Scan code (decimal or 0x-prefixed hex, e.g. 0x1E for 'A').",
           type: "integer",
         },
         action: {
@@ -1558,8 +1510,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           default: "tap",
         },
         extended: {
-          description:
-            "Mark as extended (E0-prefixed) key (arrows, NumPad, RWIN, etc).",
+          description: "Mark as extended (E0-prefixed) key (arrows, NumPad, RWIN, etc).",
           type: "boolean",
           default: false,
         },
@@ -1580,8 +1531,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           default: null,
         },
         name: {
-          description:
-            "Process name (no .exe extension required). Used when pid is null.",
+          description: "Process name (no .exe extension required). Used when pid is null.",
           type: ["string", "null"],
           default: null,
         },
@@ -1605,8 +1555,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "string",
         },
         args: {
-          description:
-            "Optional command-line arguments (space-separated, shell-escaped).",
+          description: "Optional command-line arguments (space-separated, shell-escaped).",
           type: ["string", "null"],
           default: null,
         },
@@ -1627,13 +1576,11 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         path: {
-          description:
-            "Absolute or relative path. Relative paths are resolved against the user's Desktop folder.",
+          description: "Absolute or relative path. Relative paths are resolved against the user's Desktop folder.",
           type: "string",
         },
         pattern: {
-          description:
-            "Glob pattern filter, e.g. '*.txt'. Empty = all entries.",
+          description: "Glob pattern filter, e.g. '*.txt'. Empty = all entries.",
           type: ["string", "null"],
           default: null,
         },
@@ -1686,14 +1633,12 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         name: {
-          description:
-            "Substring filter on process name (case-insensitive). Empty = no filter.",
+          description: "Substring filter on process name (case-insensitive). Empty = no filter.",
           type: ["string", "null"],
           default: null,
         },
         sortBy: {
-          description:
-            "Sort key: 'memory', 'private', 'cpu', 'threads', 'handles' or 'name'.",
+          description: "Sort key: 'memory', 'private', 'cpu', 'threads', 'handles' or 'name'.",
           type: "string",
           default: "memory",
         },
@@ -1727,8 +1672,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         folder: {
-          description:
-            "Task folder, default '\\'. Use '\\Microsoft\\Windows\\Defender' for sub-folders.",
+          description: "Task folder, default '\\'. Use '\\Microsoft\\Windows\\Defender' for sub-folders.",
           type: "string",
           default: "\\",
         },
@@ -1746,14 +1690,12 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         nameFilter: {
-          description:
-            "Substring filter on service name (case-insensitive). Empty = no filter.",
+          description: "Substring filter on service name (case-insensitive). Empty = no filter.",
           type: ["string", "null"],
           default: null,
         },
         statusFilter: {
-          description:
-            "Status filter: Running, Stopped, Paused, StartPending, StopPending. Empty = any.",
+          description: "Status filter: Running, Stopped, Paused, StartPending, StopPending. Empty = any.",
           type: ["string", "null"],
           default: null,
         },
@@ -1768,8 +1710,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         stateFilter: {
-          description:
-            "Optional state filter (case-insensitive). Empty = all states.",
+          description: "Optional state filter (case-insensitive). Empty = all states.",
           type: ["string", "null"],
           default: null,
         },
@@ -1852,8 +1793,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "mem_free",
-    description:
-      "Releases a region previously allocated with MemAllocate (MEM_RELEASE).",
+    description: "Releases a region previously allocated with MemAllocate (MEM_RELEASE).",
     inputSchema: {
       type: "object",
       properties: {
@@ -1862,8 +1802,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         address: {
-          description:
-            "Base address returned by MemAllocate (decimal or 0x-prefixed hex).",
+          description: "Base address returned by MemAllocate (decimal or 0x-prefixed hex).",
           type: "integer",
         },
       },
@@ -1882,8 +1821,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         moduleName: {
-          description:
-            "Module name to find (e.g. 'kernel32.dll'). Case-insensitive.",
+          description: "Module name to find (e.g. 'kernel32.dll'). Case-insensitive.",
           type: "string",
         },
       },
@@ -1913,8 +1851,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         nameFilter: {
-          description:
-            "Substring filter on process name (case-insensitive). Empty = all.",
+          description: "Substring filter on process name (case-insensitive). Empty = all.",
           type: "string",
           default: "",
         },
@@ -1960,8 +1897,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         address: {
-          description:
-            "Any address within the region to query (decimal or 0x-prefixed hex).",
+          description: "Any address within the region to query (decimal or 0x-prefixed hex).",
           type: "integer",
         },
       },
@@ -1980,8 +1916,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         address: {
-          description:
-            "Virtual address to read from (decimal or 0x-prefixed hex).",
+          description: "Virtual address to read from (decimal or 0x-prefixed hex).",
           type: "integer",
         },
         length: {
@@ -2004,13 +1939,11 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         address: {
-          description:
-            "Virtual address to read from (decimal or 0x-prefixed hex).",
+          description: "Virtual address to read from (decimal or 0x-prefixed hex).",
           type: "integer",
         },
         maxLength: {
-          description:
-            "Maximum bytes to read before stopping. Default 256, capped at 4096.",
+          description: "Maximum bytes to read before stopping. Default 256, capped at 4096.",
           type: "integer",
           default: 256,
         },
@@ -2020,8 +1953,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "mem_read_double",
-    description:
-      "Reads a 64-bit IEEE 754 double (little-endian) from a process's virtual memory.",
+    description: "Reads a 64-bit IEEE 754 double (little-endian) from a process's virtual memory.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2030,8 +1962,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         address: {
-          description:
-            "Virtual address to read from (decimal or 0x-prefixed hex).",
+          description: "Virtual address to read from (decimal or 0x-prefixed hex).",
           type: "integer",
         },
       },
@@ -2040,8 +1971,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "mem_read_float",
-    description:
-      "Reads a 32-bit IEEE 754 float (little-endian) from a process's virtual memory.",
+    description: "Reads a 32-bit IEEE 754 float (little-endian) from a process's virtual memory.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2050,8 +1980,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         address: {
-          description:
-            "Virtual address to read from (decimal or 0x-prefixed hex).",
+          description: "Virtual address to read from (decimal or 0x-prefixed hex).",
           type: "integer",
         },
       },
@@ -2060,8 +1989,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "mem_read_int32",
-    description:
-      "Reads a signed 32-bit integer (little-endian) from a process's virtual memory.",
+    description: "Reads a signed 32-bit integer (little-endian) from a process's virtual memory.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2070,8 +1998,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         address: {
-          description:
-            "Virtual address to read from (decimal or 0x-prefixed hex).",
+          description: "Virtual address to read from (decimal or 0x-prefixed hex).",
           type: "integer",
         },
       },
@@ -2080,8 +2007,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "mem_read_int64",
-    description:
-      "Reads a signed 64-bit integer (little-endian) from a process's virtual memory.",
+    description: "Reads a signed 64-bit integer (little-endian) from a process's virtual memory.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2090,8 +2016,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         address: {
-          description:
-            "Virtual address to read from (decimal or 0x-prefixed hex).",
+          description: "Virtual address to read from (decimal or 0x-prefixed hex).",
           type: "integer",
         },
       },
@@ -2110,13 +2035,11 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         address: {
-          description:
-            "Virtual address to read from (decimal or 0x-prefixed hex).",
+          description: "Virtual address to read from (decimal or 0x-prefixed hex).",
           type: "integer",
         },
         maxChars: {
-          description:
-            "Maximum characters to read. Default 256, capped at 2048.",
+          description: "Maximum characters to read. Default 256, capped at 2048.",
           type: "integer",
           default: 256,
         },
@@ -2126,8 +2049,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "mem_resume_process",
-    description:
-      "Resumes every thread of the target process via NtResumeProcess.",
+    description: "Resumes every thread of the target process via NtResumeProcess.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2155,13 +2077,11 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "string",
         },
         pattern: {
-          description:
-            "IDA-style byte pattern with '??' wildcards (e.g. '48 8B 05 ?? ?? ??').",
+          description: "IDA-style byte pattern with '??' wildcards (e.g. '48 8B 05 ?? ?? ??').",
           type: "string",
         },
         maxHits: {
-          description:
-            "Maximum number of matches to return. Default 10, capped at 100.",
+          description: "Maximum number of matches to return. Default 10, capped at 100.",
           type: "integer",
           default: 10,
         },
@@ -2195,8 +2115,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "mem_suspend_process",
-    description:
-      "Suspends every thread of the target process via NtSuspendProcess.",
+    description: "Suspends every thread of the target process via NtSuspendProcess.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2220,13 +2139,11 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         address: {
-          description:
-            "Virtual address to write to (decimal or 0x-prefixed hex).",
+          description: "Virtual address to write to (decimal or 0x-prefixed hex).",
           type: "integer",
         },
         hex: {
-          description:
-            "Hex string of bytes to write (e.g. 'deadbeef' or 'de ad be ef').",
+          description: "Hex string of bytes to write (e.g. 'deadbeef' or 'de ad be ef').",
           type: "string",
         },
       },
@@ -2279,8 +2196,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "mem_write_int32",
-    description:
-      "Writes a signed 32-bit little-endian integer to a process's memory.",
+    description: "Writes a signed 32-bit little-endian integer to a process's memory.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2302,8 +2218,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "mem_write_int64",
-    description:
-      "Writes a signed 64-bit little-endian integer to a process's memory.",
+    description: "Writes a signed 64-bit little-endian integer to a process's memory.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2410,8 +2325,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         drag: {
-          description:
-            "Left-button drag from current position to (x,y) when true; cursor move (hover) otherwise.",
+          description: "Left-button drag from current position to (x,y) when true; cursor move (hover) otherwise.",
           type: "boolean",
           default: false,
         },
@@ -2517,8 +2431,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         lowPriorityOnly: {
-          description:
-            "Purge low-priority only (faster, safer) instead of the full standby list.",
+          description: "Purge low-priority only (faster, safer) instead of the full standby list.",
           type: "boolean",
           default: false,
         },
@@ -2537,8 +2450,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         mode: {
-          description:
-            "'on' (eco), 'off' (max perf), 'default' (clear overrides).",
+          description: "'on' (eco), 'off' (max perf), 'default' (clear overrides).",
           type: "string",
           default: "on",
         },
@@ -2558,8 +2470,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "string",
         },
         timeoutSeconds: {
-          description:
-            "Timeout in seconds before the process is killed (default 30, max 600).",
+          description: "Timeout in seconds before the process is killed (default 30, max 600).",
           type: "integer",
           default: 30,
         },
@@ -2606,8 +2517,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         path: {
-          description:
-            "Absolute or relative path. Relative paths are resolved against the user's Desktop folder.",
+          description: "Absolute or relative path. Relative paths are resolved against the user's Desktop folder.",
           type: "string",
         },
         offset: {
@@ -2629,8 +2539,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "resize_window",
-    description:
-      "Resizes / moves a window matched by title substring. Set width/height to 0 to keep current size.",
+    description: "Resizes / moves a window matched by title substring. Set width/height to 0 to keep current size.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2662,8 +2571,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "restart_service",
-    description:
-      "Restarts a Windows service. Stops then starts, waiting up to 10s per phase.",
+    description: "Restarts a Windows service. Stops then starts, waiting up to 10s per phase.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2703,8 +2611,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         url: {
-          description:
-            "Absolute URL (http:// or https://). Other schemes are rejected.",
+          description: "Absolute URL (http:// or https://). Other schemes are rejected.",
           type: "string",
         },
       },
@@ -2722,8 +2629,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         outputPath: {
-          description:
-            "Output file path. If null, a timestamped file is written to %TEMP%.",
+          description: "Output file path. If null, a timestamped file is written to %TEMP%.",
           type: ["string", "null"],
           default: null,
         },
@@ -2738,8 +2644,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         x: {
-          description:
-            "X coordinate in screen pixels (cursor is moved here before scrolling).",
+          description: "X coordinate in screen pixels (cursor is moved here before scrolling).",
           type: "integer",
         },
         y: {
@@ -2786,8 +2691,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           default: true,
         },
         exclude: {
-          description:
-            "Basename glob patterns to omit; matching directories are not traversed.",
+          description: "Basename glob patterns to omit; matching directories are not traversed.",
           type: "array",
           items: {
             type: "string",
@@ -2799,14 +2703,12 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "search_windows",
-    description:
-      "Effectue une recherche sur le disque via l'indexeur natif Windows Search.",
+    description: "Effectue une recherche sur le disque via l'indexeur natif Windows Search.",
     inputSchema: {
       type: "object",
       properties: {
         query: {
-          description:
-            "Les mots clés de la recherche (nom de fichier ou contenu texte).",
+          description: "Les mots clés de la recherche (nom de fichier ou contenu texte).",
           type: "string",
         },
       },
@@ -2832,8 +2734,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "string",
         },
         appId: {
-          description:
-            "AUMID for branded toasts. Ignored in this Win32 balloon implementation.",
+          description: "AUMID for branded toasts. Ignored in this Win32 balloon implementation.",
           type: ["string", "null"],
           default: null,
         },
@@ -2849,8 +2750,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         guid: {
-          description:
-            "GUID of the power plan to activate (with or without braces).",
+          description: "GUID of the power plan to activate (with or without braces).",
           type: "string",
         },
       },
@@ -2917,8 +2817,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         mask: {
-          description:
-            "Affinity bitmask. Bit N = run on logical CPU N. 0 resets to system mask.",
+          description: "Affinity bitmask. Bit N = run on logical CPU N. 0 resets to system mask.",
           type: "integer",
         },
       },
@@ -2952,13 +2851,11 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         path: {
-          description:
-            "Key path including hive prefix, e.g. 'HKCU:\\Software\\MyApp'.",
+          description: "Key path including hive prefix, e.g. 'HKCU:\\Software\\MyApp'.",
           type: "string",
         },
         name: {
-          description:
-            "Value name. Use '(default)' for the default unnamed value.",
+          description: "Value name. Use '(default)' for the default unnamed value.",
           type: "string",
         },
         value: {
@@ -3020,8 +2917,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "start_service",
-    description:
-      "Starts a stopped Windows service. Waits up to 10s for the Running state.",
+    description: "Starts a stopped Windows service. Waits up to 10s for the Running state.",
     inputSchema: {
       type: "object",
       properties: {
@@ -3048,8 +2944,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         steamRoot: {
-          description:
-            "Steam client root; defaults to the registry SteamPath or the standard install locations.",
+          description: "Steam client root; defaults to the registry SteamPath or the standard install locations.",
           type: "string",
         },
       },
@@ -3068,14 +2963,12 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         executableName: {
-          description:
-            "Override executable name (no .exe required). Defaults to install_dir + .exe.",
+          description: "Override executable name (no .exe required). Defaults to install_dir + .exe.",
           type: ["string", "null"],
           default: null,
         },
         steamRoot: {
-          description:
-            "Steam client root; defaults to the registry SteamPath or the standard install locations.",
+          description: "Steam client root; defaults to the registry SteamPath or the standard install locations.",
           type: "string",
         },
       },
@@ -3148,14 +3041,12 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         includeMissing: {
-          description:
-            "Include games whose install directory is absent (files_present=0). Default false.",
+          description: "Include games whose install directory is absent (files_present=0). Default false.",
           type: "boolean",
           default: false,
         },
         steamRoot: {
-          description:
-            "Steam client root; defaults to the registry SteamPath or the standard install locations.",
+          description: "Steam client root; defaults to the registry SteamPath or the standard install locations.",
           type: "string",
         },
       },
@@ -3169,8 +3060,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         steamRoot: {
-          description:
-            "Steam client root; defaults to the registry SteamPath or the standard install locations.",
+          description: "Steam client root; defaults to the registry SteamPath or the standard install locations.",
           type: "string",
         },
       },
@@ -3184,8 +3074,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         steamUri: {
-          description:
-            "A steam:// URI, e.g. steam://store/2799860, steam://nav/console, steam://browsemedia.",
+          description: "A steam:// URI, e.g. steam://store/2799860, steam://nav/console, steam://browsemedia.",
           type: "string",
         },
       },
@@ -3194,14 +3083,12 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "steam_scan_summary",
-    description:
-      "Returns live Steam counts: nb_libraries, nb_games, nb_games_present, total_size_bytes.",
+    description: "Returns live Steam counts: nb_libraries, nb_games, nb_games_present, total_size_bytes.",
     inputSchema: {
       type: "object",
       properties: {
         steamRoot: {
-          description:
-            "Steam client root; defaults to the registry SteamPath or the standard install locations.",
+          description: "Steam client root; defaults to the registry SteamPath or the standard install locations.",
           type: "string",
         },
       },
@@ -3215,8 +3102,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         steamRoot: {
-          description:
-            "Steam client root; defaults to the registry SteamPath or the standard install locations.",
+          description: "Steam client root; defaults to the registry SteamPath or the standard install locations.",
           type: "string",
         },
       },
@@ -3230,8 +3116,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         appId: {
-          description:
-            "Steam AppID (informational only, used in the response).",
+          description: "Steam AppID (informational only, used in the response).",
           type: "integer",
         },
         executableName: {
@@ -3254,8 +3139,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "stop_service",
-    description:
-      "Stops a running Windows service. Waits up to 10s for the Stopped state.",
+    description: "Stops a running Windows service. Waits up to 10s for the Stopped state.",
     inputSchema: {
       type: "object",
       properties: {
@@ -3312,8 +3196,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "string",
         },
         x: {
-          description:
-            "X coordinate in screen pixels (the field will be focused via a left-click).",
+          description: "X coordinate in screen pixels (the field will be focused via a left-click).",
           type: "integer",
         },
         y: {
@@ -3321,8 +3204,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         clear: {
-          description:
-            "Clear the existing field contents first (Ctrl+A then Delete).",
+          description: "Clear the existing field contents first (Ctrl+A then Delete).",
           type: "boolean",
           default: false,
         },
@@ -3369,8 +3251,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           default: null,
         },
         fullContent: {
-          description:
-            "Render the full window content via DWM (recommended). False = client-area only.",
+          description: "Render the full window content via DWM (recommended). False = client-area only.",
           type: "boolean",
           default: true,
         },
@@ -3474,8 +3355,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "window_minimise_all",
-    description:
-      "Sends WM_KEYDOWN/UP for Win+D to the shell — minimises every visible window at once.",
+    description: "Sends WM_KEYDOWN/UP for Win+D to the shell — minimises every visible window at once.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -3588,8 +3468,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "integer",
         },
         clickThrough: {
-          description:
-            "Make the window click-through (input passes underneath).",
+          description: "Make the window click-through (input passes underneath).",
           type: "boolean",
           default: false,
         },
@@ -3618,8 +3497,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "window_set_topmost",
-    description:
-      "Sets the TOPMOST flag on a window (Z-order pinned above all non-topmost windows).",
+    description: "Sets the TOPMOST flag on a window (Z-order pinned above all non-topmost windows).",
     inputSchema: {
       type: "object",
       properties: {
@@ -3638,8 +3516,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
   },
   {
     name: "winml_get_version",
-    description:
-      "Returns the ONNX Runtime version string powering Windows ML on this machine.",
+    description: "Returns the ONNX Runtime version string powering Windows ML on this machine.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -3681,8 +3558,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
           type: "string",
         },
         inputsJson: {
-          description:
-            "JSON map of input name -> { shape: int[], data: float[] }.",
+          description: "JSON map of input name -> { shape: int[], data: float[] }.",
           type: "string",
         },
         executionProvider: {
@@ -3702,8 +3578,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         path: {
-          description:
-            "Absolute or relative path. Relative paths are resolved against the user's Desktop folder.",
+          description: "Absolute or relative path. Relative paths are resolved against the user's Desktop folder.",
           type: "string",
         },
         content: {
@@ -3730,13 +3605,11 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         distribution: {
-          description:
-            "Exact distribution name returned by wsl_list_distributions.",
+          description: "Exact distribution name returned by wsl_list_distributions.",
           type: "string",
         },
         command: {
-          description:
-            "Executable followed by its arguments; 1..64 values, no control characters.",
+          description: "Executable followed by its arguments; 1..64 values, no control characters.",
           type: "array",
           items: {
             type: "string",
@@ -3781,8 +3654,7 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         distribution: {
-          description:
-            "Exact distribution name returned by wsl_list_distributions.",
+          description: "Exact distribution name returned by wsl_list_distributions.",
           type: "string",
         },
       },
@@ -3800,13 +3672,11 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         distribution: {
-          description:
-            "Exact distribution name returned by wsl_list_distributions.",
+          description: "Exact distribution name returned by wsl_list_distributions.",
           type: "string",
         },
         probe: {
-          description:
-            "One of: system-info, re-toolchain, processes, mounts, network.",
+          description: "One of: system-info, re-toolchain, processes, mounts, network.",
           type: "string",
         },
       },
@@ -3824,13 +3694,11 @@ export const TOOL_CATALOG: ReadonlyArray<{
       type: "object",
       properties: {
         distribution: {
-          description:
-            "Exact distribution name returned by wsl_list_distributions.",
+          description: "Exact distribution name returned by wsl_list_distributions.",
           type: "string",
         },
         processId: {
-          description:
-            "Exact positive Linux PID returned by wsl_list_processes.",
+          description: "Exact positive Linux PID returned by wsl_list_processes.",
           type: "integer",
         },
         signal: {

@@ -5,10 +5,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import * as React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
-import {
-  ModelOptionList,
-  groupModelsByProvider,
-} from "../src/ModelSelector.tsx";
+import { ModelOptionList, groupModelsByProvider } from "../src/ModelSelector.tsx";
 import type { ModelOption } from "../src/types.ts";
 import { GeminiPersonalContextEdit } from "../src/GeminiPersonalContextEdit.tsx";
 import { GoogleSpotlightBar } from "../src/GoogleSpotlightBar.tsx";
@@ -30,11 +27,7 @@ const models: ModelOption[] = [
 ];
 
 function key(value: string) {
-  flushSync(() =>
-    document.activeElement!.dispatchEvent(
-      new KeyboardEvent("keydown", { key: value, bubbles: true }),
-    ),
-  );
+  flushSync(() => document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: value, bubbles: true })));
 }
 
 describe("production model selector accessibility", () => {
@@ -54,22 +47,14 @@ describe("production model selector accessibility", () => {
     root = createRoot(host);
     const selected = mock(() => {});
     flushSync(() =>
-      root!.render(
-        <ModelOptionList
-          grouped={groupModelsByProvider(models)}
-          value="b"
-          onSelect={selected}
-        />,
-      ),
+      root!.render(<ModelOptionList grouped={groupModelsByProvider(models)} value="b" onSelect={selected} />),
     );
-    const options = [
-      ...host.querySelectorAll<HTMLButtonElement>('[role="option"]'),
-    ];
-    expect(options.map((option) => option.tabIndex)).toEqual([-1, 0, -1]);
+    const options = [...host.querySelectorAll<HTMLButtonElement>('[role="option"]')];
+    expect(options.map(option => option.tabIndex)).toEqual([-1, 0, -1]);
     flushSync(() => options[1]!.focus());
     key("ArrowDown");
     expect(document.activeElement === options[2]).toBe(true);
-    expect(options.map((option) => option.tabIndex)).toEqual([-1, -1, 0]);
+    expect(options.map(option => option.tabIndex)).toEqual([-1, -1, 0]);
     key("ArrowDown");
     expect(document.activeElement === options[0]).toBe(true);
     key("End");
@@ -88,20 +73,12 @@ function mount(element: React.ReactNode) {
   flushSync(() => root!.render(element));
 }
 
-function editControl(
-  control: HTMLInputElement | HTMLTextAreaElement,
-  value: string,
-) {
-  const prototype =
-    control instanceof HTMLTextAreaElement
-      ? HTMLTextAreaElement.prototype
-      : HTMLInputElement.prototype;
+function editControl(control: HTMLInputElement | HTMLTextAreaElement, value: string) {
+  const prototype = control instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   const setValue = Object.getOwnPropertyDescriptor(prototype, "value")!.set!;
   flushSync(() => {
     setValue.call(control, value);
-    const propKey = Object.keys(control).find((k) =>
-      k.startsWith("__reactProps$"),
-    );
+    const propKey = Object.keys(control).find(k => k.startsWith("__reactProps$"));
     if (propKey) {
       // oxlint-disable-next-line @typescript-eslint/no-explicit-any
       const props = (control as unknown as Record<string, any>)[propKey];
@@ -126,9 +103,7 @@ describe("production controlled AI editors and actions", () => {
     );
     mount(render("Saved context"));
     await Bun.sleep(20);
-    const textarea = document.querySelector<HTMLTextAreaElement>(
-      'textarea[aria-label="Personal context content"]',
-    )!;
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Personal context content"]')!;
     expect(textarea.value).toBe("Saved context");
     textarea.focus();
     editControl(textarea, "Unsaved draft");
@@ -154,8 +129,8 @@ describe("production controlled AI editors and actions", () => {
       <GeminiPersonalContextEdit
         open
         initialContext="Old context"
-        onOpenChange={(open) => closes.push(open)}
-        onSave={(value) => {
+        onOpenChange={open => closes.push(open)}
+        onSave={value => {
           saves.push(value);
         }}
       />,
@@ -163,9 +138,9 @@ describe("production controlled AI editors and actions", () => {
     await Bun.sleep(20);
     const textarea = document.querySelector<HTMLTextAreaElement>("textarea")!;
     editControl(textarea, "  New context  ");
-    const save = [
-      ...document.querySelectorAll<HTMLButtonElement>("button"),
-    ].find((button) => button.textContent === "Save")!;
+    const save = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+      button => button.textContent === "Save",
+    )!;
     expect(save.disabled).toBe(false);
     flushSync(() => save.click());
     await Bun.sleep(10);
@@ -179,23 +154,17 @@ describe("production controlled AI editors and actions", () => {
     const render = (query: string) => (
       <GoogleSpotlightBar
         query={query}
-        onQueryChange={(value) => changes.push(value)}
-        onSubmit={(value) => submissions.push(value)}
+        onQueryChange={value => changes.push(value)}
+        onSubmit={value => submissions.push(value)}
       />
     );
     mount(render("Initial query"));
     const search = host!.querySelector("search")!;
-    expect(search.getAttribute("aria-label")).toBe(
-      "Google Spotlight Assistant",
-    );
+    expect(search.getAttribute("aria-label")).toBe("Google Spotlight Assistant");
     const input = search.querySelector("input")!;
     editControl(input, "Proposed query");
     expect(changes).toEqual(["Proposed query"]);
-    flushSync(() =>
-      input.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
-      ),
-    );
+    flushSync(() => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
     expect(submissions).toEqual(["Initial query"]);
     // Observe the controlled DOM at the owner's React commit. Synthetic happy-dom
     // edits do not reliably exercise the browser's immediate value restoration.
@@ -203,11 +172,7 @@ describe("production controlled AI editors and actions", () => {
     expect(input.value).toBe("Initial query");
     flushSync(() => root!.render(render("Accepted query")));
     expect(input.value).toBe("Accepted query");
-    flushSync(() =>
-      input.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
-      ),
-    );
+    flushSync(() => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
     expect(submissions).toEqual(["Initial query", "Accepted query"]);
   });
 
@@ -231,9 +196,7 @@ describe("production controlled AI editors and actions", () => {
     expect(button.type).toBe("button");
     expect(button.tabIndex).toBe(0);
     expect(button.getAttribute("aria-expanded")).toBe("false");
-    const region = document.getElementById(
-      button.getAttribute("aria-controls")!,
-    )!;
+    const region = document.getElementById(button.getAttribute("aria-controls")!)!;
     expect(region.hidden).toBe(true);
     expect(button.textContent).toContain("Live");
     expect(button.textContent).not.toContain("Invalid Date");
@@ -253,7 +216,7 @@ test("math content retains existing superscript and subscript nodes when another
   const subscript = host!.querySelector("sub");
   flushSync(() => root!.render(<InlineMath math="w^3 + x^2 + y_1 + z^2" />));
   const exponents = [...host!.querySelectorAll("sup")];
-  expect(exponents.map((node) => node.textContent)).toEqual(["3", "2", "2"]);
+  expect(exponents.map(node => node.textContent)).toEqual(["3", "2", "2"]);
   expect(exponents[1]).toBe(firstExponent);
   expect(exponents[2]).toBe(repeatedExponent);
   expect(host!.querySelector("sub")).toBe(subscript);

@@ -22,28 +22,22 @@ const flags: Record<string, string> = {
 const args = process.argv.slice(2);
 for (let index = 0; index < args.length; index++) {
   const flag = args[index]!;
-  if (!Object.hasOwn(flags, flag))
-    throw new Error(`Unknown brand theme option: ${flag}`);
+  if (!Object.hasOwn(flags, flag)) throw new Error(`Unknown brand theme option: ${flag}`);
   const value = args[++index];
-  if (value === undefined || value.startsWith("--"))
-    throw new Error(`${flag} needs a value`);
+  if (value === undefined || value.startsWith("--")) throw new Error(`${flag} needs a value`);
   flags[flag] = value;
 }
 
 async function readExport(path: string) {
   const file = Bun.file(path);
   if (!(await file.exists()))
-    throw new Error(
-      `Missing Rust theme export ${path}; regenerate with: ${BRAND_THEME_REGENERATE}`,
-    );
+    throw new Error(`Missing Rust theme export ${path}; regenerate with: ${BRAND_THEME_REGENERATE}`);
   return parseNativeThemeExport(await file.json());
 }
 
 const nativeTheme = await readExport(flags["--native-theme"]!);
 const highContrastTheme = await readExport(flags["--high-contrast-theme"]!);
-const tokensCss = await Bun.file(
-  Bun.fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/m3-tokens.css")),
-).text();
+const tokensCss = await Bun.file(Bun.fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/m3-tokens.css"))).text();
 await Bun.write(
   join(import.meta.dir, "..", "src", "brand.css"),
   brandCss(tokensCss, { nativeTheme, highContrastTheme }),

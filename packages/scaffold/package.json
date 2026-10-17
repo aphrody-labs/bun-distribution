@@ -38,8 +38,7 @@
     "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun test"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@aphrody/m3-config": "workspace:*"
   },

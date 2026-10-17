@@ -5,31 +5,73 @@ interface Functions {
   /** clusapi.dll!AddClusterGroupDependency */
   AddClusterGroupDependency(hDependentGroup: number | bigint, hProviderGroup: number | bigint): number;
   /** clusapi.dll!AddClusterGroupDependencyEx */
-  AddClusterGroupDependencyEx(hDependentGroup: number | bigint, hProviderGroup: number | bigint, lpszReason: string | Win32Pointer): number;
+  AddClusterGroupDependencyEx(
+    hDependentGroup: number | bigint,
+    hProviderGroup: number | bigint,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!AddClusterGroupSetDependency */
   AddClusterGroupSetDependency(hDependentGroupSet: number | bigint, hProviderGroupSet: number | bigint): number;
   /** clusapi.dll!AddClusterGroupSetDependencyEx */
-  AddClusterGroupSetDependencyEx(hDependentGroupSet: number | bigint, hProviderGroupSet: number | bigint, lpszReason: string | Win32Pointer): number;
+  AddClusterGroupSetDependencyEx(
+    hDependentGroupSet: number | bigint,
+    hProviderGroupSet: number | bigint,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!AddClusterGroupToGroupSetDependency */
   AddClusterGroupToGroupSetDependency(hDependentGroup: number | bigint, hProviderGroupSet: number | bigint): number;
   /** clusapi.dll!AddClusterGroupToGroupSetDependencyEx */
-  AddClusterGroupToGroupSetDependencyEx(hDependentGroup: number | bigint, hProviderGroupSet: number | bigint, lpszReason: string | Win32Pointer): number;
+  AddClusterGroupToGroupSetDependencyEx(
+    hDependentGroup: number | bigint,
+    hProviderGroupSet: number | bigint,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!AddClusterNode */
-  AddClusterNode(hCluster: number | bigint, lpszNodeName: string | Win32Pointer, pfnProgressCallback: Win32Callback, pvCallbackArg: Win32Pointer): number | bigint;
+  AddClusterNode(
+    hCluster: number | bigint,
+    lpszNodeName: string | Win32Pointer,
+    pfnProgressCallback: Win32Callback,
+    pvCallbackArg: Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!AddClusterNodeEx */
-  AddClusterNodeEx(hCluster: number | bigint, lpszNodeName: string | Win32Pointer, dwFlags: number, pfnProgressCallback: Win32Callback, pvCallbackArg: Win32Pointer): number | bigint;
+  AddClusterNodeEx(
+    hCluster: number | bigint,
+    lpszNodeName: string | Win32Pointer,
+    dwFlags: number,
+    pfnProgressCallback: Win32Callback,
+    pvCallbackArg: Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!AddClusterResourceDependency */
   AddClusterResourceDependency(hResource: number | bigint, hDependsOn: number | bigint): number;
   /** clusapi.dll!AddClusterResourceDependencyEx */
-  AddClusterResourceDependencyEx(hResource: number | bigint, hDependsOn: number | bigint, lpszReason: string | Win32Pointer): number;
+  AddClusterResourceDependencyEx(
+    hResource: number | bigint,
+    hDependsOn: number | bigint,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!AddClusterResourceNode */
   AddClusterResourceNode(hResource: number | bigint, hNode: number | bigint): number;
   /** clusapi.dll!AddClusterResourceNodeEx */
-  AddClusterResourceNodeEx(hResource: number | bigint, hNode: number | bigint, lpszReason: string | Win32Pointer): number;
+  AddClusterResourceNodeEx(
+    hResource: number | bigint,
+    hNode: number | bigint,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!AddClusterStorageNode */
-  AddClusterStorageNode(hCluster: number | bigint, lpszNodeName: string | Win32Pointer, pfnProgressCallback: Win32Callback, pvCallbackArg: Win32Pointer, lpszClusterStorageNodeDescription: string | Win32Pointer, lpszClusterStorageNodeLocation: string | Win32Pointer): number;
+  AddClusterStorageNode(
+    hCluster: number | bigint,
+    lpszNodeName: string | Win32Pointer,
+    pfnProgressCallback: Win32Callback,
+    pvCallbackArg: Win32Pointer,
+    lpszClusterStorageNodeDescription: string | Win32Pointer,
+    lpszClusterStorageNodeLocation: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!AddCrossClusterGroupSetDependency */
-  AddCrossClusterGroupSetDependency(hDependentGroupSet: number | bigint, lpRemoteClusterName: string | Win32Pointer, lpRemoteGroupSetName: string | Win32Pointer): number;
+  AddCrossClusterGroupSetDependency(
+    hDependentGroupSet: number | bigint,
+    lpRemoteClusterName: string | Win32Pointer,
+    lpRemoteGroupSetName: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!AddResourceToClusterSharedVolumes */
   AddResourceToClusterSharedVolumes(hResource: number | bigint): number;
   /** clusapi.dll!BackupClusterDatabase */
@@ -43,7 +85,12 @@ interface Functions {
   /** clusapi.dll!ChangeClusterResourceGroupEx */
   ChangeClusterResourceGroupEx(hResource: number | bigint, hGroup: number | bigint, Flags: number | bigint): number;
   /** clusapi.dll!ChangeClusterResourceGroupEx2 */
-  ChangeClusterResourceGroupEx2(hResource: number | bigint, hGroup: number | bigint, Flags: number | bigint, lpszReason: string | Win32Pointer): number;
+  ChangeClusterResourceGroupEx2(
+    hResource: number | bigint,
+    hGroup: number | bigint,
+    Flags: number | bigint,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!CloseCluster */
   CloseCluster(hCluster: number | bigint): number;
   /** clusapi.dll!CloseClusterGroup */
@@ -63,27 +110,77 @@ interface Functions {
   /** clusapi.dll!ClusapiSetReasonHandler */
   ClusapiSetReasonHandler(lpHandler: Win32Pointer): number | null;
   /** clusapi.dll!ClusterAddGroupToAffinityRule */
-  ClusterAddGroupToAffinityRule(hCluster: number | bigint, ruleName: string | Win32Pointer, hGroup: number | bigint): number;
+  ClusterAddGroupToAffinityRule(
+    hCluster: number | bigint,
+    ruleName: string | Win32Pointer,
+    hGroup: number | bigint,
+  ): number;
   /** clusapi.dll!ClusterAddGroupToGroupSet */
   ClusterAddGroupToGroupSet(hGroupSet: number | bigint, hGroup: number | bigint): number;
   /** clusapi.dll!ClusterAddGroupToGroupSetWithDomains */
-  ClusterAddGroupToGroupSetWithDomains(hGroupSet: number | bigint, hGroup: number | bigint, faultDomain: number, updateDomain: number): number;
+  ClusterAddGroupToGroupSetWithDomains(
+    hGroupSet: number | bigint,
+    hGroup: number | bigint,
+    faultDomain: number,
+    updateDomain: number,
+  ): number;
   /** clusapi.dll!ClusterAddGroupToGroupSetWithDomainsEx */
-  ClusterAddGroupToGroupSetWithDomainsEx(hGroupSet: number | bigint, hGroup: number | bigint, faultDomain: number, updateDomain: number, lpszReason: string | Win32Pointer): number;
+  ClusterAddGroupToGroupSetWithDomainsEx(
+    hGroupSet: number | bigint,
+    hGroup: number | bigint,
+    faultDomain: number,
+    updateDomain: number,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterAffinityRuleControl */
-  ClusterAffinityRuleControl(hCluster: number | bigint, affinityRuleName: string | Win32Pointer, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, cbInBufferSize: number, lpOutBuffer: Win32Pointer, cbOutBufferSize: number, lpBytesReturned: Win32Pointer): number;
+  ClusterAffinityRuleControl(
+    hCluster: number | bigint,
+    affinityRuleName: string | Win32Pointer,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    cbOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterCloseEnum */
   ClusterCloseEnum(hEnum: number | bigint): number;
   /** clusapi.dll!ClusterCloseEnumEx */
   ClusterCloseEnumEx(hClusterEnum: number | bigint): number;
   /** clusapi.dll!ClusterControl */
-  ClusterControl(hCluster: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer): number;
+  ClusterControl(
+    hCluster: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterControlEx */
-  ClusterControlEx(hCluster: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterControlEx(
+    hCluster: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterCreateAffinityRule */
   ClusterCreateAffinityRule(hCluster: number | bigint, ruleName: string | Win32Pointer, ruleType: number): number;
   /** clusapi.dll!ClusterEnum */
-  ClusterEnum(hEnum: number | bigint, dwIndex: number, lpdwType: Win32Pointer, lpszName: string | Win32Pointer, lpcchName: Win32Pointer): number;
+  ClusterEnum(
+    hEnum: number | bigint,
+    dwIndex: number,
+    lpdwType: Win32Pointer,
+    lpszName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterEnumEx */
   ClusterEnumEx(hClusterEnum: number | bigint, dwIndex: number, pItem: Win32Pointer, cbItem: Win32Pointer): number;
   /** clusapi.dll!ClusterGetEnumCount */
@@ -95,11 +192,36 @@ interface Functions {
   /** clusapi.dll!ClusterGroupCloseEnumEx */
   ClusterGroupCloseEnumEx(hGroupEnumEx: number | bigint): number;
   /** clusapi.dll!ClusterGroupControl */
-  ClusterGroupControl(hGroup: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer): number;
+  ClusterGroupControl(
+    hGroup: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterGroupControlEx */
-  ClusterGroupControlEx(hGroup: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterGroupControlEx(
+    hGroup: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterGroupEnum */
-  ClusterGroupEnum(hGroupEnum: number | bigint, dwIndex: number, lpdwType: Win32Pointer, lpszResourceName: string | Win32Pointer, lpcchName: Win32Pointer): number;
+  ClusterGroupEnum(
+    hGroupEnum: number | bigint,
+    dwIndex: number,
+    lpdwType: Win32Pointer,
+    lpszResourceName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterGroupEnumEx */
   ClusterGroupEnumEx(hGroupEnumEx: number | bigint, dwIndex: number, pItem: Win32Pointer, cbItem: Win32Pointer): number;
   /** clusapi.dll!ClusterGroupGetEnumCount */
@@ -109,15 +231,46 @@ interface Functions {
   /** clusapi.dll!ClusterGroupOpenEnum */
   ClusterGroupOpenEnum(hGroup: number | bigint, dwType: number): number | bigint;
   /** clusapi.dll!ClusterGroupOpenEnumEx */
-  ClusterGroupOpenEnumEx(hCluster: number | bigint, lpszProperties: string | Win32Pointer, cbProperties: number, lpszRoProperties: string | Win32Pointer, cbRoProperties: number, dwFlags: number): number | bigint;
+  ClusterGroupOpenEnumEx(
+    hCluster: number | bigint,
+    lpszProperties: string | Win32Pointer,
+    cbProperties: number,
+    lpszRoProperties: string | Win32Pointer,
+    cbRoProperties: number,
+    dwFlags: number,
+  ): number | bigint;
   /** clusapi.dll!ClusterGroupSetCloseEnum */
   ClusterGroupSetCloseEnum(hGroupSetEnum: number | bigint): number;
   /** clusapi.dll!ClusterGroupSetControl */
-  ClusterGroupSetControl(hGroupSet: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, cbInBufferSize: number, lpOutBuffer: Win32Pointer, cbOutBufferSize: number, lpBytesReturned: Win32Pointer): number;
+  ClusterGroupSetControl(
+    hGroupSet: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    cbOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterGroupSetControlEx */
-  ClusterGroupSetControlEx(hGroupSet: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, cbInBufferSize: number, lpOutBuffer: Win32Pointer, cbOutBufferSize: number, lpBytesReturned: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterGroupSetControlEx(
+    hGroupSet: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    cbOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterGroupSetEnum */
-  ClusterGroupSetEnum(hGroupSetEnum: number | bigint, dwIndex: number, lpszName: string | Win32Pointer, lpcchName: Win32Pointer): number;
+  ClusterGroupSetEnum(
+    hGroupSetEnum: number | bigint,
+    dwIndex: number,
+    lpszName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterGroupSetGetEnumCount */
   ClusterGroupSetGetEnumCount(hGroupSetEnum: number | bigint): number;
   /** clusapi.dll!ClusterGroupSetOpenEnum */
@@ -125,21 +278,74 @@ interface Functions {
   /** clusapi.dll!ClusterNetInterfaceCloseEnum */
   ClusterNetInterfaceCloseEnum(hNetInterfaceEnum: number | bigint): number;
   /** clusapi.dll!ClusterNetInterfaceControl */
-  ClusterNetInterfaceControl(hNetInterface: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer): number;
+  ClusterNetInterfaceControl(
+    hNetInterface: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterNetInterfaceControlEx */
-  ClusterNetInterfaceControlEx(hNetInterface: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterNetInterfaceControlEx(
+    hNetInterface: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterNetInterfaceEnum */
-  ClusterNetInterfaceEnum(hNetInterfaceEnum: number | bigint, dwIndex: number, lpszName: string | Win32Pointer, lpcchName: Win32Pointer): number;
+  ClusterNetInterfaceEnum(
+    hNetInterfaceEnum: number | bigint,
+    dwIndex: number,
+    lpszName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterNetInterfaceOpenEnum */
-  ClusterNetInterfaceOpenEnum(hCluster: number | bigint, lpszNodeName: string | Win32Pointer, lpszNetworkName: string | Win32Pointer): number | bigint;
+  ClusterNetInterfaceOpenEnum(
+    hCluster: number | bigint,
+    lpszNodeName: string | Win32Pointer,
+    lpszNetworkName: string | Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!ClusterNetworkCloseEnum */
   ClusterNetworkCloseEnum(hNetworkEnum: number | bigint): number;
   /** clusapi.dll!ClusterNetworkControl */
-  ClusterNetworkControl(hNetwork: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer): number;
+  ClusterNetworkControl(
+    hNetwork: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterNetworkControlEx */
-  ClusterNetworkControlEx(hNetwork: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterNetworkControlEx(
+    hNetwork: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterNetworkEnum */
-  ClusterNetworkEnum(hNetworkEnum: number | bigint, dwIndex: number, lpdwType: Win32Pointer, lpszName: string | Win32Pointer, lpcchName: Win32Pointer): number;
+  ClusterNetworkEnum(
+    hNetworkEnum: number | bigint,
+    dwIndex: number,
+    lpdwType: Win32Pointer,
+    lpszName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterNetworkGetEnumCount */
   ClusterNetworkGetEnumCount(hNetworkEnum: number | bigint): number;
   /** clusapi.dll!ClusterNetworkOpenEnum */
@@ -149,11 +355,36 @@ interface Functions {
   /** clusapi.dll!ClusterNodeCloseEnumEx */
   ClusterNodeCloseEnumEx(hNodeEnum: number | bigint): number;
   /** clusapi.dll!ClusterNodeControl */
-  ClusterNodeControl(hNode: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer): number;
+  ClusterNodeControl(
+    hNode: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterNodeControlEx */
-  ClusterNodeControlEx(hNode: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterNodeControlEx(
+    hNode: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterNodeEnum */
-  ClusterNodeEnum(hNodeEnum: number | bigint, dwIndex: number, lpdwType: Win32Pointer, lpszName: string | Win32Pointer, lpcchName: Win32Pointer): number;
+  ClusterNodeEnum(
+    hNodeEnum: number | bigint,
+    dwIndex: number,
+    lpdwType: Win32Pointer,
+    lpszName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterNodeEnumEx */
   ClusterNodeEnumEx(hNodeEnum: number | bigint, dwIndex: number, pItem: Win32Pointer, cbItem: Win32Pointer): number;
   /** clusapi.dll!ClusterNodeGetEnumCount */
@@ -165,13 +396,24 @@ interface Functions {
   /** clusapi.dll!ClusterNodeOpenEnumEx */
   ClusterNodeOpenEnumEx(hNode: number | bigint, dwType: number, pOptions: Win32Pointer): number | bigint;
   /** clusapi.dll!ClusterNodeReplacement */
-  ClusterNodeReplacement(hCluster: number | bigint, lpszNodeNameCurrent: string | Win32Pointer, lpszNodeNameNew: string | Win32Pointer): number;
+  ClusterNodeReplacement(
+    hCluster: number | bigint,
+    lpszNodeNameCurrent: string | Win32Pointer,
+    lpszNodeNameNew: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterOpenEnum */
   ClusterOpenEnum(hCluster: number | bigint, dwType: number): number | bigint;
   /** clusapi.dll!ClusterOpenEnumEx */
   ClusterOpenEnumEx(hCluster: number | bigint, dwType: number, pOptions: Win32Pointer): number | bigint;
   /** clusapi.dll!ClusterRegBatchAddCommand */
-  ClusterRegBatchAddCommand(hRegBatch: number | bigint, dwCommand: number, wzName: string | Win32Pointer, dwOptions: number, lpData: Win32Pointer, cbData: number): number;
+  ClusterRegBatchAddCommand(
+    hRegBatch: number | bigint,
+    dwCommand: number,
+    wzName: string | Win32Pointer,
+    dwOptions: number,
+    lpData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** clusapi.dll!ClusterRegBatchCloseNotification */
   ClusterRegBatchCloseNotification(hBatchNotification: number | bigint): number;
   /** clusapi.dll!ClusterRegBatchReadCommand */
@@ -195,9 +437,26 @@ interface Functions {
   /** clusapi.dll!ClusterRegCreateBatchNotifyPort */
   ClusterRegCreateBatchNotifyPort(hKey: Win32Pointer, phBatchNotifyPort: Win32Pointer): number;
   /** clusapi.dll!ClusterRegCreateKey */
-  ClusterRegCreateKey(hKey: Win32Pointer, lpszSubKey: string | Win32Pointer, dwOptions: number, samDesired: number, lpSecurityAttributes: Win32Pointer, phkResult: Win32Pointer, lpdwDisposition: Win32Pointer): number;
+  ClusterRegCreateKey(
+    hKey: Win32Pointer,
+    lpszSubKey: string | Win32Pointer,
+    dwOptions: number,
+    samDesired: number,
+    lpSecurityAttributes: Win32Pointer,
+    phkResult: Win32Pointer,
+    lpdwDisposition: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterRegCreateKeyEx */
-  ClusterRegCreateKeyEx(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, dwOptions: number, samDesired: number, lpSecurityAttributes: Win32Pointer, phkResult: Win32Pointer, lpdwDisposition: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterRegCreateKeyEx(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    dwOptions: number,
+    samDesired: number,
+    lpSecurityAttributes: Win32Pointer,
+    phkResult: Win32Pointer,
+    lpdwDisposition: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterRegCreateReadBatch */
   ClusterRegCreateReadBatch(hKey: Win32Pointer, phRegReadBatch: Win32Pointer): number;
   /** clusapi.dll!ClusterRegDeleteKey */
@@ -207,39 +466,108 @@ interface Functions {
   /** clusapi.dll!ClusterRegDeleteValue */
   ClusterRegDeleteValue(hKey: Win32Pointer, lpszValueName: string | Win32Pointer): number;
   /** clusapi.dll!ClusterRegDeleteValueEx */
-  ClusterRegDeleteValueEx(hKey: Win32Pointer, lpszValueName: string | Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterRegDeleteValueEx(
+    hKey: Win32Pointer,
+    lpszValueName: string | Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterRegEnumKey */
-  ClusterRegEnumKey(hKey: Win32Pointer, dwIndex: number, lpszName: string | Win32Pointer, lpcchName: Win32Pointer, lpftLastWriteTime: Win32Pointer): number;
+  ClusterRegEnumKey(
+    hKey: Win32Pointer,
+    dwIndex: number,
+    lpszName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+    lpftLastWriteTime: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterRegEnumValue */
-  ClusterRegEnumValue(hKey: Win32Pointer, dwIndex: number, lpszValueName: string | Win32Pointer, lpcchValueName: Win32Pointer, lpdwType: Win32Pointer, lpData: Win32Pointer, lpcbData: Win32Pointer): number;
+  ClusterRegEnumValue(
+    hKey: Win32Pointer,
+    dwIndex: number,
+    lpszValueName: string | Win32Pointer,
+    lpcchValueName: Win32Pointer,
+    lpdwType: Win32Pointer,
+    lpData: Win32Pointer,
+    lpcbData: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterRegGetBatchNotification */
   ClusterRegGetBatchNotification(hBatchNotify: number | bigint, phBatchNotification: Win32Pointer): number;
   /** clusapi.dll!ClusterRegGetKeySecurity */
-  ClusterRegGetKeySecurity(hKey: Win32Pointer, RequestedInformation: number, pSecurityDescriptor: Win32Pointer, lpcbSecurityDescriptor: Win32Pointer): number;
+  ClusterRegGetKeySecurity(
+    hKey: Win32Pointer,
+    RequestedInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+    lpcbSecurityDescriptor: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterRegOpenKey */
-  ClusterRegOpenKey(hKey: Win32Pointer, lpszSubKey: string | Win32Pointer, samDesired: number, phkResult: Win32Pointer): number;
+  ClusterRegOpenKey(
+    hKey: Win32Pointer,
+    lpszSubKey: string | Win32Pointer,
+    samDesired: number,
+    phkResult: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterRegQueryInfoKey */
-  ClusterRegQueryInfoKey(hKey: Win32Pointer, lpcSubKeys: Win32Pointer, lpcchMaxSubKeyLen: Win32Pointer, lpcValues: Win32Pointer, lpcchMaxValueNameLen: Win32Pointer, lpcbMaxValueLen: Win32Pointer, lpcbSecurityDescriptor: Win32Pointer, lpftLastWriteTime: Win32Pointer): number;
+  ClusterRegQueryInfoKey(
+    hKey: Win32Pointer,
+    lpcSubKeys: Win32Pointer,
+    lpcchMaxSubKeyLen: Win32Pointer,
+    lpcValues: Win32Pointer,
+    lpcchMaxValueNameLen: Win32Pointer,
+    lpcbMaxValueLen: Win32Pointer,
+    lpcbSecurityDescriptor: Win32Pointer,
+    lpftLastWriteTime: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterRegQueryValue */
-  ClusterRegQueryValue(hKey: Win32Pointer, lpszValueName: string | Win32Pointer, lpdwValueType: Win32Pointer, lpData: Win32Pointer, lpcbData: Win32Pointer): number;
+  ClusterRegQueryValue(
+    hKey: Win32Pointer,
+    lpszValueName: string | Win32Pointer,
+    lpdwValueType: Win32Pointer,
+    lpData: Win32Pointer,
+    lpcbData: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterRegReadBatchAddCommand */
-  ClusterRegReadBatchAddCommand(hRegReadBatch: number | bigint, wzSubkeyName: string | Win32Pointer, wzValueName: string | Win32Pointer): number;
+  ClusterRegReadBatchAddCommand(
+    hRegReadBatch: number | bigint,
+    wzSubkeyName: string | Win32Pointer,
+    wzValueName: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterRegReadBatchReplyNextCommand */
   ClusterRegReadBatchReplyNextCommand(hRegReadBatchReply: number | bigint, pBatchCommand: Win32Pointer): number;
   /** clusapi.dll!ClusterRegSetKeySecurity */
   ClusterRegSetKeySecurity(hKey: Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer): number;
   /** clusapi.dll!ClusterRegSetKeySecurityEx */
-  ClusterRegSetKeySecurityEx(hKey: Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterRegSetKeySecurityEx(
+    hKey: Win32Pointer,
+    SecurityInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterRegSetValue */
-  ClusterRegSetValue(hKey: Win32Pointer, lpszValueName: string | Win32Pointer, dwType: number, lpData: Win32Pointer, cbData: number): number;
+  ClusterRegSetValue(
+    hKey: Win32Pointer,
+    lpszValueName: string | Win32Pointer,
+    dwType: number,
+    lpData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** clusapi.dll!ClusterRegSetValueEx */
-  ClusterRegSetValueEx(hKey: Win32Pointer, lpszValueName: string | Win32Pointer, dwType: number, lpData: Win32Pointer, cbData: number, lpszReason: string | Win32Pointer): number;
+  ClusterRegSetValueEx(
+    hKey: Win32Pointer,
+    lpszValueName: string | Win32Pointer,
+    dwType: number,
+    lpData: Win32Pointer,
+    cbData: number,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterRegSyncDatabase */
   ClusterRegSyncDatabase(hCluster: number | bigint, flags: number): number;
   /** clusapi.dll!ClusterRemoveAffinityRule */
   ClusterRemoveAffinityRule(hCluster: number | bigint, ruleName: string | Win32Pointer): number;
   /** clusapi.dll!ClusterRemoveGroupFromAffinityRule */
-  ClusterRemoveGroupFromAffinityRule(hCluster: number | bigint, ruleName: string | Win32Pointer, hGroup: number | bigint): number;
+  ClusterRemoveGroupFromAffinityRule(
+    hCluster: number | bigint,
+    ruleName: string | Win32Pointer,
+    hGroup: number | bigint,
+  ): number;
   /** clusapi.dll!ClusterRemoveGroupFromGroupSet */
   ClusterRemoveGroupFromGroupSet(hGroup: number | bigint): number;
   /** clusapi.dll!ClusterRemoveGroupFromGroupSetEx */
@@ -249,17 +577,66 @@ interface Functions {
   /** clusapi.dll!ClusterResourceCloseEnumEx */
   ClusterResourceCloseEnumEx(hResourceEnumEx: number | bigint): number;
   /** clusapi.dll!ClusterResourceControl */
-  ClusterResourceControl(hResource: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, cbInBufferSize: number, lpOutBuffer: Win32Pointer, cbOutBufferSize: number, lpBytesReturned: Win32Pointer): number;
+  ClusterResourceControl(
+    hResource: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    cbOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterResourceControlAsUser */
-  ClusterResourceControlAsUser(hResource: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, cbInBufferSize: number, lpOutBuffer: Win32Pointer, cbOutBufferSize: number, lpBytesReturned: Win32Pointer): number;
+  ClusterResourceControlAsUser(
+    hResource: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    cbOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterResourceControlAsUserEx */
-  ClusterResourceControlAsUserEx(hResource: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, cbInBufferSize: number, lpOutBuffer: Win32Pointer, cbOutBufferSize: number, lpBytesReturned: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterResourceControlAsUserEx(
+    hResource: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    cbOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterResourceControlEx */
-  ClusterResourceControlEx(hResource: number | bigint, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, cbInBufferSize: number, lpOutBuffer: Win32Pointer, cbOutBufferSize: number, lpBytesReturned: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterResourceControlEx(
+    hResource: number | bigint,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    cbOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterResourceEnum */
-  ClusterResourceEnum(hResEnum: number | bigint, dwIndex: number, lpdwType: Win32Pointer, lpszName: string | Win32Pointer, lpcchName: Win32Pointer): number;
+  ClusterResourceEnum(
+    hResEnum: number | bigint,
+    dwIndex: number,
+    lpdwType: Win32Pointer,
+    lpszName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterResourceEnumEx */
-  ClusterResourceEnumEx(hResourceEnumEx: number | bigint, dwIndex: number, pItem: Win32Pointer, cbItem: Win32Pointer): number;
+  ClusterResourceEnumEx(
+    hResourceEnumEx: number | bigint,
+    dwIndex: number,
+    pItem: Win32Pointer,
+    cbItem: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterResourceGetEnumCount */
   ClusterResourceGetEnumCount(hResEnum: number | bigint): number;
   /** clusapi.dll!ClusterResourceGetEnumCountEx */
@@ -267,53 +644,180 @@ interface Functions {
   /** clusapi.dll!ClusterResourceOpenEnum */
   ClusterResourceOpenEnum(hResource: number | bigint, dwType: number): number | bigint;
   /** clusapi.dll!ClusterResourceOpenEnumEx */
-  ClusterResourceOpenEnumEx(hCluster: number | bigint, lpszProperties: string | Win32Pointer, cbProperties: number, lpszRoProperties: string | Win32Pointer, cbRoProperties: number, dwFlags: number): number | bigint;
+  ClusterResourceOpenEnumEx(
+    hCluster: number | bigint,
+    lpszProperties: string | Win32Pointer,
+    cbProperties: number,
+    lpszRoProperties: string | Win32Pointer,
+    cbRoProperties: number,
+    dwFlags: number,
+  ): number | bigint;
   /** clusapi.dll!ClusterResourceTypeCloseEnum */
   ClusterResourceTypeCloseEnum(hResTypeEnum: number | bigint): number;
   /** clusapi.dll!ClusterResourceTypeControl */
-  ClusterResourceTypeControl(hCluster: number | bigint, lpszResourceTypeName: string | Win32Pointer, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer): number;
+  ClusterResourceTypeControl(
+    hCluster: number | bigint,
+    lpszResourceTypeName: string | Win32Pointer,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterResourceTypeControlAsUser */
-  ClusterResourceTypeControlAsUser(hCluster: number | bigint, lpszResourceTypeName: string | Win32Pointer, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer): number;
+  ClusterResourceTypeControlAsUser(
+    hCluster: number | bigint,
+    lpszResourceTypeName: string | Win32Pointer,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterResourceTypeControlAsUserEx */
-  ClusterResourceTypeControlAsUserEx(hCluster: number | bigint, lpszResourceTypeName: string | Win32Pointer, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterResourceTypeControlAsUserEx(
+    hCluster: number | bigint,
+    lpszResourceTypeName: string | Win32Pointer,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterResourceTypeControlEx */
-  ClusterResourceTypeControlEx(hCluster: number | bigint, lpszResourceTypeName: string | Win32Pointer, hHostNode: number | bigint, dwControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  ClusterResourceTypeControlEx(
+    hCluster: number | bigint,
+    lpszResourceTypeName: string | Win32Pointer,
+    hHostNode: number | bigint,
+    dwControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterResourceTypeEnum */
-  ClusterResourceTypeEnum(hResTypeEnum: number | bigint, dwIndex: number, lpdwType: Win32Pointer, lpszName: string | Win32Pointer, lpcchName: Win32Pointer): number;
+  ClusterResourceTypeEnum(
+    hResTypeEnum: number | bigint,
+    dwIndex: number,
+    lpdwType: Win32Pointer,
+    lpszName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+  ): number;
   /** clusapi.dll!ClusterResourceTypeGetEnumCount */
   ClusterResourceTypeGetEnumCount(hResTypeEnum: number | bigint): number;
   /** clusapi.dll!ClusterResourceTypeOpenEnum */
-  ClusterResourceTypeOpenEnum(hCluster: number | bigint, lpszResourceTypeName: string | Win32Pointer, dwType: number): number | bigint;
+  ClusterResourceTypeOpenEnum(
+    hCluster: number | bigint,
+    lpszResourceTypeName: string | Win32Pointer,
+    dwType: number,
+  ): number | bigint;
   /** clusapi.dll!ClusterSetAccountAccess */
-  ClusterSetAccountAccess(hCluster: number | bigint, szAccountSID: string | Win32Pointer, dwAccess: number, dwControlType: number): number;
+  ClusterSetAccountAccess(
+    hCluster: number | bigint,
+    szAccountSID: string | Win32Pointer,
+    dwAccess: number,
+    dwControlType: number,
+  ): number;
   /** clusapi.dll!ClusterSharedVolumeSetSnapshotState */
-  ClusterSharedVolumeSetSnapshotState(guidSnapshotSet: Win32StructInit, lpszVolumeName: string | Win32Pointer, state: number): number;
+  ClusterSharedVolumeSetSnapshotState(
+    guidSnapshotSet: Win32StructInit,
+    lpszVolumeName: string | Win32Pointer,
+    state: number,
+  ): number;
   /** clusapi.dll!ClusterUpgradeFunctionalLevel */
-  ClusterUpgradeFunctionalLevel(hCluster: number | bigint, perform: number, pfnProgressCallback: Win32Callback, pvCallbackArg: Win32Pointer): number;
+  ClusterUpgradeFunctionalLevel(
+    hCluster: number | bigint,
+    perform: number,
+    pfnProgressCallback: Win32Callback,
+    pvCallbackArg: Win32Pointer,
+  ): number;
   /** clusapi.dll!CreateCluster */
-  CreateCluster(pConfig: Win32Pointer, pfnProgressCallback: Win32Callback, pvCallbackArg: Win32Pointer): number | bigint;
+  CreateCluster(
+    pConfig: Win32Pointer,
+    pfnProgressCallback: Win32Callback,
+    pvCallbackArg: Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!CreateClusterAvailabilitySet */
-  CreateClusterAvailabilitySet(hCluster: number | bigint, lpAvailabilitySetName: string | Win32Pointer, pAvailabilitySetConfig: Win32Pointer): number | bigint;
+  CreateClusterAvailabilitySet(
+    hCluster: number | bigint,
+    lpAvailabilitySetName: string | Win32Pointer,
+    pAvailabilitySetConfig: Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!CreateClusterGroup */
   CreateClusterGroup(hCluster: number | bigint, lpszGroupName: string | Win32Pointer): number | bigint;
   /** clusapi.dll!CreateClusterGroupEx */
-  CreateClusterGroupEx(hCluster: number | bigint, lpszGroupName: string | Win32Pointer, pGroupInfo: Win32Pointer): number | bigint;
+  CreateClusterGroupEx(
+    hCluster: number | bigint,
+    lpszGroupName: string | Win32Pointer,
+    pGroupInfo: Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!CreateClusterGroupSet */
   CreateClusterGroupSet(hCluster: number | bigint, groupSetName: string | Win32Pointer): number | bigint;
   /** clusapi.dll!CreateClusterNameAccount */
-  CreateClusterNameAccount(hCluster: number | bigint, pConfig: Win32Pointer, pfnProgressCallback: Win32Callback, pvCallbackArg: Win32Pointer): number;
+  CreateClusterNameAccount(
+    hCluster: number | bigint,
+    pConfig: Win32Pointer,
+    pfnProgressCallback: Win32Callback,
+    pvCallbackArg: Win32Pointer,
+  ): number;
   /** clusapi.dll!CreateClusterNotifyPort */
-  CreateClusterNotifyPort(hChange: number | bigint, hCluster: number | bigint, dwFilter: number, dwNotifyKey: number | bigint): number | bigint;
+  CreateClusterNotifyPort(
+    hChange: number | bigint,
+    hCluster: number | bigint,
+    dwFilter: number,
+    dwNotifyKey: number | bigint,
+  ): number | bigint;
   /** clusapi.dll!CreateClusterNotifyPortV2 */
-  CreateClusterNotifyPortV2(hChange: number | bigint, hCluster: number | bigint, Filters: Win32Pointer, dwFilterCount: number, dwNotifyKey: number | bigint): number | bigint;
+  CreateClusterNotifyPortV2(
+    hChange: number | bigint,
+    hCluster: number | bigint,
+    Filters: Win32Pointer,
+    dwFilterCount: number,
+    dwNotifyKey: number | bigint,
+  ): number | bigint;
   /** clusapi.dll!CreateClusterResource */
-  CreateClusterResource(hGroup: number | bigint, lpszResourceName: string | Win32Pointer, lpszResourceType: string | Win32Pointer, dwFlags: number): number | bigint;
+  CreateClusterResource(
+    hGroup: number | bigint,
+    lpszResourceName: string | Win32Pointer,
+    lpszResourceType: string | Win32Pointer,
+    dwFlags: number,
+  ): number | bigint;
   /** clusapi.dll!CreateClusterResourceEx */
-  CreateClusterResourceEx(hGroup: number | bigint, lpszResourceName: string | Win32Pointer, lpszResourceType: string | Win32Pointer, dwFlags: number, lpszReason: string | Win32Pointer): number | bigint;
+  CreateClusterResourceEx(
+    hGroup: number | bigint,
+    lpszResourceName: string | Win32Pointer,
+    lpszResourceType: string | Win32Pointer,
+    dwFlags: number,
+    lpszReason: string | Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!CreateClusterResourceType */
-  CreateClusterResourceType(hCluster: number | bigint, lpszResourceTypeName: string | Win32Pointer, lpszDisplayName: string | Win32Pointer, lpszResourceTypeDll: string | Win32Pointer, dwLooksAlivePollInterval: number, dwIsAlivePollInterval: number): number;
+  CreateClusterResourceType(
+    hCluster: number | bigint,
+    lpszResourceTypeName: string | Win32Pointer,
+    lpszDisplayName: string | Win32Pointer,
+    lpszResourceTypeDll: string | Win32Pointer,
+    dwLooksAlivePollInterval: number,
+    dwIsAlivePollInterval: number,
+  ): number;
   /** clusapi.dll!CreateClusterResourceTypeEx */
-  CreateClusterResourceTypeEx(hCluster: number | bigint, lpszResourceTypeName: string | Win32Pointer, lpszDisplayName: string | Win32Pointer, lpszResourceTypeDll: string | Win32Pointer, dwLooksAlivePollInterval: number, dwIsAlivePollInterval: number, lpszReason: string | Win32Pointer): number;
+  CreateClusterResourceTypeEx(
+    hCluster: number | bigint,
+    lpszResourceTypeName: string | Win32Pointer,
+    lpszDisplayName: string | Win32Pointer,
+    lpszResourceTypeDll: string | Win32Pointer,
+    dwLooksAlivePollInterval: number,
+    dwIsAlivePollInterval: number,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!DeleteClusterGroup */
   DeleteClusterGroup(hGroup: number | bigint): number;
   /** clusapi.dll!DeleteClusterGroupEx */
@@ -329,9 +833,18 @@ interface Functions {
   /** clusapi.dll!DeleteClusterResourceType */
   DeleteClusterResourceType(hCluster: number | bigint, lpszResourceTypeName: string | Win32Pointer): number;
   /** clusapi.dll!DeleteClusterResourceTypeEx */
-  DeleteClusterResourceTypeEx(hCluster: number | bigint, lpszTypeName: string | Win32Pointer, lpszReason: string | Win32Pointer): number;
+  DeleteClusterResourceTypeEx(
+    hCluster: number | bigint,
+    lpszTypeName: string | Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!DestroyCluster */
-  DestroyCluster(hCluster: number | bigint, pfnProgressCallback: Win32Callback, pvCallbackArg: Win32Pointer, fdeleteVirtualComputerObjects: number): number;
+  DestroyCluster(
+    hCluster: number | bigint,
+    pfnProgressCallback: Win32Callback,
+    pvCallbackArg: Win32Pointer,
+    fdeleteVirtualComputerObjects: number,
+  ): number;
   /** clusapi.dll!DestroyClusterGroup */
   DestroyClusterGroup(hGroup: number | bigint): number;
   /** clusapi.dll!DestroyClusterGroupEx */
@@ -349,7 +862,12 @@ interface Functions {
   /** clusapi.dll!EvictClusterNodeEx */
   EvictClusterNodeEx(hNode: number | bigint, dwTimeOut: number, phrCleanupStatus: Win32Pointer): number;
   /** clusapi.dll!EvictClusterNodeEx2 */
-  EvictClusterNodeEx2(hNode: number | bigint, dwTimeout: number, phrCleanupStatus: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  EvictClusterNodeEx2(
+    hNode: number | bigint,
+    dwTimeout: number,
+    phrCleanupStatus: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!FailClusterResource */
   FailClusterResource(hResource: number | bigint): number;
   /** clusapi.dll!FailClusterResourceEx */
@@ -367,13 +885,28 @@ interface Functions {
   /** clusapi.dll!GetClusterGroupKey */
   GetClusterGroupKey(hGroup: number | bigint, samDesired: number): number | null;
   /** clusapi.dll!GetClusterGroupState */
-  GetClusterGroupState(hGroup: number | bigint, lpszNodeName: string | Win32Pointer, lpcchNodeName: Win32Pointer): number;
+  GetClusterGroupState(
+    hGroup: number | bigint,
+    lpszNodeName: string | Win32Pointer,
+    lpcchNodeName: Win32Pointer,
+  ): number;
   /** clusapi.dll!GetClusterInformation */
-  GetClusterInformation(hCluster: number | bigint, lpszClusterName: string | Win32Pointer, lpcchClusterName: Win32Pointer, lpClusterInfo: Win32Pointer): number;
+  GetClusterInformation(
+    hCluster: number | bigint,
+    lpszClusterName: string | Win32Pointer,
+    lpcchClusterName: Win32Pointer,
+    lpClusterInfo: Win32Pointer,
+  ): number;
   /** clusapi.dll!GetClusterKey */
   GetClusterKey(hCluster: number | bigint, samDesired: number): number | null;
   /** clusapi.dll!GetClusterNetInterface */
-  GetClusterNetInterface(hCluster: number | bigint, lpszNodeName: string | Win32Pointer, lpszNetworkName: string | Win32Pointer, lpszInterfaceName: string | Win32Pointer, lpcchInterfaceName: Win32Pointer): number;
+  GetClusterNetInterface(
+    hCluster: number | bigint,
+    lpszNodeName: string | Win32Pointer,
+    lpszNetworkName: string | Win32Pointer,
+    lpszInterfaceName: string | Win32Pointer,
+    lpcchInterfaceName: Win32Pointer,
+  ): number;
   /** clusapi.dll!GetClusterNetInterfaceKey */
   GetClusterNetInterfaceKey(hNetInterface: number | bigint, samDesired: number): number | null;
   /** clusapi.dll!GetClusterNetInterfaceState */
@@ -391,21 +924,68 @@ interface Functions {
   /** clusapi.dll!GetClusterNodeState */
   GetClusterNodeState(hNode: number | bigint): number;
   /** clusapi.dll!GetClusterNotify */
-  GetClusterNotify(hChange: number | bigint, lpdwNotifyKey: Win32Pointer, lpdwFilterType: Win32Pointer, lpszName: string | Win32Pointer, lpcchName: Win32Pointer, dwMilliseconds: number): number;
+  GetClusterNotify(
+    hChange: number | bigint,
+    lpdwNotifyKey: Win32Pointer,
+    lpdwFilterType: Win32Pointer,
+    lpszName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+    dwMilliseconds: number,
+  ): number;
   /** clusapi.dll!GetClusterNotifyV2 */
-  GetClusterNotifyV2(hChange: number | bigint, lpdwNotifyKey: Win32Pointer, pFilterAndType: Win32Pointer, buffer: Win32Pointer, lpbBufferSize: Win32Pointer, lpszObjectId: string | Win32Pointer, lpcchObjectId: Win32Pointer, lpszParentId: string | Win32Pointer, lpcchParentId: Win32Pointer, lpszName: string | Win32Pointer, lpcchName: Win32Pointer, lpszType: string | Win32Pointer, lpcchType: Win32Pointer, dwMilliseconds: number): number;
+  GetClusterNotifyV2(
+    hChange: number | bigint,
+    lpdwNotifyKey: Win32Pointer,
+    pFilterAndType: Win32Pointer,
+    buffer: Win32Pointer,
+    lpbBufferSize: Win32Pointer,
+    lpszObjectId: string | Win32Pointer,
+    lpcchObjectId: Win32Pointer,
+    lpszParentId: string | Win32Pointer,
+    lpcchParentId: Win32Pointer,
+    lpszName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+    lpszType: string | Win32Pointer,
+    lpcchType: Win32Pointer,
+    dwMilliseconds: number,
+  ): number;
   /** clusapi.dll!GetClusterQuorumResource */
-  GetClusterQuorumResource(hCluster: number | bigint, lpszResourceName: string | Win32Pointer, lpcchResourceName: Win32Pointer, lpszDeviceName: string | Win32Pointer, lpcchDeviceName: Win32Pointer, lpdwMaxQuorumLogSize: Win32Pointer): number;
+  GetClusterQuorumResource(
+    hCluster: number | bigint,
+    lpszResourceName: string | Win32Pointer,
+    lpcchResourceName: Win32Pointer,
+    lpszDeviceName: string | Win32Pointer,
+    lpcchDeviceName: Win32Pointer,
+    lpdwMaxQuorumLogSize: Win32Pointer,
+  ): number;
   /** clusapi.dll!GetClusterResourceDependencyExpression */
-  GetClusterResourceDependencyExpression(hResource: number | bigint, lpszDependencyExpression: string | Win32Pointer, lpcchDependencyExpression: Win32Pointer): number;
+  GetClusterResourceDependencyExpression(
+    hResource: number | bigint,
+    lpszDependencyExpression: string | Win32Pointer,
+    lpcchDependencyExpression: Win32Pointer,
+  ): number;
   /** clusapi.dll!GetClusterResourceKey */
   GetClusterResourceKey(hResource: number | bigint, samDesired: number): number | null;
   /** clusapi.dll!GetClusterResourceNetworkName */
-  GetClusterResourceNetworkName(hResource: number | bigint, lpBuffer: string | Win32Pointer, nSize: Win32Pointer): number;
+  GetClusterResourceNetworkName(
+    hResource: number | bigint,
+    lpBuffer: string | Win32Pointer,
+    nSize: Win32Pointer,
+  ): number;
   /** clusapi.dll!GetClusterResourceState */
-  GetClusterResourceState(hResource: number | bigint, lpszNodeName: string | Win32Pointer, lpcchNodeName: Win32Pointer, lpszGroupName: string | Win32Pointer, lpcchGroupName: Win32Pointer): number;
+  GetClusterResourceState(
+    hResource: number | bigint,
+    lpszNodeName: string | Win32Pointer,
+    lpcchNodeName: Win32Pointer,
+    lpszGroupName: string | Win32Pointer,
+    lpcchGroupName: Win32Pointer,
+  ): number;
   /** clusapi.dll!GetClusterResourceTypeKey */
-  GetClusterResourceTypeKey(hCluster: number | bigint, lpszTypeName: string | Win32Pointer, samDesired: number): number | null;
+  GetClusterResourceTypeKey(
+    hCluster: number | bigint,
+    lpszTypeName: string | Win32Pointer,
+    samDesired: number,
+  ): number | null;
   /** clusapi.dll!GetNodeCloudTypeDW */
   GetNodeCloudTypeDW(ppszNodeName: string | Win32Pointer, NodeCloudType: Win32Pointer): number;
   /** clusapi.dll!GetNodeClusterState */
@@ -417,153 +997,361 @@ interface Functions {
   /** clusapi.dll!MoveClusterGroup */
   MoveClusterGroup(hGroup: number | bigint, hDestinationNode: number | bigint): number;
   /** clusapi.dll!MoveClusterGroupEx */
-  MoveClusterGroupEx(hGroup: number | bigint, hDestinationNode: number | bigint, dwMoveFlags: number, lpInBuffer: Win32Pointer, cbInBufferSize: number): number;
+  MoveClusterGroupEx(
+    hGroup: number | bigint,
+    hDestinationNode: number | bigint,
+    dwMoveFlags: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+  ): number;
   /** clusapi.dll!MoveClusterGroupEx2 */
-  MoveClusterGroupEx2(hGroup: number | bigint, hDestinationNode: number | bigint, dwMoveFlags: number, lpInBuffer: Win32Pointer, cbInBufferSize: number, lpszReason: string | Win32Pointer): number;
+  MoveClusterGroupEx2(
+    hGroup: number | bigint,
+    hDestinationNode: number | bigint,
+    dwMoveFlags: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!OfflineClusterGroup */
   OfflineClusterGroup(hGroup: number | bigint): number;
   /** clusapi.dll!OfflineClusterGroupEx */
-  OfflineClusterGroupEx(hGroup: number | bigint, dwOfflineFlags: number, lpInBuffer: Win32Pointer, cbInBufferSize: number): number;
+  OfflineClusterGroupEx(
+    hGroup: number | bigint,
+    dwOfflineFlags: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+  ): number;
   /** clusapi.dll!OfflineClusterGroupEx2 */
-  OfflineClusterGroupEx2(hGroup: number | bigint, dwOfflineFlags: number, lpInBuffer: Win32Pointer, cbInBufferSize: number, lpszReason: string | Win32Pointer): number;
+  OfflineClusterGroupEx2(
+    hGroup: number | bigint,
+    dwOfflineFlags: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!OfflineClusterResource */
   OfflineClusterResource(hResource: number | bigint): number;
   /** clusapi.dll!OfflineClusterResourceEx */
-  OfflineClusterResourceEx(hResource: number | bigint, dwOfflineFlags: number, lpInBuffer: Win32Pointer, cbInBufferSize: number): number;
+  OfflineClusterResourceEx(
+    hResource: number | bigint,
+    dwOfflineFlags: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+  ): number;
   /** clusapi.dll!OfflineClusterResourceEx2 */
-  OfflineClusterResourceEx2(hResource: number | bigint, dwOfflineFlags: number, lpInBuffer: Win32Pointer, cbInBufferSize: number, lpszReason: string | Win32Pointer): number;
+  OfflineClusterResourceEx2(
+    hResource: number | bigint,
+    dwOfflineFlags: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!OnlineClusterGroup */
   OnlineClusterGroup(hGroup: number | bigint, hDestinationNode: number | bigint): number;
   /** clusapi.dll!OnlineClusterGroupEx */
-  OnlineClusterGroupEx(hGroup: number | bigint, hDestinationNode: number | bigint, dwOnlineFlags: number, lpInBuffer: Win32Pointer, cbInBufferSize: number): number;
+  OnlineClusterGroupEx(
+    hGroup: number | bigint,
+    hDestinationNode: number | bigint,
+    dwOnlineFlags: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+  ): number;
   /** clusapi.dll!OnlineClusterGroupEx2 */
-  OnlineClusterGroupEx2(hGroup: number | bigint, hDestinationNode: number | bigint, dwOnlineFlags: number, lpInBuffer: Win32Pointer, cbInBufferSize: number, lpszReason: string | Win32Pointer): number;
+  OnlineClusterGroupEx2(
+    hGroup: number | bigint,
+    hDestinationNode: number | bigint,
+    dwOnlineFlags: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!OnlineClusterResource */
   OnlineClusterResource(hResource: number | bigint): number;
   /** clusapi.dll!OnlineClusterResourceEx */
-  OnlineClusterResourceEx(hResource: number | bigint, dwOnlineFlags: number, lpInBuffer: Win32Pointer, cbInBufferSize: number): number;
+  OnlineClusterResourceEx(
+    hResource: number | bigint,
+    dwOnlineFlags: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+  ): number;
   /** clusapi.dll!OnlineClusterResourceEx2 */
-  OnlineClusterResourceEx2(hResource: number | bigint, dwOnlineFlags: number, lpInBuffer: Win32Pointer, cbInBufferSize: number, lpszReason: string | Win32Pointer): number;
+  OnlineClusterResourceEx2(
+    hResource: number | bigint,
+    dwOnlineFlags: number,
+    lpInBuffer: Win32Pointer,
+    cbInBufferSize: number,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!OpenCluster */
   OpenCluster(lpszClusterName: string | Win32Pointer): number | bigint;
   /** clusapi.dll!OpenClusterEx */
-  OpenClusterEx(lpszClusterName: string | Win32Pointer, DesiredAccess: number, GrantedAccess: Win32Pointer): number | bigint;
+  OpenClusterEx(
+    lpszClusterName: string | Win32Pointer,
+    DesiredAccess: number,
+    GrantedAccess: Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!OpenClusterGroup */
   OpenClusterGroup(hCluster: number | bigint, lpszGroupName: string | Win32Pointer): number | bigint;
   /** clusapi.dll!OpenClusterGroupEx */
-  OpenClusterGroupEx(hCluster: number | bigint, lpszGroupName: string | Win32Pointer, dwDesiredAccess: number, lpdwGrantedAccess: Win32Pointer): number | bigint;
+  OpenClusterGroupEx(
+    hCluster: number | bigint,
+    lpszGroupName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    lpdwGrantedAccess: Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!OpenClusterGroupSet */
   OpenClusterGroupSet(hCluster: number | bigint, lpszGroupSetName: string | Win32Pointer): number | bigint;
   /** clusapi.dll!OpenClusterNetInterface */
   OpenClusterNetInterface(hCluster: number | bigint, lpszInterfaceName: string | Win32Pointer): number | bigint;
   /** clusapi.dll!OpenClusterNetInterfaceEx */
-  OpenClusterNetInterfaceEx(hCluster: number | bigint, lpszInterfaceName: string | Win32Pointer, dwDesiredAccess: number, lpdwGrantedAccess: Win32Pointer): number | bigint;
+  OpenClusterNetInterfaceEx(
+    hCluster: number | bigint,
+    lpszInterfaceName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    lpdwGrantedAccess: Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!OpenClusterNetwork */
   OpenClusterNetwork(hCluster: number | bigint, lpszNetworkName: string | Win32Pointer): number | bigint;
   /** clusapi.dll!OpenClusterNetworkEx */
-  OpenClusterNetworkEx(hCluster: number | bigint, lpszNetworkName: string | Win32Pointer, dwDesiredAccess: number, lpdwGrantedAccess: Win32Pointer): number | bigint;
+  OpenClusterNetworkEx(
+    hCluster: number | bigint,
+    lpszNetworkName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    lpdwGrantedAccess: Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!OpenClusterNode */
   OpenClusterNode(hCluster: number | bigint, lpszNodeName: string | Win32Pointer): number | bigint;
   /** clusapi.dll!OpenClusterNodeById */
   OpenClusterNodeById(hCluster: number | bigint, nodeId: number): number | bigint;
   /** clusapi.dll!OpenClusterNodeEx */
-  OpenClusterNodeEx(hCluster: number | bigint, lpszNodeName: string | Win32Pointer, dwDesiredAccess: number, lpdwGrantedAccess: Win32Pointer): number | bigint;
+  OpenClusterNodeEx(
+    hCluster: number | bigint,
+    lpszNodeName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    lpdwGrantedAccess: Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!OpenClusterResource */
   OpenClusterResource(hCluster: number | bigint, lpszResourceName: string | Win32Pointer): number | bigint;
   /** clusapi.dll!OpenClusterResourceEx */
-  OpenClusterResourceEx(hCluster: number | bigint, lpszResourceName: string | Win32Pointer, dwDesiredAccess: number, lpdwGrantedAccess: Win32Pointer): number | bigint;
+  OpenClusterResourceEx(
+    hCluster: number | bigint,
+    lpszResourceName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    lpdwGrantedAccess: Win32Pointer,
+  ): number | bigint;
   /** clusapi.dll!PauseClusterNode */
   PauseClusterNode(hNode: number | bigint): number;
   /** clusapi.dll!PauseClusterNodeEx */
-  PauseClusterNodeEx(hNode: number | bigint, bDrainNode: number, dwPauseFlags: number, hNodeDrainTarget: number | bigint): number;
+  PauseClusterNodeEx(
+    hNode: number | bigint,
+    bDrainNode: number,
+    dwPauseFlags: number,
+    hNodeDrainTarget: number | bigint,
+  ): number;
   /** clusapi.dll!PauseClusterNodeEx2 */
-  PauseClusterNodeEx2(hNode: number | bigint, bDrainNode: number, dwPauseFlags: number, hNodeDrainTarget: number | bigint, lpszReason: string | Win32Pointer): number;
+  PauseClusterNodeEx2(
+    hNode: number | bigint,
+    bDrainNode: number,
+    dwPauseFlags: number,
+    hNodeDrainTarget: number | bigint,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!RegisterClusterNotify */
-  RegisterClusterNotify(hChange: number | bigint, dwFilterType: number, hObject: Win32Pointer, dwNotifyKey: number | bigint): number;
+  RegisterClusterNotify(
+    hChange: number | bigint,
+    dwFilterType: number,
+    hObject: Win32Pointer,
+    dwNotifyKey: number | bigint,
+  ): number;
   /** clusapi.dll!RegisterClusterNotifyV2 */
-  RegisterClusterNotifyV2(hChange: number | bigint, Filter: Win32StructInit, hObject: Win32Pointer, dwNotifyKey: number | bigint): number;
+  RegisterClusterNotifyV2(
+    hChange: number | bigint,
+    Filter: Win32StructInit,
+    hObject: Win32Pointer,
+    dwNotifyKey: number | bigint,
+  ): number;
   /** clusapi.dll!RegisterClusterResourceTypeNotifyV2 */
-  RegisterClusterResourceTypeNotifyV2(hChange: number | bigint, hCluster: number | bigint, Flags: number | bigint, resTypeName: string | Win32Pointer, dwNotifyKey: number | bigint): number;
+  RegisterClusterResourceTypeNotifyV2(
+    hChange: number | bigint,
+    hCluster: number | bigint,
+    Flags: number | bigint,
+    resTypeName: string | Win32Pointer,
+    dwNotifyKey: number | bigint,
+  ): number;
   /** clusapi.dll!RemoveClusterGroupDependency */
   RemoveClusterGroupDependency(hGroup: number | bigint, hDependsOn: number | bigint): number;
   /** clusapi.dll!RemoveClusterGroupDependencyEx */
-  RemoveClusterGroupDependencyEx(hGroup: number | bigint, hDependsOn: number | bigint, lpszReason: string | Win32Pointer): number;
+  RemoveClusterGroupDependencyEx(
+    hGroup: number | bigint,
+    hDependsOn: number | bigint,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!RemoveClusterGroupSetDependency */
   RemoveClusterGroupSetDependency(hGroupSet: number | bigint, hDependsOn: number | bigint): number;
   /** clusapi.dll!RemoveClusterGroupSetDependencyEx */
-  RemoveClusterGroupSetDependencyEx(hGroupSet: number | bigint, hDependsOn: number | bigint, lpszReason: string | Win32Pointer): number;
+  RemoveClusterGroupSetDependencyEx(
+    hGroupSet: number | bigint,
+    hDependsOn: number | bigint,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!RemoveClusterGroupToGroupSetDependency */
   RemoveClusterGroupToGroupSetDependency(hGroup: number | bigint, hDependsOn: number | bigint): number;
   /** clusapi.dll!RemoveClusterGroupToGroupSetDependencyEx */
-  RemoveClusterGroupToGroupSetDependencyEx(hGroup: number | bigint, hDependsOn: number | bigint, lpszReason: string | Win32Pointer): number;
+  RemoveClusterGroupToGroupSetDependencyEx(
+    hGroup: number | bigint,
+    hDependsOn: number | bigint,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!RemoveClusterNameAccount */
   RemoveClusterNameAccount(hCluster: number | bigint, bDeleteComputerObjects: number): number;
   /** clusapi.dll!RemoveClusterResourceDependency */
   RemoveClusterResourceDependency(hResource: number | bigint, hDependsOn: number | bigint): number;
   /** clusapi.dll!RemoveClusterResourceDependencyEx */
-  RemoveClusterResourceDependencyEx(hResource: number | bigint, hDependsOn: number | bigint, lpszReason: string | Win32Pointer): number;
+  RemoveClusterResourceDependencyEx(
+    hResource: number | bigint,
+    hDependsOn: number | bigint,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!RemoveClusterResourceNode */
   RemoveClusterResourceNode(hResource: number | bigint, hNode: number | bigint): number;
   /** clusapi.dll!RemoveClusterResourceNodeEx */
-  RemoveClusterResourceNodeEx(hResource: number | bigint, hNode: number | bigint, lpszReason: string | Win32Pointer): number;
+  RemoveClusterResourceNodeEx(
+    hResource: number | bigint,
+    hNode: number | bigint,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!RemoveClusterStorageNode */
-  RemoveClusterStorageNode(hCluster: number | bigint, lpszClusterStorageEnclosureName: string | Win32Pointer, dwTimeout: number, dwFlags: number): number;
+  RemoveClusterStorageNode(
+    hCluster: number | bigint,
+    lpszClusterStorageEnclosureName: string | Win32Pointer,
+    dwTimeout: number,
+    dwFlags: number,
+  ): number;
   /** clusapi.dll!RemoveCrossClusterGroupSetDependency */
-  RemoveCrossClusterGroupSetDependency(hDependentGroupSet: number | bigint, lpRemoteClusterName: string | Win32Pointer, lpRemoteGroupSetName: string | Win32Pointer): number;
+  RemoveCrossClusterGroupSetDependency(
+    hDependentGroupSet: number | bigint,
+    lpRemoteClusterName: string | Win32Pointer,
+    lpRemoteGroupSetName: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!RemoveResourceFromClusterSharedVolumes */
   RemoveResourceFromClusterSharedVolumes(hResource: number | bigint): number;
   /** clusapi.dll!RepairClusterNameAccount */
-  RepairClusterNameAccount(hCluster: number | bigint, pConfig: Win32Pointer, pfnProgressCallback: Win32Callback, pvCallbackArg: Win32Pointer): number;
+  RepairClusterNameAccount(
+    hCluster: number | bigint,
+    pConfig: Win32Pointer,
+    pfnProgressCallback: Win32Callback,
+    pvCallbackArg: Win32Pointer,
+  ): number;
   /** clusapi.dll!RestartClusterResource */
   RestartClusterResource(hResource: number | bigint, dwFlags: number): number;
   /** clusapi.dll!RestartClusterResourceEx */
   RestartClusterResourceEx(hResource: number | bigint, dwFlags: number, lpszReason: string | Win32Pointer): number;
   /** clusapi.dll!RestoreClusterDatabase */
-  RestoreClusterDatabase(lpszPathName: string | Win32Pointer, bForce: number, lpszQuorumDriveLetter: string | Win32Pointer): number;
+  RestoreClusterDatabase(
+    lpszPathName: string | Win32Pointer,
+    bForce: number,
+    lpszQuorumDriveLetter: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!ResumeClusterNode */
   ResumeClusterNode(hNode: number | bigint): number;
   /** clusapi.dll!ResumeClusterNodeEx */
   ResumeClusterNodeEx(hNode: number | bigint, eResumeFailbackType: number, dwResumeFlagsReserved: number): number;
   /** clusapi.dll!ResumeClusterNodeEx2 */
-  ResumeClusterNodeEx2(hNode: number | bigint, eResumeFailbackType: number, dwResumeFlagsReserved: number, lpszReason: string | Win32Pointer): number;
+  ResumeClusterNodeEx2(
+    hNode: number | bigint,
+    eResumeFailbackType: number,
+    dwResumeFlagsReserved: number,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!SetClusterGroupName */
   SetClusterGroupName(hGroup: number | bigint, lpszGroupName: string | Win32Pointer): number;
   /** clusapi.dll!SetClusterGroupNameEx */
-  SetClusterGroupNameEx(hGroup: number | bigint, lpszGroupName: string | Win32Pointer, lpszReason: string | Win32Pointer): number;
+  SetClusterGroupNameEx(
+    hGroup: number | bigint,
+    lpszGroupName: string | Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!SetClusterGroupNodeList */
   SetClusterGroupNodeList(hGroup: number | bigint, NodeCount: number, NodeList: Win32Pointer): number;
   /** clusapi.dll!SetClusterGroupNodeListEx */
-  SetClusterGroupNodeListEx(hGroup: number | bigint, NodeCount: number, NodeList: Win32Pointer, lpszReason: string | Win32Pointer): number;
+  SetClusterGroupNodeListEx(
+    hGroup: number | bigint,
+    NodeCount: number,
+    NodeList: Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!SetClusterGroupSetDependencyExpression */
-  SetClusterGroupSetDependencyExpression(hGroupSet: number | bigint, lpszDependencyExprssion: string | Win32Pointer): number;
+  SetClusterGroupSetDependencyExpression(
+    hGroupSet: number | bigint,
+    lpszDependencyExprssion: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!SetClusterGroupSetDependencyExpressionEx */
-  SetClusterGroupSetDependencyExpressionEx(hGroupSet: number | bigint, lpszDependencyExpression: string | Win32Pointer, lpszReason: string | Win32Pointer): number;
+  SetClusterGroupSetDependencyExpressionEx(
+    hGroupSet: number | bigint,
+    lpszDependencyExpression: string | Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!SetClusterName */
   SetClusterName(hCluster: number | bigint, lpszNewClusterName: string | Win32Pointer): number;
   /** clusapi.dll!SetClusterNameEx */
-  SetClusterNameEx(hCluster: number | bigint, lpszNewClusterName: string | Win32Pointer, lpszReason: string | Win32Pointer): number;
+  SetClusterNameEx(
+    hCluster: number | bigint,
+    lpszNewClusterName: string | Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!SetClusterNetworkName */
   SetClusterNetworkName(hNetwork: number | bigint, lpszName: string | Win32Pointer): number;
   /** clusapi.dll!SetClusterNetworkNameEx */
-  SetClusterNetworkNameEx(hNetwork: number | bigint, lpszName: string | Win32Pointer, lpszReason: string | Win32Pointer): number;
+  SetClusterNetworkNameEx(
+    hNetwork: number | bigint,
+    lpszName: string | Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!SetClusterNetworkPriorityOrder */
   SetClusterNetworkPriorityOrder(hCluster: number | bigint, NetworkCount: number, NetworkList: Win32Pointer): number;
   /** clusapi.dll!SetClusterQuorumResource */
-  SetClusterQuorumResource(hResource: number | bigint, lpszDeviceName: string | Win32Pointer, dwMaxQuoLogSize: number): number;
+  SetClusterQuorumResource(
+    hResource: number | bigint,
+    lpszDeviceName: string | Win32Pointer,
+    dwMaxQuoLogSize: number,
+  ): number;
   /** clusapi.dll!SetClusterQuorumResourceEx */
-  SetClusterQuorumResourceEx(hResource: number | bigint, lpszDeviceName: string | Win32Pointer, dwMaxQuorumLogSize: number, lpszReason: string | Win32Pointer): number;
+  SetClusterQuorumResourceEx(
+    hResource: number | bigint,
+    lpszDeviceName: string | Win32Pointer,
+    dwMaxQuorumLogSize: number,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!SetClusterResourceDependencyExpression */
-  SetClusterResourceDependencyExpression(hResource: number | bigint, lpszDependencyExpression: string | Win32Pointer): number;
+  SetClusterResourceDependencyExpression(
+    hResource: number | bigint,
+    lpszDependencyExpression: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!SetClusterResourceName */
   SetClusterResourceName(hResource: number | bigint, lpszResourceName: string | Win32Pointer): number;
   /** clusapi.dll!SetClusterResourceNameEx */
-  SetClusterResourceNameEx(hResource: number | bigint, lpszResourceName: string | Win32Pointer, lpszReason: string | Win32Pointer): number;
+  SetClusterResourceNameEx(
+    hResource: number | bigint,
+    lpszResourceName: string | Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
   /** clusapi.dll!SetClusterServiceAccountPassword */
-  SetClusterServiceAccountPassword(lpszClusterName: string | Win32Pointer, lpszNewPassword: string | Win32Pointer, dwFlags: number, lpReturnStatusBuffer: Win32Pointer, lpcbReturnStatusBufferSize: Win32Pointer): number;
+  SetClusterServiceAccountPassword(
+    lpszClusterName: string | Win32Pointer,
+    lpszNewPassword: string | Win32Pointer,
+    dwFlags: number,
+    lpReturnStatusBuffer: Win32Pointer,
+    lpcbReturnStatusBufferSize: Win32Pointer,
+  ): number;
   /** clusapi.dll!SetGroupDependencyExpression */
   SetGroupDependencyExpression(hGroup: number | bigint, lpszDependencyExpression: string | Win32Pointer): number;
   /** clusapi.dll!SetGroupDependencyExpressionEx */
-  SetGroupDependencyExpressionEx(hGroup: number | bigint, lpszDependencyExpression: string | Win32Pointer, lpszReason: string | Win32Pointer): number;
+  SetGroupDependencyExpressionEx(
+    hGroup: number | bigint,
+    lpszDependencyExpression: string | Win32Pointer,
+    lpszReason: string | Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

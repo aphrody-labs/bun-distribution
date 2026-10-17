@@ -3,9 +3,7 @@ import { browserDocumentTitle, deriveTitleFromPath } from "./route-title";
 
 test("Studio links and application tabs share the actual page title", () => {
   expect(deriveTitleFromPath("/studio", "?section=drive")).toBe("Drive");
-  expect(deriveTitleFromPath("/studio", "?section=unknown")).toBe(
-    "Outils des agents",
-  );
+  expect(deriveTitleFromPath("/studio", "?section=unknown")).toBe("Outils des agents");
   expect(deriveTitleFromPath("/models", "")).toBe("Modèles & IA");
   expect(deriveTitleFromPath("/sources/source-id", "")).toBeNull();
 });
@@ -20,16 +18,8 @@ test("explorer paths are decoded once and malformed paths stay navigable", () =>
 });
 
 test("public homepage and OS retain SEO titles while native tab titles remain native", () => {
-  expect(browserDocumentTitle("/", "Aphrody", true)).toBe(
-    "Aphrody — Search, workspace and native OS",
-  );
-  expect(browserDocumentTitle("/os/", "Aphrody", true)).toBe(
-    "Aphrody OS — Browser workspace",
-  );
-  expect(browserDocumentTitle("/", "Aphrody", false)).toBe(
-    "Aphrody — Aphrody OS",
-  );
-  expect(browserDocumentTitle("/studio", "Google", true)).toBe(
-    "Studio — Aphrody",
-  );
+  expect(browserDocumentTitle("/", "Aphrody", true)).toBe("Aphrody — Search, workspace and native OS");
+  expect(browserDocumentTitle("/os/", "Aphrody", true)).toBe("Aphrody OS — Browser workspace");
+  expect(browserDocumentTitle("/", "Aphrody", false)).toBe("Aphrody — Aphrody OS");
+  expect(browserDocumentTitle("/studio", "Google", true)).toBe("Studio — Aphrody");
 });

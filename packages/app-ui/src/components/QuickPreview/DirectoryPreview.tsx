@@ -33,17 +33,9 @@ export function DirectoryPreview({ file }: DirectoryPreviewProps) {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="text-center">
-          <img
-            src={Folder}
-            alt="Folder icon"
-            className="w-16 h-16 mb-4 mx-auto"
-          />
-          <div className="text-title-medium font-medium text-on-surface">
-            {file.name}
-          </div>
-          <div className="text-body-medium text-on-surface-variant mt-2">
-            Loading directories...
-          </div>
+          <img src={Folder} alt="Folder icon" className="w-16 h-16 mb-4 mx-auto" />
+          <div className="text-title-medium font-medium text-on-surface">{file.name}</div>
+          <div className="text-body-medium text-on-surface-variant mt-2">Loading directories...</div>
         </div>
       </div>
     );
@@ -53,17 +45,9 @@ export function DirectoryPreview({ file }: DirectoryPreviewProps) {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="text-center">
-          <img
-            src={Folder}
-            alt="Folder icon"
-            className="w-16 h-16 mb-4 mx-auto"
-          />
-          <div className="text-title-medium font-medium text-on-surface">
-            {file.name}
-          </div>
-          <div className="text-body-medium text-on-surface-variant mt-2">
-            No subdirectories
-          </div>
+          <img src={Folder} alt="Folder icon" className="w-16 h-16 mb-4 mx-auto" />
+          <div className="text-title-medium font-medium text-on-surface">{file.name}</div>
+          <div className="text-body-medium text-on-surface-variant mt-2">No subdirectories</div>
         </div>
       </div>
     );
@@ -82,10 +66,7 @@ export function DirectoryPreview({ file }: DirectoryPreviewProps) {
         }}
       >
         {directories.map((dir: File) => (
-          <div
-            key={dir.id}
-            className="flex flex-col items-center gap-2 p-1 rounded-small hover:bg-on-surface/2"
-          >
+          <div key={dir.id} className="flex flex-col items-center gap-2 p-1 rounded-small hover:bg-on-surface/2">
             <div className="rounded-small p-2">
               <FileComponent.Thumb file={dir} size={thumbSize} />
             </div>

@@ -14,12 +14,8 @@ import {
 
 test("journal formatting uses standard syslog prefixes", () => {
   expect(formatJournal("INFO", "service booted")).toBe("<6>service booted");
-  expect(formatJournal("ERR", "database connection failed")).toBe(
-    "<3>database connection failed",
-  );
-  expect(formatJournal("WARNING", "rate limit approaching")).toBe(
-    "<4>rate limit approaching",
-  );
+  expect(formatJournal("ERR", "database connection failed")).toBe("<3>database connection failed");
+  expect(formatJournal("WARNING", "rate limit approaching")).toBe("<4>rate limit approaching");
   expect(SyslogPriority.EMERG).toBe("<0>");
   expect(SyslogPriority.DEBUG).toBe("<7>");
 });

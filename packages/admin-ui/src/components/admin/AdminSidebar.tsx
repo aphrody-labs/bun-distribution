@@ -57,14 +57,7 @@ import {
 
 // Types internes
 
-type SectionId =
-  | "pilotage"
-  | "site"
-  | "systeme"
-  | "encyclopedie"
-  | "communaute"
-  | "economie"
-  | "securite";
+type SectionId = "pilotage" | "site" | "systeme" | "encyclopedie" | "communaute" | "economie" | "securite";
 
 type AdminLink = {
   href: string;
@@ -163,8 +156,7 @@ const ADMIN_LINKS: AdminLink[] = [
   {
     href: "/admin/commandes",
     label: "Exécuter une commande",
-    description:
-      "Lancer une commande du bot à distance (XP, zénis, races, rôles…)",
+    description: "Lancer une commande du bot à distance (XP, zénis, races, rôles…)",
     icon: <Terminal className="h-4 w-4" />,
     section: "pilotage",
   },
@@ -329,8 +321,7 @@ const ADMIN_LINKS: AdminLink[] = [
   {
     href: "/admin/transcriptions",
     label: "Transcriptions & Arbitrage",
-    description:
-      "Suivi global, arbitrage des défauts et relecture des planches",
+    description: "Suivi global, arbitrage des défauts et relecture des planches",
     icon: <ScanText className="h-4 w-4" />,
     section: "encyclopedie",
   },

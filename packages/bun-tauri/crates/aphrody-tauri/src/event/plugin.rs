@@ -13,70 +13,70 @@ use super::EventTarget;
 
 #[command(root = "crate")]
 async fn listen<R: Runtime>(
-  webview: Webview<R>,
-  event: EventName,
-  target: EventTarget,
-  handler: CallbackFn,
+    webview: Webview<R>,
+    event: EventName,
+    target: EventTarget,
+    handler: CallbackFn,
 ) -> Result<EventId> {
-  webview.listen_js(event.as_str_event(), target, handler)
+    webview.listen_js(event.as_str_event(), target, handler)
 }
 
 #[command(root = "crate")]
 async fn unlisten<R: Runtime>(
-  webview: Webview<R>,
-  event: EventName,
-  event_id: EventId,
+    webview: Webview<R>,
+    event: EventName,
+    event_id: EventId,
 ) -> Result<()> {
-  webview.unlisten_js(event.as_str_event(), event_id)
+    webview.unlisten_js(event.as_str_event(), event_id)
 }
 
 #[command(root = "crate")]
 async fn emit<R: Runtime>(
-  app: AppHandle<R>,
-  event: EventName,
-  payload: Option<JsonValue>,
+    app: AppHandle<R>,
+    event: EventName,
+    payload: Option<JsonValue>,
 ) -> Result<()> {
-  app.emit(event.as_str(), payload)
+    app.emit(event.as_str(), payload)
 }
 
 #[command(root = "crate")]
 async fn emit_to<R: Runtime>(
-  app: AppHandle<R>,
-  target: EventTarget,
-  event: EventName,
-  payload: Option<JsonValue>,
+    app: AppHandle<R>,
+    target: EventTarget,
+    event: EventName,
+    payload: Option<JsonValue>,
 ) -> Result<()> {
-  app.emit_to(target, event.as_str(), payload)
+    app.emit_to(target, event.as_str(), payload)
 }
 
 /// Initializes the event plugin.
 pub(crate) fn init<R: Runtime, M: Manager<R>>(manager: &M) -> TauriPlugin<R> {
-  let listeners = manager.manager().listeners();
+    let listeners = manager.manager().listeners();
 
-  #[derive(Template)]
-  #[default_template("./init.js")]
-  struct InitJavascript {
-    #[raw]
-    unregister_listener_function: String,
-  }
+    #[derive(Template)]
+    #[default_template("./init.js")]
+    struct InitJavascript {
+        #[raw]
+        unregister_listener_function: String,
+    }
 
-  let init_script = InitJavascript {
-    unregister_listener_function: format!(
-      "(event, eventId) => {}",
-      crate::event::unlisten_js_script(listeners.listeners_object_name(), "event", "eventId")
-    ),
-  };
+    let init_script = InitJavascript {
+        unregister_listener_function: format!(
+            "(event, eventId) => {}",
+            crate::event::unlisten_js_script(listeners.listeners_object_name(), "event", "eventId")
+        ),
+    };
 
-  Builder::new("event")
-    .invoke_handler(crate::generate_handler![
-      #![plugin(event)]
-      listen, unlisten, emit, emit_to
-    ])
-    .initialization_script(
-      init_script
-        .render_default(&Default::default())
-        .unwrap()
-        .to_string(),
-    )
-    .build()
+    Builder::new("event")
+        .invoke_handler(crate::generate_handler![
+          #![plugin(event)]
+          listen, unlisten, emit, emit_to
+        ])
+        .initialization_script(
+            init_script
+                .render_default(&Default::default())
+                .unwrap()
+                .to_string(),
+        )
+        .build()
 }

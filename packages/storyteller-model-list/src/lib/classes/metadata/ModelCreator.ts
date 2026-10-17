@@ -26,9 +26,7 @@ export enum ModelCreator {
 }
 
 /** Backend `model_creator` snake_case string -> frontend `ModelCreator` enum. */
-export const modelCreatorFromBackend = (
-  raw?: string | null,
-): ModelCreator | undefined => {
+export const modelCreatorFromBackend = (raw?: string | null): ModelCreator | undefined => {
   switch (raw) {
     case "alibaba":
       return ModelCreator.Alibaba;

@@ -2,14 +2,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import type { Server } from "bun";
 import { join } from "node:path";
-import {
-  buildRoutes,
-  createProxy,
-  fileRoutes,
-  proxyRoutes,
-  resolvePort,
-  serveM3,
-} from "../src/server.ts";
+import { buildRoutes, createProxy, fileRoutes, proxyRoutes, resolvePort, serveM3 } from "../src/server.ts";
 
 const SPA_HTML = join(import.meta.dir, "fixtures/spa/index.html");
 const PAGES = join(import.meta.dir, "fixtures/pages");
@@ -46,13 +39,9 @@ describe("serveM3", () => {
     expect(root.status).toBe(200);
     const html = await root.text();
     expect(html).toContain('id="spa-root"');
-    const deep = await fetch(new URL("/some/client/route", server.url)).then(
-      (r) => r.text(),
-    );
+    const deep = await fetch(new URL("/some/client/route", server.url)).then(r => r.text());
     expect(deep).toContain('id="spa-root"');
-    expect(
-      await fetch(new URL("/health", server.url)).then((r) => r.text()),
-    ).toBe("ok");
+    expect(await fetch(new URL("/health", server.url)).then(r => r.text())).toBe("ok");
     // The bundled client script referenced by the HTML is served too.
     const script = /src="([^"]+\.js)"/.exec(html)?.[1];
     expect(script).toBeDefined();
@@ -73,25 +62,13 @@ describe("serveM3", () => {
     const home = await fetch(new URL("/", server.url));
     expect(home.headers.get("content-type")).toContain("text/html");
     expect(await home.text()).toContain("SSR home");
-    expect(
-      await fetch(new URL("/about", server.url)).then((res) => res.text()),
-    ).toContain("SSR about");
-    const user = await fetch(
-      new URL("/users/%3Cadmin%3E?view=full", server.url),
-    ).then((res) => res.text());
+    expect(await fetch(new URL("/about", server.url)).then(res => res.text())).toContain("SSR about");
+    const user = await fetch(new URL("/users/%3Cadmin%3E?view=full", server.url)).then(res => res.text());
     expect(user).toContain("&lt;admin&gt;");
     expect(user).toContain("full");
-    expect(
-      await fetch(new URL("/health", server.url)).then((res) => res.text()),
-    ).toBe("explicit");
-    expect(
-      await fetch(new URL("/rpc/echo", server.url)).then((res) => res.json()),
-    ).toMatchObject({ path: "/rpc/echo" });
-    expect(
-      await fetch(new URL("/client/route", server.url)).then((res) =>
-        res.text(),
-      ),
-    ).toContain('id="spa-root"');
+    expect(await fetch(new URL("/health", server.url)).then(res => res.text())).toBe("explicit");
+    expect(await fetch(new URL("/rpc/echo", server.url)).then(res => res.json())).toMatchObject({ path: "/rpc/echo" });
+    expect(await fetch(new URL("/client/route", server.url)).then(res => res.text())).toContain('id="spa-root"');
   });
 
   test("proxies a prefix and everything below it, keeping method, query, headers and body", async () => {
@@ -100,15 +77,13 @@ describe("serveM3", () => {
       port: 0,
       hmr: false,
     });
-    const exact = await fetch(new URL("/rpc", server.url)).then((r) =>
-      r.json(),
-    );
+    const exact = await fetch(new URL("/rpc", server.url)).then(r => r.json());
     expect(exact).toMatchObject({ method: "GET", path: "/rpc" });
     const nested = await fetch(new URL("/rpc/a/b?x=1", server.url), {
       method: "POST",
       body: "payload",
       headers: { "x-custom": "kept" },
-    }).then((r) => r.json());
+    }).then(r => r.json());
     expect(nested).toMatchObject({
       method: "POST",
       path: "/rpc/a/b",
@@ -152,15 +127,8 @@ describe("routing helpers", () => {
       "/rpc/": "http://127.0.0.1:1",
       "/api": "http://127.0.0.1:2",
     });
-    expect(Object.keys(routes).toSorted()).toEqual([
-      "/api",
-      "/api/*",
-      "/rpc",
-      "/rpc/*",
-    ]);
-    expect(() => proxyRoutes({ rpc: "http://127.0.0.1:1" })).toThrow(
-      "must start with",
-    );
+    expect(Object.keys(routes).toSorted()).toEqual(["/api", "/api/*", "/rpc", "/rpc/*"]);
+    expect(() => proxyRoutes({ rpc: "http://127.0.0.1:1" })).toThrow("must start with");
   });
 
   test("buildRoutes orders proxy, routes, then the /* fallback", async () => {
@@ -170,23 +138,13 @@ describe("routing helpers", () => {
       index: SPA_HTML,
     });
     expect(Object.keys(routes)).toEqual(["/rpc", "/rpc/*", "/a", "/*"]);
-    await expect(buildRoutes({ index: "not-html.txt" })).rejects.toThrow(
-      "not an .html file",
-    );
+    await expect(buildRoutes({ index: "not-html.txt" })).rejects.toThrow("not an .html file");
   });
 
   test("fileRoutes maps index, nested pages and dynamic segments", async () => {
     const routes = await fileRoutes(PAGES);
-    expect(Object.keys(routes).toSorted()).toEqual([
-      "/",
-      "/about",
-      "/health",
-      "/rpc/echo",
-      "/users/:id",
-    ]);
-    await expect(fileRoutes(join(PAGES, "missing"))).rejects.toThrow(
-      "not a directory",
-    );
+    expect(Object.keys(routes).toSorted()).toEqual(["/", "/about", "/health", "/rpc/echo", "/users/:id"]);
+    await expect(fileRoutes(join(PAGES, "missing"))).rejects.toThrow("not a directory");
   });
 
   test("createProxy keeps a base path of the target", async () => {

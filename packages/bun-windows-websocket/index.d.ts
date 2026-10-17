@@ -5,9 +5,28 @@ interface Functions {
   /** websocket.dll!WebSocketAbortHandle */
   WebSocketAbortHandle(hWebSocket: Win32Pointer): void;
   /** websocket.dll!WebSocketBeginClientHandshake */
-  WebSocketBeginClientHandshake(hWebSocket: Win32Pointer, pszSubprotocols: Win32Pointer, ulSubprotocolCount: number, pszExtensions: Win32Pointer, ulExtensionCount: number, pInitialHeaders: Win32Pointer, ulInitialHeaderCount: number, pAdditionalHeaders: Win32Pointer, pulAdditionalHeaderCount: Win32Pointer): number;
+  WebSocketBeginClientHandshake(
+    hWebSocket: Win32Pointer,
+    pszSubprotocols: Win32Pointer,
+    ulSubprotocolCount: number,
+    pszExtensions: Win32Pointer,
+    ulExtensionCount: number,
+    pInitialHeaders: Win32Pointer,
+    ulInitialHeaderCount: number,
+    pAdditionalHeaders: Win32Pointer,
+    pulAdditionalHeaderCount: Win32Pointer,
+  ): number;
   /** websocket.dll!WebSocketBeginServerHandshake */
-  WebSocketBeginServerHandshake(hWebSocket: Win32Pointer, pszSubprotocolSelected: string | Win32Pointer, pszExtensionSelected: Win32Pointer, ulExtensionSelectedCount: number, pRequestHeaders: Win32Pointer, ulRequestHeaderCount: number, pResponseHeaders: Win32Pointer, pulResponseHeaderCount: Win32Pointer): number;
+  WebSocketBeginServerHandshake(
+    hWebSocket: Win32Pointer,
+    pszSubprotocolSelected: string | Win32Pointer,
+    pszExtensionSelected: Win32Pointer,
+    ulExtensionSelectedCount: number,
+    pRequestHeaders: Win32Pointer,
+    ulRequestHeaderCount: number,
+    pResponseHeaders: Win32Pointer,
+    pulResponseHeaderCount: Win32Pointer,
+  ): number;
   /** websocket.dll!WebSocketCompleteAction */
   WebSocketCompleteAction(hWebSocket: Win32Pointer, pvActionContext: Win32Pointer, ulBytesTransferred: number): void;
   /** websocket.dll!WebSocketCreateClientHandle */
@@ -17,11 +36,27 @@ interface Functions {
   /** websocket.dll!WebSocketDeleteHandle */
   WebSocketDeleteHandle(hWebSocket: Win32Pointer): void;
   /** websocket.dll!WebSocketEndClientHandshake */
-  WebSocketEndClientHandshake(hWebSocket: Win32Pointer, pResponseHeaders: Win32Pointer, ulReponseHeaderCount: number, pulSelectedExtensions: Win32Pointer, pulSelectedExtensionCount: Win32Pointer, pulSelectedSubprotocol: Win32Pointer): number;
+  WebSocketEndClientHandshake(
+    hWebSocket: Win32Pointer,
+    pResponseHeaders: Win32Pointer,
+    ulReponseHeaderCount: number,
+    pulSelectedExtensions: Win32Pointer,
+    pulSelectedExtensionCount: Win32Pointer,
+    pulSelectedSubprotocol: Win32Pointer,
+  ): number;
   /** websocket.dll!WebSocketEndServerHandshake */
   WebSocketEndServerHandshake(hWebSocket: Win32Pointer): number;
   /** websocket.dll!WebSocketGetAction */
-  WebSocketGetAction(hWebSocket: Win32Pointer, eActionQueue: number, pDataBuffers: Win32Pointer, pulDataBufferCount: Win32Pointer, pAction: Win32Pointer, pBufferType: Win32Pointer, pvApplicationContext: Win32Pointer, pvActionContext: Win32Pointer): number;
+  WebSocketGetAction(
+    hWebSocket: Win32Pointer,
+    eActionQueue: number,
+    pDataBuffers: Win32Pointer,
+    pulDataBufferCount: Win32Pointer,
+    pAction: Win32Pointer,
+    pBufferType: Win32Pointer,
+    pvApplicationContext: Win32Pointer,
+    pvActionContext: Win32Pointer,
+  ): number;
   /** websocket.dll!WebSocketGetGlobalProperty */
   WebSocketGetGlobalProperty(eType: number, pvValue: Win32Pointer, ulSize: Win32Pointer): number;
   /** websocket.dll!WebSocketReceive */

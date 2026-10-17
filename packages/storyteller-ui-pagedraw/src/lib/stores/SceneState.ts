@@ -61,8 +61,7 @@ export const convertFileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-export type ActiveTool =
-  "select" | "draw" | "inpaint" | "eraser" | "backgroundColor" | "shape";
+export type ActiveTool = "select" | "draw" | "inpaint" | "eraser" | "backgroundColor" | "shape";
 
 // Serialized shape node for history storage
 type SerializedNodeData = {
@@ -139,49 +138,20 @@ export interface SceneState {
   // Actions
   addNode: (node: Node) => void;
   removeNode: (id: string, shouldSaveState?: boolean) => void;
-  updateNode: (
-    id: string,
-    updates: Partial<Node>,
-    shouldSaveState: boolean,
-  ) => void;
+  updateNode: (id: string, updates: Partial<Node>, shouldSaveState: boolean) => void;
   selectNode: (id: string | null, isMultiSelect?: boolean) => void;
 
-  moveNode: (
-    id: string,
-    x: number,
-    y: number,
-    dx?: number,
-    dy?: number,
-    shouldSaveState?: boolean,
-  ) => void;
+  moveNode: (id: string, x: number, y: number, dx?: number, dy?: number, shouldSaveState?: boolean) => void;
 
   // Batch operations
   setNodes: (nodes: Node[]) => void;
 
   // Node creation helpers
-  createRectangle: (
-    x: number,
-    y: number,
-    width?: number,
-    height?: number,
-    fill?: string,
-  ) => void;
+  createRectangle: (x: number, y: number, width?: number, height?: number, fill?: string) => void;
   createCircle: (x: number, y: number, radius?: number, fill?: string) => void;
 
-  createTriangle: (
-    x: number,
-    y: number,
-    width?: number,
-    height?: number,
-    fill?: string,
-  ) => void;
-  createImage: (
-    x: number,
-    y: number,
-    source: string | File,
-    width?: number,
-    height?: number,
-  ) => void;
+  createTriangle: (x: number, y: number, width?: number, height?: number, fill?: string) => void;
+  createImage: (x: number, y: number, source: string | File, width?: number, height?: number) => void;
 
   // History management
   history: { drawNodes: SerializedDrawNode[]; inpaintLineNodes: LineNode[] }[];
@@ -193,36 +163,15 @@ export interface SceneState {
   // Line node actions
   addLineNode: (lineNode: LineNode, shouldSaveState: boolean) => void;
   removeLineNode: (id: string, shouldSaveState?: boolean) => void;
-  updateLineNode: (
-    id: string,
-    updates: Partial<LineNode>,
-    shouldSaveState: boolean,
-  ) => void;
-  moveLineNode: (
-    id: string,
-    dx: number,
-    dy: number,
-    shouldSaveState?: boolean,
-  ) => void;
+  updateLineNode: (id: string, updates: Partial<LineNode>, shouldSaveState: boolean) => void;
+  moveLineNode: (id: string, dx: number, dy: number, shouldSaveState?: boolean) => void;
   clearLineNodes: () => void;
 
   // Add a specific method for file uploads
-  createImageFromFile: (
-    x: number,
-    y: number,
-    file: File,
-    width?: number,
-    height?: number,
-  ) => void;
+  createImageFromFile: (x: number, y: number, file: File, width?: number, height?: number) => void;
 
   // Add method for URL-based images
-  createImageFromUrl: (
-    x: number,
-    y: number,
-    url: string,
-    width?: number,
-    height?: number,
-  ) => void;
+  createImageFromUrl: (x: number, y: number, url: string, width?: number, height?: number) => void;
 
   // Create an image node backed by a 3D model (dataUrl is the initial render)
   createImageFrom3DModel: (
@@ -280,16 +229,10 @@ export interface SceneState {
   sendBackward: (nodeIds: string[]) => void;
 
   // Start background removal — returns {base64, nodeId} for the caller to enqueue via adapter
-  beginRemoveBackground: (
-    nodeIds: string[],
-  ) => Promise<{ base64: string; nodeId: string } | null>;
+  beginRemoveBackground: (nodeIds: string[]) => Promise<{ base64: string; nodeId: string } | null>;
 
   // Finish background removal (handoff back from the platform event)
-  finishRemoveBackground: (
-    nodeId: string,
-    mediaToken: string,
-    imageCdnUrl: string,
-  ) => Promise<void>;
+  finishRemoveBackground: (nodeId: string, mediaToken: string, imageCdnUrl: string) => Promise<void>;
 
   // Pending AI generation placeholders (shown in HistoryStack)
   pendingGenerations: { id: string; count: number }[];
@@ -365,29 +308,25 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
 
   // Actions
   addNode: (node: Node) => {
-    set((state) => ({
+    set(state => ({
       drawNodes: [...state.drawNodes, node],
     }));
     get().saveState();
   },
 
   removeNode: (id: string, shouldSaveState: boolean = true) => {
-    set((state) => ({
-      drawNodes: state.drawNodes.filter((n) => n.id !== id),
-      selectedNodeIds: state.selectedNodeIds.filter((nodeId) => nodeId !== id),
+    set(state => ({
+      drawNodes: state.drawNodes.filter(n => n.id !== id),
+      selectedNodeIds: state.selectedNodeIds.filter(nodeId => nodeId !== id),
     }));
     if (shouldSaveState) {
       get().saveState();
     }
   },
 
-  updateNode: (
-    id: string,
-    updates: Partial<Node>,
-    shouldSaveState: boolean = true,
-  ) => {
-    set((state) => ({
-      drawNodes: state.drawNodes.map((n) => {
+  updateNode: (id: string, updates: Partial<Node>, shouldSaveState: boolean = true) => {
+    set(state => ({
+      drawNodes: state.drawNodes.map(n => {
         if (n.id === id && n instanceof Node) {
           return new Node({ ...n, ...updates });
         }
@@ -400,7 +339,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   },
 
   selectNode: (id: string | null, isMultiSelect = false) => {
-    set((state) => {
+    set(state => {
       if (!id) {
         return { selectedNodeIds: [] };
       }
@@ -408,9 +347,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       if (isMultiSelect) {
         if (state.selectedNodeIds.includes(id)) {
           return {
-            selectedNodeIds: state.selectedNodeIds.filter(
-              (nodeId) => nodeId !== id,
-            ),
+            selectedNodeIds: state.selectedNodeIds.filter(nodeId => nodeId !== id),
           };
         }
         return {
@@ -422,26 +359,15 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     });
   },
 
-  moveNode: (
-    id: string,
-    x: number,
-    y: number,
-    dx?: number,
-    dy?: number,
-    shouldSaveState: boolean = false,
-  ) => {
-    set((state) => ({
-      drawNodes: state.drawNodes.map((n) => {
+  moveNode: (id: string, x: number, y: number, dx?: number, dy?: number, shouldSaveState: boolean = false) => {
+    set(state => ({
+      drawNodes: state.drawNodes.map(n => {
         if (!(n instanceof Node)) return n;
         if (n.id === id) {
           n.setPosition(x, y);
           return n;
         }
-        if (
-          state.selectedNodeIds.includes(n.id) &&
-          dx !== undefined &&
-          dy !== undefined
-        ) {
+        if (state.selectedNodeIds.includes(n.id) && dx !== undefined && dy !== undefined) {
           n.setPosition(n.x + dx, n.y + dy);
           return n;
         }
@@ -454,24 +380,15 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   },
 
   setNodes: (nodes: Node[]) => {
-    set((state) => ({
+    set(state => ({
       // Keep existing line nodes in place, replace all shape nodes
-      drawNodes: [
-        ...state.drawNodes.filter((n) => n.type === "line"),
-        ...nodes,
-      ],
+      drawNodes: [...state.drawNodes.filter(n => n.type === "line"), ...nodes],
     }));
     get().saveState();
   },
 
   // Node creation helpers
-  createRectangle: (
-    x: number,
-    y: number,
-    width = 100,
-    height = 100,
-    fill?: string,
-  ) => {
+  createRectangle: (x: number, y: number, width = 100, height = 100, fill?: string) => {
     const finalFill = fill || get().shapeColor;
     const node = new Node({
       id: generateId(),
@@ -507,13 +424,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     get().setActiveTool("select");
   },
 
-  createTriangle: (
-    x: number,
-    y: number,
-    width = 100,
-    height = 100,
-    fill?: string,
-  ) => {
+  createTriangle: (x: number, y: number, width = 100, height = 100, fill?: string) => {
     const finalFill = fill || get().shapeColor;
     const node = new Node({
       id: generateId(),
@@ -535,12 +446,12 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   saveState: () => {
     if (isRestoring) return;
 
-    set((state) => {
+    set(state => {
       const serializableState: {
         drawNodes: SerializedDrawNode[];
         inpaintLineNodes: LineNode[];
       } = {
-        drawNodes: state.drawNodes.map((n) => {
+        drawNodes: state.drawNodes.map(n => {
           if (n instanceof Node) {
             return {
               id: n.id,
@@ -603,7 +514,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     isRestoring = true;
 
     const restoredDrawNodes = await Promise.all(
-      previousState.drawNodes.map(async (nodeData) => {
+      previousState.drawNodes.map(async nodeData => {
         // LineNode — plain object, no image loading needed
         if (nodeData.type === "line") {
           return nodeData as LineNode;
@@ -649,7 +560,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     isRestoring = true;
 
     const restoredDrawNodes = await Promise.all(
-      nextState.drawNodes.map(async (nodeData) => {
+      nextState.drawNodes.map(async nodeData => {
         if (nodeData.type === "line") {
           return nodeData as LineNode;
         }
@@ -686,11 +597,11 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   // Line node actions — route by id prefix
   addLineNode: (lineNode: LineNode, shouldSaveState: boolean = true) => {
     if (lineNode.id.startsWith("line-inpaint")) {
-      set((state) => ({
+      set(state => ({
         inpaintLineNodes: [...state.inpaintLineNodes, lineNode],
       }));
     } else {
-      set((state) => ({
+      set(state => ({
         drawNodes: [...state.drawNodes, lineNode],
       }));
     }
@@ -701,18 +612,14 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
 
   removeLineNode: (id: string, shouldSaveState: boolean = true) => {
     if (id.startsWith("line-inpaint")) {
-      set((state) => ({
-        inpaintLineNodes: state.inpaintLineNodes.filter((n) => n.id !== id),
-        selectedNodeIds: state.selectedNodeIds.filter(
-          (nodeId) => nodeId !== id,
-        ),
+      set(state => ({
+        inpaintLineNodes: state.inpaintLineNodes.filter(n => n.id !== id),
+        selectedNodeIds: state.selectedNodeIds.filter(nodeId => nodeId !== id),
       }));
     } else {
-      set((state) => ({
-        drawNodes: state.drawNodes.filter((n) => n.id !== id),
-        selectedNodeIds: state.selectedNodeIds.filter(
-          (nodeId) => nodeId !== id,
-        ),
+      set(state => ({
+        drawNodes: state.drawNodes.filter(n => n.id !== id),
+        selectedNodeIds: state.selectedNodeIds.filter(nodeId => nodeId !== id),
       }));
     }
     if (shouldSaveState) {
@@ -720,22 +627,14 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     }
   },
 
-  updateLineNode: (
-    id: string,
-    updates: Partial<LineNode>,
-    shouldSaveState: boolean = true,
-  ) => {
+  updateLineNode: (id: string, updates: Partial<LineNode>, shouldSaveState: boolean = true) => {
     if (id.startsWith("line-inpaint")) {
-      set((state) => ({
-        inpaintLineNodes: state.inpaintLineNodes.map((n) =>
-          n.id === id ? { ...n, ...updates } : n,
-        ),
+      set(state => ({
+        inpaintLineNodes: state.inpaintLineNodes.map(n => (n.id === id ? { ...n, ...updates } : n)),
       }));
     } else {
-      set((state) => ({
-        drawNodes: state.drawNodes.map((n) =>
-          n.id === id ? ({ ...n, ...updates } as Node | LineNode) : n,
-        ),
+      set(state => ({
+        drawNodes: state.drawNodes.map(n => (n.id === id ? ({ ...n, ...updates } as Node | LineNode) : n)),
       }));
     }
     if (shouldSaveState) {
@@ -743,21 +642,16 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     }
   },
 
-  moveLineNode: (
-    id: string,
-    dx: number,
-    dy: number,
-    shouldSaveState: boolean = false,
-  ) => {
+  moveLineNode: (id: string, dx: number, dy: number, shouldSaveState: boolean = false) => {
     if (id.startsWith("line-inpaint")) {
-      set((state) => ({
-        inpaintLineNodes: state.inpaintLineNodes.map((n) =>
+      set(state => ({
+        inpaintLineNodes: state.inpaintLineNodes.map(n =>
           n.id === id ? { ...n, x: (n.x ?? 0) + dx, y: (n.y ?? 0) + dy } : n,
         ),
       }));
     } else {
-      set((state) => ({
-        drawNodes: state.drawNodes.map((n) => {
+      set(state => ({
+        drawNodes: state.drawNodes.map(n => {
           if (n.id !== id || n.type !== "line") return n;
           const ln = n as LineNode;
           return { ...ln, x: (ln.x ?? 0) + dx, y: (ln.y ?? 0) + dy };
@@ -770,15 +664,9 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   },
 
   // Add a specific method for file uploads
-  createImageFromFile: (
-    x: number,
-    y: number,
-    file: File,
-    width?: number,
-    height?: number,
-  ) => {
+  createImageFromFile: (x: number, y: number, file: File, width?: number, height?: number) => {
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = event => {
       const dataUrl = event.target?.result as string;
       if (dataUrl) {
         const img = new Image();
@@ -795,13 +683,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   },
 
   // Add method for URL-based images
-  createImageFromUrl: async (
-    x: number,
-    y: number,
-    url: string,
-    width?: number,
-    height?: number,
-  ) => {
+  createImageFromUrl: async (x: number, y: number, url: string, width?: number, height?: number) => {
     try {
       const response = await fetch(url);
       const blob = await response.blob();
@@ -844,16 +726,10 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       .then(() => {
         get().addNode(node);
       })
-      .catch((error) => console.error("Error loading 3D model render:", error));
+      .catch(error => console.error("Error loading 3D model render:", error));
   },
 
-  createImage: (
-    x: number,
-    y: number,
-    source: string | File,
-    width = 200,
-    height = 200,
-  ) => {
+  createImage: (x: number, y: number, source: string | File, width = 200, height = 200) => {
     const nodeId = generateId();
     const node = new Node({
       id: nodeId,
@@ -875,7 +751,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       .then(() => {
         get().addNode(node);
       })
-      .catch((error) => console.error("Error loading image:", error));
+      .catch(error => console.error("Error loading image:", error));
   },
 
   // Action for deleting selected items
@@ -883,13 +759,9 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     const initialSelectedIds = [...get().selectedNodeIds];
 
     if (initialSelectedIds.length > 0) {
-      set((state) => ({
-        drawNodes: state.drawNodes.filter(
-          (n) => !initialSelectedIds.includes(n.id),
-        ),
-        inpaintLineNodes: state.inpaintLineNodes.filter(
-          (n) => !initialSelectedIds.includes(n.id),
-        ),
+      set(state => ({
+        drawNodes: state.drawNodes.filter(n => !initialSelectedIds.includes(n.id)),
+        inpaintLineNodes: state.inpaintLineNodes.filter(n => !initialSelectedIds.includes(n.id)),
         selectedNodeIds: [],
       }));
 
@@ -903,12 +775,12 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
 
   // Clipboard actions
   copySelectedItems: () => {
-    set((state) => {
-      const selected = [...state.drawNodes, ...state.inpaintLineNodes].filter(
-        (n) => state.selectedNodeIds.includes(n.id),
+    set(state => {
+      const selected = [...state.drawNodes, ...state.inpaintLineNodes].filter(n =>
+        state.selectedNodeIds.includes(n.id),
       );
 
-      const copied = selected.map((item) => {
+      const copied = selected.map(item => {
         if (item instanceof Node) {
           return new Node({ ...item });
         }
@@ -929,7 +801,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     const nodesToAdd: Node[] = [];
     const lineNodesToAdd: LineNode[] = [];
 
-    clipboard.forEach((item) => {
+    clipboard.forEach(item => {
       const newId = generateId();
       newPastedItemIds.push(newId);
 
@@ -942,16 +814,13 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
         };
         const newNodeInstance = new Node(pastedNodeData);
 
-        if (
-          newNodeInstance.type === "image" &&
-          (newNodeInstance.imageUrl || newNodeInstance.imageFile)
-        ) {
+        if (newNodeInstance.type === "image" && (newNodeInstance.imageUrl || newNodeInstance.imageFile)) {
           const source = newNodeInstance.imageUrl || newNodeInstance.imageFile;
           if (source) {
             newNodeInstance
               .setImage(source)
               .then(() => {
-                if (get().drawNodes.find((n) => n.id === newId)) {
+                if (get().drawNodes.find(n => n.id === newId)) {
                   const {
                     id,
                     x,
@@ -993,11 +862,8 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
                   );
                 }
               })
-              .catch((error) => {
-                console.error(
-                  `Failed to load image for pasted node ${newId}:`,
-                  error,
-                );
+              .catch(error => {
+                console.error(`Failed to load image for pasted node ${newId}:`, error);
               });
           }
         }
@@ -1007,9 +873,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
         const pastedLineNode: LineNode = {
           ...lineNode,
           id: newId,
-          points: lineNode.points.map((point, index) =>
-            index % 2 === 0 ? point + offset : point + offset,
-          ),
+          points: lineNode.points.map((point, index) => (index % 2 === 0 ? point + offset : point + offset)),
           x: lineNode.x !== undefined ? lineNode.x + offset : undefined,
           y: lineNode.y !== undefined ? lineNode.y + offset : undefined,
         };
@@ -1017,7 +881,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       }
     });
 
-    set((state) => ({
+    set(state => ({
       drawNodes: [...state.drawNodes, ...nodesToAdd, ...lineNodesToAdd],
       selectedNodeIds: newPastedItemIds,
     }));
@@ -1038,13 +902,11 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   setInpaintBrushSize: (size: number) => set({ inpaintBrushSize: size }),
 
   // Shape tool actions
-  setCurrentShape: (shape: "rectangle" | "circle" | "triangle") =>
-    set({ currentShape: shape }),
+  setCurrentShape: (shape: "rectangle" | "circle" | "triangle") => set({ currentShape: shape }),
   setShapeColor: (color: string) => set({ shapeColor: color }),
 
   // Cursor actions
-  setCursorPosition: (position: { x: number; y: number } | null) =>
-    set({ cursorPosition: position }),
+  setCursorPosition: (position: { x: number; y: number } | null) => set({ cursorPosition: position }),
   setCursorVisible: (visible: boolean) => set({ cursorVisible: visible }),
 
   // Scene save/load actions
@@ -1061,7 +923,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     };
 
     const processedDrawNodes = await Promise.all(
-      state.drawNodes.map(async (n) => {
+      state.drawNodes.map(async n => {
         if (n.type === "line") {
           return JSON.parse(JSON.stringify(n));
         }
@@ -1134,9 +996,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       };
 
       const restoredDrawNodes = (sceneData.drawNodes || []).map(
-        (
-          nodeData: (SerializedNodeData & { imageDataUrl?: string }) | LineNode,
-        ) => {
+        (nodeData: (SerializedNodeData & { imageDataUrl?: string }) | LineNode) => {
           if (nodeData.type === "line") {
             return nodeData as LineNode;
           }
@@ -1150,10 +1010,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
             const loadImage = async () => {
               try {
                 if (shapeData.imageDataUrl) {
-                  const file = base64ToFile(
-                    shapeData.imageDataUrl,
-                    `restored-image-${node.id}.png`,
-                  );
+                  const file = base64ToFile(shapeData.imageDataUrl, `restored-image-${node.id}.png`);
                   await node.setImageFromFile(file);
                 } else if (node.imageUrl) {
                   await node.setImageFromUrl(node.imageUrl);
@@ -1230,35 +1087,32 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   // Layer management — all O(n) operations on drawNodes array
 
   bringToFront: (nodeIds: string[]) => {
-    set((state) => {
+    set(state => {
       if (nodeIds.length === 0) return state;
-      const others = state.drawNodes.filter((n) => !nodeIds.includes(n.id));
-      const selected = state.drawNodes.filter((n) => nodeIds.includes(n.id));
+      const others = state.drawNodes.filter(n => !nodeIds.includes(n.id));
+      const selected = state.drawNodes.filter(n => nodeIds.includes(n.id));
       return { drawNodes: [...others, ...selected] };
     });
     get().saveState();
   },
 
   sendToBack: (nodeIds: string[]) => {
-    set((state) => {
+    set(state => {
       if (nodeIds.length === 0) return state;
-      const others = state.drawNodes.filter((n) => !nodeIds.includes(n.id));
-      const selected = state.drawNodes.filter((n) => nodeIds.includes(n.id));
+      const others = state.drawNodes.filter(n => !nodeIds.includes(n.id));
+      const selected = state.drawNodes.filter(n => nodeIds.includes(n.id));
       return { drawNodes: [...selected, ...others] };
     });
     get().saveState();
   },
 
   bringForward: (nodeIds: string[]) => {
-    set((state) => {
+    set(state => {
       if (nodeIds.length === 0) return state;
       const order = [...state.drawNodes];
       // Iterate backward so higher-index selected items move first (avoids double-move)
       for (let i = order.length - 2; i >= 0; i--) {
-        if (
-          nodeIds.includes(order[i].id) &&
-          !nodeIds.includes(order[i + 1].id)
-        ) {
+        if (nodeIds.includes(order[i].id) && !nodeIds.includes(order[i + 1].id)) {
           [order[i], order[i + 1]] = [order[i + 1], order[i]];
         }
       }
@@ -1268,15 +1122,12 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   },
 
   sendBackward: (nodeIds: string[]) => {
-    set((state) => {
+    set(state => {
       if (nodeIds.length === 0) return state;
       const order = [...state.drawNodes];
       // Iterate forward so lower-index selected items move first (avoids double-move)
       for (let i = 1; i < order.length; i++) {
-        if (
-          nodeIds.includes(order[i].id) &&
-          !nodeIds.includes(order[i - 1].id)
-        ) {
+        if (nodeIds.includes(order[i].id) && !nodeIds.includes(order[i - 1].id)) {
           [order[i], order[i - 1]] = [order[i - 1], order[i]];
         }
       }
@@ -1288,10 +1139,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   beginRemoveBackground: async (nodeIds: string[]) => {
     const drawNodes = get().drawNodes;
     const firstNode = drawNodes.find(
-      (n) =>
-        nodeIds.includes(n.id) &&
-        n instanceof Node &&
-        (n as Node).type === "image",
+      n => nodeIds.includes(n.id) && n instanceof Node && (n as Node).type === "image",
     ) as Node | undefined;
 
     if (!firstNode || !firstNode.imageFile) {
@@ -1306,17 +1154,12 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     }
   },
 
-  finishRemoveBackground: async (
-    nodeId: string,
-    mediaToken: string,
-    imageCdnUrl: string,
-  ) => {
+  finishRemoveBackground: async (nodeId: string, mediaToken: string, imageCdnUrl: string) => {
     if (!nodeId || !mediaToken || !imageCdnUrl) {
       return;
     }
     const firstNode = get().drawNodes.find(
-      (n) =>
-        n.id === nodeId && n instanceof Node && (n as Node).type === "image",
+      n => n.id === nodeId && n instanceof Node && (n as Node).type === "image",
     ) as Node | undefined;
 
     if (!firstNode || !firstNode.imageFile) {
@@ -1328,8 +1171,8 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
         imageUrl: imageCdnUrl,
       });
       await updatedNode.setImageFromUrl(imageCdnUrl);
-      set((state) => ({
-        drawNodes: state.drawNodes.map((n) => {
+      set(state => ({
+        drawNodes: state.drawNodes.map(n => {
           if (n.id === firstNode.id) return updatedNode;
           return n;
         }),
@@ -1341,8 +1184,8 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   },
 
   toggleLock: (nodeIds: string[]) => {
-    set((state) => ({
-      drawNodes: state.drawNodes.map((n) => {
+    set(state => ({
+      drawNodes: state.drawNodes.map(n => {
         if (!nodeIds.includes(n.id)) return n;
         if (n instanceof Node) {
           return new Node({ ...n, locked: !n.locked });
@@ -1350,7 +1193,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
         // LineNode
         return { ...n, locked: !(n as LineNode).locked };
       }),
-      inpaintLineNodes: state.inpaintLineNodes.map((n) => {
+      inpaintLineNodes: state.inpaintLineNodes.map(n => {
         if (!nodeIds.includes(n.id)) return n;
         return { ...n, locked: !n.locked };
       }),
@@ -1371,11 +1214,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     }
 
     const info = get().baseImageInfo;
-    if (
-      info?.isBlankCanvas &&
-      info.blankCanvasWidth &&
-      info.blankCanvasHeight
-    ) {
+    if (info?.isBlankCanvas && info.blankCanvasWidth && info.blankCanvasHeight) {
       return { width: info.blankCanvasWidth, height: info.blankCanvasHeight };
     }
 
@@ -1404,7 +1243,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     const currentBaseImage = get().baseImageInfo;
     if (currentBaseImage) {
       get().historyImageNodeMap.set(currentBaseImage, {
-        drawNodes: get().drawNodes.map((n) => {
+        drawNodes: get().drawNodes.map(n => {
           if (n instanceof Node) {
             return {
               id: n.id,
@@ -1439,19 +1278,12 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     const applyImageNodes = (bitmap: HTMLImageElement | null) => {
       const previousNodeData = get().historyImageNodeMap.get(image);
       if (previousNodeData) {
-        const restoredDrawNodes = previousNodeData.drawNodes.map((nodeData) => {
+        const restoredDrawNodes = previousNodeData.drawNodes.map(nodeData => {
           if (nodeData.type === "line") return nodeData as LineNode;
           const node = new Node(nodeData as SerializedNodeData);
           if (node.type === "image" && (node.imageUrl || node.imageFile)) {
             const src = node.imageUrl || node.imageFile!;
-            node
-              .setImage(src)
-              .catch((e) =>
-                console.error(
-                  "Failed to restore image in base image switch:",
-                  e,
-                ),
-              );
+            node.setImage(src).catch(e => console.error("Failed to restore image in base image switch:", e));
           }
           return node;
         });
@@ -1485,7 +1317,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       if (myGen !== baseImageLoadGen) return; // superseded by a newer setBaseImageInfo
       applyImageNodes(imgBitmap);
     };
-    imgBitmap.onerror = (event) => {
+    imgBitmap.onerror = event => {
       if (myGen !== baseImageLoadGen) return;
       console.error("Failed to load base image, discarding", event);
       set({ baseImageInfo: null, baseImageBitmap: null });
@@ -1493,14 +1325,13 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       imgBitmap.onerror = null;
     };
     imgBitmap.crossOrigin = "anonymous";
-    const isDataUrl =
-      typeof image.url === "string" && image.url.startsWith("data:");
+    const isDataUrl = typeof image.url === "string" && image.url.startsWith("data:");
     imgBitmap.src = isDataUrl ? image.url : image.url + "?basecanvasimg";
   },
 
   clearLineNodes() {
-    set((state) => ({
-      drawNodes: state.drawNodes.filter((n) => n.type !== "line"),
+    set(state => ({
+      drawNodes: state.drawNodes.filter(n => n.type !== "line"),
       inpaintLineNodes: [],
     }));
   },
@@ -1513,24 +1344,22 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   },
 
   addHistoryImageBundle(bundle) {
-    set((state) => ({
+    set(state => ({
       historyImageBundles: [...state.historyImageBundles, bundle],
     }));
   },
 
   removeHistoryImage(image) {
     console.log("Removing history image:", image);
-    set((state) => {
+    set(state => {
       state.historyImageNodeMap.delete(image);
 
       const updatedBundles = state.historyImageBundles
-        .map((bundle) => ({
+        .map(bundle => ({
           ...bundle,
-          images: bundle.images.filter(
-            (img) => img.mediaToken !== image.mediaToken,
-          ),
+          images: bundle.images.filter(img => img.mediaToken !== image.mediaToken),
         }))
-        .filter((bundle) => bundle.images.length > 0);
+        .filter(bundle => bundle.images.length > 0);
 
       console.log("Updated history image bundles:", updatedBundles);
       return { historyImageBundles: updatedBundles };
@@ -1538,20 +1367,20 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   },
 
   addPendingGeneration: (id: string, count: number) => {
-    set((state) => ({
+    set(state => ({
       pendingGenerations: [...state.pendingGenerations, { id, count }],
     }));
   },
 
   resolvePendingGeneration: (id: string) => {
-    set((state) => ({
-      pendingGenerations: state.pendingGenerations.filter((p) => p.id !== id),
+    set(state => ({
+      pendingGenerations: state.pendingGenerations.filter(p => p.id !== id),
     }));
   },
 
   removePendingGeneration: (id: string) => {
-    set((state) => ({
-      pendingGenerations: state.pendingGenerations.filter((p) => p.id !== id),
+    set(state => ({
+      pendingGenerations: state.pendingGenerations.filter(p => p.id !== id),
     }));
   },
 

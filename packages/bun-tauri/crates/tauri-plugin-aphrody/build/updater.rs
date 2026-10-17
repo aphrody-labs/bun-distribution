@@ -6,6 +6,5 @@ const COMMANDS: &[&str] = &["check", "download", "install", "download_and_instal
 
 /// Build description of the `updater` plugin.
 pub fn builder() -> tauri_plugin::Builder<'static> {
-    tauri_plugin::Builder::new(COMMANDS)
-        .global_api_script_path("iife/updater.js")
+    tauri_plugin::Builder::new(COMMANDS).global_api_script_path("iife/updater.js")
 }

@@ -10,11 +10,7 @@ const temporary: string[] = [];
 afterEach(async () => {
   delete process.env.APHRODY_SYSTEMD_USER_DIR;
   delete process.env.APHRODY_YOLO_ROOT;
-  await Promise.all(
-    temporary
-      .splice(0)
-      .map((path) => rm(path, { recursive: true, force: true })),
-  );
+  await Promise.all(temporary.splice(0).map(path => rm(path, { recursive: true, force: true })));
 });
 
 test("install plans only the named repo units and refuses unknown names", async () => {
@@ -33,16 +29,12 @@ test("install plans only the named repo units and refuses unknown names", async 
   try {
     const plan = new Ctx(root, false, false);
     expect(install(plan, ["aphrody-b.service"])).toBe(0);
-    expect(log.mock.calls.map((call) => String(call[0]))).toEqual([
-      "would  aphrody-b.service (missing)",
-    ]);
+    expect(log.mock.calls.map(call => String(call[0]))).toEqual(["would  aphrody-b.service (missing)"]);
     log.mockClear();
     expect(install(plan)).toBe(0);
     expect(log.mock.calls).toHaveLength(2);
     expect(install(plan, ["aphrody-missing.service"])).toBe(2);
-    expect(String(error.mock.calls[0]?.[0])).toContain(
-      "aphrody-missing.service",
-    );
+    expect(String(error.mock.calls[0]?.[0])).toContain("aphrody-missing.service");
     const dir = join(root, "installed");
     await writeFile(join(dir, "aphrody-a.service"), "[Service]\n");
     await writeFile(join(dir, "aphrody-b.service"), "stale\n");

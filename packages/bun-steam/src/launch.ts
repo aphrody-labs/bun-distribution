@@ -7,39 +7,23 @@
 import { existsSync, readdirSync } from "node:fs";
 import { availableParallelism, homedir } from "node:os";
 import { join } from "node:path";
-import {
-  isSteamRunning,
-  readVdf,
-  type ChangePlan,
-  writeVdf,
-} from "./config.js";
+import { isSteamRunning, readVdf, type ChangePlan, writeVdf } from "./config.js";
 import { ANTI_CHEAT_RUNTIMES } from "./proton.js";
-import {
-  compatToolDirs,
-  IS_WINDOWS,
-  norm,
-  resolveSteamRoot,
-  userDataDirs,
-} from "./paths.js";
+import { compatToolDirs, IS_WINDOWS, norm, resolveSteamRoot, userDataDirs } from "./paths.js";
 import { kvEnsure, kvKey, kvObj, kvStr } from "./vdf.js";
 
 /** `steam://rungameid/<appId>`; `appId` must be a decimal Steam app or shortcut game id. */
 export function rungameidUri(appId: number | string): string {
-  if (!/^\d+$/.test(String(appId)))
-    throw new Error(`invalid Steam app id: ${appId}`);
+  if (!/^\d+$/.test(String(appId))) throw new Error(`invalid Steam app id: ${appId}`);
   return `steam://rungameid/${appId}`;
 }
 
 /** Only `steam://` URIs without quotes or control characters reach the shell. */
-export const isSafeSteamUri = (uri: string): boolean =>
-  uri.startsWith("steam://") && !/["\p{Cc}]/u.test(uri);
+export const isSafeSteamUri = (uri: string): boolean => uri.startsWith("steam://") && !/["\p{Cc}]/u.test(uri);
 
 /** Opens a `steam://` URI through the running client (`start` on Windows, `steam`/`xdg-open` on Linux). */
-export async function openSteamUri(
-  uri: string,
-): Promise<{ uri: string; exitCode: number }> {
-  if (!isSafeSteamUri(uri))
-    throw new Error(`refusing unsafe Steam URI: ${uri}`);
+export async function openSteamUri(uri: string): Promise<{ uri: string; exitCode: number }> {
+  if (!isSafeSteamUri(uri)) throw new Error(`refusing unsafe Steam URI: ${uri}`);
   const cmd = IS_WINDOWS
     ? ["cmd.exe", "/d", "/c", "start", "", uri]
     : Bun.which("steam")
@@ -51,10 +35,7 @@ export async function openSteamUri(
     stderr: "ignore",
   });
   // `steam <uri>` hands the URI to the running client and returns; do not wait on a cold start.
-  const exitCode = await Promise.race([
-    proc.exited,
-    Bun.sleep(10_000).then(() => 0),
-  ]);
+  const exitCode = await Promise.race([proc.exited, Bun.sleep(10_000).then(() => 0)]);
   return { uri, exitCode };
 }
 
@@ -79,7 +60,7 @@ export interface Tuning {
 
 const hasRenderNode = (): boolean => {
   try {
-    return readdirSync("/dev/dri").some((d) => d.startsWith("renderD"));
+    return readdirSync("/dev/dri").some(d => d.startsWith("renderD"));
   } catch {
     return false;
   }
@@ -96,38 +77,26 @@ export function launchTuning(opts: TuningOptions = {}): Tuning {
     };
   const env: Record<string, string> = {};
   if (existsSync("/dev/ntsync")) env.PROTON_USE_NTSYNC = "1";
-  else
-    notes.push(
-      "no /dev/ntsync: load the ntsync module (Proton 11 falls back to fsync)",
-    );
+  else notes.push("no /dev/ntsync: load the ntsync module (Proton 11 falls back to fsync)");
   const cache = norm(
     opts.cacheDir ??
       process.env.BUN_STEAM_CACHE ??
-      join(
-        process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"),
-        "bun-steam",
-      ),
+      join(process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"), "bun-steam"),
   );
   env.DXVK_STATE_CACHE_PATH = `${cache}/dxvk`;
   env.VKD3D_SHADER_CACHE_PATH = `${cache}/vkd3d`;
   env.MESA_SHADER_CACHE_DIR = `${cache}/mesa`;
   env.MESA_SHADER_CACHE_MAX_SIZE = "16G";
-  const llvmpipe =
-    opts.llvmpipe === undefined || opts.llvmpipe === "auto"
-      ? !hasRenderNode()
-      : opts.llvmpipe;
+  const llvmpipe = opts.llvmpipe === undefined || opts.llvmpipe === "auto" ? !hasRenderNode() : opts.llvmpipe;
   if (llvmpipe) {
     env.LP_NUM_THREADS = String(opts.threads ?? availableParallelism());
     notes.push("no GPU render node: llvmpipe/lavapipe on every core");
   }
-  const extra = compatToolDirs(opts.steamRoot ?? resolveSteamRoot()).filter(
-    (d) => existsSync(d),
-  );
+  const extra = compatToolDirs(opts.steamRoot ?? resolveSteamRoot()).filter(d => existsSync(d));
   if (extra.length) env.STEAM_EXTRA_COMPAT_TOOLS_PATHS = extra.join(":");
   if (opts.runtimesDir)
     for (const [key, rt] of Object.entries(ANTI_CHEAT_RUNTIMES))
-      if (existsSync(join(opts.runtimesDir, key, ".complete")))
-        env[rt.env] = norm(join(opts.runtimesDir, key));
+      if (existsSync(join(opts.runtimesDir, key, ".complete"))) env[rt.env] = norm(join(opts.runtimesDir, key));
   const wrapper = Bun.which("gamemoderun") ? ["gamemoderun"] : [];
   if (!wrapper.length) notes.push("gamemode not installed");
   return { env, wrapper, notes };
@@ -144,11 +113,8 @@ export function launchOptionsString(t: Tuning): string {
 const APPS = ["UserLocalConfigStore", "Software", "Valve", "Steam", "apps"];
 
 /** Current `LaunchOptions` of a game for every local Steam user. */
-export function readLaunchOptions(
-  appId: string,
-  steamRoot = resolveSteamRoot(),
-) {
-  return userDataDirs(steamRoot).map((dir) => {
+export function readLaunchOptions(appId: string, steamRoot = resolveSteamRoot()) {
+  return userDataDirs(steamRoot).map(dir => {
     const file = join(dir, "config", "localconfig.vdf");
     const value = kvStr(kvObj(readVdf(file), ...APPS, appId), "LaunchOptions");
     return { file: norm(file), launchOptions: value };
@@ -163,10 +129,8 @@ export function setLaunchOptions(
 ): ChangePlan[] {
   const steamRoot = opts.steamRoot ?? resolveSteamRoot();
   if (!opts.dryRun && !opts.force && isSteamRunning())
-    throw new Error(
-      "Steam is running and rewrites localconfig.vdf on exit; close it first (or pass --force)",
-    );
-  return userDataDirs(steamRoot).flatMap((dir) => {
+    throw new Error("Steam is running and rewrites localconfig.vdf on exit; close it first (or pass --force)");
+  return userDataDirs(steamRoot).flatMap(dir => {
     const file = join(dir, "config", "localconfig.vdf");
     const doc = readVdf(file);
     if (!doc) return [];

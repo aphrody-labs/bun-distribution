@@ -7,24 +7,13 @@ import type { UserInfo } from "@storyteller/api";
 import { DesktopLoginBridge } from "./DesktopLoginBridge";
 import { LoginSuccess } from "./LoginSuccess";
 import { ArtCraftSignUp } from "./artcraft-signup";
-import {
-  getNativeLoginSession,
-  passwordLogin,
-  passwordSignup,
-  isDesktopLoginError,
-} from "./NativeLoginBridge";
+import { getNativeLoginSession, passwordLogin, passwordSignup, isDesktopLoginError } from "./NativeLoginBridge";
 import { useLoginModalStore } from "./useLoginModalStore";
 
 // Webapp auth-showcase video (swap by passing `videoUrl`).
-const DEFAULT_SHOWCASE_VIDEO =
-  "https://frontend-cdn.fakeyou.com/videos/knight-video.mp4";
+const DEFAULT_SHOWCASE_VIDEO = "https://frontend-cdn.fakeyou.com/videos/knight-video.mp4";
 const LOGIN_SUCCESS_DURATION_MS = 3000;
-const FRAME_CORNERS = [
-  "top-0 left-0",
-  "top-0 right-0",
-  "bottom-0 left-0",
-  "bottom-0 right-0",
-];
+const FRAME_CORNERS = ["top-0 left-0", "top-0 right-0", "bottom-0 left-0", "bottom-0 right-0"];
 
 interface LoginModalProps {
   onClose?: () => void;
@@ -67,7 +56,7 @@ export function LoginModal({
     const generation = ++authGeneration.current;
     let active = true;
     getNativeLoginSession()
-      .then((user) => {
+      .then(user => {
         if (!active || generation !== authGeneration.current) return;
         if (user) {
           setIsLoggedInArtCraft(true);
@@ -84,12 +73,10 @@ export function LoginModal({
           useLoginModalStore.getState().openModal();
         }
       })
-      .catch((error) => {
+      .catch(error => {
         if (!active || generation !== authGeneration.current) return;
         setErrorMessage(
-          isDesktopLoginError(error)
-            ? error.message
-            : "Unable to check your account. Please sign in again.",
+          isDesktopLoginError(error) ? error.message : "Unable to check your account. Please sign in again.",
         );
         useLoginModalStore.getState().openModal();
       });
@@ -131,12 +118,7 @@ export function LoginModal({
     authSuccess.current?.(user);
   };
 
-  const handleAuthSubmit = async (
-    username: string,
-    email: string,
-    password: string,
-    passwordConfirmation: string,
-  ) => {
+  const handleAuthSubmit = async (username: string, email: string, password: string, passwordConfirmation: string) => {
     setIsLoading(true);
     setErrorMessage("");
     const generation = ++authGeneration.current;
@@ -154,11 +136,7 @@ export function LoginModal({
       }
     } catch (error) {
       if (generation === authGeneration.current)
-        setErrorMessage(
-          isDesktopLoginError(error)
-            ? error.message
-            : "An unexpected error occurred. Please try again.",
-        );
+        setErrorMessage(isDesktopLoginError(error) ? error.message : "An unexpected error occurred. Please try again.");
     } finally {
       if (generation === authGeneration.current) setIsLoading(false);
     }
@@ -195,8 +173,7 @@ export function LoginModal({
           Join our <span className="font-serif-italic">community.</span>
         </h2>
         <p className="mb-8 max-w-md text-sm leading-relaxed text-white/60">
-          Connect with other creators, share your work, and get the latest
-          updates in our Discord community.
+          Connect with other creators, share your work, and get the latest updates in our Discord community.
         </p>
         <div className="flex gap-3">
           <Button
@@ -225,11 +202,7 @@ export function LoginModal({
   const inOnboarding = showDiscord || showSuccess;
 
   return (
-    <Transition
-      appear
-      show={isOpen}
-      afterLeave={() => setLoggedInUsername(null)}
-    >
+    <Transition appear show={isOpen} afterLeave={() => setLoggedInUsername(null)}>
       <div className="fixed inset-0 z-[100]">
         <TransitionChild
           enter="ease-out duration-300"
@@ -252,7 +225,7 @@ export function LoginModal({
           >
             <div
               className={`relative w-full ${loggedInUsername !== null ? "max-w-md" : "max-w-lg lg:max-w-5xl"}`}
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
             >
               <div
                 className={`relative flex w-full overflow-hidden border border-white/20 bg-[#1e1f22] text-white ${loggedInUsername !== null ? "" : "lg:min-h-[560px]"}`}
@@ -279,10 +252,7 @@ export function LoginModal({
                                 "Create your account"
                               ) : (
                                 <>
-                                  Welcome{" "}
-                                  <span className="font-serif-italic">
-                                    back.
-                                  </span>
+                                  Welcome <span className="font-serif-italic">back.</span>
                                 </>
                               )}
                             </h1>
@@ -313,7 +283,7 @@ export function LoginModal({
                             <ArtCraftSignUp
                               onSubmit={handleAuthSubmit}
                               isSignUp={isSignUp}
-                              onToggleMode={() => setIsSignUp((prev) => !prev)}
+                              onToggleMode={() => setIsSignUp(prev => !prev)}
                               errorMessage={errorMessage}
                               isLoading={isLoading}
                             />
@@ -322,8 +292,7 @@ export function LoginModal({
                       </div>
 
                       <div className="px-6 pb-6 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-white/25 sm:px-10">
-                        &copy; {new Date().getFullYear()} ArtCraft. All rights
-                        reserved.
+                        &copy; {new Date().getFullYear()} ArtCraft. All rights reserved.
                       </div>
                     </div>
 
@@ -334,12 +303,8 @@ export function LoginModal({
                   </>
                 )}
               </div>
-              {FRAME_CORNERS.map((corner) => (
-                <span
-                  key={corner}
-                  aria-hidden="true"
-                  className={`frame-corner-mark ${corner}`}
-                />
+              {FRAME_CORNERS.map(corner => (
+                <span key={corner} aria-hidden="true" className={`frame-corner-mark ${corner}`} />
               ))}
             </div>
           </TransitionChild>
@@ -373,12 +338,8 @@ function LoginShowcase({ videoUrl }: { videoUrl: string }) {
         <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
           One of the cheapest
         </p>
-        <h2 className="text-2xl font-bold leading-tight">
-          Seedance 2.0 Video Generation
-        </h2>
-        <p className="mt-1 max-w-sm text-sm text-white/70">
-          Generate jaw-dropping AI videos with Seedance 2.0.
-        </p>
+        <h2 className="text-2xl font-bold leading-tight">Seedance 2.0 Video Generation</h2>
+        <p className="mt-1 max-w-sm text-sm text-white/70">Generate jaw-dropping AI videos with Seedance 2.0.</p>
       </div>
     </div>
   );

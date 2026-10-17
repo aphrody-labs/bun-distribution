@@ -8,9 +8,7 @@ import { createTimelineAudioBuffer } from "../../media/audio";
 import { formatTimecode } from "opencut-wasm";
 import { downloadBlob } from "../../utils/browser";
 
-type SnapshotResult =
-  | { success: true; blob: Blob; filename: string }
-  | { success: false; error: string };
+type SnapshotResult = { success: true; blob: Blob; filename: string } | { success: false; error: string };
 
 export class RendererManager {
   private renderTree: RootNode | null = null;
@@ -92,10 +90,7 @@ export class RendererManager {
       }
 
       const { canvasSize, fps } = activeProject.settings;
-      const renderTime = Math.min(
-        this.editor.playback.getCurrentTime(),
-        this.editor.timeline.getLastFrameTime(),
-      );
+      const renderTime = Math.min(this.editor.playback.getCurrentTime(), this.editor.timeline.getLastFrameTime());
 
       const renderer = new CanvasRenderer({
         width: canvasSize.width,
@@ -113,21 +108,16 @@ export class RendererManager {
         targetCanvas: tempCanvas,
       });
 
-      const blob = await new Promise<Blob | null>((resolve) => {
-        tempCanvas.toBlob((result) => resolve(result), "image/png");
+      const blob = await new Promise<Blob | null>(resolve => {
+        tempCanvas.toBlob(result => resolve(result), "image/png");
       });
 
       if (!blob) {
         return { success: false, error: "Failed to create image" };
       }
 
-      const timecode = formatTimecode({ time: renderTime, rate: fps })!.replace(
-        /:/g,
-        "-",
-      );
-      const safeName =
-        activeProject.metadata.name.replace(/[<>:"/\\|?*]/g, "-").trim() ||
-        "snapshot";
+      const timecode = formatTimecode({ time: renderTime, rate: fps })!.replace(/:/g, "-");
+      const safeName = activeProject.metadata.name.replace(/[<>:"/\\|?*]/g, "-").trim() || "snapshot";
       const filename = `${safeName}-${timecode}.png`;
 
       return { success: true, blob, filename };
@@ -196,10 +186,8 @@ export class RendererManager {
         audioBuffer: audioBuffer || undefined,
       });
 
-      exporter.on("progress", (progress) => {
-        const adjustedProgress = includeAudio
-          ? 0.05 + progress * 0.95
-          : progress;
+      exporter.on("progress", progress => {
+        const adjustedProgress = includeAudio ? 0.05 + progress * 0.95 : progress;
         onProgress?.({ progress: adjustedProgress });
       });
 
@@ -247,7 +235,7 @@ export class RendererManager {
   }
 
   private notify(): void {
-    this.listeners.forEach((fn) => {
+    this.listeners.forEach(fn => {
       fn();
     });
   }

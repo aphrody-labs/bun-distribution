@@ -29,8 +29,7 @@ const SKIP = /(^|\/)(node_modules|target|upstream|dist|\.next)\//;
 export function targetFiles(c: Ctx, t: Target): string[] {
   if (t.file) return c.exists(t.file) ? [t.file] : [];
   const out: string[] = [];
-  for (const f of new Bun.Glob(t.glob!).scanSync({ cwd: c.root }))
-    if (!SKIP.test(f)) out.push(f);
+  for (const f of new Bun.Glob(t.glob!).scanSync({ cwd: c.root })) if (!SKIP.test(f)) out.push(f);
   return out.toSorted();
 }
 
@@ -40,7 +39,7 @@ function regex(t: Target): RegExp {
 
 /** Versions captured by one target in one text. */
 export function capture(text: string, t: Target): string[] {
-  return [...text.matchAll(regex(t))].map((m) => m[1]!).filter(Boolean);
+  return [...text.matchAll(regex(t))].map(m => m[1]!).filter(Boolean);
 }
 
 /** Replace the capture group of every match with `version`. */
@@ -58,35 +57,26 @@ export function load(c: Ctx): PinFile {
 export function collect(c: Ctx, tool: PinTool): Hit[] {
   const hits: Hit[] = [];
   for (const t of tool.targets) {
-    for (const f of targetFiles(c, t))
-      for (const version of capture(c.read(f), t))
-        hits.push({ file: f, version });
+    for (const f of targetFiles(c, t)) for (const version of capture(c.read(f), t)) hits.push({ file: f, version });
   }
   return hits;
 }
 
 /** Source of truth = first hit. Returns a drift list per tool. */
-export function check(
-  c: Ctx,
-): { tool: string; pin?: string; drift: Hit[]; missing: string[] }[] {
-  const out: { tool: string; pin?: string; drift: Hit[]; missing: string[] }[] =
-    [];
+export function check(c: Ctx): { tool: string; pin?: string; drift: Hit[]; missing: string[] }[] {
+  const out: { tool: string; pin?: string; drift: Hit[]; missing: string[] }[] = [];
   for (const [name, tool] of Object.entries(load(c).tools)) {
     const hits = collect(c, tool);
     const pin = hits[0]?.version;
     const missing = tool.targets
       .filter(
-        (t) =>
-          (t.file && !c.exists(t.file)) ||
-          (t.file &&
-            c.exists(t.file) &&
-            capture(c.read(t.file), t).length === 0),
+        t => (t.file && !c.exists(t.file)) || (t.file && c.exists(t.file) && capture(c.read(t.file), t).length === 0),
       )
-      .map((t) => `${t.file}: /${t.re}/`);
+      .map(t => `${t.file}: /${t.re}/`);
     out.push({
       tool: name,
       pin,
-      drift: hits.filter((h) => h.version !== pin),
+      drift: hits.filter(h => h.version !== pin),
       missing,
     });
   }
@@ -118,8 +108,7 @@ export function runPins(c: Ctx, args: string[]): number {
       console.error("usage: pins apply <tool> <version>");
       return 2;
     }
-    for (const f of apply(c, name, version))
-      console.log(`pin    ${name} ${version} -> ${f}`);
+    for (const f of apply(c, name, version)) console.log(`pin    ${name} ${version} -> ${f}`);
     return 0;
   }
   let bad = 0;

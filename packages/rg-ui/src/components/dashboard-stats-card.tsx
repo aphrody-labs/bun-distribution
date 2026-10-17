@@ -98,12 +98,7 @@ export function DashboardStatsCard({
       )}
     >
       <div className="flex items-center justify-between">
-        <div
-          className={cn(
-            "rounded-lg p-2.5",
-            accentVariants[finalAccent] || accentVariants.primary,
-          )}
-        >
+        <div className={cn("rounded-lg p-2.5", accentVariants[finalAccent] || accentVariants.primary)}>
           {/* La branche « chaîne » s'appuyait sur une police `material-icons`
 					    qui n'est déclarée dans aucune des deux apps : le nom de l'icône
 					    s'affichait en toutes lettres, débordant de son carré de 20px.
@@ -111,27 +106,18 @@ export function DashboardStatsCard({
           {renderIcone(Icon)}
         </div>
         {trend && (
-          <span
-            className={cn(
-              "text-xs font-medium",
-              trend.value > 0 ? "text-succes" : "text-destructive",
-            )}
-          >
+          <span className={cn("text-xs font-medium", trend.value > 0 ? "text-succes" : "text-destructive")}>
             {trend.value > 0 ? "+" : ""}
             {trend.value}%
           </span>
         )}
       </div>
       <div className="mt-4">
-        <p className="text-sm font-medium text-muted-foreground">
-          {displayTitle}
-        </p>
+        <p className="text-sm font-medium text-muted-foreground">{displayTitle}</p>
         <h3 className="text-2xl font-bold tracking-tight text-foreground">
           {typeof value === "number" ? value.toLocaleString("fr-FR") : value}
         </h3>
-        {description && (
-          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
       </div>
     </div>
   );

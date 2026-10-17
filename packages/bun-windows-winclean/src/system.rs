@@ -255,15 +255,17 @@ fn cache_totals(buffer: &[u8]) -> CacheTotals {
         }
         let level = record[8];
         let line = u32::from(u16::from_le_bytes([record[10], record[11]]));
-        let size = u64::from(u32::from_le_bytes([record[12], record[13], record[14], record[15]]));
+        let size = u64::from(u32::from_le_bytes([
+            record[12], record[13], record[14], record[15],
+        ]));
         match level {
             1 => {
                 totals.l1 += size;
                 totals.line = totals.line.max(line);
-            },
+            }
             2 => totals.l2 += size,
             3 => totals.l3 += size,
-            _ => {},
+            _ => {}
         }
     }
     totals
@@ -292,7 +294,11 @@ fn logical_processor_info(relationship: u32) -> Vec<u8> {
     let result = unsafe {
         GetLogicalProcessorInformationEx(
             relationship,
-            Some(buffer.as_mut_ptr().cast::<SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>()),
+            Some(
+                buffer
+                    .as_mut_ptr()
+                    .cast::<SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(),
+            ),
             &mut length,
         )
     };
@@ -354,13 +360,16 @@ pub fn perf_dwm_flush() -> io::Result<serde_json::Value> {
         Err(error) => {
             let hr = error.code().0 as u32;
             Ok(serde_json::json!({"success":false,"hr":format!("0x{hr:08X}")}))
-        },
+        }
     }
 }
 
 #[cfg(not(windows))]
 pub fn perf_dwm_flush() -> io::Result<serde_json::Value> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "DwmFlush is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "DwmFlush is Windows-only",
+    ))
 }
 
 /// Apply Win11 PowerThrottling/EcoQoS to one process using the documented
@@ -385,7 +394,7 @@ pub fn perf_set_eco_mode(pid: u32, mode: &str) -> io::Result<serde_json::Value> 
                 io::ErrorKind::InvalidInput,
                 "unknown mode; use on|off|default",
             ));
-        },
+        }
     };
     let handle = unsafe { OpenProcess(PROCESS_SET_INFORMATION, false, pid) }
         .map_err(|error| io::Error::new(io::ErrorKind::PermissionDenied, error.to_string()))?;
@@ -410,7 +419,10 @@ pub fn perf_set_eco_mode(pid: u32, mode: &str) -> io::Result<serde_json::Value> 
 
 #[cfg(not(windows))]
 pub fn perf_set_eco_mode(_pid: u32, _mode: &str) -> io::Result<serde_json::Value> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "EcoQoS is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "EcoQoS is Windows-only",
+    ))
 }
 
 pub fn list_processes(
@@ -427,7 +439,10 @@ pub fn list_processes(
         .values()
         .filter_map(|process| {
             let name = process.name().to_string_lossy().into_owned();
-            if needle.as_ref().is_some_and(|value| !name.to_ascii_lowercase().contains(value)) {
+            if needle
+                .as_ref()
+                .is_some_and(|value| !name.to_ascii_lowercase().contains(value))
+            {
                 return None;
             }
             let cpu = f64::from(process.cpu_usage()) / 100.0;
@@ -449,18 +464,24 @@ pub fn list_processes(
         .collect::<Vec<_>>();
     match sort_by.to_ascii_lowercase().as_str() {
         "name" => processes.sort_by(|left, right| {
-            left.name.to_ascii_lowercase().cmp(&right.name.to_ascii_lowercase())
+            left.name
+                .to_ascii_lowercase()
+                .cmp(&right.name.to_ascii_lowercase())
         }),
         "cpu" => processes.sort_by(|left, right| right.cpu_seconds.total_cmp(&left.cpu_seconds)),
         "private" => {
             processes.sort_by_key(|item| std::cmp::Reverse(item.private_working_set_bytes))
-        },
+        }
         _ => processes.sort_by_key(|item| std::cmp::Reverse(item.working_set_bytes)),
     }
     let truncated = processes.len() > limit;
     processes.truncate(limit);
     let count = processes.len();
-    ProcessListResponse { count, truncated, processes }
+    ProcessListResponse {
+        count,
+        truncated,
+        processes,
+    }
 }
 
 pub fn kill_process(pid: Option<u32>, name: Option<&str>, _force: bool) -> String {
@@ -471,7 +492,7 @@ pub fn kill_process(pid: Option<u32>, name: Option<&str>, _force: bool) -> Strin
         return match system.process(process) {
             Some(value) if value.kill_with(Signal::Kill).unwrap_or(false) => {
                 "Killed 1 process.".to_owned()
-            },
+            }
             Some(_) => format!("Unable to terminate PID {pid}."),
             None => format!("No process with PID {pid}."),
         };
@@ -501,7 +522,10 @@ pub fn wait_seconds(seconds: u64) -> String {
 /// Execute a bounded PowerShell command and collect both output streams.
 pub fn power_shell(command: &str, timeout_seconds: u64) -> io::Result<serde_json::Value> {
     if command.trim().is_empty() {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "command must be non-empty"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "command must be non-empty",
+        ));
     }
     let timeout = timeout_seconds.clamp(1, 600);
     let executable = if cfg!(windows) {
@@ -560,7 +584,10 @@ pub fn trim_process_working_set(pid: u32) -> io::Result<serde_json::Value> {
 
 #[cfg(not(windows))]
 pub fn trim_process_working_set(_pid: u32) -> io::Result<serde_json::Value> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "working-set trimming is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "working-set trimming is Windows-only",
+    ))
 }
 
 /// Trims every process working set through SystemMemoryListInformation; no
@@ -572,7 +599,10 @@ pub fn empty_working_sets() -> io::Result<serde_json::Value> {
 
 #[cfg(not(windows))]
 pub fn empty_working_sets() -> io::Result<serde_json::Value> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "working-set trimming is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "working-set trimming is Windows-only",
+    ))
 }
 
 #[cfg(windows)]
@@ -583,7 +613,10 @@ pub fn purge_standby_list(low_priority_only: bool) -> io::Result<serde_json::Val
 
 #[cfg(not(windows))]
 pub fn purge_standby_list(_low_priority_only: bool) -> io::Result<serde_json::Value> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "standby-list purge is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "standby-list purge is Windows-only",
+    ))
 }
 
 #[cfg(windows)]
@@ -610,12 +643,20 @@ fn nt_set_system_information(command: i32) -> io::Result<i32> {
     // SAFETY: the symbol is documented with this ABI and exact signature.
     let function: NtSetSystemInformation = unsafe { std::mem::transmute(function) };
     let mut value = command;
-    let status =
-        unsafe { function(80, addr_of_mut!(value).cast(), std::mem::size_of::<i32>() as u32) };
+    let status = unsafe {
+        function(
+            80,
+            addr_of_mut!(value).cast(),
+            std::mem::size_of::<i32>() as u32,
+        )
+    };
     if status < 0 {
         Err(io::Error::new(
             io::ErrorKind::PermissionDenied,
-            format!("NtSetSystemInformation failed: NTSTATUS 0x{:08X}", status as u32),
+            format!(
+                "NtSetSystemInformation failed: NTSTATUS 0x{:08X}",
+                status as u32
+            ),
         ))
     } else {
         Ok(status)
@@ -628,14 +669,23 @@ pub fn set_process_affinity(pid: u32, requested: usize) -> io::Result<serde_json
         GetProcessAffinityMask, OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_SET_INFORMATION,
         SetProcessAffinityMask,
     };
-    let handle =
-        unsafe { OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_SET_INFORMATION, false, pid) }
-            .map_err(|e| io::Error::new(io::ErrorKind::PermissionDenied, e.to_string()))?;
+    let handle = unsafe {
+        OpenProcess(
+            PROCESS_QUERY_INFORMATION | PROCESS_SET_INFORMATION,
+            false,
+            pid,
+        )
+    }
+    .map_err(|e| io::Error::new(io::ErrorKind::PermissionDenied, e.to_string()))?;
     let mut previous = 0usize;
     let mut system = 0usize;
     unsafe { GetProcessAffinityMask(handle, &mut previous, &mut system) }
         .map_err(|e| io::Error::other(e.to_string()))?;
-    let target = if requested == 0 { system } else { requested & system };
+    let target = if requested == 0 {
+        system
+    } else {
+        requested & system
+    };
     if target == 0 {
         let _ = unsafe { windows::Win32::Foundation::CloseHandle(handle) };
         return Err(io::Error::new(
@@ -653,7 +703,10 @@ pub fn set_process_affinity(pid: u32, requested: usize) -> io::Result<serde_json
 
 #[cfg(not(windows))]
 pub fn set_process_affinity(_pid: u32, _requested: usize) -> io::Result<serde_json::Value> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "process affinity is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "process affinity is Windows-only",
+    ))
 }
 
 #[cfg(windows)]
@@ -671,11 +724,21 @@ pub fn set_process_priority(pid: u32, priority: &str) -> io::Result<serde_json::
         "abovenormal" => ABOVE_NORMAL_PRIORITY_CLASS,
         "high" => HIGH_PRIORITY_CLASS,
         "realtime" => REALTIME_PRIORITY_CLASS,
-        _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, "unknown priority class")),
+        _ => {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "unknown priority class",
+            ));
+        }
     };
-    let handle =
-        unsafe { OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_SET_INFORMATION, false, pid) }
-            .map_err(|e| io::Error::new(io::ErrorKind::PermissionDenied, e.to_string()))?;
+    let handle = unsafe {
+        OpenProcess(
+            PROCESS_QUERY_INFORMATION | PROCESS_SET_INFORMATION,
+            false,
+            pid,
+        )
+    }
+    .map_err(|e| io::Error::new(io::ErrorKind::PermissionDenied, e.to_string()))?;
     let previous = unsafe { GetPriorityClass(handle) };
     unsafe { SetPriorityClass(handle, class) }
         .map_err(|e| io::Error::new(io::ErrorKind::PermissionDenied, e.to_string()))?;
@@ -685,7 +748,10 @@ pub fn set_process_priority(pid: u32, priority: &str) -> io::Result<serde_json::
 
 #[cfg(not(windows))]
 pub fn set_process_priority(_pid: u32, _priority: &str) -> io::Result<serde_json::Value> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "process priority is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "process priority is Windows-only",
+    ))
 }
 
 pub fn launch_app(
@@ -723,7 +789,10 @@ pub fn list_power_plans() -> std::io::Result<PowerPlanListResponse> {
             "power plans are Windows-only",
         ));
     }
-    let output = std::process::Command::new("powercfg").no_window().arg("/list").output()?;
+    let output = std::process::Command::new("powercfg")
+        .no_window()
+        .arg("/list")
+        .output()?;
     let text = String::from_utf8_lossy(&output.stdout);
     let mut plans = Vec::new();
     for line in text.lines() {
@@ -740,11 +809,22 @@ pub fn list_power_plans() -> std::io::Result<PowerPlanListResponse> {
             .unwrap_or("Unknown")
             .trim()
             .to_owned();
-        plans.push(PowerPlan { guid: guid.trim_matches(['{', '}']).to_owned(), name, is_active });
+        plans.push(PowerPlan {
+            guid: guid.trim_matches(['{', '}']).to_owned(),
+            name,
+            is_active,
+        });
     }
-    let active_guid =
-        plans.iter().find(|plan| plan.is_active).map(|plan| plan.guid.clone()).unwrap_or_default();
-    Ok(PowerPlanListResponse { count: plans.len(), active_guid, plans })
+    let active_guid = plans
+        .iter()
+        .find(|plan| plan.is_active)
+        .map(|plan| plan.guid.clone())
+        .unwrap_or_default();
+    Ok(PowerPlanListResponse {
+        count: plans.len(),
+        active_guid,
+        plans,
+    })
 }
 
 pub fn get_active_power_plan() -> std::io::Result<PowerPlan> {
@@ -770,7 +850,8 @@ pub fn set_active_power_plan(guid: &str) -> std::io::Result<String> {
             "invalid power-plan GUID",
         ));
     }
-    let output = std::process::Command::new("powercfg").no_window()
+    let output = std::process::Command::new("powercfg")
+        .no_window()
         .args(["/setactive", normalized.as_str()])
         .output()?;
     if !output.status.success() {
@@ -788,17 +869,29 @@ pub fn list_scheduled_tasks(folder: &str) -> std::io::Result<ScheduledTaskListRe
             "scheduled tasks are Windows-only",
         ));
     }
-    let folder = if folder.trim().is_empty() { "\\" } else { folder.trim() };
-    if folder.bytes().any(|byte| byte.is_ascii_control() || matches!(byte, b'"' | b'\'')) {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid task folder"));
+    let folder = if folder.trim().is_empty() {
+        "\\"
+    } else {
+        folder.trim()
+    };
+    if folder
+        .bytes()
+        .any(|byte| byte.is_ascii_control() || matches!(byte, b'"' | b'\''))
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "invalid task folder",
+        ));
     }
-    let targeted = std::process::Command::new("schtasks").no_window()
+    let targeted = std::process::Command::new("schtasks")
+        .no_window()
         .args(["/Query", "/TN", folder, "/FO", "CSV", "/V", "/NH"])
         .output()?;
     let output = if targeted.status.success() && !targeted.stdout.is_empty() {
         targeted.stdout
     } else {
-        std::process::Command::new("schtasks").no_window()
+        std::process::Command::new("schtasks")
+            .no_window()
             .args(["/Query", "/FO", "CSV", "/V", "/NH"])
             .output()?
             .stdout
@@ -813,13 +906,18 @@ pub fn list_scheduled_tasks(folder: &str) -> std::io::Result<ScheduledTaskListRe
         let path = fields[1].clone();
         if !prefix.is_empty()
             && prefix != "\\"
-            && !path.to_ascii_lowercase().starts_with(&prefix.to_ascii_lowercase())
+            && !path
+                .to_ascii_lowercase()
+                .starts_with(&prefix.to_ascii_lowercase())
         {
             continue;
         }
         let state = fields[3].clone();
         let last_run = fields.get(5).cloned().unwrap_or_default();
-        let last_result = fields.get(6).and_then(|value| value.parse().ok()).unwrap_or(0);
+        let last_result = fields
+            .get(6)
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(0);
         let name = path.rsplit('\\').next().unwrap_or(&path).to_owned();
         tasks.push(ScheduledTask {
             path,
@@ -830,7 +928,10 @@ pub fn list_scheduled_tasks(folder: &str) -> std::io::Result<ScheduledTaskListRe
             enabled: !state.eq_ignore_ascii_case("Disabled"),
         });
     }
-    Ok(ScheduledTaskListResponse { count: tasks.len(), tasks })
+    Ok(ScheduledTaskListResponse {
+        count: tasks.len(),
+        tasks,
+    })
 }
 
 pub fn control_scheduled_task(action: &str, path: &str) -> std::io::Result<String> {
@@ -841,8 +942,15 @@ pub fn control_scheduled_task(action: &str, path: &str) -> std::io::Result<Strin
         ));
     }
     let path = path.trim();
-    if path.is_empty() || path.bytes().any(|byte| byte.is_ascii_control() || byte == b'"') {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid task path"));
+    if path.is_empty()
+        || path
+            .bytes()
+            .any(|byte| byte.is_ascii_control() || byte == b'"')
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "invalid task path",
+        ));
     }
     let args: Vec<&str> = match action {
         "run" => vec!["/Run", "/TN", path],
@@ -853,9 +961,12 @@ pub fn control_scheduled_task(action: &str, path: &str) -> std::io::Result<Strin
                 std::io::ErrorKind::InvalidInput,
                 "unsupported task action",
             ));
-        },
+        }
     };
-    let output = std::process::Command::new("schtasks").no_window().args(args).output()?;
+    let output = std::process::Command::new("schtasks")
+        .no_window()
+        .args(args)
+        .output()?;
     if !output.status.success() {
         return Err(std::io::Error::other(
             String::from_utf8_lossy(&output.stderr).trim().to_owned(),
@@ -879,12 +990,12 @@ fn parse_csv_row(line: &str) -> Vec<String> {
             '"' if quoted && chars.peek() == Some(&'"') => {
                 current.push('"');
                 chars.next();
-            },
+            }
             '"' => quoted = !quoted,
             ',' if !quoted => {
                 fields.push(current.clone());
                 current.clear();
-            },
+            }
             other => current.push(other),
         }
     }
@@ -895,16 +1006,25 @@ fn parse_csv_row(line: &str) -> Vec<String> {
 fn valid_guid(value: &str) -> bool {
     value.len() == 36
         && value.bytes().enumerate().all(|(index, byte)| {
-            if matches!(index, 8 | 13 | 18 | 23) { byte == b'-' } else { byte.is_ascii_hexdigit() }
+            if matches!(index, 8 | 13 | 18 | 23) {
+                byte == b'-'
+            } else {
+                byte.is_ascii_hexdigit()
+            }
         })
 }
 
 fn validate_wsl_distribution(distribution: &str) -> io::Result<()> {
     if distribution.trim().is_empty()
         || distribution.len() > 128
-        || distribution.chars().any(|character| character.is_control() || character == '"')
+        || distribution
+            .chars()
+            .any(|character| character.is_control() || character == '"')
     {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid WSL distribution"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "invalid WSL distribution",
+        ));
     }
     Ok(())
 }
@@ -953,9 +1073,13 @@ pub fn wsl_read_only_probe(distribution: &str, probe: &str) -> io::Result<serde_
                 io::ErrorKind::InvalidInput,
                 "probe must be system-info, re-toolchain, processes, mounts, or network",
             ));
-        },
+        }
     };
-    let mut args = vec!["--distribution".to_owned(), distribution.to_owned(), "--exec".to_owned()];
+    let mut args = vec![
+        "--distribution".to_owned(),
+        distribution.to_owned(),
+        "--exec".to_owned(),
+    ];
     args.extend(command.iter().map(|value| (*value).to_owned()));
     Ok(crate::wsl::result(&args))
 }
@@ -973,7 +1097,11 @@ pub fn wsl_execute(distribution: &str, command: &[String]) -> io::Result<serde_j
             "command must contain 1..64 safe arguments",
         ));
     }
-    let mut args = vec!["--distribution".to_owned(), distribution.to_owned(), "--exec".to_owned()];
+    let mut args = vec![
+        "--distribution".to_owned(),
+        distribution.to_owned(),
+        "--exec".to_owned(),
+    ];
     args.extend(command.iter().cloned());
     Ok(crate::wsl::result(&args))
 }
@@ -985,7 +1113,10 @@ pub fn wsl_send_signal(
 ) -> io::Result<serde_json::Value> {
     validate_wsl_distribution(distribution)?;
     if process_id == 0
-        || !matches!(signal.trim().to_ascii_uppercase().as_str(), "HUP" | "INT" | "TERM" | "KILL")
+        || !matches!(
+            signal.trim().to_ascii_uppercase().as_str(),
+            "HUP" | "INT" | "TERM" | "KILL"
+        )
     {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -1009,21 +1140,32 @@ pub fn get_disk_info() -> DiskInfoListResponse {
         .iter()
         .map(|disk| DiskInfo {
             root: disk.mount_point().display().to_string(),
-            drive_type: if disk.is_removable() { "Removable" } else { "Fixed" }.to_owned(),
+            drive_type: if disk.is_removable() {
+                "Removable"
+            } else {
+                "Fixed"
+            }
+            .to_owned(),
             total_bytes: disk.total_space(),
             free_bytes: disk.available_space(),
             available_bytes: disk.available_space(),
         })
         .collect::<Vec<_>>();
-    DiskInfoListResponse { count: disks.len(), disks }
+    DiskInfoListResponse {
+        count: disks.len(),
+        disks,
+    }
 }
 
 /// One value of `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion` as text (empty when absent).
 fn current_version_value(name: &str) -> String {
-    crate::registry::get_value("HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", name)
-        .ok()
-        .map(|value| registry_text(&value["Value"]))
-        .unwrap_or_default()
+    crate::registry::get_value(
+        "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
+        name,
+    )
+    .ok()
+    .map(|value| registry_text(&value["Value"]))
+    .unwrap_or_default()
 }
 
 fn registry_text(value: &serde_json::Value) -> String {
@@ -1052,7 +1194,9 @@ pub fn get_os_info() -> OsInfo {
         installation_type: current_version_value("InstallationType"),
         os_architecture: std::env::consts::ARCH.to_owned(),
         machine_name: System::host_name().unwrap_or_default(),
-        user_name: std::env::var("USERNAME").or_else(|_| std::env::var("USER")).unwrap_or_default(),
+        user_name: std::env::var("USERNAME")
+            .or_else(|_| std::env::var("USER"))
+            .unwrap_or_default(),
     }
 }
 
@@ -1072,21 +1216,33 @@ pub fn get_network_adapters() -> NetworkAdapterListResponse {
                 .collect::<Vec<_>>()
                 .join(""),
             speed_bps: 0,
-            ip_addresses: network.ip_networks().iter().map(ToString::to_string).collect(),
+            ip_addresses: network
+                .ip_networks()
+                .iter()
+                .map(ToString::to_string)
+                .collect(),
         })
         .collect::<Vec<_>>();
-    NetworkAdapterListResponse { count: adapters.len(), adapters }
+    NetworkAdapterListResponse {
+        count: adapters.len(),
+        adapters,
+    }
 }
 
 pub fn list_tcp_connections(
     state_filter: Option<&str>,
 ) -> std::io::Result<TcpConnectionListResponse> {
-    let filter = state_filter.map(str::trim).filter(|value| !value.is_empty());
+    let filter = state_filter
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
     let connections: Vec<TcpConnection> = crate::tcp::connections()?
         .into_iter()
         .filter(|row| filter.is_none_or(|state| row.state.eq_ignore_ascii_case(state)))
         .collect();
-    Ok(TcpConnectionListResponse { count: connections.len(), connections })
+    Ok(TcpConnectionListResponse {
+        count: connections.len(),
+        connections,
+    })
 }
 
 /// Probe the ViGEmBus virtual gamepad stack without subprocesses: the driver's service key
@@ -1174,13 +1330,19 @@ pub fn shell_open(uri: &str) -> std::io::Result<()> {
             5 => std::io::ErrorKind::PermissionDenied,
             _ => std::io::ErrorKind::Other,
         };
-        Err(std::io::Error::new(kind, format!("ShellExecuteW could not open {uri} (code {code})")))
+        Err(std::io::Error::new(
+            kind,
+            format!("ShellExecuteW could not open {uri} (code {code})"),
+        ))
     }
 }
 
 #[cfg(not(windows))]
 pub fn gamepad_environment() -> std::io::Result<serde_json::Value> {
-    Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "ViGEm diagnostics are Windows-only"))
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "ViGEm diagnostics are Windows-only",
+    ))
 }
 
 pub fn list_listening_ports() -> std::io::Result<TcpConnectionListResponse> {

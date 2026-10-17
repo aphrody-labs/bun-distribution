@@ -11,12 +11,7 @@ interface SourcesGroupProps {
   sortableListeners?: any;
 }
 
-export function SourcesGroup({
-  isCollapsed,
-  onToggle,
-  sortableAttributes,
-  sortableListeners,
-}: SourcesGroupProps) {
+export function SourcesGroup({ isCollapsed, onToggle, sortableAttributes, sortableListeners }: SourcesGroupProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { getIcon } = useAdapterIcons();
@@ -40,16 +35,14 @@ export function SourcesGroup({
 
       {!isCollapsed && (
         <div className="space-y-0.5">
-          {sourcesList.map((source) => {
+          {sourcesList.map(source => {
             const isActive = location.pathname === `/sources/${source.id}`;
             return (
               <button
                 key={source.id}
                 onClick={() => navigate(`/sources/${source.id}`)}
                 className={`flex w-full items-center gap-2 rounded-small px-2 py-1 text-left text-label-large font-medium ${
-                  isActive
-                    ? "bg-secondary-container text-on-surface"
-                    : "text-sidebar-inkDull hover:text-on-surface"
+                  isActive ? "bg-secondary-container text-on-surface" : "text-sidebar-inkDull hover:text-on-surface"
                 }`}
               >
                 {getIcon(source.adapter_id) ? (
@@ -62,10 +55,7 @@ export function SourcesGroup({
                     }}
                   />
                 ) : (
-                  <Database
-                    className="size-4 shrink-0"
-                    weight={isActive ? "fill" : "bold"}
-                  />
+                  <Database className="size-4 shrink-0" weight={isActive ? "fill" : "bold"} />
                 )}
                 <span className="truncate">{source.name}</span>
               </button>

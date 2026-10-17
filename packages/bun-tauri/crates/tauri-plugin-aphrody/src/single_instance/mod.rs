@@ -72,7 +72,9 @@ impl<R: Runtime> Default for Builder<R> {
         Self {
             callback: Box::new(move |_app, _args, _| {
                 #[cfg(feature = "single-instance-deep-link")]
-                if let Some(deep_link) = _app.try_state::<tauri_plugin_aphrody::deep_link::DeepLink<R>>() {
+                if let Some(deep_link) =
+                    _app.try_state::<tauri_plugin_aphrody::deep_link::DeepLink<R>>()
+                {
                     deep_link.handle_cli_arguments(_args.iter());
                 }
             }),
@@ -98,7 +100,8 @@ impl<R: Runtime> Builder<R> {
     ) -> Self {
         self.callback = Box::new(move |app, args, cwd| {
             #[cfg(feature = "single-instance-deep-link")]
-            if let Some(deep_link) = app.try_state::<tauri_plugin_aphrody::deep_link::DeepLink<R>>() {
+            if let Some(deep_link) = app.try_state::<tauri_plugin_aphrody::deep_link::DeepLink<R>>()
+            {
                 deep_link.handle_cli_arguments(args.iter());
             }
             f(app, args, cwd)

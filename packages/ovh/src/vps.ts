@@ -62,9 +62,7 @@ export class OvhVps {
    * Get detailed specification and operational parameters of a VPS.
    */
   public async getVps(serviceName: string): Promise<VpsDetails> {
-    const raw = await this.client.get<Record<string, unknown>>(
-      `/vps/${serviceName}`,
-    );
+    const raw = await this.client.get<Record<string, unknown>>(`/vps/${serviceName}`);
     const model = (raw.model as Record<string, unknown>) || {};
 
     return {
@@ -85,18 +83,14 @@ export class OvhVps {
    * List all IPs associated with a VPS.
    */
   public async getIps(serviceName: string): Promise<VpsIp[]> {
-    const ipStrings = await this.client.get<string[]>(
-      `/vps/${serviceName}/ips`,
-    );
+    const ipStrings = await this.client.get<string[]>(`/vps/${serviceName}/ips`);
     if (!ipStrings || ipStrings.length === 0) return [];
 
     // Independent per-IP lookups; Promise.all keeps the API order and each failure falls back locally.
     return Promise.all(
       ipStrings.map(async (ip): Promise<VpsIp> => {
         try {
-          const detail = await this.client.get<Record<string, unknown>>(
-            `/vps/${serviceName}/ips/${ip}`,
-          );
+          const detail = await this.client.get<Record<string, unknown>>(`/vps/${serviceName}/ips/${ip}`);
           return {
             ip,
             version: ip.includes(":") ? "v6" : "v4",
@@ -119,9 +113,7 @@ export class OvhVps {
    * Get current operational status (ping, up).
    */
   public async getStatus(serviceName: string): Promise<VpsStatus> {
-    const status = await this.client.get<Record<string, unknown>>(
-      `/vps/${serviceName}/status`,
-    );
+    const status = await this.client.get<Record<string, unknown>>(`/vps/${serviceName}/status`);
     return {
       state: (status.state as string) || "unknown",
       ping: Boolean(status.ping),
@@ -140,39 +132,30 @@ export class OvhVps {
     let snapshot: VpsBackupInfo["snapshot"] = undefined;
 
     try {
-      const auto = await this.client.get<Record<string, unknown>>(
-        `${basePath}/automatedBackup`,
-      );
+      const auto = await this.client.get<Record<string, unknown>>(`${basePath}/automatedBackup`);
       automatedBackup = {
         state: auto.state as string,
         schedule: auto.schedule as string,
         restorePoints: [],
       };
     } catch (error) {
-      if (!(error instanceof OvhApiError) || error.statusCode !== 404)
-        throw error;
+      if (!(error instanceof OvhApiError) || error.statusCode !== 404) throw error;
       // Distinguish an absent backup option from a VPS outside this account.
       await this.client.get(basePath);
     }
 
     if (automatedBackup.state) {
       try {
-        automatedBackup.restorePoints = await this.client.get<string[]>(
-          `${basePath}/automatedBackup/restorePoints`,
-          {
-            state: "available",
-          },
-        );
+        automatedBackup.restorePoints = await this.client.get<string[]>(`${basePath}/automatedBackup/restorePoints`, {
+          state: "available",
+        });
       } catch (error) {
-        if (!(error instanceof OvhApiError) || error.statusCode !== 404)
-          throw error;
+        if (!(error instanceof OvhApiError) || error.statusCode !== 404) throw error;
       }
     }
 
     try {
-      const snap = await this.client.get<Record<string, unknown>>(
-        `${basePath}/snapshot`,
-      );
+      const snap = await this.client.get<Record<string, unknown>>(`${basePath}/snapshot`);
       if (snap && snap.creationDate) {
         snapshot = {
           creationDate: snap.creationDate as string,
@@ -180,8 +163,7 @@ export class OvhVps {
         };
       }
     } catch (error) {
-      if (!(error instanceof OvhApiError) || error.statusCode !== 404)
-        throw error;
+      if (!(error instanceof OvhApiError) || error.statusCode !== 404) throw error;
       // OVH returns 404 when no manual snapshot exists.
     }
 
@@ -202,9 +184,7 @@ export class OvhVps {
       };
     }
 
-    const task = await this.client.post<Record<string, unknown>>(
-      `/vps/${serviceName}/reboot`,
-    );
+    const task = await this.client.post<Record<string, unknown>>(`/vps/${serviceName}/reboot`);
     return {
       planned: false,
       taskId: (task?.id as number) || undefined,

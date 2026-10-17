@@ -45,11 +45,7 @@ export interface GatewayOptions {
   /** URL WSS initiale (typiquement `GET /gateway/bot`), mise en cache ; rappelée si la connexion échoue. */
   getUrl: () => Promise<string>;
   onDispatch: (event: string, data: unknown) => void;
-  onReady?: (data: {
-    session_id: string;
-    user?: { id: string };
-    application?: { id: string };
-  }) => void;
+  onReady?: (data: { session_id: string; user?: { id: string }; application?: { id: string } }) => void;
   WebSocketImpl?: typeof WebSocket;
   random?: () => number;
   sleep?: Sleep;
@@ -110,8 +106,7 @@ export class Gateway {
         outcome = { kind: this.session ? "resume" : "identify" };
       }
       if (outcome.kind === "stop") return;
-      if (outcome.kind === "fatal")
-        throw new GatewayFatalError(outcome.code, fatalMessage(outcome.code));
+      if (outcome.kind === "fatal") throw new GatewayFatalError(outcome.code, fatalMessage(outcome.code));
       if (outcome.kind === "identify") {
         this.session = undefined;
         this.seq = null;
@@ -127,9 +122,7 @@ export class Gateway {
 
   /** URL de connexion : `resume_gateway_url` pendant une session, sinon l'URL Gateway (récupérée une fois). */
   private async connectionBase(): Promise<string> {
-    return this.session
-      ? this.session.resumeUrl
-      : (this.cachedUrl ??= await this.options.getUrl());
+    return this.session ? this.session.resumeUrl : (this.cachedUrl ??= await this.options.getUrl());
   }
 
   private async abortableSleep(ms: number): Promise<void> {
@@ -138,15 +131,13 @@ export class Gateway {
     if (signal.aborted) return;
     await Promise.race([
       this.sleep(ms),
-      new Promise<void>((resolve) =>
-        signal.addEventListener("abort", () => resolve(), { once: true }),
-      ),
+      new Promise<void>(resolve => signal.addEventListener("abort", () => resolve(), { once: true })),
     ]);
   }
 
   private connect(url: string): Promise<Outcome> {
     const WS = this.options.WebSocketImpl ?? WebSocket;
-    return new Promise<Outcome>((resolve) => {
+    return new Promise<Outcome>(resolve => {
       const ws = new WS(url);
       let settled = false;
       let forced: Outcome | undefined;
@@ -214,10 +205,7 @@ export class Gateway {
         if (typeof payload.s === "number") this.seq = payload.s;
         switch (payload.op) {
           case Op.Hello: {
-            const interval = Number(
-              (payload.d as { heartbeat_interval?: number })
-                ?.heartbeat_interval ?? 41_250,
-            );
+            const interval = Number((payload.d as { heartbeat_interval?: number })?.heartbeat_interval ?? 41_250);
             // Premier battement après interval * jitter (0..1), puis un par intervalle.
             firstBeat = setTimeout(
               () => {
@@ -272,8 +260,7 @@ export class Gateway {
           }
           case Op.Dispatch:
             this.dispatch(payload);
-            if (payload.t === "READY" || payload.t === "RESUMED")
-              this.stable = true;
+            if (payload.t === "READY" || payload.t === "RESUMED") this.stable = true;
             break;
           default:
             break;
@@ -298,8 +285,7 @@ export class Gateway {
       };
       this.session = {
         id: data.session_id,
-        resumeUrl:
-          data.resume_gateway_url || this.cachedUrl || FALLBACK_GATEWAY,
+        resumeUrl: data.resume_gateway_url || this.cachedUrl || FALLBACK_GATEWAY,
       };
       this.options.onReady?.(data);
       return;

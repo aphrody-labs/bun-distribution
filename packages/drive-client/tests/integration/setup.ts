@@ -18,9 +18,7 @@ console.error = (...args: any[]) => {
   const message = args[0];
   if (
     typeof message === "string" &&
-    message.includes(
-      "An update to TestComponent inside a test was not wrapped in act",
-    )
+    message.includes("An update to TestComponent inside a test was not wrapped in act")
   ) {
     // Suppress act() warnings - they're expected for real-time event updates
     return;

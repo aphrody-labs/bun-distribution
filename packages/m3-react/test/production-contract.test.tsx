@@ -80,15 +80,9 @@ describe("production transition lifecycle", () => {
         </Collapse>
       </>,
     );
-    expect(
-      el.querySelector('[data-testid="fade"]')!.hasAttribute("inert"),
-    ).toBe(true);
-    expect(
-      el.querySelector('[data-testid="fade"]')!.getAttribute("aria-hidden"),
-    ).toBe("true");
-    expect(
-      el.querySelector('[data-testid="collapse"]')!.closest("[inert]"),
-    ).not.toBeNull();
+    expect(el.querySelector('[data-testid="fade"]')!.hasAttribute("inert")).toBe(true);
+    expect(el.querySelector('[data-testid="fade"]')!.getAttribute("aria-hidden")).toBe("true");
+    expect(el.querySelector('[data-testid="collapse"]')!.closest("[inert]")).not.toBeNull();
   });
 
   test("reduced motion removes CSS duration and unmounts exits immediately", () => {

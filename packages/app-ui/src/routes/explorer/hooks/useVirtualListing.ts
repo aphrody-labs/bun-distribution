@@ -1,16 +1,7 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  useNormalizedQuery,
-  getDeviceIcon,
-} from "../../../contexts/SpacedriveContext";
-import {
-  getVolumeIcon,
-  mapLocationToFile,
-  mapVolumeToFile,
-  mapDeviceToFile,
-  type File,
-} from "@aphrody/drive-client";
+import { useNormalizedQuery, getDeviceIcon } from "../../../contexts/SpacedriveContext";
+import { getVolumeIcon, mapLocationToFile, mapVolumeToFile, mapDeviceToFile, type File } from "@aphrody/drive-client";
 import { Location } from "@aphrody/assets/icons";
 
 export type VirtualViewType = "device" | "devices" | null;
@@ -38,13 +29,12 @@ export function useVirtualListing(): VirtualListingResult {
   const isVirtualView = view !== null;
 
   // Fetch locations
-  const { data: locationsData, isLoading: locationsLoading } =
-    useNormalizedQuery({
-      query: "locations.list",
-      input: null,
-      resourceType: "location",
-      enabled: view === "device",
-    });
+  const { data: locationsData, isLoading: locationsLoading } = useNormalizedQuery({
+    query: "locations.list",
+    input: null,
+    resourceType: "location",
+    enabled: view === "device",
+  });
 
   // Fetch volumes
   const { data: volumesData, isLoading: volumesLoading } = useNormalizedQuery({
@@ -68,9 +58,7 @@ export function useVirtualListing(): VirtualListingResult {
     // View: All Devices
     if (view === "devices") {
       const devices = (devicesData as any[]) || [];
-      return devices.map((device) =>
-        mapDeviceToFile(device, getDeviceIcon(device)),
-      );
+      return devices.map(device => mapDeviceToFile(device, getDeviceIcon(device)));
     }
 
     // View: Single Device (Locations + Volumes)
@@ -91,20 +79,12 @@ export function useVirtualListing(): VirtualListingResult {
         return loc.sd_path.Physical.device_slug === device.slug;
       });
 
-      virtualFiles.push(
-        ...deviceLocations.map((loc: any) => mapLocationToFile(loc, Location)),
-      );
+      virtualFiles.push(...deviceLocations.map((loc: any) => mapLocationToFile(loc, Location)));
 
       // Add volumes for this device
-      const deviceVolumes = volumes.filter(
-        (vol: any) => vol.device_id === device.id,
-      );
+      const deviceVolumes = volumes.filter((vol: any) => vol.device_id === device.id);
 
-      virtualFiles.push(
-        ...deviceVolumes.map((vol: any) =>
-          mapVolumeToFile(vol, device.slug, getVolumeIcon(vol)),
-        ),
-      );
+      virtualFiles.push(...deviceVolumes.map((vol: any) => mapVolumeToFile(vol, device.slug, getVolumeIcon(vol))));
 
       return virtualFiles;
     }
@@ -113,8 +93,7 @@ export function useVirtualListing(): VirtualListingResult {
   }, [view, deviceId, locationsData, volumesData, devicesData, isVirtualView]);
 
   const isLoading =
-    (view === "device" &&
-      (locationsLoading || volumesLoading || devicesLoading)) ||
+    (view === "device" && (locationsLoading || volumesLoading || devicesLoading)) ||
     (view === "devices" && devicesLoading);
 
   return {

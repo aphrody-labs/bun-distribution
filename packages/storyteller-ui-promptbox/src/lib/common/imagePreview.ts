@@ -54,10 +54,7 @@ async function buildPreviewUrl(file: File): Promise<string> {
       imageOrientation: "from-image",
     });
     try {
-      const scale = Math.min(
-        1,
-        PREVIEW_MAX_DIM / Math.max(bitmap.width, bitmap.height),
-      );
+      const scale = Math.min(1, PREVIEW_MAX_DIM / Math.max(bitmap.width, bitmap.height));
       if (scale >= 1) {
         return URL.createObjectURL(file);
       }
@@ -70,9 +67,7 @@ async function buildPreviewUrl(file: File): Promise<string> {
       }
       ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
       const type = ALPHA_TYPES.has(file.type) ? "image/png" : "image/jpeg";
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, type, PREVIEW_JPEG_QUALITY),
-      );
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, type, PREVIEW_JPEG_QUALITY));
       return blob ? URL.createObjectURL(blob) : URL.createObjectURL(file);
     } finally {
       bitmap.close();

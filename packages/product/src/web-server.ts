@@ -9,9 +9,7 @@ import { appServerProxy, isLoopbackHost } from "@aphrody/app-ui/backend";
 
 function within(root: string, path: string): boolean {
   const suffix = relative(root, path);
-  return (
-    suffix !== ".." && !suffix.startsWith(".." + sep) && !suffix.startsWith(sep)
-  );
+  return suffix !== ".." && !suffix.startsWith(".." + sep) && !suffix.startsWith(sep);
 }
 
 export interface ProductUiServerOptions {
@@ -21,21 +19,17 @@ export interface ProductUiServerOptions {
   uiDist?: string;
 }
 
-export async function startProductUiServer(
-  options: ProductUiServerOptions = {},
-) {
+export async function startProductUiServer(options: ProductUiServerOptions = {}) {
   const {
     port = 3000,
     host = "127.0.0.1",
     backendUrl,
     uiDist = resolve(findWorkspaceRoot(), "crates/ui/app/ui-dist"),
   } = options;
-  if (!isLoopbackHost(host))
-    throw new Error("The private product UI must bind to a loopback address.");
+  if (!isLoopbackHost(host)) throw new Error("The private product UI must bind to a loopback address.");
   const root = await realpath(uiDist);
   const index = resolve(root, "index.html");
-  if (!existsSync(index))
-    throw new Error("Build @aphrody/app-ui before serving its UI.");
+  if (!existsSync(index)) throw new Error("Build @aphrody/app-ui before serving its UI.");
 
   return serveM3({
     hostname: host,
@@ -49,16 +43,12 @@ export async function startProductUiServer(
           path,
           async (request: Request) => {
             const url = new URL(request.url);
-            if (
-              !isLoopbackHost(url.hostname) ||
-              request.headers.get("sec-fetch-site") === "cross-site"
-            )
+            if (!isLoopbackHost(url.hostname) || request.headers.get("sec-fetch-site") === "cross-site")
               return new Response("Forbidden", { status: 403 });
             const origin = request.headers.get("origin");
             if (!origin) return forward(request);
             // Validate the browser boundary before adapting its origin to the private backend.
-            if (origin !== url.origin)
-              return new Response("Forbidden", { status: 403 });
+            if (origin !== url.origin) return new Response("Forbidden", { status: 403 });
             const headers = new Headers(request.headers);
             headers.set("origin", target);
             return forward(new Request(request, { headers }));
@@ -69,10 +59,7 @@ export async function startProductUiServer(
     async fetch(request) {
       const url = new URL(request.url);
       if (url.pathname.startsWith("/api/") || url.pathname === "/ws") {
-        return Response.json(
-          { error: "This endpoint is not provided by the web app." },
-          { status: 404 },
-        );
+        return Response.json({ error: "This endpoint is not provided by the web app." }, { status: 404 });
       }
       if (request.method !== "GET" && request.method !== "HEAD") {
         return new Response("Method Not Allowed", {
@@ -87,18 +74,15 @@ export async function startProductUiServer(
         return new Response("Bad Request", { status: 400 });
       }
       const candidate = resolve(root, "." + pathname);
-      if (!within(root, candidate))
-        return new Response("Forbidden", { status: 403 });
+      if (!within(root, candidate)) return new Response("Forbidden", { status: 403 });
       const file = Bun.file(candidate);
       if (await file.exists()) {
-        if (!within(root, await realpath(candidate)))
-          return new Response("Forbidden", { status: 403 });
+        if (!within(root, await realpath(candidate))) return new Response("Forbidden", { status: 403 });
         return new Response(request.method === "HEAD" ? null : file, {
           headers: { "Content-Type": file.type, "Cache-Control": "no-cache" },
         });
       }
-      if (extname(pathname) || pathname.startsWith("/fonts/"))
-        return new Response("Not Found", { status: 404 });
+      if (extname(pathname) || pathname.startsWith("/fonts/")) return new Response("Not Found", { status: 404 });
       return new Response(request.method === "HEAD" ? null : Bun.file(index), {
         headers: {
           "Content-Type": "text/html; charset=utf-8",

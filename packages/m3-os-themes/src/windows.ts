@@ -1,22 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Windows 11: Personalize registry values (dark/light, accent), DWM accent, .theme files, wallpaper script.
-import {
-  abgr,
-  allModes,
-  argb,
-  hex8,
-  rgb,
-  rolesFor,
-  validate,
-} from "./color.ts";
+import { abgr, allModes, argb, hex8, rgb, rolesFor, validate } from "./color.ts";
 import { gradientPng } from "./png.ts";
 import type { GeneratedFile, Mode, Roles, ThemeInput } from "./types.ts";
 
-export const PERSONALIZE_KEY =
-  "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
+export const PERSONALIZE_KEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
 export const DWM_KEY = "HKCU\\Software\\Microsoft\\Windows\\DWM";
-export const ACCENT_KEY =
-  "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent";
+export const ACCENT_KEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent";
 
 export interface RegistryValue {
   key: string;
@@ -37,7 +27,7 @@ export function accentPalette(roles: Roles): number[] {
     roles["onPrimaryFixedVariant"],
     roles["onPrimaryFixed"],
   ];
-  return swatches.flatMap((c) => {
+  return swatches.flatMap(c => {
     const [red, green, blue] = rgb(c!);
     return [red, green, blue, 0];
   });
@@ -104,16 +94,13 @@ export function registryValues(input: ThemeInput, mode: Mode): RegistryValue[] {
 }
 
 const psValue = (v: RegistryValue): string =>
-  v.type === "DWord"
-    ? `0x${hex8(v.value as number)}`
-    : `([byte[]](${(v.value as number[]).join(",")}))`;
+  v.type === "DWord" ? `0x${hex8(v.value as number)}` : `([byte[]](${(v.value as number[]).join(",")}))`;
 
 function psRegistryTable(input: ThemeInput): string {
   const rows = (mode: Mode): string =>
     registryValues(input, mode)
       .map(
-        (v) =>
-          `    @{ Path = 'HKCU:${v.key.slice(4)}'; Name = '${v.name}'; Type = '${v.type}'; Value = ${psValue(v)} }`,
+        v => `    @{ Path = 'HKCU:${v.key.slice(4)}'; Name = '${v.name}'; Type = '${v.type}'; Value = ${psValue(v)} }`,
       )
       .join("\n");
   return `$Light = @(\n${rows("light")}\n)\n$Dark = @(\n${rows("dark")}\n)`;
@@ -286,12 +273,7 @@ export function generateWindows(input: ThemeInput): GeneratedFile[] {
     files.push({
       target: "windows",
       path: `${dir}/wallpaper-${input.name}-${mode}.png`,
-      content: gradientPng(
-        64,
-        36,
-        roles["primaryContainer"]!,
-        roles["surface"]!,
-      ),
+      content: gradientPng(64, 36, roles["primaryContainer"]!, roles["surface"]!),
     });
   }
   files.push({

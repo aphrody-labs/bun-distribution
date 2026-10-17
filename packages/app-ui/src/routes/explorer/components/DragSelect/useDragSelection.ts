@@ -17,13 +17,9 @@ export function useDragSelection({ files, scrollRef }: UseDragSelectionProps) {
    */
   const getFilesFromElements = useCallback(
     (elements: Element[]): File[] => {
-      const fileIds = new Set(
-        elements
-          .map((el) => getElementFileId(el))
-          .filter((id): id is string => id !== null),
-      );
+      const fileIds = new Set(elements.map(el => getElementFileId(el)).filter((id): id is string => id !== null));
 
-      return files.filter((file) => fileIds.has(file.id));
+      return files.filter(file => fileIds.has(file.id));
     },
     [files],
   );
@@ -48,10 +44,7 @@ export function useDragSelection({ files, scrollRef }: UseDragSelectionProps) {
       const container = scrollRef.current;
       if (!container) return;
 
-      container.scrollBy(
-        (e.direction[0] || 0) * 10,
-        (e.direction[1] || 0) * 10,
-      );
+      container.scrollBy((e.direction[0] || 0) * 10, (e.direction[1] || 0) * 10);
     },
     [scrollRef],
   );

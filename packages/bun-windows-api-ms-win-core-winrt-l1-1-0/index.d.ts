@@ -11,9 +11,18 @@ interface Functions {
   /** api-ms-win-core-winrt-l1-1-0.dll!RoInitialize */
   RoInitialize(initType: number): number;
   /** api-ms-win-core-winrt-l1-1-0.dll!RoRegisterActivationFactories */
-  RoRegisterActivationFactories(activatableClassIds: Win32Pointer, activationFactoryCallbacks: Win32Pointer, count: number, cookie: Win32Pointer): number;
+  RoRegisterActivationFactories(
+    activatableClassIds: Win32Pointer,
+    activationFactoryCallbacks: Win32Pointer,
+    count: number,
+    cookie: Win32Pointer,
+  ): number;
   /** api-ms-win-core-winrt-l1-1-0.dll!RoRegisterForApartmentShutdown */
-  RoRegisterForApartmentShutdown(callbackObject: Win32Pointer, apartmentIdentifier: Win32Pointer, regCookie: Win32Pointer): number;
+  RoRegisterForApartmentShutdown(
+    callbackObject: Win32Pointer,
+    apartmentIdentifier: Win32Pointer,
+    regCookie: Win32Pointer,
+  ): number;
   /** api-ms-win-core-winrt-l1-1-0.dll!RoRevokeActivationFactories */
   RoRevokeActivationFactories(cookie: number | bigint): void;
   /** api-ms-win-core-winrt-l1-1-0.dll!RoUninitialize */

@@ -3,23 +3,64 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** vertdll.dll!CallEnclave */
-  CallEnclave(lpRoutine: number | bigint, lpParameter: Win32Pointer, fWaitForThread: number, lpReturnValue: Win32Pointer): number;
+  CallEnclave(
+    lpRoutine: number | bigint,
+    lpParameter: Win32Pointer,
+    fWaitForThread: number,
+    lpReturnValue: Win32Pointer,
+  ): number;
   /** vertdll.dll!EnclaveCopyIntoEnclave */
-  EnclaveCopyIntoEnclave(EnclaveAddress: Win32Pointer, UnsecureAddress: Win32Pointer, NumberOfBytes: number | bigint): number;
+  EnclaveCopyIntoEnclave(
+    EnclaveAddress: Win32Pointer,
+    UnsecureAddress: Win32Pointer,
+    NumberOfBytes: number | bigint,
+  ): number;
   /** vertdll.dll!EnclaveCopyOutOfEnclave */
-  EnclaveCopyOutOfEnclave(UnsecureAddress: Win32Pointer, EnclaveAddress: Win32Pointer, NumberOfBytes: number | bigint): number;
+  EnclaveCopyOutOfEnclave(
+    UnsecureAddress: Win32Pointer,
+    EnclaveAddress: Win32Pointer,
+    NumberOfBytes: number | bigint,
+  ): number;
   /** vertdll.dll!EnclaveEncryptDataForTrustlet */
-  EnclaveEncryptDataForTrustlet(DataToEncrypt: Win32Pointer, DataToEncryptSize: number, TrustletBindingData: Win32Pointer, EncryptedData: Win32Pointer, BufferSize: number, EncryptedDataSize: Win32Pointer): number;
+  EnclaveEncryptDataForTrustlet(
+    DataToEncrypt: Win32Pointer,
+    DataToEncryptSize: number,
+    TrustletBindingData: Win32Pointer,
+    EncryptedData: Win32Pointer,
+    BufferSize: number,
+    EncryptedDataSize: Win32Pointer,
+  ): number;
   /** vertdll.dll!EnclaveGetAttestationReport */
-  EnclaveGetAttestationReport(EnclaveData: Win32Pointer, Report: Win32Pointer, BufferSize: number, OutputSize: Win32Pointer): number;
+  EnclaveGetAttestationReport(
+    EnclaveData: Win32Pointer,
+    Report: Win32Pointer,
+    BufferSize: number,
+    OutputSize: Win32Pointer,
+  ): number;
   /** vertdll.dll!EnclaveGetEnclaveInformation */
   EnclaveGetEnclaveInformation(InformationSize: number, EnclaveInformation: Win32Pointer): number;
   /** vertdll.dll!EnclaveRestrictContainingProcessAccess */
   EnclaveRestrictContainingProcessAccess(RestrictAccess: number, PreviouslyRestricted: Win32Pointer): number;
   /** vertdll.dll!EnclaveSealData */
-  EnclaveSealData(DataToEncrypt: Win32Pointer, DataToEncryptSize: number, IdentityPolicy: number, RuntimePolicy: number, ProtectedBlob: Win32Pointer, BufferSize: number, ProtectedBlobSize: Win32Pointer): number;
+  EnclaveSealData(
+    DataToEncrypt: Win32Pointer,
+    DataToEncryptSize: number,
+    IdentityPolicy: number,
+    RuntimePolicy: number,
+    ProtectedBlob: Win32Pointer,
+    BufferSize: number,
+    ProtectedBlobSize: Win32Pointer,
+  ): number;
   /** vertdll.dll!EnclaveUnsealData */
-  EnclaveUnsealData(ProtectedBlob: Win32Pointer, ProtectedBlobSize: number, DecryptedData: Win32Pointer, BufferSize: number, DecryptedDataSize: Win32Pointer, SealingIdentity: Win32Pointer, UnsealingFlags: Win32Pointer): number;
+  EnclaveUnsealData(
+    ProtectedBlob: Win32Pointer,
+    ProtectedBlobSize: number,
+    DecryptedData: Win32Pointer,
+    BufferSize: number,
+    DecryptedDataSize: Win32Pointer,
+    SealingIdentity: Win32Pointer,
+    UnsealingFlags: Win32Pointer,
+  ): number;
   /** vertdll.dll!EnclaveUsesAttestedKeys */
   EnclaveUsesAttestedKeys(): number;
   /** vertdll.dll!EnclaveVerifyAttestationReport */

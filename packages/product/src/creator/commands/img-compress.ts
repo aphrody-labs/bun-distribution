@@ -54,39 +54,20 @@ const EXT: Record<Format, string> = {
 };
 
 /** Encode one image; returns the compressed bytes. */
-export async function encode(
-  input: Uint8Array,
-  format: Format,
-  options: Options,
-): Promise<Uint8Array> {
-  const Image = (
-    Bun as unknown as { Image?: new (data: Uint8Array) => BunImage }
-  ).Image;
-  if (!Image)
-    throw new Error(
-      "Bun.Image indisponible dans ce Bun : utilise web/image-compressor/index.html",
-    );
+export async function encode(input: Uint8Array, format: Format, options: Options): Promise<Uint8Array> {
+  const Image = (Bun as unknown as { Image?: new (data: Uint8Array) => BunImage }).Image;
+  if (!Image) throw new Error("Bun.Image indisponible dans ce Bun : utilise web/image-compressor/index.html");
   let image = new Image(input);
   const { width, height } = await new Image(input).metadata();
   const ratio = Math.min(
     options.maxWidth && width > options.maxWidth ? options.maxWidth / width : 1,
-    options.maxHeight && height > options.maxHeight
-      ? options.maxHeight / height
-      : 1,
+    options.maxHeight && height > options.maxHeight ? options.maxHeight / height : 1,
   );
-  if (ratio < 1)
-    image = image.resize(
-      Math.max(1, Math.round(width * ratio)),
-      Math.max(1, Math.round(height * ratio)),
-    );
+  if (ratio < 1) image = image.resize(Math.max(1, Math.round(width * ratio)), Math.max(1, Math.round(height * ratio)));
   switch (format) {
     case "png":
       return image
-        .png(
-          options.pngLossless
-            ? { compressionLevel: 9 }
-            : { palette: true, colors: options.pngColors },
-        )
+        .png(options.pngLossless ? { compressionLevel: 9 } : { palette: true, colors: options.pngColors })
         .toBuffer();
     case "webp":
       return image.webp({ quality: options.quality }).toBuffer();
@@ -211,11 +192,9 @@ export async function run(argv: string[]): Promise<number> {
     console.log(HELP);
     return 0;
   }
-  if (positionals.length === 0)
-    throw new UsageError("Donne au moins un fichier ou un dossier");
+  if (positionals.length === 0) throw new UsageError("Donne au moins un fichier ou un dossier");
   const format = (values.format ?? "keep") as Options["format"];
-  if (!["keep", "png", "jpeg", "webp"].includes(format))
-    throw new UsageError(`Format inconnu : ${format}`);
+  if (!["keep", "png", "jpeg", "webp"].includes(format)) throw new UsageError(`Format inconnu : ${format}`);
   const options: Options = {
     format,
     quality: Math.min(100, Math.max(1, Number(values.quality ?? 80))),
@@ -233,13 +212,10 @@ export async function run(argv: string[]): Promise<number> {
   const inPlace = values["in-place"] === true;
   const place = (source: string, target: Format): string => {
     const name = basename(source, extname(source)) + EXT[target];
-    return values.out
-      ? join(resolve(values.out), name)
-      : join(dirname(source), "compressed", name);
+    return values.out ? join(resolve(values.out), name) : join(dirname(source), "compressed", name);
   };
   if (values["dry-run"]) {
-    for (const file of files)
-      console.log(`${file} -> ${targetFormat(file, options.format)}`);
+    for (const file of files) console.log(`${file} -> ${targetFormat(file, options.format)}`);
     console.log(`${files.length} image(s)`);
     return 0;
   }
@@ -254,9 +230,7 @@ export async function run(argv: string[]): Promise<number> {
         // oxlint-disable-next-line no-await-in-loop -- file de travail à concurrence bornée (4) : chaque worker traite ses fichiers séquentiellement
         const outcome = await compressFile(file, options, place, inPlace);
         results.push(outcome);
-        const pct = outcome.before
-          ? Math.round((1 - outcome.after / outcome.before) * 100)
-          : 0;
+        const pct = outcome.before ? Math.round((1 - outcome.after / outcome.before) * 100) : 0;
         console.log(
           `${outcome.status === "error" ? "ERREUR" : outcome.status === "written" ? `-${pct}%` : "  =  "}  ${formatBytes(outcome.before)} -> ${formatBytes(outcome.after)}  ${basename(file)}${outcome.detail ? `  (${outcome.detail})` : ""}`,
         );

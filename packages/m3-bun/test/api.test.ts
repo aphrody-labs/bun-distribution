@@ -14,30 +14,23 @@ import {
   yaml,
 } from "../src/api.ts";
 
-const call = (
-  handler: ReturnType<typeof routesToFetch>,
-  path: string,
-  init?: RequestInit,
-) => handler(new Request(`http://m3.test${path}`, init));
+const call = (handler: ReturnType<typeof routesToFetch>, path: string, init?: RequestInit) =>
+  handler(new Request(`http://m3.test${path}`, init));
 
 describe("routesToFetch", () => {
   const handler = routesToFetch({
-    "/api/hello/:name": (request) =>
-      Response.json({ hello: request.params.name }),
+    "/api/hello/:name": request => Response.json({ hello: request.params.name }),
     "/api/hello/world": () => Response.json({ hello: "static wins" }),
     "/api/items": {
       GET: () => Response.json([1, 2]),
-      POST: async (request) =>
-        Response.json(await request.json(), { status: 201 }),
+      POST: async request => Response.json(await request.json(), { status: 201 }),
     },
-    "/api/files/*": (request) => new Response(new URL(request.url).pathname),
+    "/api/files/*": request => new Response(new URL(request.url).pathname),
     "/api/version": new Response("1.0"),
   });
 
   test("params are decoded and static segments outrank them", async () => {
-    expect(await (await call(handler, "/api/hello/caf%C3%A9"))!.json()).toEqual(
-      { hello: "café" },
-    );
+    expect(await (await call(handler, "/api/hello/caf%C3%A9"))!.json()).toEqual({ hello: "café" });
     expect(await (await call(handler, "/api/hello/world"))!.json()).toEqual({
       hello: "static wins",
     });
@@ -56,9 +49,7 @@ describe("routesToFetch", () => {
   });
 
   test("a trailing /* matches everything below, a static Response is cloned per request", async () => {
-    expect(await (await call(handler, "/api/files/a/b/c.txt"))!.text()).toBe(
-      "/api/files/a/b/c.txt",
-    );
+    expect(await (await call(handler, "/api/files/a/b/c.txt"))!.text()).toBe("/api/files/a/b/c.txt");
     expect(await (await call(handler, "/api/version"))!.text()).toBe("1.0");
     expect(await (await call(handler, "/api/version"))!.text()).toBe("1.0");
   });
@@ -94,7 +85,7 @@ describe("normalizeApi", () => {
 describe("cookies (Bun.CookieMap)", () => {
   test("routes read request.cookies and their changes become Set-Cookie headers", async () => {
     const handler = routesToFetch({
-      "/api/visit": (request) => {
+      "/api/visit": request => {
         const visits = Number(request.cookies.get("visits") ?? 0) + 1;
         request.cookies.set("visits", String(visits), {
           httpOnly: true,
@@ -107,15 +98,11 @@ describe("cookies (Bun.CookieMap)", () => {
       headers: { cookie: "visits=2; other=x" },
     }))!;
     expect(await res.json()).toEqual({ visits: 3 });
-    expect(res.headers.getSetCookie()).toEqual([
-      "visits=3; Path=/; HttpOnly; SameSite=Lax",
-    ]);
+    expect(res.headers.getSetCookie()).toEqual(["visits=3; Path=/; HttpOnly; SameSite=Lax"]);
   });
 
   test("requestCookies parses the header; withCookies leaves untouched maps alone", () => {
-    const cookies = requestCookies(
-      new Request("http://m3.test/", { headers: { cookie: "a=1; b=two" } }),
-    );
+    const cookies = requestCookies(new Request("http://m3.test/", { headers: { cookie: "a=1; b=two" } }));
     expect(cookies.get("b")).toBe("two");
     const plain = new Response("x");
     expect(withCookies(plain, cookies)).toBe(plain);
@@ -125,7 +112,7 @@ describe("cookies (Bun.CookieMap)", () => {
 describe("m3Csrf (Bun.CSRF)", () => {
   const csrf = m3Csrf({
     secret: "s3cret",
-    sessionOf: (request) => request.cookies.get("sid") ?? undefined,
+    sessionOf: request => request.cookies.get("sid") ?? undefined,
   });
   const handler = routesToFetch({
     "/api/notes": csrf.protect({
@@ -136,9 +123,7 @@ describe("m3Csrf (Bun.CSRF)", () => {
 
   test("safe methods pass, unsafe ones need a token of the same session", async () => {
     expect(await (await call(handler, "/api/notes"))!.text()).toBe("list");
-    expect(
-      (await call(handler, "/api/notes", { method: "POST" }))!.status,
-    ).toBe(403);
+    expect((await call(handler, "/api/notes", { method: "POST" }))!.status).toBe(403);
     const token = csrf.token("session-a");
     const post = (sid: string) =>
       call(handler, "/api/notes", {
@@ -150,8 +135,7 @@ describe("m3Csrf (Bun.CSRF)", () => {
   });
 });
 
-const request = (accept: string) =>
-  new Request("http://m3.test/", { headers: { accept } });
+const request = (accept: string) => new Request("http://m3.test/", { headers: { accept } });
 async function* rows() {
   yield 1;
   yield { two: 2 };
@@ -175,9 +159,7 @@ describe("content negotiation (Bun.YAML, Bun.JSONL)", () => {
     expect(asYaml.headers.get("content-type")).toStartWith("application/yaml");
     expect(Bun.YAML.parse(await asYaml.text())).toEqual(data);
     const asLines = reply(data, request("application/jsonl"));
-    expect(await asLines.text()).toBe(
-      '{"id":1,"name":"a"}\n{"id":2,"name":"b"}\n',
-    );
+    expect(await asLines.text()).toBe('{"id":1,"name":"a"}\n{"id":2,"name":"b"}\n');
     const asJson = reply({ ok: true }, request("application/jsonl"));
     expect(await asJson.json()).toEqual({ ok: true });
     expect(asJson.headers.get("vary")).toBe("Accept");
@@ -193,8 +175,7 @@ describe("content negotiation (Bun.YAML, Bun.JSONL)", () => {
     const encoder = new TextEncoder();
     const body = new ReadableStream<Uint8Array>({
       start(controller) {
-        for (const part of ['{"a":', '1}\n{"b"', ":2}\n3"])
-          controller.enqueue(encoder.encode(part));
+        for (const part of ['{"a":', '1}\n{"b"', ":2}\n3"]) controller.enqueue(encoder.encode(part));
         controller.close();
       },
     });
@@ -203,26 +184,17 @@ describe("content negotiation (Bun.YAML, Bun.JSONL)", () => {
       body,
       duplex: "half",
     } as RequestInit);
-    expect(await Array.fromAsync(readJsonl(streamed))).toEqual([
-      { a: 1 },
-      { b: 2 },
-      3,
-    ]);
+    expect(await Array.fromAsync(readJsonl(streamed))).toEqual([{ a: 1 }, { b: 2 }, 3]);
     expect(await post("application/yaml", "a: 1\nb: [x, y]\n")).toEqual({
       a: 1,
       b: ["x", "y"],
     });
-    expect(await post("application/x-ndjson", '{"a":1}\n{"a":2}\n')).toEqual([
-      { a: 1 },
-      { a: 2 },
-    ]);
+    expect(await post("application/x-ndjson", '{"a":1}\n{"a":2}\n')).toEqual([{ a: 1 }, { a: 2 }]);
     expect(await post("application/x-www-form-urlencoded", "a=1&b=2")).toEqual({
       a: "1",
       b: "2",
     });
     expect(await post("application/json", '{"x":true}')).toEqual({ x: true });
-    await expect(
-      post("application/jsonl", '{"a":1}\n{oops}\n'),
-    ).rejects.toThrow();
+    await expect(post("application/jsonl", '{"a":1}\n{oops}\n')).rejects.toThrow();
   });
 });

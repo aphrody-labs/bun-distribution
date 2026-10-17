@@ -40,19 +40,16 @@ export class FKHelper {
     this.transformControls.setSpace("local");
     this.transformControls.setMode("rotate");
     this.transformControls.setSize(0.5);
-    this.transformControls.addEventListener(
-      "dragging-changed",
-      (event: any) => {
-        onDragChange(event.value);
-      },
-    );
+    this.transformControls.addEventListener("dragging-changed", (event: any) => {
+      onDragChange(event.value);
+    });
   }
 
   // Set FK target
   setTarget(target: THREE.Object3D) {
     // TODO: Highlight all the necessary bones
     this.clear();
-    target.traverse((child) => {
+    target.traverse(child => {
       // Skip if not bone
       if (child.type !== "Bone") {
         return;
@@ -95,7 +92,7 @@ export class FKHelper {
     this.scene.add(this.skeletonHelper);
     console.log(
       "All bones:",
-      this.skeletonHelper.bones.map((b) => b.name),
+      this.skeletonHelper.bones.map(b => b.name),
     );
   }
 
@@ -103,10 +100,7 @@ export class FKHelper {
     // @ts-expect-error — TransformControls.camera is set by the local copy
     // under engine/TransformControls.js but isn't declared in three's types.
     this.raycaster.setFromCamera(mouse, this.transformControls.camera);
-    const intersections = this.raycaster.intersectObjects(
-      this.targetBoneSpheres,
-      false,
-    );
+    const intersections = this.raycaster.intersectObjects(this.targetBoneSpheres, false);
 
     if (intersections.length < 1) {
       console.log("No intersections");
@@ -136,7 +130,7 @@ export class FKHelper {
   }
 
   private highlightSphere(sphere: THREE.Object3D) {
-    this.targetBoneSpheres.forEach((s) => {
+    this.targetBoneSpheres.forEach(s => {
       // @ts-expect-error Material on object3d, but it's fine since this is a mesh
       s.material.opacity = 0.2;
     });
@@ -145,7 +139,7 @@ export class FKHelper {
   }
 
   private resetHighlight() {
-    this.targetBoneSpheres.forEach((s) => {
+    this.targetBoneSpheres.forEach(s => {
       // @ts-expect-error Material on object3d, but it's fine since this is a mesh
       s.material.opacity = 1;
     });
@@ -161,7 +155,7 @@ export class FKHelper {
   }
 
   private removeSpheres() {
-    this.targetBoneSpheres.forEach((sphere) => {
+    this.targetBoneSpheres.forEach(sphere => {
       this.scene.remove(sphere);
       sphere.parent?.remove(sphere);
       // @ts-expect-error Geometry on object3d, but it's fine since this is a mesh

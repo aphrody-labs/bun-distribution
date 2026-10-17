@@ -5,10 +5,7 @@ import type { EffectDefinition } from "./types";
 // any host-extended effects register themselves at module-init time.
 // The properties panel and the effect-pass resolver both look up
 // definitions by effect type via `effectsRegistry.get(type)`.
-export class EffectsRegistry extends DefinitionRegistry<
-  string,
-  EffectDefinition
-> {
+export class EffectsRegistry extends DefinitionRegistry<string, EffectDefinition> {
   constructor() {
     super("effect");
   }

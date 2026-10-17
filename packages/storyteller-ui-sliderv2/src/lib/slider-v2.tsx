@@ -104,9 +104,7 @@ export const SliderV2 = ({
   };
 
   const percentage = ((localValue - min) / (max - min)) * 100;
-  const displayValue =
-    localValue.toFixed(step.toString().split(".")[1]?.length || 0) +
-    (suffix || "");
+  const displayValue = localValue.toFixed(step.toString().split(".")[1]?.length || 0) + (suffix || "");
 
   return (
     <div className="flex w-full">
@@ -159,10 +157,7 @@ export const SliderV2 = ({
       ) : (
         <div
           ref={sliderRef}
-          className={twMerge(
-            "relative h-4 w-full cursor-pointer flex items-center",
-            className,
-          )}
+          className={twMerge("relative h-4 w-full cursor-pointer flex items-center", className)}
           onMouseDown={handleMouseDown}
         >
           <div className="absolute left-0 right-0 h-2 bg-ui-border rounded-full bg-white/15" />

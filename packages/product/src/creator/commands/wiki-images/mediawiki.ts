@@ -19,8 +19,7 @@ export interface Target {
   title?: string;
 }
 
-const USER_AGENT =
-  "creator-kit/0.1 (local wiki image fetch; contact: see README)";
+const USER_AGENT = "creator-kit/0.1 (local wiki image fetch; contact: see README)";
 
 export function wikiHeaders(): Record<string, string> {
   return { "user-agent": USER_AGENT, accept: "application/json" };
@@ -35,56 +34,33 @@ export function titleFromPath(url: URL): string | undefined {
 }
 
 /** Find the api.php of the wiki serving `pageUrl` (RSD link in the HTML, then common paths). */
-export async function resolveTarget(
-  input: string,
-  fetchImpl: Fetch = fetch,
-): Promise<Target> {
+export async function resolveTarget(input: string, fetchImpl: Fetch = fetch): Promise<Target> {
   const url = new URL(input);
   if (url.pathname.endsWith("api.php")) return { apiUrl: url.toString() };
   const title = titleFromPath(url);
   const candidates: string[] = [];
   try {
-    const html = await (
-      await fetchImpl(url.toString(), { headers: { "user-agent": USER_AGENT } })
-    ).text();
-    const rsd = html.match(
-      /<link[^>]+rel=["']EditURI["'][^>]+href=["']([^"']+)["']/i,
-    )?.[1];
-    if (rsd)
-      candidates.push(
-        new URL(rsd.replaceAll("&amp;", "&"), url)
-          .toString()
-          .replace(/\?.*$/, ""),
-      );
+    const html = await (await fetchImpl(url.toString(), { headers: { "user-agent": USER_AGENT } })).text();
+    const rsd = html.match(/<link[^>]+rel=["']EditURI["'][^>]+href=["']([^"']+)["']/i)?.[1];
+    if (rsd) candidates.push(new URL(rsd.replaceAll("&amp;", "&"), url).toString().replace(/\?.*$/, ""));
   } catch {
     // fall through to the common paths
   }
-  const prefix =
-    url.pathname.match(/^(\/[a-z]{2}(?:-[a-z]{2})?)\/wiki\//i)?.[1] ?? "";
-  candidates.push(
-    `${url.origin}${prefix}/api.php`,
-    `${url.origin}/w/api.php`,
-    `${url.origin}/api.php`,
-  );
+  const prefix = url.pathname.match(/^(\/[a-z]{2}(?:-[a-z]{2})?)\/wiki\//i)?.[1] ?? "";
+  candidates.push(`${url.origin}${prefix}/api.php`, `${url.origin}/w/api.php`, `${url.origin}/api.php`);
   for (const candidate of new Set(candidates)) {
     try {
       // oxlint-disable-next-line no-await-in-loop -- candidates are probed in preference order; the first valid api.php must win, without parallel hits on the wiki
-      const res = await fetchImpl(
-        `${candidate}?action=query&meta=siteinfo&format=json`,
-        {
-          headers: wikiHeaders(),
-        },
-      );
+      const res = await fetchImpl(`${candidate}?action=query&meta=siteinfo&format=json`, {
+        headers: wikiHeaders(),
+      });
       // oxlint-disable-next-line no-await-in-loop -- same ordered probe: the body decides whether this candidate wins before the next one is tried
-      if (res.ok && (await res.json())?.query)
-        return { apiUrl: candidate, title };
+      if (res.ok && (await res.json())?.query) return { apiUrl: candidate, title };
     } catch {
       // try next
     }
   }
-  throw new Error(
-    `api.php introuvable pour ${input} (passe l'URL de l'API avec --api)`,
-  );
+  throw new Error(`api.php introuvable pour ${input} (passe l'URL de l'API avec --api)`);
 }
 
 interface ApiPage {
@@ -105,11 +81,7 @@ type ApiResponse = {
   error?: { code: string; info: string };
 };
 
-async function* query(
-  apiUrl: string,
-  params: Record<string, string>,
-  fetchImpl: Fetch,
-): AsyncGenerator<ApiPage> {
+async function* query(apiUrl: string, params: Record<string, string>, fetchImpl: Fetch): AsyncGenerator<ApiPage> {
   const base: Record<string, string> = {
     action: "query",
     format: "json",
@@ -128,8 +100,7 @@ async function* query(
     const res = await fetchWithRetry(`${apiUrl}?${search}`, fetchImpl);
     // oxlint-disable-next-line no-await-in-loop -- same continuation chain: the body carries the next continue token
     const body = (await res.json()) as ApiResponse;
-    if (body.error)
-      throw new Error(`API MediaWiki : ${body.error.code} ${body.error.info}`);
+    if (body.error) throw new Error(`API MediaWiki : ${body.error.code} ${body.error.info}`);
     for (const [id, page] of Object.entries(body.query?.pages ?? {})) {
       const known = seen.get(id);
       if (known) known.imageinfo ??= page.imageinfo;
@@ -141,11 +112,7 @@ async function* query(
   yield* seen.values();
 }
 
-export async function fetchWithRetry(
-  url: string,
-  fetchImpl: Fetch,
-  attempts = 5,
-): Promise<Response> {
+export async function fetchWithRetry(url: string, fetchImpl: Fetch, attempts = 5): Promise<Response> {
   let lastError: unknown;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
@@ -196,22 +163,12 @@ async function collect(source: AsyncGenerator<ApiPage>): Promise<WikiFile[]> {
 }
 
 /** Files embedded in / linked from pages (batches of 50 titles). Covers `<gallery>` tags. */
-export async function filesOfPages(
-  apiUrl: string,
-  titles: string[],
-  fetchImpl: Fetch = fetch,
-): Promise<WikiFile[]> {
+export async function filesOfPages(apiUrl: string, titles: string[], fetchImpl: Fetch = fetch): Promise<WikiFile[]> {
   const out: WikiFile[] = [];
   for (let i = 0; i < titles.length; i += 50) {
     const batch = titles.slice(i, i + 50).join("|");
     // oxlint-disable-next-line no-await-in-loop -- batches run one after another to respect the wiki's maxlag/rate limits and keep output order
-    const files = await collect(
-      query(
-        apiUrl,
-        { generator: "images", gimlimit: "max", titles: batch },
-        fetchImpl,
-      ),
-    );
+    const files = await collect(query(apiUrl, { generator: "images", gimlimit: "max", titles: batch }, fetchImpl));
     out.push(...files);
   }
   return out;
@@ -224,9 +181,7 @@ export async function filesOfCategory(
   fetchImpl: Fetch = fetch,
   depth = 0,
 ): Promise<WikiFile[]> {
-  const title = /^Category:/i.test(category)
-    ? category
-    : `Category:${category}`;
+  const title = /^Category:/i.test(category) ? category : `Category:${category}`;
   const files = await collect(
     query(
       apiUrl,
@@ -263,27 +218,15 @@ export async function filesOfCategory(
 }
 
 /** Every uploaded file whose name starts with `prefix` (use sparingly on large wikis). */
-export async function filesOfPrefix(
-  apiUrl: string,
-  prefix: string,
-  fetchImpl: Fetch = fetch,
-): Promise<WikiFile[]> {
-  return collect(
-    query(
-      apiUrl,
-      { generator: "allimages", gaiprefix: prefix, gailimit: "max" },
-      fetchImpl,
-    ),
-  );
+export async function filesOfPrefix(apiUrl: string, prefix: string, fetchImpl: Fetch = fetch): Promise<WikiFile[]> {
+  return collect(query(apiUrl, { generator: "allimages", gaiprefix: prefix, gailimit: "max" }, fetchImpl));
 }
 
 const WINDOWS_RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i;
 
 /** Safe file name on Windows, macOS and Linux. */
 export function safeName(name: string): string {
-  const printable = [...name]
-    .filter((char) => char.charCodeAt(0) >= 32)
-    .join("");
+  const printable = [...name].filter(char => char.charCodeAt(0) >= 32).join("");
   let out =
     printable
       .replace(/[<>:"/\\|?*]/g, "_")
@@ -292,7 +235,5 @@ export function safeName(name: string): string {
   if (WINDOWS_RESERVED.test(out)) out = `_${out}`;
   if (out.length <= 180) return out;
   const dot = out.lastIndexOf(".");
-  return dot > 0 && out.length - dot <= 10
-    ? `${out.slice(0, 160)}${out.slice(dot)}`
-    : out.slice(0, 170);
+  return dot > 0 && out.length - dot <= 10 ? `${out.slice(0, 160)}${out.slice(dot)}` : out.slice(0, 170);
 }

@@ -3,9 +3,7 @@ import { GetOpenAIApiKey, SetOpenAIApiKey } from "@storyteller/tauri-api";
 import { Input } from "@storyteller/ui-input";
 
 export const OpenAIApiKeyBlock = () => {
-  const [openAIApiKey, setOpenAIApiKey] = useState<string | undefined>(
-    undefined,
-  );
+  const [openAIApiKey, setOpenAIApiKey] = useState<string | undefined>(undefined);
 
   const [isCheckingOpenAIApiKey, setIsCheckingOpenAIApiKey] = useState(false);
 
@@ -39,7 +37,7 @@ export const OpenAIApiKeyBlock = () => {
       <span>Open AI API Key:</span>
       <Input
         value={openAIApiKey}
-        onChange={(e) => syncOpenAIApiKey(e.target.value)}
+        onChange={e => syncOpenAIApiKey(e.target.value)}
         placeholder="Enter Open AI API key"
       />
 

@@ -2,13 +2,7 @@ import { ApiManager, ApiResponse } from "./ApiManager.js";
 import { UserBookmarkBatch } from "./models/UserBookmark.js";
 
 export class UserBookmarksApi extends ApiManager {
-  public CreateUserBookmark({
-    entityToken,
-    entityType,
-  }: {
-    entityToken: string;
-    entityType: string;
-  }): Promise<
+  public CreateUserBookmark({ entityToken, entityType }: { entityToken: string; entityType: string }): Promise<
     ApiResponse<{
       new_bookmark_count_for_entity?: number;
       user_bookmark_token?: string;
@@ -32,7 +26,7 @@ export class UserBookmarksApi extends ApiManager {
         BadInput?: string;
       }
     >({ endpoint, body })
-      .then((response) => ({
+      .then(response => ({
         success: response.success ?? false,
         data: {
           new_bookmark_count_for_entity: response.new_bookmark_count_for_entity,
@@ -40,16 +34,12 @@ export class UserBookmarksApi extends ApiManager {
         },
         errorMessage: response.BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
 
-  public DeleteUserBookmark({
-    entityToken,
-  }: {
-    entityToken: string;
-  }): Promise<ApiResponse<undefined>> {
+  public DeleteUserBookmark({ entityToken }: { entityToken: string }): Promise<ApiResponse<undefined>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/user_bookmarks/delete/${entityToken}`;
 
     return this.delete<
@@ -59,11 +49,11 @@ export class UserBookmarksApi extends ApiManager {
         BadInput?: string;
       }
     >({ endpoint, body: { as_mod: true } })
-      .then((response) => ({
+      .then(response => ({
         success: response.success ?? false,
         errorMessage: response.BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
@@ -76,12 +66,12 @@ export class UserBookmarksApi extends ApiManager {
       bookmarks?: UserBookmarkBatch[];
       BadInput?: string;
     }>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success ?? false,
         data: response.bookmarks,
         errorMessage: response.BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }

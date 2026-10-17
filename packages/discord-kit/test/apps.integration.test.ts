@@ -9,10 +9,7 @@ test("compilation returns the actual runnable output path on the selected native
   const directory = await mkdtemp(join(tmpdir(), "aphrody-discord-output-"));
   try {
     const entrypoint = join(directory, "app.ts");
-    await Bun.write(
-      entrypoint,
-      "console.log(JSON.stringify({compiled:true}));",
-    );
+    await Bun.write(entrypoint, "console.log(JSON.stringify({compiled:true}));");
     const executable = await compileDiscordApp({
       entrypoint,
       outfile: join(directory, "app"),
@@ -81,8 +78,8 @@ test("a compiled Bun application runs and stops under the installed Yolo supervi
     const childPid = ready
       .split("\n")
       .filter(Boolean)
-      .map((line) => JSON.parse(line))
-      .find((line) => line.childPid)?.childPid;
+      .map(line => JSON.parse(line))
+      .find(line => line.childPid)?.childPid;
     expect(typeof childPid).toBe("number");
     expect(() => process.kill(childPid, 0)).not.toThrow();
     expect(held.status().running).toBe(true);
@@ -90,8 +87,7 @@ test("a compiled Bun application runs and stops under the installed Yolo supervi
     expect(stopped.running).toBe(false);
     expect(stopped.exitCode).toBe(process.platform === "win32" ? 1 : 0);
     const finalOutput = held.takeStdout();
-    if (process.platform === "win32")
-      expect(finalOutput).not.toContain("stopped");
+    if (process.platform === "win32") expect(finalOutput).not.toContain("stopped");
     else expect(finalOutput).toContain("stopped");
     let childAlive = true;
     const childDeadline = Date.now() + 5000;
@@ -111,19 +107,14 @@ test("a compiled Bun application runs and stops under the installed Yolo supervi
 }, 30_000);
 
 test("the process owner rejects an ambiguous domain before starting anything", async () => {
-  await expect(
-    startDiscordApp({ binary: "missing", profile: "../aphrody" }),
-  ).rejects.toThrow("explicit named");
+  await expect(startDiscordApp({ binary: "missing", profile: "../aphrody" })).rejects.toThrow("explicit named");
 });
 
 test.skipIf(process.platform !== "win32")(
   "Windows supervisor terminates an independent PowerShell process tree",
   async () => {
     const binary = Bun.which("powershell.exe");
-    if (!binary)
-      throw new Error(
-        "Native Windows PowerShell is required for process-tree qualification",
-      );
+    if (!binary) throw new Error("Native Windows PowerShell is required for process-tree qualification");
     using parent = await startDiscordApp({
       binary,
       profile: "dbfr",

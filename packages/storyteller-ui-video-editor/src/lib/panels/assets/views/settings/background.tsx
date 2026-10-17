@@ -1,18 +1,10 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
-import {
-  Section,
-  SectionContent,
-  SectionHeader,
-  SectionTitle,
-} from "../../../../components/section";
+import { Section, SectionContent, SectionHeader, SectionTitle } from "../../../../components/section";
 import { ColorPickerContent } from "../../../../components/ui/color-picker";
 import { Popover, PopoverTrigger } from "../../../../components/ui/popover";
-import {
-  BACKGROUND_BLUR_INTENSITY_PRESETS,
-  DEFAULT_BACKGROUND_BLUR_INTENSITY,
-} from "../../../../background/blur";
+import { BACKGROUND_BLUR_INTENSITY_PRESETS, DEFAULT_BACKGROUND_BLUR_INTENSITY } from "../../../../background/blur";
 import { DEFAULT_BACKGROUND_COLOR } from "../../../../background/color";
 import { patternCraftGradients } from "../../../../data/colors/pattern-craft";
 import { colors } from "../../../../data/colors/solid";
@@ -69,14 +61,9 @@ const BlurPreview = memo(
         type="button"
         aria-label={`Select ${blur.label} blur`}
       >
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute right-1 bottom-1 left-1 text-center">
-          <span className="rounded bg-black/50 px-1 text-xs text-white">
-            {blur.label}
-          </span>
+          <span className="rounded bg-black/50 px-1 text-xs text-white">{blur.label}</span>
         </div>
       </button>
     );
@@ -101,7 +88,7 @@ const BackgroundPreviews = memo(
   }) => {
     return useMemo(
       () =>
-        backgrounds.map((bg) => (
+        backgrounds.map(bg => (
           <button
             key={bg}
             className={cn(
@@ -125,13 +112,7 @@ const BackgroundPreviews = memo(
             aria-label={`Select background ${bg}`}
           />
         )),
-      [
-        backgrounds,
-        isColorBackground,
-        currentBackgroundColor,
-        onSelect,
-        useBackgroundColor,
-      ],
+      [backgrounds, isColorBackground, currentBackgroundColor, onSelect, useBackgroundColor],
     );
   },
 );
@@ -160,10 +141,7 @@ function CustomColorPreview({
           type="button"
           aria-label="Pick a custom background color"
         >
-          <span
-            className="absolute inset-0"
-            style={{ background: CUSTOM_COLOR_SWATCH_BACKGROUND }}
-          />
+          <span className="absolute inset-0" style={{ background: CUSTOM_COLOR_SWATCH_BACKGROUND }} />
           <span
             className="absolute right-1 bottom-1 size-5 rounded-sm border border-white/70 shadow-sm"
             style={{ backgroundColor: currentBackgroundColor }}
@@ -172,8 +150,8 @@ function CustomColorPreview({
       </PopoverTrigger>
       <ColorPickerContent
         value={currentBackgroundColor.replace(/^#/, "").toUpperCase()}
-        onChange={(color) => onPreview(`#${color}`)}
-        onChangeEnd={(color) => onCommit(`#${color}`)}
+        onChange={color => onPreview(`#${color}`)}
+        onChangeEnd={color => onCommit(`#${color}`)}
       />
     </Popover>
   );
@@ -203,7 +181,7 @@ const COLOR_SECTIONS = [
 
 export function BackgroundContent() {
   const editor = useEditor();
-  const activeProject = useEditor((e) => e.project.getActive());
+  const activeProject = useEditor(e => e.project.getActive());
 
   const handleBlurSelect = useCallback(
     async (blurIntensity: number) => {
@@ -238,17 +216,11 @@ export function BackgroundContent() {
   const isBlurBackground = background?.type === "blur";
   const isColorBackground = background?.type === "color";
 
-  const currentBlurIntensity = isBlurBackground
-    ? background.blurIntensity
-    : DEFAULT_BACKGROUND_BLUR_INTENSITY;
+  const currentBlurIntensity = isBlurBackground ? background.blurIntensity : DEFAULT_BACKGROUND_BLUR_INTENSITY;
 
-  const currentBackgroundColor = isColorBackground
-    ? background.color
-    : DEFAULT_BACKGROUND_COLOR;
+  const currentBackgroundColor = isColorBackground ? background.color : DEFAULT_BACKGROUND_COLOR;
 
-  const hasPresetColorMatch = colors.some(
-    (color) => color.toLowerCase() === currentBackgroundColor.toLowerCase(),
-  );
+  const hasPresetColorMatch = colors.some(color => color.toLowerCase() === currentBackgroundColor.toLowerCase());
 
   const handlePresetColorSelect = useCallback(
     (color: string) => {
@@ -259,7 +231,7 @@ export function BackgroundContent() {
 
   const blurPreviews = useMemo(
     () =>
-      BACKGROUND_BLUR_INTENSITY_PRESETS.map((blur) => (
+      BACKGROUND_BLUR_INTENSITY_PRESETS.map(blur => (
         <BlurPreview
           key={blur.value}
           blur={blur}
@@ -272,12 +244,7 @@ export function BackgroundContent() {
 
   return (
     <div className="flex flex-col">
-      <Section
-        collapsible
-        defaultOpen={true}
-        sectionKey="background-blur"
-        showTopBorder={false}
-      >
+      <Section collapsible defaultOpen={true} sectionKey="background-blur" showTopBorder={false}>
         <SectionHeader>
           <SectionTitle>Blur</SectionTitle>
         </SectionHeader>
@@ -285,13 +252,8 @@ export function BackgroundContent() {
           <div className="flex flex-wrap gap-2">{blurPreviews}</div>
         </SectionContent>
       </Section>
-      {COLOR_SECTIONS.map((section) => (
-        <Section
-          key={section.id}
-          collapsible
-          defaultOpen={false}
-          sectionKey={`settings:background-${section.id}`}
-        >
+      {COLOR_SECTIONS.map(section => (
+        <Section key={section.id} collapsible defaultOpen={false} sectionKey={`settings:background-${section.id}`}>
           <SectionHeader>
             <SectionTitle>{section.title}</SectionTitle>
           </SectionHeader>
@@ -310,11 +272,7 @@ export function BackgroundContent() {
                 currentBackgroundColor={currentBackgroundColor}
                 isColorBackground={isColorBackground}
                 onSelect={handlePresetColorSelect}
-                useBackgroundColor={
-                  "useBackgroundColor" in section
-                    ? section.useBackgroundColor
-                    : false
-                }
+                useBackgroundColor={"useBackgroundColor" in section ? section.useBackgroundColor : false}
               />
             </div>
           </SectionContent>

@@ -4,15 +4,7 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { type Cache, keyOf, sha256 } from "./cache.ts";
 import { FASTER_WHISPER_SCRIPT } from "./fw-script.ts";
-import {
-  type Env,
-  ToolError,
-  exec,
-  extractWav,
-  failure,
-  probeDuration,
-  which,
-} from "./media.ts";
+import { type Env, ToolError, exec, extractWav, failure, probeDuration, which } from "./media.ts";
 import { type Cue, parseSubtitles } from "./subtitles.ts";
 
 export type AsrBackend = "whisper-cli" | "faster-whisper" | "endpoint";
@@ -74,20 +66,10 @@ export interface Detection {
   notes: string[];
 }
 
-const MODEL_PREFERENCE = [
-  "large-v3-turbo",
-  "large-v3",
-  "large-v2",
-  "medium",
-  "small",
-  "base",
-  "tiny",
-];
+const MODEL_PREFERENCE = ["large-v3-turbo", "large-v3", "large-v2", "medium", "small", "base", "tiny"];
 
 const rank = (path: string): number => {
-  const index = MODEL_PREFERENCE.findIndex((label) =>
-    path.includes(`ggml-${label}`),
-  );
+  const index = MODEL_PREFERENCE.findIndex(label => path.includes(`ggml-${label}`));
   return index < 0 ? MODEL_PREFERENCE.length : index;
 };
 
@@ -102,11 +84,9 @@ export async function findWhisperModel(env: Env): Promise<string | undefined> {
     join(process.cwd(), "models"),
   ].filter((dir): dir is string => Boolean(dir));
   const listed = await Promise.all(
-    dirs.map(async (dir) => {
+    dirs.map(async dir => {
       try {
-        return (await readdir(dir))
-          .filter((name) => /^ggml-.*\.bin$/.test(name))
-          .map((name) => join(dir, name));
+        return (await readdir(dir)).filter(name => /^ggml-.*\.bin$/.test(name)).map(name => join(dir, name));
       } catch {
         // directory missing
         return [];
@@ -121,10 +101,7 @@ export async function findWhisperModel(env: Env): Promise<string | undefined> {
  * Picks the ASR backend. `--asr <name>` forces one; otherwise an explicit `--asr-url` wins, then:
  * whisper-cli (needs a model), faster-whisper through `uv run`, then nothing.
  */
-export async function detectAsr(
-  options: AsrOptions,
-  env: Env = process.env,
-): Promise<Detection> {
+export async function detectAsr(options: AsrOptions, env: Env = process.env): Promise<Detection> {
   const notes: string[] = [];
   const candidates: AsrBackend[] =
     options.backend !== "auto"
@@ -146,9 +123,7 @@ export async function detectAsr(
         // oxlint-disable-next-line no-await-in-loop -- candidates are probed in preference order and the first usable backend returns early
         (await findWhisperModel(env));
       if (!model) {
-        notes.push(
-          `whisper-cli : trouvé (${program}) mais aucun modèle ggml (--whisper-model ou WHISPER_MODEL)`,
-        );
+        notes.push(`whisper-cli : trouvé (${program}) mais aucun modèle ggml (--whisper-model ou WHISPER_MODEL)`);
         continue;
       }
       // oxlint-disable-next-line no-await-in-loop -- candidates are probed in preference order and the first usable backend returns early
@@ -196,9 +171,7 @@ export async function detectAsr(
 export function endpointUrl(base: string): string {
   const url = base.replace(/\/+$/, "");
   if (url.endsWith("/audio/transcriptions")) return url;
-  return /^https?:\/\/[^/]+$/.test(url)
-    ? `${url}/v1/audio/transcriptions`
-    : `${url}/audio/transcriptions`;
+  return /^https?:\/\/[^/]+$/.test(url) ? `${url}/v1/audio/transcriptions` : `${url}/audio/transcriptions`;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -215,11 +188,7 @@ export interface Chunk {
 }
 
 /** Overlapping windows over [0, durationMs). Chunk k starts at k * (chunk - overlap). */
-export function planChunks(
-  durationMs: number,
-  chunkSeconds: number,
-  overlapSeconds: number,
-): Chunk[] {
+export function planChunks(durationMs: number, chunkSeconds: number, overlapSeconds: number): Chunk[] {
   const chunk = Math.max(30, chunkSeconds) * 1000;
   const overlap = Math.min(Math.max(0, overlapSeconds) * 1000, chunk / 2);
   if (durationMs <= chunk)
@@ -258,15 +227,12 @@ const JUNK = /^[\s♪♫~〜…・.\-–—]*$/u;
 const TAG = /^\s*[[(（【][^\])）】]{0,30}[\])）】]\s*$/u;
 
 /** Overlap merge: keep each chunk's core, then drop junk, hallucinated loops and duplicates. */
-export function mergeChunks(
-  results: { chunk: Chunk; segments: AsrSegment[] }[],
-): AsrSegment[] {
+export function mergeChunks(results: { chunk: Chunk; segments: AsrSegment[] }[]): AsrSegment[] {
   const kept: AsrSegment[] = [];
   for (const { chunk, segments } of results) {
     for (const segment of segments) {
       const middle = (segment.start + segment.end) / 2;
-      if (middle >= chunk.coreStart && middle < chunk.coreEnd)
-        kept.push(segment);
+      if (middle >= chunk.coreStart && middle < chunk.coreEnd) kept.push(segment);
     }
   }
   kept.sort((a, b) => a.start - b.start || a.end - b.end);
@@ -291,21 +257,16 @@ export function mergeChunks(
   return out;
 }
 
-const CJK_CHARS =
-  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+const CJK_CHARS = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
 
 /** Splits segments longer than `maxChars` at the biggest word gap near the middle (needs word timestamps). */
 const joinWords = (list: AsrWord[]): string =>
   list
-    .map((word) => word.word)
+    .map(word => word.word)
     .join("")
     .trim();
 
-export function splitLongSegments(
-  segments: AsrSegment[],
-  maxChars = 90,
-  maxCjk = 48,
-): AsrSegment[] {
+export function splitLongSegments(segments: AsrSegment[], maxChars = 90, maxCjk = 48): AsrSegment[] {
   const out: AsrSegment[] = [];
   const visit = (segment: AsrSegment): void => {
     const limit = CJK_CHARS.test(segment.text) ? maxCjk : maxChars;
@@ -322,9 +283,7 @@ export function splitLongSegments(
       const previous = words[i - 1];
       if (!current || !previous) continue;
       const gap = current.start - previous.end;
-      const punctuation = /[,.!?、。！？…]$/.test(previous.word.trim())
-        ? 400
-        : 0;
+      const punctuation = /[,.!?、。！？…]$/.test(previous.word.trim()) ? 400 : 0;
       const value = gap + punctuation - Math.abs(i - middle) * 20;
       if (value > score) {
         score = value;
@@ -393,21 +352,16 @@ async function runWhisperCli(
   );
   if (result.code !== 0) throw failure("whisper-cli", result);
   const srt = Bun.file(`${prefix}.srt`);
-  if (!(await srt.exists()))
-    throw new ToolError("whisper-cli n'a produit aucun fichier .srt");
-  const segments = parseSubtitles(await srt.text(), "srt").map((cue) => ({
+  if (!(await srt.exists())) throw new ToolError("whisper-cli n'a produit aucun fichier .srt");
+  const segments = parseSubtitles(await srt.text(), "srt").map(cue => ({
     start: cue.start,
     end: cue.end,
     text: cue.text,
   }));
-  const detected = /auto-detected language:\s*([a-z]{2,3})/i.exec(
-    `${result.stderr}\n${result.stdout}`,
-  )?.[1];
+  const detected = /auto-detected language:\s*([a-z]{2,3})/i.exec(`${result.stderr}\n${result.stdout}`)?.[1];
   return {
     segments,
-    language:
-      detected?.toLowerCase() ??
-      (options.language === "auto" ? undefined : options.language),
+    language: detected?.toLowerCase() ?? (options.language === "auto" ? undefined : options.language),
   };
 }
 
@@ -435,8 +389,7 @@ async function runFasterWhisper(
   );
   if (result.code !== 0) throw failure("faster-whisper (uv run)", result);
   const file = Bun.file(`${wav}.fw.json`);
-  if (!(await file.exists()))
-    throw new ToolError("faster-whisper n'a produit aucun fichier .fw.json");
+  if (!(await file.exists())) throw new ToolError("faster-whisper n'a produit aucun fichier .fw.json");
   const json = (await file.json()) as {
     language?: string;
     segments: {
@@ -448,11 +401,11 @@ async function runFasterWhisper(
   };
   return {
     language: json.language,
-    segments: json.segments.map((segment) => ({
+    segments: json.segments.map(segment => ({
       start: Math.round(segment.start * 1000),
       end: Math.round(segment.end * 1000),
       text: segment.text,
-      words: segment.words?.map((word) => ({
+      words: segment.words?.map(word => ({
         start: Math.round(word.start * 1000),
         end: Math.round(word.end * 1000),
         word: word.word,
@@ -476,11 +429,7 @@ export function multipart(
   const encoder = new TextEncoder();
   const parts: Uint8Array[] = [];
   for (const [name, value] of fields) {
-    parts.push(
-      encoder.encode(
-        `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`,
-      ),
-    );
+    parts.push(encoder.encode(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`));
   }
   parts.push(
     encoder.encode(
@@ -489,9 +438,7 @@ export function multipart(
     file.bytes,
     encoder.encode(`\r\n--${boundary}--\r\n`),
   );
-  const body = new Uint8Array(
-    new ArrayBuffer(parts.reduce((sum, part) => sum + part.length, 0)),
-  );
+  const body = new Uint8Array(new ArrayBuffer(parts.reduce((sum, part) => sum + part.length, 0)));
   let offset = 0;
   for (const part of parts) {
     body.set(part, offset);
@@ -500,10 +447,7 @@ export function multipart(
   return { body, contentType: `multipart/form-data; boundary=${boundary}` };
 }
 
-async function runEndpoint(
-  options: AsrOptions,
-  wav: string,
-): Promise<ChunkResult> {
+async function runEndpoint(options: AsrOptions, wav: string): Promise<ChunkResult> {
   const url = endpointUrl(options.url ?? "");
   const bytes = new Uint8Array(await Bun.file(wav).arrayBuffer());
   const send = async (granularities: boolean): Promise<Response> => {
@@ -511,13 +455,9 @@ async function runEndpoint(
       ["model", options.urlModel],
       ["response_format", "verbose_json"],
     ];
-    if (options.language !== "auto")
-      fields.push(["language", options.language]);
+    if (options.language !== "auto") fields.push(["language", options.language]);
     if (granularities) {
-      fields.push(
-        ["timestamp_granularities[]", "segment"],
-        ["timestamp_granularities[]", "word"],
-      );
+      fields.push(["timestamp_granularities[]", "segment"], ["timestamp_granularities[]", "word"]);
     }
     const { body, contentType } = multipart(fields, {
       field: "file",
@@ -537,27 +477,21 @@ async function runEndpoint(
   let response = await send(true);
   if (response.status === 400) response = await send(false);
   if (!response.ok)
-    throw new ToolError(
-      `endpoint ASR HTTP ${response.status} : ${(await response.text()).slice(0, 300)}`,
-    );
+    throw new ToolError(`endpoint ASR HTTP ${response.status} : ${(await response.text()).slice(0, 300)}`);
   const json = (await response.json()) as VerboseJson;
   if (!json.segments?.length)
-    throw new ToolError(
-      "l'endpoint ASR n'a renvoyé aucun segment horodaté (verbose_json requis)",
-    );
-  const words = (json.words ?? []).map((word) => ({
+    throw new ToolError("l'endpoint ASR n'a renvoyé aucun segment horodaté (verbose_json requis)");
+  const words = (json.words ?? []).map(word => ({
     word: word.word,
     start: Math.round(word.start * 1000),
     end: Math.round(word.end * 1000),
   }));
   return {
     language: json.language,
-    segments: json.segments.map((segment) => {
+    segments: json.segments.map(segment => {
       const start = Math.round(segment.start * 1000);
       const end = Math.round(segment.end * 1000);
-      const inside = words.filter(
-        (word) => word.start >= start - 50 && word.end <= end + 50,
-      );
+      const inside = words.filter(word => word.start >= start - 50 && word.end <= end + 50);
       return {
         start,
         end,
@@ -583,8 +517,7 @@ export interface AsrResult {
 
 function majority(values: (string | undefined)[]): string | undefined {
   const counts = new Map<string, number>();
-  for (const value of values)
-    if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
+  for (const value of values) if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
   return [...counts.entries()].toSorted((a, b) => b[1] - a[1])[0]?.[0];
 }
 
@@ -596,29 +529,16 @@ export async function transcribeMedia(
 ): Promise<AsrResult> {
   const { cache, env, log } = deps;
   const durationMs = await probeDuration(input, env);
-  const chunks = planChunks(
-    durationMs,
-    options.chunkSeconds,
-    options.overlapSeconds,
-  );
+  const chunks = planChunks(durationMs, options.chunkSeconds, options.overlapSeconds);
   const work = await mkdtemp(join(tmpdir(), "vt-asr-"));
   const results: { chunk: Chunk; segments: AsrSegment[] }[] = [];
   const languages: (string | undefined)[] = [];
   let cached = 0;
   try {
     for (const chunk of chunks) {
-      const wav = join(
-        work,
-        `chunk-${String(chunk.index + 1).padStart(4, "0")}.wav`,
-      );
+      const wav = join(work, `chunk-${String(chunk.index + 1).padStart(4, "0")}.wav`);
       // oxlint-disable-next-line no-await-in-loop -- chunks run in order, one ASR process at a time, each result cached before the next chunk
-      await extractWav(
-        input,
-        wav,
-        chunk.start,
-        chunks.length === 1 ? undefined : chunk.length,
-        env,
-      );
+      await extractWav(input, wav, chunk.start, chunks.length === 1 ? undefined : chunk.length, env);
       // oxlint-disable-next-line no-await-in-loop -- chunks run in order, one ASR process at a time, each result cached before the next chunk
       const hash = sha256(new Uint8Array(await Bun.file(wav).arrayBuffer()));
       const key = keyOf(
@@ -654,11 +574,11 @@ export async function transcribeMedia(
       languages.push(result.language);
       results.push({
         chunk,
-        segments: result.segments.map((segment) =>
+        segments: result.segments.map(segment =>
           Object.assign({}, segment, {
             start: segment.start + chunk.start,
             end: segment.end + chunk.start,
-            words: segment.words?.map((word) =>
+            words: segment.words?.map(word =>
               Object.assign({}, word, {
                 start: word.start + chunk.start,
                 end: word.end + chunk.start,
@@ -674,10 +594,7 @@ export async function transcribeMedia(
     await rm(work, { recursive: true, force: true });
   }
   const segments = splitLongSegments(mergeChunks(results));
-  if (!segments.length)
-    throw new ToolError(
-      "aucune parole détectée (vérifier la piste audio et la langue --from)",
-    );
+  if (!segments.length) throw new ToolError("aucune parole détectée (vérifier la piste audio et la langue --from)");
   const cues = segments.map((segment, index) => ({
     id: index + 1,
     start: segment.start,

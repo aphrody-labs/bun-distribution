@@ -78,13 +78,11 @@ export const TOOLS: readonly ToolDefinition[] = [
         },
         managers: {
           type: "string",
-          description:
-            "Comma-separated bun,uv,cargo; default detects manifests",
+          description: "Comma-separated bun,uv,cargo; default detects manifests",
         },
         apply: {
           type: "boolean",
-          description:
-            "Execute planned dependency synchronization (default: false)",
+          description: "Execute planned dependency synchronization (default: false)",
         },
         offline: {
           type: "boolean",
@@ -112,8 +110,7 @@ export const TOOLS: readonly ToolDefinition[] = [
         },
         changed: {
           type: "boolean",
-          description:
-            "If true, only runs gates whose file surfaces changed relative to HEAD",
+          description: "If true, only runs gates whose file surfaces changed relative to HEAD",
         },
         parallel: {
           type: "integer",
@@ -126,8 +123,7 @@ export const TOOLS: readonly ToolDefinition[] = [
   },
   {
     name: "yolo_status",
-    description:
-      "Inspect active package forks, vendored crate sync status, and Cargo workspace configuration.",
+    description: "Inspect active package forks, vendored crate sync status, and Cargo workspace configuration.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -142,13 +138,11 @@ export const TOOLS: readonly ToolDefinition[] = [
       properties: {
         path: {
           type: "string",
-          description:
-            "Relative or absolute target path to scan (defaults to repository root)",
+          description: "Relative or absolute target path to scan (defaults to repository root)",
         },
         exts: {
           type: "string",
-          description:
-            "Comma-separated list of extensions to include (e.g. 'ts,rs,toml')",
+          description: "Comma-separated list of extensions to include (e.g. 'ts,rs,toml')",
         },
         parallel: {
           type: "integer",
@@ -201,8 +195,7 @@ export const TOOLS: readonly ToolDefinition[] = [
   },
   {
     name: "yolo_host_space",
-    description:
-      "Measure disk space breakdown for a directory with deduplication of hard links and safety checks.",
+    description: "Measure disk space breakdown for a directory with deduplication of hard links and safety checks.",
     inputSchema: {
       type: "object",
       properties: {
@@ -223,8 +216,7 @@ export const TOOLS: readonly ToolDefinition[] = [
   },
   {
     name: "yolo_ai_infer",
-    description:
-      "Run a text inference turn through the configured native provider; no simulated fallback.",
+    description: "Run a text inference turn through the configured native provider; no simulated fallback.",
     inputSchema: {
       type: "object",
       properties: {
@@ -298,8 +290,7 @@ export const TOOLS: readonly ToolDefinition[] = [
       properties: {
         query: {
           type: "string",
-          description:
-            "Query text requiring a configured real embedding provider",
+          description: "Query text requiring a configured real embedding provider",
         },
         queryVector: {
           type: "array",
@@ -324,8 +315,7 @@ export const TOOLS: readonly ToolDefinition[] = [
   },
   {
     name: "yolo_traindb_stats",
-    description:
-      "Retrieve training dataset statistics, sample counts, and splits from Redis Train DB.",
+    description: "Retrieve training dataset statistics, sample counts, and splits from Redis Train DB.",
     inputSchema: {
       type: "object",
       properties: {
@@ -363,12 +353,9 @@ export class ToolExecutionContext {
   constructor(options: ToolExecutionContextOptions = {}) {
     this.inference =
       options.inference ??
-      new UnifiedInferenceEngine(
-        process.env["YOLO_INFERENCE_MODEL"] ?? "gemma4-e2b",
-        {
-          apiKey: process.env["YOLO_INFERENCE_API_KEY"],
-        },
-      );
+      new UnifiedInferenceEngine(process.env["YOLO_INFERENCE_MODEL"] ?? "gemma4-e2b", {
+        apiKey: process.env["YOLO_INFERENCE_API_KEY"],
+      });
     this.redisClient = options.redisClient ?? new NativeRedisClient();
     this.#ownsClient = !options.redisClient;
     this.embed = options.embed;
@@ -379,8 +366,7 @@ export class ToolExecutionContext {
     if (this.#closed) throw new Error("Tool context is closed");
     let store = this.#vectors.get(namespace);
     if (!store) {
-      if (this.#vectors.size >= 128)
-        throw new ToolArgumentError("Too many vector namespaces");
+      if (this.#vectors.size >= 128) throw new ToolArgumentError("Too many vector namespaces");
       store = new RedisVectorStore(this.redisClient, namespace);
       this.#vectors.set(namespace, store);
     }
@@ -391,8 +377,7 @@ export class ToolExecutionContext {
     if (this.#closed) throw new Error("Tool context is closed");
     let db = this.#datasets.get(dataset);
     if (!db) {
-      if (this.#datasets.size >= 128)
-        throw new ToolArgumentError("Too many datasets");
+      if (this.#datasets.size >= 128) throw new ToolArgumentError("Too many datasets");
       db = new RedisTrainDb(this.redisClient, dataset);
       this.#datasets.set(dataset, db);
     }
@@ -427,24 +412,16 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function validateValue(
-  value: unknown,
-  schema: Record<string, unknown>,
-  label: string,
-): void {
+function validateValue(value: unknown, schema: Record<string, unknown>, label: string): void {
   const type = schema.type;
   if (
     (type === "number" || type === "integer") &&
-    (typeof value !== "number" ||
-      !Number.isFinite(value) ||
-      (type === "integer" && !Number.isInteger(value)))
+    (typeof value !== "number" || !Number.isFinite(value) || (type === "integer" && !Number.isInteger(value)))
   ) {
     throw new ToolArgumentError(`${label} must be a finite ${type}`);
   }
-  if (type === "string" && typeof value !== "string")
-    throw new ToolArgumentError(`${label} must be a string`);
-  if (type === "boolean" && typeof value !== "boolean")
-    throw new ToolArgumentError(`${label} must be a boolean`);
+  if (type === "string" && typeof value !== "string") throw new ToolArgumentError(`${label} must be a string`);
+  if (type === "boolean" && typeof value !== "boolean") throw new ToolArgumentError(`${label} must be a boolean`);
   if (
     typeof value === "number" &&
     ((typeof schema.minimum === "number" && value < schema.minimum) ||
@@ -453,8 +430,7 @@ function validateValue(
     throw new ToolArgumentError(`${label} is outside the allowed range`);
   }
   if (type === "array") {
-    if (!Array.isArray(value))
-      throw new ToolArgumentError(`${label} must be an array`);
+    if (!Array.isArray(value)) throw new ToolArgumentError(`${label} must be an array`);
     if (
       (typeof schema.minItems === "number" && value.length < schema.minItems) ||
       (typeof schema.maxItems === "number" && value.length > schema.maxItems)
@@ -463,16 +439,11 @@ function validateValue(
     }
     if (isRecord(schema.items))
       value.forEach((item, index) =>
-        validateValue(
-          item,
-          schema.items as Record<string, unknown>,
-          `${label}[${index}]`,
-        ),
+        validateValue(item, schema.items as Record<string, unknown>, `${label}[${index}]`),
       );
   }
   if (type === "object") {
-    if (!isRecord(value))
-      throw new ToolArgumentError(`${label} must be an object`);
+    if (!isRecord(value)) throw new ToolArgumentError(`${label} must be an object`);
     if (isRecord(schema.additionalProperties)) {
       for (const [key, item] of Object.entries(value))
         validateValue(item, schema.additionalProperties, `${label}.${key}`);
@@ -480,32 +451,22 @@ function validateValue(
   }
 }
 
-export function validateToolArguments(
-  name: string,
-  args: unknown,
-): asserts args is Record<string, unknown> {
-  const tool = TOOLS.find((entry) => entry.name === name);
+export function validateToolArguments(name: string, args: unknown): asserts args is Record<string, unknown> {
+  const tool = TOOLS.find(entry => entry.name === name);
   if (!tool) throw new ToolArgumentError(`Unknown tool: ${name}`);
-  if (!isRecord(args))
-    throw new ToolArgumentError("Tool arguments must be an object");
+  if (!isRecord(args)) throw new ToolArgumentError("Tool arguments must be an object");
   for (const key of tool.inputSchema.required ?? []) {
-    if (args[key] === undefined)
-      throw new ToolArgumentError(`Missing required argument: '${key}'`);
+    if (args[key] === undefined) throw new ToolArgumentError(`Missing required argument: '${key}'`);
   }
   if (
     tool.inputSchema.anyOf &&
-    !tool.inputSchema.anyOf.some((branch) =>
-      branch.required.every((key) => args[key] !== undefined),
-    )
+    !tool.inputSchema.anyOf.some(branch => branch.required.every(key => args[key] !== undefined))
   ) {
-    throw new ToolArgumentError(
-      "Provide queryVector or query with an embedding provider",
-    );
+    throw new ToolArgumentError("Provide queryVector or query with an embedding provider");
   }
   for (const [key, value] of Object.entries(args)) {
     const schema = tool.inputSchema.properties[key];
-    if (!isRecord(schema))
-      throw new ToolArgumentError(`Unknown argument: '${key}'`);
+    if (!isRecord(schema)) throw new ToolArgumentError(`Unknown argument: '${key}'`);
     validateValue(value, schema, key);
   }
 }
@@ -524,14 +485,8 @@ export async function executeTool(
         ? resolveContainedPath(rootDir, args.path as string | undefined)
         : resolve(rootDir, (args.path as string) ?? ".");
       const managers =
-        typeof args.managers === "string"
-          ? args.managers.split(",").map((value) => value.trim())
-          : undefined;
-      if (
-        managers &&
-        (managers.length === 0 ||
-          managers.some((value) => !["bun", "uv", "cargo"].includes(value)))
-      )
+        typeof args.managers === "string" ? args.managers.split(",").map(value => value.trim()) : undefined;
+      if (managers && (managers.length === 0 || managers.some(value => !["bun", "uv", "cargo"].includes(value))))
         throw new ToolArgumentError("Choose managers: bun, uv, cargo");
       return syncPackages({
         root,
@@ -550,35 +505,29 @@ export async function executeTool(
       if (typeof args.only === "string" && args.only.length > 0) {
         const want = args.only
           .split(",")
-          .map((s) => s.trim())
+          .map(s => s.trim())
           .filter(Boolean);
-        const unknown = want.filter(
-          (id) => !GATES.some((gate) => gate.id === id),
-        );
-        if (unknown.length)
-          throw new ToolArgumentError(`Unknown gates: ${unknown.join(", ")}`);
-        selected = GATES.filter((g) => want.includes(g.id));
+        const unknown = want.filter(id => !GATES.some(gate => gate.id === id));
+        if (unknown.length) throw new ToolArgumentError(`Unknown gates: ${unknown.join(", ")}`);
+        selected = GATES.filter(g => want.includes(g.id));
         selection = "only";
       } else if (args.changed === true) {
         selected = selectChanged(GATES, changedFiles(rootDir));
         selection = "changed";
       }
-      const ids = new Set(selected.map((gate) => gate.id));
+      const ids = new Set(selected.map(gate => gate.id));
       for (const gate of selected) {
         for (const id of gate.needs ?? []) {
           if (ids.has(id)) continue;
-          const dependency = GATES.find((entry) => entry.id === id);
+          const dependency = GATES.find(entry => entry.id === id);
           if (dependency) {
             ids.add(id);
             selected.push(dependency);
           }
         }
       }
-      selected = GATES.filter((gate) => ids.has(gate.id));
-      const parallel = Math.max(
-        1,
-        Number(args.parallel ?? navigator.hardwareConcurrency ?? 4),
-      );
+      selected = GATES.filter(gate => ids.has(gate.id));
+      const parallel = Math.max(1, Number(args.parallel ?? navigator.hardwareConcurrency ?? 4));
       const runner = spawnRunner(rootDir, 60_000);
       const outcome = await runGates(selected, runner, {
         parallel,
@@ -608,10 +557,7 @@ export async function executeTool(
         : typeof args.path === "string"
           ? resolve(rootDir, args.path)
           : rootDir;
-      const exts =
-        typeof args.exts === "string"
-          ? args.exts.split(",").map((e) => e.trim())
-          : undefined;
+      const exts = typeof args.exts === "string" ? args.exts.split(",").map(e => e.trim()) : undefined;
       const parallel = typeof args.parallel === "number" ? args.parallel : 16;
       return await scanDirectory(target, { exts, parallel });
     }
@@ -625,9 +571,7 @@ export async function executeTool(
         mode: "check",
         dry_run: true,
         ...(typeof args.jobs === "number" ? { jobs: args.jobs } : {}),
-        ...(Array.isArray(args.ignore)
-          ? { ignore: args.ignore as string[] }
-          : {}),
+        ...(Array.isArray(args.ignore) ? { ignore: args.ignore as string[] } : {}),
       });
     }
 
@@ -635,9 +579,7 @@ export async function executeTool(
       if (typeof args.path !== "string") {
         throw new Error("Missing required argument: 'path'");
       }
-      const filePath = context.containPaths
-        ? resolveContainedPath(rootDir, args.path)
-        : resolve(rootDir, args.path);
+      const filePath = context.containPaths ? resolveContainedPath(rootDir, args.path) : resolve(rootDir, args.path);
       return await parseTsSource(filePath);
     }
 
@@ -647,30 +589,22 @@ export async function executeTool(
 
     case "yolo_bench": {
       const iters =
-        typeof args.iterations === "number"
-          ? Math.max(10_000, Math.min(1_000_000, args.iterations))
-          : 200_000;
-      const testBuffer = Buffer.from(
-        "Aphrody YOLO Bun Industrial Engine Benchmark Data String",
-      );
+        typeof args.iterations === "number" ? Math.max(10_000, Math.min(1_000_000, args.iterations)) : 200_000;
+      const testBuffer = Buffer.from("Aphrody YOLO Bun Industrial Engine Benchmark Data String");
 
       const t0 = Bun.nanoseconds();
       let lastHash = 0n;
       for (let i = 0; i < iters; i++) {
         lastHash = Bun.hash.wyhash(testBuffer, BigInt(i));
       }
-      const elapsedWyhashMs = Number(
-        ((Bun.nanoseconds() - t0) / 1_000_000).toFixed(2),
-      );
+      const elapsedWyhashMs = Number(((Bun.nanoseconds() - t0) / 1_000_000).toFixed(2));
 
       const t1 = Bun.nanoseconds();
       let lastCrc = 0;
       for (let i = 0; i < iters; i++) {
         lastCrc = Bun.hash.crc32(testBuffer, i);
       }
-      const elapsedCrcMs = Number(
-        ((Bun.nanoseconds() - t1) / 1_000_000).toFixed(2),
-      );
+      const elapsedCrcMs = Number(((Bun.nanoseconds() - t1) / 1_000_000).toFixed(2));
 
       return {
         schema: "yolo.bench/1",
@@ -694,9 +628,7 @@ export async function executeTool(
       }
       const depth = typeof args.depth === "number" ? args.depth : 2;
       const parallel = typeof args.parallel === "number" ? args.parallel : 8;
-      const dir = context.containPaths
-        ? resolveContainedPath(rootDir, args.dir)
-        : args.dir;
+      const dir = context.containPaths ? resolveContainedPath(rootDir, args.dir) : args.dir;
       const records = await scanLinks([dir], {
         run: async (cmd: string) => {
           const proc = Bun.spawn(["sh", "-c", cmd], {
@@ -723,8 +655,7 @@ export async function executeTool(
       });
     }
     case "yolo_gemma4_status": {
-      const modelName =
-        typeof args.model === "string" ? args.model : "gemma4-e2b";
+      const modelName = typeof args.model === "string" ? args.model : "gemma4-e2b";
       const seqLen = typeof args.seqLen === "number" ? args.seqLen : 512;
       const config = getGemma4Config(modelName);
       const memory = estimateGemma4Memory(config);
@@ -768,8 +699,7 @@ export async function executeTool(
       messages.push({
         role: "user",
         content: args.user,
-        imageCount:
-          typeof args.imageCount === "number" ? args.imageCount : undefined,
+        imageCount: typeof args.imageCount === "number" ? args.imageCount : undefined,
       });
       if (typeof args.thought === "string" && args.thought) {
         messages.push({
@@ -787,31 +717,22 @@ export async function executeTool(
     }
 
     case "yolo_vector_search": {
-      const namespace =
-        typeof args.namespace === "string" ? args.namespace : "default";
+      const namespace = typeof args.namespace === "string" ? args.namespace : "default";
       const topK = typeof args.topK === "number" ? args.topK : 5;
       let queryVector: Float32Array;
       if (Array.isArray(args.queryVector)) {
         queryVector = new Float32Array(args.queryVector);
       } else {
-        if (!context.embed)
-          throw new ToolArgumentError(
-            "No embedding provider configured; supply queryVector",
-          );
+        if (!context.embed) throw new ToolArgumentError("No embedding provider configured; supply queryVector");
         queryVector = await context.embed(args.query as string);
       }
       const store = context.vectorStore(namespace);
-      const results = await store.query(
-        queryVector,
-        topK,
-        args.filter as Record<string, string> | undefined,
-      );
+      const results = await store.query(queryVector, topK, args.filter as Record<string, string> | undefined);
       return { schema: "yolo.vector.search/1", namespace, topK, results };
     }
 
     case "yolo_traindb_stats": {
-      const dataset =
-        typeof args.dataset === "string" ? args.dataset : "default";
+      const dataset = typeof args.dataset === "string" ? args.dataset : "default";
       const stats = await context.trainDb(dataset).getStats();
       return { schema: "yolo.traindb.stats/1", ...stats };
     }
@@ -823,8 +744,5 @@ export async function executeTool(
 
 /** Same catalog subset for AI CLI discovery and execution; no second schema list. */
 export function isAiTool(name: string): boolean {
-  return (
-    /^yolo_(?:ai_|gemma4_|vector_|traindb_)/.test(name) &&
-    TOOLS.some((tool) => tool.name === name)
-  );
+  return /^yolo_(?:ai_|gemma4_|vector_|traindb_)/.test(name) && TOOLS.some(tool => tool.name === name);
 }

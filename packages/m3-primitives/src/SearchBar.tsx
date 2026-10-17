@@ -14,10 +14,7 @@ import { Icon } from "./Icon";
  * `size`: `md` is the M3 baseline (56dp), `sm` (40dp) and `xs` (32dp, the upstream SpaceUI
  * height) are density steps for toolbars and sidebars.
  */
-interface SearchBarProps extends Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  "value" | "onChange" | "size"
-> {
+interface SearchBarProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "size"> {
   value?: string;
   onChange?: (value: string) => void;
   onClear?: () => void;
@@ -31,18 +28,7 @@ const containerSizes = {
 } as const;
 
 export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
-  (
-    {
-      value,
-      onChange,
-      onClear,
-      className,
-      placeholder = "Search...",
-      size = "md",
-      ...props
-    },
-    ref,
-  ) => {
+  ({ value, onChange, onClear, className, placeholder = "Search...", size = "md", ...props }, ref) => {
     const [internalValue, setInternalValue] = useState("");
     const currentValue = value !== undefined ? value : internalValue;
     const dense = size !== "md";
@@ -79,11 +65,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           className,
         )}
       >
-        <Icon
-          name="search"
-          size={dense ? 20 : 24}
-          className="text-on-surface"
-        />
+        <Icon name="search" size={dense ? 20 : 24} className="text-on-surface" />
         <input
           ref={ref}
           type="text"

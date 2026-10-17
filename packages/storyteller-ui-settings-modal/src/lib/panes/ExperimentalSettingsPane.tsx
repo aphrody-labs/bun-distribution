@@ -11,15 +11,9 @@ interface Props {
   onStoryboardPageDisable?: () => void;
 }
 
-export const ExperimentalSettingsPane = ({
-  onStoryboardPageDisable,
-}: Props) => {
-  const storyboardPageEnabled = useExperimentalStore(
-    (s) => s.storyboardPageEnabled,
-  );
-  const setStoryboardPageEnabled = useExperimentalStore(
-    (s) => s.setStoryboardPageEnabled,
-  );
+export const ExperimentalSettingsPane = ({ onStoryboardPageDisable }: Props) => {
+  const storyboardPageEnabled = useExperimentalStore(s => s.storyboardPageEnabled);
+  const setStoryboardPageEnabled = useExperimentalStore(s => s.setStoryboardPageEnabled);
   const [isDisableConfirmOpen, setIsDisableConfirmOpen] = useState(false);
 
   const fireToggleEvent = (enabled: boolean) => {
@@ -50,18 +44,12 @@ export const ExperimentalSettingsPane = ({
       <div className="space-y-4 text-base-fg">
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-0.5">
-            <Label htmlFor="experimental-storyboard-page">
-              Storyboard page
-            </Label>
+            <Label htmlFor="experimental-storyboard-page">Storyboard page</Label>
             <p className="text-xs opacity-70">
-              Show the Storyboard page in the apps menu. In-development; expect
-              rough edges.
+              Show the Storyboard page in the apps menu. In-development; expect rough edges.
             </p>
           </div>
-          <Switch
-            enabled={storyboardPageEnabled}
-            setEnabled={handleStoryboardToggle}
-          />
+          <Switch enabled={storyboardPageEnabled} setEnabled={handleStoryboardToggle} />
         </div>
       </div>
       <ExperimentalConfirmModal

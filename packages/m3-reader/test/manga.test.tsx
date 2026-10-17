@@ -15,9 +15,9 @@ async function hydrationErrors(element: ReactElement): Promise<unknown[]> {
   container.innerHTML = renderToString(element);
   const errors: unknown[] = [];
   const root = hydrateRoot(container, element, {
-    onRecoverableError: (e) => errors.push(e),
+    onRecoverableError: e => errors.push(e),
   });
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  await new Promise(resolve => setTimeout(resolve, 100));
   root.unmount();
   container.remove();
   return errors;

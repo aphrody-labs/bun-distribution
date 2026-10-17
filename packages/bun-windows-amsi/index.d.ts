@@ -7,13 +7,32 @@ interface Functions {
   /** amsi.dll!AmsiInitialize */
   AmsiInitialize(appName: string | Win32Pointer, amsiContext: Win32Pointer): number;
   /** amsi.dll!AmsiNotifyOperation */
-  AmsiNotifyOperation(amsiContext: Win32Pointer, buffer: Win32Pointer, length: number, contentName: string | Win32Pointer, result: Win32Pointer): number;
+  AmsiNotifyOperation(
+    amsiContext: Win32Pointer,
+    buffer: Win32Pointer,
+    length: number,
+    contentName: string | Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** amsi.dll!AmsiOpenSession */
   AmsiOpenSession(amsiContext: Win32Pointer, amsiSession: Win32Pointer): number;
   /** amsi.dll!AmsiScanBuffer */
-  AmsiScanBuffer(amsiContext: Win32Pointer, buffer: Win32Pointer, length: number, contentName: string | Win32Pointer, amsiSession: Win32Pointer, result: Win32Pointer): number;
+  AmsiScanBuffer(
+    amsiContext: Win32Pointer,
+    buffer: Win32Pointer,
+    length: number,
+    contentName: string | Win32Pointer,
+    amsiSession: Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** amsi.dll!AmsiScanString */
-  AmsiScanString(amsiContext: Win32Pointer, string: string | Win32Pointer, contentName: string | Win32Pointer, amsiSession: Win32Pointer, result: Win32Pointer): number;
+  AmsiScanString(
+    amsiContext: Win32Pointer,
+    string: string | Win32Pointer,
+    contentName: string | Win32Pointer,
+    amsiSession: Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** amsi.dll!AmsiUninitialize */
   AmsiUninitialize(amsiContext: Win32Pointer): void;
 }

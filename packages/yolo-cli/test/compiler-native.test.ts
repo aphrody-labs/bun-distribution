@@ -1,13 +1,7 @@
 // SPDX-License-Identifier: MIT
 import { afterAll, expect, test } from "bun:test";
 import { dlopen, FFIType } from "bun:ffi";
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { NativeTooling } from "@aphrody/runtime-sdk/tooling";
@@ -78,10 +72,9 @@ function fixture(abi = 1) {
   const path = join(directory, `libfixture-${abi}.so`);
   const input = join(directory, `fixture-${abi}.c`);
   writeFileSync(input, source);
-  const built = Bun.spawnSync(
-    [compiler!, "-shared", "-fPIC", `-DTOOLING_ABI=${abi}`, input, "-o", path],
-    { windowsHide: true },
-  );
+  const built = Bun.spawnSync([compiler!, "-shared", "-fPIC", `-DTOOLING_ABI=${abi}`, input, "-o", path], {
+    windowsHide: true,
+  });
   if (built.exitCode) throw new Error(built.stderr.toString());
   expect(built.exitCode).toBe(0);
   const observer = dlopen(path, {
@@ -95,87 +88,61 @@ function fixture(abi = 1) {
 test("input validation does not load a missing provider or alter explicit selection", () => {
   using tooling = new NativeTooling({ path: join(directory, "missing.so") });
   expect(() => tooling.formatSource("bad\0source")).toThrow(TypeError);
-  expect(() => tooling.scanNodeProject("project", { jobs: 0 })).toThrow(
-    TypeError,
-  );
-  expect(() => tooling.scanNodeProject("project", { jobs: 7 })).toThrow(
-    TypeError,
-  );
-  expect(() =>
-    tooling.scanNodeProject("project", { unknown: true } as never),
-  ).toThrow(TypeError);
+  expect(() => tooling.scanNodeProject("project", { jobs: 0 })).toThrow(TypeError);
+  expect(() => tooling.scanNodeProject("project", { jobs: 7 })).toThrow(TypeError);
+  expect(() => tooling.scanNodeProject("project", { unknown: true } as never)).toThrow(TypeError);
   expect(tooling.probe().error).toContain("selection preserved");
   expect(tooling.probe().available).toBe(false);
 });
 
-fixtureTest(
-  "owned native strings are released on success and every decoding failure",
-  () => {
-    const { path, observer } = fixture();
-    try {
-      using tooling = new NativeTooling({ path });
-      const start = observer.symbols.fixture_frees();
-      expect(tooling.formatSource("valid")).toBe("fixture-code");
-      expect(observer.symbols.fixture_frees()).toBe(start + 1);
-      expect(() => tooling.formatSource("malformed-json")).toThrow(
-        "invalid native JSON",
-      );
-      expect(observer.symbols.fixture_frees()).toBe(start + 2);
-      expect(() => tooling.formatSource("native-error")).toThrow(
-        "fixture failure",
-      );
-      expect(observer.symbols.fixture_frees()).toBe(start + 3);
-      expect(() => tooling.lintSource("bad-schema")).toThrow(
-        "invalid native diagnostics",
-      );
-      expect(observer.symbols.fixture_frees()).toBe(start + 4);
-      expect(() => tooling.analyzeModule("syntax", "fixture.ts")).toThrow(
-        SyntaxError,
-      );
-      expect(observer.symbols.fixture_frees()).toBe(start + 5);
-      expect(() => tooling.formatSource("null")).toThrow("null pointer");
-      expect(observer.symbols.fixture_frees()).toBe(start + 5);
-    } finally {
-      observer.close();
-    }
-  },
-);
+fixtureTest("owned native strings are released on success and every decoding failure", () => {
+  const { path, observer } = fixture();
+  try {
+    using tooling = new NativeTooling({ path });
+    const start = observer.symbols.fixture_frees();
+    expect(tooling.formatSource("valid")).toBe("fixture-code");
+    expect(observer.symbols.fixture_frees()).toBe(start + 1);
+    expect(() => tooling.formatSource("malformed-json")).toThrow("invalid native JSON");
+    expect(observer.symbols.fixture_frees()).toBe(start + 2);
+    expect(() => tooling.formatSource("native-error")).toThrow("fixture failure");
+    expect(observer.symbols.fixture_frees()).toBe(start + 3);
+    expect(() => tooling.lintSource("bad-schema")).toThrow("invalid native diagnostics");
+    expect(observer.symbols.fixture_frees()).toBe(start + 4);
+    expect(() => tooling.analyzeModule("syntax", "fixture.ts")).toThrow(SyntaxError);
+    expect(observer.symbols.fixture_frees()).toBe(start + 5);
+    expect(() => tooling.formatSource("null")).toThrow("null pointer");
+    expect(observer.symbols.fixture_frees()).toBe(start + 5);
+  } finally {
+    observer.close();
+  }
+});
 
-fixtureTest(
-  "N2B options retain absence, explicit dry-run and bounded jobs",
-  () => {
-    const { path, observer } = fixture();
-    try {
-      using tooling = new NativeTooling({ path });
-      expect(tooling.scanNodeProject("project").schema_version).toBe(2);
-      expect(observer.symbols.fixture_options()!.toString()).toBe("");
-      tooling.scanNodeProject("project", {
-        mode: "fix",
-        jobs: 2,
-        dry_run: true,
-        ignore: ["vendor"],
-      });
-      expect(
-        JSON.parse(observer.symbols.fixture_options()!.toString()),
-      ).toEqual({
-        mode: "fix",
-        jobs: 2,
-        dry_run: true,
-        ignore: ["vendor"],
-      });
-      expect([...tooling.findNewlinesUtf16("\u0a00🐈\nline\n")]).toEqual([
-        3, 8,
-      ]);
-      const calls = observer.symbols.fixture_calls();
-      expect(() => tooling.scanNodeProject("project", { jobs: 7 })).toThrow(
-        TypeError,
-      );
-      expect(observer.symbols.fixture_calls()).toBe(calls);
-    } finally {
-      observer.close();
-    }
-  },
-);
+fixtureTest("N2B options retain absence, explicit dry-run and bounded jobs", () => {
+  const { path, observer } = fixture();
+  try {
+    using tooling = new NativeTooling({ path });
+    expect(tooling.scanNodeProject("project").schema_version).toBe(2);
+    expect(observer.symbols.fixture_options()!.toString()).toBe("");
+    tooling.scanNodeProject("project", {
+      mode: "fix",
+      jobs: 2,
+      dry_run: true,
+      ignore: ["vendor"],
+    });
+    expect(JSON.parse(observer.symbols.fixture_options()!.toString())).toEqual({
+      mode: "fix",
+      jobs: 2,
+      dry_run: true,
+      ignore: ["vendor"],
+    });
+    expect([...tooling.findNewlinesUtf16("\u0a00🐈\nline\n")]).toEqual([3, 8]);
+    const calls = observer.symbols.fixture_calls();
+    expect(() => tooling.scanNodeProject("project", { jobs: 7 })).toThrow(TypeError);
+    expect(observer.symbols.fixture_calls()).toBe(calls);
+  } finally {
+    observer.close();
+  }
+});
 
 fixtureTest("ABI mismatch closes the owner before engine dispatch", () => {
   const { path, observer } = fixture(9);
@@ -207,23 +174,19 @@ fixtureTest("closing an owner prevents all later native dispatch", () => {
   }
 });
 
-providerTest(
-  "the real provider scans an isolated project without changing its source",
-  () => {
-    const root = join(directory, "real-project");
-    mkdirSync(root);
-    const input = join(root, "index.js");
-    const text =
-      'import fs from "node:fs"; const contents = fs.readFileSync("input.txt", "utf8");\n';
-    writeFileSync(input, text);
-    using tooling = new NativeTooling({ path: providerPath! });
-    const report = tooling.scanNodeProject(root);
-    expect(report.schema_version).toBe(2);
-    expect(report.mode).toBe("check");
-    expect(report.files_scanned).toBe(1);
-    expect(report.findings_total).toBeGreaterThan(0);
-    expect(report.files.every((file) => !file.changed)).toBe(true);
-    expect(readFileSync(input, "utf8")).toBe(text);
-    expect([...tooling.findNewlinesUtf16("\u0a00🐈\nline\n")]).toEqual([3, 8]);
-  },
-);
+providerTest("the real provider scans an isolated project without changing its source", () => {
+  const root = join(directory, "real-project");
+  mkdirSync(root);
+  const input = join(root, "index.js");
+  const text = 'import fs from "node:fs"; const contents = fs.readFileSync("input.txt", "utf8");\n';
+  writeFileSync(input, text);
+  using tooling = new NativeTooling({ path: providerPath! });
+  const report = tooling.scanNodeProject(root);
+  expect(report.schema_version).toBe(2);
+  expect(report.mode).toBe("check");
+  expect(report.files_scanned).toBe(1);
+  expect(report.findings_total).toBeGreaterThan(0);
+  expect(report.files.every(file => !file.changed)).toBe(true);
+  expect(readFileSync(input, "utf8")).toBe(text);
+  expect([...tooling.findNewlinesUtf16("\u0a00🐈\nline\n")]).toEqual([3, 8]);
+});

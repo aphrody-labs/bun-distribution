@@ -1,9 +1,4 @@
-import {
-  FilterEngineCategories,
-  MediaFileAnimationType,
-  UploaderState,
-  UploaderStates,
-} from "../../Types";
+import { FilterEngineCategories, MediaFileAnimationType, UploaderState, UploaderStates } from "../../Types";
 import { setThumbnail, uploadSnapshotAsThumbnail } from "./thumbnailHelpers";
 import { uploadAsset } from "./uploadAsset";
 

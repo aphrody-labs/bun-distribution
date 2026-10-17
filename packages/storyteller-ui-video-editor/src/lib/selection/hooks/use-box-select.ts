@@ -1,11 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type {
-  BoxSelectionSnapshot,
-  ResolveIntersections,
-  SelectionBoxBounds,
-} from "../types";
+import type { BoxSelectionSnapshot, ResolveIntersections, SelectionBoxBounds } from "../types";
 
 interface SelectionBoxState<TId> extends BoxSelectionSnapshot<TId> {
   startPos: { x: number; y: number };
@@ -62,15 +58,12 @@ export function useBoxSelect<TId>({
   getIsAdditiveSelection?: (event: React.MouseEvent<Element>) => boolean;
   isEnabled?: boolean;
 }) {
-  const [selectionBox, setSelectionBox] =
-    useState<SelectionBoxState<TId> | null>(null);
+  const [selectionBox, setSelectionBox] = useState<SelectionBoxState<TId> | null>(null);
   const justFinishedSelectingRef = useRef(false);
 
   const handleMouseDown = useCallback(
     (event: React.MouseEvent<Element>) => {
-      const canStartSelection = shouldStartSelection
-        ? shouldStartSelection(event)
-        : true;
+      const canStartSelection = shouldStartSelection ? shouldStartSelection(event) : true;
       if (!isEnabled || event.button !== 0 || !canStartSelection) {
         return;
       }
@@ -88,31 +81,16 @@ export function useBoxSelect<TId>({
             })
           : null,
         isActive: false,
-        isAdditive: getIsAdditiveSelection
-          ? getIsAdditiveSelection(event)
-          : event.ctrlKey || event.metaKey,
+        isAdditive: getIsAdditiveSelection ? getIsAdditiveSelection(event) : event.ctrlKey || event.metaKey,
         initialSelectedIds: selectedIds,
         initialAnchorId: anchorId,
       });
     },
-    [
-      anchorId,
-      containerRef,
-      getIsAdditiveSelection,
-      isEnabled,
-      selectedIds,
-      shouldStartSelection,
-    ],
+    [anchorId, containerRef, getIsAdditiveSelection, isEnabled, selectedIds, shouldStartSelection],
   );
 
   const updateSelection = useCallback(
-    ({
-      startPos,
-      currentPos,
-      isAdditive,
-      initialSelectedIds,
-      initialAnchorId,
-    }: SelectionBoxState<TId>) => {
+    ({ startPos, currentPos, isAdditive, initialSelectedIds, initialAnchorId }: SelectionBoxState<TId>) => {
       const intersectedIds = resolveIntersections({
         startPos,
         currentPos,
@@ -206,10 +184,7 @@ export function useBoxSelect<TId>({
   }, []);
 
   return {
-    selectionBox:
-      selectionBox?.isActive && selectionBox.bounds
-        ? { bounds: selectionBox.bounds }
-        : null,
+    selectionBox: selectionBox?.isActive && selectionBox.bounds ? { bounds: selectionBox.bounds } : null,
     handleMouseDown,
     isSelecting: selectionBox?.isActive ?? false,
     shouldIgnoreClick,

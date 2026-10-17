@@ -42,7 +42,7 @@ export function Spacedrop({ onClose, people = NO_PEOPLE }: SpacedropProps) {
     <div className="relative flex h-full w-full flex-col overflow-hidden rounded-large border border-outline-variant bg-black">
       {/* Animated Stars Background */}
       <div className="absolute inset-0">
-        {stars.map((star) => (
+        {stars.map(star => (
           <motion.div
             key={star.id}
             className="absolute rounded-full bg-white"
@@ -84,22 +84,14 @@ export function Spacedrop({ onClose, people = NO_PEOPLE }: SpacedropProps) {
       {/* Content */}
       <div className="relative z-10 flex flex-1 items-center justify-center p-8">
         {people.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
             <div className="mb-4 flex justify-center">
               <div className="rounded-full bg-surface-container/40 p-6 backdrop-blur-lg">
                 <Users className="size-12 text-sidebar-inkFaint" />
               </div>
             </div>
-            <h2 className="mb-2 text-title-medium font-semibold text-on-surface">
-              No devices found
-            </h2>
-            <p className="text-body-medium text-sidebar-inkFaint">
-              Waiting for nearby devices...
-            </p>
+            <h2 className="mb-2 text-title-medium font-semibold text-on-surface">No devices found</h2>
+            <p className="text-body-medium text-sidebar-inkFaint">Waiting for nearby devices...</p>
           </motion.div>
         ) : (
           <div className="grid max-w-4xl grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
@@ -159,9 +151,7 @@ export function Spacedrop({ onClose, people = NO_PEOPLE }: SpacedropProps) {
 
                 {/* Name */}
                 <div className="text-center">
-                  <p className="text-label-large font-medium text-on-surface group-hover:text-primary">
-                    {person.name}
-                  </p>
+                  <p className="text-label-large font-medium text-on-surface group-hover:text-primary">{person.name}</p>
                   <p className="text-body-small text-sidebar-inkFaint">
                     {person.status === "online" ? "Online" : "Offline"}
                   </p>

@@ -8,10 +8,7 @@ import type { TaskPriority } from "./types";
 import { TASK_PRIORITY_LABEL } from "./types";
 
 /** Material Symbols glyph and M3 color role per priority. */
-const config: Record<
-  TaskPriority,
-  { icon: string; filled: boolean; color: string }
-> = {
+const config: Record<TaskPriority, { icon: string; filled: boolean; color: string }> = {
   critical: { icon: "priority_high", filled: true, color: "text-error" },
   high: {
     icon: "keyboard_double_arrow_up",
@@ -30,12 +27,7 @@ export interface TaskPriorityIconProps {
   label?: string;
 }
 
-export function TaskPriorityIcon({
-  priority,
-  size = 14,
-  className,
-  label,
-}: TaskPriorityIconProps) {
+export function TaskPriorityIcon({ priority, size = 14, className, label }: TaskPriorityIconProps) {
   const { icon, filled, color } = config[priority];
   return (
     <Icon

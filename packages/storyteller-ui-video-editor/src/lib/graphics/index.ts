@@ -10,11 +10,7 @@ import {
   rectangleGraphicDefinition,
   starGraphicDefinition,
 } from "./definitions";
-import {
-  DEFAULT_GRAPHIC_SOURCE_SIZE,
-  type GraphicInstance,
-  type GraphicDefinition,
-} from "./types";
+import { DEFAULT_GRAPHIC_SOURCE_SIZE, type GraphicInstance, type GraphicDefinition } from "./types";
 
 // Graphic-definition lookup + thumbnail generation. The preview cache is
 // keyed by (definitionId, resolvedParams, size) so re-rendering the same
@@ -28,13 +24,7 @@ const FALLBACK_FILL_OPACITY = 0.08;
 const FALLBACK_MIN_FONT_SIZE = 12;
 const FALLBACK_FONT_SIZE_RATIO = 0.15;
 
-function buildFallbackPreviewUrl({
-  name,
-  size,
-}: {
-  name: string;
-  size: number;
-}): string {
+function buildFallbackPreviewUrl({ name, size }: { name: string; size: number }): string {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
       <rect width="${size}" height="${size}" rx="${size * FALLBACK_CORNER_RADIUS_RATIO}" fill="white" fill-opacity="${FALLBACK_FILL_OPACITY}" />
@@ -44,20 +34,12 @@ function buildFallbackPreviewUrl({
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
-export function getGraphicDefinition({
-  definitionId,
-}: {
-  definitionId: string;
-}): GraphicDefinition {
+export function getGraphicDefinition({ definitionId }: { definitionId: string }): GraphicDefinition {
   registerDefaultGraphics();
   return graphicsRegistry.get(definitionId);
 }
 
-export function buildDefaultGraphicInstance({
-  definitionId,
-}: {
-  definitionId: string;
-}): GraphicInstance {
+export function buildDefaultGraphicInstance({ definitionId }: { definitionId: string }): GraphicInstance {
   const definition = getGraphicDefinition({ definitionId });
   return {
     definitionId,
@@ -153,8 +135,4 @@ export {
   registerDefaultGraphics,
   starGraphicDefinition,
 };
-export type {
-  GraphicDefinition,
-  GraphicInstance,
-  GraphicRenderContext,
-} from "./types";
+export type { GraphicDefinition, GraphicInstance, GraphicRenderContext } from "./types";

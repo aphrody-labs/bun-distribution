@@ -12,19 +12,8 @@ import {
   VideoNode,
 } from "./types";
 import { useMoodboardHistoryStore } from "./MoodboardHistoryStore";
-import {
-  DEFAULT_CARD_COLOR,
-  DEFAULT_CARD_PADDING,
-  DEFAULT_CARD_WIDTH,
-  computeCardHeight,
-} from "./cardLayout";
-import {
-  CanvasSize,
-  Viewport,
-  computeAABBById,
-  computeContentBounds,
-  fitViewportToBounds,
-} from "./layout/geometry";
+import { DEFAULT_CARD_COLOR, DEFAULT_CARD_PADDING, DEFAULT_CARD_WIDTH, computeCardHeight } from "./cardLayout";
+import { CanvasSize, Viewport, computeAABBById, computeContentBounds, fitViewportToBounds } from "./layout/geometry";
 import { SnapGuide } from "./layout/snapping";
 
 // Hover state published during a node drag so overlay UI can highlight the card
@@ -69,27 +58,13 @@ interface MoodboardState {
   fitToContent: (padding?: number) => void;
   selectAll: () => void;
 
-  addImage: (
-    src: string,
-    pos: Vec2,
-    naturalW: number,
-    naturalH: number,
-    mediaId?: string | null,
-  ) => string;
-  addVideo: (
-    src: string,
-    pos: Vec2,
-    naturalW: number,
-    naturalH: number,
-    mediaId?: string | null,
-  ) => string;
+  addImage: (src: string, pos: Vec2, naturalW: number, naturalH: number, mediaId?: string | null) => string;
+  addVideo: (src: string, pos: Vec2, naturalW: number, naturalH: number, mediaId?: string | null) => string;
   addText: (pos: Vec2) => string;
   updateNode: (id: string, patch: Partial<MoodboardNode>) => void;
   setCardColor: (id: string, color: string) => void;
   deleteSelected: () => void;
-  applyLayoutPatches: (
-    patches: Array<{ id: string; patch: Partial<MoodboardNode> }>,
-  ) => void;
+  applyLayoutPatches: (patches: Array<{ id: string; patch: Partial<MoodboardNode> }>) => void;
 
   setSelection: (ids: Iterable<string>) => void;
   toggleInSelection: (id: string, additive: boolean) => void;
@@ -131,11 +106,7 @@ const DEFAULT_FONT_SIZE = 24;
 const DEFAULT_TEXT_COLOR = "#FFFFFF";
 const MAX_IMAGE_DIMENSION = 480;
 
-const fitWithinBox = (
-  w: number,
-  h: number,
-  max: number,
-): { w: number; h: number } => {
+const fitWithinBox = (w: number, h: number, max: number): { w: number; h: number } => {
   if (w <= max && h <= max) return { w, h };
   const ratio = Math.min(max / w, max / h);
   return { w: w * ratio, h: h * ratio };
@@ -160,14 +131,13 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
     guides: [],
   },
 
-  setTool: (t) => set({ tool: t }),
-  toggleSnap: () => set((s) => ({ snapEnabled: !s.snapEnabled })),
-  setGuides: (guides) =>
-    set((s) => ({ transient: { ...s.transient, guides } })),
-  setLastDropPoint: (p) => set({ lastDropPoint: p }),
-  setZoom: (z) => set((s) => ({ viewport: { ...s.viewport, zoom: z } })),
-  setPan: (p) => set((s) => ({ viewport: { ...s.viewport, pan: p } })),
-  setCanvasSize: (sz) => set({ canvasSize: sz }),
+  setTool: t => set({ tool: t }),
+  toggleSnap: () => set(s => ({ snapEnabled: !s.snapEnabled })),
+  setGuides: guides => set(s => ({ transient: { ...s.transient, guides } })),
+  setLastDropPoint: p => set({ lastDropPoint: p }),
+  setZoom: z => set(s => ({ viewport: { ...s.viewport, zoom: z } })),
+  setPan: p => set(s => ({ viewport: { ...s.viewport, pan: p } })),
+  setCanvasSize: sz => set({ canvasSize: sz }),
   resetViewport: () => set({ viewport: { zoom: 1, pan: { x: 0, y: 0 } } }),
   fitToContent: (padding = 48) => {
     const { nodes, rootOrder, canvasSize } = get();
@@ -184,11 +154,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
   addImage: (src, pos, naturalW, naturalH, mediaId = null) => {
     get().pushHistory();
     const id = crypto.randomUUID();
-    const fit = fitWithinBox(
-      naturalW || 320,
-      naturalH || 320,
-      MAX_IMAGE_DIMENSION,
-    );
+    const fit = fitWithinBox(naturalW || 320, naturalH || 320, MAX_IMAGE_DIMENSION);
     const node: ImageNode = {
       id,
       kind: "image",
@@ -204,7 +170,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
       naturalW,
       naturalH,
     };
-    set((s) => ({
+    set(s => ({
       nodes: { ...s.nodes, [id]: node },
       rootOrder: [...s.rootOrder, id],
       selectedIds: new Set([id]),
@@ -215,11 +181,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
   addVideo: (src, pos, naturalW, naturalH, mediaId = null) => {
     get().pushHistory();
     const id = crypto.randomUUID();
-    const fit = fitWithinBox(
-      naturalW || 320,
-      naturalH || 320,
-      MAX_IMAGE_DIMENSION,
-    );
+    const fit = fitWithinBox(naturalW || 320, naturalH || 320, MAX_IMAGE_DIMENSION);
     const node: VideoNode = {
       id,
       kind: "video",
@@ -240,7 +202,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
       loop: true,
       autoplay: true,
     };
-    set((s) => ({
+    set(s => ({
       nodes: { ...s.nodes, [id]: node },
       rootOrder: [...s.rootOrder, id],
       selectedIds: new Set([id]),
@@ -248,7 +210,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
     return id;
   },
 
-  addText: (pos) => {
+  addText: pos => {
     get().pushHistory();
     const id = crypto.randomUUID();
     const node: TextNode = {
@@ -265,7 +227,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
       fontSize: DEFAULT_FONT_SIZE,
       color: DEFAULT_TEXT_COLOR,
     };
-    set((s) => ({
+    set(s => ({
       nodes: { ...s.nodes, [id]: node },
       rootOrder: [...s.rootOrder, id],
       selectedIds: new Set([id]),
@@ -275,7 +237,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
   },
 
   updateNode: (id, patch) => {
-    set((s) => {
+    set(s => {
       const existing = s.nodes[id];
       if (!existing) return s;
       // Keep discriminant intact by spreading then overlaying with patch fields.
@@ -288,7 +250,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
     // Live edit (called continuously while dragging the color picker), so it
     // deliberately skips history — the undo stack would otherwise flood with a
     // frame per pointermove.
-    set((s) => {
+    set(s => {
       const n = s.nodes[id];
       if (!n || n.kind !== "card") return s;
       return { nodes: { ...s.nodes, [id]: { ...n, backgroundColor: color } } };
@@ -299,14 +261,13 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
     const { selectedIds } = get();
     if (selectedIds.size === 0) return;
     get().pushHistory();
-    set((s) => {
+    set(s => {
       const removed = new Set<string>();
       const collect = (id: string) => {
         const n = s.nodes[id];
         if (!n) return;
         removed.add(id);
-        if (n.kind === "group" || n.kind === "card")
-          n.childIds.forEach(collect);
+        if (n.kind === "group" || n.kind === "card") n.childIds.forEach(collect);
       };
       selectedIds.forEach(collect);
 
@@ -317,7 +278,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
         if (n.kind === "group" || n.kind === "card") {
           nodes[id] = {
             ...n,
-            childIds: n.childIds.filter((c) => !removed.has(c)),
+            childIds: n.childIds.filter(c => !removed.has(c)),
           };
         } else {
           nodes[id] = n;
@@ -326,16 +287,16 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
 
       return {
         nodes,
-        rootOrder: s.rootOrder.filter((id) => !removed.has(id)),
+        rootOrder: s.rootOrder.filter(id => !removed.has(id)),
         selectedIds: new Set(),
       };
     });
   },
 
-  applyLayoutPatches: (patches) => {
+  applyLayoutPatches: patches => {
     if (patches.length === 0) return;
     get().pushHistory();
-    set((s) => {
+    set(s => {
       const nodes = { ...s.nodes };
       patches.forEach(({ id, patch }) => {
         const existing = nodes[id];
@@ -346,14 +307,14 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
     });
   },
 
-  setSelection: (ids) => {
+  setSelection: ids => {
     set({
       selectedIds: stripAncestorsAndDescendants(get().nodes, new Set(ids)),
     });
   },
 
   toggleInSelection: (id, additive) => {
-    set((s) => {
+    set(s => {
       const next = additive ? new Set(s.selectedIds) : new Set<string>();
       if (additive && s.selectedIds.has(id)) {
         next.delete(id);
@@ -368,7 +329,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
 
   group: () => {
     const { selectedIds, nodes } = get();
-    const topLevelIds = Array.from(selectedIds).filter((id) => {
+    const topLevelIds = Array.from(selectedIds).filter(id => {
       const n = nodes[id];
       return n && n.parentId === null;
     });
@@ -393,10 +354,10 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
       childIds: topLevelIds,
     };
 
-    set((s) => {
+    set(s => {
       const newNodes: Record<string, MoodboardNode> = { ...s.nodes };
       // Rebase each child position to be group-local.
-      topLevelIds.forEach((id) => {
+      topLevelIds.forEach(id => {
         const n = newNodes[id];
         if (!n) return;
         newNodes[id] = {
@@ -409,29 +370,26 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
       newNodes[groupId] = groupNode;
       return {
         nodes: newNodes,
-        rootOrder: [
-          ...s.rootOrder.filter((id) => !topLevelIds.includes(id)),
-          groupId,
-        ],
+        rootOrder: [...s.rootOrder.filter(id => !topLevelIds.includes(id)), groupId],
         selectedIds: new Set([groupId]),
       };
     });
     return groupId;
   },
 
-  groupClusters: (clusters) => {
+  groupClusters: clusters => {
     // Single-shot atomic version of group() that creates one group per
     // cluster of ids, with one history entry covering all of them. Used by
     // "Auto-group by proximity" so undo collapses to a single step.
-    const validClusters = clusters.filter((cluster) => cluster.length >= 2);
+    const validClusters = clusters.filter(cluster => cluster.length >= 2);
     if (validClusters.length === 0) return [];
     get().pushHistory();
     const newGroupIds: string[] = [];
-    set((s) => {
+    set(s => {
       const newNodes: Record<string, MoodboardNode> = { ...s.nodes };
       let newRootOrder = [...s.rootOrder];
       for (const cluster of validClusters) {
-        const topLevelIds = cluster.filter((id) => {
+        const topLevelIds = cluster.filter(id => {
           const n = newNodes[id];
           return n && n.parentId === null;
         });
@@ -451,7 +409,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
           zIndex: newRootOrder.length,
           childIds: topLevelIds,
         };
-        topLevelIds.forEach((id) => {
+        topLevelIds.forEach(id => {
           const n = newNodes[id];
           if (!n) return;
           newNodes[id] = {
@@ -462,10 +420,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
           } as MoodboardNode;
         });
         newNodes[groupId] = groupNode;
-        newRootOrder = [
-          ...newRootOrder.filter((id) => !topLevelIds.includes(id)),
-          groupId,
-        ];
+        newRootOrder = [...newRootOrder.filter(id => !topLevelIds.includes(id)), groupId];
         newGroupIds.push(groupId);
       }
       return {
@@ -495,9 +450,9 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
     // Target was there first, so it sits on top; the dragged node stacks below.
     const childIds = [targetId, draggedId];
 
-    set((s) => {
+    set(s => {
       const newNodes: Record<string, MoodboardNode> = { ...s.nodes };
-      childIds.forEach((cid) => {
+      childIds.forEach(cid => {
         const c = newNodes[cid];
         if (!c) return;
         // Children are reparented; their x/y are ignored by the card's flex
@@ -521,10 +476,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
       newNodes[cardId] = { ...base, height: computeCardHeight(base, newNodes) };
       return {
         nodes: newNodes,
-        rootOrder: [
-          ...s.rootOrder.filter((id) => id !== targetId && id !== draggedId),
-          cardId,
-        ],
+        rootOrder: [...s.rootOrder.filter(id => id !== targetId && id !== draggedId), cardId],
         selectedIds: new Set([cardId]),
       };
     });
@@ -539,7 +491,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
     if (draggedId === cardId || card.childIds.includes(draggedId)) return;
 
     get().pushHistory();
-    set((s) => {
+    set(s => {
       const current = s.nodes[cardId];
       const child = s.nodes[draggedId];
       if (!current || current.kind !== "card" || !child) return s;
@@ -552,7 +504,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
       newNodes[cardId] = { ...base, height: computeCardHeight(base, newNodes) };
       return {
         nodes: newNodes,
-        rootOrder: s.rootOrder.filter((id) => id !== draggedId),
+        rootOrder: s.rootOrder.filter(id => id !== draggedId),
         selectedIds: new Set([cardId]),
       };
     });
@@ -560,23 +512,21 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
 
   ungroup: () => {
     const { selectedIds, nodes } = get();
-    const groupIds = Array.from(selectedIds).filter(
-      (id) => nodes[id]?.kind === "group",
-    );
+    const groupIds = Array.from(selectedIds).filter(id => nodes[id]?.kind === "group");
     if (groupIds.length === 0) return;
 
     get().pushHistory();
 
-    set((s) => {
+    set(s => {
       const newNodes: Record<string, MoodboardNode> = { ...s.nodes };
       const newRootOrder = [...s.rootOrder];
       const releasedChildIds: string[] = [];
 
-      groupIds.forEach((gid) => {
+      groupIds.forEach(gid => {
         const g = newNodes[gid];
         if (!g || g.kind !== "group") return;
         // Rebase children back to stage-local using group's transform.
-        g.childIds.forEach((cid) => {
+        g.childIds.forEach(cid => {
           const child = newNodes[cid];
           if (!child) return;
           const local = { x: child.x, y: child.y };
@@ -596,7 +546,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
         if (idx >= 0) newRootOrder.splice(idx, 1);
       });
 
-      releasedChildIds.forEach((cid) => newRootOrder.push(cid));
+      releasedChildIds.forEach(cid => newRootOrder.push(cid));
 
       return {
         nodes: newNodes,
@@ -606,16 +556,11 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
     });
   },
 
-  setMarquee: (r) =>
-    set((s) => ({ transient: { ...s.transient, marquee: r } })),
-  setLassoPath: (p) =>
-    set((s) => ({ transient: { ...s.transient, lassoPath: p } })),
-  setEditingText: (id) =>
-    set((s) => ({ transient: { ...s.transient, editingTextId: id } })),
-  setIsPanning: (v) =>
-    set((s) => ({ transient: { ...s.transient, isPanning: v } })),
-  setDragPreview: (p) =>
-    set((s) => ({ transient: { ...s.transient, dragPreview: p } })),
+  setMarquee: r => set(s => ({ transient: { ...s.transient, marquee: r } })),
+  setLassoPath: p => set(s => ({ transient: { ...s.transient, lassoPath: p } })),
+  setEditingText: id => set(s => ({ transient: { ...s.transient, editingTextId: id } })),
+  setIsPanning: v => set(s => ({ transient: { ...s.transient, isPanning: v } })),
+  setDragPreview: p => set(s => ({ transient: { ...s.transient, dragPreview: p } })),
 
   snapshot: () => {
     const { nodes, rootOrder, selectedIds } = get();
@@ -626,7 +571,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
     };
   },
 
-  applySnapshot: (snap) => {
+  applySnapshot: snap => {
     set({
       nodes: structuredClone(snap.nodes),
       rootOrder: [...snap.rootOrder],
@@ -673,13 +618,10 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
 
 // ---------- helpers ----------
 
-const stripAncestorsAndDescendants = (
-  nodes: Record<string, MoodboardNode>,
-  ids: Set<string>,
-): Set<string> => {
+const stripAncestorsAndDescendants = (nodes: Record<string, MoodboardNode>, ids: Set<string>): Set<string> => {
   const result = new Set(ids);
   // Drop any node whose ancestor (parent chain up to root) is in the set.
-  ids.forEach((id) => {
+  ids.forEach(id => {
     let cur = nodes[id];
     while (cur && cur.parentId) {
       if (result.has(cur.parentId)) {
@@ -690,7 +632,7 @@ const stripAncestorsAndDescendants = (
     }
   });
   // Drop any descendant whose ancestor container (group or card) is in the set.
-  ids.forEach((id) => {
+  ids.forEach(id => {
     const n = nodes[id];
     if (n && (n.kind === "group" || n.kind === "card")) {
       const stack = [...n.childIds];

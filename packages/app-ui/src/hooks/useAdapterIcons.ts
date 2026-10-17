@@ -14,7 +14,7 @@ export function useAdapterIcons() {
   const getIcon = useCallback(
     (adapterId: string): string | null => {
       if (!adapters) return null;
-      return adapters.find((a) => a.id === adapterId)?.icon_svg ?? null;
+      return adapters.find(a => a.id === adapterId)?.icon_svg ?? null;
     },
     [adapters],
   );

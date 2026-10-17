@@ -3,31 +3,12 @@ import { readFile } from "node:fs/promises";
 import { type OptionSpec, parse, UsageError } from "../../shared/args.ts";
 import { runBot } from "./challonge/bot.ts";
 import { commandDefinitions } from "./challonge/bot-commands.ts";
-import {
-  ChallongeClient,
-  ChallongeError,
-  type PlanEntry,
-} from "./challonge/client.ts";
-import {
-  authOf,
-  type ChallongeConfig,
-  loadConfig,
-} from "./challonge/config.ts";
-import {
-  assertWebhookUrl,
-  DiscordError,
-  DiscordRest,
-  redactWebhook,
-} from "./challonge/discord.ts";
+import { ChallongeClient, ChallongeError, type PlanEntry } from "./challonge/client.ts";
+import { authOf, type ChallongeConfig, loadConfig } from "./challonge/config.ts";
+import { assertWebhookUrl, DiscordError, DiscordRest, redactWebhook } from "./challonge/discord.ts";
 import { redact } from "./challonge/http.ts";
 import { defaultIo, type Io } from "./challonge/io.ts";
-import {
-  readParticipants,
-  readSeedFile,
-  type SeedEntry,
-  seedBy,
-  shuffleSeeds,
-} from "./challonge/participants.ts";
+import { readParticipants, readSeedFile, type SeedEntry, seedBy, shuffleSeeds } from "./challonge/participants.ts";
 import { defaultStatePath, StateStore } from "./challonge/state.ts";
 import {
   bracketUrl,
@@ -182,8 +163,7 @@ async function prepare<S extends OptionSpec>(
   let tournamentId = "";
   let community = common.community ?? config.communityId;
   if (options.tournament) {
-    if (common.tournament)
-      tournamentId = tournamentFromInput(common.tournament);
+    if (common.tournament) tournamentId = tournamentFromInput(common.tournament);
     else {
       const last = (await store.read()).lastTournament;
       if (last) {
@@ -205,11 +185,9 @@ async function prepare<S extends OptionSpec>(
     random: io.random,
     community,
     dryRun,
-    onPlan: (entry) => plan.push(entry),
+    onPlan: entry => plan.push(entry),
     onRetry: ({ status, attempt, waitMs }) =>
-      io.err(
-        `Challonge ${status} : nouvelle tentative ${attempt} dans ${Math.round(waitMs / 100) / 10} s…`,
-      ),
+      io.err(`Challonge ${status} : nouvelle tentative ${attempt} dans ${Math.round(waitMs / 100) / 10} s…`),
   });
   return {
     values,
@@ -236,8 +214,7 @@ function printPlan(run: Run): void {
   for (const entry of run.plan) {
     run.io.out(`  ${entry.method} ${entry.url}`);
     if (entry.body !== undefined) {
-      for (const line of JSON.stringify(entry.body, null, 2).split("\n"))
-        run.io.out(`    ${line}`);
+      for (const line of JSON.stringify(entry.body, null, 2).split("\n")) run.io.out(`    ${line}`);
     }
   }
 }
@@ -249,8 +226,7 @@ function summary(run: Run): string {
 function num(value: string | undefined, flag: string): number | undefined {
   if (value === undefined) return undefined;
   const n = Number(value);
-  if (!Number.isInteger(n))
-    throw new UsageError(`${flag} attend un entier (reçu « ${value} »).`);
+  if (!Number.isInteger(n)) throw new UsageError(`${flag} attend un entier (reçu « ${value} »).`);
   return n;
 }
 
@@ -284,32 +260,23 @@ async function seedEntries(
   values: { participants?: string; shuffle?: boolean; "seed-by"?: string },
   io: Io,
 ): Promise<SeedEntry[]> {
-  if (values.shuffle && values["seed-by"])
-    throw new UsageError("--shuffle et --seed-by s'excluent mutuellement.");
-  let names = values.participants
-    ? await readParticipants(values.participants)
-    : [];
+  if (values.shuffle && values["seed-by"]) throw new UsageError("--shuffle et --seed-by s'excluent mutuellement.");
+  let names = values.participants ? await readParticipants(values.participants) : [];
   if (values["seed-by"]) {
     let text: string;
     try {
       text = await readFile(values["seed-by"], "utf8");
     } catch (error) {
-      throw new UsageError(
-        `Impossible de lire le fichier --seed-by : ${(error as Error).message}`,
-      );
+      throw new UsageError(`Impossible de lire le fichier --seed-by : ${(error as Error).message}`);
     }
     const ranking = readSeedFile(text);
     if (!names.length) names = ranking;
     const { entries, unknown } = seedBy(names, ranking);
     if (unknown.length)
-      io.err(
-        `Attention : ${unknown.length} nom(s) du fichier --seed-by absent(s) de la liste : ${unknown.join(", ")}`,
-      );
+      io.err(`Attention : ${unknown.length} nom(s) du fichier --seed-by absent(s) de la liste : ${unknown.join(", ")}`);
     return entries;
   }
-  return values.shuffle
-    ? shuffleSeeds(names, io.random)
-    : names.map((name) => ({ name }));
+  return values.shuffle ? shuffleSeeds(names, io.random) : names.map(name => ({ name }));
 }
 
 async function announce(
@@ -325,11 +292,7 @@ async function announce(
       {
         title: result.tournament.name,
         url: result.tournament.bracketUrl,
-        description: [
-          `Format : ${type}`,
-          game ? `Jeu : ${game}` : undefined,
-          `Participants : ${result.participants}`,
-        ]
+        description: [`Format : ${type}`, game ? `Jeu : ${game}` : undefined, `Participants : ${result.participants}`]
           .filter(Boolean)
           .join("\n"),
         color: 0xf26e22,
@@ -339,8 +302,7 @@ async function announce(
   };
   if (run.dryRun) {
     run.io.out(`  POST ${redactWebhook(assertWebhookUrl(webhook))}`);
-    for (const line of JSON.stringify(message, null, 2).split("\n"))
-      run.io.out(`    ${line}`);
+    for (const line of JSON.stringify(message, null, 2).split("\n")) run.io.out(`    ${line}`);
     return;
   }
   const rest = new DiscordRest({
@@ -353,9 +315,7 @@ async function announce(
     run.io.out("Annonce Discord envoyée.");
   } catch (error) {
     // Le tournoi existe déjà : un échec d'annonce n'annule rien, on prévient seulement.
-    run.io.err(
-      `Attention : annonce Discord non envoyée (${redact((error as Error).message, [webhook])}).`,
-    );
+    run.io.err(`Attention : annonce Discord non envoyée (${redact((error as Error).message, [webhook])}).`);
   }
 }
 
@@ -371,11 +331,7 @@ async function create(io: Io, argv: string[]): Promise<number> {
   const webhook = values.announce ?? run.config.announceWebhook;
   if (webhook) assertWebhookUrl(webhook);
   const grandFinals = values["grand-finals"];
-  if (
-    grandFinals !== undefined &&
-    grandFinals !== "skip" &&
-    grandFinals !== "single"
-  ) {
+  if (grandFinals !== undefined && grandFinals !== "skip" && grandFinals !== "single") {
     throw new UsageError("--grand-finals attend « skip » ou « single ».");
   }
   const result = await createTournamentFlow(
@@ -393,12 +349,7 @@ async function create(io: Io, argv: string[]): Promise<number> {
       checkInMinutes: num(values.checkin, "--checkin"),
       swissRounds: num(values["swiss-rounds"], "--swiss-rounds"),
       thirdPlace: values["third-place"],
-      grandFinals:
-        grandFinals === undefined
-          ? undefined
-          : grandFinals === "skip"
-            ? "skip"
-            : "single match",
+      grandFinals: grandFinals === undefined ? undefined : grandFinals === "skip" ? "skip" : "single match",
       groupStage: values["group-stage"]
         ? {
             size: num(values["group-size"], "--group-size"),
@@ -416,7 +367,7 @@ async function create(io: Io, argv: string[]): Promise<number> {
     run.io.out("Aucune requête envoyée.");
     return 0;
   }
-  await run.store.update((state) => {
+  await run.store.update(state => {
     state.lastTournament = result.tournament;
   });
   if (run.json) {
@@ -434,15 +385,11 @@ async function create(io: Io, argv: string[]): Promise<number> {
       ),
     );
   } else {
-    run.io.out(
-      `Tournoi créé : ${result.tournament.name ?? values.name} (${TYPE_LABEL[type]})`,
-    );
+    run.io.out(`Tournoi créé : ${result.tournament.name ?? values.name} (${TYPE_LABEL[type]})`);
     run.io.out(`  id           : ${result.tournament.id}`);
     run.io.out(`  état         : ${result.state ?? "inconnu"}`);
     run.io.out(`  bracket      : ${result.tournament.bracketUrl}`);
-    run.io.out(
-      `  participants : ${result.participants}${result.started ? " (tournoi lancé)" : ""}`,
-    );
+    run.io.out(`  participants : ${result.participants}${result.started ? " (tournoi lancé)" : ""}`);
     run.io.out(summary(run));
   }
   if (webhook) await announce(run, webhook, result, game, TYPE_LABEL[type]);
@@ -460,27 +407,17 @@ async function add(io: Io, argv: string[]): Promise<number> {
   );
   if (!run) return help(io, "add");
   const source = values.participants ?? positionals.join(",");
-  if (!source)
-    throw new UsageError(
-      'Indiquez des noms (add Alice Bob) ou --participants <fichier|"a,b,c">.',
-    );
+  if (!source) throw new UsageError('Indiquez des noms (add Alice Bob) ou --participants <fichier|"a,b,c">.');
   const names = await readParticipants(source);
   await addParticipants(
     run.client,
     run.tournamentId,
-    names.map((name) => ({ name })),
+    names.map(name => ({ name })),
   );
-  return finish(
-    run,
-    `${names.length} participant(s) ajouté(s) au tournoi ${run.tournamentId}.`,
-  );
+  return finish(run, `${names.length} participant(s) ajouté(s) au tournoi ${run.tournamentId}.`);
 }
 
-async function stateCommand(
-  io: Io,
-  argv: string[],
-  name: "start" | "finalize",
-): Promise<number> {
+async function stateCommand(io: Io, argv: string[], name: "start" | "finalize"): Promise<number> {
   const { run, values } = await prepare(
     io,
     argv,
@@ -491,37 +428,25 @@ async function stateCommand(
     { tournament: true },
   );
   if (!run) return help(io, name);
-  if (values.shuffle && name !== "start")
-    throw new UsageError("--shuffle ne s'applique qu'à start.");
+  if (values.shuffle && name !== "start") throw new UsageError("--shuffle ne s'applique qu'à start.");
   if (values.shuffle) await run.client.randomizeParticipants(run.tournamentId);
   const target = stateFor(name, !!values["group-stage"]);
   const tournament = await run.client.changeState(run.tournamentId, target);
   const state = tournament?.attributes?.state;
-  return finish(
-    run,
-    `Tournoi ${run.tournamentId} : « ${target} » effectué${state ? ` (état : ${state})` : ""}.`,
-  );
+  return finish(run, `Tournoi ${run.tournamentId} : « ${target} » effectué${state ? ` (état : ${state})` : ""}.`);
 }
 
 async function randomize(io: Io, argv: string[]): Promise<number> {
   const { run } = await prepare(io, argv, withCommon({}), { tournament: true });
   if (!run) return help(io, "randomize");
   await run.client.randomizeParticipants(run.tournamentId);
-  return finish(
-    run,
-    `Têtes de série tirées au sort pour le tournoi ${run.tournamentId}.`,
-  );
+  return finish(run, `Têtes de série tirées au sort pour le tournoi ${run.tournamentId}.`);
 }
 
 async function checkin(io: Io, argv: string[]): Promise<number> {
-  const { run, values } = await prepare(
-    io,
-    argv,
-    withCommon({ abort: { type: "boolean" } }),
-    {
-      tournament: true,
-    },
-  );
+  const { run, values } = await prepare(io, argv, withCommon({ abort: { type: "boolean" } }), {
+    tournament: true,
+  });
   if (!run) return help(io, "checkin");
   const target = values.abort ? "abort_checkin" : "process_checkin";
   await run.client.changeState(run.tournamentId, target);
@@ -535,9 +460,7 @@ function finish(run: Run, message: string): number {
     return 0;
   }
   run.io.out(
-    run.json
-      ? JSON.stringify({ ok: true, message, requests: run.client.requestCount })
-      : `${message}\n${summary(run)}`,
+    run.json ? JSON.stringify({ ok: true, message, requests: run.client.requestCount }) : `${message}\n${summary(run)}`,
   );
   return 0;
 }
@@ -557,8 +480,7 @@ async function report(io: Io, argv: string[]): Promise<number> {
   );
   if (!run) return help(io, "report");
   const [match, score, ...rest] = positionals;
-  if (!match || !score || rest.length)
-    throw new UsageError("Usage : report <match> <score> (ex. report A 2-1).");
+  if (!match || !score || rest.length) throw new UsageError("Usage : report <match> <score> (ex. report A 2-1).");
   const result = await reportMatch(run.client, run.tournamentId, match, score, {
     winner: values.winner,
     tie: values.tie,
@@ -570,11 +492,7 @@ async function report(io: Io, argv: string[]): Promise<number> {
     return 0;
   }
   const sets = result.score.sets.map(([a, b]) => `${a}-${b}`).join(", ");
-  const outcome = result.tie
-    ? "match nul"
-    : result.winnerId
-      ? `gagnant : participant ${result.winnerId}`
-      : "";
+  const outcome = result.tie ? "match nul" : result.winnerId ? `gagnant : participant ${result.winnerId}` : "";
   if (run.json)
     run.io.out(
       JSON.stringify({
@@ -594,30 +512,18 @@ async function report(io: Io, argv: string[]): Promise<number> {
 }
 
 async function matches(io: Io, argv: string[]): Promise<number> {
-  const { run, values } = await prepare(
-    io,
-    argv,
-    withCommon({ state: { type: "string" } }),
-    {
-      tournament: true,
-    },
-  );
+  const { run, values } = await prepare(io, argv, withCommon({ state: { type: "string" } }), {
+    tournament: true,
+  });
   if (!run) return help(io, "matches");
   const state = values.state;
   if (state !== undefined && !["open", "pending", "complete"].includes(state))
     throw new UsageError("--state attend open, pending ou complete.");
-  const found = await run.client.listMatches(
-    run.tournamentId,
-    state as "open" | "pending" | "complete" | undefined,
-  );
-  const participants = run.dryRun
-    ? []
-    : await run.client.listParticipants(run.tournamentId);
+  const found = await run.client.listMatches(run.tournamentId, state as "open" | "pending" | "complete" | undefined);
+  const participants = run.dryRun ? [] : await run.client.listParticipants(run.tournamentId);
   if (run.dryRun) return finish(run, "");
-  const names = new Map(
-    participants.map((p) => [String(p.id), p.attributes.name ?? String(p.id)]),
-  );
-  const rows = found.map((m) => {
+  const names = new Map(participants.map(p => [String(p.id), p.attributes.name ?? String(p.id)]));
+  const rows = found.map(m => {
     const { player1, player2 } = matchPlayers(m);
     return {
       id: m.id,
@@ -654,10 +560,7 @@ async function list(io: Io, argv: string[]): Promise<number> {
     { tournament: false },
   );
   if (!run) return help(io, "list");
-  if (
-    values.state !== undefined &&
-    !["pending", "in_progress", "ended"].includes(values.state)
-  ) {
+  if (values.state !== undefined && !["pending", "in_progress", "ended"].includes(values.state)) {
     throw new UsageError("--state attend pending, in_progress ou ended.");
   }
   const type = values.type ? normalizeType(values.type) : undefined;
@@ -667,7 +570,7 @@ async function list(io: Io, argv: string[]): Promise<number> {
     page: num(values.page, "--page"),
   });
   if (run.dryRun) return finish(run, "");
-  const rows = tournaments.map((t) => ({
+  const rows = tournaments.map(t => ({
     id: t.id,
     url: t.attributes.url,
     name: t.attributes.name,
@@ -707,9 +610,7 @@ async function show(io: Io, argv: string[]): Promise<number> {
       ),
     );
   } else {
-    run.io.out(
-      `${tournament.attributes.name ?? run.tournamentId} — ${tournament.attributes.state ?? "état inconnu"}`,
-    );
+    run.io.out(`${tournament.attributes.name ?? run.tournamentId} — ${tournament.attributes.state ?? "état inconnu"}`);
     run.io.out(link);
   }
   return 0;
@@ -742,13 +643,9 @@ async function bot(io: Io, argv: string[]): Promise<number> {
     process.once("SIGTERM", stop);
   }
   try {
-    return await runBot(
-      { ...io, signal: io.signal ?? controller.signal },
-      config,
-      {
-        register: !values["no-register"],
-      },
-    );
+    return await runBot({ ...io, signal: io.signal ?? controller.signal }, config, {
+      register: !values["no-register"],
+    });
   } finally {
     if (real) {
       process.off("SIGINT", stop);
@@ -764,13 +661,9 @@ function help(io: Io, topic?: string): number {
   return 0;
 }
 
-export async function runChallonge(
-  argv: string[],
-  io: Io = defaultIo(),
-): Promise<number> {
+export async function runChallonge(argv: string[], io: Io = defaultIo()): Promise<number> {
   const [sub, ...rest] = argv;
-  if (!sub || sub === "--help" || sub === "-h" || sub === "help")
-    return help(io);
+  if (!sub || sub === "--help" || sub === "-h" || sub === "help") return help(io);
   try {
     switch (sub) {
       case "create":
@@ -810,7 +703,7 @@ export async function runChallonge(
 const command: Command = {
   name: "challonge",
   summary: "Créer et lancer un tournoi Challonge (CLI + bot Discord)",
-  run: (argv) => runChallonge(argv),
+  run: argv => runChallonge(argv),
 };
 
 export default command;

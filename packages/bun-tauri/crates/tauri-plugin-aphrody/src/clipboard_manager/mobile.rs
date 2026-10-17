@@ -39,7 +39,10 @@ impl<R: Runtime> Clipboard<R> {
     /// # Errors
     ///
     /// Returns [`crate::clipboard_manager::Error::PluginInvoke`] if the underlying mobile plugin call fails.
-    pub fn write_text<'a, T: Into<Cow<'a, str>>>(&self, text: T) -> crate::clipboard_manager::Result<()> {
+    pub fn write_text<'a, T: Into<Cow<'a, str>>>(
+        &self,
+        text: T,
+    ) -> crate::clipboard_manager::Result<()> {
         let text = text.into().to_string();
         self.0
             .run_mobile_plugin("writeText", ClipKind::PlainText { text, label: None })

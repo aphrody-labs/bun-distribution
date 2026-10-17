@@ -1,23 +1,11 @@
 import { Checkbox } from "@storyteller/ui-checkbox";
 import { Modal } from "@storyteller/ui-modal";
-import {
-  ArrowUpFromLineIcon,
-  FootprintsIcon,
-  LayersIcon,
-  SearchIcon,
-} from "lucide-react";
+import { ArrowUpFromLineIcon, FootprintsIcon, LayersIcon, SearchIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { Input } from "@storyteller/ui-input";
-import React, {
-  ChangeEvent,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { ChangeEvent, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { twMerge } from "tailwind-merge";
 
@@ -55,7 +43,7 @@ export const AnimationsModal = () => {
     setAnimationsModalVisible,
     setReopenAfterDrag,
   } = usePageSceneStore(
-    useShallow((s) => ({
+    useShallow(s => ({
       animationsModalVisible: s.animationsModalVisible,
       assetDraggingUnder: s.assetDraggingUnder,
       reopenAfterDrag: s.reopenAfterDrag,
@@ -151,15 +139,13 @@ export const AnimationsModal = () => {
     [allAnimations, defaultAnimations, userAnimations],
   );
 
-  const currentTab = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
+  const currentTab = tabs.find(tab => tab.id === activeTab) ?? tabs[0];
 
   const displayedItems = useMemo(() => {
     if (!searchTerm) return currentTab.items;
     const searchLower = searchTerm.toLowerCase();
     return currentTab.items.filter(
-      (item) =>
-        item.name?.toLowerCase().includes(searchLower) ||
-        item.description?.toLowerCase().includes(searchLower),
+      item => item.name?.toLowerCase().includes(searchLower) || item.description?.toLowerCase().includes(searchLower),
     );
   }, [currentTab.items, searchTerm]);
 
@@ -171,23 +157,12 @@ export const AnimationsModal = () => {
   const clearSearch = () => setSearchTerm("");
 
   const renderContent = () => {
-    if (
-      activeTab === "uploaded" &&
-      userAnimations.length === 0 &&
-      !isFetching
-    ) {
+    if (activeTab === "uploaded" && userAnimations.length === 0 && !isFetching) {
       return (
         <div className="flex h-full flex-col items-center justify-center gap-1 text-center">
           <p className="text-sm text-white/70">No uploaded animations yet.</p>
-          <p className="text-xs text-white/40">
-            Upload a Mixamo GLB or FBX to add your own clips.
-          </p>
-          <Button
-            variant="primary"
-            icon={ArrowUpFromLineIcon}
-            className="mt-3"
-            onClick={handleOpenUpload}
-          >
+          <p className="text-xs text-white/40">Upload a Mixamo GLB or FBX to add your own clips.</p>
+          <Button variant="primary" icon={ArrowUpFromLineIcon} className="mt-3" onClick={handleOpenUpload}>
             Upload animation
           </Button>
         </div>
@@ -201,12 +176,8 @@ export const AnimationsModal = () => {
         items={displayedItems}
         busy={isFetching}
         debug={`animations-modal-${currentTab.id}`}
-        hasMore={
-          currentTab.id === "uploaded" ? hasMoreUserAnimations : undefined
-        }
-        onLoadMore={
-          currentTab.id === "uploaded" ? loadMoreUserAnimations : undefined
-        }
+        hasMore={currentTab.id === "uploaded" ? hasMoreUserAnimations : undefined}
+        onLoadMore={currentTab.id === "uploaded" ? loadMoreUserAnimations : undefined}
       />
     );
   };
@@ -236,20 +207,17 @@ export const AnimationsModal = () => {
         <div className="grid h-full grid-cols-12 gap-3">
           <div className="relative col-span-3 flex h-full flex-col p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-gray-200 after:bg-white/10">
             <div className="flex h-10 items-center justify-between gap-2.5">
-              <h2 className="font-display text-lg tracking-tight text-white">
-                Animations
-              </h2>
+              <h2 className="font-display text-lg tracking-tight text-white">Animations</h2>
             </div>
             <hr className="my-2 w-full border-white/10" />
             <div className="flex h-full flex-col space-y-2">
-              {tabs.map((tab) => (
+              {tabs.map(tab => (
                 <Button
                   key={tab.id}
                   variant={activeTab === tab.id ? "primary" : "secondary"}
                   className={twMerge(
                     "w-full justify-start rounded-[3px] border border-transparent bg-transparent px-3.5 py-2.5 text-left hover:bg-white/15",
-                    activeTab === tab.id &&
-                      "border-white/15 bg-white/10 text-white hover:bg-white/10",
+                    activeTab === tab.id && "border-white/15 bg-white/10 text-white hover:bg-white/10",
                   )}
                   onClick={() => setActiveTab(tab.id)}
                 >
@@ -288,9 +256,7 @@ export const AnimationsModal = () => {
                       inputClassName="bg-white/5 pr-10 placeholder-white/40"
                       icon={SearchIcon}
                       value={searchTerm}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        setSearchTerm(e.target.value)
-                      }
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                       iconClassName="pointer-events-none left-3 top-1/2 h-4 w-4 -translate-y-1/2 p-0 text-white/50"
                     />
                     {searchTerm && (
@@ -300,14 +266,9 @@ export const AnimationsModal = () => {
                       />
                     )}
                   </div>
-                  <CloseButton
-                    onClick={handleClose}
-                    className="relative z-[51]"
-                  />
+                  <CloseButton onClick={handleClose} className="relative z-[51]" />
                 </div>
-                <div className="overflow-auto-y mt-4 h-[574px]">
-                  {renderContent()}
-                </div>
+                <div className="overflow-auto-y mt-4 h-[574px]">{renderContent()}</div>
               </div>
             </div>
           </div>

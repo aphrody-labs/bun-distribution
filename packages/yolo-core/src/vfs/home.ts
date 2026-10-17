@@ -8,8 +8,7 @@ import { dirname, join, resolve } from "node:path";
 /** Replaced at compile time (`--define YOLO_VERSION='"x.y.z"'`). */
 declare const YOLO_VERSION: string | undefined;
 
-const embedded = (path: string): boolean =>
-  path.includes("$bunfs") || path.includes("~BUN");
+const embedded = (path: string): boolean => path.includes("$bunfs") || path.includes("~BUN");
 
 /**
  * True inside the standalone executable. A `--bytecode` build reports the build-time source path as `import.meta.dir`,
@@ -26,10 +25,7 @@ export function findRepoRoot(start: string = process.cwd()): string {
 
   let dir = resolve(start);
   for (;;) {
-    if (
-      existsSync(join(dir, "vendor.toml")) &&
-      existsSync(join(dir, "package.json"))
-    ) {
+    if (existsSync(join(dir, "vendor.toml")) && existsSync(join(dir, "package.json"))) {
       return dir;
     }
     const parent = dirname(dir);
@@ -39,10 +35,7 @@ export function findRepoRoot(start: string = process.cwd()): string {
 
   let metaDir = resolve(import.meta.dir);
   for (;;) {
-    if (
-      existsSync(join(metaDir, "vendor.toml")) &&
-      existsSync(join(metaDir, "package.json"))
-    ) {
+    if (existsSync(join(metaDir, "vendor.toml")) && existsSync(join(metaDir, "package.json"))) {
       return metaDir;
     }
     const parent = dirname(metaDir);
@@ -58,8 +51,7 @@ export function yoloHome(): string {
 }
 
 export function yoloVersion(): string {
-  if (typeof YOLO_VERSION !== "undefined" && YOLO_VERSION !== "")
-    return YOLO_VERSION;
+  if (typeof YOLO_VERSION !== "undefined" && YOLO_VERSION !== "") return YOLO_VERSION;
   const file = join(yoloHome(), "VERSION");
   return existsSync(file) ? readFileSync(file, "utf8").trim() : "0.0.0-dev";
 }
@@ -71,10 +63,7 @@ export function yoloVersion(): string {
 export function findCheckout(start: string = process.cwd()): string | null {
   let dir = resolve(start);
   for (;;) {
-    if (
-      existsSync(join(dir, "vendor.toml")) &&
-      existsSync(join(dir, "packages/engine/yolo/src/index.ts"))
-    ) {
+    if (existsSync(join(dir, "vendor.toml")) && existsSync(join(dir, "packages/engine/yolo/src/index.ts"))) {
       return dir;
     }
     const parent = dirname(dir);

@@ -77,19 +77,7 @@ export function classifyAttachment(pathOrUrl: string): {
   }
 
   const ext = trimmed.split(".").pop()?.toLowerCase() || "";
-  if (
-    [
-      "png",
-      "jpg",
-      "jpeg",
-      "webp",
-      "gif",
-      "bmp",
-      "svg",
-      "avif",
-      "heic",
-    ].includes(ext)
-  ) {
+  if (["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg", "avif", "heic"].includes(ext)) {
     return { kind: "image", extension: ext, isUrl: false };
   }
   if (AUDIO_VIDEO_EXTENSIONS.has(ext)) {
@@ -102,10 +90,7 @@ export function classifyAttachment(pathOrUrl: string): {
  * Transforms user text and raw attachment paths/URLs into typed turn input items
  * compatible with the broker, local models (vision / audio / files), and JSON-RPC app-server.
  */
-export function buildTurnInputItems(
-  text: string,
-  attachments: string[] = [],
-): TurnInputItem[] {
+export function buildTurnInputItems(text: string, attachments: string[] = []): TurnInputItem[] {
   const items: TurnInputItem[] = [];
 
   if (text.trim()) {
@@ -148,9 +133,7 @@ export function buildAskAphrodyPrompt(targets: File[]): {
   parentDir?: string;
   targetPaths: string[];
 } {
-  const targetPaths = targets
-    .map((f) => getFilePhysicalPath(f) || f.name)
-    .filter(Boolean);
+  const targetPaths = targets.map(f => getFilePhysicalPath(f) || f.name).filter(Boolean);
 
   let prompt = "";
   let parentDir: string | undefined;
@@ -167,13 +150,10 @@ export function buildAskAphrodyPrompt(targets: File[]): {
       if (lastSlash > 0) parentDir = path.slice(0, lastSlash);
     }
   } else {
-    prompt = `À propos des fichiers sélectionnés :\n${targetPaths.map((p) => `- ${p}`).join("\n")}\n\n`;
+    prompt = `À propos des fichiers sélectionnés :\n${targetPaths.map(p => `- ${p}`).join("\n")}\n\n`;
     if (targetPaths.length > 0) {
       const first = targetPaths[0];
-      const lastSlash = Math.max(
-        first.lastIndexOf("/"),
-        first.lastIndexOf("\\"),
-      );
+      const lastSlash = Math.max(first.lastIndexOf("/"), first.lastIndexOf("\\"));
       if (lastSlash > 0) parentDir = first.slice(0, lastSlash);
     }
   }

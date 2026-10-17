@@ -6,22 +6,12 @@ import { X } from "lucide-react";
 import { cn } from "../../utils/ui";
 import { useOverlayOpenChange } from "./use-overlay-open-change";
 
-function Dialog({
-  open,
-  onOpenChange,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) {
+function Dialog({ open, onOpenChange, ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   const handleOpenChange = useOverlayOpenChange({
     open,
     onOpenChange,
   });
-  return (
-    <DialogPrimitive.Root
-      open={open}
-      onOpenChange={handleOpenChange}
-      {...props}
-    />
-  );
+  return <DialogPrimitive.Root open={open} onOpenChange={handleOpenChange} {...props} />;
 }
 
 const DialogTrigger = DialogPrimitive.Trigger;
@@ -36,10 +26,7 @@ const DialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
-    className={cn(
-      "fixed inset-0 z-250 backdrop-blur-sm bg-black/10",
-      className,
-    )}
+    className={cn("fixed inset-0 z-250 backdrop-blur-sm bg-black/10", className)}
     {...props}
   />
 ));
@@ -57,7 +44,7 @@ const DialogContent = React.forwardRef<
         "bg-popover fixed top-[50%] left-[50%] z-250 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-lg border border-ui-panel-border shadow-lg duration-200",
         className,
       )}
-      onCloseAutoFocus={(e) => {
+      onCloseAutoFocus={e => {
         e.stopPropagation();
         e.preventDefault();
       }}
@@ -73,32 +60,17 @@ const DialogContent = React.forwardRef<
 ));
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-const DialogHeader = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col space-y-2 text-left border-b border-ui-panel-border p-6",
-      className,
-    )}
-    {...props}
-  />
+const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn("flex flex-col space-y-2 text-left border-b border-ui-panel-border p-6", className)} {...props} />
 );
 DialogHeader.displayName = "DialogHeader";
 
-const DialogBody = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+const DialogBody = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={cn("p-6 flex flex-col gap-4", className)} {...props} />
 );
 DialogBody.displayName = "DialogBody";
 
-const DialogFooter = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
       "flex gap-3 flex-col-reverse sm:flex-row sm:justify-end p-6 py-5 border-t border-ui-panel-border",
@@ -115,10 +87,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn(
-      "text-lg leading-none font-semibold tracking-tight",
-      className,
-    )}
+    className={cn("text-lg leading-none font-semibold tracking-tight", className)}
     {...props}
   />
 ));
@@ -128,11 +97,7 @@ const DialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Description
-    ref={ref}
-    className={cn("text-muted-foreground text-sm", className)}
-    {...props}
-  />
+  <DialogPrimitive.Description ref={ref} className={cn("text-muted-foreground text-sm", className)} {...props} />
 ));
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 

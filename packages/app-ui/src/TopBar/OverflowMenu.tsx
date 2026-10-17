@@ -24,7 +24,7 @@ export function OverflowButton({ items }: OverflowButtonProps) {
           sideOffset={8}
           align="start"
         >
-          {items.map((item) => {
+          {items.map(item => {
             const isSimpleAction = !!item.onClick;
 
             if (isSimpleAction) {
@@ -43,9 +43,7 @@ export function OverflowButton({ items }: OverflowButtonProps) {
               <DropdownMenu.Sub key={item.id}>
                 <DropdownMenu.SubTrigger className="px-3 py-2 text-body-medium text-on-surface hover:bg-on-surface/4 transition-colors flex items-center justify-between outline-none cursor-pointer">
                   <span>{item.label}</span>
-                  <span className="text-on-surface-variant text-body-small">
-                    ▶
-                  </span>
+                  <span className="text-on-surface-variant text-body-small">▶</span>
                 </DropdownMenu.SubTrigger>
                 <DropdownMenu.Portal>
                   <DropdownMenu.SubContent className="z-50" sideOffset={8}>

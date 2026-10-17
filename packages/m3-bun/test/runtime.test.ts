@@ -28,10 +28,7 @@ describe("runtimeSdkPath", () => {
     writeFileSync(entry, "export const Runtime = {};\n");
     expect(runtimeSdkPath(root)).toBe(entry);
     const sdk = runtimeSdkPath();
-    if (sdk)
-      expect(sdk.endsWith("index.ts") || sdk.endsWith("runtime-sdk.ts")).toBe(
-        true,
-      );
+    if (sdk) expect(sdk.endsWith("index.ts") || sdk.endsWith("runtime-sdk.ts")).toBe(true);
   });
 });
 
@@ -47,16 +44,12 @@ describe("launch", () => {
       expect(["buv-runtime", "bun-spawn"]).toContain(child.via);
       expect(child.readyStatus).toBe(200);
       expect(child.pid).toBeGreaterThan(0);
-      expect((await fetch(`http://127.0.0.1:${port}/healthz`)).status).toBe(
-        200,
-      );
+      expect((await fetch(`http://127.0.0.1:${port}/healthz`)).status).toBe(200);
     } finally {
       const stopped = await child.stop();
       expect(stopped).toHaveProperty("exitCode");
     }
-    await expect(
-      fetch(`http://127.0.0.1:${port}/healthz`),
-    ).rejects.toBeDefined();
+    await expect(fetch(`http://127.0.0.1:${port}/healthz`)).rejects.toBeDefined();
   }, 30_000);
 
   test("a process that never listens fails within the timeout and does not linger", async () => {
@@ -78,36 +71,23 @@ describe("smoke", () => {
   test("GETs each path, checks status and content type, reports ok", async () => {
     const port = freePort();
     // `launch` runs the program with the given args; a tiny wrapper script makes a runnable "executable".
-    const wrapper = join(
-      tmp(),
-      process.platform === "win32" ? "run.exe" : "run.sh",
-    );
+    const wrapper = join(tmp(), process.platform === "win32" ? "run.exe" : "run.sh");
     if (process.platform === "win32") {
-      const compiled = Bun.spawnSync(
-        [
-          process.execPath,
-          "build",
-          "--compile",
-          script(),
-          "--outfile",
-          wrapper,
-        ],
-        { windowsHide: true, stdout: "pipe", stderr: "pipe" },
-      );
+      const compiled = Bun.spawnSync([process.execPath, "build", "--compile", script(), "--outfile", wrapper], {
+        windowsHide: true,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
       expect(compiled.stderr.toString()).not.toContain("error");
     } else {
-      writeFileSync(
-        wrapper,
-        `#!/bin/sh\nexec ${process.execPath} ${script()}\n`,
-        { mode: 0o755 },
-      );
+      writeFileSync(wrapper, `#!/bin/sh\nexec ${process.execPath} ${script()}\n`, { mode: 0o755 });
     }
     const report = await smoke(wrapper, port, ["/", "/healthz"], {
       "/": "text/html",
       "/healthz": "application/json",
     });
     expect(report.ok).toBe(true);
-    expect(report.checks.map((c) => [c.path, c.status])).toEqual([
+    expect(report.checks.map(c => [c.path, c.status])).toEqual([
       ["/", 200],
       ["/healthz", 200],
     ]);

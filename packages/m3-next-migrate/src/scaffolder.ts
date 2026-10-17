@@ -1,11 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import {
-  appFiles,
-  assertNativeShellOwner,
-  assertPrivateOwnerWorkspace,
-  TAURI_3,
-  writeFiles,
-} from "@aphrody/scaffold";
+import { appFiles, assertNativeShellOwner, assertPrivateOwnerWorkspace, TAURI_3, writeFiles } from "@aphrody/scaffold";
 import { generateAppRouterCode, type RouteHierarchy } from "./layout";
 
 /**
@@ -24,16 +18,8 @@ export interface ScaffoldOptions {
 }
 
 /** Writes the migrated project: the `app` template of `@aphrody/scaffold` with the migrated route tree as `src/App.tsx`. */
-export async function scaffoldTargetProject(
-  options: ScaffoldOptions,
-): Promise<void> {
-  const {
-    projectName = "migrated-app",
-    target = "tauri",
-    outDir,
-    modernizeM3 = false,
-    hierarchy,
-  } = options;
+export async function scaffoldTargetProject(options: ScaffoldOptions): Promise<void> {
+  const { projectName = "migrated-app", target = "tauri", outDir, modernizeM3 = false, hierarchy } = options;
   assertPrivateOwnerWorkspace(outDir);
   assertNativeShellOwner(target);
   const files = appFiles({
@@ -41,9 +27,7 @@ export async function scaffoldTargetProject(
     target,
     modernizeM3,
     dependencies: options.dependencies,
-    appTsx: hierarchy
-      ? generateAppRouterCode(hierarchy, { modernizeM3, target })
-      : undefined,
+    appTsx: hierarchy ? generateAppRouterCode(hierarchy, { modernizeM3, target }) : undefined,
   });
   await writeFiles(outDir, files, "empty");
 }

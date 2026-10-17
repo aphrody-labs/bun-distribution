@@ -123,8 +123,7 @@ export type ApfsVolumeInfo = {
 /**
  * APFS volume roles in the container
  */
-export type ApfsVolumeRole =
-  "System" | "Data" | "Preboot" | "Recovery" | "VM" | { Other: string };
+export type ApfsVolumeRole = "System" | "Data" | "Preboot" | "Recovery" | "VM" | { Other: string };
 
 /**
  * App configuration response with all fields exposed
@@ -963,8 +962,7 @@ export type DeviceDebugInfo = {
 /**
  * Device form factor types
  */
-export type DeviceFormFactor =
-  "Desktop" | "Laptop" | "Mobile" | "Tablet" | "Server" | "Other";
+export type DeviceFormFactor = "Desktop" | "Laptop" | "Mobile" | "Tablet" | "Server" | "Other";
 
 export type DeviceInfo = {
   id: string;
@@ -1761,8 +1759,7 @@ export type FileByPathQuery = { path: string };
 /**
  * Internal enum for file conflict resolution strategies
  */
-export type FileConflictResolution =
-  "Overwrite" | "AutoModifyName" | "Skip" | "Abort";
+export type FileConflictResolution = "Overwrite" | "AutoModifyName" | "Skip" | "Abort";
 
 /**
  * Core input structure for file copy operations
@@ -2983,16 +2980,9 @@ export type JobStatus =
 /**
  * Type of job to trigger for a location
  */
-export type JobType =
-  "thumbnail" | "thumbstrip" | "ocr" | "speech_to_text" | "object_detection";
+export type JobType = "thumbnail" | "thumbstrip" | "ocr" | "speech_to_text" | "object_detection";
 
-export type JsonValue =
-  | null
-  | boolean
-  | number
-  | string
-  | JsonValue[]
-  | { [key in string]: JsonValue };
+export type JsonValue = null | boolean | number | string | JsonValue[] | { [key in string]: JsonValue };
 
 /**
  * Latency metrics snapshot
@@ -3988,8 +3978,7 @@ export type OcrPolicy = {
 /**
  * Operating system types
  */
-export type OperatingSystem =
-  "MacOS" | "Windows" | "Linux" | "IOs" | "Android" | "Other";
+export type OperatingSystem = "MacOS" | "Windows" | "Linux" | "IOs" | "Android" | "Other";
 
 /**
  * Operation metrics snapshot
@@ -4754,17 +4743,9 @@ export type Sidecar = {
  * - Already used in Spacedrive (job serialization)
  * - Enables sub-30ms semantic search on 1M+ files
  */
-export type SidecarFormat =
-  "webp" | "mp_4" | "json" | "message_pack" | "text" | "ply";
+export type SidecarFormat = "webp" | "mp_4" | "json" | "message_pack" | "text" | "ply";
 
-export type SidecarKind =
-  | "thumb"
-  | "thumbstrip"
-  | "proxy"
-  | "embeddings"
-  | "ocr"
-  | "transcript"
-  | "gaussian_splat";
+export type SidecarKind = "thumb" | "thumbstrip" | "proxy" | "embeddings" | "ocr" | "transcript" | "gaussian_splat";
 
 export type SidecarVariant = string;
 
@@ -4781,8 +4762,7 @@ export type SortDirection = "Asc" | "Desc";
 /**
  * Fields that can be used for sorting
  */
-export type SortField =
-  "Relevance" | "Name" | "Size" | "ModifiedAt" | "CreatedAt" | "IndexedAt";
+export type SortField = "Relevance" | "Name" | "Size" | "ModifiedAt" | "CreatedAt" | "IndexedAt";
 
 /**
  * Sorting options for search results
@@ -6213,8 +6193,7 @@ export type VouchState = {
   reason: string | null;
 };
 
-export type VouchStatus =
-  "Selected" | "Queued" | "Waiting" | "Accepted" | "Rejected" | "Unreachable";
+export type VouchStatus = "Selected" | "Queued" | "Waiting" | "Accepted" | "Rejected" | "Unreachable";
 
 export type VouchingSession = {
   id: string;

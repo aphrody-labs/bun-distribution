@@ -47,27 +47,22 @@
     browse: "ytd-page-manager > ytd-browse:not([hidden])",
     activePage: 'ytd-page-manager > [role="main"]:not([hidden])',
     // /feed/subscriptions
-    feedItem:
-      "ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer", // B (rich, grid) + V (ytd-video-renderer); ? for the real feed
+    feedItem: "ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer", // B (rich, grid) + V (ytd-video-renderer); ? for the real feed
     shortsShelf: "ytd-rich-shelf-renderer[is-shorts], ytd-reel-shelf-renderer", // B
     shortsSection: "ytd-rich-section-renderer", // B
     shortLink: 'a[href^="/shorts/"]', // V
-    shortLockup:
-      "ytm-shorts-lockup-view-model, ytm-shorts-lockup-view-model-v2, ytd-reel-item-renderer", // V
+    shortLockup: "ytm-shorts-lockup-view-model, ytm-shorts-lockup-view-model-v2, ytd-reel-item-renderer", // V
     progressOverlay:
       "ytw-thumbnail-overlay-resume-playback-renderer, ytd-thumbnail-overlay-resume-playback-renderer, yt-thumbnail-overlay-progress-bar-view-model", // B
     progressFill:
       ".ytwThumbnailOverlayResumePlaybackRendererThumbnailOverlayResumePlaybackProgress, .ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment, #progress", // B
-    channelLink:
-      'a[href^="/@"], a[href^="/channel/UC"], a[href^="/c/"], a[href^="/user/"]', // V
-    channelName:
-      "ytd-channel-name #text, ytd-channel-name a, #channel-title, .ytContentMetadataViewModelMetadataText", // V (ytd-channel-name), ? for lockups in the feed
+    channelLink: 'a[href^="/@"], a[href^="/channel/UC"], a[href^="/c/"], a[href^="/user/"]', // V
+    channelName: "ytd-channel-name #text, ytd-channel-name a, #channel-title, .ytContentMetadataViewModelMetadataText", // V (ytd-channel-name), ? for lockups in the feed
     // /feed/channels
     channelRow: "ytd-channel-renderer", // V
     // channel page
     channelActions: "yt-flexible-actions-view-model", // V
-    channelActionsLegacy:
-      "#channel-header-container #buttons, ytd-c4-tabbed-header-renderer #buttons", // ?
+    channelActionsLegacy: "#channel-header-container #buttons, ytd-c4-tabbed-header-renderer #buttons", // ?
     // watch page
     watchOwner: "ytd-watch-metadata #owner", // V
     watchOwnerRenderer: "ytd-video-owner-renderer", // V
@@ -103,8 +98,7 @@
     }
   }
 
-  const setSetting = (key, value) =>
-    mutate((s) => ({ ...s, settings: { ...s.settings, [key]: value } }));
+  const setSetting = (key, value) => mutate(s => ({ ...s, settings: { ...s.settings, [key]: value } }));
 
   // ------------------------------------------------------------------ small DOM helpers
 
@@ -112,28 +106,20 @@
     const el = document.createElement(tag);
     for (const [k, v] of Object.entries(props || {})) {
       if (v === false || v === null || v === undefined) continue;
-      if (k === "style")
-        for (const [p, val] of Object.entries(v)) el.style.setProperty(p, val);
+      if (k === "style") for (const [p, val] of Object.entries(v)) el.style.setProperty(p, val);
       else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
       else el.setAttribute(k, v === true ? "" : v);
     }
-    el.append(
-      ...kids
-        .flat()
-        .filter((x) => x !== null && x !== undefined && x !== false),
-    );
+    el.append(...kids.flat().filter(x => x !== null && x !== undefined && x !== false));
     return el;
   }
 
-  const dot = (color) =>
-    h("span", { class: "yss-dot", style: { background: color } });
-  const groupById = (id) => state.groups.find((g) => g.id === id);
+  const dot = color => h("span", { class: "yss-dot", style: { background: color } });
+  const groupById = id => state.groups.find(g => g.id === id);
 
   function textOf(el) {
     if (!el) return "";
-    return (el.getAttribute("title") || el.textContent || "")
-      .replace(/\s+/g, " ")
-      .trim();
+    return (el.getAttribute("title") || el.textContent || "").replace(/\s+/g, " ").trim();
   }
 
   function keysIn(root) {
@@ -148,10 +134,7 @@
   /** One element showing a handle and a channel id is the same channel: remember it (batched per pass). */
   function notePair(keys) {
     const pair = core.pairForAlias(keys);
-    if (
-      pair &&
-      core.resolveKey(state, pair.handle) !== core.resolveKey(state, pair.id)
-    )
+    if (pair && core.resolveKey(state, pair.handle) !== core.resolveKey(state, pair.id))
       pendingPairs.set(pair.handle + "|" + pair.id, pair);
   }
 
@@ -159,15 +142,12 @@
     if (!pendingPairs.size) return;
     const batch = [...pendingPairs.values()];
     pendingPairs.clear();
-    mutate((s) =>
-      batch.reduce((acc, p) => core.learnAlias(acc, p.handle, p.id), s),
-    );
+    mutate(s => batch.reduce((acc, p) => core.learnAlias(acc, p.handle, p.id), s));
   }
 
   function mark(el, reason) {
     if (reason) {
-      if (el.getAttribute("data-yss-hidden") !== reason)
-        el.setAttribute("data-yss-hidden", reason);
+      if (el.getAttribute("data-yss-hidden") !== reason) el.setAttribute("data-yss-hidden", reason);
     } else if (el.hasAttribute("data-yss-hidden")) {
       el.removeAttribute("data-yss-hidden");
     }
@@ -184,12 +164,7 @@
   }
 
   function onOutside(ev) {
-    if (
-      picker &&
-      !picker.el.contains(ev.target) &&
-      !picker.anchor.contains(ev.target)
-    )
-      closePicker();
+    if (picker && !picker.el.contains(ev.target) && !picker.anchor.contains(ev.target)) closePicker();
   }
 
   function onKey(ev) {
@@ -227,22 +202,14 @@
     if (!picker) return;
     const { ctx, el } = picker;
     const current = core.groupsOfAny(state, ctx.keys);
-    const list = state.groups.map((g) =>
+    const list = state.groups.map(g =>
       h(
         "label",
         { class: "yss-pop-item" },
         h("input", {
           type: "checkbox",
           checked: current.includes(g.id),
-          onchange: () =>
-            mutate((s) =>
-              core.toggleChannelGroup(
-                withAlias(s, ctx.keys),
-                ctx.keys,
-                ctx.name,
-                g.id,
-              ),
-            ),
+          onchange: () => mutate(s => core.toggleChannelGroup(withAlias(s, ctx.keys), ctx.keys, ctx.name, g.id)),
         }),
         dot(g.color),
         h("span", { class: "yss-pop-name" }, g.name),
@@ -263,18 +230,13 @@
     });
     const create = async () => {
       let error = "";
-      await mutate((s) => {
+      await mutate(s => {
         const res = core.addGroup(s, nameInput.value, colorInput.value);
         if (!res.group) {
           error = res.error || "";
           return s;
         }
-        return core.toggleChannelGroup(
-          withAlias(res.state, ctx.keys),
-          ctx.keys,
-          ctx.name,
-          res.group.id,
-        );
+        return core.toggleChannelGroup(withAlias(res.state, ctx.keys), ctx.keys, ctx.name, res.group.id);
       });
       if (picker) {
         picker.error = error ? T.errors[error] || error : "";
@@ -282,7 +244,7 @@
       }
     };
     for (const type of ["keydown", "keyup", "keypress"]) {
-      nameInput.addEventListener(type, (ev) => {
+      nameInput.addEventListener(type, ev => {
         if (type === "keydown" && ev.key === "Enter") create();
         ev.stopPropagation(); // YouTube binds single-key shortcuts on the page
       });
@@ -295,24 +257,15 @@
         { class: "yss-pop-new" },
         nameInput,
         colorInput,
-        h(
-          "button",
-          { class: "yss-btn yss-btn-sm", type: "button", onclick: create },
-          T.create,
-        ),
+        h("button", { class: "yss-btn yss-btn-sm", type: "button", onclick: create }, T.create),
       ),
-      ...(picker.error
-        ? [h("div", { class: "yss-pop-error", role: "alert" }, picker.error)]
-        : []),
+      ...(picker.error ? [h("div", { class: "yss-pop-error", role: "alert" }, picker.error)] : []),
     );
   }
 
   /** Button showing the groups of one channel; opens the picker. */
   function assignButton(ctx, extraClass) {
-    const groups = core
-      .groupsOfAny(state, ctx.keys)
-      .map(groupById)
-      .filter(Boolean);
+    const groups = core.groupsOfAny(state, ctx.keys).map(groupById).filter(Boolean);
     const label = groups.length
       ? groups.length > 1
         ? `${groups[0].name} +${groups.length - 1}`
@@ -324,13 +277,13 @@
         type: "button",
         class: `yss-ui yss-btn ${extraClass || ""}`.trim(),
         title: T.assign,
-        onclick: (ev) => {
+        onclick: ev => {
           ev.preventDefault();
           ev.stopPropagation();
           openPicker(ev.currentTarget, ctx);
         },
       },
-      ...groups.slice(0, 3).map((g) => dot(g.color)),
+      ...groups.slice(0, 3).map(g => dot(g.color)),
       h("span", { class: "yss-btn-label" }, label),
     );
   }
@@ -377,7 +330,7 @@
     const parts = [
       h("span", { class: "yss-bar-label" }, T.groups),
       chip("all", T.all),
-      ...state.groups.map((g) => chip(g.id, g.name, g.color)),
+      ...state.groups.map(g => chip(g.id, g.name, g.color)),
       chip("none", T.none),
     ];
     if (kind === "feed")
@@ -392,20 +345,15 @@
         {
           class: "yss-select",
           "aria-label": T.sort,
-          onchange: (ev) => setSetting("sort", ev.currentTarget.value),
+          onchange: ev => setSetting("sort", ev.currentTarget.value),
         },
         ...[
           ["default", T.sortDefault],
           ["alpha", T.sortAlpha],
           ["group", T.sortGroup],
-        ].map(([value, label]) =>
-          h("option", { value, selected: s.sort === value }, label),
-        ),
+        ].map(([value, label]) => h("option", { value, selected: s.sort === value }, label)),
       );
-      parts.push(
-        h("span", { class: "yss-sep" }),
-        h("label", { class: "yss-bar-label" }, `${T.sort} `, select),
-      );
+      parts.push(h("span", { class: "yss-sep" }), h("label", { class: "yss-bar-label" }, `${T.sort} `, select));
     }
     bar.replaceChildren(...parts);
   }
@@ -416,19 +364,13 @@
     const overlay = el.querySelector(selectors.progressOverlay);
     if (!overlay) return null;
     const fill = overlay.querySelector(selectors.progressFill);
-    const pct = fill
-      ? core.parsePercent(fill.style.width || fill.getAttribute("style") || "")
-      : null;
+    const pct = fill ? core.parsePercent(fill.style.width || fill.getAttribute("style") || "") : null;
     return pct === null ? 100 : pct; // overlay present but unreadable: counted as watched
   }
 
   function renderBadge(el, groupIds) {
-    const want = state.settings.badges
-      ? groupIds.map(groupById).filter(Boolean)
-      : [];
-    let badge = Array.from(el.children).find((c) =>
-      c.classList.contains("yss-badge"),
-    );
+    const want = state.settings.badges ? groupIds.map(groupById).filter(Boolean) : [];
+    let badge = Array.from(el.children).find(c => c.classList.contains("yss-badge"));
     if (!want.length) {
       if (badge) badge.remove();
       return;
@@ -438,15 +380,7 @@
     if (!badge) badge = h("div", { class: "yss-ui yss-badge" });
     badge.setAttribute("data-sig", sig);
     badge.replaceChildren(
-      ...want
-        .slice(0, 3)
-        .map((g) =>
-          h(
-            "span",
-            { class: "yss-pill", style: { background: g.color } },
-            g.name,
-          ),
-        ),
+      ...want.slice(0, 3).map(g => h("span", { class: "yss-pill", style: { background: g.color } }, g.name)),
     );
     el.setAttribute("data-yss-host", "");
     el.append(badge);
@@ -454,9 +388,7 @@
 
   /** Normal place: top of the browse page. Fallback when YouTube changes it: a floating bar. */
   function barHost() {
-    const browse =
-      document.querySelector(selectors.browsePrimary) ||
-      document.querySelector(selectors.browse);
+    const browse = document.querySelector(selectors.browsePrimary) || document.querySelector(selectors.browse);
     if (browse) return { el: browse, floating: false };
     const page = document.querySelector(selectors.activePage);
     return page ? { el: page, floating: true } : null;
@@ -467,21 +399,14 @@
     if (host) renderBar("feed", host);
     const s = state.settings;
     for (const shelf of document.querySelectorAll(selectors.shortsShelf))
-      mark(
-        shelf.closest(selectors.shortsSection) || shelf,
-        s.hideShorts ? "short" : null,
-      );
+      mark(shelf.closest(selectors.shortsSection) || shelf, s.hideShorts ? "short" : null);
     for (const el of document.querySelectorAll(selectors.feedItem)) {
-      if (el.parentElement && el.parentElement.closest(selectors.feedItem))
-        continue;
+      if (el.parentElement && el.parentElement.closest(selectors.feedItem)) continue;
       const keys = keysIn(el);
       notePair(keys);
       let groupIds = core.groupsOfAny(state, keys);
       if (!keys.length) {
-        const byName = core.resolveByName(
-          state,
-          textOf(el.querySelector(selectors.channelName)),
-        );
+        const byName = core.resolveByName(state, textOf(el.querySelector(selectors.channelName)));
         if (byName) groupIds = core.groupsOf(state, byName);
       }
       const isShort = Boolean(
@@ -489,11 +414,7 @@
         el.querySelector(selectors.shortLockup) ||
         el.closest(selectors.shortsShelf),
       );
-      const decision = core.decideFeedItem(
-        { isShort, watchedPct: watchedPct(el) },
-        s,
-        groupIds,
-      );
+      const decision = core.decideFeedItem({ isShort, watchedPct: watchedPct(el) }, s, groupIds);
       mark(el, decision.hide ? decision.reason : null);
       renderBadge(el, groupIds);
     }
@@ -504,7 +425,7 @@
     if (host) renderBar("list", host);
     const s = state.settings;
     const rows = Array.from(document.querySelectorAll(selectors.channelRow));
-    const items = rows.map((row) => {
+    const items = rows.map(row => {
       const keys = keysIn(row);
       notePair(keys);
       return {
@@ -514,32 +435,20 @@
       };
     });
     const ranks = core.sortRanks(
-      items.map((i) => ({ key: core.bestKey(i.keys), name: i.name })),
+      items.map(i => ({ key: core.bestKey(i.keys), name: i.name })),
       s.sort,
       state,
     );
     const parents = new Set();
     items.forEach((item, index) => {
       const { row, keys, name } = item;
-      mark(
-        row,
-        core.matchesFilter(s.listFilter, core.groupsOfAny(state, keys))
-          ? null
-          : "group",
-      );
+      mark(row, core.matchesFilter(s.listFilter, core.groupsOfAny(state, keys)) ? null : "group");
       if (ranks) row.style.order = String(ranks[index]);
       else if (row.style.order) row.style.removeProperty("order");
       if (row.parentElement) parents.add(row.parentElement);
       const ctx = { keys, name };
-      let ui = Array.from(row.children).find((c) =>
-        c.classList.contains("yss-row"),
-      );
-      const sig = JSON.stringify([
-        keys,
-        name,
-        state.groups,
-        core.groupsOfAny(state, keys),
-      ]);
+      let ui = Array.from(row.children).find(c => c.classList.contains("yss-row"));
+      const sig = JSON.stringify([keys, name, state.groups, core.groupsOfAny(state, keys)]);
       if (ui && ui.getAttribute("data-sig") === sig) return;
       if (!ui) ui = h("div", { class: "yss-ui yss-row" });
       ui.setAttribute("data-sig", sig);
@@ -564,12 +473,7 @@
   /** Put (or refresh) one button into `host`; falls back to a floating button when the host is missing. */
   function placeButton(page, ctx, host) {
     const old = document.querySelector(`.yss-btn[data-yss-page="${page}"]`);
-    const sig = JSON.stringify([
-      ctx.keys,
-      ctx.name,
-      core.groupsOfAny(state, ctx.keys),
-      state.groups,
-    ]);
+    const sig = JSON.stringify([ctx.keys, ctx.name, core.groupsOfAny(state, ctx.keys), state.groups]);
     if (
       old &&
       old.getAttribute("data-sig") === sig &&
@@ -595,12 +499,7 @@
     const link = document.querySelector('link[rel="canonical"]');
     const og = document.querySelector('meta[property="og:title"]');
     const ref = link && core.parseChannelRef(link.getAttribute("href"));
-    return ref &&
-      ref.kind === "id" &&
-      og &&
-      og.getAttribute("content") === pageTitleName()
-      ? ref.key
-      : null;
+    return ref && ref.kind === "id" && og && og.getAttribute("content") === pageTitleName() ? ref.key : null;
   }
 
   function applyChannelPage() {
@@ -611,8 +510,7 @@
     if (id && id !== own.key) keys.push(id);
     notePair(keys);
     const host =
-      document.querySelector(selectors.channelActions) ||
-      document.querySelector(selectors.channelActionsLegacy);
+      document.querySelector(selectors.channelActions) || document.querySelector(selectors.channelActionsLegacy);
     placeButton("channel", { keys, name: pageTitleName() }, host);
   }
 
@@ -626,11 +524,7 @@
       return;
     }
     notePair(keys);
-    placeButton(
-      "watch",
-      { keys, name: textOf(owner.querySelector(selectors.channelName)) },
-      host,
-    );
+    placeButton("watch", { keys, name: textOf(owner.querySelector(selectors.channelName)) }, host);
   }
 
   // ------------------------------------------------------------------ scheduling
@@ -644,9 +538,7 @@
     }
     for (const page of ["channel", "watch"]) {
       if (route !== page) {
-        const stale = document.querySelector(
-          `.yss-btn[data-yss-page="${page}"]`,
-        );
+        const stale = document.querySelector(`.yss-btn[data-yss-page="${page}"]`);
         if (stale) stale.remove();
       }
     }

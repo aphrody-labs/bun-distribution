@@ -3,15 +3,35 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** ntdll.dll!RtlAddGrowableFunctionTable */
-  RtlAddGrowableFunctionTable(DynamicTable: Win32Pointer, FunctionTable: Win32Pointer, EntryCount: number, MaximumEntryCount: number, RangeBase: number | bigint, RangeEnd: number | bigint): number;
+  RtlAddGrowableFunctionTable(
+    DynamicTable: Win32Pointer,
+    FunctionTable: Win32Pointer,
+    EntryCount: number,
+    MaximumEntryCount: number,
+    RangeBase: number | bigint,
+    RangeEnd: number | bigint,
+  ): number;
   /** ntdll.dll!RtlAnsiStringToUnicodeString */
-  RtlAnsiStringToUnicodeString(DestinationString: Win32Pointer, SourceString: Win32Pointer, AllocateDestinationString: number): number;
+  RtlAnsiStringToUnicodeString(
+    DestinationString: Win32Pointer,
+    SourceString: Win32Pointer,
+    AllocateDestinationString: number,
+  ): number;
   /** ntdll.dll!RtlCharToInteger */
   RtlCharToInteger(String: Win32Pointer, Base: number, Value: Win32Pointer): number;
   /** ntdll.dll!RtlConvertDeviceFamilyInfoToString */
-  RtlConvertDeviceFamilyInfoToString(pulDeviceFamilyBufferSize: Win32Pointer, pulDeviceFormBufferSize: Win32Pointer, DeviceFamily: string | Win32Pointer, DeviceForm: string | Win32Pointer): number;
+  RtlConvertDeviceFamilyInfoToString(
+    pulDeviceFamilyBufferSize: Win32Pointer,
+    pulDeviceFormBufferSize: Win32Pointer,
+    DeviceFamily: string | Win32Pointer,
+    DeviceForm: string | Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlConvertSidToUnicodeString */
-  RtlConvertSidToUnicodeString(UnicodeString: Win32Pointer, Sid: Win32Pointer, AllocateDestinationString: number): number;
+  RtlConvertSidToUnicodeString(
+    UnicodeString: Win32Pointer,
+    Sid: Win32Pointer,
+    AllocateDestinationString: number,
+  ): number;
   /** ntdll.dll!RtlCrc32 */
   RtlCrc32(Buffer: Win32Pointer, Size: number | bigint, InitialCrc: number): number;
   /** ntdll.dll!RtlCrc64 */
@@ -35,13 +55,29 @@ interface Functions {
   /** ntdll.dll!RtlExtendCorrelationVector */
   RtlExtendCorrelationVector(CorrelationVector: Win32Pointer): number;
   /** ntdll.dll!RtlFillNonVolatileMemory */
-  RtlFillNonVolatileMemory(NvToken: Win32Pointer, NvDestination: Win32Pointer, Size: number | bigint, Value: number, Flags: number): number;
+  RtlFillNonVolatileMemory(
+    NvToken: Win32Pointer,
+    NvDestination: Win32Pointer,
+    Size: number | bigint,
+    Value: number,
+    Flags: number,
+  ): number;
   /** ntdll.dll!RtlFirstEntrySList */
   RtlFirstEntrySList(ListHead: Win32Pointer): number | null;
   /** ntdll.dll!RtlFlushNonVolatileMemory */
-  RtlFlushNonVolatileMemory(NvToken: Win32Pointer, NvBuffer: Win32Pointer, Size: number | bigint, Flags: number): number;
+  RtlFlushNonVolatileMemory(
+    NvToken: Win32Pointer,
+    NvBuffer: Win32Pointer,
+    Size: number | bigint,
+    Flags: number,
+  ): number;
   /** ntdll.dll!RtlFlushNonVolatileMemoryRanges */
-  RtlFlushNonVolatileMemoryRanges(NvToken: Win32Pointer, NvRanges: Win32Pointer, NumRanges: number | bigint, Flags: number): number;
+  RtlFlushNonVolatileMemoryRanges(
+    NvToken: Win32Pointer,
+    NvRanges: Win32Pointer,
+    NumRanges: number | bigint,
+    Flags: number,
+  ): number;
   /** ntdll.dll!RtlFreeAnsiString */
   RtlFreeAnsiString(AnsiString: Win32Pointer): void;
   /** ntdll.dll!RtlFreeNonVolatileToken */
@@ -51,11 +87,21 @@ interface Functions {
   /** ntdll.dll!RtlFreeUnicodeString */
   RtlFreeUnicodeString(UnicodeString: Win32Pointer): void;
   /** ntdll.dll!RtlGetDeviceFamilyInfoEnum */
-  RtlGetDeviceFamilyInfoEnum(pullUAPInfo: Win32Pointer, pulDeviceFamily: Win32Pointer, pulDeviceForm: Win32Pointer): void;
+  RtlGetDeviceFamilyInfoEnum(
+    pullUAPInfo: Win32Pointer,
+    pulDeviceFamily: Win32Pointer,
+    pulDeviceForm: Win32Pointer,
+  ): void;
   /** ntdll.dll!RtlGetNonVolatileToken */
   RtlGetNonVolatileToken(NvBuffer: Win32Pointer, Size: number | bigint, NvToken: Win32Pointer): number;
   /** ntdll.dll!RtlGetProductInfo */
-  RtlGetProductInfo(OSMajorVersion: number, OSMinorVersion: number, SpMajorVersion: number, SpMinorVersion: number, ReturnedProductType: Win32Pointer): number;
+  RtlGetProductInfo(
+    OSMajorVersion: number,
+    OSMinorVersion: number,
+    SpMajorVersion: number,
+    SpMinorVersion: number,
+    ReturnedProductType: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlGetReturnAddressHijackTarget */
   RtlGetReturnAddressHijackTarget(): number | bigint;
   /** ntdll.dll!RtlGrowFunctionTable */
@@ -83,39 +129,107 @@ interface Functions {
   /** ntdll.dll!RtlInterlockedPushEntrySList */
   RtlInterlockedPushEntrySList(ListHead: Win32Pointer, ListEntry: Win32Pointer): number | null;
   /** ntdll.dll!RtlInterlockedPushListSListEx */
-  RtlInterlockedPushListSListEx(ListHead: Win32Pointer, List: Win32Pointer, ListEnd: Win32Pointer, Count: number): number | null;
+  RtlInterlockedPushListSListEx(
+    ListHead: Win32Pointer,
+    List: Win32Pointer,
+    ListEnd: Win32Pointer,
+    Count: number,
+  ): number | null;
   /** ntdll.dll!RtlIpv4AddressToStringA */
   RtlIpv4AddressToStringA(Addr: Win32Pointer, S: string | Win32Pointer): number | null;
   /** ntdll.dll!RtlIpv4AddressToStringExA */
-  RtlIpv4AddressToStringExA(Address: Win32Pointer, Port: number, AddressString: string | Win32Pointer, AddressStringLength: Win32Pointer): number;
+  RtlIpv4AddressToStringExA(
+    Address: Win32Pointer,
+    Port: number,
+    AddressString: string | Win32Pointer,
+    AddressStringLength: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv4AddressToStringExW */
-  RtlIpv4AddressToStringExW(Address: Win32Pointer, Port: number, AddressString: string | Win32Pointer, AddressStringLength: Win32Pointer): number;
+  RtlIpv4AddressToStringExW(
+    Address: Win32Pointer,
+    Port: number,
+    AddressString: string | Win32Pointer,
+    AddressStringLength: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv4AddressToStringExW */
-  RtlIpv4AddressToStringEx(Address: Win32Pointer, Port: number, AddressString: string | Win32Pointer, AddressStringLength: Win32Pointer): number;
+  RtlIpv4AddressToStringEx(
+    Address: Win32Pointer,
+    Port: number,
+    AddressString: string | Win32Pointer,
+    AddressStringLength: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv4AddressToStringW */
   RtlIpv4AddressToStringW(Addr: Win32Pointer, S: string | Win32Pointer): number | null;
   /** ntdll.dll!RtlIpv4AddressToStringW */
   RtlIpv4AddressToString(Addr: Win32Pointer, S: string | Win32Pointer): number | null;
   /** ntdll.dll!RtlIpv4StringToAddressA */
-  RtlIpv4StringToAddressA(S: string | Win32Pointer, Strict: number, Terminator: Win32Pointer, Addr: Win32Pointer): number;
+  RtlIpv4StringToAddressA(
+    S: string | Win32Pointer,
+    Strict: number,
+    Terminator: Win32Pointer,
+    Addr: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv4StringToAddressExA */
-  RtlIpv4StringToAddressExA(AddressString: string | Win32Pointer, Strict: number, Address: Win32Pointer, Port: Win32Pointer): number;
+  RtlIpv4StringToAddressExA(
+    AddressString: string | Win32Pointer,
+    Strict: number,
+    Address: Win32Pointer,
+    Port: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv4StringToAddressExW */
-  RtlIpv4StringToAddressExW(AddressString: string | Win32Pointer, Strict: number, Address: Win32Pointer, Port: Win32Pointer): number;
+  RtlIpv4StringToAddressExW(
+    AddressString: string | Win32Pointer,
+    Strict: number,
+    Address: Win32Pointer,
+    Port: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv4StringToAddressExW */
-  RtlIpv4StringToAddressEx(AddressString: string | Win32Pointer, Strict: number, Address: Win32Pointer, Port: Win32Pointer): number;
+  RtlIpv4StringToAddressEx(
+    AddressString: string | Win32Pointer,
+    Strict: number,
+    Address: Win32Pointer,
+    Port: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv4StringToAddressW */
-  RtlIpv4StringToAddressW(S: string | Win32Pointer, Strict: number, Terminator: Win32Pointer, Addr: Win32Pointer): number;
+  RtlIpv4StringToAddressW(
+    S: string | Win32Pointer,
+    Strict: number,
+    Terminator: Win32Pointer,
+    Addr: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv4StringToAddressW */
-  RtlIpv4StringToAddress(S: string | Win32Pointer, Strict: number, Terminator: Win32Pointer, Addr: Win32Pointer): number;
+  RtlIpv4StringToAddress(
+    S: string | Win32Pointer,
+    Strict: number,
+    Terminator: Win32Pointer,
+    Addr: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv6AddressToStringA */
   RtlIpv6AddressToStringA(Addr: Win32Pointer, S: string | Win32Pointer): number | null;
   /** ntdll.dll!RtlIpv6AddressToStringExA */
-  RtlIpv6AddressToStringExA(Address: Win32Pointer, ScopeId: number, Port: number, AddressString: string | Win32Pointer, AddressStringLength: Win32Pointer): number;
+  RtlIpv6AddressToStringExA(
+    Address: Win32Pointer,
+    ScopeId: number,
+    Port: number,
+    AddressString: string | Win32Pointer,
+    AddressStringLength: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv6AddressToStringExW */
-  RtlIpv6AddressToStringExW(Address: Win32Pointer, ScopeId: number, Port: number, AddressString: string | Win32Pointer, AddressStringLength: Win32Pointer): number;
+  RtlIpv6AddressToStringExW(
+    Address: Win32Pointer,
+    ScopeId: number,
+    Port: number,
+    AddressString: string | Win32Pointer,
+    AddressStringLength: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv6AddressToStringExW */
-  RtlIpv6AddressToStringEx(Address: Win32Pointer, ScopeId: number, Port: number, AddressString: string | Win32Pointer, AddressStringLength: Win32Pointer): number;
+  RtlIpv6AddressToStringEx(
+    Address: Win32Pointer,
+    ScopeId: number,
+    Port: number,
+    AddressString: string | Win32Pointer,
+    AddressStringLength: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv6AddressToStringW */
   RtlIpv6AddressToStringW(Addr: Win32Pointer, S: string | Win32Pointer): number | null;
   /** ntdll.dll!RtlIpv6AddressToStringW */
@@ -123,11 +237,26 @@ interface Functions {
   /** ntdll.dll!RtlIpv6StringToAddressA */
   RtlIpv6StringToAddressA(S: string | Win32Pointer, Terminator: Win32Pointer, Addr: Win32Pointer): number;
   /** ntdll.dll!RtlIpv6StringToAddressExA */
-  RtlIpv6StringToAddressExA(AddressString: string | Win32Pointer, Address: Win32Pointer, ScopeId: Win32Pointer, Port: Win32Pointer): number;
+  RtlIpv6StringToAddressExA(
+    AddressString: string | Win32Pointer,
+    Address: Win32Pointer,
+    ScopeId: Win32Pointer,
+    Port: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv6StringToAddressExW */
-  RtlIpv6StringToAddressExW(AddressString: string | Win32Pointer, Address: Win32Pointer, ScopeId: Win32Pointer, Port: Win32Pointer): number;
+  RtlIpv6StringToAddressExW(
+    AddressString: string | Win32Pointer,
+    Address: Win32Pointer,
+    ScopeId: Win32Pointer,
+    Port: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv6StringToAddressExW */
-  RtlIpv6StringToAddressEx(AddressString: string | Win32Pointer, Address: Win32Pointer, ScopeId: Win32Pointer, Port: Win32Pointer): number;
+  RtlIpv6StringToAddressEx(
+    AddressString: string | Win32Pointer,
+    Address: Win32Pointer,
+    ScopeId: Win32Pointer,
+    Port: Win32Pointer,
+  ): number;
   /** ntdll.dll!RtlIpv6StringToAddressW */
   RtlIpv6StringToAddressW(S: string | Win32Pointer, Terminator: Win32Pointer, Addr: Win32Pointer): number;
   /** ntdll.dll!RtlIpv6StringToAddressW */
@@ -139,7 +268,13 @@ interface Functions {
   /** ntdll.dll!RtlLocalTimeToSystemTime */
   RtlLocalTimeToSystemTime(LocalTime: Win32Pointer, SystemTime: Win32Pointer): number;
   /** ntdll.dll!RtlNormalizeSecurityDescriptor */
-  RtlNormalizeSecurityDescriptor(SecurityDescriptor: Win32Pointer, SecurityDescriptorLength: number, NewSecurityDescriptor: Win32Pointer, NewSecurityDescriptorLength: Win32Pointer, CheckOnly: number): number;
+  RtlNormalizeSecurityDescriptor(
+    SecurityDescriptor: Win32Pointer,
+    SecurityDescriptorLength: number,
+    NewSecurityDescriptor: Win32Pointer,
+    NewSecurityDescriptorLength: Win32Pointer,
+    CheckOnly: number,
+  ): number;
   /** ntdll.dll!RtlNtStatusToDosError */
   RtlNtStatusToDosError(Status: number): number;
   /** ntdll.dll!RtlOsDeploymentState */
@@ -153,17 +288,35 @@ interface Functions {
   /** ntdll.dll!RtlTimeToSecondsSince1970 */
   RtlTimeToSecondsSince1970(Time: Win32Pointer, ElapsedSeconds: Win32Pointer): number;
   /** ntdll.dll!RtlUnicodeStringToAnsiString */
-  RtlUnicodeStringToAnsiString(DestinationString: Win32Pointer, SourceString: Win32Pointer, AllocateDestinationString: number): number;
+  RtlUnicodeStringToAnsiString(
+    DestinationString: Win32Pointer,
+    SourceString: Win32Pointer,
+    AllocateDestinationString: number,
+  ): number;
   /** ntdll.dll!RtlUnicodeStringToOemString */
-  RtlUnicodeStringToOemString(DestinationString: Win32Pointer, SourceString: Win32Pointer, AllocateDestinationString: number): number;
+  RtlUnicodeStringToOemString(
+    DestinationString: Win32Pointer,
+    SourceString: Win32Pointer,
+    AllocateDestinationString: number,
+  ): number;
   /** ntdll.dll!RtlUnicodeToMultiByteSize */
-  RtlUnicodeToMultiByteSize(BytesInMultiByteString: Win32Pointer, UnicodeString: string | Win32Pointer, BytesInUnicodeString: number): number;
+  RtlUnicodeToMultiByteSize(
+    BytesInMultiByteString: Win32Pointer,
+    UnicodeString: string | Win32Pointer,
+    BytesInUnicodeString: number,
+  ): number;
   /** ntdll.dll!RtlUniform */
   RtlUniform(Seed: Win32Pointer): number;
   /** ntdll.dll!RtlValidateCorrelationVector */
   RtlValidateCorrelationVector(Vector: Win32Pointer): number;
   /** ntdll.dll!RtlWriteNonVolatileMemory */
-  RtlWriteNonVolatileMemory(NvToken: Win32Pointer, NvDestination: Win32Pointer, Source: Win32Pointer, Size: number | bigint, Flags: number): number;
+  RtlWriteNonVolatileMemory(
+    NvToken: Win32Pointer,
+    NvDestination: Win32Pointer,
+    Source: Win32Pointer,
+    Size: number | bigint,
+    Flags: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

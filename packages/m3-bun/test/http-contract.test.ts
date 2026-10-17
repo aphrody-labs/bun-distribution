@@ -18,30 +18,17 @@ test("route precedence favors the first static segment over deeper parameter rou
     "/api/admin/:page": () => new Response("static"),
     "/api/*": () => new Response("wildcard"),
   });
-  expect(
-    await (await handler(
-      new Request("http://m3.test/api/admin/settings"),
-    ))!.text(),
-  ).toBe("static");
-  expect(
-    await (await handler(new Request("http://m3.test/api/a/settings")))!.text(),
-  ).toBe("parameter");
-  expect(
-    await (await handler(new Request("http://m3.test/api/other/page")))!.text(),
-  ).toBe("wildcard");
+  expect(await (await handler(new Request("http://m3.test/api/admin/settings")))!.text()).toBe("static");
+  expect(await (await handler(new Request("http://m3.test/api/a/settings")))!.text()).toBe("parameter");
+  expect(await (await handler(new Request("http://m3.test/api/other/page")))!.text()).toBe("wildcard");
 });
 
 test("malformed parameters return 400 and HEAD has no response body", async () => {
   const handler = routesToFetch({
-    "/api/:id": () =>
-      new Response("body", { headers: { "x-contract": "kept" } }),
+    "/api/:id": () => new Response("body", { headers: { "x-contract": "kept" } }),
   });
-  expect((await handler(new Request("http://m3.test/api/%ZZ")))!.status).toBe(
-    400,
-  );
-  const head = await handler(
-    new Request("http://m3.test/api/item", { method: "HEAD" }),
-  );
+  expect((await handler(new Request("http://m3.test/api/%ZZ")))!.status).toBe(400);
+  const head = await handler(new Request("http://m3.test/api/item", { method: "HEAD" }));
   expect(head!.headers.get("x-contract")).toBe("kept");
   expect(await head!.text()).toBe("");
 });

@@ -91,17 +91,12 @@ function InspectorView({
       aria-label="Inspector"
       className={clsx(
         "text-on-surface relative flex h-full flex-col overflow-hidden rounded-large",
-        isPreviewActive
-          ? "bg-surface-container-low/80 backdrop-blur-2xl"
-          : "bg-surface-container-low/65",
+        isPreviewActive ? "bg-surface-container-low/80 backdrop-blur-2xl" : "bg-surface-container-low/65",
       )}
     >
       {/* Drag region for macOS traffic lights area */}
       {!hideDragRegion && (
-        <div
-          data-tauri-drag-region
-          className="absolute inset-x-0 top-0 h-[52px] z-[60] pointer-events-none"
-        />
+        <div data-tauri-drag-region className="absolute inset-x-0 top-0 h-[52px] z-[60] pointer-events-none" />
       )}
 
       <div className="relative z-[51] flex h-full flex-col p-2.5 pb-2">
@@ -141,9 +136,7 @@ function InspectorView({
 function EmptyState() {
   return (
     <div className="flex flex-1 items-center justify-center px-4 text-center">
-      <p className="text-on-surface-variant text-body-small">
-        Select an item to view details
-      </p>
+      <p className="text-on-surface-variant text-body-small">Select an item to view details</p>
     </div>
   );
 }
@@ -159,7 +152,7 @@ export function PopoutInspector() {
   // Apply macOS titlebar styling after window is ready
   useEffect(() => {
     if (platform.applyMacOSStyling) {
-      platform.applyMacOSStyling().catch((err) => {
+      platform.applyMacOSStyling().catch(err => {
         console.warn("Failed to apply macOS styling:", err);
       });
     }
@@ -170,8 +163,8 @@ export function PopoutInspector() {
     if (platform.getSelectedFileIds) {
       platform
         .getSelectedFileIds()
-        .then((fileIds) => setSelectedFileIds(fileIds))
-        .catch((err) => {
+        .then(fileIds => setSelectedFileIds(fileIds))
+        .catch(err => {
           console.error("Failed to get selected file IDs:", err);
         });
     }
@@ -185,12 +178,12 @@ export function PopoutInspector() {
     let mounted = true;
 
     platform
-      .onSelectedFilesChanged((fileIds) => {
+      .onSelectedFilesChanged(fileIds => {
         if (mounted) {
           setSelectedFileIds(fileIds);
         }
       })
-      .then((unlistenFn) => {
+      .then(unlistenFn => {
         if (mounted) {
           unlisten = unlistenFn;
         } else {
@@ -198,7 +191,7 @@ export function PopoutInspector() {
         }
         return null;
       })
-      .catch((err) => {
+      .catch(err => {
         console.error("Failed to listen for selected files changes:", err);
       });
 
@@ -238,11 +231,5 @@ export function PopoutInspector() {
     );
   }
 
-  return (
-    <InspectorView
-      variant={variant}
-      showPopOutButton={false}
-      hideDragRegion={true}
-    />
-  );
+  return <InspectorView variant={variant} showPopOutButton={false} hideDragRegion={true} />;
 }

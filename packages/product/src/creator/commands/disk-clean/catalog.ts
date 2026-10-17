@@ -15,10 +15,7 @@ export interface CacheTarget {
 type Env = Record<string, string | undefined>;
 
 /** Caches that every program regenerates by itself. Nothing here holds user documents. */
-export function catalog(
-  env: Env,
-  platform: NodeJS.Platform = process.platform,
-): CacheTarget[] {
+export function catalog(env: Env, platform: NodeJS.Platform = process.platform): CacheTarget[] {
   if (platform === "win32") return windows(env);
   return unix(env);
 }
@@ -56,25 +53,19 @@ function windows(env: Env): CacheTarget[] {
       {
         id: "chrome",
         label: "Cache Google Chrome",
-        patterns: ["Cache", "Code Cache", "GPUCache"].map((d) =>
-          join(local, "Google", "Chrome", "User Data", "*", d),
-        ),
+        patterns: ["Cache", "Code Cache", "GPUCache"].map(d => join(local, "Google", "Chrome", "User Data", "*", d)),
         lockedBy: ["chrome"],
       },
       {
         id: "edge",
         label: "Cache Microsoft Edge",
-        patterns: ["Cache", "Code Cache", "GPUCache"].map((d) =>
-          join(local, "Microsoft", "Edge", "User Data", "*", d),
-        ),
+        patterns: ["Cache", "Code Cache", "GPUCache"].map(d => join(local, "Microsoft", "Edge", "User Data", "*", d)),
         lockedBy: ["msedge"],
       },
       {
         id: "firefox",
         label: "Cache Firefox",
-        patterns: [
-          join(local, "Mozilla", "Firefox", "Profiles", "*", "cache2"),
-        ],
+        patterns: [join(local, "Mozilla", "Firefox", "Profiles", "*", "cache2")],
         lockedBy: ["firefox"],
       },
       {
@@ -89,9 +80,7 @@ function windows(env: Env): CacheTarget[] {
     out.push({
       id: "discord",
       label: "Cache Discord",
-      patterns: ["Cache", "Code Cache", "GPUCache"].map((d) =>
-        join(roaming, "discord", d),
-      ),
+      patterns: ["Cache", "Code Cache", "GPUCache"].map(d => join(roaming, "discord", d)),
       lockedBy: ["discord"],
     });
   }
@@ -104,14 +93,8 @@ function windows(env: Env): CacheTarget[] {
   out.push({
     id: "adobe",
     label: "Caches Adobe (voir aussi adobe-clean)",
-    patterns: cacheLocations(env).map((l) => l.pattern),
-    lockedBy: [
-      "photoshop",
-      "afterfx",
-      "adobe premiere pro",
-      "adobe media encoder",
-      "illustrator",
-    ],
+    patterns: cacheLocations(env).map(l => l.pattern),
+    lockedBy: ["photoshop", "afterfx", "adobe premiere pro", "adobe media encoder", "illustrator"],
   });
   return out;
 }
@@ -140,13 +123,7 @@ function unix(env: Env): CacheTarget[] {
     {
       id: "trash",
       label: "Corbeille",
-      patterns: [
-        join(
-          env.XDG_DATA_HOME ?? join(home, ".local", "share"),
-          "Trash",
-          "files",
-        ),
-      ],
+      patterns: [join(env.XDG_DATA_HOME ?? join(home, ".local", "share"), "Trash", "files")],
     },
   ];
 }

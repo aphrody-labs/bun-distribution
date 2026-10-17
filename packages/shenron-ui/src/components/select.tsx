@@ -10,11 +10,7 @@ const Select = SelectPrimitive.Root;
 const SelectGroup = SelectPrimitive.Group;
 const SelectPortal = SelectPrimitive.Portal;
 
-function SelectTrigger({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Trigger>) {
+function SelectTrigger({ className, children, ...props }: React.ComponentProps<typeof SelectPrimitive.Trigger>) {
   return (
     <SelectPrimitive.Trigger
       className={cn(
@@ -32,16 +28,8 @@ function SelectTrigger({
   );
 }
 
-function SelectValue({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Value>) {
-  return (
-    <SelectPrimitive.Value
-      className={cn("line-clamp-1 text-left font-medium", className)}
-      {...props}
-    />
-  );
+function SelectValue({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Value>) {
+  return <SelectPrimitive.Value className={cn("line-clamp-1 text-left font-medium", className)} {...props} />;
 }
 
 function SelectPopup({
@@ -54,10 +42,7 @@ function SelectPopup({
 }) {
   return (
     <SelectPortal>
-      <SelectPrimitive.Positioner
-        sideOffset={sideOffset}
-        className="z-50 outline-none"
-      >
+      <SelectPrimitive.Positioner sideOffset={sideOffset} className="z-50 outline-none">
         <SelectPrimitive.Popup
           className={cn(
             "relative z-50 max-h-72 min-w-[var(--anchor-width)] overflow-y-auto rounded-xl border-2 border-black bg-[#0d0d14] p-1.5 text-gray-100 shadow-[5px_5px_0px_#000] outline-none transition-all select-none",
@@ -67,20 +52,14 @@ function SelectPopup({
           {...props}
         >
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-dbz-orange via-dbz-yellow to-dbz-orange" />
-          <SelectPrimitive.List className="space-y-0.5">
-            {children}
-          </SelectPrimitive.List>
+          <SelectPrimitive.List className="space-y-0.5">{children}</SelectPrimitive.List>
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
     </SelectPortal>
   );
 }
 
-function SelectItem({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Item>) {
+function SelectItem({ className, children, ...props }: React.ComponentProps<typeof SelectPrimitive.Item>) {
   return (
     <SelectPrimitive.Item
       className={cn(
@@ -100,10 +79,7 @@ function SelectItem({
   );
 }
 
-function SelectLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.GroupLabel>) {
+function SelectLabel({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.GroupLabel>) {
   return (
     <SelectPrimitive.GroupLabel
       className={cn(
@@ -115,16 +91,10 @@ function SelectLabel({
   );
 }
 
-function SelectSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Separator>) {
+function SelectSeparator({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Separator>) {
   return (
     <SelectPrimitive.Separator
-      className={cn(
-        "-mx-1 my-1.5 h-0.5 bg-black/60 border-b border-white/5",
-        className,
-      )}
+      className={cn("-mx-1 my-1.5 h-0.5 bg-black/60 border-b border-white/5", className)}
       {...props}
     />
   );

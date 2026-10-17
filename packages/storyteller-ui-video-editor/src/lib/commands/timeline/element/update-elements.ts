@@ -1,10 +1,7 @@
 import { EditorCore } from "../../../core";
 import { Command, type CommandResult } from "../../base-command";
 import type { SceneTracks, TimelineElement } from "../../../timeline/types";
-import {
-  findTrackInSceneTracks,
-  updateElementInSceneTracks,
-} from "../../../timeline/track-element-update";
+import { findTrackInSceneTracks, updateElementInSceneTracks } from "../../../timeline/track-element-update";
 import { applyElementUpdate } from "../../../timeline/update-pipeline";
 
 export class UpdateElementsCommand extends Command {
@@ -38,9 +35,7 @@ export class UpdateElementsCommand extends Command {
         tracks: updatedTracks,
         trackId: updateEntry.trackId,
       });
-      const currentElement = currentTrack?.elements.find(
-        (element) => element.id === updateEntry.elementId,
-      );
+      const currentElement = currentTrack?.elements.find(element => element.id === updateEntry.elementId);
       if (!currentTrack || !currentElement) {
         continue;
       }

@@ -44,7 +44,11 @@ pub fn computer_speak(text: &str, requested_path: Option<&str>) -> Result<Value,
                         .unwrap_or_default()
                 ))
             });
-        let path = if path.extension().is_none() { path.with_extension("wav") } else { path };
+        let path = if path.extension().is_none() {
+            path.with_extension("wav")
+        } else {
+            path
+        };
         if let Some(parent) = path.parent()
             && !parent.as_os_str().is_empty()
         {
@@ -72,7 +76,11 @@ pub fn computer_speak(text: &str, requested_path: Option<&str>) -> Result<Value,
         reader.ReadBytes(&mut audio).map_err(|e| e.to_string())?;
         fs::write(&path, audio).map_err(|e| e.to_string())?;
 
-        let wide: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+        let wide: Vec<u16> = path
+            .as_os_str()
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect();
         let played = unsafe {
             PlaySoundW(
                 windows::core::PCWSTR(wide.as_ptr()),
@@ -82,7 +90,10 @@ pub fn computer_speak(text: &str, requested_path: Option<&str>) -> Result<Value,
             .as_bool()
         };
         if !played {
-            return Err(format!("PlaySound failed (error={}).", std::io::Error::last_os_error()));
+            return Err(format!(
+                "PlaySound failed (error={}).",
+                std::io::Error::last_os_error()
+            ));
         }
         Ok(serde_json::json!({
             "success": true,

@@ -2,10 +2,7 @@ import { Command, type CommandResult } from "../../base-command";
 import type { SceneTracks } from "../../../timeline/types";
 import { EditorCore } from "../../../core";
 import { canTrackHaveAudio } from "../../../timeline/track-capabilities";
-import {
-  findTrackInSceneTracks,
-  updateTrackInSceneTracks,
-} from "../../../timeline/track-element-update";
+import { findTrackInSceneTracks, updateTrackInSceneTracks } from "../../../timeline/track-element-update";
 
 export class ToggleTrackMuteCommand extends Command {
   private savedState: SceneTracks | null = null;
@@ -29,8 +26,7 @@ export class ToggleTrackMuteCommand extends Command {
     const updatedTracks = updateTrackInSceneTracks({
       tracks: this.savedState,
       trackId: this.trackId,
-      update: (track) =>
-        canTrackHaveAudio(track) ? { ...track, muted: !track.muted } : track,
+      update: track => (canTrackHaveAudio(track) ? { ...track, muted: !track.muted } : track),
     });
 
     editor.timeline.updateTracks(updatedTracks);

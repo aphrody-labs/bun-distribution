@@ -3,11 +3,25 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** shdocvw.dll!DoPrivacyDlg */
-  DoPrivacyDlg(hwndOwner: Win32Pointer, pszUrl: string | Win32Pointer, pPrivacyEnum: Win32Pointer, fReportAllSites: number): number;
+  DoPrivacyDlg(
+    hwndOwner: Win32Pointer,
+    pszUrl: string | Win32Pointer,
+    pPrivacyEnum: Win32Pointer,
+    fReportAllSites: number,
+  ): number;
   /** shdocvw.dll!ImportPrivacySettings */
-  ImportPrivacySettings(pszFilename: string | Win32Pointer, pfParsePrivacyPreferences: Win32Pointer, pfParsePerSiteRules: Win32Pointer): number;
+  ImportPrivacySettings(
+    pszFilename: string | Win32Pointer,
+    pfParsePrivacyPreferences: Win32Pointer,
+    pfParsePerSiteRules: Win32Pointer,
+  ): number;
   /** shdocvw.dll!SoftwareUpdateMessageBox */
-  SoftwareUpdateMessageBox(hWnd: Win32Pointer, pszDistUnit: string | Win32Pointer, dwFlags: number, psdi: Win32Pointer): number;
+  SoftwareUpdateMessageBox(
+    hWnd: Win32Pointer,
+    pszDistUnit: string | Win32Pointer,
+    dwFlags: number,
+    psdi: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

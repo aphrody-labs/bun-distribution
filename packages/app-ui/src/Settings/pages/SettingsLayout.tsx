@@ -1,12 +1,7 @@
 import { Button, Icon, Switch } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import type { ReactNode } from "react";
-import {
-  Controller,
-  type Control,
-  type FieldPath,
-  type FieldValues,
-} from "react-hook-form";
+import { Controller, type Control, type FieldPath, type FieldValues } from "react-hook-form";
 
 /**
  * Material Design 3 building blocks shared by the settings pages: a page header, list sections
@@ -14,21 +9,11 @@ import {
  * with trailing switches, notices on the container roles and the save action.
  */
 
-export function SettingsHeader({
-  title,
-  description,
-}: {
-  title: string;
-  description?: ReactNode;
-}) {
+export function SettingsHeader({ title, description }: { title: string; description?: ReactNode }) {
   return (
     <header className="space-y-1">
       <h2 className="text-on-surface text-headline-small">{title}</h2>
-      {description && (
-        <p className="text-on-surface-variant text-body-medium">
-          {description}
-        </p>
-      )}
+      {description && <p className="text-on-surface-variant text-body-medium">{description}</p>}
     </header>
   );
 }
@@ -54,11 +39,7 @@ export function SettingsSection({
       <div className="bg-surface-container-low divide-outline-variant overflow-hidden rounded-large divide-y">
         {children}
       </div>
-      {footer && (
-        <div className="text-on-surface-variant px-4 text-body-small">
-          {footer}
-        </div>
-      )}
+      {footer && <div className="text-on-surface-variant px-4 text-body-small">{footer}</div>}
     </section>
   );
 }
@@ -83,11 +64,7 @@ export function SettingsItem({
       <div className="flex items-center justify-between gap-4">
         <Headline htmlFor={htmlFor} className="min-w-0">
           <span className="text-on-surface block text-body-large">{label}</span>
-          {description && (
-            <span className="text-on-surface-variant block text-body-medium">
-              {description}
-            </span>
-          )}
+          {description && <span className="text-on-surface-variant block text-body-medium">{description}</span>}
         </Headline>
         {trailing}
       </div>
@@ -151,11 +128,7 @@ export function SettingsNotice({
         tone === "info" && "bg-secondary-container text-on-secondary-container",
       )}
     >
-      <Icon
-        name={tone === "error" ? "error" : tone === "info" ? "info" : "warning"}
-        size={20}
-        className="mt-px"
-      />
+      <Icon name={tone === "error" ? "error" : tone === "info" ? "info" : "warning"} size={20} className="mt-px" />
       <p>{children}</p>
     </div>
   );

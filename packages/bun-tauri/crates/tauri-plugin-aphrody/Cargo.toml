@@ -42,13 +42,28 @@ default = [
 ]
 autostart = ["dep:auto-launch"]
 clipboard-manager = ["dep:arboard"]
-deep-link = ["dep:tauri-utils", "dep:tracing", "dep:dunce", "dep:windows-registry", "dep:windows-result", "dep:rust-ini"]
+deep-link = [
+  "dep:tauri-utils",
+  "dep:tracing",
+  "dep:dunce",
+  "dep:windows-registry",
+  "dep:windows-result",
+  "dep:rust-ini",
+]
 dialog = ["fs", "dep:rfd", "dep:raw-window-handle"]
 dialog-xdg-portal = ["dialog", "rfd/xdg-portal", "rfd/tokio", "rfd/wayland"]
 fs = ["dep:serde_repr", "dep:anyhow", "dep:glob", "dep:dunce", "dep:percent-encoding", "dep:objc2-foundation"]
 fs-watch = ["fs", "dep:notify", "dep:notify-debouncer-full"]
 global-shortcut = ["dep:global-hotkey"]
-log = ["dep:serde_repr", "dep:fern", "dep:time", "dep:android_logger", "dep:swift-rs", "dep:objc2", "dep:objc2-foundation"]
+log = [
+  "dep:serde_repr",
+  "dep:fern",
+  "dep:time",
+  "dep:android_logger",
+  "dep:swift-rs",
+  "dep:objc2",
+  "dep:objc2-foundation",
+]
 log-colored = ["log", "fern/colored"]
 log-tracing = ["log", "dep:tracing"]
 mcp-bridge = [
@@ -212,7 +227,12 @@ osakit = { version = "0.3", features = ["full"], optional = true }
 objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSWorkspace"], optional = true }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
-objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSURL", "NSArray", "NSString"], optional = true }
+objc2-foundation = { version = "0.3", default-features = false, features = [
+  "std",
+  "NSURL",
+  "NSArray",
+  "NSString",
+], optional = true }
 
 [target.'cfg(target_os = "ios")'.dependencies]
 swift-rs = { workspace = true, optional = true }

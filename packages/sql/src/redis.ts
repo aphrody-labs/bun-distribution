@@ -43,10 +43,7 @@ export interface ResolveRedisUrlOptions {
 
 /** First usable Redis URL from the environment, else the fallback (read at call time). */
 export function resolveRedisUrl(options: ResolveRedisUrlOptions = {}): string {
-  const env =
-    options.env ??
-    (globalThis as { process?: { env?: EnvSource } }).process?.env ??
-    {};
+  const env = options.env ?? (globalThis as { process?: { env?: EnvSource } }).process?.env ?? {};
   for (const name of options.names ?? ["REDIS_URL", "VALKEY_URL"]) {
     const value = env[name];
     if (isUsableEnvValue(value)) return value;
@@ -60,12 +57,9 @@ export function redisOptions(options: RedisOptions = {}): RedisOptions {
 }
 
 function redisClientConstructor(): typeof RedisClient {
-  const bun = (globalThis as { Bun?: { RedisClient?: typeof RedisClient } })
-    .Bun;
+  const bun = (globalThis as { Bun?: { RedisClient?: typeof RedisClient } }).Bun;
   if (!bun?.RedisClient) {
-    throw new Error(
-      "@aphrody/sql/redis requires the Bun runtime (Bun.RedisClient).",
-    );
+    throw new Error("@aphrody/sql/redis requires the Bun runtime (Bun.RedisClient).");
   }
   return bun.RedisClient;
 }
@@ -74,10 +68,7 @@ function redisClientConstructor(): typeof RedisClient {
  * New Bun `RedisClient` for `url` (default {@link resolveRedisUrl}). The
  * connection opens on the first command.
  */
-export function createRedisClient(
-  url?: string,
-  options: RedisOptions = {},
-): RedisClient {
+export function createRedisClient(url?: string, options: RedisOptions = {}): RedisClient {
   const BunRedisClient = redisClientConstructor();
   return new BunRedisClient(url ?? resolveRedisUrl(), redisOptions(options));
 }

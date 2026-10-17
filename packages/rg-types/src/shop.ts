@@ -10,7 +10,15 @@
  */
 
 export type ProductCategory =
-  "pack-patreon" | "print" | "sticker" | "marque-page" | "badge" | "textile" | "affiche" | "carte" | "digital";
+  | "pack-patreon"
+  | "print"
+  | "sticker"
+  | "marque-page"
+  | "badge"
+  | "textile"
+  | "affiche"
+  | "carte"
+  | "digital";
 
 export interface ProductVariant {
   id: string;

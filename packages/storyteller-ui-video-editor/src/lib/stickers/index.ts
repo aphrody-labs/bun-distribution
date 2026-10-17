@@ -5,25 +5,13 @@ import { stickersRegistry } from "./registry";
 import { resolveStickerId } from "./resolver";
 import { registerDefaultStickerProviders } from "./providers";
 import { parseStickerId } from "./sticker-id";
-import type {
-  StickerBrowseResult,
-  StickerItem,
-  StickerProvider,
-  StickerSearchResult,
-} from "./types";
+import type { StickerBrowseResult, StickerItem, StickerProvider, StickerSearchResult } from "./types";
 
 const DEFAULT_BROWSE_LIMIT = 12;
 const DEFAULT_SEARCH_LIMIT = 100;
 
-function mergeSearchResults({
-  results,
-}: {
-  results: StickerSearchResult[];
-}): StickerSearchResult {
-  const deduplicatedItems = new Map<
-    string,
-    StickerSearchResult["items"][number]
-  >();
+function mergeSearchResults({ results }: { results: StickerSearchResult[] }): StickerSearchResult {
+  const deduplicatedItems = new Map<string, StickerSearchResult["items"][number]>();
   let total = 0;
   let hasMore = false;
 
@@ -44,11 +32,7 @@ function mergeSearchResults({
   };
 }
 
-function getProviderByCategory({
-  category,
-}: {
-  category: StickerCategory;
-}): StickerProvider | null {
+function getProviderByCategory({ category }: { category: StickerCategory }): StickerProvider | null {
   if (category === "all") {
     return null;
   }
@@ -71,17 +55,10 @@ function getStickerNameFromId({ stickerId }: { stickerId: string }): string {
   if (stickerIdParts.length <= 1) {
     return stickerId;
   }
-  return (
-    stickerIdParts.slice(1).join(":").split(":").pop()?.replaceAll("-", " ") ??
-    stickerId
-  );
+  return stickerIdParts.slice(1).join(":").split(":").pop()?.replaceAll("-", " ") ?? stickerId;
 }
 
-function toRecentStickerItem({
-  stickerId,
-}: {
-  stickerId: string;
-}): StickerItem | null {
+function toRecentStickerItem({ stickerId }: { stickerId: string }): StickerItem | null {
   try {
     const { providerId } = parseStickerId({ stickerId });
     return {
@@ -137,7 +114,7 @@ export async function searchStickers({
 
   const perProviderLimit = Math.max(1, Math.ceil(limit / providers.length));
   const settledResults = await Promise.allSettled(
-    providers.map((provider) =>
+    providers.map(provider =>
       provider.search({
         query,
         options: { limit: perProviderLimit },
@@ -146,11 +123,8 @@ export async function searchStickers({
   );
 
   const fulfilledResults = settledResults
-    .filter(
-      (result): result is PromiseFulfilledResult<StickerSearchResult> =>
-        result.status === "fulfilled",
-    )
-    .map((result) => result.value);
+    .filter((result): result is PromiseFulfilledResult<StickerSearchResult> => result.status === "fulfilled")
+    .map(result => result.value);
 
   return mergeSearchResults({
     results: fulfilledResults,
@@ -173,7 +147,7 @@ export async function searchAll({
 
   const perProviderLimit = Math.max(1, Math.ceil(limit / providers.length));
   const settledResults = await Promise.allSettled(
-    providers.map(async (provider) => {
+    providers.map(async provider => {
       const result = await provider.search({
         query,
         options: { limit: perProviderLimit },
@@ -204,11 +178,7 @@ export async function searchAll({
   return { sections };
 }
 
-export async function browseCategory({
-  category,
-}: {
-  category: StickerCategory;
-}): Promise<StickerBrowseResult> {
+export async function browseCategory({ category }: { category: StickerCategory }): Promise<StickerBrowseResult> {
   registerDefaultStickerProviders({});
 
   const effectiveCategory = category in STICKER_CATEGORIES ? category : "all";
@@ -235,7 +205,7 @@ export async function browseAll({
 
   const sections: StickerBrowseResult["sections"] = [];
   const recentItems = recentStickers
-    .map((stickerId) => toRecentStickerItem({ stickerId }))
+    .map(stickerId => toRecentStickerItem({ stickerId }))
     .filter((item): item is StickerItem => item !== null);
 
   if (recentItems.length > 0) {
@@ -249,7 +219,7 @@ export async function browseAll({
   }
 
   const settledResults = await Promise.allSettled(
-    stickersRegistry.getAll().map(async (provider) => {
+    stickersRegistry.getAll().map(async provider => {
       const browseResult = await provider.browse({
         options: { limit },
       });
@@ -289,10 +259,9 @@ export async function resolveStickerIntrinsicSize({
   stickerId: string;
 }): Promise<{ width: number; height: number }> {
   const url = resolveStickerId({ stickerId });
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const img = new Image();
-    img.onload = () =>
-      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
     img.onerror = () =>
       resolve({
         width: STICKER_INTRINSIC_SIZE_FALLBACK,

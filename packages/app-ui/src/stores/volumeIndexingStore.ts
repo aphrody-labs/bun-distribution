@@ -14,28 +14,26 @@ interface VolumeIndexingState {
   getJobId: (fingerprint: string) => string | undefined;
 }
 
-export const useVolumeIndexingStore = create<VolumeIndexingState>(
-  (set, get) => ({
-    volumeToJob: new Map(),
+export const useVolumeIndexingStore = create<VolumeIndexingState>((set, get) => ({
+  volumeToJob: new Map(),
 
-    setVolumeJob: (fingerprint: string, jobId: string) => {
-      set((state) => {
-        const newMap = new Map(state.volumeToJob);
-        newMap.set(fingerprint, jobId);
-        return { volumeToJob: newMap };
-      });
-    },
+  setVolumeJob: (fingerprint: string, jobId: string) => {
+    set(state => {
+      const newMap = new Map(state.volumeToJob);
+      newMap.set(fingerprint, jobId);
+      return { volumeToJob: newMap };
+    });
+  },
 
-    clearVolumeJob: (fingerprint: string) => {
-      set((state) => {
-        const newMap = new Map(state.volumeToJob);
-        newMap.delete(fingerprint);
-        return { volumeToJob: newMap };
-      });
-    },
+  clearVolumeJob: (fingerprint: string) => {
+    set(state => {
+      const newMap = new Map(state.volumeToJob);
+      newMap.delete(fingerprint);
+      return { volumeToJob: newMap };
+    });
+  },
 
-    getJobId: (fingerprint: string) => {
-      return get().volumeToJob.get(fingerprint);
-    },
-  }),
-);
+  getJobId: (fingerprint: string) => {
+    return get().volumeToJob.get(fingerprint);
+  },
+}));

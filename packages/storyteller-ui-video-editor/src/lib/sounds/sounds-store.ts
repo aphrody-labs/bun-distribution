@@ -45,26 +45,14 @@ interface SoundsStore {
   appendTopSounds: ({ results }: { results: SoundEffect[] }) => void;
   resetPagination: () => void;
   loadSavedSounds: () => Promise<void>;
-  saveSoundEffect: ({
-    soundEffect,
-  }: {
-    soundEffect: SoundEffect;
-  }) => Promise<void>;
+  saveSoundEffect: ({ soundEffect }: { soundEffect: SoundEffect }) => Promise<void>;
   removeSavedSound: ({ soundId }: { soundId: number }) => Promise<void>;
   isSoundSaved: ({ soundId }: { soundId: number }) => boolean;
-  toggleSavedSound: ({
-    soundEffect,
-  }: {
-    soundEffect: SoundEffect;
-  }) => Promise<void>;
+  toggleSavedSound: ({ soundEffect }: { soundEffect: SoundEffect }) => Promise<void>;
   clearSavedSounds: () => Promise<void>;
 }
 
-function buildSavedSoundFromEffect({
-  soundEffect,
-}: {
-  soundEffect: SoundEffect;
-}): SavedSound {
+function buildSavedSoundFromEffect({ soundEffect }: { soundEffect: SoundEffect }): SavedSound {
   return {
     id: soundEffect.id,
     name: soundEffect.name,
@@ -86,7 +74,7 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
   showCommercialOnly: true,
 
   toggleCommercialFilter: () => {
-    set((state) => ({ showCommercialOnly: !state.showCommercialOnly }));
+    set(state => ({ showCommercialOnly: !state.showCommercialOnly }));
   },
 
   searchQuery: "",
@@ -109,8 +97,7 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
   setError: ({ error }) => set({ error }),
   setHasLoaded: ({ loaded }) => set({ hasLoaded: loaded }),
   setSearchQuery: ({ query }) => set({ searchQuery: query }),
-  setSearchResults: ({ results }) =>
-    set({ searchResults: results, currentPage: 1 }),
+  setSearchResults: ({ results }) => set({ searchResults: results, currentPage: 1 }),
   setSearching: ({ searching }) => set({ isSearching: searching }),
   setSearchError: ({ error }) => set({ searchError: error }),
   setLastSearchQuery: ({ query }) => set({ lastSearchQuery: query }),
@@ -121,12 +108,12 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
   setLoadingMore: ({ loading }) => set({ isLoadingMore: loading }),
 
   appendSearchResults: ({ results }) =>
-    set((state) => ({
+    set(state => ({
       searchResults: [...state.searchResults, ...results],
     })),
 
   appendTopSounds: ({ results }) =>
-    set((state) => ({
+    set(state => ({
       topSoundEffects: [...state.topSoundEffects, ...results],
     })),
 
@@ -151,8 +138,7 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
         isLoadingSavedSounds: false,
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to load saved sounds";
+      const errorMessage = error instanceof Error ? error.message : "Failed to load saved sounds";
       set({
         savedSoundsError: errorMessage,
         isLoadingSavedSounds: false,
@@ -169,21 +155,15 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
       // Optimistically update the in-store collection. The adapter
       // owns the source of truth; we re-load the next time the panel
       // opens to reconcile.
-      set((state) => {
-        const exists = state.savedSounds.some(
-          (sound) => sound.id === soundEffect.id,
-        );
+      set(state => {
+        const exists = state.savedSounds.some(sound => sound.id === soundEffect.id);
         if (exists) return state;
         return {
-          savedSounds: [
-            ...state.savedSounds,
-            buildSavedSoundFromEffect({ soundEffect }),
-          ],
+          savedSounds: [...state.savedSounds, buildSavedSoundFromEffect({ soundEffect })],
         };
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to save sound";
+      const errorMessage = error instanceof Error ? error.message : "Failed to save sound";
       set({ savedSoundsError: errorMessage });
       EditorCore.getInstance().adapters.toast.error("Failed to save sound");
       console.error("Failed to save sound:", error);
@@ -195,12 +175,11 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
       const editor = EditorCore.getInstance();
       await editor.adapters.soundsAdapter.unsaveSound({ soundId });
 
-      set((state) => ({
-        savedSounds: state.savedSounds.filter((sound) => sound.id !== soundId),
+      set(state => ({
+        savedSounds: state.savedSounds.filter(sound => sound.id !== soundId),
       }));
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to remove sound";
+      const errorMessage = error instanceof Error ? error.message : "Failed to remove sound";
       set({ savedSoundsError: errorMessage });
       EditorCore.getInstance().adapters.toast.error("Failed to remove sound");
       console.error("Failed to remove sound:", error);
@@ -209,7 +188,7 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
 
   isSoundSaved: ({ soundId }) => {
     const { savedSounds } = get();
-    return savedSounds.some((sound) => sound.id === soundId);
+    return savedSounds.some(sound => sound.id === soundId);
   },
 
   toggleSavedSound: async ({ soundEffect }) => {
@@ -231,12 +210,9 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
         savedSoundsError: null,
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to clear saved sounds";
+      const errorMessage = error instanceof Error ? error.message : "Failed to clear saved sounds";
       set({ savedSoundsError: errorMessage });
-      EditorCore.getInstance().adapters.toast.error(
-        "Failed to clear saved sounds",
-      );
+      EditorCore.getInstance().adapters.toast.error("Failed to clear saved sounds");
       console.error("Failed to clear saved sounds:", error);
     }
   },
@@ -262,8 +238,7 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
       const currentTime = editor.playback.getCurrentTime();
 
       const response = await fetch(audioUrl);
-      if (!response.ok)
-        throw new Error(`Failed to download audio: ${response.statusText}`);
+      if (!response.ok) throw new Error(`Failed to download audio: ${response.statusText}`);
 
       const arrayBuffer = await response.arrayBuffer();
       const audioContext = new AudioContext();
@@ -284,11 +259,7 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
       return true;
     } catch (error) {
       console.error("Failed to add sound to timeline:", error);
-      editor.adapters.toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to add sound to timeline",
-      );
+      editor.adapters.toast.error(error instanceof Error ? error.message : "Failed to add sound to timeline");
       return false;
     }
   },

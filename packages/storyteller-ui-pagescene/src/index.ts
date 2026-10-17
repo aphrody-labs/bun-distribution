@@ -18,11 +18,7 @@ export type {
 } from "./lib/adapter";
 
 // Store
-export {
-  usePageSceneStore,
-  useIsVisitingOthersScene,
-  getIsVisitingOthersScene,
-} from "./lib/PageSceneStore";
+export { usePageSceneStore, useIsVisitingOthersScene, getIsVisitingOthersScene } from "./lib/PageSceneStore";
 export type {
   Camera,
   FocalLengthDragging,
@@ -72,13 +68,7 @@ export type { XYZ, Simple3DVector } from "./lib/datastructures/common";
 // to importing from here.
 export type { MediaItem, AudioMediaItem } from "./lib/models/assets";
 export type { SceneGenereationMetaData } from "./lib/models/sceneGenerationMetadata";
-export type {
-  MediaInfo,
-  MaybeResult,
-  Request,
-  Status,
-  ActiveJob,
-} from "./lib/models/mediaInfo";
+export type { MediaInfo, MaybeResult, Request, Status, ActiveJob } from "./lib/models/mediaInfo";
 export type { Pagination, PaginationInfinite } from "./lib/models/pagination";
 export type { Prompts } from "./lib/models/prompts";
 export type {
@@ -91,11 +81,7 @@ export type {
   VoiceConversionModelListResponse,
   CreatorDetails,
 } from "./lib/models/types";
-export type {
-  UserBookmarkBatch,
-  UserBookmarkByEntity,
-  UserBookmarkByUser,
-} from "./lib/models/userBookmark";
+export type { UserBookmarkBatch, UserBookmarkByEntity, UserBookmarkByUser } from "./lib/models/userBookmark";
 
 // Engine — main entry point for hosts. Editor takes a PageSceneAdapter
 // at construction; everything platform-specific (HTTP, signals, auth)
@@ -107,38 +93,23 @@ export type { SceneDeps } from "./lib/engine/scene";
 export { SceneUtils } from "./lib/engine/helper";
 export type { SceneUtilsDeps } from "./lib/engine/helper";
 export { SaveManager } from "./lib/engine/save_manager";
-export type {
-  SaveManagerDeps,
-  SaveSceneStateArgs,
-} from "./lib/engine/save_manager";
+export type { SaveManagerDeps, SaveSceneStateArgs } from "./lib/engine/save_manager";
 export { SceneManager } from "./lib/engine/scene_manager_api";
 export { MouseControls } from "./lib/engine/keybinds_controls";
 export type { MouseControlsDeps } from "./lib/engine/keybinds_controls";
 export { buildKeymap, dispatchBinding } from "./lib/engine/keymap";
-export type {
-  KeyBinding,
-  KeyGroup as KeymapKeyGroup,
-} from "./lib/engine/keymap";
+export type { KeyBinding, KeyGroup as KeymapKeyGroup } from "./lib/engine/keymap";
 
 // Engine subsystems
 export { HistoryManager } from "./lib/engine/editor/HistoryManager";
-export type {
-  UndoableAction,
-  HistoryManagerOptions,
-} from "./lib/engine/editor/HistoryManager";
+export type { UndoableAction, HistoryManagerOptions } from "./lib/engine/editor/HistoryManager";
 export { ViewportController } from "./lib/engine/editor/ViewportController";
 export type { ViewportEngineRefs } from "./lib/engine/editor/ViewportController";
 export { PostProcessingPipeline } from "./lib/engine/editor/PostProcessingPipeline";
 export { GizmoController } from "./lib/engine/editor/GizmoController";
-export type {
-  GizmoControllerDeps,
-  GizmoCallbacks,
-} from "./lib/engine/editor/GizmoController";
+export type { GizmoControllerDeps, GizmoCallbacks } from "./lib/engine/editor/GizmoController";
 export { CameraController } from "./lib/engine/editor/CameraController";
-export type {
-  CameraControllerDeps,
-  RenderDimensions,
-} from "./lib/engine/editor/CameraController";
+export type { CameraControllerDeps, RenderDimensions } from "./lib/engine/editor/CameraController";
 export { SelectionBridge } from "./lib/engine/editor/SelectionBridge";
 export type { SelectionBridgeDeps } from "./lib/engine/editor/SelectionBridge";
 
@@ -178,11 +149,7 @@ export { useViewportPointer } from "./lib/hooks/useViewportPointer";
 export { useViewportKeyboard } from "./lib/hooks/useViewportKeyboard";
 
 // Engine context — React tree access to the live Editor instance.
-export {
-  EngineContext,
-  setActiveEditor,
-  getActiveEditor,
-} from "./lib/contexts/EngineContext/EngineContext";
+export { EngineContext, setActiveEditor, getActiveEditor } from "./lib/contexts/EngineContext/EngineContext";
 export type { EditorExpandedI } from "./lib/contexts/EngineContext/EngineContext";
 export { EngineProvider } from "./lib/contexts/EngineContext/EngineProvider";
 
@@ -241,11 +208,7 @@ export {
   rotationVectorFromKeys,
   lerpVelocity,
 } from "./lib/engine/cameraMath";
-export type {
-  FreeCamControlState,
-  HeldMoveKeys,
-  HeldRotateKeys,
-} from "./lib/engine/cameraMath";
+export type { FreeCamControlState, HeldMoveKeys, HeldRotateKeys } from "./lib/engine/cameraMath";
 export { ndcFromClient, applyNdcToVector2 } from "./lib/engine/pointer";
 export { isPointerLockSupported } from "./lib/engine/browserChecks";
 
@@ -256,10 +219,7 @@ export { isPointerLockSupported } from "./lib/engine/browserChecks";
 export { EngineEventBus } from "./lib/engine/events/EngineEventBus";
 export { EngineStoreBridge } from "./lib/engine/EngineStoreBridge";
 export type { EngineStoreBridgeDeps } from "./lib/engine/EngineStoreBridge";
-export type {
-  EngineEventCtor,
-  EngineEventListener,
-} from "./lib/engine/events/EngineEventBus";
+export type { EngineEventCtor, EngineEventListener } from "./lib/engine/events/EngineEventBus";
 export {
   EngineEvent,
   EngineInitializedEvent,

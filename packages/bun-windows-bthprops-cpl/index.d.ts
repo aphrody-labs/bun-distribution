@@ -3,11 +3,28 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** bthprops.cpl!BluetoothAuthenticateDevice */
-  BluetoothAuthenticateDevice(hwndParent: Win32Pointer, hRadio: Win32Pointer, pbtbi: Win32Pointer, pszPasskey: string | Win32Pointer, ulPasskeyLength: number): number;
+  BluetoothAuthenticateDevice(
+    hwndParent: Win32Pointer,
+    hRadio: Win32Pointer,
+    pbtbi: Win32Pointer,
+    pszPasskey: string | Win32Pointer,
+    ulPasskeyLength: number,
+  ): number;
   /** bthprops.cpl!BluetoothAuthenticateDeviceEx */
-  BluetoothAuthenticateDeviceEx(hwndParentIn: Win32Pointer, hRadioIn: Win32Pointer, pbtdiInout: Win32Pointer, pbtOobData: Win32Pointer, authenticationRequirement: number): number;
+  BluetoothAuthenticateDeviceEx(
+    hwndParentIn: Win32Pointer,
+    hRadioIn: Win32Pointer,
+    pbtdiInout: Win32Pointer,
+    pbtOobData: Win32Pointer,
+    authenticationRequirement: number,
+  ): number;
   /** bthprops.cpl!BluetoothAuthenticateMultipleDevices */
-  BluetoothAuthenticateMultipleDevices(hwndParent: Win32Pointer, hRadio: Win32Pointer, cDevices: number, rgbtdi: Win32Pointer): number;
+  BluetoothAuthenticateMultipleDevices(
+    hwndParent: Win32Pointer,
+    hRadio: Win32Pointer,
+    cDevices: number,
+    rgbtdi: Win32Pointer,
+  ): number;
   /** bthprops.cpl!BluetoothDisplayDeviceProperties */
   BluetoothDisplayDeviceProperties(hwndParent: Win32Pointer, pbtdi: Win32Pointer): number;
   /** bthprops.cpl!BluetoothSelectDevices */

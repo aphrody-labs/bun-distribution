@@ -9,17 +9,9 @@ import {
   Copy as CopyIcon,
   ArrowsLeftRight,
 } from "@phosphor-icons/react";
-import {
-  Dialog,
-  dialogManager,
-  useDialog,
-  type UseDialogProps,
-} from "@aphrody/m3-primitives";
+import { Dialog, dialogManager, useDialog, type UseDialogProps } from "@aphrody/m3-primitives";
 import type { SdPath, File as FileType } from "@aphrody/drive-client";
-import {
-  useLibraryMutation,
-  useLibraryQuery,
-} from "../../contexts/SpacedriveContext";
+import { useLibraryMutation, useLibraryQuery } from "../../contexts/SpacedriveContext";
 import { File, FileStack } from "../../routes/explorer/File";
 
 interface FileOperationDialogProps {
@@ -32,16 +24,12 @@ interface FileOperationDialogProps {
 
 type ConflictResolution = "Overwrite" | "AutoModifyName" | "Skip" | "Abort";
 
-type DialogPhase =
-  { type: "form" } | { type: "executing" } | { type: "error"; message: string };
+type DialogPhase = { type: "form" } | { type: "executing" } | { type: "error"; message: string };
 
 export function useFileOperationDialog() {
   return (options: Omit<FileOperationDialogProps, "id">) => {
     return dialogManager.create((props: UseDialogProps) => (
-      <FileOperationDialog
-        {...(props as FileOperationDialogProps)}
-        {...options}
-      />
+      <FileOperationDialog {...(props as FileOperationDialogProps)} {...options} />
     ));
   };
 }
@@ -51,15 +39,14 @@ function FileOperationDialog(props: FileOperationDialogProps) {
   const form = useForm();
   const [phase, setPhase] = useState<DialogPhase>({ type: "form" });
   const [operation, setOperation] = useState<"copy" | "move">(props.operation);
-  const [conflictResolution, setConflictResolution] =
-    useState<ConflictResolution>("Skip");
+  const [conflictResolution, setConflictResolution] = useState<ConflictResolution>("Skip");
 
   const copyFiles = useLibraryMutation("files.copy");
 
   // Fetch file info for sources (up to 3 for FileStack)
   const sourcePaths = props.sources
     .slice(0, 3)
-    .map((s) => ("Physical" in s ? s.Physical.path : null))
+    .map(s => ("Physical" in s ? s.Physical.path : null))
     .filter((p): p is string => p !== null);
 
   // One query per FileStack slot (max 3), called unconditionally to keep the hook order stable
@@ -77,12 +64,11 @@ function FileOperationDialog(props: FileOperationDialogProps) {
   );
 
   const sourceFiles = [sourceFileQuery0, sourceFileQuery1, sourceFileQuery2]
-    .map((q) => q.data)
+    .map(q => q.data)
     .filter((f): f is FileType => f !== undefined && f !== null);
 
   // Fetch destination folder info
-  const destPath: string | null =
-    "Physical" in props.destination ? props.destination.Physical.path : null;
+  const destPath: string | null = "Physical" in props.destination ? props.destination.Physical.path : null;
 
   const { data: destFile } = useLibraryQuery(
     { type: "files.by_path", input: { path: destPath! } },
@@ -90,7 +76,7 @@ function FileOperationDialog(props: FileOperationDialogProps) {
   );
 
   // Check if any source is the same as destination
-  const hasSameSourceDest = props.sources.some((source) => {
+  const hasSameSourceDest = props.sources.some(source => {
     if ("Physical" in source && "Physical" in props.destination) {
       return source.Physical.path === props.destination.Physical.path;
     }
@@ -205,10 +191,7 @@ function FileOperationDialog(props: FileOperationDialogProps) {
       >
         <div className="space-y-3 py-6">
           <div className="flex items-center justify-center gap-3">
-            <CircleNotch
-              className="size-6 text-primary animate-spin"
-              weight="bold"
-            />
+            <CircleNotch className="size-6 text-primary animate-spin" weight="bold" />
             <span className="text-body-medium text-on-surface">
               {operation === "copy" ? "Copying files..." : "Moving files..."}
             </span>
@@ -233,12 +216,8 @@ function FileOperationDialog(props: FileOperationDialogProps) {
           <div className="flex items-start gap-2 p-3 bg-error/10 border border-error/20 rounded-small">
             <Warning className="size-5 text-error mt-0.5" weight="fill" />
             <div className="flex-1">
-              <div className="text-label-large font-medium text-on-surface mb-1">
-                Error
-              </div>
-              <div className="text-body-small text-on-surface-variant">
-                {phase.message}
-              </div>
+              <div className="text-label-large font-medium text-on-surface mb-1">Error</div>
+              <div className="text-body-small text-on-surface-variant">{phase.message}</div>
             </div>
           </div>
         </div>
@@ -274,9 +253,7 @@ function FileOperationDialog(props: FileOperationDialogProps) {
                   <FileStack files={sourceFiles} size={80} />
                 )}
                 <div className="text-center w-full">
-                  <div className="text-body-small text-on-surface-variant mb-0.5">
-                    Source
-                  </div>
+                  <div className="text-body-small text-on-surface-variant mb-0.5">Source</div>
                   {sourceFiles.length === 1 ? (
                     <div className="text-label-large font-medium text-on-surface truncate w-full">
                       {sourceFiles[0].name}
@@ -290,14 +267,9 @@ function FileOperationDialog(props: FileOperationDialogProps) {
               </>
             ) : (
               <>
-                <Files
-                  className="size-20 text-on-surface-variant"
-                  weight="fill"
-                />
+                <Files className="size-20 text-on-surface-variant" weight="fill" />
                 <div className="text-center">
-                  <div className="text-body-small text-on-surface-variant mb-0.5">
-                    Source
-                  </div>
+                  <div className="text-body-small text-on-surface-variant mb-0.5">Source</div>
                   <div className="text-label-large font-medium text-on-surface">
                     {sourceCount} {pluralItems}
                   </div>
@@ -317,21 +289,15 @@ function FileOperationDialog(props: FileOperationDialogProps) {
               <>
                 <File.Thumb file={destFile} size={80} />
                 <div className="text-center w-full">
-                  <div className="text-body-small text-on-surface-variant mb-0.5">
-                    To
-                  </div>
-                  <div className="text-label-large font-medium text-on-surface truncate w-full">
-                    {destFile.name}
-                  </div>
+                  <div className="text-body-small text-on-surface-variant mb-0.5">To</div>
+                  <div className="text-label-large font-medium text-on-surface truncate w-full">{destFile.name}</div>
                 </div>
               </>
             ) : (
               <>
                 <FolderOpen className="size-20 text-primary" weight="fill" />
                 <div className="text-center">
-                  <div className="text-body-small text-on-surface-variant mb-0.5">
-                    To
-                  </div>
+                  <div className="text-body-small text-on-surface-variant mb-0.5">To</div>
                   <div className="text-label-large font-medium text-on-surface truncate max-w-full">
                     {getFileName(props.destination)}
                   </div>
@@ -343,9 +309,7 @@ function FileOperationDialog(props: FileOperationDialogProps) {
 
         {/* Operation type selection */}
         <div className="space-y-2">
-          <div className="text-label-medium font-medium text-on-surface-variant mb-2">
-            Operation:
-          </div>
+          <div className="text-label-medium font-medium text-on-surface-variant mb-2">Operation:</div>
           <div className="flex gap-2">
             <button
               type="button"
@@ -378,9 +342,7 @@ function FileOperationDialog(props: FileOperationDialogProps) {
 
         {/* Conflict resolution options */}
         <div className="space-y-2">
-          <div className="text-label-medium font-medium text-on-surface-variant mb-2">
-            If files already exist:
-          </div>
+          <div className="text-label-medium font-medium text-on-surface-variant mb-2">If files already exist:</div>
           <div className="space-y-1">
             {[
               { value: "Skip", label: "Skip existing files", key: "S" },
@@ -394,7 +356,7 @@ function FileOperationDialog(props: FileOperationDialogProps) {
                 label: "Overwrite existing files",
                 key: "O",
               },
-            ].map((option) => (
+            ].map(option => (
               <label
                 key={option.value}
                 className="flex items-center justify-between gap-2 px-2 py-2 rounded-small hover:bg-on-surface/8 cursor-pointer transition-colors"
@@ -405,18 +367,12 @@ function FileOperationDialog(props: FileOperationDialogProps) {
                     name="conflict-resolution"
                     value={option.value}
                     checked={conflictResolution === option.value}
-                    onChange={() =>
-                      setConflictResolution(option.value as ConflictResolution)
-                    }
+                    onChange={() => setConflictResolution(option.value as ConflictResolution)}
                     className="size-4 accent-primary cursor-pointer"
                   />
-                  <span className="text-body-medium text-on-surface">
-                    {option.label}
-                  </span>
+                  <span className="text-body-medium text-on-surface">{option.label}</span>
                 </div>
-                <span className="text-label-medium text-outline font-medium">
-                  {option.key}
-                </span>
+                <span className="text-label-medium text-outline font-medium">{option.key}</span>
               </label>
             ))}
           </div>

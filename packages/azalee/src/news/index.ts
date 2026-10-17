@@ -30,7 +30,13 @@ export interface TagCloudItem extends NewsTag {
 }
 
 export type NewsCategory =
-  "announcement" | "game-update" | "guide" | "community" | "tournament" | "patch-notes" | "dev-blog";
+  | "announcement"
+  | "game-update"
+  | "guide"
+  | "community"
+  | "tournament"
+  | "patch-notes"
+  | "dev-blog";
 
 export interface Article {
   id: string;

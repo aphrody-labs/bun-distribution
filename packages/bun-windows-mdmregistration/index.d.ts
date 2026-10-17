@@ -5,21 +5,37 @@ interface Functions {
   /** mdmregistration.dll!DiscoverManagementService */
   DiscoverManagementService(pszUPN: string | Win32Pointer, ppMgmtInfo: Win32Pointer): number;
   /** mdmregistration.dll!DiscoverManagementServiceEx */
-  DiscoverManagementServiceEx(pszUPN: string | Win32Pointer, pszDiscoveryServiceCandidate: string | Win32Pointer, ppMgmtInfo: Win32Pointer): number;
+  DiscoverManagementServiceEx(
+    pszUPN: string | Win32Pointer,
+    pszDiscoveryServiceCandidate: string | Win32Pointer,
+    ppMgmtInfo: Win32Pointer,
+  ): number;
   /** mdmregistration.dll!GetDeviceManagementConfigInfo */
-  GetDeviceManagementConfigInfo(providerID: string | Win32Pointer, configStringBufferLength: Win32Pointer, configString: string | Win32Pointer): number;
+  GetDeviceManagementConfigInfo(
+    providerID: string | Win32Pointer,
+    configStringBufferLength: Win32Pointer,
+    configString: string | Win32Pointer,
+  ): number;
   /** mdmregistration.dll!GetDeviceRegistrationInfo */
   GetDeviceRegistrationInfo(DeviceInformationClass: number, ppDeviceRegistrationInfo: Win32Pointer): number;
   /** mdmregistration.dll!GetManagementAppHyperlink */
   GetManagementAppHyperlink(cchHyperlink: number, pszHyperlink: string | Win32Pointer): number;
   /** mdmregistration.dll!IsDeviceRegisteredWithManagement */
-  IsDeviceRegisteredWithManagement(pfIsDeviceRegisteredWithManagement: Win32Pointer, cchUPN: number, pszUPN: string | Win32Pointer): number;
+  IsDeviceRegisteredWithManagement(
+    pfIsDeviceRegisteredWithManagement: Win32Pointer,
+    cchUPN: number,
+    pszUPN: string | Win32Pointer,
+  ): number;
   /** mdmregistration.dll!IsManagementRegistrationAllowed */
   IsManagementRegistrationAllowed(pfIsManagementRegistrationAllowed: Win32Pointer): number;
   /** mdmregistration.dll!IsMdmUxWithoutAadAllowed */
   IsMdmUxWithoutAadAllowed(isEnrollmentAllowed: Win32Pointer): number;
   /** mdmregistration.dll!RegisterDeviceWithManagement */
-  RegisterDeviceWithManagement(pszUPN: string | Win32Pointer, ppszMDMServiceUri: string | Win32Pointer, ppzsAccessToken: string | Win32Pointer): number;
+  RegisterDeviceWithManagement(
+    pszUPN: string | Win32Pointer,
+    ppszMDMServiceUri: string | Win32Pointer,
+    ppzsAccessToken: string | Win32Pointer,
+  ): number;
   /** mdmregistration.dll!RegisterDeviceWithManagementUsingAADCredentials */
   RegisterDeviceWithManagementUsingAADCredentials(UserToken: Win32Pointer): number;
   /** mdmregistration.dll!RegisterDeviceWithManagementUsingAADDeviceCredentials */

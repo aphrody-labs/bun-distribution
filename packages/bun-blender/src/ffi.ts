@@ -16,13 +16,11 @@ export type BlenderPython = Library<typeof symbols>;
  * With a bpy module build (WITH_PYTHON_MODULE) on BUN_BLENDER_BPY, `import bpy` works in-process.
  */
 export async function openPython(path?: string): Promise<BlenderPython> {
-  const lib =
-    path ?? Bun.env.BUN_BLENDER_PYTHON ?? (await requireBlender()).python;
+  const lib = path ?? Bun.env.BUN_BLENDER_PYTHON ?? (await requireBlender()).python;
   if (!lib) throw new Error("no Blender python runtime found");
   if (!Bun.env.PYTHONHOME && !path && !Bun.env.BUN_BLENDER_PYTHON) {
     const install = await requireBlender();
-    if (install.version)
-      Bun.env.PYTHONHOME = join(install.root, install.version, "python");
+    if (install.version) Bun.env.PYTHONHOME = join(install.root, install.version, "python");
   }
   const py = dlopen(lib, symbols);
   if (!py.symbols.Py_IsInitialized()) py.symbols.Py_InitializeEx(0);
@@ -32,8 +30,7 @@ export async function openPython(path?: string): Promise<BlenderPython> {
 }
 
 export function exec(py: BlenderPython, code: string): void {
-  if (py.symbols.PyRun_SimpleString(Buffer.from(`${code}\0`)) !== 0)
-    throw new Error("python execution failed");
+  if (py.symbols.PyRun_SimpleString(Buffer.from(`${code}\0`)) !== 0) throw new Error("python execution failed");
 }
 
 export function pythonVersion(py: BlenderPython): string {

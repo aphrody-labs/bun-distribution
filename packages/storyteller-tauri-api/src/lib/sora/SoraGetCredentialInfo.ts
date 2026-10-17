@@ -10,8 +10,7 @@ export interface SoraGetCredentialInfoSuccess extends CommandResult {
   payload: SoraGetCredentialInfoPayload;
 }
 
-export const SoraGetCredentialInfo =
-  async (): Promise<SoraGetCredentialInfoSuccess> => {
-    const result = await invoke("sora_get_credential_info_command");
-    return result as SoraGetCredentialInfoSuccess;
-  };
+export const SoraGetCredentialInfo = async (): Promise<SoraGetCredentialInfoSuccess> => {
+  const result = await invoke("sora_get_credential_info_command");
+  return result as SoraGetCredentialInfoSuccess;
+};

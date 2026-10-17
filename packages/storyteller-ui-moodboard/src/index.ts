@@ -11,11 +11,7 @@ export { PresentationView as MoodboardPresentation } from "./lib/grid/Presentati
 // (separate from the durable board model in useBoardLibraryStore).
 export { useBoardLibraryStore } from "./lib/boards/BoardLibraryStore";
 export { useMoodboardStore } from "./lib/canvas/MoodboardStore";
-export {
-  useActiveBoard,
-  filterItems,
-  collectTags,
-} from "./lib/boards/boardSelectors";
+export { useActiveBoard, filterItems, collectTags } from "./lib/boards/boardSelectors";
 
 // Adapter (platform seams)
 export type {
@@ -30,23 +26,14 @@ export type {
 // Server persistence — document shape + sync status, for hosts that
 // implement MoodboardPersistenceAdapter or build tooling around the
 // persisted mood_board documents.
-export {
-  serializeMoodboardDocument,
-  deserializeMoodboardDocument,
-} from "./lib/persistence/documents";
-export type {
-  MoodboardDocument,
-  MoodboardCanvasDocument,
-} from "./lib/persistence/documents";
+export { serializeMoodboardDocument, deserializeMoodboardDocument } from "./lib/persistence/documents";
+export type { MoodboardDocument, MoodboardCanvasDocument } from "./lib/persistence/documents";
 export { useMoodboardSyncStore } from "./lib/persistence/moodboardSync";
 export type { MoodboardSaveStatus } from "./lib/persistence/moodboardSync";
 
 // Gallery → board drop bridge. Host apps wire their gallery's drop callback to
 // this; the grid + canvas views listen for the event it dispatches.
-export {
-  dispatchGalleryMoodboardDrop,
-  GALLERY_MOODBOARD_DROP_EVENT,
-} from "./lib/galleryDrop";
+export { dispatchGalleryMoodboardDrop, GALLERY_MOODBOARD_DROP_EVENT } from "./lib/galleryDrop";
 export type { DroppedGalleryItem } from "./lib/galleryDrop";
 
 // Board model types

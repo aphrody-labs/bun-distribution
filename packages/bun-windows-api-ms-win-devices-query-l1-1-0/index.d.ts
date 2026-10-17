@@ -5,21 +5,76 @@ interface Functions {
   /** api-ms-win-devices-query-l1-1-0.dll!DevCloseObjectQuery */
   DevCloseObjectQuery(hDevQuery: Win32Pointer): void;
   /** api-ms-win-devices-query-l1-1-0.dll!DevCreateObjectQuery */
-  DevCreateObjectQuery(ObjectType: number, QueryFlags: number, cRequestedProperties: number, pRequestedProperties: Win32Pointer, cFilterExpressionCount: number, pFilter: Win32Pointer, pCallback: Win32Callback, pContext: Win32Pointer, phDevQuery: Win32Pointer): number;
+  DevCreateObjectQuery(
+    ObjectType: number,
+    QueryFlags: number,
+    cRequestedProperties: number,
+    pRequestedProperties: Win32Pointer,
+    cFilterExpressionCount: number,
+    pFilter: Win32Pointer,
+    pCallback: Win32Callback,
+    pContext: Win32Pointer,
+    phDevQuery: Win32Pointer,
+  ): number;
   /** api-ms-win-devices-query-l1-1-0.dll!DevCreateObjectQueryFromId */
-  DevCreateObjectQueryFromId(ObjectType: number, pszObjectId: string | Win32Pointer, QueryFlags: number, cRequestedProperties: number, pRequestedProperties: Win32Pointer, cFilterExpressionCount: number, pFilter: Win32Pointer, pCallback: Win32Callback, pContext: Win32Pointer, phDevQuery: Win32Pointer): number;
+  DevCreateObjectQueryFromId(
+    ObjectType: number,
+    pszObjectId: string | Win32Pointer,
+    QueryFlags: number,
+    cRequestedProperties: number,
+    pRequestedProperties: Win32Pointer,
+    cFilterExpressionCount: number,
+    pFilter: Win32Pointer,
+    pCallback: Win32Callback,
+    pContext: Win32Pointer,
+    phDevQuery: Win32Pointer,
+  ): number;
   /** api-ms-win-devices-query-l1-1-0.dll!DevCreateObjectQueryFromIds */
-  DevCreateObjectQueryFromIds(ObjectType: number, pszzObjectIds: string | Win32Pointer, QueryFlags: number, cRequestedProperties: number, pRequestedProperties: Win32Pointer, cFilterExpressionCount: number, pFilter: Win32Pointer, pCallback: Win32Callback, pContext: Win32Pointer, phDevQuery: Win32Pointer): number;
+  DevCreateObjectQueryFromIds(
+    ObjectType: number,
+    pszzObjectIds: string | Win32Pointer,
+    QueryFlags: number,
+    cRequestedProperties: number,
+    pRequestedProperties: Win32Pointer,
+    cFilterExpressionCount: number,
+    pFilter: Win32Pointer,
+    pCallback: Win32Callback,
+    pContext: Win32Pointer,
+    phDevQuery: Win32Pointer,
+  ): number;
   /** api-ms-win-devices-query-l1-1-0.dll!DevFindProperty */
-  DevFindProperty(pKey: Win32Pointer, Store: number, pszLocaleName: string | Win32Pointer, cProperties: number, pProperties: Win32Pointer): number | null;
+  DevFindProperty(
+    pKey: Win32Pointer,
+    Store: number,
+    pszLocaleName: string | Win32Pointer,
+    cProperties: number,
+    pProperties: Win32Pointer,
+  ): number | null;
   /** api-ms-win-devices-query-l1-1-0.dll!DevFreeObjectProperties */
   DevFreeObjectProperties(cPropertyCount: number, pProperties: Win32Pointer): void;
   /** api-ms-win-devices-query-l1-1-0.dll!DevFreeObjects */
   DevFreeObjects(cObjectCount: number, pObjects: Win32Pointer): void;
   /** api-ms-win-devices-query-l1-1-0.dll!DevGetObjectProperties */
-  DevGetObjectProperties(ObjectType: number, pszObjectId: string | Win32Pointer, QueryFlags: number, cRequestedProperties: number, pRequestedProperties: Win32Pointer, pcPropertyCount: Win32Pointer, ppProperties: Win32Pointer): number;
+  DevGetObjectProperties(
+    ObjectType: number,
+    pszObjectId: string | Win32Pointer,
+    QueryFlags: number,
+    cRequestedProperties: number,
+    pRequestedProperties: Win32Pointer,
+    pcPropertyCount: Win32Pointer,
+    ppProperties: Win32Pointer,
+  ): number;
   /** api-ms-win-devices-query-l1-1-0.dll!DevGetObjects */
-  DevGetObjects(ObjectType: number, QueryFlags: number, cRequestedProperties: number, pRequestedProperties: Win32Pointer, cFilterExpressionCount: number, pFilter: Win32Pointer, pcObjectCount: Win32Pointer, ppObjects: Win32Pointer): number;
+  DevGetObjects(
+    ObjectType: number,
+    QueryFlags: number,
+    cRequestedProperties: number,
+    pRequestedProperties: Win32Pointer,
+    cFilterExpressionCount: number,
+    pFilter: Win32Pointer,
+    pcObjectCount: Win32Pointer,
+    ppObjects: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -1,16 +1,6 @@
-import {
-  Database,
-  EyeSlash,
-  Eye,
-  Gauge,
-  EjectSimple,
-} from "@phosphor-icons/react";
+import { Database, EyeSlash, Eye, Gauge, EjectSimple } from "@phosphor-icons/react";
 import type { Volume } from "@aphrody/drive-client";
-import {
-  useContextMenu,
-  type ContextMenuItem,
-  type ContextMenuResult,
-} from "../../../hooks/useContextMenu";
+import { useContextMenu, type ContextMenuItem, type ContextMenuResult } from "../../../hooks/useContextMenu";
 import { useLibraryMutation } from "../../../contexts/SpacedriveContext";
 
 interface UseVolumeContextMenuOptions {
@@ -27,9 +17,7 @@ interface UseVolumeContextMenuOptions {
  * - Index Volume: Trigger full volume indexing
  * - Eject Volume: Safely eject removable media
  */
-export function useVolumeContextMenu({
-  volume,
-}: UseVolumeContextMenuOptions): ContextMenuResult {
+export function useVolumeContextMenu({ volume }: UseVolumeContextMenuOptions): ContextMenuResult {
   const trackVolume = useLibraryMutation("volumes.track");
   const untrackVolume = useLibraryMutation("volumes.untrack");
   const speedTestVolume = useLibraryMutation("volumes.speed_test");

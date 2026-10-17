@@ -66,7 +66,7 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
         ...allSources,
         calculator: false,
       });
-      const hasCalc = results.some((r) => r.kind === "calculator");
+      const hasCalc = results.some(r => r.kind === "calculator");
       expect(hasCalc).toBe(false);
     });
   });
@@ -74,9 +74,7 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
   describe("thread history source", () => {
     test("matches words in conversation threads", () => {
       const results = suggest("moteur M3", sampleThreads, allSources);
-      const threadResult = results.find(
-        (r): r is ThreadSuggestion => r.kind === "thread",
-      );
+      const threadResult = results.find((r): r is ThreadSuggestion => r.kind === "thread");
       expect(threadResult).toBeDefined();
       expect(threadResult?.thread.id).toBe("thread-1");
     });
@@ -86,7 +84,7 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
         ...allSources,
         history: false,
       });
-      const hasThread = results.some((r) => r.kind === "thread");
+      const hasThread = results.some(r => r.kind === "thread");
       expect(hasThread).toBe(false);
     });
   });
@@ -95,16 +93,14 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
     test("suggests 'Aller au chat' on 'chat' or 'codex'", () => {
       const resultsChat = suggest("chat", sampleThreads, allSources);
       const navChat = resultsChat.find(
-        (r): r is NavigationSuggestion =>
-          r.kind === "navigation" && r.label === "Aller au chat",
+        (r): r is NavigationSuggestion => r.kind === "navigation" && r.label === "Aller au chat",
       );
       expect(navChat).toBeDefined();
       expect(navChat?.route).toBe("/chat");
 
       const resultsCodex = suggest("codex", sampleThreads, allSources);
       const navCodex = resultsCodex.find(
-        (r): r is NavigationSuggestion =>
-          r.kind === "navigation" && r.label === "Aller au chat",
+        (r): r is NavigationSuggestion => r.kind === "navigation" && r.label === "Aller au chat",
       );
       expect(navCodex).toBeDefined();
     });
@@ -112,8 +108,7 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
     test("suggests 'Aller aux fichiers' on 'fichiers' or 'explorer'", () => {
       const results = suggest("fichiers", sampleThreads, allSources);
       const navFiles = results.find(
-        (r): r is NavigationSuggestion =>
-          r.kind === "navigation" && r.label === "Aller aux fichiers",
+        (r): r is NavigationSuggestion => r.kind === "navigation" && r.label === "Aller aux fichiers",
       );
       expect(navFiles).toBeDefined();
       expect(navFiles?.route).toBe("/explorer");
@@ -122,34 +117,28 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
     test("suggests 'Aller aux Modèles' on 'modèles' or 'models'", () => {
       const resultsFr = suggest("modèles", sampleThreads, allSources);
       const navModelsFr = resultsFr.find(
-        (r): r is NavigationSuggestion =>
-          r.kind === "navigation" && r.label === "Aller aux Modèles",
+        (r): r is NavigationSuggestion => r.kind === "navigation" && r.label === "Aller aux Modèles",
       );
       expect(navModelsFr).toBeDefined();
       expect(navModelsFr?.route).toBe("/models");
 
       const resultsEn = suggest("models", sampleThreads, allSources);
       const navModelsEn = resultsEn.find(
-        (r): r is NavigationSuggestion =>
-          r.kind === "navigation" && r.label === "Aller aux Modèles",
+        (r): r is NavigationSuggestion => r.kind === "navigation" && r.label === "Aller aux Modèles",
       );
       expect(navModelsEn).toBeDefined();
     });
 
     test("does not expose jobs as a standalone navigation surface", () => {
       const results = suggest("cron", sampleThreads, allSources);
-      const navTasks = results.find(
-        (r): r is NavigationSuggestion =>
-          r.kind === "navigation" && r.route === "/tasks",
-      );
+      const navTasks = results.find((r): r is NavigationSuggestion => r.kind === "navigation" && r.route === "/tasks");
       expect(navTasks).toBeUndefined();
     });
 
     test("suggests 'Ouvrir les Paramètres' on 'paramètres' or 'settings'", () => {
       const results = suggest("paramètres", sampleThreads, allSources);
       const navSettings = results.find(
-        (r): r is NavigationSuggestion =>
-          r.kind === "navigation" && r.label === "Ouvrir les Paramètres",
+        (r): r is NavigationSuggestion => r.kind === "navigation" && r.label === "Ouvrir les Paramètres",
       );
       expect(navSettings).toBeDefined();
       expect(navSettings?.route).toBe("/settings");
@@ -160,7 +149,7 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
         ...allSources,
         navigation: false,
       });
-      const hasNav = results.some((r) => r.kind === "navigation");
+      const hasNav = results.some(r => r.kind === "navigation");
       expect(hasNav).toBe(false);
     });
   });
@@ -169,35 +158,26 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
     test("'>' lists all available system commands", () => {
       const results = suggest(">", sampleThreads, allSources, { limit: 10 });
       expect(results.length).toBeGreaterThan(0);
-      expect(results.every((r) => r.kind === "command")).toBe(true);
+      expect(results.every(r => r.kind === "command")).toBe(true);
     });
 
     test("'> models' returns the models command", () => {
       const results = suggest("> models", sampleThreads, allSources);
-      const cmd = results.find(
-        (r): r is CommandSuggestion =>
-          r.kind === "command" && r.command === "models",
-      );
+      const cmd = results.find((r): r is CommandSuggestion => r.kind === "command" && r.command === "models");
       expect(cmd).toBeDefined();
       expect(cmd?.label).toBe("> models");
     });
 
     test("'> clear' returns the clear command", () => {
       const results = suggest("> clear", sampleThreads, allSources);
-      const cmd = results.find(
-        (r): r is CommandSuggestion =>
-          r.kind === "command" && r.command === "clear",
-      );
+      const cmd = results.find((r): r is CommandSuggestion => r.kind === "command" && r.command === "clear");
       expect(cmd).toBeDefined();
       expect(cmd?.label).toBe("> clear");
     });
 
     test("matches commands without '>' by keyword", () => {
       const resultsClear = suggest("clear", sampleThreads, allSources);
-      const cmdClear = resultsClear.find(
-        (r): r is CommandSuggestion =>
-          r.kind === "command" && r.command === "clear",
-      );
+      const cmdClear = resultsClear.find((r): r is CommandSuggestion => r.kind === "command" && r.command === "clear");
       expect(cmdClear).toBeDefined();
     });
 
@@ -217,16 +197,11 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
     });
 
     test("supports custom recent files in options", () => {
-      const customFiles = [
-        { name: "MonProjet.rs", path: "C:/src/MonProjet.rs", isDir: false },
-      ];
+      const customFiles = [{ name: "MonProjet.rs", path: "C:/src/MonProjet.rs", isDir: false }];
       const results = suggest("MonProjet", sampleThreads, allSources, {
         files: customFiles,
       });
-      const file = results.find(
-        (r): r is FileSuggestion =>
-          r.kind === "file" && r.name === "MonProjet.rs",
-      );
+      const file = results.find((r): r is FileSuggestion => r.kind === "file" && r.name === "MonProjet.rs");
       expect(file).toBeDefined();
       expect(file?.path).toBe("C:/src/MonProjet.rs");
     });
@@ -236,7 +211,7 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
         ...allSources,
         files: false,
       });
-      const hasFile = results.some((r) => r.kind === "file");
+      const hasFile = results.some(r => r.kind === "file");
       expect(hasFile).toBe(false);
     });
   });
@@ -251,16 +226,8 @@ describe("quickbar & command palette suggestions (Magpie unified spotlight)", ()
       const defaults = getDefaultSuggestions(allSources, 8);
       expect(defaults.length).toBe(8);
       expect(defaults[0].kind).toBe("navigation");
-      expect(
-        defaults.some(
-          (d) => d.kind === "navigation" && d.label === "Aller au chat",
-        ),
-      ).toBe(true);
-      expect(
-        defaults.some(
-          (d) => d.kind === "navigation" && d.label === "Aller aux fichiers",
-        ),
-      ).toBe(true);
+      expect(defaults.some(d => d.kind === "navigation" && d.label === "Aller au chat")).toBe(true);
+      expect(defaults.some(d => d.kind === "navigation" && d.label === "Aller aux fichiers")).toBe(true);
     });
 
     test("respects limit parameter across all sources", () => {

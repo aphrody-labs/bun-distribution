@@ -33,11 +33,7 @@ function isFreeformPathPoint(value: unknown): value is FreeformPathPoint {
   );
 }
 
-export function parseFreeformPath({
-  path,
-}: {
-  path: string;
-}): FreeformPathPoint[] {
+export function parseFreeformPath({ path }: { path: string }): FreeformPathPoint[] {
   if (!path) {
     return [];
   }
@@ -50,11 +46,7 @@ export function parseFreeformPath({
   }
 }
 
-export function serializeFreeformPath({
-  points,
-}: {
-  points: FreeformPathPoint[];
-}): string {
+export function serializeFreeformPath({ points }: { points: FreeformPathPoint[] }): string {
   return JSON.stringify(points);
 }
 
@@ -69,7 +61,7 @@ export function removeFreeformPathPoints({
     return points;
   }
   const pointIdsToRemove = new Set(pointIds);
-  return points.filter((point) => !pointIdsToRemove.has(point.id));
+  return points.filter(point => !pointIdsToRemove.has(point.id));
 }
 
 export function getFreeformPathClosedStateAfterPointRemoval({
@@ -82,15 +74,10 @@ export function getFreeformPathClosedStateAfterPointRemoval({
   return wasClosed && remainingPointCount >= 3;
 }
 
-function rotatePoint({
-  x,
-  y,
-  rotationDegrees,
-}: {
+function rotatePoint({ x, y, rotationDegrees }: { x: number; y: number; rotationDegrees: number }): {
   x: number;
   y: number;
-  rotationDegrees: number;
-}): { x: number; y: number } {
+} {
   const angleRad = (rotationDegrees * Math.PI) / 180;
   const cos = Math.cos(angleRad);
   const sin = Math.sin(angleRad);
@@ -194,7 +181,7 @@ export function getFreeformCanvasGeometry({
   scale: number;
   bounds: ElementBounds;
 }) {
-  const anchors = points.map((point) => ({
+  const anchors = points.map(point => ({
     id: point.id,
     anchor: freeformLocalPointToCanvas({
       point: { x: point.x, y: point.y },
@@ -222,11 +209,7 @@ export function getFreeformCanvasGeometry({
     }),
   }));
 
-  const geometryPoints = anchors.flatMap((point) => [
-    point.anchor,
-    point.inHandle,
-    point.outHandle,
-  ]);
+  const geometryPoints = anchors.flatMap(point => [point.anchor, point.inHandle, point.outHandle]);
   if (geometryPoints.length === 0) {
     return {
       anchors,
@@ -303,27 +286,13 @@ function clampUnit(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
-function getDistanceSquared({
-  a,
-  b,
-}: {
-  a: CanvasPoint;
-  b: CanvasPoint;
-}): number {
+function getDistanceSquared({ a, b }: { a: CanvasPoint; b: CanvasPoint }): number {
   const dx = a.x - b.x;
   const dy = a.y - b.y;
   return dx * dx + dy * dy;
 }
 
-function lerpPoint({
-  a,
-  b,
-  t,
-}: {
-  a: CanvasPoint;
-  b: CanvasPoint;
-  t: number;
-}): CanvasPoint {
+function lerpPoint({ a, b, t }: { a: CanvasPoint; b: CanvasPoint; t: number }): CanvasPoint {
   return {
     x: a.x + (b.x - a.x) * t,
     y: a.y + (b.y - a.y) * t,
@@ -345,16 +314,8 @@ function evaluateCubicBezier({
 }): CanvasPoint {
   const oneMinusT = 1 - t;
   return {
-    x:
-      oneMinusT ** 3 * p0.x +
-      3 * oneMinusT ** 2 * t * p1.x +
-      3 * oneMinusT * t ** 2 * p2.x +
-      t ** 3 * p3.x,
-    y:
-      oneMinusT ** 3 * p0.y +
-      3 * oneMinusT ** 2 * t * p1.y +
-      3 * oneMinusT * t ** 2 * p2.y +
-      t ** 3 * p3.y,
+    x: oneMinusT ** 3 * p0.x + 3 * oneMinusT ** 2 * t * p1.x + 3 * oneMinusT * t ** 2 * p2.x + t ** 3 * p3.x,
+    y: oneMinusT ** 3 * p0.y + 3 * oneMinusT ** 2 * t * p1.y + 3 * oneMinusT * t ** 2 * p2.y + t ** 3 * p3.y,
   };
 }
 
@@ -378,13 +339,7 @@ function getFreeformSegmentIndices({
   };
 }
 
-export function getFreeformSegmentCount({
-  points,
-  closed,
-}: {
-  points: FreeformPathPoint[];
-  closed: boolean;
-}): number {
+export function getFreeformSegmentCount({ points, closed }: { points: FreeformPathPoint[]; closed: boolean }): number {
   if (points.length < 2) {
     return 0;
   }
@@ -463,7 +418,7 @@ export function findClosestPointOnFreeformSegment({
     scale,
     bounds,
     closed,
-  }).find((candidate) => candidate.index === segmentIndex);
+  }).find(candidate => candidate.index === segmentIndex);
   if (!segment) {
     return null;
   }
@@ -493,18 +448,16 @@ export function findClosestPointOnFreeformSegment({
 
   let searchStep = 1 / sampleCount;
   for (let iteration = 0; iteration < 8; iteration++) {
-    const candidates = [bestT - searchStep, bestT, bestT + searchStep]
-      .map(clampUnit)
-      .map((t) => ({
+    const candidates = [bestT - searchStep, bestT, bestT + searchStep].map(clampUnit).map(t => ({
+      t,
+      point: evaluateCubicBezier({
+        p0: segment.start,
+        p1: segment.startOut,
+        p2: segment.endIn,
+        p3: segment.end,
         t,
-        point: evaluateCubicBezier({
-          p0: segment.start,
-          p1: segment.startOut,
-          p2: segment.endIn,
-          p3: segment.end,
-          t,
-        }),
-      }));
+      }),
+    }));
     for (const candidate of candidates) {
       const distanceSquared = getDistanceSquared({
         a: canvasPoint,
@@ -596,18 +549,12 @@ export function insertPointIntoFreeformSegment({
   return nextPoints;
 }
 
-export function getFreeformLocalBounds({
-  points,
-  bounds,
-}: {
-  points: FreeformPathPoint[];
-  bounds: ElementBounds;
-}) {
+export function getFreeformLocalBounds({ points, bounds }: { points: FreeformPathPoint[]; bounds: ElementBounds }) {
   if (points.length === 0) {
     return null;
   }
 
-  const values = points.flatMap((point) => [
+  const values = points.flatMap(point => [
     { x: point.x * bounds.width, y: point.y * bounds.height },
     {
       x: (point.x + point.inX) * bounds.width,
@@ -669,13 +616,10 @@ export function recenterFreeformPath({
   };
   const nextCenterLocal = {
     x: bounds.width === 0 ? 0 : (nextCenterCanvas.x - bounds.cx) / bounds.width,
-    y:
-      bounds.height === 0
-        ? 0
-        : (nextCenterCanvas.y - bounds.cy) / bounds.height,
+    y: bounds.height === 0 ? 0 : (nextCenterCanvas.y - bounds.cy) / bounds.height,
   };
 
-  const nextPoints = geometry.anchors.map((point) => {
+  const nextPoints = geometry.anchors.map(point => {
     const anchor = freeformCanvasPointToLocal({
       point: point.anchor,
       centerX: nextCenterLocal.x,

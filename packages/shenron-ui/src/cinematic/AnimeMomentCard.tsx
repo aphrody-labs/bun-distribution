@@ -28,10 +28,7 @@ export interface AnimeMomentCardProps {
   className?: string;
 }
 
-const AURA_STYLES: Record<
-  AuraForm,
-  { glow: string; border: string; badge: string; text: string }
-> = {
+const AURA_STYLES: Record<AuraForm, { glow: string; border: string; badge: string; text: string }> = {
   base: {
     glow: "group-hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]",
     border: "border-neutral-600",
@@ -114,7 +111,7 @@ export const AnimeMomentCard: React.FC<AnimeMomentCardProps> = ({
       onClick={onClick}
       onKeyDown={
         onClick
-          ? (event) => {
+          ? event => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
                 onClick();
@@ -152,8 +149,7 @@ export const AnimeMomentCard: React.FC<AnimeMomentCardProps> = ({
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
           <span
             className={
-              "px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider rounded border shadow-md " +
-              style.badge
+              "px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider rounded border shadow-md " + style.badge
             }
           >
             {saga}
@@ -177,18 +173,8 @@ export const AnimeMomentCard: React.FC<AnimeMomentCardProps> = ({
       <div className="p-4 flex flex-col justify-between flex-1 bg-neutral-950/95 border-t border-neutral-900">
         <div>
           <div className="flex items-center justify-between text-xs mb-1.5">
-            <span
-              className={
-                "font-bold tracking-wider uppercase text-[11px] " + style.text
-              }
-            >
-              {character}
-            </span>
-            {director && (
-              <span className="text-neutral-300 text-[10px] font-mono">
-                Dir: {director}
-              </span>
-            )}
+            <span className={"font-bold tracking-wider uppercase text-[11px] " + style.text}>{character}</span>
+            {director && <span className="text-neutral-300 text-[10px] font-mono">Dir: {director}</span>}
           </div>
           <h4 className="font-black text-white text-base leading-tight group-hover:text-amber-400 transition-colors">
             {title}

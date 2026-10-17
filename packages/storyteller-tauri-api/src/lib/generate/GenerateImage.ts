@@ -1,11 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult } from "../common/CommandStatus";
-import {
-  CommonAspectRatio,
-  CommonResolution,
-  CommonQuality,
-  ImageModel,
-} from "@storyteller/model-list";
+import { CommonAspectRatio, CommonResolution, CommonQuality, ImageModel } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 export interface GenerateImageRequest {
@@ -86,9 +81,7 @@ export interface GenerateImageSuccess extends CommandResult {
 
 export type GenerateImageResult = GenerateImageSuccess | GenerateImageError;
 
-export const GenerateImage = async (
-  request: GenerateImageRequest,
-): Promise<GenerateImageResult> => {
+export const GenerateImage = async (request: GenerateImageRequest): Promise<GenerateImageResult> => {
   let modelName: string | undefined;
 
   if (request.model) {
@@ -100,9 +93,7 @@ export const GenerateImage = async (
   }
 
   if (!modelName) {
-    throw new Error(
-      "No model specified in request: " + JSON.stringify(request),
-    );
+    throw new Error("No model specified in request: " + JSON.stringify(request));
   }
 
   const mutableRequest = { ...request, model: modelName };

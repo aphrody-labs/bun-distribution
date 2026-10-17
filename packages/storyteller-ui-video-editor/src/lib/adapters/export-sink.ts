@@ -40,8 +40,5 @@ export interface ExportSinkAdapter {
   // saves also return `null`. The lib does not currently consume the
   // return value — it's surfaced for hosts that want to log or open
   // the saved file.
-  accept(
-    artifact: ExportArtifact,
-    options?: ExportSinkOptions,
-  ): Promise<string | null>;
+  accept(artifact: ExportArtifact, options?: ExportSinkOptions): Promise<string | null>;
 }

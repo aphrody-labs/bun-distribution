@@ -25,10 +25,7 @@ export interface VirtualMetadata {
 /**
  * Maps a Location to a File-like object for Explorer display
  */
-export function mapLocationToFile(
-  location: any,
-  iconUrl?: string | number,
-): File {
+export function mapLocationToFile(location: any, iconUrl?: string | number): File {
   return {
     id: `virtual:location:${location.id}`,
     kind: "Directory",
@@ -61,11 +58,7 @@ export function mapLocationToFile(
 /**
  * Maps a Volume to a File-like object for Explorer display
  */
-export function mapVolumeToFile(
-  volume: any,
-  deviceSlug: string,
-  iconUrl?: string | number,
-): File {
+export function mapVolumeToFile(volume: any, deviceSlug: string, iconUrl?: string | number): File {
   const sdPath = {
     Physical: {
       device_slug: deviceSlug,
@@ -152,8 +145,6 @@ export function isVirtualFile(file: File | undefined | null): boolean {
 /**
  * Gets virtual metadata from a file
  */
-export function getVirtualMetadata(
-  file: File | undefined | null,
-): VirtualMetadata | null {
+export function getVirtualMetadata(file: File | undefined | null): VirtualMetadata | null {
   return file ? (file as any)._virtual || null : null;
 }

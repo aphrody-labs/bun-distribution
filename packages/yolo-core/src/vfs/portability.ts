@@ -33,15 +33,7 @@ export interface PortabilityReport {
   readonly ok: boolean;
 }
 
-const DEFAULT_EXCLUDE_DIRS = new Set([
-  ".git",
-  "node_modules",
-  "target",
-  "dist",
-  ".cache",
-  "var",
-  "vendor",
-]);
+const DEFAULT_EXCLUDE_DIRS = new Set([".git", "node_modules", "target", "dist", ".cache", "var", "vendor"]);
 
 interface RuleDef {
   readonly id: string;
@@ -87,11 +79,7 @@ export async function auditPortability(
   async function checkFile(fullPath: string, relPath: string): Promise<void> {
     if (!options.includeTests && relPath.startsWith("test/")) return;
     if (relPath.startsWith("crates/aphrody-")) return; // Vendored upstream fork crates
-    if (
-      relPath.endsWith("portability.ts") ||
-      relPath.endsWith("audit_portability.ts")
-    )
-      return;
+    if (relPath.endsWith("portability.ts") || relPath.endsWith("audit_portability.ts")) return;
 
     try {
       const file = Bun.file(fullPath);
@@ -151,7 +139,7 @@ export async function auditPortability(
 
   await walk(root);
 
-  const errors = issues.filter((i) => i.severity === "error");
+  const errors = issues.filter(i => i.severity === "error");
 
   return {
     schema: "yolo.portability/1",
@@ -174,16 +162,11 @@ export function renderPortabilityMarkdown(report: PortabilityReport): string {
   ];
 
   if (report.issues.length === 0) {
-    lines.push(
-      "✔ No hardcoded environment paths, WSL assumptions, or non-portable references found.",
-    );
+    lines.push("✔ No hardcoded environment paths, WSL assumptions, or non-portable references found.");
     return lines.join("\n");
   }
 
-  lines.push(
-    "| Severity | Rule | File | Line | Snippet |",
-    "| :--- | :--- | :--- | :--- | :--- |",
-  );
+  lines.push("| Severity | Rule | File | Line | Snippet |", "| :--- | :--- | :--- | :--- | :--- |");
 
   for (const issue of report.issues) {
     const icon = issue.severity === "error" ? "❌ ERROR" : "⚠️ WARN";

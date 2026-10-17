@@ -33,13 +33,7 @@ export const uploadSnapshotAsThumbnail = async ({
   });
 };
 
-export const setThumbnail = async ({
-  assetToken,
-  thumbnailToken,
-}: {
-  assetToken: string;
-  thumbnailToken: string;
-}) => {
+export const setThumbnail = async ({ assetToken, thumbnailToken }: { assetToken: string; thumbnailToken: string }) => {
   const mediaFilesApi = new MediaFilesApi();
   return await mediaFilesApi.UpdateCoverImage({
     mediaFileToken: assetToken,

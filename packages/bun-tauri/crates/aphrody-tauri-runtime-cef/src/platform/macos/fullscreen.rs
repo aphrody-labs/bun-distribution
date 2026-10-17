@@ -21,17 +21,17 @@
 use std::cell::Cell;
 
 use objc2::{
-  DefinedClass, MainThreadOnly, define_class,
-  rc::Retained,
-  runtime::{AnyObject, NSObject, NSObjectProtocol},
-  sel,
+    DefinedClass, MainThreadOnly, define_class,
+    rc::Retained,
+    runtime::{AnyObject, NSObject, NSObjectProtocol},
+    sel,
 };
 use objc2_app_kit::{
-  NSWindow, NSWindowDidEnterFullScreenNotification, NSWindowDidExitFullScreenNotification,
-  NSWindowWillEnterFullScreenNotification, NSWindowWillExitFullScreenNotification,
+    NSWindow, NSWindowDidEnterFullScreenNotification, NSWindowDidExitFullScreenNotification,
+    NSWindowWillEnterFullScreenNotification, NSWindowWillExitFullScreenNotification,
 };
 use objc2_foundation::{
-  MainThreadMarker, NSNotification, NSNotificationCenter, NSObjectNSDelayedPerforming,
+    MainThreadMarker, NSNotification, NSNotificationCenter, NSObjectNSDelayedPerforming,
 };
 
 use crate::window::FullscreenTarget;
@@ -43,13 +43,13 @@ use crate::window::FullscreenTarget;
 const TRANSITION_TIMEOUT: f64 = 3.0;
 
 pub(crate) struct FullscreenTransitionIvars {
-  /// Whether a transition is in flight.
-  in_progress: Cell<bool>,
-  /// The latest request made during the transition; `Some(None)` is a request to leave.
-  pending: Cell<Option<Option<FullscreenTarget>>>,
-  /// Called when a transition ends while a request is pending. Runs inside AppKit's
-  /// notification dispatch, so it must only post the request for later.
-  on_transition_end: Box<dyn Fn()>,
+    /// Whether a transition is in flight.
+    in_progress: Cell<bool>,
+    /// The latest request made during the transition; `Some(None)` is a request to leave.
+    pending: Cell<Option<Option<FullscreenTarget>>>,
+    /// Called when a transition ends while a request is pending. Runs inside AppKit's
+    /// notification dispatch, so it must only post the request for later.
+    on_transition_end: Box<dyn Fn()>,
 }
 
 define_class!(
@@ -92,84 +92,89 @@ define_class!(
 );
 
 impl FullscreenTransition {
-  /// Starts tracking `nswindow`'s fullscreen transitions. The observer is removed when it is
-  /// deallocated, which happens when the returned reference is dropped.
-  pub(crate) fn observe(
-    nswindow: &NSWindow,
-    on_transition_end: impl Fn() + 'static,
-  ) -> Retained<Self> {
-    // The window is created by winit on the main thread.
-    let mtm = MainThreadMarker::from(nswindow);
-    let observer = Self::alloc(mtm).set_ivars(FullscreenTransitionIvars {
-      in_progress: Cell::new(false),
-      pending: Cell::new(None),
-      on_transition_end: Box::new(on_transition_end),
-    });
-    let observer: Retained<Self> = unsafe { objc2::msg_send![super(observer), init] };
+    /// Starts tracking `nswindow`'s fullscreen transitions. The observer is removed when it is
+    /// deallocated, which happens when the returned reference is dropped.
+    pub(crate) fn observe(
+        nswindow: &NSWindow,
+        on_transition_end: impl Fn() + 'static,
+    ) -> Retained<Self> {
+        // The window is created by winit on the main thread.
+        let mtm = MainThreadMarker::from(nswindow);
+        let observer = Self::alloc(mtm).set_ivars(FullscreenTransitionIvars {
+            in_progress: Cell::new(false),
+            pending: Cell::new(None),
+            on_transition_end: Box::new(on_transition_end),
+        });
+        let observer: Retained<Self> = unsafe { objc2::msg_send![super(observer), init] };
 
-    let center = NSNotificationCenter::defaultCenter();
-    let names = unsafe {
-      [
-        (
-          NSWindowWillEnterFullScreenNotification,
-          sel!(windowWillChangeFullScreen:),
-        ),
-        (
-          NSWindowWillExitFullScreenNotification,
-          sel!(windowWillChangeFullScreen:),
-        ),
-        (
-          NSWindowDidEnterFullScreenNotification,
-          sel!(windowDidChangeFullScreen:),
-        ),
-        (
-          NSWindowDidExitFullScreenNotification,
-          sel!(windowDidChangeFullScreen:),
-        ),
-      ]
-    };
-    for (name, selector) in names {
-      // SAFETY: `observer` implements both selectors, and they take the notification as
-      // their only argument.
-      unsafe {
-        center.addObserver_selector_name_object(&observer, selector, Some(name), Some(nswindow));
-      }
+        let center = NSNotificationCenter::defaultCenter();
+        let names = unsafe {
+            [
+                (
+                    NSWindowWillEnterFullScreenNotification,
+                    sel!(windowWillChangeFullScreen:),
+                ),
+                (
+                    NSWindowWillExitFullScreenNotification,
+                    sel!(windowWillChangeFullScreen:),
+                ),
+                (
+                    NSWindowDidEnterFullScreenNotification,
+                    sel!(windowDidChangeFullScreen:),
+                ),
+                (
+                    NSWindowDidExitFullScreenNotification,
+                    sel!(windowDidChangeFullScreen:),
+                ),
+            ]
+        };
+        for (name, selector) in names {
+            // SAFETY: `observer` implements both selectors, and they take the notification as
+            // their only argument.
+            unsafe {
+                center.addObserver_selector_name_object(
+                    &observer,
+                    selector,
+                    Some(name),
+                    Some(nswindow),
+                );
+            }
+        }
+
+        observer
     }
 
-    observer
-  }
-
-  fn cancel_timeout(&self) {
-    // SAFETY: cancels the delayed perform scheduled in `windowWillChangeFullScreen:`, which
-    // targets this object.
-    unsafe {
-      NSObject::cancelPreviousPerformRequestsWithTarget_selector_object(
-        self,
-        sel!(transitionTimedOut:),
-        None,
-      );
+    fn cancel_timeout(&self) {
+        // SAFETY: cancels the delayed perform scheduled in `windowWillChangeFullScreen:`, which
+        // targets this object.
+        unsafe {
+            NSObject::cancelPreviousPerformRequestsWithTarget_selector_object(
+                self,
+                sel!(transitionTimedOut:),
+                None,
+            );
+        }
     }
-  }
 
-  fn transition_ended(&self) {
-    self.ivars().in_progress.set(false);
-    if self.ivars().pending.get().is_some() {
-      (self.ivars().on_transition_end)();
+    fn transition_ended(&self) {
+        self.ivars().in_progress.set(false);
+        if self.ivars().pending.get().is_some() {
+            (self.ivars().on_transition_end)();
+        }
     }
-  }
 
-  /// Whether the window is in the middle of entering or leaving fullscreen.
-  pub(crate) fn in_progress(&self) -> bool {
-    self.ivars().in_progress.get()
-  }
+    /// Whether the window is in the middle of entering or leaving fullscreen.
+    pub(crate) fn in_progress(&self) -> bool {
+        self.ivars().in_progress.get()
+    }
 
-  /// Keeps `target` until the transition in progress ends, replacing any earlier request.
-  pub(crate) fn hold(&self, target: Option<FullscreenTarget>) {
-    self.ivars().pending.set(Some(target));
-  }
+    /// Keeps `target` until the transition in progress ends, replacing any earlier request.
+    pub(crate) fn hold(&self, target: Option<FullscreenTarget>) {
+        self.ivars().pending.set(Some(target));
+    }
 
-  /// The request held during the last transition, if any.
-  pub(crate) fn take_pending(&self) -> Option<Option<FullscreenTarget>> {
-    self.ivars().pending.take()
-  }
+    /// The request held during the last transition, if any.
+    pub(crate) fn take_pending(&self) -> Option<Option<FullscreenTarget>> {
+        self.ivars().pending.take()
+    }
 }

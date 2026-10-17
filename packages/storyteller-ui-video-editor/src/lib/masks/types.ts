@@ -1,11 +1,7 @@
 import type { ElementBounds } from "../preview/element-bounds";
 import type { SnapLine } from "../preview/preview-snap";
 import type { ParamDefinition } from "../params";
-import type {
-  TextDecoration,
-  TextFontStyle,
-  TextFontWeight,
-} from "../text/primitives";
+import type { TextDecoration, TextFontStyle, TextFontWeight } from "../text/primitives";
 
 // Full mask type system. Combines the data shapes (Mask union + params)
 // with the renderer/interaction/definition shapes that the canvas
@@ -159,8 +155,7 @@ export interface FreeformPathMask {
 export type Mask = BuiltinShapeMask | FreeformPathMask;
 
 export type MaskByType<TType extends MaskType> = Extract<Mask, { type: TType }>;
-export type MaskParamsByType<TType extends MaskType> =
-  MaskByType<TType>["params"];
+export type MaskParamsByType<TType extends MaskType> = MaskByType<TType>["params"];
 
 type MaskPathArgs<TParams extends BaseMaskParams> = {
   resolvedParams: TParams;
@@ -301,16 +296,13 @@ export interface MaskCanvasPathOverlay {
   strokeOpacity?: number;
 }
 
-export type MaskOverlay =
-  MaskLineOverlay | MaskRectOverlay | MaskShapeOverlay | MaskCanvasPathOverlay;
+export type MaskOverlay = MaskLineOverlay | MaskRectOverlay | MaskShapeOverlay | MaskCanvasPathOverlay;
 
 export interface MaskDefaultContext {
   elementSize?: { width: number; height: number };
 }
 
-export interface MaskParamUpdateArgs<
-  TParams extends BaseMaskParams = BaseMaskParams,
-> {
+export interface MaskParamUpdateArgs<TParams extends BaseMaskParams = BaseMaskParams> {
   handleId: MaskHandleId;
   startParams: TParams;
   deltaX: number;
@@ -330,9 +322,7 @@ export interface MaskSnapArgs<TParams extends BaseMaskParams = BaseMaskParams> {
   snapThreshold: { x: number; y: number };
 }
 
-export interface MaskSnapResult<
-  TParams extends BaseMaskParams = BaseMaskParams,
-> {
+export interface MaskSnapResult<TParams extends BaseMaskParams = BaseMaskParams> {
   params: TParams;
   activeLines: SnapLine[];
 }
@@ -342,9 +332,7 @@ export interface MaskInteractionResult {
   overlays: MaskOverlay[];
 }
 
-export interface MaskInteractionDefinition<
-  TParams extends BaseMaskParams = BaseMaskParams,
-> {
+export interface MaskInteractionDefinition<TParams extends BaseMaskParams = BaseMaskParams> {
   getInteraction(args: {
     params: TParams;
     bounds: ElementBounds;
@@ -366,7 +354,5 @@ export interface MaskDefinition<TType extends MaskType = MaskType> {
   // element renders fully visible.
   isActive?(params: MaskParamsByType<TType>): boolean;
   buildDefault(context: MaskDefaultContext): Omit<MaskByType<TType>, "id">;
-  computeParamUpdate(
-    args: MaskParamUpdateArgs<MaskParamsByType<TType>>,
-  ): Partial<MaskParamsByType<TType>>;
+  computeParamUpdate(args: MaskParamUpdateArgs<MaskParamsByType<TType>>): Partial<MaskParamsByType<TType>>;
 }

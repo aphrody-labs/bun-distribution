@@ -3,14 +3,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import {
-  type CSSProperties,
-  forwardRef,
-  type ReactNode,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type CSSProperties, forwardRef, type ReactNode, useEffect, useRef, useState } from "react";
 import { toast as SonnerToast } from "sonner";
 
 import { Icon, type IconSource, renderIcon } from "./Icon";
@@ -43,8 +36,7 @@ type ToastAction = {
   onClick: () => void;
   className?: string;
 };
-type ToastCloseEvent =
-  "on-dismiss" | "on-auto-close" | "on-action" | "on-cancel";
+type ToastCloseEvent = "on-dismiss" | "on-auto-close" | "on-action" | "on-cancel";
 
 interface ToastOptions {
   id?: ToastId;
@@ -76,21 +68,12 @@ interface PromiseToastOptions<T = ToastPromiseData> extends Omit<
   error: ToastMessage | ((error: unknown) => ToastMessage);
   loader?: ReactNode;
   showLoader?: boolean;
-  onClose?: (data: {
-    id: ToastId;
-    event: Extract<ToastCloseEvent, "on-dismiss" | "on-auto-close">;
-  }) => void;
+  onClose?: (data: { id: ToastId; event: Extract<ToastCloseEvent, "on-dismiss" | "on-auto-close"> }) => void;
 }
 
-type CustomToastOptions = Omit<
-  ToastOptions,
-  "type" | "icon" | "action" | "cancel" | "onDismiss" | "onClose"
->;
+type CustomToastOptions = Omit<ToastOptions, "type" | "icon" | "action" | "cancel" | "onDismiss" | "onClose">;
 
-interface ToastProps extends Pick<
-  ToastOptions,
-  "type" | "icon" | "action" | "cancel" | "onDismiss" | "onClose"
-> {
+interface ToastProps extends Pick<ToastOptions, "type" | "icon" | "action" | "cancel" | "onDismiss" | "onClose"> {
   id: ToastId;
   message: ToastMessage | ((id: ToastId) => ToastMessage);
   closable?: boolean;
@@ -108,12 +91,7 @@ const icons: Record<ToastType, { name: string; className: string }> = {
 };
 
 const typeIcon = (type: ToastType) => (
-  <Icon
-    name={icons[type].name}
-    size={20}
-    filled
-    className={icons[type].className}
-  />
+  <Icon name={icons[type].name} size={20} filled className={icons[type].className} />
 );
 
 /** Small indeterminate circular indicator shown while a promise toast is pending. */
@@ -126,150 +104,115 @@ const ToastLoader = () => (
   />
 );
 
-const ToastComponent = forwardRef<HTMLDivElement, ToastProps>(
-  ({ closable = true, action, cancel, ...props }, ref) => {
-    const message =
-      typeof props.message === "function"
-        ? props.message(props.id)
-        : props.message;
+const ToastComponent = forwardRef<HTMLDivElement, ToastProps>(({ closable = true, action, cancel, ...props }, ref) => {
+  const message = typeof props.message === "function" ? props.message(props.id) : props.message;
 
-    const title =
-      message && typeof message === "object" && "title" in message
-        ? message.title
-        : message;
+  const title = message && typeof message === "object" && "title" in message ? message.title : message;
 
-    const body =
-      message && typeof message === "object" && "body" in message
-        ? message.body
-        : undefined;
+  const body = message && typeof message === "object" && "body" in message ? message.body : undefined;
 
-    const multiline = !!body;
+  const multiline = !!body;
 
-    return (
-      <div
-        ref={ref}
-        className={clsx(
-          "pointer-events-auto flex w-full gap-3",
-          multiline ? "items-start" : "items-center",
-        )}
-      >
-        {(props.icon || props.type) && (
-          <div className={clsx("flex shrink-0", multiline && "mt-2.5")}>
-            {props.icon
-              ? renderIcon(props.icon, { size: 20 })
-              : props.type && typeIcon(props.type)}
-          </div>
-        )}
-
-        <div className="flex grow flex-col py-2">
-          {title && (
-            <span
-              className="text-body-medium text-inverse-on-surface"
-              style={{ wordBreak: "break-word" }}
-            >
-              {title}
-            </span>
-          )}
-
-          {body && (
-            <div
-              className="mt-0.5 text-body-medium text-inverse-on-surface/80"
-              style={{ wordBreak: "break-word" }}
-            >
-              {body}
-            </div>
-          )}
+  return (
+    <div
+      ref={ref}
+      className={clsx("pointer-events-auto flex w-full gap-3", multiline ? "items-start" : "items-center")}
+    >
+      {(props.icon || props.type) && (
+        <div className={clsx("flex shrink-0", multiline && "mt-2.5")}>
+          {props.icon ? renderIcon(props.icon, { size: 20 }) : props.type && typeIcon(props.type)}
         </div>
+      )}
 
-        {(action || cancel) && (
-          <div className="flex shrink-0 items-center gap-1">
-            {cancel && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (typeof cancel === "object") cancel.onClick?.();
-                  props.onClose?.({
-                    id: props.id,
-                    event: "on-cancel",
-                  });
-                  toast.dismiss(props.id);
-                }}
-                className={clsx(
-                  actionButtonClassName,
-                  typeof cancel === "object" ? cancel.className : null,
-                )}
-              >
-                {typeof cancel === "object" ? cancel.label : cancel}
-              </button>
-            )}
-
-            {action && (
-              <button
-                type="button"
-                onClick={() => {
-                  action.onClick();
-                  props.onClose?.({
-                    id: props.id,
-                    event: "on-action",
-                  });
-                  toast.dismiss(props.id);
-                }}
-                className={clsx(actionButtonClassName, action.className)}
-              >
-                {action.label}
-              </button>
-            )}
-          </div>
+      <div className="flex grow flex-col py-2">
+        {title && (
+          <span className="text-body-medium text-inverse-on-surface" style={{ wordBreak: "break-word" }}>
+            {title}
+          </span>
         )}
 
-        {closable && (
-          <button
-            type="button"
-            aria-label="Close"
-            className={clsx(
-              "inline-flex size-9 shrink-0 items-center justify-center rounded-full outline-none",
-              "text-inverse-on-surface transition-colors duration-200 ease-standard",
-              "hover:bg-inverse-on-surface/8 active:bg-inverse-on-surface/10 focus-visible:bg-inverse-on-surface/10",
-            )}
-            onClick={() => {
-              props.onDismiss?.(props.id);
-              props.onClose?.({
-                id: props.id,
-                event: "on-dismiss",
-              });
-              toast.dismiss(props.id);
-            }}
-          >
-            <Icon name="close" size={20} />
-          </button>
+        {body && (
+          <div className="mt-0.5 text-body-medium text-inverse-on-surface/80" style={{ wordBreak: "break-word" }}>
+            {body}
+          </div>
         )}
       </div>
-    );
-  },
-);
+
+      {(action || cancel) && (
+        <div className="flex shrink-0 items-center gap-1">
+          {cancel && (
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof cancel === "object") cancel.onClick?.();
+                props.onClose?.({
+                  id: props.id,
+                  event: "on-cancel",
+                });
+                toast.dismiss(props.id);
+              }}
+              className={clsx(actionButtonClassName, typeof cancel === "object" ? cancel.className : null)}
+            >
+              {typeof cancel === "object" ? cancel.label : cancel}
+            </button>
+          )}
+
+          {action && (
+            <button
+              type="button"
+              onClick={() => {
+                action.onClick();
+                props.onClose?.({
+                  id: props.id,
+                  event: "on-action",
+                });
+                toast.dismiss(props.id);
+              }}
+              className={clsx(actionButtonClassName, action.className)}
+            >
+              {action.label}
+            </button>
+          )}
+        </div>
+      )}
+
+      {closable && (
+        <button
+          type="button"
+          aria-label="Close"
+          className={clsx(
+            "inline-flex size-9 shrink-0 items-center justify-center rounded-full outline-none",
+            "text-inverse-on-surface transition-colors duration-200 ease-standard",
+            "hover:bg-inverse-on-surface/8 active:bg-inverse-on-surface/10 focus-visible:bg-inverse-on-surface/10",
+          )}
+          onClick={() => {
+            props.onDismiss?.(props.id);
+            props.onClose?.({
+              id: props.id,
+              event: "on-dismiss",
+            });
+            toast.dismiss(props.id);
+          }}
+        >
+          <Icon name="close" size={20} />
+        </button>
+      )}
+    </div>
+  );
+});
 
 ToastComponent.displayName = "Toast";
 
 interface PromiseToastProps<T = ToastPromiseData> extends Pick<
   PromiseToastOptions<T>,
-  | "loading"
-  | "success"
-  | "error"
-  | "onDismiss"
-  | "onAutoClose"
-  | "onClose"
-  | "loader"
-  | "showLoader"
+  "loading" | "success" | "error" | "onDismiss" | "onAutoClose" | "onClose" | "loader" | "showLoader"
 > {
   id: ToastId;
   promise: ToastPromise<T>;
   duration?: number;
 }
 
-const PromiseToast = <T extends ToastPromiseData>({
-  showLoader = true,
-  ...props
-}: PromiseToastProps<T>) => {
+const PromiseToast = <T extends ToastPromiseData>({ showLoader = true, ...props }: PromiseToastProps<T>) => {
   const [type, setType] = useState<ToastType>();
   const [message, setMessage] = useState<ToastMessage>(props.loading);
   const { id, promise, duration } = props;
@@ -322,21 +265,10 @@ const PromiseToast = <T extends ToastPromiseData>({
 
 const renderToast = (
   message: ToastMessage | ((id: ToastId) => ToastMessage),
-  {
-    ref,
-    type,
-    icon,
-    action,
-    cancel,
-    onDismiss,
-    onClose,
-    onAutoClose,
-    className,
-    ...options
-  }: ToastOptions = {},
+  { ref, type, icon, action, cancel, onDismiss, onClose, onAutoClose, className, ...options }: ToastOptions = {},
 ) => {
   return SonnerToast.custom(
-    (id) => (
+    id => (
       <ToastComponent
         id={id}
         ref={ref}
@@ -388,7 +320,7 @@ const renderPromiseToast = <T extends ToastPromiseData>(
   }: PromiseToastOptions<T>,
 ) => {
   return SonnerToast.custom(
-    (id) => (
+    id => (
       <PromiseToast
         id={id}
         promise={promise}
@@ -412,28 +344,16 @@ const renderPromiseToast = <T extends ToastPromiseData>(
 };
 
 export const toast = Object.assign(renderToast, {
-  info: (
-    message: ToastMessage | ((id: ToastId) => ToastMessage),
-    options?: Omit<ToastOptions, "type">,
-  ) => {
+  info: (message: ToastMessage | ((id: ToastId) => ToastMessage), options?: Omit<ToastOptions, "type">) => {
     return renderToast(message, { ...options, type: "info" });
   },
-  success: (
-    message: ToastMessage | ((id: ToastId) => ToastMessage),
-    options?: Omit<ToastOptions, "type">,
-  ) => {
+  success: (message: ToastMessage | ((id: ToastId) => ToastMessage), options?: Omit<ToastOptions, "type">) => {
     return renderToast(message, { ...options, type: "success" });
   },
-  error: (
-    message: ToastMessage | ((id: ToastId) => ToastMessage),
-    options?: Omit<ToastOptions, "type">,
-  ) => {
+  error: (message: ToastMessage | ((id: ToastId) => ToastMessage), options?: Omit<ToastOptions, "type">) => {
     return renderToast(message, { ...options, type: "error" });
   },
-  warning: (
-    message: ToastMessage | ((id: ToastId) => ToastMessage),
-    options?: Omit<ToastOptions, "type">,
-  ) => {
+  warning: (message: ToastMessage | ((id: ToastId) => ToastMessage), options?: Omit<ToastOptions, "type">) => {
     return renderToast(message, { ...options, type: "warning" });
   },
   custom: renderCustomToast,

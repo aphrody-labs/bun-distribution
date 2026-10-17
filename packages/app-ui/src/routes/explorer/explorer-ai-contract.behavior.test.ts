@@ -33,25 +33,14 @@ function ContextAction({ targets }: { targets: File[] }) {
   return createElement(
     "div",
     null,
-    createElement(
-      "button",
-      { onClick: () => ask(targets) },
-      "Demander à Aphrody",
-    ),
-    createElement(
-      "output",
-      null,
-      JSON.stringify({ path: location.pathname, state: location.state }),
-    ),
+    createElement("button", { onClick: () => ask(targets) }, "Demander à Aphrody"),
+    createElement("output", null, JSON.stringify({ path: location.pathname, state: location.state })),
   );
 }
 let root: Root | undefined;
 let container: HTMLDivElement | undefined;
 const hasDom = typeof document !== "undefined";
-if (hasDom)
-  (
-    globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-  ).IS_REACT_ACT_ENVIRONMENT = true;
+if (hasDom) (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 afterEach(async () => {
   if (root) await act(async () => root!.unmount());
   root = undefined;
@@ -64,11 +53,7 @@ async function mount(targets: File[]) {
   root = createRoot(container);
   await act(async () =>
     root!.render(
-      createElement(
-        MemoryRouter,
-        { initialEntries: ["/explorer"] },
-        createElement(ContextAction, { targets }),
-      ),
+      createElement(MemoryRouter, { initialEntries: ["/explorer"] }, createElement(ContextAction, { targets })),
     ),
   );
 }
@@ -89,8 +74,7 @@ describe.skipIf(!hasDom)("Explorer context reaches the real chat route", () => {
     expect(current()).toEqual({
       path: "/chat",
       state: {
-        initialPrompt:
-          'À propos du fichier "facture.pdf" (C:\\docs\\facture.pdf) :\n',
+        initialPrompt: 'À propos du fichier "facture.pdf" (C:\\docs\\facture.pdf) :\n',
         cwd: "C:\\docs",
         contextFiles: ["C:\\docs\\facture.pdf"],
       },
@@ -100,22 +84,15 @@ describe.skipIf(!hasDom)("Explorer context reaches the real chat route", () => {
     await mount([file("/workspace/screen.png"), file("/workspace/notes.md")]);
     await act(async () => container!.querySelector("button")!.click());
     expect(current().path).toBe("/chat");
-    expect(current().state?.contextFiles).toEqual([
-      "/workspace/screen.png",
-      "/workspace/notes.md",
-    ]);
-    expect(current().state?.initialPrompt).toContain(
-      "- /workspace/screen.png\n- /workspace/notes.md",
-    );
+    expect(current().state?.contextFiles).toEqual(["/workspace/screen.png", "/workspace/notes.md"]);
+    expect(current().state?.initialPrompt).toContain("- /workspace/screen.png\n- /workspace/notes.md");
     expect(current().state?.cwd).toBe("/workspace");
   });
   test("directory context and empty selections never invent file jobs", async () => {
     await mount([file("/workspace/project", "Directory")]);
     await act(async () => container!.querySelector("button")!.click());
     expect(current().state?.cwd).toBe("/workspace/project");
-    expect(current().state?.initialPrompt).toContain(
-      'À propos du dossier "project"',
-    );
+    expect(current().state?.initialPrompt).toContain('À propos du dossier "project"');
     await act(async () => root!.unmount());
     root = undefined;
     container!.remove();

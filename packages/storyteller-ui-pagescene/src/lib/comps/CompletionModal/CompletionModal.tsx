@@ -1,11 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import {
-  CloudUploadIcon,
-  LoaderCircleIcon,
-  RotateCwIcon,
-  TrashIcon,
-  TriangleAlertIcon,
-} from "lucide-react";
+import { CloudUploadIcon, LoaderCircleIcon, RotateCwIcon, TrashIcon, TriangleAlertIcon } from "lucide-react";
 import { EngineContext } from "../../contexts/EngineContext";
 import { usePageSceneStore, type ProducedArtifact } from "../../PageSceneStore";
 
@@ -18,10 +12,8 @@ type UploadStatus = "idle" | "uploading" | "error";
 
 export const CompletionModal = () => {
   const editor = useContext(EngineContext);
-  const artifact = usePageSceneStore((s) => s.producedArtifact);
-  const clearProducedArtifact = usePageSceneStore(
-    (s) => s.clearProducedArtifact,
-  );
+  const artifact = usePageSceneStore(s => s.producedArtifact);
+  const clearProducedArtifact = usePageSceneStore(s => s.clearProducedArtifact);
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const autoStartedRef = useRef(false);
@@ -43,10 +35,7 @@ export const CompletionModal = () => {
         throw new Error("Uploading is unavailable in this editor.");
       }
       // A failed preview lookup must not upload the same large video again.
-      let token =
-        uploadedRef.current?.artifact === artifact
-          ? uploadedRef.current.token
-          : undefined;
+      let token = uploadedRef.current?.artifact === artifact ? uploadedRef.current.token : undefined;
       if (!token) {
         token = await editor.adapter.uploadMedia({
           kind: artifact.kind,
@@ -64,9 +53,7 @@ export const CompletionModal = () => {
       }
     } catch (error) {
       console.error("Scene output upload or preview failed:", error);
-      setErrorMessage(
-        error instanceof Error ? error.message : "Upload failed. Please retry.",
-      );
+      setErrorMessage(error instanceof Error ? error.message : "Upload failed. Please retry.");
       setStatus("error");
     } finally {
       inFlightRef.current = false;
@@ -101,19 +88,9 @@ export const CompletionModal = () => {
 
         <div className="flex max-h-[52vh] items-center justify-center overflow-hidden rounded-none bg-white/5">
           {isVideo ? (
-            <video
-              src={artifact.objectUrl}
-              controls
-              autoPlay
-              loop
-              className="max-h-[52vh] w-full object-contain"
-            />
+            <video src={artifact.objectUrl} controls autoPlay loop className="max-h-[52vh] w-full object-contain" />
           ) : (
-            <img
-              src={artifact.objectUrl}
-              alt="Captured frame"
-              className="max-h-[52vh] w-full object-contain"
-            />
+            <img src={artifact.objectUrl} alt="Captured frame" className="max-h-[52vh] w-full object-contain" />
           )}
         </div>
 
@@ -125,10 +102,7 @@ export const CompletionModal = () => {
           </div>
         )}
         {status === "error" && (
-          <div
-            role="alert"
-            className="flex items-center gap-2 text-sm text-red"
-          >
+          <div role="alert" className="flex items-center gap-2 text-sm text-red">
             <TriangleAlertIcon className="h-4 w-4" />
             {errorMessage}
           </div>

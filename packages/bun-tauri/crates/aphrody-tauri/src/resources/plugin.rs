@@ -3,29 +3,29 @@
 // SPDX-License-Identifier: MIT
 
 use crate::{
-  Manager, Runtime, Webview, command,
-  plugin::{Builder, TauriPlugin},
+    Manager, Runtime, Webview, command,
+    plugin::{Builder, TauriPlugin},
 };
 
 use super::ResourceId;
 
 #[command(root = "crate")]
 fn close<R: Runtime>(webview: Webview<R>, rid: ResourceId) -> crate::Result<()> {
-  let mut result = webview.resources_table().close(rid);
-  if result.is_err() {
-    result = webview.window().resources_table().close(rid);
+    let mut result = webview.resources_table().close(rid);
     if result.is_err() {
-      result = webview.app_handle().resources_table().close(rid);
+        result = webview.window().resources_table().close(rid);
+        if result.is_err() {
+            result = webview.app_handle().resources_table().close(rid);
+        }
     }
-  }
-  result
+    result
 }
 
 pub(crate) fn init<R: Runtime>() -> TauriPlugin<R> {
-  Builder::new("resources")
-    .invoke_handler(crate::generate_handler![
-      #![plugin(resources)]
-      close
-    ])
-    .build()
+    Builder::new("resources")
+        .invoke_handler(crate::generate_handler![
+          #![plugin(resources)]
+          close
+        ])
+        .build()
 }

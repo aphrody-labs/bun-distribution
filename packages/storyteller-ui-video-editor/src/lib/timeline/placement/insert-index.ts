@@ -57,10 +57,7 @@ export function resolvePreferredNewTrackPlacement({
     };
   }
 
-  const safePreferredIndex = Math.min(
-    Math.max(preferredIndex, 0),
-    trackCount - 1,
-  );
+  const safePreferredIndex = Math.min(Math.max(preferredIndex, 0), trackCount - 1);
   const mainTrackIndex = tracks.overlay.length;
 
   if (trackType === "audio") {
@@ -72,14 +69,12 @@ export function resolvePreferredNewTrackPlacement({
     }
 
     return {
-      insertIndex:
-        direction === "above" ? safePreferredIndex : safePreferredIndex + 1,
+      insertIndex: direction === "above" ? safePreferredIndex : safePreferredIndex + 1,
       insertPosition: direction,
     };
   }
 
-  const insertIndex =
-    direction === "above" ? safePreferredIndex : safePreferredIndex + 1;
+  const insertIndex = direction === "above" ? safePreferredIndex : safePreferredIndex + 1;
   if (mainTrackIndex >= 0 && insertIndex > mainTrackIndex) {
     return {
       insertIndex: mainTrackIndex,

@@ -6,9 +6,7 @@ import { useEffect, useState } from "react";
 // `<html>` changes.
 const readFgRgb = (): string => {
   if (typeof window === "undefined") return "255 255 255";
-  const v = getComputedStyle(document.documentElement)
-    .getPropertyValue("--st-fg-rgb")
-    .trim();
+  const v = getComputedStyle(document.documentElement).getPropertyValue("--st-fg-rgb").trim();
   return v || "255 255 255";
 };
 
@@ -17,7 +15,7 @@ export const useThemeFgRgb = (): string => {
 
   useEffect(() => {
     const update = () => setFgRgb(readFgRgb());
-    const observer = new MutationObserver((mutations) => {
+    const observer = new MutationObserver(mutations => {
       for (const m of mutations) {
         if (m.attributeName === "class") {
           update();

@@ -11,22 +11,13 @@ export type Platform = {
   platform: "web" | "tauri";
 
   /** Open native directory picker dialog (Tauri only) */
-  openDirectoryPickerDialog?(opts?: {
-    title?: string;
-    multiple?: boolean;
-  }): Promise<string | string[] | null>;
+  openDirectoryPickerDialog?(opts?: { title?: string; multiple?: boolean }): Promise<string | string[] | null>;
 
   /** Open native file picker dialog (Tauri only) */
-  openFilePickerDialog?(opts?: {
-    title?: string;
-    multiple?: boolean;
-  }): Promise<string | string[] | null>;
+  openFilePickerDialog?(opts?: { title?: string; multiple?: boolean }): Promise<string | string[] | null>;
 
   /** Save file picker dialog (Tauri only) */
-  saveFilePickerDialog?(opts?: {
-    title?: string;
-    defaultPath?: string;
-  }): Promise<string | null>;
+  saveFilePickerDialog?(opts?: { title?: string; defaultPath?: string }): Promise<string | null>;
 
   /** Open a URL in the default browser */
   openLink(url: string): void;
@@ -74,9 +65,7 @@ export type Platform = {
   setCurrentLibraryId?(libraryId: string): Promise<void>;
 
   /** Listen for library ID changes across all windows (Tauri only) */
-  onLibraryIdChanged?(
-    callback: (libraryId: string) => void,
-  ): Promise<() => void>;
+  onLibraryIdChanged?(callback: (libraryId: string) => void): Promise<() => void>;
 
   /** Show a specific window type (Tauri only) */
   showWindow?(window: any): Promise<void>;
@@ -103,9 +92,7 @@ export type Platform = {
   setSelectedFileIds?(fileIds: string[]): Promise<void>;
 
   /** Listen for selected file changes across all windows (Tauri only) */
-  onSelectedFilesChanged?(
-    callback: (fileIds: string[]) => void,
-  ): Promise<() => void>;
+  onSelectedFilesChanged?(callback: (fileIds: string[]) => void): Promise<() => void>;
 
   /** Get app version (Tauri only) */
   getAppVersion?(): Promise<string>;
@@ -174,11 +161,7 @@ export type Platform = {
   // Keybind API
 
   /** Register a keybind handler (Tauri only) */
-  registerKeybind?(
-    id: string,
-    accelerator: string,
-    handler: () => void | Promise<void>,
-  ): Promise<void>;
+  registerKeybind?(id: string, accelerator: string, handler: () => void | Promise<void>): Promise<void>;
 
   /** Unregister a keybind handler (Tauri only) */
   unregisterKeybind?(id: string): Promise<void>;
@@ -222,13 +205,6 @@ export function usePlatform(): Platform {
   return ctx;
 }
 
-export function PlatformProvider({
-  platform,
-  children,
-}: PropsWithChildren<{ platform: Platform }>) {
-  return (
-    <PlatformContext.Provider value={platform}>
-      {children}
-    </PlatformContext.Provider>
-  );
+export function PlatformProvider({ platform, children }: PropsWithChildren<{ platform: Platform }>) {
+  return <PlatformContext.Provider value={platform}>{children}</PlatformContext.Provider>;
 }

@@ -28,15 +28,8 @@ export const PreviewBox = ({ imageUrl }: PreviewBoxProps) => {
       >
         <XIcon className="text-xs" />
       </button>
-      <img
-        src={imageUrl}
-        crossOrigin="anonymous"
-        alt="Author's generation"
-        className="rounded-md"
-      />
-      <span className="text-center text-[11px] text-white/60">
-        Author's generation
-      </span>
+      <img src={imageUrl} crossOrigin="anonymous" alt="Author's generation" className="rounded-md" />
+      <span className="text-center text-[11px] text-white/60">Author's generation</span>
     </div>
   );
 };

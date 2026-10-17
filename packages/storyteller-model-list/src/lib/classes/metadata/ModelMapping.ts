@@ -3,12 +3,10 @@ import { ModelCreator } from "./ModelCreator.js";
 import { getCreatorIcon } from "./ModelCreatorIcons.js";
 
 // Normalize a model id/type key for lookups (lowercase, dots → underscores)
-const normalizeModelKey = (modelType: string): string =>
-  modelType.toLowerCase().replace(/\./g, "_").trim();
+const normalizeModelKey = (modelType: string): string => modelType.toLowerCase().replace(/\./g, "_").trim();
 
 /** Matches all seedance_* variants (video-only; image models are seedream_*). */
-export const isSeedanceVideoModelId = (modelId: string): boolean =>
-  normalizeModelKey(modelId).startsWith("seedance");
+export const isSeedanceVideoModelId = (modelId: string): boolean => normalizeModelKey(modelId).startsWith("seedance");
 
 const CHINESE_CHARACTERS_REGEX = /\p{Script=Han}/u;
 
@@ -23,10 +21,7 @@ export const effectivePromptMaxLength = (
   modelMaxLength: number | undefined,
   prompt: string,
 ): number | undefined => {
-  if (
-    isSeedanceVideoModelId(modelId) &&
-    CHINESE_CHARACTERS_REGEX.test(prompt)
-  ) {
+  if (isSeedanceVideoModelId(modelId) && CHINESE_CHARACTERS_REGEX.test(prompt)) {
     return Infinity;
   }
   return modelMaxLength;
@@ -34,10 +29,7 @@ export const effectivePromptMaxLength = (
 
 // Convert model type string to human-readable display name. An API-provided
 // full name (when present) wins over the static map.
-export const getModelDisplayName = (
-  modelType: string,
-  fullName?: string | null,
-): string => {
+export const getModelDisplayName = (modelType: string, fullName?: string | null): string => {
   if (fullName) return fullName;
 
   const displayNames: Record<string, string> = {
@@ -226,10 +218,7 @@ export const getProviderDisplayName = (provider: string): string => {
 };
 
 // Get provider icon (string-based provider)
-export const getProviderIconByName = (
-  provider: string,
-  className = "h-4 w-4 invert",
-): React.ReactNode | null => {
+export const getProviderIconByName = (provider: string, className = "h-4 w-4 invert"): React.ReactNode | null => {
   const providerToCreator: Record<string, ModelCreator> = {
     artcraft: ModelCreator.ArtCraft,
     fal: ModelCreator.Fal,

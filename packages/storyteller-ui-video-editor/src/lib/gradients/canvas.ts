@@ -1,13 +1,7 @@
-import type {
-  GradientAst,
-  Color,
-  ColorStop,
-  GradientOrientation,
-} from "./parser";
+import type { GradientAst, Color, ColorStop, GradientOrientation } from "./parser";
 import { parseGradient } from "./parser";
 
-type BackgroundLayer =
-  { type: "color"; value: string } | { type: "gradient"; value: GradientAst };
+type BackgroundLayer = { type: "color"; value: string } | { type: "gradient"; value: GradientAst };
 
 type LinearPoints = {
   x0: number;
@@ -76,11 +70,7 @@ export function drawCssBackground({
   }
 }
 
-const parseBackgroundLayers = ({
-  css,
-}: {
-  css: string;
-}): Array<BackgroundLayer> => {
+const parseBackgroundLayers = ({ css }: { css: string }): Array<BackgroundLayer> => {
   const segments = splitCssLayers({ css });
   const layers: Array<BackgroundLayer> = [];
 
@@ -256,11 +246,7 @@ const resolveLinearPoints = ({
   return { x0, y0, x1, y1, length };
 };
 
-const resolveLinearAngle = ({
-  orientation,
-}: {
-  orientation: GradientOrientation | undefined;
-}): number => {
+const resolveLinearAngle = ({ orientation }: { orientation: GradientOrientation | undefined }): number => {
   if (!orientation) {
     return 180;
   }
@@ -317,9 +303,7 @@ const resolveRadialDimensions = ({
   orientation: GradientOrientation | undefined;
 }): RadialDimensions => {
   const centerFallback = { cx: width / 2, cy: height / 2 };
-  const radial = Array.isArray(orientation)
-    ? (orientation[0] as RadialOrientation | undefined)
-    : undefined;
+  const radial = Array.isArray(orientation) ? (orientation[0] as RadialOrientation | undefined) : undefined;
 
   if (!radial) {
     const { rx, ry } = resolveRadialExtents({
@@ -344,12 +328,8 @@ const resolveRadialDimensions = ({
     if (radial.style && radial.style.type === "position") {
       const xDist = radial.style.value.x;
       const yDist = radial.style.value.y;
-      const rx = xDist
-        ? resolveEllipseDimension({ distance: xDist, axisSize: width })
-        : width / 2;
-      const ry = yDist
-        ? resolveEllipseDimension({ distance: yDist, axisSize: height })
-        : height / 2;
+      const rx = xDist ? resolveEllipseDimension({ distance: xDist, axisSize: width }) : width / 2;
+      const ry = yDist ? resolveEllipseDimension({ distance: yDist, axisSize: height }) : height / 2;
       return { cx, cy, rx, ry };
     }
 
@@ -371,10 +351,7 @@ const resolveRadialDimensions = ({
       return { cx, cy, rx: radius, ry: radius };
     }
 
-    const extent =
-      radial.style && radial.style.type === "extent-keyword"
-        ? radial.style.value
-        : "farthest-corner";
+    const extent = radial.style && radial.style.type === "extent-keyword" ? radial.style.value : "farthest-corner";
     const { rx, ry } = resolveRadialExtents({
       width,
       height,
@@ -447,18 +424,11 @@ const resolveRadialCenter = ({
   return { cx, cy };
 };
 
-const normalizePositionKeywords = ({
-  position,
-}: {
-  position: Position;
-}): Position => {
+const normalizePositionKeywords = ({ position }: { position: Position }): Position => {
   const xValue = position.value.x;
   const yValue = position.value.y;
 
-  if (
-    xValue?.type === "position-keyword" &&
-    yValue?.type === "position-keyword"
-  ) {
+  if (xValue?.type === "position-keyword" && yValue?.type === "position-keyword") {
     const xKeyword = xValue.value.toLowerCase() as PositionKeyword;
     const yKeyword = yValue.value.toLowerCase() as PositionKeyword;
     const xIsVertical = xKeyword === "top" || xKeyword === "bottom";
@@ -530,11 +500,8 @@ const resolveRadialExtents = ({
     { dx: left, dy: bottom },
     { dx: right, dy: bottom },
   ];
-  const sorted = corners
-    .slice()
-    .sort((a, b) => Math.hypot(a.dx, a.dy) - Math.hypot(b.dx, b.dy));
-  const chosen =
-    extent === "closest-corner" ? sorted[0] : sorted[sorted.length - 1];
+  const sorted = corners.slice().sort((a, b) => Math.hypot(a.dx, a.dy) - Math.hypot(b.dx, b.dy));
+  const chosen = extent === "closest-corner" ? sorted[0] : sorted[sorted.length - 1];
   return { rx: Math.abs(chosen.dx), ry: Math.abs(chosen.dy) };
 };
 
@@ -574,13 +541,7 @@ const resolvePositionValue = ({
   return axisSize / 2;
 };
 
-const resolveDistanceInPixels = ({
-  distance,
-  axisSize,
-}: {
-  distance: Distance;
-  axisSize: number;
-}): number | null => {
+const resolveDistanceInPixels = ({ distance, axisSize }: { distance: Distance; axisSize: number }): number | null => {
   if (distance.type === "%") {
     return (Number.parseFloat(distance.value) / 100) * axisSize;
   }
@@ -596,13 +557,7 @@ const resolveDistanceInPixels = ({
   return null;
 };
 
-const resolveEllipseDimension = ({
-  distance,
-  axisSize,
-}: {
-  distance: Distance;
-  axisSize: number;
-}): number => {
+const resolveEllipseDimension = ({ distance, axisSize }: { distance: Distance; axisSize: number }): number => {
   if (distance.type === "%") {
     return (Number.parseFloat(distance.value) / 100) * axisSize;
   }
@@ -618,15 +573,7 @@ const resolveEllipseDimension = ({
   return axisSize / 2;
 };
 
-const keywordToPosition = ({
-  value,
-  axisSize,
-  axis,
-}: {
-  value: string;
-  axisSize: number;
-  axis: "x" | "y";
-}): number => {
+const keywordToPosition = ({ value, axisSize, axis }: { value: string; axisSize: number; axis: "x" | "y" }): number => {
   const keyword = value.toLowerCase() as PositionKeyword;
 
   if (keyword === "center") {
@@ -659,20 +606,14 @@ const isTransparent = ({ color }: { color: string }): boolean => {
   if (lower === "transparent") {
     return true;
   }
-  const rgbaMatch = lower.match(
-    /^rgba\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)$/,
-  );
+  const rgbaMatch = lower.match(/^rgba\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)$/);
   if (rgbaMatch && Number.parseFloat(rgbaMatch[1]) === 0) {
     return true;
   }
   return false;
 };
 
-const parseColorToRgb = ({
-  color,
-}: {
-  color: string;
-}): { r: number; g: number; b: number; a: number } | null => {
+const parseColorToRgb = ({ color }: { color: string }): { r: number; g: number; b: number; a: number } | null => {
   const lower = color.toLowerCase().trim();
 
   const hexMatch = lower.match(/^#([0-9a-f]{3,8})$/);
@@ -704,9 +645,7 @@ const parseColorToRgb = ({
     }
   }
 
-  const rgbMatch = lower.match(
-    /^rgb\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/,
-  );
+  const rgbMatch = lower.match(/^rgb\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/);
   if (rgbMatch) {
     return {
       r: Number.parseFloat(rgbMatch[1]),
@@ -716,9 +655,7 @@ const parseColorToRgb = ({
     };
   }
 
-  const rgbaMatch = lower.match(
-    /^rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/,
-  );
+  const rgbaMatch = lower.match(/^rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/);
   if (rgbaMatch) {
     return {
       r: Number.parseFloat(rgbaMatch[1]),
@@ -740,7 +677,7 @@ const fixTransparentStops = ({
     return stops;
   }
 
-  const result = stops.map((stop) => ({ ...stop }));
+  const result = stops.map(stop => ({ ...stop }));
 
   for (let i = 0; i < result.length; i++) {
     if (!isTransparent({ color: result[i].color })) {
@@ -772,8 +709,7 @@ const fixTransparentStops = ({
     }
 
     if (donorColor) {
-      result[i].color =
-        `rgba(${donorColor.r},${donorColor.g},${donorColor.b},0)`;
+      result[i].color = `rgba(${donorColor.r},${donorColor.g},${donorColor.b},0)`;
     }
   }
 
@@ -787,13 +723,13 @@ const normalizeColorStops = ({
   colorStops: Array<ColorStop>;
   gradientLength: number;
 }): Array<{ color: string; offset: number }> => {
-  const mappedStops = colorStops.map((stop) => ({
+  const mappedStops = colorStops.map(stop => ({
     color: colorToString({ color: stop }),
     offset: resolveStopOffset({ stop, gradientLength }),
   }));
 
   const fixedStops = fixTransparentStops({ stops: mappedStops });
-  const resolvedStops = fixedStops.map((stop) => ({ ...stop }));
+  const resolvedStops = fixedStops.map(stop => ({ ...stop }));
   const knownIndices = resolvedStops
     .map((stop, index) => (stop.offset === null ? null : index))
     .filter((index): index is number => index !== null);
@@ -851,19 +787,13 @@ const clampStops = ({
 }: {
   stops: Array<{ color: string; offset: number | null }>;
 }): Array<{ color: string; offset: number }> => {
-  return stops.map((stop) => ({
+  return stops.map(stop => ({
     color: stop.color,
     offset: clamp01({ value: stop.offset ?? 0 }),
   }));
 };
 
-const resolveStopOffset = ({
-  stop,
-  gradientLength,
-}: {
-  stop: ColorStop;
-  gradientLength: number;
-}): number | null => {
+const resolveStopOffset = ({ stop, gradientLength }: { stop: ColorStop; gradientLength: number }): number | null => {
   if (!stop.length) {
     return null;
   }

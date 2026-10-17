@@ -2,20 +2,7 @@
 // not installed so NES images stay disassemblable from the single-file executable.
 import type { DisasmLine } from "./index.js";
 
-type Mode =
-  | "imp"
-  | "acc"
-  | "imm"
-  | "zp"
-  | "zpx"
-  | "zpy"
-  | "abs"
-  | "abx"
-  | "aby"
-  | "ind"
-  | "izx"
-  | "izy"
-  | "rel";
+type Mode = "imp" | "acc" | "imm" | "zp" | "zpx" | "zpy" | "abs" | "abx" | "aby" | "ind" | "izx" | "izy" | "rel";
 
 const lengths: Record<Mode, number> = {
   imp: 1,
@@ -61,12 +48,7 @@ for (const entry of table.split(/[|\n]/)) {
 const h2 = (value: number) => value.toString(16).padStart(2, "0");
 const h4 = (value: number) => value.toString(16).padStart(4, "0");
 
-function operand(
-  mode: Mode,
-  bytes: Uint8Array,
-  at: number,
-  pc: number,
-): string {
+function operand(mode: Mode, bytes: Uint8Array, at: number, pc: number): string {
   const b = bytes[at + 1] ?? 0;
   const w = b | ((bytes[at + 2] ?? 0) << 8);
   switch (mode) {
@@ -99,20 +81,14 @@ function operand(
   }
 }
 
-export function disassemble6502(
-  bytes: Uint8Array,
-  address: number,
-  count: number,
-): DisasmLine[] {
+export function disassemble6502(bytes: Uint8Array, address: number, count: number): DisasmLine[] {
   const lines: DisasmLine[] = [];
   for (let at = 0; at < bytes.byteLength && lines.length < count;) {
     const pc = (address + at) & 0xffff;
     const known = opcodes.get(bytes[at]!);
     const length = known ? lengths[known[1]] : 1;
     if (at + length > bytes.byteLength) break;
-    const text = known
-      ? `${known[0]} ${operand(known[1], bytes, at, pc)}`.trim()
-      : `.db $${h2(bytes[at]!)}`;
+    const text = known ? `${known[0]} ${operand(known[1], bytes, at, pc)}`.trim() : `.db $${h2(bytes[at]!)}`;
     lines.push({
       address: pc,
       bytes: Array.from(bytes.subarray(at, at + length), h2).join(" "),

@@ -16,10 +16,7 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
   const settingsRoutePath = resolve(__dirname, "routes/settings/index.tsx");
   const settingsRouteCode = readFileSync(settingsRoutePath, "utf-8");
 
-  const spaceSwitcherPath = resolve(
-    __dirname,
-    "components/SpacesSidebar/SpaceSwitcher.tsx",
-  );
+  const spaceSwitcherPath = resolve(__dirname, "components/SpacesSidebar/SpaceSwitcher.tsx");
   const spaceSwitcherCode = readFileSync(spaceSwitcherPath, "utf-8");
 
   it("enforces a single navigation sidebar with no secondary sidebar anywhere", () => {
@@ -63,9 +60,7 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
     expect(sidebarCode).toContain("model_training");
 
     // 48dp row height and label-large 18px text
-    expect(sidebarCode).toContain(
-      "h-12 w-full items-center gap-3 rounded-full px-3 text-label-large",
-    );
+    expect(sidebarCode).toContain("h-12 w-full items-center gap-3 rounded-full px-3 text-label-large");
   });
 
   it("dynamically changes groups based on active area without modal drawers", () => {
@@ -126,10 +121,7 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
   });
 
   it("eliminates technical slop across settings pages (no alpha versions, device slug or raw dumps)", () => {
-    const generalPath = resolve(
-      __dirname,
-      "Settings/pages/GeneralSettings.tsx",
-    );
+    const generalPath = resolve(__dirname, "Settings/pages/GeneralSettings.tsx");
     const generalCode = readFileSync(generalPath, "utf-8");
 
     // Zero slop assertions
@@ -143,10 +135,7 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
   });
 
   it("conforms to LOW_VISION accessibility profile with text >= 18px", () => {
-    const appearancePath = resolve(
-      __dirname,
-      "Settings/pages/AppearanceSettings.tsx",
-    );
+    const appearancePath = resolve(__dirname, "Settings/pages/AppearanceSettings.tsx");
     const appearanceCode = readFileSync(appearancePath, "utf-8");
 
     // Appearance includes font size controls respecting 18px floor
@@ -159,9 +148,7 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
     const appCssPath = resolve(__dirname, "app.css");
     const appCss = readFileSync(appCssPath, "utf-8");
     expect(appCss).toContain("LOW_VISION is a product invariant");
-    expect(appCss).toContain(
-      "font-size: max(var(--aphrody-base-font-size, 18px), 1em)",
-    );
+    expect(appCss).toContain("font-size: max(var(--aphrody-base-font-size, 18px), 1em)");
   });
 
   it("chat store handles thread grouping into projects and unread indicators", () => {
@@ -174,11 +161,11 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
     const groups = getProjectGroups(mockThreads, { aphrody: true });
     expect(groups.length).toBeGreaterThanOrEqual(2);
 
-    const aphrodyGroup = groups.find((g) => g.name === "aphrody");
+    const aphrodyGroup = groups.find(g => g.name === "aphrody");
     expect(aphrodyGroup).toBeDefined();
     expect(aphrodyGroup?.threads).toHaveLength(2);
 
-    const atlasGroup = groups.find((g) => g.name === "atlas");
+    const atlasGroup = groups.find(g => g.name === "atlas");
     expect(atlasGroup).toBeDefined();
     expect(atlasGroup?.threads).toHaveLength(1);
   });

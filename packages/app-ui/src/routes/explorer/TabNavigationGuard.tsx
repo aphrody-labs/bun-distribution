@@ -17,10 +17,7 @@ interface TabNavigationGuardProps {
  *
  * Regular in-tab navigation (sidebar, breadcrumbs) is NOT blocked.
  */
-export function TabNavigationGuard({
-  children,
-  fallback,
-}: TabNavigationGuardProps) {
+export function TabNavigationGuard({ children, fallback }: TabNavigationGuardProps) {
   const { activeTabId } = useExplorer();
   const { tabs } = useTabManager();
   const location = useLocation();
@@ -31,7 +28,7 @@ export function TabNavigationGuard({
     switchedAt: 0,
   });
 
-  const activeTab = tabs.find((t) => t.id === activeTabId);
+  const activeTab = tabs.find(t => t.id === activeTabId);
   const currentUrlPath = location.pathname + location.search;
 
   // Detect tab switch and record timestamp (state update during render: React re-runs
@@ -46,8 +43,7 @@ export function TabNavigationGuard({
   const justSwitchedTabs = Date.now() - tabSwitch.switchedAt < 50;
 
   // Only block if we JUST switched tabs AND URL hasn't caught up yet
-  const isNavigating =
-    justSwitchedTabs && activeTab && currentUrlPath !== activeTab.savedPath;
+  const isNavigating = justSwitchedTabs && activeTab && currentUrlPath !== activeTab.savedPath;
 
   if (isNavigating) {
     return fallback ?? <div className="h-full overflow-auto" />;

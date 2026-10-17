@@ -38,13 +38,10 @@ export function parseIconSpecifier(tail: string): IconRequest {
   const [pathPart = "", query = ""] = tail.split("?", 2);
   const parts = pathPart.split("/").filter(Boolean);
   const name = parts.pop();
-  if (!name || !/^[a-z0-9_]+$/.test(name))
-    throw new Error(`m3-bun: invalid icon name in m3:icons/${tail}`);
+  if (!name || !/^[a-z0-9_]+$/.test(name)) throw new Error(`m3-bun: invalid icon name in m3:icons/${tail}`);
   const style = (parts.pop() ?? "outlined") as IconStyle;
   if (!(ICON_STYLES as readonly string[]).includes(style) || parts.length > 0)
-    throw new Error(
-      `m3-bun: m3:icons/${tail}: style must be one of ${ICON_STYLES.join(", ")}`,
-    );
+    throw new Error(`m3-bun: m3:icons/${tail}: style must be one of ${ICON_STYLES.join(", ")}`);
   const params = new URLSearchParams(query);
   const weight = Number(params.get("wght") ?? 400);
   if (![100, 200, 300, 400, 500, 600, 700].includes(weight))
@@ -59,55 +56,35 @@ export function iconFile({ name, fill, weight }: IconRequest): string {
 
 /** Google's variant directory: `default`, `fill1`, `wght300`, `wght300fill1`. */
 export function iconVariant({ fill, weight }: IconRequest): string {
-  return (
-    `${weight === 400 ? "" : `wght${weight}`}${fill ? "fill1" : ""}` ||
-    "default"
-  );
+  return `${weight === 400 ? "" : `wght${weight}`}${fill ? "fill1" : ""}` || "default";
 }
 
 /** The CDN the icons come from when there is no local catalogue: `M3_ICONS_ORIGIN`, else Google's. */
-export const iconsOrigin = (): string =>
-  Bun.env.M3_ICONS_ORIGIN ?? "https://fonts.gstatic.com";
+export const iconsOrigin = (): string => Bun.env.M3_ICONS_ORIGIN ?? "https://fonts.gstatic.com";
 
 /** The Material Symbols CDN URL of a variant (fonts.gstatic.com layout). */
-export function iconUrl(
-  request: IconRequest,
-  origin: string = iconsOrigin(),
-): string {
+export function iconUrl(request: IconRequest, origin: string = iconsOrigin()): string {
   return `${origin.replace(/\/$/, "")}/s/i/short-term/release/materialsymbols${request.style}/${request.name}/${iconVariant(request)}/24px.svg`;
 }
 
 export const iconsCacheDir = (): string =>
-  Bun.env.M3_ICONS_CACHE ??
-  `${Bun.env.XDG_CACHE_HOME ?? `${Bun.env.HOME ?? "/tmp"}/.cache`}/aphrody/material-symbols`;
+  Bun.env.M3_ICONS_CACHE ?? `${Bun.env.XDG_CACHE_HOME ?? `${Bun.env.HOME ?? "/tmp"}/.cache`}/aphrody/material-symbols`;
 
 /** The cache file of a variant. The origin's `Bun.hash` names a directory, so two CDNs never share entries. */
-export function iconCacheFile(
-  request: IconRequest,
-  origin: string = iconsOrigin(),
-): string {
-  const key = Bun.hash
-    .xxHash3(origin.replace(/\/$/, ""))
-    .toString(16)
-    .padStart(16, "0");
+export function iconCacheFile(request: IconRequest, origin: string = iconsOrigin()): string {
+  const key = Bun.hash.xxHash3(origin.replace(/\/$/, "")).toString(16).padStart(16, "0");
   return `${iconsCacheDir()}/${key}/${request.style}/${request.name}/${iconVariant(request)}.svg`;
 }
 
 /** The SVG markup of an icon: the local catalogue when there is one, else the CDN through the disk cache. */
-export async function loadIcon(
-  request: IconRequest,
-  root: string | null = iconsRoot() ?? null,
-): Promise<string> {
+export async function loadIcon(request: IconRequest, root: string | null = iconsRoot() ?? null): Promise<string> {
   if (root) return readIcon(request, root);
   const origin = iconsOrigin();
   const cached = Bun.file(iconCacheFile(request, origin));
   if (await cached.exists()) return (await cached.text()).trim();
   const url = iconUrl(request, origin);
   const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
-  if (res.status === 404)
-    throw new Error(
-      `m3-bun: no icon ${request.style}/${iconFile(request)} at ${url}`,
-    );
+  if (res.status === 404) throw new Error(`m3-bun: no icon ${request.style}/${iconFile(request)} at ${url}`);
   if (!res.ok) throw new Error(`m3-bun: ${url} answered ${res.status}`);
   const svg = (await res.text()).trim();
   if (!svg.startsWith("<svg")) throw new Error(`m3-bun: ${url} is not an SVG`);
@@ -116,23 +93,10 @@ export async function loadIcon(
 }
 
 /** The SVG markup of an icon from a local catalogue, or a build error that names the file. */
-export function readIcon(
-  request: IconRequest,
-  root: string | null = iconsRoot() ?? null,
-): string {
+export function readIcon(request: IconRequest, root: string | null = iconsRoot() ?? null): string {
   if (!root)
-    throw new Error(
-      "m3-bun: no local Material Symbols catalogue (M3_ICONS_ROOT); use loadIcon to fetch from the CDN",
-    );
-  const file = join(
-    root,
-    request.name,
-    `materialsymbols${request.style}`,
-    iconFile(request),
-  );
-  if (!existsSync(file))
-    throw new Error(
-      `m3-bun: no icon ${request.style}/${iconFile(request)} in ${root}`,
-    );
+    throw new Error("m3-bun: no local Material Symbols catalogue (M3_ICONS_ROOT); use loadIcon to fetch from the CDN");
+  const file = join(root, request.name, `materialsymbols${request.style}`, iconFile(request));
+  if (!existsSync(file)) throw new Error(`m3-bun: no icon ${request.style}/${iconFile(request)} in ${root}`);
   return readFileSync(file, "utf8").trim();
 }

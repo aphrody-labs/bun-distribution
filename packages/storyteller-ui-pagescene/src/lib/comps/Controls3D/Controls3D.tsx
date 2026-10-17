@@ -26,11 +26,7 @@ import {
 import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
-import {
-  openAnimationsModal,
-  openAssetModal,
-  setTransformMode,
-} from "../../actions";
+import { openAnimationsModal, openAssetModal, setTransformMode } from "../../actions";
 import { usePageSceneStore, type TransformMode } from "../../PageSceneStore";
 import { AnimationsModal, AssetModal } from "../AssetMenu";
 
@@ -40,19 +36,11 @@ export interface Controls3DProps {
   showImageTo3DButton?: boolean;
 }
 
-export const Controls3D = ({
-  showImageTo3DButton = true,
-}: Controls3DProps = {}) => {
+export const Controls3D = ({ showImageTo3DButton = true }: Controls3DProps = {}) => {
   useSignals();
   const editor = useContext(EngineContext);
-  const {
-    assetModalVisible,
-    selectedMode,
-    transformSpace,
-    currentUserToken,
-    hostOverlayVisible,
-  } = usePageSceneStore(
-    useShallow((s) => ({
+  const { assetModalVisible, selectedMode, transformSpace, currentUserToken, hostOverlayVisible } = usePageSceneStore(
+    useShallow(s => ({
       assetModalVisible: s.assetModalVisible,
       selectedMode: s.selectedMode,
       transformSpace: s.transformSpace,
@@ -66,7 +54,7 @@ export const Controls3D = ({
   const [uploadImageIsShowing, setUploadImageIsShowing] = useState(false);
   const [uploadSplatIsShowing, setUploadSplatIsShowing] = useState(false);
 
-  const outlinerItemCount = usePageSceneStore((s) => s.outlinerItems.length);
+  const outlinerItemCount = usePageSceneStore(s => s.outlinerItems.length);
 
   useEffect(() => {
     const isSceneEmpty =
@@ -113,10 +101,7 @@ export const Controls3D = ({
 
   const handleAddAssetAction = (action: string) => {
     const requiresAuth =
-      action === "library" ||
-      action === "upload-3d" ||
-      action === "upload-image" ||
-      action === "upload-splat";
+      action === "library" || action === "upload-3d" || action === "upload-image" || action === "upload-splat";
     if (requiresAuth && !currentUserToken && editor?.adapter.promptSignup) {
       editor.adapter.promptSignup(action);
       return;
@@ -186,9 +171,7 @@ export const Controls3D = ({
                   position="bottom"
                   delay={300}
                   closeOnClick
-                  className={twMerge(
-                    showEmptySceneTooltip ? "hidden" : "block",
-                  )}
+                  className={twMerge(showEmptySceneTooltip ? "hidden" : "block")}
                 >
                   <PopoverMenu
                     mode="button"
@@ -246,12 +229,7 @@ export const Controls3D = ({
                 </Tooltip>
               </div>
               {showImageTo3DButton && (
-                <Tooltip
-                  content="Create 3D model from image"
-                  position="bottom"
-                  delay={300}
-                  closeOnClick
-                >
+                <Tooltip content="Create 3D model from image" position="bottom" delay={300} closeOnClick>
                   <Button
                     icon={WandSparklesIcon}
                     iconClassName="h-[18px] w-[18px]"
@@ -272,11 +250,7 @@ export const Controls3D = ({
             />
             <span aria-hidden="true" className="h-5 w-px bg-white/15" />
             {selectedMode === "scale" ? (
-              <Tooltip
-                content="Scale is always in local space"
-                position="bottom"
-                delay={300}
-              >
+              <Tooltip content="Scale is always in local space" position="bottom" delay={300}>
                 <button
                   disabled
                   className="flex min-w-[92px] cursor-not-allowed items-center justify-center gap-2 rounded-[3px] border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-base-fg opacity-40 transition-colors duration-150"
@@ -286,11 +260,7 @@ export const Controls3D = ({
                 </button>
               </Tooltip>
             ) : (
-              <Tooltip
-                content={`Transform space: ${transformSpace} (X to toggle)`}
-                position="bottom"
-                delay={300}
-              >
+              <Tooltip content={`Transform space: ${transformSpace} (X to toggle)`} position="bottom" delay={300}>
                 <button
                   className="flex min-w-[92px] items-center justify-center gap-2 rounded-[3px] border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-base-fg transition-colors duration-150 hover:bg-white/[0.08]"
                   onClick={() => editor?.gizmo.toggleTransformSpace()}

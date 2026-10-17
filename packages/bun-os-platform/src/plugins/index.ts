@@ -113,9 +113,7 @@ export interface Panel {
   titleKey: string;
   location: MenuEntry["location"];
   /** Returns the panel content as data the host renders with its own components. */
-  render(context: {
-    locale: string;
-  }): Promise<{ rows: { labelKey: string; value: string }[] }>;
+  render(context: { locale: string }): Promise<{ rows: { labelKey: string; value: string }[] }>;
 }
 
 export interface MachineContribution {
@@ -142,15 +140,11 @@ export interface PluginBuild {
   readonly locale: string;
   onDetect(
     options: { filter?: RegExp; magic?: Uint8Array | string; offset?: number },
-    detect: (
-      input: DetectInput,
-    ) => Detection | null | Promise<Detection | null>,
+    detect: (input: DetectInput) => Detection | null | Promise<Detection | null>,
   ): void;
   onPreview(
     options: { kind?: string; format?: string },
-    preview: (
-      input: DetectInput & { detection: Detection },
-    ) => Promise<Preview | null>,
+    preview: (input: DetectInput & { detection: Detection }) => Promise<Preview | null>,
   ): void;
   addGameSource(source: GameSource): void;
   addTheme(theme: ThemeFile): void;
@@ -159,10 +153,7 @@ export interface PluginBuild {
   addPanel(panel: Panel): void;
   addMachine(machine: MachineContribution): void;
   addTransferProvider(provider: TransferProvider): void;
-  onCommand(
-    id: string,
-    run: (args: Record<string, unknown>) => unknown | Promise<unknown>,
-  ): void;
+  onCommand(id: string, run: (args: Record<string, unknown>) => unknown | Promise<unknown>): void;
   bunPlugin(plugin: BunPlugin): void;
 }
 
@@ -186,9 +177,7 @@ export interface Previewer {
   plugin: string;
   kind?: string;
   format?: string;
-  preview(
-    input: DetectInput & { detection: Detection },
-  ): Promise<Preview | null>;
+  preview(input: DetectInput & { detection: Detection }): Promise<Preview | null>;
 }
 
 export interface LoadedPlugin {
@@ -216,17 +205,14 @@ export class PluginRegistry {
   readonly panels: (Panel & { plugin: string })[] = [];
   readonly machines: (MachineContribution & { plugin: string })[] = [];
   readonly providers: (TransferProvider & { plugin: string })[] = [];
-  readonly commands = new Map<
-    string,
-    (args: Record<string, unknown>) => unknown
-  >();
+  readonly commands = new Map<string, (args: Record<string, unknown>) => unknown>();
   readonly themes: (ThemeFile & { plugin: string })[] = [];
 
   /** Menu entries with labels resolved by the host's localizer. */
   menuFor(l10n: Localizer, location?: MenuEntry["location"]) {
     return this.menu
-      .filter((m) => !location || m.location === location)
-      .map((m) => ({
+      .filter(m => !location || m.location === location)
+      .map(m => ({
         plugin: m.plugin,
         id: m.id,
         label: l10n.t(m.labelKey),
@@ -236,10 +222,7 @@ export class PluginRegistry {
       }));
   }
 
-  async run(
-    command: string,
-    args: Record<string, unknown> = {},
-  ): Promise<unknown> {
+  async run(command: string, args: Record<string, unknown> = {}): Promise<unknown> {
     const run = this.commands.get(command);
     if (!run) throw new Error(`unknown plugin command ${command}`);
     return run(args);
@@ -271,23 +254,16 @@ export function pluginDigest(dir: string): string {
 }
 
 interface LockFile {
-  plugins: Record<
-    string,
-    { version: string; sha256: string; source?: string; pinnedAt: string }
-  >;
+  plugins: Record<string, { version: string; sha256: string; source?: string; pinnedAt: string }>;
 }
 
 export async function readLock(): Promise<LockFile> {
   const file = Bun.file(platformPaths().pluginLock);
-  return (await file.exists())
-    ? ((await file.json()) as LockFile)
-    : { plugins: {} };
+  return (await file.exists()) ? ((await file.json()) as LockFile) : { plugins: {} };
 }
 
 /** Pins the current digest of an installed plugin (an explicit trust decision of the owner). */
-export async function pinPlugin(
-  dir: string,
-): Promise<{ name: string; sha256: string }> {
+export async function pinPlugin(dir: string): Promise<{ name: string; sha256: string }> {
   const manifest = readManifest(dir);
   const lock = await readLock();
   const sha256 = pluginDigest(dir);
@@ -299,10 +275,7 @@ export async function pinPlugin(
   };
   const { ensureDir } = await import("../paths");
   ensureDir(platformPaths().etc);
-  await Bun.write(
-    platformPaths().pluginLock,
-    `${JSON.stringify(lock, null, 2)}\n`,
-  );
+  await Bun.write(platformPaths().pluginLock, `${JSON.stringify(lock, null, 2)}\n`);
   return { name: manifest.name, sha256 };
 }
 
@@ -311,27 +284,11 @@ async function signedBy(dir: string, digest: string): Promise<boolean> {
   const keysDir = platformPaths().trustedKeys;
   if (!existsSync(sig) || !existsSync(keysDir)) return false;
   const signature = Buffer.from(readFileSync(sig, "utf8").trim(), "base64");
-  for (const name of readdirSync(keysDir).filter((f) => f.endsWith(".jwk"))) {
+  for (const name of readdirSync(keysDir).filter(f => f.endsWith(".jwk"))) {
     try {
-      const jwk = JSON.parse(
-        readFileSync(join(keysDir, name), "utf8"),
-      ) as JsonWebKey;
-      const key = await crypto.subtle.importKey(
-        "jwk",
-        jwk,
-        { name: "Ed25519" },
-        false,
-        ["verify"],
-      );
-      if (
-        await crypto.subtle.verify(
-          "Ed25519",
-          key,
-          signature,
-          new TextEncoder().encode(digest),
-        )
-      )
-        return true;
+      const jwk = JSON.parse(readFileSync(join(keysDir, name), "utf8")) as JsonWebKey;
+      const key = await crypto.subtle.importKey("jwk", jwk, { name: "Ed25519" }, false, ["verify"]);
+      if (await crypto.subtle.verify("Ed25519", key, signature, new TextEncoder().encode(digest))) return true;
     } catch {
       /* not an Ed25519 key */
     }
@@ -343,20 +300,12 @@ const VALID_PERMISSION =
   /^(files|library|themes|locales|ui|machines|transfer|bun\.plugin|net:[a-z0-9.*-]+|fs\.read:.+)$/;
 
 export function readManifest(dir: string): PluginManifest {
-  const manifest = JSON.parse(
-    readFileSync(join(dir, "plugin.json"), "utf8"),
-  ) as PluginManifest;
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(manifest.name ?? ""))
-    throw new Error(`${dir}: invalid plugin name`);
-  if (!/^\d+\.\d+\.\d+/.test(manifest.version ?? ""))
-    throw new Error(`${dir}: invalid version`);
+  const manifest = JSON.parse(readFileSync(join(dir, "plugin.json"), "utf8")) as PluginManifest;
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(manifest.name ?? "")) throw new Error(`${dir}: invalid plugin name`);
+  if (!/^\d+\.\d+\.\d+/.test(manifest.version ?? "")) throw new Error(`${dir}: invalid version`);
   for (const p of manifest.permissions ?? [])
-    if (!VALID_PERMISSION.test(p))
-      throw new Error(`${manifest.name}: unknown permission ${p}`);
-  if (
-    manifest.entry &&
-    resolve(dir, manifest.entry).indexOf(resolve(dir)) !== 0
-  )
+    if (!VALID_PERMISSION.test(p)) throw new Error(`${manifest.name}: unknown permission ${p}`);
+  if (manifest.entry && resolve(dir, manifest.entry).indexOf(resolve(dir)) !== 0)
     throw new Error(`${manifest.name}: entry outside the plugin`);
   return manifest;
 }
@@ -370,8 +319,7 @@ export function discover(): { dir: string; builtin: boolean }[] {
   ] as const) {
     if (!existsSync(root)) continue;
     for (const name of readdirSync(root).sort())
-      if (existsSync(join(root, name, "plugin.json")))
-        out.push({ dir: join(root, name), builtin });
+      if (existsSync(join(root, name, "plugin.json"))) out.push({ dir: join(root, name), builtin });
   }
   return out;
 }
@@ -382,9 +330,7 @@ function guard(manifest: PluginManifest, permission: Permission): void {
 }
 
 /** Loads every trusted plugin into a registry. */
-export async function loadPlugins(
-  options: { locale?: string; only?: string[] } = {},
-): Promise<PluginRegistry> {
+export async function loadPlugins(options: { locale?: string; only?: string[] } = {}): Promise<PluginRegistry> {
   const registry = new PluginRegistry();
   const lock = await readLock();
   for (const { dir, builtin } of discover()) {
@@ -400,7 +346,7 @@ export async function loadPlugins(
       continue;
     }
     if (options.only && !options.only.includes(manifest.name)) continue;
-    if (registry.plugins.some((p) => p.manifest.name === manifest.name)) {
+    if (registry.plugins.some(p => p.manifest.name === manifest.name)) {
       registry.blocked.push({
         name: manifest.name,
         dir,
@@ -410,39 +356,23 @@ export async function loadPlugins(
     }
     const digest = pluginDigest(dir);
     let trust: LoadedPlugin["trust"] | null = builtin ? "builtin" : null;
-    if (!trust && lock.plugins[manifest.name]?.sha256 === digest)
-      trust = "pinned";
+    if (!trust && lock.plugins[manifest.name]?.sha256 === digest) trust = "pinned";
     if (!trust && (await signedBy(dir, digest))) trust = "signed";
     if (!trust) {
       registry.blocked.push({
         name: manifest.name,
         dir,
-        reason: lock.plugins[manifest.name]
-          ? "digest differs from the pinned one"
-          : "not pinned or signed",
+        reason: lock.plugins[manifest.name] ? "digest differs from the pinned one" : "not pinned or signed",
       });
       continue;
     }
     // Static data: catalogs and themes (no code runs).
-    if (
-      manifest.permissions.includes("locales") &&
-      existsSync(join(dir, "locales"))
-    )
+    if (manifest.permissions.includes("locales") && existsSync(join(dir, "locales")))
       for (const tag of readdirSync(join(dir, "locales")))
-        for (const f of readdirSync(join(dir, "locales", tag)).filter((f) =>
-          f.endsWith(".ftl"),
-        ))
-          contributeCatalog(
-            tag,
-            readFileSync(join(dir, "locales", tag, f), "utf8"),
-          );
-    if (
-      manifest.permissions.includes("themes") &&
-      existsSync(join(dir, "themes"))
-    )
-      for (const f of readdirSync(join(dir, "themes")).filter((f) =>
-        /\.(json|toml|css)$/.test(f),
-      )) {
+        for (const f of readdirSync(join(dir, "locales", tag)).filter(f => f.endsWith(".ftl")))
+          contributeCatalog(tag, readFileSync(join(dir, "locales", tag, f), "utf8"));
+    if (manifest.permissions.includes("themes") && existsSync(join(dir, "themes")))
+      for (const f of readdirSync(join(dir, "themes")).filter(f => /\.(json|toml|css)$/.test(f))) {
         const theme = readThemeFile(join(dir, "themes", f));
         theme.id ??= `${manifest.name}/${f.replace(/\.[^.]+$/, "")}`;
         contributeTheme(theme);
@@ -468,10 +398,7 @@ export async function loadPlugins(
         locale: options.locale ?? "en",
         onDetect(o, detect) {
           guard(manifest, "files");
-          const magic =
-            typeof o.magic === "string"
-              ? new TextEncoder().encode(o.magic)
-              : o.magic;
+          const magic = typeof o.magic === "string" ? new TextEncoder().encode(o.magic) : o.magic;
           registry.detectors.push({
             plugin: name,
             filter: o.filter,

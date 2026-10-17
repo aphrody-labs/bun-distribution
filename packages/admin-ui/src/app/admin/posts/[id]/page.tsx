@@ -8,11 +8,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Modifier l'article" };
 
-export default async function EditPostPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
   const { id } = await params;
   const post = await db.query.posts.findFirst({
@@ -39,8 +35,8 @@ export default async function EditPostPage({
                 type: "doc",
                 content: post.body
                   .split(/\n{2,}/)
-                  .filter((p) => p.trim())
-                  .map((p) => ({
+                  .filter(p => p.trim())
+                  .map(p => ({
                     type: "paragraph",
                     content: [{ type: "text", text: p.trim() }],
                   })),

@@ -3,7 +3,11 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-sysinfo-l1-2-4.dll!GetSystemTimeAdjustmentPrecise */
-  GetSystemTimeAdjustmentPrecise(lpTimeAdjustment: Win32Pointer, lpTimeIncrement: Win32Pointer, lpTimeAdjustmentDisabled: Win32Pointer): number;
+  GetSystemTimeAdjustmentPrecise(
+    lpTimeAdjustment: Win32Pointer,
+    lpTimeIncrement: Win32Pointer,
+    lpTimeAdjustmentDisabled: Win32Pointer,
+  ): number;
   /** api-ms-win-core-sysinfo-l1-2-4.dll!SetSystemTimeAdjustmentPrecise */
   SetSystemTimeAdjustmentPrecise(dwTimeAdjustment: number | bigint, bTimeAdjustmentDisabled: number): number;
 }

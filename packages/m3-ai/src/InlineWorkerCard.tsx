@@ -9,13 +9,7 @@ import { ToolCall } from "./ToolCall";
 import { Markdown } from "./Markdown";
 import type { TranscriptStep } from "./types";
 import { pairTranscriptSteps } from "./types";
-import {
-  CircularIndicator,
-  StatusChip,
-  type ChipTone,
-  expandMotion,
-  focusRing,
-} from "./internal";
+import { CircularIndicator, StatusChip, type ChipTone, expandMotion, focusRing } from "./internal";
 
 /** Collapse runs of 3+ spaces to 2, preventing Markdown 4-space code blocks. */
 function stripExcessWhitespace(text: string): string {
@@ -78,7 +72,7 @@ function InlineWorkerCard({
       <div className="min-w-0 max-w-full overflow-hidden rounded-medium bg-surface-container text-on-surface">
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => setExpanded(v => !v)}
           aria-expanded={expanded}
           aria-controls={contentId}
           className={clsx(
@@ -107,16 +101,12 @@ function InlineWorkerCard({
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <div className="line-clamp-2 min-w-0 flex-1 text-title-small text-on-surface">
-                {title}
-              </div>
+              <div className="line-clamp-2 min-w-0 flex-1 text-title-small text-on-surface">{title}</div>
               <StatusChip tone={tone}>{status}</StatusChip>
             </div>
             <div className="mt-1 flex items-center gap-2 text-body-small text-on-surface-variant">
               <span>{toolCallCount} tool calls</span>
-              {liveStatus ? (
-                <span className="truncate text-outline">{liveStatus}</span>
-              ) : null}
+              {liveStatus ? <span className="truncate text-outline">{liveStatus}</span> : null}
             </div>
           </div>
 
@@ -132,12 +122,7 @@ function InlineWorkerCard({
 
         <AnimatePresence initial={false}>
           {expanded ? (
-            <motion.div
-              id={contentId}
-              key="transcript"
-              {...expandMotion}
-              className="overflow-hidden"
-            >
+            <motion.div id={contentId} key="transcript" {...expandMotion} className="overflow-hidden">
               <div className="flex flex-col gap-2 border-t border-outline-variant px-4 py-3">
                 {isTranscriptLoading ? (
                   <div className="flex items-center gap-2 text-body-small text-on-surface-variant">
@@ -145,7 +130,7 @@ function InlineWorkerCard({
                     Loading worker transcript...
                   </div>
                 ) : items.length > 0 ? (
-                  items.map((item) =>
+                  items.map(item =>
                     item.kind === "tool" ? (
                       <ToolCall key={item.pair.id} pair={item.pair} />
                     ) : (
@@ -158,9 +143,7 @@ function InlineWorkerCard({
                     ),
                   )
                 ) : (
-                  <div className="text-body-small text-on-surface-variant">
-                    No tool calls yet.
-                  </div>
+                  <div className="text-body-small text-on-surface-variant">No tool calls yet.</div>
                 )}
               </div>
             </motion.div>
@@ -171,12 +154,7 @@ function InlineWorkerCard({
       {(onCopyLogs || (onCancel && isRunning)) && (
         <div className="mt-1 flex gap-1 opacity-0 transition-opacity duration-200 ease-standard group-focus-within:opacity-100 group-hover:opacity-100">
           {onCopyLogs && (
-            <Button
-              variant="text"
-              size="xs"
-              onClick={onCopyLogs}
-              title="Copy logs"
-            >
+            <Button variant="text" size="xs" onClick={onCopyLogs} title="Copy logs">
               <Icon name="content_copy" size={18} />
               Copy
             </Button>

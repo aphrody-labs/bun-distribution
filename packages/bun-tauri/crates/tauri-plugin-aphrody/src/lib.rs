@@ -62,7 +62,10 @@ impl<R: tauri::Runtime> BuilderExt<R> for tauri::Builder<R> {
     #[allow(unused_mut)]
     fn aphrody_plugins(self) -> Self {
         let mut builder = self.plugin(bun::init());
-        #[cfg(all(feature = "autostart", not(any(target_os = "android", target_os = "ios"))))]
+        #[cfg(all(
+            feature = "autostart",
+            not(any(target_os = "android", target_os = "ios"))
+        ))]
         {
             builder = builder.plugin(autostart::init(autostart::MacosLauncher::LaunchAgent, None));
         }
@@ -82,7 +85,10 @@ impl<R: tauri::Runtime> BuilderExt<R> for tauri::Builder<R> {
         {
             builder = builder.plugin(dialog::init());
         }
-        #[cfg(all(feature = "global-shortcut", not(any(target_os = "android", target_os = "ios"))))]
+        #[cfg(all(
+            feature = "global-shortcut",
+            not(any(target_os = "android", target_os = "ios"))
+        ))]
         {
             builder = builder.plugin(global_shortcut::Builder::new().build());
         }
@@ -110,7 +116,10 @@ impl<R: tauri::Runtime> BuilderExt<R> for tauri::Builder<R> {
         {
             builder = builder.plugin(store::Builder::default().build());
         }
-        #[cfg(all(feature = "window-state", not(any(target_os = "android", target_os = "ios"))))]
+        #[cfg(all(
+            feature = "window-state",
+            not(any(target_os = "android", target_os = "ios"))
+        ))]
         {
             builder = builder.plugin(window_state::Builder::default().build());
         }

@@ -4,18 +4,9 @@ import { Modal } from "@storyteller/ui-modal";
 import { UploadAssetError } from "../UploadAssetError";
 import { UploadSuccess } from "../UploadSuccess";
 import { UploadFilesSplat } from "./UploadFilesSplat";
-import {
-  FilterEngineCategories,
-  SPLAT_FILE_TYPE,
-  UploaderState,
-  UploaderStates,
-  initialUploaderState,
-} from "../Types";
+import { FilterEngineCategories, SPLAT_FILE_TYPE, UploaderState, UploaderStates, initialUploaderState } from "../Types";
 import type { LucideIcon } from "lucide-react";
-import {
-  galleryModalVisibleViewMode,
-  galleryModalVisibleDuringDrag,
-} from "@storyteller/ui-gallery-modal";
+import { galleryModalVisibleViewMode, galleryModalVisibleDuringDrag } from "@storyteller/ui-gallery-modal";
 
 interface Props {
   onClose: () => void;
@@ -35,17 +26,8 @@ const splatFileTypes = Object.values(SPLAT_FILE_TYPE);
 
 export function UploadModalSplat(props: Props) {
   const selectedCategory = FilterEngineCategories.SPLAT;
-  const {
-    isOpen,
-    onClose,
-    onSuccess,
-    title,
-    titleIcon,
-    initialFiles,
-    options,
-  } = props;
-  const [uploaderState, setUploaderState] =
-    useState<UploaderState>(initialUploaderState);
+  const { isOpen, onClose, onSuccess, title, titleIcon, initialFiles, options } = props;
+  const [uploaderState, setUploaderState] = useState<UploaderState>(initialUploaderState);
 
   const updateUploaderState = (newState: UploaderState) => {
     setUploaderState(newState);
@@ -87,9 +69,7 @@ export function UploadModalSplat(props: Props) {
           <>
             <LoadingDots className="mb-1 bg-transparent" />
             <div className="w-100 text-center opacity-50">
-              {p && p.total > 1
-                ? `Uploading ${p.current} / ${p.total}...`
-                : "Uploading..."}
+              {p && p.total > 1 ? `Uploading ${p.current} / ${p.total}...` : "Uploading..."}
             </div>
           </>
         );
@@ -135,14 +115,7 @@ export function UploadModalSplat(props: Props) {
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      titleIcon={titleIcon}
-      title={title}
-      className="max-w-xl"
-      showClose={true}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} titleIcon={titleIcon} title={title} className="max-w-xl" showClose={true}>
       {/* Inline call — `<Comp />` would be a fresh component reference each render, remounting the dropzone mid-click and breaking the file picker. */}
       {UploaderModalContent()}
     </Modal>

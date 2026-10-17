@@ -38,8 +38,7 @@ const DEFAULT_TIMELINE_STEPS: TimelineStep[] = [
     title: "Lead Coordination & Monorepo Integration",
     status: "completed",
     timestamp: "Live",
-    description:
-      "Coordination active via .coord mailbox and OS resource claims.",
+    description: "Coordination active via .coord mailbox and OS resource claims.",
   },
   {
     id: "step-workers",
@@ -48,8 +47,7 @@ const DEFAULT_TIMELINE_STEPS: TimelineStep[] = [
     title: "Subagent / Peer Parallel Tasks",
     status: "running",
     timestamp: "Ongoing",
-    description:
-      "Workers executing disjoint task families under cooperatively acquired locks.",
+    description: "Workers executing disjoint task families under cooperatively acquired locks.",
   },
 ];
 
@@ -63,7 +61,7 @@ export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
   const timelineId = useId();
 
   const toggleExpand = (id: string) => {
-    setExpandedStepId((current) => (current === id ? null : id));
+    setExpandedStepId(current => (current === id ? null : id));
   };
 
   return (
@@ -78,30 +76,22 @@ export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
     >
       <div className="flex items-center justify-between border-b border-[var(--md-sys-color-outline-variant,#cac4d0)]/40 pb-3">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-lg text-[var(--md-sys-color-primary,#6750a4)]">
-            timeline
-          </span>
-          <h3 className="text-sm font-semibold tracking-tight">
-            A2A Task Delegation Timeline
-          </h3>
+          <span className="material-symbols-outlined text-lg text-[var(--md-sys-color-primary,#6750a4)]">timeline</span>
+          <h3 className="text-sm font-semibold tracking-tight">A2A Task Delegation Timeline</h3>
         </div>
-        <span className="text-xs text-[var(--md-sys-color-outline,#79747e)]">
-          {steps.length} delegation steps
-        </span>
+        <span className="text-xs text-[var(--md-sys-color-outline,#79747e)]">{steps.length} delegation steps</span>
       </div>
 
       <div className="relative flex flex-col gap-4 pl-4 pt-1">
         {/* Continuous connector line */}
         <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-[var(--md-sys-color-outline-variant,#cac4d0)]/60" />
 
-        {steps.map((step) => {
+        {steps.map(step => {
           const isCurrent = step.id === currentStepId;
           const isExpanded = step.id === expandedStepId;
           const detailsId = `${timelineId}-${encodeURIComponent(step.id)}`;
           const date = new Date(step.timestamp);
-          const time = Number.isNaN(date.getTime())
-            ? step.timestamp
-            : date.toLocaleTimeString();
+          const time = Number.isNaN(date.getTime()) ? step.timestamp : date.toLocaleTimeString();
 
           const statusIcon =
             step.status === "completed"
@@ -124,10 +114,7 @@ export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
           return (
             <div
               key={step.id}
-              className={clsx(
-                "relative flex items-start gap-3 transition-all",
-                isCurrent && "font-medium",
-              )}
+              className={clsx("relative flex items-start gap-3 transition-all", isCurrent && "font-medium")}
             >
               {/* Step indicator node */}
               <div
@@ -142,14 +129,7 @@ export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
                         : "border-[var(--md-sys-color-outline-variant,#cac4d0)]",
                 )}
               >
-                <span
-                  className={clsx(
-                    "material-symbols-outlined text-sm",
-                    statusColor,
-                  )}
-                >
-                  {statusIcon}
-                </span>
+                <span className={clsx("material-symbols-outlined text-sm", statusColor)}>{statusIcon}</span>
               </div>
 
               {/* Step details card */}
@@ -181,9 +161,7 @@ export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
                         @{step.from} → @{step.to}
                       </span>
                     </span>
-                    <span className="text-[10px] font-mono text-[var(--md-sys-color-outline,#79747e)]">
-                      {time}
-                    </span>
+                    <span className="text-[10px] font-mono text-[var(--md-sys-color-outline,#79747e)]">{time}</span>
                   </span>
 
                   {step.description && (
@@ -194,9 +172,7 @@ export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
 
                   {step.claim && (
                     <span className="mt-2 flex items-center gap-1.5 text-[11px] font-mono text-amber-700 dark:text-amber-400">
-                      <span className="material-symbols-outlined text-xs">
-                        lock
-                      </span>
+                      <span className="material-symbols-outlined text-xs">lock</span>
                       <span>claim: {step.claim}</span>
                     </span>
                   )}
@@ -210,9 +186,7 @@ export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
                     className="mt-2.5 pt-2 border-t border-[var(--md-sys-color-outline-variant,#cac4d0)]/40 font-mono text-[11px] text-[var(--md-sys-color-on-surface-variant,#49454f)]"
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold">
-                        Kind: {step.envelope.kind}
-                      </span>
+                      <span className="font-semibold">Kind: {step.envelope.kind}</span>
                       <span>·</span>
                       <span>Topic: {step.envelope.topic}</span>
                     </div>

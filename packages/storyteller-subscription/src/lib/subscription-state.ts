@@ -39,9 +39,7 @@ export type SubscriptionActions = {
   reset: () => void;
 };
 
-export const useSubscriptionState = create<
-  SubscriptionState & SubscriptionActions
->((set, get) => ({
+export const useSubscriptionState = create<SubscriptionState & SubscriptionActions>((set, get) => ({
   subscriptionInfo: undefined,
 
   // Returns true if the user has a paid plan.
@@ -52,10 +50,7 @@ export const useSubscriptionState = create<
   // (The user can't cancel an already set to cancel/expire plan again)
   canCancelPlan: () => {
     const info = get().subscriptionInfo;
-    return (
-      info?.subscriptionToken !== undefined &&
-      info?.subscriptionEndAt === undefined
-    );
+    return info?.subscriptionToken !== undefined && info?.subscriptionEndAt === undefined;
   },
 
   reset: () => set({ subscriptionInfo: undefined }),
@@ -74,15 +69,13 @@ export const useSubscriptionState = create<
       let activeSubscription = undefined;
       if (data.payload.active_subscription) {
         activeSubscription = {
-          subscriptionToken:
-            data.payload.active_subscription.subscription_token,
+          subscriptionToken: data.payload.active_subscription.subscription_token,
           productSlug: data.payload.active_subscription.product_slug,
           namespace: data.payload.active_subscription.namespace,
           nextBillAt: data.payload.active_subscription.next_bill_at
             ? new Date(data.payload.active_subscription.next_bill_at)
             : undefined,
-          subscriptionEndAt: data.payload.active_subscription
-            .subscription_end_at
+          subscriptionEndAt: data.payload.active_subscription.subscription_end_at
             ? new Date(data.payload.active_subscription.subscription_end_at)
             : undefined,
         };

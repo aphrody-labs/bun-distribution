@@ -9,9 +9,22 @@ interface Functions {
   /** api-ms-win-core-winrt-error-l1-1-1.dll!RoGetMatchingRestrictedErrorInfo */
   RoGetMatchingRestrictedErrorInfo(hrIn: number, ppRestrictedErrorInfo: Win32Pointer): number;
   /** api-ms-win-core-winrt-error-l1-1-1.dll!RoInspectCapturedStackBackTrace */
-  RoInspectCapturedStackBackTrace(targetErrorInfoAddress: number | bigint, machine: number, readMemoryCallback: Win32Callback, context: Win32Pointer, frameCount: Win32Pointer, targetBackTraceAddress: Win32Pointer): number;
+  RoInspectCapturedStackBackTrace(
+    targetErrorInfoAddress: number | bigint,
+    machine: number,
+    readMemoryCallback: Win32Callback,
+    context: Win32Pointer,
+    frameCount: Win32Pointer,
+    targetBackTraceAddress: Win32Pointer,
+  ): number;
   /** api-ms-win-core-winrt-error-l1-1-1.dll!RoInspectThreadErrorInfo */
-  RoInspectThreadErrorInfo(targetTebAddress: number | bigint, machine: number, readMemoryCallback: Win32Callback, context: Win32Pointer, targetErrorInfoAddress: Win32Pointer): number;
+  RoInspectThreadErrorInfo(
+    targetTebAddress: number | bigint,
+    machine: number,
+    readMemoryCallback: Win32Callback,
+    context: Win32Pointer,
+    targetErrorInfoAddress: Win32Pointer,
+  ): number;
   /** api-ms-win-core-winrt-error-l1-1-1.dll!RoOriginateLanguageException */
   RoOriginateLanguageException(error: number, message: Win32Pointer, languageException: Win32Pointer): number;
   /** api-ms-win-core-winrt-error-l1-1-1.dll!RoReportFailedDelegate */

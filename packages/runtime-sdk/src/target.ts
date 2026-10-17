@@ -1,4 +1,1 @@
-export {
-  SUPPORTED_TARGETS,
-  hostTarget,
-} from "@aphrody/bun-runtime-sdk/artifact";
+export { SUPPORTED_TARGETS, hostTarget } from "@aphrody/bun-runtime-sdk/artifact";

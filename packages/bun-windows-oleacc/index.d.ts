@@ -7,9 +7,21 @@ interface Functions {
   /** oleacc.dll!AccSetRunningUtilityState */
   AccSetRunningUtilityState(hwndApp: Win32Pointer, dwUtilityStateMask: number, dwUtilityState: number): number;
   /** oleacc.dll!AccessibleChildren */
-  AccessibleChildren(paccContainer: Win32Pointer, iChildStart: number, cChildren: number, rgvarChildren: Win32Pointer, pcObtained: Win32Pointer): number;
+  AccessibleChildren(
+    paccContainer: Win32Pointer,
+    iChildStart: number,
+    cChildren: number,
+    rgvarChildren: Win32Pointer,
+    pcObtained: Win32Pointer,
+  ): number;
   /** oleacc.dll!AccessibleObjectFromEvent */
-  AccessibleObjectFromEvent(hwnd: Win32Pointer, dwId: number, dwChildId: number, ppacc: Win32Pointer, pvarChild: Win32Pointer): number;
+  AccessibleObjectFromEvent(
+    hwnd: Win32Pointer,
+    dwId: number,
+    dwChildId: number,
+    ppacc: Win32Pointer,
+    pvarChild: Win32Pointer,
+  ): number;
   /** oleacc.dll!AccessibleObjectFromPoint */
   AccessibleObjectFromPoint(ptScreen: Win32StructInit, ppacc: Win32Pointer, pvarChild: Win32Pointer): number;
   /** oleacc.dll!AccessibleObjectFromWindow */
@@ -17,11 +29,29 @@ interface Functions {
   /** oleacc.dll!CreateStdAccessibleObject */
   CreateStdAccessibleObject(hwnd: Win32Pointer, idObject: number, riid: Win32Pointer, ppvObject: Win32Pointer): number;
   /** oleacc.dll!CreateStdAccessibleProxyA */
-  CreateStdAccessibleProxyA(hwnd: Win32Pointer, pClassName: string | Win32Pointer, idObject: number, riid: Win32Pointer, ppvObject: Win32Pointer): number;
+  CreateStdAccessibleProxyA(
+    hwnd: Win32Pointer,
+    pClassName: string | Win32Pointer,
+    idObject: number,
+    riid: Win32Pointer,
+    ppvObject: Win32Pointer,
+  ): number;
   /** oleacc.dll!CreateStdAccessibleProxyW */
-  CreateStdAccessibleProxyW(hwnd: Win32Pointer, pClassName: string | Win32Pointer, idObject: number, riid: Win32Pointer, ppvObject: Win32Pointer): number;
+  CreateStdAccessibleProxyW(
+    hwnd: Win32Pointer,
+    pClassName: string | Win32Pointer,
+    idObject: number,
+    riid: Win32Pointer,
+    ppvObject: Win32Pointer,
+  ): number;
   /** oleacc.dll!CreateStdAccessibleProxyW */
-  CreateStdAccessibleProxy(hwnd: Win32Pointer, pClassName: string | Win32Pointer, idObject: number, riid: Win32Pointer, ppvObject: Win32Pointer): number;
+  CreateStdAccessibleProxy(
+    hwnd: Win32Pointer,
+    pClassName: string | Win32Pointer,
+    idObject: number,
+    riid: Win32Pointer,
+    ppvObject: Win32Pointer,
+  ): number;
   /** oleacc.dll!GetOleaccVersionInfo */
   GetOleaccVersionInfo(pVer: Win32Pointer, pBuild: Win32Pointer): void;
   /** oleacc.dll!GetProcessHandleFromHwnd */
@@ -41,7 +71,12 @@ interface Functions {
   /** oleacc.dll!LresultFromObject */
   LresultFromObject(riid: Win32Pointer, wParam: number | bigint, punk: Win32Pointer): number | bigint;
   /** oleacc.dll!ObjectFromLresult */
-  ObjectFromLresult(lResult: number | bigint, riid: Win32Pointer, wParam: number | bigint, ppvObject: Win32Pointer): number;
+  ObjectFromLresult(
+    lResult: number | bigint,
+    riid: Win32Pointer,
+    wParam: number | bigint,
+    ppvObject: Win32Pointer,
+  ): number;
   /** oleacc.dll!WindowFromAccessibleObject */
   WindowFromAccessibleObject(param0: Win32Pointer, phwnd: Win32Pointer): number;
 }

@@ -18,14 +18,7 @@ import { clientFromTcpSocket } from "../../src/bun";
 // oxlint-disable-next-line import/no-unassigned-import -- setup DOM à effet de bord, exécuté avant les autres imports
 import "./setup";
 
-import {
-  describe,
-  test,
-  expect,
-  beforeAll,
-  afterAll,
-  afterEach,
-} from "bun:test";
+import { describe, test, expect, beforeAll, afterAll, afterEach } from "bun:test";
 import { readFile } from "fs/promises";
 import { rename } from "fs/promises";
 import { join } from "path";
@@ -72,12 +65,8 @@ beforeAll(async () => {
   console.log(`[TS] Library set to: ${bridgeConfig.library_id}`);
 
   // Hook into the subscription manager to collect all events
-  const originalCreateSubscription = (client as any).subscriptionManager
-    .createSubscription;
-  (client as any).subscriptionManager.createSubscription = function (
-    filter: any,
-    callback: any,
-  ) {
+  const originalCreateSubscription = (client as any).subscriptionManager.createSubscription;
+  (client as any).subscriptionManager.createSubscription = function (filter: any, callback: any) {
     const wrappedCallback = (event: any) => {
       allEventsReceived.push({
         timestamp: new Date().toISOString(),
@@ -93,9 +82,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   // Log all events at the end for debugging
-  console.log(
-    `[TS] ===== ALL EVENTS RECEIVED (${allEventsReceived.length}) =====`,
-  );
+  console.log(`[TS] ===== ALL EVENTS RECEIVED (${allEventsReceived.length}) =====`);
   allEventsReceived.forEach((item, idx) => {
     console.log(`[TS] Event ${idx + 1} at ${item.timestamp}:`);
     console.log(`[TS]   Filter:`, JSON.stringify(item.filter, null, 2));
@@ -211,20 +198,15 @@ describe("useNormalizedQuery - File Moves Integration", () => {
     expect(initialFolderAData.files.length).toBeGreaterThanOrEqual(2); // file1.txt, file2.rs
     expect(initialFolderBData.files.length).toBeGreaterThanOrEqual(1); // file3.md
 
-    const file1Before = initialFolderAData.files.find(
-      (f: any) => f.name === "file1",
-    );
+    const file1Before = initialFolderAData.files.find((f: any) => f.name === "file1");
     expect(file1Before).toBeDefined();
 
     // Move file1.txt from folder_a to folder_b
     console.log("[TS] Moving file1.txt from folder_a to folder_b");
-    await rename(
-      join(folderAPath, "file1.txt"),
-      join(folderBPath, "file1.txt"),
-    );
+    await rename(join(folderAPath, "file1.txt"), join(folderBPath, "file1.txt"));
 
     // Wait for watcher to detect and emit events (watcher buffers for 500ms + tick time)
-    await new Promise((resolve) => setTimeout(resolve, 8000));
+    await new Promise(resolve => setTimeout(resolve, 8000));
 
     // Verify cache updated correctly
     const finalFolderAData = folderAResult.current.data as { files: any[] };
@@ -234,15 +216,11 @@ describe("useNormalizedQuery - File Moves Integration", () => {
     console.log("[TS] Final folder_b files:", finalFolderBData);
 
     // file1 should no longer be in folder_a
-    const file1InFolderA = finalFolderAData.files.find(
-      (f: any) => f.name === "file1",
-    );
+    const file1InFolderA = finalFolderAData.files.find((f: any) => f.name === "file1");
     expect(file1InFolderA).toBeUndefined();
 
     // file1 should now be in folder_b
-    const file1InFolderB = finalFolderBData.files.find(
-      (f: any) => f.name === "file1",
-    );
+    const file1InFolderB = finalFolderBData.files.find((f: any) => f.name === "file1");
     expect(file1InFolderB).toBeDefined();
 
     // UUID should be preserved (move detection)

@@ -12,62 +12,38 @@ function MetadataPanel({ file }: { file: File }) {
     <div className="w-[280px] min-w-[280px] bg-surface-container-low border-l border-outline-variant p-4 overflow-y-auto">
       <div className="space-y-4">
         <div>
-          <div className="text-body-small text-on-surface-variant mb-1">
-            Name
-          </div>
-          <div className="text-body-medium text-on-surface break-words">
-            {file.name}
-          </div>
+          <div className="text-body-small text-on-surface-variant mb-1">Name</div>
+          <div className="text-body-medium text-on-surface break-words">{file.name}</div>
         </div>
 
         <div>
-          <div className="text-body-small text-on-surface-variant mb-1">
-            Kind
-          </div>
-          <div className="text-body-medium text-on-surface capitalize">
-            {getContentKind(file)}
-          </div>
+          <div className="text-body-small text-on-surface-variant mb-1">Kind</div>
+          <div className="text-body-medium text-on-surface capitalize">{getContentKind(file)}</div>
         </div>
 
         <div>
-          <div className="text-body-small text-on-surface-variant mb-1">
-            Size
-          </div>
-          <div className="text-body-medium text-on-surface">
-            {formatBytes(file.size || 0)}
-          </div>
+          <div className="text-body-small text-on-surface-variant mb-1">Size</div>
+          <div className="text-body-medium text-on-surface">{formatBytes(file.size || 0)}</div>
         </div>
 
         {file.extension && (
           <div>
-            <div className="text-body-small text-on-surface-variant mb-1">
-              Extension
-            </div>
-            <div className="text-body-medium text-on-surface">
-              {file.extension}
-            </div>
+            <div className="text-body-small text-on-surface-variant mb-1">Extension</div>
+            <div className="text-body-medium text-on-surface">{file.extension}</div>
           </div>
         )}
 
         {file.created_at && (
           <div>
-            <div className="text-body-small text-on-surface-variant mb-1">
-              Created
-            </div>
-            <div className="text-body-medium text-on-surface">
-              {new Date(file.created_at).toLocaleString()}
-            </div>
+            <div className="text-body-small text-on-surface-variant mb-1">Created</div>
+            <div className="text-body-medium text-on-surface">{new Date(file.created_at).toLocaleString()}</div>
           </div>
         )}
 
         {file.modified_at && (
           <div>
-            <div className="text-body-small text-on-surface-variant mb-1">
-              Modified
-            </div>
-            <div className="text-body-medium text-on-surface">
-              {new Date(file.modified_at).toLocaleString()}
-            </div>
+            <div className="text-body-small text-on-surface-variant mb-1">Modified</div>
+            <div className="text-body-medium text-on-surface">{new Date(file.modified_at).toLocaleString()}</div>
           </div>
         )}
       </div>
@@ -81,9 +57,7 @@ export function QuickPreview() {
   // Extract file_id from window label. Label format: "quick-preview-{file_id}"
   const fileId = useMemo(() => {
     if (!platform.getCurrentWindowLabel) return null;
-    const match = platform
-      .getCurrentWindowLabel()
-      .match(/^quick-preview-(.+)$/);
+    const match = platform.getCurrentWindowLabel().match(/^quick-preview-(.+)$/);
     return match ? match[1] : null;
   }, [platform]);
 
@@ -120,9 +94,7 @@ export function QuickPreview() {
   if (isLoading || !file) {
     return (
       <div className="h-screen flex items-center justify-center bg-surface text-on-surface">
-        <div className="animate-pulse text-body-medium text-on-surface-variant">
-          Loading...
-        </div>
+        <div className="animate-pulse text-body-medium text-on-surface-variant">Loading...</div>
       </div>
     );
   }
@@ -131,9 +103,7 @@ export function QuickPreview() {
     return (
       <div className="h-screen flex items-center justify-center bg-surface text-error">
         <div>
-          <div className="text-title-medium font-medium mb-2">
-            Error loading file
-          </div>
+          <div className="text-title-medium font-medium mb-2">Error loading file</div>
           <div className="text-body-medium">{error.message}</div>
         </div>
       </div>

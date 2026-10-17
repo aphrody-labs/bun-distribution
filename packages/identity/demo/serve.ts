@@ -11,17 +11,13 @@ export function serveDemo(port = 0, development = true) {
     port,
     routes: {
       "/": page,
-      "/spritesheet.webp": () =>
-        new Response(atlas, { headers: { "cache-control": "max-age=3600" } }),
+      "/spritesheet.webp": () => new Response(atlas, { headers: { "cache-control": "max-age=3600" } }),
     },
     development,
   });
 }
 
 if (import.meta.main) {
-  const server = serveDemo(
-    Number(process.env.PORT ?? 0),
-    process.env.NODE_ENV !== "production",
-  );
+  const server = serveDemo(Number(process.env.PORT ?? 0), process.env.NODE_ENV !== "production");
   console.log(`<aphrody-pet> : ${server.url}`);
 }

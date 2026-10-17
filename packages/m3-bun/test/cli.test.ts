@@ -7,9 +7,7 @@ import { cleanup, FIXTURE, fixtureCopy, tmp } from "./helpers.ts";
 
 afterAll(cleanup);
 
-async function capture(
-  fn: () => Promise<number>,
-): Promise<{ code: number; text: string }> {
+async function capture(fn: () => Promise<number>): Promise<{ code: number; text: string }> {
   const lines: string[] = [];
   const log = console.log;
   console.log = (...args: unknown[]) => void lines.push(args.join(" "));
@@ -22,15 +20,7 @@ async function capture(
 
 describe("parseArgs", () => {
   test("command, positionals and flags with values or booleans", () => {
-    const parsed = parseArgs([
-      "deploy",
-      "docker",
-      "nginx",
-      "--out",
-      "dist-deploy",
-      "--domain=a.example.com",
-      "--json",
-    ]);
+    const parsed = parseArgs(["deploy", "docker", "nginx", "--out", "dist-deploy", "--domain=a.example.com", "--json"]);
     expect(parsed.command).toBe("deploy");
     expect(parsed.positionals).toEqual(["docker", "nginx"]);
     expect(parsed.flags.get("out")).toBe("dist-deploy");
@@ -41,12 +31,8 @@ describe("parseArgs", () => {
     expect(parseArgs([]).command).toBe("help");
     expect(parseArgs(["build", "--help"]).command).toBe("help");
     expect(parseArgs(["--version"]).command).toBe("version");
-    expect(() => parseArgs(["build", "--minify"])).toThrow(
-      /--minify needs a value/,
-    );
-    expect(parseArgs(["smoke", "--", "--weird"]).positionals).toEqual([
-      "--weird",
-    ]);
+    expect(() => parseArgs(["build", "--minify"])).toThrow(/--minify needs a value/);
+    expect(parseArgs(["smoke", "--", "--weird"]).positionals).toEqual(["--weird"]);
   });
 });
 
@@ -57,10 +43,7 @@ describe("bunfigHasPlugin", () => {
   });
   test("rejects a bunfig without the plugin", async () => {
     const dir = tmp();
-    await Bun.write(
-      join(dir, "bunfig.toml"),
-      '[serve.static]\nplugins = ["some-other-plugin"]\n',
-    );
+    await Bun.write(join(dir, "bunfig.toml"), '[serve.static]\nplugins = ["some-other-plugin"]\n');
     expect(bunfigHasPlugin(dir)).toBe(false);
     await Bun.write(join(dir, "bunfig.toml"), '[test]\npreload = ["x"]\n');
     expect(bunfigHasPlugin(dir)).toBe(false);
@@ -69,12 +52,8 @@ describe("bunfigHasPlugin", () => {
 
 describe("runCli", () => {
   test("help, version and targets", async () => {
-    expect((await capture(() => runCli(["help"]))).text).toContain(
-      "Compile targets: linux-x64",
-    );
-    expect((await capture(() => runCli(["version"]))).text).toMatch(
-      /^\d+\.\d+\.\d+/,
-    );
+    expect((await capture(() => runCli(["help"]))).text).toContain("Compile targets: linux-x64");
+    expect((await capture(() => runCli(["version"]))).text).toMatch(/^\d+\.\d+\.\d+/);
     const targets = await capture(() => runCli(["targets"]));
     for (const id of [
       "docker",
@@ -97,9 +76,7 @@ describe("runCli", () => {
     expect(human.code).toBe(0);
     expect(human.text).toContain("m3-bun build hello-m3@1.2.3: 3 files");
     expect(existsSync(join(dir, "dist", "index.html"))).toBe(true);
-    const machine = await capture(() =>
-      runCli(["build", "--json", "--minify", "none"], dir),
-    );
+    const machine = await capture(() => runCli(["build", "--json", "--minify", "none"], dir));
     expect(JSON.parse(machine.text).manifest.minify).toBe("none");
   });
 
@@ -125,68 +102,31 @@ describe("runCli", () => {
       ),
     );
     expect(code).toBe(0);
-    expect(text).toContain(
-      "generated only: nothing was applied, pushed or reloaded",
+    expect(text).toContain("generated only: nothing was applied, pushed or reloaded");
+    expect(readFileSync(join(out, "systemd", "hello-m3.service"), "utf8")).toContain(
+      "WorkingDirectory=/home/svc/apps/demo/current",
     );
-    expect(
-      readFileSync(join(out, "systemd", "hello-m3.service"), "utf8"),
-    ).toContain("WorkingDirectory=/home/svc/apps/demo/current");
-    expect(
-      readFileSync(join(out, "systemd", "hello-m3.service"), "utf8"),
-    ).toContain("User=svc");
+    expect(readFileSync(join(out, "systemd", "hello-m3.service"), "utf8")).toContain("User=svc");
     expect(existsSync(join(out, "nginx"))).toBe(false);
     const all = tmp();
     await capture(() =>
-      runCli(
-        [
-          "deploy",
-          "all",
-          "--out",
-          all,
-          "--http2",
-          "listen",
-          "--tls-cert",
-          "/c.pem",
-          "--tls-key",
-          "/k.pem",
-        ],
-        dir,
-      ),
+      runCli(["deploy", "all", "--out", all, "--http2", "listen", "--tls-cert", "/c.pem", "--tls-key", "/k.pem"], dir),
     );
-    const tls = JSON.parse(
-      readFileSync(join(all, "nginx", "hello-m3.nginx.json"), "utf8"),
-    ).servers[1];
-    expect([tls.ssl_certificate, tls.listen_ports]).toEqual([
-      "/c.pem",
-      ["443 ssl http2"],
-    ]);
+    const tls = JSON.parse(readFileSync(join(all, "nginx", "hello-m3.nginx.json"), "utf8")).servers[1];
+    expect([tls.ssl_certificate, tls.listen_ports]).toEqual(["/c.pem", ["443 ssl http2"]]);
   });
 
   test("bad flag values are errors, not silent defaults", async () => {
     const dir = fixtureCopy();
-    await expect(runCli(["build", "--minify", "extreme"], dir)).rejects.toThrow(
-      /--minify must be none, basic or full/,
-    );
-    await expect(
-      runCli(["compile", "--target", "plan9-x64"], dir),
-    ).rejects.toThrow(/--target must be one of/);
-    await expect(
-      runCli(["deploy", "docker", "--tls-cert", "/c.pem"], dir),
-    ).rejects.toThrow(/go together/);
-    await expect(runCli(["deploy", "heroku"], dir)).rejects.toThrow(
-      /unknown deploy target heroku/,
-    );
-    await expect(runCli(["serve", "--port", "-1"], dir)).rejects.toThrow(
-      /non-negative integer/,
-    );
-    await expect(runCli(["package", "--format", "rar"], dir)).rejects.toThrow(
-      /--format must be tar.gz or zip/,
-    );
+    await expect(runCli(["build", "--minify", "extreme"], dir)).rejects.toThrow(/--minify must be none, basic or full/);
+    await expect(runCli(["compile", "--target", "plan9-x64"], dir)).rejects.toThrow(/--target must be one of/);
+    await expect(runCli(["deploy", "docker", "--tls-cert", "/c.pem"], dir)).rejects.toThrow(/go together/);
+    await expect(runCli(["deploy", "heroku"], dir)).rejects.toThrow(/unknown deploy target heroku/);
+    await expect(runCli(["serve", "--port", "-1"], dir)).rejects.toThrow(/non-negative integer/);
+    await expect(runCli(["package", "--format", "rar"], dir)).rejects.toThrow(/--format must be tar.gz or zip/);
   });
 
   test("smoke needs a compiled executable and says which command makes one", async () => {
-    await expect(runCli(["smoke"], fixtureCopy())).rejects.toThrow(
-      /m3-bun compile first/,
-    );
+    await expect(runCli(["smoke"], fixtureCopy())).rejects.toThrow(/m3-bun compile first/);
   });
 });

@@ -43,18 +43,15 @@ export class ToolResult {
   get text(): string {
     return this.content
       .filter((c): c is { type: "text"; text: string } => c.type === "text")
-      .map((c) => c.text)
+      .map(c => c.text)
       .join("\n");
   }
 
   /** Decoded image blocks (PNG frames from `computer_observe`, `window_capture`, …). */
   get images(): { mimeType: string; bytes: Uint8Array }[] {
     return this.content
-      .filter(
-        (c): c is { type: "image"; data: string; mimeType: string } =>
-          c.type === "image",
-      )
-      .map((c) => ({
+      .filter((c): c is { type: "image"; data: string; mimeType: string } => c.type === "image")
+      .map(c => ({
         mimeType: c.mimeType,
         bytes: Uint8Array.from(Buffer.from(c.data, "base64")),
       }));
@@ -69,11 +66,8 @@ export class ToolResult {
   /** `structuredContent`, or the first text block parsed as JSON. Throws on tool error. */
   json<T = any>(): T {
     this.ok();
-    if (this.structuredContent !== undefined)
-      return this.structuredContent as T;
-    const first = this.content.find(
-      (c): c is { type: "text"; text: string } => c.type === "text",
-    );
+    if (this.structuredContent !== undefined) return this.structuredContent as T;
+    const first = this.content.find((c): c is { type: "text"; text: string } => c.type === "text");
     return JSON.parse(first?.text ?? "null") as T;
   }
 }

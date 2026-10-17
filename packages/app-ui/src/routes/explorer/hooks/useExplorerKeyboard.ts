@@ -12,14 +12,7 @@ import { useDeleteFiles } from "./useDeleteFiles";
 import { isInputFocused } from "../../../util/keybinds/platform";
 
 export function useExplorerKeyboard() {
-  const {
-    currentPath,
-    sortBy,
-    viewMode,
-    openQuickPreview,
-    tagModeActive,
-    setTagModeActive,
-  } = useExplorer();
+  const { currentPath, sortBy, viewMode, openQuickPreview, tagModeActive, setTagModeActive } = useExplorer();
   const {
     selectedFiles,
     selectAll,
@@ -53,10 +46,7 @@ export function useExplorerKeyboard() {
     pathScope: currentPath ?? undefined,
   });
 
-  const files = useMemo(
-    () => (directoryQuery.data as any)?.files || [],
-    [directoryQuery.data],
-  );
+  const files = useMemo(() => (directoryQuery.data as any)?.files || [], [directoryQuery.data]);
 
   // Typeahead search (disabled for column view - it handles its own)
   const typeahead = useTypeaheadSearch({
@@ -73,7 +63,7 @@ export function useExplorerKeyboard() {
     "explorer.copy",
     () => {
       if (selectedFiles.length === 0) return;
-      const sdPaths = selectedFiles.map((f) => f.sd_path);
+      const sdPaths = selectedFiles.map(f => f.sd_path);
       clipboard.copyFiles(sdPaths, currentPath);
     },
     { enabled: selectedFiles.length > 0 },
@@ -84,7 +74,7 @@ export function useExplorerKeyboard() {
     "explorer.cut",
     () => {
       if (selectedFiles.length === 0) return;
-      const sdPaths = selectedFiles.map((f) => f.sd_path);
+      const sdPaths = selectedFiles.map(f => f.sd_path);
       clipboard.cutFiles(sdPaths, currentPath);
     },
     { enabled: selectedFiles.length > 0 },
@@ -186,11 +176,7 @@ export function useExplorerKeyboard() {
       // Arrow keys: Navigation
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         // Skip views that handle their own keyboard navigation
-        if (
-          viewMode === "column" ||
-          viewMode === "media" ||
-          viewMode === "grid"
-        ) {
+        if (viewMode === "column" || viewMode === "media" || viewMode === "grid") {
           return;
         }
 
@@ -203,8 +189,7 @@ export function useExplorerKeyboard() {
         if (viewMode === "list") {
           // List view: only up/down
           if (e.key === "ArrowUp") newIndex = Math.max(0, focusedIndex - 1);
-          if (e.key === "ArrowDown")
-            newIndex = Math.min(files.length - 1, focusedIndex + 1);
+          if (e.key === "ArrowDown") newIndex = Math.min(files.length - 1, focusedIndex + 1);
         }
 
         if (newIndex !== focusedIndex) {

@@ -1,9 +1,5 @@
 import { getDefaultLeftHandle, getDefaultRightHandle } from "./bezier";
-import type {
-  CurveHandle,
-  NormalizedCubicBezier,
-  ScalarAnimationKey,
-} from "./types";
+import type { CurveHandle, NormalizedCubicBezier, ScalarAnimationKey } from "./types";
 import { roundMediaTime } from "../wasm";
 
 // Maps between the two representations of a Bezier segment:
@@ -34,8 +30,7 @@ export function getNormalizedCubicBezierForScalarSegment({
   const effectiveSpanValue =
     Math.abs(spanValue) > VALUE_EPSILON
       ? spanValue
-      : referenceSpanValue !== undefined &&
-          Math.abs(referenceSpanValue) > VALUE_EPSILON
+      : referenceSpanValue !== undefined && Math.abs(referenceSpanValue) > VALUE_EPSILON
         ? referenceSpanValue
         : null;
 
@@ -43,10 +38,8 @@ export function getNormalizedCubicBezierForScalarSegment({
     return null;
   }
 
-  const rightHandle =
-    leftKey.rightHandle ?? getDefaultRightHandle({ leftKey, rightKey });
-  const leftHandle =
-    rightKey.leftHandle ?? getDefaultLeftHandle({ leftKey, rightKey });
+  const rightHandle = leftKey.rightHandle ?? getDefaultRightHandle({ leftKey, rightKey });
+  const leftHandle = rightKey.leftHandle ?? getDefaultLeftHandle({ leftKey, rightKey });
 
   return [
     clamp01({ value: rightHandle.dt / spanTime }),
@@ -75,8 +68,7 @@ export function getCurveHandlesForNormalizedCubicBezier({
   const effectiveSpanValue =
     Math.abs(spanValue) > VALUE_EPSILON
       ? spanValue
-      : referenceSpanValue !== undefined &&
-          Math.abs(referenceSpanValue) > VALUE_EPSILON
+      : referenceSpanValue !== undefined && Math.abs(referenceSpanValue) > VALUE_EPSILON
         ? referenceSpanValue
         : null;
 

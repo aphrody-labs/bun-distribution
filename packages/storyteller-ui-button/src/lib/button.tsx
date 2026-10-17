@@ -4,13 +4,9 @@ import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 import { ButtonHTMLAttributes, AnchorHTMLAttributes } from "react";
 
-export const NEUTRAL_BUTTON_HOVER_CLASSES =
-  "hover:bg-white/[0.07] hover:border-white/25";
+export const NEUTRAL_BUTTON_HOVER_CLASSES = "hover:bg-white/[0.07] hover:border-white/25";
 
-type AnchorProps = Omit<
-  AnchorHTMLAttributes<HTMLAnchorElement>,
-  keyof ButtonHTMLAttributes<HTMLButtonElement>
->;
+type AnchorProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof ButtonHTMLAttributes<HTMLButtonElement>>;
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: LucideIcon;
@@ -62,16 +58,12 @@ export const Button = ({
     }
   }
 
-  const disabledClass = twMerge(
-    disabled || loading ? "opacity-50 pointer-events-none" : "",
-  );
+  const disabledClass = twMerge(disabled || loading ? "opacity-50 pointer-events-none" : "");
 
   const className = twMerge(
     "w-fit rounded-[3px] font-mono text-xs font-semibold uppercase tracking-[0.12em] px-3.5 py-2 border border-transparent focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/60 transition-colors duration-150 flex gap-2 items-center justify-center",
     getVariantClassNames(propsVariant),
-    (propsVariant === "secondary" ||
-      propsVariant === "action" ||
-      propsVariant === "ghost") &&
+    (propsVariant === "secondary" || propsVariant === "action" || propsVariant === "ghost") &&
       NEUTRAL_BUTTON_HOVER_CLASSES,
     propsClassName,
     disabledClass,
@@ -83,21 +75,13 @@ export const Button = ({
         {loading && !iconFlip ? (
           <LoaderCircleIcon className="animate-spin" />
         ) : (
-          <>
-            {icon && !iconFlip ? (
-              <DynamicIcon icon={icon} className={iconClassName} />
-            ) : null}
-          </>
+          <>{icon && !iconFlip ? <DynamicIcon icon={icon} className={iconClassName} /> : null}</>
         )}
         {children}
         {loading && iconFlip ? (
           <LoaderCircleIcon className="animate-spin" />
         ) : (
-          <>
-            {icon && iconFlip ? (
-              <DynamicIcon icon={icon} className={iconClassName} />
-            ) : null}
-          </>
+          <>{icon && iconFlip ? <DynamicIcon icon={icon} className={iconClassName} /> : null}</>
         )}
       </label>
     );
@@ -105,60 +89,34 @@ export const Button = ({
 
   if (as === "link" && href) {
     return (
-      <a
-        href={href}
-        className={className}
-        style={rest.style}
-        {...(rest as unknown as AnchorProps)}
-        target={target}
-      >
+      <a href={href} className={className} style={rest.style} {...(rest as unknown as AnchorProps)} target={target}>
         {loading && !iconFlip ? (
           <LoaderCircleIcon className="animate-spin" />
         ) : (
-          <>
-            {icon && !iconFlip ? (
-              <DynamicIcon icon={icon} className={iconClassName} />
-            ) : null}
-          </>
+          <>{icon && !iconFlip ? <DynamicIcon icon={icon} className={iconClassName} /> : null}</>
         )}
         {children}
         {loading && iconFlip ? (
           <LoaderCircleIcon className="animate-spin" />
         ) : (
-          <>
-            {icon && iconFlip ? (
-              <DynamicIcon icon={icon} className={iconClassName} />
-            ) : null}
-          </>
+          <>{icon && iconFlip ? <DynamicIcon icon={icon} className={iconClassName} /> : null}</>
         )}
       </a>
     );
   }
 
   return (
-    <button
-      className={className}
-      disabled={disabled || loading}
-      {...{ ...rest, htmlFor }}
-    >
+    <button className={className} disabled={disabled || loading} {...{ ...rest, htmlFor }}>
       {loading && !iconFlip ? (
         <LoaderCircleIcon className="animate-spin" />
       ) : (
-        <>
-          {icon && !iconFlip ? (
-            <DynamicIcon icon={icon} className={iconClassName} />
-          ) : null}
-        </>
+        <>{icon && !iconFlip ? <DynamicIcon icon={icon} className={iconClassName} /> : null}</>
       )}
       {children}
       {loading && iconFlip ? (
         <LoaderCircleIcon className="animate-spin" />
       ) : (
-        <>
-          {icon && iconFlip ? (
-            <DynamicIcon icon={icon} className={iconClassName} />
-          ) : null}
-        </>
+        <>{icon && iconFlip ? <DynamicIcon icon={icon} className={iconClassName} /> : null}</>
       )}
     </button>
   );

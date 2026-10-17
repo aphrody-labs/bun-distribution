@@ -1,8 +1,4 @@
-import type {
-  AnimationColorPropertyPath,
-  AnimationNumericPropertyPath,
-  ElementAnimations,
-} from "./types";
+import type { AnimationColorPropertyPath, AnimationNumericPropertyPath, ElementAnimations } from "./types";
 import { resolveAnimationPathValueAtTime } from "./resolve";
 
 // Thin wrappers over resolveAnimationPathValueAtTime that constrain the

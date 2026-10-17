@@ -16,10 +16,10 @@ export class SceneState {
   public async initiateFromScene({ scene }: { scene: Scene }): Promise<void> {
     if (this.version < 1) {
       this.saveFromSceneObjectVer0(scene)
-        .then((result) => {
+        .then(result => {
           this.sceneItems = result;
         })
-        .catch((e) => {
+        .catch(e => {
           throw e;
         });
     }
@@ -32,11 +32,7 @@ export class SceneState {
     return;
   }
 
-  public async initiateFromObject3DJson({
-    objectJsons,
-  }: {
-    objectJsons: Object3DJSON[];
-  }): Promise<void> {
+  public async initiateFromObject3DJson({ objectJsons }: { objectJsons: Object3DJSON[] }): Promise<void> {
     const sceneItems = objectJsons.map((jsonObject: Object3DJSON) => {
       console.log(jsonObject);
       const object3D = new Object3D(this.version, "placeholder-token");

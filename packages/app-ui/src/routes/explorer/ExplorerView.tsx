@@ -99,11 +99,7 @@ export function ExplorerView() {
   // new view shows the directory the user was actually looking at.
   const handleViewModeChange = useCallback(
     (newMode: string) => {
-      if (
-        viewMode === "column" &&
-        newMode !== "column" &&
-        columnStack.length > 1
-      ) {
+      if (viewMode === "column" && newMode !== "column" && columnStack.length > 1) {
         navigateToPath(columnStack[columnStack.length - 1]);
       }
       setViewMode(newMode as ViewMode);
@@ -113,12 +109,7 @@ export function ExplorerView() {
 
   // Memoize submenu content to prevent infinite re-renders
   const viewModeSubmenu = useMemo(
-    () => (
-      <ViewModeMenuPanel
-        viewMode={viewMode}
-        onViewModeChange={handleViewModeChange}
-      />
-    ),
+    () => <ViewModeMenuPanel viewMode={viewMode} onViewModeChange={handleViewModeChange} />,
     [viewMode, handleViewModeChange],
   );
 
@@ -135,13 +126,7 @@ export function ExplorerView() {
   );
 
   const sortSubmenu = useMemo(
-    () => (
-      <SortMenuPanel
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        viewMode={viewMode as any}
-      />
-    ),
+    () => <SortMenuPanel sortBy={sortBy} onSortChange={setSortBy} viewMode={viewMode as any} />,
     [sortBy, setSortBy, viewMode],
   );
 
@@ -172,27 +157,13 @@ export function ExplorerView() {
               </TopBarItem>
               <TopBarItem id="navigation" label="Navigation" priority="high">
                 <CircleButtonGroup>
-                  <CircleButton
-                    icon="arrow_back"
-                    title="Back"
-                    onClick={goBack}
-                    disabled={!canGoBack}
-                  />
-                  <CircleButton
-                    icon="arrow_forward"
-                    title="Forward"
-                    onClick={goForward}
-                    disabled={!canGoForward}
-                  />
+                  <CircleButton icon="arrow_back" title="Back" onClick={goBack} disabled={!canGoBack} />
+                  <CircleButton icon="arrow_forward" title="Forward" onClick={goForward} disabled={!canGoForward} />
                 </CircleButtonGroup>
               </TopBarItem>
               {pathBarPath && (
                 <TopBarItem id="path-bar" label="Path" priority="high">
-                  <PathBar
-                    path={pathBarPath}
-                    devices={devices}
-                    onNavigate={navigateToPath}
-                  />
+                  <PathBar path={pathBarPath} devices={devices} onNavigate={navigateToPath} />
                 </TopBarItem>
               )}
               {currentView && (
@@ -206,20 +177,13 @@ export function ExplorerView() {
             <>
               <TopBarItem id="search" label="Search" priority="high">
                 <ExpandableSearchButton
-                  placeholder={
-                    currentPath ? "Search in current folder..." : "Search..."
-                  }
+                  placeholder={currentPath ? "Search in current folder..." : "Search..."}
                   value={searchValue}
                   onChange={handleSearchChange}
                   onClear={handleSearchClear}
                 />
               </TopBarItem>
-              <TopBarItem
-                id="tag-mode"
-                label="Tags"
-                priority="low"
-                onClick={() => setTagModeActive(!tagModeActive)}
-              >
+              <TopBarItem id="tag-mode" label="Tags" priority="low" onClick={() => setTagModeActive(!tagModeActive)}>
                 <CircleButton
                   icon="label"
                   title="Tag mode"
@@ -227,36 +191,14 @@ export function ExplorerView() {
                   active={tagModeActive}
                 />
               </TopBarItem>
-              <TopBarItem
-                id="view-mode"
-                label="Views"
-                priority="normal"
-                submenuContent={viewModeSubmenu}
-              >
-                <ViewModeMenu
-                  viewMode={viewMode}
-                  onViewModeChange={handleViewModeChange}
-                />
+              <TopBarItem id="view-mode" label="Views" priority="normal" submenuContent={viewModeSubmenu}>
+                <ViewModeMenu viewMode={viewMode} onViewModeChange={handleViewModeChange} />
               </TopBarItem>
-              <TopBarItem
-                id="view-settings"
-                label="View settings"
-                priority="low"
-                submenuContent={viewSettingsSubmenu}
-              >
+              <TopBarItem id="view-settings" label="View settings" priority="low" submenuContent={viewSettingsSubmenu}>
                 <ViewSettings totalFileCount={currentFiles.length} />
               </TopBarItem>
-              <TopBarItem
-                id="sort"
-                label="Sort"
-                priority="low"
-                submenuContent={sortSubmenu}
-              >
-                <SortMenu
-                  sortBy={sortBy}
-                  onSortChange={setSortBy}
-                  viewMode={viewMode as any}
-                />
+              <TopBarItem id="sort" label="Sort" priority="low" submenuContent={sortSubmenu}>
+                <SortMenu sortBy={sortBy} onSortChange={setSortBy} viewMode={viewMode as any} />
               </TopBarItem>
               <TopBarItem
                 id="inspector-toggle"
@@ -280,18 +222,11 @@ export function ExplorerView() {
         <div
           className={clsx(
             "relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-outline-variant/40 shadow-md3-1 transition-colors duration-200",
-            viewMode === "size"
-              ? "bg-surface-container-lowest/80"
-              : "bg-surface-container-lowest",
+            viewMode === "size" ? "bg-surface-container-lowest/80" : "bg-surface-container-lowest",
           )}
         >
           {mode.type === "search" && <SearchToolbar />}
-          <div
-            className={clsx(
-              "flex-1",
-              viewMode === "size" ? "overflow-visible" : "overflow-auto",
-            )}
-          >
+          <div className={clsx("flex-1", viewMode === "size" ? "overflow-visible" : "overflow-auto")}>
             <TabNavigationGuard>
               {mode.type === "search" ? (
                 <SearchView />

@@ -13,12 +13,9 @@ export interface MediaFileDeleteSuccess extends CommandResult {
   payload: MediaFileDeletePayload;
 }
 
-export type MediaFileDeleteResult =
-  MediaFileDeleteSuccess | MediaFileDeleteError;
+export type MediaFileDeleteResult = MediaFileDeleteSuccess | MediaFileDeleteError;
 
-export const MediaFileDelete = async (
-  media_file_token: string,
-): Promise<MediaFileDeleteResult> => {
+export const MediaFileDelete = async (media_file_token: string): Promise<MediaFileDeleteResult> => {
   const result = await invoke("media_file_delete_command", {
     request: {
       media_file_token: media_file_token,

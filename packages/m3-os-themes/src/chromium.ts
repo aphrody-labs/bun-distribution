@@ -88,11 +88,7 @@ export function policyJson(roles: Roles): string {
 export function policyReg(roles: Roles): string {
   const lines = ["Windows Registry Editor Version 5.00", ""];
   for (const b of Object.values(BROWSERS)) {
-    lines.push(
-      `[HKEY_LOCAL_MACHINE\\${b.win}]`,
-      `"BrowserThemeColor"="${roles["primary"]}"`,
-      "",
-    );
+    lines.push(`[HKEY_LOCAL_MACHINE\\${b.win}]`, `"BrowserThemeColor"="${roles["primary"]}"`, "");
   }
   return lines.join("\r\n");
 }
@@ -182,11 +178,7 @@ Check at \`chrome://policy\`. \`--dry-run\` prints the commands without running 
 
 export function generateChromium(input: ThemeInput): GeneratedFile[] {
   const files: GeneratedFile[] = [];
-  const add = (
-    path: string,
-    content: string | Uint8Array,
-    executable = false,
-  ): void => {
+  const add = (path: string, content: string | Uint8Array, executable = false): void => {
     files.push({
       target: "chromium",
       path: `chromium/${path}`,
@@ -196,14 +188,8 @@ export function generateChromium(input: ThemeInput): GeneratedFile[] {
   };
   for (const mode of ["light", "dark"] as const) {
     const { roles } = rolesFor(input, mode);
-    add(
-      `${mode}/manifest.json`,
-      `${JSON.stringify(themeManifest(input, mode), null, 2)}\n`,
-    );
-    add(
-      `${mode}/images/ntp.png`,
-      gradientPng(1, 256, roles["surface"]!, roles["primaryContainer"]!),
-    );
+    add(`${mode}/manifest.json`, `${JSON.stringify(themeManifest(input, mode), null, 2)}\n`);
+    add(`${mode}/images/ntp.png`, gradientPng(1, 256, roles["surface"]!, roles["primaryContainer"]!));
     add(`policies/managed/m3-theme-${mode}.json`, policyJson(roles));
     add(`policies/windows/m3-theme-${mode}.reg`, policyReg(roles));
   }

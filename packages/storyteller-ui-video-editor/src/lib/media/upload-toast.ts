@@ -17,7 +17,7 @@ function getAssetLabel({ count }: { count: number }): string {
 }
 
 function waitForNextPaint(): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => resolve());
     });
@@ -42,11 +42,7 @@ export async function showMediaUploadToast<T extends MediaUploadToastResult>({
     const { uploadedCount, assetNames } = result;
     if (uploadedCount === 1) {
       const assetName = assetNames?.[0];
-      toast.success(
-        assetName
-          ? `${assetName} has been uploaded`
-          : "1 media asset has been uploaded",
-      );
+      toast.success(assetName ? `${assetName} has been uploaded` : "1 media asset has been uploaded");
     } else if (uploadedCount > 1) {
       toast.success(`${uploadedCount} media assets have been uploaded`);
     } else {

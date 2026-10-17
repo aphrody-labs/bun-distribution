@@ -1,11 +1,4 @@
-import {
-  ArrowsClockwise,
-  ArrowDown,
-  CheckCircle,
-  Warning,
-  PlugsConnected,
-  Circle,
-} from "@phosphor-icons/react";
+import { ArrowsClockwise, ArrowDown, CheckCircle, Warning, PlugsConnected, Circle } from "@phosphor-icons/react";
 import { clsx } from "clsx";
 import type { SyncActivity } from "../types";
 import { timeAgo } from "../utils";
@@ -19,12 +12,8 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4">
         <Circle className="size-8 text-outline mb-2" weight="duotone" />
-        <p className="text-body-medium text-on-surface-variant text-center">
-          No recent activity
-        </p>
-        <p className="text-body-small text-outline text-center mt-1">
-          Activity will appear here when syncing
-        </p>
+        <p className="text-body-medium text-on-surface-variant text-center">No recent activity</p>
+        <p className="text-body-small text-outline text-center mt-1">Activity will appear here when syncing</p>
       </div>
     );
   }
@@ -85,12 +74,8 @@ function ActivityItem({ activity }: { activity: SyncActivity }) {
     <div className="flex items-start gap-3 py-2 px-2 hover:bg-on-surface/8 rounded-small transition-colors">
       <div className={clsx("mt-0.5", getIconColor())}>{getIcon()}</div>
       <div className="flex-1 min-w-0">
-        <p className="text-body-medium text-on-surface truncate">
-          {activity.description}
-        </p>
-        <p className="text-body-small text-outline">
-          {timeAgo(activity.timestamp)}
-        </p>
+        <p className="text-body-medium text-on-surface truncate">{activity.description}</p>
+        <p className="text-body-small text-outline">{timeAgo(activity.timestamp)}</p>
       </div>
     </div>
   );

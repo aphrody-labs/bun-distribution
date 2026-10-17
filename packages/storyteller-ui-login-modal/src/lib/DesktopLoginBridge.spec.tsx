@@ -1,14 +1,5 @@
-import {
-  stubGlobal,
-  restoreGlobals,
-} from "../../../../../tools/testing/globals";
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from "@testing-library/react";
+import { stubGlobal, restoreGlobals } from "../../../../../tools/testing/globals";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { DesktopLoginBridge } from "./DesktopLoginBridge";
 
@@ -24,9 +15,7 @@ vi.mock("@storyteller/api", () => {
   throw new Error("Login UI must only import API types");
 });
 vi.mock("qrcode.react", () => ({
-  QRCodeSVG: ({ value }: { value: string }) => (
-    <svg role="img" aria-label="Login QR" data-value={value} />
-  ),
+  QRCodeSVG: ({ value }: { value: string }) => <svg role="img" aria-label="Login QR" data-value={value} />,
 }));
 
 const CHALLENGE_ID = "local-handle";
@@ -54,11 +43,7 @@ beforeEach(() => {
         poll_interval_seconds: 5,
       };
     if (command === "storyteller_poll_login_challenge_command") return outcome;
-    if (
-      command === "storyteller_cancel_login_challenge_command" ||
-      command === "plugin:opener|open_url"
-    )
-      return;
+    if (command === "storyteller_cancel_login_challenge_command" || command === "plugin:opener|open_url") return;
     throw new Error(`Unexpected native command: ${command}`);
   });
 });
@@ -74,15 +59,11 @@ describe("desktop native login bridge integration", () => {
   it("creates through IPC and opens the native browser with the matching QR/code", async () => {
     render(<DesktopLoginBridge onSuccess={vi.fn()} />);
     await start("Login with Website");
-    expect(native).toHaveBeenCalledWith(
-      "storyteller_create_login_challenge_command",
-    );
+    expect(native).toHaveBeenCalledWith("storyteller_create_login_challenge_command");
     expect(native).toHaveBeenCalledWith("plugin:opener|open_url", {
       url: APPROVAL_URL,
     });
-    expect(
-      screen.getByRole("img", { name: "Login QR" }).getAttribute("data-value"),
-    ).toBe(APPROVAL_URL);
+    expect(screen.getByRole("img", { name: "Login QR" }).getAttribute("data-value")).toBe(APPROVAL_URL);
     expect(screen.getByText("WDJB-MJHT")).toBeTruthy();
   });
 
@@ -98,19 +79,13 @@ describe("desktop native login bridge integration", () => {
       maybe_user: USER,
     };
     await tick(5000);
-    expect(native).toHaveBeenCalledWith(
-      "storyteller_poll_login_challenge_command",
-      {
-        challengeId: CHALLENGE_ID,
-      },
-    );
+    expect(native).toHaveBeenCalledWith("storyteller_poll_login_challenge_command", {
+      challengeId: CHALLENGE_ID,
+    });
     expect(success).toHaveBeenCalledWith(USER);
-    expect(native).toHaveBeenCalledWith(
-      "storyteller_cancel_login_challenge_command",
-      {
-        challengeId: CHALLENGE_ID,
-      },
-    );
+    expect(native).toHaveBeenCalledWith("storyteller_cancel_login_challenge_command", {
+      challengeId: CHALLENGE_ID,
+    });
     const count = calls("storyteller_poll_login_challenge_command");
     await tick(30_000);
     expect(calls("storyteller_poll_login_challenge_command")).toBe(count);
@@ -133,9 +108,7 @@ describe("desktop native login bridge integration", () => {
     render(<DesktopLoginBridge onSuccess={vi.fn()} />);
     await start("Scan to Login");
     await tick(5000);
-    expect(
-      screen.getByText("Login request expired. Start a new request."),
-    ).toBeTruthy();
+    expect(screen.getByText("Login request expired. Start a new request.")).toBeTruthy();
     expect(calls("storyteller_create_login_challenge_command")).toBe(1);
     expect(calls("storyteller_poll_login_challenge_command")).toBe(0);
     expect(calls("storyteller_cancel_login_challenge_command")).toBe(1);
@@ -164,18 +137,15 @@ describe("desktop native login bridge integration", () => {
     await start("Scan to Login");
     native.mockImplementationOnce(
       () =>
-        new Promise((done) => {
+        new Promise(done => {
           resolve = done;
         }),
     );
     await tick(5000);
     view.unmount();
-    expect(native).toHaveBeenCalledWith(
-      "storyteller_cancel_login_challenge_command",
-      {
-        challengeId: CHALLENGE_ID,
-      },
-    );
+    expect(native).toHaveBeenCalledWith("storyteller_cancel_login_challenge_command", {
+      challengeId: CHALLENGE_ID,
+    });
     await act(async () => {
       resolve({ status: "redeemed", maybe_user: USER });
     });
@@ -189,18 +159,15 @@ describe("desktop native login bridge integration", () => {
     await start("Scan to Login");
     native.mockImplementationOnce(
       () =>
-        new Promise((done) => {
+        new Promise(done => {
           resolve = done;
         }),
     );
     await tick(5000);
     await start("Back");
-    expect(native).toHaveBeenCalledWith(
-      "storyteller_cancel_login_challenge_command",
-      {
-        challengeId: CHALLENGE_ID,
-      },
-    );
+    expect(native).toHaveBeenCalledWith("storyteller_cancel_login_challenge_command", {
+      challengeId: CHALLENGE_ID,
+    });
     await act(async () => {
       resolve({ status: "redeemed", maybe_user: USER });
     });
@@ -221,19 +188,14 @@ describe("desktop native login bridge integration", () => {
     render(<DesktopLoginBridge onSuccess={vi.fn()} />);
     await start("Scan to Login");
     await tick(5000);
-    expect(
-      screen.getByText(
-        "This login request could not be completed. Start a new request.",
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText("This login request could not be completed. Start a new request.")).toBeTruthy();
   });
 
   it("shows the native host/status diagnostic and stops on terminal HTTP errors", async () => {
     render(<DesktopLoginBridge onSuccess={vi.fn()} />);
     await start("Scan to Login");
     native.mockRejectedValueOnce({
-      message:
-        "http://localhost:12345: Login server rejected the request (HTTP 401)",
+      message: "http://localhost:12345: Login server rejected the request (HTTP 401)",
       status: 401,
       retryable: false,
     });

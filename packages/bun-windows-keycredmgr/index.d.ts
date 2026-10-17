@@ -7,7 +7,11 @@ interface Functions {
   /** keycredmgr.dll!KeyCredentialManagerGetInformation */
   KeyCredentialManagerGetInformation(keyCredentialManagerInfo: Win32Pointer): number;
   /** keycredmgr.dll!KeyCredentialManagerGetOperationErrorStates */
-  KeyCredentialManagerGetOperationErrorStates(keyCredentialManagerOperationType: number, isReady: Win32Pointer, keyCredentialManagerOperationErrorStates: Win32Pointer): number;
+  KeyCredentialManagerGetOperationErrorStates(
+    keyCredentialManagerOperationType: number,
+    isReady: Win32Pointer,
+    keyCredentialManagerOperationErrorStates: Win32Pointer,
+  ): number;
   /** keycredmgr.dll!KeyCredentialManagerShowUIOperation */
   KeyCredentialManagerShowUIOperation(hWndOwner: Win32Pointer, keyCredentialManagerOperationType: number): number;
 }

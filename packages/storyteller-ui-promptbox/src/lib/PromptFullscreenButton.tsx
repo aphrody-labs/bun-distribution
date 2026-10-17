@@ -14,10 +14,7 @@ interface PromptFullscreenButtonProps {
   className?: string;
 }
 
-export const PromptFullscreenButton = ({
-  onClick,
-  className,
-}: PromptFullscreenButtonProps) => {
+export const PromptFullscreenButton = ({ onClick, className }: PromptFullscreenButtonProps) => {
   return (
     <div className={`absolute right-0 top-0 z-10 ${className ?? ""}`}>
       <Tooltip content="Focus mode" position="top" delay={200}>

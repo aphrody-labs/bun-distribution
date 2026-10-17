@@ -15,16 +15,8 @@ async function fixture() {
   };
 }
 
-async function workspace(
-  dir: string,
-  name: string,
-  script: "check" | "bun:check",
-  exitCode = 0,
-) {
-  await Bun.write(
-    join(dir, "package.json"),
-    JSON.stringify({ name, scripts: { [script]: "bun contract.ts" } }),
-  );
+async function workspace(dir: string, name: string, script: "check" | "bun:check", exitCode = 0) {
+  await Bun.write(join(dir, "package.json"), JSON.stringify({ name, scripts: { [script]: "bun contract.ts" } }));
   await Bun.write(
     join(dir, "contract.ts"),
     `await Bun.write("contract.txt", process.cwd()); process.exit(${exitCode});\n`,
@@ -116,9 +108,7 @@ describe("m3 check workspace contract", () => {
     await app(tmp.dir);
 
     expect(findWorkspaceRoot(tmp.dir)).toBeUndefined();
-    await expect(runCli(["check"], tmp.dir)).rejects.toThrow(
-      "no aphrody-m3 check or host bun:check",
-    );
+    await expect(runCli(["check"], tmp.dir)).rejects.toThrow("no aphrody-m3 check or host bun:check");
     expect(await Bun.file(join(tmp.dir, "tests.txt")).exists()).toBe(false);
   });
 

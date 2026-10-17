@@ -62,14 +62,11 @@ export enum SPLAT_FILE_TYPE {
   SPZ = "spz",
 }
 
-export const getFileName = (file: File): string =>
-  file.name.substring(0, file.name.lastIndexOf("."));
+export const getFileName = (file: File): string => file.name.substring(0, file.name.lastIndexOf("."));
 
-export const getFileExtension = (file: File): string =>
-  file.name.substring(file.name.lastIndexOf("."));
+export const getFileExtension = (file: File): string => file.name.substring(file.name.lastIndexOf("."));
 
 // Per-file row status shown in the multi-file upload sidebar. "converting"
 // = an FBX being normalized to GLB client-side before it can be previewed
 // or uploaded.
-export type FileEntryStatus =
-  "idle" | "converting" | "uploading" | "success" | "error";
+export type FileEntryStatus = "idle" | "converting" | "uploading" | "success" | "error";

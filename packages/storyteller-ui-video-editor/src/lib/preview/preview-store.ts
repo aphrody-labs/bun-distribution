@@ -21,23 +21,14 @@ interface PreviewState {
   gridConfig: GridConfig;
   toggleGuide: (guideId: GuideId) => void;
   setGridConfig: (config: Partial<GridConfig>) => void;
-  setOverlayVisibility: ({
-    overlayId,
-    isVisible,
-  }: {
-    overlayId: string;
-    isVisible: boolean;
-  }) => void;
+  setOverlayVisibility: ({ overlayId, isVisible }: { overlayId: string; isVisible: boolean }) => void;
   toggleOverlayVisibility: ({ overlayId }: { overlayId: string }) => void;
 }
 
 const DEFAULT_PREVIEW_OVERLAYS: PreviewOverlaysState = {};
 
-function getPersistedActiveGuide(
-  state: PersistedPreviewState | undefined,
-): GuideId | null {
-  const persistedGuide =
-    state?.activeGuide ?? state?.layoutGuide?.platform ?? null;
+function getPersistedActiveGuide(state: PersistedPreviewState | undefined): GuideId | null {
+  const persistedGuide = state?.activeGuide ?? state?.layoutGuide?.platform ?? null;
 
   if (typeof persistedGuide !== "string") {
     return null;
@@ -48,22 +39,22 @@ function getPersistedActiveGuide(
 
 export const usePreviewStore = create<PreviewState>()(
   persist(
-    (set) => ({
+    set => ({
       activeGuide: null,
       overlays: DEFAULT_PREVIEW_OVERLAYS,
       gridConfig: DEFAULT_GRID_CONFIG,
-      toggleGuide: (guideId) => {
-        set((state) => ({
+      toggleGuide: guideId => {
+        set(state => ({
           activeGuide: state.activeGuide === guideId ? null : guideId,
         }));
       },
-      setGridConfig: (config) => {
-        set((state) => ({
+      setGridConfig: config => {
+        set(state => ({
           gridConfig: { ...state.gridConfig, ...config },
         }));
       },
       setOverlayVisibility: ({ overlayId, isVisible }) => {
-        set((state) => ({
+        set(state => ({
           overlays: {
             ...state.overlays,
             [overlayId]: isVisible,
@@ -71,7 +62,7 @@ export const usePreviewStore = create<PreviewState>()(
         }));
       },
       toggleOverlayVisibility: ({ overlayId }) => {
-        set((state) => ({
+        set(state => ({
           overlays: {
             ...state.overlays,
             [overlayId]: !state.overlays[overlayId],
@@ -82,7 +73,7 @@ export const usePreviewStore = create<PreviewState>()(
     {
       name: "preview-settings",
       version: 6,
-      migrate: (persistedState) => {
+      migrate: persistedState => {
         const state = persistedState as PersistedPreviewState | undefined;
 
         return {
@@ -94,7 +85,7 @@ export const usePreviewStore = create<PreviewState>()(
           },
         };
       },
-      partialize: (state) => ({
+      partialize: state => ({
         activeGuide: state.activeGuide,
         overlays: state.overlays,
         gridConfig: state.gridConfig,

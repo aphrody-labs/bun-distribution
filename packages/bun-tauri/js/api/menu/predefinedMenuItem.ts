@@ -2,16 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
-import { MenuItemBase, newMenu } from './base'
-import { invoke } from '../core'
-import type { JsImage } from '../image'
+import { MenuItemBase, newMenu } from "./base";
+import { invoke } from "../core";
+import type { JsImage } from "../image";
 
 /** A metadata for the about predefined menu item. */
 export interface AboutMetadata {
   /** Sets the application name. */
-  name?: string
+  name?: string;
   /** The application version. */
-  version?: string
+  version?: string;
   /**
    * The short version, e.g. "1.0".
    *
@@ -19,7 +19,7 @@ export interface AboutMetadata {
    *
    * - **Windows / Linux:** Appended to the end of `version` in parentheses.
    */
-  shortVersion?: string
+  shortVersion?: string;
   /**
    * The authors of the application.
    *
@@ -27,7 +27,7 @@ export interface AboutMetadata {
    *
    * - **macOS:** Unsupported.
    */
-  authors?: string[]
+  authors?: string[];
   /**
    * Application comments.
    *
@@ -35,9 +35,9 @@ export interface AboutMetadata {
    *
    * - **macOS:** Unsupported.
    */
-  comments?: string
+  comments?: string;
   /** The copyright of the application. */
-  copyright?: string
+  copyright?: string;
   /**
    * The license of the application.
    *
@@ -45,7 +45,7 @@ export interface AboutMetadata {
    *
    * - **macOS:** Unsupported.
    */
-  license?: string
+  license?: string;
   /**
    * The application website.
    *
@@ -53,7 +53,7 @@ export interface AboutMetadata {
    *
    * - **macOS:** Unsupported.
    */
-  website?: string
+  website?: string;
   /**
    * The website label.
    *
@@ -61,7 +61,7 @@ export interface AboutMetadata {
    *
    * - **macOS:** Unsupported.
    */
-  websiteLabel?: string
+  websiteLabel?: string;
   /**
    * The credits.
    *
@@ -69,7 +69,7 @@ export interface AboutMetadata {
    *
    * - **Windows / Linux:** Unsupported.
    */
-  credits?: string
+  credits?: string;
   /**
    * The application icon.
    *
@@ -77,7 +77,7 @@ export interface AboutMetadata {
    *
    * - **Windows:** Unsupported.
    */
-  icon?: JsImage
+  icon?: JsImage;
 }
 
 /** Options for creating a new predefined menu item. */
@@ -88,7 +88,7 @@ export interface PredefinedMenuItemOptions {
    * Defaults to the platform's own label for the chosen item, so only set it to
    * override or localize that label.
    */
-  text?: string
+  text?: string;
   /**
    * The predefined item type.
    *
@@ -141,33 +141,33 @@ export interface PredefinedMenuItemOptions {
    * ```
    */
   item:
-    | 'Separator'
-    | 'Copy'
-    | 'Cut'
-    | 'Paste'
-    | 'SelectAll'
-    | 'Undo'
-    | 'Redo'
-    | 'Minimize'
-    | 'Maximize'
-    | 'Fullscreen'
-    | 'Hide'
-    | 'HideOthers'
-    | 'ShowAll'
-    | 'CloseWindow'
-    | 'Quit'
-    | 'Services'
-    | 'BringAllToFront'
+    | "Separator"
+    | "Copy"
+    | "Cut"
+    | "Paste"
+    | "SelectAll"
+    | "Undo"
+    | "Redo"
+    | "Minimize"
+    | "Maximize"
+    | "Fullscreen"
+    | "Hide"
+    | "HideOthers"
+    | "ShowAll"
+    | "CloseWindow"
+    | "Quit"
+    | "Services"
+    | "BringAllToFront"
     | {
-        About: AboutMetadata | null
-      }
+        About: AboutMetadata | null;
+      };
 }
 
 /** A predefined (native) menu item which has a predefined behavior by the OS or by tauri.  */
 export class PredefinedMenuItem extends MenuItemBase {
   /** @ignore */
   protected constructor(rid: number, id: string) {
-    super(rid, id, 'Predefined')
+    super(rid, id, "Predefined");
   }
 
   /**
@@ -179,25 +179,21 @@ export class PredefinedMenuItem extends MenuItemBase {
    * const separator = await PredefinedMenuItem.new({ item: 'Separator' });
    * ```
    */
-  static async new(
-    opts?: PredefinedMenuItemOptions
-  ): Promise<PredefinedMenuItem> {
-    return newMenu('Predefined', opts).then(
-      ([rid, id]) => new PredefinedMenuItem(rid, id)
-    )
+  static async new(opts?: PredefinedMenuItemOptions): Promise<PredefinedMenuItem> {
+    return newMenu("Predefined", opts).then(([rid, id]) => new PredefinedMenuItem(rid, id));
   }
 
   /** Returns the text of this predefined menu item. */
   async text(): Promise<string> {
-    return invoke('plugin:menu|text', { rid: this.rid, kind: this.kind })
+    return invoke("plugin:menu|text", { rid: this.rid, kind: this.kind });
   }
 
   /** Sets the text for this predefined menu item. */
   async setText(text: string): Promise<void> {
-    return invoke('plugin:menu|set_text', {
+    return invoke("plugin:menu|set_text", {
       rid: this.rid,
       kind: this.kind,
-      text
-    })
+      text,
+    });
   }
 }

@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, expect, test } from "bun:test";
-import {
-  activeModal,
-  attachDpad,
-  focusables,
-} from "../../src/material/adaptive/dpad.ts";
+import { activeModal, attachDpad, focusables } from "../../src/material/adaptive/dpad.ts";
 afterEach(() => {
   document.body.innerHTML = "";
 });
@@ -39,9 +35,7 @@ test("D-pad ignores controls hidden or disabled by ancestors", () => {
   disabled.disabled = true;
   document.body.append(disabled);
   button(disabled, "Disabled fieldset");
-  expect(focusables(document).map((element) => element.textContent)).toEqual([
-    visible.textContent,
-  ]);
+  expect(focusables(document).map(element => element.textContent)).toEqual([visible.textContent]);
 });
 test("hidden modal containers do not steal the D-pad focus scope", () => {
   const live = document.createElement("section");

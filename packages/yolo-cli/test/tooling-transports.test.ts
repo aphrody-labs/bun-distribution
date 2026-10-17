@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { afterAll, expect, test } from "bun:test";
-import {
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createApiServer } from "../../core/src/server/http";
@@ -36,9 +30,7 @@ async function post(args: Record<string, unknown>) {
 }
 test("native migration transport rejects writes and unbounded worker options", async () => {
   const responses = await Promise.all(
-    [{ mode: "fix" }, { dry_run: false }, { jobs: 7 }, { jobs: 1.5 }].map(
-      (args) => post(args),
-    ),
+    [{ mode: "fix" }, { dry_run: false }, { jobs: 7 }, { jobs: 1.5 }].map(args => post(args)),
   );
   for (const response of responses) expect(response.status).toBe(400);
   expect(readFileSync(join(root, "entry.js"), "utf8")).toBe(original);

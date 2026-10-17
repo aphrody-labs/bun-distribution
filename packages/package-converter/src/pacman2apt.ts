@@ -12,13 +12,7 @@ import { runProcess } from "@aphrody/bun-workspace/process";
 import { pacmanRepositories } from "../../../factory/arch/index.ts";
 import curated from "../data/pacman2apt.json";
 import { decompress } from "./compression.ts";
-import {
-  compareDotted,
-  elfDynamic,
-  highestVersions,
-  isElf,
-  type ElfDynamic,
-} from "./elf.ts";
+import { compareDotted, elfDynamic, highestVersions, isElf, type ElfDynamic } from "./elf.ts";
 import { pkginfo } from "./alpm.ts";
 import {
   openIndex,
@@ -31,12 +25,7 @@ import {
 } from "./pacman-db.ts";
 import { decodedFile, download } from "./remote.ts";
 import { tar, tarStream, TarWriter, type TarWriteEntry } from "./tar.ts";
-import {
-  hostSeries,
-  syncUbuntu,
-  UbuntuIndex,
-  usrMerged,
-} from "./ubuntu-index.ts";
+import { hostSeries, syncUbuntu, UbuntuIndex, usrMerged } from "./ubuntu-index.ts";
 
 type Relation = string;
 
@@ -80,19 +69,10 @@ interface Mapping {
   pkg?: PacmanPackage;
 }
 
-const METADATA = new Set([
-  ".PKGINFO",
-  ".BUILDINFO",
-  ".MTREE",
-  ".INSTALL",
-  ".CHANGELOG",
-]);
+const METADATA = new Set([".PKGINFO", ".BUILDINFO", ".MTREE", ".INSTALL", ".CHANGELOG"]);
 
 export function defaultState(): string {
-  return (
-    process.env.PACMAN2APT_STATE ??
-    join(process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"), "pacman2apt")
-  );
+  return process.env.PACMAN2APT_STATE ?? join(process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"), "pacman2apt");
 }
 
 export function loadPolicy(extra?: Partial<Policy>): Policy {
@@ -104,13 +84,10 @@ export function loadPolicy(extra?: Partial<Policy>): Policy {
   };
 }
 
-const glob = (pattern: string) =>
-  new RegExp(
-    `^${pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`,
-  );
+const glob = (pattern: string) => new RegExp(`^${pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`);
 
 export function isProtected(policy: Policy, name: string): boolean {
-  return policy.protected.some((pattern) => glob(pattern).test(name));
+  return policy.protected.some(pattern => glob(pattern).test(name));
 }
 
 /** `[epoch:]pkgver-pkgrel` to a Debian version marked as a pacman2apt build. */
@@ -131,35 +108,23 @@ const sanitizeName = (name: string) =>
     .replace(/^[^a-z0-9]+/, "");
 
 /** Debian name; a collision with an Ubuntu package gets the repository-family suffix. */
-export function debianName(
-  pkg: Pick<PacmanPackage, "name" | "family">,
-  ubuntu: UbuntuIndex,
-  policy: Policy,
-): string {
+export function debianName(pkg: Pick<PacmanPackage, "name" | "family">, ubuntu: UbuntuIndex, policy: Policy): string {
   const name = sanitizeName(pkg.name);
-  return ubuntu.has(name)
-    ? `${name}${policy.nameSuffix[pkg.family] ?? "-pacman"}`
-    : name;
+  return ubuntu.has(name) ? `${name}${policy.nameSuffix[pkg.family] ?? "-pacman"}` : name;
 }
 
 function relationFrom(value: string): Relation[] {
   return value
     .split(",")
-    .map((item) => item.trim())
+    .map(item => item.trim())
     .filter(Boolean);
 }
 
 /** Probe the running Ubuntu host for its real glibc/libstdc++ symbol versions. */
-export async function targetAbi(
-  policy: Policy,
-  series: string | undefined,
-): Promise<Record<string, string>> {
+export async function targetAbi(policy: Policy, series: string | undefined): Promise<Record<string, string>> {
   const abi = { ...policy.target.abi };
   if (!series || series !== (await hostSeries())) return abi;
-  for (const path of [
-    "/usr/lib/x86_64-linux-gnu/libc.so.6",
-    "/usr/lib/x86_64-linux-gnu/libstdc++.so.6",
-  ]) {
+  for (const path of ["/usr/lib/x86_64-linux-gnu/libc.so.6", "/usr/lib/x86_64-linux-gnu/libstdc++.so.6"]) {
     const file = Bun.file(path);
     if (!(await file.exists())) continue;
     const dynamic = elfDynamic(new Uint8Array(await file.arrayBuffer()));
@@ -173,14 +138,12 @@ interface InstalledOwners {
 }
 
 /** dpkg's installed file lists, loaded only for the paths a package ships. */
-async function installedOwners(
-  paths: Set<string>,
-): Promise<InstalledOwners | undefined> {
+async function installedOwners(paths: Set<string>): Promise<InstalledOwners | undefined> {
   const info = "/var/lib/dpkg/info";
   if (process.platform !== "linux") return undefined;
   let names: string[];
   try {
-    names = (await readdir(info)).filter((name) => name.endsWith(".list"));
+    names = (await readdir(info)).filter(name => name.endsWith(".list"));
   } catch {
     return undefined;
   }
@@ -192,7 +155,7 @@ async function installedOwners(
       if (paths.has(path)) found.set(path, [...(found.get(path) ?? []), owner]);
     }
   }
-  return { owners: (path) => found.get(path) ?? [] };
+  return { owners: path => found.get(path) ?? [] };
 }
 
 function mtreeDigests(data: Uint8Array): Map<string, string> {
@@ -221,10 +184,7 @@ function mtreeDigests(data: Uint8Array): Map<string, string> {
     else if (first && !first.startsWith("/")) {
       const merged = { ...defaults, ...fields };
       if ((merged.type ?? "file") === "file" && merged.sha256digest)
-        digests.set(
-          unescape(first).replace(/^\.\//, ""),
-          merged.sha256digest.toLowerCase(),
-        );
+        digests.set(unescape(first).replace(/^\.\//, ""), merged.sha256digest.toLowerCase());
     }
   }
   return digests;
@@ -248,12 +208,11 @@ function maintainerScripts(
 ): ScriptPlan {
   const plan: ScriptPlan = { scripts: {}, triggers: [], notes: [] };
   if (relocated) {
-    if (install)
-      plan.notes.push(".INSTALL not translated: payload is relocated");
+    if (install) plan.notes.push(".INSTALL not translated: payload is relocated");
     plan.notes.push("pacman hooks not mapped: payload is relocated");
     return plan;
   }
-  const has = (pattern: RegExp) => paths.some((path) => pattern.test(path));
+  const has = (pattern: RegExp) => paths.some(path => pattern.test(path));
   const triggers = new Set<string>();
   const post: string[] = [];
   const postrm: string[] = [];
@@ -273,63 +232,42 @@ function maintainerScripts(
     if (has(pattern)) triggers.add(trigger);
   const units = has(/^usr\/lib\/systemd\/(system|user)\//);
   if (units) {
-    const reload =
-      "if [ -d /run/systemd/system ]; then systemctl daemon-reload >/dev/null 2>&1 || true; fi";
+    const reload = "if [ -d /run/systemd/system ]; then systemctl daemon-reload >/dev/null 2>&1 || true; fi";
     post.push(reload);
     postrm.push(reload);
     plan.notes.push("systemd units: daemon-reload only; units are not enabled");
   }
-  const sysusers = paths.filter((path) =>
-    /^usr\/lib\/sysusers\.d\/.+\.conf$/.test(path),
-  );
+  const sysusers = paths.filter(path => /^usr\/lib\/sysusers\.d\/.+\.conf$/.test(path));
   if (sysusers.length)
     post.push(
-      `if command -v systemd-sysusers >/dev/null; then systemd-sysusers ${sysusers.map((path) => `/${path}`).join(" ")} || true; fi`,
+      `if command -v systemd-sysusers >/dev/null; then systemd-sysusers ${sysusers.map(path => `/${path}`).join(" ")} || true; fi`,
     );
-  const tmpfiles = paths.filter((path) =>
-    /^usr\/lib\/tmpfiles\.d\/.+\.conf$/.test(path),
-  );
+  const tmpfiles = paths.filter(path => /^usr\/lib\/tmpfiles\.d\/.+\.conf$/.test(path));
   if (tmpfiles.length)
     post.push(
-      `if command -v systemd-tmpfiles >/dev/null; then systemd-tmpfiles --create ${tmpfiles.map((path) => `/${path}`).join(" ")} || true; fi`,
+      `if command -v systemd-tmpfiles >/dev/null; then systemd-tmpfiles --create ${tmpfiles.map(path => `/${path}`).join(" ")} || true; fi`,
     );
   if (has(/^usr\/lib\/udev\/rules\.d\//))
-    post.push(
-      "if [ -d /run/udev ]; then udevadm control --reload >/dev/null 2>&1 || true; fi",
-    );
-  if (has(/^usr\/lib\/modules\//))
-    plan.notes.push("kernel modules shipped: depmod is not run");
-  plan.triggers = [...triggers].map((name) => `activate-noawait ${name}`);
+    post.push("if [ -d /run/udev ]; then udevadm control --reload >/dev/null 2>&1 || true; fi");
+  if (has(/^usr\/lib\/modules\//)) plan.notes.push("kernel modules shipped: depmod is not run");
+  plan.triggers = [...triggers].map(name => `activate-noawait ${name}`);
   let body = "";
   const functions = new Set<string>();
   if (install) {
     if (FORBIDDEN_SCRIPT.test(install))
-      plan.notes.push(
-        `.INSTALL not translated: uses pacman-specific tooling (${FORBIDDEN_SCRIPT.exec(install)![1]})`,
-      );
+      plan.notes.push(`.INSTALL not translated: uses pacman-specific tooling (${FORBIDDEN_SCRIPT.exec(install)![1]})`);
     else {
       body = install;
-      const services =
-        /systemctl\s+(?:--\S+\s+)*(enable|restart|start|reload)\b/.exec(
-          install,
-        );
+      const services = /systemctl\s+(?:--\S+\s+)*(enable|restart|start|reload)\b/.exec(install);
       if (services)
-        plan.notes.push(
-          `.INSTALL calls systemctl ${services[1]}: services change on install/upgrade, as with pacman`,
-        );
-      for (const match of install.matchAll(
-        /^\s*(?:function\s+)?((?:pre|post)_(?:install|upgrade|remove))\s*\(\s*\)/gm,
-      ))
+        plan.notes.push(`.INSTALL calls systemctl ${services[1]}: services change on install/upgrade, as with pacman`);
+      for (const match of install.matchAll(/^\s*(?:function\s+)?((?:pre|post)_(?:install|upgrade|remove))\s*\(\s*\)/gm))
         functions.add(match[1]!);
-      plan.notes.push(
-        `.INSTALL translated: ${[...functions].join(", ") || "no functions"}`,
-      );
+      plan.notes.push(`.INSTALL translated: ${[...functions].join(", ") || "no functions"}`);
     }
   }
   const call = (name: string, args: string) =>
-    functions.has(name)
-      ? `${name} ${args} || echo "pacman2apt: ${name} failed (ignored like pacman)" >&2`
-      : "";
+    functions.has(name) ? `${name} ${args} || echo "pacman2apt: ${name} failed (ignored like pacman)" >&2` : "";
   const old = 'old="${2%+pacman2apt}"';
   const script = (cases: string, extra: string[] = []) =>
     `#!/bin/bash\nset -e\n# Generated by pacman2apt from .INSTALL and libalpm hook effects.\n${body ? `${body}\n` : ""}case "$1" in\n${cases}\nesac\n${extra.join("\n")}\nexit 0\n`;
@@ -338,20 +276,13 @@ function maintainerScripts(
     plan.scripts.preinst = script(
       `  install) ${call("pre_install", version) || ":"} ;;\n  upgrade) ${old}; ${call("pre_upgrade", `${version} "$old"`) || ":"} ;;`,
     );
-  if (
-    functions.has("post_install") ||
-    functions.has("post_upgrade") ||
-    post.length
-  )
+  if (functions.has("post_install") || functions.has("post_upgrade") || post.length)
     plan.scripts.postinst = script(
       `  configure)\n    if [ -z "$2" ]; then ${call("post_install", version) || ":"}; else ${old}; ${call("post_upgrade", `${version} "$old"`) || ":"}; fi\n    ${post.join("\n    ")}\n    ;;`,
     );
-  if (functions.has("pre_remove"))
-    plan.scripts.prerm = script(`  remove) ${call("pre_remove", version)} ;;`);
+  if (functions.has("pre_remove")) plan.scripts.prerm = script(`  remove) ${call("pre_remove", version)} ;;`);
   if (functions.has("post_remove") || postrm.length)
-    plan.scripts.postrm = script(
-      `  remove) ${call("post_remove", version) || ":"}; ${postrm.join("; ") || ":"} ;;`,
-    );
+    plan.scripts.postrm = script(`  remove) ${call("post_remove", version) || ":"}; ${postrm.join("; ") || ":"} ;;`);
   return plan;
 }
 
@@ -397,7 +328,7 @@ async function transcodePayload(
     }
     await sink.end();
   })();
-  const tarWriter = new TarWriter(async (chunk) => {
+  const tarWriter = new TarWriter(async chunk => {
     await writer.ready;
     await writer.write(chunk as Uint8Array<ArrayBuffer>);
   });
@@ -426,20 +357,16 @@ async function transcodePayload(
       mtime = Math.max(mtime, entry.mtime);
       if (METADATA.has(entry.path)) {
         if (entry.path === ".PKGINFO") summary.pkginfo = entry.data.slice();
-        else if (entry.path === ".INSTALL")
-          summary.install = new TextDecoder().decode(entry.data);
+        else if (entry.path === ".INSTALL") summary.install = new TextDecoder().decode(entry.data);
         else if (entry.path === ".MTREE")
-          summary.mtree = mtreeDigests(
-            Bun.gunzipSync(entry.data as Uint8Array<ArrayBuffer>),
-          );
+          summary.mtree = mtreeDigests(Bun.gunzipSync(entry.data as Uint8Array<ArrayBuffer>));
         continue;
       }
       if (entry.path.startsWith(".")) {
         summary.warnings.push(`skipped root metadata ${entry.path}`);
         continue;
       }
-      for (const user of [entry.uname, entry.gname])
-        if (user && user !== "root") owners.add(user);
+      for (const user of [entry.uname, entry.gname]) if (user && user !== "root") owners.add(user);
       if (entry.xattrs.length)
         summary.warnings.push(
           `${entry.path}: extended attributes dropped (${entry.xattrs.join(", ")}); dpkg does not apply them`,
@@ -454,18 +381,12 @@ async function transcodePayload(
         size: entry.size,
       };
       if (entry.kind === "file") {
-        record.md5 = new Bun.CryptoHasher("md5")
-          .update(entry.data)
-          .digest("hex");
-        summary.sha256.set(
-          entry.path,
-          new Bun.CryptoHasher("sha256").update(entry.data).digest("hex"),
-        );
+        record.md5 = new Bun.CryptoHasher("md5").update(entry.data).digest("hex");
+        summary.sha256.set(entry.path, new Bun.CryptoHasher("sha256").update(entry.data).digest("hex"));
         if (isElf(entry.data)) {
           try {
             const dynamic = elfDynamic(entry.data);
-            if (dynamic && [3, 62].includes(dynamic.machine))
-              summary.elf.push({ path: entry.path, dynamic });
+            if (dynamic && [3, 62].includes(dynamic.machine)) summary.elf.push({ path: entry.path, dynamic });
           } catch (error) {
             summary.warnings.push(
               `${entry.path}: ELF not analysed (${error instanceof Error ? error.message : error})`,
@@ -485,26 +406,19 @@ async function transcodePayload(
         data: entry.data,
       };
       // Absolute links are decided once every relocated path is known.
-      if (prefix && entry.kind === "symlink" && link?.startsWith("/"))
-        deferred.push(item);
+      if (prefix && entry.kind === "symlink" && link?.startsWith("/")) deferred.push(item);
       else await tarWriter.add(item);
     }
     for (const item of deferred) {
       const target = item.link!.slice(1).replace(/\/+$/, "");
       if (sources.has(target)) item.link = `/${prefix}/${target}`;
-      else
-        summary.warnings.push(
-          `/${item.path} keeps its absolute target ${item.link} outside the relocated tree`,
-        );
+      else summary.warnings.push(`/${item.path} keeps its absolute target ${item.link} outside the relocated tree`);
       await tarWriter.add(item);
     }
     await tarWriter.end();
     await writer.close();
     await pump;
-    if (owners.size)
-      summary.warnings.push(
-        `non-root owners ${[...owners].join(", ")} mapped to root:root`,
-      );
+    if (owners.size) summary.warnings.push(`non-root owners ${[...owners].join(", ")} mapped to root:root`);
   } catch (error) {
     await writer.abort(error).catch(() => {});
     await pump.catch(() => {});
@@ -522,7 +436,7 @@ function arHeader(name: string, size: number): Uint8Array {
 
 async function memoryTar(entries: TarWriteEntry[]): Promise<Uint8Array> {
   const chunks: Uint8Array[] = [];
-  const writer = new TarWriter((chunk) => {
+  const writer = new TarWriter(chunk => {
     chunks.push(chunk.slice());
   });
   for (const entry of entries) await writer.add(entry);
@@ -531,11 +445,7 @@ async function memoryTar(entries: TarWriteEntry[]): Promise<Uint8Array> {
 }
 
 /** ar(5) archive with debian-binary, control.tar.zst and the streamed data.tar.zst. */
-async function writeDeb(
-  path: string,
-  control: Uint8Array,
-  dataTar: string,
-): Promise<void> {
+async function writeDeb(path: string, control: Uint8Array, dataTar: string): Promise<void> {
   const partial = `${path}.part`;
   const sink = Bun.file(partial).writer();
   const dataSize = Bun.file(dataTar).size;
@@ -580,19 +490,16 @@ export class Converter {
   private sonameRelation(soname: string, bits: 32 | 64): Relation | undefined {
     const owners = this.ubuntu
       .libraryOwners(soname, bits)
-      .filter((owner) => this.ubuntu.has(owner.package))
-      .filter((owner) => !/-(dbg|dev)(:|$)/.test(owner.package));
+      .filter(owner => this.ubuntu.has(owner.package))
+      .filter(owner => !/-(dbg|dev)(:|$)/.test(owner.package));
     if (!owners.length) return undefined;
     return owners
       .slice(0, 3)
-      .map((owner) => owner.package)
+      .map(owner => owner.package)
       .join(" | ");
   }
 
-  private curated(
-    name: string,
-    table: "override" | "map",
-  ): Mapping | undefined {
+  private curated(name: string, table: "override" | "map"): Mapping | undefined {
     const policy = this.options.policy[table];
     if (!Object.hasOwn(policy, name)) return undefined;
     const value = policy[name];
@@ -604,13 +511,10 @@ export class Converter {
       };
     const relations = relationFrom(value!);
     const missing = relations.filter(
-      (relation) =>
-        !relation.split("|").some((atom) => {
+      relation =>
+        !relation.split("|").some(atom => {
           const bare = atom.trim();
-          return (
-            this.ubuntu.has(bare) ||
-            this.ubuntu.virtualProviders(bare.split(":")[0]!).length > 0
-          );
+          return this.ubuntu.has(bare) || this.ubuntu.virtualProviders(bare.split(":")[0]!).length > 0;
         }),
     );
     if (missing.length)
@@ -626,8 +530,7 @@ export class Converter {
   /** `linked` holds `bits:soname` needs of the payload ELF objects, when known. */
   map(dependency: string, linked?: Set<string>): Mapping {
     const parsed = parseDependency(dependency);
-    if (this.options.skip.has(parsed.name))
-      return { dependency, result: "drop", via: "--skip-dep" };
+    if (this.options.skip.has(parsed.name)) return { dependency, result: "drop", via: "--skip-dep" };
     const override = this.curated(parsed.name, "override");
     if (override) return { ...override, dependency };
     const soname = sonameProvide(parsed);
@@ -644,21 +547,18 @@ export class Converter {
     // Curated entries are explicit owner decisions for non-library and virtual names.
     const mapped = this.curated(parsed.name, "map");
     if (mapped) return { ...mapped, dependency };
-    const pkg =
-      this.pacman.get(parsed.name) ?? this.pacman.providers(parsed.name)[0];
+    const pkg = this.pacman.get(parsed.name) ?? this.pacman.providers(parsed.name)[0];
     if (pkg) {
       const relationsOf = (items: Array<{ soname: string; bits: 32 | 64 }>) => [
         ...new Set(
           items
-            .map((item) => this.sonameRelation(item.soname, item.bits))
+            .map(item => this.sonameRelation(item.soname, item.bits))
             .filter((relation): relation is string => !!relation),
         ),
       ];
       const sonames = this.pacman.sonames(pkg);
       // Libraries the payload links name the exact Ubuntu runtime packages.
-      const used = linked
-        ? sonames.filter((item) => linked.has(`${item.bits}:${item.soname}`))
-        : [];
+      const used = linked ? sonames.filter(item => linked.has(`${item.bits}:${item.soname}`)) : [];
       const precise = relationsOf(used);
       if (precise.length)
         return {
@@ -672,14 +572,9 @@ export class Converter {
       const votes = new Map<string, number>();
       for (const path of this.pacman.binaries(pkg))
         for (const owner of this.ubuntu.executableOwners(basename(path)))
-          if (this.ubuntu.has(owner) && !/-(dev|dbg)$/.test(owner))
-            votes.set(owner, (votes.get(owner) ?? 0) + 1);
-      const executable = [...votes].sort(
-        (a, b) => b[1] - a[1] || a[0].length - b[0].length,
-      )[0]?.[0];
-      const relations = [
-        ...new Set([...libraries, ...(executable ? [executable] : [])]),
-      ];
+          if (this.ubuntu.has(owner) && !/-(dev|dbg)$/.test(owner)) votes.set(owner, (votes.get(owner) ?? 0) + 1);
+      const executable = [...votes].sort((a, b) => b[1] - a[1] || a[0].length - b[0].length)[0]?.[0];
+      const relations = [...new Set([...libraries, ...(executable ? [executable] : [])])];
       if (relations.length)
         return {
           dependency,
@@ -720,10 +615,9 @@ export class Converter {
   async init(): Promise<void> {
     this.abi = await targetAbi(
       this.options.policy,
-      this.ubuntu.series().find((suite) => !suite.includes("-")),
+      this.ubuntu.series().find(suite => !suite.includes("-")),
     );
-    if (!this.ubuntu.series().length)
-      throw new Error("Ubuntu index is empty: run `pacman2apt sync` first");
+    if (!this.ubuntu.series().length) throw new Error("Ubuntu index is empty: run `pacman2apt sync` first");
   }
 
   /** Fetch a package from its repository and verify the database SHA-256. */
@@ -738,15 +632,11 @@ export class Converter {
       for await (const chunk of file.stream()) hasher.update(chunk);
       if (hasher.digest("hex") === pkg.sha256) return path;
     }
-    const repository = this.pacman
-      .repositories()
-      .find((repo) => repo.name === pkg.repo);
+    const repository = this.pacman.repositories().find(repo => repo.name === pkg.repo);
     if (!repository) throw new Error(`${pkg.repo}: repository not synced`);
-    this.options.log(
-      `fetch ${pkg.repo}/${pkg.filename} (${(pkg.csize / 1048576).toFixed(1)} MiB)`,
-    );
+    this.options.log(`fetch ${pkg.repo}/${pkg.filename} (${(pkg.csize / 1048576).toFixed(1)} MiB)`);
     const urls = repository.servers.map(
-      (server) =>
+      server =>
         `${server.replaceAll("$repo", repository.name).replaceAll("$arch", repository.arch)}/${encodeURIComponent(pkg.filename)}`,
     );
     await download(urls, path, {
@@ -762,7 +652,7 @@ export class Converter {
   async convert(targets: string[]): Promise<ConvertedPackage[]> {
     await this.init();
     await mkdir(this.options.out, { recursive: true });
-    const queue = targets.map((target) => ({ target, top: true }));
+    const queue = targets.map(target => ({ target, top: true }));
     const results: ConvertedPackage[] = [];
     const failures: string[] = [];
     while (queue.length) {
@@ -777,9 +667,7 @@ export class Converter {
             queue.push({ target: `${pkg.repo}/${pkg.name}`, top: false });
           }
       } catch (error) {
-        failures.push(
-          `${target}: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        failures.push(`${target}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
     if (failures.length) throw new Error(failures.join("\n\n"));
@@ -789,63 +677,39 @@ export class Converter {
   private async convertOne(
     target: string,
     top: boolean,
-  ): Promise<
-    { converted: ConvertedPackage; pending: PacmanPackage[] } | undefined
-  > {
+  ): Promise<{ converted: ConvertedPackage; pending: PacmanPackage[] } | undefined> {
     const policy = this.options.policy;
     let input: string;
     let pkg: PacmanPackage | undefined;
     let verified: string;
-    if (
-      /\.pkg\.tar\.(zst|gz)$/.test(target) &&
-      (await Bun.file(target).exists())
-    ) {
+    if (/\.pkg\.tar\.(zst|gz)$/.test(target) && (await Bun.file(target).exists())) {
       input = resolve(target);
       pkg = this.pacman.byFilename(basename(target));
       const hasher = new Bun.CryptoHasher("sha256");
       for await (const chunk of Bun.file(input).stream()) hasher.update(chunk);
       const digest = hasher.digest("hex");
       if (pkg && pkg.sha256 !== digest)
-        throw new Error(
-          `${target}: SHA-256 ${digest} differs from ${pkg.repo} database ${pkg.sha256}`,
-        );
-      verified = pkg
-        ? `sha256 matches ${pkg.repo}.db`
-        : `local file sha256 ${digest} (no database entry)`;
+        throw new Error(`${target}: SHA-256 ${digest} differs from ${pkg.repo} database ${pkg.sha256}`);
+      verified = pkg ? `sha256 matches ${pkg.repo}.db` : `local file sha256 ${digest} (no database entry)`;
     } else {
       pkg = this.pacman.resolve(target);
       if (isProtected(policy, pkg.name))
-        throw new Error(
-          `${pkg.name} is protected: it would replace an Ubuntu system component`,
-        );
+        throw new Error(`${pkg.name} is protected: it would replace an Ubuntu system component`);
       if (this.converted.has(`${pkg.repo}/${pkg.name}`)) return undefined;
       input = await this.fetch(pkg);
       verified = `sha256 ${pkg.sha256} from ${pkg.repo}.db`;
     }
     const work = join(this.options.state, "work");
     await mkdir(work, { recursive: true });
-    const dataTar = join(
-      work,
-      `${basename(input)}.${process.pid}.data.tar.zst`,
-    );
+    const dataTar = join(work, `${basename(input)}.${process.pid}.data.tar.zst`);
     const prefix =
       top && this.options.prefix
         ? this.options.prefix
             .replace(/^\/+|\/+$/g, "")
-            .replaceAll(
-              "{name}",
-              pkg?.name ??
-                basename(input).replace(
-                  /-[^-]+-[^-]+-[^-]+\.pkg\.tar\..*$/,
-                  "",
-                ),
-            )
+            .replaceAll("{name}", pkg?.name ?? basename(input).replace(/-[^-]+-[^-]+-[^-]+\.pkg\.tar\..*$/, ""))
         : undefined;
-    if (prefix && !/^[A-Za-z0-9._+/-]+$/.test(prefix))
-      throw new Error(`Invalid relocation prefix: ${prefix}`);
-    this.options.log(
-      `transcode ${basename(input)}${prefix ? ` -> /${prefix}` : ""}`,
-    );
+    if (prefix && !/^[A-Za-z0-9._+/-]+$/.test(prefix)) throw new Error(`Invalid relocation prefix: ${prefix}`);
+    this.options.log(`transcode ${basename(input)}${prefix ? ` -> /${prefix}` : ""}`);
     try {
       const payload = await transcodePayload(
         input,
@@ -859,43 +723,32 @@ export class Converter {
       const name = info.name;
       const version = info.version;
       if (pkg && (pkg.name !== name || pkg.version !== version))
-        throw new Error(
-          `.PKGINFO ${name} ${version} differs from database ${pkg.name} ${pkg.version}`,
-        );
+        throw new Error(`.PKGINFO ${name} ${version} differs from database ${pkg.name} ${pkg.version}`);
       const family: PacmanPackage["family"] = pkg?.family ?? "archlinux";
       const warnings = [...payload.warnings];
       // Integrity: every regular file must match the package's own .MTREE digest.
       if (payload.mtree) {
         for (const [path, digest] of payload.sha256) {
           const expected = payload.mtree.get(path);
-          if (expected && expected !== digest)
-            throw new Error(`${path}: SHA-256 differs from .MTREE`);
+          if (expected && expected !== digest) throw new Error(`${path}: SHA-256 differs from .MTREE`);
         }
-      } else
-        warnings.push("package has no .MTREE; payload digests not verified");
+      } else warnings.push("package has no .MTREE; payload digests not verified");
       // ABI: internal sonames, external needs and symbol-version ceilings.
       const internal = new Set<string>();
-      for (const entry of payload.entries)
-        if (entry.kind !== "directory") internal.add(basename(entry.source));
-      for (const { dynamic } of payload.elf)
-        if (dynamic.soname) internal.add(dynamic.soname);
+      for (const entry of payload.entries) if (entry.kind !== "directory") internal.add(basename(entry.source));
+      for (const { dynamic } of payload.elf) if (dynamic.soname) internal.add(dynamic.soname);
       const needed = new Set<string>();
       const violations: string[] = [];
       for (const { path, dynamic } of payload.elf) {
-        for (const soname of dynamic.needed)
-          if (!internal.has(soname)) needed.add(`${dynamic.bits}:${soname}`);
+        for (const soname of dynamic.needed) if (!internal.has(soname)) needed.add(`${dynamic.bits}:${soname}`);
         for (const need of dynamic.versionNeeds) {
           if (internal.has(need.file)) continue;
           for (const versionName of need.versions) {
-            const match = /^(GLIBC|GLIBCXX|CXXABI)_(\d+(?:\.\d+)*)$/.exec(
-              versionName,
-            );
+            const match = /^(GLIBC|GLIBCXX|CXXABI)_(\d+(?:\.\d+)*)$/.exec(versionName);
             if (!match) continue;
             const ceiling = this.abi[match[1]!];
             if (ceiling && compareDotted(match[2]!, ceiling) > 0)
-              violations.push(
-                `${path} needs ${versionName} from ${need.file} (target ${match[1]}_${ceiling})`,
-              );
+              violations.push(`${path} needs ${versionName} from ${need.file} (target ${match[1]}_${ceiling})`);
           }
         }
       }
@@ -916,64 +769,40 @@ export class Converter {
       for (const dependency of fields.depend ?? []) {
         const mapping = this.map(dependency, needed);
         mappings.push(mapping);
-        if (mapping.result === "ubuntu")
-          for (const relation of mapping.relations!) add(depends, relation);
+        if (mapping.result === "ubuntu") for (const relation of mapping.relations!) add(depends, relation);
         else if (mapping.result === "pacman") {
           const target = mapping.pkg!;
           if (!this.options.withDeps) {
-            unresolved.push(
-              `${dependency} (pacman-only: ${target.repo}/${target.name}; use --with-deps)`,
-            );
+            unresolved.push(`${dependency} (pacman-only: ${target.repo}/${target.name}; use --with-deps)`);
             continue;
           }
-          add(
-            depends,
-            `${this.debName(target)} (>= ${debianVersion(target.version)})`,
-          );
+          add(depends, `${this.debName(target)} (>= ${debianVersion(target.version)})`);
           pending.push(target);
-        } else if (mapping.result === "unresolved")
-          unresolved.push(`${dependency} (${mapping.via})`);
+        } else if (mapping.result === "unresolved") unresolved.push(`${dependency} (${mapping.via})`);
       }
       for (const dependency of fields.optdepend ?? []) {
         const mapping = this.map(dependency.split(": ")[0]!);
-        if (mapping.result === "ubuntu")
-          for (const relation of mapping.relations!) add(suggests, relation);
+        if (mapping.result === "ubuntu") for (const relation of mapping.relations!) add(suggests, relation);
       }
-      const covered = new Set(
-        depends.flatMap((relation) =>
-          relation.split("|").map((atom) => atom.trim().split(" ")[0]!),
-        ),
-      );
+      const covered = new Set(depends.flatMap(relation => relation.split("|").map(atom => atom.trim().split(" ")[0]!)));
       const unresolvedSonames: string[] = [];
       if (this.options.elfDeps !== "none")
         for (const key of [...needed].sort()) {
           const bits = Number(key.slice(0, 2)) as 32 | 64;
           const soname = key.slice(3);
-          const owners = this.ubuntu
-            .libraryOwners(soname, bits)
-            .map((owner) => owner.package);
-          if (owners.some((owner) => covered.has(owner))) continue;
+          const owners = this.ubuntu.libraryOwners(soname, bits).map(owner => owner.package);
+          if (owners.some(owner => covered.has(owner))) continue;
           const relation = this.sonameRelation(soname, bits);
-          if (relation)
-            add(
-              this.options.elfDeps === "depends" ? depends : recommends,
-              relation,
-            );
-          else if (!soname.startsWith("ld-linux"))
-            unresolvedSonames.push(`${soname} (${bits}-bit)`);
+          if (relation) add(this.options.elfDeps === "depends" ? depends : recommends, relation);
+          else if (!soname.startsWith("ld-linux")) unresolvedSonames.push(`${soname} (${bits}-bit)`);
         }
       if (unresolvedSonames.length)
-        warnings.push(
-          `ELF sonames without an Ubuntu owner: ${unresolvedSonames.join(", ")}`,
-        );
+        warnings.push(`ELF sonames without an Ubuntu owner: ${unresolvedSonames.join(", ")}`);
       if (unresolved.length && !this.options.allowUnresolved)
         throw new Error(
           `unresolved dependencies (map them in data/pacman2apt.json, pass --skip-dep NAME, --with-deps or --allow-unresolved):\n  ${unresolved.join("\n  ")}`,
         );
-      if (unresolved.length)
-        warnings.push(
-          `dropped unresolved dependencies: ${unresolved.join("; ")}`,
-        );
+      if (unresolved.length) warnings.push(`dropped unresolved dependencies: ${unresolved.join("; ")}`);
       // Identity.
       const debName = this.debName({ name, family });
       const debVersion = debianVersion(version);
@@ -981,49 +810,29 @@ export class Converter {
       if (!["any", "x86_64"].includes(fields.arch?.[0] ?? ""))
         throw new Error(`unsupported pacman architecture ${fields.arch?.[0]}`);
       // File conflicts with Ubuntu archive owners and the installed dpkg database.
-      const shipped = new Set(
-        payload.entries.map((entry) => usrMerged(entry.path)),
-      );
+      const shipped = new Set(payload.entries.map(entry => usrMerged(entry.path)));
       const installed = await installedOwners(shipped);
       const conflicts: ConvertedPackage["conflicts"] = [];
       for (const entry of payload.entries) {
         const path = usrMerged(entry.path);
         const archive = this.ubuntu.owners(path);
-        const local =
-          entry.kind === "directory" ? [] : (installed?.owners(path) ?? []);
-        let owners = [...new Set([...archive, ...local])].filter(
-          (owner) => owner !== debName,
-        );
-        if (
-          !owners.length &&
-          entry.kind !== "directory" &&
-          process.platform === "linux"
-        ) {
+        const local = entry.kind === "directory" ? [] : (installed?.owners(path) ?? []);
+        let owners = [...new Set([...archive, ...local])].filter(owner => owner !== debName);
+        if (!owners.length && entry.kind !== "directory" && process.platform === "linux") {
           const state = await lstat(`/${entry.path}`).catch(() => undefined);
-          if (
-            state &&
-            !state.isDirectory() &&
-            !installed?.owners(path).includes(debName)
-          )
+          if (state && !state.isDirectory() && !installed?.owners(path).includes(debName))
             owners = ["(unowned file on this host)"];
         }
         if (owners.length) conflicts.push({ path: entry.path, owners });
       }
-      const debFile = join(
-        this.options.out,
-        `${debName}_${debVersion.replace(/^\d+:/, "")}_${architecture}.deb`,
-      );
+      const debFile = join(this.options.out, `${debName}_${debVersion.replace(/^\d+:/, "")}_${architecture}.deb`);
       const reportFile = debFile.replace(/\.deb$/, ".pacman2apt.json");
       const shadows = payload.entries
-        .filter((entry) => /^usr\/lib(32)?\/[^/]+\.so\.\d/.test(entry.path))
+        .filter(entry => /^usr\/lib(32)?\/[^/]+\.so\.\d/.test(entry.path))
         .filter(
-          (entry) =>
-            this.ubuntu.libraryOwners(
-              basename(entry.path),
-              entry.path.startsWith("usr/lib32") ? 32 : 64,
-            ).length,
+          entry => this.ubuntu.libraryOwners(basename(entry.path), entry.path.startsWith("usr/lib32") ? 32 : 64).length,
         )
-        .map((entry) => entry.path);
+        .map(entry => entry.path);
       if (shadows.length)
         warnings.push(
           `libraries also provided by Ubuntu (ld.so prefers the multiarch copy): ${shadows.slice(0, 10).join(", ")}`,
@@ -1054,17 +863,14 @@ export class Converter {
         throw new Error(
           `${conflicts.length} path(s) conflict with Ubuntu-owned files; relocate with --prefix /opt/pacman2apt/{name} (report: ${reportFile}):\n  ${conflicts
             .slice(0, 25)
-            .map(
-              (conflict) =>
-                `/${conflict.path} <- ${conflict.owners.join(", ")}`,
-            )
+            .map(conflict => `/${conflict.path} <- ${conflict.owners.join(", ")}`)
             .join("\n  ")}`,
         );
       }
       // Maintainer scripts and triggers.
       const scripts = maintainerScripts(
         payload.install,
-        payload.entries.map((entry) => entry.path),
+        payload.entries.map(entry => entry.path),
         version,
         !!prefix,
       );
@@ -1073,20 +879,16 @@ export class Converter {
       const namespace = (values: string[] | undefined) => [
         ...new Set(
           (values ?? [])
-            .map((value) => parseDependency(value))
-            .filter((value) => !sonameProvide(value))
-            .map((value) => sanitizeName(value.name))
-            .filter(
-              (value) => value && value !== debName && !this.ubuntu.has(value),
-            ),
+            .map(value => parseDependency(value))
+            .filter(value => !sonameProvide(value))
+            .map(value => sanitizeName(value.name))
+            .filter(value => value && value !== debName && !this.ubuntu.has(value)),
         ),
       ];
       const provides = namespace(fields.provides);
       const conflictsWith = namespace(fields.conflict);
       const replaces = namespace(fields.replaces);
-      const description = (info.description ?? name)
-        .replace(/\s+/g, " ")
-        .trim();
+      const description = (info.description ?? name).replace(/\s+/g, " ").trim();
       const field = (key: string, value: string | undefined) =>
         value ? `${key}: ${value.replace(/\s*\n\s*/g, " ")}\n` : "";
       const maintainer = /<[^>]+@[^>]+>/.test(fields.packager?.[0] ?? "")
@@ -1112,14 +914,12 @@ export class Converter {
         field("Pacman-Sha256", pkg?.sha256) +
         `Description: ${description.slice(0, 200)}\n Converted by pacman2apt from ${pkg?.repo ?? "a local file"}/${name} ${version}.\n${prefix ? ` Relocated under /${prefix}.\n` : ""}`;
       const md5sums = payload.entries
-        .filter((entry) => entry.md5)
-        .map((entry) => `${entry.md5}  ${entry.path}`)
+        .filter(entry => entry.md5)
+        .map(entry => `${entry.md5}  ${entry.path}`)
         .join("\n");
       const conffiles = payload.entries
-        .filter(
-          (entry) => entry.kind === "file" && entry.path.startsWith("etc/"),
-        )
-        .map((entry) => `/${entry.path}`);
+        .filter(entry => entry.kind === "file" && entry.path.startsWith("etc/"))
+        .map(entry => `/${entry.path}`);
       const now = Math.floor(Date.now() / 1000);
       const members: TarWriteEntry[] = [
         { path: "", kind: "directory", mode: 0o755, mtime: now },
@@ -1195,24 +995,16 @@ export class Converter {
 export async function debControl(path: string): Promise<string> {
   const file = Bun.file(path);
   const head = new Uint8Array(await file.slice(0, 8).arrayBuffer());
-  if (new TextDecoder().decode(head) !== "!<arch>\n")
-    throw new Error(`${path}: not an ar archive`);
+  if (new TextDecoder().decode(head) !== "!<arch>\n") throw new Error(`${path}: not an ar archive`);
   for (let offset = 8; offset + 60 <= file.size;) {
-    const header = new TextDecoder().decode(
-      await file.slice(offset, offset + 60).arrayBuffer(),
-    );
+    const header = new TextDecoder().decode(await file.slice(offset, offset + 60).arrayBuffer());
     const name = header.slice(0, 16).trim().replace(/\/$/, "");
     const size = Number(header.slice(48, 58).trim());
     const start = offset + 60;
     if (name.startsWith("control.tar")) {
-      const member = new Uint8Array(
-        await file.slice(start, start + size).arrayBuffer(),
-      );
-      const control = tar(await decompress(member)).find(
-        (entry) => entry.path === "control" && entry.kind === "file",
-      );
-      if (!control)
-        throw new Error(`${path}: control member has no control file`);
+      const member = new Uint8Array(await file.slice(start, start + size).arrayBuffer());
+      const control = tar(await decompress(member)).find(entry => entry.path === "control" && entry.kind === "file");
+      if (!control) throw new Error(`${path}: control member has no control file`);
       return new TextDecoder().decode(control.data);
     }
     offset = start + size + (size % 2);
@@ -1223,26 +1015,19 @@ export async function debControl(path: string): Promise<string> {
 /** Flat APT repository: Packages, Packages.zst and Release beside the .deb files. */
 export async function buildRepository(directory: string): Promise<number> {
   const cachePath = join(directory, ".pacman2apt-hashes.json");
-  const cache: Record<
-    string,
-    { size: number; mtime: number; md5: string; sha256: string }
-  > = (await Bun.file(cachePath).exists())
+  const cache: Record<string, { size: number; mtime: number; md5: string; sha256: string }> = (await Bun.file(
+    cachePath,
+  ).exists())
     ? await Bun.file(cachePath).json()
     : {};
   const fresh: typeof cache = {};
   const stanzas: string[] = [];
-  const names = (await readdir(directory))
-    .filter((name) => name.endsWith(".deb"))
-    .sort();
+  const names = (await readdir(directory)).filter(name => name.endsWith(".deb")).sort();
   for (const name of names) {
     const path = join(directory, name);
     const state = await lstat(path);
     let hashes = cache[name];
-    if (
-      !hashes ||
-      hashes.size !== state.size ||
-      hashes.mtime !== state.mtimeMs
-    ) {
+    if (!hashes || hashes.size !== state.size || hashes.mtime !== state.mtimeMs) {
       const md5 = new Bun.CryptoHasher("md5");
       const sha256 = new Bun.CryptoHasher("sha256");
       for await (const chunk of Bun.file(path).stream()) {
@@ -1285,23 +1070,14 @@ export async function buildRepository(directory: string): Promise<number> {
 const PROTECTED_DEBIAN =
   /^(libc6|libc6-i386|libc-bin|libgl1-mesa-dri|mesa-.*|libegl-mesa0|libglx-mesa0|systemd|systemd-sysv|libsystemd0|udev|libudev1)(:.*)?$/;
 
-async function privileged(
-  command: string[],
-  timeoutMs: number,
-  env?: Record<string, string>,
-) {
+async function privileged(command: string[], timeoutMs: number, env?: Record<string, string>) {
   const root = process.getuid?.() === 0;
   const argv = root
     ? command
     : [
         "sudo",
         "-n",
-        ...(env
-          ? [
-              "env",
-              ...Object.entries(env).map(([key, value]) => `${key}=${value}`),
-            ]
-          : []),
+        ...(env ? ["env", ...Object.entries(env).map(([key, value]) => `${key}=${value}`)] : []),
         ...command,
       ];
   const result = await runProcess(argv, process.cwd(), {
@@ -1310,9 +1086,7 @@ async function privileged(
     env: root ? { ...process.env, ...env } : undefined,
   });
   if (result.code !== 0)
-    throw new Error(
-      `${command.join(" ")} failed (${result.code}):\n${result.stderr || result.stdout}`,
-    );
+    throw new Error(`${command.join(" ")} failed (${result.code}):\n${result.stderr || result.stdout}`);
   return result.stdout;
 }
 
@@ -1324,22 +1098,16 @@ export async function install(
   targets: string[],
   options: ConvertOptions & { repository: string; dryRun: boolean },
 ): Promise<string> {
-  if (process.platform !== "linux")
-    throw new Error("install runs on the Ubuntu target");
+  if (process.platform !== "linux") throw new Error("install runs on the Ubuntu target");
   const converter = new Converter(db, { ...options, out: options.repository });
   const converted = await converter.convert(targets);
   await buildRepository(options.repository);
   const sources = `# Generated by pacman2apt\nTypes: deb\nURIs: file:${resolve(options.repository)}\nSuites: ./\nTrusted: yes\n`;
-  const current = (await Bun.file(SOURCES_FILE).exists())
-    ? await Bun.file(SOURCES_FILE).text()
-    : "";
+  const current = (await Bun.file(SOURCES_FILE).exists()) ? await Bun.file(SOURCES_FILE).text() : "";
   if (current !== sources) {
     const temporary = join(options.state, "pacman2apt.sources");
     await Bun.write(temporary, sources);
-    await privileged(
-      ["install", "-m", "0644", temporary, SOURCES_FILE],
-      30_000,
-    );
+    await privileged(["install", "-m", "0644", temporary, SOURCES_FILE], 30_000);
   }
   await privileged(
     [
@@ -1354,39 +1122,25 @@ export async function install(
     ],
     300_000,
   );
-  const names = [...new Set(converted.map((item) => item.debian.name))];
+  const names = [...new Set(converted.map(item => item.debian.name))];
   const env = { DEBIAN_FRONTEND: "noninteractive" };
-  const simulation = await privileged(
-    ["apt-get", "install", "-s", "--no-remove", ...names],
-    300_000,
-    env,
-  );
-  const removals = simulation
-    .split("\n")
-    .filter((line) => line.startsWith("Remv "));
+  const simulation = await privileged(["apt-get", "install", "-s", "--no-remove", ...names], 300_000, env);
+  const removals = simulation.split("\n").filter(line => line.startsWith("Remv "));
   const upgrades = simulation
     .split("\n")
-    .filter((line) => /^Inst \S+ \[/.test(line))
-    .map((line) => line.split(" ")[1]!)
-    .filter((name) => PROTECTED_DEBIAN.test(name));
+    .filter(line => /^Inst \S+ \[/.test(line))
+    .map(line => line.split(" ")[1]!)
+    .filter(name => PROTECTED_DEBIAN.test(name));
   if (removals.length || upgrades.length)
-    throw new Error(
-      `apt plan touches protected or installed packages:\n${[...removals, ...upgrades].join("\n")}`,
-    );
+    throw new Error(`apt plan touches protected or installed packages:\n${[...removals, ...upgrades].join("\n")}`);
   if (options.dryRun) return simulation;
-  return privileged(
-    ["apt-get", "install", "-y", "--no-remove", ...names],
-    3_600_000,
-    env,
-  );
+  return privileged(["apt-get", "install", "-y", "--no-remove", ...names], 3_600_000, env);
 }
 
 function cpuSupportsV3(): boolean {
   try {
     const flags = readFileSync("/proc/cpuinfo", "utf8");
-    return ["avx2", "bmi2", "fma", "movbe"].every((flag) =>
-      new RegExp(`\\b${flag}\\b`).test(flags),
-    );
+    return ["avx2", "bmi2", "fma", "movbe"].every(flag => new RegExp(`\\b${flag}\\b`).test(flags));
   } catch {
     return true;
   }
@@ -1403,9 +1157,7 @@ pacman2apt repo DIR                           write Packages, Packages.zst and R
 pacman2apt install NAME... [--repo /var/lib/aphrody-apt/pacman2apt] [--dry-run] [convert options]
 Common: --state DIR (default $PACMAN2APT_STATE or ~/.cache/pacman2apt)`;
 
-export async function runPacman2AptCLI(
-  argv: string[] = Bun.argv.slice(2),
-): Promise<void> {
+export async function runPacman2AptCLI(argv: string[] = Bun.argv.slice(2)): Promise<void> {
   const args = [...argv];
   const command = args.shift();
   if (!command || command === "--help" || command === "help") {
@@ -1416,14 +1168,7 @@ export async function runPacman2AptCLI(
   const repeated: Record<string, string[]> = { "skip-dep": [] };
   const flags = new Set<string>();
   const positional: string[] = [];
-  const booleans = new Set([
-    "with-deps",
-    "allow-unresolved",
-    "no-files",
-    "no-ubuntu",
-    "no-i386",
-    "dry-run",
-  ]);
+  const booleans = new Set(["with-deps", "allow-unresolved", "no-files", "no-ubuntu", "no-i386", "dry-run"]);
   while (args.length) {
     const arg = args.shift()!;
     if (!arg.startsWith("--")) {
@@ -1446,43 +1191,25 @@ export async function runPacman2AptCLI(
     if (command === "sync") {
       const wanted = values.repos?.split(",");
       const isa = values.isa ?? "auto";
-      const v3 =
-        isa === "x86-64-v3" ||
-        (isa === "auto" && (process.platform !== "linux" || cpuSupportsV3()));
+      const v3 = isa === "x86-64-v3" || (isa === "auto" && (process.platform !== "linux" || cpuSupportsV3()));
       const repositories = pacmanRepositories().filter(
         (repository: PacmanRepository) =>
-          (!wanted || wanted.includes(repository.name)) &&
-          (repository.isa !== "x86-64-v3" || v3),
+          (!wanted || wanted.includes(repository.name)) && (repository.isa !== "x86-64-v3" || v3),
       );
       for (const [index, repository] of repositories.entries()) {
-        const result = await syncRepository(
-          db,
-          repository,
-          index,
-          state,
-          !flags.has("no-files"),
-        );
-        log(
-          `${result.repo}: ${result.packages} packages, ${result.files} indexed paths from ${result.url}`,
-        );
+        const result = await syncRepository(db, repository, index, state, !flags.has("no-files"));
+        log(`${result.repo}: ${result.packages} packages, ${result.files} indexed paths from ${result.url}`);
       }
       if (!flags.has("no-ubuntu")) {
         const series = values.series ?? (await hostSeries());
-        if (!series)
-          throw new Error(
-            "--series is required when this host is not the Ubuntu target",
-          );
+        if (!series) throw new Error("--series is required when this host is not the Ubuntu target");
         const results = await syncUbuntu(
           db,
           {
-            mirror: (
-              values["ubuntu-mirror"] ?? "http://archive.ubuntu.com/ubuntu"
-            ).replace(/\/$/, ""),
+            mirror: (values["ubuntu-mirror"] ?? "http://archive.ubuntu.com/ubuntu").replace(/\/$/, ""),
             series,
             suites: [series, `${series}-updates`, `${series}-security`],
-            components: (
-              values.components ?? "main,restricted,universe,multiverse"
-            ).split(","),
+            components: (values.components ?? "main,restricted,universe,multiverse").split(","),
             architectures: flags.has("no-i386") ? ["amd64"] : ["amd64", "i386"],
           },
           state,
@@ -1498,14 +1225,10 @@ export async function runPacman2AptCLI(
     if (command === "repo") {
       const directory = resolve(positional[0] ?? "");
       if (!positional[0]) throw new Error("repo needs a directory");
-      log(
-        `${await buildRepository(directory)} packages indexed in ${directory}`,
-      );
+      log(`${await buildRepository(directory)} packages indexed in ${directory}`);
       return;
     }
-    const extra = values.map
-      ? ((await Bun.file(values.map).json()) as Partial<Policy>)
-      : undefined;
+    const extra = values.map ? ((await Bun.file(values.map).json()) as Partial<Policy>) : undefined;
     const options: ConvertOptions = {
       state,
       out: resolve(values.out ?? join(state, "debs")),
@@ -1569,7 +1292,7 @@ export async function runPacman2AptCLI(
 }
 
 if (import.meta.main)
-  runPacman2AptCLI().catch((error) => {
+  runPacman2AptCLI().catch(error => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });

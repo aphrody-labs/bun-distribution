@@ -42,9 +42,7 @@ function lines(file: string): string[] {
 export function checkCatalogs(): Finding[] {
   const out: Finding[] = [];
   const root = join(packageRoot, "locales");
-  const tags = readdirSync(root).filter((d) =>
-    statSync(join(root, d)).isDirectory(),
-  );
+  const tags = readdirSync(root).filter(d => statSync(join(root, d)).isDirectory());
   const parse = (tag: string, domain: string) => {
     const file = join(root, tag, `${domain}.ftl`);
     if (!existsSync(file)) return null;
@@ -59,11 +57,11 @@ export function checkCatalogs(): Finding[] {
     return r;
   };
   const domains = readdirSync(join(root, "en"))
-    .filter((f) => f.endsWith(".ftl"))
-    .map((f) => f.slice(0, -4));
+    .filter(f => f.endsWith(".ftl"))
+    .map(f => f.slice(0, -4));
   for (const domain of domains) {
     const en = parse("en", domain) as FluentResource;
-    for (const tag of tags.filter((t) => t !== "en")) {
+    for (const tag of tags.filter(t => t !== "en")) {
       const file = rel(join(root, tag, `${domain}.ftl`));
       const other = parse(tag, domain);
       if (!other) {
@@ -92,40 +90,24 @@ export function checkCatalogs(): Finding[] {
           });
       }
       for (const id of other.entries.keys())
-        if (!en.entries.has(id))
-          out.push({ rule: "ftl-extra-key", file, line: 0, text: id });
+        if (!en.entries.has(id)) out.push({ rule: "ftl-extra-key", file, line: 0, text: id });
     }
   }
   // Keys used by the code must exist in en.
-  const enIds = (domain: string) =>
-    new Set(
-      (parse("en", domain) as FluentResource | null)?.entries.keys() ?? [],
-    );
+  const enIds = (domain: string) => new Set((parse("en", domain) as FluentResource | null)?.entries.keys() ?? []);
   const uses: [string, string, RegExp[], string[]][] = [
-    [
-      "crates/bun-os-shell/src",
-      "shell",
-      [/\btf?\(\s*"([a-z0-9.-]+)"/g],
-      ["common", "shell"],
-    ],
+    ["crates/bun-os-shell/src", "shell", [/\btf?\(\s*"([a-z0-9.-]+)"/g], ["common", "shell"]],
     [
       "crates/bun-engine-core/src/runtime",
       "engine",
       [/\bbun_os_platform::tf?\(\s*"([a-z0-9.-]+)"/g],
       ["common", "engine"],
     ],
-    [
-      "apps/play/src/client",
-      "play",
-      [/\bth?\(\s*"([a-z0-9-]+)"/g, /data-i18n="([a-z0-9-]+)"/g],
-      ["common", "play"],
-    ],
+    ["apps/play/src/client", "play", [/\bth?\(\s*"([a-z0-9-]+)"/g, /data-i18n="([a-z0-9-]+)"/g], ["common", "play"]],
   ];
   for (const [dir, , patterns, domainsOf] of uses) {
-    const known = new Set(domainsOf.flatMap((d) => [...enIds(d)]));
-    for (const file of walk(join(repoRoot, dir), (f) =>
-      /\.(rs|ts|html)$/.test(f),
-    )) {
+    const known = new Set(domainsOf.flatMap(d => [...enIds(d)]));
+    for (const file of walk(join(repoRoot, dir), f => /\.(rs|ts|html)$/.test(f))) {
       lines(file).forEach((text, i) => {
         for (const re of patterns)
           for (const m of text.matchAll(re)) {
@@ -159,31 +141,20 @@ export function checkStrings(): Finding[] {
     });
   // Shell and engine runtime: literals reaching Text, labels, toasts and format! UI strings.
   const rustUi = [
-    ...walk(
-      join(repoRoot, "crates/bun-os-shell/src"),
-      (f) => f.endsWith(".rs") && !/[\\/](text|theme)\.rs$/.test(f),
-    ),
-    ...walk(join(repoRoot, "crates/bun-engine-core/src/runtime"), (f) =>
-      f.endsWith(".rs"),
-    ),
+    ...walk(join(repoRoot, "crates/bun-os-shell/src"), f => f.endsWith(".rs") && !/[\\/](text|theme)\.rs$/.test(f)),
+    ...walk(join(repoRoot, "crates/bun-engine-core/src/runtime"), f => f.endsWith(".rs")),
   ];
   const rustSinks =
     /(?:\.text\(|Text::new\(|Text\(|a11y_button\(|toast\(|label:\s*|title:\s*|windowed\()\s*(?:&?format!\(\s*)?"([^"]*)"/g;
   for (const file of rustUi)
     lines(file).forEach((text, i) => {
-      if (
-        /^\s*(\/\/|#\[|eprintln!|println!|log::|debug!|info!|warn!|error!|trace!)/.test(
-          text,
-        )
-      )
-        return;
-      for (const m of text.matchAll(rustSinks))
-        if (WORDS.test(m[1] as string)) add("hardcoded-string", file, i, m[0]);
+      if (/^\s*(\/\/|#\[|eprintln!|println!|log::|debug!|info!|warn!|error!|trace!)/.test(text)) return;
+      for (const m of text.matchAll(rustSinks)) if (WORDS.test(m[1] as string)) add("hardcoded-string", file, i, m[0]);
     });
   // Play client: text nodes and user-facing attributes in templates and HTML.
   for (const file of walk(
     join(repoRoot, "apps/play/src/client"),
-    (f) => /\.(ts|html)$/.test(f) && !f.endsWith("messages.ts"),
+    f => /\.(ts|html)$/.test(f) && !f.endsWith("messages.ts"),
   )) {
     lines(file).forEach((text, i) => {
       if (/^\s*(\/\/|\*|\/\*|import )/.test(text)) return;
@@ -191,14 +162,9 @@ export function checkStrings(): Finding[] {
       for (const m of text.matchAll(
         /(?:<[a-zA-Z][^<>]*>|<\/[a-zA-Z0-9]+>)([^<>${}`]*[A-Za-z]{2,}[^<>${}`]*)<(?:\/|[a-zA-Z])/g,
       ))
-        if (
-          WORDS.test((m[1] as string).trim()) &&
-          !/[();=]/.test(m[1] as string)
-        )
+        if (WORDS.test((m[1] as string).trim()) && !/[();=]/.test(m[1] as string))
           add("hardcoded-string", file, i, m[1] as string);
-      for (const m of text.matchAll(
-        /\b(aria-label|title|placeholder|alt)="([^"$]*[A-Za-z]{2,}[^"$]*)"/g,
-      ))
+      for (const m of text.matchAll(/\b(aria-label|title|placeholder|alt)="([^"$]*[A-Za-z]{2,}[^"$]*)"/g))
         add("hardcoded-attribute", file, i, m[0]);
       for (const m of text.matchAll(
         /\.(textContent|innerText|title|ariaLabel)\s*=\s*["'`]([^"'`$]*[A-Za-z]{2,}[^"'`]*)["'`]/g,
@@ -220,9 +186,7 @@ export function checkTokens(): Finding[] {
       line: i + 1,
       text: text.trim().slice(0, 120),
     });
-  for (const file of walk(join(repoRoot, "apps/play/src/client"), (f) =>
-    /\.(css|ts|html)$/.test(f),
-  )) {
+  for (const file of walk(join(repoRoot, "apps/play/src/client"), f => /\.(css|ts|html)$/.test(f))) {
     const css = file.endsWith(".css");
     let inMedia = false;
     lines(file).forEach((text, i) => {
@@ -231,21 +195,18 @@ export function checkTokens(): Finding[] {
       const code = text.replace(/var\(--[^)]*\)/g, "var()");
       for (const m of code.matchAll(/#[0-9a-fA-F]{3,8}\b(?![\w-])/g))
         if (css || /["'`]#/.test(text)) add("raw-color", file, i, m[0]);
-      for (const m of code.matchAll(/\b(rgba?|hsla?|oklch|lab|lch)\(\s*\d/g))
-        add("raw-color", file, i, m[0]);
+      for (const m of code.matchAll(/\b(rgba?|hsla?|oklch|lab|lch)\(\s*\d/g)) add("raw-color", file, i, m[0]);
       if (css && !inMedia)
         for (const m of code.matchAll(/(?<![\w.-])(\d*\.?\d+)(px|rem|em)\b/g))
-          if (!["0", "1"].includes(m[1] as string) || m[2] !== "px")
-            add("raw-size", file, i, m[0]);
+          if (!["0", "1"].includes(m[1] as string) || m[2] !== "px") add("raw-size", file, i, m[0]);
       for (const m of code.matchAll(/(?<![\w.-])(\d*\.?\d+)(ms|s)\b/g))
         if (css || /["'`]/.test(text)) add("raw-duration", file, i, m[0]);
-      if (inMedia && /\{\s*$/.test(text) && !/@media|@container/.test(text))
-        inMedia = true;
+      if (inMedia && /\{\s*$/.test(text) && !/@media|@container/.test(text)) inMedia = true;
       if (text.startsWith("}")) inMedia = false;
     });
   }
   // UI modules only: timers of system pollers (nvidia.rs, runtime.rs) are not motion tokens.
-  const rustUi = walk(join(repoRoot, "crates/bun-os-shell/src"), (f) =>
+  const rustUi = walk(join(repoRoot, "crates/bun-os-shell/src"), f =>
     /[\\/](screens|ui|overlay|app|text)\.rs$/.test(f),
   );
   for (const file of rustUi)
@@ -257,13 +218,9 @@ export function checkTokens(): Finding[] {
         add("raw-color", file, i, m[0]);
       for (const m of text.matchAll(/Val::(Px|Vw|Vh)\(\s*-?\d+(\.\d+)?\s*\)/g))
         if (!/\(\s*0(\.0)?\s*\)/.test(m[0])) add("raw-size", file, i, m[0]);
-      for (const m of text.matchAll(
-        /(font_size|BorderRadius::all\(Val::Px|radius\()\s*[:(]?\s*\d+(\.\d+)?/g,
-      ))
+      for (const m of text.matchAll(/(font_size|BorderRadius::all\(Val::Px|radius\()\s*[:(]?\s*\d+(\.\d+)?/g))
         add("raw-size", file, i, m[0]);
-      for (const m of text.matchAll(
-        /Duration::from_(millis|secs_f32|secs)\(\s*\d/g,
-      ))
+      for (const m of text.matchAll(/Duration::from_(millis|secs_f32|secs)\(\s*\d/g))
         add("raw-duration", file, i, m[0]);
     });
   return out;
@@ -278,15 +235,12 @@ function count(findings: Finding[]): Counts {
   const c: Counts = {};
   for (const f of findings) {
     c[f.rule] ??= {};
-    (c[f.rule] as Record<string, number>)[f.file] =
-      ((c[f.rule] as Record<string, number>)[f.file] ?? 0) + 1;
+    (c[f.rule] as Record<string, number>)[f.file] = ((c[f.rule] as Record<string, number>)[f.file] ?? 0) + 1;
   }
   return c;
 }
 
-export function runCheck(
-  options: { updateBaseline?: boolean; verbose?: boolean } = {},
-): number {
+export function runCheck(options: { updateBaseline?: boolean; verbose?: boolean } = {}): number {
   const catalogs = checkCatalogs();
   const ui = [...checkStrings(), ...checkTokens()];
   const now = count(ui);
@@ -310,13 +264,11 @@ export function runCheck(
       if (n > allowed) {
         failed++;
         console.log(`error ${rule} ${file}: ${n} (baseline ${allowed})`);
-        for (const f of ui.filter((u) => u.rule === rule && u.file === file))
+        for (const f of ui.filter(u => u.rule === rule && u.file === file))
           console.log(`  ${f.file}:${f.line} ${f.text}`);
-      } else if (options.verbose)
-        console.log(`debt ${rule} ${file}: ${n} (baseline ${allowed})`);
+      } else if (options.verbose) console.log(`debt ${rule} ${file}: ${n} (baseline ${allowed})`);
     }
-  const total = (rule: string) =>
-    Object.values(now[rule] ?? {}).reduce((a, b) => a + b, 0);
+  const total = (rule: string) => Object.values(now[rule] ?? {}).reduce((a, b) => a + b, 0);
   console.log(
     `catalog errors ${catalogs.length}; UI debt: hardcoded strings ${total("hardcoded-string") + total("hardcoded-attribute")}, raw colors ${total("raw-color")}, raw sizes ${total("raw-size")}, raw durations ${total("raw-duration")}${failed ? `; ${failed} failure(s)` : ""}`,
   );

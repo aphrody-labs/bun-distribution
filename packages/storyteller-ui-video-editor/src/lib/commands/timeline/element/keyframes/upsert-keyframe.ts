@@ -4,17 +4,9 @@ import { upsertPathKeyframe } from "../../../../animation";
 import { updateElementInSceneTracks } from "../../../../timeline/track-element-update";
 import type { SceneTracks } from "../../../../timeline/types";
 import { resolveAnimationTarget } from "../../../../timeline/animation-targets";
-import type {
-  AnimationPath,
-  AnimationInterpolation,
-} from "../../../../animation/types";
+import type { AnimationPath, AnimationInterpolation } from "../../../../animation/types";
 import type { ParamValue } from "../../../../params";
-import {
-  type MediaTime,
-  maxMediaTime,
-  minMediaTime,
-  ZERO_MEDIA_TIME,
-} from "../../../../wasm";
+import { type MediaTime, maxMediaTime, minMediaTime, ZERO_MEDIA_TIME } from "../../../../wasm";
 
 export class UpsertKeyframeCommand extends Command {
   private savedState: SceneTracks | null = null;
@@ -61,7 +53,7 @@ export class UpsertKeyframeCommand extends Command {
       tracks: this.savedState,
       trackId: this.trackId,
       elementId: this.elementId,
-      update: (element) => {
+      update: element => {
         const target = resolveAnimationTarget({
           element,
           path: this.propertyPath,

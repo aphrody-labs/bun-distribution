@@ -1,19 +1,8 @@
-import {
-  createContext,
-  useContext,
-  useReducer,
-  useMemo,
-  useEffect,
-  useCallback,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useReducer, useMemo, useEffect, useCallback, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useNormalizedQuery } from "../../contexts/SpacedriveContext";
 import { useTabManager } from "../../components/TabManager/useTabManager";
-import type {
-  ViewMode as TabViewMode,
-  SortBy as TabSortBy,
-} from "../../components/TabManager/TabManagerContext";
+import type { ViewMode as TabViewMode, SortBy as TabSortBy } from "../../components/TabManager/TabManagerContext";
 
 import type {
   SdPath,
@@ -24,14 +13,10 @@ import type {
   MediaSortBy,
   SearchFilters as ApiSearchFilters,
 } from "@aphrody/drive-client";
-import {
-  useViewPreferencesStore,
-  useSortPreferencesStore,
-} from "@aphrody/drive-client";
+import { useViewPreferencesStore, useSortPreferencesStore } from "@aphrody/drive-client";
 
 export type SortBy = DirectorySortBy | MediaSortBy;
-export type ViewMode =
-  "grid" | "list" | "media" | "column" | "size" | "knowledge";
+export type ViewMode = "grid" | "list" | "media" | "column" | "size" | "knowledge";
 
 export interface ViewSettings {
   gridSize: number;
@@ -84,10 +69,7 @@ function targetToKey(target: NavigationTarget): string {
   return `view:${target.view}:${target.id || ""}`;
 }
 
-function targetsEqual(
-  a: NavigationTarget | null,
-  b: NavigationTarget | null,
-): boolean {
+function targetsEqual(a: NavigationTarget | null, b: NavigationTarget | null): boolean {
   if (a === null || b === null) return a === b;
   return targetToKey(a) === targetToKey(b);
 }
@@ -105,10 +87,7 @@ type NavigationAction =
   | { type: "GO_FORWARD" }
   | { type: "SYNC"; target: NavigationTarget };
 
-function navigationReducer(
-  state: NavigationState,
-  action: NavigationAction,
-): NavigationState {
+function navigationReducer(state: NavigationState, action: NavigationAction): NavigationState {
   switch (action.type) {
     case "NAVIGATE": {
       const current = state.history[state.index];
@@ -144,10 +123,7 @@ function navigationReducer(
         return state;
       }
 
-      const newHistory = [
-        ...state.history.slice(0, state.index + 1),
-        action.target,
-      ];
+      const newHistory = [...state.history.slice(0, state.index + 1), action.target];
       const trimmedHistory = newHistory.slice(-MAX_HISTORY_SIZE);
       const indexAdjustment = newHistory.length - trimmedHistory.length;
 
@@ -300,9 +276,7 @@ function uiReducer(state: UIState, action: UIAction): UIState {
       return {
         ...state,
         viewMode: action.viewMode,
-        viewSettings: action.viewSettings
-          ? { ...state.viewSettings, ...action.viewSettings }
-          : state.viewSettings,
+        viewSettings: action.viewSettings ? { ...state.viewSettings, ...action.viewSettings } : state.viewSettings,
       };
 
     default:
@@ -392,11 +366,7 @@ interface ExplorerContextValue {
   } | null;
 
   navigateToPath: (path: SdPath) => void;
-  navigateToView: (
-    view: string,
-    id?: string,
-    params?: Record<string, string>,
-  ) => void;
+  navigateToView: (view: string, id?: string, params?: Record<string, string>) => void;
   goBack: () => void;
   goForward: () => void;
   canGoBack: boolean;
@@ -419,11 +389,7 @@ interface ExplorerContextValue {
 
   // Size view transform (per-tab, stored in TabManager)
   sizeViewTransform: { k: number; x: number; y: number };
-  setSizeViewTransform: (transform: {
-    k: number;
-    x: number;
-    y: number;
-  }) => void;
+  setSizeViewTransform: (transform: { k: number; x: number; y: number }) => void;
 
   sidebarVisible: boolean;
   setSidebarVisible: (visible: boolean) => void;
@@ -468,34 +434,21 @@ interface ExplorerProviderProps {
   isActiveTab?: boolean;
 }
 
-export function ExplorerProvider({
-  children,
-  isActiveTab: _isActiveTab = true,
-}: ExplorerProviderProps) {
+export function ExplorerProvider({ children, isActiveTab: _isActiveTab = true }: ExplorerProviderProps) {
   const routerNavigate = useNavigate();
   const location = useLocation();
   const viewPrefs = useViewPreferencesStore();
   const sortPrefs = useSortPreferencesStore();
 
   // Get per-tab state from TabManager
-  const { activeTabId, getExplorerState, updateExplorerState } =
-    useTabManager();
+  const { activeTabId, getExplorerState, updateExplorerState } = useTabManager();
 
   // Memoize tabState to ensure it updates when activeTabId or explorerStates change
-  const tabState = useMemo(
-    () => getExplorerState(activeTabId),
-    [activeTabId, getExplorerState],
-  );
+  const tabState = useMemo(() => getExplorerState(activeTabId), [activeTabId, getExplorerState]);
 
-  const [navState, navDispatch] = useReducer(
-    navigationReducer,
-    initialNavigationState,
-  );
+  const [navState, navDispatch] = useReducer(navigationReducer, initialNavigationState);
   const [uiState, uiDispatch] = useReducer(uiReducer, initialUIState);
-  const [currentFiles, setCurrentFiles] = useReducer(
-    (_: File[], files: File[]) => files,
-    [] as File[],
-  );
+  const [currentFiles, setCurrentFiles] = useReducer((_: File[], files: File[]) => files, [] as File[]);
 
   // Parse columnStack from TabManager (stored as JSON strings)
   // tabState belongs to the active tab, so switching tabs recalculates this value
@@ -504,7 +457,7 @@ export function ExplorerProvider({
       return [];
     }
     try {
-      return tabState.columnStack.map((s) => JSON.parse(s) as SdPath);
+      return tabState.columnStack.map(s => JSON.parse(s) as SdPath);
     } catch {
       return [];
     }
@@ -513,7 +466,7 @@ export function ExplorerProvider({
   const setColumnStack = useCallback(
     (columns: SdPath[]) => {
       updateExplorerState(activeTabId, {
-        columnStack: columns.map((c) => JSON.stringify(c)),
+        columnStack: columns.map(c => JSON.stringify(c)),
       });
     },
     [activeTabId, updateExplorerState],
@@ -579,7 +532,7 @@ export function ExplorerProvider({
 
   const devices = useMemo(() => {
     const list = devicesQuery.data ?? [];
-    return new Map(list.map((d) => [d.id, d]));
+    return new Map(list.map(d => [d.id, d]));
   }, [devicesQuery.data]);
 
   // Exclude currentTarget from deps to prevent infinite sync loops.
@@ -713,10 +666,7 @@ export function ExplorerProvider({
       });
 
       // Update UI state for global settings (showFileSize, sizeViewItemLimit)
-      if (
-        settings.showFileSize !== undefined ||
-        settings.sizeViewItemLimit !== undefined
-      ) {
+      if (settings.showFileSize !== undefined || settings.sizeViewItemLimit !== undefined) {
         uiDispatch({
           type: "SET_VIEW_SETTINGS",
           settings,
@@ -728,14 +678,7 @@ export function ExplorerProvider({
         viewSettings: { ...viewSettings, ...settings },
       });
     },
-    [
-      activeTabId,
-      updateExplorerState,
-      tabState,
-      spaceKey,
-      viewSettings,
-      viewPrefs,
-    ],
+    [activeTabId, updateExplorerState, tabState, spaceKey, viewSettings, viewPrefs],
   );
 
   const setSidebarVisible = useCallback((visible: boolean) => {
@@ -758,12 +701,9 @@ export function ExplorerProvider({
     uiDispatch({ type: "SET_TAG_MODE", active });
   }, []);
 
-  const enterSearchMode = useCallback(
-    (query: string, scope: SearchScope = "folder") => {
-      uiDispatch({ type: "ENTER_SEARCH_MODE", query, scope });
-    },
-    [],
-  );
+  const enterSearchMode = useCallback((query: string, scope: SearchScope = "folder") => {
+    uiDispatch({ type: "ENTER_SEARCH_MODE", query, scope });
+  }, []);
 
   const exitSearchMode = useCallback(() => {
     uiDispatch({ type: "EXIT_SEARCH_MODE" });
@@ -777,12 +717,9 @@ export function ExplorerProvider({
     uiDispatch({ type: "EXIT_RECENTS_MODE" });
   }, []);
 
-  const enterFilteredMode = useCallback(
-    (filters: ApiSearchFilters, label: string) => {
-      uiDispatch({ type: "ENTER_FILTERED_MODE", filters, label });
-    },
-    [],
-  );
+  const enterFilteredMode = useCallback((filters: ApiSearchFilters, label: string) => {
+    uiDispatch({ type: "ENTER_FILTERED_MODE", filters, label });
+  }, []);
 
   const exitFilteredMode = useCallback(() => {
     uiDispatch({ type: "EXIT_FILTERED_MODE" });
@@ -912,11 +849,7 @@ export function ExplorerProvider({
     ],
   );
 
-  return (
-    <ExplorerContext.Provider value={value}>
-      {children}
-    </ExplorerContext.Provider>
-  );
+  return <ExplorerContext.Provider value={value}>{children}</ExplorerContext.Provider>;
 }
 
 export function useExplorer(): ExplorerContextValue {
@@ -936,12 +869,7 @@ export function useOptionalExplorer(): ExplorerContextValue | null {
   return useContext(ExplorerContext);
 }
 
-export {
-  getSpaceItemKey,
-  getSpaceItemKey as getSpaceItemKeyFromRoute,
-  targetToKey,
-  targetsEqual,
-};
+export { getSpaceItemKey, getSpaceItemKey as getSpaceItemKeyFromRoute, targetToKey, targetsEqual };
 
 export type VirtualView = {
   view: string;

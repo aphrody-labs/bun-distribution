@@ -10,10 +10,7 @@ import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  nativeThemeColorRoles,
-  parseNativeThemeExport,
-} from "@aphrody/m3-tokens/native-theme";
+import { nativeThemeColorRoles, parseNativeThemeExport } from "@aphrody/m3-tokens/native-theme";
 
 const here = import.meta.dir;
 /** Source colour of the logo (QuantizerCelebi + Score of material-color-utilities on assets/icon-256.png). */
@@ -34,9 +31,7 @@ export async function schemeCss(path = THEME): Promise<string> {
     );
   const theme = parseNativeThemeExport(await file.json());
   if (theme.seed !== SEED || theme.variant !== "fidelity")
-    throw new Error(
-      `${path} is not the ${SEED} fidelity export (got ${theme.seed} ${theme.variant})`,
-    );
+    throw new Error(`${path} is not the ${SEED} fidelity export (got ${theme.seed} ${theme.variant})`);
   const light = nativeThemeColorRoles(theme);
   const dark = nativeThemeColorRoles(theme, true);
   return [
@@ -66,9 +61,7 @@ ${declarations(dark)}
 export async function build(outDir = join(here, "dist")): Promise<string> {
   await rm(outDir, { recursive: true, force: true });
   await mkdir(join(outDir, "fonts"), { recursive: true });
-  const tokens = await Bun.file(
-    fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/m3-tokens.css")),
-  ).text();
+  const tokens = await Bun.file(fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/m3-tokens.css"))).text();
   const scheme = await schemeCss();
   const font = `@font-face {
   font-family: "Google Sans Flex";
@@ -80,24 +73,14 @@ export async function build(outDir = join(here, "dist")): Promise<string> {
 `;
   await Bun.write(join(outDir, "theme.css"), `${font}\n${tokens}\n${scheme}`);
   await cp(
-    fileURLToPath(
-      import.meta
-        .resolve("@aphrody/m3-fonts/fonts/web/GoogleSansFlex-latin.woff2"),
-    ),
+    fileURLToPath(import.meta.resolve("@aphrody/m3-fonts/fonts/web/GoogleSansFlex-latin.woff2")),
     join(outDir, "fonts/GoogleSansFlex-latin.woff2"),
   );
+  await Promise.all(["index.html", "page.css", "app.js"].map(name => cp(join(here, "src", name), join(outDir, name))));
   await Promise.all(
-    ["index.html", "page.css", "app.js"].map((name) =>
-      cp(join(here, "src", name), join(outDir, name)),
+    ["logo.webp", "favicon-32.png", "favicon-192.png", "apple-touch-icon.png"].map(name =>
+      cp(join(here, "assets", name), join(outDir, name)),
     ),
-  );
-  await Promise.all(
-    [
-      "logo.webp",
-      "favicon-32.png",
-      "favicon-192.png",
-      "apple-touch-icon.png",
-    ].map((name) => cp(join(here, "assets", name), join(outDir, name))),
   );
   return outDir;
 }

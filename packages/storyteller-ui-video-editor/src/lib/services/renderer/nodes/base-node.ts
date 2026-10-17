@@ -1,10 +1,7 @@
 export type BaseNodeParams = object | undefined;
 export type AnyBaseNode = BaseNode<BaseNodeParams, unknown>;
 
-export class BaseNode<
-  Params extends BaseNodeParams = BaseNodeParams,
-  Resolved = unknown,
-> {
+export class BaseNode<Params extends BaseNodeParams = BaseNodeParams, Resolved = unknown> {
   params: Params;
   resolved: Resolved | null = null;
 
@@ -20,7 +17,7 @@ export class BaseNode<
   }
 
   remove(child: AnyBaseNode) {
-    this.children = this.children.filter((c) => c !== child);
+    this.children = this.children.filter(c => c !== child);
     return this;
   }
 }

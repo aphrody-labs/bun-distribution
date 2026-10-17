@@ -13,14 +13,7 @@ import { MediaItem } from "./models";
 import { Simple3DVector } from "./datastructures/common";
 
 export type { Camera, FocalLengthDragging };
-export type {
-  EasingSpec,
-  Keyframe,
-  TimelineTrack,
-  TimelineData,
-  ClipLane,
-  ClipStrip,
-} from "./engine/timeline/types";
+export type { EasingSpec, Keyframe, TimelineTrack, TimelineData, ClipLane, ClipStrip } from "./engine/timeline/types";
 import type { TimelineTrack, ClipLane } from "./engine/timeline/types";
 
 // A still (Capture) or video (Record) produced by Record mode, cached
@@ -392,10 +385,7 @@ interface PageSceneState {
   toggleOutlinerLock: (id: string) => void;
 
   // precision selector
-  showPrecisionSelector: (
-    coords: PrecisionSelectorCoords,
-    values: number[],
-  ) => void;
+  showPrecisionSelector: (coords: PrecisionSelectorCoords, values: number[]) => void;
   hidePrecisionSelector: () => void;
   setPrecisionSelectedValue: (v: number) => void;
 
@@ -508,76 +498,74 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   camViewCanvasEl: null,
 
   // scene actions
-  addObject: (obj) => set((s) => ({ objects: [...s.objects, obj] })),
-  addCharacter: (obj) => set((s) => ({ characters: [...s.characters, obj] })),
-  addShape: (obj) => set((s) => ({ shapes: [...s.shapes, obj] })),
-  removeSceneObject: (id) =>
-    set((s) => ({
-      objects: s.objects.filter((o) => o.id !== id),
-      characters: s.characters.filter((o) => o.id !== id),
-      shapes: s.shapes.filter((o) => o.id !== id),
+  addObject: obj => set(s => ({ objects: [...s.objects, obj] })),
+  addCharacter: obj => set(s => ({ characters: [...s.characters, obj] })),
+  addShape: obj => set(s => ({ shapes: [...s.shapes, obj] })),
+  removeSceneObject: id =>
+    set(s => ({
+      objects: s.objects.filter(o => o.id !== id),
+      characters: s.characters.filter(o => o.id !== id),
+      shapes: s.shapes.filter(o => o.id !== id),
       selectedObject: s.selectedObject?.id === id ? null : s.selectedObject,
     })),
-  setSelectedObject: (sel) => set({ selectedObject: sel }),
-  resetScene: () =>
-    set({ objects: [], characters: [], shapes: [], selectedObject: null }),
+  setSelectedObject: sel => set({ selectedObject: sel }),
+  resetScene: () => set({ objects: [], characters: [], shapes: [], selectedObject: null }),
 
   // camera actions
-  addCamera: (camera) => set((s) => ({ cameras: [...s.cameras, camera] })),
+  addCamera: camera => set(s => ({ cameras: [...s.cameras, camera] })),
   updateCamera: (id, updates) =>
-    set((s) => ({
-      cameras: s.cameras.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+    set(s => ({
+      cameras: s.cameras.map(c => (c.id === id ? { ...c, ...updates } : c)),
     })),
-  deleteCamera: (id) => {
+  deleteCamera: id => {
     if (id === "main") return;
-    set((s) => ({
-      cameras: s.cameras.filter((c) => c.id !== id),
+    set(s => ({
+      cameras: s.cameras.filter(c => c.id !== id),
       selectedCameraId: s.selectedCameraId === id ? "main" : s.selectedCameraId,
     }));
   },
-  setSelectedCameraId: (id) => set({ selectedCameraId: id }),
-  setCameraAspectRatio: (ratio) => set({ cameraAspectRatio: ratio }),
-  setFocalLengthDragging: (state) => set({ focalLengthDragging: state }),
-  setCameraFilter: (filter) => set({ cameraFilter: filter }),
+  setSelectedCameraId: id => set({ selectedCameraId: id }),
+  setCameraAspectRatio: ratio => set({ cameraAspectRatio: ratio }),
+  setFocalLengthDragging: state => set({ focalLengthDragging: state }),
+  setCameraFilter: filter => set({ cameraFilter: filter }),
 
   // editor mode actions
-  setSceneMode: (mode) => set({ sceneMode: mode }),
-  setEditorState: (state) => set({ editorState: state }),
-  setTransformMode: (mode) => set({ transformMode: mode }),
-  setTransformSpace: (space) => set({ transformSpace: space }),
-  setSelectedMode: (mode) => set({ selectedMode: mode }),
-  setPoseMode: (mode) => set({ poseMode: mode }),
-  setShowPoseControls: (visible) => set({ showPoseControls: visible }),
-  setGridVisible: (visible) => set({ gridVisible: visible }),
-  setTimelineExists: (exists) => set({ timelineExists: exists }),
-  setTimelineExpanded: (expanded) => set({ timelineExpanded: expanded }),
-  setTimelinePlayhead: (time) => set({ timelinePlayhead: time }),
-  setTimelineIsPlaying: (playing) => set({ timelineIsPlaying: playing }),
-  setTimelineDuration: (duration) => set({ timelineDuration: duration }),
-  setTimelineTracks: (tracks) => set({ timelineTracks: tracks }),
-  setTimelineClipLanes: (clipLanes) => set({ timelineClipLanes: clipLanes }),
-  setTimelineSelectedKeyframe: (id) => set({ timelineSelectedKeyframeId: id }),
-  setTimelineSelectedClipLane: (id) => set({ timelineSelectedClipLaneId: id }),
-  setTimelineEasingKeyframe: (id) => set({ timelineEasingKeyframeId: id }),
-  setTimelineEasingClipLane: (id) => set({ timelineEasingClipLaneId: id }),
-  setTimelineRevealObjectUuid: (uuid) =>
-    set({ timelineRevealObjectUuid: uuid }),
-  setTimelineFocusSelected: (focus) => set({ timelineFocusSelected: focus }),
-  setProducedArtifact: (artifact) => set({ producedArtifact: artifact }),
+  setSceneMode: mode => set({ sceneMode: mode }),
+  setEditorState: state => set({ editorState: state }),
+  setTransformMode: mode => set({ transformMode: mode }),
+  setTransformSpace: space => set({ transformSpace: space }),
+  setSelectedMode: mode => set({ selectedMode: mode }),
+  setPoseMode: mode => set({ poseMode: mode }),
+  setShowPoseControls: visible => set({ showPoseControls: visible }),
+  setGridVisible: visible => set({ gridVisible: visible }),
+  setTimelineExists: exists => set({ timelineExists: exists }),
+  setTimelineExpanded: expanded => set({ timelineExpanded: expanded }),
+  setTimelinePlayhead: time => set({ timelinePlayhead: time }),
+  setTimelineIsPlaying: playing => set({ timelineIsPlaying: playing }),
+  setTimelineDuration: duration => set({ timelineDuration: duration }),
+  setTimelineTracks: tracks => set({ timelineTracks: tracks }),
+  setTimelineClipLanes: clipLanes => set({ timelineClipLanes: clipLanes }),
+  setTimelineSelectedKeyframe: id => set({ timelineSelectedKeyframeId: id }),
+  setTimelineSelectedClipLane: id => set({ timelineSelectedClipLaneId: id }),
+  setTimelineEasingKeyframe: id => set({ timelineEasingKeyframeId: id }),
+  setTimelineEasingClipLane: id => set({ timelineEasingClipLaneId: id }),
+  setTimelineRevealObjectUuid: uuid => set({ timelineRevealObjectUuid: uuid }),
+  setTimelineFocusSelected: focus => set({ timelineFocusSelected: focus }),
+  setProducedArtifact: artifact => set({ producedArtifact: artifact }),
   clearProducedArtifact: () =>
-    set((s) => {
+    set(s => {
       if (s.producedArtifact) URL.revokeObjectURL(s.producedArtifact.objectUrl);
       return { producedArtifact: null };
     }),
-  setRecordingProgress: (progress) => set({ recordingProgress: progress }),
-  setEncodeCancelSignal: (signal) => set({ encodeCancelSignal: signal }),
+  setRecordingProgress: progress => set({ recordingProgress: progress }),
+  setEncodeCancelSignal: signal => set({ encodeCancelSignal: signal }),
   requestEncodeCancel: () => {
     const signal = get().encodeCancelSignal;
     if (signal) signal.cancelled = true;
   },
-  toggleStats: () => set((s) => ({ statsVisible: !s.statsVisible })),
-  setIgnoreKeyDelete: (ignore) => set({ ignoreKeyDelete: ignore }),
-  disableHotkeyInput: (level) => {
+  toggleStats: () => set(s => ({ statsVisible: !s.statsVisible })),
+  setIgnoreKeyDelete: ignore => set({ ignoreKeyDelete: ignore }),
+  disableHotkeyInput: level => {
     const status = get().hotkeyStatus;
     if (status.disabled) {
       if (level > status.disabledBy) {
@@ -587,33 +575,30 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
       set({ hotkeyStatus: { disabled: true, disabledBy: level } });
     }
   },
-  enableHotkeyInput: (level) => {
+  enableHotkeyInput: level => {
     const status = get().hotkeyStatus;
     if (status.disabled && level >= status.disabledBy) {
       set({ hotkeyStatus: { disabled: false, disabledBy: DomLevels.NONE } });
     }
   },
-  setIsPromptBoxFocused: (focused) => set({ isPromptBoxFocused: focused }),
-  setModalTransformActive: (active) => set({ modalTransformActive: active }),
+  setIsPromptBoxFocused: focused => set({ isPromptBoxFocused: focused }),
+  setModalTransformActive: active => set({ modalTransformActive: active }),
 
   // layout actions
-  setAssetModalVisible: (visible) => set({ assetModalVisible: visible }),
-  setAnimationsModalVisible: (visible) =>
-    set({ animationsModalVisible: visible }),
-  setAssetModalVisibleDuringDrag: (visible) =>
-    set({ assetModalVisibleDuringDrag: visible }),
-  setAssetDraggingUnder: (dragging) => set({ assetDraggingUnder: dragging }),
-  setReopenAfterDrag: (reopen) => set({ reopenAfterDrag: reopen }),
+  setAssetModalVisible: visible => set({ assetModalVisible: visible }),
+  setAnimationsModalVisible: visible => set({ animationsModalVisible: visible }),
+  setAssetModalVisibleDuringDrag: visible => set({ assetModalVisibleDuringDrag: visible }),
+  setAssetDraggingUnder: dragging => set({ assetDraggingUnder: dragging }),
+  setReopenAfterDrag: reopen => set({ reopenAfterDrag: reopen }),
 
   // overlays actions
-  showEditorLoader: (message) =>
-    set({ editorLoader: { isShowing: true, message } }),
+  showEditorLoader: message => set({ editorLoader: { isShowing: true, message } }),
   hideEditorLoader: () =>
-    set((s) => ({
+    set(s => ({
       editorLoader: { isShowing: false, message: s.editorLoader.message },
     })),
-  toggleEditorLetterBox: (next) =>
-    set((s) => ({
+  toggleEditorLetterBox: next =>
+    set(s => ({
       editorLetterBox: next !== undefined ? next : !s.editorLetterBox,
     })),
   setErrorDialog: (title, message) =>
@@ -622,42 +607,38 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
       errorDialogMessage: message,
       showErrorDialog: true,
     }),
-  setShowErrorDialog: (show) => set({ showErrorDialog: show }),
+  setShowErrorDialog: show => set({ showErrorDialog: show }),
 
   // drag-and-drop actions
-  setCanDrop: (canDrop) => set({ canDrop }),
-  setDragItem: (item) => set({ dragItem: item }),
-  setDragPosition: (pos) => set({ dragPosition: pos }),
-  setAnimationDropState: (state) => set({ animationDropState: state }),
+  setCanDrop: canDrop => set({ canDrop }),
+  setDragItem: item => set({ dragItem: item }),
+  setDragPosition: pos => set({ dragPosition: pos }),
+  setAnimationDropState: state => set({ animationDropState: state }),
 
   // object panel actions
-  showObjectPanel: (obj) =>
-    set((s) => ({
+  showObjectPanel: obj =>
+    set(s => ({
       objectPanelShowing: true,
       objectPanelCurrent: obj ?? s.objectPanelCurrent,
     })),
   hideObjectPanel: () => set({ objectPanelShowing: false }),
-  updateObjectPanel: (obj) => set({ objectPanelCurrent: obj }),
+  updateObjectPanel: obj => set({ objectPanelCurrent: obj }),
 
   // outliner actions
-  setOutlinerItems: (items) => set({ outlinerItems: items }),
-  setOutlinerSelectedItem: (item) => set({ outlinerSelectedItem: item }),
-  setOutlinerShowing: (showing) => set({ outlinerShowing: showing }),
-  selectOutlinerItem: (id) => {
-    const item = get().outlinerItems.find((i) => i.id === id);
+  setOutlinerItems: items => set({ outlinerItems: items }),
+  setOutlinerSelectedItem: item => set({ outlinerSelectedItem: item }),
+  setOutlinerShowing: showing => set({ outlinerShowing: showing }),
+  selectOutlinerItem: id => {
+    const item = get().outlinerItems.find(i => i.id === id);
     if (item) set({ outlinerSelectedItem: item });
   },
-  toggleOutlinerVisibility: (id) =>
-    set((s) => ({
-      outlinerItems: s.outlinerItems.map((i) =>
-        i.id === id ? { ...i, visible: !i.visible } : i,
-      ),
+  toggleOutlinerVisibility: id =>
+    set(s => ({
+      outlinerItems: s.outlinerItems.map(i => (i.id === id ? { ...i, visible: !i.visible } : i)),
     })),
-  toggleOutlinerLock: (id) =>
-    set((s) => ({
-      outlinerItems: s.outlinerItems.map((i) =>
-        i.id === id ? { ...i, locked: !i.locked } : i,
-      ),
+  toggleOutlinerLock: id =>
+    set(s => ({
+      outlinerItems: s.outlinerItems.map(i => (i.id === id ? { ...i, locked: !i.locked } : i)),
     })),
 
   // precision selector actions
@@ -668,21 +649,19 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
       precisionSelectorValues: values,
     }),
   hidePrecisionSelector: () => set({ precisionSelectorShowing: false }),
-  setPrecisionSelectedValue: (v) => set({ precisionSelectedValue: v }),
+  setPrecisionSelectedValue: v => set({ precisionSelectedValue: v }),
 
-  set3DPageMounted: (mounted) => set({ is3DPageMounted: mounted }),
-  setIs3DEditorInitialized: (initialized) =>
-    set({ is3DEditorInitialized: initialized }),
-  setIs3DSceneLoaded: (loaded) => set({ is3DSceneLoaded: loaded }),
+  set3DPageMounted: mounted => set({ is3DPageMounted: mounted }),
+  setIs3DEditorInitialized: initialized => set({ is3DEditorInitialized: initialized }),
+  setIs3DSceneLoaded: loaded => set({ is3DSceneLoaded: loaded }),
 
-  setSceneMeta: (meta) =>
-    set((s) => ({ sceneMeta: { ...s.sceneMeta, ...meta } })),
-  setCurrentUserToken: (token) => set({ currentUserToken: token }),
-  setHostOverlayVisible: (visible) => set({ hostOverlayVisible: visible }),
+  setSceneMeta: meta => set(s => ({ sceneMeta: { ...s.sceneMeta, ...meta } })),
+  setCurrentUserToken: token => set({ currentUserToken: token }),
+  setHostOverlayVisible: visible => set({ hostOverlayVisible: visible }),
 
-  setSceneContainerEl: (el) => set({ sceneContainerEl: el }),
-  setEditorCanvasEl: (el) => set({ editorCanvasEl: el }),
-  setCamViewCanvasEl: (el) => set({ camViewCanvasEl: el }),
+  setSceneContainerEl: el => set({ sceneContainerEl: el }),
+  setEditorCanvasEl: el => set({ editorCanvasEl: el }),
+  setCamViewCanvasEl: el => set({ camViewCanvasEl: el }),
 }));
 
 // True when the visitor is looking at someone else's scene (owner is
@@ -695,11 +674,8 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
 // account on confirm) and the PreviewBox shows the author's
 // generation result.
 const computeIsVisitingOthersScene = (s: PageSceneState): boolean =>
-  s.sceneMeta.ownerToken !== undefined &&
-  s.sceneMeta.ownerToken !== s.currentUserToken;
+  s.sceneMeta.ownerToken !== undefined && s.sceneMeta.ownerToken !== s.currentUserToken;
 
-export const useIsVisitingOthersScene = (): boolean =>
-  usePageSceneStore(computeIsVisitingOthersScene);
+export const useIsVisitingOthersScene = (): boolean => usePageSceneStore(computeIsVisitingOthersScene);
 
-export const getIsVisitingOthersScene = (): boolean =>
-  computeIsVisitingOthersScene(usePageSceneStore.getState());
+export const getIsVisitingOthersScene = (): boolean => computeIsVisitingOthersScene(usePageSceneStore.getState());

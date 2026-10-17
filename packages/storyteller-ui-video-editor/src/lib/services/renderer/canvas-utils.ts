@@ -1,10 +1,4 @@
-export function createCanvasSurface({
-  width,
-  height,
-}: {
-  width: number;
-  height: number;
-}): {
+export function createCanvasSurface({ width, height }: { width: number; height: number }): {
   canvas: OffscreenCanvas;
   context: OffscreenCanvasRenderingContext2D;
 } {

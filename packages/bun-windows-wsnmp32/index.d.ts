@@ -15,13 +15,32 @@ interface Functions {
   /** wsnmp32.dll!SnmpCountVbl */
   SnmpCountVbl(vbl: number | bigint): number;
   /** wsnmp32.dll!SnmpCreatePdu */
-  SnmpCreatePdu(session: number | bigint, PDU_type: number, request_id: number, error_status: number, error_index: number, varbindlist: number | bigint): number | bigint;
+  SnmpCreatePdu(
+    session: number | bigint,
+    PDU_type: number,
+    request_id: number,
+    error_status: number,
+    error_index: number,
+    varbindlist: number | bigint,
+  ): number | bigint;
   /** wsnmp32.dll!SnmpCreateSession */
-  SnmpCreateSession(hWnd: Win32Pointer, wMsg: number, fCallBack: Win32Callback, lpClientData: Win32Pointer): number | bigint;
+  SnmpCreateSession(
+    hWnd: Win32Pointer,
+    wMsg: number,
+    fCallBack: Win32Callback,
+    lpClientData: Win32Pointer,
+  ): number | bigint;
   /** wsnmp32.dll!SnmpCreateVbl */
   SnmpCreateVbl(session: number | bigint, name: Win32Pointer, value: Win32Pointer): number | bigint;
   /** wsnmp32.dll!SnmpDecodeMsg */
-  SnmpDecodeMsg(session: number | bigint, srcEntity: Win32Pointer, dstEntity: Win32Pointer, context: Win32Pointer, pdu: Win32Pointer, msgBufDesc: Win32Pointer): number;
+  SnmpDecodeMsg(
+    session: number | bigint,
+    srcEntity: Win32Pointer,
+    dstEntity: Win32Pointer,
+    context: Win32Pointer,
+    pdu: Win32Pointer,
+    msgBufDesc: Win32Pointer,
+  ): number;
   /** wsnmp32.dll!SnmpDeleteVb */
   SnmpDeleteVb(vbl: number | bigint, index: number): number;
   /** wsnmp32.dll!SnmpDuplicatePdu */
@@ -29,7 +48,14 @@ interface Functions {
   /** wsnmp32.dll!SnmpDuplicateVbl */
   SnmpDuplicateVbl(session: number | bigint, vbl: number | bigint): number | bigint;
   /** wsnmp32.dll!SnmpEncodeMsg */
-  SnmpEncodeMsg(session: number | bigint, srcEntity: number | bigint, dstEntity: number | bigint, context: number | bigint, pdu: number | bigint, msgBufDesc: Win32Pointer): number;
+  SnmpEncodeMsg(
+    session: number | bigint,
+    srcEntity: number | bigint,
+    dstEntity: number | bigint,
+    context: number | bigint,
+    pdu: number | bigint,
+    msgBufDesc: Win32Pointer,
+  ): number;
   /** wsnmp32.dll!SnmpEntityToStr */
   SnmpEntityToStr(entity: number | bigint, size: number, string: string | Win32Pointer): number;
   /** wsnmp32.dll!SnmpFreeContext */
@@ -45,7 +71,14 @@ interface Functions {
   /** wsnmp32.dll!SnmpGetLastError */
   SnmpGetLastError(session: number | bigint): number;
   /** wsnmp32.dll!SnmpGetPduData */
-  SnmpGetPduData(PDU: number | bigint, PDU_type: Win32Pointer, request_id: Win32Pointer, error_status: Win32Pointer, error_index: Win32Pointer, varbindlist: Win32Pointer): number;
+  SnmpGetPduData(
+    PDU: number | bigint,
+    PDU_type: Win32Pointer,
+    request_id: Win32Pointer,
+    error_status: Win32Pointer,
+    error_index: Win32Pointer,
+    varbindlist: Win32Pointer,
+  ): number;
   /** wsnmp32.dll!SnmpGetRetransmitMode */
   SnmpGetRetransmitMode(nRetransmitMode: Win32Pointer): number;
   /** wsnmp32.dll!SnmpGetRetry */
@@ -71,13 +104,39 @@ interface Functions {
   /** wsnmp32.dll!SnmpOpen */
   SnmpOpen(hWnd: Win32Pointer, wMsg: number): number | bigint;
   /** wsnmp32.dll!SnmpRecvMsg */
-  SnmpRecvMsg(session: number | bigint, srcEntity: Win32Pointer, dstEntity: Win32Pointer, context: Win32Pointer, PDU: Win32Pointer): number;
+  SnmpRecvMsg(
+    session: number | bigint,
+    srcEntity: Win32Pointer,
+    dstEntity: Win32Pointer,
+    context: Win32Pointer,
+    PDU: Win32Pointer,
+  ): number;
   /** wsnmp32.dll!SnmpRegister */
-  SnmpRegister(session: number | bigint, srcEntity: number | bigint, dstEntity: number | bigint, context: number | bigint, notification: Win32Pointer, state: number): number;
+  SnmpRegister(
+    session: number | bigint,
+    srcEntity: number | bigint,
+    dstEntity: number | bigint,
+    context: number | bigint,
+    notification: Win32Pointer,
+    state: number,
+  ): number;
   /** wsnmp32.dll!SnmpSendMsg */
-  SnmpSendMsg(session: number | bigint, srcEntity: number | bigint, dstEntity: number | bigint, context: number | bigint, PDU: number | bigint): number;
+  SnmpSendMsg(
+    session: number | bigint,
+    srcEntity: number | bigint,
+    dstEntity: number | bigint,
+    context: number | bigint,
+    PDU: number | bigint,
+  ): number;
   /** wsnmp32.dll!SnmpSetPduData */
-  SnmpSetPduData(PDU: number | bigint, PDU_type: Win32Pointer, request_id: Win32Pointer, non_repeaters: Win32Pointer, max_repetitions: Win32Pointer, varbindlist: Win32Pointer): number;
+  SnmpSetPduData(
+    PDU: number | bigint,
+    PDU_type: Win32Pointer,
+    request_id: Win32Pointer,
+    non_repeaters: Win32Pointer,
+    max_repetitions: Win32Pointer,
+    varbindlist: Win32Pointer,
+  ): number;
   /** wsnmp32.dll!SnmpSetPort */
   SnmpSetPort(hEntity: number | bigint, nPort: number): number;
   /** wsnmp32.dll!SnmpSetRetransmitMode */
@@ -91,9 +150,21 @@ interface Functions {
   /** wsnmp32.dll!SnmpSetVb */
   SnmpSetVb(vbl: number | bigint, index: number, name: Win32Pointer, value: Win32Pointer): number;
   /** wsnmp32.dll!SnmpStartup */
-  SnmpStartup(nMajorVersion: Win32Pointer, nMinorVersion: Win32Pointer, nLevel: Win32Pointer, nTranslateMode: Win32Pointer, nRetransmitMode: Win32Pointer): number;
+  SnmpStartup(
+    nMajorVersion: Win32Pointer,
+    nMinorVersion: Win32Pointer,
+    nLevel: Win32Pointer,
+    nTranslateMode: Win32Pointer,
+    nRetransmitMode: Win32Pointer,
+  ): number;
   /** wsnmp32.dll!SnmpStartupEx */
-  SnmpStartupEx(nMajorVersion: Win32Pointer, nMinorVersion: Win32Pointer, nLevel: Win32Pointer, nTranslateMode: Win32Pointer, nRetransmitMode: Win32Pointer): number;
+  SnmpStartupEx(
+    nMajorVersion: Win32Pointer,
+    nMinorVersion: Win32Pointer,
+    nLevel: Win32Pointer,
+    nTranslateMode: Win32Pointer,
+    nRetransmitMode: Win32Pointer,
+  ): number;
   /** wsnmp32.dll!SnmpStrToContext */
   SnmpStrToContext(session: number | bigint, string: Win32Pointer): number | bigint;
   /** wsnmp32.dll!SnmpStrToEntity */

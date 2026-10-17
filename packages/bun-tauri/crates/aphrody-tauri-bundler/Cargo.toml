@@ -1,10 +1,7 @@
 [package]
 name = "aphrody-tauri-bundler"
 version = "1.4.4"
-authors = [
-  "George Burton <burtonageo@gmail.com>",
-  "Tauri Programme within The Commons Conservancy",
-]
+authors = ["George Burton <burtonageo@gmail.com>", "Tauri Programme within The Commons Conservancy"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 license = "Apache-2.0 OR MIT"
 keywords = ["bundle", "cargo", "tauri"]
@@ -15,7 +12,9 @@ rust-version = "1.95"
 exclude = ["CHANGELOG.md", "/target", "rustfmt.toml"]
 
 [dependencies]
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["resources"] }
+tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+  "resources",
+] }
 image = { workspace = true }
 flate2 = { workspace = true }
 thiserror = { workspace = true }

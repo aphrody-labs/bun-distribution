@@ -56,43 +56,26 @@ ConvertTo-Json -InputObject $r -Depth 8 -Compress`;
 
 function pwsh(): string {
   const found = Bun.env.BUN_LOADERS_PWSH ?? Bun.which("pwsh");
-  if (!found)
-    throw new Error("PowerShell 7 (pwsh) is required to load .ps1 files");
+  if (!found) throw new Error("PowerShell 7 (pwsh) is required to load .ps1 files");
   return found;
 }
 
-async function exec(
-  command: string,
-  env: Record<string, string>,
-  timeout: number,
-): Promise<string> {
-  const proc = Bun.spawn(
-    [pwsh(), "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", command],
-    {
-      stdout: "pipe",
-      stderr: "pipe",
-      timeout,
-      windowsHide: true,
-      env: { ...Bun.env, ...env },
-    },
-  );
-  const [out, err, code] = await Promise.all([
-    proc.stdout.text(),
-    proc.stderr.text(),
-    proc.exited,
-  ]);
-  if (code !== 0)
-    throw new Error(`pwsh exited ${code}: ${(err || out).trim()}`);
+async function exec(command: string, env: Record<string, string>, timeout: number): Promise<string> {
+  const proc = Bun.spawn([pwsh(), "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", command], {
+    stdout: "pipe",
+    stderr: "pipe",
+    timeout,
+    windowsHide: true,
+    env: { ...Bun.env, ...env },
+  });
+  const [out, err, code] = await Promise.all([proc.stdout.text(), proc.stderr.text(), proc.exited]);
+  if (code !== 0) throw new Error(`pwsh exited ${code}: ${(err || out).trim()}`);
   return out.trim();
 }
 
-export async function describePowerShell(
-  script: string,
-): Promise<PowerShellScript> {
+export async function describePowerShell(script: string): Promise<PowerShellScript> {
   const path = resolve(script);
-  const info = JSON.parse(
-    await exec(DESCRIBE, { BUN_LOADERS_SCRIPT: path }, 60_000),
-  ) as Omit<PowerShellScript, "path">;
+  const info = JSON.parse(await exec(DESCRIBE, { BUN_LOADERS_SCRIPT: path }, 60_000)) as Omit<PowerShellScript, "path">;
   return { path, ...info };
 }
 
@@ -115,13 +98,11 @@ export async function runPowerShell(
   return values.length === 1 ? values[0] : values;
 }
 
-export async function powershellExports(
-  script: string,
-): Promise<Record<string, unknown>> {
+export async function powershellExports(script: string): Promise<Record<string, unknown>> {
   const metadata = await describePowerShell(script);
-  const run = Object.assign(
-    (params?: Record<string, unknown>) => runPowerShell(metadata.path, params),
-    { metadata, parameters: metadata.parameters },
-  );
+  const run = Object.assign((params?: Record<string, unknown>) => runPowerShell(metadata.path, params), {
+    metadata,
+    parameters: metadata.parameters,
+  });
   return { default: run, run, metadata, parameters: metadata.parameters };
 }

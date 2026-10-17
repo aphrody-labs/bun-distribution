@@ -10,22 +10,20 @@ interface CostBreakdownModalState {
   setEstimatedCreditsForPage: (page: ModelPage, credits: number | null) => void;
 }
 
-export const useCostBreakdownModalStore = create<CostBreakdownModalState>(
-  (set) => ({
-    isOpen: false,
-    openModal: () => set({ isOpen: true }),
-    closeModal: () => set({ isOpen: false }),
-    toggleModal: () => set((state) => ({ isOpen: !state.isOpen })),
-    estimatedCreditsByPage: {},
-    setEstimatedCreditsForPage: (page, credits) =>
-      set((state) => ({
-        estimatedCreditsByPage: {
-          ...state.estimatedCreditsByPage,
-          [page]: credits,
-        },
-      })),
-  }),
-);
+export const useCostBreakdownModalStore = create<CostBreakdownModalState>(set => ({
+  isOpen: false,
+  openModal: () => set({ isOpen: true }),
+  closeModal: () => set({ isOpen: false }),
+  toggleModal: () => set(state => ({ isOpen: !state.isOpen })),
+  estimatedCreditsByPage: {},
+  setEstimatedCreditsForPage: (page, credits) =>
+    set(state => ({
+      estimatedCreditsByPage: {
+        ...state.estimatedCreditsByPage,
+        [page]: credits,
+      },
+    })),
+}));
 
 // Map TabId to ModelPage
 export const TAB_TO_MODEL_PAGE: Record<string, ModelPage> = {

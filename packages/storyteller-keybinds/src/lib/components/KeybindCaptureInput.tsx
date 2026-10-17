@@ -23,7 +23,7 @@ export function KeybindCaptureInput({
 
   useKeybindCapture({
     active: capturing,
-    onCapture: (b) => {
+    onCapture: b => {
       setCapturing(false);
       onCapture(b);
     },
@@ -33,7 +33,7 @@ export function KeybindCaptureInput({
   return (
     <button
       type="button"
-      onClick={() => setCapturing((v) => !v)}
+      onClick={() => setCapturing(v => !v)}
       aria-label="Change keybinding"
       className={twMerge(
         "inline-flex min-h-8 min-w-[7rem] items-center justify-center rounded-[3px] border px-2 py-1 text-sm transition-colors",
@@ -46,9 +46,7 @@ export function KeybindCaptureInput({
       )}
     >
       {capturing ? (
-        <span className="text-[12px] font-medium">
-          Press a key… (Esc to cancel)
-        </span>
+        <span className="text-[12px] font-medium">Press a key… (Esc to cancel)</span>
       ) : (
         <KbdBindings bindings={bindings} />
       )}

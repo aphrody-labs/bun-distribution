@@ -11,11 +11,7 @@ export interface LiveReply {
   message?: string;
 }
 
-export function sendLive(
-  type: string,
-  params: Record<string, unknown> = {},
-  timeoutMs = 180_000,
-): Promise<unknown> {
+export function sendLive(type: string, params: Record<string, unknown> = {}, timeoutMs = 180_000): Promise<unknown> {
   const { promise, resolve, reject } = Promise.withResolvers<unknown>();
   const decoder = new TextDecoder();
   let text = "";
@@ -26,10 +22,7 @@ export function sendLive(
     clearTimeout(timer);
     fn();
   };
-  const timer = setTimeout(
-    () => finish(() => reject(new Error(`blender_mcp: no reply to ${type}`))),
-    timeoutMs,
-  );
+  const timer = setTimeout(() => finish(() => reject(new Error(`blender_mcp: no reply to ${type}`))), timeoutMs);
   Bun.connect({
     hostname: HOST,
     port: PORT,
@@ -61,13 +54,7 @@ export function sendLive(
       },
     },
   }).catch((err: unknown) =>
-    finish(() =>
-      reject(
-        new Error(
-          `blender_mcp not reachable on ${HOST}:${PORT}: ${String(err)}`,
-        ),
-      ),
-    ),
+    finish(() => reject(new Error(`blender_mcp not reachable on ${HOST}:${PORT}: ${String(err)}`))),
   );
   return promise;
 }

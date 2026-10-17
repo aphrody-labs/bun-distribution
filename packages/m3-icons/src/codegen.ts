@@ -27,9 +27,7 @@ export interface GeneratedIcon {
  * named exports) ship only the icons they actually use, instead of the whole Material Symbols
  * set or an icon font.
  */
-export async function generateIcons(
-  options: GenerateIconsOptions,
-): Promise<GeneratedIcon[]> {
+export async function generateIcons(options: GenerateIconsOptions): Promise<GeneratedIcon[]> {
   const style = options.style ?? "outlined";
   const names = options.names ?? m3IconNames(style);
 
@@ -54,9 +52,7 @@ export async function generateIcons(
 export default ${JSON.stringify(svg)};
 `,
     );
-    barrelLines.push(
-      `export { default as ${identifier} } from "./${name}.js";`,
-    );
+    barrelLines.push(`export { default as ${identifier} } from "./${name}.js";`);
     generated.push({ name, file });
   }
 

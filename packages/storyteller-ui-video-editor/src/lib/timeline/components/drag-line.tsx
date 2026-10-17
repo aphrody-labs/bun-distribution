@@ -9,12 +9,7 @@ interface DragLineProps {
   headerHeight?: number;
 }
 
-export function DragLine({
-  dropTarget,
-  tracks,
-  isVisible,
-  headerHeight = 0,
-}: DragLineProps) {
+export function DragLine({ dropTarget, tracks, isVisible, headerHeight = 0 }: DragLineProps) {
   if (!isVisible || !dropTarget) return null;
 
   const y = getDropLineY({ dropTarget, tracks });

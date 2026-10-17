@@ -67,7 +67,7 @@ const deleteSelected = (editor: Editor) => {
   if (!mc?.selected) return;
   // Route through editor.deleteObject so HistoryManager records the
   // deletion. mc.deleteObject (the legacy direct path) bypasses history.
-  mc.selected.forEach((sel) => {
+  mc.selected.forEach(sel => {
     editor.deleteObject(sel.uuid);
   });
   mc.selected = [];
@@ -101,10 +101,7 @@ const deselectAll = (editor: Editor) => {
 };
 
 const focusSelected = (editor: Editor) => {
-  if (
-    editor.mouse_controls?.selected?.length &&
-    editor.mouse_controls.lockControls
-  ) {
+  if (editor.mouse_controls?.selected?.length && editor.mouse_controls.lockControls) {
     editor.mouse_controls.focus();
   }
 };
@@ -168,12 +165,9 @@ const timelineNudge = (editor: Editor, direction: 1 | -1) => {
   const keyframeId = store.timelineSelectedKeyframeId;
   if (keyframeId) {
     for (const track of timeline.tracks) {
-      const keyframe = track.keyframes.find((k) => k.id === keyframeId);
+      const keyframe = track.keyframes.find(k => k.id === keyframeId);
       if (keyframe) {
-        const time = Math.min(
-          timeline.duration,
-          Math.max(0, keyframe.time + delta),
-        );
+        const time = Math.min(timeline.duration, Math.max(0, keyframe.time + delta));
         nudgeKeyframe(editor, keyframeId, time);
         return;
       }
@@ -202,7 +196,7 @@ const timelineDeleteSelected = (editor: Editor) => {
   if (keyframeId) {
     const exists = editor.timelineController
       .getTimeline()
-      ?.tracks.some((t) => t.keyframes.some((k) => k.id === keyframeId));
+      ?.tracks.some(t => t.keyframes.some(k => k.id === keyframeId));
     if (exists) deleteKeyframe(editor, keyframeId);
     store.setTimelineSelectedKeyframe(null);
     return;
@@ -218,12 +212,12 @@ const timelineDeleteSelected = (editor: Editor) => {
 // Action id → handler. Bindings live in the keybinds registry; this maps each
 // registered PageScene action to what it actually does.
 const HANDLERS: Record<ActionId, (editor: Editor) => void | Promise<void>> = {
-  "pagescene.transform.grab": (e) => e.beginModalTransform("translate"),
-  "pagescene.transform.translate": (e) => setGizmoMode(e, "translate", "move"),
-  "pagescene.transform.rotate": (e) => setGizmoMode(e, "rotate", "rotate"),
-  "pagescene.transform.scale": (e) => setGizmoMode(e, "scale", "scale"),
-  "pagescene.transform.toggleSpace": (e) => e.gizmo.toggleTransformSpace(),
-  "pagescene.transform.poseFK": (e) => e.mouse_controls?.toggleFKMode(),
+  "pagescene.transform.grab": e => e.beginModalTransform("translate"),
+  "pagescene.transform.translate": e => setGizmoMode(e, "translate", "move"),
+  "pagescene.transform.rotate": e => setGizmoMode(e, "rotate", "rotate"),
+  "pagescene.transform.scale": e => setGizmoMode(e, "scale", "scale"),
+  "pagescene.transform.toggleSpace": e => e.gizmo.toggleTransformSpace(),
+  "pagescene.transform.poseFK": e => e.mouse_controls?.toggleFKMode(),
   "pagescene.view.focus": focusSelected,
   "pagescene.view.assetMenu": openAssetModal,
   "pagescene.view.toggleCameraView": toggleCameraView,
@@ -231,20 +225,20 @@ const HANDLERS: Record<ActionId, (editor: Editor) => void | Promise<void>> = {
   "pagescene.selection.clearOrExit": onEscape,
   "pagescene.selection.deselectAll": deselectAll,
   "pagescene.edit.delete": deleteSelected,
-  "pagescene.edit.duplicate": (e) => e.duplicateSelected(),
-  "pagescene.edit.toggleSnapping": (e) => e.toggleSnapping(),
-  "pagescene.view.toggleGrid": (e) => e.toggleGrid(),
+  "pagescene.edit.duplicate": e => e.duplicateSelected(),
+  "pagescene.edit.toggleSnapping": e => e.toggleSnapping(),
+  "pagescene.view.toggleGrid": e => e.toggleGrid(),
   "pagescene.edit.undo": undo,
   "pagescene.edit.redo": redo,
   "pagescene.edit.copy": copy,
   "pagescene.edit.paste": paste,
   "pagescene.timeline.playPause": timelinePlayPause,
-  "pagescene.timeline.stepBack": (e) => timelineStep(e, -1),
-  "pagescene.timeline.stepForward": (e) => timelineStep(e, 1),
-  "pagescene.timeline.nudgeLeft": (e) => timelineNudge(e, -1),
-  "pagescene.timeline.nudgeRight": (e) => timelineNudge(e, 1),
-  "pagescene.timeline.goToStart": (e) => seekTimeline(e, 0),
-  "pagescene.timeline.goToEnd": (e) => {
+  "pagescene.timeline.stepBack": e => timelineStep(e, -1),
+  "pagescene.timeline.stepForward": e => timelineStep(e, 1),
+  "pagescene.timeline.nudgeLeft": e => timelineNudge(e, -1),
+  "pagescene.timeline.nudgeRight": e => timelineNudge(e, 1),
+  "pagescene.timeline.goToStart": e => seekTimeline(e, 0),
+  "pagescene.timeline.goToEnd": e => {
     const timeline = e.timelineController.getTimeline();
     if (timeline) seekTimeline(e, timeline.duration);
   },
@@ -260,8 +254,7 @@ const HANDLERS: Record<ActionId, (editor: Editor) => void | Promise<void>> = {
   },
   "pagescene.record.captureStill": captureStill,
   "pagescene.record.recordVideo": recordVideo,
-  "pagescene.record.cancelEncode": () =>
-    usePageSceneStore.getState().requestEncodeCancel(),
+  "pagescene.record.cancelEncode": () => usePageSceneStore.getState().requestEncodeCancel(),
 };
 
 // Expand the handler table into concrete KeyBindings using the resolved bindings
@@ -269,8 +262,7 @@ const HANDLERS: Record<ActionId, (editor: Editor) => void | Promise<void>> = {
 // two Redo combos each stay live). `forAction` defaults to the store so non-React
 // callers keep working; useViewportKeyboard passes a reactive resolver.
 export const buildKeymap = (
-  forAction: (id: ActionId) => Binding[] = (id) =>
-    useKeybindsStore.getState().resolveBindings(id),
+  forAction: (id: ActionId) => Binding[] = id => useKeybindsStore.getState().resolveBindings(id),
 ): KeyBinding[] => {
   const out: KeyBinding[] = [];
   for (const [id, run] of Object.entries(HANDLERS)) {

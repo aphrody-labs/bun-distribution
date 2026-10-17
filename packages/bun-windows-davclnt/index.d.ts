@@ -5,7 +5,11 @@ interface Functions {
   /** davclnt.dll!DavCancelConnectionsToServer */
   DavCancelConnectionsToServer(lpName: string | Win32Pointer, fForce: number): number;
   /** davclnt.dll!DavGetTheLockOwnerOfTheFile */
-  DavGetTheLockOwnerOfTheFile(FileName: string | Win32Pointer, LockOwnerName: string | Win32Pointer, LockOwnerNameLengthInBytes: Win32Pointer): number;
+  DavGetTheLockOwnerOfTheFile(
+    FileName: string | Win32Pointer,
+    LockOwnerName: string | Win32Pointer,
+    LockOwnerNameLengthInBytes: Win32Pointer,
+  ): number;
   /** davclnt.dll!DavInvalidateCache */
   DavInvalidateCache(URLName: string | Win32Pointer): number;
   /** davclnt.dll!DavRegisterAuthCallback */
@@ -13,31 +17,72 @@ interface Functions {
   /** davclnt.dll!DavUnregisterAuthCallback */
   DavUnregisterAuthCallback(hCallback: number): void;
   /** davclnt.dll!NPAddConnection */
-  NPAddConnection(lpNetResource: Win32Pointer, lpPassword: string | Win32Pointer, lpUserName: string | Win32Pointer): number;
+  NPAddConnection(
+    lpNetResource: Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpUserName: string | Win32Pointer,
+  ): number;
   /** davclnt.dll!NPAddConnection3 */
-  NPAddConnection3(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, lpPassword: string | Win32Pointer, lpUserName: string | Win32Pointer, dwFlags: number): number;
+  NPAddConnection3(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpUserName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** davclnt.dll!NPCancelConnection */
   NPCancelConnection(lpName: string | Win32Pointer, fForce: number): number;
   /** davclnt.dll!NPCloseEnum */
   NPCloseEnum(hEnum: Win32Pointer): number;
   /** davclnt.dll!NPEnumResource */
-  NPEnumResource(hEnum: Win32Pointer, lpcCount: Win32Pointer, lpBuffer: Win32Pointer, lpBufferSize: Win32Pointer): number;
+  NPEnumResource(
+    hEnum: Win32Pointer,
+    lpcCount: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    lpBufferSize: Win32Pointer,
+  ): number;
   /** davclnt.dll!NPFormatNetworkName */
-  NPFormatNetworkName(lpRemoteName: string | Win32Pointer, lpFormattedName: string | Win32Pointer, lpnLength: Win32Pointer, dwFlags: number, dwAveCharPerLine: number): number;
+  NPFormatNetworkName(
+    lpRemoteName: string | Win32Pointer,
+    lpFormattedName: string | Win32Pointer,
+    lpnLength: Win32Pointer,
+    dwFlags: number,
+    dwAveCharPerLine: number,
+  ): number;
   /** davclnt.dll!NPGetCaps */
   NPGetCaps(ndex: number): number;
   /** davclnt.dll!NPGetConnection */
-  NPGetConnection(lpLocalName: string | Win32Pointer, lpRemoteName: string | Win32Pointer, lpnBufferLen: Win32Pointer): number;
+  NPGetConnection(
+    lpLocalName: string | Win32Pointer,
+    lpRemoteName: string | Win32Pointer,
+    lpnBufferLen: Win32Pointer,
+  ): number;
   /** davclnt.dll!NPGetResourceInformation */
-  NPGetResourceInformation(lpNetResource: Win32Pointer, lpBuffer: Win32Pointer, lpBufferSize: Win32Pointer, lplpSystem: Win32Pointer): number;
+  NPGetResourceInformation(
+    lpNetResource: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    lpBufferSize: Win32Pointer,
+    lplpSystem: Win32Pointer,
+  ): number;
   /** davclnt.dll!NPGetResourceParent */
   NPGetResourceParent(lpNetResource: Win32Pointer, lpBuffer: Win32Pointer, lpBufferSize: Win32Pointer): number;
   /** davclnt.dll!NPGetUniversalName */
-  NPGetUniversalName(lpLocalPath: string | Win32Pointer, dwInfoLevel: number, lpBuffer: Win32Pointer, lpBufferSize: Win32Pointer): number;
+  NPGetUniversalName(
+    lpLocalPath: string | Win32Pointer,
+    dwInfoLevel: number,
+    lpBuffer: Win32Pointer,
+    lpBufferSize: Win32Pointer,
+  ): number;
   /** davclnt.dll!NPGetUser */
   NPGetUser(lpName: string | Win32Pointer, lpUserName: string | Win32Pointer, lpnBufferLen: Win32Pointer): number;
   /** davclnt.dll!NPOpenEnum */
-  NPOpenEnum(dwScope: number, dwType: number, dwUsage: number, lpNetResource: Win32Pointer, lphEnum: Win32Pointer): number;
+  NPOpenEnum(
+    dwScope: number,
+    dwType: number,
+    dwUsage: number,
+    lpNetResource: Win32Pointer,
+    lphEnum: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

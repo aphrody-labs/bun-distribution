@@ -29,8 +29,7 @@ export const AUDIO_FILE_ACCEPT = [
   ".aif",
 ].join(",");
 
-export const AUDIO_FILE_TYPE_ERROR =
-  "Please choose an audio file (MP3, WAV, M4A, FLAC…)";
+export const AUDIO_FILE_TYPE_ERROR = "Please choose an audio file (MP3, WAV, M4A, FLAC…)";
 
 const AUDIO_FILE_EXTENSIONS = new Set([
   "mp3",

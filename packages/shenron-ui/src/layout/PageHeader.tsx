@@ -29,12 +29,7 @@ export function PageHeader({
 }) {
   return (
     <header className={`border-b border-white/[0.08] pb-6 ${className}`}>
-      <HeroTitles
-        eyebrow={eyebrow}
-        title={title}
-        lead={subtitle}
-        regime={size === "md" ? "compact" : "plain"}
-      />
+      <HeroTitles eyebrow={eyebrow} title={title} lead={subtitle} regime={size === "md" ? "compact" : "plain"} />
     </header>
   );
 }

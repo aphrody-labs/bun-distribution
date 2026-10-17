@@ -39,8 +39,8 @@
     "typecheck": "bun check --project tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@aphrody/paths": "workspace:*",
     "@aphrody/bun-runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
+    "@aphrody/paths": "workspace:*",
     "@aphrody/update": "workspace:*"
   },
   "engines": {

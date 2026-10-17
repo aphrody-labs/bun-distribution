@@ -1,9 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult, CommandSuccessStatus } from "../common/CommandStatus";
-import {
-  ImageGenerationMode,
-  GenerationProvider,
-} from "@storyteller/api-enums";
+import { ImageGenerationMode, GenerationProvider } from "@storyteller/api-enums";
 
 export interface EstimateImageCostRequest {
   [key: string]: unknown;
@@ -41,18 +38,13 @@ export interface EstimateImageCostErrorResult extends CommandResult {
   error_details?: EstimateImageCostErrorPayload;
 }
 
-export type EstimateImageCostResult =
-  EstimateImageCostSuccess | EstimateImageCostErrorResult;
+export type EstimateImageCostResult = EstimateImageCostSuccess | EstimateImageCostErrorResult;
 
-export const EstimateImageCost = async (
-  request: EstimateImageCostRequest,
-): Promise<EstimateImageCostResult> => {
+export const EstimateImageCost = async (request: EstimateImageCostRequest): Promise<EstimateImageCostResult> => {
   const result = await invoke("estimate_image_cost_command", { request });
   return result as EstimateImageCostResult;
 };
 
-export function isEstimateImageCostSuccess(
-  r: EstimateImageCostResult,
-): r is EstimateImageCostSuccess {
+export function isEstimateImageCostSuccess(r: EstimateImageCostResult): r is EstimateImageCostSuccess {
   return r.status === CommandSuccessStatus.Success;
 }

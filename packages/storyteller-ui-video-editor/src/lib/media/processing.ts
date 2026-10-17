@@ -21,11 +21,7 @@ import { renderThumbnailDataUrl } from "./thumbnail";
 
 export interface ProcessedMediaAsset extends MediaAsset {}
 
-const getUnsupportedVideoDescription = ({
-  codec,
-}: {
-  codec: VideoFileData["codec"];
-}): string => {
+const getUnsupportedVideoDescription = ({ codec }: { codec: VideoFileData["codec"] }): string => {
   const codecLabel = codec ? codec.toUpperCase() : "this video codec";
 
   return codec === "hevc"
@@ -57,9 +53,7 @@ async function generateImageThumbnail({
           height: image.naturalHeight,
         });
       } catch (error) {
-        reject(
-          error instanceof Error ? error : new Error("Could not render image"),
-        );
+        reject(error instanceof Error ? error : new Error("Could not render image"));
       } finally {
         URL.revokeObjectURL(objectUrl);
         image.remove();
@@ -140,9 +134,7 @@ export async function processMediaAssets({
           duration = videoData.duration;
           width = videoData.width;
           height = videoData.height;
-          fps = Number.isFinite(videoData.fps)
-            ? Math.round(videoData.fps)
-            : undefined;
+          fps = Number.isFinite(videoData.fps) ? Math.round(videoData.fps) : undefined;
           hasAudio = videoData.hasAudio;
           thumbnailUrl = videoData.thumbnailUrl ?? undefined;
 
@@ -154,8 +146,7 @@ export async function processMediaAssets({
             });
           }
         } catch (error) {
-          const message =
-            error instanceof Error ? error.message : "Could not process video";
+          const message = error instanceof Error ? error.message : "Could not process video";
 
           toast.error(`Couldn't process ${file.name}`, {
             description: message,
@@ -172,11 +163,8 @@ export async function processMediaAssets({
         handle = await mediaSource.uploadLocalFile(file);
         ownsHandle = true;
       }
-      const existingResolvedItem = existing
-        ? existingResolved?.[index]
-        : undefined;
-      resolved =
-        existingResolvedItem ?? (await mediaSource.resolveMedia(handle));
+      const existingResolvedItem = existing ? existingResolved?.[index] : undefined;
+      resolved = existingResolvedItem ?? (await mediaSource.resolveMedia(handle));
 
       processedAssets.push({
         id: handle.id,
@@ -192,7 +180,7 @@ export async function processMediaAssets({
         hasAudio,
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise(resolve => setTimeout(resolve, 0));
 
       completed += 1;
       if (onProgress) {
@@ -213,11 +201,7 @@ export async function processMediaAssets({
         try {
           await mediaSource.deleteHandle(handle);
         } catch (deleteError) {
-          console.error(
-            "deleteHandle failed during rollback:",
-            handle.id,
-            deleteError,
-          );
+          console.error("deleteHandle failed during rollback:", handle.id, deleteError);
         }
       }
     }
@@ -228,9 +212,7 @@ export async function processMediaAssets({
 
 const getMediaDuration = ({ file }: { file: File }): Promise<number> => {
   return new Promise((resolve, reject) => {
-    const element = document.createElement(
-      file.type.startsWith("video/") ? "video" : "audio",
-    ) as HTMLVideoElement;
+    const element = document.createElement(file.type.startsWith("video/") ? "video" : "audio") as HTMLVideoElement;
     const objectUrl = URL.createObjectURL(file);
 
     element.addEventListener("loadedmetadata", () => {

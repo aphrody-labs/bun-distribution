@@ -9,18 +9,11 @@ import { Tabs, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { useEditor } from "../../editor/use-editor";
 import { useEditorAdapters } from "../../EditorProvider";
 import { resolveStickerIntrinsicSize } from "..";
-import {
-  buildGraphicElement,
-  buildStickerElement,
-} from "../../timeline/element-utils";
+import { buildGraphicElement, buildStickerElement } from "../../timeline/element-utils";
 import { STICKER_CATEGORIES } from "../categories";
 import { parseShapeStickerId } from "../providers/shapes";
 import type { TimelineDragData } from "../../timeline/drag";
-import type {
-  StickerBrowseSection,
-  StickerCategory,
-  StickerItem as StickerData,
-} from "..";
+import type { StickerBrowseSection, StickerCategory, StickerItem as StickerData } from "..";
 import { useStickersStore } from "../stickers-store";
 import { cn } from "../../utils/ui";
 import { HappyIcon } from "@hugeicons/core-free-icons";
@@ -52,7 +45,7 @@ export function StickersView() {
           variant="default"
           placeholder="Search..."
           value={searchQuery}
-          onChange={(e) => {
+          onChange={e => {
             setSearchQuery({ query: e.target.value });
             void searchStickers({ query: e.target.value });
           }}
@@ -68,7 +61,7 @@ export function StickersView() {
 
       <Tabs
         value={selectedCategory}
-        onValueChange={(value) => {
+        onValueChange={value => {
           setSelectedCategory({ category: value as StickerCategory });
         }}
         variant="underline"
@@ -102,31 +95,13 @@ function InlineSpinner({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       className={cn("size-4 animate-spin", className)}
     >
-      <circle
-        cx="12"
-        cy="12"
-        r="9"
-        stroke="currentColor"
-        strokeOpacity="0.25"
-        strokeWidth="2"
-      />
-      <path
-        d="M21 12a9 9 0 0 0-9-9"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
 
-function StickerGrid({
-  items,
-  shouldCapSize = false,
-}: {
-  items: StickerData[];
-  shouldCapSize?: boolean;
-}) {
+function StickerGrid({ items, shouldCapSize = false }: { items: StickerData[]; shouldCapSize?: boolean }) {
   const gridStyle: CSSProperties & {
     "--sticker-min": string;
     "--sticker-max"?: string;
@@ -140,7 +115,7 @@ function StickerGrid({
 
   return (
     <div className="grid gap-2" style={gridStyle}>
-      {items.map((item) => (
+      {items.map(item => (
         <StickerItem key={item.id} item={item} shouldCapSize={shouldCapSize} />
       ))}
     </div>
@@ -150,7 +125,7 @@ function StickerGrid({
 function StickerRow({ items }: { items: StickerData[] }) {
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hidden">
-      {items.map((item) => (
+      {items.map(item => (
         <div key={item.id} className="w-20 shrink-0">
           <StickerItem item={item} shouldCapSize containerClassName="w-full" />
         </div>
@@ -162,10 +137,7 @@ function StickerRow({ items }: { items: StickerData[] }) {
 function EmptyView({ message }: { message: string }) {
   return (
     <div className="bg-background flex h-full flex-col items-center justify-center gap-3 p-4">
-      <HugeiconsIcon
-        icon={HappyIcon}
-        className="text-muted-foreground size-10"
-      />
+      <HugeiconsIcon icon={HappyIcon} className="text-muted-foreground size-10" />
       <div className="flex flex-col gap-2 text-center">
         <p className="text-lg font-medium">No stickers found</p>
         <p className="text-muted-foreground text-sm text-balance">{message}</p>
@@ -200,9 +172,7 @@ function StickersContentView() {
       return (
         <div className="flex flex-col gap-3 pb-4">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">
-              {searchResults.total} results
-            </span>
+            <span className="text-muted-foreground text-sm">{searchResults.total} results</span>
           </div>
           <StickerGrid items={searchResults.items} />
         </div>
@@ -240,12 +210,12 @@ function StickersContentView() {
 
   return (
     <div className="flex flex-col gap-4 pb-4">
-      {browseContent.sections.map((section) => (
+      {browseContent.sections.map(section => (
         <StickerSection
           key={section.id}
           section={section}
           onClearRecent={clearRecentStickers}
-          onSeeAll={(category) => {
+          onSeeAll={category => {
             setSelectedCategory({ category });
           }}
         />
@@ -263,18 +233,13 @@ function StickerSection({
   onClearRecent: () => void;
   onSeeAll: (category: StickerCategory) => void;
 }) {
-  const hasHeader =
-    Boolean(section.title) || section.id === "recent" || section.action;
+  const hasHeader = Boolean(section.title) || section.id === "recent" || section.action;
 
   return (
     <div className="flex flex-col gap-2">
       {hasHeader && (
         <div className="flex items-center justify-between gap-2">
-          {section.title ? (
-            <p className="text-xs text-muted-foreground">{section.title}</p>
-          ) : (
-            <div />
-          )}
+          {section.title ? <p className="text-xs text-muted-foreground">{section.title}</p> : <div />}
 
           <div className="ml-auto flex items-center gap-2">
             {section.id === "recent" && (
@@ -304,11 +269,7 @@ function StickerSection({
         </div>
       )}
 
-      {section.layout === "row" ? (
-        <StickerRow items={section.items} />
-      ) : (
-        <StickerGrid items={section.items} />
-      )}
+      {section.layout === "row" ? <StickerRow items={section.items} /> : <StickerGrid items={section.items} />}
     </div>
   );
 }
@@ -319,11 +280,7 @@ interface StickerItemProps {
   containerClassName?: string;
 }
 
-function StickerItem({
-  item,
-  shouldCapSize = false,
-  containerClassName,
-}: StickerItemProps) {
+function StickerItem({ item, shouldCapSize = false, containerClassName }: StickerItemProps) {
   const editor = useEditor();
   const { toast } = useEditorAdapters();
   const { addToRecentStickers } = useStickersStore();
@@ -339,19 +296,14 @@ function StickerItem({
   }, [item.id]);
 
   const displayName = item.name;
-  const shapePreset =
-    item.provider === "shapes"
-      ? parseShapeStickerId({ stickerId: item.id })
-      : null;
+  const shapePreset = item.provider === "shapes" ? parseShapeStickerId({ stickerId: item.id }) : null;
 
   const handleAdd = async () => {
     setIsAdding(true);
     try {
       const currentTime = editor.playback.getCurrentTime();
 
-      let element:
-        | ReturnType<typeof buildGraphicElement>
-        | ReturnType<typeof buildStickerElement>;
+      let element: ReturnType<typeof buildGraphicElement> | ReturnType<typeof buildStickerElement>;
       if (shapePreset) {
         element = buildGraphicElement({
           definitionId: shapePreset.definitionId,
@@ -360,8 +312,9 @@ function StickerItem({
           params: shapePreset.params,
         });
       } else {
-        const { width: intrinsicWidth, height: intrinsicHeight } =
-          await resolveStickerIntrinsicSize({ stickerId: item.id });
+        const { width: intrinsicWidth, height: intrinsicHeight } = await resolveStickerIntrinsicSize({
+          stickerId: item.id,
+        });
         element = buildStickerElement({
           stickerId: item.id,
           name: item.name,
@@ -388,9 +341,7 @@ function StickerItem({
   const preview = (
     <div className="flex size-full items-center justify-center p-3">
       {hasImageError ? (
-        <span className="text-muted-foreground text-center text-xs break-all">
-          {displayName}
-        </span>
+        <span className="text-muted-foreground text-center text-xs break-all">{displayName}</span>
       ) : (
         <img
           src={item.previewUrl}
@@ -429,9 +380,7 @@ function StickerItem({
       };
 
   return (
-    <div
-      className={cn("relative", isAdding && "pointer-events-none opacity-50")}
-    >
+    <div className={cn("relative", isAdding && "pointer-events-none opacity-50")}>
       <DraggableItem
         name={displayName}
         preview={preview}

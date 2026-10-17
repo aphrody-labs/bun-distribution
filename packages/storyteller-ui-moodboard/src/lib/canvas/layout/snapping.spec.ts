@@ -13,9 +13,7 @@ describe("computeSnap", () => {
     const moving = box(103, 400);
     const result = computeSnap(moving, [box(100, 0)], 6, null);
     expect(result.x).toBe(100);
-    expect(result.guides.some((g) => g.axis === "x" && g.pos === 100)).toBe(
-      true,
-    );
+    expect(result.guides.some(g => g.axis === "x" && g.pos === 100)).toBe(true);
   });
 
   it("snaps centers together", () => {
@@ -50,7 +48,7 @@ describe("computeSnap", () => {
   it("emits a guide spanning both boxes on the shared axis", () => {
     const moving = box(100, 300);
     const result = computeSnap(moving, [box(100, 0)], 6, null);
-    const guide = result.guides.find((g) => g.axis === "x");
+    const guide = result.guides.find(g => g.axis === "x");
     expect(guide).toBeDefined();
     expect(guide?.from).toBe(0);
     expect(guide?.to).toBe(400);

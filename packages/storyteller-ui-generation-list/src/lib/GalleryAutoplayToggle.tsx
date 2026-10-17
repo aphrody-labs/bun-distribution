@@ -17,8 +17,8 @@ const OPTIONS: {
 // GalleryViewToggle on the video page; the selection is shared with the
 // gallery via useGalleryViewStore.
 export function GalleryAutoplayToggle() {
-  const autoplayVideos = useGalleryViewStore((s) => s.autoplayVideos);
-  const setAutoplayVideos = useGalleryViewStore((s) => s.setAutoplayVideos);
+  const autoplayVideos = useGalleryViewStore(s => s.autoplayVideos);
+  const setAutoplayVideos = useGalleryViewStore(s => s.setAutoplayVideos);
 
   return (
     <div
@@ -36,9 +36,7 @@ export function GalleryAutoplayToggle() {
               aria-pressed={active}
               onClick={() => setAutoplayVideos(autoplay)}
               className={`flex h-6 w-6 items-center justify-center rounded-[3px] text-xs transition-colors ${
-                active
-                  ? "bg-white/10 text-white"
-                  : "text-white/45 hover:text-white/80"
+                active ? "bg-white/10 text-white" : "text-white/45 hover:text-white/80"
               }`}
             >
               <DynamicIcon icon={icon} />

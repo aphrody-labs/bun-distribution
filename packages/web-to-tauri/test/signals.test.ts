@@ -17,41 +17,24 @@ describe("signals", () => {
     const apis = detectApis(
       `navigator.serviceWorker.register("/sw.js"); new WebSocket("wss://x.test"); await window.showOpenFilePicker(); navigator.gpu.requestAdapter()`,
     );
-    expect(apis).toEqual([
-      "service-worker",
-      "websocket",
-      "file-system-access",
-      "webgpu",
-    ]);
+    expect(apis).toEqual(["service-worker", "websocket", "file-system-access", "webgpu"]);
     expect(isChromiumOnly("file-system-access")).toBe(true);
     expect(isChromiumOnly("websocket")).toBe(false);
   });
 
   it("does not report APIs that are only mentioned in prose", () => {
-    expect(
-      detectApis("Learn about service workers and WebSockets in this guide."),
-    ).toEqual([]);
+    expect(detectApis("Learn about service workers and WebSockets in this guide.")).toEqual([]);
   });
 
   it("detects user-agent branching", () => {
-    expect(detectApis(`if (/Chrome/.test(navigator.userAgent)) {}`)).toContain(
-      "user-agent-sniffing",
-    );
-    expect(detectApis(`const ua = navigator.userAgent; log(ua)`)).not.toContain(
-      "user-agent-sniffing",
-    );
+    expect(detectApis(`if (/Chrome/.test(navigator.userAgent)) {}`)).toContain("user-agent-sniffing");
+    expect(detectApis(`const ua = navigator.userAgent; log(ua)`)).not.toContain("user-agent-sniffing");
   });
 
   it("detects frameworks from markup and headers", () => {
-    expect(
-      detectFrameworks(`<script id="__NEXT_DATA__"></script>`, ""),
-    ).toContain("next");
-    expect(detectFrameworks(`<link href="/wp-content/x.css">`, "")).toContain(
-      "wordpress",
-    );
-    expect(
-      detectFrameworks("<html></html>", "x-powered-by: Next.js"),
-    ).toContain("next");
+    expect(detectFrameworks(`<script id="__NEXT_DATA__"></script>`, "")).toContain("next");
+    expect(detectFrameworks(`<link href="/wp-content/x.css">`, "")).toContain("wordpress");
+    expect(detectFrameworks("<html></html>", "x-powered-by: Next.js")).toContain("next");
     expect(detectFrameworks("<html></html>", "")).toEqual([]);
   });
 
@@ -70,44 +53,23 @@ describe("signals", () => {
 
   it("extracts full URLs without trailing punctuation", () => {
     expect(
-      extractUrls(
-        `see https://a.example.com/x?y=1#z. and "wss://rt.example.com/s", <https://b.test/>`,
-      ).toSorted(),
-    ).toEqual([
-      "https://a.example.com/x?y=1#z",
-      "https://b.test/",
-      "https://rt.example.com/s",
-    ]);
+      extractUrls(`see https://a.example.com/x?y=1#z. and "wss://rt.example.com/s", <https://b.test/>`).toSorted(),
+    ).toEqual(["https://a.example.com/x?y=1#z", "https://b.test/", "https://rt.example.com/s"]);
   });
 
   it("counts a path-scoped provider only when the page points at that path", () => {
-    expect(
-      detectIdps([
-        "https://github.com/aphrody-code",
-        "https://github.com/login",
-      ]),
-    ).toEqual([]);
-    expect(
-      detectIdps(["https://github.com/login/oauth/authorize?client_id=1"]).map(
-        (entry) => entry.id,
-      ),
-    ).toEqual(["github"]);
-    expect(
-      detectIdps(["https://www.facebook.com/v19.0/dialog/oauth"]).map(
-        (entry) => entry.id,
-      ),
-    ).toEqual(["facebook"]);
+    expect(detectIdps(["https://github.com/aphrody-code", "https://github.com/login"])).toEqual([]);
+    expect(detectIdps(["https://github.com/login/oauth/authorize?client_id=1"]).map(entry => entry.id)).toEqual([
+      "github",
+    ]);
+    expect(detectIdps(["https://www.facebook.com/v19.0/dialog/oauth"]).map(entry => entry.id)).toEqual(["facebook"]);
     expect(detectIdps(["https://www.facebook.com/somepage"])).toEqual([]);
   });
 
   it("finds embed providers from frames and scripts, not from the hosts alone", () => {
     expect(
-      detectEmbeds([
-        "https://www.youtube.com/embed/abc",
-        "https://js.stripe.com/v3/",
-        "https://example.com/",
-      ])
-        .map((entry) => entry.id)
+      detectEmbeds(["https://www.youtube.com/embed/abc", "https://js.stripe.com/v3/", "https://example.com/"])
+        .map(entry => entry.id)
         .toSorted(),
     ).toEqual(["stripe-js", "youtube"]);
     expect(detectEmbeds(["not a url"])).toEqual([]);
@@ -120,12 +82,8 @@ describe("signals", () => {
       "https://checkout.stripe.com",
       "https://example.com",
     ]);
-    expect(found.map((entry) => entry.id).toSorted()).toEqual([
-      "auth0",
-      "google",
-      "stripe",
-    ]);
-    expect(found.find((entry) => entry.id === "stripe")?.kind).toBe("payment");
+    expect(found.map(entry => entry.id).toSorted()).toEqual(["auth0", "google", "stripe"]);
+    expect(found.find(entry => entry.id === "stripe")?.kind).toBe("payment");
     expect(detectIdps(["https://accounts.google.com.evil.test"])).toEqual([]);
   });
 
@@ -150,9 +108,7 @@ describe("signals", () => {
 
   it("finds backend route prefixes in bundled code", () => {
     expect(
-      detectProxyPrefixes(
-        `fetch("/api/users"); fetch('/graphql'); const u = \`/trpc/x\`; "/apixyz"; "/about"`,
-      ),
+      detectProxyPrefixes(`fetch("/api/users"); fetch('/graphql'); const u = \`/trpc/x\`; "/apixyz"; "/about"`),
     ).toEqual(["/api", "/graphql", "/trpc"]);
   });
 });

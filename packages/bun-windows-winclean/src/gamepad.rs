@@ -20,7 +20,10 @@ mod native {
     }
     impl Default for State {
         fn default() -> Self {
-            Self { client: None, pads: std::array::from_fn(|_| None) }
+            Self {
+                client: None,
+                pads: std::array::from_fn(|_| None),
+            }
         }
     }
     static STATE: OnceLock<Mutex<State>> = OnceLock::new();
@@ -38,7 +41,9 @@ mod native {
     }
     pub fn create(slot_index: i64) -> Result<Value, String> {
         let index = slot(slot_index, "gamepad_create_xbox360")?;
-        let mut guard = state().lock().map_err(|_| "gamepad state poisoned".to_owned())?;
+        let mut guard = state()
+            .lock()
+            .map_err(|_| "gamepad state poisoned".to_owned())?;
         if guard.pads[index].is_some() {
             return Err(format!("slot {index} already active; destroy it first"));
         }
@@ -82,10 +87,14 @@ mod native {
             left_trigger: u8::try_from(lt).map_err(|_| "lt out of range")?,
             right_trigger: u8::try_from(rt).map_err(|_| "rt out of range")?,
         };
-        let pad = state().lock().map_err(|_| "gamepad state poisoned".to_owned())?.pads[index]
+        let pad = state()
+            .lock()
+            .map_err(|_| "gamepad state poisoned".to_owned())?
+            .pads[index]
             .clone()
             .ok_or_else(|| format!("slot {index} not active"))?;
-        pad.update(&report).map_err(|e| err("ViGEm Xbox 360 update failed", e))?;
+        pad.update(&report)
+            .map_err(|e| err("ViGEm Xbox 360 update failed", e))?;
         Ok(
             json!({"success":true,"slot":index,"buttons":buttons,"lx":lx,"ly":ly,"rx":rx,"ry":ry,"lt":lt,"rt":rt}),
         )
@@ -99,8 +108,11 @@ mod native {
     }
     pub fn destroy(slot_value: i64) -> Result<Value, String> {
         let index = slot(slot_value, "gamepad_destroy")?;
-        let pad =
-            state().lock().map_err(|_| "gamepad state poisoned".to_owned())?.pads[index].take();
+        let pad = state()
+            .lock()
+            .map_err(|_| "gamepad state poisoned".to_owned())?
+            .pads[index]
+            .take();
         if let Some(pad) = pad {
             pad.unplug().map_err(|e| err("ViGEm unplug failed", e))?;
             Ok(json!({"success":true,"slot":index}))
@@ -110,7 +122,9 @@ mod native {
     }
     pub fn destroy_all() -> Result<Value, String> {
         let pads: [Option<TargetHandle<Xbox360, Ready>>; 8] = {
-            let mut guard = state().lock().map_err(|_| "gamepad state poisoned".to_owned())?;
+            let mut guard = state()
+                .lock()
+                .map_err(|_| "gamepad state poisoned".to_owned())?;
             std::array::from_fn(|i| guard.pads[i].take())
         };
         let mut destroyed = 0;

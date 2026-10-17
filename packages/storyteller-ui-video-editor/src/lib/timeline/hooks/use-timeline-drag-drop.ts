@@ -1,10 +1,7 @@
 import { useEffect, useReducer, useState, type RefObject } from "react";
 import { useEditor } from "../../editor/use-editor";
 import { useCommittedRef } from "../../hooks/use-committed-ref";
-import {
-  DragDropController,
-  type DragDropConfig,
-} from "../controllers/drag-drop-controller";
+import { DragDropController, type DragDropConfig } from "../controllers/drag-drop-controller";
 
 interface UseTimelineDragDropProps {
   containerRef: RefObject<HTMLDivElement | null>;
@@ -13,12 +10,7 @@ interface UseTimelineDragDropProps {
   zoomLevel: number;
 }
 
-export function useTimelineDragDrop({
-  containerRef,
-  headerRef,
-  tracksScrollRef,
-  zoomLevel,
-}: UseTimelineDragDropProps) {
+export function useTimelineDragDrop({ containerRef, headerRef, tracksScrollRef, zoomLevel }: UseTimelineDragDropProps) {
   const editor = useEditor();
 
   const config: DragDropConfig = {
@@ -27,16 +19,15 @@ export function useTimelineDragDrop({
     getHeaderEl: () => headerRef?.current ?? null,
     getTracksScrollEl: () => tracksScrollRef?.current ?? null,
     getActiveProjectFps: () => editor.project.getActive()?.settings.fps ?? null,
-    getActiveProjectId: () =>
-      editor.project.getActiveOrNull()?.metadata.id ?? null,
+    getActiveProjectId: () => editor.project.getActiveOrNull()?.metadata.id ?? null,
     getSceneTracks: () => editor.scenes.getActiveScene().tracks,
     getCurrentPlayheadTime: () => editor.playback.getCurrentTime(),
     getMediaAssets: () => editor.media.getAssets(),
     dragSource: editor.timeline.dragSource,
-    addMediaAsset: (args) => editor.media.addMediaAsset(args),
-    executeCommand: (command) => editor.command.execute({ command }),
-    insertElement: (args) => editor.timeline.insertElement(args),
-    addClipEffect: (args) => editor.timeline.addClipEffect(args),
+    addMediaAsset: args => editor.media.addMediaAsset(args),
+    executeCommand: command => editor.command.execute({ command }),
+    insertElement: args => editor.timeline.insertElement(args),
+    addClipEffect: args => editor.timeline.addClipEffect(args),
   };
   const configRef = useCommittedRef(config);
   const [controller] = useState(() => new DragDropController({ configRef }));

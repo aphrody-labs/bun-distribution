@@ -5,12 +5,8 @@ export interface PendingStatus {
   timeLabel: string | null;
 }
 
-export function derivePendingStatus(
-  progress?: number,
-  estimatedTimeLeftMs?: number,
-): PendingStatus {
-  const progressPercent =
-    progress != null ? Math.max(0, Math.min(100, Math.round(progress))) : null;
+export function derivePendingStatus(progress?: number, estimatedTimeLeftMs?: number): PendingStatus {
+  const progressPercent = progress != null ? Math.max(0, Math.min(100, Math.round(progress))) : null;
   const isAlmostDone = progress != null && progress >= 95;
   const timeLabel = isAlmostDone
     ? "Almost done..."

@@ -1,16 +1,10 @@
 import { useMemo } from "react";
-import type {
-  DirectorySortBy,
-  File,
-  FileSearchInput,
-  FileSearchOutput,
-} from "@aphrody/drive-client";
+import type { DirectorySortBy, File, FileSearchInput, FileSearchOutput } from "@aphrody/drive-client";
 import { useNormalizedQuery } from "../../../contexts/SpacedriveContext";
 import { useExplorer } from "../context";
 import { useVirtualListing } from "./useVirtualListing";
 
-export type FileSource =
-  "search" | "virtual" | "directory" | "recents" | "filtered" | "tag";
+export type FileSource = "search" | "virtual" | "directory" | "recents" | "filtered" | "tag";
 
 export interface ExplorerFilesResult {
   files: File[];
@@ -54,10 +48,7 @@ export function useExplorerFiles(): ExplorerFilesResult {
     // Map explorer sortBy to search SortField
     const searchSortField = (() => {
       if (!sortBy) return "Relevance" as const;
-      const sortMap: Record<
-        string,
-        "Relevance" | "Name" | "Size" | "ModifiedAt" | "CreatedAt"
-      > = {
+      const sortMap: Record<string, "Relevance" | "Name" | "Size" | "ModifiedAt" | "CreatedAt"> = {
         name: "Name",
         size: "Size",
         modified: "ModifiedAt",
@@ -68,10 +59,7 @@ export function useExplorerFiles(): ExplorerFilesResult {
 
     return {
       query,
-      scope:
-        scope === "folder" && currentPath
-          ? { Path: { path: currentPath } }
-          : "Library",
+      scope: scope === "folder" && currentPath ? { Path: { path: currentPath } } : "Library",
       filters: {
         file_types: null,
         tags: null,
@@ -106,10 +94,7 @@ export function useExplorerFiles(): ExplorerFilesResult {
 
     const searchSortField = (() => {
       if (!sortBy) return "Size" as const;
-      const sortMap: Record<
-        string,
-        "Relevance" | "Name" | "Size" | "ModifiedAt" | "CreatedAt"
-      > = {
+      const sortMap: Record<string, "Relevance" | "Name" | "Size" | "ModifiedAt" | "CreatedAt"> = {
         name: "Name",
         size: "Size",
         modified: "ModifiedAt",
@@ -175,14 +160,10 @@ export function useExplorerFiles(): ExplorerFilesResult {
     input: searchQueryInput!,
     resourceType: "file",
     pathScope:
-      isSearchMode &&
-      mode.type === "search" &&
-      mode.scope === "folder" &&
-      currentPath
+      isSearchMode && mode.type === "search" && mode.scope === "folder" && currentPath
         ? (currentPath as any)
         : undefined,
-    enabled:
-      isSearchMode && !!searchQueryInput && searchQueryInput.query.length >= 2,
+    enabled: isSearchMode && !!searchQueryInput && searchQueryInput.query.length >= 2,
   });
 
   // Recents query
@@ -231,13 +212,7 @@ export function useExplorerFiles(): ExplorerFilesResult {
         }
       : null!,
     resourceType: "file",
-    enabled:
-      !!currentPath &&
-      !isVirtualView &&
-      !isSearchMode &&
-      !isRecentsMode &&
-      !isFilteredMode &&
-      !isTagMode,
+    enabled: !!currentPath && !isVirtualView && !isSearchMode && !isRecentsMode && !isFilteredMode && !isTagMode,
     pathScope: currentPath ?? undefined,
   });
 

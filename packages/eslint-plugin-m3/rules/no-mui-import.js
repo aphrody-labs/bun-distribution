@@ -9,21 +9,12 @@
  */
 /** @type {Array<[RegExp, string]>} */
 const SUGGEST = [
-  [
-    /^@mui\/icons-material(\/|$)/,
-    "<md-icon> + Material Symbols (codemod migration/codemods/transforms/icons.ts)",
-  ],
+  [/^@mui\/icons-material(\/|$)/, "<md-icon> + Material Symbols (codemod migration/codemods/transforms/icons.ts)"],
   [/^@mui\/material(\/|$)/, "@aphrody/m3-react (codemod orchestrator.ts)"],
   [/^@mui\/x-data-grid/, "md-table (@aphrody/m3-react)"],
   [/^@mui\/x-charts/, "md-*-chart (@aphrody/m3-react)"],
-  [
-    /^@mui\/x-date-pickers/,
-    "md-date-picker / md-time-picker (@aphrody/m3-react)",
-  ],
-  [
-    /^@mui\/(lab|system|material-nextjs)/,
-    "material-web (pas d'Emotion/cache requis)",
-  ],
+  [/^@mui\/x-date-pickers/, "md-date-picker / md-time-picker (@aphrody/m3-react)"],
+  [/^@mui\/(lab|system|material-nextjs)/, "material-web (pas d'Emotion/cache requis)"],
 ];
 
 export default {
@@ -53,8 +44,7 @@ export default {
       },
       // import("@mui/...") dynamique
       ImportExpression(node) {
-        if (node.source && node.source.type === "Literal")
-          check(node, node.source.value);
+        if (node.source && node.source.type === "Literal") check(node, node.source.value);
       },
     };
   },

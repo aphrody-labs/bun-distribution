@@ -49,10 +49,10 @@
     "pg": "catalog:"
   },
   "devDependencies": {
+    "@aphrody/bun-types": "workspace:*",
     "@types/pg": "catalog:",
     "kysely-supabase": "catalog:",
-    "vitest": "catalog:",
-    "@aphrody/bun-types": "workspace:*"
+    "vitest": "catalog:"
   },
   "engines": {
     "bun": "=1.4.4"

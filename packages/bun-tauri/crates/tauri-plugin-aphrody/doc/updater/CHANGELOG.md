@@ -4,7 +4,7 @@
 
 - [`2fd27c2d`](https://github.com/tauri-apps/plugins-workspace/commit/2fd27c2d43966a86e436ecd538e133e1812cc641) Update MSRV to 1.95 to match tauri.
 - [`6a12f7c8`](https://github.com/tauri-apps/plugins-workspace/commit/6a12f7c80a09939609bf522c2f384b0bad04b3d0) ([#3607](https://github.com/tauri-apps/plugins-workspace/pull/3607) by [@lucasfernog](https://github.com/tauri-apps/plugins-workspace/../../lucasfernog)) **Breaking:** Removed the deprecated `Update.available` field, which was always `true`. Check whether `check()` returned `null` instead.
-[`0163bbac`](https://github.com/tauri-apps/plugins-workspace/commit/0163bbaca5d42de292e11cfbdd6464220be9051b) ([#3653](https://github.com/tauri-apps/plugins-workspace/pull/3653)) Fixed an issue that caused the updater plugin to fail to build on macOS with an `no method named run_on_main_thread found` error.
+  [`0163bbac`](https://github.com/tauri-apps/plugins-workspace/commit/0163bbaca5d42de292e11cfbdd6464220be9051b) ([#3653](https://github.com/tauri-apps/plugins-workspace/pull/3653)) Fixed an issue that caused the updater plugin to fail to build on macOS with an `no method named run_on_main_thread found` error.
 
 ## [3.0.0-alpha.1]
 
@@ -27,20 +27,20 @@
 ## [2.12.0]
 
 - [`1308bfa3`](https://github.com/tauri-apps/plugins-workspace/commit/1308bfa399b962b3977c767100a6339d1cbfdd20) **Breaking change:** the `allowDowngrades` option was removed from the `check` command and is now read from the plugin configuration instead.
-    
-    Previously any code running in the webview could pass `allowDowngrades: true` to `plugin:updater|check` and relax the version check from "the update must be newer" to "the update must be different", overriding the comparator the application had configured on the Rust side. The flag is now an application-level setting:
-    
-    ```json
-    {
-      "plugins": {
-        "updater": {
-          "allowDowngrades": true
-        }
+
+  Previously any code running in the webview could pass `allowDowngrades: true` to `plugin:updater|check` and relax the version check from "the update must be newer" to "the update must be different", overriding the comparator the application had configured on the Rust side. The flag is now an application-level setting:
+
+  ```json
+  {
+    "plugins": {
+      "updater": {
+        "allowDowngrades": true
       }
     }
-    ```
-    
-    It defaults to `false`, and is ignored when the application provides its own `Builder::default_version_comparator`, which continues to take precedence.
+  }
+  ```
+
+  It defaults to `false`, and is ignored when the application provides its own `Builder::default_version_comparator`, which continues to take precedence.
 
 ## [2.11.0]
 
@@ -73,6 +73,7 @@
 - [`87afa23c`](https://github.com/tauri-apps/plugins-workspace/commit/87afa23cad077c09bc1eb743800ae3396b531146) ([#2726](https://github.com/tauri-apps/plugins-workspace/pull/2726)) Add allowDowngrades parameter to check command
 
   Added a new optional `allowDowngrades` parameter to the JavaScript check command that allows the updater to consider versions that are lower than the current version as valid updates. When enabled, the version comparator will accept any version that is different from the current version, effectively allowing downgrades.
+
 - [`73ff15de`](https://github.com/tauri-apps/plugins-workspace/commit/73ff15de5d07d476693e40e8e5d138c16da5211e) ([#2757](https://github.com/tauri-apps/plugins-workspace/pull/2757)) Fix headers option in `Update.download` and `Update.downloadAndInstall` doesn't work with `Record<string, string> | Headers` types
 
 ## \[2.7.1]
@@ -165,7 +166,7 @@
 
 ## \[2.0.0-beta.8]
 
-- [`99d6ac0f`](https://github.com/tauri-apps/plugins-workspace/commit/99d6ac0f9506a6a4a1aa59c728157190a7441af6) ([#1606](https://github.com/tauri-apps/plugins-workspace/pull/1606) by [@FabianLars](https://github.com/tauri-apps/plugins-workspace/../../FabianLars)) The JS packages now specify the *minimum* `@tauri-apps/api` version instead of a single exact version.
+- [`99d6ac0f`](https://github.com/tauri-apps/plugins-workspace/commit/99d6ac0f9506a6a4a1aa59c728157190a7441af6) ([#1606](https://github.com/tauri-apps/plugins-workspace/pull/1606) by [@FabianLars](https://github.com/tauri-apps/plugins-workspace/../../FabianLars)) The JS packages now specify the _minimum_ `@tauri-apps/api` version instead of a single exact version.
 - [`6de87966`](https://github.com/tauri-apps/plugins-workspace/commit/6de87966ecc00ad9d91c25be452f1f46bd2b7e1f) ([#1597](https://github.com/tauri-apps/plugins-workspace/pull/1597) by [@Legend-Master](https://github.com/tauri-apps/plugins-workspace/../../Legend-Master)) Update to tauri beta.25.
 
 ## \[2.0.0-beta.11]
@@ -257,7 +258,7 @@
 ## \[2.0.0-alpha.0]
 
 - [`717ae67`](https://github.com/tauri-apps/plugins-workspace/commit/717ae670978feb4492fac1f295998b93f2b9347f)([#371](https://github.com/tauri-apps/plugins-workspace/pull/371)) First v2 alpha release!
-7c2f9e0ce4c75c07ffa3fd76391a25b58f5daf)([#802](https://github.com/tauri-apps/plugins-workspace/pull/802)) Update to @tauri-apps/api v2.0.0-alpha.12.
+  7c2f9e0ce4c75c07ffa3fd76391a25b58f5daf)([#802](https://github.com/tauri-apps/plugins-workspace/pull/802)) Update to @tauri-apps/api v2.0.0-alpha.12.
 
 ## \[2.0.0-alpha.3]
 

@@ -58,7 +58,10 @@ impl Pattern {
             Some((host, digits)) => (
                 host,
                 Port::Exact(
-                    digits.parse().ok().filter(|_| digits.chars().all(|c| c.is_ascii_digit()))?,
+                    digits
+                        .parse()
+                        .ok()
+                        .filter(|_| digits.chars().all(|c| c.is_ascii_digit()))?,
                 ),
             ),
             None => (authority, Port::Default),
@@ -70,10 +73,19 @@ impl Pattern {
             None | Some("/" | "/*") => None,
             Some(path) if path.contains(['?', '#']) => return None,
             Some(path) => Some(
-                path.strip_suffix('*').filter(|_| path.ends_with("/*")).unwrap_or(path).to_string(),
+                path.strip_suffix('*')
+                    .filter(|_| path.ends_with("/*"))
+                    .unwrap_or(path)
+                    .to_string(),
             ),
         };
-        Some(Self { scheme, host: host.to_ascii_lowercase(), subdomains, port, path })
+        Some(Self {
+            scheme,
+            host: host.to_ascii_lowercase(),
+            subdomains,
+            port,
+            path,
+        })
     }
 
     #[must_use]
@@ -81,7 +93,9 @@ impl Pattern {
         if url.scheme() != self.scheme {
             return false;
         }
-        let Some(host) = url.host_str() else { return false };
+        let Some(host) = url.host_str() else {
+            return false;
+        };
         let host = host.to_ascii_lowercase();
         if self.subdomains {
             if !host.ends_with(&format!(".{}", self.host)) {
@@ -99,7 +113,9 @@ impl Pattern {
         if wanted != actual {
             return false;
         }
-        self.path.as_ref().is_none_or(|prefix| path_matches(prefix, url.path()))
+        self.path
+            .as_ref()
+            .is_none_or(|prefix| path_matches(prefix, url.path()))
     }
 }
 
@@ -113,10 +129,20 @@ fn path_matches(prefix: &str, pathname: &str) -> bool {
     let actual: Vec<&str> = pathname.split('/').collect();
     // A trailing slash leaves an empty last segment in the prefix: the URL only has to reach it.
     let trailing_slash = wanted.last() == Some(&"");
-    let required = if trailing_slash { wanted.len() - 1 } else { wanted.len() };
+    let required = if trailing_slash {
+        wanted.len() - 1
+    } else {
+        wanted.len()
+    };
     for (index, segment) in wanted.iter().take(required).enumerate() {
-        let Some(value) = actual.get(index) else { return false };
-        let matches = if *segment == "*" { !value.is_empty() } else { segment == value };
+        let Some(value) = actual.get(index) else {
+            return false;
+        };
+        let matches = if *segment == "*" {
+            !value.is_empty()
+        } else {
+            segment == value
+        };
         if !matches {
             return false;
         }
@@ -151,7 +177,10 @@ impl Policy {
             .chain(extra)
             .filter_map(|text| Pattern::parse(text))
             .collect();
-        Self { patterns, external: origins.external }
+        Self {
+            patterns,
+            external: origins.external,
+        }
     }
 
     #[must_use]
@@ -163,7 +192,7 @@ impl Policy {
                 } else {
                     Decision::Deny
                 }
-            },
+            }
             "blob" | "data" | "javascript" => Decision::Allow,
             "file" => Decision::Deny,
             "http" | "https" => {
@@ -176,7 +205,7 @@ impl Policy {
                         External::Inapp => Decision::Allow,
                     }
                 }
-            },
+            }
             // mailto:, tel:, custom application schemes: only the operating system can handle them.
             _ => {
                 if self.external == External::System {
@@ -184,7 +213,7 @@ impl Policy {
                 } else {
                     Decision::Deny
                 }
-            },
+            }
         }
     }
 
@@ -201,11 +230,15 @@ mod tests {
 
     use super::*;
 
-    const CASES: &str =
-        include_str!("policy-cases.json");
+    const CASES: &str = include_str!("policy-cases.json");
 
     fn strings(value: &Value) -> Vec<String> {
-        value.as_array().unwrap().iter().map(|item| item.as_str().unwrap().to_string()).collect()
+        value
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|item| item.as_str().unwrap().to_string())
+            .collect()
     }
 
     #[test]

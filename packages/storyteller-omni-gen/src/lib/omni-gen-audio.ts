@@ -14,10 +14,7 @@ import type {
 // Server rule (validate_audio_request): these models require exactly one
 // audio reference (the remix/sample source). The models API has no
 // "required" flag, so mirror it by id.
-export const AUDIO_MODELS_REQUIRING_AUDIO_REF = new Set([
-  "suno_remix",
-  "suno_sample",
-]);
+export const AUDIO_MODELS_REQUIRING_AUDIO_REF = new Set(["suno_remix", "suno_sample"]);
 
 // ── Request params ───────────────────────────────────────────────────────
 
@@ -54,38 +51,17 @@ export function buildAudioRequest(
     idempotency_token: crypto.randomUUID(),
     prompt: settings.prompt.trim() || null,
     style_prompt:
-      supports(model.style_prompt_supported) && settings.stylePrompt.trim()
-        ? settings.stylePrompt.trim()
-        : null,
+      supports(model.style_prompt_supported) && settings.stylePrompt.trim() ? settings.stylePrompt.trim() : null,
     audio_media_tokens:
-      supports(model.audio_references_supported) &&
-      settings.audioMediaTokens.length
-        ? settings.audioMediaTokens
-        : null,
+      supports(model.audio_references_supported) && settings.audioMediaTokens.length ? settings.audioMediaTokens : null,
     image_media_tokens:
-      supports(model.image_references_supported) &&
-      settings.imageMediaTokens.length
-        ? settings.imageMediaTokens
-        : null,
-    keep_lyrics: supports(model.keep_lyrics_supported)
-      ? settings.keepLyrics
-      : null,
-    is_instrumental: supports(model.instrumental_toggle_supported)
-      ? settings.isInstrumental
-      : null,
-    is_loopable: supports(model.loopable_toggle_supported)
-      ? settings.isLoopable
-      : null,
-    bpm:
-      supports(model.bpm_supported) && settings.bpm !== null
-        ? settings.bpm
-        : null,
-    musical_key: supports(model.musical_key_supported)
-      ? (settings.musicalKey as OmniGenMusicalKey)
-      : null,
-    sample_rate_hz: model.sample_rate_hz_options?.length
-      ? settings.sampleRateHz
-      : null,
+      supports(model.image_references_supported) && settings.imageMediaTokens.length ? settings.imageMediaTokens : null,
+    keep_lyrics: supports(model.keep_lyrics_supported) ? settings.keepLyrics : null,
+    is_instrumental: supports(model.instrumental_toggle_supported) ? settings.isInstrumental : null,
+    is_loopable: supports(model.loopable_toggle_supported) ? settings.isLoopable : null,
+    bpm: supports(model.bpm_supported) && settings.bpm !== null ? settings.bpm : null,
+    musical_key: supports(model.musical_key_supported) ? (settings.musicalKey as OmniGenMusicalKey) : null,
+    sample_rate_hz: model.sample_rate_hz_options?.length ? settings.sampleRateHz : null,
     speed: supports(model.speed_supported) ? settings.speed : null,
     volume: supports(model.volume_supported) ? settings.volume : null,
     pitch: supports(model.pitch_supported) ? settings.pitch : null,
@@ -97,9 +73,7 @@ export function buildAudioRequest(
 export async function enqueueAudioGeneration(
   model: OmniGenAudioModelDetails,
   settings: AudioGenerationSettings,
-  generate: (
-    body: OmniGenAudioRequest,
-  ) => Promise<OmniGenAudioGenerateResponse> = generateAudioOverHttp,
+  generate: (body: OmniGenAudioRequest) => Promise<OmniGenAudioGenerateResponse> = generateAudioOverHttp,
 ): Promise<{
   success: boolean;
   // One request can create several jobs (Suno-style multi-clip) — callers
@@ -113,9 +87,7 @@ export async function enqueueAudioGeneration(
   try {
     const response = await generate(body);
     if (response.success && response.inference_job_token) {
-      const jobTokens = response.all_job_tokens?.length
-        ? response.all_job_tokens
-        : [response.inference_job_token];
+      const jobTokens = response.all_job_tokens?.length ? response.all_job_tokens : [response.inference_job_token];
       return { success: true, jobTokens };
     }
     return { success: false, jobTokens: [], error: "Generation failed" };
@@ -147,16 +119,12 @@ export interface AudioCostParams {
   sampleRateHz?: number | null;
 }
 
-const generateAudioOverHttp = (body: OmniGenAudioRequest) =>
-  new OmniGenApi().generateAudio(body);
-const estimateAudioOverHttp = (body: OmniGenAudioRequest) =>
-  new OmniGenApi().estimateAudioCost(body);
+const generateAudioOverHttp = (body: OmniGenAudioRequest) => new OmniGenApi().generateAudio(body);
+const estimateAudioOverHttp = (body: OmniGenAudioRequest) => new OmniGenApi().estimateAudioCost(body);
 
 export function useAudioCostEstimate(
   params: AudioCostParams,
-  estimate: (
-    body: OmniGenAudioRequest,
-  ) => Promise<OmniGenAudioCostResponse> = estimateAudioOverHttp,
+  estimate: (body: OmniGenAudioRequest) => Promise<OmniGenAudioCostResponse> = estimateAudioOverHttp,
 ): number | null {
   const [credits, setCredits] = useState<number | null>(null);
   const abortRef = useRef(0);
@@ -171,17 +139,14 @@ export function useAudioCostEstimate(
     const body: OmniGenAudioRequest = {
       model: params.model,
       audio_media_tokens: params.audioReferenceCount
-        ? Array.from(
-            { length: params.audioReferenceCount },
-            () => "placeholder",
-          )
+        ? Array.from({ length: params.audioReferenceCount }, () => "placeholder")
         : null,
       image_media_tokens: params.hasImageReference ? ["placeholder"] : null,
       sample_rate_hz: params.sampleRateHz ?? null,
     };
 
     estimate(body).then(
-      (response) => {
+      response => {
         if (id !== abortRef.current) return;
         if (response.success && response.cost_in_credits != null) {
           setCredits(response.cost_in_credits);
@@ -197,13 +162,7 @@ export function useAudioCostEstimate(
     return () => {
       abortRef.current++;
     };
-  }, [
-    estimate,
-    params.model,
-    params.audioReferenceCount,
-    params.hasImageReference,
-    params.sampleRateHz,
-  ]);
+  }, [estimate, params.model, params.audioReferenceCount, params.hasImageReference, params.sampleRateHz]);
 
   return credits;
 }

@@ -29,7 +29,10 @@ name = "tauri_build"
 anyhow = { workspace = true }
 quote = { workspace = true, optional = true }
 tauri-codegen = { version = "~1.4.4", path = "../aphrody-tauri-codegen", package = "aphrody-tauri-codegen", optional = true }
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2", "resources"] }
+tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+  "build-2",
+  "resources",
+] }
 cargo_toml = "1.0"
 serde = { workspace = true }
 serde_json = { workspace = true }

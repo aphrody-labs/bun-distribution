@@ -1,8 +1,4 @@
-import {
-  LoyaltyProgram,
-  SubscriptionNamespace,
-  SubscriptionProduct,
-} from "../enums/Billing.js";
+import { LoyaltyProgram, SubscriptionNamespace, SubscriptionProduct } from "../enums/Billing.js";
 
 export interface ActiveSubscriptions {
   // user's list of subscriptions

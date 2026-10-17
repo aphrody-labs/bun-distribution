@@ -38,18 +38,13 @@ export interface EstimateSplatCostErrorResult extends CommandResult {
   error_details?: EstimateSplatCostErrorPayload;
 }
 
-export type EstimateSplatCostResult =
-  EstimateSplatCostSuccess | EstimateSplatCostErrorResult;
+export type EstimateSplatCostResult = EstimateSplatCostSuccess | EstimateSplatCostErrorResult;
 
-export const EstimateSplatCost = async (
-  request: EstimateSplatCostRequest,
-): Promise<EstimateSplatCostResult> => {
+export const EstimateSplatCost = async (request: EstimateSplatCostRequest): Promise<EstimateSplatCostResult> => {
   const result = await invoke("estimate_splat_cost_command", { request });
   return result as EstimateSplatCostResult;
 };
 
-export function isEstimateSplatCostSuccess(
-  r: EstimateSplatCostResult,
-): r is EstimateSplatCostSuccess {
+export function isEstimateSplatCostSuccess(r: EstimateSplatCostResult): r is EstimateSplatCostSuccess {
   return r.status === CommandSuccessStatus.Success;
 }

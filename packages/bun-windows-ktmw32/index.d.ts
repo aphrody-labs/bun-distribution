@@ -11,31 +11,86 @@ interface Functions {
   /** ktmw32.dll!CommitTransactionAsync */
   CommitTransactionAsync(TransactionHandle: Win32Pointer): number;
   /** ktmw32.dll!CreateEnlistment */
-  CreateEnlistment(lpEnlistmentAttributes: Win32Pointer, ResourceManagerHandle: Win32Pointer, TransactionHandle: Win32Pointer, NotificationMask: number, CreateOptions: number, EnlistmentKey: Win32Pointer): number | null;
+  CreateEnlistment(
+    lpEnlistmentAttributes: Win32Pointer,
+    ResourceManagerHandle: Win32Pointer,
+    TransactionHandle: Win32Pointer,
+    NotificationMask: number,
+    CreateOptions: number,
+    EnlistmentKey: Win32Pointer,
+  ): number | null;
   /** ktmw32.dll!CreateResourceManager */
-  CreateResourceManager(lpResourceManagerAttributes: Win32Pointer, ResourceManagerId: Win32Pointer, CreateOptions: number, TmHandle: Win32Pointer, Description: string | Win32Pointer): number | null;
+  CreateResourceManager(
+    lpResourceManagerAttributes: Win32Pointer,
+    ResourceManagerId: Win32Pointer,
+    CreateOptions: number,
+    TmHandle: Win32Pointer,
+    Description: string | Win32Pointer,
+  ): number | null;
   /** ktmw32.dll!CreateTransaction */
-  CreateTransaction(lpTransactionAttributes: Win32Pointer, UOW: Win32Pointer, CreateOptions: number, IsolationLevel: number, IsolationFlags: number, Timeout: number, Description: string | Win32Pointer): number | null;
+  CreateTransaction(
+    lpTransactionAttributes: Win32Pointer,
+    UOW: Win32Pointer,
+    CreateOptions: number,
+    IsolationLevel: number,
+    IsolationFlags: number,
+    Timeout: number,
+    Description: string | Win32Pointer,
+  ): number | null;
   /** ktmw32.dll!CreateTransactionManager */
-  CreateTransactionManager(lpTransactionAttributes: Win32Pointer, LogFileName: string | Win32Pointer, CreateOptions: number, CommitStrength: number): number | null;
+  CreateTransactionManager(
+    lpTransactionAttributes: Win32Pointer,
+    LogFileName: string | Win32Pointer,
+    CreateOptions: number,
+    CommitStrength: number,
+  ): number | null;
   /** ktmw32.dll!GetCurrentClockTransactionManager */
   GetCurrentClockTransactionManager(TransactionManagerHandle: Win32Pointer, TmVirtualClock: Win32Pointer): number;
   /** ktmw32.dll!GetEnlistmentId */
   GetEnlistmentId(EnlistmentHandle: Win32Pointer, EnlistmentId: Win32Pointer): number;
   /** ktmw32.dll!GetEnlistmentRecoveryInformation */
-  GetEnlistmentRecoveryInformation(EnlistmentHandle: Win32Pointer, BufferSize: number, Buffer: Win32Pointer, BufferUsed: Win32Pointer): number;
+  GetEnlistmentRecoveryInformation(
+    EnlistmentHandle: Win32Pointer,
+    BufferSize: number,
+    Buffer: Win32Pointer,
+    BufferUsed: Win32Pointer,
+  ): number;
   /** ktmw32.dll!GetNotificationResourceManager */
-  GetNotificationResourceManager(ResourceManagerHandle: Win32Pointer, TransactionNotification: Win32Pointer, NotificationLength: number, dwMilliseconds: number, ReturnLength: Win32Pointer): number;
+  GetNotificationResourceManager(
+    ResourceManagerHandle: Win32Pointer,
+    TransactionNotification: Win32Pointer,
+    NotificationLength: number,
+    dwMilliseconds: number,
+    ReturnLength: Win32Pointer,
+  ): number;
   /** ktmw32.dll!GetNotificationResourceManagerAsync */
-  GetNotificationResourceManagerAsync(ResourceManagerHandle: Win32Pointer, TransactionNotification: Win32Pointer, TransactionNotificationLength: number, ReturnLength: Win32Pointer, lpOverlapped: Win32Pointer): number;
+  GetNotificationResourceManagerAsync(
+    ResourceManagerHandle: Win32Pointer,
+    TransactionNotification: Win32Pointer,
+    TransactionNotificationLength: number,
+    ReturnLength: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** ktmw32.dll!GetTransactionId */
   GetTransactionId(TransactionHandle: Win32Pointer, TransactionId: Win32Pointer): number;
   /** ktmw32.dll!GetTransactionInformation */
-  GetTransactionInformation(TransactionHandle: Win32Pointer, Outcome: Win32Pointer, IsolationLevel: Win32Pointer, IsolationFlags: Win32Pointer, Timeout: Win32Pointer, BufferLength: number, Description: string | Win32Pointer): number;
+  GetTransactionInformation(
+    TransactionHandle: Win32Pointer,
+    Outcome: Win32Pointer,
+    IsolationLevel: Win32Pointer,
+    IsolationFlags: Win32Pointer,
+    Timeout: Win32Pointer,
+    BufferLength: number,
+    Description: string | Win32Pointer,
+  ): number;
   /** ktmw32.dll!GetTransactionManagerId */
   GetTransactionManagerId(TransactionManagerHandle: Win32Pointer, TransactionManagerId: Win32Pointer): number;
   /** ktmw32.dll!OpenEnlistment */
-  OpenEnlistment(dwDesiredAccess: number, ResourceManagerHandle: Win32Pointer, EnlistmentId: Win32Pointer): number | null;
+  OpenEnlistment(
+    dwDesiredAccess: number,
+    ResourceManagerHandle: Win32Pointer,
+    EnlistmentId: Win32Pointer,
+  ): number | null;
   /** ktmw32.dll!OpenResourceManager */
   OpenResourceManager(dwDesiredAccess: number, TmHandle: Win32Pointer, ResourceManagerId: Win32Pointer): number | null;
   /** ktmw32.dll!OpenTransaction */
@@ -43,7 +98,11 @@ interface Functions {
   /** ktmw32.dll!OpenTransactionManager */
   OpenTransactionManager(LogFileName: string | Win32Pointer, DesiredAccess: number, OpenOptions: number): number | null;
   /** ktmw32.dll!OpenTransactionManagerById */
-  OpenTransactionManagerById(TransactionManagerId: Win32Pointer, DesiredAccess: number, OpenOptions: number): number | null;
+  OpenTransactionManagerById(
+    TransactionManagerId: Win32Pointer,
+    DesiredAccess: number,
+    OpenOptions: number,
+  ): number | null;
   /** ktmw32.dll!PrePrepareComplete */
   PrePrepareComplete(EnlistmentHandle: Win32Pointer, TmVirtualClock: Win32Pointer): number;
   /** ktmw32.dll!PrePrepareEnlistment */
@@ -75,9 +134,19 @@ interface Functions {
   /** ktmw32.dll!SetEnlistmentRecoveryInformation */
   SetEnlistmentRecoveryInformation(EnlistmentHandle: Win32Pointer, BufferSize: number, Buffer: Win32Pointer): number;
   /** ktmw32.dll!SetResourceManagerCompletionPort */
-  SetResourceManagerCompletionPort(ResourceManagerHandle: Win32Pointer, IoCompletionPortHandle: Win32Pointer, CompletionKey: number | bigint): number;
+  SetResourceManagerCompletionPort(
+    ResourceManagerHandle: Win32Pointer,
+    IoCompletionPortHandle: Win32Pointer,
+    CompletionKey: number | bigint,
+  ): number;
   /** ktmw32.dll!SetTransactionInformation */
-  SetTransactionInformation(TransactionHandle: Win32Pointer, IsolationLevel: number, IsolationFlags: number, Timeout: number, Description: string | Win32Pointer): number;
+  SetTransactionInformation(
+    TransactionHandle: Win32Pointer,
+    IsolationLevel: number,
+    IsolationFlags: number,
+    Timeout: number,
+    Description: string | Win32Pointer,
+  ): number;
   /** ktmw32.dll!SinglePhaseReject */
   SinglePhaseReject(EnlistmentHandle: Win32Pointer, TmVirtualClock: Win32Pointer): number;
 }

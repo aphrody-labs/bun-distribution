@@ -2,11 +2,7 @@
  * Original source: https://github.com/rafaelcaricio/gradient-parser/blob/master/lib/parser.js
  */
 
-type GradientType =
-  | "linear-gradient"
-  | "repeating-linear-gradient"
-  | "radial-gradient"
-  | "repeating-radial-gradient";
+type GradientType = "linear-gradient" | "repeating-linear-gradient" | "radial-gradient" | "repeating-radial-gradient";
 
 type DirectionalOrientation = { type: "directional"; value: string };
 type AngularOrientation = { type: "angular"; value: string };
@@ -34,8 +30,7 @@ type Shape = {
 
 type DefaultRadial = { type: "default-radial"; at: Position };
 
-type RadialOrientation =
-  Shape | (ExtentKeyword & { at?: Position }) | DefaultRadial;
+type RadialOrientation = Shape | (ExtentKeyword & { at?: Position }) | DefaultRadial;
 
 export type GradientOrientation = LinearOrientation | Array<RadialOrientation>;
 
@@ -86,15 +81,12 @@ type Tokens = {
 
 const tokens: Tokens = {
   linearGradient: /^(-(webkit|o|ms|moz)-)?(linear-gradient)/i,
-  repeatingLinearGradient:
-    /^(-(webkit|o|ms|moz)-)?(repeating-linear-gradient)/i,
+  repeatingLinearGradient: /^(-(webkit|o|ms|moz)-)?(repeating-linear-gradient)/i,
   radialGradient: /^(-(webkit|o|ms|moz)-)?(radial-gradient)/i,
-  repeatingRadialGradient:
-    /^(-(webkit|o|ms|moz)-)?(repeating-radial-gradient)/i,
+  repeatingRadialGradient: /^(-(webkit|o|ms|moz)-)?(repeating-radial-gradient)/i,
   sideOrCorner:
     /^to (left (top|bottom)|right (top|bottom)|top (left|right)|bottom (left|right)|left|right|top|bottom)/i,
-  extentKeywords:
-    /^(closest-side|closest-corner|farthest-side|farthest-corner|contain|cover)/,
+  extentKeywords: /^(closest-side|closest-corner|farthest-side|farthest-corner|contain|cover)/,
   positionKeywords: /^(left|center|right|top|bottom)/i,
   pixelValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))px/,
   percentageValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))%/,
@@ -134,8 +126,7 @@ const getAst = (): Array<GradientAst> => {
   return ast;
 };
 
-const matchListDefinitions = (): Array<GradientAst> =>
-  matchListing({ matcher: matchDefinition });
+const matchListDefinitions = (): Array<GradientAst> => matchListing({ matcher: matchDefinition });
 
 const matchDefinition = (): GradientAst | undefined =>
   matchGradient({
@@ -238,8 +229,7 @@ const matchAngle = (): AngularOrientation | undefined =>
   match({ type: "angular", pattern: tokens.angleValue, captureIndex: 1 }) ||
   match({ type: "angular", pattern: tokens.radianValue, captureIndex: 1 });
 
-const matchListRadialOrientations = ():
-  Array<RadialOrientation> | undefined => {
+const matchListRadialOrientations = (): Array<RadialOrientation> | undefined => {
   const radialOrientation = matchRadialOrientation();
   if (!radialOrientation) {
     return undefined;
@@ -394,11 +384,7 @@ const matchCoordinates = (): PositionValue => ({
   y: matchDistance(),
 });
 
-const matchListing = <T>({
-  matcher,
-}: {
-  matcher: () => T | undefined;
-}): Array<T> => {
+const matchListing = <T>({ matcher }: { matcher: () => T | undefined }): Array<T> => {
   const captures = matcher();
   const result: Array<T> = [];
 
@@ -433,8 +419,7 @@ const matchColor = (): Color | undefined =>
 const matchLiteralColor = (): Color | undefined =>
   match({ type: "literal", pattern: tokens.literalColor, captureIndex: 0 });
 
-const matchHexColor = (): Color | undefined =>
-  match({ type: "hex", pattern: tokens.hexColor, captureIndex: 1 });
+const matchHexColor = (): Color | undefined => match({ type: "hex", pattern: tokens.hexColor, captureIndex: 1 });
 
 const matchRGBColor = (): Color | undefined =>
   matchCall({
@@ -470,8 +455,7 @@ const matchHSLColor = (): Color | undefined =>
       const lookahead = scan({ regexp: tokens.percentageValue });
       if (lookahead) {
         error({
-          message:
-            "HSL hue value must be a number in degrees (0-360) or normalized (-360 to 360), not a percentage",
+          message: "HSL hue value must be a number in degrees (0-360) or normalized (-360 to 360), not a percentage",
         });
       }
 
@@ -485,14 +469,12 @@ const matchHSLColor = (): Color | undefined =>
       const ensuredSat =
         sat ??
         error({
-          message:
-            "Expected percentage value for saturation and lightness in HSL",
+          message: "Expected percentage value for saturation and lightness in HSL",
         });
       const ensuredLight =
         light ??
         error({
-          message:
-            "Expected percentage value for saturation and lightness in HSL",
+          message: "Expected percentage value for saturation and lightness in HSL",
         });
       return {
         type: "hsl",
@@ -517,14 +499,12 @@ const matchHSLAColor = (): Color | undefined =>
       const ensuredSat =
         sat ??
         error({
-          message:
-            "Expected percentage value for saturation and lightness in HSLA",
+          message: "Expected percentage value for saturation and lightness in HSLA",
         });
       const ensuredLight =
         light ??
         error({
-          message:
-            "Expected percentage value for saturation and lightness in HSLA",
+          message: "Expected percentage value for saturation and lightness in HSLA",
         });
       return {
         type: "hsla",
@@ -534,15 +514,12 @@ const matchHSLAColor = (): Color | undefined =>
   });
 
 const matchVariableName = (): string => {
-  const captures =
-    scan({ regexp: tokens.variableName }) ??
-    error({ message: "Expected CSS variable name" });
+  const captures = scan({ regexp: tokens.variableName }) ?? error({ message: "Expected CSS variable name" });
   return captures[1];
 };
 
 const matchNumber = (): string => {
-  const captures =
-    scan({ regexp: tokens.number }) ?? error({ message: "Expected number" });
+  const captures = scan({ regexp: tokens.number }) ?? error({ message: "Expected number" });
   return captures[1];
 };
 
@@ -632,11 +609,7 @@ const consume = ({ size }: { size: number }): void => {
   input = input.slice(size);
 };
 
-export const parseGradient = ({
-  code,
-}: {
-  code: string;
-}): Array<GradientAst> => {
+export const parseGradient = ({ code }: { code: string }): Array<GradientAst> => {
   input = code.toString().trim();
   if (input.endsWith(";")) {
     input = input.slice(0, -1);

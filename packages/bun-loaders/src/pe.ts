@@ -111,8 +111,7 @@ const flagNames = (value: number, names: Record<number, string>): string[] =>
 
 export function parsePe(data: Uint8Array, path = "<memory>"): PeInfo {
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-  if (data.length < 64 || view.getUint16(0, true) !== 0x5a4d)
-    throw new TypeError(`not a PE image (no MZ): ${path}`);
+  if (data.length < 64 || view.getUint16(0, true) !== 0x5a4d) throw new TypeError(`not a PE image (no MZ): ${path}`);
   const pe = view.getUint32(60, true);
   if (pe + 24 > data.length || view.getUint32(pe, true) !== 0x4550)
     throw new TypeError(`invalid PE signature: ${path}`);
@@ -158,9 +157,7 @@ export function parsePe(data: Uint8Array, path = "<memory>"): PeInfo {
         return o < data.length ? o : -1;
       }
     }
-    return rva < data.length && rva < (sections[0]?.rawOffset ?? 0x400)
-      ? rva
-      : -1;
+    return rva < data.length && rva < (sections[0]?.rawOffset ?? 0x400) ? rva : -1;
   };
   const cstr = (o: number, max = 512): string => {
     if (o < 0) return "";
@@ -170,15 +167,10 @@ export function parsePe(data: Uint8Array, path = "<memory>"): PeInfo {
   };
   const dir = (i: number): [number, number] =>
     i < dirCount && dirBase + i * 8 + 8 <= secBase
-      ? [
-          view.getUint32(dirBase + i * 8, true),
-          view.getUint32(dirBase + i * 8 + 4, true),
-        ]
+      ? [view.getUint32(dirBase + i * 8, true), view.getUint32(dirBase + i * 8 + 4, true)]
       : [0, 0];
-  const u32 = (o: number) =>
-    o >= 0 && o + 4 <= data.length ? view.getUint32(o, true) : 0;
-  const u16 = (o: number) =>
-    o >= 0 && o + 2 <= data.length ? view.getUint16(o, true) : 0;
+  const u32 = (o: number) => (o >= 0 && o + 4 <= data.length ? view.getUint32(o, true) : 0);
+  const u16 = (o: number) => (o >= 0 && o + 2 <= data.length ? view.getUint16(o, true) : 0);
 
   const thunks = (rva: number): (string | number)[] => {
     const out: (string | number)[] = [];
@@ -194,11 +186,7 @@ export function parsePe(data: Uint8Array, path = "<memory>"): PeInfo {
   };
   const imports: PeImport[] = [];
   const [impRva] = dir(1);
-  for (
-    let o = impRva ? off(impRva) : -1, n = 0;
-    o >= 0 && o + 20 <= data.length && n < 4096;
-    o += 20, n++
-  ) {
+  for (let o = impRva ? off(impRva) : -1, n = 0; o >= 0 && o + 20 <= data.length && n < 4096; o += 20, n++) {
     const nameRva = u32(o + 12);
     if (!nameRva && !u32(o) && !u32(o + 16)) break;
     imports.push({
@@ -208,11 +196,7 @@ export function parsePe(data: Uint8Array, path = "<memory>"): PeInfo {
     });
   }
   const [delayRva] = dir(13);
-  for (
-    let o = delayRva ? off(delayRva) : -1, n = 0;
-    o >= 0 && o + 32 <= data.length && n < 4096;
-    o += 32, n++
-  ) {
+  for (let o = delayRva ? off(delayRva) : -1, n = 0; o >= 0 && o + 32 <= data.length && n < 4096; o += 32, n++) {
     if (!u32(o + 4)) break;
     imports.push({
       dll: cstr(off(u32(o + 4))),
@@ -233,8 +217,7 @@ export function parsePe(data: Uint8Array, path = "<memory>"): PeInfo {
     const names = off(u32(e + 32));
     const ords = off(u32(e + 36));
     const named = new Map<number, string>();
-    for (let i = 0; i < nNames; i++)
-      named.set(u16(ords + i * 2), cstr(off(u32(names + i * 4))));
+    for (let i = 0; i < nNames; i++) named.set(u16(ords + i * 2), cstr(off(u32(names + i * 4))));
     for (let i = 0; i < nFuncs; i++) {
       const rva = u32(funcs + i * 4);
       if (!rva) continue;
@@ -243,8 +226,7 @@ export function parsePe(data: Uint8Array, path = "<memory>"): PeInfo {
         ordinal: base + i,
         rva,
       };
-      if (rva >= expRva && rva < expRva + expSize)
-        entry.forwarder = cstr(off(rva));
+      if (rva >= expRva && rva < expRva + expSize) entry.forwarder = cstr(off(rva));
       exports.functions.push(entry);
     }
   }
@@ -255,9 +237,7 @@ export function parsePe(data: Uint8Array, path = "<memory>"): PeInfo {
   const resName = (v: number): string | number => {
     if (!(v & 0x80000000)) return v & 0xffff;
     const o = root + (v & 0x7fffffff);
-    return new TextDecoder("utf-16le").decode(
-      data.subarray(o + 2, o + 2 + u16(o) * 2),
-    );
+    return new TextDecoder("utf-16le").decode(data.subarray(o + 2, o + 2 + u16(o) * 2));
   };
   const walk = (o: number, depth: number, path: (string | number)[]): void => {
     if (o < 0 || depth > 2 || resources.length > 4096) return;
@@ -265,8 +245,7 @@ export function parsePe(data: Uint8Array, path = "<memory>"): PeInfo {
     for (let i = 0; i < n; i++) {
       const name = resName(u32(o + 16 + i * 8));
       const target = u32(o + 20 + i * 8);
-      if (target & 0x80000000)
-        walk(root + (target & 0x7fffffff), depth + 1, [...path, name]);
+      if (target & 0x80000000) walk(root + (target & 0x7fffffff), depth + 1, [...path, name]);
       else {
         const leaf = root + target;
         const t = path[0]!;
@@ -281,11 +260,10 @@ export function parsePe(data: Uint8Array, path = "<memory>"): PeInfo {
     }
   };
   if (root >= 0) walk(root, 0, []);
-  const bytesOf = (r?: PeResource) =>
-    r ? data.subarray(off(r.rva), off(r.rva) + r.size) : undefined;
-  const manifestBytes = bytesOf(resources.find((r) => r.type === "MANIFEST"));
+  const bytesOf = (r?: PeResource) => (r ? data.subarray(off(r.rva), off(r.rva) + r.size) : undefined);
+  const manifestBytes = bytesOf(resources.find(r => r.type === "MANIFEST"));
   const version: Record<string, string> = {};
-  const versionBytes = bytesOf(resources.find((r) => r.type === "VERSION"));
+  const versionBytes = bytesOf(resources.find(r => r.type === "VERSION"));
   if (versionBytes) {
     const text = new TextDecoder("utf-16le").decode(versionBytes);
     for (const key of [
@@ -330,12 +308,7 @@ export function parsePe(data: Uint8Array, path = "<memory>"): PeInfo {
     dll: (chars & 0x2000) !== 0,
     subsystem: SUBSYSTEMS[u16(opt + 68)] ?? String(u16(opt + 68)),
     entryPoint: u32(opt + 16),
-    imageBase:
-      "0x" +
-      (wide
-        ? view.getBigUint64(opt + 24, true)
-        : BigInt(u32(opt + 28))
-      ).toString(16),
+    imageBase: "0x" + (wide ? view.getBigUint64(opt + 24, true) : BigInt(u32(opt + 28))).toString(16),
     sizeOfImage: u32(opt + 56),
     linkerVersion: `${data[opt + 2]}.${data[opt + 3]}`,
     osVersion: `${u16(opt + 40)}.${u16(opt + 42)}`,
@@ -349,18 +322,13 @@ export function parsePe(data: Uint8Array, path = "<memory>"): PeInfo {
       0x1000: "appcontainer",
       0x4000: "guard-cf",
     }),
-    dotnet:
-      clr >= 0
-        ? { runtime: `${u16(clr + 4)}.${u16(clr + 6)}`, flags: u32(clr + 16) }
-        : null,
+    dotnet: clr >= 0 ? { runtime: `${u16(clr + 4)}.${u16(clr + 6)}`, flags: u32(clr + 16) } : null,
     sections,
     imports,
     exports,
     resources,
     version,
-    manifest: manifestBytes
-      ? new TextDecoder().decode(manifestBytes).trim()
-      : null,
+    manifest: manifestBytes ? new TextDecoder().decode(manifestBytes).trim() : null,
     abi: summary,
   };
 }

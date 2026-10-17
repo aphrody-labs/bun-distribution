@@ -3,10 +3,20 @@
   "version": "1.4.4",
   "private": false,
   "description": "Chrome applicatif partagé de website (navigation, barre latérale, barre supérieure, pied de page)",
+  "license": "Apache-2.0",
+  "files": [
+    "src",
+    "test",
+    "tsconfig.json"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./routes-next": "./src/lib/routes-next.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "scripts": {
     "lint": "bun lint -c ../rg-config/oxlintrc.json src",
@@ -34,15 +44,5 @@
   },
   "engines": {
     "bun": "=1.4.4"
-  },
-  "license": "Apache-2.0",
-  "files": [
-    "src",
-    "test",
-    "tsconfig.json"
-  ],
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   }
 }

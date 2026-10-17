@@ -39,13 +39,7 @@ const RATIO_VALUE: Record<CameraAspectRatio, number> = {
 
 type FrameRect = { x: number; y: number; width: number; height: number };
 
-const fitFrame = (
-  width: number,
-  height: number,
-  ratio: number,
-  top: number,
-  bottom: number,
-): FrameRect => {
+const fitFrame = (width: number, height: number, ratio: number, top: number, bottom: number): FrameRect => {
   let safeWidth = width - SIDE_INSET * 2;
   let safeHeight = height - top - bottom;
   let safeTop = top;
@@ -64,19 +58,13 @@ const fitFrame = (
   };
 };
 
-export const CameraFrame = ({
-  width,
-  height,
-}: {
-  width: number;
-  height: number;
-}) => {
+export const CameraFrame = ({ width, height }: { width: number; height: number }) => {
   const editor = useContext(EngineContext);
-  const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
-  const sceneMode = usePageSceneStore((s) => s.sceneMode);
-  const timelineExpanded = usePageSceneStore((s) => s.timelineExpanded);
-  const cameras = usePageSceneStore((s) => s.cameras);
-  const selectedCameraId = usePageSceneStore((s) => s.selectedCameraId);
+  const camAspect = usePageSceneStore(s => s.cameraAspectRatio);
+  const sceneMode = usePageSceneStore(s => s.sceneMode);
+  const timelineExpanded = usePageSceneStore(s => s.timelineExpanded);
+  const cameras = usePageSceneStore(s => s.cameras);
+  const selectedCameraId = usePageSceneStore(s => s.selectedCameraId);
 
   const isRecord = sceneMode === "record";
 
@@ -88,9 +76,7 @@ export const CameraFrame = ({
     const el = document.getElementById("timeline-editor");
     if (!el) return undefined;
     setEditorPanelHeight(el.offsetHeight);
-    const observer = new ResizeObserver(() =>
-      setEditorPanelHeight(el.offsetHeight),
-    );
+    const observer = new ResizeObserver(() => setEditorPanelHeight(el.offsetHeight));
     observer.observe(el);
     return () => observer.disconnect();
   }, [isRecord, timelineExpanded]);
@@ -127,30 +113,16 @@ export const CameraFrame = ({
 
   if (!frame) return null;
 
-  const focalLength = cameras.find(
-    (c) => c.id === selectedCameraId,
-  )?.focalLength;
+  const focalLength = cameras.find(c => c.id === selectedCameraId)?.focalLength;
   const right = frame.x + frame.width;
   const bottomEdge = frame.y + frame.height;
 
   return (
-    <div
-      id="letterbox"
-      className="pointer-events-none absolute inset-0 select-none"
-    >
+    <div id="letterbox" className="pointer-events-none absolute inset-0 select-none">
       {/* Dim everything outside the frame (still visible, won't render). */}
-      <div
-        className="absolute left-0 right-0 top-0 bg-black/60"
-        style={{ height: frame.y }}
-      />
-      <div
-        className="absolute bottom-0 left-0 right-0 bg-black/60"
-        style={{ height: height - bottomEdge }}
-      />
-      <div
-        className="absolute left-0 bg-black/60"
-        style={{ top: frame.y, height: frame.height, width: frame.x }}
-      />
+      <div className="absolute left-0 right-0 top-0 bg-black/60" style={{ height: frame.y }} />
+      <div className="absolute bottom-0 left-0 right-0 bg-black/60" style={{ height: height - bottomEdge }} />
+      <div className="absolute left-0 bg-black/60" style={{ top: frame.y, height: frame.height, width: frame.x }} />
       <div
         className="absolute right-0 bg-black/60"
         style={{ top: frame.y, height: frame.height, width: width - right }}
@@ -171,9 +143,7 @@ export const CameraFrame = ({
         <div className="absolute left-0 right-0 top-1/3 h-px bg-white/15" />
         <div className="absolute left-0 right-0 top-2/3 h-px bg-white/15" />
         {focalLength !== undefined && (
-          <div className="absolute left-3 top-2 text-sm font-medium text-white/80 drop-shadow">
-            {focalLength}mm
-          </div>
+          <div className="absolute left-3 top-2 text-sm font-medium text-white/80 drop-shadow">{focalLength}mm</div>
         )}
       </div>
     </div>

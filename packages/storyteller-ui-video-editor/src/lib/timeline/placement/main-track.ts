@@ -15,7 +15,7 @@ export function getEarliestMainTrackElement({
   mainTrack: VideoTrack;
   excludeElementId?: string;
 }): TimelineElement | null {
-  const elements = mainTrack.elements.filter((element) => {
+  const elements = mainTrack.elements.filter(element => {
     return !excludeElementId || element.id !== excludeElementId;
   });
   if (elements.length === 0) {
@@ -23,9 +23,7 @@ export function getEarliestMainTrackElement({
   }
 
   return elements.reduce((earliestElement, element) => {
-    return element.startTime < earliestElement.startTime
-      ? element
-      : earliestElement;
+    return element.startTime < earliestElement.startTime ? element : earliestElement;
   });
 }
 

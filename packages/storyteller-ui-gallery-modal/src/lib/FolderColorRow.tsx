@@ -12,12 +12,9 @@ interface FolderColorRowProps {
  * Preset color swatches + a clear option + a native custom-color picker, shared
  * by the desktop and webapp folder context menus.
  */
-export const FolderColorRow: React.FC<FolderColorRowProps> = ({
-  colorCode,
-  onSetColor,
-}) => (
+export const FolderColorRow: React.FC<FolderColorRowProps> = ({ colorCode, onSetColor }) => (
   <div className="flex flex-wrap items-center gap-1.5 px-2 py-2">
-    {FOLDER_COLOR_PRESETS.map((c) => (
+    {FOLDER_COLOR_PRESETS.map(c => (
       <button
         key={c}
         type="button"
@@ -26,8 +23,7 @@ export const FolderColorRow: React.FC<FolderColorRowProps> = ({
         style={{ backgroundColor: c }}
         className={twMerge(
           "h-5 w-5 rounded-[3px] border border-black/20 transition-transform hover:scale-110",
-          colorCode === c &&
-            "ring-2 ring-white ring-offset-1 ring-offset-ui-panel",
+          colorCode === c && "ring-2 ring-white ring-offset-1 ring-offset-ui-panel",
         )}
       />
     ))}
@@ -48,18 +44,13 @@ export const FolderColorRow: React.FC<FolderColorRowProps> = ({
       title="Custom color"
       className="relative h-5 w-5 cursor-pointer overflow-hidden rounded-[3px] border border-ui-panel-border"
       style={{
-        background:
-          "conic-gradient(red, orange, yellow, lime, cyan, blue, magenta, red)",
+        background: "conic-gradient(red, orange, yellow, lime, cyan, blue, magenta, red)",
       }}
     >
       <input
         type="color"
-        value={
-          colorCode && /^#[0-9a-fA-F]{6}$/.test(colorCode)
-            ? colorCode
-            : "#888888"
-        }
-        onChange={(e) => onSetColor(e.target.value)}
+        value={colorCode && /^#[0-9a-fA-F]{6}$/.test(colorCode) ? colorCode : "#888888"}
+        onChange={e => onSetColor(e.target.value)}
         className="absolute -inset-1 h-[150%] w-[150%] cursor-pointer opacity-0"
       />
     </label>

@@ -16,7 +16,7 @@ export const computePackPatches = (
   const { rowHeight, gap } = { ...DEFAULTS, ...opts };
   if (nodes.length === 0 || bounds.width <= 0) return [];
 
-  const aspects = nodes.map((n) => (n.height > 0 ? n.width / n.height : 1));
+  const aspects = nodes.map(n => (n.height > 0 ? n.width / n.height : 1));
 
   // Greedy row break: stop adding when summed aspect (at target rowHeight)
   // would overflow the bounds width including per-item gaps.
@@ -30,10 +30,7 @@ export const computePackPatches = (
     const a = aspects[i];
     const projected = current.aspectSum + a;
     const projectedGapAspect = (current.indices.length * gap) / rowHeight;
-    if (
-      current.indices.length > 0 &&
-      projected + projectedGapAspect >= targetAspect
-    ) {
+    if (current.indices.length > 0 && projected + projectedGapAspect >= targetAspect) {
       rows.push(current);
       current = { indices: [], aspectSum: 0 };
     }

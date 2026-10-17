@@ -50,13 +50,8 @@ export const computeMasonryLayout = (
   density: DensityConfig,
 ): MasonryLayout => {
   const usable = Math.max(containerWidth, density.targetColumnWidth);
-  const rawColumns = Math.round(
-    usable / (density.targetColumnWidth + density.gap),
-  );
-  const columnCount = Math.min(
-    density.maxColumns,
-    Math.max(density.minColumns, rawColumns || 1),
-  );
+  const rawColumns = Math.round(usable / (density.targetColumnWidth + density.gap));
+  const columnCount = Math.min(density.maxColumns, Math.max(density.minColumns, rawColumns || 1));
   const totalGap = density.gap * (columnCount - 1);
   const columnWidth = (usable - totalGap) / columnCount;
 
@@ -71,8 +66,7 @@ export const computeMasonryLayout = (
     }
     // Guard against a non-finite aspect (a single NaN would poison totalHeight
     // and collapse the whole virtualized slice).
-    const aspect =
-      Number.isFinite(item.aspect) && item.aspect > 0 ? item.aspect : 1;
+    const aspect = Number.isFinite(item.aspect) && item.aspect > 0 ? item.aspect : 1;
     const height = Math.max(columnWidth * aspect, MIN_ITEM_HEIGHT);
     const pos: PositionedItem = {
       id: item.id,
@@ -233,5 +227,5 @@ export const sliceVisible = (
 ): PositionedItem[] => {
   const top = scrollTop - buffer;
   const bottom = scrollTop + viewportHeight + buffer;
-  return positions.filter((p) => p.y + p.height >= top && p.y <= bottom);
+  return positions.filter(p => p.y + p.height >= top && p.y <= bottom);
 };

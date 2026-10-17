@@ -24,15 +24,15 @@ interface SidebarStore {
 
 export const useSidebarStore = create<SidebarStore>()(
   persist(
-    (set) => ({
+    set => ({
       // Persisted
       currentSpaceId: null,
-      setCurrentSpace: (id) => set({ currentSpaceId: id }),
+      setCurrentSpace: id => set({ currentSpaceId: id }),
 
       // Ephemeral
       collapsedGroups: new Set(),
-      toggleGroup: (groupId) =>
-        set((state) => {
+      toggleGroup: groupId =>
+        set(state => {
           const newSet = new Set(state.collapsedGroups);
           if (newSet.has(groupId)) {
             newSet.delete(groupId);
@@ -41,7 +41,7 @@ export const useSidebarStore = create<SidebarStore>()(
           }
           return { collapsedGroups: newSet };
         }),
-      collapseAll: (groupIds) =>
+      collapseAll: groupIds =>
         set({
           collapsedGroups: new Set(groupIds),
         }),
@@ -49,11 +49,11 @@ export const useSidebarStore = create<SidebarStore>()(
 
       // Drag
       draggedItem: null,
-      setDraggedItem: (item) => set({ draggedItem: item }),
+      setDraggedItem: item => set({ draggedItem: item }),
     }),
     {
       name: "spacedrive-sidebar",
-      partialize: (state) => ({
+      partialize: state => ({
         currentSpaceId: state.currentSpaceId,
       }),
     },

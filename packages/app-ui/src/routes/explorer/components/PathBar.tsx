@@ -1,19 +1,8 @@
 import LaptopIcon from "@aphrody/assets/icons/Laptop.png";
 import type { Device, SdPath } from "@aphrody/drive-client";
-import {
-  getDeviceIcon,
-  useLibraryMutation,
-  useNormalizedQuery,
-} from "@aphrody/drive-client";
+import { getDeviceIcon, useLibraryMutation, useNormalizedQuery } from "@aphrody/drive-client";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
-import {
-  Button,
-  CircleButton,
-  Icon,
-  m3FocusRing,
-  Popover,
-  usePopover,
-} from "@aphrody/m3-primitives";
+import { Button, CircleButton, Icon, m3FocusRing, Popover, usePopover } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
@@ -136,32 +125,22 @@ function IndexIndicator({ path }: { path: SdPath }) {
           return pathStr.startsWith(locPath);
         })
         .toSorted((a: any, b: any) => {
-          const aPath =
-            "Physical" in a.sd_path! ? a.sd_path!.Physical.path : "";
-          const bPath =
-            "Physical" in b.sd_path! ? b.sd_path!.Physical.path : "";
+          const aPath = "Physical" in a.sd_path! ? a.sd_path!.Physical.path : "";
+          const bPath = "Physical" in b.sd_path! ? b.sd_path!.Physical.path : "";
           return bPath.length - aPath.length;
         })[0];
     }
     return undefined;
   })();
 
-  const isIndexed =
-    matchingLocation?.index_mode !== undefined &&
-    matchingLocation.index_mode !== "none";
+  const isIndexed = matchingLocation?.index_mode !== undefined && matchingLocation.index_mode !== "none";
 
   return (
     <Popover.Root open={popover.open} onOpenChange={popover.setOpen}>
       <Popover.Trigger asChild>
         <CircleButton
           icon={
-            <Icon
-              name={
-                isIndexed ? "radio_button_checked" : "radio_button_unchecked"
-              }
-              size={20}
-              filled={isIndexed}
-            />
+            <Icon name={isIndexed ? "radio_button_checked" : "radio_button_unchecked"} size={20} filled={isIndexed} />
           }
           active={!isIndexed}
           className={isIndexed ? "!text-primary" : undefined}
@@ -174,13 +153,9 @@ function IndexIndicator({ path }: { path: SdPath }) {
             <>
               <div className="mb-2">
                 <div className="px-2 py-1.5">
-                  <div className="text-on-surface text-title-small">
-                    {matchingLocation.name}
-                  </div>
+                  <div className="text-on-surface text-title-small">{matchingLocation.name}</div>
                   <div className="text-on-surface-variant mt-0.5 text-body-small">
-                    {isIndexed
-                      ? `Indexed (${matchingLocation.index_mode})`
-                      : "Not indexed"}
+                    {isIndexed ? `Indexed (${matchingLocation.index_mode})` : "Not indexed"}
                   </div>
                 </div>
               </div>
@@ -202,11 +177,7 @@ function IndexIndicator({ path }: { path: SdPath }) {
                       m3FocusRing,
                     )}
                   >
-                    <Icon
-                      name="visibility"
-                      size={20}
-                      className="text-on-surface-variant"
-                    />
+                    <Icon name="visibility" size={20} className="text-on-surface-variant" />
                     Activer l'indexation
                   </button>
                 )}
@@ -221,11 +192,7 @@ function IndexIndicator({ path }: { path: SdPath }) {
                     m3FocusRing,
                   )}
                 >
-                  <Icon
-                    name="folder"
-                    size={20}
-                    className="text-on-surface-variant"
-                  />
+                  <Icon name="folder" size={20} className="text-on-surface-variant" />
                   Ouvrir l'inspecteur d'emplacement
                 </button>
               </div>
@@ -233,15 +200,12 @@ function IndexIndicator({ path }: { path: SdPath }) {
           ) : (
             <div>
               <div className="px-2 py-1.5">
-                <div className="text-on-surface-variant mb-2 text-body-small">
-                  Chemin en dehors de tout emplacement
-                </div>
+                <div className="text-on-surface-variant mb-2 text-body-small">Chemin en dehors de tout emplacement</div>
                 <Button
                   size="sm"
                   variant="filled"
                   onClick={() => {
-                    const initialPath =
-                      "Physical" in path ? path.Physical.path : undefined;
+                    const initialPath = "Physical" in path ? path.Physical.path : undefined;
                     // oxlint-disable-next-line react/hooks -- useAddStorageDialog n'appelle aucun hook : il ouvre une boîte de dialogue (dialogManager.create) depuis un gestionnaire d'événement
                     useAddStorageDialog(undefined, initialPath);
                     popover.setOpen(false);
@@ -274,9 +238,7 @@ export function PathBar({ path, devices, onNavigate }: PathBarProps) {
     if ("Physical" in path) {
       const deviceSlug = path.Physical.device_slug;
       // Find device by slug
-      const device = Array.from(devices.values()).find(
-        (d) => d.slug === deviceSlug,
-      );
+      const device = Array.from(devices.values()).find(d => d.slug === deviceSlug);
       return {
         icon: device ? getDeviceIcon(device) : LaptopIcon,
         device,
@@ -306,16 +268,9 @@ export function PathBar({ path, devices, onNavigate }: PathBarProps) {
 
   const handleContainerClick = (e: React.MouseEvent) => {
     // Only enter edit mode if clicking the container itself, not buttons/segments
-    if (
-      e.target === e.currentTarget ||
-      (e.target as HTMLElement).tagName === "INPUT"
-    ) {
+    if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === "INPUT") {
       const isUriMode = showUri;
-      const valueToEdit = isUriMode
-        ? uri
-        : "Physical" in path
-          ? path.Physical.path
-          : uri;
+      const valueToEdit = isUriMode ? uri : "Physical" in path ? path.Physical.path : uri;
       enterEditMode(valueToEdit, isUriMode);
     }
   };
@@ -391,13 +346,7 @@ export function PathBar({ path, devices, onNavigate }: PathBarProps) {
   const uriWidth = Math.min(uri.length * 7 + 70, 600);
   const editWidth = Math.max(200, Math.min(editValue.length * 7 + 70, 600));
 
-  const currentWidth = isEditing
-    ? editWidth
-    : !isExpanded
-      ? collapsedWidth
-      : showUri
-        ? uriWidth
-        : breadcrumbsWidth;
+  const currentWidth = isEditing ? editWidth : !isExpanded ? collapsedWidth : showUri ? uriWidth : breadcrumbsWidth;
 
   return (
     <div className="flex items-center gap-2">
@@ -415,20 +364,16 @@ export function PathBar({ path, devices, onNavigate }: PathBarProps) {
         )}
       >
         <button
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             handleDeviceClick();
           }}
           disabled={!deviceInfo.device}
-          title={
-            deviceInfo.device ? `Go to ${deviceInfo.device.name}` : "Device"
-          }
+          title={deviceInfo.device ? `Go to ${deviceInfo.device.name}` : "Device"}
           className={clsx(
             "size-5 flex-shrink-0 rounded-full transition-opacity",
             m3FocusRing,
-            deviceInfo.device
-              ? "cursor-pointer opacity-60 hover:opacity-100"
-              : "cursor-default opacity-60",
+            deviceInfo.device ? "cursor-pointer opacity-60 hover:opacity-100" : "cursor-default opacity-60",
           )}
         >
           <img src={deviceInfo.icon} alt="Device" className="size-full" />
@@ -438,7 +383,7 @@ export function PathBar({ path, devices, onNavigate }: PathBarProps) {
           <input
             type="text"
             value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
+            onChange={e => setEditValue(e.target.value)}
             onKeyDown={handleEditKeyDown}
             onBlur={exitEditMode}
 
@@ -449,9 +394,7 @@ export function PathBar({ path, devices, onNavigate }: PathBarProps) {
               "focus:outline-none focus:ring-0",
               editingAsUri && "font-mono",
             )}
-            placeholder={
-              editingAsUri ? "Enter SdPath JSON..." : "Enter path..."
-            }
+            placeholder={editingAsUri ? "Enter SdPath JSON..." : "Enter path..."}
           />
         ) : showUri ? (
           <input
@@ -472,12 +415,9 @@ export function PathBar({ path, devices, onNavigate }: PathBarProps) {
             {segments.map((segment, index) => {
               const isLast = index === segments.length - 1;
               return (
-                <div
-                  key={sdPathToUri(segment.path)}
-                  className="flex flex-shrink-0 items-center gap-1"
-                >
+                <div key={sdPathToUri(segment.path)} className="flex flex-shrink-0 items-center gap-1">
                   <button
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       if (!isLast) onNavigate(segment.path);
                     }}
@@ -494,10 +434,9 @@ export function PathBar({ path, devices, onNavigate }: PathBarProps) {
                   </button>
                   {!isLast && (
                     <button
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
-                        const valueToEdit =
-                          "Physical" in path ? path.Physical.path : uri;
+                        const valueToEdit = "Physical" in path ? path.Physical.path : uri;
                         enterEditMode(valueToEdit, false);
                       }}
                       className="text-on-surface-variant cursor-text opacity-60 transition-opacity hover:opacity-100"

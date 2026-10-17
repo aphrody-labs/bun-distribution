@@ -12,13 +12,7 @@ interface TimelineTickProps {
   showLabel: boolean;
 }
 
-export function TimelineTick({
-  time,
-  timeInSeconds,
-  zoomLevel,
-  fps,
-  showLabel,
-}: TimelineTickProps) {
+export function TimelineTick({ time, timeInSeconds, zoomLevel, fps, showLabel }: TimelineTickProps) {
   const leftPosition = timelineTimeToSnappedPixels({ time, zoomLevel });
 
   if (showLabel) {
@@ -34,9 +28,6 @@ export function TimelineTick({
   }
 
   return (
-    <div
-      className="border-muted-foreground/25 absolute top-1.5 h-1.5 border-l"
-      style={{ left: `${leftPosition}px` }}
-    />
+    <div className="border-muted-foreground/25 absolute top-1.5 h-1.5 border-l" style={{ left: `${leftPosition}px` }} />
   );
 }

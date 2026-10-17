@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let distribution = std::env::args().nth(1).ok_or("pass an installed distribution name")?;
+    let distribution = std::env::args()
+        .nth(1)
+        .ok_or("pass an installed distribution name")?;
     let runtime = bun_windows_winclean::shared()?;
     for (tool, args) in [
         ("wsl_get_status", serde_json::json!({})),

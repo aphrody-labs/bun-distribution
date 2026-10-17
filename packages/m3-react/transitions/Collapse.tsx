@@ -9,10 +9,7 @@
 import * as React from "react";
 
 import { EASING } from "./create-transition.js";
-import {
-  BaseTransitionProps,
-  useTransitionProps,
-} from "./use-transition-state.js";
+import { BaseTransitionProps, useTransitionProps } from "./use-transition-state.js";
 
 export interface CollapseProps extends BaseTransitionProps {
   /** The axis along which to collapse. Defaults to `vertical` (height). */
@@ -34,11 +31,7 @@ export interface CollapseProps extends BaseTransitionProps {
  */
 export function Collapse(props: CollapseProps): React.ReactElement | null {
   const { orientation = "vertical", collapsedSize = "0px", children } = props;
-  const { mounted, phase, visible, durationMs } = useTransitionProps(
-    props,
-    300,
-    250,
-  );
+  const { mounted, phase, visible, durationMs } = useTransitionProps(props, 300, 250);
 
   const innerRef = React.useRef<HTMLDivElement>(null);
   const [naturalSize, setNaturalSize] = React.useState<number>(0);
@@ -63,8 +56,7 @@ export function Collapse(props: CollapseProps): React.ReactElement | null {
   const sizeProp = isHorizontal ? "width" : "height";
   // `entered` lets the content size itself naturally (responsive); the other
   // phases use an explicit pixel size so the transition can interpolate.
-  const targetSize =
-    phase === "entered" ? "auto" : visible ? `${naturalSize}px` : collapsedSize;
+  const targetSize = phase === "entered" ? "auto" : visible ? `${naturalSize}px` : collapsedSize;
 
   const containerStyle: React.CSSProperties = {
     [sizeProp]: targetSize,
@@ -73,9 +65,7 @@ export function Collapse(props: CollapseProps): React.ReactElement | null {
     willChange: sizeProp,
   };
 
-  const innerStyle: React.CSSProperties = isHorizontal
-    ? { display: "inline-block", height: "100%" }
-    : {};
+  const innerStyle: React.CSSProperties = isHorizontal ? { display: "inline-block", height: "100%" } : {};
 
   return (
     <div

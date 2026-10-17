@@ -2,17 +2,15 @@ import React, { createContext, useContext, useState } from "react";
 import { JobContextType } from "@storyteller/common";
 const JobContext = createContext<JobContextType | undefined>(undefined);
 
-export const JobProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [jobTokens, setJobTokens] = useState<string[]>([]);
 
   const addJobToken = (token: string) => {
-    setJobTokens((prevTokens) => [...prevTokens, token]);
+    setJobTokens(prevTokens => [...prevTokens, token]);
   };
 
   const removeJobToken = (token: string) => {
-    setJobTokens((prevTokens) => prevTokens.filter((t) => t !== token));
+    setJobTokens(prevTokens => prevTokens.filter(t => t !== token));
   };
 
   const clearJobTokens = () => {
@@ -20,9 +18,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    <JobContext.Provider
-      value={{ jobTokens, addJobToken, removeJobToken, clearJobTokens }}
-    >
+    <JobContext.Provider value={{ jobTokens, addJobToken, removeJobToken, clearJobTokens }}>
       {children}
     </JobContext.Provider>
   );

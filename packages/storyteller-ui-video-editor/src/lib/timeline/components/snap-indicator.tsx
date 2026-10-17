@@ -2,10 +2,7 @@
 
 import { useSnapIndicatorPosition } from "../hooks/use-snap-indicator-position";
 import type { SnapPoint } from "../snapping";
-import {
-  getCenteredLineLeft,
-  TIMELINE_INDICATOR_LINE_WIDTH_PX,
-} from "../pixel-utils";
+import { getCenteredLineLeft, TIMELINE_INDICATOR_LINE_WIDTH_PX } from "../pixel-utils";
 import { TIMELINE_LAYERS } from "./layers";
 interface SnapIndicatorProps {
   snapPoint: SnapPoint | null;
@@ -15,13 +12,7 @@ interface SnapIndicatorProps {
   tracksScrollRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export function SnapIndicator({
-  snapPoint,
-  zoomLevel,
-  isVisible,
-  timelineRef,
-  tracksScrollRef,
-}: SnapIndicatorProps) {
+export function SnapIndicator({ snapPoint, zoomLevel, isVisible, timelineRef, tracksScrollRef }: SnapIndicatorProps) {
   const { leftPosition, topPosition, height } = useSnapIndicatorPosition({
     snapPoint,
     zoomLevel,

@@ -20,11 +20,7 @@ export interface SoundsAdapter {
   // Returns a page of sound effects matching `query`. Hosts paginate
   // their own way; the adapter just tells the lib whether more pages
   // exist. `commercialOnly` (when supported) filters licensing.
-  searchSounds(args: {
-    query: string;
-    page: number;
-    commercialOnly?: boolean;
-  }): Promise<SoundsSearchResult>;
+  searchSounds(args: { query: string; page: number; commercialOnly?: boolean }): Promise<SoundsSearchResult>;
 
   // Returns the curated "top sounds" list shown when the search input
   // is empty. `commercialOnly` filters licensing where supported.

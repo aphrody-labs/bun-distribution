@@ -105,21 +105,14 @@ export interface M3App {
 const MINIFY = new Set(["none", "basic", "full"]);
 
 /** Load `m3.config.ts` and its optional `bun` export from `dir` and resolve every default. */
-export async function loadApp(
-  dir: string = process.cwd(),
-  configFile?: string,
-): Promise<M3App> {
+export async function loadApp(dir: string = process.cwd(), configFile?: string): Promise<M3App> {
   const m3 = await loadM3Config(dir, configFile);
-  const mod = (await import(
-    pathToFileURL(m3.file ?? join(m3.dir, "m3.config.ts")).href
-  )) as {
+  const mod = (await import(pathToFileURL(m3.file ?? join(m3.dir, "m3.config.ts")).href)) as {
     bun?: M3BunConfig;
   };
   const bun = mod.bun ?? {};
   if (bun.minify !== undefined && !MINIFY.has(bun.minify))
-    throw new Error(
-      `m3-bun: minify must be none, basic or full, got ${String(bun.minify)}`,
-    );
+    throw new Error(`m3-bun: minify must be none, basic or full, got ${String(bun.minify)}`);
   const manifestFile = join(m3.dir, "package.json");
   const manifest = existsSync(manifestFile)
     ? (JSON.parse(readFileSync(manifestFile, "utf8")) as {
@@ -128,8 +121,7 @@ export async function loadApp(
       })
     : {};
   const api = bun.api ? resolve(m3.dir, bun.api) : undefined;
-  if (api && !existsSync(api))
-    throw new Error(`m3-bun: api module not found: ${api}`);
+  if (api && !existsSync(api)) throw new Error(`m3-bun: api module not found: ${api}`);
   return {
     dir: m3.dir,
     name: slug(bun.name ?? manifest.name ?? basename(m3.dir)),
@@ -144,14 +136,10 @@ export async function loadApp(
 }
 
 /** The `bun build --compile` target string for a friendly name or the host. */
-export function compileTarget(
-  name: CompileTargetName | undefined,
-): Bun.Build.CompileTarget | undefined {
+export function compileTarget(name: CompileTargetName | undefined): Bun.Build.CompileTarget | undefined {
   if (!name) return undefined;
   if (!(COMPILE_TARGETS as readonly string[]).includes(name))
-    throw new Error(
-      `m3-bun: unknown compile target ${name} (${COMPILE_TARGETS.join(", ")})`,
-    );
+    throw new Error(`m3-bun: unknown compile target ${name} (${COMPILE_TARGETS.join(", ")})`);
   return `bun-${name}` as Bun.Build.CompileTarget;
 }
 
@@ -160,12 +148,7 @@ export function findWorkspaceRoot(start: string): string | undefined {
   let dir = resolve(start);
   for (;;) {
     const file = join(dir, "package.json");
-    if (
-      existsSync(file) &&
-      (JSON.parse(readFileSync(file, "utf8")) as { workspaces?: unknown })
-        .workspaces
-    )
-      return dir;
+    if (existsSync(file) && (JSON.parse(readFileSync(file, "utf8")) as { workspaces?: unknown }).workspaces) return dir;
     const parent = dirname(dir);
     if (parent === dir) return undefined;
     dir = parent;

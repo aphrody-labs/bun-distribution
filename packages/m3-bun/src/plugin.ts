@@ -44,24 +44,19 @@ export interface M3BunPluginOptions extends M3PluginOptions, ForkPluginOptions {
  * What `m3Bun` adds to `m3Plugin` besides the fork plugins: the m3 package modules, `m3:optional/` and the standalone
  * font sheets. Exported for `Bun.build` callers that compose themselves.
  */
-export function m3BunExtras(
-  options: Pick<M3BunPluginOptions, "iconsRoot" | "configDir"> = {},
-): BunPlugin {
+export function m3BunExtras(options: Pick<M3BunPluginOptions, "iconsRoot" | "configDir"> = {}): BunPlugin {
   const packages = m3PackagesPlugin(options);
   return {
     name: "@aphrody/m3-bun",
     setup(build) {
       void packages.setup(build);
-      build.onResolve({ filter: /^m3:optional\// }, (args) => ({
+      build.onResolve({ filter: /^m3:optional\// }, args => ({
         path: args.path.slice("m3:optional/".length),
         namespace: OPTIONAL_NAMESPACE,
       }));
-      build.onLoad({ filter: /.*/, namespace: OPTIONAL_NAMESPACE }, (args) => {
+      build.onLoad({ filter: /.*/, namespace: OPTIONAL_NAMESPACE }, args => {
         try {
-          const resolved = Bun.resolveSync(
-            args.path,
-            options.configDir ?? process.cwd(),
-          );
+          const resolved = Bun.resolveSync(args.path, options.configDir ?? process.cwd());
           return {
             contents: `import * as namespace from ${JSON.stringify(resolved)};\nexport default namespace;\nexport const resolved = true;\n`,
             loader: "js",
@@ -74,15 +69,12 @@ export function m3BunExtras(
         }
       });
       // m3Plugin serves the font sheets from an Aphrody OS checkout; without one, `@aphrody/m3-fonts` does.
-      build.onResolve({ filter: /^m3:fonts[-a-z]*\.css$/ }, (args) => {
+      build.onResolve({ filter: /^m3:fonts[-a-z]*\.css$/ }, args => {
         const specifier = FONT_SHEETS[args.path];
         if (!specifier) return undefined;
         try {
           return {
-            path: Bun.resolveSync(
-              specifier,
-              options.configDir ?? process.cwd(),
-            ),
+            path: Bun.resolveSync(specifier, options.configDir ?? process.cwd()),
           };
         } catch {
           return {
@@ -96,15 +88,7 @@ export function m3BunExtras(
 
 /** The complete plugin. */
 export function m3Bun(options: M3BunPluginOptions = {}): BunPlugin {
-  const {
-    iconsRoot: icons,
-    yaml,
-    svelte,
-    mdx,
-    n2b,
-    oxc,
-    ...m3Options
-  } = options;
+  const { iconsRoot: icons, yaml, svelte, mdx, n2b, oxc, ...m3Options } = options;
   const extras = m3BunExtras({
     ...(icons ? { iconsRoot: icons } : {}),
     ...(options.configDir ? { configDir: options.configDir } : {}),
@@ -117,9 +101,7 @@ export function m3Bun(options: M3BunPluginOptions = {}): BunPlugin {
       // Extras first: they decide before m3Plugin throws on an `m3:` module or a font sheet it does not know.
       void extras.setup(build);
       // Only the native-hook plugins (mdx, oxc `native`) set up asynchronously; the default plugin stays synchronous.
-      const pending = forks
-        .map((plugin) => plugin.setup(build))
-        .filter((result) => result instanceof Promise);
+      const pending = forks.map(plugin => plugin.setup(build)).filter(result => result instanceof Promise);
       void base.setup(build);
       if (pending.length > 0) return Promise.all(pending).then(() => undefined);
     },

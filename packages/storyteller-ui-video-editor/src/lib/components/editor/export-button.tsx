@@ -11,38 +11,16 @@ import { Progress } from "../ui/progress";
 import { Checkbox } from "../ui/checkbox";
 import { cn } from "../../utils/ui";
 import { getExportMimeType, getExportFileExtension } from "../../export";
-import {
-  AlertCircle,
-  Check,
-  Copy,
-  Download,
-  Library,
-  Loader2,
-  RotateCcw,
-} from "lucide-react";
-import {
-  EXPORT_FORMAT_VALUES,
-  EXPORT_QUALITY_VALUES,
-  type ExportFormat,
-  type ExportQuality,
-} from "../../export";
-import {
-  Section,
-  SectionContent,
-  SectionHeader,
-  SectionTitle,
-} from "../section";
+import { AlertCircle, Check, Copy, Download, Library, Loader2, RotateCcw } from "lucide-react";
+import { EXPORT_FORMAT_VALUES, EXPORT_QUALITY_VALUES, type ExportFormat, type ExportQuality } from "../../export";
+import { Section, SectionContent, SectionHeader, SectionTitle } from "../section";
 import { useEditor } from "../../editor/use-editor";
 import { useEditorAdapters } from "../../EditorProvider";
 import { DEFAULT_EXPORT_OPTIONS } from "../../export/defaults";
 import { mediaTimeToSeconds } from "../../wasm";
-import type {
-  ExportDestination,
-  ExportSinkProgressEvent,
-} from "../../adapters";
+import type { ExportDestination, ExportSinkProgressEvent } from "../../adapters";
 
-type DestinationStatus =
-  "skipped" | "pending" | "uploading" | "success" | "error";
+type DestinationStatus = "skipped" | "pending" | "uploading" | "success" | "error";
 
 interface SaveState {
   // "idle" before the user clicks Export; "saving" while the adapter
@@ -59,18 +37,10 @@ const INITIAL_SAVE_STATE: SaveState = {
   library: { status: "skipped" },
 };
 
-function updateDestinationStatus(
-  state: SaveState,
-  event: ExportSinkProgressEvent,
-): SaveState {
+function updateDestinationStatus(state: SaveState, event: ExportSinkProgressEvent): SaveState {
   if (state.phase !== "saving") return state;
-  const update =
-    event.status === "error"
-      ? { status: "error" as const, error: event.error }
-      : { status: event.status };
-  return event.destination === "disk"
-    ? { ...state, disk: update }
-    : { ...state, library: update };
+  const update = event.status === "error" ? { status: "error" as const, error: event.error } : { status: event.status };
+  return event.destination === "disk" ? { ...state, disk: update } : { ...state, library: update };
 }
 
 function isTerminalStatus(status: DestinationStatus): boolean {
@@ -85,27 +55,23 @@ function finalizeSaveState(state: SaveState): SaveState {
   // as success than leave the user looking at a stuck spinner.
   return {
     phase: "settled",
-    disk: isTerminalStatus(state.disk.status)
-      ? state.disk
-      : { status: "success" },
-    library: isTerminalStatus(state.library.status)
-      ? state.library
-      : { status: "success" },
+    disk: isTerminalStatus(state.disk.status) ? state.disk : { status: "success" },
+    library: isTerminalStatus(state.library.status) ? state.library : { status: "success" },
   };
 }
 
 function isExportFormat(value: string): value is ExportFormat {
-  return EXPORT_FORMAT_VALUES.some((formatValue) => formatValue === value);
+  return EXPORT_FORMAT_VALUES.some(formatValue => formatValue === value);
 }
 
 function isExportQuality(value: string): value is ExportQuality {
-  return EXPORT_QUALITY_VALUES.some((qualityValue) => qualityValue === value);
+  return EXPORT_QUALITY_VALUES.some(qualityValue => qualityValue === value);
 }
 
 export function ExportButton() {
   const [isExportPopoverOpen, setIsExportPopoverOpen] = useState(false);
   const editor = useEditor();
-  const activeProject = useEditor((e) => e.project.getActiveOrNull());
+  const activeProject = useEditor(e => e.project.getActiveOrNull());
   const hasProject = !!activeProject;
 
   const handlePopoverOpenChange = ({ open }: { open: boolean }) => {
@@ -117,19 +83,14 @@ export function ExportButton() {
   };
 
   return (
-    <Popover
-      open={isExportPopoverOpen}
-      onOpenChange={(open) => handlePopoverOpenChange({ open })}
-    >
+    <Popover open={isExportPopoverOpen} onOpenChange={open => handlePopoverOpenChange({ open })}>
       <PopoverTrigger asChild>
         <Button
           type="button"
-          className={cn(
-            hasProject ? "cursor-pointer" : "cursor-not-allowed opacity-50",
-          )}
+          className={cn(hasProject ? "cursor-pointer" : "cursor-not-allowed opacity-50")}
           onClick={hasProject ? () => setIsExportPopoverOpen(true) : undefined}
           disabled={!hasProject}
-          onKeyDown={(event) => {
+          onKeyDown={event => {
             if (hasProject && (event.key === "Enter" || event.key === " ")) {
               event.preventDefault();
               setIsExportPopoverOpen(true);
@@ -145,25 +106,15 @@ export function ExportButton() {
   );
 }
 
-function ExportPopover({
-  onOpenChange,
-}: {
-  onOpenChange: (open: boolean) => void;
-}) {
+function ExportPopover({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
   const editor = useEditor();
   const { exportSink, toast } = useEditorAdapters();
-  const activeProject = useEditor((e) => e.project.getActive());
-  const exportState = useEditor((e) => e.project.getExportState());
+  const activeProject = useEditor(e => e.project.getActive());
+  const exportState = useEditor(e => e.project.getExportState());
   const { isExporting, progress, result: exportResult } = exportState;
-  const [format, setFormat] = useState<ExportFormat>(
-    DEFAULT_EXPORT_OPTIONS.format,
-  );
-  const [quality, setQuality] = useState<ExportQuality>(
-    DEFAULT_EXPORT_OPTIONS.quality,
-  );
-  const [shouldIncludeAudio, setShouldIncludeAudio] = useState<boolean>(
-    DEFAULT_EXPORT_OPTIONS.includeAudio ?? true,
-  );
+  const [format, setFormat] = useState<ExportFormat>(DEFAULT_EXPORT_OPTIONS.format);
+  const [quality, setQuality] = useState<ExportQuality>(DEFAULT_EXPORT_OPTIONS.quality);
+  const [shouldIncludeAudio, setShouldIncludeAudio] = useState<boolean>(DEFAULT_EXPORT_OPTIONS.includeAudio ?? true);
   const [saveToDisk, setSaveToDisk] = useState<boolean>(true);
   const [saveToLibrary, setSaveToLibrary] = useState<boolean>(true);
   const [saveState, setSaveState] = useState<SaveState>(INITIAL_SAVE_STATE);
@@ -193,9 +144,7 @@ function ExportPopover({
       const mime = getExportMimeType({ format });
       const filename = `${activeProject.metadata.name}${getExportFileExtension({ format })}`;
       const projectDurationTicks = editor.timeline.getTotalDuration();
-      const durationMs = Math.round(
-        mediaTimeToSeconds({ time: projectDurationTicks }) * 1000,
-      );
+      const durationMs = Math.round(mediaTimeToSeconds({ time: projectDurationTicks }) * 1000);
 
       // Seed the saving phase with whichever destinations the user
       // picked. Destinations that are off stay "skipped" so the UI
@@ -207,7 +156,7 @@ function ExportPopover({
       });
 
       const handleProgress = (event: ExportSinkProgressEvent) => {
-        setSaveState((prev) => updateDestinationStatus(prev, event));
+        setSaveState(prev => updateDestinationStatus(prev, event));
       };
 
       try {
@@ -224,13 +173,13 @@ function ExportPopover({
             onProgress: handleProgress,
           },
         );
-        setSaveState((prev) => finalizeSaveState(prev));
+        setSaveState(prev => finalizeSaveState(prev));
       } catch (error) {
         console.error("Export sink failed:", error);
         toast.error("Couldn't save exported video", {
           description: error instanceof Error ? error.message : "Unknown error",
         });
-        setSaveState((prev) => finalizeSaveState(prev));
+        setSaveState(prev => finalizeSaveState(prev));
         return;
       }
       editor.project.clearExportState();
@@ -249,34 +198,25 @@ function ExportPopover({
   return (
     <PopoverContent className="bg-ui-controls mr-4 flex w-80 flex-col p-0">
       {exportResult && !exportResult.success ? (
-        <ExportError
-          error={exportResult.error || "Unknown error occurred"}
-          onRetry={handleExport}
-        />
+        <ExportError error={exportResult.error || "Unknown error occurred"} onRetry={handleExport} />
       ) : (
         <>
           <div className="flex items-center justify-between p-3 border-b border-ui-controls-border">
-            <h3 className="font-medium text-sm">
-              {isExporting ? "Exporting project" : "Export project"}
-            </h3>
+            <h3 className="font-medium text-sm">{isExporting ? "Exporting project" : "Export project"}</h3>
           </div>
 
           <div className="flex flex-col gap-4">
             {!isExporting && saveState.phase === "idle" && (
               <>
                 <div className="flex flex-col">
-                  <Section
-                    collapsible
-                    defaultOpen={false}
-                    showTopBorder={false}
-                  >
+                  <Section collapsible defaultOpen={false} showTopBorder={false}>
                     <SectionHeader>
                       <SectionTitle>Format</SectionTitle>
                     </SectionHeader>
                     <SectionContent>
                       <RadioGroup
                         value={format}
-                        onValueChange={(value) => {
+                        onValueChange={value => {
                           if (isExportFormat(value)) {
                             setFormat(value);
                           }
@@ -284,15 +224,11 @@ function ExportPopover({
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="mp4" id="mp4" />
-                          <Label htmlFor="mp4">
-                            MP4 (H.264) - Better compatibility
-                          </Label>
+                          <Label htmlFor="mp4">MP4 (H.264) - Better compatibility</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="webm" id="webm" />
-                          <Label htmlFor="webm">
-                            WebM (VP9) - Smaller file size
-                          </Label>
+                          <Label htmlFor="webm">WebM (VP9) - Smaller file size</Label>
                         </div>
                       </RadioGroup>
                     </SectionContent>
@@ -305,7 +241,7 @@ function ExportPopover({
                     <SectionContent>
                       <RadioGroup
                         value={quality}
-                        onValueChange={(value) => {
+                        onValueChange={value => {
                           if (isExportQuality(value)) {
                             setQuality(value);
                           }
@@ -325,9 +261,7 @@ function ExportPopover({
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="very_high" id="very_high" />
-                          <Label htmlFor="very_high">
-                            Very high - Largest file size
-                          </Label>
+                          <Label htmlFor="very_high">Very high - Largest file size</Label>
                         </div>
                       </RadioGroup>
                     </SectionContent>
@@ -342,13 +276,9 @@ function ExportPopover({
                         <Checkbox
                           id="include-audio"
                           checked={shouldIncludeAudio}
-                          onCheckedChange={(checked) =>
-                            setShouldIncludeAudio(!!checked)
-                          }
+                          onCheckedChange={checked => setShouldIncludeAudio(!!checked)}
                         />
-                        <Label htmlFor="include-audio">
-                          Include audio in export
-                        </Label>
+                        <Label htmlFor="include-audio">Include audio in export</Label>
                       </div>
                     </SectionContent>
                   </Section>
@@ -363,9 +293,7 @@ function ExportPopover({
                           <Checkbox
                             id="save-to-disk"
                             checked={saveToDisk}
-                            onCheckedChange={(checked) =>
-                              setSaveToDisk(!!checked)
-                            }
+                            onCheckedChange={checked => setSaveToDisk(!!checked)}
                           />
                           <Label htmlFor="save-to-disk">Save to disk</Label>
                         </div>
@@ -373,30 +301,18 @@ function ExportPopover({
                           <Checkbox
                             id="save-to-library"
                             checked={saveToLibrary}
-                            onCheckedChange={(checked) =>
-                              setSaveToLibrary(!!checked)
-                            }
+                            onCheckedChange={checked => setSaveToLibrary(!!checked)}
                           />
-                          <Label htmlFor="save-to-library">
-                            Save to my media library
-                          </Label>
+                          <Label htmlFor="save-to-library">Save to my media library</Label>
                         </div>
-                        {!canExport && (
-                          <p className="text-muted-foreground text-xs">
-                            Pick at least one destination.
-                          </p>
-                        )}
+                        {!canExport && <p className="text-muted-foreground text-xs">Pick at least one destination.</p>}
                       </div>
                     </SectionContent>
                   </Section>
                 </div>
 
                 <div className="p-3 pt-0">
-                  <Button
-                    onClick={handleExport}
-                    disabled={!canExport}
-                    className="w-full gap-2"
-                  >
+                  <Button onClick={handleExport} disabled={!canExport} className="w-full gap-2">
                     <Download className="size-4" />
                     Export
                   </Button>
@@ -408,19 +324,13 @@ function ExportPopover({
               <div className="space-y-4 p-3">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between text-center">
-                    <p className="text-muted-foreground text-sm">
-                      {Math.round(progress * 100)}%
-                    </p>
+                    <p className="text-muted-foreground text-sm">{Math.round(progress * 100)}%</p>
                     <p className="text-muted-foreground text-sm">100%</p>
                   </div>
                   <Progress value={progress * 100} className="w-full" />
                 </div>
 
-                <Button
-                  variant="outline"
-                  className="w-full rounded-md"
-                  onClick={handleCancel}
-                >
+                <Button variant="outline" className="w-full rounded-md" onClick={handleCancel}>
                   Cancel
                 </Button>
               </div>
@@ -436,35 +346,23 @@ function ExportPopover({
   );
 }
 
-function SavePhasePanel({
-  saveState,
-  onDismiss,
-}: {
-  saveState: SaveState;
-  onDismiss: () => void;
-}) {
+function SavePhasePanel({ saveState, onDismiss }: { saveState: SaveState; onDismiss: () => void }) {
   const settled = saveState.phase === "settled";
   const visibleDestinations = (["disk", "library"] as ExportDestination[])
-    .map((destination) => ({
+    .map(destination => ({
       destination,
       ...(destination === "disk" ? saveState.disk : saveState.library),
     }))
-    .filter((entry) => entry.status !== "skipped");
+    .filter(entry => entry.status !== "skipped");
 
-  const allSucceeded = visibleDestinations.every(
-    (entry) => entry.status === "success",
-  );
-  const headerLabel = settled
-    ? allSucceeded
-      ? "Export saved"
-      : "Export finished with errors"
-    : "Saving export";
+  const allSucceeded = visibleDestinations.every(entry => entry.status === "success");
+  const headerLabel = settled ? (allSucceeded ? "Export saved" : "Export finished with errors") : "Saving export";
 
   return (
     <div className="space-y-4 p-3">
       <p className="text-foreground text-sm font-medium">{headerLabel}</p>
       <div className="flex flex-col gap-2">
-        {visibleDestinations.map((entry) => (
+        {visibleDestinations.map(entry => (
           <DestinationRow
             key={entry.destination}
             destination={entry.destination}
@@ -474,11 +372,7 @@ function SavePhasePanel({
         ))}
       </div>
       {settled && (
-        <Button
-          variant="outline"
-          className="w-full rounded-md"
-          onClick={onDismiss}
-        >
+        <Button variant="outline" className="w-full rounded-md" onClick={onDismiss}>
           Close
         </Button>
       )}
@@ -495,8 +389,7 @@ function DestinationRow({
   status: DestinationStatus;
   error?: string;
 }) {
-  const label =
-    destination === "disk" ? "Saving to disk" : "Saving to media library";
+  const label = destination === "disk" ? "Saving to disk" : "Saving to media library";
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2 text-xs">
@@ -513,20 +406,12 @@ function DestinationRow({
               : label}
         </span>
       </div>
-      {status === "error" && error && (
-        <p className="text-destructive ml-6 text-[11px]">{error}</p>
-      )}
+      {status === "error" && error && <p className="text-destructive ml-6 text-[11px]">{error}</p>}
     </div>
   );
 }
 
-function DestinationIcon({
-  destination,
-  status,
-}: {
-  destination: ExportDestination;
-  status: DestinationStatus;
-}) {
+function DestinationIcon({ destination, status }: { destination: ExportDestination; status: DestinationStatus }) {
   if (status === "success") {
     return <Check className="text-foreground size-3.5" />;
   }
@@ -543,13 +428,7 @@ function DestinationIcon({
   );
 }
 
-function ExportError({
-  error,
-  onRetry,
-}: {
-  error: string;
-  onRetry: () => void;
-}) {
+function ExportError({ error, onRetry }: { error: string; onRetry: () => void }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -566,21 +445,11 @@ function ExportError({
       </div>
 
       <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 flex-1 text-xs"
-          onClick={handleCopy}
-        >
+        <Button variant="outline" size="sm" className="h-8 flex-1 text-xs" onClick={handleCopy}>
           {copied ? <Check className="text-constructive" /> : <Copy />}
           Copy
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 flex-1 text-xs"
-          onClick={onRetry}
-        >
+        <Button variant="outline" size="sm" className="h-8 flex-1 text-xs" onClick={onRetry}>
           <RotateCcw />
           Retry
         </Button>

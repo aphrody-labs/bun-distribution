@@ -42,8 +42,7 @@
   .m3-bui-nav__icon {
     display: inline-grid;
     place-items: center;
-    transition: rotate var(--md-sys-motion-duration-short4)
-      var(--md-sys-motion-easing-emphasized);
+    transition: rotate var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
   }
   .m3-bui-nav__trigger[data-popup-open] .m3-bui-nav__icon {
     rotate: 180deg;
@@ -63,10 +62,8 @@
   .m3-bui-nav__content {
     padding: 8px 16px;
     transition:
-      opacity var(--md-sys-motion-duration-short4)
-        var(--md-sys-motion-easing-standard),
-      transform var(--md-sys-motion-duration-short4)
-        var(--md-sys-motion-easing-emphasized);
+      opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+      transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
   }
   .m3-bui-nav__content[data-starting-style],
   .m3-bui-nav__content[data-ending-style] {

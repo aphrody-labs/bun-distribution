@@ -55,14 +55,19 @@ pub const fn compiled_in() -> bool {
 #[must_use]
 pub fn parse_enabled(value: Option<&str>) -> bool {
     value.is_some_and(|raw| {
-        matches!(raw.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on")
+        matches!(
+            raw.trim().to_ascii_lowercase().as_str(),
+            "1" | "true" | "yes" | "on"
+        )
     })
 }
 
 /// A valid port number, or `0` (ephemeral) for anything else.
 #[must_use]
 pub fn parse_port(value: Option<&str>) -> u16 {
-    value.and_then(|raw| raw.trim().parse::<u16>().ok()).unwrap_or(0)
+    value
+        .and_then(|raw| raw.trim().parse::<u16>().ok())
+        .unwrap_or(0)
 }
 
 /// Directory holding one discovery file per running debug-enabled app.
@@ -103,7 +108,13 @@ pub fn discovery_json(
 pub fn discovery_file_name(exe: &str, pid: u32) -> String {
     let stem: String = exe
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
     format!("{stem}-{pid}.json")
 }
@@ -135,7 +146,11 @@ mod bridge {
     };
 
     fn random_token() -> String {
-        format!("{}{}", uuid::Uuid::new_v4().simple(), uuid::Uuid::new_v4().simple())
+        format!(
+            "{}{}",
+            uuid::Uuid::new_v4().simple(),
+            uuid::Uuid::new_v4().simple()
+        )
     }
 
     /// Writes the discovery file atomically with mode 0600 (directory 0700). Failures are logged
@@ -152,9 +167,14 @@ mod bridge {
         let pid = std::process::id();
         let exe = std::env::current_exe()
             .ok()
-            .and_then(|path| path.file_stem().map(|stem| stem.to_string_lossy().into_owned()))
+            .and_then(|path| {
+                path.file_stem()
+                    .map(|stem| stem.to_string_lossy().into_owned())
+            })
             .unwrap_or_else(|| "tauri-app".to_owned());
-        let started = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_millis());
+        let started = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_or(0, |d| d.as_millis());
         let body = discovery_json(addr, token, pid, &exe, started).to_string();
         let name = discovery_file_name(&exe, pid);
         let result = (|| -> std::io::Result<()> {
@@ -172,14 +192,17 @@ mod bridge {
             ),
             Err(error) => {
                 eprintln!("[aphrody-tauri-debug] could not write the discovery file: {error}")
-            },
+            }
         }
     }
 
     #[cfg(unix)]
     fn create_private_dir(dir: &std::path::Path) -> std::io::Result<()> {
         use std::os::unix::fs::DirBuilderExt as _;
-        std::fs::DirBuilder::new().recursive(true).mode(0o700).create(dir)
+        std::fs::DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(dir)
     }
 
     #[cfg(not(unix))]
@@ -190,12 +213,21 @@ mod bridge {
     #[cfg(unix)]
     fn private_file(path: &std::path::Path) -> std::io::Result<std::fs::File> {
         use std::os::unix::fs::OpenOptionsExt as _;
-        std::fs::OpenOptions::new().write(true).create(true).truncate(true).mode(0o600).open(path)
+        std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .mode(0o600)
+            .open(path)
     }
 
     #[cfg(not(unix))]
     fn private_file(path: &std::path::Path) -> std::io::Result<std::fs::File> {
-        std::fs::OpenOptions::new().write(true).create(true).truncate(true).open(path)
+        std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(path)
     }
 
     pub(super) fn build<R: Runtime>() -> Option<TauriPlugin<R>> {
@@ -235,7 +267,14 @@ mod tests {
     #[test]
     fn ports_fall_back_to_ephemeral() {
         assert_eq!(parse_port(Some("9333")), 9333);
-        for bad in [None, Some(""), Some("0"), Some("70000"), Some("-1"), Some("abc")] {
+        for bad in [
+            None,
+            Some(""),
+            Some("0"),
+            Some("70000"),
+            Some("-1"),
+            Some("abc"),
+        ] {
             assert_eq!(parse_port(bad), 0, "{bad:?}");
         }
     }
@@ -259,11 +298,17 @@ mod tests {
         assert_eq!(json["port"], 43211);
         assert_eq!(json["pid"], 42);
         assert_eq!(json["token"], "tok");
-        assert_eq!(discovery_file_name("model view/../x", 5), "model_view____x-5.json");
+        assert_eq!(
+            discovery_file_name("model view/../x", 5),
+            "model_view____x-5.json"
+        );
     }
 
     #[test]
     fn without_the_feature_nothing_is_compiled_in() {
-        assert_eq!(compiled_in(), cfg!(all(feature = "wrap-debug-bridge", debug_assertions)));
+        assert_eq!(
+            compiled_in(),
+            cfg!(all(feature = "wrap-debug-bridge", debug_assertions))
+        );
     }
 }

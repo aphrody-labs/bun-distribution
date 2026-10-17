@@ -1,9 +1,5 @@
 import type { MediaType } from "../../media/types";
-import type {
-  TProject,
-  TProjectMetadata,
-  TTimelineViewState,
-} from "../../project/types";
+import type { TProject, TProjectMetadata, TTimelineViewState } from "../../project/types";
 import type { TScene } from "../../timeline/types";
 
 // Persistence-layer interface: a key-value store with async semantics.
@@ -42,10 +38,7 @@ export type SerializedScene = Omit<TScene, "createdAt" | "updatedAt"> & {
   updatedAt: string;
 };
 
-export type SerializedProjectMetadata = Omit<
-  TProjectMetadata,
-  "createdAt" | "updatedAt"
-> & {
+export type SerializedProjectMetadata = Omit<TProjectMetadata, "createdAt" | "updatedAt"> & {
   createdAt: string;
   updatedAt: string;
 };

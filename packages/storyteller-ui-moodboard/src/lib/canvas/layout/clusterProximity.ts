@@ -9,23 +9,18 @@ const median = (xs: number[]): number => {
   if (xs.length === 0) return 0;
   const sorted = [...xs].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0
-    ? (sorted[mid - 1] + sorted[mid]) / 2
-    : sorted[mid];
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 };
 
 export const defaultEpsForNodes = (nodes: MoodboardNode[]): number => {
   if (nodes.length === 0) return 0;
-  const dims = nodes.map((n) => Math.max(n.width, n.height));
+  const dims = nodes.map(n => Math.max(n.width, n.height));
   return median(dims) * 1.5;
 };
 
 // DBSCAN with minPts = 1 → equivalent to connected-components on the
 // eps-graph. Every input node ends up in some cluster (no noise points).
-export const clusterByProximity = (
-  nodes: MoodboardNode[],
-  eps?: number,
-): MoodboardNode[][] => {
+export const clusterByProximity = (nodes: MoodboardNode[], eps?: number): MoodboardNode[][] => {
   if (nodes.length === 0) return [];
   const e = eps ?? defaultEpsForNodes(nodes);
   const e2 = e * e;

@@ -3,43 +3,130 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** tdh.dll!TdhAggregatePayloadFilters */
-  TdhAggregatePayloadFilters(PayloadFilterCount: number, PayloadFilterPtrs: Win32Pointer, EventMatchALLFlags: Win32Pointer, EventFilterDescriptor: Win32Pointer): number;
+  TdhAggregatePayloadFilters(
+    PayloadFilterCount: number,
+    PayloadFilterPtrs: Win32Pointer,
+    EventMatchALLFlags: Win32Pointer,
+    EventFilterDescriptor: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhCleanupPayloadEventFilterDescriptor */
   TdhCleanupPayloadEventFilterDescriptor(EventFilterDescriptor: Win32Pointer): number;
   /** tdh.dll!TdhCloseDecodingHandle */
   TdhCloseDecodingHandle(Handle: number | bigint): number;
   /** tdh.dll!TdhCreatePayloadFilter */
-  TdhCreatePayloadFilter(ProviderGuid: Win32Pointer, EventDescriptor: Win32Pointer, EventMatchANY: number, PayloadPredicateCount: number, PayloadPredicates: Win32Pointer, PayloadFilter: Win32Pointer): number;
+  TdhCreatePayloadFilter(
+    ProviderGuid: Win32Pointer,
+    EventDescriptor: Win32Pointer,
+    EventMatchANY: number,
+    PayloadPredicateCount: number,
+    PayloadPredicates: Win32Pointer,
+    PayloadFilter: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhDeletePayloadFilter */
   TdhDeletePayloadFilter(PayloadFilter: Win32Pointer): number;
   /** tdh.dll!TdhEnumerateManifestProviderEvents */
-  TdhEnumerateManifestProviderEvents(ProviderGuid: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  TdhEnumerateManifestProviderEvents(
+    ProviderGuid: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhEnumerateProviderFieldInformation */
-  TdhEnumerateProviderFieldInformation(pGuid: Win32Pointer, EventFieldType: number, pBuffer: Win32Pointer, pBufferSize: Win32Pointer): number;
+  TdhEnumerateProviderFieldInformation(
+    pGuid: Win32Pointer,
+    EventFieldType: number,
+    pBuffer: Win32Pointer,
+    pBufferSize: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhEnumerateProviderFilters */
-  TdhEnumerateProviderFilters(Guid: Win32Pointer, TdhContextCount: number, TdhContext: Win32Pointer, FilterCount: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  TdhEnumerateProviderFilters(
+    Guid: Win32Pointer,
+    TdhContextCount: number,
+    TdhContext: Win32Pointer,
+    FilterCount: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhEnumerateProviders */
   TdhEnumerateProviders(pBuffer: Win32Pointer, pBufferSize: Win32Pointer): number;
   /** tdh.dll!TdhEnumerateProvidersForDecodingSource */
-  TdhEnumerateProvidersForDecodingSource(filter: number, buffer: Win32Pointer, bufferSize: number, bufferRequired: Win32Pointer): number;
+  TdhEnumerateProvidersForDecodingSource(
+    filter: number,
+    buffer: Win32Pointer,
+    bufferSize: number,
+    bufferRequired: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhFormatProperty */
-  TdhFormatProperty(EventInfo: Win32Pointer, MapInfo: Win32Pointer, PointerSize: number, PropertyInType: number, PropertyOutType: number, PropertyLength: number, UserDataLength: number, UserData: Win32Pointer, BufferSize: Win32Pointer, Buffer: string | Win32Pointer, UserDataConsumed: Win32Pointer): number;
+  TdhFormatProperty(
+    EventInfo: Win32Pointer,
+    MapInfo: Win32Pointer,
+    PointerSize: number,
+    PropertyInType: number,
+    PropertyOutType: number,
+    PropertyLength: number,
+    UserDataLength: number,
+    UserData: Win32Pointer,
+    BufferSize: Win32Pointer,
+    Buffer: string | Win32Pointer,
+    UserDataConsumed: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhGetDecodingParameter */
   TdhGetDecodingParameter(Handle: number | bigint, TdhContext: Win32Pointer): number;
   /** tdh.dll!TdhGetEventInformation */
-  TdhGetEventInformation(Event: Win32Pointer, TdhContextCount: number, TdhContext: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  TdhGetEventInformation(
+    Event: Win32Pointer,
+    TdhContextCount: number,
+    TdhContext: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhGetEventMapInformation */
-  TdhGetEventMapInformation(pEvent: Win32Pointer, pMapName: string | Win32Pointer, pBuffer: Win32Pointer, pBufferSize: Win32Pointer): number;
+  TdhGetEventMapInformation(
+    pEvent: Win32Pointer,
+    pMapName: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+    pBufferSize: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhGetManifestEventInformation */
-  TdhGetManifestEventInformation(ProviderGuid: Win32Pointer, EventDescriptor: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
+  TdhGetManifestEventInformation(
+    ProviderGuid: Win32Pointer,
+    EventDescriptor: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhGetProperty */
-  TdhGetProperty(pEvent: Win32Pointer, TdhContextCount: number, pTdhContext: Win32Pointer, PropertyDataCount: number, pPropertyData: Win32Pointer, BufferSize: number, pBuffer: Win32Pointer): number;
+  TdhGetProperty(
+    pEvent: Win32Pointer,
+    TdhContextCount: number,
+    pTdhContext: Win32Pointer,
+    PropertyDataCount: number,
+    pPropertyData: Win32Pointer,
+    BufferSize: number,
+    pBuffer: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhGetPropertySize */
-  TdhGetPropertySize(pEvent: Win32Pointer, TdhContextCount: number, pTdhContext: Win32Pointer, PropertyDataCount: number, pPropertyData: Win32Pointer, pPropertySize: Win32Pointer): number;
+  TdhGetPropertySize(
+    pEvent: Win32Pointer,
+    TdhContextCount: number,
+    pTdhContext: Win32Pointer,
+    PropertyDataCount: number,
+    pPropertyData: Win32Pointer,
+    pPropertySize: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhGetWppMessage */
-  TdhGetWppMessage(Handle: number | bigint, EventRecord: Win32Pointer, BufferSize: Win32Pointer, Buffer: Win32Pointer): number;
+  TdhGetWppMessage(
+    Handle: number | bigint,
+    EventRecord: Win32Pointer,
+    BufferSize: Win32Pointer,
+    Buffer: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhGetWppProperty */
-  TdhGetWppProperty(Handle: number | bigint, EventRecord: Win32Pointer, PropertyName: string | Win32Pointer, BufferSize: Win32Pointer, Buffer: Win32Pointer): number;
+  TdhGetWppProperty(
+    Handle: number | bigint,
+    EventRecord: Win32Pointer,
+    PropertyName: string | Win32Pointer,
+    BufferSize: Win32Pointer,
+    Buffer: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhLoadManifest */
   TdhLoadManifest(Manifest: string | Win32Pointer): number;
   /** tdh.dll!TdhLoadManifestFromBinary */
@@ -49,7 +136,13 @@ interface Functions {
   /** tdh.dll!TdhOpenDecodingHandle */
   TdhOpenDecodingHandle(Handle: Win32Pointer): number;
   /** tdh.dll!TdhQueryProviderFieldInformation */
-  TdhQueryProviderFieldInformation(pGuid: Win32Pointer, EventFieldValue: number | bigint, EventFieldType: number, pBuffer: Win32Pointer, pBufferSize: Win32Pointer): number;
+  TdhQueryProviderFieldInformation(
+    pGuid: Win32Pointer,
+    EventFieldValue: number | bigint,
+    EventFieldType: number,
+    pBuffer: Win32Pointer,
+    pBufferSize: Win32Pointer,
+  ): number;
   /** tdh.dll!TdhSetDecodingParameter */
   TdhSetDecodingParameter(Handle: number | bigint, TdhContext: Win32Pointer): number;
   /** tdh.dll!TdhUnloadManifest */

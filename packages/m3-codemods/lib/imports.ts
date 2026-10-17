@@ -6,11 +6,7 @@ import type { Edits } from "./edits";
 import type { ImportDecl, ImportSpec, ScanResult } from "./tsx-scan";
 
 /** Garde les spécificateurs acceptés ; supprime la déclaration quand il n'en reste aucun. */
-export function filterSpecifiers(
-  edits: Edits,
-  decl: ImportDecl,
-  keep: (spec: ImportSpec) => boolean,
-): void {
+export function filterSpecifiers(edits: Edits, decl: ImportDecl, keep: (spec: ImportSpec) => boolean): void {
   const kept = decl.specifiers.filter(keep);
   if (kept.length === decl.specifiers.length) return;
   if (kept.length === 0) {
@@ -21,18 +17,11 @@ export function filterSpecifiers(
     edits.replace(decl.start, end, "");
     return;
   }
-  const head = kept.filter((s) => s.kind !== "named").map((s) => s.text);
-  const named = kept.filter((s) => s.kind === "named").map((s) => s.text);
-  const clause = [
-    ...head,
-    ...(named.length > 0 ? [`{ ${named.join(", ")} }`] : []),
-  ].join(", ");
+  const head = kept.filter(s => s.kind !== "named").map(s => s.text);
+  const named = kept.filter(s => s.kind === "named").map(s => s.text);
+  const clause = [...head, ...(named.length > 0 ? [`{ ${named.join(", ")} }`] : [])].join(", ");
   const q = decl.quote;
-  edits.replace(
-    decl.start,
-    decl.end,
-    `import ${decl.typeOnly ? "type " : ""}${clause} from ${q}${decl.source}${q};`,
-  );
+  edits.replace(decl.start, decl.end, `import ${decl.typeOnly ? "type " : ""}${clause} from ${q}${decl.source}${q};`);
 }
 
 /** Import d'effet de bord de `md-icon`, avec sa justification oxlint. */
@@ -46,18 +35,13 @@ export const MD_ICON_IMPORT =
  * doit rester en tête pour rester une directive). `blocks` sont des statements complets terminés
  * par `\n` ; un bloc multi-ligne est séparé du suivant par une ligne vide.
  */
-export function insertImports(
-  edits: Edits,
-  scan: ScanResult,
-  blocks: string[],
-): void {
+export function insertImports(edits: Edits, scan: ScanResult, blocks: string[]): void {
   if (blocks.length === 0) return;
   let text = "";
   blocks.forEach((block, i) => {
     text += block;
     const last = i === blocks.length - 1;
-    if (block.trimEnd().includes("\n") && (!last || scan.directivesEnd > 0))
-      text += "\n";
+    if (block.trimEnd().includes("\n") && (!last || scan.directivesEnd > 0)) text += "\n";
   });
   if (scan.directivesEnd === 0) edits.insert(0, text);
   else edits.insert(scan.directivesEnd, `\n${text.replace(/\n$/, "")}`);

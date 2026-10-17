@@ -20,27 +20,19 @@ import { getElementsAtTime, hasMediaId } from "../timeline/element-utils";
 import { cancelInteraction } from "../editor/cancel-interaction";
 import { invokeAction } from ".";
 import { canToggleSourceAudio } from "../timeline/audio-separation";
-import {
-  activateScope,
-  clearActiveScope,
-  type ScopeEntry,
-} from "../selection/scope";
+import { activateScope, clearActiveScope, type ScopeEntry } from "../selection/scope";
 import { useCommittedRef } from "../hooks/use-committed-ref";
 
 export function useEditorActions() {
   const editor = useEditor();
   const { selectedElements, setElementSelection } = useElementSelection();
   const { selectedKeyframes, clearKeyframeSelection } = useKeyframeSelection();
-  const selectedMaskPointSelection = useEditor((e) =>
-    e.selection.getSelectedMaskPointSelection(),
-  );
-  const toggleSnapping = useTimelineStore((s) => s.toggleSnapping);
-  const rippleEditingEnabled = useTimelineStore((s) => s.rippleEditingEnabled);
-  const toggleRippleEditing = useTimelineStore((s) => s.toggleRippleEditing);
+  const selectedMaskPointSelection = useEditor(e => e.selection.getSelectedMaskPointSelection());
+  const toggleSnapping = useTimelineStore(s => s.toggleSnapping);
+  const rippleEditingEnabled = useTimelineStore(s => s.rippleEditingEnabled);
+  const toggleRippleEditing = useTimelineStore(s => s.toggleRippleEditing);
   const hasTimelineSelection =
-    selectedElements.length > 0 ||
-    selectedKeyframes.length > 0 ||
-    selectedMaskPointSelection !== null;
+    selectedElements.length > 0 || selectedKeyframes.length > 0 || selectedMaskPointSelection !== null;
   const hasTimelineSelectionRef = useCommittedRef(hasTimelineSelection);
   const clearTimelineSelectionRef = useCommittedRef(() => {
     editor.selection.clearSelection();
@@ -87,7 +79,7 @@ export function useEditorActions() {
 
   useActionHandler(
     "seek-forward",
-    (args) => {
+    args => {
       const seconds = args?.seconds ?? 1;
       const delta = mediaTimeFromSeconds({ seconds });
       editor.playback.seek({
@@ -105,7 +97,7 @@ export function useEditorActions() {
 
   useActionHandler(
     "seek-backward",
-    (args) => {
+    args => {
       const seconds = args?.seconds ?? 1;
       const delta = mediaTimeFromSeconds({ seconds });
       editor.playback.seek({
@@ -167,7 +159,7 @@ export function useEditorActions() {
 
   useActionHandler(
     "jump-forward",
-    (args) => {
+    args => {
       const seconds = args?.seconds ?? 5;
       const delta = mediaTimeFromSeconds({ seconds });
       editor.playback.seek({
@@ -185,7 +177,7 @@ export function useEditorActions() {
 
   useActionHandler(
     "jump-backward",
-    (args) => {
+    args => {
       const seconds = args?.seconds ?? 5;
       const delta = mediaTimeFromSeconds({ seconds });
       editor.playback.seek({
@@ -354,11 +346,7 @@ export function useEditorActions() {
           return null;
         }
 
-        return (
-          editor.media
-            .getAssets()
-            .find((asset) => asset.id === element.mediaId) ?? null
-        );
+        return editor.media.getAssets().find(asset => asset.id === element.mediaId) ?? null;
       })();
       if (!canToggleSourceAudio(selectedElement.element, mediaAsset)) {
         return;
@@ -376,12 +364,8 @@ export function useEditorActions() {
     "select-all",
     () => {
       const scene = editor.scenes.getActiveScene();
-      const allElements = [
-        ...scene.tracks.overlay,
-        scene.tracks.main,
-        ...scene.tracks.audio,
-      ].flatMap((track) =>
-        track.elements.map((element) => ({
+      const allElements = [...scene.tracks.overlay, scene.tracks.main, ...scene.tracks.audio].flatMap(track =>
+        track.elements.map(element => ({
           trackId: track.id,
           elementId: element.id,
         })),
@@ -496,7 +480,7 @@ export function useEditorActions() {
   // todo: potnetially unify these two actions:
   useActionHandler(
     "remove-media-asset",
-    (args) => {
+    args => {
       if (!args) return;
       editor.media.removeMediaAsset({
         projectId: args.projectId,
@@ -508,7 +492,7 @@ export function useEditorActions() {
 
   useActionHandler(
     "remove-media-assets",
-    (args) => {
+    args => {
       if (!args) return;
       editor.media.removeMediaAssets({
         projectId: args.projectId,

@@ -8,14 +8,8 @@ import { useFocusTrap } from "./use-focus-trap";
 const environment = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
 const previousAct = environment.IS_REACT_ACT_ENVIRONMENT;
 environment.IS_REACT_ACT_ENVIRONMENT = true;
-const originalOwner = Object.getOwnPropertyDescriptor(
-  document,
-  "fullscreenElement",
-);
-const originalExit = Object.getOwnPropertyDescriptor(
-  document,
-  "exitFullscreen",
-);
+const originalOwner = Object.getOwnPropertyDescriptor(document, "fullscreenElement");
+const originalExit = Object.getOwnPropertyDescriptor(document, "exitFullscreen");
 const originalOverflow = document.body.style.overflow;
 const mounts: { root: Root; host: HTMLElement; active: boolean }[] = [];
 const extraElements: HTMLElement[] = [];
@@ -43,11 +37,9 @@ afterEach(async () => {
     mounted.host.remove();
   }
   for (const element of extraElements.splice(0)) element.remove();
-  if (originalOwner)
-    Object.defineProperty(document, "fullscreenElement", originalOwner);
+  if (originalOwner) Object.defineProperty(document, "fullscreenElement", originalOwner);
   else Reflect.deleteProperty(document, "fullscreenElement");
-  if (originalExit)
-    Object.defineProperty(document, "exitFullscreen", originalExit);
+  if (originalExit) Object.defineProperty(document, "exitFullscreen", originalExit);
   else Reflect.deleteProperty(document, "exitFullscreen");
   document.body.style.overflow = originalOverflow;
   owner = null;
@@ -160,7 +152,7 @@ describe("reader fullscreen ownership and lifetime", () => {
 
   test.each(["request", "exit"])(
     "%s rejection is returned and exposed without an unhandled promise",
-    async (operation) => {
+    async operation => {
       platform();
       const reader = await fullscreenReader();
       const denied = mock(async () => {
@@ -317,14 +309,11 @@ describe("reader modal keyboard lifecycle", () => {
     const lowerEscape = mock(() => {});
     const upperEscape = mock(() => {});
     const lower = await mount(<Trap onEscape={lowerEscape}>{controls}</Trap>);
-    const lowerLast =
-      lower.host.querySelector<HTMLButtonElement>("[data-last]")!;
+    const lowerLast = lower.host.querySelector<HTMLButtonElement>("[data-last]")!;
     lowerLast.focus();
     const upper = await mount(<Trap onEscape={upperEscape}>{controls}</Trap>);
     tab(true);
-    expect(document.activeElement).toBe(
-      upper.host.querySelector("[data-last]"),
-    );
+    expect(document.activeElement).toBe(upper.host.querySelector("[data-last]"));
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     expect(upperEscape).toHaveBeenCalledTimes(1);
     expect(lowerEscape).not.toHaveBeenCalled();
@@ -357,20 +346,15 @@ describe("reader modal keyboard lifecycle", () => {
     const panel = mounted.host.querySelector<HTMLElement>("[data-panel]")!;
     expect(document.activeElement).toBe(panel);
     expect(tab(true).defaultPrevented).toBe(true);
-    expect(document.activeElement).toBe(
-      mounted.host.querySelector("[data-last]"),
-    );
+    expect(document.activeElement).toBe(mounted.host.querySelector("[data-last]"));
     panel.focus();
     expect(tab().defaultPrevented).toBe(true);
-    expect(document.activeElement).toBe(
-      mounted.host.querySelector("[data-first]"),
-    );
+    expect(document.activeElement).toBe(mounted.host.querySelector("[data-first]"));
   });
 
   test("wraps each boundary while preserving ordinary browser tab navigation", async () => {
     const mounted = await mount(<Trap>{controls}</Trap>);
-    const first =
-      mounted.host.querySelector<HTMLButtonElement>("[data-first]")!;
+    const first = mounted.host.querySelector<HTMLButtonElement>("[data-first]")!;
     const last = mounted.host.querySelector<HTMLButtonElement>("[data-last]")!;
     first.focus();
     expect(tab().defaultPrevented).toBe(false);
@@ -402,13 +386,9 @@ describe("reader modal keyboard lifecycle", () => {
       </Trap>,
     );
     tab(true);
-    expect(document.activeElement).toBe(
-      mounted.host.querySelector("[data-last]"),
-    );
+    expect(document.activeElement).toBe(mounted.host.querySelector("[data-last]"));
     tab();
-    expect(document.activeElement).toBe(
-      mounted.host.querySelector("[data-first]"),
-    );
+    expect(document.activeElement).toBe(mounted.host.querySelector("[data-first]"));
   });
 
   test("a modal with no tabbable children keeps focus on its panel", async () => {
@@ -420,9 +400,7 @@ describe("reader modal keyboard lifecycle", () => {
       </Trap>,
     );
     expect(tab().defaultPrevented).toBe(true);
-    expect(document.activeElement).toBe(
-      mounted.host.querySelector("[data-panel]"),
-    );
+    expect(document.activeElement).toBe(mounted.host.querySelector("[data-panel]"));
     expect(tab(true).defaultPrevented).toBe(true);
   });
 
@@ -433,9 +411,7 @@ describe("reader modal keyboard lifecycle", () => {
     const mounted = await mount(<Trap>{controls}</Trap>);
     outside.focus();
     expect(tab(true).defaultPrevented).toBe(true);
-    expect(document.activeElement).toBe(
-      mounted.host.querySelector("[data-last]"),
-    );
+    expect(document.activeElement).toBe(mounted.host.querySelector("[data-last]"));
   });
 
   test("rerender keeps focus, uses the current Escape callback and restores opener/scroll on close", async () => {
@@ -450,9 +426,7 @@ describe("reader modal keyboard lifecycle", () => {
     expect(document.body.style.overflow).toBe("hidden");
     const last = mounted.host.querySelector<HTMLButtonElement>("[data-last]")!;
     last.focus();
-    await act(() =>
-      mounted.root.render(<Trap onEscape={replacement}>{controls}</Trap>),
-    );
+    await act(() => mounted.root.render(<Trap onEscape={replacement}>{controls}</Trap>));
     expect(document.activeElement).toBe(last);
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     expect(original).not.toHaveBeenCalled();

@@ -32,21 +32,15 @@ export const DragAndDropZone = ({
     const file = files[0];
     const fileName = file.name.split(".")[0].toUpperCase();
     const fileSize =
-      file.size >= 1024 * 1024
-        ? (file.size / 1024 / 1024).toFixed(2) + " MB"
-        : `${Math.floor(file.size / 1024)} KB`;
+      file.size >= 1024 * 1024 ? (file.size / 1024 / 1024).toFixed(2) + " MB" : `${Math.floor(file.size / 1024)} KB`;
 
     return (
       <div className="flex cursor-pointer items-center justify-between gap-3.5 rounded-none border border-dashed border-white/20 bg-white/[0.02] p-3 transition-colors hover:border-white/40 hover:bg-white/[0.05]">
         <DynamicIcon icon={fileIcon} className="text-4xl" />
         <div className="flex grow flex-col gap-0">
-          <p className="font-medium">
-            {file.name.slice(0, file.name.lastIndexOf("."))}
-          </p>
+          <p className="font-medium">{file.name.slice(0, file.name.lastIndexOf("."))}</p>
           <p className="flex items-center gap-2 text-sm font-normal">
-            <span className="opacity-50">
-              {`${fileName} file size: ${fileSize} `}
-            </span>
+            <span className="opacity-50">{`${fileName} file size: ${fileSize} `}</span>
             <u className="transition-all hover:text-white/80">Change File</u>
           </p>
         </div>

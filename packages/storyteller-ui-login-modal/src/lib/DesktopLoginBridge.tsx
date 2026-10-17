@@ -22,9 +22,7 @@ export function DesktopLoginBridge({
   onStart?: () => void;
   onActiveChange?: (active: boolean) => void;
 }) {
-  const [challenge, setChallenge] = useState<DesktopLoginChallenge | null>(
-    null,
-  );
+  const [challenge, setChallenge] = useState<DesktopLoginChallenge | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [now, setNow] = useState(Date.now);
@@ -70,10 +68,7 @@ export function DesktopLoginBridge({
         const result = await pollDesktopLoginChallenge(challenge.challenge_id);
         if (!active || current !== generation.current) return;
         if (result.status === "redeemed") {
-          if (!result.maybe_user)
-            throw new Error(
-              "Native session verification did not return a user",
-            );
+          if (!result.maybe_user) throw new Error("Native session verification did not return a user");
           active = false;
           setChallenge(null);
           setMessage("Signed in successfully.");
@@ -91,9 +86,7 @@ export function DesktopLoginBridge({
           return;
         }
         if (!["pending", "approved"].includes(result.status)) {
-          finish(
-            "This login request could not be completed. Start a new request.",
-          );
+          finish("This login request could not be completed. Start a new request.");
           return;
         }
         delay = Math.max(5, challenge.poll_interval_seconds) * 1000;
@@ -107,16 +100,9 @@ export function DesktopLoginBridge({
         delay = Math.min(delay * 2, 30_000);
         setMessage("Connection interrupted. Retrying…");
       }
-      if (active)
-        timer = setTimeout(
-          poll,
-          Math.min(delay, Math.max(0, deadline - Date.now())),
-        );
+      if (active) timer = setTimeout(poll, Math.min(delay, Math.max(0, deadline - Date.now())));
     };
-    timer = setTimeout(
-      poll,
-      Math.min(delay, Math.max(0, deadline - Date.now())),
-    );
+    timer = setTimeout(poll, Math.min(delay, Math.max(0, deadline - Date.now())));
     return () => {
       active = false;
       clearTimeout(timer);
@@ -144,9 +130,7 @@ export function DesktopLoginBridge({
     } catch (error) {
       if (current === generation.current)
         setMessage(
-          isDesktopLoginError(error)
-            ? error.message
-            : "Unable to open website login. Try again or scan the QR code.",
+          isDesktopLoginError(error) ? error.message : "Unable to open website login. Try again or scan the QR code.",
         );
     } finally {
       if (current === generation.current) setBusy(false);
@@ -160,14 +144,9 @@ export function DesktopLoginBridge({
     setMessage("");
   };
 
-  const remaining = challenge
-    ? Math.max(0, Math.ceil((Date.parse(challenge.expires_at) - now) / 1000))
-    : 0;
+  const remaining = challenge ? Math.max(0, Math.ceil((Date.parse(challenge.expires_at) - now) / 1000)) : 0;
   return (
-    <section
-      aria-label="Website login"
-      className="mb-6 border border-white/15 bg-white/[0.03] p-4 text-center"
-    >
+    <section aria-label="Website login" className="mb-6 border border-white/15 bg-white/[0.03] p-4 text-center">
       {isActive && (
         <div className="mb-4 text-left">
           <button
@@ -181,9 +160,7 @@ export function DesktopLoginBridge({
       )}
       {challenge ? (
         <>
-          <p className="mb-3 text-sm text-white/70">
-            Scan with your phone or approve in your browser.
-          </p>
+          <p className="mb-3 text-sm text-white/70">Scan with your phone or approve in your browser.</p>
           <QRCodeSVG
             value={challenge.verification_url}
             size={192}
@@ -192,12 +169,10 @@ export function DesktopLoginBridge({
             className="mx-auto"
           />
           <p className="my-3 font-mono text-2xl tracking-[0.2em]">
-            {challenge.confirmation_code.slice(0, 4)}-
-            {challenge.confirmation_code.slice(4)}
+            {challenge.confirmation_code.slice(0, 4)}-{challenge.confirmation_code.slice(4)}
           </p>
           <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.12em] text-white/50">
-            Verify this code on the website. Expires in{" "}
-            {Math.floor(remaining / 60)}:
+            Verify this code on the website. Expires in {Math.floor(remaining / 60)}:
             {String(remaining % 60).padStart(2, "0")}
           </p>
           <button
@@ -205,9 +180,7 @@ export function DesktopLoginBridge({
             className="h-10 rounded-[3px] border border-white/15 bg-white/5 px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/10"
             onClick={() =>
               OpenUrl(challenge.verification_url).catch(() =>
-                setMessage(
-                  "Unable to open the browser. Scan the QR code instead.",
-                ),
+                setMessage("Unable to open the browser. Scan the QR code instead."),
               )
             }
           >
@@ -215,10 +188,7 @@ export function DesktopLoginBridge({
           </button>
         </>
       ) : busy ? (
-        <p
-          className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/60"
-          role="status"
-        >
+        <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/60" role="status">
           Preparing login…
         </p>
       ) : (
@@ -237,9 +207,7 @@ export function DesktopLoginBridge({
           >
             Scan to Login
           </button>
-          <p className="text-xs text-white/50">
-            Use Google or any account already signed in on the website.
-          </p>
+          <p className="text-xs text-white/50">Use Google or any account already signed in on the website.</p>
         </div>
       )}
       {message && (

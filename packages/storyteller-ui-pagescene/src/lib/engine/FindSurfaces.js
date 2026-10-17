@@ -65,7 +65,7 @@ class FindSurfaces {
     }
 
     // Find cycles
-    const frontierNodes = Object.keys(vertexMap).map((v) => Number(v));
+    const frontierNodes = Object.keys(vertexMap).map(v => Number(v));
     const exploredNodes = {};
     const vertexIdToSurfaceId = {};
 

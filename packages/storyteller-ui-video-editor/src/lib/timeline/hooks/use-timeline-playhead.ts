@@ -4,10 +4,7 @@ import { useCommittedRef } from "../../hooks/use-committed-ref";
 import { useShiftKey } from "../../hooks/use-shift-key";
 import { useEdgeAutoScroll } from "./use-edge-auto-scroll";
 import { timelineTimeToPixels } from "../pixel-utils";
-import {
-  PlayheadController,
-  type PlayheadConfig,
-} from "../controllers/playhead-controller";
+import { PlayheadController, type PlayheadConfig } from "../controllers/playhead-controller";
 import type { MediaTime } from "../../wasm";
 
 interface UseTimelinePlayheadProps {
@@ -29,7 +26,7 @@ export function useTimelinePlayhead({
   const isShiftHeldRef = useShiftKey();
   // isScrubbing drives useEdgeAutoScroll — the controller sets it on the editor,
   // so this reactive read naturally reflects whether scrubbing is active.
-  const isScrubbing = useEditor((e) => e.playback.getIsScrubbing());
+  const isScrubbing = useEditor(e => e.playback.getIsScrubbing());
 
   const config: PlayheadConfig = {
     zoomLevel,
@@ -43,9 +40,8 @@ export function useTimelinePlayhead({
     getPlayheadEl: () => playheadRef?.current ?? null,
     getSceneTracks: () => editor.scenes.getActiveScene().tracks,
     getSceneBookmarks: () => editor.scenes.getActiveScene()?.bookmarks ?? [],
-    seek: (time) => editor.playback.seek({ time }),
-    setScrubbing: (scrubbing) =>
-      editor.playback.setScrubbing({ isScrubbing: scrubbing }),
+    seek: time => editor.playback.seek({ time }),
+    setScrubbing: scrubbing => editor.playback.setScrubbing({ isScrubbing: scrubbing }),
     setTimelineViewState: ({ zoomLevel, scrollLeft, playheadTime }) =>
       editor.project.setTimelineViewState({
         timelineViewState: {
@@ -62,8 +58,7 @@ export function useTimelinePlayhead({
   useEffect(() => {
     const scrollEl = rulerScrollRef.current;
     if (!scrollEl) return;
-    const handler = () =>
-      ctrl.updatePlayheadLeft(editor.playback.getCurrentTime());
+    const handler = () => ctrl.updatePlayheadLeft(editor.playback.getCurrentTime());
     scrollEl.addEventListener("scroll", handler, { passive: true });
     return () => scrollEl.removeEventListener("scroll", handler);
   }, [ctrl, editor.playback, rulerScrollRef]);

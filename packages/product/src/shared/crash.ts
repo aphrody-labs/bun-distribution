@@ -8,10 +8,7 @@ export function crashLogPath(
   env: Record<string, string | undefined> = process.env,
   app: AppIdentity = CREATOR_APP,
 ): string {
-  const base =
-    env.LOCALAPPDATA ??
-    env.XDG_CACHE_HOME ??
-    join(env.HOME ?? homedir(), ".cache");
+  const base = env.LOCALAPPDATA ?? env.XDG_CACHE_HOME ?? join(env.HOME ?? homedir(), ".cache");
   return join(base, app.name, "crash.log");
 }
 
@@ -23,8 +20,7 @@ export function logCrash(
   app: AppIdentity = CREATOR_APP,
 ): string {
   const path = crashLogPath(env, app);
-  const text =
-    error instanceof Error ? (error.stack ?? error.message) : String(error);
+  const text = error instanceof Error ? (error.stack ?? error.message) : String(error);
   try {
     mkdirSync(dirname(path), { recursive: true });
     appendFileSync(
@@ -41,7 +37,6 @@ export function logCrash(
 export function splitArgs(line: string): string[] {
   const out: string[] = [];
   const pattern = /"([^"]*)"|(\S+)/g;
-  for (let match = pattern.exec(line); match; match = pattern.exec(line))
-    out.push(match[1] ?? match[2] ?? "");
+  for (let match = pattern.exec(line); match; match = pattern.exec(line)) out.push(match[1] ?? match[2] ?? "");
   return out;
 }

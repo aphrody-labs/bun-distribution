@@ -29,7 +29,7 @@ export function loadFontAtlas(): Promise<FontAtlas | null> {
   if (atlasFetchPromise) return atlasFetchPromise;
 
   atlasFetchPromise = fetch(FONT_ATLAS_PATH)
-    .then(async (response) => {
+    .then(async response => {
       if (!response.ok) return null;
       const data: FontAtlas = await response.json();
       cachedAtlas = data;
@@ -42,9 +42,7 @@ export function loadFontAtlas(): Promise<FontAtlas | null> {
 }
 
 function preloadChunkImages({ atlas }: { atlas: FontAtlas }): void {
-  const maxChunk = Math.max(
-    ...Object.values(atlas.fonts).map((entry) => entry.ch),
-  );
+  const maxChunk = Math.max(...Object.values(atlas.fonts).map(entry => entry.ch));
   for (let i = 0; i <= maxChunk; i++) {
     // hint browser to preload chunk images without blocking
     const img = new Image();
@@ -66,23 +64,15 @@ export async function loadFullFont({
   link.rel = "stylesheet";
   link.href = url;
   document.head.appendChild(link);
-  await new Promise<void>((resolve) => {
+  await new Promise<void>(resolve => {
     link.addEventListener("load", () => resolve(), { once: true });
     link.addEventListener("error", () => resolve(), { once: true });
   });
-  await Promise.all(
-    weights.map((weight) =>
-      document.fonts.load(`${weight} 16px "${family.replace(/"/g, '\\"')}"`),
-    ),
-  );
+  await Promise.all(weights.map(weight => document.fonts.load(`${weight} 16px "${family.replace(/"/g, '\\"')}"`)));
   fullLoaded.add(family);
 }
 
-export async function loadFonts({
-  families,
-}: {
-  families: string[];
-}): Promise<void> {
-  const googleFonts = families.filter((family) => !SYSTEM_FONTS.has(family));
-  await Promise.all(googleFonts.map((family) => loadFullFont({ family })));
+export async function loadFonts({ families }: { families: string[] }): Promise<void> {
+  const googleFonts = families.filter(family => !SYSTEM_FONTS.has(family));
+  await Promise.all(googleFonts.map(family => loadFullFont({ family })));
 }

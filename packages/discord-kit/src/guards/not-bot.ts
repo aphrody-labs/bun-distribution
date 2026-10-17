@@ -22,18 +22,12 @@ export function extractUserFromPayload(payload: unknown): User | null {
   }
 
   // Guild members or voice state: GuildMember, VoiceState
-  if (
-    "member" in target &&
-    (target as { member: { user?: User } }).member?.user
-  ) {
+  if ("member" in target && (target as { member: { user?: User } }).member?.user) {
     return (target as { member: { user: User } }).member.user;
   }
 
   // Reactions: MessageReaction
-  if (
-    "message" in target &&
-    (target as { message: { author?: User } }).message?.author
-  ) {
+  if ("message" in target && (target as { message: { author?: User } }).message?.author) {
     return (target as { message: { author: User } }).message.author;
   }
 

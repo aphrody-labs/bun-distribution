@@ -4,16 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import {
-  Search,
-  Sparkles,
-  RefreshCw,
-  AlertCircle,
-  CheckCircle,
-  ArrowUpDown,
-  ExternalLink,
-  Pencil,
-} from "lucide-react";
+import { Search, Sparkles, RefreshCw, AlertCircle, CheckCircle, ArrowUpDown, ExternalLink, Pencil } from "lucide-react";
 import type { ProgressionFiche } from "@/lib/databooks-transcription";
 import type { CampagneStats } from "@/lib/databooks-campagne";
 import { assetUrl } from "@/lib/assets";
@@ -28,17 +19,9 @@ export function DatabooksCatalogManager({
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<
-    | "all"
-    | "in-progress"
-    | "completed"
-    | "empty"
-    | "completed-fr"
-    | "in-progress-fr"
-    | "empty-fr"
+    "all" | "in-progress" | "completed" | "empty" | "completed-fr" | "in-progress-fr" | "empty-fr"
   >("all");
-  const [sortKey, setSortKey] = useState<
-    "id" | "title" | "progress" | "traduites" | "fautives"
-  >("progress");
+  const [sortKey, setSortKey] = useState<"id" | "title" | "progress" | "traduites" | "fautives">("progress");
   const [sortAsc, setSortAsc] = useState(false);
 
   // Campaign data query
@@ -64,7 +47,7 @@ export function DatabooksCatalogManager({
       if (!res.ok) throw new Error("Échec de la réindexation");
       return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       alert(`Index Redis synchronisé : ${data.indexed} fiches indexées.`);
     },
   });
@@ -85,7 +68,7 @@ export function DatabooksCatalogManager({
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       list = list.filter(
-        (f) =>
+        f =>
           f.titre.toLowerCase().includes(q) ||
           (f.titreJa && f.titreJa.toLowerCase().includes(q)) ||
           String(f.id).includes(q),
@@ -93,30 +76,22 @@ export function DatabooksCatalogManager({
     }
 
     if (categoryFilter !== "all") {
-      list = list.filter((f) => f.categorie === categoryFilter);
+      list = list.filter(f => f.categorie === categoryFilter);
     }
 
     if (statusFilter !== "all") {
       if (statusFilter === "completed") {
-        list = list.filter(
-          (f) => f.planches > 0 && f.transcrites >= f.planches,
-        );
+        list = list.filter(f => f.planches > 0 && f.transcrites >= f.planches);
       } else if (statusFilter === "in-progress") {
-        list = list.filter(
-          (f) => f.transcrites > 0 && f.transcrites < f.planches,
-        );
+        list = list.filter(f => f.transcrites > 0 && f.transcrites < f.planches);
       } else if (statusFilter === "empty") {
-        list = list.filter((f) => f.transcrites === 0);
+        list = list.filter(f => f.transcrites === 0);
       } else if (statusFilter === "completed-fr") {
-        list = list.filter(
-          (f) => f.planches > 0 && (f.traduites ?? 0) >= f.planches,
-        );
+        list = list.filter(f => f.planches > 0 && (f.traduites ?? 0) >= f.planches);
       } else if (statusFilter === "in-progress-fr") {
-        list = list.filter(
-          (f) => (f.traduites ?? 0) > 0 && (f.traduites ?? 0) < f.planches,
-        );
+        list = list.filter(f => (f.traduites ?? 0) > 0 && (f.traduites ?? 0) < f.planches);
       } else if (statusFilter === "empty-fr") {
-        list = list.filter((f) => (f.traduites ?? 0) === 0);
+        list = list.filter(f => (f.traduites ?? 0) === 0);
       }
     }
 
@@ -151,8 +126,7 @@ export function DatabooksCatalogManager({
               </h2>
             </div>
             <p className="mt-1 text-xs text-white/50">
-              Suivi de la file de traduction en temps réel et ordonnancement des
-              vagues par agents
+              Suivi de la file de traduction en temps réel et ordonnancement des vagues par agents
             </p>
           </div>
 
@@ -163,12 +137,8 @@ export function DatabooksCatalogManager({
               disabled={reindexMutation.isPending}
               className="btn btn-ghost btn-sm flex items-center gap-1.5 text-xs text-white/70 hover:text-white"
             >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${reindexMutation.isPending ? "animate-spin" : ""}`}
-              />
-              {reindexMutation.isPending
-                ? "Réindexation..."
-                : "Réindexer Redis"}
+              <RefreshCw className={`h-3.5 w-3.5 ${reindexMutation.isPending ? "animate-spin" : ""}`} />
+              {reindexMutation.isPending ? "Réindexation..." : "Réindexer Redis"}
             </button>
           </div>
         </div>
@@ -180,22 +150,16 @@ export function DatabooksCatalogManager({
               {campagne.ouvragesEnAttente} / {campagne.totalOuvrages}
             </div>
             <div className="mt-1 text-[11px] text-white/40">
-              {campagne.resteATraduire.toLocaleString("fr-FR")} planches à
-              traduire
+              {campagne.resteATraduire.toLocaleString("fr-FR")} planches à traduire
             </div>
           </div>
 
           <div className="rounded-lg bg-white/[0.02] p-3 border border-white/5">
             <div className="text-xs text-white/40">Volume Japonais Restant</div>
             <div className="mt-1 text-2xl font-bold text-dbz-orange">
-              {Math.round(campagne.signesJaRestants / 1000).toLocaleString(
-                "fr-FR",
-              )}{" "}
-              k
+              {Math.round(campagne.signesJaRestants / 1000).toLocaleString("fr-FR")} k
             </div>
-            <div className="mt-1 text-[11px] text-white/40">
-              signes japonais sains
-            </div>
+            <div className="mt-1 text-[11px] text-white/40">signes japonais sains</div>
           </div>
 
           <div className="rounded-lg bg-white/[0.02] p-3 border border-white/5">
@@ -205,11 +169,7 @@ export function DatabooksCatalogManager({
             </div>
             <div className="mt-1 text-[11px] text-emerald-400/60">
               {campagne.planchesTranscrites > 0
-                ? Math.round(
-                    (campagne.planchesTraduites /
-                      campagne.planchesTranscrites) *
-                      100,
-                  )
+                ? Math.round((campagne.planchesTraduites / campagne.planchesTranscrites) * 100)
                 : 0}
               % du corpus transcrit
             </div>
@@ -221,9 +181,7 @@ export function DatabooksCatalogManager({
               <CheckCircle className="h-4 w-4" />
               Juge Double Défaut
             </div>
-            <div className="mt-1 text-[11px] text-white/40">
-              Zero hallucination · Lexique canonique
-            </div>
+            <div className="mt-1 text-[11px] text-white/40">Zero hallucination · Lexique canonique</div>
           </div>
         </div>
       </div>
@@ -235,7 +193,7 @@ export function DatabooksCatalogManager({
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher par titre, titre japonais ou #ID..."
             className="input input-sm w-full bg-white/5 text-xs text-white placeholder-white/30 border-white/10"
           />
@@ -244,12 +202,12 @@ export function DatabooksCatalogManager({
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            onChange={e => setCategoryFilter(e.target.value)}
             aria-label="Filtrer par catégorie"
             className="select select-sm bg-white/5 text-xs text-white border-white/10"
           >
             <option value="all">Toutes les catégories</option>
-            {categories.map((c) => (
+            {categories.map(c => (
               <option key={c} value={c}>
                 {c}
               </option>
@@ -258,7 +216,7 @@ export function DatabooksCatalogManager({
 
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
+            onChange={e => setStatusFilter(e.target.value as any)}
             aria-label="Filtrer par statut"
             className="select select-sm bg-white/5 text-xs text-white border-white/10"
           >
@@ -266,16 +224,14 @@ export function DatabooksCatalogManager({
             <option value="in-progress">OCR en cours</option>
             <option value="completed">OCR complet (100%)</option>
             <option value="empty">OCR non démarré</option>
-            <option value="completed-fr">
-              Traductions FR terminées (100%)
-            </option>
+            <option value="completed-fr">Traductions FR terminées (100%)</option>
             <option value="in-progress-fr">Traductions FR en cours</option>
             <option value="empty-fr">Traductions FR non démarrées</option>
           </select>
 
           <select
             value={sortKey}
-            onChange={(e) => setSortKey(e.target.value as any)}
+            onChange={e => setSortKey(e.target.value as any)}
             aria-label="Trier par critère"
             className="select select-sm bg-white/5 text-xs text-white border-white/10"
           >
@@ -322,37 +278,18 @@ export function DatabooksCatalogManager({
                   </td>
                 </tr>
               ) : (
-                filteredFiches.map((fiche) => {
-                  const pct =
-                    fiche.planches > 0
-                      ? Math.round((fiche.transcrites / fiche.planches) * 100)
-                      : 0;
-                  const pctFr =
-                    fiche.planches > 0
-                      ? Math.round(
-                          ((fiche.traduites ?? 0) / fiche.planches) * 100,
-                        )
-                      : 0;
+                filteredFiches.map(fiche => {
+                  const pct = fiche.planches > 0 ? Math.round((fiche.transcrites / fiche.planches) * 100) : 0;
+                  const pctFr = fiche.planches > 0 ? Math.round(((fiche.traduites ?? 0) / fiche.planches) * 100) : 0;
 
                   return (
-                    <tr
-                      key={fiche.id}
-                      className="hover:bg-white/[0.02] transition"
-                    >
-                      <td className="py-3 px-4 font-mono font-bold text-dbz-orange">
-                        #{fiche.id}
-                      </td>
+                    <tr key={fiche.id} className="hover:bg-white/[0.02] transition">
+                      <td className="py-3 px-4 font-mono font-bold text-dbz-orange">#{fiche.id}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           {fiche.cover && (
                             <div className="relative h-10 w-8 flex-shrink-0 overflow-hidden rounded bg-black/40">
-                              <Image
-                                src={assetUrl(fiche.cover)}
-                                alt=""
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
+                              <Image src={assetUrl(fiche.cover)} alt="" fill className="object-cover" unoptimized />
                             </div>
                           )}
                           <div>
@@ -363,9 +300,7 @@ export function DatabooksCatalogManager({
                               {fiche.titre}
                             </Link>
                             {fiche.titreJa && (
-                              <div className="text-[10px] text-white/40 font-mono">
-                                {fiche.titreJa}
-                              </div>
+                              <div className="text-[10px] text-white/40 font-mono">{fiche.titreJa}</div>
                             )}
                           </div>
                         </div>
@@ -381,24 +316,12 @@ export function DatabooksCatalogManager({
                             <span className="font-semibold text-white">
                               {fiche.transcrites} / {fiche.planches}
                             </span>
-                            <span
-                              className={
-                                pct >= 100
-                                  ? "text-green-400 font-bold"
-                                  : "text-white/50"
-                              }
-                            >
-                              {pct}%
-                            </span>
+                            <span className={pct >= 100 ? "text-green-400 font-bold" : "text-white/50"}>{pct}%</span>
                           </div>
                           <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
                             <div
                               className={`h-full transition-all ${
-                                pct >= 100
-                                  ? "bg-green-400"
-                                  : pct >= 50
-                                    ? "bg-dbz-orange"
-                                    : "bg-amber-400"
+                                pct >= 100 ? "bg-green-400" : pct >= 50 ? "bg-dbz-orange" : "bg-amber-400"
                               }`}
                               style={{ width: `${pct}%` }}
                             />
@@ -446,14 +369,10 @@ export function DatabooksCatalogManager({
                             {fiche.fautives}
                           </span>
                         ) : (
-                          <span className="text-[10px] text-green-400/60 font-semibold">
-                            ✓ Sain
-                          </span>
+                          <span className="text-[10px] text-green-400/60 font-semibold">✓ Sain</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-mono text-white/60">
-                        {Math.round(fiche.signes / 1000)} k
-                      </td>
+                      <td className="py-3 px-4 font-mono text-white/60">{Math.round(fiche.signes / 1000)} k</td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <Link

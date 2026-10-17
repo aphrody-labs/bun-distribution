@@ -3,17 +3,65 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** credui.dll!CredPackAuthenticationBufferA */
-  CredPackAuthenticationBufferA(dwFlags: number, pszUserName: string | Win32Pointer, pszPassword: string | Win32Pointer, pPackedCredentials: Win32Pointer, pcbPackedCredentials: Win32Pointer): number;
+  CredPackAuthenticationBufferA(
+    dwFlags: number,
+    pszUserName: string | Win32Pointer,
+    pszPassword: string | Win32Pointer,
+    pPackedCredentials: Win32Pointer,
+    pcbPackedCredentials: Win32Pointer,
+  ): number;
   /** credui.dll!CredPackAuthenticationBufferW */
-  CredPackAuthenticationBufferW(dwFlags: number, pszUserName: string | Win32Pointer, pszPassword: string | Win32Pointer, pPackedCredentials: Win32Pointer, pcbPackedCredentials: Win32Pointer): number;
+  CredPackAuthenticationBufferW(
+    dwFlags: number,
+    pszUserName: string | Win32Pointer,
+    pszPassword: string | Win32Pointer,
+    pPackedCredentials: Win32Pointer,
+    pcbPackedCredentials: Win32Pointer,
+  ): number;
   /** credui.dll!CredPackAuthenticationBufferW */
-  CredPackAuthenticationBuffer(dwFlags: number, pszUserName: string | Win32Pointer, pszPassword: string | Win32Pointer, pPackedCredentials: Win32Pointer, pcbPackedCredentials: Win32Pointer): number;
+  CredPackAuthenticationBuffer(
+    dwFlags: number,
+    pszUserName: string | Win32Pointer,
+    pszPassword: string | Win32Pointer,
+    pPackedCredentials: Win32Pointer,
+    pcbPackedCredentials: Win32Pointer,
+  ): number;
   /** credui.dll!CredUICmdLinePromptForCredentialsA */
-  CredUICmdLinePromptForCredentialsA(pszTargetName: string | Win32Pointer, pContext: Win32Pointer, dwAuthError: number, UserName: string | Win32Pointer, ulUserBufferSize: number, pszPassword: string | Win32Pointer, ulPasswordBufferSize: number, pfSave: Win32Pointer, dwFlags: number): number;
+  CredUICmdLinePromptForCredentialsA(
+    pszTargetName: string | Win32Pointer,
+    pContext: Win32Pointer,
+    dwAuthError: number,
+    UserName: string | Win32Pointer,
+    ulUserBufferSize: number,
+    pszPassword: string | Win32Pointer,
+    ulPasswordBufferSize: number,
+    pfSave: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** credui.dll!CredUICmdLinePromptForCredentialsW */
-  CredUICmdLinePromptForCredentialsW(pszTargetName: string | Win32Pointer, pContext: Win32Pointer, dwAuthError: number, UserName: string | Win32Pointer, ulUserBufferSize: number, pszPassword: string | Win32Pointer, ulPasswordBufferSize: number, pfSave: Win32Pointer, dwFlags: number): number;
+  CredUICmdLinePromptForCredentialsW(
+    pszTargetName: string | Win32Pointer,
+    pContext: Win32Pointer,
+    dwAuthError: number,
+    UserName: string | Win32Pointer,
+    ulUserBufferSize: number,
+    pszPassword: string | Win32Pointer,
+    ulPasswordBufferSize: number,
+    pfSave: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** credui.dll!CredUICmdLinePromptForCredentialsW */
-  CredUICmdLinePromptForCredentials(pszTargetName: string | Win32Pointer, pContext: Win32Pointer, dwAuthError: number, UserName: string | Win32Pointer, ulUserBufferSize: number, pszPassword: string | Win32Pointer, ulPasswordBufferSize: number, pfSave: Win32Pointer, dwFlags: number): number;
+  CredUICmdLinePromptForCredentials(
+    pszTargetName: string | Win32Pointer,
+    pContext: Win32Pointer,
+    dwAuthError: number,
+    UserName: string | Win32Pointer,
+    ulUserBufferSize: number,
+    pszPassword: string | Win32Pointer,
+    ulPasswordBufferSize: number,
+    pfSave: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** credui.dll!CredUIConfirmCredentialsA */
   CredUIConfirmCredentialsA(pszTargetName: string | Win32Pointer, bConfirm: number): number;
   /** credui.dll!CredUIConfirmCredentialsW */
@@ -21,41 +69,184 @@ interface Functions {
   /** credui.dll!CredUIConfirmCredentialsW */
   CredUIConfirmCredentials(pszTargetName: string | Win32Pointer, bConfirm: number): number;
   /** credui.dll!CredUIParseUserNameA */
-  CredUIParseUserNameA(userName: string | Win32Pointer, user: string | Win32Pointer, userBufferSize: number, domain: string | Win32Pointer, domainBufferSize: number): number;
+  CredUIParseUserNameA(
+    userName: string | Win32Pointer,
+    user: string | Win32Pointer,
+    userBufferSize: number,
+    domain: string | Win32Pointer,
+    domainBufferSize: number,
+  ): number;
   /** credui.dll!CredUIParseUserNameW */
-  CredUIParseUserNameW(UserName: string | Win32Pointer, user: string | Win32Pointer, userBufferSize: number, domain: string | Win32Pointer, domainBufferSize: number): number;
+  CredUIParseUserNameW(
+    UserName: string | Win32Pointer,
+    user: string | Win32Pointer,
+    userBufferSize: number,
+    domain: string | Win32Pointer,
+    domainBufferSize: number,
+  ): number;
   /** credui.dll!CredUIParseUserNameW */
-  CredUIParseUserName(UserName: string | Win32Pointer, user: string | Win32Pointer, userBufferSize: number, domain: string | Win32Pointer, domainBufferSize: number): number;
+  CredUIParseUserName(
+    UserName: string | Win32Pointer,
+    user: string | Win32Pointer,
+    userBufferSize: number,
+    domain: string | Win32Pointer,
+    domainBufferSize: number,
+  ): number;
   /** credui.dll!CredUIPromptForCredentialsA */
-  CredUIPromptForCredentialsA(pUiInfo: Win32Pointer, pszTargetName: string | Win32Pointer, pContext: Win32Pointer, dwAuthError: number, pszUserName: string | Win32Pointer, ulUserNameBufferSize: number, pszPassword: string | Win32Pointer, ulPasswordBufferSize: number, save: Win32Pointer, dwFlags: number): number;
+  CredUIPromptForCredentialsA(
+    pUiInfo: Win32Pointer,
+    pszTargetName: string | Win32Pointer,
+    pContext: Win32Pointer,
+    dwAuthError: number,
+    pszUserName: string | Win32Pointer,
+    ulUserNameBufferSize: number,
+    pszPassword: string | Win32Pointer,
+    ulPasswordBufferSize: number,
+    save: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** credui.dll!CredUIPromptForCredentialsW */
-  CredUIPromptForCredentialsW(pUiInfo: Win32Pointer, pszTargetName: string | Win32Pointer, pContext: Win32Pointer, dwAuthError: number, pszUserName: string | Win32Pointer, ulUserNameBufferSize: number, pszPassword: string | Win32Pointer, ulPasswordBufferSize: number, save: Win32Pointer, dwFlags: number): number;
+  CredUIPromptForCredentialsW(
+    pUiInfo: Win32Pointer,
+    pszTargetName: string | Win32Pointer,
+    pContext: Win32Pointer,
+    dwAuthError: number,
+    pszUserName: string | Win32Pointer,
+    ulUserNameBufferSize: number,
+    pszPassword: string | Win32Pointer,
+    ulPasswordBufferSize: number,
+    save: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** credui.dll!CredUIPromptForCredentialsW */
-  CredUIPromptForCredentials(pUiInfo: Win32Pointer, pszTargetName: string | Win32Pointer, pContext: Win32Pointer, dwAuthError: number, pszUserName: string | Win32Pointer, ulUserNameBufferSize: number, pszPassword: string | Win32Pointer, ulPasswordBufferSize: number, save: Win32Pointer, dwFlags: number): number;
+  CredUIPromptForCredentials(
+    pUiInfo: Win32Pointer,
+    pszTargetName: string | Win32Pointer,
+    pContext: Win32Pointer,
+    dwAuthError: number,
+    pszUserName: string | Win32Pointer,
+    ulUserNameBufferSize: number,
+    pszPassword: string | Win32Pointer,
+    ulPasswordBufferSize: number,
+    save: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** credui.dll!CredUIPromptForWindowsCredentialsA */
-  CredUIPromptForWindowsCredentialsA(pUiInfo: Win32Pointer, dwAuthError: number, pulAuthPackage: Win32Pointer, pvInAuthBuffer: Win32Pointer, ulInAuthBufferSize: number, ppvOutAuthBuffer: Win32Pointer, pulOutAuthBufferSize: Win32Pointer, pfSave: Win32Pointer, dwFlags: number): number;
+  CredUIPromptForWindowsCredentialsA(
+    pUiInfo: Win32Pointer,
+    dwAuthError: number,
+    pulAuthPackage: Win32Pointer,
+    pvInAuthBuffer: Win32Pointer,
+    ulInAuthBufferSize: number,
+    ppvOutAuthBuffer: Win32Pointer,
+    pulOutAuthBufferSize: Win32Pointer,
+    pfSave: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** credui.dll!CredUIPromptForWindowsCredentialsW */
-  CredUIPromptForWindowsCredentialsW(pUiInfo: Win32Pointer, dwAuthError: number, pulAuthPackage: Win32Pointer, pvInAuthBuffer: Win32Pointer, ulInAuthBufferSize: number, ppvOutAuthBuffer: Win32Pointer, pulOutAuthBufferSize: Win32Pointer, pfSave: Win32Pointer, dwFlags: number): number;
+  CredUIPromptForWindowsCredentialsW(
+    pUiInfo: Win32Pointer,
+    dwAuthError: number,
+    pulAuthPackage: Win32Pointer,
+    pvInAuthBuffer: Win32Pointer,
+    ulInAuthBufferSize: number,
+    ppvOutAuthBuffer: Win32Pointer,
+    pulOutAuthBufferSize: Win32Pointer,
+    pfSave: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** credui.dll!CredUIPromptForWindowsCredentialsW */
-  CredUIPromptForWindowsCredentials(pUiInfo: Win32Pointer, dwAuthError: number, pulAuthPackage: Win32Pointer, pvInAuthBuffer: Win32Pointer, ulInAuthBufferSize: number, ppvOutAuthBuffer: Win32Pointer, pulOutAuthBufferSize: Win32Pointer, pfSave: Win32Pointer, dwFlags: number): number;
+  CredUIPromptForWindowsCredentials(
+    pUiInfo: Win32Pointer,
+    dwAuthError: number,
+    pulAuthPackage: Win32Pointer,
+    pvInAuthBuffer: Win32Pointer,
+    ulInAuthBufferSize: number,
+    ppvOutAuthBuffer: Win32Pointer,
+    pulOutAuthBufferSize: Win32Pointer,
+    pfSave: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** credui.dll!CredUIReadSSOCredW */
   CredUIReadSSOCredW(pszRealm: string | Win32Pointer, ppszUsername: Win32Pointer): number;
   /** credui.dll!CredUIStoreSSOCredW */
-  CredUIStoreSSOCredW(pszRealm: string | Win32Pointer, pszUsername: string | Win32Pointer, pszPassword: string | Win32Pointer, bPersist: number): number;
+  CredUIStoreSSOCredW(
+    pszRealm: string | Win32Pointer,
+    pszUsername: string | Win32Pointer,
+    pszPassword: string | Win32Pointer,
+    bPersist: number,
+  ): number;
   /** credui.dll!CredUnPackAuthenticationBufferA */
-  CredUnPackAuthenticationBufferA(dwFlags: number, pAuthBuffer: Win32Pointer, cbAuthBuffer: number, pszUserName: string | Win32Pointer, pcchlMaxUserName: Win32Pointer, pszDomainName: string | Win32Pointer, pcchMaxDomainName: Win32Pointer, pszPassword: string | Win32Pointer, pcchMaxPassword: Win32Pointer): number;
+  CredUnPackAuthenticationBufferA(
+    dwFlags: number,
+    pAuthBuffer: Win32Pointer,
+    cbAuthBuffer: number,
+    pszUserName: string | Win32Pointer,
+    pcchlMaxUserName: Win32Pointer,
+    pszDomainName: string | Win32Pointer,
+    pcchMaxDomainName: Win32Pointer,
+    pszPassword: string | Win32Pointer,
+    pcchMaxPassword: Win32Pointer,
+  ): number;
   /** credui.dll!CredUnPackAuthenticationBufferW */
-  CredUnPackAuthenticationBufferW(dwFlags: number, pAuthBuffer: Win32Pointer, cbAuthBuffer: number, pszUserName: string | Win32Pointer, pcchMaxUserName: Win32Pointer, pszDomainName: string | Win32Pointer, pcchMaxDomainName: Win32Pointer, pszPassword: string | Win32Pointer, pcchMaxPassword: Win32Pointer): number;
+  CredUnPackAuthenticationBufferW(
+    dwFlags: number,
+    pAuthBuffer: Win32Pointer,
+    cbAuthBuffer: number,
+    pszUserName: string | Win32Pointer,
+    pcchMaxUserName: Win32Pointer,
+    pszDomainName: string | Win32Pointer,
+    pcchMaxDomainName: Win32Pointer,
+    pszPassword: string | Win32Pointer,
+    pcchMaxPassword: Win32Pointer,
+  ): number;
   /** credui.dll!CredUnPackAuthenticationBufferW */
-  CredUnPackAuthenticationBuffer(dwFlags: number, pAuthBuffer: Win32Pointer, cbAuthBuffer: number, pszUserName: string | Win32Pointer, pcchMaxUserName: Win32Pointer, pszDomainName: string | Win32Pointer, pcchMaxDomainName: Win32Pointer, pszPassword: string | Win32Pointer, pcchMaxPassword: Win32Pointer): number;
+  CredUnPackAuthenticationBuffer(
+    dwFlags: number,
+    pAuthBuffer: Win32Pointer,
+    cbAuthBuffer: number,
+    pszUserName: string | Win32Pointer,
+    pcchMaxUserName: Win32Pointer,
+    pszDomainName: string | Win32Pointer,
+    pcchMaxDomainName: Win32Pointer,
+    pszPassword: string | Win32Pointer,
+    pcchMaxPassword: Win32Pointer,
+  ): number;
   /** credui.dll!SspiIsPromptingNeeded */
   SspiIsPromptingNeeded(ErrorOrNtStatus: number): number;
   /** credui.dll!SspiPromptForCredentialsA */
-  SspiPromptForCredentialsA(pszTargetName: string | Win32Pointer, pUiInfo: Win32Pointer, dwAuthError: number, pszPackage: string | Win32Pointer, pInputAuthIdentity: Win32Pointer, ppAuthIdentity: Win32Pointer, pfSave: Win32Pointer, dwFlags: number): number;
+  SspiPromptForCredentialsA(
+    pszTargetName: string | Win32Pointer,
+    pUiInfo: Win32Pointer,
+    dwAuthError: number,
+    pszPackage: string | Win32Pointer,
+    pInputAuthIdentity: Win32Pointer,
+    ppAuthIdentity: Win32Pointer,
+    pfSave: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** credui.dll!SspiPromptForCredentialsW */
-  SspiPromptForCredentialsW(pszTargetName: string | Win32Pointer, pUiInfo: Win32Pointer, dwAuthError: number, pszPackage: string | Win32Pointer, pInputAuthIdentity: Win32Pointer, ppAuthIdentity: Win32Pointer, pfSave: Win32Pointer, dwFlags: number): number;
+  SspiPromptForCredentialsW(
+    pszTargetName: string | Win32Pointer,
+    pUiInfo: Win32Pointer,
+    dwAuthError: number,
+    pszPackage: string | Win32Pointer,
+    pInputAuthIdentity: Win32Pointer,
+    ppAuthIdentity: Win32Pointer,
+    pfSave: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** credui.dll!SspiPromptForCredentialsW */
-  SspiPromptForCredentials(pszTargetName: string | Win32Pointer, pUiInfo: Win32Pointer, dwAuthError: number, pszPackage: string | Win32Pointer, pInputAuthIdentity: Win32Pointer, ppAuthIdentity: Win32Pointer, pfSave: Win32Pointer, dwFlags: number): number;
+  SspiPromptForCredentials(
+    pszTargetName: string | Win32Pointer,
+    pUiInfo: Win32Pointer,
+    dwAuthError: number,
+    pszPackage: string | Win32Pointer,
+    pInputAuthIdentity: Win32Pointer,
+    ppAuthIdentity: Win32Pointer,
+    pfSave: Win32Pointer,
+    dwFlags: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

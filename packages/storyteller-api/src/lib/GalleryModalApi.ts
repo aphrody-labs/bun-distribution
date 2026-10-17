@@ -1,9 +1,5 @@
 import { MediaFilesApi } from "./MediaFilesApi.js";
-import {
-  FilterMediaClasses,
-  FilterMediaType,
-  FilterEngineCategories,
-} from "./enums/QueryFilters.js";
+import { FilterMediaClasses, FilterMediaType, FilterEngineCategories } from "./enums/QueryFilters.js";
 
 interface ListUserMediaQuery {
   username: string;

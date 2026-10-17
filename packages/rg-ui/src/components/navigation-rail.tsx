@@ -17,50 +17,28 @@ type NavigationRailProps = React.ComponentProps<"nav"> & {
   footer?: React.ReactNode;
 };
 
-function NavigationRail({
-  fab,
-  header,
-  footer,
-  children,
-  className,
-  ...props
-}: NavigationRailProps) {
+function NavigationRail({ fab, header, footer, children, className, ...props }: NavigationRailProps) {
   return (
     <nav
       data-slot="navigation-rail"
-      className={cn(
-        "flex h-full w-20 flex-col items-center gap-3 bg-surface pt-11 pb-3 text-on-surface",
-        className,
-      )}
+      className={cn("flex h-full w-20 flex-col items-center gap-3 bg-surface pt-11 pb-3 text-on-surface", className)}
       {...props}
     >
       {header ? (
-        <div
-          data-slot="navigation-rail-header"
-          className="flex w-full flex-col items-center"
-        >
+        <div data-slot="navigation-rail-header" className="flex w-full flex-col items-center">
           {header}
         </div>
       ) : null}
       {fab ? (
-        <div
-          data-slot="navigation-rail-fab"
-          className="flex w-full justify-center pb-2"
-        >
+        <div data-slot="navigation-rail-fab" className="flex w-full justify-center pb-2">
           {fab}
         </div>
       ) : null}
-      <div
-        data-slot="navigation-rail-items"
-        className="flex w-full flex-1 flex-col items-center gap-3"
-      >
+      <div data-slot="navigation-rail-items" className="flex w-full flex-1 flex-col items-center gap-3">
         {children}
       </div>
       {footer ? (
-        <div
-          data-slot="navigation-rail-footer"
-          className="flex w-full flex-col items-center"
-        >
+        <div data-slot="navigation-rail-footer" className="flex w-full flex-col items-center">
           {footer}
         </div>
       ) : null}
@@ -74,13 +52,7 @@ type NavigationRailItemProps = Omit<React.ComponentProps<"button">, "type"> & {
   label: string;
 };
 
-function NavigationRailItem({
-  active = false,
-  icon,
-  label,
-  className,
-  ...props
-}: NavigationRailItemProps) {
+function NavigationRailItem({ active = false, icon, label, className, ...props }: NavigationRailItemProps) {
   return (
     <button
       data-slot="navigation-rail-item"

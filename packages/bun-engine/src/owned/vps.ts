@@ -42,12 +42,16 @@ function ssh(host: string, script: string, stdin?: "pipe") {
 
 async function run(host: string, script: string): Promise<string> {
   const child = ssh(host, script);
-  const [out, err, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
+  const [out, err, code] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
   if (code !== 0) throw new Error(`ssh ${host}: ${err.trim() || `exit ${code}`}`);
   return out;
 }
 
-const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
+const sleep = (ms: number) => new Promise(done => setTimeout(done, ms));
 
 /** Remote path of a dump: <root>/<kind dir>/<console>/<sha256>.<ext>, mirroring the local store. */
 function remotePath(root: string, dump: OwnedDump): string {
@@ -80,12 +84,22 @@ async function send(host: string, root: string, dump: OwnedDump, offset: number,
     }
   }
   await stdin.end();
-  const [out, err, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
+  const [out, err, code] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
   if (code !== 0 || out.trim() !== "ok") {
     if (/mismatch/.test(out)) await run(host, `rm -f ${quote(`${target}.part`)}`);
     throw new Error(`${dump.sha256.slice(0, 12)}: ${out.trim() || err.trim() || `exit ${code}`}`);
   }
-  return { sha256: dump.sha256, file: dump.file, bytes: sent, resumedAt: offset, ms: Math.round(performance.now() - started) };
+  return {
+    sha256: dump.sha256,
+    file: dump.file,
+    bytes: sent,
+    resumedAt: offset,
+    ms: Math.round(performance.now() - started),
+  };
 }
 
 /** Sends the dumps the VPS does not hold yet (keys only with `keys`), one at a time. */
@@ -109,9 +123,9 @@ export async function syncVps(options: VpsOptions = {}): Promise<VpsResult> {
     if (at > 0) remote.set(line.slice(0, at), Number(line.slice(at + 1)));
   }
   const dumps = listOwned({ system: options.system }).filter(
-    (dump) =>
+    dump =>
       (options.keys || dump.kind !== "keys") &&
-      (!options.only?.length || options.only.some((sha) => dump.sha256.startsWith(sha.toLowerCase()))),
+      (!options.only?.length || options.only.some(sha => dump.sha256.startsWith(sha.toLowerCase()))),
   );
   const result: VpsResult = { host, root, sent: [], present: 0, pruned: [] };
   for (const dump of dumps) {
@@ -122,8 +136,8 @@ export async function syncVps(options: VpsOptions = {}): Promise<VpsResult> {
     result.sent.push(await send(host, root, dump, remote.get(`${dump.file}.part`) ?? 0, limit));
   }
   if (options.prune) {
-    const local = new Set(listOwned().map((dump) => dump.file));
-    const stale = [...remote.keys()].filter((file) => !local.has(file.replace(/\.part$/, "")));
+    const local = new Set(listOwned().map(dump => dump.file));
+    const stale = [...remote.keys()].filter(file => !local.has(file.replace(/\.part$/, "")));
     if (stale.length) await run(host, `cd ${quote(root)} && rm -f ${stale.map(quote).join(" ")}`);
     result.pruned = stale;
   }

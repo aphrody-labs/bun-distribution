@@ -75,7 +75,7 @@ export class ClipboardManager {
   }
 
   private notify(): void {
-    this.listeners.forEach((listener) => {
+    this.listeners.forEach(listener => {
       listener();
     });
   }

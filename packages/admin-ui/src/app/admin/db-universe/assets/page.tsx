@@ -63,28 +63,19 @@ type Params = {
 const lien = (params: Params, modif: Partial<Params>) => {
   const fusion = { ...params, ...modif };
   const qs = new URLSearchParams();
-  for (const [cle, val] of Object.entries(fusion))
-    if (val) qs.set(cle, String(val));
+  for (const [cle, val] of Object.entries(fusion)) if (val) qs.set(cle, String(val));
   const s = qs.toString();
   return `/admin/db-universe/assets${s ? `?${s}` : ""}`;
 };
 
-export default async function AdminAssetsPage({
-  searchParams,
-}: {
-  searchParams: Promise<Params>;
-}) {
+export default async function AdminAssetsPage({ searchParams }: { searchParams: Promise<Params> }) {
   const sp = await searchParams;
   const bucket = sp.bucket ?? "";
   const recherche = sp.q ?? "";
   const licence = sp.licence ?? "";
-  const vue = (
-    ["orphelins", "doublons"].includes(sp.vue ?? "") ? sp.vue : "tous"
-  ) as "tous" | "orphelins" | "doublons";
+  const vue = (["orphelins", "doublons"].includes(sp.vue ?? "") ? sp.vue : "tous") as "tous" | "orphelins" | "doublons";
   const page = Math.max(1, Number(sp.page) || 1);
-  const tri = (
-    TRIS_ASSETS.some((t) => t.cle === sp.tri) ? sp.tri : "naturel"
-  ) as TriAssets;
+  const tri = (TRIS_ASSETS.some(t => t.cle === sp.tri) ? sp.tri : "naturel") as TriAssets;
 
   const [{ lignes, total }, buckets, licences, stats] = await Promise.all([
     listAssets({
@@ -130,15 +121,11 @@ export default async function AdminAssetsPage({
             etiquette: "fichiers en double",
             lien: lien({}, { vue: "doublons" }),
           },
-        ].map((c) => {
+        ].map(c => {
           const contenu = (
             <>
-              <div className="font-saiyan text-2xl text-dbz-orange leading-none">
-                {c.valeur}
-              </div>
-              <div className="text-[11px] uppercase tracking-widest text-white/50 mt-1">
-                {c.etiquette}
-              </div>
+              <div className="font-saiyan text-2xl text-dbz-orange leading-none">{c.valeur}</div>
+              <div className="text-[11px] uppercase tracking-widest text-white/50 mt-1">{c.etiquette}</div>
             </>
           );
           return c.lien ? (
@@ -174,7 +161,7 @@ export default async function AdminAssetsPage({
           className="bg-dbz-bg border-2 border-dbz-border px-3 py-2 text-white focus:border-dbz-orange outline-none"
         >
           <option value="">Toutes licences</option>
-          {licences.map((l) => (
+          {licences.map(l => (
             <option key={l.licence} value={l.licence}>
               {l.licence} ({l.total})
             </option>
@@ -186,7 +173,7 @@ export default async function AdminAssetsPage({
           className="bg-dbz-bg border-2 border-dbz-border px-3 py-2 text-white focus:border-dbz-orange outline-none"
           aria-label="Ordre de tri"
         >
-          {TRIS_ASSETS.map((t) => (
+          {TRIS_ASSETS.map(t => (
             <option key={t.cle} value={t.cle}>
               {t.libelle}
             </option>
@@ -195,15 +182,8 @@ export default async function AdminAssetsPage({
         <button type="submit" className="dbz-button-ghost !text-xs cible-44">
           Filtrer
         </button>
-        {recherche ||
-        licence ||
-        vue !== "tous" ||
-        bucket ||
-        tri !== "naturel" ? (
-          <Link
-            href="/admin/db-universe/assets"
-            className="text-xs text-white/50 hover:text-white cible-44"
-          >
+        {recherche || licence || vue !== "tous" || bucket || tri !== "naturel" ? (
+          <Link href="/admin/db-universe/assets" className="text-xs text-white/50 hover:text-white cible-44">
             Réinitialiser
           </Link>
         ) : null}
@@ -211,10 +191,7 @@ export default async function AdminAssetsPage({
       </form>
 
       {/* Buckets mesurés en base : aucun média ne peut être invisible faute d'être listé ici. */}
-      <nav
-        className="mb-5 flex flex-wrap gap-2"
-        aria-label="Catégorie d'assets"
-      >
+      <nav className="mb-5 flex flex-wrap gap-2" aria-label="Catégorie d'assets">
         <Link
           href={lien(sp, { bucket: "", page: "" })}
           className={`px-3 py-1.5 border-2 font-saiyan tracking-widest text-xs uppercase transition-colors ${
@@ -225,7 +202,7 @@ export default async function AdminAssetsPage({
         >
           Tous ({stats.total})
         </Link>
-        {buckets.map((b) => (
+        {buckets.map(b => (
           <Link
             key={b.bucket}
             href={lien(sp, { bucket: b.bucket, page: "" })}
@@ -247,10 +224,7 @@ export default async function AdminAssetsPage({
             ? "médias rattachés à aucune fiche. Ce n'est pas une anomalie en soi : des buckets entiers (toei, dbofficial, shueisha…) sont des bannières et des visuels d'actualité, qui n'illustrent aucune fiche par nature. Les buckets de fiches, eux, sont rattachés à 100 %"
             : `médias dont le sha256 est partagé par au moins deux lignes — les ${total} lignes affichées forment ${stats.doublonsEnTrop} doublons réels, chaque groupe étant montré en entier`}
           {" · "}
-          <Link
-            href={lien(sp, { vue: "", page: "" })}
-            className="underline hover:text-white"
-          >
+          <Link href={lien(sp, { vue: "", page: "" })} className="underline hover:text-white">
             revenir à tout
           </Link>
         </p>
@@ -258,17 +232,13 @@ export default async function AdminAssetsPage({
 
       {assets.length === 0 ? (
         <div className="dbz-panel p-12 text-center">
-          <p className="font-saiyan text-xl uppercase text-white/50 mb-1">
-            Aucun média
-          </p>
-          <p className="text-white/50 text-sm">
-            Aucun fichier ne correspond à ces filtres.
-          </p>
+          <p className="font-saiyan text-xl uppercase text-white/50 mb-1">Aucun média</p>
+          <p className="text-white/50 text-sm">Aucun fichier ne correspond à ces filtres.</p>
         </div>
       ) : (
         <GalerieMedias
           bucket={bucket}
-          medias={assets.map((a) => ({
+          medias={assets.map(a => ({
             id: a.id,
             chemin: a.path,
             url: assetCdnUrl(a.path),
@@ -285,15 +255,9 @@ export default async function AdminAssetsPage({
       )}
 
       {pages > 1 ? (
-        <nav
-          className="mt-8 flex items-center justify-center gap-3"
-          aria-label="Pagination"
-        >
+        <nav className="mt-8 flex items-center justify-center gap-3" aria-label="Pagination">
           {page > 1 ? (
-            <Link
-              href={lien(sp, { page: String(page - 1) })}
-              className="dbz-button-ghost !text-xs cible-44"
-            >
+            <Link href={lien(sp, { page: String(page - 1) })} className="dbz-button-ghost !text-xs cible-44">
               Précédent
             </Link>
           ) : null}
@@ -301,10 +265,7 @@ export default async function AdminAssetsPage({
             Page {page} / {pages}
           </span>
           {page < pages ? (
-            <Link
-              href={lien(sp, { page: String(page + 1) })}
-              className="dbz-button-ghost !text-xs cible-44"
-            >
+            <Link href={lien(sp, { page: String(page + 1) })} className="dbz-button-ghost !text-xs cible-44">
               Suivant
             </Link>
           ) : null}

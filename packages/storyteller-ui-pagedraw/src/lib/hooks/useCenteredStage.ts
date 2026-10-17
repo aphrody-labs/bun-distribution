@@ -22,13 +22,7 @@ export const useStageCentering = (
       setStagePosition({ x: centerX, y: centerY });
       stage.position({ x: centerX, y: centerY });
     }
-  }, [
-    leftPct,
-    leftPanelWidth,
-    leftPanelHeight,
-    window.innerWidth,
-    window.innerHeight,
-  ]);
+  }, [leftPct, leftPanelWidth, leftPanelHeight, window.innerWidth, window.innerHeight]);
 
   return stagePosition;
 };

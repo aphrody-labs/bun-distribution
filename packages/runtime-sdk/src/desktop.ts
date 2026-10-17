@@ -11,8 +11,7 @@ import { type ManagedProcess } from "./index";
 import { sharedRuntime } from "./modules";
 import { installedDesktopExecutable } from "./desktop-artifact";
 
-export type DesktopGrant =
-  "window.create" | "window.control" | "window.observe";
+export type DesktopGrant = "window.create" | "window.control" | "window.observe";
 export interface DesktopOptions {
   readonly executable?: string;
   readonly grants: readonly DesktopGrant[];
@@ -64,9 +63,7 @@ function exchange(
   return new Promise((resolve, reject) => {
     const frame = JSON.stringify({ token, id, method, params }) + "\n";
     if (Buffer.byteLength(frame) > MAX_FRAME) {
-      reject(
-        new DesktopError("InvalidArgument", "desktop request exceeds 64 KiB"),
-      );
+      reject(new DesktopError("InvalidArgument", "desktop request exceeds 64 KiB"));
       return;
     }
     const socket = createConnection({ host: "127.0.0.1", port });
@@ -82,15 +79,10 @@ function exchange(
       if (error !== undefined) reject(error);
       else resolve(value);
     };
-    const timer = setTimeout(
-      () => finish(new DesktopError("Timeout", "desktop reply timed out")),
-      REQUEST_TIMEOUT_MS,
-    );
+    const timer = setTimeout(() => finish(new DesktopError("Timeout", "desktop reply timed out")), REQUEST_TIMEOUT_MS);
     socket.once("connect", () => socket.write(frame));
-    socket.once("error", (error) => finish(error));
-    socket.once("close", () =>
-      finish(new DesktopError("SessionClosed", "desktop connection closed")),
-    );
+    socket.once("error", error => finish(error));
+    socket.once("close", () => finish(new DesktopError("SessionClosed", "desktop connection closed")));
     socket.on("data", (data: Buffer) => {
       chunks = Buffer.concat([chunks, data]);
       if (chunks.length > MAX_FRAME) {
@@ -100,19 +92,9 @@ function exchange(
       const newline = chunks.indexOf(10);
       if (newline < 0) return;
       try {
-        const reply: unknown = JSON.parse(
-          chunks.subarray(0, newline).toString("utf8"),
-        );
-        if (
-          reply === null ||
-          typeof reply !== "object" ||
-          !("id" in reply) ||
-          reply.id !== id
-        ) {
-          throw new DesktopError(
-            "ProtocolMismatch",
-            "desktop reply has a different request id",
-          );
+        const reply: unknown = JSON.parse(chunks.subarray(0, newline).toString("utf8"));
+        if (reply === null || typeof reply !== "object" || !("id" in reply) || reply.id !== id) {
+          throw new DesktopError("ProtocolMismatch", "desktop reply has a different request id");
         }
         if ("error" in reply) {
           const error = reply.error;
@@ -124,18 +106,11 @@ function exchange(
             typeof error.code !== "string" ||
             typeof error.message !== "string"
           ) {
-            throw new DesktopError(
-              "ProtocolMismatch",
-              "desktop error reply is invalid",
-            );
+            throw new DesktopError("ProtocolMismatch", "desktop error reply is invalid");
           }
           finish(new DesktopError(error.code, error.message));
         } else if ("result" in reply) finish(undefined, reply.result);
-        else
-          throw new DesktopError(
-            "ProtocolMismatch",
-            "desktop reply is missing its result",
-          );
+        else throw new DesktopError("ProtocolMismatch", "desktop reply is missing its result");
       } catch (error) {
         finish(error instanceof Error ? error : new Error(String(error)));
       }
@@ -169,8 +144,7 @@ export class DesktopWindow {
     try {
       await this.session.request("window.close", { window: this.id });
     } catch (error) {
-      if (!(error instanceof DesktopError && error.code === "InvalidHandle"))
-        throw error;
+      if (!(error instanceof DesktopError && error.code === "InvalidHandle")) throw error;
     }
     this.#closed = true;
   }
@@ -204,10 +178,7 @@ export class DesktopSession {
         process.platform === "win32" ? "yolo-desktop.exe" : "yolo-desktop",
       );
     if (!existsSync(executable))
-      throw new DesktopError(
-        "ArtifactMissing",
-        `precompiled desktop host not found at ${executable}`,
-      );
+      throw new DesktopError("ArtifactMissing", `precompiled desktop host not found at ${executable}`);
     const token = randomBytes(32).toString("hex");
     const child = sharedRuntime().spawn({
       program: executable,
@@ -241,10 +212,7 @@ export class DesktopSession {
         ready.port < 1 ||
         ready.port > 65535
       ) {
-        throw new DesktopError(
-          "ProtocolMismatch",
-          "desktop host handshake is incompatible",
-        );
+        throw new DesktopError("ProtocolMismatch", "desktop host handshake is incompatible");
       }
       session = new DesktopSession(child, ready.port, token);
       const ownedSession = session;
@@ -254,8 +222,7 @@ export class DesktopSession {
           void ownedSession.close().catch(() => {});
         };
         signal.addEventListener("abort", abort, { once: true });
-        session.#abortCleanup = () =>
-          signal.removeEventListener("abort", abort);
+        session.#abortCleanup = () => signal.removeEventListener("abort", abort);
         if (signal.aborted) {
           await session.close();
           signal.throwIfAborted();
@@ -288,23 +255,9 @@ export class DesktopSession {
 
   /** Calls are checked for grants, bounds and current window identity in the native host. */
   request(method: string, params: unknown = null): Promise<unknown> {
-    if (this.#closed)
-      return Promise.reject(
-        new DesktopError("SessionClosed", "desktop session is closed"),
-      );
-    return exchange(
-      this.port,
-      this.token,
-      ++this.#nextId,
-      method,
-      params,
-      this.#sockets,
-    ).then((result) => {
-      if (this.#closed)
-        throw new DesktopError(
-          "SessionClosed",
-          "desktop session closed during dispatch",
-        );
+    if (this.#closed) return Promise.reject(new DesktopError("SessionClosed", "desktop session is closed"));
+    return exchange(this.port, this.token, ++this.#nextId, method, params, this.#sockets).then(result => {
+      if (this.#closed) throw new DesktopError("SessionClosed", "desktop session closed during dispatch");
       return result;
     });
   }
@@ -316,17 +269,9 @@ export class DesktopSession {
       title: options.title,
       ...(options.width === undefined ? {} : { width: options.width }),
       ...(options.height === undefined ? {} : { height: options.height }),
-    }).then((result) => {
-      if (
-        result === null ||
-        typeof result !== "object" ||
-        !("window" in result) ||
-        typeof result.window !== "string"
-      ) {
-        throw new DesktopError(
-          "ProtocolMismatch",
-          "desktop create reply is invalid",
-        );
+    }).then(result => {
+      if (result === null || typeof result !== "object" || !("window" in result) || typeof result.window !== "string") {
+        throw new DesktopError("ProtocolMismatch", "desktop create reply is invalid");
       }
       return new DesktopWindow(result.window, this);
     });
@@ -335,15 +280,12 @@ export class DesktopSession {
     return await new Promise<DesktopWindow>((resolve, reject) => {
       const abort = (): void => {
         // Keep the native create reply alive so cancellation can destroy its exact resource.
-        void pending.then((window) => window.close()).catch(() => {});
-        reject(
-          signal.reason ??
-            new DOMException("Window creation aborted", "AbortError"),
-        );
+        void pending.then(window => window.close()).catch(() => {});
+        reject(signal.reason ?? new DOMException("Window creation aborted", "AbortError"));
       };
       signal.addEventListener("abort", abort, { once: true });
       pending.then(
-        (window) => {
+        window => {
           signal.removeEventListener("abort", abort);
           resolve(window);
           return window;
@@ -357,9 +299,7 @@ export class DesktopSession {
     });
   }
 
-  async events(
-    since = 0,
-  ): Promise<{
+  async events(since = 0): Promise<{
     readonly sequence: number;
     readonly events: readonly DesktopEvent[];
   }> {
@@ -378,14 +318,7 @@ export class DesktopSession {
     this.#closed = true;
     this.#abortCleanup?.();
     try {
-      await exchange(
-        this.port,
-        this.token,
-        ++this.#nextId,
-        "shutdown",
-        null,
-        this.#sockets,
-      );
+      await exchange(this.port, this.token, ++this.#nextId, "shutdown", null, this.#sockets);
       await this.process.waitForExit({ signal: AbortSignal.timeout(5_000) });
     } catch {
       await this.process.stopAsync(500);
@@ -401,6 +334,5 @@ export class DesktopSession {
 }
 
 export const desktop = {
-  open: (options: DesktopOptions): Promise<DesktopSession> =>
-    DesktopSession.open(options),
+  open: (options: DesktopOptions): Promise<DesktopSession> => DesktopSession.open(options),
 };

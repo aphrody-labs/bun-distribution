@@ -16,7 +16,7 @@ import { deleteBoardEverywhere } from "./persistence/moodboardSync";
 // toolbar's inline title.
 export const BoardPicker = () => {
   const { boards, boardOrder, activeBoardId } = useBoardLibraryStore(
-    useShallow((s) => ({
+    useShallow(s => ({
       boards: s.boards,
       boardOrder: s.boardOrder,
       activeBoardId: s.activeBoardId,
@@ -26,9 +26,7 @@ export const BoardPicker = () => {
   const rootRef = useRef<HTMLDivElement>(null);
 
   const activeBoard = activeBoardId ? boards[activeBoardId] : null;
-  const orderedBoards = boardOrder
-    .map((id) => boards[id])
-    .filter((b) => Boolean(b));
+  const orderedBoards = boardOrder.map(id => boards[id]).filter(b => Boolean(b));
 
   useEffect(() => {
     if (!open) return undefined;
@@ -59,9 +57,7 @@ export const BoardPicker = () => {
     await deleteBoardEverywhere(boardId);
     if (wasActive) {
       const nextActiveId = useBoardLibraryStore.getState().activeBoardId;
-      applyCanvasDocument(
-        nextActiveId ? getCanvasForBoard(nextActiveId) : null,
-      );
+      applyCanvasDocument(nextActiveId ? getCanvasForBoard(nextActiveId) : null);
     }
   };
 
@@ -69,7 +65,7 @@ export const BoardPicker = () => {
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(v => !v)}
         title="Switch board"
         aria-label="Switch board"
         className="flex max-w-[180px] items-center gap-2 rounded-xl px-3.5 py-1.5 text-sm font-medium text-base-fg/70 transition-colors duration-150 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -81,14 +77,12 @@ export const BoardPicker = () => {
       {open && (
         <div className="glass absolute left-0 top-full z-50 mt-1.5 w-64 rounded-2xl border border-ui-divider p-1.5 shadow-[0_12px_32px_-12px_rgba(0,0,0,0.6)]">
           <div className="max-h-72 overflow-y-auto">
-            {orderedBoards.map((board) => (
+            {orderedBoards.map(board => (
               <div
                 key={board.id}
                 className={[
                   "group flex items-center gap-1 rounded-xl",
-                  board.id === activeBoardId
-                    ? "bg-base-fg/15"
-                    : "hover:bg-base-fg/10",
+                  board.id === activeBoardId ? "bg-base-fg/15" : "hover:bg-base-fg/10",
                 ].join(" ")}
               >
                 <button

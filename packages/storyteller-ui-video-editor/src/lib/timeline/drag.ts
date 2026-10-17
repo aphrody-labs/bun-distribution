@@ -39,9 +39,4 @@ export interface EffectDragData extends BaseDragData {
   targetElementTypes: VisualElement["type"][];
 }
 
-export type TimelineDragData =
-  | MediaDragData
-  | TextDragData
-  | StickerDragData
-  | GraphicDragData
-  | EffectDragData;
+export type TimelineDragData = MediaDragData | TextDragData | StickerDragData | GraphicDragData | EffectDragData;

@@ -6,12 +6,7 @@ import { clsx } from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import { Icon } from "@aphrody/m3-primitives";
 import type { ToolCallPair, ToolCallStatus } from "./types";
-import {
-  CircularIndicator,
-  StatusChip,
-  expandMotion,
-  focusRing,
-} from "./internal";
+import { CircularIndicator, StatusChip, expandMotion, focusRing } from "./internal";
 import { McpAppCard } from "./McpAppCard";
 
 // ---------------------------------------------------------------------------
@@ -35,7 +30,7 @@ function firstArg(pair: ToolCallPair, keys: readonly string[]): unknown {
 
 const pathSummary =
   (pathKeys: readonly string[]): ToolRenderer["summary"] =>
-  (pair) => {
+  pair => {
     if (pair.title) return pair.title;
     const path = firstArg(pair, pathKeys);
     return path ? truncate(String(path), 60) : null;
@@ -80,11 +75,7 @@ function fileWrite(pathKeys: readonly string[]): ToolRenderer {
       if (!path && !content) return null;
       return (
         <div className="rounded-small bg-surface-container-highest px-3 py-2">
-          {!!path && (
-            <p className="mb-1 font-code text-body-small text-on-surface-variant">
-              {String(path)}
-            </p>
-          )}
+          {!!path && <p className="mb-1 font-code text-body-small text-on-surface-variant">{String(path)}</p>}
           {!!content && (
             <pre className="max-h-40 overflow-auto font-code text-body-small text-outline">
               {truncate(String(content), 2000)}
@@ -98,20 +89,14 @@ function fileWrite(pathKeys: readonly string[]): ToolRenderer {
 }
 
 /** `file_edit` and `edit`: the path and the old / new text. */
-function fileEdit(
-  pathKeys: readonly string[],
-  oldKeys: readonly string[],
-  newKeys: readonly string[],
-): ToolRenderer {
+function fileEdit(pathKeys: readonly string[], oldKeys: readonly string[], newKeys: readonly string[]): ToolRenderer {
   // Whole class names, so Tailwind's scanner finds them.
   const TONE = { error: "text-error", success: "text-success" } as const;
   const side = (label: string, tone: keyof typeof TONE, text: unknown) =>
     text ? (
       <div className="mt-1">
         <p className={`text-body-small font-medium ${TONE[tone]}`}>{label}</p>
-        <pre
-          className={`max-h-20 overflow-auto font-code text-body-small ${TONE[tone]}`}
-        >
+        <pre className={`max-h-20 overflow-auto font-code text-body-small ${TONE[tone]}`}>
           {truncate(String(text), 500)}
         </pre>
       </div>
@@ -123,9 +108,7 @@ function fileEdit(
       if (!path) return null;
       return (
         <div className="rounded-small bg-surface-container-highest px-3 py-2">
-          <p className="mb-1 font-code text-body-small text-on-surface-variant">
-            {String(path)}
-          </p>
+          <p className="mb-1 font-code text-body-small text-on-surface-variant">{String(path)}</p>
           {side("Old", "error", firstArg(pair, oldKeys))}
           {side("New", "success", firstArg(pair, newKeys))}
         </div>
@@ -153,9 +136,7 @@ const toolRenderers: Record<string, ToolRenderer> = {
       const kind = pair.args?.kind;
       const message = pair.args?.message;
       if (kind === "outcome") {
-        return message
-          ? `Outcome: ${truncate(String(message), 50)}`
-          : "Outcome set";
+        return message ? `Outcome: ${truncate(String(message), 50)}` : "Outcome set";
       }
       return message ? truncate(String(message), 60) : null;
     },
@@ -168,11 +149,7 @@ const toolRenderers: Record<string, ToolRenderer> = {
 
   read: fileRead(["filePath", "file_path"]),
   write: fileWrite(["filePath", "file_path"]),
-  edit: fileEdit(
-    ["filePath", "file_path"],
-    ["oldString", "old_string"],
-    ["newString", "new_string"],
-  ),
+  edit: fileEdit(["filePath", "file_path"], ["oldString", "old_string"], ["newString", "new_string"]),
 
   glob: {
     summary(pair) {
@@ -232,9 +209,7 @@ const toolRenderers: Record<string, ToolRenderer> = {
       const query = pair.args?.query;
       const resultCount =
         pair.result?.result_count ??
-        (Array.isArray(pair.result?.results)
-          ? (pair.result!.results as unknown[]).length
-          : null);
+        (Array.isArray(pair.result?.results) ? (pair.result!.results as unknown[]).length : null);
       const queryStr = query ? truncate(String(query), 50) : null;
       if (queryStr && resultCount != null) {
         return `${queryStr} (${resultCount} result${resultCount !== 1 ? "s" : ""})`;
@@ -285,16 +260,8 @@ const toolRenderers: Record<string, ToolRenderer> = {
       if (!action && !docId) return null;
       return (
         <div className="rounded-small bg-surface-container-highest px-3 py-2">
-          {!!docId && (
-            <p className="font-code text-body-small text-on-surface-variant">
-              {String(docId)}
-            </p>
-          )}
-          {!!query && (
-            <p className="mt-0.5 text-body-small text-outline">
-              filter: {String(query)}
-            </p>
-          )}
+          {!!docId && <p className="font-code text-body-small text-on-surface-variant">{String(docId)}</p>}
+          {!!query && <p className="mt-0.5 text-body-small text-outline">filter: {String(query)}</p>}
         </div>
       );
     },
@@ -343,25 +310,14 @@ function getRenderer(name: string): ToolRenderer {
 // ---------------------------------------------------------------------------
 
 function ResultLine({ text }: { text: string }) {
-  return (
-    <p className="px-3 py-2 text-body-small text-on-surface-variant">{text}</p>
-  );
+  return <p className="px-3 py-2 text-body-small text-on-surface-variant">{text}</p>;
 }
 
-function CollapsiblePre({
-  text,
-  maxLines = 20,
-}: {
-  text: string;
-  maxLines?: number;
-}) {
+function CollapsiblePre({ text, maxLines = 20 }: { text: string; maxLines?: number }) {
   const [expanded, setExpanded] = useState(false);
   const lines = text.split("\n");
   const needsCollapse = lines.length > maxLines;
-  const displayText =
-    needsCollapse && !expanded
-      ? lines.slice(0, maxLines).join("\n") + "\n..."
-      : text;
+  const displayText = needsCollapse && !expanded ? lines.slice(0, maxLines).join("\n") + "\n..." : text;
 
   return (
     <div>
@@ -381,10 +337,7 @@ function CollapsiblePre({
           <Icon
             name="expand_more"
             size={18}
-            className={clsx(
-              "transition-transform duration-200 ease-standard",
-              expanded && "rotate-180",
-            )}
+            className={clsx("transition-transform duration-200 ease-standard", expanded && "rotate-180")}
           />
           {expanded ? "Show less" : `Show all ${lines.length} lines`}
         </button>
@@ -418,16 +371,10 @@ const STATUS_LABELS: Record<ToolCallStatus, string> = {
 
 /** Leading Material Symbol per tool family. */
 function toolIcon(name: string): string {
-  if (
-    name.startsWith("file_") ||
-    name === "read" ||
-    name === "write" ||
-    name === "edit"
-  ) {
+  if (name.startsWith("file_") || name === "read" || name === "write" || name === "edit") {
     return "description";
   }
-  if (name === "glob" || name === "grep" || name === "web_search")
-    return "search";
+  if (name === "glob" || name === "grep" || name === "web_search") return "search";
   if (name === "webfetch") return "language";
   if (name === "set_status") return "schedule";
   return "build";
@@ -447,7 +394,7 @@ function formatToolName(name: string): string {
 
   return stripped
     .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
@@ -471,11 +418,7 @@ export interface ToolCallProps {
  * A tool invocation as an M3 outlined card: status + tool name header (`text-label-large`),
  * summary, and an expandable body with arguments and result blocks in `font-code`.
  */
-export function ToolCall({
-  pair,
-  defaultExpanded = false,
-  className,
-}: ToolCallProps) {
+export function ToolCall({ pair, defaultExpanded = false, className }: ToolCallProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const bodyId = useId();
   const renderer = getRenderer(pair.name);
@@ -507,38 +450,18 @@ export function ToolCall({
           focusRing,
         )}
       >
-        <span
-          className={clsx(
-            "flex size-5 shrink-0 items-center justify-center",
-            STATUS_COLORS[pair.status],
-          )}
-        >
+        <span className={clsx("flex size-5 shrink-0 items-center justify-center", STATUS_COLORS[pair.status])}>
           {pair.status === "running" ? (
             <CircularIndicator size={16} label="Running" />
           ) : (
-            <Icon
-              name={STATUS_ICONS[pair.status]}
-              size={18}
-              filled
-              label={STATUS_LABELS[pair.status]}
-            />
+            <Icon name={STATUS_ICONS[pair.status]} size={18} filled label={STATUS_LABELS[pair.status]} />
           )}
         </span>
-        <Icon
-          name={toolIcon(pair.name)}
-          size={18}
-          className="shrink-0 text-on-surface-variant"
-        />
-        {category && (
-          <span className="text-label-medium text-outline">{category}</span>
-        )}
-        <span className="shrink-0 text-label-large text-on-surface">
-          {displayName}
-        </span>
+        <Icon name={toolIcon(pair.name)} size={18} className="shrink-0 text-on-surface-variant" />
+        {category && <span className="text-label-medium text-outline">{category}</span>}
+        <span className="shrink-0 text-label-large text-on-surface">{displayName}</span>
         {summary && !expanded ? (
-          <span className="min-w-0 flex-1 truncate text-body-small text-on-surface-variant">
-            {summary}
-          </span>
+          <span className="min-w-0 flex-1 truncate text-body-small text-on-surface-variant">{summary}</span>
         ) : (
           <span className="flex-1" />
         )}
@@ -559,12 +482,7 @@ export function ToolCall({
 
       <AnimatePresence initial={false}>
         {expanded ? (
-          <motion.div
-            id={bodyId}
-            key="body"
-            {...expandMotion}
-            className="overflow-hidden"
-          >
+          <motion.div id={bodyId} key="body" {...expandMotion} className="overflow-hidden">
             <div className="flex flex-col gap-2 border-t border-outline-variant px-3 py-3">
               {args}
               {result != null && result !== false ? (
@@ -587,10 +505,7 @@ export function ToolCall({
   );
 }
 
-function renderArgs(
-  pair: ToolCallPair,
-  renderer: ToolRenderer,
-): React.ReactNode {
+function renderArgs(pair: ToolCallPair, renderer: ToolRenderer): React.ReactNode {
   if (renderer.argsView) {
     const custom = renderer.argsView(pair);
     if (custom) return custom;
@@ -603,9 +518,7 @@ function renderArgs(
           {Object.entries(pair.args).map(([key, value]) => (
             <p key={key} className="font-code text-body-small">
               <span className="text-outline">{key}: </span>
-              <span className="text-on-surface-variant">
-                {formatArgValue(key, value)}
-              </span>
+              <span className="text-on-surface-variant">{formatArgValue(key, value)}</span>
             </p>
           ))}
         </div>
@@ -616,9 +529,7 @@ function renderArgs(
   if (pair.argsRaw && pair.argsRaw !== "{}" && pair.argsRaw.trim().length > 0) {
     return (
       <div className="rounded-small bg-surface-container-highest px-3 py-2">
-        <pre className="max-h-40 overflow-auto font-code text-body-small text-on-surface-variant">
-          {pair.argsRaw}
-        </pre>
+        <pre className="max-h-40 overflow-auto font-code text-body-small text-on-surface-variant">{pair.argsRaw}</pre>
       </div>
     );
   }
@@ -626,10 +537,7 @@ function renderArgs(
   return null;
 }
 
-function renderResult(
-  pair: ToolCallPair,
-  renderer: ToolRenderer,
-): React.ReactNode {
+function renderResult(pair: ToolCallPair, renderer: ToolRenderer): React.ReactNode {
   if (pair.status === "running") {
     return (
       <div className="flex items-center gap-2 px-3 py-2 text-body-small text-on-surface-variant">
@@ -647,9 +555,7 @@ function renderResult(
   if (!pair.resultRaw) return null;
 
   // Check if result contains an interactive MCP-UI resource or app
-  const mcpResourceUri =
-    (pair.result?._meta as any)?.ui?.resourceUri ||
-    (pair.result?.ui as any)?.resourceUri;
+  const mcpResourceUri = (pair.result?._meta as any)?.ui?.resourceUri || (pair.result?.ui as any)?.resourceUri;
   const mcpHtml = (pair.result as any)?.html || (pair.result as any)?.uiHtml;
   if (mcpResourceUri || mcpHtml) {
     return (
@@ -658,9 +564,7 @@ function renderResult(
           toolName={pair.name}
           title={pair.title || pair.name}
           html={typeof mcpHtml === "string" ? mcpHtml : undefined}
-          toolResourceUri={
-            typeof mcpResourceUri === "string" ? mcpResourceUri : undefined
-          }
+          toolResourceUri={typeof mcpResourceUri === "string" ? mcpResourceUri : undefined}
           toolInput={pair.args || undefined}
           toolResult={pair.result || undefined}
         />
@@ -676,9 +580,7 @@ function renderResult(
             <p key={key} className="font-code text-body-small">
               <span className="text-outline">{key}: </span>
               <span className="text-on-surface-variant">
-                {typeof value === "string"
-                  ? truncate(value, 200)
-                  : JSON.stringify(value)}
+                {typeof value === "string" ? truncate(value, 200) : JSON.stringify(value)}
               </span>
             </p>
           ))}

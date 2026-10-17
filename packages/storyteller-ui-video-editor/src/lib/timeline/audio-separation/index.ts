@@ -2,12 +2,7 @@ import { cloneAnimations } from "../../animation";
 import type { ElementAnimations } from "../../animation/types";
 import type { MediaAsset } from "../../media/types";
 import { DEFAULTS } from "../defaults";
-import type {
-  CreateUploadAudioElement,
-  TimelineElement,
-  AudioElement,
-  VideoElement,
-} from "../types";
+import type { CreateUploadAudioElement, TimelineElement, AudioElement, VideoElement } from "../types";
 
 // "Source audio separation" — extracts a video clip's audio track into
 // its own AudioElement on a sibling track, so the user can mute,
@@ -18,19 +13,11 @@ import type {
 
 type MediaAudioState = Pick<MediaAsset, "hasAudio">;
 
-export function isSourceAudioEnabled({
-  element,
-}: {
-  element: VideoElement;
-}): boolean {
+export function isSourceAudioEnabled({ element }: { element: VideoElement }): boolean {
   return element.isSourceAudioEnabled !== false;
 }
 
-export function isSourceAudioSeparated({
-  element,
-}: {
-  element: VideoElement;
-}): boolean {
+export function isSourceAudioSeparated({ element }: { element: VideoElement }): boolean {
   return !isSourceAudioEnabled({ element });
 }
 
@@ -38,17 +25,10 @@ export function canExtractSourceAudio(
   element: TimelineElement,
   mediaAsset: MediaAudioState | null | undefined,
 ): element is VideoElement {
-  return (
-    element.type === "video" &&
-    isSourceAudioEnabled({ element }) &&
-    !!mediaAsset &&
-    mediaAsset.hasAudio !== false
-  );
+  return element.type === "video" && isSourceAudioEnabled({ element }) && !!mediaAsset && mediaAsset.hasAudio !== false;
 }
 
-export function canRecoverSourceAudio(
-  element: TimelineElement,
-): element is VideoElement {
+export function canRecoverSourceAudio(element: TimelineElement): element is VideoElement {
   return element.type === "video" && isSourceAudioSeparated({ element });
 }
 
@@ -56,9 +36,7 @@ export function canToggleSourceAudio(
   element: TimelineElement,
   mediaAsset: MediaAudioState | null | undefined,
 ): element is VideoElement {
-  return (
-    canRecoverSourceAudio(element) || canExtractSourceAudio(element, mediaAsset)
-  );
+  return canRecoverSourceAudio(element) || canExtractSourceAudio(element, mediaAsset);
 }
 
 export function doesElementHaveEnabledAudio({
@@ -72,11 +50,7 @@ export function doesElementHaveEnabledAudio({
     return true;
   }
 
-  return (
-    !!mediaAsset &&
-    mediaAsset.hasAudio !== false &&
-    isSourceAudioEnabled({ element })
-  );
+  return !!mediaAsset && mediaAsset.hasAudio !== false && isSourceAudioEnabled({ element });
 }
 
 export function buildSeparatedAudioElement({
@@ -95,10 +69,7 @@ export function buildSeparatedAudioElement({
     trimEnd: sourceElement.trimEnd,
     sourceDuration: sourceElement.sourceDuration,
     params: {
-      volume:
-        typeof sourceElement.params.volume === "number"
-          ? sourceElement.params.volume
-          : DEFAULTS.element.volume,
+      volume: typeof sourceElement.params.volume === "number" ? sourceElement.params.volume : DEFAULTS.element.volume,
       muted: sourceElement.params.muted === true,
     },
     retime: sourceElement.retime
@@ -115,14 +86,8 @@ export function buildSeparatedAudioElement({
   };
 }
 
-export function getSourceAudioActionLabel({
-  element,
-}: {
-  element: VideoElement;
-}): "Extract audio" | "Recover audio" {
-  return isSourceAudioSeparated({ element })
-    ? "Recover audio"
-    : "Extract audio";
+export function getSourceAudioActionLabel({ element }: { element: VideoElement }): "Extract audio" | "Recover audio" {
+  return isSourceAudioSeparated({ element }) ? "Recover audio" : "Extract audio";
 }
 
 function cloneVolumeAnimations({

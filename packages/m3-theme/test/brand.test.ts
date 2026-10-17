@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, it } from "bun:test";
-import {
-  GEMINI_BRAND_COLORS,
-  GEMINI_BRAND_GRADIENTS,
-  GEMINI_BRAND_SHAPES,
-  getGeminiBrandCss,
-} from "../src/index.js";
+import { GEMINI_BRAND_COLORS, GEMINI_BRAND_GRADIENTS, GEMINI_BRAND_SHAPES, getGeminiBrandCss } from "../src/index.js";
 
 describe("@aphrody/m3-theme brand tokens", () => {
   it("exposes canonical Gemini brand colors matching Rust definitions", () => {

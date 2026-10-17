@@ -49,23 +49,7 @@ export interface StickerResolveOptions {
 
 export interface StickerProvider {
   id: string;
-  search({
-    query,
-    options,
-  }: {
-    query: string;
-    options?: StickerProviderSearchOptions;
-  }): Promise<StickerSearchResult>;
-  browse({
-    options,
-  }: {
-    options?: StickerProviderBrowseOptions;
-  }): Promise<StickerBrowseResult>;
-  resolveUrl({
-    stickerId,
-    options,
-  }: {
-    stickerId: string;
-    options?: StickerResolveOptions;
-  }): string;
+  search({ query, options }: { query: string; options?: StickerProviderSearchOptions }): Promise<StickerSearchResult>;
+  browse({ options }: { options?: StickerProviderBrowseOptions }): Promise<StickerBrowseResult>;
+  resolveUrl({ stickerId, options }: { stickerId: string; options?: StickerResolveOptions }): string;
 }

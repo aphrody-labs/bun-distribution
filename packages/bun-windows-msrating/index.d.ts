@@ -3,23 +3,73 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** msrating.dll!RatingAccessDeniedDialog */
-  RatingAccessDeniedDialog(hDlg: Win32Pointer, pszUsername: string | Win32Pointer, pszContentDescription: string | Win32Pointer, pRatingDetails: Win32Pointer): number;
+  RatingAccessDeniedDialog(
+    hDlg: Win32Pointer,
+    pszUsername: string | Win32Pointer,
+    pszContentDescription: string | Win32Pointer,
+    pRatingDetails: Win32Pointer,
+  ): number;
   /** msrating.dll!RatingAccessDeniedDialog2 */
-  RatingAccessDeniedDialog2(hDlg: Win32Pointer, pszUsername: string | Win32Pointer, pRatingDetails: Win32Pointer): number;
+  RatingAccessDeniedDialog2(
+    hDlg: Win32Pointer,
+    pszUsername: string | Win32Pointer,
+    pRatingDetails: Win32Pointer,
+  ): number;
   /** msrating.dll!RatingAccessDeniedDialog2W */
-  RatingAccessDeniedDialog2W(hDlg: Win32Pointer, pszUsername: string | Win32Pointer, pRatingDetails: Win32Pointer): number;
+  RatingAccessDeniedDialog2W(
+    hDlg: Win32Pointer,
+    pszUsername: string | Win32Pointer,
+    pRatingDetails: Win32Pointer,
+  ): number;
   /** msrating.dll!RatingAccessDeniedDialogW */
-  RatingAccessDeniedDialogW(hDlg: Win32Pointer, pszUsername: string | Win32Pointer, pszContentDescription: string | Win32Pointer, pRatingDetails: Win32Pointer): number;
+  RatingAccessDeniedDialogW(
+    hDlg: Win32Pointer,
+    pszUsername: string | Win32Pointer,
+    pszContentDescription: string | Win32Pointer,
+    pRatingDetails: Win32Pointer,
+  ): number;
   /** msrating.dll!RatingAddToApprovedSites */
-  RatingAddToApprovedSites(hDlg: Win32Pointer, cbPasswordBlob: number, pbPasswordBlob: Win32Pointer, lpszUrl: string | Win32Pointer, fAlwaysNever: number, fSitePage: number, fApprovedSitesEnforced: number): number;
+  RatingAddToApprovedSites(
+    hDlg: Win32Pointer,
+    cbPasswordBlob: number,
+    pbPasswordBlob: Win32Pointer,
+    lpszUrl: string | Win32Pointer,
+    fAlwaysNever: number,
+    fSitePage: number,
+    fApprovedSitesEnforced: number,
+  ): number;
   /** msrating.dll!RatingCheckUserAccess */
-  RatingCheckUserAccess(pszUsername: string | Win32Pointer, pszURL: string | Win32Pointer, pszRatingInfo: string | Win32Pointer, pData: Win32Pointer, cbData: number, ppRatingDetails: Win32Pointer): number;
+  RatingCheckUserAccess(
+    pszUsername: string | Win32Pointer,
+    pszURL: string | Win32Pointer,
+    pszRatingInfo: string | Win32Pointer,
+    pData: Win32Pointer,
+    cbData: number,
+    ppRatingDetails: Win32Pointer,
+  ): number;
   /** msrating.dll!RatingCheckUserAccessW */
-  RatingCheckUserAccessW(pszUsername: string | Win32Pointer, pszURL: string | Win32Pointer, pszRatingInfo: string | Win32Pointer, pData: Win32Pointer, cbData: number, ppRatingDetails: Win32Pointer): number;
+  RatingCheckUserAccessW(
+    pszUsername: string | Win32Pointer,
+    pszURL: string | Win32Pointer,
+    pszRatingInfo: string | Win32Pointer,
+    pData: Win32Pointer,
+    cbData: number,
+    ppRatingDetails: Win32Pointer,
+  ): number;
   /** msrating.dll!RatingClickedOnPRFInternal */
-  RatingClickedOnPRFInternal(hWndOwner: Win32Pointer, param1: Win32Pointer, lpszFileName: string | Win32Pointer, nShow: number): number;
+  RatingClickedOnPRFInternal(
+    hWndOwner: Win32Pointer,
+    param1: Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    nShow: number,
+  ): number;
   /** msrating.dll!RatingClickedOnRATInternal */
-  RatingClickedOnRATInternal(hWndOwner: Win32Pointer, param1: Win32Pointer, lpszFileName: string | Win32Pointer, nShow: number): number;
+  RatingClickedOnRATInternal(
+    hWndOwner: Win32Pointer,
+    param1: Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    nShow: number,
+  ): number;
   /** msrating.dll!RatingEnable */
   RatingEnable(hwndParent: Win32Pointer, pszUsername: string | Win32Pointer, fEnable: number): number;
   /** msrating.dll!RatingEnableW */
@@ -33,9 +83,19 @@ interface Functions {
   /** msrating.dll!RatingObtainCancel */
   RatingObtainCancel(hRatingObtainQuery: Win32Pointer): number;
   /** msrating.dll!RatingObtainQuery */
-  RatingObtainQuery(pszTargetUrl: string | Win32Pointer, dwUserData: number, fCallback: number | bigint, phRatingObtainQuery: Win32Pointer): number;
+  RatingObtainQuery(
+    pszTargetUrl: string | Win32Pointer,
+    dwUserData: number,
+    fCallback: number | bigint,
+    phRatingObtainQuery: Win32Pointer,
+  ): number;
   /** msrating.dll!RatingObtainQueryW */
-  RatingObtainQueryW(pszTargetUrl: string | Win32Pointer, dwUserData: number, fCallback: number | bigint, phRatingObtainQuery: Win32Pointer): number;
+  RatingObtainQueryW(
+    pszTargetUrl: string | Win32Pointer,
+    dwUserData: number,
+    fCallback: number | bigint,
+    phRatingObtainQuery: Win32Pointer,
+  ): number;
   /** msrating.dll!RatingSetupUI */
   RatingSetupUI(hDlg: Win32Pointer, pszUsername: string | Win32Pointer): number;
   /** msrating.dll!RatingSetupUIW */

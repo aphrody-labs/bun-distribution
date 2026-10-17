@@ -20,10 +20,7 @@ it("switches Midjourney capabilities without changing the ArtCraft catalog model
     ],
   );
   const direct = imageModelForProvider(model, GenerationProvider.Midjourney)!;
-  expect(direct.getProviders()).toEqual([
-    GenerationProvider.Artcraft,
-    GenerationProvider.Midjourney,
-  ]);
+  expect(direct.getProviders()).toEqual([GenerationProvider.Artcraft, GenerationProvider.Midjourney]);
   expect(direct.predefinedGenerationCounts).toEqual([4]);
   expect(direct.defaultGenerationCount).toBe(4);
   expect(direct.isValidGenerationCount(1)).toBe(false);

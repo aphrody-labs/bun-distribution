@@ -37,11 +37,7 @@ export function PageHero({
   height?: "sm" | "md" | "lg";
   /** Cadrage vertical du cover (utile pour un visuel portrait recadré en bandeau). */
   imagePosition?: "center" | "top" | "bottom";
-  renderImage?: (image: {
-    src: string;
-    alt: string;
-    className: string;
-  }) => ReactNode;
+  renderImage?: (image: { src: string; alt: string; className: string }) => ReactNode;
 }) {
   const h = image
     ? height === "sm"
@@ -51,11 +47,7 @@ export function PageHero({
         : "h-[200px] md:h-[240px]"
     : "min-h-[140px] md:min-h-[160px] py-8 md:py-10";
   const objPos =
-    imagePosition === "top"
-      ? "object-top"
-      : imagePosition === "bottom"
-        ? "object-bottom"
-        : "object-center";
+    imagePosition === "top" ? "object-top" : imagePosition === "bottom" ? "object-bottom" : "object-center";
   return (
     <section
       className={`relative ${h} w-full overflow-hidden border-b-2 border-black/80 shadow-[0_2px_0px_rgba(231,130,32,0.3)] ${
@@ -79,17 +71,11 @@ export function PageHero({
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/65 to-black/25" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-transparent to-black/45" />
           {/* Nappe d'énergie ki en haut, discrète */}
-          <div
-            aria-hidden
-            className="absolute inset-x-0 top-0 h-1/2 aurora opacity-40 pointer-events-none"
-          />
+          <div aria-hidden className="absolute inset-x-0 top-0 h-1/2 aurora opacity-40 pointer-events-none" />
           {/* Trame demi-teinte façon planche manga */}
           <div className="absolute inset-0 halftone opacity-[0.07] mix-blend-overlay pointer-events-none" />
           {/* Lignes de vitesse — focus action façon planche Toriyama */}
-          <div
-            aria-hidden
-            className="absolute inset-0 speed-lines opacity-[0.05] pointer-events-none"
-          />
+          <div aria-hidden className="absolute inset-0 speed-lines opacity-[0.05] pointer-events-none" />
         </>
       )}
       {!image && (
@@ -111,21 +97,14 @@ export function PageHero({
         }`}
       >
         <div className="flex-1 max-w-2xl reveal-up">
-          <HeroTitles
-            eyebrow={eyebrow}
-            title={title}
-            lead={lead}
-            regime={image ? "image" : "plain"}
-          />
+          <HeroTitles eyebrow={eyebrow} title={title} lead={lead} regime={image ? "image" : "plain"} />
         </div>
         {right && <div className="shrink-0 ml-6 hidden md:block">{right}</div>}
       </div>
 
       <div
         className={`absolute bottom-0 inset-x-0 h-[2px] ${
-          image
-            ? "bg-gradient-to-r from-transparent via-dbz-orange to-transparent"
-            : "bg-white/[0.08]"
+          image ? "bg-gradient-to-r from-transparent via-dbz-orange to-transparent" : "bg-white/[0.08]"
         }`}
       />
     </section>

@@ -1,14 +1,7 @@
 import { getGuideById, type GuideId } from "./index";
-import {
-  EMPTY_PREVIEW_OVERLAY_SOURCE_RESULT,
-  type PreviewOverlaySourceResult,
-} from "../preview/overlays";
+import { EMPTY_PREVIEW_OVERLAY_SOURCE_RESULT, type PreviewOverlaySourceResult } from "../preview/overlays";
 
-export function getGuidePreviewOverlaySource({
-  guideId,
-}: {
-  guideId: GuideId | null;
-}): PreviewOverlaySourceResult {
+export function getGuidePreviewOverlaySource({ guideId }: { guideId: GuideId | null }): PreviewOverlaySourceResult {
   const guide = getGuideById(guideId);
   if (!guide) {
     return EMPTY_PREVIEW_OVERLAY_SOURCE_RESULT;

@@ -2,27 +2,15 @@
 // Pure view helpers of the IA cockpit. They hold no React so `bun test` covers them directly;
 // UnifiedIaCockpit.tsx and NativeAiPanel.tsx stay thin renderers on top of them.
 
-export const IA_COCKPIT_TABS = [
-  "overview",
-  "training",
-  "canon",
-  "corpus",
-  "agents",
-] as const;
+export const IA_COCKPIT_TABS = ["overview", "training", "canon", "corpus", "agents"] as const;
 export type IaCockpitTab = (typeof IA_COCKPIT_TABS)[number];
 
 /** `?tab=` is user-controlled: anything unknown falls back instead of rendering an empty cockpit. */
-export function parseCockpitTab(
-  value: string | null | undefined,
-  fallback: IaCockpitTab = "overview",
-): IaCockpitTab {
-  return (IA_COCKPIT_TABS as readonly string[]).includes(value ?? "")
-    ? (value as IaCockpitTab)
-    : fallback;
+export function parseCockpitTab(value: string | null | undefined, fallback: IaCockpitTab = "overview"): IaCockpitTab {
+  return (IA_COCKPIT_TABS as readonly string[]).includes(value ?? "") ? (value as IaCockpitTab) : fallback;
 }
 
-export type CockpitFailureKind =
-  "unauthenticated" | "forbidden" | "server" | "network";
+export type CockpitFailureKind = "unauthenticated" | "forbidden" | "server" | "network";
 
 export interface CockpitFailure {
   kind: CockpitFailureKind;
@@ -30,10 +18,7 @@ export interface CockpitFailure {
 }
 
 /** Turns a non-2xx admin API answer into a state the page can render without guessing from text. */
-export function describeHttpFailure(
-  status: number,
-  serverMessage?: string | null,
-): CockpitFailure {
+export function describeHttpFailure(status: number, serverMessage?: string | null): CockpitFailure {
   const detail = serverMessage?.trim();
   if (status === 401) {
     return {
@@ -82,17 +67,10 @@ export function splitMarkedExcerpt(excerpt: string): ExcerptSegment[] {
 }
 
 export const OCR_PROBE_MAX_BYTES = 6_000_000;
-export const OCR_PROBE_TYPES = [
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-] as const;
+export const OCR_PROBE_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
 
 /** Returns a user-facing reason when the planche cannot be sent to the OCR probe, else null. */
-export function ocrProbeFileError(file: {
-  size: number;
-  type: string;
-}): string | null {
+export function ocrProbeFileError(file: { size: number; type: string }): string | null {
   if (!(OCR_PROBE_TYPES as readonly string[]).includes(file.type)) {
     return "Format non pris en charge : PNG, JPEG ou WebP uniquement.";
   }
@@ -119,12 +97,7 @@ export interface LocalRagHit {
 
 /** Passage list handed to the local model; numbering matches the `[n]` citations it must emit. */
 export function formatRagContext(hits: readonly LocalRagHit[]): string {
-  return hits
-    .map(
-      (hit, index) =>
-        `[${index + 1}] ${hit.title ?? "Sans titre"} — ${hit.snippet ?? ""}`,
-    )
-    .join("\n");
+  return hits.map((hit, index) => `[${index + 1}] ${hit.title ?? "Sans titre"} — ${hit.snippet ?? ""}`).join("\n");
 }
 
 export const EMPTY_RETRIEVAL_NOTICE =

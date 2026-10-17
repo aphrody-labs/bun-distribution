@@ -23,8 +23,7 @@ const stateLayer = [
   "hover:before:bg-on-surface/8 focus-visible:before:bg-on-surface/10 active:before:bg-primary/10",
 ];
 
-const focusRing =
-  "outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-secondary";
+const focusRing = "outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-secondary";
 
 const styles = cva(
   [
@@ -49,21 +48,18 @@ const styles = cva(
   },
 );
 
-export interface CheckBoxProps
-  extends ComponentProps<"input">, VariantProps<typeof styles> {}
+export interface CheckBoxProps extends ComponentProps<"input">, VariantProps<typeof styles> {}
 
-export const CheckBox = forwardRef<HTMLInputElement, CheckBoxProps>(
-  ({ className, error, ...props }, ref) => (
-    <input
-      {...props}
-      type="checkbox"
-      data-m3-component="CheckBox"
-      ref={ref}
-      aria-invalid={error ? true : undefined}
-      className={styles({ error, className })}
-    />
-  ),
-);
+export const CheckBox = forwardRef<HTMLInputElement, CheckBoxProps>(({ className, error, ...props }, ref) => (
+  <input
+    {...props}
+    type="checkbox"
+    data-m3-component="CheckBox"
+    ref={ref}
+    aria-invalid={error ? true : undefined}
+    className={styles({ error, className })}
+  />
+));
 
 CheckBox.displayName = "CheckBox";
 
@@ -98,10 +94,7 @@ type BaseRootProps = CheckboxPrimitive.Root.Props;
  * Base UI checkbox props with the Radix value shape kept: `checked` / `defaultChecked` also
  * accept `"indeterminate"` (Base UI's `indeterminate` prop works too).
  */
-export interface CheckboxRootProps extends Omit<
-  BaseRootProps,
-  "checked" | "defaultChecked" | "className" | "ref"
-> {
+export interface CheckboxRootProps extends Omit<BaseRootProps, "checked" | "defaultChecked" | "className" | "ref"> {
   checked?: boolean | "indeterminate";
   defaultChecked?: boolean | "indeterminate";
   className?: StateClassName<CheckboxPrimitive.Root.State>;
@@ -110,18 +103,11 @@ export interface CheckboxRootProps extends Omit<
 }
 
 /** Splits the Radix tri-state value into Base UI's `checked` + `indeterminate`. */
-function checkedProps({
-  checked,
-  defaultChecked,
-  indeterminate,
-}: CheckboxRootProps) {
+function checkedProps({ checked, defaultChecked, indeterminate }: CheckboxRootProps) {
   return {
     checked: checked === undefined ? undefined : checked === true,
-    defaultChecked:
-      defaultChecked === undefined ? undefined : defaultChecked === true,
-    indeterminate:
-      indeterminate ??
-      (checked === "indeterminate" || defaultChecked === "indeterminate"),
+    defaultChecked: defaultChecked === undefined ? undefined : defaultChecked === true,
+    indeterminate: indeterminate ?? (checked === "indeterminate" || defaultChecked === "indeterminate"),
   };
 }
 
@@ -130,10 +116,7 @@ function checkedProps({
  * sibling `<label htmlFor>` pointing at `id` works.
  */
 export const CheckboxRoot = forwardRef<HTMLButtonElement, CheckboxRootProps>(
-  (
-    { className, error, checked, defaultChecked, indeterminate, ...props },
-    ref,
-  ) => (
+  ({ className, error, checked, defaultChecked, indeterminate, ...props }, ref) => (
     <CheckboxPrimitive.Root
       ref={ref}
       nativeButton
@@ -151,18 +134,17 @@ export const CheckboxRoot = forwardRef<HTMLButtonElement, CheckboxRootProps>(
 CheckboxRoot.displayName = "CheckboxRoot";
 
 /** Base UI checkbox indicator; renders the M3 check / dash glyph when given no children. */
-export const CheckboxIndicator = forwardRef<
-  HTMLSpanElement,
-  ComponentProps<typeof CheckboxPrimitive.Indicator>
->(({ className, children, ...props }, ref) => (
-  <CheckboxPrimitive.Indicator
-    ref={ref}
-    className={withClassName("flex items-center justify-center", className)}
-    {...props}
-  >
-    {children ?? <Glyph />}
-  </CheckboxPrimitive.Indicator>
-));
+export const CheckboxIndicator = forwardRef<HTMLSpanElement, ComponentProps<typeof CheckboxPrimitive.Indicator>>(
+  ({ className, children, ...props }, ref) => (
+    <CheckboxPrimitive.Indicator
+      ref={ref}
+      className={withClassName("flex items-center justify-center", className)}
+      {...props}
+    >
+      {children ?? <Glyph />}
+    </CheckboxPrimitive.Indicator>
+  ),
+);
 
 CheckboxIndicator.displayName = "CheckboxIndicator";
 
@@ -175,19 +157,8 @@ export interface RadixCheckboxProps extends CheckboxRootProps {
  * Checkbox with an optional trailing label (name kept from upstream; it is Base UI underneath).
  * `className` goes on the row, the label is tied to the control through `name`.
  */
-export const RadixCheckbox = ({
-  className,
-  labelClassName,
-  label,
-  error,
-  ...props
-}: RadixCheckboxProps) => (
-  <div
-    className={clsx(
-      "flex items-center",
-      typeof className === "string" && className,
-    )}
-  >
+export const RadixCheckbox = ({ className, labelClassName, label, error, ...props }: RadixCheckboxProps) => (
+  <div className={clsx("flex items-center", typeof className === "string" && className)}>
     <CheckboxRoot id={props.name} error={error} {...props}>
       <CheckboxIndicator />
     </CheckboxRoot>

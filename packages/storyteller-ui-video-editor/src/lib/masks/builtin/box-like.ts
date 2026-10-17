@@ -1,7 +1,4 @@
-import {
-  DEFAULT_SHAPE_MASK_SHORT_SIDE_RATIO,
-  MIN_MASK_DIMENSION,
-} from "../dimensions";
+import { DEFAULT_SHAPE_MASK_SHORT_SIDE_RATIO, MIN_MASK_DIMENSION } from "../dimensions";
 import { computeFeatherUpdate } from "../param-update";
 import type {
   BaseMaskParams,
@@ -12,10 +9,7 @@ import type {
   RectangleMaskParams,
 } from "../types";
 import type { NumberParamDefinition, ParamDefinition } from "../../params";
-import {
-  getBoxMaskHandlePositions,
-  getBoxMaskOverlays,
-} from "../handle-positions";
+import { getBoxMaskHandlePositions, getBoxMaskOverlays } from "../handle-positions";
 import { snapBoxMaskInteraction } from "../snap";
 
 // Shared scaffolding for the rectangle/ellipse/heart/diamond/star/text
@@ -28,17 +22,12 @@ import { snapBoxMaskInteraction } from "../snap";
 // Everything else — params layout, interaction handles, snap, defaults,
 // drag math — lives here.
 
-const PERCENTAGE_DISPLAY: Pick<
-  NumberParamDefinition,
-  "displayMultiplier" | "step"
-> = {
+const PERCENTAGE_DISPLAY: Pick<NumberParamDefinition, "displayMultiplier" | "step"> = {
   displayMultiplier: 100,
   step: 1,
 };
 
-export const BOX_LIKE_MASK_PARAMS: ParamDefinition<
-  keyof RectangleMaskParams & string
->[] = [
+export const BOX_LIKE_MASK_PARAMS: ParamDefinition<keyof RectangleMaskParams & string>[] = [
   {
     key: "centerX",
     label: "X",
@@ -133,20 +122,13 @@ export function getStrokeOffset({
 // the element's short side at DEFAULT_SHAPE_MASK_SHORT_SIDE_RATIO. The
 // width/height fields end up unequal when the element isn't square
 // (because they're normalized against per-axis bounds).
-export function getDefaultSquareMaskParams({
-  elementSize,
-}: MaskDefaultContext): RectangleMaskParams {
+export function getDefaultSquareMaskParams({ elementSize }: MaskDefaultContext): RectangleMaskParams {
   const absWidth = Math.abs(elementSize?.width ?? 0);
   const absHeight = Math.abs(elementSize?.height ?? 0);
   const shortSide = Math.min(absWidth, absHeight);
-  const squareSide =
-    shortSide > 0 ? shortSide * DEFAULT_SHAPE_MASK_SHORT_SIDE_RATIO : 0;
-  const width =
-    absWidth > 0 ? squareSide / absWidth : DEFAULT_SHAPE_MASK_SHORT_SIDE_RATIO;
-  const height =
-    absHeight > 0
-      ? squareSide / absHeight
-      : DEFAULT_SHAPE_MASK_SHORT_SIDE_RATIO;
+  const squareSide = shortSide > 0 ? shortSide * DEFAULT_SHAPE_MASK_SHORT_SIDE_RATIO : 0;
+  const width = absWidth > 0 ? squareSide / absWidth : DEFAULT_SHAPE_MASK_SHORT_SIDE_RATIO;
+  const height = absHeight > 0 ? squareSide / absHeight : DEFAULT_SHAPE_MASK_SHORT_SIDE_RATIO;
 
   return {
     ...getDefaultBaseMaskParams(),
@@ -251,38 +233,24 @@ export function computeBoxMaskParamUpdate({
   const halfWidth = startParams.width * bounds.width;
   const halfHeight = startParams.height * bounds.height;
 
-  if (
-    handleId.kind === "edge" &&
-    (handleId.side === "right" || handleId.side === "left")
-  ) {
+  if (handleId.kind === "edge" && (handleId.side === "right" || handleId.side === "left")) {
     const sign = handleId.side === "right" ? 1 : -1;
     return {
-      width: Math.max(
-        MIN_MASK_DIMENSION,
-        startParams.width + (sign * deltaX * 2) / bounds.width,
-      ),
+      width: Math.max(MIN_MASK_DIMENSION, startParams.width + (sign * deltaX * 2) / bounds.width),
     };
   }
 
-  if (
-    handleId.kind === "edge" &&
-    (handleId.side === "bottom" || handleId.side === "top")
-  ) {
+  if (handleId.kind === "edge" && (handleId.side === "bottom" || handleId.side === "top")) {
     const sign = handleId.side === "bottom" ? 1 : -1;
     return {
-      height: Math.max(
-        MIN_MASK_DIMENSION,
-        startParams.height + (sign * deltaY * 2) / bounds.height,
-      ),
+      height: Math.max(MIN_MASK_DIMENSION, startParams.height + (sign * deltaY * 2) / bounds.height),
     };
   }
 
   if (handleId.kind === "corner") {
     const signX = handleId.corner.x === "right" ? 1 : -1;
     const signY = handleId.corner.y === "bottom" ? 1 : -1;
-    const distance = Math.sqrt(
-      (signX * deltaX + halfWidth) ** 2 + (signY * deltaY + halfHeight) ** 2,
-    );
+    const distance = Math.sqrt((signX * deltaX + halfWidth) ** 2 + (signY * deltaY + halfHeight) ** 2);
     const originalDistance = Math.sqrt(halfWidth ** 2 + halfHeight ** 2);
     const scale = originalDistance > 0 ? distance / originalDistance : 1;
     return {

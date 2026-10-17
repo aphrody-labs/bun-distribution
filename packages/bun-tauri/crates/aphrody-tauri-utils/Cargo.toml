@@ -20,9 +20,7 @@ serde_json = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 phf = { version = "0.13", features = ["macros"] }
-brotli = { version = "9", optional = true, default-features = false, features = [
-  "std",
-] }
+brotli = { version = "9", optional = true, default-features = false, features = ["std"] }
 url = { workspace = true, features = ["serde"] }
 html5ever = { version = "0.29", optional = true }
 kuchiki = { package = "kuchikiki", version = "0.8.8-speedreader", optional = true }
@@ -66,23 +64,9 @@ tauri = { path = "../aphrody-tauri", package = "aphrody-tauri", version = "1.4.4
 tempfile = { workspace = true }
 
 [features]
-build = [
-  "proc-macro2",
-  "quote",
-  "cargo_metadata",
-  "schema",
-  "swift-rs",
-  "html-manipulation",
-]
+build = ["proc-macro2", "quote", "cargo_metadata", "schema", "swift-rs", "html-manipulation"]
 # Same as `build` but uses `html-manipulation-2` to avoid the `kuchikiki` dependency.
-build-2 = [
-  "proc-macro2",
-  "quote",
-  "cargo_metadata",
-  "schema",
-  "swift-rs",
-  "html-manipulation-2",
-]
+build-2 = ["proc-macro2", "quote", "cargo_metadata", "schema", "swift-rs", "html-manipulation-2"]
 compression = ["brotli"]
 schema = ["schemars"]
 isolation = ["aes-gcm", "getrandom", "serialize-to-javascript"]

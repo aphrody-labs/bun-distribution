@@ -97,11 +97,7 @@ export class SelectionManager {
     this.notify();
   }
 
-  setSelectedMaskPoints({
-    selection,
-  }: {
-    selection: SelectedMaskPointSelection | null;
-  }): void {
+  setSelectedMaskPoints({ selection }: { selection: SelectedMaskPointSelection | null }): void {
     this.selectedMaskPoints =
       selection && selection.pointIds.length > 0
         ? {
@@ -157,11 +153,7 @@ export class SelectionManager {
     return false;
   }
 
-  applySelectionPatch({
-    patch,
-  }: {
-    patch: EditorSelectionPatch;
-  }): EditorSelectionSnapshot {
+  applySelectionPatch({ patch }: { patch: EditorSelectionPatch }): EditorSelectionSnapshot {
     if (patch.selectedElements !== undefined) {
       this.selectedElements = [...patch.selectedElements];
     }
@@ -202,7 +194,7 @@ export class SelectionManager {
   }
 
   private notify(): void {
-    this.listeners.forEach((fn) => {
+    this.listeners.forEach(fn => {
       fn();
     });
   }

@@ -22,10 +22,7 @@ export const NewsPost = ({ slug: propSlug, basePath }: NewsPostProps) => {
         <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-8 pt-28 sm:pt-36 pb-12">
           <h1 className="text-3xl font-bold">Not found</h1>
           <p className="text-white/70">We couldn't find this article.</p>
-          <Link
-            to={basePath}
-            className="text-blue-400 mt-4 inline-block hover:underline"
-          >
+          <Link to={basePath} className="text-blue-400 mt-4 inline-block hover:underline">
             Return to News
           </Link>
         </div>
@@ -48,14 +45,10 @@ export const NewsPost = ({ slug: propSlug, basePath }: NewsPostProps) => {
             <ChevronLeftIcon />
             Back to News
           </Link>
-          {post.date && (
-            <span className="text-white/50 font-mono text-sm">{post.date}</span>
-          )}
+          {post.date && <span className="text-white/50 font-mono text-sm">{post.date}</span>}
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-bold mb-6 !leading-tight tracking-tight">
-          {post.title}
-        </h1>
+        <h1 className="text-4xl md:text-5xl font-bold mb-6 !leading-tight tracking-tight">{post.title}</h1>
 
         {post.description && (
           <p className="text-xl text-white/70 mb-8 leading-relaxed font-light border-l-4 border-primary pl-4">
@@ -65,11 +58,7 @@ export const NewsPost = ({ slug: propSlug, basePath }: NewsPostProps) => {
 
         {post.thumbnail && (
           <div className="w-full overflow-hidden rounded-xl border border-white/10 bg-black mb-12 shadow-2xl">
-            <img
-              src={post.thumbnail}
-              alt={post.title}
-              className="w-full h-auto object-cover"
-            />
+            <img src={post.thumbnail} alt={post.title} className="w-full h-auto object-cover" />
           </div>
         )}
 

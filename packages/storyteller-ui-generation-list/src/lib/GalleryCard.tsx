@@ -1,17 +1,7 @@
 import { memo, useCallback, useState, type ReactNode } from "react";
-import {
-  BoxIcon,
-  CheckIcon,
-  EyeIcon,
-  ImageIcon,
-  MusicIcon,
-  VideoIcon,
-} from "lucide-react";
+import { BoxIcon, CheckIcon, EyeIcon, ImageIcon, MusicIcon, VideoIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
-import {
-  getCreatorIconPathForModelId,
-  getModelDisplayName,
-} from "@storyteller/model-list";
+import { getCreatorIconPathForModelId, getModelDisplayName } from "@storyteller/model-list";
 import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import { GalleryThumbnail } from "./GalleryThumbnail";
 import { is3DMediaClass, type GalleryItem } from "./types";
@@ -50,10 +40,7 @@ function persistCache(cache: Map<string, number>) {
     try {
       const entries = [...cache.entries()];
       const trimmed = entries.slice(-500);
-      sessionStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(Object.fromEntries(trimmed)),
-      );
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Object.fromEntries(trimmed)));
     } catch {
       // ignore
     }
@@ -102,38 +89,16 @@ export const GalleryCard = memo(function GalleryCard({
   const isVideo = item.mediaClass === "video";
   const is3D = is3DMediaClass(item.mediaClass);
   const isAudio = item.mediaClass === "audio";
-  const mediaIcon = isVideo
-    ? VideoIcon
-    : is3D
-      ? BoxIcon
-      : isAudio
-        ? MusicIcon
-        : ImageIcon;
-  const mediaLabel = isVideo
-    ? "Video"
-    : is3D
-      ? "3D"
-      : isAudio
-        ? "Audio"
-        : "Image";
-  const modelDisplayName = item.modelId
-    ? getModelDisplayName(item.modelId)
-    : null;
-  const modelIconPath = item.modelId
-    ? getCreatorIconPathForModelId(item.modelId)
-    : null;
+  const mediaIcon = isVideo ? VideoIcon : is3D ? BoxIcon : isAudio ? MusicIcon : ImageIcon;
+  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : isAudio ? "Audio" : "Image";
+  const modelDisplayName = item.modelId ? getModelDisplayName(item.modelId) : null;
+  const modelIconPath = item.modelId ? getCreatorIconPathForModelId(item.modelId) : null;
 
-  const displayRatio = isAudio
-    ? AUDIO_RATIO
-    : ratio
-      ? Math.min(ratio, MAX_RATIO)
-      : 1;
+  const displayRatio = isAudio ? AUDIO_RATIO : ratio ? Math.min(ratio, MAX_RATIO) : 1;
 
   // In square mode the wrapper sets the ratio via `aspect-square`; we only
   // compute the dynamic aspectRatio for masonry-style layouts.
-  const outerStyle: React.CSSProperties | undefined = isSquare
-    ? undefined
-    : { aspectRatio: `1 / ${displayRatio}` };
+  const outerStyle: React.CSSProperties | undefined = isSquare ? undefined : { aspectRatio: `1 / ${displayRatio}` };
 
   const measureRatio = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -189,9 +154,7 @@ export const GalleryCard = memo(function GalleryCard({
       >
         {isAudio ? (
           <div className="flex h-full flex-col bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] p-3">
-            <p className="line-clamp-2 shrink-0 text-sm leading-snug text-white/85">
-              {title || item.label}
-            </p>
+            <p className="line-clamp-2 shrink-0 text-sm leading-snug text-white/85">{title || item.label}</p>
             <div className="flex min-h-0 flex-1 items-center justify-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
                 <MusicIcon className="text-xl text-white/70" />
@@ -199,10 +162,7 @@ export const GalleryCard = memo(function GalleryCard({
             </div>
             {item.fullImage && (
               <div className="w-full shrink-0">
-                <WaveformAudioPlayer
-                  src={item.fullImage}
-                  durationMillis={item.durationMillis}
-                />
+                <WaveformAudioPlayer src={item.fullImage} durationMillis={item.durationMillis} />
               </div>
             )}
           </div>
@@ -222,9 +182,7 @@ export const GalleryCard = memo(function GalleryCard({
       {selectMode && item.fullImage && (
         <div
           className={`pointer-events-none absolute left-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-[3px] border transition-colors ${
-            selected
-              ? "border-primary-400 bg-primary-400 text-white"
-              : "border-white/60 bg-black/40 text-transparent"
+            selected ? "border-primary-400 bg-primary-400 text-white" : "border-white/60 bg-black/40 text-transparent"
           }`}
         >
           <CheckIcon className="text-[10px]" />
@@ -250,11 +208,7 @@ export const GalleryCard = memo(function GalleryCard({
           </div>
           {modelDisplayName && modelIconPath && (
             <div className="flex items-center gap-1 bg-black/60 px-2 py-1 text-[10px] text-white/80">
-              <img
-                src={modelIconPath}
-                alt=""
-                className="h-3 w-3 icon-auto-contrast"
-              />
+              <img src={modelIconPath} alt="" className="h-3 w-3 icon-auto-contrast" />
               <span className="max-w-[100px] truncate">{modelDisplayName}</span>
             </div>
           )}

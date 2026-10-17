@@ -26,12 +26,9 @@ export interface FalHunyuanImageTo3dSuccess extends CommandResult {
   payload: FalHunyuanImageTo3dPayload;
 }
 
-export type FalHunyuanImageTo3dResult =
-  FalHunyuanImageTo3dSuccess | FalHunyuanImageTo3dError;
+export type FalHunyuanImageTo3dResult = FalHunyuanImageTo3dSuccess | FalHunyuanImageTo3dError;
 
-export const FalHunyuanImageTo3d = async (
-  request: FalHunyuanImageTo3dRequest,
-): Promise<FalHunyuanImageTo3dResult> => {
+export const FalHunyuanImageTo3d = async (request: FalHunyuanImageTo3dRequest): Promise<FalHunyuanImageTo3dResult> => {
   let result = await invoke("fal_hunyuan_image_to_3d_command", {
     request: {
       image_media_token: request.image_media_token,

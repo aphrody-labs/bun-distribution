@@ -12,9 +12,7 @@ export interface WorkspaceCargoSummary {
   readonly releaseProfile: Record<string, unknown>;
 }
 
-export async function readWorkspaceCargo(
-  rootDir: string = yoloHome(),
-): Promise<WorkspaceCargoSummary | null> {
+export async function readWorkspaceCargo(rootDir: string = yoloHome()): Promise<WorkspaceCargoSummary | null> {
   try {
     const cargoFile = Bun.file(resolve(rootDir, "Cargo.toml"));
     if (!(await cargoFile.exists())) return null;

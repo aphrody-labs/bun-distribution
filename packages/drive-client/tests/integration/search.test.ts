@@ -87,9 +87,7 @@ describe("Search - Persistent Location", () => {
     expect(result.results.length).toBeGreaterThan(0);
 
     // Should find report.txt
-    const foundReport = result.results.some(
-      (r: any) => r.file.name === "report",
-    );
+    const foundReport = result.results.some((r: any) => r.file.name === "report");
     expect(foundReport).toBe(true);
   });
 

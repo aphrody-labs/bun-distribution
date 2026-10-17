@@ -86,10 +86,7 @@ export function FileThumb({
   return (
     <div
       data-m3-component="FileThumb"
-      className={clsx(
-        "relative pointer-events-none flex shrink-0 grow-0 items-center justify-center",
-        className,
-      )}
+      className={clsx("relative pointer-events-none flex shrink-0 grow-0 items-center justify-center", className)}
       style={{
         width: size,
         height: size,
@@ -126,18 +123,11 @@ export function FileThumb({
           className={clsx(
             "absolute inset-0 m-auto max-h-full max-w-full object-contain transition-opacity duration-200 ease-standard",
             frameClassName ||
-              clsx(
-                "border border-outline-variant bg-surface-container-high",
-                useSmallCorner && "rounded-small",
-              ),
+              clsx("border border-outline-variant bg-surface-container-high", useSmallCorner && "rounded-small"),
             selected && "outline-2 outline-offset-0 outline-primary",
             !thumbLoaded && "opacity-0",
           )}
-          style={
-            frameClassName || useSmallCorner
-              ? undefined
-              : { borderRadius: `${borderRadius}px` }
-          }
+          style={frameClassName || useSmallCorner ? undefined : { borderRadius: `${borderRadius}px` }}
           onLoad={() => {
             setInternalLoaded(true);
             onThumbnailLoad?.();

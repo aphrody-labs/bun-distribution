@@ -18,7 +18,7 @@ import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
 // its own (scene.ts builds one per load), and undo re-loads deleted
 // objects from their snapshot rather than reusing the instance.
 export function disposeObject3D(root: THREE.Object3D): void {
-  root.traverse((child) => {
+  root.traverse(child => {
     if (child instanceof SplatMesh) child.dispose();
     if (child instanceof SparkRenderer) disposeSparkRenderer(child);
     if (child instanceof THREE.SkinnedMesh) child.skeleton?.dispose();
@@ -33,9 +33,7 @@ export function disposeObject3D(root: THREE.Object3D): void {
 
 // Every texture the tree's materials reference, as material properties or
 // ShaderMaterial uniforms, deduplicated.
-export function collectObjectTextures(
-  root: THREE.Object3D,
-): Set<THREE.Texture> {
+export function collectObjectTextures(root: THREE.Object3D): Set<THREE.Texture> {
   return collectMaterialTextures(collectMaterials(root));
 }
 
@@ -54,7 +52,7 @@ function disposeSparkRenderer(spark: SparkRenderer): void {
 
 function collectMaterials(root: THREE.Object3D): Set<THREE.Material> {
   const materials = new Set<THREE.Material>();
-  root.traverse((child) => {
+  root.traverse(child => {
     const { material } = child as Partial<THREE.Mesh>;
     const childMaterials = Array.isArray(material) ? material : [material];
     for (const childMaterial of childMaterials) {
@@ -64,15 +62,13 @@ function collectMaterials(root: THREE.Object3D): Set<THREE.Material> {
   return materials;
 }
 
-function collectMaterialTextures(
-  materials: Iterable<THREE.Material>,
-): Set<THREE.Texture> {
+function collectMaterialTextures(materials: Iterable<THREE.Material>): Set<THREE.Texture> {
   const textures = new Set<THREE.Texture>();
   for (const material of materials) {
     addTextures(Object.values(material), textures);
     if (material instanceof THREE.ShaderMaterial) {
       addTextures(
-        Object.values(material.uniforms).map((uniform) => uniform?.value),
+        Object.values(material.uniforms).map(uniform => uniform?.value),
         textures,
       );
     }

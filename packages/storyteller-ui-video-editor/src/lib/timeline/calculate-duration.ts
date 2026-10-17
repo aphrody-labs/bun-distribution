@@ -5,11 +5,7 @@ import type { SceneTracks } from "./types";
 // Equal to opencut's `calculateTotalDuration` from timeline/index.ts —
 // extracted into its own file here so scenes.ts can import it without
 // pulling in the rest of the timeline barrel.
-export function calculateTotalDuration({
-  tracks,
-}: {
-  tracks: SceneTracks;
-}): MediaTime {
+export function calculateTotalDuration({ tracks }: { tracks: SceneTracks }): MediaTime {
   const orderedTracks = [...tracks.overlay, tracks.main, ...tracks.audio];
   if (orderedTracks.length === 0) return ZERO_MEDIA_TIME;
 

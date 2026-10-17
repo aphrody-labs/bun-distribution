@@ -1,10 +1,4 @@
-import {
-  Input,
-  ALL_FORMATS,
-  BlobSource,
-  CanvasSink,
-  type WrappedCanvas,
-} from "mediabunny";
+import { Input, ALL_FORMATS, BlobSource, CanvasSink, type WrappedCanvas } from "mediabunny";
 
 // Decoded-frame cache for the preview canvas. mediabunny gives us
 // CanvasSink-backed iterators that decode the next frame in sequence;
@@ -96,11 +90,8 @@ export class VideoCache {
   getStats() {
     return {
       totalSinks: this.sinks.size,
-      activeSinks: Array.from(this.sinks.values()).filter((s) => s.iterator)
-        .length,
-      cachedFrames: Array.from(this.sinks.values()).filter(
-        (s) => s.currentFrame,
-      ).length,
+      activeSinks: Array.from(this.sinks.values()).filter(s => s.iterator).length,
+      cachedFrames: Array.from(this.sinks.values()).filter(s => s.currentFrame).length,
     };
   }
 
@@ -117,22 +108,14 @@ export class VideoCache {
       this.startPrefetch({ sinkData });
     }
 
-    if (
-      sinkData.currentFrame &&
-      this.isFrameValid({ frame: sinkData.currentFrame, time })
-    ) {
+    if (sinkData.currentFrame && this.isFrameValid({ frame: sinkData.currentFrame, time })) {
       if (!sinkData.nextFrame && !sinkData.prefetching) {
         this.startPrefetch({ sinkData });
       }
       return sinkData.currentFrame;
     }
 
-    if (
-      sinkData.iterator &&
-      sinkData.currentFrame &&
-      time >= sinkData.lastTime &&
-      time < sinkData.lastTime + 2.0
-    ) {
+    if (sinkData.iterator && sinkData.currentFrame && time >= sinkData.lastTime && time < sinkData.lastTime + 2.0) {
       const frame = await this.iterateToTime({ sinkData, targetTime: time });
       if (frame) {
         if (!sinkData.nextFrame && !sinkData.prefetching) {
@@ -149,13 +132,7 @@ export class VideoCache {
     return frame;
   }
 
-  private isFrameValid({
-    frame,
-    time,
-  }: {
-    frame: WrappedCanvas;
-    time: number;
-  }): boolean {
+  private isFrameValid({ frame, time }: { frame: WrappedCanvas; time: number }): boolean {
     return time >= frame.timestamp && time < frame.timestamp + frame.duration;
   }
 
@@ -174,10 +151,7 @@ export class VideoCache {
           await sinkData.prefetchPromise;
         }
 
-        if (
-          sinkData.nextFrame &&
-          sinkData.nextFrame.timestamp <= targetTime + 0.05
-        ) {
+        if (sinkData.nextFrame && sinkData.nextFrame.timestamp <= targetTime + 0.05) {
           sinkData.currentFrame = sinkData.nextFrame;
           sinkData.nextFrame = null;
         } else {
@@ -251,11 +225,7 @@ export class VideoCache {
     sinkData.prefetchPromise = this.prefetchNextFrame({ sinkData });
   }
 
-  private async prefetchNextFrame({
-    sinkData,
-  }: {
-    sinkData: VideoSinkData;
-  }): Promise<void> {
+  private async prefetchNextFrame({ sinkData }: { sinkData: VideoSinkData }): Promise<void> {
     if (!sinkData.iterator) {
       sinkData.prefetching = false;
       sinkData.prefetchPromise = null;
@@ -282,13 +252,7 @@ export class VideoCache {
     }
   }
 
-  private async ensureSink({
-    mediaId,
-    file,
-  }: {
-    mediaId: string;
-    file: File;
-  }): Promise<void> {
+  private async ensureSink({ mediaId, file }: { mediaId: string; file: File }): Promise<void> {
     if (this.sinks.has(mediaId)) return;
 
     if (this.initPromises.has(mediaId)) {
@@ -306,13 +270,7 @@ export class VideoCache {
     }
   }
 
-  private async initializeSink({
-    mediaId,
-    file,
-  }: {
-    mediaId: string;
-    file: File;
-  }): Promise<void> {
+  private async initializeSink({ mediaId, file }: { mediaId: string; file: File }): Promise<void> {
     const input = new Input({
       source: new BlobSource(file),
       formats: ALL_FORMATS,

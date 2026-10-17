@@ -1,9 +1,5 @@
 // @ts-nocheck
-import {
-  useQuery,
-  type UseQueryOptions,
-  type UseQueryResult,
-} from "@tanstack/react-query";
+import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query";
 import { useSpacedriveClient } from "./useClient";
 import type { CoreQuery, LibraryQuery } from "../generated/types";
 import { WIRE_METHODS } from "../generated/types";
@@ -25,10 +21,7 @@ import { WIRE_METHODS } from "../generated/types";
  */
 export function useCoreQuery<T extends CoreQuery["type"]>(
   query: { type: T; input: Extract<CoreQuery, { type: T }>["input"] },
-  options?: Omit<
-    UseQueryOptions<Extract<CoreQuery, { type: T }>["output"]>,
-    "queryKey" | "queryFn"
-  >,
+  options?: Omit<UseQueryOptions<Extract<CoreQuery, { type: T }>["output"]>, "queryKey" | "queryFn">,
 ): UseQueryResult<Extract<CoreQuery, { type: T }>["output"]> {
   const client = useSpacedriveClient();
   const wireMethod = WIRE_METHODS.coreQueries[query.type]; // ← Auto-generated!
@@ -64,10 +57,7 @@ export function useCoreQuery<T extends CoreQuery["type"]>(
  */
 export function useLibraryQuery<T extends LibraryQuery["type"]>(
   query: { type: T; input: Extract<LibraryQuery, { type: T }>["input"] },
-  options?: Omit<
-    UseQueryOptions<Extract<LibraryQuery, { type: T }>["output"]>,
-    "queryKey" | "queryFn"
-  >,
+  options?: Omit<UseQueryOptions<Extract<LibraryQuery, { type: T }>["output"]>, "queryKey" | "queryFn">,
 ): UseQueryResult<Extract<LibraryQuery, { type: T }>["output"]> {
   const client = useSpacedriveClient();
   const wireMethod = WIRE_METHODS.libraryQueries[query.type]; // ← Auto-generated!
@@ -77,9 +67,7 @@ export function useLibraryQuery<T extends LibraryQuery["type"]>(
     queryKey: [query.type, libraryId, query.input],
     queryFn: () => {
       if (!libraryId) {
-        throw new Error(
-          "No library selected. Use client.switchToLibrary() first.",
-        );
+        throw new Error("No library selected. Use client.switchToLibrary() first.");
       }
 
       // Client.execute() automatically adds library_id to the request

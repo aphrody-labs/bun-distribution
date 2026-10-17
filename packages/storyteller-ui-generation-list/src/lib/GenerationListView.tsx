@@ -3,18 +3,10 @@ import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { PendingRow } from "./PendingRow";
 import { FailedRow } from "./FailedRow";
 import { GalleryRow } from "./GalleryRow";
-import {
-  useMergedGalleryEntries,
-  useInfiniteScrollSentinel,
-} from "./useGalleryEntries";
+import { useMergedGalleryEntries, useInfiniteScrollSentinel } from "./useGalleryEntries";
 import { usePrompts } from "./prompts-cache";
 import { useMediaPromptTokens } from "./media-prompt-token-cache";
-import type {
-  FailedJob,
-  GalleryItem,
-  GenerationMediaClass,
-  InProgressJob,
-} from "./types";
+import type { FailedJob, GalleryItem, GenerationMediaClass, InProgressJob } from "./types";
 
 // Constrains the feed to the promptbox width (max-w-5xl) and stacks one row
 // per generation: a single time-sorted merge of the in-progress / failed /
@@ -45,10 +37,7 @@ export interface GenerationListViewProps {
   /** Per-row hover quick-action cluster for completed rows. `modelId` and
    *  `promptToken` come from the prompt record resolved by the list (richer
    *  than the media file's own fields). */
-  renderGalleryActions?: (
-    item: GalleryItem,
-    ctx: { modelId?: string; promptToken?: string },
-  ) => ReactNode;
+  renderGalleryActions?: (item: GalleryItem, ctx: { modelId?: string; promptToken?: string }) => ReactNode;
   /** Copy-prompt feedback (e.g. host toast). */
   onCopyPromptResult?: (success: boolean) => void;
   /** Multi-select mode for completed rows (pending/failed rows are never
@@ -96,12 +85,7 @@ export function GenerationListView({
   // prompt token into the prompts cache (prompt token → text + model). Both
   // steps are batched + cached. Pending/failed entries already carry a prompt.
   const mediaTokensNeedingPrompt = useMemo(
-    () =>
-      mergedEntries.flatMap((entry) =>
-        entry.kind === "gallery" && !entry.item.promptToken
-          ? [entry.item.id]
-          : [],
-      ),
+    () => mergedEntries.flatMap(entry => (entry.kind === "gallery" && !entry.item.promptToken ? [entry.item.id] : [])),
     [mergedEntries],
   );
   const resolvedPromptTokens = useMediaPromptTokens(mediaTokensNeedingPrompt);
@@ -141,7 +125,7 @@ export function GenerationListView({
   return (
     <div className="mx-auto w-full max-w-5xl sm:px-4">
       <div className="flex flex-col divide-y divide-white/[0.04]">
-        {mergedEntries.map((entry) => {
+        {mergedEntries.map(entry => {
           if (entry.kind === "pending") {
             return (
               <PendingRow

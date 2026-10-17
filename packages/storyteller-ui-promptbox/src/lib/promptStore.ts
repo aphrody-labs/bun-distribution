@@ -49,19 +49,19 @@ export interface Prompt2DStore {
   setGenerationCount: (count: number) => void;
 }
 
-export const usePrompt2DStore = create<Prompt2DStore>()((set) => ({
+export const usePrompt2DStore = create<Prompt2DStore>()(set => ({
   prompt: "",
   aspectRatio: "wide",
   resolution: "1k",
   useSystemPrompt: true,
   referenceImages: [],
   generationCount: 1,
-  setPrompt: (prompt) => set({ prompt }),
-  setAspectRatio: (aspectRatio) => set({ aspectRatio }),
-  setResolution: (resolution) => set({ resolution }),
-  setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
-  setReferenceImages: (referenceImages) => set({ referenceImages }),
-  setGenerationCount: (generationCount) => set({ generationCount }),
+  setPrompt: prompt => set({ prompt }),
+  setAspectRatio: aspectRatio => set({ aspectRatio }),
+  setResolution: resolution => set({ resolution }),
+  setUseSystemPrompt: useSystemPrompt => set({ useSystemPrompt }),
+  setReferenceImages: referenceImages => set({ referenceImages }),
+  setGenerationCount: generationCount => set({ generationCount }),
 }));
 
 export { usePrompt2DStore as usePromptStore };
@@ -83,25 +83,22 @@ interface Prompt3DStore {
   pushPromptHistory: (prompt: string) => void;
 }
 
-export const usePrompt3DStore = create<Prompt3DStore>()((set) => ({
+export const usePrompt3DStore = create<Prompt3DStore>()(set => ({
   prompt: "",
   resolution: "1k",
   useSystemPrompt: true,
   referenceImages: [],
   promptHistory: [],
-  setPrompt: (prompt) => set({ prompt }),
-  setResolution: (resolution) => set({ resolution }),
-  setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
-  setReferenceImages: (referenceImages) => set({ referenceImages }),
-  pushPromptHistory: (prompt) =>
-    set((state) => {
+  setPrompt: prompt => set({ prompt }),
+  setResolution: resolution => set({ resolution }),
+  setUseSystemPrompt: useSystemPrompt => set({ useSystemPrompt }),
+  setReferenceImages: referenceImages => set({ referenceImages }),
+  pushPromptHistory: prompt =>
+    set(state => {
       const trimmed = prompt.trim();
       if (!trimmed) return state;
       // De-dupe: drop any existing copy, then unshift so it's newest-first.
-      const next = [
-        trimmed,
-        ...state.promptHistory.filter((p) => p !== trimmed),
-      ].slice(0, MAX_PROMPT_HISTORY);
+      const next = [trimmed, ...state.promptHistory.filter(p => p !== trimmed)].slice(0, MAX_PROMPT_HISTORY);
       return { promptHistory: next };
     }),
 }));
@@ -129,7 +126,7 @@ interface PromptImageStore {
   setCommonQuality: (quality: CommonQuality | undefined) => void;
 }
 
-export const usePromptImageStore = create<PromptImageStore>()((set) => ({
+export const usePromptImageStore = create<PromptImageStore>()(set => ({
   prompt: "",
   aspectRatio: "wide",
   resolution: "1k",
@@ -139,15 +136,15 @@ export const usePromptImageStore = create<PromptImageStore>()((set) => ({
   commonAspectRatio: undefined,
   commonResolution: undefined,
   commonQuality: undefined,
-  setPrompt: (prompt) => set({ prompt }),
-  setAspectRatio: (aspectRatio) => set({ aspectRatio }),
-  setResolution: (resolution) => set({ resolution }),
-  setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
-  setReferenceImages: (referenceImages) => set({ referenceImages }),
-  setGenerationCount: (generationCount) => set({ generationCount }),
-  setCommonAspectRatio: (commonAspectRatio) => set({ commonAspectRatio }),
-  setCommonResolution: (commonResolution) => set({ commonResolution }),
-  setCommonQuality: (commonQuality) => set({ commonQuality }),
+  setPrompt: prompt => set({ prompt }),
+  setAspectRatio: aspectRatio => set({ aspectRatio }),
+  setResolution: resolution => set({ resolution }),
+  setUseSystemPrompt: useSystemPrompt => set({ useSystemPrompt }),
+  setReferenceImages: referenceImages => set({ referenceImages }),
+  setGenerationCount: generationCount => set({ generationCount }),
+  setCommonAspectRatio: commonAspectRatio => set({ commonAspectRatio }),
+  setCommonResolution: commonResolution => set({ commonResolution }),
+  setCommonQuality: commonQuality => set({ commonQuality }),
 }));
 
 // ----- Video Prompt Box Store -----
@@ -184,7 +181,7 @@ interface PromptVideoStore {
   setGenerationCount: (count: number) => void;
 }
 
-export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
+export const usePromptVideoStore = create<PromptVideoStore>()(set => ({
   prompt: "",
   resolution: "720p",
   aspectRatio: null,
@@ -199,20 +196,20 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   outputFormat: null,
   inputMode: "reference",
   generationCount: 1,
-  setPrompt: (prompt) => set({ prompt }),
-  setResolution: (resolution) => set({ resolution }),
-  setAspectRatio: (aspectRatio) => set({ aspectRatio }),
-  setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
-  setReferenceImages: (referenceImages) => set({ referenceImages }),
-  setEndFrameImage: (endFrameImage) => set({ endFrameImage }),
-  setReferenceVideos: (referenceVideos) => set({ referenceVideos }),
-  setReferenceAudios: (referenceAudios) => set({ referenceAudios }),
-  setGenerateWithSound: (generateWithSound) => set({ generateWithSound }),
-  setDuration: (duration) => set({ duration }),
-  setBitrate: (bitrate) => set({ bitrate }),
-  setOutputFormat: (outputFormat) => set({ outputFormat }),
-  setInputMode: (inputMode) => set({ inputMode }),
-  setGenerationCount: (generationCount) => set({ generationCount }),
+  setPrompt: prompt => set({ prompt }),
+  setResolution: resolution => set({ resolution }),
+  setAspectRatio: aspectRatio => set({ aspectRatio }),
+  setUseSystemPrompt: useSystemPrompt => set({ useSystemPrompt }),
+  setReferenceImages: referenceImages => set({ referenceImages }),
+  setEndFrameImage: endFrameImage => set({ endFrameImage }),
+  setReferenceVideos: referenceVideos => set({ referenceVideos }),
+  setReferenceAudios: referenceAudios => set({ referenceAudios }),
+  setGenerateWithSound: generateWithSound => set({ generateWithSound }),
+  setDuration: duration => set({ duration }),
+  setBitrate: bitrate => set({ bitrate }),
+  setOutputFormat: outputFormat => set({ outputFormat }),
+  setInputMode: inputMode => set({ inputMode }),
+  setGenerationCount: generationCount => set({ generationCount }),
 }));
 
 // ----- Audio Prompt Box Store -----
@@ -253,7 +250,7 @@ interface PromptAudioStore {
   setReferenceImages: (images: RefImage[]) => void;
 }
 
-export const usePromptAudioStore = create<PromptAudioStore>()((set) => ({
+export const usePromptAudioStore = create<PromptAudioStore>()(set => ({
   prompt: "",
   stylePrompt: "",
   selectedModelId: null,
@@ -268,20 +265,20 @@ export const usePromptAudioStore = create<PromptAudioStore>()((set) => ({
   pitch: 0,
   referenceAudios: [],
   referenceImages: [],
-  setPrompt: (prompt) => set({ prompt }),
-  setStylePrompt: (stylePrompt) => set({ stylePrompt }),
-  setSelectedModelId: (selectedModelId) => set({ selectedModelId }),
-  setIsInstrumental: (isInstrumental) => set({ isInstrumental }),
-  setKeepLyrics: (keepLyrics) => set({ keepLyrics }),
-  setIsLoopable: (isLoopable) => set({ isLoopable }),
-  setBpm: (bpm) => set({ bpm }),
-  setMusicalKey: (musicalKey) => set({ musicalKey }),
-  setSampleRateHz: (sampleRateHz) => set({ sampleRateHz }),
-  setSpeed: (speed) => set({ speed }),
-  setVolume: (volume) => set({ volume }),
-  setPitch: (pitch) => set({ pitch }),
-  setReferenceAudios: (referenceAudios) => set({ referenceAudios }),
-  setReferenceImages: (referenceImages) => set({ referenceImages }),
+  setPrompt: prompt => set({ prompt }),
+  setStylePrompt: stylePrompt => set({ stylePrompt }),
+  setSelectedModelId: selectedModelId => set({ selectedModelId }),
+  setIsInstrumental: isInstrumental => set({ isInstrumental }),
+  setKeepLyrics: keepLyrics => set({ keepLyrics }),
+  setIsLoopable: isLoopable => set({ isLoopable }),
+  setBpm: bpm => set({ bpm }),
+  setMusicalKey: musicalKey => set({ musicalKey }),
+  setSampleRateHz: sampleRateHz => set({ sampleRateHz }),
+  setSpeed: speed => set({ speed }),
+  setVolume: volume => set({ volume }),
+  setPitch: pitch => set({ pitch }),
+  setReferenceAudios: referenceAudios => set({ referenceAudios }),
+  setReferenceImages: referenceImages => set({ referenceImages }),
 }));
 
 // ----- Edit Prompt Box Store -----
@@ -296,13 +293,13 @@ interface PromptEditStore {
   setResolution: (resolution: Resolution) => void;
 }
 
-export const usePromptEditStore = create<PromptEditStore>()((set) => ({
+export const usePromptEditStore = create<PromptEditStore>()(set => ({
   referenceImages: [],
   aspectRatio: "auto",
   resolution: "1k",
-  setReferenceImages: (referenceImages) => set({ referenceImages }),
-  setAspectRatio: (aspectRatio) => set({ aspectRatio }),
-  setResolution: (resolution) => set({ resolution }),
+  setReferenceImages: referenceImages => set({ referenceImages }),
+  setAspectRatio: aspectRatio => set({ aspectRatio }),
+  setResolution: resolution => set({ resolution }),
 }));
 
 // ----- Enter-to-Generate Preference Store -----
@@ -315,9 +312,7 @@ const ENTER_TO_GENERATE_STORAGE_KEY = "artcraft_enter_to_generate";
 const readEnterToGenerate = (): boolean => {
   if (typeof window === "undefined") return false;
   try {
-    return (
-      window.localStorage.getItem(ENTER_TO_GENERATE_STORAGE_KEY) === "true"
-    );
+    return window.localStorage.getItem(ENTER_TO_GENERATE_STORAGE_KEY) === "true";
   } catch {
     return false;
   }
@@ -341,15 +336,13 @@ interface EnterToGenerateStore {
   setEnabled: (enabled: boolean) => void;
 }
 
-export const useEnterToGenerateStore = create<EnterToGenerateStore>()(
-  (set) => ({
-    enabled: readEnterToGenerate(),
-    setEnabled: (enabled) => {
-      writeEnterToGenerate(enabled);
-      set({ enabled });
-    },
-  }),
-);
+export const useEnterToGenerateStore = create<EnterToGenerateStore>()(set => ({
+  enabled: readEnterToGenerate(),
+  setEnabled: enabled => {
+    writeEnterToGenerate(enabled);
+    set({ enabled });
+  },
+}));
 
 // ----- Characters Store -----
 export interface StoredCharacter {
@@ -368,19 +361,17 @@ interface CharactersStore {
   setLoaded: (loaded: boolean) => void;
 }
 
-export const useCharactersStore = create<CharactersStore>()((set) => ({
+export const useCharactersStore = create<CharactersStore>()(set => ({
   characters: [],
   loaded: false,
-  setCharacters: (characters) => set({ characters }),
+  setCharacters: characters => set({ characters }),
   updateCharacter: (token, updates) =>
-    set((state) => ({
-      characters: state.characters.map((c) =>
-        c.character_token === token ? { ...c, ...updates } : c,
-      ),
+    set(state => ({
+      characters: state.characters.map(c => (c.character_token === token ? { ...c, ...updates } : c)),
     })),
-  removeCharacter: (token) =>
-    set((state) => ({
-      characters: state.characters.filter((c) => c.character_token !== token),
+  removeCharacter: token =>
+    set(state => ({
+      characters: state.characters.filter(c => c.character_token !== token),
     })),
-  setLoaded: (loaded) => set({ loaded }),
+  setLoaded: loaded => set({ loaded }),
 }));

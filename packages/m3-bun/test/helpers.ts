@@ -19,16 +19,14 @@ export function fixtureCopy(): string {
   const dir = mkdtempSync(join(import.meta.dir, "fixtures", ".copy-"));
   cpSync(FIXTURE, dir, {
     recursive: true,
-    filter: (src) =>
-      !/\/(dist|bin|release|node_modules|\.copy-[^/]*)(\/|$)/.test(src),
+    filter: src => !/\/(dist|bin|release|node_modules|\.copy-[^/]*)(\/|$)/.test(src),
   });
   made.push(dir);
   return dir;
 }
 
 export function cleanup(): void {
-  for (const dir of made.splice(0))
-    rmSync(dir, { recursive: true, force: true });
+  for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
 }
 
 /** A port that is free right now. */

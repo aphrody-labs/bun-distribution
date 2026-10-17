@@ -5,33 +5,126 @@ interface Functions {
   /** wdspxe.dll!PxeAsyncRecvDone */
   PxeAsyncRecvDone(hClientRequest: Win32Pointer, Action: number): number;
   /** wdspxe.dll!PxeDhcpAppendOption */
-  PxeDhcpAppendOption(pReplyPacket: Win32Pointer, uMaxReplyPacketLen: number, puReplyPacketLen: Win32Pointer, bOption: number, bOptionLen: number, pValue: Win32Pointer): number;
+  PxeDhcpAppendOption(
+    pReplyPacket: Win32Pointer,
+    uMaxReplyPacketLen: number,
+    puReplyPacketLen: Win32Pointer,
+    bOption: number,
+    bOptionLen: number,
+    pValue: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpAppendOptionRaw */
-  PxeDhcpAppendOptionRaw(pReplyPacket: Win32Pointer, uMaxReplyPacketLen: number, puReplyPacketLen: Win32Pointer, uBufferLen: number, pBuffer: Win32Pointer): number;
+  PxeDhcpAppendOptionRaw(
+    pReplyPacket: Win32Pointer,
+    uMaxReplyPacketLen: number,
+    puReplyPacketLen: Win32Pointer,
+    uBufferLen: number,
+    pBuffer: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpGetOptionValue */
-  PxeDhcpGetOptionValue(pPacket: Win32Pointer, uPacketLen: number, uInstance: number, bOption: number, pbOptionLen: Win32Pointer, ppOptionValue: Win32Pointer): number;
+  PxeDhcpGetOptionValue(
+    pPacket: Win32Pointer,
+    uPacketLen: number,
+    uInstance: number,
+    bOption: number,
+    pbOptionLen: Win32Pointer,
+    ppOptionValue: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpGetVendorOptionValue */
-  PxeDhcpGetVendorOptionValue(pPacket: Win32Pointer, uPacketLen: number, bOption: number, uInstance: number, pbOptionLen: Win32Pointer, ppOptionValue: Win32Pointer): number;
+  PxeDhcpGetVendorOptionValue(
+    pPacket: Win32Pointer,
+    uPacketLen: number,
+    bOption: number,
+    uInstance: number,
+    pbOptionLen: Win32Pointer,
+    ppOptionValue: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpInitialize */
-  PxeDhcpInitialize(pRecvPacket: Win32Pointer, uRecvPacketLen: number, pReplyPacket: Win32Pointer, uMaxReplyPacketLen: number, puReplyPacketLen: Win32Pointer): number;
+  PxeDhcpInitialize(
+    pRecvPacket: Win32Pointer,
+    uRecvPacketLen: number,
+    pReplyPacket: Win32Pointer,
+    uMaxReplyPacketLen: number,
+    puReplyPacketLen: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpIsValid */
-  PxeDhcpIsValid(pPacket: Win32Pointer, uPacketLen: number, bRequestPacket: number, pbPxeOptionPresent: Win32Pointer): number;
+  PxeDhcpIsValid(
+    pPacket: Win32Pointer,
+    uPacketLen: number,
+    bRequestPacket: number,
+    pbPxeOptionPresent: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpv6AppendOption */
-  PxeDhcpv6AppendOption(pReply: Win32Pointer, cbReply: number, pcbReplyUsed: Win32Pointer, wOptionType: number, cbOption: number, pOption: Win32Pointer): number;
+  PxeDhcpv6AppendOption(
+    pReply: Win32Pointer,
+    cbReply: number,
+    pcbReplyUsed: Win32Pointer,
+    wOptionType: number,
+    cbOption: number,
+    pOption: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpv6AppendOptionRaw */
-  PxeDhcpv6AppendOptionRaw(pReply: Win32Pointer, cbReply: number, pcbReplyUsed: Win32Pointer, cbBuffer: number, pBuffer: Win32Pointer): number;
+  PxeDhcpv6AppendOptionRaw(
+    pReply: Win32Pointer,
+    cbReply: number,
+    pcbReplyUsed: Win32Pointer,
+    cbBuffer: number,
+    pBuffer: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpv6CreateRelayRepl */
-  PxeDhcpv6CreateRelayRepl(pRelayMessages: Win32Pointer, nRelayMessages: number, pInnerPacket: Win32Pointer, cbInnerPacket: number, pReplyBuffer: Win32Pointer, cbReplyBuffer: number, pcbReplyBuffer: Win32Pointer): number;
+  PxeDhcpv6CreateRelayRepl(
+    pRelayMessages: Win32Pointer,
+    nRelayMessages: number,
+    pInnerPacket: Win32Pointer,
+    cbInnerPacket: number,
+    pReplyBuffer: Win32Pointer,
+    cbReplyBuffer: number,
+    pcbReplyBuffer: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpv6GetOptionValue */
-  PxeDhcpv6GetOptionValue(pPacket: Win32Pointer, uPacketLen: number, uInstance: number, wOption: number, pwOptionLen: Win32Pointer, ppOptionValue: Win32Pointer): number;
+  PxeDhcpv6GetOptionValue(
+    pPacket: Win32Pointer,
+    uPacketLen: number,
+    uInstance: number,
+    wOption: number,
+    pwOptionLen: Win32Pointer,
+    ppOptionValue: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpv6GetVendorOptionValue */
-  PxeDhcpv6GetVendorOptionValue(pPacket: Win32Pointer, uPacketLen: number, dwEnterpriseNumber: number, wOption: number, uInstance: number, pwOptionLen: Win32Pointer, ppOptionValue: Win32Pointer): number;
+  PxeDhcpv6GetVendorOptionValue(
+    pPacket: Win32Pointer,
+    uPacketLen: number,
+    dwEnterpriseNumber: number,
+    wOption: number,
+    uInstance: number,
+    pwOptionLen: Win32Pointer,
+    ppOptionValue: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpv6Initialize */
-  PxeDhcpv6Initialize(pRequest: Win32Pointer, cbRequest: number, pReply: Win32Pointer, cbReply: number, pcbReplyUsed: Win32Pointer): number;
+  PxeDhcpv6Initialize(
+    pRequest: Win32Pointer,
+    cbRequest: number,
+    pReply: Win32Pointer,
+    cbReply: number,
+    pcbReplyUsed: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpv6IsValid */
-  PxeDhcpv6IsValid(pPacket: Win32Pointer, uPacketLen: number, bRequestPacket: number, pbPxeOptionPresent: Win32Pointer): number;
+  PxeDhcpv6IsValid(
+    pPacket: Win32Pointer,
+    uPacketLen: number,
+    bRequestPacket: number,
+    pbPxeOptionPresent: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeDhcpv6ParseRelayForw */
-  PxeDhcpv6ParseRelayForw(pRelayForwPacket: Win32Pointer, uRelayForwPacketLen: number, pRelayMessages: Win32Pointer, nRelayMessages: number, pnRelayMessages: Win32Pointer, ppInnerPacket: Win32Pointer, pcbInnerPacket: Win32Pointer): number;
+  PxeDhcpv6ParseRelayForw(
+    pRelayForwPacket: Win32Pointer,
+    uRelayForwPacketLen: number,
+    pRelayMessages: Win32Pointer,
+    nRelayMessages: number,
+    pnRelayMessages: Win32Pointer,
+    ppInnerPacket: Win32Pointer,
+    pcbInnerPacket: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeGetServerInfo */
   PxeGetServerInfo(uInfoType: number, pBuffer: Win32Pointer, uBufferLen: number): number;
   /** wdspxe.dll!PxeGetServerInfoEx */
@@ -51,13 +144,29 @@ interface Functions {
   /** wdspxe.dll!PxeProviderQueryIndex */
   PxeProviderQueryIndex(pszProviderName: string | Win32Pointer, puIndex: Win32Pointer): number;
   /** wdspxe.dll!PxeProviderRegister */
-  PxeProviderRegister(pszProviderName: string | Win32Pointer, pszModulePath: string | Win32Pointer, Index: number, bIsCritical: number, phProviderKey: Win32Pointer): number;
+  PxeProviderRegister(
+    pszProviderName: string | Win32Pointer,
+    pszModulePath: string | Win32Pointer,
+    Index: number,
+    bIsCritical: number,
+    phProviderKey: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeProviderSetAttribute */
-  PxeProviderSetAttribute(hProvider: Win32Pointer, Attribute: number, pParameterBuffer: Win32Pointer, uParamLen: number): number;
+  PxeProviderSetAttribute(
+    hProvider: Win32Pointer,
+    Attribute: number,
+    pParameterBuffer: Win32Pointer,
+    uParamLen: number,
+  ): number;
   /** wdspxe.dll!PxeProviderUnRegister */
   PxeProviderUnRegister(pszProviderName: string | Win32Pointer): number;
   /** wdspxe.dll!PxeRegisterCallback */
-  PxeRegisterCallback(hProvider: Win32Pointer, CallbackType: number, pCallbackFunction: Win32Pointer, pContext: Win32Pointer): number;
+  PxeRegisterCallback(
+    hProvider: Win32Pointer,
+    CallbackType: number,
+    pCallbackFunction: Win32Pointer,
+    pContext: Win32Pointer,
+  ): number;
   /** wdspxe.dll!PxeSendReply */
   PxeSendReply(hClientRequest: Win32Pointer, pPacket: Win32Pointer, uPacketLen: number, pAddress: Win32Pointer): number;
   /** wdspxe.dll!PxeTrace */

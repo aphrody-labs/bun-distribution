@@ -125,7 +125,11 @@ async function runNative(
     timedOut = true;
     child.kill();
   }, timeoutMs);
-  const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
+  const [stdout, stderr, code] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
   clearTimeout(timer);
   const ms = Math.round(performance.now() - started);
   // "<machine>: N frames" ends a headless run; the frame hash is the SHA-256 of the final screens.
@@ -159,10 +163,12 @@ async function biosFor(system: SystemDefinition): Promise<{ path: string; owned:
   const wanted = system.native?.bios;
   if (!wanted) return undefined;
   const fits = (bytes: number) => system.native!.machine !== "psx" || bytes === 512 * 1024;
-  const owned = listOwned({ kind: "firmware" }).find((dump) => dump.console === wanted.console && dump.status !== "bad-dump" && fits(dump.size));
+  const owned = listOwned({ kind: "firmware" }).find(
+    dump => dump.console === wanted.console && dump.status !== "bad-dump" && fits(dump.size),
+  );
   if (owned) return { path: storePath(owned), owned: true };
   const free = (await listFirmware(wanted.console).catch(() => [])).find(
-    (image) => fits(image.bytes) && (image as { origin?: string }).origin !== "owned",
+    image => fits(image.bytes) && (image as { origin?: string }).origin !== "owned",
   );
   return free ? { path: join(defaultFirmwareStore(), free.console, free.file), owned: false } : undefined;
 }
@@ -172,24 +178,32 @@ function label(dump: OwnedDump): string {
 }
 
 /** Runs the owned titles and BIOS; returns the report path and every result. */
-export async function testOwned(options: OwnedTestOptions = {}): Promise<{ run: string; report: string; results: OwnedTestResult[] }> {
+export async function testOwned(
+  options: OwnedTestOptions = {},
+): Promise<{ run: string; report: string; results: OwnedTestResult[] }> {
   const frames = options.frames ?? 180;
   const timeoutMs = options.timeoutMs ?? 120_000;
   const run = new Date().toISOString().replace(/[:.]/g, "-");
   const out = join(ownedPaths().reports, run);
   await mkdir(out, { recursive: true });
   const { systems } = await loadSystems();
-  const systemById = new Map(systems.map((system) => [system.id, system]));
+  const systemById = new Map(systems.map(system => [system.id, system]));
   const selected = (dump: OwnedDump) =>
     (!options.system || dump.system === options.system) &&
-    (!options.only?.length || options.only.some((sha) => dump.sha256.startsWith(sha.toLowerCase())));
+    (!options.only?.length || options.only.some(sha => dump.sha256.startsWith(sha.toLowerCase())));
   const results: OwnedTestResult[] = [];
 
   for (const dump of options.roms === false ? [] : listOwned({ kind: "rom" }).filter(selected)) {
     const base = { sha256: dump.sha256, name: label(dump), mode: "rom" as const, system: dump.system };
     const system = dump.system ? systemById.get(dump.system) : undefined;
     if (!system) {
-      results.push({ ...base, route: null, status: "skipped", ms: 0, detail: "system unknown; re-import with --system" });
+      results.push({
+        ...base,
+        route: null,
+        status: "skipped",
+        ms: 0,
+        detail: "system unknown; re-import with --system",
+      });
       continue;
     }
     try {
@@ -197,7 +211,15 @@ export async function testOwned(options: OwnedTestOptions = {}): Promise<{ run: 
       const route = await chooseRoute(game);
       if (route.kind === "native") {
         const bios = await biosFor(system);
-        const result = await runNative(system.native!.machine, storePath(dump), bios?.path, frames, timeoutMs, out, `${dump.sha256.slice(0, 12)}-rom`);
+        const result = await runNative(
+          system.native!.machine,
+          storePath(dump),
+          bios?.path,
+          frames,
+          timeoutMs,
+          out,
+          `${dump.sha256.slice(0, 12)}-rom`,
+        );
         results.push({ ...base, route: route.id, ...result, ...(bios ? { bios: bios.owned ? "owned" : "free" } : {}) });
       } else {
         const launched = await launchGame(game, { route: route.id, check: true, frames, timeoutMs });
@@ -210,36 +232,74 @@ export async function testOwned(options: OwnedTestOptions = {}): Promise<{ run: 
         });
       }
     } catch (error) {
-      results.push({ ...base, route: null, status: "skipped", ms: 0, detail: error instanceof Error ? error.message : String(error) });
+      results.push({
+        ...base,
+        route: null,
+        status: "skipped",
+        ms: 0,
+        detail: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
   for (const dump of options.bios === false ? [] : listOwned({ kind: "firmware" }).filter(selected)) {
-    const system = systems.find((item) => item.native?.bios?.console === dump.console);
+    const system = systems.find(item => item.native?.bios?.console === dump.console);
     const base = { sha256: dump.sha256, name: label(dump), system: system?.id ?? dump.system };
     if (!system?.native) {
-      results.push({ ...base, mode: "bios", route: null, status: "skipped", ms: 0, detail: `no native machine boots ${dump.console} firmware; libretro cores read it from usr/share/bun-engine/system` });
+      results.push({
+        ...base,
+        mode: "bios",
+        route: null,
+        status: "skipped",
+        ms: 0,
+        detail: `no native machine boots ${dump.console} firmware; libretro cores read it from usr/share/bun-engine/system`,
+      });
       continue;
     }
     // The BIOS boots alone (PlayStation shell) or under a free test cartridge (GBA intro).
     let media = join(out, "empty.bin");
     if (system.native.machine === "psx") await Bun.write(media, new Uint8Array());
     else {
-      const free = (await pm.freeRoms(dump.console)).find((rom) => system.native!.extensions.some((ext) => rom.path.endsWith(`.${ext}`)));
+      const free = (await pm.freeRoms(dump.console)).find(rom =>
+        system.native!.extensions.some(ext => rom.path.endsWith(`.${ext}`)),
+      );
       if (!free) {
-        results.push({ ...base, mode: "bios", route: null, status: "skipped", ms: 0, detail: "no free test cartridge for this machine" });
+        results.push({
+          ...base,
+          mode: "bios",
+          route: null,
+          status: "skipped",
+          ms: 0,
+          detail: "no free test cartridge for this machine",
+        });
         continue;
       }
       media = join(repoRoot, free.path);
     }
     const machine = system.native.machine;
-    const owned = await runNative(machine, media, storePath(dump), frames, timeoutMs, out, `${dump.sha256.slice(0, 12)}-bios`);
+    const owned = await runNative(
+      machine,
+      media,
+      storePath(dump),
+      frames,
+      timeoutMs,
+      out,
+      `${dump.sha256.slice(0, 12)}-bios`,
+    );
     results.push({ ...base, mode: "bios", route: `native:${machine}`, bios: "owned", ...owned });
     const free = (await listFirmware(dump.console).catch(() => [])).find(
-      (image) => image.sha256 !== dump.sha256 && (image as { origin?: string }).origin !== "owned",
+      image => image.sha256 !== dump.sha256 && (image as { origin?: string }).origin !== "owned",
     );
     if (free) {
-      const reference = await runNative(machine, media, join(defaultFirmwareStore(), free.console, free.file), frames, timeoutMs, out, `${dump.sha256.slice(0, 12)}-bios-free`);
+      const reference = await runNative(
+        machine,
+        media,
+        join(defaultFirmwareStore(), free.console, free.file),
+        frames,
+        timeoutMs,
+        out,
+        `${dump.sha256.slice(0, 12)}-bios-free`,
+      );
       results.push({ ...base, mode: "bios-free", route: `native:${machine}`, bios: free.file, ...reference });
     }
   }

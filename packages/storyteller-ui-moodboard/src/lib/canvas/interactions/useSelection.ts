@@ -5,11 +5,7 @@ import { Vec2 } from "../types";
 import { stagePointerPos } from "./useStagePointer";
 import { pointInPolygon } from "../layout/pointInPolygon";
 import { polygonIntersectsRect } from "../layout/segmentsIntersect";
-import {
-  rectCorners,
-  rectFromPoints,
-  rectsIntersect,
-} from "../layout/geometry";
+import { rectCorners, rectFromPoints, rectsIntersect } from "../layout/geometry";
 
 const MIN_DRAG = 4; // screen px before a press becomes a drag
 
@@ -32,10 +28,10 @@ export const useSelection = (stageRef: React.RefObject<Konva.Stage | null>) => {
     mode: null,
   });
 
-  const tool = useMoodboardStore((s) => s.tool);
-  const setMarquee = useMoodboardStore((s) => s.setMarquee);
-  const setLassoPath = useMoodboardStore((s) => s.setLassoPath);
-  const setSelection = useMoodboardStore((s) => s.setSelection);
+  const tool = useMoodboardStore(s => s.tool);
+  const setMarquee = useMoodboardStore(s => s.setMarquee);
+  const setLassoPath = useMoodboardStore(s => s.setLassoPath);
+  const setSelection = useMoodboardStore(s => s.setSelection);
 
   useEffect(() => {
     if (tool !== "select" && tool !== "lasso") return;
@@ -78,9 +74,7 @@ export const useSelection = (stageRef: React.RefObject<Konva.Stage | null>) => {
 
     const commitSelection = () => {
       const { nodes, rootOrder } = useMoodboardStore.getState();
-      const candidates = rootOrder
-        .map((id) => nodes[id])
-        .filter((n): n is NonNullable<typeof n> => Boolean(n));
+      const candidates = rootOrder.map(id => nodes[id]).filter((n): n is NonNullable<typeof n> => Boolean(n));
 
       if (drag.current.mode === "rect") {
         const rect = useMoodboardStore.getState().transient.marquee;
@@ -88,13 +82,8 @@ export const useSelection = (stageRef: React.RefObject<Konva.Stage | null>) => {
           setSelection([]);
         } else {
           const hit = candidates
-            .filter((n) =>
-              rectsIntersect(
-                { x: n.x, y: n.y, width: n.width, height: n.height },
-                rect,
-              ),
-            )
-            .map((n) => n.id);
+            .filter(n => rectsIntersect({ x: n.x, y: n.y, width: n.width, height: n.height }, rect))
+            .map(n => n.id);
           setSelection(hit);
         }
         setMarquee(null);
@@ -105,13 +94,13 @@ export const useSelection = (stageRef: React.RefObject<Konva.Stage | null>) => {
         } else {
           const closed = [...path, path[0]];
           const hit = candidates
-            .filter((n) => {
+            .filter(n => {
               const corners = rectCorners(n);
-              if (corners.some((c) => pointInPolygon(c, closed))) return true;
+              if (corners.some(c => pointInPolygon(c, closed))) return true;
               if (polygonIntersectsRect(closed, n)) return true;
               return false;
             })
-            .map((n) => n.id);
+            .map(n => n.id);
           setSelection(hit);
         }
         setLassoPath(null);

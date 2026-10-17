@@ -99,11 +99,8 @@ export function capabilityFor(libraryId: string): {
   title: string;
   description: string;
 } {
-  const capability = capabilities.find(
-    (entry) => entry.libraryId === libraryId,
-  );
-  if (capability)
-    return { title: capability.title, description: capability.description };
+  const capability = capabilities.find(entry => entry.libraryId === libraryId);
+  if (capability) return { title: capability.title, description: capability.description };
   if (libraryId === "craft-libs")
     return {
       title: "Shared libraries",
@@ -118,50 +115,34 @@ export function capabilityFor(libraryId: string): {
 }
 
 export function appCapabilityFor(appId: string): AppCapability | undefined {
-  const entry = capabilities.find((capability) => capability.id === appId);
+  const entry = capabilities.find(capability => capability.id === appId);
   return entry ? { ...entry } : undefined;
 }
 
-export function appCapabilityForLibrary(
-  libraryId: string,
-): AppCapability | undefined {
-  const capability = capabilities.find(
-    (entry) => entry.libraryId === libraryId,
-  );
+export function appCapabilityForLibrary(libraryId: string): AppCapability | undefined {
+  const capability = capabilities.find(entry => entry.libraryId === libraryId);
   return capability ? { ...capability } : undefined;
 }
 
-export function appCapabilities(
-  config: Pick<Config, "modules" | "priorities">,
-): AppCapability[] {
-  const engines = new Set(
-    config.modules
-      .filter((module) => module.role === "engine")
-      .map((module) => module.id),
-  );
+export function appCapabilities(config: Pick<Config, "modules" | "priorities">): AppCapability[] {
+  const engines = new Set(config.modules.filter(module => module.role === "engine").map(module => module.id));
   for (const id of engines) {
-    if (!capabilities.some((entry) => entry.libraryId === id))
-      throw new Error(`Application capability missing: ${id}`);
+    if (!capabilities.some(entry => entry.libraryId === id)) throw new Error(`Application capability missing: ${id}`);
   }
-  const selected = capabilities.filter((entry) => engines.has(entry.libraryId));
+  const selected = capabilities.filter(entry => engines.has(entry.libraryId));
   const priorities = config.priorities ?? [];
   return selected
-    .map((entry) => ({ ...entry }))
-    .sort(
-      (a, b) =>
-        Number(priorities.includes(b.libraryId)) -
-        Number(priorities.includes(a.libraryId)),
-    );
+    .map(entry => ({ ...entry }))
+    .sort((a, b) => Number(priorities.includes(b.libraryId)) - Number(priorities.includes(a.libraryId)));
 }
 
 export function appHostname(
   capabilityId: string,
   config: Pick<Config, "modules" | "priorities" | "deployment">,
 ): string {
-  if (!appCapabilities(config).some((entry) => entry.id === capabilityId))
+  if (!appCapabilities(config).some(entry => entry.id === capabilityId))
     throw new Error(`Unknown application: ${capabilityId}`);
-  if (!config.deployment)
-    throw new Error("Application deployment settings are required.");
+  if (!config.deployment) throw new Error("Application deployment settings are required.");
   const label = `${config.deployment.appPrefix}${capabilityId}`;
   if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))
     throw new Error(`Invalid application hostname: ${capabilityId}`);

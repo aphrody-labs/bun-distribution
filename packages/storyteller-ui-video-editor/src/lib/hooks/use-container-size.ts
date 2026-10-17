@@ -1,11 +1,7 @@
 import { useCallback, useState } from "react";
 import { useResizeObserver } from "./use-resize-observer";
 
-export function useContainerSize({
-  containerRef,
-}: {
-  containerRef: React.RefObject<HTMLElement | null>;
-}) {
+export function useContainerSize({ containerRef }: { containerRef: React.RefObject<HTMLElement | null> }) {
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   const onResize = useCallback((entry: ResizeObserverEntry) => {

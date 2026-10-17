@@ -3,13 +3,36 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** version.dll!GetFileVersionInfoA */
-  GetFileVersionInfoA(lptstrFilename: string | Win32Pointer, dwHandle: number, dwLen: number, lpData: Win32Pointer): number;
+  GetFileVersionInfoA(
+    lptstrFilename: string | Win32Pointer,
+    dwHandle: number,
+    dwLen: number,
+    lpData: Win32Pointer,
+  ): number;
   /** version.dll!GetFileVersionInfoExA */
-  GetFileVersionInfoExA(dwFlags: number, lpwstrFilename: string | Win32Pointer, dwHandle: number, dwLen: number, lpData: Win32Pointer): number;
+  GetFileVersionInfoExA(
+    dwFlags: number,
+    lpwstrFilename: string | Win32Pointer,
+    dwHandle: number,
+    dwLen: number,
+    lpData: Win32Pointer,
+  ): number;
   /** version.dll!GetFileVersionInfoExW */
-  GetFileVersionInfoExW(dwFlags: number, lpwstrFilename: string | Win32Pointer, dwHandle: number, dwLen: number, lpData: Win32Pointer): number;
+  GetFileVersionInfoExW(
+    dwFlags: number,
+    lpwstrFilename: string | Win32Pointer,
+    dwHandle: number,
+    dwLen: number,
+    lpData: Win32Pointer,
+  ): number;
   /** version.dll!GetFileVersionInfoExW */
-  GetFileVersionInfoEx(dwFlags: number, lpwstrFilename: string | Win32Pointer, dwHandle: number, dwLen: number, lpData: Win32Pointer): number;
+  GetFileVersionInfoEx(
+    dwFlags: number,
+    lpwstrFilename: string | Win32Pointer,
+    dwHandle: number,
+    dwLen: number,
+    lpData: Win32Pointer,
+  ): number;
   /** version.dll!GetFileVersionInfoSizeA */
   GetFileVersionInfoSizeA(lptstrFilename: string | Win32Pointer, lpdwHandle: Win32Pointer): number;
   /** version.dll!GetFileVersionInfoSizeExA */
@@ -23,27 +46,106 @@ interface Functions {
   /** version.dll!GetFileVersionInfoSizeW */
   GetFileVersionInfoSize(lptstrFilename: string | Win32Pointer, lpdwHandle: Win32Pointer): number;
   /** version.dll!GetFileVersionInfoW */
-  GetFileVersionInfoW(lptstrFilename: string | Win32Pointer, dwHandle: number, dwLen: number, lpData: Win32Pointer): number;
+  GetFileVersionInfoW(
+    lptstrFilename: string | Win32Pointer,
+    dwHandle: number,
+    dwLen: number,
+    lpData: Win32Pointer,
+  ): number;
   /** version.dll!GetFileVersionInfoW */
-  GetFileVersionInfo(lptstrFilename: string | Win32Pointer, dwHandle: number, dwLen: number, lpData: Win32Pointer): number;
+  GetFileVersionInfo(
+    lptstrFilename: string | Win32Pointer,
+    dwHandle: number,
+    dwLen: number,
+    lpData: Win32Pointer,
+  ): number;
   /** version.dll!VerFindFileA */
-  VerFindFileA(uFlags: number, szFileName: string | Win32Pointer, szWinDir: string | Win32Pointer, szAppDir: string | Win32Pointer, szCurDir: string | Win32Pointer, puCurDirLen: Win32Pointer, szDestDir: string | Win32Pointer, puDestDirLen: Win32Pointer): number;
+  VerFindFileA(
+    uFlags: number,
+    szFileName: string | Win32Pointer,
+    szWinDir: string | Win32Pointer,
+    szAppDir: string | Win32Pointer,
+    szCurDir: string | Win32Pointer,
+    puCurDirLen: Win32Pointer,
+    szDestDir: string | Win32Pointer,
+    puDestDirLen: Win32Pointer,
+  ): number;
   /** version.dll!VerFindFileW */
-  VerFindFileW(uFlags: number, szFileName: string | Win32Pointer, szWinDir: string | Win32Pointer, szAppDir: string | Win32Pointer, szCurDir: string | Win32Pointer, puCurDirLen: Win32Pointer, szDestDir: string | Win32Pointer, puDestDirLen: Win32Pointer): number;
+  VerFindFileW(
+    uFlags: number,
+    szFileName: string | Win32Pointer,
+    szWinDir: string | Win32Pointer,
+    szAppDir: string | Win32Pointer,
+    szCurDir: string | Win32Pointer,
+    puCurDirLen: Win32Pointer,
+    szDestDir: string | Win32Pointer,
+    puDestDirLen: Win32Pointer,
+  ): number;
   /** version.dll!VerFindFileW */
-  VerFindFile(uFlags: number, szFileName: string | Win32Pointer, szWinDir: string | Win32Pointer, szAppDir: string | Win32Pointer, szCurDir: string | Win32Pointer, puCurDirLen: Win32Pointer, szDestDir: string | Win32Pointer, puDestDirLen: Win32Pointer): number;
+  VerFindFile(
+    uFlags: number,
+    szFileName: string | Win32Pointer,
+    szWinDir: string | Win32Pointer,
+    szAppDir: string | Win32Pointer,
+    szCurDir: string | Win32Pointer,
+    puCurDirLen: Win32Pointer,
+    szDestDir: string | Win32Pointer,
+    puDestDirLen: Win32Pointer,
+  ): number;
   /** version.dll!VerInstallFileA */
-  VerInstallFileA(uFlags: number, szSrcFileName: string | Win32Pointer, szDestFileName: string | Win32Pointer, szSrcDir: string | Win32Pointer, szDestDir: string | Win32Pointer, szCurDir: string | Win32Pointer, szTmpFile: string | Win32Pointer, puTmpFileLen: Win32Pointer): number;
+  VerInstallFileA(
+    uFlags: number,
+    szSrcFileName: string | Win32Pointer,
+    szDestFileName: string | Win32Pointer,
+    szSrcDir: string | Win32Pointer,
+    szDestDir: string | Win32Pointer,
+    szCurDir: string | Win32Pointer,
+    szTmpFile: string | Win32Pointer,
+    puTmpFileLen: Win32Pointer,
+  ): number;
   /** version.dll!VerInstallFileW */
-  VerInstallFileW(uFlags: number, szSrcFileName: string | Win32Pointer, szDestFileName: string | Win32Pointer, szSrcDir: string | Win32Pointer, szDestDir: string | Win32Pointer, szCurDir: string | Win32Pointer, szTmpFile: string | Win32Pointer, puTmpFileLen: Win32Pointer): number;
+  VerInstallFileW(
+    uFlags: number,
+    szSrcFileName: string | Win32Pointer,
+    szDestFileName: string | Win32Pointer,
+    szSrcDir: string | Win32Pointer,
+    szDestDir: string | Win32Pointer,
+    szCurDir: string | Win32Pointer,
+    szTmpFile: string | Win32Pointer,
+    puTmpFileLen: Win32Pointer,
+  ): number;
   /** version.dll!VerInstallFileW */
-  VerInstallFile(uFlags: number, szSrcFileName: string | Win32Pointer, szDestFileName: string | Win32Pointer, szSrcDir: string | Win32Pointer, szDestDir: string | Win32Pointer, szCurDir: string | Win32Pointer, szTmpFile: string | Win32Pointer, puTmpFileLen: Win32Pointer): number;
+  VerInstallFile(
+    uFlags: number,
+    szSrcFileName: string | Win32Pointer,
+    szDestFileName: string | Win32Pointer,
+    szSrcDir: string | Win32Pointer,
+    szDestDir: string | Win32Pointer,
+    szCurDir: string | Win32Pointer,
+    szTmpFile: string | Win32Pointer,
+    puTmpFileLen: Win32Pointer,
+  ): number;
   /** version.dll!VerQueryValueA */
-  VerQueryValueA(pBlock: Win32Pointer, lpSubBlock: string | Win32Pointer, lplpBuffer: Win32Pointer, puLen: Win32Pointer): number;
+  VerQueryValueA(
+    pBlock: Win32Pointer,
+    lpSubBlock: string | Win32Pointer,
+    lplpBuffer: Win32Pointer,
+    puLen: Win32Pointer,
+  ): number;
   /** version.dll!VerQueryValueW */
-  VerQueryValueW(pBlock: Win32Pointer, lpSubBlock: string | Win32Pointer, lplpBuffer: Win32Pointer, puLen: Win32Pointer): number;
+  VerQueryValueW(
+    pBlock: Win32Pointer,
+    lpSubBlock: string | Win32Pointer,
+    lplpBuffer: Win32Pointer,
+    puLen: Win32Pointer,
+  ): number;
   /** version.dll!VerQueryValueW */
-  VerQueryValue(pBlock: Win32Pointer, lpSubBlock: string | Win32Pointer, lplpBuffer: Win32Pointer, puLen: Win32Pointer): number;
+  VerQueryValue(
+    pBlock: Win32Pointer,
+    lpSubBlock: string | Win32Pointer,
+    lplpBuffer: Win32Pointer,
+    puLen: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

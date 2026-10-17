@@ -44,8 +44,7 @@ export function resolveSteamRoot(explicit?: string): string {
   if (IS_WINDOWS) {
     try {
       const v = winRegistry.get(HKCU_STEAM, "SteamPath");
-      if (v && typeof v.value === "string" && v.value)
-        return norm(resolve(v.value));
+      if (v && typeof v.value === "string" && v.value) return norm(resolve(v.value));
     } catch {
       /* registry unavailable */
     }
@@ -53,24 +52,17 @@ export function resolveSteamRoot(explicit?: string): string {
   }
   // A configured client (config/config.vdf) wins over empty directories left by installers.
   const roots = linuxSteamRoots();
-  return norm(
-    roots.find((r) => existsSync(join(r, "config", "config.vdf"))) ??
-      roots.find(isDir) ??
-      roots[0]!,
-  );
+  return norm(roots.find(r => existsSync(join(r, "config", "config.vdf"))) ?? roots.find(isDir) ?? roots[0]!);
 }
 
 /** `%LOCALAPPDATA%/Steam` (htmlcache, local.vdf). */
 export function defaultAppDataRoot(): string {
-  const local =
-    process.env.LOCALAPPDATA ??
-    join(process.env.USERPROFILE ?? homedir(), "AppData", "Local");
+  const local = process.env.LOCALAPPDATA ?? join(process.env.USERPROFILE ?? homedir(), "AppData", "Local");
   return norm(join(local, "Steam"));
 }
 
 /** Linux `registry.vdf`, the client's replacement for the Windows registry. */
-export const linuxRegistryVdf = (home = homedir()): string =>
-  join(home, ".steam/registry.vdf");
+export const linuxRegistryVdf = (home = homedir()): string => join(home, ".steam/registry.vdf");
 
 export interface SteamcmdLocation {
   /** steamcmd executable or launcher script. */
@@ -92,7 +84,7 @@ export function findSteamcmd(explicit?: string): SteamcmdLocation | null {
     IS_WINDOWS ? "C:/steamcmd/steamcmd.exe" : "/usr/games/steamcmd",
     Bun.which("steamcmd") ?? undefined,
   ].filter((p): p is string => !!p);
-  const exe = candidates.find((p) => existsSync(p));
+  const exe = candidates.find(p => existsSync(p));
   if (!exe) return null;
   if (IS_WINDOWS) return { exe: norm(exe), home: norm(resolve(exe, "..")) };
   const home = homedir();
@@ -102,8 +94,7 @@ export function findSteamcmd(explicit?: string): SteamcmdLocation | null {
     join(home, "Steam"),
     join(home, ".local/share/Steam"),
   ].filter((p): p is string => !!p);
-  const found =
-    homes.find((h) => existsSync(join(h, "config", "config.vdf"))) ?? homes[0]!;
+  const found = homes.find(h => existsSync(join(h, "config", "config.vdf"))) ?? homes[0]!;
   return { exe: norm(exe), home: norm(found) };
 }
 
@@ -112,9 +103,7 @@ export function findSteamcmd(explicit?: string): SteamcmdLocation | null {
  * system `/usr/share/steam/compatibilitytools.d`, and `STEAM_EXTRA_COMPAT_TOOLS_PATHS`.
  */
 export function compatToolDirs(steamRoot = resolveSteamRoot()): string[] {
-  const extra = (process.env.STEAM_EXTRA_COMPAT_TOOLS_PATHS ?? "")
-    .split(":")
-    .filter(Boolean);
+  const extra = (process.env.STEAM_EXTRA_COMPAT_TOOLS_PATHS ?? "").split(":").filter(Boolean);
   return [
     ...extra,
     join(steamRoot, "compatibilitytools.d"),
@@ -127,8 +116,8 @@ export function userDataDirs(steamRoot = resolveSteamRoot()): string[] {
   const base = join(steamRoot, "userdata");
   try {
     return readdirSync(base)
-      .filter((d) => /^\d+$/.test(d) && d !== "0")
-      .map((d) => norm(join(base, d)));
+      .filter(d => /^\d+$/.test(d) && d !== "0")
+      .map(d => norm(join(base, d)));
   } catch {
     return [];
   }

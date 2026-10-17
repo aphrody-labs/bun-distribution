@@ -3,9 +3,18 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mfsrcsnk.dll!MFCreateAVIMediaSink */
-  MFCreateAVIMediaSink(pIByteStream: Win32Pointer, pVideoMediaType: Win32Pointer, pAudioMediaType: Win32Pointer, ppIMediaSink: Win32Pointer): number;
+  MFCreateAVIMediaSink(
+    pIByteStream: Win32Pointer,
+    pVideoMediaType: Win32Pointer,
+    pAudioMediaType: Win32Pointer,
+    ppIMediaSink: Win32Pointer,
+  ): number;
   /** mfsrcsnk.dll!MFCreateWAVEMediaSink */
-  MFCreateWAVEMediaSink(pTargetByteStream: Win32Pointer, pAudioMediaType: Win32Pointer, ppMediaSink: Win32Pointer): number;
+  MFCreateWAVEMediaSink(
+    pTargetByteStream: Win32Pointer,
+    pAudioMediaType: Win32Pointer,
+    ppMediaSink: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

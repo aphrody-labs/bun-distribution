@@ -4,12 +4,7 @@
  * chain, the first bundle holding a message wins. Used by play's client (catalogs fetched from
  * `/api/platform/i18n/<locale>`), the play server and the sidecar of the native shell.
  */
-import {
-  type FluentArgs,
-  FluentBundle,
-  type FormatError,
-  FluentResource,
-} from "./fluent";
+import { type FluentArgs, FluentBundle, type FormatError, FluentResource } from "./fluent";
 
 export interface LocaleInfo {
   /** Canonical BCP 47 tag. */
@@ -32,7 +27,7 @@ export class Localizer {
     readonly chain: string[],
     sources: CatalogSources,
   ) {
-    this.bundles = chain.map((tag) => {
+    this.bundles = chain.map(tag => {
       const bundle = new FluentBundle(tag);
       for (const text of sources[tag] ?? []) {
         const resource = new FluentResource(text);
@@ -52,9 +47,7 @@ export class Localizer {
   }
 
   has(id: string): boolean {
-    return this.bundles.some((bundle) =>
-      bundle.hasMessage(id.split(".")[0] as string),
-    );
+    return this.bundles.some(bundle => bundle.hasMessage(id.split(".")[0] as string));
   }
 
   /**
@@ -75,20 +68,12 @@ export class Localizer {
     return new Intl.NumberFormat(this.locale, options).format(value);
   }
 
-  date(
-    value: Date | number | string,
-    options?: Intl.DateTimeFormatOptions,
-  ): string {
-    return new Intl.DateTimeFormat(this.locale, options).format(
-      new Date(value),
-    );
+  date(value: Date | number | string, options?: Intl.DateTimeFormatOptions): string {
+    return new Intl.DateTimeFormat(this.locale, options).format(new Date(value));
   }
 
   relative(value: number, unit: Intl.RelativeTimeFormatUnit): string {
-    return new Intl.RelativeTimeFormat(this.locale, { numeric: "auto" }).format(
-      value,
-      unit,
-    );
+    return new Intl.RelativeTimeFormat(this.locale, { numeric: "auto" }).format(value, unit);
   }
 
   list(values: string[], type: Intl.ListFormatType = "conjunction"): string {
@@ -98,13 +83,7 @@ export class Localizer {
   /** Byte sizes with the locale's digits and the unit names from Intl (kilobyte, megabyte...). */
   bytes(value: number | null | undefined): string {
     if (value == null) return this.t("common-unknown-value");
-    const units = [
-      "byte",
-      "kilobyte",
-      "megabyte",
-      "gigabyte",
-      "terabyte",
-    ] as const;
+    const units = ["byte", "kilobyte", "megabyte", "gigabyte", "terabyte"] as const;
     let n = value;
     let unit = 0;
     while (n >= 1024 && unit < units.length - 1) {
@@ -121,10 +100,7 @@ export class Localizer {
 }
 
 /** Negotiates against `available` with plain BCP 47 lookup (exact, then language prefix). */
-export function lookupLocale(
-  requested: readonly string[],
-  available: readonly string[],
-): string | null {
+export function lookupLocale(requested: readonly string[], available: readonly string[]): string | null {
   const canon = (tag: string) => {
     try {
       return Intl.getCanonicalLocales(tag.replace(/_/g, "-"))[0] ?? null;
@@ -140,28 +116,20 @@ export function lookupLocale(
     const max = new Intl.Locale(tag).maximize();
     const scripted = `${max.language}-${max.script}`;
     if (available.includes(scripted)) return scripted;
-    const regional = available.find((a) =>
-      a.startsWith(`${max.language}-${max.region}`),
-    );
+    const regional = available.find(a => a.startsWith(`${max.language}-${max.region}`));
     if (regional) return regional;
-    const language = available.find(
-      (a) => a === max.language || a.startsWith(`${max.language}-`),
-    );
+    const language = available.find(a => a === max.language || a.startsWith(`${max.language}-`));
     if (language) return language;
   }
   return null;
 }
 
 /** Fallback chain for a resolved tag: the tag, its declared fallbacks, then the default. */
-export function fallbackChain(
-  tag: string,
-  locales: readonly LocaleInfo[],
-  defaultLocale = "en",
-): string[] {
+export function fallbackChain(tag: string, locales: readonly LocaleInfo[], defaultLocale = "en"): string[] {
   const chain: string[] = [];
   const visit = (t: string) => {
     if (chain.includes(t)) return;
-    const info = locales.find((l) => l.tag === t);
+    const info = locales.find(l => l.tag === t);
     if (!info) return;
     chain.push(t);
     for (const f of info.fallbacks ?? []) visit(f);

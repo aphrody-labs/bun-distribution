@@ -9,11 +9,25 @@ interface Functions {
   /** p2pgraph.dll!PeerGraphCloseDirectConnection */
   PeerGraphCloseDirectConnection(hGraph: Win32Pointer, ullConnectionId: number | bigint): number;
   /** p2pgraph.dll!PeerGraphConnect */
-  PeerGraphConnect(hGraph: Win32Pointer, pwzPeerId: string | Win32Pointer, pAddress: Win32Pointer, pullConnectionId: Win32Pointer): number;
+  PeerGraphConnect(
+    hGraph: Win32Pointer,
+    pwzPeerId: string | Win32Pointer,
+    pAddress: Win32Pointer,
+    pullConnectionId: Win32Pointer,
+  ): number;
   /** p2pgraph.dll!PeerGraphCreate */
-  PeerGraphCreate(pGraphProperties: Win32Pointer, pwzDatabaseName: string | Win32Pointer, pSecurityInterface: Win32Pointer, phGraph: Win32Pointer): number;
+  PeerGraphCreate(
+    pGraphProperties: Win32Pointer,
+    pwzDatabaseName: string | Win32Pointer,
+    pSecurityInterface: Win32Pointer,
+    phGraph: Win32Pointer,
+  ): number;
   /** p2pgraph.dll!PeerGraphDelete */
-  PeerGraphDelete(pwzGraphId: string | Win32Pointer, pwzPeerId: string | Win32Pointer, pwzDatabaseName: string | Win32Pointer): number;
+  PeerGraphDelete(
+    pwzGraphId: string | Win32Pointer,
+    pwzPeerId: string | Win32Pointer,
+    pwzDatabaseName: string | Win32Pointer,
+  ): number;
   /** p2pgraph.dll!PeerGraphDeleteRecord */
   PeerGraphDeleteRecord(hGraph: Win32Pointer, pRecordId: Win32Pointer, fLocal: number): number;
   /** p2pgraph.dll!PeerGraphEndEnumeration */
@@ -23,7 +37,12 @@ interface Functions {
   /** p2pgraph.dll!PeerGraphEnumNodes */
   PeerGraphEnumNodes(hGraph: Win32Pointer, pwzPeerId: string | Win32Pointer, phPeerEnum: Win32Pointer): number;
   /** p2pgraph.dll!PeerGraphEnumRecords */
-  PeerGraphEnumRecords(hGraph: Win32Pointer, pRecordType: Win32Pointer, pwzPeerId: string | Win32Pointer, phPeerEnum: Win32Pointer): number;
+  PeerGraphEnumRecords(
+    hGraph: Win32Pointer,
+    pRecordType: Win32Pointer,
+    pwzPeerId: string | Win32Pointer,
+    phPeerEnum: Win32Pointer,
+  ): number;
   /** p2pgraph.dll!PeerGraphExportDatabase */
   PeerGraphExportDatabase(hGraph: Win32Pointer, pwzFilePath: string | Win32Pointer): number;
   /** p2pgraph.dll!PeerGraphFreeData */
@@ -47,17 +66,46 @@ interface Functions {
   /** p2pgraph.dll!PeerGraphListen */
   PeerGraphListen(hGraph: Win32Pointer, dwScope: number, dwScopeId: number, wPort: number): number;
   /** p2pgraph.dll!PeerGraphOpen */
-  PeerGraphOpen(pwzGraphId: string | Win32Pointer, pwzPeerId: string | Win32Pointer, pwzDatabaseName: string | Win32Pointer, pSecurityInterface: Win32Pointer, cRecordTypeSyncPrecedence: number, pRecordTypeSyncPrecedence: Win32Pointer, phGraph: Win32Pointer): number;
+  PeerGraphOpen(
+    pwzGraphId: string | Win32Pointer,
+    pwzPeerId: string | Win32Pointer,
+    pwzDatabaseName: string | Win32Pointer,
+    pSecurityInterface: Win32Pointer,
+    cRecordTypeSyncPrecedence: number,
+    pRecordTypeSyncPrecedence: Win32Pointer,
+    phGraph: Win32Pointer,
+  ): number;
   /** p2pgraph.dll!PeerGraphOpenDirectConnection */
-  PeerGraphOpenDirectConnection(hGraph: Win32Pointer, pwzPeerId: string | Win32Pointer, pAddress: Win32Pointer, pullConnectionId: Win32Pointer): number;
+  PeerGraphOpenDirectConnection(
+    hGraph: Win32Pointer,
+    pwzPeerId: string | Win32Pointer,
+    pAddress: Win32Pointer,
+    pullConnectionId: Win32Pointer,
+  ): number;
   /** p2pgraph.dll!PeerGraphPeerTimeToUniversalTime */
-  PeerGraphPeerTimeToUniversalTime(hGraph: Win32Pointer, pftPeerTime: Win32Pointer, pftUniversalTime: Win32Pointer): number;
+  PeerGraphPeerTimeToUniversalTime(
+    hGraph: Win32Pointer,
+    pftPeerTime: Win32Pointer,
+    pftUniversalTime: Win32Pointer,
+  ): number;
   /** p2pgraph.dll!PeerGraphRegisterEvent */
-  PeerGraphRegisterEvent(hGraph: Win32Pointer, hEvent: Win32Pointer, cEventRegistrations: number, pEventRegistrations: Win32Pointer, phPeerEvent: Win32Pointer): number;
+  PeerGraphRegisterEvent(
+    hGraph: Win32Pointer,
+    hEvent: Win32Pointer,
+    cEventRegistrations: number,
+    pEventRegistrations: Win32Pointer,
+    phPeerEvent: Win32Pointer,
+  ): number;
   /** p2pgraph.dll!PeerGraphSearchRecords */
   PeerGraphSearchRecords(hGraph: Win32Pointer, pwzCriteria: string | Win32Pointer, phPeerEnum: Win32Pointer): number;
   /** p2pgraph.dll!PeerGraphSendData */
-  PeerGraphSendData(hGraph: Win32Pointer, ullConnectionId: number | bigint, pType: Win32Pointer, cbData: number, pvData: Win32Pointer): number;
+  PeerGraphSendData(
+    hGraph: Win32Pointer,
+    ullConnectionId: number | bigint,
+    pType: Win32Pointer,
+    cbData: number,
+    pvData: Win32Pointer,
+  ): number;
   /** p2pgraph.dll!PeerGraphSetNodeAttributes */
   PeerGraphSetNodeAttributes(hGraph: Win32Pointer, pwzAttributes: string | Win32Pointer): number;
   /** p2pgraph.dll!PeerGraphSetPresence */
@@ -69,7 +117,11 @@ interface Functions {
   /** p2pgraph.dll!PeerGraphStartup */
   PeerGraphStartup(wVersionRequested: number, pVersionData: Win32Pointer): number;
   /** p2pgraph.dll!PeerGraphUniversalTimeToPeerTime */
-  PeerGraphUniversalTimeToPeerTime(hGraph: Win32Pointer, pftUniversalTime: Win32Pointer, pftPeerTime: Win32Pointer): number;
+  PeerGraphUniversalTimeToPeerTime(
+    hGraph: Win32Pointer,
+    pftUniversalTime: Win32Pointer,
+    pftPeerTime: Win32Pointer,
+  ): number;
   /** p2pgraph.dll!PeerGraphUnregisterEvent */
   PeerGraphUnregisterEvent(hPeerEvent: Win32Pointer): number;
   /** p2pgraph.dll!PeerGraphUpdateRecord */

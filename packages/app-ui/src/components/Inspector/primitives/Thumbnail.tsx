@@ -12,11 +12,9 @@ interface ThumbnailProps {
 const iconForKind = (kind?: string): string => {
   if (!kind) return "draft";
   const k = kind.toLowerCase();
-  if (k.includes("image") || ["jpg", "png", "gif", "svg"].includes(k))
-    return "image";
+  if (k.includes("image") || ["jpg", "png", "gif", "svg"].includes(k)) return "image";
   if (k.includes("video") || ["mp4", "mov", "avi"].includes(k)) return "movie";
-  if (k.includes("audio") || ["mp3", "wav", "flac"].includes(k))
-    return "music_note";
+  if (k.includes("audio") || ["mp3", "wav", "flac"].includes(k)) return "music_note";
   if (["js", "ts", "tsx", "jsx", "py", "rs"].includes(k)) return "code_blocks";
   if (["pdf", "txt", "md"].includes(k)) return "description";
   return "draft";
@@ -25,13 +23,7 @@ const iconForKind = (kind?: string): string => {
 const sizeClasses = { sm: "size-16", md: "size-24", lg: "size-32" } as const;
 const iconSizes = { sm: 32, md: 48, lg: 64 } as const;
 
-export function Thumbnail({
-  src,
-  kind,
-  name,
-  size = "md",
-  className,
-}: ThumbnailProps) {
+export function Thumbnail({ src, kind, name, size = "md", className }: ThumbnailProps) {
   return (
     <div
       className={clsx(
@@ -41,19 +33,9 @@ export function Thumbnail({
       )}
     >
       {src ? (
-        <img
-          src={src}
-          alt={name}
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
+        <img src={src} alt={name} className="h-full w-full object-cover" loading="lazy" />
       ) : (
-        <Icon
-          name={iconForKind(kind)}
-          size={iconSizes[size]}
-          weight={200}
-          className="text-on-surface-variant/40"
-        />
+        <Icon name={iconForKind(kind)} size={iconSizes[size]} weight={200} className="text-on-surface-variant/40" />
       )}
     </div>
   );

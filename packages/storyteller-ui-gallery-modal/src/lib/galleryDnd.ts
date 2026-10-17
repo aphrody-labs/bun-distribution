@@ -115,11 +115,7 @@ function spawnDropRipple(x: number, y: number) {
 
 // ── Drag lifecycle ───────────────────────────────────────────────────────────
 
-function onPointerDown(
-  event: React.PointerEvent,
-  item: GalleryItem,
-  bulkItems?: GalleryItem[],
-) {
+function onPointerDown(event: React.PointerEvent, item: GalleryItem, bulkItems?: GalleryItem[]) {
   if (event.button !== 0) return;
   dragState.item = item;
   dragState.items = bulkItems && bulkItems.length > 0 ? bulkItems : [item];
@@ -144,12 +140,7 @@ function isOutsideModal(clientX: number, clientY: number): boolean {
   const modalEl = document.querySelector("[data-gallery-modal]");
   if (!modalEl) return false;
   const rect = modalEl.getBoundingClientRect();
-  return (
-    clientX < rect.left ||
-    clientX > rect.right ||
-    clientY < rect.top ||
-    clientY > rect.bottom
-  );
+  return clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom;
 }
 
 /**
@@ -159,17 +150,10 @@ function isOutsideModal(clientX: number, clientY: number): boolean {
  * folder chips entirely.
  */
 function folderIdAt(clientX: number, clientY: number): string | null {
-  const chips = Array.from(
-    document.querySelectorAll<HTMLElement>("[data-folder-id]"),
-  );
+  const chips = Array.from(document.querySelectorAll<HTMLElement>("[data-folder-id]"));
   for (const chip of chips) {
     const rect = chip.getBoundingClientRect();
-    if (
-      clientX >= rect.left &&
-      clientX <= rect.right &&
-      clientY >= rect.top &&
-      clientY <= rect.bottom
-    ) {
+    if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
       return chip.getAttribute("data-folder-id");
     }
   }
@@ -180,10 +164,7 @@ function onPointerMove(event: PointerEvent) {
   if (!dragState.item) return;
   const deltaX = event.pageX - dragState.startX;
   const deltaY = event.pageY - dragState.startY;
-  if (
-    !dragState.isDragging &&
-    (Math.abs(deltaX) > dragThreshold || Math.abs(deltaY) > dragThreshold)
-  ) {
+  if (!dragState.isDragging && (Math.abs(deltaX) > dragThreshold || Math.abs(deltaY) > dragThreshold)) {
     dragState.isDragging = true;
     createDragPreview(dragState.items.length);
     // Hosts with a full-screen canvas behind the modal (e.g. the 3D editor)
@@ -206,10 +187,7 @@ function onPointerMove(event: PointerEvent) {
     // folder) the modal stays fully visible and interactive so folders can be
     // targeted. Once hidden it stays hidden for the rest of the drag, so
     // re-entering the (now transparent) panel area doesn't flicker it back.
-    if (
-      !dragState.modalHidden &&
-      isOutsideModal(event.clientX, event.clientY)
-    ) {
+    if (!dragState.modalHidden && isOutsideModal(event.clientX, event.clientY)) {
       dragState.modalHidden = true;
       galleryModalDraggingUnder.value = true;
     }
@@ -217,11 +195,8 @@ function onPointerMove(event: PointerEvent) {
     // Highlight the folder under the cursor (if any) — folders still accept
     // drops even while the gallery is dimmed.
     const overFolder = folderIdAt(event.clientX, event.clientY);
-    document.querySelectorAll("[data-folder-id]").forEach((el) => {
-      el.classList.toggle(
-        "folder-drag-over",
-        el.getAttribute("data-folder-id") === overFolder,
-      );
+    document.querySelectorAll("[data-folder-id]").forEach(el => {
+      el.classList.toggle("folder-drag-over", el.getAttribute("data-folder-id") === overFolder);
     });
   }
 }
@@ -229,24 +204,15 @@ function onPointerMove(event: PointerEvent) {
 export const IMAGE_DROP_EVENT = "gallery-image-drop";
 export const FOLDER_DROP_EVENT = "gallery-folder-drop";
 
-export function emitImageDrop(
-  item: GalleryItem,
-  position: { x: number; y: number },
-) {
-  window.dispatchEvent(
-    new CustomEvent(IMAGE_DROP_EVENT, { detail: { item, position } }),
-  );
+export function emitImageDrop(item: GalleryItem, position: { x: number; y: number }) {
+  window.dispatchEvent(new CustomEvent(IMAGE_DROP_EVENT, { detail: { item, position } }));
 }
 
 export function emitFolderDrop(items: GalleryItem[], folderId: string) {
-  window.dispatchEvent(
-    new CustomEvent(FOLDER_DROP_EVENT, { detail: { items, folderId } }),
-  );
+  window.dispatchEvent(new CustomEvent(FOLDER_DROP_EVENT, { detail: { items, folderId } }));
 }
 
-export function onImageDrop(
-  callback: (item: GalleryItem, position: { x: number; y: number }) => void,
-) {
+export function onImageDrop(callback: (item: GalleryItem, position: { x: number; y: number }) => void) {
   const handler = (e: any) => {
     callback(e.detail.item, e.detail.position);
   };
@@ -258,9 +224,7 @@ export function removeImageDropListener(handler: (e: any) => void) {
   window.removeEventListener(IMAGE_DROP_EVENT, handler);
 }
 
-export function onFolderDrop(
-  callback: (items: GalleryItem[], folderId: string) => void,
-) {
+export function onFolderDrop(callback: (items: GalleryItem[], folderId: string) => void) {
   const handler = (e: any) => {
     callback(e.detail.items, e.detail.folderId);
   };
@@ -307,7 +271,7 @@ function onPointerUp(event: PointerEvent) {
   // Cleanup
   removeDragPreview();
 
-  document.querySelectorAll("[data-folder-id]").forEach((el) => {
+  document.querySelectorAll("[data-folder-id]").forEach(el => {
     el.classList.remove("folder-drag-over");
   });
 

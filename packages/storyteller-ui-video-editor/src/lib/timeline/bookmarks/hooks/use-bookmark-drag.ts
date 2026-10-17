@@ -1,10 +1,4 @@
-import {
-  useState,
-  useCallback,
-  useEffect,
-  useRef,
-  type RefObject,
-} from "react";
+import { useState, useCallback, useEffect, useRef, type RefObject } from "react";
 import { useEditor } from "../../../editor/use-editor";
 import { useShiftKey } from "../../../hooks/use-shift-key";
 import { TIMELINE_DRAG_THRESHOLD_PX } from "../../components/interaction";
@@ -41,12 +35,7 @@ interface UseBookmarkDragProps {
   onSnapPointChange?: (snapPoint: SnapPoint | null) => void;
 }
 
-export function useBookmarkDrag({
-  zoomLevel,
-  scrollRef,
-  snappingEnabled,
-  onSnapPointChange,
-}: UseBookmarkDragProps) {
+export function useBookmarkDrag({ zoomLevel, scrollRef, snappingEnabled, onSnapPointChange }: UseBookmarkDragProps) {
   const editor = useEditor();
   const isShiftHeldRef = useShiftKey();
   const tracks = editor.scenes.getActiveScene().tracks;
@@ -65,13 +54,7 @@ export function useBookmarkDrag({
   const lastMouseXRef = useRef(0);
 
   const startDrag = useCallback(
-    ({
-      bookmarkTime,
-      initialCurrentTime,
-    }: {
-      bookmarkTime: MediaTime;
-      initialCurrentTime: MediaTime;
-    }) => {
+    ({ bookmarkTime, initialCurrentTime }: { bookmarkTime: MediaTime; initialCurrentTime: MediaTime }) => {
       setDragState({
         isDragging: true,
         bookmarkTime,
@@ -120,14 +103,7 @@ export function useBookmarkDrag({
         snapPoint: result.snapPoint,
       };
     },
-    [
-      snappingEnabled,
-      tracks,
-      playheadTime,
-      bookmarks,
-      zoomLevel,
-      isShiftHeldRef,
-    ],
+    [snappingEnabled, tracks, playheadTime, bookmarks, zoomLevel, isShiftHeldRef],
   );
 
   useEffect(() => {
@@ -140,15 +116,11 @@ export function useBookmarkDrag({
       if (!scrollContainer) return;
 
       if (isPendingDrag && pendingDragRef.current) {
-        const { startMouseX, startMouseY, bookmarkTime } =
-          pendingDragRef.current;
+        const { startMouseX, startMouseY, bookmarkTime } = pendingDragRef.current;
         const deltaX = Math.abs(event.clientX - startMouseX);
         const deltaY = Math.abs(event.clientY - startMouseY);
 
-        if (
-          deltaX <= TIMELINE_DRAG_THRESHOLD_PX &&
-          deltaY <= TIMELINE_DRAG_THRESHOLD_PX
-        ) {
+        if (deltaX <= TIMELINE_DRAG_THRESHOLD_PX && deltaY <= TIMELINE_DRAG_THRESHOLD_PX) {
           return;
         }
 
@@ -203,7 +175,7 @@ export function useBookmarkDrag({
         excludeBookmarkTime: dragState.bookmarkTime,
       });
 
-      setDragState((previousDragState) => ({
+      setDragState(previousDragState => ({
         ...previousDragState,
         currentTime: snapResult.snappedTime,
       }));
@@ -235,8 +207,7 @@ export function useBookmarkDrag({
         return;
       }
 
-      const clampedTime =
-        dragState.currentTime > duration ? duration : dragState.currentTime;
+      const clampedTime = dragState.currentTime > duration ? duration : dragState.currentTime;
 
       editor.scenes.moveBookmark({
         fromTime: dragState.bookmarkTime,

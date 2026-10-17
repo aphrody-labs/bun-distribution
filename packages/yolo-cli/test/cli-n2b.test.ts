@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { afterAll, describe, expect, test } from "bun:test";
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { n2bExitCode, parseN2bArguments, renderN2bReport } from "../src/n2b.ts";
@@ -24,26 +17,15 @@ afterAll(() => rmSync(work, { recursive: true, force: true }));
 
 function run(args: string[], cwd = work, library = missingLibrary) {
   return Bun.spawnSync(
-    [
-      process.execPath,
-      "--no-install",
-      join(repository, "packages/engine/yolo/src/index.ts"),
-      "n2b",
-      ...args,
-    ],
+    [process.execPath, "--no-install", join(repository, "packages/engine/yolo/src/index.ts"), "n2b", ...args],
     {
       windowsHide: true,
       cwd,
       env: {
-        PATH:
-          process.platform === "win32"
-            ? (process.env["PATH"] ?? "")
-            : "/usr/bin:/bin",
+        PATH: process.platform === "win32" ? (process.env["PATH"] ?? "") : "/usr/bin:/bin",
         HOME: userHome,
         YOLO_TOOLING_LIB: library,
-        ...(process.platform === "win32"
-          ? { SystemRoot: process.env["SystemRoot"] }
-          : {}),
+        ...(process.platform === "win32" ? { SystemRoot: process.env["SystemRoot"] } : {}),
       },
       stdout: "pipe",
       stderr: "pipe",
@@ -52,12 +34,9 @@ function run(args: string[], cwd = work, library = missingLibrary) {
   );
 }
 
-function report(
-  mode: "check" | "fix" | "aggressive" = "check",
-): NodeProjectReport {
+function report(mode: "check" | "fix" | "aggressive" = "check"): NodeProjectReport {
   return {
-    $schema:
-      "https://raw.githubusercontent.com/aphrody-code/n2b/main/schema/v2.json",
+    $schema: "https://raw.githubusercontent.com/aphrody-code/n2b/main/schema/v2.json",
     schema_version: 2,
     tool: "node2bun",
     version: "0.6.2",
@@ -128,9 +107,7 @@ describe("native N2B CLI contract", () => {
       jobs: 6,
       ignore: ["dist/**", "*.test.ts"],
     });
-    expect(parseN2bArguments(["--fix", "--jobs", "1"], work).options.mode).toBe(
-      "fix",
-    );
+    expect(parseN2bArguments(["--fix", "--jobs", "1"], work).options.mode).toBe("fix");
   });
 
   test("rejects invalid or ambiguous input before loading a provider", () => {
@@ -139,9 +116,7 @@ describe("native N2B CLI contract", () => {
       ["one", "two"],
       ["--fix", "--aggressive"],
       ["--jobs"],
-      ...["0", "7", "-1", "NaN", "1.5", "1e0", "+2", ""].map((jobs) => [
-        `--jobs=${jobs}`,
-      ]),
+      ...["0", "7", "-1", "NaN", "1.5", "1e0", "+2", ""].map(jobs => [`--jobs=${jobs}`]),
       ["--ignore="],
       ["--ignore", "bad\0glob"],
       ["--library="],
@@ -163,9 +138,9 @@ describe("native N2B CLI contract", () => {
       expect(
         n2bExitCode({
           ...result,
-          files: result.files.map((file) =>
+          files: result.files.map(file =>
             Object.assign({}, file, {
-              findings: file.findings.map((finding) => ({
+              findings: file.findings.map(finding => ({
                 ...finding,
                 severity: "error",
               })),
@@ -212,9 +187,7 @@ describe("native N2B CLI contract", () => {
     }
     const file = join(work, "file.js");
     writeFileSync(file, "export {};");
-    expect(run([file]).stderr.toString()).toContain(
-      "Project path must be a directory",
-    );
+    expect(run([file]).stderr.toString()).toContain("Project path must be a directory");
   });
 
   test("missing native libraries fail explicitly instead of invoking a substitute", () => {
@@ -222,9 +195,7 @@ describe("native N2B CLI contract", () => {
     expect(result.exitCode).toBe(2);
     expect(result.stdout.toString()).toBe("");
     expect(result.stderr.toString()).toContain("yolo n2b:");
-    expect(result.stderr.toString()).toContain(
-      "Selected native tooling library is missing",
-    );
+    expect(result.stderr.toString()).toContain("Selected native tooling library is missing");
     expect(result.stderr.toString()).toContain("selection preserved");
   });
 
@@ -236,49 +207,25 @@ describe("native N2B CLI contract", () => {
       const file = join(project, "entry.js");
       const original = "#!/usr/bin/env node\nconsole.log('hello');\n";
       writeFileSync(file, original);
-      const args = [
-        project,
-        "--library",
-        resolve(configuredLibrary!),
-        "--json",
-        "--jobs",
-        "1",
-      ];
+      const args = [project, "--library", resolve(configuredLibrary!), "--json", "--jobs", "1"];
       const checked = run(args, project, configuredLibrary);
-      const checkedReport = JSON.parse(
-        checked.stdout.toString(),
-      ) as NodeProjectReport;
+      const checkedReport = JSON.parse(checked.stdout.toString()) as NodeProjectReport;
       expect(checkedReport.schema_version).toBe(2);
       expect(checkedReport.mode).toBe("check");
-      expect(
-        checkedReport.files.some((item) =>
-          item.findings.some((finding) => finding.rule_id === "shebang/node"),
-        ),
-      ).toBe(true);
+      expect(checkedReport.files.some(item => item.findings.some(finding => finding.rule_id === "shebang/node"))).toBe(
+        true,
+      );
       expect(checked.exitCode).toBe(n2bExitCode(checkedReport));
       expect(readFileSync(file, "utf8")).toBe(original);
 
-      const preview = run(
-        [...args, "--fix", "--dry-run"],
-        project,
-        configuredLibrary,
-      );
+      const preview = run([...args, "--fix", "--dry-run"], project, configuredLibrary);
       expect(preview.exitCode).toBe(0);
-      expect(
-        (JSON.parse(preview.stdout.toString()) as NodeProjectReport).mode,
-      ).toBe("fix");
+      expect((JSON.parse(preview.stdout.toString()) as NodeProjectReport).mode).toBe("fix");
       expect(readFileSync(file, "utf8")).toBe(original);
 
-      const ignored = run(
-        [...args, "--aggressive", "--ignore", "entry.js"],
-        project,
-        configuredLibrary,
-      );
+      const ignored = run([...args, "--aggressive", "--ignore", "entry.js"], project, configuredLibrary);
       expect(ignored.exitCode).toBe(0);
-      expect(
-        (JSON.parse(ignored.stdout.toString()) as NodeProjectReport)
-          .findings_total,
-      ).toBe(0);
+      expect((JSON.parse(ignored.stdout.toString()) as NodeProjectReport).findings_total).toBe(0);
       expect(readFileSync(file, "utf8")).toBe(original);
 
       const fixed = run([...args, "--fix"], project, configuredLibrary);

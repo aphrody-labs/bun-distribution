@@ -6,16 +6,9 @@ import type { GraphicStrokeAlign } from "./definitions/shared";
 // and outside renders onto a scratch canvas with composite-out to keep
 // only the outer half (matching how Figma/Illustrator align strokes).
 
-type GraphicRenderContext =
-  CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+type GraphicRenderContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
-function createTempCanvas({
-  width,
-  height,
-}: {
-  width: number;
-  height: number;
-}): OffscreenCanvas | HTMLCanvasElement {
+function createTempCanvas({ width, height }: { width: number; height: number }): OffscreenCanvas | HTMLCanvasElement {
   try {
     return new OffscreenCanvas(width, height);
   } catch {
@@ -77,9 +70,7 @@ export function applyAlignedStroke({
       width: ctx.canvas.width,
       height: ctx.canvas.height,
     });
-    const strokeCtx = strokeCanvas.getContext(
-      "2d",
-    ) as GraphicRenderContext | null;
+    const strokeCtx = strokeCanvas.getContext("2d") as GraphicRenderContext | null;
     if (!strokeCtx) {
       return;
     }

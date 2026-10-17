@@ -22,10 +22,7 @@ function DropdownMenuPopup({
 }) {
   return (
     <DropdownMenuPortal>
-      <MenuPrimitive.Positioner
-        sideOffset={sideOffset}
-        className="z-50 outline-none"
-      >
+      <MenuPrimitive.Positioner sideOffset={sideOffset} className="z-50 outline-none">
         <MenuPrimitive.Popup
           className={cn(
             "relative z-50 min-w-[12rem] overflow-hidden rounded-xl border-2 border-black bg-[#0d0d12] p-1.5 text-gray-100 shadow-[4px_4px_0px_#000] outline-none transition-all duration-150 select-none",
@@ -95,25 +92,16 @@ function DropdownMenuCheckboxItem({
   );
 }
 
-function DropdownMenuSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof MenuPrimitive.Separator>) {
+function DropdownMenuSeparator({ className, ...props }: React.ComponentProps<typeof MenuPrimitive.Separator>) {
   return (
     <MenuPrimitive.Separator
-      className={cn(
-        "-mx-1.5 my-1.5 h-0.5 bg-black/60 border-b border-white/5",
-        className,
-      )}
+      className={cn("-mx-1.5 my-1.5 h-0.5 bg-black/60 border-b border-white/5", className)}
       {...props}
     />
   );
 }
 
-function DropdownMenuLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof MenuPrimitive.GroupLabel>) {
+function DropdownMenuLabel({ className, ...props }: React.ComponentProps<typeof MenuPrimitive.GroupLabel>) {
   return (
     <MenuPrimitive.GroupLabel
       className={cn(

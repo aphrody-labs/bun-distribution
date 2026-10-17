@@ -27,7 +27,7 @@ function buildDiamondPath({
     { x: centerX + halfWidth, y: centerY },
     { x: centerX, y: centerY + halfHeight },
     { x: centerX - halfWidth, y: centerY },
-  ].map((point) =>
+  ].map(point =>
     rotatePoint({
       ...point,
       centerX,
@@ -72,8 +72,7 @@ export const diamondMaskDefinition: MaskDefinition<"diamond"> = {
       kind: "fillPath",
       buildPath({ resolvedParams, width, height }) {
         const params = resolvedParams;
-        const { centerX, centerY, maskWidth, maskHeight, rotationRad } =
-          getBoxLikeGeometry({ params, width, height });
+        const { centerX, centerY, maskWidth, maskHeight, rotationRad } = getBoxLikeGeometry({ params, width, height });
         return buildDiamondPath({
           centerX,
           centerY,
@@ -87,8 +86,7 @@ export const diamondMaskDefinition: MaskDefinition<"diamond"> = {
       kind: "strokeFromPath",
       buildStrokePath({ resolvedParams, width, height }) {
         const params = resolvedParams;
-        const { centerX, centerY, maskWidth, maskHeight, rotationRad } =
-          getBoxLikeGeometry({ params, width, height });
+        const { centerX, centerY, maskWidth, maskHeight, rotationRad } = getBoxLikeGeometry({ params, width, height });
         const offset = getStrokeOffset({
           strokeAlign: params.strokeAlign,
           strokeWidth: params.strokeWidth,

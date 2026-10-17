@@ -1,20 +1,10 @@
-import {
-  backoffMs,
-  drain,
-  errorText,
-  type Fetch,
-  realSleep,
-  redact,
-  retryAfterMs,
-  type Sleep,
-} from "./http.ts";
+import { backoffMs, drain, errorText, type Fetch, realSleep, redact, retryAfterMs, type Sleep } from "./http.ts";
 
 /** API Challonge v2.1 (JSON:API). Les versions v1 et v2.0 sont dépréciées (doc consultée le 2026-10-06). */
 export const API_BASE = "https://api.challonge.com/v2.1";
 export const USER_AGENT = "creator-kit-challonge/0.1";
 
-export type Auth =
-  { kind: "key"; key: string } | { kind: "oauth"; token: string };
+export type Auth = { kind: "key"; key: string } | { kind: "oauth"; token: string };
 export type Method = "GET" | "POST" | "PUT" | "DELETE";
 export type Query = Record<string, string | number | boolean | undefined>;
 
@@ -103,11 +93,7 @@ export interface ClientOptions {
   /** N'appelle pas l'API : enregistre le plan de requêtes via `onPlan` et répond par des valeurs factices. */
   dryRun?: boolean;
   onPlan?: (entry: PlanEntry) => void;
-  onRetry?: (info: {
-    status: number | "réseau";
-    attempt: number;
-    waitMs: number;
-  }) => void;
+  onRetry?: (info: { status: number | "réseau"; attempt: number; waitMs: number }) => void;
 }
 
 /** Au-delà, une attente 429 correspond à un quota épuisé (mensuel), pas à un simple pic : inutile d'attendre. */
@@ -175,8 +161,7 @@ export class ChallongeClient {
     for (const [key, value] of Object.entries(spec.query ?? {})) {
       if (value !== undefined) url.searchParams.set(key, String(value));
     }
-    if (this.community && !url.searchParams.has("community_id"))
-      url.searchParams.set("community_id", this.community);
+    if (this.community && !url.searchParams.has("community_id")) url.searchParams.set("community_id", this.community);
     return url.toString();
   }
 
@@ -186,11 +171,7 @@ export class ChallongeClient {
       this.onPlan?.({ method: spec.method, url, body: spec.body });
       return this.fake(spec) as T;
     }
-    if (!this.auth)
-      throw new ChallongeError(
-        "Aucune clé API Challonge configurée (CHALLONGE_API_KEY).",
-        401,
-      );
+    if (!this.auth) throw new ChallongeError("Aucune clé API Challonge configurée (CHALLONGE_API_KEY).", 401);
     const init: RequestInit = {
       method: spec.method,
       headers: this.headers(),
@@ -215,14 +196,10 @@ export class ChallongeClient {
       }
       if (res.ok) return (await parseJson(res)) as T;
 
-      if (
-        this.retryable(spec.method, res.status) &&
-        attempt < this.maxRetries
-      ) {
+      if (this.retryable(spec.method, res.status) && attempt < this.maxRetries) {
         const asked = retryAfterMs(res);
         const waitMs = asked ?? backoffMs(attempt, this.random);
-        if (res.status === 429 && waitMs > MAX_RETRY_WAIT_MS)
-          throw await this.failure(res, attempt + 1);
+        if (res.status === 429 && waitMs > MAX_RETRY_WAIT_MS) throw await this.failure(res, attempt + 1);
         await drain(res);
         await this.wait(res.status, attempt, waitMs);
         continue;
@@ -238,19 +215,12 @@ export class ChallongeClient {
     return status === 502 || status === 503 || status === 504;
   }
 
-  private async wait(
-    status: number | "réseau",
-    attempt: number,
-    waitMs: number,
-  ): Promise<void> {
+  private async wait(status: number | "réseau", attempt: number, waitMs: number): Promise<void> {
     this.onRetry?.({ status, attempt: attempt + 1, waitMs });
     await this.sleep(waitMs);
   }
 
-  private async failure(
-    res: Response,
-    attempts: number,
-  ): Promise<ChallongeError> {
+  private async failure(res: Response, attempts: number): Promise<ChallongeError> {
     const details = await readErrors(res);
     return new ChallongeError(
       redact(frenchMessage(res.status, details, attempts), [this.secret()]),
@@ -261,9 +231,8 @@ export class ChallongeClient {
 
   private fake(spec: RequestSpec): unknown {
     if (spec.method === "POST" && spec.path === "/tournaments") {
-      const attributes = ((
-        spec.body as { data?: { attributes?: TournamentAttrs } }
-      )?.data?.attributes ?? {}) as TournamentAttrs;
+      const attributes = ((spec.body as { data?: { attributes?: TournamentAttrs } })?.data?.attributes ??
+        {}) as TournamentAttrs;
       return {
         data: {
           id: "TOURNAMENT_ID",
@@ -281,9 +250,7 @@ export class ChallongeClient {
 
   // --- Tournois -----------------------------------------------------------------------------------------------
 
-  async createTournament(
-    attributes: Record<string, unknown>,
-  ): Promise<Tournament> {
+  async createTournament(attributes: Record<string, unknown>): Promise<Tournament> {
     const res = await this.request<{ data: Tournament }>({
       method: "POST",
       path: "/tournaments",
@@ -309,10 +276,7 @@ export class ChallongeClient {
     return Array.isArray(res.data) ? res.data : [];
   }
 
-  async updateTournament(
-    id: string,
-    attributes: Record<string, unknown>,
-  ): Promise<Tournament> {
+  async updateTournament(id: string, attributes: Record<string, unknown>): Promise<Tournament> {
     const res = await this.request<{ data: Tournament }>({
       method: "PUT",
       path: `/tournaments/${encodeURIComponent(id)}`,
@@ -333,10 +297,7 @@ export class ChallongeClient {
 
   // --- Participants -------------------------------------------------------------------------------------------
 
-  async addParticipant(
-    id: string,
-    attributes: Record<string, unknown>,
-  ): Promise<Participant> {
+  async addParticipant(id: string, attributes: Record<string, unknown>): Promise<Participant> {
     const res = await this.request<{ data: Participant }>({
       method: "POST",
       path: `/tournaments/${encodeURIComponent(id)}/participants`,
@@ -346,10 +307,7 @@ export class ChallongeClient {
   }
 
   /** Maximum 20 participants par requête (limite de la doc) ; l'appelant découpe. */
-  async bulkAddParticipants(
-    id: string,
-    participants: Record<string, unknown>[],
-  ): Promise<Participant[]> {
+  async bulkAddParticipants(id: string, participants: Record<string, unknown>[]): Promise<Participant[]> {
     if (participants.length === 0 || participants.length > 20)
       throw new RangeError("bulk_add accepte de 1 à 20 participants");
     const res = await this.request<{ data?: Participant[] }>({
@@ -368,21 +326,13 @@ export class ChallongeClient {
   }
 
   listParticipants(id: string): Promise<Participant[]> {
-    return this.listAll<Participant>(
-      `/tournaments/${encodeURIComponent(id)}/participants`,
-    );
+    return this.listAll<Participant>(`/tournaments/${encodeURIComponent(id)}/participants`);
   }
 
   // --- Matchs -------------------------------------------------------------------------------------------------
 
-  listMatches(
-    id: string,
-    state?: "pending" | "open" | "complete",
-  ): Promise<Match[]> {
-    return this.listAll<Match>(
-      `/tournaments/${encodeURIComponent(id)}/matches`,
-      { state },
-    );
+  listMatches(id: string, state?: "pending" | "open" | "complete"): Promise<Match[]> {
+    return this.listAll<Match>(`/tournaments/${encodeURIComponent(id)}/matches`, { state });
   }
 
   async getMatch(id: string, matchId: string): Promise<Match> {
@@ -393,11 +343,7 @@ export class ChallongeClient {
     return res.data;
   }
 
-  async updateMatch(
-    id: string,
-    matchId: string,
-    attributes: Record<string, unknown>,
-  ): Promise<Match> {
+  async updateMatch(id: string, matchId: string, attributes: Record<string, unknown>): Promise<Match> {
     const res = await this.request<{ data: Match }>({
       method: "PUT",
       path: `/tournaments/${encodeURIComponent(id)}/matches/${encodeURIComponent(matchId)}`,
@@ -410,10 +356,7 @@ export class ChallongeClient {
    * Parcourt toutes les pages. Le changelog Challonge du 2026-09-14 signale que les pointeurs de pagination des
    * matchs « continuaient à l'infini » avant correction : on s'arrête sur page vide, page courte ou page déjà vue.
    */
-  private async listAll<T extends { id: string }>(
-    path: string,
-    query: Query = {},
-  ): Promise<T[]> {
+  private async listAll<T extends { id: string }>(path: string, query: Query = {}): Promise<T[]> {
     const out: T[] = [];
     const seen = new Set<string>();
     for (let page = 1; page <= MAX_PAGES; page += 1) {
@@ -439,7 +382,7 @@ export class ChallongeClient {
         throw error;
       }
       const items = Array.isArray(res.data) ? res.data : [];
-      const fresh = items.filter((item) => !seen.has(String(item.id)));
+      const fresh = items.filter(item => !seen.has(String(item.id)));
       for (const item of fresh) {
         seen.add(String(item.id));
         out.push(item);
@@ -457,10 +400,7 @@ async function parseJson(res: Response): Promise<unknown> {
   try {
     return JSON.parse(text);
   } catch {
-    throw new ChallongeError(
-      "Réponse Challonge illisible (JSON attendu).",
-      res.status,
-    );
+    throw new ChallongeError("Réponse Challonge illisible (JSON attendu).", res.status);
   }
 }
 
@@ -481,13 +421,9 @@ async function readErrors(res: Response): Promise<ApiErrorDetail[]> {
       source?: { pointer?: unknown };
     };
     return {
-      detail:
-        typeof item.detail === "string" ? item.detail.slice(0, 300) : undefined,
+      detail: typeof item.detail === "string" ? item.detail.slice(0, 300) : undefined,
       status: typeof item.status === "number" ? item.status : undefined,
-      pointer:
-        typeof item.source?.pointer === "string"
-          ? item.source.pointer
-          : undefined,
+      pointer: typeof item.source?.pointer === "string" ? item.source.pointer : undefined,
     };
   });
 }
@@ -498,22 +434,13 @@ function field(pointer: string): string {
 
 function describeDetails(details: ApiErrorDetail[]): string {
   return details
-    .map(
-      (d) =>
-        `${d.pointer ? `${field(d.pointer)} : ` : ""}${d.detail ?? "erreur sans détail"}`,
-    )
+    .map(d => `${d.pointer ? `${field(d.pointer)} : ` : ""}${d.detail ?? "erreur sans détail"}`)
     .join(" ; ");
 }
 
 /** Messages d'erreur en français. L'éventuel détail renvoyé par l'API est conservé tel quel (en anglais). */
-export function frenchMessage(
-  status: number,
-  details: ApiErrorDetail[],
-  attempts: number,
-): string {
-  const extra = details.length
-    ? ` Détail API : ${describeDetails(details)}.`
-    : "";
+export function frenchMessage(status: number, details: ApiErrorDetail[], attempts: number): string {
+  const extra = details.length ? ` Détail API : ${describeDetails(details)}.` : "";
   switch (status) {
     case 400:
       return `Requête refusée par Challonge (400).${extra}`;
@@ -531,7 +458,7 @@ export function frenchMessage(
       return `Format refusé (${status}) : l'API rejette les en-têtes Accept/Content-Type (bug de creator-kit, à signaler).`;
     case 422: {
       const slug = details.some(
-        (d) =>
+        d =>
           /url|permalink/i.test(`${d.pointer ?? ""} ${d.detail ?? ""}`) &&
           /taken|already|exist|unique/i.test(d.detail ?? ""),
       );

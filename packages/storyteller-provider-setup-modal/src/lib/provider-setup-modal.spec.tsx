@@ -1,10 +1,4 @@
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "bun:test";
 import { GenerationProvider } from "@storyteller/common";
 import ProviderSetupModal from "./provider-setup-modal";
@@ -21,13 +15,8 @@ vi.mock("@storyteller/tauri-events", () => ({
 }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
 vi.mock("@storyteller/ui-modal", () => ({
-  Modal: ({
-    isOpen,
-    children,
-  }: {
-    isOpen: boolean;
-    children: React.ReactNode;
-  }) => (isOpen ? <div role="dialog">{children}</div> : null),
+  Modal: ({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) =>
+    isOpen ? <div role="dialog">{children}</div> : null,
 }));
 
 afterEach(() => {
@@ -37,7 +26,7 @@ afterEach(() => {
 
 it.each([GenerationProvider.Sora, GenerationProvider.WorldLabs])(
   "ignores login events from the retired %s integration",
-  async (provider) => {
+  async provider => {
     render(<ProviderSetupModal />);
     await act(async () => mocks.onLogin({ provider }));
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -47,9 +36,7 @@ it.each([GenerationProvider.Sora, GenerationProvider.WorldLabs])(
 
 it("still opens login for a supported direct provider", async () => {
   render(<ProviderSetupModal />);
-  await act(async () =>
-    mocks.onLogin({ provider: GenerationProvider.Midjourney }),
-  );
+  await act(async () => mocks.onLogin({ provider: GenerationProvider.Midjourney }));
   await act(async () => {
     fireEvent.click(screen.getByRole("button", { name: "Set up Midjourney" }));
   });

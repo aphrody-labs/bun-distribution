@@ -4,11 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { run } from "../../src/creator/commands/wiki-images.ts";
-import {
-  resolveTarget,
-  safeName,
-  titleFromPath,
-} from "../../src/creator/commands/wiki-images/mediawiki.ts";
+import { resolveTarget, safeName, titleFromPath } from "../../src/creator/commands/wiki-images/mediawiki.ts";
 
 let server: ReturnType<typeof Bun.serve>;
 let base = "";
@@ -23,12 +19,10 @@ beforeAll(() => {
           `<html><head><link rel="EditURI" type="application/rsd+xml" href="${base}/api.php?action=rsd"></head></html>`,
         );
       }
-      if (url.pathname.startsWith("/files/"))
-        return new Response(`bytes:${url.pathname}`);
+      if (url.pathname.startsWith("/files/")) return new Response(`bytes:${url.pathname}`);
       if (url.pathname === "/api.php") {
         const q = url.searchParams;
-        if (q.get("meta") === "siteinfo")
-          return Response.json({ query: { general: {} } });
+        if (q.get("meta") === "siteinfo") return Response.json({ query: { general: {} } });
         const info = (n: string, size: number) => ({
           url: `${base}/files/${n}`,
           size,
@@ -76,12 +70,8 @@ beforeAll(() => {
 afterAll(() => server.stop(true));
 
 test("titleFromPath decodes wiki paths", () => {
-  expect(
-    titleFromPath(new URL("https://x.fandom.com/wiki/Sol_Badguy/Gallery")),
-  ).toBe("Sol Badguy/Gallery");
-  expect(titleFromPath(new URL("https://x.org/index.php?title=A_b"))).toBe(
-    "A b",
-  );
+  expect(titleFromPath(new URL("https://x.fandom.com/wiki/Sol_Badguy/Gallery"))).toBe("Sol Badguy/Gallery");
+  expect(titleFromPath(new URL("https://x.org/index.php?title=A_b"))).toBe("A b");
 });
 
 test("safeName strips reserved characters and device names", () => {
@@ -100,20 +90,14 @@ test("downloads gallery images across API continuations, filters non images", as
   const out = await mkdtemp(join(tmpdir(), "wiki-images-"));
   const code = await run([`${base}/wiki/Sol/Gallery`, "--out", out], fetch);
   expect(code).toBe(0);
-  expect((await readdir(out)).toSorted()).toEqual([
-    "A.png",
-    "B_.png",
-    "manifest.json",
-  ]);
+  expect((await readdir(out)).toSorted()).toEqual(["A.png", "B_.png", "manifest.json"]);
   expect(await readFile(join(out, "A.png"), "utf8")).toBe("bytes:/files/A.png");
   // second run skips existing files with the same size
   const logs: string[] = [];
   const original = console.log;
   console.log = (line: string) => logs.push(line);
   try {
-    expect(await run([`${base}/wiki/Sol/Gallery`, "--out", out], fetch)).toBe(
-      0,
-    );
+    expect(await run([`${base}/wiki/Sol/Gallery`, "--out", out], fetch)).toBe(0);
   } finally {
     console.log = original;
   }

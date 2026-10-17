@@ -11,21 +11,16 @@ export function JobsScreen() {
 
   // Filter jobs based on toggle
   const filteredJobs = showOnlyRunning
-    ? jobs.filter(
-        (job) =>
-          job.status === "running" ||
-          job.status === "paused" ||
-          job.status === "queued",
-      )
+    ? jobs.filter(job => job.status === "running" || job.status === "paused" || job.status === "queued")
     : jobs;
 
   // Group jobs by status
-  const runningJobs = filteredJobs.filter((j) => j.status === "running");
-  const pausedJobs = filteredJobs.filter((j) => j.status === "paused");
-  const queuedJobs = filteredJobs.filter((j) => j.status === "queued");
-  const completedJobs = filteredJobs.filter((j) => j.status === "completed");
-  const failedJobs = filteredJobs.filter((j) => j.status === "failed");
-  const cancelledJobs = filteredJobs.filter((j) => j.status === "cancelled");
+  const runningJobs = filteredJobs.filter(j => j.status === "running");
+  const pausedJobs = filteredJobs.filter(j => j.status === "paused");
+  const queuedJobs = filteredJobs.filter(j => j.status === "queued");
+  const completedJobs = filteredJobs.filter(j => j.status === "completed");
+  const failedJobs = filteredJobs.filter(j => j.status === "failed");
+  const cancelledJobs = filteredJobs.filter(j => j.status === "cancelled");
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-surface">
@@ -51,17 +46,11 @@ export function JobsScreen() {
               icon="filter_list"
               active={showOnlyRunning}
               onClick={() => setShowOnlyRunning(!showOnlyRunning)}
-              title={
-                showOnlyRunning ? "Show all jobs" : "Show only active jobs"
-              }
+              title={showOnlyRunning ? "Show all jobs" : "Show only active jobs"}
             />
 
             {/* Back button */}
-            <CircleButton
-              icon="close"
-              onClick={() => navigate(-1)}
-              title="Go back"
-            />
+            <CircleButton icon="close" onClick={() => navigate(-1)} title="Go back" />
           </div>
         </div>
 
@@ -81,9 +70,7 @@ export function JobsScreen() {
       {/* Content */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isLoading && jobs.length === 0 ? (
-          <output className="block p-6 text-label-large text-on-surface-variant">
-            Chargement…
-          </output>
+          <output className="block p-6 text-label-large text-on-surface-variant">Chargement…</output>
         ) : error && jobs.length === 0 ? (
           <div className="m-4 flex items-center gap-3 rounded-medium bg-error-container p-4 text-on-error-container">
             <p role="alert" className="text-label-large">
@@ -103,9 +90,7 @@ export function JobsScreen() {
         ) : filteredJobs.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <p className="text-body-medium text-on-surface-variant">
-                No jobs found
-              </p>
+              <p className="text-body-medium text-on-surface-variant">No jobs found</p>
             </div>
           </div>
         ) : (
@@ -113,14 +98,8 @@ export function JobsScreen() {
             {/* Running Jobs */}
             {runningJobs.length > 0 && (
               <JobSection title="Running" count={runningJobs.length}>
-                {runningJobs.map((job) => (
-                  <JobRow
-                    key={job.id}
-                    job={job}
-                    onPause={pause}
-                    onResume={resume}
-                    onCancel={cancel}
-                  />
+                {runningJobs.map(job => (
+                  <JobRow key={job.id} job={job} onPause={pause} onResume={resume} onCancel={cancel} />
                 ))}
               </JobSection>
             )}
@@ -128,14 +107,8 @@ export function JobsScreen() {
             {/* Paused Jobs */}
             {pausedJobs.length > 0 && (
               <JobSection title="Paused" count={pausedJobs.length}>
-                {pausedJobs.map((job) => (
-                  <JobRow
-                    key={job.id}
-                    job={job}
-                    onPause={pause}
-                    onResume={resume}
-                    onCancel={cancel}
-                  />
+                {pausedJobs.map(job => (
+                  <JobRow key={job.id} job={job} onPause={pause} onResume={resume} onCancel={cancel} />
                 ))}
               </JobSection>
             )}
@@ -143,14 +116,8 @@ export function JobsScreen() {
             {/* Queued Jobs */}
             {queuedJobs.length > 0 && (
               <JobSection title="Queued" count={queuedJobs.length}>
-                {queuedJobs.map((job) => (
-                  <JobRow
-                    key={job.id}
-                    job={job}
-                    onPause={pause}
-                    onResume={resume}
-                    onCancel={cancel}
-                  />
+                {queuedJobs.map(job => (
+                  <JobRow key={job.id} job={job} onPause={pause} onResume={resume} onCancel={cancel} />
                 ))}
               </JobSection>
             )}
@@ -158,14 +125,8 @@ export function JobsScreen() {
             {/* Completed Jobs */}
             {completedJobs.length > 0 && (
               <JobSection title="Completed" count={completedJobs.length}>
-                {completedJobs.map((job) => (
-                  <JobRow
-                    key={job.id}
-                    job={job}
-                    onPause={pause}
-                    onResume={resume}
-                    onCancel={cancel}
-                  />
+                {completedJobs.map(job => (
+                  <JobRow key={job.id} job={job} onPause={pause} onResume={resume} onCancel={cancel} />
                 ))}
               </JobSection>
             )}
@@ -173,28 +134,16 @@ export function JobsScreen() {
             {/* Failed Jobs */}
             {failedJobs.length > 0 && (
               <JobSection title="Failed" count={failedJobs.length}>
-                {failedJobs.map((job) => (
-                  <JobRow
-                    key={job.id}
-                    job={job}
-                    onPause={pause}
-                    onResume={resume}
-                    onCancel={cancel}
-                  />
+                {failedJobs.map(job => (
+                  <JobRow key={job.id} job={job} onPause={pause} onResume={resume} onCancel={cancel} />
                 ))}
               </JobSection>
             )}
 
             {cancelledJobs.length > 0 && (
               <JobSection title="Cancelled" count={cancelledJobs.length}>
-                {cancelledJobs.map((job) => (
-                  <JobRow
-                    key={job.id}
-                    job={job}
-                    onPause={pause}
-                    onResume={resume}
-                    onCancel={cancel}
-                  />
+                {cancelledJobs.map(job => (
+                  <JobRow key={job.id} job={job} onPause={pause} onResume={resume} onCancel={cancel} />
                 ))}
               </JobSection>
             )}
@@ -216,9 +165,7 @@ function JobSection({ title, count, children }: JobSectionProps) {
     <div>
       <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-2 bg-surface-container-low border-b border-outline-variant">
         <h2 className="text-title-small text-on-surface">{title}</h2>
-        <span className="text-body-small text-on-surface-variant">
-          ({count})
-        </span>
+        <span className="text-body-small text-on-surface-variant">({count})</span>
       </div>
       <div>{children}</div>
     </div>

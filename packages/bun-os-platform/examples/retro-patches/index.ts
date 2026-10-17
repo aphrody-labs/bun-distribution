@@ -94,14 +94,9 @@ const plugin: BunOsPlugin = {
     });
 
     build.onCommand("list-patches", () => {
-      const dir = join(
-        Bun.env.BUN_OS_USR ?? join(build.dir, "..", "..", "..", ".."),
-        "share",
-        "bun-engine",
-        "patches",
-      );
+      const dir = join(Bun.env.BUN_OS_USR ?? join(build.dir, "..", "..", "..", ".."), "share", "bun-engine", "patches");
       try {
-        return readdirSync(dir).filter((f) => /\.(ips|bps|ups)$/i.test(f));
+        return readdirSync(dir).filter(f => /\.(ips|bps|ups)$/i.test(f));
       } catch {
         return [];
       }

@@ -17,9 +17,7 @@ export const packageRoot = resolve(import.meta.dir, "..");
 export const repoRoot = resolve(packageRoot, "..", "..");
 
 export function usrRoot(): string {
-  return resolve(
-    Bun.env.BUN_OS_USR ?? Bun.env.BEP_ROOT ?? join(repoRoot, "usr"),
-  );
+  return resolve(Bun.env.BUN_OS_USR ?? Bun.env.BEP_ROOT ?? join(repoRoot, "usr"));
 }
 
 export const platformPaths = () => {
@@ -66,17 +64,11 @@ export async function readSettings(): Promise<PlatformSettings> {
   return (await file.exists()) ? ((await file.json()) as PlatformSettings) : {};
 }
 
-export async function writeSettings(
-  patch: Partial<PlatformSettings>,
-): Promise<PlatformSettings> {
+export async function writeSettings(patch: Partial<PlatformSettings>): Promise<PlatformSettings> {
   const next = { ...(await readSettings()), ...patch };
   for (const [k, v] of Object.entries(next))
-    if (v === undefined || v === null)
-      delete (next as Record<string, unknown>)[k];
+    if (v === undefined || v === null) delete (next as Record<string, unknown>)[k];
   ensureDir(platformPaths().etc);
-  await Bun.write(
-    platformPaths().settings,
-    `${JSON.stringify(next, null, 2)}\n`,
-  );
+  await Bun.write(platformPaths().settings, `${JSON.stringify(next, null, 2)}\n`);
   return next;
 }

@@ -66,31 +66,16 @@
     #c46f1b
   ); /* press state : −15 % de valeur, le rapport de l'ancien couple */
   --color-dbz-blue: var(--dbz-blue, #1e244d); /* deep navy lisible */
-  --color-dbz-blue-light: var(
-    --dbz-blue-light,
-    #cdcdcd
-  ); /* gris clair DB officiel */
-  --color-dbz-yellow: var(
-    --dbz-yellow,
-    #fefd03
-  ); /* jaune du titre de couverture, comme `gold` */
+  --color-dbz-blue-light: var(--dbz-blue-light, #cdcdcd); /* gris clair DB officiel */
+  --color-dbz-yellow: var(--dbz-yellow, #fefd03); /* jaune du titre de couverture, comme `gold` */
   /* Rouge du titre de couverture (#de0b36, teinte 347,8°) éclairci de 4 % de
 	   luminance : le token porte 53 usages dont des messages d'erreur en petit
 	   texte, et l'aplat exact tombe à 3,97:1 sur le fond noir. Ici 4,58:1, donc
 	   AA. L'aplat de couverture reste disponible en `--color-logo-rouge`. */
   --color-dbz-red: var(--dbz-red, #f10c3b);
-  --color-dbz-green: var(
-    --dbz-green,
-    #2e9b41
-  ); /* corps de Shenron, mesuré (29,4 % de sa zone) */
-  --color-dbz-purple: var(
-    --dbz-purple,
-    #a855f7
-  ); /* transformations / énergie */
-  --color-dbz-gold: var(
-    --dbz-gold,
-    #fefd03
-  ); /* jaune du titre de couverture, mesuré */
+  --color-dbz-green: var(--dbz-green, #2e9b41); /* corps de Shenron, mesuré (29,4 % de sa zone) */
+  --color-dbz-purple: var(--dbz-purple, #a855f7); /* transformations / énergie */
+  --color-dbz-gold: var(--dbz-gold, #fefd03); /* jaune du titre de couverture, mesuré */
   --color-dbz-cyan: var(--dbz-cyan, #22d3ee); /* relations / affiliations */
   --color-dbz-pink: var(--dbz-pink, #ec4899); /* divers / curiosités */
 
@@ -156,10 +141,7 @@
 	   `--dbz-ember` dans le thème rétablit une braise indépendante. */
   --color-dbz-ember: var(--dbz-ember, var(--color-dbz-orange));
   --color-dbz-ki: var(--dbz-ki, #4ba8ff); /* bleu ki (LED, glows, planètes) */
-  --color-dbz-amber: var(
-    --dbz-amber,
-    #ffd23f
-  ); /* ambre (dégradés, texte ghost) */
+  --color-dbz-amber: var(--dbz-amber, #ffd23f); /* ambre (dégradés, texte ghost) */
 
   /* Gradients réutilisables.
 	   `galactic` dérive de la couleur d'accent du thème, et non plus d'un

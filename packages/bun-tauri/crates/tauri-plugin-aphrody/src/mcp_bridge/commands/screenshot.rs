@@ -1,7 +1,7 @@
 //! Native screenshot capture.
 
 use serde_json::Value;
-use tauri::{command, Runtime, WebviewWindow};
+use tauri::{Runtime, WebviewWindow, command};
 
 /// Screenshot command of the one desktop runtime (CEF).
 ///

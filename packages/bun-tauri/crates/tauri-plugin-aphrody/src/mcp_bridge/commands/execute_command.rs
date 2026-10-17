@@ -1,7 +1,7 @@
 //! Dynamic command execution.
 
 use serde_json::Value;
-use tauri::{command, AppHandle, Runtime};
+use tauri::{AppHandle, Runtime, command};
 
 /// Executes an arbitrary Tauri command dynamically.
 ///

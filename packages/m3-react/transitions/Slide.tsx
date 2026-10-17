@@ -48,8 +48,6 @@ export const Slide = createTransition<SlideProps>("Slide", {
   exit: { easing: EASING.emphasizedAccelerate, fallbackMs: 200 },
   properties: ["transform"],
   style: ({ visible, props }) => ({
-    transform: visible
-      ? "translate(0, 0)"
-      : hiddenTransform(props.direction ?? "down", props.offset ?? "100%"),
+    transform: visible ? "translate(0, 0)" : hiddenTransform(props.direction ?? "down", props.offset ?? "100%"),
   }),
 });

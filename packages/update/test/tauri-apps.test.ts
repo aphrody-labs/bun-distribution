@@ -61,21 +61,11 @@ const registryJson = JSON.stringify({
 });
 
 test("parseRegistry rejects unsupported versions, incomplete and duplicate projects", () => {
-  expect(() =>
-    parseRegistry(JSON.stringify({ schemaVersion: 2, projects: [] })),
-  ).toThrow("schemaVersion");
-  expect(() => parseRegistry(JSON.stringify({ schemaVersion: 1 }))).toThrow(
-    "projects",
-  );
-  expect(() =>
-    parseRegistry(
-      JSON.stringify({ schemaVersion: 1, projects: [{ id: "a" }] }),
-    ),
-  ).toThrow("incomplete");
+  expect(() => parseRegistry(JSON.stringify({ schemaVersion: 2, projects: [] }))).toThrow("schemaVersion");
+  expect(() => parseRegistry(JSON.stringify({ schemaVersion: 1 }))).toThrow("projects");
+  expect(() => parseRegistry(JSON.stringify({ schemaVersion: 1, projects: [{ id: "a" }] }))).toThrow("incomplete");
   const dup = { id: "a", kind: "app", path: "x" };
-  expect(() =>
-    parseRegistry(JSON.stringify({ schemaVersion: 1, projects: [dup, dup] })),
-  ).toThrow("duplicate");
+  expect(() => parseRegistry(JSON.stringify({ schemaVersion: 1, projects: [dup, dup] }))).toThrow("duplicate");
 });
 
 test("the gate is derived from gated registry projects", () => {
@@ -108,11 +98,7 @@ version = "3"
     { name: "tauri-runtime-wry", inherited: false },
     { name: "tauri-plugin-fs", inherited: false },
   ]);
-  expect(
-    tauriCargoDeps(
-      `[package]\nname = "tauri-mcp"\n[dependencies]\nserde = "1"\n`,
-    ),
-  ).toEqual([]);
+  expect(tauriCargoDeps(`[package]\nname = "tauri-mcp"\n[dependencies]\nserde = "1"\n`)).toEqual([]);
 });
 
 test("npmTauriDeps ignores peer ranges and unrelated packages", () => {
@@ -133,12 +119,8 @@ test("npmTauriDeps ignores peer ranges and unrelated packages", () => {
 
 test("workspaceState follows members, excludes and the upstream tree", () => {
   expect(workspaceState(rootCargo, "crates/ui/app")).toBe("member");
-  expect(workspaceState(rootCargo, "crates/os/kernel/comps/drive")).toBe(
-    "excluded",
-  );
-  expect(workspaceState(rootCargo, "upstream/victauri/crates/x")).toBe(
-    "upstream",
-  );
+  expect(workspaceState(rootCargo, "crates/os/kernel/comps/drive")).toBe("excluded");
+  expect(workspaceState(rootCargo, "upstream/victauri/crates/x")).toBe("upstream");
   expect(workspaceState(rootCargo, "packages/koharu/ui")).toBe("outside");
   // members globs match one path segment only
   expect(workspaceState(rootCargo, "crates/ui/app/nested")).toBe("outside");
@@ -148,9 +130,7 @@ test("owner matches exact paths and anything below a subtree", () => {
   const registry = parseRegistry(registryJson);
   expect(owner(registry, "crates/ui/app")?.id).toBe("app");
   expect(owner(registry, "crates/ui/app/src-tauri")).toBeUndefined();
-  expect(owner(registry, "upstream/fx/examples/demo/src-tauri")?.id).toBe(
-    "fixtures",
-  );
+  expect(owner(registry, "upstream/fx/examples/demo/src-tauri")?.id).toBe("fixtures");
   expect(owner(registry, "upstream/fxother")).toBeUndefined();
 });
 
@@ -160,13 +140,9 @@ test("schema tag helpers read and rewrite only the tag", () => {
   const next = rewriteSchemaTag(conf, "3.0.0-alpha.3");
   expect(schemaTag(next)).toBe("3.0.0-alpha.3");
   expect(next).toContain('"identifier": "x"');
-  expect(
-    schemaTag('{"$schema":"https://schema.tauri.app/config/2"}'),
-  ).toBeNull();
+  expect(schemaTag('{"$schema":"https://schema.tauri.app/config/2"}')).toBeNull();
   expect(pinnedTauriVersion(rootCargo)).toBe("3.0.0-alpha.3");
-  expect(
-    pinnedTauriVersion(`[workspace.dependencies]\ntauri = "=3.0.0-alpha.4"\n`),
-  ).toBe("3.0.0-alpha.4");
+  expect(pinnedTauriVersion(`[workspace.dependencies]\ntauri = "=3.0.0-alpha.4"\n`)).toBe("3.0.0-alpha.4");
 });
 
 test("parseArgs validates flags", () => {
@@ -176,17 +152,13 @@ test("parseArgs validates flags", () => {
     fix: false,
     json: true,
   });
-  expect(() => parseArgs(["--fix", "--check"], "/r")).toThrow(
-    "mutually exclusive",
-  );
+  expect(() => parseArgs(["--fix", "--check"], "/r")).toThrow("mutually exclusive");
   expect(() => parseArgs(["--nope"], "/r")).toThrow("Unknown argument");
 });
 
 const dirs: string[] = [];
 afterAll(async () => {
-  await Promise.all(
-    dirs.map((dir) => rm(dir, { recursive: true, force: true })),
-  );
+  await Promise.all(dirs.map(dir => rm(dir, { recursive: true, force: true })));
 });
 
 async function put(root: string, file: string, text: string) {
@@ -201,57 +173,33 @@ async function fixtureTree(): Promise<string> {
   await put(root, "tools/config/tauri-apps.json", registryJson);
   const stale = `{\n  "$schema": "${schemaUrl("3.0.0-alpha.2")}",\n  "build": { "frontendDist": "dist", "beforeBuildCommand": "bun --cwd ../aphrody-ui run build" }\n}\n`;
   await put(root, "crates/ui/app/tauri.conf.json", stale);
-  await put(
-    root,
-    "crates/ui/app/Cargo.toml",
-    `[dependencies]\ntauri = { workspace = true }\ntauri-plugin-log = "3"\n`,
-  );
-  await put(
-    root,
-    "crates/ui/app/package.json",
-    JSON.stringify({ dependencies: { "@tauri-apps/api": "^3.0.0" } }),
-  );
+  await put(root, "crates/ui/app/Cargo.toml", `[dependencies]\ntauri = { workspace = true }\ntauri-plugin-log = "3"\n`);
+  await put(root, "crates/ui/app/package.json", JSON.stringify({ dependencies: { "@tauri-apps/api": "^3.0.0" } }));
   // workspace-excluded and git-ignored-looking paths must still be found; target/node_modules must not
-  await put(
-    root,
-    "crates/os/kernel/comps/drive/Cargo.toml",
-    `[dependencies]\ntauri = { workspace = true }\n`,
-  );
+  await put(root, "crates/os/kernel/comps/drive/Cargo.toml", `[dependencies]\ntauri = { workspace = true }\n`);
   await put(root, "upstream/fx/examples/demo/src-tauri/tauri.conf.json", "{}");
   await put(root, "crates/ui/stray/Tauri.toml", "");
-  await put(
-    root,
-    "crates/ui/app/target/debug/Cargo.toml",
-    `[dependencies]\ntauri = "3"\n`,
-  );
-  await put(
-    root,
-    "node_modules/x/package.json",
-    JSON.stringify({ dependencies: { "@tauri-apps/api": "3" } }),
-  );
+  await put(root, "crates/ui/app/target/debug/Cargo.toml", `[dependencies]\ntauri = "3"\n`);
+  await put(root, "node_modules/x/package.json", JSON.stringify({ dependencies: { "@tauri-apps/api": "3" } }));
   return root;
 }
 
 test("discover scans excluded paths and skips target and node_modules", async () => {
   const root = await fixtureTree();
   const found = await discover(root, ["target", "node_modules", ".git"]);
-  expect(found.map((item) => item.dir)).toEqual([
+  expect(found.map(item => item.dir)).toEqual([
     "crates/os/kernel/comps/drive",
     "crates/ui/app",
     "crates/ui/stray",
     "upstream/fx/examples/demo/src-tauri",
   ]);
-  expect(
-    found.find((item) => item.dir === "crates/ui/app")?.via.toSorted(),
-  ).toEqual(["cargo", "conf", "npm"]);
+  expect(found.find(item => item.dir === "crates/ui/app")?.via.toSorted()).toEqual(["cargo", "conf", "npm"]);
 });
 
 test("audit reports unregistered projects, pinned deps, schema drift and legacy sibling refs", async () => {
   const root = await fixtureTree();
   const report = await audit(root, parseRegistry(registryJson));
-  const codes = report.violations
-    .map((item) => `${item.code}:${item.subject}`)
-    .toSorted();
+  const codes = report.violations.map(item => `${item.code}:${item.subject}`).toSorted();
   expect(codes).toEqual([
     "legacy-sibling:crates/ui/app/tauri.conf.json",
     "pinned-crate:app",
@@ -259,19 +207,12 @@ test("audit reports unregistered projects, pinned deps, schema drift and legacy 
     "schema-drift:crates/ui/app/tauri.conf.json",
     "unregistered:crates/ui/stray",
   ]);
-  expect(
-    report.rows.find((row) => row.dir === "crates/os/kernel/comps/drive"),
-  ).toMatchObject({
+  expect(report.rows.find(row => row.dir === "crates/os/kernel/comps/drive")).toMatchObject({
     id: "drive",
     workspace: "excluded",
   });
-  expect(
-    report.rows.find((row) => row.dir === "upstream/fx/examples/demo/src-tauri")
-      ?.id,
-  ).toBe("fixtures");
-  expect(report.warnings.map((item) => item.code)).toEqual([
-    "frontend-missing",
-  ]);
+  expect(report.rows.find(row => row.dir === "upstream/fx/examples/demo/src-tauri")?.id).toBe("fixtures");
+  expect(report.warnings.map(item => item.code)).toEqual(["frontend-missing"]);
 });
 
 test("audit flags a missing registry path and a workspace mismatch", async () => {
@@ -291,9 +232,7 @@ test("audit flags a missing registry path and a workspace mismatch", async () =>
       ],
     }),
   );
-  const codes = (await audit(root, registry)).violations.map(
-    (item) => item.code,
-  );
+  const codes = (await audit(root, registry)).violations.map(item => item.code);
   expect(codes).toContain("missing");
   expect(codes).toContain("workspace-mismatch");
 });
@@ -304,14 +243,9 @@ test("fixConfSchemas rewrites only drifted first-party configs", async () => {
   expect(await confSchemaDrift(root, registry, "3.0.0-alpha.3")).toEqual([
     { file: "crates/ui/app/tauri.conf.json", tag: "3.0.0-alpha.2" },
   ]);
-  expect(await fixConfSchemas(root, registry, "3.0.0-alpha.3")).toEqual([
-    "crates/ui/app/tauri.conf.json",
-  ]);
+  expect(await fixConfSchemas(root, registry, "3.0.0-alpha.3")).toEqual(["crates/ui/app/tauri.conf.json"]);
   expect(await fixConfSchemas(root, registry, "3.0.0-alpha.3")).toEqual([]);
-  const text = await readFile(
-    join(root, "crates/ui/app/tauri.conf.json"),
-    "utf8",
-  );
+  const text = await readFile(join(root, "crates/ui/app/tauri.conf.json"), "utf8");
   expect(schemaTag(text)).toBe("3.0.0-alpha.3");
   expect(text).toContain("beforeBuildCommand");
 });

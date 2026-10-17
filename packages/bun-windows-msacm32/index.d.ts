@@ -3,11 +3,29 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** msacm32.dll!acmDriverAddA */
-  acmDriverAddA(phadid: Win32Pointer, hinstModule: Win32Pointer, lParam: number | bigint, dwPriority: number, fdwAdd: number): number;
+  acmDriverAddA(
+    phadid: Win32Pointer,
+    hinstModule: Win32Pointer,
+    lParam: number | bigint,
+    dwPriority: number,
+    fdwAdd: number,
+  ): number;
   /** msacm32.dll!acmDriverAddW */
-  acmDriverAddW(phadid: Win32Pointer, hinstModule: Win32Pointer, lParam: number | bigint, dwPriority: number, fdwAdd: number): number;
+  acmDriverAddW(
+    phadid: Win32Pointer,
+    hinstModule: Win32Pointer,
+    lParam: number | bigint,
+    dwPriority: number,
+    fdwAdd: number,
+  ): number;
   /** msacm32.dll!acmDriverAddW */
-  acmDriverAdd(phadid: Win32Pointer, hinstModule: Win32Pointer, lParam: number | bigint, dwPriority: number, fdwAdd: number): number;
+  acmDriverAdd(
+    phadid: Win32Pointer,
+    hinstModule: Win32Pointer,
+    lParam: number | bigint,
+    dwPriority: number,
+    fdwAdd: number,
+  ): number;
   /** msacm32.dll!acmDriverClose */
   acmDriverClose(had: Win32Pointer, fdwClose: number): number;
   /** msacm32.dll!acmDriverDetailsA */
@@ -21,7 +39,12 @@ interface Functions {
   /** msacm32.dll!acmDriverID */
   acmDriverID(hao: Win32Pointer, phadid: Win32Pointer, fdwDriverID: number): number;
   /** msacm32.dll!acmDriverMessage */
-  acmDriverMessage(had: Win32Pointer, uMsg: number, lParam1: number | bigint, lParam2: number | bigint): number | bigint;
+  acmDriverMessage(
+    had: Win32Pointer,
+    uMsg: number,
+    lParam1: number | bigint,
+    lParam2: number | bigint,
+  ): number | bigint;
   /** msacm32.dll!acmDriverOpen */
   acmDriverOpen(phad: Win32Pointer, hadid: Win32Pointer, fdwOpen: number): number;
   /** msacm32.dll!acmDriverPriority */
@@ -41,11 +64,29 @@ interface Functions {
   /** msacm32.dll!acmFilterDetailsW */
   acmFilterDetails(had: Win32Pointer, pafd: Win32Pointer, fdwDetails: number): number;
   /** msacm32.dll!acmFilterEnumA */
-  acmFilterEnumA(had: Win32Pointer, pafd: Win32Pointer, fnCallback: Win32Callback, dwInstance: number | bigint, fdwEnum: number): number;
+  acmFilterEnumA(
+    had: Win32Pointer,
+    pafd: Win32Pointer,
+    fnCallback: Win32Callback,
+    dwInstance: number | bigint,
+    fdwEnum: number,
+  ): number;
   /** msacm32.dll!acmFilterEnumW */
-  acmFilterEnumW(had: Win32Pointer, pafd: Win32Pointer, fnCallback: Win32Callback, dwInstance: number | bigint, fdwEnum: number): number;
+  acmFilterEnumW(
+    had: Win32Pointer,
+    pafd: Win32Pointer,
+    fnCallback: Win32Callback,
+    dwInstance: number | bigint,
+    fdwEnum: number,
+  ): number;
   /** msacm32.dll!acmFilterEnumW */
-  acmFilterEnum(had: Win32Pointer, pafd: Win32Pointer, fnCallback: Win32Callback, dwInstance: number | bigint, fdwEnum: number): number;
+  acmFilterEnum(
+    had: Win32Pointer,
+    pafd: Win32Pointer,
+    fnCallback: Win32Callback,
+    dwInstance: number | bigint,
+    fdwEnum: number,
+  ): number;
   /** msacm32.dll!acmFilterTagDetailsA */
   acmFilterTagDetailsA(had: Win32Pointer, paftd: Win32Pointer, fdwDetails: number): number;
   /** msacm32.dll!acmFilterTagDetailsW */
@@ -53,11 +94,29 @@ interface Functions {
   /** msacm32.dll!acmFilterTagDetailsW */
   acmFilterTagDetails(had: Win32Pointer, paftd: Win32Pointer, fdwDetails: number): number;
   /** msacm32.dll!acmFilterTagEnumA */
-  acmFilterTagEnumA(had: Win32Pointer, paftd: Win32Pointer, fnCallback: Win32Callback, dwInstance: number | bigint, fdwEnum: number): number;
+  acmFilterTagEnumA(
+    had: Win32Pointer,
+    paftd: Win32Pointer,
+    fnCallback: Win32Callback,
+    dwInstance: number | bigint,
+    fdwEnum: number,
+  ): number;
   /** msacm32.dll!acmFilterTagEnumW */
-  acmFilterTagEnumW(had: Win32Pointer, paftd: Win32Pointer, fnCallback: Win32Callback, dwInstance: number | bigint, fdwEnum: number): number;
+  acmFilterTagEnumW(
+    had: Win32Pointer,
+    paftd: Win32Pointer,
+    fnCallback: Win32Callback,
+    dwInstance: number | bigint,
+    fdwEnum: number,
+  ): number;
   /** msacm32.dll!acmFilterTagEnumW */
-  acmFilterTagEnum(had: Win32Pointer, paftd: Win32Pointer, fnCallback: Win32Callback, dwInstance: number | bigint, fdwEnum: number): number;
+  acmFilterTagEnum(
+    had: Win32Pointer,
+    paftd: Win32Pointer,
+    fnCallback: Win32Callback,
+    dwInstance: number | bigint,
+    fdwEnum: number,
+  ): number;
   /** msacm32.dll!acmFormatChooseA */
   acmFormatChooseA(pafmtc: Win32Pointer): number;
   /** msacm32.dll!acmFormatChooseW */
@@ -71,13 +130,37 @@ interface Functions {
   /** msacm32.dll!acmFormatDetailsW */
   acmFormatDetails(had: Win32Pointer, pafd: Win32Pointer, fdwDetails: number): number;
   /** msacm32.dll!acmFormatEnumA */
-  acmFormatEnumA(had: Win32Pointer, pafd: Win32Pointer, fnCallback: Win32Callback, dwInstance: number | bigint, fdwEnum: number): number;
+  acmFormatEnumA(
+    had: Win32Pointer,
+    pafd: Win32Pointer,
+    fnCallback: Win32Callback,
+    dwInstance: number | bigint,
+    fdwEnum: number,
+  ): number;
   /** msacm32.dll!acmFormatEnumW */
-  acmFormatEnumW(had: Win32Pointer, pafd: Win32Pointer, fnCallback: Win32Callback, dwInstance: number | bigint, fdwEnum: number): number;
+  acmFormatEnumW(
+    had: Win32Pointer,
+    pafd: Win32Pointer,
+    fnCallback: Win32Callback,
+    dwInstance: number | bigint,
+    fdwEnum: number,
+  ): number;
   /** msacm32.dll!acmFormatEnumW */
-  acmFormatEnum(had: Win32Pointer, pafd: Win32Pointer, fnCallback: Win32Callback, dwInstance: number | bigint, fdwEnum: number): number;
+  acmFormatEnum(
+    had: Win32Pointer,
+    pafd: Win32Pointer,
+    fnCallback: Win32Callback,
+    dwInstance: number | bigint,
+    fdwEnum: number,
+  ): number;
   /** msacm32.dll!acmFormatSuggest */
-  acmFormatSuggest(had: Win32Pointer, pwfxSrc: Win32Pointer, pwfxDst: Win32Pointer, cbwfxDst: number, fdwSuggest: number): number;
+  acmFormatSuggest(
+    had: Win32Pointer,
+    pwfxSrc: Win32Pointer,
+    pwfxDst: Win32Pointer,
+    cbwfxDst: number,
+    fdwSuggest: number,
+  ): number;
   /** msacm32.dll!acmFormatTagDetailsA */
   acmFormatTagDetailsA(had: Win32Pointer, paftd: Win32Pointer, fdwDetails: number): number;
   /** msacm32.dll!acmFormatTagDetailsW */
@@ -85,11 +168,29 @@ interface Functions {
   /** msacm32.dll!acmFormatTagDetailsW */
   acmFormatTagDetails(had: Win32Pointer, paftd: Win32Pointer, fdwDetails: number): number;
   /** msacm32.dll!acmFormatTagEnumA */
-  acmFormatTagEnumA(had: Win32Pointer, paftd: Win32Pointer, fnCallback: Win32Callback, dwInstance: number | bigint, fdwEnum: number): number;
+  acmFormatTagEnumA(
+    had: Win32Pointer,
+    paftd: Win32Pointer,
+    fnCallback: Win32Callback,
+    dwInstance: number | bigint,
+    fdwEnum: number,
+  ): number;
   /** msacm32.dll!acmFormatTagEnumW */
-  acmFormatTagEnumW(had: Win32Pointer, paftd: Win32Pointer, fnCallback: Win32Callback, dwInstance: number | bigint, fdwEnum: number): number;
+  acmFormatTagEnumW(
+    had: Win32Pointer,
+    paftd: Win32Pointer,
+    fnCallback: Win32Callback,
+    dwInstance: number | bigint,
+    fdwEnum: number,
+  ): number;
   /** msacm32.dll!acmFormatTagEnumW */
-  acmFormatTagEnum(had: Win32Pointer, paftd: Win32Pointer, fnCallback: Win32Callback, dwInstance: number | bigint, fdwEnum: number): number;
+  acmFormatTagEnum(
+    had: Win32Pointer,
+    paftd: Win32Pointer,
+    fnCallback: Win32Callback,
+    dwInstance: number | bigint,
+    fdwEnum: number,
+  ): number;
   /** msacm32.dll!acmGetVersion */
   acmGetVersion(): number;
   /** msacm32.dll!acmMetrics */
@@ -101,7 +202,16 @@ interface Functions {
   /** msacm32.dll!acmStreamMessage */
   acmStreamMessage(has: Win32Pointer, uMsg: number, lParam1: number | bigint, lParam2: number | bigint): number;
   /** msacm32.dll!acmStreamOpen */
-  acmStreamOpen(phas: Win32Pointer, had: Win32Pointer, pwfxSrc: Win32Pointer, pwfxDst: Win32Pointer, pwfltr: Win32Pointer, dwCallback: number | bigint, dwInstance: number | bigint, fdwOpen: number): number;
+  acmStreamOpen(
+    phas: Win32Pointer,
+    had: Win32Pointer,
+    pwfxSrc: Win32Pointer,
+    pwfxDst: Win32Pointer,
+    pwfltr: Win32Pointer,
+    dwCallback: number | bigint,
+    dwInstance: number | bigint,
+    fdwOpen: number,
+  ): number;
   /** msacm32.dll!acmStreamPrepareHeader */
   acmStreamPrepareHeader(has: Win32Pointer, pash: Win32Pointer, fdwPrepare: number): number;
   /** msacm32.dll!acmStreamReset */

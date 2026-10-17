@@ -5,7 +5,14 @@
  */
 
 export type BotCommandOptionType =
-  "string" | "integer" | "boolean" | "user" | "channel" | "role" | "mentionable" | "number";
+  | "string"
+  | "integer"
+  | "boolean"
+  | "user"
+  | "channel"
+  | "role"
+  | "mentionable"
+  | "number";
 
 export interface BotCommandOptionChoice {
   name: string;

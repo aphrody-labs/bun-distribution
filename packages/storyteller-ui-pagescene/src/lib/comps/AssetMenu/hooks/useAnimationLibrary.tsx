@@ -2,15 +2,8 @@ import { useCallback, useContext, useMemo } from "react";
 import { create } from "zustand";
 import { EngineContext } from "../../../contexts/EngineContext/EngineContext";
 import type { PageSceneAdapter } from "../../../adapter";
-import {
-  FetchStatus,
-  FilterEngineCategories,
-  FilterMediaType,
-} from "../../../enums";
-import {
-  fetchFeaturedMediaItems,
-  fetchUserMediaItems,
-} from "../utilities/fetchMediaItems";
+import { FetchStatus, FilterEngineCategories, FilterMediaType } from "../../../enums";
+import { fetchFeaturedMediaItems, fetchUserMediaItems } from "../utilities/fetchMediaItems";
 import { demoAnimationItems } from "../../../signals/demoAssets";
 import type { MediaItem } from "../../../models/assets";
 import type { Pagination } from "../../../models/pagination";
@@ -49,12 +42,11 @@ const useAnimationLibraryStore = create<AnimationLibraryState>(() => ({
   userNextPage: undefined,
 }));
 
-const hasMorePages = (page: Pagination | undefined): boolean =>
-  !!page && page.current + 1 < page.total_page_count;
+const hasMorePages = (page: Pagination | undefined): boolean => !!page && page.current + 1 < page.total_page_count;
 
 const dedupeById = (items: MediaItem[]): MediaItem[] => {
   const seen = new Set<string>();
-  return items.filter((item) => {
+  return items.filter(item => {
     if (seen.has(item.media_id)) return false;
     seen.add(item.media_id);
     return true;
@@ -70,9 +62,7 @@ const ANIMATION_FILTERS = {
 // later open only after a failure. One pipeline = one toast per attempt.
 let featuredSucceeded = false;
 
-const fetchFeaturedAnimations = async (
-  adapter: PageSceneAdapter,
-): Promise<void> => {
+const fetchFeaturedAnimations = async (adapter: PageSceneAdapter): Promise<void> => {
   const store = useAnimationLibraryStore;
   if (featuredSucceeded) return;
   if (store.getState().featuredFetchStatus === FetchStatus.IN_PROGRESS) return;
@@ -91,10 +81,7 @@ const fetchFeaturedAnimations = async (
   });
 };
 
-const fetchUserAnimationsShared = async (
-  adapter: PageSceneAdapter,
-  pageIndex = 0,
-): Promise<void> => {
+const fetchUserAnimationsShared = async (adapter: PageSceneAdapter, pageIndex = 0): Promise<void> => {
   const store = useAnimationLibraryStore;
   if (store.getState().userFetchStatus === FetchStatus.IN_PROGRESS) return;
   store.setState({ userFetchStatus: FetchStatus.IN_PROGRESS });
@@ -107,19 +94,14 @@ const fetchUserAnimationsShared = async (
     },
     adapter,
   );
-  store.setState((prev) => ({
+  store.setState(prev => ({
     userFetchStatus: result.status,
     ...(result.mediaItems
       ? {
           // Page 0 = refresh (replace); later pages append, deduped by
           // media id in case a refresh raced a load-more.
           userAnimations:
-            pageIndex > 0
-              ? dedupeById([
-                  ...(prev.userAnimations ?? []),
-                  ...result.mediaItems,
-                ])
-              : result.mediaItems,
+            pageIndex > 0 ? dedupeById([...(prev.userAnimations ?? []), ...result.mediaItems]) : result.mediaItems,
           userNextPage: result.nextPage,
         }
       : {}),
@@ -145,13 +127,8 @@ export const useAnimationLibrary = (): {
   fetchStatuses: FetchStatus[];
 } => {
   const editor = useContext(EngineContext);
-  const {
-    featuredAnimations,
-    featuredFetchStatus,
-    userAnimations,
-    userFetchStatus,
-    userNextPage,
-  } = useAnimationLibraryStore();
+  const { featuredAnimations, featuredFetchStatus, userAnimations, userFetchStatus, userNextPage } =
+    useAnimationLibraryStore();
 
   const fetchUserAnimations = useCallback(() => {
     const adapter = editor?.adapter;
@@ -167,8 +144,7 @@ export const useAnimationLibrary = (): {
   }, [editor]);
 
   const defaultAnimations = useMemo(
-    () =>
-      featuredAnimations?.length ? featuredAnimations : demoAnimationItems,
+    () => (featuredAnimations?.length ? featuredAnimations : demoAnimationItems),
     [featuredAnimations],
   );
 

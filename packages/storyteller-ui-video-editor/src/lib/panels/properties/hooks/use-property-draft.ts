@@ -39,9 +39,7 @@ export function usePropertyDraft<T>({
       setDraft(sourceDisplay);
       onStartEditing?.();
     },
-    onChange: (
-      event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    ) => {
+    onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const nextDraft = event.target.value;
       setDraft(nextDraft);
 
@@ -50,9 +48,7 @@ export function usePropertyDraft<T>({
         onPreview(parsed);
       }
     },
-    onBlur: (
-      event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>,
-    ) => {
+    onBlur: (event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const nextDraft = event.target.value;
       if (supportsExpressions && looksLikeExpression({ input: nextDraft })) {
         const evaluated = evaluateMathExpression({ input: nextDraft });

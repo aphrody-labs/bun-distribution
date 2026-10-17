@@ -20,19 +20,19 @@ use std::sync::atomic::{AtomicU8, Ordering};
 /// GTK major version.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Version {
-  /// GTK 3.
-  V3 = 3,
-  /// GTK 4.
-  V4 = 4,
+    /// GTK 3.
+    V3 = 3,
+    /// GTK 4.
+    V4 = 4,
 }
 
 impl std::fmt::Display for Version {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    match self {
-      Self::V3 => write!(f, "GTK 3"),
-      Self::V4 => write!(f, "GTK 4"),
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::V3 => write!(f, "GTK 3"),
+            Self::V4 => write!(f, "GTK 4"),
+        }
     }
-  }
 }
 
 static ACTIVE_VERSION: AtomicU8 = AtomicU8::new(0);
@@ -42,14 +42,14 @@ static ACTIVE_VERSION: AtomicU8 = AtomicU8::new(0);
 /// Runtimes must call this before creating any window. The last call wins; since GTK 3 and GTK 4
 /// cannot share a process, a binary that declares both is already unable to run.
 pub fn declare_version(version: Version) {
-  ACTIVE_VERSION.store(version as u8, Ordering::Relaxed);
+    ACTIVE_VERSION.store(version as u8, Ordering::Relaxed);
 }
 
 /// The GTK version declared by the active runtime, or [`None`] if no runtime declared one.
 pub fn active_version() -> Option<Version> {
-  match ACTIVE_VERSION.load(Ordering::Relaxed) {
-    3 => Some(Version::V3),
-    4 => Some(Version::V4),
-    _ => None,
-  }
+    match ACTIVE_VERSION.load(Ordering::Relaxed) {
+        3 => Some(Version::V3),
+        4 => Some(Version::V4),
+        _ => None,
+    }
 }

@@ -124,9 +124,7 @@ describe("AgUiEventStream: Accumulator & A2U Bridge", () => {
     } as ReasoningMessageContentEvent);
 
     const snapshot = acc.snapshot();
-    expect(snapshot.reasoning).toBe(
-      "Thinking through architecture and design...",
-    );
+    expect(snapshot.reasoning).toBe("Thinking through architecture and design...");
   });
 
   it("tracks subagent invocations and lifecycle", () => {
@@ -180,9 +178,7 @@ describe("AgUiEventStream: Accumulator & A2U Bridge", () => {
             version: "v0.9",
             updateComponents: {
               surfaceId: "surface_main",
-              components: [
-                { id: "btn_1", type: "Button", props: { label: "Deploy" } },
-              ],
+              components: [{ id: "btn_1", type: "Button", props: { label: "Deploy" } }],
             },
           },
           {
@@ -228,9 +224,7 @@ describe("AgUiEventStream: A2A Fleet Envelope Bidirectional Bridge", () => {
     const roundtrip = agUiEventToCoordEnvelope(agUiEvent, "agy", "codex");
     expect(roundtrip.kind).toBe("ask");
     expect(roundtrip.topic).toBe("cargo-check");
-    expect(roundtrip.body).toBe(
-      "Verify serialization in crates/os/kernel/comps/a2a-coord",
-    );
+    expect(roundtrip.body).toBe("Verify serialization in crates/os/kernel/comps/a2a-coord");
     expect(roundtrip.re).toBe("env-parent-0");
     expect(roundtrip.channel_hint).toEqual(["rust", "serial"]);
   });
@@ -249,9 +243,7 @@ describe("AgUiEventStream: A2A Fleet Envelope Bidirectional Bridge", () => {
 
     const event = coordEnvelopeToAgUiEvent(errorEnvelope);
     expect(event.type).toBe(EventType.RUN_ERROR);
-    expect((event as any).message).toBe(
-      "Vector index lock timed out after 30s",
-    );
+    expect((event as any).message).toBe("Vector index lock timed out after 30s");
 
     const backToEnv = agUiEventToCoordEnvelope(event, "shenron", "agy");
     expect(backToEnv.kind).toBe("error");

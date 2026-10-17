@@ -6,16 +6,8 @@ import { AssetType, ToastTypes } from "../enums";
 import type Editor from "../engine/editor";
 import { pickDropPosition } from "../engine/pickDropPosition";
 import { DEFAULT_TIMELINE_FPS } from "../engine/timeline/types";
-import {
-  fractionToTime,
-  quantizeToFrame,
-} from "../comps/Timeline/timelineUtils";
-import {
-  addCharacter,
-  addClipToCharacter,
-  addObject,
-  addShape,
-} from "../actions";
+import { fractionToTime, quantizeToFrame } from "../comps/Timeline/timelineUtils";
+import { addCharacter, addClipToCharacter, addObject, addShape } from "../actions";
 
 // Top-of-page Y exclusion for the host's TopBar — drops above this
 // pixel cutoff are rejected. Stable for the artcraft layout; if a
@@ -71,11 +63,7 @@ class DndAsset {
     this.onPointerUp = this.onPointerUp.bind(this);
   }
 
-  onPointerDown(
-    event: React.PointerEvent<HTMLDivElement>,
-    item: MediaItem,
-    editor: Editor | null,
-  ) {
+  onPointerDown(event: React.PointerEvent<HTMLDivElement>, item: MediaItem, editor: Editor | null) {
     if (event.button === 0) {
       this.editor = editor;
       const store = usePageSceneStore.getState();
@@ -172,8 +160,7 @@ class DndAsset {
             getCamera: () => editor.cameraController.camera,
             getCanvas: () => editor.renderer?.domElement,
             getRaycastTargets: () => editor.activeScene.scene.children,
-            removeTransformControls: () =>
-              editor.utils.removeTransformControls(true),
+            removeTransformControls: () => editor.utils.removeTransformControls(true),
           },
           positionX,
           positionY,
@@ -202,11 +189,7 @@ class DndAsset {
       event.preventDefault();
       const deltaX = event.pageX - this.initX;
       const deltaY = event.pageY - this.initY;
-      if (
-        !this.isDragging &&
-        (Math.abs(deltaX) > this.dragThreshold ||
-          Math.abs(deltaY) > this.dragThreshold)
-      ) {
+      if (!this.isDragging && (Math.abs(deltaX) > this.dragThreshold || Math.abs(deltaY) > this.dragThreshold)) {
         this.isDragging = true;
         this.wasDragGesture = true;
         // Let pointer events pass through the library the moment the drag begins.
@@ -257,11 +240,7 @@ class DndAsset {
   // and completes — fully validated — when the inspection resolves. Punting
   // back to the user with a "try again" toast for losing that race was a
   // bug: click-to-add never waits, so drops shouldn't either.
-  private dropAnimation(
-    event: PointerEvent,
-    item: MediaItem,
-    editor: Editor,
-  ): void {
+  private dropAnimation(event: PointerEvent, item: MediaItem, editor: Editor): void {
     const target = this.findAnimationDropTarget(event);
     if (!target) return;
     // Bumped on every drop of this clip — including the synchronous path,
@@ -279,7 +258,7 @@ class DndAsset {
       this.completeAnimationDrop(editor, item, target, undefined);
       return;
     }
-    void inspection.then((names) => {
+    void inspection.then(names => {
       // Superseded by a newer drop of this same clip.
       if (this.pendingDropTokens.get(item.media_id) !== token) return;
       this.completeAnimationDrop(editor, item, target, names);
@@ -300,35 +279,19 @@ class DndAsset {
     // controller would silently lose the clip while the store writes
     // (timeline expand + reveal) fire on the NEW editor's UI.
     if (!editor.isLive) return;
-    const root = editor.activeScene.scene.children.find(
-      (child) => child.uuid === target.characterUuid,
-    );
+    const root = editor.activeScene.scene.children.find(child => child.uuid === target.characterUuid);
     if (!root) return; // target left the scene while the clip loaded
     if (names === null) {
-      editor.adapter.showToast(
-        ToastTypes.ERROR,
-        `Couldn't read an animation from "${item.name ?? item.media_id}".`,
-      );
+      editor.adapter.showToast(ToastTypes.ERROR, `Couldn't read an animation from "${item.name ?? item.media_id}".`);
       return;
     }
-    if (names && !names.some((name) => root.getObjectByName(name))) {
-      editor.adapter.showToast(
-        ToastTypes.WARNING,
-        "This animation doesn't match the character's skeleton.",
-      );
+    if (names && !names.some(name => root.getObjectByName(name))) {
+      editor.adapter.showToast(ToastTypes.WARNING, "This animation doesn't match the character's skeleton.");
       return;
     }
-    const laneId = addClipToCharacter(
-      editor,
-      target.characterUuid,
-      item,
-      target.time,
-    );
+    const laneId = addClipToCharacter(editor, target.characterUuid, item, target.time);
     if (!laneId) {
-      editor.adapter.showToast(
-        ToastTypes.WARNING,
-        "No room left on the character's timeline for this clip.",
-      );
+      editor.adapter.showToast(ToastTypes.WARNING, "No room left on the character's timeline for this clip.");
     }
   }
 
@@ -345,10 +308,7 @@ class DndAsset {
       state = "blocked";
     } else if (this.activeClipNames === undefined) {
       state = "checking";
-    } else if (
-      this.activeClipNames !== null &&
-      this.characterAcceptsClip(target.characterUuid)
-    ) {
+    } else if (this.activeClipNames !== null && this.characterAcceptsClip(target.characterUuid)) {
       state = "ok";
     } else {
       state = "blocked";
@@ -360,27 +320,17 @@ class DndAsset {
 
   // Timeline character row under the cursor first (precise time), then a
   // character hit in the 3D scene (time 0 → earliest free slot on the row).
-  private findAnimationDropTarget(
-    event: MouseEvent | PointerEvent,
-  ): AnimationDropTarget | null {
+  private findAnimationDropTarget(event: MouseEvent | PointerEvent): AnimationDropTarget | null {
     const rowTarget = this.timelineRowTarget(event.clientX, event.clientY);
     if (rowTarget) return rowTarget;
-    const characterUuid = this.characterUnderPointer(
-      event.clientX,
-      event.clientY,
-    );
+    const characterUuid = this.characterUnderPointer(event.clientX, event.clientY);
     return characterUuid ? { characterUuid, time: 0 } : null;
   }
 
-  private timelineRowTarget(
-    clientX: number,
-    clientY: number,
-  ): AnimationDropTarget | null {
+  private timelineRowTarget(clientX: number, clientY: number): AnimationDropTarget | null {
     const editor = this.editor;
     if (!editor) return null;
-    const row = document
-      .elementFromPoint(clientX, clientY)
-      ?.closest?.(`[${CLIP_DROP_ATTR}]`);
+    const row = document.elementFromPoint(clientX, clientY)?.closest?.(`[${CLIP_DROP_ATTR}]`);
     const characterUuid = row?.getAttribute(CLIP_DROP_ATTR);
     if (!characterUuid) return null;
     const timeline = editor.timelineController.getTimeline();
@@ -406,10 +356,7 @@ class DndAsset {
   //   ground never participate), then accept only when the FIRST hit's root
   //   is clip-eligible: a character hidden behind a wall or prop is not a
   //   target, matching the regular drop path's front-most-surface semantics.
-  private characterUnderPointer(
-    clientX: number,
-    clientY: number,
-  ): string | null {
+  private characterUnderPointer(clientX: number, clientY: number): string | null {
     const editor = this.editor;
     if (!editor) return null;
     const camera = editor.cameraController.camera;
@@ -425,9 +372,7 @@ class DndAsset {
     }
     if (candidateIds.size === 0) return null;
     const contentRoots = scene.children.filter(
-      (child) =>
-        child.userData?.["media_id"] !== undefined ||
-        child.userData?.["isShape"] === true,
+      child => child.userData?.["media_id"] !== undefined || child.userData?.["isShape"] === true,
     );
     if (contentRoots.length === 0) return null;
     const rect = canvas.getBoundingClientRect();
@@ -462,7 +407,7 @@ class DndAsset {
     this.compatByCharacter.clear();
     let promise = this.clipNodeNamesCache.get(mediaId);
     if (!promise) {
-      promise = editor.activeScene.loadRawGlb(mediaId).then((glb) => {
+      promise = editor.activeScene.loadRawGlb(mediaId).then(glb => {
         const clip = glb?.animations?.[0];
         if (!clip) {
           // Unreadable or animation-less: don't cache, so a transient load
@@ -479,7 +424,7 @@ class DndAsset {
       });
       this.clipNodeNamesCache.set(mediaId, promise);
     }
-    void promise.then((names) => {
+    void promise.then(names => {
       // Ignore if this drag ended or another item's drag superseded it.
       if (usePageSceneStore.getState().dragItem?.media_id !== mediaId) return;
       this.activeClipNames = names;
@@ -499,11 +444,8 @@ class DndAsset {
     // findObject): clip targets are always outliner-level roots. A deep
     // traverse here could validate a nested object the drop path can't
     // resolve — green badge, silently lost drop.
-    const root = this.editor?.activeScene.scene.children.find(
-      (child) => child.uuid === characterUuid,
-    );
-    const accepts =
-      !!root && names.some((name) => root.getObjectByName(name) !== undefined);
+    const root = this.editor?.activeScene.scene.children.find(child => child.uuid === characterUuid);
+    const accepts = !!root && names.some(name => root.getObjectByName(name) !== undefined);
     this.compatByCharacter.set(characterUuid, accepts);
     return accepts;
   }

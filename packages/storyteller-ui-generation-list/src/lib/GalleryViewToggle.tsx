@@ -2,10 +2,7 @@ import { LayoutGridIcon, ListIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import {
-  useGalleryViewStore,
-  type GalleryViewMode,
-} from "./gallery-view-store";
+import { useGalleryViewStore, type GalleryViewMode } from "./gallery-view-store";
 
 const OPTIONS: {
   mode: GalleryViewMode;
@@ -19,8 +16,8 @@ const OPTIONS: {
 // Segmented grid/list switch for the create-page galleries. Lives in the
 // TopBar; the selection is shared with the gallery via useGalleryViewStore.
 export function GalleryViewToggle() {
-  const viewMode = useGalleryViewStore((s) => s.viewMode);
-  const setViewMode = useGalleryViewStore((s) => s.setViewMode);
+  const viewMode = useGalleryViewStore(s => s.viewMode);
+  const setViewMode = useGalleryViewStore(s => s.setViewMode);
 
   return (
     <div
@@ -38,9 +35,7 @@ export function GalleryViewToggle() {
               aria-pressed={active}
               onClick={() => setViewMode(mode)}
               className={`flex h-6 w-6 items-center justify-center rounded-[3px] text-xs transition-colors ${
-                active
-                  ? "bg-white/10 text-white"
-                  : "text-white/45 hover:text-white/80"
+                active ? "bg-white/10 text-white" : "text-white/45 hover:text-white/80"
               }`}
             >
               <DynamicIcon icon={icon} />

@@ -5,22 +5,22 @@
   "description": "Bun OS Steam owner (Bun half): VDF text/binary/appinfo parser and writer, Steam client configuration, steamcmd with a cached session, libraries, Proton management and launch tuning, Remote Play state, the local Steam index and the bun-steam CLI.",
   "license": "Apache-2.0",
   "author": "aphrody-dev <contact@aphrody.com>",
-  "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
   "bin": {
     "bun-steam": "src/cli.ts"
   },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
     "./cli": "./src/cli.ts",
     "./signin": "./src/signin.ts",
     "./vdf": "./src/vdf.ts"
   },
-  "files": [
-    "src",
-    "README.md"
-  ],
   "scripts": {
     "lint": "bun lint src",
     "typecheck": "bun check --noEmit -p ."

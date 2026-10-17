@@ -2,12 +2,7 @@
  * High-level bridge to @aphrody/yolo-runtime C ABI 1.4 native engine.
  */
 import { Runtime } from "@aphrody/runtime-sdk/src/index.ts";
-import {
-  sharedRuntime,
-  closeSharedRuntime,
-  system,
-  processes,
-} from "@aphrody/runtime-sdk/src/modules.ts";
+import { sharedRuntime, closeSharedRuntime, system, processes } from "@aphrody/runtime-sdk/src/modules.ts";
 import {
   hostTarget,
   runtimeHome,

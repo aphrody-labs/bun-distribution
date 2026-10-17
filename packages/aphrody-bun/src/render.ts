@@ -26,9 +26,7 @@ export function m3Render(scene: Scene): Uint8Array {
   const outLen = new BigUint64Array(1);
   const ptr = renderLib.bun_rs_render_png(json, json.length, outLen);
   if (!ptr) {
-    throw new Error(
-      "m3Render: bun_rs_render_png returned a null buffer (invalid scene)",
-    );
+    throw new Error("m3Render: bun_rs_render_png returned a null buffer (invalid scene)");
   }
   const len = Number(outLen[0]);
   try {
@@ -55,18 +53,10 @@ export function m3Render(scene: Scene): Uint8Array {
  *
  * @throws if the scene is invalid or the GPU policy cannot be satisfied.
  */
-export function m3Render3d(
-  scene: Scene3d,
-  policy: Render3dPolicy = "cpu",
-): Uint8Array {
+export function m3Render3d(scene: Scene3d, policy: Render3dPolicy = "cpu"): Uint8Array {
   const json = Buffer.from(JSON.stringify(scene));
   const outLen = new BigUint64Array(1);
-  const ptr = renderLib.bun_rs_render3d_png(
-    json,
-    json.length,
-    render3dPolicies[policy],
-    outLen,
-  );
+  const ptr = renderLib.bun_rs_render3d_png(json, json.length, render3dPolicies[policy], outLen);
   if (!ptr) {
     throw new Error(
       `m3Render3d: bun_rs_render3d_png returned a null buffer (invalid scene or unavailable "${policy}" backend)`,

@@ -3,7 +3,12 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** schannel.dll!SslCrackCertificate */
-  SslCrackCertificate(pbCertificate: Win32Pointer, cbCertificate: number, dwFlags: number, ppCertificate: Win32Pointer): number;
+  SslCrackCertificate(
+    pbCertificate: Win32Pointer,
+    cbCertificate: number,
+    dwFlags: number,
+    ppCertificate: Win32Pointer,
+  ): number;
   /** schannel.dll!SslDeserializeCertificateStore */
   SslDeserializeCertificateStore(SerializedCertificateStore: Win32StructInit, ppCertContext: Win32Pointer): number;
   /** schannel.dll!SslEmptyCacheA */
@@ -17,11 +22,24 @@ interface Functions {
   /** schannel.dll!SslGenerateRandomBits */
   SslGenerateRandomBits(pRandomData: Win32Pointer, cRandomData: number): void;
   /** schannel.dll!SslGetExtensions */
-  SslGetExtensions(clientHello: Win32Pointer, clientHelloByteSize: number, genericExtensions: Win32Pointer, genericExtensionsCount: number, bytesToRead: Win32Pointer, flags: number): number;
+  SslGetExtensions(
+    clientHello: Win32Pointer,
+    clientHelloByteSize: number,
+    genericExtensions: Win32Pointer,
+    genericExtensionsCount: number,
+    bytesToRead: Win32Pointer,
+    flags: number,
+  ): number;
   /** schannel.dll!SslGetMaximumKeySize */
   SslGetMaximumKeySize(Reserved: number): number;
   /** schannel.dll!SslGetServerIdentity */
-  SslGetServerIdentity(ClientHello: Win32Pointer, ClientHelloSize: number, ServerIdentity: Win32Pointer, ServerIdentitySize: Win32Pointer, Flags: number): number;
+  SslGetServerIdentity(
+    ClientHello: Win32Pointer,
+    ClientHelloSize: number,
+    ServerIdentity: Win32Pointer,
+    ServerIdentitySize: Win32Pointer,
+    Flags: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

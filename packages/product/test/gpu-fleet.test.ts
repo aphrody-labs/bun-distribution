@@ -5,9 +5,7 @@ import { diskCommand } from "../src/admin/lib/fleet/disks.ts";
 import { openPlanner } from "../src/admin/lib/fleet/native.ts";
 
 test("a missing Python application owner is rejected before interpreter initialization", async () => {
-  await expect(
-    openPlanner(join(import.meta.dir, "missing-owner")),
-  ).rejects.toThrow("source missing");
+  await expect(openPlanner(join(import.meta.dir, "missing-owner"))).rejects.toThrow("source missing");
 });
 
 test.skipIf(!process.env.BUN_PYTHON_HOST_LIBRARY)(
@@ -49,16 +47,8 @@ test("reciprocal Explorer mounts use declared peers and protected host keys", ()
   const argv = diskCommand("omar", "O:", "C:/Users/owner", "C:/Program Files");
   expect(argv).toContain("omara@10.200.77.10:/C:/");
   expect(argv).toContain("StrictHostKeyChecking=yes");
-  expect(argv).toContain(
-    "IdentityFile=/cygdrive/c/Users/owner/.ssh/id_ed25519_aphrody",
-  );
-  expect(
-    diskCommand("aphro-pc", "P:", "C:/Users/omar", "C:/Program Files"),
-  ).toContain("aphro@10.200.77.4:/C:/");
-  expect(() =>
-    diskCommand("external", "O:", "C:/Users/owner", "C:/Program Files"),
-  ).toThrow("undeclared");
-  expect(() =>
-    diskCommand("omar", "C:", "C:/Users/owner", "C:/Program Files"),
-  ).toThrow("unused");
+  expect(argv).toContain("IdentityFile=/cygdrive/c/Users/owner/.ssh/id_ed25519_aphrody");
+  expect(diskCommand("aphro-pc", "P:", "C:/Users/omar", "C:/Program Files")).toContain("aphro@10.200.77.4:/C:/");
+  expect(() => diskCommand("external", "O:", "C:/Users/owner", "C:/Program Files")).toThrow("undeclared");
+  expect(() => diskCommand("omar", "C:", "C:/Users/owner", "C:/Program Files")).toThrow("unused");
 });

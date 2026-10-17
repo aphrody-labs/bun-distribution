@@ -17,8 +17,7 @@ export const ZOOM_MAX = 8;
 
 // ---------- scalar + rect primitives ----------
 
-export const clamp = (v: number, lo: number, hi: number): number =>
-  Math.max(lo, Math.min(hi, v));
+export const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
 
 export const rectFromPoints = (a: Vec2, b: Vec2): Rect => ({
   x: Math.min(a.x, b.x),
@@ -27,12 +26,7 @@ export const rectFromPoints = (a: Vec2, b: Vec2): Rect => ({
   height: Math.abs(b.y - a.y),
 });
 
-export const rectCorners = (r: {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}): Vec2[] => [
+export const rectCorners = (r: { x: number; y: number; width: number; height: number }): Vec2[] => [
   { x: r.x, y: r.y },
   { x: r.x + r.width, y: r.y },
   { x: r.x + r.width, y: r.y + r.height },
@@ -40,12 +34,7 @@ export const rectCorners = (r: {
 ];
 
 export const rectsIntersect = (a: Rect, b: Rect): boolean =>
-  !(
-    a.x + a.width < b.x ||
-    a.x > b.x + b.width ||
-    a.y + a.height < b.y ||
-    a.y > b.y + b.height
-  );
+  !(a.x + a.width < b.x || a.x > b.x + b.width || a.y + a.height < b.y || a.y > b.y + b.height);
 
 // ---------- AABB over a set of nodes ----------
 
@@ -65,10 +54,7 @@ export const computeAABB = (nodes: MoodboardNode[]): Rect | null => {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 };
 
-export const computeAABBById = (
-  nodes: Record<string, MoodboardNode>,
-  ids: string[],
-): Rect | null => {
+export const computeAABBById = (nodes: Record<string, MoodboardNode>, ids: string[]): Rect | null => {
   const picked: MoodboardNode[] = [];
   for (const id of ids) {
     const n = nodes[id];
@@ -80,20 +66,15 @@ export const computeAABBById = (
 // AABB of every top-level node. Treats rotated nodes as their own
 // (x, y, w, h) rect for simplicity — fine for "is content on screen?"
 // checks and minimap overviews.
-export const computeContentBounds = (
-  nodes: Record<string, MoodboardNode>,
-  rootOrder: string[],
-): Rect | null => computeAABBById(nodes, rootOrder);
+export const computeContentBounds = (nodes: Record<string, MoodboardNode>, rootOrder: string[]): Rect | null =>
+  computeAABBById(nodes, rootOrder);
 
 // ---------- viewport math ----------
 
 // Visible stage-coord rect = what the camera currently sees.
 // canvas_px = pan + stage_coord * zoom, so the visible stage region maps to
 // (-pan / zoom) .. (-pan / zoom + canvas / zoom).
-export const computeVisibleRect = (
-  viewport: Viewport,
-  canvas: CanvasSize,
-): Rect => ({
+export const computeVisibleRect = (viewport: Viewport, canvas: CanvasSize): Rect => ({
   x: -viewport.pan.x / viewport.zoom,
   y: -viewport.pan.y / viewport.zoom,
   width: canvas.width / viewport.zoom,
@@ -113,12 +94,7 @@ export const anyContentVisible = (
   for (const id of rootOrder) {
     const n = nodes[id];
     if (!n) continue;
-    if (
-      rectsIntersect(
-        { x: n.x, y: n.y, width: n.width, height: n.height },
-        visible,
-      )
-    ) {
+    if (rectsIntersect({ x: n.x, y: n.y, width: n.width, height: n.height }, visible)) {
       return true;
     }
   }
@@ -129,11 +105,7 @@ export const anyContentVisible = (
 // screen pixels of margin on all sides, clamped to [ZOOM_MIN, ZOOM_MAX].
 // Degenerate bounds (zero width/height) fall back to zoom=1 centered on
 // the point.
-export const fitViewportToBounds = (
-  bounds: Rect,
-  canvas: CanvasSize,
-  padding: number,
-): Viewport => {
+export const fitViewportToBounds = (bounds: Rect, canvas: CanvasSize, padding: number): Viewport => {
   if (bounds.width <= 0 || bounds.height <= 0) {
     return {
       zoom: 1,
@@ -145,11 +117,7 @@ export const fitViewportToBounds = (
   }
   const availW = Math.max(canvas.width - 2 * padding, 1);
   const availH = Math.max(canvas.height - 2 * padding, 1);
-  const zoom = clamp(
-    Math.min(availW / bounds.width, availH / bounds.height),
-    ZOOM_MIN,
-    ZOOM_MAX,
-  );
+  const zoom = clamp(Math.min(availW / bounds.width, availH / bounds.height), ZOOM_MIN, ZOOM_MAX);
   const centerX = bounds.x + bounds.width / 2;
   const centerY = bounds.y + bounds.height / 2;
   return {
@@ -164,11 +132,7 @@ export const fitViewportToBounds = (
 // Returns the pan that centers the viewport on a given stage-coord point
 // at the current zoom. Handy for minimap drag-to-navigate: stage point
 // under the minimap cursor → pan such that it lands in the canvas center.
-export const panToCenterOn = (
-  stagePoint: Vec2,
-  zoom: number,
-  canvas: CanvasSize,
-): Vec2 => ({
+export const panToCenterOn = (stagePoint: Vec2, zoom: number, canvas: CanvasSize): Vec2 => ({
   x: canvas.width / 2 - stagePoint.x * zoom,
   y: canvas.height / 2 - stagePoint.y * zoom,
 });

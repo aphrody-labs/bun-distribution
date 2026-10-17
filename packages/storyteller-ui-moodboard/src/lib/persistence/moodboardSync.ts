@@ -49,17 +49,16 @@ const HYDRATE_CONCURRENCY = 4;
 const TOMBSTONE_STORAGE_KEY = "artcraft_moodboard_deleted_tokens_v1";
 const DEFAULT_BOARD_NAME = "Untitled board";
 
-export type MoodboardSaveStatus =
-  "idle" | "dirty" | "saving" | "saved" | "error";
+export type MoodboardSaveStatus = "idle" | "dirty" | "saving" | "saved" | "error";
 
 interface MoodboardSyncState {
   status: MoodboardSaveStatus;
   setStatus: (status: MoodboardSaveStatus) => void;
 }
 
-export const useMoodboardSyncStore = create<MoodboardSyncState>((set) => ({
+export const useMoodboardSyncStore = create<MoodboardSyncState>(set => ({
   status: "idle",
-  setStatus: (status) => set({ status }),
+  setStatus: status => set({ status }),
 }));
 
 // ---------- module-level controller state ----------
@@ -79,8 +78,7 @@ let retryAttempt = 0;
 let pageHideHooked = false;
 let restoredLiveCanvas = false;
 
-const setStatus = (status: MoodboardSaveStatus) =>
-  useMoodboardSyncStore.getState().setStatus(status);
+const setStatus = (status: MoodboardSaveStatus) => useMoodboardSyncStore.getState().setStatus(status);
 
 // ---------- public surface ----------
 
@@ -89,15 +87,13 @@ export function useMoodboardSync(adapter: MoodboardAdapter): {
   status: MoodboardSaveStatus;
   saveNow: () => void;
 } {
-  const status = useMoodboardSyncStore((s) => s.status);
+  const status = useMoodboardSyncStore(s => s.status);
   const persistence = adapter.persistence;
 
   // The session resolves asynchronously, so track the account reactively —
   // a boolean sampled once would miss both late logins and account
   // switches.
-  const [userId, setUserId] = useState<string | null>(
-    () => persistence?.getUserId() ?? null,
-  );
+  const [userId, setUserId] = useState<string | null>(() => persistence?.getUserId() ?? null);
   useEffect(() => {
     if (!persistence) return undefined;
     const update = () => setUserId(persistence.getUserId());
@@ -232,10 +228,7 @@ function markBoardDirty(boardId: string): void {
 
 function canSaveNow(): boolean {
   return (
-    syncPhase === "ready" &&
-    persistenceRef !== null &&
-    syncUserId !== null &&
-    persistenceRef.getUserId() === syncUserId
+    syncPhase === "ready" && persistenceRef !== null && syncUserId !== null && persistenceRef.getUserId() === syncUserId
   );
 }
 
@@ -303,14 +296,12 @@ async function flush(): Promise<void> {
 
   // Failed boards stay dirty and retry with backoff — a transient network
   // error must never silently drop edits from the push queue.
-  failed.forEach((id) => dirtyBoardIds.add(id));
+  failed.forEach(id => dirtyBoardIds.add(id));
 
   if (failed.length > 0) {
     retryAttempt += 1;
     setStatus("error");
-    scheduleFlush(
-      Math.min(RETRY_BASE_MS * 2 ** (retryAttempt - 1), RETRY_MAX_MS),
-    );
+    scheduleFlush(Math.min(RETRY_BASE_MS * 2 ** (retryAttempt - 1), RETRY_MAX_MS));
   } else {
     retryAttempt = 0;
     if (dirtyBoardIds.size > 0 || hasPendingFlush) {
@@ -324,11 +315,7 @@ async function flush(): Promise<void> {
   hasPendingFlush = false;
 }
 
-async function saveBoard(
-  persistence: MoodboardPersistenceAdapter,
-  userId: string,
-  boardId: string,
-): Promise<boolean> {
+async function saveBoard(persistence: MoodboardPersistenceAdapter, userId: string, boardId: string): Promise<boolean> {
   const state = useBoardLibraryStore.getState();
   const board = state.boards[boardId];
   if (!board) return true;
@@ -337,10 +324,7 @@ async function saveBoard(
   // never pushed from this one, even though it is visible in the
   // machine-shared local library.
   if (board.ownerId && board.ownerId !== userId) {
-    console.warn(
-      "[Moodboard] skipping push of board owned by another account:",
-      boardId,
-    );
+    console.warn("[Moodboard] skipping push of board owned by another account:", boardId);
     return true;
   }
 
@@ -366,9 +350,7 @@ async function saveBoard(
     return true;
   }
 
-  const documentJson = JSON.stringify(
-    serializeMoodboardDocument({ board, canvas }),
-  );
+  const documentJson = JSON.stringify(serializeMoodboardDocument({ board, canvas }));
 
   try {
     const result = await persistence.saveBoard({
@@ -390,8 +372,7 @@ async function saveBoard(
       // survive to the next push. Board content fields are compared (not
       // identity, which sync's own token write-back churns); the canvas
       // is compared by replica-entry reference (every stash replaces it).
-      const canvasUnchanged =
-        (getCanvasForBoard(boardId) ?? EMPTY_CANVAS_DOCUMENT) === canvas;
+      const canvasUnchanged = (getCanvasForBoard(boardId) ?? EMPTY_CANVAS_DOCUMENT) === canvas;
       if (!boardEditedSince(board, boardId) && canvasUnchanged) {
         store.markBoardSynced(boardId, { ownerId: userId });
       }
@@ -419,10 +400,7 @@ function boardEditedSince(snapshot: Board, boardId: string): boolean {
 
 // ---------- hydration ----------
 
-async function hydrateRemoteBoards(
-  persistence: MoodboardPersistenceAdapter,
-  userId: string,
-): Promise<void> {
+async function hydrateRemoteBoards(persistence: MoodboardPersistenceAdapter, userId: string): Promise<void> {
   try {
     const listed = await persistence.listBoards();
     // Abandon silently if the account changed mid-flight.
@@ -431,19 +409,15 @@ async function hydrateRemoteBoards(
     if (listed.success && listed.boards) {
       await retryTombstonedDeletes(persistence);
       const tombstones = readTombstones();
-      const rows = listed.boards.filter((row) => !tombstones.has(row.token));
+      const rows = listed.boards.filter(row => !tombstones.has(row.token));
 
       // Each board hydrates independently — one bad row/fetch must not
       // strand every board after it.
-      await mapWithConcurrency(rows, HYDRATE_CONCURRENCY, async (row) => {
+      await mapWithConcurrency(rows, HYDRATE_CONCURRENCY, async row => {
         try {
           await hydrateBoard(persistence, userId, row.token, row.name);
         } catch (error) {
-          console.error(
-            "[Moodboard] board hydration failed:",
-            row.token,
-            error,
-          );
+          console.error("[Moodboard] board hydration failed:", row.token, error);
         }
       });
     } else {
@@ -474,9 +448,7 @@ async function hydrateBoard(
   token: string,
   name: string,
 ): Promise<void> {
-  const local = Object.values(useBoardLibraryStore.getState().boards).find(
-    (b) => b.remoteToken === token,
-  );
+  const local = Object.values(useBoardLibraryStore.getState().boards).find(b => b.remoteToken === token);
 
   // Dirty-aware LWW: unsaved local edits win — they are strictly newer
   // than the server copy from this device's perspective, and the pending
@@ -513,9 +485,7 @@ async function hydrateBoard(
     const store = useBoardLibraryStore.getState();
     // Re-check dirtiness at apply time: the user may have edited this
     // board while its document was downloading.
-    const current = Object.values(store.boards).find(
-      (b) => b.remoteToken === token,
-    );
+    const current = Object.values(store.boards).find(b => b.remoteToken === token);
     if (current?.needsSync) {
       dirtyBoardIds.add(current.id);
       return;
@@ -567,10 +537,7 @@ function readTombstones(): Set<string> {
 
 function writeTombstones(tokens: Set<string>): void {
   try {
-    localStorage.setItem(
-      TOMBSTONE_STORAGE_KEY,
-      JSON.stringify(Array.from(tokens)),
-    );
+    localStorage.setItem(TOMBSTONE_STORAGE_KEY, JSON.stringify(Array.from(tokens)));
   } catch (error) {
     console.error("[Moodboard] tombstone persist failed:", error);
   }
@@ -588,9 +555,7 @@ function removeTombstone(token: string): void {
   writeTombstones(tokens);
 }
 
-async function retryTombstonedDeletes(
-  persistence: MoodboardPersistenceAdapter,
-): Promise<void> {
+async function retryTombstonedDeletes(persistence: MoodboardPersistenceAdapter): Promise<void> {
   if (!persistence.deleteBoard) return;
   for (const token of readTombstones()) {
     try {
@@ -621,7 +586,7 @@ function hookPageHide(): void {
     if (activeId && dirtyBoardIds.has(activeId)) stashLiveCanvas(activeId);
     withDirtySuppressed(() => {
       const store = useBoardLibraryStore.getState();
-      dirtyBoardIds.forEach((id) => store.markBoardNeedsSync(id));
+      dirtyBoardIds.forEach(id => store.markBoardNeedsSync(id));
     });
     persistCanvasReplicaNow();
   });
@@ -629,20 +594,13 @@ function hookPageHide(): void {
 
 // ---------- small utils ----------
 
-async function mapWithConcurrency<T>(
-  items: T[],
-  limit: number,
-  run: (item: T) => Promise<void>,
-): Promise<void> {
+async function mapWithConcurrency<T>(items: T[], limit: number, run: (item: T) => Promise<void>): Promise<void> {
   let nextIndex = 0;
-  const workers = Array.from(
-    { length: Math.min(limit, items.length) },
-    async () => {
-      while (nextIndex < items.length) {
-        const index = nextIndex++;
-        await run(items[index]);
-      }
-    },
-  );
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      await run(items[index]);
+    }
+  });
   await Promise.all(workers);
 }

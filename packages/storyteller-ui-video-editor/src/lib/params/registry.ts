@@ -16,21 +16,12 @@ import { CORNER_RADIUS_MAX, CORNER_RADIUS_MIN } from "../text/background";
 // The registry is keyed by ElementType, so adding a new element type
 // requires registering its params here at module-init time.
 
-export type ElementParamDefinition<TKey extends string = string> =
-  ParamDefinition<TKey> & {
-    read?: ({ element }: { element: TimelineElement }) => ParamValue | null;
-    write?: ({
-      element,
-      value,
-    }: {
-      element: TimelineElement;
-      value: ParamValue;
-    }) => TimelineElement;
-  };
+export type ElementParamDefinition<TKey extends string = string> = ParamDefinition<TKey> & {
+  read?: ({ element }: { element: TimelineElement }) => ParamValue | null;
+  write?: ({ element, value }: { element: TimelineElement; value: ParamValue }) => TimelineElement;
+};
 
-export function buildDefaultParamValues(
-  params: readonly ParamDefinition[],
-): ParamValues {
+export function buildDefaultParamValues(params: readonly ParamDefinition[]): ParamValues {
   const values: ParamValues = {};
   for (const param of params) {
     values[param.key] = param.default;
@@ -320,10 +311,9 @@ const textElementParams: ElementParamDefinition[] = [
   },
 ];
 
-export const elementParamRegistry = new DefinitionRegistry<
-  ElementType,
-  readonly ElementParamDefinition[]
->("element params");
+export const elementParamRegistry = new DefinitionRegistry<ElementType, readonly ElementParamDefinition[]>(
+  "element params",
+);
 
 elementParamRegistry.register({
   key: "video",
@@ -348,21 +338,11 @@ elementParamRegistry.register({
 elementParamRegistry.register({ key: "audio", definition: audioElementParams });
 elementParamRegistry.register({ key: "effect", definition: [] });
 
-export function getElementParams({
-  element,
-}: {
-  element: TimelineElement;
-}): readonly ElementParamDefinition[] {
-  return elementParamRegistry.has(element.type)
-    ? elementParamRegistry.get(element.type)
-    : [];
+export function getElementParams({ element }: { element: TimelineElement }): readonly ElementParamDefinition[] {
+  return elementParamRegistry.has(element.type) ? elementParamRegistry.get(element.type) : [];
 }
 
-export function getBuiltInElementParams({
-  type,
-}: {
-  type: ElementType;
-}): readonly ElementParamDefinition[] {
+export function getBuiltInElementParams({ type }: { type: ElementType }): readonly ElementParamDefinition[] {
   return elementParamRegistry.has(type) ? elementParamRegistry.get(type) : [];
 }
 
@@ -373,9 +353,7 @@ export function getElementParam({
   element: TimelineElement;
   key: string;
 }): ElementParamDefinition | null {
-  return (
-    getElementParams({ element }).find((param) => param.key === key) ?? null
-  );
+  return getElementParams({ element }).find(param => param.key === key) ?? null;
 }
 
 export function readElementParamValue({
@@ -418,11 +396,7 @@ export function writeElementParamValue({
   return element;
 }
 
-export function buildElementParamValues({
-  element,
-}: {
-  element: TimelineElement;
-}): ParamValues {
+export function buildElementParamValues({ element }: { element: TimelineElement }): ParamValues {
   const values: ParamValues = {};
   for (const param of getElementParams({ element })) {
     const value = readElementParamValue({ element, param });

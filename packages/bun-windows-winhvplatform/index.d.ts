@@ -5,9 +5,22 @@ interface Functions {
   /** winhvplatform.dll!WHvAcceptPartitionMigration */
   WHvAcceptPartitionMigration(MigrationHandle: Win32Pointer, Partition: Win32Pointer): number;
   /** winhvplatform.dll!WHvAdviseGpaRange */
-  WHvAdviseGpaRange(Partition: number | bigint, GpaRanges: Win32Pointer, GpaRangesCount: number, Advice: number, AdviceBuffer: Win32Pointer, AdviceBufferSizeInBytes: number): number;
+  WHvAdviseGpaRange(
+    Partition: number | bigint,
+    GpaRanges: Win32Pointer,
+    GpaRangesCount: number,
+    Advice: number,
+    AdviceBuffer: Win32Pointer,
+    AdviceBufferSizeInBytes: number,
+  ): number;
   /** winhvplatform.dll!WHvAllocateVpciResource */
-  WHvAllocateVpciResource(ProviderId: Win32Pointer, Flags: number, ResourceDescriptor: Win32Pointer, ResourceDescriptorSizeInBytes: number, VpciResource: Win32Pointer): number;
+  WHvAllocateVpciResource(
+    ProviderId: Win32Pointer,
+    Flags: number,
+    ResourceDescriptor: Win32Pointer,
+    ResourceDescriptorSizeInBytes: number,
+    VpciResource: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvCancelPartitionMigration */
   WHvCancelPartitionMigration(Partition: number | bigint): number;
   /** winhvplatform.dll!WHvCancelRunVirtualProcessor */
@@ -15,17 +28,38 @@ interface Functions {
   /** winhvplatform.dll!WHvCompletePartitionMigration */
   WHvCompletePartitionMigration(Partition: number | bigint): number;
   /** winhvplatform.dll!WHvCreateNotificationPort */
-  WHvCreateNotificationPort(Partition: number | bigint, Parameters: Win32Pointer, EventHandle: Win32Pointer, PortHandle: Win32Pointer): number;
+  WHvCreateNotificationPort(
+    Partition: number | bigint,
+    Parameters: Win32Pointer,
+    EventHandle: Win32Pointer,
+    PortHandle: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvCreatePartition */
   WHvCreatePartition(Partition: Win32Pointer): number;
   /** winhvplatform.dll!WHvCreateTrigger */
-  WHvCreateTrigger(Partition: number | bigint, Parameters: Win32Pointer, TriggerHandle: Win32Pointer, EventHandle: Win32Pointer): number;
+  WHvCreateTrigger(
+    Partition: number | bigint,
+    Parameters: Win32Pointer,
+    TriggerHandle: Win32Pointer,
+    EventHandle: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvCreateVirtualProcessor */
   WHvCreateVirtualProcessor(Partition: number | bigint, VpIndex: number, Flags: number): number;
   /** winhvplatform.dll!WHvCreateVirtualProcessor2 */
-  WHvCreateVirtualProcessor2(Partition: number | bigint, VpIndex: number, Properties: Win32Pointer, PropertyCount: number): number;
+  WHvCreateVirtualProcessor2(
+    Partition: number | bigint,
+    VpIndex: number,
+    Properties: Win32Pointer,
+    PropertyCount: number,
+  ): number;
   /** winhvplatform.dll!WHvCreateVpciDevice */
-  WHvCreateVpciDevice(Partition: number | bigint, LogicalDeviceId: number | bigint, VpciResource: Win32Pointer, Flags: number, NotificationEventHandle: Win32Pointer): number;
+  WHvCreateVpciDevice(
+    Partition: number | bigint,
+    LogicalDeviceId: number | bigint,
+    VpciResource: Win32Pointer,
+    Flags: number,
+    NotificationEventHandle: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvDeleteNotificationPort */
   WHvDeleteNotificationPort(Partition: number | bigint, PortHandle: Win32Pointer): number;
   /** winhvplatform.dll!WHvDeletePartition */
@@ -37,89 +71,295 @@ interface Functions {
   /** winhvplatform.dll!WHvDeleteVpciDevice */
   WHvDeleteVpciDevice(Partition: number | bigint, LogicalDeviceId: number | bigint): number;
   /** winhvplatform.dll!WHvGetCapability */
-  WHvGetCapability(CapabilityCode: number, CapabilityBuffer: Win32Pointer, CapabilityBufferSizeInBytes: number, WrittenSizeInBytes: Win32Pointer): number;
+  WHvGetCapability(
+    CapabilityCode: number,
+    CapabilityBuffer: Win32Pointer,
+    CapabilityBufferSizeInBytes: number,
+    WrittenSizeInBytes: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvGetInterruptTargetVpSet */
-  WHvGetInterruptTargetVpSet(Partition: number | bigint, Destination: number | bigint, DestinationMode: number, TargetVps: Win32Pointer, VpCount: number, TargetVpCount: Win32Pointer): number;
+  WHvGetInterruptTargetVpSet(
+    Partition: number | bigint,
+    Destination: number | bigint,
+    DestinationMode: number,
+    TargetVps: Win32Pointer,
+    VpCount: number,
+    TargetVpCount: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvGetPartitionCounters */
-  WHvGetPartitionCounters(Partition: number | bigint, CounterSet: number, Buffer: Win32Pointer, BufferSizeInBytes: number, BytesWritten: Win32Pointer): number;
+  WHvGetPartitionCounters(
+    Partition: number | bigint,
+    CounterSet: number,
+    Buffer: Win32Pointer,
+    BufferSizeInBytes: number,
+    BytesWritten: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvGetPartitionProperty */
-  WHvGetPartitionProperty(Partition: number | bigint, PropertyCode: number, PropertyBuffer: Win32Pointer, PropertyBufferSizeInBytes: number, WrittenSizeInBytes: Win32Pointer): number;
+  WHvGetPartitionProperty(
+    Partition: number | bigint,
+    PropertyCode: number,
+    PropertyBuffer: Win32Pointer,
+    PropertyBufferSizeInBytes: number,
+    WrittenSizeInBytes: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvGetVirtualProcessorCounters */
-  WHvGetVirtualProcessorCounters(Partition: number | bigint, VpIndex: number, CounterSet: number, Buffer: Win32Pointer, BufferSizeInBytes: number, BytesWritten: Win32Pointer): number;
+  WHvGetVirtualProcessorCounters(
+    Partition: number | bigint,
+    VpIndex: number,
+    CounterSet: number,
+    Buffer: Win32Pointer,
+    BufferSizeInBytes: number,
+    BytesWritten: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvGetVirtualProcessorCpuidOutput */
-  WHvGetVirtualProcessorCpuidOutput(Partition: number | bigint, VpIndex: number, Eax: number, Ecx: number, CpuidOutput: Win32Pointer): number;
+  WHvGetVirtualProcessorCpuidOutput(
+    Partition: number | bigint,
+    VpIndex: number,
+    Eax: number,
+    Ecx: number,
+    CpuidOutput: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvGetVirtualProcessorInterruptControllerState */
-  WHvGetVirtualProcessorInterruptControllerState(Partition: number | bigint, VpIndex: number, State: Win32Pointer, StateSize: number, WrittenSize: Win32Pointer): number;
+  WHvGetVirtualProcessorInterruptControllerState(
+    Partition: number | bigint,
+    VpIndex: number,
+    State: Win32Pointer,
+    StateSize: number,
+    WrittenSize: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvGetVirtualProcessorInterruptControllerState2 */
-  WHvGetVirtualProcessorInterruptControllerState2(Partition: number | bigint, VpIndex: number, State: Win32Pointer, StateSize: number, WrittenSize: Win32Pointer): number;
+  WHvGetVirtualProcessorInterruptControllerState2(
+    Partition: number | bigint,
+    VpIndex: number,
+    State: Win32Pointer,
+    StateSize: number,
+    WrittenSize: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvGetVirtualProcessorRegisters */
-  WHvGetVirtualProcessorRegisters(Partition: number | bigint, VpIndex: number, RegisterNames: Win32Pointer, RegisterCount: number, RegisterValues: Win32Pointer): number;
+  WHvGetVirtualProcessorRegisters(
+    Partition: number | bigint,
+    VpIndex: number,
+    RegisterNames: Win32Pointer,
+    RegisterCount: number,
+    RegisterValues: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvGetVirtualProcessorState */
-  WHvGetVirtualProcessorState(Partition: number | bigint, VpIndex: number, StateType: number, Buffer: Win32Pointer, BufferSizeInBytes: number, BytesWritten: Win32Pointer): number;
+  WHvGetVirtualProcessorState(
+    Partition: number | bigint,
+    VpIndex: number,
+    StateType: number,
+    Buffer: Win32Pointer,
+    BufferSizeInBytes: number,
+    BytesWritten: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvGetVirtualProcessorXsaveState */
-  WHvGetVirtualProcessorXsaveState(Partition: number | bigint, VpIndex: number, Buffer: Win32Pointer, BufferSizeInBytes: number, BytesWritten: Win32Pointer): number;
+  WHvGetVirtualProcessorXsaveState(
+    Partition: number | bigint,
+    VpIndex: number,
+    Buffer: Win32Pointer,
+    BufferSizeInBytes: number,
+    BytesWritten: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvGetVpciDeviceInterruptTarget */
-  WHvGetVpciDeviceInterruptTarget(Partition: number | bigint, LogicalDeviceId: number | bigint, Index: number, MultiMessageNumber: number, Target: Win32Pointer, TargetSizeInBytes: number, BytesWritten: Win32Pointer): number;
+  WHvGetVpciDeviceInterruptTarget(
+    Partition: number | bigint,
+    LogicalDeviceId: number | bigint,
+    Index: number,
+    MultiMessageNumber: number,
+    Target: Win32Pointer,
+    TargetSizeInBytes: number,
+    BytesWritten: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvGetVpciDeviceNotification */
-  WHvGetVpciDeviceNotification(Partition: number | bigint, LogicalDeviceId: number | bigint, Notification: Win32Pointer, NotificationSizeInBytes: number): number;
+  WHvGetVpciDeviceNotification(
+    Partition: number | bigint,
+    LogicalDeviceId: number | bigint,
+    Notification: Win32Pointer,
+    NotificationSizeInBytes: number,
+  ): number;
   /** winhvplatform.dll!WHvGetVpciDeviceProperty */
-  WHvGetVpciDeviceProperty(Partition: number | bigint, LogicalDeviceId: number | bigint, PropertyCode: number, PropertyBuffer: Win32Pointer, PropertyBufferSizeInBytes: number, WrittenSizeInBytes: Win32Pointer): number;
+  WHvGetVpciDeviceProperty(
+    Partition: number | bigint,
+    LogicalDeviceId: number | bigint,
+    PropertyCode: number,
+    PropertyBuffer: Win32Pointer,
+    PropertyBufferSizeInBytes: number,
+    WrittenSizeInBytes: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvMapGpaRange */
-  WHvMapGpaRange(Partition: number | bigint, SourceAddress: Win32Pointer, GuestAddress: number | bigint, SizeInBytes: number | bigint, Flags: number): number;
+  WHvMapGpaRange(
+    Partition: number | bigint,
+    SourceAddress: Win32Pointer,
+    GuestAddress: number | bigint,
+    SizeInBytes: number | bigint,
+    Flags: number,
+  ): number;
   /** winhvplatform.dll!WHvMapGpaRange2 */
-  WHvMapGpaRange2(Partition: number | bigint, Process: Win32Pointer, SourceAddress: Win32Pointer, GuestAddress: number | bigint, SizeInBytes: number | bigint, Flags: number): number;
+  WHvMapGpaRange2(
+    Partition: number | bigint,
+    Process: Win32Pointer,
+    SourceAddress: Win32Pointer,
+    GuestAddress: number | bigint,
+    SizeInBytes: number | bigint,
+    Flags: number,
+  ): number;
   /** winhvplatform.dll!WHvMapVpciDeviceInterrupt */
-  WHvMapVpciDeviceInterrupt(Partition: number | bigint, LogicalDeviceId: number | bigint, Index: number, MessageCount: number, Target: Win32Pointer, MsiAddress: Win32Pointer, MsiData: Win32Pointer): number;
+  WHvMapVpciDeviceInterrupt(
+    Partition: number | bigint,
+    LogicalDeviceId: number | bigint,
+    Index: number,
+    MessageCount: number,
+    Target: Win32Pointer,
+    MsiAddress: Win32Pointer,
+    MsiData: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvMapVpciDeviceMmioRanges */
-  WHvMapVpciDeviceMmioRanges(Partition: number | bigint, LogicalDeviceId: number | bigint, MappingCount: Win32Pointer, Mappings: Win32Pointer): number;
+  WHvMapVpciDeviceMmioRanges(
+    Partition: number | bigint,
+    LogicalDeviceId: number | bigint,
+    MappingCount: Win32Pointer,
+    Mappings: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvPostVirtualProcessorSynicMessage */
-  WHvPostVirtualProcessorSynicMessage(Partition: number | bigint, VpIndex: number, SintIndex: number, Message: Win32Pointer, MessageSizeInBytes: number): number;
+  WHvPostVirtualProcessorSynicMessage(
+    Partition: number | bigint,
+    VpIndex: number,
+    SintIndex: number,
+    Message: Win32Pointer,
+    MessageSizeInBytes: number,
+  ): number;
   /** winhvplatform.dll!WHvQueryGpaRangeDirtyBitmap */
-  WHvQueryGpaRangeDirtyBitmap(Partition: number | bigint, GuestAddress: number | bigint, RangeSizeInBytes: number | bigint, Bitmap: Win32Pointer, BitmapSizeInBytes: number): number;
+  WHvQueryGpaRangeDirtyBitmap(
+    Partition: number | bigint,
+    GuestAddress: number | bigint,
+    RangeSizeInBytes: number | bigint,
+    Bitmap: Win32Pointer,
+    BitmapSizeInBytes: number,
+  ): number;
   /** winhvplatform.dll!WHvReadGpaRange */
-  WHvReadGpaRange(Partition: number | bigint, VpIndex: number, GuestAddress: number | bigint, Controls: Win32StructInit, Data: Win32Pointer, DataSizeInBytes: number): number;
+  WHvReadGpaRange(
+    Partition: number | bigint,
+    VpIndex: number,
+    GuestAddress: number | bigint,
+    Controls: Win32StructInit,
+    Data: Win32Pointer,
+    DataSizeInBytes: number,
+  ): number;
   /** winhvplatform.dll!WHvReadVpciDeviceRegister */
-  WHvReadVpciDeviceRegister(Partition: number | bigint, LogicalDeviceId: number | bigint, Register: Win32Pointer, Data: Win32Pointer): number;
+  WHvReadVpciDeviceRegister(
+    Partition: number | bigint,
+    LogicalDeviceId: number | bigint,
+    Register: Win32Pointer,
+    Data: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvRegisterPartitionDoorbellEvent */
-  WHvRegisterPartitionDoorbellEvent(Partition: number | bigint, MatchData: Win32Pointer, EventHandle: Win32Pointer): number;
+  WHvRegisterPartitionDoorbellEvent(
+    Partition: number | bigint,
+    MatchData: Win32Pointer,
+    EventHandle: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvRequestInterrupt */
   WHvRequestInterrupt(Partition: number | bigint, Interrupt: Win32Pointer, InterruptControlSize: number): number;
   /** winhvplatform.dll!WHvRequestVpciDeviceInterrupt */
-  WHvRequestVpciDeviceInterrupt(Partition: number | bigint, LogicalDeviceId: number | bigint, MsiAddress: number | bigint, MsiData: number): number;
+  WHvRequestVpciDeviceInterrupt(
+    Partition: number | bigint,
+    LogicalDeviceId: number | bigint,
+    MsiAddress: number | bigint,
+    MsiData: number,
+  ): number;
   /** winhvplatform.dll!WHvResetPartition */
   WHvResetPartition(Partition: number | bigint): number;
   /** winhvplatform.dll!WHvResumePartitionTime */
   WHvResumePartitionTime(Partition: number | bigint): number;
   /** winhvplatform.dll!WHvRetargetVpciDeviceInterrupt */
-  WHvRetargetVpciDeviceInterrupt(Partition: number | bigint, LogicalDeviceId: number | bigint, MsiAddress: number | bigint, MsiData: number, Target: Win32Pointer): number;
+  WHvRetargetVpciDeviceInterrupt(
+    Partition: number | bigint,
+    LogicalDeviceId: number | bigint,
+    MsiAddress: number | bigint,
+    MsiData: number,
+    Target: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvRunVirtualProcessor */
-  WHvRunVirtualProcessor(Partition: number | bigint, VpIndex: number, ExitContext: Win32Pointer, ExitContextSizeInBytes: number): number;
+  WHvRunVirtualProcessor(
+    Partition: number | bigint,
+    VpIndex: number,
+    ExitContext: Win32Pointer,
+    ExitContextSizeInBytes: number,
+  ): number;
   /** winhvplatform.dll!WHvSetNotificationPortProperty */
-  WHvSetNotificationPortProperty(Partition: number | bigint, PortHandle: Win32Pointer, PropertyCode: number, PropertyValue: number | bigint): number;
+  WHvSetNotificationPortProperty(
+    Partition: number | bigint,
+    PortHandle: Win32Pointer,
+    PropertyCode: number,
+    PropertyValue: number | bigint,
+  ): number;
   /** winhvplatform.dll!WHvSetPartitionProperty */
-  WHvSetPartitionProperty(Partition: number | bigint, PropertyCode: number, PropertyBuffer: Win32Pointer, PropertyBufferSizeInBytes: number): number;
+  WHvSetPartitionProperty(
+    Partition: number | bigint,
+    PropertyCode: number,
+    PropertyBuffer: Win32Pointer,
+    PropertyBufferSizeInBytes: number,
+  ): number;
   /** winhvplatform.dll!WHvSetVirtualProcessorInterruptControllerState */
-  WHvSetVirtualProcessorInterruptControllerState(Partition: number | bigint, VpIndex: number, State: Win32Pointer, StateSize: number): number;
+  WHvSetVirtualProcessorInterruptControllerState(
+    Partition: number | bigint,
+    VpIndex: number,
+    State: Win32Pointer,
+    StateSize: number,
+  ): number;
   /** winhvplatform.dll!WHvSetVirtualProcessorInterruptControllerState2 */
-  WHvSetVirtualProcessorInterruptControllerState2(Partition: number | bigint, VpIndex: number, State: Win32Pointer, StateSize: number): number;
+  WHvSetVirtualProcessorInterruptControllerState2(
+    Partition: number | bigint,
+    VpIndex: number,
+    State: Win32Pointer,
+    StateSize: number,
+  ): number;
   /** winhvplatform.dll!WHvSetVirtualProcessorRegisters */
-  WHvSetVirtualProcessorRegisters(Partition: number | bigint, VpIndex: number, RegisterNames: Win32Pointer, RegisterCount: number, RegisterValues: Win32Pointer): number;
+  WHvSetVirtualProcessorRegisters(
+    Partition: number | bigint,
+    VpIndex: number,
+    RegisterNames: Win32Pointer,
+    RegisterCount: number,
+    RegisterValues: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvSetVirtualProcessorState */
-  WHvSetVirtualProcessorState(Partition: number | bigint, VpIndex: number, StateType: number, Buffer: Win32Pointer, BufferSizeInBytes: number): number;
+  WHvSetVirtualProcessorState(
+    Partition: number | bigint,
+    VpIndex: number,
+    StateType: number,
+    Buffer: Win32Pointer,
+    BufferSizeInBytes: number,
+  ): number;
   /** winhvplatform.dll!WHvSetVirtualProcessorXsaveState */
-  WHvSetVirtualProcessorXsaveState(Partition: number | bigint, VpIndex: number, Buffer: Win32Pointer, BufferSizeInBytes: number): number;
+  WHvSetVirtualProcessorXsaveState(
+    Partition: number | bigint,
+    VpIndex: number,
+    Buffer: Win32Pointer,
+    BufferSizeInBytes: number,
+  ): number;
   /** winhvplatform.dll!WHvSetVpciDevicePowerState */
   WHvSetVpciDevicePowerState(Partition: number | bigint, LogicalDeviceId: number | bigint, PowerState: number): number;
   /** winhvplatform.dll!WHvSetupPartition */
   WHvSetupPartition(Partition: number | bigint): number;
   /** winhvplatform.dll!WHvSignalVirtualProcessorSynicEvent */
-  WHvSignalVirtualProcessorSynicEvent(Partition: number | bigint, SynicEvent: Win32StructInit, NewlySignaled: Win32Pointer): number;
+  WHvSignalVirtualProcessorSynicEvent(
+    Partition: number | bigint,
+    SynicEvent: Win32StructInit,
+    NewlySignaled: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvStartPartitionMigration */
   WHvStartPartitionMigration(Partition: number | bigint, MigrationHandle: Win32Pointer): number;
   /** winhvplatform.dll!WHvSuspendPartitionTime */
   WHvSuspendPartitionTime(Partition: number | bigint): number;
   /** winhvplatform.dll!WHvTranslateGva */
-  WHvTranslateGva(Partition: number | bigint, VpIndex: number, Gva: number | bigint, TranslateFlags: number, TranslationResult: Win32Pointer, Gpa: Win32Pointer): number;
+  WHvTranslateGva(
+    Partition: number | bigint,
+    VpIndex: number,
+    Gva: number | bigint,
+    TranslateFlags: number,
+    TranslationResult: Win32Pointer,
+    Gpa: Win32Pointer,
+  ): number;
   /** winhvplatform.dll!WHvUnmapGpaRange */
   WHvUnmapGpaRange(Partition: number | bigint, GuestAddress: number | bigint, SizeInBytes: number | bigint): number;
   /** winhvplatform.dll!WHvUnmapVpciDeviceInterrupt */
@@ -131,9 +371,21 @@ interface Functions {
   /** winhvplatform.dll!WHvUpdateTriggerParameters */
   WHvUpdateTriggerParameters(Partition: number | bigint, Parameters: Win32Pointer, TriggerHandle: Win32Pointer): number;
   /** winhvplatform.dll!WHvWriteGpaRange */
-  WHvWriteGpaRange(Partition: number | bigint, VpIndex: number, GuestAddress: number | bigint, Controls: Win32StructInit, Data: Win32Pointer, DataSizeInBytes: number): number;
+  WHvWriteGpaRange(
+    Partition: number | bigint,
+    VpIndex: number,
+    GuestAddress: number | bigint,
+    Controls: Win32StructInit,
+    Data: Win32Pointer,
+    DataSizeInBytes: number,
+  ): number;
   /** winhvplatform.dll!WHvWriteVpciDeviceRegister */
-  WHvWriteVpciDeviceRegister(Partition: number | bigint, LogicalDeviceId: number | bigint, Register: Win32Pointer, Data: Win32Pointer): number;
+  WHvWriteVpciDeviceRegister(
+    Partition: number | bigint,
+    LogicalDeviceId: number | bigint,
+    Register: Win32Pointer,
+    Data: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

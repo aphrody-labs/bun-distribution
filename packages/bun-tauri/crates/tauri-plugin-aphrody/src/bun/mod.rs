@@ -134,7 +134,13 @@ impl Bun {
                 url: Some(p.url()),
                 command: p.command.clone(),
             },
-            None => BunInfo { running: false, pid: None, port: None, url: None, command: Vec::new() },
+            None => BunInfo {
+                running: false,
+                pid: None,
+                port: None,
+                url: None,
+                command: Vec::new(),
+            },
         }
     }
 
@@ -154,7 +160,10 @@ impl Bun {
     }
 
     pub fn port(&self) -> Result<u16> {
-        self.lock().as_ref().map(|p| p.port).ok_or(Error::NotRunning)
+        self.lock()
+            .as_ref()
+            .map(|p| p.port)
+            .ok_or(Error::NotRunning)
     }
 }
 
@@ -200,11 +209,16 @@ async fn bun_request<R: Runtime>(app: AppHandle<R>, request: BunRequest) -> Resu
 /// The `aphrody` plugin (Bun runtime).
 pub fn init<R: Runtime>() -> TauriPlugin<R, Option<Config>> {
     Builder::<R, Option<Config>>::new("aphrody")
-        .invoke_handler(tauri::generate_handler![#![plugin(aphrody)] bun_info, bun_request, bun_restart])
+        .invoke_handler(
+            tauri::generate_handler![#![plugin(aphrody)] bun_info, bun_request, bun_restart],
+        )
         .setup(|app, api| {
             let config = api.config().as_ref().and_then(|c| c.bun.clone());
             let autostart = config.as_ref().is_some_and(|c| c.autostart);
-            app.manage(Bun { config, process: Mutex::new(None) });
+            app.manage(Bun {
+                config,
+                process: Mutex::new(None),
+            });
             if autostart {
                 app.state::<Bun>().restart(app)?;
             }

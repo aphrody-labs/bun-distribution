@@ -80,12 +80,7 @@ export function ShinyButton({
         size: iconSize,
         className: "shrink-0",
       })}
-      <span
-        className={clsx(
-          "text-center font-plain",
-          size === "small" ? "text-label-large" : "text-title-medium",
-        )}
-      >
+      <span className={clsx("text-center font-plain", size === "small" ? "text-label-large" : "text-title-medium")}>
         {children}
       </span>
     </>
@@ -102,11 +97,7 @@ export function ShinyButton({
   }
 
   return (
-    <button
-      type="button"
-      {...(props as ComponentProps<"button">)}
-      className={classes}
-    >
+    <button type="button" {...(props as ComponentProps<"button">)} className={classes}>
       {content}
     </button>
   );

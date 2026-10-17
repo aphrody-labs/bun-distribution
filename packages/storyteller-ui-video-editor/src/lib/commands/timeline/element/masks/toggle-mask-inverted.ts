@@ -20,9 +20,7 @@ export function toggleMaskInvertedOnElement({
       inverted: !mask.params.inverted,
     },
   });
-  const updatedMasks = currentMasks.map((mask) =>
-    mask.id !== maskId ? mask : toggleMask(mask),
-  );
+  const updatedMasks = currentMasks.map(mask => (mask.id !== maskId ? mask : toggleMask(mask)));
 
   return { ...element, masks: updatedMasks };
 }
@@ -33,15 +31,7 @@ export class ToggleMaskInvertedCommand extends Command {
   private readonly elementId: string;
   private readonly maskId: string;
 
-  constructor({
-    trackId,
-    elementId,
-    maskId,
-  }: {
-    trackId: string;
-    elementId: string;
-    maskId: string;
-  }) {
+  constructor({ trackId, elementId, maskId }: { trackId: string; elementId: string; maskId: string }) {
     super();
     this.trackId = trackId;
     this.elementId = elementId;
@@ -57,7 +47,7 @@ export class ToggleMaskInvertedCommand extends Command {
       trackId: this.trackId,
       elementId: this.elementId,
       elementPredicate: isMaskableElement,
-      update: (element) => {
+      update: element => {
         if (!isMaskableElement(element)) return element;
         return toggleMaskInvertedOnElement({
           element,

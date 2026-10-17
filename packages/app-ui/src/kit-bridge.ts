@@ -11,8 +11,7 @@ export const KIT_PROTOCOL = "aphrody.kit/1";
 
 export type KitName = "omar" | "creator";
 
-export type KitFieldKind =
-  "text" | "path" | "url" | "number" | "select" | "boolean";
+export type KitFieldKind = "text" | "path" | "url" | "number" | "select" | "boolean";
 
 export interface KitField {
   name: string;
@@ -85,11 +84,7 @@ export interface KitRun {
 const NOT_DESKTOP = "Cette vue nécessite l’application Aphrody.";
 
 /** Start `<kit> desktop <args>`; every event goes to `onEvent` in order. */
-export async function startKit(
-  kit: KitName,
-  args: string[],
-  onEvent: (event: KitEvent) => void,
-): Promise<KitRun> {
+export async function startKit(kit: KitName, args: string[], onEvent: (event: KitEvent) => void): Promise<KitRun> {
   if (!isTauri()) throw new Error(NOT_DESKTOP);
   const channel = new Channel<KitEvent>();
   // Channel exposes only the `onmessage` setter.
@@ -102,7 +97,7 @@ export async function startKit(
   });
   return {
     session,
-    answer: (answer) => invoke<void>("aphrody_kit_answer", { session, answer }),
+    answer: answer => invoke<void>("aphrody_kit_answer", { session, answer }),
     cancel: () => invoke<void>("aphrody_kit_cancel", { session }),
   };
 }
@@ -120,20 +115,15 @@ export function kitCatalog(kit: KitName, refresh = false): Promise<KitCatalog> {
       settled = true;
       reject(new Error(message));
     };
-    startKit(kit, ["catalog"], (event) => {
+    startKit(kit, ["catalog"], event => {
       if (event.type === "catalog" && !settled) {
         if (event.catalog.protocol !== KIT_PROTOCOL)
-          return fail(
-            `Protocole du kit non pris en charge : ${event.catalog.protocol}`,
-          );
+          return fail(`Protocole du kit non pris en charge : ${event.catalog.protocol}`);
         settled = true;
         resolve(event.catalog);
       } else if (event.type === "error") fail(event.message);
-      else if (event.type === "exit")
-        fail("Le kit s’est arrêté sans catalogue.");
-    }).catch((error: unknown) =>
-      fail(error instanceof Error ? error.message : String(error)),
-    );
+      else if (event.type === "exit") fail("Le kit s’est arrêté sans catalogue.");
+    }).catch((error: unknown) => fail(error instanceof Error ? error.message : String(error)));
   });
   catalogs.set(kit, pending);
   pending.catch(() => catalogs.delete(kit));
@@ -172,9 +162,7 @@ export const MAX_LINES = 2000;
 /** Pure state of one run, folded over its events. */
 export function reduceRun(state: RunState, event: KitEvent): RunState {
   const push = (line: Omit<RunLine, "id">): RunLine[] =>
-    [...state.lines, { ...line, id: (state.lines.at(-1)?.id ?? 0) + 1 }].slice(
-      -MAX_LINES,
-    );
+    [...state.lines, { ...line, id: (state.lines.at(-1)?.id ?? 0) + 1 }].slice(-MAX_LINES);
   switch (event.type) {
     case "say":
       return {
@@ -217,13 +205,8 @@ export const typedOk = (expect: string | undefined, value: string): boolean =>
   expect === undefined || value.trim() === expect;
 
 /** Actions shown on this platform (Windows-only actions are hidden elsewhere). */
-export function visibleActions(
-  catalog: KitCatalog,
-  group: string,
-): KitAction[] {
+export function visibleActions(catalog: KitCatalog, group: string): KitAction[] {
   return catalog.actions.filter(
-    (action) =>
-      action.group === group &&
-      (!action.windowsOnly || catalog.platform === "win32"),
+    action => action.group === group && (!action.windowsOnly || catalog.platform === "win32"),
   );
 }

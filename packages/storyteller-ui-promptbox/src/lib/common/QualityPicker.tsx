@@ -23,11 +23,7 @@ const QUALITY_LABELS: Record<CommonQuality, string> = {
  * models, including GPT Image 2.5). Models that don't
  * declare `qualities` should not render this picker.
  */
-export const QualityPicker = ({
-  model,
-  currentQuality,
-  handleCommonQualitySelect,
-}: QualityPickerProps) => {
+export const QualityPicker = ({ model, currentQuality, handleCommonQualitySelect }: QualityPickerProps) => {
   const useQuality = model.resolveQuality(currentQuality);
 
   const handleSelectAdapter = (item: PopoverItem) => {
@@ -35,19 +31,14 @@ export const QualityPicker = ({
     if (quality) handleCommonQualitySelect(quality);
   };
 
-  const qualityList: PopoverItem[] = model.qualityOptions.map((q) => ({
+  const qualityList: PopoverItem[] = model.qualityOptions.map(q => ({
     label: QUALITY_LABELS[q] ?? q,
     action: q,
     selected: useQuality === q,
   }));
 
   return (
-    <Tooltip
-      content="Quality"
-      position="top"
-      className="z-50"
-      closeOnClick={true}
-    >
+    <Tooltip content="Quality" position="top" className="z-50" closeOnClick={true}>
       <PopoverMenu
         items={qualityList}
         onSelect={handleSelectAdapter}

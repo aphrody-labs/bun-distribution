@@ -42,16 +42,14 @@ export default function SplitPane({
   /** Same logic for mouse + touch */
   const beginDrag = useCallback(() => {
     const move = (clientX: number) => {
-      const { left: rootLeft, width } =
-        rootRef.current!.getBoundingClientRect();
+      const { left: rootLeft, width } = rootRef.current!.getBoundingClientRect();
       const pct = ((clientX - rootLeft) / width) * 100;
       const clamped = Math.min(maxPercent, Math.max(minPercent, pct));
       setLeftPct(clamped);
       onChange?.(clamped);
     };
 
-    const handleMove = (e: MouseEvent | TouchEvent) =>
-      move(e instanceof MouseEvent ? e.clientX : e.touches[0].clientX);
+    const handleMove = (e: MouseEvent | TouchEvent) => move(e instanceof MouseEvent ? e.clientX : e.touches[0].clientX);
 
     /* attach & clean up */
     window.addEventListener("mousemove", handleMove);
@@ -80,10 +78,7 @@ export default function SplitPane({
       </div>
     </div>
   ) : (
-    <div
-      ref={rootRef}
-      className={`pegboard-bg relative flex ${heightClass} w-full overflow-hidden ${className}`}
-    >
+    <div ref={rootRef} className={`pegboard-bg relative flex ${heightClass} w-full overflow-hidden ${className}`}>
       <div style={leftStyle} className="h-full min-w-0 overflow-hidden">
         {left}
       </div>

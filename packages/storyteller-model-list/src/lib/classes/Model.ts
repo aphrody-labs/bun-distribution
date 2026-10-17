@@ -3,12 +3,7 @@ import { ModelCategory, ModelConfig } from "../legacy/ModelConfig.js";
 import { ModelTag } from "./metadata/ModelTag.js";
 import { GenerationProvider } from "@storyteller/api-enums";
 
-export type ModelKind =
-  | "model"
-  | "image_model"
-  | "video_model"
-  | "gaussian_model"
-  | "3d_object_model";
+export type ModelKind = "model" | "image_model" | "video_model" | "gaussian_model" | "3d_object_model";
 
 // NB: Do not create instances of this class directly, use subclasses.
 export class Model {
@@ -93,7 +88,7 @@ export class Model {
   }
 
   toLegacyBadges(): { label: string }[] {
-    return this.selectorBadges.map((b) => ({ label: b }));
+    return this.selectorBadges.map(b => ({ label: b }));
   }
 
   // TODO: This is a method to support migration. Kill it after we no longer need it.

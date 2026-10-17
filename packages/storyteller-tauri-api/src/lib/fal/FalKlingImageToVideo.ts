@@ -26,8 +26,7 @@ export interface FalKlingImageToVideoSuccess extends CommandResult {
   payload: FalKlingImageToVideoPayload;
 }
 
-export type FalKlingImageToVideoResult =
-  FalKlingImageToVideoSuccess | FalKlingImageToVideoError;
+export type FalKlingImageToVideoResult = FalKlingImageToVideoSuccess | FalKlingImageToVideoError;
 
 export const FalKlingImageToVideo = async (
   request: FalKlingImageToVideoRequest,

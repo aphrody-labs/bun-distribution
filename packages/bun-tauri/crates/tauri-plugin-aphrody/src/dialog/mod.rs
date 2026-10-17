@@ -8,7 +8,6 @@
 //!
 //! - **xdg-portal** *(enabled by default)*: Uses XDG Desktop Portal on Linux & BSDs; has no effect on Windows and macOS. GTK 3 dialogs are not offered.
 
-
 use serde::{Deserialize, Serialize};
 use tauri::{
     Manager, Runtime,
@@ -206,7 +205,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
     }
 
     builder
-        .invoke_handler(tauri::generate_handler![#![plugin(dialog)] 
+        .invoke_handler(tauri::generate_handler![#![plugin(dialog)]
             commands::dialog_open,
             commands::save,
             commands::message,
@@ -304,10 +303,11 @@ impl<R: Runtime> MessageDialogBuilder<R> {
         if let (Ok(window_handle), Ok(display_handle)) =
             (parent.window_handle(), parent.display_handle())
         {
-            self.parent.replace(crate::dialog::desktop::WindowHandle::new(
-                window_handle.as_raw(),
-                display_handle.as_raw(),
-            ));
+            self.parent
+                .replace(crate::dialog::desktop::WindowHandle::new(
+                    window_handle.as_raw(),
+                    display_handle.as_raw(),
+                ));
         }
         self
     }
@@ -480,10 +480,11 @@ impl<R: Runtime> FileDialogBuilder<R> {
         if let (Ok(window_handle), Ok(display_handle)) =
             (parent.window_handle(), parent.display_handle())
         {
-            self.parent.replace(crate::dialog::desktop::WindowHandle::new(
-                window_handle.as_raw(),
-                display_handle.as_raw(),
-            ));
+            self.parent
+                .replace(crate::dialog::desktop::WindowHandle::new(
+                    window_handle.as_raw(),
+                    display_handle.as_raw(),
+                ));
         }
         self
     }

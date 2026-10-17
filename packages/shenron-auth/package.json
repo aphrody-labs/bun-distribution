@@ -3,6 +3,12 @@
   "version": "1.4.4",
   "private": true,
   "description": "Briques Better Auth partagées (site Next, bot Bun, API) : secret, origines, cookies, fournisseur Discord, handler Request/Response",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
+    "directory": "packages/shenron-auth"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -29,15 +35,15 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@shenron/db": "workspace:*",
     "@aphrody/bun-types": "catalog:",
+    "@aphrody/bun-workspace": "workspace:*",
+    "@shenron/db": "workspace:*",
     "@types/react": "catalog:",
     "better-auth": "catalog:",
+    "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "next": "catalog:",
-    "react": "catalog:",
-    "drizzle-orm": "catalog:",
-    "@aphrody/bun-workspace": "workspace:*"
+    "react": "catalog:"
   },
   "peerDependencies": {
     "better-auth": "catalog:",
@@ -59,13 +65,7 @@
   "engines": {
     "bun": "=1.4.4"
   },
-  "license": "Apache-2.0",
   "packageManager": "bun@1.4.4",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
-    "directory": "packages/shenron-auth"
-  },
   "bunos": {
     "runtime": {
       ".": "server",

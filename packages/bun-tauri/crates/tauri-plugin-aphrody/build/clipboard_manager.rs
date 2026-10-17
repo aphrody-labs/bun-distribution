@@ -13,6 +13,5 @@ const COMMANDS: &[&str] = &[
 
 /// Build description of the `clipboard-manager` plugin.
 pub fn builder() -> tauri_plugin::Builder<'static> {
-    tauri_plugin::Builder::new(COMMANDS)
-        .global_api_script_path("iife/clipboard-manager.js")
+    tauri_plugin::Builder::new(COMMANDS).global_api_script_path("iife/clipboard-manager.js")
 }

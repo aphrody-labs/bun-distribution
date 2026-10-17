@@ -36,9 +36,7 @@ export function GridSkeleton({
     <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="space-y-2">
-          <div
-            className={`${ratio} animate-pulse rounded-lg bg-white/[0.06]`}
-          />
+          <div className={`${ratio} animate-pulse rounded-lg bg-white/[0.06]`} />
           <div className="h-3 w-3/4 animate-pulse rounded bg-white/[0.06]" />
         </div>
       ))}
@@ -51,10 +49,7 @@ export function CardListSkeleton({ count = 12 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="space-y-2.5 rounded-xl border border-white/[0.06] p-5"
-        >
+        <div key={i} className="space-y-2.5 rounded-xl border border-white/[0.06] p-5">
           <div className="h-4 w-1/2 animate-pulse rounded bg-white/10" />
           <div className="h-3 w-full animate-pulse rounded bg-white/[0.06]" />
           <div className="h-3 w-4/5 animate-pulse rounded bg-white/[0.06]" />

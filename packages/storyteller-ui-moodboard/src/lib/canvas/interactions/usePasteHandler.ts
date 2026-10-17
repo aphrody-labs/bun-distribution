@@ -34,9 +34,7 @@ export const usePasteHandler = (
       e.preventDefault();
 
       const stage = stageRef.current;
-      const center = stage
-        ? { x: stage.width() / 2, y: stage.height() / 2 }
-        : { x: 400, y: 400 };
+      const center = stage ? { x: stage.width() / 2, y: stage.height() / 2 } : { x: 400, y: 400 };
 
       for (const file of fileItems) {
         await addCanvasImageFromFile({ file, position: center, adapter });

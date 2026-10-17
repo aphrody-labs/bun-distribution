@@ -38,10 +38,7 @@ function Switch({
   );
 }
 
-function SwitchThumb({
-  className,
-  ...props
-}: Omit<SwitchPrimitive.Thumb.Props, "key">) {
+function SwitchThumb({ className, ...props }: Omit<SwitchPrimitive.Thumb.Props, "key">) {
   return (
     <SwitchPrimitive.Thumb
       data-slot="switch-thumb"

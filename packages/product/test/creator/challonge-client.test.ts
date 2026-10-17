@@ -1,10 +1,6 @@
 import { expect, test } from "bun:test";
 
-import {
-  ChallongeClient,
-  ChallongeError,
-  type PlanEntry,
-} from "../../src/creator/commands/challonge/client.ts";
+import { ChallongeClient, ChallongeError, type PlanEntry } from "../../src/creator/commands/challonge/client.ts";
 import type { Fetch } from "../../src/creator/commands/challonge/http.ts";
 
 const KEY = "sk-test-key-0123456789";
@@ -16,9 +12,7 @@ interface Call {
   body?: any;
 }
 
-function mock(
-  handler: (call: Call, index: number) => Response | Promise<Response>,
-) {
+function mock(handler: (call: Call, index: number) => Response | Promise<Response>) {
   const calls: Call[] = [];
   const fetchFn: Fetch = async (input, init) => {
     const call: Call = {
@@ -33,25 +27,18 @@ function mock(
   return { calls, fetchFn };
 }
 
-const json = (
-  body: unknown,
-  status = 200,
-  headers: Record<string, string> = {},
-) =>
+const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json", ...headers },
   });
 
-function client(
-  fetchFn: Fetch,
-  extra: ConstructorParameters<typeof ChallongeClient>[0] = {},
-) {
+function client(fetchFn: Fetch, extra: ConstructorParameters<typeof ChallongeClient>[0] = {}) {
   const sleeps: number[] = [];
   const c = new ChallongeClient({
     auth: { kind: "key", key: KEY },
     fetch: fetchFn,
-    sleep: async (ms) => {
+    sleep: async ms => {
       sleeps.push(ms);
     },
     random: () => 0,
@@ -82,9 +69,7 @@ test("clé API v1 : en-têtes de l'API v2.1 (Authorization-Type v1, JSON:API) et
   expect(tournament.id).toBe("42");
   const call = calls[0]!;
   expect(call.method).toBe("POST");
-  expect(call.url.origin + call.url.pathname).toBe(
-    "https://api.challonge.com/v2.1/tournaments",
-  );
+  expect(call.url.origin + call.url.pathname).toBe("https://api.challonge.com/v2.1/tournaments");
   expect(call.headers.get("authorization-type")).toBe("v1");
   expect(call.headers.get("authorization")).toBe(KEY);
   expect(call.headers.get("content-type")).toBe("application/vnd.api+json");
@@ -110,9 +95,7 @@ test("jeton OAuth : Authorization-Type v2 et schéma Bearer", async () => {
 });
 
 test("community_id est ajouté à toutes les requêtes quand une communauté est configurée", async () => {
-  const { calls, fetchFn } = mock(() =>
-    json({ data: { id: "1", attributes: {} } }),
-  );
+  const { calls, fetchFn } = mock(() => json({ data: { id: "1", attributes: {} } }));
   const { c } = client(fetchFn, { community: "fauxthrone" });
   await c.getTournament("abc");
   expect(calls[0]!.url.searchParams.get("community_id")).toBe("fauxthrone");
@@ -120,9 +103,7 @@ test("community_id est ajouté à toutes les requêtes quand une communauté est
 });
 
 test("change_state envoie TournamentState/state ; bulk_add refuse plus de 20 participants", async () => {
-  const { calls, fetchFn } = mock(() =>
-    json({ data: { id: "1", attributes: { state: "underway" } } }),
-  );
+  const { calls, fetchFn } = mock(() => json({ data: { id: "1", attributes: { state: "underway" } } }));
   const { c } = client(fetchFn);
   await c.changeState("1", "start");
   expect(calls[0]!.method).toBe("PUT");
@@ -140,9 +121,7 @@ test("change_state envoie TournamentState/state ; bulk_add refuse plus de 20 par
 
 test("429 avec Retry-After : on attend la durée demandée puis on rejoue", async () => {
   const { fetchFn } = mock((_, i) =>
-    i === 0
-      ? json({ errors: [] }, 429, { "Retry-After": "2" })
-      : json({ data: { id: "1", attributes: {} } }),
+    i === 0 ? json({ errors: [] }, 429, { "Retry-After": "2" }) : json({ data: { id: "1", attributes: {} } }),
   );
   const { c, sleeps } = client(fetchFn);
   await c.getTournament("1");
@@ -156,18 +135,14 @@ test("429 persistant : backoff exponentiel puis erreur en français citant le qu
   const error = await c.getTournament("1").catch((e: ChallongeError) => e);
   expect(error).toBeInstanceOf(ChallongeError);
   expect((error as ChallongeError).status).toBe(429);
-  expect((error as Error).message).toContain(
-    "Limite de requêtes atteinte (429)",
-  );
+  expect((error as Error).message).toContain("Limite de requêtes atteinte (429)");
   expect((error as Error).message).toContain("500 requêtes par mois");
   expect(calls).toHaveLength(3);
   expect(sleeps).toEqual([500, 1000]);
 });
 
 test("429 avec Retry-After très long (quota épuisé) : pas d'attente inutile", async () => {
-  const { calls, fetchFn } = mock(() =>
-    json({ errors: [] }, 429, { "Retry-After": "86400" }),
-  );
+  const { calls, fetchFn } = mock(() => json({ errors: [] }, 429, { "Retry-After": "86400" }));
   const { c, sleeps } = client(fetchFn);
   await expect(c.getTournament("1")).rejects.toThrow("Limite de requêtes");
   expect(calls).toHaveLength(1);
@@ -176,17 +151,13 @@ test("429 avec Retry-After très long (quota épuisé) : pas d'attente inutile",
 
 test("5xx : rejoué pour GET/PUT et 502-504 ; un POST en 500 n'est pas rejoué (risque de doublon)", async () => {
   const get = mock((_, i) =>
-    i < 2
-      ? new Response("boom", { status: 503 })
-      : json({ data: { id: "1", attributes: {} } }),
+    i < 2 ? new Response("boom", { status: 503 }) : json({ data: { id: "1", attributes: {} } }),
   );
   await client(get.fetchFn).c.getTournament("1");
   expect(get.calls).toHaveLength(3);
 
   const put = mock((_, i) =>
-    i === 0
-      ? new Response("x", { status: 500 })
-      : json({ data: { id: "1", attributes: {} } }),
+    i === 0 ? new Response("x", { status: 500 }) : json({ data: { id: "1", attributes: {} } }),
   );
   await client(put.fetchFn).c.changeState("1", "start");
   expect(put.calls).toHaveLength(2);
@@ -199,19 +170,13 @@ test("5xx : rejoué pour GET/PUT et 502-504 ; un POST en 500 n'est pas rejoué (
   expect((error as Error).message).toContain("Erreur côté Challonge (500)");
 
   const post503 = mock((_, i) =>
-    i === 0
-      ? new Response("x", { status: 503 })
-      : json({ data: { id: "9", attributes: {} } }, 201),
+    i === 0 ? new Response("x", { status: 503 }) : json({ data: { id: "9", attributes: {} } }, 201),
   );
-  expect(
-    (await client(post503.fetchFn).c.createTournament({ name: "n" })).id,
-  ).toBe("9");
+  expect((await client(post503.fetchFn).c.createTournament({ name: "n" })).id).toBe("9");
 });
 
 test("401, 404 et 422 : messages français, détail API conservé, la clé n'apparaît jamais", async () => {
-  const unauthorized = mock(() =>
-    json({ errors: [{ status: 401, detail: `invalid key ${KEY}` }] }, 401),
-  );
+  const unauthorized = mock(() => json({ errors: [{ status: 401, detail: `invalid key ${KEY}` }] }, 401));
   const e401 = (await client(unauthorized.fetchFn)
     .c.getTournament("1")
     .catch((e: Error) => e)) as ChallongeError;
@@ -219,9 +184,7 @@ test("401, 404 et 422 : messages français, détail API conservé, la clé n'app
   expect(e401.message).toContain("CHALLONGE_API_KEY");
   expect(e401.message).not.toContain(KEY);
 
-  const notFound = mock(() =>
-    json({ errors: [{ status: 404, detail: "not found" }] }, 404),
-  );
+  const notFound = mock(() => json({ errors: [{ status: 404, detail: "not found" }] }, 404));
   expect(
     (
       (await client(notFound.fetchFn)
@@ -249,9 +212,7 @@ test("401, 404 et 422 : messages français, détail API conservé, la clé n'app
     .catch((e: Error) => e)) as ChallongeError;
   expect(e422.status).toBe(422);
   expect(e422.message).toContain("Données refusées (422)");
-  expect(e422.message).toContain(
-    "tournament_format : Tournament Format is invalid",
-  );
+  expect(e422.message).toContain("tournament_format : Tournament Format is invalid");
   expect(e422.details[0]?.pointer).toBe("/data/attributes/tournament_format");
   expect(invalid.calls).toHaveLength(1);
 
@@ -303,7 +264,7 @@ test("--dry-run : aucun appel réseau, plan enregistré, réponses factices coh�
   const c = new ChallongeClient({
     fetch: fetchFn,
     dryRun: true,
-    onPlan: (entry) => plan.push(entry),
+    onPlan: entry => plan.push(entry),
     community: "asso",
   });
   const tournament = await c.createTournament({ name: "Cup", url: "cup_1" });
@@ -314,7 +275,7 @@ test("--dry-run : aucun appel réseau, plan enregistré, réponses factices coh�
   expect(c.requestCount).toBe(0);
   expect(tournament.id).toBe("TOURNAMENT_ID");
   expect(tournament.attributes.url).toBe("cup_1");
-  expect(plan.map((p) => `${p.method} ${new URL(p.url).pathname}`)).toEqual([
+  expect(plan.map(p => `${p.method} ${new URL(p.url).pathname}`)).toEqual([
     "POST /v2.1/tournaments",
     "POST /v2.1/tournaments/TOURNAMENT_ID/participants/bulk_add",
     "PUT /v2.1/tournaments/TOURNAMENT_ID/change_state",
@@ -329,44 +290,30 @@ const items = (from: number, to: number) =>
   }));
 
 test("pagination : continue sur page pleine, s'arrête sur page courte, vide ou déjà vue", async () => {
-  const pages = mock((call) =>
+  const pages = mock(call =>
     json({
-      data:
-        call.url.searchParams.get("page") === "1"
-          ? items(1, 30)
-          : items(31, 35),
+      data: call.url.searchParams.get("page") === "1" ? items(1, 30) : items(31, 35),
     }),
   );
   expect(await client(pages.fetchFn).c.listParticipants("t")).toHaveLength(35);
-  expect(pages.calls.map((c) => c.url.searchParams.get("page"))).toEqual([
-    "1",
-    "2",
-  ]);
+  expect(pages.calls.map(c => c.url.searchParams.get("page"))).toEqual(["1", "2"]);
   expect(pages.calls[0]!.url.searchParams.get("per_page")).toBe("100");
 
   // Pointeur qui « continue à l'infini » (bug corrigé côté Challonge le 2026-09-14) : la page répétée arrête la boucle.
   const loop = mock(() => json({ data: items(1, 30) }));
-  expect(await client(loop.fetchFn).c.listMatches("t", "open")).toHaveLength(
-    30,
-  );
+  expect(await client(loop.fetchFn).c.listMatches("t", "open")).toHaveLength(30);
   expect(loop.calls).toHaveLength(2);
   expect(loop.calls[0]!.url.searchParams.get("state")).toBe("open");
 
   // Taille de page refusée (borne non documentée) : repli sur le défaut de l'API, sans per_page.
-  const refused = mock((call) =>
+  const refused = mock(call =>
     call.url.searchParams.has("per_page")
-      ? json(
-          { errors: [{ status: 422, detail: "per_page is too large" }] },
-          422,
-        )
+      ? json({ errors: [{ status: 422, detail: "per_page is too large" }] }, 422)
       : json({ data: items(1, 3) }),
   );
   const strict = client(refused.fetchFn);
   expect(await strict.c.listParticipants("t")).toHaveLength(3);
-  expect(refused.calls.map((c) => c.url.searchParams.get("per_page"))).toEqual([
-    "100",
-    null,
-  ]);
+  expect(refused.calls.map(c => c.url.searchParams.get("per_page"))).toEqual(["100", null]);
   await strict.c.listParticipants("t");
   expect(refused.calls.at(-1)!.url.searchParams.has("per_page")).toBe(false);
 

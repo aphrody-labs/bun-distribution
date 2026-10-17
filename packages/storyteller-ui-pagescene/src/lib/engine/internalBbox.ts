@@ -18,19 +18,14 @@ export const BBOX_INTERNAL_KEY = "__bbox_internal";
 // Attach a hidden wireframe bbox child to `parent` for selection cueing.
 // Idempotent: if a child tagged BBOX_INTERNAL_KEY already exists, this
 // is a no-op. Also no-ops if the local box is empty (no bounds to draw).
-export function ensureInternalBbox(
-  parent: THREE.Object3D,
-  localBox: THREE.Box3,
-): void {
+export function ensureInternalBbox(parent: THREE.Object3D, localBox: THREE.Box3): void {
   if (findInternalBbox(parent)) return;
   if (localBox.isEmpty()) return;
   parent.add(createInternalBbox(localBox));
 }
 
 // Look up the bbox child on `parent`. Returns undefined when absent.
-export function findInternalBbox(
-  parent: THREE.Object3D,
-): THREE.LineSegments | undefined {
+export function findInternalBbox(parent: THREE.Object3D): THREE.LineSegments | undefined {
   for (const child of parent.children) {
     if (child.userData?.[BBOX_INTERNAL_KEY] === true) {
       return child as THREE.LineSegments;
@@ -40,9 +35,7 @@ export function findInternalBbox(
 }
 
 // Predicate for the save/load/outliner filters.
-export function isInternalBbox(obj: {
-  userData?: Record<string, unknown>;
-}): boolean {
+export function isInternalBbox(obj: { userData?: Record<string, unknown> }): boolean {
   return obj.userData?.[BBOX_INTERNAL_KEY] === true;
 }
 

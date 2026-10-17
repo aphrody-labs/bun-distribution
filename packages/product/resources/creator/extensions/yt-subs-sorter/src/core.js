@@ -50,7 +50,7 @@
   const COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
   const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
-  const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+  const isObj = v => v !== null && typeof v === "object" && !Array.isArray(v);
 
   function cleanText(value, max) {
     if (typeof value !== "string") return "";
@@ -60,10 +60,7 @@
   // ---------------------------------------------------------------- channel keys
 
   function isValidKey(key) {
-    return (
-      typeof key === "string" &&
-      (HANDLE_RE.test(key) || ID_RE.test(key) || LEGACY_RE.test(key))
-    );
+    return typeof key === "string" && (HANDLE_RE.test(key) || ID_RE.test(key) || LEGACY_RE.test(key));
   }
 
   /** Lower rank = preferred canonical key: handle, channel id, /c/, /user/. */
@@ -96,7 +93,7 @@
       .split(/[?#]/)[0]
       .split("/")
       .filter(Boolean)
-      .map((s) => {
+      .map(s => {
         try {
           return decodeURIComponent(s);
         } catch {
@@ -109,13 +106,10 @@
       const key = "@" + head.slice(1).toLowerCase();
       return HANDLE_RE.test(key) ? { kind: "handle", key } : null;
     }
-    if (head === "channel" && next && ID_RE.test(next))
-      return { kind: "id", key: next };
+    if (head === "channel" && next && ID_RE.test(next)) return { kind: "id", key: next };
     if ((head === "c" || head === "user") && next) {
       const key = (head === "c" ? "c:" : "u:") + next.toLowerCase();
-      return LEGACY_RE.test(key)
-        ? { kind: head === "c" ? "c" : "user", key }
-        : null;
+      return LEGACY_RE.test(key) ? { kind: head === "c" ? "c" : "user", key } : null;
     }
     return null;
   }
@@ -133,19 +127,15 @@
   /** One element showing exactly one handle and one channel id = same channel: alias candidate. */
   function pairForAlias(keys) {
     const uniq = [...new Set((keys || []).filter(isValidKey))];
-    const handles = uniq.filter((k) => keyRank(k) === 0);
-    const ids = uniq.filter((k) => keyRank(k) === 1);
-    return handles.length === 1 && ids.length === 1 && uniq.length === 2
-      ? { handle: handles[0], id: ids[0] }
-      : null;
+    const handles = uniq.filter(k => keyRank(k) === 0);
+    const ids = uniq.filter(k => keyRank(k) === 1);
+    return handles.length === 1 && ids.length === 1 && uniq.length === 2 ? { handle: handles[0], id: ids[0] } : null;
   }
 
   /** The canonical key of several keys found on one element (handle preferred). */
   function bestKey(keys) {
     const valid = (keys || []).filter(isValidKey);
-    return valid.length
-      ? valid.toSorted((a, b) => keyRank(a) - keyRank(b))[0]
-      : null;
+    return valid.length ? valid.toSorted((a, b) => keyRank(a) - keyRank(b))[0] : null;
   }
 
   // ---------------------------------------------------------------- state
@@ -163,9 +153,8 @@
 
   function normalizeSettings(raw, groups) {
     const src = isObj(raw) ? raw : {};
-    const ids = new Set((groups || []).map((g) => g.id));
-    const filter = (v) =>
-      v === "all" || v === "none" || ids.has(v) ? v : "all";
+    const ids = new Set((groups || []).map(g => g.id));
+    const filter = v => (v === "all" || v === "none" || ids.has(v) ? v : "all");
     const threshold = Number.isFinite(src.watchedThreshold)
       ? Math.min(100, Math.max(1, Math.round(src.watchedThreshold)))
       : DEFAULT_SETTINGS.watchedThreshold;
@@ -193,12 +182,7 @@
         break;
       }
       const name = cleanText(g && g.name, LIMITS.groupName);
-      if (
-        !isObj(g) ||
-        typeof g.id !== "string" ||
-        !GROUP_ID_RE.test(g.id) ||
-        !name
-      ) {
+      if (!isObj(g) || typeof g.id !== "string" || !GROUP_ID_RE.test(g.id) || !name) {
         warnings.push("groups: invalid entry ignored");
         continue;
       }
@@ -211,25 +195,17 @@
       groups.push({
         id: g.id,
         name,
-        color: COLOR_RE.test(g.color)
-          ? g.color.toLowerCase()
-          : PALETTE[groups.length % PALETTE.length],
+        color: COLOR_RE.test(g.color) ? g.color.toLowerCase() : PALETTE[groups.length % PALETTE.length],
       });
     }
     const channels = {};
     let count = 0;
-    for (const [key, rec] of isObj(src.channels)
-      ? Object.entries(src.channels)
-      : []) {
+    for (const [key, rec] of isObj(src.channels) ? Object.entries(src.channels) : []) {
       if (!isValidKey(key) || !isObj(rec) || !Array.isArray(rec.g)) {
         warnings.push("channels: invalid entry ignored");
         continue;
       }
-      const ids = [
-        ...new Set(
-          rec.g.filter((id) => typeof id === "string" && seenIds.has(id)),
-        ),
-      ];
+      const ids = [...new Set(rec.g.filter(id => typeof id === "string" && seenIds.has(id)))];
       if (!ids.length) continue;
       if (count >= LIMITS.channels) {
         warnings.push("channels: limit reached, extra channels ignored");
@@ -240,16 +216,8 @@
     }
     const aliases = {};
     let aliasCount = 0;
-    for (const [from, to] of isObj(src.aliases)
-      ? Object.entries(src.aliases)
-      : []) {
-      if (
-        !isValidKey(from) ||
-        !isValidKey(to) ||
-        from === to ||
-        aliasCount >= LIMITS.aliases
-      )
-        continue;
+    for (const [from, to] of isObj(src.aliases) ? Object.entries(src.aliases) : []) {
+      if (!isValidKey(from) || !isValidKey(to) || from === to || aliasCount >= LIMITS.aliases) continue;
       aliases[from] = to;
       aliasCount++;
     }
@@ -269,42 +237,32 @@
   // ---------------------------------------------------------------- group editing (all pure: return a new state)
 
   function newGroupId(random = Math.random, now = Date.now) {
-    return (
-      "g" + now().toString(36) + Math.floor(random() * 36 ** 4).toString(36)
-    );
+    return "g" + now().toString(36) + Math.floor(random() * 36 ** 4).toString(36);
   }
 
   function addGroup(state, name, color, id) {
     const clean = cleanText(name, LIMITS.groupName);
     if (!clean) return { state, error: "name-empty" };
-    if (state.groups.length >= LIMITS.groups)
-      return { state, error: "too-many-groups" };
-    if (state.groups.some((g) => g.name.toLowerCase() === clean.toLowerCase()))
-      return { state, error: "name-duplicate" };
+    if (state.groups.length >= LIMITS.groups) return { state, error: "too-many-groups" };
+    if (state.groups.some(g => g.name.toLowerCase() === clean.toLowerCase())) return { state, error: "name-duplicate" };
     let gid = id && GROUP_ID_RE.test(id) ? id : newGroupId();
-    while (state.groups.some((g) => g.id === gid)) gid += "x";
+    while (state.groups.some(g => g.id === gid)) gid += "x";
     const group = {
       id: gid.slice(0, 32),
       name: clean,
-      color: COLOR_RE.test(color)
-        ? color.toLowerCase()
-        : PALETTE[state.groups.length % PALETTE.length],
+      color: COLOR_RE.test(color) ? color.toLowerCase() : PALETTE[state.groups.length % PALETTE.length],
     };
     return { state: { ...state, groups: [...state.groups, group] }, group };
   }
 
   function updateGroup(state, id, patch) {
-    const current = state.groups.find((g) => g.id === id);
+    const current = state.groups.find(g => g.id === id);
     if (!current) return { state, error: "group-unknown" };
     const next = { ...current };
     if (patch && patch.name !== undefined) {
       const clean = cleanText(patch.name, LIMITS.groupName);
       if (!clean) return { state, error: "name-empty" };
-      if (
-        state.groups.some(
-          (g) => g.id !== id && g.name.toLowerCase() === clean.toLowerCase(),
-        )
-      )
+      if (state.groups.some(g => g.id !== id && g.name.toLowerCase() === clean.toLowerCase()))
         return { state, error: "name-duplicate" };
       next.name = clean;
     }
@@ -315,7 +273,7 @@
     return {
       state: {
         ...state,
-        groups: state.groups.map((g) => (g.id === id ? next : g)),
+        groups: state.groups.map(g => (g.id === id ? next : g)),
       },
       group: next,
     };
@@ -324,10 +282,10 @@
   function deleteGroup(state, id) {
     const channels = {};
     for (const [key, rec] of Object.entries(state.channels)) {
-      const g = rec.g.filter((x) => x !== id);
+      const g = rec.g.filter(x => x !== id);
       if (g.length) channels[key] = { n: rec.n, g };
     }
-    const groups = state.groups.filter((g) => g.id !== id);
+    const groups = state.groups.filter(g => g.id !== id);
     const settings = { ...state.settings };
     if (settings.feedFilter === id) settings.feedFilter = "all";
     if (settings.listFilter === id) settings.listFilter = "all";
@@ -336,23 +294,20 @@
 
   function resolveKey(state, key) {
     if (!isValidKey(key)) return null;
-    return hasOwn(state.aliases, key) && isValidKey(state.aliases[key])
-      ? state.aliases[key]
-      : key;
+    return hasOwn(state.aliases, key) && isValidKey(state.aliases[key]) ? state.aliases[key] : key;
   }
 
   function groupsOf(state, key) {
     const k = resolveKey(state, key);
     if (!k || !hasOwn(state.channels, k)) return [];
-    const known = new Set(state.groups.map((g) => g.id));
-    return state.channels[k].g.filter((id) => known.has(id));
+    const known = new Set(state.groups.map(g => g.id));
+    return state.channels[k].g.filter(id => known.has(id));
   }
 
   /** Union of the groups of every key found on one element (handle and channel id may both be present). */
   function groupsOfAny(state, keys) {
     const out = [];
-    for (const k of [].concat(keys || []))
-      for (const id of groupsOf(state, k)) if (!out.includes(id)) out.push(id);
+    for (const k of [].concat(keys || [])) for (const id of groupsOf(state, k)) if (!out.includes(id)) out.push(id);
     return out;
   }
 
@@ -362,14 +317,14 @@
       ...new Set(
         []
           .concat(keys || [])
-          .map((k) => resolveKey(state, k))
+          .map(k => resolveKey(state, k))
           .filter(Boolean),
       ),
     ];
     if (!resolved.length) return state;
     const target = resolved.toSorted((a, b) => keyRank(a) - keyRank(b))[0];
-    const known = new Set(state.groups.map((g) => g.id));
-    const ids = [...new Set((groupIds || []).filter((id) => known.has(id)))];
+    const known = new Set(state.groups.map(g => g.id));
+    const ids = [...new Set((groupIds || []).filter(id => known.has(id)))];
     const channels = { ...state.channels };
     let previous = "";
     for (const k of resolved) {
@@ -387,9 +342,7 @@
 
   function toggleChannelGroup(state, keys, name, groupId) {
     const current = groupsOfAny(state, keys);
-    const next = current.includes(groupId)
-      ? current.filter((id) => id !== groupId)
-      : [...current, groupId];
+    const next = current.includes(groupId) ? current.filter(id => id !== groupId) : [...current, groupId];
     return setChannelGroups(state, keys, name, next);
   }
 
@@ -402,8 +355,7 @@
     const target = keyRank(ra) <= keyRank(rb) ? ra : rb;
     const source = target === ra ? rb : ra;
     const aliases = { ...state.aliases };
-    for (const [from, to] of Object.entries(aliases))
-      if (to === source) aliases[from] = target;
+    for (const [from, to] of Object.entries(aliases)) if (to === source) aliases[from] = target;
     aliases[source] = target;
     const channels = { ...state.channels };
     if (hasOwn(channels, source)) {
@@ -434,8 +386,7 @@
   function countByGroup(state) {
     const counts = {};
     for (const g of state.groups) counts[g.id] = 0;
-    for (const rec of Object.values(state.channels))
-      for (const id of rec.g) if (hasOwn(counts, id)) counts[id]++;
+    for (const rec of Object.values(state.channels)) for (const id of rec.g) if (hasOwn(counts, id)) counts[id]++;
     return { counts, assigned: Object.keys(state.channels).length };
   }
 
@@ -460,16 +411,10 @@
    * returns { hide, reason }  reason: "short" | "watched" | "group" | null
    */
   function decideFeedItem(item, settings, groupIds) {
-    if (settings.hideShorts && item.isShort)
-      return { hide: true, reason: "short" };
-    if (
-      settings.hideWatched &&
-      item.watchedPct !== null &&
-      item.watchedPct >= settings.watchedThreshold
-    )
+    if (settings.hideShorts && item.isShort) return { hide: true, reason: "short" };
+    if (settings.hideWatched && item.watchedPct !== null && item.watchedPct >= settings.watchedThreshold)
       return { hide: true, reason: "watched" };
-    if (!matchesFilter(settings.feedFilter, groupIds))
-      return { hide: true, reason: "group" };
+    if (!matchesFilter(settings.feedFilter, groupIds)) return { hide: true, reason: "group" };
     return { hide: false, reason: null };
   }
 
@@ -484,10 +429,8 @@
       numeric: true,
     });
     const order = new Map(state.groups.map((g, i) => [g.id, i]));
-    const groupRank = (item) => {
-      const ranks = (item.key ? groupsOf(state, item.key) : [])
-        .map((id) => order.get(id))
-        .filter((n) => n !== undefined);
+    const groupRank = item => {
+      const ranks = (item.key ? groupsOf(state, item.key) : []).map(id => order.get(id)).filter(n => n !== undefined);
       return ranks.length ? Math.min(...ranks) : Number.MAX_SAFE_INTEGER;
     };
     const decorated = items.map((item, index) => ({
@@ -495,12 +438,7 @@
       name: item.name || "",
       rank: mode === "group" ? groupRank(item) : 0,
     }));
-    decorated.sort(
-      (a, b) =>
-        a.rank - b.rank ||
-        collator.compare(a.name, b.name) ||
-        a.index - b.index,
-    );
+    decorated.sort((a, b) => a.rank - b.rank || collator.compare(a.name, b.name) || a.index - b.index);
     const ranks = Array.from({ length: items.length });
     decorated.forEach((d, position) => {
       ranks[d.index] = position;
@@ -515,13 +453,8 @@
       format: FORMAT,
       version: VERSION,
       exportedAt: now.toISOString(),
-      groups: state.groups.map((g) => ({ ...g })),
-      channels: Object.fromEntries(
-        Object.entries(state.channels).map(([k, r]) => [
-          k,
-          { n: r.n, g: [...r.g] },
-        ]),
-      ),
+      groups: state.groups.map(g => ({ ...g })),
+      channels: Object.fromEntries(Object.entries(state.channels).map(([k, r]) => [k, { n: r.n, g: [...r.g] }])),
       aliases: { ...state.aliases },
       settings: { ...state.settings },
     };
@@ -531,8 +464,7 @@
   function validateImport(input) {
     let raw = input;
     if (typeof input === "string") {
-      if (input.length > LIMITS.importBytes)
-        return { ok: false, errors: ["file too large"] };
+      if (input.length > LIMITS.importBytes) return { ok: false, errors: ["file too large"] };
       try {
         raw = JSON.parse(input);
       } catch {
@@ -540,14 +472,9 @@
       }
     }
     const errors = [];
-    if (!isObj(raw))
-      return { ok: false, errors: ["JSON root must be an object"] };
+    if (!isObj(raw)) return { ok: false, errors: ["JSON root must be an object"] };
     if (raw.format !== FORMAT) errors.push(`format must be "${FORMAT}"`);
-    if (
-      !Number.isInteger(raw.version) ||
-      raw.version < 1 ||
-      raw.version > VERSION
-    )
+    if (!Number.isInteger(raw.version) || raw.version < 1 || raw.version > VERSION)
       errors.push(`unsupported version (supported: 1..${VERSION})`);
     if (!Array.isArray(raw.groups)) errors.push("groups must be an array");
     if (!isObj(raw.channels)) errors.push("channels must be an object");
@@ -562,10 +489,8 @@
     let state = current;
     const idMap = new Map();
     for (const g of imported.groups) {
-      const sameId = state.groups.find((x) => x.id === g.id);
-      const sameName = state.groups.find(
-        (x) => x.name.toLowerCase() === g.name.toLowerCase(),
-      );
+      const sameId = state.groups.find(x => x.id === g.id);
+      const sameName = state.groups.find(x => x.name.toLowerCase() === g.name.toLowerCase());
       const target = sameId || sameName;
       if (target) {
         idMap.set(g.id, target.id);
@@ -579,7 +504,7 @@
     }
     const channels = { ...state.channels };
     for (const [key, rec] of Object.entries(imported.channels)) {
-      const mapped = rec.g.map((id) => idMap.get(id)).filter(Boolean);
+      const mapped = rec.g.map(id => idMap.get(id)).filter(Boolean);
       if (!mapped.length) continue;
       const existing = hasOwn(channels, key) ? channels[key] : null;
       channels[key] = {

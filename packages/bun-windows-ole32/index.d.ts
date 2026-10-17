@@ -43,11 +43,31 @@ interface Functions {
   /** ole32.dll!CoCreateGuid */
   CoCreateGuid(pguid: Win32Pointer): number;
   /** ole32.dll!CoCreateInstance */
-  CoCreateInstance(rclsid: Win32Pointer, pUnkOuter: Win32Pointer, dwClsContext: number, riid: Win32Pointer, ppv: Win32Pointer): number;
+  CoCreateInstance(
+    rclsid: Win32Pointer,
+    pUnkOuter: Win32Pointer,
+    dwClsContext: number,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** ole32.dll!CoCreateInstanceEx */
-  CoCreateInstanceEx(Clsid: Win32Pointer, punkOuter: Win32Pointer, dwClsCtx: number, pServerInfo: Win32Pointer, dwCount: number, pResults: Win32Pointer): number;
+  CoCreateInstanceEx(
+    Clsid: Win32Pointer,
+    punkOuter: Win32Pointer,
+    dwClsCtx: number,
+    pServerInfo: Win32Pointer,
+    dwCount: number,
+    pResults: Win32Pointer,
+  ): number;
   /** ole32.dll!CoCreateInstanceFromApp */
-  CoCreateInstanceFromApp(Clsid: Win32Pointer, punkOuter: Win32Pointer, dwClsCtx: number, reserved: Win32Pointer, dwCount: number, pResults: Win32Pointer): number;
+  CoCreateInstanceFromApp(
+    Clsid: Win32Pointer,
+    punkOuter: Win32Pointer,
+    dwClsCtx: number,
+    reserved: Win32Pointer,
+    dwCount: number,
+    pResults: Win32Pointer,
+  ): number;
   /** ole32.dll!CoDecodeProxy */
   CoDecodeProxy(dwClientPid: number, ui64ProxyAddress: number | bigint, pServerInformation: Win32Pointer): number;
   /** ole32.dll!CoDecrementMTAUsage */
@@ -83,7 +103,13 @@ interface Functions {
   /** ole32.dll!CoGetCancelObject */
   CoGetCancelObject(dwThreadId: number, iid: Win32Pointer, ppUnk: Win32Pointer): number;
   /** ole32.dll!CoGetClassObject */
-  CoGetClassObject(rclsid: Win32Pointer, dwClsContext: number, pvReserved: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  CoGetClassObject(
+    rclsid: Win32Pointer,
+    dwClsContext: number,
+    pvReserved: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** ole32.dll!CoGetContextToken */
   CoGetContextToken(pToken: Win32Pointer): number;
   /** ole32.dll!CoGetCurrentLogicalThreadId */
@@ -93,27 +119,69 @@ interface Functions {
   /** ole32.dll!CoGetDefaultContext */
   CoGetDefaultContext(aptType: number, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** ole32.dll!CoGetInstanceFromFile */
-  CoGetInstanceFromFile(pServerInfo: Win32Pointer, pClsid: Win32Pointer, punkOuter: Win32Pointer, dwClsCtx: number, grfMode: number, pwszName: string | Win32Pointer, dwCount: number, pResults: Win32Pointer): number;
+  CoGetInstanceFromFile(
+    pServerInfo: Win32Pointer,
+    pClsid: Win32Pointer,
+    punkOuter: Win32Pointer,
+    dwClsCtx: number,
+    grfMode: number,
+    pwszName: string | Win32Pointer,
+    dwCount: number,
+    pResults: Win32Pointer,
+  ): number;
   /** ole32.dll!CoGetInstanceFromIStorage */
-  CoGetInstanceFromIStorage(pServerInfo: Win32Pointer, pClsid: Win32Pointer, punkOuter: Win32Pointer, dwClsCtx: number, pstg: Win32Pointer, dwCount: number, pResults: Win32Pointer): number;
+  CoGetInstanceFromIStorage(
+    pServerInfo: Win32Pointer,
+    pClsid: Win32Pointer,
+    punkOuter: Win32Pointer,
+    dwClsCtx: number,
+    pstg: Win32Pointer,
+    dwCount: number,
+    pResults: Win32Pointer,
+  ): number;
   /** ole32.dll!CoGetInterceptor */
   CoGetInterceptor(iidIntercepted: Win32Pointer, punkOuter: Win32Pointer, iid: Win32Pointer, ppv: Win32Pointer): number;
   /** ole32.dll!CoGetInterceptorFromTypeInfo */
-  CoGetInterceptorFromTypeInfo(iidIntercepted: Win32Pointer, punkOuter: Win32Pointer, typeInfo: Win32Pointer, iid: Win32Pointer, ppv: Win32Pointer): number;
+  CoGetInterceptorFromTypeInfo(
+    iidIntercepted: Win32Pointer,
+    punkOuter: Win32Pointer,
+    typeInfo: Win32Pointer,
+    iid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** ole32.dll!CoGetInterfaceAndReleaseStream */
   CoGetInterfaceAndReleaseStream(pStm: Win32Pointer, iid: Win32Pointer, ppv: Win32Pointer): number;
   /** ole32.dll!CoGetMalloc */
   CoGetMalloc(dwMemContext: number, ppMalloc: Win32Pointer): number;
   /** ole32.dll!CoGetMarshalSizeMax */
-  CoGetMarshalSizeMax(pulSize: Win32Pointer, riid: Win32Pointer, pUnk: Win32Pointer, dwDestContext: number, pvDestContext: Win32Pointer, mshlflags: number): number;
+  CoGetMarshalSizeMax(
+    pulSize: Win32Pointer,
+    riid: Win32Pointer,
+    pUnk: Win32Pointer,
+    dwDestContext: number,
+    pvDestContext: Win32Pointer,
+    mshlflags: number,
+  ): number;
   /** ole32.dll!CoGetObject */
-  CoGetObject(pszName: string | Win32Pointer, pBindOptions: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  CoGetObject(
+    pszName: string | Win32Pointer,
+    pBindOptions: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** ole32.dll!CoGetObjectContext */
   CoGetObjectContext(riid: Win32Pointer, ppv: Win32Pointer): number;
   /** ole32.dll!CoGetPSClsid */
   CoGetPSClsid(riid: Win32Pointer, pClsid: Win32Pointer): number;
   /** ole32.dll!CoGetStandardMarshal */
-  CoGetStandardMarshal(riid: Win32Pointer, pUnk: Win32Pointer, dwDestContext: number, pvDestContext: Win32Pointer, mshlflags: number, ppMarshal: Win32Pointer): number;
+  CoGetStandardMarshal(
+    riid: Win32Pointer,
+    pUnk: Win32Pointer,
+    dwDestContext: number,
+    pvDestContext: Win32Pointer,
+    mshlflags: number,
+    ppMarshal: Win32Pointer,
+  ): number;
   /** ole32.dll!CoGetStdMarshalEx */
   CoGetStdMarshalEx(pUnkOuter: Win32Pointer, smexflags: number, ppUnkInner: Win32Pointer): number;
   /** ole32.dll!CoGetSystemSecurityPermissions */
@@ -129,9 +197,25 @@ interface Functions {
   /** ole32.dll!CoInitializeEx */
   CoInitializeEx(pvReserved: Win32Pointer, dwCoInit: number): number;
   /** ole32.dll!CoInitializeSecurity */
-  CoInitializeSecurity(pSecDesc: Win32Pointer, cAuthSvc: number, asAuthSvc: Win32Pointer, pReserved1: Win32Pointer, dwAuthnLevel: number, dwImpLevel: number, pAuthList: Win32Pointer, dwCapabilities: number, pReserved3: Win32Pointer): number;
+  CoInitializeSecurity(
+    pSecDesc: Win32Pointer,
+    cAuthSvc: number,
+    asAuthSvc: Win32Pointer,
+    pReserved1: Win32Pointer,
+    dwAuthnLevel: number,
+    dwImpLevel: number,
+    pAuthList: Win32Pointer,
+    dwCapabilities: number,
+    pReserved3: Win32Pointer,
+  ): number;
   /** ole32.dll!CoInstall */
-  CoInstall(pbc: Win32Pointer, dwFlags: number, pClassSpec: Win32Pointer, pQuery: Win32Pointer, pszCodeBase: string | Win32Pointer): number;
+  CoInstall(
+    pbc: Win32Pointer,
+    dwFlags: number,
+    pClassSpec: Win32Pointer,
+    pQuery: Win32Pointer,
+    pszCodeBase: string | Win32Pointer,
+  ): number;
   /** ole32.dll!CoInvalidateRemoteMachineBindings */
   CoInvalidateRemoteMachineBindings(pszMachineName: string | Win32Pointer): number;
   /** ole32.dll!CoIsHandlerConnected */
@@ -147,19 +231,49 @@ interface Functions {
   /** ole32.dll!CoMarshalInterThreadInterfaceInStream */
   CoMarshalInterThreadInterfaceInStream(riid: Win32Pointer, pUnk: Win32Pointer, ppStm: Win32Pointer): number;
   /** ole32.dll!CoMarshalInterface */
-  CoMarshalInterface(pStm: Win32Pointer, riid: Win32Pointer, pUnk: Win32Pointer, dwDestContext: number, pvDestContext: Win32Pointer, mshlflags: number): number;
+  CoMarshalInterface(
+    pStm: Win32Pointer,
+    riid: Win32Pointer,
+    pUnk: Win32Pointer,
+    dwDestContext: number,
+    pvDestContext: Win32Pointer,
+    mshlflags: number,
+  ): number;
   /** ole32.dll!CoQueryAuthenticationServices */
   CoQueryAuthenticationServices(pcAuthSvc: Win32Pointer, asAuthSvc: Win32Pointer): number;
   /** ole32.dll!CoQueryClientBlanket */
-  CoQueryClientBlanket(pAuthnSvc: Win32Pointer, pAuthzSvc: Win32Pointer, pServerPrincName: Win32Pointer, pAuthnLevel: Win32Pointer, pImpLevel: Win32Pointer, pPrivs: Win32Pointer, pCapabilities: Win32Pointer): number;
+  CoQueryClientBlanket(
+    pAuthnSvc: Win32Pointer,
+    pAuthzSvc: Win32Pointer,
+    pServerPrincName: Win32Pointer,
+    pAuthnLevel: Win32Pointer,
+    pImpLevel: Win32Pointer,
+    pPrivs: Win32Pointer,
+    pCapabilities: Win32Pointer,
+  ): number;
   /** ole32.dll!CoQueryProxyBlanket */
-  CoQueryProxyBlanket(pProxy: Win32Pointer, pwAuthnSvc: Win32Pointer, pAuthzSvc: Win32Pointer, pServerPrincName: Win32Pointer, pAuthnLevel: Win32Pointer, pImpLevel: Win32Pointer, pAuthInfo: Win32Pointer, pCapabilites: Win32Pointer): number;
+  CoQueryProxyBlanket(
+    pProxy: Win32Pointer,
+    pwAuthnSvc: Win32Pointer,
+    pAuthzSvc: Win32Pointer,
+    pServerPrincName: Win32Pointer,
+    pAuthnLevel: Win32Pointer,
+    pImpLevel: Win32Pointer,
+    pAuthInfo: Win32Pointer,
+    pCapabilites: Win32Pointer,
+  ): number;
   /** ole32.dll!CoRegisterActivationFilter */
   CoRegisterActivationFilter(pActivationFilter: Win32Pointer): number;
   /** ole32.dll!CoRegisterChannelHook */
   CoRegisterChannelHook(ExtensionUuid: Win32Pointer, pChannelHook: Win32Pointer): number;
   /** ole32.dll!CoRegisterClassObject */
-  CoRegisterClassObject(rclsid: Win32Pointer, pUnk: Win32Pointer, dwClsContext: number, flags: number, lpdwRegister: Win32Pointer): number;
+  CoRegisterClassObject(
+    rclsid: Win32Pointer,
+    pUnk: Win32Pointer,
+    dwClsContext: number,
+    flags: number,
+    lpdwRegister: Win32Pointer,
+  ): number;
   /** ole32.dll!CoRegisterDeviceCatalog */
   CoRegisterDeviceCatalog(deviceInstanceId: string | Win32Pointer, cookie: Win32Pointer): number;
   /** ole32.dll!CoRegisterInitializeSpy */
@@ -191,7 +305,16 @@ interface Functions {
   /** ole32.dll!CoSetCancelObject */
   CoSetCancelObject(pUnk: Win32Pointer): number;
   /** ole32.dll!CoSetProxyBlanket */
-  CoSetProxyBlanket(pProxy: Win32Pointer, dwAuthnSvc: number, dwAuthzSvc: number, pServerPrincName: string | Win32Pointer, dwAuthnLevel: number, dwImpLevel: number, pAuthInfo: Win32Pointer, dwCapabilities: number): number;
+  CoSetProxyBlanket(
+    pProxy: Win32Pointer,
+    dwAuthnSvc: number,
+    dwAuthzSvc: number,
+    pServerPrincName: string | Win32Pointer,
+    dwAuthnLevel: number,
+    dwImpLevel: number,
+    pAuthInfo: Win32Pointer,
+    dwCapabilities: number,
+  ): number;
   /** ole32.dll!CoSuspendClassObjects */
   CoSuspendClassObjects(): number;
   /** ole32.dll!CoSwitchCallContext */
@@ -213,9 +336,21 @@ interface Functions {
   /** ole32.dll!CoUnmarshalInterface */
   CoUnmarshalInterface(pStm: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** ole32.dll!CoWaitForMultipleHandles */
-  CoWaitForMultipleHandles(dwFlags: number, dwTimeout: number, cHandles: number, pHandles: Win32Pointer, lpdwindex: Win32Pointer): number;
+  CoWaitForMultipleHandles(
+    dwFlags: number,
+    dwTimeout: number,
+    cHandles: number,
+    pHandles: Win32Pointer,
+    lpdwindex: Win32Pointer,
+  ): number;
   /** ole32.dll!CoWaitForMultipleObjects */
-  CoWaitForMultipleObjects(dwFlags: number, dwTimeout: number, cHandles: number, pHandles: Win32Pointer, lpdwindex: Win32Pointer): number;
+  CoWaitForMultipleObjects(
+    dwFlags: number,
+    dwTimeout: number,
+    cHandles: number,
+    pHandles: Win32Pointer,
+    lpdwindex: Win32Pointer,
+  ): number;
   /** ole32.dll!CreateAntiMoniker */
   CreateAntiMoniker(ppmk: Win32Pointer): number;
   /** ole32.dll!CreateBindCtx */
@@ -241,7 +376,12 @@ interface Functions {
   /** ole32.dll!CreatePointerMoniker */
   CreatePointerMoniker(punk: Win32Pointer, ppmk: Win32Pointer): number;
   /** ole32.dll!CreateStdProgressIndicator */
-  CreateStdProgressIndicator(hwndParent: Win32Pointer, pszTitle: string | Win32Pointer, pIbscCaller: Win32Pointer, ppIbsc: Win32Pointer): number;
+  CreateStdProgressIndicator(
+    hwndParent: Win32Pointer,
+    pszTitle: string | Win32Pointer,
+    pIbscCaller: Win32Pointer,
+    ppIbsc: Win32Pointer,
+  ): number;
   /** ole32.dll!CreateStreamOnHGlobal */
   CreateStreamOnHGlobal(hGlobal: Win32Pointer, fDeleteOnRelease: number, ppstm: Win32Pointer): number;
   /** ole32.dll!DcomChannelSetHResult */
@@ -419,57 +559,249 @@ interface Functions {
   /** ole32.dll!IsAccelerator */
   IsAccelerator(hAccel: Win32Pointer, cAccelEntries: number, lpMsg: Win32Pointer, lpwCmd: Win32Pointer): number;
   /** ole32.dll!MkParseDisplayName */
-  MkParseDisplayName(pbc: Win32Pointer, szUserName: string | Win32Pointer, pchEaten: Win32Pointer, ppmk: Win32Pointer): number;
+  MkParseDisplayName(
+    pbc: Win32Pointer,
+    szUserName: string | Win32Pointer,
+    pchEaten: Win32Pointer,
+    ppmk: Win32Pointer,
+  ): number;
   /** ole32.dll!MonikerCommonPrefixWith */
   MonikerCommonPrefixWith(pmkThis: Win32Pointer, pmkOther: Win32Pointer, ppmkCommon: Win32Pointer): number;
   /** ole32.dll!MonikerRelativePathTo */
-  MonikerRelativePathTo(pmkSrc: Win32Pointer, pmkDest: Win32Pointer, ppmkRelPath: Win32Pointer, dwReserved: number): number;
+  MonikerRelativePathTo(
+    pmkSrc: Win32Pointer,
+    pmkDest: Win32Pointer,
+    ppmkRelPath: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** ole32.dll!OleBuildVersion */
   OleBuildVersion(): number;
   /** ole32.dll!OleConvertIStorageToOLESTREAM */
   OleConvertIStorageToOLESTREAM(pstg: Win32Pointer, lpolestream: Win32Pointer): number;
   /** ole32.dll!OleConvertIStorageToOLESTREAMEx */
-  OleConvertIStorageToOLESTREAMEx(pstg: Win32Pointer, cfFormat: number, lWidth: number, lHeight: number, dwSize: number, pmedium: Win32Pointer, polestm: Win32Pointer): number;
+  OleConvertIStorageToOLESTREAMEx(
+    pstg: Win32Pointer,
+    cfFormat: number,
+    lWidth: number,
+    lHeight: number,
+    dwSize: number,
+    pmedium: Win32Pointer,
+    polestm: Win32Pointer,
+  ): number;
   /** ole32.dll!OleConvertOLESTREAMToIStorage */
   OleConvertOLESTREAMToIStorage(lpolestream: Win32Pointer, pstg: Win32Pointer, ptd: Win32Pointer): number;
   /** ole32.dll!OleConvertOLESTREAMToIStorage2 */
-  OleConvertOLESTREAMToIStorage2(lpolestream: Win32Pointer, pstg: Win32Pointer, ptd: Win32Pointer, opt: number, pvCallbackContext: Win32Pointer, pQueryConvertOLELinkCallback: Win32Callback): number;
+  OleConvertOLESTREAMToIStorage2(
+    lpolestream: Win32Pointer,
+    pstg: Win32Pointer,
+    ptd: Win32Pointer,
+    opt: number,
+    pvCallbackContext: Win32Pointer,
+    pQueryConvertOLELinkCallback: Win32Callback,
+  ): number;
   /** ole32.dll!OleConvertOLESTREAMToIStorageEx */
-  OleConvertOLESTREAMToIStorageEx(polestm: Win32Pointer, pstg: Win32Pointer, pcfFormat: Win32Pointer, plwWidth: Win32Pointer, plHeight: Win32Pointer, pdwSize: Win32Pointer, pmedium: Win32Pointer): number;
+  OleConvertOLESTREAMToIStorageEx(
+    polestm: Win32Pointer,
+    pstg: Win32Pointer,
+    pcfFormat: Win32Pointer,
+    plwWidth: Win32Pointer,
+    plHeight: Win32Pointer,
+    pdwSize: Win32Pointer,
+    pmedium: Win32Pointer,
+  ): number;
   /** ole32.dll!OleConvertOLESTREAMToIStorageEx2 */
-  OleConvertOLESTREAMToIStorageEx2(polestm: Win32Pointer, pstg: Win32Pointer, pcfFormat: Win32Pointer, plwWidth: Win32Pointer, plHeight: Win32Pointer, pdwSize: Win32Pointer, pmedium: Win32Pointer, opt: number, pvCallbackContext: Win32Pointer, pQueryConvertOLELinkCallback: Win32Callback): number;
+  OleConvertOLESTREAMToIStorageEx2(
+    polestm: Win32Pointer,
+    pstg: Win32Pointer,
+    pcfFormat: Win32Pointer,
+    plwWidth: Win32Pointer,
+    plHeight: Win32Pointer,
+    pdwSize: Win32Pointer,
+    pmedium: Win32Pointer,
+    opt: number,
+    pvCallbackContext: Win32Pointer,
+    pQueryConvertOLELinkCallback: Win32Callback,
+  ): number;
   /** ole32.dll!OleCreate */
-  OleCreate(rclsid: Win32Pointer, riid: Win32Pointer, renderopt: number, pFormatEtc: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreate(
+    rclsid: Win32Pointer,
+    riid: Win32Pointer,
+    renderopt: number,
+    pFormatEtc: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateDefaultHandler */
-  OleCreateDefaultHandler(clsid: Win32Pointer, pUnkOuter: Win32Pointer, riid: Win32Pointer, lplpObj: Win32Pointer): number;
+  OleCreateDefaultHandler(
+    clsid: Win32Pointer,
+    pUnkOuter: Win32Pointer,
+    riid: Win32Pointer,
+    lplpObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateEmbeddingHelper */
-  OleCreateEmbeddingHelper(clsid: Win32Pointer, pUnkOuter: Win32Pointer, flags: number, pCF: Win32Pointer, riid: Win32Pointer, lplpObj: Win32Pointer): number;
+  OleCreateEmbeddingHelper(
+    clsid: Win32Pointer,
+    pUnkOuter: Win32Pointer,
+    flags: number,
+    pCF: Win32Pointer,
+    riid: Win32Pointer,
+    lplpObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateEx */
-  OleCreateEx(rclsid: Win32Pointer, riid: Win32Pointer, dwFlags: number, renderopt: number, cFormats: number, rgAdvf: Win32Pointer, rgFormatEtc: Win32Pointer, lpAdviseSink: Win32Pointer, rgdwConnection: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreateEx(
+    rclsid: Win32Pointer,
+    riid: Win32Pointer,
+    dwFlags: number,
+    renderopt: number,
+    cFormats: number,
+    rgAdvf: Win32Pointer,
+    rgFormatEtc: Win32Pointer,
+    lpAdviseSink: Win32Pointer,
+    rgdwConnection: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateFromData */
-  OleCreateFromData(pSrcDataObj: Win32Pointer, riid: Win32Pointer, renderopt: number, pFormatEtc: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreateFromData(
+    pSrcDataObj: Win32Pointer,
+    riid: Win32Pointer,
+    renderopt: number,
+    pFormatEtc: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateFromDataEx */
-  OleCreateFromDataEx(pSrcDataObj: Win32Pointer, riid: Win32Pointer, dwFlags: number, renderopt: number, cFormats: number, rgAdvf: Win32Pointer, rgFormatEtc: Win32Pointer, lpAdviseSink: Win32Pointer, rgdwConnection: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreateFromDataEx(
+    pSrcDataObj: Win32Pointer,
+    riid: Win32Pointer,
+    dwFlags: number,
+    renderopt: number,
+    cFormats: number,
+    rgAdvf: Win32Pointer,
+    rgFormatEtc: Win32Pointer,
+    lpAdviseSink: Win32Pointer,
+    rgdwConnection: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateFromFile */
-  OleCreateFromFile(rclsid: Win32Pointer, lpszFileName: string | Win32Pointer, riid: Win32Pointer, renderopt: number, lpFormatEtc: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreateFromFile(
+    rclsid: Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    riid: Win32Pointer,
+    renderopt: number,
+    lpFormatEtc: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateFromFileEx */
-  OleCreateFromFileEx(rclsid: Win32Pointer, lpszFileName: string | Win32Pointer, riid: Win32Pointer, dwFlags: number, renderopt: number, cFormats: number, rgAdvf: Win32Pointer, rgFormatEtc: Win32Pointer, lpAdviseSink: Win32Pointer, rgdwConnection: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreateFromFileEx(
+    rclsid: Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    riid: Win32Pointer,
+    dwFlags: number,
+    renderopt: number,
+    cFormats: number,
+    rgAdvf: Win32Pointer,
+    rgFormatEtc: Win32Pointer,
+    lpAdviseSink: Win32Pointer,
+    rgdwConnection: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateLink */
-  OleCreateLink(pmkLinkSrc: Win32Pointer, riid: Win32Pointer, renderopt: number, lpFormatEtc: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreateLink(
+    pmkLinkSrc: Win32Pointer,
+    riid: Win32Pointer,
+    renderopt: number,
+    lpFormatEtc: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateLinkEx */
-  OleCreateLinkEx(pmkLinkSrc: Win32Pointer, riid: Win32Pointer, dwFlags: number, renderopt: number, cFormats: number, rgAdvf: Win32Pointer, rgFormatEtc: Win32Pointer, lpAdviseSink: Win32Pointer, rgdwConnection: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreateLinkEx(
+    pmkLinkSrc: Win32Pointer,
+    riid: Win32Pointer,
+    dwFlags: number,
+    renderopt: number,
+    cFormats: number,
+    rgAdvf: Win32Pointer,
+    rgFormatEtc: Win32Pointer,
+    lpAdviseSink: Win32Pointer,
+    rgdwConnection: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateLinkFromData */
-  OleCreateLinkFromData(pSrcDataObj: Win32Pointer, riid: Win32Pointer, renderopt: number, pFormatEtc: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreateLinkFromData(
+    pSrcDataObj: Win32Pointer,
+    riid: Win32Pointer,
+    renderopt: number,
+    pFormatEtc: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateLinkFromDataEx */
-  OleCreateLinkFromDataEx(pSrcDataObj: Win32Pointer, riid: Win32Pointer, dwFlags: number, renderopt: number, cFormats: number, rgAdvf: Win32Pointer, rgFormatEtc: Win32Pointer, lpAdviseSink: Win32Pointer, rgdwConnection: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreateLinkFromDataEx(
+    pSrcDataObj: Win32Pointer,
+    riid: Win32Pointer,
+    dwFlags: number,
+    renderopt: number,
+    cFormats: number,
+    rgAdvf: Win32Pointer,
+    rgFormatEtc: Win32Pointer,
+    lpAdviseSink: Win32Pointer,
+    rgdwConnection: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateLinkToFile */
-  OleCreateLinkToFile(lpszFileName: string | Win32Pointer, riid: Win32Pointer, renderopt: number, lpFormatEtc: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreateLinkToFile(
+    lpszFileName: string | Win32Pointer,
+    riid: Win32Pointer,
+    renderopt: number,
+    lpFormatEtc: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateLinkToFileEx */
-  OleCreateLinkToFileEx(lpszFileName: string | Win32Pointer, riid: Win32Pointer, dwFlags: number, renderopt: number, cFormats: number, rgAdvf: Win32Pointer, rgFormatEtc: Win32Pointer, lpAdviseSink: Win32Pointer, rgdwConnection: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreateLinkToFileEx(
+    lpszFileName: string | Win32Pointer,
+    riid: Win32Pointer,
+    dwFlags: number,
+    renderopt: number,
+    cFormats: number,
+    rgAdvf: Win32Pointer,
+    rgFormatEtc: Win32Pointer,
+    lpAdviseSink: Win32Pointer,
+    rgdwConnection: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleCreateMenuDescriptor */
   OleCreateMenuDescriptor(hmenuCombined: Win32Pointer, lpMenuWidths: Win32Pointer): number | bigint;
   /** ole32.dll!OleCreateStaticFromData */
-  OleCreateStaticFromData(pSrcDataObj: Win32Pointer, iid: Win32Pointer, renderopt: number, pFormatEtc: Win32Pointer, pClientSite: Win32Pointer, pStg: Win32Pointer, ppvObj: Win32Pointer): number;
+  OleCreateStaticFromData(
+    pSrcDataObj: Win32Pointer,
+    iid: Win32Pointer,
+    renderopt: number,
+    pFormatEtc: Win32Pointer,
+    pClientSite: Win32Pointer,
+    pStg: Win32Pointer,
+    ppvObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleDestroyMenuDescriptor */
   OleDestroyMenuDescriptor(holemenu: number | bigint): number;
   /** ole32.dll!OleDoAutoConvert */
@@ -485,7 +817,13 @@ interface Functions {
   /** ole32.dll!OleGetClipboard */
   OleGetClipboard(ppDataObj: Win32Pointer): number;
   /** ole32.dll!OleGetClipboardWithEnterpriseInfo */
-  OleGetClipboardWithEnterpriseInfo(dataObject: Win32Pointer, dataEnterpriseId: Win32Pointer, sourceDescription: Win32Pointer, targetDescription: Win32Pointer, dataDescription: Win32Pointer): number;
+  OleGetClipboardWithEnterpriseInfo(
+    dataObject: Win32Pointer,
+    dataEnterpriseId: Win32Pointer,
+    sourceDescription: Win32Pointer,
+    targetDescription: Win32Pointer,
+    dataDescription: Win32Pointer,
+  ): number;
   /** ole32.dll!OleGetIconOfClass */
   OleGetIconOfClass(rclsid: Win32Pointer, lpszLabel: string | Win32Pointer, fUseTypeAsLabel: number): number | null;
   /** ole32.dll!OleGetIconOfFile */
@@ -503,7 +841,12 @@ interface Functions {
   /** ole32.dll!OleLockRunning */
   OleLockRunning(pUnknown: Win32Pointer, fLock: number, fLastUnlockCloses: number): number;
   /** ole32.dll!OleMetafilePictFromIconAndLabel */
-  OleMetafilePictFromIconAndLabel(hIcon: Win32Pointer, lpszLabel: string | Win32Pointer, lpszSourceFile: string | Win32Pointer, iIconIndex: number): number | null;
+  OleMetafilePictFromIconAndLabel(
+    hIcon: Win32Pointer,
+    lpszLabel: string | Win32Pointer,
+    lpszSourceFile: string | Win32Pointer,
+    iIconIndex: number,
+  ): number | null;
   /** ole32.dll!OleNoteObjectVisible */
   OleNoteObjectVisible(pUnknown: Win32Pointer, fVisible: number): number;
   /** ole32.dll!OleQueryCreateFromData */
@@ -531,7 +874,13 @@ interface Functions {
   /** ole32.dll!OleSetContainedObject */
   OleSetContainedObject(pUnknown: Win32Pointer, fContained: number): number;
   /** ole32.dll!OleSetMenuDescriptor */
-  OleSetMenuDescriptor(holemenu: number | bigint, hwndFrame: Win32Pointer, hwndActiveObject: Win32Pointer, lpFrame: Win32Pointer, lpActiveObj: Win32Pointer): number;
+  OleSetMenuDescriptor(
+    holemenu: number | bigint,
+    hwndFrame: Win32Pointer,
+    hwndActiveObject: Win32Pointer,
+    lpFrame: Win32Pointer,
+    lpActiveObj: Win32Pointer,
+  ): number;
   /** ole32.dll!OleTranslateAccelerator */
   OleTranslateAccelerator(lpFrame: Win32Pointer, lpFrameInfo: Win32Pointer, lpmsg: Win32Pointer): number;
   /** ole32.dll!OleUninitialize */
@@ -595,17 +944,46 @@ interface Functions {
   /** ole32.dll!StgConvertPropertyToVariant */
   StgConvertPropertyToVariant(pprop: Win32Pointer, CodePage: number, pvar: Win32Pointer, pma: Win32Pointer): number;
   /** ole32.dll!StgConvertVariantToProperty */
-  StgConvertVariantToProperty(pvar: Win32Pointer, CodePage: number, pprop: Win32Pointer, pcb: Win32Pointer, pid: number, fReserved: number, pcIndirect: Win32Pointer): number | null;
+  StgConvertVariantToProperty(
+    pvar: Win32Pointer,
+    CodePage: number,
+    pprop: Win32Pointer,
+    pcb: Win32Pointer,
+    pid: number,
+    fReserved: number,
+    pcIndirect: Win32Pointer,
+  ): number | null;
   /** ole32.dll!StgCreateDocfile */
   StgCreateDocfile(pwcsName: string | Win32Pointer, grfMode: number, reserved: number, ppstgOpen: Win32Pointer): number;
   /** ole32.dll!StgCreateDocfileOnILockBytes */
-  StgCreateDocfileOnILockBytes(plkbyt: Win32Pointer, grfMode: number, reserved: number, ppstgOpen: Win32Pointer): number;
+  StgCreateDocfileOnILockBytes(
+    plkbyt: Win32Pointer,
+    grfMode: number,
+    reserved: number,
+    ppstgOpen: Win32Pointer,
+  ): number;
   /** ole32.dll!StgCreatePropSetStg */
   StgCreatePropSetStg(pStorage: Win32Pointer, dwReserved: number, ppPropSetStg: Win32Pointer): number;
   /** ole32.dll!StgCreatePropStg */
-  StgCreatePropStg(pUnk: Win32Pointer, fmtid: Win32Pointer, pclsid: Win32Pointer, grfFlags: number, dwReserved: number, ppPropStg: Win32Pointer): number;
+  StgCreatePropStg(
+    pUnk: Win32Pointer,
+    fmtid: Win32Pointer,
+    pclsid: Win32Pointer,
+    grfFlags: number,
+    dwReserved: number,
+    ppPropStg: Win32Pointer,
+  ): number;
   /** ole32.dll!StgCreateStorageEx */
-  StgCreateStorageEx(pwcsName: string | Win32Pointer, grfMode: number, stgfmt: number, grfAttrs: number, pStgOptions: Win32Pointer, pSecurityDescriptor: Win32Pointer, riid: Win32Pointer, ppObjectOpen: Win32Pointer): number;
+  StgCreateStorageEx(
+    pwcsName: string | Win32Pointer,
+    grfMode: number,
+    stgfmt: number,
+    grfAttrs: number,
+    pStgOptions: Win32Pointer,
+    pSecurityDescriptor: Win32Pointer,
+    riid: Win32Pointer,
+    ppObjectOpen: Win32Pointer,
+  ): number;
   /** ole32.dll!StgGetIFillLockBytesOnFile */
   StgGetIFillLockBytesOnFile(pwcsName: string | Win32Pointer, ppflb: Win32Pointer): number;
   /** ole32.dll!StgGetIFillLockBytesOnILockBytes */
@@ -615,19 +993,58 @@ interface Functions {
   /** ole32.dll!StgIsStorageILockBytes */
   StgIsStorageILockBytes(plkbyt: Win32Pointer): number;
   /** ole32.dll!StgOpenAsyncDocfileOnIFillLockBytes */
-  StgOpenAsyncDocfileOnIFillLockBytes(pflb: Win32Pointer, grfMode: number, asyncFlags: number, ppstgOpen: Win32Pointer): number;
+  StgOpenAsyncDocfileOnIFillLockBytes(
+    pflb: Win32Pointer,
+    grfMode: number,
+    asyncFlags: number,
+    ppstgOpen: Win32Pointer,
+  ): number;
   /** ole32.dll!StgOpenPropStg */
-  StgOpenPropStg(pUnk: Win32Pointer, fmtid: Win32Pointer, grfFlags: number, dwReserved: number, ppPropStg: Win32Pointer): number;
+  StgOpenPropStg(
+    pUnk: Win32Pointer,
+    fmtid: Win32Pointer,
+    grfFlags: number,
+    dwReserved: number,
+    ppPropStg: Win32Pointer,
+  ): number;
   /** ole32.dll!StgOpenStorage */
-  StgOpenStorage(pwcsName: string | Win32Pointer, pstgPriority: Win32Pointer, grfMode: number, snbExclude: Win32Pointer, reserved: number, ppstgOpen: Win32Pointer): number;
+  StgOpenStorage(
+    pwcsName: string | Win32Pointer,
+    pstgPriority: Win32Pointer,
+    grfMode: number,
+    snbExclude: Win32Pointer,
+    reserved: number,
+    ppstgOpen: Win32Pointer,
+  ): number;
   /** ole32.dll!StgOpenStorageEx */
-  StgOpenStorageEx(pwcsName: string | Win32Pointer, grfMode: number, stgfmt: number, grfAttrs: number, pStgOptions: Win32Pointer, pSecurityDescriptor: Win32Pointer, riid: Win32Pointer, ppObjectOpen: Win32Pointer): number;
+  StgOpenStorageEx(
+    pwcsName: string | Win32Pointer,
+    grfMode: number,
+    stgfmt: number,
+    grfAttrs: number,
+    pStgOptions: Win32Pointer,
+    pSecurityDescriptor: Win32Pointer,
+    riid: Win32Pointer,
+    ppObjectOpen: Win32Pointer,
+  ): number;
   /** ole32.dll!StgOpenStorageOnILockBytes */
-  StgOpenStorageOnILockBytes(plkbyt: Win32Pointer, pstgPriority: Win32Pointer, grfMode: number, snbExclude: Win32Pointer, reserved: number, ppstgOpen: Win32Pointer): number;
+  StgOpenStorageOnILockBytes(
+    plkbyt: Win32Pointer,
+    pstgPriority: Win32Pointer,
+    grfMode: number,
+    snbExclude: Win32Pointer,
+    reserved: number,
+    ppstgOpen: Win32Pointer,
+  ): number;
   /** ole32.dll!StgPropertyLengthAsVariant */
   StgPropertyLengthAsVariant(pProp: Win32Pointer, cbProp: number, CodePage: number, bReserved: number): number;
   /** ole32.dll!StgSetTimes */
-  StgSetTimes(lpszName: string | Win32Pointer, pctime: Win32Pointer, patime: Win32Pointer, pmtime: Win32Pointer): number;
+  StgSetTimes(
+    lpszName: string | Win32Pointer,
+    pctime: Win32Pointer,
+    patime: Win32Pointer,
+    pmtime: Win32Pointer,
+  ): number;
   /** ole32.dll!StringFromCLSID */
   StringFromCLSID(rclsid: Win32Pointer, lplpsz: Win32Pointer): number;
   /** ole32.dll!StringFromGUID2 */

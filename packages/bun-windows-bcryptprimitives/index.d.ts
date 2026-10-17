@@ -3,19 +3,49 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** bcryptprimitives.dll!GetAsymmetricEncryptionInterface */
-  GetAsymmetricEncryptionInterface(pszProviderName: string | Win32Pointer, pszAlgId: string | Win32Pointer, ppFunctionTable: Win32Pointer, dwFlags: number): number;
+  GetAsymmetricEncryptionInterface(
+    pszProviderName: string | Win32Pointer,
+    pszAlgId: string | Win32Pointer,
+    ppFunctionTable: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** bcryptprimitives.dll!GetCipherInterface */
-  GetCipherInterface(pszProviderName: string | Win32Pointer, pszAlgId: string | Win32Pointer, ppFunctionTable: Win32Pointer, dwFlags: number): number;
+  GetCipherInterface(
+    pszProviderName: string | Win32Pointer,
+    pszAlgId: string | Win32Pointer,
+    ppFunctionTable: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** bcryptprimitives.dll!GetHashInterface */
-  GetHashInterface(pszProviderName: string | Win32Pointer, pszAlgId: string | Win32Pointer, ppFunctionTable: Win32Pointer, dwFlags: number): number;
+  GetHashInterface(
+    pszProviderName: string | Win32Pointer,
+    pszAlgId: string | Win32Pointer,
+    ppFunctionTable: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** bcryptprimitives.dll!GetKeyDerivationInterface */
-  GetKeyDerivationInterface(pszProviderName: string | Win32Pointer, pszAlgId: string | Win32Pointer, ppFunctionTable: Win32Pointer, dwFlags: number): number;
+  GetKeyDerivationInterface(
+    pszProviderName: string | Win32Pointer,
+    pszAlgId: string | Win32Pointer,
+    ppFunctionTable: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** bcryptprimitives.dll!GetRngInterface */
   GetRngInterface(pszProviderName: string | Win32Pointer, ppFunctionTable: Win32Pointer, dwFlags: number): number;
   /** bcryptprimitives.dll!GetSecretAgreementInterface */
-  GetSecretAgreementInterface(pszProviderName: string | Win32Pointer, pszAlgId: string | Win32Pointer, ppFunctionTable: Win32Pointer, dwFlags: number): number;
+  GetSecretAgreementInterface(
+    pszProviderName: string | Win32Pointer,
+    pszAlgId: string | Win32Pointer,
+    ppFunctionTable: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** bcryptprimitives.dll!GetSignatureInterface */
-  GetSignatureInterface(pszProviderName: string | Win32Pointer, pszAlgId: string | Win32Pointer, ppFunctionTable: Win32Pointer, dwFlags: number): number;
+  GetSignatureInterface(
+    pszProviderName: string | Win32Pointer,
+    pszAlgId: string | Win32Pointer,
+    ppFunctionTable: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** bcryptprimitives.dll!ProcessPrng */
   ProcessPrng(pbData: Win32Pointer, cbData: number | bigint): number;
   /** bcryptprimitives.dll!SystemPrng */

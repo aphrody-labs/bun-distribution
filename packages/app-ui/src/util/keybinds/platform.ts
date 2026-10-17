@@ -41,28 +41,22 @@ export function getComboForPlatform(
 }
 
 // Normalize Cmd/Ctrl based on platform
-export function normalizeModifiers(
-  modifiers: Modifier[],
-  platform: Platform,
-): Modifier[] {
+export function normalizeModifiers(modifiers: Modifier[], platform: Platform): Modifier[] {
   // On macOS, Cmd stays as Cmd
   // On other platforms, Cmd becomes Ctrl
   if (platform === "macos") {
     return modifiers;
   }
 
-  return modifiers.map((m) => (m === "Cmd" ? "Ctrl" : m));
+  return modifiers.map(m => (m === "Cmd" ? "Ctrl" : m));
 }
 
 // Convert to Tauri accelerator string
-export function toTauriAccelerator(
-  combo: KeyCombo,
-  platform: Platform,
-): string {
+export function toTauriAccelerator(combo: KeyCombo, platform: Platform): string {
   const normalizedModifiers = normalizeModifiers(combo.modifiers, platform);
 
   const modifierStr = normalizedModifiers
-    .map((m) => {
+    .map(m => {
       switch (m) {
         case "Cmd":
           return "Command";
@@ -92,7 +86,7 @@ export function toTauriAccelerator(
 export function toDisplayString(combo: KeyCombo, platform: Platform): string {
   const normalizedModifiers = normalizeModifiers(combo.modifiers, platform);
 
-  const symbols = normalizedModifiers.map((m) => {
+  const symbols = normalizedModifiers.map(m => {
     if (platform === "macos") {
       switch (m) {
         case "Cmd":
@@ -120,23 +114,15 @@ export function toDisplayString(combo: KeyCombo, platform: Platform): string {
 
   // Format key for display
   let displayKey = combo.key;
-  if (displayKey === "ArrowUp")
-    displayKey = "\u2191" as typeof displayKey; // ↑
-  else if (displayKey === "ArrowDown")
-    displayKey = "\u2193" as typeof displayKey; // ↓
-  else if (displayKey === "ArrowLeft")
-    displayKey = "\u2190" as typeof displayKey; // ←
-  else if (displayKey === "ArrowRight")
-    displayKey = "\u2192" as typeof displayKey; // →
-  else if (displayKey === "Backspace")
-    displayKey = "\u232B" as typeof displayKey; // ⌫
-  else if (displayKey === "Delete")
-    displayKey = "\u2326" as typeof displayKey; // ⌦
-  else if (displayKey === "Enter")
-    displayKey = "\u23CE" as typeof displayKey; // ⏎
+  if (displayKey === "ArrowUp") displayKey = "\u2191" as typeof displayKey; // ↑
+  else if (displayKey === "ArrowDown") displayKey = "\u2193" as typeof displayKey; // ↓
+  else if (displayKey === "ArrowLeft") displayKey = "\u2190" as typeof displayKey; // ←
+  else if (displayKey === "ArrowRight") displayKey = "\u2192" as typeof displayKey; // →
+  else if (displayKey === "Backspace") displayKey = "\u232B" as typeof displayKey; // ⌫
+  else if (displayKey === "Delete") displayKey = "\u2326" as typeof displayKey; // ⌦
+  else if (displayKey === "Enter") displayKey = "\u23CE" as typeof displayKey; // ⏎
   else if (displayKey === "Escape") displayKey = "Esc" as typeof displayKey;
-  else if (displayKey === "Tab")
-    displayKey = "\u21E5" as typeof displayKey; // ⇥
+  else if (displayKey === "Tab") displayKey = "\u21E5" as typeof displayKey; // ⇥
   else if (displayKey === "Space") displayKey = "Space" as typeof displayKey;
   else {
     // Capitalize single letters

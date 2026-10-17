@@ -27,7 +27,7 @@
  * @module
  */
 
-import { invoke } from './core'
+import { invoke } from "./core";
 
 /**
  * @since 2.0.0
@@ -149,7 +149,7 @@ enum BaseDirectory {
    *
    * - **Android:** Unsupported, this variant does not exist on Android.
    */
-  Template = 23
+  Template = 23,
 }
 
 /**
@@ -165,9 +165,9 @@ enum BaseDirectory {
  * @since 1.2.0
  */
 async function appConfigDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.AppConfig
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.AppConfig,
+  });
 }
 
 /**
@@ -183,9 +183,9 @@ async function appConfigDir(): Promise<string> {
  * @since 1.2.0
  */
 async function appDataDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.AppData
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.AppData,
+  });
 }
 
 /**
@@ -201,9 +201,9 @@ async function appDataDir(): Promise<string> {
  * @since 1.2.0
  */
 async function appLocalDataDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.AppLocalData
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.AppLocalData,
+  });
 }
 
 /**
@@ -219,9 +219,9 @@ async function appLocalDataDir(): Promise<string> {
  * @since 1.2.0
  */
 async function appCacheDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.AppCache
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.AppCache,
+  });
 }
 
 /**
@@ -241,9 +241,9 @@ async function appCacheDir(): Promise<string> {
  * @since 1.0.0
  */
 async function audioDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Audio
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Audio,
+  });
 }
 
 /**
@@ -263,9 +263,9 @@ async function audioDir(): Promise<string> {
  * @since 1.0.0
  */
 async function cacheDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Cache
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Cache,
+  });
 }
 
 /**
@@ -285,9 +285,9 @@ async function cacheDir(): Promise<string> {
  * @since 1.0.0
  */
 async function configDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Config
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Config,
+  });
 }
 
 /**
@@ -307,9 +307,9 @@ async function configDir(): Promise<string> {
  * @since 1.0.0
  */
 async function dataDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Data
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Data,
+  });
 }
 
 /**
@@ -332,9 +332,9 @@ async function dataDir(): Promise<string> {
  * @since 1.0.0
  */
 async function desktopDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Desktop
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Desktop,
+  });
 }
 
 /**
@@ -354,9 +354,9 @@ async function desktopDir(): Promise<string> {
  * @since 1.0.0
  */
 async function documentDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Document
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Document,
+  });
 }
 
 /**
@@ -376,9 +376,9 @@ async function documentDir(): Promise<string> {
  * @since 1.0.0
  */
 async function downloadDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Download
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Download,
+  });
 }
 
 /**
@@ -401,9 +401,9 @@ async function downloadDir(): Promise<string> {
  * @since 1.0.0
  */
 async function executableDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Executable
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Executable,
+  });
 }
 
 /**
@@ -426,9 +426,9 @@ async function executableDir(): Promise<string> {
  * @since 1.0.0
  */
 async function fontDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Font
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Font,
+  });
 }
 
 /**
@@ -448,9 +448,9 @@ async function fontDir(): Promise<string> {
  * @since 1.0.0
  */
 async function homeDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Home
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Home,
+  });
 }
 
 /**
@@ -470,9 +470,9 @@ async function homeDir(): Promise<string> {
  * @since 1.0.0
  */
 async function localDataDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.LocalData
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.LocalData,
+  });
 }
 
 /**
@@ -492,9 +492,9 @@ async function localDataDir(): Promise<string> {
  * @since 1.0.0
  */
 async function pictureDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Picture
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Picture,
+  });
 }
 
 /**
@@ -514,9 +514,9 @@ async function pictureDir(): Promise<string> {
  * @since 1.0.0
  */
 async function publicDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Public
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Public,
+  });
 }
 
 /**
@@ -547,9 +547,9 @@ async function publicDir(): Promise<string> {
  * @since 1.0.0
  */
 async function resourceDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Resource
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Resource,
+  });
 }
 
 /**
@@ -567,10 +567,10 @@ async function resourceDir(): Promise<string> {
  * @since 1.0.0
  */
 async function resolveResource(resourcePath: string): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
+  return invoke("plugin:path|resolve_directory", {
     directory: BaseDirectory.Resource,
-    path: resourcePath
-  })
+    path: resourcePath,
+  });
 }
 
 /**
@@ -593,9 +593,9 @@ async function resolveResource(resourcePath: string): Promise<string> {
  * @since 1.0.0
  */
 async function runtimeDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Runtime
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Runtime,
+  });
 }
 
 /**
@@ -618,9 +618,9 @@ async function runtimeDir(): Promise<string> {
  * @since 1.0.0
  */
 async function templateDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Template
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Template,
+  });
 }
 
 /**
@@ -650,9 +650,9 @@ async function templateDir(): Promise<string> {
  * @since 1.0.0
  */
 async function videoDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Video
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Video,
+  });
 }
 
 /**
@@ -674,9 +674,9 @@ async function videoDir(): Promise<string> {
  * @since 1.2.0
  */
 async function appLogDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.AppLog
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.AppLog,
+  });
 }
 
 /**
@@ -690,9 +690,9 @@ async function appLogDir(): Promise<string> {
  * @since 2.0.0
  */
 async function tempDir(): Promise<string> {
-  return invoke('plugin:path|resolve_directory', {
-    directory: BaseDirectory.Temp
-  })
+  return invoke("plugin:path|resolve_directory", {
+    directory: BaseDirectory.Temp,
+  });
 }
 
 /**
@@ -703,7 +703,7 @@ async function tempDir(): Promise<string> {
  * @since 2.0.0
  */
 function sep(): string {
-  return window.__TAURI_INTERNALS__.plugins.path.sep
+  return window.__TAURI_INTERNALS__.plugins.path.sep;
 }
 
 /**
@@ -714,7 +714,7 @@ function sep(): string {
  * @since 2.0.0
  */
 function delimiter(): string {
-  return window.__TAURI_INTERNALS__.plugins.path.delimiter
+  return window.__TAURI_INTERNALS__.plugins.path.delimiter;
 }
 /**
  * Resolves a sequence of `paths` or `path` segments into an absolute path.
@@ -728,7 +728,7 @@ function delimiter(): string {
  * @since 1.0.0
  */
 async function resolve(...paths: string[]): Promise<string> {
-  return invoke('plugin:path|resolve', { paths })
+  return invoke("plugin:path|resolve", { paths });
 }
 
 /**
@@ -743,7 +743,7 @@ async function resolve(...paths: string[]): Promise<string> {
  * @since 1.0.0
  */
 async function normalize(path: string): Promise<string> {
-  return invoke('plugin:path|normalize', { path })
+  return invoke("plugin:path|normalize", { path });
 }
 
 /**
@@ -758,7 +758,7 @@ async function normalize(path: string): Promise<string> {
  * @since 1.0.0
  */
 async function join(...paths: string[]): Promise<string> {
-  return invoke('plugin:path|join', { paths })
+  return invoke("plugin:path|join", { paths });
 }
 
 /**
@@ -773,7 +773,7 @@ async function join(...paths: string[]): Promise<string> {
  * @since 1.0.0
  */
 async function dirname(path: string): Promise<string> {
-  return invoke('plugin:path|dirname', { path })
+  return invoke("plugin:path|dirname", { path });
 }
 
 /**
@@ -788,7 +788,7 @@ async function dirname(path: string): Promise<string> {
  * @since 1.0.0
  */
 async function extname(path: string): Promise<string> {
-  return invoke('plugin:path|extname', { path })
+  return invoke("plugin:path|extname", { path });
 }
 
 /**
@@ -804,7 +804,7 @@ async function extname(path: string): Promise<string> {
  * @since 1.0.0
  */
 async function basename(path: string, ext?: string): Promise<string> {
-  return invoke('plugin:path|basename', { path, ext })
+  return invoke("plugin:path|basename", { path, ext });
 }
 
 /**
@@ -818,7 +818,7 @@ async function basename(path: string, ext?: string): Promise<string> {
  * @since 1.0.0
  */
 async function isAbsolute(path: string): Promise<boolean> {
-  return invoke('plugin:path|is_absolute', { path })
+  return invoke("plugin:path|is_absolute", { path });
 }
 
 export {
@@ -855,5 +855,5 @@ export {
   extname,
   basename,
   isAbsolute,
-  tempDir
-}
+  tempDir,
+};

@@ -5,11 +5,32 @@ interface Functions {
   /** shell32.dll!AssocCreateForClasses */
   AssocCreateForClasses(rgClasses: Win32Pointer, cClasses: number, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** shell32.dll!AssocGetDetailsOfPropKey */
-  AssocGetDetailsOfPropKey(psf: Win32Pointer, pidl: Win32Pointer, pkey: Win32Pointer, pv: Win32Pointer, pfFoundPropKey: Win32Pointer): number;
+  AssocGetDetailsOfPropKey(
+    psf: Win32Pointer,
+    pidl: Win32Pointer,
+    pkey: Win32Pointer,
+    pv: Win32Pointer,
+    pfFoundPropKey: Win32Pointer,
+  ): number;
   /** shell32.dll!CDefFolderMenu_Create2 */
-  CDefFolderMenu_Create2(pidlFolder: Win32Pointer, hwnd: Win32Pointer, cidl: number, apidl: Win32Pointer, psf: Win32Pointer, pfn: Win32Callback, nKeys: number, ahkeys: Win32Pointer, ppcm: Win32Pointer): number;
+  CDefFolderMenu_Create2(
+    pidlFolder: Win32Pointer,
+    hwnd: Win32Pointer,
+    cidl: number,
+    apidl: Win32Pointer,
+    psf: Win32Pointer,
+    pfn: Win32Callback,
+    nKeys: number,
+    ahkeys: Win32Pointer,
+    ppcm: Win32Pointer,
+  ): number;
   /** shell32.dll!CIDLData_CreateFromIDArray */
-  CIDLData_CreateFromIDArray(pidlFolder: Win32Pointer, cidl: number, apidl: Win32Pointer, ppdtobj: Win32Pointer): number;
+  CIDLData_CreateFromIDArray(
+    pidlFolder: Win32Pointer,
+    cidl: number,
+    apidl: Win32Pointer,
+    ppdtobj: Win32Pointer,
+  ): number;
   /** shell32.dll!CommandLineToArgvW */
   CommandLineToArgvW(lpCmdLine: string | Win32Pointer, pNumArgs: Win32Pointer): number | null;
   /** shell32.dll!DAD_AutoScroll */
@@ -51,11 +72,26 @@ interface Functions {
   /** shell32.dll!ExtractAssociatedIconA */
   ExtractAssociatedIconA(hInst: Win32Pointer, pszIconPath: string | Win32Pointer, piIcon: Win32Pointer): number | null;
   /** shell32.dll!ExtractAssociatedIconExA */
-  ExtractAssociatedIconExA(hInst: Win32Pointer, pszIconPath: string | Win32Pointer, piIconIndex: Win32Pointer, piIconId: Win32Pointer): number | null;
+  ExtractAssociatedIconExA(
+    hInst: Win32Pointer,
+    pszIconPath: string | Win32Pointer,
+    piIconIndex: Win32Pointer,
+    piIconId: Win32Pointer,
+  ): number | null;
   /** shell32.dll!ExtractAssociatedIconExW */
-  ExtractAssociatedIconExW(hInst: Win32Pointer, pszIconPath: string | Win32Pointer, piIconIndex: Win32Pointer, piIconId: Win32Pointer): number | null;
+  ExtractAssociatedIconExW(
+    hInst: Win32Pointer,
+    pszIconPath: string | Win32Pointer,
+    piIconIndex: Win32Pointer,
+    piIconId: Win32Pointer,
+  ): number | null;
   /** shell32.dll!ExtractAssociatedIconExW */
-  ExtractAssociatedIconEx(hInst: Win32Pointer, pszIconPath: string | Win32Pointer, piIconIndex: Win32Pointer, piIconId: Win32Pointer): number | null;
+  ExtractAssociatedIconEx(
+    hInst: Win32Pointer,
+    pszIconPath: string | Win32Pointer,
+    piIconIndex: Win32Pointer,
+    piIconId: Win32Pointer,
+  ): number | null;
   /** shell32.dll!ExtractAssociatedIconW */
   ExtractAssociatedIconW(hInst: Win32Pointer, pszIconPath: string | Win32Pointer, piIcon: Win32Pointer): number | null;
   /** shell32.dll!ExtractAssociatedIconW */
@@ -63,11 +99,29 @@ interface Functions {
   /** shell32.dll!ExtractIconA */
   ExtractIconA(hInst: Win32Pointer, pszExeFileName: string | Win32Pointer, nIconIndex: number): number | null;
   /** shell32.dll!ExtractIconExA */
-  ExtractIconExA(lpszFile: string | Win32Pointer, nIconIndex: number, phiconLarge: Win32Pointer, phiconSmall: Win32Pointer, nIcons: number): number;
+  ExtractIconExA(
+    lpszFile: string | Win32Pointer,
+    nIconIndex: number,
+    phiconLarge: Win32Pointer,
+    phiconSmall: Win32Pointer,
+    nIcons: number,
+  ): number;
   /** shell32.dll!ExtractIconExW */
-  ExtractIconExW(lpszFile: string | Win32Pointer, nIconIndex: number, phiconLarge: Win32Pointer, phiconSmall: Win32Pointer, nIcons: number): number;
+  ExtractIconExW(
+    lpszFile: string | Win32Pointer,
+    nIconIndex: number,
+    phiconLarge: Win32Pointer,
+    phiconSmall: Win32Pointer,
+    nIcons: number,
+  ): number;
   /** shell32.dll!ExtractIconExW */
-  ExtractIconEx(lpszFile: string | Win32Pointer, nIconIndex: number, phiconLarge: Win32Pointer, phiconSmall: Win32Pointer, nIcons: number): number;
+  ExtractIconEx(
+    lpszFile: string | Win32Pointer,
+    nIconIndex: number,
+    phiconLarge: Win32Pointer,
+    phiconSmall: Win32Pointer,
+    nIcons: number,
+  ): number;
   /** shell32.dll!ExtractIconW */
   ExtractIconW(hInst: Win32Pointer, pszExeFileName: string | Win32Pointer, nIconIndex: number): number | null;
   /** shell32.dll!ExtractIconW */
@@ -75,15 +129,35 @@ interface Functions {
   /** shell32.dll!FileIconInit */
   FileIconInit(fRestoreCache: number): number;
   /** shell32.dll!FindExecutableA */
-  FindExecutableA(lpFile: string | Win32Pointer, lpDirectory: string | Win32Pointer, lpResult: string | Win32Pointer): number | null;
+  FindExecutableA(
+    lpFile: string | Win32Pointer,
+    lpDirectory: string | Win32Pointer,
+    lpResult: string | Win32Pointer,
+  ): number | null;
   /** shell32.dll!FindExecutableW */
-  FindExecutableW(lpFile: string | Win32Pointer, lpDirectory: string | Win32Pointer, lpResult: string | Win32Pointer): number | null;
+  FindExecutableW(
+    lpFile: string | Win32Pointer,
+    lpDirectory: string | Win32Pointer,
+    lpResult: string | Win32Pointer,
+  ): number | null;
   /** shell32.dll!FindExecutableW */
-  FindExecutable(lpFile: string | Win32Pointer, lpDirectory: string | Win32Pointer, lpResult: string | Win32Pointer): number | null;
+  FindExecutable(
+    lpFile: string | Win32Pointer,
+    lpDirectory: string | Win32Pointer,
+    lpResult: string | Win32Pointer,
+  ): number | null;
   /** shell32.dll!GetCurrentProcessExplicitAppUserModelID */
   GetCurrentProcessExplicitAppUserModelID(AppID: Win32Pointer): number;
   /** shell32.dll!GetFileNameFromBrowse */
-  GetFileNameFromBrowse(hwnd: Win32Pointer, pszFilePath: string | Win32Pointer, cchFilePath: number, pszWorkingDir: string | Win32Pointer, pszDefExt: string | Win32Pointer, pszFilters: string | Win32Pointer, pszTitle: string | Win32Pointer): number;
+  GetFileNameFromBrowse(
+    hwnd: Win32Pointer,
+    pszFilePath: string | Win32Pointer,
+    cchFilePath: number,
+    pszWorkingDir: string | Win32Pointer,
+    pszDefExt: string | Win32Pointer,
+    pszFilters: string | Win32Pointer,
+    pszTitle: string | Win32Pointer,
+  ): number;
   /** shell32.dll!ILAppendID */
   ILAppendID(pidl: Win32Pointer, pmkid: Win32Pointer, fAppend: number): number | null;
   /** shell32.dll!ILClone */
@@ -131,7 +205,12 @@ interface Functions {
   /** shell32.dll!IsUserAnAdmin */
   IsUserAnAdmin(): number;
   /** shell32.dll!OpenRegStream */
-  OpenRegStream(hkey: Win32Pointer, pszSubkey: string | Win32Pointer, pszValue: string | Win32Pointer, grfMode: number): number | null;
+  OpenRegStream(
+    hkey: Win32Pointer,
+    pszSubkey: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    grfMode: number,
+  ): number | null;
   /** shell32.dll!PathCleanupSpec */
   PathCleanupSpec(pszDir: string | Win32Pointer, pszSpec: string | Win32Pointer): number;
   /** shell32.dll!PathGetShortPath */
@@ -145,23 +224,56 @@ interface Functions {
   /** shell32.dll!PathIsSlowW */
   PathIsSlow(pszFile: string | Win32Pointer, dwAttr: number): number;
   /** shell32.dll!PathMakeUniqueName */
-  PathMakeUniqueName(pszUniqueName: string | Win32Pointer, cchMax: number, pszTemplate: string | Win32Pointer, pszLongPlate: string | Win32Pointer, pszDir: string | Win32Pointer): number;
+  PathMakeUniqueName(
+    pszUniqueName: string | Win32Pointer,
+    cchMax: number,
+    pszTemplate: string | Win32Pointer,
+    pszLongPlate: string | Win32Pointer,
+    pszDir: string | Win32Pointer,
+  ): number;
   /** shell32.dll!PathQualify */
   PathQualify(psz: string | Win32Pointer): void;
   /** shell32.dll!PathResolve */
   PathResolve(pszPath: string | Win32Pointer, dirs: Win32Pointer, fFlags: number): number;
   /** shell32.dll!PathYetAnotherMakeUniqueName */
-  PathYetAnotherMakeUniqueName(pszUniqueName: string | Win32Pointer, pszPath: string | Win32Pointer, pszShort: string | Win32Pointer, pszFileSpec: string | Win32Pointer): number;
+  PathYetAnotherMakeUniqueName(
+    pszUniqueName: string | Win32Pointer,
+    pszPath: string | Win32Pointer,
+    pszShort: string | Win32Pointer,
+    pszFileSpec: string | Win32Pointer,
+  ): number;
   /** shell32.dll!PickIconDlg */
-  PickIconDlg(hwnd: Win32Pointer, pszIconPath: string | Win32Pointer, cchIconPath: number, piIconIndex: Win32Pointer): number;
+  PickIconDlg(
+    hwnd: Win32Pointer,
+    pszIconPath: string | Win32Pointer,
+    cchIconPath: number,
+    piIconIndex: Win32Pointer,
+  ): number;
   /** shell32.dll!PifMgr_CloseProperties */
   PifMgr_CloseProperties(hProps: Win32Pointer, flOpt: number): number | null;
   /** shell32.dll!PifMgr_GetProperties */
-  PifMgr_GetProperties(hProps: Win32Pointer, pszGroup: string | Win32Pointer, lpProps: Win32Pointer, cbProps: number, flOpt: number): number;
+  PifMgr_GetProperties(
+    hProps: Win32Pointer,
+    pszGroup: string | Win32Pointer,
+    lpProps: Win32Pointer,
+    cbProps: number,
+    flOpt: number,
+  ): number;
   /** shell32.dll!PifMgr_OpenProperties */
-  PifMgr_OpenProperties(pszApp: string | Win32Pointer, pszPIF: string | Win32Pointer, hInf: number, flOpt: number): number | null;
+  PifMgr_OpenProperties(
+    pszApp: string | Win32Pointer,
+    pszPIF: string | Win32Pointer,
+    hInf: number,
+    flOpt: number,
+  ): number | null;
   /** shell32.dll!PifMgr_SetProperties */
-  PifMgr_SetProperties(hProps: Win32Pointer, pszGroup: string | Win32Pointer, lpProps: Win32Pointer, cbProps: number, flOpt: number): number;
+  PifMgr_SetProperties(
+    hProps: Win32Pointer,
+    pszGroup: string | Win32Pointer,
+    lpProps: Win32Pointer,
+    cbProps: number,
+    flOpt: number,
+  ): number;
   /** shell32.dll!ReadCabinetState */
   ReadCabinetState(pcs: Win32Pointer, cLength: number): number;
   /** shell32.dll!RealDriveType */
@@ -183,13 +295,36 @@ interface Functions {
   /** shell32.dll!SHAssocEnumHandlers */
   SHAssocEnumHandlers(pszExtra: string | Win32Pointer, afFilter: number, ppEnumHandler: Win32Pointer): number;
   /** shell32.dll!SHAssocEnumHandlersForProtocolByApplication */
-  SHAssocEnumHandlersForProtocolByApplication(protocol: string | Win32Pointer, riid: Win32Pointer, enumHandlers: Win32Pointer): number;
+  SHAssocEnumHandlersForProtocolByApplication(
+    protocol: string | Win32Pointer,
+    riid: Win32Pointer,
+    enumHandlers: Win32Pointer,
+  ): number;
   /** shell32.dll!SHBindToFolderIDListParent */
-  SHBindToFolderIDListParent(psfRoot: Win32Pointer, pidl: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer, ppidlLast: Win32Pointer): number;
+  SHBindToFolderIDListParent(
+    psfRoot: Win32Pointer,
+    pidl: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+    ppidlLast: Win32Pointer,
+  ): number;
   /** shell32.dll!SHBindToFolderIDListParentEx */
-  SHBindToFolderIDListParentEx(psfRoot: Win32Pointer, pidl: Win32Pointer, ppbc: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer, ppidlLast: Win32Pointer): number;
+  SHBindToFolderIDListParentEx(
+    psfRoot: Win32Pointer,
+    pidl: Win32Pointer,
+    ppbc: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+    ppidlLast: Win32Pointer,
+  ): number;
   /** shell32.dll!SHBindToObject */
-  SHBindToObject(psf: Win32Pointer, pidl: Win32Pointer, pbc: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  SHBindToObject(
+    psf: Win32Pointer,
+    pidl: Win32Pointer,
+    pbc: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** shell32.dll!SHBindToParent */
   SHBindToParent(pidl: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer, ppidlLast: Win32Pointer): number;
   /** shell32.dll!SHBrowseForFolderA */
@@ -201,7 +336,12 @@ interface Functions {
   /** shell32.dll!SHCLSIDFromString */
   SHCLSIDFromString(psz: string | Win32Pointer, pclsid: Win32Pointer): number;
   /** shell32.dll!SHChangeNotification_Lock */
-  SHChangeNotification_Lock(hChange: Win32Pointer, dwProcId: number, pppidl: Win32Pointer, plEvent: Win32Pointer): number | null;
+  SHChangeNotification_Lock(
+    hChange: Win32Pointer,
+    dwProcId: number,
+    pppidl: Win32Pointer,
+    plEvent: Win32Pointer,
+  ): number | null;
   /** shell32.dll!SHChangeNotification_Unlock */
   SHChangeNotification_Unlock(hLock: Win32Pointer): number;
   /** shell32.dll!SHChangeNotify */
@@ -209,17 +349,37 @@ interface Functions {
   /** shell32.dll!SHChangeNotifyDeregister */
   SHChangeNotifyDeregister(ulID: number): number;
   /** shell32.dll!SHChangeNotifyRegister */
-  SHChangeNotifyRegister(hwnd: Win32Pointer, fSources: number, fEvents: number, wMsg: number, cEntries: number, pshcne: Win32Pointer): number;
+  SHChangeNotifyRegister(
+    hwnd: Win32Pointer,
+    fSources: number,
+    fEvents: number,
+    wMsg: number,
+    cEntries: number,
+    pshcne: Win32Pointer,
+  ): number;
   /** shell32.dll!SHChangeNotifyRegisterThread */
   SHChangeNotifyRegisterThread(status: number): void;
   /** shell32.dll!SHCloneSpecialIDList */
   SHCloneSpecialIDList(hwnd: Win32Pointer, csidl: number, fCreate: number): number | null;
   /** shell32.dll!SHCoCreateInstance */
-  SHCoCreateInstance(pszCLSID: string | Win32Pointer, pclsid: Win32Pointer, pUnkOuter: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  SHCoCreateInstance(
+    pszCLSID: string | Win32Pointer,
+    pclsid: Win32Pointer,
+    pUnkOuter: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** shell32.dll!SHCreateAssociationRegistration */
   SHCreateAssociationRegistration(riid: Win32Pointer, ppv: Win32Pointer): number;
   /** shell32.dll!SHCreateDataObject */
-  SHCreateDataObject(pidlFolder: Win32Pointer, cidl: number, apidl: Win32Pointer, pdtInner: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  SHCreateDataObject(
+    pidlFolder: Win32Pointer,
+    cidl: number,
+    apidl: Win32Pointer,
+    pdtInner: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** shell32.dll!SHCreateDefaultContextMenu */
   SHCreateDefaultContextMenu(pdcm: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** shell32.dll!SHCreateDefaultExtractIcon */
@@ -235,17 +395,45 @@ interface Functions {
   /** shell32.dll!SHCreateDirectoryExW */
   SHCreateDirectoryEx(hwnd: Win32Pointer, pszPath: string | Win32Pointer, psa: Win32Pointer): number;
   /** shell32.dll!SHCreateFileExtractIconW */
-  SHCreateFileExtractIconW(pszFile: string | Win32Pointer, dwFileAttributes: number, riid: Win32Pointer, ppv: Win32Pointer): number;
+  SHCreateFileExtractIconW(
+    pszFile: string | Win32Pointer,
+    dwFileAttributes: number,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** shell32.dll!SHCreateItemFromIDList */
   SHCreateItemFromIDList(pidl: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** shell32.dll!SHCreateItemFromParsingName */
-  SHCreateItemFromParsingName(pszPath: string | Win32Pointer, pbc: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  SHCreateItemFromParsingName(
+    pszPath: string | Win32Pointer,
+    pbc: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** shell32.dll!SHCreateItemFromRelativeName */
-  SHCreateItemFromRelativeName(psiParent: Win32Pointer, pszName: string | Win32Pointer, pbc: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  SHCreateItemFromRelativeName(
+    psiParent: Win32Pointer,
+    pszName: string | Win32Pointer,
+    pbc: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** shell32.dll!SHCreateItemInKnownFolder */
-  SHCreateItemInKnownFolder(kfid: Win32Pointer, dwKFFlags: number, pszItem: string | Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  SHCreateItemInKnownFolder(
+    kfid: Win32Pointer,
+    dwKFFlags: number,
+    pszItem: string | Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** shell32.dll!SHCreateItemWithParent */
-  SHCreateItemWithParent(pidlParent: Win32Pointer, psfParent: Win32Pointer, pidl: Win32Pointer, riid: Win32Pointer, ppvItem: Win32Pointer): number;
+  SHCreateItemWithParent(
+    pidlParent: Win32Pointer,
+    psfParent: Win32Pointer,
+    pidl: Win32Pointer,
+    riid: Win32Pointer,
+    ppvItem: Win32Pointer,
+  ): number;
   /** shell32.dll!SHCreateProcessAsUserW */
   SHCreateProcessAsUserW(pscpi: Win32Pointer): number;
   /** shell32.dll!SHCreatePropSheetExtArray */
@@ -259,7 +447,13 @@ interface Functions {
   /** shell32.dll!SHCreateShellItem */
   SHCreateShellItem(pidlParent: Win32Pointer, psfParent: Win32Pointer, pidl: Win32Pointer, ppsi: Win32Pointer): number;
   /** shell32.dll!SHCreateShellItemArray */
-  SHCreateShellItemArray(pidlParent: Win32Pointer, psf: Win32Pointer, cidl: number, ppidl: Win32Pointer, ppsiItemArray: Win32Pointer): number;
+  SHCreateShellItemArray(
+    pidlParent: Win32Pointer,
+    psf: Win32Pointer,
+    cidl: number,
+    ppidl: Win32Pointer,
+    ppsiItemArray: Win32Pointer,
+  ): number;
   /** shell32.dll!SHCreateShellItemArrayFromDataObject */
   SHCreateShellItemArrayFromDataObject(pdo: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** shell32.dll!SHCreateShellItemArrayFromIDLists */
@@ -269,15 +463,42 @@ interface Functions {
   /** shell32.dll!SHCreateStdEnumFmtEtc */
   SHCreateStdEnumFmtEtc(cfmt: number, afmt: Win32Pointer, ppenumFormatEtc: Win32Pointer): number;
   /** shell32.dll!SHDefExtractIconA */
-  SHDefExtractIconA(pszIconFile: string | Win32Pointer, iIndex: number, uFlags: number, phiconLarge: Win32Pointer, phiconSmall: Win32Pointer, nIconSize: number): number;
+  SHDefExtractIconA(
+    pszIconFile: string | Win32Pointer,
+    iIndex: number,
+    uFlags: number,
+    phiconLarge: Win32Pointer,
+    phiconSmall: Win32Pointer,
+    nIconSize: number,
+  ): number;
   /** shell32.dll!SHDefExtractIconW */
-  SHDefExtractIconW(pszIconFile: string | Win32Pointer, iIndex: number, uFlags: number, phiconLarge: Win32Pointer, phiconSmall: Win32Pointer, nIconSize: number): number;
+  SHDefExtractIconW(
+    pszIconFile: string | Win32Pointer,
+    iIndex: number,
+    uFlags: number,
+    phiconLarge: Win32Pointer,
+    phiconSmall: Win32Pointer,
+    nIconSize: number,
+  ): number;
   /** shell32.dll!SHDefExtractIconW */
-  SHDefExtractIcon(pszIconFile: string | Win32Pointer, iIndex: number, uFlags: number, phiconLarge: Win32Pointer, phiconSmall: Win32Pointer, nIconSize: number): number;
+  SHDefExtractIcon(
+    pszIconFile: string | Win32Pointer,
+    iIndex: number,
+    uFlags: number,
+    phiconLarge: Win32Pointer,
+    phiconSmall: Win32Pointer,
+    nIconSize: number,
+  ): number;
   /** shell32.dll!SHDestroyPropSheetExtArray */
   SHDestroyPropSheetExtArray(hpsxa: Win32Pointer): void;
   /** shell32.dll!SHDoDragDrop */
-  SHDoDragDrop(hwnd: Win32Pointer, pdata: Win32Pointer, pdsrc: Win32Pointer, dwEffect: number, pdwEffect: Win32Pointer): number;
+  SHDoDragDrop(
+    hwnd: Win32Pointer,
+    pdata: Win32Pointer,
+    pdsrc: Win32Pointer,
+    dwEffect: number,
+    pdwEffect: Win32Pointer,
+  ): number;
   /** shell32.dll!SHEmptyRecycleBinA */
   SHEmptyRecycleBinA(hwnd: Win32Pointer, pszRootPath: string | Win32Pointer, dwFlags: number): number;
   /** shell32.dll!SHEmptyRecycleBinW */
@@ -285,9 +506,19 @@ interface Functions {
   /** shell32.dll!SHEmptyRecycleBinW */
   SHEmptyRecycleBin(hwnd: Win32Pointer, pszRootPath: string | Win32Pointer, dwFlags: number): number;
   /** shell32.dll!SHEnumerateUnreadMailAccountsW */
-  SHEnumerateUnreadMailAccountsW(hKeyUser: Win32Pointer, dwIndex: number, pszMailAddress: string | Win32Pointer, cchMailAddress: number): number;
+  SHEnumerateUnreadMailAccountsW(
+    hKeyUser: Win32Pointer,
+    dwIndex: number,
+    pszMailAddress: string | Win32Pointer,
+    cchMailAddress: number,
+  ): number;
   /** shell32.dll!SHEvaluateSystemCommandTemplate */
-  SHEvaluateSystemCommandTemplate(pszCmdTemplate: string | Win32Pointer, ppszApplication: Win32Pointer, ppszCommandLine: Win32Pointer, ppszParameters: Win32Pointer): number;
+  SHEvaluateSystemCommandTemplate(
+    pszCmdTemplate: string | Win32Pointer,
+    ppszApplication: Win32Pointer,
+    ppszCommandLine: Win32Pointer,
+    ppszParameters: Win32Pointer,
+  ): number;
   /** shell32.dll!SHFileOperationA */
   SHFileOperationA(lpFileOp: Win32Pointer): number;
   /** shell32.dll!SHFileOperationW */
@@ -297,7 +528,12 @@ interface Functions {
   /** shell32.dll!SHFindFiles */
   SHFindFiles(pidlFolder: Win32Pointer, pidlSaveFile: Win32Pointer): number;
   /** shell32.dll!SHFind_InitMenuPopup */
-  SHFind_InitMenuPopup(hmenu: Win32Pointer, hwndOwner: Win32Pointer, idCmdFirst: number, idCmdLast: number): number | null;
+  SHFind_InitMenuPopup(
+    hmenu: Win32Pointer,
+    hwndOwner: Win32Pointer,
+    idCmdFirst: number,
+    idCmdLast: number,
+  ): number | null;
   /** shell32.dll!SHFlushSFCache */
   SHFlushSFCache(): void;
   /** shell32.dll!SHFormatDrive */
@@ -307,7 +543,12 @@ interface Functions {
   /** shell32.dll!SHFreeNameMappings */
   SHFreeNameMappings(hNameMappings: Win32Pointer): void;
   /** shell32.dll!SHGetAttributesFromDataObject */
-  SHGetAttributesFromDataObject(pdo: Win32Pointer, dwAttributeMask: number, pdwAttributes: Win32Pointer, pcItems: Win32Pointer): number;
+  SHGetAttributesFromDataObject(
+    pdo: Win32Pointer,
+    dwAttributeMask: number,
+    pdwAttributes: Win32Pointer,
+    pcItems: Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetDataFromIDListA */
   SHGetDataFromIDListA(psf: Win32Pointer, pidl: Win32Pointer, nFormat: number, pv: Win32Pointer, cb: number): number;
   /** shell32.dll!SHGetDataFromIDListW */
@@ -317,33 +558,111 @@ interface Functions {
   /** shell32.dll!SHGetDesktopFolder */
   SHGetDesktopFolder(ppshf: Win32Pointer): number;
   /** shell32.dll!SHGetDiskFreeSpaceExA */
-  SHGetDiskFreeSpaceExA(pszDirectoryName: string | Win32Pointer, pulFreeBytesAvailableToCaller: Win32Pointer, pulTotalNumberOfBytes: Win32Pointer, pulTotalNumberOfFreeBytes: Win32Pointer): number;
+  SHGetDiskFreeSpaceExA(
+    pszDirectoryName: string | Win32Pointer,
+    pulFreeBytesAvailableToCaller: Win32Pointer,
+    pulTotalNumberOfBytes: Win32Pointer,
+    pulTotalNumberOfFreeBytes: Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetDiskFreeSpaceExW */
-  SHGetDiskFreeSpaceExW(pszDirectoryName: string | Win32Pointer, pulFreeBytesAvailableToCaller: Win32Pointer, pulTotalNumberOfBytes: Win32Pointer, pulTotalNumberOfFreeBytes: Win32Pointer): number;
+  SHGetDiskFreeSpaceExW(
+    pszDirectoryName: string | Win32Pointer,
+    pulFreeBytesAvailableToCaller: Win32Pointer,
+    pulTotalNumberOfBytes: Win32Pointer,
+    pulTotalNumberOfFreeBytes: Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetDiskFreeSpaceExW */
-  SHGetDiskFreeSpaceEx(pszDirectoryName: string | Win32Pointer, pulFreeBytesAvailableToCaller: Win32Pointer, pulTotalNumberOfBytes: Win32Pointer, pulTotalNumberOfFreeBytes: Win32Pointer): number;
+  SHGetDiskFreeSpaceEx(
+    pszDirectoryName: string | Win32Pointer,
+    pulFreeBytesAvailableToCaller: Win32Pointer,
+    pulTotalNumberOfBytes: Win32Pointer,
+    pulTotalNumberOfFreeBytes: Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetDriveMedia */
   SHGetDriveMedia(pszDrive: string | Win32Pointer, pdwMediaContent: Win32Pointer): number;
   /** shell32.dll!SHGetFileInfoA */
-  SHGetFileInfoA(pszPath: string | Win32Pointer, dwFileAttributes: number, psfi: Win32Pointer, cbFileInfo: number, uFlags: number): number | bigint;
+  SHGetFileInfoA(
+    pszPath: string | Win32Pointer,
+    dwFileAttributes: number,
+    psfi: Win32Pointer,
+    cbFileInfo: number,
+    uFlags: number,
+  ): number | bigint;
   /** shell32.dll!SHGetFileInfoW */
-  SHGetFileInfoW(pszPath: string | Win32Pointer, dwFileAttributes: number, psfi: Win32Pointer, cbFileInfo: number, uFlags: number): number | bigint;
+  SHGetFileInfoW(
+    pszPath: string | Win32Pointer,
+    dwFileAttributes: number,
+    psfi: Win32Pointer,
+    cbFileInfo: number,
+    uFlags: number,
+  ): number | bigint;
   /** shell32.dll!SHGetFileInfoW */
-  SHGetFileInfo(pszPath: string | Win32Pointer, dwFileAttributes: number, psfi: Win32Pointer, cbFileInfo: number, uFlags: number): number | bigint;
+  SHGetFileInfo(
+    pszPath: string | Win32Pointer,
+    dwFileAttributes: number,
+    psfi: Win32Pointer,
+    cbFileInfo: number,
+    uFlags: number,
+  ): number | bigint;
   /** shell32.dll!SHGetFolderLocation */
-  SHGetFolderLocation(hwnd: Win32Pointer, csidl: number, hToken: Win32Pointer, dwFlags: number, ppidl: Win32Pointer): number;
+  SHGetFolderLocation(
+    hwnd: Win32Pointer,
+    csidl: number,
+    hToken: Win32Pointer,
+    dwFlags: number,
+    ppidl: Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetFolderPathA */
-  SHGetFolderPathA(hwnd: Win32Pointer, csidl: number, hToken: Win32Pointer, dwFlags: number, pszPath: string | Win32Pointer): number;
+  SHGetFolderPathA(
+    hwnd: Win32Pointer,
+    csidl: number,
+    hToken: Win32Pointer,
+    dwFlags: number,
+    pszPath: string | Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetFolderPathAndSubDirA */
-  SHGetFolderPathAndSubDirA(hwnd: Win32Pointer, csidl: number, hToken: Win32Pointer, dwFlags: number, pszSubDir: string | Win32Pointer, pszPath: string | Win32Pointer): number;
+  SHGetFolderPathAndSubDirA(
+    hwnd: Win32Pointer,
+    csidl: number,
+    hToken: Win32Pointer,
+    dwFlags: number,
+    pszSubDir: string | Win32Pointer,
+    pszPath: string | Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetFolderPathAndSubDirW */
-  SHGetFolderPathAndSubDirW(hwnd: Win32Pointer, csidl: number, hToken: Win32Pointer, dwFlags: number, pszSubDir: string | Win32Pointer, pszPath: string | Win32Pointer): number;
+  SHGetFolderPathAndSubDirW(
+    hwnd: Win32Pointer,
+    csidl: number,
+    hToken: Win32Pointer,
+    dwFlags: number,
+    pszSubDir: string | Win32Pointer,
+    pszPath: string | Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetFolderPathAndSubDirW */
-  SHGetFolderPathAndSubDir(hwnd: Win32Pointer, csidl: number, hToken: Win32Pointer, dwFlags: number, pszSubDir: string | Win32Pointer, pszPath: string | Win32Pointer): number;
+  SHGetFolderPathAndSubDir(
+    hwnd: Win32Pointer,
+    csidl: number,
+    hToken: Win32Pointer,
+    dwFlags: number,
+    pszSubDir: string | Win32Pointer,
+    pszPath: string | Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetFolderPathW */
-  SHGetFolderPathW(hwnd: Win32Pointer, csidl: number, hToken: Win32Pointer, dwFlags: number, pszPath: string | Win32Pointer): number;
+  SHGetFolderPathW(
+    hwnd: Win32Pointer,
+    csidl: number,
+    hToken: Win32Pointer,
+    dwFlags: number,
+    pszPath: string | Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetFolderPathW */
-  SHGetFolderPath(hwnd: Win32Pointer, csidl: number, hToken: Win32Pointer, dwFlags: number, pszPath: string | Win32Pointer): number;
+  SHGetFolderPath(
+    hwnd: Win32Pointer,
+    csidl: number,
+    hToken: Win32Pointer,
+    dwFlags: number,
+    pszPath: string | Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetIDListFromObject */
   SHGetIDListFromObject(punk: Win32Pointer, ppidl: Win32Pointer): number;
   /** shell32.dll!SHGetIconOverlayIndexA */
@@ -363,21 +682,50 @@ interface Functions {
   /** shell32.dll!SHGetKnownFolderIDList */
   SHGetKnownFolderIDList(rfid: Win32Pointer, dwFlags: number, hToken: Win32Pointer, ppidl: Win32Pointer): number;
   /** shell32.dll!SHGetKnownFolderItem */
-  SHGetKnownFolderItem(rfid: Win32Pointer, flags: number, hToken: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  SHGetKnownFolderItem(
+    rfid: Win32Pointer,
+    flags: number,
+    hToken: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetKnownFolderPath */
   SHGetKnownFolderPath(rfid: Win32Pointer, dwFlags: number, hToken: Win32Pointer, ppszPath: Win32Pointer): number;
   /** shell32.dll!SHGetLocalizedName */
-  SHGetLocalizedName(pszPath: string | Win32Pointer, pszResModule: string | Win32Pointer, cch: number, pidsRes: Win32Pointer): number;
+  SHGetLocalizedName(
+    pszPath: string | Win32Pointer,
+    pszResModule: string | Win32Pointer,
+    cch: number,
+    pidsRes: Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetMalloc */
   SHGetMalloc(ppMalloc: Win32Pointer): number;
   /** shell32.dll!SHGetNameFromIDList */
   SHGetNameFromIDList(pidl: Win32Pointer, sigdnName: number, ppszName: Win32Pointer): number;
   /** shell32.dll!SHGetNewLinkInfoA */
-  SHGetNewLinkInfoA(pszLinkTo: string | Win32Pointer, pszDir: string | Win32Pointer, pszName: string | Win32Pointer, pfMustCopy: Win32Pointer, uFlags: number): number;
+  SHGetNewLinkInfoA(
+    pszLinkTo: string | Win32Pointer,
+    pszDir: string | Win32Pointer,
+    pszName: string | Win32Pointer,
+    pfMustCopy: Win32Pointer,
+    uFlags: number,
+  ): number;
   /** shell32.dll!SHGetNewLinkInfoW */
-  SHGetNewLinkInfoW(pszLinkTo: string | Win32Pointer, pszDir: string | Win32Pointer, pszName: string | Win32Pointer, pfMustCopy: Win32Pointer, uFlags: number): number;
+  SHGetNewLinkInfoW(
+    pszLinkTo: string | Win32Pointer,
+    pszDir: string | Win32Pointer,
+    pszName: string | Win32Pointer,
+    pfMustCopy: Win32Pointer,
+    uFlags: number,
+  ): number;
   /** shell32.dll!SHGetNewLinkInfoW */
-  SHGetNewLinkInfo(pszLinkTo: string | Win32Pointer, pszDir: string | Win32Pointer, pszName: string | Win32Pointer, pfMustCopy: Win32Pointer, uFlags: number): number;
+  SHGetNewLinkInfo(
+    pszLinkTo: string | Win32Pointer,
+    pszDir: string | Win32Pointer,
+    pszName: string | Win32Pointer,
+    pfMustCopy: Win32Pointer,
+    uFlags: number,
+  ): number;
   /** shell32.dll!SHGetPathFromIDListA */
   SHGetPathFromIDListA(pidl: Win32Pointer, pszPath: string | Win32Pointer): number;
   /** shell32.dll!SHGetPathFromIDListEx */
@@ -391,7 +739,13 @@ interface Functions {
   /** shell32.dll!SHGetPropertyStoreFromIDList */
   SHGetPropertyStoreFromIDList(pidl: Win32Pointer, flags: number, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** shell32.dll!SHGetPropertyStoreFromParsingName */
-  SHGetPropertyStoreFromParsingName(pszPath: string | Win32Pointer, pbc: Win32Pointer, flags: number, riid: Win32Pointer, ppv: Win32Pointer): number;
+  SHGetPropertyStoreFromParsingName(
+    pszPath: string | Win32Pointer,
+    pbc: Win32Pointer,
+    flags: number,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** shell32.dll!SHGetRealIDL */
   SHGetRealIDL(psf: Win32Pointer, pidlSimple: Win32Pointer, ppidlReal: Win32Pointer): number;
   /** shell32.dll!SHGetSetFolderCustomSettings */
@@ -413,17 +767,42 @@ interface Functions {
   /** shell32.dll!SHGetTemporaryPropertyForItem */
   SHGetTemporaryPropertyForItem(psi: Win32Pointer, propkey: Win32Pointer, ppropvar: Win32Pointer): number;
   /** shell32.dll!SHGetUnreadMailCountW */
-  SHGetUnreadMailCountW(hKeyUser: Win32Pointer, pszMailAddress: string | Win32Pointer, pdwCount: Win32Pointer, pFileTime: Win32Pointer, pszShellExecuteCommand: string | Win32Pointer, cchShellExecuteCommand: number): number;
+  SHGetUnreadMailCountW(
+    hKeyUser: Win32Pointer,
+    pszMailAddress: string | Win32Pointer,
+    pdwCount: Win32Pointer,
+    pFileTime: Win32Pointer,
+    pszShellExecuteCommand: string | Win32Pointer,
+    cchShellExecuteCommand: number,
+  ): number;
   /** shell32.dll!SHHandleUpdateImage */
   SHHandleUpdateImage(pidlExtra: Win32Pointer): number;
   /** shell32.dll!SHILCreateFromPath */
   SHILCreateFromPath(pszPath: string | Win32Pointer, ppidl: Win32Pointer, rgfInOut: Win32Pointer): number;
   /** shell32.dll!SHInvokePrinterCommandA */
-  SHInvokePrinterCommandA(hwnd: Win32Pointer, uAction: number, lpBuf1: string | Win32Pointer, lpBuf2: string | Win32Pointer, fModal: number): number;
+  SHInvokePrinterCommandA(
+    hwnd: Win32Pointer,
+    uAction: number,
+    lpBuf1: string | Win32Pointer,
+    lpBuf2: string | Win32Pointer,
+    fModal: number,
+  ): number;
   /** shell32.dll!SHInvokePrinterCommandW */
-  SHInvokePrinterCommandW(hwnd: Win32Pointer, uAction: number, lpBuf1: string | Win32Pointer, lpBuf2: string | Win32Pointer, fModal: number): number;
+  SHInvokePrinterCommandW(
+    hwnd: Win32Pointer,
+    uAction: number,
+    lpBuf1: string | Win32Pointer,
+    lpBuf2: string | Win32Pointer,
+    fModal: number,
+  ): number;
   /** shell32.dll!SHInvokePrinterCommandW */
-  SHInvokePrinterCommand(hwnd: Win32Pointer, uAction: number, lpBuf1: string | Win32Pointer, lpBuf2: string | Win32Pointer, fModal: number): number;
+  SHInvokePrinterCommand(
+    hwnd: Win32Pointer,
+    uAction: number,
+    lpBuf1: string | Win32Pointer,
+    lpBuf2: string | Win32Pointer,
+    fModal: number,
+  ): number;
   /** shell32.dll!SHIsFileAvailableOffline */
   SHIsFileAvailableOffline(pwszPath: string | Win32Pointer, pdwStatus: Win32Pointer): number;
   /** shell32.dll!SHLimitInputEdit */
@@ -437,27 +816,83 @@ interface Functions {
   /** shell32.dll!SHMultiFileProperties */
   SHMultiFileProperties(pdtobj: Win32Pointer, dwFlags: number): number;
   /** shell32.dll!SHObjectProperties */
-  SHObjectProperties(hwnd: Win32Pointer, shopObjectType: number, pszObjectName: string | Win32Pointer, pszPropertyPage: string | Win32Pointer): number;
+  SHObjectProperties(
+    hwnd: Win32Pointer,
+    shopObjectType: number,
+    pszObjectName: string | Win32Pointer,
+    pszPropertyPage: string | Win32Pointer,
+  ): number;
   /** shell32.dll!SHOpenFolderAndSelectItems */
   SHOpenFolderAndSelectItems(pidlFolder: Win32Pointer, cidl: number, apidl: Win32Pointer, dwFlags: number): number;
   /** shell32.dll!SHOpenPropSheetW */
-  SHOpenPropSheetW(pszCaption: string | Win32Pointer, ahkeys: Win32Pointer, ckeys: number, pclsidDefault: Win32Pointer, pdtobj: Win32Pointer, psb: Win32Pointer, pStartPage: string | Win32Pointer): number;
+  SHOpenPropSheetW(
+    pszCaption: string | Win32Pointer,
+    ahkeys: Win32Pointer,
+    ckeys: number,
+    pclsidDefault: Win32Pointer,
+    pdtobj: Win32Pointer,
+    psb: Win32Pointer,
+    pStartPage: string | Win32Pointer,
+  ): number;
   /** shell32.dll!SHOpenWithDialog */
   SHOpenWithDialog(hwndParent: Win32Pointer, poainfo: Win32Pointer): number;
   /** shell32.dll!SHParseDisplayName */
-  SHParseDisplayName(pszName: string | Win32Pointer, pbc: Win32Pointer, ppidl: Win32Pointer, sfgaoIn: number, psfgaoOut: Win32Pointer): number;
+  SHParseDisplayName(
+    pszName: string | Win32Pointer,
+    pbc: Win32Pointer,
+    ppidl: Win32Pointer,
+    sfgaoIn: number,
+    psfgaoOut: Win32Pointer,
+  ): number;
   /** shell32.dll!SHPathPrepareForWriteA */
-  SHPathPrepareForWriteA(hwnd: Win32Pointer, punkEnableModless: Win32Pointer, pszPath: string | Win32Pointer, dwFlags: number): number;
+  SHPathPrepareForWriteA(
+    hwnd: Win32Pointer,
+    punkEnableModless: Win32Pointer,
+    pszPath: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shell32.dll!SHPathPrepareForWriteW */
-  SHPathPrepareForWriteW(hwnd: Win32Pointer, punkEnableModless: Win32Pointer, pszPath: string | Win32Pointer, dwFlags: number): number;
+  SHPathPrepareForWriteW(
+    hwnd: Win32Pointer,
+    punkEnableModless: Win32Pointer,
+    pszPath: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shell32.dll!SHPathPrepareForWriteW */
-  SHPathPrepareForWrite(hwnd: Win32Pointer, punkEnableModless: Win32Pointer, pszPath: string | Win32Pointer, dwFlags: number): number;
+  SHPathPrepareForWrite(
+    hwnd: Win32Pointer,
+    punkEnableModless: Win32Pointer,
+    pszPath: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** shell32.dll!SHPropStgCreate */
-  SHPropStgCreate(psstg: Win32Pointer, fmtid: Win32Pointer, pclsid: Win32Pointer, grfFlags: number, grfMode: number, dwDisposition: number, ppstg: Win32Pointer, puCodePage: Win32Pointer): number;
+  SHPropStgCreate(
+    psstg: Win32Pointer,
+    fmtid: Win32Pointer,
+    pclsid: Win32Pointer,
+    grfFlags: number,
+    grfMode: number,
+    dwDisposition: number,
+    ppstg: Win32Pointer,
+    puCodePage: Win32Pointer,
+  ): number;
   /** shell32.dll!SHPropStgReadMultiple */
-  SHPropStgReadMultiple(pps: Win32Pointer, uCodePage: number, cpspec: number, rgpspec: Win32Pointer, rgvar: Win32Pointer): number;
+  SHPropStgReadMultiple(
+    pps: Win32Pointer,
+    uCodePage: number,
+    cpspec: number,
+    rgpspec: Win32Pointer,
+    rgvar: Win32Pointer,
+  ): number;
   /** shell32.dll!SHPropStgWriteMultiple */
-  SHPropStgWriteMultiple(pps: Win32Pointer, puCodePage: Win32Pointer, cpspec: number, rgpspec: Win32Pointer, rgvar: Win32Pointer, propidNameFirst: number): number;
+  SHPropStgWriteMultiple(
+    pps: Win32Pointer,
+    puCodePage: Win32Pointer,
+    cpspec: number,
+    rgpspec: Win32Pointer,
+    rgvar: Win32Pointer,
+    propidNameFirst: number,
+  ): number;
   /** shell32.dll!SHQueryRecycleBinA */
   SHQueryRecycleBinA(pszRootPath: string | Win32Pointer, pSHQueryRBInfo: Win32Pointer): number;
   /** shell32.dll!SHQueryRecycleBinW */
@@ -469,7 +904,12 @@ interface Functions {
   /** shell32.dll!SHRemoveLocalizedName */
   SHRemoveLocalizedName(pszPath: string | Win32Pointer): number;
   /** shell32.dll!SHReplaceFromPropSheetExtArray */
-  SHReplaceFromPropSheetExtArray(hpsxa: Win32Pointer, uPageID: number, lpfnReplaceWith: Win32Callback, lParam: number | bigint): number;
+  SHReplaceFromPropSheetExtArray(
+    hpsxa: Win32Pointer,
+    uPageID: number,
+    lpfnReplaceWith: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** shell32.dll!SHResolveLibrary */
   SHResolveLibrary(psiLibrary: Win32Pointer): number;
   /** shell32.dll!SHRestricted */
@@ -485,17 +925,32 @@ interface Functions {
   /** shell32.dll!SHSetInstanceExplorer */
   SHSetInstanceExplorer(punk: Win32Pointer): void;
   /** shell32.dll!SHSetKnownFolderPath */
-  SHSetKnownFolderPath(rfid: Win32Pointer, dwFlags: number, hToken: Win32Pointer, pszPath: string | Win32Pointer): number;
+  SHSetKnownFolderPath(
+    rfid: Win32Pointer,
+    dwFlags: number,
+    hToken: Win32Pointer,
+    pszPath: string | Win32Pointer,
+  ): number;
   /** shell32.dll!SHSetLocalizedName */
   SHSetLocalizedName(pszPath: string | Win32Pointer, pszResModule: string | Win32Pointer, idsRes: number): number;
   /** shell32.dll!SHSetTemporaryPropertyForItem */
   SHSetTemporaryPropertyForItem(psi: Win32Pointer, propkey: Win32Pointer, propvar: Win32Pointer): number;
   /** shell32.dll!SHSetUnreadMailCountW */
-  SHSetUnreadMailCountW(pszMailAddress: string | Win32Pointer, dwCount: number, pszShellExecuteCommand: string | Win32Pointer): number;
+  SHSetUnreadMailCountW(
+    pszMailAddress: string | Win32Pointer,
+    dwCount: number,
+    pszShellExecuteCommand: string | Win32Pointer,
+  ): number;
   /** shell32.dll!SHShellFolderView_Message */
   SHShellFolderView_Message(hwndMain: Win32Pointer, uMsg: number, lParam: number | bigint): number | bigint;
   /** shell32.dll!SHShowManageLibraryUI */
-  SHShowManageLibraryUI(psiLibrary: Win32Pointer, hwndOwner: Win32Pointer, pszTitle: string | Win32Pointer, pszInstruction: string | Win32Pointer, lmdOptions: number): number;
+  SHShowManageLibraryUI(
+    psiLibrary: Win32Pointer,
+    hwndOwner: Win32Pointer,
+    pszTitle: string | Win32Pointer,
+    pszInstruction: string | Win32Pointer,
+    lmdOptions: number,
+  ): number;
   /** shell32.dll!SHSimpleIDListFromPath */
   SHSimpleIDListFromPath(pszPath: string | Win32Pointer): number | null;
   /** shell32.dll!SHStartNetConnectionDialogW */
@@ -513,13 +968,35 @@ interface Functions {
   /** shell32.dll!SetCurrentProcessExplicitAppUserModelID */
   SetCurrentProcessExplicitAppUserModelID(AppID: string | Win32Pointer): number;
   /** shell32.dll!ShellAboutA */
-  ShellAboutA(hWnd: Win32Pointer, szApp: string | Win32Pointer, szOtherStuff: string | Win32Pointer, hIcon: Win32Pointer): number;
+  ShellAboutA(
+    hWnd: Win32Pointer,
+    szApp: string | Win32Pointer,
+    szOtherStuff: string | Win32Pointer,
+    hIcon: Win32Pointer,
+  ): number;
   /** shell32.dll!ShellAboutW */
-  ShellAboutW(hWnd: Win32Pointer, szApp: string | Win32Pointer, szOtherStuff: string | Win32Pointer, hIcon: Win32Pointer): number;
+  ShellAboutW(
+    hWnd: Win32Pointer,
+    szApp: string | Win32Pointer,
+    szOtherStuff: string | Win32Pointer,
+    hIcon: Win32Pointer,
+  ): number;
   /** shell32.dll!ShellAboutW */
-  ShellAbout(hWnd: Win32Pointer, szApp: string | Win32Pointer, szOtherStuff: string | Win32Pointer, hIcon: Win32Pointer): number;
+  ShellAbout(
+    hWnd: Win32Pointer,
+    szApp: string | Win32Pointer,
+    szOtherStuff: string | Win32Pointer,
+    hIcon: Win32Pointer,
+  ): number;
   /** shell32.dll!ShellExecuteA */
-  ShellExecuteA(hwnd: Win32Pointer, lpOperation: string | Win32Pointer, lpFile: string | Win32Pointer, lpParameters: string | Win32Pointer, lpDirectory: string | Win32Pointer, nShowCmd: number): number | null;
+  ShellExecuteA(
+    hwnd: Win32Pointer,
+    lpOperation: string | Win32Pointer,
+    lpFile: string | Win32Pointer,
+    lpParameters: string | Win32Pointer,
+    lpDirectory: string | Win32Pointer,
+    nShowCmd: number,
+  ): number | null;
   /** shell32.dll!ShellExecuteExA */
   ShellExecuteExA(pExecInfo: Win32Pointer): number;
   /** shell32.dll!ShellExecuteExW */
@@ -527,9 +1004,23 @@ interface Functions {
   /** shell32.dll!ShellExecuteExW */
   ShellExecuteEx(pExecInfo: Win32Pointer): number;
   /** shell32.dll!ShellExecuteW */
-  ShellExecuteW(hwnd: Win32Pointer, lpOperation: string | Win32Pointer, lpFile: string | Win32Pointer, lpParameters: string | Win32Pointer, lpDirectory: string | Win32Pointer, nShowCmd: number): number | null;
+  ShellExecuteW(
+    hwnd: Win32Pointer,
+    lpOperation: string | Win32Pointer,
+    lpFile: string | Win32Pointer,
+    lpParameters: string | Win32Pointer,
+    lpDirectory: string | Win32Pointer,
+    nShowCmd: number,
+  ): number | null;
   /** shell32.dll!ShellExecuteW */
-  ShellExecute(hwnd: Win32Pointer, lpOperation: string | Win32Pointer, lpFile: string | Win32Pointer, lpParameters: string | Win32Pointer, lpDirectory: string | Win32Pointer, nShowCmd: number): number | null;
+  ShellExecute(
+    hwnd: Win32Pointer,
+    lpOperation: string | Win32Pointer,
+    lpFile: string | Win32Pointer,
+    lpParameters: string | Win32Pointer,
+    lpDirectory: string | Win32Pointer,
+    nShowCmd: number,
+  ): number | null;
   /** shell32.dll!Shell_GetCachedImageIndex */
   Shell_GetCachedImageIndex(pwszIconPath: string | Win32Pointer, iIconIndex: number, uIconFlags: number): number;
   /** shell32.dll!Shell_GetCachedImageIndexA */
@@ -539,7 +1030,14 @@ interface Functions {
   /** shell32.dll!Shell_GetImageLists */
   Shell_GetImageLists(phiml: Win32Pointer, phimlSmall: Win32Pointer): number;
   /** shell32.dll!Shell_MergeMenus */
-  Shell_MergeMenus(hmDst: Win32Pointer, hmSrc: Win32Pointer, uInsert: number, uIDAdjust: number, uIDAdjustMax: number, uFlags: number): number;
+  Shell_MergeMenus(
+    hmDst: Win32Pointer,
+    hmSrc: Win32Pointer,
+    uInsert: number,
+    uIDAdjust: number,
+    uIDAdjustMax: number,
+    uFlags: number,
+  ): number;
   /** shell32.dll!Shell_NotifyIconA */
   Shell_NotifyIconA(dwMessage: number, lpData: Win32Pointer): number;
   /** shell32.dll!Shell_NotifyIconGetRect */
@@ -551,7 +1049,13 @@ interface Functions {
   /** shell32.dll!SignalFileOpen */
   SignalFileOpen(pidl: Win32Pointer): number;
   /** shell32.dll!StgMakeUniqueName */
-  StgMakeUniqueName(pstgParent: Win32Pointer, pszFileSpec: string | Win32Pointer, grfMode: number, riid: Win32Pointer, ppv: Win32Pointer): number;
+  StgMakeUniqueName(
+    pstgParent: Win32Pointer,
+    pszFileSpec: string | Win32Pointer,
+    grfMode: number,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** shell32.dll!Win32DeleteFile */
   Win32DeleteFile(pszPath: string | Win32Pointer): number;
   /** shell32.dll!WriteCabinetState */

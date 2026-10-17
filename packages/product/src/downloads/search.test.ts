@@ -30,12 +30,9 @@ test("M3 search uses the explicit public collection and preserves conditional re
     googleCalls++;
     throw new Error("must not switch providers");
   };
-  const request = new Request(
-    "https://aphrody.com/api/search?query=Bun&num=2&start=1",
-    {
-      headers: { cookie: "private", authorization: "private" },
-    },
-  );
+  const request = new Request("https://aphrody.com/api/search?query=Bun&num=2&start=1", {
+    headers: { cookie: "private", authorization: "private" },
+  });
   const response = await publicSearchResponse(
     request,
     google,
@@ -68,7 +65,7 @@ test("M3 search uses the explicit public collection and preserves conditional re
 
 test("Public search validates requests and fails closed on invalid backend configuration", async () => {
   let calls = 0;
-  const owner: PublicIndexSearch = async (input) => {
+  const owner: PublicIndexSearch = async input => {
     calls++;
     return indexOwner(input);
   };
@@ -78,13 +75,8 @@ test("Public search validates requests and fails closed on invalid backend confi
       { PUBLIC_SEARCH_BACKEND: "public-index" },
       { ...indexEnvironment, PUBLIC_INDEX_DEFAULT_COLLECTION: "../private" },
       { PUBLIC_SEARCH_BACKEND: "unknown" },
-    ].map(async (env) => {
-      const response = await publicSearchResponse(
-        request,
-        undefined,
-        owner,
-        env,
-      );
+    ].map(async env => {
+      const response = await publicSearchResponse(request, undefined, owner, env);
       expect(response.status).toBe(503);
       expect(await response.text()).not.toContain("private");
     }),
@@ -110,12 +102,9 @@ test("Public search validates requests and fails closed on invalid backend confi
 
 test("Public search projects only anonymous SafeSearch parameters, never request cookies", async () => {
   const response = await publicSearchResponse(
-    new Request(
-      "https://aphrody.com/api/search?query=Bun&vertical=web&hl=en&safe=active&start=0",
-      {
-        headers: { cookie: "private=session", authorization: "private" },
-      },
-    ),
+    new Request("https://aphrody.com/api/search?query=Bun&vertical=web&hl=en&safe=active&start=0", {
+      headers: { cookie: "private=session", authorization: "private" },
+    }),
     async (args, signal) => {
       expect(args).toEqual({
         query: "Bun",
@@ -152,12 +141,7 @@ test("Public search rejects privileged arguments and returns redacted upstream f
       "query=x&num=100",
       "query=x&query=y",
       "query=x&vertical=images",
-    ].map((query) =>
-      publicSearchResponse(
-        new Request("https://aphrody.com/api/search?" + query),
-        search,
-      ),
-    ),
+    ].map(query => publicSearchResponse(new Request("https://aphrody.com/api/search?" + query), search)),
   );
   for (const response of invalid) expect(response.status).toBe(400);
   expect(calls).toBe(0);
@@ -171,10 +155,7 @@ test("Public search rejects privileged arguments and returns redacted upstream f
       )
     ).status,
   ).toBe(405);
-  const response = await publicSearchResponse(
-    new Request("https://aphrody.com/api/search?query=x"),
-    search,
-  );
+  const response = await publicSearchResponse(new Request("https://aphrody.com/api/search?query=x"), search);
   expect(response.status).toBe(503);
   expect(await response.text()).not.toContain("private-owner-error");
 });
@@ -183,14 +164,8 @@ test("Bun site handler exposes only the search route on declared site hosts", as
   const handler = createHandler(
     "C:/nonexistent-fixture-downloads",
     { root: "C:/nonexistent-fixture-site", hosts: new Set(["aphrody.com"]) },
-    async (args) => ({ query: args.query, organic: [], authenticated: false }),
+    async args => ({ query: args.query, organic: [], authenticated: false }),
   );
-  expect(
-    (await handler(new Request("https://aphrody.com/api/search?query=Bun")))
-      .status,
-  ).toBe(200);
-  expect(
-    (await handler(new Request("https://foreign.test/api/search?query=Bun")))
-      .status,
-  ).toBe(404);
+  expect((await handler(new Request("https://aphrody.com/api/search?query=Bun"))).status).toBe(200);
+  expect((await handler(new Request("https://foreign.test/api/search?query=Bun"))).status).toBe(404);
 });

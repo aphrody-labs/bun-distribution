@@ -3,7 +3,12 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** dflayout.dll!StgOpenLayoutDocfile */
-  StgOpenLayoutDocfile(pwcsDfName: string | Win32Pointer, grfMode: number, reserved: number, ppstgOpen: Win32Pointer): number;
+  StgOpenLayoutDocfile(
+    pwcsDfName: string | Win32Pointer,
+    grfMode: number,
+    reserved: number,
+    ppstgOpen: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

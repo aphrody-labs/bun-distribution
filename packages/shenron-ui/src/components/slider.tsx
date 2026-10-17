@@ -5,16 +5,10 @@ import type * as React from "react";
 
 import { cn } from "../lib/utils";
 
-function Slider({
-  className,
-  ...props
-}: React.ComponentProps<typeof SliderPrimitive.Root>) {
+function Slider({ className, ...props }: React.ComponentProps<typeof SliderPrimitive.Root>) {
   return (
     <SliderPrimitive.Root
-      className={cn(
-        "relative flex w-full touch-none select-none items-center",
-        className,
-      )}
+      className={cn("relative flex w-full touch-none select-none items-center", className)}
       {...props}
     >
       <SliderPrimitive.Control className="relative flex w-full items-center">

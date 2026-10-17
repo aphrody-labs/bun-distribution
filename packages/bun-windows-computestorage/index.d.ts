@@ -13,23 +13,54 @@ interface Functions {
   /** computestorage.dll!HcsDetachOverlayFilter */
   HcsDetachOverlayFilter(VolumeMountPoint: string | Win32Pointer, LayerData: string | Win32Pointer): number;
   /** computestorage.dll!HcsExportLayer */
-  HcsExportLayer(layerPath: string | Win32Pointer, exportFolderPath: string | Win32Pointer, layerData: string | Win32Pointer, options: string | Win32Pointer): number;
+  HcsExportLayer(
+    layerPath: string | Win32Pointer,
+    exportFolderPath: string | Win32Pointer,
+    layerData: string | Win32Pointer,
+    options: string | Win32Pointer,
+  ): number;
   /** computestorage.dll!HcsExportLegacyWritableLayer */
-  HcsExportLegacyWritableLayer(writableLayerMountPath: string | Win32Pointer, writableLayerFolderPath: string | Win32Pointer, exportFolderPath: string | Win32Pointer, layerData: string | Win32Pointer): number;
+  HcsExportLegacyWritableLayer(
+    writableLayerMountPath: string | Win32Pointer,
+    writableLayerFolderPath: string | Win32Pointer,
+    exportFolderPath: string | Win32Pointer,
+    layerData: string | Win32Pointer,
+  ): number;
   /** computestorage.dll!HcsFormatWritableLayerVhd */
   HcsFormatWritableLayerVhd(vhdHandle: Win32Pointer): number;
   /** computestorage.dll!HcsGetLayerVhdMountPath */
   HcsGetLayerVhdMountPath(vhdHandle: Win32Pointer, mountPath: Win32Pointer): number;
   /** computestorage.dll!HcsImportLayer */
-  HcsImportLayer(layerPath: string | Win32Pointer, sourceFolderPath: string | Win32Pointer, layerData: string | Win32Pointer): number;
+  HcsImportLayer(
+    layerPath: string | Win32Pointer,
+    sourceFolderPath: string | Win32Pointer,
+    layerData: string | Win32Pointer,
+  ): number;
   /** computestorage.dll!HcsInitializeLegacyWritableLayer */
-  HcsInitializeLegacyWritableLayer(writableLayerMountPath: string | Win32Pointer, writableLayerFolderPath: string | Win32Pointer, layerData: string | Win32Pointer, options: string | Win32Pointer): number;
+  HcsInitializeLegacyWritableLayer(
+    writableLayerMountPath: string | Win32Pointer,
+    writableLayerFolderPath: string | Win32Pointer,
+    layerData: string | Win32Pointer,
+    options: string | Win32Pointer,
+  ): number;
   /** computestorage.dll!HcsInitializeWritableLayer */
-  HcsInitializeWritableLayer(writableLayerPath: string | Win32Pointer, layerData: string | Win32Pointer, options: string | Win32Pointer): number;
+  HcsInitializeWritableLayer(
+    writableLayerPath: string | Win32Pointer,
+    layerData: string | Win32Pointer,
+    options: string | Win32Pointer,
+  ): number;
   /** computestorage.dll!HcsSetupBaseOSLayer */
-  HcsSetupBaseOSLayer(layerPath: string | Win32Pointer, vhdHandle: Win32Pointer, options: string | Win32Pointer): number;
+  HcsSetupBaseOSLayer(
+    layerPath: string | Win32Pointer,
+    vhdHandle: Win32Pointer,
+    options: string | Win32Pointer,
+  ): number;
   /** computestorage.dll!HcsSetupBaseOSVolume */
-  HcsSetupBaseOSVolume(layerPath: string | Win32Pointer, volumePath: string | Win32Pointer, options: string | Win32Pointer): number;
+  HcsSetupBaseOSVolume(
+    layerPath: string | Win32Pointer,
+    volumePath: string | Win32Pointer,
+    options: string | Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -1,12 +1,7 @@
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { FrameRate } from "opencut-wasm";
 import { BASE_TIMELINE_PIXELS_PER_SECOND } from "../scale";
-import {
-  mediaTime,
-  snapSeekMediaTime,
-  TICKS_PER_SECOND,
-  type MediaTime,
-} from "../../wasm";
+import { mediaTime, snapSeekMediaTime, TICKS_PER_SECOND, type MediaTime } from "../../wasm";
 
 // Click-vs-drag arbiter for the timeline ruler and tracks area. Owns
 // "pending" mouse-down state; the actual scrubbing-while-dragging path
@@ -41,11 +36,7 @@ export interface SeekConfig {
   getActiveProjectFps: () => FrameRate | null;
   clearSelectedElements: () => void;
   seek: (time: MediaTime) => void;
-  setTimelineViewState: (viewState: {
-    zoomLevel: number;
-    scrollLeft: number;
-    playheadTime: MediaTime;
-  }) => void;
+  setTimelineViewState: (viewState: { zoomLevel: number; scrollLeft: number; playheadTime: MediaTime }) => void;
 }
 
 // Mutable ref so the controller always reads the latest config without
@@ -72,22 +63,13 @@ function pixelToTime({
 
   const rawTimeSeconds = Math.max(
     0,
-    Math.min(
-      duration / TICKS_PER_SECOND,
-      (mouseX + scrollLeft) / (BASE_TIMELINE_PIXELS_PER_SECOND * zoomLevel),
-    ),
+    Math.min(duration / TICKS_PER_SECOND, (mouseX + scrollLeft) / (BASE_TIMELINE_PIXELS_PER_SECOND * zoomLevel)),
   );
 
   return mediaTime({ ticks: Math.round(rawTimeSeconds * TICKS_PER_SECOND) });
 }
 
-function isClickGesture({
-  event,
-  session,
-}: {
-  event: ReactMouseEvent;
-  session: PendingSeekSession;
-}): boolean {
+function isClickGesture({ event, session }: { event: ReactMouseEvent; session: PendingSeekSession }): boolean {
   const deltaX = Math.abs(event.clientX - session.downX);
   const deltaY = Math.abs(event.clientY - session.downY);
   const deltaTime = event.timeStamp - session.downTime;
@@ -131,13 +113,7 @@ export class SeekController {
     this.handleClick({ event, source: "ruler" });
   }
 
-  private beginPendingSeek({
-    event,
-    source,
-  }: {
-    event: ReactMouseEvent;
-    source: SeekSource;
-  }): void {
+  private beginPendingSeek({ event, source }: { event: ReactMouseEvent; source: SeekSource }): void {
     if (event.button !== 0) return;
 
     this.session = {
@@ -149,13 +125,7 @@ export class SeekController {
     };
   }
 
-  private handleClick({
-    event,
-    source,
-  }: {
-    event: ReactMouseEvent;
-    source: SeekSource;
-  }): void {
+  private handleClick({ event, source }: { event: ReactMouseEvent; source: SeekSource }): void {
     const shouldProcess = this.shouldProcessClick({ event, source });
     this.session = { kind: "idle" };
 
@@ -165,13 +135,7 @@ export class SeekController {
     this.seekFromEvent({ event, source });
   }
 
-  private shouldProcessClick({
-    event,
-    source,
-  }: {
-    event: ReactMouseEvent;
-    source: SeekSource;
-  }): boolean {
+  private shouldProcessClick({ event, source }: { event: ReactMouseEvent; source: SeekSource }): boolean {
     if (this.session.kind !== "pending") return false;
     if (this.session.source !== source) return false;
     if (!isClickGesture({ event, session: this.session })) return false;
@@ -188,17 +152,8 @@ export class SeekController {
     return true;
   }
 
-  private seekFromEvent({
-    event,
-    source,
-  }: {
-    event: ReactMouseEvent;
-    source: SeekSource;
-  }): void {
-    const scrollContainer =
-      source === "ruler"
-        ? this.config.getRulerScrollEl()
-        : this.config.getTracksScrollEl();
+  private seekFromEvent({ event, source }: { event: ReactMouseEvent; source: SeekSource }): void {
+    const scrollContainer = source === "ruler" ? this.config.getRulerScrollEl() : this.config.getTracksScrollEl();
     if (!scrollContainer) return;
 
     const rawTime = pixelToTime({

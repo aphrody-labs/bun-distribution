@@ -15,14 +15,7 @@ interface ColumnItemProps {
 }
 
 export const ColumnItem = memo(
-  function ColumnItem({
-    file,
-    selected,
-    focused,
-    onClick,
-    onDoubleClick,
-    onContextMenu,
-  }: ColumnItemProps) {
+  function ColumnItem({ file, selected, focused, onClick, onDoubleClick, onContextMenu }: ColumnItemProps) {
     const handleClick = useCallback(
       (e: React.MouseEvent) => {
         const multi = e.metaKey || e.ctrlKey;
@@ -43,13 +36,7 @@ export const ColumnItem = memo(
     });
 
     return (
-      <div
-        ref={setNodeRef}
-        {...listeners}
-        {...attributes}
-        tabIndex={-1}
-        className="outline-none focus:outline-none"
-      >
+      <div ref={setNodeRef} {...listeners} {...attributes} tabIndex={-1} className="outline-none focus:outline-none">
         <FileComponent
           file={file}
           selected={selected && !isDragging}
@@ -60,12 +47,8 @@ export const ColumnItem = memo(
           data-file-id={file.id}
           className={clsx(
             "flex items-center gap-2 px-3 py-1.5 mx-2 rounded-small cursor-default transition-none",
-            selected && !isDragging
-              ? "bg-secondary-container text-on-secondary-container"
-              : "text-on-surface",
-            focused &&
-              !selected &&
-              "outline-3 outline-secondary -outline-offset-1",
+            selected && !isDragging ? "bg-secondary-container text-on-secondary-container" : "text-on-surface",
+            focused && !selected && "outline-3 outline-secondary -outline-offset-1",
             isDragging && "opacity-40",
           )}
         >
@@ -80,11 +63,7 @@ export const ColumnItem = memo(
             <Icon
               name="chevron_right"
               size={16}
-              className={clsx(
-                selected && !isDragging
-                  ? "text-on-secondary-container"
-                  : "text-on-surface-variant",
-              )}
+              className={clsx(selected && !isDragging ? "text-on-secondary-container" : "text-on-surface-variant")}
             />
           )}
         </FileComponent>

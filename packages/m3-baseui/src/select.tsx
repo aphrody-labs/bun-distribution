@@ -12,10 +12,7 @@ export const Group = B.Group;
 export const GroupLabel = part(B.GroupLabel, "m3-bui-select__group-label");
 export const Icon = part(B.Icon, "m3-bui-select__icon");
 export const Item = part(B.Item, "m3-bui-select__item m3-bui-item");
-export const ItemIndicator = part(
-  B.ItemIndicator,
-  "m3-bui-select__item-indicator",
-);
+export const ItemIndicator = part(B.ItemIndicator, "m3-bui-select__item-indicator");
 export const ItemText = part(B.ItemText, "m3-bui-select__item-text");
 export const Label = part(B.Label, "m3-bui-select__label");
 export const List = part(B.List, "m3-bui-select__list");

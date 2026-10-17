@@ -2,8 +2,7 @@ const originals = new Map<string, PropertyDescriptor | undefined>();
 
 /** Keep global replacements local to the current native test lifecycle. */
 export function stubGlobal(name: string, value: unknown): void {
-  if (!originals.has(name))
-    originals.set(name, Object.getOwnPropertyDescriptor(globalThis, name));
+  if (!originals.has(name)) originals.set(name, Object.getOwnPropertyDescriptor(globalThis, name));
   Object.defineProperty(globalThis, name, {
     configurable: true,
     writable: true,

@@ -25,7 +25,7 @@ const computeModelBox = (target: THREE.Object3D): THREE.Box3 => {
   if (box.isEmpty()) {
     target.updateMatrixWorld(true);
     const point = new THREE.Vector3();
-    target.traverse((node) => {
+    target.traverse(node => {
       box.expandByPoint(node.getWorldPosition(point));
     });
   }
@@ -45,12 +45,7 @@ export interface Viewer3DProps {
   onThumbnailCapture?: (dataUrl: string) => void;
 }
 
-export function Viewer3D({
-  modelUrl,
-  className = "",
-  showGrid = false,
-  onThumbnailCapture,
-}: Viewer3DProps) {
+export function Viewer3D({ modelUrl, className = "", showGrid = false, onThumbnailCapture }: Viewer3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -76,9 +71,7 @@ export function Viewer3D({
   // bones get THREE.SkeletonHelper; converted mesh-less exports (whose
   // joints re-import as plain nodes — GLTF only round-trips bone-ness via a
   // skin) get the generic NodeHierarchyHelper.
-  const skeletonHelperRef = useRef<
-    THREE.SkeletonHelper | NodeHierarchyHelper | null
-  >(null);
+  const skeletonHelperRef = useRef<THREE.SkeletonHelper | NodeHierarchyHelper | null>(null);
   const [hasRig, setHasRig] = useState(false);
   const [skeletonVisible, setSkeletonVisible] = useState(false);
 
@@ -112,7 +105,7 @@ export function Viewer3D({
 
   const captureRestPose = (model: THREE.Object3D) => {
     const rest: NonNullable<typeof restPoseRef.current> = [];
-    model.traverse((node) => {
+    model.traverse(node => {
       rest.push({
         node,
         position: node.position.clone(),
@@ -124,8 +117,7 @@ export function Viewer3D({
   };
 
   const restoreRestPose = () => {
-    for (const { node, position, quaternion, scale } of restPoseRef.current ??
-      []) {
+    for (const { node, position, quaternion, scale } of restPoseRef.current ?? []) {
       node.position.copy(position);
       node.quaternion.copy(quaternion);
       node.scale.copy(scale);
@@ -173,11 +165,7 @@ export function Viewer3D({
       const ambientLight = new THREE.AmbientLight(0xffffff, 2);
       scene.add(ambientLight);
 
-      const hemisphereLight = new THREE.HemisphereLight(
-        0xffffff,
-        0x888888,
-        1.2,
-      );
+      const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x888888, 1.2);
       scene.add(hemisphereLight);
 
       const keyLight = new THREE.DirectionalLight(0xffffff, 2);
@@ -267,10 +255,7 @@ export function Viewer3D({
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      if (
-        rendererRef.current &&
-        container.contains(rendererRef.current.domElement)
-      ) {
+      if (rendererRef.current && container.contains(rendererRef.current.domElement)) {
         container.removeChild(rendererRef.current.domElement);
       }
       controlsRef.current?.dispose();
@@ -369,8 +354,7 @@ export function Viewer3D({
 
             // Render and capture
             rendererRef.current.render(sceneRef.current, cameraRef.current);
-            const dataUrl =
-              rendererRef.current.domElement.toDataURL("image/png");
+            const dataUrl = rendererRef.current.domElement.toDataURL("image/png");
             onThumbnailCapture(dataUrl);
 
             // Restore grid visibility
@@ -390,9 +374,7 @@ export function Viewer3D({
     let urlExtension = "";
     try {
       const pathname = new URL(modelUrl, window.location.href).pathname;
-      urlExtension = (
-        pathname.match(/\.([a-z0-9]+)$/i)?.[1] ?? ""
-      ).toLowerCase();
+      urlExtension = (pathname.match(/\.([a-z0-9]+)$/i)?.[1] ?? "").toLowerCase();
     } catch {
       // Unparseable URL — fall through to the GLTF attempt below.
     }
@@ -407,7 +389,7 @@ export function Viewer3D({
       console.log(`[Viewer3D] splat format detected (.${urlExtension})`);
       new SplatMesh({
         url: modelUrl,
-        onLoad: (mesh) => {
+        onLoad: mesh => {
           if (cancelled) {
             mesh.dispose();
             return;
@@ -421,11 +403,7 @@ export function Viewer3D({
           if (cameraRef.current && controlsRef.current) {
             const angle = Math.PI / 4;
             const cameraDistance = 1.2;
-            cameraRef.current.position.set(
-              Math.sin(angle) * cameraDistance,
-              1.0,
-              Math.cos(angle) * cameraDistance,
-            );
+            cameraRef.current.position.set(Math.sin(angle) * cameraDistance, 1.0, Math.cos(angle) * cameraDistance);
             controlsRef.current.target.set(0, 1, 0);
             controlsRef.current.update();
           }
@@ -436,9 +414,7 @@ export function Viewer3D({
     } else if (!GLTF_EXTENSIONS.includes(urlExtension)) {
       // Known non-glTF model format with no loader wired here (obj, fbx,
       // pmx, …). Show the fallback shape rather than spamming a parse error.
-      console.warn(
-        `[Viewer3D] unsupported model format ".${urlExtension}" — showing placeholder`,
-      );
+      console.warn(`[Viewer3D] unsupported model format ".${urlExtension}" — showing placeholder`);
       if (cubeRef.current) {
         cubeRef.current.visible = true;
       }
@@ -449,7 +425,7 @@ export function Viewer3D({
       loader.setCrossOrigin("anonymous");
       loader.load(
         modelUrl,
-        (gltf) => {
+        gltf => {
           if (cancelled) {
             disposeObject3D(gltf.scene);
             return;
@@ -467,9 +443,7 @@ export function Viewer3D({
             mixerRef.current = mixer;
             clipsRef.current = clips;
             mixer.clipAction(clips[0]).play();
-            setAnimationNames(
-              clips.map((clip, index) => clip.name || `Clip ${index + 1}`),
-            );
+            setAnimationNames(clips.map((clip, index) => clip.name || `Clip ${index + 1}`));
             setSelectedClip(0);
           }
           // Skeleton overlay: offered for any model with real bones, and for
@@ -478,7 +452,7 @@ export function Viewer3D({
           // Shown by default only in the mesh-less case.
           let modelHasBones = false;
           let modelHasMesh = false;
-          model.traverse((node) => {
+          model.traverse(node => {
             if ((node as THREE.Bone).isBone) modelHasBones = true;
             if ((node as THREE.Mesh).isMesh) modelHasMesh = true;
           });
@@ -491,13 +465,10 @@ export function Viewer3D({
             setSkeletonVisible(!modelHasMesh);
           }
         },
-        (progress) => {
-          console.log(
-            "[Viewer3D] Loading progress:",
-            ((progress.loaded / progress.total) * 100).toFixed(2) + "%",
-          );
+        progress => {
+          console.log("[Viewer3D] Loading progress:", ((progress.loaded / progress.total) * 100).toFixed(2) + "%");
         },
-        (error) => {
+        error => {
           console.error("[Viewer3D] Error loading model:", error);
           if (cubeRef.current) {
             cubeRef.current.visible = true;
@@ -549,9 +520,7 @@ export function Viewer3D({
   const showViewer = modelUrl && isModelLoaded;
   const showSpinner = !showViewer;
 
-  const stopPropagation = (
-    e: React.MouseEvent | React.WheelEvent | React.PointerEvent,
-  ) => {
+  const stopPropagation = (e: React.MouseEvent | React.WheelEvent | React.PointerEvent) => {
     e.stopPropagation();
   };
 
@@ -582,7 +551,7 @@ export function Viewer3D({
             <button
               type="button"
               title={skeletonVisible ? "Hide skeleton" : "Show skeleton"}
-              onClick={() => setSkeletonVisible((visible) => !visible)}
+              onClick={() => setSkeletonVisible(visible => !visible)}
               className={`flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${
                 skeletonVisible
                   ? "border-primary bg-primary/20 text-white"
@@ -596,7 +565,7 @@ export function Viewer3D({
             <div className="w-44">
               <Select
                 value={String(selectedClip)}
-                onChange={(value) => setSelectedClip(Number(value))}
+                onChange={value => setSelectedClip(Number(value))}
                 options={[
                   ...animationNames.map((name, index) => ({
                     label: name,
@@ -610,11 +579,7 @@ export function Viewer3D({
         </div>
       )}
 
-      <div
-        ref={containerRef}
-        className="h-full w-full"
-        style={{ visibility: showViewer ? "visible" : "hidden" }}
-      />
+      <div ref={containerRef} className="h-full w-full" style={{ visibility: showViewer ? "visible" : "hidden" }} />
     </div>
   );
 }

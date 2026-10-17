@@ -8,12 +8,8 @@ const server = Bun.serve({
     const path = new URL(request.url).pathname;
     if (!["/", "/index.html", "/main.js", "/main.js.map"].includes(path))
       return new Response("Not found", { status: 404 });
-    const file = Bun.file(
-      resolve(root, path === "/" ? "index.html" : path.slice(1)),
-    );
-    return (await file.exists())
-      ? new Response(file)
-      : new Response("Run bun run build first", { status: 404 });
+    const file = Bun.file(resolve(root, path === "/" ? "index.html" : path.slice(1)));
+    return (await file.exists()) ? new Response(file) : new Response("Run bun run build first", { status: 404 });
   },
 });
 console.log(server.url.href);

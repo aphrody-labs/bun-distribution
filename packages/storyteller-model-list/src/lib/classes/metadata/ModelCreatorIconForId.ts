@@ -59,9 +59,7 @@ const MODEL_ID_PREFIX_COLOR_ICON_FILES: Array<[string, string]> = [
  * Falls back to a prefix match, then to the generic icon.
  */
 export const getCreatorIconPathForModelId = (modelId: string): string => {
-  const model = ALL_MODELS_LIST.find(
-    (m) => m.id === modelId || m.tauriId === modelId,
-  );
+  const model = ALL_MODELS_LIST.find(m => m.id === modelId || m.tauriId === modelId);
   if (model) return getCreatorIconPath(model.creator);
   const base = getServicesBasePath();
   for (const [prefix, file] of MODEL_ID_PREFIX_ICON_FILES) {
@@ -79,12 +77,8 @@ export const getCreatorIconPathForModelId = (modelId: string): string => {
  * `getCreatorIconPathForModelId`, preferring the full-color variant at each
  * step and reporting whether the auto-contrast filter is still needed.
  */
-export const getCreatorIconSourceForModelId = (
-  modelId: string,
-): CreatorIconSource => {
-  const model = ALL_MODELS_LIST.find(
-    (m) => m.id === modelId || m.tauriId === modelId,
-  );
+export const getCreatorIconSourceForModelId = (modelId: string): CreatorIconSource => {
+  const model = ALL_MODELS_LIST.find(m => m.id === modelId || m.tauriId === modelId);
   if (model) return getCreatorIconSource(model.creator);
   const base = getServicesBasePath();
   for (const [prefix, file] of MODEL_ID_PREFIX_COLOR_ICON_FILES) {

@@ -5,10 +5,7 @@ import { useShiftKey } from "../../hooks/use-shift-key";
 import { useElementSelection } from "./element/use-element-selection";
 import { useTimelineStore } from "../timeline-store";
 import { registerCanceller } from "../../editor/cancel-interaction";
-import {
-  ResizeController,
-  type ResizeConfig,
-} from "../controllers/resize-controller";
+import { ResizeController, type ResizeConfig } from "../controllers/resize-controller";
 import type { ResizeSide } from "../group-resize";
 import type { SnapPoint } from "../snapping";
 import type { TimelineElement } from "../types";
@@ -20,13 +17,10 @@ interface UseTimelineResizeProps {
   onSnapPointChange?: (snapPoint: SnapPoint | null) => void;
 }
 
-export function useTimelineResize({
-  zoomLevel,
-  onSnapPointChange,
-}: UseTimelineResizeProps) {
+export function useTimelineResize({ zoomLevel, onSnapPointChange }: UseTimelineResizeProps) {
   const editor = useEditor();
   const isShiftHeldRef = useShiftKey();
-  const snappingEnabled = useTimelineStore((state) => state.snappingEnabled);
+  const snappingEnabled = useTimelineStore(state => state.snappingEnabled);
   const { selectedElements } = useElementSelection();
 
   const config: ResizeConfig = {
@@ -38,7 +32,7 @@ export function useTimelineResize({
     getActiveProjectFps: () => editor.project.getActive()?.settings.fps ?? null,
     selectedElements,
     discardPreview: () => editor.timeline.discardPreview(),
-    previewElements: (updates) =>
+    previewElements: updates =>
       editor.timeline.previewElements({
         updates: updates.map(({ trackId, elementId, patch }) => ({
           trackId,
@@ -46,7 +40,7 @@ export function useTimelineResize({
           updates: patch as Partial<TimelineElement>,
         })),
       }),
-    commitElements: (updates) =>
+    commitElements: updates =>
       editor.timeline.updateElements({
         updates: updates.map(({ trackId, elementId, patch }) => ({
           trackId,

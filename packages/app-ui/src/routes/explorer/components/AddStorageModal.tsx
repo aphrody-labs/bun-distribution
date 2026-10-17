@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import {
-  Folder,
-  FolderOpen,
-  HardDrive,
-  CloudArrowUp,
-} from "@phosphor-icons/react";
+import { Folder, FolderOpen, HardDrive, CloudArrowUp } from "@phosphor-icons/react";
 import {
   Icon,
   Button,
@@ -30,11 +25,7 @@ import type {
   ValidationWarning as PathValidationWarning,
   VolumeIndexingSuggestion,
 } from "@aphrody/drive-client";
-import {
-  useLibraryMutation,
-  useLibraryQuery,
-  useSpacedriveClient,
-} from "../../../contexts/SpacedriveContext";
+import { useLibraryMutation, useLibraryQuery, useSpacedriveClient } from "../../../contexts/SpacedriveContext";
 import { usePlatform } from "../../../contexts/PlatformContext";
 import { clsx } from "clsx";
 
@@ -199,13 +190,7 @@ function StorageDialog({
       hideButtons={hideButtons}
       buttonsSideContent={
         showBackButton ? (
-          <Button
-            aria-label="Back"
-            title="Back"
-            variant="gray"
-            size="sm"
-            onClick={onBack}
-          >
+          <Button aria-label="Back" title="Back" variant="gray" size="sm" onClick={onBack}>
             <Icon name="arrow_back" size={18} />
           </Button>
         ) : undefined
@@ -254,38 +239,22 @@ const jobOptions: JobOption[] = [
   },
 ];
 
-export function useAddStorageDialog(
-  onStorageAdded?: (sdPath: any) => void,
-  initialPath?: string,
-) {
-  return dialogManager.create((props) => (
-    <AddStorageDialog
-      {...props}
-      onStorageAdded={onStorageAdded}
-      initialPath={initialPath}
-    />
+export function useAddStorageDialog(onStorageAdded?: (sdPath: any) => void, initialPath?: string) {
+  return dialogManager.create(props => (
+    <AddStorageDialog {...props} onStorageAdded={onStorageAdded} initialPath={initialPath} />
   ));
 }
 
-function AddStorageDialog(props: {
-  id: number;
-  onStorageAdded?: (sdPath: any) => void;
-  initialPath?: string;
-}) {
+function AddStorageDialog(props: { id: number; onStorageAdded?: (sdPath: any) => void; initialPath?: string }) {
   const dialog = useDialog(props);
   const platform = usePlatform();
 
   // Derive initial folder name from path
-  const initialFolderName =
-    props.initialPath?.split("/").findLast(Boolean) || "";
+  const initialFolderName = props.initialPath?.split("/").findLast(Boolean) || "";
 
-  const [step, setStep] = useState<ModalStep>(
-    props.initialPath ? "local-config" : "category",
-  );
-  const [selectedCategory, setSelectedCategory] =
-    useState<StorageCategory | null>(props.initialPath ? "local" : null);
-  const [selectedProvider, setSelectedProvider] =
-    useState<CloudProvider | null>(null);
+  const [step, setStep] = useState<ModalStep>(props.initialPath ? "local-config" : "category");
+  const [selectedCategory, setSelectedCategory] = useState<StorageCategory | null>(props.initialPath ? "local" : null);
+  const [selectedProvider, setSelectedProvider] = useState<CloudProvider | null>(null);
   const [tab, setTab] = useState<SettingsTab>("preset");
   const [validationResult, setValidationResult] = useState<{
     riskLevel: RiskLevel;
@@ -339,20 +308,18 @@ function AddStorageDialog(props: {
   // Update selected jobs when preset mode changes
   const currentMode = useWatch({ control: localForm.control, name: "mode" });
   const [selectedJobs, setSelectedJobs] = useState<Set<string>>(
-    new Set(
-      jobOptions.filter((j) => j.presets.includes("Deep")).map((j) => j.id),
-    ),
+    new Set(jobOptions.filter(j => j.presets.includes("Deep")).map(j => j.id)),
   );
 
   // Sync selected jobs with preset when mode changes
   const handleModeChange = (mode: IndexMode) => {
     localForm.setValue("mode", mode);
-    const presetJobs = jobOptions.filter((j) => j.presets.includes(mode));
-    setSelectedJobs(new Set(presetJobs.map((j) => j.id)));
+    const presetJobs = jobOptions.filter(j => j.presets.includes(mode));
+    setSelectedJobs(new Set(presetJobs.map(j => j.id)));
   };
 
   const toggleJob = (jobId: string) => {
-    setSelectedJobs((prev) => {
+    setSelectedJobs(prev => {
       const next = new Set(prev);
       if (next.has(jobId)) {
         next.delete(jobId);
@@ -413,7 +380,7 @@ function AddStorageDialog(props: {
     setStep("local-config");
   };
 
-  const onSubmitManualPath = localForm.handleSubmit((data) => {
+  const onSubmitManualPath = localForm.handleSubmit(data => {
     const path = (data.path || "").trim();
     if (!path) return;
     if (!data.name) {
@@ -455,7 +422,7 @@ function AddStorageDialog(props: {
     }
   };
 
-  const onSubmitLocal = localForm.handleSubmit(async (data) => {
+  const onSubmitLocal = localForm.handleSubmit(async data => {
     // Validate path first
     const validateInput: ValidateLocationPathInput = {
       path: {
@@ -474,10 +441,7 @@ function AddStorageDialog(props: {
         }
       | undefined;
     try {
-      validation = (await client.execute(
-        "query:locations.validate_path",
-        validateInput,
-      )) as any;
+      validation = (await client.execute("query:locations.validate_path", validateInput)) as any;
       console.log("Validation result:", validation);
     } catch (error) {
       console.error("Failed to validate path:", error);
@@ -485,12 +449,7 @@ function AddStorageDialog(props: {
     }
 
     // Show warning if path is risky (but don't block submission if user already saw it)
-    if (
-      validation &&
-      (validation.risk_level === "medium" ||
-        validation.risk_level === "high") &&
-      !validationResult
-    ) {
+    if (validation && (validation.risk_level === "medium" || validation.risk_level === "high") && !validationResult) {
       console.log("Validation warning for risk level:", validation.risk_level);
       setValidationResult({
         riskLevel: validation.risk_level,
@@ -506,7 +465,7 @@ function AddStorageDialog(props: {
       setValidationResult(null);
     }
     const job_policies: any = {};
-    selectedJobs.forEach((jobId) => {
+    selectedJobs.forEach(jobId => {
       job_policies[jobId] = { enabled: true };
     });
 
@@ -533,13 +492,12 @@ function AddStorageDialog(props: {
       console.error("Failed to add location:", error);
       localForm.setError("root", {
         type: "manual",
-        message:
-          error instanceof Error ? error.message : "Failed to add location",
+        message: error instanceof Error ? error.message : "Failed to add location",
       });
     }
   });
 
-  const onSubmitCloud = cloudForm.handleSubmit(async (data) => {
+  const onSubmitCloud = cloudForm.handleSubmit(async data => {
     if (!selectedProvider) return;
 
     const provider = selectedProvider;
@@ -548,13 +506,11 @@ function AddStorageDialog(props: {
       !data.region?.trim() ||
       !data.access_key_id?.trim() ||
       !data.secret_access_key?.trim() ||
-      ((provider.id === "r2" || provider.id === "minio") &&
-        !data.endpoint?.trim())
+      ((provider.id === "r2" || provider.id === "minio") && !data.endpoint?.trim())
     ) {
       cloudForm.setError("root", {
         type: "manual",
-        message:
-          "Bucket, region and credentials are required; R2 and MinIO also need an endpoint.",
+        message: "Bucket, region and credentials are required; R2 and MinIO also need an endpoint.",
       });
       return;
     }
@@ -630,8 +586,7 @@ function AddStorageDialog(props: {
       console.error("Failed to index volume:", error);
       localForm.setError("root", {
         type: "manual",
-        message:
-          error instanceof Error ? error.message : "Failed to index volume",
+        message: error instanceof Error ? error.message : "Failed to index volume",
       });
     }
   };
@@ -648,7 +603,7 @@ function AddStorageDialog(props: {
         hideButtons={true}
       >
         <div className="grid grid-cols-2 gap-3">
-          {categories.map((category) => (
+          {categories.map(category => (
             <button
               key={category.id}
               type="button"
@@ -662,12 +617,8 @@ function AddStorageDialog(props: {
             >
               <img src={category.icon} className="size-12" alt="" />
               <div className="text-center">
-                <div className="text-sm font-medium text-ink">
-                  {category.label}
-                </div>
-                <div className="mt-1 text-xs text-ink-faint">
-                  {category.description}
-                </div>
+                <div className="text-sm font-medium text-ink">{category.label}</div>
+                <div className="mt-1 text-xs text-ink-faint">{category.description}</div>
               </div>
             </button>
           ))}
@@ -690,7 +641,7 @@ function AddStorageDialog(props: {
         onBack={handleBack}
       >
         <div className="grid grid-cols-3 gap-3 max-h-[400px] overflow-y-auto pr-1">
-          {cloudProviders.map((provider) => (
+          {cloudProviders.map(provider => (
             <button
               key={provider.id}
               type="button"
@@ -702,9 +653,7 @@ function AddStorageDialog(props: {
               )}
             >
               <img src={provider.icon} className="size-10" alt="" />
-              <div className="text-xs font-medium text-ink text-center">
-                {provider.name}
-              </div>
+              <div className="text-xs font-medium text-ink text-center">{provider.name}</div>
             </button>
           ))}
         </div>
@@ -728,7 +677,7 @@ function AddStorageDialog(props: {
         <div className="space-y-3">
           {volumes && volumes.length > 0 ? (
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
-              {volumes.map((volume) => (
+              {volumes.map(volume => (
                 <button
                   key={volume.fingerprint}
                   type="button"
@@ -741,9 +690,7 @@ function AddStorageDialog(props: {
                 >
                   <img src={HDDIcon} className="size-8" alt="" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-ink truncate">
-                      {volume.display_name || volume.name}
-                    </div>
+                    <div className="text-sm font-medium text-ink truncate">{volume.display_name || volume.name}</div>
                     <div className="text-xs text-ink-faint">
                       {volume.mount_point} •{" "}
                       {typeof volume.file_system === "string"
@@ -752,10 +699,7 @@ function AddStorageDialog(props: {
                     </div>
                   </div>
                   <div className="text-xs text-ink-dull">
-                    {volume.total_capacity
-                      ? (volume.total_capacity / 1e9).toFixed(0)
-                      : "?"}{" "}
-                    GB
+                    {volume.total_capacity ? (volume.total_capacity / 1e9).toFixed(0) : "?"} GB
                   </div>
                 </button>
               ))}
@@ -763,8 +707,7 @@ function AddStorageDialog(props: {
           ) : (
             <div className="rounded-lg bg-app-box border border-app-line p-6 text-center">
               <p className="text-sm text-ink-dull">
-                No untracked external drives found. Connect a drive and refresh
-                to see it here.
+                No untracked external drives found. Connect a drive and refresh to see it here.
               </p>
             </div>
           )}
@@ -794,7 +737,7 @@ function AddStorageDialog(props: {
             <div className="relative">
               <Input
                 value={localPathTyped}
-                onChange={(e) =>
+                onChange={e =>
                   localForm.setValue("path", e.target.value, {
                     shouldValidate: true,
                     shouldDirty: true,
@@ -816,24 +759,17 @@ function AddStorageDialog(props: {
             <div className="space-y-2">
               <Label>Suggested locations</Label>
               <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1">
-                {suggestedLocations.locations.map((loc) => (
+                {suggestedLocations.locations.map(loc => (
                   <button
                     key={loc.path}
                     type="button"
                     onClick={() => handleSelectSuggested(loc.path, loc.name)}
                     className="flex items-center gap-3 rounded-lg border border-app-line bg-app-box p-3 text-left transition-all hover:bg-app-hover hover:border-accent/50 h-fit"
                   >
-                    <Folder
-                      className="size-5 shrink-0 text-accent"
-                      weight="fill"
-                    />
+                    <Folder className="size-5 shrink-0 text-accent" weight="fill" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-ink truncate">
-                        {loc.name}
-                      </div>
-                      <div className="text-xs text-ink-faint truncate">
-                        {loc.path}
-                      </div>
+                      <div className="text-sm font-medium text-ink truncate">{loc.name}</div>
+                      <div className="text-xs text-ink-faint truncate">{loc.path}</div>
                     </div>
                   </button>
                 ))}
@@ -873,40 +809,23 @@ function AddStorageDialog(props: {
               )}
             >
               <div className="flex items-start gap-2">
-                <span className="text-title-medium">
-                  {validationResult.riskLevel === "high" ? "⚠️" : "⚡"}
-                </span>
+                <span className="text-title-medium">{validationResult.riskLevel === "high" ? "⚠️" : "⚡"}</span>
                 <div className="flex-1 space-y-2">
                   <p className="text-sm font-medium text-ink">
-                    {validationResult.riskLevel === "high"
-                      ? "High risk path detected"
-                      : "Warning"}
+                    {validationResult.riskLevel === "high" ? "High risk path detected" : "Warning"}
                   </p>
-                  {validationResult.warnings.map((warning) => (
+                  {validationResult.warnings.map(warning => (
                     <div key={warning.message} className="space-y-1">
                       <p className="text-xs text-ink-dull">{warning.message}</p>
-                      {warning.suggestion && (
-                        <p className="text-xs text-ink-faint italic">
-                          💡 {warning.suggestion}
-                        </p>
-                      )}
+                      {warning.suggestion && <p className="text-xs text-ink-faint italic">💡 {warning.suggestion}</p>}
                     </div>
                   ))}
 
                   {validationResult.suggestion && (
                     <div className="mt-3 pt-3 border-t border-app-line/50">
-                      <p className="text-xs font-medium text-ink mb-2">
-                        Alternative suggestion
-                      </p>
-                      <p className="text-xs text-ink-dull mb-2">
-                        {validationResult.suggestion.message}
-                      </p>
-                      <Button
-                        onClick={handleUseVolumeIndexing}
-                        variant="accent"
-                        size="sm"
-                        className="w-full"
-                      >
+                      <p className="text-xs font-medium text-ink mb-2">Alternative suggestion</p>
+                      <p className="text-xs text-ink-dull mb-2">{validationResult.suggestion.message}</p>
+                      <Button onClick={handleUseVolumeIndexing} variant="accent" size="sm" className="w-full">
                         Index Volume: {validationResult.suggestion.volume_name}
                       </Button>
                     </div>
@@ -918,27 +837,20 @@ function AddStorageDialog(props: {
 
           <div className="space-y-2">
             <Label slug="name">Display name</Label>
-            <Input
-              {...localForm.register("name")}
-              size="md"
-              placeholder="My documents"
-              className="bg-app-input"
-            />
+            <Input {...localForm.register("name")} size="md" placeholder="My documents" className="bg-app-input" />
           </div>
 
-          <TabsRoot value={tab} onValueChange={(v) => setTab(v as SettingsTab)}>
+          <TabsRoot value={tab} onValueChange={v => setTab(v as SettingsTab)}>
             <TabsList>
               <TabsTrigger value="preset">Preset</TabsTrigger>
-              <TabsTrigger value="jobs">
-                Jobs {selectedJobs.size > 0 && `(${selectedJobs.size})`}
-              </TabsTrigger>
+              <TabsTrigger value="jobs">Jobs {selectedJobs.size > 0 && `(${selectedJobs.size})`}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="preset" className="pt-3">
               <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
                 <Label>Indexing mode</Label>
                 <div className="grid grid-cols-3 gap-2">
-                  {indexModes.map((mode) => {
+                  {indexModes.map(mode => {
                     const isSelected = currentMode === mode.value;
                     return (
                       <button
@@ -952,12 +864,8 @@ function AddStorageDialog(props: {
                             : "border-app-line bg-app-box hover:bg-app-hover",
                         )}
                       >
-                        <div className="text-xs font-medium text-ink">
-                          {mode.label}
-                        </div>
-                        <div className="mt-1 text-[11px] leading-tight text-ink-faint">
-                          {mode.description}
-                        </div>
+                        <div className="text-xs font-medium text-ink">{mode.label}</div>
+                        <div className="mt-1 text-[11px] leading-tight text-ink-faint">{mode.description}</div>
                       </button>
                     );
                   })}
@@ -968,11 +876,10 @@ function AddStorageDialog(props: {
             <TabsContent value="jobs" className="pt-3">
               <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
                 <p className="text-xs text-ink-faint">
-                  Select which jobs to run after indexing. Extensions can add
-                  more jobs.
+                  Select which jobs to run after indexing. Extensions can add more jobs.
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                  {jobOptions.map((job) => {
+                  {jobOptions.map(job => {
                     const isSelected = selectedJobs.has(job.id);
                     return (
                       <button
@@ -988,12 +895,8 @@ function AddStorageDialog(props: {
                         )}
                       >
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-medium text-ink">
-                            {job.label}
-                          </div>
-                          <div className="text-[11px] text-ink-faint mt-1 leading-tight">
-                            {job.description}
-                          </div>
+                          <div className="text-xs font-medium text-ink">{job.label}</div>
+                          <div className="text-[11px] text-ink-faint mt-1 leading-tight">{job.description}</div>
                         </div>
                       </button>
                     );
@@ -1004,9 +907,7 @@ function AddStorageDialog(props: {
           </TabsRoot>
 
           {localForm.formState.errors.root && (
-            <p className="text-body-small text-error">
-              {localForm.formState.errors.root.message}
-            </p>
+            <p className="text-body-small text-error">{localForm.formState.errors.root.message}</p>
           )}
         </div>
       </StorageDialog>
@@ -1044,21 +945,11 @@ function AddStorageDialog(props: {
           <>
             <div className="space-y-2">
               <Label>Bucket</Label>
-              <Input
-                {...cloudForm.register("bucket")}
-                size="md"
-                placeholder="my-bucket"
-                className="bg-app-input"
-              />
+              <Input {...cloudForm.register("bucket")} size="md" placeholder="my-bucket" className="bg-app-input" />
             </div>
             <div className="space-y-2">
               <Label>Region</Label>
-              <Input
-                {...cloudForm.register("region")}
-                size="md"
-                placeholder="us-west-2"
-                className="bg-app-input"
-              />
+              <Input {...cloudForm.register("region")} size="md" placeholder="us-west-2" className="bg-app-input" />
             </div>
             <div className="space-y-2">
               <Label>Access key ID</Label>
@@ -1083,8 +974,7 @@ function AddStorageDialog(props: {
               <div className="space-y-2">
                 <Label>
                   Endpoint
-                  {provider.id === "r2" &&
-                    " (e.g., https://account.r2.cloudflarestorage.com)"}
+                  {provider.id === "r2" && " (e.g., https://account.r2.cloudflarestorage.com)"}
                   {provider.id === "minio" && " (e.g., http://localhost:9000)"}
                 </Label>
                 <Input
@@ -1104,9 +994,7 @@ function AddStorageDialog(props: {
           </>
 
           {cloudForm.formState.errors.root && (
-            <p className="text-body-small text-error">
-              {cloudForm.formState.errors.root.message}
-            </p>
+            <p className="text-body-small text-error">{cloudForm.formState.errors.root.message}</p>
           )}
         </div>
       </StorageDialog>

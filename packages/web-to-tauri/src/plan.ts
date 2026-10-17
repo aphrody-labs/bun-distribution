@@ -71,12 +71,7 @@ const MULTI_LABEL_SUFFIXES = new Set([
 /** Registrable domain of a host (`app.example.co.uk` -> `example.co.uk`); IPs and `localhost` map to themselves. */
 export function registrableDomain(host: string): string {
   const lower = host.toLowerCase();
-  if (
-    lower === "localhost" ||
-    /^\d{1,3}(?:\.\d{1,3}){3}$/.test(lower) ||
-    lower.includes(":")
-  )
-    return lower;
+  if (lower === "localhost" || /^\d{1,3}(?:\.\d{1,3}){3}$/.test(lower) || lower.includes(":")) return lower;
   const labels = lower.split(".");
   if (labels.length <= 2) return lower;
   const tail2 = labels.slice(-2).join(".");
@@ -89,15 +84,10 @@ function siteApp(probe: SiteProbe, extra: string[]): string[] {
   const finalOrigin = new URL(probe.finalUrl);
   const registrable = registrableDomain(finalOrigin.hostname);
   const scheme = finalOrigin.protocol.replace(":", "");
-  const wildcardable =
-    registrable !== "localhost" &&
-    !/^\d/.test(registrable) &&
-    registrable.includes(".");
+  const wildcardable = registrable !== "localhost" && !/^\d/.test(registrable) && registrable.includes(".");
   for (const origin of probe.redirectOrigins) out.add(origin);
   out.add(finalOrigin.origin);
-  const input = originOf(
-    probe.input.includes("://") ? probe.input : `https://${probe.input}`,
-  );
+  const input = originOf(probe.input.includes("://") ? probe.input : `https://${probe.input}`);
   if (input) out.add(input);
   if (wildcardable) {
     // Cookies are shared across the registrable domain; so is the app.
@@ -111,7 +101,7 @@ function siteApp(probe: SiteProbe, extra: string[]): string[] {
 function authPatterns(probe: SiteProbe): string[] {
   const out = new Set<string>();
   for (const found of probe.idps) {
-    const rule = IDP_RULES.find((candidate) => candidate.id === found.id);
+    const rule = IDP_RULES.find(candidate => candidate.id === found.id);
     for (const pattern of rule?.patterns ?? []) out.add(pattern);
   }
   return [...out];
@@ -120,27 +110,21 @@ function authPatterns(probe: SiteProbe): string[] {
 function embedPatterns(probe: SiteProbe): string[] {
   const out = new Set<string>(probe.frameOrigins);
   for (const found of probe.embeds) {
-    const rule = EMBED_RULES.find((candidate) => candidate.id === found.id);
+    const rule = EMBED_RULES.find(candidate => candidate.id === found.id);
     for (const pattern of rule?.patterns ?? []) out.add(pattern);
   }
   return [...out];
 }
 
 function chromiumApis(probe: Probe): string[] {
-  return probe.signals
-    .filter((signal) => isChromiumOnly(signal.id))
-    .map((signal) => signal.id);
+  return probe.signals.filter(signal => isChromiumOnly(signal.id)).map(signal => signal.id);
 }
 
 function hasSignal(probe: Probe, id: string): boolean {
-  return probe.signals.some((signal) => signal.id === id);
+  return probe.signals.some(signal => signal.id === id);
 }
 
-function chooseMode(
-  probe: Probe,
-  requested: WrapMode | "auto",
-  reasons: string[],
-): WrapMode {
+function chooseMode(probe: Probe, requested: WrapMode | "auto", reasons: string[]): WrapMode {
   if (probe.kind === "site") {
     if (requested !== "auto" && requested !== "remote") {
       throw new PlanError(
@@ -157,34 +141,23 @@ function chooseMode(
   }
   const { staticDir, serverEntry } = probe;
   if (requested === "bundle") {
-    if (!staticDir)
-      throw new PlanError(
-        `no built bundle with an index.html in ${probe.input}; build it first`,
-      );
-    reasons.push(
-      "bundle: requested; the static bundle is served from loopback",
-    );
+    if (!staticDir) throw new PlanError(`no built bundle with an index.html in ${probe.input}; build it first`);
+    reasons.push("bundle: requested; the static bundle is served from loopback");
     return "bundle";
   }
   if (requested === "sidecar") {
-    if (!serverEntry)
-      throw new PlanError(`no server entry found in ${probe.input}`);
+    if (!serverEntry) throw new PlanError(`no server entry found in ${probe.input}`);
     reasons.push(`sidecar: requested; ${serverEntry} runs next to the app`);
     return "sidecar";
   }
-  if (
-    serverEntry &&
-    (probe.apiRoutes > 0 || probe.nextOutput === "standalone" || !staticDir)
-  ) {
+  if (serverEntry && (probe.apiRoutes > 0 || probe.nextOutput === "standalone" || !staticDir)) {
     reasons.push(
       `sidecar: ${serverEntry} serves the app and its API routes (${probe.apiRoutes}); a static bundle would lose them`,
     );
     return "sidecar";
   }
   if (staticDir) {
-    reasons.push(
-      `bundle: ${staticDir}/ is a built static bundle with no server of its own`,
-    );
+    reasons.push(`bundle: ${staticDir}/ is a built static bundle with no server of its own`);
     return "bundle";
   }
   throw new PlanError(
@@ -192,11 +165,7 @@ function chooseMode(
   );
 }
 
-function chooseEngine(
-  probe: Probe,
-  requested: WrapEngine | "auto",
-  reasons: string[],
-): WrapEngine {
+function chooseEngine(probe: Probe, requested: WrapEngine | "auto", reasons: string[]): WrapEngine {
   const apis = chromiumApis(probe);
   if (requested !== "auto") {
     reasons.push(`${requested} engine: requested`);
@@ -208,9 +177,7 @@ function chooseEngine(
     );
     return "cef";
   }
-  reasons.push(
-    "wry engine: no Chromium-only API found, the system webview is lighter on memory",
-  );
+  reasons.push("wry engine: no Chromium-only API found, the system webview is lighter on memory");
   return "wry";
 }
 
@@ -332,14 +299,7 @@ export function assessRisks(probe: Probe, config: WrapConfig): Risk[] {
   }
   if (hasSignal(probe, "print")) {
     risks.push(
-      risk(
-        "print",
-        "low",
-        "platform",
-        "calls window.print()",
-        "manual",
-        "native print support differs per webview",
-      ),
+      risk("print", "low", "platform", "calls window.print()", "manual", "native print support differs per webview"),
     );
   }
   if (probe.kind === "site") {
@@ -409,7 +369,7 @@ function siteRisks(probe: SiteProbe, config: WrapConfig): Risk[] {
     );
   }
   if (probe.idps.length > 0) {
-    const names = probe.idps.map((idp) => idp.id).join(", ");
+    const names = probe.idps.map(idp => idp.id).join(", ");
     risks.push(
       risk(
         "sign-in-providers",
@@ -420,16 +380,14 @@ function siteRisks(probe: SiteProbe, config: WrapConfig): Risk[] {
         "their origins are allowed in-app, popups keep their opener",
       ),
     );
-    const strict = probe.idps.filter(
-      (idp) => idp.id === "google" || idp.id === "apple",
-    );
+    const strict = probe.idps.filter(idp => idp.id === "google" || idp.id === "apple");
     if (strict.length > 0 && config.engine === "wry") {
       risks.push(
         risk(
           "embedded-webview-sign-in",
           "medium",
           "auth",
-          `${strict.map((idp) => idp.id).join(", ")} may refuse sign-in in an embedded webview`,
+          `${strict.map(idp => idp.id).join(", ")} may refuse sign-in in an embedded webview`,
           "manual",
           "test the sign-in flow; use the cef engine or a system-browser callback if it is refused",
         ),
@@ -437,9 +395,7 @@ function siteRisks(probe: SiteProbe, config: WrapConfig): Risk[] {
     }
   }
   const unlisted = probe.formOrigins.filter(
-    (origin) =>
-      !config.origins.app.includes(origin) &&
-      !config.origins.auth.some((pattern) => pattern.startsWith(origin)),
+    origin => !config.origins.app.includes(origin) && !config.origins.auth.some(pattern => pattern.startsWith(origin)),
   );
   if (unlisted.length > 0) {
     risks.push(
@@ -459,13 +415,13 @@ function siteRisks(probe: SiteProbe, config: WrapConfig): Risk[] {
         "frame-navigation",
         "medium",
         "ui",
-        `loads third-party frames (${[...probe.frameOrigins, ...probe.embeds.map((embed) => embed.id)].slice(0, 4).join(", ")})`,
+        `loads third-party frames (${[...probe.frameOrigins, ...probe.embeds.map(embed => embed.id)].slice(0, 4).join(", ")})`,
         "applied",
         "their origins are allowed in-app; WebKitGTK and WKWebView send frame loads through the navigation hook, a frame created later by script from an unlisted origin would open in the system browser",
       ),
     );
   }
-  if (probe.cookies.some((cookie) => cookie.sameSite === "none")) {
+  if (probe.cookies.some(cookie => cookie.sameSite === "none")) {
     risks.push(
       risk(
         "third-party-cookies",
@@ -586,12 +542,7 @@ function directoryRisks(probe: DirectoryProbe, config: WrapConfig): Risk[] {
 function nameOf(probe: Probe, options: PlanOptions): string {
   if (options.name) return options.name;
   if (probe.kind === "directory") return probe.name ?? "wrapped-app";
-  return (
-    probe.manifest?.name ??
-    probe.manifest?.shortName ??
-    probe.title ??
-    new URL(probe.finalUrl).hostname
-  );
+  return probe.manifest?.name ?? probe.manifest?.shortName ?? probe.title ?? new URL(probe.finalUrl).hostname;
 }
 
 /** Refuses options the runtime would refuse at startup, so a typo fails here and not in the shipped app. */
@@ -610,31 +561,16 @@ function validateOptions(options: PlanOptions): void {
     } catch {
       // reported below
     }
-    if (
-      url === null ||
-      (url.protocol !== "http:" && url.protocol !== "https:")
-    ) {
-      throw new PlanError(
-        `--backend ${JSON.stringify(options.backend)} is not an http(s) origin`,
-      );
+    if (url === null || (url.protocol !== "http:" && url.protocol !== "https:")) {
+      throw new PlanError(`--backend ${JSON.stringify(options.backend)} is not an http(s) origin`);
     }
   }
-  if (
-    options.port !== undefined &&
-    !(
-      Number.isInteger(options.port) &&
-      options.port >= 0 &&
-      options.port <= 65_535
-    )
-  ) {
+  if (options.port !== undefined && !(Number.isInteger(options.port) && options.port >= 0 && options.port <= 65_535)) {
     throw new PlanError(`--port ${options.port} is not a port number`);
   }
 }
 
-export function planConversion(
-  probe: Probe,
-  options: PlanOptions = {},
-): ConversionPlan {
+export function planConversion(probe: Probe, options: PlanOptions = {}): ConversionPlan {
   validateOptions(options);
   const reasons: string[] = [];
   const mode = chooseMode(probe, options.mode ?? "auto", reasons);
@@ -651,9 +587,7 @@ export function planConversion(
   let sidecar: WrapConfig["sidecar"] = null;
 
   if (probe.kind === "site") {
-    const input = probe.input.includes("://")
-      ? probe.input
-      : `https://${probe.input}`;
+    const input = probe.input.includes("://") ? probe.input : `https://${probe.input}`;
     start = new URL(input).href;
     appOrigins = siteApp(probe, extra);
     auth = authPatterns(probe);
@@ -663,20 +597,14 @@ export function planConversion(
     );
   } else {
     start = "/";
-    const backend =
-      options.backend ??
-      (probe.backends.length === 1 ? probe.backends[0]! : null);
+    const backend = options.backend ?? (probe.backends.length === 1 ? probe.backends[0]! : null);
     appOrigins = [...extra];
     if (backend) appOrigins.push(backend);
     if (mode === "bundle") {
       bundle = {
         dir: `../${probe.staticDir && probe.staticDir !== "." ? probe.staticDir : "dist"}`,
         backend: backend ?? null,
-        proxy: backend
-          ? probe.proxyPrefixes.length > 0
-            ? probe.proxyPrefixes
-            : ["/api"]
-          : [],
+        proxy: backend ? (probe.proxyPrefixes.length > 0 ? probe.proxyPrefixes : ["/api"]) : [],
         spaFallback: probe.htmlPages <= 1,
       };
     } else {
@@ -696,10 +624,7 @@ export function planConversion(
     name,
     identifier:
       options.identifier ??
-      tauriIdentifier(
-        probe.kind === "site" ? new URL(probe.finalUrl).hostname : name,
-        WRAPPED_ID_PREFIX,
-      ),
+      tauriIdentifier(probe.kind === "site" ? new URL(probe.finalUrl).hostname : name, WRAPPED_ID_PREFIX),
     mode,
     engine,
     start,
@@ -721,18 +646,11 @@ export function planConversion(
 
   const risks = assessRisks(probe, config);
   const blocking = risks.some(
-    (entry) =>
-      entry.severity === "blocker" ||
-      (entry.severity === "high" && entry.mitigation.kind !== "applied"),
+    entry => entry.severity === "blocker" || (entry.severity === "high" && entry.mitigation.kind !== "applied"),
   );
   const parityPaths =
     probe.kind === "site"
-      ? [
-          "/",
-          ...probe.links
-            .filter((path) => path !== "/")
-            .slice(0, (options.maxParityPaths ?? 8) - 1),
-        ]
+      ? ["/", ...probe.links.filter(path => path !== "/").slice(0, (options.maxParityPaths ?? 8) - 1)]
       : ["/"];
 
   return {

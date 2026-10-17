@@ -5,21 +5,42 @@ interface Functions {
   /** mf.dll!CreateNamedPropertyStore */
   CreateNamedPropertyStore(ppStore: Win32Pointer): number;
   /** mf.dll!MFCreate3GPMediaSink */
-  MFCreate3GPMediaSink(pIByteStream: Win32Pointer, pVideoMediaType: Win32Pointer, pAudioMediaType: Win32Pointer, ppIMediaSink: Win32Pointer): number;
+  MFCreate3GPMediaSink(
+    pIByteStream: Win32Pointer,
+    pVideoMediaType: Win32Pointer,
+    pAudioMediaType: Win32Pointer,
+    ppIMediaSink: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateAC3MediaSink */
-  MFCreateAC3MediaSink(pTargetByteStream: Win32Pointer, pAudioMediaType: Win32Pointer, ppMediaSink: Win32Pointer): number;
+  MFCreateAC3MediaSink(
+    pTargetByteStream: Win32Pointer,
+    pAudioMediaType: Win32Pointer,
+    ppMediaSink: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateADTSMediaSink */
-  MFCreateADTSMediaSink(pTargetByteStream: Win32Pointer, pAudioMediaType: Win32Pointer, ppMediaSink: Win32Pointer): number;
+  MFCreateADTSMediaSink(
+    pTargetByteStream: Win32Pointer,
+    pAudioMediaType: Win32Pointer,
+    ppMediaSink: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateASFContentInfo */
   MFCreateASFContentInfo(ppIContentInfo: Win32Pointer): number;
   /** mf.dll!MFCreateASFIndexer */
   MFCreateASFIndexer(ppIIndexer: Win32Pointer): number;
   /** mf.dll!MFCreateASFIndexerByteStream */
-  MFCreateASFIndexerByteStream(pIContentByteStream: Win32Pointer, cbIndexStartOffset: number | bigint, pIIndexByteStream: Win32Pointer): number;
+  MFCreateASFIndexerByteStream(
+    pIContentByteStream: Win32Pointer,
+    cbIndexStartOffset: number | bigint,
+    pIIndexByteStream: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateASFMediaSink */
   MFCreateASFMediaSink(pIByteStream: Win32Pointer, ppIMediaSink: Win32Pointer): number;
   /** mf.dll!MFCreateASFMediaSinkActivate */
-  MFCreateASFMediaSinkActivate(pwszFileName: string | Win32Pointer, pContentInfo: Win32Pointer, ppIActivate: Win32Pointer): number;
+  MFCreateASFMediaSinkActivate(
+    pwszFileName: string | Win32Pointer,
+    pContentInfo: Win32Pointer,
+    ppIActivate: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateASFMultiplexer */
   MFCreateASFMultiplexer(ppIMultiplexer: Win32Pointer): number;
   /** mf.dll!MFCreateASFProfile */
@@ -33,7 +54,11 @@ interface Functions {
   /** mf.dll!MFCreateASFStreamingMediaSink */
   MFCreateASFStreamingMediaSink(pIByteStream: Win32Pointer, ppIMediaSink: Win32Pointer): number;
   /** mf.dll!MFCreateASFStreamingMediaSinkActivate */
-  MFCreateASFStreamingMediaSinkActivate(pByteStreamActivate: Win32Pointer, pContentInfo: Win32Pointer, ppIActivate: Win32Pointer): number;
+  MFCreateASFStreamingMediaSinkActivate(
+    pByteStreamActivate: Win32Pointer,
+    pContentInfo: Win32Pointer,
+    ppIActivate: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateAggregateSource */
   MFCreateAggregateSource(pSourceCollection: Win32Pointer, ppAggSource: Win32Pointer): number;
   /** mf.dll!MFCreateAudioRenderer */
@@ -47,21 +72,46 @@ interface Functions {
   /** mf.dll!MFCreateDeviceSourceActivate */
   MFCreateDeviceSourceActivate(pAttributes: Win32Pointer, ppActivate: Win32Pointer): number;
   /** mf.dll!MFCreateEncryptedMediaExtensionsStoreActivate */
-  MFCreateEncryptedMediaExtensionsStoreActivate(pmpHost: Win32Pointer, objectStream: Win32Pointer, classId: string | Win32Pointer, activate: Win32Pointer): number;
+  MFCreateEncryptedMediaExtensionsStoreActivate(
+    pmpHost: Win32Pointer,
+    objectStream: Win32Pointer,
+    classId: string | Win32Pointer,
+    activate: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateFMPEG4MediaSink */
-  MFCreateFMPEG4MediaSink(pIByteStream: Win32Pointer, pVideoMediaType: Win32Pointer, pAudioMediaType: Win32Pointer, ppIMediaSink: Win32Pointer): number;
+  MFCreateFMPEG4MediaSink(
+    pIByteStream: Win32Pointer,
+    pVideoMediaType: Win32Pointer,
+    pAudioMediaType: Win32Pointer,
+    ppIMediaSink: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateMP3MediaSink */
   MFCreateMP3MediaSink(pTargetByteStream: Win32Pointer, ppMediaSink: Win32Pointer): number;
   /** mf.dll!MFCreateMPEG4MediaSink */
-  MFCreateMPEG4MediaSink(pIByteStream: Win32Pointer, pVideoMediaType: Win32Pointer, pAudioMediaType: Win32Pointer, ppIMediaSink: Win32Pointer): number;
+  MFCreateMPEG4MediaSink(
+    pIByteStream: Win32Pointer,
+    pVideoMediaType: Win32Pointer,
+    pAudioMediaType: Win32Pointer,
+    ppIMediaSink: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateMediaSession */
   MFCreateMediaSession(pConfiguration: Win32Pointer, ppMediaSession: Win32Pointer): number;
   /** mf.dll!MFCreateMuxSink */
-  MFCreateMuxSink(guidOutputSubType: Win32StructInit, pOutputAttributes: Win32Pointer, pOutputByteStream: Win32Pointer, ppMuxSink: Win32Pointer): number;
+  MFCreateMuxSink(
+    guidOutputSubType: Win32StructInit,
+    pOutputAttributes: Win32Pointer,
+    pOutputByteStream: Win32Pointer,
+    ppMuxSink: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateNetSchemePlugin */
   MFCreateNetSchemePlugin(riid: Win32Pointer, ppvHandler: Win32Pointer): number;
   /** mf.dll!MFCreatePMPMediaSession */
-  MFCreatePMPMediaSession(dwCreationFlags: number, pConfiguration: Win32Pointer, ppMediaSession: Win32Pointer, ppEnablerActivate: Win32Pointer): number;
+  MFCreatePMPMediaSession(
+    dwCreationFlags: number,
+    pConfiguration: Win32Pointer,
+    ppMediaSession: Win32Pointer,
+    ppEnablerActivate: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreatePMPServer */
   MFCreatePMPServer(dwCreationFlags: number, ppPMPServer: Win32Pointer): number;
   /** mf.dll!MFCreatePresentationClock */
@@ -71,13 +121,21 @@ interface Functions {
   /** mf.dll!MFCreateProtectedEnvironmentAccess */
   MFCreateProtectedEnvironmentAccess(ppAccess: Win32Pointer): number;
   /** mf.dll!MFCreateProxyLocator */
-  MFCreateProxyLocator(pszProtocol: string | Win32Pointer, pProxyConfig: Win32Pointer, ppProxyLocator: Win32Pointer): number;
+  MFCreateProxyLocator(
+    pszProtocol: string | Win32Pointer,
+    pProxyConfig: Win32Pointer,
+    ppProxyLocator: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateRemoteDesktopPlugin */
   MFCreateRemoteDesktopPlugin(ppPlugin: Win32Pointer): number;
   /** mf.dll!MFCreateSampleCopierMFT */
   MFCreateSampleCopierMFT(ppCopierMFT: Win32Pointer): number;
   /** mf.dll!MFCreateSampleGrabberSinkActivate */
-  MFCreateSampleGrabberSinkActivate(pIMFMediaType: Win32Pointer, pIMFSampleGrabberSinkCallback: Win32Pointer, ppIActivate: Win32Pointer): number;
+  MFCreateSampleGrabberSinkActivate(
+    pIMFMediaType: Win32Pointer,
+    pIMFSampleGrabberSinkCallback: Win32Pointer,
+    ppIActivate: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateSequencerSegmentOffset */
   MFCreateSequencerSegmentOffset(dwId: number, hnsOffset: number | bigint, pvarSegmentOffset: Win32Pointer): number;
   /** mf.dll!MFCreateSequencerSource */
@@ -97,23 +155,50 @@ interface Functions {
   /** mf.dll!MFCreateTranscodeSinkActivate */
   MFCreateTranscodeSinkActivate(ppActivate: Win32Pointer): number;
   /** mf.dll!MFCreateTranscodeTopology */
-  MFCreateTranscodeTopology(pSrc: Win32Pointer, pwszOutputFilePath: string | Win32Pointer, pProfile: Win32Pointer, ppTranscodeTopo: Win32Pointer): number;
+  MFCreateTranscodeTopology(
+    pSrc: Win32Pointer,
+    pwszOutputFilePath: string | Win32Pointer,
+    pProfile: Win32Pointer,
+    ppTranscodeTopo: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateTranscodeTopologyFromByteStream */
-  MFCreateTranscodeTopologyFromByteStream(pSrc: Win32Pointer, pOutputStream: Win32Pointer, pProfile: Win32Pointer, ppTranscodeTopo: Win32Pointer): number;
+  MFCreateTranscodeTopologyFromByteStream(
+    pSrc: Win32Pointer,
+    pOutputStream: Win32Pointer,
+    pProfile: Win32Pointer,
+    ppTranscodeTopo: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateVideoRenderer */
   MFCreateVideoRenderer(riidRenderer: Win32Pointer, ppVideoRenderer: Win32Pointer): number;
   /** mf.dll!MFCreateVideoRendererActivate */
   MFCreateVideoRendererActivate(hwndVideo: Win32Pointer, ppActivate: Win32Pointer): number;
   /** mf.dll!MFCreateWMAEncoderActivate */
-  MFCreateWMAEncoderActivate(pMediaType: Win32Pointer, pEncodingConfigurationProperties: Win32Pointer, ppActivate: Win32Pointer): number;
+  MFCreateWMAEncoderActivate(
+    pMediaType: Win32Pointer,
+    pEncodingConfigurationProperties: Win32Pointer,
+    ppActivate: Win32Pointer,
+  ): number;
   /** mf.dll!MFCreateWMVEncoderActivate */
-  MFCreateWMVEncoderActivate(pMediaType: Win32Pointer, pEncodingConfigurationProperties: Win32Pointer, ppActivate: Win32Pointer): number;
+  MFCreateWMVEncoderActivate(
+    pMediaType: Win32Pointer,
+    pEncodingConfigurationProperties: Win32Pointer,
+    ppActivate: Win32Pointer,
+  ): number;
   /** mf.dll!MFEnumDeviceSources */
-  MFEnumDeviceSources(pAttributes: Win32Pointer, pppSourceActivate: Win32Pointer, pcSourceActivate: Win32Pointer): number;
+  MFEnumDeviceSources(
+    pAttributes: Win32Pointer,
+    pppSourceActivate: Win32Pointer,
+    pcSourceActivate: Win32Pointer,
+  ): number;
   /** mf.dll!MFGetLocalId */
   MFGetLocalId(verifier: Win32Pointer, size: number, id: Win32Pointer): number;
   /** mf.dll!MFGetService */
-  MFGetService(punkObject: Win32Pointer, guidService: Win32Pointer, riid: Win32Pointer, ppvObject: Win32Pointer): number;
+  MFGetService(
+    punkObject: Win32Pointer,
+    guidService: Win32Pointer,
+    riid: Win32Pointer,
+    ppvObject: Win32Pointer,
+  ): number;
   /** mf.dll!MFGetSystemId */
   MFGetSystemId(ppId: Win32Pointer): number;
   /** mf.dll!MFGetTopoNodeCurrentType */
@@ -125,7 +210,12 @@ interface Functions {
   /** mf.dll!MFShutdownObject */
   MFShutdownObject(pUnk: Win32Pointer): number;
   /** mf.dll!MFTranscodeGetAudioOutputAvailableTypes */
-  MFTranscodeGetAudioOutputAvailableTypes(guidSubType: Win32Pointer, dwMFTFlags: number, pCodecConfig: Win32Pointer, ppAvailableTypes: Win32Pointer): number;
+  MFTranscodeGetAudioOutputAvailableTypes(
+    guidSubType: Win32Pointer,
+    dwMFTFlags: number,
+    pCodecConfig: Win32Pointer,
+    ppAvailableTypes: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

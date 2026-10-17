@@ -35,12 +35,7 @@ export const Input = React.forwardRef(
         {label && <Label htmlFor={id ? id : label}>{label}</Label>}
 
         <div className="relative w-full">
-          {icon && (
-            <DynamicIcon
-              icon={icon}
-              className={twMerge("text-md absolute pl-3 pt-3", iconClassName)}
-            />
-          )}
+          {icon && <DynamicIcon icon={icon} className={twMerge("text-md absolute pl-3 pt-3", iconClassName)} />}
           <input
             ref={ref}
             id={id ? id : label ? label : undefined}
@@ -65,9 +60,7 @@ export const Input = React.forwardRef(
             }}
             {...rest}
           />
-          {errorMessage && (
-            <h6 className="absolute z-10 text-red-400">{errorMessage}</h6>
-          )}
+          {errorMessage && <h6 className="absolute z-10 text-red-400">{errorMessage}</h6>}
         </div>
       </div>
     );

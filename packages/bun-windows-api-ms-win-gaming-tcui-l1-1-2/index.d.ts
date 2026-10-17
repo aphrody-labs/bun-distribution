@@ -3,19 +3,67 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-gaming-tcui-l1-1-2.dll!CheckGamingPrivilegeSilentlyForUser */
-  CheckGamingPrivilegeSilentlyForUser(user: Win32Pointer, privilegeId: number, scope: Win32Pointer, policy: Win32Pointer, hasPrivilege: Win32Pointer): number;
+  CheckGamingPrivilegeSilentlyForUser(
+    user: Win32Pointer,
+    privilegeId: number,
+    scope: Win32Pointer,
+    policy: Win32Pointer,
+    hasPrivilege: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-2.dll!CheckGamingPrivilegeWithUIForUser */
-  CheckGamingPrivilegeWithUIForUser(user: Win32Pointer, privilegeId: number, scope: Win32Pointer, policy: Win32Pointer, friendlyMessage: Win32Pointer, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  CheckGamingPrivilegeWithUIForUser(
+    user: Win32Pointer,
+    privilegeId: number,
+    scope: Win32Pointer,
+    policy: Win32Pointer,
+    friendlyMessage: Win32Pointer,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-2.dll!ShowChangeFriendRelationshipUIForUser */
-  ShowChangeFriendRelationshipUIForUser(user: Win32Pointer, targetUserXuid: Win32Pointer, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  ShowChangeFriendRelationshipUIForUser(
+    user: Win32Pointer,
+    targetUserXuid: Win32Pointer,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-2.dll!ShowGameInviteUIForUser */
-  ShowGameInviteUIForUser(user: Win32Pointer, serviceConfigurationId: Win32Pointer, sessionTemplateName: Win32Pointer, sessionId: Win32Pointer, invitationDisplayText: Win32Pointer, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  ShowGameInviteUIForUser(
+    user: Win32Pointer,
+    serviceConfigurationId: Win32Pointer,
+    sessionTemplateName: Win32Pointer,
+    sessionId: Win32Pointer,
+    invitationDisplayText: Win32Pointer,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-2.dll!ShowPlayerPickerUIForUser */
-  ShowPlayerPickerUIForUser(user: Win32Pointer, promptDisplayText: Win32Pointer, xuids: Win32Pointer, xuidsCount: number | bigint, preSelectedXuids: Win32Pointer, preSelectedXuidsCount: number | bigint, minSelectionCount: number | bigint, maxSelectionCount: number | bigint, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  ShowPlayerPickerUIForUser(
+    user: Win32Pointer,
+    promptDisplayText: Win32Pointer,
+    xuids: Win32Pointer,
+    xuidsCount: number | bigint,
+    preSelectedXuids: Win32Pointer,
+    preSelectedXuidsCount: number | bigint,
+    minSelectionCount: number | bigint,
+    maxSelectionCount: number | bigint,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-2.dll!ShowProfileCardUIForUser */
-  ShowProfileCardUIForUser(user: Win32Pointer, targetUserXuid: Win32Pointer, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  ShowProfileCardUIForUser(
+    user: Win32Pointer,
+    targetUserXuid: Win32Pointer,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-2.dll!ShowTitleAchievementsUIForUser */
-  ShowTitleAchievementsUIForUser(user: Win32Pointer, titleId: number, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  ShowTitleAchievementsUIForUser(
+    user: Win32Pointer,
+    titleId: number,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

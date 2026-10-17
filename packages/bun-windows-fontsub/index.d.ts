@@ -3,9 +3,40 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** fontsub.dll!CreateFontPackage */
-  CreateFontPackage(puchSrcBuffer: Win32Pointer, ulSrcBufferSize: number, ppuchFontPackageBuffer: Win32Pointer, pulFontPackageBufferSize: Win32Pointer, pulBytesWritten: Win32Pointer, usFlag: number, usTTCIndex: number, usSubsetFormat: number, usSubsetLanguage: number, usSubsetPlatform: number, usSubsetEncoding: number, pusSubsetKeepList: Win32Pointer, usSubsetListCount: number, lpfnAllocate: Win32Callback, lpfnReAllocate: Win32Callback, lpfnFree: Win32Callback, lpvReserved: Win32Pointer): number;
+  CreateFontPackage(
+    puchSrcBuffer: Win32Pointer,
+    ulSrcBufferSize: number,
+    ppuchFontPackageBuffer: Win32Pointer,
+    pulFontPackageBufferSize: Win32Pointer,
+    pulBytesWritten: Win32Pointer,
+    usFlag: number,
+    usTTCIndex: number,
+    usSubsetFormat: number,
+    usSubsetLanguage: number,
+    usSubsetPlatform: number,
+    usSubsetEncoding: number,
+    pusSubsetKeepList: Win32Pointer,
+    usSubsetListCount: number,
+    lpfnAllocate: Win32Callback,
+    lpfnReAllocate: Win32Callback,
+    lpfnFree: Win32Callback,
+    lpvReserved: Win32Pointer,
+  ): number;
   /** fontsub.dll!MergeFontPackage */
-  MergeFontPackage(puchMergeFontBuffer: Win32Pointer, ulMergeFontBufferSize: number, puchFontPackageBuffer: Win32Pointer, ulFontPackageBufferSize: number, ppuchDestBuffer: Win32Pointer, pulDestBufferSize: Win32Pointer, pulBytesWritten: Win32Pointer, usMode: number, lpfnAllocate: Win32Callback, lpfnReAllocate: Win32Callback, lpfnFree: Win32Callback, lpvReserved: Win32Pointer): number;
+  MergeFontPackage(
+    puchMergeFontBuffer: Win32Pointer,
+    ulMergeFontBufferSize: number,
+    puchFontPackageBuffer: Win32Pointer,
+    ulFontPackageBufferSize: number,
+    ppuchDestBuffer: Win32Pointer,
+    pulDestBufferSize: Win32Pointer,
+    pulBytesWritten: Win32Pointer,
+    usMode: number,
+    lpfnAllocate: Win32Callback,
+    lpfnReAllocate: Win32Callback,
+    lpfnFree: Win32Callback,
+    lpvReserved: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

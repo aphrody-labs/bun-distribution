@@ -32,10 +32,7 @@ const inputVariants = cva(
   },
 );
 
-interface InputProps
-  extends
-    Omit<ComponentProps<"input">, "size">,
-    VariantProps<typeof inputVariants> {
+interface InputProps extends Omit<ComponentProps<"input">, "size">, VariantProps<typeof inputVariants> {
   showPassword?: boolean;
   onShowPasswordChange?: (show: boolean) => void;
   showClearIcon?: boolean;
@@ -66,23 +63,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
     const isPassword = type === "password";
     const showPasswordToggle = isPassword && onShowPasswordChange;
-    const showClear =
-      showClearIcon &&
-      onClear &&
-      value &&
-      String(value).length > 0 &&
-      isFocused;
+    const showClear = showClearIcon && onClear && value && String(value).length > 0 && isFocused;
     const inputType = isPassword && showPassword ? "text" : type;
 
     const hasIcons = showPasswordToggle || showClear;
     const iconCount = Number(showPasswordToggle) + Number(showClear);
-    const paddingRight =
-      iconCount === 2 ? "pr-20" : iconCount === 1 ? "pr-10" : "";
+    const paddingRight = iconCount === 2 ? "pr-20" : iconCount === 1 ? "pr-10" : "";
 
     return (
-      <div
-        className={cn(hasIcons ? "relative w-full" : "", containerClassName)}
-      >
+      <div className={cn(hasIcons ? "relative w-full" : "", containerClassName)}>
         <input
           type={inputType}
           className={cn(
@@ -94,11 +83,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
           ref={ref}
           value={value}
-          onFocus={(e) => {
+          onFocus={e => {
             setIsFocused(true);
             onFocus?.(e);
           }}
-          onBlur={(e) => {
+          onBlur={e => {
             setIsFocused(false);
             onBlur?.(e);
           }}
@@ -108,7 +97,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           <Button
             variant="text"
             size="icon"
-            onMouseDown={(e) => {
+            onMouseDown={e => {
               e.preventDefault();
               onClear?.();
             }}
@@ -129,11 +118,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             )}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
-            {showPassword ? (
-              <Eye className="size-4" />
-            ) : (
-              <EyeOff className="size-4" />
-            )}
+            {showPassword ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
           </Button>
         )}
       </div>

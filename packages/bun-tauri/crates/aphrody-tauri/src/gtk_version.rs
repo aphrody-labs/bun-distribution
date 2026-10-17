@@ -14,20 +14,20 @@ use tauri_runtime::gtk::Version;
 
 /// The GTK version the enabled features bound this crate to.
 const COMPILED: Version = if cfg!(feature = "gtk4") {
-  Version::V4
+    Version::V4
 } else {
-  Version::V3
+    Version::V3
 };
 
 /// Fails when the active runtime's GTK objects are not the version this crate binds.
 pub(crate) fn check() -> crate::Result<()> {
-  match tauri_runtime::gtk::active_version() {
-    // no runtime declared a version: nothing to compare against, keep the previous behavior
-    None => Ok(()),
-    Some(active) if active == COMPILED => Ok(()),
-    Some(active) => {
-      static REPORTED: std::sync::Once = std::sync::Once::new();
-      REPORTED.call_once(|| {
+    match tauri_runtime::gtk::active_version() {
+        // no runtime declared a version: nothing to compare against, keep the previous behavior
+        None => Ok(()),
+        Some(active) if active == COMPILED => Ok(()),
+        Some(active) => {
+            static REPORTED: std::sync::Once = std::sync::Once::new();
+            REPORTED.call_once(|| {
         log::error!(
           "the `tauri` crate was built for {COMPILED} but the active runtime uses {active}, so the \
            GTK APIs and the Linux menu integration are unavailable. This happens when a single \
@@ -37,10 +37,10 @@ pub(crate) fn check() -> crate::Result<()> {
            process anyway."
         );
       });
-      Err(crate::Error::GtkVersionMismatch {
-        expected: COMPILED,
-        active,
-      })
+            Err(crate::Error::GtkVersionMismatch {
+                expected: COMPILED,
+                active,
+            })
+        }
     }
-  }
 }

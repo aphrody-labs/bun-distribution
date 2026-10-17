@@ -1,17 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 AND MIT
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/forms/src/RadioGroupField.tsx), MIT, rebuilt on Material Design 3.
-import {
-  RadioGroupRoot as RadioGroup,
-  RadioGroupItem,
-} from "@aphrody/m3-primitives";
-import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "./Form";
+import { RadioGroupRoot as RadioGroup, RadioGroupItem } from "@aphrody/m3-primitives";
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./Form";
 
 export interface RadioOption {
   value: string;
@@ -28,14 +18,7 @@ export interface RadioGroupFieldProps {
   required?: boolean;
 }
 
-function RadioGroupField({
-  name,
-  label,
-  description,
-  options,
-  disabled,
-  required,
-}: RadioGroupFieldProps) {
+function RadioGroupField({ name, label, description, options, disabled, required }: RadioGroupFieldProps) {
   return (
     <FormField
       name={name}
@@ -55,17 +38,13 @@ function RadioGroupField({
               required={required}
               name={field.name}
             >
-              {options.map((option) => (
+              {options.map(option => (
                 <FormItem key={option.value}>
                   <div className="flex min-h-12 flex-row items-center gap-3">
                     <FormControl>
                       <RadioGroupItem
                         value={option.value}
-                        className={
-                          fieldState.error
-                            ? "border-error text-error"
-                            : undefined
-                        }
+                        className={fieldState.error ? "border-error text-error" : undefined}
                       />
                     </FormControl>
                     <FormLabel variant="inline">{option.label}</FormLabel>

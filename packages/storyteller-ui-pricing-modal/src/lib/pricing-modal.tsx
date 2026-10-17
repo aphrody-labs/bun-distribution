@@ -5,12 +5,7 @@ import { CoinsIcon, CreditCardIcon, TagIcon } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { OpenUrl } from "@storyteller/tauri-api";
 import { useSubscriptionState } from "@storyteller/subscription";
-import {
-  BillingCadence,
-  PricingSectionLabel,
-  PricingTable,
-  PROMO_PCT,
-} from "@storyteller/ui-pricing-table";
+import { BillingCadence, PricingSectionLabel, PricingTable, PROMO_PCT } from "@storyteller/ui-pricing-table";
 import { usePricingModalStore } from "./pricing-modal-store";
 import { useCreditsModalStore } from "./credits-modal-store";
 
@@ -33,18 +28,14 @@ interface PricingContentProps {
 export function PricingContent({ title, subtitle }: PricingContentProps) {
   const subscriptionStore = useSubscriptionState();
   const hasActiveSub = subscriptionStore.hasPaidPlan();
-  const activePlanSlug = hasActiveSub
-    ? (subscriptionStore.subscriptionInfo?.productSlug ?? null)
-    : null;
+  const activePlanSlug = hasActiveSub ? (subscriptionStore.subscriptionInfo?.productSlug ?? null) : null;
 
   const handleManageSubscription = async () => {
     await invoke("storyteller_open_customer_portal_manage_plan_command");
   };
 
   const handleUpdatePaymentMethod = async () => {
-    await invoke(
-      "storyteller_open_customer_portal_update_payment_method_command",
-    );
+    await invoke("storyteller_open_customer_portal_update_payment_method_command");
   };
 
   const handleSetPlan = async (planSlug: string, cadence: BillingCadence) => {
@@ -79,18 +70,13 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
             Limited-time offer
           </p>
           <p className="text-sm">
-            Save {PROMO_PCT}% on every plan, monthly or yearly — lock in the
-            lowest price today.
+            Save {PROMO_PCT}% on every plan, monthly or yearly — lock in the lowest price today.
           </p>
         </div>
       </div>
 
       <PricingSection>
-        <PricingSectionLabel
-          index="01"
-          label="Pricing"
-          annotation="Free & open source · Subscriptions optional†"
-        />
+        <PricingSectionLabel index="01" label="Pricing" annotation="Free & open source · Subscriptions optional†" />
         <div className="px-6 py-12 md:px-10 md:py-16">
           <h1 className="max-w-3xl font-display text-4xl font-medium leading-[1.02] tracking-[-0.035em] text-white sm:text-5xl md:text-6xl">
             {title || pricingConfig.header.title}
@@ -100,19 +86,11 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
           </p>
           {hasActiveSub && (
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button
-                variant="secondary"
-                className={SECONDARY_BUTTON_CLASSES}
-                onClick={handleBuyCredits}
-              >
+              <Button variant="secondary" className={SECONDARY_BUTTON_CLASSES} onClick={handleBuyCredits}>
                 <CoinsIcon aria-hidden className="h-4 w-4" />
                 Buy more credits
               </Button>
-              <Button
-                variant="secondary"
-                className={SECONDARY_BUTTON_CLASSES}
-                onClick={handleUpdatePaymentMethod}
-              >
+              <Button variant="secondary" className={SECONDARY_BUTTON_CLASSES} onClick={handleUpdatePaymentMethod}>
                 <CreditCardIcon aria-hidden className="h-4 w-4" />
                 Update payment method
               </Button>
@@ -122,18 +100,14 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
       </PricingSection>
 
       <PricingSection>
-        <PricingSectionLabel
-          index="02"
-          label="Choose your plan"
-          annotation="Every paid plan includes video credits"
-        />
+        <PricingSectionLabel index="02" label="Choose your plan" annotation="Every paid plan includes video credits" />
         <PricingTable
           activePlanSlug={activePlanSlug}
           showSeedanceFeatures
           showEnterprise
           onChoosePlan={handleSetPlan}
           onManagePlan={handleManageSubscription}
-          onContact={(mailtoUrl) => OpenUrl(mailtoUrl)}
+          onContact={mailtoUrl => OpenUrl(mailtoUrl)}
         />
       </PricingSection>
 
@@ -147,11 +121,7 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
             <p className="mt-2 max-w-md leading-relaxed text-white/55">
               Top up without changing your plan. Credit packs never expire.
             </p>
-            <Button
-              variant="secondary"
-              className={`mt-6 ${SECONDARY_BUTTON_CLASSES}`}
-              onClick={handleBuyCredits}
-            >
+            <Button variant="secondary" className={`mt-6 ${SECONDARY_BUTTON_CLASSES}`} onClick={handleBuyCredits}>
               <CoinsIcon aria-hidden className="h-4 w-4 text-primary" />
               Buy credits
             </Button>
@@ -159,10 +129,8 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
           <div className="border-t border-white/15 p-6 md:border-l md:border-t-0 md:p-10">
             <p className="pricing-hud text-white/40">† Footnote</p>
             <p className="mt-4 max-w-md leading-relaxed text-white/55">
-              ArtCraft can be used without paying for a subscription. You can
-              bring your own compute and third-party subscriptions. We hope
-              you’ll subscribe, though, as that helps accelerate our
-              development.
+              ArtCraft can be used without paying for a subscription. You can bring your own compute and third-party
+              subscriptions. We hope you’ll subscribe, though, as that helps accelerate our development.
             </p>
           </div>
         </div>

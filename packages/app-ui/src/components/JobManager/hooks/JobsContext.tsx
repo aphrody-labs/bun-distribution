@@ -19,9 +19,7 @@ const JobsContext = createContext<JobsContextValue | null>(null);
 export function JobsProvider({ children }: { children: ReactNode }) {
   const jobsData = useJobs();
 
-  return (
-    <JobsContext.Provider value={jobsData}>{children}</JobsContext.Provider>
-  );
+  return <JobsContext.Provider value={jobsData}>{children}</JobsContext.Provider>;
 }
 
 export function useJobsContext() {

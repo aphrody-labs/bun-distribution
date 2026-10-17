@@ -2,22 +2,7 @@
   "schemaVersion": 1,
   "note": "Frontend system list (EmulationStation/Recalbox style). `probe` arguments (exit codes in `probeExit`, default 0) qualify a release binary without a game. Each system maps console catalog ids to file extensions, the native Bun Engine machine, upstream release binaries installed by bep (usr/bin) and libretro cores run through RetroArch, in launch-priority order. `dats` are libretro-database files (vendor/libretro-database) matched by CRC32/MD5. `autoDetect` lists extensions too generic to assign a system from the extension alone.",
   "autoDetect": {
-    "exclude": [
-      "md",
-      "bin",
-      "iso",
-      "img",
-      "chd",
-      "cue",
-      "zip",
-      "7z",
-      "elf",
-      "exe",
-      "pbp",
-      "cso",
-      "pkg",
-      "app"
-    ]
+    "exclude": ["md", "bin", "iso", "img", "chd", "cue", "zip", "7z", "elf", "exe", "pbp", "cso", "pkg", "app"]
   },
   "emulators": {
     "tetanes": { "args": ["{file}"], "probe": ["--help"] },
@@ -91,10 +76,7 @@
       "extensions": ["gb", "gbc", "sgb"],
       "binaries": ["mgba", "ares", "jgenesis"],
       "libretro": ["gambatte", "sameboy", "mgba"],
-      "dats": [
-        "metadat/no-intro/Nintendo - Game Boy.dat",
-        "metadat/no-intro/Nintendo - Game Boy Color.dat"
-      ]
+      "dats": ["metadat/no-intro/Nintendo - Game Boy.dat", "metadat/no-intro/Nintendo - Game Boy Color.dat"]
     },
     {
       "id": "gba",
@@ -114,10 +96,7 @@
       },
       "binaries": ["mgba", "ares"],
       "libretro": ["mgba", "gpsp"],
-      "dats": [
-        "metadat/no-intro/Nintendo - Game Boy Advance.dat",
-        "metadat/homebrew/Nintendo - Game Boy Advance.dat"
-      ]
+      "dats": ["metadat/no-intro/Nintendo - Game Boy Advance.dat", "metadat/homebrew/Nintendo - Game Boy Advance.dat"]
     },
     {
       "id": "nds",
@@ -129,10 +108,7 @@
       "native": { "machine": "nds", "extensions": ["nds", "srl"] },
       "binaries": ["melonds"],
       "libretro": ["melondsds", "melonds", "desmume"],
-      "dats": [
-        "metadat/no-intro/Nintendo - Nintendo DS.dat",
-        "metadat/no-intro/Nintendo - Nintendo DSi.dat"
-      ]
+      "dats": ["metadat/no-intro/Nintendo - Nintendo DS.dat", "metadat/no-intro/Nintendo - Nintendo DSi.dat"]
     },
     {
       "id": "3ds",
@@ -166,10 +142,7 @@
       "native": { "machine": "gc", "extensions": ["dol"] },
       "binaries": [],
       "libretro": ["dolphin"],
-      "dats": [
-        "metadat/redump/Nintendo - GameCube.dat",
-        "metadat/homebrew/Nintendo - GameCube.dat"
-      ]
+      "dats": ["metadat/redump/Nintendo - GameCube.dat", "metadat/homebrew/Nintendo - GameCube.dat"]
     },
     {
       "id": "wii",
@@ -211,17 +184,7 @@
       "manufacturer": "Sony",
       "year": 1994,
       "consoles": ["sony-playstation"],
-      "extensions": [
-        "exe",
-        "psexe",
-        "psx",
-        "cue",
-        "bin",
-        "chd",
-        "pbp",
-        "iso",
-        "m3u"
-      ],
+      "extensions": ["exe", "psexe", "psx", "cue", "bin", "chd", "pbp", "iso", "m3u"],
       "native": {
         "machine": "psx",
         "extensions": ["exe", "psexe", "psx", "bin", "iso"],
@@ -310,10 +273,7 @@
       "extensions": ["cdi", "gdi", "chd", "cue"],
       "binaries": ["flycast"],
       "libretro": ["flycast"],
-      "dats": [
-        "metadat/redump/Sega - Dreamcast.dat",
-        "metadat/homebrew/Sega - Dreamcast.dat"
-      ]
+      "dats": ["metadat/redump/Sega - Dreamcast.dat", "metadat/homebrew/Sega - Dreamcast.dat"]
     },
     {
       "id": "megadrive",
@@ -324,10 +284,7 @@
       "extensions": ["md", "gen", "smd", "bin", "sms", "gg"],
       "binaries": ["jgenesis", "ares"],
       "libretro": ["genesis_plus_gx", "picodrive"],
-      "dats": [
-        "metadat/no-intro/Sega - Mega Drive - Genesis.dat",
-        "metadat/homebrew/Sega - Mega Drive - Genesis.dat"
-      ]
+      "dats": ["metadat/no-intro/Sega - Mega Drive - Genesis.dat", "metadat/homebrew/Sega - Mega Drive - Genesis.dat"]
     },
     {
       "id": "arcade",

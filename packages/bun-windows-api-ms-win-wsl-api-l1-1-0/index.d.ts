@@ -3,15 +3,39 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-wsl-api-l1-1-0.dll!WslConfigureDistribution */
-  WslConfigureDistribution(distributionName: string | Win32Pointer, defaultUID: number, wslDistributionFlags: number): number;
+  WslConfigureDistribution(
+    distributionName: string | Win32Pointer,
+    defaultUID: number,
+    wslDistributionFlags: number,
+  ): number;
   /** api-ms-win-wsl-api-l1-1-0.dll!WslGetDistributionConfiguration */
-  WslGetDistributionConfiguration(distributionName: string | Win32Pointer, distributionVersion: Win32Pointer, defaultUID: Win32Pointer, wslDistributionFlags: Win32Pointer, defaultEnvironmentVariables: Win32Pointer, defaultEnvironmentVariableCount: Win32Pointer): number;
+  WslGetDistributionConfiguration(
+    distributionName: string | Win32Pointer,
+    distributionVersion: Win32Pointer,
+    defaultUID: Win32Pointer,
+    wslDistributionFlags: Win32Pointer,
+    defaultEnvironmentVariables: Win32Pointer,
+    defaultEnvironmentVariableCount: Win32Pointer,
+  ): number;
   /** api-ms-win-wsl-api-l1-1-0.dll!WslIsDistributionRegistered */
   WslIsDistributionRegistered(distributionName: string | Win32Pointer): number;
   /** api-ms-win-wsl-api-l1-1-0.dll!WslLaunch */
-  WslLaunch(distributionName: string | Win32Pointer, command: string | Win32Pointer, useCurrentWorkingDirectory: number, stdIn: Win32Pointer, stdOut: Win32Pointer, stdErr: Win32Pointer, process: Win32Pointer): number;
+  WslLaunch(
+    distributionName: string | Win32Pointer,
+    command: string | Win32Pointer,
+    useCurrentWorkingDirectory: number,
+    stdIn: Win32Pointer,
+    stdOut: Win32Pointer,
+    stdErr: Win32Pointer,
+    process: Win32Pointer,
+  ): number;
   /** api-ms-win-wsl-api-l1-1-0.dll!WslLaunchInteractive */
-  WslLaunchInteractive(distributionName: string | Win32Pointer, command: string | Win32Pointer, useCurrentWorkingDirectory: number, exitCode: Win32Pointer): number;
+  WslLaunchInteractive(
+    distributionName: string | Win32Pointer,
+    command: string | Win32Pointer,
+    useCurrentWorkingDirectory: number,
+    exitCode: Win32Pointer,
+  ): number;
   /** api-ms-win-wsl-api-l1-1-0.dll!WslRegisterDistribution */
   WslRegisterDistribution(distributionName: string | Win32Pointer, tarGzFilename: string | Win32Pointer): number;
   /** api-ms-win-wsl-api-l1-1-0.dll!WslUnregisterDistribution */

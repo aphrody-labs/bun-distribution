@@ -76,9 +76,7 @@ export function QuickPreviewOverlay({
           ) : error ? (
             <div className="flex h-full items-center justify-center text-error">
               <div>
-                <div className="mb-2 text-title-medium font-medium">
-                  Error loading file
-                </div>
+                <div className="mb-2 text-title-medium font-medium">Error loading file</div>
                 <div className="text-body-medium">{error.message}</div>
               </div>
             </div>
@@ -109,9 +107,7 @@ export function QuickPreviewOverlay({
                       <div className="h-4 w-px bg-outline-variant/50" />
                     </>
                   )}
-                  <div className="truncate text-label-large font-medium text-on-surface">
-                    {file.name}
-                  </div>
+                  <div className="truncate text-label-large font-medium text-on-surface">{file.name}</div>
                 </div>
 
                 <button
@@ -130,13 +126,13 @@ export function QuickPreviewOverlay({
               {/* Footer with keyboard hints */}
               <div className="border-t border-outline-variant/50 bg-surface-container/40 px-4 py-1.5">
                 <div className="text-center text-body-small text-on-surface-variant">
-                  <span className="text-on-surface">ESC</span> or{" "}
-                  <span className="text-on-surface">Space</span> to close
+                  <span className="text-on-surface">ESC</span> or <span className="text-on-surface">Space</span> to
+                  close
                   {(hasPrevious || hasNext) && (
                     <>
                       {" · "}
-                      <span className="text-on-surface">←</span> /{" "}
-                      <span className="text-on-surface">→</span> to navigate
+                      <span className="text-on-surface">←</span> / <span className="text-on-surface">→</span> to
+                      navigate
                     </>
                   )}
                 </div>

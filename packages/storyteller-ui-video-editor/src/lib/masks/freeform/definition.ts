@@ -25,11 +25,7 @@ import {
 import { getBoxMaskHandlePositions } from "../handle-positions";
 import { computeFeatherUpdate } from "../param-update";
 import { setMaskLocalCenter, toGlobalMaskSnapLines } from "../geometry";
-import {
-  snapPosition,
-  snapRotation,
-  snapScale,
-} from "../../preview/preview-snap";
+import { snapPosition, snapRotation, snapScale } from "../../preview/preview-snap";
 import { PEN_CURSOR } from "../../preview/components/cursors";
 
 const PERCENTAGE_DISPLAY = {
@@ -37,9 +33,7 @@ const PERCENTAGE_DISPLAY = {
   step: 1,
 } as const;
 
-const FREEFORM_PATH_MASK_PARAMS: ParamDefinition<
-  keyof FreeformPathMaskParams & string
->[] = [
+const FREEFORM_PATH_MASK_PARAMS: ParamDefinition<keyof FreeformPathMaskParams & string>[] = [
   {
     key: "centerX",
     label: "X",
@@ -162,7 +156,7 @@ function getFreeformDisplayHandles({
     );
   }
 
-  geometry.anchors.forEach((point) => {
+  geometry.anchors.forEach(point => {
     handles.push({
       id: { kind: "anchor", pointId: point.id },
       x: point.anchor.x,
@@ -187,7 +181,7 @@ function updateFreeformPathMaskPoint({
   pointId: string;
   updater: (point: FreeformPathPoint) => FreeformPathPoint;
 }) {
-  return points.map((point) => (point.id === pointId ? updater(point) : point));
+  return points.map(point => (point.id === pointId ? updater(point) : point));
 }
 
 function computeFreeformParamUpdate({
@@ -210,16 +204,8 @@ function computeFreeformParamUpdate({
   const pivotY = bounds.cy + startParams.centerY * bounds.height;
 
   if (handleId.kind === "rotation") {
-    const startAngle =
-      (Math.atan2(startCanvasY - pivotY, startCanvasX - pivotX) * 180) /
-      Math.PI;
-    const currentAngle =
-      (Math.atan2(
-        startCanvasY + deltaY - pivotY,
-        startCanvasX + deltaX - pivotX,
-      ) *
-        180) /
-      Math.PI;
+    const startAngle = (Math.atan2(startCanvasY - pivotY, startCanvasX - pivotX) * 180) / Math.PI;
+    const currentAngle = (Math.atan2(startCanvasY + deltaY - pivotY, startCanvasX + deltaX - pivotX) * 180) / Math.PI;
 
     let deltaAngle = currentAngle - startAngle;
     if (deltaAngle > 180) deltaAngle -= 360;
@@ -242,14 +228,8 @@ function computeFreeformParamUpdate({
   }
 
   if (handleId.kind === "scale") {
-    const startDistance = Math.hypot(
-      startCanvasX - pivotX,
-      startCanvasY - pivotY,
-    );
-    const currentDistance = Math.hypot(
-      startCanvasX + deltaX - pivotX,
-      startCanvasY + deltaY - pivotY,
-    );
+    const startDistance = Math.hypot(startCanvasX - pivotX, startCanvasY - pivotY);
+    const currentDistance = Math.hypot(startCanvasX + deltaX - pivotX, startCanvasY + deltaY - pivotY);
     const scaleFactor = startDistance > 0 ? currentDistance / startDistance : 1;
     return {
       scale: Math.max(0.01, startParams.scale * scaleFactor),
@@ -278,7 +258,7 @@ function computeFreeformParamUpdate({
     path: updateFreeformPathMaskPoint({
       points,
       pointId: handleId.pointId,
-      updater: (point) => ({
+      updater: point => ({
         ...point,
         x: localPoint.x,
         y: localPoint.y,
@@ -297,23 +277,10 @@ export const freeformMaskDefinition: MaskDefinition<"freeform"> = {
   },
   params: FREEFORM_PATH_MASK_PARAMS,
   interaction: {
-    getInteraction({
-      params,
-      bounds,
-      displayScale,
-      scaleX: _scaleX,
-      scaleY: _scaleY,
-    }) {
+    getInteraction({ params, bounds, displayScale, scaleX: _scaleX, scaleY: _scaleY }) {
       return getFreeformDisplayHandles({ params, bounds, displayScale });
     },
-    snap({
-      handleId,
-      proposedParams,
-      startParams,
-      bounds,
-      canvasSize,
-      snapThreshold,
-    }) {
+    snap({ handleId, proposedParams, startParams, bounds, canvasSize, snapThreshold }) {
       const points = startParams.path;
       const localBounds = getFreeformLocalBounds({ points, bounds });
       if (!startParams.closed || !localBounds) {
@@ -515,10 +482,8 @@ export function appendPointToFreeformPathMask({
   if (points.length === 0) {
     return {
       ...params,
-      centerX:
-        bounds.width === 0 ? 0 : (canvasPoint.x - bounds.cx) / bounds.width,
-      centerY:
-        bounds.height === 0 ? 0 : (canvasPoint.y - bounds.cy) / bounds.height,
+      centerX: bounds.width === 0 ? 0 : (canvasPoint.x - bounds.cx) / bounds.width,
+      centerY: bounds.height === 0 ? 0 : (canvasPoint.y - bounds.cy) / bounds.height,
       rotation: 0,
       scale: 1,
       path: [

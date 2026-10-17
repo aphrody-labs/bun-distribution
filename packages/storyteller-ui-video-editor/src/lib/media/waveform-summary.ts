@@ -12,17 +12,9 @@ import type { RetimeConfig } from "../timeline/types";
 const RMS_ANALYSIS_WINDOW_SECONDS = 0.02;
 const DEFAULT_SOURCE_WAVEFORM_BUCKET_SIZE = 128;
 
-function computePeakBuckets({
-  buffer,
-  buckets,
-}: {
-  buffer: AudioBuffer;
-  buckets: SampleBucket[];
-}): number[] {
+function computePeakBuckets({ buffer, buckets }: { buffer: AudioBuffer; buckets: SampleBucket[] }): number[] {
   const channels = buffer.numberOfChannels;
-  const channelData: Float32Array[] = Array.from({ length: channels }, (_, c) =>
-    buffer.getChannelData(c),
-  );
+  const channelData: Float32Array[] = Array.from({ length: channels }, (_, c) => buffer.getChannelData(c));
 
   return buckets.map(({ bucketStart, bucketEnd }) => {
     let peak = 0;
@@ -52,13 +44,7 @@ export interface SourceWaveformSummary {
   amplitudes: Float32Array;
 }
 
-export function buildWaveformSourceKey({
-  kind,
-  id,
-}: {
-  kind: "media" | "library";
-  id: string;
-}): string {
+export function buildWaveformSourceKey({ kind, id }: { kind: "media" | "library"; id: string }): string {
   return `${kind}:${id}`;
 }
 
@@ -122,14 +108,8 @@ export function buildWaveformSampleBuckets({
   return Array.from({ length: barCount }, (_, index) => {
     const bucketLeftPx = clipLeftPx + index * barStepPx;
     const bucketRightPx = Math.min(clipRightPx, bucketLeftPx + barStepPx);
-    const clipStartSec = Math.max(
-      0,
-      Math.min(clipDurationSec, bucketLeftPx / pixelsPerSecond),
-    );
-    const clipEndSec = Math.max(
-      clipStartSec,
-      Math.min(clipDurationSec, bucketRightPx / pixelsPerSecond),
-    );
+    const clipStartSec = Math.max(0, Math.min(clipDurationSec, bucketLeftPx / pixelsPerSecond));
+    const clipEndSec = Math.max(clipStartSec, Math.min(clipDurationSec, bucketRightPx / pixelsPerSecond));
     const sourceBucketStartSec =
       sourceStartSec +
       getSourceTimeAtClipTime({
@@ -145,10 +125,7 @@ export function buildWaveformSampleBuckets({
 
     return {
       bucketStart: Math.max(0, Math.floor(sourceBucketStartSec * sampleRate)),
-      bucketEnd: Math.min(
-        maxSampleExclusive,
-        Math.max(0, Math.ceil(sourceBucketEndSec * sampleRate)),
-      ),
+      bucketEnd: Math.min(maxSampleExclusive, Math.max(0, Math.ceil(sourceBucketEndSec * sampleRate))),
     };
   });
 }
@@ -165,10 +142,7 @@ export function sampleSourceWaveformSummary({
       return 0;
     }
 
-    const startIndex = Math.max(
-      0,
-      Math.floor(bucketStart / summary.bucketSize),
-    );
+    const startIndex = Math.max(0, Math.floor(bucketStart / summary.bucketSize));
     const endIndex = Math.min(
       summary.amplitudes.length,
       Math.max(startIndex + 1, Math.ceil(bucketEnd / summary.bucketSize)),
@@ -186,22 +160,11 @@ export function sampleSourceWaveformSummary({
   });
 }
 
-export function computeRmsBuckets({
-  buffer,
-  buckets,
-}: {
-  buffer: AudioBuffer;
-  buckets: SampleBucket[];
-}): number[] {
+export function computeRmsBuckets({ buffer, buckets }: { buffer: AudioBuffer; buckets: SampleBucket[] }): number[] {
   const channels = buffer.numberOfChannels;
-  const maxWindowLength = Math.max(
-    1,
-    Math.floor(buffer.sampleRate * RMS_ANALYSIS_WINDOW_SECONDS),
-  );
+  const maxWindowLength = Math.max(1, Math.floor(buffer.sampleRate * RMS_ANALYSIS_WINDOW_SECONDS));
 
-  const channelData: Float32Array[] = Array.from({ length: channels }, (_, c) =>
-    buffer.getChannelData(c),
-  );
+  const channelData: Float32Array[] = Array.from({ length: channels }, (_, c) => buffer.getChannelData(c));
 
   const result = Array.from<number>({ length: buckets.length });
 

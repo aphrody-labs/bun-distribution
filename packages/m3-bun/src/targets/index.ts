@@ -26,11 +26,7 @@ import { windows } from "./windows.ts";
 
 export type { Target, TargetContext, TargetFile } from "./types.ts";
 export { inspectWindows, type WindowsInspection } from "./windows-inspect.ts";
-export {
-  verifyWebView,
-  type VerifyWebViewOptions,
-  type WebViewReport,
-} from "./webos.ts";
+export { verifyWebView, type VerifyWebViewOptions, type WebViewReport } from "./webos.ts";
 export { windowsIcon } from "./windows.ts";
 
 export const TARGETS: readonly Target[] = [
@@ -53,23 +49,15 @@ export const TARGETS: readonly Target[] = [
 ];
 
 export function getTarget(id: string): Target {
-  const target = TARGETS.find((t) => t.id === id);
-  if (!target)
-    throw new Error(
-      `m3-bun: unknown deploy target ${id} (${TARGETS.map((t) => t.id).join(", ")})`,
-    );
+  const target = TARGETS.find(t => t.id === id);
+  if (!target) throw new Error(`m3-bun: unknown deploy target ${id} (${TARGETS.map(t => t.id).join(", ")})`);
   return target;
 }
 
 /** The context of `app`, with the deploy section of its config applied. */
-export function contextFor(
-  app: M3App,
-  overrides: Partial<TargetContext> = {},
-): TargetContext {
+export function contextFor(app: M3App, overrides: Partial<TargetContext> = {}): TargetContext {
   const deploy = app.bun.deploy ?? {};
-  const relativeApi = app.api
-    ? app.api.slice(app.dir.length + 1).replaceAll("\\", "/")
-    : undefined;
+  const relativeApi = app.api ? app.api.slice(app.dir.length + 1).replaceAll("\\", "/") : undefined;
   const theme = app.m3.theme ?? {};
   return {
     name: app.name,
@@ -81,8 +69,7 @@ export function contextFor(
     user: deploy.user ?? "ubuntu",
     region: deploy.region ?? "cdg",
     binary: app.name,
-    outdir:
-      app.outdir.slice(app.dir.length + 1).replaceAll("\\", "/") || "dist",
+    outdir: app.outdir.slice(app.dir.length + 1).replaceAll("\\", "/") || "dist",
     ...(relativeApi ? { api: relativeApi } : {}),
     bunVersion: Bun.version,
     yoloRoot: yoloRoot(),
@@ -108,8 +95,7 @@ export async function generateTargets(
   context: TargetContext,
   out: string,
 ): Promise<GeneratedTarget[]> {
-  const targets =
-    ids.length === 0 || ids.includes("all") ? TARGETS : ids.map(getTarget);
+  const targets = ids.length === 0 || ids.includes("all") ? TARGETS : ids.map(getTarget);
   const generated: GeneratedTarget[] = [];
   for (const target of targets) {
     const dir = resolve(join(out, target.id));

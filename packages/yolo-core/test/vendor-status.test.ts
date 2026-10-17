@@ -13,11 +13,7 @@ import {
 import { readWorkspaceCargo } from "../../core/src/vendor/cargo";
 
 const roots: string[] = [];
-afterEach(() =>
-  roots
-    .splice(0)
-    .forEach((root) => rmSync(root, { recursive: true, force: true })),
-);
+afterEach(() => roots.splice(0).forEach(root => rmSync(root, { recursive: true, force: true })));
 function git(cwd: string, ...args: string[]) {
   const child = Bun.spawnSync(["git", ...args], {
     windowsHide: true,
@@ -54,9 +50,7 @@ test("full SHA survives packed refs and vendor comparison rejects a matching sho
   git(value.repository, "pack-refs", "--all");
   expect(await readGitHead(value.repository)).toBe(value.sha);
   const packages = await inspectPackages(join(value.root, "vendor"));
-  expect(packages.find((entry) => entry.name === "tauri")?.headCommit).toBe(
-    value.sha,
-  );
+  expect(packages.find(entry => entry.name === "tauri")?.headCommit).toBe(value.sha);
   writeFileSync(
     join(value.root, "vendor.lock"),
     JSON.stringify({
@@ -68,9 +62,7 @@ test("full SHA survives packed refs and vendor comparison rejects a matching sho
   writeFileSync(
     join(value.root, "vendor.lock"),
     JSON.stringify({
-      sources: [
-        { name: "tauri", sha: `${value.sha.slice(0, 10)}${"0".repeat(30)}` },
-      ],
+      sources: [{ name: "tauri", sha: `${value.sha.slice(0, 10)}${"0".repeat(30)}` }],
       crates: [],
     }),
   );
@@ -85,7 +77,7 @@ test("the vendor catalog owns discovery and retains declared missing checkouts",
     JSON.stringify({ sources: [{ name: "tauri" }, { name: "missing" }] }),
   );
   const packages = await inspectPackages(join(value.root, "vendor"));
-  expect(packages.map((entry) => entry.name)).toEqual(["tauri", "missing"]);
+  expect(packages.map(entry => entry.name)).toEqual(["tauri", "missing"]);
   expect(packages[0]?.headCommit).toBe(value.sha);
   expect(packages[1]?.exists).toBe(false);
   expect(packages[1]?.path).toBe(join(value.root, "vendor/missing"));
@@ -104,10 +96,7 @@ test("bounded symbolic refs resolve while malformed or cyclic metadata stays unq
   git(value.repository, "symbolic-ref", "refs/heads/alias", "refs/heads/main");
   git(value.repository, "symbolic-ref", "HEAD", "refs/heads/alias");
   expect(await readGitHead(value.repository)).toBe(value.sha);
-  writeFileSync(
-    join(value.repository, ".git/refs/heads/alias"),
-    "ref: refs/heads/alias\n",
-  );
+  writeFileSync(join(value.repository, ".git/refs/heads/alias"), "ref: refs/heads/alias\n");
   expect(await readGitHead(value.repository)).toBeUndefined();
   writeFileSync(join(value.repository, ".git/HEAD"), "ref: refs/../outside\n");
   expect(await readGitHead(value.repository)).toBeUndefined();
@@ -122,21 +111,12 @@ test("status distinguishes the core default selection from all workspace members
   );
   const status = await collectStatusReport(root);
   expect(status.cargo?.members).toEqual(["crates/*"]);
-  expect(status.cargo?.defaultMembers).toEqual([
-    "crates/engine/yolo-core",
-    "crates/engine/yolo-runtime",
-  ]);
+  expect(status.cargo?.defaultMembers).toEqual(["crates/engine/yolo-core", "crates/engine/yolo-runtime"]);
   expect(renderStatusMarkdown(status)).toContain(
     "**Default Members:** crates/engine/yolo-core, crates/engine/yolo-runtime",
   );
-  writeFileSync(
-    join(root, "Cargo.toml"),
-    '[workspace]\nmembers = ["crates/*"]\n',
-  );
+  writeFileSync(join(root, "Cargo.toml"), '[workspace]\nmembers = ["crates/*"]\n');
   expect((await readWorkspaceCargo(root))?.defaultMembers).toBeNull();
-  writeFileSync(
-    join(root, "Cargo.toml"),
-    '[workspace]\nmembers = ["crates/*"]\ndefault-members = []\n',
-  );
+  writeFileSync(join(root, "Cargo.toml"), '[workspace]\nmembers = ["crates/*"]\ndefault-members = []\n');
   expect((await readWorkspaceCargo(root))?.defaultMembers).toEqual([]);
 });

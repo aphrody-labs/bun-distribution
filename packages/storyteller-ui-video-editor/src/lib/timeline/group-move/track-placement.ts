@@ -16,11 +16,7 @@ export interface TrackPlacement {
   displayIndex: number;
 }
 
-export function getDisplayTracks({
-  tracks,
-}: {
-  tracks: SceneTracks;
-}): TimelineTrack[] {
+export function getDisplayTracks({ tracks }: { tracks: SceneTracks }): TimelineTrack[] {
   return [...tracks.overlay, tracks.main, ...tracks.audio];
 }
 
@@ -41,9 +37,7 @@ export function getTrackPlacementById({
     };
   }
 
-  const overlayTrackIndex = tracks.overlay.findIndex(
-    (track) => track.id === trackId,
-  );
+  const overlayTrackIndex = tracks.overlay.findIndex(track => track.id === trackId);
   if (overlayTrackIndex >= 0) {
     return {
       trackId,
@@ -54,9 +48,7 @@ export function getTrackPlacementById({
     };
   }
 
-  const audioTrackIndex = tracks.audio.findIndex(
-    (track) => track.id === trackId,
-  );
+  const audioTrackIndex = tracks.audio.findIndex(track => track.id === trackId);
   if (audioTrackIndex >= 0) {
     return {
       trackId,

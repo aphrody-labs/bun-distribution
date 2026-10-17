@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
+import { createContext, useContext, useState, useCallback, useMemo, useRef } from "react";
 
 export type TopBarPriority = "high" | "normal" | "low";
 export type TopBarPosition = "left" | "center" | "right";
@@ -44,77 +37,70 @@ const TopBarContext = createContext<TopBarContextValue | null>(null);
 export function TopBarProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<Map<string, TopBarItem>>(new Map());
   const [visibleItems, setVisibleItemsState] = useState<Set<string>>(new Set());
-  const [overflowItems, setOverflowItemsState] = useState<
-    Map<TopBarPosition, TopBarItem[]>
-  >(new Map());
-  const [leftContainerRef, setLeftContainerRef] =
-    useState<React.RefObject<HTMLDivElement | null> | null>(null);
-  const [rightContainerRef, setRightContainerRef] =
-    useState<React.RefObject<HTMLDivElement | null> | null>(null);
+  const [overflowItems, setOverflowItemsState] = useState<Map<TopBarPosition, TopBarItem[]>>(new Map());
+  const [leftContainerRef, setLeftContainerRef] = useState<React.RefObject<HTMLDivElement | null> | null>(null);
+  const [rightContainerRef, setRightContainerRef] = useState<React.RefObject<HTMLDivElement | null> | null>(null);
   const [recalculationTrigger, setRecalculationTrigger] = useState(0);
   const elementsRef = useRef<Map<string, React.ReactNode>>(new Map());
   const submenuContentRef = useRef<Map<string, React.ReactNode>>(new Map());
 
-  const registerItem = useCallback(
-    (item: Omit<TopBarItem, "width" | "elementVersion">) => {
-      // Store element and submenuContent in refs (don't trigger re-render)
-      elementsRef.current.set(item.id, item.element);
-      if (item.submenuContent) {
-        submenuContentRef.current.set(item.id, item.submenuContent);
+  const registerItem = useCallback((item: Omit<TopBarItem, "width" | "elementVersion">) => {
+    // Store element and submenuContent in refs (don't trigger re-render)
+    elementsRef.current.set(item.id, item.element);
+    if (item.submenuContent) {
+      submenuContentRef.current.set(item.id, item.submenuContent);
+    }
+
+    setItems(prev => {
+      const existingItem = prev.get(item.id);
+
+      // Check if structural properties changed
+      const structureChanged =
+        !existingItem ||
+        existingItem.label !== item.label ||
+        existingItem.priority !== item.priority ||
+        existingItem.position !== item.position ||
+        existingItem.onClick !== item.onClick;
+
+      // Always create new Map so consumers re-render with updated element/submenuContent
+      const newItems = new Map(prev);
+
+      if (!structureChanged) {
+        // Only element/submenuContent changed - update without triggering recalculation
+        newItems.set(item.id, {
+          ...existingItem,
+          element: item.element,
+          submenuContent: item.submenuContent,
+        });
+      } else {
+        // Structure changed - full update and trigger recalculation
+        newItems.set(item.id, {
+          ...item,
+          width: existingItem?.width || 0,
+          elementVersion: 0,
+        });
+
+        // Initially add to visible so it can be measured
+        if (!existingItem) {
+          setVisibleItemsState(prev2 => {
+            const newVisible = new Set(prev2);
+            newVisible.add(item.id);
+            return newVisible;
+          });
+        }
       }
 
-      setItems((prev) => {
-        const existingItem = prev.get(item.id);
-
-        // Check if structural properties changed
-        const structureChanged =
-          !existingItem ||
-          existingItem.label !== item.label ||
-          existingItem.priority !== item.priority ||
-          existingItem.position !== item.position ||
-          existingItem.onClick !== item.onClick;
-
-        // Always create new Map so consumers re-render with updated element/submenuContent
-        const newItems = new Map(prev);
-
-        if (!structureChanged) {
-          // Only element/submenuContent changed - update without triggering recalculation
-          newItems.set(item.id, {
-            ...existingItem,
-            element: item.element,
-            submenuContent: item.submenuContent,
-          });
-        } else {
-          // Structure changed - full update and trigger recalculation
-          newItems.set(item.id, {
-            ...item,
-            width: existingItem?.width || 0,
-            elementVersion: 0,
-          });
-
-          // Initially add to visible so it can be measured
-          if (!existingItem) {
-            setVisibleItemsState((prev2) => {
-              const newVisible = new Set(prev2);
-              newVisible.add(item.id);
-              return newVisible;
-            });
-          }
-        }
-
-        return newItems;
-      });
-    },
-    [],
-  );
+      return newItems;
+    });
+  }, []);
 
   const unregisterItem = useCallback((id: string) => {
-    setItems((prev) => {
+    setItems(prev => {
       const newItems = new Map(prev);
       newItems.delete(id);
       return newItems;
     });
-    setVisibleItemsState((prev) => {
+    setVisibleItemsState(prev => {
       const newVisible = new Set(prev);
       newVisible.delete(id);
       return newVisible;
@@ -122,7 +108,7 @@ export function TopBarProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateItemWidth = useCallback((id: string, width: number) => {
-    setItems((prev) => {
+    setItems(prev => {
       const item = prev.get(id);
       if (!item || item.width === width) return prev;
 
@@ -130,14 +116,14 @@ export function TopBarProvider({ children }: { children: React.ReactNode }) {
       newItems.set(id, { ...item, width });
 
       // Trigger recalculation only when we actually update
-      setRecalculationTrigger((t) => t + 1);
+      setRecalculationTrigger(t => t + 1);
 
       return newItems;
     });
   }, []);
 
   const recalculate = useCallback(() => {
-    setRecalculationTrigger((prev) => prev + 1);
+    setRecalculationTrigger(prev => prev + 1);
   }, []);
 
   const contextValue = useMemo<TopBarContextValue>(
@@ -185,15 +171,11 @@ export function TopBarProvider({ children }: { children: React.ReactNode }) {
 // Internal context for state setters
 interface TopBarInternalContextValue {
   setVisibleItems: React.Dispatch<React.SetStateAction<Set<string>>>;
-  setOverflowItems: React.Dispatch<
-    React.SetStateAction<Map<TopBarPosition, TopBarItem[]>>
-  >;
+  setOverflowItems: React.Dispatch<React.SetStateAction<Map<TopBarPosition, TopBarItem[]>>>;
   recalculationTrigger: number;
 }
 
-const TopBarInternalContext = createContext<TopBarInternalContextValue | null>(
-  null,
-);
+const TopBarInternalContext = createContext<TopBarInternalContextValue | null>(null);
 
 function TopBarInternalProvider({
   children,
@@ -203,9 +185,7 @@ function TopBarInternalProvider({
 }: {
   children: React.ReactNode;
   setVisibleItems: React.Dispatch<React.SetStateAction<Set<string>>>;
-  setOverflowItems: React.Dispatch<
-    React.SetStateAction<Map<TopBarPosition, TopBarItem[]>>
-  >;
+  setOverflowItems: React.Dispatch<React.SetStateAction<Map<TopBarPosition, TopBarItem[]>>>;
   recalculationTrigger: number;
 }) {
   const internalValue = useMemo<TopBarInternalContextValue>(
@@ -213,11 +193,7 @@ function TopBarInternalProvider({
     [setVisibleItems, setOverflowItems, recalculationTrigger],
   );
 
-  return (
-    <TopBarInternalContext.Provider value={internalValue}>
-      {children}
-    </TopBarInternalContext.Provider>
-  );
+  return <TopBarInternalContext.Provider value={internalValue}>{children}</TopBarInternalContext.Provider>;
 }
 
 export function useTopBar() {

@@ -9,7 +9,12 @@ interface Functions {
   /** api-ms-win-ro-typeresolution-l1-1-1.dll!RoIsApiContractMajorVersionPresent */
   RoIsApiContractMajorVersionPresent(name: string | Win32Pointer, majorVersion: number, present: Win32Pointer): number;
   /** api-ms-win-ro-typeresolution-l1-1-1.dll!RoIsApiContractPresent */
-  RoIsApiContractPresent(name: string | Win32Pointer, majorVersion: number, minorVersion: number, present: Win32Pointer): number;
+  RoIsApiContractPresent(
+    name: string | Win32Pointer,
+    majorVersion: number,
+    minorVersion: number,
+    present: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

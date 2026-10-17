@@ -10,8 +10,7 @@
  * the NUMBER and DATETIME built-ins. Bidi isolation is off on both sides (Bevy text has no FSI).
  */
 
-export type FluentValue =
-  string | number | Date | FluentNumber | FluentDateTime;
+export type FluentValue = string | number | Date | FluentNumber | FluentDateTime;
 export type FluentArgs = Record<string, FluentValue | null | undefined>;
 
 export class FluentNumber {
@@ -48,9 +47,7 @@ type Expression =
       named: Record<string, Literal>;
     }
   | { type: "select"; selector: Expression; variants: Variant[]; star: number };
-type Literal =
-  | { type: "str"; value: string }
-  | { type: "num"; value: number; precision: number };
+type Literal = { type: "str"; value: string } | { type: "num"; value: number; precision: number };
 type Element = string | Expression;
 export type Pattern = string | Element[];
 interface Variant {
@@ -80,7 +77,7 @@ export class FluentResource {
 
   /** Message ids (no terms), in source order. */
   messageIds(): string[] {
-    return [...this.entries.keys()].filter((id) => !id.startsWith("-"));
+    return [...this.entries.keys()].filter(id => !id.startsWith("-"));
   }
 }
 
@@ -191,8 +188,7 @@ class Parser {
       if (attr === null) this.fail(`attribute .${name} has no value`);
       attributes[name] = attr;
     }
-    if (value === null && Object.keys(attributes).length === 0)
-      this.fail(`${id} has no value`);
+    if (value === null && Object.keys(attributes).length === 0) this.fail(`${id} has no value`);
     if (term && value === null) this.fail(`term ${id} has no value`);
     this.out.entries.set(id, { id, value, attributes });
     // Consume the rest of the line.
@@ -253,12 +249,8 @@ class Parser {
     }
     flush();
     // Common indent of the block lines, then join.
-    const indents = pieces.filter(
-      (p): p is { indent: number } => typeof p === "object" && "indent" in p,
-    );
-    const common = indents.length
-      ? Math.min(...indents.map((p) => p.indent))
-      : 0;
+    const indents = pieces.filter((p): p is { indent: number } => typeof p === "object" && "indent" in p);
+    const common = indents.length ? Math.min(...indents.map(p => p.indent)) : 0;
     const out: Element[] = [];
     let first = true;
     for (const p of pieces) {
@@ -268,8 +260,7 @@ class Parser {
       } else piece = p;
       first = false;
       const last = out[out.length - 1];
-      if (typeof piece === "string" && typeof last === "string")
-        out[out.length - 1] = last + piece;
+      if (typeof piece === "string" && typeof last === "string") out[out.length - 1] = last + piece;
       else if (piece !== "") out.push(piece);
     }
     if (typeof out[0] === "string") out[0] = out[0].replace(/^[ \t]+/, "");
@@ -311,10 +302,8 @@ class Parser {
         if (isDefault) star = variants.length;
         variants.push({ key, value });
       }
-      if (variants.length === 0)
-        this.fail("select expression without variants");
-      if (star < 0)
-        this.fail("select expression without a default (*) variant");
+      if (variants.length === 0) this.fail("select expression without variants");
+      if (star < 0) this.fail("select expression without a default (*) variant");
       this.blank();
       this.expect("}");
       return { type: "select", selector: expression, variants, star };
@@ -343,8 +332,7 @@ class Parser {
     let value = "";
     for (;;) {
       const c = this.s[this.i++];
-      if (c === undefined || c === "\n")
-        this.fail("unterminated string literal");
+      if (c === undefined || c === "\n") this.fail("unterminated string literal");
       if (c === '"') break;
       if (c === "\\") {
         const e = this.s[this.i++];
@@ -352,8 +340,7 @@ class Parser {
         else if (e === "u" || e === "U") {
           const len = e === "u" ? 4 : 6;
           const hex = this.s.slice(this.i, this.i + len);
-          if (!/^[0-9a-fA-F]+$/.test(hex) || hex.length !== len)
-            this.fail("bad unicode escape");
+          if (!/^[0-9a-fA-F]+$/.test(hex) || hex.length !== len) this.fail("bad unicode escape");
           value += String.fromCodePoint(parseInt(hex, 16));
           this.i += len;
         } else this.fail(`unknown escape \\${e}`);
@@ -385,8 +372,7 @@ class Parser {
         if (this.s[this.i] === ":") {
           this.i++;
           this.blank();
-          named[m[0]] =
-            this.s[this.i] === '"' ? this.stringLiteral() : this.number();
+          named[m[0]] = this.s[this.i] === '"' ? this.stringLiteral() : this.number();
           isNamed = true;
         } else this.i = save;
       }
@@ -407,11 +393,7 @@ class Parser {
   private inlineExpression(): Expression {
     const c = this.s[this.i] ?? "";
     if (c === '"') return this.stringLiteral();
-    if (
-      /[0-9]/.test(c) ||
-      (c === "-" && /[0-9]/.test(this.s[this.i + 1] ?? ""))
-    )
-      return this.number();
+    if (/[0-9]/.test(c) || (c === "-" && /[0-9]/.test(this.s[this.i + 1] ?? ""))) return this.number();
     if (c === "$") {
       this.i++;
       return { type: "var", name: this.ident() };
@@ -428,8 +410,7 @@ class Parser {
     }
     const name = this.ident();
     if (this.s[this.i] === "(") {
-      if (!/^[A-Z][A-Z0-9_-]*$/.test(name))
-        this.fail(`function names are upper case: ${name}`);
+      if (!/^[A-Z][A-Z0-9_-]*$/.test(name)) this.fail(`function names are upper case: ${name}`);
       const { positional, named } = this.callArgs();
       return { type: "func", name, positional, named };
     }
@@ -437,10 +418,7 @@ class Parser {
   }
 }
 
-export type FluentFunction = (
-  positional: FluentValue[],
-  named: Record<string, string | number>,
-) => FluentValue;
+export type FluentFunction = (positional: FluentValue[], named: Record<string, string | number>) => FluentValue;
 
 export interface FormatError {
   id: string;
@@ -456,10 +434,7 @@ export class FluentBundle {
   private readonly functions: Record<string, FluentFunction>;
   private readonly plural = new Map<string, Intl.PluralRules>();
 
-  constructor(
-    locale: string,
-    options: { functions?: Record<string, FluentFunction> } = {},
-  ) {
+  constructor(locale: string, options: { functions?: Record<string, FluentFunction> } = {}) {
     this.locale = locale;
     this.functions = {
       NUMBER: (pos, named) => {
@@ -473,12 +448,7 @@ export class FluentBundle {
       },
       DATETIME: (pos, named) => {
         const v = pos[0];
-        const d =
-          v instanceof FluentDateTime
-            ? v.value
-            : v instanceof Date
-              ? v
-              : new Date(String(v));
+        const d = v instanceof FluentDateTime ? v.value : v instanceof Date ? v : new Date(String(v));
         const base = v instanceof FluentDateTime ? v.options : {};
         return new FluentDateTime(d, {
           ...base,
@@ -503,15 +473,11 @@ export class FluentBundle {
   }
 
   messageIds(): string[] {
-    return [...this.entries.keys()].filter((id) => !id.startsWith("-"));
+    return [...this.entries.keys()].filter(id => !id.startsWith("-"));
   }
 
   /** Formats `id` (or `id.attr`); returns null when the message or attribute is missing. */
-  format(
-    path: string,
-    args: FluentArgs = {},
-    errors: FormatError[] = [],
-  ): string | null {
+  format(path: string, args: FluentArgs = {}, errors: FormatError[] = []): string | null {
     const [id, attr] = path.split(".", 2) as [string, string | undefined];
     const message = this.getMessage(id);
     if (!message) return null;
@@ -528,19 +494,14 @@ export class FluentBundle {
     }
     let out = "";
     for (const el of p)
-      out +=
-        typeof el === "string"
-          ? el
-          : this.display(this.expr(el, { ...scope, depth: scope.depth + 1 }));
+      out += typeof el === "string" ? el : this.display(this.expr(el, { ...scope, depth: scope.depth + 1 }));
     return out;
   }
 
   private display(v: FluentValue): string {
     if (typeof v === "string") return v;
-    if (typeof v === "number")
-      return new Intl.NumberFormat(this.locale).format(v);
-    if (v instanceof Date)
-      return new Intl.DateTimeFormat(this.locale).format(v);
+    if (typeof v === "number") return new Intl.NumberFormat(this.locale).format(v);
+    if (v instanceof Date) return new Intl.DateTimeFormat(this.locale).format(v);
     if (v instanceof FluentNumber) {
       const { type: _type, ...opts } = v.options;
       return new Intl.NumberFormat(this.locale, opts).format(v.value);
@@ -549,9 +510,7 @@ export class FluentBundle {
   }
 
   private literal(l: Literal): FluentValue {
-    return l.type === "str"
-      ? l.value
-      : new FluentNumber(l.value, { minimumFractionDigits: l.precision });
+    return l.type === "str" ? l.value : new FluentNumber(l.value, { minimumFractionDigits: l.precision });
   }
 
   private expr(e: Expression, scope: Scope): FluentValue {
@@ -611,7 +570,7 @@ export class FluentBundle {
         const named: Record<string, string | number> = {};
         for (const [k, l] of Object.entries(e.named)) named[k] = l.value;
         return fn(
-          e.positional.map((p) => this.expr(p, scope)),
+          e.positional.map(p => this.expr(p, scope)),
           named,
         );
       }
@@ -633,26 +592,16 @@ export class FluentBundle {
       type = sel.options.type ?? "cardinal";
     }
     if (n !== null) {
-      const exact = variants.findIndex(
-        (v) => v.key.type === "num" && v.key.value === n,
-      );
+      const exact = variants.findIndex(v => v.key.type === "num" && v.key.value === n);
       if (exact >= 0) return exact;
       let rules = this.plural.get(type);
-      if (!rules)
-        this.plural.set(
-          type,
-          (rules = new Intl.PluralRules(this.locale, { type })),
-        );
+      if (!rules) this.plural.set(type, (rules = new Intl.PluralRules(this.locale, { type })));
       const category = rules.select(n);
-      const i = variants.findIndex(
-        (v) => v.key.type === "name" && v.key.value === category,
-      );
+      const i = variants.findIndex(v => v.key.type === "name" && v.key.value === category);
       return i >= 0 ? i : null;
     }
     if (typeof sel === "string") {
-      const i = variants.findIndex(
-        (v) => v.key.type !== "num" && String(v.key.value) === sel,
-      );
+      const i = variants.findIndex(v => v.key.type !== "num" && String(v.key.value) === sel);
       return i >= 0 ? i : null;
     }
     return null;
@@ -675,8 +624,7 @@ export function patternVariables(p: Pattern | null): Set<string> {
     else if (e.type === "func") e.positional.forEach(walk);
     else if (e.type === "select") {
       walk(e.selector);
-      for (const v of e.variants)
-        if (typeof v.value !== "string") v.value.forEach(walk);
+      for (const v of e.variants) if (typeof v.value !== "string") v.value.forEach(walk);
     }
   };
   if (p && typeof p !== "string") p.forEach(walk);

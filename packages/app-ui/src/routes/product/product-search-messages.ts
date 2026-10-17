@@ -28,10 +28,7 @@ const en = {
   drive: "Drive tools",
 };
 export type ProductSearchMessages = { [K in keyof typeof en]: string };
-export const productSearchMessages: Record<
-  SupportedLanguage,
-  ProductSearchMessages
-> = {
+export const productSearchMessages: Record<SupportedLanguage, ProductSearchMessages> = {
   en,
   fr: {
     logo: "Logo Aphrody",
@@ -111,7 +108,4 @@ export const nativeGoogleMessages = {
     previous: "Previous",
     next: "Next",
   },
-} satisfies Record<
-  SupportedLanguage,
-  import("../studio/NativeGoogleStudio").GoogleStudioMessages
->;
+} satisfies Record<SupportedLanguage, import("../studio/NativeGoogleStudio").GoogleStudioMessages>;

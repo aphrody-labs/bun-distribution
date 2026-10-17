@@ -3,41 +3,121 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** d3d10.dll!D3D10CompileEffectFromMemory */
-  D3D10CompileEffectFromMemory(pData: Win32Pointer, DataLength: number | bigint, pSrcFileName: string | Win32Pointer, pDefines: Win32Pointer, pInclude: Win32Pointer, HLSLFlags: number, FXFlags: number, ppCompiledEffect: Win32Pointer, ppErrors: Win32Pointer): number;
+  D3D10CompileEffectFromMemory(
+    pData: Win32Pointer,
+    DataLength: number | bigint,
+    pSrcFileName: string | Win32Pointer,
+    pDefines: Win32Pointer,
+    pInclude: Win32Pointer,
+    HLSLFlags: number,
+    FXFlags: number,
+    ppCompiledEffect: Win32Pointer,
+    ppErrors: Win32Pointer,
+  ): number;
   /** d3d10.dll!D3D10CompileShader */
-  D3D10CompileShader(pSrcData: string | Win32Pointer, SrcDataSize: number | bigint, pFileName: string | Win32Pointer, pDefines: Win32Pointer, pInclude: Win32Pointer, pFunctionName: string | Win32Pointer, pProfile: string | Win32Pointer, Flags: number, ppShader: Win32Pointer, ppErrorMsgs: Win32Pointer): number;
+  D3D10CompileShader(
+    pSrcData: string | Win32Pointer,
+    SrcDataSize: number | bigint,
+    pFileName: string | Win32Pointer,
+    pDefines: Win32Pointer,
+    pInclude: Win32Pointer,
+    pFunctionName: string | Win32Pointer,
+    pProfile: string | Win32Pointer,
+    Flags: number,
+    ppShader: Win32Pointer,
+    ppErrorMsgs: Win32Pointer,
+  ): number;
   /** d3d10.dll!D3D10CreateBlob */
   D3D10CreateBlob(NumBytes: number | bigint, ppBuffer: Win32Pointer): number;
   /** d3d10.dll!D3D10CreateDevice */
-  D3D10CreateDevice(pAdapter: Win32Pointer, DriverType: number, Software: Win32Pointer, Flags: number, SDKVersion: number, ppDevice: Win32Pointer): number;
+  D3D10CreateDevice(
+    pAdapter: Win32Pointer,
+    DriverType: number,
+    Software: Win32Pointer,
+    Flags: number,
+    SDKVersion: number,
+    ppDevice: Win32Pointer,
+  ): number;
   /** d3d10.dll!D3D10CreateDeviceAndSwapChain */
-  D3D10CreateDeviceAndSwapChain(pAdapter: Win32Pointer, DriverType: number, Software: Win32Pointer, Flags: number, SDKVersion: number, pSwapChainDesc: Win32Pointer, ppSwapChain: Win32Pointer, ppDevice: Win32Pointer): number;
+  D3D10CreateDeviceAndSwapChain(
+    pAdapter: Win32Pointer,
+    DriverType: number,
+    Software: Win32Pointer,
+    Flags: number,
+    SDKVersion: number,
+    pSwapChainDesc: Win32Pointer,
+    ppSwapChain: Win32Pointer,
+    ppDevice: Win32Pointer,
+  ): number;
   /** d3d10.dll!D3D10CreateEffectFromMemory */
-  D3D10CreateEffectFromMemory(pData: Win32Pointer, DataLength: number | bigint, FXFlags: number, pDevice: Win32Pointer, pEffectPool: Win32Pointer, ppEffect: Win32Pointer): number;
+  D3D10CreateEffectFromMemory(
+    pData: Win32Pointer,
+    DataLength: number | bigint,
+    FXFlags: number,
+    pDevice: Win32Pointer,
+    pEffectPool: Win32Pointer,
+    ppEffect: Win32Pointer,
+  ): number;
   /** d3d10.dll!D3D10CreateEffectPoolFromMemory */
-  D3D10CreateEffectPoolFromMemory(pData: Win32Pointer, DataLength: number | bigint, FXFlags: number, pDevice: Win32Pointer, ppEffectPool: Win32Pointer): number;
+  D3D10CreateEffectPoolFromMemory(
+    pData: Win32Pointer,
+    DataLength: number | bigint,
+    FXFlags: number,
+    pDevice: Win32Pointer,
+    ppEffectPool: Win32Pointer,
+  ): number;
   /** d3d10.dll!D3D10CreateStateBlock */
   D3D10CreateStateBlock(pDevice: Win32Pointer, pStateBlockMask: Win32Pointer, ppStateBlock: Win32Pointer): number;
   /** d3d10.dll!D3D10DisassembleEffect */
   D3D10DisassembleEffect(pEffect: Win32Pointer, EnableColorCode: number, ppDisassembly: Win32Pointer): number;
   /** d3d10.dll!D3D10DisassembleShader */
-  D3D10DisassembleShader(pShader: Win32Pointer, BytecodeLength: number | bigint, EnableColorCode: number, pComments: string | Win32Pointer, ppDisassembly: Win32Pointer): number;
+  D3D10DisassembleShader(
+    pShader: Win32Pointer,
+    BytecodeLength: number | bigint,
+    EnableColorCode: number,
+    pComments: string | Win32Pointer,
+    ppDisassembly: Win32Pointer,
+  ): number;
   /** d3d10.dll!D3D10GetGeometryShaderProfile */
   D3D10GetGeometryShaderProfile(pDevice: Win32Pointer): number | null;
   /** d3d10.dll!D3D10GetInputAndOutputSignatureBlob */
-  D3D10GetInputAndOutputSignatureBlob(pShaderBytecode: Win32Pointer, BytecodeLength: number | bigint, ppSignatureBlob: Win32Pointer): number;
+  D3D10GetInputAndOutputSignatureBlob(
+    pShaderBytecode: Win32Pointer,
+    BytecodeLength: number | bigint,
+    ppSignatureBlob: Win32Pointer,
+  ): number;
   /** d3d10.dll!D3D10GetInputSignatureBlob */
-  D3D10GetInputSignatureBlob(pShaderBytecode: Win32Pointer, BytecodeLength: number | bigint, ppSignatureBlob: Win32Pointer): number;
+  D3D10GetInputSignatureBlob(
+    pShaderBytecode: Win32Pointer,
+    BytecodeLength: number | bigint,
+    ppSignatureBlob: Win32Pointer,
+  ): number;
   /** d3d10.dll!D3D10GetOutputSignatureBlob */
-  D3D10GetOutputSignatureBlob(pShaderBytecode: Win32Pointer, BytecodeLength: number | bigint, ppSignatureBlob: Win32Pointer): number;
+  D3D10GetOutputSignatureBlob(
+    pShaderBytecode: Win32Pointer,
+    BytecodeLength: number | bigint,
+    ppSignatureBlob: Win32Pointer,
+  ): number;
   /** d3d10.dll!D3D10GetPixelShaderProfile */
   D3D10GetPixelShaderProfile(pDevice: Win32Pointer): number | null;
   /** d3d10.dll!D3D10GetShaderDebugInfo */
-  D3D10GetShaderDebugInfo(pShaderBytecode: Win32Pointer, BytecodeLength: number | bigint, ppDebugInfo: Win32Pointer): number;
+  D3D10GetShaderDebugInfo(
+    pShaderBytecode: Win32Pointer,
+    BytecodeLength: number | bigint,
+    ppDebugInfo: Win32Pointer,
+  ): number;
   /** d3d10.dll!D3D10GetVertexShaderProfile */
   D3D10GetVertexShaderProfile(pDevice: Win32Pointer): number | null;
   /** d3d10.dll!D3D10PreprocessShader */
-  D3D10PreprocessShader(pSrcData: string | Win32Pointer, SrcDataSize: number | bigint, pFileName: string | Win32Pointer, pDefines: Win32Pointer, pInclude: Win32Pointer, ppShaderText: Win32Pointer, ppErrorMsgs: Win32Pointer): number;
+  D3D10PreprocessShader(
+    pSrcData: string | Win32Pointer,
+    SrcDataSize: number | bigint,
+    pFileName: string | Win32Pointer,
+    pDefines: Win32Pointer,
+    pInclude: Win32Pointer,
+    ppShaderText: Win32Pointer,
+    ppErrorMsgs: Win32Pointer,
+  ): number;
   /** d3d10.dll!D3D10ReflectShader */
   D3D10ReflectShader(pShaderBytecode: Win32Pointer, BytecodeLength: number | bigint, ppReflector: Win32Pointer): number;
   /** d3d10.dll!D3D10StateBlockMaskDifference */
@@ -45,11 +125,21 @@ interface Functions {
   /** d3d10.dll!D3D10StateBlockMaskDisableAll */
   D3D10StateBlockMaskDisableAll(pMask: Win32Pointer): number;
   /** d3d10.dll!D3D10StateBlockMaskDisableCapture */
-  D3D10StateBlockMaskDisableCapture(pMask: Win32Pointer, StateType: number, RangeStart: number, RangeLength: number): number;
+  D3D10StateBlockMaskDisableCapture(
+    pMask: Win32Pointer,
+    StateType: number,
+    RangeStart: number,
+    RangeLength: number,
+  ): number;
   /** d3d10.dll!D3D10StateBlockMaskEnableAll */
   D3D10StateBlockMaskEnableAll(pMask: Win32Pointer): number;
   /** d3d10.dll!D3D10StateBlockMaskEnableCapture */
-  D3D10StateBlockMaskEnableCapture(pMask: Win32Pointer, StateType: number, RangeStart: number, RangeLength: number): number;
+  D3D10StateBlockMaskEnableCapture(
+    pMask: Win32Pointer,
+    StateType: number,
+    RangeStart: number,
+    RangeLength: number,
+  ): number;
   /** d3d10.dll!D3D10StateBlockMaskGetSetting */
   D3D10StateBlockMaskGetSetting(pMask: Win32Pointer, StateType: number, Entry: number): number;
   /** d3d10.dll!D3D10StateBlockMaskIntersect */

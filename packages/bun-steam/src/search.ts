@@ -83,20 +83,10 @@ export function upsertCatalog(db: Database, rows: CatalogRow[]): void {
     for (const r of rows) {
       if (!r.name) continue;
       const old = get.get(r.appid) as Record<string, string | null> | null;
-      const pick = <T>(
-        v: T | null | undefined,
-        k: string,
-      ): T | string | null =>
+      const pick = <T>(v: T | null | undefined, k: string): T | string | null =>
         v === undefined || v === null || v === "" ? (old?.[k] ?? null) : v;
-      const tags = r.tags?.length
-        ? JSON.stringify(r.tags)
-        : (old?.tags ?? null);
-      const sources = [
-        ...new Set([
-          ...(old?.sources ? JSON.parse(old.sources) : []),
-          r.source,
-        ]),
-      ];
+      const tags = r.tags?.length ? JSON.stringify(r.tags) : (old?.tags ?? null);
+      const sources = [...new Set([...(old?.sources ? JSON.parse(old.sources) : []), r.source])];
       const row = [
         r.appid,
         r.name,
@@ -127,9 +117,7 @@ export function upsertCatalog(db: Database, rows: CatalogRow[]): void {
 }
 
 const tableExists = (db: Database, name: string): boolean =>
-  !!db
-    .query("SELECT 1 FROM sqlite_master WHERE type='table' AND name = ?")
-    .get(name);
+  !!db.query("SELECT 1 FROM sqlite_master WHERE type='table' AND name = ?").get(name);
 
 /** Rebuilds the catalog from the local PICS index (`app_info`) and store `appdetails` (`store_app`). */
 export function rebuildCatalog(db: Database): number {
@@ -152,9 +140,7 @@ export function rebuildCatalog(db: Database): number {
       let aliases: string | null = null;
       try {
         const kv = a.kv_json ? JSON.parse(a.kv_json) : null;
-        aliases =
-          kvStr(kvObj(kv, "appinfo", "common"), "aliases") ??
-          kvStr(kvObj(kv, "common"), "aliases");
+        aliases = kvStr(kvObj(kv, "appinfo", "common"), "aliases") ?? kvStr(kvObj(kv, "common"), "aliases");
       } catch {
         /* kv_json absent */
       }
@@ -165,9 +151,7 @@ export function rebuildCatalog(db: Database): number {
         type: a.type,
         developer: a.developer,
         publisher: a.publisher,
-        release: a.steam_release_date
-          ? new Date(a.steam_release_date * 1000).toISOString().slice(0, 10)
-          : null,
+        release: a.steam_release_date ? new Date(a.steam_release_date * 1000).toISOString().slice(0, 10) : null,
         source: "pics",
       });
     }
@@ -177,8 +161,7 @@ export function rebuildCatalog(db: Database): number {
         "SELECT appid, name, type, developers, publishers, release_date, genres, categories, price_initial, price_final, currency FROM store_app WHERE success = 1",
       )
       .all() as Record<string, string | number | null>[]) {
-      const list = (v: unknown) =>
-        typeof v === "string" ? (JSON.parse(v) as string[]) : [];
+      const list = (v: unknown) => (typeof v === "string" ? (JSON.parse(v) as string[]) : []);
       rows.push({
         appid: Number(s.appid),
         name: String(s.name ?? ""),
@@ -198,9 +181,7 @@ export function rebuildCatalog(db: Database): number {
       });
     }
   upsertCatalog(db, rows);
-  return (
-    db.query("SELECT COUNT(*) AS n FROM app_catalog").get() as { n: number }
-  ).n;
+  return (db.query("SELECT COUNT(*) AS n FROM app_catalog").get() as { n: number }).n;
 }
 
 /** Records the games installed on this machine (`local`) or listed by `manifests` of a remote host. */
@@ -220,7 +201,7 @@ export function recordInstalled(
   })();
   upsertCatalog(
     db,
-    games.map((g) => ({
+    games.map(g => ({
       appid: g.appid,
       name: g.name,
       source: `installed:${host}`,
@@ -229,14 +210,11 @@ export function recordInstalled(
   return games.length;
 }
 
-export function recordLocalInstalled(
-  db: Database,
-  steamRoot = resolveSteamRoot(),
-): number {
+export function recordLocalInstalled(db: Database, steamRoot = resolveSteamRoot()): number {
   return recordInstalled(
     db,
     "local",
-    installedGames(steamRoot).map((g) => ({
+    installedGames(steamRoot).map(g => ({
       appid: g.appId,
       name: g.name,
       library: g.library,
@@ -248,16 +226,12 @@ export function recordLocalInstalled(
  * Reads the app manifests of an SSH host (read-only `cat` of `appmanifest_*.acf` in every library of
  * `<root>/config/libraryfolders.vdf`) and records them under `host`.
  */
-export async function recordRemoteInstalled(
-  db: Database,
-  host: string,
-  root = "~/.steam/steam",
-): Promise<number> {
+export async function recordRemoteInstalled(db: Database, host: string, root = "~/.steam/steam"): Promise<number> {
   const script = `for d in $(grep -o '"path"[[:space:]]*"[^"]*"' ${root}/config/libraryfolders.vdf | cut -d'"' -f4); do for f in "$d"/steamapps/appmanifest_*.acf; do [ -f "$f" ] && { echo "//LIB $d"; cat "$f"; }; done; done`;
-  const proc = Bun.spawn(
-    ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", host, script],
-    { stdout: "pipe", stderr: "ignore" },
-  );
+  const proc = Bun.spawn(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", host, script], {
+    stdout: "pipe",
+    stderr: "ignore",
+  });
   const text = await new Response(proc.stdout).text();
   await proc.exited;
   const games: { appid: number; name: string; library: string }[] = [];
@@ -266,8 +240,7 @@ export async function recordRemoteInstalled(
     const library = part.slice(0, nl).trim();
     const st = kvObj(parseTextKv(part.slice(nl + 1)), "AppState");
     const appid = Number(kvStr(st, "appid"));
-    if (appid)
-      games.push({ appid, name: kvStr(st, "name") ?? String(appid), library });
+    if (appid) games.push({ appid, name: kvStr(st, "name") ?? String(appid), library });
   }
   return recordInstalled(db, host, games);
 }
@@ -278,17 +251,13 @@ const ftsQuery = (term: string): string =>
     .replace(/["*^():]/g, " ")
     .split(/\s+/)
     .filter(Boolean)
-    .map((t) => `"${t}"*`)
+    .map(t => `"${t}"*`)
     .join(" AND ");
 
 let lastStoreHit = 0;
 
 /** Live keyless store search (`api/storesearch`), one request at most every 300 ms. */
-export async function storeSearch(
-  term: string,
-  cc = "FR",
-  lang = "english",
-): Promise<CatalogRow[]> {
+export async function storeSearch(term: string, cc = "FR", lang = "english"): Promise<CatalogRow[]> {
   const wait = lastStoreHit + 300 - Date.now();
   if (wait > 0) await Bun.sleep(wait);
   lastStoreHit = Date.now();
@@ -309,7 +278,7 @@ export async function storeSearch(
       tiny_image?: string;
     }[];
   };
-  return (j.items ?? []).map((i) => ({
+  return (j.items ?? []).map(i => ({
     appid: i.id,
     name: i.name,
     // The store reports "app" for every title; keep the PICS type (Game, DLC, ...) when known.
@@ -325,19 +294,13 @@ export async function storeSearch(
  * store results; installed apps are flagged and slightly boosted. Live results are cached into the
  * local index so later searches find them offline.
  */
-export async function searchApps(
-  db: Database,
-  term: string,
-  opts: SearchOptions = {},
-): Promise<SearchHit[]> {
+export async function searchApps(db: Database, term: string, opts: SearchOptions = {}): Promise<SearchHit[]> {
   ensureSearchSchema(db);
   const q = term.trim();
   if (!q) return [];
   const limit = opts.limit ?? 20;
   const live =
-    opts.live !== false
-      ? storeSearch(q, opts.cc, opts.lang).catch(() => [])
-      : Promise.resolve([] as CatalogRow[]);
+    opts.live !== false ? storeSearch(q, opts.cc, opts.lang).catch(() => []) : Promise.resolve([] as CatalogRow[]);
   const hits = new Map<number, SearchHit>();
   const installed = new Map<number, string[]>();
   for (const r of db.query("SELECT appid, host FROM installed_app").all() as {
@@ -348,18 +311,10 @@ export async function searchApps(
   const lower = q.toLowerCase();
   const score = (appid: number, name: string, base: number) =>
     (String(appid) === q ? 1000 : 0) +
-    (name.toLowerCase() === lower
-      ? 900
-      : name.toLowerCase().startsWith(lower)
-        ? 400
-        : 0) +
+    (name.toLowerCase() === lower ? 900 : name.toLowerCase().startsWith(lower) ? 400 : 0) +
     base +
     (installed.has(appid) ? 25 : 0);
-  const toHit = (
-    r: Record<string, unknown>,
-    source: string,
-    base: number,
-  ): SearchHit => ({
+  const toHit = (r: Record<string, unknown>, source: string, base: number): SearchHit => ({
     appid: Number(r.appid),
     name: String(r.name),
     type: (r.type as string) ?? null,
@@ -367,19 +322,14 @@ export async function searchApps(
     developer: (r.developer as string) ?? null,
     publisher: (r.publisher as string) ?? null,
     tags: typeof r.tags === "string" ? JSON.parse(r.tags) : [],
-    price:
-      typeof r.price === "string"
-        ? JSON.parse(r.price)
-        : ((r.price as SearchHit["price"]) ?? null),
+    price: typeof r.price === "string" ? JSON.parse(r.price) : ((r.price as SearchHit["price"]) ?? null),
     image: (r.image as string) ?? null,
     installed: installed.get(Number(r.appid)) ?? [],
     sources: [source],
     score: score(Number(r.appid), String(r.name), base),
   });
   if (/^\d+$/.test(q)) {
-    const row = db
-      .query("SELECT * FROM app_catalog WHERE appid = ?")
-      .get(Number(q)) as Record<string, unknown> | null;
+    const row = db.query("SELECT * FROM app_catalog WHERE appid = ?").get(Number(q)) as Record<string, unknown> | null;
     if (row) hits.set(row.appid as number, toHit(row, "fts", 0));
   }
   const fts = ftsQuery(q);
@@ -391,8 +341,7 @@ export async function searchApps(
         )
         .all(fts, limit * 2) as Record<string, unknown>[]
     ).entries())
-      if (!hits.has(r.appid as number))
-        hits.set(r.appid as number, toHit(r, "fts", 300 - i));
+      if (!hits.has(r.appid as number)) hits.set(r.appid as number, toHit(r, "fts", 300 - i));
   const liveRows = await live;
   if (liveRows.length) upsertCatalog(db, liveRows);
   for (const [i, r] of liveRows.entries()) {
@@ -402,11 +351,7 @@ export async function searchApps(
       seen.price ??= r.price ?? null;
       seen.image ??= r.image ?? null;
       seen.score += 50;
-    } else
-      hits.set(
-        r.appid,
-        toHit(r as unknown as Record<string, unknown>, "store", 200 - i),
-      );
+    } else hits.set(r.appid, toHit(r as unknown as Record<string, unknown>, "store", 200 - i));
   }
   return [...hits.values()].sort((a, b) => b.score - a.score).slice(0, limit);
 }

@@ -3,7 +3,14 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-memory-l1-1-4.dll!QueryVirtualMemoryInformation */
-  QueryVirtualMemoryInformation(Process: Win32Pointer, VirtualAddress: Win32Pointer, MemoryInformationClass: number, MemoryInformation: Win32Pointer, MemoryInformationSize: number | bigint, ReturnSize: Win32Pointer): number;
+  QueryVirtualMemoryInformation(
+    Process: Win32Pointer,
+    VirtualAddress: Win32Pointer,
+    MemoryInformationClass: number,
+    MemoryInformation: Win32Pointer,
+    MemoryInformationSize: number | bigint,
+    ReturnSize: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

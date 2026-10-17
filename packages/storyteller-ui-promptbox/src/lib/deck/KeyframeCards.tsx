@@ -3,12 +3,7 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { ArrowLeftRightIcon, PlusIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { DeckAddAction, DeckItem } from "./deckTypes";
-import {
-  DeckAddMenu,
-  DeckCard,
-  DeckPreviewModal,
-  DeckStyles,
-} from "./DeckCard";
+import { DeckAddMenu, DeckCard, DeckPreviewModal, DeckStyles } from "./DeckCard";
 
 interface KeyframeCardsProps {
   firstFrame?: DeckItem;
@@ -43,12 +38,7 @@ export const KeyframeCards = ({
   const [previewItem, setPreviewItem] = useState<DeckItem | null>(null);
 
   return (
-    <div
-      className={twMerge(
-        "relative flex shrink-0 items-center self-start",
-        className,
-      )}
-    >
+    <div className={twMerge("relative flex shrink-0 items-center self-start", className)}>
       <DeckStyles />
 
       <DeckSlotCard
@@ -90,10 +80,7 @@ export const KeyframeCards = ({
         </>
       )}
 
-      <DeckPreviewModal
-        item={previewItem}
-        onClose={() => setPreviewItem(null)}
-      />
+      <DeckPreviewModal item={previewItem} onClose={() => setPreviewItem(null)} />
     </div>
   );
 };
@@ -119,7 +106,7 @@ export const DeckSlotCard = ({
   onRemove?: () => void;
   onPreview: (item: DeckItem) => void;
 }) => {
-  const enabledActions = addActions.filter((a) => !a.disabled);
+  const enabledActions = addActions.filter(a => !a.disabled);
 
   if (item) {
     return (
@@ -130,9 +117,7 @@ export const DeckSlotCard = ({
           onClick={() => onPreview(item)}
           className={twMerge(tiltClass, "hover:z-10 hover:rotate-0")}
         />
-        <span className="text-[9px] font-medium leading-none text-base-fg/60">
-          {label}
-        </span>
+        <span className="text-[9px] font-medium leading-none text-base-fg/60">{label}</span>
       </div>
     );
   }
@@ -147,9 +132,7 @@ export const DeckSlotCard = ({
       )}
     >
       <PlusIcon className="text-lg opacity-80" />
-      <span className="px-0.5 text-center text-[8px] font-medium leading-tight opacity-70">
-        {label}
-      </span>
+      <span className="px-0.5 text-center text-[8px] font-medium leading-tight opacity-70">{label}</span>
     </button>
   );
 

@@ -23,7 +23,12 @@ interface Functions {
   /** d3d9.dll!Direct3DCreate9On12 */
   Direct3DCreate9On12(SDKVersion: number, pOverrideList: Win32Pointer, NumOverrideEntries: number): number | null;
   /** d3d9.dll!Direct3DCreate9On12Ex */
-  Direct3DCreate9On12Ex(SDKVersion: number, pOverrideList: Win32Pointer, NumOverrideEntries: number, ppOutputInterface: Win32Pointer): number;
+  Direct3DCreate9On12Ex(
+    SDKVersion: number,
+    pOverrideList: Win32Pointer,
+    NumOverrideEntries: number,
+    ppOutputInterface: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

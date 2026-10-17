@@ -7,21 +7,14 @@ interface UseFileUploadOptions {
   onFilesSelected?: (files: File[]) => void;
 }
 
-export function useFileUpload({
-  accept,
-  multiple,
-  onFilesSelected,
-}: UseFileUploadOptions = {}) {
+export function useFileUpload({ accept, multiple, onFilesSelected }: UseFileUploadOptions = {}) {
   const editor = useEditor();
   const [isDragOver, setIsDragOver] = useState(false);
   const dragCounterRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function containsFiles(dataTransfer: DataTransfer): boolean {
-    return (
-      !editor.timeline.dragSource.isActive() &&
-      dataTransfer.types.includes("Files")
-    );
+    return !editor.timeline.dragSource.isActive() && dataTransfer.types.includes("Files");
   }
 
   function openFilePicker() {

@@ -9,33 +9,22 @@ import { forwardRef } from "react";
 
 import { type StateClassName, withClassName } from "./base-ui";
 
-export interface RootProps extends Omit<
-  RadioGroupPrimitive.Props<string>,
-  "className" | "onValueChange"
-> {
+export interface RootProps extends Omit<RadioGroupPrimitive.Props<string>, "className" | "onValueChange"> {
   className?: StateClassName<RadioGroupPrimitive.State>;
-  onValueChange?: (
-    value: string,
-    eventDetails: RadioGroupPrimitive.ChangeEventDetails,
-  ) => void;
+  onValueChange?: (value: string, eventDetails: RadioGroupPrimitive.ChangeEventDetails) => void;
 }
 
 /** Base UI radio group (`role="radiogroup"`, roving focus, arrow-key selection, hidden input). */
-export const Root = forwardRef<HTMLDivElement, RootProps>(
-  ({ className, onValueChange, ...props }, ref) => {
-    return (
-      <RadioGroupPrimitive
-        {...props}
-        ref={ref}
-        onValueChange={
-          onValueChange &&
-          ((value, details) => onValueChange(value as string, details))
-        }
-        className={withClassName("space-y-3", className)}
-      />
-    );
-  },
-);
+export const Root = forwardRef<HTMLDivElement, RootProps>(({ className, onValueChange, ...props }, ref) => {
+  return (
+    <RadioGroupPrimitive
+      {...props}
+      ref={ref}
+      onValueChange={onValueChange && ((value, details) => onValueChange(value as string, details))}
+      className={withClassName("space-y-3", className)}
+    />
+  );
+});
 
 Root.displayName = "RadioGroupRoot";
 

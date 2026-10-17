@@ -46,10 +46,7 @@ describe("m3BunBuild native preset", () => {
   });
 
   test("bundles TypeScript code into dist using Bun.build", async () => {
-    await Bun.write(
-      join(dir, "src", "index.ts"),
-      `export const greet = (name: string): string => 'Hello ' + name;`,
-    );
+    await Bun.write(join(dir, "src", "index.ts"), `export const greet = (name: string): string => 'Hello ' + name;`);
 
     const result = await m3BunBuild({
       entry: "src/index.ts",
@@ -84,12 +81,8 @@ describe("m3BunBuild native preset", () => {
     await Bun.write(join(dist, "index.js.map"), "{}");
     expect(await prependUseClient(dist, ["react.js", "sub/link.js"])).toBe(2);
     expect(await Bun.file(join(dist, "index.js")).text()).toBe("export {};\n");
-    expect(await Bun.file(join(dist, "react.js")).text()).toStartWith(
-      DIRECTIVE,
-    );
-    expect(await Bun.file(join(dist, "sub", "link.js")).text()).toStartWith(
-      DIRECTIVE,
-    );
+    expect(await Bun.file(join(dist, "react.js")).text()).toStartWith(DIRECTIVE);
+    expect(await Bun.file(join(dist, "sub", "link.js")).text()).toStartWith(DIRECTIVE);
     expect(await Bun.file(join(dist, "index.js.map")).text()).toBe("{}");
   });
 
@@ -105,9 +98,7 @@ describe("m3BunBuild native preset", () => {
   });
 
   test("the output layout is based on the deepest common directory of the entries", () => {
-    expect(commonDir(["/p/src/index.ts", "/p/src/shims/link.ts"])).toBe(
-      "/p/src",
-    );
+    expect(commonDir(["/p/src/index.ts", "/p/src/shims/link.ts"])).toBe("/p/src");
     expect(commonDir(["/p/index.ts", "/p/wrappers/a.ts"])).toBe("/p");
     expect(commonDir(["/p/a/x.ts", "/q/b/y.ts"])).toBe("/");
   });
@@ -123,14 +114,8 @@ describe("m3BunBuild native preset", () => {
   });
 
   test("a build of several entries keeps the src-relative layout, splits shared code and marks the listed entries", async () => {
-    await Bun.write(
-      join(dir, "src", "shared.ts"),
-      "export const shared = () => 'shared';\n",
-    );
-    await Bun.write(
-      join(dir, "src", "a.ts"),
-      "import { shared } from './shared'; export const a = shared() + 'a';\n",
-    );
+    await Bun.write(join(dir, "src", "shared.ts"), "export const shared = () => 'shared';\n");
+    await Bun.write(join(dir, "src", "a.ts"), "import { shared } from './shared'; export const a = shared() + 'a';\n");
     await Bun.write(
       join(dir, "src", "react.tsx"),
       "import { shared } from './shared'; export const r = shared() + 'r';\n",
@@ -141,12 +126,8 @@ describe("m3BunBuild native preset", () => {
       useClient: ["react.js"],
     });
     expect(result.success).toBe(true);
-    expect(await Bun.file(join(dir, "dist", "a.js")).text()).not.toStartWith(
-      DIRECTIVE,
-    );
-    expect(await Bun.file(join(dir, "dist", "react.js")).text()).toStartWith(
-      DIRECTIVE,
-    );
+    expect(await Bun.file(join(dir, "dist", "a.js")).text()).not.toStartWith(DIRECTIVE);
+    expect(await Bun.file(join(dir, "dist", "react.js")).text()).toStartWith(DIRECTIVE);
   });
 
   test("a build error is returned, not thrown", async () => {
@@ -169,41 +150,18 @@ describe("externals", () => {
     );
     const list = externals(dir, ["bun:*"]);
     expect(list).toEqual(
-      expect.arrayContaining([
-        ...M3_EXTERNAL,
-        "node:*",
-        "swiper",
-        "swiper/*",
-        "@scope/x",
-        "@scope/x/*",
-        "bun:*",
-      ]),
+      expect.arrayContaining([...M3_EXTERNAL, "node:*", "swiper", "swiper/*", "@scope/x", "@scope/x/*", "bun:*"]),
     );
     expect(list).not.toContain("bundled");
     expect(new Set(list).size).toBe(list.length);
   });
 
   test("a dependency stays an import and a dev-only package is bundled in", async () => {
-    await Bun.write(
-      join(dir, "package.json"),
-      JSON.stringify({ dependencies: { kept: "1" } }),
-    );
-    await Bun.write(
-      join(dir, "node_modules", "kept", "package.json"),
-      '{"name":"kept","main":"index.js"}',
-    );
-    await Bun.write(
-      join(dir, "node_modules", "kept", "index.js"),
-      "export const kept = 'KEPT-BODY';\n",
-    );
-    await Bun.write(
-      join(dir, "node_modules", "inlined", "package.json"),
-      '{"name":"inlined","main":"index.js"}',
-    );
-    await Bun.write(
-      join(dir, "node_modules", "inlined", "index.js"),
-      "export const inlined = 'INLINED-BODY';\n",
-    );
+    await Bun.write(join(dir, "package.json"), JSON.stringify({ dependencies: { kept: "1" } }));
+    await Bun.write(join(dir, "node_modules", "kept", "package.json"), '{"name":"kept","main":"index.js"}');
+    await Bun.write(join(dir, "node_modules", "kept", "index.js"), "export const kept = 'KEPT-BODY';\n");
+    await Bun.write(join(dir, "node_modules", "inlined", "package.json"), '{"name":"inlined","main":"index.js"}');
+    await Bun.write(join(dir, "node_modules", "inlined", "index.js"), "export const inlined = 'INLINED-BODY';\n");
     await Bun.write(
       join(dir, "src", "index.ts"),
       "import { kept } from 'kept'; import { inlined } from 'inlined'; export const both = kept + inlined;\n",

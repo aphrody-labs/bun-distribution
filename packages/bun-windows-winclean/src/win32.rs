@@ -25,13 +25,20 @@ pub(crate) fn wide(value: &str) -> Vec<u16> {
 
 /// Borrow a NUL-terminated UTF-16 buffer produced by [`wide`] as a `PCWSTR`.
 pub(crate) fn pcwstr(buffer: &[u16]) -> PCWSTR {
-    debug_assert_eq!(buffer.last(), Some(&0), "PCWSTR buffers must be NUL-terminated");
+    debug_assert_eq!(
+        buffer.last(),
+        Some(&0),
+        "PCWSTR buffers must be NUL-terminated"
+    );
     PCWSTR(buffer.as_ptr())
 }
 
 /// Decode UTF-16 up to the first NUL (or the whole slice when there is none).
 pub(crate) fn from_wide(units: &[u16]) -> String {
-    let end = units.iter().position(|&unit| unit == 0).unwrap_or(units.len());
+    let end = units
+        .iter()
+        .position(|&unit| unit == 0)
+        .unwrap_or(units.len());
     String::from_utf16_lossy(&units[..end])
 }
 
@@ -73,7 +80,10 @@ pub(crate) fn hresult_error(error: &windows::core::Error, context: &str) -> io::
     if hr & 0xFFFF_0000 == 0x8007_0000 {
         return win32_error(WIN32_ERROR(hr & 0xFFFF), context);
     }
-    io::Error::other(format!("{context}: {} (HRESULT 0x{hr:08X})", error.message()))
+    io::Error::other(format!(
+        "{context}: {} (HRESULT 0x{hr:08X})",
+        error.message()
+    ))
 }
 
 /// Win32 error code carried by a `windows::core::Error`, when it wraps one.
@@ -99,7 +109,10 @@ impl ComScope {
         } else if hr == RPC_E_CHANGED_MODE {
             Ok(Self { initialized: false })
         } else {
-            Err(io::Error::other(format!("CoInitializeEx failed: HRESULT 0x{:08X}", hr.0 as u32)))
+            Err(io::Error::other(format!(
+                "CoInitializeEx failed: HRESULT 0x{:08X}",
+                hr.0 as u32
+            )))
         }
     }
 }

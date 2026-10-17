@@ -5,7 +5,11 @@ interface Functions {
   /** api-ms-win-gaming-tcui-l1-1-4.dll!ShowCustomizeUserProfileUI */
   ShowCustomizeUserProfileUI(completionRoutine: Win32Callback, context: Win32Pointer): number;
   /** api-ms-win-gaming-tcui-l1-1-4.dll!ShowCustomizeUserProfileUIForUser */
-  ShowCustomizeUserProfileUIForUser(user: Win32Pointer, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  ShowCustomizeUserProfileUIForUser(
+    user: Win32Pointer,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-4.dll!ShowFindFriendsUI */
   ShowFindFriendsUI(completionRoutine: Win32Callback, context: Win32Pointer): number;
   /** api-ms-win-gaming-tcui-l1-1-4.dll!ShowFindFriendsUIForUser */
@@ -13,7 +17,12 @@ interface Functions {
   /** api-ms-win-gaming-tcui-l1-1-4.dll!ShowGameInfoUI */
   ShowGameInfoUI(titleId: number, completionRoutine: Win32Callback, context: Win32Pointer): number;
   /** api-ms-win-gaming-tcui-l1-1-4.dll!ShowGameInfoUIForUser */
-  ShowGameInfoUIForUser(user: Win32Pointer, titleId: number, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  ShowGameInfoUIForUser(
+    user: Win32Pointer,
+    titleId: number,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-4.dll!ShowUserSettingsUI */
   ShowUserSettingsUI(completionRoutine: Win32Callback, context: Win32Pointer): number;
   /** api-ms-win-gaming-tcui-l1-1-4.dll!ShowUserSettingsUIForUser */

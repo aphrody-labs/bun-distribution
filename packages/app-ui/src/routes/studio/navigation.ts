@@ -8,16 +8,13 @@ export const studioSections = [
   { id: "runtime", label: "Moteur", icon: "memory" },
 ] as const;
 export type StudioSection = (typeof studioSections)[number]["id"];
-export function studioLabel(
-  section: StudioSection,
-  language: SupportedLanguage,
-): string {
+export function studioLabel(section: StudioSection, language: SupportedLanguage): string {
   return section === "google"
     ? nativeGoogleMessages[language].title
-    : studioSections.find((entry) => entry.id === section)!.label;
+    : studioSections.find(entry => entry.id === section)!.label;
 }
 export function studioSection(value: string | null): StudioSection {
-  return studioSections.find((entry) => entry.id === value)?.id ?? "a2a";
+  return studioSections.find(entry => entry.id === value)?.id ?? "a2a";
 }
 export function studioPath(section: StudioSection): string {
   return "/studio?section=" + section;

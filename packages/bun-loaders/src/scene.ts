@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: MIT
 /** Read-only 3D scene inspection: glTF/GLB and OBJ natively, every other format through bun-blender. */
 import { extname, resolve } from "node:path";
-import {
-  evalPython,
-  info,
-  jsonPython,
-} from "../../bun-blender/src/headless.ts";
+import { evalPython, info, jsonPython } from "../../bun-blender/src/headless.ts";
 
 export interface SceneInfo {
   path: string;
@@ -44,26 +40,25 @@ function gltf(
   path: string,
   format: string,
 ): SceneInfo {
-  const list = (k: string) =>
-    Array.isArray(json[k]) ? (json[k] as Record<string, unknown>[]) : [];
+  const list = (k: string) => (Array.isArray(json[k]) ? (json[k] as Record<string, unknown>[]) : []);
   return {
     path,
     format,
     backend: "native",
     asset: json.asset,
     extensionsUsed: json.extensionsUsed ?? [],
-    scenes: list("scenes").map((s) => s.name ?? null),
-    nodes: list("nodes").map((n) => n.name ?? null),
-    meshes: list("meshes").map((m) => ({
+    scenes: list("scenes").map(s => s.name ?? null),
+    nodes: list("nodes").map(n => n.name ?? null),
+    meshes: list("meshes").map(m => ({
       name: m.name ?? null,
       primitives: (m.primitives as unknown[] | undefined)?.length ?? 0,
     })),
-    materials: list("materials").map((m) => m.name ?? null),
-    animations: list("animations").map((a) => a.name ?? null),
+    materials: list("materials").map(m => m.name ?? null),
+    animations: list("animations").map(a => a.name ?? null),
     skins: list("skins").length,
     textures: list("textures").length,
-    images: list("images").map((i) => i.uri ?? i.name ?? null),
-    buffers: list("buffers").map((b) => ({
+    images: list("images").map(i => i.uri ?? i.name ?? null),
+    buffers: list("buffers").map(b => ({
       uri: b.uri ?? null,
       byteLength: b.byteLength,
     })),
@@ -107,21 +102,15 @@ export async function inspectScene(input: string): Promise<SceneInfo> {
   if (ext === ".glb") {
     const bytes = await Bun.file(path).bytes();
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    if (view.getUint32(0, true) !== 0x46546c67)
-      throw new TypeError(`not a GLB file: ${path}`);
+    if (view.getUint32(0, true) !== 0x46546c67) throw new TypeError(`not a GLB file: ${path}`);
     const length = view.getUint32(12, true);
     return {
-      ...gltf(
-        JSON.parse(new TextDecoder().decode(bytes.subarray(20, 20 + length))),
-        path,
-        "glb",
-      ),
+      ...gltf(JSON.parse(new TextDecoder().decode(bytes.subarray(20, 20 + length))), path, "glb"),
       version: view.getUint32(4, true),
     };
   }
   if (ext === ".obj") return obj(path);
-  if (ext === ".blend")
-    return { path, format: "blend", backend: "blender", ...(await info(path)) };
+  if (ext === ".blend") return { path, format: "blend", backend: "blender", ...(await info(path)) };
   const importer = IMPORTERS[ext];
   if (!importer) throw new TypeError(`unsupported 3D format: ${ext}`);
   const code = jsonPython(SUMMARY).replace(

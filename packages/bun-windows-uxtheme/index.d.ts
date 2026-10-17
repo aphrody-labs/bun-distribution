@@ -3,9 +3,24 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** uxtheme.dll!BeginBufferedAnimation */
-  BeginBufferedAnimation(hwnd: Win32Pointer, hdcTarget: Win32Pointer, prcTarget: Win32Pointer, dwFormat: number, pPaintParams: Win32Pointer, pAnimationParams: Win32Pointer, phdcFrom: Win32Pointer, phdcTo: Win32Pointer): number | bigint;
+  BeginBufferedAnimation(
+    hwnd: Win32Pointer,
+    hdcTarget: Win32Pointer,
+    prcTarget: Win32Pointer,
+    dwFormat: number,
+    pPaintParams: Win32Pointer,
+    pAnimationParams: Win32Pointer,
+    phdcFrom: Win32Pointer,
+    phdcTo: Win32Pointer,
+  ): number | bigint;
   /** uxtheme.dll!BeginBufferedPaint */
-  BeginBufferedPaint(hdcTarget: Win32Pointer, prcTarget: Win32Pointer, dwFormat: number, pPaintParams: Win32Pointer, phdc: Win32Pointer): number | bigint;
+  BeginBufferedPaint(
+    hdcTarget: Win32Pointer,
+    prcTarget: Win32Pointer,
+    dwFormat: number,
+    pPaintParams: Win32Pointer,
+    phdc: Win32Pointer,
+  ): number | bigint;
   /** uxtheme.dll!BeginPanningFeedback */
   BeginPanningFeedback(hwnd: Win32Pointer): number;
   /** uxtheme.dll!BufferedPaintClear */
@@ -23,21 +38,72 @@ interface Functions {
   /** uxtheme.dll!CloseThemeData */
   CloseThemeData(hTheme: number | bigint): number;
   /** uxtheme.dll!DrawThemeBackground */
-  DrawThemeBackground(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, pRect: Win32Pointer, pClipRect: Win32Pointer): number;
+  DrawThemeBackground(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    pRect: Win32Pointer,
+    pClipRect: Win32Pointer,
+  ): number;
   /** uxtheme.dll!DrawThemeBackgroundEx */
-  DrawThemeBackgroundEx(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, pRect: Win32Pointer, pOptions: Win32Pointer): number;
+  DrawThemeBackgroundEx(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    pRect: Win32Pointer,
+    pOptions: Win32Pointer,
+  ): number;
   /** uxtheme.dll!DrawThemeEdge */
-  DrawThemeEdge(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, pDestRect: Win32Pointer, uEdge: number, uFlags: number, pContentRect: Win32Pointer): number;
+  DrawThemeEdge(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    pDestRect: Win32Pointer,
+    uEdge: number,
+    uFlags: number,
+    pContentRect: Win32Pointer,
+  ): number;
   /** uxtheme.dll!DrawThemeIcon */
-  DrawThemeIcon(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, pRect: Win32Pointer, himl: number | bigint, iImageIndex: number): number;
+  DrawThemeIcon(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    pRect: Win32Pointer,
+    himl: number | bigint,
+    iImageIndex: number,
+  ): number;
   /** uxtheme.dll!DrawThemeParentBackground */
   DrawThemeParentBackground(hwnd: Win32Pointer, hdc: Win32Pointer, prc: Win32Pointer): number;
   /** uxtheme.dll!DrawThemeParentBackgroundEx */
   DrawThemeParentBackgroundEx(hwnd: Win32Pointer, hdc: Win32Pointer, dwFlags: number, prc: Win32Pointer): number;
   /** uxtheme.dll!DrawThemeText */
-  DrawThemeText(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, pszText: string | Win32Pointer, cchText: number, dwTextFlags: number, dwTextFlags2: number, pRect: Win32Pointer): number;
+  DrawThemeText(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    pszText: string | Win32Pointer,
+    cchText: number,
+    dwTextFlags: number,
+    dwTextFlags2: number,
+    pRect: Win32Pointer,
+  ): number;
   /** uxtheme.dll!DrawThemeTextEx */
-  DrawThemeTextEx(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, pszText: string | Win32Pointer, cchText: number, dwTextFlags: number, pRect: Win32Pointer, pOptions: Win32Pointer): number;
+  DrawThemeTextEx(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    pszText: string | Win32Pointer,
+    cchText: number,
+    dwTextFlags: number,
+    pRect: Win32Pointer,
+    pOptions: Win32Pointer,
+  ): number;
   /** uxtheme.dll!EnableThemeDialogTexture */
   EnableThemeDialogTexture(hwnd: Win32Pointer, dwFlags: number): number;
   /** uxtheme.dll!EnableTheming */
@@ -57,53 +123,203 @@ interface Functions {
   /** uxtheme.dll!GetBufferedPaintTargetRect */
   GetBufferedPaintTargetRect(hBufferedPaint: number | bigint, prc: Win32Pointer): number;
   /** uxtheme.dll!GetCurrentThemeName */
-  GetCurrentThemeName(pszThemeFileName: string | Win32Pointer, cchMaxNameChars: number, pszColorBuff: string | Win32Pointer, cchMaxColorChars: number, pszSizeBuff: string | Win32Pointer, cchMaxSizeChars: number): number;
+  GetCurrentThemeName(
+    pszThemeFileName: string | Win32Pointer,
+    cchMaxNameChars: number,
+    pszColorBuff: string | Win32Pointer,
+    cchMaxColorChars: number,
+    pszSizeBuff: string | Win32Pointer,
+    cchMaxSizeChars: number,
+  ): number;
   /** uxtheme.dll!GetThemeAnimationProperty */
-  GetThemeAnimationProperty(hTheme: number | bigint, iStoryboardId: number, iTargetId: number, eProperty: number, pvProperty: Win32Pointer, cbSize: number, pcbSizeOut: Win32Pointer): number;
+  GetThemeAnimationProperty(
+    hTheme: number | bigint,
+    iStoryboardId: number,
+    iTargetId: number,
+    eProperty: number,
+    pvProperty: Win32Pointer,
+    cbSize: number,
+    pcbSizeOut: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeAnimationTransform */
-  GetThemeAnimationTransform(hTheme: number | bigint, iStoryboardId: number, iTargetId: number, dwTransformIndex: number, pTransform: Win32Pointer, cbSize: number, pcbSizeOut: Win32Pointer): number;
+  GetThemeAnimationTransform(
+    hTheme: number | bigint,
+    iStoryboardId: number,
+    iTargetId: number,
+    dwTransformIndex: number,
+    pTransform: Win32Pointer,
+    cbSize: number,
+    pcbSizeOut: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeAppProperties */
   GetThemeAppProperties(): number;
   /** uxtheme.dll!GetThemeBackgroundContentRect */
-  GetThemeBackgroundContentRect(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, pBoundingRect: Win32Pointer, pContentRect: Win32Pointer): number;
+  GetThemeBackgroundContentRect(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    pBoundingRect: Win32Pointer,
+    pContentRect: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeBackgroundExtent */
-  GetThemeBackgroundExtent(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, pContentRect: Win32Pointer, pExtentRect: Win32Pointer): number;
+  GetThemeBackgroundExtent(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    pContentRect: Win32Pointer,
+    pExtentRect: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeBackgroundRegion */
-  GetThemeBackgroundRegion(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, pRect: Win32Pointer, pRegion: Win32Pointer): number;
+  GetThemeBackgroundRegion(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    pRect: Win32Pointer,
+    pRegion: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeBitmap */
-  GetThemeBitmap(hTheme: number | bigint, iPartId: number, iStateId: number, iPropId: number, dwFlags: number, phBitmap: Win32Pointer): number;
+  GetThemeBitmap(
+    hTheme: number | bigint,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    dwFlags: number,
+    phBitmap: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeBool */
-  GetThemeBool(hTheme: number | bigint, iPartId: number, iStateId: number, iPropId: number, pfVal: Win32Pointer): number;
+  GetThemeBool(
+    hTheme: number | bigint,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    pfVal: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeColor */
-  GetThemeColor(hTheme: number | bigint, iPartId: number, iStateId: number, iPropId: number, pColor: Win32Pointer): number;
+  GetThemeColor(
+    hTheme: number | bigint,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    pColor: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeDocumentationProperty */
-  GetThemeDocumentationProperty(pszThemeName: string | Win32Pointer, pszPropertyName: string | Win32Pointer, pszValueBuff: string | Win32Pointer, cchMaxValChars: number): number;
+  GetThemeDocumentationProperty(
+    pszThemeName: string | Win32Pointer,
+    pszPropertyName: string | Win32Pointer,
+    pszValueBuff: string | Win32Pointer,
+    cchMaxValChars: number,
+  ): number;
   /** uxtheme.dll!GetThemeEnumValue */
-  GetThemeEnumValue(hTheme: number | bigint, iPartId: number, iStateId: number, iPropId: number, piVal: Win32Pointer): number;
+  GetThemeEnumValue(
+    hTheme: number | bigint,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    piVal: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeFilename */
-  GetThemeFilename(hTheme: number | bigint, iPartId: number, iStateId: number, iPropId: number, pszThemeFileName: string | Win32Pointer, cchMaxBuffChars: number): number;
+  GetThemeFilename(
+    hTheme: number | bigint,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    pszThemeFileName: string | Win32Pointer,
+    cchMaxBuffChars: number,
+  ): number;
   /** uxtheme.dll!GetThemeFont */
-  GetThemeFont(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, iPropId: number, pFont: Win32Pointer): number;
+  GetThemeFont(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    pFont: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeInt */
   GetThemeInt(hTheme: number | bigint, iPartId: number, iStateId: number, iPropId: number, piVal: Win32Pointer): number;
   /** uxtheme.dll!GetThemeIntList */
-  GetThemeIntList(hTheme: number | bigint, iPartId: number, iStateId: number, iPropId: number, pIntList: Win32Pointer): number;
+  GetThemeIntList(
+    hTheme: number | bigint,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    pIntList: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeMargins */
-  GetThemeMargins(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, iPropId: number, prc: Win32Pointer, pMargins: Win32Pointer): number;
+  GetThemeMargins(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    prc: Win32Pointer,
+    pMargins: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeMetric */
-  GetThemeMetric(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, iPropId: number, piVal: Win32Pointer): number;
+  GetThemeMetric(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    piVal: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemePartSize */
-  GetThemePartSize(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, prc: Win32Pointer, eSize: number, psz: Win32Pointer): number;
+  GetThemePartSize(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    prc: Win32Pointer,
+    eSize: number,
+    psz: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemePosition */
-  GetThemePosition(hTheme: number | bigint, iPartId: number, iStateId: number, iPropId: number, pPoint: Win32Pointer): number;
+  GetThemePosition(
+    hTheme: number | bigint,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    pPoint: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemePropertyOrigin */
-  GetThemePropertyOrigin(hTheme: number | bigint, iPartId: number, iStateId: number, iPropId: number, pOrigin: Win32Pointer): number;
+  GetThemePropertyOrigin(
+    hTheme: number | bigint,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    pOrigin: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeRect */
-  GetThemeRect(hTheme: number | bigint, iPartId: number, iStateId: number, iPropId: number, pRect: Win32Pointer): number;
+  GetThemeRect(
+    hTheme: number | bigint,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    pRect: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeStream */
-  GetThemeStream(hTheme: number | bigint, iPartId: number, iStateId: number, iPropId: number, ppvStream: Win32Pointer, pcbStream: Win32Pointer, hInst: Win32Pointer): number;
+  GetThemeStream(
+    hTheme: number | bigint,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    ppvStream: Win32Pointer,
+    pcbStream: Win32Pointer,
+    hInst: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeString */
-  GetThemeString(hTheme: number | bigint, iPartId: number, iStateId: number, iPropId: number, pszBuff: string | Win32Pointer, cchMaxBuffChars: number): number;
+  GetThemeString(
+    hTheme: number | bigint,
+    iPartId: number,
+    iStateId: number,
+    iPropId: number,
+    pszBuff: string | Win32Pointer,
+    cchMaxBuffChars: number,
+  ): number;
   /** uxtheme.dll!GetThemeSysBool */
   GetThemeSysBool(hTheme: number | bigint, iBoolId: number): number;
   /** uxtheme.dll!GetThemeSysColor */
@@ -117,19 +333,63 @@ interface Functions {
   /** uxtheme.dll!GetThemeSysSize */
   GetThemeSysSize(hTheme: number | bigint, iSizeId: number): number;
   /** uxtheme.dll!GetThemeSysString */
-  GetThemeSysString(hTheme: number | bigint, iStringId: number, pszStringBuff: string | Win32Pointer, cchMaxStringChars: number): number;
+  GetThemeSysString(
+    hTheme: number | bigint,
+    iStringId: number,
+    pszStringBuff: string | Win32Pointer,
+    cchMaxStringChars: number,
+  ): number;
   /** uxtheme.dll!GetThemeTextExtent */
-  GetThemeTextExtent(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, pszText: string | Win32Pointer, cchCharCount: number, dwTextFlags: number, pBoundingRect: Win32Pointer, pExtentRect: Win32Pointer): number;
+  GetThemeTextExtent(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    pszText: string | Win32Pointer,
+    cchCharCount: number,
+    dwTextFlags: number,
+    pBoundingRect: Win32Pointer,
+    pExtentRect: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeTextMetrics */
-  GetThemeTextMetrics(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, ptm: Win32Pointer): number;
+  GetThemeTextMetrics(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    ptm: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeTimingFunction */
-  GetThemeTimingFunction(hTheme: number | bigint, iTimingFunctionId: number, pTimingFunction: Win32Pointer, cbSize: number, pcbSizeOut: Win32Pointer): number;
+  GetThemeTimingFunction(
+    hTheme: number | bigint,
+    iTimingFunctionId: number,
+    pTimingFunction: Win32Pointer,
+    cbSize: number,
+    pcbSizeOut: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetThemeTransitionDuration */
-  GetThemeTransitionDuration(hTheme: number | bigint, iPartId: number, iStateIdFrom: number, iStateIdTo: number, iPropId: number, pdwDuration: Win32Pointer): number;
+  GetThemeTransitionDuration(
+    hTheme: number | bigint,
+    iPartId: number,
+    iStateIdFrom: number,
+    iStateIdTo: number,
+    iPropId: number,
+    pdwDuration: Win32Pointer,
+  ): number;
   /** uxtheme.dll!GetWindowTheme */
   GetWindowTheme(hwnd: Win32Pointer): number | bigint;
   /** uxtheme.dll!HitTestThemeBackground */
-  HitTestThemeBackground(hTheme: number | bigint, hdc: Win32Pointer, iPartId: number, iStateId: number, dwOptions: number, pRect: Win32Pointer, hrgn: Win32Pointer, ptTest: Win32StructInit, pwHitTestCode: Win32Pointer): number;
+  HitTestThemeBackground(
+    hTheme: number | bigint,
+    hdc: Win32Pointer,
+    iPartId: number,
+    iStateId: number,
+    dwOptions: number,
+    pRect: Win32Pointer,
+    hrgn: Win32Pointer,
+    ptTest: Win32StructInit,
+    pwHitTestCode: Win32Pointer,
+  ): number;
   /** uxtheme.dll!IsAppThemed */
   IsAppThemed(): number;
   /** uxtheme.dll!IsCompositionActive */
@@ -153,9 +413,19 @@ interface Functions {
   /** uxtheme.dll!SetWindowTheme */
   SetWindowTheme(hwnd: Win32Pointer, pszSubAppName: string | Win32Pointer, pszSubIdList: string | Win32Pointer): number;
   /** uxtheme.dll!SetWindowThemeAttribute */
-  SetWindowThemeAttribute(hwnd: Win32Pointer, eAttribute: number, pvAttribute: Win32Pointer, cbAttribute: number): number;
+  SetWindowThemeAttribute(
+    hwnd: Win32Pointer,
+    eAttribute: number,
+    pvAttribute: Win32Pointer,
+    cbAttribute: number,
+  ): number;
   /** uxtheme.dll!UpdatePanningFeedback */
-  UpdatePanningFeedback(hwnd: Win32Pointer, lTotalOverpanOffsetX: number, lTotalOverpanOffsetY: number, fInInertia: number): number;
+  UpdatePanningFeedback(
+    hwnd: Win32Pointer,
+    lTotalOverpanOffsetX: number,
+    lTotalOverpanOffsetY: number,
+    fInInertia: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

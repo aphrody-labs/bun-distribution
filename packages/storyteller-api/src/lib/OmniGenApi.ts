@@ -86,12 +86,7 @@ export interface OmniGenVideoGenerateResponse {
 // ── Audio request / response types ───────────────────────────────────────
 
 // Audio model ids (match backend CommonAudioModel).
-export type OmniGenAudioModelId =
-  | "suno_music"
-  | "suno_remix"
-  | "suno_sounds"
-  | "suno_sample"
-  | "seed_audio_1p0";
+export type OmniGenAudioModelId = "suno_music" | "suno_remix" | "suno_sounds" | "suno_sample" | "seed_audio_1p0";
 
 // Musical keys for audio generation (eg. Suno Sounds).
 // NB: There are intentionally no E keys, per product spec.
@@ -461,9 +456,7 @@ function stripNulls(obj: object): Record<string, unknown> {
 function dedupeMediaTokenLists(obj: object): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(obj).map(([key, value]) =>
-      key.endsWith("_media_tokens") && Array.isArray(value)
-        ? [key, [...new Set(value)]]
-        : [key, value],
+      key.endsWith("_media_tokens") && Array.isArray(value) ? [key, [...new Set(value)]] : [key, value],
     ),
   );
 }
@@ -473,9 +466,7 @@ function dedupeMediaTokenLists(obj: object): Record<string, unknown> {
 export class OmniGenApi extends ApiManager {
   // ── Models ───────────────────────────────────────────────────────────
 
-  public async getImageModels(
-    provider?: string,
-  ): Promise<OmniGenImageModelsResponse> {
+  public async getImageModels(provider?: string): Promise<OmniGenImageModelsResponse> {
     const query = provider ? { provider } : undefined;
     return this.get<OmniGenImageModelsResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/models/image`,
@@ -483,9 +474,7 @@ export class OmniGenApi extends ApiManager {
     });
   }
 
-  public async getVideoModels(
-    provider?: string,
-  ): Promise<OmniGenVideoModelsResponse> {
+  public async getVideoModels(provider?: string): Promise<OmniGenVideoModelsResponse> {
     const query = provider ? { provider } : undefined;
     return this.get<OmniGenVideoModelsResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/models/video`,
@@ -493,9 +482,7 @@ export class OmniGenApi extends ApiManager {
     });
   }
 
-  public async getAudioModels(
-    provider?: string,
-  ): Promise<OmniGenAudioModelsResponse> {
+  public async getAudioModels(provider?: string): Promise<OmniGenAudioModelsResponse> {
     const query = provider ? { provider } : undefined;
     return this.get<OmniGenAudioModelsResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/models/audio`,
@@ -503,9 +490,7 @@ export class OmniGenApi extends ApiManager {
     });
   }
 
-  public async getMeshModels(
-    provider?: string,
-  ): Promise<OmniGenMeshModelsResponse> {
+  public async getMeshModels(provider?: string): Promise<OmniGenMeshModelsResponse> {
     const query = provider ? { provider } : undefined;
     return this.get<OmniGenMeshModelsResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/models/mesh`,
@@ -513,9 +498,7 @@ export class OmniGenApi extends ApiManager {
     });
   }
 
-  public async getSplatModels(
-    provider?: string,
-  ): Promise<OmniGenSplatModelsResponse> {
+  public async getSplatModels(provider?: string): Promise<OmniGenSplatModelsResponse> {
     const query = provider ? { provider } : undefined;
     return this.get<OmniGenSplatModelsResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/models/splat`,
@@ -525,45 +508,35 @@ export class OmniGenApi extends ApiManager {
 
   // ── Cost estimates ───────────────────────────────────────────────────
 
-  public async estimateImageCost(
-    body: OmniGenImageRequest,
-  ): Promise<OmniGenImageCostResponse> {
+  public async estimateImageCost(body: OmniGenImageRequest): Promise<OmniGenImageCostResponse> {
     return this.post<Record<string, unknown>, OmniGenImageCostResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/cost/image`,
       body: stripNulls(body),
     });
   }
 
-  public async estimateVideoCost(
-    body: OmniGenVideoRequest,
-  ): Promise<OmniGenVideoCostResponse> {
+  public async estimateVideoCost(body: OmniGenVideoRequest): Promise<OmniGenVideoCostResponse> {
     return this.post<Record<string, unknown>, OmniGenVideoCostResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/cost/video`,
       body: stripNulls(body),
     });
   }
 
-  public async estimateAudioCost(
-    body: OmniGenAudioRequest,
-  ): Promise<OmniGenAudioCostResponse> {
+  public async estimateAudioCost(body: OmniGenAudioRequest): Promise<OmniGenAudioCostResponse> {
     return this.post<Record<string, unknown>, OmniGenAudioCostResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/cost/audio`,
       body: stripNulls(body),
     });
   }
 
-  public async estimateMeshCost(
-    body: OmniGenMeshRequest,
-  ): Promise<OmniGenMeshCostResponse> {
+  public async estimateMeshCost(body: OmniGenMeshRequest): Promise<OmniGenMeshCostResponse> {
     return this.post<Record<string, unknown>, OmniGenMeshCostResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/cost/mesh`,
       body: stripNulls(body),
     });
   }
 
-  public async estimateSplatCost(
-    body: OmniGenSplatRequest,
-  ): Promise<OmniGenSplatCostResponse> {
+  public async estimateSplatCost(body: OmniGenSplatRequest): Promise<OmniGenSplatCostResponse> {
     return this.post<Record<string, unknown>, OmniGenSplatCostResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/cost/splat`,
       body: stripNulls(body),
@@ -572,45 +545,35 @@ export class OmniGenApi extends ApiManager {
 
   // ── Generation ───────────────────────────────────────────────────────
 
-  public async generateImage(
-    body: OmniGenImageRequest,
-  ): Promise<OmniGenImageGenerateResponse> {
+  public async generateImage(body: OmniGenImageRequest): Promise<OmniGenImageGenerateResponse> {
     return this.post<Record<string, unknown>, OmniGenImageGenerateResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/image`,
       body: stripNulls(dedupeMediaTokenLists(body)),
     });
   }
 
-  public async generateVideo(
-    body: OmniGenVideoRequest,
-  ): Promise<OmniGenVideoGenerateResponse> {
+  public async generateVideo(body: OmniGenVideoRequest): Promise<OmniGenVideoGenerateResponse> {
     return this.post<Record<string, unknown>, OmniGenVideoGenerateResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/video`,
       body: stripNulls(dedupeMediaTokenLists(body)),
     });
   }
 
-  public async generateAudio(
-    body: OmniGenAudioRequest,
-  ): Promise<OmniGenAudioGenerateResponse> {
+  public async generateAudio(body: OmniGenAudioRequest): Promise<OmniGenAudioGenerateResponse> {
     return this.post<Record<string, unknown>, OmniGenAudioGenerateResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/audio`,
       body: stripNulls(dedupeMediaTokenLists(body)),
     });
   }
 
-  public async generateMesh(
-    body: OmniGenMeshRequest,
-  ): Promise<OmniGenMeshGenerateResponse> {
+  public async generateMesh(body: OmniGenMeshRequest): Promise<OmniGenMeshGenerateResponse> {
     return this.post<Record<string, unknown>, OmniGenMeshGenerateResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/mesh`,
       body: stripNulls(dedupeMediaTokenLists(body)),
     });
   }
 
-  public async generateSplat(
-    body: OmniGenSplatRequest,
-  ): Promise<OmniGenSplatGenerateResponse> {
+  public async generateSplat(body: OmniGenSplatRequest): Promise<OmniGenSplatGenerateResponse> {
     return this.post<Record<string, unknown>, OmniGenSplatGenerateResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/splat`,
       body: stripNulls(dedupeMediaTokenLists(body)),

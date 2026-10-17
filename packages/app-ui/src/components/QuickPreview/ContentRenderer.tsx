@@ -4,20 +4,10 @@ import { File as FileComponent } from "../../routes/explorer/File";
 import { formatBytes } from "../../routes/explorer/utils";
 import { usePlatform } from "../../contexts/PlatformContext";
 import { useServer } from "../../contexts/ServerContext";
-import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  lazy,
-  Suspense,
-} from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 
 import { VideoPlayer } from "./VideoPlayer";
-import type {
-  VideoControlsState,
-  VideoControlsCallbacks,
-} from "./VideoControls";
+import type { VideoControlsState, VideoControlsCallbacks } from "./VideoControls";
 import { AudioPlayer } from "./AudioPlayer";
 import { useZoomPan } from "./useZoomPan";
 import { TextViewer } from "./TextViewer";
@@ -26,12 +16,8 @@ import { sounds } from "@aphrody/assets/sounds";
 import { CircleButton } from "@aphrody/m3-primitives";
 import { DirectoryPreview } from "./DirectoryPreview";
 
-const MeshViewer = lazy(() =>
-  import("./MeshViewer").then((m) => ({ default: m.MeshViewer })),
-);
-const MeshViewerUI = lazy(() =>
-  import("./MeshViewer").then((m) => ({ default: m.MeshViewerUI })),
-);
+const MeshViewer = lazy(() => import("./MeshViewer").then(m => ({ default: m.MeshViewer })));
+const MeshViewerUI = lazy(() => import("./MeshViewer").then(m => ({ default: m.MeshViewerUI })));
 
 interface ContentRendererProps {
   file: File;
@@ -74,20 +60,13 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
   const imageFileId = file.content_identity?.uuid || file.id;
 
   // Check if Gaussian splat sidecar exists and get URL
-  const splatSidecar = file.sidecars?.find(
-    (s) => s.kind === "gaussian_splat" && s.format === "ply",
-  );
+  const splatSidecar = file.sidecars?.find(s => s.kind === "gaussian_splat" && s.format === "ply");
   const hasSplat = !!splatSidecar;
 
   // Build sidecar URL for the splat
   const splatUrl =
     hasSplat && file.content_identity?.uuid
-      ? buildSidecarUrl(
-          file.content_identity.uuid,
-          splatSidecar!.kind,
-          splatSidecar!.variant,
-          splatSidecar!.format,
-        )
+      ? buildSidecarUrl(file.content_identity.uuid, splatSidecar!.kind, splatSidecar!.variant, splatSidecar!.format)
       : null;
 
   // Notify parent of zoom state changes
@@ -121,20 +100,12 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
     const physicalPath = sdPath?.Physical?.path;
 
     if (!physicalPath) {
-      console.log(
-        "[ImageRenderer] No physical path available, sd_path:",
-        file.sd_path,
-      );
+      console.log("[ImageRenderer] No physical path available, sd_path:", file.sd_path);
       return;
     }
 
     const url = platform.convertFileSrc(physicalPath);
-    console.log(
-      "[ImageRenderer] Loading original from:",
-      physicalPath,
-      "-> URL:",
-      url,
-    );
+    console.log("[ImageRenderer] Loading original from:", physicalPath, "-> URL:", url);
     // oxlint-disable-next-line react/set-state-in-effect -- l URL dérive de la source physique du fichier (chargement différé) ; mise à jour d état volontaire
     setOriginalUrl(url);
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- l effet doit rejouer à chaque changement de fichier (imageFileId), dépendance volontaire
@@ -142,28 +113,19 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
 
   // Get highest resolution thumbnail first
   const getHighestResThumbnail = () => {
-    const thumbnails = file.sidecars?.filter((s) => s.kind === "thumb") || [];
+    const thumbnails = file.sidecars?.filter(s => s.kind === "thumb") || [];
     if (thumbnails.length === 0) return null;
 
     const highest = thumbnails.toSorted((a, b) => {
-      const aSize = parseInt(
-        a.variant.split("x")[0]?.replace(/\D/g, "") || "0",
-      );
-      const bSize = parseInt(
-        b.variant.split("x")[0]?.replace(/\D/g, "") || "0",
-      );
+      const aSize = parseInt(a.variant.split("x")[0]?.replace(/\D/g, "") || "0");
+      const bSize = parseInt(b.variant.split("x")[0]?.replace(/\D/g, "") || "0");
       return bSize - aSize;
     })[0];
 
     const contentUuid = file.content_identity?.uuid;
     if (!contentUuid) return null;
 
-    return buildSidecarUrl(
-      contentUuid,
-      highest.kind,
-      highest.variant,
-      highest.format,
-    );
+    return buildSidecarUrl(contentUuid, highest.kind, highest.variant, highest.format);
   };
 
   const thumbnailUrl = getHighestResThumbnail();
@@ -191,12 +153,7 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
           fallback={
             <div className="relative w-full h-full z-10 pointer-events-none bg-scrim flex items-center justify-center">
               {thumbnailUrl && (
-                <img
-                  src={thumbnailUrl}
-                  alt={file.name}
-                  className="w-full h-full object-contain"
-                  draggable={false}
-                />
+                <img src={thumbnailUrl} alt={file.name} className="w-full h-full object-contain" draggable={false} />
               )}
               {originalUrl && (
                 <img
@@ -229,12 +186,7 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
           <div className="relative w-full h-full z-10 pointer-events-none bg-scrim flex items-center justify-center">
             {/* Thumbnail (always available) */}
             {thumbnailUrl && (
-              <img
-                src={thumbnailUrl}
-                alt={file.name}
-                className="w-full h-full object-contain"
-                draggable={false}
-              />
+              <img src={thumbnailUrl} alt={file.name} className="w-full h-full object-contain" draggable={false} />
             )}
             {/* Original image (fades in over thumbnail when ready) */}
             {originalUrl && (
@@ -269,26 +221,24 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
           <Suspense fallback={null}>
             <MeshViewerUI
               autoRotate={meshControls.autoRotate}
-              setAutoRotate={(v) =>
-                setMeshControls((c) => ({
+              setAutoRotate={v =>
+                setMeshControls(c => ({
                   ...c,
                   autoRotate: v,
                 }))
               }
               swayAmount={meshControls.swayAmount}
-              setSwayAmount={(v) =>
-                setMeshControls((c) => ({
+              setSwayAmount={v =>
+                setMeshControls(c => ({
                   ...c,
                   swayAmount: v,
                 }))
               }
               swaySpeed={meshControls.swaySpeed}
-              setSwaySpeed={(v) =>
-                setMeshControls((c) => ({ ...c, swaySpeed: v }))
-              }
+              setSwaySpeed={v => setMeshControls(c => ({ ...c, swaySpeed: v }))}
               cameraDistance={meshControls.cameraDistance}
-              setCameraDistance={(v) =>
-                setMeshControls((c) => ({
+              setCameraDistance={v =>
+                setMeshControls(c => ({
                   ...c,
                   cameraDistance: v,
                 }))
@@ -360,18 +310,10 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
       )}
 
       {/* Image container with zoom/pan transform */}
-      <div
-        className="relative w-full h-full flex items-center justify-center"
-        style={transform}
-      >
+      <div className="relative w-full h-full flex items-center justify-center" style={transform}>
         {/* High-res thumbnail (always rendered as background layer) */}
         {thumbnailUrl && (
-          <img
-            src={thumbnailUrl}
-            alt={file.name}
-            className="w-full h-full object-contain"
-            draggable={false}
-          />
+          <img src={thumbnailUrl} alt={file.name} className="w-full h-full object-contain" draggable={false} />
         )}
 
         {/* Original image (loads async, fades in over thumbnail when ready) */}
@@ -385,9 +327,7 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
               transition: "opacity 0.3s",
             }}
             onLoad={() => setOriginalLoaded(true)}
-            onError={(e) =>
-              console.error("[ImageRenderer] Original failed to load:", e)
-            }
+            onError={e => console.error("[ImageRenderer] Original failed to load:", e)}
             draggable={false}
           />
         )}
@@ -438,12 +378,7 @@ function VideoRenderer({
     }
 
     const url = platform.convertFileSrc(physicalPath);
-    console.log(
-      "[VideoRenderer] Loading video from:",
-      physicalPath,
-      "-> URL:",
-      url,
-    );
+    console.log("[VideoRenderer] Loading video from:", physicalPath, "-> URL:", url);
     // oxlint-disable-next-line react/set-state-in-effect -- l URL dérive de la source physique du fichier vidéo ; mise à jour d état volontaire
     setVideoUrl(url);
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- l effet doit rejouer à chaque changement de fichier vidéo (videoFileId), dépendance volontaire
@@ -452,11 +387,7 @@ function VideoRenderer({
   if (!videoUrl) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <FileComponent.Thumb
-          file={file}
-          size={800}
-          className="max-w-full max-h-full"
-        />
+        <FileComponent.Thumb file={file} size={800} className="max-w-full max-h-full" />
       </div>
     );
   }
@@ -509,12 +440,7 @@ function AudioRenderer({ file }: ContentRendererProps) {
     }
 
     const url = platform.convertFileSrc(physicalPath);
-    console.log(
-      "[AudioRenderer] Loading audio from:",
-      physicalPath,
-      "-> URL:",
-      url,
-    );
+    console.log("[AudioRenderer] Loading audio from:", physicalPath, "-> URL:", url);
     // oxlint-disable-next-line react/set-state-in-effect -- l URL dérive de la source physique du fichier audio ; mise à jour d état volontaire
     setAudioUrl(url);
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- l effet doit rejouer à chaque changement de fichier audio (audioFileId), dépendance volontaire
@@ -525,9 +451,7 @@ function AudioRenderer({ file }: ContentRendererProps) {
       <div className="w-full h-full flex items-center justify-center">
         <div className="text-center">
           <FileComponent.Thumb file={file} size={200} />
-          <div className="mt-6 text-on-surface text-title-medium font-medium">
-            {file.name}
-          </div>
+          <div className="mt-6 text-on-surface text-title-medium font-medium">{file.name}</div>
         </div>
       </div>
     );
@@ -541,15 +465,11 @@ function DocumentRenderer({ file }: ContentRendererProps) {
     <div className="w-full h-full flex items-center justify-center">
       <div className="text-center">
         <FileComponent.Thumb file={file} size={200} />
-        <div className="mt-6 text-on-surface text-title-medium font-medium">
-          {file.name}
-        </div>
+        <div className="mt-6 text-on-surface text-title-medium font-medium">{file.name}</div>
         <div className="text-on-surface-variant text-body-medium mt-2 capitalize">
           {getContentKind(file) ?? "unknown"}
         </div>
-        <div className="text-on-surface-variant text-body-small mt-1">
-          {formatBytes(file.size || 0)}
-        </div>
+        <div className="text-on-surface-variant text-body-small mt-1">{formatBytes(file.size || 0)}</div>
       </div>
     </div>
   );
@@ -589,12 +509,7 @@ function TextRenderer({ file }: ContentRendererProps) {
     }
 
     const url = platform.convertFileSrc(physicalPath);
-    console.log(
-      "[TextRenderer] Loading text from:",
-      physicalPath,
-      "-> URL:",
-      url,
-    );
+    console.log("[TextRenderer] Loading text from:", physicalPath, "-> URL:", url);
     // oxlint-disable-next-line react/set-state-in-effect -- l URL dérive de la source physique du fichier texte ; mise à jour d état volontaire
     setTextUrl(url);
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- l effet doit rejouer à chaque changement de fichier texte (textFileId), dépendance volontaire
@@ -607,12 +522,8 @@ function TextRenderer({ file }: ContentRendererProps) {
       <div className="w-full h-full flex items-center justify-center">
         <div className="text-center">
           <FileComponent.Thumb file={file} size={120} />
-          <div className="mt-4 text-on-surface text-title-medium font-medium">
-            {file.name}
-          </div>
-          <div className="text-on-surface-variant text-body-medium mt-2">
-            Loading...
-          </div>
+          <div className="mt-4 text-on-surface text-title-medium font-medium">{file.name}</div>
+          <div className="text-on-surface-variant text-body-medium mt-2">Loading...</div>
         </div>
       </div>
     );
@@ -635,15 +546,11 @@ function DefaultRenderer({ file }: ContentRendererProps) {
     <div className="w-full h-full flex items-center justify-center">
       <div className="text-center">
         <FileComponent.Thumb file={file} size={200} />
-        <div className="mt-6 text-on-surface text-title-medium font-medium">
-          {file.name}
-        </div>
+        <div className="mt-6 text-on-surface text-title-medium font-medium">{file.name}</div>
         <div className="text-on-surface-variant text-body-medium mt-2 capitalize">
           {getContentKind(file) ?? "unknown"}
         </div>
-        <div className="text-on-surface-variant text-body-small mt-1">
-          {formatBytes(file.size || 0)}
-        </div>
+        <div className="text-on-surface-variant text-body-small mt-1">{formatBytes(file.size || 0)}</div>
       </div>
     </div>
   );

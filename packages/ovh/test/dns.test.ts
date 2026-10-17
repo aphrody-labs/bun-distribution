@@ -122,17 +122,14 @@ class MockOvhClient extends OvhClient {
         lastUpdate: "2026-09-07T12:00:00Z",
       } as T;
     }
-    if (
-      method === "GET" &&
-      path.startsWith("/domain/zone/aphrody.com/record")
-    ) {
+    if (method === "GET" && path.startsWith("/domain/zone/aphrody.com/record")) {
       if (path.match(/\/record\/\d+$/)) {
         const id = Number(path.split("/").pop());
-        const found = this.recordsStore.find((r) => r.id === id);
+        const found = this.recordsStore.find(r => r.id === id);
         if (!found) throw new Error("Record not found");
         return found as T;
       }
-      return this.recordsStore.map((r) => r.id) as T;
+      return this.recordsStore.map(r => r.id) as T;
     }
     if (method === "POST" && path === "/domain/zone/aphrody.com/refresh") {
       return null as T;

@@ -1,9 +1,4 @@
-import {
-  Button,
-  Icon,
-  m3FocusRing,
-  m3StateLayer,
-} from "@aphrody/m3-primitives";
+import { Button, Icon, m3FocusRing, m3StateLayer } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { useExplorer } from "./context";
 import type { SearchScope } from "./context";
@@ -26,31 +21,20 @@ export function SearchToolbar() {
   return (
     <div className="flex items-center gap-3 px-4 py-2 border-b border-outline-variant bg-surface-container-low">
       <div className="flex items-center gap-2">
-        <span className="text-label-medium text-on-surface-variant font-medium">
-          Rechercher dans :
-        </span>
+        <span className="text-label-medium text-on-surface-variant font-medium">Rechercher dans :</span>
         {/* M3 segmented button: connected outlined segments, selected = secondary-container. */}
         <div
           role="radiogroup"
           aria-label="Portée de recherche"
           className="flex items-center rounded-full border border-outline divide-x divide-outline overflow-hidden shadow-xs"
         >
-          <ScopeButton
-            active={scope === "folder"}
-            onClick={() => handleScopeChange("folder")}
-          >
+          <ScopeButton active={scope === "folder"} onClick={() => handleScopeChange("folder")}>
             Ce dossier
           </ScopeButton>
-          <ScopeButton
-            active={scope === "location"}
-            onClick={() => handleScopeChange("location")}
-          >
+          <ScopeButton active={scope === "location"} onClick={() => handleScopeChange("location")}>
             Emplacement
           </ScopeButton>
-          <ScopeButton
-            active={scope === "library"}
-            onClick={() => handleScopeChange("library")}
-          >
+          <ScopeButton active={scope === "library"} onClick={() => handleScopeChange("library")}>
             Bibliothèque
           </ScopeButton>
         </div>
@@ -91,9 +75,7 @@ function ScopeButton({ active, onClick, children }: ScopeButtonProps) {
         "flex h-8 items-center gap-1 px-3 text-label-large",
         m3StateLayer,
         m3FocusRing,
-        active
-          ? "bg-secondary-container text-on-secondary-container"
-          : "text-on-surface",
+        active ? "bg-secondary-container text-on-secondary-container" : "text-on-surface",
       )}
     >
       {active && <Icon name="check" size={16} />}

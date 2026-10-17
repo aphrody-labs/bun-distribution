@@ -38,11 +38,7 @@ declare global {
  * passante à l'image LCP ni aux polices. Les emplacements déjà rendus empilent
  * leur `push({})` dans `window.adsbygoogle`, traité au chargement du script.
  */
-export function AdSenseScript({
-  client = ADSENSE_CLIENT,
-}: {
-  client?: string;
-}) {
+export function AdSenseScript({ client = ADSENSE_CLIENT }: { client?: string }) {
   if (!client) {
     return null;
   }
@@ -58,10 +54,7 @@ export function AdSenseScript({
   );
 }
 
-export interface AdUnitProps extends Omit<
-  React.ComponentProps<"div">,
-  "children"
-> {
+export interface AdUnitProps extends Omit<React.ComponentProps<"div">, "children"> {
   /** `data-ad-slot` — identifiant de l'emplacement créé dans le tableau de bord. */
   slot: string;
   /** `data-ad-format` : `auto` = bloc adaptatif, `fluid` = annonce in-article. */
@@ -104,11 +97,7 @@ export function AdUnit({
   }, []);
 
   return (
-    <div
-      className={cn("min-h-24 w-full overflow-hidden text-center", className)}
-      data-slot="ad-unit"
-      {...props}
-    >
+    <div className={cn("min-h-24 w-full overflow-hidden text-center", className)} data-slot="ad-unit" {...props}>
       <ins
         className="adsbygoogle block w-full"
         data-ad-client={client}

@@ -21,44 +21,34 @@ async function readBody(req: Request): Promise<JsonObject> {
   } catch {
     throw new InvalidRequest("Request body must be valid JSON");
   }
-  if (!isObject(body))
-    throw new InvalidRequest("Request body must be a JSON object");
+  if (!isObject(body)) throw new InvalidRequest("Request body must be a JSON object");
   return body;
 }
 
 function optionalString(body: JsonObject, field: string): string | undefined {
   const value = body[field];
   if (value === undefined) return undefined;
-  if (typeof value !== "string")
-    throw new InvalidRequest(`${field} must be a string`);
+  if (typeof value !== "string") throw new InvalidRequest(`${field} must be a string`);
   return value;
 }
 
 function requiredString(body: JsonObject, field: string): string {
   const value = optionalString(body, field);
-  if (!value?.trim())
-    throw new InvalidRequest(`${field} must be a non-empty string`);
+  if (!value?.trim()) throw new InvalidRequest(`${field} must be a non-empty string`);
   return value;
 }
 
-function nullableString(
-  body: JsonObject,
-  field: string,
-): string | null | undefined {
+function nullableString(body: JsonObject, field: string): string | null | undefined {
   return body[field] === null ? null : optionalString(body, field);
 }
 
-function readArtifact(
-  body: JsonObject,
-): { name: string; body: string } | null | undefined {
+function readArtifact(body: JsonObject): { name: string; body: string } | null | undefined {
   const value = body.artifact;
   if (value === undefined || value === null) return value;
-  if (!isObject(value))
-    throw new InvalidRequest("artifact must be an object with name and body");
+  if (!isObject(value)) throw new InvalidRequest("artifact must be an object with name and body");
   const name = requiredString(value, "name");
   const content = optionalString(value, "body");
-  if (content === undefined)
-    throw new InvalidRequest("artifact.body must be a string");
+  if (content === undefined) throw new InvalidRequest("artifact.body must be a string");
   return { name, body: content };
 }
 
@@ -71,32 +61,19 @@ function readBaseUrl(body: JsonObject): string | undefined {
   } catch {
     throw new InvalidRequest("baseUrl must be an absolute HTTP(S) URL");
   }
-  if (
-    !["http:", "https:"].includes(url.protocol) ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash
-  ) {
-    throw new InvalidRequest(
-      "baseUrl must be an HTTP(S) URL without credentials, query or fragment",
-    );
+  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
+    throw new InvalidRequest("baseUrl must be an HTTP(S) URL without credentials, query or fragment");
   }
   return url.href.replace(/\/+$/, "");
 }
 
 function failure(error: unknown): Response {
   const message = error instanceof Error ? error.message : String(error);
-  return Response.json(
-    { error: message },
-    { status: error instanceof InvalidRequest ? 400 : 500 },
-  );
+  return Response.json({ error: message }, { status: error instanceof InvalidRequest ? 400 : 500 });
 }
 
 /** Build the HTTP handler served by the design engine. */
-export function createFetchHandler(
-  compiler: DesignCompiler,
-): (req: Request) => Promise<Response> {
+export function createFetchHandler(compiler: DesignCompiler): (req: Request) => Promise<Response> {
   return async function handle(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const allowed =
@@ -107,10 +84,7 @@ export function createFetchHandler(
           : undefined;
     if (!allowed) return Response.json({ error: "Not found" }, { status: 404 });
     if (req.method !== allowed) {
-      return Response.json(
-        { error: "Method not allowed" },
-        { status: 405, headers: { allow: allowed } },
-      );
+      return Response.json({ error: "Method not allowed" }, { status: 405, headers: { allow: allowed } });
     }
 
     if (url.pathname === "/api/generate") {
@@ -119,13 +93,8 @@ export function createFetchHandler(
         const prompt = requiredString(body, "prompt");
         const seedColor = optionalString(body, "seedColor");
         const designSystemId = optionalString(body, "designSystemId");
-        if (
-          seedColor !== undefined &&
-          !/^#?(?:[\da-f]{3}|[\da-f]{6})$/i.test(seedColor.trim())
-        ) {
-          throw new InvalidRequest(
-            "seedColor must be a three- or six-digit HEX color",
-          );
+        if (seedColor !== undefined && !/^#?(?:[\da-f]{3}|[\da-f]{6})$/i.test(seedColor.trim())) {
+          throw new InvalidRequest("seedColor must be a three- or six-digit HEX color");
         }
         const result = compiler.compile(prompt, seedColor, designSystemId);
         return Response.json(result);
@@ -140,12 +109,9 @@ export function createFetchHandler(
         const projectId = requiredString(body, "projectId");
         const apiKey = requiredString(body, "apiKey");
         const model = requiredString(body, "model");
-        const suppliedProtocol =
-          optionalString(body, "protocol") ?? "anthropic";
+        const suppliedProtocol = optionalString(body, "protocol") ?? "anthropic";
         if (!["anthropic", "openai", "google"].includes(suppliedProtocol)) {
-          throw new InvalidRequest(
-            "protocol must be anthropic, openai or google",
-          );
+          throw new InvalidRequest("protocol must be anthropic, openai or google");
         }
         const protocol = suppliedProtocol as Protocol;
         const baseUrl = readBaseUrl(body);
@@ -156,9 +122,7 @@ export function createFetchHandler(
           !Number.isSafeInteger(transcriptMessageCount) ||
           (transcriptMessageCount as number) < 0
         ) {
-          throw new InvalidRequest(
-            "transcriptMessageCount must be a non-negative safe integer",
-          );
+          throw new InvalidRequest("transcriptMessageCount must be a non-negative safe integer");
         }
         const designSystemId = nullableString(body, "designSystemId");
         const designSystemBody = nullableString(body, "designSystemBody");
@@ -229,9 +193,7 @@ export function createFetchHandler(
               signal: req.signal,
               headers: { "content-type": "application/json" },
               body: JSON.stringify({
-                contents: [
-                  { role: "user", parts: [{ text: prompts.userPrompt }] },
-                ],
+                contents: [{ role: "user", parts: [{ text: prompts.userPrompt }] }],
                 systemInstruction: { parts: [{ text: prompts.systemPrompt }] },
                 generationConfig: { maxOutputTokens: 4000 },
               }),
@@ -257,10 +219,7 @@ export function createFetchHandler(
             designSystemId: designSystemId || null,
           });
         } catch {
-          return Response.json(
-            { error: `Upstream ${protocol} request or response failed` },
-            { status: 502 },
-          );
+          return Response.json({ error: `Upstream ${protocol} request or response failed` }, { status: 502 });
         }
       } catch (error: unknown) {
         return failure(error);
@@ -314,8 +273,7 @@ export function parseCliArgs(args: readonly string[]): CliOptions | null {
   return {
     prompt: args[promptIndex + 1],
     color: colorIndex !== -1 ? args[colorIndex + 1] : undefined,
-    designSystem:
-      designSystemIndex !== -1 ? args[designSystemIndex + 1] : undefined,
+    designSystem: designSystemIndex !== -1 ? args[designSystemIndex + 1] : undefined,
   };
 }
 
@@ -401,9 +359,7 @@ say so explicitly rather than fabricating content.`;
       : "(no design system selected for this project)";
 
   const artifactHeader = input.artifact ? input.artifact.name : "none";
-  const artifactBody = input.artifact
-    ? input.artifact.body
-    : "(no artifact in scope for this finalize)";
+  const artifactBody = input.artifact ? input.artifact.body : "(no artifact in scope for this finalize)";
 
   const userPrompt =
     `The following inputs describe the design session for project ${input.projectId}.\n\n` +

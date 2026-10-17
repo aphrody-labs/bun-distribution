@@ -11,8 +11,7 @@ import { useEmptySpaceContextMenu } from "../../hooks/useEmptySpaceContextMenu";
 const VIRTUALIZATION_THRESHOLD = 0; // Disabled - always virtualize
 
 export function GridView() {
-  const { viewSettings, setCurrentFiles, scrollPosition, setScrollPosition } =
-    useExplorer();
+  const { viewSettings, setCurrentFiles, scrollPosition, setScrollPosition } = useExplorer();
   const {
     isSelected,
     focusedIndex,
@@ -75,12 +74,8 @@ export function GridView() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="text-on-surface-variant text-title-medium font-medium mb-1">
-            No tagged files
-          </div>
-          <div className="text-on-surface-variant text-body-medium">
-            Files tagged with this tag will appear here
-          </div>
+          <div className="text-on-surface-variant text-title-medium font-medium mb-1">No tagged files</div>
+          <div className="text-on-surface-variant text-body-medium">Files tagged with this tag will appear here</div>
         </div>
       </div>
     );
@@ -152,12 +147,7 @@ interface VirtualizedGridProps {
   selectedFiles: File[];
   scrollPosition: { top: number; left: number };
   setScrollPosition: (position: { top: number; left: number }) => void;
-  selectFile: (
-    file: File,
-    files: File[],
-    multi?: boolean,
-    range?: boolean,
-  ) => void;
+  selectFile: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
   setSelectedFiles: (files: File[]) => void;
   onContainerClick: (e: React.MouseEvent) => void;
   onContainerContextMenu: (e: React.MouseEvent) => void;
@@ -255,9 +245,7 @@ function VirtualizedGrid({
   // Keyboard navigation with correct column count
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)
-      ) {
+      if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         return;
       }
       if (files.length === 0) return;
@@ -281,9 +269,7 @@ function VirtualizedGrid({
         setSelectedFiles([files[newIndex]]);
 
         // Scroll into view
-        const element = document.querySelector(
-          `[data-file-id="${files[newIndex].id}"]`,
-        );
+        const element = document.querySelector(`[data-file-id="${files[newIndex].id}"]`);
         if (element) {
           element.scrollIntoView({
             block: "nearest",
@@ -302,7 +288,7 @@ function VirtualizedGrid({
       role="presentation"
       ref={parentRef}
       className="h-full overflow-auto"
-      onScroll={(event) =>
+      onScroll={event =>
         setScrollPosition({
           top: event.currentTarget.scrollTop,
           left: event.currentTarget.scrollLeft,
@@ -323,7 +309,7 @@ function VirtualizedGrid({
             transition: "opacity 0.1s",
           }}
         >
-          {virtualRows.map((virtualRow) => {
+          {virtualRows.map(virtualRow => {
             const startIndex = virtualRow.index * columns;
             const endIndex = Math.min(startIndex + columns, files.length);
             const rowFiles = files.slice(startIndex, endIndex);

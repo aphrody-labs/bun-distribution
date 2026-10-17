@@ -1,31 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useDndContext, useDroppable } from "@dnd-kit/core";
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  ArrowsClockwise,
-  ArrowsOut,
-  CircleNotch,
-  FunnelSimple,
-  GearSix,
-  ListBullets,
-} from "@phosphor-icons/react";
+import { ArrowsClockwise, ArrowsOut, CircleNotch, FunnelSimple, GearSix, ListBullets } from "@phosphor-icons/react";
 import { useSidebarStore } from "@aphrody/drive-client";
-import type {
-  Space,
-  SpaceGroup as SpaceGroupType,
-  SpaceItem as SpaceItemType,
-} from "@aphrody/drive-client";
-import {
-  CircleButton,
-  Popover,
-  usePopover,
-  type IconComponentProps,
-} from "@aphrody/m3-primitives";
+import type { Space, SpaceGroup as SpaceGroupType, SpaceItem as SpaceItemType } from "@aphrody/drive-client";
+import { CircleButton, Popover, usePopover, type IconComponentProps } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { memo, useEffect, useState, useMemo } from "react";
@@ -96,15 +76,8 @@ function SpaceGroupWithDropZone({
   };
 
   return (
-    <div
-      ref={setSortableRef}
-      style={style}
-      className={clsx("relative", isDragging && "z-50 opacity-50")}
-    >
-      <div
-        ref={setDropRef}
-        className="absolute -top-2.5 left-0 right-0 z-10 h-5"
-      >
+    <div ref={setSortableRef} style={style} className={clsx("relative", isDragging && "z-50 opacity-50")}>
+      <div ref={setDropRef} className="absolute -top-2.5 left-0 right-0 z-10 h-5">
         {isOver && !isDragging && !isDraggingSortableItem && (
           <div className="bg-primary absolute left-2 right-2 top-1/2 h-[2px] -translate-y-1/2 rounded-full" />
         )}
@@ -142,9 +115,7 @@ function SyncIcon({ className, size }: IconComponentProps) {
 }
 
 function SpinningSyncIcon({ className, size }: IconComponentProps) {
-  return (
-    <CircleNotch className={clsx(className, "animate-spin")} size={size} />
-  );
+  return <CircleNotch className={clsx(className, "animate-spin")} size={size} />;
 }
 
 function JobsIcon({ className, size }: IconComponentProps) {
@@ -152,12 +123,7 @@ function JobsIcon({ className, size }: IconComponentProps) {
 }
 
 function RunningJobsIcon({ className, size }: IconComponentProps) {
-  return (
-    <CircleNotch
-      className={clsx(className, "animate-spin text-primary")}
-      size={size}
-    />
-  );
+  return <CircleNotch className={clsx(className, "animate-spin text-primary")} size={size} />;
 }
 
 // Sync Monitor Button with Popover
@@ -177,10 +143,7 @@ const SyncButton = memo(function SyncButton() {
   return (
     <Popover.Root open={popover.open} onOpenChange={popover.setOpen}>
       <Popover.Trigger asChild>
-        <CircleButton
-          icon={isSyncing ? SpinningSyncIcon : SyncIcon}
-          title="Synchro"
-        />
+        <CircleButton icon={isSyncing ? SpinningSyncIcon : SyncIcon} title="Synchro" />
       </Popover.Trigger>
       <Popover.Content
         side="top"
@@ -189,31 +152,22 @@ const SyncButton = memo(function SyncButton() {
         className="!bg-surface z-50 max-h-[520px] w-[380px] !rounded-medium !p-0"
       >
         <div className="border-outline-variant flex items-center justify-between border-b px-4 py-3">
-          <h3 className="text-on-surface text-label-large font-semibold">
-            Synchro
-          </h3>
+          <h3 className="text-on-surface text-label-large font-semibold">Synchro</h3>
 
           <div className="flex items-center gap-2">
             {onlinePeerCount > 0 && (
               <span className="text-on-surface-variant text-body-large">
-                {onlinePeerCount}{" "}
-                {onlinePeerCount === 1 ? "pair connecté" : "pairs connectés"}
+                {onlinePeerCount} {onlinePeerCount === 1 ? "pair connecté" : "pairs connectés"}
               </span>
             )}
 
-            <CircleButton
-              icon={ArrowsOut}
-              onClick={() => navigate("/sync")}
-              title="Ouvrir le moniteur de synchro"
-            />
+            <CircleButton icon={ArrowsOut} onClick={() => navigate("/sync")} title="Ouvrir le moniteur de synchro" />
 
             <CircleButton
               icon={FunnelSimple}
               active={showActivityFeed}
               onClick={() => setShowActivityFeed(!showActivityFeed)}
-              title={
-                showActivityFeed ? "Afficher les pairs" : "Afficher l'activité"
-              }
+              title={showActivityFeed ? "Afficher les pairs" : "Afficher l'activité"}
             />
           </div>
         </div>
@@ -222,12 +176,8 @@ const SyncButton = memo(function SyncButton() {
           <>
             <div className="border-outline-variant bg-surface-container/50 border-b px-4 py-2">
               <div className="flex items-center gap-2">
-                <div
-                  className={`size-2 rounded-full ${getStateColor(sync.currentState)}`}
-                />
-                <span className="text-on-surface-variant text-label-large font-medium">
-                  {sync.currentState}
-                </span>
+                <div className={`size-2 rounded-full ${getStateColor(sync.currentState)}`} />
+                <span className="text-on-surface-variant text-label-large font-medium">{sync.currentState}</span>
               </div>
             </div>
             <motion.div
@@ -287,21 +237,13 @@ const JobsButton = memo(
     }
 
     const filteredJobs = showOnlyRunning
-      ? jobs.filter(
-          (job) =>
-            job.status === "running" ||
-            job.status === "paused" ||
-            job.status === "queued",
-        )
+      ? jobs.filter(job => job.status === "running" || job.status === "paused" || job.status === "queued")
       : jobs;
 
     return (
       <Popover.Root open={popover.open} onOpenChange={popover.setOpen}>
         <Popover.Trigger asChild>
-          <CircleButton
-            icon={hasRunningJobs ? RunningJobsIcon : JobsIcon}
-            title="Tâches"
-          />
+          <CircleButton icon={hasRunningJobs ? RunningJobsIcon : JobsIcon} title="Tâches" />
         </Popover.Trigger>
         <Popover.Content
           side="top"
@@ -310,26 +252,18 @@ const JobsButton = memo(
           className="!bg-surface z-50 max-h-[480px] w-[360px] !rounded-medium !p-0"
         >
           <div className="border-outline-variant flex items-center justify-between border-b px-4 py-3">
-            <h3 className="text-on-surface text-label-large font-semibold">
-              Tâches
-            </h3>
+            <h3 className="text-on-surface text-label-large font-semibold">Tâches</h3>
 
             <div className="flex items-center gap-2">
               {activeJobCount > 0 && (
-                <span className="text-on-surface-variant text-body-large">
-                  {activeJobCount} en cours
-                </span>
+                <span className="text-on-surface-variant text-body-large">{activeJobCount} en cours</span>
               )}
 
               <CircleButton
                 icon={FunnelSimple}
                 active={showOnlyRunning}
                 onClick={() => setShowOnlyRunning(!showOnlyRunning)}
-                title={
-                  showOnlyRunning
-                    ? "Toutes les tâches"
-                    : "Tâches actives uniquement"
-                }
+                title={showOnlyRunning ? "Toutes les tâches" : "Tâches actives uniquement"}
               />
 
               {onOpenTasks && (
@@ -353,10 +287,7 @@ const JobsButton = memo(
                 height:
                   filteredJobs.length === 0
                     ? CARD_HEIGHT + 16
-                    : Math.min(
-                        filteredJobs.length * (CARD_HEIGHT + 8) + 16,
-                        400,
-                      ),
+                    : Math.min(filteredJobs.length * (CARD_HEIGHT + 8) + 16, 400),
               }}
               transition={{
                 duration: 0.2,
@@ -378,8 +309,7 @@ const JobsButton = memo(
   },
   (prevProps, nextProps) => {
     return (
-      prevProps.activeJobCount === nextProps.activeJobCount &&
-      prevProps.hasRunningJobs === nextProps.hasRunningJobs
+      prevProps.activeJobCount === nextProps.activeJobCount && prevProps.hasRunningJobs === nextProps.hasRunningJobs
     );
   },
 );
@@ -405,9 +335,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { data: libraries } = useLibraries();
-  const [currentLibraryId, setCurrentLibraryId] = useState<string | null>(() =>
-    client.getCurrentLibraryId(),
-  );
+  const [currentLibraryId, setCurrentLibraryId] = useState<string | null>(() => client.getCurrentLibraryId());
 
   // Settings section search filter
   const [settingsSearch, setSettingsSearch] = useState("");
@@ -423,30 +351,15 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
     requestNewSession,
   } = useChatStore();
 
-  const projectGroups = useMemo(
-    () => getProjectGroups(threads, expandedProjects),
-    [threads, expandedProjects],
-  );
+  const projectGroups = useMemo(() => getProjectGroups(threads, expandedProjects), [threads, expandedProjects]);
 
   const recentThreads = useMemo(() => {
-    return [...threads]
-      .toSorted(
-        (a, b) => (b.updatedAt ?? b.createdAt) - (a.updatedAt ?? a.createdAt),
-      )
-      .slice(0, 8);
+    return [...threads].toSorted((a, b) => (b.updatedAt ?? b.createdAt) - (a.updatedAt ?? a.createdAt)).slice(0, 8);
   }, [threads]);
 
   // Job and sync status
   useSyncCount();
-  const {
-    activeJobCount,
-    hasRunningJobs,
-    jobs,
-    pause,
-    resume,
-    cancel,
-    getSpeedHistory,
-  } = useJobsContext();
+  const { activeJobCount, hasRunningJobs, jobs, pause, resume, cancel, getSpeedHistory } = useJobsContext();
 
   const { currentSpaceId, setCurrentSpace } = useSidebarStore();
   const { data: spacesData } = useSpaces();
@@ -467,17 +380,14 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
     if (libraries && libraries.length > 0 && !currentLibraryId) {
       const firstLib = libraries[0];
       if (platform.setCurrentLibraryId) {
-        platform
-          .setCurrentLibraryId(firstLib.id)
-          .catch((err) => console.error("Failed to set library ID:", err));
+        platform.setCurrentLibraryId(firstLib.id).catch(err => console.error("Failed to set library ID:", err));
       } else {
         client.setCurrentLibrary(firstLib.id);
       }
     }
   }, [libraries, currentLibraryId, client, platform]);
 
-  const currentSpace =
-    spaces?.find((s) => s.id === currentSpaceId) ?? spaces?.[0];
+  const currentSpace = spaces?.find(s => s.id === currentSpaceId) ?? spaces?.[0];
 
   useEffect(() => {
     if (currentSpace && currentSpace.id !== currentSpaceId) {
@@ -498,9 +408,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
 
   // Active Area Detection
   const isChatActive =
-    location.pathname === "/chat" ||
-    location.pathname === "/codex" ||
-    location.pathname.startsWith("/chat/");
+    location.pathname === "/chat" || location.pathname === "/codex" || location.pathname.startsWith("/chat/");
   const isFilesActive =
     location.pathname.startsWith("/explorer") ||
     location.pathname.startsWith("/file-kinds") ||
@@ -511,9 +419,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
     location.pathname.startsWith("/location");
   const isModelsActive = location.pathname.startsWith("/models");
   const isStudioActive = location.pathname.startsWith("/studio");
-  const isTerminalActive = location.pathname.startsWith(
-    browserOnlyRoutes.terminal,
-  );
+  const isTerminalActive = location.pathname.startsWith(browserOnlyRoutes.terminal);
   const isCreatorActive = location.pathname.startsWith(desktopRoutes.creator);
   const isAdminActive = location.pathname.startsWith(desktopRoutes.admin);
   const showCreator = useKitVisible("creator") || isCreatorActive;
@@ -528,12 +434,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
     if (!layoutGroups) return [];
     return layoutGroups.filter(({ group }) => {
       const lower = (group.name || "").toLowerCase();
-      return (
-        lower !== "overview" &&
-        lower !== "redundancy" &&
-        lower !== "favorites" &&
-        lower !== "favoris"
-      );
+      return lower !== "overview" && lower !== "redundancy" && lower !== "favorites" && lower !== "favoris";
     });
   }, [layoutGroups]);
 
@@ -541,10 +442,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
   const filteredSettingsSections = useMemo(() => {
     if (!settingsSearch.trim()) return SETTINGS_SECTIONS;
     const q = settingsSearch.toLowerCase();
-    return SETTINGS_SECTIONS.filter(
-      (s) =>
-        s.label.toLowerCase().includes(q) || s.id.toLowerCase().includes(q),
-    );
+    return SETTINGS_SECTIONS.filter(s => s.label.toLowerCase().includes(q) || s.id.toLowerCase().includes(q));
   }, [settingsSearch]);
 
   return (
@@ -552,9 +450,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
       <div
         className={clsx(
           "flex h-full flex-col overflow-hidden rounded-large",
-          isPreviewActive
-            ? "bg-surface-container-low/80 backdrop-blur-2xl"
-            : "bg-surface-container-low/65",
+          isPreviewActive ? "bg-surface-container-low/80 backdrop-blur-2xl" : "bg-surface-container-low/65",
         )}
       >
         <nav
@@ -564,11 +460,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
           )}
         >
           {/* Switcher en haut avec avatar Aphrody */}
-          <SpaceSwitcher
-            spaces={spaces}
-            currentSpace={currentSpace}
-            onSwitch={setCurrentSpace}
-          />
+          <SpaceSwitcher spaces={spaces} currentSpace={currentSpace} onSwitch={setCurrentSpace} />
 
           {/* Les 4 zones principales (icônes M3, 48dp, label-large 18px) */}
           <div className="flex flex-col gap-1 border-b border-outline-variant/30 pb-2">
@@ -578,8 +470,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                   ? location.pathname === "/"
                   : location.pathname === route ||
                     location.pathname.startsWith(`${route}/`) ||
-                    (route === "/material-3" &&
-                      location.pathname.startsWith("/showcase"));
+                    (route === "/material-3" && location.pathname.startsWith("/showcase"));
               return (
                 <button
                   key={route}
@@ -593,10 +484,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                       : "text-on-surface-variant hover:bg-secondary-container/20",
                   )}
                 >
-                  <span
-                    className="material-symbol text-title-medium"
-                    aria-hidden="true"
-                  >
+                  <span className="material-symbol text-title-medium" aria-hidden="true">
                     {icon}
                   </span>
                   <span className="truncate">{label}</span>
@@ -614,16 +502,11 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
               )}
             >
               <span
-                className={clsx(
-                  "material-symbol text-title-medium",
-                  isChatActive && !isSettingsActive && "font-bold",
-                )}
+                className={clsx("material-symbol text-title-medium", isChatActive && !isSettingsActive && "font-bold")}
               >
                 chat
               </span>
-              <span className="truncate">
-                {language === "fr" ? "Chat" : "Chat"}
-              </span>
+              <span className="truncate">{language === "fr" ? "Chat" : "Chat"}</span>
             </button>
 
             <button
@@ -637,16 +520,11 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
               )}
             >
               <span
-                className={clsx(
-                  "material-symbol text-title-medium",
-                  isFilesActive && !isSettingsActive && "font-bold",
-                )}
+                className={clsx("material-symbol text-title-medium", isFilesActive && !isSettingsActive && "font-bold")}
               >
                 folder_open
               </span>
-              <span className="truncate">
-                {language === "fr" ? "Fichiers" : "Files"}
-              </span>
+              <span className="truncate">{language === "fr" ? "Fichiers" : "Files"}</span>
             </button>
 
             {platform.platform !== "tauri" && (
@@ -689,9 +567,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
               >
                 model_training
               </span>
-              <span className="truncate">
-                {language === "fr" ? "Modèles" : "Models"}
-              </span>
+              <span className="truncate">{language === "fr" ? "Modèles" : "Models"}</span>
             </button>
             <button
               type="button"
@@ -724,17 +600,8 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                     : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
                 )}
               >
-                <span
-                  className={clsx(
-                    "material-symbol text-title-medium",
-                    isCreatorActive && "font-bold",
-                  )}
-                >
-                  brush
-                </span>
-                <span className="truncate">
-                  {language === "fr" ? "Créateur" : "Creator"}
-                </span>
+                <span className={clsx("material-symbol text-title-medium", isCreatorActive && "font-bold")}>brush</span>
+                <span className="truncate">{language === "fr" ? "Créateur" : "Creator"}</span>
               </button>
             )}
             {showAdmin && (
@@ -748,17 +615,10 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                     : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
                 )}
               >
-                <span
-                  className={clsx(
-                    "material-symbol text-title-medium",
-                    isAdminActive && "font-bold",
-                  )}
-                >
+                <span className={clsx("material-symbol text-title-medium", isAdminActive && "font-bold")}>
                   admin_panel_settings
                 </span>
-                <span className="truncate">
-                  {language === "fr" ? "Administration" : "Administration"}
-                </span>
+                <span className="truncate">{language === "fr" ? "Administration" : "Administration"}</span>
               </button>
             )}
           </div>
@@ -771,13 +631,11 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                 {/* Champ de recherche dans les paramètres */}
                 <div className="px-0.5">
                   <div className="flex h-12 items-center gap-2.5 rounded-full bg-surface-container-high px-3 border border-outline-variant/30 text-on-surface">
-                    <span className="material-symbol text-title-small text-on-surface-variant">
-                      search
-                    </span>
+                    <span className="material-symbol text-title-small text-on-surface-variant">search</span>
                     <input
                       type="text"
                       value={settingsSearch}
-                      onChange={(e) => setSettingsSearch(e.target.value)}
+                      onChange={e => setSettingsSearch(e.target.value)}
                       placeholder="Rechercher..."
                       className="w-full bg-transparent text-label-large text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none"
                     />
@@ -787,9 +645,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                         onClick={() => setSettingsSearch("")}
                         className="text-on-surface-variant hover:text-on-surface"
                       >
-                        <span className="material-symbol text-title-small">
-                          close
-                        </span>
+                        <span className="material-symbol text-title-small">close</span>
                       </button>
                     )}
                   </div>
@@ -797,15 +653,13 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
 
                 {/* Les 6 sections STRICTES */}
                 <div className="space-y-1">
-                  {filteredSettingsSections.map((section) => {
+                  {filteredSettingsSections.map(section => {
                     const isSelected = currentSettingsSection === section.id;
                     return (
                       <button
                         key={section.id}
                         type="button"
-                        onClick={() =>
-                          navigate(`/settings?section=${section.id}`)
-                        }
+                        onClick={() => navigate(`/settings?section=${section.id}`)}
                         className={clsx(
                           "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
                           isSelected
@@ -813,9 +667,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                             : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
                         )}
                       >
-                        <span className="material-symbol text-title-small opacity-80">
-                          {section.icon}
-                        </span>
+                        <span className="material-symbol text-title-small opacity-80">{section.icon}</span>
                         <span className="truncate">{section.label}</span>
                       </button>
                     );
@@ -836,19 +688,15 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                   }}
                   className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-secondary-container hover:bg-secondary-container/80 text-on-secondary-container px-4 text-label-large font-medium transition-colors cursor-pointer select-none"
                 >
-                  <span className="material-symbol text-title-small">
-                    edit_square
-                  </span>
+                  <span className="material-symbol text-title-small">edit_square</span>
                   <span>Nouveau chat</span>
                 </button>
 
                 {/* Section Projets avec arborescence et puce bleue non-lue */}
                 <div className="space-y-1.5">
-                  <div className="px-2 text-label-large font-medium text-on-surface-variant">
-                    Projets
-                  </div>
+                  <div className="px-2 text-label-large font-medium text-on-surface-variant">Projets</div>
                   <div className="space-y-1">
-                    {projectGroups.map((project) => {
+                    {projectGroups.map(project => {
                       return (
                         <div key={project.name} className="space-y-0.5">
                           {/* Dossier du projet */}
@@ -858,17 +706,11 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                             className="flex h-10 w-full items-center justify-between rounded-full px-3 text-label-large font-medium text-on-surface hover:bg-secondary-container/20 cursor-pointer text-left select-none transition-colors"
                           >
                             <div className="flex items-center gap-2 overflow-hidden">
-                              <span className="material-symbol text-title-small text-primary shrink-0">
-                                folder
-                              </span>
-                              <span className="truncate font-semibold">
-                                {project.name}
-                              </span>
+                              <span className="material-symbol text-title-small text-primary shrink-0">folder</span>
+                              <span className="truncate font-semibold">{project.name}</span>
                             </div>
                             <span className="material-symbol text-title-small text-on-surface-variant">
-                              {project.expanded
-                                ? "expand_more"
-                                : "chevron_right"}
+                              {project.expanded ? "expand_more" : "chevron_right"}
                             </span>
                           </button>
 
@@ -880,7 +722,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                                   Aucun chat : ouvrez-en un dans ce projet
                                 </div>
                               ) : (
-                                project.threads.map((thread) => {
+                                project.threads.map(thread => {
                                   const isActive = thread.id === activeThreadId;
                                   const isUnread = !!unreadThreadIds[thread.id];
                                   return (
@@ -898,14 +740,8 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                                           : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
                                       )}
                                     >
-                                      <span className="truncate">
-                                        {thread.name ||
-                                          thread.preview ||
-                                          "Sans titre"}
-                                      </span>
-                                      {isUnread && (
-                                        <span className="size-2 rounded-full bg-primary shrink-0 ml-1.5" />
-                                      )}
+                                      <span className="truncate">{thread.name || thread.preview || "Sans titre"}</span>
+                                      {isUnread && <span className="size-2 rounded-full bg-primary shrink-0 ml-1.5" />}
                                     </button>
                                   );
                                 })
@@ -920,11 +756,9 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
 
                 {/* Section Récents */}
                 <div className="space-y-1.5 pt-2 border-t border-outline-variant/20">
-                  <div className="px-2 text-label-large font-medium text-on-surface-variant">
-                    Récents
-                  </div>
+                  <div className="px-2 text-label-large font-medium text-on-surface-variant">Récents</div>
                   <div className="space-y-0.5">
-                    {recentThreads.map((thread) => {
+                    {recentThreads.map(thread => {
                       const isActive = thread.id === activeThreadId;
                       const isUnread = !!unreadThreadIds[thread.id];
                       return (
@@ -942,12 +776,8 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                               : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
                           )}
                         >
-                          <span className="truncate">
-                            {thread.name || thread.preview || "Sans titre"}
-                          </span>
-                          {isUnread && (
-                            <span className="size-2 rounded-full bg-primary shrink-0 ml-1.5" />
-                          )}
+                          <span className="truncate">{thread.name || thread.preview || "Sans titre"}</span>
+                          {isUnread && <span className="size-2 rounded-full bg-primary shrink-0 ml-1.5" />}
                         </button>
                       );
                     })}
@@ -963,11 +793,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                 <button
                   type="button"
                   onClick={() => navigate("/redundancy")}
-                  aria-current={
-                    location.pathname.startsWith("/redundancy")
-                      ? "page"
-                      : undefined
-                  }
+                  aria-current={location.pathname.startsWith("/redundancy") ? "page" : undefined}
                   className={clsx(
                     "flex min-h-10 w-full items-center gap-2 rounded-full px-3 text-left text-body-large outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     location.pathname.startsWith("/redundancy")
@@ -975,17 +801,14 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                       : "text-on-surface-variant hover:bg-secondary-container/20 hover:text-on-surface",
                   )}
                 >
-                  <span
-                    className="material-symbol text-title-medium"
-                    aria-hidden="true"
-                  >
+                  <span className="material-symbol text-title-medium" aria-hidden="true">
                     verified_user
                   </span>
                   <span>{language === "fr" ? "Redondance" : "Redundancy"}</span>
                 </button>
                 {layout?.space_items && layout.space_items.length > 0 && (
                   <SortableContext
-                    items={layout.space_items.map((item) => item.id)}
+                    items={layout.space_items.map(item => item.id)}
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="space-y-0.5">
@@ -1030,18 +853,14 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
             {isModelsActive && !isSettingsActive && (
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <div className="px-2 text-label-large font-medium text-on-surface-variant">
-                    Modèles locaux
-                  </div>
+                  <div className="px-2 text-label-large font-medium text-on-surface-variant">Modèles locaux</div>
                   <div className="space-y-0.5">
                     <button
                       type="button"
                       onClick={() => navigate("/models?tab=installed")}
                       className="flex h-10 w-full items-center gap-2.5 rounded-full px-2 text-body-large font-medium text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20 cursor-pointer text-left select-none transition-colors"
                     >
-                      <span className="material-symbol text-title-small text-success shrink-0">
-                        check_circle
-                      </span>
+                      <span className="material-symbol text-title-small text-success shrink-0">check_circle</span>
                       <span className="truncate">Installés</span>
                     </button>
 
@@ -1050,9 +869,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                       onClick={() => navigate("/models?tab=catalog")}
                       className="flex h-10 w-full items-center gap-2.5 rounded-full px-2 text-body-large font-medium text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20 cursor-pointer text-left select-none transition-colors"
                     >
-                      <span className="material-symbol text-title-small text-primary shrink-0">
-                        explore
-                      </span>
+                      <span className="material-symbol text-title-small text-primary shrink-0">explore</span>
                       <span className="truncate">Catalogue</span>
                     </button>
                   </div>
@@ -1082,9 +899,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                 type="button"
                 onClick={() => setLanguage(language === "fr" ? "en" : "fr")}
                 className="flex h-9 items-center justify-center rounded-full px-2.5 text-[13px] font-semibold text-on-surface-variant hover:text-on-surface bg-surface-container-high hover:bg-surface-container-highest transition-colors cursor-pointer border border-outline-variant/40"
-                title={
-                  language === "fr" ? "Switch to English" : "Passer en Français"
-                }
+                title={language === "fr" ? "Switch to English" : "Passer en Français"}
               >
                 {language.toUpperCase()}
               </button>

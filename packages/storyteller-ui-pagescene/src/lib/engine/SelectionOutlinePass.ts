@@ -42,10 +42,7 @@ import { Pass, FullScreenQuad } from "three/addons/postprocessing/Pass.js";
 import { SplatMesh } from "@sparkjsdev/spark";
 import { MediaFileType } from "../enums";
 import { findInternalBbox } from "./internalBbox";
-import {
-  SELECTION_OUTLINE_COLOR,
-  SELECTION_OUTLINE_ACCENT_COLOR,
-} from "./selectionColors";
+import { SELECTION_OUTLINE_COLOR, SELECTION_OUTLINE_ACCENT_COLOR } from "./selectionColors";
 
 // Two-color pulse so the outline reads as motion. Pale-orange ↔ dark-
 // orange in the Blender editor selection style — both ends sit in a
@@ -64,9 +61,7 @@ const FAR_DEPTH_THRESHOLD = 0.999999;
 // regardless of saved userData. The userData tag check is a secondary
 // fallback for future non-SparkJS splat backends, and so we don't
 // regress if someone wraps a SplatMesh in a Group.
-function findSplatAncestor(
-  obj: THREE.Object3D,
-): SplatMesh | THREE.Object3D | undefined {
+function findSplatAncestor(obj: THREE.Object3D): SplatMesh | THREE.Object3D | undefined {
   let cur: THREE.Object3D | null = obj;
   while (cur) {
     if (cur instanceof SplatMesh) return cur;
@@ -101,12 +96,7 @@ export class SelectionOutlinePass extends Pass {
   private readonly fsQuad: FullScreenQuad;
   private readonly outlineMaterial: THREE.ShaderMaterial;
 
-  constructor(
-    scene: THREE.Scene,
-    camera: THREE.PerspectiveCamera,
-    width: number,
-    height: number,
-  ) {
+  constructor(scene: THREE.Scene, camera: THREE.PerspectiveCamera, width: number, height: number) {
     super();
     this.scene = scene;
     this.camera = camera;
@@ -155,12 +145,7 @@ export class SelectionOutlinePass extends Pass {
 
   override setSize(width: number, height: number) {
     this.selectedTarget.setSize(width, height);
-    this.outlineMaterial.uniforms["screenSize"].value.set(
-      width,
-      height,
-      1 / width,
-      1 / height,
-    );
+    this.outlineMaterial.uniforms["screenSize"].value.set(width, height, 1 / width, 1 / height);
   }
 
   override dispose() {
@@ -206,10 +191,10 @@ export class SelectionOutlinePass extends Pass {
       keepVisible.add(ancestor);
       ancestor = ancestor.parent;
     }
-    this.outlineTarget.traverse((d) => keepVisible.add(d));
+    this.outlineTarget.traverse(d => keepVisible.add(d));
 
     const hidden: THREE.Object3D[] = [];
-    this.scene.traverse((obj) => {
+    this.scene.traverse(obj => {
       if (!obj.visible || keepVisible.has(obj)) return;
       // Leave lights alone — toggling Light.visible drops them from
       // lighting accumulation and the selected mesh would render unlit.
@@ -230,8 +215,7 @@ export class SelectionOutlinePass extends Pass {
     // not-selected, discards otherwise. autoClear=false preserves
     // writeBuffer from step 1. `uTime` (seconds) drives the color pulse
     // inside the fragment shader.
-    this.outlineMaterial.uniforms["selectedDepth"].value =
-      this.selectedTarget.depthTexture;
+    this.outlineMaterial.uniforms["selectedDepth"].value = this.selectedTarget.depthTexture;
     this.outlineMaterial.uniforms["uTime"].value = performance.now() * 0.001;
     const prevAutoClear = renderer.autoClear;
     renderer.autoClear = false;
@@ -261,10 +245,7 @@ export class SelectionOutlinePass extends Pass {
     }
   }
 
-  private createOutlineMaterial(
-    width: number,
-    height: number,
-  ): THREE.ShaderMaterial {
+  private createOutlineMaterial(width: number, height: number): THREE.ShaderMaterial {
     return new THREE.ShaderMaterial({
       uniforms: {
         selectedDepth: { value: null },

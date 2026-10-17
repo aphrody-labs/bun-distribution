@@ -4,8 +4,7 @@ import { getAttr, isMdIconTag, jsxTagName } from "./helpers.js";
 /** Récupère les clés d'un style inline JSX (style={{ ... }}). [] sinon. */
 function styleKeys(openingElement) {
   const style = getAttr(openingElement, "style");
-  if (!style || !style.value || style.value.type !== "JSXExpressionContainer")
-    return [];
+  if (!style || !style.value || style.value.type !== "JSXExpressionContainer") return [];
   const expr = style.value.expression;
   if (!expr || expr.type !== "ObjectExpression") return [];
   const keys = [];
@@ -28,8 +27,7 @@ export default {
   meta: {
     type: "suggestion",
     docs: {
-      description:
-        "Prefer --md-icon-* axis tokens over inline font-variation-settings on md-icon.",
+      description: "Prefer --md-icon-* axis tokens over inline font-variation-settings on md-icon.",
     },
     schema: [],
   },
@@ -39,10 +37,7 @@ export default {
         const name = jsxTagName(node);
         if (!isMdIconTag(name)) return;
         const keys = styleKeys(node);
-        if (
-          keys.includes("fontVariationSettings") ||
-          keys.includes("font-variation-settings")
-        ) {
+        if (keys.includes("fontVariationSettings") || keys.includes("font-variation-settings")) {
           context.report({
             node,
             message:

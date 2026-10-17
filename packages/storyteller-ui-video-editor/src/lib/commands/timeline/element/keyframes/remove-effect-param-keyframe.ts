@@ -43,7 +43,7 @@ export class RemoveEffectParamKeyframeCommand extends Command {
       trackId: this.trackId,
       elementId: this.elementId,
       elementPredicate: isVisualElement,
-      update: (element) => {
+      update: element => {
         const animations = removeEffectParamKeyframe({
           animations: element.animations,
           effectId: this.effectId,

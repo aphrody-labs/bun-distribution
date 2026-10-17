@@ -9,19 +9,39 @@ interface Functions {
   /** rtworkq.dll!RtwqAllocateWorkQueue */
   RtwqAllocateWorkQueue(WorkQueueType: number, workQueueId: Win32Pointer): number;
   /** rtworkq.dll!RtwqBeginRegisterWorkQueueWithMMCSS */
-  RtwqBeginRegisterWorkQueueWithMMCSS(workQueueId: number, usageClass: string | Win32Pointer, dwTaskId: number, lPriority: number, doneCallback: Win32Pointer, doneState: Win32Pointer): number;
+  RtwqBeginRegisterWorkQueueWithMMCSS(
+    workQueueId: number,
+    usageClass: string | Win32Pointer,
+    dwTaskId: number,
+    lPriority: number,
+    doneCallback: Win32Pointer,
+    doneState: Win32Pointer,
+  ): number;
   /** rtworkq.dll!RtwqBeginUnregisterWorkQueueWithMMCSS */
-  RtwqBeginUnregisterWorkQueueWithMMCSS(workQueueId: number, doneCallback: Win32Pointer, doneState: Win32Pointer): number;
+  RtwqBeginUnregisterWorkQueueWithMMCSS(
+    workQueueId: number,
+    doneCallback: Win32Pointer,
+    doneState: Win32Pointer,
+  ): number;
   /** rtworkq.dll!RtwqCancelDeadline */
   RtwqCancelDeadline(pRequest: Win32Pointer): number;
   /** rtworkq.dll!RtwqCancelWorkItem */
   RtwqCancelWorkItem(Key: number | bigint): number;
   /** rtworkq.dll!RtwqCreateAsyncResult */
-  RtwqCreateAsyncResult(appObject: Win32Pointer, callback: Win32Pointer, appState: Win32Pointer, asyncResult: Win32Pointer): number;
+  RtwqCreateAsyncResult(
+    appObject: Win32Pointer,
+    callback: Win32Pointer,
+    appState: Win32Pointer,
+    asyncResult: Win32Pointer,
+  ): number;
   /** rtworkq.dll!RtwqEndRegisterWorkQueueWithMMCSS */
   RtwqEndRegisterWorkQueueWithMMCSS(result: Win32Pointer, taskId: Win32Pointer): number;
   /** rtworkq.dll!RtwqGetWorkQueueMMCSSClass */
-  RtwqGetWorkQueueMMCSSClass(workQueueId: number, usageClass: string | Win32Pointer, usageClassLength: Win32Pointer): number;
+  RtwqGetWorkQueueMMCSSClass(
+    workQueueId: number,
+    usageClass: string | Win32Pointer,
+    usageClassLength: Win32Pointer,
+  ): number;
   /** rtworkq.dll!RtwqGetWorkQueueMMCSSPriority */
   RtwqGetWorkQueueMMCSSPriority(workQueueId: number, priority: Win32Pointer): number;
   /** rtworkq.dll!RtwqGetWorkQueueMMCSSTaskId */
@@ -33,7 +53,12 @@ interface Functions {
   /** rtworkq.dll!RtwqLockPlatform */
   RtwqLockPlatform(): number;
   /** rtworkq.dll!RtwqLockSharedWorkQueue */
-  RtwqLockSharedWorkQueue(usageClass: string | Win32Pointer, basePriority: number, taskId: Win32Pointer, id: Win32Pointer): number;
+  RtwqLockSharedWorkQueue(
+    usageClass: string | Win32Pointer,
+    basePriority: number,
+    taskId: Win32Pointer,
+    id: Win32Pointer,
+  ): number;
   /** rtworkq.dll!RtwqLockWorkQueue */
   RtwqLockWorkQueue(workQueueId: number): number;
   /** rtworkq.dll!RtwqPutWaitingWorkItem */
@@ -51,7 +76,12 @@ interface Functions {
   /** rtworkq.dll!RtwqSetDeadline */
   RtwqSetDeadline(workQueueId: number, deadlineInHNS: number | bigint, pRequest: Win32Pointer): number;
   /** rtworkq.dll!RtwqSetDeadline2 */
-  RtwqSetDeadline2(workQueueId: number, deadlineInHNS: number | bigint, preDeadlineInHNS: number | bigint, pRequest: Win32Pointer): number;
+  RtwqSetDeadline2(
+    workQueueId: number,
+    deadlineInHNS: number | bigint,
+    preDeadlineInHNS: number | bigint,
+    pRequest: Win32Pointer,
+  ): number;
   /** rtworkq.dll!RtwqSetLongRunning */
   RtwqSetLongRunning(workQueueId: number, enable: number): number;
   /** rtworkq.dll!RtwqShutdown */

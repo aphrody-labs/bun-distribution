@@ -43,9 +43,7 @@ const command: Command = {
   name: "diagnostic",
   summary: "Préparer le message d'aide à envoyer à l'équipe",
   async run(_argv, ctx) {
-    ctx.ui.say(
-      "Préparation du message pour l'équipe (ça prend quelques secondes)...",
-    );
+    ctx.ui.say("Préparation du message pour l'équipe (ça prend quelques secondes)...");
     const text = await buildDiagnostic(ctx);
     const file = join(ctx.paths.desktopDir, "message-pour-l-equipe.txt");
     await mkdir(ctx.paths.desktopDir, { recursive: true });

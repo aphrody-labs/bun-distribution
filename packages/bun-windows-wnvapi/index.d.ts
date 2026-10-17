@@ -5,7 +5,12 @@ interface Functions {
   /** wnvapi.dll!WnvOpen */
   WnvOpen(): number | null;
   /** wnvapi.dll!WnvRequestNotification */
-  WnvRequestNotification(WnvHandle: Win32Pointer, NotificationParam: Win32Pointer, Overlapped: Win32Pointer, BytesTransferred: Win32Pointer): number;
+  WnvRequestNotification(
+    WnvHandle: Win32Pointer,
+    NotificationParam: Win32Pointer,
+    Overlapped: Win32Pointer,
+    BytesTransferred: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

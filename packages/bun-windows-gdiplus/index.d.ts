@@ -3,13 +3,49 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** gdiplus.dll!GdipAddPathArc */
-  GdipAddPathArc(path: Win32Pointer, x: number, y: number, width: number, height: number, startAngle: number, sweepAngle: number): number;
+  GdipAddPathArc(
+    path: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    startAngle: number,
+    sweepAngle: number,
+  ): number;
   /** gdiplus.dll!GdipAddPathArcI */
-  GdipAddPathArcI(path: Win32Pointer, x: number, y: number, width: number, height: number, startAngle: number, sweepAngle: number): number;
+  GdipAddPathArcI(
+    path: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    startAngle: number,
+    sweepAngle: number,
+  ): number;
   /** gdiplus.dll!GdipAddPathBezier */
-  GdipAddPathBezier(path: Win32Pointer, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number): number;
+  GdipAddPathBezier(
+    path: Win32Pointer,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    x3: number,
+    y3: number,
+    x4: number,
+    y4: number,
+  ): number;
   /** gdiplus.dll!GdipAddPathBezierI */
-  GdipAddPathBezierI(path: Win32Pointer, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number): number;
+  GdipAddPathBezierI(
+    path: Win32Pointer,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    x3: number,
+    y3: number,
+    x4: number,
+    y4: number,
+  ): number;
   /** gdiplus.dll!GdipAddPathBeziers */
   GdipAddPathBeziers(path: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipAddPathBeziersI */
@@ -29,9 +65,23 @@ interface Functions {
   /** gdiplus.dll!GdipAddPathCurve2I */
   GdipAddPathCurve2I(path: Win32Pointer, points: Win32Pointer, count: number, tension: number): number;
   /** gdiplus.dll!GdipAddPathCurve3 */
-  GdipAddPathCurve3(path: Win32Pointer, points: Win32Pointer, count: number, offset: number, numberOfSegments: number, tension: number): number;
+  GdipAddPathCurve3(
+    path: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    offset: number,
+    numberOfSegments: number,
+    tension: number,
+  ): number;
   /** gdiplus.dll!GdipAddPathCurve3I */
-  GdipAddPathCurve3I(path: Win32Pointer, points: Win32Pointer, count: number, offset: number, numberOfSegments: number, tension: number): number;
+  GdipAddPathCurve3I(
+    path: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    offset: number,
+    numberOfSegments: number,
+    tension: number,
+  ): number;
   /** gdiplus.dll!GdipAddPathCurveI */
   GdipAddPathCurveI(path: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipAddPathEllipse */
@@ -49,9 +99,25 @@ interface Functions {
   /** gdiplus.dll!GdipAddPathPath */
   GdipAddPathPath(path: Win32Pointer, addingPath: Win32Pointer, connect: number): number;
   /** gdiplus.dll!GdipAddPathPie */
-  GdipAddPathPie(path: Win32Pointer, x: number, y: number, width: number, height: number, startAngle: number, sweepAngle: number): number;
+  GdipAddPathPie(
+    path: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    startAngle: number,
+    sweepAngle: number,
+  ): number;
   /** gdiplus.dll!GdipAddPathPieI */
-  GdipAddPathPieI(path: Win32Pointer, x: number, y: number, width: number, height: number, startAngle: number, sweepAngle: number): number;
+  GdipAddPathPieI(
+    path: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    startAngle: number,
+    sweepAngle: number,
+  ): number;
   /** gdiplus.dll!GdipAddPathPolygon */
   GdipAddPathPolygon(path: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipAddPathPolygonI */
@@ -65,31 +131,99 @@ interface Functions {
   /** gdiplus.dll!GdipAddPathRectanglesI */
   GdipAddPathRectanglesI(path: Win32Pointer, rects: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipAddPathString */
-  GdipAddPathString(path: Win32Pointer, string: string | Win32Pointer, length: number, family: Win32Pointer, style: number, emSize: number, layoutRect: Win32Pointer, format: Win32Pointer): number;
+  GdipAddPathString(
+    path: Win32Pointer,
+    string: string | Win32Pointer,
+    length: number,
+    family: Win32Pointer,
+    style: number,
+    emSize: number,
+    layoutRect: Win32Pointer,
+    format: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipAddPathStringI */
-  GdipAddPathStringI(path: Win32Pointer, string: string | Win32Pointer, length: number, family: Win32Pointer, style: number, emSize: number, layoutRect: Win32Pointer, format: Win32Pointer): number;
+  GdipAddPathStringI(
+    path: Win32Pointer,
+    string: string | Win32Pointer,
+    length: number,
+    family: Win32Pointer,
+    style: number,
+    emSize: number,
+    layoutRect: Win32Pointer,
+    format: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipAlloc */
   GdipAlloc(size: number | bigint): number | null;
   /** gdiplus.dll!GdipBeginContainer */
-  GdipBeginContainer(graphics: Win32Pointer, dstrect: Win32Pointer, srcrect: Win32Pointer, unit: number, state: Win32Pointer): number;
+  GdipBeginContainer(
+    graphics: Win32Pointer,
+    dstrect: Win32Pointer,
+    srcrect: Win32Pointer,
+    unit: number,
+    state: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipBeginContainer2 */
   GdipBeginContainer2(graphics: Win32Pointer, state: Win32Pointer): number;
   /** gdiplus.dll!GdipBeginContainerI */
-  GdipBeginContainerI(graphics: Win32Pointer, dstrect: Win32Pointer, srcrect: Win32Pointer, unit: number, state: Win32Pointer): number;
+  GdipBeginContainerI(
+    graphics: Win32Pointer,
+    dstrect: Win32Pointer,
+    srcrect: Win32Pointer,
+    unit: number,
+    state: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipBitmapApplyEffect */
-  GdipBitmapApplyEffect(bitmap: Win32Pointer, effect: Win32Pointer, roi: Win32Pointer, useAuxData: number, auxData: Win32Pointer, auxDataSize: Win32Pointer): number;
+  GdipBitmapApplyEffect(
+    bitmap: Win32Pointer,
+    effect: Win32Pointer,
+    roi: Win32Pointer,
+    useAuxData: number,
+    auxData: Win32Pointer,
+    auxDataSize: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipBitmapConvertFormat */
-  GdipBitmapConvertFormat(pInputBitmap: Win32Pointer, format: number, dithertype: number, palettetype: number, palette: Win32Pointer, alphaThresholdPercent: number): number;
+  GdipBitmapConvertFormat(
+    pInputBitmap: Win32Pointer,
+    format: number,
+    dithertype: number,
+    palettetype: number,
+    palette: Win32Pointer,
+    alphaThresholdPercent: number,
+  ): number;
   /** gdiplus.dll!GdipBitmapCreateApplyEffect */
-  GdipBitmapCreateApplyEffect(inputBitmaps: Win32Pointer, numInputs: number, effect: Win32Pointer, roi: Win32Pointer, outputRect: Win32Pointer, outputBitmap: Win32Pointer, useAuxData: number, auxData: Win32Pointer, auxDataSize: Win32Pointer): number;
+  GdipBitmapCreateApplyEffect(
+    inputBitmaps: Win32Pointer,
+    numInputs: number,
+    effect: Win32Pointer,
+    roi: Win32Pointer,
+    outputRect: Win32Pointer,
+    outputBitmap: Win32Pointer,
+    useAuxData: number,
+    auxData: Win32Pointer,
+    auxDataSize: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipBitmapGetHistogram */
-  GdipBitmapGetHistogram(bitmap: Win32Pointer, format: number, NumberOfEntries: number, channel0: Win32Pointer, channel1: Win32Pointer, channel2: Win32Pointer, channel3: Win32Pointer): number;
+  GdipBitmapGetHistogram(
+    bitmap: Win32Pointer,
+    format: number,
+    NumberOfEntries: number,
+    channel0: Win32Pointer,
+    channel1: Win32Pointer,
+    channel2: Win32Pointer,
+    channel3: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipBitmapGetHistogramSize */
   GdipBitmapGetHistogramSize(format: number, NumberOfEntries: Win32Pointer): number;
   /** gdiplus.dll!GdipBitmapGetPixel */
   GdipBitmapGetPixel(bitmap: Win32Pointer, x: number, y: number, color: Win32Pointer): number;
   /** gdiplus.dll!GdipBitmapLockBits */
-  GdipBitmapLockBits(bitmap: Win32Pointer, rect: Win32Pointer, flags: number, format: number, lockedBitmapData: Win32Pointer): number;
+  GdipBitmapLockBits(
+    bitmap: Win32Pointer,
+    rect: Win32Pointer,
+    flags: number,
+    format: number,
+    lockedBitmapData: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipBitmapSetPixel */
   GdipBitmapSetPixel(bitmap: Win32Pointer, x: number, y: number, color: number): number;
   /** gdiplus.dll!GdipBitmapSetResolution */
@@ -99,9 +233,25 @@ interface Functions {
   /** gdiplus.dll!GdipClearPathMarkers */
   GdipClearPathMarkers(path: Win32Pointer): number;
   /** gdiplus.dll!GdipCloneBitmapArea */
-  GdipCloneBitmapArea(x: number, y: number, width: number, height: number, format: number, srcBitmap: Win32Pointer, dstBitmap: Win32Pointer): number;
+  GdipCloneBitmapArea(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    format: number,
+    srcBitmap: Win32Pointer,
+    dstBitmap: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCloneBitmapAreaI */
-  GdipCloneBitmapAreaI(x: number, y: number, width: number, height: number, format: number, srcBitmap: Win32Pointer, dstBitmap: Win32Pointer): number;
+  GdipCloneBitmapAreaI(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    format: number,
+    srcBitmap: Win32Pointer,
+    dstBitmap: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCloneBrush */
   GdipCloneBrush(brush: Win32Pointer, cloneBrush: Win32Pointer): number;
   /** gdiplus.dll!GdipCloneCustomLineCap */
@@ -139,11 +289,34 @@ interface Functions {
   /** gdiplus.dll!GdipComment */
   GdipComment(graphics: Win32Pointer, sizeData: number, data: Win32Pointer): number;
   /** gdiplus.dll!GdipConvertToEmfPlus */
-  GdipConvertToEmfPlus(refGraphics: Win32Pointer, metafile: Win32Pointer, conversionFailureFlag: Win32Pointer, emfType: number, description: string | Win32Pointer, out_metafile: Win32Pointer): number;
+  GdipConvertToEmfPlus(
+    refGraphics: Win32Pointer,
+    metafile: Win32Pointer,
+    conversionFailureFlag: Win32Pointer,
+    emfType: number,
+    description: string | Win32Pointer,
+    out_metafile: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipConvertToEmfPlusToFile */
-  GdipConvertToEmfPlusToFile(refGraphics: Win32Pointer, metafile: Win32Pointer, conversionFailureFlag: Win32Pointer, filename: string | Win32Pointer, emfType: number, description: string | Win32Pointer, out_metafile: Win32Pointer): number;
+  GdipConvertToEmfPlusToFile(
+    refGraphics: Win32Pointer,
+    metafile: Win32Pointer,
+    conversionFailureFlag: Win32Pointer,
+    filename: string | Win32Pointer,
+    emfType: number,
+    description: string | Win32Pointer,
+    out_metafile: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipConvertToEmfPlusToStream */
-  GdipConvertToEmfPlusToStream(refGraphics: Win32Pointer, metafile: Win32Pointer, conversionFailureFlag: Win32Pointer, stream: Win32Pointer, emfType: number, description: string | Win32Pointer, out_metafile: Win32Pointer): number;
+  GdipConvertToEmfPlusToStream(
+    refGraphics: Win32Pointer,
+    metafile: Win32Pointer,
+    conversionFailureFlag: Win32Pointer,
+    stream: Win32Pointer,
+    emfType: number,
+    description: string | Win32Pointer,
+    out_metafile: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateAdjustableArrowCap */
   GdipCreateAdjustableArrowCap(height: number, width: number, isFilled: number, cap: Win32Pointer): number;
   /** gdiplus.dll!GdipCreateBitmapFromDirectDrawSurface */
@@ -161,9 +334,20 @@ interface Functions {
   /** gdiplus.dll!GdipCreateBitmapFromHICON */
   GdipCreateBitmapFromHICON(hicon: Win32Pointer, bitmap: Win32Pointer): number;
   /** gdiplus.dll!GdipCreateBitmapFromResource */
-  GdipCreateBitmapFromResource(hInstance: Win32Pointer, lpBitmapName: string | Win32Pointer, bitmap: Win32Pointer): number;
+  GdipCreateBitmapFromResource(
+    hInstance: Win32Pointer,
+    lpBitmapName: string | Win32Pointer,
+    bitmap: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateBitmapFromScan0 */
-  GdipCreateBitmapFromScan0(width: number, height: number, stride: number, format: number, scan0: Win32Pointer, bitmap: Win32Pointer): number;
+  GdipCreateBitmapFromScan0(
+    width: number,
+    height: number,
+    stride: number,
+    format: number,
+    scan0: Win32Pointer,
+    bitmap: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateBitmapFromStream */
   GdipCreateBitmapFromStream(stream: Win32Pointer, bitmap: Win32Pointer): number;
   /** gdiplus.dll!GdipCreateBitmapFromStreamICM */
@@ -171,13 +355,23 @@ interface Functions {
   /** gdiplus.dll!GdipCreateCachedBitmap */
   GdipCreateCachedBitmap(bitmap: Win32Pointer, graphics: Win32Pointer, cachedBitmap: Win32Pointer): number;
   /** gdiplus.dll!GdipCreateCustomLineCap */
-  GdipCreateCustomLineCap(fillPath: Win32Pointer, strokePath: Win32Pointer, baseCap: number, baseInset: number, customCap: Win32Pointer): number;
+  GdipCreateCustomLineCap(
+    fillPath: Win32Pointer,
+    strokePath: Win32Pointer,
+    baseCap: number,
+    baseInset: number,
+    customCap: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateEffect */
   GdipCreateEffect(guid: Win32StructInit, effect: Win32Pointer): number;
   /** gdiplus.dll!GdipCreateFont */
   GdipCreateFont(fontFamily: Win32Pointer, emSize: number, style: number, unit: number, font: Win32Pointer): number;
   /** gdiplus.dll!GdipCreateFontFamilyFromName */
-  GdipCreateFontFamilyFromName(name: string | Win32Pointer, fontCollection: Win32Pointer, fontFamily: Win32Pointer): number;
+  GdipCreateFontFamilyFromName(
+    name: string | Win32Pointer,
+    fontCollection: Win32Pointer,
+    fontFamily: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateFontFromDC */
   GdipCreateFontFromDC(hdc: Win32Pointer, font: Win32Pointer): number;
   /** gdiplus.dll!GdipCreateFontFromLogfontA */
@@ -205,21 +399,73 @@ interface Functions {
   /** gdiplus.dll!GdipCreateImageAttributes */
   GdipCreateImageAttributes(imageattr: Win32Pointer): number;
   /** gdiplus.dll!GdipCreateLineBrush */
-  GdipCreateLineBrush(point1: Win32Pointer, point2: Win32Pointer, color1: number, color2: number, wrapMode: number, lineGradient: Win32Pointer): number;
+  GdipCreateLineBrush(
+    point1: Win32Pointer,
+    point2: Win32Pointer,
+    color1: number,
+    color2: number,
+    wrapMode: number,
+    lineGradient: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateLineBrushFromRect */
-  GdipCreateLineBrushFromRect(rect: Win32Pointer, color1: number, color2: number, mode: number, wrapMode: number, lineGradient: Win32Pointer): number;
+  GdipCreateLineBrushFromRect(
+    rect: Win32Pointer,
+    color1: number,
+    color2: number,
+    mode: number,
+    wrapMode: number,
+    lineGradient: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateLineBrushFromRectI */
-  GdipCreateLineBrushFromRectI(rect: Win32Pointer, color1: number, color2: number, mode: number, wrapMode: number, lineGradient: Win32Pointer): number;
+  GdipCreateLineBrushFromRectI(
+    rect: Win32Pointer,
+    color1: number,
+    color2: number,
+    mode: number,
+    wrapMode: number,
+    lineGradient: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateLineBrushFromRectWithAngle */
-  GdipCreateLineBrushFromRectWithAngle(rect: Win32Pointer, color1: number, color2: number, angle: number, isAngleScalable: number, wrapMode: number, lineGradient: Win32Pointer): number;
+  GdipCreateLineBrushFromRectWithAngle(
+    rect: Win32Pointer,
+    color1: number,
+    color2: number,
+    angle: number,
+    isAngleScalable: number,
+    wrapMode: number,
+    lineGradient: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateLineBrushFromRectWithAngleI */
-  GdipCreateLineBrushFromRectWithAngleI(rect: Win32Pointer, color1: number, color2: number, angle: number, isAngleScalable: number, wrapMode: number, lineGradient: Win32Pointer): number;
+  GdipCreateLineBrushFromRectWithAngleI(
+    rect: Win32Pointer,
+    color1: number,
+    color2: number,
+    angle: number,
+    isAngleScalable: number,
+    wrapMode: number,
+    lineGradient: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateLineBrushI */
-  GdipCreateLineBrushI(point1: Win32Pointer, point2: Win32Pointer, color1: number, color2: number, wrapMode: number, lineGradient: Win32Pointer): number;
+  GdipCreateLineBrushI(
+    point1: Win32Pointer,
+    point2: Win32Pointer,
+    color1: number,
+    color2: number,
+    wrapMode: number,
+    lineGradient: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateMatrix */
   GdipCreateMatrix(matrix: Win32Pointer): number;
   /** gdiplus.dll!GdipCreateMatrix2 */
-  GdipCreateMatrix2(m11: number, m12: number, m21: number, m22: number, dx: number, dy: number, matrix: Win32Pointer): number;
+  GdipCreateMatrix2(
+    m11: number,
+    m12: number,
+    m21: number,
+    m22: number,
+    dx: number,
+    dy: number,
+    matrix: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateMatrix3 */
   GdipCreateMatrix3(rect: Win32Pointer, dstplg: Win32Pointer, matrix: Win32Pointer): number;
   /** gdiplus.dll!GdipCreateMatrix3I */
@@ -231,15 +477,36 @@ interface Functions {
   /** gdiplus.dll!GdipCreateMetafileFromStream */
   GdipCreateMetafileFromStream(stream: Win32Pointer, metafile: Win32Pointer): number;
   /** gdiplus.dll!GdipCreateMetafileFromWmf */
-  GdipCreateMetafileFromWmf(hWmf: Win32Pointer, deleteWmf: number, wmfPlaceableFileHeader: Win32Pointer, metafile: Win32Pointer): number;
+  GdipCreateMetafileFromWmf(
+    hWmf: Win32Pointer,
+    deleteWmf: number,
+    wmfPlaceableFileHeader: Win32Pointer,
+    metafile: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateMetafileFromWmfFile */
-  GdipCreateMetafileFromWmfFile(file: string | Win32Pointer, wmfPlaceableFileHeader: Win32Pointer, metafile: Win32Pointer): number;
+  GdipCreateMetafileFromWmfFile(
+    file: string | Win32Pointer,
+    wmfPlaceableFileHeader: Win32Pointer,
+    metafile: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreatePath */
   GdipCreatePath(brushMode: number, path: Win32Pointer): number;
   /** gdiplus.dll!GdipCreatePath2 */
-  GdipCreatePath2(param0: Win32Pointer, param1: Win32Pointer, param2: number, param3: number, path: Win32Pointer): number;
+  GdipCreatePath2(
+    param0: Win32Pointer,
+    param1: Win32Pointer,
+    param2: number,
+    param3: number,
+    path: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreatePath2I */
-  GdipCreatePath2I(param0: Win32Pointer, param1: Win32Pointer, param2: number, param3: number, path: Win32Pointer): number;
+  GdipCreatePath2I(
+    param0: Win32Pointer,
+    param1: Win32Pointer,
+    param2: number,
+    param3: number,
+    path: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreatePathGradient */
   GdipCreatePathGradient(points: Win32Pointer, count: number, wrapMode: number, polyGradient: Win32Pointer): number;
   /** gdiplus.dll!GdipCreatePathGradientFromPath */
@@ -273,13 +540,45 @@ interface Functions {
   /** gdiplus.dll!GdipCreateTexture */
   GdipCreateTexture(image: Win32Pointer, wrapmode: number, texture: Win32Pointer): number;
   /** gdiplus.dll!GdipCreateTexture2 */
-  GdipCreateTexture2(image: Win32Pointer, wrapmode: number, x: number, y: number, width: number, height: number, texture: Win32Pointer): number;
+  GdipCreateTexture2(
+    image: Win32Pointer,
+    wrapmode: number,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    texture: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateTexture2I */
-  GdipCreateTexture2I(image: Win32Pointer, wrapmode: number, x: number, y: number, width: number, height: number, texture: Win32Pointer): number;
+  GdipCreateTexture2I(
+    image: Win32Pointer,
+    wrapmode: number,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    texture: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateTextureIA */
-  GdipCreateTextureIA(image: Win32Pointer, imageAttributes: Win32Pointer, x: number, y: number, width: number, height: number, texture: Win32Pointer): number;
+  GdipCreateTextureIA(
+    image: Win32Pointer,
+    imageAttributes: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    texture: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipCreateTextureIAI */
-  GdipCreateTextureIAI(image: Win32Pointer, imageAttributes: Win32Pointer, x: number, y: number, width: number, height: number, texture: Win32Pointer): number;
+  GdipCreateTextureIAI(
+    image: Win32Pointer,
+    imageAttributes: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    texture: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipDeleteBrush */
   GdipDeleteBrush(brush: Win32Pointer): number;
   /** gdiplus.dll!GdipDeleteCachedBitmap */
@@ -313,13 +612,53 @@ interface Functions {
   /** gdiplus.dll!GdipDisposeImageAttributes */
   GdipDisposeImageAttributes(imageattr: Win32Pointer): number;
   /** gdiplus.dll!GdipDrawArc */
-  GdipDrawArc(graphics: Win32Pointer, pen: Win32Pointer, x: number, y: number, width: number, height: number, startAngle: number, sweepAngle: number): number;
+  GdipDrawArc(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    startAngle: number,
+    sweepAngle: number,
+  ): number;
   /** gdiplus.dll!GdipDrawArcI */
-  GdipDrawArcI(graphics: Win32Pointer, pen: Win32Pointer, x: number, y: number, width: number, height: number, startAngle: number, sweepAngle: number): number;
+  GdipDrawArcI(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    startAngle: number,
+    sweepAngle: number,
+  ): number;
   /** gdiplus.dll!GdipDrawBezier */
-  GdipDrawBezier(graphics: Win32Pointer, pen: Win32Pointer, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number): number;
+  GdipDrawBezier(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    x3: number,
+    y3: number,
+    x4: number,
+    y4: number,
+  ): number;
   /** gdiplus.dll!GdipDrawBezierI */
-  GdipDrawBezierI(graphics: Win32Pointer, pen: Win32Pointer, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number): number;
+  GdipDrawBezierI(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    x3: number,
+    y3: number,
+    x4: number,
+    y4: number,
+  ): number;
   /** gdiplus.dll!GdipDrawBeziers */
   GdipDrawBeziers(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipDrawBeziersI */
@@ -329,55 +668,216 @@ interface Functions {
   /** gdiplus.dll!GdipDrawClosedCurve */
   GdipDrawClosedCurve(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipDrawClosedCurve2 */
-  GdipDrawClosedCurve2(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number, tension: number): number;
+  GdipDrawClosedCurve2(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    tension: number,
+  ): number;
   /** gdiplus.dll!GdipDrawClosedCurve2I */
-  GdipDrawClosedCurve2I(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number, tension: number): number;
+  GdipDrawClosedCurve2I(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    tension: number,
+  ): number;
   /** gdiplus.dll!GdipDrawClosedCurveI */
   GdipDrawClosedCurveI(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipDrawCurve */
   GdipDrawCurve(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipDrawCurve2 */
-  GdipDrawCurve2(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number, tension: number): number;
+  GdipDrawCurve2(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    tension: number,
+  ): number;
   /** gdiplus.dll!GdipDrawCurve2I */
-  GdipDrawCurve2I(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number, tension: number): number;
+  GdipDrawCurve2I(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    tension: number,
+  ): number;
   /** gdiplus.dll!GdipDrawCurve3 */
-  GdipDrawCurve3(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number, offset: number, numberOfSegments: number, tension: number): number;
+  GdipDrawCurve3(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    offset: number,
+    numberOfSegments: number,
+    tension: number,
+  ): number;
   /** gdiplus.dll!GdipDrawCurve3I */
-  GdipDrawCurve3I(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number, offset: number, numberOfSegments: number, tension: number): number;
+  GdipDrawCurve3I(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    offset: number,
+    numberOfSegments: number,
+    tension: number,
+  ): number;
   /** gdiplus.dll!GdipDrawCurveI */
   GdipDrawCurveI(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipDrawDriverString */
-  GdipDrawDriverString(graphics: Win32Pointer, text: Win32Pointer, length: number, font: Win32Pointer, brush: Win32Pointer, positions: Win32Pointer, flags: number, matrix: Win32Pointer): number;
+  GdipDrawDriverString(
+    graphics: Win32Pointer,
+    text: Win32Pointer,
+    length: number,
+    font: Win32Pointer,
+    brush: Win32Pointer,
+    positions: Win32Pointer,
+    flags: number,
+    matrix: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipDrawEllipse */
-  GdipDrawEllipse(graphics: Win32Pointer, pen: Win32Pointer, x: number, y: number, width: number, height: number): number;
+  GdipDrawEllipse(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): number;
   /** gdiplus.dll!GdipDrawEllipseI */
-  GdipDrawEllipseI(graphics: Win32Pointer, pen: Win32Pointer, x: number, y: number, width: number, height: number): number;
+  GdipDrawEllipseI(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): number;
   /** gdiplus.dll!GdipDrawImage */
   GdipDrawImage(graphics: Win32Pointer, image: Win32Pointer, x: number, y: number): number;
   /** gdiplus.dll!GdipDrawImageFX */
-  GdipDrawImageFX(graphics: Win32Pointer, image: Win32Pointer, source: Win32Pointer, xForm: Win32Pointer, effect: Win32Pointer, imageAttributes: Win32Pointer, srcUnit: number): number;
+  GdipDrawImageFX(
+    graphics: Win32Pointer,
+    image: Win32Pointer,
+    source: Win32Pointer,
+    xForm: Win32Pointer,
+    effect: Win32Pointer,
+    imageAttributes: Win32Pointer,
+    srcUnit: number,
+  ): number;
   /** gdiplus.dll!GdipDrawImageI */
   GdipDrawImageI(graphics: Win32Pointer, image: Win32Pointer, x: number, y: number): number;
   /** gdiplus.dll!GdipDrawImagePointRect */
-  GdipDrawImagePointRect(graphics: Win32Pointer, image: Win32Pointer, x: number, y: number, srcx: number, srcy: number, srcwidth: number, srcheight: number, srcUnit: number): number;
+  GdipDrawImagePointRect(
+    graphics: Win32Pointer,
+    image: Win32Pointer,
+    x: number,
+    y: number,
+    srcx: number,
+    srcy: number,
+    srcwidth: number,
+    srcheight: number,
+    srcUnit: number,
+  ): number;
   /** gdiplus.dll!GdipDrawImagePointRectI */
-  GdipDrawImagePointRectI(graphics: Win32Pointer, image: Win32Pointer, x: number, y: number, srcx: number, srcy: number, srcwidth: number, srcheight: number, srcUnit: number): number;
+  GdipDrawImagePointRectI(
+    graphics: Win32Pointer,
+    image: Win32Pointer,
+    x: number,
+    y: number,
+    srcx: number,
+    srcy: number,
+    srcwidth: number,
+    srcheight: number,
+    srcUnit: number,
+  ): number;
   /** gdiplus.dll!GdipDrawImagePoints */
   GdipDrawImagePoints(graphics: Win32Pointer, image: Win32Pointer, dstpoints: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipDrawImagePointsI */
   GdipDrawImagePointsI(graphics: Win32Pointer, image: Win32Pointer, dstpoints: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipDrawImagePointsRect */
-  GdipDrawImagePointsRect(graphics: Win32Pointer, image: Win32Pointer, points: Win32Pointer, count: number, srcx: number, srcy: number, srcwidth: number, srcheight: number, srcUnit: number, imageAttributes: Win32Pointer, callback: number | bigint, callbackData: Win32Pointer): number;
+  GdipDrawImagePointsRect(
+    graphics: Win32Pointer,
+    image: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    srcx: number,
+    srcy: number,
+    srcwidth: number,
+    srcheight: number,
+    srcUnit: number,
+    imageAttributes: Win32Pointer,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipDrawImagePointsRectI */
-  GdipDrawImagePointsRectI(graphics: Win32Pointer, image: Win32Pointer, points: Win32Pointer, count: number, srcx: number, srcy: number, srcwidth: number, srcheight: number, srcUnit: number, imageAttributes: Win32Pointer, callback: number | bigint, callbackData: Win32Pointer): number;
+  GdipDrawImagePointsRectI(
+    graphics: Win32Pointer,
+    image: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    srcx: number,
+    srcy: number,
+    srcwidth: number,
+    srcheight: number,
+    srcUnit: number,
+    imageAttributes: Win32Pointer,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipDrawImageRect */
-  GdipDrawImageRect(graphics: Win32Pointer, image: Win32Pointer, x: number, y: number, width: number, height: number): number;
+  GdipDrawImageRect(
+    graphics: Win32Pointer,
+    image: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): number;
   /** gdiplus.dll!GdipDrawImageRectI */
-  GdipDrawImageRectI(graphics: Win32Pointer, image: Win32Pointer, x: number, y: number, width: number, height: number): number;
+  GdipDrawImageRectI(
+    graphics: Win32Pointer,
+    image: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): number;
   /** gdiplus.dll!GdipDrawImageRectRect */
-  GdipDrawImageRectRect(graphics: Win32Pointer, image: Win32Pointer, dstx: number, dsty: number, dstwidth: number, dstheight: number, srcx: number, srcy: number, srcwidth: number, srcheight: number, srcUnit: number, imageAttributes: Win32Pointer, callback: number | bigint, callbackData: Win32Pointer): number;
+  GdipDrawImageRectRect(
+    graphics: Win32Pointer,
+    image: Win32Pointer,
+    dstx: number,
+    dsty: number,
+    dstwidth: number,
+    dstheight: number,
+    srcx: number,
+    srcy: number,
+    srcwidth: number,
+    srcheight: number,
+    srcUnit: number,
+    imageAttributes: Win32Pointer,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipDrawImageRectRectI */
-  GdipDrawImageRectRectI(graphics: Win32Pointer, image: Win32Pointer, dstx: number, dsty: number, dstwidth: number, dstheight: number, srcx: number, srcy: number, srcwidth: number, srcheight: number, srcUnit: number, imageAttributes: Win32Pointer, callback: number | bigint, callbackData: Win32Pointer): number;
+  GdipDrawImageRectRectI(
+    graphics: Win32Pointer,
+    image: Win32Pointer,
+    dstx: number,
+    dsty: number,
+    dstwidth: number,
+    dstheight: number,
+    srcx: number,
+    srcy: number,
+    srcwidth: number,
+    srcheight: number,
+    srcUnit: number,
+    imageAttributes: Win32Pointer,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipDrawLine */
   GdipDrawLine(graphics: Win32Pointer, pen: Win32Pointer, x1: number, y1: number, x2: number, y2: number): number;
   /** gdiplus.dll!GdipDrawLineI */
@@ -389,81 +889,299 @@ interface Functions {
   /** gdiplus.dll!GdipDrawPath */
   GdipDrawPath(graphics: Win32Pointer, pen: Win32Pointer, path: Win32Pointer): number;
   /** gdiplus.dll!GdipDrawPie */
-  GdipDrawPie(graphics: Win32Pointer, pen: Win32Pointer, x: number, y: number, width: number, height: number, startAngle: number, sweepAngle: number): number;
+  GdipDrawPie(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    startAngle: number,
+    sweepAngle: number,
+  ): number;
   /** gdiplus.dll!GdipDrawPieI */
-  GdipDrawPieI(graphics: Win32Pointer, pen: Win32Pointer, x: number, y: number, width: number, height: number, startAngle: number, sweepAngle: number): number;
+  GdipDrawPieI(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    startAngle: number,
+    sweepAngle: number,
+  ): number;
   /** gdiplus.dll!GdipDrawPolygon */
   GdipDrawPolygon(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipDrawPolygonI */
   GdipDrawPolygonI(graphics: Win32Pointer, pen: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipDrawRectangle */
-  GdipDrawRectangle(graphics: Win32Pointer, pen: Win32Pointer, x: number, y: number, width: number, height: number): number;
+  GdipDrawRectangle(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): number;
   /** gdiplus.dll!GdipDrawRectangleI */
-  GdipDrawRectangleI(graphics: Win32Pointer, pen: Win32Pointer, x: number, y: number, width: number, height: number): number;
+  GdipDrawRectangleI(
+    graphics: Win32Pointer,
+    pen: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): number;
   /** gdiplus.dll!GdipDrawRectangles */
   GdipDrawRectangles(graphics: Win32Pointer, pen: Win32Pointer, rects: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipDrawRectanglesI */
   GdipDrawRectanglesI(graphics: Win32Pointer, pen: Win32Pointer, rects: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipDrawString */
-  GdipDrawString(graphics: Win32Pointer, string: string | Win32Pointer, length: number, font: Win32Pointer, layoutRect: Win32Pointer, stringFormat: Win32Pointer, brush: Win32Pointer): number;
+  GdipDrawString(
+    graphics: Win32Pointer,
+    string: string | Win32Pointer,
+    length: number,
+    font: Win32Pointer,
+    layoutRect: Win32Pointer,
+    stringFormat: Win32Pointer,
+    brush: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipEmfToWmfBits */
-  GdipEmfToWmfBits(hemf: Win32Pointer, cbData16: number, pData16: Win32Pointer, iMapMode: number, eFlags: number): number;
+  GdipEmfToWmfBits(
+    hemf: Win32Pointer,
+    cbData16: number,
+    pData16: Win32Pointer,
+    iMapMode: number,
+    eFlags: number,
+  ): number;
   /** gdiplus.dll!GdipEndContainer */
   GdipEndContainer(graphics: Win32Pointer, state: number): number;
   /** gdiplus.dll!GdipEnumerateMetafileDestPoint */
-  GdipEnumerateMetafileDestPoint(graphics: Win32Pointer, metafile: Win32Pointer, destPoint: Win32Pointer, callback: number | bigint, callbackData: Win32Pointer, imageAttributes: Win32Pointer): number;
+  GdipEnumerateMetafileDestPoint(
+    graphics: Win32Pointer,
+    metafile: Win32Pointer,
+    destPoint: Win32Pointer,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+    imageAttributes: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipEnumerateMetafileDestPointI */
-  GdipEnumerateMetafileDestPointI(graphics: Win32Pointer, metafile: Win32Pointer, destPoint: Win32Pointer, callback: number | bigint, callbackData: Win32Pointer, imageAttributes: Win32Pointer): number;
+  GdipEnumerateMetafileDestPointI(
+    graphics: Win32Pointer,
+    metafile: Win32Pointer,
+    destPoint: Win32Pointer,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+    imageAttributes: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipEnumerateMetafileDestPoints */
-  GdipEnumerateMetafileDestPoints(graphics: Win32Pointer, metafile: Win32Pointer, destPoints: Win32Pointer, count: number, callback: number | bigint, callbackData: Win32Pointer, imageAttributes: Win32Pointer): number;
+  GdipEnumerateMetafileDestPoints(
+    graphics: Win32Pointer,
+    metafile: Win32Pointer,
+    destPoints: Win32Pointer,
+    count: number,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+    imageAttributes: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipEnumerateMetafileDestPointsI */
-  GdipEnumerateMetafileDestPointsI(graphics: Win32Pointer, metafile: Win32Pointer, destPoints: Win32Pointer, count: number, callback: number | bigint, callbackData: Win32Pointer, imageAttributes: Win32Pointer): number;
+  GdipEnumerateMetafileDestPointsI(
+    graphics: Win32Pointer,
+    metafile: Win32Pointer,
+    destPoints: Win32Pointer,
+    count: number,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+    imageAttributes: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipEnumerateMetafileDestRect */
-  GdipEnumerateMetafileDestRect(graphics: Win32Pointer, metafile: Win32Pointer, destRect: Win32Pointer, callback: number | bigint, callbackData: Win32Pointer, imageAttributes: Win32Pointer): number;
+  GdipEnumerateMetafileDestRect(
+    graphics: Win32Pointer,
+    metafile: Win32Pointer,
+    destRect: Win32Pointer,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+    imageAttributes: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipEnumerateMetafileDestRectI */
-  GdipEnumerateMetafileDestRectI(graphics: Win32Pointer, metafile: Win32Pointer, destRect: Win32Pointer, callback: number | bigint, callbackData: Win32Pointer, imageAttributes: Win32Pointer): number;
+  GdipEnumerateMetafileDestRectI(
+    graphics: Win32Pointer,
+    metafile: Win32Pointer,
+    destRect: Win32Pointer,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+    imageAttributes: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipEnumerateMetafileSrcRectDestPoint */
-  GdipEnumerateMetafileSrcRectDestPoint(graphics: Win32Pointer, metafile: Win32Pointer, destPoint: Win32Pointer, srcRect: Win32Pointer, srcUnit: number, callback: number | bigint, callbackData: Win32Pointer, imageAttributes: Win32Pointer): number;
+  GdipEnumerateMetafileSrcRectDestPoint(
+    graphics: Win32Pointer,
+    metafile: Win32Pointer,
+    destPoint: Win32Pointer,
+    srcRect: Win32Pointer,
+    srcUnit: number,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+    imageAttributes: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipEnumerateMetafileSrcRectDestPointI */
-  GdipEnumerateMetafileSrcRectDestPointI(graphics: Win32Pointer, metafile: Win32Pointer, destPoint: Win32Pointer, srcRect: Win32Pointer, srcUnit: number, callback: number | bigint, callbackData: Win32Pointer, imageAttributes: Win32Pointer): number;
+  GdipEnumerateMetafileSrcRectDestPointI(
+    graphics: Win32Pointer,
+    metafile: Win32Pointer,
+    destPoint: Win32Pointer,
+    srcRect: Win32Pointer,
+    srcUnit: number,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+    imageAttributes: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipEnumerateMetafileSrcRectDestPoints */
-  GdipEnumerateMetafileSrcRectDestPoints(graphics: Win32Pointer, metafile: Win32Pointer, destPoints: Win32Pointer, count: number, srcRect: Win32Pointer, srcUnit: number, callback: number | bigint, callbackData: Win32Pointer, imageAttributes: Win32Pointer): number;
+  GdipEnumerateMetafileSrcRectDestPoints(
+    graphics: Win32Pointer,
+    metafile: Win32Pointer,
+    destPoints: Win32Pointer,
+    count: number,
+    srcRect: Win32Pointer,
+    srcUnit: number,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+    imageAttributes: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipEnumerateMetafileSrcRectDestPointsI */
-  GdipEnumerateMetafileSrcRectDestPointsI(graphics: Win32Pointer, metafile: Win32Pointer, destPoints: Win32Pointer, count: number, srcRect: Win32Pointer, srcUnit: number, callback: number | bigint, callbackData: Win32Pointer, imageAttributes: Win32Pointer): number;
+  GdipEnumerateMetafileSrcRectDestPointsI(
+    graphics: Win32Pointer,
+    metafile: Win32Pointer,
+    destPoints: Win32Pointer,
+    count: number,
+    srcRect: Win32Pointer,
+    srcUnit: number,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+    imageAttributes: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipEnumerateMetafileSrcRectDestRect */
-  GdipEnumerateMetafileSrcRectDestRect(graphics: Win32Pointer, metafile: Win32Pointer, destRect: Win32Pointer, srcRect: Win32Pointer, srcUnit: number, callback: number | bigint, callbackData: Win32Pointer, imageAttributes: Win32Pointer): number;
+  GdipEnumerateMetafileSrcRectDestRect(
+    graphics: Win32Pointer,
+    metafile: Win32Pointer,
+    destRect: Win32Pointer,
+    srcRect: Win32Pointer,
+    srcUnit: number,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+    imageAttributes: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipEnumerateMetafileSrcRectDestRectI */
-  GdipEnumerateMetafileSrcRectDestRectI(graphics: Win32Pointer, metafile: Win32Pointer, destRect: Win32Pointer, srcRect: Win32Pointer, srcUnit: number, callback: number | bigint, callbackData: Win32Pointer, imageAttributes: Win32Pointer): number;
+  GdipEnumerateMetafileSrcRectDestRectI(
+    graphics: Win32Pointer,
+    metafile: Win32Pointer,
+    destRect: Win32Pointer,
+    srcRect: Win32Pointer,
+    srcUnit: number,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+    imageAttributes: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipFillClosedCurve */
   GdipFillClosedCurve(graphics: Win32Pointer, brush: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipFillClosedCurve2 */
-  GdipFillClosedCurve2(graphics: Win32Pointer, brush: Win32Pointer, points: Win32Pointer, count: number, tension: number, fillMode: number): number;
+  GdipFillClosedCurve2(
+    graphics: Win32Pointer,
+    brush: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    tension: number,
+    fillMode: number,
+  ): number;
   /** gdiplus.dll!GdipFillClosedCurve2I */
-  GdipFillClosedCurve2I(graphics: Win32Pointer, brush: Win32Pointer, points: Win32Pointer, count: number, tension: number, fillMode: number): number;
+  GdipFillClosedCurve2I(
+    graphics: Win32Pointer,
+    brush: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    tension: number,
+    fillMode: number,
+  ): number;
   /** gdiplus.dll!GdipFillClosedCurveI */
   GdipFillClosedCurveI(graphics: Win32Pointer, brush: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipFillEllipse */
-  GdipFillEllipse(graphics: Win32Pointer, brush: Win32Pointer, x: number, y: number, width: number, height: number): number;
+  GdipFillEllipse(
+    graphics: Win32Pointer,
+    brush: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): number;
   /** gdiplus.dll!GdipFillEllipseI */
-  GdipFillEllipseI(graphics: Win32Pointer, brush: Win32Pointer, x: number, y: number, width: number, height: number): number;
+  GdipFillEllipseI(
+    graphics: Win32Pointer,
+    brush: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): number;
   /** gdiplus.dll!GdipFillPath */
   GdipFillPath(graphics: Win32Pointer, brush: Win32Pointer, path: Win32Pointer): number;
   /** gdiplus.dll!GdipFillPie */
-  GdipFillPie(graphics: Win32Pointer, brush: Win32Pointer, x: number, y: number, width: number, height: number, startAngle: number, sweepAngle: number): number;
+  GdipFillPie(
+    graphics: Win32Pointer,
+    brush: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    startAngle: number,
+    sweepAngle: number,
+  ): number;
   /** gdiplus.dll!GdipFillPieI */
-  GdipFillPieI(graphics: Win32Pointer, brush: Win32Pointer, x: number, y: number, width: number, height: number, startAngle: number, sweepAngle: number): number;
+  GdipFillPieI(
+    graphics: Win32Pointer,
+    brush: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    startAngle: number,
+    sweepAngle: number,
+  ): number;
   /** gdiplus.dll!GdipFillPolygon */
-  GdipFillPolygon(graphics: Win32Pointer, brush: Win32Pointer, points: Win32Pointer, count: number, fillMode: number): number;
+  GdipFillPolygon(
+    graphics: Win32Pointer,
+    brush: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    fillMode: number,
+  ): number;
   /** gdiplus.dll!GdipFillPolygon2 */
   GdipFillPolygon2(graphics: Win32Pointer, brush: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipFillPolygon2I */
   GdipFillPolygon2I(graphics: Win32Pointer, brush: Win32Pointer, points: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipFillPolygonI */
-  GdipFillPolygonI(graphics: Win32Pointer, brush: Win32Pointer, points: Win32Pointer, count: number, fillMode: number): number;
+  GdipFillPolygonI(
+    graphics: Win32Pointer,
+    brush: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    fillMode: number,
+  ): number;
   /** gdiplus.dll!GdipFillRectangle */
-  GdipFillRectangle(graphics: Win32Pointer, brush: Win32Pointer, x: number, y: number, width: number, height: number): number;
+  GdipFillRectangle(
+    graphics: Win32Pointer,
+    brush: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): number;
   /** gdiplus.dll!GdipFillRectangleI */
-  GdipFillRectangleI(graphics: Win32Pointer, brush: Win32Pointer, x: number, y: number, width: number, height: number): number;
+  GdipFillRectangleI(
+    graphics: Win32Pointer,
+    brush: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): number;
   /** gdiplus.dll!GdipFillRectangles */
   GdipFillRectangles(graphics: Win32Pointer, brush: Win32Pointer, rects: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipFillRectanglesI */
@@ -489,7 +1207,12 @@ interface Functions {
   /** gdiplus.dll!GdipGetAdjustableArrowCapWidth */
   GdipGetAdjustableArrowCapWidth(cap: Win32Pointer, width: Win32Pointer): number;
   /** gdiplus.dll!GdipGetAllPropertyItems */
-  GdipGetAllPropertyItems(image: Win32Pointer, totalBufferSize: number, numProperties: number, allItems: Win32Pointer): number;
+  GdipGetAllPropertyItems(
+    image: Win32Pointer,
+    totalBufferSize: number,
+    numProperties: number,
+    allItems: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipGetBrushType */
   GdipGetBrushType(brush: Win32Pointer, type: Win32Pointer): number;
   /** gdiplus.dll!GdipGetCellAscent */
@@ -531,7 +1254,12 @@ interface Functions {
   /** gdiplus.dll!GdipGetEmHeight */
   GdipGetEmHeight(family: Win32Pointer, style: number, EmHeight: Win32Pointer): number;
   /** gdiplus.dll!GdipGetEncoderParameterList */
-  GdipGetEncoderParameterList(image: Win32Pointer, clsidEncoder: Win32Pointer, size: number, buffer: Win32Pointer): number;
+  GdipGetEncoderParameterList(
+    image: Win32Pointer,
+    clsidEncoder: Win32Pointer,
+    size: number,
+    buffer: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipGetEncoderParameterListSize */
   GdipGetEncoderParameterListSize(image: Win32Pointer, clsidEncoder: Win32Pointer, size: Win32Pointer): number;
   /** gdiplus.dll!GdipGetFamily */
@@ -541,7 +1269,12 @@ interface Functions {
   /** gdiplus.dll!GdipGetFontCollectionFamilyCount */
   GdipGetFontCollectionFamilyCount(fontCollection: Win32Pointer, numFound: Win32Pointer): number;
   /** gdiplus.dll!GdipGetFontCollectionFamilyList */
-  GdipGetFontCollectionFamilyList(fontCollection: Win32Pointer, numSought: number, gpfamilies: Win32Pointer, numFound: Win32Pointer): number;
+  GdipGetFontCollectionFamilyList(
+    fontCollection: Win32Pointer,
+    numSought: number,
+    gpfamilies: Win32Pointer,
+    numFound: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipGetFontHeight */
   GdipGetFontHeight(font: Win32Pointer, graphics: Win32Pointer, height: Win32Pointer): number;
   /** gdiplus.dll!GdipGetFontHeightGivenDPI */
@@ -567,7 +1300,11 @@ interface Functions {
   /** gdiplus.dll!GdipGetHemfFromMetafile */
   GdipGetHemfFromMetafile(metafile: Win32Pointer, hEmf: Win32Pointer): number;
   /** gdiplus.dll!GdipGetImageAttributesAdjustedPalette */
-  GdipGetImageAttributesAdjustedPalette(imageAttr: Win32Pointer, colorPalette: Win32Pointer, colorAdjustType: number): number;
+  GdipGetImageAttributesAdjustedPalette(
+    imageAttr: Win32Pointer,
+    colorPalette: Win32Pointer,
+    colorAdjustType: number,
+  ): number;
   /** gdiplus.dll!GdipGetImageBounds */
   GdipGetImageBounds(image: Win32Pointer, srcRect: Win32Pointer, srcUnit: Win32Pointer): number;
   /** gdiplus.dll!GdipGetImageDecoders */
@@ -599,7 +1336,14 @@ interface Functions {
   /** gdiplus.dll!GdipGetImageRawFormat */
   GdipGetImageRawFormat(image: Win32Pointer, format: Win32Pointer): number;
   /** gdiplus.dll!GdipGetImageThumbnail */
-  GdipGetImageThumbnail(image: Win32Pointer, thumbWidth: number, thumbHeight: number, thumbImage: Win32Pointer, callback: number | bigint, callbackData: Win32Pointer): number;
+  GdipGetImageThumbnail(
+    image: Win32Pointer,
+    thumbWidth: number,
+    thumbHeight: number,
+    thumbImage: Win32Pointer,
+    callback: number | bigint,
+    callbackData: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipGetImageType */
   GdipGetImageType(image: Win32Pointer, type: Win32Pointer): number;
   /** gdiplus.dll!GdipGetImageVerticalResolution */
@@ -639,7 +1383,10 @@ interface Functions {
   /** gdiplus.dll!GdipGetMatrixElements */
   GdipGetMatrixElements(matrix: Win32Pointer, matrixOut: Win32Pointer): number;
   /** gdiplus.dll!GdipGetMetafileDownLevelRasterizationLimit */
-  GdipGetMetafileDownLevelRasterizationLimit(metafile: Win32Pointer, metafileRasterizationLimitDpi: Win32Pointer): number;
+  GdipGetMetafileDownLevelRasterizationLimit(
+    metafile: Win32Pointer,
+    metafileRasterizationLimitDpi: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipGetMetafileHeaderFromEmf */
   GdipGetMetafileHeaderFromEmf(hEmf: Win32Pointer, header: Win32Pointer): number;
   /** gdiplus.dll!GdipGetMetafileHeaderFromFile */
@@ -679,7 +1426,12 @@ interface Functions {
   /** gdiplus.dll!GdipGetPathGradientPointCount */
   GdipGetPathGradientPointCount(brush: Win32Pointer, count: Win32Pointer): number;
   /** gdiplus.dll!GdipGetPathGradientPresetBlend */
-  GdipGetPathGradientPresetBlend(brush: Win32Pointer, blend: Win32Pointer, positions: Win32Pointer, count: number): number;
+  GdipGetPathGradientPresetBlend(
+    brush: Win32Pointer,
+    blend: Win32Pointer,
+    positions: Win32Pointer,
+    count: number,
+  ): number;
   /** gdiplus.dll!GdipGetPathGradientPresetBlendCount */
   GdipGetPathGradientPresetBlendCount(brush: Win32Pointer, count: Win32Pointer): number;
   /** gdiplus.dll!GdipGetPathGradientRect */
@@ -797,7 +1549,12 @@ interface Functions {
   /** gdiplus.dll!GdipGetStringFormatTabStopCount */
   GdipGetStringFormatTabStopCount(format: Win32Pointer, count: Win32Pointer): number;
   /** gdiplus.dll!GdipGetStringFormatTabStops */
-  GdipGetStringFormatTabStops(format: Win32Pointer, count: number, firstTabOffset: Win32Pointer, tabStops: Win32Pointer): number;
+  GdipGetStringFormatTabStops(
+    format: Win32Pointer,
+    count: number,
+    firstTabOffset: Win32Pointer,
+    tabStops: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipGetStringFormatTrimming */
   GdipGetStringFormatTrimming(format: Win32Pointer, trimming: Win32Pointer): number;
   /** gdiplus.dll!GdipGetTextContrast */
@@ -835,7 +1592,13 @@ interface Functions {
   /** gdiplus.dll!GdipImageSetAbort */
   GdipImageSetAbort(pImage: Win32Pointer, pIAbort: Win32Pointer): number;
   /** gdiplus.dll!GdipInitializePalette */
-  GdipInitializePalette(palette: Win32Pointer, palettetype: number, optimalColors: number, useTransparentColor: number, bitmap: Win32Pointer): number;
+  GdipInitializePalette(
+    palette: Win32Pointer,
+    palettetype: number,
+    optimalColors: number,
+    useTransparentColor: number,
+    bitmap: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipInvertMatrix */
   GdipInvertMatrix(matrix: Win32Pointer): number;
   /** gdiplus.dll!GdipIsClipEmpty */
@@ -853,33 +1616,101 @@ interface Functions {
   /** gdiplus.dll!GdipIsMatrixInvertible */
   GdipIsMatrixInvertible(matrix: Win32Pointer, result: Win32Pointer): number;
   /** gdiplus.dll!GdipIsOutlineVisiblePathPoint */
-  GdipIsOutlineVisiblePathPoint(path: Win32Pointer, x: number, y: number, pen: Win32Pointer, graphics: Win32Pointer, result: Win32Pointer): number;
+  GdipIsOutlineVisiblePathPoint(
+    path: Win32Pointer,
+    x: number,
+    y: number,
+    pen: Win32Pointer,
+    graphics: Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipIsOutlineVisiblePathPointI */
-  GdipIsOutlineVisiblePathPointI(path: Win32Pointer, x: number, y: number, pen: Win32Pointer, graphics: Win32Pointer, result: Win32Pointer): number;
+  GdipIsOutlineVisiblePathPointI(
+    path: Win32Pointer,
+    x: number,
+    y: number,
+    pen: Win32Pointer,
+    graphics: Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipIsStyleAvailable */
   GdipIsStyleAvailable(family: Win32Pointer, style: number, IsStyleAvailable: Win32Pointer): number;
   /** gdiplus.dll!GdipIsVisibleClipEmpty */
   GdipIsVisibleClipEmpty(graphics: Win32Pointer, result: Win32Pointer): number;
   /** gdiplus.dll!GdipIsVisiblePathPoint */
-  GdipIsVisiblePathPoint(path: Win32Pointer, x: number, y: number, graphics: Win32Pointer, result: Win32Pointer): number;
+  GdipIsVisiblePathPoint(
+    path: Win32Pointer,
+    x: number,
+    y: number,
+    graphics: Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipIsVisiblePathPointI */
-  GdipIsVisiblePathPointI(path: Win32Pointer, x: number, y: number, graphics: Win32Pointer, result: Win32Pointer): number;
+  GdipIsVisiblePathPointI(
+    path: Win32Pointer,
+    x: number,
+    y: number,
+    graphics: Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipIsVisiblePoint */
   GdipIsVisiblePoint(graphics: Win32Pointer, x: number, y: number, result: Win32Pointer): number;
   /** gdiplus.dll!GdipIsVisiblePointI */
   GdipIsVisiblePointI(graphics: Win32Pointer, x: number, y: number, result: Win32Pointer): number;
   /** gdiplus.dll!GdipIsVisibleRect */
-  GdipIsVisibleRect(graphics: Win32Pointer, x: number, y: number, width: number, height: number, result: Win32Pointer): number;
+  GdipIsVisibleRect(
+    graphics: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    result: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipIsVisibleRectI */
-  GdipIsVisibleRectI(graphics: Win32Pointer, x: number, y: number, width: number, height: number, result: Win32Pointer): number;
+  GdipIsVisibleRectI(
+    graphics: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    result: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipIsVisibleRegionPoint */
-  GdipIsVisibleRegionPoint(region: Win32Pointer, x: number, y: number, graphics: Win32Pointer, result: Win32Pointer): number;
+  GdipIsVisibleRegionPoint(
+    region: Win32Pointer,
+    x: number,
+    y: number,
+    graphics: Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipIsVisibleRegionPointI */
-  GdipIsVisibleRegionPointI(region: Win32Pointer, x: number, y: number, graphics: Win32Pointer, result: Win32Pointer): number;
+  GdipIsVisibleRegionPointI(
+    region: Win32Pointer,
+    x: number,
+    y: number,
+    graphics: Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipIsVisibleRegionRect */
-  GdipIsVisibleRegionRect(region: Win32Pointer, x: number, y: number, width: number, height: number, graphics: Win32Pointer, result: Win32Pointer): number;
+  GdipIsVisibleRegionRect(
+    region: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    graphics: Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipIsVisibleRegionRectI */
-  GdipIsVisibleRegionRectI(region: Win32Pointer, x: number, y: number, width: number, height: number, graphics: Win32Pointer, result: Win32Pointer): number;
+  GdipIsVisibleRegionRectI(
+    region: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    graphics: Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipLoadImageFromFile */
   GdipLoadImageFromFile(filename: string | Win32Pointer, image: Win32Pointer): number;
   /** gdiplus.dll!GdipLoadImageFromFileICM */
@@ -889,11 +1720,39 @@ interface Functions {
   /** gdiplus.dll!GdipLoadImageFromStreamICM */
   GdipLoadImageFromStreamICM(stream: Win32Pointer, image: Win32Pointer): number;
   /** gdiplus.dll!GdipMeasureCharacterRanges */
-  GdipMeasureCharacterRanges(graphics: Win32Pointer, string: string | Win32Pointer, length: number, font: Win32Pointer, layoutRect: Win32Pointer, stringFormat: Win32Pointer, regionCount: number, regions: Win32Pointer): number;
+  GdipMeasureCharacterRanges(
+    graphics: Win32Pointer,
+    string: string | Win32Pointer,
+    length: number,
+    font: Win32Pointer,
+    layoutRect: Win32Pointer,
+    stringFormat: Win32Pointer,
+    regionCount: number,
+    regions: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipMeasureDriverString */
-  GdipMeasureDriverString(graphics: Win32Pointer, text: Win32Pointer, length: number, font: Win32Pointer, positions: Win32Pointer, flags: number, matrix: Win32Pointer, boundingBox: Win32Pointer): number;
+  GdipMeasureDriverString(
+    graphics: Win32Pointer,
+    text: Win32Pointer,
+    length: number,
+    font: Win32Pointer,
+    positions: Win32Pointer,
+    flags: number,
+    matrix: Win32Pointer,
+    boundingBox: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipMeasureString */
-  GdipMeasureString(graphics: Win32Pointer, string: string | Win32Pointer, length: number, font: Win32Pointer, layoutRect: Win32Pointer, stringFormat: Win32Pointer, boundingBox: Win32Pointer, codepointsFitted: Win32Pointer, linesFilled: Win32Pointer): number;
+  GdipMeasureString(
+    graphics: Win32Pointer,
+    string: string | Win32Pointer,
+    length: number,
+    font: Win32Pointer,
+    layoutRect: Win32Pointer,
+    stringFormat: Win32Pointer,
+    boundingBox: Win32Pointer,
+    codepointsFitted: Win32Pointer,
+    linesFilled: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipMultiplyLineTransform */
   GdipMultiplyLineTransform(brush: Win32Pointer, matrix: Win32Pointer, order: number): number;
   /** gdiplus.dll!GdipMultiplyMatrix */
@@ -911,9 +1770,22 @@ interface Functions {
   /** gdiplus.dll!GdipNewPrivateFontCollection */
   GdipNewPrivateFontCollection(fontCollection: Win32Pointer): number;
   /** gdiplus.dll!GdipPathIterCopyData */
-  GdipPathIterCopyData(iterator: Win32Pointer, resultCount: Win32Pointer, points: Win32Pointer, types: Win32Pointer, startIndex: number, endIndex: number): number;
+  GdipPathIterCopyData(
+    iterator: Win32Pointer,
+    resultCount: Win32Pointer,
+    points: Win32Pointer,
+    types: Win32Pointer,
+    startIndex: number,
+    endIndex: number,
+  ): number;
   /** gdiplus.dll!GdipPathIterEnumerate */
-  GdipPathIterEnumerate(iterator: Win32Pointer, resultCount: Win32Pointer, points: Win32Pointer, types: Win32Pointer, count: number): number;
+  GdipPathIterEnumerate(
+    iterator: Win32Pointer,
+    resultCount: Win32Pointer,
+    points: Win32Pointer,
+    types: Win32Pointer,
+    count: number,
+  ): number;
   /** gdiplus.dll!GdipPathIterGetCount */
   GdipPathIterGetCount(iterator: Win32Pointer, count: Win32Pointer): number;
   /** gdiplus.dll!GdipPathIterGetSubpathCount */
@@ -923,35 +1795,109 @@ interface Functions {
   /** gdiplus.dll!GdipPathIterIsValid */
   GdipPathIterIsValid(iterator: Win32Pointer, valid: Win32Pointer): number;
   /** gdiplus.dll!GdipPathIterNextMarker */
-  GdipPathIterNextMarker(iterator: Win32Pointer, resultCount: Win32Pointer, startIndex: Win32Pointer, endIndex: Win32Pointer): number;
+  GdipPathIterNextMarker(
+    iterator: Win32Pointer,
+    resultCount: Win32Pointer,
+    startIndex: Win32Pointer,
+    endIndex: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipPathIterNextMarkerPath */
   GdipPathIterNextMarkerPath(iterator: Win32Pointer, resultCount: Win32Pointer, path: Win32Pointer): number;
   /** gdiplus.dll!GdipPathIterNextPathType */
-  GdipPathIterNextPathType(iterator: Win32Pointer, resultCount: Win32Pointer, pathType: Win32Pointer, startIndex: Win32Pointer, endIndex: Win32Pointer): number;
+  GdipPathIterNextPathType(
+    iterator: Win32Pointer,
+    resultCount: Win32Pointer,
+    pathType: Win32Pointer,
+    startIndex: Win32Pointer,
+    endIndex: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipPathIterNextSubpath */
-  GdipPathIterNextSubpath(iterator: Win32Pointer, resultCount: Win32Pointer, startIndex: Win32Pointer, endIndex: Win32Pointer, isClosed: Win32Pointer): number;
+  GdipPathIterNextSubpath(
+    iterator: Win32Pointer,
+    resultCount: Win32Pointer,
+    startIndex: Win32Pointer,
+    endIndex: Win32Pointer,
+    isClosed: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipPathIterNextSubpathPath */
-  GdipPathIterNextSubpathPath(iterator: Win32Pointer, resultCount: Win32Pointer, path: Win32Pointer, isClosed: Win32Pointer): number;
+  GdipPathIterNextSubpathPath(
+    iterator: Win32Pointer,
+    resultCount: Win32Pointer,
+    path: Win32Pointer,
+    isClosed: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipPathIterRewind */
   GdipPathIterRewind(iterator: Win32Pointer): number;
   /** gdiplus.dll!GdipPlayMetafileRecord */
-  GdipPlayMetafileRecord(metafile: Win32Pointer, recordType: number, flags: number, dataSize: number, data: Win32Pointer): number;
+  GdipPlayMetafileRecord(
+    metafile: Win32Pointer,
+    recordType: number,
+    flags: number,
+    dataSize: number,
+    data: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipPrivateAddFontFile */
   GdipPrivateAddFontFile(fontCollection: Win32Pointer, filename: string | Win32Pointer): number;
   /** gdiplus.dll!GdipPrivateAddMemoryFont */
   GdipPrivateAddMemoryFont(fontCollection: Win32Pointer, memory: Win32Pointer, length: number): number;
   /** gdiplus.dll!GdipRecordMetafile */
-  GdipRecordMetafile(referenceHdc: Win32Pointer, type: number, frameRect: Win32Pointer, frameUnit: number, description: string | Win32Pointer, metafile: Win32Pointer): number;
+  GdipRecordMetafile(
+    referenceHdc: Win32Pointer,
+    type: number,
+    frameRect: Win32Pointer,
+    frameUnit: number,
+    description: string | Win32Pointer,
+    metafile: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipRecordMetafileFileName */
-  GdipRecordMetafileFileName(fileName: string | Win32Pointer, referenceHdc: Win32Pointer, type: number, frameRect: Win32Pointer, frameUnit: number, description: string | Win32Pointer, metafile: Win32Pointer): number;
+  GdipRecordMetafileFileName(
+    fileName: string | Win32Pointer,
+    referenceHdc: Win32Pointer,
+    type: number,
+    frameRect: Win32Pointer,
+    frameUnit: number,
+    description: string | Win32Pointer,
+    metafile: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipRecordMetafileFileNameI */
-  GdipRecordMetafileFileNameI(fileName: string | Win32Pointer, referenceHdc: Win32Pointer, type: number, frameRect: Win32Pointer, frameUnit: number, description: string | Win32Pointer, metafile: Win32Pointer): number;
+  GdipRecordMetafileFileNameI(
+    fileName: string | Win32Pointer,
+    referenceHdc: Win32Pointer,
+    type: number,
+    frameRect: Win32Pointer,
+    frameUnit: number,
+    description: string | Win32Pointer,
+    metafile: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipRecordMetafileI */
-  GdipRecordMetafileI(referenceHdc: Win32Pointer, type: number, frameRect: Win32Pointer, frameUnit: number, description: string | Win32Pointer, metafile: Win32Pointer): number;
+  GdipRecordMetafileI(
+    referenceHdc: Win32Pointer,
+    type: number,
+    frameRect: Win32Pointer,
+    frameUnit: number,
+    description: string | Win32Pointer,
+    metafile: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipRecordMetafileStream */
-  GdipRecordMetafileStream(stream: Win32Pointer, referenceHdc: Win32Pointer, type: number, frameRect: Win32Pointer, frameUnit: number, description: string | Win32Pointer, metafile: Win32Pointer): number;
+  GdipRecordMetafileStream(
+    stream: Win32Pointer,
+    referenceHdc: Win32Pointer,
+    type: number,
+    frameRect: Win32Pointer,
+    frameUnit: number,
+    description: string | Win32Pointer,
+    metafile: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipRecordMetafileStreamI */
-  GdipRecordMetafileStreamI(stream: Win32Pointer, referenceHdc: Win32Pointer, type: number, frameRect: Win32Pointer, frameUnit: number, description: string | Win32Pointer, metafile: Win32Pointer): number;
+  GdipRecordMetafileStreamI(
+    stream: Win32Pointer,
+    referenceHdc: Win32Pointer,
+    type: number,
+    frameRect: Win32Pointer,
+    frameUnit: number,
+    description: string | Win32Pointer,
+    metafile: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipReleaseDC */
   GdipReleaseDC(graphics: Win32Pointer, hdc: Win32Pointer): number;
   /** gdiplus.dll!GdipRemovePropertyItem */
@@ -997,9 +1943,19 @@ interface Functions {
   /** gdiplus.dll!GdipSaveGraphics */
   GdipSaveGraphics(graphics: Win32Pointer, state: Win32Pointer): number;
   /** gdiplus.dll!GdipSaveImageToFile */
-  GdipSaveImageToFile(image: Win32Pointer, filename: string | Win32Pointer, clsidEncoder: Win32Pointer, encoderParams: Win32Pointer): number;
+  GdipSaveImageToFile(
+    image: Win32Pointer,
+    filename: string | Win32Pointer,
+    clsidEncoder: Win32Pointer,
+    encoderParams: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipSaveImageToStream */
-  GdipSaveImageToStream(image: Win32Pointer, stream: Win32Pointer, clsidEncoder: Win32Pointer, encoderParams: Win32Pointer): number;
+  GdipSaveImageToStream(
+    image: Win32Pointer,
+    stream: Win32Pointer,
+    clsidEncoder: Win32Pointer,
+    encoderParams: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipScaleLineTransform */
   GdipScaleLineTransform(brush: Win32Pointer, sx: number, sy: number, order: number): number;
   /** gdiplus.dll!GdipScaleMatrix */
@@ -1027,9 +1983,23 @@ interface Functions {
   /** gdiplus.dll!GdipSetClipPath */
   GdipSetClipPath(graphics: Win32Pointer, path: Win32Pointer, combineMode: number): number;
   /** gdiplus.dll!GdipSetClipRect */
-  GdipSetClipRect(graphics: Win32Pointer, x: number, y: number, width: number, height: number, combineMode: number): number;
+  GdipSetClipRect(
+    graphics: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    combineMode: number,
+  ): number;
   /** gdiplus.dll!GdipSetClipRectI */
-  GdipSetClipRectI(graphics: Win32Pointer, x: number, y: number, width: number, height: number, combineMode: number): number;
+  GdipSetClipRectI(
+    graphics: Win32Pointer,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    combineMode: number,
+  ): number;
   /** gdiplus.dll!GdipSetClipRegion */
   GdipSetClipRegion(graphics: Win32Pointer, region: Win32Pointer, combineMode: number): number;
   /** gdiplus.dll!GdipSetCompositingMode */
@@ -1053,19 +2023,48 @@ interface Functions {
   /** gdiplus.dll!GdipSetImageAttributesCachedBackground */
   GdipSetImageAttributesCachedBackground(imageattr: Win32Pointer, enableFlag: number): number;
   /** gdiplus.dll!GdipSetImageAttributesColorKeys */
-  GdipSetImageAttributesColorKeys(imageattr: Win32Pointer, type: number, enableFlag: number, colorLow: number, colorHigh: number): number;
+  GdipSetImageAttributesColorKeys(
+    imageattr: Win32Pointer,
+    type: number,
+    enableFlag: number,
+    colorLow: number,
+    colorHigh: number,
+  ): number;
   /** gdiplus.dll!GdipSetImageAttributesColorMatrix */
-  GdipSetImageAttributesColorMatrix(imageattr: Win32Pointer, type: number, enableFlag: number, colorMatrix: Win32Pointer, grayMatrix: Win32Pointer, flags: number): number;
+  GdipSetImageAttributesColorMatrix(
+    imageattr: Win32Pointer,
+    type: number,
+    enableFlag: number,
+    colorMatrix: Win32Pointer,
+    grayMatrix: Win32Pointer,
+    flags: number,
+  ): number;
   /** gdiplus.dll!GdipSetImageAttributesGamma */
   GdipSetImageAttributesGamma(imageattr: Win32Pointer, type: number, enableFlag: number, gamma: number): number;
   /** gdiplus.dll!GdipSetImageAttributesNoOp */
   GdipSetImageAttributesNoOp(imageattr: Win32Pointer, type: number, enableFlag: number): number;
   /** gdiplus.dll!GdipSetImageAttributesOutputChannel */
-  GdipSetImageAttributesOutputChannel(imageattr: Win32Pointer, type: number, enableFlag: number, channelFlags: number): number;
+  GdipSetImageAttributesOutputChannel(
+    imageattr: Win32Pointer,
+    type: number,
+    enableFlag: number,
+    channelFlags: number,
+  ): number;
   /** gdiplus.dll!GdipSetImageAttributesOutputChannelColorProfile */
-  GdipSetImageAttributesOutputChannelColorProfile(imageattr: Win32Pointer, type: number, enableFlag: number, colorProfileFilename: string | Win32Pointer): number;
+  GdipSetImageAttributesOutputChannelColorProfile(
+    imageattr: Win32Pointer,
+    type: number,
+    enableFlag: number,
+    colorProfileFilename: string | Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipSetImageAttributesRemapTable */
-  GdipSetImageAttributesRemapTable(imageattr: Win32Pointer, type: number, enableFlag: number, mapSize: number, map: Win32Pointer): number;
+  GdipSetImageAttributesRemapTable(
+    imageattr: Win32Pointer,
+    type: number,
+    enableFlag: number,
+    mapSize: number,
+    map: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipSetImageAttributesThreshold */
   GdipSetImageAttributesThreshold(imageattr: Win32Pointer, type: number, enableFlag: number, threshold: number): number;
   /** gdiplus.dll!GdipSetImageAttributesToIdentity */
@@ -1095,7 +2094,15 @@ interface Functions {
   /** gdiplus.dll!GdipSetLineWrapMode */
   GdipSetLineWrapMode(brush: Win32Pointer, wrapmode: number): number;
   /** gdiplus.dll!GdipSetMatrixElements */
-  GdipSetMatrixElements(matrix: Win32Pointer, m11: number, m12: number, m21: number, m22: number, dx: number, dy: number): number;
+  GdipSetMatrixElements(
+    matrix: Win32Pointer,
+    m11: number,
+    m12: number,
+    m21: number,
+    m22: number,
+    dx: number,
+    dy: number,
+  ): number;
   /** gdiplus.dll!GdipSetMetafileDownLevelRasterizationLimit */
   GdipSetMetafileDownLevelRasterizationLimit(metafile: Win32Pointer, metafileRasterizationLimitDpi: number): number;
   /** gdiplus.dll!GdipSetPageScale */
@@ -1121,7 +2128,12 @@ interface Functions {
   /** gdiplus.dll!GdipSetPathGradientPath */
   GdipSetPathGradientPath(brush: Win32Pointer, path: Win32Pointer): number;
   /** gdiplus.dll!GdipSetPathGradientPresetBlend */
-  GdipSetPathGradientPresetBlend(brush: Win32Pointer, blend: Win32Pointer, positions: Win32Pointer, count: number): number;
+  GdipSetPathGradientPresetBlend(
+    brush: Win32Pointer,
+    blend: Win32Pointer,
+    positions: Win32Pointer,
+    count: number,
+  ): number;
   /** gdiplus.dll!GdipSetPathGradientSigmaBlend */
   GdipSetPathGradientSigmaBlend(brush: Win32Pointer, focus: number, scale: number): number;
   /** gdiplus.dll!GdipSetPathGradientSurroundColorsWithCount */
@@ -1191,7 +2203,12 @@ interface Functions {
   /** gdiplus.dll!GdipSetStringFormatMeasurableCharacterRanges */
   GdipSetStringFormatMeasurableCharacterRanges(format: Win32Pointer, rangeCount: number, ranges: Win32Pointer): number;
   /** gdiplus.dll!GdipSetStringFormatTabStops */
-  GdipSetStringFormatTabStops(format: Win32Pointer, firstTabOffset: number, count: number, tabStops: Win32Pointer): number;
+  GdipSetStringFormatTabStops(
+    format: Win32Pointer,
+    firstTabOffset: number,
+    count: number,
+    tabStops: Win32Pointer,
+  ): number;
   /** gdiplus.dll!GdipSetStringFormatTrimming */
   GdipSetStringFormatTrimming(format: Win32Pointer, trimming: number): number;
   /** gdiplus.dll!GdipSetTextContrast */
@@ -1221,9 +2238,21 @@ interface Functions {
   /** gdiplus.dll!GdipTransformPath */
   GdipTransformPath(path: Win32Pointer, matrix: Win32Pointer): number;
   /** gdiplus.dll!GdipTransformPoints */
-  GdipTransformPoints(graphics: Win32Pointer, destSpace: number, srcSpace: number, points: Win32Pointer, count: number): number;
+  GdipTransformPoints(
+    graphics: Win32Pointer,
+    destSpace: number,
+    srcSpace: number,
+    points: Win32Pointer,
+    count: number,
+  ): number;
   /** gdiplus.dll!GdipTransformPointsI */
-  GdipTransformPointsI(graphics: Win32Pointer, destSpace: number, srcSpace: number, points: Win32Pointer, count: number): number;
+  GdipTransformPointsI(
+    graphics: Win32Pointer,
+    destSpace: number,
+    srcSpace: number,
+    points: Win32Pointer,
+    count: number,
+  ): number;
   /** gdiplus.dll!GdipTransformRegion */
   GdipTransformRegion(region: Win32Pointer, matrix: Win32Pointer): number;
   /** gdiplus.dll!GdipTranslateClip */
@@ -1251,7 +2280,18 @@ interface Functions {
   /** gdiplus.dll!GdipVectorTransformMatrixPointsI */
   GdipVectorTransformMatrixPointsI(matrix: Win32Pointer, pts: Win32Pointer, count: number): number;
   /** gdiplus.dll!GdipWarpPath */
-  GdipWarpPath(path: Win32Pointer, matrix: Win32Pointer, points: Win32Pointer, count: number, srcx: number, srcy: number, srcwidth: number, srcheight: number, warpMode: number, flatness: number): number;
+  GdipWarpPath(
+    path: Win32Pointer,
+    matrix: Win32Pointer,
+    points: Win32Pointer,
+    count: number,
+    srcx: number,
+    srcy: number,
+    srcwidth: number,
+    srcheight: number,
+    warpMode: number,
+    flatness: number,
+  ): number;
   /** gdiplus.dll!GdipWidenPath */
   GdipWidenPath(nativePath: Win32Pointer, pen: Win32Pointer, matrix: Win32Pointer, flatness: number): number;
   /** gdiplus.dll!GdipWindingModeOutline */

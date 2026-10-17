@@ -1,11 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
-import {
-  LayersIcon,
-  PlusIcon,
-  Trash2Icon,
-  WandSparklesIcon,
-  XIcon,
-} from "lucide-react";
+import { LayersIcon, PlusIcon, Trash2Icon, WandSparklesIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { BoardSection } from "../boards/boardTypes";
 
@@ -40,9 +34,7 @@ export const SelectionBar = ({
       {/* Styled to match the webapp library's multiselect bar: solid pill, filled
           control buttons, red delete, round clear. */}
       <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-ui-panel-border bg-ui-panel/95 px-2.5 py-2 shadow-xl backdrop-blur">
-        <span className="px-1 text-sm font-medium text-white/80">
-          {count} selected
-        </span>
+        <span className="px-1 text-sm font-medium text-white/80">{count} selected</span>
         {/* Triage shortcut discoverability — these keys act on the selection. */}
         <span className="hidden items-center gap-1 text-[11px] text-white/40 sm:flex">
           <Kbd>1–5</Kbd> rate
@@ -99,8 +91,7 @@ const MoveToMenu = ({
   useEffect(() => {
     if (!open) return undefined;
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -122,7 +113,7 @@ const MoveToMenu = ({
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(o => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
         className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -136,28 +127,13 @@ const MoveToMenu = ({
           role="menu"
           className="absolute bottom-[calc(100%+8px)] left-1/2 z-40 max-h-72 w-52 -translate-x-1/2 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl"
         >
-          <MenuItem
-            label="Ungrouped"
-            muted
-            onClick={() => pick(() => onAssignToSection(null))}
-          />
-          {sections.length > 0 && (
-            <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
-          )}
-          {sections.map((s) => (
-            <MenuItem
-              key={s.id}
-              label={s.name}
-              onClick={() => pick(() => onAssignToSection(s.id))}
-            />
+          <MenuItem label="Ungrouped" muted onClick={() => pick(() => onAssignToSection(null))} />
+          {sections.length > 0 && <div className="mx-1.5 my-1 border-t border-ui-panel-border" />}
+          {sections.map(s => (
+            <MenuItem key={s.id} label={s.name} onClick={() => pick(() => onAssignToSection(s.id))} />
           ))}
           <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
-          <MenuItem
-            label="New section"
-            icon={PlusIcon}
-            accent
-            onClick={() => pick(onCreateSectionWithSelection)}
-          />
+          <MenuItem label="New section" icon={PlusIcon} accent onClick={() => pick(onCreateSectionWithSelection)} />
         </div>
       )}
     </div>
@@ -191,11 +167,7 @@ const MenuItem = ({
           : "text-white hover:bg-ui-controls/50",
     ].join(" ")}
   >
-    {icon ? (
-      <DynamicIcon icon={icon} className="h-3 w-3 shrink-0 opacity-70" />
-    ) : (
-      <span className="h-3 w-3 shrink-0" />
-    )}
+    {icon ? <DynamicIcon icon={icon} className="h-3 w-3 shrink-0 opacity-70" /> : <span className="h-3 w-3 shrink-0" />}
     <span className="truncate">{label}</span>
   </button>
 );

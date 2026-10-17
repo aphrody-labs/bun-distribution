@@ -40,11 +40,11 @@ export function EventsStream() {
     const es = new EventSource("/api/bot-admin/a2a/events");
     es.onopen = () => setConnected(true);
     es.onerror = () => setConnected(false);
-    es.onmessage = (e) => {
+    es.onmessage = e => {
       try {
         const parsed = JSON.parse(e.data);
         counterRef.current++;
-        setEvents((prev) =>
+        setEvents(prev =>
           [
             {
               id: counterRef.current,
@@ -67,9 +67,7 @@ export function EventsStream() {
       <div className="dbz-panel p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
-            className={`w-2.5 h-2.5 rounded-full ${
-              connected ? "bg-green-500 shadow-[0_0_8px_#22c55e]" : "bg-red-500"
-            }`}
+            className={`w-2.5 h-2.5 rounded-full ${connected ? "bg-green-500 shadow-[0_0_8px_#22c55e]" : "bg-red-500"}`}
           />
           <span className="font-saiyan text-sm uppercase tracking-widest">
             {connected ? "Connecté" : "Déconnecté — reconnexion auto"}
@@ -82,22 +80,18 @@ export function EventsStream() {
 
       {!connected && (
         <div className="dbz-panel p-3 text-xs text-red-300 border border-red-800 bg-red-900/20">
-          La connexion est interrompue. Les événements reprendront
-          automatiquement dès que le bot sera joignable.
+          La connexion est interrompue. Les événements reprendront automatiquement dès que le bot sera joignable.
         </div>
       )}
 
       <div className="space-y-2">
         {events.length === 0 ? (
           <div className="dbz-panel p-8 text-center text-zinc-500 text-sm">
-            {connected
-              ? "En attente du prochain événement A2A…"
-              : "Connexion en cours…"}
+            {connected ? "En attente du prochain événement A2A…" : "Connexion en cours…"}
           </div>
         ) : (
-          events.map((e) => {
-            const colorClass =
-              COLOR_BY_TYPE[e.type] ?? "text-dbz-blue-light border-dbz-border";
+          events.map(e => {
+            const colorClass = COLOR_BY_TYPE[e.type] ?? "text-dbz-blue-light border-dbz-border";
             const label = EVENT_LABEL[e.type] ?? e.type;
             return (
               <article
@@ -106,14 +100,8 @@ export function EventsStream() {
               >
                 <div className="flex items-baseline justify-between mb-1">
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`font-saiyan text-sm font-bold ${colorClass.split(" ")[0]}`}
-                    >
-                      {label}
-                    </span>
-                    <code className="text-[9px] text-zinc-500 font-mono">
-                      {e.type}
-                    </code>
+                    <span className={`font-saiyan text-sm font-bold ${colorClass.split(" ")[0]}`}>{label}</span>
+                    <code className="text-[9px] text-zinc-500 font-mono">{e.type}</code>
                   </div>
                   <span className="text-[10px] text-zinc-500 font-mono">
                     {new Date(e.ts).toLocaleTimeString("fr-FR", {
@@ -125,9 +113,7 @@ export function EventsStream() {
                   </span>
                 </div>
                 <details>
-                  <summary className="text-[10px] text-zinc-500 cursor-pointer select-none">
-                    Données détaillées
-                  </summary>
+                  <summary className="text-[10px] text-zinc-500 cursor-pointer select-none">Données détaillées</summary>
                   <pre className="text-[11px] text-zinc-300 font-mono overflow-x-auto bg-dbz-bg p-2 mt-1 max-h-32 rounded">
                     {JSON.stringify(e.data, null, 2)}
                   </pre>

@@ -13,7 +13,7 @@ interface Rgb {
 }
 
 export const extractPalette = (url: string, count = 5): Promise<string[]> =>
-  new Promise((resolve) => {
+  new Promise(resolve => {
     const img = new window.Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
@@ -62,14 +62,13 @@ const quantize = (img: HTMLImageElement, count: number): string[] => {
       g: Math.round(e.g / e.n),
       b: Math.round(e.b / e.n),
     };
-    if (chosen.every((o) => distance(o, c) > MIN_DISTANCE)) chosen.push(c);
+    if (chosen.every(o => distance(o, c) > MIN_DISTANCE)) chosen.push(c);
     if (chosen.length >= count) break;
   }
-  return chosen.map((c) => toHex(c));
+  return chosen.map(c => toHex(c));
 };
 
-const distance = (a: Rgb, b: Rgb): number =>
-  Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b);
+const distance = (a: Rgb, b: Rgb): number => Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b);
 
 const toHex = ({ r, g, b }: Rgb): string => {
   const h = (r << 16) | (g << 8) | b;

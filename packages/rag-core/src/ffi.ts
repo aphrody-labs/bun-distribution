@@ -57,26 +57,21 @@ export function defaultLibraryPath(): string {
 
 /** Open the library and return the typed facade. The handle stays open for the process lifetime. */
 export function openRagFfi(path: string = defaultLibraryPath()): RagCore {
-  if (!isAbsolute(path))
-    throw new Error("the aphrody-ffi library path must be absolute");
+  if (!isAbsolute(path)) throw new Error("the aphrody-ffi library path must be absolute");
   const { symbols: s } = dlopen(path, RAG_SYMBOLS);
   if (s.aphrody_rag_abi_version() !== RAG_FFI_ABI_VERSION) {
-    throw new Error(
-      `aphrody_rag ABI mismatch (expected ${RAG_FFI_ABI_VERSION})`,
-    );
+    throw new Error(`aphrody_rag ABI mismatch (expected ${RAG_FFI_ABI_VERSION})`);
   }
 
   // Scratch buffer grown on demand; a result that did not fit is read back with `take`, never recomputed.
   let scratch = new Uint8Array(64 * 1024);
   const sized = (n: number): void => {
-    if (n > scratch.length)
-      scratch = new Uint8Array(Math.max(n, scratch.length * 2));
+    if (n > scratch.length) scratch = new Uint8Array(Math.max(n, scratch.length * 2));
   };
   const message = (): string => {
     const need = Number(s.aphrody_rag_last_error(ptr(scratch), scratch.length));
     sized(need);
-    if (need > scratch.length)
-      s.aphrody_rag_last_error(ptr(scratch), scratch.length);
+    if (need > scratch.length) s.aphrody_rag_last_error(ptr(scratch), scratch.length);
     return decoder.decode(scratch.subarray(0, need));
   };
 
@@ -102,22 +97,11 @@ export function openRagFfi(path: string = defaultLibraryPath()): RagCore {
     callJson(op, input) {
       const o = encoder.encode(op);
       const i = encoder.encode(input);
-      const n = Number(
-        s.aphrody_rag_call_json(
-          ptr(o),
-          o.length,
-          p(i),
-          i.length,
-          ptr(scratch),
-          scratch.length,
-        ),
-      );
+      const n = Number(s.aphrody_rag_call_json(ptr(o), o.length, p(i), i.length, ptr(scratch), scratch.length));
       const text = decoder.decode(finish(op, n));
       // `{"ok":<result>}` is unwrapped by slicing, without parsing the result twice.
       if (text.startsWith('{"ok":')) return text.slice(6, -1);
-      throw new Error(
-        `${op}: ${(JSON.parse(text) as { error?: string }).error ?? "native error"}`,
-      );
+      throw new Error(`${op}: ${(JSON.parse(text) as { error?: string }).error ?? "native error"}`);
     },
     callVec(op, params, a, b) {
       const o = encoder.encode(op);

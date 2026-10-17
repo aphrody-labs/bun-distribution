@@ -14,11 +14,7 @@ export type GenerationMediaClass =
 // "dimensional" class; new records are written as "mesh" (3D models) or
 // "splat" (gaussian splats). Treat all three as 3D.
 export function is3DMediaClass(mediaClass: string | undefined | null): boolean {
-  return (
-    mediaClass === "dimensional" ||
-    mediaClass === "mesh" ||
-    mediaClass === "splat"
-  );
+  return mediaClass === "dimensional" || mediaClass === "mesh" || mediaClass === "splat";
 }
 
 /** Plural noun for batch captions, e.g. "Generating 4 images". */

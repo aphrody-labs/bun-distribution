@@ -8,11 +8,7 @@ export const uploadImagesBatch = async ({
   onComplete,
 }: {
   files: File[];
-  onFileStatusChange: (
-    index: number,
-    status: FileEntryStatus,
-    errorMessage?: string,
-  ) => void;
+  onFileStatusChange: (index: number, status: FileEntryStatus, errorMessage?: string) => void;
   onOverallProgress: (completed: number, total: number) => void;
   onComplete: (allSucceeded: boolean, anySucceeded: boolean) => void;
 }) => {
@@ -29,7 +25,7 @@ export const uploadImagesBatch = async ({
         uploadImage({
           title: file.name.slice(0, file.name.lastIndexOf(".")),
           assetFile: file,
-          progressCallback: (state) => {
+          progressCallback: state => {
             if (state.status === UploaderStates.success) {
               successCount++;
               onFileStatusChange(i, "success");
@@ -37,10 +33,7 @@ export const uploadImagesBatch = async ({
               onFileStatusChange(i, "error", state.errorMessage);
             }
 
-            if (
-              state.status === UploaderStates.success ||
-              state.status === UploaderStates.assetError
-            ) {
+            if (state.status === UploaderStates.success || state.status === UploaderStates.assetError) {
               if (!completedIndices.has(i)) {
                 completedIndices.add(i);
                 completedCount++;
@@ -54,11 +47,7 @@ export const uploadImagesBatch = async ({
   } catch (err) {
     files.forEach((_, i) => {
       if (!completedIndices.has(i)) {
-        onFileStatusChange(
-          i,
-          "error",
-          err instanceof Error ? err.message : "Unexpected error",
-        );
+        onFileStatusChange(i, "error", err instanceof Error ? err.message : "Unexpected error");
       }
     });
   }

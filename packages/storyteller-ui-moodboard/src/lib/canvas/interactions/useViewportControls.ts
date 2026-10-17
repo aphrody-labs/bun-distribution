@@ -19,12 +19,10 @@ const isEditableTarget = (target: EventTarget | null): boolean => {
 // the store directly — no more ref props, which keeps a future minimap or
 // other camera-driving UI (recenter button, Shift+1 fit, etc.) able to
 // co-exist with these gestures.
-export const useViewportControls = (
-  stageRef: React.RefObject<Konva.Stage | null>,
-) => {
-  const setZoom = useMoodboardStore((s) => s.setZoom);
-  const setPan = useMoodboardStore((s) => s.setPan);
-  const setIsPanning = useMoodboardStore((s) => s.setIsPanning);
+export const useViewportControls = (stageRef: React.RefObject<Konva.Stage | null>) => {
+  const setZoom = useMoodboardStore(s => s.setZoom);
+  const setPan = useMoodboardStore(s => s.setPan);
+  const setIsPanning = useMoodboardStore(s => s.setIsPanning);
 
   // Track spacebar so any subsequent mousedown becomes a pan, not a select.
   const spaceHeld = useRef(false);
@@ -60,11 +58,7 @@ export const useViewportControls = (
         y: (pointer.y - stagePos.y) / oldScale,
       };
       const direction = e.deltaY > 0 ? -1 : 1;
-      const newScale = clamp(
-        direction > 0 ? oldScale * ZOOM_STEP : oldScale / ZOOM_STEP,
-        ZOOM_MIN,
-        ZOOM_MAX,
-      );
+      const newScale = clamp(direction > 0 ? oldScale * ZOOM_STEP : oldScale / ZOOM_STEP, ZOOM_MIN, ZOOM_MAX);
       const newPan = {
         x: pointer.x - mousePointTo.x * newScale,
         y: pointer.y - mousePointTo.y * newScale,

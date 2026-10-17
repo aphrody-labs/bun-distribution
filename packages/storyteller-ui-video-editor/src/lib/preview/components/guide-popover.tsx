@@ -3,18 +3,14 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { GUIDE_REGISTRY, getGuideById } from "../../guides";
 import { usePreviewStore } from "../preview-store";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../../components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../../components/ui/popover";
 import { Label } from "../../components/ui/label";
 import { Separator } from "../../components/ui/separator";
 import { cn } from "../../utils/ui";
 
 export function GridPopover({ children }: { children: React.ReactNode }) {
-  const activeGuide = usePreviewStore((state) => state.activeGuide);
-  const toggleGuide = usePreviewStore((state) => state.toggleGuide);
+  const activeGuide = usePreviewStore(state => state.activeGuide);
+  const toggleGuide = usePreviewStore(state => state.toggleGuide);
   const activeGuideDef = getGuideById(activeGuide);
   const options = activeGuideDef?.renderOptions?.();
 
@@ -25,7 +21,7 @@ export function GridPopover({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col gap-2 px-4">
           <Label>Guides</Label>
           <div className="grid grid-cols-3 gap-1">
-            {GUIDE_REGISTRY.map((guide) => (
+            {GUIDE_REGISTRY.map(guide => (
               <GridItem
                 key={guide.id}
                 label={guide.label}
@@ -87,14 +83,7 @@ function GridItem({
       >
         {preview}
       </div>
-      <span
-        className={cn(
-          "text-xs",
-          isSelected ? "text-primary" : "text-muted-foreground",
-        )}
-      >
-        {label}
-      </span>
+      <span className={cn("text-xs", isSelected ? "text-primary" : "text-muted-foreground")}>{label}</span>
     </button>
   );
 }

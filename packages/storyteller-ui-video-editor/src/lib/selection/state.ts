@@ -4,15 +4,7 @@ function dedupeIds({ ids }: { ids: string[] }) {
   return [...new Set(ids)];
 }
 
-function getRangeIds({
-  orderedIds,
-  anchorId,
-  targetId,
-}: {
-  orderedIds: string[];
-  anchorId: string;
-  targetId: string;
-}) {
+function getRangeIds({ orderedIds, anchorId, targetId }: { orderedIds: string[]; anchorId: string; targetId: string }) {
   const anchorIndex = orderedIds.indexOf(anchorId);
   const targetIndex = orderedIds.indexOf(targetId);
 
@@ -25,13 +17,7 @@ function getRangeIds({
   return orderedIds.slice(rangeStart, rangeEnd + 1);
 }
 
-export function replaceSelection({
-  ids,
-  anchorId,
-}: {
-  ids: string[];
-  anchorId?: string | null;
-}): SelectionState {
+export function replaceSelection({ ids, anchorId }: { ids: string[]; anchorId?: string | null }): SelectionState {
   const selectedIds = dedupeIds({ ids });
   return {
     selectedIds,
@@ -46,22 +32,12 @@ export function clearSelection(): SelectionState {
   };
 }
 
-export function pruneSelection({
-  state,
-  orderedIds,
-}: {
-  state: SelectionState;
-  orderedIds: string[];
-}): SelectionState {
+export function pruneSelection({ state, orderedIds }: { state: SelectionState; orderedIds: string[] }): SelectionState {
   const validIds = new Set(orderedIds);
-  const selectedIds = state.selectedIds.filter((id) => validIds.has(id));
+  const selectedIds = state.selectedIds.filter(id => validIds.has(id));
   const anchorId =
-    state.anchorId && validIds.has(state.anchorId)
-      ? state.anchorId
-      : (selectedIds[selectedIds.length - 1] ?? null);
-  const isUnchanged =
-    selectedIds.length === state.selectedIds.length &&
-    anchorId === state.anchorId;
+    state.anchorId && validIds.has(state.anchorId) ? state.anchorId : (selectedIds[selectedIds.length - 1] ?? null);
+  const isUnchanged = selectedIds.length === state.selectedIds.length && anchorId === state.anchorId;
 
   if (isUnchanged) {
     return state;
@@ -73,31 +49,14 @@ export function pruneSelection({
   };
 }
 
-export function isSelected({
-  state,
-  id,
-}: {
-  state: SelectionState;
-  id: string;
-}) {
+export function isSelected({ state, id }: { state: SelectionState; id: string }) {
   return state.selectedIds.includes(id);
 }
 
-export function toggleSelection({
-  state,
-  id,
-}: {
-  state: SelectionState;
-  id: string;
-}): SelectionState {
+export function toggleSelection({ state, id }: { state: SelectionState; id: string }): SelectionState {
   if (isSelected({ state, id })) {
-    const selectedIds = state.selectedIds.filter(
-      (selectedId) => selectedId !== id,
-    );
-    const anchorId =
-      state.anchorId === id
-        ? (selectedIds[selectedIds.length - 1] ?? null)
-        : state.anchorId;
+    const selectedIds = state.selectedIds.filter(selectedId => selectedId !== id);
+    const anchorId = state.anchorId === id ? (selectedIds[selectedIds.length - 1] ?? null) : state.anchorId;
     return replaceSelection({
       ids: selectedIds,
       anchorId,
@@ -121,10 +80,7 @@ export function selectRange({
   targetId: string;
   isAdditive: boolean;
 }): SelectionState {
-  const anchorId =
-    state.anchorId ??
-    state.selectedIds[state.selectedIds.length - 1] ??
-    targetId;
+  const anchorId = state.anchorId ?? state.selectedIds[state.selectedIds.length - 1] ?? targetId;
   const rangeIds = getRangeIds({
     orderedIds,
     anchorId,

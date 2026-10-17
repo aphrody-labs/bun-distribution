@@ -194,7 +194,8 @@ export function aIdentiteNative(liees: readonly ConnexionLiee[]): boolean {
 }
 
 export type ResultatDeliaison =
-  { autorise: true } | { autorise: false; raison: "connexion_non_liee" | "derniere_methode_acces" };
+  | { autorise: true }
+  | { autorise: false; raison: "connexion_non_liee" | "derniere_methode_acces" };
 
 /**
  * Peut-on délier cette connexion sans verrouiller l'utilisateur dehors ?

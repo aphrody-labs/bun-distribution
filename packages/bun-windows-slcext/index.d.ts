@@ -3,13 +3,39 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** slcext.dll!SLAcquireGenuineTicket */
-  SLAcquireGenuineTicket(ppTicketBlob: Win32Pointer, pcbTicketBlob: Win32Pointer, pwszTemplateId: string | Win32Pointer, pwszServerUrl: string | Win32Pointer, pwszClientToken: string | Win32Pointer): number;
+  SLAcquireGenuineTicket(
+    ppTicketBlob: Win32Pointer,
+    pcbTicketBlob: Win32Pointer,
+    pwszTemplateId: string | Win32Pointer,
+    pwszServerUrl: string | Win32Pointer,
+    pwszClientToken: string | Win32Pointer,
+  ): number;
   /** slcext.dll!SLActivateProduct */
-  SLActivateProduct(hSLC: Win32Pointer, pProductSkuId: Win32Pointer, cbAppSpecificData: number, pvAppSpecificData: Win32Pointer, pActivationInfo: Win32Pointer, pwszProxyServer: string | Win32Pointer, wProxyPort: number): number;
+  SLActivateProduct(
+    hSLC: Win32Pointer,
+    pProductSkuId: Win32Pointer,
+    cbAppSpecificData: number,
+    pvAppSpecificData: Win32Pointer,
+    pActivationInfo: Win32Pointer,
+    pwszProxyServer: string | Win32Pointer,
+    wProxyPort: number,
+  ): number;
   /** slcext.dll!SLGetReferralInformation */
-  SLGetReferralInformation(hSLC: Win32Pointer, eReferralType: number, pSkuOrAppId: Win32Pointer, pwszValueName: string | Win32Pointer, ppwszValue: Win32Pointer): number;
+  SLGetReferralInformation(
+    hSLC: Win32Pointer,
+    eReferralType: number,
+    pSkuOrAppId: Win32Pointer,
+    pwszValueName: string | Win32Pointer,
+    ppwszValue: Win32Pointer,
+  ): number;
   /** slcext.dll!SLGetServerStatus */
-  SLGetServerStatus(pwszServerURL: string | Win32Pointer, pwszAcquisitionType: string | Win32Pointer, pwszProxyServer: string | Win32Pointer, wProxyPort: number, phrStatus: Win32Pointer): number;
+  SLGetServerStatus(
+    pwszServerURL: string | Win32Pointer,
+    pwszAcquisitionType: string | Win32Pointer,
+    pwszProxyServer: string | Win32Pointer,
+    wProxyPort: number,
+    phrStatus: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

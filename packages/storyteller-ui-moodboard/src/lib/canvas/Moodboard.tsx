@@ -25,16 +25,10 @@ export const Moodboard = ({ adapter }: Props) => {
   // All discrete moodboard shortcuts (tools, selection, group/ungroup, delete,
   // fit, undo/redo) now resolve from the unified keybinds store.
   useMoodboardKeybinds(true);
-  const { triggerUpload, triggerGallery, modals } = useMoodboardImageEntry(
-    adapter,
-    stageRef,
-  );
+  const { triggerUpload, triggerGallery, modals } = useMoodboardImageEntry(adapter, stageRef);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative h-full w-full overflow-hidden bg-ui-panel"
-    >
+    <div ref={containerRef} className="relative h-full w-full overflow-hidden bg-ui-panel">
       <MoodboardStage containerRef={containerRef} stageRef={stageRef} />
       <TextEditOverlay containerRef={containerRef} />
       <RecenterIndicator />
@@ -45,10 +39,7 @@ export const Moodboard = ({ adapter }: Props) => {
         />
       )} */}
       <div className="absolute left-0 right-0 top-0 z-10">
-        <MoodboardToolbar
-          onUploadClick={triggerUpload}
-          onGalleryClick={triggerGallery}
-        />
+        <MoodboardToolbar onUploadClick={triggerUpload} onGalleryClick={triggerGallery} />
       </div>
       {modals}
     </div>

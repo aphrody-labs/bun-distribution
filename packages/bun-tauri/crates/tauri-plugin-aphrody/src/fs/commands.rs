@@ -162,8 +162,9 @@ impl<R: Runtime> Drop for FileHandle<R> {
             if let FilePath::Url(url) = file_path
                 && url.scheme() == "file"
             {
-                let security_scoped_resources =
-                    self.app_handle.state::<crate::fs::SecurityScopedResources>();
+                let security_scoped_resources = self
+                    .app_handle
+                    .state::<crate::fs::SecurityScopedResources>();
 
                 // Only clean up if it's not tracked manually
                 if !security_scoped_resources.is_tracked_manually(url.as_str()) {
@@ -240,8 +241,9 @@ impl<R: Runtime> Drop for PathHandle<R> {
         if let FilePath::Url(url) = file_path
             && url.scheme() == "file"
         {
-            let security_scoped_resources =
-                self.app_handle.state::<crate::fs::SecurityScopedResources>();
+            let security_scoped_resources = self
+                .app_handle
+                .state::<crate::fs::SecurityScopedResources>();
 
             // Only clean up if it's not tracked manually
             if !security_scoped_resources.is_tracked_manually(url.as_str()) {
@@ -1249,7 +1251,8 @@ pub fn start_accessing_security_scoped_resource<R: Runtime>(
             let ns_url = NSURL::URLWithString(&url_nsstring);
             if let Some(ns_url) = ns_url {
                 // Check if already active
-                let security_scoped_resources = webview.state::<crate::fs::SecurityScopedResources>();
+                let security_scoped_resources =
+                    webview.state::<crate::fs::SecurityScopedResources>();
                 if security_scoped_resources.is_tracked_manually(url.as_str()) {
                     log::debug!(
                         "Security-scoped resource already active for URL: {}",

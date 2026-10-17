@@ -61,9 +61,7 @@ export function serializeMoodboardDocument({
   };
 }
 
-export function deserializeMoodboardDocument(
-  documentJson: string,
-): MoodboardDocument | null {
+export function deserializeMoodboardDocument(documentJson: string): MoodboardDocument | null {
   let parsed: unknown;
   try {
     parsed = JSON.parse(documentJson);
@@ -105,30 +103,19 @@ export const UNRESOLVED_MEDIA_SRC =
 
 // True when a media src needs (re-)resolution from its token: never
 // persisted ("" after a blob strip) or previously unresolved (placeholder).
-const needsMediaResolution = (src: string): boolean =>
-  src === "" || src === UNRESOLVED_MEDIA_SRC;
+const needsMediaResolution = (src: string): boolean => src === "" || src === UNRESOLVED_MEDIA_SRC;
 
 // Media tokens whose display URL needs re-resolution after a load (src was a
 // blob URL at save time and got cleared).
-export function collectUnresolvedMediaTokens(
-  document: MoodboardDocument,
-): string[] {
+export function collectUnresolvedMediaTokens(document: MoodboardDocument): string[] {
   const tokens = new Set<string>();
   for (const item of Object.values(document.board.items)) {
-    if (
-      (item.kind === "image" || item.kind === "video") &&
-      needsMediaResolution(item.src) &&
-      item.mediaId
-    ) {
+    if ((item.kind === "image" || item.kind === "video") && needsMediaResolution(item.src) && item.mediaId) {
       tokens.add(item.mediaId);
     }
   }
   for (const node of Object.values(document.canvas.nodes)) {
-    if (
-      (node.kind === "image" || node.kind === "video") &&
-      needsMediaResolution(node.src) &&
-      node.mediaId
-    ) {
+    if ((node.kind === "image" || node.kind === "video") && needsMediaResolution(node.src) && node.mediaId) {
       tokens.add(node.mediaId);
     }
   }
@@ -143,11 +130,7 @@ export function applyResolvedMediaUrls(
 ): MoodboardDocument {
   const items = { ...document.board.items };
   for (const [id, item] of Object.entries(items)) {
-    if (
-      (item.kind === "image" || item.kind === "video") &&
-      needsMediaResolution(item.src) &&
-      item.mediaId
-    ) {
+    if ((item.kind === "image" || item.kind === "video") && needsMediaResolution(item.src) && item.mediaId) {
       items[id] = {
         ...item,
         src: urlByToken[item.mediaId] ?? UNRESOLVED_MEDIA_SRC,
@@ -156,11 +139,7 @@ export function applyResolvedMediaUrls(
   }
   const nodes = { ...document.canvas.nodes };
   for (const [id, node] of Object.entries(nodes)) {
-    if (
-      (node.kind === "image" || node.kind === "video") &&
-      needsMediaResolution(node.src) &&
-      node.mediaId
-    ) {
+    if ((node.kind === "image" || node.kind === "video") && needsMediaResolution(node.src) && node.mediaId) {
       nodes[id] = {
         ...node,
         src: urlByToken[node.mediaId] ?? UNRESOLVED_MEDIA_SRC,
@@ -178,8 +157,7 @@ export function applyResolvedMediaUrls(
 
 // Blob object URLs and the unresolved placeholder both die with the
 // document â€” persist them as "" (token-only) so loads re-resolve.
-const isEphemeralSrc = (src: string): boolean =>
-  src.startsWith("blob:") || src === UNRESOLVED_MEDIA_SRC;
+const isEphemeralSrc = (src: string): boolean => src.startsWith("blob:") || src === UNRESOLVED_MEDIA_SRC;
 
 function persistableBoardContent(board: Board): {
   itemOrder: string[];
@@ -201,14 +179,12 @@ function persistableBoardContent(board: Board): {
     // blob src without a token: dropped.
   }
   return {
-    itemOrder: board.itemOrder.filter((id) => items[id]),
+    itemOrder: board.itemOrder.filter(id => items[id]),
     items,
   };
 }
 
-export function persistableCanvas(
-  canvas: MoodboardCanvasDocument,
-): MoodboardCanvasDocument {
+export function persistableCanvas(canvas: MoodboardCanvasDocument): MoodboardCanvasDocument {
   const nodes: Record<string, MoodboardNode> = {};
   const dropped = new Set<string>();
 
@@ -232,7 +208,7 @@ export function persistableCanvas(
   if (dropped.size > 0) {
     for (const [id, node] of Object.entries(nodes)) {
       if (node.kind === "group" || node.kind === "card") {
-        const childIds = node.childIds.filter((child) => !dropped.has(child));
+        const childIds = node.childIds.filter(child => !dropped.has(child));
         if (childIds.length !== node.childIds.length) {
           nodes[id] = { ...node, childIds };
         }
@@ -242,7 +218,7 @@ export function persistableCanvas(
 
   return {
     nodes,
-    rootOrder: canvas.rootOrder.filter((id) => nodes[id]),
+    rootOrder: canvas.rootOrder.filter(id => nodes[id]),
     viewport: canvas.viewport,
     canvasSize: canvas.canvasSize,
     gridSpacing: canvas.gridSpacing,

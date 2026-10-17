@@ -32,9 +32,9 @@ function LibrariesView() {
   const platform = usePlatform();
 
   // Listen to all core events
-  useAllEvents((event) => {
+  useAllEvents(event => {
     setLastEvent(event);
-    setEventCount((c) => c + 1);
+    setEventCount(c => c + 1);
   });
 
   async function openWindow(windowType: string, params?: any) {
@@ -45,9 +45,7 @@ function LibrariesView() {
       }
 
       const windowDef =
-        windowType === "Settings"
-          ? { type: "Settings", page: params }
-          : { type: windowType, ...params };
+        windowType === "Settings" ? { type: "Settings", page: params } : { type: windowType, ...params };
 
       await platform.showWindow(windowDef);
       setLastEvent({ success: "Window opened", type: windowType });
@@ -68,9 +66,7 @@ function LibrariesView() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-headline-small font-bold">Spacedrive V2</h1>
-              <p className="text-body-medium text-outline">
-                Multi-window architecture demo
-              </p>
+              <p className="text-body-medium text-outline">Multi-window architecture demo</p>
             </div>
             <div className="flex items-center gap-2">
               <div
@@ -83,11 +79,7 @@ function LibrariesView() {
                 }`}
               />
               <span className="text-body-small text-outline">
-                {status === "connected"
-                  ? "Connected"
-                  : status === "error"
-                    ? "Error"
-                    : "Loading"}
+                {status === "connected" ? "Connected" : status === "error" ? "Error" : "Loading"}
               </span>
             </div>
           </div>
@@ -100,9 +92,7 @@ function LibrariesView() {
           {/* Libraries Grid */}
           {status === "connected" && libraries && (
             <div>
-              <h2 className="text-title-medium font-semibold mb-4">
-                Libraries
-              </h2>
+              <h2 className="text-title-medium font-semibold mb-4">Libraries</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {libraries.length === 0 ? (
                   <div className="col-span-full bg-outline rounded-small p-8 border border-outline text-center">
@@ -118,22 +108,15 @@ function LibrariesView() {
                       <div className="space-y-2 text-body-medium">
                         <div className="flex justify-between text-outline">
                           <span>Files</span>
-                          <span className="text-white">
-                            {lib.stats?.total_files?.toLocaleString() || 0}
-                          </span>
+                          <span className="text-white">{lib.stats?.total_files?.toLocaleString() || 0}</span>
                         </div>
                         <div className="flex justify-between text-outline">
                           <span>Size</span>
-                          <span className="text-white">
-                            {formatBytes(lib.stats?.total_size || 0)}
-                          </span>
+                          <span className="text-white">{formatBytes(lib.stats?.total_size || 0)}</span>
                         </div>
                         {lib.path && (
                           <div className="pt-2 border-t border-outline">
-                            <p
-                              className="text-body-small text-outline truncate"
-                              title={lib.path}
-                            >
+                            <p className="text-body-small text-outline truncate" title={lib.path}>
                               {lib.path}
                             </p>
                           </div>
@@ -150,9 +133,7 @@ function LibrariesView() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-title-medium font-semibold">Live events</h2>
-              <span className="text-body-small bg-outline px-2 py-1 rounded-full">
-                {eventCount} received
-              </span>
+              <span className="text-body-small bg-outline px-2 py-1 rounded-full">{eventCount} received</span>
             </div>
             <div className="bg-outline rounded-small border border-outline p-4">
               {lastEvent ? (
@@ -160,25 +141,19 @@ function LibrariesView() {
                   {JSON.stringify(lastEvent, null, 2)}
                 </pre>
               ) : (
-                <p className="text-outline text-body-medium text-center py-4">
-                  Waiting for events...
-                </p>
+                <p className="text-outline text-body-medium text-center py-4">Waiting for events...</p>
               )}
             </div>
           </div>
 
           {/* Window Controls */}
           <div>
-            <h2 className="text-title-medium font-semibold mb-4">
-              Window management
-            </h2>
+            <h2 className="text-title-medium font-semibold mb-4">Window management</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <ShinyButton onClick={() => refetch()} disabled={isLoading}>
                 Refresh
               </ShinyButton>
-              <ShinyButton onClick={() => openWindow("Settings", "general")}>
-                Settings
-              </ShinyButton>
+              <ShinyButton onClick={() => openWindow("Settings", "general")}>Settings</ShinyButton>
               <ShinyButton
                 onClick={() =>
                   openWindow("Inspector", {
@@ -188,9 +163,7 @@ function LibrariesView() {
               >
                 Inspector
               </ShinyButton>
-              <ShinyButton onClick={() => openWindow("FloatingControls")}>
-                Floating controls
-              </ShinyButton>
+              <ShinyButton onClick={() => openWindow("FloatingControls")}>Floating controls</ShinyButton>
             </div>
             {windowError && (
               <div className="mt-3 bg-error/20 border border-error rounded-small p-3">
@@ -204,9 +177,7 @@ function LibrariesView() {
       {error && (
         <div className="absolute inset-0 bg-black/50 backdrop-blur flex items-center justify-center">
           <div className="bg-outline rounded-small p-6 border border-error max-w-md">
-            <h2 className="text-title-large font-bold mb-2 text-error">
-              Error
-            </h2>
+            <h2 className="text-title-large font-bold mb-2 text-error">Error</h2>
             <p className="text-body-medium text-outline">{error.message}</p>
           </div>
         </div>

@@ -19,7 +19,18 @@ export const ownedUsage = [
 function parse(args: string[]): { positional: string[]; flags: Map<string, string | true> } {
   const positional: string[] = [];
   const flags = new Map<string, string | true>();
-  const valued = new Set(["--system", "--kind", "--to", "--from", "--part-size", "--limit", "--host", "--root", "--frames", "--timeout"]);
+  const valued = new Set([
+    "--system",
+    "--kind",
+    "--to",
+    "--from",
+    "--part-size",
+    "--limit",
+    "--host",
+    "--root",
+    "--frames",
+    "--timeout",
+  ]);
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
     if (valued.has(arg)) {
@@ -60,7 +71,7 @@ export async function runImport(args: string[]): Promise<number> {
   if (!positional.length) throw new Error(`usage: ${ownedUsage[0]}`);
   const results = await ingestPaths(positional, { system: text(flags, "--system"), via: "cli" });
   print(results);
-  return results.some((result) => result.error) ? 1 : 0;
+  return results.some(result => result.error) ? 1 : 0;
 }
 
 export async function runTestOwned(args: string[]): Promise<number> {
@@ -75,8 +86,11 @@ export async function runTestOwned(args: string[]): Promise<number> {
     roms: !flags.has("--no-roms"),
     bios: !flags.has("--no-bios"),
   });
-  print({ report, results: results.map(({ detail, ...rest }) => ({ ...rest, ...(detail ? { detail: detail.slice(0, 240) } : {}) })) });
-  return results.some((result) => result.status === "fail" || result.status === "timeout") ? 1 : 0;
+  print({
+    report,
+    results: results.map(({ detail, ...rest }) => ({ ...rest, ...(detail ? { detail: detail.slice(0, 240) } : {}) })),
+  });
+  return results.some(result => result.status === "fail" || result.status === "timeout") ? 1 : 0;
 }
 
 export async function runOwned(args: string[]): Promise<number> {
@@ -85,7 +99,11 @@ export async function runOwned(args: string[]): Promise<number> {
   switch (command) {
     case "ls":
     case "list":
-      return print(listOwned({ kind: text(flags, "--kind") as OwnedKind | undefined, system: text(flags, "--system") }).map(describe));
+      return print(
+        listOwned({ kind: text(flags, "--kind") as OwnedKind | undefined, system: text(flags, "--system") }).map(
+          describe,
+        ),
+      );
     case "rm":
     case "remove": {
       if (!positional.length) throw new Error("usage: bep owned rm <sha...>");
@@ -98,7 +116,7 @@ export async function runOwned(args: string[]): Promise<number> {
         await runInbox({
           system: text(flags, "--system"),
           watch: flags.has("--watch"),
-          report: flags.has("--watch") ? (results) => console.log(JSON.stringify(results)) : undefined,
+          report: flags.has("--watch") ? results => console.log(JSON.stringify(results)) : undefined,
         }),
       );
     case "push": {
@@ -106,7 +124,7 @@ export async function runOwned(args: string[]): Promise<number> {
       const dumps =
         flags.has("--all") || !positional.length
           ? listOwned()
-          : positional.map((sha) => {
+          : positional.map(sha => {
               const dump = ownedBySha(sha);
               if (!dump) throw new Error(`no owned dump ${sha}`);
               return dump;
@@ -124,12 +142,19 @@ export async function runOwned(args: string[]): Promise<number> {
       const [sha, file] = positional;
       if (!sha || !file) throw new Error("usage: bep owned pull <sha> <file> [--from <target>]");
       const dump = ownedBySha(sha);
-      return print(await pullDump(dump?.sha256 ?? sha, await openTarget(text(flags, "--from") ?? defaultTarget, limitOf(flags)), file));
+      return print(
+        await pullDump(
+          dump?.sha256 ?? sha,
+          await openTarget(text(flags, "--from") ?? defaultTarget, limitOf(flags)),
+          file,
+        ),
+      );
     }
     case "forget": {
       const target = await openTarget(text(flags, "--from") ?? defaultTarget);
       const removed = [];
-      for (const sha of positional) removed.push({ sha, objects: await deleteRemote(ownedBySha(sha)?.sha256 ?? sha, target) });
+      for (const sha of positional)
+        removed.push({ sha, objects: await deleteRemote(ownedBySha(sha)?.sha256 ?? sha, target) });
       return print(removed);
     }
     case "sync": {

@@ -1,24 +1,13 @@
 import { countEpisodesBySeries, listEpisodesBySeries } from "@/lib/wiki-admin";
 import { AdminHeader } from "../_Header";
-import {
-  DbAddButton,
-  DbRowActions,
-} from "@aphrody/admin-ui/components/admin/DbCrud";
+import { DbAddButton, DbRowActions } from "@aphrody/admin-ui/components/admin/DbCrud";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 const TABLE = "db_episodes";
 
-const SERIES = [
-  "DB",
-  "DBZ",
-  "DBZ_KAI",
-  "DBZ_KAI_FINAL",
-  "DBGT",
-  "DBS",
-  "DB_DAIMA",
-];
+const SERIES = ["DB", "DBZ", "DBZ_KAI", "DBZ_KAI_FINAL", "DBGT", "DBS", "DB_DAIMA"];
 
 const SERIES_LABELS: Record<string, string> = {
   DB: "Dragon Ball",
@@ -40,11 +29,7 @@ type Episode = {
   mal_id: number | null;
 };
 
-export default async function AdminEpisodesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ series?: string }>;
-}) {
+export default async function AdminEpisodesPage({ searchParams }: { searchParams: Promise<{ series?: string }> }) {
   const sp = await searchParams;
   const series = sp.series ?? "DBZ";
   const [eps, total] = await Promise.all([
@@ -64,9 +49,8 @@ export default async function AdminEpisodesPage({
       />
 
       <p className="text-sm text-white/50 mb-5">
-        Consultez la liste des épisodes par série. Sélectionnez une série
-        ci-dessous pour filtrer l&apos;affichage. Le numéro MAL renvoie vers la
-        fiche MyAnimeList de l&apos;anime.
+        Consultez la liste des épisodes par série. Sélectionnez une série ci-dessous pour filtrer l&apos;affichage. Le
+        numéro MAL renvoie vers la fiche MyAnimeList de l&apos;anime.
       </p>
 
       <div className="flex justify-end mb-4">
@@ -75,7 +59,7 @@ export default async function AdminEpisodesPage({
 
       {/* Filtre séries */}
       <nav className="mb-6 flex flex-wrap gap-2" aria-label="Choisir une série">
-        {SERIES.map((s) => (
+        {SERIES.map(s => (
           <Link
             key={s}
             href={`/admin/db-universe/episodes?series=${s}`}
@@ -92,15 +76,10 @@ export default async function AdminEpisodesPage({
 
       {eps.length === 0 ? (
         <div className="dbz-panel p-12 text-center">
-          <p className="font-saiyan text-xl uppercase text-white/50 mb-1">
-            Aucun épisode pour cette série
-          </p>
+          <p className="font-saiyan text-xl uppercase text-white/50 mb-1">Aucun épisode pour cette série</p>
           <p className="text-white/50 text-sm">
-            Les épisodes de{" "}
-            <strong className="text-white/60">
-              {SERIES_LABELS[series] ?? series}
-            </strong>{" "}
-            n&apos;ont pas encore été importés.
+            Les épisodes de <strong className="text-white/60">{SERIES_LABELS[series] ?? series}</strong> n&apos;ont pas
+            encore été importés.
           </p>
         </div>
       ) : (
@@ -108,44 +87,25 @@ export default async function AdminEpisodesPage({
           <table className="w-full">
             <thead>
               <tr className="border-b-2 border-dbz-border/60">
-                <th className="p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light w-16">
-                  N°
-                </th>
-                <th className="p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light">
-                  Titre
-                </th>
-                <th className="p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light w-32">
-                  Diffusion
-                </th>
-                <th className="p-2 text-right text-xs uppercase tracking-widest text-dbz-blue-light w-20">
-                  MAL
-                </th>
-                <th className="p-2 text-right text-xs uppercase tracking-widest text-dbz-blue-light w-20">
-                  Actions
-                </th>
+                <th className="p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light w-16">N°</th>
+                <th className="p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light">Titre</th>
+                <th className="p-2 text-left text-xs uppercase tracking-widest text-dbz-blue-light w-32">Diffusion</th>
+                <th className="p-2 text-right text-xs uppercase tracking-widest text-dbz-blue-light w-20">MAL</th>
+                <th className="p-2 text-right text-xs uppercase tracking-widest text-dbz-blue-light w-20">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {eps.map((ep) => (
-                <tr
-                  key={ep.id}
-                  className="border-b border-dbz-border/30 hover:bg-dbz-blue-light/5 transition-colors"
-                >
+              {eps.map(ep => (
+                <tr key={ep.id} className="border-b border-dbz-border/30 hover:bg-dbz-blue-light/5 transition-colors">
                   <td className="p-2 font-mono text-xs text-dbz-orange tabular-nums">
                     {String(ep.number_in_series).padStart(3, "0")}
                   </td>
                   <td className="p-2">
                     <div className="text-sm text-white">{ep.title}</div>
-                    {ep.title_ja && (
-                      <div className="font-jp text-xs text-dbz-yellow/75 mt-0.5">
-                        {ep.title_ja}
-                      </div>
-                    )}
+                    {ep.title_ja && <div className="font-jp text-xs text-dbz-yellow/75 mt-0.5">{ep.title_ja}</div>}
                   </td>
                   <td className="p-2 text-[11px] text-white/55">
-                    {ep.air_date
-                      ? new Date(ep.air_date * 1000).toLocaleDateString("fr-FR")
-                      : "—"}
+                    {ep.air_date ? new Date(ep.air_date * 1000).toLocaleDateString("fr-FR") : "—"}
                   </td>
                   <td className="p-2 text-right">
                     {ep.mal_id ? (

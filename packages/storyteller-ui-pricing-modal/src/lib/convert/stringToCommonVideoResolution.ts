@@ -10,9 +10,7 @@ import { CommonVideoResolution } from "@storyteller/api-enums";
  * - A new-style CommonResolution value from @storyteller/model-list ("one_k", "two_k", "four_k")
  * - A legacy resolution string ("1k", "2k", "4k") from the old prompt stores
  */
-export function stringToCommonVideoResolution(
-  resolution: string | undefined,
-): string | null {
+export function stringToCommonVideoResolution(resolution: string | undefined): string | null {
   switch (resolution) {
     case "half_k":
       return CommonVideoResolution.HalfK;

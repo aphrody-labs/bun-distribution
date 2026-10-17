@@ -10,18 +10,10 @@
 
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import type {
-  CommonAspectRatio,
-  CommonResolution,
-  ImageModel,
-} from "@storyteller/model-list";
+import type { CommonAspectRatio, CommonResolution, ImageModel } from "@storyteller/model-list";
 import type { GenerationProvider } from "@storyteller/api-enums";
 import type { UploadImageArgs } from "@storyteller/common";
-import type {
-  FilterEngineCategories,
-  FilterMediaType,
-  ToastTypes,
-} from "./enums";
+import type { FilterEngineCategories, FilterMediaType, ToastTypes } from "./enums";
 import type { MediaInfo } from "./models/mediaInfo";
 import type { Pagination, PaginationInfinite } from "./models/pagination";
 
@@ -137,16 +129,12 @@ export interface PageSceneAdapter {
 
   // Paginated media-file listing — backs AssetMenu's "My objects" tab.
   // Wraps the host's MediaFilesApi.ListUserMediaFiles.
-  listUserMediaFiles(
-    query: ListMediaFilesQuery,
-  ): Promise<ListUserMediaFilesResult>;
+  listUserMediaFiles(query: ListMediaFilesQuery): Promise<ListUserMediaFilesResult>;
 
   // Cursor-paginated featured listing — backs AssetMenu's "Featured"
   // tabs (skybox, character, location, etc.). Wraps the host's
   // MediaFilesApi.ListFeaturedMediaFiles.
-  listFeaturedMediaFiles(
-    query: ListMediaFilesQuery,
-  ): Promise<ListFeaturedMediaFilesResult>;
+  listFeaturedMediaFiles(query: ListMediaFilesQuery): Promise<ListFeaturedMediaFilesResult>;
 
   // Optional: list the user's saved 3D scenes for the scene picker.
   // Hosts that have migrated scene persistence to the project endpoints
@@ -184,15 +172,9 @@ export interface PageSceneAdapter {
   // its own AssetMenu / scene-load modal containers — same shape as
   // PageDrawAdapter.renderBaseImageSelector.
   renderAssetBrowser(props: {
-    onAssetSelect: (asset: {
-      mediaToken: string;
-      name: string;
-      kind: string;
-    }) => void;
+    onAssetSelect: (asset: { mediaToken: string; name: string; kind: string }) => void;
   }): ReactNode;
-  renderSceneLoader(props: {
-    onSceneSelect: (token: string) => void;
-  }): ReactNode;
+  renderSceneLoader(props: { onSceneSelect: (token: string) => void }): ReactNode;
 
   // "Upload your own model" host modal. Rendered from inside the lib's
   // AssetModal / AnimationsModal — the lib owns the trigger button + modal
@@ -259,21 +241,13 @@ export interface PageSceneAdapter {
   // Persist a produced still/video to the user's media library and return its
   // media token. Images auto-upload after Capture; videos upload on demand
   // (they're large). Required so hosts cannot silently omit recording uploads.
-  uploadMedia(args: {
-    kind: "image" | "video";
-    blob: Blob;
-    fileName: string;
-    title?: string;
-  }): Promise<string>;
+  uploadMedia(args: { kind: "image" | "video"; blob: Blob; fileName: string; title?: string }): Promise<string>;
 
   // Open the app's media Lightbox on an uploaded token — the shared modal that
   // offers every destination for the media type (Edit-on-Canvas, Make-Video,
   // Recreate, Share, Download). Host resolves the CDN URL from the token and
   // renders <Lightbox>. Replaces bespoke per-destination handoffs.
-  openMediaLightbox(
-    token: string,
-    kind: "image" | "video",
-  ): void | Promise<void>;
+  openMediaLightbox(token: string, kind: "image" | "video"): void | Promise<void>;
 
   // Auth/logout — the SettingsModal in Controls3D needs a logout
   // callback. Tauri host: setLogoutStates. Web host: web auth flow.
@@ -308,18 +282,8 @@ export interface PageSceneAdapter {
   // Wraps the host's `signalScene(...)` so the artcraft TopBar (and
   // other app-wide consumers) keeps seeing scene title/owner/dirty
   // state without the lib importing the host signal.
-  onSceneTitleChange?(meta: {
-    title: string;
-    token?: string;
-    ownerToken?: string;
-    isModified: boolean;
-  }): void;
-  onEnqueueMeta?(meta: {
-    prompt: string;
-    refImageUrls: string[];
-    modelType: string;
-    timestamp: number;
-  }): void;
+  onSceneTitleChange?(meta: { title: string; token?: string; ownerToken?: string; isModified: boolean }): void;
+  onEnqueueMeta?(meta: { prompt: string; refImageUrls: string[]; modelType: string; timestamp: number }): void;
 
   // Tab-cache integration. The host (artcraft useTabStore) reads/
   // writes the serialized scene JSON between tab switches; the library

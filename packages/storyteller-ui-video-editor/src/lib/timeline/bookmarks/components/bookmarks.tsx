@@ -7,27 +7,17 @@ import type { BookmarkDragState } from "../hooks/use-bookmark-drag";
 import { DEFAULT_TIMELINE_BOOKMARK_COLOR } from "../../components/theme";
 import { TIMELINE_BOOKMARK_ROW_HEIGHT_PX } from "../../components/layout";
 import { DEFAULT_FPS } from "../../../fps/defaults";
-import {
-  ArrowTurnBackwardIcon,
-  Delete02Icon,
-} from "@hugeicons/core-free-icons";
+import { ArrowTurnBackwardIcon, Delete02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { Bookmark } from "../../types";
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-} from "../../../components/ui/popover";
+import { Popover, PopoverAnchor, PopoverContent } from "../../../components/ui/popover";
 import { Input } from "../../../components/ui/input";
 import { ColorPicker } from "../../../components/ui/color-picker";
 import { Button } from "../../../components/ui/button";
 import { Label } from "../../../components/ui/label";
 import { uppercase } from "../../../utils/string";
 import { clamp, formatNumberForDisplay } from "../../../utils/math";
-import {
-  timelineTimeToPixels,
-  timelineTimeToSnappedPixels,
-} from "../../pixel-utils";
+import { timelineTimeToPixels, timelineTimeToSnappedPixels } from "../../pixel-utils";
 import {
   type MediaTime,
   mediaTimeFromSeconds,
@@ -41,16 +31,9 @@ const MIN_BOOKMARK_WIDTH_PX = 2;
 const BOOKMARK_MARKER_WIDTH_PX = 12;
 const BOOKMARK_MARKER_HEIGHT_PX = 15;
 const BOOKMARK_HALF_WIDTH_PX = BOOKMARK_MARKER_WIDTH_PX / 2;
-const BOOKMARK_MARKER_CLIP_PATH =
-  "polygon(50% 100%, 12% 72%, 12% 10%, 88% 10%, 88% 72%)";
+const BOOKMARK_MARKER_CLIP_PATH = "polygon(50% 100%, 12% 72%, 12% 10%, 88% 10%, 88% 72%)";
 
-function seekToBookmarkTime({
-  editor,
-  time,
-}: {
-  editor: EditorCore;
-  time: MediaTime;
-}) {
+function seekToBookmarkTime({ editor, time }: { editor: EditorCore; time: MediaTime }) {
   const activeProject = editor.project.getActive();
   const duration = editor.timeline.getTotalDuration();
   const rate = activeProject?.settings.fps ?? DEFAULT_FPS;
@@ -62,10 +45,7 @@ interface TimelineBookmarksRowProps {
   zoomLevel: number;
   dynamicTimelineWidth: number;
   dragState: BookmarkDragState;
-  onBookmarkMouseDown: (params: {
-    event: React.MouseEvent;
-    bookmark: Bookmark;
-  }) => void;
+  onBookmarkMouseDown: (params: { event: React.MouseEvent; bookmark: Bookmark }) => void;
   handleWheel: (event: React.WheelEvent) => void;
   handleTimelineContentClick: (event: React.MouseEvent) => void;
   handleRulerTrackingMouseDown: (event: React.MouseEvent) => void;
@@ -82,13 +62,10 @@ export function TimelineBookmarksRow({
   handleRulerTrackingMouseDown,
   handleRulerMouseDown,
 }: TimelineBookmarksRowProps) {
-  const bookmarks = useEditor((e) => e.scenes.getActiveScene().bookmarks);
+  const bookmarks = useEditor(e => e.scenes.getActiveScene().bookmarks);
 
   return (
-    <div
-      className="relative flex-1 overflow-hidden"
-      style={{ height: TIMELINE_BOOKMARK_ROW_HEIGHT_PX }}
-    >
+    <div className="relative flex-1 overflow-hidden" style={{ height: TIMELINE_BOOKMARK_ROW_HEIGHT_PX }}>
       <button
         className="relative w-full cursor-default select-none border-0 bg-transparent p-0"
         style={{
@@ -98,17 +75,17 @@ export function TimelineBookmarksRow({
         aria-label="Timeline ruler"
         type="button"
         onWheel={handleWheel}
-        onClick={(event) => {
+        onClick={event => {
           if (!event.currentTarget.contains(event.target as Node)) return;
           handleTimelineContentClick(event);
         }}
-        onMouseDown={(event) => {
+        onMouseDown={event => {
           if (!event.currentTarget.contains(event.target as Node)) return;
           handleRulerMouseDown(event);
           handleRulerTrackingMouseDown(event);
         }}
       >
-        {bookmarks.map((bookmark) => (
+        {bookmarks.map(bookmark => (
           <TimelineBookmark
             key={`bookmark-${bookmark.time}`}
             bookmark={bookmark}
@@ -131,27 +108,19 @@ function TimelineBookmark({
   bookmark: Bookmark;
   zoomLevel: number;
   dragState: BookmarkDragState;
-  onBookmarkMouseDown: (params: {
-    event: React.MouseEvent;
-    bookmark: Bookmark;
-  }) => void;
+  onBookmarkMouseDown: (params: { event: React.MouseEvent; bookmark: Bookmark }) => void;
 }) {
   const editor = useEditor();
   const duration = editor.timeline.getTotalDuration();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const isDragging =
-    dragState.isDragging &&
-    dragState.bookmarkTime !== null &&
-    dragState.bookmarkTime === bookmark.time;
+    dragState.isDragging && dragState.bookmarkTime !== null && dragState.bookmarkTime === bookmark.time;
 
   const displayTime = isDragging ? dragState.currentTime : bookmark.time;
   const time = bookmark.time;
   const bookmarkDuration = bookmark.duration ?? ZERO_MEDIA_TIME;
-  const durationWidth =
-    bookmarkDuration > 0
-      ? timelineTimeToPixels({ time: bookmarkDuration, zoomLevel })
-      : 0;
+  const durationWidth = bookmarkDuration > 0 ? timelineTimeToPixels({ time: bookmarkDuration, zoomLevel }) : 0;
   const hasDurationRange = durationWidth > MIN_BOOKMARK_WIDTH_PX;
   const bookmarkWidth = BOOKMARK_MARKER_WIDTH_PX + Math.max(durationWidth, 0);
   const left = timelineTimeToSnappedPixels({ time: displayTime, zoomLevel });
@@ -276,7 +245,7 @@ function TimelineBookmark({
         align="start"
         side="bottom"
         sideOffset={8}
-        onOpenAutoFocus={(event) => event.preventDefault()}
+        onOpenAutoFocus={event => event.preventDefault()}
       >
         <BookmarkPopoverContent
           bookmark={bookmark}
@@ -302,17 +271,11 @@ function BookmarkPopoverContent({
 }) {
   const editor = useEditor();
   const [draftColorHex, setDraftColorHex] = useState(
-    (bookmark.color ?? DEFAULT_TIMELINE_BOOKMARK_COLOR)
-      .replace("#", "")
-      .toUpperCase(),
+    (bookmark.color ?? DEFAULT_TIMELINE_BOOKMARK_COLOR).replace("#", "").toUpperCase(),
   );
 
   useEffect(() => {
-    setDraftColorHex(
-      (bookmark.color ?? DEFAULT_TIMELINE_BOOKMARK_COLOR)
-        .replace("#", "")
-        .toUpperCase(),
-    );
+    setDraftColorHex((bookmark.color ?? DEFAULT_TIMELINE_BOOKMARK_COLOR).replace("#", "").toUpperCase());
   }, [bookmark.color]);
 
   const handleRemove = () => {
@@ -320,17 +283,10 @@ function BookmarkPopoverContent({
     onPopoverClose();
   };
 
-  const handleUpdate = ({
-    note,
-    color,
-    duration,
-  }: Partial<Omit<Bookmark, "time">>) => {
+  const handleUpdate = ({ note, color, duration }: Partial<Omit<Bookmark, "time">>) => {
     const updates: Partial<Omit<Bookmark, "time">> = {};
     if (note !== undefined && note !== bookmark.note) updates.note = note;
-    if (
-      color !== undefined &&
-      color.toUpperCase() !== (bookmark.color ?? "").toUpperCase()
-    ) {
+    if (color !== undefined && color.toUpperCase() !== (bookmark.color ?? "").toUpperCase()) {
       updates.color = color;
     }
     if (duration !== undefined && duration !== bookmark.duration) {
@@ -340,10 +296,7 @@ function BookmarkPopoverContent({
     editor.scenes.updateBookmark({ time, updates });
   };
   const maxDuration = mediaTimeToSeconds({
-    time:
-      timelineDuration > time
-        ? subMediaTime({ a: timelineDuration, b: time })
-        : ZERO_MEDIA_TIME,
+    time: timelineDuration > time ? subMediaTime({ a: timelineDuration, b: time }) : ZERO_MEDIA_TIME,
   });
   const durationSeconds = mediaTimeToSeconds({
     time: bookmark.duration ?? ZERO_MEDIA_TIME,
@@ -356,7 +309,7 @@ function BookmarkPopoverContent({
         <Input
           placeholder="Add a note..."
           value={bookmark.note ?? ""}
-          onChange={(event) => handleUpdate({ note: event.target.value })}
+          onChange={event => handleUpdate({ note: event.target.value })}
           className="h-8 text-sm"
         />
       </div>
@@ -365,18 +318,13 @@ function BookmarkPopoverContent({
         <div className="relative">
           <ColorPicker
             value={uppercase({ string: draftColorHex })}
-            onChange={(color) => setDraftColorHex(uppercase({ string: color }))}
-            onChangeEnd={(color) =>
-              handleUpdate({ color: `#${uppercase({ string: color })}` })
-            }
+            onChange={color => setDraftColorHex(uppercase({ string: color }))}
+            onChangeEnd={color => handleUpdate({ color: `#${uppercase({ string: color })}` })}
             className="bg-background border"
           />
           {bookmark.color &&
             bookmark.color.replace(/^#/, "").toUpperCase() !==
-              DEFAULT_TIMELINE_BOOKMARK_COLOR.replace(
-                /^#/,
-                "",
-              ).toUpperCase() && (
+              DEFAULT_TIMELINE_BOOKMARK_COLOR.replace(/^#/, "").toUpperCase() && (
               <Button
                 type="button"
                 variant="text"
@@ -390,10 +338,7 @@ function BookmarkPopoverContent({
                   })
                 }
               >
-                <HugeiconsIcon
-                  icon={ArrowTurnBackwardIcon}
-                  className="!size-3.5"
-                />
+                <HugeiconsIcon icon={ArrowTurnBackwardIcon} className="!size-3.5" />
               </Button>
             )}
         </div>
@@ -406,7 +351,7 @@ function BookmarkPopoverContent({
             min={0}
             step={0.1}
             value={durationSeconds}
-            onChange={(event) => {
+            onChange={event => {
               const parsed = parseFloat(event.target.value);
               const value = Number.isNaN(parsed)
                 ? 0
@@ -430,7 +375,7 @@ function BookmarkPopoverContent({
         size="sm"
         className="text-destructive hover:bg-destructive/10"
         onClick={handleRemove}
-        onKeyDown={(event) => {
+        onKeyDown={event => {
           if (event.key === "Enter" || event.key === " ") {
             handleRemove();
           }

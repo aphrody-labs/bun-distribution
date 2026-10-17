@@ -59,18 +59,18 @@ fn main() {
 Afterwards all the plugin's APIs are available through the JavaScript guest bindings:
 
 ```typescript
-import { Store } from '@aphrody/plugin-store'
+import { Store } from "@aphrody/plugin-store";
 
-const store = await Store.load('settings.json')
+const store = await Store.load("settings.json");
 
-await store.set('some-key', { value: 5 })
+await store.set("some-key", { value: 5 });
 
-const val = await store.get<{ value: number }>('some-key')
+const val = await store.get<{ value: number }>("some-key");
 
 if (val) {
-  console.log(val)
+  console.log(val);
 } else {
-  console.log('val is null')
+  console.log("val is null");
 }
 ```
 
@@ -81,14 +81,14 @@ Modifications made to the store are automatically saved by default
 You can manually save a store with:
 
 ```javascript
-await store.save()
+await store.save();
 ```
 
 Stores are loaded automatically when used from the JavaScript bindings.  
 However, you can also load them manually later like so:
 
 ```javascript
-await store.load()
+await store.load();
 ```
 
 ### LazyStore
@@ -96,9 +96,9 @@ await store.load()
 There's also a high level API `LazyStore` which only loads the store on first access, note that the options will be ignored if a `Store` with that path has already been created
 
 ```typescript
-import { LazyStore } from '@aphrody/plugin-store'
+import { LazyStore } from "@aphrody/plugin-store";
 
-const store = new LazyStore('settings.json')
+const store = new LazyStore("settings.json");
 ```
 
 ## Usage from Rust

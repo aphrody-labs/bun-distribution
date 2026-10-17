@@ -18,25 +18,15 @@ export interface RetryOptions {
   /** Random source in [0, 1) for jitter (injectable for deterministic tests). */
   readonly random?: () => number;
   /** Invoked before each retry, after the delay is computed. */
-  readonly onRetry?: (info: {
-    attempt: number;
-    delayMs: number;
-    error: unknown;
-  }) => void;
+  readonly onRetry?: (info: { attempt: number; delayMs: number; error: unknown }) => void;
 }
 
-const DEFAULT_SLEEP = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+const DEFAULT_SLEEP = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
 /** HTTP status codes considered transient and therefore retryable. */
 export function isRetryableStatus(status: number | undefined): boolean {
   if (status === undefined) return false;
-  return (
-    status === 408 ||
-    status === 425 ||
-    status === 429 ||
-    (status >= 500 && status <= 599)
-  );
+  return status === 408 || status === 425 || status === 429 || (status >= 500 && status <= 599);
 }
 
 /**
@@ -63,18 +53,9 @@ export function isTransientNetworkError(err: unknown): boolean {
   const anyErr = err as { name?: unknown; code?: unknown; message?: unknown };
   const name = typeof anyErr.name === "string" ? anyErr.name : "";
   const code = typeof anyErr.code === "string" ? anyErr.code : "";
-  const message =
-    typeof anyErr.message === "string" ? anyErr.message.toLowerCase() : "";
+  const message = typeof anyErr.message === "string" ? anyErr.message.toLowerCase() : "";
   if (name === "AbortError" || name === "TimeoutError") return true;
-  if (
-    [
-      "ETIMEDOUT",
-      "ECONNRESET",
-      "ECONNREFUSED",
-      "EAI_AGAIN",
-      "ENOTFOUND",
-    ].includes(code)
-  ) {
+  if (["ETIMEDOUT", "ECONNRESET", "ECONNREFUSED", "EAI_AGAIN", "ENOTFOUND"].includes(code)) {
     return true;
   }
   return (
@@ -99,10 +80,7 @@ export function defaultIsRetryable(err: unknown): boolean {
  * (wrapped in {@link RetryExhaustedError}) once attempts are exhausted, or
  * immediately if the error is judged non-retryable.
  */
-export async function withRetry<T>(
-  fn: (attempt: number) => Promise<T>,
-  options: RetryOptions = {},
-): Promise<T> {
+export async function withRetry<T>(fn: (attempt: number) => Promise<T>, options: RetryOptions = {}): Promise<T> {
   const retries = Math.max(1, options.retries ?? 4);
   const baseDelayMs = Math.max(0, options.baseDelayMs ?? 300);
   const maxDelayMs = Math.max(baseDelayMs, options.maxDelayMs ?? 8000);
@@ -130,9 +108,7 @@ export async function withRetry<T>(
     }
   }
 
-  throw new RetryExhaustedError(
-    `Operation failed after ${retries} attempt(s): ${toMessage(lastError)}`,
-    retries,
-    { cause: lastError },
-  );
+  throw new RetryExhaustedError(`Operation failed after ${retries} attempt(s): ${toMessage(lastError)}`, retries, {
+    cause: lastError,
+  });
 }

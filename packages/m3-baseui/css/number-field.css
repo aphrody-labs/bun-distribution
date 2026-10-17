@@ -15,8 +15,7 @@
     border: 1px solid var(--md-sys-color-outline);
     border-radius: var(--md-sys-shape-corner-extra-small);
     color: var(--md-sys-color-on-surface);
-    transition: border-color var(--md-sys-motion-duration-short3)
-      var(--md-sys-motion-easing-standard);
+    transition: border-color var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
   }
   .m3-bui-number-field__group:hover {
     border-color: var(--md-sys-color-on-surface);

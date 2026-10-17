@@ -8,8 +8,8 @@
  * @module
  */
 
-import { invoke } from '../api/core'
-import { type UnlistenFn, listen } from '../api/event'
+import { invoke } from "../api/core";
+import { type UnlistenFn, listen } from "../api/event";
 
 /**
  * Get the current URLs that triggered the deep link. Use this on app load to check whether your app was started via a deep link.
@@ -30,7 +30,7 @@ import { type UnlistenFn, listen } from '../api/event'
  * @since 2.0.0
  */
 export async function getCurrent(): Promise<string[] | null> {
-  return await invoke('plugin:deep-link|get_current')
+  return await invoke("plugin:deep-link|get_current");
 }
 
 /**
@@ -52,7 +52,7 @@ export async function getCurrent(): Promise<string[] | null> {
  * @since 2.0.0
  */
 export async function register(protocol: string): Promise<null> {
-  return await invoke('plugin:deep-link|register', { protocol })
+  return await invoke("plugin:deep-link|register", { protocol });
 }
 
 /**
@@ -76,7 +76,7 @@ export async function register(protocol: string): Promise<null> {
  * @since 2.0.0
  */
 export async function unregister(protocol: string): Promise<null> {
-  return await invoke('plugin:deep-link|unregister', { protocol })
+  return await invoke("plugin:deep-link|unregister", { protocol });
 }
 
 /**
@@ -98,7 +98,7 @@ export async function unregister(protocol: string): Promise<null> {
  * @since 2.0.0
  */
 export async function isRegistered(protocol: string): Promise<boolean> {
-  return await invoke('plugin:deep-link|is_registered', { protocol })
+  return await invoke("plugin:deep-link|is_registered", { protocol });
 }
 
 /**
@@ -119,10 +119,8 @@ export async function isRegistered(protocol: string): Promise<boolean> {
  * @returns A promise resolving to a function that unregisters the event listener.
  * @since 2.0.0
  */
-export async function onOpenUrl(
-  handler: (urls: string[]) => void
-): Promise<UnlistenFn> {
-  return await listen<string[]>('deep-link://new-url', (event) => {
-    handler(event.payload)
-  })
+export async function onOpenUrl(handler: (urls: string[]) => void): Promise<UnlistenFn> {
+  return await listen<string[]>("deep-link://new-url", event => {
+    handler(event.payload);
+  });
 }

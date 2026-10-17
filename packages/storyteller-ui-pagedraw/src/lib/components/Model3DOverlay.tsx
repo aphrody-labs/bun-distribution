@@ -1,19 +1,11 @@
-import React, {
-  useEffect,
-  useRef,
-  useCallback,
-  useImperativeHandle,
-} from "react";
+import React, { useEffect, useRef, useCallback, useImperativeHandle } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import Konva from "konva";
 import { disposeObject3D } from "@storyteller/ui-viewer-3d";
 import { Node } from "../Node";
-import {
-  Model3DParams,
-  DEFAULT_MODEL3D_PARAMS,
-} from "../utilities/render3DModel";
+import { Model3DParams, DEFAULT_MODEL3D_PARAMS } from "../utilities/render3DModel";
 
 export interface Model3DOverlayHandle {
   onScaleDrag: (dx: number, dy: number) => void;
@@ -53,10 +45,10 @@ function buildNodeScreenRect(
   return { left, top, width, height };
 }
 
-export const Model3DOverlay = React.forwardRef<
-  Model3DOverlayHandle,
-  Model3DOverlayProps
->(function Model3DOverlay({ node, stageRef, onCommit, onDismiss }, ref) {
+export const Model3DOverlay = React.forwardRef<Model3DOverlayHandle, Model3DOverlayProps>(function Model3DOverlay(
+  { node, stageRef, onCommit, onDismiss },
+  ref,
+) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -65,9 +57,7 @@ export const Model3DOverlay = React.forwardRef<
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const animFrameRef = useRef<number | null>(null);
-  const modelScaleRef = useRef<number>(
-    node.model3dParams?.modelScale ?? DEFAULT_MODEL3D_PARAMS.modelScale,
-  );
+  const modelScaleRef = useRef<number>(node.model3dParams?.modelScale ?? DEFAULT_MODEL3D_PARAMS.modelScale);
   const loadedModelRef = useRef<THREE.Object3D | null>(null);
   const committedRef = useRef(false);
 
@@ -113,10 +103,8 @@ export const Model3DOverlay = React.forwardRef<
     // Render at native (undistorted) dimensions. Konva will stretch the committed
     // PNG to fill the node's current frame, preserving any user-applied stretch.
     const baseParams = node.model3dParams ?? DEFAULT_MODEL3D_PARAMS;
-    const nativeW =
-      baseParams.nativeWidth ?? Math.round(node.width * (node.scaleX ?? 1));
-    const nativeH =
-      baseParams.nativeHeight ?? Math.round(node.height * (node.scaleY ?? 1));
+    const nativeW = baseParams.nativeWidth ?? Math.round(node.width * (node.scaleX ?? 1));
+    const nativeH = baseParams.nativeHeight ?? Math.round(node.height * (node.scaleY ?? 1));
     renderer.setSize(nativeW, nativeH);
     camera.aspect = nativeW / nativeH;
     camera.updateProjectionMatrix();
@@ -130,10 +118,7 @@ export const Model3DOverlay = React.forwardRef<
   const onScaleDrag = useCallback((dx: number, _dy: number) => {
     const model = loadedModelRef.current;
     if (!model) return;
-    const newScale = Math.max(
-      0.1,
-      Math.min(3, modelScaleRef.current + dx * 0.01),
-    );
+    const newScale = Math.max(0.1, Math.min(3, modelScaleRef.current + dx * 0.01));
     const ratio = newScale / modelScaleRef.current;
     model.scale.multiplyScalar(ratio);
     modelScaleRef.current = newScale;
@@ -206,25 +191,12 @@ export const Model3DOverlay = React.forwardRef<
     renderer.setSize(nativeW, nativeH, false);
     rendererRef.current = renderer;
 
-    const camera = new THREE.PerspectiveCamera(
-      params.fov,
-      nativeW / nativeH,
-      0.1,
-      1000,
-    );
-    camera.position.set(
-      params.cameraPosition.x,
-      params.cameraPosition.y,
-      params.cameraPosition.z,
-    );
+    const camera = new THREE.PerspectiveCamera(params.fov, nativeW / nativeH, 0.1, 1000);
+    camera.position.set(params.cameraPosition.x, params.cameraPosition.y, params.cameraPosition.z);
     cameraRef.current = camera;
 
     const controls = new OrbitControls(camera, canvas);
-    controls.target.set(
-      params.cameraTarget.x,
-      params.cameraTarget.y,
-      params.cameraTarget.z,
-    );
+    controls.target.set(params.cameraTarget.x, params.cameraTarget.y, params.cameraTarget.z);
     controls.enabled = false; // interaction handled via scrub buttons
     controls.update();
     controlsRef.current = controls;
@@ -249,7 +221,7 @@ export const Model3DOverlay = React.forwardRef<
     const loader = new GLTFLoader();
     loader.load(
       node.modelUrl!,
-      (gltf) => {
+      gltf => {
         if (cancelled) {
           disposeObject3D(gltf.scene);
           return;
@@ -273,7 +245,7 @@ export const Model3DOverlay = React.forwardRef<
         loadedModelRef.current = model;
       },
       undefined,
-      (err) => console.error("[Model3DOverlay] Failed to load model:", err),
+      err => console.error("[Model3DOverlay] Failed to load model:", err),
     );
 
     // RAF loop
@@ -310,20 +282,14 @@ export const Model3DOverlay = React.forwardRef<
 
   // Click-outside to commit
   const onOverlayPointerDown = (e: React.PointerEvent) => {
-    if (
-      overlayRef.current &&
-      !overlayRef.current.contains(e.target as Element)
-    ) {
+    if (overlayRef.current && !overlayRef.current.contains(e.target as Element)) {
       commit();
     }
   };
 
   return (
     // Full-viewport capture layer for click-outside detection
-    <div
-      className="pointer-events-auto fixed inset-0 z-50"
-      onPointerDown={onOverlayPointerDown}
-    >
+    <div className="pointer-events-auto fixed inset-0 z-50" onPointerDown={onOverlayPointerDown}>
       {/* Overlay card positioned over the Konva node, CSS-rotated to match */}
       <div
         ref={overlayRef}
@@ -336,13 +302,9 @@ export const Model3DOverlay = React.forwardRef<
           transform: `rotate(${node.rotation ?? 0}deg)`,
           transformOrigin: "0 0",
         }}
-        onPointerDown={(e) => e.stopPropagation()}
+        onPointerDown={e => e.stopPropagation()}
       >
-        <canvas
-          ref={canvasRef}
-          className="h-full w-full"
-          style={{ display: "block" }}
-        />
+        <canvas ref={canvasRef} className="h-full w-full" style={{ display: "block" }} />
       </div>
     </div>
   );

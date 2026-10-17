@@ -1,23 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import {
-  FolderOpen,
-  MagnifyingGlass,
-  Trash,
-  Database,
-} from "@phosphor-icons/react";
+import { FolderOpen, MagnifyingGlass, Trash, Database } from "@phosphor-icons/react";
 import type { SpaceItem as SpaceItemType } from "@aphrody/drive-client";
-import {
-  useContextMenu,
-  type ContextMenuItem,
-  type ContextMenuResult,
-} from "../../../hooks/useContextMenu";
+import { useContextMenu, type ContextMenuItem, type ContextMenuResult } from "../../../hooks/useContextMenu";
 import { usePlatform } from "../../../contexts/PlatformContext";
 import { useLibraryMutation } from "../../../contexts/SpacedriveContext";
 import { isVolumeItem, isPathItem } from "./spaceItemUtils";
-import {
-  useExplorer,
-  getSpaceItemKeyFromRoute,
-} from "../../../routes/explorer/context";
+import { useExplorer, getSpaceItemKeyFromRoute } from "../../../routes/explorer/context";
 
 interface UseSpaceItemContextMenuOptions {
   item: SpaceItemType;
@@ -34,11 +22,7 @@ interface UseSpaceItemContextMenuOptions {
  * - Show in Finder: Reveal file in OS file manager (Path items only)
  * - Remove from Space: Delete the item from the current space
  */
-export function useSpaceItemContextMenu({
-  item,
-  path,
-  spaceId,
-}: UseSpaceItemContextMenuOptions): ContextMenuResult {
+export function useSpaceItemContextMenu({ item, path, spaceId }: UseSpaceItemContextMenuOptions): ContextMenuResult {
   const navigate = useNavigate();
   const platform = usePlatform();
   const { loadPreferencesForSpaceItem } = useExplorer();
@@ -52,9 +36,7 @@ export function useSpaceItemContextMenu({
       onClick: () => {
         if (path) {
           // Extract pathname and search from the path
-          const [pathname, search] = path.includes("?")
-            ? [path.split("?")[0], "?" + path.split("?")[1]]
-            : [path, ""];
+          const [pathname, search] = path.includes("?") ? [path.split("?")[0], "?" + path.split("?")[1]] : [path, ""];
           const spaceItemKey = getSpaceItemKeyFromRoute(pathname, search);
           loadPreferencesForSpaceItem(spaceItemKey);
           navigate(path);
@@ -68,8 +50,7 @@ export function useSpaceItemContextMenu({
       onClick: async () => {
         if (isVolumeItem(item.item_type)) {
           const fingerprint =
-            (item as SpaceItemType & { fingerprint?: string }).fingerprint ||
-            item.item_type.Volume.volume_id;
+            (item as SpaceItemType & { fingerprint?: string }).fingerprint || item.item_type.Volume.volume_id;
 
           try {
             const result = await indexVolume.mutateAsync({
@@ -92,8 +73,7 @@ export function useSpaceItemContextMenu({
         if (isPathItem(item.item_type)) {
           const sdPath = item.item_type.Path.sd_path;
           if (typeof sdPath === "object" && "Physical" in sdPath) {
-            const physicalPath = (sdPath as { Physical: { path: string } })
-              .Physical.path;
+            const physicalPath = (sdPath as { Physical: { path: string } }).Physical.path;
             if (platform.revealFile) {
               try {
                 await platform.revealFile(physicalPath);
@@ -108,11 +88,7 @@ export function useSpaceItemContextMenu({
       condition: () => {
         if (!isPathItem(item.item_type)) return false;
         const sdPath = item.item_type.Path.sd_path;
-        return (
-          typeof sdPath === "object" &&
-          "Physical" in sdPath &&
-          !!platform.revealFile
-        );
+        return typeof sdPath === "object" && "Physical" in sdPath && !!platform.revealFile;
       },
     },
     { type: "separator" },

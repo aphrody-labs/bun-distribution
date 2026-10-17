@@ -31,25 +31,17 @@ afterEach(async () => {
 function Probe() {
   const location = useLocation();
   const { tabs, activeTabId, createTab, switchTab } = useTabManager();
-  const active = tabs.find((tab) => tab.id === activeTabId);
+  const active = tabs.find(tab => tab.id === activeTabId);
   return (
     <>
       <TabNavigationSync />
       <output data-testid="path">{location.pathname + location.search}</output>
       <output data-testid="saved">{active?.savedPath}</output>
       <output data-testid="title">{active?.title}</output>
-      <button
-        type="button"
-        id="new-tab"
-        onClick={() => createTab("Templates", "/templates")}
-      >
+      <button type="button" id="new-tab" onClick={() => createTab("Templates", "/templates")}>
         New tab
       </button>
-      <button
-        type="button"
-        id="first-tab"
-        onClick={() => switchTab(tabs[0].id)}
-      >
+      <button type="button" id="first-tab" onClick={() => switchTab(tabs[0].id)}>
         First tab
       </button>
       <Link to="/docs/runtime-architecture?view=full" id="article">
@@ -115,17 +107,11 @@ test("a direct URL also takes precedence over an older persisted active tab", as
 
 test("actual tab switches restore saved paths while in-tab links save the new URL", async () => {
   await mount("/docs");
-  await act(async () =>
-    host!.querySelector<HTMLButtonElement>("#new-tab")!.click(),
-  );
+  await act(async () => host!.querySelector<HTMLButtonElement>("#new-tab")!.click());
   expect(text("path")).toBe("/templates");
-  await act(async () =>
-    host!.querySelector<HTMLButtonElement>("#first-tab")!.click(),
-  );
+  await act(async () => host!.querySelector<HTMLButtonElement>("#first-tab")!.click());
   expect(text("path")).toBe("/docs");
-  await act(async () =>
-    host!.querySelector<HTMLAnchorElement>("#article")!.click(),
-  );
+  await act(async () => host!.querySelector<HTMLAnchorElement>("#article")!.click());
   expect(text("path")).toBe("/docs/runtime-architecture?view=full");
   expect(text("saved")).toBe("/docs/runtime-architecture?view=full");
 });

@@ -7,16 +7,10 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { clsx } from "clsx";
 import { forwardRef, type PropsWithChildren } from "react";
 
-import {
-  Button as UIButton,
-  type ButtonProps as UIButtonProps,
-} from "./Button";
+import { Button as UIButton, type ButtonProps as UIButtonProps } from "./Button";
 import { Icon, type IconSource, renderIcon } from "./Icon";
 
-export const Section = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+export const Section = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={clsx("py-2", className)} {...props} />
 );
 
@@ -31,10 +25,8 @@ const itemStyles = cva(
     variants: {
       selected: {
         true: "bg-secondary-container text-on-secondary-container",
-        undefined:
-          "text-on-surface hover:bg-on-surface/8 data-highlighted:bg-on-surface/8 active:bg-on-surface/10",
-        false:
-          "text-on-surface hover:bg-on-surface/8 data-highlighted:bg-on-surface/8 active:bg-on-surface/10",
+        undefined: "text-on-surface hover:bg-on-surface/8 data-highlighted:bg-on-surface/8 active:bg-on-surface/10",
+        false: "text-on-surface hover:bg-on-surface/8 data-highlighted:bg-on-surface/8 active:bg-on-surface/10",
       },
       active: {
         true: "bg-on-surface/10",
@@ -63,13 +55,7 @@ type DropdownItemProps = PropsWithChildren<{
 }> &
   VariantProps<typeof itemStyles>;
 
-export const Item = ({
-  to,
-  className,
-  icon,
-  children,
-  ...props
-}: DropdownItemProps) => {
+export const Item = ({ to, className, icon, children, ...props }: DropdownItemProps) => {
   const { iconClassName, selected, active, ...rest } = props;
   const content = (
     <>
@@ -89,37 +75,25 @@ export const Item = ({
     </Menu.LinkItem>
   ) : (
     // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- name comes from the consumer (aria-label, aria-labelledby or associated label)
-    <Menu.Item
-      {...rest}
-      nativeButton
-      render={<button type="button" />}
-      className={classes}
-    >
+    <Menu.Item {...rest} nativeButton render={<button type="button" />} className={classes}>
       {content}
     </Menu.Item>
   );
 };
 
-export const Button = forwardRef<HTMLButtonElement, UIButtonProps>(
-  ({ children, className, ...props }, ref) => {
-    return (
-      <UIButton
-        size="sm"
-        ref={ref as never}
-        className={clsx("group flex text-left", className)}
-        {...props}
-      >
-        {children}
-        <span className="grow" />
-        <Icon
-          name="arrow_drop_down"
-          size={20}
-          className="ml-2 shrink-0 text-on-surface-variant transition-transform duration-200 ease-standard in-data-popup-open:rotate-180"
-        />
-      </UIButton>
-    );
-  },
-);
+export const Button = forwardRef<HTMLButtonElement, UIButtonProps>(({ children, className, ...props }, ref) => {
+  return (
+    <UIButton size="sm" ref={ref as never} className={clsx("group flex text-left", className)} {...props}>
+      {children}
+      <span className="grow" />
+      <Icon
+        name="arrow_drop_down"
+        size={20}
+        className="ml-2 shrink-0 text-on-surface-variant transition-transform duration-200 ease-standard in-data-popup-open:rotate-180"
+      />
+    </UIButton>
+  );
+});
 
 Button.displayName = "DropdownButton";
 
@@ -177,9 +151,6 @@ export const Root = (props: PropsWithChildren<DropdownRootProps>) => {
   );
 };
 
-export const Separator = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+export const Separator = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={clsx("my-2 h-px bg-outline-variant", className)} {...props} />
 );

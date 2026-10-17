@@ -1,10 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  extractMetadata,
-  generateDocsOffline,
-  generateDocsFromCode,
-  buildDocPrompt,
-} from "../src/generator.js";
+import { extractMetadata, generateDocsOffline, generateDocsFromCode, buildDocPrompt } from "../src/generator.js";
 import type { LlmClient } from "../src/llm.js";
 
 const SAMPLE = `
@@ -26,10 +21,10 @@ describe("extractMetadata", () => {
     const meta = extractMetadata(SAMPLE);
     expect(meta.tagName).toBe("md-widget");
     expect(meta.className).toBe("MdWidget");
-    const names = meta.properties.map((p) => p.name);
+    const names = meta.properties.map(p => p.name);
     expect(names).toContain("disabled");
     expect(names).toContain("label");
-    expect(meta.events.map((e) => e.name)).toEqual(["change"]);
+    expect(meta.events.map(e => e.name)).toEqual(["change"]);
   });
 
   test("does not duplicate the same event", () => {
@@ -104,10 +99,10 @@ describe("generateDocsFromCode (injected client)", () => {
     const out = await generateDocsFromCode(SAMPLE, "widget.ts", {
       client,
       retry: { retries: 1 },
-      warn: (m) => warnings.push(m),
+      warn: m => warnings.push(m),
     });
     expect(out).toContain("# MdWidget");
-    expect(warnings.some((w) => w.includes("falling back"))).toBe(true);
+    expect(warnings.some(w => w.includes("falling back"))).toBe(true);
   });
 
   test("falls back offline when the client returns empty text", async () => {

@@ -11,9 +11,29 @@ interface Functions {
   /** imgutil.dll!DecodeImage */
   DecodeImage(pStream: Win32Pointer, pMap: Win32Pointer, pEventSink: Win32Pointer): number;
   /** imgutil.dll!DecodeImageEx */
-  DecodeImageEx(pStream: Win32Pointer, pMap: Win32Pointer, pEventSink: Win32Pointer, pszMIMETypeParam: string | Win32Pointer): number;
+  DecodeImageEx(
+    pStream: Win32Pointer,
+    pMap: Win32Pointer,
+    pEventSink: Win32Pointer,
+    pszMIMETypeParam: string | Win32Pointer,
+  ): number;
   /** imgutil.dll!DitherTo8 */
-  DitherTo8(pDestBits: Win32Pointer, nDestPitch: number, pSrcBits: Win32Pointer, nSrcPitch: number, bfidSrc: Win32Pointer, prgbDestColors: Win32Pointer, prgbSrcColors: Win32Pointer, pbDestInvMap: Win32Pointer, x: number, y: number, cx: number, cy: number, lDestTrans: number, lSrcTrans: number): number;
+  DitherTo8(
+    pDestBits: Win32Pointer,
+    nDestPitch: number,
+    pSrcBits: Win32Pointer,
+    nSrcPitch: number,
+    bfidSrc: Win32Pointer,
+    prgbDestColors: Win32Pointer,
+    prgbSrcColors: Win32Pointer,
+    pbDestInvMap: Win32Pointer,
+    x: number,
+    y: number,
+    cx: number,
+    cy: number,
+    lDestTrans: number,
+    lSrcTrans: number,
+  ): number;
   /** imgutil.dll!GetMaxMIMEIDBytes */
   GetMaxMIMEIDBytes(pnMaxBytes: Win32Pointer): number;
   /** imgutil.dll!IdentifyMIMEType */

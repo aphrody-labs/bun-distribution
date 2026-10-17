@@ -11,11 +11,7 @@ import type * as React from "react";
 
 import { cn } from "../lib/utils";
 
-function NavigationBar({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<"nav">) {
+function NavigationBar({ className, children, ...props }: React.ComponentProps<"nav">) {
   return (
     <nav
       data-slot="navigation-bar"
@@ -75,9 +71,7 @@ function NavigationBarItem({
         data-slot="navigation-bar-item-label"
         className={cn(
           "text-xs font-medium leading-4 tracking-[0.5px]",
-          labelOnActive
-            ? "opacity-0 group-data-[active=true]/nav-bar-item:opacity-100"
-            : "opacity-100",
+          labelOnActive ? "opacity-0 group-data-[active=true]/nav-bar-item:opacity-100" : "opacity-100",
         )}
       >
         {label}

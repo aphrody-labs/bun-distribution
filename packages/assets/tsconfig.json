@@ -14,12 +14,6 @@
     "verbatimModuleSyntax": true,
     "allowImportingTsExtensions": true
   },
-  "include": [
-    "icons/**/*.ts",
-    "util/**/*.ts",
-    "test/**/*.ts",
-    "types.d.ts",
-    "scripts/**/*.ts"
-  ],
+  "include": ["icons/**/*.ts", "util/**/*.ts", "test/**/*.ts", "types.d.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules"]
 }

@@ -29,7 +29,7 @@ export class PromptBoxErrorBoundary extends Component<Props, State> {
           <button
             className="underline hover:text-red-200"
             onClick={() =>
-              this.setState((prev) => ({
+              this.setState(prev => ({
                 hasError: false,
                 resetKey: prev.resetKey + 1,
               }))

@@ -43,7 +43,7 @@ export function useDaemonStatus() {
             hasEverConnected.current = true;
           }
 
-          setStatus((prev) => ({
+          setStatus(prev => ({
             ...prev,
             isConnected: isRunning,
             // Only clear isChecking if we're connected (daemon started successfully)
@@ -54,7 +54,7 @@ export function useDaemonStatus() {
         }
       } catch {
         if (mounted) {
-          setStatus((prev) => ({
+          setStatus(prev => ({
             ...prev,
             isConnected: false,
             // Don't clear isChecking on error - might still be starting
@@ -68,7 +68,7 @@ export function useDaemonStatus() {
         console.log("[useDaemonStatus] daemon-connected event received");
         if (mounted) {
           hasEverConnected.current = true;
-          setStatus((prev) => ({
+          setStatus(prev => ({
             ...prev,
             isConnected: true,
             isChecking: false,
@@ -80,7 +80,7 @@ export function useDaemonStatus() {
       const unlistenDisconnected = await platform.onDaemonDisconnected?.(() => {
         console.log("[useDaemonStatus] daemon-disconnected event received");
         if (mounted) {
-          setStatus((prev) => ({
+          setStatus(prev => ({
             ...prev,
             isConnected: false,
             isChecking: false,
@@ -96,7 +96,7 @@ export function useDaemonStatus() {
       const unlistenStarting = await platform.onDaemonStarting?.(() => {
         console.log("[useDaemonStatus] daemon-starting event received");
         if (mounted) {
-          setStatus((prev) => ({
+          setStatus(prev => ({
             ...prev,
             isChecking: true,
             // If daemon is starting (e.g., user clicked restart), show startup state
@@ -119,16 +119,13 @@ export function useDaemonStatus() {
         const installed = await platform.checkDaemonInstalled?.();
         console.log("[useDaemonStatus] checkInstallation result:", installed);
         if (mounted) {
-          setStatus((prev) => ({
+          setStatus(prev => ({
             ...prev,
             isInstalled: installed ?? false,
           }));
         }
       } catch (error) {
-        console.error(
-          "[useDaemonStatus] Failed to check daemon installation:",
-          error,
-        );
+        console.error("[useDaemonStatus] Failed to check daemon installation:", error);
       }
     };
 
@@ -138,18 +135,15 @@ export function useDaemonStatus() {
 
     // Set up event listeners
     setupListeners()
-      .then((cleanup) => {
+      .then(cleanup => {
         listenerCleanup = cleanup;
         if (!mounted) {
           listenerCleanup?.();
         }
         return;
       })
-      .catch((error) => {
-        console.error(
-          "[useDaemonStatus] Failed to set up daemon listeners:",
-          error,
-        );
+      .catch(error => {
+        console.error("[useDaemonStatus] Failed to set up daemon listeners:", error);
       });
 
     // Fallback polling only when disconnected (event listeners should handle normal case)
@@ -168,7 +162,7 @@ export function useDaemonStatus() {
       await platform.startDaemonProcess?.();
     } catch (error) {
       console.error("Failed to start daemon:", error);
-      setStatus((prev) => ({
+      setStatus(prev => ({
         ...prev,
         isChecking: false,
       }));
@@ -180,20 +174,15 @@ export function useDaemonStatus() {
     try {
       console.log("[useDaemonStatus] Calling platform.installDaemonService()");
       await platform.installDaemonService?.();
-      console.log(
-        "[useDaemonStatus] installDaemonService completed, updating isInstalled state",
-      );
-      setStatus((prev) => ({
+      console.log("[useDaemonStatus] installDaemonService completed, updating isInstalled state");
+      setStatus(prev => ({
         ...prev,
         isInstalled: true,
       }));
       return true;
     } catch (error) {
-      console.error(
-        "[useDaemonStatus] Failed to install daemon service:",
-        error,
-      );
-      setStatus((prev) => ({
+      console.error("[useDaemonStatus] Failed to install daemon service:", error);
+      setStatus(prev => ({
         ...prev,
         isChecking: false,
       }));

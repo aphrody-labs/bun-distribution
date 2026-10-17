@@ -59,9 +59,9 @@ fn main() {
 Afterwards all the plugin's APIs are available through the JavaScript guest bindings:
 
 ```javascript
-import { stat } from '@aphrody/plugin-fs'
+import { stat } from "@aphrody/plugin-fs";
 
-await stat('/path/to/file')
+await stat("/path/to/file");
 ```
 
 ## Contributing

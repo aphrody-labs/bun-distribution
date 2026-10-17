@@ -4,7 +4,6 @@
 
 //! Read information about the operating system.
 
-
 use std::fmt::Display;
 
 pub use os_info::Version;
@@ -138,7 +137,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 
     Builder::new("os")
         .initialization_script(init_js.to_string())
-        .invoke_handler(tauri::generate_handler![#![plugin(os)] 
+        .invoke_handler(tauri::generate_handler![#![plugin(os)]
             commands::locale,
             commands::hostname
         ])

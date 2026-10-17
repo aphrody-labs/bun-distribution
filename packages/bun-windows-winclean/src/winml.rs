@@ -78,10 +78,16 @@ mod native {
     pub(super) fn providers() -> Result<Value, String> {
         ensure_runtime()?;
         let mut providers = vec!["CPUExecutionProvider".to_owned()];
-        if ort::ep::DirectML::default().is_available().map_err(|error| error.to_string())? {
+        if ort::ep::DirectML::default()
+            .is_available()
+            .map_err(|error| error.to_string())?
+        {
             providers.push("DmlExecutionProvider".into());
         }
-        if ort::ep::CUDA::default().is_available().map_err(|error| error.to_string())? {
+        if ort::ep::CUDA::default()
+            .is_available()
+            .map_err(|error| error.to_string())?
+        {
             providers.push("CUDAExecutionProvider".into());
         }
         Ok(json!({"providers": providers}))
@@ -133,8 +139,11 @@ mod native {
             return Err("inputsJson required".into());
         }
         ensure_runtime()?;
-        let key =
-            if execution_provider.trim().is_empty() { "cpu" } else { execution_provider.trim() };
+        let key = if execution_provider.trim().is_empty() {
+            "cpu"
+        } else {
+            execution_provider.trim()
+        };
         let mut builder = Session::builder().map_err(|error| error.to_string())?;
         builder = match key.to_ascii_lowercase().as_str() {
             "cpu" => builder,
@@ -144,10 +153,15 @@ mod native {
             "cuda" => builder
                 .with_execution_providers([ort::ep::CUDA::default().build()])
                 .map_err(|error| error.to_string())?,
-            _ => return Err(format!("unknown EP '{execution_provider}'. Use cpu|dml|cuda.")),
+            _ => {
+                return Err(format!(
+                    "unknown EP '{execution_provider}'. Use cpu|dml|cuda."
+                ));
+            }
         };
-        let mut session =
-            builder.commit_from_file(model_path).map_err(|error| error.to_string())?;
+        let mut session = builder
+            .commit_from_file(model_path)
+            .map_err(|error| error.to_string())?;
         let parsed: BTreeMap<String, InputTensor> = serde_json::from_str(inputs_json)
             .map_err(|error| format!("invalid inputsJson: {error}"))?;
         if parsed.is_empty() {
@@ -161,7 +175,9 @@ mod native {
             let expected = tensor
                 .shape
                 .iter()
-                .try_fold(1usize, |acc, dimension| acc.checked_mul(*dimension as usize))
+                .try_fold(1usize, |acc, dimension| {
+                    acc.checked_mul(*dimension as usize)
+                })
                 .ok_or_else(|| format!("input '{name}' shape overflows"))?;
             if expected > MAX_TENSOR_ELEMENTS {
                 return Err(format!(
@@ -180,11 +196,19 @@ mod native {
                     .map_err(|error| error.to_string())?,
             ));
         }
-        let output_name =
-            session.outputs().first().map(|output| output.name().to_owned()).unwrap_or_default();
+        let output_name = session
+            .outputs()
+            .first()
+            .map(|output| output.name().to_owned())
+            .unwrap_or_default();
         let outputs = session.run(inputs).map_err(|error| error.to_string())?;
-        let first = outputs.values().next().ok_or_else(|| "model produced no output".to_owned())?;
-        let (shape, data) = first.try_extract_tensor::<f32>().map_err(|error| error.to_string())?;
+        let first = outputs
+            .values()
+            .next()
+            .ok_or_else(|| "model produced no output".to_owned())?;
+        let (shape, data) = first
+            .try_extract_tensor::<f32>()
+            .map_err(|error| error.to_string())?;
         Ok(
             json!({"action":"WinmlRunFloat32","executionProvider":key.to_ascii_lowercase(),"output":{"name":output_name,"shape":shape.to_vec(),"data":data}}),
         )
@@ -244,7 +268,11 @@ mod tests {
     #[cfg(not(windows))]
     #[test]
     fn non_windows_is_explicitly_unsupported() {
-        assert!(super::list_providers().unwrap_err().contains("Windows-only"));
+        assert!(
+            super::list_providers()
+                .unwrap_err()
+                .contains("Windows-only")
+        );
         assert!(super::get_version().unwrap_err().contains("Windows-only"));
     }
 }

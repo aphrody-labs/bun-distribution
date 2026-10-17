@@ -42,9 +42,7 @@ it("reads complete Git state and reports invalid repositories explicitly", async
     expect(state.dirty).toBe(false);
     writeFileSync(join(root, "changed.txt"), "changed");
     expect((await engine.getGitState(root)).uncommittedCount).toBe(1);
-    expect((await engine.getGitState(join(root, "missing"))).error).toContain(
-      "failed",
-    );
+    expect((await engine.getGitState(join(root, "missing"))).error).toContain("failed");
   } finally {
     await engine.stop();
     rmSync(root, { recursive: true, force: true });
@@ -108,10 +106,7 @@ it("writes beacons only to explicit fixture paths and caches empty docs offline"
     expect((await engine.runSyncCycle()).beaconWritten).toBe(true);
     expect((await Bun.file(target).json()).repositories).toEqual({});
     expect(
-      await Promise.all([
-        engine.cachedDocQuery("docs", fetcher),
-        engine.cachedDocQuery(" DOCS ", fetcher),
-      ]),
+      await Promise.all([engine.cachedDocQuery("docs", fetcher), engine.cachedDocQuery(" DOCS ", fetcher)]),
     ).toEqual(["", ""]);
     expect(await engine.cachedDocQuery("docs", fetcher)).toBe("");
     expect(calls).toBe(1);
@@ -140,11 +135,7 @@ describe("isolated agent watcher", () => {
       watcher.start();
       mkdirSync(join(root, sessionId));
       writeFileSync(join(root, sessionId, "event.jsonl"), "fixture");
-      await until(() =>
-        watcher
-          .getActiveSessions()
-          .some((session) => session.sessionId === sessionId),
-      );
+      await until(() => watcher.getActiveSessions().some(session => session.sessionId === sessionId));
       await watcher.stop();
       expect(
         (

@@ -12,23 +12,12 @@ import { resolveAnimationPathValueAtTime } from "./resolve";
 export const EFFECT_PARAM_PATH_PREFIX = "effects.";
 export const EFFECT_PARAM_PATH_SUFFIX = ".params.";
 
-export function buildEffectParamPath({
-  effectId,
-  paramKey,
-}: {
-  effectId: string;
-  paramKey: string;
-}): EffectParamPath {
+export function buildEffectParamPath({ effectId, paramKey }: { effectId: string; paramKey: string }): EffectParamPath {
   return `${EFFECT_PARAM_PATH_PREFIX}${effectId}${EFFECT_PARAM_PATH_SUFFIX}${paramKey}`;
 }
 
-export function isEffectParamPath(
-  propertyPath: string,
-): propertyPath is EffectParamPath {
-  return (
-    propertyPath.startsWith(EFFECT_PARAM_PATH_PREFIX) &&
-    propertyPath.includes(EFFECT_PARAM_PATH_SUFFIX)
-  );
+export function isEffectParamPath(propertyPath: string): propertyPath is EffectParamPath {
+  return propertyPath.startsWith(EFFECT_PARAM_PATH_PREFIX) && propertyPath.includes(EFFECT_PARAM_PATH_SUFFIX);
 }
 
 export function parseEffectParamPath({
@@ -47,9 +36,7 @@ export function parseEffectParamPath({
   }
 
   const effectId = withoutPrefix.slice(0, separatorIndex);
-  const paramKey = withoutPrefix.slice(
-    separatorIndex + EFFECT_PARAM_PATH_SUFFIX.length,
-  );
+  const paramKey = withoutPrefix.slice(separatorIndex + EFFECT_PARAM_PATH_SUFFIX.length);
   if (!effectId || !paramKey) {
     return null;
   }

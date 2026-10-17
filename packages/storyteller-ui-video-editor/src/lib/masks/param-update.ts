@@ -19,12 +19,6 @@ export function computeFeatherUpdate({
 }): { feather: number } {
   const projection = deltaX * directionX + deltaY * directionY;
   return {
-    feather: Math.max(
-      0,
-      Math.min(
-        MAX_FEATHER,
-        Math.round(startFeather + projection / FEATHER_HANDLE_SCALE),
-      ),
-    ),
+    feather: Math.max(0, Math.min(MAX_FEATHER, Math.round(startFeather + projection / FEATHER_HANDLE_SCALE))),
   };
 }

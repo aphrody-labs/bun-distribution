@@ -36,19 +36,12 @@ export interface NumericSpec {
   max?: number;
   step?: number;
 }
-export type AnimationColorPropertyPath = Extract<
-  AnimationPropertyPath,
-  "color" | "background.color"
->;
-export type AnimationNumericPropertyPath = Exclude<
-  AnimationPropertyPath,
-  AnimationColorPropertyPath
->;
+export type AnimationColorPropertyPath = Extract<AnimationPropertyPath, "color" | "background.color">;
+export type AnimationNumericPropertyPath = Exclude<AnimationPropertyPath, AnimationColorPropertyPath>;
 
 export type ContinuousKeyframeInterpolation = "linear" | "hold" | "bezier";
 export type DiscreteKeyframeInterpolation = "hold";
-export type AnimationInterpolation =
-  ContinuousKeyframeInterpolation | DiscreteKeyframeInterpolation;
+export type AnimationInterpolation = ContinuousKeyframeInterpolation | DiscreteKeyframeInterpolation;
 
 export type ScalarSegmentType = "step" | "linear" | "bezier";
 export type TangentMode = "auto" | "aligned" | "broken" | "flat";
@@ -74,12 +67,11 @@ export interface ScalarAnimationKey extends BaseAnimationKeyframe<number> {
 
 export type DiscreteAnimationKey = BaseAnimationKeyframe<DiscreteValue>;
 
-export type Keyframe<TValue extends ParamValue = ParamValue> =
-  TValue extends number
-    ? ScalarAnimationKey
-    : TValue extends DiscreteValue
-      ? DiscreteAnimationKey
-      : never;
+export type Keyframe<TValue extends ParamValue = ParamValue> = TValue extends number
+  ? ScalarAnimationKey
+  : TValue extends DiscreteValue
+    ? DiscreteAnimationKey
+    : never;
 
 export interface ScalarChannel {
   keys: ScalarAnimationKey[];
@@ -93,12 +85,11 @@ export interface DiscreteChannel {
   keys: DiscreteAnimationKey[];
 }
 
-export type Channel<TValue extends ParamValue = ParamValue> =
-  TValue extends number
-    ? ScalarChannel
-    : TValue extends DiscreteValue
-      ? DiscreteChannel
-      : never;
+export type Channel<TValue extends ParamValue = ParamValue> = TValue extends number
+  ? ScalarChannel
+  : TValue extends DiscreteValue
+    ? DiscreteChannel
+    : never;
 
 export type ScalarAnimationChannel = Channel<number>;
 export type DiscreteAnimationChannel = Channel<DiscreteValue>;

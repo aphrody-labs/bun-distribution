@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import {
-  loadModelInventories,
-  stopModelDownload,
-  isChatModel,
-} from "./models-hub-actions";
+import { loadModelInventories, stopModelDownload, isChatModel } from "./models-hub-actions";
 import { listAllThreads } from "./history-panel";
 import { useChatStore, getProjectGroups } from "./stores/chat-store";
 
@@ -37,16 +33,14 @@ describe("Jan UI absorption: owner contract behavior", () => {
     expect(result.error).toContain("Stockage : denied");
   });
   test("cancellation requires a real acknowledgement", async () => {
-    await expect(stopModelDownload("model", async () => false)).rejects.toThrow(
-      "Aucun téléchargement actif",
-    );
+    await expect(stopModelDownload("model", async () => false)).rejects.toThrow("Aucun téléchargement actif");
     await expect(
       stopModelDownload("model", async () => {
         throw new Error("denied");
       }),
     ).rejects.toThrow("denied");
     let received = "";
-    await stopModelDownload("model", async (id) => {
+    await stopModelDownload("model", async id => {
       received = id;
       return true;
     });
@@ -54,11 +48,7 @@ describe("Jan UI absorption: owner contract behavior", () => {
   });
   test("OCR, embedding and unknown models cannot become a chat default", () => {
     expect(isChatModel({ task: "text-generation" })).toBe(true);
-    for (const task of [
-      "visual-transcription",
-      "text-embedding",
-      "speech-to-text",
-    ])
+    for (const task of ["visual-transcription", "text-embedding", "speech-to-text"])
       expect(isChatModel({ task })).toBe(false);
     expect(isChatModel(undefined)).toBe(false);
   });
@@ -82,7 +72,7 @@ describe("Jan UI absorption: owner contract behavior", () => {
       { limit: 100, archived: true },
       { cursor: "page2", limit: 100, archived: true },
     ]);
-    expect(result.map((thread) => thread.id)).toEqual(["new", "old"]);
+    expect(result.map(thread => thread.id)).toEqual(["new", "old"]);
   });
   test("the UI starts without fabricated or cross-domain conversation groups", () => {
     expect(useChatStore.getState().threads).toEqual([]);

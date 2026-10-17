@@ -2,11 +2,7 @@
 // Unit tests for Jan & Kunkun parity features in Aphrody Desktop
 
 import { describe, expect, test } from "bun:test";
-import {
-  filterSessionsList,
-  SYSTEM_PRESETS,
-  TOKEN_LIMIT_OPTIONS,
-} from "./system-presets";
+import { filterSessionsList, SYSTEM_PRESETS, TOKEN_LIMIT_OPTIONS } from "./system-presets";
 import { SIDEBAR_COLLAPSED_KEY, STORE_SIDEBAR_COLLAPSED } from "./preferences";
 
 describe("Jan Parity - System Presets & Inference Tuning", () => {
@@ -17,9 +13,7 @@ describe("Jan Parity - System Presets & Inference Tuning", () => {
 
     expect(SYSTEM_PRESETS.engineer).toBeDefined();
     expect(SYSTEM_PRESETS.engineer.label).toBe("Autonomous engineer");
-    expect(SYSTEM_PRESETS.engineer.prompt).toContain(
-      "autonomous senior staff engineer",
-    );
+    expect(SYSTEM_PRESETS.engineer.prompt).toContain("autonomous senior staff engineer");
 
     expect(SYSTEM_PRESETS.code_reviewer).toBeDefined();
     expect(SYSTEM_PRESETS.code_reviewer.label).toBe("Rigorous code reviewer");

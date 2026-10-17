@@ -17,11 +17,7 @@ import {
   type Report,
 } from "../src/verify";
 
-const gate = (
-  id: string,
-  needs: string[] = [],
-  surfaces: string[] = ["**"],
-): Gate => ({
+const gate = (id: string, needs: string[] = [], surfaces: string[] = ["**"]): Gate => ({
   id,
   title: id,
   command: ["fake", id],
@@ -39,7 +35,7 @@ const failingRun = async (g: Gate) => ({
   output: "bad",
 });
 
-const only = (files: string[]) => selectChanged(GATES, files).map((g) => g.id);
+const only = (files: string[]) => selectChanged(GATES, files).map(g => g.id);
 
 const native = (script: string): Gate => ({
   ...gate("x"),
@@ -96,18 +92,18 @@ const report = (over: Partial<Report> = {}): Report => ({
 
 describe("runGates", () => {
   it("runs independent gates in parallel: wall time is below the summed time (measured)", async () => {
-    const gates = ["a", "b", "c", "d"].map((id) => gate(id));
+    const gates = ["a", "b", "c", "d"].map(id => gate(id));
     const { results, wallMs } = await runGates(gates, sleepRun, {
       parallel: 4,
       root: "/",
     });
     const { sumGateMs, speedup } = summarize(results, wallMs);
-    expect(results.every((r) => r.status === "pass")).toBe(true);
+    expect(results.every(r => r.status === "pass")).toBe(true);
     expect(sumGateMs).toBeGreaterThanOrEqual(240);
     expect(wallMs).toBeLessThan(sumGateMs * 0.6);
     expect(speedup).toBeGreaterThan(1.5);
     // all four started at about the same moment
-    expect(Math.max(...results.map((r) => r.startMs))).toBeLessThan(40);
+    expect(Math.max(...results.map(r => r.startMs))).toBeLessThan(40);
   });
 
   it("is serial with parallel 1 and never exceeds the limit", async () => {
@@ -121,7 +117,7 @@ describe("runGates", () => {
       return { exitCode: 0, output: "" };
     };
     await runGates(
-      ["a", "b", "c", "d", "e"].map((id) => gate(id)),
+      ["a", "b", "c", "d", "e"].map(id => gate(id)),
       run,
       { parallel: 2, root: "/" },
     );
@@ -139,14 +135,9 @@ describe("runGates", () => {
         output: g.id === "build" ? "boom" : "",
       };
     };
-    const gates = [
-      gate("build"),
-      gate("test", ["build"]),
-      gate("docs"),
-      gate("deploy", ["test"]),
-    ];
+    const gates = [gate("build"), gate("test", ["build"]), gate("docs"), gate("deploy", ["test"])];
     const { results } = await runGates(gates, run, { parallel: 8, root: "/" });
-    const by = Object.fromEntries(results.map((r) => [r.id, r]));
+    const by = Object.fromEntries(results.map(r => [r.id, r]));
     expect(by["build"]).toMatchObject({
       status: "fail",
       exitCode: 1,
@@ -162,12 +153,7 @@ describe("runGates", () => {
     });
     expect(by["docs"]?.status).toBe("pass");
     expect(order).not.toContain("start:test");
-    expect(results.map((r) => r.id)).toEqual([
-      "build",
-      "test",
-      "docs",
-      "deploy",
-    ]); // input order
+    expect(results.map(r => r.id)).toEqual(["build", "test", "docs", "deploy"]); // input order
   });
 
   it("honours a precondition by skipping with its reason", async () => {
@@ -175,14 +161,10 @@ describe("runGates", () => {
       ...gate("import"),
       precondition: () => "worktree missing",
     };
-    const { results } = await runGates(
-      [g],
-      async () => ({ exitCode: 0, output: "" }),
-      {
-        parallel: 1,
-        root: "/",
-      },
-    );
+    const { results } = await runGates([g], async () => ({ exitCode: 0, output: "" }), {
+      parallel: 1,
+      root: "/",
+    });
     expect(results[0]).toMatchObject({
       status: "skipped",
       detail: "worktree missing",
@@ -193,25 +175,15 @@ describe("runGates", () => {
 describe("validateGraph", () => {
   it("rejects unknown dependencies and cycles", () => {
     expect(() => validateGraph([gate("a", ["zzz"])])).toThrow(/needs zzz/);
-    expect(() => validateGraph([gate("a", ["b"]), gate("b", ["a"])])).toThrow(
-      /cycle: a -> b -> a/,
-    );
+    expect(() => validateGraph([gate("a", ["b"]), gate("b", ["a"])])).toThrow(/cycle: a -> b -> a/);
     expect(() => validateGraph(GATES)).not.toThrow();
   });
 });
 
 describe("selectChanged", () => {
   it("selects only core Rust formatting by default and declares upstream checks explicitly", () => {
-    const core = GATES.find((entry) => entry.id === "rust-fmt");
-    expect(core?.command).toEqual([
-      "cargo",
-      "fmt",
-      "--check",
-      "-p",
-      "yolo-core",
-      "-p",
-      "yolo-runtime",
-    ]);
+    const core = GATES.find(entry => entry.id === "rust-fmt");
+    expect(core?.command).toEqual(["cargo", "fmt", "--check", "-p", "yolo-core", "-p", "yolo-runtime"]);
     expect(core?.title).toContain("yolo-core and yolo-runtime");
     for (const file of [
       "crates/engine/yolo-core/src/lib.rs",
@@ -220,21 +192,15 @@ describe("selectChanged", () => {
       "rustfmt.toml",
       ".rustfmt.toml",
     ])
-      expect(selectChanged(GATES, [file]).map((entry) => entry.id)).toContain(
-        "rust-fmt",
-      );
+      expect(selectChanged(GATES, [file]).map(entry => entry.id)).toContain("rust-fmt");
     for (const file of [
       "vendor/obscura/crates/obscura-core/src/lib.rs",
       "crates/aphrody-tauri/src/lib.rs",
       "crates/ui/app/src/lib.rs",
       "crates/engine/yolo-pyo3/src/lib.rs",
     ])
-      expect(
-        selectChanged(GATES, [file]).map((entry) => entry.id),
-      ).not.toContain("rust-fmt");
-    const upstream = NOT_RUN_HEAVY.find(
-      (entry) => entry.id === "rust-fmt-upstream",
-    );
+      expect(selectChanged(GATES, [file]).map(entry => entry.id)).not.toContain("rust-fmt");
+    const upstream = NOT_RUN_HEAVY.find(entry => entry.id === "rust-fmt-upstream");
     expect(upstream?.title).toContain("--all --check");
     expect(upstream?.reason).toContain("just rust-fmt-upstream-check");
     expect(upstream?.reason).toContain("explicit upstream profile");
@@ -244,10 +210,7 @@ describe("selectChanged", () => {
   });
 
   it("selects the gates whose surfaces match a changed file", () => {
-    expect(only(["docs/operations/infra/SERVER.md"])).toEqual([
-      "whitespace",
-      "docs",
-    ]);
+    expect(only(["docs/operations/infra/SERVER.md"])).toEqual(["whitespace", "docs"]);
     expect(only(["packages/engine/yolo/src/verify.ts"])).toEqual([
       "whitespace",
       "typecheck",
@@ -256,9 +219,7 @@ describe("selectChanged", () => {
       "test",
     ]);
     expect(only(["crates/engine/yolo-core/src/lib.rs"])).toContain("rust-fmt");
-    expect(only(["crates/engine/yolo-core/src/lib.rs"])).toContain(
-      "import-check",
-    );
+    expect(only(["crates/engine/yolo-core/src/lib.rs"])).toContain("import-check");
     expect(only([])).toEqual([]);
   });
 });
@@ -305,7 +266,7 @@ describe("yolo verify command", () => {
     try {
       // Les deux aides sont indépendantes : elles n'écrivent ni ne lisent d'état partagé.
       await Promise.all(
-        ["--help", "-h"].map(async (help) => {
+        ["--help", "-h"].map(async help => {
           let printed = "";
           let touched = 0;
           const code = await runVerifyCommand([help], root, {
@@ -322,7 +283,7 @@ describe("yolo verify command", () => {
               touched++;
               throw new Error("help executed a gate");
             },
-            out: (text) => (printed += text),
+            out: text => (printed += text),
           });
           expect(code).toBe(0);
           expect(printed).toContain("Usage: yolo verify");
@@ -383,7 +344,7 @@ describe("yolo verify command", () => {
             return { exitCode: 0, output: "" };
           },
           out: () => {},
-          err: (text) => (error += text),
+          err: text => (error += text),
         });
         expect({ args, code, executed }).toEqual({
           args,
@@ -415,13 +376,9 @@ describe("yolo verify command", () => {
       expect(JSON.parse(printed).schema).toBe("yolo.verify.gates/1");
       expect(executed).toEqual([]);
       expect(readdirSync(root)).toEqual([]);
-      expect(
-        await runVerifyCommand(
-          ["--only", "a", "--parallel", "2", "--timeout", "0.5", "--json"],
-          root,
-          deps,
-        ),
-      ).toBe(0);
+      expect(await runVerifyCommand(["--only", "a", "--parallel", "2", "--timeout", "0.5", "--json"], root, deps)).toBe(
+        0,
+      );
       expect(executed).toEqual(["a"]);
       expect(JSON.parse(printed).parallel).toBe(2);
     } finally {
@@ -437,21 +394,16 @@ describe("yolo verify command", () => {
       const code = await runVerifyCommand(["--json"], root, {
         gates,
         run: failingRun,
-        out: (s) => (printed += s),
+        out: s => (printed += s),
       });
       const r = JSON.parse(printed) as Report;
       expect(code).toBe(1);
       expect(r.ok).toBe(false);
-      expect(r.gates.map((g) => g.status)).toEqual(["fail", "skipped"]);
-      expect(
-        JSON.parse(readFileSync(join(root, "var/verify/latest.json"), "utf8"))
-          .schema,
-      ).toBe("yolo.verify/1");
+      expect(r.gates.map(g => g.status)).toEqual(["fail", "skipped"]);
+      expect(JSON.parse(readFileSync(join(root, "var/verify/latest.json"), "utf8")).schema).toBe("yolo.verify/1");
       expect(readdirSync(join(root, "var/verify")).length).toBe(2);
       let again = "";
-      expect(
-        await runVerifyCommand(["--last"], root, { out: (s) => (again += s) }),
-      ).toBe(1);
+      expect(await runVerifyCommand(["--last"], root, { out: s => (again += s) })).toBe(1);
       expect(again).toContain("# yolo verify: FAIL");
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -461,13 +413,9 @@ describe("yolo verify command", () => {
   it("rejects unknown gate names and cycles with exit 2", async () => {
     const root = mkdtempSync(join(tmpdir(), "verify-"));
     try {
-      expect(
-        await runVerifyCommand(["--only", "nope"], root, { out: () => {} }),
-      ).toBe(2);
+      expect(await runVerifyCommand(["--only", "nope"], root, { out: () => {} })).toBe(2);
       const cyc = [gate("a", ["b"]), gate("b", ["a"])];
-      expect(
-        await runVerifyCommand([], root, { gates: cyc, out: () => {} }),
-      ).toBe(2);
+      expect(await runVerifyCommand([], root, { gates: cyc, out: () => {} })).toBe(2);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

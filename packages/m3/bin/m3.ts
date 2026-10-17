@@ -8,8 +8,6 @@ try {
   // `m3 dev` keeps running through its server; every other command exits here.
   if (code !== 0) process.exit(code);
 } catch (error) {
-  console.error(
-    `m3: ${error instanceof Error ? error.message : String(error)}`,
-  );
+  console.error(`m3: ${error instanceof Error ? error.message : String(error)}`);
   process.exit(1);
 }

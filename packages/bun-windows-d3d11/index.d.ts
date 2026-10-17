@@ -7,11 +7,46 @@ interface Functions {
   /** d3d11.dll!CreateDirect3D11SurfaceFromDXGISurface */
   CreateDirect3D11SurfaceFromDXGISurface(dgxiSurface: Win32Pointer, graphicsSurface: Win32Pointer): number;
   /** d3d11.dll!D3D11CreateDevice */
-  D3D11CreateDevice(pAdapter: Win32Pointer, DriverType: number, Software: Win32Pointer, Flags: number, pFeatureLevels: Win32Pointer, FeatureLevels: number, SDKVersion: number, ppDevice: Win32Pointer, pFeatureLevel: Win32Pointer, ppImmediateContext: Win32Pointer): number;
+  D3D11CreateDevice(
+    pAdapter: Win32Pointer,
+    DriverType: number,
+    Software: Win32Pointer,
+    Flags: number,
+    pFeatureLevels: Win32Pointer,
+    FeatureLevels: number,
+    SDKVersion: number,
+    ppDevice: Win32Pointer,
+    pFeatureLevel: Win32Pointer,
+    ppImmediateContext: Win32Pointer,
+  ): number;
   /** d3d11.dll!D3D11CreateDeviceAndSwapChain */
-  D3D11CreateDeviceAndSwapChain(pAdapter: Win32Pointer, DriverType: number, Software: Win32Pointer, Flags: number, pFeatureLevels: Win32Pointer, FeatureLevels: number, SDKVersion: number, pSwapChainDesc: Win32Pointer, ppSwapChain: Win32Pointer, ppDevice: Win32Pointer, pFeatureLevel: Win32Pointer, ppImmediateContext: Win32Pointer): number;
+  D3D11CreateDeviceAndSwapChain(
+    pAdapter: Win32Pointer,
+    DriverType: number,
+    Software: Win32Pointer,
+    Flags: number,
+    pFeatureLevels: Win32Pointer,
+    FeatureLevels: number,
+    SDKVersion: number,
+    pSwapChainDesc: Win32Pointer,
+    ppSwapChain: Win32Pointer,
+    ppDevice: Win32Pointer,
+    pFeatureLevel: Win32Pointer,
+    ppImmediateContext: Win32Pointer,
+  ): number;
   /** d3d11.dll!D3D11On12CreateDevice */
-  D3D11On12CreateDevice(pDevice: Win32Pointer, Flags: number, pFeatureLevels: Win32Pointer, FeatureLevels: number, ppCommandQueues: Win32Pointer, NumQueues: number, NodeMask: number, ppDevice: Win32Pointer, ppImmediateContext: Win32Pointer, pChosenFeatureLevel: Win32Pointer): number;
+  D3D11On12CreateDevice(
+    pDevice: Win32Pointer,
+    Flags: number,
+    pFeatureLevels: Win32Pointer,
+    FeatureLevels: number,
+    ppCommandQueues: Win32Pointer,
+    NumQueues: number,
+    NodeMask: number,
+    ppDevice: Win32Pointer,
+    ppImmediateContext: Win32Pointer,
+    pChosenFeatureLevel: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

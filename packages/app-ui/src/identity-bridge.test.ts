@@ -4,10 +4,7 @@ import { createIdentityBridge, type Invoke } from "./identity-bridge";
 
 function recorder() {
   const calls: Array<{ command: string; args?: Record<string, unknown> }> = [];
-  const invoke: Invoke = async <T>(
-    command: string,
-    args?: Record<string, unknown>,
-  ) => {
+  const invoke: Invoke = async <T>(command: string, args?: Record<string, unknown>) => {
     calls.push({ command, args });
     return undefined as T;
   };
@@ -56,7 +53,7 @@ describe("identity bridge", () => {
     await bridge.compare("a.png", "b.png");
     await bridge.vectorize("a.png", { mode: "sombre", threshold: 40 });
     await bridge.paletteCss("a.png", "brand");
-    expect(calls.map((c) => c.command)).toEqual([
+    expect(calls.map(c => c.command)).toEqual([
       "aphrody_pixel_planche",
       "aphrody_pixel_comparer",
       "aphrody_pixel_vectoriser",

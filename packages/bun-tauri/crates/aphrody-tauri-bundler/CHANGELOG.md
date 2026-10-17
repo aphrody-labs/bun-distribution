@@ -33,12 +33,13 @@
 ### New Features
 
 - [`1e5ba7b53`](https://www.github.com/tauri-apps/tauri/commit/1e5ba7b53dfb3da97f372b646f15853e5ba0e1a8) ([#15985](https://www.github.com/tauri-apps/tauri/pull/15985)) Added `BundleSettings::webview_runtime` to tell the bundler which webview runtime the application uses, so it only ships what that runtime needs:
-    
-    - `WebviewRuntime::Wry` (the default): the AppImage ships the webkit2gtk helper processes, and the NSIS and WiX installers include the WebView2 installation step (`webviewInstallMode`, `minimumWebview2Version` and the `WebView2Loader.dll` resource).
-    - `WebviewRuntime::Cef`: its `distribution` field is the CEF distribution to copy into the bundle, or `None` for an app that loads CEF from a shared runtime outside its bundle, which ships no CEF files. Its `helper` field carries the `CefHelperSettings` used to build the executable of the macOS helper apps, which are created either way.
-    - `WebviewRuntime::Other`: nothing runtime-specific is shipped.
-    
-    The `BundleSettings::cef_path` and `BundleSettings::cef_shared_runtime` fields were removed in favor of the `Cef` variant.
+
+  - `WebviewRuntime::Wry` (the default): the AppImage ships the webkit2gtk helper processes, and the NSIS and WiX installers include the WebView2 installation step (`webviewInstallMode`, `minimumWebview2Version` and the `WebView2Loader.dll` resource).
+  - `WebviewRuntime::Cef`: its `distribution` field is the CEF distribution to copy into the bundle, or `None` for an app that loads CEF from a shared runtime outside its bundle, which ships no CEF files. Its `helper` field carries the `CefHelperSettings` used to build the executable of the macOS helper apps, which are created either way.
+  - `WebviewRuntime::Other`: nothing runtime-specific is shipped.
+
+  The `BundleSettings::cef_path` and `BundleSettings::cef_shared_runtime` fields were removed in favor of the `Cef` variant.
+
 - [`8254e5af6`](https://www.github.com/tauri-apps/tauri/commit/8254e5af6df4f780bf5bd879ada4ab69599b6545) ([#14207](https://www.github.com/tauri-apps/tauri/pull/14207)) Added support to Liquid Glass icons.
 
 ### Enhancements
@@ -145,6 +146,7 @@
 
   - For `tauri-bundler` lib users, the `NsisSettings` now has 2 new fields `uninstaller_icon` and `uninstaller_header_image` which can be a breaking change
   - When bundling with NSIS, users can add `uninstallerIcon` and `uninstallerHeaderImage` under `bundle > windows > nsis` to configure them.
+
 - [`cc5c97602`](https://www.github.com/tauri-apps/tauri/commit/cc5c976027b0ab2431c13ec5b2e201d4414a8a6e) ([#14486](https://www.github.com/tauri-apps/tauri/pull/14486)) Implement file association for Android and iOS.
 - [`5a0ca7edb`](https://www.github.com/tauri-apps/tauri/commit/5a0ca7edbbc707199615a91845146e98b6f5e8ca) ([#14671](https://www.github.com/tauri-apps/tauri/pull/14671)) Added support to Liquid Glass icons.
 - [`5dc2cee60`](https://www.github.com/tauri-apps/tauri/commit/5dc2cee60370665af88c185684432e425b1c987d) ([#14793](https://www.github.com/tauri-apps/tauri/pull/14793)) Added support for `minimumWebview2Version` option support for the MSI (Wix) installer, the old `bundle > windows > nsis > minimumWebview2Version` is now deprecated in favor of `bundle > windows > minimumWebview2Version`
@@ -309,7 +311,7 @@
 
 ### New Features
 
-- [`a9ec12843`](https://www.github.com/tauri-apps/tauri/commit/a9ec12843aa7d0eb774bd3a53e2e63da12cfa77b) ([#13521](https://www.github.com/tauri-apps/tauri/pull/13521) by [@FabianLars](https://www.github.com/tauri-apps/tauri/../../FabianLars)) Added a `--skip-stapling` option to make `tauri build|bundle` *not* wait for notarization to finish on macOS.
+- [`a9ec12843`](https://www.github.com/tauri-apps/tauri/commit/a9ec12843aa7d0eb774bd3a53e2e63da12cfa77b) ([#13521](https://www.github.com/tauri-apps/tauri/pull/13521) by [@FabianLars](https://www.github.com/tauri-apps/tauri/../../FabianLars)) Added a `--skip-stapling` option to make `tauri build|bundle` _not_ wait for notarization to finish on macOS.
 
 ### Enhancements
 
@@ -427,6 +429,7 @@
 
   - Fixed launch on start checkbox in nsis installer does not work well with applications that require elevated permissions
   - Fixed nsis installer may fail to install if launched by updater plugin
+
 - [`fbe7c9ead`](https://www.github.com/tauri-apps/tauri/commit/fbe7c9ead76e71ca258c6f48bbb62185fcc37b1c) ([#12466](https://www.github.com/tauri-apps/tauri/pull/12466) by [@FabianLars](https://www.github.com/tauri-apps/tauri/../../FabianLars)) Fixed an issue that caused the compiled AppImage to miss webkitgtk's internal `libwebkit2gtkinjectedbundle.so` file.
 - [`f5a59b93b`](https://www.github.com/tauri-apps/tauri/commit/f5a59b93bfefb43ff131a7870b3c5d5e48c1ca1e) ([#12136](https://www.github.com/tauri-apps/tauri/pull/12136) by [@unknovvn](https://www.github.com/tauri-apps/tauri/../../unknovvn)) The NSIS bundler will now replace non-numeric build metadata with `0` instead of returning an error.
 - [`9dac2863a`](https://www.github.com/tauri-apps/tauri/commit/9dac2863afa70fb0bcddf859b284afba917f28ae) ([#12323](https://www.github.com/tauri-apps/tauri/pull/12323) by [@FabianLars](https://www.github.com/tauri-apps/tauri/../../FabianLars)) Skip signing the .dmg if self signing via `"signingIdentity": "-"` is used.
@@ -941,7 +944,7 @@
 
 ### Breaking Changes
 
-- [`8de308d1`](https://www.github.com/tauri-apps/tauri/commit/8de308d1bf6a855d7a26af58bd0e744938ba47d8)([#8723](https://www.github.com/tauri-apps/tauri/pull/8723)) -   Removed all license fields from `WixSettings`, `NsisSettings` and `MacOsSettings` and replaced with `license` and `license_file` fields in `BundlerSettings`.
+- [`8de308d1`](https://www.github.com/tauri-apps/tauri/commit/8de308d1bf6a855d7a26af58bd0e744938ba47d8)([#8723](https://www.github.com/tauri-apps/tauri/pull/8723)) - Removed all license fields from `WixSettings`, `NsisSettings` and `MacOsSettings` and replaced with `license` and `license_file` fields in `BundlerSettings`.
 
 ## \[2.0.0-alpha.14]
 
@@ -1033,6 +1036,7 @@
 
   - `Spanish`
   - `SpanishInternational`
+
 - [`2915bd06`](https://www.github.com/tauri-apps/tauri/commit/2915bd068ed40dc01a363b69212c6b6f2d3ec01e)([#6854](https://www.github.com/tauri-apps/tauri/pull/6854)) Correctly escape arguments in NSIS script to fix bundling apps that use non-default WebView2 install modes.
 
 ## \[2.0.0-alpha.4]
@@ -1044,7 +1048,7 @@
 ## \[2.0.0-alpha.3]
 
 - Pull changes from Tauri 1.3 release.
-  - [](https://www.github.com/tauri-apps/tauri/commit/undefined)  on undefined
+  - [](https://www.github.com/tauri-apps/tauri/commit/undefined) on undefined
 
 ## \[2.0.0-alpha.2]
 
@@ -1164,6 +1168,7 @@
 - [`cb1d4164`](https://www.github.com/tauri-apps/tauri/commit/cb1d4164e71e29f071b8438d02a7ec86a9fac67b)([#7487](https://www.github.com/tauri-apps/tauri/pull/7487)) On Windows, code sign the application binaries before trying to create the WiX and NSIS bundles to always sign the executables even if no bundle types are enabled.
 
   On Windows, code sign the sidecar binaries if they are not signed already.
+
 - [`57f73f1b`](https://www.github.com/tauri-apps/tauri/commit/57f73f1b6a07e690d122d7534a0b3531c8c12c03)([#7486](https://www.github.com/tauri-apps/tauri/pull/7486)) On Windows, NSIS installer will write webview2 installer file to the well-known temp dir instead of the install dir, so we don't pollute the install dir.
 - [`a7777ff4`](https://www.github.com/tauri-apps/tauri/commit/a7777ff485b725f177d08bbc00af607cd8ee8d6d)([#7626](https://www.github.com/tauri-apps/tauri/pull/7626)) Added Bulgarian language support to the NSIS bundler.
 - [`e3bfb014`](https://www.github.com/tauri-apps/tauri/commit/e3bfb01411c3cc5e602c8f961f6cb5c9dd9524e1)([#7776](https://www.github.com/tauri-apps/tauri/pull/7776)) Add `compression` configuration option under `tauri > bundle > windows > nsis`.
@@ -1215,7 +1220,7 @@
 
 ### Bug Fixes
 
-- [`0302138f`](https://www.github.com/tauri-apps/tauri/commit/0302138f2fa8c869888f07006eda333a8dd2ba7f)([#6992](https://www.github.com/tauri-apps/tauri/pull/6992)) -   Updated the AppImage bundler to follow symlinks for `/usr/lib*`.
+- [`0302138f`](https://www.github.com/tauri-apps/tauri/commit/0302138f2fa8c869888f07006eda333a8dd2ba7f)([#6992](https://www.github.com/tauri-apps/tauri/pull/6992)) - Updated the AppImage bundler to follow symlinks for `/usr/lib*`.
   - Fixes AppImage bundling for Void Linux, which was failing to bundle webkit2gtk because the `/usr/lib64` is a symlink to `/usr/lib`.
 - [`1b8001b8`](https://www.github.com/tauri-apps/tauri/commit/1b8001b8b8757b6914e9b61a71ad1e092a5fa754)([#7056](https://www.github.com/tauri-apps/tauri/pull/7056)) Fix incorrect estimated app size for NSIS bundler when installed to a non-empty directory.
 - [`df89ccc1`](https://www.github.com/tauri-apps/tauri/commit/df89ccc1912db6b81d43d56c9e6d66980ece2e8d)([#6955](https://www.github.com/tauri-apps/tauri/pull/6955)) Fix NSIS installer disabling `do not uninstall` button and silent installer aborting, if `allowDowngrades` was disabled even when we are not downgrading.

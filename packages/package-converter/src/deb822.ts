@@ -1,17 +1,9 @@
 // SPDX-License-Identifier: MIT
-import {
-  decoder,
-  LIMITS,
-  type Ecosystem,
-  type Fields,
-  type PackageRecord,
-  type SourceArtifact,
-} from "./types.ts";
+import { decoder, LIMITS, type Ecosystem, type Fields, type PackageRecord, type SourceArtifact } from "./types.ts";
 
 /** Debian control fields: case-insensitive names, folded values and blank-line stanzas. */
 export function deb822(data: Uint8Array): Fields[] {
-  if (data.length > LIMITS.metadata)
-    throw new Error("Debian metadata exceeds limit");
+  if (data.length > LIMITS.metadata) throw new Error("Debian metadata exceeds limit");
   let text = decoder.decode(data);
   // .dsc files may carry a cleartext OpenPGP signature. Preserve its presence, never its trust claim.
   const signed = text.startsWith("-----BEGIN PGP SIGNED MESSAGE-----");
@@ -19,15 +11,11 @@ export function deb822(data: Uint8Array): Fields[] {
     const lines = text.split(/\r?\n/);
     const start = lines.indexOf("");
     const end = lines.indexOf("-----BEGIN PGP SIGNATURE-----", start + 1);
-    if (
-      start < 1 ||
-      end < start ||
-      !lines.includes("-----END PGP SIGNATURE-----")
-    )
+    if (start < 1 || end < start || !lines.includes("-----END PGP SIGNATURE-----"))
       throw new Error("Malformed Debian cleartext signature");
     text = lines
       .slice(start + 1, end)
-      .map((line) => (line.startsWith("- ") ? line.slice(2) : line))
+      .map(line => (line.startsWith("- ") ? line.slice(2) : line))
       .join("\n");
   }
   const rows: Fields[] = [];
@@ -37,15 +25,13 @@ export function deb822(data: Uint8Array): Fields[] {
     if (line.length > 65536) throw new Error("Debian field line exceeds limit");
     if (!line.length) {
       if (Object.keys(row).length) rows.push(row);
-      if (rows.length > LIMITS.entries)
-        throw new Error("Too many Debian stanzas");
+      if (rows.length > LIMITS.entries) throw new Error("Too many Debian stanzas");
       row = Object.create(null);
       previous = "";
     } else if (/^[ \t]/.test(line)) {
       if (!previous) throw new Error("Orphan Debian continuation");
       const text = `${row[previous]![0]}\n${line.slice(1)}`;
-      if (text.length > 1024 * 1024)
-        throw new Error("Debian field exceeds limit");
+      if (text.length > 1024 * 1024) throw new Error("Debian field exceeds limit");
       row[previous] = [text];
     } else if (!line.startsWith("#")) {
       const at = line.indexOf(":");
@@ -56,9 +42,7 @@ export function deb822(data: Uint8Array): Fields[] {
       previous = name;
     }
   }
-  if (signed)
-    for (const fields of rows)
-      fields["openpgp-clearsigned"] = ["present-unverified"];
+  if (signed) for (const fields of rows) fields["openpgp-clearsigned"] = ["present-unverified"];
   return rows;
 }
 
@@ -75,9 +59,7 @@ function checksumFiles(fields: Fields): SourceArtifact[] {
     ["checksums-sha1", "sha1", 40],
     ["checksums-sha256", "sha256", 64],
   ] as const) {
-    for (const line of (fields[key]?.[0] ?? "")
-      .split("\n")
-      .filter((line) => line.trim())) {
+    for (const line of (fields[key]?.[0] ?? "").split("\n").filter(line => line.trim())) {
       const parts = line.trim().split(/\s+/);
       // Sources/.dsc use three columns; .changes may add section and priority columns.
       const [hash, size] = parts;
@@ -92,11 +74,9 @@ function checksumFiles(fields: Fields): SourceArtifact[] {
       )
         throw new Error("Invalid Debian source checksum");
       const count = Number(size);
-      if (!Number.isSafeInteger(count))
-        throw new Error("Debian source size exceeds safe integer");
+      if (!Number.isSafeInteger(count)) throw new Error("Debian source size exceeds safe integer");
       const old = byPath.get(path);
-      if (old && old.size !== count)
-        throw new Error("Conflicting source artifact sizes");
+      if (old && old.size !== count) throw new Error("Conflicting source artifact sizes");
       byPath.set(path, {
         path,
         size: count,
@@ -107,30 +87,23 @@ function checksumFiles(fields: Fields): SourceArtifact[] {
   return [...byPath.values()];
 }
 
-export function debianRecords(
-  rows: Fields[],
-  ecosystem: Ecosystem,
-): PackageRecord[] {
-  return rows.map((fields) => {
+export function debianRecords(rows: Fields[], ecosystem: Ecosystem): PackageRecord[] {
+  return rows.map(fields => {
     const name = fields.package?.[0] ?? required(fields, "source");
-    if (!/^[a-z0-9][a-z0-9+.-]+$/.test(name))
-      throw new Error("Invalid Debian package name");
+    if (!/^[a-z0-9][a-z0-9+.-]+$/.test(name)) throw new Error("Invalid Debian package name");
     const version = required(fields, "version");
-    const source =
-      !!fields.directory || !!fields["checksums-sha256"] || !!fields["binary"];
+    const source = !!fields.directory || !!fields["checksums-sha256"] || !!fields["binary"];
     const sources = checksumFiles(fields);
     if (fields.filename) {
       const artifact: SourceArtifact = { path: required(fields, "filename") };
       if (fields.size) {
         const size = required(fields, "size");
-        if (!/^\d+$/.test(size) || !Number.isSafeInteger(Number(size)))
-          throw new Error("Invalid Debian package size");
+        if (!/^\d+$/.test(size) || !Number.isSafeInteger(Number(size))) throw new Error("Invalid Debian package size");
         artifact.size = Number(size);
       }
       if (fields.sha256) {
         const hash = required(fields, "sha256");
-        if (!/^[a-fA-F0-9]{64}$/.test(hash))
-          throw new Error("Invalid Debian package SHA256");
+        if (!/^[a-fA-F0-9]{64}$/.test(hash)) throw new Error("Invalid Debian package SHA256");
         artifact.integrity = `sha256:${hash.toLowerCase()}`;
       }
       sources.push(artifact);

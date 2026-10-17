@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TagIcon } from "lucide-react";
-import {
-  TagsApi,
-  UsersApi,
-  type TagDetails,
-  type UserInfo,
-} from "@storyteller/api";
+import { TagsApi, UsersApi, type TagDetails, type UserInfo } from "@storyteller/api";
 import { toast } from "@storyteller/ui-toaster";
 import { TagChipInput, type TagSuggestion } from "./TagChipInput";
 
@@ -43,11 +38,8 @@ const resolveSessionUsername = (): Promise<string | null> => {
   if (!usernameInFlight) {
     usernameInFlight = new UsersApi()
       .GetSession()
-      .then((res) => {
-        cachedUsername =
-          res.success && res.data?.loggedIn && res.data.user
-            ? res.data.user.username
-            : null;
+      .then(res => {
+        cachedUsername = res.success && res.data?.loggedIn && res.data.user ? res.data.user.username : null;
         return cachedUsername;
       })
       .catch(() => {
@@ -69,13 +61,7 @@ const resolveSessionUsername = (): Promise<string | null> => {
  * remembered, so rapid edits collapse into a single follow-up request and
  * add/remove can never interleave.
  */
-export function TagsSection({
-  mediaToken,
-  creator,
-  currentUsername,
-  suggestions,
-  onSaved,
-}: TagsSectionProps) {
+export function TagsSection({ mediaToken, creator, currentUsername, suggestions, onSaved }: TagsSectionProps) {
   const tagsApi = useMemo(() => new TagsApi(), []);
 
   // Session: prop wins; otherwise resolve (and cache) it ourselves.
@@ -83,7 +69,7 @@ export function TagsSection({
   useEffect(() => {
     if (currentUsername !== undefined) return;
     let cancelled = false;
-    resolveSessionUsername().then((username) => {
+    resolveSessionUsername().then(username => {
       if (!cancelled) setResolvedUsername(username);
     });
     return () => {
@@ -91,10 +77,7 @@ export function TagsSection({
     };
   }, [currentUsername]);
   const effectiveUsername = currentUsername ?? resolvedUsername;
-  const isOwner =
-    !!effectiveUsername &&
-    !!creator?.username &&
-    creator.username === effectiveUsername;
+  const isOwner = !!effectiveUsername && !!creator?.username && creator.username === effectiveUsername;
 
   // null until the first fetch resolves — the section doesn't render (and
   // can't be edited) before we know the file's current tags.
@@ -112,7 +95,7 @@ export function TagsSection({
     pendingRef.current = null;
     if (!mediaToken) return;
     let cancelled = false;
-    tagsApi.ListMediaFileTags({ mediaFileToken: mediaToken }).then((res) => {
+    tagsApi.ListMediaFileTags({ mediaFileToken: mediaToken }).then(res => {
       if (cancelled) return;
       const fetched = res.success && res.data ? res.data : [];
       setTags(fetched);
@@ -147,12 +130,8 @@ export function TagsSection({
       if (cancelled) return;
       setOwnTags(
         all
-          .sort(
-            (a, b) =>
-              b.use_count - a.use_count ||
-              a.tag_value_lowercase.localeCompare(b.tag_value_lowercase),
-          )
-          .map((t) => ({ value: t.tag_value, useCount: t.use_count })),
+          .sort((a, b) => b.use_count - a.use_count || a.tag_value_lowercase.localeCompare(b.tag_value_lowercase))
+          .map(t => ({ value: t.tag_value, useCount: t.use_count })),
       );
     })();
     return () => {
@@ -175,11 +154,11 @@ export function TagsSection({
         onSaved?.(res.data.tags);
         if (suggestions === undefined && res.data.tags.length > 0) {
           // Keep the self-fetched suggestion list fresh with new tags.
-          setOwnTags((prev) => {
-            const known = new Set(prev.map((s) => s.value.toLowerCase()));
+          setOwnTags(prev => {
+            const known = new Set(prev.map(s => s.value.toLowerCase()));
             const added = res
-              .data!.tags.filter((t) => !known.has(t.tag_value_lowercase))
-              .map((t) => ({ value: t.tag_value, useCount: t.use_count }));
+              .data!.tags.filter(t => !known.has(t.tag_value_lowercase))
+              .map(t => ({ value: t.tag_value, useCount: t.use_count }));
             return added.length > 0 ? [...prev, ...added] : prev;
           });
         }
@@ -208,7 +187,7 @@ export function TagsSection({
   const handleAdd = (values: string[]) => {
     const next = [
       ...(tags ?? []),
-      ...values.map((value) => ({
+      ...values.map(value => ({
         tag_token: "",
         tag_value: value,
         tag_value_lowercase: value.toLowerCase(),
@@ -216,13 +195,13 @@ export function TagsSection({
       })),
     ];
     setTags(next);
-    enqueueSave(next.map((t) => t.tag_value));
+    enqueueSave(next.map(t => t.tag_value));
   };
 
   const handleRemove = (value: string) => {
-    const next = (tags ?? []).filter((t) => t.tag_value !== value);
+    const next = (tags ?? []).filter(t => t.tag_value !== value);
     setTags(next);
-    enqueueSave(next.map((t) => t.tag_value));
+    enqueueSave(next.map(t => t.tag_value));
   };
 
   const handleClear = () => {
@@ -241,16 +220,13 @@ export function TagsSection({
           <span>Tags</span>
         </div>
         {isOwner && tags.length >= 2 && (
-          <button
-            onClick={handleClear}
-            className="text-xs text-base-fg/60 hover:text-base-fg transition-colors"
-          >
+          <button onClick={handleClear} className="text-xs text-base-fg/60 hover:text-base-fg transition-colors">
             Clear
           </button>
         )}
       </div>
       <TagChipInput
-        chips={tags.map((t) => t.tag_value)}
+        chips={tags.map(t => t.tag_value)}
         suggestions={effectiveSuggestions}
         disabled={!isOwner}
         onAdd={handleAdd}

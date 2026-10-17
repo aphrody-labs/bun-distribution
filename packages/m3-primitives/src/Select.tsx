@@ -113,17 +113,11 @@ export type SelectItems = Record<string, ReactNode>;
  * element props) into Base UI `items`. Items rendered by other components are not visible here;
  * pass `items` to `SelectRoot` for those.
  */
-function collectItems(
-  children: ReactNode,
-  into: SelectItems = {},
-): SelectItems {
-  Children.forEach(children, (child) => {
+function collectItems(children: ReactNode, into: SelectItems = {}): SelectItems {
+  Children.forEach(children, child => {
     if (!isValidElement(child)) return;
     const props = child.props as { value?: unknown; children?: ReactNode };
-    if (
-      (child.type === SelectItem || child.type === SelectOption) &&
-      typeof props.value === "string"
-    ) {
+    if ((child.type === SelectItem || child.type === SelectOption) && typeof props.value === "string") {
       into[props.value] = props.children;
       return;
     }
@@ -134,9 +128,7 @@ function collectItems(
 
 const hasItems = (items: SelectItems) => Object.keys(items).length > 0;
 
-export interface SelectProps<
-  TValue extends string = string,
-> extends VariantProps<typeof selectStyles> {
+export interface SelectProps<TValue extends string = string> extends VariantProps<typeof selectStyles> {
   value: TValue;
   onChange: (value: TValue) => void;
   placeholder?: string;
@@ -160,15 +152,11 @@ export const Select = forwardRef(
     const size: SelectSize = props.size ?? "sm";
     const items = collectItems(props.children);
     return (
-      <div
-        className={props.containerClassName}
-        data-m3-component="Select"
-        ref={ref}
-      >
+      <div className={props.containerClassName} data-m3-component="Select" ref={ref}>
         <SelectSizeContext.Provider value={size}>
           <RS.Root
             value={props.value}
-            onValueChange={(value) => {
+            onValueChange={value => {
               if (value !== null) props.onChange(value as TValue);
             }}
             items={hasItems(items) ? items : undefined}
@@ -192,11 +180,7 @@ export const Select = forwardRef(
             </RS.Trigger>
 
             <RS.Portal>
-              <RS.Positioner
-                className="z-[100] outline-none"
-                sideOffset={4}
-                alignItemWithTrigger={false}
-              >
+              <RS.Positioner className="z-[100] outline-none" sideOffset={4} alignItemWithTrigger={false}>
                 <RS.Popup className={menuContent}>
                   <RS.List>{props.children}</RS.List>
                 </RS.Popup>
@@ -221,9 +205,7 @@ const ItemCheck = () => (
   </span>
 );
 
-export function SelectOption(
-  props: PropsWithChildren<{ value: string; default?: boolean }>,
-) {
+export function SelectOption(props: PropsWithChildren<{ value: string; default?: boolean }>) {
   const size = useContext(SelectSizeContext);
   return (
     <RS.Item value={props.value} className={clsx(menuItem, itemHeights[size])}>
@@ -233,15 +215,9 @@ export function SelectOption(
   );
 }
 
-export interface SelectRootProps extends Omit<
-  RS.Root.Props<string>,
-  "onValueChange" | "items"
-> {
+export interface SelectRootProps extends Omit<RS.Root.Props<string>, "onValueChange" | "items"> {
   /** Called with the chosen value (Radix shape; Base UI adds the event details). */
-  onValueChange?: (
-    value: string,
-    eventDetails: RS.Root.ChangeEventDetails,
-  ) => void;
+  onValueChange?: (value: string, eventDetails: RS.Root.ChangeEventDetails) => void;
   /**
    * Base UI `items`: labels shown in the trigger before the popup opens. Derived from the
    * `SelectItem` elements in `children` when omitted.
@@ -250,21 +226,12 @@ export interface SelectRootProps extends Omit<
 }
 
 /** Composable Base UI select root (Radix-compatible `onValueChange`). */
-export const SelectRoot = ({
-  onValueChange,
-  items,
-  children,
-  ...props
-}: SelectRootProps) => {
+export const SelectRoot = ({ onValueChange, items, children, ...props }: SelectRootProps) => {
   const derived = items ?? collectItems(children);
   return (
     <RS.Root<string>
       {...props}
-      items={
-        Array.isArray(derived) || hasItems(derived as SelectItems)
-          ? derived
-          : undefined
-      }
+      items={Array.isArray(derived) || hasItems(derived as SelectItems) ? derived : undefined}
       onValueChange={
         onValueChange &&
         ((value, details) => {
@@ -288,16 +255,9 @@ export const SelectGroup = ({ ...props }: RS.Group.Props) => (
 
 export const SelectValue = RS.Value;
 
-export const SelectTrigger = ({
-  className,
-  children,
-  ...props
-}: RS.Trigger.Props) => (
+export const SelectTrigger = ({ className, children, ...props }: RS.Trigger.Props) => (
   <RS.Trigger
-    className={withClassName(
-      clsx(selectStyles({ size: "md" }), "w-full [&>span]:line-clamp-1"),
-      className,
-    )}
+    className={withClassName(clsx(selectStyles({ size: "md" }), "w-full [&>span]:line-clamp-1"), className)}
     {...props}
   >
     {children}
@@ -313,32 +273,17 @@ const scrollArrow = clsx(
   "absolute inset-x-0 z-10 flex h-6 cursor-default items-center justify-center bg-surface-container text-on-surface-variant",
 );
 
-export const SelectScrollUpButton = ({
-  className,
-  ...props
-}: RS.ScrollUpArrow.Props) => (
-  <RS.ScrollUpArrow
-    className={withClassName(
-      clsx(scrollArrow, "top-0 rounded-t-extra-small"),
-      className,
-    )}
-    {...props}
-  >
+export const SelectScrollUpButton = ({ className, ...props }: RS.ScrollUpArrow.Props) => (
+  <RS.ScrollUpArrow className={withClassName(clsx(scrollArrow, "top-0 rounded-t-extra-small"), className)} {...props}>
     <Icon name="expand_less" size={20} />
   </RS.ScrollUpArrow>
 );
 
 SelectScrollUpButton.displayName = "SelectScrollUpButton";
 
-export const SelectScrollDownButton = ({
-  className,
-  ...props
-}: RS.ScrollDownArrow.Props) => (
+export const SelectScrollDownButton = ({ className, ...props }: RS.ScrollDownArrow.Props) => (
   <RS.ScrollDownArrow
-    className={withClassName(
-      clsx(scrollArrow, "bottom-0 rounded-b-extra-small"),
-      className,
-    )}
+    className={withClassName(clsx(scrollArrow, "bottom-0 rounded-b-extra-small"), className)}
     {...props}
   >
     <Icon name="expand_more" size={20} />
@@ -349,16 +294,10 @@ SelectScrollDownButton.displayName = "SelectScrollDownButton";
 
 type SelectPositionerProps = Pick<
   RS.Positioner.Props,
-  | "side"
-  | "sideOffset"
-  | "align"
-  | "alignOffset"
-  | "collisionPadding"
-  | "sticky"
+  "side" | "sideOffset" | "align" | "alignOffset" | "collisionPadding" | "sticky"
 >;
 
-export interface SelectContentProps
-  extends SelectPositionerProps, RS.Popup.Props {
+export interface SelectContentProps extends SelectPositionerProps, RS.Popup.Props {
   /**
    * Radix placement mode. `popper` (default) opens below the trigger; `item-aligned` overlaps
    * the trigger with the selected item (Base UI `alignItemWithTrigger`, macOS style).
@@ -389,13 +328,7 @@ export const SelectContent = ({
       collisionPadding={collisionPadding}
       sticky={sticky}
     >
-      <RS.Popup
-        className={withClassName(
-          clsx("relative max-h-96 min-w-[8rem]", menuContent),
-          className,
-        )}
-        {...props}
-      >
+      <RS.Popup className={withClassName(clsx("relative max-h-96 min-w-[8rem]", menuContent), className)} {...props}>
         <SelectScrollUpButton />
         <RS.List>{children}</RS.List>
         <SelectScrollDownButton />
@@ -410,15 +343,9 @@ SelectContent.displayName = "SelectContent";
  * Section label. Inside a `SelectGroup` it is the Base UI group label (it names the group);
  * elsewhere it is a presentational heading, as with Radix.
  */
-export const SelectLabel = ({
-  className,
-  ...props
-}: HTMLAttributes<HTMLDivElement>) => {
+export const SelectLabel = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => {
   const inGroup = useContext(InGroup);
-  const classes = clsx(
-    "px-3 py-2 pl-11 text-title-small text-on-surface-variant",
-    className,
-  );
+  const classes = clsx("px-3 py-2 pl-11 text-title-small text-on-surface-variant", className);
   return inGroup ? (
     <RS.GroupLabel className={classes} {...props} />
   ) : (
@@ -429,17 +356,10 @@ export const SelectLabel = ({
 
 SelectLabel.displayName = "SelectLabel";
 
-export const SelectItem = ({
-  className,
-  children,
-  ...props
-}: RS.Item.Props) => {
+export const SelectItem = ({ className, children, ...props }: RS.Item.Props) => {
   const size = useContext(SelectSizeContext);
   return (
-    <RS.Item
-      className={withClassName(clsx(menuItem, itemHeights[size]), className)}
-      {...props}
-    >
+    <RS.Item className={withClassName(clsx(menuItem, itemHeights[size]), className)} {...props}>
       <ItemCheck />
       <RS.ItemText>{children}</RS.ItemText>
     </RS.Item>
@@ -448,14 +368,8 @@ export const SelectItem = ({
 
 SelectItem.displayName = "SelectItem";
 
-export const SelectSeparator = ({
-  className,
-  ...props
-}: RS.Separator.Props) => (
-  <RS.Separator
-    className={withClassName("my-2 h-px bg-outline-variant", className)}
-    {...props}
-  />
+export const SelectSeparator = ({ className, ...props }: RS.Separator.Props) => (
+  <RS.Separator className={withClassName("my-2 h-px bg-outline-variant", className)} {...props} />
 );
 
 SelectSeparator.displayName = "SelectSeparator";

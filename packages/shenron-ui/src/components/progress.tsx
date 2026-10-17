@@ -30,10 +30,7 @@ function Progress({
     >
       <ProgressPrimitive.Track className="h-full w-full">
         <ProgressPrimitive.Indicator
-          className={cn(
-            "h-full transition-all duration-300 ease-out",
-            variants[variant],
-          )}
+          className={cn("h-full transition-all duration-300 ease-out", variants[variant])}
           style={{ width: `${Math.min(100, Math.max(0, value ?? 0))}%` }}
         />
       </ProgressPrimitive.Track>

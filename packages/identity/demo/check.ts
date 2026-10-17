@@ -43,27 +43,20 @@ async function devtoolsUrl(): Promise<string> {
 }
 
 const ws = new WebSocket(await devtoolsUrl());
-await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+await new Promise(r => ws.addEventListener("open", r, { once: true }));
 let nextId = 0;
-const pending = new Map<
-  number,
-  (v: { result?: any; error?: { message: string } }) => void
->();
-ws.addEventListener("message", (e) => {
+const pending = new Map<number, (v: { result?: any; error?: { message: string } }) => void>();
+ws.addEventListener("message", e => {
   const msg = JSON.parse(String(e.data));
   pending.get(msg.id)?.(msg);
   pending.delete(msg.id);
 });
-async function cdp(
-  method: string,
-  params: object = {},
-  sessionId?: string,
-): Promise<any> {
+async function cdp(method: string, params: object = {}, sessionId?: string): Promise<any> {
   const id = ++nextId;
   const reply = await new Promise<{
     result?: any;
     error?: { message: string };
-  }>((resolve) => {
+  }>(resolve => {
     pending.set(id, resolve);
     ws.send(JSON.stringify({ id, method, params, sessionId }));
   });
@@ -84,16 +77,14 @@ await cdp(
   },
   sessionId,
 );
-const page = (method: string, params: object = {}) =>
-  cdp(method, params, sessionId);
+const page = (method: string, params: object = {}) => cdp(method, params, sessionId);
 async function evaluate<T>(expression: string): Promise<T> {
   const r = await page("Runtime.evaluate", {
     expression,
     awaitPromise: true,
     returnByValue: true,
   });
-  if (r.exceptionDetails)
-    throw new Error(r.exceptionDetails.exception?.description ?? expression);
+  if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description ?? expression);
   return r.result.value as T;
 }
 
@@ -101,9 +92,7 @@ const cell = `(() => { const d = document.querySelector("aphrody-pet")?.shadowRo
   const c = [...(d?.classList ?? [])].find((c) => c.startsWith("nie-c")); return c ? Number(c.slice(5)) : null; })()`;
 /** Distinct cells shown during `ms`, sampled every 40 ms in the page. */
 const sample = (ms: number) =>
-  evaluate<
-    number[]
-  >(`new Promise((done) => { const seen = []; const t0 = performance.now();
+  evaluate<number[]>(`new Promise((done) => { const seen = []; const t0 = performance.now();
     const id = setInterval(() => { const c = ${cell}; if (c !== null && seen.at(-1) !== c) seen.push(c);
       if (performance.now() - t0 > ${ms}) { clearInterval(id); done(seen); } }, 40); })`);
 
@@ -125,37 +114,24 @@ try {
       const why = await evaluate<string>(
         `JSON.stringify({ url: location.href, ready: document.readyState, defined: !!customElements.get("aphrody-pet"),
           shadow: document.querySelector("aphrody-pet")?.shadowRoot?.innerHTML.slice(0, 200) ?? null, errors: globalThis.__errors ?? [] })`,
-      ).catch((e) => String(e));
+      ).catch(e => String(e));
       throw new Error(`the pet never painted: ${why}`);
     }
     // oxlint-disable-next-line no-await-in-loop -- fixed-interval polling of the page state
     await Bun.sleep(25);
   }
-  check(
-    true,
-    "first frame painted (ms after navigation)",
-    Math.round(performance.now() - t0),
-  );
+  check(true, "first frame painted (ms after navigation)", Math.round(performance.now() - t0));
 
   const idleCells = new Set(PET_WEB.tracks.idle!.frames.map(([c]) => c));
   const idle = await sample(2600);
-  check(
-    idle.length >= 2 && idle.every((c) => idleCells.has(c)),
-    "idle plays its own cells",
-    idle,
-  );
+  check(idle.length >= 2 && idle.every(c => idleCells.has(c)), "idle plays its own cells", idle);
 
   await evaluate(`document.querySelector("aphrody-pet").setState("running")`);
   const running = await sample(700);
   const runningCells = new Set(PET_WEB.tracks.running!.frames.map(([c]) => c));
+  check(running.length >= 4 && running.every(c => runningCells.has(c)), "setState('running') plays running", running);
   check(
-    running.length >= 4 && running.every((c) => runningCells.has(c)),
-    "setState('running') plays running",
-    running,
-  );
-  check(
-    (await evaluate<string>(`document.querySelector("aphrody-pet").state`)) ===
-      "running",
+    (await evaluate<string>(`document.querySelector("aphrody-pet").state`)) === "running",
     "state getter",
     "running",
   );
@@ -201,11 +177,7 @@ try {
     x: eyes.x + 5,
     y: eyes.y + 5,
   });
-  check(
-    (await sample(120)).at(-1) === PET_WEB.neutral,
-    "gaze dead zone shows the neutral pose",
-    PET_WEB.neutral,
-  );
+  check((await sample(120)).at(-1) === PET_WEB.neutral, "gaze dead zone shows the neutral pose", PET_WEB.neutral);
 
   const { data } = await page("Page.captureScreenshot", { format: "png" });
   await Bun.write(shot, Buffer.from(data, "base64"));

@@ -47,23 +47,13 @@ export const emptyRotateKeys = (): HeldRotateKeys => ({
 
 // Per-frame movement direction (in camera-local space). Multiply by
 // (delta * movementSpeed) before applying.
-export const moveVectorFromKeys = (
-  keys: HeldMoveKeys,
-  autoForward = false,
-): Vector3 => {
+export const moveVectorFromKeys = (keys: HeldMoveKeys, autoForward = false): Vector3 => {
   const forward = keys.forward || (autoForward && !keys.back) ? 1 : 0;
-  return new Vector3(
-    -keys.left + keys.right,
-    -keys.down + keys.up,
-    -forward + keys.back,
-  );
+  return new Vector3(-keys.left + keys.right, -keys.down + keys.up, -forward + keys.back);
 };
 
 // Per-frame rotation deltas. Already pre-scaled by rollSpeed.
-export const rotationVectorFromKeys = (
-  keys: HeldRotateKeys,
-  rollSpeed: number,
-): Vector3 =>
+export const rotationVectorFromKeys = (keys: HeldRotateKeys, rollSpeed: number): Vector3 =>
   new Vector3(
     -keys.pitchDown + keys.pitchUp,
     -keys.yawRight + keys.yawLeft,
@@ -72,11 +62,7 @@ export const rotationVectorFromKeys = (
 
 // Mouse-drag pan amounts (in camera-local x/y, before applying).
 // dx/dy are pointer deltas in pixels; speed scales them.
-export const panFromDrag = (
-  dx: number,
-  dy: number,
-  speed: number,
-): { x: number; y: number } => ({
+export const panFromDrag = (dx: number, dy: number, speed: number): { x: number; y: number } => ({
   x: -dx * (speed * 0.01),
   y: dy * (speed * 0.01),
 });
@@ -97,11 +83,7 @@ export const lookAtFromCamera = (camera: PerspectiveCamera): Vector3 => {
 
 // Smooth a velocity vector toward a target with a per-component lerp.
 // Returns the same `velocity` instance for chaining.
-export const lerpVelocity = (
-  velocity: Vector3,
-  target: Vector3,
-  smoothing: number,
-): Vector3 => {
+export const lerpVelocity = (velocity: Vector3, target: Vector3, smoothing: number): Vector3 => {
   velocity.x = MathUtils.lerp(velocity.x, target.x, smoothing);
   velocity.y = MathUtils.lerp(velocity.y, target.y, smoothing);
   velocity.z = MathUtils.lerp(velocity.z, target.z, smoothing);
@@ -144,21 +126,18 @@ export const CAMERA_MOVE_ACTION_SLOTS: Record<string, keyof HeldMoveKeys> = {
   "pagescene.camera.down": "down",
 };
 
-export const CAMERA_ROTATE_ACTION_SLOTS: Record<string, keyof HeldRotateKeys> =
-  {
-    "pagescene.camera.pitchUp": "pitchUp",
-    "pagescene.camera.pitchDown": "pitchDown",
-    "pagescene.camera.yawLeft": "yawLeft",
-    "pagescene.camera.yawRight": "yawRight",
-  };
+export const CAMERA_ROTATE_ACTION_SLOTS: Record<string, keyof HeldRotateKeys> = {
+  "pagescene.camera.pitchUp": "pitchUp",
+  "pagescene.camera.pitchDown": "pitchDown",
+  "pagescene.camera.yawLeft": "yawLeft",
+  "pagescene.camera.yawRight": "yawRight",
+};
 
 // Translate a KeyboardEvent code into the move/rotate slot it drives via a
 // resolved `code → slot` map, or null. (The map replaces the old hardcoded
 // WASD/QE + arrow switches so camera keys are remappable.)
-export const moveSlotForKeyCode = (
-  code: string,
-  map: Record<string, keyof HeldMoveKeys>,
-): keyof HeldMoveKeys | null => map[code] ?? null;
+export const moveSlotForKeyCode = (code: string, map: Record<string, keyof HeldMoveKeys>): keyof HeldMoveKeys | null =>
+  map[code] ?? null;
 
 export const rotateSlotForKeyCode = (
   code: string,
@@ -169,11 +148,7 @@ export const rotateSlotForKeyCode = (
 // applies the resulting movement / rotation to `camera`, and returns
 // `true` if anything changed. The caller is responsible for any
 // downstream sync (e.g. lookAt updates) when this returns true.
-export const freeCamFrameTick = (
-  camera: PerspectiveCamera,
-  state: FreeCamControlState,
-  delta: number,
-): boolean => {
+export const freeCamFrameTick = (camera: PerspectiveCamera, state: FreeCamControlState, delta: number): boolean => {
   if (!state.enabled) return false;
 
   const moveVec = moveVectorFromKeys(state.moveKeys);

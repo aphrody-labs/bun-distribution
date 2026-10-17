@@ -10,19 +10,12 @@ interface ProviderBillingModalProps {
   isVideoPage?: boolean;
 }
 
-export function ProviderBillingModal({
-  isVideoPage = false,
-}: ProviderBillingModalProps) {
+export function ProviderBillingModal({ isVideoPage = false }: ProviderBillingModalProps) {
   const [showModal, setShowModal] = useState(false);
-  const [provider, setProvider] = useState<GenerationProvider>(
-    GenerationProvider.Artcraft,
-  );
+  const [provider, setProvider] = useState<GenerationProvider>(GenerationProvider.Artcraft);
 
-  useShowProviderBillingModalEvent(async (event) => {
-    console.log(
-      "Show provider billing modal event received from Tauri:",
-      event,
-    );
+  useShowProviderBillingModalEvent(async event => {
+    console.log("Show provider billing modal event received from Tauri:", event);
     setProvider(event.provider);
     setShowModal(true);
   });
@@ -68,12 +61,7 @@ export function ProviderBillingModal({
       childPadding={!isArtcraft}
       showClose={true}
     >
-      <div
-        className={twMerge(
-          "flex flex-col items-center justify-center",
-          isArtcraft ? "h-full w-full" : "gap-6 p-6",
-        )}
-      >
+      <div className={twMerge("flex flex-col items-center justify-center", isArtcraft ? "h-full w-full" : "gap-6 p-6")}>
         {block}
       </div>
     </Modal>

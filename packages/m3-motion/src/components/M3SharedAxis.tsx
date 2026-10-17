@@ -2,10 +2,7 @@ import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { HTMLMotionProps, Transition, Variants } from "motion/react";
 import { m3Easings, m3Durations } from "../easings";
-import {
-  motionVariants,
-  useM3ReducedMotion,
-} from "../hooks/useM3ReducedMotion";
+import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion";
 
 export interface M3SharedAxisProps extends HTMLMotionProps<"div"> {
   /**
@@ -109,10 +106,7 @@ export const M3SharedAxis = React.forwardRef<HTMLDivElement, M3SharedAxisProps>(
       },
     };
 
-    const resolvedVariants = motionVariants(
-      customVariants ?? defaultVariants,
-      reduced,
-    );
+    const resolvedVariants = motionVariants(customVariants ?? defaultVariants, reduced);
 
     const content = (
       <motion.div
@@ -129,9 +123,7 @@ export const M3SharedAxis = React.forwardRef<HTMLDivElement, M3SharedAxisProps>(
     );
 
     if (inProp !== undefined) {
-      return (
-        <AnimatePresence mode="wait">{inProp ? content : null}</AnimatePresence>
-      );
+      return <AnimatePresence mode="wait">{inProp ? content : null}</AnimatePresence>;
     }
 
     return content;

@@ -3,64 +3,16 @@
 // format tables is read until an accessor asks for it.
 import { basename, resolve } from "node:path";
 import { detect } from "./detect.js";
-import {
-  disassembleBytes,
-  maxInstructionBytes,
-  type Backend,
-  type DisasmResult,
-} from "./disasm/index.js";
-import {
-  parsePsxExe,
-  parseCdImage,
-  parseChd,
-  parseCue,
-  parsePbp,
-  cdFiles,
-} from "./parsers/playstation.js";
-import {
-  exefsFiles,
-  parseNcch,
-  parseNcsd,
-  parseNro,
-  parseNsp,
-  parseXci,
-  partitionFs,
-} from "./parsers/ctr-switch.js";
+import { disassembleBytes, maxInstructionBytes, type Backend, type DisasmResult } from "./disasm/index.js";
+import { parsePsxExe, parseCdImage, parseChd, parseCue, parsePbp, cdFiles } from "./parsers/playstation.js";
+import { exefsFiles, parseNcch, parseNcsd, parseNro, parseNsp, parseXci, partitionFs } from "./parsers/ctr-switch.js";
 import { parseElf } from "./parsers/elf.js";
 import { biosParser } from "./parsers/firmware.js";
-import {
-  ndsFiles,
-  parseFds,
-  parseGameBoy,
-  parseGba,
-  parseNds,
-  parseNes,
-} from "./parsers/handheld.js";
+import { ndsFiles, parseFds, parseGameBoy, parseGba, parseNds, parseNes } from "./parsers/handheld.js";
 import { parseGenesis } from "./parsers/sega.js";
-import {
-  gameCubeFiles,
-  parseDisc,
-  parseDol,
-  parseN64,
-  parseWbfs,
-  parseWia,
-  toZ64,
-} from "./parsers/home.js";
-import {
-  BinarySource,
-  digestSource,
-  type Chunk,
-  type StreamDigest,
-} from "./stream.js";
-import type {
-  Arch,
-  Detection,
-  FileEntry,
-  FormatId,
-  FormatParser,
-  ParsedImage,
-  Section,
-} from "./types.js";
+import { gameCubeFiles, parseDisc, parseDol, parseN64, parseWbfs, parseWia, toZ64 } from "./parsers/home.js";
+import { BinarySource, digestSource, type Chunk, type StreamDigest } from "./stream.js";
+import type { Arch, Detection, FileEntry, FormatId, FormatParser, ParsedImage, Section } from "./types.js";
 
 const parsers: Record<FormatId, FormatParser | undefined> = {
   nes: parseNes,
@@ -126,9 +78,7 @@ export interface ImageSummary<H extends object = Record<string, unknown>> {
   owners: string[];
 }
 
-export class BinaryImage<
-  H extends object = Record<string, unknown>,
-> implements ImageSummary<H> {
+export class BinaryImage<H extends object = Record<string, unknown>> implements ImageSummary<H> {
   readonly path: string;
   readonly name: string;
   readonly size: number;
@@ -176,20 +126,12 @@ export class BinaryImage<
     const detection = await detect(source, path, options);
     const head = await source.read(0, BinarySource.headBytes);
     const parser = parsers[detection.format];
-    const parsed = parser
-      ? await parser({ source, path, head })
-      : { header: {}, sections: [] };
-    return new BinaryImage<H>(
-      source,
-      path,
-      detection,
-      parsed as ParsedImage<H>,
-      head,
-    );
+    const parsed = parser ? await parser({ source, path, head }) : { header: {}, sections: [] };
+    return new BinaryImage<H>(source, path, detection, parsed as ParsedImage<H>, head);
   }
 
   section(name: string): Section | undefined {
-    return this.sections.find((section) => section.name === name);
+    return this.sections.find(section => section.name === name);
   }
 
   read(offset: number, length: number): Promise<Uint8Array> {
@@ -204,9 +146,7 @@ export class BinaryImage<
     const section = this.section(name);
     if (!section) throw new Error(`${this.name} has no section ${name}`);
     const bytes = await this.source.read(section.offset, section.size);
-    return section.swap
-      ? toZ64(bytes, section.swap === "16" ? "v64" : "n64")
-      : bytes;
+    return section.swap ? toZ64(bytes, section.swap === "16" ? "v64" : "n64") : bytes;
   }
 
   stream(start = 0, end = this.size): AsyncGenerator<Chunk> {
@@ -235,9 +175,9 @@ export class BinaryImage<
       case "xci": {
         const nested = await Promise.all(
           this.sections
-            .filter((section) => section.kind === "partition")
-            .map(async (section) =>
-              (await partitionFs(this.source, section.offset)).map((file) => ({
+            .filter(section => section.kind === "partition")
+            .map(async section =>
+              (await partitionFs(this.source, section.offset)).map(file => ({
                 ...file,
                 path: `${section.name}/${file.path}`,
               })),
@@ -251,23 +191,16 @@ export class BinaryImage<
   }
 
   /** Maps a guest address to the code section that contains it. */
-  locate(
-    address: number,
-    arch?: Arch,
-  ): { section: Section; offset: number } | undefined {
+  locate(address: number, arch?: Arch): { section: Section; offset: number } | undefined {
     const candidates = this.sections.filter(
-      (section) =>
+      section =>
         section.address !== undefined &&
         section.kind === "code" &&
         address >= section.address &&
         address < section.address + section.size,
     );
-    const section =
-      candidates.find((candidate) => !arch || candidate.arch === arch) ??
-      candidates[0];
-    return section
-      ? { section, offset: section.offset + (address - section.address!) }
-      : undefined;
+    const section = candidates.find(candidate => !arch || candidate.arch === arch) ?? candidates[0];
+    return section ? { section, offset: section.offset + (address - section.address!) } : undefined;
   }
 
   async disasm(
@@ -280,23 +213,18 @@ export class BinaryImage<
     if (options.offset !== undefined) {
       offset = options.offset;
       section = this.sections.find(
-        (candidate) =>
+        candidate =>
           candidate.kind === "code" &&
           offset >= candidate.offset &&
           offset < candidate.offset + candidate.size &&
           candidate.address !== undefined,
       );
-      address =
-        options.at ??
-        (section ? section.address! + (offset - section.offset) : offset);
+      address = options.at ?? (section ? section.address! + (offset - section.offset) : offset);
     } else {
       address =
         options.at ??
         this.entry ??
-        this.sections.find(
-          (candidate) =>
-            candidate.kind === "code" && candidate.address !== undefined,
-        )?.address ??
+        this.sections.find(candidate => candidate.kind === "code" && candidate.address !== undefined)?.address ??
         0;
       const located = this.locate(address, options.arch);
       if (!located)
@@ -306,16 +234,11 @@ export class BinaryImage<
       ({ offset, section } = located);
     }
     const arch = options.arch ?? section?.arch ?? this.arch;
-    if (!arch)
-      throw new Error(
-        `${this.name}: no instruction set known for ${this.format}; pass --arch`,
-      );
+    if (!arch) throw new Error(`${this.name}: no instruction set known for ${this.format}; pass --arch`);
     let length = count * maxInstructionBytes(arch);
-    if (section)
-      length = Math.min(length, section.offset + section.size - offset);
+    if (section) length = Math.min(length, section.offset + section.size - offset);
     let bytes = await this.source.read(offset, length);
-    if (section?.swap)
-      bytes = toZ64(bytes, section.swap === "16" ? "v64" : "n64");
+    if (section?.swap) bytes = toZ64(bytes, section.swap === "16" ? "v64" : "n64");
     const result = await disassembleBytes(bytes, {
       arch,
       address,
@@ -326,19 +249,7 @@ export class BinaryImage<
   }
 
   toJSON(): ImageSummary<H> {
-    const {
-      path,
-      name,
-      size,
-      format,
-      platform,
-      detection,
-      arch,
-      entry,
-      header,
-      sections,
-      owners,
-    } = this;
+    const { path, name, size, format, platform, detection, arch, entry, header, sections, owners } = this;
     return {
       path,
       name,

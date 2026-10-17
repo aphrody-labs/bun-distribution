@@ -47,13 +47,8 @@ export function SoundsSettingsPopover({
   musicalKey = "auto",
   onMusicalKeyChange,
 }: SoundsSettingsPopoverProps) {
-  const keyLabel =
-    MUSICAL_KEYS.find((entry) => entry.value === musicalKey)?.shortLabel ??
-    "Auto";
-  const triggerLabel = [
-    showBpm ? (bpm === null ? "Auto BPM" : `${bpm} BPM`) : null,
-    showMusicalKey ? keyLabel : null,
-  ]
+  const keyLabel = MUSICAL_KEYS.find(entry => entry.value === musicalKey)?.shortLabel ?? "Auto";
+  const triggerLabel = [showBpm ? (bpm === null ? "Auto BPM" : `${bpm} BPM`) : null, showMusicalKey ? keyLabel : null]
     .filter(Boolean)
     .join(" · ");
 
@@ -70,9 +65,7 @@ export function SoundsSettingsPopover({
             <div className="mb-1 flex items-center justify-between">
               <span className="text-xs font-medium text-base-fg/60">BPM</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium tabular-nums text-base-fg">
-                  {bpm === null ? "Auto" : bpm}
-                </span>
+                <span className="text-xs font-medium tabular-nums text-base-fg">{bpm === null ? "Auto" : bpm}</span>
                 {bpm !== null && (
                   <button
                     type="button"
@@ -89,7 +82,7 @@ export function SoundsSettingsPopover({
               max={AUDIO_BPM_MAX}
               step={1}
               value={bpm ?? DEFAULT_BPM}
-              onChange={(value) => onBpmChange?.(value)}
+              onChange={value => onBpmChange?.(value)}
               variant="filled"
             />
           </div>
@@ -97,11 +90,9 @@ export function SoundsSettingsPopover({
 
         {showMusicalKey && (
           <div>
-            <div className="mb-1.5 text-xs font-medium text-base-fg/60">
-              Musical key
-            </div>
+            <div className="mb-1.5 text-xs font-medium text-base-fg/60">Musical key</div>
             <div className="grid grid-cols-4 gap-1">
-              {MUSICAL_KEYS.map((entry) => (
+              {MUSICAL_KEYS.map(entry => (
                 <button
                   key={entry.value}
                   type="button"

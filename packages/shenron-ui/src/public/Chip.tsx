@@ -13,10 +13,8 @@ import type { UiLinkComponent } from "../navigation/link";
 export type ChipTone = "neutral" | "accent" | "ink" | "quiet";
 
 const TONES: Record<ChipTone, string> = {
-  neutral:
-    "border-white/20 text-white/75 hover:border-white/45 hover:text-white",
-  accent:
-    "border-dbz-orange/60 bg-dbz-orange/10 text-dbz-orange hover:bg-dbz-orange/20",
+  neutral: "border-white/20 text-white/75 hover:border-white/45 hover:text-white",
+  accent: "border-dbz-orange/60 bg-dbz-orange/10 text-dbz-orange hover:bg-dbz-orange/20",
   ink: "border-black bg-dbz-orange text-black",
   quiet: "border-transparent bg-white/[0.05] text-white/55",
 };
@@ -52,16 +50,6 @@ export function Chip({
 }
 
 /** Liste de chips avec retour à la ligne propre. */
-export function ChipRow({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-      {children}
-    </div>
-  );
+export function ChipRow({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`flex flex-wrap items-center gap-2 ${className}`}>{children}</div>;
 }

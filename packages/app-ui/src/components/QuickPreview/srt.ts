@@ -28,9 +28,7 @@ export function parseSRT(srtContent: string): SubtitleCue[] {
     if (lines.length < 3) continue;
 
     const index = parseInt(lines[0], 10);
-    const timecodeMatch = lines[1].match(
-      /(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2}),(\d{3})/,
-    );
+    const timecodeMatch = lines[1].match(/(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2}),(\d{3})/);
 
     if (!timecodeMatch) continue;
 

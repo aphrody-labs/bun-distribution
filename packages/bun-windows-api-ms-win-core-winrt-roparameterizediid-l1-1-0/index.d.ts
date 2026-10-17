@@ -5,7 +5,13 @@ interface Functions {
   /** api-ms-win-core-winrt-roparameterizediid-l1-1-0.dll!RoFreeParameterizedTypeExtra */
   RoFreeParameterizedTypeExtra(extra: Win32Pointer): void;
   /** api-ms-win-core-winrt-roparameterizediid-l1-1-0.dll!RoGetParameterizedTypeInstanceIID */
-  RoGetParameterizedTypeInstanceIID(nameElementCount: number, nameElements: Win32Pointer, metaDataLocator: Win32Pointer, iid: Win32Pointer, pExtra: Win32Pointer): number;
+  RoGetParameterizedTypeInstanceIID(
+    nameElementCount: number,
+    nameElements: Win32Pointer,
+    metaDataLocator: Win32Pointer,
+    iid: Win32Pointer,
+    pExtra: Win32Pointer,
+  ): number;
   /** api-ms-win-core-winrt-roparameterizediid-l1-1-0.dll!RoParameterizedTypeExtraGetTypeSignature */
   RoParameterizedTypeExtraGetTypeSignature(extra: Win32Pointer): number | null;
 }

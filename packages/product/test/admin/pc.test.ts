@@ -3,11 +3,7 @@ import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import {
-  PC_ACTIONS,
-  runPcAction,
-  serverStatus,
-} from "../../src/admin/commands/pc.ts";
+import { PC_ACTIONS, runPcAction, serverStatus } from "../../src/admin/commands/pc.ts";
 import { saveProfile } from "../../src/admin/lib/profile.ts";
 import { samplePack, testContext } from "./helpers.ts";
 
@@ -21,15 +17,11 @@ const withTools = (t: ReturnType<typeof testContext>) => {
 };
 
 test("every action maps to a fixed aphrody argv, never a shell string", () => {
-  const all = PC_ACTIONS.flatMap((action) =>
-    action.commands.map((c) => `${c.tool} ${c.args.join(" ")}`),
-  );
+  const all = PC_ACTIONS.flatMap(action => action.commands.map(c => `${c.tool} ${c.args.join(" ")}`));
   expect(all).toContain("aphrody winclean call get_disk_info");
   expect(all).toContain("aphrody winclean call wsl_list_distributions");
   expect(all.join(" ")).not.toContain("yolo");
-  expect(all.join(" ")).not.toMatch(
-    /wsl_execute|wsl_send_signal|kill|rm |delete|--apply/i,
-  );
+  expect(all.join(" ")).not.toMatch(/wsl_execute|wsl_send_signal|kill|rm |delete|--apply/i);
 });
 
 test("a status action runs its commands on the PC", async () => {
@@ -37,11 +29,7 @@ test("a status action runs its commands on the PC", async () => {
   withTools(t);
   expect(await runPcAction(t.ctx, "etat")).toBe(0);
   expect(t.sys.calls).toHaveLength(5);
-  expect(t.sys.calls[0]!.argv.slice(1)).toEqual([
-    "winclean",
-    "call",
-    "get_os_info",
-  ]);
+  expect(t.sys.calls[0]!.argv.slice(1)).toEqual(["winclean", "call", "get_os_info"]);
   expect(t.sys.calls[0]!.options.inherit).toBe(true);
 });
 
@@ -54,10 +42,7 @@ test("memory trimming needs a typed OUI, and says nothing is deleted", async () 
   const yes = testContext({ answers: ["OUI"] });
   withTools(yes);
   expect(await runPcAction(yes.ctx, "memoire")).toBe(0);
-  expect(yes.sys.calls.map((c) => c.argv.at(-1))).toEqual([
-    "perf_purge_standby_list",
-    "perf_empty_working_sets",
-  ]);
+  expect(yes.sys.calls.map(c => c.argv.at(-1))).toEqual(["perf_purge_standby_list", "perf_empty_working_sets"]);
   const batch = testContext({ interactive: false });
   withTools(batch);
   await runPcAction(batch.ctx, "memoire");
@@ -87,7 +72,5 @@ test("server health goes through aphrody infra ssh for vps and dbfr only", async
     }),
   );
   expect(await serverStatus(t.ctx)).toBe(0);
-  expect(t.sys.calls.map((c) => c.argv.slice(1))).toEqual([
-    ["infra", "ssh", "status", "--host", "vps"],
-  ]);
+  expect(t.sys.calls.map(c => c.argv.slice(1))).toEqual([["infra", "ssh", "status", "--host", "vps"]]);
 });

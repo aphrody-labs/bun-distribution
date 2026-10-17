@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** sechost.dll!SubscribeServiceChangeNotifications */
-  SubscribeServiceChangeNotifications(hService: Win32Pointer, eEventType: number, pCallback: Win32Callback, pCallbackContext: Win32Pointer, pSubscription: Win32Pointer): number;
+  SubscribeServiceChangeNotifications(
+    hService: Win32Pointer,
+    eEventType: number,
+    pCallback: Win32Callback,
+    pCallbackContext: Win32Pointer,
+    pSubscription: Win32Pointer,
+  ): number;
   /** sechost.dll!UnsubscribeServiceChangeNotifications */
   UnsubscribeServiceChangeNotifications(pSubscription: number | bigint): void;
 }

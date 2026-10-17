@@ -1,9 +1,4 @@
-import {
-  ArrowsClockwise,
-  CircleNotch,
-  ArrowsOut,
-  FunnelSimple,
-} from "@phosphor-icons/react";
+import { ArrowsClockwise, CircleNotch, ArrowsOut, FunnelSimple } from "@phosphor-icons/react";
 import { Popover, usePopover, CircleButton } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { useState } from "react";
@@ -81,23 +76,16 @@ export function SyncMonitorPopover({ className }: SyncMonitorPopoverProps) {
         className="w-[380px] max-h-[520px] z-50 !p-0 !bg-surface !rounded-medium"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant">
-          <h3 className="text-label-large font-semibold text-on-surface">
-            Sync monitor
-          </h3>
+          <h3 className="text-label-large font-semibold text-on-surface">Sync monitor</h3>
 
           <div className="flex items-center gap-2">
             {onlinePeerCount > 0 && (
               <span className="text-body-small text-on-surface-variant">
-                {onlinePeerCount} {onlinePeerCount === 1 ? "peer" : "peers"}{" "}
-                online
+                {onlinePeerCount} {onlinePeerCount === 1 ? "peer" : "peers"} online
               </span>
             )}
 
-            <CircleButton
-              icon={ArrowsOut}
-              onClick={() => navigate("/sync")}
-              title="Open full sync monitor"
-            />
+            <CircleButton icon={ArrowsOut} onClick={() => navigate("/sync")} title="Open full sync monitor" />
 
             <CircleButton
               icon={FunnelSimple}
@@ -108,31 +96,21 @@ export function SyncMonitorPopover({ className }: SyncMonitorPopoverProps) {
           </div>
         </div>
 
-        {popover.open && (
-          <SyncMonitorContent showActivityFeed={showActivityFeed} />
-        )}
+        {popover.open && <SyncMonitorContent showActivityFeed={showActivityFeed} />}
       </Popover.Content>
     </Popover.Root>
   );
 }
 
-function SyncMonitorContent({
-  showActivityFeed,
-}: {
-  showActivityFeed: boolean;
-}) {
+function SyncMonitorContent({ showActivityFeed }: { showActivityFeed: boolean }) {
   const sync = useSyncMonitor();
 
   return (
     <>
       <div className="px-4 py-2 border-b border-outline-variant bg-surface-container/50">
         <div className="flex items-center gap-2">
-          <div
-            className={`size-2 rounded-full ${getStateColor(sync.currentState)}`}
-          />
-          <span className="text-label-medium font-medium text-on-surface-variant">
-            {sync.currentState}
-          </span>
+          <div className={`size-2 rounded-full ${getStateColor(sync.currentState)}`} />
+          <span className="text-label-medium font-medium text-on-surface-variant">{sync.currentState}</span>
         </div>
       </div>
       <motion.div

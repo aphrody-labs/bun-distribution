@@ -37,8 +37,7 @@ export function FilterDropdown({
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
@@ -55,17 +54,10 @@ export function FilterDropdown({
     };
   }, [open]);
 
-  const toggle = (v: string) =>
-    onChange(
-      selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v],
-    );
+  const toggle = (v: string) => onChange(selected.includes(v) ? selected.filter(x => x !== v) : [...selected, v]);
 
   const shown =
-    searchable && q.trim()
-      ? options.filter((o) =>
-          o.label.toLowerCase().includes(q.trim().toLowerCase()),
-        )
-      : options;
+    searchable && q.trim() ? options.filter(o => o.label.toLowerCase().includes(q.trim().toLowerCase())) : options;
   const count = selected.length;
 
   return (
@@ -73,7 +65,7 @@ export function FilterDropdown({
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(o => !o)}
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-controls={listId}
@@ -117,7 +109,7 @@ export function FilterDropdown({
             <input
               type="search"
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={e => setQ(e.target.value)}
               placeholder="Filtrer…"
               aria-label={`Filtrer ${label}`}
               className="mb-2 w-full h-9 px-3 rounded-lg bg-white/[0.05] border border-white/[0.1] text-white text-[13px] placeholder:text-white/50 focus:outline-none focus:border-dbz-orange/60"
@@ -125,11 +117,9 @@ export function FilterDropdown({
           )}
           <div className="max-h-72 overflow-y-auto pr-1 space-y-0.5 [scrollbar-width:thin]">
             {shown.length === 0 ? (
-              <p className="px-2.5 py-3 text-[12px] text-white/50">
-                Aucune option.
-              </p>
+              <p className="px-2.5 py-3 text-[12px] text-white/50">Aucune option.</p>
             ) : (
-              shown.map((o) => {
+              shown.map(o => {
                 const on = selected.includes(o.value);
                 return (
                   <button
@@ -142,9 +132,7 @@ export function FilterDropdown({
                   >
                     <span
                       className={`flex items-center justify-center w-4 h-4 rounded border shrink-0 transition-colors ${
-                        on
-                          ? "bg-dbz-orange border-dbz-orange"
-                          : "border-white/30"
+                        on ? "bg-dbz-orange border-dbz-orange" : "border-white/30"
                       }`}
                     >
                       {on && (
@@ -160,16 +148,10 @@ export function FilterDropdown({
                         </svg>
                       )}
                     </span>
-                    <span
-                      className={`flex-1 truncate text-[13px] ${on ? "text-white" : "text-white/70"}`}
-                    >
+                    <span className={`flex-1 truncate text-[13px] ${on ? "text-white" : "text-white/70"}`}>
                       {o.label}
                     </span>
-                    {o.count != null && (
-                      <span className="text-white/50 text-[11px] tabular-nums">
-                        {o.count}
-                      </span>
-                    )}
+                    {o.count != null && <span className="text-white/50 text-[11px] tabular-nums">{o.count}</span>}
                   </button>
                 );
               })

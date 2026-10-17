@@ -5,9 +5,21 @@ interface Functions {
   /** evr.dll!MFCreateVideoMixer */
   MFCreateVideoMixer(pOwner: Win32Pointer, riidDevice: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** evr.dll!MFCreateVideoMixerAndPresenter */
-  MFCreateVideoMixerAndPresenter(pMixerOwner: Win32Pointer, pPresenterOwner: Win32Pointer, riidMixer: Win32Pointer, ppvVideoMixer: Win32Pointer, riidPresenter: Win32Pointer, ppvVideoPresenter: Win32Pointer): number;
+  MFCreateVideoMixerAndPresenter(
+    pMixerOwner: Win32Pointer,
+    pPresenterOwner: Win32Pointer,
+    riidMixer: Win32Pointer,
+    ppvVideoMixer: Win32Pointer,
+    riidPresenter: Win32Pointer,
+    ppvVideoPresenter: Win32Pointer,
+  ): number;
   /** evr.dll!MFCreateVideoPresenter */
-  MFCreateVideoPresenter(pOwner: Win32Pointer, riidDevice: Win32Pointer, riid: Win32Pointer, ppVideoPresenter: Win32Pointer): number;
+  MFCreateVideoPresenter(
+    pOwner: Win32Pointer,
+    riidDevice: Win32Pointer,
+    riid: Win32Pointer,
+    ppVideoPresenter: Win32Pointer,
+  ): number;
   /** evr.dll!MFCreateVideoSampleAllocator */
   MFCreateVideoSampleAllocator(riid: Win32Pointer, ppSampleAllocator: Win32Pointer): number;
   /** evr.dll!MFCreateVideoSampleFromSurface */

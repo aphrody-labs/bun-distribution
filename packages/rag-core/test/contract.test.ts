@@ -6,10 +6,7 @@ import { join } from "node:path";
 import { createRagCore, type RagCore } from "../src/core";
 
 const root = join(import.meta.dir, "..");
-const wasmFile = join(
-  root,
-  "../../infra/cli-wasm/wasm/aphrody_command_wasm_bg.wasm",
-);
+const wasmFile = join(root, "../../infra/cli-wasm/wasm/aphrody_command_wasm_bg.wasm");
 const ffiPath = process.env.APHRODY_RAG_LIBRARY;
 
 const backends: [string, () => Promise<RagCore>][] = [];
@@ -23,10 +20,7 @@ if (existsSync(wasmFile)) {
   ]);
 }
 if (ffiPath && existsSync(ffiPath)) {
-  backends.push([
-    "ffi",
-    async () => (await import("../src/ffi")).openRagFfi(ffiPath),
-  ]);
+  backends.push(["ffi", async () => (await import("../src/ffi")).openRagFfi(ffiPath)]);
 }
 
 test("at least one backend is built (bun run build:wasm, APHRODY_RAG_LIBRARY)", () => {
@@ -49,16 +43,9 @@ for (const [name, load] of backends) {
       const rs = rag.chunk("a.rs", 'fn greet() {\n    println!("hi");\n}\n');
       expect(rs[0]?.symbol).toBe("greet");
       expect(rs[0]?.hash).toHaveLength(64);
-      expect(
-        rag.chunk("a.md", "# A\n\ntext one.\n\n## B\n\ntext two.\n").length,
-      ).toBeGreaterThan(0);
-      expect(rag.chunk("a.txt", "Hello world. Second one.")[0]?.kind).toBe(
-        "prose",
-      );
-      const ts = rag.chunk(
-        "a.ts",
-        "export function add(a: number, b: number) {\n  return a + b;\n}\n",
-      );
+      expect(rag.chunk("a.md", "# A\n\ntext one.\n\n## B\n\ntext two.\n").length).toBeGreaterThan(0);
+      expect(rag.chunk("a.txt", "Hello world. Second one.")[0]?.kind).toBe("prose");
+      const ts = rag.chunk("a.ts", "export function add(a: number, b: number) {\n  return a + b;\n}\n");
       expect(ts.length).toBeGreaterThan(0);
       expect(
         rag.chunk("a.md", "é".repeat(40), {
@@ -132,18 +119,11 @@ for (const [name, load] of backends) {
         ),
       ).toEqual(["a", "c"]);
       expect(rag.minmaxNormalize([1, 3])).toEqual([0, 1]);
-      expect(
-        rag.mergeTopK(
-          [[{ index: 5, score: 0.5 }], [{ index: 1, score: 0.9 }]],
-          1,
-        )[0]?.index,
-      ).toBe(1);
+      expect(rag.mergeTopK([[{ index: 5, score: 0.5 }], [{ index: 1, score: 0.9 }]], 1)[0]?.index).toBe(1);
     });
 
     test("retrieval eval harness", () => {
-      const gold = rag.evalParseGold(
-        '// c\n{"q":"x","expectUrl":["/a"],"tags":["t"]}\nbad\n',
-      );
+      const gold = rag.evalParseGold('// c\n{"q":"x","expectUrl":["/a"],"tags":["t"]}\nbad\n');
       expect(gold).toHaveLength(1);
       const results = [hit("/zzz"), hit("https://dragonballfr.com/a/")];
       const c = gold[0]!;
@@ -161,21 +141,15 @@ for (const [name, load] of backends) {
       expect(rag.evalGateCheck("recall@1>=0.8", agg).ok).toBe(false);
       const report = rag.evalReport("c", [run]);
       expect(rag.evalCompare(report, report).mrr.delta).toBe(0);
-      expect(() => rag.evalCompare(report, rag.evalReport("d", [run]))).toThrow(
-        "condition mismatch",
-      );
+      expect(() => rag.evalCompare(report, rag.evalReport("d", [run]))).toThrow("condition mismatch");
       expect(rag.evalQuantile([1, 2, 3, 4], 0.5)).toBe(3);
       expect(rag.evalLatencyStats([10]).p95_ms).toBe(10);
     });
 
     test("errors surface as exceptions", () => {
-      expect(() =>
-        rag.chunk("a.rs", "x", { profile: "nope" as never }),
-      ).toThrow("unknown options profile");
+      expect(() => rag.chunk("a.rs", "x", { profile: "nope" as never })).toThrow("unknown options profile");
       expect(() => rag.normalizeF32(f32(1, 2, 3), 2)).toThrow(RangeError);
-      expect(() =>
-        rag.evalGateCheck("wat", { cases: 0, recall: {}, mrr: 0, ndcg: 0 }),
-      ).toThrow("invalid gate");
+      expect(() => rag.evalGateCheck("wat", { cases: 0, recall: {}, mrr: 0, ndcg: 0 })).toThrow("invalid gate");
     });
 
     test("dense vectors", () => {
@@ -184,9 +158,7 @@ for (const [name, load] of backends) {
       expect(n[0]).toBeCloseTo(0.6, 6);
       expect(Array.from(rag.similaritiesF32(v, v, 2))).toEqual([25, 8, 8, 4]);
       expect(Array.from(rag.meanF32(v, 2))).toEqual([1.5, 3]);
-      expect(Array.from(rag.squaredDistancesF32(v, f32(0, 0), 2))).toEqual([
-        25, 4,
-      ]);
+      expect(Array.from(rag.squaredDistancesF32(v, f32(0, 0), 2))).toEqual([25, 4]);
       expect(rag.dotF32(f32(1, 2), f32(3, 4))).toBe(11);
       expect(rag.cosineF32(f32(1, 0), f32(1, 0))).toBeCloseTo(1, 6);
       expect(rag.l2NormalizeF32(f32(3, 4), 2)[1]).toBeCloseTo(0.8, 6);
@@ -197,22 +169,16 @@ for (const [name, load] of backends) {
       expect(Array.from(rag.squaredDistancesF64(d, d, 2))).toEqual([0]);
       expect(rag.updateCentersF64(d, [0], d, 2)).toHaveLength(2);
       // a view with a non-zero byteOffset into a larger buffer must be read at its own offset
-      const shifted = new Float32Array(
-        new Float32Array([9, 9, 1, 0]).buffer,
-        8,
-        2,
-      );
+      const shifted = new Float32Array(new Float32Array([9, 9, 1, 0]).buffer, 8, 2);
       expect(rag.dotF32(shifted, f32(1, 0))).toBe(1);
     });
 
     test("top-k scans, int8 and shard merge", () => {
       const matrix = f32(1, 0, 0, 1, 0.7, 0.7);
       const top = rag.topKCosineF32(f32(1, 0), matrix, 2, 2);
-      expect(top.map((h) => h.index)).toEqual([0, 2]);
-      expect(rag.topKDotF32(f32(1, 0), f32(1, 0, 0, 1), 2, 1)[0]?.index).toBe(
-        0,
-      );
-      const unit = [f32(1, 0), f32(0, 1)].map((r) => rag.quantizeI8(r));
+      expect(top.map(h => h.index)).toEqual([0, 2]);
+      expect(rag.topKDotF32(f32(1, 0), f32(1, 0, 0, 1), 2, 1)[0]?.index).toBe(0);
+      const unit = [f32(1, 0), f32(0, 1)].map(r => rag.quantizeI8(r));
       const codes = new Int8Array([...unit[0]!.codes, ...unit[1]!.codes]);
       const scales = f32(unit[0]!.scale, unit[1]!.scale);
       expect(rag.topKI8(f32(1, 0), codes, scales, 2, 1)[0]?.index).toBe(0);
@@ -230,14 +196,11 @@ for (const [name, load] of backends) {
   });
 }
 
-test.skipIf(!existsSync(wasmFile))(
-  "loadRagWasm instantiates from bytes (async path)",
-  async () => {
-    const { loadRagWasm } = await import("../src/wasm");
-    const rag = await loadRagWasm(readFileSync(wasmFile));
-    expect(rag.chunk("a.rs", "fn f() {}\n")[0]?.symbol).toBe("f");
-  },
-);
+test.skipIf(!existsSync(wasmFile))("loadRagWasm instantiates from bytes (async path)", async () => {
+  const { loadRagWasm } = await import("../src/wasm");
+  const rag = await loadRagWasm(readFileSync(wasmFile));
+  expect(rag.chunk("a.rs", "fn f() {}\n")[0]?.symbol).toBe("f");
+});
 
 describe("facade drift", () => {
   test("the facade covers every operation of the manifest", async () => {
@@ -245,18 +208,12 @@ describe("facade drift", () => {
     if (!name || !load) return;
     const rag = await load();
     const source = readFileSync(join(root, "src/core.ts"), "utf8");
-    const listed = new Set(
-      [...source.matchAll(/(?:json<.*?>|vec)\(\s*"([a-z0-9_]+)"/g)].map(
-        (m) => m[1],
-      ),
-    );
+    const listed = new Set([...source.matchAll(/(?:json<.*?>|vec)\(\s*"([a-z0-9_]+)"/g)].map(m => m[1]));
     for (const op of [...rag.manifest.json, ...rag.manifest.vec])
-      expect(listed.has(op.name), `facade lacks operation ${op.name}`).toBe(
-        true,
-      );
+      expect(listed.has(op.name), `facade lacks operation ${op.name}`).toBe(true);
     for (const op of listed) {
       expect(
-        [...rag.manifest.json, ...rag.manifest.vec].some((o) => o.name === op),
+        [...rag.manifest.json, ...rag.manifest.vec].some(o => o.name === op),
         `facade names unknown ${op}`,
       ).toBe(true);
     }

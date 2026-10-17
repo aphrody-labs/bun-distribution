@@ -14,27 +14,17 @@ import { EditorStates } from "../enums";
 // A follow-up PR can dissolve MouseControls further; for now the goal
 // is "no window listeners" + "React owns attachment".
 
-export const useViewportPointer = (
-  canvas: HTMLCanvasElement | null,
-  editor: Editor | null,
-) => {
+export const useViewportPointer = (canvas: HTMLCanvasElement | null, editor: Editor | null) => {
   // While the camera-view free-cam owns drag state, selection / FK
   // pointer handling stays out of the way.
-  const cameraViewActive = usePageSceneStore(
-    (s) => s.editorState === EditorStates.CAMERA_VIEW,
-  );
+  const cameraViewActive = usePageSceneStore(s => s.editorState === EditorStates.CAMERA_VIEW);
 
   useEffect(() => {
     if (!canvas || !editor) return undefined;
 
     const onPointerMove = (e: PointerEvent) => {
       if (!editor.mouse) return;
-      applyNdcToVector2(
-        editor.mouse,
-        canvas.getBoundingClientRect(),
-        e.clientX,
-        e.clientY,
-      );
+      applyNdcToVector2(editor.mouse, canvas.getBoundingClientRect(), e.clientX, e.clientY);
       editor.mouse_controls?.onMouseMove(e as unknown as MouseEvent);
     };
 

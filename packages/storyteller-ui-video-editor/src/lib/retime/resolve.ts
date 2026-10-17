@@ -13,32 +13,15 @@ function getSafeRate({ rate }: { rate: number }): number {
   return clampRetimeRate({ rate });
 }
 
-export function getSourceTimeAtClipTime({
-  clipTime,
-  retime,
-}: {
-  clipTime: number;
-  retime?: RetimeConfig;
-}): number {
+export function getSourceTimeAtClipTime({ clipTime, retime }: { clipTime: number; retime?: RetimeConfig }): number {
   return clipTime * getSafeRate({ rate: retime?.rate ?? 1 });
 }
 
-export function getClipTimeAtSourceTime({
-  sourceTime,
-  retime,
-}: {
-  sourceTime: number;
-  retime?: RetimeConfig;
-}): number {
+export function getClipTimeAtSourceTime({ sourceTime, retime }: { sourceTime: number; retime?: RetimeConfig }): number {
   return sourceTime / getSafeRate({ rate: retime?.rate ?? 1 });
 }
 
-export function getEffectiveRateAt({
-  retime,
-}: {
-  clipTime?: number;
-  retime?: RetimeConfig;
-}): number {
+export function getEffectiveRateAt({ retime }: { clipTime?: number; retime?: RetimeConfig }): number {
   return getSafeRate({ rate: retime?.rate ?? 1 });
 }
 

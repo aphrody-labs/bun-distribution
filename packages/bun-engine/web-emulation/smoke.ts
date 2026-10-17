@@ -16,10 +16,7 @@ const dist = join(root, "dist", "web-emulation");
 const shots = join(root, "build", "web-emulation", "screens");
 
 /** Free test content per core (bep packs, pinned by sha256 in roms.json). */
-const cases: Record<
-  string,
-  { system: string; rom: string; firmware?: string; frames?: number }
-> = {
+const cases: Record<string, { system: string; rom: string; firmware?: string; frames?: number }> = {
   "dust-nds": { system: "nds", rom: "/roms/godmode9i/GodMode9i.nds" },
   melonds: { system: "nds", rom: "/roms/godmode9i/GodMode9i.nds" },
   "zakuro-3ds": { system: "3ds", rom: "/roms/fbi/FBI.3dsx" },
@@ -40,7 +37,7 @@ function chromePath() {
     "/usr/bin/google-chrome",
     "/usr/bin/chromium",
   ];
-  return candidates.find((p) => p && Bun.file(p).size > 0);
+  return candidates.find(p => p && Bun.file(p).size > 0);
 }
 
 class Cdp {
@@ -50,7 +47,7 @@ class Cdp {
   listeners: Array<(message: any) => void> = [];
   constructor(ws: WebSocket) {
     this.#ws = ws;
-    ws.onmessage = (event) => {
+    ws.onmessage = event => {
       const message = JSON.parse(String(event.data));
       if (message.id && this.#pending.has(message.id)) {
         this.#pending.get(message.id)!(message);
@@ -70,11 +67,7 @@ class Cdp {
     const id = ++this.#id;
     this.#ws.send(JSON.stringify({ id, method, params, sessionId }));
     return new Promise((ok, fail) =>
-      this.#pending.set(id, (m) =>
-        m.error
-          ? fail(new Error(`${method}: ${m.error.message}`))
-          : ok(m.result),
-      ),
+      this.#pending.set(id, m => (m.error ? fail(new Error(`${method}: ${m.error.message}`)) : ok(m.result))),
     );
   }
   close() {
@@ -125,9 +118,7 @@ export async function smoke(cores: string[], threads: boolean) {
     endpoint = buffered.match(/DevTools listening on (ws:\/\/\S+)/)?.[1] ?? "";
   }
   const cdp = await Cdp.connect(endpoint);
-  const results: Record<string, unknown> = (await Bun.file(
-    join(dist, "smoke.json"),
-  ).exists())
+  const results: Record<string, unknown> = (await Bun.file(join(dist, "smoke.json")).exists())
     ? await Bun.file(join(dist, "smoke.json")).json()
     : {};
   try {
@@ -157,15 +148,9 @@ export async function smoke(cores: string[], threads: boolean) {
           logs.push(
             `exception: ${m.params.exceptionDetails?.exception?.description ?? m.params.exceptionDetails?.text}`,
           );
-        if (
-          m.method === "Runtime.consoleAPICalled" &&
-          (m.params.type === "error" || m.params.type === "warning")
-        )
-          logs.push(
-            `${m.params.type}: ${m.params.args.map((a: any) => a.value ?? a.description).join(" ")}`,
-          );
-        if (m.method === "Log.entryAdded" && m.params.entry.level === "error")
-          logs.push(`log: ${m.params.entry.text}`);
+        if (m.method === "Runtime.consoleAPICalled" && (m.params.type === "error" || m.params.type === "warning"))
+          logs.push(`${m.params.type}: ${m.params.args.map((a: any) => a.value ?? a.description).join(" ")}`);
+        if (m.method === "Log.entryAdded" && m.params.entry.level === "error") logs.push(`log: ${m.params.entry.text}`);
       };
       cdp.listeners.push(listener);
       await cdp.send("Runtime.enable", {}, sessionId);
@@ -187,11 +172,7 @@ export async function smoke(cores: string[], threads: boolean) {
         result = JSON.parse(value.value ?? "null");
         if (result) break;
       }
-      const shot = await cdp.send(
-        "Page.captureScreenshot",
-        { format: "png" },
-        sessionId,
-      );
+      const shot = await cdp.send("Page.captureScreenshot", { format: "png" }, sessionId);
       const shotPath = join(shots, `${core}${threads ? "-threads" : ""}.png`);
       await Bun.write(shotPath, Buffer.from(shot.data, "base64"));
       cdp.listeners.splice(cdp.listeners.indexOf(listener), 1);
@@ -206,10 +187,7 @@ export async function smoke(cores: string[], threads: boolean) {
       console.log(
         `${core}${threads ? " (threads)" : ""}: ${entry.ok ? "ok" : "FAIL"} frames=${entry.frames} hash=${entry.hash} lit=${entry.lit} ${entry.renderer ?? ""} first=${Math.round(entry.ms?.firstFrame ?? -1)}ms ${entry.error ?? ""}`,
       );
-      await Bun.write(
-        join(dist, "smoke.json"),
-        `${JSON.stringify(results, null, 2)}\n`,
-      );
+      await Bun.write(join(dist, "smoke.json"), `${JSON.stringify(results, null, 2)}\n`);
     }
   } finally {
     cdp.close();
@@ -221,6 +199,6 @@ export async function smoke(cores: string[], threads: boolean) {
 
 if (import.meta.main) {
   const args = Bun.argv.slice(2);
-  const cores = args.filter((a) => !a.startsWith("--"));
+  const cores = args.filter(a => !a.startsWith("--"));
   await smoke(cores.length ? cores : ["dust-nds"], args.includes("--threads"));
 }

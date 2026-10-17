@@ -21,10 +21,7 @@ async function run(argv: string[], timeoutSecs = 60): Promise<string> {
     : archHost
       ? ["aphrody-infra", "ssh", "exec", "--host", archHost, "--", ...argv]
       : undefined;
-  if (!cmd)
-    throw new Error(
-      "no local pacman and ARCH_MCP_HOST unset (an aphrody-infra SSH host running Arch)",
-    );
+  if (!cmd) throw new Error("no local pacman and ARCH_MCP_HOST unset (an aphrody-infra SSH host running Arch)");
   const proc = Bun.spawn(cmd, {
     stdout: "pipe",
     stderr: "pipe",
@@ -46,8 +43,7 @@ async function run(argv: string[], timeoutSecs = 60): Promise<string> {
 const shellArg = (s: string) => `'${s.replaceAll("'", `'\\''`)}'`;
 const safeArgs = (args: unknown): string[] => {
   const list = Array.isArray(args) ? args.map(String) : [];
-  for (const a of list)
-    if (/[;&|`$<>\n]/.test(a)) throw new Error(`rejected argument: ${a}`);
+  for (const a of list) if (/[;&|`$<>\n]/.test(a)) throw new Error(`rejected argument: ${a}`);
   return list;
 };
 
@@ -96,40 +92,28 @@ function lintPkgbuild(src: string): string[] {
   for (const v of ["pkgname", "pkgver", "pkgrel", "arch", "license"])
     if (!new RegExp(`^${v}=`, "m").test(src)) issues.push(`missing ${v}`);
   if (!/^pkgdesc=/m.test(src)) issues.push("missing pkgdesc");
-  if (/^source=/m.test(src) && !/^(b2|sha\d+|md5)sums(_\w+)?=/m.test(src))
-    issues.push("source without checksums");
+  if (/^source=/m.test(src) && !/^(b2|sha\d+|md5)sums(_\w+)?=/m.test(src)) issues.push("source without checksums");
   if (/\bsudo\b/.test(src)) issues.push("sudo used inside PKGBUILD");
-  if (/\$srcdir|\$pkgdir/.test(src) && !/"\$\{?(src|pkg)dir/.test(src))
-    issues.push("unquoted $srcdir/$pkgdir");
-  if (/^package\(\)/m.test(src) === false && !/^package_\w+\(\)/m.test(src))
-    issues.push("missing package() function");
-  if (/cd \$srcdir|cd "\$srcdir"$/m.test(src))
-    issues.push("cd into $srcdir without a subdirectory");
+  if (/\$srcdir|\$pkgdir/.test(src) && !/"\$\{?(src|pkg)dir/.test(src)) issues.push("unquoted $srcdir/$pkgdir");
+  if (/^package\(\)/m.test(src) === false && !/^package_\w+\(\)/m.test(src)) issues.push("missing package() function");
+  if (/cd \$srcdir|cd "\$srcdir"$/m.test(src)) issues.push("cd into $srcdir without a subdirectory");
   return issues;
 }
 
 const tools = [
   {
     name: "arch_wiki_search",
-    description:
-      "Full-text search (FTS5, bm25) of the offline Arch Wiki (arch-wiki-docs, English).",
-    inputSchema: obj(
-      { query: str("Search terms"), limit: num("Max hits (default 10)") },
-      ["query"],
-    ),
+    description: "Full-text search (FTS5, bm25) of the offline Arch Wiki (arch-wiki-docs, English).",
+    inputSchema: obj({ query: str("Search terms"), limit: num("Max hits (default 10)") }, ["query"]),
   },
   {
     name: "omarchy_manual_search",
     description: "Full-text search of the offline Omarchy manual.",
-    inputSchema: obj(
-      { query: str("Search terms"), limit: num("Max hits (default 10)") },
-      ["query"],
-    ),
+    inputSchema: obj({ query: str("Search terms"), limit: num("Max hits (default 10)") }, ["query"]),
   },
   {
     name: "docs_read",
-    description:
-      "Read an Arch Wiki or Omarchy manual page by exact title or path from a search hit.",
+    description: "Read an Arch Wiki or Omarchy manual page by exact title or path from a search hit.",
     inputSchema: obj(
       {
         page: str("Title or path"),
@@ -154,11 +138,8 @@ const tools = [
   },
   {
     name: "aur_info",
-    description:
-      "AUR package details (version, votes, maintainer, dependencies, out-of-date flag).",
-    inputSchema: obj({ names: { type: "array", items: { type: "string" } } }, [
-      "names",
-    ]),
+    description: "AUR package details (version, votes, maintainer, dependencies, out-of-date flag).",
+    inputSchema: obj({ names: { type: "array", items: { type: "string" } } }, ["names"]),
   },
   {
     name: "aur_pkgbuild",
@@ -167,8 +148,7 @@ const tools = [
   },
   {
     name: "arch_package_search",
-    description:
-      "Search official Arch repositories (archlinux.org packages JSON API).",
+    description: "Search official Arch repositories (archlinux.org packages JSON API).",
     inputSchema: obj(
       {
         query: str("Search term (q) or exact name"),
@@ -207,15 +187,11 @@ const tools = [
     name: "hyprctl_query",
     description:
       "Read-only hyprctl JSON query: version, monitors, workspaces, activeworkspace, clients, activewindow, devices, layers, binds, getoption, systeminfo, configerrors.",
-    inputSchema: obj(
-      { command: str("hyprctl subcommand"), arg: str("Optional argument") },
-      ["command"],
-    ),
+    inputSchema: obj({ command: str("hyprctl subcommand"), arg: str("Optional argument") }, ["command"]),
   },
   {
     name: "pkgbuild_lint",
-    description:
-      "Lint a PKGBUILD: static checks here, plus namcap on the Arch host when available.",
+    description: "Lint a PKGBUILD: static checks here, plus namcap on the Arch host when available.",
     inputSchema: obj({ content: str("PKGBUILD source") }, ["content"]),
   },
 ];
@@ -228,15 +204,9 @@ async function call(name: string, a: Json): Promise<unknown> {
     case "omarchy_manual_search":
       return search(String(a.query), "omarchy", limit);
     case "docs_read":
-      return read(
-        String(a.page),
-        Number(a.offset ?? 0),
-        Number(a.max ?? 12_000),
-      );
+      return read(String(a.page), Number(a.offset ?? 0), Number(a.max ?? 12_000));
     case "aur_search":
-      return aur(
-        `search/${encodeURIComponent(String(a.query))}?by=${encodeURIComponent(String(a.by ?? "name-desc"))}`,
-      );
+      return aur(`search/${encodeURIComponent(String(a.query))}?by=${encodeURIComponent(String(a.by ?? "name-desc"))}`);
     case "aur_info": {
       const p = new URLSearchParams();
       for (const n of (a.names as string[]) ?? []) p.append("arg[]", n);
@@ -255,12 +225,11 @@ async function call(name: string, a: Json): Promise<unknown> {
         [a.exact ? "name" : "q"]: String(a.query),
       });
       if (a.repo) p.set("repo", String(a.repo));
-      const res = await fetch(
-        `https://archlinux.org/packages/search/json/?${p}`,
-        { signal: AbortSignal.timeout(20_000) },
-      );
+      const res = await fetch(`https://archlinux.org/packages/search/json/?${p}`, {
+        signal: AbortSignal.timeout(20_000),
+      });
       const data = (await res.json()) as { results: Json[] };
-      return data.results.slice(0, 25).map((r) => ({
+      return data.results.slice(0, 25).map(r => ({
         repo: r.repo,
         name: r.pkgname,
         version: `${r.pkgver}-${r.pkgrel}`,
@@ -272,39 +241,27 @@ async function call(name: string, a: Json): Promise<unknown> {
       const tool = String(a.tool ?? "pacman");
       const args = safeArgs(a.args);
       if (tool === "pacman") {
-        if (!args[0] || !pacmanRead.test(args[0]))
-          throw new Error("only read-only pacman operations are allowed");
-      } else if (!["expac", "pactree", "checkupdates"].includes(tool))
-        throw new Error(`tool not allowed: ${tool}`);
+        if (!args[0] || !pacmanRead.test(args[0])) throw new Error("only read-only pacman operations are allowed");
+      } else if (!["expac", "pactree", "checkupdates"].includes(tool)) throw new Error(`tool not allowed: ${tool}`);
       return run([tool, ...args]);
     }
     case "systemd_query": {
       const tool = String(a.tool);
       const args = safeArgs(a.args);
       if (tool === "systemctl") {
-        if (!args[0] || !systemctlRead.has(args[0]))
-          throw new Error("only read-only systemctl verbs are allowed");
+        if (!args[0] || !systemctlRead.has(args[0])) throw new Error("only read-only systemctl verbs are allowed");
       } else if (tool === "journalctl") {
-        if (
-          args.some((x) => /^--(vacuum|rotate|flush|sync|relinquish)/.test(x))
-        )
+        if (args.some(x => /^--(vacuum|rotate|flush|sync|relinquish)/.test(x)))
           throw new Error("journal maintenance is not allowed");
-        if (!args.includes("-n") && !args.some((x) => x.startsWith("--lines")))
-          args.push("-n", "200");
+        if (!args.includes("-n") && !args.some(x => x.startsWith("--lines"))) args.push("-n", "200");
         args.push("--no-pager");
       } else throw new Error(`tool not allowed: ${tool}`);
       return run([tool, ...(a.user ? ["--user"] : []), ...args]);
     }
     case "hyprctl_query": {
       const command = String(a.command);
-      if (!hyprRead.has(command))
-        throw new Error(`hyprctl ${command} is not a read-only query`);
-      return run([
-        "hyprctl",
-        "-j",
-        command,
-        ...(a.arg ? safeArgs([a.arg]) : []),
-      ]);
+      if (!hyprRead.has(command)) throw new Error(`hyprctl ${command} is not a read-only query`);
+      return run(["hyprctl", "-j", command, ...(a.arg ? safeArgs([a.arg]) : [])]);
     }
     case "pkgbuild_lint": {
       const content = String(a.content);
@@ -313,11 +270,9 @@ async function call(name: string, a: Json): Promise<unknown> {
         const b64 = Buffer.from(content).toString("base64");
         const script = `d=$(mktemp -d) && echo ${b64} | base64 -d > "$d/PKGBUILD" && namcap "$d/PKGBUILD"; r=$?; rm -rf "$d"; exit $r`;
         // The SSH transport joins argv into a remote shell line, so quote only there.
-        result.namcap = await run([
-          "sh",
-          "-c",
-          localArch ? script : shellArg(script),
-        ]).catch((e: Error) => `namcap unavailable: ${e.message}`);
+        result.namcap = await run(["sh", "-c", localArch ? script : shellArg(script)]).catch(
+          (e: Error) => `namcap unavailable: ${e.message}`,
+        );
       }
       return result;
     }
@@ -341,24 +296,18 @@ async function handle(msg: Json): Promise<Json | null> {
       return ok({ tools });
     case "tools/call":
       try {
-        const out = await call(
-          params.name as string,
-          (params.arguments ?? {}) as Json,
-        );
+        const out = await call(params.name as string, (params.arguments ?? {}) as Json);
         return ok({
           content: [
             {
               type: "text",
-              text:
-                typeof out === "string" ? out : JSON.stringify(out, null, 2),
+              text: typeof out === "string" ? out : JSON.stringify(out, null, 2),
             },
           ],
         });
       } catch (err) {
         return ok({
-          content: [
-            { type: "text", text: String((err as Error).message ?? err) },
-          ],
+          content: [{ type: "text", text: String((err as Error).message ?? err) }],
           isError: true,
         });
       }
@@ -383,7 +332,7 @@ for await (const chunk of Bun.stdin.stream()) {
     const line = buffer.slice(0, nl).trim();
     buffer = buffer.slice(nl + 1);
     if (!line) continue;
-    void handle(JSON.parse(line) as Json).then((reply) => {
+    void handle(JSON.parse(line) as Json).then(reply => {
       if (reply) void Bun.write(Bun.stdout, `${JSON.stringify(reply)}\n`);
     });
   }

@@ -1,21 +1,10 @@
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  useMemo,
-  memo,
-} from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { DRAW_LAYER_ID, INPAINT_LAYER_ID, PaintSurface } from "./PaintSurface";
 import "./pagedraw.css";
 import PromptEditor from "./PromptEditor/PromptEditor";
 import SideToolbar from "./components/ui/SideToolbar";
-import {
-  AspectRatioType,
-  type SceneState,
-  useSceneStore,
-} from "./stores/SceneState";
+import { AspectRatioType, type SceneState, useSceneStore } from "./stores/SceneState";
 import { usePagedrawKeybinds } from "./hooks/usePagedrawKeybinds";
 import { Cheatsheet, useCheatsheetVisibility } from "@storyteller/keybinds";
 import Konva from "konva";
@@ -39,15 +28,8 @@ import { compositeInWorker, maskInWorker } from "./utilities/generatePipeline";
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
 import { PromptsApi } from "@storyteller/api";
 import toast from "react-hot-toast";
-import {
-  render3DModelToDataUrl,
-  DEFAULT_MODEL3D_PARAMS,
-  type Model3DParams,
-} from "./utilities/render3DModel";
-import {
-  Model3DOverlay,
-  type Model3DOverlayHandle,
-} from "./components/Model3DOverlay";
+import { render3DModelToDataUrl, DEFAULT_MODEL3D_PARAMS, type Model3DParams } from "./utilities/render3DModel";
+import { Model3DOverlay, type Model3DOverlayHandle } from "./components/Model3DOverlay";
 import { CameraIcon, Maximize2Icon, RefreshCwIcon } from "lucide-react";
 import type { PageDrawAdapter } from "./adapter";
 
@@ -56,14 +38,10 @@ const PAGE_ID: ModelPage = ModelPage.Canvas2D;
 // Order the shape hotkey cycles through (matches the submenu's visual order).
 const SHAPE_CYCLE = ["rectangle", "circle", "triangle"] as const;
 
-export const DecodeBase64ToImage = async (
-  base64String: string,
-): Promise<ImageBitmap> => {
+export const DecodeBase64ToImage = async (base64String: string): Promise<ImageBitmap> => {
   const img = document.createElement("img");
 
-  const dataUrl = base64String.startsWith("data:")
-    ? base64String
-    : `data:image/png;base64,${base64String}`;
+  const dataUrl = base64String.startsWith("data:") ? base64String : `data:image/png;base64,${base64String}`;
 
   return new Promise((resolve, reject) => {
     img.onload = async () => {
@@ -88,13 +66,9 @@ interface Edit3DButtonProps {
   onEdit: (nodeId: string) => void;
 }
 
-const Edit3DButton = memo(function Edit3DButton({
-  nodeId,
-  stageRef,
-  onEdit,
-}: Edit3DButtonProps) {
+const Edit3DButton = memo(function Edit3DButton({ nodeId, stageRef, onEdit }: Edit3DButtonProps) {
   const [, forceUpdate] = useState(0);
-  const bump = useCallback(() => forceUpdate((t) => t + 1), []);
+  const bump = useCallback(() => forceUpdate(t => t + 1), []);
   const [interacting, setInteracting] = useState(false);
 
   useEffect(() => {
@@ -102,13 +76,10 @@ const Edit3DButton = memo(function Edit3DButton({
     if (!stage?.on) return;
 
     const ns = ".edit3dbtn";
-    stage.on(
-      `dragmove${ns} xChange${ns} yChange${ns} scaleXChange${ns} scaleYChange${ns}`,
-      bump,
-    );
+    stage.on(`dragmove${ns} xChange${ns} yChange${ns} scaleXChange${ns} scaleYChange${ns}`, bump);
 
     const transformers = stage.find("Transformer");
-    transformers.forEach((tr) => {
+    transformers.forEach(tr => {
       tr.on(`transformstart${ns}`, () => setInteracting(true));
       tr.on(`transformend${ns}`, () =>
         requestAnimationFrame(() => {
@@ -131,7 +102,7 @@ const Edit3DButton = memo(function Edit3DButton({
 
     return () => {
       stage.off(ns);
-      transformers.forEach((tr) => tr.off(ns));
+      transformers.forEach(tr => tr.off(ns));
       konvaNode?.off(ns);
     };
   }, [stageRef, bump, nodeId]);
@@ -153,7 +124,7 @@ const Edit3DButton = memo(function Edit3DButton({
     <button
       className="pointer-events-auto fixed z-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-primary-400"
       style={{ left: btnLeft, top: btnTop }}
-      onPointerDown={(e) => e.stopPropagation()}
+      onPointerDown={e => e.stopPropagation()}
       onClick={() => onEdit(nodeId)}
     >
       Edit 3D
@@ -204,16 +175,13 @@ const Edit3DScrubControls = memo(function Edit3DScrubControls({
   overlayHandle,
 }: Edit3DScrubControlsProps) {
   const [, forceUpdate] = useState(0);
-  const bump = useCallback(() => forceUpdate((t) => t + 1), []);
+  const bump = useCallback(() => forceUpdate(t => t + 1), []);
 
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage?.on) return;
     const ns = ".edit3dcontrols";
-    stage.on(
-      `dragmove${ns} xChange${ns} yChange${ns} scaleXChange${ns} scaleYChange${ns}`,
-      bump,
-    );
+    stage.on(`dragmove${ns} xChange${ns} yChange${ns} scaleXChange${ns} scaleYChange${ns}`, bump);
     return () => {
       stage.off(ns);
     };
@@ -252,7 +220,7 @@ const Edit3DScrubControls = memo(function Edit3DScrubControls({
       <button
         onClick={() => overlayHandle.current?.commit()}
         className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-white shadow-lg hover:bg-primary-400"
-        onPointerDown={(e) => e.stopPropagation()}
+        onPointerDown={e => e.stopPropagation()}
       >
         ✓
       </button>
@@ -407,11 +375,9 @@ const PageDraw = ({
   } = useSceneStore(useShallow(selector));
 
   const promptStoreProvider = usePrompt2DStore;
-  const generationCount = promptStoreProvider((state) => state.generationCount);
-  const setGenerationCount = promptStoreProvider(
-    (state) => state.setGenerationCount,
-  );
-  const useSystemPrompt = promptStoreProvider((state) => state.useSystemPrompt);
+  const generationCount = promptStoreProvider(state => state.generationCount);
+  const setGenerationCount = promptStoreProvider(state => state.setGenerationCount);
+  const useSystemPrompt = promptStoreProvider(state => state.useSystemPrompt);
 
   const baseImageKonvaRef = useRef<Konva.Image>({} as Konva.Image);
   const baseImageUrl = baseImageInfo?.url;
@@ -423,14 +389,11 @@ const PageDraw = ({
   const generateInFlightRef = useRef(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const selectedImageModel: ImageModel | undefined =
-    useSelectedImageModel(PAGE_ID);
+  const selectedImageModel: ImageModel | undefined = useSelectedImageModel(PAGE_ID);
 
-  const selectedProvider: GenerationProvider | undefined =
-    useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
+  const selectedProvider: GenerationProvider | undefined = useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
 
-  const supportsMaskedInpainting =
-    selectedImageModel?.usesInpaintingMask ?? false;
+  const supportsMaskedInpainting = selectedImageModel?.usesInpaintingMask ?? false;
 
   // Keyboard tool switching mirrors the SideToolbar buttons; size up/down
   // adjusts whichever size the active tool draws with (brush, eraser, and the
@@ -461,9 +424,7 @@ const PageDraw = ({
     const scene = useSceneStore.getState();
     const step = 2 * direction;
     if (scene.activeTool === "inpaint") {
-      scene.setInpaintBrushSize(
-        Math.min(100, Math.max(1, scene.inpaintBrushSize + step)),
-      );
+      scene.setInpaintBrushSize(Math.min(100, Math.max(1, scene.inpaintBrushSize + step)));
     } else if (scene.activeTool === "eraser") {
       scene.setEraserSize(Math.min(64, Math.max(1, scene.eraserSize + step)));
     } else if (scene.activeTool === "draw") {
@@ -471,26 +432,11 @@ const PageDraw = ({
     }
   }, []);
 
-  const handleBrushSizeUp = useCallback(
-    () => adjustBrushSize(1),
-    [adjustBrushSize],
-  );
-  const handleBrushSizeDown = useCallback(
-    () => adjustBrushSize(-1),
-    [adjustBrushSize],
-  );
-  const handleSelectToolKey = useCallback(
-    () => useSceneStore.getState().setActiveTool("select"),
-    [],
-  );
-  const handleBrushToolKey = useCallback(
-    () => useSceneStore.getState().setActiveTool("draw"),
-    [],
-  );
-  const handleEraserToolKey = useCallback(
-    () => useSceneStore.getState().setActiveTool("eraser"),
-    [],
-  );
+  const handleBrushSizeUp = useCallback(() => adjustBrushSize(1), [adjustBrushSize]);
+  const handleBrushSizeDown = useCallback(() => adjustBrushSize(-1), [adjustBrushSize]);
+  const handleSelectToolKey = useCallback(() => useSceneStore.getState().setActiveTool("select"), []);
+  const handleBrushToolKey = useCallback(() => useSceneStore.getState().setActiveTool("draw"), []);
+  const handleEraserToolKey = useCallback(() => useSceneStore.getState().setActiveTool("eraser"), []);
 
   usePagedrawKeybinds({
     undo,
@@ -519,9 +465,7 @@ const PageDraw = ({
       throw new Error("Stage or left panel or base image ref is not available");
     }
 
-    const layer = stageRef.current
-      .getLayers()
-      .find((l) => l.id() === INPAINT_LAYER_ID)!;
+    const layer = stageRef.current.getLayers().find(l => l.id() === INPAINT_LAYER_ID)!;
 
     const rect = baseImageKonvaRef.current;
     const layerCrop = layer.toCanvas({
@@ -547,9 +491,7 @@ const PageDraw = ({
 
       const stage = stageRef.current;
       if (!stage) {
-        console.error(
-          "Stage reference not available for coordinate transformation",
-        );
+        console.error("Stage reference not available for coordinate transformation");
         return;
       }
       const stagePoint = {
@@ -565,10 +507,7 @@ const PageDraw = ({
         }
         const toastId = toast.loading(`Loading 3D model "${item.label}"…`);
         try {
-          const dataUrl = await render3DModelToDataUrl(
-            modelUrl,
-            DEFAULT_MODEL3D_PARAMS,
-          );
+          const dataUrl = await render3DModelToDataUrl(modelUrl, DEFAULT_MODEL3D_PARAMS);
           const img = new globalThis.Image();
           img.onload = () => {
             const canvasDims = getAspectRatioDimensions();
@@ -610,16 +549,10 @@ const PageDraw = ({
       createImageFromUrl(stagePoint.x, stagePoint.y, imageUrl);
     };
 
-    window.addEventListener(
-      "gallery-2d-drop",
-      handleGallery2DDrop as unknown as EventListener,
-    );
+    window.addEventListener("gallery-2d-drop", handleGallery2DDrop as unknown as EventListener);
 
     return () => {
-      window.removeEventListener(
-        "gallery-2d-drop",
-        handleGallery2DDrop as unknown as EventListener,
-      );
+      window.removeEventListener("gallery-2d-drop", handleGallery2DDrop as unknown as EventListener);
     };
   }, [createImageFromUrl, createImageFrom3DModel]);
 
@@ -635,11 +568,7 @@ const PageDraw = ({
       if (!editing3DNodeId) return;
       const img = new globalThis.Image();
       img.onload = () => {
-        updateNode(
-          editing3DNodeId,
-          { imageUrl: dataUrl, imageElement: img, model3dParams: params },
-          true,
-        );
+        updateNode(editing3DNodeId, { imageUrl: dataUrl, imageElement: img, model3dParams: params }, true);
       };
       img.src = dataUrl;
       setEditing3DNodeId(null);
@@ -649,10 +578,7 @@ const PageDraw = ({
   );
 
   const displayNodes = useMemo(
-    () =>
-      editing3DNodeId
-        ? drawNodes.filter((n) => n.id !== editing3DNodeId)
-        : drawNodes,
+    () => (editing3DNodeId ? drawNodes.filter(n => n.id !== editing3DNodeId) : drawNodes),
     [drawNodes, editing3DNodeId],
   );
 
@@ -690,14 +616,11 @@ const PageDraw = ({
   // store snapshot, so deferred bakes pick up the current bitmap at run time
   // (not the one captured at schedule time).
   const getCompositeCanvasFile = useCallback(async (): Promise<File | null> => {
-    const { baseImageBitmap: baseBitmapNow, baseImageInfo: baseInfoNow } =
-      useSceneStore.getState();
+    const { baseImageBitmap: baseBitmapNow, baseImageInfo: baseInfoNow } = useSceneStore.getState();
     if (!stageRef.current || !baseImageKonvaRef.current) return null;
     if (!baseInfoNow?.isBlankCanvas && !baseBitmapNow) return null;
 
-    const editsLayer = stageRef.current
-      .getLayers()
-      .find((l) => l.id() === DRAW_LAYER_ID);
+    const editsLayer = stageRef.current.getLayers().find(l => l.id() === DRAW_LAYER_ID);
 
     if (!editsLayer) {
       console.error("Edits layer not found");
@@ -725,9 +648,7 @@ const PageDraw = ({
     // worker-side cache.
     const [markerBitmap, baseBitmap] = await Promise.all([
       createImageBitmap(markerLayerCanvas),
-      baseBitmapNow
-        ? createImageBitmap(baseBitmapNow)
-        : Promise.resolve(undefined),
+      baseBitmapNow ? createImageBitmap(baseBitmapNow) : Promise.resolve(undefined),
     ]);
 
     const blob = await compositeInWorker({
@@ -834,9 +755,7 @@ const PageDraw = ({
       try {
         // Yield once so React paints the disabled button before the heavy
         // canvas readback / encode / upload runs and locks the main thread.
-        await new Promise<void>((resolve) =>
-          requestAnimationFrame(() => resolve()),
-        );
+        await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
 
         const editedImageToken = baseImageInfo?.mediaToken;
 
@@ -856,16 +775,12 @@ const PageDraw = ({
         }
 
         const subscriberId: string =
-          crypto?.randomUUID?.() ??
-          `inpaint-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          crypto?.randomUUID?.() ?? `inpaint-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
         adapter.onEnqueueMeta?.({
           prompt,
-          refImageUrls: (options?.images || [])
-            .map((img) => img.url)
-            .filter(Boolean),
-          modelType:
-            (selectedImageModel as any)?.tauriId || String(selectedImageModel),
+          refImageUrls: (options?.images || []).map(img => img.url).filter(Boolean),
+          modelType: (selectedImageModel as any)?.tauriId || String(selectedImageModel),
           timestamp: Date.now(),
         });
 
@@ -907,9 +822,7 @@ const PageDraw = ({
           result = await adapter.enqueueEditImage({
             model: selectedImageModel,
             canvasImageMediaToken: snapshotResult.data,
-            imageMediaTokens: imgs
-              .map((img) => img.mediaToken)
-              .filter((t) => t.length > 0),
+            imageMediaTokens: imgs.map(img => img.mediaToken).filter(t => t.length > 0),
             prompt: prompt,
             imageCount: generationCount,
             frontendCaller: "image_editor",
@@ -941,9 +854,7 @@ const PageDraw = ({
           result = await adapter.enqueueEditImage({
             model: selectedImageModel,
             canvasImageMediaToken: snapshotResult.data,
-            imageMediaTokens: imgs
-              .map((img) => img.mediaToken)
-              .filter((t) => t.length > 0),
+            imageMediaTokens: imgs.map(img => img.mediaToken).filter(t => t.length > 0),
             prompt: prompt,
             imageCount: generationCount,
             frontendCaller: "image_editor",
@@ -1024,14 +935,14 @@ const PageDraw = ({
       const tryFit = async () => {
         const stage = stageRef.current;
         if (stage && stage.container && stage.container().offsetWidth > 0) {
-          await new Promise((resolve) => setTimeout(resolve, 50));
+          await new Promise(resolve => setTimeout(resolve, 50));
           onFitPressed();
           return true;
         }
 
         attempts++;
         if (attempts < maxAttempts) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 100));
           return tryFit();
         }
         return false;
@@ -1044,10 +955,7 @@ const PageDraw = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseImageBitmap, baseImageInfo?.isBlankCanvas]);
 
-  const handleSelectTool = useCallback(
-    () => setActiveTool("select"),
-    [setActiveTool],
-  );
+  const handleSelectTool = useCallback(() => setActiveTool("select"), [setActiveTool]);
 
   const handleActivateShapeTool = useCallback(
     (shape: "rectangle" | "circle" | "triangle") => {
@@ -1086,9 +994,7 @@ const PageDraw = ({
     input.onchange = (e: Event) => {
       const target = e.target as HTMLInputElement;
       if (target.files) {
-        const imageFiles = Array.from(target.files).filter((f) =>
-          f.type.startsWith("image/"),
-        );
+        const imageFiles = Array.from(target.files).filter(f => f.type.startsWith("image/"));
         if (imageFiles.length > 0) handleImageUpload(imageFiles);
       }
       document.body.removeChild(input);
@@ -1112,7 +1018,7 @@ const PageDraw = ({
         }
       };
       setAspectRatioType(ratioToType(ratio));
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise(resolve => requestAnimationFrame(resolve));
       onFitPressed();
     },
     [setAspectRatioType, onFitPressed],
@@ -1169,18 +1075,15 @@ const PageDraw = ({
     ],
   );
 
-  const handleCanvasSizeChange = useCallback(
-    (width: number, height: number) => {
-      canvasWidth.current = width;
-      canvasHeight.current = height;
-    },
-    [],
-  );
+  const handleCanvasSizeChange = useCallback((width: number, height: number) => {
+    canvasWidth.current = width;
+    canvasHeight.current = height;
+  }, []);
 
   const isLocked = useMemo(
     () =>
-      selectedNodeIds.some((id) => {
-        const node = drawNodes.find((n) => n.id === id);
+      selectedNodeIds.some(id => {
+        const node = drawNodes.find(n => n.id === id);
         return node?.locked ?? false;
       }),
     [selectedNodeIds, drawNodes],
@@ -1188,13 +1091,13 @@ const PageDraw = ({
 
   const selectedNodeWithModel = useMemo(() => {
     if (selectedNodeIds.length !== 1) return null;
-    const n = drawNodes.find((n) => n.id === selectedNodeIds[0]);
+    const n = drawNodes.find(n => n.id === selectedNodeIds[0]);
     return n?.type !== "line" ? n : null;
   }, [selectedNodeIds, drawNodes]);
 
   const editingNode = useMemo(() => {
     if (!editing3DNodeId) return null;
-    const n = drawNodes.find((n) => n.id === editing3DNodeId);
+    const n = drawNodes.find(n => n.id === editing3DNodeId);
     return n?.type !== "line" ? n : null;
   }, [editing3DNodeId, drawNodes]);
 
@@ -1214,10 +1117,7 @@ const PageDraw = ({
                 addHistoryImageBundle({ images: [image] });
                 setBaseImageInfo(image);
               },
-              showLoading:
-                baseImageInfo !== null &&
-                baseImageBitmap === null &&
-                !baseImageInfo.isBlankCanvas,
+              showLoading: baseImageInfo !== null && baseImageBitmap === null && !baseImageInfo.isBlankCanvas,
             })}
           </div>
         </div>
@@ -1241,10 +1141,10 @@ const PageDraw = ({
           imageBundles={historyImageBundles}
           pendingPlaceholders={pendingGenerations}
           blurredBackgroundUrl={baseImageUrl}
-          onImageSelect={(baseImage) => {
+          onImageSelect={baseImage => {
             setBaseImageInfo(baseImage);
           }}
-          onImageRemove={(baseImage) => {
+          onImageRemove={baseImage => {
             if (
               pendingGenerations.length === 0 &&
               historyImageBundles.length === 1 &&
@@ -1357,19 +1257,11 @@ const PageDraw = ({
         </div>
       )}
       {!editing3DNodeId && selectedNodeWithModel?.modelUrl && (
-        <Edit3DButton
-          nodeId={selectedNodeIds[0]}
-          stageRef={stageRef}
-          onEdit={setEditing3DNodeId}
-        />
+        <Edit3DButton nodeId={selectedNodeIds[0]} stageRef={stageRef} onEdit={setEditing3DNodeId} />
       )}
       {editingNode && (
         <>
-          <Edit3DScrubControls
-            nodeId={editing3DNodeId!}
-            stageRef={stageRef}
-            overlayHandle={overlayHandleRef}
-          />
+          <Edit3DScrubControls nodeId={editing3DNodeId!} stageRef={stageRef} overlayHandle={overlayHandleRef} />
           <Model3DOverlay
             ref={overlayHandleRef}
             node={editingNode}

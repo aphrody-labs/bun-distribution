@@ -1,9 +1,7 @@
 import { test, expect } from "bun:test";
 import { runInNewContext } from "node:vm";
 
-const bundle = await Bun.file(
-  new URL("../dist/main.js", import.meta.url),
-).text();
+const bundle = await Bun.file(new URL("../dist/main.js", import.meta.url)).text();
 
 test("browser bundle boots without native Tauri bridge", () => {
   const status = { textContent: "" };

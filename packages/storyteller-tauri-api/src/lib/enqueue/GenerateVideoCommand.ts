@@ -102,9 +102,7 @@ export interface GenerateVideoSuccess extends CommandResult {
 
 export type GenerateVideoResult = GenerateVideoSuccess | GenerateVideoError;
 
-export const GenerateVideoCommand = async (
-  request: GenerateVideoRequest,
-): Promise<GenerateVideoResult> => {
+export const GenerateVideoCommand = async (request: GenerateVideoRequest): Promise<GenerateVideoResult> => {
   const mutableRequest: RawGenerateVideoRequest = {
     model: request.model?.tauriId,
     start_frame_image_media_token: request.start_frame_image_media_token,
@@ -120,8 +118,7 @@ export const GenerateVideoCommand = async (
   }
 
   if (request.end_frame_image_media_token) {
-    mutableRequest.end_frame_image_media_token =
-      request.end_frame_image_media_token;
+    mutableRequest.end_frame_image_media_token = request.end_frame_image_media_token;
   }
 
   if (request.frontend_caller) {
@@ -152,39 +149,20 @@ export const GenerateVideoCommand = async (
     mutableRequest.duration_seconds = request.duration_seconds;
   }
 
-  if (
-    request.reference_image_media_tokens &&
-    request.reference_image_media_tokens.length > 0
-  ) {
-    mutableRequest.reference_image_media_tokens = uniqueTokens(
-      request.reference_image_media_tokens,
-    );
+  if (request.reference_image_media_tokens && request.reference_image_media_tokens.length > 0) {
+    mutableRequest.reference_image_media_tokens = uniqueTokens(request.reference_image_media_tokens);
   }
 
-  if (
-    request.reference_video_media_tokens &&
-    request.reference_video_media_tokens.length > 0
-  ) {
-    mutableRequest.reference_video_media_tokens = uniqueTokens(
-      request.reference_video_media_tokens,
-    );
+  if (request.reference_video_media_tokens && request.reference_video_media_tokens.length > 0) {
+    mutableRequest.reference_video_media_tokens = uniqueTokens(request.reference_video_media_tokens);
   }
 
-  if (
-    request.reference_audio_media_tokens &&
-    request.reference_audio_media_tokens.length > 0
-  ) {
-    mutableRequest.reference_audio_media_tokens = uniqueTokens(
-      request.reference_audio_media_tokens,
-    );
+  if (request.reference_audio_media_tokens && request.reference_audio_media_tokens.length > 0) {
+    mutableRequest.reference_audio_media_tokens = uniqueTokens(request.reference_audio_media_tokens);
   }
 
-  if (
-    request.reference_character_tokens &&
-    request.reference_character_tokens.length > 0
-  ) {
-    mutableRequest.reference_character_tokens =
-      request.reference_character_tokens;
+  if (request.reference_character_tokens && request.reference_character_tokens.length > 0) {
+    mutableRequest.reference_character_tokens = request.reference_character_tokens;
   }
 
   const result = await invoke("generate_video_command", {

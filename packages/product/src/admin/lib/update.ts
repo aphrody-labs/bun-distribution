@@ -12,13 +12,7 @@ import {
   type UpdateResult,
 } from "../../shared/update.ts";
 import type { Context } from "./context.ts";
-import {
-  checkArtifact,
-  downloadsFor,
-  pickArtifact,
-  toRelease,
-  WINDOWS_PLATFORM,
-} from "./downloads.ts";
+import { checkArtifact, downloadsFor, pickArtifact, toRelease, WINDOWS_PLATFORM } from "./downloads.ts";
 import { loadProfile } from "./profile.ts";
 
 export const KIT_ARTIFACT = "aphrody-setup";
@@ -41,10 +35,7 @@ export async function updateKit(
   } = {},
 ): Promise<UpdateResult> {
   const name = options.artifact ?? KIT_ARTIFACT;
-  const base =
-    options.base ??
-    (await loadProfile(ctx.paths))?.downloadsBase ??
-    "https://downloads.aphrody.com";
+  const base = options.base ?? (await loadProfile(ctx.paths))?.downloadsBase ?? "https://downloads.aphrody.com";
   const snapshot = await downloadsFor({ ...ctx }, base);
   const manifest = snapshot.manifest;
   const release = toRelease(manifest, name, currentPlatform());

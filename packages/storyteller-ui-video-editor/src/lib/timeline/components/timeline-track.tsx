@@ -17,16 +17,8 @@ interface TimelineTrackContentProps {
     track: TimelineTrack;
     side: "left" | "right";
   }) => void;
-  onElementMouseDown: (params: {
-    event: React.MouseEvent;
-    element: TimelineElementType;
-    track: TimelineTrack;
-  }) => void;
-  onElementClick: (params: {
-    event: React.MouseEvent;
-    element: TimelineElementType;
-    track: TimelineTrack;
-  }) => void;
+  onElementMouseDown: (params: { event: React.MouseEvent; element: TimelineElementType; track: TimelineTrack }) => void;
+  onElementClick: (params: { event: React.MouseEvent; element: TimelineElementType; track: TimelineTrack }) => void;
   onTrackMouseDown?: (event: React.MouseEvent) => void;
   onTrackMouseUp?: (event: React.MouseEvent) => void;
   shouldIgnoreClick?: () => boolean;
@@ -53,11 +45,11 @@ export function TimelineTrackContent({
         type="button"
         className="absolute inset-0 m-0 size-full appearance-none border-0 bg-transparent p-0"
         aria-label={`Select ${track.name} track`}
-        onMouseUp={(event) => {
+        onMouseUp={event => {
           if (shouldIgnoreClick?.()) return;
           onTrackMouseUp?.(event);
         }}
-        onMouseDown={(event) => {
+        onMouseDown={event => {
           event.preventDefault();
           onTrackMouseDown?.(event);
         }}
@@ -66,12 +58,12 @@ export function TimelineTrackContent({
       <div
         className="relative h-full min-w-full"
         style={{ zIndex: TIMELINE_LAYERS.trackContent }}
-        onMouseUp={(event) => {
+        onMouseUp={event => {
           if (event.target !== event.currentTarget) return;
           if (shouldIgnoreClick?.()) return;
           onTrackMouseUp?.(event);
         }}
-        onMouseDown={(event) => {
+        onMouseDown={event => {
           if (event.target !== event.currentTarget) return;
           event.preventDefault();
           onTrackMouseDown?.(event);
@@ -80,7 +72,7 @@ export function TimelineTrackContent({
         {track.elements.length === 0 ? (
           <div className="text-muted-foreground border-muted/50 pointer-events-none flex size-full items-center justify-center rounded-sm border-2 border-dashed text-xs" />
         ) : (
-          track.elements.map((element) => {
+          track.elements.map(element => {
             const isSelected = isElementSelected({
               trackId: track.id,
               elementId: element.id,
@@ -93,15 +85,9 @@ export function TimelineTrackContent({
                 track={track}
                 zoomLevel={zoomLevel}
                 isSelected={isSelected}
-                onResizeStart={({ event, element, side }) =>
-                  onResizeStart({ event, element, track, side })
-                }
-                onElementMouseDown={({ event, element }) =>
-                  onElementMouseDown({ event, element, track })
-                }
-                onElementClick={({ event, element }) =>
-                  onElementClick({ event, element, track })
-                }
+                onResizeStart={({ event, element, side }) => onResizeStart({ event, element, track, side })}
+                onElementMouseDown={({ event, element }) => onElementMouseDown({ event, element, track })}
+                onElementClick={({ event, element }) => onElementClick({ event, element, track })}
                 dragView={dragView}
                 isDropTarget={element.id === targetElementId}
               />

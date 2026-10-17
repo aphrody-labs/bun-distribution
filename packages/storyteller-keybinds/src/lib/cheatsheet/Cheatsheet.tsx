@@ -26,15 +26,9 @@ const GROUP_ORDER: KeyGroup[] = [
 // open via useCheatsheetPin (then Esc / click outside dismisses; the panel
 // becomes interactive so it can scroll). Render it inside a positioned
 // (relative) container — it fills `inset-0`.
-export function Cheatsheet({
-  surface,
-  visible,
-}: {
-  surface: Surface;
-  visible: boolean;
-}) {
+export function Cheatsheet({ surface, visible }: { surface: Surface; visible: boolean }) {
   const { forAction, selectedPreset } = useResolvedKeybinds();
-  const pinned = useCheatsheetPin((s) => s.pinned);
+  const pinned = useCheatsheetPin(s => s.pinned);
 
   const byGroup = useMemo(() => {
     const map = new Map<KeyGroup, ActionDef[]>();
@@ -50,10 +44,7 @@ export function Cheatsheet({
   if (!visible) return null;
 
   return (
-    <div
-      aria-hidden={!pinned}
-      className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
-    >
+    <div aria-hidden={!pinned} className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
       <div
         data-keybinds-cheatsheet
         className={twMerge(
@@ -70,7 +61,7 @@ export function Cheatsheet({
           </span>
         </div>
         <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
-          {GROUP_ORDER.map((group) => {
+          {GROUP_ORDER.map(group => {
             const rows = byGroup.get(group);
             if (!rows?.length) return null;
             return (
@@ -79,11 +70,8 @@ export function Cheatsheet({
                   {group}
                 </div>
                 <ul className="flex flex-col gap-1.5">
-                  {rows.map((a) => (
-                    <li
-                      key={a.id}
-                      className="flex items-center justify-between gap-3 text-sm"
-                    >
+                  {rows.map(a => (
+                    <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
                       <span className="text-white/80">{a.label}</span>
                       <KbdBindings bindings={forAction(a.id)} />
                     </li>

@@ -3,10 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { SplatFileType, SplatMesh } from "@sparkjsdev/spark";
-import {
-  NodeHierarchyHelper,
-  disposeObject3D,
-} from "@storyteller/ui-viewer-3d";
+import { NodeHierarchyHelper, disposeObject3D } from "@storyteller/ui-viewer-3d";
 
 interface LoaderInterface {
   file: File;
@@ -153,24 +150,22 @@ export const loadPreviewOnCanvas = ({
       renderer,
       statusCallback,
       isCancelled,
-      onModelInfo: (info) => {
+      onModelInfo: info => {
         if (info.hasBones || !info.hasMesh) {
-          skeletonHelper = info.hasBones
-            ? new THREE.SkeletonHelper(scene)
-            : new NodeHierarchyHelper(scene);
+          skeletonHelper = info.hasBones ? new THREE.SkeletonHelper(scene) : new NodeHierarchyHelper(scene);
           skeletonHelper.visible = !info.hasMesh;
           scene.add(skeletonHelper);
         }
         onModelInfo?.(info);
       },
-      onAnimations: (loadedClips) => {
+      onAnimations: loadedClips => {
         clips = loadedClips;
         if (clips.length === 0) return;
         // Snapshot the load pose before any action can evaluate (the first
         // mixer.update runs on the next animation-loop frame). Lights get
         // captured too — nothing animates them, so restoring is a no-op.
         restPose = [];
-        scene.traverse((node) => {
+        scene.traverse(node => {
           restPose!.push({
             node,
             position: node.position.clone(),
@@ -180,9 +175,7 @@ export const loadPreviewOnCanvas = ({
         });
         mixer = new THREE.AnimationMixer(scene);
         mixer.clipAction(clips[0]).play(); // autoplay the first clip
-        onAnimationsAvailable?.(
-          clips.map((clip, index) => clip.name || `Clip ${index + 1}`),
-        );
+        onAnimationsAvailable?.(clips.map((clip, index) => clip.name || `Clip ${index + 1}`));
       },
     });
   } else if (file.name.endsWith(".pmd")) {
@@ -213,7 +206,7 @@ export const loadPreviewOnCanvas = ({
   } else if (file.name.endsWith(".spz")) {
     file
       .arrayBuffer()
-      .then((arrayBuffer) => {
+      .then(arrayBuffer => {
         if (cancelled) return;
         splatMesh = new SplatMesh({
           fileBytes: arrayBuffer,
@@ -228,7 +221,7 @@ export const loadPreviewOnCanvas = ({
           splatMesh.rotateZ(Math.PI);
         }
       })
-      .catch((loaderError) => {
+      .catch(loaderError => {
         statusCallback({
           type: "SPLAT Loader Error",
           message: String(loaderError),
@@ -287,13 +280,13 @@ const glbLoader = ({
   const loader = new GLTFLoader();
   loader.load(
     fileUrl,
-    (data) => {
+    data => {
       if (isCancelled?.()) return;
       // Inspect BEFORE re-parenting (the loop below moves children out of
       // data.scene).
       let hasMesh = false;
       let hasBones = false;
-      data.scene.traverse((node) => {
+      data.scene.traverse(node => {
         if ((node as THREE.Mesh).isMesh) hasMesh = true;
         if ((node as THREE.Bone).isBone) hasBones = true;
       });
@@ -301,7 +294,7 @@ const glbLoader = ({
       // Iterate a COPY: scene.add() re-parents the child, which mutates
       // data.scene.children mid-loop and would skip every other child.
       const addedRoots: THREE.Object3D[] = [];
-      [...data.scene.children].forEach((child) => {
+      [...data.scene.children].forEach(child => {
         child.userData["color"] = "#FFFFFF";
         scene.add(child);
         addedRoots.push(child);
@@ -316,7 +309,7 @@ const glbLoader = ({
       // need it. Only the re-parented GLB roots are sampled; the preview
       // lights would wildly inflate the box.
       const box = new THREE.Box3();
-      scene.traverse((object) => {
+      scene.traverse(object => {
         if (object instanceof THREE.Mesh) {
           object.geometry.computeBoundingBox();
           box.expandByObject(object);
@@ -326,7 +319,7 @@ const glbLoader = ({
         scene.updateMatrixWorld(true);
         const point = new THREE.Vector3();
         for (const root of addedRoots) {
-          root.traverse((node) => {
+          root.traverse(node => {
             box.expandByPoint(node.getWorldPosition(point));
           });
         }
@@ -344,11 +337,7 @@ const glbLoader = ({
         const fov = camera.fov * (Math.PI / 180);
         const distance = (radius * 1.2) / Math.tan(fov * 0.5);
 
-        camera.position.set(
-          center.x + distance * 0.6,
-          center.y + distance * 0.4,
-          center.z + distance * 0.6,
-        );
+        camera.position.set(center.x + distance * 0.6, center.y + distance * 0.4, center.z + distance * 0.6);
         camera.lookAt(center);
 
         camera.near = distance * 0.01;
@@ -373,7 +362,7 @@ const glbLoader = ({
       });
     },
     undefined,
-    (loaderError) => {
+    loaderError => {
       if (isCancelled?.()) return;
       statusCallback({
         type: "GLB Loader Error",
@@ -383,18 +372,12 @@ const glbLoader = ({
   );
 };
 
-const pmdLoader = ({
-  camera,
-  scene,
-  renderer,
-  statusCallback,
-  isCancelled,
-}: LoaderInterface) => {
+const pmdLoader = ({ camera, scene, renderer, statusCallback, isCancelled }: LoaderInterface) => {
   camera.position.z = 30;
   const loader = new FontLoader();
   loader.load(
     "https://threejs.org/examples/fonts/helvetiker_regular.typeface.json",
-    (font) => {
+    font => {
       if (isCancelled?.()) return;
       const textGeometry = new TextGeometry("MMD", {
         font: font,
@@ -422,7 +405,7 @@ const pmdLoader = ({
       });
     },
     undefined,
-    (loaderError) => {
+    loaderError => {
       statusCallback({
         type: "PMD Loader Error",
         message: String(loaderError),
@@ -431,15 +414,10 @@ const pmdLoader = ({
   );
 };
 
-const imagePlaneLoader = ({
-  fileUrl,
-  scene,
-  statusCallback,
-  isCancelled,
-}: LoaderInterface) => {
+const imagePlaneLoader = ({ fileUrl, scene, statusCallback, isCancelled }: LoaderInterface) => {
   const geometry = new THREE.PlaneGeometry(1, 1);
   const loader = new THREE.TextureLoader();
-  const texture = loader.load(fileUrl, undefined, undefined, (loaderError) => {
+  const texture = loader.load(fileUrl, undefined, undefined, loaderError => {
     if (isCancelled?.()) return;
     statusCallback({
       type: "Image Plane Loader Error",

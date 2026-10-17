@@ -24,7 +24,7 @@
 ## \[4.7.0]
 
 - [`8d15234`](https://www.github.com/tauri-apps/create-tauri-app/commit/8d15234e7b473afe68c8601e88f11d1646157404) ([#929](https://www.github.com/tauri-apps/create-tauri-app/pull/929) by [@Legend-Master](https://www.github.com/tauri-apps/create-tauri-app/../../Legend-Master)) Fix the `.ico` icon being blurry because of it lacks some sizes
-- [`22db439`](https://www.github.com/tauri-apps/create-tauri-app/commit/22db43928e31af579b29b58a8bef8a2b78b9e851) ([#944](https://www.github.com/tauri-apps/create-tauri-app/pull/944) by [@pronebird](https://www.github.com/tauri-apps/create-tauri-app/../../pronebird)) -   Update `dioxus` to `0.7` with minor changes to the template.
+- [`22db439`](https://www.github.com/tauri-apps/create-tauri-app/commit/22db43928e31af579b29b58a8bef8a2b78b9e851) ([#944](https://www.github.com/tauri-apps/create-tauri-app/pull/944) by [@pronebird](https://www.github.com/tauri-apps/create-tauri-app/../../pronebird)) - Update `dioxus` to `0.7` with minor changes to the template.
   - Disable interactive mode for `dx serve`. Fixes broken terminal when developing.
 - [`f68d870`](https://www.github.com/tauri-apps/create-tauri-app/commit/f68d870adedb1519b8da3aeb4124ee5d106d5a68) ([#895](https://www.github.com/tauri-apps/create-tauri-app/pull/895) by [@bicarlsen](https://www.github.com/tauri-apps/create-tauri-app/../../bicarlsen)) Bump `leptos` to `0.8`.
 
@@ -103,7 +103,7 @@
 
 ## \[4.3.1]
 
-- [`d8e65fe`](https://www.github.com/tauri-apps/create-tauri-app/commit/d8e65fe9ae2aa8dac791e8f4a4e593cdddb8e254) ([#768](https://www.github.com/tauri-apps/create-tauri-app/pull/768) by [@amrbashir](https://www.github.com/tauri-apps/create-tauri-app/../../amrbashir)) Fix  `--rc` angluar template invalid configuration
+- [`d8e65fe`](https://www.github.com/tauri-apps/create-tauri-app/commit/d8e65fe9ae2aa8dac791e8f4a4e593cdddb8e254) ([#768](https://www.github.com/tauri-apps/create-tauri-app/pull/768) by [@amrbashir](https://www.github.com/tauri-apps/create-tauri-app/../../amrbashir)) Fix `--rc` angluar template invalid configuration
 
 ## \[4.3.0]
 
@@ -284,7 +284,7 @@
 
 - [`194d569`](https://www.github.com/tauri-apps/create-tauri-app/commit/194d569f6c192e0665cb0e5c5a6f66b7fb9ac8a3)([#478](https://www.github.com/tauri-apps/create-tauri-app/pull/478)) Fix running `create-tauri-app` in JS environments in strict mode.
 - [`3449afc`](https://www.github.com/tauri-apps/create-tauri-app/commit/3449afcc9c872d0d20a7751c25b47b9c602f2804)([#476](https://www.github.com/tauri-apps/create-tauri-app/pull/476)) Fix typescript error in `solid-ts` template when importing some non-standard files.
-- [`f7256ee`](https://www.github.com/tauri-apps/create-tauri-app/commit/f7256eecfedb3e786a342b574a0737b4ceb110e7)([#471](https://www.github.com/tauri-apps/create-tauri-app/pull/471)) Improve the error messages for  unsupported package manager, unsupported template or when a supported template is used with a package manager that is not intended to be used with.
+- [`f7256ee`](https://www.github.com/tauri-apps/create-tauri-app/commit/f7256eecfedb3e786a342b574a0737b4ceb110e7)([#471](https://www.github.com/tauri-apps/create-tauri-app/pull/471)) Improve the error messages for unsupported package manager, unsupported template or when a supported template is used with a package manager that is not intended to be used with.
 
 ## \[3.7.2]
 

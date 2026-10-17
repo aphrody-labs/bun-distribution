@@ -1,8 +1,4 @@
-import {
-  VisualNode,
-  type ResolvedVisualSourceNodeState,
-  type VisualNodeParams,
-} from "./visual-node";
+import { VisualNode, type ResolvedVisualSourceNodeState, type VisualNodeParams } from "./visual-node";
 
 export interface VideoNodeParams extends VisualNodeParams {
   url: string;
@@ -10,7 +6,4 @@ export interface VideoNodeParams extends VisualNodeParams {
   mediaId: string;
 }
 
-export class VideoNode extends VisualNode<
-  VideoNodeParams,
-  ResolvedVisualSourceNodeState
-> {}
+export class VideoNode extends VisualNode<VideoNodeParams, ResolvedVisualSourceNodeState> {}

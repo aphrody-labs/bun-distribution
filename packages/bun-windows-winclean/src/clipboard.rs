@@ -17,10 +17,16 @@ pub fn get_clipboard_text() -> io::Result<String> {
 /// Replace the clipboard content with `text` (as `CF_UNICODETEXT`).
 pub fn set_clipboard_text(text: &str) -> io::Result<String> {
     if text.contains('\0') {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "clipboard text contains NUL"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "clipboard text contains NUL",
+        ));
     }
     imp::set_text(text)?;
-    Ok(format!("Copied {} characters to the clipboard.", text.chars().count()))
+    Ok(format!(
+        "Copied {} characters to the clipboard.",
+        text.chars().count()
+    ))
 }
 
 #[cfg(windows)]
@@ -59,7 +65,7 @@ mod imp {
                         std::thread::sleep(Duration::from_millis(
                             10 * u64::from(attempt.min(9) + 1),
                         ));
-                    },
+                    }
                 }
             }
             let detail = last_error.map(|error| error.message()).unwrap_or_default();
@@ -136,7 +142,7 @@ mod imp {
                 // SAFETY: ownership did not transfer, so the block is freed here.
                 let _ = unsafe { GlobalFree(Some(memory)) };
                 Err(hresult_error(&error, "SetClipboardData"))
-            },
+            }
         }
     }
 }
@@ -146,11 +152,17 @@ mod imp {
     use std::io;
 
     pub(super) fn get_text() -> io::Result<String> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "clipboard is Windows-only"))
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "clipboard is Windows-only",
+        ))
     }
 
     pub(super) fn set_text(_text: &str) -> io::Result<()> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "clipboard is Windows-only"))
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "clipboard is Windows-only",
+        ))
     }
 }
 
@@ -178,8 +190,10 @@ mod tests {
     #[ignore = "needs an interactive desktop"]
     fn clipboard_round_trip_preserves_unicode_text() {
         let previous = get_clipboard_text().expect("read the current clipboard");
-        let sample =
-            format!("aphrody clipboard \u{e9}\u{1F600} {}\r\nline two", std::process::id());
+        let sample = format!(
+            "aphrody clipboard \u{e9}\u{1F600} {}\r\nline two",
+            std::process::id()
+        );
         let message = set_clipboard_text(&sample).expect("write the clipboard");
         assert!(message.starts_with("Copied "));
         let read = get_clipboard_text().expect("read the clipboard back");

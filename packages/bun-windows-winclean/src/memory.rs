@@ -52,7 +52,10 @@ pub fn read_bytes(pid: u32, address: u64, length: usize) -> io::Result<Vec<u8>> 
 
 #[cfg(not(windows))]
 pub fn read_bytes(_pid: u32, _address: u64, _length: usize) -> io::Result<Vec<u8>> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "remote memory is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "remote memory is Windows-only",
+    ))
 }
 
 #[cfg(windows)]
@@ -78,7 +81,10 @@ pub fn write_bytes(pid: u32, address: u64, data: &[u8]) -> io::Result<usize> {
 
 #[cfg(not(windows))]
 pub fn write_bytes(_pid: u32, _address: u64, _data: &[u8]) -> io::Result<usize> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "remote memory is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "remote memory is Windows-only",
+    ))
 }
 
 #[cfg(windows)]
@@ -104,14 +110,27 @@ pub fn allocate(pid: u32, size: usize, protect_value: &str) -> io::Result<u64> {
     }
     let h = open(pid, true)?;
     let address = unsafe {
-        VirtualAllocEx(h, None, size, MEM_COMMIT | MEM_RESERVE, protection(protect_value)?)
+        VirtualAllocEx(
+            h,
+            None,
+            size,
+            MEM_COMMIT | MEM_RESERVE,
+            protection(protect_value)?,
+        )
     };
     close(h);
-    if address.is_null() { Err(io::Error::last_os_error()) } else { Ok(address as u64) }
+    if address.is_null() {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(address as u64)
+    }
 }
 #[cfg(not(windows))]
 pub fn allocate(_pid: u32, _size: usize, _protect: &str) -> io::Result<u64> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "remote memory is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "remote memory is Windows-only",
+    ))
 }
 
 #[cfg(windows)]
@@ -124,7 +143,10 @@ pub fn free(pid: u32, address: u64) -> io::Result<()> {
 }
 #[cfg(not(windows))]
 pub fn free(_pid: u32, _address: u64) -> io::Result<()> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "remote memory is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "remote memory is Windows-only",
+    ))
 }
 
 #[cfg(windows)]
@@ -134,11 +156,15 @@ pub fn protect(pid: u32, address: u64, size: usize, value: &str) -> io::Result<u
     let mut old = PAGE_PROTECTION_FLAGS(0);
     let r = unsafe { VirtualProtectEx(h, address as *const _, size, protection(value)?, &mut old) };
     close(h);
-    r.map(|_| old.0).map_err(|e| io::Error::other(e.to_string()))
+    r.map(|_| old.0)
+        .map_err(|e| io::Error::other(e.to_string()))
 }
 #[cfg(not(windows))]
 pub fn protect(_pid: u32, _address: u64, _size: usize, _value: &str) -> io::Result<u32> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "remote memory is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "remote memory is Windows-only",
+    ))
 }
 
 #[cfg(windows)]
@@ -164,15 +190,19 @@ pub fn query(pid: u32, address: u64) -> io::Result<serde_json::Value> {
 }
 #[cfg(not(windows))]
 pub fn query(_pid: u32, _address: u64) -> io::Result<serde_json::Value> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "remote memory is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "remote memory is Windows-only",
+    ))
 }
 
 pub fn parse_address(value: &serde_json::Value) -> io::Result<u64> {
     if let Some(number) = value.as_u64() {
         return Ok(number);
     }
-    let text =
-        value.as_str().ok_or_else(|| invalid("address must be integer or hexadecimal string"))?;
+    let text = value
+        .as_str()
+        .ok_or_else(|| invalid("address must be integer or hexadecimal string"))?;
     let text = text.trim();
     if let Some(hex) = text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
         u64::from_str_radix(hex, 16).map_err(|_| invalid("invalid hexadecimal address"))
@@ -205,8 +235,10 @@ pub fn suspend_resume(pid: u32, resume: bool) -> io::Result<serde_json::Value> {
     };
     let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0) }
         .map_err(|e| io::Error::other(e.to_string()))?;
-    let mut entry =
-        THREADENTRY32 { dwSize: std::mem::size_of::<THREADENTRY32>() as u32, ..Default::default() };
+    let mut entry = THREADENTRY32 {
+        dwSize: std::mem::size_of::<THREADENTRY32>() as u32,
+        ..Default::default()
+    };
     let mut count = 0u32;
     let mut ok = unsafe { Thread32First(snapshot, &mut entry) }.is_ok();
     while ok {
@@ -233,7 +265,10 @@ pub fn suspend_resume(pid: u32, resume: bool) -> io::Result<serde_json::Value> {
 }
 #[cfg(not(windows))]
 pub fn suspend_resume(_pid: u32, _resume: bool) -> io::Result<serde_json::Value> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "process suspension is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "process suspension is Windows-only",
+    ))
 }
 
 #[cfg(windows)]
@@ -257,8 +292,10 @@ pub(crate) fn enable_privilege(name: windows::core::PCWSTR) -> io::Result<()> {
     let mut token = windows::Win32::Foundation::HANDLE::default();
     unsafe { OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &mut token) }
         .map_err(|e| io::Error::new(io::ErrorKind::PermissionDenied, e.to_string()))?;
-    let mut privilege =
-        TOKEN_PRIVILEGES { PrivilegeCount: 1, Privileges: [LUID_AND_ATTRIBUTES::default()] };
+    let mut privilege = TOKEN_PRIVILEGES {
+        PrivilegeCount: 1,
+        Privileges: [LUID_AND_ATTRIBUTES::default()],
+    };
     if let Err(e) = unsafe { LookupPrivilegeValueW(None, name, &mut privilege.Privileges[0].Luid) }
     {
         let _ = unsafe { windows::Win32::Foundation::CloseHandle(token) };
@@ -280,7 +317,10 @@ pub(crate) fn enable_privilege(name: windows::core::PCWSTR) -> io::Result<()> {
 }
 #[cfg(not(windows))]
 pub fn enable_debug_privilege() -> io::Result<serde_json::Value> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "debug privilege is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "debug privilege is Windows-only",
+    ))
 }
 
 #[cfg(windows)]
@@ -292,20 +332,35 @@ pub fn list_modules(pid: u32) -> io::Result<Vec<serde_json::Value>> {
     let snapshot =
         unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid) }
             .map_err(|e| io::Error::other(e.to_string()))?;
-    let mut entry =
-        MODULEENTRY32 { dwSize: std::mem::size_of::<MODULEENTRY32>() as u32, ..Default::default() };
+    let mut entry = MODULEENTRY32 {
+        dwSize: std::mem::size_of::<MODULEENTRY32>() as u32,
+        ..Default::default()
+    };
     let mut rows = Vec::new();
     let mut ok = unsafe { Module32First(snapshot, &mut entry) }.is_ok();
     while ok {
-        let name_end = entry.szModule.iter().position(|v| *v == 0).unwrap_or(entry.szModule.len());
-        let path_end =
-            entry.szExePath.iter().position(|v| *v == 0).unwrap_or(entry.szExePath.len());
+        let name_end = entry
+            .szModule
+            .iter()
+            .position(|v| *v == 0)
+            .unwrap_or(entry.szModule.len());
+        let path_end = entry
+            .szExePath
+            .iter()
+            .position(|v| *v == 0)
+            .unwrap_or(entry.szExePath.len());
         let name = String::from_utf8_lossy(
-            &entry.szModule[..name_end].iter().map(|v| *v as u8).collect::<Vec<_>>(),
+            &entry.szModule[..name_end]
+                .iter()
+                .map(|v| *v as u8)
+                .collect::<Vec<_>>(),
         )
         .into_owned();
         let path = String::from_utf8_lossy(
-            &entry.szExePath[..path_end].iter().map(|v| *v as u8).collect::<Vec<_>>(),
+            &entry.szExePath[..path_end]
+                .iter()
+                .map(|v| *v as u8)
+                .collect::<Vec<_>>(),
         )
         .into_owned();
         rows.push(serde_json::json!({
@@ -321,7 +376,10 @@ pub fn list_modules(pid: u32) -> io::Result<Vec<serde_json::Value>> {
 }
 #[cfg(not(windows))]
 pub fn list_modules(_pid: u32) -> io::Result<Vec<serde_json::Value>> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "module enumeration is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "module enumeration is Windows-only",
+    ))
 }
 
 pub fn get_module_base(pid: u32, module_name: &str) -> io::Result<serde_json::Value> {
@@ -337,7 +395,10 @@ pub fn get_module_base(pid: u32, module_name: &str) -> io::Result<serde_json::Va
                 .is_some_and(|name| name.eq_ignore_ascii_case(wanted))
         })
         .ok_or_else(|| {
-            io::Error::new(io::ErrorKind::NotFound, format!("module not found: {wanted}"))
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("module not found: {wanted}"),
+            )
         })
 }
 
@@ -444,7 +505,10 @@ pub fn scan_value_int32(pid: u32, value: i32, max_hits: usize) -> io::Result<Vec
 
 #[cfg(not(windows))]
 pub fn scan_value_int32(_pid: u32, _value: i32, _max_hits: usize) -> io::Result<Vec<u64>> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "remote memory is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "remote memory is Windows-only",
+    ))
 }
 
 #[cfg(windows)]
@@ -455,13 +519,19 @@ fn parse_aob_pattern(pattern: &str) -> io::Result<Vec<Option<u8>>> {
             if token == "?" || token == "??" {
                 Ok(None)
             } else if token.len() == 2 {
-                u8::from_str_radix(token, 16).map(Some).map_err(|_| invalid("invalid AOB byte"))
+                u8::from_str_radix(token, 16)
+                    .map(Some)
+                    .map_err(|_| invalid("invalid AOB byte"))
             } else {
                 Err(invalid("AOB bytes must be two hex digits or ??"))
             }
         })
         .collect::<io::Result<Vec<_>>>()?;
-    if parsed.is_empty() { Err(invalid("AOB pattern must not be empty")) } else { Ok(parsed) }
+    if parsed.is_empty() {
+        Err(invalid("AOB pattern must not be empty"))
+    } else {
+        Ok(parsed)
+    }
 }
 
 /// Scan one loaded module for an IDA-style byte pattern.
@@ -488,7 +558,10 @@ pub fn scan_module_aob(
                 .is_some_and(|name| name.eq_ignore_ascii_case(wanted))
         })
         .ok_or_else(|| {
-            io::Error::new(io::ErrorKind::NotFound, format!("module not found: {wanted}"))
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("module not found: {wanted}"),
+            )
         })?;
     let base = module
         .get("baseAddress")
@@ -537,7 +610,9 @@ pub fn scan_module_aob(
             if !matches {
                 continue;
             }
-            let absolute = address.saturating_sub(carry_len as u64).saturating_add(index as u64);
+            let absolute = address
+                .saturating_sub(carry_len as u64)
+                .saturating_add(index as u64);
             if absolute >= base && absolute < base.saturating_add(size as u64) {
                 hits.push(absolute);
                 if hits.len() >= limit {
@@ -564,7 +639,10 @@ pub fn scan_module_aob(
     _pattern: &str,
     _max_hits: usize,
 ) -> io::Result<Vec<u64>> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "remote memory is Windows-only"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "remote memory is Windows-only",
+    ))
 }
 
 #[cfg(test)]

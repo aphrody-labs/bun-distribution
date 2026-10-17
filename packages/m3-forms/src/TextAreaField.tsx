@@ -1,14 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 AND MIT
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/forms/src/TextAreaField.tsx), MIT, rebuilt on Material Design 3.
 import { TextArea } from "@aphrody/m3-primitives";
-import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "./Form";
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./Form";
 
 export interface TextAreaFieldProps {
   name: string;
@@ -21,24 +14,12 @@ export interface TextAreaFieldProps {
   required?: boolean;
 }
 
-function TextAreaField({
-  name,
-  label,
-  description,
-  placeholder,
-  disabled,
-  rows = 4,
-  required,
-}: TextAreaFieldProps) {
+function TextAreaField({ name, label, description, placeholder, disabled, rows = 4, required }: TextAreaFieldProps) {
   return (
     <FormField
       name={name}
       render={({ field, fieldState }) => (
-        <FormItem
-          data-disabled={disabled || undefined}
-          data-m3-component="TextAreaField"
-          data-testid={`field-${name}`}
-        >
+        <FormItem data-disabled={disabled || undefined} data-m3-component="TextAreaField" data-testid={`field-${name}`}>
           {label && <FormLabel required={required}>{label}</FormLabel>}
           <FormControl>
             <TextArea
@@ -53,9 +34,7 @@ function TextAreaField({
               rows={rows}
             />
           </FormControl>
-          {description && (
-            <FormDescription className="px-4">{description}</FormDescription>
-          )}
+          {description && <FormDescription className="px-4">{description}</FormDescription>}
           <FormMessage className="px-4" />
         </FormItem>
       )}

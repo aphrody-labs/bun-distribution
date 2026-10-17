@@ -79,8 +79,7 @@ export function useScrollSync({
     if (bookmarksViewport) {
       handleBookmarksScroll = () => {
         const now = Date.now();
-        if (isUpdatingRef.current || now - lastBookmarksSync.current < 16)
-          return;
+        if (isUpdatingRef.current || now - lastBookmarksSync.current < 16) return;
         lastBookmarksSync.current = now;
         isUpdatingRef.current = true;
         const nextScrollLeft = bookmarksViewport.scrollLeft;
@@ -100,8 +99,7 @@ export function useScrollSync({
     if (trackLabelsViewport) {
       const handleTrackLabelsScroll = () => {
         const now = Date.now();
-        if (isUpdatingRef.current || now - lastVerticalSync.current < 16)
-          return;
+        if (isUpdatingRef.current || now - lastVerticalSync.current < 16) return;
         lastVerticalSync.current = now;
         isUpdatingRef.current = true;
         tracksViewport.scrollTop = trackLabelsViewport.scrollTop;
@@ -110,8 +108,7 @@ export function useScrollSync({
 
       const handleTracksVerticalScroll = () => {
         const now = Date.now();
-        if (isUpdatingRef.current || now - lastVerticalSync.current < 16)
-          return;
+        if (isUpdatingRef.current || now - lastVerticalSync.current < 16) return;
         lastVerticalSync.current = now;
         isUpdatingRef.current = true;
         trackLabelsViewport.scrollTop = tracksViewport.scrollTop;
@@ -128,24 +125,11 @@ export function useScrollSync({
         if (tracksViewport !== rulerViewport) {
           tracksViewport.removeEventListener("scroll", handleTracksScroll);
         }
-        if (
-          bookmarksViewport &&
-          bookmarksViewport !== tracksViewport &&
-          handleBookmarksScroll
-        ) {
-          bookmarksViewport.removeEventListener(
-            "scroll",
-            handleBookmarksScroll,
-          );
+        if (bookmarksViewport && bookmarksViewport !== tracksViewport && handleBookmarksScroll) {
+          bookmarksViewport.removeEventListener("scroll", handleBookmarksScroll);
         }
-        trackLabelsViewport.removeEventListener(
-          "scroll",
-          handleTrackLabelsScroll,
-        );
-        tracksViewport.removeEventListener(
-          "scroll",
-          handleTracksVerticalScroll,
-        );
+        trackLabelsViewport.removeEventListener("scroll", handleTrackLabelsScroll);
+        tracksViewport.removeEventListener("scroll", handleTracksVerticalScroll);
       };
     }
 
@@ -156,18 +140,9 @@ export function useScrollSync({
       if (tracksViewport !== rulerViewport) {
         tracksViewport.removeEventListener("scroll", handleTracksScroll);
       }
-      if (
-        bookmarksViewport &&
-        bookmarksViewport !== tracksViewport &&
-        handleBookmarksScroll
-      ) {
+      if (bookmarksViewport && bookmarksViewport !== tracksViewport && handleBookmarksScroll) {
         bookmarksViewport.removeEventListener("scroll", handleBookmarksScroll);
       }
     };
-  }, [
-    rulerScrollRef,
-    tracksScrollRef,
-    trackLabelsScrollRef,
-    bookmarksScrollRef,
-  ]);
+  }, [rulerScrollRef, tracksScrollRef, trackLabelsScrollRef, bookmarksScrollRef]);
 }

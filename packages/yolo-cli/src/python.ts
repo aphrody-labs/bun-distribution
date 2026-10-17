@@ -59,10 +59,7 @@ export interface PythonDeps {
   env?: Env;
   home?: string;
   /** Runs a command to completion with the given environment; the default inherits stdio. */
-  run?: (
-    command: string[],
-    options: { cwd: string; env: Env },
-  ) => Promise<number>;
+  run?: (command: string[], options: { cwd: string; env: Env }) => Promise<number>;
 }
 
 export interface PythonTools {
@@ -115,16 +112,12 @@ export function describeVu(state: VuState): VuStatus {
       checked: state.full ? "full" : "quick",
     };
   }
-  if (state.state === "invalid")
-    return { state: "invalid", artifact: state.dir, problems: state.problems };
+  if (state.state === "invalid") return { state: "invalid", artifact: state.dir, problems: state.problems };
   return { state: "absent", reason: state.reason };
 }
 
 /** The tools of this invocation: the verified runtime artifact, else the tools on PATH. */
-export async function resolveTools(
-  args: readonly string[],
-  deps: PythonDeps = {},
-): Promise<PythonTools> {
+export async function resolveTools(args: readonly string[], deps: PythonDeps = {}): Promise<PythonTools> {
   const env = deps.env ?? process.env;
   const explicit = flag(args, "--vu");
   if (args.includes("--no-vu")) {
@@ -137,8 +130,7 @@ export async function resolveTools(
     full: args.includes("--vu-full"),
   });
   if (state.state === "verified") {
-    const bin = (name: "uv" | "ruff" | "python"): string =>
-      join(state.dir, vuExecutable(name, state.manifest.target));
+    const bin = (name: "uv" | "ruff" | "python"): string => join(state.dir, vuExecutable(name, state.manifest.target));
     return {
       source: "vu",
       vu: describeVu(state),
@@ -164,8 +156,7 @@ export async function resolveTools(
 }
 
 function fromPath(env: Env, vu: VuStatus, refusal: string | null): PythonTools {
-  const lookup = (name: string): string | null =>
-    Bun.which(name, { PATH: env["PATH"] ?? "" });
+  const lookup = (name: string): string | null => Bun.which(name, { PATH: env["PATH"] ?? "" });
   return {
     source: "path",
     vu,
@@ -179,11 +170,7 @@ function fromPath(env: Env, vu: VuStatus, refusal: string | null): PythonTools {
 
 /** The environment as Bun wants it: no undefined values. */
 function plain(env: Env): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(env).filter(
-      (entry): entry is [string, string] => entry[1] !== undefined,
-    ),
-  );
+  return Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] => entry[1] !== undefined));
 }
 
 function versionOf(program: string | null, env: Env): string | null {
@@ -213,10 +200,7 @@ export async function runPythonCommand(
   const maturinBin = Bun.which("maturin", { PATH: tools.env["PATH"] ?? "" });
   const runCommand =
     deps.run ??
-    (async (
-      command: string[],
-      options: { cwd: string; env: Env },
-    ): Promise<number> => {
+    (async (command: string[], options: { cwd: string; env: Env }): Promise<number> => {
       const proc = Bun.spawn(command, {
         windowsHide: true,
         cwd: options.cwd,
@@ -249,11 +233,7 @@ export async function runPythonCommand(
       packageConfigured,
       workspaceConfigured,
       venvActive,
-      ok: Boolean(
-        tools.uv &&
-        tools.refusal === null &&
-        (packageConfigured || workspaceConfigured),
-      ),
+      ok: Boolean(tools.uv && tools.refusal === null && (packageConfigured || workspaceConfigured)),
     };
 
     if (json) {
@@ -277,12 +257,8 @@ export async function runPythonCommand(
       out(`- **Astral uv:** ${report.uvVersion ?? "Not found"}`);
       out(`- **Maturin (PyO3):** ${report.maturinVersion ?? "Not found"}`);
       out(`- **Ruff:** ${report.ruffVersion ?? "Not found"}`);
-      out(
-        `- **Package Configured:** ${report.packageConfigured ? "✔ Yes" : "✘ No"}`,
-      );
-      out(
-        `- **py/ Workspace:** ${report.workspaceConfigured ? "✔ Yes" : "✘ No"}`,
-      );
+      out(`- **Package Configured:** ${report.packageConfigured ? "✔ Yes" : "✘ No"}`);
+      out(`- **py/ Workspace:** ${report.workspaceConfigured ? "✔ Yes" : "✘ No"}`);
       out(`- **Virtualenv Ready:** ${report.venvActive ? "✔ Yes" : "✘ No"}`);
       return 0;
     }
@@ -296,12 +272,8 @@ export async function runPythonCommand(
     out(
       `  Package:      ${packageConfigured ? "\x1b[32mpackages/engine/python (configured)\x1b[0m" : "\x1b[31mnot configured\x1b[0m"}`,
     );
-    out(
-      `  Workspace:    ${workspaceConfigured ? "\x1b[32mpy/ (configured)\x1b[0m" : "\x1b[31mpy/ not found\x1b[0m"}`,
-    );
-    out(
-      `  Virtualenv:   ${venvActive ? "\x1b[32mready (.venv)\x1b[0m" : "\x1b[33mnot initialized\x1b[0m"}`,
-    );
+    out(`  Workspace:    ${workspaceConfigured ? "\x1b[32mpy/ (configured)\x1b[0m" : "\x1b[31mpy/ not found\x1b[0m"}`);
+    out(`  Virtualenv:   ${venvActive ? "\x1b[32mready (.venv)\x1b[0m" : "\x1b[33mnot initialized\x1b[0m"}`);
     return 0;
   }
 
@@ -310,28 +282,21 @@ export async function runPythonCommand(
   if (sub === "eval" || sub === "exec") {
     const code = args
       .slice(1)
-      .filter((arg) => !arg.startsWith("--"))
+      .filter(arg => !arg.startsWith("--"))
       .join(" ");
     if (code === "") {
-      console.error(
-        `Usage: yolo py ${sub} <python ${sub === "eval" ? "expression" : "statements"}>`,
-      );
+      console.error(`Usage: yolo py ${sub} <python ${sub === "eval" ? "expression" : "statements"}>`);
       return 2;
     }
     const { Python, libpythonIn } = await import("@aphrody/runtime-sdk/python");
-    const libpython =
-      tools.vu.artifact === undefined
-        ? undefined
-        : libpythonIn(tools.vu.artifact);
+    const libpython = tools.vu.artifact === undefined ? undefined : libpythonIn(tools.vu.artifact);
     try {
       using python = Python.open(libpython === undefined ? {} : { libpython });
       if (sub === "eval") out(python.eval(code));
       else python.run(code);
       return 0;
     } catch (error) {
-      console.error(
-        `yolo py ${sub}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      console.error(`yolo py ${sub}: ${error instanceof Error ? error.message : String(error)}`);
       return 1;
     }
   }
@@ -352,42 +317,24 @@ export async function runPythonCommand(
       if (arg === "--vu") index++;
       else if (arg !== "--no-vu" && arg !== "--vu-full") forwarded.push(arg);
     }
-    return runCommand(
-      [
-        join(tools.vu.artifact, vuExecutable("vu", tools.vu.target)),
-        ...forwarded,
-      ],
-      {
-        cwd: process.cwd(),
-        env: tools.env,
-      },
-    );
+    return runCommand([join(tools.vu.artifact, vuExecutable("vu", tools.vu.target)), ...forwarded], {
+      cwd: process.cwd(),
+      env: tools.env,
+    });
   }
 
-  const supervised = new Set([
-    "check",
-    "locks",
-    "distributions",
-    "providers",
-    "typecheck",
-    "format:check",
-    "plan",
-  ]);
+  const supervised = new Set(["check", "locks", "distributions", "providers", "typecheck", "format:check", "plan"]);
   if (supervised.has(sub)) {
     if (sub !== "plan" && tools.refusal !== null) {
       console.error(`yolo py ${sub}: ${tools.refusal}`);
       return 3;
     }
-    const { runPythonWorkspace } =
-      await import("@aphrody/bun-workspace/automation/python-workspace.ts");
+    const { runPythonWorkspace } = await import("@aphrody/bun-workspace/automation/python-workspace.ts");
     const rest: string[] = [];
     for (let index = 0; index < args.length; index++) {
       const arg = args[index]!;
       if (arg === "--vu") index++;
-      else if (
-        !["--no-vu", "--vu-full", "--json", "--md", "--engine"].includes(arg)
-      )
-        rest.push(arg);
+      else if (!["--no-vu", "--vu-full", "--json", "--md", "--engine"].includes(arg)) rest.push(arg);
     }
     const controller = new AbortController();
     const cancel = () => controller.abort();
@@ -413,9 +360,7 @@ export async function runPythonCommand(
 
   if (sub === "test") {
     if (!tools.uv) {
-      console.error(
-        "uv is required to run Python tests (https://github.com/astral-sh/uv)",
-      );
+      console.error("uv is required to run Python tests (https://github.com/astral-sh/uv)");
       return 1;
     }
     const command = engine
@@ -442,13 +387,10 @@ export async function runPythonCommand(
       console.error("The ruff binary is required for Python linting");
       return 1;
     }
-    return runCommand(
-      [tools.ruff, "check", engine ? "packages/engine/python" : "py"],
-      {
-        cwd: root,
-        env: tools.env,
-      },
-    );
+    return runCommand([tools.ruff, "check", engine ? "packages/engine/python" : "py"], {
+      cwd: root,
+      env: tools.env,
+    });
   }
 
   if (sub === "fmt") {
@@ -456,13 +398,10 @@ export async function runPythonCommand(
       console.error("The ruff binary is required for Python formatting");
       return 1;
     }
-    return runCommand(
-      [tools.ruff, "format", engine ? "packages/engine/python" : "py"],
-      {
-        cwd: root,
-        env: tools.env,
-      },
-    );
+    return runCommand([tools.ruff, "format", engine ? "packages/engine/python" : "py"], {
+      cwd: root,
+      env: tools.env,
+    });
   }
 
   if (sub === "build") {
@@ -471,23 +410,8 @@ export async function runPythonCommand(
       return 1;
     }
     const command = engine
-      ? [
-          tools.uv,
-          "run",
-          "--directory",
-          "packages/engine/python",
-          "maturin",
-          "develop",
-          "--release",
-        ]
-      : [
-          tools.uv,
-          "build",
-          "--wheel",
-          "py/packages/aphrody",
-          "--out-dir",
-          "py/dist",
-        ];
+      ? [tools.uv, "run", "--directory", "packages/engine/python", "maturin", "develop", "--release"]
+      : [tools.uv, "build", "--wheel", "py/packages/aphrody", "--out-dir", "py/dist"];
     return runCommand(command, { cwd: root, env: tools.env });
   }
 

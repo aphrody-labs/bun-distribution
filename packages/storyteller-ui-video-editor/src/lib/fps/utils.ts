@@ -27,20 +27,13 @@ export function frameRateToFloat(rate: FrameRate): number {
   return rate.numerator / rate.denominator;
 }
 
-export function frameRatesEqual({
-  a,
-  b,
-}: {
-  a: FrameRate;
-  b: FrameRate;
-}): boolean {
+export function frameRatesEqual({ a, b }: { a: FrameRate; b: FrameRate }): boolean {
   return a.numerator === b.numerator && a.denominator === b.denominator;
 }
 
 export function floatToFrameRate(fps: number): FrameRate {
   const standard = STANDARD_FRAME_RATES.find(
-    (candidate) =>
-      Math.abs(fps - candidate.value) <= STANDARD_FRAME_RATE_TOLERANCE,
+    candidate => Math.abs(fps - candidate.value) <= STANDARD_FRAME_RATE_TOLERANCE,
   );
   if (standard) return standard.rate;
 
@@ -71,11 +64,7 @@ function gcd({ left, right }: { left: number; right: number }): number {
   return a || 1;
 }
 
-export function getHighestImportedVideoFps({
-  mediaAssets,
-}: {
-  mediaAssets: MediaAssetFpsInput[];
-}): number | null {
+export function getHighestImportedVideoFps({ mediaAssets }: { mediaAssets: MediaAssetFpsInput[] }): number | null {
   let highestFps: number | null = null;
 
   for (const asset of mediaAssets) {
@@ -102,10 +91,7 @@ export function getRaisedProjectFpsForImportedMedia({
 
   const currentFpsFloat = frameRateToFloat(currentFps);
 
-  if (
-    highestImportedVideoFps === null ||
-    highestImportedVideoFps <= currentFpsFloat
-  ) {
+  if (highestImportedVideoFps === null || highestImportedVideoFps <= currentFpsFloat) {
     return null;
   }
 

@@ -446,7 +446,7 @@ impl<R: Runtime> Builder<R> {
         let handler = self.handler;
         let shortcuts = self.shortcuts;
         PluginBuilder::new("global-shortcut")
-            .invoke_handler(tauri::generate_handler![#![plugin(global_shortcut)] 
+            .invoke_handler(tauri::generate_handler![#![plugin(global_shortcut)]
                 register,
                 unregister,
                 unregister_all,

@@ -1,3 +1,3 @@
 export function version(): string {
-	return Bun.version;
+  return Bun.version;
 }

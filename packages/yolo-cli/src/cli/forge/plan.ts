@@ -6,15 +6,7 @@ import { join } from "node:path";
 import defaults from "./defaults.json";
 
 export type ScratchMode = "auto" | "loop" | "tmpfs" | "dir";
-export type Command =
-  | "doctor"
-  | "bootstrap"
-  | "build"
-  | "watch"
-  | "status"
-  | "unit"
-  | "help"
-  | "version";
+export type Command = "doctor" | "bootstrap" | "build" | "watch" | "status" | "unit" | "help" | "version";
 
 export interface ForgeConfig {
   repository: string;
@@ -57,16 +49,7 @@ export interface Options {
 
 export const DEFAULT_CONFIG: ForgeConfig = defaults as ForgeConfig;
 
-const COMMANDS: Command[] = [
-  "doctor",
-  "bootstrap",
-  "build",
-  "watch",
-  "status",
-  "unit",
-  "help",
-  "version",
-];
+const COMMANDS: Command[] = ["doctor", "bootstrap", "build", "watch", "status", "unit", "help", "version"];
 
 const ALIASES: Record<string, Command> = {
   "-h": "help",
@@ -74,22 +57,15 @@ const ALIASES: Record<string, Command> = {
   "--version": "version",
 };
 
-export function parseArgs(
-  argv: string[],
-  env: Record<string, string | undefined>,
-): Options {
+export function parseArgs(argv: string[], env: Record<string, string | undefined>): Options {
   const config: ForgeConfig = structuredClone(DEFAULT_CONFIG);
   const first = argv[0];
   const command: Command =
     first === undefined
       ? "help"
-      : (COMMANDS.find((c) => c === first) ??
-        (Object.hasOwn(ALIASES, first)
-          ? ALIASES[first]!
-          : fail(`unknown command: ${first}`)));
-  const home =
-    env.BUN_FORGE_HOME ??
-    join(env.XDG_CACHE_HOME ?? join(env.HOME ?? "/tmp", ".cache"), "bun-forge");
+      : (COMMANDS.find(c => c === first) ??
+        (Object.hasOwn(ALIASES, first) ? ALIASES[first]! : fail(`unknown command: ${first}`)));
+  const home = env.BUN_FORGE_HOME ?? join(env.XDG_CACHE_HOME ?? join(env.HOME ?? "/tmp", ".cache"), "bun-forge");
   const options: Options = {
     command,
     config,
@@ -120,8 +96,7 @@ export function parseArgs(
         break;
       case "--rev":
         options.revision = value();
-        if (!/^[0-9a-f]{40}$/.test(options.revision))
-          fail("--rev needs a full 40-character commit SHA");
+        if (!/^[0-9a-f]{40}$/.test(options.revision)) fail("--rev needs a full 40-character commit SHA");
         break;
       case "--profile":
         config.profile = value();
@@ -131,8 +106,7 @@ export function parseArgs(
         break;
       case "--scratch": {
         const mode = value();
-        if (!["auto", "loop", "tmpfs", "dir"].includes(mode))
-          fail(`--scratch must be auto, loop, tmpfs or dir`);
+        if (!["auto", "loop", "tmpfs", "dir"].includes(mode)) fail(`--scratch must be auto, loop, tmpfs or dir`);
         config.scratch.mode = mode as ScratchMode;
         break;
       }
@@ -144,21 +118,18 @@ export function parseArgs(
       }
       case "--jobs":
         options.jobs = Number(value());
-        if (!Number.isInteger(options.jobs) || options.jobs < 1)
-          fail("--jobs must be a positive integer");
+        if (!Number.isInteger(options.jobs) || options.jobs < 1) fail("--jobs must be a positive integer");
         break;
       case "--interval":
         config.watch.intervalSeconds = Number(value());
-        if (!(config.watch.intervalSeconds >= 10))
-          fail("--interval must be at least 10 seconds");
+        if (!(config.watch.intervalSeconds >= 10)) fail("--interval must be at least 10 seconds");
         break;
       case "--latest":
         config.watch.everyCommit = false;
         break;
       case "--home":
         options.home = value();
-        options.artifacts =
-          env.BUN_FORGE_ARTIFACTS ?? join(options.home, "artifacts");
+        options.artifacts = env.BUN_FORGE_ARTIFACTS ?? join(options.home, "artifacts");
         break;
       case "--artifacts":
         options.artifacts = value();
@@ -227,23 +198,16 @@ export function versionIn(output: string): string | undefined {
 }
 
 /** scripts/build/tools.ts accepts clang/lld `>=MAJOR.1.0 <MAJOR.1.99`. */
-export function llvmAccepted(
-  version: string | undefined,
-  major: number,
-): boolean {
+export function llvmAccepted(version: string | undefined, major: number): boolean {
   if (!version) return false;
-  return (
-    compareVersions(version, `${major}.1.0`) >= 0 &&
-    compareVersions(version, `${major}.1.99`) < 0
-  );
+  return compareVersions(version, `${major}.1.0`) >= 0 && compareVersions(version, `${major}.1.99`) < 0;
 }
 
 /** The `channel` of the checkout's rust-toolchain.toml. */
 export function rustChannel(toml: string): string {
   const parsed = Bun.TOML.parse(toml) as { toolchain?: { channel?: unknown } };
   const channel = parsed.toolchain?.channel;
-  if (typeof channel !== "string" || channel.length === 0)
-    fail("rust-toolchain.toml has no toolchain.channel");
+  if (typeof channel !== "string" || channel.length === 0) fail("rust-toolchain.toml has no toolchain.channel");
   return channel;
 }
 
@@ -254,20 +218,13 @@ export function hostArch(arch: string): Arch {
   return fail(`unsupported architecture: ${arch}`);
 }
 
-export function toolUrl(
-  template: string,
-  version: string,
-  name: "llvm" | "cmake" | "rustup",
-  arch: Arch,
-): string {
+export function toolUrl(template: string, version: string, name: "llvm" | "cmake" | "rustup", arch: Arch): string {
   const archName = {
     llvm: { x64: "X64", arm64: "ARM64" },
     cmake: { x64: "x86_64", arm64: "aarch64" },
     rustup: { x64: "x86_64", arm64: "aarch64" },
   }[name][arch];
-  return template
-    .replaceAll("{version}", version)
-    .replaceAll("{arch}", archName);
+  return template.replaceAll("{version}", version).replaceAll("{arch}", archName);
 }
 
 export interface Paths {
@@ -330,11 +287,7 @@ export function scratchPlan(
 ): ScratchPlan {
   const bytes = parseSize(size);
   const resolved: Exclude<ScratchMode, "auto"> =
-    mode === "auto"
-      ? host.root && host.freeBytes > bytes * 1.05
-        ? "loop"
-        : "dir"
-      : mode;
+    mode === "auto" ? (host.root && host.freeBytes > bytes * 1.05 ? "loop" : "dir") : mode;
   if ((resolved === "loop" || resolved === "tmpfs") && !host.root)
     fail(`--scratch ${resolved} needs root or passwordless sudo`);
   const dir = join(base, sha.slice(0, 12));
@@ -351,15 +304,7 @@ export function scratchPlan(
       dir,
       setup: [
         ["mkdir", "-p", dir],
-        [
-          "mount",
-          "-t",
-          "tmpfs",
-          "-o",
-          `size=${bytes},mode=0755,uid=${host.uid},gid=${host.gid}`,
-          "tmpfs",
-          dir,
-        ],
+        ["mount", "-t", "tmpfs", "-o", `size=${bytes},mode=0755,uid=${host.uid},gid=${host.gid}`, "tmpfs", dir],
       ],
       teardown: [
         ["umount", dir],
@@ -388,14 +333,10 @@ export function scratchPlan(
 }
 
 /** `git ls-remote` output -> SHA of `refs/heads/<branch>`. */
-export function remoteHead(
-  lsRemote: string,
-  branch: string,
-): string | undefined {
+export function remoteHead(lsRemote: string, branch: string): string | undefined {
   for (const line of lsRemote.split("\n")) {
     const [sha, ref] = line.trim().split(/\s+/);
-    if (ref === `refs/heads/${branch}` && sha && /^[0-9a-f]{40}$/.test(sha))
-      return sha;
+    if (ref === `refs/heads/${branch}` && sha && /^[0-9a-f]{40}$/.test(sha)) return sha;
   }
   return undefined;
 }
@@ -404,11 +345,7 @@ export function remoteHead(
  * Commits to build, oldest first. `history` is `git rev-list --first-parent <head>` (newest first). Every commit after
  * `last` when `everyCommit`, otherwise only the head; just the head when `last` is unknown or out of the history.
  */
-export function commitQueue(
-  history: string[],
-  last: string | undefined,
-  everyCommit: boolean,
-): string[] {
+export function commitQueue(history: string[], last: string | undefined, everyCommit: boolean): string[] {
   const head = history[0];
   if (!head || head === last) return [];
   if (!everyCommit || !last) return [head];
@@ -432,8 +369,7 @@ export function buildEnv(input: BuildEnvInput): Record<string, string> {
   if (input.cmakeDir) pathEntries.push(join(input.cmakeDir, "bin"));
   pathEntries.push(input.baseEnv.PATH ?? "/usr/local/bin:/usr/bin:/bin");
   const env: Record<string, string> = {};
-  for (const [k, v] of Object.entries(input.baseEnv))
-    if (v !== undefined) env[k] = v;
+  for (const [k, v] of Object.entries(input.baseEnv)) if (v !== undefined) env[k] = v;
   delete env.BUN_BE_BUN;
   Object.assign(env, {
     PATH: pathEntries.join(":"),
@@ -459,13 +395,7 @@ export function buildCommand(config: ForgeConfig, jobs?: number): string[] {
 }
 
 /** Specifiers the aphrody-labs/bun runtime serves natively (tools/config/bun-absorb.json, status "fork"). */
-export const ABSORBED = [
-  "picocolors",
-  "tiny-invariant",
-  "dotenv",
-  "dotenv/config",
-  "uuid",
-] as const;
+export const ABSORBED = ["picocolors", "tiny-invariant", "dotenv", "dotenv/config", "uuid"] as const;
 
 /** The fork build is one product: the binary is `yolo`; `bun` (the engine) and `vu` (Python) are aliases of the same file, selected by argv0. */
 export const BINARY = { name: "yolo", aliases: ["bun", "vu"] } as const;
@@ -504,9 +434,7 @@ export function artifactLayout(out: string): {
 } {
   return {
     binary: `${out}/${BINARY.name}`,
-    aliases: Object.fromEntries(
-      BINARY.aliases.map((name) => [name, `${out}/${name}`]),
-    ),
+    aliases: Object.fromEntries(BINARY.aliases.map(name => [name, `${out}/${name}`])),
   };
 }
 
@@ -562,11 +490,7 @@ export interface State {
   builds: { revision: string; ok: boolean; finishedAt: string }[];
 }
 
-export function recordBuild(
-  state: State,
-  receipt: Pick<Receipt, "revision" | "ok" | "finishedAt">,
-  keep = 100,
-): State {
+export function recordBuild(state: State, receipt: Pick<Receipt, "revision" | "ok" | "finishedAt">, keep = 100): State {
   const builds = [
     ...state.builds,
     {
@@ -580,11 +504,7 @@ export function recordBuild(
 }
 
 /** The unit running `<command> watch`; `command` is the forge invocation (`yolo forge` or the standalone executable). */
-export function systemdUnit(
-  command: string,
-  home: string,
-  user: string,
-): string {
+export function systemdUnit(command: string, home: string, user: string): string {
   return `[Unit]
 Description=bun-forge: build aphrody-labs/bun on every commit of the watched branch
 After=network-online.target

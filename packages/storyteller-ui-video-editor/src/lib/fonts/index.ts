@@ -5,17 +5,6 @@
 // preload a Google font before rendering a frame.
 
 export { SYSTEM_FONTS } from "./system-fonts";
-export {
-  loadFontAtlas,
-  getCachedFontAtlas,
-  clearFontAtlasCache,
-  loadFullFont,
-  loadFonts,
-} from "./google-fonts";
+export { loadFontAtlas, getCachedFontAtlas, clearFontAtlasCache, loadFullFont, loadFonts } from "./google-fonts";
 export { useFontAtlas } from "./use-font-atlas";
-export type {
-  FontOption,
-  GoogleFontMeta,
-  FontAtlas,
-  FontAtlasEntry,
-} from "./types";
+export type { FontOption, GoogleFontMeta, FontAtlas, FontAtlasEntry } from "./types";

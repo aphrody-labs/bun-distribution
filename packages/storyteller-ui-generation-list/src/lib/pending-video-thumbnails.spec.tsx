@@ -1,14 +1,5 @@
-import {
-  stubGlobal,
-  restoreGlobals,
-} from "../../../../../tools/testing/globals";
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from "@testing-library/react";
+import { stubGlobal, restoreGlobals } from "../../../../../tools/testing/globals";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { VideoIcon } from "lucide-react";
 import {
@@ -25,8 +16,7 @@ vi.mock("@storyteller/common", () => ({
   PLACEHOLDER_IMAGES: { DEFAULT: "placeholder.png" },
 }));
 
-const THUMB =
-  "https://cdn-2.fakeyou.com/cdn-cgi/image/width=512,quality=95/media/a/b/storyteller_x.mp4-thumb.gif";
+const THUMB = "https://cdn-2.fakeyou.com/cdn-cgi/image/width=512,quality=95/media/a/b/storyteller_x.mp4-thumb.gif";
 
 // Probes made by the checker; a test settles each one by hand.
 let probes: FakeImage[] = [];
@@ -60,9 +50,7 @@ describe("checker", () => {
 
     vi.advanceTimersByTime(5_000);
     expect(probes).toHaveLength(1);
-    expect(probes[0].src).toMatch(
-      /^https:\/\/cdn-2\.fakeyou\.com\/.*\.mp4-thumb\.gif\?_r=\d+$/,
-    );
+    expect(probes[0].src).toMatch(/^https:\/\/cdn-2\.fakeyou\.com\/.*\.mp4-thumb\.gif\?_r=\d+$/);
 
     probes[0].onload!();
     expect(getVideoThumbnailState(THUMB)).toEqual({
@@ -157,14 +145,7 @@ describe("GalleryThumbnail", () => {
   });
 
   it("leaves image thumbnails on the placeholder fallback", () => {
-    render(
-      <GalleryThumbnail
-        thumbnail={THUMB}
-        alt="Image"
-        isVideo={false}
-        fallbackIcon={VideoIcon}
-      />,
-    );
+    render(<GalleryThumbnail thumbnail={THUMB} alt="Image" isVideo={false} fallbackIcon={VideoIcon} />);
     fireEvent.error(screen.getByRole("img"));
     expect(screen.getByRole("img").getAttribute("src")).toBe("placeholder.png");
     expect(getVideoThumbnailState(THUMB)).toBeUndefined();
@@ -172,14 +153,7 @@ describe("GalleryThumbnail", () => {
 });
 
 function renderVideoThumbnail() {
-  render(
-    <GalleryThumbnail
-      thumbnail={THUMB}
-      alt="Video"
-      isVideo
-      fallbackIcon={VideoIcon}
-    />,
-  );
+  render(<GalleryThumbnail thumbnail={THUMB} alt="Video" isVideo fallbackIcon={VideoIcon} />);
 }
 
 // Advance time, failing every probe the checker starts along the way.

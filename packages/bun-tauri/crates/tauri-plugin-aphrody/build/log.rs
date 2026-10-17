@@ -6,6 +6,5 @@ const COMMANDS: &[&str] = &["log"];
 
 /// Build description of the `log` plugin.
 pub fn builder() -> tauri_plugin::Builder<'static> {
-    tauri_plugin::Builder::new(COMMANDS)
-        .global_api_script_path("iife/log.js")
+    tauri_plugin::Builder::new(COMMANDS).global_api_script_path("iife/log.js")
 }

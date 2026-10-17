@@ -33,17 +33,13 @@ export function captureLandingContext(): void {
     const params = new URLSearchParams(window.location.search);
 
     const rawReferralUsername = params.get("u");
-    const sanitizedReferralUsername = rawReferralUsername
-      ? sanitizeReferralUsername(rawReferralUsername)
-      : undefined;
+    const sanitizedReferralUsername = rawReferralUsername ? sanitizeReferralUsername(rawReferralUsername) : undefined;
     if (sanitizedReferralUsername) {
       persist(REFERRAL_USERNAME_KEY, sanitizedReferralUsername);
     }
 
     const rawReferralCode = params.get("r");
-    const sanitizedReferralCode = rawReferralCode
-      ? sanitizeReferralCode(rawReferralCode)
-      : undefined;
+    const sanitizedReferralCode = rawReferralCode ? sanitizeReferralCode(rawReferralCode) : undefined;
     if (sanitizedReferralCode) {
       persist(REFERRAL_CODE_KEY, sanitizedReferralCode);
     }
@@ -133,17 +129,13 @@ function writeCookie(key: string, value: string): void {
 
 function readCookie(key: string): string | undefined {
   const prefix = `${key}=`;
-  const match = document.cookie
-    .split("; ")
-    .find((entry) => entry.startsWith(prefix));
+  const match = document.cookie.split("; ").find(entry => entry.startsWith(prefix));
   if (!match) return undefined;
   return decodeURIComponent(match.slice(prefix.length)) || undefined;
 }
 
 function getApexCookieDomainAttr(): string {
   const hostname = window.location.hostname;
-  const apex = APEX_DOMAINS.find(
-    (d) => hostname === d || hostname.endsWith(`.${d}`),
-  );
+  const apex = APEX_DOMAINS.find(d => hostname === d || hostname.endsWith(`.${d}`));
   return apex ? `; Domain=.${apex}` : "";
 }

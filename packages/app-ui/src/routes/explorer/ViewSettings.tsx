@@ -73,16 +73,8 @@ function SwitchSetting({
   );
 }
 
-export function ViewSettingsPanel({
-  viewSettings,
-  setViewSettings,
-  viewMode,
-  totalFileCount,
-}: ViewSettingsPanelProps) {
-  const sizeViewLimit = Math.min(
-    viewSettings.sizeViewItemLimit || 500,
-    totalFileCount || 500,
-  );
+export function ViewSettingsPanel({ viewSettings, setViewSettings, viewMode, totalFileCount }: ViewSettingsPanelProps) {
+  const sizeViewLimit = Math.min(viewSettings.sizeViewItemLimit || 500, totalFileCount || 500);
   return (
     <div className="w-72 bg-surface-container rounded-medium shadow-md3-3 p-4 space-y-4 border border-outline-variant/50">
       <div className="text-title-small text-on-surface font-medium border-b border-outline-variant/60 pb-2">
@@ -98,22 +90,20 @@ export function ViewSettingsPanel({
           max={400}
           step={8}
           value={viewSettings.columnWidth}
-          onChange={(columnWidth) => setViewSettings({ columnWidth })}
+          onChange={columnWidth => setViewSettings({ columnWidth })}
         />
       )}
 
       {/* Grid Size (Grid View and Media View) */}
       {(viewMode === "grid" || viewMode === "media") && (
         <SliderSetting
-          label={
-            viewMode === "media" ? "Taille des vignettes" : "Taille de grille"
-          }
+          label={viewMode === "media" ? "Taille des vignettes" : "Taille de grille"}
           valueLabel={`${viewSettings.gridSize}px`}
           min={80}
           max={400}
           step={10}
           value={viewSettings.gridSize}
-          onChange={(gridSize) => setViewSettings({ gridSize })}
+          onChange={gridSize => setViewSettings({ gridSize })}
         />
       )}
 
@@ -126,7 +116,7 @@ export function ViewSettingsPanel({
           max={32}
           step={1}
           value={viewSettings.gapSize}
-          onChange={(gapSize) => setViewSettings({ gapSize })}
+          onChange={gapSize => setViewSettings({ gapSize })}
         />
       )}
 
@@ -139,26 +129,20 @@ export function ViewSettingsPanel({
           max={Math.max(50, totalFileCount || 500)}
           step={10}
           value={sizeViewLimit}
-          onChange={(sizeViewItemLimit) =>
-            setViewSettings({ sizeViewItemLimit })
-          }
+          onChange={sizeViewItemLimit => setViewSettings({ sizeViewItemLimit })}
         />
       )}
 
       <SwitchSetting
         label="Afficher la taille des fichiers"
         checked={!!viewSettings.showFileSize}
-        onChange={() =>
-          setViewSettings({ showFileSize: !viewSettings.showFileSize })
-        }
+        onChange={() => setViewSettings({ showFileSize: !viewSettings.showFileSize })}
       />
 
       <SwitchSetting
         label="Dossiers en premier"
         checked={!!viewSettings.foldersFirst}
-        onChange={() =>
-          setViewSettings({ foldersFirst: !viewSettings.foldersFirst })
-        }
+        onChange={() => setViewSettings({ foldersFirst: !viewSettings.foldersFirst })}
       />
     </div>
   );
@@ -201,8 +185,7 @@ export function ViewSettings({ className, totalFileCount }: ViewSettingsProps) {
 
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isOpen]);
 

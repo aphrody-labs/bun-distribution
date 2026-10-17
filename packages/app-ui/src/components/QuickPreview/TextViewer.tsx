@@ -5,7 +5,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import { languageMapping } from "./prism";
 
 const prismaLazy = import("./prism-lazy").then(({ loadPrism }) => loadPrism());
-prismaLazy.catch((e) => console.error("Failed to load prism-lazy", e));
+prismaLazy.catch(e => console.error("Failed to load prism-lazy", e));
 
 export interface TextViewerProps {
   src: string;
@@ -17,14 +17,7 @@ export interface TextViewerProps {
 }
 
 export const TextViewer = memo(
-  ({
-    src,
-    className,
-    onLoad,
-    onError,
-    codeExtension,
-    isSidebarPreview,
-  }: TextViewerProps) => {
+  ({ src, className, onLoad, onError, codeExtension, isSidebarPreview }: TextViewerProps) => {
     const [lines, setLines] = useState<string[]>([]);
     const parentRef = useRef<HTMLPreElement>(null);
     // oxlint-disable-next-line react/incompatible-library -- @tanstack/react-virtual useVirtualizer returns a mutable instance that the React Compiler cannot memoize safely
@@ -42,19 +35,13 @@ export const TextViewer = memo(
         mode: "cors",
         signal: controller.signal,
       })
-        .then((response) => {
-          if (!response.ok)
-            throw new Error(`Invalid response: ${response.statusText}`);
+        .then(response => {
+          if (!response.ok) throw new Error(`Invalid response: ${response.statusText}`);
           if (!response.body) return;
           onLoad?.(new UIEvent("load", {}));
 
-          const reader = response.body
-            .pipeThrough(new TextDecoderStream())
-            .getReader();
-          return reader.read().then(function ingestLines({
-            done,
-            value,
-          }): void | Promise<void> {
+          const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+          return reader.read().then(function ingestLines({ done, value }): void | Promise<void> {
             if (done) return;
 
             const chunks = value.split("\n");
@@ -65,9 +52,8 @@ export const TextViewer = memo(
             return reader.read().then(ingestLines);
           });
         })
-        .catch((error) => {
-          if (!controller.signal.aborted)
-            onError?.(new ErrorEvent("error", { message: `${error}` }));
+        .catch(error => {
+          if (!controller.signal.aborted) onError?.(new ErrorEvent("error", { message: `${error}` }));
         });
 
       return () => controller.abort();
@@ -83,20 +69,14 @@ export const TextViewer = memo(
         <div
           className={clsx(
             "relative w-full whitespace-pre text-body-medium text-on-surface",
-            codeExtension &&
-              `language-${languageMapping.get(codeExtension) ?? codeExtension}`,
+            codeExtension && `language-${languageMapping.get(codeExtension) ?? codeExtension}`,
           )}
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
           }}
         >
-          {rowVirtualizer.getVirtualItems().map((row) => (
-            <TextRow
-              key={row.key}
-              codeExtension={codeExtension}
-              row={row}
-              content={lines[row.index]!}
-            />
+          {rowVirtualizer.getVirtualItems().map(row => (
+            <TextRow key={row.key} codeExtension={codeExtension} row={row} content={lines[row.index]!} />
           ))}
         </div>
       </pre>
@@ -104,15 +84,7 @@ export const TextViewer = memo(
   },
 );
 
-function TextRow({
-  codeExtension,
-  row,
-  content,
-}: {
-  codeExtension?: string;
-  row: VirtualItem;
-  content: string;
-}) {
+function TextRow({ codeExtension, row, content }: { codeExtension?: string; row: VirtualItem; content: string }) {
   const contentRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -122,13 +94,9 @@ function TextRow({
     let intersectionObserver: null | IntersectionObserver = null;
 
     prismaLazy.then(({ highlightElement }) => {
-      intersectionObserver = new IntersectionObserver((events) => {
+      intersectionObserver = new IntersectionObserver(events => {
         for (const event of events) {
-          if (
-            !event.isIntersecting ||
-            ref.getAttribute("data-highlighted") === "true"
-          )
-            continue;
+          if (!event.isIntersecting || ref.getAttribute("data-highlighted") === "true") continue;
 
           ref.setAttribute("data-highlighted", "true");
           highlightElement(event.target, false);
@@ -159,9 +127,7 @@ function TextRow({
       {codeExtension && (
         <div
           key={row.key}
-          className={clsx(
-            "token block shrink-0 whitespace-pre pl-2 pr-4 text-sm leading-6 text-gray-450",
-          )}
+          className={clsx("token block shrink-0 whitespace-pre pl-2 pr-4 text-sm leading-6 text-gray-450")}
         >
           {row.index + 1}
         </div>

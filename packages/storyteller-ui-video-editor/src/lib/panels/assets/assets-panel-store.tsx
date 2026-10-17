@@ -12,23 +12,13 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 
-export const TAB_KEYS = [
-  "media",
-  "sounds",
-  "text",
-  "stickers",
-  "effects",
-  "captions",
-  "settings",
-] as const;
+export const TAB_KEYS = ["media", "sounds", "text", "stickers", "effects", "captions", "settings"] as const;
 
 export type Tab = (typeof TAB_KEYS)[number];
 
 const createHugeiconsIcon =
   ({ icon }: { icon: IconSvgElement }) =>
-  ({ className }: { className?: string }) => (
-    <HugeiconsIcon icon={icon} className={className} />
-  );
+  ({ className }: { className?: string }) => <HugeiconsIcon icon={icon} className={className} />;
 
 export const tabs = {
   media: {
@@ -59,10 +49,7 @@ export const tabs = {
     icon: createHugeiconsIcon({ icon: Settings01Icon }),
     label: "Settings",
   },
-} satisfies Record<
-  Tab,
-  { icon: ElementType<{ className?: string }>; label: string }
->;
+} satisfies Record<Tab, { icon: ElementType<{ className?: string }>; label: string }>;
 
 export type MediaViewMode = "grid" | "list";
 export type MediaSortKey = "name" | "type" | "duration" | "size";
@@ -85,23 +72,21 @@ interface AssetsPanelStore {
 
 export const useAssetsPanelStore = create<AssetsPanelStore>()(
   persist(
-    (set) => ({
+    set => ({
       activeTab: "media",
-      setActiveTab: (tab) => set({ activeTab: tab }),
+      setActiveTab: tab => set({ activeTab: tab }),
       highlightMediaId: null,
-      requestRevealMedia: (mediaId) =>
-        set({ activeTab: "media", highlightMediaId: mediaId }),
+      requestRevealMedia: mediaId => set({ activeTab: "media", highlightMediaId: mediaId }),
       clearHighlight: () => set({ highlightMediaId: null }),
       mediaViewMode: "grid",
-      setMediaViewMode: (mode) => set({ mediaViewMode: mode }),
+      setMediaViewMode: mode => set({ mediaViewMode: mode }),
       mediaSortBy: "name",
       mediaSortOrder: "asc",
-      setMediaSort: ({ key, order }) =>
-        set({ mediaSortBy: key, mediaSortOrder: order }),
+      setMediaSort: ({ key, order }) => set({ mediaSortBy: key, mediaSortOrder: order }),
     }),
     {
       name: "assets-panel",
-      partialize: (state) => ({
+      partialize: state => ({
         mediaViewMode: state.mediaViewMode,
         mediaSortBy: state.mediaSortBy,
         mediaSortOrder: state.mediaSortOrder,

@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Pure state helpers of the Models hub (models-hub.tsx): progress aggregation over the
 // `aphrody://model-pull` events, measured throughput, and catalog/store joins.
-import type {
-  CatalogEntry,
-  HardwareTelemetry,
-  InstalledModels,
-  PullProgress,
-} from "./tauri-bridge";
+import type { CatalogEntry, HardwareTelemetry, InstalledModels, PullProgress } from "./tauri-bridge";
 import { FuzzySearch } from "@aphrody/fuzzy";
 
 /** Jan hub search contract, adapted to Aphrody's existing catalog/store schema.
@@ -18,17 +13,18 @@ export function cleanModelSearchQuery(raw: string): string {
   return raw.trim().replace(/^https?:\/\/[^/]+\//i, "");
 }
 
-export function searchModelCatalog<
-  T extends Pick<CatalogEntry, "id" | "title" | "summary" | "files">,
->(entries: T[], rawQuery: string): T[] {
+export function searchModelCatalog<T extends Pick<CatalogEntry, "id" | "title" | "summary" | "files">>(
+  entries: T[],
+  rawQuery: string,
+): T[] {
   const query = cleanModelSearchQuery(rawQuery).toLowerCase();
   if (!query) return entries;
-  const documents = entries.map((entry) => {
-    const variants = entry.files.flatMap((file) => {
+  const documents = entries.map(entry => {
+    const variants = entry.files.flatMap(file => {
       const ref = file.ref.replace(/^hf:/, "").split("@")[0]!;
       return [ref, ref.split("/").at(-1)!];
     });
-    const repos = entry.files.flatMap((file) => {
+    const repos = entry.files.flatMap(file => {
       const match = file.ref.match(/^hf:([^/]+\/[^/]+)\//);
       return match ? [match[1]!] : [];
     });
@@ -46,16 +42,10 @@ export function searchModelCatalog<
     keys: ["names", "variants", "summary"],
   });
   const rank = (document: (typeof documents)[number]) => {
-    const names = document.names.map((name) => name.trim().toLowerCase());
+    const names = document.names.map(name => name.trim().toLowerCase());
     if (names.includes(query)) return 0;
-    if (
-      document.variants.some(
-        (variant) => variant.trim().toLowerCase() === query,
-      )
-    )
-      return 1;
-    if (names.some((name) => name.startsWith(query) || query.startsWith(name)))
-      return 2;
+    if (document.variants.some(variant => variant.trim().toLowerCase() === query)) return 1;
+    if (names.some(name => name.startsWith(query) || query.startsWith(name))) return 2;
     return 3;
   };
   return fuse
@@ -89,10 +79,7 @@ export function entryBytes(entry: Pick<CatalogEntry, "files">): number | null {
   return total;
 }
 
-export function startDownload(
-  total: number | null,
-  now: number,
-): DownloadState {
+export function startDownload(total: number | null, now: number): DownloadState {
   return {
     roles: {},
     downloaded: 0,
@@ -105,16 +92,9 @@ export function startDownload(
 }
 
 /** Fold one progress event into the entry's state; throughput is measured, never assumed. */
-export function applyProgress(
-  state: DownloadState,
-  event: PullProgress,
-  now: number,
-): DownloadState {
+export function applyProgress(state: DownloadState, event: PullProgress, now: number): DownloadState {
   const roles = { ...state.roles, [event.role ?? "file"]: event.downloaded };
-  const downloaded = Object.values(roles).reduce(
-    (sum, bytes) => sum + bytes,
-    0,
-  );
+  const downloaded = Object.values(roles).reduce((sum, bytes) => sum + bytes, 0);
   const elapsed = (now - state.sampledAt) / 1000;
   const delta = downloaded - state.downloaded;
   let speedBps = state.speedBps;
@@ -122,27 +102,19 @@ export function applyProgress(
     const instant = delta / elapsed;
     speedBps = speedBps === null ? instant : speedBps * 0.7 + instant * 0.3;
   }
-  const remaining =
-    state.total === null ? null : Math.max(0, state.total - downloaded);
-  const etaSeconds =
-    remaining !== null && speedBps ? Math.ceil(remaining / speedBps) : null;
+  const remaining = state.total === null ? null : Math.max(0, state.total - downloaded);
+  const etaSeconds = remaining !== null && speedBps ? Math.ceil(remaining / speedBps) : null;
   return { ...state, roles, downloaded, speedBps, etaSeconds, sampledAt: now };
 }
 
 export function installedIds(installed: InstalledModels | null): Set<string> {
-  return new Set(
-    (installed?.models ?? []).flatMap((model) =>
-      model.catalog_id ? [model.catalog_id] : [],
-    ),
-  );
+  return new Set((installed?.models ?? []).flatMap(model => (model.catalog_id ? [model.catalog_id] : [])));
 }
 
 /** Largest probed GPU memory in bytes; `null` when the GPU probe failed. */
-export function maxVramBytes(
-  hardware: HardwareTelemetry | null,
-): number | null {
+export function maxVramBytes(hardware: HardwareTelemetry | null): number | null {
   if (!hardware || hardware.gpus === null) return null;
-  const fromGpus = Math.max(0, ...hardware.gpus.map((gpu) => gpu.vram_bytes));
+  const fromGpus = Math.max(0, ...hardware.gpus.map(gpu => gpu.vram_bytes));
   const fromCuda = (hardware.cudaVramTotalMb ?? 0) * 1024 * 1024;
   return Math.max(fromGpus, fromCuda);
 }
@@ -217,24 +189,17 @@ export interface DetectedExternalStore {
 }
 
 /** Resolve external model store path against a base user home directory, respecting platform separators. */
-export function resolveExternalModelPath(
-  homeDir: string,
-  defaultSubpath: string,
-): string {
+export function resolveExternalModelPath(homeDir: string, defaultSubpath: string): string {
   const isWindows = homeDir.includes("\\") || /^[a-zA-Z]:/.test(homeDir);
   const sep = isWindows ? "\\" : "/";
   const cleanHome = homeDir.replace(/[/\\]+$/, "");
-  const cleanSubpath = isWindows
-    ? defaultSubpath.replace(/\//g, "\\")
-    : defaultSubpath.replace(/\\/g, "/");
+  const cleanSubpath = isWindows ? defaultSubpath.replace(/\//g, "\\") : defaultSubpath.replace(/\\/g, "/");
   return `${cleanHome}${sep}${cleanSubpath}`;
 }
 
 /** Given a home directory, build candidate paths for all standard external model stores. */
-export function buildStandardExternalCandidates(
-  homeDir: string,
-): ExternalStoreCandidate[] {
-  return STANDARD_EXTERNAL_MODEL_DIRS.map((def) =>
+export function buildStandardExternalCandidates(homeDir: string): ExternalStoreCandidate[] {
+  return STANDARD_EXTERNAL_MODEL_DIRS.map(def =>
     Object.assign(def, {
       path: resolveExternalModelPath(homeDir, def.defaultSubpath),
     }),
@@ -264,14 +229,10 @@ export function evaluateDetectedStores(
   candidates: ExternalStoreCandidate[],
   probes: Record<string, { exists: boolean; modelCount?: number } | boolean>,
 ): DetectedExternalStore[] {
-  return candidates.map((candidate) => {
+  return candidates.map(candidate => {
     const probe = probes[candidate.path] ?? probes[candidate.id];
-    const exists =
-      typeof probe === "boolean" ? probe : (probe?.exists ?? false);
-    const modelCount =
-      typeof probe === "object" && probe !== null
-        ? probe.modelCount
-        : undefined;
+    const exists = typeof probe === "boolean" ? probe : (probe?.exists ?? false);
+    const modelCount = typeof probe === "object" && probe !== null ? probe.modelCount : undefined;
     return {
       id: candidate.id,
       name: candidate.name,
@@ -285,10 +246,7 @@ export function evaluateDetectedStores(
 
 async function probeExternalStore(
   c: ExternalStoreCandidate,
-  probeFn: (
-    path: string,
-    id: string,
-  ) => Promise<{ exists: boolean; modelCount?: number } | boolean>,
+  probeFn: (path: string, id: string) => Promise<{ exists: boolean; modelCount?: number } | boolean>,
 ): Promise<DetectedExternalStore> {
   try {
     const res = await probeFn(c.path, c.id);
@@ -307,14 +265,11 @@ async function probeExternalStore(
  */
 export async function scanExternalModelDirectories(
   homeDir: string,
-  probeFn?: (
-    path: string,
-    id: string,
-  ) => Promise<{ exists: boolean; modelCount?: number } | boolean>,
+  probeFn?: (path: string, id: string) => Promise<{ exists: boolean; modelCount?: number } | boolean>,
 ): Promise<DetectedExternalStore[]> {
   const candidates = buildStandardExternalCandidates(homeDir);
   if (!probeFn) {
-    return candidates.map((c) => ({
+    return candidates.map(c => ({
       id: c.id,
       name: c.name,
       path: c.path,
@@ -322,7 +277,7 @@ export async function scanExternalModelDirectories(
       description: c.description,
     }));
   }
-  return Promise.all(candidates.map((c) => probeExternalStore(c, probeFn)));
+  return Promise.all(candidates.map(c => probeExternalStore(c, probeFn)));
 }
 
 export type ModelKind = "chat" | "embedding" | "OCR" | "speech";

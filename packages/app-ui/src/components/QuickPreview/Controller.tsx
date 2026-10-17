@@ -23,9 +23,7 @@ export const QuickPreviewController = memo(function QuickPreviewController({
   // because it's memoized and doesn't read selectedFiles directly
   if (!quickPreviewFileId) return null;
 
-  const currentIndex = currentFiles.findIndex(
-    (f) => f.id === quickPreviewFileId,
-  );
+  const currentIndex = currentFiles.findIndex(f => f.id === quickPreviewFileId);
   const hasPrevious = currentIndex > 0;
   const hasNext = currentIndex < currentFiles.length - 1;
 

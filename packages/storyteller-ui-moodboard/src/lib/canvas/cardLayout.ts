@@ -7,10 +7,7 @@ export const DEFAULT_CARD_COLOR = "#FFFFFF";
 // Height of one child when laid out inside a card: child's native aspect
 // ratio applied to (cardWidth - 2*padding), falling back to the child's own
 // height when aspect isn't available (text nodes, nested containers).
-export const childRenderedHeight = (
-  child: MoodboardNode,
-  innerWidth: number,
-): number => {
+export const childRenderedHeight = (child: MoodboardNode, innerWidth: number): number => {
   if (child.kind === "image" || child.kind === "video") {
     const ratio =
       child.naturalH > 0 && child.naturalW > 0
@@ -22,10 +19,7 @@ export const childRenderedHeight = (
   return child.height;
 };
 
-export const computeCardHeight = (
-  card: CardNode,
-  nodes: Record<string, MoodboardNode>,
-): number => {
+export const computeCardHeight = (card: CardNode, nodes: Record<string, MoodboardNode>): number => {
   const innerW = Math.max(card.width - card.padding * 2, 1);
   let total = card.padding;
   for (const cid of card.childIds) {

@@ -4,7 +4,6 @@
 
 //! Read and write to the system clipboard.
 
-
 use tauri::{
     Manager, Runtime,
     plugin::{Builder, TauriPlugin},
@@ -40,7 +39,7 @@ impl<R: Runtime, T: Manager<R>> crate::clipboard_manager::ClipboardExt<R> for T 
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("clipboard-manager")
-        .invoke_handler(tauri::generate_handler![#![plugin(clipboard_manager)] 
+        .invoke_handler(tauri::generate_handler![#![plugin(clipboard_manager)]
             commands::write_text,
             commands::read_text,
             commands::read_image,

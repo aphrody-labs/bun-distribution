@@ -8,14 +8,9 @@ import { useI18n } from "../../i18n";
 import { isTauri } from "../../tauri-bridge";
 import { productSearchMessages } from "./product-search-messages";
 
-export function ProductSearchHome({
-  assetBase,
-}: {
-  publicPreview?: boolean;
-  assetBase?: string;
-}) {
-  const language = useI18n((state) => state.language);
-  const setLanguage = useI18n((state) => state.setLanguage);
+export function ProductSearchHome({ assetBase }: { publicPreview?: boolean; assetBase?: string }) {
+  const language = useI18n(state => state.language);
+  const setLanguage = useI18n(state => state.setLanguage);
   const text = productSearchMessages[language];
   const [query, setQuery] = useState("");
   const [page, setPage] = useState<GoogleSearchPage | null>(null);
@@ -55,37 +50,25 @@ export function ProductSearchHome({
       <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-5 py-12 text-center sm:px-8 sm:py-20">
         <div className="mb-5 flex items-center gap-4">
           <AphrodyAvatar size={64} label={text.logo} />
-          <h1
-            id="aphrody-home-title"
-            className="text-display-large font-medium tracking-tight"
-          >
+          <h1 id="aphrody-home-title" className="text-display-large font-medium tracking-tight">
             Aphrody
           </h1>
         </div>
-        <p className="mb-8 text-body-large text-on-surface-variant">
-          {text.intro}
-        </p>
+        <p className="mb-8 text-body-large text-on-surface-variant">{text.intro}</p>
         <search aria-label={text.searchLabel} className="w-full">
-          <form
-            aria-label={text.searchLabel}
-            onSubmit={submit}
-            className="w-full"
-          >
+          <form aria-label={text.searchLabel} onSubmit={submit} className="w-full">
             <label htmlFor="aphrody-home-search" className="sr-only">
               {text.search}
             </label>
             <div className="flex min-h-16 items-center gap-3 rounded-full bg-surface-container-high px-5 shadow-sm ring-1 ring-outline-variant focus-within:ring-2 focus-within:ring-primary">
-              <span
-                className="material-symbol text-2xl text-on-surface-variant"
-                aria-hidden="true"
-              >
+              <span className="material-symbol text-2xl text-on-surface-variant" aria-hidden="true">
                 search
               </span>
               <input
                 id="aphrody-home-search"
                 type="search"
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={event => setQuery(event.target.value)}
                 required
                 placeholder={text.search}
                 autoComplete="off"
@@ -104,16 +87,12 @@ export function ProductSearchHome({
             </div>
           </form>
         </search>
-        <p className="mt-4 text-body-small text-on-surface-variant">
-          {text.privacy}
-        </p>
+        <p className="mt-4 text-body-small text-on-surface-variant">{text.privacy}</p>
         <label className="mt-4 flex items-center gap-2 text-body-small">
           {text.language}
           <select
             value={language}
-            onChange={(event) =>
-              setLanguage(event.target.value === "en" ? "en" : "fr")
-            }
+            onChange={event => setLanguage(event.target.value === "en" ? "en" : "fr")}
             className="rounded-lg bg-surface-container p-2"
           >
             <option value="fr">{text.french}</option>
@@ -127,30 +106,14 @@ export function ProductSearchHome({
           {text.os}
         </Link>
         <div className="mt-7" aria-hidden="true">
-          <AphrodyPet
-            atlasUrl={publicPetAtlas(PET_ATLAS_URL, assetBase)}
-            height={80}
-            label={text.pet}
-          />
+          <AphrodyPet atlasUrl={publicPetAtlas(PET_ATLAS_URL, assetBase)} height={80} label={text.pet} />
         </div>
       </section>
-      <section
-        aria-live="polite"
-        aria-busy={busy}
-        className="mx-auto w-full max-w-3xl px-5 sm:px-8"
-      >
+      <section aria-live="polite" aria-busy={busy} className="mx-auto w-full max-w-3xl px-5 sm:px-8">
         {failed && (
-          <div
-            role="alert"
-            className="mb-8 rounded-extra-large bg-error-container p-5 text-on-error-container"
-          >
+          <div role="alert" className="mb-8 rounded-extra-large bg-error-container p-5 text-on-error-container">
             <p>{text.unavailable}</p>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void run()}
-              className="mt-3 min-h-12 underline"
-            >
+            <button type="button" disabled={busy} onClick={() => void run()} className="mt-3 min-h-12 underline">
               {text.retry}
             </button>
             <Link to="/docs" className="ml-5 min-h-12 content-center underline">
@@ -170,11 +133,9 @@ export function ProductSearchHome({
             )}
             {page.organic.length === 0 && <p className="mt-4">{text.empty}</p>}
             <ol className="mt-6 flex flex-col gap-6">
-              {page.organic.map((hit) => (
+              {page.organic.map(hit => (
                 <li key={hit.url + hit.title}>
-                  <p className="truncate text-body-small text-on-surface-variant">
-                    {hit.url}
-                  </p>
+                  <p className="truncate text-body-small text-on-surface-variant">{hit.url}</p>
                   <a
                     href={hit.url}
                     target="_blank"
@@ -201,27 +162,18 @@ export function ProductSearchHome({
           <Link className="min-h-12 content-center underline" to="/templates">
             {text.templates}
           </Link>
-          <Link
-            className="min-h-12 content-center underline"
-            to="/material-3/components"
-          >
+          <Link className="min-h-12 content-center underline" to="/material-3/components">
             {text.material}
           </Link>
           <Link className="min-h-12 content-center underline" to="/os">
             {text.files}
           </Link>
           {isTauri() && (
-            <Link
-              className="min-h-12 content-center underline"
-              to="/studio?section=drive"
-            >
+            <Link className="min-h-12 content-center underline" to="/studio?section=drive">
               {text.drive}
             </Link>
           )}
-          <a
-            className="min-h-12 content-center underline"
-            href="https://downloads.aphrody.com/"
-          >
+          <a className="min-h-12 content-center underline" href="https://downloads.aphrody.com/">
             {text.downloads}
           </a>
           <Link className="min-h-12 content-center underline" to="/studio">

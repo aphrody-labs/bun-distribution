@@ -3,11 +3,27 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-memory-l1-1-8.dll!AllocateUserPhysicalPages2 */
-  AllocateUserPhysicalPages2(ObjectHandle: Win32Pointer, NumberOfPages: Win32Pointer, PageArray: Win32Pointer, ExtendedParameters: Win32Pointer, ExtendedParameterCount: number): number;
+  AllocateUserPhysicalPages2(
+    ObjectHandle: Win32Pointer,
+    NumberOfPages: Win32Pointer,
+    PageArray: Win32Pointer,
+    ExtendedParameters: Win32Pointer,
+    ExtendedParameterCount: number,
+  ): number;
   /** api-ms-win-core-memory-l1-1-8.dll!OpenDedicatedMemoryPartition */
-  OpenDedicatedMemoryPartition(Partition: Win32Pointer, DedicatedMemoryTypeId: number | bigint, DesiredAccess: number, InheritHandle: number): number | null;
+  OpenDedicatedMemoryPartition(
+    Partition: Win32Pointer,
+    DedicatedMemoryTypeId: number | bigint,
+    DesiredAccess: number,
+    InheritHandle: number,
+  ): number | null;
   /** api-ms-win-core-memory-l1-1-8.dll!QueryPartitionInformation */
-  QueryPartitionInformation(Partition: Win32Pointer, PartitionInformationClass: number, PartitionInformation: Win32Pointer, PartitionInformationLength: number): number;
+  QueryPartitionInformation(
+    Partition: Win32Pointer,
+    PartitionInformationClass: number,
+    PartitionInformation: Win32Pointer,
+    PartitionInformationLength: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import {
-  NativeLocalAI,
-  type LocalAISelection,
-  type LocalAIResult,
-} from "../../src/lab/local-ai.ts";
+import { NativeLocalAI, type LocalAISelection, type LocalAIResult } from "../../src/lab/local-ai.ts";
 
 const gemma = { model: "gemma-4-e2b-it-q4km", profile: "aphrody" };
 const shenron = { model: "qwen3-4b-instruct-2507-q4km", profile: "dbfr" };
@@ -22,7 +18,7 @@ test("the next model cannot open until native destruction completes", async () =
   const closing = Promise.withResolvers<void>();
   const order: string[] = [];
   let resident = 0;
-  const ai = new NativeLocalAI(async (selection) => {
+  const ai = new NativeLocalAI(async selection => {
     expect(++resident).toBe(1);
     order.push(`open:${selection.profile}`);
     return {
@@ -45,13 +41,8 @@ test("the next model cannot open until native destruction completes", async () =
   expect(order).toEqual(["open:aphrody"]);
   release.resolve();
   const answers = await Promise.all([first, second]);
-  expect(answers.map((answer) => answer.profile)).toEqual(["aphrody", "dbfr"]);
-  expect(order).toEqual([
-    "open:aphrody",
-    "close:aphrody",
-    "open:dbfr",
-    "close:dbfr",
-  ]);
+  expect(answers.map(answer => answer.profile)).toEqual(["aphrody", "dbfr"]);
+  expect(order).toEqual(["open:aphrody", "close:aphrody", "open:dbfr", "close:dbfr"]);
   expect(resident).toBe(0);
   await ai.close();
   await expect(ai.chat(gemma, input)).rejects.toThrow("closing");
@@ -59,7 +50,7 @@ test("the next model cannot open until native destruction completes", async () =
 
 test("failed generation is closed and does not poison subsequent turns", async () => {
   let closed = 0;
-  const ai = new NativeLocalAI(async (selection) => ({
+  const ai = new NativeLocalAI(async selection => ({
     async chat() {
       if (selection.profile === "aphrody") throw new Error("Generation failed");
       return result(selection);
@@ -77,7 +68,7 @@ test("an aborted queued turn does not load its model", async () => {
   const release = Promise.withResolvers<void>();
   const started = Promise.withResolvers<void>();
   let opens = 0;
-  const ai = new NativeLocalAI(async (selection) => {
+  const ai = new NativeLocalAI(async selection => {
     opens++;
     return {
       async chat() {
@@ -102,7 +93,7 @@ test("an aborted queued turn does not load its model", async () => {
 test("queue wait counts against the request deadline", async () => {
   const release = Promise.withResolvers<void>();
   let opens = 0;
-  const ai = new NativeLocalAI(async (selection) => ({
+  const ai = new NativeLocalAI(async selection => ({
     async chat() {
       opens++;
       await release.promise;
@@ -133,15 +124,9 @@ test("invalid profile or output identity fails closed and native session is free
       },
     };
   });
-  await expect(
-    ai.chat({ ...gemma, profile: "../dbfr" }, input),
-  ).rejects.toThrow("required");
-  await expect(ai.chat({ ...gemma, context: 256 }, input)).rejects.toThrow(
-    "context",
-  );
-  await expect(ai.chat({ ...gemma, context: 1000000 }, input)).rejects.toThrow(
-    "context",
-  );
+  await expect(ai.chat({ ...gemma, profile: "../dbfr" }, input)).rejects.toThrow("required");
+  await expect(ai.chat({ ...gemma, context: 256 }, input)).rejects.toThrow("context");
+  await expect(ai.chat({ ...gemma, context: 1000000 }, input)).rejects.toThrow("context");
   expect(opens).toBe(0);
   await expect(ai.chat(gemma, input)).rejects.toThrow("identity");
   expect(closed).toBe(1);

@@ -20,15 +20,10 @@ export interface ListCharactersRequest {
 }
 
 export class CharactersApi extends ApiManager {
-  public CreateCharacter(
-    params: CreateCharacterRequest,
-  ): Promise<ApiResponse<{ inference_job_token: string }>> {
+  public CreateCharacter(params: CreateCharacterRequest): Promise<ApiResponse<{ inference_job_token: string }>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/character/create`;
 
-    return this.post<
-      CreateCharacterRequest,
-      { success: boolean; inference_job_token: string }
-    >({
+    return this.post<CreateCharacterRequest, { success: boolean; inference_job_token: string }>({
       endpoint,
       body: params,
     })
@@ -36,21 +31,16 @@ export class CharactersApi extends ApiManager {
         success,
         data: { inference_job_token },
       }))
-      .catch((err) => ({
+      .catch(err => ({
         success: false,
         errorMessage: err.message,
       }));
   }
 
-  public EditCharacter(
-    params: EditCharacterRequest,
-  ): Promise<ApiResponse<undefined>> {
+  public EditCharacter(params: EditCharacterRequest): Promise<ApiResponse<undefined>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/character/edit`;
 
-    return this.post<
-      EditCharacterRequest,
-      { success: boolean; BadInput?: string }
-    >({
+    return this.post<EditCharacterRequest, { success: boolean; BadInput?: string }>({
       endpoint,
       body: params,
     })
@@ -58,17 +48,13 @@ export class CharactersApi extends ApiManager {
         success: success ?? false,
         errorMessage: BadInput,
       }))
-      .catch((err) => ({
+      .catch(err => ({
         success: false,
         errorMessage: err.message,
       }));
   }
 
-  public GetCharacter({
-    characterToken,
-  }: {
-    characterToken: string;
-  }): Promise<ApiResponse<Character>> {
+  public GetCharacter({ characterToken }: { characterToken: string }): Promise<ApiResponse<Character>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/character/${characterToken}`;
 
     return this.get<{ success: boolean; character: Character }>({ endpoint })
@@ -76,17 +62,13 @@ export class CharactersApi extends ApiManager {
         success,
         data: character,
       }))
-      .catch((err) => ({
+      .catch(err => ({
         success: false,
         errorMessage: err.message,
       }));
   }
 
-  public DeleteCharacter({
-    characterToken,
-  }: {
-    characterToken: string;
-  }): Promise<ApiResponse<undefined>> {
+  public DeleteCharacter({ characterToken }: { characterToken: string }): Promise<ApiResponse<undefined>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/character/${characterToken}`;
 
     return this.delete<null, { success: boolean }>({
@@ -95,7 +77,7 @@ export class CharactersApi extends ApiManager {
       .then(({ success }) => ({
         success: success ?? false,
       }))
-      .catch((err) => ({
+      .catch(err => ({
         success: false,
         errorMessage: err.message,
       }));
@@ -106,21 +88,19 @@ export class CharactersApi extends ApiManager {
   ): Promise<ApiResponse<Character[], { next_cursor?: number | null }>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/characters/session`;
 
-    const query = params?.cursor
-      ? { cursor: params.cursor.toString() }
-      : undefined;
+    const query = params?.cursor ? { cursor: params.cursor.toString() } : undefined;
 
     return this.get<{
       success: boolean;
       characters: Character[];
       next_cursor?: number | null;
     }>({ endpoint, query })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.characters,
         pagination: { next_cursor: response.next_cursor },
       }))
-      .catch((err) => ({
+      .catch(err => ({
         success: false,
         errorMessage: err.message,
       }));
@@ -131,12 +111,9 @@ export class CharactersApi extends ApiManager {
     let cursor: number | undefined = undefined;
 
     while (true) {
-      const res: ApiResponse<Character[], { next_cursor?: number | null }> =
-        await this.ListCharacters({ cursor });
+      const res: ApiResponse<Character[], { next_cursor?: number | null }> = await this.ListCharacters({ cursor });
       if (!res.success || !res.data) {
-        return all.length > 0
-          ? { success: true, data: all }
-          : { success: false, errorMessage: res.errorMessage };
+        return all.length > 0 ? { success: true, data: all } : { success: false, errorMessage: res.errorMessage };
       }
       all.push(...res.data);
       const next = res.pagination?.next_cursor;

@@ -7,13 +7,7 @@
  * benchmarks, and codebase fingerprints.
  */
 import { Database } from "bun:sqlite";
-import {
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-} from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { findRepoRoot } from "../vfs/index";
@@ -29,10 +23,7 @@ export function redactSecrets(text: string | null | undefined): string {
   return (
     text
       // 1. OpenAI API Keys (sk-..., sk-proj-..., sk-admin-..., ctx7sk-...)
-      .replace(
-        /(?:[a-zA-Z0-9_-]*?)sk-(?:proj-|admin-|org-)?[a-zA-Z0-9_-]{20,}/g,
-        "[REDACTED_OPENAI_KEY]",
-      )
+      .replace(/(?:[a-zA-Z0-9_-]*?)sk-(?:proj-|admin-|org-)?[a-zA-Z0-9_-]{20,}/g, "[REDACTED_OPENAI_KEY]")
       // 2. Google API Keys (AIza...)
       .replace(/\bAIza[0-9A-Za-z_-]{30,45}\b/g, "[REDACTED_GOOGLE_KEY]")
       // 3. GitHub Tokens (ghp_..., gho_..., github_pat_...)
@@ -50,21 +41,15 @@ export function redactSecrets(text: string | null | undefined): string {
       // 7. JSON secret fields: "password": "...", "apiKey": "...", etc.
       .replace(
         /"(?:password|passwd|pwd|secret|apiKey|api_key|apiSecret|api_secret|auth_token|access_token|private_key)"\s*:\s*"[^"]*"/gi,
-        (match) => {
+        match => {
           const key = match.split(":")[0];
           return `${key}: "[REDACTED_SECRET]"`;
         },
       )
       // 8. CLI flags --password=..., --token=...
-      .replace(
-        /--(?:password|passwd|token|secret)[=\s]+[^\s]+/gi,
-        "--password=[REDACTED_SECRET]",
-      )
+      .replace(/--(?:password|passwd|token|secret)[=\s]+[^\s]+/gi, "--password=[REDACTED_SECRET]")
       // 9. JWT tokens (header.payload.signature)
-      .replace(
-        /\bey[A-Za-z0-9_-]{10,}\.ey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9-_]{10,}\b/g,
-        "[REDACTED_JWT]",
-      )
+      .replace(/\bey[A-Za-z0-9_-]{10,}\.ey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9-_]{10,}\b/g, "[REDACTED_JWT]")
   );
 }
 
@@ -296,9 +281,7 @@ export function initLedgerDatabase(customPath?: string): Database {
 
   // Migrate existing table if 'profile' column is missing
   try {
-    db.run(
-      "ALTER TABLE training_samples ADD COLUMN profile TEXT NOT NULL DEFAULT 'yolo';",
-    );
+    db.run("ALTER TABLE training_samples ADD COLUMN profile TEXT NOT NULL DEFAULT 'yolo';");
   } catch {
     // Column already exists
   }
@@ -326,27 +309,15 @@ export interface TrainingSampleRecord {
   createdAt: string;
 }
 
-export function recordAgentTelemetry(
-  db: Database,
-  event: AgentTelemetryRecord,
-): void {
+export function recordAgentTelemetry(db: Database, event: AgentTelemetryRecord): void {
   const stmt = db.prepare(`
     INSERT INTO agent_telemetry (agent, session_id, event_type, target_path, timestamp)
     VALUES (?, ?, ?, ?, ?)
   `);
-  stmt.run(
-    event.agent,
-    event.sessionId,
-    event.eventType,
-    redactSecrets(event.targetPath),
-    event.timestamp,
-  );
+  stmt.run(event.agent, event.sessionId, event.eventType, redactSecrets(event.targetPath), event.timestamp);
 }
 
-export function recordTrainingSample(
-  db: Database,
-  sample: TrainingSampleRecord,
-): void {
+export function recordTrainingSample(db: Database, sample: TrainingSampleRecord): void {
   const profile = sample.profile ?? "yolo";
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO training_samples (sample_id, profile, domain, instruction, input_context, action, outcome, reward_score, created_at)
@@ -387,10 +358,7 @@ export function recordSession(db: Database, session: SessionRecord): void {
 /**
  * Records an audit report.
  */
-export function recordAuditReport(
-  db: Database,
-  audit: AuditReportRecord,
-): void {
+export function recordAuditReport(db: Database, audit: AuditReportRecord): void {
   const stmt = db.prepare(`
     INSERT INTO audit_reports (session_id, domain, auditor, verdict, summary, details, recorded_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -453,14 +421,7 @@ export function recordRemediation(db: Database, rem: RemediationRecord): void {
     INSERT INTO remediation_ledger (issue_code, component, description, status, patch_commit, resolved_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `);
-  stmt.run(
-    rem.issueCode,
-    rem.component,
-    redactSecrets(rem.description),
-    rem.status,
-    rem.patchCommit,
-    rem.resolvedAt,
-  );
+  stmt.run(rem.issueCode, rem.component, redactSecrets(rem.description), rem.status, rem.patchCommit, rem.resolvedAt);
 }
 
 /**
@@ -501,22 +462,9 @@ export function enforceLedgerPermissions(customPath?: string): void {
  * Recursively scans and indexes all source files in the codebase using Wyhash64.
  * Skips target/, node_modules/, .git/, vendor/, .venv/, etc.
  */
-export function indexCodebaseFingerprints(
-  db: Database,
-  rootDir: string,
-): number {
+export function indexCodebaseFingerprints(db: Database, rootDir: string): number {
   const root = resolve(rootDir);
-  const IGNORE = new Set([
-    ".git",
-    "node_modules",
-    "target",
-    "vendor",
-    ".venv",
-    ".cache",
-    "dist",
-    ".tmp",
-    "var",
-  ]);
+  const IGNORE = new Set([".git", "node_modules", "target", "vendor", ".venv", ".cache", "dist", ".tmp", "var"]);
 
   let count = 0;
   const insertStmt = db.prepare(`
@@ -535,9 +483,7 @@ export function indexCodebaseFingerprints(
         scan(fullPath);
       } else if (entry.isFile()) {
         try {
-          const ext = entry.name.includes(".")
-            ? entry.name.split(".").pop() || ""
-            : "";
+          const ext = entry.name.includes(".") ? entry.name.split(".").pop() || "" : "";
           const content = readFileSync(fullPath);
           const hash = Bun.hash.wyhash(content).toString(16);
           const relPath = relative(root, fullPath).replaceAll("\\", "/");

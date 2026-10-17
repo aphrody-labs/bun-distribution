@@ -13,10 +13,7 @@ export function getMouseTimeFromClientX({
   scrollLeft: number;
 }): MediaTime {
   const mouseX = clientX - containerRect.left + scrollLeft;
-  const seconds = Math.max(
-    0,
-    mouseX / (BASE_TIMELINE_PIXELS_PER_SECOND * zoomLevel),
-  );
+  const seconds = Math.max(0, mouseX / (BASE_TIMELINE_PIXELS_PER_SECOND * zoomLevel));
   return mediaTime({
     ticks: Math.round(seconds * TICKS_PER_SECOND),
   });

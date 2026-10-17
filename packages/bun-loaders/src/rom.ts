@@ -5,10 +5,7 @@
  * Bun.plugin entry that exposes them as `import rom from "./game.nes"`.
  */
 import type { PluginBuilder } from "bun";
-import {
-  BinaryImage,
-  type ImageSummary,
-} from "../../bun-engine/src/formats/index.ts";
+import { BinaryImage, type ImageSummary } from "../../bun-engine/src/formats/index.ts";
 
 /** Extensions routed to the console loader; content detection decides the real format. */
 export const romExtensions = [
@@ -54,7 +51,7 @@ export const romExtensions = [
 
 export function extensionFilter(extensions: readonly string[]): RegExp {
   return new RegExp(
-    `\\.(${extensions.map((extension) => extension.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})$`,
+    `\\.(${extensions.map(extension => extension.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})$`,
     "i",
   );
 }
@@ -70,9 +67,7 @@ export async function inspectRom(input: string): Promise<RomInfo> {
 }
 
 /** Module namespace for one image: the live BinaryImage plus its header, sections and summary. */
-export async function romExports(
-  path: string,
-): Promise<Record<string, unknown>> {
+export async function romExports(path: string): Promise<Record<string, unknown>> {
   const image = await BinaryImage.open(path);
   return {
     default: image,
@@ -92,19 +87,14 @@ export async function romExports(
  * runtime the module exports the live object with lazy accessors; under Bun.build it inlines the
  * JSON summary so a bundle or single-file executable carries metadata without the ROM bytes.
  */
-export function setupRomLoader(
-  build: PluginBuilder,
-  extensions: readonly string[] = romExtensions,
-): void {
+export function setupRomLoader(build: PluginBuilder, extensions: readonly string[] = romExtensions): void {
   const bundling = "config" in build && build.config !== undefined;
-  build.onLoad(
-    { filter: extensionFilter(extensions), namespace: "file" },
-    async ({ path }) =>
-      bundling
-        ? {
-            contents: JSON.stringify((await BinaryImage.open(path)).toJSON()),
-            loader: "json",
-          }
-        : { exports: await romExports(path), loader: "object" },
+  build.onLoad({ filter: extensionFilter(extensions), namespace: "file" }, async ({ path }) =>
+    bundling
+      ? {
+          contents: JSON.stringify((await BinaryImage.open(path)).toJSON()),
+          loader: "json",
+        }
+      : { exports: await romExports(path), loader: "object" },
   );
 }

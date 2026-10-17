@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 import { ModelPage } from "@storyteller/ui-model-selector";
 import { Model } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
-import {
-  EstimateSplatCost,
-  isEstimateSplatCostSuccess,
-  type CommonSplatModel,
-} from "@storyteller/tauri-api";
+import { EstimateSplatCost, isEstimateSplatCostSuccess, type CommonSplatModel } from "@storyteller/tauri-api";
 import { useCostBreakdownModalStore } from "./cost-breakdown-modal-store";
 
 const SPLAT_PAGES = new Set<ModelPage>([ModelPage.ImageTo3DWorld]);
@@ -17,9 +13,7 @@ export function useSplatCostEstimate(
   selectedProvider: string | null | undefined,
 ): { isLoading: boolean } {
   const [isLoading, setIsLoading] = useState(false);
-  const setEstimatedCreditsForPage = useCostBreakdownModalStore(
-    (s) => s.setEstimatedCreditsForPage,
-  );
+  const setEstimatedCreditsForPage = useCostBreakdownModalStore(s => s.setEstimatedCreditsForPage);
 
   useEffect(() => {
     if (!SPLAT_PAGES.has(activePage) || !selectedModel) {
@@ -33,9 +27,7 @@ export function useSplatCostEstimate(
       return;
     }
 
-    const provider =
-      (selectedProvider as GenerationProvider | null | undefined) ??
-      GenerationProvider.Artcraft;
+    const provider = (selectedProvider as GenerationProvider | null | undefined) ?? GenerationProvider.Artcraft;
 
     let cancelled = false;
     setIsLoading(true);
@@ -47,13 +39,10 @@ export function useSplatCostEstimate(
       has_reference_image: true,
       reference_image_media_tokens: ["mf_estimate_reference"],
     })
-      .then((result) => {
+      .then(result => {
         if (cancelled) return;
         if (isEstimateSplatCostSuccess(result)) {
-          setEstimatedCreditsForPage(
-            activePage,
-            result.payload.cost_in_credits ?? null,
-          );
+          setEstimatedCreditsForPage(activePage, result.payload.cost_in_credits ?? null);
         } else {
           setEstimatedCreditsForPage(activePage, null);
         }

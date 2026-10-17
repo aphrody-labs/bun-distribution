@@ -12,9 +12,9 @@ interface SyncPreferencesStore {
 
 export const useSyncPreferencesStore = create<SyncPreferencesStore>()(
   persist(
-    (set) => ({
+    set => ({
       autoSwitchOnSync: true,
-      setAutoSwitchOnSync: (enabled) => set({ autoSwitchOnSync: enabled }),
+      setAutoSwitchOnSync: enabled => set({ autoSwitchOnSync: enabled }),
     }),
     {
       name: "spacedrive-sync-preferences",

@@ -8,8 +8,7 @@
 //   const { bitmap } = await loadIcon("/favicon.ico", { size: 32 });
 //   const { svg } = await loadIcon("symbol:home?style=rounded&fill=1", { size: 24, tint: "#6750a4", output: "svg" });
 
-export type IconFormat =
-  "png" | "jpeg" | "webp" | "gif" | "svg" | "ico" | "symbol";
+export type IconFormat = "png" | "jpeg" | "webp" | "gif" | "svg" | "ico" | "symbol";
 export type Fit = "contain" | "cover" | "fill" | "none";
 export type IconSource = string | URL | Blob | ArrayBuffer | Uint8Array;
 type Bytes = Uint8Array<ArrayBuffer>;
@@ -78,8 +77,7 @@ export function parseSymbol(specifier: string): SymbolSpec {
   const body = specifier.replace(/^symbol:/, "");
   const q = body.indexOf("?");
   const name = q < 0 ? body : body.slice(0, q);
-  if (!/^[a-z0-9_]+$/.test(name))
-    throw new LoadIconError(`symbol: name "${name}" (expected [a-z0-9_]+)`);
+  if (!/^[a-z0-9_]+$/.test(name)) throw new LoadIconError(`symbol: name "${name}" (expected [a-z0-9_]+)`);
   const spec: SymbolSpec = {
     name,
     style: "outlined",
@@ -88,38 +86,26 @@ export function parseSymbol(specifier: string): SymbolSpec {
     grad: 0,
     opsz: 24,
   };
-  for (const [key, value] of new URLSearchParams(
-    q < 0 ? "" : body.slice(q + 1),
-  )) {
+  for (const [key, value] of new URLSearchParams(q < 0 ? "" : body.slice(q + 1))) {
     if (key === "style") {
-      const style = STYLES.find((s) => s === value);
-      if (!style)
-        throw new LoadIconError(
-          `symbol: style=${value} (expected outlined, rounded or sharp)`,
-        );
+      const style = STYLES.find(s => s === value);
+      if (!style) throw new LoadIconError(`symbol: style=${value} (expected outlined, rounded or sharp)`);
       spec.style = style;
     } else if (key in AXES) {
       const allowed: readonly number[] = AXES[key as keyof typeof AXES];
       const n = Number(value);
       if (value === "" || !allowed.includes(n)) {
-        throw new LoadIconError(
-          `symbol: ${key}=${value} (expected one of ${allowed.join(", ")})`,
-        );
+        throw new LoadIconError(`symbol: ${key}=${value} (expected one of ${allowed.join(", ")})`);
       }
       spec[key as keyof typeof AXES] = n;
     } else {
-      throw new LoadIconError(
-        `symbol: unknown parameter "${key}" (style, fill, wght, grad, opsz)`,
-      );
+      throw new LoadIconError(`symbol: unknown parameter "${key}" (style, fill, wght, grad, opsz)`);
     }
   }
   return spec;
 }
 
-export function symbolUrl(
-  spec: SymbolSpec,
-  origin: string = SYMBOLS_ORIGIN,
-): string {
+export function symbolUrl(spec: SymbolSpec, origin: string = SYMBOLS_ORIGIN): string {
   let variant = spec.wght === 400 ? "" : `wght${spec.wght}`;
   variant += spec.grad < 0 ? "gradN25" : spec.grad > 0 ? "grad200" : "";
   variant += spec.fill ? "fill1" : "";
@@ -138,26 +124,14 @@ function isSvg(bytes: Uint8Array): boolean {
 }
 
 /** Format from the magic bytes, as `Format::detecter` in the crate. */
-export function detectFormat(
-  bytes: Uint8Array,
-): Exclude<IconFormat, "symbol"> | undefined {
+export function detectFormat(bytes: Uint8Array): Exclude<IconFormat, "symbol"> | undefined {
   const b = bytes;
-  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47)
-    return "png";
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "png";
   if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpeg";
-  const ascii = (from: number, to: number) =>
-    String.fromCharCode(...b.subarray(from, to));
+  const ascii = (from: number, to: number) => String.fromCharCode(...b.subarray(from, to));
   if (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return "webp";
   if (/^GIF8[79]a$/.test(ascii(0, 6))) return "gif";
-  if (
-    b.length >= 6 &&
-    b[0] === 0 &&
-    b[1] === 0 &&
-    b[2] === 1 &&
-    b[3] === 0 &&
-    (b[4]! | (b[5]! << 8)) > 0
-  )
-    return "ico";
+  if (b.length >= 6 && b[0] === 0 && b[1] === 0 && b[2] === 1 && b[3] === 0 && (b[4]! | (b[5]! << 8)) > 0) return "ico";
   return isSvg(b) ? "svg" : undefined;
 }
 
@@ -167,29 +141,23 @@ export interface IcoEntry extends IcoEntryInfo {
 
 /** The directory of an ICO; sizes of PNG entries come from their IHDR. */
 export function icoEntries(bytes: Bytes): IcoEntry[] {
-  if (detectFormat(bytes) !== "ico")
-    throw new LoadIconError("ico: not an icon file");
+  if (detectFormat(bytes) !== "ico") throw new LoadIconError("ico: not an icon file");
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const count = view.getUint16(4, true);
-  if (6 + count * 16 > bytes.length)
-    throw new LoadIconError(`ico: directory of ${count} entries is truncated`);
+  if (6 + count * 16 > bytes.length) throw new LoadIconError(`ico: directory of ${count} entries is truncated`);
   return Array.from({ length: count }, (_, i) => {
     const at = 6 + i * 16;
     const size = view.getUint32(at + 8, true);
     const offset = view.getUint32(at + 12, true);
-    if (size === 0 || offset + size > bytes.length)
-      throw new LoadIconError(`ico: entry ${i} points past the end`);
+    if (size === 0 || offset + size > bytes.length) throw new LoadIconError(`ico: entry ${i} points past the end`);
     const data = bytes.subarray(offset, offset + size);
     const png = detectFormat(data) === "png";
-    if (png && data.length < 24)
-      throw new LoadIconError(`ico: entry ${i} has a truncated PNG header`);
+    if (png && data.length < 24) throw new LoadIconError(`ico: entry ${i} has a truncated PNG header`);
     const d = new DataView(data.buffer, data.byteOffset, data.byteLength);
     return {
       width: png ? d.getUint32(16) : bytes[at] || 256,
       height: png ? d.getUint32(20) : bytes[at + 1] || 256,
-      bits:
-        view.getUint16(at + 6, true) ||
-        (png ? 32 : data.length >= 16 ? d.getUint16(14, true) : 0),
+      bits: view.getUint16(at + 6, true) || (png ? 32 : data.length >= 16 ? d.getUint16(14, true) : 0),
       png,
       data,
     };
@@ -197,27 +165,19 @@ export function icoEntries(bytes: Bytes): IcoEntry[] {
 }
 
 /** `meilleure_entree` of the crate: the smallest entry covering `target`, else the largest. */
-export function bestEntry(
-  entries: readonly IcoEntryInfo[],
-  target?: number,
-): number {
+export function bestEntry(entries: readonly IcoEntryInfo[], target?: number): number {
   const side = (e: IcoEntryInfo) => Math.max(e.width, e.height);
   let best = -1;
   if (target !== undefined) {
     entries.forEach((e, i) => {
       const b = entries[best];
-      if (
-        side(e) >= target &&
-        (!b || side(e) < side(b) || (side(e) === side(b) && e.bits > b.bits))
-      )
-        best = i;
+      if (side(e) >= target && (!b || side(e) < side(b) || (side(e) === side(b) && e.bits > b.bits))) best = i;
     });
     if (best >= 0) return best;
   }
   entries.forEach((e, i) => {
     const b = entries[best];
-    if (!b || side(e) > side(b) || (side(e) === side(b) && e.bits >= b.bits))
-      best = i;
+    if (!b || side(e) > side(b) || (side(e) === side(b) && e.bits >= b.bits)) best = i;
   });
   return best;
 }
@@ -239,48 +199,35 @@ export function icoEntryBlob(entry: IcoEntry): Blob {
 }
 
 /** `#rgb`, `#rrggbb`, `#rrggbbaa` → [r, g, b, a]. */
-export function parseColor(
-  hex: string,
-): [number, number, number, number] | undefined {
+export function parseColor(hex: string): [number, number, number, number] | undefined {
   const m = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(hex);
   if (!m) return undefined;
-  const h = m[1]!.length === 3 ? [...m[1]!].map((c) => c + c).join("") : m[1]!;
+  const h = m[1]!.length === 3 ? [...m[1]!].map(c => c + c).join("") : m[1]!;
   const n = (i: number) => parseInt(h.slice(i, i + 2), 16);
   return [n(0), n(2), n(4), h.length === 8 ? n(6) : 255];
 }
 
 function px(v: number): number {
   const r = Math.round(v);
-  if (!Number.isFinite(r) || r < 1 || r > MAX_SIDE)
-    throw new LoadIconError(`side of ${r} px out of 1..${MAX_SIDE}`);
+  if (!Number.isFinite(r) || r < 1 || r > MAX_SIDE) throw new LoadIconError(`side of ${r} px out of 1..${MAX_SIDE}`);
   return r;
 }
 
 /** Output size and, for `cover`, the side of the centred square crop. Same arithmetic as the crate. */
 export function dimensions(
   [w, h]: [number, number],
-  {
-    size,
-    scale = 1,
-    fit = "contain",
-  }: Pick<LoadIconOptions, "size" | "scale" | "fit">,
+  { size, scale = 1, fit = "contain" }: Pick<LoadIconOptions, "size" | "scale" | "fit">,
 ): { width: number; height: number; crop?: number } {
   if (!(w > 0 && h > 0)) throw new LoadIconError("image of zero size");
-  if (!(scale > 0 && scale <= 16))
-    throw new LoadIconError(`scale ${scale} out of ]0, 16]`);
-  if (size !== undefined && !(size > 0))
-    throw new LoadIconError(`size ${size} must be positive`);
+  if (!(scale > 0 && scale <= 16)) throw new LoadIconError(`scale ${scale} out of ]0, 16]`);
+  if (size !== undefined && !(size > 0)) throw new LoadIconError(`size ${size} must be positive`);
   let out: { width: number; height: number; crop?: number };
-  if (size === undefined || fit === "none")
-    out = { width: px(w * scale), height: px(h * scale) };
+  if (size === undefined || fit === "none") out = { width: px(w * scale), height: px(h * scale) };
   else {
     const side = size * scale;
     if (fit === "fill") out = { width: px(side), height: px(side) };
     else {
-      const r =
-        fit === "cover"
-          ? Math.max(side / w, side / h)
-          : Math.min(side / w, side / h);
+      const r = fit === "cover" ? Math.max(side / w, side / h) : Math.min(side / w, side / h);
       out = {
         width: px(w * r),
         height: px(h * r),
@@ -289,16 +236,13 @@ export function dimensions(
     }
   }
   if (out.width * out.height > MAX_PIXELS)
-    throw new LoadIconError(
-      `${out.width}x${out.height} exceeds ${MAX_PIXELS} pixels`,
-    );
+    throw new LoadIconError(`${out.width}x${out.height} exceeds ${MAX_PIXELS} pixels`);
   return out;
 }
 
 function svgIntrinsic(svg: string): [number, number] {
   const tag = /<svg\b[^>]*>/.exec(svg)?.[0] ?? "";
-  const attr = (n: string) =>
-    new RegExp(`\\s${n}="\\s*([\\d.]+)(px)?\\s*"`).exec(tag)?.[1];
+  const attr = (n: string) => new RegExp(`\\s${n}="\\s*([\\d.]+)(px)?\\s*"`).exec(tag)?.[1];
   const [w, h] = [Number(attr("width")), Number(attr("height"))];
   if (w > 0 && h > 0) return [w, h];
   const box = /\sviewBox="([^"]+)"/
@@ -306,22 +250,15 @@ function svgIntrinsic(svg: string): [number, number] {
     ?.trim()
     .split(/[\s,]+/)
     .map(Number);
-  if (box && box.length === 4 && box[2]! > 0 && box[3]! > 0)
-    return [box[2]!, box[3]!];
+  if (box && box.length === 4 && box[2]! > 0 && box[3]! > 0) return [box[2]!, box[3]!];
   throw new LoadIconError("svg: no width/height or viewBox");
 }
 
 const UNSAFE_SVG = /<script\b|<foreignObject\b|\son\w+\s*=|javascript:/i;
 
 /** Root `width`/`height`, `preserveAspectRatio` for the fit, and the tint as `fill` and `color`. */
-function sizedSvg(
-  svg: string,
-  width: number,
-  height: number,
-  fit: Fit,
-  tint: string | undefined,
-): string {
-  return svg.replace(/<svg\b[^>]*>/, (tag) => {
+function sizedSvg(svg: string, width: number, height: number, fit: Fit, tint: string | undefined): string {
+  return svg.replace(/<svg\b[^>]*>/, tag => {
     let t = tag.replace(/\s(width|height|preserveAspectRatio)="[^"]*"/g, "");
     if (tint) t = t.replace(/\s(fill|color)="[^"]*"/g, "");
     const extra = [`width="${width}"`, `height="${height}"`];
@@ -332,21 +269,14 @@ function sizedSvg(
   });
 }
 
-async function bytesOf(
-  source: Exclude<IconSource, string | URL>,
-): Promise<Bytes> {
+async function bytesOf(source: Exclude<IconSource, string | URL>): Promise<Bytes> {
   if (source instanceof Uint8Array)
-    return source.buffer instanceof ArrayBuffer
-      ? (source as Bytes)
-      : new Uint8Array(source);
+    return source.buffer instanceof ArrayBuffer ? (source as Bytes) : new Uint8Array(source);
   if (source instanceof ArrayBuffer) return new Uint8Array(source);
   return new Uint8Array(await source.arrayBuffer());
 }
 
-async function fetchBytes(
-  url: string,
-  f: typeof fetch,
-): Promise<Bytes | undefined> {
+async function fetchBytes(url: string, f: typeof fetch): Promise<Bytes | undefined> {
   let response: Response;
   try {
     response = await f(url);
@@ -359,13 +289,8 @@ async function fetchBytes(
 }
 
 function needBitmap(): void {
-  if (
-    typeof createImageBitmap !== "function" ||
-    typeof OffscreenCanvas !== "function"
-  ) {
-    throw new LoadIconError(
-      'output "bitmap" needs createImageBitmap and OffscreenCanvas (a browser)',
-    );
+  if (typeof createImageBitmap !== "function" || typeof OffscreenCanvas !== "function") {
+    throw new LoadIconError('output "bitmap" needs createImageBitmap and OffscreenCanvas (a browser)');
   }
 }
 
@@ -387,11 +312,7 @@ async function finish(
   const canvas = new OffscreenCanvas(cw, ch);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new LoadIconError("no 2D context");
-  ctx.drawImage(
-    bitmap,
-    -Math.floor((out.width - cw) / 2),
-    -Math.floor((out.height - ch) / 2),
-  );
+  ctx.drawImage(bitmap, -Math.floor((out.width - cw) / 2), -Math.floor((out.height - ch) / 2));
   bitmap.close();
   if (tint) {
     ctx.globalCompositeOperation = "source-in";
@@ -402,8 +323,7 @@ async function finish(
 }
 
 async function svgImage(svg: string): Promise<HTMLImageElement> {
-  if (typeof Image !== "function")
-    throw new LoadIconError("svg to bitmap needs a document (Image)");
+  if (typeof Image !== "function") throw new LoadIconError("svg to bitmap needs a document (Image)");
   const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
   try {
     const img = new Image();
@@ -419,18 +339,12 @@ async function svgImage(svg: string): Promise<HTMLImageElement> {
  * Load an image or icon. `symbol:` sources come from the CDN; strings and URLs are fetched; bytes,
  * ArrayBuffers and Blobs are read as is. Throws LoadIconError with a message naming the cause.
  */
-export async function loadIcon(
-  source: IconSource,
-  options: LoadIconOptions = {},
-): Promise<LoadedIcon> {
+export async function loadIcon(source: IconSource, options: LoadIconOptions = {}): Promise<LoadedIcon> {
   const { size, scale = 1, fit = "contain", output = "bitmap" } = options;
   const f = options.fetch ?? globalThis.fetch;
-  const tint =
-    options.tint === undefined ? undefined : parseColor(options.tint);
+  const tint = options.tint === undefined ? undefined : parseColor(options.tint);
   if (options.tint !== undefined && !tint)
-    throw new LoadIconError(
-      `tint ${options.tint} (expected #rgb, #rrggbb or #rrggbbaa)`,
-    );
+    throw new LoadIconError(`tint ${options.tint} (expected #rgb, #rrggbb or #rrggbbaa)`);
 
   let bytes: Bytes;
   let format: IconFormat | undefined;
@@ -439,10 +353,7 @@ export async function loadIcon(
     const spec = parseSymbol(source);
     const url = symbolUrl(spec, options.origin);
     const got = await fetchBytes(url, f);
-    if (!got)
-      throw new LoadIconError(
-        `symbol: unknown symbol "${spec.name}" (${spec.style}) at ${url}`,
-      );
+    if (!got) throw new LoadIconError(`symbol: unknown symbol "${spec.name}" (${spec.style}) at ${url}`);
     [bytes, format, glyph] = [got, "symbol", spec.opsz];
   } else if (typeof source === "string" || source instanceof URL) {
     const url = String(source);
@@ -454,33 +365,18 @@ export async function loadIcon(
   }
   const detected = detectFormat(bytes);
   if (format === "symbol" ? detected !== "svg" : !detected) {
-    throw new LoadIconError(
-      format === "symbol"
-        ? "symbol: the CDN did not answer an SVG"
-        : "unknown image format",
-    );
+    throw new LoadIconError(format === "symbol" ? "symbol: the CDN did not answer an SVG" : "unknown image format");
   }
   format ??= detected!;
 
   if (format === "svg" || format === "symbol") {
     const svg = new TextDecoder().decode(bytes);
-    const intrinsic: [number, number] = glyph
-      ? [glyph, glyph]
-      : svgIntrinsic(svg);
+    const intrinsic: [number, number] = glyph ? [glyph, glyph] : svgIntrinsic(svg);
     const out = dimensions(intrinsic, { size, scale, fit });
     if (output === "svg") {
-      if (UNSAFE_SVG.test(svg))
-        throw new LoadIconError(
-          "svg: scripts, event handlers and foreignObject are refused",
-        );
+      if (UNSAFE_SVG.test(svg)) throw new LoadIconError("svg: scripts, event handlers and foreignObject are refused");
       const side = out.crop ?? undefined;
-      const markup = sizedSvg(
-        svg,
-        side ?? out.width,
-        side ?? out.height,
-        fit,
-        options.tint,
-      );
+      const markup = sizedSvg(svg, side ?? out.width, side ?? out.height, fit, options.tint);
       return {
         format,
         intrinsic,
@@ -491,13 +387,7 @@ export async function loadIcon(
       };
     }
     needBitmap();
-    const drawn = sizedSvg(
-      svg,
-      out.width,
-      out.height,
-      fit === "cover" ? "contain" : fit,
-      undefined,
-    );
+    const drawn = sizedSvg(svg, out.width, out.height, fit === "cover" ? "contain" : fit, undefined);
     const bitmap = await finish(await svgImage(drawn), out, tint);
     return {
       format,
@@ -508,32 +398,22 @@ export async function loadIcon(
       bitmap,
     };
   }
-  if (output === "svg")
-    throw new LoadIconError(`a ${format} source has no SVG output`);
+  if (output === "svg") throw new LoadIconError(`a ${format} source has no SVG output`);
   needBitmap();
 
   if (format === "ico") {
     const entries = icoEntries(bytes);
-    const target =
-      size === undefined
-        ? undefined
-        : Math.min(Math.round(size * scale), MAX_SIDE);
+    const target = size === undefined ? undefined : Math.min(Math.round(size * scale), MAX_SIDE);
     const entry = bestEntry(entries, target);
     const chosen = entries[entry]!;
     let decoded: ImageBitmap;
     try {
       decoded = await createImageBitmap(icoEntryBlob(chosen));
     } catch (error) {
-      throw new LoadIconError(
-        `ico: entry ${entry}: ${(error as Error).message}`,
-      );
+      throw new LoadIconError(`ico: entry ${entry}: ${(error as Error).message}`);
     }
     const intrinsic: [number, number] = [decoded.width, decoded.height];
-    const bitmap = await finish(
-      decoded,
-      dimensions(intrinsic, { size, scale, fit }),
-      tint,
-    );
+    const bitmap = await finish(decoded, dimensions(intrinsic, { size, scale, fit }), tint);
     const info = entries.map(({ width, height, bits, png }) => ({
       width,
       height,
@@ -553,18 +433,12 @@ export async function loadIcon(
 
   let decoded: ImageBitmap;
   try {
-    decoded = await createImageBitmap(
-      new Blob([bytes], { type: `image/${format}` }),
-    );
+    decoded = await createImageBitmap(new Blob([bytes], { type: `image/${format}` }));
   } catch (error) {
     throw new LoadIconError(`${format}: ${(error as Error).message}`);
   }
   const intrinsic: [number, number] = [decoded.width, decoded.height];
-  const bitmap = await finish(
-    decoded,
-    dimensions(intrinsic, { size, scale, fit }),
-    tint,
-  );
+  const bitmap = await finish(decoded, dimensions(intrinsic, { size, scale, fit }), tint);
   return {
     format,
     intrinsic,

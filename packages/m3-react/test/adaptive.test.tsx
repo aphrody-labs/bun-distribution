@@ -4,12 +4,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import * as React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
-import {
-  BREAKPOINTS,
-  classifyWidth,
-  minWidthQuery,
-  useWindowSizeClass,
-} from "../adaptive/index.js";
+import { BREAKPOINTS, classifyWidth, minWidthQuery, useWindowSizeClass } from "../adaptive/index.js";
 
 describe("classifyWidth — canonical M3 boundaries (600/840/1200/1600)", () => {
   test.each([
@@ -43,11 +38,7 @@ describe("classifyWidth — canonical M3 boundaries (600/840/1200/1600)", () => 
 });
 
 function Probe() {
-  return React.createElement(
-    "span",
-    { "data-testid": "size-class" },
-    useWindowSizeClass(),
-  );
+  return React.createElement("span", { "data-testid": "size-class" }, useWindowSizeClass());
 }
 
 describe("useWindowSizeClass", () => {

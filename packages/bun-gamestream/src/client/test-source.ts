@@ -10,11 +10,7 @@ export interface TestSource {
   note(text: string): void;
 }
 
-export function createTestSource(
-  width = 1280,
-  height = 720,
-  fps = 60,
-): TestSource {
+export function createTestSource(width = 1280, height = 720, fps = 60): TestSource {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -52,11 +48,7 @@ export function createTestSource(
     ctx.restore();
     ctx.fillStyle = "#eceff4";
     ctx.font = "28px sans-serif";
-    ctx.fillText(
-      `Bun OS gamestream test source  ${width}x${height}  t=${t.toFixed(2)}s`,
-      24,
-      48,
-    );
+    ctx.fillText(`Bun OS gamestream test source  ${width}x${height}  t=${t.toFixed(2)}s`, 24, 48);
     ctx.font = "14px monospace";
     ctx.fillText(`input: ${lastInput}`, 24, height - 24);
     ctx.fillStyle = "#ebcb8b";
@@ -75,8 +67,7 @@ export function createTestSource(
     note(text: string) {
       lastInput = text;
       const match = /^ma ([\d.]+) ([\d.]+)/.exec(text);
-      if (match)
-        pointer = { x: Number(match[1]) * width, y: Number(match[2]) * height };
+      if (match) pointer = { x: Number(match[1]) * width, y: Number(match[2]) * height };
       const rel = /^mm (-?\d+) (-?\d+)/.exec(text);
       if (rel) {
         pointer = {

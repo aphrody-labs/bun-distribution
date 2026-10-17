@@ -7,9 +7,9 @@ interface CreditsModalState {
   toggleModal: () => void;
 }
 
-export const useCreditsModalStore = create<CreditsModalState>((set) => ({
+export const useCreditsModalStore = create<CreditsModalState>(set => ({
   isOpen: false,
   openModal: () => set({ isOpen: true }),
   closeModal: () => set({ isOpen: false }),
-  toggleModal: () => set((state) => ({ isOpen: !state.isOpen })),
+  toggleModal: () => set(state => ({ isOpen: !state.isOpen })),
 }));

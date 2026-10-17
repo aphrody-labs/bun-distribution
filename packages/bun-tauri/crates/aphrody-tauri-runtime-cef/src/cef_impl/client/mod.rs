@@ -8,9 +8,9 @@ use cef::*;
 use tauri_runtime::{UserEvent, window::WindowId};
 
 use crate::{
-  cef_impl::{ipc, request_handler},
-  macros::wrap_with_args,
-  runtime::{CefRuntime, Message, RuntimeContext},
+    cef_impl::{ipc, request_handler},
+    macros::wrap_with_args,
+    runtime::{CefRuntime, Message, RuntimeContext},
 };
 
 mod command;
@@ -31,8 +31,9 @@ use display::{TauriCefDisplayHandler, TauriCefDisplayHandlerArgs};
 use download::TauriCefDownloadHandler;
 use drag::TauriCefDragHandler;
 pub(crate) use drag::{
-  DragDropEventTarget, DragDropScriptEvent, DragDropState, WebDragDropResourceRequestHandler,
-  WebDragDropResourceRequestHandlerArgs, drag_drop_initialization_script, event_from_script_event,
+    DragDropEventTarget, DragDropScriptEvent, DragDropState, WebDragDropResourceRequestHandler,
+    WebDragDropResourceRequestHandlerArgs, drag_drop_initialization_script,
+    event_from_script_event,
 };
 use keyboard::TauriCefKeyboardHandler;
 use life_span::{TauriCefChildLifeSpanHandler, TauriCefChildLifeSpanHandlerArgs};
@@ -42,36 +43,38 @@ use permission::TauriCefPermissionHandler;
 pub(crate) use process::TauriCefBrowserProcessHandler;
 
 pub(crate) struct TauriCefBrowserClientHandlers<T: UserEvent> {
-  pub(crate) frame_event_handler: Option<Arc<crate::FrameEventHandler>>,
-  pub(crate) ipc_handler: Option<Arc<ipc::IpcHandler<T>>>,
-  pub(crate) on_page_load_handler: Option<Arc<tauri_runtime::webview::OnPageLoadHandler>>,
-  pub(crate) document_title_changed_handler:
-    Option<Arc<tauri_runtime::webview::DocumentTitleChangedHandler>>,
-  pub(crate) navigation_handler: Option<Arc<tauri_runtime::webview::NavigationHandler>>,
-  pub(crate) new_window_handler:
-    Option<Arc<tauri_runtime::webview::NewWindowHandler<T, CefRuntime<T>>>>,
-  pub(crate) download_handler: Option<Arc<tauri_runtime::webview::DownloadHandler>>,
-  pub(crate) console_message_handler: Option<Arc<crate::ConsoleMessageHandler>>,
-  pub(crate) permission_request_handler: Option<Arc<PermissionRequestHandler>>,
-  pub(crate) web_content_process_terminate_handler:
-    Option<Arc<tauri_runtime::webview::OnWebContentProcessTerminateHandler>>,
+    pub(crate) frame_event_handler: Option<Arc<crate::FrameEventHandler>>,
+    pub(crate) ipc_handler: Option<Arc<ipc::IpcHandler<T>>>,
+    pub(crate) on_page_load_handler: Option<Arc<tauri_runtime::webview::OnPageLoadHandler>>,
+    pub(crate) document_title_changed_handler:
+        Option<Arc<tauri_runtime::webview::DocumentTitleChangedHandler>>,
+    pub(crate) navigation_handler: Option<Arc<tauri_runtime::webview::NavigationHandler>>,
+    pub(crate) new_window_handler:
+        Option<Arc<tauri_runtime::webview::NewWindowHandler<T, CefRuntime<T>>>>,
+    pub(crate) download_handler: Option<Arc<tauri_runtime::webview::DownloadHandler>>,
+    pub(crate) console_message_handler: Option<Arc<crate::ConsoleMessageHandler>>,
+    pub(crate) permission_request_handler: Option<Arc<PermissionRequestHandler>>,
+    pub(crate) web_content_process_terminate_handler:
+        Option<Arc<tauri_runtime::webview::OnWebContentProcessTerminateHandler>>,
 }
 
 impl<T: UserEvent> Clone for TauriCefBrowserClientHandlers<T> {
-  fn clone(&self) -> Self {
-    Self {
-      frame_event_handler: self.frame_event_handler.clone(),
-      ipc_handler: self.ipc_handler.clone(),
-      on_page_load_handler: self.on_page_load_handler.clone(),
-      document_title_changed_handler: self.document_title_changed_handler.clone(),
-      navigation_handler: self.navigation_handler.clone(),
-      new_window_handler: self.new_window_handler.clone(),
-      download_handler: self.download_handler.clone(),
-      console_message_handler: self.console_message_handler.clone(),
-      permission_request_handler: self.permission_request_handler.clone(),
-      web_content_process_terminate_handler: self.web_content_process_terminate_handler.clone(),
+    fn clone(&self) -> Self {
+        Self {
+            frame_event_handler: self.frame_event_handler.clone(),
+            ipc_handler: self.ipc_handler.clone(),
+            on_page_load_handler: self.on_page_load_handler.clone(),
+            document_title_changed_handler: self.document_title_changed_handler.clone(),
+            navigation_handler: self.navigation_handler.clone(),
+            new_window_handler: self.new_window_handler.clone(),
+            download_handler: self.download_handler.clone(),
+            console_message_handler: self.console_message_handler.clone(),
+            permission_request_handler: self.permission_request_handler.clone(),
+            web_content_process_terminate_handler: self
+                .web_content_process_terminate_handler
+                .clone(),
+        }
     }
-  }
 }
 
 wrap_with_args! {

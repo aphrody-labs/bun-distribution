@@ -17,25 +17,25 @@ interface TimelineStore {
 
 export const useTimelineStore = create<TimelineStore>()(
   persist(
-    (set) => ({
+    set => ({
       snappingEnabled: true,
 
       toggleSnapping: () => {
-        set((state) => ({ snappingEnabled: !state.snappingEnabled }));
+        set(state => ({ snappingEnabled: !state.snappingEnabled }));
       },
 
       rippleEditingEnabled: false,
 
       toggleRippleEditing: () => {
-        set((state) => ({
+        set(state => ({
           rippleEditingEnabled: !state.rippleEditingEnabled,
         }));
       },
 
       expandedElementIds: new Set<string>(),
 
-      toggleElementExpanded: (elementId) => {
-        set((state) => {
+      toggleElementExpanded: elementId => {
+        set(state => {
           const next = new Set(state.expandedElementIds);
           if (next.has(elementId)) {
             next.delete(elementId);
@@ -48,7 +48,7 @@ export const useTimelineStore = create<TimelineStore>()(
     }),
     {
       name: "timeline-store",
-      partialize: (state) => ({
+      partialize: state => ({
         snappingEnabled: state.snappingEnabled,
         rippleEditingEnabled: state.rippleEditingEnabled,
       }),

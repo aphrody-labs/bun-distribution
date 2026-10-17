@@ -4,47 +4,18 @@ import type { ReactElement } from "react";
 import { useForm } from "react-hook-form";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import {
-  CheckBox,
-  CheckboxIndicator,
-  CheckboxRoot,
-  RadixCheckbox,
-} from "../src/Checkbox";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "../src/Collapsible";
+import { CheckBox, CheckboxIndicator, CheckboxRoot, RadixCheckbox } from "../src/Checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../src/Collapsible";
 import { ErrorMessage, errorStyles, Form, z } from "../src/forms/Form";
-import {
-  Input,
-  inputSizes,
-  inputStyles,
-  Label,
-  PasswordInput,
-  SearchInput,
-  TextArea,
-} from "../src/Input";
+import { Input, inputSizes, inputStyles, Label, PasswordInput, SearchInput, TextArea } from "../src/Input";
 import { NumberStepper } from "../src/NumberStepper";
 import { Item as RadioItem, Root as RadioRoot } from "../src/RadioGroup";
 import { Resizable, ResizableHandle, ResizablePanel } from "../src/Resizable";
 import { SearchBar } from "../src/SearchBar";
-import {
-  Select,
-  SelectOption,
-  SelectRoot,
-  SelectTrigger,
-  SelectValue,
-  selectStyles,
-} from "../src/Select";
+import { Select, SelectOption, SelectRoot, SelectTrigger, SelectValue, selectStyles } from "../src/Select";
 import { Slider } from "../src/Slider";
 import { Switch } from "../src/Switch";
-import {
-  Content as TabsContent,
-  List as TabsList,
-  Root as TabsRoot,
-  Trigger as TabsTrigger,
-} from "../src/Tabs";
+import { Content as TabsContent, List as TabsList, Root as TabsRoot, Trigger as TabsTrigger } from "../src/Tabs";
 
 const SPACEUI_VOCAB = /\b(bg|text|border)-(app|ink|sidebar|menu|accent)\b/;
 
@@ -94,9 +65,7 @@ describe("Input", () => {
   });
 
   test("icon accepts a Material Symbols name, upstream transparent variant still works", () => {
-    const html = render(
-      <Input icon="mail" variant="transparent" right={<span>R</span>} />,
-    );
+    const html = render(<Input icon="mail" variant="transparent" right={<span>R</span>} />);
     expect(html).toContain(">mail<");
     expect(html).toContain("border-transparent");
     expect(html).toContain(">R<");
@@ -208,9 +177,7 @@ describe("Switch", () => {
 
   test("upstream sizes still work (sm is a density step)", () => {
     expect(render(<Switch size="sm" />)).toContain("h-6 w-10");
-    expect(render(<Switch size="lg" thumbClassName="thumb-x" />)).toContain(
-      "thumb-x",
-    );
+    expect(render(<Switch size="lg" thumbClassName="thumb-x" />)).toContain("thumb-x");
   });
 });
 
@@ -262,9 +229,7 @@ describe("Select", () => {
 
   test("sizes and filled variant", () => {
     expect(selectStyles({ size: "xl" })).toContain("h-14");
-    expect(selectStyles({ variant: "filled" })).toContain(
-      "bg-surface-container-highest",
-    );
+    expect(selectStyles({ variant: "filled" })).toContain("bg-surface-container-highest");
     expect(selectStyles()).toContain("h-8");
   });
 
@@ -334,9 +299,7 @@ describe("NumberStepper", () => {
   });
 
   test("dense size", () => {
-    expect(
-      render(<NumberStepper value={1} onChange={() => {}} size="sm" />),
-    ).toContain("h-10");
+    expect(render(<NumberStepper value={1} onChange={() => {}} size="sm" />)).toContain("h-10");
   });
 });
 

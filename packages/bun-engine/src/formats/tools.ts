@@ -8,10 +8,7 @@ import { dirname, join, resolve } from "node:path";
 const exe = process.platform === "win32" ? ".exe" : "";
 
 function isRoot(directory: string): boolean {
-  return (
-    existsSync(join(directory, "AGENTS.md")) &&
-    existsSync(join(directory, "crates"))
-  );
+  return existsSync(join(directory, "AGENTS.md")) && existsSync(join(directory, "crates"));
 }
 
 function walkUp(from: string): string | undefined {
@@ -31,9 +28,7 @@ export function workspaceRoot(): string | undefined {
   if (cachedRoot !== undefined) return cachedRoot ?? undefined;
   const fromSource = resolve(import.meta.dir, "..", "..", "..", "..");
   const found =
-    [Bun.env.BUN_OS_ROOT, Bun.env.BUN_ENGINE_HOME].find(
-      (path) => path && isRoot(path),
-    ) ??
+    [Bun.env.BUN_OS_ROOT, Bun.env.BUN_ENGINE_HOME].find(path => path && isRoot(path)) ??
     (isRoot(fromSource) ? fromSource : undefined) ??
     walkUp(process.cwd()) ??
     walkUp(dirname(process.execPath));
@@ -66,21 +61,13 @@ export function nativeEngine(): string | undefined {
 /** A MAME tool (`unidasm`, `chdman`) from the bep-installed usr/lib/mame, or PATH. */
 export function mameTool(name: "unidasm" | "chdman"): string | undefined {
   const usr = usrDirectory();
-  return (
-    firstFile([usr && join(usr, "lib", "mame", `${name}${exe}`)]) ??
-    Bun.which(name) ??
-    undefined
-  );
+  return firstFile([usr && join(usr, "lib", "mame", `${name}${exe}`)]) ?? Bun.which(name) ?? undefined;
 }
 
 export function llvmObjdump(): string | undefined {
   return (
     Bun.which("llvm-objdump") ??
-    firstFile([
-      process.platform === "win32"
-        ? "C:\\Program Files\\LLVM\\bin\\llvm-objdump.exe"
-        : undefined,
-    ])
+    firstFile([process.platform === "win32" ? "C:\\Program Files\\LLVM\\bin\\llvm-objdump.exe" : undefined])
   );
 }
 
@@ -95,10 +82,7 @@ export interface ToolResult {
 }
 
 /** Runs a tool with a hard timeout and captured output. */
-export async function runTool(
-  command: string[],
-  timeoutMs = 30_000,
-): Promise<ToolResult> {
+export async function runTool(command: string[], timeoutMs = 30_000): Promise<ToolResult> {
   const child = Bun.spawn(command, {
     stdin: "ignore",
     stdout: "pipe",
@@ -106,11 +90,7 @@ export async function runTool(
   });
   const timer = setTimeout(() => child.kill(), timeoutMs);
   try {
-    const [stdout, stderr, code] = await Promise.all([
-      child.stdout.text(),
-      child.stderr.text(),
-      child.exited,
-    ]);
+    const [stdout, stderr, code] = await Promise.all([child.stdout.text(), child.stderr.text(), child.exited]);
     return { code, stdout, stderr };
   } finally {
     clearTimeout(timer);
@@ -118,9 +98,7 @@ export async function runTool(
 }
 
 /** `bun-engine info <rom.nds> --json` from the Rust owner; undefined when the binary is absent. */
-export async function nativeNdsInfo(
-  path: string,
-): Promise<Record<string, unknown> | undefined> {
+export async function nativeNdsInfo(path: string): Promise<Record<string, unknown> | undefined> {
   if (Bun.env.BUN_ENGINE_FORMATS_NATIVE === "0") return undefined;
   const engine = nativeEngine();
   if (!engine) return undefined;

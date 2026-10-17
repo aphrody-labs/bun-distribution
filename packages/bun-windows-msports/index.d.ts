@@ -9,7 +9,13 @@ interface Functions {
   /** msports.dll!ComDBClose */
   ComDBClose(HComDB: Win32Pointer): number;
   /** msports.dll!ComDBGetCurrentPortUsage */
-  ComDBGetCurrentPortUsage(HComDB: Win32Pointer, Buffer: Win32Pointer, BufferSize: number, ReportType: number, MaxPortsReported: Win32Pointer): number;
+  ComDBGetCurrentPortUsage(
+    HComDB: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: number,
+    ReportType: number,
+    MaxPortsReported: Win32Pointer,
+  ): number;
   /** msports.dll!ComDBOpen */
   ComDBOpen(PHComDB: Win32Pointer): number;
   /** msports.dll!ComDBReleasePort */

@@ -31,13 +31,10 @@ export default async function NewOfficialTierlistPage({
     return (
       <div className="w-full max-w-4xl mx-auto space-y-6">
         <div>
-          <h1 className="text-4xl font-saiyan text-dbz-orange">
-            TIER LIST OFFICIELLE
-          </h1>
+          <h1 className="text-4xl font-saiyan text-dbz-orange">TIER LIST OFFICIELLE</h1>
           <p className="text-sm text-white/50 mt-1">
-            Choisis un pool de cartes pour commencer. Les cartes viennent du
-            wiki Dragon Ball FR ; tu pourras aussi uploader tes propres images
-            dans l'éditeur.
+            Choisis un pool de cartes pour commencer. Les cartes viennent du wiki Dragon Ball FR ; tu pourras aussi
+            uploader tes propres images dans l'éditeur.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -47,11 +44,10 @@ export default async function NewOfficialTierlistPage({
           >
             <h2 className="text-lg font-bold text-white">Pool complet</h2>
             <p className="mt-1 text-[13px] text-white/55">
-              Tous les personnages du wiki avec illustration (jusqu'à 400
-              cartes).
+              Tous les personnages du wiki avec illustration (jusqu'à 400 cartes).
             </p>
           </Link>
-          {TIERLIST_TEMPLATES.map((t) => (
+          {TIERLIST_TEMPLATES.map(t => (
             <Link
               key={t.key}
               href={`/admin/tierlists/new?template=${t.key}`}
@@ -62,10 +58,7 @@ export default async function NewOfficialTierlistPage({
             </Link>
           ))}
         </div>
-        <Link
-          href="/admin/tierlists"
-          className="inline-block text-sm text-white/50 hover:text-white/80"
-        >
+        <Link href="/admin/tierlists" className="inline-block text-sm text-white/50 hover:text-white/80">
           ← Retour à la modération
         </Link>
       </div>
@@ -80,10 +73,7 @@ export default async function NewOfficialTierlistPage({
       <div className="w-full max-w-4xl mx-auto">
         <div className="dbz-panel p-8 text-center text-white/60">
           Template inconnu.{" "}
-          <Link
-            href="/admin/tierlists/new"
-            className="text-dbz-orange hover:underline"
-          >
+          <Link href="/admin/tierlists/new" className="text-dbz-orange hover:underline">
             Recommencer
           </Link>
         </div>
@@ -91,9 +81,7 @@ export default async function NewOfficialTierlistPage({
     );
   }
 
-  const pool = isAll
-    ? await getAdminCharacterPool()
-    : await getTierlistPool(tpl!.key);
+  const pool = isAll ? await getAdminCharacterPool() : await getTierlistPool(tpl!.key);
   const allowEmpty = isAll ? false : tpl!.source === "none";
   const defaultTitle = isAll ? "Tier list officielle" : tpl!.title;
   const templateKey = isAll ? null : tpl!.key;
@@ -101,19 +89,14 @@ export default async function NewOfficialTierlistPage({
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-saiyan text-dbz-orange">
-          {defaultTitle.toUpperCase()}
-        </h1>
+        <h1 className="text-3xl font-saiyan text-dbz-orange">{defaultTitle.toUpperCase()}</h1>
         <p className="text-sm text-white/50 mt-1">
-          Glisse/tape les cartes dans les tiers, règle la curation, puis
-          enregistre.
+          Glisse/tape les cartes dans les tiers, règle la curation, puis enregistre.
         </p>
       </div>
 
       {pool.length === 0 && !allowEmpty ? (
-        <div className="dbz-panel p-8 text-center text-white/60">
-          Pool de cartes indisponible pour ce thème.
-        </div>
+        <div className="dbz-panel p-8 text-center text-white/60">Pool de cartes indisponible pour ce thème.</div>
       ) : (
         <TierlistEditor
           admin
@@ -128,10 +111,7 @@ export default async function NewOfficialTierlistPage({
         />
       )}
 
-      <Link
-        href="/admin/tierlists/new"
-        className="inline-block text-sm text-white/50 hover:text-white/80"
-      >
+      <Link href="/admin/tierlists/new" className="inline-block text-sm text-white/50 hover:text-white/80">
         ← Changer de pool
       </Link>
     </div>

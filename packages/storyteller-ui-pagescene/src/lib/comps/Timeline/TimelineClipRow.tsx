@@ -1,12 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
-import {
-  FilmIcon,
-  PlusIcon,
-  RepeatIcon,
-  SplineIcon,
-  XIcon,
-} from "lucide-react";
+import { FilmIcon, PlusIcon, RepeatIcon, SplineIcon, XIcon } from "lucide-react";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
   addBakedClipToObject,
@@ -22,11 +16,7 @@ import type { TimelineUndoSnapshot } from "../../engine/editor/TimelineControlle
 import { usePageSceneStore, type ClipLane } from "../../PageSceneStore";
 import { DEFAULT_TIMELINE_FPS } from "../../engine/timeline/types";
 import { ToastTypes } from "../../enums";
-import {
-  fractionToTime,
-  quantizeToFrame,
-  timeToFraction,
-} from "./timelineUtils";
+import { fractionToTime, quantizeToFrame, timeToFraction } from "./timelineUtils";
 
 interface TimelineClipRowProps {
   objectUuid: string;
@@ -52,13 +42,7 @@ type Drag =
 // on the model and in the picker). Library-clip drops are handled by the row
 // wrapper in TimelineEditor, so an empty row still accepts drops; baked clips
 // are added through the "+" picker.
-export const TimelineClipRow = ({
-  objectUuid,
-  lanes,
-  duration,
-  bakedClips,
-  droppable,
-}: TimelineClipRowProps) => {
+export const TimelineClipRow = ({ objectUuid, lanes, duration, bakedClips, droppable }: TimelineClipRowProps) => {
   const editor = useContext(EngineContext);
   const laneRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -71,7 +55,7 @@ export const TimelineClipRow = ({
   // effectively invisible.
   const [pickerAnchor, setPickerAnchor] = useState<DOMRect | null>(null);
   const pickerMenuRef = useRef<HTMLDivElement>(null);
-  const selectedLaneId = usePageSceneStore((s) => s.timelineSelectedClipLaneId);
+  const selectedLaneId = usePageSceneStore(s => s.timelineSelectedClipLaneId);
 
   // A fixed-position popup can't follow its button, so any outside scroll
   // or resize closes it (scrolling INSIDE the popup's own list is exempt).
@@ -107,10 +91,7 @@ export const TimelineClipRow = ({
     if (!lane.strip.transitionEasing) {
       // Gap + default curve as one undo step.
       if (!enableClipTransition(editor, lane.id)) {
-        editor.adapter.showToast(
-          ToastTypes.WARNING,
-          "No room on this row to open a gap for the transition.",
-        );
+        editor.adapter.showToast(ToastTypes.WARNING, "No room on this row to open a gap for the transition.");
         return;
       }
     }
@@ -123,24 +104,17 @@ export const TimelineClipRow = ({
     if (!editor) return;
     const laneId = addBakedClipToObject(editor, objectUuid, clipIndex);
     if (!laneId) {
-      editor.adapter.showToast(
-        ToastTypes.WARNING,
-        "No room left on this row for that clip.",
-      );
+      editor.adapter.showToast(ToastTypes.WARNING, "No room left on this row for that clip.");
     }
   };
 
-  const fps =
-    editor?.timelineController.getTimeline()?.fps ?? DEFAULT_TIMELINE_FPS;
+  const fps = editor?.timelineController.getTimeline()?.fps ?? DEFAULT_TIMELINE_FPS;
 
   const laneTimeFromEvent = (clientX: number): number => {
     const el = laneRef.current;
     if (!el) return 0;
     const rect = el.getBoundingClientRect();
-    return quantizeToFrame(
-      fractionToTime((clientX - rect.left) / rect.width, duration),
-      fps,
-    );
+    return quantizeToFrame(fractionToTime((clientX - rect.left) / rect.width, duration), fps);
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -149,7 +123,7 @@ export const TimelineClipRow = ({
     if (drag.current.kind === "move") {
       moveClipLane(editor, drag.current.laneId, t - drag.current.grabOffset);
     } else {
-      const lane = lanes.find((l) => l.id === drag.current?.laneId);
+      const lane = lanes.find(l => l.id === drag.current?.laneId);
       if (lane) resizeClipLane(editor, lane.id, t - lane.strip.startTime);
     }
   };
@@ -158,9 +132,7 @@ export const TimelineClipRow = ({
     if (drag.current && dragUndo.current && editor) {
       commitTimelineEdit(
         editor,
-        drag.current.kind === "move"
-          ? "Move Animation Clip"
-          : "Trim Animation Clip",
+        drag.current.kind === "move" ? "Move Animation Clip" : "Trim Animation Clip",
         dragUndo.current,
       );
     }
@@ -183,11 +155,7 @@ export const TimelineClipRow = ({
                   ? "bg-brand-primary text-white"
                   : "bg-white/10 text-base-fg/70 hover:bg-white/20 hover:text-base-fg"
               }`}
-              onClick={(e) =>
-                setPickerAnchor((open) =>
-                  open ? null : e.currentTarget.getBoundingClientRect(),
-                )
-              }
+              onClick={e => setPickerAnchor(open => (open ? null : e.currentTarget.getBoundingClientRect()))}
             >
               <PlusIcon className="h-2.5 w-2.5" />
             </button>
@@ -195,11 +163,7 @@ export const TimelineClipRow = ({
               ReactDOM.createPortal(
                 <>
                   {/* click-away backdrop */}
-                  <div
-                    className="fixed inset-0"
-                    style={{ zIndex: 9998 }}
-                    onClick={() => setPickerAnchor(null)}
-                  />
+                  <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => setPickerAnchor(null)} />
                   {/* Opens upward from the button (the timeline docks to the
                       screen bottom, so up always has room). */}
                   <div
@@ -242,13 +206,11 @@ export const TimelineClipRow = ({
       >
         {lanes.length === 0 && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-md border border-dashed border-white/15 text-[10px] text-base-fg/30">
-            {droppable
-              ? "Drag an animation here"
-              : "Add a baked animation with +"}
+            {droppable ? "Drag an animation here" : "Add a baked animation with +"}
           </div>
         )}
 
-        {lanes.map((lane) => {
+        {lanes.map(lane => {
           const strip = lane.strip;
           const isSelected = selectedLaneId === lane.id;
           const leftPct = timeToFraction(strip.startTime, duration) * 100;
@@ -266,15 +228,11 @@ export const TimelineClipRow = ({
               /* pe-2.5 keeps the × (and name) clear of the absolute w-1.5
                  trim handle on the right edge */
               className={`absolute inset-y-0 flex items-center gap-1 rounded-md border pe-2.5 ps-1.5 text-[10px] text-white ${
-                isSelected
-                  ? "border-white/80 bg-brand-primary/45"
-                  : "border-brand-primary/60 bg-brand-primary/25"
+                isSelected ? "border-white/80 bg-brand-primary/45" : "border-brand-primary/60 bg-brand-primary/25"
               }`}
               style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-              onPointerDown={(e) => {
-                usePageSceneStore
-                  .getState()
-                  .setTimelineSelectedClipLane(lane.id);
+              onPointerDown={e => {
+                usePageSceneStore.getState().setTimelineSelectedClipLane(lane.id);
                 e.currentTarget.setPointerCapture(e.pointerId);
                 drag.current = {
                   laneId: lane.id,
@@ -286,20 +244,12 @@ export const TimelineClipRow = ({
             >
               <button
                 type="button"
-                title={
-                  strip.loop
-                    ? "Looping — click to play once"
-                    : "Play once — click to loop"
-                }
+                title={strip.loop ? "Looping — click to play once" : "Play once — click to loop"}
                 className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] ${
-                  strip.loop
-                    ? "bg-white/90 text-brand-primary"
-                    : "text-white/70 hover:text-white"
+                  strip.loop ? "bg-white/90 text-brand-primary" : "text-white/70 hover:text-white"
                 }`}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() =>
-                  editor && setClipLoop(editor, lane.id, !strip.loop)
-                }
+                onPointerDown={e => e.stopPropagation()}
+                onClick={() => editor && setClipLoop(editor, lane.id, !strip.loop)}
               >
                 <RepeatIcon className="h-2.5 w-2.5" />
               </button>
@@ -314,13 +264,11 @@ export const TimelineClipRow = ({
                   type="button"
                   title="Remove animation (Del)"
                   className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] text-white/70 hover:bg-white/20 hover:text-white"
-                  onPointerDown={(e) => e.stopPropagation()}
+                  onPointerDown={e => e.stopPropagation()}
                   onClick={() => {
                     if (!editor) return;
                     removeClipLane(editor, lane.id);
-                    usePageSceneStore
-                      .getState()
-                      .setTimelineSelectedClipLane(null);
+                    usePageSceneStore.getState().setTimelineSelectedClipLane(null);
                   }}
                 >
                   <XIcon className="h-2.5 w-2.5" />
@@ -331,7 +279,7 @@ export const TimelineClipRow = ({
               <div
                 className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize rounded-r-md bg-white/40 hover:bg-white/70"
                 title="Trim clip length"
-                onPointerDown={(e) => {
+                onPointerDown={e => {
                   e.stopPropagation();
                   e.currentTarget.setPointerCapture(e.pointerId);
                   drag.current = { laneId: lane.id, kind: "resize" };
@@ -357,25 +305,20 @@ export const TimelineClipRow = ({
             const gapStart = lane.strip.startTime + lane.strip.duration;
             const gapEnd = next.strip.startTime;
             const active = !!lane.strip.transitionEasing;
-            const midPct =
-              timeToFraction((gapStart + gapEnd) / 2, duration) * 100;
+            const midPct = timeToFraction((gapStart + gapEnd) / 2, duration) * 100;
             return (
               <button
                 key={`transition-${lane.id}`}
                 type="button"
                 data-transition-chip
-                title={
-                  active
-                    ? "Edit transition into the next clip"
-                    : "Blend into the next clip"
-                }
+                title={active ? "Edit transition into the next clip" : "Blend into the next clip"}
                 className={`absolute top-1/2 z-10 flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border transition-colors ${
                   active
                     ? "border-brand-primary bg-brand-primary text-white"
                     : "border-dashed border-white/30 bg-white/5 text-white/40 hover:border-white/60 hover:text-white/80"
                 }`}
                 style={{ left: `${midPct}%` }}
-                onPointerDown={(e) => e.stopPropagation()}
+                onPointerDown={e => e.stopPropagation()}
                 onClick={() => toggleTransition(lane)}
               >
                 <SplineIcon className="h-2 w-2" />

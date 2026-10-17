@@ -12,8 +12,7 @@
     font: var(--m3-bui-font-body-small);
     letter-spacing: var(--md-sys-typescale-body-small-tracking);
     transform-origin: var(--transform-origin);
-    transition: opacity var(--md-sys-motion-duration-short3)
-      var(--md-sys-motion-easing-standard);
+    transition: opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
   }
   .m3-bui-tooltip__popup[data-starting-style],
   .m3-bui-tooltip__popup[data-ending-style] {

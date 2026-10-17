@@ -4,39 +4,31 @@ import { Job, JobPreview } from "./models/Job.js";
 import { JobState } from "./models/JobState.js";
 
 export class JobsApi extends ApiManager {
-  public GetPreviewStatusByJobToken({
-    token,
-  }: {
-    token: string;
-  }): Promise<ApiResponse<JobPreview>> {
+  public GetPreviewStatusByJobToken({ token }: { token: string }): Promise<ApiResponse<JobPreview>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/workflows/preview_status/${token}`;
 
     return this.get<ApiResponse<JobPreview>>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.data,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
 
-  public GetJobByToken({
-    token,
-  }: {
-    token: string;
-  }): Promise<ApiResponse<JobState>> {
+  public GetJobByToken({ token }: { token: string }): Promise<ApiResponse<JobState>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/jobs/job/${token}`;
 
     return this.get<{
       success: boolean;
       state: JobState;
     }>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.state,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
@@ -48,11 +40,11 @@ export class JobsApi extends ApiManager {
       success: boolean;
       job_states: JobState[];
     }>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.job_states,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
@@ -65,11 +57,11 @@ export class JobsApi extends ApiManager {
       jobs: Job[];
       error_reason?: string;
     }>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.jobs,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
@@ -83,10 +75,10 @@ export class JobsApi extends ApiManager {
         success: boolean;
       }
     >({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }

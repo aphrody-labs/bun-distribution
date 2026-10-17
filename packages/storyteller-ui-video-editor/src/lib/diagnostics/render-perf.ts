@@ -41,13 +41,7 @@ export function isRenderPerfEnabled(): boolean {
   return typeof window !== "undefined" && window.__renderPerf === true;
 }
 
-export function recordSpan({
-  name,
-  durationMs,
-}: {
-  name: string;
-  durationMs: number;
-}): void {
+export function recordSpan({ name, durationMs }: { name: string; durationMs: number }): void {
   if (!isRenderPerfEnabled()) return;
   let stats = spans.get(name);
   if (!stats) {
@@ -57,13 +51,7 @@ export function recordSpan({
   stats.samples.push(durationMs);
 }
 
-export async function measureSpanAsync<T>({
-  name,
-  fn,
-}: {
-  name: string;
-  fn: () => Promise<T>;
-}): Promise<T> {
+export async function measureSpanAsync<T>({ name, fn }: { name: string; fn: () => Promise<T> }): Promise<T> {
   if (!isRenderPerfEnabled()) return fn();
   const start = performance.now();
   try {
@@ -73,13 +61,7 @@ export async function measureSpanAsync<T>({
   }
 }
 
-export function measureSpanSync<T>({
-  name,
-  fn,
-}: {
-  name: string;
-  fn: () => T;
-}): T {
+export function measureSpanSync<T>({ name, fn }: { name: string; fn: () => T }): T {
   if (!isRenderPerfEnabled()) return fn();
   const start = performance.now();
   try {
@@ -89,27 +71,16 @@ export function measureSpanSync<T>({
   }
 }
 
-export function incrementCounter({
-  name,
-  by = 1,
-}: {
-  name: string;
-  by?: number;
-}): void {
+export function incrementCounter({ name, by = 1 }: { name: string; by?: number }): void {
   if (!isRenderPerfEnabled()) return;
-  pendingCountersThisFrame.set(
-    name,
-    (pendingCountersThisFrame.get(name) ?? 0) + by,
-  );
+  pendingCountersThisFrame.set(name, (pendingCountersThisFrame.get(name) ?? 0) + by);
 }
 
 /**
  * Pulls sub-span timings recorded inside the wasm `renderFrame` call and
  * feeds them into the aggregator as ordinary spans.
  */
-export function recordWasmFrameProfile(
-  entries: Array<{ name: string; durationMs: number }>,
-): void {
+export function recordWasmFrameProfile(entries: Array<{ name: string; durationMs: number }>): void {
   if (!isRenderPerfEnabled()) return;
   for (const entry of entries) {
     recordSpan({ name: entry.name, durationMs: entry.durationMs });
@@ -144,8 +115,7 @@ function flush(): void {
   for (const [name, stats] of spans) {
     if (stats.samples.length === 0) continue;
     const sorted = [...stats.samples].sort((a, b) => a - b);
-    const p = (q: number) =>
-      sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))];
+    const p = (q: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))];
     const sum = sorted.reduce((acc, v) => acc + v, 0);
     spanRows.push({
       span: name,
@@ -169,9 +139,7 @@ function flush(): void {
   }
   counterRows.sort((a, b) => Number(b.perFrame) - Number(a.perFrame));
 
-  console.groupCollapsed(
-    `[render-perf] summary over ${framesSinceFlush} frames`,
-  );
+  console.groupCollapsed(`[render-perf] summary over ${framesSinceFlush} frames`);
   if (spanRows.length > 0) console.table(spanRows);
   if (counterRows.length > 0) console.table(counterRows);
   console.groupEnd();

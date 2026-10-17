@@ -34,11 +34,7 @@ interface CreditsModalProps {
   onPurchase?: (pack: CreditPack) => void;
 }
 
-export function CreditsModal({
-  isOpen = false,
-  onClose,
-  onPurchase,
-}: CreditsModalProps) {
+export function CreditsModal({ isOpen = false, onClose, onPurchase }: CreditsModalProps) {
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
   const handlePurchase = async (pack: CreditPack) => {
@@ -81,7 +77,7 @@ export function CreditsModal({
           </p>
 
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2">
-            {creditPacks.map((pack) => {
+            {creditPacks.map(pack => {
               const isLoading = purchasingId === pack.id;
               const isPopular = !!pack.badge;
               return (
@@ -115,9 +111,7 @@ export function CreditsModal({
                         {pack.bonus > 0 ? (
                           <>
                             {pack.base.toLocaleString()} +{" "}
-                            <span className="font-semibold text-white">
-                              {pack.bonus.toLocaleString()} bonus
-                            </span>
+                            <span className="font-semibold text-white">{pack.bonus.toLocaleString()} bonus</span>
                           </>
                         ) : (
                           "credits"
@@ -127,9 +121,7 @@ export function CreditsModal({
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-semibold text-white/80">
-                      ${pack.priceUsd}
-                    </span>
+                    <span className="text-2xl font-semibold text-white/80">${pack.priceUsd}</span>
                     <span className="flex items-center gap-1.5 text-base font-semibold text-white">
                       {isLoading ? (
                         <LoaderCircleIcon className="animate-spin" />
@@ -146,9 +138,7 @@ export function CreditsModal({
             })}
           </div>
 
-          <p className="mt-6 text-center text-xs text-white/35">
-            Secure checkout via Stripe.
-          </p>
+          <p className="mt-6 text-center text-xs text-white/35">Secure checkout via Stripe.</p>
         </div>
       </div>
     </Modal>

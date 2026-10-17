@@ -14,13 +14,7 @@
  */
 import { basename, extname, join } from "node:path";
 import { platformPaths, repoRoot } from "../paths";
-import {
-  type Detection,
-  type DetectInput,
-  type PluginRegistry,
-  plugins,
-  type Preview,
-} from "../plugins";
+import { type Detection, type DetectInput, type PluginRegistry, plugins, type Preview } from "../plugins";
 
 export type { Detection, Preview } from "../plugins";
 
@@ -30,8 +24,7 @@ export interface FileInfo extends Detection {
   size: number;
 }
 
-type Sig =
-  { at?: number; bytes: (number | null)[] } | { at?: number; text: string };
+type Sig = { at?: number; bytes: (number | null)[] } | { at?: number; text: string };
 interface MagicEntry {
   kind: string;
   format: string;
@@ -89,10 +82,7 @@ const MAGIC: MagicEntry[] = [
     format: "bmp",
     mime: "image/bmp",
     sig: [t("BM")],
-    test: (h) =>
-      h.length > 26 &&
-      h[14] !== undefined &&
-      [12, 40, 56, 108, 124].includes(h[14]),
+    test: h => h.length > 26 && h[14] !== undefined && [12, 40, 56, 108, 124].includes(h[14]),
   },
   {
     kind: "image",
@@ -106,23 +96,13 @@ const MAGIC: MagicEntry[] = [
     format: "svg",
     mime: "image/svg+xml",
     sig: [],
-    test: (h) =>
-      /^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(
-        ascii(h, 0, 512),
-      ),
+    test: h => /^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(ascii(h, 0, 512)),
   },
   {
     kind: "video",
     format: "mp4",
     mime: "video/mp4",
-    sig: [
-      t("ftypisom", 4),
-      t("ftypmp42", 4),
-      t("ftypmp41", 4),
-      t("ftypavc1", 4),
-      t("ftypM4V ", 4),
-      t("ftypdash", 4),
-    ],
+    sig: [t("ftypisom", 4), t("ftypmp42", 4), t("ftypmp41", 4), t("ftypavc1", 4), t("ftypM4V ", 4), t("ftypdash", 4)],
   },
   {
     kind: "video",
@@ -135,7 +115,7 @@ const MAGIC: MagicEntry[] = [
     format: "matroska",
     mime: "video/x-matroska",
     sig: [b([0x1a, 0x45, 0xdf, 0xa3])],
-    test: (h) => !ascii(h, 0, 64).includes("webm"),
+    test: h => !ascii(h, 0, 64).includes("webm"),
   },
   {
     kind: "video",
@@ -172,7 +152,7 @@ const MAGIC: MagicEntry[] = [
     format: "apk",
     mime: "application/vnd.android.package-archive",
     sig: [t("PK\u0003\u0004")],
-    test: (h) => ascii(h, 0, h.length).includes("AndroidManifest.xml"),
+    test: h => ascii(h, 0, h.length).includes("AndroidManifest.xml"),
   },
   {
     kind: "package",
@@ -245,11 +225,8 @@ const MAGIC: MagicEntry[] = [
     format: "pe",
     mime: "application/vnd.microsoft.portable-executable",
     sig: [t("MZ")],
-    test: (h) => {
-      const off =
-        h.length > 0x40
-          ? new DataView(h.buffer, h.byteOffset).getUint32(0x3c, true)
-          : 0;
+    test: h => {
+      const off = h.length > 0x40 ? new DataView(h.buffer, h.byteOffset).getUint32(0x3c, true) : 0;
       return off > 0 && off + 4 <= h.length && ascii(h, off, 4) === "PE\0\0";
     },
   },
@@ -291,8 +268,7 @@ const MAGIC: MagicEntry[] = [
 
 function ascii(h: Uint8Array, at: number, len: number): string {
   let s = "";
-  for (let i = at; i < Math.min(h.length, at + len); i++)
-    s += String.fromCharCode(h[i] as number);
+  for (let i = at; i < Math.min(h.length, at + len); i++) s += String.fromCharCode(h[i] as number);
   return s;
 }
 
@@ -306,11 +282,7 @@ function magic(input: DetectInput): Detection | null {
   const h = input.head;
   for (const e of MAGIC) {
     const ok =
-      e.sig.length === 0
-        ? true
-        : e.all
-          ? e.sig.every((s) => sigMatches(h, s))
-          : e.sig.some((s) => sigMatches(h, s));
+      e.sig.length === 0 ? true : e.all ? e.sig.every(s => sigMatches(h, s)) : e.sig.some(s => sigMatches(h, s));
     if (ok && (!e.test || e.test(h, input)))
       return {
         kind: e.kind,
@@ -327,13 +299,10 @@ function magic(input: DetectInput): Detection | null {
 function textual(input: DetectInput): Detection | null {
   const h = input.head;
   // Binary if NUL bytes in the first 8 KiB.
-  for (let i = 0; i < Math.min(h.length, 8192); i++)
-    if (h[i] === 0) return null;
+  for (let i = 0; i < Math.min(h.length, 8192); i++) if (h[i] === 0) return null;
   let text: string;
   try {
-    text = new TextDecoder("utf-8", { fatal: true }).decode(
-      h.subarray(0, Math.min(h.length, 65536)),
-    );
+    text = new TextDecoder("utf-8", { fatal: true }).decode(h.subarray(0, Math.min(h.length, 65536)));
   } catch {
     return null;
   }
@@ -400,21 +369,7 @@ function textual(input: DetectInput): Detection | null {
 /** Battery saves have no header: power-of-two sizes with a save extension. */
 function save(input: DetectInput): Detection | null {
   const ext = extname(input.name).toLowerCase();
-  if (
-    ![
-      ".sav",
-      ".srm",
-      ".eep",
-      ".fla",
-      ".dsv",
-      ".mcr",
-      ".gci",
-      ".state",
-      ".ss0",
-      ".ss1",
-    ].includes(ext)
-  )
-    return null;
+  if (![".sav", ".srm", ".eep", ".fla", ".dsv", ".mcr", ".gci", ".state", ".ss0", ".ss1"].includes(ext)) return null;
   const pow2 = input.size > 0 && (input.size & (input.size - 1)) === 0;
   return {
     kind: "save",
@@ -432,16 +387,11 @@ const EXTENSION: Record<string, [string, string]> = {
   ".rom": ["firmware", "rom"],
 };
 
-export async function readHead(
-  path: string,
-  bytes = 0x10000,
-): Promise<{ head: Uint8Array; size: number }> {
+export async function readHead(path: string, bytes = 0x10000): Promise<{ head: Uint8Array; size: number }> {
   const file = Bun.file(path);
   const size = file.size;
   return {
-    head: new Uint8Array(
-      await file.slice(0, Math.min(size, bytes)).arrayBuffer(),
-    ),
+    head: new Uint8Array(await file.slice(0, Math.min(size, bytes)).arrayBuffer()),
     size,
   };
 }
@@ -453,10 +403,7 @@ export interface DetectOptions {
 }
 
 /** Detects a file by content; returns the best detection with all candidates considered. */
-export async function detectFile(
-  path: string,
-  options: DetectOptions = {},
-): Promise<FileInfo> {
+export async function detectFile(path: string, options: DetectOptions = {}): Promise<FileInfo> {
   const { head, size } = await readHead(path);
   const name = basename(path);
   const input: DetectInput = { path, name, size, head };
@@ -467,8 +414,7 @@ export async function detectFile(
   if (!m || m.kind === "archive" || m.kind === "executable") {
     for (const d of registry.detectors) {
       if (d.filter && !d.filter.test(name)) continue;
-      if (d.magic && !d.magic.every((v, i) => head[d.offset + i] === v))
-        continue;
+      if (d.magic && !d.magic.every((v, i) => head[d.offset + i] === v)) continue;
       try {
         const r = await d.detect(input);
         if (r) candidates.push({ ...r, by: r.by || d.plugin });
@@ -479,15 +425,13 @@ export async function detectFile(
   }
   const s = save(input);
   if (s) candidates.push(s);
-  if (!candidates.some((c) => c.confidence >= 0.8)) {
+  if (!candidates.some(c => c.confidence >= 0.8)) {
     const text = textual(input);
     if (text) candidates.push(text);
   }
-  if (options.magika && !candidates.some((c) => c.confidence >= 0.8)) {
+  if (options.magika && !candidates.some(c => c.confidence >= 0.8)) {
     try {
-      const { identifyWithMagika } = (await import(
-        join(repoRoot, "packages", "re", "src", "ml", "magika.ts")
-      )) as {
+      const { identifyWithMagika } = (await import(join(repoRoot, "packages", "re", "src", "ml", "magika.ts"))) as {
         identifyWithMagika(p: string): Promise<{
           label?: string;
           output?: { label?: string; mime_type?: string; group?: string };
@@ -544,17 +488,15 @@ async function imagePreview(path: string, width: number): Promise<Preview> {
 
 async function videoPreview(path: string, width: number): Promise<Preview> {
   const video = new Bun.Video(path);
-  const metadata = (await video.metadata()) as unknown as Record<
-    string,
-    unknown
-  > & { duration?: number; width?: number; height?: number };
+  const metadata = (await video.metadata()) as unknown as Record<string, unknown> & {
+    duration?: number;
+    width?: number;
+    height?: number;
+  };
   const at = Math.min(Math.max(0, (metadata.duration ?? 0) * 0.1), 10);
   const thumbnail = await new Bun.Video(path)
     .frame(at)
-    .resize(
-      width,
-      Math.round((width * (metadata.height ?? 9)) / (metadata.width ?? 16)),
-    )
+    .resize(width, Math.round((width * (metadata.height ?? 9)) / (metadata.width ?? 16)))
     .webp({ quality: 80 })
     .bytes();
   return { kind: "video", thumbnail, metadata };
@@ -564,10 +506,7 @@ async function audioPreview(path: string): Promise<Preview> {
   try {
     return {
       kind: "audio",
-      metadata: (await new Bun.Video(path).metadata()) as unknown as Record<
-        string,
-        unknown
-      >,
+      metadata: (await new Bun.Video(path).metadata()) as unknown as Record<string, unknown>,
     };
   } catch {
     return { kind: "audio", metadata: { size: Bun.file(path).size } };
@@ -575,18 +514,9 @@ async function audioPreview(path: string): Promise<Preview> {
 }
 
 async function archivePreview(path: string, format: string): Promise<Preview> {
-  if (
-    format === "7z" ||
-    format === "rar" ||
-    format === "xz" ||
-    format === "bzip2"
-  ) {
+  if (format === "7z" || format === "rar" || format === "xz" || format === "bzip2") {
     // bep's 7-Zip owner (packages/bun-engine/src/usr.ts).
-    const seven =
-      Bun.which("7z") ??
-      (process.platform === "win32"
-        ? "C:\\Program Files\\7-Zip\\7z.exe"
-        : null);
+    const seven = Bun.which("7z") ?? (process.platform === "win32" ? "C:\\Program Files\\7-Zip\\7z.exe" : null);
     if (!seven)
       return {
         kind: "archive",
@@ -598,8 +528,7 @@ async function archivePreview(path: string, format: string): Promise<Preview> {
     for (const line of out.stdout.toString().split(/\r?\n/)) {
       const [k, ...v] = line.split(" = ");
       if (k === "Path") cur = { path: v.join(" = ") };
-      else if (k === "Size" && cur.path)
-        entries.push({ path: cur.path, size: Number(v[0]) || 0 });
+      else if (k === "Size" && cur.path) entries.push({ path: cur.path, size: Number(v[0]) || 0 });
     }
     return {
       kind: "archive",
@@ -644,11 +573,7 @@ export async function previewFile(
   const registry = options.registry ?? (await plugins());
   const { head, size } = await readHead(path);
   for (const p of registry.previewers) {
-    if (
-      (p.kind && p.kind !== detection.kind) ||
-      (p.format && p.format !== detection.format)
-    )
-      continue;
+    if ((p.kind && p.kind !== detection.kind) || (p.format && p.format !== detection.format)) continue;
     const r = await p.preview({
       path,
       name: detection.name,
@@ -662,9 +587,7 @@ export async function previewFile(
   switch (detection.kind) {
     case "image":
       preview =
-        detection.format === "svg" ||
-        detection.format === "ico" ||
-        detection.format === "qoi"
+        detection.format === "svg" || detection.format === "ico" || detection.format === "qoi"
           ? { kind: "image", metadata: { format: detection.format } }
           : await imagePreview(path, width);
       break;
@@ -679,10 +602,7 @@ export async function previewFile(
       preview =
         detection.format === "deb" || detection.format === "msi"
           ? await packagePreview(path, detection.format)
-          : await archivePreview(
-              path,
-              detection.format === "apk" ? "zip" : detection.format,
-            );
+          : await archivePreview(path, detection.format === "apk" ? "zip" : detection.format);
       break;
     case "save":
       preview = await savePreview(path);
@@ -696,9 +616,7 @@ export async function previewFile(
 async function packagePreview(path: string, format: string): Promise<Preview> {
   if (format === "deb") {
     try {
-      const { inspect } = (await import(
-        join(repoRoot, "packages", "package-converter", "src", "convert.ts")
-      )) as {
+      const { inspect } = (await import(join(repoRoot, "packages", "package-converter", "src", "convert.ts"))) as {
         inspect(
           p: string,
           o: Record<string, unknown>,
@@ -714,20 +632,12 @@ async function packagePreview(path: string, format: string): Promise<Preview> {
 }
 
 /** Imports a file into the right `usr/` store by kind (ROMs and firmware to bep's store, themes and catalogs to the platform). */
-export async function importFile(
-  path: string,
-): Promise<{ to: string; detection: FileInfo }> {
+export async function importFile(path: string): Promise<{ to: string; detection: FileInfo }> {
   const detection = await detectFile(path);
   const usr = platformPaths().usr;
   const dir =
     detection.kind === "rom"
-      ? join(
-          usr,
-          "share",
-          "bun-engine",
-          "system",
-          detection.platform ?? "unknown",
-        )
+      ? join(usr, "share", "bun-engine", "system", detection.platform ?? "unknown")
       : detection.kind === "firmware"
         ? join(usr, "share", "bun-engine", "firmware")
         : detection.kind === "theme"
@@ -735,10 +645,7 @@ export async function importFile(
           : detection.kind === "save"
             ? join(usr, "var", "lib", "bun-os", "saves")
             : null;
-  if (!dir)
-    throw new Error(
-      `${detection.name}: ${detection.kind} files are opened, not imported`,
-    );
+  if (!dir) throw new Error(`${detection.name}: ${detection.kind} files are opened, not imported`);
   const to = join(dir, detection.name);
   await Bun.write(to, Bun.file(path));
   return { to, detection };

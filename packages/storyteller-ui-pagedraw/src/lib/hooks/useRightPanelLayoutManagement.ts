@@ -13,10 +13,7 @@ export const useRightPanelLayoutManagement = (
     const update = () => {
       if (!rightContainerRef.current) return;
       const { clientWidth, clientHeight } = rightContainerRef.current;
-      let s = Math.min(
-        clientWidth / naturalWidth,
-        clientHeight / naturalHeight,
-      );
+      let s = Math.min(clientWidth / naturalWidth, clientHeight / naturalHeight);
       if (s > 1.0) {
         s = 1.0;
       }

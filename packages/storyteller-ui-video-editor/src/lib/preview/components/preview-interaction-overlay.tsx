@@ -13,33 +13,19 @@ export function PreviewInteractionOverlay() {
   const [snapLines, setSnapLines] = useState<SnapLine[]>([]);
   const editor = useEditor();
   const viewport = usePreviewViewport();
-  const selectedElements = useEditor((e) => e.selection.getSelectedElements());
+  const selectedElements = useEditor(e => e.selection.getSelectedElements());
   const { activeTabPerType } = usePropertiesStore();
 
-  const selectedRef =
-    selectedElements.length === 1 ? selectedElements[0] : null;
-  const activeTrack = selectedRef
-    ? editor.timeline.getTrackById({ trackId: selectedRef.trackId })
-    : null;
-  const activeElement =
-    activeTrack?.elements.find(
-      (element) => element.id === selectedRef?.elementId,
-    ) ?? null;
-  const isMaskMode = activeElement
-    ? activeTabPerType[activeElement.type] === "masks"
-    : false;
+  const selectedRef = selectedElements.length === 1 ? selectedElements[0] : null;
+  const activeTrack = selectedRef ? editor.timeline.getTrackById({ trackId: selectedRef.trackId }) : null;
+  const activeElement = activeTrack?.elements.find(element => element.id === selectedRef?.elementId) ?? null;
+  const isMaskMode = activeElement ? activeTabPerType[activeElement.type] === "masks" : false;
 
-  const {
-    onPointerDown,
-    onPointerMove,
-    onPointerUp,
-    onDoubleClick,
-    editingText,
-    commitTextEdit,
-  } = usePreviewInteraction({
-    onSnapLinesChange: setSnapLines,
-    isMaskMode,
-  });
+  const { onPointerDown, onPointerMove, onPointerUp, onDoubleClick, editingText, commitTextEdit } =
+    usePreviewInteraction({
+      onSnapLinesChange: setSnapLines,
+      isMaskMode,
+    });
 
   const handlePointerDown = (event: React.PointerEvent) => {
     if (viewport.handlePanPointerDown({ event })) {
@@ -72,18 +58,14 @@ export function PreviewInteractionOverlay() {
         role="application"
         aria-label="Preview canvas"
         style={{
-          cursor: viewport.isPanning
-            ? "grabbing"
-            : viewport.canPan
-              ? "default"
-              : undefined,
+          cursor: viewport.isPanning ? "grabbing" : viewport.canPan ? "default" : undefined,
         }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onDoubleClick={onDoubleClick}
-        onDragStart={(e) => e.preventDefault()}
+        onDragStart={e => e.preventDefault()}
       />
       {editingText ? (
         <TextEditOverlay

@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Shared HTTP plumbing of the transports: headers, deadlines, abort mapping. */
-import {
-  A2A_EXTENSIONS_HEADER,
-  A2A_PROTOCOL_VERSION,
-  A2A_VERSION_HEADER,
-} from "./protocol.ts";
+import { A2A_EXTENSIONS_HEADER, A2A_PROTOCOL_VERSION, A2A_VERSION_HEADER } from "./protocol.ts";
 import { A2ATransportError } from "./errors.ts";
 
-export type HeadersProvider =
-  HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
+export type HeadersProvider = HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
 
 export interface HttpOptions {
   /** `fetch` implementation, resolved at call time when omitted. */
@@ -47,32 +42,24 @@ export interface RequestSpec {
 export class HttpCore {
   constructor(private readonly options: HttpOptions) {}
 
-  private async headers(
-    extra: HeadersInit | undefined,
-    spec: RequestSpec,
-  ): Promise<Headers> {
+  private async headers(extra: HeadersInit | undefined, spec: RequestSpec): Promise<Headers> {
     const headers = new Headers();
     const base = this.options.headers;
     const resolved = typeof base === "function" ? await base() : base;
     for (const source of [resolved, extra]) {
-      if (source)
-        new Headers(source).forEach((value, key) => headers.set(key, value));
+      if (source) new Headers(source).forEach((value, key) => headers.set(key, value));
     }
     headers.set(A2A_VERSION_HEADER, A2A_PROTOCOL_VERSION);
     const extensions = this.options.extensions;
-    if (extensions && extensions.length > 0)
-      headers.set(A2A_EXTENSIONS_HEADER, extensions.join(","));
+    if (extensions && extensions.length > 0) headers.set(A2A_EXTENSIONS_HEADER, extensions.join(","));
     headers.set("accept", spec.accept);
     if (spec.contentType) headers.set("content-type", spec.contentType);
     return headers;
   }
 
   /** Unary exchange: the deadline covers the headers and the whole body. */
-  async exchange(
-    spec: RequestSpec,
-    call: CallOptions = {},
-  ): Promise<{ response: Response; text: string }> {
-    return this.run(spec, call, false, async (response) => ({
+  async exchange(spec: RequestSpec, call: CallOptions = {}): Promise<{ response: Response; text: string }> {
+    return this.run(spec, call, false, async response => ({
       response,
       text: await response.text(),
     }));
@@ -82,12 +69,9 @@ export class HttpCore {
    * Streaming exchange: the deadline only covers the response headers. The caller owns the body and
    * must call `release()` once it is done, to detach the abort listener of its signal.
    */
-  async open(
-    spec: RequestSpec,
-    call: CallOptions = {},
-  ): Promise<{ response: Response; release: () => void }> {
+  async open(spec: RequestSpec, call: CallOptions = {}): Promise<{ response: Response; release: () => void }> {
     const detach: { run?: () => void } = {};
-    const response = await this.run(spec, call, true, async (r) => r, detach);
+    const response = await this.run(spec, call, true, async r => r, detach);
     return { response, release: () => detach.run?.() };
   }
 
@@ -100,8 +84,7 @@ export class HttpCore {
   ): Promise<T> {
     const fetchImpl = this.options.fetch ?? globalThis.fetch;
     const headers = await this.headers(call.headers, spec);
-    const timeoutMs =
-      call.timeoutMs ?? this.options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const timeoutMs = call.timeoutMs ?? this.options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const controller = new AbortController();
     let timedOut = false;
     const timer =
@@ -160,14 +143,10 @@ export class HttpCore {
       });
     }
     const reason = cause instanceof Error ? cause.message : String(cause);
-    return new A2ATransportError(
-      "network",
-      `${spec.operation} failed: ${reason}`,
-      {
-        method: spec.operation,
-        cause,
-      },
-    );
+    return new A2ATransportError("network", `${spec.operation} failed: ${reason}`, {
+      method: spec.operation,
+      cause,
+    });
   }
 }
 

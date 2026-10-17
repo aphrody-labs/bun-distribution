@@ -10,11 +10,7 @@ import { withClassName } from "./base-ui";
 export type RootProps = TabsPrimitive.Root.Props;
 
 export const Root = ({ className, ...props }: RootProps) => (
-  <TabsPrimitive.Root
-    className={withClassName("flex flex-col", className)}
-    data-m3-component="Tabs"
-    {...props}
-  />
+  <TabsPrimitive.Root className={withClassName("flex flex-col", className)} data-m3-component="Tabs" {...props} />
 );
 
 export type ContentProps = TabsPrimitive.Panel.Props;
@@ -38,17 +34,10 @@ export type ListProps = TabsPrimitive.List.Props;
  * activate the focused tab (`activateOnFocus`, Radix `activationMode="automatic"`); pass
  * `activateOnFocus={false}` for manual activation.
  */
-export const List = ({
-  className,
-  activateOnFocus = true,
-  ...props
-}: ListProps) => (
+export const List = ({ className, activateOnFocus = true, ...props }: ListProps) => (
   <TabsPrimitive.List
     activateOnFocus={activateOnFocus}
-    className={withClassName(
-      "relative flex flex-row items-center border-b border-outline-variant",
-      className,
-    )}
+    className={withClassName("relative flex flex-row items-center border-b border-outline-variant", className)}
     data-m3-component="TabsList"
     {...props}
   />

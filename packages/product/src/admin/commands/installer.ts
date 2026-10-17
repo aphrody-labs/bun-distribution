@@ -15,10 +15,7 @@ et le MCP dans ton assistant. Chaque étape saute ce qui est déjà fait : tu pe
   --simuler          dit ce qui serait fait, sans rien modifier
   --acces <fichier>  fichier d'accès de l'équipe (sinon cherché dans Téléchargements et le Bureau)`;
 
-export async function installFlow(
-  ctx: Context,
-  options: { simuler: boolean; acces?: string },
-): Promise<number> {
+export async function installFlow(ctx: Context, options: { simuler: boolean; acces?: string }): Promise<number> {
   const { ui } = ctx;
   ui.say("Installation et réglages d'Aphrody sur ce PC");
   ui.say(
@@ -31,11 +28,7 @@ export async function installFlow(
     repoReady: false,
     ...(options.acces ? { packFile: options.acces } : {}),
   };
-  const report = await runInstall(
-    ctx,
-    options.simuler ? "simuler" : "executer",
-    state,
-  );
+  const report = await runInstall(ctx, options.simuler ? "simuler" : "executer", state);
   ui.say();
   if (options.simuler) {
     ui.say("Simulation terminée. Rien n'a été modifié.");
@@ -44,9 +37,7 @@ export async function installFlow(
   ui.say("Vérification finale...");
   const doctor = await runDoctor(ctx);
   for (const line of renderReport(doctor)) ui.say(line);
-  const needsPack =
-    report.results.find((entry) => entry.step.id === "acces")?.result.state ===
-    "attente";
+  const needsPack = report.results.find(entry => entry.step.id === "acces")?.result.state === "attente";
   if (needsPack) {
     ui.say();
     ui.say(
@@ -75,10 +66,7 @@ const command: Command = {
     if (
       !values.simuler &&
       ctx.ui.interactive &&
-      !ctx.ui.confirm(
-        "Je vais installer et configurer Aphrody sur ce PC. Continuer ?",
-        true,
-      )
+      !ctx.ui.confirm("Je vais installer et configurer Aphrody sur ce PC. Continuer ?", true)
     ) {
       ctx.ui.say("D'accord, rien n'a été fait.");
       return 0;

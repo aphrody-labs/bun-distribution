@@ -15,9 +15,7 @@
         "reference-types",
         "multivalue"
       ],
-      "threads": [
-        "atomics"
-      ]
+      "threads": ["atomics"]
     }
   },
   "tools": {
@@ -72,23 +70,12 @@
     },
     "qt": {
       "version": "6.12.0",
-      "kits": [
-        "wasm_singlethread",
-        "wasm_multithread"
-      ],
+      "kits": ["wasm_singlethread", "wasm_multithread"],
       "host": "linux_gcc_64",
       "modules": {
-        "wasm_multithread": [
-          "qtmultimedia",
-          "qtshadertools"
-        ],
-        "wasm_singlethread": [
-          "qtshadertools"
-        ],
-        "linux_gcc_64": [
-          "qtmultimedia",
-          "qtshadertools"
-        ]
+        "wasm_multithread": ["qtmultimedia", "qtshadertools"],
+        "wasm_singlethread": ["qtshadertools"],
+        "linux_gcc_64": ["qtmultimedia", "qtshadertools"]
       }
     },
     "emscripten": "5.0.5"

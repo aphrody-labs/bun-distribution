@@ -5,27 +5,80 @@ interface Functions {
   /** mscoree.dll!CLRCreateInstance */
   CLRCreateInstance(clsid: Win32Pointer, riid: Win32Pointer, ppInterface: Win32Pointer): number;
   /** mscoree.dll!CallFunctionShim */
-  CallFunctionShim(szDllName: string | Win32Pointer, szFunctionName: string | Win32Pointer, lpvArgument1: Win32Pointer, lpvArgument2: Win32Pointer, szVersion: string | Win32Pointer, pvReserved: Win32Pointer): number;
+  CallFunctionShim(
+    szDllName: string | Win32Pointer,
+    szFunctionName: string | Win32Pointer,
+    lpvArgument1: Win32Pointer,
+    lpvArgument2: Win32Pointer,
+    szVersion: string | Win32Pointer,
+    pvReserved: Win32Pointer,
+  ): number;
   /** mscoree.dll!ClrCreateManagedInstance */
   ClrCreateManagedInstance(pTypeName: string | Win32Pointer, riid: Win32Pointer, ppObject: Win32Pointer): number;
   /** mscoree.dll!CorBindToCurrentRuntime */
-  CorBindToCurrentRuntime(pwszFileName: string | Win32Pointer, rclsid: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  CorBindToCurrentRuntime(
+    pwszFileName: string | Win32Pointer,
+    rclsid: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** mscoree.dll!CorBindToRuntime */
-  CorBindToRuntime(pwszVersion: string | Win32Pointer, pwszBuildFlavor: string | Win32Pointer, rclsid: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  CorBindToRuntime(
+    pwszVersion: string | Win32Pointer,
+    pwszBuildFlavor: string | Win32Pointer,
+    rclsid: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** mscoree.dll!CorBindToRuntimeByCfg */
-  CorBindToRuntimeByCfg(pCfgStream: Win32Pointer, reserved: number, startupFlags: number, rclsid: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  CorBindToRuntimeByCfg(
+    pCfgStream: Win32Pointer,
+    reserved: number,
+    startupFlags: number,
+    rclsid: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** mscoree.dll!CorBindToRuntimeEx */
-  CorBindToRuntimeEx(pwszVersion: string | Win32Pointer, pwszBuildFlavor: string | Win32Pointer, startupFlags: number, rclsid: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  CorBindToRuntimeEx(
+    pwszVersion: string | Win32Pointer,
+    pwszBuildFlavor: string | Win32Pointer,
+    startupFlags: number,
+    rclsid: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** mscoree.dll!CorBindToRuntimeHost */
-  CorBindToRuntimeHost(pwszVersion: string | Win32Pointer, pwszBuildFlavor: string | Win32Pointer, pwszHostConfigFile: string | Win32Pointer, pReserved: Win32Pointer, startupFlags: number, rclsid: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  CorBindToRuntimeHost(
+    pwszVersion: string | Win32Pointer,
+    pwszBuildFlavor: string | Win32Pointer,
+    pwszHostConfigFile: string | Win32Pointer,
+    pReserved: Win32Pointer,
+    startupFlags: number,
+    rclsid: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** mscoree.dll!CorExitProcess */
   CorExitProcess(exitCode: number): void;
   /** mscoree.dll!CorLaunchApplication */
-  CorLaunchApplication(dwClickOnceHost: number, pwzAppFullName: string | Win32Pointer, dwManifestPaths: number, ppwzManifestPaths: Win32Pointer, dwActivationData: number, ppwzActivationData: Win32Pointer, lpProcessInformation: Win32Pointer): number;
+  CorLaunchApplication(
+    dwClickOnceHost: number,
+    pwzAppFullName: string | Win32Pointer,
+    dwManifestPaths: number,
+    ppwzManifestPaths: Win32Pointer,
+    dwActivationData: number,
+    ppwzActivationData: Win32Pointer,
+    lpProcessInformation: Win32Pointer,
+  ): number;
   /** mscoree.dll!CorMarkThreadInThreadPool */
   CorMarkThreadInThreadPool(): void;
   /** mscoree.dll!CreateDebuggingInterfaceFromVersion */
-  CreateDebuggingInterfaceFromVersion(iDebuggerVersion: number, szDebuggeeVersion: string | Win32Pointer, ppCordb: Win32Pointer): number;
+  CreateDebuggingInterfaceFromVersion(
+    iDebuggerVersion: number,
+    szDebuggeeVersion: string | Win32Pointer,
+    ppCordb: Win32Pointer,
+  ): number;
   /** mscoree.dll!GetCLRIdentityManager */
   GetCLRIdentityManager(riid: Win32Pointer, ppManager: Win32Pointer): number;
   /** mscoree.dll!GetCORRequiredVersion */
@@ -35,23 +88,68 @@ interface Functions {
   /** mscoree.dll!GetCORVersion */
   GetCORVersion(pbBuffer: string | Win32Pointer, cchBuffer: number, dwLength: Win32Pointer): number;
   /** mscoree.dll!GetFileVersion */
-  GetFileVersion(szFilename: string | Win32Pointer, szBuffer: string | Win32Pointer, cchBuffer: number, dwLength: Win32Pointer): number;
+  GetFileVersion(
+    szFilename: string | Win32Pointer,
+    szBuffer: string | Win32Pointer,
+    cchBuffer: number,
+    dwLength: Win32Pointer,
+  ): number;
   /** mscoree.dll!GetRealProcAddress */
   GetRealProcAddress(pwszProcName: string | Win32Pointer, ppv: Win32Pointer): number;
   /** mscoree.dll!GetRequestedRuntimeInfo */
-  GetRequestedRuntimeInfo(pExe: string | Win32Pointer, pwszVersion: string | Win32Pointer, pConfigurationFile: string | Win32Pointer, startupFlags: number, runtimeInfoFlags: number, pDirectory: string | Win32Pointer, dwDirectory: number, dwDirectoryLength: Win32Pointer, pVersion: string | Win32Pointer, cchBuffer: number, dwlength: Win32Pointer): number;
+  GetRequestedRuntimeInfo(
+    pExe: string | Win32Pointer,
+    pwszVersion: string | Win32Pointer,
+    pConfigurationFile: string | Win32Pointer,
+    startupFlags: number,
+    runtimeInfoFlags: number,
+    pDirectory: string | Win32Pointer,
+    dwDirectory: number,
+    dwDirectoryLength: Win32Pointer,
+    pVersion: string | Win32Pointer,
+    cchBuffer: number,
+    dwlength: Win32Pointer,
+  ): number;
   /** mscoree.dll!GetRequestedRuntimeVersion */
-  GetRequestedRuntimeVersion(pExe: string | Win32Pointer, pVersion: string | Win32Pointer, cchBuffer: number, dwLength: Win32Pointer): number;
+  GetRequestedRuntimeVersion(
+    pExe: string | Win32Pointer,
+    pVersion: string | Win32Pointer,
+    cchBuffer: number,
+    dwLength: Win32Pointer,
+  ): number;
   /** mscoree.dll!GetRequestedRuntimeVersionForCLSID */
-  GetRequestedRuntimeVersionForCLSID(rclsid: Win32Pointer, pVersion: string | Win32Pointer, cchBuffer: number, dwLength: Win32Pointer, dwResolutionFlags: number): number;
+  GetRequestedRuntimeVersionForCLSID(
+    rclsid: Win32Pointer,
+    pVersion: string | Win32Pointer,
+    cchBuffer: number,
+    dwLength: Win32Pointer,
+    dwResolutionFlags: number,
+  ): number;
   /** mscoree.dll!GetVersionFromProcess */
-  GetVersionFromProcess(hProcess: Win32Pointer, pVersion: string | Win32Pointer, cchBuffer: number, dwLength: Win32Pointer): number;
+  GetVersionFromProcess(
+    hProcess: Win32Pointer,
+    pVersion: string | Win32Pointer,
+    cchBuffer: number,
+    dwLength: Win32Pointer,
+  ): number;
   /** mscoree.dll!LoadLibraryShim */
-  LoadLibraryShim(szDllName: string | Win32Pointer, szVersion: string | Win32Pointer, pvReserved: Win32Pointer, phModDll: Win32Pointer): number;
+  LoadLibraryShim(
+    szDllName: string | Win32Pointer,
+    szVersion: string | Win32Pointer,
+    pvReserved: Win32Pointer,
+    phModDll: Win32Pointer,
+  ): number;
   /** mscoree.dll!LoadStringRC */
   LoadStringRC(iResouceID: number, szBuffer: string | Win32Pointer, iMax: number, bQuiet: number): number;
   /** mscoree.dll!LoadStringRCEx */
-  LoadStringRCEx(lcid: number, iResouceID: number, szBuffer: string | Win32Pointer, iMax: number, bQuiet: number, pcwchUsed: Win32Pointer): number;
+  LoadStringRCEx(
+    lcid: number,
+    iResouceID: number,
+    szBuffer: string | Win32Pointer,
+    iMax: number,
+    bQuiet: number,
+    pcwchUsed: Win32Pointer,
+  ): number;
   /** mscoree.dll!LockClrVersion */
   LockClrVersion(hostCallback: Win32Callback, pBeginHostSetup: Win32Pointer, pEndHostSetup: Win32Pointer): number;
   /** mscoree.dll!RunDll32ShimW */

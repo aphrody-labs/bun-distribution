@@ -11,13 +11,17 @@ pub(crate) struct InitialNavigation {
 
 impl InitialNavigation {
     pub(crate) fn new(url: String) -> Self {
-        Self { pending_url: Mutex::new(Some(url)) }
+        Self {
+            pending_url: Mutex::new(Some(url)),
+        }
     }
 
     /// Returns true while the pending initial load owns this navigation.
     pub(crate) fn defer(&self, url: &str) -> bool {
-        let mut pending =
-            self.pending_url.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut pending = self
+            .pending_url
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if let Some(target) = pending.as_mut() {
             *target = url.to_owned();
             true
@@ -28,7 +32,10 @@ impl InitialNavigation {
 
     /// Consumes the latest URL exactly once, releasing the lock before calling CEF.
     pub(crate) fn take_url(&self) -> Option<String> {
-        self.pending_url.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take()
+        self.pending_url
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
     }
 }
 
@@ -40,7 +47,10 @@ mod tests {
     fn navigation_before_script_acknowledgment_replaces_the_splash() {
         let pending = InitialNavigation::new("app://localhost/index.html".into());
         assert!(pending.defer("http://127.0.0.1:43100/"));
-        assert_eq!(pending.take_url().as_deref(), Some("http://127.0.0.1:43100/"));
+        assert_eq!(
+            pending.take_url().as_deref(),
+            Some("http://127.0.0.1:43100/")
+        );
     }
 
     #[test]
@@ -48,7 +58,10 @@ mod tests {
         let pending = InitialNavigation::new("app://localhost/index.html".into());
         assert!(pending.defer("http://127.0.0.1:43100/desktop"));
         assert!(pending.defer("http://127.0.0.1:43100/studio"));
-        assert_eq!(pending.take_url().as_deref(), Some("http://127.0.0.1:43100/studio"));
+        assert_eq!(
+            pending.take_url().as_deref(),
+            Some("http://127.0.0.1:43100/studio")
+        );
         assert!(pending.take_url().is_none());
     }
 

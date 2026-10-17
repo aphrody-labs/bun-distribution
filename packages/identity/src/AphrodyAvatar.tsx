@@ -12,12 +12,7 @@ export interface AphrodyAvatarProps {
   style?: CSSProperties;
 }
 
-export function AphrodyAvatar({
-  size = 32,
-  label,
-  className,
-  style,
-}: AphrodyAvatarProps) {
+export function AphrodyAvatar({ size = 32, label, className, style }: AphrodyAvatarProps) {
   return (
     <span
       className={className}
@@ -35,14 +30,7 @@ export function AphrodyAvatar({
         ...style,
       }}
     >
-      <img
-        src={brandIcon(size)}
-        srcSet={brandSrcSet(size)}
-        width={size}
-        height={size}
-        alt=""
-        draggable={false}
-      />
+      <img src={brandIcon(size)} srcSet={brandSrcSet(size)} width={size} height={size} alt="" draggable={false} />
     </span>
   );
 }

@@ -1,18 +1,8 @@
-import type {
-  MouseEvent as ReactMouseEvent,
-  PointerEvent as ReactPointerEvent,
-} from "react";
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import type { MediaAsset } from "../../media/types";
-import {
-  getVisibleElementsWithBounds,
-  type ElementWithBounds,
-} from "../element-bounds";
+import { getVisibleElementsWithBounds, type ElementWithBounds } from "../element-bounds";
 import { getHitElements, hitTest, resolvePreferredHit } from "../hit-test";
-import {
-  SNAP_THRESHOLD_SCREEN_PIXELS,
-  snapPosition,
-  type SnapLine,
-} from "../preview-snap";
+import { SNAP_THRESHOLD_SCREEN_PIXELS, snapPosition, type SnapLine } from "../preview-snap";
 import type { TCanvasSize } from "../../project/types";
 import type { ParamValues } from "../../params";
 import { buildTransformFromParams, type Transform } from "../../rendering";
@@ -62,8 +52,7 @@ interface DraggingGesture extends CapturedPointerState {
   readonly elements: readonly DragElementSnapshot[];
 }
 
-type GestureSession =
-  { readonly kind: "idle" } | PendingGesture | DraggingGesture;
+type GestureSession = { readonly kind: "idle" } | PendingGesture | DraggingGesture;
 
 const IDLE_GESTURE: GestureSession = { kind: "idle" };
 
@@ -74,18 +63,8 @@ export interface EditingTextState {
 }
 
 export interface PreviewViewportAdapter {
-  screenToCanvas: ({
-    clientX,
-    clientY,
-  }: {
-    clientX: number;
-    clientY: number;
-  }) => Point | null;
-  screenPixelsToLogicalThreshold: ({
-    screenPixels,
-  }: {
-    screenPixels: number;
-  }) => Point;
+  screenToCanvas: ({ clientX, clientY }: { clientX: number; clientY: number }) => Point | null;
+  screenPixelsToLogicalThreshold: ({ screenPixels }: { screenPixels: number }) => Point;
 }
 
 export interface InputAdapter {
@@ -146,13 +125,7 @@ export interface PreviewInteractionDepsRef {
   readonly current: PreviewInteractionDeps;
 }
 
-function isSameElementRef({
-  left,
-  right,
-}: {
-  left: ElementRef;
-  right: ElementRef;
-}): boolean {
+function isSameElementRef({ left, right }: { left: ElementRef; right: ElementRef }): boolean {
   return left.trackId === right.trackId && left.elementId === right.elementId;
 }
 
@@ -168,34 +141,18 @@ function buildDragSelection({
     elementId: dragTarget.elementId,
   };
 
-  if (
-    !selectedElements.some((selectedElement) =>
-      isSameElementRef({ left: selectedElement, right: dragTargetRef }),
-    )
-  ) {
+  if (!selectedElements.some(selectedElement => isSameElementRef({ left: selectedElement, right: dragTargetRef }))) {
     return [dragTargetRef];
   }
 
   return [
     dragTargetRef,
-    ...selectedElements.filter(
-      (selectedElement) =>
-        !isSameElementRef({ left: selectedElement, right: dragTargetRef }),
-    ),
+    ...selectedElements.filter(selectedElement => !isSameElementRef({ left: selectedElement, right: dragTargetRef })),
   ];
 }
 
-function movedPastDragThreshold({
-  current,
-  origin,
-}: {
-  current: Point;
-  origin: Point;
-}): boolean {
-  return (
-    Math.abs(current.x - origin.x) > MIN_DRAG_DISTANCE ||
-    Math.abs(current.y - origin.y) > MIN_DRAG_DISTANCE
-  );
+function movedPastDragThreshold({ current, origin }: { current: Point; origin: Point }): boolean {
+  return Math.abs(current.x - origin.x) > MIN_DRAG_DISTANCE || Math.abs(current.y - origin.y) > MIN_DRAG_DISTANCE;
 }
 
 function toDragElementSnapshots({
@@ -206,17 +163,14 @@ function toDragElementSnapshots({
   const isVisualTrackedElement = (value: {
     track: TimelineTrack;
     element: TimelineElement;
-  }): value is { track: TimelineTrack; element: VisualElement } =>
-    isVisualElement(value.element);
+  }): value is { track: TimelineTrack; element: VisualElement } => isVisualElement(value.element);
 
-  return elementsWithTracks
-    .filter(isVisualTrackedElement)
-    .map(({ track, element }) => ({
-      trackId: track.id,
-      elementId: element.id,
-      initialTransform: buildTransformFromParams({ params: element.params }),
-      initialParams: element.params,
-    }));
+  return elementsWithTracks.filter(isVisualTrackedElement).map(({ track, element }) => ({
+    trackId: track.id,
+    elementId: element.id,
+    initialTransform: buildTransformFromParams({ params: element.params }),
+    initialParams: element.params,
+  }));
 }
 
 export class PreviewInteractionController {
@@ -239,9 +193,7 @@ export class PreviewInteractionController {
     this.commitTextEdit = this.commitTextEdit.bind(this);
     this.handlePlaybackChange = this.handlePlaybackChange.bind(this);
 
-    this.unsubscribePlayback = this.deps.playback.subscribe(
-      this.handlePlaybackChange,
-    );
+    this.unsubscribePlayback = this.deps.playback.subscribe(this.handlePlaybackChange);
   }
 
   private get deps(): PreviewInteractionDeps {
@@ -320,13 +272,7 @@ export class PreviewInteractionController {
     this.notify();
   }
 
-  onPointerDown({
-    clientX,
-    clientY,
-    currentTarget,
-    pointerId,
-    button,
-  }: ReactPointerEvent): void {
+  onPointerDown({ clientX, clientY, currentTarget, pointerId, button }: ReactPointerEvent): void {
     if (this.editingTextState) return;
     if (this.deps.preview.isMaskMode()) return;
     if (button !== PRIMARY_POINTER_BUTTON) return;
@@ -438,11 +384,7 @@ export class PreviewInteractionController {
     this.deps.preview.onSnapLinesChange?.([]);
   }
 
-  private releaseCapturedPointer({
-    pointerState,
-  }: {
-    pointerState: CapturedPointerState | null;
-  }): void {
+  private releaseCapturedPointer({ pointerState }: { pointerState: CapturedPointerState | null }): void {
     if (!pointerState) return;
 
     if (!pointerState.captureTarget.hasPointerCapture(pointerState.pointerId)) {
@@ -519,13 +461,7 @@ export class PreviewInteractionController {
     this.notify();
   }
 
-  private updateDragPreview({
-    drag,
-    currentPos,
-  }: {
-    drag: DraggingGesture;
-    currentPos: Point;
-  }): void {
+  private updateDragPreview({ drag, currentPos }: { drag: DraggingGesture; currentPos: Point }): void {
     const firstElement = drag.elements[0];
     if (!firstElement) return;
 
@@ -556,27 +492,21 @@ export class PreviewInteractionController {
 
     this.deps.preview.onSnapLinesChange?.(activeLines);
 
-    const deltaSnappedX =
-      snappedPosition.x - firstElement.initialTransform.position.x;
-    const deltaSnappedY =
-      snappedPosition.y - firstElement.initialTransform.position.y;
+    const deltaSnappedX = snappedPosition.x - firstElement.initialTransform.position.x;
+    const deltaSnappedY = snappedPosition.y - firstElement.initialTransform.position.y;
 
     this.deps.timeline.previewElements(
-      drag.elements.map(
-        ({ trackId, elementId, initialTransform, initialParams }) => ({
-          trackId,
-          elementId,
-          updates: {
-            params: {
-              ...initialParams,
-              "transform.positionX":
-                initialTransform.position.x + deltaSnappedX,
-              "transform.positionY":
-                initialTransform.position.y + deltaSnappedY,
-            },
+      drag.elements.map(({ trackId, elementId, initialTransform, initialParams }) => ({
+        trackId,
+        elementId,
+        updates: {
+          params: {
+            ...initialParams,
+            "transform.positionX": initialTransform.position.x + deltaSnappedX,
+            "transform.positionY": initialTransform.position.y + deltaSnappedY,
           },
-        }),
-      ),
+        },
+      })),
     );
   }
 }

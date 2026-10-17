@@ -1,10 +1,6 @@
 import { SquareIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import {
-  DynamicIcon,
-  HighDefinitionIcon,
-  StandardDefinitionIcon,
-} from "@storyteller/icons";
+import { DynamicIcon, HighDefinitionIcon, StandardDefinitionIcon } from "@storyteller/icons";
 import { PopoverItem, PopoverMenu } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { CommonResolution, ImageModel } from "@storyteller/model-list";
@@ -27,13 +23,8 @@ interface ResolutionPickerProps {
  * @param currentAspectRatio - currently selected aspect ratio
  * @param handleCommonResolutionSelect - callback when a resolution is selected
  */
-export const ResolutionPicker = ({
-  model,
-  currentResolution,
-  handleCommonResolutionSelect,
-}: ResolutionPickerProps) => {
-  const useResolution =
-    currentResolution ?? model.defaultResolution ?? undefined;
+export const ResolutionPicker = ({ model, currentResolution, handleCommonResolutionSelect }: ResolutionPickerProps) => {
+  const useResolution = currentResolution ?? model.defaultResolution ?? undefined;
 
   console.log("resolution - currentResolution:", currentResolution);
   console.log("resolution - useResolution:", useResolution);
@@ -57,32 +48,20 @@ export const ResolutionPicker = ({
       label: getResolutionTextLabel(resolution),
       action: resolution,
       selected: useResolution === resolution,
-      icon: (
-        <DynamicIcon icon={getResolutionIcon(resolution)} className="h-4 w-4" />
-      ),
+      icon: <DynamicIcon icon={getResolutionIcon(resolution)} className="h-4 w-4" />,
     });
   });
 
   return (
     <>
-      <Tooltip
-        content="Resolution"
-        position="top"
-        className="z-50"
-        closeOnClick={true}
-      >
+      <Tooltip content="Resolution" position="top" className="z-50" closeOnClick={true}>
         <PopoverMenu
           items={resolutionList}
           onSelect={handleSelectAdapter}
           mode="toggle"
           panelTitle="Resolution"
           showIconsInList
-          triggerIcon={
-            <DynamicIcon
-              icon={getCurrentResolutionIcon()}
-              className="h-4 w-4"
-            />
-          }
+          triggerIcon={<DynamicIcon icon={getCurrentResolutionIcon()} className="h-4 w-4" />}
         />
       </Tooltip>
     </>

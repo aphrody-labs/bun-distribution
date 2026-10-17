@@ -28,15 +28,10 @@ interface EditorErrorBoundaryState {
   retryKey: number;
 }
 
-export class EditorErrorBoundary extends Component<
-  EditorErrorBoundaryProps,
-  EditorErrorBoundaryState
-> {
+export class EditorErrorBoundary extends Component<EditorErrorBoundaryProps, EditorErrorBoundaryState> {
   override state: EditorErrorBoundaryState = { error: null, retryKey: 0 };
 
-  static getDerivedStateFromError(
-    error: Error,
-  ): Partial<EditorErrorBoundaryState> {
+  static getDerivedStateFromError(error: Error): Partial<EditorErrorBoundaryState> {
     return { error };
   }
 
@@ -50,7 +45,7 @@ export class EditorErrorBoundary extends Component<
 
   private handleRecover = (): void => {
     this.props.onRecover?.();
-    this.setState((prev) => ({
+    this.setState(prev => ({
       error: null,
       retryKey: prev.retryKey + 1,
     }));
@@ -61,9 +56,7 @@ export class EditorErrorBoundary extends Component<
       return (
         <div className="bg-background flex h-full w-full flex-col items-center justify-center gap-4 p-6">
           <div className="flex max-w-md flex-col items-center gap-2 text-center">
-            <h2 className="text-foreground text-base font-semibold">
-              The editor ran into a problem
-            </h2>
+            <h2 className="text-foreground text-base font-semibold">The editor ran into a problem</h2>
             <p className="text-muted-foreground text-xs">
               {this.state.error.message || "An unexpected error occurred."}
             </p>

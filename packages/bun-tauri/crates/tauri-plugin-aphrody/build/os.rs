@@ -15,6 +15,5 @@ const COMMANDS: &[&str] = &[
 
 /// Build description of the `os` plugin.
 pub fn builder() -> tauri_plugin::Builder<'static> {
-    tauri_plugin::Builder::new(COMMANDS)
-        .global_api_script_path("iife/os.js")
+    tauri_plugin::Builder::new(COMMANDS).global_api_script_path("iife/os.js")
 }

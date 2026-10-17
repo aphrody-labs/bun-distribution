@@ -22,10 +22,7 @@ async function run(args: string[]) {
 test("migration CLI reports its actual package version", async () => {
   const result = await run(["--version"]);
   expect(result.code).toBe(0);
-  expect(result.stdout.trim()).toBe(
-    (await Bun.file(resolve(import.meta.dir, "../package.json")).json())
-      .version,
-  );
+  expect(result.stdout.trim()).toBe((await Bun.file(resolve(import.meta.dir, "../package.json")).json()).version);
 });
 
 test("invalid target flags fail before inspecting source or creating an app", async () => {
@@ -40,18 +37,8 @@ test("dry-run JSON inspects external source without activating or creating an ow
     const source = join(directory, "source");
     const target = join(directory, "output");
     await mkdir(join(source, "app"), { recursive: true });
-    await writeFile(
-      join(source, "app/page.tsx"),
-      "export default function Page(){return <h1>Inspect</h1>;}",
-    );
-    const result = await run([
-      source,
-      target,
-      "--target",
-      "vite",
-      "--dry-run",
-      "--json",
-    ]);
+    await writeFile(join(source, "app/page.tsx"), "export default function Page(){return <h1>Inspect</h1>;}");
+    const result = await run([source, target, "--target", "vite", "--dry-run", "--json"]);
     expect(result.code).toBe(0);
     expect(JSON.parse(result.stdout).requirements).toEqual([]);
     expect(await Bun.file(join(target, "package.json")).exists()).toBe(false);

@@ -5,10 +5,10 @@
   "description": "Bun OS platform layer shared by the console shell, play.aphrody.app and the Bun Engine: Fluent catalogs and locale negotiation, M3 theme files, Bun.plugin-style plugins, the file-type registry and the transfer service (downloads, mirrors, LAN cache, R2 uploads).",
   "license": "Apache-2.0",
   "author": "aphrody-dev <contact@aphrody.com>",
-  "type": "module",
   "bin": {
     "bun-os-platform": "./src/cli.ts"
   },
+  "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./i18n": "./src/i18n/index.ts",

@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, it } from "bun:test";
-import {
-  canSudoNonInteractive,
-  getElevationState,
-  isElevated,
-  wrapElevatedCommand,
-} from "../../runtime/src/privilege";
+import { canSudoNonInteractive, getElevationState, isElevated, wrapElevatedCommand } from "../../runtime/src/privilege";
 
 describe("Native Privilege Layer (NHITL)", () => {
   it("queries elevation state cleanly", () => {

@@ -96,7 +96,7 @@ export class SkeletonHelperController {
 
   private hasBones(obj: THREE.Object3D): boolean {
     let found = false;
-    obj.traverse((child) => {
+    obj.traverse(child => {
       if ((child as THREE.Bone).isBone) found = true;
     });
     return found;
@@ -104,6 +104,6 @@ export class SkeletonHelperController {
 
   // Top-level scene objects only — helpers attach to outliner-level roots.
   private find(uuid: string): THREE.Object3D | undefined {
-    return this.getScene().children.find((child) => child.uuid === uuid);
+    return this.getScene().children.find(child => child.uuid === uuid);
   }
 }

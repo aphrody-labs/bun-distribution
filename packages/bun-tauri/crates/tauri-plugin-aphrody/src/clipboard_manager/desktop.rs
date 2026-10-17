@@ -34,7 +34,10 @@ impl<R: Runtime> Clipboard<R> {
     ///
     /// Returns [`crate::clipboard_manager::Error::Clipboard`] if the clipboard could not be initialized or the
     /// underlying [`arboard`] operation fails.
-    pub fn write_text<'a, T: Into<Cow<'a, str>>>(&self, text: T) -> crate::clipboard_manager::Result<()> {
+    pub fn write_text<'a, T: Into<Cow<'a, str>>>(
+        &self,
+        text: T,
+    ) -> crate::clipboard_manager::Result<()> {
         match &self.clipboard {
             Ok(clipboard) => clipboard
                 .lock()

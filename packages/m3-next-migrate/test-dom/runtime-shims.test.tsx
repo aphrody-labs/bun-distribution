@@ -9,12 +9,8 @@ import { cookies } from "../src/shims/headers";
 import { usePathname, useSearchParams } from "../src/shims/navigation";
 import { NextMigrateProvider } from "../src/shims/provider";
 
-(
-  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-).IS_REACT_ACT_ENVIRONMENT = true;
-const happyDOM = (
-  window as unknown as { happyDOM: { setURL(url: string): void } }
-).happyDOM;
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+const happyDOM = (window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM;
 happyDOM.setURL("http://localhost/initial");
 let root: ReturnType<typeof createRoot> | undefined;
 const originalCookie = Object.getOwnPropertyDescriptor(document, "cookie");
@@ -36,7 +32,7 @@ async function mount(node: ReactNode) {
   root = createRoot(container);
   await act(async () => {
     root!.render(node);
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise(resolve => setTimeout(resolve, 10));
   });
   return container;
 }
@@ -83,10 +79,7 @@ describe("migrated browser runtime contracts", () => {
   test("GET forms preserve action, replace its query, keep the fragment and include the submit button", async () => {
     const navigations: string[] = [];
     const container = await mount(
-      <NextMigrateProvider
-        mode="browser"
-        onNavigate={(url) => navigations.push(url)}
-      >
+      <NextMigrateProvider mode="browser" onNavigate={url => navigations.push(url)}>
         <Form action="/search?old=ignored#results">
           <input name="q" defaultValue="hello world" />
           <button name="intent" value="search" type="submit">
@@ -106,18 +99,13 @@ describe("migrated browser runtime contracts", () => {
       form.dispatchEvent(event);
     });
     expect(event.defaultPrevented).toBe(true);
-    expect(navigations).toEqual([
-      "/search?q=hello+world&intent=search#results",
-    ]);
+    expect(navigations).toEqual(["/search?q=hello+world&intent=search#results"]);
   });
 
   test("POST and cross-origin forms preserve native submission", async () => {
     const navigations: string[] = [];
     const container = await mount(
-      <NextMigrateProvider
-        mode="browser"
-        onNavigate={(url) => navigations.push(url)}
-      >
+      <NextMigrateProvider mode="browser" onNavigate={url => navigations.push(url)}>
         <Form action="/upload" method="post">
           <button>Upload</button>
         </Form>
@@ -162,7 +150,7 @@ describe("migrated browser runtime contracts", () => {
     expect(loads).toBe(0);
     const container = await mount(<Widget />);
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await new Promise(resolve => setTimeout(resolve, 20));
     });
     expect(loads).toBe(1);
     expect(container.textContent).toBe("Loaded");

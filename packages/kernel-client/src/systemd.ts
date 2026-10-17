@@ -42,14 +42,7 @@ const libcSymbols = {
     returns: FFIType.i32,
   },
   sendto: {
-    args: [
-      FFIType.i32,
-      FFIType.ptr,
-      FFIType.u64,
-      FFIType.i32,
-      FFIType.ptr,
-      FFIType.u32,
-    ],
+    args: [FFIType.i32, FFIType.ptr, FFIType.u64, FFIType.i32, FFIType.ptr, FFIType.u32],
     returns: FFIType.i64,
   },
   close: { args: [FFIType.i32], returns: FFIType.i32 },
@@ -63,8 +56,7 @@ function getLibc() {
     return false;
   }
   try {
-    const libPath =
-      process.platform === "darwin" ? "libSystem.B.dylib" : "libc.so.6";
+    const libPath = process.platform === "darwin" ? "libSystem.B.dylib" : "libc.so.6";
     libc = dlopen(libPath, libcSymbols);
     return libc;
   } catch {
@@ -104,18 +96,9 @@ export function sdNotify(state: string): boolean {
     pathBuffer.copy(sockaddr, 2, 0, Math.min(pathBuffer.length, 108));
 
     const stateBuf = Buffer.from(state, "utf-8");
-    const addrLen = isAbstract
-      ? 2 + pathBuffer.length
-      : 2 + pathBuffer.length + 1;
+    const addrLen = isAbstract ? 2 + pathBuffer.length : 2 + pathBuffer.length + 1;
 
-    const sent = lib.symbols.sendto(
-      fd,
-      stateBuf,
-      BigInt(stateBuf.length),
-      0,
-      sockaddr,
-      addrLen,
-    );
+    const sent = lib.symbols.sendto(fd, stateBuf, BigInt(stateBuf.length), 0, sockaddr, addrLen);
 
     return Number(sent) >= 0;
   } finally {
@@ -157,9 +140,7 @@ export function getWatchdogUsec(): number | null {
  *
  * @returns a controller with `.stop()` to cancel the heartbeat, or `null` if watchdog is not enabled.
  */
-export function startWatchdogLoop(
-  customIntervalMs?: number,
-): { stop(): void } | null {
+export function startWatchdogLoop(customIntervalMs?: number): { stop(): void } | null {
   let intervalMs: number | null = null;
   if (customIntervalMs !== undefined && customIntervalMs > 0) {
     intervalMs = customIntervalMs;

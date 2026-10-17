@@ -4,7 +4,7 @@ import type { MediaInfo } from "../../../models/mediaInfo";
 import type { MediaItem } from "../../../models/assets";
 
 export const isAnyStatusFetching = (statuses: FetchStatus[]): boolean => {
-  return statuses.some((status) => status === FetchStatus.IN_PROGRESS);
+  return statuses.some(status => status === FetchStatus.IN_PROGRESS);
 };
 
 // Maps a MediaInfo[] (raw API shape) to MediaItem[] (engine shape).
@@ -26,16 +26,10 @@ export const responseMapping = (
     FilterEngineCategories.SKYBOX,
     FilterEngineCategories.VIDEO_PLANE,
   ];
-  const assetType = objectCategories.includes(filterEngineCategories[0])
-    ? AssetType.OBJECT
-    : filterEngineCategories[0];
+  const assetType = objectCategories.includes(filterEngineCategories[0]) ? AssetType.OBJECT : filterEngineCategories[0];
 
-  return data.map((item) => {
-    const itemThumb = adapter.getCdnUrl(
-      item.cover_image.maybe_cover_image_public_bucket_path ?? "",
-      600,
-      100,
-    );
+  return data.map(item => {
+    const itemThumb = adapter.getCdnUrl(item.cover_image.maybe_cover_image_public_bucket_path ?? "", 600, 100);
     return {
       colorIndex: item.cover_image.default_cover.color_index,
       imageIndex: item.cover_image.default_cover.image_index,
@@ -43,9 +37,7 @@ export const responseMapping = (
       name: item.maybe_title ?? "Unknown",
       type: assetType as AssetType,
       media_type: item.media_type,
-      maybe_animation_type: item.maybe_animation_type
-        ? item.maybe_animation_type
-        : undefined,
+      maybe_animation_type: item.maybe_animation_type ? item.maybe_animation_type : undefined,
       length: ((item.maybe_duration_millis ?? 1000) / 1000) * 60,
       version: 1,
       ...(item.cover_image.maybe_cover_image_public_bucket_path

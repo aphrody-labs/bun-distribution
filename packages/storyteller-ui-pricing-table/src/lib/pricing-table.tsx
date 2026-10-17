@@ -16,10 +16,7 @@ export interface PricingTableProps {
   className?: string;
   defaultCadence?: BillingCadence;
   /** Called when a plan CTA is clicked (never for the active plan). */
-  onChoosePlan: (
-    planSlug: string,
-    cadence: BillingCadence,
-  ) => Promise<unknown> | unknown;
+  onChoosePlan: (planSlug: string, cadence: BillingCadence) => Promise<unknown> | unknown;
   /** Opens the subscription management portal. */
   onManagePlan?: () => Promise<unknown> | unknown;
   /** Opens a mailto link; defaults to regular link navigation. */
@@ -45,9 +42,7 @@ export const PricingTable = ({
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   const [managing, setManaging] = useState(false);
 
-  const plans = includeFree
-    ? SUBSCRIPTION_PLANS
-    : SUBSCRIPTION_PLANS.filter((plan) => plan.slug !== "free");
+  const plans = includeFree ? SUBSCRIPTION_PLANS : SUBSCRIPTION_PLANS.filter(plan => plan.slug !== "free");
 
   const handleChoose = async (planSlug: string) => {
     if (planSlug === activePlanSlug) return;
@@ -102,12 +97,7 @@ interface PricingSectionLabelProps {
 }
 
 // "01 / Pricing" hairline strip that heads each pricing section.
-export const PricingSectionLabel = ({
-  index,
-  label,
-  annotation,
-  className,
-}: PricingSectionLabelProps) => (
+export const PricingSectionLabel = ({ index, label, annotation, className }: PricingSectionLabelProps) => (
   <div
     className={twMerge(
       "pricing-hud flex items-center justify-between gap-4 border-b border-white/15 px-6 py-3 text-white/55 md:px-10",
@@ -118,9 +108,7 @@ export const PricingSectionLabel = ({
       <span className="text-white/40">{index} / </span>
       {label}
     </p>
-    {annotation && (
-      <p className="hidden text-white/40 sm:block">{annotation}</p>
-    )}
+    {annotation && <p className="hidden text-white/40 sm:block">{annotation}</p>}
   </div>
 );
 

@@ -1,13 +1,5 @@
 import { UsageError } from "../../../shared/args.ts";
-import {
-  backoffMs,
-  errorText,
-  type Fetch,
-  realSleep,
-  redact,
-  retryAfterMs,
-  type Sleep,
-} from "./http.ts";
+import { backoffMs, errorText, type Fetch, realSleep, redact, retryAfterMs, type Sleep } from "./http.ts";
 
 /** API REST Discord v10 (versions 9 et 10 « Available », 6 par défaut mais dépréciée : doc du 2026-10-06). */
 export const DISCORD_API = "https://discord.com/api/v10";
@@ -119,22 +111,15 @@ export class DiscordRest {
     this.maxRetries = options.maxRetries ?? 3;
   }
 
-  private async call<T>(
-    method: string,
-    path: string,
-    options: CallOptions = {},
-  ): Promise<T | undefined> {
+  private async call<T>(method: string, path: string, options: CallOptions = {}): Promise<T | undefined> {
     const url = options.absolute ?? this.baseUrl + path;
     const headers: Record<string, string> = { "User-Agent": USER_AGENT };
-    if (options.body !== undefined)
-      headers["Content-Type"] = "application/json";
-    if (options.bot !== false && this.token && !options.absolute)
-      headers.Authorization = `Bot ${this.token}`;
+    if (options.body !== undefined) headers["Content-Type"] = "application/json";
+    if (options.bot !== false && this.token && !options.absolute) headers.Authorization = `Bot ${this.token}`;
     const init: RequestInit = {
       method,
       headers,
-      body:
-        options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
     };
 
     for (let attempt = 0; ; attempt += 1) {
@@ -143,10 +128,7 @@ export class DiscordRest {
         // oxlint-disable-next-line no-await-in-loop -- Discord retries are sequential by design: each attempt waits for the rate-limit/backoff of the previous one
         res = await this.fetchImpl(url, init);
       } catch (cause) {
-        throw new DiscordError(
-          `Réseau injoignable (${redact(errorText(cause), [this.token])}).`,
-          0,
-        );
+        throw new DiscordError(`Réseau injoignable (${redact(errorText(cause), [this.token])}).`, 0);
       }
       if (res.ok) {
         if (res.status === 204) return undefined;
@@ -156,23 +138,19 @@ export class DiscordRest {
       }
       // oxlint-disable-next-line no-await-in-loop -- error body of this attempt is needed to decide retry or throw
       const text = await res.text().catch(() => "");
-      let parsed: { message?: string; code?: number; retry_after?: number } =
-        {};
+      let parsed: { message?: string; code?: number; retry_after?: number } = {};
       try {
         parsed = JSON.parse(text) as typeof parsed;
       } catch {
         // corps non JSON (page d'erreur Cloudflare…)
       }
-      const retryable =
-        res.status === 429 || (res.status >= 500 && method !== "POST");
+      const retryable = res.status === 429 || (res.status >= 500 && method !== "POST");
       if (retryable && attempt < this.maxRetries) {
         const waitMs =
           res.status === 429
             ? Math.min(
                 30_000,
-                Math.round((parsed.retry_after ?? 0) * 1000) ||
-                  retryAfterMs(res) ||
-                  backoffMs(attempt, this.random),
+                Math.round((parsed.retry_after ?? 0) * 1000) || retryAfterMs(res) || backoffMs(attempt, this.random),
               )
             : backoffMs(attempt, this.random);
         // oxlint-disable-next-line no-await-in-loop -- rate-limit/backoff wait before the next sequential attempt
@@ -180,9 +158,7 @@ export class DiscordRest {
         continue;
       }
       throw new DiscordError(
-        redact(frenchDiscord(res.status, parsed.message, parsed.code), [
-          this.token,
-        ]),
+        redact(frenchDiscord(res.status, parsed.message, parsed.code), [this.token]),
         res.status,
         parsed.code,
       );
@@ -212,80 +188,50 @@ export class DiscordRest {
   }
 
   /** PUT remplace TOUTES les commandes de l'application pour ce serveur (slash, utilisateur et message). */
-  async putGuildCommands(
-    guildId: string,
-    commands: unknown[],
-  ): Promise<unknown[]> {
+  async putGuildCommands(guildId: string, commands: unknown[]): Promise<unknown[]> {
     if (!this.appId) throw new UsageError("DISCORD_APP_ID manquant.");
     return (
-      (await this.call<unknown[]>(
-        "PUT",
-        `/applications/${this.appId}/guilds/${guildId}/commands`,
-        {
-          body: commands,
-        },
-      )) ?? []
+      (await this.call<unknown[]>("PUT", `/applications/${this.appId}/guilds/${guildId}/commands`, {
+        body: commands,
+      })) ?? []
     );
   }
 
   // --- Interactions (3 s pour le premier callback, jeton valable 15 min) -----------------------------------------
 
-  async callback(
-    interaction: Interaction,
-    type: number,
-    data?: MessageData,
-  ): Promise<void> {
-    await this.call(
-      "POST",
-      `/interactions/${interaction.id}/${interaction.token}/callback`,
-      {
-        body: { type, data },
-        bot: false,
-      },
-    );
+  async callback(interaction: Interaction, type: number, data?: MessageData): Promise<void> {
+    await this.call("POST", `/interactions/${interaction.id}/${interaction.token}/callback`, {
+      body: { type, data },
+      bot: false,
+    });
   }
 
   defer(interaction: Interaction, hidden: boolean): Promise<void> {
-    return this.callback(
-      interaction,
-      CallbackType.DeferredChannelMessage,
-      hidden ? { flags: EPHEMERAL } : undefined,
-    );
+    return this.callback(interaction, CallbackType.DeferredChannelMessage, hidden ? { flags: EPHEMERAL } : undefined);
   }
 
   respond(interaction: Interaction, data: MessageData): Promise<void> {
     return this.callback(interaction, CallbackType.ChannelMessage, data);
   }
 
-  async editOriginal(
-    interaction: Interaction,
-    data: MessageData,
-  ): Promise<void> {
-    await this.call(
-      "PATCH",
-      `/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
-      { body: data, bot: false },
-    );
+  async editOriginal(interaction: Interaction, data: MessageData): Promise<void> {
+    await this.call("PATCH", `/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
+      body: data,
+      bot: false,
+    });
   }
 
   /** Nouveau message après un premier editOriginal (public sauf drapeau éphémère). */
   async followup(interaction: Interaction, data: MessageData): Promise<void> {
-    await this.call(
-      "POST",
-      `/webhooks/${interaction.application_id}/${interaction.token}`,
-      {
-        body: data,
-        bot: false,
-      },
-    );
+    await this.call("POST", `/webhooks/${interaction.application_id}/${interaction.token}`, {
+      body: data,
+      bot: false,
+    });
   }
 
   // --- Webhooks d'annonce -----------------------------------------------------------------------------------------
 
-  async executeWebhook(
-    webhookUrl: string,
-    data: MessageData & { username?: string },
-  ): Promise<void> {
+  async executeWebhook(webhookUrl: string, data: MessageData & { username?: string }): Promise<void> {
     await this.call("POST", "", {
       body: data,
       absolute: assertWebhookUrl(webhookUrl),
@@ -293,12 +239,7 @@ export class DiscordRest {
   }
 }
 
-const WEBHOOK_HOSTS = new Set([
-  "discord.com",
-  "ptb.discord.com",
-  "canary.discord.com",
-  "discordapp.com",
-]);
+const WEBHOOK_HOSTS = new Set(["discord.com", "ptb.discord.com", "canary.discord.com", "discordapp.com"]);
 
 /** N'accepte que de vrais webhooks Discord (évite d'envoyer un message à une URL arbitraire). */
 export function assertWebhookUrl(raw: string): string {
@@ -306,18 +247,14 @@ export function assertWebhookUrl(raw: string): string {
   try {
     url = new URL(raw);
   } catch {
-    throw new UsageError(
-      "URL de webhook invalide (attendu https://discord.com/api/webhooks/<id>/<jeton>).",
-    );
+    throw new UsageError("URL de webhook invalide (attendu https://discord.com/api/webhooks/<id>/<jeton>).");
   }
   if (
     url.protocol !== "https:" ||
     !WEBHOOK_HOSTS.has(url.hostname) ||
     !/^\/api(\/v\d+)?\/webhooks\/\d+\/[\w-]+\/?$/.test(url.pathname)
   ) {
-    throw new UsageError(
-      "URL de webhook invalide (attendu https://discord.com/api/webhooks/<id>/<jeton>).",
-    );
+    throw new UsageError("URL de webhook invalide (attendu https://discord.com/api/webhooks/<id>/<jeton>).");
   }
   return url.toString();
 }
@@ -327,11 +264,7 @@ export function redactWebhook(raw: string): string {
   return raw.replace(/(\/webhooks\/\d+\/)[\w-]+/, "$1***");
 }
 
-export function frenchDiscord(
-  status: number,
-  message?: string,
-  code?: number,
-): string {
+export function frenchDiscord(status: number, message?: string, code?: number): string {
   const detail = message ? ` (${message}${code ? `, code ${code}` : ""})` : "";
   switch (status) {
     case 401:

@@ -1,11 +1,7 @@
 "use client";
 
 import { resolveAnimationPathValueAtTime } from "../../../animation";
-import {
-  Section,
-  SectionContent,
-  SectionFields,
-} from "../../../components/section";
+import { Section, SectionContent, SectionFields } from "../../../components/section";
 import { useElementPlayhead } from "../hooks/use-element-playhead";
 import { useKeyframedParamProperty } from "../hooks/use-keyframed-param-property";
 import { PropertyParamField } from "./property-param-field";
@@ -34,9 +30,7 @@ export function ElementParamsTab({
     startTime: element.startTime,
     duration: element.duration,
   });
-  const params = getElementParams({ element }).filter(
-    (param) => !paramKeys || paramKeys.includes(param.key),
-  );
+  const params = getElementParams({ element }).filter(param => !paramKeys || paramKeys.includes(param.key));
   const baseValues = buildValues({ element, params });
 
   return (
@@ -44,8 +38,8 @@ export function ElementParamsTab({
       <SectionContent className="pt-4">
         <SectionFields>
           {params
-            .filter((param) => isVisible({ param, values: baseValues }))
-            .map((param) => (
+            .filter(param => isVisible({ param, values: baseValues }))
+            .map(param => (
               <ElementParamField
                 key={param.key}
                 element={element}
@@ -92,8 +86,7 @@ function ElementParamField({
     localTime,
     isPlayheadWithinElementRange,
     resolvedValue,
-    buildBaseUpdates: ({ value }) =>
-      writeElementParamValue({ element, param, value }),
+    buildBaseUpdates: ({ value }) => writeElementParamValue({ element, param, value }),
   });
 
   return (
@@ -132,14 +125,8 @@ function buildValues({
   return values;
 }
 
-function isVisible({
-  param,
-  values,
-}: {
-  param: ElementParamDefinition;
-  values: ParamValues;
-}): boolean {
-  return (param.dependencies ?? []).every((dependency) =>
+function isVisible({ param, values }: { param: ElementParamDefinition; values: ParamValues }): boolean {
+  return (param.dependencies ?? []).every(dependency =>
     areParamValuesEqual({
       left: values[dependency.param],
       right: dependency.equals,
@@ -147,12 +134,6 @@ function isVisible({
   );
 }
 
-function areParamValuesEqual({
-  left,
-  right,
-}: {
-  left: ParamValue | undefined;
-  right: ParamValue;
-}): boolean {
+function areParamValuesEqual({ left, right }: { left: ParamValue | undefined; right: ParamValue }): boolean {
   return left === right;
 }

@@ -6,8 +6,7 @@ export const sha256 = (value: string | Uint8Array): string =>
   new Bun.CryptoHasher("sha256").update(value).digest("hex");
 
 /** Stable hash of any JSON-serialisable parts. */
-export const keyOf = (...parts: unknown[]): string =>
-  sha256(JSON.stringify(parts));
+export const keyOf = (...parts: unknown[]): string => sha256(JSON.stringify(parts));
 
 export class Cache {
   hits = 0;

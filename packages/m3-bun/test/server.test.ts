@@ -25,25 +25,17 @@ beforeAll(() => {
   writeFileSync(join(dir, "index.html"), "<!doctype html><title>home</title>");
   writeFileSync(join(dir, "chunk-abcd1234.js"), BIG_JS);
   writeFileSync(join(dir, "app.js"), BIG_JS);
-  writeFileSync(
-    join(dir, "assets", "logo.svg"),
-    `<svg xmlns="http://www.w3.org/2000/svg">${"<g/>".repeat(400)}</svg>`,
-  );
+  writeFileSync(join(dir, "assets", "logo.svg"), `<svg xmlns="http://www.w3.org/2000/svg">${"<g/>".repeat(400)}</svg>`);
   writeFileSync(join(dir, "app.js.map"), "{}");
   writeFileSync(join(dir, "docs.html"), "<title>docs</title>");
   utimesSync(join(dir, "index.html"), 1_700_000_000, 1_700_000_000);
 });
 afterAll(cleanup);
 
-const get = (
-  app: ReturnType<typeof createM3App>,
-  path: string,
-  headers: Record<string, string> = {},
-  method = "GET",
-) => app.fetch(new Request(`http://m3.test${path}`, { method, headers }));
+const get = (app: ReturnType<typeof createM3App>, path: string, headers: Record<string, string> = {}, method = "GET") =>
+  app.fetch(new Request(`http://m3.test${path}`, { method, headers }));
 
-const staticApp = () =>
-  createM3App({ name: "t", version: "9.9.9", files: dirSource(dir) });
+const staticApp = () => createM3App({ name: "t", version: "9.9.9", files: dirSource(dir) });
 
 describe("static files", () => {
   test("the entry answers / and keeps no-cache; sourcemaps are not served", async () => {
@@ -60,27 +52,19 @@ describe("static files", () => {
     expect(res.headers.get("x-content-type-options")).toBe("nosniff");
     expect(res.headers.get("content-security-policy")).toBe(DEFAULT_CSP);
     const none = createM3App({ files: dirSource(dir), csp: false });
-    expect(
-      (await get(none, "/index.html")).headers.get("content-security-policy"),
-    ).toBeNull();
+    expect((await get(none, "/index.html")).headers.get("content-security-policy")).toBeNull();
     const custom = createM3App({
       files: dirSource(dir),
       csp: "default-src 'none'",
     });
-    expect(
-      (await get(custom, "/index.html")).headers.get("content-security-policy"),
-    ).toBe("default-src 'none'");
+    expect((await get(custom, "/index.html")).headers.get("content-security-policy")).toBe("default-src 'none'");
   });
 
   test("content-hashed names are immutable, others expire in an hour", async () => {
-    expect(
-      (await get(staticApp(), "/chunk-abcd1234.js")).headers.get(
-        "cache-control",
-      ),
-    ).toBe("public, max-age=31536000, immutable");
-    expect(
-      (await get(staticApp(), "/app.js")).headers.get("cache-control"),
-    ).toBe("public, max-age=3600");
+    expect((await get(staticApp(), "/chunk-abcd1234.js")).headers.get("cache-control")).toBe(
+      "public, max-age=31536000, immutable",
+    );
+    expect((await get(staticApp(), "/app.js")).headers.get("cache-control")).toBe("public, max-age=3600");
     expect(cacheControl("/x.html", "text/html;charset=utf-8")).toBe("no-cache");
   });
 
@@ -88,13 +72,8 @@ describe("static files", () => {
     const first = await get(staticApp(), "/app.js");
     const etag = first.headers.get("etag")!;
     expect(etag).toStartWith('W/"');
-    expect(
-      (await get(staticApp(), "/app.js", { "if-none-match": etag })).status,
-    ).toBe(304);
-    expect(
-      (await get(staticApp(), "/app.js", { "if-none-match": 'W/"other"' }))
-        .status,
-    ).toBe(200);
+    expect((await get(staticApp(), "/app.js", { "if-none-match": etag })).status).toBe(304);
+    expect((await get(staticApp(), "/app.js", { "if-none-match": 'W/"other"' })).status).toBe(200);
   });
 
   test("compressible files are served br or gzip when accepted, identity otherwise, and round-trip", async () => {
@@ -103,21 +82,15 @@ describe("static files", () => {
     });
     expect(br.headers.get("content-encoding")).toBe("br");
     expect(br.headers.get("vary")).toContain("Accept-Encoding");
-    expect(
-      brotliDecompressSync(new Uint8Array(await br.arrayBuffer())).toString(),
-    ).toBe(BIG_JS);
+    expect(brotliDecompressSync(new Uint8Array(await br.arrayBuffer())).toString()).toBe(BIG_JS);
     const gz = await get(staticApp(), "/app.js", { "accept-encoding": "gzip" });
     expect(gz.headers.get("content-encoding")).toBe("gzip");
-    expect(gunzipSync(new Uint8Array(await gz.arrayBuffer())).toString()).toBe(
-      BIG_JS,
-    );
+    expect(gunzipSync(new Uint8Array(await gz.arrayBuffer())).toString()).toBe(BIG_JS);
     const plain = await get(staticApp(), "/app.js");
     expect(plain.headers.get("content-encoding")).toBeNull();
     expect(await plain.text()).toBe(BIG_JS);
     expect(
-      (
-        await get(staticApp(), "/assets/logo.svg", { "accept-encoding": "br" })
-      ).headers.get("content-encoding"),
+      (await get(staticApp(), "/assets/logo.svg", { "accept-encoding": "br" })).headers.get("content-encoding"),
     ).toBe("br");
   });
 
@@ -134,13 +107,8 @@ describe("static files", () => {
     });
     expect(nav.status).toBe(200);
     expect(await nav.text()).toContain("<title>home</title>");
-    expect(
-      (await get(staticApp(), "/some/route", { accept: "application/json" }))
-        .status,
-    ).toBe(404);
-    expect(
-      (await get(staticApp(), "/missing.js", { accept: "text/html" })).status,
-    ).toBe(404);
+    expect((await get(staticApp(), "/some/route", { accept: "application/json" })).status).toBe(404);
+    expect((await get(staticApp(), "/missing.js", { accept: "text/html" })).status).toBe(404);
     expect(
       (
         await staticApp().fetch(
@@ -152,9 +120,7 @@ describe("static files", () => {
       ).status,
     ).toBe(404);
     const off = createM3App({ files: dirSource(dir), spa: false });
-    expect(
-      (await get(off, "/some/route", { accept: "text/html" })).status,
-    ).toBe(404);
+    expect((await get(off, "/some/route", { accept: "text/html" })).status).toBe(404);
   });
 
   test("a directory path serves its index, a bare name serves name/index.html when present", async () => {
@@ -211,12 +177,8 @@ describe("health, info and the API", () => {
     });
     expect(info.api).toEqual(["/api/ping", "/api/shadow"]);
     expect(info.files).toBeGreaterThan(3);
-    expect((await get(createM3App({ health: false }), "/healthz")).status).toBe(
-      404,
-    );
-    expect(
-      (await get(createM3App({ health: "/ready" }), "/ready")).status,
-    ).toBe(200);
+    expect((await get(createM3App({ health: false }), "/healthz")).status).toBe(404);
+    expect((await get(createM3App({ health: "/ready" }), "/ready")).status).toBe(200);
   });
 
   test("API routes answer before static files, a fallback fetch can pass or answer", async () => {
@@ -225,10 +187,7 @@ describe("health, info and the API", () => {
       files: dirSource(dir),
       api: {
         routes: {},
-        fetch: (request: Request) =>
-          new URL(request.url).pathname === "/custom"
-            ? new Response("custom")
-            : undefined,
+        fetch: (request: Request) => (new URL(request.url).pathname === "/custom" ? new Response("custom") : undefined),
       },
     });
     expect(await (await get(fallback, "/custom")).text()).toBe("custom");
@@ -252,9 +211,7 @@ describe("embedded files", () => {
       "build1",
     );
     expect(source.paths()).toEqual(["/app.js", "/index.html"]);
-    expect(source.etag("/app.js")).toBe(
-      `W/"${BIG_JS.length.toString(16)}-build1"`,
-    );
+    expect(source.etag("/app.js")).toBe(`W/"${BIG_JS.length.toString(16)}-build1"`);
     const app = createM3App({ files: source });
     expect(await (await get(app, "/")).text()).toContain("home");
   });
@@ -294,8 +251,7 @@ describe("one process, one socket: UI and API over real HTTP", () => {
       name: "real",
       files: dirSource(dir),
       api: {
-        "/api/echo/:word": (request: M3Request) =>
-          Response.json({ word: request.params.word }),
+        "/api/echo/:word": (request: M3Request) => Response.json({ word: request.params.word }),
       },
     });
     try {
@@ -306,10 +262,7 @@ describe("one process, one socket: UI and API over real HTTP", () => {
       const page = await fetch(base);
       expect(page.status).toBe(200);
       expect(await page.text()).toContain("home");
-      expect(
-        ((await (await fetch(`${base}/healthz`)).json()) as { name: string })
-          .name,
-      ).toBe("real");
+      expect(((await (await fetch(`${base}/healthz`)).json()) as { name: string }).name).toBe("real");
       const asset = await fetch(`${base}/app.js`, {
         headers: { "accept-encoding": "br" },
       });

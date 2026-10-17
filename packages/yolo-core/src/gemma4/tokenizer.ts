@@ -38,30 +38,16 @@ export function formatGemma4ChatPrompt(
     throw new Error("messages must be an array of at most 10000 turns");
   let total = 0;
   for (const msg of messages) {
-    if (!msg || !["system", "user", "model", "assistant"].includes(msg.role))
-      throw new Error("Invalid message role");
-    if (
-      typeof msg.content !== "string" ||
-      (msg.thought !== undefined && typeof msg.thought !== "string")
-    )
+    if (!msg || !["system", "user", "model", "assistant"].includes(msg.role)) throw new Error("Invalid message role");
+    if (typeof msg.content !== "string" || (msg.thought !== undefined && typeof msg.thought !== "string"))
       throw new Error("Message content and thought must be text");
     for (const count of [msg.imageCount, msg.audioCount]) {
-      if (
-        count !== undefined &&
-        (!Number.isSafeInteger(count) || count < 0 || count > 1024)
-      )
-        throw new Error(
-          "Media placeholder counts must be integers between 0 and 1024",
-        );
+      if (count !== undefined && (!Number.isSafeInteger(count) || count < 0 || count > 1024))
+        throw new Error("Media placeholder counts must be integers between 0 and 1024");
     }
     total +=
-      msg.content.length +
-      (msg.thought?.length ?? 0) +
-      (msg.imageCount ?? 0) * 7 +
-      (msg.audioCount ?? 0) * 7 +
-      80;
-    if (total > MAX_TEXT_LENGTH)
-      throw new Error("Conversation exceeds the text budget");
+      msg.content.length + (msg.thought?.length ?? 0) + (msg.imageCount ?? 0) * 7 + (msg.audioCount ?? 0) * 7 + 80;
+    if (total > MAX_TEXT_LENGTH) throw new Error("Conversation exceeds the text budget");
   }
   const includeBos = options.includeBos ?? true;
   const addGenerationPrompt = options.addGenerationPrompt ?? true;
@@ -126,8 +112,7 @@ export class Gemma4ResponseParser {
   #consume(value: string): string {
     if (this.#inThought) {
       if (this.collectThought) {
-        if (this.#thought.length + value.length > MAX_TEXT_LENGTH)
-          throw new Error("Reasoning exceeds the text budget");
+        if (this.#thought.length + value.length > MAX_TEXT_LENGTH) throw new Error("Reasoning exceeds the text budget");
         this.#thought += value;
       }
       return "";
@@ -136,16 +121,14 @@ export class Gemma4ResponseParser {
     if (!this.#started) visible = visible.trimStart();
     const trimmed = visible.trimEnd();
     this.#spaces = visible.slice(trimmed.length);
-    if (this.#spaces.length > MAX_TEXT_LENGTH)
-      throw new Error("Whitespace exceeds the text budget");
+    if (this.#spaces.length > MAX_TEXT_LENGTH) throw new Error("Whitespace exceeds the text budget");
     if (trimmed) this.#started = true;
     return trimmed;
   }
 
   push(text: string): string {
     if (this.#finished) throw new Error("Response parser is already finished");
-    if (typeof text !== "string")
-      throw new Error("Response delta must be text");
+    if (typeof text !== "string") throw new Error("Response delta must be text");
     this.#pending += text;
     const markers = [
       GEMMA4_SPECIAL_TOKENS.THOUGHT_START,
@@ -168,24 +151,19 @@ export class Gemma4ResponseParser {
         let keep = 0;
         for (const candidate of markers) {
           for (let size = 1; size < candidate.length; size++) {
-            if (this.#pending.endsWith(candidate.slice(0, size)))
-              keep = Math.max(keep, size);
+            if (this.#pending.endsWith(candidate.slice(0, size))) keep = Math.max(keep, size);
           }
         }
-        output += this.#consume(
-          this.#pending.slice(0, this.#pending.length - keep),
-        );
+        output += this.#consume(this.#pending.slice(0, this.#pending.length - keep));
         this.#pending = keep ? this.#pending.slice(-keep) : "";
         break;
       }
       output += this.#consume(this.#pending.slice(0, index));
       this.#pending = this.#pending.slice(index + marker.length);
       if (marker === GEMMA4_SPECIAL_TOKENS.THOUGHT_START) {
-        if (!this.#inThought && this.collectThought && this.#thought)
-          this.#thought += "\n";
+        if (!this.#inThought && this.collectThought && this.#thought) this.#thought += "\n";
         this.#inThought = true;
-      } else if (marker === GEMMA4_SPECIAL_TOKENS.THOUGHT_END)
-        this.#inThought = false;
+      } else if (marker === GEMMA4_SPECIAL_TOKENS.THOUGHT_END) this.#inThought = false;
     }
     return output;
   }

@@ -89,7 +89,7 @@ the change fails with an explicit error.
 ```ts
 import { applyDynamicFusionTheme, type M3SchemeSheet } from "@aphrody/m3-theme";
 
-const sheet: M3SchemeSheet = async (request) =>
+const sheet: M3SchemeSheet = async request =>
   (
     await fetch(
       `/api/m3/scheme.css?${new URLSearchParams(Object.entries(request).map(([k, v]) => [k, String(v)]))}`,

@@ -68,20 +68,14 @@ export const CircularProgress: FunctionComponent<CircularProgressProps> = ({
 
   useEffect(() => {
     if (initialAnimation && !reduced) {
-      const timeout = setTimeout(
-        () => setAnimationInitialized(true),
-        initialAnimationDelay,
-      );
+      const timeout = setTimeout(() => setAnimationInitialized(true), initialAnimationDelay);
       return () => clearTimeout(timeout);
     }
   }, [initialAnimation, initialAnimationDelay, reduced]);
 
-  progress = Number.isFinite(progress)
-    ? Math.min(100, Math.max(0, progress))
-    : 0;
+  progress = Number.isFinite(progress) ? Math.min(100, Math.max(0, progress)) : 0;
 
-  const getProgress = () =>
-    initialAnimation && !animationInitialized && !reduced ? 0 : progress;
+  const getProgress = () => (initialAnimation && !animationInitialized && !reduced ? 0 : progress);
 
   const circumference = radius * 2 * Math.PI;
 
@@ -127,10 +121,7 @@ export const CircularProgress: FunctionComponent<CircularProgressProps> = ({
             strokeDasharray={strokeDasharray}
             strokeLinecap={trackStrokeLinecap}
             style={{ transition: reduced ? "none" : trackTransition }}
-            className={clsx(
-              "track-stroke",
-              !trackStrokeColor && "stroke-secondary-container",
-            )}
+            className={clsx("track-stroke", !trackStrokeColor && "stroke-secondary-container")}
           />
         )}
         {strokeWidth > 0 && (
@@ -147,10 +138,7 @@ export const CircularProgress: FunctionComponent<CircularProgressProps> = ({
               transition: reduced ? "none" : transition,
               strokeDashoffset,
             }}
-            className={clsx(
-              "progress-stroke",
-              !strokeColor && "stroke-primary",
-            )}
+            className={clsx("progress-stroke", !strokeColor && "stroke-primary")}
           />
         )}
         {pointerRadius > 0 && (

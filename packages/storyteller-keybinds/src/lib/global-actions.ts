@@ -20,10 +20,7 @@ const handlers = new Map<ActionId, () => void>();
 
 /** Register the behavior for a global action. Returns an unregister fn.
  *  Last registration wins; unregistering only removes your own handler. */
-export function registerGlobalAction(
-  id: ActionId,
-  handler: () => void,
-): () => void {
+export function registerGlobalAction(id: ActionId, handler: () => void): () => void {
   handlers.set(id, handler);
   return () => {
     if (handlers.get(id) === handler) handlers.delete(id);

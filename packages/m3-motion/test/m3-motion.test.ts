@@ -1,24 +1,13 @@
 import { expect, test, describe } from "bun:test";
 import { m3Springs } from "../src/springs.js";
-import {
-  m3Easings,
-  m3Durations,
-  type M3EasingKey,
-  type M3DurationKey,
-} from "../src/easings.js";
+import { m3Easings, m3Durations, type M3EasingKey, type M3DurationKey } from "../src/easings.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function isCubicBezier(
-  v: unknown,
-): v is readonly [number, number, number, number] {
-  return (
-    Array.isArray(v) &&
-    v.length === 4 &&
-    v.every((n) => typeof n === "number" && n >= 0 && n <= 1)
-  );
+function isCubicBezier(v: unknown): v is readonly [number, number, number, number] {
+  return Array.isArray(v) && v.length === 4 && v.every(n => typeof n === "number" && n >= 0 && n <= 1);
 }
 
 // ---------------------------------------------------------------------------
@@ -86,10 +75,7 @@ describe("m3Easings", () => {
 
   test("all values are valid cubic-bezier coordinates [0..1]×4", () => {
     for (const [key, value] of Object.entries(m3Easings)) {
-      expect(isCubicBezier(value)).toBe(
-        true,
-        `${key} failed cubic-bezier validation`,
-      );
+      expect(isCubicBezier(value)).toBe(true, `${key} failed cubic-bezier validation`);
     }
   });
 });
@@ -203,19 +189,13 @@ describe("m3Springs", () => {
   });
 
   test("fast springs have higher stiffness than default which is higher than slow", () => {
-    expect(m3Springs.fast.spatial.stiffness!).toBeGreaterThan(
-      m3Springs.default.spatial.stiffness!,
-    );
-    expect(m3Springs.default.spatial.stiffness!).toBeGreaterThan(
-      m3Springs.slow.spatial.stiffness!,
-    );
+    expect(m3Springs.fast.spatial.stiffness!).toBeGreaterThan(m3Springs.default.spatial.stiffness!);
+    expect(m3Springs.default.spatial.stiffness!).toBeGreaterThan(m3Springs.slow.spatial.stiffness!);
   });
 
   test("effects springs have higher damping than spatial (critically damped, no overshoot)", () => {
     for (const speed of ["fast", "default", "slow"] as const) {
-      expect(m3Springs[speed].effects.damping!).toBeGreaterThan(
-        m3Springs[speed].spatial.damping!,
-      );
+      expect(m3Springs[speed].effects.damping!).toBeGreaterThan(m3Springs[speed].spatial.damping!);
     }
   });
 });
@@ -256,25 +236,19 @@ describe("component exports", () => {
   test("M3Transition is exported with displayName", async () => {
     const mod = await import("../src/components/M3Transition.js");
     expect(typeof mod.M3Transition).toBe("object");
-    expect((mod.M3Transition as { displayName?: string }).displayName).toBe(
-      "M3Transition",
-    );
+    expect((mod.M3Transition as { displayName?: string }).displayName).toBe("M3Transition");
   });
 
   test("M3ListStagger is exported with displayName", async () => {
     const mod = await import("../src/components/M3ListStagger.js");
     expect(typeof mod.M3ListStagger).toBe("object");
-    expect((mod.M3ListStagger as { displayName?: string }).displayName).toBe(
-      "M3ListStagger",
-    );
+    expect((mod.M3ListStagger as { displayName?: string }).displayName).toBe("M3ListStagger");
   });
 
   test("M3ListStaggerItem is exported with displayName", async () => {
     const mod = await import("../src/components/M3ListStagger.js");
     expect(typeof mod.M3ListStaggerItem).toBe("object");
-    expect(
-      (mod.M3ListStaggerItem as { displayName?: string }).displayName,
-    ).toBe("M3ListStaggerItem");
+    expect((mod.M3ListStaggerItem as { displayName?: string }).displayName).toBe("M3ListStaggerItem");
   });
 
   test("useM3Animate is exported as a function", async () => {
@@ -333,24 +307,12 @@ describe("SSR safety", () => {
 
   test("importing all component modules does not throw (no DOM access at module init)", async () => {
     await expect(import("../src/components/M3Fade.js")).resolves.toBeDefined();
-    await expect(
-      import("../src/components/M3FadeThrough.js"),
-    ).resolves.toBeDefined();
-    await expect(
-      import("../src/components/M3SharedAxis.js"),
-    ).resolves.toBeDefined();
-    await expect(
-      import("../src/components/M3Collapse.js"),
-    ).resolves.toBeDefined();
-    await expect(
-      import("../src/components/M3ContainerTransform.js"),
-    ).resolves.toBeDefined();
-    await expect(
-      import("../src/components/M3Transition.js"),
-    ).resolves.toBeDefined();
-    await expect(
-      import("../src/components/M3ListStagger.js"),
-    ).resolves.toBeDefined();
+    await expect(import("../src/components/M3FadeThrough.js")).resolves.toBeDefined();
+    await expect(import("../src/components/M3SharedAxis.js")).resolves.toBeDefined();
+    await expect(import("../src/components/M3Collapse.js")).resolves.toBeDefined();
+    await expect(import("../src/components/M3ContainerTransform.js")).resolves.toBeDefined();
+    await expect(import("../src/components/M3Transition.js")).resolves.toBeDefined();
+    await expect(import("../src/components/M3ListStagger.js")).resolves.toBeDefined();
   });
 });
 

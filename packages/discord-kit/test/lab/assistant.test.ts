@@ -52,17 +52,10 @@ describe("laboratory assistant boundary", () => {
   test("unprivileged member cannot trigger model", async () => {
     let calls = 0;
     expect(
-      await processMessage(
-        message,
-        state,
-        policy,
-        "admin",
-        emptyRolesApi,
-        async () => {
-          calls++;
-          return "answer";
-        },
-      ),
+      await processMessage(message, state, policy, "admin", emptyRolesApi, async () => {
+        calls++;
+        return "answer";
+      }),
     ).toBe(false);
     expect(calls).toBe(0);
   });
@@ -76,16 +69,7 @@ describe("laboratory assistant boundary", () => {
       calls++;
       return "answer";
     };
-    expect(
-      await processMessage(
-        message,
-        state,
-        migrated,
-        "admin",
-        researcherApi,
-        infer,
-      ),
-    ).toBe(false);
+    expect(await processMessage(message, state, migrated, "admin", researcherApi, infer)).toBe(false);
     expect(
       await processMessage(
         {
@@ -105,23 +89,12 @@ describe("laboratory assistant boundary", () => {
   });
   test("researcher response is bounded, referenced and cannot ping anyone", async () => {
     let payload: Record<string, unknown> | undefined;
-    const api: LabApi = async <T>(
-      _path: string,
-      method?: string,
-      body?: unknown,
-    ) => {
+    const api: LabApi = async <T>(_path: string, method?: string, body?: unknown) => {
       if (method === "POST") payload = body as Record<string, unknown>;
       return { roles: ["researcher"] } as T;
     };
     expect(
-      await processMessage(
-        message,
-        state,
-        policy,
-        "admin",
-        api,
-        async () => "@everyone " + "x".repeat(3000),
-      ),
+      await processMessage(message, state, policy, "admin", api, async () => "@everyone " + "x".repeat(3000)),
     ).toBe(true);
     expect((payload!.content as string).length).toBe(1900);
     expect(payload!.allowed_mentions).toEqual({
@@ -132,11 +105,7 @@ describe("laboratory assistant boundary", () => {
   });
   test("missing model backend answers once and releases the message", async () => {
     let payload: Record<string, unknown> | undefined;
-    const api: LabApi = async <T>(
-      _path: string,
-      method?: string,
-      body?: unknown,
-    ) => {
+    const api: LabApi = async <T>(_path: string, method?: string, body?: unknown) => {
       if (method === "POST") payload = body as Record<string, unknown>;
       return { roles: ["researcher"] } as T;
     };
@@ -154,16 +123,9 @@ describe("laboratory assistant boundary", () => {
     expect(payload!.enforce_nonce).toBe(true);
   });
   test("discord failures still propagate for retry", async () => {
-    await expect(
-      processMessage(
-        message,
-        state,
-        policy,
-        "admin",
-        unavailableApi,
-        async () => "answer",
-      ),
-    ).rejects.toThrow("Discord 503");
+    await expect(processMessage(message, state, policy, "admin", unavailableApi, async () => "answer")).rejects.toThrow(
+      "Discord 503",
+    );
   });
   test("error summary is bounded and masks credentials", () => {
     const summary = errorSummary(
@@ -172,9 +134,7 @@ describe("laboratory assistant boundary", () => {
       ),
     );
     expect(summary.length).toBe(200);
-    expect(summary.startsWith("Error: Bot [masqué] failed [masqué] ")).toBe(
-      true,
-    );
+    expect(summary.startsWith("Error: Bot [masqué] failed [masqué] ")).toBe(true);
     expect(errorSummary("plain")).toBe("plain");
   });
   test("assistant preserves selected model/profile and system instructions through native adapter", async () => {

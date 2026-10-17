@@ -14,11 +14,7 @@ const ELEMENT_TRACK_MAP: Record<ElementType, TrackType> = {
   image: "video",
 };
 
-export function getTrackTypeForElementType({
-  elementType,
-}: {
-  elementType: ElementType;
-}): TrackType {
+export function getTrackTypeForElementType({ elementType }: { elementType: ElementType }): TrackType {
   return ELEMENT_TRACK_MAP[elementType];
 }
 

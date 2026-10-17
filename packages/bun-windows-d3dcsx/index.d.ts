@@ -3,21 +3,74 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** d3dcsx.dll!D3DX11CreateFFT */
-  D3DX11CreateFFT(pDeviceContext: Win32Pointer, pDesc: Win32Pointer, Flags: number, pBufferInfo: Win32Pointer, ppFFT: Win32Pointer): number;
+  D3DX11CreateFFT(
+    pDeviceContext: Win32Pointer,
+    pDesc: Win32Pointer,
+    Flags: number,
+    pBufferInfo: Win32Pointer,
+    ppFFT: Win32Pointer,
+  ): number;
   /** d3dcsx.dll!D3DX11CreateFFT1DComplex */
-  D3DX11CreateFFT1DComplex(pDeviceContext: Win32Pointer, X: number, Flags: number, pBufferInfo: Win32Pointer, ppFFT: Win32Pointer): number;
+  D3DX11CreateFFT1DComplex(
+    pDeviceContext: Win32Pointer,
+    X: number,
+    Flags: number,
+    pBufferInfo: Win32Pointer,
+    ppFFT: Win32Pointer,
+  ): number;
   /** d3dcsx.dll!D3DX11CreateFFT1DReal */
-  D3DX11CreateFFT1DReal(pDeviceContext: Win32Pointer, X: number, Flags: number, pBufferInfo: Win32Pointer, ppFFT: Win32Pointer): number;
+  D3DX11CreateFFT1DReal(
+    pDeviceContext: Win32Pointer,
+    X: number,
+    Flags: number,
+    pBufferInfo: Win32Pointer,
+    ppFFT: Win32Pointer,
+  ): number;
   /** d3dcsx.dll!D3DX11CreateFFT2DComplex */
-  D3DX11CreateFFT2DComplex(pDeviceContext: Win32Pointer, X: number, Y: number, Flags: number, pBufferInfo: Win32Pointer, ppFFT: Win32Pointer): number;
+  D3DX11CreateFFT2DComplex(
+    pDeviceContext: Win32Pointer,
+    X: number,
+    Y: number,
+    Flags: number,
+    pBufferInfo: Win32Pointer,
+    ppFFT: Win32Pointer,
+  ): number;
   /** d3dcsx.dll!D3DX11CreateFFT2DReal */
-  D3DX11CreateFFT2DReal(pDeviceContext: Win32Pointer, X: number, Y: number, Flags: number, pBufferInfo: Win32Pointer, ppFFT: Win32Pointer): number;
+  D3DX11CreateFFT2DReal(
+    pDeviceContext: Win32Pointer,
+    X: number,
+    Y: number,
+    Flags: number,
+    pBufferInfo: Win32Pointer,
+    ppFFT: Win32Pointer,
+  ): number;
   /** d3dcsx.dll!D3DX11CreateFFT3DComplex */
-  D3DX11CreateFFT3DComplex(pDeviceContext: Win32Pointer, X: number, Y: number, Z: number, Flags: number, pBufferInfo: Win32Pointer, ppFFT: Win32Pointer): number;
+  D3DX11CreateFFT3DComplex(
+    pDeviceContext: Win32Pointer,
+    X: number,
+    Y: number,
+    Z: number,
+    Flags: number,
+    pBufferInfo: Win32Pointer,
+    ppFFT: Win32Pointer,
+  ): number;
   /** d3dcsx.dll!D3DX11CreateFFT3DReal */
-  D3DX11CreateFFT3DReal(pDeviceContext: Win32Pointer, X: number, Y: number, Z: number, Flags: number, pBufferInfo: Win32Pointer, ppFFT: Win32Pointer): number;
+  D3DX11CreateFFT3DReal(
+    pDeviceContext: Win32Pointer,
+    X: number,
+    Y: number,
+    Z: number,
+    Flags: number,
+    pBufferInfo: Win32Pointer,
+    ppFFT: Win32Pointer,
+  ): number;
   /** d3dcsx.dll!D3DX11CreateScan */
-  D3DX11CreateScan(pDeviceContext: Win32Pointer, MaxElementScanSize: number, MaxScanCount: number, ppScan: Win32Pointer): number;
+  D3DX11CreateScan(
+    pDeviceContext: Win32Pointer,
+    MaxElementScanSize: number,
+    MaxScanCount: number,
+    ppScan: Win32Pointer,
+  ): number;
   /** d3dcsx.dll!D3DX11CreateSegmentedScan */
   D3DX11CreateSegmentedScan(pDeviceContext: Win32Pointer, MaxElementScanSize: number, ppScan: Win32Pointer): number;
 }

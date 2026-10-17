@@ -8,11 +8,7 @@ import { File as FileComponent } from "../../File";
 import { useExplorer } from "../../context";
 import { useSelection } from "../../SelectionContext";
 import { TagPill } from "../../../../components/Tags";
-import {
-  ROW_HEIGHT,
-  TABLE_PADDING_X,
-  type listTableFeatures,
-} from "./useTable";
+import { ROW_HEIGHT, TABLE_PADDING_X, type listTableFeatures } from "./useTable";
 import { useFileContextMenu } from "../../hooks/useFileContextMenu";
 import { isVirtualFile } from "@aphrody/drive-client";
 import { InlineNameEdit } from "../../components/InlineNameEdit";
@@ -28,12 +24,7 @@ interface TableRowProps {
   isPreviousSelected: boolean;
   isNextSelected: boolean;
   measureRef: (node: HTMLElement | null) => void;
-  selectFile: (
-    file: File,
-    files: File[],
-    multi?: boolean,
-    range?: boolean,
-  ) => void;
+  selectFile: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
 }
 
 export const TableRow = memo(
@@ -60,9 +51,7 @@ export const TableRow = memo(
 
     // Set up file opening for non-directory files
     const physicalPath =
-      file.kind === "File" && "Physical" in file.sd_path
-        ? [(file.sd_path as any).Physical.path]
-        : [];
+      file.kind === "File" && "Physical" in file.sd_path ? [(file.sd_path as any).Physical.path] : [];
     const { openWithDefault } = useOpenWith(physicalPath);
 
     const handleClick = useCallback(
@@ -131,9 +120,7 @@ export const TableRow = memo(
             // Alternating background
             index % 2 === 0 && !isSelected && "bg-surface-container-low/50",
             // Selection styling
-            isSelected
-              ? "border-transparent bg-secondary-container"
-              : "border-transparent",
+            isSelected ? "border-transparent bg-secondary-container" : "border-transparent",
             // Connect adjacent selected rows
             isSelected && isPreviousSelected && "rounded-t-none border-t-0",
             isSelected && isNextSelected && "rounded-b-none border-b-0",
@@ -157,7 +144,7 @@ export const TableRow = memo(
             paddingRight: TABLE_PADDING_X,
           }}
         >
-          {cells.map((cell) => {
+          {cells.map(cell => {
             const isNameColumn = cell.column.id === "name";
 
             return (
@@ -172,9 +159,7 @@ export const TableRow = memo(
                 {isNameColumn ? (
                   <NameCell file={file} />
                 ) : (
-                  <span className="truncate">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </span>
+                  <span className="truncate">{flexRender(cell.column.columnDef.cell, cell.getContext())}</span>
                 )}
               </div>
             );
@@ -210,12 +195,7 @@ const NameCell = memo(function NameCell({ file }: { file: File }) {
 
       {/* File name or inline edit */}
       {isRenaming ? (
-        <InlineNameEdit
-          file={file}
-          onSave={saveRename}
-          onCancel={cancelRename}
-          className="flex-1 min-w-0"
-        />
+        <InlineNameEdit file={file} onSave={saveRename} onCancel={cancelRename} className="flex-1 min-w-0" />
       ) : (
         <span className="truncate text-body-medium text-on-surface">
           {file.name}
@@ -226,16 +206,12 @@ const NameCell = memo(function NameCell({ file }: { file: File }) {
       {/* Tags (inline, compact) - hide when renaming */}
       {!isRenaming && file.tags && file.tags.length > 0 && (
         <div className="flex flex-shrink-0 items-center gap-1">
-          {file.tags.slice(0, 2).map((tag) => (
+          {file.tags.slice(0, 2).map(tag => (
             <TagPill key={tag.id} color={tag.color || "#3B82F6"} size="xs">
               {tag.canonical_name}
             </TagPill>
           ))}
-          {file.tags.length > 2 && (
-            <span className="text-label-small text-outline">
-              +{file.tags.length - 2}
-            </span>
-          )}
+          {file.tags.length > 2 && <span className="text-label-small text-outline">+{file.tags.length - 2}</span>}
         </div>
       )}
     </div>

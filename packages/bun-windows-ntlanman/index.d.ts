@@ -3,21 +3,53 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** ntlanman.dll!NPAddConnection4 */
-  NPAddConnection4(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, lpAuthBuffer: Win32Pointer, cbAuthBuffer: number, dwFlags: number, lpUseOptions: Win32Pointer, cbUseOptions: number): number;
+  NPAddConnection4(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    lpAuthBuffer: Win32Pointer,
+    cbAuthBuffer: number,
+    dwFlags: number,
+    lpUseOptions: Win32Pointer,
+    cbUseOptions: number,
+  ): number;
   /** ntlanman.dll!NPCancelConnection2 */
   NPCancelConnection2(lpName: string | Win32Pointer, fForce: number, dwFlags: number): number;
   /** ntlanman.dll!NPGetConnection3 */
-  NPGetConnection3(lpLocalName: string | Win32Pointer, dwLevel: number, lpBuffer: Win32Pointer, lpBufferSize: Win32Pointer): number;
+  NPGetConnection3(
+    lpLocalName: string | Win32Pointer,
+    dwLevel: number,
+    lpBuffer: Win32Pointer,
+    lpBufferSize: Win32Pointer,
+  ): number;
   /** ntlanman.dll!NPGetConnectionPerformance */
   NPGetConnectionPerformance(lpRemoteName: string | Win32Pointer, lpNetConnectInfo: Win32Pointer): number;
   /** ntlanman.dll!NPGetPersistentUseOptionsForConnection */
-  NPGetPersistentUseOptionsForConnection(lpRemotePath: string | Win32Pointer, lpReadUseOptions: Win32Pointer, cbReadUseOptions: number, lpWriteUseOptions: Win32Pointer, lpSizeWriteUseOptions: Win32Pointer): number;
+  NPGetPersistentUseOptionsForConnection(
+    lpRemotePath: string | Win32Pointer,
+    lpReadUseOptions: Win32Pointer,
+    cbReadUseOptions: number,
+    lpWriteUseOptions: Win32Pointer,
+    lpSizeWriteUseOptions: Win32Pointer,
+  ): number;
   /** ntlanman.dll!QueryAppInstanceVersion */
-  QueryAppInstanceVersion(AppInstanceId: Win32Pointer, InstanceVersionHigh: Win32Pointer, InstanceVersionLow: Win32Pointer, VersionStatus: Win32Pointer): number;
+  QueryAppInstanceVersion(
+    AppInstanceId: Win32Pointer,
+    InstanceVersionHigh: Win32Pointer,
+    InstanceVersionLow: Win32Pointer,
+    VersionStatus: Win32Pointer,
+  ): number;
   /** ntlanman.dll!RegisterAppInstance */
-  RegisterAppInstance(ProcessHandle: Win32Pointer, AppInstanceId: Win32Pointer, ChildrenInheritAppInstance: number): number;
+  RegisterAppInstance(
+    ProcessHandle: Win32Pointer,
+    AppInstanceId: Win32Pointer,
+    ChildrenInheritAppInstance: number,
+  ): number;
   /** ntlanman.dll!RegisterAppInstanceVersion */
-  RegisterAppInstanceVersion(AppInstanceId: Win32Pointer, InstanceVersionHigh: number | bigint, InstanceVersionLow: number | bigint): number;
+  RegisterAppInstanceVersion(
+    AppInstanceId: Win32Pointer,
+    InstanceVersionHigh: number | bigint,
+    InstanceVersionLow: number | bigint,
+  ): number;
   /** ntlanman.dll!ResetAllAppInstanceVersions */
   ResetAllAppInstanceVersions(): number;
   /** ntlanman.dll!SetAppInstanceCsvFlags */

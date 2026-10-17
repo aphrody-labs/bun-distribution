@@ -28,8 +28,7 @@ export const AspectRatioPicker = ({
   currentAspectRatio,
   handleCommonAspectRatioSelect,
 }: AspectRatioPickerProps) => {
-  const useAspectRatio =
-    currentAspectRatio ?? model.defaultAspectRatio ?? undefined;
+  const useAspectRatio = currentAspectRatio ?? model.defaultAspectRatio ?? undefined;
 
   // If the stored ratio isn't supported by the current model (e.g. user picked
   // SquareHd on Imagen then switched to Flux Pro 1.1), reset to the model's
@@ -70,22 +69,13 @@ export const AspectRatioPicker = ({
       label: getAspectRatioTextLabel(ratio),
       action: ratio,
       selected: useAspectRatio === ratio,
-      icon: isAutoAspectRatio(ratio) ? (
-        <AutoIcon />
-      ) : (
-        <AspectRatioIcon commonAspectRatio={ratio} />
-      ),
+      icon: isAutoAspectRatio(ratio) ? <AutoIcon /> : <AspectRatioIcon commonAspectRatio={ratio} />,
     });
   });
 
   return (
     <>
-      <Tooltip
-        content="Aspect Ratio"
-        position="top"
-        className="z-50"
-        closeOnClick={true}
-      >
+      <Tooltip content="Aspect Ratio" position="top" className="z-50" closeOnClick={true}>
         <PopoverMenu
           items={aspectRatioList}
           onSelect={handleSelectAdapter}
@@ -93,11 +83,7 @@ export const AspectRatioPicker = ({
           panelTitle="Aspect Ratio"
           showIconsInList
           triggerIcon={
-            isAutoRatio || !useAspectRatio ? (
-              <AutoIcon />
-            ) : (
-              <AspectRatioIcon commonAspectRatio={useAspectRatio} />
-            )
+            isAutoRatio || !useAspectRatio ? <AutoIcon /> : <AspectRatioIcon commonAspectRatio={useAspectRatio} />
           }
         />
       </Tooltip>

@@ -47,10 +47,7 @@ export function openLancacheDb(root: string): Database {
 /** Upstream addresses of a CDN name from public DNS, cached for the record TTL. */
 class UpstreamResolver {
   #resolver = new Resolver();
-  #cache = new Map<
-    string,
-    { addresses: string[]; until: number; next: number }
-  >();
+  #cache = new Map<string, { addresses: string[]; until: number; next: number }>();
   constructor(servers: string[]) {
     this.#resolver.setServers(servers);
   }
@@ -60,9 +57,9 @@ class UpstreamResolver {
     if (!entry || entry.until < now) {
       const records = await this.#resolver.resolve4(host, { ttl: true });
       if (records.length === 0) throw new Error(`no A record for ${host}`);
-      const ttl = Math.max(30, Math.min(...records.map((r) => r.ttl)));
+      const ttl = Math.max(30, Math.min(...records.map(r => r.ttl)));
       entry = {
-        addresses: records.map((r) => r.address),
+        addresses: records.map(r => r.address),
         until: now + ttl * 1000,
         next: 0,
       };
@@ -81,17 +78,14 @@ export function serveLancache(options: LancacheOptions) {
   const upstream = new UpstreamResolver(options.resolvers);
   const inflight = new Map<string, Promise<void>>();
 
-  const chunkPath = (depot: string, sha: string) =>
-    join(options.root, "depot", depot, sha.slice(0, 2), sha);
+  const chunkPath = (depot: string, sha: string) => join(options.root, "depot", depot, sha.slice(0, 2), sha);
 
   async function fetchUpstream(host: string, path: string, headers: Headers) {
-    const target =
-      host === "lancache.steamcontent.com" ? options.upstreamHost : host;
+    const target = host === "lancache.steamcontent.com" ? options.upstreamHost : host;
     const address = await upstream.pick(target);
     const forward = new Headers();
     for (const [key, value] of headers)
-      if (!HOP_BY_HOP.has(key.toLowerCase()) && key.toLowerCase() !== "host")
-        forward.set(key, value);
+      if (!HOP_BY_HOP.has(key.toLowerCase()) && key.toLowerCase() !== "host") forward.set(key, value);
     forward.set("host", target);
     const response = await fetch(`http://${address}${path}`, {
       headers: forward,
@@ -102,13 +96,7 @@ export function serveLancache(options: LancacheOptions) {
   }
 
   /** Fetch one chunk into the cache once, even if several clients ask for it concurrently. */
-  function fill(
-    key: string,
-    file: string,
-    host: string,
-    path: string,
-    headers: Headers,
-  ) {
+  function fill(key: string, file: string, host: string, path: string, headers: Headers) {
     let job = inflight.get(key);
     if (!job) {
       job = (async () => {
@@ -141,9 +129,7 @@ export function serveLancache(options: LancacheOptions) {
     async fetch(request, server) {
       const started = performance.now();
       const url = new URL(request.url);
-      const host = (request.headers.get("host") ?? options.upstreamHost).split(
-        ":",
-      )[0]!;
+      const host = (request.headers.get("host") ?? options.upstreamHost).split(":")[0]!;
       const client = server.requestIP(request)?.address ?? null;
       const match = CHUNK.exec(url.pathname);
       if (request.method === "GET" && match) {
@@ -153,13 +139,7 @@ export function serveLancache(options: LancacheOptions) {
         if (!(await Bun.file(file).exists())) {
           hit = 0;
           try {
-            await fill(
-              `${depot}/${sha}`,
-              file,
-              host,
-              url.pathname,
-              request.headers,
-            );
+            await fill(`${depot}/${sha}`, file, host, url.pathname, request.headers);
           } catch (error) {
             const failed = (error as { response?: Response }).response;
             insert.run(
@@ -201,14 +181,9 @@ export function serveLancache(options: LancacheOptions) {
       }
       // Manifests, request codes and everything else pass through unmodified.
       try {
-        const { response, address } = await fetchUpstream(
-          host,
-          url.pathname + url.search,
-          request.headers,
-        );
+        const { response, address } = await fetchUpstream(host, url.pathname + url.search, request.headers);
         const headers = new Headers();
-        for (const [key, value] of response.headers)
-          if (!HOP_BY_HOP.has(key.toLowerCase())) headers.set(key, value);
+        for (const [key, value] of response.headers) if (!HOP_BY_HOP.has(key.toLowerCase())) headers.set(key, value);
         headers.set("x-lancache", "PASS");
         const length = Number(response.headers.get("content-length") ?? 0);
         insert.run(
@@ -229,19 +204,7 @@ export function serveLancache(options: LancacheOptions) {
           headers,
         });
       } catch (error) {
-        insert.run(
-          Date.now(),
-          null,
-          null,
-          url.pathname,
-          host,
-          null,
-          502,
-          0,
-          0,
-          performance.now() - started,
-          client,
-        );
+        insert.run(Date.now(), null, null, url.pathname, host, null, 502, 0, 0, performance.now() - started, client);
         return new Response(String(error), { status: 502 });
       }
     },
@@ -319,26 +282,16 @@ export function audit(db: Database, root: string): LancacheAudit {
     clients: all(
       `SELECT client, count(*) requests, sum(bytes) bytes FROM transfer GROUP BY client ORDER BY bytes DESC`,
     ),
-    statuses: all(
-      `SELECT status, count(*) count FROM transfer GROUP BY status ORDER BY count DESC`,
-    ),
+    statuses: all(`SELECT status, count(*) count FROM transfer GROUP BY status ORDER BY count DESC`),
   };
 }
 
 /** Removes cached chunks of one depot (or all) and their rows. */
 export async function evict(root: string, depot?: number) {
-  const target =
-    depot === undefined
-      ? join(root, "depot")
-      : join(root, "depot", String(depot));
-  if (await stat(target).catch(() => null))
-    await rm(target, { recursive: true, force: true });
+  const target = depot === undefined ? join(root, "depot") : join(root, "depot", String(depot));
+  if (await stat(target).catch(() => null)) await rm(target, { recursive: true, force: true });
   const db = openLancacheDb(root);
-  db.run(
-    depot === undefined
-      ? "DELETE FROM transfer"
-      : `DELETE FROM transfer WHERE depot = ${Number(depot)}`,
-  );
+  db.run(depot === undefined ? "DELETE FROM transfer" : `DELETE FROM transfer WHERE depot = ${Number(depot)}`);
   db.close();
 }
 

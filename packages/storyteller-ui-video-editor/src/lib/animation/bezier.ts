@@ -71,10 +71,8 @@ export function solveBezierProgressForTime({
 }) {
   let lower = 0;
   let upper = 1;
-  const rightHandle =
-    leftKey.rightHandle ?? getDefaultRightHandle({ leftKey, rightKey });
-  const leftHandle =
-    rightKey.leftHandle ?? getDefaultLeftHandle({ leftKey, rightKey });
+  const rightHandle = leftKey.rightHandle ?? getDefaultRightHandle({ leftKey, rightKey });
+  const leftHandle = rightKey.leftHandle ?? getDefaultLeftHandle({ leftKey, rightKey });
 
   for (let iteration = 0; iteration < BEZIER_SOLVE_ITERATIONS; iteration++) {
     const mid = (lower + upper) / 2;

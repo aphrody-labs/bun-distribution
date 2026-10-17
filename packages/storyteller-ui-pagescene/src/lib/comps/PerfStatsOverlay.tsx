@@ -15,7 +15,7 @@ import { usePageSceneStore } from "../PageSceneStore";
 
 export function PerfStatsOverlay() {
   const editor = useContext(EngineContext);
-  const visible = usePageSceneStore((s) => s.statsVisible);
+  const visible = usePageSceneStore(s => s.statsVisible);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,10 +44,5 @@ export function PerfStatsOverlay() {
   if (!visible) return null;
   // Bottom-left of the scene container. zIndex high enough to clear
   // the bottom-row outliner/preview.
-  return (
-    <div
-      ref={containerRef}
-      className="pointer-events-none absolute bottom-2 left-2 z-50"
-    />
-  );
+  return <div ref={containerRef} className="pointer-events-none absolute bottom-2 left-2 z-50" />;
 }

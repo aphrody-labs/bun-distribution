@@ -16,10 +16,7 @@ interface SpaceItemViewPreferences {
 interface ViewPreferencesStore {
   preferences: Record<string, SpaceItemViewPreferences>;
   getPreferences: (spaceItemId: string) => SpaceItemViewPreferences | undefined;
-  setPreferences: (
-    spaceItemId: string,
-    prefs: Partial<SpaceItemViewPreferences>,
-  ) => void;
+  setPreferences: (spaceItemId: string, prefs: Partial<SpaceItemViewPreferences>) => void;
 }
 
 const DEFAULT_VIEW_SETTINGS: ViewSettings = {
@@ -38,11 +35,11 @@ export const useViewPreferencesStore = create<ViewPreferencesStore>()(
   persist(
     (set, get) => ({
       preferences: {},
-      getPreferences: (spaceItemId) => {
+      getPreferences: spaceItemId => {
         return get().preferences[spaceItemId];
       },
       setPreferences: (spaceItemId, prefs) =>
-        set((state) => ({
+        set(state => ({
           preferences: {
             ...state.preferences,
             [spaceItemId]: {

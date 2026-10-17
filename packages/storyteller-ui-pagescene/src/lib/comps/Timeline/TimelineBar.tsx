@@ -12,10 +12,10 @@ import { DurationLabel } from "./DurationLabel";
 // `readOnly` (record mode) hides the expand chevron — playback only.
 export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
   const editor = useContext(EngineContext);
-  const playhead = usePageSceneStore((s) => s.timelinePlayhead);
-  const isPlaying = usePageSceneStore((s) => s.timelineIsPlaying);
-  const duration = usePageSceneStore((s) => s.timelineDuration);
-  const setExpanded = usePageSceneStore((s) => s.setTimelineExpanded);
+  const playhead = usePageSceneStore(s => s.timelinePlayhead);
+  const isPlaying = usePageSceneStore(s => s.timelineIsPlaying);
+  const duration = usePageSceneStore(s => s.timelineDuration);
+  const setExpanded = usePageSceneStore(s => s.setTimelineExpanded);
 
   const togglePlay = () => {
     if (!editor) return;
@@ -26,8 +26,8 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
   return (
     <div
       className="border border-ui-panel-border bg-ui-controls flex w-full select-none items-center gap-3 rounded-none px-4 py-2 text-white"
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
+      onMouseDown={e => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
     >
       <button
         type="button"
@@ -35,14 +35,9 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
         aria-label={isPlaying ? "Pause timeline" : "Play timeline"}
         className="flex h-7 w-7 items-center justify-center rounded-[3px] text-base-fg/80 hover:bg-white/10"
       >
-        <DynamicIcon
-          icon={isPlaying ? PauseIcon : PlayIcon}
-          className="h-3.5 w-3.5"
-        />
+        <DynamicIcon icon={isPlaying ? PauseIcon : PlayIcon} className="h-3.5 w-3.5" />
       </button>
-      <span className="w-9 shrink-0 font-mono tabular-nums text-xs text-base-fg/70">
-        {formatTimecode(playhead)}
-      </span>
+      <span className="w-9 shrink-0 font-mono tabular-nums text-xs text-base-fg/70">{formatTimecode(playhead)}</span>
       <input
         type="range"
         aria-label="Timeline playhead"
@@ -50,7 +45,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
         max={duration}
         step={0.01}
         value={playhead}
-        onChange={(e) => {
+        onChange={e => {
           if (!editor) return;
           pauseTimeline(editor);
           seekTimeline(editor, parseFloat(e.target.value));

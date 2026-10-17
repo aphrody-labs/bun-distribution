@@ -18,11 +18,11 @@ interface GalleryViewState {
 
 export const useGalleryViewStore = create<GalleryViewState>()(
   persist(
-    (set) => ({
+    set => ({
       viewMode: "grid",
-      setViewMode: (viewMode) => set({ viewMode }),
+      setViewMode: viewMode => set({ viewMode }),
       autoplayVideos: true,
-      setAutoplayVideos: (autoplayVideos) => set({ autoplayVideos }),
+      setAutoplayVideos: autoplayVideos => set({ autoplayVideos }),
     }),
     { name: "artcraft-gallery-view" },
   ),

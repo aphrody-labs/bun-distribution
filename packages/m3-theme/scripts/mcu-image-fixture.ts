@@ -17,14 +17,8 @@
 import { QuantizerCelebi, Score } from "@material/material-color-utilities";
 import { join } from "node:path";
 
-const OUT_JSON = join(
-  import.meta.dir,
-  "../../../../crates/ui/m3-tokens/tests/fixtures/mcu-image.json",
-);
-const OUT_IMAGES_DIR = join(
-  import.meta.dir,
-  "../../../../crates/ui/m3-tokens/tests/fixtures/images",
-);
+const OUT_JSON = join(import.meta.dir, "../../../../crates/ui/m3-tokens/tests/fixtures/mcu-image.json");
+const OUT_IMAGES_DIR = join(import.meta.dir, "../../../../crates/ui/m3-tokens/tests/fixtures/images");
 
 /** The default seed `quantize::DEFAULT_SEED` in the Rust port uses. */
 const DEFAULT_SEED = 0x6750a4b1;
@@ -82,16 +76,11 @@ function adler32(data: Uint8Array): number {
 
 /** Wraps a raw DEFLATE stream (what `Bun.deflateSync` produces) in the RFC 1950 zlib container
  *  PNG's IDAT chunk requires: a 2-byte header plus a trailing Adler-32 of the uncompressed data. */
-function toZlibStream(
-  rawDeflate: Uint8Array,
-  uncompressed: Uint8Array,
-): Uint8Array {
+function toZlibStream(rawDeflate: Uint8Array, uncompressed: Uint8Array): Uint8Array {
   const header = new Uint8Array([0x78, 0x9c]); // CMF/FLG: deflate, 32K window, default level
   const checksum = new Uint8Array(4);
   new DataView(checksum.buffer).setUint32(0, adler32(uncompressed), false);
-  const out = new Uint8Array(
-    header.length + rawDeflate.length + checksum.length,
-  );
+  const out = new Uint8Array(header.length + rawDeflate.length + checksum.length);
   out.set(header, 0);
   out.set(rawDeflate, header.length);
   out.set(checksum, header.length + rawDeflate.length);
@@ -99,11 +88,7 @@ function toZlibStream(
 }
 
 /** Encodes tightly packed RGBA8 pixels (row-major, no padding) as a real PNG file. */
-function encodePng(
-  width: number,
-  height: number,
-  rgba8: Uint8Array,
-): Uint8Array {
+function encodePng(width: number, height: number, rgba8: Uint8Array): Uint8Array {
   const stride = width * 4;
   const raw = new Uint8Array((stride + 1) * height);
   for (let y = 0; y < height; y++) {
@@ -123,12 +108,7 @@ function encodePng(
   ihdr[11] = 0;
   ihdr[12] = 0;
 
-  const parts = [
-    signature,
-    chunk("IHDR", ihdr),
-    chunk("IDAT", idatData),
-    chunk("IEND", new Uint8Array(0)),
-  ];
+  const parts = [signature, chunk("IHDR", ihdr), chunk("IDAT", idatData), chunk("IEND", new Uint8Array(0))];
   const total = parts.reduce((n, p) => n + p.length, 0);
   const out = new Uint8Array(total);
   let offset = 0;
@@ -141,14 +121,7 @@ function encodePng(
 
 // ── Synthetic RGBA8 pixel generators.
 
-function solid(
-  width: number,
-  height: number,
-  r: number,
-  g: number,
-  b: number,
-  a = 255,
-): Uint8Array {
+function solid(width: number, height: number, r: number, g: number, b: number, a = 255): Uint8Array {
   const out = new Uint8Array(width * height * 4);
   for (let i = 0; i < width * height; i++) out.set([r, g, b, a], i * 4);
   return out;
@@ -279,27 +252,20 @@ async function main() {
       const pngRelPath = `images/${name}.png`;
       await Bun.write(join(OUT_IMAGES_DIR, `${name}.png`), png);
       if (png.length > 200 * 1024) {
-        throw new Error(
-          `${name}.png is ${png.length} bytes, over the 200KB budget`,
-        );
+        throw new Error(`${name}.png is ${png.length} bytes, over the 200KB budget`);
       }
 
       const pixels = rgbaToArgbPixels(rgba8);
       const maxColors = 128;
-      const { quantized, sourceColor, scoreDefault } = withSeededRandom(
-        DEFAULT_SEED,
-        () => {
-          const result = QuantizerCelebi.quantize(pixels, maxColors);
-          const scores = Score.score(result);
-          return {
-            quantized: [...result.entries()].toSorted(
-              (a, b) => a[0] - b[0],
-            ) as Array<[number, number]>,
-            scoreDefault: scores,
-            sourceColor: scores[0]!,
-          };
-        },
-      );
+      const { quantized, sourceColor, scoreDefault } = withSeededRandom(DEFAULT_SEED, () => {
+        const result = QuantizerCelebi.quantize(pixels, maxColors);
+        const scores = Score.score(result);
+        return {
+          quantized: [...result.entries()].toSorted((a, b) => a[0] - b[0]) as Array<[number, number]>,
+          scoreDefault: scores,
+          sourceColor: scores[0]!,
+        };
+      });
 
       return {
         name,

@@ -28,8 +28,7 @@ export const demoSkyboxItems: MediaItem[] = [
     media_id: "SKY::m_3",
     type: AssetType.SKYBOX,
     name: "Gray Skybox",
-    thumbnail:
-      "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_2_LeftX.webp",
+    thumbnail: "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_2_LeftX.webp",
   },
   {
     version: 1,

@@ -36,8 +36,7 @@ function GenericCardContent({
     | undefined;
 
   const targetPath =
-    ((job.action_context?.action_input as Record<string, unknown> | null)
-      ?.path as string | undefined) ||
+    ((job.action_context?.action_input as Record<string, unknown> | null)?.path as string | undefined) ||
     (typeof job.current_path === "string" ? job.current_path : undefined);
 
   const handleResultClick = async (e: React.MouseEvent) => {
@@ -64,9 +63,7 @@ function GenericCardContent({
     <>
       {/* Row 1: Title, status badge, and controls */}
       <div className="flex items-center gap-3 min-h-0">
-        <span className="flex-1 truncate text-title-small text-on-surface font-medium">
-          {displayName}
-        </span>
+        <span className="flex-1 truncate text-title-small text-on-surface font-medium">{displayName}</span>
 
         {/* Status badge */}
         <span className="flex-shrink-0 text-label-large text-on-surface-variant max-w-[120px] truncate">
@@ -83,11 +80,7 @@ function GenericCardContent({
             }}
             className="flex-shrink-0"
           >
-            <Icon
-              name="expand_more"
-              size={18}
-              className="text-on-surface-variant"
-            />
+            <Icon name="expand_more" size={18} className="text-on-surface-variant" />
           </motion.div>
         )}
 
@@ -103,24 +96,10 @@ function GenericCardContent({
                 "bg-primary text-on-primary hover:bg-primary/90 transition-all active:scale-95 shadow-sm",
                 m3FocusRing,
               )}
-              title={
-                resultAction?.label ||
-                (targetPath ? "Afficher dans fichiers" : "Ouvrir")
-              }
+              title={resultAction?.label || (targetPath ? "Afficher dans fichiers" : "Ouvrir")}
             >
-              <Icon
-                name={
-                  resultAction?.label === "Ouvrir"
-                    ? "open_in_new"
-                    : "folder_open"
-                }
-                size={16}
-                filled
-              />
-              <span>
-                {resultAction?.label ||
-                  (targetPath ? "Afficher dans fichiers" : "Ouvrir")}
-              </span>
+              <Icon name={resultAction?.label === "Ouvrir" ? "open_in_new" : "folder_open"} size={16} filled />
+              <span>{resultAction?.label || (targetPath ? "Afficher dans fichiers" : "Ouvrir")}</span>
             </button>
           )}
 
@@ -137,11 +116,7 @@ function GenericCardContent({
               )}
               title={canPause ? "Mettre en pause" : "Reprendre"}
             >
-              {canPause ? (
-                <Icon name="pause" size={18} filled />
-              ) : (
-                <Icon name="play_arrow" size={18} filled />
-              )}
+              {canPause ? <Icon name="pause" size={18} filled /> : <Icon name="play_arrow" size={18} filled />}
             </button>
           )}
 

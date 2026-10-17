@@ -1,9 +1,5 @@
 import { ReactNode, useRef, useState } from "react";
-import {
-  EASING_PRESETS,
-  type EasingPresetName,
-  type EasingSpec,
-} from "../../engine/timeline/types";
+import { EASING_PRESETS, type EasingPresetName, type EasingSpec } from "../../engine/timeline/types";
 
 // The Motion popover edits a cubic-bezier easing curve. Presets across the
 // top, an editable curve below with two draggable handles and a dotted
@@ -36,13 +32,7 @@ interface MotionPopoverProps {
   footer?: ReactNode;
 }
 
-export const MotionPopover = ({
-  easing,
-  onChange,
-  leftPercent,
-  title = "Motion",
-  footer,
-}: MotionPopoverProps) => {
+export const MotionPopover = ({ easing, onChange, leftPercent, title = "Motion", footer }: MotionPopoverProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragging, setDragging] = useState<null | "p1" | "p2">(null);
 
@@ -77,12 +67,12 @@ export const MotionPopover = ({
       id="motion-popover"
       className="border border-ui-panel-border bg-ui-controls pointer-events-auto absolute bottom-full z-50 mb-2 w-[180px] -translate-x-1/2 select-none rounded-none p-3"
       style={{ left: `${Math.max(12, Math.min(88, leftPercent))}%` }}
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
+      onMouseDown={e => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
     >
       <div className="mb-2 text-xs font-semibold text-base-fg/80">{title}</div>
       <div className="mb-3 grid grid-cols-4 gap-1">
-        {PRESETS.map((p) => {
+        {PRESETS.map(p => {
           const preset = EASING_PRESETS[p.name];
           const active =
             preset.p1x === easing.p1x &&
@@ -154,13 +144,7 @@ export const MotionPopover = ({
           className="text-brand-primary/50"
         />
         {/* the curve */}
-        <path
-          d={curvePath}
-          stroke="currentColor"
-          strokeWidth="2"
-          fill="none"
-          className="text-base-fg"
-        />
+        <path d={curvePath} stroke="currentColor" strokeWidth="2" fill="none" className="text-base-fg" />
         {/* endpoints */}
         <circle cx={sx(0)} cy={sy(0)} r="2.5" className="fill-base-fg/50" />
         <circle cx={sx(1)} cy={sy(1)} r="2.5" className="fill-base-fg/50" />
@@ -170,7 +154,7 @@ export const MotionPopover = ({
           cy={sy(easing.p1y)}
           r="5"
           className="cursor-grab fill-brand-primary"
-          onPointerDown={(e) => {
+          onPointerDown={e => {
             e.currentTarget.setPointerCapture(e.pointerId);
             setDragging("p1");
           }}
@@ -180,7 +164,7 @@ export const MotionPopover = ({
           cy={sy(easing.p2y)}
           r="5"
           className="cursor-grab fill-brand-primary"
-          onPointerDown={(e) => {
+          onPointerDown={e => {
             e.currentTarget.setPointerCapture(e.pointerId);
             setDragging("p2");
           }}

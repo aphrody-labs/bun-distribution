@@ -24,7 +24,7 @@ export const listTableFeatures = tableFeatures({
 // Column definitions for the list view
 export function useTable(files: File[]) {
   // Memoize files array reference to prevent unnecessary table updates
-  const filesKey = JSON.stringify(files.map((f) => f.id));
+  const filesKey = JSON.stringify(files.map(f => f.id));
   // oxlint-disable-next-line react-hooks/exhaustive-deps -- la référence ne change que si la liste d'identifiants change ; files est volontairement absent
   const stableFiles = useMemo(() => files, [filesKey]);
 
@@ -36,7 +36,7 @@ export function useTable(files: File[]) {
         minSize: 200,
         size: 320,
         maxSize: 800,
-        accessorFn: (row) => row.name,
+        accessorFn: row => row.name,
       },
       {
         id: "size",
@@ -44,7 +44,7 @@ export function useTable(files: File[]) {
         size: 100,
         minSize: 70,
         maxSize: 140,
-        accessorFn: (row) => (row.size > 0 ? formatBytes(row.size) : "—"),
+        accessorFn: row => (row.size > 0 ? formatBytes(row.size) : "—"),
       },
       {
         id: "modified",
@@ -52,7 +52,7 @@ export function useTable(files: File[]) {
         size: 140,
         minSize: 90,
         maxSize: 200,
-        accessorFn: (row) => formatRelativeTime(row.modified_at),
+        accessorFn: row => formatRelativeTime(row.modified_at),
       },
       {
         id: "type",
@@ -60,8 +60,7 @@ export function useTable(files: File[]) {
         size: 90,
         minSize: 70,
         maxSize: 130,
-        accessorFn: (row) =>
-          row.kind === "File" ? row.extension?.toUpperCase() || "—" : "Dossier",
+        accessorFn: row => (row.kind === "File" ? row.extension?.toUpperCase() || "—" : "Dossier"),
       },
     ],
     [],
@@ -76,7 +75,7 @@ export function useTable(files: File[]) {
       maxSize: 500,
     },
     columnResizeMode: "onChange",
-    getRowId: (row) => row.id,
+    getRowId: row => row.id,
   });
 
   return { table, columns };

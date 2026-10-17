@@ -1,24 +1,11 @@
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { FrameRate } from "opencut-wasm";
-import {
-  mediaTime,
-  snapSeekMediaTime,
-  TICKS_PER_SECOND,
-  type MediaTime,
-} from "../../wasm";
-import {
-  buildTimelineSnapPoints,
-  getTimelineSnapThresholdInTicks,
-  resolveTimelineSnap,
-} from "../snapping";
+import { mediaTime, snapSeekMediaTime, TICKS_PER_SECOND, type MediaTime } from "../../wasm";
+import { buildTimelineSnapPoints, getTimelineSnapThresholdInTicks, resolveTimelineSnap } from "../snapping";
 import { getBookmarkSnapPoints } from "../bookmarks";
 import { getElementEdgeSnapPoints } from "../element-snap-source";
 import { getAnimationKeyframeSnapPointsForTimeline } from "../animation-snap-points";
-import {
-  getCenteredLineLeft,
-  timelineTimeToPixels,
-  timelineTimeToSnappedPixels,
-} from "../pixel-utils";
+import { getCenteredLineLeft, timelineTimeToPixels, timelineTimeToSnappedPixels } from "../pixel-utils";
 import { BASE_TIMELINE_PIXELS_PER_SECOND } from "../scale";
 import type { Bookmark, SceneTracks } from "../types";
 
@@ -60,11 +47,7 @@ export interface PlayheadConfig {
   getSceneBookmarks: () => Bookmark[];
   seek: (time: MediaTime) => void;
   setScrubbing: (isScrubbing: boolean) => void;
-  setTimelineViewState: (viewState: {
-    zoomLevel: number;
-    scrollLeft: number;
-    playheadTime: MediaTime;
-  }) => void;
+  setTimelineViewState: (viewState: { zoomLevel: number; scrollLeft: number; playheadTime: MediaTime }) => void;
 }
 
 export interface PlayheadConfigRef {
@@ -84,16 +67,10 @@ function pixelToTime({
 }): MediaTime {
   const rulerRect = rulerEl.getBoundingClientRect();
   const contentWidth = timelineTimeToPixels({ time: duration, zoomLevel });
-  const clampedX = Math.max(
-    0,
-    Math.min(contentWidth, clientX - rulerRect.left),
-  );
+  const clampedX = Math.max(0, Math.min(contentWidth, clientX - rulerRect.left));
   const seconds = Math.max(
     0,
-    Math.min(
-      duration / TICKS_PER_SECOND,
-      clampedX / (BASE_TIMELINE_PIXELS_PER_SECOND * zoomLevel),
-    ),
+    Math.min(duration / TICKS_PER_SECOND, clampedX / (BASE_TIMELINE_PIXELS_PER_SECOND * zoomLevel)),
   );
   return mediaTime({ ticks: Math.round(seconds * TICKS_PER_SECOND) });
 }
@@ -181,8 +158,7 @@ export class PlayheadController {
   handlePlaybackUpdate(time: MediaTime): void {
     this.updatePlayheadLeft(time);
 
-    if (!this.config.getIsPlaying() || this.session.kind === "scrubbing")
-      return;
+    if (!this.config.getIsPlaying() || this.session.kind === "scrubbing") return;
 
     const rulerViewport = this.config.getRulerScrollEl();
     const tracksViewport = this.config.getTracksScrollEl();
@@ -194,16 +170,12 @@ export class PlayheadController {
     });
     const viewportWidth = rulerViewport.clientWidth;
     const isOutOfView =
-      playheadPixels < rulerViewport.scrollLeft ||
-      playheadPixels > rulerViewport.scrollLeft + viewportWidth;
+      playheadPixels < rulerViewport.scrollLeft || playheadPixels > rulerViewport.scrollLeft + viewportWidth;
 
     if (isOutOfView) {
       const desiredScroll = Math.max(
         0,
-        Math.min(
-          rulerViewport.scrollWidth - viewportWidth,
-          playheadPixels - viewportWidth / 2,
-        ),
+        Math.min(rulerViewport.scrollWidth - viewportWidth, playheadPixels - viewportWidth / 2),
       );
       rulerViewport.scrollLeft = tracksViewport.scrollLeft = desiredScroll;
     }
@@ -245,13 +217,11 @@ export class PlayheadController {
     const frameTime = snapSeekMediaTime({ time: rawTime, duration, fps });
 
     const time = (() => {
-      if (!isElementSnappingEnabled || this.config.isShiftHeld())
-        return frameTime;
+      if (!isElementSnappingEnabled || this.config.isShiftHeld()) return frameTime;
 
       const snapPoints = buildTimelineSnapPoints({
         sources: [
-          () =>
-            getElementEdgeSnapPoints({ tracks: this.config.getSceneTracks() }),
+          () => getElementEdgeSnapPoints({ tracks: this.config.getSceneTracks() }),
           () =>
             getBookmarkSnapPoints({
               bookmarks: this.config.getSceneBookmarks(),

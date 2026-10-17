@@ -18,36 +18,24 @@ import {
 
 import { Icon } from "../Icon";
 
-export interface FormProps<T extends FieldValues> extends Omit<
-  ComponentProps<"form">,
-  "onSubmit"
-> {
+export interface FormProps<T extends FieldValues> extends Omit<ComponentProps<"form">, "onSubmit"> {
   form: UseFormReturn<T>;
   disabled?: boolean;
   onSubmit?: ReturnType<UseFormHandleSubmit<T>>;
 }
 
-export const Form = <T extends FieldValues>({
-  form,
-  disabled,
-  onSubmit,
-  children,
-  ...props
-}: FormProps<T>) => {
+export const Form = <T extends FieldValues>({ form, disabled, onSubmit, children, ...props }: FormProps<T>) => {
   return (
     <FormProvider {...form}>
       <form
-        onSubmit={(e) => {
+        onSubmit={e => {
           e.stopPropagation();
           e.preventDefault();
           return onSubmit?.(e);
         }}
         {...props}
       >
-        <fieldset
-          disabled={disabled || form.formState.isSubmitting}
-          className="min-w-0"
-        >
+        <fieldset disabled={disabled || form.formState.isSubmitting} className="min-w-0">
           {children}
         </fieldset>
       </form>
@@ -63,32 +51,25 @@ export type FormRootProps<T extends FieldValues> = FormProps<T>;
  * M3 error supporting text: `error` role, leading filled `error` icon. `default` is the field
  * supporting text (`body-small`), `large` a form-level message (`body-medium`).
  */
-export const errorStyles = cva(
-  "flex items-start gap-1 whitespace-normal break-words text-error",
-  {
-    variants: {
-      variant: {
-        none: "",
-        default: "w-full px-4 text-body-small",
-        large: "gap-2 text-left text-body-medium",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
+export const errorStyles = cva("flex items-start gap-1 whitespace-normal break-words text-error", {
+  variants: {
+    variant: {
+      none: "",
+      default: "w-full px-4 text-body-small",
+      large: "gap-2 text-left text-body-medium",
     },
   },
-);
+  defaultVariants: {
+    variant: "default",
+  },
+});
 
 export interface ErrorMessageProps extends VariantProps<typeof errorStyles> {
   name: string;
   className: string;
 }
 
-export const ErrorMessage = ({
-  name,
-  variant,
-  className,
-}: ErrorMessageProps) => {
+export const ErrorMessage = ({ name, variant, className }: ErrorMessageProps) => {
   const methods = useFormContext();
   const error = get(methods.formState.errors, name) as FieldErrors | undefined;
   const message = error?.message;
@@ -117,12 +98,7 @@ export const ErrorMessage = ({
             },
           }}
         >
-          <Icon
-            name="error"
-            filled
-            size={variant === "large" ? 20 : 16}
-            className="mt-px"
-          />
+          <Icon name="error" filled size={variant === "large" ? 20 : 16} className="mt-px" />
           <p className="whitespace-normal">{message}</p>
         </motion.div>
       ) : null}

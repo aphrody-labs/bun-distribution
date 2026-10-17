@@ -26,8 +26,7 @@ export interface FalBackgroundRemovalSuccess extends CommandResult {
   payload: FalBackgroundRemovalPayload;
 }
 
-export type FalBackgroundRemovalResult =
-  FalBackgroundRemovalSuccess | FalBackgroundRemovalError;
+export type FalBackgroundRemovalResult = FalBackgroundRemovalSuccess | FalBackgroundRemovalError;
 
 export const FalBackgroundRemoval = async (
   request: FalBackgroundRemovalRequest,

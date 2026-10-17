@@ -56,15 +56,8 @@ export const MONOREPO_BUN_CATALOG: MonorepoBunCatalog = {
     {
       id: "server",
       title: "Native HTTP Server & WebSockets",
-      description:
-        "High-performance Bun.serve with zero-copy routing, SSE streams, backpressure WebSocket, and TLS",
-      keyApis: [
-        "Bun.serve",
-        "Bun.listen",
-        "ServerWebSocket",
-        "Response.json",
-        "Response.redirect",
-      ],
+      description: "High-performance Bun.serve with zero-copy routing, SSE streams, backpressure WebSocket, and TLS",
+      keyApis: ["Bun.serve", "Bun.listen", "ServerWebSocket", "Response.json", "Response.redirect"],
       docCount: 60,
       sampleDocs: [
         "aphrody-source\\products\\web\\drive-server\\README.md",
@@ -77,14 +70,8 @@ export const MONOREPO_BUN_CATALOG: MonorepoBunCatalog = {
     {
       id: "react",
       title: "React & JSX Engine",
-      description:
-        "Direct JSX/TSX transpilation, React 19 / Server Components compatibility, and Bun.markdown.react()",
-      keyApis: [
-        "Bun.Transpiler",
-        "Bun.markdown.react",
-        "jsx: 'react-jsx'",
-        "React Server Components",
-      ],
+      description: "Direct JSX/TSX transpilation, React 19 / Server Components compatibility, and Bun.markdown.react()",
+      keyApis: ["Bun.Transpiler", "Bun.markdown.react", "jsx: 'react-jsx'", "React Server Components"],
       docCount: 5,
       sampleDocs: [
         "bundler\\fullstack.mdx",
@@ -99,13 +86,7 @@ export const MONOREPO_BUN_CATALOG: MonorepoBunCatalog = {
       title: "LightningCSS & Modern Styling Engine",
       description:
         "Built-in LightningCSS transpilation: CSS nesting, color-mix(), relative colors, OKLCH, and CSS Modules",
-      keyApis: [
-        "Bun.build({ loaders: { '.css': 'css' } })",
-        "Bun.color",
-        "CSS Nesting",
-        "color-mix()",
-        "oklch()",
-      ],
+      keyApis: ["Bun.build({ loaders: { '.css': 'css' } })", "Bun.color", "CSS Nesting", "color-mix()", "oklch()"],
       docCount: 26,
       sampleDocs: [
         "bundler\\css.mdx",
@@ -120,14 +101,7 @@ export const MONOREPO_BUN_CATALOG: MonorepoBunCatalog = {
       title: "Native Image Pipeline (Bun.Image)",
       description:
         "SIMD-accelerated image decoding, resize (mitchell/lanczos3), rotate, modulate, WebP/AVIF, and ThumbHash placeholders",
-      keyApis: [
-        "new Bun.Image()",
-        "Blob.image()",
-        "img.resize()",
-        "img.webp()",
-        "img.placeholder()",
-        "img.bytes()",
-      ],
+      keyApis: ["new Bun.Image()", "Blob.image()", "img.resize()", "img.webp()", "img.placeholder()", "img.bytes()"],
       docCount: 12,
       sampleDocs: [
         "chromium\\sources\\chromium-site\\70bb13377fed8671966ab9565b7627f2e73ae1a2\\site\\chromium-os\\developer-library\\guides\\device\\install-software-on-base-images\\index.md",
@@ -140,15 +114,8 @@ export const MONOREPO_BUN_CATALOG: MonorepoBunCatalog = {
     {
       id: "json",
       title: "High-Performance Structured Data",
-      description:
-        "Fast SIMD JSON, zero-copy streaming Bun.JSONL, JSON5, native Bun.TOML, and Bun.XML",
-      keyApis: [
-        "Bun.JSONL.parse",
-        "Bun.JSONL.parseChunk",
-        "Bun.TOML.parse",
-        "Bun.TOML.stringify",
-        "Bun.XML.parse",
-      ],
+      description: "Fast SIMD JSON, zero-copy streaming Bun.JSONL, JSON5, native Bun.TOML, and Bun.XML",
+      keyApis: ["Bun.JSONL.parse", "Bun.JSONL.parseChunk", "Bun.TOML.parse", "Bun.TOML.stringify", "Bun.XML.parse"],
       docCount: 24,
       sampleDocs: [
         "chromium\\sources\\chromium-site\\70bb13377fed8671966ab9565b7627f2e73ae1a2\\site\\developers\\testing\\commit-queue\\chromium_trybot-json\\index.md",
@@ -163,12 +130,7 @@ export const MONOREPO_BUN_CATALOG: MonorepoBunCatalog = {
       title: "Rust-Powered Markdown Engine (Bun.markdown)",
       description:
         "Ultra-fast GFM parser written in Rust with native HTML, ANSI terminal, custom AST render, and React JSX output",
-      keyApis: [
-        "Bun.markdown.html",
-        "Bun.markdown.ansi",
-        "Bun.markdown.render",
-        "Bun.markdown.react",
-      ],
+      keyApis: ["Bun.markdown.html", "Bun.markdown.ansi", "Bun.markdown.render", "Bun.markdown.react"],
       docCount: 4,
       sampleDocs: [
         "chromium\\sources\\chromium-site\\70bb13377fed8671966ab9565b7627f2e73ae1a2\\site\\developers\\markdown-documentation\\index.md",

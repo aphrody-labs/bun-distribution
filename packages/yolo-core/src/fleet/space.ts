@@ -37,20 +37,14 @@ export interface ReclaimEstimate {
 
 const BLOCK = 512;
 
-export function estimateReclaim(
-  records: readonly LinkRecord[],
-): ReclaimEstimate {
-  const seen = new Map<
-    string,
-    { nlink: number; blocks: number; inside: number }
-  >();
+export function estimateReclaim(records: readonly LinkRecord[]): ReclaimEstimate {
+  const seen = new Map<string, { nlink: number; blocks: number; inside: number }>();
   let naive = 0;
   for (const r of records) {
     naive += r.blocks * BLOCK;
     const key = `${r.dev}:${r.ino}`;
     const e = seen.get(key);
-    if (e === undefined)
-      seen.set(key, { nlink: r.nlink, blocks: r.blocks, inside: 1 });
+    if (e === undefined) seen.set(key, { nlink: r.nlink, blocks: r.blocks, inside: 1 });
     else e.inside += 1;
   }
   let unique = 0;
@@ -76,14 +70,9 @@ export interface SpaceGate {
   readonly requiredFreeBytes: number;
 }
 
-export function spaceGate(
-  totalBytes: number,
-  freeBytes: number,
-  minFreeRatio: number,
-): SpaceGate {
+export function spaceGate(totalBytes: number, freeBytes: number, minFreeRatio: number): SpaceGate {
   if (!(totalBytes > 0)) throw new Error("totalBytes must be positive");
-  if (!(minFreeRatio >= 0 && minFreeRatio <= 1))
-    throw new Error("minFreeRatio must be in [0, 1]");
+  if (!(minFreeRatio >= 0 && minFreeRatio <= 1)) throw new Error("minFreeRatio must be in [0, 1]");
   const free = Math.min(Math.max(freeBytes, 0), totalBytes);
   const required = Math.ceil(totalBytes * minFreeRatio);
   return {
@@ -100,22 +89,16 @@ export function parseDfSizeAvail(text: string): {
 } {
   for (const line of text.split("\n")) {
     const m = /^\s*(\d+)\s+(\d+)\s*$/.exec(line);
-    if (m !== null)
-      return { totalBytes: Number(m[1]), freeBytes: Number(m[2]) };
+    if (m !== null) return { totalBytes: Number(m[1]), freeBytes: Number(m[2]) };
   }
   throw new Error("df output has no size/avail line");
 }
 
 export const DEFAULT_MIN_FREE = 0.2;
 
-export function parseRatio(
-  text: string | number | undefined | null,
-): number | null {
+export function parseRatio(text: string | number | undefined | null): number | null {
   if (text === undefined || text === null || text === "") return null;
-  const raw =
-    typeof text === "number"
-      ? text
-      : Number(String(text).trim().replace(/%$/, ""));
+  const raw = typeof text === "number" ? text : Number(String(text).trim().replace(/%$/, ""));
   if (!Number.isFinite(raw)) return null;
   const pct = typeof text === "string" && text.trim().endsWith("%");
   const ratio = pct || raw > 1 ? raw / 100 : raw;
@@ -134,10 +117,7 @@ export function resolveMinFree(sources: {
   ] as const) {
     if (value === undefined || value === "") continue;
     const r = parseRatio(value);
-    if (r === null)
-      throw new Error(
-        `${name}: "${value}" is not a ratio between 0 and 1 (or 0 and 100 %)`,
-      );
+    if (r === null) throw new Error(`${name}: "${value}" is not a ratio between 0 and 1 (or 0 and 100 %)`);
     return r;
   }
   return DEFAULT_MIN_FREE;
@@ -153,10 +133,7 @@ export interface DiskDecision {
   readonly message: string;
 }
 
-export function diskDecision(
-  probeStdout: string | null,
-  minFreeRatio: number = DEFAULT_MIN_FREE,
-): DiskDecision {
+export function diskDecision(probeStdout: string | null, minFreeRatio: number = DEFAULT_MIN_FREE): DiskDecision {
   if (probeStdout === null)
     return {
       ok: false,
@@ -191,10 +168,7 @@ export interface ScanOptions {
   readonly batch?: number | undefined;
 }
 
-export async function scanLinks(
-  paths: readonly string[],
-  o: ScanOptions,
-): Promise<LinkRecord[]> {
+export async function scanLinks(paths: readonly string[], o: ScanOptions): Promise<LinkRecord[]> {
   const gate = limiter(o.parallel);
   const sh = (command: string): Promise<string> => gate(() => o.run(command));
   const pre = o.sudo === true ? "sudo -n " : "";
@@ -204,14 +178,9 @@ export async function scanLinks(
 
   async function files(names: readonly string[]): Promise<LinkRecord[]> {
     const chunks: string[][] = [];
-    for (let i = 0; i < names.length; i += batch)
-      chunks.push(names.slice(i, i + batch));
+    for (let i = 0; i < names.length; i += batch) chunks.push(names.slice(i, i + batch));
     const parts = await Promise.all(
-      chunks.map(async (c) =>
-        parseFindLinks(
-          await sh(links(`${c.map(quote).join(" ")} -maxdepth 0`)),
-        ),
-      ),
+      chunks.map(async c => parseFindLinks(await sh(links(`${c.map(quote).join(" ")} -maxdepth 0`)))),
     );
     return parts.flat();
   }
@@ -228,20 +197,13 @@ export async function scanLinks(
       if (tab < 0) continue;
       (line.slice(0, tab) === "d" ? dirs : loose).push(line.slice(tab + 1));
     }
-    const parts = await Promise.all([
-      ...dirs.map((d) => walk(d, depth - 1)),
-      files(loose),
-    ]);
+    const parts = await Promise.all([...dirs.map(d => walk(d, depth - 1)), files(loose)]);
     return parts.flat();
   }
 
   const roots = await Promise.all(
-    paths.map(async (path) => {
-      const kind = (
-        await sh(
-          `${pre}find ${quote(path)} -maxdepth 0 -printf '%y' 2>/dev/null || true`,
-        )
-      ).trim();
+    paths.map(async path => {
+      const kind = (await sh(`${pre}find ${quote(path)} -maxdepth 0 -printf '%y' 2>/dev/null || true`)).trim();
       if (kind === "d") return walk(path, o.depth);
       return kind === "" ? [] : files([path]);
     }),

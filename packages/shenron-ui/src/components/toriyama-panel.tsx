@@ -26,19 +26,11 @@ const PANEL_STYLES = {
     "bg-[var(--color-card,#18181b)] border-2 border-[var(--color-toriyama-capsule,#00b4d8)] shadow-[4px_4px_0px_var(--color-toriyama-ink,#121417)] rounded-2xl",
 };
 
-export function ToriyamaPanel({
-  children,
-  variant = "standard",
-  sfx,
-  title,
-  className = "",
-}: ToriyamaPanelProps) {
+export function ToriyamaPanel({ children, variant = "standard", sfx, title, className = "" }: ToriyamaPanelProps) {
   const panelStyle = PANEL_STYLES[variant] ?? PANEL_STYLES.standard;
 
   return (
-    <div
-      className={`relative p-5 text-[var(--color-foreground)] ${panelStyle} ${className}`}
-    >
+    <div className={`relative p-5 text-[var(--color-foreground)] ${panelStyle} ${className}`}>
       {/* Sound Effect (SFX / Onomatopoeia) Top Badge */}
       {sfx && (
         <span

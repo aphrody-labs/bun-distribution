@@ -74,7 +74,7 @@ export function MangaCard({
   className = "",
   linkComponent: Link = "a",
   renderImage,
-  resolveImage = (src) => src,
+  resolveImage = src => src,
 }: MangaCardProps) {
   return (
     <article
@@ -82,17 +82,14 @@ export function MangaCard({
     >
       {image && (
         <Link href={href} tabIndex={-1} aria-hidden className="block">
-          <div
-            className={`relative overflow-hidden border-b border-white/[0.08] ${RATIOS[ratio]}`}
-          >
+          <div className={`relative overflow-hidden border-b border-white/[0.08] ${RATIOS[ratio]}`}>
             {renderImage ? (
               renderImage({
                 src: resolveImage(image),
                 alt: imageAlt ?? "",
                 priority,
                 sizes,
-                className:
-                  "object-cover transition-transform duration-500 group-hover:scale-[1.03]",
+                className: "object-cover transition-transform duration-500 group-hover:scale-[1.03]",
               })
             ) : (
               <img
@@ -116,18 +113,13 @@ export function MangaCard({
         <h3 className="font-display text-[1.0625rem] font-semibold leading-[1.25] tracking-[-0.01em] text-white sm:text-[1.125rem]">
           {/* Lien étendu : toute la carte est cliquable, sans imbriquer les
 					    liens du pied de carte (qui restent au-dessus via z-index). */}
-          <Link
-            href={href}
-            className="after:absolute after:inset-0 hover:text-dbz-orange"
-          >
+          <Link href={href} className="after:absolute after:inset-0 hover:text-dbz-orange">
             {title}
           </Link>
         </h3>
 
         {excerpt && (
-          <p className="mt-2 line-clamp-3 flex-1 text-[0.875rem] leading-relaxed text-white/[0.68]">
-            {excerpt}
-          </p>
+          <p className="mt-2 line-clamp-3 flex-1 text-[0.875rem] leading-relaxed text-white/[0.68]">{excerpt}</p>
         )}
 
         {meta && (
@@ -161,11 +153,7 @@ export function CardGrid({
     3: "sm:grid-cols-2 lg:grid-cols-3",
     4: "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
   } as const;
-  return (
-    <div className={`grid gap-5 sm:gap-6 ${cols[columns]} ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`grid gap-5 sm:gap-6 ${cols[columns]} ${className}`}>{children}</div>;
 }
 
 /**
@@ -188,16 +176,10 @@ export function SocialCounts({
   emptyLabel?: string;
 }) {
   if (likes === 0 && comments === 0) {
-    return emptyLabel ? (
-      <span className={`text-[0.75rem] text-white/35 ${className}`}>
-        {emptyLabel}
-      </span>
-    ) : null;
+    return emptyLabel ? <span className={`text-[0.75rem] text-white/35 ${className}`}>{emptyLabel}</span> : null;
   }
   return (
-    <span
-      className={`flex items-center gap-4 font-mono text-[0.75rem] tabular-nums text-white/50 ${className}`}
-    >
+    <span className={`flex items-center gap-4 font-mono text-[0.75rem] tabular-nums text-white/50 ${className}`}>
       {likes > 0 && (
         <span className="inline-flex items-center gap-1.5">
           <Coeur size={14} aria-hidden />

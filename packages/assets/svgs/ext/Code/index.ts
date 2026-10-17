@@ -57,22 +57,4 @@ const vue = React.lazy(async () => ({
   default: (await import("./vue.svg")).ReactComponent,
 }));
 
-export {
-  angular,
-  bun,
-  c,
-  cmake,
-  cpp,
-  csharp,
-  css,
-  dartlang,
-  go,
-  html,
-  java,
-  js,
-  kotlin,
-  php,
-  py,
-  ts,
-  vue,
-};
+export { angular, bun, c, cmake, cpp, csharp, css, dartlang, go, html, java, js, kotlin, php, py, ts, vue };

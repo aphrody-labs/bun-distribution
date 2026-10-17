@@ -9,20 +9,8 @@ export {
   type Decision,
   type NavigationKind,
 } from "./policy.ts";
-export {
-  normalizeTarget,
-  probeDirectory,
-  probeUrl,
-  ProbeError,
-  type ProbeOptions,
-} from "./probe.ts";
-export {
-  assessRisks,
-  planConversion,
-  PlanError,
-  registrableDomain,
-  WRAPPED_ID_PREFIX,
-} from "./plan.ts";
+export { normalizeTarget, probeDirectory, probeUrl, ProbeError, type ProbeOptions } from "./probe.ts";
+export { assessRisks, planConversion, PlanError, registrableDomain, WRAPPED_ID_PREFIX } from "./plan.ts";
 export {
   generateProject,
   GenerateError,

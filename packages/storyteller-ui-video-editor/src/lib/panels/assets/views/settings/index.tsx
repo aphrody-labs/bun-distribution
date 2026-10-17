@@ -2,23 +2,12 @@
 
 import { useState } from "react";
 import { PanelView } from "../base-panel";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../../components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../../components/ui/select";
 import { FPS_PRESETS } from "../../../../fps/presets";
 import { DEFAULT_CANVAS_SIZE } from "../../../../canvas/sizes";
 import { floatToFrameRate, frameRateToFloat } from "../../../../fps/utils";
 import { useEditor } from "../../../../editor/use-editor";
-import {
-  Section,
-  SectionContent,
-  SectionHeader,
-  SectionTitle,
-} from "../../../../components/section";
+import { Section, SectionContent, SectionHeader, SectionTitle } from "../../../../components/section";
 import { BackgroundContent } from "./background";
 import { Tabs, TabsList, TabsTrigger } from "../../../../components/ui/tabs";
 import { Button } from "../../../../components/ui/button";
@@ -46,13 +35,7 @@ const PRESET_LABELS: Record<string, string> = {
   "4:3": "4:3",
 };
 
-function areCanvasSizesEqual({
-  left,
-  right,
-}: {
-  left: TCanvasSize;
-  right: TCanvasSize;
-}) {
+function areCanvasSizesEqual({ left, right }: { left: TCanvasSize; right: TCanvasSize }) {
   return left.width === right.width && left.height === right.height;
 }
 
@@ -71,22 +54,16 @@ function parseCanvasDimension({ input }: { input: string }): number | null {
   return rounded > 0 ? rounded : null;
 }
 
-function useCanvasDimensionDraft({
-  value,
-  onCommit,
-}: {
-  value: number;
-  onCommit: (value: number) => void;
-}) {
+function useCanvasDimensionDraft({ value, onCommit }: { value: number; onCommit: (value: number) => void }) {
   const [pendingValue, setPendingValue] = useState(value);
 
   return usePropertyDraft({
     displayValue: formatCanvasDimension({ value }),
-    parse: (input) => parseCanvasDimension({ input }),
+    parse: input => parseCanvasDimension({ input }),
     onStartEditing: () => {
       setPendingValue(value);
     },
-    onPreview: (nextValue) => {
+    onPreview: nextValue => {
       setPendingValue(nextValue);
     },
     onCommit: () => {
@@ -100,13 +77,11 @@ function useCanvasDimensionDraft({
 export function SettingsView() {
   const [view, setView] = useState<SettingsView>("project-info");
   const editor = useEditor();
-  const activeProject = useEditor((e) => e.project.getActive());
+  const activeProject = useEditor(e => e.project.getActive());
   const { canvasPresets } = useEditorStore();
-  const currentCanvasSize =
-    activeProject?.settings.canvasSize ?? DEFAULT_CANVAS_SIZE;
+  const currentCanvasSize = activeProject?.settings.canvasSize ?? DEFAULT_CANVAS_SIZE;
   const canvasSizeMode = activeProject?.settings.canvasSizeMode ?? "preset";
-  const lastCustomCanvasSize =
-    activeProject?.settings.lastCustomCanvasSize ?? null;
+  const lastCustomCanvasSize = activeProject?.settings.lastCustomCanvasSize ?? null;
 
   const presetItems = canvasPresets.map((preset, index) => {
     const ratio = dimensionToAspectRatio(preset);
@@ -120,7 +95,7 @@ export function SettingsView() {
 
   const selectedPresetId =
     canvasSizeMode === "preset"
-      ? (presetItems.find((preset) =>
+      ? (presetItems.find(preset =>
           areCanvasSizesEqual({
             left: preset.canvasSize,
             right: currentCanvasSize,
@@ -128,11 +103,7 @@ export function SettingsView() {
         )?.id ?? null)
       : null;
 
-  const updateCustomCanvasSize = ({
-    canvasSize,
-  }: {
-    canvasSize: TCanvasSize;
-  }) => {
+  const updateCustomCanvasSize = ({ canvasSize }: { canvasSize: TCanvasSize }) => {
     const shouldUpdateCanvasSize = !areCanvasSizesEqual({
       left: canvasSize,
       right: currentCanvasSize,
@@ -145,30 +116,20 @@ export function SettingsView() {
       });
     const shouldUpdateCanvasSizeMode = canvasSizeMode !== "custom";
 
-    if (
-      !shouldUpdateCanvasSize &&
-      !shouldUpdateLastCustomCanvasSize &&
-      !shouldUpdateCanvasSizeMode
-    ) {
+    if (!shouldUpdateCanvasSize && !shouldUpdateLastCustomCanvasSize && !shouldUpdateCanvasSizeMode) {
       return;
     }
 
     editor.project.updateSettings({
       settings: {
         ...(shouldUpdateCanvasSize ? { canvasSize } : {}),
-        ...(shouldUpdateCanvasSizeMode
-          ? { canvasSizeMode: "custom" as const }
-          : {}),
+        ...(shouldUpdateCanvasSizeMode ? { canvasSizeMode: "custom" as const } : {}),
         lastCustomCanvasSize: canvasSize,
       },
     });
   };
 
-  const selectPresetCanvasSize = ({
-    canvasSize,
-  }: {
-    canvasSize: TCanvasSize;
-  }) => {
+  const selectPresetCanvasSize = ({ canvasSize }: { canvasSize: TCanvasSize }) => {
     const shouldUpdateCanvasSize = !areCanvasSizesEqual({
       left: canvasSize,
       right: currentCanvasSize,
@@ -180,9 +141,7 @@ export function SettingsView() {
     editor.project.updateSettings({
       settings: {
         ...(shouldUpdateCanvasSize ? { canvasSize } : {}),
-        ...(shouldUpdateCanvasSizeMode
-          ? { canvasSizeMode: "preset" as const }
-          : {}),
+        ...(shouldUpdateCanvasSizeMode ? { canvasSizeMode: "preset" as const } : {}),
       },
     });
   };
@@ -195,7 +154,7 @@ export function SettingsView() {
 
   const widthDraft = useCanvasDimensionDraft({
     value: currentCanvasSize.width,
-    onCommit: (width) =>
+    onCommit: width =>
       updateCustomCanvasSize({
         canvasSize: { width, height: currentCanvasSize.height },
       }),
@@ -203,7 +162,7 @@ export function SettingsView() {
 
   const heightDraft = useCanvasDimensionDraft({
     value: currentCanvasSize.height,
-    onCommit: (height) =>
+    onCommit: height =>
       updateCustomCanvasSize({
         canvasSize: { width: currentCanvasSize.width, height },
       }),
@@ -220,7 +179,7 @@ export function SettingsView() {
       actions={
         <Tabs
           value={view}
-          onValueChange={(value) => {
+          onValueChange={value => {
             if (isSettingsView(value)) {
               setView(value);
             }
@@ -238,19 +197,15 @@ export function SettingsView() {
           <Section showTopBorder={false}>
             <SectionHeader>
               <SectionTitle className="flex-1">Name</SectionTitle>
-              <span className="text-sm truncate">
-                {activeProject.metadata.name}
-              </span>
+              <span className="text-sm truncate">{activeProject.metadata.name}</span>
             </SectionHeader>
           </Section>
           <Section showTopBorder={false}>
             <SectionHeader className="justify-between">
               <SectionTitle className="flex-1">Frame rate</SectionTitle>
               <Select
-                value={String(
-                  Math.round(frameRateToFloat(activeProject.settings.fps)),
-                )}
-                onValueChange={(value) => {
+                value={String(Math.round(frameRateToFloat(activeProject.settings.fps)))}
+                onValueChange={value => {
                   const fps = floatToFrameRate(parseFloat(value));
                   editor.project.updateSettings({ settings: { fps } });
                 }}
@@ -259,7 +214,7 @@ export function SettingsView() {
                   <SelectValue placeholder="Select a frame rate" />
                 </SelectTrigger>
                 <SelectContent>
-                  {FPS_PRESETS.map((preset) => (
+                  {FPS_PRESETS.map(preset => (
                     <SelectItem key={preset.value} value={preset.value}>
                       {preset.label}
                     </SelectItem>
@@ -268,16 +223,12 @@ export function SettingsView() {
               </Select>
             </SectionHeader>
           </Section>
-          <Section
-            showTopBorder={false}
-            collapsible
-            sectionKey="settings:aspect-ratio"
-          >
+          <Section showTopBorder={false} collapsible sectionKey="settings:aspect-ratio">
             <SectionHeader>
               <SectionTitle className="flex-1">Aspect ratio</SectionTitle>
             </SectionHeader>
             <SectionContent className="px-2 flex flex-col gap-1 pb-2">
-              {presetItems.map((preset) => (
+              {presetItems.map(preset => (
                 <AspectRatioItem
                   key={preset.id}
                   label={preset.label}
@@ -352,18 +303,12 @@ function AspectRatioItem({
     >
       <div className="w-full flex justify-between items-center h-8">
         <div className="flex-1 flex items-center gap-2">
-          <div className="flex items-center justify-center size-5">
-            {previewIcon}
-          </div>
+          <div className="flex items-center justify-center size-5">{previewIcon}</div>
           <span className="text-sm truncate">{label}</span>
         </div>
-        <div>
-          {isSelected && <HugeiconsIcon icon={Tick02Icon} className="size-4" />}
-        </div>
+        <div>{isSelected && <HugeiconsIcon icon={Tick02Icon} className="size-4" />}</div>
       </div>
-      {uiOptions && isSelected && (
-        <div className="w-full pb-2">{uiOptions}</div>
-      )}
+      {uiOptions && isSelected && <div className="w-full pb-2">{uiOptions}</div>}
     </Button>
   );
 }
@@ -376,10 +321,5 @@ function AspectRatioPreview({ ratio }: { ratio?: string }) {
   const width = w >= h ? maxSize : (w / h) * maxSize;
   const height = h >= w ? maxSize : (h / w) * maxSize;
 
-  return (
-    <div
-      style={{ width, height, borderWidth: 1.5 }}
-      className="rounded-xs border-current opacity-60"
-    />
-  );
+  return <div style={{ width, height, borderWidth: 1.5 }} className="rounded-xs border-current opacity-60" />;
 }

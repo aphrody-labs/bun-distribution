@@ -1,32 +1,14 @@
 import type { ParamDefinition } from "../../../params";
-import type {
-  MaskDefinition,
-  MaskParamUpdateArgs,
-  TextMask,
-  TextMaskParams,
-  MaskHandleId,
-} from "../../types";
+import type { MaskDefinition, MaskParamUpdateArgs, TextMask, TextMaskParams, MaskHandleId } from "../../types";
 import { DEFAULTS } from "../../../timeline/defaults";
 import { MIN_FONT_SIZE, MAX_FONT_SIZE } from "../../../text/typography";
-import {
-  drawMeasuredTextLayout,
-  measureTextLayout,
-  strokeMeasuredTextLayout,
-} from "../../../text/primitives";
+import { drawMeasuredTextLayout, measureTextLayout, strokeMeasuredTextLayout } from "../../../text/primitives";
 import { getTextMeasurementContext } from "../../../text/measure-element";
 import { getTextVisualRect } from "../../../text/layout";
-import {
-  getBoxMaskHandlePositions,
-  getBoxMaskRectOverlay,
-} from "../../handle-positions";
+import { getBoxMaskHandlePositions, getBoxMaskRectOverlay } from "../../handle-positions";
 import { computeFeatherUpdate } from "../../param-update";
 import { setMaskLocalCenter, toGlobalMaskSnapLines } from "../../geometry";
-import {
-  snapPosition,
-  snapRotation,
-  snapScale,
-  type ScaleEdgePreference,
-} from "../../../preview/preview-snap";
+import { snapPosition, snapRotation, snapScale, type ScaleEdgePreference } from "../../../preview/preview-snap";
 
 // Text-shaped mask. Stamps glyphs as the mask body — the mask is opaque
 // where text pixels are drawn. Implements `drawOpaque` (filled glyphs)
@@ -93,13 +75,7 @@ const TEXT_MASK_PARAMS: ParamDefinition<keyof TextMaskParams & string>[] = [
   },
 ];
 
-function measureTextMask({
-  params,
-  height,
-}: {
-  params: TextMaskParams;
-  height: number;
-}) {
+function measureTextMask({ params, height }: { params: TextMaskParams; height: number }) {
   const layout = measureTextLayout({
     text: {
       content: params.content,
@@ -129,11 +105,7 @@ function measureTextMask({
   };
 }
 
-function getScalePreferredEdges({
-  handleId,
-}: {
-  handleId: MaskHandleId;
-}): ScaleEdgePreference | undefined {
+function getScalePreferredEdges({ handleId }: { handleId: MaskHandleId }): ScaleEdgePreference | undefined {
   if (handleId.kind !== "scale") {
     return undefined;
   }
@@ -164,16 +136,8 @@ function computeTextMaskParamUpdate({
   const pivotY = bounds.cy + startParams.centerY * bounds.height;
 
   if (handleId.kind === "rotation") {
-    const startAngle =
-      (Math.atan2(startCanvasY - pivotY, startCanvasX - pivotX) * 180) /
-      Math.PI;
-    const currentAngle =
-      (Math.atan2(
-        startCanvasY + deltaY - pivotY,
-        startCanvasX + deltaX - pivotX,
-      ) *
-        180) /
-      Math.PI;
+    const startAngle = (Math.atan2(startCanvasY - pivotY, startCanvasX - pivotX) * 180) / Math.PI;
+    const currentAngle = (Math.atan2(startCanvasY + deltaY - pivotY, startCanvasX + deltaX - pivotX) * 180) / Math.PI;
 
     let deltaAngle = currentAngle - startAngle;
     if (deltaAngle > 180) deltaAngle -= 360;
@@ -196,14 +160,8 @@ function computeTextMaskParamUpdate({
   }
 
   if (handleId.kind === "scale") {
-    const startDistance = Math.hypot(
-      startCanvasX - pivotX,
-      startCanvasY - pivotY,
-    );
-    const currentDistance = Math.hypot(
-      startCanvasX + deltaX - pivotX,
-      startCanvasY + deltaY - pivotY,
-    );
+    const startDistance = Math.hypot(startCanvasX - pivotX, startCanvasY - pivotY);
+    const currentDistance = Math.hypot(startCanvasX + deltaX - pivotX, startCanvasY + deltaY - pivotY);
     const scaleFactor = startDistance > 0 ? currentDistance / startDistance : 1;
     return {
       scale: Math.max(0.01, startParams.scale * scaleFactor),
@@ -223,13 +181,7 @@ export const textMaskDefinition: MaskDefinition<"text"> = {
   },
   params: TEXT_MASK_PARAMS,
   interaction: {
-    getInteraction({
-      params,
-      bounds,
-      displayScale,
-      scaleX: _scaleX,
-      scaleY: _scaleY,
-    }) {
+    getInteraction({ params, bounds, displayScale, scaleX: _scaleX, scaleY: _scaleY }) {
       const { intrinsicWidth, intrinsicHeight } = measureTextMask({
         params,
         height: bounds.height,
@@ -260,14 +212,7 @@ export const textMaskDefinition: MaskDefinition<"text"> = {
         ],
       };
     },
-    snap({
-      handleId,
-      startParams,
-      proposedParams,
-      bounds,
-      canvasSize,
-      snapThreshold,
-    }) {
+    snap({ handleId, startParams, proposedParams, bounds, canvasSize, snapThreshold }) {
       const { intrinsicWidth, intrinsicHeight } = measureTextMask({
         params: startParams,
         height: bounds.height,
@@ -385,10 +330,7 @@ export const textMaskDefinition: MaskDefinition<"text"> = {
         const { layout } = measureTextMask({ params, height });
 
         ctx.save();
-        ctx.translate(
-          width / 2 + params.centerX * width,
-          height / 2 + params.centerY * height,
-        );
+        ctx.translate(width / 2 + params.centerX * width, height / 2 + params.centerY * height);
         ctx.scale(params.scale, params.scale);
         if (params.rotation) {
           ctx.rotate((params.rotation * Math.PI) / 180);
@@ -409,10 +351,7 @@ export const textMaskDefinition: MaskDefinition<"text"> = {
         const { layout } = measureTextMask({ params, height });
 
         ctx.save();
-        ctx.translate(
-          width / 2 + params.centerX * width,
-          height / 2 + params.centerY * height,
-        );
+        ctx.translate(width / 2 + params.centerX * width, height / 2 + params.centerY * height);
         ctx.scale(params.scale, params.scale);
         if (params.rotation) {
           ctx.rotate((params.rotation * Math.PI) / 180);

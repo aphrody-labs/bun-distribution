@@ -1,15 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { setWindowTitle } from "./metadata";
 
 export type RouterMode = "tauri" | "vite" | "browser";
@@ -20,10 +12,7 @@ export interface NextMigrateContextValue {
   searchParams: URLSearchParams;
   params: RouteParams;
   mode: RouterMode;
-  navigate: (
-    url: string,
-    options?: { replace?: boolean; scroll?: boolean },
-  ) => void;
+  navigate: (url: string, options?: { replace?: boolean; scroll?: boolean }) => void;
   back: () => void;
   forward: () => void;
   refresh: () => void;
@@ -103,9 +92,7 @@ export function NextMigrateProvider({
   onNavigate,
 }: NextMigrateProviderProps) {
   const isHash =
-    useHashRouting ??
-    (mode === "tauri" ||
-      (typeof window !== "undefined" && window.location.protocol === "file:"));
+    useHashRouting ?? (mode === "tauri" || (typeof window !== "undefined" && window.location.protocol === "file:"));
   const parseLocation = useCallback((): {
     pathname: string;
     search: string;
@@ -204,12 +191,7 @@ export function NextMigrateProvider({
   }, [parseLocation]);
 
   const openExternal = useCallback(
-    (url: string) =>
-      openExternalUrl(
-        url,
-        mode,
-        typeof window === "undefined" ? undefined : window,
-      ),
+    (url: string) => openExternalUrl(url, mode, typeof window === "undefined" ? undefined : window),
     [mode],
   );
 
@@ -225,22 +207,10 @@ export function NextMigrateProvider({
       refresh,
       openExternal,
     }),
-    [
-      currentLoc.pathname,
-      searchParams,
-      params,
-      mode,
-      navigate,
-      refresh,
-      openExternal,
-    ],
+    [currentLoc.pathname, searchParams, params, mode, navigate, refresh, openExternal],
   );
 
-  return (
-    <NextMigrateContext.Provider value={value}>
-      {children}
-    </NextMigrateContext.Provider>
-  );
+  return <NextMigrateContext.Provider value={value}>{children}</NextMigrateContext.Provider>;
 }
 
 export function useNextMigrateContext(): NextMigrateContextValue {
@@ -250,9 +220,7 @@ export function useNextMigrateContext(): NextMigrateContextValue {
     const isBrowser = typeof window !== "undefined";
     return {
       pathname: isBrowser ? window.location.pathname || "/" : "/",
-      searchParams: new URLSearchParams(
-        isBrowser ? window.location.search : "",
-      ),
+      searchParams: new URLSearchParams(isBrowser ? window.location.search : ""),
       params: {},
       mode: "browser",
       navigate: (url, opts) => {
@@ -272,7 +240,7 @@ export function useNextMigrateContext(): NextMigrateContextValue {
       refresh: () => {
         if (isBrowser) window.location.reload();
       },
-      openExternal: async (url) => {
+      openExternal: async url => {
         if (isBrowser) window.open(url, "_blank", "noopener,noreferrer");
       },
     };
@@ -281,21 +249,8 @@ export function useNextMigrateContext(): NextMigrateContextValue {
 }
 
 /** Gives pages and their layouts the params matched by the generated router. */
-export function RouteParamsProvider({
-  params,
-  children,
-}: {
-  params: RouteParams;
-  children: ReactNode;
-}) {
+export function RouteParamsProvider({ params, children }: { params: RouteParams; children: ReactNode }) {
   const context = useNextMigrateContext();
-  const contextValue = useMemo(
-    () => ({ ...context, params }),
-    [context, params],
-  );
-  return (
-    <NextMigrateContext.Provider value={contextValue}>
-      {children}
-    </NextMigrateContext.Provider>
-  );
+  const contextValue = useMemo(() => ({ ...context, params }), [context, params]);
+  return <NextMigrateContext.Provider value={contextValue}>{children}</NextMigrateContext.Provider>;
 }

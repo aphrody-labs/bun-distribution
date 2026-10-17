@@ -30,14 +30,17 @@ struct Shared<R: Runtime> {
 fn plain(status: StatusCode, message: &str) -> Response {
     let mut response = Response::new(Body::from(message.to_string()));
     *response.status_mut() = status;
-    response
-        .headers_mut()
-        .insert(header::CONTENT_TYPE, HeaderValue::from_static("text/plain; charset=utf-8"));
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("text/plain; charset=utf-8"),
+    );
     response
 }
 
 fn has_file_extension(path: &str) -> bool {
-    path.rsplit('/').next().is_some_and(|name| name.contains('.'))
+    path.rsplit('/')
+        .next()
+        .is_some_and(|name| name.contains('.'))
 }
 
 fn serve_asset<R: Runtime>(state: &Shared<R>, method: &Method, path: &str) -> Response {
@@ -55,7 +58,9 @@ fn serve_asset<R: Runtime>(state: &Shared<R>, method: &Method, path: &str) -> Re
         return plain(StatusCode::NOT_FOUND, "not found");
     }
     if is_html && !state.spa_fallback && !matches!(path, "/" | "/index.html") {
-        let index = resolver.get("/index.html".to_string()).map(|index| index.bytes);
+        let index = resolver
+            .get("/index.html".to_string())
+            .map(|index| index.bytes);
         if index.as_deref() == Some(asset.bytes.as_slice()) {
             return plain(StatusCode::NOT_FOUND, "not found");
         }
@@ -64,8 +69,14 @@ fn serve_asset<R: Runtime>(state: &Shared<R>, method: &Method, path: &str) -> Re
     if let Ok(value) = HeaderValue::from_str(&asset.mime_type) {
         response.headers_mut().insert(header::CONTENT_TYPE, value);
     }
-    if let Some(csp) = asset.csp_header.as_deref().and_then(|csp| HeaderValue::from_str(csp).ok()) {
-        response.headers_mut().insert(header::CONTENT_SECURITY_POLICY, csp);
+    if let Some(csp) = asset
+        .csp_header
+        .as_deref()
+        .and_then(|csp| HeaderValue::from_str(csp).ok())
+    {
+        response
+            .headers_mut()
+            .insert(header::CONTENT_SECURITY_POLICY, csp);
     }
     response
 }
@@ -76,20 +87,32 @@ async fn forward<R: Runtime>(state: &Shared<R>, request: Request) -> Response {
     };
     let (parts, body) = request.into_parts();
     if parts.headers.contains_key(header::UPGRADE) {
-        return plain(StatusCode::NOT_IMPLEMENTED, "WebSocket upgrades are not proxied");
+        return plain(
+            StatusCode::NOT_IMPLEMENTED,
+            "WebSocket upgrades are not proxied",
+        );
     }
-    let path_and_query = parts.uri.path_and_query().map_or("/", |value| value.as_str());
+    let path_and_query = parts
+        .uri
+        .path_and_query()
+        .map_or("/", |value| value.as_str());
     let target = proxy::backend_url(backend, path_and_query);
     let headers = proxy::forward_request_headers(&parts.headers, backend, &state.origin);
-    let mut outgoing = state.client.request(parts.method.clone(), target).headers(headers);
+    let mut outgoing = state
+        .client
+        .request(parts.method.clone(), target)
+        .headers(headers);
     if parts.method != Method::GET && parts.method != Method::HEAD {
         outgoing = outgoing.body(reqwest::Body::wrap_stream(body.into_data_stream()));
     }
     let upstream = match outgoing.send().await {
         Ok(upstream) => upstream,
         Err(error) => {
-            return plain(StatusCode::BAD_GATEWAY, &format!("backend unreachable: {error}"));
-        },
+            return plain(
+                StatusCode::BAD_GATEWAY,
+                &format!("backend unreachable: {error}"),
+            );
+        }
     };
     let mut response = Response::new(Body::empty());
     *response.status_mut() = upstream.status();
@@ -140,7 +163,9 @@ pub fn start<R: Runtime>(
     listener.set_nonblocking(true)?;
     let origin = format!("http://127.0.0.1:{}", listener.local_addr()?.port());
     let backend = bundle.backend.as_deref().map(Url::parse).transpose()?;
-    let client = reqwest::Client::builder().redirect(reqwest::redirect::Policy::none()).build()?;
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .build()?;
     let state = Arc::new(Shared {
         app: app.clone(),
         backend,
@@ -156,7 +181,7 @@ pub fn start<R: Runtime>(
                 if let Err(error) = axum::serve(listener, router).await {
                     eprintln!("aphrody-tauri-wrap: loopback server stopped: {error}");
                 }
-            },
+            }
             Err(error) => eprintln!("aphrody-tauri-wrap: loopback listener failed: {error}"),
         }
     });

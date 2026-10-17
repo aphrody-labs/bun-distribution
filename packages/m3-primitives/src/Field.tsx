@@ -8,64 +8,47 @@ import { forwardRef } from "react";
 import { withClassName } from "./base-ui";
 
 export type FieldRootProps = FieldPrimitive.Root.Props;
-export const FieldRoot = forwardRef<HTMLDivElement, FieldRootProps>(
-  ({ className, ...props }, ref) => (
-    <FieldPrimitive.Root
-      ref={ref}
-      className={withClassName("flex flex-col gap-1.5 w-full", className)}
-      {...props}
-    />
-  ),
-);
+export const FieldRoot = forwardRef<HTMLDivElement, FieldRootProps>(({ className, ...props }, ref) => (
+  <FieldPrimitive.Root ref={ref} className={withClassName("flex flex-col gap-1.5 w-full", className)} {...props} />
+));
 FieldRoot.displayName = "FieldRoot";
 
 export type FieldLabelProps = FieldPrimitive.Label.Props;
-export const FieldLabel = forwardRef<HTMLLabelElement, FieldLabelProps>(
-  ({ className, ...props }, ref) => (
-    <FieldPrimitive.Label
-      ref={ref}
-      className={withClassName(
-        "text-label-large font-medium text-on-surface data-[disabled]:opacity-38 data-[invalid]:text-error",
-        className,
-      )}
-      {...props}
-    />
-  ),
-);
+export const FieldLabel = forwardRef<HTMLLabelElement, FieldLabelProps>(({ className, ...props }, ref) => (
+  <FieldPrimitive.Label
+    ref={ref}
+    className={withClassName(
+      "text-label-large font-medium text-on-surface data-[disabled]:opacity-38 data-[invalid]:text-error",
+      className,
+    )}
+    {...props}
+  />
+));
 FieldLabel.displayName = "FieldLabel";
 
 export type FieldControlProps = FieldPrimitive.Control.Props;
 export const FieldControl = FieldPrimitive.Control;
 
 export type FieldDescriptionProps = FieldPrimitive.Description.Props;
-export const FieldDescription = forwardRef<
-  HTMLParagraphElement,
-  FieldDescriptionProps
->(({ className, ...props }, ref) => (
-  <FieldPrimitive.Description
-    ref={ref}
-    className={withClassName(
-      "m-0 text-body-small text-on-surface-variant",
-      className,
-    )}
-    {...props}
-  />
-));
-FieldDescription.displayName = "FieldDescription";
-
-export type FieldErrorProps = FieldPrimitive.Error.Props;
-export const FieldError = forwardRef<HTMLParagraphElement, FieldErrorProps>(
+export const FieldDescription = forwardRef<HTMLParagraphElement, FieldDescriptionProps>(
   ({ className, ...props }, ref) => (
-    <FieldPrimitive.Error
+    <FieldPrimitive.Description
       ref={ref}
-      className={withClassName(
-        "m-0 text-body-small font-medium text-error",
-        className,
-      )}
+      className={withClassName("m-0 text-body-small text-on-surface-variant", className)}
       {...props}
     />
   ),
 );
+FieldDescription.displayName = "FieldDescription";
+
+export type FieldErrorProps = FieldPrimitive.Error.Props;
+export const FieldError = forwardRef<HTMLParagraphElement, FieldErrorProps>(({ className, ...props }, ref) => (
+  <FieldPrimitive.Error
+    ref={ref}
+    className={withClassName("m-0 text-body-small font-medium text-error", className)}
+    {...props}
+  />
+));
 FieldError.displayName = "FieldError";
 
 export type FieldValidityProps = FieldPrimitive.Validity.Props;

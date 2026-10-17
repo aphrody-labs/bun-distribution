@@ -4,23 +4,9 @@ import { JobContextType } from "@storyteller/common";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import {
-  ToggleButton,
-  GenerateIconButton,
-  NEUTRAL_BUTTON_HOVER_CLASSES,
-} from "@storyteller/ui-button";
-import {
-  GenerateVideo,
-  GenerateVideoRequest,
-  commandErrorMessage,
-} from "@storyteller/tauri-api";
-import {
-  AudioLinesIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  ClockIcon,
-  InfoIcon,
-} from "lucide-react";
+import { ToggleButton, GenerateIconButton, NEUTRAL_BUTTON_HOVER_CLASSES } from "@storyteller/ui-button";
+import { GenerateVideo, GenerateVideoRequest, commandErrorMessage } from "@storyteller/tauri-api";
+import { AudioLinesIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, InfoIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { arrayMove } from "@dnd-kit/sortable";
 import {
@@ -48,11 +34,7 @@ import type { UploadImageFn } from "./ImagePromptRow";
 import { ReferenceDeck } from "./deck/ReferenceDeck";
 import { KeyframeCards } from "./deck/KeyframeCards";
 import { useDeckMedia } from "./deck/useDeckMedia";
-import {
-  PromptBoxDropOverlay,
-  usePromptBoxDrop,
-  type DroppedFiles,
-} from "./deck/usePromptBoxDrop";
+import { PromptBoxDropOverlay, usePromptBoxDrop, type DroppedFiles } from "./deck/usePromptBoxDrop";
 import { DeckAddAction, DeckItem } from "./deck/deckTypes";
 import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { VideoGenerationCountPicker } from "./common/VideoGenerationCountPicker";
@@ -63,10 +45,7 @@ import { CharactersModal } from "./CharactersModal";
 import { CharactersApi } from "@storyteller/api";
 import { MentionTextarea } from "./MentionTextarea";
 import type { MentionItem } from "./MentionTextarea";
-import {
-  PromptFullscreenModal,
-  useFullscreenPrompt,
-} from "./PromptFullscreenModal";
+import { PromptFullscreenModal, useFullscreenPrompt } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
 
@@ -101,10 +80,7 @@ const DEFAULT_RESOLUTIONS: SizeOption[] = [
 
 interface PromptBoxVideoProps {
   useJobContext: () => JobContextType;
-  onEnqueuePressed?: (
-    prompt: string,
-    subscriberIds: string[],
-  ) => void | Promise<void>;
+  onEnqueuePressed?: (prompt: string, subscriberIds: string[]) => void | Promise<void>;
   selectedModel?: VideoModel;
   selectedProvider?: GenerationProvider;
   imageMediaId?: string;
@@ -146,46 +122,41 @@ export const PromptBoxVideo = ({
     }
   }, [imageMediaId, url]);
 
-  const prompt = usePromptVideoStore((s) => s.prompt);
-  const setPrompt = usePromptVideoStore((s) => s.setPrompt);
-  const generateWithSound = usePromptVideoStore((s) => s.generateWithSound);
-  const setGenerateWithSound = usePromptVideoStore(
-    (s) => s.setGenerateWithSound,
-  );
-  const resolution = usePromptVideoStore((s) => s.resolution);
-  const setResolution = usePromptVideoStore((s) => s.setResolution);
-  const aspectRatio = usePromptVideoStore((s) => s.aspectRatio);
-  const setAspectRatio = usePromptVideoStore((s) => s.setAspectRatio);
-  const duration = usePromptVideoStore((s) => s.duration);
-  const bitrate = usePromptVideoStore((s) => s.bitrate);
-  const setBitrate = usePromptVideoStore((s) => s.setBitrate);
-  const outputFormat = usePromptVideoStore((s) => s.outputFormat);
-  const setOutputFormat = usePromptVideoStore((s) => s.setOutputFormat);
-  const setDuration = usePromptVideoStore((s) => s.setDuration);
-  const inputMode = usePromptVideoStore((s) => s.inputMode);
-  const setInputMode = usePromptVideoStore((s) => s.setInputMode);
-  const generationCount = usePromptVideoStore((s) => s.generationCount);
-  const setGenerationCount = usePromptVideoStore((s) => s.setGenerationCount);
-  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
+  const prompt = usePromptVideoStore(s => s.prompt);
+  const setPrompt = usePromptVideoStore(s => s.setPrompt);
+  const generateWithSound = usePromptVideoStore(s => s.generateWithSound);
+  const setGenerateWithSound = usePromptVideoStore(s => s.setGenerateWithSound);
+  const resolution = usePromptVideoStore(s => s.resolution);
+  const setResolution = usePromptVideoStore(s => s.setResolution);
+  const aspectRatio = usePromptVideoStore(s => s.aspectRatio);
+  const setAspectRatio = usePromptVideoStore(s => s.setAspectRatio);
+  const duration = usePromptVideoStore(s => s.duration);
+  const bitrate = usePromptVideoStore(s => s.bitrate);
+  const setBitrate = usePromptVideoStore(s => s.setBitrate);
+  const outputFormat = usePromptVideoStore(s => s.outputFormat);
+  const setOutputFormat = usePromptVideoStore(s => s.setOutputFormat);
+  const setDuration = usePromptVideoStore(s => s.setDuration);
+  const inputMode = usePromptVideoStore(s => s.inputMode);
+  const setInputMode = usePromptVideoStore(s => s.setInputMode);
+  const generationCount = usePromptVideoStore(s => s.generationCount);
+  const setGenerationCount = usePromptVideoStore(s => s.setGenerationCount);
+  const enterToGenerate = useEnterToGenerateStore(s => s.enabled);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const { isFullscreen, openFullscreen, closeFullscreen } =
-    useFullscreenPrompt();
+  const { isFullscreen, openFullscreen, closeFullscreen } = useFullscreenPrompt();
   const [isCharactersModalOpen, setIsCharactersModalOpen] = useState(false);
 
   // Mentions are plain text: with several characters sharing a name,
   // "@Robot" alone can't identify one. Records which token the user actually
   // picked (dropdown, modal, or chip-menu replace), keyed by name.
-  const [mentionSelections, setMentionSelections] = useState<
-    Record<string, string>
-  >({});
+  const [mentionSelections, setMentionSelections] = useState<Record<string, string>>({});
 
   // Characters store for @-mentions
-  const storedCharacters = useCharactersStore((s) => s.characters);
-  const charactersLoaded = useCharactersStore((s) => s.loaded);
-  const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
-  const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
+  const storedCharacters = useCharactersStore(s => s.characters);
+  const charactersLoaded = useCharactersStore(s => s.loaded);
+  const storeSetCharacters = useCharactersStore(s => s.setCharacters);
+  const storeSetLoaded = useCharactersStore(s => s.setLoaded);
 
   // Load characters on mount if not already loaded
   useEffect(() => {
@@ -193,10 +164,10 @@ export const PromptBoxVideo = ({
     const api = new CharactersApi();
     api
       .ListAllCharacters()
-      .then((res) => {
+      .then(res => {
         if (res.success && res.data) {
           storeSetCharacters(
-            res.data.map((c) => ({
+            res.data.map(c => ({
               character_token: c.token,
               name: c.name,
               avatar_image_url: c.maybe_avatar?.cdn_url,
@@ -228,17 +199,13 @@ export const PromptBoxVideo = ({
   // pushes the box under the fixed bottom action row.
   const computeAvailableEditorHeight = (el: HTMLElement): number => {
     const topFromViewport = el.getBoundingClientRect().top;
-    return Math.max(
-      88,
-      Math.floor(window.innerHeight - topFromViewport - BOTTOM_SAFE_AREA_PX),
-    );
+    return Math.max(88, Math.floor(window.innerHeight - topFromViewport - BOTTOM_SAFE_AREA_PX));
   };
 
   const toggleExpand = () => {
-    setIsExpanded((prev) => {
+    setIsExpanded(prev => {
       const next = !prev;
-      const el = (mentionEditorRef.current ??
-        textareaRef.current) as HTMLElement | null;
+      const el = (mentionEditorRef.current ?? textareaRef.current) as HTMLElement | null;
       if (el) {
         el.style.height = next ? EXPANDED_HEIGHT : "auto";
       }
@@ -246,28 +213,25 @@ export const PromptBoxVideo = ({
     });
   };
 
-  const referenceImages = usePromptVideoStore((s) => s.referenceImages);
-  const setReferenceImages = usePromptVideoStore((s) => s.setReferenceImages);
-  const endFrameImage = usePromptVideoStore((s) => s.endFrameImage);
-  const setEndFrameImage = usePromptVideoStore((s) => s.setEndFrameImage);
-  const referenceVideos = usePromptVideoStore((s) => s.referenceVideos);
-  const setReferenceVideos = usePromptVideoStore((s) => s.setReferenceVideos);
-  const referenceAudios = usePromptVideoStore((s) => s.referenceAudios);
-  const setReferenceAudios = usePromptVideoStore((s) => s.setReferenceAudios);
+  const referenceImages = usePromptVideoStore(s => s.referenceImages);
+  const setReferenceImages = usePromptVideoStore(s => s.setReferenceImages);
+  const endFrameImage = usePromptVideoStore(s => s.endFrameImage);
+  const setEndFrameImage = usePromptVideoStore(s => s.setEndFrameImage);
+  const referenceVideos = usePromptVideoStore(s => s.referenceVideos);
+  const setReferenceVideos = usePromptVideoStore(s => s.setReferenceVideos);
+  const referenceAudios = usePromptVideoStore(s => s.referenceAudios);
+  const setReferenceAudios = usePromptVideoStore(s => s.setReferenceAudios);
 
   // TODO: Get rid of default resolutions. Just disable it if not present.
   let aspectRatioOptions: PopoverItem[];
 
   const buildAspectRatioOptions = (options: SizeOption[]): PopoverItem[] => {
-    const currentExists = options.some(
-      (option) => option.textLabel === aspectRatio,
-    );
+    const currentExists = options.some(option => option.textLabel === aspectRatio);
     const useFirstOption = !currentExists;
 
     return options.map((option, index) => ({
       label: option.textLabel,
-      selected:
-        option.textLabel === aspectRatio || (useFirstOption && index === 0),
+      selected: option.textLabel === aspectRatio || (useFirstOption && index === 0),
       icon: <AspectRatioIcon sizeIcon={option.icon} />,
     }));
   };
@@ -287,12 +251,9 @@ export const PromptBoxVideo = ({
   // invokes the latest closure — picks up current `isExpanded`, refs, etc.
   const applyHeightsRef = useRef<() => void>(() => {});
   applyHeightsRef.current = () => {
-    const el = (mentionEditorRef.current ??
-      textareaRef.current) as HTMLElement | null;
+    const el = (mentionEditorRef.current ?? textareaRef.current) as HTMLElement | null;
     if (!el) return;
-    const maxH = isExpanded
-      ? computeExpandedEditorHeight()
-      : Math.min(computeAvailableEditorHeight(el), 500);
+    const maxH = isExpanded ? computeExpandedEditorHeight() : Math.min(computeAvailableEditorHeight(el), 500);
     el.style.maxHeight = `${maxH}px`;
     el.style.minHeight = "0";
     if (!isExpanded) {
@@ -324,12 +285,9 @@ export const PromptBoxVideo = ({
   // never push the box past the bottom action row — regardless of viewport
   // size (4K was previously capped at 500px while the viewport had room).
   useEffect(() => {
-    const el = (mentionEditorRef.current ??
-      textareaRef.current) as HTMLElement | null;
+    const el = (mentionEditorRef.current ?? textareaRef.current) as HTMLElement | null;
     if (el) {
-      const maxH = isExpanded
-        ? computeExpandedEditorHeight()
-        : Math.min(computeAvailableEditorHeight(el), 500);
+      const maxH = isExpanded ? computeExpandedEditorHeight() : Math.min(computeAvailableEditorHeight(el), 500);
       el.style.maxHeight = `${maxH}px`;
       el.style.minHeight = "0";
       if (!isExpanded) {
@@ -354,7 +312,7 @@ export const PromptBoxVideo = ({
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
     setAspectRatio(selectedItem.label);
     setAspectRatioList(() =>
-      aspectRatioOptions.map((item) => ({
+      aspectRatioOptions.map(item => ({
         ...item,
         selected: item.label === selectedItem.label,
       })),
@@ -365,9 +323,7 @@ export const PromptBoxVideo = ({
   // lower duration cap some models apply in image-reference mode.
   useEffect(() => {
     const current = usePromptVideoStore.getState().duration;
-    const next = selectedModel
-      ? resolveVideoDuration(selectedModel, current, inputMode === "reference")
-      : null;
+    const next = selectedModel ? resolveVideoDuration(selectedModel, current, inputMode === "reference") : null;
     if (next !== current) setDuration(next);
   }, [selectedModel, inputMode, setDuration]);
 
@@ -383,22 +339,16 @@ export const PromptBoxVideo = ({
     const current = usePromptVideoStore.getState().outputFormat;
     const options = selectedModel?.outputFormatOptions;
     if (!current || !options?.includes(current)) {
-      setOutputFormat(
-        selectedModel?.defaultOutputFormat ?? options?.[0] ?? null,
-      );
+      setOutputFormat(selectedModel?.defaultOutputFormat ?? options?.[0] ?? null);
     }
   }, [selectedModel, setOutputFormat]);
 
   useEffect(() => {
     const current = usePromptVideoStore.getState().aspectRatio;
-    if (
-      selectedModel?.sizeOptions.some((option) => option.textLabel === current)
-    )
-      return;
+    if (selectedModel?.sizeOptions.some(option => option.textLabel === current)) return;
     const option =
-      selectedModel?.sizeOptions.find(
-        (option) => option.tauriValue === selectedModel.defaultAspectRatio,
-      ) ?? selectedModel?.sizeOptions[0];
+      selectedModel?.sizeOptions.find(option => option.tauriValue === selectedModel.defaultAspectRatio) ??
+      selectedModel?.sizeOptions[0];
     if (option) setAspectRatio(option.textLabel);
   }, [selectedModel, setAspectRatio]);
 
@@ -407,9 +357,7 @@ export const PromptBoxVideo = ({
   useEffect(() => {
     const currentResolution = usePromptVideoStore.getState().resolution;
     if (selectedModel?.resolutionOptions && selectedModel.defaultResolution) {
-      if (
-        !selectedModel.resolutionOptions.includes(currentResolution as string)
-      ) {
+      if (!selectedModel.resolutionOptions.includes(currentResolution as string)) {
         setResolution(selectedModel.defaultResolution);
       }
     }
@@ -419,10 +367,7 @@ export const PromptBoxVideo = ({
   // Read from store directly to avoid stale closure (same as duration above).
   useEffect(() => {
     const currentInputMode = usePromptVideoStore.getState().inputMode;
-    if (
-      !selectedModel?.supportsReferenceMode &&
-      currentInputMode === "reference"
-    ) {
+    if (!selectedModel?.supportsReferenceMode && currentInputMode === "reference") {
       setInputMode("keyframe");
       setReferenceVideos([]);
       setReferenceAudios([]);
@@ -432,69 +377,49 @@ export const PromptBoxVideo = ({
   // Keep the selected count within the API's options when switching models.
   useEffect(() => {
     const current = usePromptVideoStore.getState().generationCount;
-    const next = selectedModel
-      ? resolveVideoGenerationCount(selectedModel, current)
-      : 1;
+    const next = selectedModel ? resolveVideoGenerationCount(selectedModel, current) : 1;
     if (next !== current) setGenerationCount(next);
   }, [selectedModel, setGenerationCount]);
 
-  const generationCounts = selectedModel
-    ? videoGenerationCounts(selectedModel)
-    : [1];
-  const effectiveGenerationCount = selectedModel
-    ? resolveVideoGenerationCount(selectedModel, generationCount)
-    : 1;
+  const generationCounts = selectedModel ? videoGenerationCounts(selectedModel) : [1];
+  const effectiveGenerationCount = selectedModel ? resolveVideoGenerationCount(selectedModel, generationCount) : 1;
 
-  const durationRange = selectedModel
-    ? videoDurationRange(selectedModel, inputMode === "reference")
-    : null;
+  const durationRange = selectedModel ? videoDurationRange(selectedModel, inputMode === "reference") : null;
   const effectiveDuration = selectedModel
-    ? (resolveVideoDuration(
-        selectedModel,
-        duration,
-        inputMode === "reference",
-      ) ??
-      selectedModel.defaultDuration ??
-      5)
+    ? (resolveVideoDuration(selectedModel, duration, inputMode === "reference") ?? selectedModel.defaultDuration ?? 5)
     : 5;
   const handleDurationSlide = (value: number) => {
-    if (selectedModel)
-      setDuration(
-        resolveVideoDuration(selectedModel, value, inputMode === "reference"),
-      );
+    if (selectedModel) setDuration(resolveVideoDuration(selectedModel, value, inputMode === "reference"));
   };
 
-  const resolutionPickerOptions: PopoverItem[] | null =
-    selectedModel?.resolutionOptions
-      ? selectedModel.resolutionOptions.map((r) => ({
-          label: r,
-          selected: r === resolution,
-        }))
-      : null;
+  const resolutionPickerOptions: PopoverItem[] | null = selectedModel?.resolutionOptions
+    ? selectedModel.resolutionOptions.map(r => ({
+        label: r,
+        selected: r === resolution,
+      }))
+    : null;
 
   const handleResolutionSelect = (selectedItem: PopoverItem) => {
     setResolution(selectedItem.label);
   };
 
-  const inputModeOptions: PopoverItem[] | null =
-    selectedModel?.supportsReferenceMode
-      ? [
-          {
-            label: "Keyframe",
-            description: "First/Last frame",
-            selected: inputMode === "keyframe",
-          },
-          {
-            label: "Omni Reference",
-            description: "Multi-media ref",
-            selected: inputMode === "reference",
-          },
-        ]
-      : null;
+  const inputModeOptions: PopoverItem[] | null = selectedModel?.supportsReferenceMode
+    ? [
+        {
+          label: "Keyframe",
+          description: "First/Last frame",
+          selected: inputMode === "keyframe",
+        },
+        {
+          label: "Omni Reference",
+          description: "Multi-media ref",
+          selected: inputMode === "reference",
+        },
+      ]
+    : null;
 
   const handleInputModeSelect = (selectedItem: PopoverItem) => {
-    const mode: VideoInputMode =
-      selectedItem.label === "Omni Reference" ? "reference" : "keyframe";
+    const mode: VideoInputMode = selectedItem.label === "Omni Reference" ? "reference" : "keyframe";
     setInputMode(mode);
     // Clear images/videos when switching modes to avoid stale state
     if (mode === "reference") {
@@ -505,11 +430,8 @@ export const PromptBoxVideo = ({
     }
   };
 
-  const isReferenceMode =
-    inputMode === "reference" && !!selectedModel?.supportsReferenceMode;
-  const maxImageCount = isReferenceMode
-    ? (selectedModel?.maxReferenceImages ?? 3)
-    : 1;
+  const isReferenceMode = inputMode === "reference" && !!selectedModel?.supportsReferenceMode;
+  const maxImageCount = isReferenceMode ? (selectedModel?.maxReferenceImages ?? 3) : 1;
 
   const maxVideoCount = selectedModel?.maxReferenceVideos ?? 3;
   const maxAudioCount = selectedModel?.maxReferenceAudios ?? 2;
@@ -546,25 +468,19 @@ export const PromptBoxVideo = ({
       if (!isReferenceMode) {
         // Fill the empty keyframe slots in order: first frame, then last.
         const queue = [...images];
-        const firstOpen =
-          referenceImages.length === 0 && deck.uploadingImages.length === 0;
-        const lastOpen =
-          !!selectedModel?.endFrame && !endFrameImage && !deck.uploadingEnd;
+        const firstOpen = referenceImages.length === 0 && deck.uploadingImages.length === 0;
+        const lastOpen = !!selectedModel?.endFrame && !endFrameImage && !deck.uploadingEnd;
         if (firstOpen) deck.processImageFiles([queue.shift()!], "start");
         if (lastOpen && queue.length > 0) {
           deck.processImageFiles([queue.shift()!], "end");
         }
         if (!firstOpen && !lastOpen) {
           toast.error(
-            selectedModel?.endFrame
-              ? "First and last frames are already set"
-              : "The first frame is already set",
+            selectedModel?.endFrame ? "First and last frames are already set" : "The first frame is already set",
           );
         }
       } else if (deck.availableImageSlots <= 0) {
-        toast.error(
-          `Max ${maxImageCount} image reference${maxImageCount === 1 ? "" : "s"}`,
-        );
+        toast.error(`Max ${maxImageCount} image reference${maxImageCount === 1 ? "" : "s"}`);
       } else {
         deck.processImageFiles(images, "start");
       }
@@ -646,14 +562,7 @@ export const PromptBoxVideo = ({
           ]
         : []),
     ],
-    [
-      referenceImages,
-      referenceVideos,
-      referenceAudios,
-      deck.uploadingImages,
-      deck.uploadingVideo,
-      deck.uploadingAudio,
-    ],
+    [referenceImages, referenceVideos, referenceAudios, deck.uploadingImages, deck.uploadingVideo, deck.uploadingAudio],
   );
 
   const refDeckAddActions: DeckAddAction[] = [];
@@ -707,25 +616,19 @@ export const PromptBoxVideo = ({
   }
 
   const handleRemoveDeckItem = (id: string) => {
-    if (referenceImages.some((img) => img.id === id)) {
-      setReferenceImages(referenceImages.filter((img) => img.id !== id));
-    } else if (referenceVideos.some((video) => video.id === id)) {
-      setReferenceVideos(referenceVideos.filter((video) => video.id !== id));
-    } else if (referenceAudios.some((audio) => audio.id === id)) {
-      setReferenceAudios(referenceAudios.filter((audio) => audio.id !== id));
+    if (referenceImages.some(img => img.id === id)) {
+      setReferenceImages(referenceImages.filter(img => img.id !== id));
+    } else if (referenceVideos.some(video => video.id === id)) {
+      setReferenceVideos(referenceVideos.filter(video => video.id !== id));
+    } else if (referenceAudios.some(audio => audio.id === id)) {
+      setReferenceAudios(referenceAudios.filter(audio => audio.id !== id));
     }
   };
 
   const maxVideoTotalSec = selectedModel?.maxVideoRefDuration ?? 15;
   const maxAudioTotalSec = selectedModel?.maxAudioRefDuration ?? 15;
-  const totalVideoRefSeconds = referenceVideos.reduce(
-    (sum, video) => sum + video.duration,
-    0,
-  );
-  const totalAudioRefSeconds = referenceAudios.reduce(
-    (sum, audio) => sum + audio.duration,
-    0,
-  );
+  const totalVideoRefSeconds = referenceVideos.reduce((sum, video) => sum + video.duration, 0);
+  const totalAudioRefSeconds = referenceAudios.reduce((sum, audio) => sum + audio.duration, 0);
 
   const refDeckGroupHints = {
     image: `${referenceImages.length}/${maxImageCount}`,
@@ -741,9 +644,7 @@ export const PromptBoxVideo = ({
       addMenuGroupHints={refDeckGroupHints}
       onAddClick={deck.openAnyUpload}
       onRemove={handleRemoveDeckItem}
-      onReorderImages={(from, to) =>
-        setReferenceImages(arrayMove(referenceImages, from, to))
-      }
+      onReorderImages={(from, to) => setReferenceImages(arrayMove(referenceImages, from, to))}
       onClearAll={() => {
         setReferenceImages([]);
         setReferenceVideos([]);
@@ -853,20 +754,14 @@ export const PromptBoxVideo = ({
     "rgb(14, 165, 233)", // sky
   ];
 
-  const hasAnyRefs =
-    referenceImages.length > 0 ||
-    referenceVideos.length > 0 ||
-    referenceAudios.length > 0;
+  const hasAnyRefs = referenceImages.length > 0 || referenceVideos.length > 0 || referenceAudios.length > 0;
 
   // Characters are only supported for seedance_2p0
   const isSeedance2p0 = selectedModel?.id === "seedance_2p0";
   const activeCharacters = isSeedance2p0 ? storedCharacters : EMPTY_CHARACTERS;
 
   // Build a set of character names for highlight matching
-  const characterNames = useMemo(
-    () => activeCharacters.map((c) => c.name),
-    [activeCharacters],
-  );
+  const characterNames = useMemo(() => activeCharacters.map(c => c.name), [activeCharacters]);
 
   const hasAnyMentionables = hasAnyRefs || activeCharacters.length > 0;
 
@@ -896,16 +791,12 @@ export const PromptBoxVideo = ({
           })),
         ]
       : []),
-    ...activeCharacters.map((char) => ({
+    ...activeCharacters.map(char => ({
       label: `@${char.name}`,
       type: "character" as const,
       preview: char.avatar_image_url,
     })),
-  ].filter((item) =>
-    mentionFilter
-      ? item.label.toLowerCase().includes(mentionFilter.toLowerCase())
-      : true,
-  );
+  ].filter(item => (mentionFilter ? item.label.toLowerCase().includes(mentionFilter.toLowerCase()) : true));
 
   // All mention items (unfiltered) for the contentEditable MentionTextarea
   const allMentionItems: MentionItem[] = useMemo(
@@ -929,7 +820,7 @@ export const PromptBoxVideo = ({
             })),
           ]
         : []),
-      ...activeCharacters.map((char) => ({
+      ...activeCharacters.map(char => ({
         label: `@${char.name}`,
         type: "character" as const,
         preview: char.avatar_image_url,
@@ -937,13 +828,7 @@ export const PromptBoxVideo = ({
         fullPreview: char.full_image_url ?? char.avatar_image_url,
       })),
     ],
-    [
-      isReferenceMode,
-      referenceImages,
-      referenceVideos,
-      referenceAudios,
-      activeCharacters,
-    ],
+    [isReferenceMode, referenceImages, referenceVideos, referenceAudios, activeCharacters],
   );
 
   // Record which token a mention name refers to when the user picks a
@@ -951,7 +836,7 @@ export const PromptBoxVideo = ({
   const handleMentionSelect = useCallback((item: MentionItem) => {
     if (item.type !== "character" || !item.token) return;
     const name = item.label.replace(/^@/, "");
-    setMentionSelections((prev) => ({ ...prev, [name]: item.token! }));
+    setMentionSelections(prev => ({ ...prev, [name]: item.token! }));
   }, []);
 
   // Build label → color map for inline mention highlighting
@@ -1009,8 +894,7 @@ export const PromptBoxVideo = ({
     const pastedText = e.clipboardData.getData("text");
     const target = e.currentTarget;
     const { selectionStart, selectionEnd, value } = target;
-    const next =
-      value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
+    const next = value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
     setPrompt(next);
     requestAnimationFrame(() => {
       const pos = Math.min(selectionStart + pastedText.length, next.length);
@@ -1047,10 +931,7 @@ export const PromptBoxVideo = ({
   };
 
   const hasAttachedRefs =
-    referenceImages.length > 0 ||
-    !!endFrameImage ||
-    referenceVideos.length > 0 ||
-    referenceAudios.length > 0;
+    referenceImages.length > 0 || !!endFrameImage || referenceVideos.length > 0 || referenceAudios.length > 0;
   const hasClearableContent = prompt.length > 0 || hasAttachedRefs;
 
   const handleClearAll = () => {
@@ -1061,12 +942,7 @@ export const PromptBoxVideo = ({
     setReferenceAudios([]);
   };
 
-  const maxLen =
-    effectivePromptMaxLength(
-      selectedModel?.tauriId ?? "",
-      selectedModel?.maxPromptLength,
-      prompt,
-    ) ?? 1000;
+  const maxLen = effectivePromptMaxLength(selectedModel?.tauriId ?? "", selectedModel?.maxPromptLength, prompt) ?? 1000;
 
   const handleEnqueue = async () => {
     if (!prompt.trim()) {
@@ -1075,9 +951,7 @@ export const PromptBoxVideo = ({
       return;
     }
     if (isFinite(maxLen) && prompt.length > maxLen) {
-      toast.error(
-        `Prompt exceeds the ${maxLen} character limit for this model`,
-      );
+      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
       return;
     }
 
@@ -1099,8 +973,7 @@ export const PromptBoxVideo = ({
 
     const count = effectiveGenerationCount;
 
-    const isRefMode =
-      inputMode === "reference" && !!selectedModel.supportsReferenceMode;
+    const isRefMode = inputMode === "reference" && !!selectedModel.supportsReferenceMode;
 
     let imageMediaToken = undefined;
 
@@ -1120,9 +993,7 @@ export const PromptBoxVideo = ({
         model: selectedModel,
         start_frame_image_media_token: imageMediaToken,
         prompt: prompt,
-        end_frame_image_media_token: isRefMode
-          ? undefined
-          : endFrameImage?.mediaToken,
+        end_frame_image_media_token: isRefMode ? undefined : endFrameImage?.mediaToken,
         frontend_caller: "image_to_video",
         frontend_subscriber_id: subscriberId,
       };
@@ -1137,23 +1008,17 @@ export const PromptBoxVideo = ({
 
       // Pass reference image tokens in reference mode
       if (isRefMode && referenceImages.length > 0) {
-        request.reference_image_media_tokens = referenceImages.map(
-          (img) => img.mediaToken,
-        );
+        request.reference_image_media_tokens = referenceImages.map(img => img.mediaToken);
       }
 
       // Pass reference video tokens in reference mode
       if (isRefMode && referenceVideos.length > 0) {
-        request.reference_video_media_tokens = referenceVideos.map(
-          (v) => v.mediaToken,
-        );
+        request.reference_video_media_tokens = referenceVideos.map(v => v.mediaToken);
       }
 
       // Pass reference audio tokens in reference mode
       if (isRefMode && referenceAudios.length > 0) {
-        request.reference_audio_media_tokens = referenceAudios.map(
-          (a) => a.mediaToken,
-        );
+        request.reference_audio_media_tokens = referenceAudios.map(a => a.mediaToken);
       }
 
       // Extract character tokens from @-mentions in prompt, resolving to
@@ -1173,10 +1038,7 @@ export const PromptBoxVideo = ({
           const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
           if (!new RegExp(`@${escaped}(?!\\w)`).test(prompt)) continue;
           const candidates = byName.get(name)!;
-          const chosen =
-            candidates.find(
-              (c) => c.character_token === mentionSelections[name],
-            ) ?? candidates[0];
+          const chosen = candidates.find(c => c.character_token === mentionSelections[name]) ?? candidates[0];
           tokens.push(chosen.character_token);
         }
         return tokens;
@@ -1190,16 +1052,10 @@ export const PromptBoxVideo = ({
         request.duration_seconds = effectiveDuration;
       }
       if (selectedModel.bitrateOptions?.length) {
-        request.bitrate =
-          bitrate ??
-          selectedModel.defaultBitrate ??
-          selectedModel.bitrateOptions[0];
+        request.bitrate = bitrate ?? selectedModel.defaultBitrate ?? selectedModel.bitrateOptions[0];
       }
       if (selectedModel.outputFormatOptions?.length) {
-        request.output_format = resolveVideoOutputFormat(
-          selectedModel,
-          outputFormat,
-        );
+        request.output_format = resolveVideoOutputFormat(selectedModel, outputFormat);
       }
 
       // Pass the chosen resolution when the model exposes a resolution picker.
@@ -1216,28 +1072,21 @@ export const PromptBoxVideo = ({
           break;
 
         case "sora_2":
-          request.sora_orientation =
-            resolution === "720p" ? "landscape" : "portrait";
+          request.sora_orientation = resolution === "720p" ? "landscape" : "portrait";
           break;
       }
 
       if (selectedModel.supportsCommonAspectRatio) {
-        const selectedOption = selectedModel.sizeOptions?.find(
-          (option) => option.textLabel === aspectRatio,
-        );
+        const selectedOption = selectedModel.sizeOptions?.find(option => option.textLabel === aspectRatio);
 
         if (selectedOption) {
-          request.aspect_ratio =
-            selectedOption.tauriValue as typeof request.aspect_ratio;
+          request.aspect_ratio = selectedOption.tauriValue as typeof request.aspect_ratio;
         } else {
           const maybeDefault =
-            selectedModel.sizeOptions.find(
-              (option) =>
-                option.tauriValue === selectedModel.defaultAspectRatio,
-            ) ?? selectedModel.sizeOptions[0];
+            selectedModel.sizeOptions.find(option => option.tauriValue === selectedModel.defaultAspectRatio) ??
+            selectedModel.sizeOptions[0];
           if (maybeDefault) {
-            request.aspect_ratio =
-              maybeDefault.tauriValue as typeof request.aspect_ratio;
+            request.aspect_ratio = maybeDefault.tauriValue as typeof request.aspect_ratio;
           }
         }
       }
@@ -1247,7 +1096,7 @@ export const PromptBoxVideo = ({
 
     window.__storeTaskEnqueueMeta?.({
       prompt,
-      refImageUrls: referenceImages?.map((img) => img.url).filter(Boolean),
+      refImageUrls: referenceImages?.map(img => img.url).filter(Boolean),
       modelType: (selectedModel as any)?.tauriId || String(selectedModel),
       timestamp: Date.now(),
     });
@@ -1256,26 +1105,17 @@ export const PromptBoxVideo = ({
     const enqueuePromises: Promise<unknown>[] = [];
 
     for (let i = 0; i < count; i++) {
-      const subscriberId = crypto.randomUUID
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2);
+      const subscriberId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
       subscriberIds.push(subscriberId);
       enqueuePromises.push(GenerateVideo(buildRequest(subscriberId)));
     }
 
     const outcomes = await Promise.allSettled(enqueuePromises);
-    const acceptedIds = subscriberIds.filter(
-      (_, index) => outcomes[index].status === "fulfilled",
-    );
-    const failure = outcomes.find((outcome) => outcome.status === "rejected");
+    const acceptedIds = subscriberIds.filter((_, index) => outcomes[index].status === "fulfilled");
+    const failure = outcomes.find(outcome => outcome.status === "rejected");
     if (failure?.status === "rejected") {
       console.error("PromptBoxVideo - enqueue failed", failure.reason);
-      toast.error(
-        commandErrorMessage(
-          failure.reason,
-          "Failed to start video generation. Please try again.",
-        ),
-      );
+      toast.error(commandErrorMessage(failure.reason, "Failed to start video generation. Please try again."));
     }
     if (acceptedIds.length) onEnqueuePressed?.(prompt, acceptedIds);
 
@@ -1284,7 +1124,7 @@ export const PromptBoxVideo = ({
 
   const getCurrentAspectRatioIcon = (): SizeIconOption => {
     const allOptions = selectedModel?.sizeOptions ?? DEFAULT_RESOLUTIONS;
-    const match = allOptions.find((o) => o.textLabel === aspectRatio);
+    const match = allOptions.find(o => o.textLabel === aspectRatio);
     return match?.icon ?? SizeIconOption.Landscape;
   };
 
@@ -1293,14 +1133,12 @@ export const PromptBoxVideo = ({
     if (mentionOpen && mentionItems.length > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setMentionIndex((prev) => (prev + 1) % mentionItems.length);
+        setMentionIndex(prev => (prev + 1) % mentionItems.length);
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
-        setMentionIndex((prev) =>
-          prev <= 0 ? mentionItems.length - 1 : prev - 1,
-        );
+        setMentionIndex(prev => (prev <= 0 ? mentionItems.length - 1 : prev - 1));
         return;
       }
       if (e.key === "Enter" || e.key === "Tab") {
@@ -1335,9 +1173,7 @@ export const PromptBoxVideo = ({
   const getGrokAspectRatio = (): GROK_ASPECT_RATIO => {
     // NB: This function was just written to give us better type safety.
     // There has to be a cleaner appraoach.
-    const maybeAspectRatio = selectedModel?.sizeOptions?.find(
-      (option) => option.textLabel === aspectRatio,
-    )?.tauriValue;
+    const maybeAspectRatio = selectedModel?.sizeOptions?.find(option => option.textLabel === aspectRatio)?.tauriValue;
 
     switch (maybeAspectRatio) {
       case "landscape":
@@ -1351,8 +1187,7 @@ export const PromptBoxVideo = ({
     }
   };
 
-  const modelNeedsAnImageButNoneAreSelected =
-    selectedModel?.requiresImage && referenceImages.length === 0;
+  const modelNeedsAnImageButNoneAreSelected = selectedModel?.requiresImage && referenceImages.length === 0;
 
   // Hide/clear ending frame if model doesn't support it
   useEffect(() => {
@@ -1376,12 +1211,7 @@ export const PromptBoxVideo = ({
   // Input-mode (keyframe/reference) picker, reused in the fullscreen footer.
   const inputModeEl = inputModeOptions ? (
     <Tooltip content="Input Mode" position="top" className="z-50" closeOnClick>
-      <PopoverMenu
-        items={inputModeOptions}
-        onSelect={handleInputModeSelect}
-        mode="toggle"
-        panelTitle="Input Mode"
-      />
+      <PopoverMenu items={inputModeOptions} onSelect={handleInputModeSelect} mode="toggle" panelTitle="Input Mode" />
     </Tooltip>
   ) : null;
 
@@ -1391,20 +1221,14 @@ export const PromptBoxVideo = ({
       {deck.galleryModal}
       <div className="relative z-20 flex flex-col gap-3">
         <div
-          className={twMerge(
-            "glass relative w-full p-4 !transition-all duration-200",
-            isFocused && "border-primary",
-          )}
+          className={twMerge("glass relative w-full p-4 !transition-all duration-200", isFocused && "border-primary")}
           {...drop.dropZoneProps}
         >
           {dropOverlay}
           {selectedModel?.textToVideoSupported === false && (
             <div className="mb-2 flex items-center gap-1.5 bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
               <InfoIcon className="h-3 w-3 shrink-0" />
-              <span>
-                This model can&apos;t generate from text alone - add a starting
-                frame to animate your prompt.
-              </span>
+              <span>This model can&apos;t generate from text alone - add a starting frame to animate your prompt.</span>
             </div>
           )}
           <div className="relative flex gap-3">
@@ -1425,16 +1249,12 @@ export const PromptBoxVideo = ({
                       : "Describe what you want to happen in the video..."
                   }
                   className="promptbox-scrollbar text-md relative min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-base-fg"
-                  onKeyDown={(e) => {
+                  onKeyDown={e => {
                     if (e.key !== "Enter") return;
                     const isSubmitCombo = enterToGenerate && !e.shiftKey;
                     if (isSubmitCombo) {
                       e.preventDefault();
-                      if (
-                        selectedModel?.requiresImage &&
-                        referenceImages.length === 0
-                      )
-                        return;
+                      if (selectedModel?.requiresImage && referenceImages.length === 0) return;
                       if (!prompt.trim()) return;
                       handleEnqueue();
                     }
@@ -1467,31 +1287,19 @@ export const PromptBoxVideo = ({
           <div className="mt-3.5 flex items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               {modelSelector}
-              <Tooltip
-                content="Aspect Ratio"
-                position="top"
-                className="z-50"
-                closeOnClick={true}
-              >
+              <Tooltip content="Aspect Ratio" position="top" className="z-50" closeOnClick={true}>
                 <PopoverMenu
                   items={aspectRatioOptions}
                   onSelect={handleAspectRatioSelect}
                   mode="toggle"
                   panelTitle="Aspect Ratio"
                   showIconsInList
-                  triggerIcon={
-                    <AspectRatioIcon sizeIcon={getCurrentAspectRatioIcon()} />
-                  }
+                  triggerIcon={<AspectRatioIcon sizeIcon={getCurrentAspectRatioIcon()} />}
                 />
               </Tooltip>
 
               {resolutionPickerOptions && (
-                <Tooltip
-                  content="Resolution"
-                  position="top"
-                  className="z-50"
-                  closeOnClick={true}
-                >
+                <Tooltip content="Resolution" position="top" className="z-50" closeOnClick={true}>
                   <PopoverMenu
                     items={resolutionPickerOptions}
                     onSelect={handleResolutionSelect}
@@ -1506,38 +1314,27 @@ export const PromptBoxVideo = ({
                   <PopoverMenu
                     panelTitle="Bitrate"
                     mode="toggle"
-                    items={selectedModel.bitrateOptions.map((value) => ({
-                      label:
-                        value === "normal"
-                          ? "Normal"
-                          : value === "high"
-                            ? "High"
-                            : value,
+                    items={selectedModel.bitrateOptions.map(value => ({
+                      label: value === "normal" ? "Normal" : value === "high" ? "High" : value,
                       action: value,
                       selected: value === bitrate,
                     }))}
-                    onSelect={(item) => setBitrate(item.action ?? item.label)}
+                    onSelect={item => setBitrate(item.action ?? item.label)}
                   />
                 </Tooltip>
               )}
 
               {!!selectedModel?.outputFormatOptions?.length && (
-                <Tooltip
-                  content="Output format"
-                  position="top"
-                  className="z-50"
-                >
+                <Tooltip content="Output format" position="top" className="z-50">
                   <PopoverMenu
                     panelTitle="Output format"
                     mode="toggle"
-                    items={selectedModel.outputFormatOptions.map((value) => ({
+                    items={selectedModel.outputFormatOptions.map(value => ({
                       label: value.toUpperCase(),
                       action: value,
                       selected: value === outputFormat,
                     }))}
-                    onSelect={(item) =>
-                      setOutputFormat(item.action ?? item.label)
-                    }
+                    onSelect={item => setOutputFormat(item.action ?? item.label)}
                   />
                 </Tooltip>
               )}
@@ -1634,20 +1431,13 @@ export const PromptBoxVideo = ({
             </div>
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-            <Tooltip
-              content={isExpanded ? "Collapse" : "Expand"}
-              position="top"
-              className="-mb-2"
-            >
+            <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="top" className="-mb-2">
               <button
                 type="button"
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <DynamicIcon
-                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
-                  className="text-xs"
-                />
+                <DynamicIcon icon={isExpanded ? ChevronUpIcon : ChevronDownIcon} className="text-xs" />
               </button>
             </Tooltip>
           </div>
@@ -1666,12 +1456,11 @@ export const PromptBoxVideo = ({
       <CharactersModal
         isOpen={isCharactersModalOpen}
         onClose={() => setIsCharactersModalOpen(false)}
-        onSelectCharacter={(character) => {
+        onSelectCharacter={character => {
           const mention = `@${character.name}`;
-          const spaceBefore =
-            prompt.length > 0 && !prompt.endsWith(" ") ? " " : "";
+          const spaceBefore = prompt.length > 0 && !prompt.endsWith(" ") ? " " : "";
           setPrompt(prompt + spaceBefore + mention + " ");
-          setMentionSelections((prev) => ({
+          setMentionSelections(prev => ({
             ...prev,
             [character.name]: character.token,
           }));
@@ -1710,9 +1499,7 @@ export const PromptBoxVideo = ({
             {characterButtonEl}
           </>
         }
-        imagePromptRow={
-          isReferenceMode ? renderReferenceDeck(true) : renderKeyframeCards()
-        }
+        imagePromptRow={isReferenceMode ? renderReferenceDeck(true) : renderKeyframeCards()}
       >
         {hasAnyMentionables ? (
           <MentionTextarea

@@ -1,13 +1,7 @@
 import { createHash } from "node:crypto";
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { loadProfile } from "../../src/admin/lib/profile.ts";
@@ -44,7 +38,7 @@ function downloads(
     installScript?: string;
   } = {},
 ): TestContext["ctx"]["fetchImpl"] {
-  return async (input) => {
+  return async input => {
     const url = String(input);
     if (url.endsWith("/latest.json"))
       return Response.json({
@@ -57,8 +51,7 @@ function downloads(
         },
       });
     if (url.endsWith("/SHA256SUMS")) return new Response(options.sums ?? "");
-    if (url.endsWith("/install.ps1"))
-      return new Response(options.installScript ?? INSTALL_SCRIPT);
+    if (url.endsWith("/install.ps1")) return new Response(options.installScript ?? INSTALL_SCRIPT);
     if (url.includes("/files/")) return new Response("archive-bytes");
     return new Response("nope", { status: 404 });
   };
@@ -81,27 +74,12 @@ test("kit step: copies the exe next to a shortcut once, nothing when run from so
   touch(join(ctx.exeDir, "Guide.html"), "guide");
   sys.handlers.push({ match: /^powershell /, result: {} });
   expect((await stepKit.run(ctx, "simuler", state())).state).toBe("a-faire");
-  expect(existsSync(join(ctx.paths.localAppData, "Aphrody", "Setup"))).toBe(
-    false,
-  );
+  expect(existsSync(join(ctx.paths.localAppData, "Aphrody", "Setup"))).toBe(false);
   const done = await stepKit.run(ctx, "executer", state());
   expect(done.state).toBe("fait");
-  expect(
-    readFileSync(
-      join(
-        join(ctx.paths.localAppData, "Aphrody", "Setup"),
-        "Aphrody-Setup.exe",
-      ),
-      "utf8",
-    ),
-  ).toBe("EXE");
-  expect(
-    readFileSync(
-      join(join(ctx.paths.localAppData, "Aphrody", "Setup"), "Guide.html"),
-      "utf8",
-    ),
-  ).toBe("guide");
-  const shortcuts = sys.calls.filter((call) => call.argv[0] === "powershell");
+  expect(readFileSync(join(join(ctx.paths.localAppData, "Aphrody", "Setup"), "Aphrody-Setup.exe"), "utf8")).toBe("EXE");
+  expect(readFileSync(join(join(ctx.paths.localAppData, "Aphrody", "Setup"), "Guide.html"), "utf8")).toBe("guide");
+  const shortcuts = sys.calls.filter(call => call.argv[0] === "powershell");
   expect(shortcuts).toHaveLength(2);
   expect(shortcuts[0]!.argv[3]).toContain("CreateShortcut(");
   expect(shortcuts[0]!.argv[3]).toContain("Aphrody.lnk");
@@ -110,56 +88,35 @@ test("kit step: copies the exe next to a shortcut once, nothing when run from so
       await stepKit.run(
         {
           ...ctx,
-          exePath: join(
-            join(ctx.paths.localAppData, "Aphrody", "Setup"),
-            "Aphrody-Setup.exe",
-          ),
+          exePath: join(join(ctx.paths.localAppData, "Aphrody", "Setup"), "Aphrody-Setup.exe"),
         },
         "executer",
         state(),
       )
     ).state,
   ).toBe("deja");
-  expect(
-    (
-      await stepKit.run(
-        { ...ctx, exePath: "/usr/bin/bun" },
-        "executer",
-        state(),
-      )
-    ).state,
-  ).toBe("ignore");
+  expect((await stepKit.run({ ...ctx, exePath: "/usr/bin/bun" }, "executer", state())).state).toBe("ignore");
 });
 
 test("prerequisites step: winget installs only what is missing, and says so when winget is absent", async () => {
   const { ctx, sys } = testContext();
-  expect((await stepPrerequis.run(ctx, "simuler", state())).detail).toContain(
-    "Git et WireGuard",
-  );
+  expect((await stepPrerequis.run(ctx, "simuler", state())).detail).toContain("Git et WireGuard");
   const noWinget = await stepPrerequis.run(ctx, "executer", state());
   expect(noWinget.state).toBe("echec");
   expect(noWinget.action).toContain("Microsoft Store");
-  const winget = join(
-    ctx.paths.localAppData,
-    "Microsoft",
-    "WindowsApps",
-    "winget.exe",
-  );
+  const winget = join(ctx.paths.localAppData, "Microsoft", "WindowsApps", "winget.exe");
   touch(winget);
   sys.handlers.push({
     match: /winget\.exe install --id (Git\.Git|WireGuard\.WireGuard)/,
-    result: (argv) => {
-      if (argv.includes("Git.Git"))
-        touch(join(ctx.paths.programFiles, "Git", "cmd", "git.exe"));
+    result: argv => {
+      if (argv.includes("Git.Git")) touch(join(ctx.paths.programFiles, "Git", "cmd", "git.exe"));
       else touch(join(ctx.paths.programFiles, "WireGuard", "wireguard.exe"));
       return {};
     },
   });
   const done = await stepPrerequis.run(ctx, "executer", state());
   expect(done.state).toBe("fait");
-  const installs = sys.calls
-    .filter((call) => call.argv[0] === winget)
-    .map((call) => call.argv);
+  const installs = sys.calls.filter(call => call.argv[0] === winget).map(call => call.argv);
   expect(installs).toHaveLength(2);
   expect(installs[0]).toEqual([
     winget,
@@ -173,12 +130,8 @@ test("prerequisites step: winget installs only what is missing, and says so when
     "--accept-package-agreements",
     "--accept-source-agreements",
   ]);
-  expect(
-    sys.calls.find((call) => call.argv.includes("Git.Git"))!.options.inherit,
-  ).toBe(true);
-  expect((await stepPrerequis.run(ctx, "executer", state())).state).toBe(
-    "deja",
-  );
+  expect(sys.calls.find(call => call.argv.includes("Git.Git"))!.options.inherit).toBe(true);
+  expect((await stepPrerequis.run(ctx, "executer", state())).state).toBe("deja");
 });
 
 test("keys step: creates both keys, writes only public keys on the Desktop, copies them", async () => {
@@ -187,13 +140,10 @@ test("keys step: creates both keys, writes only public keys on the Desktop, copi
   sys.handlers.push(
     {
       match: /ssh-keygen\.exe -t ed25519/,
-      result: (argv) => {
+      result: argv => {
         const key = argv[argv.indexOf("-f") + 1]!;
         touch(key, "PRIVATE-SSH-KEY");
-        touch(
-          `${key}.pub`,
-          `ssh-ed25519 AAAAFakePublicKey ${argv[argv.indexOf("-C") + 1]}\n`,
-        );
+        touch(`${key}.pub`, `ssh-ed25519 AAAAFakePublicKey ${argv[argv.indexOf("-C") + 1]}\n`);
         return {};
       },
     },
@@ -206,14 +156,10 @@ test("keys step: creates both keys, writes only public keys on the Desktop, copi
   const file = join(ctx.paths.desktopDir, "a-envoyer-a-l-equipe.txt");
   const text = readFileSync(file, "utf8");
   expect(text).toContain("wireguard-public-key: ");
-  expect(text).toContain(
-    "ssh-public-key: ssh-ed25519 AAAAFakePublicKey omar@PC-DE-OMAR",
-  );
+  expect(text).toContain("ssh-public-key: ssh-ed25519 AAAAFakePublicKey omar@PC-DE-OMAR");
   expect(text).not.toContain("PRIVATE-SSH-KEY");
   expect(text).not.toContain(readFileSync(ctx.paths.wgKeyFile, "utf8").trim());
-  expect(sys.calls.find((call) => call.argv[0] === "clip")!.options.input).toBe(
-    text,
-  );
+  expect(sys.calls.find(call => call.argv[0] === "clip")!.options.input).toBe(text);
   expect((await stepCles.run(ctx, "executer", state())).state).toBe("deja");
 });
 
@@ -234,15 +180,9 @@ test("keysMessage and makeKeys carry no secret", async () => {
   expect(typeof makeKeys).toBe("function");
 });
 
-function accessReady(
-  t: TestContext,
-  pack: Record<string, unknown> = packJson(),
-) {
+function accessReady(t: TestContext, pack: Record<string, unknown> = packJson()) {
   touch(join(t.ctx.paths.programFiles, "WireGuard", "wireguard.exe"));
-  touch(
-    join(t.ctx.paths.downloadsDir, "aphrody-omar-acces.json"),
-    JSON.stringify(pack),
-  );
+  touch(join(t.ctx.paths.downloadsDir, "aphrody-omar-acces.json"), JSON.stringify(pack));
   let running = false;
   t.sys.handlers.push(
     { match: "icacls", result: {} },
@@ -280,30 +220,17 @@ test("access step: imports the pack, links ssh, installs the tunnel once and is 
   expect(first.detail).toContain("tunnel « aphrody » actif");
   expect(s.pack?.hosts.gpu?.address).toBe("198.51.100.2");
   expect((await loadProfile(ctx.paths))?.trainHost).toBe("gpu");
-  expect(readFileSync(ctx.paths.sshConfigFile, "utf8")).toContain(
-    "Host aphrody-gpu",
-  );
-  expect(readFileSync(ctx.paths.userSshConfig, "utf8")).toContain(
-    "# >>> aphrody-omar >>>",
-  );
-  expect(
-    existsSync(
-      join(ctx.paths.programData, "Aphrody", "Omar", "tmp", "aphrody.conf"),
-    ),
-  ).toBe(false);
+  expect(readFileSync(ctx.paths.sshConfigFile, "utf8")).toContain("Host aphrody-gpu");
+  expect(readFileSync(ctx.paths.userSshConfig, "utf8")).toContain("# >>> aphrody-omar >>>");
+  expect(existsSync(join(ctx.paths.programData, "Aphrody", "Omar", "tmp", "aphrody.conf"))).toBe(false);
   const elevations = () =>
-    sys.calls.filter(
-      (call) =>
-        call.argv[0] === "powershell" && call.argv[5]?.includes("RunAs"),
-    ).length;
+    sys.calls.filter(call => call.argv[0] === "powershell" && call.argv[5]?.includes("RunAs")).length;
   expect(elevations()).toBe(1);
   expect(readFileSync(ctx.paths.wgKeyFile, "utf8").trim()).toHaveLength(44);
   const second = await stepAcces.run(ctx, "executer", state());
   expect(second.state).toBe("deja");
   expect(elevations()).toBe(1);
-  expect(
-    readdirSync(join(ctx.paths.programData, "Aphrody", "Omar", "tmp")),
-  ).toEqual([]);
+  expect(readdirSync(join(ctx.paths.programData, "Aphrody", "Omar", "tmp"))).toEqual([]);
 });
 
 test("access step: a new team block triggers a new import", async () => {
@@ -311,21 +238,11 @@ test("access step: a new team block triggers a new import", async () => {
   accessReady(t);
   await stepAcces.run(t.ctx, "executer", state());
   const next = packJson();
-  (next.wireguard as { block: string }).block = (
-    next.wireguard as { block: string }
-  ).block.replace("51821", "51822");
-  writeFileSync(
-    join(t.ctx.paths.downloadsDir, "aphrody-omar-acces.json"),
-    JSON.stringify(next),
-  );
+  (next.wireguard as { block: string }).block = (next.wireguard as { block: string }).block.replace("51821", "51822");
+  writeFileSync(join(t.ctx.paths.downloadsDir, "aphrody-omar-acces.json"), JSON.stringify(next));
   const result = await stepAcces.run(t.ctx, "executer", state());
   expect(result.state).toBe("fait");
-  expect(
-    t.sys.calls.filter(
-      (call) =>
-        call.argv[0] === "powershell" && call.argv[5]?.includes("RunAs"),
-    ),
-  ).toHaveLength(2);
+  expect(t.sys.calls.filter(call => call.argv[0] === "powershell" && call.argv[5]?.includes("RunAs"))).toHaveLength(2);
 });
 
 test("access step: an invalid or hostile pack changes nothing", async () => {
@@ -344,13 +261,8 @@ test("access step: an invalid or hostile pack changes nothing", async () => {
   expect(result.detail).toContain("PostUp");
   expect(await loadProfile(t.ctx.paths)).toBeUndefined();
   expect(existsSync(t.ctx.paths.sshConfigFile)).toBe(false);
-  expect(
-    t.sys.calls.filter((call) => call.argv[0] === "powershell"),
-  ).toHaveLength(0);
-  writeFileSync(
-    join(t.ctx.paths.downloadsDir, "aphrody-omar-acces.json"),
-    "not json",
-  );
+  expect(t.sys.calls.filter(call => call.argv[0] === "powershell")).toHaveLength(0);
+  writeFileSync(join(t.ctx.paths.downloadsDir, "aphrody-omar-acces.json"), "not json");
   expect((await stepAcces.run(t.ctx, "executer", state())).state).toBe("echec");
 });
 
@@ -398,7 +310,7 @@ test("aphrody step: reuses the official installer after cross-checking the hashe
   let scriptSeen = "";
   sys.handlers.push({
     match: /^powershell .*install-aphrody\.ps1/,
-    result: (argv) => {
+    result: argv => {
       scriptSeen = readFileSync(argv.at(-1)!, "utf8");
       touch(join(ctx.paths.home, ".local", "bin", "aphrody.exe"));
       return {};
@@ -408,20 +320,12 @@ test("aphrody step: reuses the official installer after cross-checking the hashe
     match: /aphrody\.exe --version/,
     result: { stdout: "aphrody 1.0.0" },
   });
-  expect((await stepAphrody.run(ctx, "simuler", state())).state).toBe(
-    "a-faire",
-  );
+  expect((await stepAphrody.run(ctx, "simuler", state())).state).toBe("a-faire");
   expect(sys.calls).toEqual([]);
   const result = await stepAphrody.run(ctx, "executer", state());
   expect(result.state).toBe("fait");
-  const call = sys.calls.find((entry) => entry.argv[0] === "powershell")!;
-  expect(call.argv.slice(0, 5)).toEqual([
-    "powershell",
-    "-NoProfile",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-File",
-  ]);
+  const call = sys.calls.find(entry => entry.argv[0] === "powershell")!;
+  expect(call.argv.slice(0, 5)).toEqual(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File"]);
   expect(call.options.env).toEqual({
     APHRODY_DOWNLOAD_URL: BASE,
     APHRODY_RELEASE: "r",
@@ -472,7 +376,7 @@ test("repository step: clone with a partial filter, never a token in the URL", a
   touch(join(ctx.paths.programFiles, "Git", "cmd", "git.exe"));
   sys.handlers.push({
     match: /git\.exe -c core\.longpaths=true clone/,
-    result: (argv) => {
+    result: argv => {
       mkdirSync(join(argv.at(-1)!, ".git"), { recursive: true });
       return {};
     },
@@ -517,16 +421,14 @@ test("repository step: existing repositories are updated only when clean, other 
     state: "deja",
     detail: expect.stringContaining("pas de mise à jour automatique"),
   });
-  expect(sys.calls.some((call) => call.argv.includes("pull"))).toBe(false);
+  expect(sys.calls.some(call => call.argv.includes("pull"))).toBe(false);
   sys.handlers.length = 0;
   sys.handlers.push(
     origin("https://github.com/aphrody-labs/aphrody.git"),
     { match: /status --porcelain/, result: { stdout: "" } },
     { match: /pull --ff-only/, result: {} },
   );
-  expect((await stepDepot.run(ctx, "executer", state())).detail).toContain(
-    "à jour",
-  );
+  expect((await stepDepot.run(ctx, "executer", state())).detail).toContain("à jour");
   expect(sys.calls.at(-1)!.argv.slice(-2)).toEqual(["pull", "--ff-only"]);
 
   const other = testContext();
@@ -539,12 +441,8 @@ test("repository step: existing repositories are updated only when clean, other 
   const lowDisk = testContext();
   touch(join(lowDisk.ctx.paths.programFiles, "Git", "cmd", "git.exe"));
   lowDisk.sys.free = 1024 ** 3;
-  expect(
-    (await stepDepot.run(lowDisk.ctx, "executer", state())).detail,
-  ).toContain("libres");
-  expect(
-    (await stepDepot.run(testContext().ctx, "executer", state())).state,
-  ).toBe("echec");
+  expect((await stepDepot.run(lowDisk.ctx, "executer", state())).detail).toContain("libres");
+  expect((await stepDepot.run(testContext().ctx, "executer", state())).state).toBe("echec");
 });
 
 test("repository step: a refused GitHub sign-in points at the invitation", async () => {
@@ -562,14 +460,8 @@ test("MCP step: declares the server in Claude Desktop with a backup, once", asyn
   expect((await stepMcp.run(ctx, "executer", state())).state).toBe("attente");
   const aphrody = join(ctx.paths.home, ".local", "bin", "aphrody.exe");
   touch(aphrody);
-  expect((await stepMcp.run(ctx, "executer", state())).detail).toContain(
-    "ni Claude Desktop ni Claude Code",
-  );
-  const config = join(
-    ctx.paths.appData,
-    "Claude",
-    "claude_desktop_config.json",
-  );
+  expect((await stepMcp.run(ctx, "executer", state())).detail).toContain("ni Claude Desktop ni Claude Code");
+  const config = join(ctx.paths.appData, "Claude", "claude_desktop_config.json");
   touch(config, JSON.stringify({ preferences: { x: 1 } }));
   expect((await stepMcp.run(ctx, "simuler", state())).state).toBe("a-faire");
   expect(JSON.parse(readFileSync(config, "utf8"))).toEqual({
@@ -588,10 +480,8 @@ test("MCP step: declares the server in Claude Desktop with a backup, once", asyn
 test("the install runs every step in order, a failure never stops the others, nothing is hidden", async () => {
   const t = testContext({ fetchImpl: downloads() });
   const report = await runInstall(t.ctx, "executer", state());
-  expect(report.results.map((entry) => entry.step.id)).toEqual(
-    STEPS.map((step) => step.id),
-  );
-  expect(report.results.map((entry) => entry.step.id)).toEqual([
+  expect(report.results.map(entry => entry.step.id)).toEqual(STEPS.map(step => step.id));
+  expect(report.results.map(entry => entry.step.id)).toEqual([
     "kit",
     "prerequis",
     "cles",
@@ -612,14 +502,14 @@ test("simulation changes nothing on disk and runs nothing", async () => {
   touch(t.ctx.exePath);
   accessReady(t);
   const before = readdirSync(t.root)
-    .filter((name) => name !== "local")
+    .filter(name => name !== "local")
     .toSorted();
   const report = await runInstall(t.ctx, "simuler", state());
   expect(report.results.length).toBe(7);
-  expect(t.sys.calls.filter((call) => call.argv[0] !== "sc")).toEqual([]);
+  expect(t.sys.calls.filter(call => call.argv[0] !== "sc")).toEqual([]);
   expect(
     readdirSync(t.root)
-      .filter((name) => name !== "local")
+      .filter(name => name !== "local")
       .toSorted(),
   ).toEqual(before);
   expect(readdirSync(t.ctx.paths.installDir)).toEqual(["omar.log"]);

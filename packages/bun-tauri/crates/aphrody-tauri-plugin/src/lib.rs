@@ -66,8 +66,8 @@
 //! [`mobile`]: https://docs.rs/tauri-plugin/latest/tauri_plugin/mobile/index.html
 
 #![doc(
-  html_logo_url = "https://github.com/tauri-apps/tauri/raw/dev/.github/icon.png",
-  html_favicon_url = "https://github.com/tauri-apps/tauri/raw/dev/.github/icon.png"
+    html_logo_url = "https://github.com/tauri-apps/tauri/raw/dev/.github/icon.png",
+    html_favicon_url = "https://github.com/tauri-apps/tauri/raw/dev/.github/icon.png"
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 

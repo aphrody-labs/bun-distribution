@@ -34,14 +34,8 @@ interface KeybindsState {
   findConflicts: (id: ActionId, candidate: Binding) => ActionId[];
 }
 
-function resolveFrom(
-  overrides: Record<ActionId, Binding[]>,
-  preset: PresetId,
-  id: ActionId,
-): Binding[] {
-  return (
-    overrides[id] ?? PRESETS[preset].bindings[id] ?? BASE_BINDINGS[id] ?? []
-  );
+function resolveFrom(overrides: Record<ActionId, Binding[]>, preset: PresetId, id: ActionId): Binding[] {
+  return overrides[id] ?? PRESETS[preset].bindings[id] ?? BASE_BINDINGS[id] ?? [];
 }
 
 export const useKeybindsStore = create<KeybindsState>()(
@@ -52,37 +46,33 @@ export const useKeybindsStore = create<KeybindsState>()(
       isRecording: false,
       cheatsheetSticky: false,
 
-      setPreset: (preset) => set({ selectedPreset: preset }),
+      setPreset: preset => set({ selectedPreset: preset }),
 
-      setCheatsheetSticky: (cheatsheetSticky) => set({ cheatsheetSticky }),
+      setCheatsheetSticky: cheatsheetSticky => set({ cheatsheetSticky }),
 
-      setBinding: (id, bindings) =>
-        set((s) => ({ overrides: { ...s.overrides, [id]: bindings } })),
+      setBinding: (id, bindings) => set(s => ({ overrides: { ...s.overrides, [id]: bindings } })),
 
-      resetAction: (id) =>
-        set((s) => {
+      resetAction: id =>
+        set(s => {
           const next = { ...s.overrides };
           delete next[id];
           return { overrides: next };
         }),
 
-      resetSurface: (surface) =>
-        set((s) => ({
+      resetSurface: surface =>
+        set(s => ({
           overrides: Object.fromEntries(
-            Object.entries(s.overrides).filter(
-              ([id]) => ACTIONS[id as ActionId]?.surface !== surface,
-            ),
+            Object.entries(s.overrides).filter(([id]) => ACTIONS[id as ActionId]?.surface !== surface),
           ) as Record<ActionId, Binding[]>,
         })),
 
       resetAll: () => set({ overrides: {} }),
 
-      resetToPresetDefault: () =>
-        set({ overrides: {}, selectedPreset: DEFAULT_PRESET }),
+      resetToPresetDefault: () => set({ overrides: {}, selectedPreset: DEFAULT_PRESET }),
 
-      setIsRecording: (isRecording) => set({ isRecording }),
+      setIsRecording: isRecording => set({ isRecording }),
 
-      resolveBindings: (id) => {
+      resolveBindings: id => {
         const { overrides, selectedPreset } = get();
         return resolveFrom(overrides, selectedPreset, id);
       },
@@ -97,14 +87,13 @@ export const useKeybindsStore = create<KeybindsState>()(
           // Same-surface bindings conflict; global bindings fire on EVERY
           // surface, so they conflict across the board in both directions.
           const sameSurface = other.surface === action.surface;
-          const involvesGlobal =
-            action.surface === "global" || other.surface === "global";
+          const involvesGlobal = action.surface === "global" || other.surface === "global";
           if (!sameSurface && !involvesGlobal) continue;
           // Context-exclusive actions (their `when` gates never hold at the
           // same time) may share a key on purpose — not a conflict.
           if (!actionsCoAvailable(action, other)) continue;
           const bindings = resolveFrom(overrides, selectedPreset, other.id);
-          if (bindings.some((bd) => bindingsEqual(bd, candidate))) {
+          if (bindings.some(bd => bindingsEqual(bd, candidate))) {
             conflicts.push(other.id);
           }
         }
@@ -114,7 +103,7 @@ export const useKeybindsStore = create<KeybindsState>()(
     {
       name: "artcraft-keybinds",
       version: 1,
-      partialize: (s) => ({
+      partialize: s => ({
         selectedPreset: s.selectedPreset,
         overrides: s.overrides,
         cheatsheetSticky: s.cheatsheetSticky,

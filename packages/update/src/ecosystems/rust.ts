@@ -21,14 +21,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { Ctx } from "../context.ts";
 import { lockDiff, lockMap, runCargo } from "../cargo.ts";
-import {
-  Cache,
-  cachedText,
-  osv,
-  parseCargoLock,
-  sparsePath,
-  type Dep,
-} from "../deps/inventory.ts";
+import { Cache, cachedText, osv, parseCargoLock, sparsePath, type Dep } from "../deps/inventory.ts";
 import { cmpVersion } from "../deps/sync.ts";
 import { cargoGitRemotes, driftRows } from "../sources/drift.ts";
 
@@ -42,10 +35,7 @@ export type Triple = [number, number, number];
 export type Parsed = { v: Triple; pre: string };
 
 export function parseVersion(input: string): Parsed | undefined {
-  const m =
-    /^\s*v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?\s*$/.exec(
-      input,
-    );
+  const m = /^\s*v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?\s*$/.exec(input);
   if (!m) return undefined;
   return {
     v: [Number(m[1]), Number(m[2] ?? 0), Number(m[3] ?? 0)],
@@ -53,8 +43,7 @@ export function parseVersion(input: string): Parsed | undefined {
   };
 }
 
-const cmpTriple = (a: Triple, b: Triple) =>
-  a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+const cmpTriple = (a: Triple, b: Triple) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
 
 type Comparator = {
   test: (v: Triple) => boolean;
@@ -68,10 +57,7 @@ export function comparators(req: string): Comparator[] | undefined {
   for (const raw of req.split(",")) {
     const part = raw.trim();
     if (part === "" || part === "*") continue;
-    const m =
-      /^(\^|~|=|>=|>|<=|<)?\s*(\d+)(?:\.(\d+|\*))?(?:\.(\d+|\*))?(?:-([0-9A-Za-z.-]+))?$/.exec(
-        part,
-      );
+    const m = /^(\^|~|=|>=|>|<=|<)?\s*(\d+)(?:\.(\d+|\*))?(?:\.(\d+|\*))?(?:-([0-9A-Za-z.-]+))?$/.exec(part);
     if (!m) return undefined;
     const op = m[1] ?? "^";
     const maj = Number(m[2]);
@@ -86,12 +72,9 @@ export function comparators(req: string): Comparator[] | undefined {
     const preStr = m[5] ?? "";
     // A lower bound with a pre-release (`^2.0.0-rc.12`) admits later pre-releases of the same x.y.z, never earlier ones.
     const lower = (p: Parsed) =>
-      !preStr ||
-      cmpTriple(p.v, lo) !== 0 ||
-      p.pre === "" ||
-      cmpVersion(`0.0.0-${p.pre}`, `0.0.0-${preStr}`) >= 0;
+      !preStr || cmpTriple(p.v, lo) !== 0 || p.pre === "" || cmpVersion(`0.0.0-${p.pre}`, `0.0.0-${preStr}`) >= 0;
     const between = (hi: Triple): Comparator => ({
-      test: (v) => cmpTriple(v, lo) >= 0 && cmpTriple(v, hi) < 0,
+      test: v => cmpTriple(v, lo) >= 0 && cmpTriple(v, hi) < 0,
       pre,
       post: lower,
     });
@@ -100,37 +83,26 @@ export function comparators(req: string): Comparator[] | undefined {
       else if (min > 0 || !patchGiven) out.push(between([0, min + 1, 0]));
       else out.push(between([0, 0, pat + 1]));
     } else if (op === "~") {
-      out.push(
-        minorGiven ? between([maj, min + 1, 0]) : between([maj + 1, 0, 0]),
-      );
+      out.push(minorGiven ? between([maj, min + 1, 0]) : between([maj + 1, 0, 0]));
     } else if (op === "=") {
       if (patchGiven)
         out.push({
-          test: (v) => cmpTriple(v, lo) === 0,
+          test: v => cmpTriple(v, lo) === 0,
           pre,
-          post: (p) => p.pre === preStr,
+          post: p => p.pre === preStr,
         });
-      else
-        out.push(
-          minorGiven ? between([maj, min + 1, 0]) : between([maj + 1, 0, 0]),
-        );
+      else out.push(minorGiven ? between([maj, min + 1, 0]) : between([maj + 1, 0, 0]));
     } else {
       // Comparison operators: a partial version rounds up for > and down for <=.
-      const next: Triple = patchGiven
-        ? [maj, min, pat + 1]
-        : minorGiven
-          ? [maj, min + 1, 0]
-          : [maj + 1, 0, 0];
-      if (op === ">=")
-        out.push({ test: (v) => cmpTriple(v, lo) >= 0, pre, post: lower });
+      const next: Triple = patchGiven ? [maj, min, pat + 1] : minorGiven ? [maj, min + 1, 0] : [maj + 1, 0, 0];
+      if (op === ">=") out.push({ test: v => cmpTriple(v, lo) >= 0, pre, post: lower });
       else if (op === ">")
         out.push({
-          test: (v) =>
-            cmpTriple(v, next) >= 0 || (patchGiven && cmpTriple(v, lo) > 0),
+          test: v => cmpTriple(v, next) >= 0 || (patchGiven && cmpTriple(v, lo) > 0),
           pre,
         });
-      else if (op === "<") out.push({ test: (v) => cmpTriple(v, lo) < 0, pre });
-      else out.push({ test: (v) => cmpTriple(v, next) < 0, pre });
+      else if (op === "<") out.push({ test: v => cmpTriple(v, lo) < 0, pre });
+      else out.push({ test: v => cmpTriple(v, next) < 0, pre });
     }
   }
   return out;
@@ -141,9 +113,8 @@ export function satisfies(version: string, req: string): boolean {
   const p = parseVersion(version);
   const cs = comparators(req);
   if (!p || !cs) return false;
-  if (p.pre && !cs.some((c) => c.pre && cmpTriple(c.pre, p.v) === 0))
-    return false;
-  return cs.every((c) => c.test(p.v) && (c.post?.(p) ?? true));
+  if (p.pre && !cs.some(c => c.pre && cmpTriple(c.pre, p.v) === 0)) return false;
+  return cs.every(c => c.test(p.v) && (c.post?.(p) ?? true));
 }
 
 /**
@@ -151,17 +122,13 @@ export function satisfies(version: string, req: string): boolean {
  * (`0.7` -> `0.8`, `1` -> `2`, `=1.7.0` -> `=1.19.0`). Compound requirements return undefined: edit them by hand.
  */
 export function bumpReq(req: string, target: string): string | undefined {
-  const m = /^(\^|~|=)?\s*(\d+(?:\.\d+){0,2})(?:-[0-9A-Za-z.-]+)?$/.exec(
-    req.trim(),
-  );
+  const m = /^(\^|~|=)?\s*(\d+(?:\.\d+){0,2})(?:-[0-9A-Za-z.-]+)?$/.exec(req.trim());
   const t = parseVersion(target);
   if (!m || !t) return undefined;
   const parts = m[2]!.split(".").length;
   const full = t.v.join(".");
   const body =
-    t.pre || parts === 3 || m[1] === "="
-      ? `${full}${t.pre ? `-${t.pre}` : ""}`
-      : t.v.slice(0, parts).join(".");
+    t.pre || parts === 3 || m[1] === "=" ? `${full}${t.pre ? `-${t.pre}` : ""}` : t.v.slice(0, parts).join(".");
   return `${m[1] ?? ""}${body}`;
 }
 
@@ -208,19 +175,12 @@ export type DepDecl = {
 };
 
 /** Features of a manifest that enable the optional dependency `name` (`dep:name`, `name`, `name/feat`, `name?/feat`). */
-export function featuresEnabling(
-  features: Record<string, unknown> | undefined,
-  name: string,
-): string[] {
+export function featuresEnabling(features: Record<string, unknown> | undefined, name: string): string[] {
   return Object.entries(features ?? {})
     .filter(
       ([, v]) =>
         Array.isArray(v) &&
-        v.some(
-          (x) =>
-            typeof x === "string" &&
-            (x === `dep:${name}` || x === name || x.startsWith(`${name}/`)),
-        ),
+        v.some(x => typeof x === "string" && (x === `dep:${name}` || x === name || x.startsWith(`${name}/`))),
     )
     .map(([k]) => k);
 }
@@ -237,10 +197,7 @@ export function readDecls(manifest: string, text: string): DepDecl[] {
   }
   const pkg: string = doc.package?.name ?? "(workspace)";
   const out: DepDecl[] = [];
-  const take = (
-    section: string,
-    table: Record<string, unknown> | undefined,
-  ) => {
+  const take = (section: string, table: Record<string, unknown> | undefined) => {
     for (const [name, spec] of Object.entries(table ?? {})) {
       if (typeof spec === "string")
         out.push({
@@ -261,9 +218,7 @@ export function readDecls(manifest: string, text: string): DepDecl[] {
           git?: string;
           optional?: boolean;
         };
-        const enabledBy = s.optional
-          ? featuresEnabling(doc.features, name)
-          : undefined;
+        const enabledBy = s.optional ? featuresEnabling(doc.features, name) : undefined;
         if (s.workspace)
           out.push({
             manifest,
@@ -290,8 +245,7 @@ export function readDecls(manifest: string, text: string): DepDecl[] {
   };
   take("workspace.dependencies", doc.workspace?.dependencies);
   for (const s of DEP_SECTIONS) take(s, doc[s]);
-  for (const t of Object.values<any>(doc.target ?? {}))
-    for (const s of DEP_SECTIONS) take(`target.${s}`, t?.[s]);
+  for (const t of Object.values<any>(doc.target ?? {})) for (const s of DEP_SECTIONS) take(`target.${s}`, t?.[s]);
   return out;
 }
 
@@ -310,41 +264,23 @@ export type DirectDep = {
  */
 export function directDeps(decls: DepDecl[]): DirectDep[] {
   const ws = new Map<string, DepDecl>();
-  for (const d of decls)
-    if (d.section === "workspace.dependencies" && d.req) ws.set(d.name, d);
+  for (const d of decls) if (d.section === "workspace.dependencies" && d.req) ws.set(d.name, d);
   const map = new Map<string, DirectDep>();
-  const add = (
-    crate: string,
-    req: string,
-    manifest: string,
-    consumer?: string,
-    enabledBy?: string[],
-  ) => {
+  const add = (crate: string, req: string, manifest: string, consumer?: string, enabledBy?: string[]) => {
     const k = `${crate}\u0000${req}`;
-    const row =
-      map.get(k) ??
-      map
-        .set(k, { crate, req, declaredIn: [], consumers: [], optional: {} })
-        .get(k)!;
+    const row = map.get(k) ?? map.set(k, { crate, req, declaredIn: [], consumers: [], optional: {} }).get(k)!;
     if (!row.declaredIn.includes(manifest)) row.declaredIn.push(manifest);
-    if (consumer && !row.consumers.includes(consumer))
-      row.consumers.push(consumer);
-    if (consumer && enabledBy)
-      row.optional[consumer] = [
-        ...new Set([...(row.optional[consumer] ?? []), ...enabledBy]),
-      ];
+    if (consumer && !row.consumers.includes(consumer)) row.consumers.push(consumer);
+    if (consumer && enabledBy) row.optional[consumer] = [...new Set([...(row.optional[consumer] ?? []), ...enabledBy])];
   };
   for (const d of decls) {
-    if (d.section === "workspace.dependencies" && d.req)
-      add(d.crate, d.req, d.manifest);
+    if (d.section === "workspace.dependencies" && d.req) add(d.crate, d.req, d.manifest);
     else if (d.workspace) {
       const w = ws.get(d.name);
       if (w?.req) add(w.crate, w.req, w.manifest, d.pkg, d.enabledBy);
     } else if (d.req) add(d.crate, d.req, d.manifest, d.pkg, d.enabledBy);
   }
-  return [...map.values()].toSorted(
-    (a, b) => a.crate.localeCompare(b.crate) || a.req.localeCompare(b.req),
-  );
+  return [...map.values()].toSorted((a, b) => a.crate.localeCompare(b.crate) || a.req.localeCompare(b.req));
 }
 
 /** Replace the `req` of dependency `name` in one manifest, leaving every other line byte for byte. */
@@ -358,25 +294,17 @@ export function rewriteReq(
   let inDeps = false;
   let tableDep = false;
   const key = name.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&");
-  const inline = new RegExp(
-    `^(\\s*${key}\\s*=\\s*)"${oldReq.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`,
-  );
+  const inline = new RegExp(`^(\\s*${key}\\s*=\\s*)"${oldReq.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`);
   const inlineVer = new RegExp(
     `^(\\s*${key}\\s*=\\s*\\{[^}]*?"?\\bversion"?\\s*=\\s*)"${oldReq.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`,
   );
-  const tableVer = new RegExp(
-    `^(\\s*"?version"?\\s*=\\s*)"${oldReq.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`,
-  );
-  const lines = text.split("\n").map((line) => {
+  const tableVer = new RegExp(`^(\\s*"?version"?\\s*=\\s*)"${oldReq.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`);
+  const lines = text.split("\n").map(line => {
     const h = /^\s*\[([^\]]+)\]\s*(?:#.*)?$/.exec(line);
     if (h) {
       const sec = h[1]!.replace(/^'|'$/g, "");
-      tableDep = new RegExp(`(^|\\.)(dev-|build-)?dependencies\\.${key}$`).test(
-        sec,
-      );
-      inDeps =
-        /(^|\.)(dev-|build-)?dependencies$/.test(sec) ||
-        /^workspace\.dependencies$/.test(sec);
+      tableDep = new RegExp(`(^|\\.)(dev-|build-)?dependencies\\.${key}$`).test(sec);
+      inDeps = /(^|\.)(dev-|build-)?dependencies$/.test(sec) || /^workspace\.dependencies$/.test(sec);
       return line;
     }
     if (tableDep) {
@@ -423,10 +351,7 @@ export function lockGraph(text: string): LockGraph {
 }
 
 /** Workspace members that (transitively) depend on any of `changed` crate names. */
-export function touchedMembers(
-  graph: LockGraph,
-  changed: Iterable<string>,
-): string[] {
+export function touchedMembers(graph: LockGraph, changed: Iterable<string>): string[] {
   const seen = new Set<string>();
   const queue = [...changed];
   while (queue.length) {
@@ -438,20 +363,14 @@ export function touchedMembers(
       }
   }
   for (const n of changed) if (graph.members.has(n)) seen.add(n);
-  return [...seen].filter((n) => graph.members.has(n)).toSorted();
+  return [...seen].filter(n => graph.members.has(n)).toSorted();
 }
 
 /** Parse `cargo update --dry-run` (or real) output lines such as `Updating syn v2.0.1 -> v2.0.2`. */
-export function parseUpdateLines(
-  output: string,
-): { action: string; name: string; from?: string; to?: string }[] {
-  const out: { action: string; name: string; from?: string; to?: string }[] =
-    [];
+export function parseUpdateLines(output: string): { action: string; name: string; from?: string; to?: string }[] {
+  const out: { action: string; name: string; from?: string; to?: string }[] = [];
   for (const l of output.split("\n")) {
-    const m =
-      /^\s*(Updating|Adding|Removing|Downgrading)\s+(\S+)\s+v(\S+)(?:\s+->\s+v(\S+))?/.exec(
-        l,
-      );
+    const m = /^\s*(Updating|Adding|Removing|Downgrading)\s+(\S+)\s+v(\S+)(?:\s+->\s+v(\S+))?/.exec(l);
     if (m)
       out.push({
         action: m[1]!,
@@ -482,13 +401,11 @@ export function lockPinDrift(
   lock: { name: string; version: string }[],
   holds: Hold[],
 ): { crate: string; from: string; to: string }[] {
-  return holds.flatMap((h) =>
+  return holds.flatMap(h =>
     h.lockVersion
       ? lock
-          .filter(
-            (p) => p.name === h.crate && noBuild(p.version) !== h.lockVersion,
-          )
-          .map((p) => ({ crate: h.crate, from: p.version, to: h.lockVersion! }))
+          .filter(p => p.name === h.crate && noBuild(p.version) !== h.lockVersion)
+          .map(p => ({ crate: h.crate, from: p.version, to: h.lockVersion! }))
       : [],
   );
 }
@@ -528,30 +445,20 @@ export const noBuild = (v: string) => v.replace(/\+.*$/, "");
 
 export function classify(i: ClassifyInput): OutdatedRow[] {
   const rows: OutdatedRow[] = [];
-  const holds = new Map(i.holds.map((h) => [h.crate, h.reason]));
+  const holds = new Map(i.holds.map(h => [h.crate, h.reason]));
   for (const d of i.direct) {
     const locked = i.lock
-      .filter(
-        (p) =>
-          p.name === d.crate &&
-          p.source?.startsWith("registry+") &&
-          satisfies(p.version, d.req),
-      )
-      .map((p) => noBuild(p.version))
+      .filter(p => p.name === d.crate && p.source?.startsWith("registry+") && satisfies(p.version, d.req))
+      .map(p => noBuild(p.version))
       .toSorted(cmpVersion)
       .at(-1);
     const vers = (i.versions.get(d.crate) ?? [])
-      .filter((v) => !v.yanked)
-      .map((v) => Object.assign(v, { vers: noBuild(v.vers) }));
+      .filter(v => !v.yanked)
+      .map(v => Object.assign(v, { vers: noBuild(v.vers) }));
     const allowPre = !!locked && locked.includes("-");
-    const stable = vers
-      .filter((v) => allowPre || !v.vers.includes("-"))
-      .toSorted((a, b) => cmpVersion(a.vers, b.vers));
-    const within = stable.findLast((v) => satisfies(v.vers, d.req));
-    const beyondV = stable.findLast(
-      (v) =>
-        !satisfies(v.vers, d.req) && cmpVersion(v.vers, locked ?? "0.0.0") > 0,
-    );
+    const stable = vers.filter(v => allowPre || !v.vers.includes("-")).toSorted((a, b) => cmpVersion(a.vers, b.vers));
+    const within = stable.findLast(v => satisfies(v.vers, d.req));
+    const beyondV = stable.findLast(v => !satisfies(v.vers, d.req) && cmpVersion(v.vers, locked ?? "0.0.0") > 0);
     const exact = /^\s*=/.test(d.req);
     const row: OutdatedRow = {
       crate: d.crate,
@@ -560,22 +467,13 @@ export function classify(i: ClassifyInput): OutdatedRow[] {
       consumers: d.consumers,
       optional: d.optional,
       declaredIn: d.declaredIn,
-      inRange:
-        locked && within && cmpVersion(locked, within.vers) < 0
-          ? within.vers
-          : undefined,
+      inRange: locked && within && cmpVersion(locked, within.vers) < 0 ? within.vers : undefined,
       beyond: beyondV?.vers,
       beyondMsrv:
-        beyondV?.rustVersion &&
-        i.toolchain &&
-        cmpVersion(i.toolchain, beyondV.rustVersion) < 0
+        beyondV?.rustVersion && i.toolchain && cmpVersion(i.toolchain, beyondV.rustVersion) < 0
           ? beyondV.rustVersion
           : undefined,
-      yanked:
-        !!locked &&
-        (i.versions.get(d.crate) ?? []).some(
-          (v) => v.yanked && noBuild(v.vers) === locked,
-        ),
+      yanked: !!locked && (i.versions.get(d.crate) ?? []).some(v => v.yanked && noBuild(v.vers) === locked),
       held: holds.get(d.crate),
       exactPin: exact || undefined,
       owner: i.owners?.get(d.crate),
@@ -598,14 +496,11 @@ export function splitAdvisories(
     const m = /^crates\.io:(.+)@([^@]+)$/.exec(key);
     if (!m) continue;
     const a = { crate: m[1]!, version: m[2]!, ids };
-    const h = holds.find(
-      (x) => x.ecosystem === "crates.io" && x.name === a.crate,
-    );
+    const h = holds.find(x => x.ecosystem === "crates.io" && x.name === a.crate);
     if (h) held.push({ ...a, reason: h.reason });
     else open.push(a);
   }
-  const by = (x: Advisory, y: Advisory) =>
-    x.crate.localeCompare(y.crate) || cmpVersion(x.version, y.version);
+  const by = (x: Advisory, y: Advisory) => x.crate.localeCompare(y.crate) || cmpVersion(x.version, y.version);
   return { open: open.toSorted(by), held: held.toSorted(by) };
 }
 
@@ -620,8 +515,7 @@ export function denyAdvisories(output: string): Map<string, string[]> {
         fields?: { advisory?: { id?: string; package?: string } };
       };
       const a = j.fields?.advisory;
-      if (j.type === "diagnostic" && a?.package && a.id)
-        out.set(a.package, [...(out.get(a.package) ?? []), a.id]);
+      if (j.type === "diagnostic" && a?.package && a.id) out.set(a.package, [...(out.get(a.package) ?? []), a.id]);
     } catch {
       /* not a diagnostic */
     }
@@ -668,16 +562,12 @@ export type RustReport = {
   lockPins: { crate: string; from: string; to: string }[];
 };
 
-const cargo = (c: Ctx, args: string[], inherit = false) =>
-  c.run("bash", [WRAPPER, ...args], { inherit });
+const cargo = (c: Ctx, args: string[], inherit = false) => c.run("bash", [WRAPPER, ...args], { inherit });
 
-export const loadHolds = (c: Ctx): Hold[] =>
-  c.jsonFile<{ holds: Hold[] }>(HOLDS_FILE, { holds: [] }).holds;
+export const loadHolds = (c: Ctx): Hold[] => c.jsonFile<{ holds: Hold[] }>(HOLDS_FILE, { holds: [] }).holds;
 export const loadAdvisoryHolds = (c: Ctx) =>
-  c.jsonFile<{ holds: { ecosystem: string; name: string; reason: string }[] }>(
-    ADVISORY_HOLDS_FILE,
-    { holds: [] },
-  ).holds;
+  c.jsonFile<{ holds: { ecosystem: string; name: string; reason: string }[] }>(ADVISORY_HOLDS_FILE, { holds: [] })
+    .holds;
 
 // Progress goes to stderr so a --json report on stdout stays parseable.
 const say = (line: string) => console.error(line);
@@ -687,28 +577,15 @@ const say = (line: string) => console.error(line);
  * the holds that moved. Shared by `apply` and by the doctor.
  */
 export function restoreLockPins(c: Ctx): { restored: number; failed: number } {
-  const drift = lockPinDrift(
-    parseCargoLock(c.read("Cargo.lock")),
-    loadHolds(c),
-  );
+  const drift = lockPinDrift(parseCargoLock(c.read("Cargo.lock")), loadHolds(c));
   let failed = 0;
   for (const d of drift) {
-    const res = cargo(c, [
-      "update",
-      "-p",
-      `${d.crate}@${d.from}`,
-      "--precise",
-      d.to,
-    ]);
-    say(
-      `${res.status === 0 ? "lockpin" : "FAILED "} ${d.crate} ${d.from} -> ${d.to}`,
-    );
+    const res = cargo(c, ["update", "-p", `${d.crate}@${d.from}`, "--precise", d.to]);
+    say(`${res.status === 0 ? "lockpin" : "FAILED "} ${d.crate} ${d.from} -> ${d.to}`);
     if (res.status !== 0) failed++;
   }
-  const relock = drift.length
-    ? loadHolds(c).filter((h) => h.lockVersion && h.relock?.length)
-    : [];
-  for (const spec of new Set(relock.flatMap((h) => h.relock!))) {
+  const relock = drift.length ? loadHolds(c).filter(h => h.lockVersion && h.relock?.length) : [];
+  for (const spec of new Set(relock.flatMap(h => h.relock!))) {
     const res = cargo(c, ["update", "-p", spec, "--recursive"]);
     say(`${res.status === 0 ? "relock " : "FAILED "} ${spec} --recursive`);
     if (res.status !== 0) failed++;
@@ -718,10 +595,8 @@ export function restoreLockPins(c: Ctx): { restored: number; failed: number } {
 
 function owners(c: Ctx): Map<string, string> {
   const m = new Map<string, string>();
-  for (const n of c.jsonFile<{ rust?: { crates?: string[] } }>(
-    "tools/config/tauri-upstream.json",
-    {},
-  ).rust?.crates ?? [])
+  for (const n of c.jsonFile<{ rust?: { crates?: string[] } }>("tools/config/tauri-upstream.json", {}).rust?.crates ??
+    [])
     m.set(n, "tauri-sync (yolo ops tauri-sync)");
   return m;
 }
@@ -741,27 +616,18 @@ export function memberManifests(c: Ctx): string[] {
         withFileTypes: true,
       })) {
         const rel = `${base}/${e.name}`;
-        if (
-          e.isDirectory() &&
-          !exclude.has(rel) &&
-          c.exists(`${rel}/Cargo.toml`)
-        )
-          out.push(`${rel}/Cargo.toml`);
+        if (e.isDirectory() && !exclude.has(rel) && c.exists(`${rel}/Cargo.toml`)) out.push(`${rel}/Cargo.toml`);
       }
-    } else if (c.exists(`${pattern}/Cargo.toml`) && !exclude.has(pattern))
-      out.push(`${pattern}/Cargo.toml`);
+    } else if (c.exists(`${pattern}/Cargo.toml`) && !exclude.has(pattern)) out.push(`${pattern}/Cargo.toml`);
   }
   return out;
 }
 
 export function collectDecls(c: Ctx): DepDecl[] {
-  return memberManifests(c).flatMap((m) => readDecls(m, c.read(m)));
+  return memberManifests(c).flatMap(m => readDecls(m, c.read(m)));
 }
 
-async function fetchVersions(
-  c: Ctx,
-  crates: string[],
-): Promise<Map<string, IndexVersion[]>> {
+async function fetchVersions(c: Ctx, crates: string[]): Promise<Map<string, IndexVersion[]>> {
   const cache = new Cache(join(c.root, "target", "deps-inventory", "cache"));
   const out = new Map<string, IndexVersion[]>();
   const queue = [...crates];
@@ -769,10 +635,7 @@ async function fetchVersions(
     Array.from({ length: 16 }, async () => {
       for (let n = queue.pop(); n; n = queue.pop()) {
         // oxlint-disable-next-line no-await-in-loop -- each pool worker fetches its queue one crate at a time; the 16 workers are the concurrency limit
-        const t = await cachedText(
-          cache,
-          `https://index.crates.io/${sparsePath(n)}`,
-        );
+        const t = await cachedText(cache, `https://index.crates.io/${sparsePath(n)}`);
         out.set(n, t ? parseIndex(t) : []);
       }
     }),
@@ -780,27 +643,17 @@ async function fetchVersions(
   return out;
 }
 
-async function channel(
-  name: "stable" | "nightly",
-): Promise<{ version?: string; date?: string }> {
-  const res = await fetch(
-    `https://static.rust-lang.org/dist/channel-rust-${name}.toml`,
-    {
-      signal: AbortSignal.timeout(30_000),
-    },
-  ).catch(() => undefined);
+async function channel(name: "stable" | "nightly"): Promise<{ version?: string; date?: string }> {
+  const res = await fetch(`https://static.rust-lang.org/dist/channel-rust-${name}.toml`, {
+    signal: AbortSignal.timeout(30_000),
+  }).catch(() => undefined);
   return res?.ok ? parseChannelManifest(await res.text()) : {};
 }
 
-export async function outdated(
-  c: Ctx,
-  toolchain?: string,
-): Promise<OutdatedRow[]> {
+export async function outdated(c: Ctx, toolchain?: string): Promise<OutdatedRow[]> {
   const direct = directDeps(collectDecls(c));
   const lock = parseCargoLock(c.read("Cargo.lock"));
-  const versions = await fetchVersions(c, [
-    ...new Set(direct.map((d) => d.crate)),
-  ]);
+  const versions = await fetchVersions(c, [...new Set(direct.map(d => d.crate))]);
   return classify({
     direct,
     lock,
@@ -813,31 +666,24 @@ export async function outdated(
 
 export async function rustStatus(c: Ctx): Promise<RustReport> {
   const pinned = parseToolchainChannel(c.read("rust-toolchain.toml"));
-  const [stable, nightly] = await Promise.all([
-    channel("stable"),
-    channel("nightly"),
-  ]);
-  const installed = /rustc (\S+)/.exec(
-    c.run("rustc", ["--version"]).stdout,
-  )?.[1];
+  const [stable, nightly] = await Promise.all([channel("stable"), channel("nightly")]);
+  const installed = /rustc (\S+)/.exec(c.run("rustc", ["--version"]).stdout)?.[1];
   const rows = await outdated(c, pinned);
   const lock = parseCargoLock(c.read("Cargo.lock"));
   const deps: Dep[] = lock
-    .filter((p) => p.source?.startsWith("registry+"))
-    .map((p) => ({ ecosystem: "crates.io", name: p.name, version: p.version }));
+    .filter(p => p.source?.startsWith("registry+"))
+    .map(p => ({ ecosystem: "crates.io", name: p.name, version: p.version }));
   const advisories = splitAdvisories(await osv(deps), loadAdvisoryHolds(c));
-  const git = cargoGitRemotes(c).map(
-    ({ url, how, pinned: p, head, moved }) => ({
-      url,
-      how,
-      pinned: p,
-      head,
-      moved,
-    }),
-  );
+  const git = cargoGitRemotes(c).map(({ url, how, pinned: p, head, moved }) => ({
+    url,
+    how,
+    pinned: p,
+    head,
+    moved,
+  }));
   const sources = (await driftRows(c))
-    .filter((r) => r.behind || r.note)
-    .map((r) => ({
+    .filter(r => r.behind || r.note)
+    .map(r => ({
       id: r.id,
       current: r.current,
       latest: r.latest,
@@ -850,8 +696,7 @@ export async function rustStatus(c: Ctx): Promise<RustReport> {
       stable: stable.version,
       nightly: nightly.version,
       nightlyDate: nightly.date,
-      behind:
-        !!pinned && !!stable.version && cmpVersion(pinned, stable.version) < 0,
+      behind: !!pinned && !!stable.version && cmpVersion(pinned, stable.version) < 0,
     },
     outdated: rows,
     advisories,
@@ -869,32 +714,25 @@ function printStatus(r: RustReport) {
   console.log(
     `toolchain  pinned ${t.pinned ?? "?"}, installed ${t.installed ?? "?"}, latest stable ${t.stable ?? "?"}, nightly ${t.nightly ?? "?"} (${t.nightlyDate ?? "?"})${t.behind ? "  <- pin behind stable: yolo update tools rust --apply" : ""}`,
   );
-  const inRange = r.outdated.filter((x) => x.inRange);
-  const beyond = r.outdated.filter((x) => x.beyond);
+  const inRange = r.outdated.filter(x => x.inRange);
+  const beyond = r.outdated.filter(x => x.beyond);
   console.log(
     `outdated   ${r.outdated.length} direct requirement(s); ${inRange.length} behind inside the manifest range, ${beyond.length} with a release beyond it`,
   );
   for (const x of inRange) console.log(`  range    ${fmtRow(x)}`);
   for (const x of beyond) console.log(`  beyond   ${fmtRow(x)}`);
-  for (const x of r.outdated.filter((y) => y.yanked))
-    console.log(`  yanked   ${fmtRow(x)}`);
+  for (const x of r.outdated.filter(y => y.yanked)) console.log(`  yanked   ${fmtRow(x)}`);
   console.log(
     `advisories ${r.advisories.open.length} open, ${r.advisories.held.length} held (tools/config/deps/advisory-holds.json)`,
   );
-  for (const a of r.advisories.open)
-    console.log(
-      `  open     ${a.crate} ${a.version}: ${a.ids.slice(0, 4).join(", ")}`,
-    );
-  for (const d of r.lockPins)
-    console.log(`lockpin    ${d.crate} ${d.from} should be ${d.to}: run apply`);
+  for (const a of r.advisories.open) console.log(`  open     ${a.crate} ${a.version}: ${a.ids.slice(0, 4).join(", ")}`);
+  for (const d of r.lockPins) console.log(`lockpin    ${d.crate} ${d.from} should be ${d.to}: run apply`);
   for (const g of r.git)
     console.log(
       `git        ${g.moved ? "moved" : "ok   "} ${g.url.replace("https://github.com/", "")} ${g.how} ${g.pinned.join(",") || "(tag)"} head ${g.head ?? "?"}`,
     );
   for (const s of r.sources)
-    console.log(
-      `source     ${s.id} ${s.current} -> ${s.latest ?? "?"}${s.note ? ` (${s.note})` : ""}`,
-    );
+    console.log(`source     ${s.id} ${s.current} -> ${s.latest ?? "?"}${s.note ? ` (${s.note})` : ""}`);
 }
 
 export type RustPlan = {
@@ -916,23 +754,16 @@ export type RustPlan = {
   held: OutdatedRow[];
 };
 
-export function buildPlan(
-  rows: OutdatedRow[],
-  lock: RustPlan["lock"],
-): RustPlan {
-  const lockedNames = new Set(
-    lock.filter((l) => l.action === "Updating").map((l) => l.name),
-  );
+export function buildPlan(rows: OutdatedRow[], lock: RustPlan["lock"]): RustPlan {
+  const lockedNames = new Set(lock.filter(l => l.action === "Updating").map(l => l.name));
   return {
     lock,
     precise: rows
-      .filter(
-        (r) => r.inRange && !r.held && !r.owner && !lockedNames.has(r.crate),
-      )
-      .map((r) => ({ crate: r.crate, from: r.locked!, to: r.inRange! })),
+      .filter(r => r.inRange && !r.held && !r.owner && !lockedNames.has(r.crate))
+      .map(r => ({ crate: r.crate, from: r.locked!, to: r.inRange! })),
     majors: rows
-      .filter((r) => r.beyond)
-      .map((r) => ({
+      .filter(r => r.beyond)
+      .map(r => ({
         crate: r.crate,
         req: r.req,
         from: r.locked,
@@ -945,16 +776,14 @@ export function buildPlan(
         owner: r.owner,
         msrv: r.beyondMsrv,
       })),
-    held: rows.filter((r) => r.held),
+    held: rows.filter(r => r.held),
   };
 }
 
 async function plan(c: Ctx, args: string[]): Promise<number> {
   const pinned = parseToolchainChannel(c.read("rust-toolchain.toml"));
   const rows = await outdated(c, pinned);
-  const dry = args.includes("--no-cargo")
-    ? undefined
-    : cargo(c, ["update", "--dry-run"]);
+  const dry = args.includes("--no-cargo") ? undefined : cargo(c, ["update", "--dry-run"]);
   const lock = dry ? parseUpdateLines(dry.stderr + dry.stdout) : [];
   const p = buildPlan(rows, lock);
   if (c.json) {
@@ -962,19 +791,14 @@ async function plan(c: Ctx, args: string[]): Promise<number> {
     return 0;
   }
   console.log(
-    `plan  in-range lock refresh: ${lock.filter((l) => l.action === "Updating").length} update(s), ${lock.filter((l) => l.action === "Adding").length} added, ${lock.filter((l) => l.action === "Removing").length} removed${dry ? "" : " (cargo dry run skipped)"}`,
+    `plan  in-range lock refresh: ${lock.filter(l => l.action === "Updating").length} update(s), ${lock.filter(l => l.action === "Adding").length} added, ${lock.filter(l => l.action === "Removing").length} removed${dry ? "" : " (cargo dry run skipped)"}`,
   );
-  for (const l of lock.filter((x) => x.action === "Updating").slice(0, 60))
+  for (const l of lock.filter(x => x.action === "Updating").slice(0, 60))
     console.log(`  update   ${l.name} ${l.from} -> ${l.to}`);
   if (lock.length > 60) console.log(`  ... ${lock.length - 60} more`);
   console.log(`plan  precise updates after the refresh: ${p.precise.length}`);
-  for (const x of p.precise)
-    console.log(
-      `  precise  cargo update -p ${x.crate}@${x.from} --precise ${x.to}`,
-    );
-  console.log(
-    `plan  majors (never part of a plain apply; use \`apply --majors a,b+c\`): ${p.majors.length}`,
-  );
+  for (const x of p.precise) console.log(`  precise  cargo update -p ${x.crate}@${x.from} --precise ${x.to}`);
+  console.log(`plan  majors (never part of a plain apply; use \`apply --majors a,b+c\`): ${p.majors.length}`);
   for (const m of p.majors) {
     console.log(
       `  major    ${m.crate} ${m.from ?? "-"} -> ${m.to}${m.newReq ? ` (req ${m.req} -> ${m.newReq})` : " (compound req: edit by hand)"}${m.held ? ` [held: ${m.held}]` : ""}${m.exactPin ? " [exact pin]" : ""}${m.owner ? ` [owner: ${m.owner}]` : ""}${m.msrv ? ` [needs rust ${m.msrv}]` : ""}`,
@@ -983,18 +807,11 @@ async function plan(c: Ctx, args: string[]): Promise<number> {
       `           consumers: ${m.consumers.join(", ") || "(workspace only)"}; manifests: ${m.manifests.join(", ")}`,
     );
   }
-  const drift = lockPinDrift(
-    parseCargoLock(c.read("Cargo.lock")),
-    loadHolds(c),
-  );
+  const drift = lockPinDrift(parseCargoLock(c.read("Cargo.lock")), loadHolds(c));
   console.log(`plan  lock pins to restore after the refresh: ${drift.length}`);
-  for (const d of drift)
-    console.log(
-      `  lockpin  cargo update -p ${d.crate}@${d.from} --precise ${d.to}`,
-    );
+  for (const d of drift) console.log(`  lockpin  cargo update -p ${d.crate}@${d.from} --precise ${d.to}`);
   console.log(`plan  held (stay as they are): ${p.held.length}`);
-  for (const h of p.held)
-    console.log(`  held     ${h.crate} ${h.req}: ${h.held}`);
+  for (const h of p.held) console.log(`  held     ${h.crate} ${h.req}: ${h.held}`);
   return 0;
 }
 
@@ -1020,21 +837,13 @@ function restore(c: Ctx, s: Snapshot) {
 function recordTouched(c: Ctx, names: string[]) {
   const f = "target/update/rust-touched.json";
   const prev = c.jsonFile<{ crates: string[] }>(f, { crates: [] }).crates;
-  c.write(
-    f,
-    JSON.stringify(
-      { crates: [...new Set([...prev, ...names])].toSorted() },
-      null,
-      2,
-    ),
-  );
+  c.write(f, JSON.stringify({ crates: [...new Set([...prev, ...names])].toSorted() }, null, 2));
 }
 
 async function apply(c: Ctx, args: string[]): Promise<number> {
   const mi = args.indexOf("--majors");
   // Comma separates transactions; `+` joins crates that must move together (`nu-command+nu-engine`).
-  const wantMajors =
-    mi >= 0 ? (args[mi + 1] ?? "").split(",").filter(Boolean) : [];
+  const wantMajors = mi >= 0 ? (args[mi + 1] ?? "").split(",").filter(Boolean) : [];
   const pinned = parseToolchainChannel(c.read("rust-toolchain.toml"));
   mkdirSync(join(c.root, "target", "update"), { recursive: true });
   let failed = 0;
@@ -1048,18 +857,10 @@ async function apply(c: Ctx, args: string[]): Promise<number> {
 
     // 2. direct crates the bulk refresh left behind. Most are held back by a transitive exact or tilde requirement
     //    (cargo says which); that is reported, not fatal, and clears when the blocking crate moves.
-    for (const r of (await outdated(c, pinned)).filter(
-      (x) => x.inRange && !x.held && !x.owner,
-    )) {
-      const res = cargo(c, [
-        "update",
-        "-p",
-        `${r.crate}@${r.locked}`,
-        "--precise",
-        r.inRange!,
-      ]);
+    for (const r of (await outdated(c, pinned)).filter(x => x.inRange && !x.held && !x.owner)) {
+      const res = cargo(c, ["update", "-p", `${r.crate}@${r.locked}`, "--precise", r.inRange!]);
       console.log(
-        `${res.status === 0 ? "precise" : "blocked"} ${r.crate} ${r.locked} -> ${r.inRange}${res.status === 0 ? "" : `  ${(res.stderr.split("\n").find((l) => /required by|didn't match|conflict/.test(l)) ?? "transitive requirement").trim()}`}`,
+        `${res.status === 0 ? "precise" : "blocked"} ${r.crate} ${r.locked} -> ${r.inRange}${res.status === 0 ? "" : `  ${(res.stderr.split("\n").find(l => /required by|didn't match|conflict/.test(l)) ?? "transitive requirement").trim()}`}`,
       );
     }
 
@@ -1069,18 +870,13 @@ async function apply(c: Ctx, args: string[]): Promise<number> {
     // 3. check the workspace: a `-p` subset unifies features differently and can fail on crates (bindgen, syn) that rely on
     //    another member to enable a feature, so a refresh is always verified as a whole
     const graph = lockGraph(c.read("Cargo.lock"));
-    const changed = lockDiff(lockBefore, lockMap(c.read("Cargo.lock"))).map(
-      (x) => x.name,
-    );
+    const changed = lockDiff(lockBefore, lockMap(c.read("Cargo.lock"))).map(x => x.name);
     const touched = touchedMembers(graph, changed);
     recordTouched(c, touched);
     console.log(
       `apply  ${changed.length} package(s) changed, ${touched.length}/${graph.members.size} workspace member(s) touched`,
     );
-    if (
-      changed.length &&
-      cargo(c, ["check", "--workspace"], true).status !== 0
-    ) {
+    if (changed.length && cargo(c, ["check", "--workspace"], true).status !== 0) {
       console.error(
         "apply  cargo check FAILED after the in-range refresh. Roll back: cp target/update/Cargo.lock.before Cargo.lock",
       );
@@ -1091,14 +887,7 @@ async function apply(c: Ctx, args: string[]): Promise<number> {
   // 4. majors, one transaction per comma-separated group
   for (const group of wantMajors)
     // oxlint-disable-next-line no-await-in-loop -- each major group is one cargo transaction on the same Cargo.lock, so groups must not overlap
-    failed += (await applyMajor(
-      c,
-      group.split("+").filter(Boolean),
-      pinned,
-      args.includes("--keep"),
-    ))
-      ? 0
-      : 1;
+    failed += (await applyMajor(c, group.split("+").filter(Boolean), pinned, args.includes("--keep"))) ? 0 : 1;
   return failed ? 1 : 0;
 }
 
@@ -1106,35 +895,21 @@ async function apply(c: Ctx, args: string[]): Promise<number> {
  * One transaction for a set of crates that must move together (`nu-command+nu-engine`, `resvg+usvg`): edit every
  * requirement, let cargo re-resolve them, check the direct consumers; any failure restores manifests and lock.
  */
-async function applyMajor(
-  c: Ctx,
-  group: string[],
-  pinned: string | undefined,
-  keep = false,
-): Promise<boolean> {
+async function applyMajor(c: Ctx, group: string[], pinned: string | undefined, keep = false): Promise<boolean> {
   const label = group.join("+");
-  const rows = (await outdated(c, pinned)).filter(
-    (r) => group.includes(r.crate) && r.beyond,
-  );
-  const missing = group.filter((g) => !rows.some((r) => r.crate === g));
+  const rows = (await outdated(c, pinned)).filter(r => group.includes(r.crate) && r.beyond);
+  const missing = group.filter(g => !rows.some(r => r.crate === g));
   if (missing.length) {
-    console.error(
-      `major  ${label}: nothing beyond the current requirement for ${missing.join(", ")}`,
-    );
+    console.error(`major  ${label}: nothing beyond the current requirement for ${missing.join(", ")}`);
     return false;
   }
-  const blocked = rows.find((r) => r.held || r.owner);
+  const blocked = rows.find(r => r.held || r.owner);
   if (blocked) {
-    console.error(
-      `major  ${label}: refused, ${blocked.crate} (${blocked.held ?? blocked.owner})`,
-    );
+    console.error(`major  ${label}: refused, ${blocked.crate} (${blocked.held ?? blocked.owner})`);
     return false;
   }
-  const manifests = [...new Set(rows.flatMap((r) => r.declaredIn))];
-  const snap = snapshot(c, `major-${label.slice(0, 60)}`, [
-    "Cargo.lock",
-    ...manifests,
-  ]);
+  const manifests = [...new Set(rows.flatMap(r => r.declaredIn))];
+  const snap = snapshot(c, `major-${label.slice(0, 60)}`, ["Cargo.lock", ...manifests]);
   const fail = (why: string) => {
     if (keep) {
       console.error(
@@ -1150,10 +925,7 @@ async function applyMajor(
   };
   for (const r of rows) {
     const nr = bumpReq(r.req, r.beyond!);
-    if (!nr)
-      return fail(
-        `requirement ${r.req} of ${r.crate} is compound; edit it by hand`,
-      );
+    if (!nr) return fail(`requirement ${r.req} of ${r.crate} is compound; edit it by hand`);
     let edited = 0;
     for (const m of r.declaredIn) {
       const out = rewriteReq(c.read(m), r.crate, r.req, nr);
@@ -1162,49 +934,31 @@ async function applyMajor(
         edited += out.count;
       }
     }
-    if (!edited)
-      return fail(`could not locate the ${r.crate} requirement ${r.req}`);
+    if (!edited) return fail(`could not locate the ${r.crate} requirement ${r.req}`);
   }
-  const specs = [...new Set(rows.map((r) => `${r.crate}@${r.locked}`))];
+  const specs = [...new Set(rows.map(r => `${r.crate}@${r.locked}`))];
   // The edited requirements exclude the locked versions, so cargo re-resolves exactly these packages.
-  const up = cargo(c, ["update", ...specs.flatMap((x) => ["-p", x])], true);
-  if (up.status !== 0)
-    return fail("cargo update could not resolve the new requirements");
+  const up = cargo(c, ["update", ...specs.flatMap(x => ["-p", x])], true);
+  if (up.status !== 0) return fail("cargo update could not resolve the new requirements");
   const members = lockGraph(c.read("Cargo.lock")).members;
-  const direct = [...new Set(rows.flatMap((r) => r.consumers))].filter((n) =>
-    members.has(n),
-  );
+  const direct = [...new Set(rows.flatMap(r => r.consumers))].filter(n => members.has(n));
   // An optional dependency is only compiled with the feature that enables it: check those consumers with it switched on.
   const optional = new Map<string, Set<string>>();
   for (const r of rows)
     for (const [pkg, f] of Object.entries(r.optional))
-      (optional.get(pkg) ?? optional.set(pkg, new Set()).get(pkg)!).add(
-        f.join(",") || "*",
-      );
-  const plain = direct.filter((n) => !optional.has(n));
+      (optional.get(pkg) ?? optional.set(pkg, new Set()).get(pkg)!).add(f.join(",") || "*");
+  const plain = direct.filter(n => !optional.has(n));
   const runs: string[][] = [];
   if (plain.length || !direct.length)
-    runs.push([
-      "check",
-      ...(plain.length ? plain.flatMap((n) => ["-p", n]) : ["--workspace"]),
-    ]);
+    runs.push(["check", ...(plain.length ? plain.flatMap(n => ["-p", n]) : ["--workspace"])]);
   for (const [pkg, f] of optional) {
-    const feats = [...f]
-      .flatMap((x) => x.split(","))
-      .filter((x) => x && x !== "*");
-    runs.push([
-      "check",
-      "-p",
-      pkg,
-      ...(feats.length ? ["--features", feats.join(",")] : ["--all-features"]),
-    ]);
+    const feats = [...f].flatMap(x => x.split(",")).filter(x => x && x !== "*");
+    runs.push(["check", "-p", pkg, ...(feats.length ? ["--features", feats.join(",")] : ["--all-features"])]);
   }
-  for (const a of runs)
-    if (cargo(c, a, true).status !== 0)
-      return fail(`cargo ${a.join(" ")} failed`);
+  for (const a of runs) if (cargo(c, a, true).status !== 0) return fail(`cargo ${a.join(" ")} failed`);
   recordTouched(c, direct);
   console.log(
-    `major  ${label} ${rows.map((r) => `${r.crate} ${r.locked} -> ${r.beyond}`).join(", ")} done; consumers checked: ${direct.join(", ") || "(workspace)"}`,
+    `major  ${label} ${rows.map(r => `${r.crate} ${r.locked} -> ${r.beyond}`).join(", ")} done; consumers checked: ${direct.join(", ") || "(workspace)"}`,
   );
   return true;
 }
@@ -1228,14 +982,8 @@ async function verify(c: Ctx, args: string[]): Promise<number> {
   };
   step("cargo check --workspace", ["check", "--workspace"]);
   if (touched.length)
-    step(`cargo clippy (${touched.length} touched crate(s))`, [
-      "clippy",
-      ...touched.flatMap((n) => ["-p", n]),
-    ]);
-  else
-    console.log(
-      "verify skip   clippy (no touched crates recorded; run apply or pass --crates a,b)",
-    );
+    step(`cargo clippy (${touched.length} touched crate(s))`, ["clippy", ...touched.flatMap(n => ["-p", n])]);
+  else console.log("verify skip   clippy (no touched crates recorded; run apply or pass --crates a,b)");
   const deny = c.run("cargo-deny", ["--version"]);
   if (deny.status === 0) {
     // Held advisories (advisory-holds.json) are expected findings; anything else fails the gate.
@@ -1243,18 +991,15 @@ async function verify(c: Ctx, args: string[]): Promise<number> {
     const found = denyAdvisories(r.stderr + r.stdout);
     const held = new Set(
       loadAdvisoryHolds(c)
-        .filter((h) => h.ecosystem === "crates.io")
-        .map((h) => h.name),
+        .filter(h => h.ecosystem === "crates.io")
+        .map(h => h.name),
     );
     const open = [...found].filter(([n]) => !held.has(n));
     console.log(
       `verify ${open.length ? "FAILED" : "ok    "} cargo deny check advisories (${found.size} crate(s) flagged, ${found.size - open.length} held${open.length ? `; open: ${open.map(([n, ids]) => `${n} ${ids.join("/")}`).join(", ")}` : ""})`,
     );
     if (open.length) code = 1;
-  } else
-    console.log(
-      "verify skip   cargo deny (cargo-deny not installed: cargo install cargo-deny)",
-    );
+  } else console.log("verify skip   cargo deny (cargo-deny not installed: cargo install cargo-deny)");
   return code;
 }
 
@@ -1264,9 +1009,7 @@ async function verify(c: Ctx, args: string[]): Promise<number> {
 export async function runRust(args: string[]): Promise<number> {
   const ri = args.indexOf("--root");
   const root = resolve(ri >= 0 ? args[ri + 1]! : process.cwd());
-  const rest = args.filter(
-    (a, i) => !(a === "--root" || (ri >= 0 && i === ri + 1)),
-  );
+  const rest = args.filter((a, i) => !(a === "--root" || (ri >= 0 && i === ri + 1)));
   const c = new Ctx(root, true, rest.includes("--json"));
   const [sub = "status", ...flags] = rest;
   switch (sub) {
@@ -1286,10 +1029,7 @@ export async function runRust(args: string[]): Promise<number> {
     case "doctor":
       return (await import("./rust-doctor.ts")).runDoctor(c, flags);
     case "fix":
-      return (await import("./rust-doctor.ts")).runDoctor(c, [
-        "--fix",
-        ...flags,
-      ]);
+      return (await import("./rust-doctor.ts")).runDoctor(c, ["--fix", ...flags]);
     default:
       console.error(
         "usage: rust [status [--strict]|plan [--no-cargo]|apply [--majors a,b+c] [--skip-refresh] [--keep]|verify [--crates a,b]|doctor [--fix] [--only a,b] [--skip a,b] [--strict] [--allow-dirty] [--verbose]|fix] [--root <repo>] [--json]",

@@ -6,29 +6,18 @@ import { afterEach, describe, expect, test } from "bun:test";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-(
-  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-).IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const { act } = await import("react");
 const { createRoot } = await import("react-dom/client");
 const { CheckboxIndicator, CheckboxRoot } = await import("../src/Checkbox");
-const { Collapsible, CollapsibleContent, CollapsibleTrigger } =
-  await import("../src/Collapsible");
-const { DialogContent, DialogRoot, DialogTitle, DialogTrigger } =
-  await import("../src/Dialog");
+const { Collapsible, CollapsibleContent, CollapsibleTrigger } = await import("../src/Collapsible");
+const { DialogContent, DialogRoot, DialogTitle, DialogTrigger } = await import("../src/Dialog");
 const { DropdownMenu } = await import("../src/DropdownMenu");
 const { Popover } = await import("../src/Popover");
 const { Item: RadioItem, Root: RadioRoot } = await import("../src/RadioGroup");
-const {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectOption,
-  SelectRoot,
-  SelectTrigger,
-  SelectValue,
-} = await import("../src/Select");
+const { Select, SelectContent, SelectItem, SelectOption, SelectRoot, SelectTrigger, SelectValue } =
+  await import("../src/Select");
 const { Slider } = await import("../src/Slider");
 const { Switch } = await import("../src/Switch");
 const {
@@ -40,7 +29,7 @@ const {
 } = await import("../src/Tabs");
 const { ToggleGroup } = await import("../src/ToggleGroup");
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 let root: ReturnType<typeof createRoot> | undefined;
 
@@ -63,18 +52,10 @@ async function settle(ms = 20) {
 
 async function click(element: Element) {
   await act(async () => {
-    element.dispatchEvent(
-      new MouseEvent("pointerdown", { bubbles: true, cancelable: true }),
-    );
-    element.dispatchEvent(
-      new MouseEvent("mousedown", { bubbles: true, cancelable: true }),
-    );
-    element.dispatchEvent(
-      new MouseEvent("pointerup", { bubbles: true, cancelable: true }),
-    );
-    element.dispatchEvent(
-      new MouseEvent("mouseup", { bubbles: true, cancelable: true }),
-    );
+    element.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, cancelable: true }));
+    element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+    element.dispatchEvent(new MouseEvent("pointerup", { bubbles: true, cancelable: true }));
+    element.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true }));
     (element as HTMLElement).click();
   });
   await settle();
@@ -107,10 +88,7 @@ describe("controls", () => {
   test("CheckboxRoot toggles, reports the new state and keeps the Radix tri-state value", async () => {
     const changes: boolean[] = [];
     await mount(
-      <CheckboxRoot
-        aria-label="agree"
-        onCheckedChange={(checked) => changes.push(checked)}
-      >
+      <CheckboxRoot aria-label="agree" onCheckedChange={checked => changes.push(checked)}>
         <CheckboxIndicator />
       </CheckboxRoot>,
     );
@@ -123,21 +101,14 @@ describe("controls", () => {
     expect(box.hasAttribute("data-checked")).toBe(true);
     expect(document.body.innerHTML).toContain(">check<");
 
-    const mixed = renderToStaticMarkup(
-      <CheckboxRoot checked="indeterminate" />,
-    );
+    const mixed = renderToStaticMarkup(<CheckboxRoot checked="indeterminate" />);
     expect(mixed).toContain('aria-checked="mixed"');
     expect(mixed).toContain("data-indeterminate");
   });
 
   test("Switch toggles through the keyboard-accessible native button", async () => {
     const changes: boolean[] = [];
-    await mount(
-      <Switch
-        aria-label="wifi"
-        onCheckedChange={(checked) => changes.push(checked)}
-      />,
-    );
+    await mount(<Switch aria-label="wifi" onCheckedChange={checked => changes.push(checked)} />);
     const control = $("[role=switch]");
     expect(control.tagName).toBe("BUTTON");
     await click(control);
@@ -148,7 +119,7 @@ describe("controls", () => {
   test("RadioGroup selects on click and reports the value", async () => {
     const values: string[] = [];
     await mount(
-      <RadioRoot defaultValue="a" onValueChange={(value) => values.push(value)}>
+      <RadioRoot defaultValue="a" onValueChange={value => values.push(value)}>
         <RadioItem value="a">A</RadioItem>
         <RadioItem value="b">B</RadioItem>
       </RadioRoot>,
@@ -166,8 +137,8 @@ describe("controls", () => {
       <Slider
         defaultValue={[20, 80]}
         max={100}
-        getAriaLabel={(i) => (i === 0 ? "min" : "max")}
-        onValueChange={(value) => values.push(value)}
+        getAriaLabel={i => (i === 0 ? "min" : "max")}
+        onValueChange={value => values.push(value)}
       />,
     );
     const inputs = document.querySelectorAll("input[type=range]");
@@ -185,7 +156,7 @@ describe("controls", () => {
     await mount(
       <ToggleGroup
         value="grid"
-        onChange={(value) => changes.push(value)}
+        onChange={value => changes.push(value)}
         options={[
           { value: "grid", label: "Grid" },
           { value: "list", label: "List" },
@@ -202,10 +173,7 @@ describe("controls", () => {
   test("Tabs switch panels on click; the sliding M3 indicator renders in the list", async () => {
     const values: unknown[] = [];
     await mount(
-      <TabsRoot
-        defaultValue="one"
-        onValueChange={(value) => values.push(value)}
-      >
+      <TabsRoot defaultValue="one" onValueChange={value => values.push(value)}>
         <TabsList>
           <TabsTrigger value="one">One</TabsTrigger>
           <TabsTrigger value="two">Two</TabsTrigger>
@@ -228,7 +196,7 @@ describe("controls", () => {
   test("Collapsible toggles aria-expanded and mounts the panel", async () => {
     const changes: boolean[] = [];
     await mount(
-      <Collapsible onOpenChange={(open) => changes.push(open)}>
+      <Collapsible onOpenChange={open => changes.push(open)}>
         <CollapsibleTrigger>Header</CollapsibleTrigger>
         <CollapsibleContent>Inner</CollapsibleContent>
       </Collapsible>,
@@ -273,20 +241,18 @@ describe("select", () => {
   test("opens a listbox and selects an option", async () => {
     const changes: string[] = [];
     await mount(
-      <Select value="a" onChange={(value) => changes.push(value)}>
+      <Select value="a" onChange={value => changes.push(value)}>
         <SelectOption value="a">Alpha</SelectOption>
         <SelectOption value="b">Beta</SelectOption>
       </Select>,
     );
     await click($("button"));
     expect($("[role=listbox]")).toBeTruthy();
-    const beta = [...document.querySelectorAll("[role=option]")].find((o) =>
+    const beta = [...document.querySelectorAll("[role=option]")].find(o =>
       o.textContent?.includes("Beta"),
     ) as HTMLElement;
     expect(beta).toBeTruthy();
-    expect(document.body.innerHTML).toContain(
-      "data-selected:bg-secondary-container",
-    );
+    expect(document.body.innerHTML).toContain("data-selected:bg-secondary-container");
     await click(beta);
     expect(changes).toEqual(["b"]);
   });
@@ -319,9 +285,7 @@ describe("overlays", () => {
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>menu</DropdownMenu.Trigger>
         <DropdownMenu.Content>
-          <DropdownMenu.Item onSelect={() => selected.push("open")}>
-            Open
-          </DropdownMenu.Item>
+          <DropdownMenu.Item onSelect={() => selected.push("open")}>Open</DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Root>,
     );
@@ -337,7 +301,7 @@ describe("overlays", () => {
   test("DialogContent is a modal dialog labelled by its title and closes on Escape", async () => {
     const changes: boolean[] = [];
     await mount(
-      <DialogRoot onOpenChange={(open) => changes.push(open)}>
+      <DialogRoot onOpenChange={open => changes.push(open)}>
         <DialogTrigger>open</DialogTrigger>
         <DialogContent>
           <DialogTitle>Rename</DialogTitle>
@@ -347,9 +311,7 @@ describe("overlays", () => {
     await click($("button"));
     const dialog = $("[role=dialog]");
     expect(dialog).toBeTruthy();
-    const title = document.getElementById(
-      dialog.getAttribute("aria-labelledby") ?? "",
-    );
+    const title = document.getElementById(dialog.getAttribute("aria-labelledby") ?? "");
     expect(title?.textContent).toBe("Rename");
     await key(dialog, "Escape");
     expect(changes).toEqual([true, false]);

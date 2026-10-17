@@ -6,15 +6,8 @@
  */
 
 /** Resolve the `aphrody` executable: `YOLO_APHRODY_BIN`, `APHRODY_BIN`, then PATH. */
-export function resolveAphrody(
-  env: Record<string, string | undefined> = process.env,
-): string | undefined {
-  return (
-    env.YOLO_APHRODY_BIN ||
-    env.APHRODY_BIN ||
-    Bun.which("aphrody", { PATH: env.PATH ?? "" }) ||
-    undefined
-  );
+export function resolveAphrody(env: Record<string, string | undefined> = process.env): string | undefined {
+  return env.YOLO_APHRODY_BIN || env.APHRODY_BIN || Bun.which("aphrody", { PATH: env.PATH ?? "" }) || undefined;
 }
 
 export interface DelegateResult {
@@ -33,8 +26,7 @@ export async function runAphrody(
     return {
       code: 127,
       stdout: "",
-      stderr:
-        "aphrody binary not found: install it (aphrody self install-path) or set APHRODY_BIN",
+      stderr: "aphrody binary not found: install it (aphrody self install-path) or set APHRODY_BIN",
     };
   }
   const proc = Bun.spawn([bin, ...args], {
@@ -46,9 +38,6 @@ export async function runAphrody(
   });
   const [stdout, stderr] = opts.inherit
     ? ["", ""]
-    : await Promise.all([
-        new Response(proc.stdout).text(),
-        new Response(proc.stderr).text(),
-      ]);
+    : await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
   return { code: await proc.exited, stdout, stderr };
 }

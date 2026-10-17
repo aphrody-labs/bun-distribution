@@ -5,9 +5,20 @@ interface Functions {
   /** p2p.dll!PeerCollabAddContact */
   PeerCollabAddContact(pwzContactData: string | Win32Pointer, ppContact: Win32Pointer): number;
   /** p2p.dll!PeerCollabAsyncInviteContact */
-  PeerCollabAsyncInviteContact(pcContact: Win32Pointer, pcEndpoint: Win32Pointer, pcInvitation: Win32Pointer, hEvent: Win32Pointer, phInvitation: Win32Pointer): number;
+  PeerCollabAsyncInviteContact(
+    pcContact: Win32Pointer,
+    pcEndpoint: Win32Pointer,
+    pcInvitation: Win32Pointer,
+    hEvent: Win32Pointer,
+    phInvitation: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerCollabAsyncInviteEndpoint */
-  PeerCollabAsyncInviteEndpoint(pcEndpoint: Win32Pointer, pcInvitation: Win32Pointer, hEvent: Win32Pointer, phInvitation: Win32Pointer): number;
+  PeerCollabAsyncInviteEndpoint(
+    pcEndpoint: Win32Pointer,
+    pcInvitation: Win32Pointer,
+    hEvent: Win32Pointer,
+    phInvitation: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerCollabCancelInvitation */
   PeerCollabCancelInvitation(hInvitation: Win32Pointer): number;
   /** p2p.dll!PeerCollabCloseHandle */
@@ -35,7 +46,11 @@ interface Functions {
   /** p2p.dll!PeerCollabGetAppLaunchInfo */
   PeerCollabGetAppLaunchInfo(ppLaunchInfo: Win32Pointer): number;
   /** p2p.dll!PeerCollabGetApplicationRegistrationInfo */
-  PeerCollabGetApplicationRegistrationInfo(pApplicationId: Win32Pointer, registrationType: number, ppApplication: Win32Pointer): number;
+  PeerCollabGetApplicationRegistrationInfo(
+    pApplicationId: Win32Pointer,
+    registrationType: number,
+    ppApplication: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerCollabGetContact */
   PeerCollabGetContact(pwzPeerName: string | Win32Pointer, ppContact: Win32Pointer): number;
   /** p2p.dll!PeerCollabGetEndpointName */
@@ -49,7 +64,12 @@ interface Functions {
   /** p2p.dll!PeerCollabGetSigninOptions */
   PeerCollabGetSigninOptions(pdwSigninOptions: Win32Pointer): number;
   /** p2p.dll!PeerCollabInviteContact */
-  PeerCollabInviteContact(pcContact: Win32Pointer, pcEndpoint: Win32Pointer, pcInvitation: Win32Pointer, ppResponse: Win32Pointer): number;
+  PeerCollabInviteContact(
+    pcContact: Win32Pointer,
+    pcEndpoint: Win32Pointer,
+    pcInvitation: Win32Pointer,
+    ppResponse: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerCollabInviteEndpoint */
   PeerCollabInviteEndpoint(pcEndpoint: Win32Pointer, pcInvitation: Win32Pointer, ppResponse: Win32Pointer): number;
   /** p2p.dll!PeerCollabParseContact */
@@ -61,7 +81,12 @@ interface Functions {
   /** p2p.dll!PeerCollabRegisterApplication */
   PeerCollabRegisterApplication(pcApplication: Win32Pointer, registrationType: number): number;
   /** p2p.dll!PeerCollabRegisterEvent */
-  PeerCollabRegisterEvent(hEvent: Win32Pointer, cEventRegistration: number, pEventRegistrations: Win32Pointer, phPeerEvent: Win32Pointer): number;
+  PeerCollabRegisterEvent(
+    hEvent: Win32Pointer,
+    cEventRegistration: number,
+    pEventRegistrations: Win32Pointer,
+    phPeerEvent: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerCollabSetEndpointName */
   PeerCollabSetEndpointName(pwzEndpointName: string | Win32Pointer): number;
   /** p2p.dll!PeerCollabSetObject */
@@ -87,7 +112,11 @@ interface Functions {
   /** p2p.dll!PeerCollabUpdateContact */
   PeerCollabUpdateContact(pContact: Win32Pointer): number;
   /** p2p.dll!PeerCreatePeerName */
-  PeerCreatePeerName(pwzIdentity: string | Win32Pointer, pwzClassifier: string | Win32Pointer, ppwzPeerName: Win32Pointer): number;
+  PeerCreatePeerName(
+    pwzIdentity: string | Win32Pointer,
+    pwzClassifier: string | Win32Pointer,
+    ppwzPeerName: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerEndEnumeration */
   PeerEndEnumeration(hPeerEnum: Win32Pointer): number;
   /** p2p.dll!PeerEnumGroups */
@@ -113,7 +142,14 @@ interface Functions {
   /** p2p.dll!PeerGroupCreate */
   PeerGroupCreate(pProperties: Win32Pointer, phGroup: Win32Pointer): number;
   /** p2p.dll!PeerGroupCreateInvitation */
-  PeerGroupCreateInvitation(hGroup: Win32Pointer, pwzIdentityInfo: string | Win32Pointer, pftExpiration: Win32Pointer, cRoles: number, pRoles: Win32Pointer, ppwzInvitation: Win32Pointer): number;
+  PeerGroupCreateInvitation(
+    hGroup: Win32Pointer,
+    pwzIdentityInfo: string | Win32Pointer,
+    pftExpiration: Win32Pointer,
+    cRoles: number,
+    pRoles: Win32Pointer,
+    ppwzInvitation: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerGroupCreatePasswordInvitation */
   PeerGroupCreatePasswordInvitation(hGroup: Win32Pointer, ppwzInvitation: Win32Pointer): number;
   /** p2p.dll!PeerGroupDelete */
@@ -123,7 +159,12 @@ interface Functions {
   /** p2p.dll!PeerGroupEnumConnections */
   PeerGroupEnumConnections(hGroup: Win32Pointer, dwFlags: number, phPeerEnum: Win32Pointer): number;
   /** p2p.dll!PeerGroupEnumMembers */
-  PeerGroupEnumMembers(hGroup: Win32Pointer, dwFlags: number, pwzIdentity: string | Win32Pointer, phPeerEnum: Win32Pointer): number;
+  PeerGroupEnumMembers(
+    hGroup: Win32Pointer,
+    dwFlags: number,
+    pwzIdentity: string | Win32Pointer,
+    phPeerEnum: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerGroupEnumRecords */
   PeerGroupEnumRecords(hGroup: Win32Pointer, pRecordType: Win32Pointer, phPeerEnum: Win32Pointer): number;
   /** p2p.dll!PeerGroupExportConfig */
@@ -139,31 +180,80 @@ interface Functions {
   /** p2p.dll!PeerGroupGetStatus */
   PeerGroupGetStatus(hGroup: Win32Pointer, pdwStatus: Win32Pointer): number;
   /** p2p.dll!PeerGroupImportConfig */
-  PeerGroupImportConfig(pwzXML: string | Win32Pointer, pwzPassword: string | Win32Pointer, fOverwrite: number, ppwzIdentity: Win32Pointer, ppwzGroup: Win32Pointer): number;
+  PeerGroupImportConfig(
+    pwzXML: string | Win32Pointer,
+    pwzPassword: string | Win32Pointer,
+    fOverwrite: number,
+    ppwzIdentity: Win32Pointer,
+    ppwzGroup: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerGroupImportDatabase */
   PeerGroupImportDatabase(hGroup: Win32Pointer, pwzFilePath: string | Win32Pointer): number;
   /** p2p.dll!PeerGroupIssueCredentials */
-  PeerGroupIssueCredentials(hGroup: Win32Pointer, pwzSubjectIdentity: string | Win32Pointer, pCredentialInfo: Win32Pointer, dwFlags: number, ppwzInvitation: Win32Pointer): number;
+  PeerGroupIssueCredentials(
+    hGroup: Win32Pointer,
+    pwzSubjectIdentity: string | Win32Pointer,
+    pCredentialInfo: Win32Pointer,
+    dwFlags: number,
+    ppwzInvitation: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerGroupJoin */
-  PeerGroupJoin(pwzIdentity: string | Win32Pointer, pwzInvitation: string | Win32Pointer, pwzCloud: string | Win32Pointer, phGroup: Win32Pointer): number;
+  PeerGroupJoin(
+    pwzIdentity: string | Win32Pointer,
+    pwzInvitation: string | Win32Pointer,
+    pwzCloud: string | Win32Pointer,
+    phGroup: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerGroupOpen */
-  PeerGroupOpen(pwzIdentity: string | Win32Pointer, pwzGroupPeerName: string | Win32Pointer, pwzCloud: string | Win32Pointer, phGroup: Win32Pointer): number;
+  PeerGroupOpen(
+    pwzIdentity: string | Win32Pointer,
+    pwzGroupPeerName: string | Win32Pointer,
+    pwzCloud: string | Win32Pointer,
+    phGroup: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerGroupOpenDirectConnection */
-  PeerGroupOpenDirectConnection(hGroup: Win32Pointer, pwzIdentity: string | Win32Pointer, pAddress: Win32Pointer, pullConnectionId: Win32Pointer): number;
+  PeerGroupOpenDirectConnection(
+    hGroup: Win32Pointer,
+    pwzIdentity: string | Win32Pointer,
+    pAddress: Win32Pointer,
+    pullConnectionId: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerGroupParseInvitation */
   PeerGroupParseInvitation(pwzInvitation: string | Win32Pointer, ppInvitationInfo: Win32Pointer): number;
   /** p2p.dll!PeerGroupPasswordJoin */
-  PeerGroupPasswordJoin(pwzIdentity: string | Win32Pointer, pwzInvitation: string | Win32Pointer, pwzPassword: string | Win32Pointer, pwzCloud: string | Win32Pointer, phGroup: Win32Pointer): number;
+  PeerGroupPasswordJoin(
+    pwzIdentity: string | Win32Pointer,
+    pwzInvitation: string | Win32Pointer,
+    pwzPassword: string | Win32Pointer,
+    pwzCloud: string | Win32Pointer,
+    phGroup: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerGroupPeerTimeToUniversalTime */
-  PeerGroupPeerTimeToUniversalTime(hGroup: Win32Pointer, pftPeerTime: Win32Pointer, pftUniversalTime: Win32Pointer): number;
+  PeerGroupPeerTimeToUniversalTime(
+    hGroup: Win32Pointer,
+    pftPeerTime: Win32Pointer,
+    pftUniversalTime: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerGroupRegisterEvent */
-  PeerGroupRegisterEvent(hGroup: Win32Pointer, hEvent: Win32Pointer, cEventRegistration: number, pEventRegistrations: Win32Pointer, phPeerEvent: Win32Pointer): number;
+  PeerGroupRegisterEvent(
+    hGroup: Win32Pointer,
+    hEvent: Win32Pointer,
+    cEventRegistration: number,
+    pEventRegistrations: Win32Pointer,
+    phPeerEvent: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerGroupResumePasswordAuthentication */
   PeerGroupResumePasswordAuthentication(hGroup: Win32Pointer, hPeerEventHandle: Win32Pointer): number;
   /** p2p.dll!PeerGroupSearchRecords */
   PeerGroupSearchRecords(hGroup: Win32Pointer, pwzCriteria: string | Win32Pointer, phPeerEnum: Win32Pointer): number;
   /** p2p.dll!PeerGroupSendData */
-  PeerGroupSendData(hGroup: Win32Pointer, ullConnectionId: number | bigint, pType: Win32Pointer, cbData: number, pvData: Win32Pointer): number;
+  PeerGroupSendData(
+    hGroup: Win32Pointer,
+    ullConnectionId: number | bigint,
+    pType: Win32Pointer,
+    cbData: number,
+    pvData: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerGroupSetProperties */
   PeerGroupSetProperties(hGroup: Win32Pointer, pProperties: Win32Pointer): number;
   /** p2p.dll!PeerGroupShutdown */
@@ -171,7 +261,11 @@ interface Functions {
   /** p2p.dll!PeerGroupStartup */
   PeerGroupStartup(wVersionRequested: number, pVersionData: Win32Pointer): number;
   /** p2p.dll!PeerGroupUniversalTimeToPeerTime */
-  PeerGroupUniversalTimeToPeerTime(hGroup: Win32Pointer, pftUniversalTime: Win32Pointer, pftPeerTime: Win32Pointer): number;
+  PeerGroupUniversalTimeToPeerTime(
+    hGroup: Win32Pointer,
+    pftUniversalTime: Win32Pointer,
+    pftPeerTime: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerGroupUnregisterEvent */
   PeerGroupUnregisterEvent(hPeerEvent: Win32Pointer): number;
   /** p2p.dll!PeerGroupUpdateRecord */
@@ -179,11 +273,20 @@ interface Functions {
   /** p2p.dll!PeerHostNameToPeerName */
   PeerHostNameToPeerName(pwzHostName: string | Win32Pointer, ppwzPeerName: Win32Pointer): number;
   /** p2p.dll!PeerIdentityCreate */
-  PeerIdentityCreate(pwzClassifier: string | Win32Pointer, pwzFriendlyName: string | Win32Pointer, hCryptProv: number | bigint, ppwzIdentity: Win32Pointer): number;
+  PeerIdentityCreate(
+    pwzClassifier: string | Win32Pointer,
+    pwzFriendlyName: string | Win32Pointer,
+    hCryptProv: number | bigint,
+    ppwzIdentity: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerIdentityDelete */
   PeerIdentityDelete(pwzIdentity: string | Win32Pointer): number;
   /** p2p.dll!PeerIdentityExport */
-  PeerIdentityExport(pwzIdentity: string | Win32Pointer, pwzPassword: string | Win32Pointer, ppwzExportXML: Win32Pointer): number;
+  PeerIdentityExport(
+    pwzIdentity: string | Win32Pointer,
+    pwzPassword: string | Win32Pointer,
+    ppwzExportXML: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerIdentityGetCryptKey */
   PeerIdentityGetCryptKey(pwzIdentity: string | Win32Pointer, phCryptProv: Win32Pointer): number;
   /** p2p.dll!PeerIdentityGetDefault */
@@ -193,7 +296,11 @@ interface Functions {
   /** p2p.dll!PeerIdentityGetXML */
   PeerIdentityGetXML(pwzIdentity: string | Win32Pointer, ppwzIdentityXML: Win32Pointer): number;
   /** p2p.dll!PeerIdentityImport */
-  PeerIdentityImport(pwzImportXML: string | Win32Pointer, pwzPassword: string | Win32Pointer, ppwzIdentity: Win32Pointer): number;
+  PeerIdentityImport(
+    pwzImportXML: string | Win32Pointer,
+    pwzPassword: string | Win32Pointer,
+    ppwzIdentity: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerIdentitySetFriendlyName */
   PeerIdentitySetFriendlyName(pwzIdentity: string | Win32Pointer, pwzFriendlyName: string | Win32Pointer): number;
   /** p2p.dll!PeerNameToPeerHostName */
@@ -205,13 +312,28 @@ interface Functions {
   /** p2p.dll!PeerPnrpGetEndpoint */
   PeerPnrpGetEndpoint(hResolve: Win32Pointer, ppEndpoint: Win32Pointer): number;
   /** p2p.dll!PeerPnrpRegister */
-  PeerPnrpRegister(pcwzPeerName: string | Win32Pointer, pRegistrationInfo: Win32Pointer, phRegistration: Win32Pointer): number;
+  PeerPnrpRegister(
+    pcwzPeerName: string | Win32Pointer,
+    pRegistrationInfo: Win32Pointer,
+    phRegistration: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerPnrpResolve */
-  PeerPnrpResolve(pcwzPeerName: string | Win32Pointer, pcwzCloudName: string | Win32Pointer, pcEndpoints: Win32Pointer, ppEndpoints: Win32Pointer): number;
+  PeerPnrpResolve(
+    pcwzPeerName: string | Win32Pointer,
+    pcwzCloudName: string | Win32Pointer,
+    pcEndpoints: Win32Pointer,
+    ppEndpoints: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerPnrpShutdown */
   PeerPnrpShutdown(): number;
   /** p2p.dll!PeerPnrpStartResolve */
-  PeerPnrpStartResolve(pcwzPeerName: string | Win32Pointer, pcwzCloudName: string | Win32Pointer, cMaxEndpoints: number, hEvent: Win32Pointer, phResolve: Win32Pointer): number;
+  PeerPnrpStartResolve(
+    pcwzPeerName: string | Win32Pointer,
+    pcwzCloudName: string | Win32Pointer,
+    cMaxEndpoints: number,
+    hEvent: Win32Pointer,
+    phResolve: Win32Pointer,
+  ): number;
   /** p2p.dll!PeerPnrpStartup */
   PeerPnrpStartup(wVersionRequested: number): number;
   /** p2p.dll!PeerPnrpUnregister */

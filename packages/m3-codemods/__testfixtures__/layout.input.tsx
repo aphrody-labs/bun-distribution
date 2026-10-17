@@ -1,11 +1,4 @@
-import {
-  Button as B,
-  Box,
-  Stack,
-  Typography,
-  Modal,
-  ThemeProvider,
-} from "@mui/material";
+import { Button as B, Box, Stack, Typography, Modal, ThemeProvider } from "@mui/material";
 import Card from "@mui/material/Card";
 import React from "react";
 

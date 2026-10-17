@@ -10,34 +10,22 @@
 import { join } from "node:path";
 import type { FileInfo } from "../lib/engine";
 
-const TRANSFORMS = [
-  "orchestrator",
-  "mui-imports",
-  "button",
-  "fields",
-  "icons",
-] as const;
+const TRANSFORMS = ["orchestrator", "mui-imports", "button", "fields", "icons"] as const;
 
 const args = process.argv.slice(2);
 const dry = args.includes("--dry");
-const [name, ...patterns] = args.filter((a) => a !== "--dry");
+const [name, ...patterns] = args.filter(a => a !== "--dry");
 if (!name || !TRANSFORMS.includes(name as never) || patterns.length === 0) {
-  console.error(
-    `usage: bun scripts/codemod.ts <${TRANSFORMS.join("|")}> <fichier|glob>... [--dry]`,
-  );
+  console.error(`usage: bun scripts/codemod.ts <${TRANSFORMS.join("|")}> <fichier|glob>... [--dry]`);
   process.exit(2);
 }
 
-const transform: (file: FileInfo) => string = (
-  await import(join(__dirname, "..", "transforms", `${name}.ts`))
-).default;
+const transform: (file: FileInfo) => string = (await import(join(__dirname, "..", "transforms", `${name}.ts`))).default;
 
 let changed = 0;
 let failed = 0;
 for (const pattern of patterns) {
-  const files = (await Bun.file(pattern).exists())
-    ? [pattern]
-    : [...new Bun.Glob(pattern).scanSync(".")];
+  const files = (await Bun.file(pattern).exists()) ? [pattern] : [...new Bun.Glob(pattern).scanSync(".")];
   for (const path of files) {
     const source = await Bun.file(path).text();
     try {
@@ -48,13 +36,9 @@ for (const pattern of patterns) {
       console.log(`${dry ? "changerait" : "modifié"} ${path}`);
     } catch (error) {
       failed++;
-      console.error(
-        `ERREUR ${path}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      console.error(`ERREUR ${path}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }
-console.log(
-  `${changed} fichier(s) ${dry ? "à modifier" : "modifié(s)"}, ${failed} erreur(s).`,
-);
+console.log(`${changed} fichier(s) ${dry ? "à modifier" : "modifié(s)"}, ${failed} erreur(s).`);
 if (failed > 0) process.exit(1);

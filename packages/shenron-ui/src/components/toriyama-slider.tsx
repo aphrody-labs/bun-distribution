@@ -6,10 +6,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  DragonBallSphere,
-  type DragonBallStarsCount,
-} from "../toriyama/DragonBallSphere";
+import { DragonBallSphere, type DragonBallStarsCount } from "../toriyama/DragonBallSphere";
 
 export interface ToriyamaSliderProps {
   min?: number;
@@ -46,15 +43,10 @@ export function ToriyamaSlider({
 
   const safeMin = Number.isFinite(min) ? min : 1;
   const safeMax = Number.isFinite(max) ? Math.max(max, safeMin + 1) : 7;
-  const safeValue = Number.isFinite(currentValue)
-    ? Math.min(safeMax, Math.max(safeMin, currentValue))
-    : safeMin;
+  const safeValue = Number.isFinite(currentValue) ? Math.min(safeMax, Math.max(safeMin, currentValue)) : safeMin;
   const safeStep = Number.isFinite(step) && step > 0 ? step : 1;
   const percentage = ((safeValue - safeMin) / (safeMax - safeMin)) * 100;
-  const stars = Math.min(
-    7,
-    Math.max(1, Math.round(safeValue)),
-  ) as DragonBallStarsCount;
+  const stars = Math.min(7, Math.max(1, Math.round(safeValue))) as DragonBallStarsCount;
 
   return (
     <div className={`flex flex-col gap-2 select-none ${className}`}>
@@ -104,12 +96,7 @@ export function ToriyamaSlider({
           step={safeStep}
           value={safeValue}
           onChange={handleChange}
-          aria-label={
-            label ??
-            (mode === "dragonball"
-              ? "Étoiles Dragon Ball"
-              : "Puissance de combat")
-          }
+          aria-label={label ?? (mode === "dragonball" ? "Étoiles Dragon Ball" : "Puissance de combat")}
           className="absolute w-full h-8 opacity-0 cursor-pointer"
         />
       </div>

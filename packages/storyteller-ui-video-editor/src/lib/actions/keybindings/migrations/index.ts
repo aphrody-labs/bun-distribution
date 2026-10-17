@@ -16,13 +16,7 @@ const migrations: Record<number, MigrationFn> = {
 
 export const CURRENT_VERSION = 7;
 
-export function runMigrations({
-  state,
-  fromVersion,
-}: {
-  state: unknown;
-  fromVersion: number;
-}): unknown {
+export function runMigrations({ state, fromVersion }: { state: unknown; fromVersion: number }): unknown {
   let current = state;
   for (let version = fromVersion; version < CURRENT_VERSION; version++) {
     const migrate = migrations[version];

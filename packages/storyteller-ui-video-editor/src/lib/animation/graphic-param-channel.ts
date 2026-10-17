@@ -10,25 +10,15 @@ import { resolveAnimationPathValueAtTime } from "./resolve";
 
 export const GRAPHIC_PARAM_PATH_PREFIX = "params.";
 
-export function buildGraphicParamPath({
-  paramKey,
-}: {
-  paramKey: string;
-}): GraphicParamPath {
+export function buildGraphicParamPath({ paramKey }: { paramKey: string }): GraphicParamPath {
   return `${GRAPHIC_PARAM_PATH_PREFIX}${paramKey}`;
 }
 
-export function isGraphicParamPath(
-  propertyPath: string,
-): propertyPath is GraphicParamPath {
+export function isGraphicParamPath(propertyPath: string): propertyPath is GraphicParamPath {
   return propertyPath.startsWith(GRAPHIC_PARAM_PATH_PREFIX);
 }
 
-export function parseGraphicParamPath({
-  propertyPath,
-}: {
-  propertyPath: string;
-}): { paramKey: string } | null {
+export function parseGraphicParamPath({ propertyPath }: { propertyPath: string }): { paramKey: string } | null {
   if (!isGraphicParamPath(propertyPath)) {
     return null;
   }

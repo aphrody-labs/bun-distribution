@@ -18,9 +18,7 @@ describe("resolveLlmConfig", () => {
   });
 
   test("honours the RGFR Vertex project", () => {
-    expect(resolveLlmConfig({ APHRODY_VERTEX_PROJECT: "rgfr" }).project).toBe(
-      "rgfr",
-    );
+    expect(resolveLlmConfig({ APHRODY_VERTEX_PROJECT: "rgfr" }).project).toBe("rgfr");
   });
 
   test("honours model, Vertex location and timeout overrides", () => {
@@ -37,12 +35,8 @@ describe("resolveLlmConfig", () => {
   });
 
   test("invalid timeout falls back to the default", () => {
-    expect(
-      resolveLlmConfig({ DOC_AI_REQUEST_TIMEOUT_MS: "nope" }).requestTimeoutMs,
-    ).toBe(DEFAULT_REQUEST_TIMEOUT_MS);
-    expect(
-      resolveLlmConfig({ DOC_AI_REQUEST_TIMEOUT_MS: "-5" }).requestTimeoutMs,
-    ).toBe(DEFAULT_REQUEST_TIMEOUT_MS);
+    expect(resolveLlmConfig({ DOC_AI_REQUEST_TIMEOUT_MS: "nope" }).requestTimeoutMs).toBe(DEFAULT_REQUEST_TIMEOUT_MS);
+    expect(resolveLlmConfig({ DOC_AI_REQUEST_TIMEOUT_MS: "-5" }).requestTimeoutMs).toBe(DEFAULT_REQUEST_TIMEOUT_MS);
   });
 });
 
@@ -50,9 +44,7 @@ describe("hasCredentials / resolveClient", () => {
   test("hasCredentials reflects ADC/project presence", () => {
     expect(hasCredentials({})).toBe(false);
     expect(hasCredentials({ GOOGLE_CLOUD_PROJECT: "aphrody" })).toBe(true);
-    expect(hasCredentials({ GOOGLE_APPLICATION_CREDENTIALS: "adc.json" })).toBe(
-      true,
-    );
+    expect(hasCredentials({ GOOGLE_APPLICATION_CREDENTIALS: "adc.json" })).toBe(true);
   });
 
   test("resolveClient returns null without credentials (offline)", () => {

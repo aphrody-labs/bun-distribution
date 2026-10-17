@@ -1,14 +1,5 @@
 import { useContext } from "react";
-import {
-  BoneIcon,
-  EyeIcon,
-  EyeOffIcon,
-  LockIcon,
-  LockOpenIcon,
-  LogInIcon,
-  PlusIcon,
-  XIcon,
-} from "lucide-react";
+import { BoneIcon, EyeIcon, EyeOffIcon, LockIcon, LockOpenIcon, LogInIcon, PlusIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { Transition } from "@headlessui/react";
@@ -23,9 +14,7 @@ import { toggleSkeletonHelper } from "../../actions/toggleSkeletonHelper";
 import { toggleCameraView } from "../../actions/cameraView";
 
 const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
-  const isSelected = usePageSceneStore(
-    (s) => s.outlinerSelectedItem?.id === item.id,
-  );
+  const isSelected = usePageSceneStore(s => s.outlinerSelectedItem?.id === item.id);
 
   const editorEngine = useContext(EngineContext);
 
@@ -79,12 +68,8 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
           <DynamicIcon icon={item.icon} />
         </div>
         <span className="min-w-0">
-          <span className="block truncate text-[13px] font-semibold text-white">
-            {item.name}
-          </span>
-          <span className="block truncate text-xs text-white/50">
-            {item.type}
-          </span>
+          <span className="block truncate text-[13px] font-semibold text-white">{item.name}</span>
+          <span className="block truncate text-xs text-white/50">{item.type}</span>
         </span>
       </span>
       <div className="flex shrink-0 items-center gap-3">
@@ -146,8 +131,8 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
 
 export const Outliner = () => {
   useSignals();
-  const items = usePageSceneStore((s) => s.outlinerItems);
-  const showing = usePageSceneStore((s) => s.outlinerShowing);
+  const items = usePageSceneStore(s => s.outlinerItems);
+  const showing = usePageSceneStore(s => s.outlinerShowing);
 
   return (
     <Transition
@@ -164,9 +149,7 @@ export const Outliner = () => {
       leaveTo="opacity-0"
     >
       <div className="flex items-center border-b border-ui-panel-border px-3 py-2.5">
-        <h2 className="grow font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
-          Scene
-        </h2>
+        <h2 className="grow font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">Scene</h2>
         <Button
           icon={PlusIcon}
           variant="ghost"
@@ -190,7 +173,7 @@ export const Outliner = () => {
 
       <div className="grow overflow-auto p-2">
         <div className="flex flex-col gap-1">
-          {items.map((item) => (
+          {items.map(item => (
             <OutlinerRow key={item.id} item={item} />
           ))}
         </div>

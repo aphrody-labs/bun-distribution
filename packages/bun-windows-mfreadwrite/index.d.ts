@@ -3,15 +3,36 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mfreadwrite.dll!MFCreateSinkWriterFromMediaSink */
-  MFCreateSinkWriterFromMediaSink(pMediaSink: Win32Pointer, pAttributes: Win32Pointer, ppSinkWriter: Win32Pointer): number;
+  MFCreateSinkWriterFromMediaSink(
+    pMediaSink: Win32Pointer,
+    pAttributes: Win32Pointer,
+    ppSinkWriter: Win32Pointer,
+  ): number;
   /** mfreadwrite.dll!MFCreateSinkWriterFromURL */
-  MFCreateSinkWriterFromURL(pwszOutputURL: string | Win32Pointer, pByteStream: Win32Pointer, pAttributes: Win32Pointer, ppSinkWriter: Win32Pointer): number;
+  MFCreateSinkWriterFromURL(
+    pwszOutputURL: string | Win32Pointer,
+    pByteStream: Win32Pointer,
+    pAttributes: Win32Pointer,
+    ppSinkWriter: Win32Pointer,
+  ): number;
   /** mfreadwrite.dll!MFCreateSourceReaderFromByteStream */
-  MFCreateSourceReaderFromByteStream(pByteStream: Win32Pointer, pAttributes: Win32Pointer, ppSourceReader: Win32Pointer): number;
+  MFCreateSourceReaderFromByteStream(
+    pByteStream: Win32Pointer,
+    pAttributes: Win32Pointer,
+    ppSourceReader: Win32Pointer,
+  ): number;
   /** mfreadwrite.dll!MFCreateSourceReaderFromMediaSource */
-  MFCreateSourceReaderFromMediaSource(pMediaSource: Win32Pointer, pAttributes: Win32Pointer, ppSourceReader: Win32Pointer): number;
+  MFCreateSourceReaderFromMediaSource(
+    pMediaSource: Win32Pointer,
+    pAttributes: Win32Pointer,
+    ppSourceReader: Win32Pointer,
+  ): number;
   /** mfreadwrite.dll!MFCreateSourceReaderFromURL */
-  MFCreateSourceReaderFromURL(pwszURL: string | Win32Pointer, pAttributes: Win32Pointer, ppSourceReader: Win32Pointer): number;
+  MFCreateSourceReaderFromURL(
+    pwszURL: string | Win32Pointer,
+    pAttributes: Win32Pointer,
+    ppSourceReader: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

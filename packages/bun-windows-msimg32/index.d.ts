@@ -3,11 +3,42 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** msimg32.dll!AlphaBlend */
-  AlphaBlend(hdcDest: Win32Pointer, xoriginDest: number, yoriginDest: number, wDest: number, hDest: number, hdcSrc: Win32Pointer, xoriginSrc: number, yoriginSrc: number, wSrc: number, hSrc: number, ftn: Win32StructInit): number;
+  AlphaBlend(
+    hdcDest: Win32Pointer,
+    xoriginDest: number,
+    yoriginDest: number,
+    wDest: number,
+    hDest: number,
+    hdcSrc: Win32Pointer,
+    xoriginSrc: number,
+    yoriginSrc: number,
+    wSrc: number,
+    hSrc: number,
+    ftn: Win32StructInit,
+  ): number;
   /** msimg32.dll!GradientFill */
-  GradientFill(hdc: Win32Pointer, pVertex: Win32Pointer, nVertex: number, pMesh: Win32Pointer, nMesh: number, ulMode: number): number;
+  GradientFill(
+    hdc: Win32Pointer,
+    pVertex: Win32Pointer,
+    nVertex: number,
+    pMesh: Win32Pointer,
+    nMesh: number,
+    ulMode: number,
+  ): number;
   /** msimg32.dll!TransparentBlt */
-  TransparentBlt(hdcDest: Win32Pointer, xoriginDest: number, yoriginDest: number, wDest: number, hDest: number, hdcSrc: Win32Pointer, xoriginSrc: number, yoriginSrc: number, wSrc: number, hSrc: number, crTransparent: number): number;
+  TransparentBlt(
+    hdcDest: Win32Pointer,
+    xoriginDest: number,
+    yoriginDest: number,
+    wDest: number,
+    hDest: number,
+    hdcSrc: Win32Pointer,
+    xoriginSrc: number,
+    yoriginSrc: number,
+    wSrc: number,
+    hSrc: number,
+    crTransparent: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

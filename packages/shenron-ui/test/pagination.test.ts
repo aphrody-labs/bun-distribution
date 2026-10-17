@@ -1,11 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import {
-  DEFAULT_PAGINATION_LABELS,
-  Pagination,
-  pagesVisibles,
-} from "../src/components/pagination";
+import { DEFAULT_PAGINATION_LABELS, Pagination, pagesVisibles } from "../src/components/pagination";
 import { pageWindow } from "../src/lib/page-window";
 
 // Expected markup captured from apps/shenron/site/src/components/ui/Pagination.tsx
@@ -18,8 +14,7 @@ const BEFORE = {
 } as const;
 
 const noop = () => {};
-const render = (props: Parameters<typeof Pagination>[0]) =>
-  renderToStaticMarkup(createElement(Pagination, props));
+const render = (props: Parameters<typeof Pagination>[0]) => renderToStaticMarkup(createElement(Pagination, props));
 
 describe("Pagination (@shenron/ui/pagination)", () => {
   test("markup identical to the site component for the same props", () => {
@@ -41,15 +36,11 @@ describe("Pagination (@shenron/ui/pagination)", () => {
         className: "mt-4",
       }),
     ).toBe(BEFORE.p6);
-    expect(render({ page: 1, parPage: 10, total: 7, onPageChange: noop })).toBe(
-      BEFORE.pone,
-    );
+    expect(render({ page: 1, parPage: 10, total: 7, onPageChange: noop })).toBe(BEFORE.pone);
   });
 
   test("renders nothing for an empty list", () => {
-    expect(render({ page: 1, parPage: 10, total: 0, onPageChange: noop })).toBe(
-      "",
-    );
+    expect(render({ page: 1, parPage: 10, total: 0, onPageChange: noop })).toBe("");
   });
 
   test("labels and locale come from props", () => {

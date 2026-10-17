@@ -1,15 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  FileSearch,
-  RefreshCw,
-  Filter,
-  Loader2,
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { FileSearch, RefreshCw, Filter, Loader2, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
 
@@ -113,14 +105,10 @@ export default function AuditInternalPage() {
       <div className="card">
         <div className="flex items-center gap-2">
           <FileSearch className="h-5 w-5 text-brand-400" />
-          <h2 className="text-lg font-semibold">
-            Journal des actions internes
-          </h2>
+          <h2 className="text-lg font-semibold">Journal des actions internes</h2>
           <button
             type="button"
-            onClick={() =>
-              qc.invalidateQueries({ queryKey: ["audit", "internal"] })
-            }
+            onClick={() => qc.invalidateQueries({ queryKey: ["audit", "internal"] })}
             className="ml-auto btn btn-ghost px-2"
             title="Rafraîchir"
           >
@@ -128,27 +116,23 @@ export default function AuditInternalPage() {
           </button>
         </div>
         <p className="mt-1 text-sm text-zinc-400">
-          Toutes les actions enregistrées par le bot : modération, montées de
-          niveau, opérations sur l&apos;économie. Pour le journal d&apos;audit
-          officiel Discord, consultez la page{" "}
-          <strong>Journal d&apos;audit</strong>.
+          Toutes les actions enregistrées par le bot : modération, montées de niveau, opérations sur l&apos;économie.
+          Pour le journal d&apos;audit officiel Discord, consultez la page <strong>Journal d&apos;audit</strong>.
         </p>
         {/* Filtres */}
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">
-              Type d&apos;action
-            </label>
+            <label className="mb-1 block text-xs text-zinc-500">Type d&apos;action</label>
             <select
               className="input w-full"
               value={action}
-              onChange={(e) => {
+              onChange={e => {
                 setAction(e.target.value);
                 setPage(0);
               }}
             >
               <option value="">— Toutes les actions —</option>
-              {ACTION_OPTIONS.map((a) => (
+              {ACTION_OPTIONS.map(a => (
                 <option key={a} value={a}>
                   {ACTION_LABELS[a] ?? a}
                 </option>
@@ -156,13 +140,11 @@ export default function AuditInternalPage() {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">
-              Filtrer par membre (identifiant Discord)
-            </label>
+            <label className="mb-1 block text-xs text-zinc-500">Filtrer par membre (identifiant Discord)</label>
             <input
               className="input w-full font-mono text-xs"
               value={userId}
-              onChange={(e) => {
+              onChange={e => {
                 setUserId(e.target.value);
                 setPage(0);
               }}
@@ -212,27 +194,18 @@ export default function AuditInternalPage() {
             <tr>
               <th className="px-3 py-2 font-medium text-zinc-400">Action</th>
               <th className="px-3 py-2 font-medium text-zinc-400">Membre</th>
-              <th className="px-3 py-2 font-medium text-zinc-400">
-                Modérateur
-              </th>
+              <th className="px-3 py-2 font-medium text-zinc-400">Modérateur</th>
               <th className="px-3 py-2 font-medium text-zinc-400">Motif</th>
               <th className="px-3 py-2 font-medium text-zinc-400">Données</th>
               <th className="px-3 py-2 font-medium text-zinc-400">Date</th>
             </tr>
           </thead>
           <tbody>
-            {logs.data?.rows.map((row) => {
-              const createdAt = row.createdAt
-                ? new Date(row.createdAt).toLocaleString("fr-FR")
-                : "—";
+            {logs.data?.rows.map(row => {
+              const createdAt = row.createdAt ? new Date(row.createdAt).toLocaleString("fr-FR") : "—";
               return (
-                <tr
-                  key={row.id}
-                  className="border-t border-zinc-800 align-top hover:bg-zinc-900/30"
-                >
-                  <td
-                    className={`px-3 py-2 font-semibold ${ACTION_COLORS[row.action] ?? "text-zinc-400"}`}
-                  >
+                <tr key={row.id} className="border-t border-zinc-800 align-top hover:bg-zinc-900/30">
+                  <td className={`px-3 py-2 font-semibold ${ACTION_COLORS[row.action] ?? "text-zinc-400"}`}>
                     {ACTION_LABELS[row.action] ?? row.action}
                   </td>
                   <td className="px-3 py-2 font-mono">
@@ -247,36 +220,24 @@ export default function AuditInternalPage() {
                   <td className="px-3 py-2 font-mono">
                     {row.moderatorId ? (
                       <span title={row.moderatorId}>
-                        {row.moderatorId.slice(0, 6)}…
-                        {row.moderatorId.slice(-4)}
+                        {row.moderatorId.slice(0, 6)}…{row.moderatorId.slice(-4)}
                       </span>
                     ) : (
                       "—"
                     )}
                   </td>
-                  <td
-                    className="px-3 py-2 max-w-xs truncate"
-                    title={row.reason ?? ""}
-                  >
-                    {row.reason ?? (
-                      <span className="italic text-zinc-600">Aucun motif</span>
-                    )}
+                  <td className="px-3 py-2 max-w-xs truncate" title={row.reason ?? ""}>
+                    {row.reason ?? <span className="italic text-zinc-600">Aucun motif</span>}
                   </td>
-                  <td className="px-3 py-2 max-w-xs">
-                    {row.meta ? <MetaCell raw={row.meta} /> : "—"}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-zinc-500">
-                    {createdAt}
-                  </td>
+                  <td className="px-3 py-2 max-w-xs">{row.meta ? <MetaCell raw={row.meta} /> : "—"}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-zinc-500">{createdAt}</td>
                 </tr>
               );
             })}
             {logs.data?.rows.length === 0 && (
               <tr>
                 <td colSpan={6} className="p-6 text-center text-zinc-500">
-                  {action || userId
-                    ? "Aucune entrée ne correspond à ces critères."
-                    : "Aucune entrée dans le journal."}
+                  {action || userId ? "Aucune entrée ne correspond à ces critères." : "Aucune entrée dans le journal."}
                 </td>
               </tr>
             )}
@@ -290,7 +251,7 @@ export default function AuditInternalPage() {
           type="button"
           className="btn btn-ghost"
           disabled={page === 0}
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          onClick={() => setPage(p => Math.max(0, p - 1))}
         >
           <ChevronLeft className="h-4 w-4" />
           Précédent
@@ -303,7 +264,7 @@ export default function AuditInternalPage() {
           type="button"
           className="btn btn-ghost"
           disabled={(logs.data?.rows.length ?? 0) < limit}
-          onClick={() => setPage((p) => p + 1)}
+          onClick={() => setPage(p => p + 1)}
         >
           Suivant
           <ChevronRight className="h-4 w-4" />
@@ -322,16 +283,11 @@ function MetaCell({ raw }: { raw: string }) {
     /* keep raw */
   }
   return (
-    <details
-      open={open}
-      onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
-    >
+    <details open={open} onToggle={e => setOpen((e.target as HTMLDetailsElement).open)}>
       <summary className="cursor-pointer text-zinc-400 hover:text-zinc-200">
         {open ? "Masquer" : `${raw.slice(0, 50)}${raw.length > 50 ? "…" : ""}`}
       </summary>
-      <pre className="mt-1 max-h-48 overflow-auto rounded bg-zinc-950 p-2 text-[10px]">
-        {pretty}
-      </pre>
+      <pre className="mt-1 max-h-48 overflow-auto rounded bg-zinc-950 p-2 text-[10px]">{pretty}</pre>
     </details>
   );
 }

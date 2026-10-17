@@ -1,9 +1,6 @@
 import type { File } from "@aphrody/drive-client";
 
-export function formatDate(
-  date: Date | { from: Date; to: Date },
-  locale = "en-US",
-): string {
+export function formatDate(date: Date | { from: Date; to: Date }, locale = "en-US"): string {
   if (date instanceof Date) {
     return date.toLocaleDateString(locale, {
       year: "numeric",

@@ -54,8 +54,7 @@ export interface EnqueueImageToGaussianSuccess extends CommandResult {
   payload: EnqueueImageToGaussianPayload;
 }
 
-export type EnqueueImageToGaussianResult =
-  EnqueueImageToGaussianSuccess | EnqueueImageToGaussianError;
+export type EnqueueImageToGaussianResult = EnqueueImageToGaussianSuccess | EnqueueImageToGaussianError;
 
 export const EnqueueImageToGaussian = async (
   request: EnqueueImageToGaussianRequest,

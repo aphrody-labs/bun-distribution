@@ -15,7 +15,7 @@ mod window;
 
 pub use application::setup_application;
 pub(crate) use application::{
-  AppDelegate, AppDelegateEvent, activate_application, set_application_event_handler,
+    AppDelegate, AppDelegateEvent, activate_application, set_application_event_handler,
 };
 pub(crate) use fullscreen::FullscreenTransition;
 pub(crate) use wake::MainThreadWake;

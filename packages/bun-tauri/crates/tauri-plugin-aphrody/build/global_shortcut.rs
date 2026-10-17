@@ -6,6 +6,5 @@ const COMMANDS: &[&str] = &["register", "unregister", "unregister_all", "is_regi
 
 /// Build description of the `global-shortcut` plugin.
 pub fn builder() -> tauri_plugin::Builder<'static> {
-    tauri_plugin::Builder::new(COMMANDS)
-        .global_api_script_path("iife/global-shortcut.js")
+    tauri_plugin::Builder::new(COMMANDS).global_api_script_path("iife/global-shortcut.js")
 }

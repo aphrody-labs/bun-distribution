@@ -12,24 +12,14 @@
 
 import type { EngineEvent } from "./EngineEvent";
 
-export type EngineEventCtor<T extends EngineEvent = EngineEvent> = new (
-  ...args: never[]
-) => T;
+export type EngineEventCtor<T extends EngineEvent = EngineEvent> = new (...args: never[]) => T;
 
-export type EngineEventListener<T extends EngineEvent = EngineEvent> = (
-  event: T,
-) => void;
+export type EngineEventListener<T extends EngineEvent = EngineEvent> = (event: T) => void;
 
 export class EngineEventBus {
-  private byCtor = new Map<
-    EngineEventCtor,
-    Set<EngineEventListener<EngineEvent>>
-  >();
+  private byCtor = new Map<EngineEventCtor, Set<EngineEventListener<EngineEvent>>>();
 
-  subscribe<T extends EngineEvent>(
-    ctor: EngineEventCtor<T>,
-    listener: EngineEventListener<T>,
-  ): () => void {
+  subscribe<T extends EngineEvent>(ctor: EngineEventCtor<T>, listener: EngineEventListener<T>): () => void {
     let set = this.byCtor.get(ctor);
     if (!set) {
       set = new Set();

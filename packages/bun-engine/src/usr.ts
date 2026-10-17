@@ -74,7 +74,10 @@ async function github<T>(path: string): Promise<T> {
 }
 
 /** The release asset to install: the pinned tag when given, otherwise the latest release. */
-export async function resolveRelease(id: string, tag?: string): Promise<{ version: string; asset: string; url: string }> {
+export async function resolveRelease(
+  id: string,
+  tag?: string,
+): Promise<{ version: string; asset: string; url: string }> {
   const pkg = (await releaseCatalog())[id];
   if (!pkg) throw new Error(`no release package ${id}; see bep search`);
   const platform = platformKey();
@@ -111,7 +114,10 @@ async function unpack(archive: string, into: string, pkg: ReleasePackage): Promi
     if (!run([archive, `-o${into}`, "-y"]) && !(sevenZ && run([sevenZ, "x", "-y", `-o${into}`, archive])))
       throw new Error(`could not unpack ${name}`);
   } else if (/\.(zip|7z|tar\.gz|tgz|tar\.xz|tar\.zst)$/.test(name)) {
-    if (!(sevenZ && /\.(zip|7z)$/.test(name) && run([sevenZ, "x", "-y", `-o${into}`, archive])) && !run(["tar", "-xf", archive, "-C", into]))
+    if (
+      !(sevenZ && /\.(zip|7z)$/.test(name) && run([sevenZ, "x", "-y", `-o${into}`, archive])) &&
+      !run(["tar", "-xf", archive, "-C", into])
+    )
       throw new Error(`could not unpack ${name}`);
   } else {
     // A single executable or AppImage.
@@ -164,7 +170,10 @@ async function linkSource(id: string, source: string | undefined): Promise<void>
 
 async function copyLicenses(id: string, dir: string): Promise<void> {
   const into = join(usrRoot(), "share", "licenses", id);
-  for await (const path of new Bun.Glob("**/{LICENSE,LICENSE.*,COPYING,COPYING.*,license.txt}").scan({ cwd: dir, onlyFiles: true })) {
+  for await (const path of new Bun.Glob("**/{LICENSE,LICENSE.*,COPYING,COPYING.*,license.txt}").scan({
+    cwd: dir,
+    onlyFiles: true,
+  })) {
     await mkdir(into, { recursive: true });
     await cp(join(dir, path), join(into, path.replaceAll(/[\\/]/g, "_")));
   }
@@ -237,9 +246,7 @@ export async function installRelease(
     installedAt: new Date().toISOString(),
   };
   db()
-    .query(
-      "INSERT OR REPLACE INTO packages VALUES ($id, $version, $url, $asset, $sha256, $exe, $files, $installedAt)",
-    )
+    .query("INSERT OR REPLACE INTO packages VALUES ($id, $version, $url, $asset, $sha256, $exe, $files, $installedAt)")
     .run({ ...record });
   return record;
 }

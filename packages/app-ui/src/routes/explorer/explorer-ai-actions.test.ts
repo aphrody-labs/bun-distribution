@@ -12,13 +12,7 @@ import {
   AUDIO_VIDEO_EXTENSIONS,
 } from "./ai-helpers";
 
-const makeFile = (
-  id: string,
-  name: string,
-  ext: string,
-  kind?: string,
-  path?: string,
-): File => ({
+const makeFile = (id: string, name: string, ext: string, kind?: string, path?: string): File => ({
   id,
   name,
   extension: ext,
@@ -67,13 +61,7 @@ describe("Explorer AI Contextual Actions", () => {
   });
 
   it("extracts physical path correctly", () => {
-    const withPath = makeFile(
-      "1",
-      "doc.pdf",
-      "pdf",
-      undefined,
-      "C:/docs/doc.pdf",
-    );
+    const withPath = makeFile("1", "doc.pdf", "pdf", undefined, "C:/docs/doc.pdf");
     const withoutPath = makeFile("2", "doc.pdf", "pdf");
 
     expect(getFilePhysicalPath(withPath)).toBe("C:/docs/doc.pdf");
@@ -81,13 +69,7 @@ describe("Explorer AI Contextual Actions", () => {
   });
 
   it("builds single file prompt for Demander à Aphrody", () => {
-    const file = makeFile(
-      "1",
-      "rapport.pdf",
-      "pdf",
-      undefined,
-      "C:/docs/rapport.pdf",
-    );
+    const file = makeFile("1", "rapport.pdf", "pdf", undefined, "C:/docs/rapport.pdf");
     const { prompt, parentDir, targetPaths } = buildAskAphrodyPrompt([file]);
 
     expect(prompt).toContain('À propos du fichier "rapport.pdf"');
@@ -97,13 +79,7 @@ describe("Explorer AI Contextual Actions", () => {
   });
 
   it("builds multi-file prompt with context references", () => {
-    const f1 = makeFile(
-      "1",
-      "img1.png",
-      "png",
-      undefined,
-      "C:/photos/img1.png",
-    );
+    const f1 = makeFile("1", "img1.png", "png", undefined, "C:/photos/img1.png");
     const f2 = makeFile("2", "notes.md", "md", undefined, "C:/photos/notes.md");
     const { prompt, parentDir, targetPaths } = buildAskAphrodyPrompt([f1, f2]);
 
@@ -116,13 +92,7 @@ describe("Explorer AI Contextual Actions", () => {
 
   it("builds directory context prompt", () => {
     const dir: File = {
-      ...makeFile(
-        "dir1",
-        "ProjetAphrody",
-        "",
-        undefined,
-        "C:/src/ProjetAphrody",
-      ),
+      ...makeFile("dir1", "ProjetAphrody", "", undefined, "C:/src/ProjetAphrody"),
       kind: "Directory",
     };
     const { prompt, parentDir, targetPaths } = buildAskAphrodyPrompt([dir]);
@@ -146,9 +116,7 @@ describe("Explorer AI Contextual Actions", () => {
   });
 
   it("classifies attachments correctly into images, audio/video, files, and links", () => {
-    expect(
-      classifyAttachment("https://github.com/aphrody-labs/aphrody").kind,
-    ).toBe("link");
+    expect(classifyAttachment("https://github.com/aphrody-labs/aphrody").kind).toBe("link");
     expect(classifyAttachment("http://localhost:3000/api").isUrl).toBe(true);
 
     expect(classifyAttachment("C:/images/screenshot.png").kind).toBe("image");

@@ -22,12 +22,7 @@ export function StylePromptRow({
   };
 
   return (
-    <div
-      className={twMerge(
-        "flex items-center gap-2 border-t border-white/10 px-1 pt-2",
-        className,
-      )}
-    >
+    <div className={twMerge("flex items-center gap-2 border-t border-white/10 px-1 pt-2", className)}>
       <TagsIcon className="h-3.5 w-3.5 shrink-0 text-base-fg/40" />
       <input
         type="text"

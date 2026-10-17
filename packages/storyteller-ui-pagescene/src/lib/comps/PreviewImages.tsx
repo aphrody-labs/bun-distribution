@@ -25,12 +25,7 @@ export const PreviewImages = () => {
         className="block w-full overflow-hidden rounded-lg border border-ui-controls/25 bg-ui-controls"
         style={{ height: imageHeight, width: imageWidth }}
       >
-        <img
-          id="styled-preview"
-          alt="Styled Preview"
-          width={imageWidth}
-          height={imageHeight}
-        />
+        <img id="styled-preview" alt="Styled Preview" width={imageWidth} height={imageHeight} />
       </div>
     </div>
   );

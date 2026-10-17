@@ -18,32 +18,16 @@ import { DynamicIcon } from "@storyteller/icons";
 import { Button } from "@storyteller/ui-button";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { Input } from "@storyteller/ui-input";
-import React, {
-  ChangeEvent,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { ChangeEvent, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import { ItemElements } from "./shared/ItemElements";
-import {
-  useAnimationLibrary,
-  useUserObjects,
-  useFeaturedObjects,
-} from "./hooks";
+import { useAnimationLibrary, useUserObjects, useFeaturedObjects } from "./hooks";
 import { isAnyStatusFetching } from "./utilities/misc";
 import { FilterEngineCategories, FilterMediaType } from "../../enums";
-import {
-  demoSkyboxItems,
-  demoShapeItems,
-  demoCharacterItems,
-  demoMemeItems,
-} from "../../signals/demoAssets";
+import { demoSkyboxItems, demoShapeItems, demoCharacterItems, demoMemeItems } from "../../signals/demoAssets";
 import { usePageSceneStore } from "../../PageSceneStore";
 import type { MediaItem } from "../../models/assets";
 
@@ -56,15 +40,7 @@ type AssetTab = {
   items: MediaItem[];
 };
 
-const AllTabSection = ({
-  label,
-  items,
-  onViewAll,
-}: {
-  label: string;
-  items: MediaItem[];
-  onViewAll: () => void;
-}) => (
+const AllTabSection = ({ label, items, onViewAll }: { label: string; items: MediaItem[]; onViewAll: () => void }) => (
   <div className="mb-0">
     <div className="mb-2 flex items-center justify-between">
       <h3 className="text-md ml-2 font-semibold opacity-90">{label}</h3>
@@ -78,11 +54,7 @@ const AllTabSection = ({
       </Button>
     </div>
     <div className="h-[170px]">
-      <ItemElements
-        items={items.slice(0, 4)}
-        busy={false}
-        debug={`all-tab-section-${label}`}
-      />
+      <ItemElements items={items.slice(0, 4)} busy={false} debug={`all-tab-section-${label}`} />
     </div>
   </div>
 );
@@ -99,32 +71,22 @@ const categoryToTabIdMap: Partial<Record<FilterEngineCategories, string>> = {
   [FilterEngineCategories.SKYBOX]: "skybox",
 };
 
-const CHARACTER_PRIORITY_ORDER = [
-  "storyboy",
-  "story girl",
-  "knight",
-  "news anchor",
-];
+const CHARACTER_PRIORITY_ORDER = ["storyboy", "story girl", "knight", "news anchor"];
 const MEME_OVERRIDES = ["ai trump"];
 
 export const AssetModal = () => {
   const editor = useContext(EngineContext);
 
-  const {
-    assetModalVisible,
-    assetDraggingUnder,
-    reopenAfterDrag,
-    setAssetModalVisible,
-    setReopenAfterDrag,
-  } = usePageSceneStore(
-    useShallow((s) => ({
-      assetModalVisible: s.assetModalVisible,
-      assetDraggingUnder: s.assetDraggingUnder,
-      reopenAfterDrag: s.reopenAfterDrag,
-      setAssetModalVisible: s.setAssetModalVisible,
-      setReopenAfterDrag: s.setReopenAfterDrag,
-    })),
-  );
+  const { assetModalVisible, assetDraggingUnder, reopenAfterDrag, setAssetModalVisible, setReopenAfterDrag } =
+    usePageSceneStore(
+      useShallow(s => ({
+        assetModalVisible: s.assetModalVisible,
+        assetDraggingUnder: s.assetDraggingUnder,
+        reopenAfterDrag: s.reopenAfterDrag,
+        setAssetModalVisible: s.setAssetModalVisible,
+        setReopenAfterDrag: s.setReopenAfterDrag,
+      })),
+    );
   const [activeLibraryTab] = useState("library");
   const [activeAssetTab, setActiveAssetTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -221,53 +183,38 @@ export const AssetModal = () => {
     defaultErrorMessage: "Error fetching user image planes",
   });
 
-  const {
-    featuredObjects: featuredCharacters,
-    featuredFetchStatus: featuredCharactersFetchStatus,
-  } = useFeaturedObjects({
-    filterEngineCategories: [FilterEngineCategories.CHARACTER],
-    filterMediaTypes: [FilterMediaType.GLB],
-    defaultErrorMessage: "Error fetching featured characters",
-  });
-
-  const { featuredObjects, featuredFetchStatus: featuredObjectsFetchStatus } =
+  const { featuredObjects: featuredCharacters, featuredFetchStatus: featuredCharactersFetchStatus } =
     useFeaturedObjects({
-      filterEngineCategories: [FilterEngineCategories.OBJECT],
-      defaultErrorMessage: "Error fetching featured objects",
+      filterEngineCategories: [FilterEngineCategories.CHARACTER],
+      filterMediaTypes: [FilterMediaType.GLB],
+      defaultErrorMessage: "Error fetching featured characters",
     });
 
-  const {
-    featuredObjects: featuredSets,
-    featuredFetchStatus: featuredSetsFetchStatus,
-  } = useFeaturedObjects({
+  const { featuredObjects, featuredFetchStatus: featuredObjectsFetchStatus } = useFeaturedObjects({
+    filterEngineCategories: [FilterEngineCategories.OBJECT],
+    defaultErrorMessage: "Error fetching featured objects",
+  });
+
+  const { featuredObjects: featuredSets, featuredFetchStatus: featuredSetsFetchStatus } = useFeaturedObjects({
     filterEngineCategories: [FilterEngineCategories.LOCATION],
     defaultErrorMessage: "Error fetching featured sets",
   });
 
-  const {
-    featuredObjects: featuredCreatures,
-    featuredFetchStatus: featuredCreaturesFetchStatus,
-  } = useFeaturedObjects({
+  const { featuredObjects: featuredCreatures, featuredFetchStatus: featuredCreaturesFetchStatus } = useFeaturedObjects({
     filterEngineCategories: [FilterEngineCategories.CREATURE],
     defaultErrorMessage: "Error fetching featured creatures",
   });
 
-  const {
-    featuredObjects: featuredImagePlanes,
-    featuredFetchStatus: featuredImagePlanesFetchStatus,
-  } = useFeaturedObjects({
-    filterEngineCategories: [FilterEngineCategories.IMAGE_PLANE],
-    defaultErrorMessage: "Error fetching featured image planes",
-  });
+  const { featuredObjects: featuredImagePlanes, featuredFetchStatus: featuredImagePlanesFetchStatus } =
+    useFeaturedObjects({
+      filterEngineCategories: [FilterEngineCategories.IMAGE_PLANE],
+      defaultErrorMessage: "Error fetching featured image planes",
+    });
 
   // Animations data shared with the standalone AnimationsModal. Unlike the
   // other user-asset hooks (dead "Mine" tab), fetchUserAnimations fires on
   // every modal open — silently, since anonymous users legitimately 401.
-  const {
-    allAnimations,
-    fetchUserAnimations,
-    fetchStatuses: animationFetchStatuses,
-  } = useAnimationLibrary();
+  const { allAnimations, fetchUserAnimations, fetchStatuses: animationFetchStatuses } = useAnimationLibrary();
 
   const isFetching = isAnyStatusFetching([
     userCharactersFetchStatus,
@@ -290,23 +237,20 @@ export const AssetModal = () => {
           ? [...demoCharacterItems, ...(featuredCharacters ?? [])]
           : (userCharacters ?? []);
 
-      const memeOverrideItems = allCharacterCandidates.filter((item) =>
+      const memeOverrideItems = allCharacterCandidates.filter(item =>
         MEME_OVERRIDES.includes(item.name?.toLowerCase() ?? ""),
       );
       const characterCandidates = allCharacterCandidates.filter(
-        (item) => !MEME_OVERRIDES.includes(item.name?.toLowerCase() ?? ""),
+        item => !MEME_OVERRIDES.includes(item.name?.toLowerCase() ?? ""),
       );
 
       const priorityCharacters: MediaItem[] = [];
       for (const name of CHARACTER_PRIORITY_ORDER) {
-        const found = characterCandidates.find(
-          (item) => item.name?.toLowerCase() === name,
-        );
+        const found = characterCandidates.find(item => item.name?.toLowerCase() === name);
         if (found) priorityCharacters.push(found);
       }
       const remainingCharacters = characterCandidates.filter(
-        (item) =>
-          !CHARACTER_PRIORITY_ORDER.includes(item.name?.toLowerCase() ?? ""),
+        item => !CHARACTER_PRIORITY_ORDER.includes(item.name?.toLowerCase() ?? ""),
       );
       const orderedCharacters = [...priorityCharacters, ...remainingCharacters];
 
@@ -326,10 +270,7 @@ export const AssetModal = () => {
           labelSingle: "Object",
           icon: BoxIcon,
           engineCategory: FilterEngineCategories.OBJECT,
-          items:
-            activeLibraryTab === "library"
-              ? [...demoShapeItems, ...(featuredObjects ?? [])]
-              : (userObjects ?? []),
+          items: activeLibraryTab === "library" ? [...demoShapeItems, ...(featuredObjects ?? [])] : (userObjects ?? []),
         },
         {
           id: "memes",
@@ -337,10 +278,7 @@ export const AssetModal = () => {
           labelSingle: "Meme",
           icon: LaughIcon,
           engineCategory: FilterEngineCategories.CHARACTER,
-          items:
-            activeLibraryTab === "library"
-              ? [...demoMemeItems, ...memeOverrideItems]
-              : [],
+          items: activeLibraryTab === "library" ? [...demoMemeItems, ...memeOverrideItems] : [],
         },
         {
           id: "sets",
@@ -348,10 +286,7 @@ export const AssetModal = () => {
           labelSingle: "Set",
           icon: MountainIcon,
           engineCategory: FilterEngineCategories.LOCATION,
-          items:
-            activeLibraryTab === "library"
-              ? (featuredSets ?? [])
-              : (userSets ?? []),
+          items: activeLibraryTab === "library" ? (featuredSets ?? []) : (userSets ?? []),
         },
         {
           id: "creatures",
@@ -359,10 +294,7 @@ export const AssetModal = () => {
           labelSingle: "Creature",
           icon: DogIcon,
           engineCategory: FilterEngineCategories.CREATURE,
-          items:
-            activeLibraryTab === "library"
-              ? (featuredCreatures ?? [])
-              : (userCreatures ?? []),
+          items: activeLibraryTab === "library" ? (featuredCreatures ?? []) : (userCreatures ?? []),
         },
         {
           id: "animations",
@@ -401,23 +333,18 @@ export const AssetModal = () => {
   );
 
   const allItems = useMemo(() => {
-    return assetTabs
-      .filter((tab) => tab.id !== "all")
-      .flatMap((tab) => tab.items);
+    return assetTabs.filter(tab => tab.id !== "all").flatMap(tab => tab.items);
   }, [assetTabs]);
 
   assetTabs[0].items = allItems;
 
-  const currentTab =
-    assetTabs.find((tab) => tab.id === activeAssetTab) || assetTabs[0];
+  const currentTab = assetTabs.find(tab => tab.id === activeAssetTab) || assetTabs[0];
 
   const displayedItems = useMemo(() => {
     if (!searchTerm) return currentTab.items;
     const searchLower = searchTerm.toLowerCase();
     return currentTab.items.filter(
-      (item) =>
-        item.name?.toLowerCase().includes(searchLower) ||
-        item.description?.toLowerCase().includes(searchLower),
+      item => item.name?.toLowerCase().includes(searchLower) || item.description?.toLowerCase().includes(searchLower),
     );
   }, [currentTab.items, searchTerm]);
 
@@ -445,14 +372,10 @@ export const AssetModal = () => {
 
   const renderContent = () => {
     if (activeAssetTab === "all" && !searchTerm) {
-      const tabsToShow = assetTabs
-        .slice(1)
-        .filter(
-          (tab) => activeLibraryTab === "library" || tab.items.length > 0,
-        );
+      const tabsToShow = assetTabs.slice(1).filter(tab => activeLibraryTab === "library" || tab.items.length > 0);
       return (
         <div className="h-full space-y-2 overflow-y-auto">
-          {tabsToShow.map((tab) => (
+          {tabsToShow.map(tab => (
             <AllTabSection
               key={tab.id}
               label={tab.label}
@@ -463,13 +386,7 @@ export const AssetModal = () => {
         </div>
       );
     }
-    return (
-      <ItemElements
-        items={displayedItems}
-        busy={isFetching}
-        debug={`asset-modal-${currentTab.id}`}
-      />
-    );
+    return <ItemElements items={displayedItems} busy={isFetching} debug={`asset-modal-${currentTab.id}`} />;
   };
 
   const handleUploadSuccess = (category: FilterEngineCategories) => {
@@ -520,20 +437,17 @@ export const AssetModal = () => {
         <div className="grid h-full grid-cols-12 gap-3">
           <div className="relative col-span-3 flex h-full flex-col p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-gray-200 after:bg-white/10">
             <div className="flex h-10 items-center justify-between gap-2.5">
-              <h2 className="font-display text-lg tracking-tight text-white">
-                ArtCraft Presets
-              </h2>
+              <h2 className="font-display text-lg tracking-tight text-white">ArtCraft Presets</h2>
             </div>
             <hr className="my-2 w-full border-white/10" />
             <div className="flex h-full flex-col space-y-2">
-              {assetTabs.map((tab) => (
+              {assetTabs.map(tab => (
                 <Button
                   key={tab.id}
                   variant={activeAssetTab === tab.id ? "primary" : "secondary"}
                   className={twMerge(
                     "w-full justify-start rounded-[3px] border border-transparent bg-transparent px-3.5 py-2.5 text-left hover:bg-white/15",
-                    activeAssetTab === tab.id &&
-                      "border-white/15 bg-white/10 text-white hover:bg-white/10",
+                    activeAssetTab === tab.id && "border-white/15 bg-white/10 text-white hover:bg-white/10",
                   )}
                   onClick={() => setActiveAssetTab(tab.id)}
                 >
@@ -563,9 +477,7 @@ export const AssetModal = () => {
                       inputClassName="bg-white/5 pr-10 placeholder-white/40"
                       icon={SearchIcon}
                       value={searchTerm}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        setSearchTerm(e.target.value)
-                      }
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                       iconClassName="pointer-events-none left-3 top-1/2 h-4 w-4 -translate-y-1/2 p-0 text-white/50"
                     />
                     {searchTerm && (
@@ -575,17 +487,9 @@ export const AssetModal = () => {
                       />
                     )}
                   </div>
-                  <CloseButton
-                    onClick={handleClose}
-                    className="relative z-[51]"
-                  />
+                  <CloseButton onClick={handleClose} className="relative z-[51]" />
                 </div>
-                <div
-                  className={twMerge(
-                    "overflow-auto-y mt-4 h-[574px]",
-                    activeAssetTab !== "all" && "h-[552px]",
-                  )}
-                >
+                <div className={twMerge("overflow-auto-y mt-4 h-[574px]", activeAssetTab !== "all" && "h-[552px]")}>
                   {activeAssetTab !== "all" && !searchTerm && (
                     <div className="mb-2 flex items-center justify-between font-semibold">
                       <div className="flex items-center">

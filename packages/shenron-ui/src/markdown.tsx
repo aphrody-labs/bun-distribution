@@ -38,54 +38,27 @@ const components: Components = {
     );
   },
   p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-  strong: ({ children }) => (
-    <strong className="font-bold text-white">{children}</strong>
-  ),
+  strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
   em: ({ children }) => <em className="italic text-white/90">{children}</em>,
-  ul: ({ children }) => (
-    <ul className="mb-2 list-inside list-disc space-y-1">{children}</ul>
-  ),
-  ol: ({ children }) => (
-    <ol className="mb-2 list-inside list-decimal space-y-1">{children}</ol>
-  ),
+  ul: ({ children }) => <ul className="mb-2 list-inside list-disc space-y-1">{children}</ul>,
+  ol: ({ children }) => <ol className="mb-2 list-inside list-decimal space-y-1">{children}</ol>,
   li: ({ children }) => <li className="text-gray-400">{children}</li>,
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-dbz-orange/60 pl-3 italic text-white/70">
-      {children}
-    </blockquote>
+    <blockquote className="border-l-2 border-dbz-orange/60 pl-3 italic text-white/70">{children}</blockquote>
   ),
   code: ({ children }) => (
-    <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[0.85em] text-dbz-orange">
-      {children}
-    </code>
+    <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[0.85em] text-dbz-orange">{children}</code>
   ),
-  h1: ({ children }) => (
-    <span className="mb-1 block font-bold text-white">{children}</span>
-  ),
-  h2: ({ children }) => (
-    <span className="mb-1 block font-bold text-white">{children}</span>
-  ),
-  h3: ({ children }) => (
-    <span className="mb-1 block font-bold text-white">{children}</span>
-  ),
+  h1: ({ children }) => <span className="mb-1 block font-bold text-white">{children}</span>,
+  h2: ({ children }) => <span className="mb-1 block font-bold text-white">{children}</span>,
+  h3: ({ children }) => <span className="mb-1 block font-bold text-white">{children}</span>,
 };
 
 /** Markdown rendering with raw HTML and inline images disabled. */
-export function Markdown({
-  children,
-  className,
-}: {
-  children: string;
-  className?: string;
-}) {
+export function Markdown({ children, className }: { children: string; className?: string }) {
   return (
     <div className={className}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        disallowedElements={["img"]}
-        unwrapDisallowed
-        components={components}
-      >
+      <ReactMarkdown remarkPlugins={[remarkGfm]} disallowedElements={["img"]} unwrapDisallowed components={components}>
         {children}
       </ReactMarkdown>
     </div>

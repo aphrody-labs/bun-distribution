@@ -20,12 +20,9 @@ export const VFX_NOT_AVAILABLE_ERROR = "vfx_not_yet_available";
 
 const VFX_ENDPOINT = "/v1/generate/video/edit/beeble_switchx";
 
-export async function submitVFXJob(
-  req: SubmitVFXJobRequest,
-): Promise<SubmitVFXJobResponse> {
+export async function submitVFXJob(req: SubmitVFXJobRequest): Promise<SubmitVFXJobResponse> {
   try {
-    const url =
-      StorytellerApiHostStore.getInstance().pathToFullUrl(VFX_ENDPOINT);
+    const url = StorytellerApiHostStore.getInstance().pathToFullUrl(VFX_ENDPOINT);
 
     const res = await fetch(url, {
       method: "POST",
@@ -43,9 +40,7 @@ export async function submitVFXJob(
       };
     }
 
-    const json = (await res
-      .json()
-      .catch(() => null)) as SubmitVFXJobResponse | null;
+    const json = (await res.json().catch(() => null)) as SubmitVFXJobResponse | null;
     if (!json) {
       return {
         success: false,

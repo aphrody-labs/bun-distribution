@@ -60,9 +60,7 @@ native("M3, SVG, CLI and Web share one handle and respect close/reload", () => {
   expect(add(10, 20)).toBe(30);
   const handle = loadNativeLibrary();
   expect(getAphrodyAbiVersion()).toBe(1);
-  expect(webExtractTitle("<title>Unified native library</title>")).toBe(
-    "Unified native library",
-  );
+  expect(webExtractTitle("<title>Unified native library</title>")).toBe("Unified native library");
   expect(compileSass("$color: red; .test { color: $color; }")).toContain("red");
   expect(
     svg({

@@ -31,10 +31,7 @@ export const PendingRow = memo(function PendingRow({
   recreateSlot,
   onCopyPromptResult,
 }: PendingRowProps) {
-  const { progressPercent, timeLabel } = derivePendingStatus(
-    progress,
-    estimatedTimeLeftMs,
-  );
+  const { progressPercent, timeLabel } = derivePendingStatus(progress, estimatedTimeLeftMs);
   const iconPath = getCreatorIconPathForModelId(modelId);
 
   return (
@@ -51,26 +48,16 @@ export const PendingRow = memo(function PendingRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
           {prompt.trim() ? (
-            <p className="line-clamp-3 min-w-0 flex-1 text-sm leading-snug text-white/90">
-              {prompt}
-            </p>
+            <p className="line-clamp-3 min-w-0 flex-1 text-sm leading-snug text-white/90">{prompt}</p>
           ) : (
             // A just-enqueued job's prompt may not be resolved yet — show a
             // placeholder rather than an empty line with a stray copy button.
-            <p className="min-w-0 flex-1 text-sm italic text-white/40">
-              Generating…
-            </p>
+            <p className="min-w-0 flex-1 text-sm italic text-white/40">Generating…</p>
           )}
-          {prompt.trim() && (
-            <CopyPromptButton text={prompt} onCopyResult={onCopyPromptResult} />
-          )}
+          {prompt.trim() && <CopyPromptButton text={prompt} onCopyResult={onCopyPromptResult} />}
         </div>
         <div className="mt-1 flex items-center gap-1.5 text-xs text-white/45">
-          <img
-            src={iconPath}
-            alt=""
-            className="h-3 w-3 shrink-0 icon-auto-contrast"
-          />
+          <img src={iconPath} alt="" className="h-3 w-3 shrink-0 icon-auto-contrast" />
           <span className="truncate">{modelLabel}</span>
           {batchCount != null && batchCount > 1 && (
             <>
@@ -99,15 +86,9 @@ export const PendingRow = memo(function PendingRow({
               </div>
             )}
             {progressPercent != null && (
-              <span className="shrink-0 text-xs tabular-nums text-white/50">
-                {progressPercent}%
-              </span>
+              <span className="shrink-0 text-xs tabular-nums text-white/50">{progressPercent}%</span>
             )}
-            {timeLabel && (
-              <span className="shrink-0 text-[11px] text-white/35">
-                {timeLabel}
-              </span>
-            )}
+            {timeLabel && <span className="shrink-0 text-[11px] text-white/35">{timeLabel}</span>}
           </div>
         )}
       </div>

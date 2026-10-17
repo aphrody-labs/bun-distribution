@@ -24,19 +24,12 @@ import { useEffect, useRef, useState } from "react";
 import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
 import { twMerge } from "tailwind-merge";
 import { ImagePromptRow, type UploadImageFn } from "./ImagePromptRow";
-import {
-  RefImage,
-  usePromptEditStore,
-  useEnterToGenerateStore,
-} from "./promptStore";
+import { RefImage, usePromptEditStore, useEnterToGenerateStore } from "./promptStore";
 import { toast } from "@storyteller/ui-toaster";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
-import {
-  PromptFullscreenModal,
-  useFullscreenPrompt,
-} from "./PromptFullscreenModal";
+import { PromptFullscreenModal, useFullscreenPrompt } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
 
@@ -92,14 +85,13 @@ export const PromptBoxEdit = ({
   const [prompt, setPrompt] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const { isFullscreen, openFullscreen, closeFullscreen } =
-    useFullscreenPrompt();
+  const { isFullscreen, openFullscreen, closeFullscreen } = useFullscreenPrompt();
 
   // CSS viewport units handle resize reactivity automatically
   const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
 
   const toggleExpand = () => {
-    setIsExpanded((prev) => {
+    setIsExpanded(prev => {
       const next = !prev;
       if (textareaRef.current) {
         textareaRef.current.style.height = next ? EXPANDED_HEIGHT : "auto";
@@ -109,13 +101,13 @@ export const PromptBoxEdit = ({
   };
 
   const [internalEnqueueing, setInternalEnqueueing] = useState(false);
-  const referenceImages = usePromptEditStore((s) => s.referenceImages);
-  const setReferenceImages = usePromptEditStore((s) => s.setReferenceImages);
-  const aspectRatio = usePromptEditStore((s) => s.aspectRatio);
-  const setAspectRatio = usePromptEditStore((s) => s.setAspectRatio);
-  const resolution = usePromptEditStore((s) => s.resolution);
-  const setResolution = usePromptEditStore((s) => s.setResolution);
-  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
+  const referenceImages = usePromptEditStore(s => s.referenceImages);
+  const setReferenceImages = usePromptEditStore(s => s.setReferenceImages);
+  const aspectRatio = usePromptEditStore(s => s.aspectRatio);
+  const setAspectRatio = usePromptEditStore(s => s.setAspectRatio);
+  const resolution = usePromptEditStore(s => s.resolution);
+  const setResolution = usePromptEditStore(s => s.setResolution);
+  const enterToGenerate = useEnterToGenerateStore(s => s.enabled);
 
   const [showImagePrompts, setShowImagePrompts] = useState(false);
 
@@ -163,19 +155,17 @@ export const PromptBoxEdit = ({
   const generationCount = generationCountProp || 1;
 
   useEffect(() => {
-    setAspectRatioList((prev) =>
-      prev.map((item) => ({
+    setAspectRatioList(prev =>
+      prev.map(item => ({
         ...item,
-        selected:
-          item.label.toLowerCase() === aspectRatio ||
-          (item.label === "Auto" && aspectRatio === "auto"),
+        selected: item.label.toLowerCase() === aspectRatio || (item.label === "Auto" && aspectRatio === "auto"),
       })),
     );
   }, [aspectRatio]);
 
   useEffect(() => {
-    setResolutionList((prev) =>
-      prev.map((item) => ({
+    setResolutionList(prev =>
+      prev.map(item => ({
         ...item,
         selected: item.label.toLowerCase() === resolution,
       })),
@@ -183,8 +173,7 @@ export const PromptBoxEdit = ({
   }, [resolution]);
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
-    const value =
-      selectedItem.label === "Auto" ? "auto" : selectedItem.label.toLowerCase();
+    const value = selectedItem.label === "Auto" ? "auto" : selectedItem.label.toLowerCase();
     setAspectRatio(value as any);
   };
 
@@ -193,16 +182,14 @@ export const PromptBoxEdit = ({
   };
 
   const getCurrentAspectRatioIcon = (): LucideIcon => {
-    const selected = aspectRatioList.find((item) => item.selected);
+    const selected = aspectRatioList.find(item => item.selected);
     if (!selected?.icon) return RectangleHorizontalIcon;
     return (selected.icon as React.ReactElement).type as LucideIcon;
   };
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isImageRowVisible =
-    (selectedImageModel?.canUseImagePrompt &&
-      (showImagePrompts || referenceImages.length > 0)) ||
-    false;
+    (selectedImageModel?.canUseImagePrompt && (showImagePrompts || referenceImages.length > 0)) || false;
 
   useEffect(() => {
     if (isExpanded) return;
@@ -226,8 +213,7 @@ export const PromptBoxEdit = ({
     const pastedText = e.clipboardData.getData("text");
     const target = e.currentTarget;
     const { selectionStart, selectionEnd, value } = target;
-    const next =
-      value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
+    const next = value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
     setPrompt(next);
     requestAnimationFrame(() => {
       const pos = Math.min(selectionStart + pastedText.length, next.length);
@@ -278,9 +264,7 @@ export const PromptBoxEdit = ({
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
     if (isFinite(maxLen) && prompt.length > maxLen) {
-      toast.error(
-        `Prompt exceeds the ${maxLen} character limit for this model`,
-      );
+      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
       return;
     }
     setInternalEnqueueing(true);
@@ -348,16 +332,10 @@ export const PromptBoxEdit = ({
           <div
             className={twMerge(
               "glass w-fit mx-auto rounded-[3px] px-2 py-2 flex items-center gap-3",
-              selectedImageModel?.canUseImagePrompt &&
-                isImageRowVisible &&
-                "mb-[72px]",
+              selectedImageModel?.canUseImagePrompt && isImageRowVisible && "mb-[72px]",
             )}
           >
-            <ButtonIconSelect
-              options={modes}
-              onOptionChange={onModeSelectionChange}
-              selectedOption={selectedMode}
-            />
+            <ButtonIconSelect options={modes} onOptionChange={onModeSelectionChange} selectedOption={selectedMode} />
             <div className="h-6 w-px bg-white/20" />
             <div className="flex items-center gap-1">
               <Tooltip content="Undo" position="top" delay={200}>
@@ -386,10 +364,7 @@ export const PromptBoxEdit = ({
           {selectedImageModel?.canUseImagePrompt && isImageRowVisible && (
             <ImagePromptRow
               visible={true}
-              maxImagePromptCount={Math.max(
-                1,
-                selectedImageModel?.maxImagePromptCount ?? 1,
-              )}
+              maxImagePromptCount={Math.max(1, selectedImageModel?.maxImagePromptCount ?? 1)}
               allowUpload={true}
               referenceImages={referenceImages}
               setReferenceImages={setReferenceImages}
@@ -402,9 +377,7 @@ export const PromptBoxEdit = ({
             className={twMerge(
               "glass relative w-[860px] p-4",
               isFocused && "border-primary",
-              selectedImageModel?.canUseImagePrompt &&
-                isImageRowVisible &&
-                "rounded-t-none",
+              selectedImageModel?.canUseImagePrompt && isImageRowVisible && "rounded-t-none",
             )}
           >
             <div className="flex gap-3">
@@ -421,7 +394,7 @@ export const PromptBoxEdit = ({
                       "h-8 w-8 p-0 bg-transparent hover:bg-transparent group transition-all border-0 shadow-none",
                       isImageRowVisible && "text-white",
                     )}
-                    onClick={() => setShowImagePrompts((prev) => !prev)}
+                    onClick={() => setShowImagePrompts(prev => !prev)}
                   >
                     <svg
                       width="24"
@@ -470,36 +443,20 @@ export const PromptBoxEdit = ({
                     handleCommonAspectRatioSelect={setCommonAspectRatio}
                   />
                 )}
-                {selectedImageModel?.canChangeAspectRatio &&
-                  !selectedImageModel?.supportsNewAspectRatio() && (
-                    <Tooltip
-                      content="Aspect Ratio"
-                      position="top"
-                      className="z-50"
-                      closeOnClick={true}
-                    >
-                      <PopoverMenu
-                        items={aspectRatioList}
-                        onSelect={handleAspectRatioSelect}
-                        mode="toggle"
-                        panelTitle="Aspect Ratio"
-                        showIconsInList
-                        triggerIcon={
-                          <DynamicIcon
-                            icon={getCurrentAspectRatioIcon()}
-                            className="h-4 w-4"
-                          />
-                        }
-                      />
-                    </Tooltip>
-                  )}
+                {selectedImageModel?.canChangeAspectRatio && !selectedImageModel?.supportsNewAspectRatio() && (
+                  <Tooltip content="Aspect Ratio" position="top" className="z-50" closeOnClick={true}>
+                    <PopoverMenu
+                      items={aspectRatioList}
+                      onSelect={handleAspectRatioSelect}
+                      mode="toggle"
+                      panelTitle="Aspect Ratio"
+                      showIconsInList
+                      triggerIcon={<DynamicIcon icon={getCurrentAspectRatioIcon()} className="h-4 w-4" />}
+                    />
+                  </Tooltip>
+                )}
                 {selectedImageModel?.canChangeResolution && (
-                  <Tooltip
-                    content="Resolution"
-                    position="top"
-                    className="z-50"
-                    closeOnClick={true}
-                  >
+                  <Tooltip content="Resolution" position="top" className="z-50" closeOnClick={true}>
                     <PopoverMenu
                       items={resolutionList}
                       onSelect={handleResolutionSelect}
@@ -513,12 +470,7 @@ export const PromptBoxEdit = ({
               </div>
               <div className="flex items-center gap-2">
                 {onFitPressed && (
-                  <Tooltip
-                    content={"Fit canvas to screen"}
-                    position="top"
-                    className="z-50"
-                    delay={200}
-                  >
+                  <Tooltip content={"Fit canvas to screen"} position="top" className="z-50" delay={200}>
                     <Button
                       variant="secondary"
                       className="h-9 bg-ui-controls/60 px-3 text-base-fg hover:bg-ui-controls/90"
@@ -532,7 +484,7 @@ export const PromptBoxEdit = ({
                 <GenerationCountPicker
                   currentModel={selectedImageModel}
                   currentCount={generationCount}
-                  handleCountChange={(count) => {
+                  handleCountChange={count => {
                     onGenerationCountChange?.(count);
                   }}
                 />
@@ -555,20 +507,13 @@ export const PromptBoxEdit = ({
             </div>
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-            <Tooltip
-              content={isExpanded ? "Collapse" : "Expand"}
-              position="top"
-              className="-mb-2"
-            >
+            <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="top" className="-mb-2">
               <button
                 type="button"
                 onClick={toggleExpand}
                 className="text-white/30 hover:text-white/90 transition-colors px-3 py-0.5"
               >
-                <DynamicIcon
-                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
-                  className="text-xs"
-                />
+                <DynamicIcon icon={isExpanded ? ChevronUpIcon : ChevronDownIcon} className="text-xs" />
               </button>
             </Tooltip>
           </div>
@@ -590,10 +535,7 @@ export const PromptBoxEdit = ({
           selectedImageModel?.canUseImagePrompt ? (
             <ImagePromptRow
               visible={true}
-              maxImagePromptCount={Math.max(
-                1,
-                selectedImageModel?.maxImagePromptCount ?? 1,
-              )}
+              maxImagePromptCount={Math.max(1, selectedImageModel?.maxImagePromptCount ?? 1)}
               allowUpload={true}
               referenceImages={referenceImages}
               setReferenceImages={setReferenceImages}

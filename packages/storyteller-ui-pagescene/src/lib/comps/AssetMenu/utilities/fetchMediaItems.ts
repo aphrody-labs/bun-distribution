@@ -1,15 +1,6 @@
 import type { PageSceneAdapter } from "../../../adapter";
-import {
-  FetchStatus,
-  FilterEngineCategories,
-  FilterMediaType,
-  ToastTypes,
-} from "../../../enums";
-import type {
-  MediaItem,
-  Pagination,
-  PaginationInfinite,
-} from "../../../models";
+import { FetchStatus, FilterEngineCategories, FilterMediaType, ToastTypes } from "../../../enums";
+import type { MediaItem, Pagination, PaginationInfinite } from "../../../models";
 import { responseMapping } from "./misc";
 
 export interface FetchMediaItemStates {
@@ -34,13 +25,7 @@ export const fetchUserMediaItems = async (
   args: fetchMediaItemsInterface,
   adapter: PageSceneAdapter,
 ): Promise<FetchMediaItemStates> => {
-  const {
-    filterEngineCategories,
-    filterMediaType,
-    defaultErrorMessage,
-    nextPageIndex,
-    suppressErrorToast,
-  } = args;
+  const { filterEngineCategories, filterMediaType, defaultErrorMessage, nextPageIndex, suppressErrorToast } = args;
 
   const response = await adapter.listUserMediaFiles({
     pageSize: 100,
@@ -50,11 +35,7 @@ export const fetchUserMediaItems = async (
   });
 
   if (response.success && response.data) {
-    const newSetObjects = responseMapping(
-      response.data,
-      filterEngineCategories,
-      adapter,
-    );
+    const newSetObjects = responseMapping(response.data, filterEngineCategories, adapter);
     return {
       mediaItems: newSetObjects,
       status: FetchStatus.SUCCESS,
@@ -66,9 +47,7 @@ export const fetchUserMediaItems = async (
   if (!suppressErrorToast) {
     adapter.showToast(
       ToastTypes.ERROR,
-      response.errorMessage ??
-        defaultErrorMessage ??
-        "Unknown Error in Fetching Media Items",
+      response.errorMessage ?? defaultErrorMessage ?? "Unknown Error in Fetching Media Items",
     );
   }
   return { status: FetchStatus.ERROR };
@@ -78,12 +57,7 @@ export const fetchFeaturedMediaItems = async (
   args: fetchMediaItemsInterface,
   adapter: PageSceneAdapter,
 ): Promise<FetchMediaItemStates> => {
-  const {
-    filterMediaType,
-    filterEngineCategories,
-    defaultErrorMessage,
-    nextPageCursor,
-  } = args;
+  const { filterMediaType, filterEngineCategories, defaultErrorMessage, nextPageCursor } = args;
 
   const response = await adapter.listFeaturedMediaFiles({
     pageSize: 100,
@@ -93,11 +67,7 @@ export const fetchFeaturedMediaItems = async (
   });
 
   if (response.success && response.data) {
-    const newSetObjects = responseMapping(
-      response.data,
-      filterEngineCategories,
-      adapter,
-    );
+    const newSetObjects = responseMapping(response.data, filterEngineCategories, adapter);
     return {
       mediaItems: newSetObjects,
       status: FetchStatus.SUCCESS,
@@ -106,9 +76,7 @@ export const fetchFeaturedMediaItems = async (
   }
   adapter.showToast(
     ToastTypes.ERROR,
-    response.errorMessage ??
-      defaultErrorMessage ??
-      "Unknown Error in Fetching Media Items",
+    response.errorMessage ?? defaultErrorMessage ?? "Unknown Error in Fetching Media Items",
   );
   return { status: FetchStatus.ERROR };
 };

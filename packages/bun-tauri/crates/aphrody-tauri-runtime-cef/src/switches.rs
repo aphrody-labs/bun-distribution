@@ -35,9 +35,9 @@
 ///
 /// Each entry names the API that sets the same thing without dropping what is there.
 pub(crate) const REPLACING_SWITCHES: &[(&str, &str)] = &[
-  ("disable-features", "Cef::disable_features"),
-  ("enable-features", "Cef::enable_features"),
-  ("js-flags", "Cef::javascript_flags"),
+    ("disable-features", "Cef::disable_features"),
+    ("enable-features", "Cef::enable_features"),
+    ("js-flags", "Cef::javascript_flags"),
 ];
 
 /// Chromium switches that turn off a security boundary, mirroring the list Chrome warns
@@ -47,49 +47,49 @@ pub(crate) const REPLACING_SWITCHES: &[(&str, &str)] = &[
 /// that a future Chromium renames simply stops matching, which costs a warning and
 /// nothing else.
 const DANGEROUS_SWITCHES: &[&str] = &[
-  // Web platform boundaries.
-  "disable-web-security",
-  "allow-running-insecure-content",
-  "ignore-certificate-errors",
-  "ignore-certificate-errors-spki-list",
-  "unsafely-treat-insecure-origin-as-secure",
-  "allow-insecure-localhost",
-  "disable-site-isolation-trials",
-  "enable-blink-features",
-  "disable-blink-features",
-  "enable-unsafe-webgpu",
-  "disable-hid-blocklist",
-  "unsafely-allow-protected-media-identifier-for-domain",
-  // Process sandbox.
-  "no-sandbox",
-  "disable-gpu-sandbox",
-  "disable-setuid-sandbox",
-  "disable-seccomp-filter-sandbox",
-  "disable-namespace-sandbox",
-  "disable-landlock-sandbox",
-  "disable-webnn-compiler-sandbox",
-  "allow-sandbox-debugging",
-  "allow-third-party-modules",
-  "single-process",
-  // Traffic capture and redirection.
-  "host-resolver-rules",
-  "host-rules",
-  "ssl-key-log-file",
-  "log-net-log",
-  "net-log-capture-mode",
-  // Media and input.
-  "disable-webrtc-encryption",
-  "use-fake-ui-for-media-stream",
-  "enable-speech-dispatcher",
-  "enable-gpu-benchmarking",
+    // Web platform boundaries.
+    "disable-web-security",
+    "allow-running-insecure-content",
+    "ignore-certificate-errors",
+    "ignore-certificate-errors-spki-list",
+    "unsafely-treat-insecure-origin-as-secure",
+    "allow-insecure-localhost",
+    "disable-site-isolation-trials",
+    "enable-blink-features",
+    "disable-blink-features",
+    "enable-unsafe-webgpu",
+    "disable-hid-blocklist",
+    "unsafely-allow-protected-media-identifier-for-domain",
+    // Process sandbox.
+    "no-sandbox",
+    "disable-gpu-sandbox",
+    "disable-setuid-sandbox",
+    "disable-seccomp-filter-sandbox",
+    "disable-namespace-sandbox",
+    "disable-landlock-sandbox",
+    "disable-webnn-compiler-sandbox",
+    "allow-sandbox-debugging",
+    "allow-third-party-modules",
+    "single-process",
+    // Traffic capture and redirection.
+    "host-resolver-rules",
+    "host-rules",
+    "ssl-key-log-file",
+    "log-net-log",
+    "net-log-capture-mode",
+    // Media and input.
+    "disable-webrtc-encryption",
+    "use-fake-ui-for-media-stream",
+    "enable-speech-dispatcher",
+    "enable-gpu-benchmarking",
 ];
 
 /// Splits a comma-delimited switch value, dropping the empty entries Chromium ignores.
 fn split_list(value: &str) -> impl Iterator<Item = &str> {
-  value
-    .split(',')
-    .map(str::trim)
-    .filter(|part| !part.is_empty())
+    value
+        .split(',')
+        .map(str::trim)
+        .filter(|part| !part.is_empty())
 }
 
 /// The value a merging append should write, given what the switch already holds.
@@ -100,15 +100,15 @@ fn split_list(value: &str) -> impl Iterator<Item = &str> {
 /// `values` entries may themselves be comma-delimited, so a caller that collected
 /// `["A,B", "C"]` gets the same result as one that collected `["A", "B", "C"]`.
 fn merged_switch_value(existing: &str, values: &[String]) -> Option<String> {
-  let mut merged: Vec<&str> = split_list(existing).collect();
+    let mut merged: Vec<&str> = split_list(existing).collect();
 
-  for value in values.iter().flat_map(|value| split_list(value)) {
-    if !merged.contains(&value) {
-      merged.push(value);
+    for value in values.iter().flat_map(|value| split_list(value)) {
+        if !merged.contains(&value) {
+            merged.push(value);
+        }
     }
-  }
 
-  (!merged.is_empty()).then(|| merged.join(","))
+    (!merged.is_empty()).then(|| merged.join(","))
 }
 
 /// Merges `values` into the comma-delimited switch `name` already on `command_line`,
@@ -117,152 +117,152 @@ fn merged_switch_value(existing: &str, values: &[String]) -> Option<String> {
 /// Chromium reads the *last* value appended for a switch, and there is no API to edit one
 /// in place, so the merge is read, remove, append.
 pub(crate) fn append_merged_switch(
-  command_line: &mut cef::CommandLine,
-  name: &str,
-  values: &[String],
+    command_line: &mut cef::CommandLine,
+    name: &str,
+    values: &[String],
 ) {
-  use cef::{CefString, ImplCommandLine};
+    use cef::{CefString, ImplCommandLine};
 
-  if values.is_empty() {
-    return;
-  }
+    if values.is_empty() {
+        return;
+    }
 
-  let switch = CefString::from(name);
-  let existing = if command_line.has_switch(Some(&switch)) == 1 {
-    CefString::from(&command_line.switch_value(Some(&switch))).to_string()
-  } else {
-    String::new()
-  };
+    let switch = CefString::from(name);
+    let existing = if command_line.has_switch(Some(&switch)) == 1 {
+        CefString::from(&command_line.switch_value(Some(&switch))).to_string()
+    } else {
+        String::new()
+    };
 
-  let Some(merged) = merged_switch_value(&existing, values) else {
-    return;
-  };
+    let Some(merged) = merged_switch_value(&existing, values) else {
+        return;
+    };
 
-  // `append_switch_with_value` overwrites the map entry but leaves the old spelling in
-  // `argv`; removing first keeps the two consistent for anything that re-parses it.
-  command_line.remove_switch(Some(&switch));
-  command_line.append_switch_with_value(Some(&switch), Some(&CefString::from(merged.as_str())));
+    // `append_switch_with_value` overwrites the map entry but leaves the old spelling in
+    // `argv`; removing first keeps the two consistent for anything that re-parses it.
+    command_line.remove_switch(Some(&switch));
+    command_line.append_switch_with_value(Some(&switch), Some(&CefString::from(merged.as_str())));
 }
 
 /// Strips the `-`/`--` prefix Chromium tolerates on a switch name, so a switch spelled
 /// either way is recognised.
 fn switch_key(argument: &str) -> &str {
-  argument.trim_start_matches('-')
+    argument.trim_start_matches('-')
 }
 
 /// Warns about application switches that replace a value the runtime or CEF depends on.
 pub(crate) fn warn_about_replacing_switches(args: &[(String, Option<String>)]) {
-  for (argument, _) in args {
-    let key = switch_key(argument);
-    if let Some((_, replacement)) = REPLACING_SWITCHES.iter().find(|(name, _)| *name == key) {
-      log::warn!(
-        "the --{key} switch replaces the value Chromium and CEF already set rather than \
+    for (argument, _) in args {
+        let key = switch_key(argument);
+        if let Some((_, replacement)) = REPLACING_SWITCHES.iter().find(|(name, _)| *name == key) {
+            log::warn!(
+                "the --{key} switch replaces the value Chromium and CEF already set rather than \
          adding to it, which drops entries the runtime depends on. Use {replacement} instead."
-      );
+            );
+        }
     }
-  }
 }
 
 /// Warns about application switches that turn off a security boundary.
 pub(crate) fn warn_about_dangerous_switches(args: &[(String, Option<String>)]) {
-  for (argument, _) in args {
-    let key = switch_key(argument);
-    if DANGEROUS_SWITCHES.contains(&key) {
-      log::warn!(
-        "the --{key} switch turns off a Chromium security boundary. Chrome itself warns \
+    for (argument, _) in args {
+        let key = switch_key(argument);
+        if DANGEROUS_SWITCHES.contains(&key) {
+            log::warn!(
+                "the --{key} switch turns off a Chromium security boundary. Chrome itself warns \
          its users when it is set; do not ship it."
-      );
+            );
+        }
     }
-  }
 }
 
 #[cfg(test)]
 mod tests {
-  use super::*;
+    use super::*;
 
-  #[test]
-  fn a_list_is_split_the_way_chromium_splits_it() {
-    let parts: Vec<_> = split_list("A,,B , C,").collect();
-    assert_eq!(parts, ["A", "B", "C"]);
-  }
-
-  fn merge(existing: &str, values: &[&str]) -> Option<String> {
-    let values: Vec<String> = values.iter().map(ToString::to_string).collect();
-    merged_switch_value(existing, &values)
-  }
-
-  #[test]
-  fn merging_keeps_what_cef_already_disabled() {
-    // The whole point: CEF's crash-avoidance entries survive the application's own.
-    assert_eq!(
-      merge("GlicActorUi,LensOverlay", &["MediaRouter"]).as_deref(),
-      Some("GlicActorUi,LensOverlay,MediaRouter")
-    );
-  }
-
-  #[test]
-  fn merging_onto_an_unset_switch_writes_only_the_new_values() {
-    assert_eq!(merge("", &["A", "B"]).as_deref(), Some("A,B"));
-  }
-
-  #[test]
-  fn a_value_already_present_is_not_repeated() {
-    assert_eq!(
-      merge("A,B", &["B", "C", "B"]).as_deref(),
-      Some("A,B,C"),
-      "a duplicate would be harmless to Chromium but makes the switch unreadable"
-    );
-  }
-
-  #[test]
-  fn entries_may_themselves_be_comma_delimited() {
-    assert_eq!(merge("A", &["B,C", "D"]).as_deref(), Some("A,B,C,D"));
-  }
-
-  #[test]
-  fn nothing_to_write_leaves_the_command_line_alone() {
-    // An empty switch value is not the same as an absent switch, so it must not be
-    // appended: `--disable-features=` reads as "disable nothing named".
-    assert_eq!(merge("", &[""]), None);
-    assert_eq!(merge("", &[]), None);
-  }
-
-  #[test]
-  fn switch_names_are_recognised_with_or_without_a_prefix() {
-    assert_eq!(switch_key("--disable-features"), "disable-features");
-    assert_eq!(switch_key("-disable-features"), "disable-features");
-    assert_eq!(switch_key("disable-features"), "disable-features");
-  }
-
-  #[test]
-  fn every_replacing_switch_names_a_replacement() {
-    for (name, replacement) in REPLACING_SWITCHES {
-      assert!(!name.is_empty());
-      assert!(
-        replacement.starts_with("Cef::"),
-        "the warning tells the user what to call instead"
-      );
+    #[test]
+    fn a_list_is_split_the_way_chromium_splits_it() {
+        let parts: Vec<_> = split_list("A,,B , C,").collect();
+        assert_eq!(parts, ["A", "B", "C"]);
     }
-  }
 
-  #[test]
-  fn the_two_lists_answer_different_questions() {
-    // `disable-features` replaces CEF's crash-avoidance list, which is a correctness
-    // problem rather than a security one, so it is warned about but not called dangerous.
-    assert!(
-      REPLACING_SWITCHES
-        .iter()
-        .any(|(name, _)| *name == "disable-features")
-    );
-    assert!(!DANGEROUS_SWITCHES.contains(&"disable-features"));
+    fn merge(existing: &str, values: &[&str]) -> Option<String> {
+        let values: Vec<String> = values.iter().map(ToString::to_string).collect();
+        merged_switch_value(existing, &values)
+    }
 
-    // The blink feature switches turn boundaries off but overwrite nothing the runtime
-    // set, so they are only on the dangerous list.
-    assert!(DANGEROUS_SWITCHES.contains(&"enable-blink-features"));
-    assert!(
-      !REPLACING_SWITCHES
-        .iter()
-        .any(|(name, _)| *name == "enable-blink-features")
-    );
-  }
+    #[test]
+    fn merging_keeps_what_cef_already_disabled() {
+        // The whole point: CEF's crash-avoidance entries survive the application's own.
+        assert_eq!(
+            merge("GlicActorUi,LensOverlay", &["MediaRouter"]).as_deref(),
+            Some("GlicActorUi,LensOverlay,MediaRouter")
+        );
+    }
+
+    #[test]
+    fn merging_onto_an_unset_switch_writes_only_the_new_values() {
+        assert_eq!(merge("", &["A", "B"]).as_deref(), Some("A,B"));
+    }
+
+    #[test]
+    fn a_value_already_present_is_not_repeated() {
+        assert_eq!(
+            merge("A,B", &["B", "C", "B"]).as_deref(),
+            Some("A,B,C"),
+            "a duplicate would be harmless to Chromium but makes the switch unreadable"
+        );
+    }
+
+    #[test]
+    fn entries_may_themselves_be_comma_delimited() {
+        assert_eq!(merge("A", &["B,C", "D"]).as_deref(), Some("A,B,C,D"));
+    }
+
+    #[test]
+    fn nothing_to_write_leaves_the_command_line_alone() {
+        // An empty switch value is not the same as an absent switch, so it must not be
+        // appended: `--disable-features=` reads as "disable nothing named".
+        assert_eq!(merge("", &[""]), None);
+        assert_eq!(merge("", &[]), None);
+    }
+
+    #[test]
+    fn switch_names_are_recognised_with_or_without_a_prefix() {
+        assert_eq!(switch_key("--disable-features"), "disable-features");
+        assert_eq!(switch_key("-disable-features"), "disable-features");
+        assert_eq!(switch_key("disable-features"), "disable-features");
+    }
+
+    #[test]
+    fn every_replacing_switch_names_a_replacement() {
+        for (name, replacement) in REPLACING_SWITCHES {
+            assert!(!name.is_empty());
+            assert!(
+                replacement.starts_with("Cef::"),
+                "the warning tells the user what to call instead"
+            );
+        }
+    }
+
+    #[test]
+    fn the_two_lists_answer_different_questions() {
+        // `disable-features` replaces CEF's crash-avoidance list, which is a correctness
+        // problem rather than a security one, so it is warned about but not called dangerous.
+        assert!(
+            REPLACING_SWITCHES
+                .iter()
+                .any(|(name, _)| *name == "disable-features")
+        );
+        assert!(!DANGEROUS_SWITCHES.contains(&"disable-features"));
+
+        // The blink feature switches turn boundaries off but overwrite nothing the runtime
+        // set, so they are only on the dangerous list.
+        assert!(DANGEROUS_SWITCHES.contains(&"enable-blink-features"));
+        assert!(
+            !REPLACING_SWITCHES
+                .iter()
+                .any(|(name, _)| *name == "enable-blink-features")
+        );
+    }
 }

@@ -76,9 +76,7 @@ export interface UseSearchFilesReturn {
  * });
  * ```
  */
-export function useSearchFiles(
-  options: UseSearchFilesOptions,
-): UseSearchFilesReturn {
+export function useSearchFiles(options: UseSearchFilesOptions): UseSearchFilesReturn {
   const {
     query,
     scope,

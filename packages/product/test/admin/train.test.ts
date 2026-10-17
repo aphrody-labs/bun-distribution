@@ -25,7 +25,7 @@ const base = (extra: Partial<TrainRequest> = {}): TrainRequest => ({
 });
 
 test("every type maps to an aphrody train run kind and the owner's inputs", () => {
-  expect(TRAIN_TYPE_IDS.map((type) => TRAIN_TYPES[type].kind)).toEqual([
+  expect(TRAIN_TYPE_IDS.map(type => TRAIN_TYPES[type].kind)).toEqual([
     "dry-run",
     "embed",
     "rerank",
@@ -40,14 +40,12 @@ test("every type maps to an aphrody train run kind and the owner's inputs", () =
 });
 
 test("the CLI never offers promotion, registry migration or deletion", () => {
-  const kinds = TRAIN_TYPE_IDS.map((type) => TRAIN_TYPES[type].kind).join(" ");
+  const kinds = TRAIN_TYPE_IDS.map(type => TRAIN_TYPES[type].kind).join(" ");
   expect(kinds).not.toMatch(/promote|migrate|rm|delete/);
 });
 
 test("job ids are timestamped and safe", () => {
-  expect(newJobId("embeddings", new Date("2026-10-06T12:34:56Z"))).toBe(
-    "kit-20261006-123456-embeddings",
-  );
+  expect(newJobId("embeddings", new Date("2026-10-06T12:34:56Z"))).toBe("kit-20261006-123456-embeddings");
 });
 
 test("flags follow `aphrody train run`", () => {
@@ -87,31 +85,14 @@ test("flags follow `aphrody train run`", () => {
 test("validation lists what is missing or unsafe, in French", () => {
   expect(validateRequest(base(), hosts)).toEqual([]);
   expect(validateRequest(base({ type: "lora" }), hosts)).toHaveLength(3);
+  expect(validateRequest(base({ type: "embeddings", entree: "a;b" }), hosts).join(" ")).toContain("chemin");
+  expect(validateRequest(base({ steps: 0 }), hosts).join(" ")).toContain("étapes");
+  expect(validateRequest(base({ steps: 1.5 }), hosts).join(" ")).toContain("étapes");
+  expect(validateRequest(base({ host: "ghost" }), hosts).join(" ")).toContain("serveur inconnu");
+  expect(validateRequest(base({ id: "Bad Id" }), hosts).join(" ")).toContain("numéro");
+  expect(validateRequest(base({ domaine: "x; id" }), hosts).join(" ")).toContain("domaine");
   expect(
-    validateRequest(base({ type: "embeddings", entree: "a;b" }), hosts).join(
-      " ",
-    ),
-  ).toContain("chemin");
-  expect(validateRequest(base({ steps: 0 }), hosts).join(" ")).toContain(
-    "étapes",
-  );
-  expect(validateRequest(base({ steps: 1.5 }), hosts).join(" ")).toContain(
-    "étapes",
-  );
-  expect(validateRequest(base({ host: "ghost" }), hosts).join(" ")).toContain(
-    "serveur inconnu",
-  );
-  expect(validateRequest(base({ id: "Bad Id" }), hosts).join(" ")).toContain(
-    "numéro",
-  );
-  expect(
-    validateRequest(base({ domaine: "x; id" }), hosts).join(" "),
-  ).toContain("domaine");
-  expect(
-    validateRequest(
-      base({ type: "lora", entree: "d", reference: "g", modeleBase: "../x" }),
-      hosts,
-    ).join(" "),
+    validateRequest(base({ type: "lora", entree: "d", reference: "g", modeleBase: "../x" }), hosts).join(" "),
   ).toContain("modèle");
   expect(
     validateRequest(
@@ -128,10 +109,7 @@ test("validation lists what is missing or unsafe, in French", () => {
 
 test("the plan says what, where, and that nothing is deleted; GPU jobs warn about suspended inference", () => {
   const host = hosts.gpu!;
-  const lines = planLines(
-    base({ type: "embeddings", entree: "data/t.jsonl" }),
-    host,
-  );
+  const lines = planLines(base({ type: "embeddings", entree: "data/t.jsonl" }), host);
   const text = lines.join("\n");
   expect(text).toContain("Modèle d'embeddings");
   expect(text).toContain("omar@198.51.100.2");
@@ -151,6 +129,6 @@ test("parseJobs reads the status lines and ignores noise", () => {
   ].join("\n");
   const parsed = parseJobs(out);
   expect(parsed.host).toBe("gpu-1");
-  expect(parsed.jobs.map((job) => job.state)).toEqual(["termine", "en-cours"]);
+  expect(parsed.jobs.map(job => job.state)).toEqual(["termine", "en-cours"]);
   expect(parsed.jobs[1]!.last).toBe("a|b|c");
 });

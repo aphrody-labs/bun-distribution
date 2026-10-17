@@ -22,13 +22,7 @@ import {
 
 const SPACEUI_VOCABULARY = /\b(bg|text|border)-(app|ink|sidebar|menu|accent)\b/;
 
-function Harness({
-  children,
-  errors,
-}: {
-  children: ReactNode;
-  errors?: FieldErrors;
-}) {
+function Harness({ children, errors }: { children: ReactNode; errors?: FieldErrors }) {
   const form = useForm({
     defaultValues: {
       name: "",
@@ -85,9 +79,7 @@ describe("Form anatomy", () => {
     expect(html).toContain("Name is required");
     expect(html).toContain(">error</span>"); // leading Material Symbols `error` glyph
     expect(html).toContain('aria-invalid="true"');
-    expect(html).toMatch(
-      /aria-describedby="[^"]*-form-item-description [^"]*-form-item-message"/,
-    );
+    expect(html).toMatch(/aria-describedby="[^"]*-form-item-description [^"]*-form-item-message"/);
     expect(html).toContain("*");
     expectM3(html);
   });
@@ -113,17 +105,9 @@ describe("Form anatomy", () => {
 
 describe("fields", () => {
   test("InputField: error reaches the control and supporting text is inset 16px", () => {
-    const html = render(
-      <InputField
-        name="name"
-        label="Name"
-        description="Shown on your profile"
-        required
-      />,
-      {
-        name: { type: "required", message: "Required" },
-      },
-    );
+    const html = render(<InputField name="name" label="Name" description="Shown on your profile" required />, {
+      name: { type: "required", message: "Required" },
+    });
     expect(html).toContain("border-error");
     expect(html).toContain("px-4");
     expect(html).toContain('aria-required="true"');
@@ -139,25 +123,16 @@ describe("fields", () => {
   });
 
   test("SelectField renders its trigger", () => {
-    const html = render(
-      <SelectField name="role" label="Role" options={options} />,
-      {
-        role: { type: "required", message: "Pick one" },
-      },
-    );
+    const html = render(<SelectField name="role" label="Role" options={options} />, {
+      role: { type: "required", message: "Pick one" },
+    });
     expect(html).toContain("Role");
     expect(html).toContain("border-error");
     expectM3(html);
   });
 
   test("CheckboxField uses an inline body-large label", () => {
-    const html = render(
-      <CheckboxField
-        name="agree"
-        label="I agree"
-        description="Required to continue"
-      />,
-    );
+    const html = render(<CheckboxField name="agree" label="I agree" description="Required to continue" />);
     expect(html).toContain('type="checkbox"');
     expect(html).toContain("text-body-large");
     expectM3(html);
@@ -181,14 +156,7 @@ describe("fields", () => {
   });
 
   test("SwitchField renders a switch; disabled dims label and supporting text", () => {
-    const html = render(
-      <SwitchField
-        name="notify"
-        label="Notifications"
-        description="Push alerts"
-        disabled
-      />,
-    );
+    const html = render(<SwitchField name="notify" label="Notifications" description="Push alerts" disabled />);
     expect(html).toContain('role="switch"');
     expect(html).toContain("data-disabled");
     expect(html).toContain("group-data-[disabled]/field:opacity-38");

@@ -1,11 +1,7 @@
 import { ApiManager, ApiResponse } from "./ApiManager.js";
 import { Weight } from "./models/Weight.js";
 import { Pagination, PaginationInfinite } from "./models/Pagination.js";
-import {
-  FilterEngineCategories,
-  FilterMediaClasses,
-  FilterMediaType,
-} from "./enums/QueryFilters.js";
+import { FilterEngineCategories, FilterMediaClasses, FilterMediaType } from "./enums/QueryFilters.js";
 import { Visibility } from "./enums/Visibility.js";
 
 export enum ScopedWeightType {
@@ -104,19 +100,17 @@ export class WeightsApi extends ApiManager {
       results: Weight[];
       pagination: Pagination;
     }>({ endpoint, query })
-      .then((response) => ({
+      .then(response => ({
         success: true,
         data: response.results,
         pagination: response.pagination,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
 
-  public ListWeights({
-    ...params
-  }: ListWeightsRequest): Promise<ApiResponse<Weight[], PaginationInfinite>> {
+  public ListWeights({ ...params }: ListWeightsRequest): Promise<ApiResponse<Weight[], PaginationInfinite>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/weights/list`;
 
     const query = this.parseQueryValues(params);
@@ -126,21 +120,19 @@ export class WeightsApi extends ApiManager {
       results: Weight[];
       pagination: PaginationInfinite;
     }>({ endpoint, query })
-      .then((response) => ({
+      .then(response => ({
         success: true,
         data: response.results,
         pagination: response.pagination,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
 
   public ListWeightsFeatured({
     ...params
-  }: ListFeaturedWeightsRequest): Promise<
-    ApiResponse<Weight[], PaginationInfinite>
-  > {
+  }: ListFeaturedWeightsRequest): Promise<ApiResponse<Weight[], PaginationInfinite>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/weights/list_featured`;
 
     const query = this.parseQueryValues(params);
@@ -150,12 +142,12 @@ export class WeightsApi extends ApiManager {
       results: Weight[];
       pagination: PaginationInfinite;
     }>({ endpoint, query })
-      .then((response) => ({
+      .then(response => ({
         success: true,
         data: response.results,
         pagination: response.pagination,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
@@ -167,23 +159,19 @@ export class WeightsApi extends ApiManager {
       success: boolean;
       results: Weight[];
     }>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: true,
         data: response.results,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
 
-  public SearchWeights(
-    params: SearchWeightParams,
-  ): Promise<ApiResponse<Weight[]>> {
+  public SearchWeights(params: SearchWeightParams): Promise<ApiResponse<Weight[]>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/weights/search`;
 
-    const body = this.parseBodyValues<SearchWeightParams, SearchWeightRequest>(
-      params,
-    );
+    const body = this.parseBodyValues<SearchWeightParams, SearchWeightRequest>(params);
 
     return this.post<
       SearchWeightRequest,
@@ -192,20 +180,16 @@ export class WeightsApi extends ApiManager {
         weights: Weight[];
       }
     >({ endpoint, body })
-      .then((response) => ({
+      .then(response => ({
         success: true,
         data: response.weights,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
 
-  public GetWeightByToken({
-    weightToken,
-  }: {
-    weightToken: string;
-  }): Promise<ApiResponse<Weight>> {
+  public GetWeightByToken({ weightToken }: { weightToken: string }): Promise<ApiResponse<Weight>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/weights/weight/${weightToken}`;
 
     return this.get<GetWeightByTokenResponse>({ endpoint })
@@ -213,40 +197,29 @@ export class WeightsApi extends ApiManager {
         success: success,
         data: mediaFile,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
 
-  public UpdateWeightByToken({
-    weightToken,
-    ...params
-  }: UpdateWeightByTokenParams): Promise<ApiResponse<undefined>> {
+  public UpdateWeightByToken({ weightToken, ...params }: UpdateWeightByTokenParams): Promise<ApiResponse<undefined>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/weights/weight/${weightToken}`;
 
-    const body = this.parseBodyValues<
-      Omit<UpdateWeightByTokenParams, "weightToken">,
-      UpdateWeightByTokenRequest
-    >(params);
+    const body = this.parseBodyValues<Omit<UpdateWeightByTokenParams, "weightToken">, UpdateWeightByTokenRequest>(
+      params,
+    );
 
-    return this.post<
-      UpdateWeightByTokenRequest,
-      { success?: boolean; BadInput?: string }
-    >({ endpoint, body })
+    return this.post<UpdateWeightByTokenRequest, { success?: boolean; BadInput?: string }>({ endpoint, body })
       .then(({ success, BadInput }) => ({
         success: success ?? false,
         errorMessage: BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
 
-  public DeleteWeightByToken({
-    weightToken,
-  }: {
-    weightToken: string;
-  }): Promise<ApiResponse<undefined>> {
+  public DeleteWeightByToken({ weightToken }: { weightToken: string }): Promise<ApiResponse<undefined>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/weights/weight/${weightToken}`;
 
     const body = {
@@ -254,15 +227,15 @@ export class WeightsApi extends ApiManager {
       set_delete: true,
     };
 
-    return this.delete<
-      { as_mod: boolean; set_delete: boolean },
-      { success?: boolean; BadInput?: string }
-    >({ endpoint, body })
+    return this.delete<{ as_mod: boolean; set_delete: boolean }, { success?: boolean; BadInput?: string }>({
+      endpoint,
+      body,
+    })
       .then(({ success, BadInput }) => ({
         success: success ?? false,
         errorMessage: BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
@@ -280,15 +253,15 @@ export class WeightsApi extends ApiManager {
       cover_image_media_file_token: coverImageMediaFileToken,
     };
 
-    return this.post<
-      { cover_image_media_file_token: string },
-      { success?: boolean; BadInput?: string }
-    >({ endpoint, body })
+    return this.post<{ cover_image_media_file_token: string }, { success?: boolean; BadInput?: string }>({
+      endpoint,
+      body,
+    })
       .then(({ success, BadInput }) => ({
         success: success ?? false,
         errorMessage: BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }

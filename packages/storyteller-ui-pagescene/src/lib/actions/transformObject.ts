@@ -20,10 +20,7 @@ export type TransformSession = {
   commit(): void;
 };
 
-export function beginTransformSession(
-  editor: Editor,
-  uuid: string,
-): TransformSession {
+export function beginTransformSession(editor: Editor, uuid: string): TransformSession {
   const action = new TransformAction(editor, uuid);
   return {
     commit() {

@@ -94,19 +94,14 @@ function ipToInt(ip: string): number | undefined {
   const m = IPV4.exec(ip);
   if (!m) return undefined;
   const parts = m.slice(1).map(Number);
-  if (parts.some((p) => p > 255)) return undefined;
-  return (
-    ((parts[0]! << 24) | (parts[1]! << 16) | (parts[2]! << 8) | parts[3]!) >>> 0
-  );
+  if (parts.some(p => p > 255)) return undefined;
+  return ((parts[0]! << 24) | (parts[1]! << 16) | (parts[2]! << 8) | parts[3]!) >>> 0;
 }
-export function parseCidr(
-  cidr: string,
-): { base: number; bits: number; mask: number } | undefined {
+export function parseCidr(cidr: string): { base: number; bits: number; mask: number } | undefined {
   const [ip, len] = cidr.split("/");
   const base = ip === undefined ? undefined : ipToInt(ip);
   const bits = len === undefined ? 32 : Number(len);
-  if (base === undefined || !Number.isInteger(bits) || bits < 0 || bits > 32)
-    return undefined;
+  if (base === undefined || !Number.isInteger(bits) || bits < 0 || bits > 32) return undefined;
   const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
   return { base: (base & mask) >>> 0, bits, mask };
 }
@@ -145,158 +140,95 @@ export function tunnelProblems(root: string, file = TUNNEL_FILE): string[] {
   const problems: string[] = [];
   const text = readIfExists(root, file);
   if (text === undefined) return [`missing wireguard declaration: ${file}`];
-  if (PRIVATE_KEY_PATTERN.test(text))
-    problems.push(`${file}: contains private key material`);
+  if (PRIVATE_KEY_PATTERN.test(text)) problems.push(`${file}: contains private key material`);
   const t = JSON.parse(text) as Tunnel;
   const subnet = parseCidr(t.subnet);
-  if (!subnet || subnet.bits < 16 || subnet.bits > 29)
-    problems.push(`${file}: bad subnet ${t.subnet}`);
+  if (!subnet || subnet.bits < 16 || subnet.bits > 29) problems.push(`${file}: bad subnet ${t.subnet}`);
   for (const net of t.existingNetworks)
     if (cidrsOverlap(t.subnet, net.cidr))
-      problems.push(
-        `${file}: subnet ${t.subnet} overlaps ${net.cidr} (${net.name})`,
-      );
+      problems.push(`${file}: subnet ${t.subnet} overlaps ${net.cidr} (${net.name})`);
   if (t.clientAllowedIps !== t.subnet)
-    problems.push(
-      `${file}: clientAllowedIps must equal the subnet (split tunnel only), got ${t.clientAllowedIps}`,
-    );
+    problems.push(`${file}: clientAllowedIps must equal the subnet (split tunnel only), got ${t.clientAllowedIps}`);
   if (!/^wg\d+$/.test(t.interface) || t.interface === "wg0")
-    problems.push(
-      `${file}: interface ${t.interface} must be a new wgN (wg0 is the historical Shenron link)`,
-    );
-  if (t.hub.listenPort === 51820)
-    problems.push(`${file}: listenPort 51820 belongs to wg0`);
-  if (!inCidr(t.hub.address, t.subnet))
-    problems.push(`${file}: hub address outside the subnet`);
+    problems.push(`${file}: interface ${t.interface} must be a new wgN (wg0 is the historical Shenron link)`);
+  if (t.hub.listenPort === 51820) problems.push(`${file}: listenPort 51820 belongs to wg0`);
+  if (!inCidr(t.hub.address, t.subnet)) problems.push(`${file}: hub address outside the subnet`);
   if (t.hub.publicKey !== null && !isWgKey(t.hub.publicKey))
     problems.push(`${file}: hub publicKey is not a WireGuard key`);
   const used = new Set<string>([t.hub.address]);
   const keys = new Set<string>();
   for (const p of t.peers) {
-    if (!inCidr(p.address, t.subnet))
-      problems.push(
-        `${file}: peer ${p.id} address ${p.address} outside the subnet`,
-      );
-    if (used.has(p.address))
-      problems.push(`${file}: peer ${p.id} duplicate address ${p.address}`);
+    if (!inCidr(p.address, t.subnet)) problems.push(`${file}: peer ${p.id} address ${p.address} outside the subnet`);
+    if (used.has(p.address)) problems.push(`${file}: peer ${p.id} duplicate address ${p.address}`);
     used.add(p.address);
     if (p.publicKey !== null) {
-      if (!isWgKey(p.publicKey))
-        problems.push(`${file}: peer ${p.id} publicKey is not a WireGuard key`);
-      if (keys.has(p.publicKey))
-        problems.push(`${file}: peer ${p.id} reuses another peer's key`);
+      if (!isWgKey(p.publicKey)) problems.push(`${file}: peer ${p.id} publicKey is not a WireGuard key`);
+      if (keys.has(p.publicKey)) problems.push(`${file}: peer ${p.id} reuses another peer's key`);
       keys.add(p.publicKey);
-    } else if (!p.keyOrigin)
-      problems.push(`${file}: peer ${p.id} has no key and no keyOrigin`);
+    } else if (!p.keyOrigin) problems.push(`${file}: peer ${p.id} has no key and no keyOrigin`);
     if (p.udpSource.mode === "ufw") {
-      if (!p.udpSource.ips?.length)
-        problems.push(`${file}: peer ${p.id} ufw source without addresses`);
+      if (!p.udpSource.ips?.length) problems.push(`${file}: peer ${p.id} ufw source without addresses`);
       for (const ip of p.udpSource.ips ?? [])
-        if (
-          ipToInt(ip) === undefined ||
-          ip.includes("/") ||
-          ip.startsWith("0.")
-        )
-          problems.push(
-            `${file}: peer ${p.id} source ${ip} must be one public address`,
-          );
+        if (ipToInt(ip) === undefined || ip.includes("/") || ip.startsWith("0."))
+          problems.push(`${file}: peer ${p.id} source ${ip} must be one public address`);
       const marker = p.udpSource.comment ?? "";
       if (marker !== `${t.firewall.marker}-${p.id}`)
-        problems.push(
-          `${file}: peer ${p.id} comment must be ${t.firewall.marker}-${p.id}`,
-        );
+        problems.push(`${file}: peer ${p.id} comment must be ${t.firewall.marker}-${p.id}`);
     }
   }
-  const ids = new Set([t.hub.peer, ...t.peers.map((p) => p.id)]);
-  const services = new Map(t.services.map((s) => [s.id, s]));
+  const ids = new Set([t.hub.peer, ...t.peers.map(p => p.id)]);
+  const services = new Map(t.services.map(s => [s.id, s]));
   for (const s of t.services) {
-    if (s.port !== undefined && (s.port < 1 || s.port > 65535))
-      problems.push(`${file}: service ${s.id} bad port`);
+    if (s.port !== undefined && (s.port < 1 || s.port > 65535)) problems.push(`${file}: service ${s.id} bad port`);
     if (s.port !== undefined && t.firewall.neverOpen.includes(s.port))
-      problems.push(
-        `${file}: service ${s.id} opens a never-open port ${s.port}`,
-      );
+      problems.push(`${file}: service ${s.id} opens a never-open port ${s.port}`);
     if (s.port === undefined && s.status !== "pending")
       problems.push(`${file}: service ${s.id} has no port and is not pending`);
-    if (!inCidr(s.address, t.subnet))
-      problems.push(`${file}: service ${s.id} address outside the subnet`);
-    if (
-      s.expose === "socket-proxyd" &&
-      (!s.upstream || !/^127\.0\.0\.1:\d+$/.test(s.upstream))
-    )
+    if (!inCidr(s.address, t.subnet)) problems.push(`${file}: service ${s.id} address outside the subnet`);
+    if (s.expose === "socket-proxyd" && (!s.upstream || !/^127\.0\.0\.1:\d+$/.test(s.upstream)))
       problems.push(`${file}: service ${s.id} upstream must be loopback`);
     if (s.expose === "socket-proxyd") {
-      const ownerAddress =
-        s.host === t.hub.peer
-          ? t.hub.address
-          : t.peers.find((peer) => peer.host === s.host)?.address;
+      const ownerAddress = s.host === t.hub.peer ? t.hub.address : t.peers.find(peer => peer.host === s.host)?.address;
       if (s.address !== ownerAddress)
-        problems.push(
-          `${file}: service ${s.id} must listen on its declared owner address`,
-        );
+        problems.push(`${file}: service ${s.id} must listen on its declared owner address`);
     }
   }
   for (const [peer, list] of Object.entries(t.grants)) {
-    if (!ids.has(peer))
-      problems.push(`${file}: grant for unknown peer ${peer}`);
-    for (const id of list)
-      if (!services.has(id))
-        problems.push(`${file}: grant ${peer} -> unknown service ${id}`);
+    if (!ids.has(peer)) problems.push(`${file}: grant for unknown peer ${peer}`);
+    for (const id of list) if (!services.has(id)) problems.push(`${file}: grant ${peer} -> unknown service ${id}`);
   }
   if (
     !t.firewall.marker ||
-    t.firewall.foreignMarkers.some(
-      (m) => t.firewall.marker.includes(m) || m.includes(t.firewall.marker),
-    )
+    t.firewall.foreignMarkers.some(m => t.firewall.marker.includes(m) || m.includes(t.firewall.marker))
   )
     problems.push(`${file}: firewall marker collides with a foreign marker`);
-  const members = new Set([t.hub.peer, ...t.peers.map((p) => p.id)]);
+  const members = new Set([t.hub.peer, ...t.peers.map(p => p.id)]);
   for (const m of t.mesh ?? [])
     for (const id of [...m.from, ...m.to]) {
-      if (!members.has(id))
-        problems.push(`${file}: mesh ${m.id} names unknown member ${id}`);
+      if (!members.has(id)) problems.push(`${file}: mesh ${m.id} names unknown member ${id}`);
       if (m.to.includes(id) && t.firewall.meshDenied?.includes(id))
-        problems.push(
-          `${file}: mesh ${m.id} opens every port of ${id}, which is meshDenied`,
-        );
+        problems.push(`${file}: mesh ${m.id} opens every port of ${id}, which is meshDenied`);
     }
   for (const rule of ufwRules(t))
-    if (t.firewall.foreignMarkers.some((m) => rule.text.includes(m)))
+    if (t.firewall.foreignMarkers.some(m => rule.text.includes(m)))
       problems.push(`${file}: ufw rule carries a foreign marker: ${rule.text}`);
   return problems;
 }
 
 const KEY_LINE =
   /^((?:[^\s"]|"[^"]*")+)\s+(?:sk-)?(?:ssh-ed25519|ecdsa-sha2-nistp\d+|ssh-rsa)(?:@openssh\.com)?\s+[A-Za-z0-9+/=]+(?:\s.*)?$/;
-export function accountProblems(
-  root: string,
-  accounts: HostAccount[],
-  t?: Tunnel,
-): string[] {
+export function accountProblems(root: string, accounts: HostAccount[], t?: Tunnel): string[] {
   const problems: string[] = [];
   for (const a of accounts) {
     const tag = `account ${a.user}`;
-    for (const f of [
-      a.authorizedKeys,
-      a.sudoers,
-      ...a.sshdDropIns.map((d) => d.file),
-    ])
-      if (!existsSync(join(root, f)))
-        problems.push(`${tag}: missing file ${f}`);
-    if (a.groups.some((g) => ["postgres", "docker", "sudo", "adm"].includes(g)))
-      problems.push(
-        `${tag}: no postgres, docker, sudo or adm group (sudo is granted by the sudoers file alone)`,
-      );
-    const peer = t?.peers.find((p) => p.id === a.user);
+    for (const f of [a.authorizedKeys, a.sudoers, ...a.sshdDropIns.map(d => d.file)])
+      if (!existsSync(join(root, f))) problems.push(`${tag}: missing file ${f}`);
+    if (a.groups.some(g => ["postgres", "docker", "sudo", "adm"].includes(g)))
+      problems.push(`${tag}: no postgres, docker, sudo or adm group (sudo is granted by the sudoers file alone)`);
+    const peer = t?.peers.find(p => p.id === a.user);
     if (peer && !a.allowedFrom.includes(peer.address))
-      problems.push(
-        `${tag}: tunnel address ${peer.address} missing from allowedFrom`,
-      );
-    for (const f of [
-      a.authorizedKeys,
-      a.sudoers,
-      ...a.sshdDropIns.map((d) => d.file),
-    ]) {
+      problems.push(`${tag}: tunnel address ${peer.address} missing from allowedFrom`);
+    for (const f of [a.authorizedKeys, a.sudoers, ...a.sshdDropIns.map(d => d.file)]) {
       const text = readIfExists(root, f);
       if (text !== undefined && PRIVATE_KEY_PATTERN.test(text))
         problems.push(`${tag}: ${f} contains private key material`);
@@ -315,31 +247,19 @@ export function accountProblems(
       if (!from) problems.push(`${tag}: key line without from=`);
       else
         for (const entry of from.split(","))
-          if (!a.allowedFrom.includes(entry))
-            problems.push(`${tag}: from=${entry} is not in allowedFrom`);
-      if (!/(^|,)restrict(,|$)/.test(options))
-        problems.push(`${tag}: key line without restrict`);
+          if (!a.allowedFrom.includes(entry)) problems.push(`${tag}: from=${entry} is not in allowedFrom`);
+      if (!/(^|,)restrict(,|$)/.test(options)) problems.push(`${tag}: key line without restrict`);
     }
     const sudoers = readIfExists(root, a.sudoers) ?? "";
-    const rules = sudoers
-      .split("\n")
-      .filter((l) => l.trim() && !l.trim().startsWith("#"));
-    const grants = rules.filter((l) => !l.startsWith("Defaults"));
+    const rules = sudoers.split("\n").filter(l => l.trim() && !l.trim().startsWith("#"));
+    const grants = rules.filter(l => !l.startsWith("Defaults"));
     if (grants.length !== 1 || !grants[0]!.startsWith(`${a.user} `))
-      problems.push(
-        `${tag}: sudoers must hold exactly one rule, for ${a.user}`,
-      );
-    if (
-      rules.some(
-        (l) => l.startsWith("Defaults") && !l.startsWith(`Defaults:${a.user} `),
-      )
-    )
+      problems.push(`${tag}: sudoers must hold exactly one rule, for ${a.user}`);
+    if (rules.some(l => l.startsWith("Defaults") && !l.startsWith(`Defaults:${a.user} `)))
       problems.push(`${tag}: sudoers Defaults must be scoped to ${a.user}`);
-    if (rules.some((l) => l.includes("%") || l.includes("#include")))
+    if (rules.some(l => l.includes("%") || l.includes("#include")))
       problems.push(`${tag}: sudoers must not grant a group or include a file`);
-    const own = a.sshdDropIns.find((d) =>
-      (readIfExists(root, d.file) ?? "").includes(`Match User ${a.user}`),
-    );
+    const own = a.sshdDropIns.find(d => (readIfExists(root, d.file) ?? "").includes(`Match User ${a.user}`));
     const sshd = own ? (readIfExists(root, own.file) ?? "") : "";
     for (const need of [
       `Match User ${a.user}`,
@@ -348,49 +268,27 @@ export function accountProblems(
       "GatewayPorts no",
       "AuthorizedKeysFile /etc/ssh/authorized_keys.d/%u",
     ])
-      if (!sshd.includes(need))
-        problems.push(`${tag}: ${own?.file ?? "sshd drop-in"} lacks "${need}"`);
+      if (!sshd.includes(need)) problems.push(`${tag}: ${own?.file ?? "sshd drop-in"} lacks "${need}"`);
     // Forwarding: none, or loopback-only: reverse (-R) onto 127.0.0.1 ports (PermitListen) and local (-L)
     // limited to explicit 127.0.0.1 ports (PermitOpen), never an open or remote destination.
     const forwarding = /^\s*AllowTcpForwarding\s+(\S+)\s*$/m.exec(sshd)?.[1];
-    if (
-      forwarding === "remote" ||
-      forwarding === "local" ||
-      forwarding === "yes"
-    ) {
-      const open =
-        /^\s*PermitOpen\s+(.+)$/m.exec(sshd)?.[1]?.trim().split(/\s+/) ?? [];
-      if (
-        open.length === 0 ||
-        open.some((o) => o !== "none" && !/^127\.0\.0\.1:\d+$/.test(o))
-      )
-        problems.push(
-          `${tag}: forwarding needs "PermitOpen none" or 127.0.0.1:<port> entries only`,
-        );
-      const listen =
-        /^\s*PermitListen\s+(.+)$/m.exec(sshd)?.[1]?.trim().split(/\s+/) ?? [];
-      if (
-        forwarding !== "local" &&
-        (listen.length === 0 ||
-          listen.some((l) => !/^127\.0\.0\.1:\d+$/.test(l)))
-      )
-        problems.push(
-          `${tag}: remote forwarding must list PermitListen 127.0.0.1:<port> entries only`,
-        );
+    if (forwarding === "remote" || forwarding === "local" || forwarding === "yes") {
+      const open = /^\s*PermitOpen\s+(.+)$/m.exec(sshd)?.[1]?.trim().split(/\s+/) ?? [];
+      if (open.length === 0 || open.some(o => o !== "none" && !/^127\.0\.0\.1:\d+$/.test(o)))
+        problems.push(`${tag}: forwarding needs "PermitOpen none" or 127.0.0.1:<port> entries only`);
+      const listen = /^\s*PermitListen\s+(.+)$/m.exec(sshd)?.[1]?.trim().split(/\s+/) ?? [];
+      if (forwarding !== "local" && (listen.length === 0 || listen.some(l => !/^127\.0\.0\.1:\d+$/.test(l))))
+        problems.push(`${tag}: remote forwarding must list PermitListen 127.0.0.1:<port> entries only`);
     } else if (forwarding !== "no")
       problems.push(
         `${tag}: ${own?.file ?? "sshd drop-in"} lacks "AllowTcpForwarding no" (or loopback-only forwarding)`,
       );
     if (a.postgresAccess === "sudo-only") {
       const deny = a.sshdDropIns
-        .filter((d) => d.hosts.includes("dbfr"))
-        .some((d) =>
-          /^DenyUsers\s+postgres\s*$/m.test(readIfExists(root, d.file) ?? ""),
-        );
+        .filter(d => d.hosts.includes("dbfr"))
+        .some(d => /^DenyUsers\s+postgres\s*$/m.test(readIfExists(root, d.file) ?? ""));
       if (a.hosts.includes("dbfr") && !deny)
-        problems.push(
-          `${tag}: postgres is sudo-only but no dbfr sshd drop-in denies the postgres login`,
-        );
+        problems.push(`${tag}: postgres is sudo-only but no dbfr sshd drop-in denies the postgres login`);
     }
   }
   return problems;
@@ -398,19 +296,14 @@ export function accountProblems(
 
 // ── rendering ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-export const HUB_KEY_PLACEHOLDER =
-  "<CLE_PUBLIQUE_DU_HUB: sudo wg show wg1 public-key sur le vps, apres l'apply>";
+export const HUB_KEY_PLACEHOLDER = "<CLE_PUBLIQUE_DU_HUB: sudo wg show wg1 public-key sur le vps, apres l'apply>";
 
 function peerById(t: Tunnel, id: string): TunnelPeer {
-  const p = t.peers.find((x) => x.id === id);
-  if (!p)
-    throw new Error(
-      `unknown peer: ${id} (${t.peers.map((x) => x.id).join(", ")})`,
-    );
+  const p = t.peers.find(x => x.id === id);
+  if (!p) throw new Error(`unknown peer: ${id} (${t.peers.map(x => x.id).join(", ")})`);
   return p;
 }
-const envName = (id: string) =>
-  `${id.toUpperCase().replaceAll("-", "_")}_PUBLIC_KEY`;
+const envName = (id: string) => `${id.toUpperCase().replaceAll("-", "_")}_PUBLIC_KEY`;
 
 export interface ClientSections {
   interface: string;
@@ -418,19 +311,12 @@ export interface ClientSections {
   hubKeyKnown: boolean;
 }
 /** `[Interface]` (Address only, no key) and `[Peer]` (the hub) of a client. Split tunnel: AllowedIPs is the subnet, never /0. */
-export function clientSections(
-  t: Tunnel,
-  peerId: string,
-  hubPublicKey?: string | null,
-): ClientSections {
+export function clientSections(t: Tunnel, peerId: string, hubPublicKey?: string | null): ClientSections {
   const p = peerById(t, peerId);
   const hub = hubPublicKey ?? t.hub.publicKey;
   if (hub != null && !isWgKey(hub))
-    throw new Error(
-      "hub public key is not a WireGuard key (44 base64 characters, 32 bytes)",
-    );
-  if (t.clientAllowedIps.endsWith("/0"))
-    throw new Error("refusing a default route: split tunnel only");
+    throw new Error("hub public key is not a WireGuard key (44 base64 characters, 32 bytes)");
+  if (t.clientAllowedIps.endsWith("/0")) throw new Error("refusing a default route: split tunnel only");
   return {
     interface: [`[Interface]`, `Address = ${p.address}/32`].join("\n"),
     peer: [
@@ -449,27 +335,15 @@ export function clientSections(
  * then the Peer section. The app refuses to import a file that has no PrivateKey (conf/parser.go, "An interface must have a private
  * key"), so a key-less `.conf` cannot be a one-click import: the key must be born in the app.
  */
-export function clientPasteBlock(
-  t: Tunnel,
-  peerId: string,
-  hubPublicKey?: string | null,
-): string {
+export function clientPasteBlock(t: Tunnel, peerId: string, hubPublicKey?: string | null): string {
   const s = clientSections(t, peerId, hubPublicKey);
   return `${s.interface.split("\n").slice(1).join("\n")}\n\n${s.peer}\n`;
 }
 /** A complete wg-quick file. The private key comes from the caller (file or stdin) and is validated, never stored here. */
-export function clientConf(
-  t: Tunnel,
-  peerId: string,
-  hubPublicKey: string,
-  privateKey: string,
-): string {
+export function clientConf(t: Tunnel, peerId: string, hubPublicKey: string, privateKey: string): string {
   if (!isWgKey(privateKey.trim()))
-    throw new Error(
-      "private key is not a WireGuard key (44 base64 characters, 32 bytes)",
-    );
-  if (!isWgKey(hubPublicKey))
-    throw new Error("--hub-public-key is required for a complete .conf");
+    throw new Error("private key is not a WireGuard key (44 base64 characters, 32 bytes)");
+  if (!isWgKey(hubPublicKey)) throw new Error("--hub-public-key is required for a complete .conf");
   const s = clientSections(t, peerId, hubPublicKey);
   const [head, address] = s.interface.split("\n");
   return `${head}\nPrivateKey = ${privateKey.trim()}\n${address}\n\n${s.peer}\n`;
@@ -510,13 +384,7 @@ export function hubConfig(t: Tunnel): HubConfig {
         });
         return `\${${envName(p.id)}}`;
       })();
-    lines.push(
-      "",
-      `[Peer]`,
-      `# ${p.id}`,
-      `PublicKey = ${key}`,
-      `AllowedIPs = ${p.address}/32`,
-    );
+    lines.push("", `[Peer]`, `# ${p.id}`, `PublicKey = ${key}`, `AllowedIPs = ${p.address}/32`);
   }
   return { text: `${lines.join("\n")}\n`, needs };
 }
@@ -547,12 +415,7 @@ export interface UfwRule {
 export function ufwRules(t: Tunnel): UfwRule[] {
   const rules: UfwRule[] = [];
   const iface = t.interface;
-  const add = (
-    peer: string,
-    kind: UfwRule["kind"],
-    command: string,
-    service?: string,
-  ) =>
+  const add = (peer: string, kind: UfwRule["kind"], command: string, service?: string) =>
     rules.push({
       peer,
       service,
@@ -568,22 +431,12 @@ export function ufwRules(t: Tunnel): UfwRule[] {
           "udp-source",
           `allow from ${ip} to any port ${t.hub.listenPort} proto udp comment '${t.firewall.marker}-${p.id}'`,
         );
-  const services = new Map(t.services.map((s) => [s.id, s]));
+  const services = new Map(t.services.map(s => [s.id, s]));
   for (const [peerId, ids] of Object.entries(t.grants))
     for (const id of ids) {
       const s = services.get(id);
-      const p =
-        peerId === t.hub.peer
-          ? { address: t.hub.address }
-          : t.peers.find((x) => x.id === peerId);
-      if (
-        !s ||
-        !p ||
-        s.status === "pending" ||
-        s.port === undefined ||
-        s.address === p.address
-      )
-        continue;
+      const p = peerId === t.hub.peer ? { address: t.hub.address } : t.peers.find(x => x.id === peerId);
+      if (!s || !p || s.status === "pending" || s.port === undefined || s.address === p.address) continue;
       const comment = `comment '${t.firewall.marker}-${peerId}'`;
       // Traffic the hub originates leaves through OUTPUT, which ufw admits: no forwarding rule applies.
       if (peerId === t.hub.peer) continue;
@@ -605,24 +458,13 @@ export function ufwRules(t: Tunnel): UfwRule[] {
   for (const m of t.mesh ?? [])
     for (const from of m.from)
       for (const to of m.to) {
-        const src =
-          from === t.hub.peer
-            ? t.hub.address
-            : t.peers.find((x) => x.id === from)?.address;
-        const dst =
-          to === t.hub.peer
-            ? t.hub.address
-            : t.peers.find((x) => x.id === to)?.address;
+        const src = from === t.hub.peer ? t.hub.address : t.peers.find(x => x.id === from)?.address;
+        const dst = to === t.hub.peer ? t.hub.address : t.peers.find(x => x.id === to)?.address;
         // Hub-originated traffic leaves through OUTPUT; a member never needs a rule towards itself.
         if (!src || !dst || from === to || from === t.hub.peer) continue;
         const comment = `comment '${t.firewall.marker}-${from}'`;
         if (to === t.hub.peer)
-          add(
-            from,
-            "input",
-            `allow in on ${iface} from ${src} to ${dst} ${comment}`,
-            `mesh:${m.id}:${to}`,
-          );
+          add(from, "input", `allow in on ${iface} from ${src} to ${dst} ${comment}`, `mesh:${m.id}:${to}`);
         else
           add(
             from,
@@ -637,8 +479,7 @@ export function ufwRules(t: Tunnel): UfwRule[] {
 // ── plan ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export type WgHost = "vps" | "dbfr" | "wsl" | "windows";
-export type WgPhase =
-  "preflight" | "provision" | "install" | "verify" | "rollback" | "manual";
+export type WgPhase = "preflight" | "provision" | "install" | "verify" | "rollback" | "manual";
 /** `check` blocks the plan, `warn` reports a risk, `info` only reads, `mutate` changes the host, `pending` waits for an input. */
 export type WgKind = "check" | "warn" | "info" | "mutate" | "pending";
 export interface WgStep {
@@ -662,20 +503,14 @@ export interface WgPlan {
   subnet: string;
   hub: string;
   hubConfig: string;
-  clients: Record<
-    string,
-    { interface: string; peer: string; pasteBlock: string }
-  >;
+  clients: Record<string, { interface: string; peer: string; pasteBlock: string }>;
   ufw: UfwRule[];
   sequence: string[];
   pending: string[];
   decisions: string[];
   steps: WgStep[];
 }
-export type Runner = (
-  host: WgHost,
-  command: string,
-) => Promise<{ code: number; stdout: string; stderr: string }>;
+export type Runner = (host: WgHost, command: string) => Promise<{ code: number; stdout: string; stderr: string }>;
 
 export interface PlanContext {
   root: string;
@@ -684,21 +519,17 @@ export interface PlanContext {
 }
 
 const b64 = (text: string) => Buffer.from(text).toString("base64");
-const prefix = (subnet: string) =>
-  (subnet.split("/")[0] ?? "").split(".").slice(0, 3).join(".");
+const prefix = (subnet: string) => (subnet.split("/")[0] ?? "").split(".").slice(0, 3).join(".");
 const dots = (s: string) => s.replaceAll(".", "\\.");
 
 function hubScript(t: Tunnel, cfg: HubConfig): string {
   const body = cfg.text.split("\n");
-  const keyAt = body.findIndex((l) => l.startsWith("PrivateKey ="));
+  const keyAt = body.findIndex(l => l.startsWith("PrivateKey ="));
   const head = body.slice(0, keyAt).join("\n");
   const tail = body
     .slice(keyAt + 1)
     .join("\n")
-    .replace(
-      /\$\{(\w+)\}/g,
-      (_m, name: string) => `\${${name}:?${name} is an apply-time input}`,
-    );
+    .replace(/\$\{(\w+)\}/g, (_m, name: string) => `\${${name}:?${name} is an apply-time input}`);
   return [
     `set -eu`,
     `umask 077`,
@@ -717,7 +548,7 @@ function hubScript(t: Tunnel, cfg: HubConfig): string {
 }
 function peerScript(t: Tunnel, p: TunnelPeer): string {
   const conf = linuxPeerConf(t, p).split("\n");
-  const keyAt = conf.findIndex((l) => l.startsWith("PrivateKey ="));
+  const keyAt = conf.findIndex(l => l.startsWith("PrivateKey ="));
   return [
     `set -eu`,
     `umask 077`,
@@ -731,10 +562,7 @@ function peerScript(t: Tunnel, p: TunnelPeer): string {
       .slice(keyAt + 1)
       .join("\n")
       .replace(/\n+$/, "")
-      .replace(
-        "${HUB_PUBLIC_KEY}",
-        "${HUB_PUBLIC_KEY:?HUB_PUBLIC_KEY is an apply-time input}",
-      ),
+      .replace("${HUB_PUBLIC_KEY}", "${HUB_PUBLIC_KEY:?HUB_PUBLIC_KEY is an apply-time input}"),
     `EOF`,
     `} > /etc/wireguard/${t.interface}.conf.new`,
     `mv /etc/wireguard/${t.interface}.conf.new /etc/wireguard/${t.interface}.conf`,
@@ -756,7 +584,7 @@ export function keyBlobs(keys: string): string[] {
   return keys
     .split("\n")
     .map(
-      (l) =>
+      l =>
         /\s(?:sk-)?(?:ssh-ed25519|ecdsa-sha2-nistp\d+|ssh-rsa)(?:@openssh\.com)?\s+([A-Za-z0-9+/=]+)/.exec(
           l.trim(),
         )?.[1],
@@ -764,19 +592,13 @@ export function keyBlobs(keys: string): string[] {
     .filter((b): b is string => Boolean(b));
 }
 
-function accountSteps(
-  ctx: PlanContext,
-  t: Tunnel,
-  host: "vps" | "dbfr",
-): WgStep[] {
+function accountSteps(ctx: PlanContext, t: Tunnel, host: "vps" | "dbfr"): WgStep[] {
   const steps: WgStep[] = [];
   for (const a of ctx.catalog.accounts ?? []) {
     if (!a.hosts.includes(host)) continue;
     const id = (s: string) => `${host}.account.${a.user}.${s}`;
     const keys = readIfExists(ctx.root, a.authorizedKeys) ?? "";
-    const hasKey = keys
-      .split("\n")
-      .some((l) => l.trim() && !l.trim().startsWith("#"));
+    const hasKey = keys.split("\n").some(l => l.trim() && !l.trim().startsWith("#"));
     steps.push(
       {
         id: id("absent"),
@@ -829,7 +651,7 @@ function accountSteps(
         run: `set -eu\nid -u ${a.user} >/dev/null 2>&1 || useradd --create-home --shell /bin/bash --comment 'Omar (aphrody private tunnel guest)' ${a.user}`,
       },
     );
-    for (const d of a.sshdDropIns.filter((x) => x.hosts.includes(host))) {
+    for (const d of a.sshdDropIns.filter(x => x.hosts.includes(host))) {
       const text = readFileSync(join(ctx.root, d.file), "utf8");
       steps.push({
         id: id(`sshd:${d.install.split("/").pop()}`),
@@ -899,8 +721,8 @@ function accountSteps(
         kind: "mutate",
         note: "lock the account and remove the grants; the home directory stays",
         run: `set -eu\nrm -f /etc/sudoers.d/${a.user} /etc/ssh/authorized_keys.d/${a.user} ${a.sshdDropIns
-          .filter((x) => x.hosts.includes(host))
-          .map((x) => x.install)
+          .filter(x => x.hosts.includes(host))
+          .map(x => x.install)
           .join(
             " ",
           )}\nsshd -t && { systemctl reload ssh || systemctl reload sshd; }\nid -u ${a.user} >/dev/null 2>&1 && usermod --lock --expiredate 1 ${a.user} || true`,
@@ -967,36 +789,21 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     };
   }
   const rules = ufwRules(t);
-  const proxies = t.services.filter(
-    (s) =>
-      s.host === t.hub.peer &&
-      s.expose === "socket-proxyd" &&
-      s.port !== undefined,
-  );
+  const proxies = t.services.filter(s => s.host === t.hub.peer && s.expose === "socket-proxyd" && s.port !== undefined);
   const pending: string[] = [];
   for (const p of t.peers)
-    if (p.publicKey === null)
-      pending.push(`${p.id}: public key (${p.publicKeyNote ?? p.keyOrigin})`);
+    if (p.publicKey === null) pending.push(`${p.id}: public key (${p.publicKeyNote ?? p.keyOrigin})`);
   for (const a of ctx.catalog.accounts ?? []) {
     const keys = readIfExists(ctx.root, a.authorizedKeys) ?? "";
-    if (!keys.split("\n").some((l) => l.trim() && !l.trim().startsWith("#")))
-      pending.push(
-        `${a.user}: ssh-ed25519 public key (${a.authorizedKeys} has no key line)`,
-      );
+    if (!keys.split("\n").some(l => l.trim() && !l.trim().startsWith("#")))
+      pending.push(`${a.user}: ssh-ed25519 public key (${a.authorizedKeys} has no key line)`);
   }
-  pending.push(
-    `hub: ${t.interface} public key, generated on the vps at apply, needed by every client`,
-  );
-  for (const s of t.services)
-    if (s.status === "pending") pending.push(`${s.id}: ${s.pendingReason}`);
+  pending.push(`hub: ${t.interface} public key, generated on the vps at apply, needed by every client`);
+  for (const s of t.services) if (s.status === "pending") pending.push(`${s.id}: ${s.pendingReason}`);
 
   const decisions = [
-    ...(ctx.catalog.accounts ?? []).flatMap((a) =>
-      (a.findings ?? []).map((f) => `${a.user}: ${f}`),
-    ),
-    ...t.services
-      .filter((s) => s.caveat)
-      .map((s) => `${s.id} (${s.auth}): ${s.caveat}`),
+    ...(ctx.catalog.accounts ?? []).flatMap(a => (a.findings ?? []).map(f => `${a.user}: ${f}`)),
+    ...t.services.filter(s => s.caveat).map(s => `${s.id} (${s.auth}): ${s.caveat}`),
     "interface and subnet: wg0 is already the live Shenron link (10.8.0.0/24, ufw `Anywhere on wg0 ALLOW IN`), so the hub is a new wg1 on 10.200.77.0/24, UDP 51821",
     "sudo for omar is NOPASSWD:ALL (no Unix password exists) with sudo-rs journaling to journald only; there is no I/O log",
     "omar from= lists 92.170.252.46 and 10.200.77.10 (through the tunnel sshd sees the tunnel address); drop the second to force the public path",
@@ -1005,14 +812,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
   ];
 
   // vps
-  const vps = (
-    id: string,
-    phase: WgPhase,
-    kind: WgKind,
-    note: string,
-    run?: string,
-    extra: Partial<WgStep> = {},
-  ) =>
+  const vps = (id: string, phase: WgPhase, kind: WgKind, note: string, run?: string, extra: Partial<WgStep> = {}) =>
     steps.push({
       id: `vps.${id}`,
       host: "vps",
@@ -1053,9 +853,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
         phase: "preflight",
         kind: c.id === "tools" && host === "wsl" ? "warn" : "check",
         onFail:
-          c.id === "tools" && host === "wsl"
-            ? "not installed: the provision step installs wireguard-tools"
-            : undefined,
+          c.id === "tools" && host === "wsl" ? "not installed: the provision step installs wireguard-tools" : undefined,
         note:
           c.id === "tools" && host === "wsl"
             ? "wireguard-tools present (installed by the provision step when missing)"
@@ -1089,12 +887,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     "preflight",
     "check",
     "the installed ufw accepts every rule below (ufw --dry-run, nothing is changed)",
-    rules
-      .map(
-        (r) =>
-          `sudo -n ${r.command.replace(/^ufw /, "ufw --dry-run ")} >/dev/null`,
-      )
-      .join(" && "),
+    rules.map(r => `sudo -n ${r.command.replace(/^ufw /, "ufw --dry-run ")} >/dev/null`).join(" && "),
   );
   vps(
     "ufw-fresh",
@@ -1110,9 +903,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     "the tunnel subnet is not in Shenron's admin list (shenron-admin ufw rules)",
     `! sudo -n ufw status | grep shenron-admin | grep -q '${dots(net)}\\.'`,
   );
-  const omarIps = t.peers.flatMap((p) =>
-    p.udpSource.mode === "ufw" ? (p.udpSource.ips ?? []) : [],
-  );
+  const omarIps = t.peers.flatMap(p => (p.udpSource.mode === "ufw" ? (p.udpSource.ips ?? []) : []));
   for (const ip of omarIps)
     vps(
       `admin-overlap.${ip}`,
@@ -1131,7 +922,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     "the workstation public address (WSL and Windows share it) and the dbfr address are shenron-admin sources on the vps, so UDP reaches wg1 without a second ufw rule",
     `sudo -n ufw status numbered | grep -c shenron-admin`,
     {
-      probe: async (runner) => {
+      probe: async runner => {
         let ip = "";
         try {
           ip = (
@@ -1148,7 +939,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
           };
         }
         const r = await runner("vps", "sudo -n ufw status numbered");
-        const line = r.stdout.split("\n").find((l) => l.includes(ip));
+        const line = r.stdout.split("\n").find(l => l.includes(ip));
         return {
           ok: Boolean(line?.includes("shenron-admin")),
           detail: `workstation address ${ip.split(".").slice(0, 2).join(".")}.x.x ${line?.includes("shenron-admin") ? "is" : "is NOT"} a shenron-admin source`,
@@ -1195,15 +986,9 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     "mutate",
     `render /etc/wireguard/${t.interface}.conf (0600); peers without a key are apply-time inputs`,
     hubScript(t, hub),
-    { needs: hub.needs.map((n) => n.env) },
+    { needs: hub.needs.map(n => n.env) },
   );
-  vps(
-    "hub-verify-conf",
-    "provision",
-    "check",
-    "the rendered file parses",
-    `wg-quick strip ${t.interface} >/dev/null`,
-  );
+  vps("hub-verify-conf", "provision", "check", "the rendered file parses", `wg-quick strip ${t.interface} >/dev/null`);
   for (const r of rules)
     vps(
       `ufw.${r.peer}.${r.service ?? "udp"}`,
@@ -1227,14 +1012,14 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     "install",
     "check",
     "systemd accepts the units",
-    `systemd-analyze verify ${proxies.flatMap((s) => [`/etc/systemd/system/aphrody-wg-proxy@${s.port}.socket`, `/etc/systemd/system/aphrody-wg-proxy@${s.port}.service`]).join(" ")}`,
+    `systemd-analyze verify ${proxies.flatMap(s => [`/etc/systemd/system/aphrody-wg-proxy@${s.port}.socket`, `/etc/systemd/system/aphrody-wg-proxy@${s.port}.service`]).join(" ")}`,
   );
   vps(
     "start",
     "install",
     "mutate",
     `start ${t.interface} and the forwarders`,
-    `set -eu\nsystemctl daemon-reload\nsystemctl enable --now wg-quick@${t.interface}\nsystemctl enable --now ${proxies.map((s) => `aphrody-wg-proxy@${s.port}.socket`).join(" ")}`,
+    `set -eu\nsystemctl daemon-reload\nsystemctl enable --now wg-quick@${t.interface}\nsystemctl enable --now ${proxies.map(s => `aphrody-wg-proxy@${s.port}.socket`).join(" ")}`,
   );
   steps.push(...accountSteps(ctx, t, "vps"));
   vps(
@@ -1280,7 +1065,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     "remove the tunnel, the forwarders and the aphrody-wg ufw rules (shenron-admin and wg0 untouched)",
     [
       `set -u`,
-      `systemctl disable --now ${proxies.map((s) => `aphrody-wg-proxy@${s.port}.socket`).join(" ")} wg-quick@${t.interface} 2>/dev/null || true`,
+      `systemctl disable --now ${proxies.map(s => `aphrody-wg-proxy@${s.port}.socket`).join(" ")} wg-quick@${t.interface} 2>/dev/null || true`,
       `rm -f /etc/systemd/system/aphrody-wg-proxy@.socket /etc/systemd/system/aphrody-wg-proxy@.service /etc/sysctl.d/60-aphrody-wg.conf`,
       `systemctl daemon-reload`,
       `for n in $(ufw status numbered | grep 'aphrody-wg' | sed -E 's/^\\[ *([0-9]+)\\].*/\\1/' | sort -rn); do ufw --force delete "$n"; done`,
@@ -1291,14 +1076,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
   // dbfr and wsl: clients of the hub
   for (const host of ["dbfr", "wsl"] as const) {
     const p = peerById(t, host);
-    const h = (
-      id: string,
-      phase: WgPhase,
-      kind: WgKind,
-      note: string,
-      run?: string,
-      extra: Partial<WgStep> = {},
-    ) =>
+    const h = (id: string, phase: WgPhase, kind: WgKind, note: string, run?: string, extra: Partial<WgStep> = {}) =>
       steps.push({
         id: `${host}.${id}`,
         host,
@@ -1317,13 +1095,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
         "the WSL kernel provides wireguard (CONFIG_WIREGUARD)",
         `modinfo wireguard >/dev/null 2>&1 || zcat /proc/config.gz | grep -Eq 'CONFIG_WIREGUARD=[ym]'`,
       );
-      h(
-        "systemd",
-        "preflight",
-        "check",
-        "systemd runs in the WSL (wg-quick@ unit)",
-        `[ -d /run/systemd/system ]`,
-      );
+      h("systemd", "preflight", "check", "systemd runs in the WSL (wg-quick@ unit)", `[ -d /run/systemd/system ]`);
       h(
         "install-tools",
         "provision",
@@ -1347,13 +1119,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
         `! sudo -n ufw status | grep -E '(^|[[:space:]])(5432|6379)' | grep -q '${dots(net)}\\.'`,
       );
     }
-    h(
-      "keygen",
-      "provision",
-      "mutate",
-      `private key born on ${host} (0600, never printed)`,
-      keygen(t),
-    );
+    h("keygen", "provision", "mutate", `private key born on ${host} (0600, never printed)`, keygen(t));
     h(
       "conf",
       "provision",
@@ -1362,18 +1128,9 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
       peerScript(t, p),
       { needs: ["HUB_PUBLIC_KEY"] },
     );
-    h(
-      "start",
-      "install",
-      "mutate",
-      `enable ${t.interface} at boot`,
-      `systemctl enable --now wg-quick@${t.interface}`,
-    );
+    h("start", "install", "mutate", `enable ${t.interface} at boot`, `systemctl enable --now wg-quick@${t.interface}`);
     const localProxies = t.services.filter(
-      (service) =>
-        service.host === host &&
-        service.expose === "socket-proxyd" &&
-        service.port !== undefined,
+      service => service.host === host && service.expose === "socket-proxyd" && service.port !== undefined,
     );
     if (localProxies.length > 0) {
       for (const ext of ["socket", "service"] as const) {
@@ -1393,17 +1150,12 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
         "install",
         "check",
         "systemd accepts this host's private proxy instances",
-        `systemd-analyze verify ${localProxies.flatMap((service) => [`/etc/systemd/system/aphrody-wg-proxy@${service.port}.socket`, `/etc/systemd/system/aphrody-wg-proxy@${service.port}.service`]).join(" ")}`,
+        `systemd-analyze verify ${localProxies.flatMap(service => [`/etc/systemd/system/aphrody-wg-proxy@${service.port}.socket`, `/etc/systemd/system/aphrody-wg-proxy@${service.port}.service`]).join(" ")}`,
       );
       for (const [source, services] of Object.entries(t.grants)) {
-        const sourceAddress =
-          source === t.hub.peer
-            ? t.hub.address
-            : t.peers.find((peer) => peer.id === source)?.address;
+        const sourceAddress = source === t.hub.peer ? t.hub.address : t.peers.find(peer => peer.id === source)?.address;
         if (!sourceAddress || sourceAddress === p.address) continue;
-        for (const service of localProxies.filter((candidate) =>
-          services.includes(candidate.id),
-        )) {
+        for (const service of localProxies.filter(candidate => services.includes(candidate.id))) {
           h(
             `proxy-ufw.${source}.${service.id}`,
             "install",
@@ -1418,7 +1170,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
         "install",
         "mutate",
         `enable ${host} private proxy instances`,
-        `set -eu\nsystemctl daemon-reload\nsystemctl enable --now ${localProxies.map((service) => `aphrody-wg-proxy@${service.port}.socket`).join(" ")}`,
+        `set -eu\nsystemctl daemon-reload\nsystemctl enable --now ${localProxies.map(service => `aphrody-wg-proxy@${service.port}.socket`).join(" ")}`,
       );
     }
     if (host === "dbfr") steps.push(...accountSteps(ctx, t, "dbfr"));
@@ -1429,13 +1181,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
       "a handshake with the hub happened",
       `sudo -n wg show ${t.interface} latest-handshakes | awk '{if ($2>0) ok=1} END{exit !ok}'`,
     );
-    h(
-      "verify-hub",
-      "verify",
-      "check",
-      "the hub answers over the tunnel",
-      `ping -c 2 -W 2 ${t.hub.address} >/dev/null`,
-    );
+    h("verify-hub", "verify", "check", "the hub answers over the tunnel", `ping -c 2 -W 2 ${t.hub.address} >/dev/null`);
     h(
       "rollback",
       "rollback",
@@ -1445,7 +1191,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     );
   }
   // Windows PCs: nothing runs on a host, the owner and Omar act in the WireGuard app.
-  for (const p of t.peers.filter((x) => x.os === "windows"))
+  for (const p of t.peers.filter(x => x.os === "windows"))
     steps.push({
       id: `windows.${p.id}`,
       host: "windows",
@@ -1493,20 +1239,13 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
 
 // ── observe (read-only) and render ───────────────────────────────────────────────────────────────────────────────────────
 
-export const READ_ONLY: ReadonlySet<WgKind> = new Set([
-  "check",
-  "warn",
-  "info",
-]);
+export const READ_ONLY: ReadonlySet<WgKind> = new Set(["check", "warn", "info"]);
 export interface Observed {
   ok: boolean;
   detail: string;
 }
 /** Runs only the read-only steps. A `mutate` step is never executed, whatever the runner. */
-export async function observePlan(
-  plan: WgPlan,
-  runner: Runner,
-): Promise<Map<string, Observed>> {
+export async function observePlan(plan: WgPlan, runner: Runner): Promise<Map<string, Observed>> {
   const out = new Map<string, Observed>();
   for (const s of plan.steps) {
     if (!READ_ONLY.has(s.kind) || (s.run === undefined && !s.probe)) continue;
@@ -1518,20 +1257,13 @@ export async function observePlan(
         continue;
       }
       const r = await runner(s.host, s.run!);
-      const text = `${r.stdout}${r.stderr}`
-        .trim()
-        .split("\n")
-        .slice(0, 3)
-        .join(" | ");
+      const text = `${r.stdout}${r.stderr}`.trim().split("\n").slice(0, 3).join(" | ");
       out.set(s.id, {
         ok: r.code === 0,
         detail:
           r.code !== 0 && s.onFail
             ? s.onFail
-            : text.replace(
-                /^Error: remote command failed with exit code Some\(\d+\):\s*/,
-                "",
-              ),
+            : text.replace(/^Error: remote command failed with exit code Some\(\d+\):\s*/, ""),
       });
     } catch (error) {
       out.set(s.id, {
@@ -1544,46 +1276,38 @@ export async function observePlan(
 }
 export const defaultRunner: Runner = async (host, command) => {
   const argv =
-    host === "wsl"
-      ? ["bash", "-c", command]
-      : ["aphrody", "infra", "ssh", "exec", "--host", host, "-c", command];
+    host === "wsl" ? ["bash", "-c", command] : ["aphrody", "infra", "ssh", "exec", "--host", host, "-c", command];
   const p = Bun.spawn(argv, {
     windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
     env: { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "60" },
   });
-  const [stdout, stderr] = await Promise.all([
-    new Response(p.stdout).text(),
-    new Response(p.stderr).text(),
-  ]);
+  const [stdout, stderr] = await Promise.all([new Response(p.stdout).text(), new Response(p.stderr).text()]);
   return { code: await p.exited, stdout, stderr };
 };
 
-export function renderPlan(
-  plan: WgPlan,
-  observed?: Map<string, Observed>,
-): string {
+export function renderPlan(plan: WgPlan, observed?: Map<string, Observed>): string {
   const lines: string[] = [];
   lines.push(
     `wg-plan ${plan.name}: interface ${plan.interface}, subnet ${plan.subnet}, hub ${plan.hub} (plan only, nothing applied)`,
   );
-  lines.push("", "sequence:", ...plan.sequence.map((s) => `  ${s}`));
+  lines.push("", "sequence:", ...plan.sequence.map(s => `  ${s}`));
   lines.push(
     "",
     "hub /etc/wireguard/wg1.conf (vps), ${VAR} = apply-time input:",
     ...plan.hubConfig
       .trimEnd()
       .split("\n")
-      .map((l) => `  ${l}`),
+      .map(l => `  ${l}`),
   );
   lines.push(
     "",
     `ufw rules on the vps (${plan.ufw.length}, comment aphrody-wg-<peer>):`,
-    ...plan.ufw.map((r) => `  ${r.text}`),
+    ...plan.ufw.map(r => `  ${r.text}`),
   );
   for (const host of ["vps", "dbfr", "wsl", "windows"] as const) {
-    const own = plan.steps.filter((s) => s.host === host);
+    const own = plan.steps.filter(s => s.host === host);
     if (own.length === 0) continue;
     lines.push("", `[${host}]`);
     let phase = "";
@@ -1593,35 +1317,21 @@ export function renderPlan(
         lines.push(`  ${phase}`);
       }
       const o = observed?.get(s.id);
-      const mark = o
-        ? o.ok
-          ? "PASS"
-          : s.kind === "warn" || s.kind === "info"
-            ? "NOTE"
-            : "FAIL"
-        : "";
+      const mark = o ? (o.ok ? "PASS" : s.kind === "warn" || s.kind === "info" ? "NOTE" : "FAIL") : "";
       lines.push(
         `    ${s.kind.padEnd(7)} ${s.id.padEnd(40)} ${mark ? `${mark.padEnd(5)}` : "     "}${s.note}${o?.detail ? ` [${o.detail}]` : ""}${s.needs?.length ? ` (needs ${s.needs.join(", ")})` : ""}`,
       );
     }
   }
-  lines.push("", "pending inputs:", ...plan.pending.map((p) => `  - ${p}`));
-  lines.push(
-    "",
-    "decisions and findings for the owner:",
-    ...plan.decisions.map((d) => `  - ${d}`),
-  );
+  lines.push("", "pending inputs:", ...plan.pending.map(p => `  - ${p}`));
+  lines.push("", "decisions and findings for the owner:", ...plan.decisions.map(d => `  - ${d}`));
   return lines.join("\n");
 }
 
 /** Project only the declared DBFR service proxy, never tunnel bootstrap or account steps. */
-export function selectedProxySteps(
-  t: Tunnel,
-  ctx: PlanContext,
-  serviceId: string,
-): WgStep[] {
-  const service = t.services.find((candidate) => candidate.id === serviceId);
-  const peer = t.peers.find((candidate) => candidate.host === "dbfr");
+export function selectedProxySteps(t: Tunnel, ctx: PlanContext, serviceId: string): WgStep[] {
+  const service = t.services.find(candidate => candidate.id === serviceId);
+  const peer = t.peers.find(candidate => candidate.host === "dbfr");
   if (
     !service ||
     service.host !== "dbfr" ||
@@ -1634,36 +1344,23 @@ export function selectedProxySteps(
     peer.os !== "linux" ||
     service.address !== peer.address ||
     !inCidr(service.address, t.subnet) ||
-    !["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"].some((cidr) =>
-      inCidr(service.address, cidr),
-    ) ||
+    !["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"].some(cidr => inCidr(service.address, cidr)) ||
     service.upstream !== `127.0.0.1:${service.port}`
   )
-    throw new Error(
-      "Selected DBFR proxy must be its declared private authenticated loopback service",
-    );
+    throw new Error("Selected DBFR proxy must be its declared private authenticated loopback service");
   const selected = {
     ...t,
     services: [service],
     grants: Object.fromEntries(
-      Object.entries(t.grants).map(([source, ids]) => [
-        source,
-        ids.filter((id) => id === serviceId),
-      ]),
+      Object.entries(t.grants).map(([source, ids]) => [source, ids.filter(id => id === serviceId)]),
     ),
   };
-  return buildPlan(selected, ctx).steps.filter(
-    (step) => step.host === "dbfr" && step.id.startsWith("dbfr.proxy-"),
-  );
+  return buildPlan(selected, ctx).steps.filter(step => step.host === "dbfr" && step.id.startsWith("dbfr.proxy-"));
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-export async function wgMain(
-  cmd: string,
-  rest: string[],
-  ctx: PlanContext,
-): Promise<void> {
+export async function wgMain(cmd: string, rest: string[], ctx: PlanContext): Promise<void> {
   const flag = (name: string) => rest.includes(`--${name}`);
   const value = (name: string) => {
     const at = rest.indexOf(`--${name}`);
@@ -1672,31 +1369,18 @@ export async function wgMain(
   const t = loadTunnel(ctx.root);
   if (cmd === "wg-plan") {
     const plan = buildPlan(t, ctx);
-    const observed = flag("observe")
-      ? await observePlan(plan, defaultRunner)
-      : undefined;
+    const observed = flag("observe") ? await observePlan(plan, defaultRunner) : undefined;
     console.log(
       flag("json")
-        ? JSON.stringify(
-            { ...plan, observed: observed && Object.fromEntries(observed) },
-            null,
-            2,
-          )
+        ? JSON.stringify({ ...plan, observed: observed && Object.fromEntries(observed) }, null, 2)
         : renderPlan(plan, observed),
     );
     if (!flag("json"))
-      console.log(
-        "\nplan only: there is no apply in this command; the apply waits for the owner's written order",
-      );
+      console.log("\nplan only: there is no apply in this command; the apply waits for the owner's written order");
     return;
   }
-  const peer = rest.find(
-    (a, i) => !a.startsWith("--") && !rest[i - 1]?.startsWith("--"),
-  );
-  if (!peer)
-    throw new Error(
-      `wg-client <peer> (${t.peers.map((p) => p.id).join(", ")})`,
-    );
+  const peer = rest.find((a, i) => !a.startsWith("--") && !rest[i - 1]?.startsWith("--"));
+  if (!peer) throw new Error(`wg-client <peer> (${t.peers.map(p => p.id).join(", ")})`);
   const format = value("format") ?? "sections";
   const hubKey = value("hub-public-key");
   let text: string;
@@ -1706,15 +1390,9 @@ export async function wgMain(
   } else if (format === "paste") text = clientPasteBlock(t, peer, hubKey);
   else if (format === "conf") {
     const file = value("private-key-file");
-    const key = flag("private-key-stdin")
-      ? await Bun.stdin.text()
-      : file
-        ? readFileSync(file, "utf8")
-        : undefined;
+    const key = flag("private-key-stdin") ? await Bun.stdin.text() : file ? readFileSync(file, "utf8") : undefined;
     if (key === undefined || !hubKey)
-      throw new Error(
-        "--format conf needs --hub-public-key and --private-key-file F or --private-key-stdin",
-      );
+      throw new Error("--format conf needs --hub-public-key and --private-key-file F or --private-key-stdin");
     text = clientConf(t, peer, hubKey, key);
   } else throw new Error(`unknown --format ${format} (sections, paste, conf)`);
   const out = value("out");

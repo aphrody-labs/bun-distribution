@@ -19,16 +19,12 @@ const BEFORE = {
   svgHash: "edea59fd337b30a4fc034ee0db90cf06a7e5def067256a74af4b5d5099a3b4cf",
 } as const;
 
-const sha = (s: string) =>
-  new Bun.CryptoHasher("sha256").update(s).digest("hex");
-const r = (el: Parameters<typeof renderToStaticMarkup>[0]) =>
-  renderToStaticMarkup(el);
+const sha = (s: string) => new Bun.CryptoHasher("sha256").update(s).digest("hex");
+const r = (el: Parameters<typeof renderToStaticMarkup>[0]) => renderToStaticMarkup(el);
 
 describe("@shenron/ui/icones", () => {
   test("sample glyphs render identically to the pre-move site output", () => {
-    expect(r(createElement(I.ChevronGauche, { className: "h-4 w-4" }))).toBe(
-      BEFORE.chevron,
-    );
+    expect(r(createElement(I.ChevronGauche, { className: "h-4 w-4" }))).toBe(BEFORE.chevron);
     expect(
       r(
         createElement(I.Croix, {
@@ -41,29 +37,17 @@ describe("@shenron/ui/icones", () => {
       ),
     ).toBe(BEFORE.croix);
     expect(r(createElement(I.DragonBall))).toBe(BEFORE.dragon);
-    expect(r(createElement(I.MaisonPleine, { role: "img" }))).toBe(
-      BEFORE.maison,
-    );
+    expect(r(createElement(I.MaisonPleine, { role: "img" }))).toBe(BEFORE.maison);
   });
 
   test("every exported glyph component renders identically (digest)", () => {
     const names = Object.keys(I)
-      .filter(
-        (k) =>
-          /^[A-Z]/.test(k) &&
-          k !== "Glyphe" &&
-          typeof (I as Record<string, unknown>)[k] === "function",
-      )
+      .filter(k => /^[A-Z]/.test(k) && k !== "Glyphe" && typeof (I as Record<string, unknown>)[k] === "function")
       .sort();
     expect(names.length).toBe(98);
     const all = names
-      .map((k) => {
-        const C = (
-          I as unknown as Record<
-            string,
-            (p: { size: number }) => ReturnType<typeof createElement>
-          >
-        )[k]!;
+      .map(k => {
+        const C = (I as unknown as Record<string, (p: { size: number }) => ReturnType<typeof createElement>>)[k]!;
         return k + r(C({ size: 20 }));
       })
       .join("\n");
@@ -72,8 +56,6 @@ describe("@shenron/ui/icones", () => {
 
   test("standalone SVG documents are unchanged", () => {
     expect(NOMS_ICONES.length).toBe(89);
-    expect(
-      sha(NOMS_ICONES.map((n) => svgIcone(n, { taille: 16 })).join("\n")),
-    ).toBe(BEFORE.svgHash);
+    expect(sha(NOMS_ICONES.map(n => svgIcone(n, { taille: 16 })).join("\n"))).toBe(BEFORE.svgHash);
   });
 });

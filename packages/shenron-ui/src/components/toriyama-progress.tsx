@@ -44,9 +44,7 @@ export function ToriyamaProgress({
   className = "",
 }: ToriyamaProgressProps) {
   const safeMax = Number.isFinite(max) && max > 0 ? max : 100;
-  const clamped = Number.isFinite(value)
-    ? Math.min(safeMax, Math.max(0, value))
-    : 0;
+  const clamped = Number.isFinite(value) ? Math.min(safeMax, Math.max(0, value)) : 0;
   const percentage = Math.round((clamped / safeMax) * 100);
   const style = PROGRESS_STYLES[variant] ?? PROGRESS_STYLES.ki;
 
@@ -55,9 +53,7 @@ export function ToriyamaProgress({
       {showLabel && (
         <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider">
           <span className="text-[var(--color-muted-foreground)]">{label}</span>
-          <span className={`font-mono font-black ${style.text}`}>
-            {percentage}%
-          </span>
+          <span className={`font-mono font-black ${style.text}`}>{percentage}%</span>
         </div>
       )}
       <div

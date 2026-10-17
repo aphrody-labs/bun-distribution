@@ -8,7 +8,9 @@ use std::path::{Path, PathBuf};
 
 use crate::SubsystemError;
 use crate::{dispatch::failed, system};
-use bun_steam::install::{InstalledGame, find_steam_dir, list_installed_games, scan_steam_libraries};
+use bun_steam::install::{
+    InstalledGame, find_steam_dir, list_installed_games, scan_steam_libraries,
+};
 use serde_json::{Value, json};
 
 pub(crate) fn open_steam_uri(uri: &str) -> Result<Value, SubsystemError> {
@@ -22,7 +24,9 @@ pub(crate) fn open_steam_uri(uri: &str) -> Result<Value, SubsystemError> {
     }
     #[cfg(not(windows))]
     {
-        Err(SubsystemError::Failed("Steam URI launch through ShellExecute is Windows-only".into()))
+        Err(SubsystemError::Failed(
+            "Steam URI launch through ShellExecute is Windows-only".into(),
+        ))
     }
 }
 
@@ -80,18 +84,30 @@ fn app_id(arguments: &Value, tool: &str) -> Result<u32, SubsystemError> {
 pub(crate) fn steam_get_game(arguments: &Value) -> Result<Value, SubsystemError> {
     let id = app_id(arguments, "steam_get_game")?;
     let (_, games) = games(arguments)?;
-    Ok(games
-        .iter()
-        .find(|g| g.manifest.app_id == id)
-        .map_or_else(|| json!({"success":false,"error":"app not installed","appId":id}), game_json))
+    Ok(games.iter().find(|g| g.manifest.app_id == id).map_or_else(
+        || json!({"success":false,"error":"app not installed","appId":id}),
+        game_json,
+    ))
 }
 
 pub(crate) fn steam_list_games(arguments: &Value) -> Result<Value, SubsystemError> {
-    let include_missing = arguments.get("includeMissing").and_then(Value::as_bool).unwrap_or(false);
+    let include_missing = arguments
+        .get("includeMissing")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let (_, mut games) = games(arguments)?;
-    games.sort_by(|a, b| a.manifest.name.to_lowercase().cmp(&b.manifest.name.to_lowercase()));
+    games.sort_by(|a, b| {
+        a.manifest
+            .name
+            .to_lowercase()
+            .cmp(&b.manifest.name.to_lowercase())
+    });
     Ok(Value::Array(
-        games.iter().filter(|g| include_missing || g.exists_on_disk).map(game_json).collect(),
+        games
+            .iter()
+            .filter(|g| include_missing || g.exists_on_disk)
+            .map(game_json)
+            .collect(),
     ))
 }
 
@@ -134,20 +150,31 @@ pub(crate) fn steam_scan_summary(arguments: &Value) -> Result<Value, SubsystemEr
 pub(crate) fn steam_get_game_status(arguments: &Value) -> Result<Value, SubsystemError> {
     let id = app_id(arguments, "steam_get_game_status")?;
     let (_, games) = games(arguments)?;
-    let game = games.iter().find(|g| g.manifest.app_id == id).ok_or_else(|| {
-        SubsystemError::Failed(format!("app {id} is not installed in any Steam library"))
-    })?;
+    let game = games
+        .iter()
+        .find(|g| g.manifest.app_id == id)
+        .ok_or_else(|| {
+            SubsystemError::Failed(format!("app {id} is not installed in any Steam library"))
+        })?;
     let executable = arguments
         .get("executableName")
         .and_then(Value::as_str)
         .filter(|v| !v.trim().is_empty())
         .map(str::to_owned)
         .unwrap_or_else(|| format!("{}.exe", game.manifest.install_dir));
-    let wanted = executable.strip_suffix(".exe").unwrap_or(&executable).to_ascii_lowercase();
+    let wanted = executable
+        .strip_suffix(".exe")
+        .unwrap_or(&executable)
+        .to_ascii_lowercase();
     let process = system::list_processes(None, "name", 10_000)
         .processes
         .into_iter()
-        .find(|process| process.name.trim_end_matches(".exe").eq_ignore_ascii_case(&wanted));
+        .find(|process| {
+            process
+                .name
+                .trim_end_matches(".exe")
+                .eq_ignore_ascii_case(&wanted)
+        });
     Ok(json!({
         "appId": id,
         "running": process.is_some(),
@@ -159,7 +186,9 @@ pub(crate) fn steam_get_game_status(arguments: &Value) -> Result<Value, Subsyste
 }
 
 fn read_vdf(path: &Path) -> Option<bun_steam::vdf::VdfValue> {
-    std::fs::read_to_string(path).ok().and_then(|text| bun_steam::vdf::parse_vdf(&text).ok())
+    std::fs::read_to_string(path)
+        .ok()
+        .and_then(|text| bun_steam::vdf::parse_vdf(&text).ok())
 }
 
 /// steamcmd data home: `STEAMCMD_HOME`, the directory of `STEAMCMD`, then `C:\steamcmd` or
@@ -167,14 +196,20 @@ fn read_vdf(path: &Path) -> Option<bun_steam::vdf::VdfValue> {
 fn steamcmd_home() -> Option<PathBuf> {
     std::env::var_os("STEAMCMD_HOME")
         .map(PathBuf::from)
-        .or_else(|| std::env::var_os("STEAMCMD").and_then(|p| PathBuf::from(p).parent().map(Path::to_path_buf)))
+        .or_else(|| {
+            std::env::var_os("STEAMCMD")
+                .and_then(|p| PathBuf::from(p).parent().map(Path::to_path_buf))
+        })
         .or_else(|| {
             let candidate = if cfg!(windows) {
                 PathBuf::from(r"C:\steamcmd")
             } else {
                 PathBuf::from(std::env::var_os("HOME")?).join(".steam/steamcmd")
             };
-            candidate.join("config/config.vdf").is_file().then_some(candidate)
+            candidate
+                .join("config/config.vdf")
+                .is_file()
+                .then_some(candidate)
         })
 }
 
@@ -187,7 +222,9 @@ pub(crate) fn steam_vault_status(arguments: &Value) -> Result<Value, SubsystemEr
         .unwrap_or_default();
     let client_config = read_vdf(&root.join("config/config.vdf"));
     let steamcmd = steamcmd_home();
-    let steamcmd_config = steamcmd.as_ref().and_then(|home| read_vdf(&home.join("config/config.vdf")));
+    let steamcmd_config = steamcmd
+        .as_ref()
+        .and_then(|home| read_vdf(&home.join("config/config.vdf")));
     let accounts: Vec<Value> = users
         .iter()
         .map(|u| {

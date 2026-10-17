@@ -1,12 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
@@ -50,23 +43,15 @@ describe("aphrody bridge", () => {
 
   it("leaves a build already running for the commit alone unless forced", () => {
     const cmd = remoteCommand(factory, sha);
-    expect(
-      cmd.startsWith("if tmux has-session -t 'yolo-ship-abcdef012345'"),
-    ).toBe(true);
+    expect(cmd.startsWith("if tmux has-session -t 'yolo-ship-abcdef012345'")).toBe(true);
     expect(cmd).toContain("already running");
     const forced = remoteCommand(factory, sha, true);
     expect(forced).not.toContain("has-session");
-    expect(forced.indexOf("tmux kill-session")).toBeLessThan(
-      forced.indexOf("tmux new-session"),
-    );
+    expect(forced.indexOf("tmux kill-session")).toBeLessThan(forced.indexOf("tmux new-session"));
   });
 
   it("fetches the commit and the tags but never touches the working tree outside the lock", () => {
-    const cmd = remoteSyncCommand(
-      factory,
-      sha,
-      "https://github.com/aphrody-labs/yolo.git",
-    );
+    const cmd = remoteSyncCommand(factory, sha, "https://github.com/aphrody-labs/yolo.git");
     expect(cmd).toContain("git clone --filter=blob:none --no-checkout");
     expect(cmd).toContain("git fetch --prune --tags --filter=blob:none origin");
     expect(cmd).not.toContain("checkout -f");
@@ -77,18 +62,14 @@ describe("aphrody bridge", () => {
 
   it("prepares a clean pinned workspace under the lock without forcing a checkout or starting engines", () => {
     const cmd = remotePrepareCommand(factory, sha);
-    expect(cmd).toContain(
-      "flock --close -- '/home/ubuntu/build/locks/heavy.lock'",
-    );
+    expect(cmd).toContain("flock --close -- '/home/ubuntu/build/locks/heavy.lock'");
     expect(cmd).toContain("checkout --detach");
     expect(cmd).toContain("Factory checkout is dirty; preserved");
     expect(cmd).toContain("unowned files; preserved");
     expect(cmd).not.toContain("checkout -f");
     expect(cmd).not.toContain("systemd-run");
     expect(cmd).not.toContain("tmux new-session");
-    expect(() => remotePrepareCommand(factory, "abc123")).toThrow(
-      "full Git SHA",
-    );
+    expect(() => remotePrepareCommand(factory, "abc123")).toThrow("full Git SHA");
   });
 
   it.skipIf(process.platform === "win32")(
@@ -128,33 +109,23 @@ describe("aphrody bridge", () => {
         writeFileSync(join(workspace, "source.txt"), "second");
         git("commit", "-qam", "second");
         const second = git("rev-parse", "HEAD");
-        const prepared = Bun.spawnSync(
-          ["bash", "-c", remotePrepareCommand(localFactory, first)],
-          {
-            windowsHide: true,
-            stdout: "pipe",
-            stderr: "pipe",
-          },
-        );
+        const prepared = Bun.spawnSync(["bash", "-c", remotePrepareCommand(localFactory, first)], {
+          windowsHide: true,
+          stdout: "pipe",
+          stderr: "pipe",
+        });
         expect(prepared.exitCode).toBe(0);
         expect(git("rev-parse", "HEAD")).toBe(first);
-        expect(readFileSync(join(workspace, "source.txt"), "utf8")).toBe(
-          "first",
-        );
+        expect(readFileSync(join(workspace, "source.txt"), "utf8")).toBe("first");
         writeFileSync(join(workspace, "source.txt"), "concurrent work");
-        const rejected = Bun.spawnSync(
-          ["bash", "-c", remotePrepareCommand(localFactory, second)],
-          {
-            windowsHide: true,
-            stdout: "pipe",
-            stderr: "pipe",
-          },
-        );
+        const rejected = Bun.spawnSync(["bash", "-c", remotePrepareCommand(localFactory, second)], {
+          windowsHide: true,
+          stdout: "pipe",
+          stderr: "pipe",
+        });
         expect(rejected.exitCode).toBe(2);
         expect(git("rev-parse", "HEAD")).toBe(first);
-        expect(readFileSync(join(workspace, "source.txt"), "utf8")).toBe(
-          "concurrent work",
-        );
+        expect(readFileSync(join(workspace, "source.txt"), "utf8")).toBe("concurrent work");
       } finally {
         rmSync(temporary, { recursive: true, force: true });
       }
@@ -170,13 +141,7 @@ describe("aphrody bridge", () => {
   it("waits for a terminal status and succeeds only on ok", () => {
     const cmd = waitCommand(factory, sha);
     expect(cmd).toContain("until grep -qE '^(ok|failed|stopped)'");
-    expect(
-      cmd
-        .trimEnd()
-        .endsWith(
-          `grep -qx ok '/home/ubuntu/build/artifacts/yolo/${sha}/STATUS'`,
-        ),
-    ).toBe(true);
+    expect(cmd.trimEnd().endsWith(`grep -qx ok '/home/ubuntu/build/artifacts/yolo/${sha}/STATUS'`)).toBe(true);
   });
 });
 
@@ -197,10 +162,7 @@ describe(".coord claim for a running build (so another agent can see it before s
     writeShipClaim("vps", factory, sha);
     const path = shipClaimPath(sha);
     expect(existsSync(path)).toBe(true);
-    const claim = JSON.parse(readFileSync(path, "utf8")) as Record<
-      string,
-      unknown
-    >;
+    const claim = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
     expect(claim["owner"]).toBe("yolo-ship");
     expect(claim["state"]).toBe("active");
     expect(claim["paths"]).toContain(factory.lockPath);
@@ -210,9 +172,7 @@ describe(".coord claim for a running build (so another agent can see it before s
   it("updates the same file's state instead of deleting it when the build ends", () => {
     writeShipClaim("vps", factory, sha);
     releaseShipClaim(sha, "complete: ok");
-    const claim = JSON.parse(
-      readFileSync(shipClaimPath(sha), "utf8"),
-    ) as Record<string, unknown>;
+    const claim = JSON.parse(readFileSync(shipClaimPath(sha), "utf8")) as Record<string, unknown>;
     expect(claim["state"]).toBe("complete: ok");
     expect(claim["owner"]).toBe("yolo-ship"); // original fields survive the update
     expect(claim["endedAt"]).toBeDefined();

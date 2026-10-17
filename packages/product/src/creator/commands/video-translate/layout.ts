@@ -34,8 +34,7 @@ export interface LayoutStats {
   dropped: number;
 }
 
-export const visibleLength = (text: string): number =>
-  text.replaceAll("\n", "").length;
+export const visibleLength = (text: string): number => text.replaceAll("\n", "").length;
 
 export function cps(cue: Pick<Cue, "start" | "end" | "text">): number {
   const seconds = Math.max(cue.end - cue.start, 1) / 1000;
@@ -47,11 +46,7 @@ const clean = (text: string): string => text.replace(/\s+/g, " ").trim();
 const BREAK_AFTER = /[,;:.!?…—–)]$/;
 
 /** Balanced wrap into at most `maxLines` lines of `maxLine` characters (greedy fallback beyond that). */
-export function wrapLines(
-  input: string,
-  maxLine: number,
-  maxLines = 2,
-): string[] {
+export function wrapLines(input: string, maxLine: number, maxLines = 2): string[] {
   const text = clean(input);
   if (text.length <= maxLine) return [text];
   const words = text.split(" ");
@@ -62,17 +57,10 @@ export function wrapLines(
       const second = words.slice(at).join(" ");
       if (first.length > maxLine || second.length > maxLine) continue;
       const bonus = BREAK_AFTER.test(first) ? -4 : 0;
-      const score =
-        Math.max(first.length, second.length) +
-        Math.abs(first.length - second.length) * 0.25 +
-        bonus;
+      const score = Math.max(first.length, second.length) + Math.abs(first.length - second.length) * 0.25 + bonus;
       if (!best || score < best.score) best = { score, at };
     }
-    if (best)
-      return [
-        words.slice(0, best.at).join(" "),
-        words.slice(best.at).join(" "),
-      ];
+    if (best) return [words.slice(0, best.at).join(" "), words.slice(best.at).join(" ")];
   }
   const out: string[] = [];
   let line = "";
@@ -125,22 +113,15 @@ function pack(parts: string[], limit: number): string[] {
 }
 
 /** Orders cues, trims overlaps and removes empties. Empty cues extend the previous contiguous cue. */
-function sanitize(
-  input: Cue[],
-  options: LayoutOptions,
-  stats: LayoutStats,
-): Cue[] {
-  const sorted = input
-    .map((cue) => ({ ...cue }))
-    .toSorted((a, b) => a.start - b.start || a.end - b.end);
+function sanitize(input: Cue[], options: LayoutOptions, stats: LayoutStats): Cue[] {
+  const sorted = input.map(cue => ({ ...cue })).toSorted((a, b) => a.start - b.start || a.end - b.end);
   const out: Cue[] = [];
   for (const cue of sorted) {
     cue.text = clean(cue.text);
     if (cue.end < cue.start) cue.end = cue.start;
     if (!cue.text) {
       const previous = out[out.length - 1];
-      if (previous && cue.start - previous.end <= 800 && cue.end > previous.end)
-        previous.end = cue.end;
+      if (previous && cue.start - previous.end <= 800 && cue.end > previous.end) previous.end = cue.end;
       stats.dropped += 1;
       continue;
     }
@@ -161,10 +142,7 @@ function sanitize(
 }
 
 function neededMs(text: string, options: LayoutOptions): number {
-  return Math.max(
-    options.minDuration,
-    Math.ceil((visibleLength(text) / options.maxCps) * 1000),
-  );
+  return Math.max(options.minDuration, Math.ceil((visibleLength(text) / options.maxCps) * 1000));
 }
 
 function shouldMerge(a: Cue, b: Cue, options: LayoutOptions): boolean {
@@ -176,18 +154,14 @@ function shouldMerge(a: Cue, b: Cue, options: LayoutOptions): boolean {
   const startsLate = a.end - a.start < 900;
   // Only merge when `a` is starved of time and the merged cue is readable.
   const starved = a.end - a.start < neededMs(a.text, options);
-  const mergedOk =
-    b.end - a.start >= (visibleLength(text) / options.maxCps) * 1000;
+  const mergedOk = b.end - a.start >= (visibleLength(text) / options.maxCps) * 1000;
   return (starved || startsLate) && mergedOk;
 }
 
 /** True when the text wraps into at most maxLines lines of maxLine characters. */
 function fits(text: string, options: LayoutOptions): boolean {
   const lines = wrapLines(text, options.maxLine, options.maxLines);
-  return (
-    lines.length <= options.maxLines &&
-    lines.every((line) => line.length <= options.maxLine)
-  );
+  return lines.length <= options.maxLines && lines.every(line => line.length <= options.maxLine);
 }
 
 /** Splits a piece in two at the word boundary nearest to its middle until every part fits. */
@@ -207,39 +181,29 @@ function ensureFit(text: string, options: LayoutOptions): string[] {
       best = i;
     }
   }
-  return [
-    ...ensureFit(words.slice(0, best).join(" "), options),
-    ...ensureFit(words.slice(best).join(" "), options),
-  ];
+  return [...ensureFit(words.slice(0, best).join(" "), options), ...ensureFit(words.slice(best).join(" "), options)];
 }
 
 /** Words longer than a line (URLs, ASR noise) are cut so wrapping can always succeed. */
 function breakLongWords(text: string, max: number): string {
   return text
     .split(" ")
-    .flatMap((word) =>
-      word.length > max
-        ? (word.match(new RegExp(`.{1,${max}}`, "gu")) ?? [word])
-        : [word],
-    )
+    .flatMap(word => (word.length > max ? (word.match(new RegExp(`.{1,${max}}`, "gu")) ?? [word]) : [word]))
     .join(" ");
 }
 
 function splitCue(cue: Cue, options: LayoutOptions): Cue[] {
   const limit = options.maxLine * options.maxLines;
-  const pieces = splitText(
-    breakLongWords(cue.text, options.maxLine),
-    limit,
-  ).flatMap((piece) => ensureFit(piece, options));
+  const pieces = splitText(breakLongWords(cue.text, options.maxLine), limit).flatMap(piece =>
+    ensureFit(piece, options),
+  );
   if (pieces.length <= 1) return [cue];
   const total = pieces.reduce((sum, piece) => sum + piece.length, 0);
   const span = cue.end - cue.start;
   let cursor = cue.start;
   return pieces.map((piece, index) => {
     const last = index === pieces.length - 1;
-    const end = last
-      ? cue.end
-      : cursor + Math.round((span * piece.length) / total);
+    const end = last ? cue.end : cursor + Math.round((span * piece.length) / total);
     const part: Cue = Object.assign({}, cue, {
       text: piece,
       start: cursor,
@@ -252,10 +216,7 @@ function splitCue(cue: Cue, options: LayoutOptions): Cue[] {
 }
 
 /** Applies all subtitle constraints; the original timing is kept unless a cue needs more time and has room. */
-export function layoutCues(
-  input: Cue[],
-  partial: Partial<LayoutOptions> = {},
-): { cues: Cue[]; stats: LayoutStats } {
+export function layoutCues(input: Cue[], partial: Partial<LayoutOptions> = {}): { cues: Cue[]; stats: LayoutStats } {
   const options = { ...DEFAULT_LAYOUT, ...partial };
   const stats: LayoutStats = {
     merged: 0,
@@ -273,8 +234,7 @@ export function layoutCues(
     if (previous && shouldMerge(previous, cue, options)) {
       previous.text = `${previous.text} ${cue.text}`;
       previous.end = Math.max(previous.end, cue.end);
-      if (previous.orig || cue.orig)
-        previous.orig = [previous.orig, cue.orig].filter(Boolean).join(" ");
+      if (previous.orig || cue.orig) previous.orig = [previous.orig, cue.orig].filter(Boolean).join(" ");
       stats.merged += 1;
     } else {
       merged.push({ ...cue });
@@ -294,10 +254,7 @@ export function layoutCues(
     const cue = split[i];
     if (!cue) continue;
     const next = split[i + 1];
-    const wanted = Math.min(
-      cue.start + neededMs(cue.text, options),
-      cue.start + options.maxDuration,
-    );
+    const wanted = Math.min(cue.start + neededMs(cue.text, options), cue.start + options.maxDuration);
     const ceiling = next ? next.start : Number.POSITIVE_INFINITY;
     const target = Math.min(wanted, ceiling);
     if (target > cue.end) {
@@ -309,12 +266,9 @@ export function layoutCues(
 
   // 4. wrap, renumber, report what could not be fixed
   const out = split.map((cue, index) => {
-    const wrapped = wrapLines(cue.text, options.maxLine, options.maxLines).join(
-      "\n",
-    );
+    const wrapped = wrapLines(cue.text, options.maxLine, options.maxLines).join("\n");
     return Object.assign({}, cue, { id: index + 1, text: wrapped });
   });
-  for (const cue of out)
-    if (cps(cue) > options.maxCps + 0.01) stats.overCps.push(cue.id);
+  for (const cue of out) if (cps(cue) > options.maxCps + 0.01) stats.overCps.push(cue.id);
   return { cues: out, stats };
 }

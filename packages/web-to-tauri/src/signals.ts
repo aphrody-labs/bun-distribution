@@ -62,11 +62,11 @@ export const API_RULES: ApiRule[] = [
 
 /** API ids found in `text`, in rule order. */
 export function detectApis(text: string): string[] {
-  return API_RULES.filter((rule) => rule.re.test(text)).map((rule) => rule.id);
+  return API_RULES.filter(rule => rule.re.test(text)).map(rule => rule.id);
 }
 
 export function isChromiumOnly(id: string): boolean {
-  return API_RULES.some((rule) => rule.id === id && rule.chromiumOnly);
+  return API_RULES.some(rule => rule.id === id && rule.chromiumOnly);
 }
 
 interface FrameworkRule {
@@ -110,11 +110,7 @@ const FRAMEWORKS: FrameworkRule[] = [
   { id: "htmx", html: /\bhx-(?:get|post|boost)=/ },
 ];
 
-export function detectFrameworks(
-  html: string,
-  rawHeaders: string,
-  scripts = "",
-): string[] {
+export function detectFrameworks(html: string, rawHeaders: string, scripts = ""): string[] {
   const out: string[] = [];
   for (const rule of FRAMEWORKS) {
     if (
@@ -149,11 +145,7 @@ export const IDP_RULES: IdpRule[] = [
   {
     id: "microsoft",
     kind: "idp",
-    patterns: [
-      "https://login.microsoftonline.com",
-      "https://login.live.com",
-      "https://*.b2clogin.com",
-    ],
+    patterns: ["https://login.microsoftonline.com", "https://login.live.com", "https://*.b2clogin.com"],
   },
   {
     id: "github",
@@ -168,18 +160,12 @@ export const IDP_RULES: IdpRule[] = [
   {
     id: "facebook",
     kind: "idp",
-    patterns: [
-      "https://www.facebook.com/*/dialog/*",
-      "https://m.facebook.com/*/dialog/*",
-    ],
+    patterns: ["https://www.facebook.com/*/dialog/*", "https://m.facebook.com/*/dialog/*"],
   },
   {
     id: "discord",
     kind: "idp",
-    patterns: [
-      "https://discord.com/oauth2/*",
-      "https://discord.com/api/oauth2/*",
-    ],
+    patterns: ["https://discord.com/oauth2/*", "https://discord.com/api/oauth2/*"],
   },
   {
     id: "x",
@@ -211,18 +197,12 @@ export const IDP_RULES: IdpRule[] = [
   {
     id: "stripe",
     kind: "payment",
-    patterns: [
-      "https://checkout.stripe.com",
-      "https://*.stripe.com/*/checkout/*",
-    ],
+    patterns: ["https://checkout.stripe.com", "https://*.stripe.com/*/checkout/*"],
   },
   {
     id: "paypal",
     kind: "payment",
-    patterns: [
-      "https://www.paypal.com/checkoutnow*",
-      "https://*.paypal.com/webapps/*",
-    ],
+    patterns: ["https://www.paypal.com/checkoutnow*", "https://*.paypal.com/webapps/*"],
   },
 ];
 
@@ -230,11 +210,7 @@ export const IDP_RULES: IdpRule[] = [
 export const EMBED_RULES: { id: string; patterns: string[] }[] = [
   {
     id: "youtube",
-    patterns: [
-      "https://www.youtube.com",
-      "https://www.youtube-nocookie.com",
-      "https://youtube.com",
-    ],
+    patterns: ["https://www.youtube.com", "https://www.youtube-nocookie.com", "https://youtube.com"],
   },
   { id: "vimeo", patterns: ["https://player.vimeo.com"] },
   {
@@ -243,10 +219,7 @@ export const EMBED_RULES: { id: string; patterns: string[] }[] = [
   },
   {
     id: "recaptcha",
-    patterns: [
-      "https://www.google.com/recaptcha/*",
-      "https://www.recaptcha.net",
-    ],
+    patterns: ["https://www.google.com/recaptcha/*", "https://www.recaptcha.net"],
   },
   { id: "hcaptcha", patterns: ["https://*.hcaptcha.com"] },
   { id: "turnstile", patterns: ["https://challenges.cloudflare.com"] },
@@ -265,13 +238,8 @@ export const EMBED_RULES: { id: string; patterns: string[] }[] = [
 ];
 
 /** Embed providers that a page loads: `urls` are `<iframe src>` and script URLs, never links. */
-export function detectEmbeds(
-  urls: Iterable<string>,
-): { id: string; origin: string; patterns: string[] }[] {
-  const found = new Map<
-    string,
-    { id: string; origin: string; patterns: string[] }
-  >();
+export function detectEmbeds(urls: Iterable<string>): { id: string; origin: string; patterns: string[] }[] {
+  const found = new Map<string, { id: string; origin: string; patterns: string[] }>();
   for (const text of urls) {
     let url: URL;
     try {
@@ -280,7 +248,7 @@ export function detectEmbeds(
       continue;
     }
     for (const rule of EMBED_RULES) {
-      const hit = rule.patterns.some((pattern) => {
+      const hit = rule.patterns.some(pattern => {
         const host = stripPath(pattern);
         return host !== null && matchesPattern(host, url);
       });
@@ -300,18 +268,13 @@ export function detectEmbeds(
  * path-scoped provider (`github.com/login/*`) only counts when the page really points at that path,
  * so a footer link to github.com is not mistaken for GitHub sign-in.
  */
-export function detectIdps(
-  urls: Iterable<string>,
-): {
+export function detectIdps(urls: Iterable<string>): {
   id: string;
   kind: "idp" | "payment";
   origin: string;
   patterns: string[];
 }[] {
-  const found = new Map<
-    string,
-    { id: string; kind: "idp" | "payment"; origin: string; patterns: string[] }
-  >();
+  const found = new Map<string, { id: string; kind: "idp" | "payment"; origin: string; patterns: string[] }>();
   for (const text of urls) {
     let url: URL;
     try {
@@ -320,10 +283,7 @@ export function detectIdps(
       continue;
     }
     for (const rule of IDP_RULES) {
-      if (
-        rule.patterns.some((pattern) => matchesPattern(pattern, url)) &&
-        !found.has(rule.id)
-      ) {
+      if (rule.patterns.some(pattern => matchesPattern(pattern, url)) && !found.has(rule.id)) {
         found.set(rule.id, {
           id: rule.id,
           kind: rule.kind,
@@ -363,14 +323,11 @@ export function extractOrigins(text: string): string[] {
 
 /** Parses the `Set-Cookie` header values of a response. */
 export function parseSetCookies(values: string[]): CookieInfo[] {
-  return values.map((raw) => {
-    const [pair = "", ...attrs] = raw.split(";").map((part) => part.trim());
+  return values.map(raw => {
+    const [pair = "", ...attrs] = raw.split(";").map(part => part.trim());
     const name = pair.split("=")[0] ?? "";
-    const lower = new Set(attrs.map((attr) => attr.toLowerCase()));
-    const attr = (key: string) =>
-      attrs
-        .find((entry) => entry.toLowerCase().startsWith(`${key}=`))
-        ?.split("=")[1] ?? null;
+    const lower = new Set(attrs.map(attr => attr.toLowerCase()));
+    const attr = (key: string) => attrs.find(entry => entry.toLowerCase().startsWith(`${key}=`))?.split("=")[1] ?? null;
     const sameSite = attr("samesite")?.toLowerCase() ?? null;
     return {
       name,
@@ -378,10 +335,7 @@ export function parseSetCookies(values: string[]): CookieInfo[] {
       path: attr("path"),
       secure: lower.has("secure"),
       httpOnly: lower.has("httponly"),
-      sameSite:
-        sameSite === "strict" || sameSite === "lax" || sameSite === "none"
-          ? sameSite
-          : null,
+      sameSite: sameSite === "strict" || sameSite === "lax" || sameSite === "none" ? sameSite : null,
       partitioned: lower.has("partitioned"),
       prefixed: /^__(?:host|secure)-/i.test(name),
     };

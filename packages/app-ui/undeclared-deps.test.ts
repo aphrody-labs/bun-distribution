@@ -9,10 +9,7 @@ test("shared React owner bundles a real filesystem fixture on the current runtim
   const root = mkdtempSync(join(tmpdir(), "m3-react-owner-"));
   try {
     const entry = join(root, "entry.ts");
-    writeFileSync(
-      entry,
-      'import { createElement } from "react"; console.log(createElement("div", null, "fixture"));',
-    );
+    writeFileSync(entry, 'import { createElement } from "react"; console.log(createElement("div", null, "fixture"));');
     const result = await Bun.build({
       entrypoints: [entry],
       target: "browser",
@@ -31,21 +28,12 @@ test("plugin guest resolves from the selected host workspace outside Material", 
   const previous = process.env.APHRODY_WORKSPACE_ROOT;
   try {
     const host = join(root, "host");
-    const guest = join(
-      host,
-      "crates/tauri/aphrody-tauri-plugin-dialog/guest-js",
-    );
+    const guest = join(host, "crates/tauri/aphrody-tauri-plugin-dialog/guest-js");
     mkdirSync(guest, { recursive: true });
     process.env.APHRODY_WORKSPACE_ROOT = host;
-    writeFileSync(
-      join(guest, "index.ts"),
-      'export const owner = "selected host guest";',
-    );
+    writeFileSync(join(guest, "index.ts"), 'export const owner = "selected host guest";');
     const entry = join(root, "entry.ts");
-    writeFileSync(
-      entry,
-      'import { owner } from "@aphrody/plugin-dialog"; console.log(owner);',
-    );
+    writeFileSync(entry, 'import { owner } from "@aphrody/plugin-dialog"; console.log(owner);');
     const result = await Bun.build({
       entrypoints: [entry],
       target: "browser",

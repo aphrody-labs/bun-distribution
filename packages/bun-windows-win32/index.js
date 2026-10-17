@@ -8,7 +8,11 @@ let types;
 module.exports = {
   manifest: require("./manifest.json"),
   family(name) {
-    if (typeof name !== "string" || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name) || !Object.hasOwn(module.exports.manifest.families, name))
+    if (
+      typeof name !== "string" ||
+      !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name) ||
+      !Object.hasOwn(module.exports.manifest.families, name)
+    )
       throw new TypeError("Unknown Win32 family " + JSON.stringify(name));
     let value = families.get(name);
     if (value === undefined) {

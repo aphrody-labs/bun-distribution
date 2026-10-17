@@ -3,7 +3,11 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-winrt-registration-l1-1-0.dll!RoGetServerActivatableClasses */
-  RoGetServerActivatableClasses(serverName: Win32Pointer, activatableClassIds: Win32Pointer, count: Win32Pointer): number;
+  RoGetServerActivatableClasses(
+    serverName: Win32Pointer,
+    activatableClassIds: Win32Pointer,
+    count: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

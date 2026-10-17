@@ -1,7 +1,7 @@
 //! Script injection command for re-injecting registered scripts on page load.
 
 use crate::mcp_bridge::script_registry::{ScriptEntry, ScriptType, SharedScriptRegistry};
-use tauri::{command, Runtime, State, WebviewWindow};
+use tauri::{Runtime, State, WebviewWindow, command};
 
 /// Request script injection - called by bridge.js when a page loads.
 /// This command retrieves all registered scripts and injects them into the webview.

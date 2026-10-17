@@ -6,10 +6,7 @@ import type * as React from "react";
 
 import { cn } from "../lib/utils";
 
-function Toggle({
-  className,
-  ...props
-}: React.ComponentProps<typeof TogglePrimitive>) {
+function Toggle({ className, ...props }: React.ComponentProps<typeof TogglePrimitive>) {
   return (
     <TogglePrimitive
       className={cn(
@@ -25,16 +22,8 @@ function Toggle({
   );
 }
 
-function ToggleGroup({
-  className,
-  ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive>) {
-  return (
-    <ToggleGroupPrimitive
-      className={cn("inline-flex flex-wrap items-center gap-2", className)}
-      {...props}
-    />
-  );
+function ToggleGroup({ className, ...props }: React.ComponentProps<typeof ToggleGroupPrimitive>) {
+  return <ToggleGroupPrimitive className={cn("inline-flex flex-wrap items-center gap-2", className)} {...props} />;
 }
 
 export { Toggle, ToggleGroup };

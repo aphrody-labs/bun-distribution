@@ -32,8 +32,7 @@ export interface StackManifest {
 
 /** Source checkouts consume Material; installed distributions retain their asset layout. */
 export function templatesRoot(rootDir: string): string {
-  if (!existsSync(join(rootDir, "Cargo.toml")))
-    return resolve(rootDir, "m3/templates");
+  if (!existsSync(join(rootDir, "Cargo.toml"))) return resolve(rootDir, "m3/templates");
   return join(
     checkoutRoot("material", {
       ...process.env,
@@ -44,9 +43,7 @@ export function templatesRoot(rootDir: string): string {
 }
 
 export async function loadStack(rootDir: string): Promise<StackManifest> {
-  return Bun.TOML.parse(
-    await Bun.file(join(templatesRoot(rootDir), "stack.toml")).text(),
-  ) as StackManifest;
+  return Bun.TOML.parse(await Bun.file(join(templatesRoot(rootDir), "stack.toml")).text()) as StackManifest;
 }
 
 function walk(dir: string, base = dir, acc: string[] = []): string[] {
@@ -102,10 +99,7 @@ export async function createProject(options: CreateOptions): Promise<string[]> {
   }
 }
 
-async function createFromTemplates(
-  options: CreateOptions,
-  templatesDir: string,
-): Promise<string[]> {
+async function createFromTemplates(options: CreateOptions, templatesDir: string): Promise<string[]> {
   const proc = Bun.spawn(
     [
       process.execPath,
@@ -126,15 +120,9 @@ async function createFromTemplates(
       env: { ...process.env, NO_COLOR: "1" },
     },
   );
-  const [stderr, exitCode] = await Promise.all([
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
+  const [stderr, exitCode] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
   if (exitCode !== 0) {
-    throw new Error(
-      stderr.replace(/^error: /, "").trim() ||
-        `bun create exited with ${exitCode}`,
-    );
+    throw new Error(stderr.replace(/^error: /, "").trim() || `bun create exited with ${exitCode}`);
   }
   return walk(options.target).toSorted();
 }
@@ -147,10 +135,7 @@ const HELP = `\x1b[1myolo create\x1b[0m <dir> — scaffold an Aphrody stack proj
   --yolo-path <dir>         Yolo checkout the project links to (default: this checkout)
   --list                    Show the available templates and layers`;
 
-export async function runCreateCommand(
-  args: readonly string[],
-  rootDir: string = process.cwd(),
-): Promise<number> {
+export async function runCreateCommand(args: readonly string[], rootDir: string = process.cwd()): Promise<number> {
   const positional: string[] = [];
   let features: string[] = ["web"];
   let framework: string | undefined;
@@ -182,14 +167,10 @@ export async function runCreateCommand(
       `\x1b[1m${stack.meta["name"]}\x1b[0m (Bun ${stack.meta["bun"]}, runtime ABI ${stack.meta["runtime_abi"]})`,
     );
     for (const [id, t] of Object.entries(stack.template)) {
-      console.log(
-        `  ${id.padEnd(8)} ${t.required ? "(always) " : "         "}${t.description}`,
-      );
+      console.log(`  ${id.padEnd(8)} ${t.required ? "(always) " : "         "}${t.description}`);
     }
     for (const [id, layer] of Object.entries(stack.layer)) {
-      console.log(
-        `  layer ${id.padEnd(9)} ${String(layer["plan"]).padEnd(3)} ${layer["status"]}`,
-      );
+      console.log(`  layer ${id.padEnd(9)} ${String(layer["plan"]).padEnd(3)} ${layer["status"]}`);
     }
     return 0;
   }

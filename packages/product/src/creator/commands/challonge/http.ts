@@ -1,19 +1,12 @@
 /** Petits utilitaires HTTP partagés par les clients Challonge et Discord (aucune dépendance). */
 
-export type Fetch = (
-  input: string | URL | Request,
-  init?: RequestInit,
-) => Promise<Response>;
+export type Fetch = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 export type Sleep = (ms: number) => Promise<void>;
 
-export const realSleep: Sleep = (ms) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+export const realSleep: Sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 /** Remplace chaque secret connu par `***` (les secrets trop courts sont ignorés pour éviter les faux positifs). */
-export function redact(
-  text: string,
-  secrets: readonly (string | undefined)[],
-): string {
+export function redact(text: string, secrets: readonly (string | undefined)[]): string {
   let out = text;
   for (const secret of secrets) {
     if (secret && secret.length >= 4) out = out.split(secret).join("***");
@@ -22,21 +15,13 @@ export function redact(
 }
 
 /** Backoff exponentiel avec gigue : la tentative 0 attend environ `baseMs`, plafonné à `capMs`. */
-export function backoffMs(
-  attempt: number,
-  random: () => number,
-  baseMs = 1000,
-  capMs = 30_000,
-): number {
+export function backoffMs(attempt: number, random: () => number, baseMs = 1000, capMs = 30_000): number {
   const ceiling = Math.min(capMs, baseMs * 2 ** attempt);
   return Math.round(ceiling / 2 + (ceiling / 2) * random());
 }
 
 /** Valeur de `Retry-After` (secondes ou date HTTP) en millisecondes, ou `undefined`. */
-export function retryAfterMs(
-  res: Response,
-  now = Date.now(),
-): number | undefined {
+export function retryAfterMs(res: Response, now = Date.now()): number | undefined {
   const raw = res.headers.get("retry-after");
   if (!raw) return undefined;
   const seconds = Number(raw);

@@ -3,23 +3,10 @@ import { TICKS_PER_SECOND } from "../../wasm";
 import { clampRetimeRate, shouldMaintainPitch } from "../../retime/rate";
 import type { AudioClipSource } from "../../media/audio";
 import { createAudioContext, collectAudioClips } from "../../media/audio";
-import {
-  buildAudioGainAutomation,
-  hasAnimatedVolume,
-} from "../../timeline/audio-state";
+import { buildAudioGainAutomation, hasAnimatedVolume } from "../../timeline/audio-state";
 import { createAudioMasteringChain } from "../../media/audio-mastering";
-import {
-  getClipTimeAtSourceTime,
-  getSourceTimeAtClipTime,
-  renderRetimedBuffer,
-} from "../../retime";
-import {
-  ALL_FORMATS,
-  AudioBufferSink,
-  BlobSource,
-  Input,
-  type WrappedAudioBuffer,
-} from "mediabunny";
+import { getClipTimeAtSourceTime, getSourceTimeAtClipTime, renderRetimedBuffer } from "../../retime";
+import { ALL_FORMATS, AudioBufferSink, BlobSource, Input, type WrappedAudioBuffer } from "mediabunny";
 
 export class AudioManager {
   private audioContext: AudioContext | null = null;
@@ -33,10 +20,7 @@ export class AudioManager {
   private sinks = new Map<string, AudioBufferSink>();
   private inputs = new Map<string, Input>();
   private activeClipIds = new Set<string>();
-  private clipIterators = new Map<
-    string,
-    AsyncGenerator<WrappedAudioBuffer, void, unknown>
-  >();
+  private clipIterators = new Map<string, AsyncGenerator<WrappedAudioBuffer, void, unknown>>();
   private queuedSources = new Set<AudioBufferSourceNode>();
   private preparedClipBuffers = new Map<string, Promise<AudioBuffer | null>>();
   private decodedBuffers = new Map<string, Promise<AudioBuffer | null>>();
@@ -141,8 +125,7 @@ export class AudioManager {
 
   private getPlaybackTime(): number {
     if (!this.audioContext) return this.playbackStartTime;
-    const elapsed =
-      this.audioContext.currentTime - this.playbackStartContextTime;
+    const elapsed = this.audioContext.currentTime - this.playbackStartContextTime;
     return this.playbackStartTime + elapsed;
   }
 
@@ -250,11 +233,7 @@ export class AudioManager {
     const clipStart = clip.startTime;
     const clipEnd = clip.startTime + clip.duration;
     const playbackTimeAfterSinkReady = this.getPlaybackTime();
-    const iteratorStartTime = Math.max(
-      startTime,
-      clipStart,
-      playbackTimeAfterSinkReady,
-    );
+    const iteratorStartTime = Math.max(startTime, clipStart, playbackTimeAfterSinkReady);
     if (iteratorStartTime >= clipEnd) {
       return;
     }
@@ -311,10 +290,7 @@ export class AudioManager {
               this.playbackLatencyCompensationSeconds,
               Math.min(0.25, offset + 0.01),
             );
-            if (
-              nextCompensationSeconds >
-              this.playbackLatencyCompensationSeconds + 0.001
-            ) {
+            if (nextCompensationSeconds > this.playbackLatencyCompensationSeconds + 0.001) {
               this.playbackLatencyCompensationSeconds = nextCompensationSeconds;
             }
             const resyncStartTime = this.getPlaybackTime();
@@ -367,11 +343,7 @@ export class AudioManager {
     const clipStart = clip.startTime;
     const clipEnd = clip.startTime + clip.duration;
     const playbackTimeAfterReady = this.getPlaybackTime();
-    const effectiveStartTime = Math.max(
-      startTime,
-      clipStart,
-      playbackTimeAfterReady,
-    );
+    const effectiveStartTime = Math.max(startTime, clipStart, playbackTimeAfterReady);
     if (effectiveStartTime >= clipEnd) {
       return;
     }
@@ -422,7 +394,7 @@ export class AudioManager {
     timelineTime: number;
     targetAhead: number;
   }): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const checkInterval = setInterval(() => {
         if (!this.editor.playback.getIsPlaying()) {
           clearInterval(checkInterval);
@@ -453,11 +425,7 @@ export class AudioManager {
     this.sinks.clear();
   }
 
-  private shouldUsePreparedClipBuffer({
-    clip,
-  }: {
-    clip: AudioClipSource;
-  }): boolean {
+  private shouldUsePreparedClipBuffer({ clip }: { clip: AudioClipSource }): boolean {
     return (
       this.hasCurveRetime({ clip }) ||
       hasAnimatedVolume({ element: clip.timelineElement }) ||
@@ -506,8 +474,7 @@ export class AudioManager {
     clipGain.gain.setValueAtTime(points[0].gain, startTimestamp);
     for (let index = 1; index < points.length; index++) {
       const point = points[index];
-      const pointTimestamp =
-        startTimestamp + (point.localTime - startLocalTime);
+      const pointTimestamp = startTimestamp + (point.localTime - startLocalTime);
       if (pointTimestamp < audioContext.currentTime) {
         continue;
       }
@@ -516,11 +483,7 @@ export class AudioManager {
     }
   }
 
-  private buildPreparedClipCacheKey({
-    clip,
-  }: {
-    clip: AudioClipSource;
-  }): string {
+  private buildPreparedClipCacheKey({ clip }: { clip: AudioClipSource }): string {
     return JSON.stringify({
       id: clip.id,
       sourceKey: clip.sourceKey,
@@ -532,11 +495,7 @@ export class AudioManager {
     });
   }
 
-  private async getPreparedClipBuffer({
-    clip,
-  }: {
-    clip: AudioClipSource;
-  }): Promise<AudioBuffer | null> {
+  private async getPreparedClipBuffer({ clip }: { clip: AudioClipSource }): Promise<AudioBuffer | null> {
     const cacheKey = this.buildPreparedClipCacheKey({ clip });
     const existing = this.preparedClipBuffers.get(cacheKey);
     if (existing) {
@@ -568,11 +527,7 @@ export class AudioManager {
     return promise;
   }
 
-  private async getDecodedBuffer({
-    clip,
-  }: {
-    clip: AudioClipSource;
-  }): Promise<AudioBuffer | null> {
+  private async getDecodedBuffer({ clip }: { clip: AudioClipSource }): Promise<AudioBuffer | null> {
     const existing = this.decodedBuffers.get(clip.sourceKey);
     if (existing) {
       return existing;
@@ -583,11 +538,7 @@ export class AudioManager {
     return promise;
   }
 
-  private async decodeClipBuffer({
-    clip,
-  }: {
-    clip: AudioClipSource;
-  }): Promise<AudioBuffer | null> {
+  private async decodeClipBuffer({ clip }: { clip: AudioClipSource }): Promise<AudioBuffer | null> {
     const audioContext = this.ensureAudioContext();
     if (!audioContext) {
       return null;
@@ -620,35 +571,19 @@ export class AudioManager {
       const targetSampleRate = audioContext.sampleRate;
       const nativeSampleRate = chunks[0].sampleRate;
       const numChannels = Math.min(2, chunks[0].numberOfChannels);
-      const nativeChannels = Array.from(
-        { length: numChannels },
-        () => new Float32Array(totalSamples),
-      );
+      const nativeChannels = Array.from({ length: numChannels }, () => new Float32Array(totalSamples));
 
       let offset = 0;
       for (const chunk of chunks) {
         for (let channel = 0; channel < numChannels; channel++) {
-          nativeChannels[channel].set(
-            chunk.getChannelData(Math.min(channel, chunk.numberOfChannels - 1)),
-            offset,
-          );
+          nativeChannels[channel].set(chunk.getChannelData(Math.min(channel, chunk.numberOfChannels - 1)), offset);
         }
         offset += chunk.length;
       }
 
-      const outputSamples = Math.ceil(
-        totalSamples * (targetSampleRate / nativeSampleRate),
-      );
-      const offlineContext = new OfflineAudioContext(
-        numChannels,
-        outputSamples,
-        targetSampleRate,
-      );
-      const nativeBuffer = audioContext.createBuffer(
-        numChannels,
-        totalSamples,
-        nativeSampleRate,
-      );
+      const outputSamples = Math.ceil(totalSamples * (targetSampleRate / nativeSampleRate));
+      const offlineContext = new OfflineAudioContext(numChannels, outputSamples, targetSampleRate);
+      const nativeBuffer = audioContext.createBuffer(numChannels, totalSamples, nativeSampleRate);
 
       for (let channel = 0; channel < numChannels; channel++) {
         nativeBuffer.copyToChannel(nativeChannels[channel], channel);
@@ -668,11 +603,7 @@ export class AudioManager {
     }
   }
 
-  private async getAudioSink({
-    clip,
-  }: {
-    clip: AudioClipSource;
-  }): Promise<AudioBufferSink | null> {
+  private async getAudioSink({ clip }: { clip: AudioClipSource }): Promise<AudioBufferSink | null> {
     const existingSink = this.sinks.get(clip.sourceKey);
     if (existingSink) return existingSink;
 

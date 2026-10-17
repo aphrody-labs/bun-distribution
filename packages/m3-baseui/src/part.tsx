@@ -5,18 +5,13 @@
 import type { JSXElementConstructor } from "react";
 
 /** Join class names, dropping falsy values. */
-export const cx = (...names: (string | false | null | undefined)[]): string =>
-  names.filter(Boolean).join(" ");
+export const cx = (...names: (string | false | null | undefined)[]): string => names.filter(Boolean).join(" ");
 
 type ClassName<S> = string | ((state: S) => string | undefined) | undefined;
 
 /** `base` followed by a string `className`, or a state function that returns it with `base` first. */
-export function mergeClassName<S>(
-  base: string,
-  className: ClassName<S>,
-): string | ((state: S) => string) {
-  if (typeof className === "function")
-    return (state: S) => cx(base, className(state));
+export function mergeClassName<S>(base: string, className: ClassName<S>): string | ((state: S) => string) {
+  if (typeof className === "function") return (state: S) => cx(base, className(state));
   return cx(base, className);
 }
 
@@ -26,10 +21,7 @@ export function mergeClassName<S>(
  * prop, so nothing needs `forwardRef`.
  */
 // oxlint-disable-next-line typescript/no-explicit-any
-export function part<C extends JSXElementConstructor<any>>(
-  Component: C,
-  base: string,
-): C {
+export function part<C extends JSXElementConstructor<any>>(Component: C, base: string): C {
   const Base = Component as JSXElementConstructor<{
     className?: ClassName<unknown>;
   }>;

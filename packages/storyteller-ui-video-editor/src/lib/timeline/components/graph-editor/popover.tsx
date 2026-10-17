@@ -2,33 +2,16 @@
 
 import { useState } from "react";
 import { Popover, PopoverContent } from "../../../components/ui/popover";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../../../components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
 import { Button } from "../../../components/ui/button";
 import { cn } from "../../../utils/ui";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ArrowDown01Icon,
-  Delete02Icon,
-  PlusSignIcon,
-} from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon, Delete02Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import { getBezierPoint } from "../../../animation/bezier";
 import type { NormalizedCubicBezier } from "../../../animation/types";
 import type { GraphEditorComponentOption } from "./session";
-import {
-  BUILTIN_PRESETS,
-  PRESET_MATCH_TOLERANCE,
-  type EasingPreset,
-} from "./easing-presets";
-import {
-  removePreset,
-  savePreset,
-  useCustomPresets,
-} from "./custom-presets-store";
+import { BUILTIN_PRESETS, PRESET_MATCH_TOLERANCE, type EasingPreset } from "./easing-presets";
+import { removePreset, savePreset, useCustomPresets } from "./custom-presets-store";
 import { BezierGraph, BEZIER_GRAPH_MIN_HEIGHT } from "./bezier-graph";
 
 const COLLAPSED_MAX = 6;
@@ -74,17 +57,14 @@ export function GraphEditorPopover({
   const activePresetId =
     value == null
       ? null
-      : (allPresets.find((preset) =>
-          preset.value.every(
-            (presetValue, index) =>
-              Math.abs(presetValue - value[index]) < PRESET_MATCH_TOLERANCE,
-          ),
+      : (allPresets.find(preset =>
+          preset.value.every((presetValue, index) => Math.abs(presetValue - value[index]) < PRESET_MATCH_TOLERANCE),
         )?.id ?? null);
 
   return (
     <Popover
       open={open}
-      onOpenChange={(nextOpen) => {
+      onOpenChange={nextOpen => {
         if (!nextOpen) {
           onCancelPreview?.();
         }
@@ -92,15 +72,11 @@ export function GraphEditorPopover({
       }}
     >
       {children}
-      <PopoverContent
-        side={side}
-        sideOffset={8}
-        className="w-60 overflow-hidden px-0"
-      >
+      <PopoverContent side={side} sideOffset={8} className="w-60 overflow-hidden px-0">
         {componentOptions.length > 1 && (
           <div className="border-b px-3 py-2">
             <div className="bg-muted/40 inline-flex rounded-md p-0.5">
-              {componentOptions.map((component) => (
+              {componentOptions.map(component => (
                 <button
                   key={component.key}
                   type="button"
@@ -132,11 +108,7 @@ export function GraphEditorPopover({
           )}
         </div>
 
-        <Tabs
-          variant="underline"
-          defaultValue="presets"
-          className="flex flex-col gap-2"
-        >
+        <Tabs variant="underline" defaultValue="presets" className="flex flex-col gap-2">
           <TabsList className="px-3">
             <TabsTrigger value="presets" className="text-xs">
               Presets
@@ -151,7 +123,7 @@ export function GraphEditorPopover({
               shouldExpand={BUILTIN_PRESETS.length > COLLAPSED_MAX}
               onExpand={() => setIsExpanded(true)}
             >
-              {BUILTIN_PRESETS.map((preset) => (
+              {BUILTIN_PRESETS.map(preset => (
                 <PresetItem
                   key={preset.id}
                   preset={preset}
@@ -164,7 +136,7 @@ export function GraphEditorPopover({
           </TabsContent>
           <TabsContent value="saved" className="px-3">
             <div className="grid grid-cols-3 gap-1">
-              {custom.map((preset) => (
+              {custom.map(preset => (
                 <PresetItem
                   key={preset.id}
                   preset={preset}
@@ -180,16 +152,11 @@ export function GraphEditorPopover({
                 disabled={!canEdit}
                 className={cn(
                   "text-muted-foreground flex flex-col items-center justify-center gap-1 rounded-sm px-1 py-1",
-                  canEdit
-                    ? "hover:bg-foreground/5 cursor-pointer"
-                    : "cursor-not-allowed opacity-50",
+                  canEdit ? "hover:bg-foreground/5 cursor-pointer" : "cursor-not-allowed opacity-50",
                 )}
               >
                 <div className="border-foreground/10 flex aspect-video w-full items-center justify-center rounded-sm border border-dashed">
-                  <HugeiconsIcon
-                    icon={PlusSignIcon}
-                    className="size-3.5 opacity-40"
-                  />
+                  <HugeiconsIcon icon={PlusSignIcon} className="size-3.5 opacity-40" />
                 </div>
                 <span className="text-[10px] leading-tight">Save</span>
               </button>
@@ -236,16 +203,8 @@ function ExpandableGrid({
       </div>
       {!isExpanded && shouldExpand && (
         <div className="from-popover/0 to-popover absolute inset-x-0 bottom-0 flex h-8 items-center justify-center bg-linear-to-b">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-5"
-            onClick={onExpand}
-          >
-            <HugeiconsIcon
-              icon={ArrowDown01Icon}
-              className="text-muted-foreground size-3"
-            />
+          <Button variant="ghost" size="icon" className="size-5" onClick={onExpand}>
+            <HugeiconsIcon icon={ArrowDown01Icon} className="text-muted-foreground size-3" />
           </Button>
         </div>
       )}
@@ -273,9 +232,7 @@ function PresetItem({
       disabled={disabled}
       className={cn(
         "group relative flex flex-col items-center gap-1 rounded-sm px-1 py-1",
-        disabled
-          ? "cursor-not-allowed opacity-50"
-          : "hover:bg-foreground/5 cursor-pointer",
+        disabled ? "cursor-not-allowed opacity-50" : "hover:bg-foreground/5 cursor-pointer",
         isActive && "bg-primary/5! text-primary",
       )}
     >
@@ -287,12 +244,7 @@ function PresetItem({
       >
         <CurveThumb value={preset.value} />
       </div>
-      <span
-        className={cn(
-          "text-[10px] leading-tight",
-          isActive ? "text-primary" : "text-muted-foreground",
-        )}
-      >
+      <span className={cn("text-[10px] leading-tight", isActive ? "text-primary" : "text-muted-foreground")}>
         {preset.label}
       </span>
       {onDelete && (
@@ -300,7 +252,7 @@ function PresetItem({
           variant="destructive"
           size="icon"
           className="absolute -right-0.5 -top-0.5 hidden size-4.5 rounded-full [&_svg]:size-3 group-hover:flex"
-          onClick={(event) => {
+          onClick={event => {
             event.stopPropagation();
             onDelete();
           }}
@@ -345,19 +297,9 @@ function CurveThumb({ value }: { value: NormalizedCubicBezier }) {
     points.push(`${x},${y}`);
   }
   return (
-    <svg
-      width={THUMB_WIDTH}
-      height={THUMB_HEIGHT}
-      viewBox={`0 0 ${THUMB_WIDTH} ${THUMB_HEIGHT}`}
-    >
+    <svg width={THUMB_WIDTH} height={THUMB_HEIGHT} viewBox={`0 0 ${THUMB_WIDTH} ${THUMB_HEIGHT}`}>
       <title>Curve preset preview</title>
-      <path
-        d={`M${points.join("L")}`}
-        fill="none"
-        className="stroke-current"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-      />
+      <path d={`M${points.join("L")}`} fill="none" className="stroke-current" strokeWidth={1.5} strokeLinecap="round" />
     </svg>
   );
 }

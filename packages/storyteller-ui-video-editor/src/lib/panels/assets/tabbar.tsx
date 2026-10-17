@@ -1,11 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "../../components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../components/ui/tooltip";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../utils/ui";
 import { TAB_KEYS, tabs, useAssetsPanelStore } from "./assets-panel-store";
@@ -47,7 +43,7 @@ export function TabBar() {
         ref={scrollRef}
         className="scrollbar-hidden relative flex size-full p-1 flex-col items-center justify-start gap-0.5 overflow-y-auto"
       >
-        {TAB_KEYS.map((tabKey) => {
+        {TAB_KEYS.map(tabKey => {
           const tab = tabs[tabKey];
           return (
             <Tooltip key={tabKey} delayDuration={10}>
@@ -66,15 +62,8 @@ export function TabBar() {
                   <tab.icon />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent
-                side="right"
-                align="center"
-                variant="sidebar"
-                sideOffset={8}
-              >
-                <div className="text-foreground text-sm leading-none font-medium">
-                  {tab.label}
-                </div>
+              <TooltipContent side="right" align="center" variant="sidebar" sideOffset={8}>
+                <div className="text-foreground text-sm leading-none font-medium">{tab.label}</div>
               </TooltipContent>
             </Tooltip>
           );
@@ -87,13 +76,7 @@ export function TabBar() {
   );
 }
 
-function FadeOverlay({
-  direction,
-  show,
-}: {
-  direction: "top" | "bottom";
-  show: boolean;
-}) {
+function FadeOverlay({ direction, show }: { direction: "top" | "bottom"; show: boolean }) {
   return (
     <div
       className={cn(

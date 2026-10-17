@@ -5,13 +5,7 @@ import { listen } from "@aphrody/tauri/api/event";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { desktopRoutes } from "./desktop-navigation";
-import {
-  filesPrompt,
-  intentsOf,
-  type LinkDestination,
-  type OpenIntent,
-  type OpenRequest,
-} from "./open-requests";
+import { filesPrompt, intentsOf, type LinkDestination, type OpenIntent, type OpenRequest } from "./open-requests";
 import { isTauri, tauriInvoke } from "./tauri-bridge";
 
 export const OPEN_EVENT = "aphrody://open";
@@ -58,8 +52,7 @@ export function useOpenRequests(): void {
     if (!isTauri()) return;
     let active = true;
     const drain = async () => {
-      const requests =
-        (await tauriInvoke<OpenRequest[]>("aphrody_take_open_requests")) ?? [];
+      const requests = (await tauriInvoke<OpenRequest[]>("aphrody_take_open_requests")) ?? [];
       // The last intent wins: one navigation per batch.
       const last = intentsOf(requests).at(-1);
       if (active && last) {
@@ -68,13 +61,10 @@ export function useOpenRequests(): void {
       }
     };
     void drain().catch(() => undefined);
-    const unlisten = listen(
-      OPEN_EVENT,
-      () => void drain().catch(() => undefined),
-    );
+    const unlisten = listen(OPEN_EVENT, () => void drain().catch(() => undefined));
     return () => {
       active = false;
-      void unlisten.then((stop) => stop()).catch(() => undefined);
+      void unlisten.then(stop => stop()).catch(() => undefined);
     };
   }, [navigate]);
 }

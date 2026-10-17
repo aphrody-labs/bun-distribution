@@ -55,9 +55,7 @@ export interface DiscoveryOptions {
 /** URL of the card for an agent base URL, or the URL itself when it already names a `.json` file. */
 export function agentCardUrl(baseUrl: string): string {
   const withoutQuery = baseUrl.split(/[?#]/, 1)[0] ?? baseUrl;
-  return /\.json$/i.test(withoutQuery)
-    ? baseUrl
-    : joinUrl(baseUrl, WELL_KNOWN_AGENT_CARD_PATH);
+  return /\.json$/i.test(withoutQuery) ? baseUrl : joinUrl(baseUrl, WELL_KNOWN_AGENT_CARD_PATH);
 }
 
 function cacheDirectives(header: string | null): {
@@ -67,12 +65,10 @@ function cacheDirectives(header: string | null): {
   const directives = (header ?? "")
     .toLowerCase()
     .split(",")
-    .map((d) => d.trim());
+    .map(d => d.trim());
   if (directives.includes("no-store")) return { maxAgeMs: 0, noStore: true };
   if (directives.includes("no-cache")) return { maxAgeMs: 0, noStore: false };
-  const maxAge = directives
-    .map((d) => /^max-age=(\d+)$/.exec(d)?.[1])
-    .find((v) => v !== undefined);
+  const maxAge = directives.map(d => /^max-age=(\d+)$/.exec(d)?.[1]).find(v => v !== undefined);
   return {
     maxAgeMs: maxAge === undefined ? 0 : Number(maxAge) * 1000,
     noStore: false,
@@ -80,31 +76,22 @@ function cacheDirectives(header: string | null): {
 }
 
 /** Fetch and normalise the Agent Card published by an agent. */
-export async function fetchAgentCard(
-  baseUrl: string,
-  options: DiscoveryOptions = {},
-): Promise<AgentCard> {
+export async function fetchAgentCard(baseUrl: string, options: DiscoveryOptions = {}): Promise<AgentCard> {
   const url = agentCardUrl(baseUrl);
   const cached = options.cache?.peek(url);
   if (cached && cached.freshUntil > Date.now()) return cached.card;
 
   const headers = new Headers();
-  const extra =
-    typeof options.headers === "function"
-      ? await options.headers()
-      : options.headers;
-  if (extra)
-    new Headers(extra).forEach((value, key) => headers.set(key, value));
+  const extra = typeof options.headers === "function" ? await options.headers() : options.headers;
+  if (extra) new Headers(extra).forEach((value, key) => headers.set(key, value));
   headers.set("accept", "application/json");
   if (cached?.etag) headers.set("if-none-match", cached.etag);
-  else if (cached?.lastModified)
-    headers.set("if-modified-since", cached.lastModified);
+  else if (cached?.lastModified) headers.set("if-modified-since", cached.lastModified);
 
   const timeoutMs = options.timeoutMs ?? 30_000;
-  const signals = [
-    options.signal,
-    timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined,
-  ].filter((s): s is AbortSignal => s !== undefined);
+  const signals = [options.signal, timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined].filter(
+    (s): s is AbortSignal => s !== undefined,
+  );
   let response: Response;
   try {
     response = await (options.fetch ?? globalThis.fetch)(url, {
@@ -113,18 +100,12 @@ export async function fetchAgentCard(
     });
   } catch (cause) {
     const reason = cause instanceof Error ? cause.message : String(cause);
-    throw new A2ADiscoveryError(
-      "fetch",
-      `agent card request to ${url} failed: ${reason}`,
-      {
-        cause,
-      },
-    );
+    throw new A2ADiscoveryError("fetch", `agent card request to ${url} failed: ${reason}`, {
+      cause,
+    });
   }
 
-  const { maxAgeMs, noStore } = cacheDirectives(
-    response.headers.get("cache-control"),
-  );
+  const { maxAgeMs, noStore } = cacheDirectives(response.headers.get("cache-control"));
   if (response.status === 304 && cached) {
     await response.body?.cancel().catch(() => undefined);
     options.cache?.store(url, { ...cached, freshUntil: Date.now() + maxAgeMs });
@@ -132,23 +113,15 @@ export async function fetchAgentCard(
   }
   if (!response.ok) {
     await response.body?.cancel().catch(() => undefined);
-    throw new A2ADiscoveryError(
-      "fetch",
-      `agent card request to ${url} answered HTTP ${response.status}`,
-      {
-        status: response.status,
-      },
-    );
+    throw new A2ADiscoveryError("fetch", `agent card request to ${url} answered HTTP ${response.status}`, {
+      status: response.status,
+    });
   }
   let raw: unknown;
   try {
     raw = await response.json();
   } catch (cause) {
-    throw new A2ADiscoveryError(
-      "invalid",
-      `agent card at ${url} is not valid JSON`,
-      { cause },
-    );
+    throw new A2ADiscoveryError("invalid", `agent card at ${url} is not valid JSON`, { cause });
   }
   const card = normalizeAgentCard(raw);
   if (options.cache && !noStore) {
@@ -174,8 +147,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * Required collections that a legacy card omits are defaulted to empty; unknown members are kept.
  */
 export function normalizeAgentCard(raw: unknown): AgentCard {
-  if (!isRecord(raw))
-    throw new A2ADiscoveryError("invalid", "agent card is not a JSON object");
+  if (!isRecord(raw)) throw new A2ADiscoveryError("invalid", "agent card is not a JSON object");
   if (typeof raw.name !== "string" || raw.name === "") {
     throw new A2ADiscoveryError("invalid", "agent card has no name");
   }
@@ -184,18 +156,12 @@ export function normalizeAgentCard(raw: unknown): AgentCard {
     interfaces = raw.supportedInterfaces.filter(isRecord).map(toInterface);
   } else if (typeof raw.url === "string") {
     // Pre-1.0 card: one preferred transport at `url`, optionally more in `additionalInterfaces`.
-    const version =
-      typeof raw.protocolVersion === "string" ? raw.protocolVersion : "0.3";
-    const preferred =
-      typeof raw.preferredTransport === "string"
-        ? raw.preferredTransport
-        : "JSONRPC";
-    const extra = Array.isArray(raw.additionalInterfaces)
-      ? raw.additionalInterfaces.filter(isRecord)
-      : [];
+    const version = typeof raw.protocolVersion === "string" ? raw.protocolVersion : "0.3";
+    const preferred = typeof raw.preferredTransport === "string" ? raw.preferredTransport : "JSONRPC";
+    const extra = Array.isArray(raw.additionalInterfaces) ? raw.additionalInterfaces.filter(isRecord) : [];
     interfaces = [
       { url: raw.url, protocolBinding: preferred, protocolVersion: version },
-      ...extra.map((i) =>
+      ...extra.map(i =>
         toInterface({
           protocolVersion: version,
           ...i,
@@ -204,24 +170,13 @@ export function normalizeAgentCard(raw: unknown): AgentCard {
       ),
     ];
   } else {
-    throw new A2ADiscoveryError(
-      "invalid",
-      `agent card "${raw.name}" declares no interface`,
-    );
+    throw new A2ADiscoveryError("invalid", `agent card "${raw.name}" declares no interface`);
   }
   if (interfaces.length === 0) {
-    throw new A2ADiscoveryError(
-      "invalid",
-      `agent card "${raw.name}" declares no usable interface`,
-    );
+    throw new A2ADiscoveryError("invalid", `agent card "${raw.name}" declares no usable interface`);
   }
-  const capabilities = isRecord(raw.capabilities)
-    ? { ...raw.capabilities }
-    : {};
-  if (
-    raw.supportsAuthenticatedExtendedCard === true &&
-    capabilities.extendedAgentCard === undefined
-  ) {
+  const capabilities = isRecord(raw.capabilities) ? { ...raw.capabilities } : {};
+  if (raw.supportsAuthenticatedExtendedCard === true && capabilities.extendedAgentCard === undefined) {
     capabilities.extendedAgentCard = true;
   }
   return {
@@ -238,35 +193,24 @@ export function normalizeAgentCard(raw: unknown): AgentCard {
 }
 
 function strings(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((v): v is string => typeof v === "string")
-    : [];
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
 }
 
 function toInterface(raw: Record<string, unknown>): AgentInterface {
   if (typeof raw.url !== "string" || typeof raw.protocolBinding !== "string") {
-    throw new A2ADiscoveryError(
-      "invalid",
-      "agent interface needs a url and a protocolBinding",
-    );
+    throw new A2ADiscoveryError("invalid", "agent interface needs a url and a protocolBinding");
   }
   return {
     url: raw.url,
     protocolBinding: raw.protocolBinding,
-    protocolVersion:
-      typeof raw.protocolVersion === "string" ? raw.protocolVersion : "",
-    ...(typeof raw.tenant === "string" && raw.tenant !== ""
-      ? { tenant: raw.tenant }
-      : {}),
+    protocolVersion: typeof raw.protocolVersion === "string" ? raw.protocolVersion : "",
+    ...(typeof raw.tenant === "string" && raw.tenant !== "" ? { tenant: raw.tenant } : {}),
   };
 }
 
 /** `1`, `1.0` and `1.0.3` all designate protocol version `1.0`; patch levels never matter. */
 export function majorMinor(version: string): string {
-  const [major = "", minor = "0"] = version
-    .trim()
-    .replace(/^v/i, "")
-    .split(".");
+  const [major = "", minor = "0"] = version.trim().replace(/^v/i, "").split(".");
   return `${major}.${minor}`;
 }
 
@@ -284,31 +228,24 @@ export interface SelectOptions {
 
 function canonicalBinding(binding: string): SupportedBinding | undefined {
   const upper = binding.toUpperCase();
-  return SUPPORTED_BINDINGS.find((b) => b === upper);
+  return SUPPORTED_BINDINGS.find(b => b === upper);
 }
 
 /**
  * Pick the first interface of the card (preference order, spec 8.3.2) whose binding this client
  * speaks at the requested protocol version.
  */
-export function selectInterface(
-  card: AgentCard,
-  options: SelectOptions = {},
-): InterfaceSelection {
+export function selectInterface(card: AgentCard, options: SelectOptions = {}): InterfaceSelection {
   const bindings = options.bindings ?? SUPPORTED_BINDINGS;
   const version = majorMinor(options.protocolVersion ?? A2A_PROTOCOL_VERSION);
   for (const candidate of card.supportedInterfaces) {
     const binding = canonicalBinding(candidate.protocolBinding);
-    if (
-      binding &&
-      bindings.includes(binding) &&
-      majorMinor(candidate.protocolVersion) === version
-    ) {
+    if (binding && bindings.includes(binding) && majorMinor(candidate.protocolVersion) === version) {
       return { interface: candidate, binding };
     }
   }
   const offered = card.supportedInterfaces
-    .map((i) => `${i.protocolBinding} ${i.protocolVersion || "?"} at ${i.url}`)
+    .map(i => `${i.protocolBinding} ${i.protocolVersion || "?"} at ${i.url}`)
     .join("; ");
   throw new A2ADiscoveryError(
     "no-interface",

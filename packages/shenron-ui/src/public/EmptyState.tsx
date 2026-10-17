@@ -36,20 +36,12 @@ export function EmptyState({
   linkComponent?: UiLinkComponent;
 }) {
   return (
-    <div
-      className={`rounded-xl border border-white/[0.08] bg-dbz-card/70 p-6 sm:p-10 ${className}`}
-    >
-      <h2 className="font-display text-[1.25rem] font-bold tracking-[-0.01em] text-white sm:text-[1.5rem]">
-        {title}
-      </h2>
-      {description && (
-        <p className="mt-3 max-w-[52ch] text-[0.9375rem] leading-relaxed text-white/60">
-          {description}
-        </p>
-      )}
+    <div className={`rounded-xl border border-white/[0.08] bg-dbz-card/70 p-6 sm:p-10 ${className}`}>
+      <h2 className="font-display text-[1.25rem] font-bold tracking-[-0.01em] text-white sm:text-[1.5rem]">{title}</h2>
+      {description && <p className="mt-3 max-w-[52ch] text-[0.9375rem] leading-relaxed text-white/60">{description}</p>}
       {actions.length > 0 && (
         <div className="mt-6 flex flex-wrap gap-3">
-          {actions.map((a) =>
+          {actions.map(a =>
             a.external ? (
               <a
                 key={a.href}
@@ -61,11 +53,7 @@ export function EmptyState({
                 {a.label}
               </a>
             ) : (
-              <Link
-                key={a.href}
-                href={a.href}
-                className="toriyama-btn-secondary !text-[0.75rem]"
-              >
+              <Link key={a.href} href={a.href} className="toriyama-btn-secondary !text-[0.75rem]">
                 {a.label}
               </Link>
             ),

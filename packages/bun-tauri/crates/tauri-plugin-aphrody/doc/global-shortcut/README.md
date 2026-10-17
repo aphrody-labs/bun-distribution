@@ -84,12 +84,12 @@ fn main() {
 Afterwards all the plugin's APIs are available through the JavaScript bindings:
 
 ```javascript
-import { register } from '@aphrody/plugin-global-shortcut'
-await register('CommandOrControl+Shift+C', (event) => {
-  if (event.state === 'Pressed') {
-    console.log('Shortcut triggered')
+import { register } from "@aphrody/plugin-global-shortcut";
+await register("CommandOrControl+Shift+C", event => {
+  if (event.state === "Pressed") {
+    console.log("Shortcut triggered");
   }
-})
+});
 ```
 
 ## Contributing

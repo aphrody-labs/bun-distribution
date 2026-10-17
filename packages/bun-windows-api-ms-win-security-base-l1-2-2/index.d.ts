@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-security-base-l1-2-2.dll!DeriveCapabilitySidsFromName */
-  DeriveCapabilitySidsFromName(CapName: string | Win32Pointer, CapabilityGroupSids: Win32Pointer, CapabilityGroupSidCount: Win32Pointer, CapabilitySids: Win32Pointer, CapabilitySidCount: Win32Pointer): number;
+  DeriveCapabilitySidsFromName(
+    CapName: string | Win32Pointer,
+    CapabilityGroupSids: Win32Pointer,
+    CapabilityGroupSidCount: Win32Pointer,
+    CapabilitySids: Win32Pointer,
+    CapabilitySidCount: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

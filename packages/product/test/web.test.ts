@@ -13,9 +13,7 @@ test("product web serves the selected artifact on loopback without checkout defa
     await Bun.write(join(root, "index.html"), "product-web-fixture");
     const args = ["--root", root, "--port", "0"];
     expect(webOptions(args, {}).hostname).toBe("127.0.0.1");
-    expect(webOptions(args, { APHRODY_SITE_BIND: "[::1]:3100" }).hostname).toBe(
-      "::1",
-    );
+    expect(webOptions(args, { APHRODY_SITE_BIND: "[::1]:3100" }).hostname).toBe("::1");
     expect(
       webOptions([], {
         APHRODY_APP_UI_ROOT: root,
@@ -27,13 +25,9 @@ test("product web serves the selected artifact on loopback without checkout defa
       hostname: "127.0.0.1",
       port: 9000,
     });
-    expect(() => webOptions(["--root", root, "--port", "65536"], {})).toThrow(
-      "port",
-    );
+    expect(() => webOptions(["--root", root, "--port", "65536"], {})).toThrow("port");
     expect(() => webOptions(["--unknown"], {})).toThrow();
-    expect(appServerProxy()["/rpc"]).toBe(
-      process.env.APHRODY_APP_SERVER_URL ?? "http://127.0.0.1:8787",
-    );
+    expect(appServerProxy()["/rpc"]).toBe(process.env.APHRODY_APP_SERVER_URL ?? "http://127.0.0.1:8787");
     server = await startWeb(args, {});
     const response = await fetch(server.url);
     expect(response.status).toBe(200);

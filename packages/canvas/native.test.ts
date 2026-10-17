@@ -8,8 +8,7 @@ import {
   type SKRSContext2D,
 } from "./index";
 
-const ascii = (bytes: Uint8Array, start: number, end: number) =>
-  String.fromCharCode(...bytes.subarray(start, end));
+const ascii = (bytes: Uint8Array, start: number, end: number) => String.fromCharCode(...bytes.subarray(start, end));
 
 describe("@aphrody/canvas native Skia runtime", () => {
   test("root re-exports and loadNativeCanvas() share one upstream module", async () => {

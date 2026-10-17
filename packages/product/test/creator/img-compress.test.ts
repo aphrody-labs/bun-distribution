@@ -4,11 +4,7 @@ import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { deflateSync } from "node:zlib";
 
-import {
-  compressFile,
-  targetFormat,
-  type Options,
-} from "../../src/creator/commands/img-compress.ts";
+import { compressFile, targetFormat, type Options } from "../../src/creator/commands/img-compress.ts";
 
 function chunk(type: string, data: Uint8Array): Buffer {
   const body = Buffer.concat([Buffer.from(type), data]);

@@ -34,12 +34,8 @@ function buildStarPath({
 
   for (let index = 0; index < STAR_VERTEX_COUNT; index++) {
     const isOuterVertex = index % 2 === 0;
-    const radiusX = isOuterVertex
-      ? halfWidth
-      : halfWidth * STAR_INNER_RADIUS_RATIO;
-    const radiusY = isOuterVertex
-      ? halfHeight
-      : halfHeight * STAR_INNER_RADIUS_RATIO;
+    const radiusX = isOuterVertex ? halfWidth : halfWidth * STAR_INNER_RADIUS_RATIO;
+    const radiusY = isOuterVertex ? halfHeight : halfHeight * STAR_INNER_RADIUS_RATIO;
     const angle = (index * Math.PI) / 5 - Math.PI / 2;
     const point = rotatePoint({
       x: centerX + radiusX * Math.cos(angle),
@@ -60,13 +56,7 @@ function buildStarPath({
   return path;
 }
 
-function buildOverlayStarPath({
-  width,
-  height,
-}: {
-  width: number;
-  height: number;
-}): string {
+function buildOverlayStarPath({ width, height }: { width: number; height: number }): string {
   const centerX = width / 2;
   const centerY = height / 2;
   const halfWidth = width / 2;
@@ -75,12 +65,8 @@ function buildOverlayStarPath({
 
   for (let index = 0; index < STAR_VERTEX_COUNT; index++) {
     const isOuterVertex = index % 2 === 0;
-    const radiusX = isOuterVertex
-      ? halfWidth
-      : halfWidth * STAR_INNER_RADIUS_RATIO;
-    const radiusY = isOuterVertex
-      ? halfHeight
-      : halfHeight * STAR_INNER_RADIUS_RATIO;
+    const radiusX = isOuterVertex ? halfWidth : halfWidth * STAR_INNER_RADIUS_RATIO;
+    const radiusY = isOuterVertex ? halfHeight : halfHeight * STAR_INNER_RADIUS_RATIO;
     const angle = (index * Math.PI) / 5 - Math.PI / 2;
     const x = centerX + radiusX * Math.cos(angle);
     const y = centerY + radiusY * Math.sin(angle);
@@ -117,8 +103,7 @@ export const starMaskDefinition: MaskDefinition<"star"> = {
       kind: "fillPath",
       buildPath({ resolvedParams, width, height }) {
         const params = resolvedParams;
-        const { centerX, centerY, maskWidth, maskHeight, rotationRad } =
-          getBoxLikeGeometry({ params, width, height });
+        const { centerX, centerY, maskWidth, maskHeight, rotationRad } = getBoxLikeGeometry({ params, width, height });
         return buildStarPath({
           centerX,
           centerY,
@@ -132,8 +117,7 @@ export const starMaskDefinition: MaskDefinition<"star"> = {
       kind: "strokeFromPath",
       buildStrokePath({ resolvedParams, width, height }) {
         const params = resolvedParams;
-        const { centerX, centerY, maskWidth, maskHeight, rotationRad } =
-          getBoxLikeGeometry({ params, width, height });
+        const { centerX, centerY, maskWidth, maskHeight, rotationRad } = getBoxLikeGeometry({ params, width, height });
         const offset = getStrokeOffset({
           strokeAlign: params.strokeAlign,
           strokeWidth: params.strokeWidth,

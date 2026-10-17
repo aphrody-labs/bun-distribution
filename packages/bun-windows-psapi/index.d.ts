@@ -15,7 +15,13 @@ interface Functions {
   /** psapi.dll!EnumProcessModules */
   EnumProcessModules(hProcess: Win32Pointer, lphModule: Win32Pointer, cb: number, lpcbNeeded: Win32Pointer): number;
   /** psapi.dll!EnumProcessModulesEx */
-  EnumProcessModulesEx(hProcess: Win32Pointer, lphModule: Win32Pointer, cb: number, lpcbNeeded: Win32Pointer, dwFilterFlag: number): number;
+  EnumProcessModulesEx(
+    hProcess: Win32Pointer,
+    lphModule: Win32Pointer,
+    cb: number,
+    lpcbNeeded: Win32Pointer,
+    dwFilterFlag: number,
+  ): number;
   /** psapi.dll!EnumProcesses */
   EnumProcesses(lpidProcess: Win32Pointer, cb: number, lpcbNeeded: Win32Pointer): number;
   /** psapi.dll!GetDeviceDriverBaseNameA */
@@ -31,23 +37,68 @@ interface Functions {
   /** psapi.dll!GetDeviceDriverFileNameW */
   GetDeviceDriverFileName(ImageBase: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
   /** psapi.dll!GetMappedFileNameA */
-  GetMappedFileNameA(hProcess: Win32Pointer, lpv: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
+  GetMappedFileNameA(
+    hProcess: Win32Pointer,
+    lpv: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** psapi.dll!GetMappedFileNameW */
-  GetMappedFileNameW(hProcess: Win32Pointer, lpv: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
+  GetMappedFileNameW(
+    hProcess: Win32Pointer,
+    lpv: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** psapi.dll!GetMappedFileNameW */
-  GetMappedFileName(hProcess: Win32Pointer, lpv: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
+  GetMappedFileName(
+    hProcess: Win32Pointer,
+    lpv: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** psapi.dll!GetModuleBaseNameA */
-  GetModuleBaseNameA(hProcess: Win32Pointer, hModule: Win32Pointer, lpBaseName: string | Win32Pointer, nSize: number): number;
+  GetModuleBaseNameA(
+    hProcess: Win32Pointer,
+    hModule: Win32Pointer,
+    lpBaseName: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** psapi.dll!GetModuleBaseNameW */
-  GetModuleBaseNameW(hProcess: Win32Pointer, hModule: Win32Pointer, lpBaseName: string | Win32Pointer, nSize: number): number;
+  GetModuleBaseNameW(
+    hProcess: Win32Pointer,
+    hModule: Win32Pointer,
+    lpBaseName: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** psapi.dll!GetModuleBaseNameW */
-  GetModuleBaseName(hProcess: Win32Pointer, hModule: Win32Pointer, lpBaseName: string | Win32Pointer, nSize: number): number;
+  GetModuleBaseName(
+    hProcess: Win32Pointer,
+    hModule: Win32Pointer,
+    lpBaseName: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** psapi.dll!GetModuleFileNameExA */
-  GetModuleFileNameExA(hProcess: Win32Pointer, hModule: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
+  GetModuleFileNameExA(
+    hProcess: Win32Pointer,
+    hModule: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** psapi.dll!GetModuleFileNameExW */
-  GetModuleFileNameExW(hProcess: Win32Pointer, hModule: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
+  GetModuleFileNameExW(
+    hProcess: Win32Pointer,
+    hModule: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** psapi.dll!GetModuleFileNameExW */
-  GetModuleFileNameEx(hProcess: Win32Pointer, hModule: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
+  GetModuleFileNameEx(
+    hProcess: Win32Pointer,
+    hModule: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** psapi.dll!GetModuleInformation */
   GetModuleInformation(hProcess: Win32Pointer, hModule: Win32Pointer, lpmodinfo: Win32Pointer, cb: number): number;
   /** psapi.dll!GetPerformanceInfo */

@@ -14,22 +14,19 @@ interface GallerySelectionState {
   clear: () => void;
 }
 
-export const useGallerySelectionStore = create<GallerySelectionState>(
-  (set) => ({
-    active: false,
-    ids: new Set<string>(),
-    setActive: (active) =>
-      set(active ? { active } : { active, ids: new Set<string>() }),
-    toggle: (id) =>
-      set((state) => {
-        const ids = new Set(state.ids);
-        if (ids.has(id)) {
-          ids.delete(id);
-        } else {
-          ids.add(id);
-        }
-        return { ids };
-      }),
-    clear: () => set({ ids: new Set<string>() }),
-  }),
-);
+export const useGallerySelectionStore = create<GallerySelectionState>(set => ({
+  active: false,
+  ids: new Set<string>(),
+  setActive: active => set(active ? { active } : { active, ids: new Set<string>() }),
+  toggle: id =>
+    set(state => {
+      const ids = new Set(state.ids);
+      if (ids.has(id)) {
+        ids.delete(id);
+      } else {
+        ids.add(id);
+      }
+      return { ids };
+    }),
+  clear: () => set({ ids: new Set<string>() }),
+}));

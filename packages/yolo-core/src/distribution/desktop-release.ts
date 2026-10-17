@@ -16,8 +16,7 @@ export function runDesktopRelease(args: readonly string[]): number {
     const index = args.indexOf("--" + name);
     if (index < 0) return undefined;
     const value = args[index + 1];
-    if (value === undefined || value.startsWith("--"))
-      throw new Error("--" + name + " requires a value");
+    if (value === undefined || value.startsWith("--")) throw new Error("--" + name + " requires a value");
     return value;
   };
   if (action === "help" || args.includes("--help")) {
@@ -31,15 +30,9 @@ export function runDesktopRelease(args: readonly string[]): number {
     case "package": {
       packageDesktop({
         root: option("root") ?? process.cwd(),
-        ...(option("binary") === undefined
-          ? {}
-          : { executable: option("binary")! }),
-        ...(option("output") === undefined
-          ? {}
-          : { output: option("output")! }),
-        ...(option("cef-dir") === undefined
-          ? {}
-          : { cefDir: option("cef-dir")! }),
+        ...(option("binary") === undefined ? {} : { executable: option("binary")! }),
+        ...(option("output") === undefined ? {} : { output: option("output")! }),
+        ...(option("cef-dir") === undefined ? {} : { cefDir: option("cef-dir")! }),
         allowDirty: args.includes("--allow-dirty"),
         strip: !args.includes("--no-strip"),
       });
@@ -47,9 +40,7 @@ export function runDesktopRelease(args: readonly string[]): number {
     }
     case "install":
       if (args[1] === undefined || args[1].startsWith("--"))
-        throw new Error(
-          "install requires a verified desktop artifact directory",
-        );
+        throw new Error("install requires a verified desktop artifact directory");
       console.log(
         JSON.stringify({
           installed: installDesktopArtifact(resolve(args[1]), home),
@@ -58,29 +49,17 @@ export function runDesktopRelease(args: readonly string[]): number {
       );
       return 0;
     case "verify": {
-      const explicit =
-        args[1] !== undefined && !args[1].startsWith("--")
-          ? resolve(args[1])
-          : undefined;
+      const explicit = args[1] !== undefined && !args[1].startsWith("--") ? resolve(args[1]) : undefined;
       console.log(
-        JSON.stringify(
-          explicit === undefined
-            ? verifyInstalledDesktopArtifact(home)
-            : verifyDesktopArtifact(explicit),
-        ),
+        JSON.stringify(explicit === undefined ? verifyInstalledDesktopArtifact(home) : verifyDesktopArtifact(explicit)),
       );
       return 0;
     }
     case "rollback":
-      console.log(
-        JSON.stringify({ current: rollbackDesktopArtifact(home), home }),
-      );
+      console.log(JSON.stringify({ current: rollbackDesktopArtifact(home), home }));
       return 0;
     case "info":
-      if (option("home") !== undefined)
-        throw new Error(
-          "info resolves YOLO_HOME; use verify for an explicit --home",
-        );
+      if (option("home") !== undefined) throw new Error("info resolves YOLO_HOME; use verify for an explicit --home");
       console.log(
         JSON.stringify({
           home,

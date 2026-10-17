@@ -27,10 +27,7 @@ import { useQuery, useQueryClient, QueryClient } from "@tanstack/react-query";
 import { useSpacedriveClient } from "./useClient";
 import type { Event } from "../generated/types";
 import type { SdPath } from "../generated/types";
-function invariant(
-  condition: unknown,
-  message?: string | (() => string),
-): asserts condition {
+function invariant(condition: unknown, message?: string | (() => string)): asserts condition {
   if (condition) return;
   const prefix = "Invariant failed";
   const provided = typeof message === "function" ? message() : message;
@@ -104,14 +101,10 @@ const ResourceDeletedSchema = v.object({
 /**
  * useNormalizedQuery - Main hook
  */
-export function useNormalizedQuery<I, O = any, TSelected = O>(
-  options: UseNormalizedQueryOptions<I, O, TSelected>,
-) {
+export function useNormalizedQuery<I, O = any, TSelected = O>(options: UseNormalizedQueryOptions<I, O, TSelected>) {
   const client = useSpacedriveClient();
   const queryClient = useQueryClient();
-  const [libraryId, setLibraryId] = useState<string | null>(
-    client.getCurrentLibraryId(),
-  );
+  const [libraryId, setLibraryId] = useState<string | null>(client.getCurrentLibraryId());
 
   // Listen for library changes
   useEffect(() => {
@@ -125,10 +118,7 @@ export function useNormalizedQuery<I, O = any, TSelected = O>(
     };
   }, [client]);
 
-  const wireMethod = useMemo(
-    () => toWireMethod(options.query),
-    [options.query],
-  );
+  const wireMethod = useMemo(() => toWireMethod(options.query), [options.query]);
 
   // Query key (TanStack hashes keys by value, so a new array identity does not refetch)
   const queryKey = [wireMethod, libraryId, options.input];
@@ -156,10 +146,7 @@ export function useNormalizedQuery<I, O = any, TSelected = O>(
 
   // Serialize pathScope for deep comparison in dependency array
   // This ensures subscription re-runs when path changes, even if object reference stays same
-  const pathScopeSerialized = useMemo(
-    () => JSON.stringify(options.pathScope),
-    [options.pathScope],
-  );
+  const pathScopeSerialized = useMemo(() => JSON.stringify(options.pathScope), [options.pathScope]);
 
   // Event subscription
   // Only re-subscribe when filter criteria change
@@ -187,18 +174,11 @@ export function useNormalizedQuery<I, O = any, TSelected = O>(
     const handleEvent = (event: Event) => {
       const isDebug = optionsRef.current.debug;
       if (isDebug) {
-        console.log(
-          `[useNormalizedQuery] RAW EVENT received:`,
-          typeof event,
-          event,
-        );
+        console.log(`[useNormalizedQuery] RAW EVENT received:`, typeof event, event);
       }
 
       // Guard: only process events if pathScope hasn't changed since subscription
-      if (
-        JSON.stringify(optionsRef.current.pathScope) !==
-        JSON.stringify(capturedPathScope)
-      ) {
+      if (JSON.stringify(optionsRef.current.pathScope) !== JSON.stringify(capturedPathScope)) {
         if (isDebug) {
           console.log(`[useNormalizedQuery] STALE pathScope, skipping event`);
         }
@@ -232,12 +212,10 @@ export function useNormalizedQuery<I, O = any, TSelected = O>(
         },
         handleEvent,
       )
-      .then((unsub) => {
+      .then(unsub => {
         if (isCancelled) {
           if (current.debug) {
-            console.log(
-              `[useNormalizedQuery] Subscription created but already cancelled`,
-            );
+            console.log(`[useNormalizedQuery] Subscription created but already cancelled`);
           }
           unsub();
         } else {
@@ -248,7 +226,7 @@ export function useNormalizedQuery<I, O = any, TSelected = O>(
         }
         return;
       })
-      .catch((error) => {
+      .catch(error => {
         if (!isCancelled && current.debug) {
           console.error("[useNormalizedQuery] Subscription failed", error);
         }
@@ -298,10 +276,7 @@ export function handleResourceEvent(
   // Refresh event - invalidate all queries
   if ("Refresh" in event) {
     if (debug) {
-      console.log(
-        `[useNormalizedQuery] ${wireMethod} processing Refresh`,
-        event,
-      );
+      console.log(`[useNormalizedQuery] ${wireMethod} processing Refresh`, event);
     }
     queryClient.invalidateQueries();
     return;
@@ -317,10 +292,7 @@ export function handleResourceEvent(
     const { resource_type, resource, metadata } = result.output.ResourceChanged;
     if (resource_type === options.resourceType) {
       if (debug) {
-        console.log(
-          `[useNormalizedQuery] ${wireMethod} processing ResourceChanged`,
-          event,
-        );
+        console.log(`[useNormalizedQuery] ${wireMethod} processing ResourceChanged`, event);
       }
       updateSingleResource(resource, metadata, queryKey, queryClient, options);
     }
@@ -333,15 +305,11 @@ export function handleResourceEvent(
       return;
     }
 
-    const { resource_type, resources, metadata } =
-      result.output.ResourceChangedBatch;
+    const { resource_type, resources, metadata } = result.output.ResourceChangedBatch;
 
     if (resource_type === options.resourceType && Array.isArray(resources)) {
       if (debug) {
-        console.log(
-          `[useNormalizedQuery] ${wireMethod} processing ResourceChangedBatch`,
-          event,
-        );
+        console.log(`[useNormalizedQuery] ${wireMethod} processing ResourceChangedBatch`, event);
       }
       updateBatchResources(resources, metadata, options, queryKey, queryClient);
     }
@@ -357,10 +325,7 @@ export function handleResourceEvent(
     const { resource_type, resource_id } = result.output.ResourceDeleted;
     if (resource_type === options.resourceType) {
       if (debug) {
-        console.log(
-          `[useNormalizedQuery] ${wireMethod} processing ResourceDeleted`,
-          event,
-        );
+        console.log(`[useNormalizedQuery] ${wireMethod} processing ResourceDeleted`, event);
       }
       deleteResource(resource_id, queryKey, queryClient);
     }
@@ -374,10 +339,7 @@ function toWireMethod(query: string): string {
     return query;
   }
 
-  invariant(
-    !query.startsWith("action:"),
-    "useNormalizedQuery only supports queries, remove the action prefix",
-  );
+  invariant(!query.startsWith("action:"), "useNormalizedQuery only supports queries, remove the action prefix");
 
   return `query:${query}`;
 }
@@ -408,10 +370,7 @@ function toWireMethod(query: string): string {
  *
  * Exported for testing
  */
-export function filterBatchResources(
-  resources: any[],
-  options: UseNormalizedQueryOptions<any>,
-): any[] {
+export function filterBatchResources(resources: any[], options: UseNormalizedQueryOptions<any>): any[] {
   let filtered = resources;
 
   // Filter by resourceId (single-resource queries like file inspector)
@@ -420,11 +379,7 @@ export function filterBatchResources(
   }
 
   // Filter by pathScope for file resources in exact mode
-  if (
-    options.pathScope &&
-    options.resourceType === "file" &&
-    !options.includeDescendants
-  ) {
+  if (options.pathScope && options.resourceType === "file" && !options.includeDescendants) {
     filtered = filtered.filter((resource: any) => {
       // Get the scope path (must be Physical)
       const scopeStr = (options.pathScope as any).Physical?.path;
@@ -433,24 +388,17 @@ export function filterBatchResources(
       }
 
       // Normalize scope: convert Windows backslashes and remove trailing slashes
-      const scopeNormalized = String(scopeStr)
-        .replace(/\\/g, "/")
-        .replace(/\/+$/, "");
+      const scopeNormalized = String(scopeStr).replace(/\\/g, "/").replace(/\/+$/, "");
       // Only lower-case for Windows paths (case-insensitive FS)
-      const isWindowsPath =
-        /^[a-zA-Z]:\//.test(scopeNormalized) ||
-        scopeNormalized.startsWith("//?/");
-      const normalizedScope = isWindowsPath
-        ? scopeNormalized.toLowerCase()
-        : scopeNormalized;
+      const isWindowsPath = /^[a-zA-Z]:\//.test(scopeNormalized) || scopeNormalized.startsWith("//?/");
+      const normalizedScope = isWindowsPath ? scopeNormalized.toLowerCase() : scopeNormalized;
 
       // Try to find a Physical path - check alternate_paths first, then sd_path
       const alternatePaths = resource.alternate_paths || [];
       const physicalFromAlternate = alternatePaths.find((p: any) => p.Physical);
       const physicalFromSdPath = resource.sd_path?.Physical;
 
-      const physicalPath =
-        physicalFromAlternate?.Physical || physicalFromSdPath;
+      const physicalPath = physicalFromAlternate?.Physical || physicalFromSdPath;
 
       if (!physicalPath?.path) {
         return false; // No physical path found
@@ -458,9 +406,7 @@ export function filterBatchResources(
 
       // Normalize Windows backslashes, only lower-case for Windows paths
       const pathNormalized = String(physicalPath.path).replace(/\\/g, "/");
-      const pathStr = isWindowsPath
-        ? pathNormalized.toLowerCase()
-        : pathNormalized;
+      const pathStr = isWindowsPath ? pathNormalized.toLowerCase() : pathNormalized;
 
       // Extract parent directory from file path
       const lastSlash = pathStr.lastIndexOf("/");
@@ -575,9 +521,7 @@ export function updateBatchResources<O>(
     if (options.debug) {
       console.log(
         `[useNormalizedQuery] ${wireMethod} setQueryData: oldData has`,
-        Array.isArray(oldData)
-          ? oldData.length
-          : Object.keys(oldData || {}).join(","),
+        Array.isArray(oldData) ? oldData.length : Object.keys(oldData || {}).join(","),
         `adding ${filteredResources.length} resources`,
       );
     }
@@ -612,11 +556,7 @@ export function updateBatchResources<O>(
  *
  * Exported for testing
  */
-export function deleteResource<O>(
-  resourceId: string,
-  queryKey: any[],
-  queryClient: QueryClient,
-) {
+export function deleteResource<O>(resourceId: string, queryKey: any[], queryClient: QueryClient) {
   queryClient.setQueryData<O>(queryKey, (oldData: any) => {
     if (!oldData) return oldData;
 
@@ -625,16 +565,12 @@ export function deleteResource<O>(
     }
 
     if (oldData && typeof oldData === "object") {
-      const arrayField = Object.keys(oldData).find((key) =>
-        Array.isArray((oldData as any)[key]),
-      );
+      const arrayField = Object.keys(oldData).find(key => Array.isArray((oldData as any)[key]));
 
       if (arrayField) {
         return {
           ...oldData,
-          [arrayField]: (oldData as any)[arrayField].filter(
-            (item: any) => item.id !== resourceId,
-          ),
+          [arrayField]: (oldData as any)[arrayField].filter((item: any) => item.id !== resourceId),
         };
       }
     }
@@ -648,11 +584,7 @@ export function deleteResource<O>(
 /**
  * Update array cache (direct array response)
  */
-function updateArrayCache(
-  oldData: any[],
-  newResources: any[],
-  noMergeFields: string[],
-): any[] {
+function updateArrayCache(oldData: any[], newResources: any[], noMergeFields: string[]): any[] {
   const newData = [...oldData];
   const seenIds = new Set();
 
@@ -672,24 +604,17 @@ function updateArrayCache(
   for (const resource of newResources) {
     if (!seenIds.has(resource.id) && resource.sd_path?.Content) {
       // Try to find existing Physical entry by matching alternate_paths
-      const physicalPath = resource.alternate_paths?.find(
-        (p: any) => p.Physical,
-      )?.Physical?.path;
+      const physicalPath = resource.alternate_paths?.find((p: any) => p.Physical)?.Physical?.path;
       if (physicalPath) {
         const existingIndex = newData.findIndex((item: any) => {
           const itemPath =
-            item.sd_path?.Physical?.path ||
-            item.alternate_paths?.find((p: any) => p.Physical)?.Physical?.path;
+            item.sd_path?.Physical?.path || item.alternate_paths?.find((p: any) => p.Physical)?.Physical?.path;
           return itemPath === physicalPath;
         });
 
         if (existingIndex !== -1) {
           // Merge Content entry into existing Physical entry
-          newData[existingIndex] = safeMerge(
-            newData[existingIndex],
-            resource,
-            noMergeFields,
-          );
+          newData[existingIndex] = safeMerge(newData[existingIndex], resource, noMergeFields);
           seenIds.add(resource.id);
         }
       }
@@ -705,10 +630,7 @@ function updateArrayCache(
       // 2. Metadata updates for files elsewhere (no relevant alternate_paths) → SKIP
       if (resource.sd_path?.Content) {
         // Skip if no alternate_paths (pure metadata update)
-        if (
-          !resource.alternate_paths ||
-          resource.alternate_paths.length === 0
-        ) {
+        if (!resource.alternate_paths || resource.alternate_paths.length === 0) {
           continue;
         }
         // Otherwise, this is a real file that belongs here - add it
@@ -723,11 +645,7 @@ function updateArrayCache(
 /**
  * Update wrapped cache ({ files: [...], locations: [...], etc. })
  */
-function updateWrappedCache(
-  oldData: any,
-  newResources: any[],
-  noMergeFields: string[],
-): any {
+function updateWrappedCache(oldData: any, newResources: any[], noMergeFields: string[]): any {
   // First check: if oldData has an id that matches incoming, merge directly
   // This handles single object responses like files.by_id
   const match = newResources.find((r: any) => r.id === oldData.id);
@@ -736,9 +654,7 @@ function updateWrappedCache(
   }
 
   // Second check: wrapped responses like { files: [...] }
-  const arrayField = Object.keys(oldData).find((key) =>
-    Array.isArray(oldData[key]),
-  );
+  const arrayField = Object.keys(oldData).find(key => Array.isArray(oldData[key]));
 
   if (arrayField) {
     const array = [...oldData[arrayField]];
@@ -758,25 +674,17 @@ function updateWrappedCache(
     for (const resource of newResources) {
       if (!seenIds.has(resource.id) && resource.sd_path?.Content) {
         // Try to find existing Physical entry by matching alternate_paths
-        const physicalPath = resource.alternate_paths?.find(
-          (p: any) => p.Physical,
-        )?.Physical?.path;
+        const physicalPath = resource.alternate_paths?.find((p: any) => p.Physical)?.Physical?.path;
         if (physicalPath) {
           const existingIndex = array.findIndex((item: any) => {
             const itemPath =
-              item.sd_path?.Physical?.path ||
-              item.alternate_paths?.find((p: any) => p.Physical)?.Physical
-                ?.path;
+              item.sd_path?.Physical?.path || item.alternate_paths?.find((p: any) => p.Physical)?.Physical?.path;
             return itemPath === physicalPath;
           });
 
           if (existingIndex !== -1) {
             // Merge Content entry into existing Physical entry
-            array[existingIndex] = safeMerge(
-              array[existingIndex],
-              resource,
-              noMergeFields,
-            );
+            array[existingIndex] = safeMerge(array[existingIndex], resource, noMergeFields);
             seenIds.add(resource.id);
           }
         }
@@ -792,19 +700,14 @@ function updateWrappedCache(
         // 2. Metadata updates for files elsewhere (no relevant alternate_paths) → SKIP
         if (resource.sd_path?.Content) {
           // Skip if no alternate_paths (pure metadata update)
-          if (
-            !resource.alternate_paths ||
-            resource.alternate_paths.length === 0
-          ) {
+          if (!resource.alternate_paths || resource.alternate_paths.length === 0) {
             continue;
           }
           // Otherwise, this is a real file that belongs here - add it
         }
 
         // Check if resource already exists in the array (by ID)
-        const alreadyExists = array.some(
-          (item: any) => item.id === resource.id,
-        );
+        const alreadyExists = array.some((item: any) => item.id === resource.id);
 
         if (alreadyExists) {
           continue;
@@ -833,11 +736,7 @@ function updateWrappedCache(
  *
  * Exported for testing
  */
-export function safeMerge(
-  existing: any,
-  incoming: any,
-  noMergeFields: string[] = [],
-): any {
+export function safeMerge(existing: any, incoming: any, noMergeFields: string[] = []): any {
   // Handle null/undefined
   if (incoming === null || incoming === undefined) {
     return existing !== null && existing !== undefined ? existing : incoming;

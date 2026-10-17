@@ -22,14 +22,14 @@ export class EngineApi extends ApiManager {
       endpoint,
       body: body,
     })
-      .then((response) => {
+      .then(response => {
         return {
           success: response.success ?? false,
           data: response.inference_job_token,
           errorMessage: response.BadInput,
         };
       })
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,

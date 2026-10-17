@@ -56,14 +56,10 @@ export function renderParseMarkdown(result: TsParseResult): string {
     "",
     `## Exports (${result.exports.length})`,
     "",
-    result.exports.length > 0
-      ? result.exports.map((e) => `- \`${e}\``).join("\n")
-      : "_No top-level exports detected_",
+    result.exports.length > 0 ? result.exports.map(e => `- \`${e}\``).join("\n") : "_No top-level exports detected_",
     "",
     `## Imports (${result.imports.length})`,
     "",
-    result.imports.length > 0
-      ? result.imports.map((i) => `- \`${i}\``).join("\n")
-      : "_No imported modules detected_",
+    result.imports.length > 0 ? result.imports.map(i => `- \`${i}\``).join("\n") : "_No imported modules detected_",
   ].join("\n");
 }

@@ -14,7 +14,6 @@
 //! - **native-tls-vendored**: Enables the `vendored` feature of `native-tls`.
 //! - **system-proxy** *(enabled by default)*: Use Windows and macOS system proxy settings automatically.
 
-
 use std::{ffi::OsString, sync::Arc};
 
 use http::{HeaderMap, HeaderName, HeaderValue};
@@ -284,7 +283,7 @@ impl Builder {
                 });
                 Ok(())
             })
-            .invoke_handler(tauri::generate_handler![#![plugin(updater)] 
+            .invoke_handler(tauri::generate_handler![#![plugin(updater)]
                 commands::check,
                 commands::download,
                 commands::install,

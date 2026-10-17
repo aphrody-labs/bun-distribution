@@ -3,11 +3,7 @@ import { Pagination, PaginationInfinite } from "./models/Pagination.js";
 import { ApiManager, ApiResponse } from "./ApiManager.js";
 import { Visibility } from "./enums/Visibility.js";
 
-import {
-  FilterEngineCategories,
-  FilterMediaClasses,
-  FilterMediaType,
-} from "./enums/QueryFilters.js";
+import { FilterEngineCategories, FilterMediaClasses, FilterMediaType } from "./enums/QueryFilters.js";
 
 interface ListMediaQuery {
   sort_ascending?: boolean;
@@ -70,11 +66,11 @@ export class MediaFilesApi extends ApiManager {
         BadInput?: string;
       }
     >({ endpoint, body })
-      .then((response) => ({
+      .then(response => ({
         success: response.success ?? false,
         errorMessage: response.BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -82,11 +78,7 @@ export class MediaFilesApi extends ApiManager {
       });
   }
 
-  public async ListMediaFilesByTokens({
-    mediaTokens,
-  }: {
-    mediaTokens: string[];
-  }): Promise<ApiResponse<MediaFile[]>> {
+  public async ListMediaFilesByTokens({ mediaTokens }: { mediaTokens: string[] }): Promise<ApiResponse<MediaFile[]>> {
     if (mediaTokens.length === 0) {
       return { success: true, data: [] };
     }
@@ -94,9 +86,7 @@ export class MediaFilesApi extends ApiManager {
     // (?tokens=a&tokens=b), not a single comma-joined value, so build the
     // query string explicitly (matching BatchGetPrompts). Passing a joined
     // string makes the backend see one bogus token and return zero files.
-    const queryString = mediaTokens
-      .map((t) => `tokens=${encodeURIComponent(t)}`)
-      .join("&");
+    const queryString = mediaTokens.map(t => `tokens=${encodeURIComponent(t)}`).join("&");
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/batch?${queryString}`;
 
     return await this.get<{
@@ -104,20 +94,16 @@ export class MediaFilesApi extends ApiManager {
       media_files: MediaFile[];
       error_reason?: string;
     }>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.media_files,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
 
-  public async GetMediaFilesByBatchToken({
-    batchToken,
-  }: {
-    batchToken: string;
-  }): Promise<ApiResponse<MediaFile[]>> {
+  public async GetMediaFilesByBatchToken({ batchToken }: { batchToken: string }): Promise<ApiResponse<MediaFile[]>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/batch/${batchToken}`;
 
     return await this.get<{
@@ -126,30 +112,26 @@ export class MediaFilesApi extends ApiManager {
       pagination?: Pagination;
       error_reason?: string;
     }>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: (response.results ?? []) as unknown as MediaFile[],
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
 
-  public async GetMediaFileByToken({
-    mediaFileToken,
-  }: {
-    mediaFileToken: string;
-  }): Promise<ApiResponse<MediaFile>> {
+  public async GetMediaFileByToken({ mediaFileToken }: { mediaFileToken: string }): Promise<ApiResponse<MediaFile>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/file/${mediaFileToken}`;
     return await this.get<{
       success: boolean;
       media_file: MediaFile;
     }>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.media_file,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -157,33 +139,25 @@ export class MediaFilesApi extends ApiManager {
       });
   }
 
-  public async ListMediaFiles(
-    query: ListMediaQuery,
-  ): Promise<ApiResponse<MediaFile[], PaginationInfinite>> {
+  public async ListMediaFiles(query: ListMediaQuery): Promise<ApiResponse<MediaFile[], PaginationInfinite>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/list`;
     const queryWithStrings = {
       ...query,
-      filter_media_classes: query.filter_media_classes
-        ? query.filter_media_classes.join(",")
-        : undefined,
-      filter_media_type: query.filter_media_type
-        ? query.filter_media_type.join(",")
-        : undefined,
-      filter_engine_categories: query.filter_engine_categories
-        ? query.filter_engine_categories.join(",")
-        : undefined,
+      filter_media_classes: query.filter_media_classes ? query.filter_media_classes.join(",") : undefined,
+      filter_media_type: query.filter_media_type ? query.filter_media_type.join(",") : undefined,
+      filter_engine_categories: query.filter_engine_categories ? query.filter_engine_categories.join(",") : undefined,
     };
     return await this.get<{
       success: boolean;
       results: MediaFile[];
       pagination?: PaginationInfinite;
     }>({ endpoint, query: queryWithStrings })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.results ?? [],
         pagination: response.pagination,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -191,33 +165,25 @@ export class MediaFilesApi extends ApiManager {
       });
   }
 
-  public async ListFeaturedMediaFiles(
-    query: ListMediaQuery,
-  ): Promise<ApiResponse<MediaFile[], PaginationInfinite>> {
+  public async ListFeaturedMediaFiles(query: ListMediaQuery): Promise<ApiResponse<MediaFile[], PaginationInfinite>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/list_featured`;
     const queryWithStrings = {
       ...query,
-      filter_media_classes: query.filter_media_classes
-        ? query.filter_media_classes.join(",")
-        : undefined,
-      filter_media_type: query.filter_media_type
-        ? query.filter_media_type.join(",")
-        : undefined,
-      filter_engine_categories: query.filter_engine_categories
-        ? query.filter_engine_categories.join(",")
-        : undefined,
+      filter_media_classes: query.filter_media_classes ? query.filter_media_classes.join(",") : undefined,
+      filter_media_type: query.filter_media_type ? query.filter_media_type.join(",") : undefined,
+      filter_engine_categories: query.filter_engine_categories ? query.filter_engine_categories.join(",") : undefined,
     };
     return await this.get<{
       success: boolean;
       results: MediaFile[];
       pagination: PaginationInfinite;
     }>({ endpoint, query: queryWithStrings })
-      .then((response) => ({
+      .then(response => ({
         success: true,
         data: response.results,
         pagination: response.pagination,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -235,12 +201,12 @@ export class MediaFilesApi extends ApiManager {
       results: MediaFile[];
       pagination?: PaginationInfinite;
     }>({ endpoint, query: { ...query } })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.results ?? [],
         pagination: response.pagination,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -258,12 +224,12 @@ export class MediaFilesApi extends ApiManager {
       results: MediaFile[];
       pagination?: PaginationInfinite;
     }>({ endpoint, query: { ...query } })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.results ?? [],
         pagination: response.pagination,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -271,33 +237,25 @@ export class MediaFilesApi extends ApiManager {
       });
   }
 
-  public async ListUserMediaFiles(
-    query: ListUserMediaQuery,
-  ): Promise<ApiResponse<MediaFile[], Pagination>> {
+  public async ListUserMediaFiles(query: ListUserMediaQuery): Promise<ApiResponse<MediaFile[], Pagination>> {
     const userName = query.username;
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/list/user/${userName}`;
     const queryWithStrings = {
       ...query,
       include_user_uploads: query.include_user_uploads,
-      filter_media_classes: query.filter_media_classes
-        ? query.filter_media_classes.join(",")
-        : undefined,
-      filter_media_type: query.filter_media_type
-        ? query.filter_media_type.join(",")
-        : undefined,
-      filter_engine_categories: query.filter_engine_categories
-        ? query.filter_engine_categories.join(",")
-        : undefined,
+      filter_media_classes: query.filter_media_classes ? query.filter_media_classes.join(",") : undefined,
+      filter_media_type: query.filter_media_type ? query.filter_media_type.join(",") : undefined,
+      filter_engine_categories: query.filter_engine_categories ? query.filter_engine_categories.join(",") : undefined,
     };
     return await this.get<{
       success: boolean;
       results: MediaFile[];
       pagination?: Pagination;
     }>({ endpoint, query: queryWithStrings })
-      .then((response) => {
+      .then(response => {
         let results = response.results ?? [];
         if (query.user_uploads_only) {
-          results = results.filter((file) => file.origin_category === "upload");
+          results = results.filter(file => file.origin_category === "upload");
         }
         return {
           success: response.success,
@@ -305,7 +263,7 @@ export class MediaFilesApi extends ApiManager {
           pagination: response.pagination,
         };
       })
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -319,59 +277,45 @@ export class MediaFilesApi extends ApiManager {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/search_featured`;
     const queryWithStrings = {
       search_term: query.search_term,
-      filter_media_classes: query.filter_media_classes
-        ? query.filter_media_classes.join(",")
-        : undefined,
-      filter_media_type: query.filter_media_type
-        ? query.filter_media_type.join(",")
-        : undefined,
-      filter_engine_categories: query.filter_engine_categories
-        ? query.filter_engine_categories.join(",")
-        : undefined,
+      filter_media_classes: query.filter_media_classes ? query.filter_media_classes.join(",") : undefined,
+      filter_media_type: query.filter_media_type ? query.filter_media_type.join(",") : undefined,
+      filter_engine_categories: query.filter_engine_categories ? query.filter_engine_categories.join(",") : undefined,
     };
     return await this.get<{
       success: boolean;
       results: MediaFile[];
       pagination: Pagination;
     }>({ endpoint, query: queryWithStrings })
-      .then((response) => ({
+      .then(response => ({
         success: true,
         data: response.results,
         pagination: response.pagination,
       }))
-      .catch((err) => ({
+      .catch(err => ({
         success: false,
         errorMessage: err.message,
       }));
   }
 
-  public async SearchUserMediaFiles(
-    query: SearchFeaturedMediaQuery,
-  ): Promise<ApiResponse<MediaFile[], Pagination>> {
+  public async SearchUserMediaFiles(query: SearchFeaturedMediaQuery): Promise<ApiResponse<MediaFile[], Pagination>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/search_session`;
     const queryWithStrings = {
       search_term: query.search_term,
-      filter_media_classes: query.filter_media_classes
-        ? query.filter_media_classes.join(",")
-        : undefined,
-      filter_media_type: query.filter_media_type
-        ? query.filter_media_type.join(",")
-        : undefined,
-      filter_engine_categories: query.filter_engine_categories
-        ? query.filter_engine_categories.join(",")
-        : undefined,
+      filter_media_classes: query.filter_media_classes ? query.filter_media_classes.join(",") : undefined,
+      filter_media_type: query.filter_media_type ? query.filter_media_type.join(",") : undefined,
+      filter_engine_categories: query.filter_engine_categories ? query.filter_engine_categories.join(",") : undefined,
     };
     return await this.get<{
       success: boolean;
       results: MediaFile[];
       pagination: Pagination;
     }>({ endpoint, query: queryWithStrings })
-      .then((response) => ({
+      .then(response => ({
         success: true,
         data: response.results,
         pagination: response.pagination,
       }))
-      .catch((err) => ({
+      .catch(err => ({
         success: false,
         errorMessage: err.message,
       }));
@@ -394,11 +338,11 @@ export class MediaFilesApi extends ApiManager {
         BadInput?: string;
       }
     >({ endpoint, body })
-      .then((response) => ({
+      .then(response => ({
         success: response.success ?? false,
         errorMessage: response.BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
@@ -418,11 +362,11 @@ export class MediaFilesApi extends ApiManager {
         BadInput?: string;
       }
     >({ endpoint, body: { cover_image_media_file_token: imageToken } })
-      .then((response) => ({
+      .then(response => ({
         success: response.success ?? false,
         errorMessage: response.BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -445,11 +389,11 @@ export class MediaFilesApi extends ApiManager {
         BadInput?: string;
       }
     >({ endpoint, body: { creator_set_visibility: visibility } })
-      .then((response) => ({
+      .then(response => ({
         success: response.success ?? false,
         errorMessage: response.BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,

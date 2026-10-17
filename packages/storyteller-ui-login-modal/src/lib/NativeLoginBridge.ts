@@ -30,29 +30,16 @@ export const pollDesktopLoginChallenge = (challengeId: string) =>
 export const cancelDesktopLoginChallenge = (challengeId: string) =>
   invoke<void>("storyteller_cancel_login_challenge_command", { challengeId });
 
-export function isDesktopLoginError(
-  error: unknown,
-): error is DesktopLoginError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "message" in error &&
-    "retryable" in error
-  );
+export function isDesktopLoginError(error: unknown): error is DesktopLoginError {
+  return typeof error === "object" && error !== null && "message" in error && "retryable" in error;
 }
 
-export const getNativeLoginSession = () =>
-  invoke<UserInfo | null>("storyteller_get_login_session_command");
+export const getNativeLoginSession = () => invoke<UserInfo | null>("storyteller_get_login_session_command");
 export const passwordLogin = (usernameOrEmail: string, password: string) =>
   invoke<UserInfo>("storyteller_password_login_command", {
     request: { username_or_email: usernameOrEmail, password },
   });
-export const passwordSignup = (
-  username: string,
-  email: string,
-  password: string,
-  passwordConfirmation: string,
-) =>
+export const passwordSignup = (username: string, email: string, password: string, passwordConfirmation: string) =>
   invoke<UserInfo>("storyteller_password_signup_command", {
     request: {
       username,

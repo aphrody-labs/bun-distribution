@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, expect, test } from "bun:test";
-import {
-  cpSync,
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import {
@@ -21,8 +14,7 @@ import {
 
 const directories: string[] = [];
 afterEach(() => {
-  for (const path of directories.splice(0))
-    rmSync(path, { recursive: true, force: true });
+  for (const path of directories.splice(0)) rmSync(path, { recursive: true, force: true });
 });
 function temporary(): string {
   const path = mkdtempSync(join(tmpdir(), "aphrody-native-contract-"));
@@ -56,13 +48,7 @@ function manifest(artifact: string): NativeArtifactManifest {
   };
 }
 function parse(data: NativeArtifactManifest, development = false) {
-  return parseNativeArtifactManifest(
-    data,
-    data.artifact,
-    "3.3.3",
-    nativeHostTriple()!,
-    development,
-  );
+  return parseNativeArtifactManifest(data, data.artifact, "3.3.3", nativeHostTriple()!, development);
 }
 
 test("release acceptance rejects wrong host, ABI, package and unqualified provenance", () => {
@@ -79,9 +65,7 @@ test("release acceptance rejects wrong host, ABI, package and unqualified proven
     { observedSourceHead: "d".repeat(40) },
     { consumerSmoke: "pending" },
   ])
-    expect(() =>
-      parse({ ...valid, ...patch } as NativeArtifactManifest),
-    ).toThrow("Invalid native manifest");
+    expect(() => parse({ ...valid, ...patch } as NativeArtifactManifest)).toThrow("Invalid native manifest");
 });
 
 test("existing debug artifacts require explicit development and retain unknown build fields", () => {
@@ -97,9 +81,7 @@ test("existing debug artifacts require explicit development and retain unknown b
   };
   expect(() => parse(data)).toThrow();
   expect(parse(data, true)).toEqual(data);
-  expect(() => parse({ ...data, profile: "release" }, true)).toThrow(
-    "restricted to debug",
-  );
+  expect(() => parse({ ...data, profile: "release" }, true)).toThrow("restricted to debug");
 });
 
 test("streamed hashing covers multiple chunks and detects changed content", () => {
@@ -112,16 +94,10 @@ test("streamed hashing covers multiple chunks and detects changed content", () =
   });
   content[content.length - 1] = 8;
   writeFileSync(path, content);
-  expect(hashNativeArtifact(path).sha256).toBe(
-    new Bun.CryptoHasher("sha256").update(content).digest("hex"),
-  );
+  expect(hashNativeArtifact(path).sha256).toBe(new Bun.CryptoHasher("sha256").update(content).digest("hex"));
 });
 
-async function isolated(
-  code: string,
-  env: Record<string, string | undefined>,
-  cwd: string,
-) {
+async function isolated(code: string, env: Record<string, string | undefined>, cwd: string) {
   const child = Bun.spawn({
     windowsHide: true,
     cmd: [process.execPath, "-e", code],
@@ -153,15 +129,11 @@ test("an installed package imports every public entry without checkout ancestors
   cpSync(join(import.meta.dir, "src"), join(path, "src"), { recursive: true });
   cpSync(join(import.meta.dir, "package.json"), join(path, "package.json"));
   // An installed package sees its declared dependencies (n2b re-exports @aphrody/runtime-sdk).
-  const { dependencies = {} } = (await Bun.file(
-    join(import.meta.dir, "package.json"),
-  ).json()) as {
+  const { dependencies = {} } = (await Bun.file(join(import.meta.dir, "package.json")).json()) as {
     dependencies?: Record<string, string>;
   };
   for (const name of Object.keys(dependencies)) {
-    const target = dirname(
-      Bun.resolveSync(`${name}/package.json`, import.meta.dir),
-    );
+    const target = dirname(Bun.resolveSync(`${name}/package.json`, import.meta.dir));
     mkdirSync(dirname(join(path, "node_modules", name)), { recursive: true });
     symlinkSync(target, join(path, "node_modules", name), "dir");
   }
@@ -209,9 +181,7 @@ test("checkout target lookup is opt-in and raw overrides need development mode",
     { CARGO_TARGET_DIR: target, APHRODY_FFI_DEV: "1" },
     path,
   );
-  const verifier = JSON.stringify(
-    join(import.meta.dir, "src/native-artifact.ts"),
-  );
+  const verifier = JSON.stringify(join(import.meta.dir, "src/native-artifact.ts"));
   await isolated(
     `
     const { verifyNativeArtifact } = await import(${verifier});
@@ -245,9 +215,7 @@ test("artifact verification rejects corruption before native loading", async () 
     }),
   );
   writeFileSync(artifact, "tampered");
-  const verifier = JSON.stringify(
-    join(import.meta.dir, "src/native-artifact.ts"),
-  );
+  const verifier = JSON.stringify(join(import.meta.dir, "src/native-artifact.ts"));
   await isolated(
     `
     const { verifyNativeArtifact } = await import(${verifier});

@@ -4,8 +4,7 @@
 
 export const isSafariOrWebKit = (): boolean => {
   const ua = navigator.userAgent;
-  const isWebKit =
-    /AppleWebKit/i.test(ua) && !/Chrome|Chromium|Edg|OPR|CriOS|FxiOS/i.test(ua);
+  const isWebKit = /AppleWebKit/i.test(ua) && !/Chrome|Chromium|Edg|OPR|CriOS|FxiOS/i.test(ua);
   const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(ua);
   return isSafari || isWebKit;
 };

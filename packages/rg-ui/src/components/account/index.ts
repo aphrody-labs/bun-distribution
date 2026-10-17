@@ -7,10 +7,7 @@
 export { AccountAddressForm } from "./account-address-form";
 export { AccountAvatarCard } from "./account-avatar-card";
 export { BannerPicker } from "./banner-picker";
-export {
-  AccountConnections,
-  type AccountProviderConfig,
-} from "./account-connections";
+export { AccountConnections, type AccountProviderConfig } from "./account-connections";
 export { AccountEmailCard, AccountPasswordCard } from "./account-credentials";
 export { AccountDangerZone } from "./account-danger-zone";
 export { AccountProfileForm } from "./account-profile-form";

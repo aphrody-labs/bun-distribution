@@ -24,9 +24,7 @@ export async function loadWebLocalizer(
 ): Promise<{ catalog: WebCatalog; l10n: Localizer }> {
   const query = new URLSearchParams({ domains: domains.join(",") });
   if (options.lang) query.set("lang", options.lang);
-  const catalog = (await (
-    await fetch(`${options.base ?? ""}/api/platform/i18n?${query}`)
-  ).json()) as WebCatalog;
+  const catalog = (await (await fetch(`${options.base ?? ""}/api/platform/i18n?${query}`)).json()) as WebCatalog;
   document.documentElement.lang = catalog.locale;
   document.documentElement.dir = catalog.direction;
   return { catalog, l10n: new Localizer(catalog.chain, catalog.sources) };
@@ -40,10 +38,7 @@ export function setWebLocale(tag: string | null): void {
 }
 
 /** Fills `[data-i18n]` text and `[data-i18n-attr="attr:id,attr:id"]` attributes. */
-export function localizeDom(
-  l10n: Localizer,
-  root: ParentNode = document,
-): void {
+export function localizeDom(l10n: Localizer, root: ParentNode = document): void {
   for (const el of root.querySelectorAll<HTMLElement>("[data-i18n]"))
     el.textContent = l10n.t(el.dataset.i18n as string);
   for (const el of root.querySelectorAll<HTMLElement>("[data-i18n-attr]"))

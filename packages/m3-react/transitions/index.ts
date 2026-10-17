@@ -13,8 +13,4 @@ export { Grow } from "./Grow.js";
 export { Slide } from "./Slide.js";
 export type { SlideDirection, SlideProps } from "./Slide.js";
 export { Zoom } from "./Zoom.js";
-export type {
-  BaseTransitionProps,
-  TransitionPhase,
-  TransitionTimeout,
-} from "./use-transition-state.js";
+export type { BaseTransitionProps, TransitionPhase, TransitionTimeout } from "./use-transition-state.js";

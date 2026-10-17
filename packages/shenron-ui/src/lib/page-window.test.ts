@@ -5,11 +5,7 @@ import { pageWindow, pagerWindow, pagesVisibles } from "./page-window";
  * Verbatim copy of `pagesVisibles` from apps/shenron/site/src/components/ui/Pagination.tsx
  * before the move (HEAD f602c132), kept as the parity oracle.
  */
-function legacyPagesVisibles(
-  page: number,
-  total: number,
-  fenetre = 1,
-): Array<number | null> {
+function legacyPagesVisibles(page: number, total: number, fenetre = 1): Array<number | null> {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const set = new Set<number>([1, total, page]);
   for (let d = 1; d <= fenetre; d++) {
@@ -17,13 +13,10 @@ function legacyPagesVisibles(
     if (page + d < total) set.add(page + d);
   }
   // Garde une largeur constante quand on est à un bord (sinon la barre saute).
-  if (page <= 3) [2, 3, 4].forEach((n) => n < total && set.add(n));
-  if (page >= total - 2)
-    [total - 1, total - 2, total - 3].forEach((n) => n > 1 && set.add(n));
+  if (page <= 3) [2, 3, 4].forEach(n => n < total && set.add(n));
+  if (page >= total - 2) [total - 1, total - 2, total - 3].forEach(n => n > 1 && set.add(n));
 
-  const tri = [...set]
-    .filter((n) => n >= 1 && n <= total)
-    .sort((a, b) => a - b);
+  const tri = [...set].filter(n => n >= 1 && n <= total).sort((a, b) => a - b);
   const out: Array<number | null> = [];
   let precedent = 0;
   for (const n of tri) {
@@ -38,11 +31,7 @@ function legacyPagesVisibles(
  * Verbatim copy of `pagerWindow` from apps/shenron/site/src/components/kit/LinkPager.tsx
  * before the move (HEAD f602c132), kept as the parity oracle.
  */
-function legacyPagerWindow(
-  page: number,
-  total: number,
-  radius = 1,
-): Array<number | null> {
+function legacyPagerWindow(page: number, total: number, radius = 1): Array<number | null> {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const keep = new Set<number>([1, total, page]);
   for (let d = 1; d <= radius; d++) {
@@ -50,13 +39,10 @@ function legacyPagerWindow(
     if (page + d < total) keep.add(page + d);
   }
   // Largeur constante près des bords : sinon la barre « saute » page après page.
-  if (page <= 3) [2, 3, 4].forEach((n) => n < total && keep.add(n));
-  if (page >= total - 2)
-    [total - 1, total - 2, total - 3].forEach((n) => n > 1 && keep.add(n));
+  if (page <= 3) [2, 3, 4].forEach(n => n < total && keep.add(n));
+  if (page >= total - 2) [total - 1, total - 2, total - 3].forEach(n => n > 1 && keep.add(n));
 
-  const sorted = [...keep]
-    .filter((n) => n >= 1 && n <= total)
-    .sort((a, b) => a - b);
+  const sorted = [...keep].filter(n => n >= 1 && n <= total).sort((a, b) => a - b);
   const out: Array<number | null> = [];
   let previous = 0;
   for (const n of sorted) {
@@ -71,23 +57,10 @@ function legacyPagerWindow(
 function parityTable(): Array<[number, number]> {
   const pairs: Array<[number, number]> = [];
   for (let total = -1; total <= 40; total++) {
-    for (let current = -1; current <= total + 2; current++)
-      pairs.push([current, total]);
+    for (let current = -1; current <= total + 2; current++) pairs.push([current, total]);
   }
   for (const total of [57, 100, 1307]) {
-    for (const current of [
-      1,
-      2,
-      3,
-      4,
-      5,
-      total >> 1,
-      total - 4,
-      total - 3,
-      total - 2,
-      total - 1,
-      total,
-    ])
+    for (const current of [1, 2, 3, 4, 5, total >> 1, total - 4, total - 3, total - 2, total - 1, total])
       pairs.push([current, total]);
   }
   pairs.push([2.5, 12], [Number.NaN, 12], [3, Number.NaN], [0, 0]);
@@ -118,8 +91,7 @@ describe("pageWindow parity with both historical algorithms", () => {
       for (const [current, total] of pairs) {
         const actual = JSON.stringify(pageWindow(current, total, radius));
         if (
-          actual !==
-            JSON.stringify(legacyPagesVisibles(current, total, radius)) ||
+          actual !== JSON.stringify(legacyPagesVisibles(current, total, radius)) ||
           actual !== JSON.stringify(legacyPagerWindow(current, total, radius))
         )
           mismatches.push(`${current}/${total} r${radius}`);

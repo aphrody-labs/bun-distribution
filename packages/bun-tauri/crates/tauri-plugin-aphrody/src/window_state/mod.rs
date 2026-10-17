@@ -410,7 +410,7 @@ impl Builder {
         let map_label = self.map_label;
 
         PluginBuilder::new("window-state")
-            .invoke_handler(tauri::generate_handler![#![plugin(window_state)] 
+            .invoke_handler(tauri::generate_handler![#![plugin(window_state)]
                 cmd::save_window_state,
                 cmd::restore_state,
                 cmd::filename

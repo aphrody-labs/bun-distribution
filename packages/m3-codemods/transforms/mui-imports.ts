@@ -13,11 +13,7 @@
  */
 import { runEngine, type FileInfo, type Options } from "../lib/engine";
 
-export default function transformer(
-  file: FileInfo,
-  api?: unknown,
-  options: Options = {},
-): string {
+export default function transformer(file: FileInfo, api?: unknown, options: Options = {}): string {
   // pas de `only` -> traite tous les composants mappés
   return runEngine(file, api, options);
 }

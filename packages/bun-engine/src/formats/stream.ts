@@ -36,14 +36,8 @@ export class BinaryView {
   }
 
   u24(offset: number, endian = this.endian): number {
-    const [a, b, c] = [
-      this.u8(offset),
-      this.u8(offset + 1),
-      this.u8(offset + 2),
-    ];
-    return endian === "le"
-      ? a | (b << 8) | (c << 16)
-      : (a << 16) | (b << 8) | c;
+    const [a, b, c] = [this.u8(offset), this.u8(offset + 1), this.u8(offset + 2)];
+    return endian === "le" ? a | (b << 8) | (c << 16) : (a << 16) | (b << 8) | c;
   }
 
   u32(offset: number, endian = this.endian): number {
@@ -57,8 +51,7 @@ export class BinaryView {
   /** 64-bit value as a number; throws when it cannot be represented exactly. */
   u64(offset: number, endian = this.endian): number {
     const value = this.data.getBigUint64(offset, endian === "le");
-    if (value > BigInt(Number.MAX_SAFE_INTEGER))
-      throw new RangeError(`64-bit value at ${offset} exceeds 2^53`);
+    if (value > BigInt(Number.MAX_SAFE_INTEGER)) throw new RangeError(`64-bit value at ${offset} exceeds 2^53`);
     return Number(value);
   }
 
@@ -83,13 +76,9 @@ export class BinaryView {
   }
 
   equals(offset: number, signature: ArrayLike<number> | string): boolean {
-    const bytes =
-      typeof signature === "string"
-        ? Buffer.from(signature, "latin1")
-        : signature;
+    const bytes = typeof signature === "string" ? Buffer.from(signature, "latin1") : signature;
     if (!this.has(offset, bytes.length)) return false;
-    for (let index = 0; index < bytes.length; index++)
-      if (this.bytes[offset + index] !== bytes[index]) return false;
+    for (let index = 0; index < bytes.length; index++) if (this.bytes[offset + index] !== bytes[index]) return false;
     return true;
   }
 
@@ -129,39 +118,26 @@ export class BinarySource {
 
   /** Reads `[offset, offset + length)` clamped to the source; the first 64 KiB stay cached. */
   async read(offset: number, length: number): Promise<Uint8Array> {
-    if (
-      !Number.isSafeInteger(offset) ||
-      !Number.isSafeInteger(length) ||
-      offset < 0 ||
-      length < 0
-    ) {
+    if (!Number.isSafeInteger(offset) || !Number.isSafeInteger(length) || offset < 0 || length < 0) {
       throw new RangeError(`invalid read ${offset}+${length}`);
     }
     const end = Math.min(this.size, offset + length);
     if (offset >= end) return new Uint8Array(0);
     if (end <= BinarySource.headBytes) {
-      this.head ??= await this.blob
-        .slice(0, Math.min(this.size, BinarySource.headBytes))
-        .bytes();
+      this.head ??= await this.blob.slice(0, Math.min(this.size, BinarySource.headBytes)).bytes();
       return this.head.subarray(offset, end);
     }
     return this.blob.slice(offset, end).bytes();
   }
 
-  async view(
-    offset: number,
-    length: number,
-    endian: Endian = "le",
-  ): Promise<BinaryView> {
+  async view(offset: number, length: number, endian: Endian = "le"): Promise<BinaryView> {
     return new BinaryView(await this.read(offset, length), endian, offset);
   }
 
   /** Sequential chunks of `[start, end)` streamed through Blob.stream(). */
   async *chunks(start = 0, end = this.size): AsyncGenerator<Chunk> {
     let offset = start;
-    for await (const bytes of this.blob
-      .slice(start, Math.min(end, this.size))
-      .stream()) {
+    for await (const bytes of this.blob.slice(start, Math.min(end, this.size)).stream()) {
       yield { offset, bytes };
       offset += bytes.byteLength;
     }
@@ -172,18 +148,12 @@ export class BinarySource {
     pattern: Uint8Array | string,
     options: { start?: number; end?: number; limit?: number } = {},
   ): Promise<number[]> {
-    const needle =
-      typeof pattern === "string"
-        ? Buffer.from(pattern, "latin1")
-        : Buffer.from(pattern);
+    const needle = typeof pattern === "string" ? Buffer.from(pattern, "latin1") : Buffer.from(pattern);
     const hits: number[] = [];
     const limit = options.limit ?? 16;
     let carry = Buffer.alloc(0);
     let carryOffset = options.start ?? 0;
-    for await (const { offset, bytes } of this.chunks(
-      options.start ?? 0,
-      options.end ?? this.size,
-    )) {
+    for await (const { offset, bytes } of this.chunks(options.start ?? 0, options.end ?? this.size)) {
       const window = carry.byteLength
         ? Buffer.concat([carry, bytes])
         : Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -211,19 +181,14 @@ export class BinarySource {
       carry?: number | undefined;
     } = {},
   ): Promise<Array<{ offset: number; text: string }>> {
-    const flags = pattern.flags.includes("g")
-      ? pattern.flags
-      : `${pattern.flags}g`;
+    const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
     const regex = new RegExp(pattern.source, flags);
     const limit = options.limit ?? 16;
     const carryBytes = options.carry ?? 64;
     const found = new Map<number, string>();
     let carry = "";
     let carryOffset = options.start ?? 0;
-    for await (const { offset, bytes } of this.chunks(
-      options.start ?? 0,
-      options.end ?? this.size,
-    )) {
+    for await (const { offset, bytes } of this.chunks(options.start ?? 0, options.end ?? this.size)) {
       const text = carry + latin1.decode(bytes);
       const base = carry ? carryOffset : offset;
       for (const match of text.matchAll(regex)) {
@@ -234,16 +199,13 @@ export class BinarySource {
       carry = text.slice(-carryBytes);
       carryOffset = base + text.length - carry.length;
     }
-    return [...found]
-      .map(([offset, text]) => ({ offset, text }))
-      .sort((a, b) => a.offset - b.offset);
+    return [...found].map(([offset, text]) => ({ offset, text })).sort((a, b) => a.offset - b.offset);
   }
 
   /** CRC-32 (IEEE) of `[start, end)` computed while streaming. */
   async crc32(start = 0, end = this.size): Promise<number> {
     let crc = 0;
-    for await (const { bytes } of this.chunks(start, end))
-      crc = Bun.hash.crc32(bytes, crc);
+    for await (const { bytes } of this.chunks(start, end)) crc = Bun.hash.crc32(bytes, crc);
     return crc >>> 0;
   }
 }
@@ -259,11 +221,7 @@ export interface StreamDigest {
 }
 
 /** One streaming pass computing the usual dump-verification digests. */
-export async function digestSource(
-  source: BinarySource,
-  start = 0,
-  end = source.size,
-): Promise<StreamDigest> {
+export async function digestSource(source: BinarySource, start = 0, end = source.size): Promise<StreamDigest> {
   const begin = performance.now();
   const md5 = new Bun.CryptoHasher("md5");
   const sha1 = new Bun.CryptoHasher("sha1");
@@ -303,8 +261,7 @@ export function crc16(bytes: Uint8Array, initial = 0xffff): number {
   let crc = initial;
   for (const byte of bytes) {
     crc ^= byte;
-    for (let bit = 0; bit < 8; bit++)
-      crc = crc & 1 ? (crc >>> 1) ^ 0xa001 : crc >>> 1;
+    for (let bit = 0; bit < 8; bit++) crc = crc & 1 ? (crc >>> 1) ^ 0xa001 : crc >>> 1;
   }
   return crc & 0xffff;
 }

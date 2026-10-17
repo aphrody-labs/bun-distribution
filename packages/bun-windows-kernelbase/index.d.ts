@@ -3,17 +3,35 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** kernelbase.dll!AddPackageDependency */
-  AddPackageDependency(packageDependencyId: string | Win32Pointer, rank: number, options: number, packageDependencyContext: Win32Pointer, packageFullName: Win32Pointer): number;
+  AddPackageDependency(
+    packageDependencyId: string | Win32Pointer,
+    rank: number,
+    options: number,
+    packageDependencyContext: Win32Pointer,
+    packageFullName: Win32Pointer,
+  ): number;
   /** kernelbase.dll!DeletePackageDependency */
   DeletePackageDependency(packageDependencyId: string | Win32Pointer): number;
   /** kernelbase.dll!GetIdForPackageDependencyContext */
   GetIdForPackageDependencyContext(packageDependencyContext: Win32Pointer, packageDependencyId: Win32Pointer): number;
   /** kernelbase.dll!GetResolvedPackageFullNameForPackageDependency */
-  GetResolvedPackageFullNameForPackageDependency(packageDependencyId: string | Win32Pointer, packageFullName: Win32Pointer): number;
+  GetResolvedPackageFullNameForPackageDependency(
+    packageDependencyId: string | Win32Pointer,
+    packageFullName: Win32Pointer,
+  ): number;
   /** kernelbase.dll!RemovePackageDependency */
   RemovePackageDependency(packageDependencyContext: Win32Pointer): number;
   /** kernelbase.dll!TryCreatePackageDependency */
-  TryCreatePackageDependency(user: Win32Pointer, packageFamilyName: string | Win32Pointer, minVersion: Win32StructInit, packageDependencyProcessorArchitectures: number, lifetimeKind: number, lifetimeArtifact: string | Win32Pointer, options: number, packageDependencyId: Win32Pointer): number;
+  TryCreatePackageDependency(
+    user: Win32Pointer,
+    packageFamilyName: string | Win32Pointer,
+    minVersion: Win32StructInit,
+    packageDependencyProcessorArchitectures: number,
+    lifetimeKind: number,
+    lifetimeArtifact: string | Win32Pointer,
+    options: number,
+    packageDependencyId: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -14,9 +14,7 @@ function expectM3(html: string) {
 
 describe("TagPill", () => {
   test("is an M3 chip with the tag color kept on the dot", () => {
-    const html = renderToStaticMarkup(
-      <TagPill color="#ef4444">Important</TagPill>,
-    );
+    const html = renderToStaticMarkup(<TagPill color="#ef4444">Important</TagPill>);
     expect(html).toContain("rounded-small");
     expect(html).toContain("border-outline-variant");
     expect(html).toContain("text-label-large");
@@ -48,9 +46,7 @@ describe("TagPill", () => {
         Work
       </TagPill>,
     );
-    expect(html).toContain(
-      "bg-secondary-container text-on-secondary-container",
-    );
+    expect(html).toContain("bg-secondary-container text-on-secondary-container");
     expect(html).toContain("border-transparent");
     expect(html).toContain('aria-pressed="true"');
     expectM3(html);
@@ -60,12 +56,7 @@ describe("TagPill", () => {
 describe("RenameInput", () => {
   test("is an M3 inline text field with the extension as suffix", () => {
     const html = renderToStaticMarkup(
-      <RenameInput
-        name="report"
-        extension="pdf"
-        onSave={async () => {}}
-        onCancel={() => {}}
-      />,
+      <RenameInput name="report" extension="pdf" onSave={async () => {}} onCancel={() => {}} />,
     );
     expect(html).toContain("bg-surface-container-highest");
     expect(html).toContain("rounded-extra-small");
@@ -80,12 +71,7 @@ describe("RenameInput", () => {
 describe("FileThumb", () => {
   test("renders the kind icon and a framed thumbnail", () => {
     const html = renderToStaticMarkup(
-      <FileThumb
-        iconSrc="/icons/Image.png"
-        thumbnailSrc={{ src: "/thumbs/a.jpg" }}
-        size={120}
-        selected
-      />,
+      <FileThumb iconSrc="/icons/Image.png" thumbnailSrc={{ src: "/thumbs/a.jpg" }} size={120} selected />,
     );
     expect(html).toContain('src="/icons/Image.png"');
     expect(html).toContain('src="/thumbs/a.jpg"');
@@ -96,9 +82,7 @@ describe("FileThumb", () => {
   });
 
   test("small thumbs keep the scaled radius", () => {
-    const html = renderToStaticMarkup(
-      <FileThumb iconSrc="/i.png" thumbnailSrc="/t.jpg" size={40} />,
-    );
+    const html = renderToStaticMarkup(<FileThumb iconSrc="/i.png" thumbnailSrc="/t.jpg" size={40} />);
     expect(html).toContain("border-radius:3.2px");
   });
 });
@@ -107,9 +91,7 @@ describe("GridItem", () => {
   const thumb = { iconSrc: "/icons/Document.png" };
 
   test("is a medium-corner tile with a state layer", () => {
-    const html = renderToStaticMarkup(
-      <GridItem name="notes" extension="md" sizeText="2 KB" thumb={thumb} />,
-    );
+    const html = renderToStaticMarkup(<GridItem name="notes" extension="md" sizeText="2 KB" thumb={thumb} />);
     expect(html).toContain("rounded-medium");
     expect(html).toContain("hover:before:opacity-8");
     expect(html).toContain("text-label-medium");

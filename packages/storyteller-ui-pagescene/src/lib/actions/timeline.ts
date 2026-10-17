@@ -45,9 +45,7 @@ export function seekTimeline(editor: Editor, time: number): void {
 }
 
 export function setTimelineDuration(editor: Editor, seconds: number): void {
-  editor.timelineController.recordEdit("Set Timeline Duration", () =>
-    editor.timelineController.setDuration(seconds),
-  );
+  editor.timelineController.recordEdit("Set Timeline Duration", () => editor.timelineController.setDuration(seconds));
 }
 
 // Gesture-boundary hooks for continuous edits: capture at pointer-down /
@@ -57,58 +55,32 @@ export function beginTimelineEdit(editor: Editor): TimelineUndoSnapshot {
   return editor.timelineController.snapshotForUndo();
 }
 
-export function commitTimelineEdit(
-  editor: Editor,
-  label: string,
-  before: TimelineUndoSnapshot,
-): void {
+export function commitTimelineEdit(editor: Editor, label: string, before: TimelineUndoSnapshot): void {
   editor.timelineController.recordEditSince(label, before);
 }
 
-export function addKeyframe(
-  editor: Editor,
-  objectUuid: string,
-  atTime?: number,
-): void {
-  editor.timelineController.recordEdit("Add Keyframe", () =>
-    editor.timelineController.addKeyframe(objectUuid, atTime),
-  );
+export function addKeyframe(editor: Editor, objectUuid: string, atTime?: number): void {
+  editor.timelineController.recordEdit("Add Keyframe", () => editor.timelineController.addKeyframe(objectUuid, atTime));
 }
 
 export function deleteKeyframe(editor: Editor, keyframeId: string): void {
-  editor.timelineController.recordEdit("Delete Keyframe", () =>
-    editor.timelineController.deleteKeyframe(keyframeId),
-  );
+  editor.timelineController.recordEdit("Delete Keyframe", () => editor.timelineController.deleteKeyframe(keyframeId));
 }
 
 // Raw (unrecorded) — drag live-preview. Discrete callers wrap it: drags
 // commit via commitTimelineEdit at pointer-up, keyboard nudges via
 // nudgeKeyframe below.
-export function moveKeyframe(
-  editor: Editor,
-  keyframeId: string,
-  time: number,
-): void {
+export function moveKeyframe(editor: Editor, keyframeId: string, time: number): void {
   editor.timelineController.moveKeyframe(keyframeId, time);
 }
 
-export function nudgeKeyframe(
-  editor: Editor,
-  keyframeId: string,
-  time: number,
-): void {
-  editor.timelineController.recordEdit("Move Keyframe", () =>
-    editor.timelineController.moveKeyframe(keyframeId, time),
-  );
+export function nudgeKeyframe(editor: Editor, keyframeId: string, time: number): void {
+  editor.timelineController.recordEdit("Move Keyframe", () => editor.timelineController.moveKeyframe(keyframeId, time));
 }
 
 // Raw (unrecorded) — the Motion popover fires this per curve-drag event;
 // TimelineEditor coalesces one popover session into one undo step.
-export function setKeyframeEasing(
-  editor: Editor,
-  keyframeId: string,
-  easing: EasingSpec,
-): void {
+export function setKeyframeEasing(editor: Editor, keyframeId: string, easing: EasingSpec): void {
   editor.timelineController.setEasing(keyframeId, easing);
 }
 
@@ -134,17 +106,15 @@ export function addClipToCharacter(
 ): string | null {
   if (!item.media_id) return null;
   const startTime = atTime ?? editor.timelineController.getPlayhead();
-  const laneId = editor.timelineController.recordEdit(
-    "Add Animation Clip",
-    () =>
-      editor.timelineController.addClipLane(characterUuid, {
-        sourceMediaId: item.media_id,
-        name: item.name ?? "Animation",
-        startTime,
-        duration: DEFAULT_CLIP_DURATION,
-        loop: true,
-        autoDuration: true,
-      }),
+  const laneId = editor.timelineController.recordEdit("Add Animation Clip", () =>
+    editor.timelineController.addClipLane(characterUuid, {
+      sourceMediaId: item.media_id,
+      name: item.name ?? "Animation",
+      startTime,
+      duration: DEFAULT_CLIP_DURATION,
+      loop: true,
+      autoDuration: true,
+    }),
   );
   if (laneId) {
     const store = usePageSceneStore.getState();
@@ -158,16 +128,8 @@ export function addClipToCharacter(
 // its clip row at the earliest free slot (or an explicit `atTime`). The clip's
 // real length is known up front, so no autoDuration placeholder is needed.
 // Returns null when the object/clip doesn't exist or the row has no free slot.
-export function addBakedClipToObject(
-  editor: Editor,
-  objectUuid: string,
-  clipIndex: number,
-  atTime = 0,
-): string | null {
-  const object = editor.activeScene.scene.getObjectByProperty(
-    "uuid",
-    objectUuid,
-  );
+export function addBakedClipToObject(editor: Editor, objectUuid: string, clipIndex: number, atTime = 0): string | null {
+  const object = editor.activeScene.scene.getObjectByProperty("uuid", objectUuid);
   const clip = object?.animations?.[clipIndex];
   if (!clip) return null;
   return editor.timelineController.recordEdit("Add Animation Clip", () =>
@@ -176,10 +138,7 @@ export function addBakedClipToObject(
       bakedClipIndex: clipIndex,
       name: clip.name || `Clip ${clipIndex + 1}`,
       startTime: atTime,
-      duration: Math.min(
-        clip.duration || DEFAULT_CLIP_DURATION,
-        DEFAULT_CLIP_DURATION,
-      ),
+      duration: Math.min(clip.duration || DEFAULT_CLIP_DURATION, DEFAULT_CLIP_DURATION),
       // Loop by default, same as library strips (see addClipToCharacter).
       loop: true,
     }),
@@ -188,51 +147,29 @@ export function addBakedClipToObject(
 
 // Raw (unrecorded) — strip-drag live-preview; the drag commits one undo step
 // via commitTimelineEdit at pointer-up. Keyboard nudges use nudgeClipLane.
-export function moveClipLane(
-  editor: Editor,
-  laneId: string,
-  startTime: number,
-): void {
+export function moveClipLane(editor: Editor, laneId: string, startTime: number): void {
   editor.timelineController.moveClipLane(laneId, startTime);
 }
 
-export function nudgeClipLane(
-  editor: Editor,
-  laneId: string,
-  startTime: number,
-): void {
+export function nudgeClipLane(editor: Editor, laneId: string, startTime: number): void {
   editor.timelineController.recordEdit("Move Animation Clip", () =>
     editor.timelineController.moveClipLane(laneId, startTime),
   );
 }
 
 // Raw (unrecorded) — trim-drag live-preview, committed at pointer-up.
-export function resizeClipLane(
-  editor: Editor,
-  laneId: string,
-  duration: number,
-): void {
+export function resizeClipLane(editor: Editor, laneId: string, duration: number): void {
   editor.timelineController.resizeClipLane(laneId, duration);
 }
 
-export function setClipLoop(
-  editor: Editor,
-  laneId: string,
-  loop: boolean,
-): void {
-  editor.timelineController.recordEdit("Toggle Clip Loop", () =>
-    editor.timelineController.setClipLoop(laneId, loop),
-  );
+export function setClipLoop(editor: Editor, laneId: string, loop: boolean): void {
+  editor.timelineController.recordEdit("Toggle Clip Loop", () => editor.timelineController.setClipLoop(laneId, loop));
 }
 
 // Raw (unrecorded) — the Motion popover fires this per curve-drag event;
 // TimelineEditor coalesces one popover session (including "Remove
 // transition") into one undo step.
-export function setClipTransitionEasing(
-  editor: Editor,
-  laneId: string,
-  easing: EasingSpec | null,
-): void {
+export function setClipTransitionEasing(editor: Editor, laneId: string, easing: EasingSpec | null): void {
   editor.timelineController.setClipTransitionEasing(laneId, easing);
 }
 
@@ -252,9 +189,7 @@ export function enableClipTransition(editor: Editor, laneId: string): boolean {
 // baseline (see TimelineController), and the snapshot captures both worlds.
 export function removeClipLane(editor: Editor, laneId: string): void {
   if (!editor.timelineController.getClipLane(laneId)) return;
-  editor.timelineController.recordEdit("Remove Animation Clip", () =>
-    editor.timelineController.removeClipLane(laneId),
-  );
+  editor.timelineController.recordEdit("Remove Animation Clip", () => editor.timelineController.removeClipLane(laneId));
 }
 
 export function saveTimeline(editor: Editor): void {

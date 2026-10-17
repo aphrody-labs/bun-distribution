@@ -16,8 +16,7 @@ function Separator({
   const variants = {
     default: "bg-black/80 border-b border-white/10",
     ki: "bg-gradient-to-r from-transparent via-dbz-orange to-transparent h-0.5",
-    speedline:
-      "bg-gradient-to-r from-white/40 via-dbz-yellow to-transparent h-0.5",
+    speedline: "bg-gradient-to-r from-white/40 via-dbz-yellow to-transparent h-0.5",
   };
 
   return (

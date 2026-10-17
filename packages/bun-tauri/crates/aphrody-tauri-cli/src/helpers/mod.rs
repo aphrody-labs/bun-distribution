@@ -21,9 +21,9 @@ pub mod template;
 pub mod updater_signature;
 
 use std::{
-  collections::HashMap,
-  path::{Path, PathBuf},
-  process::Command,
+    collections::HashMap,
+    path::{Path, PathBuf},
+    process::Command,
 };
 
 use tauri_utils::config::HookCommand;
@@ -33,104 +33,104 @@ use crate::Error;
 use crate::{CommandExt, interface::AppInterface};
 
 pub fn command_env(debug: bool) -> HashMap<&'static str, String> {
-  let mut map = HashMap::new();
+    let mut map = HashMap::new();
 
-  map.insert(
-    "TAURI_ENV_PLATFORM_VERSION",
-    os_info::get().version().to_string(),
-  );
+    map.insert(
+        "TAURI_ENV_PLATFORM_VERSION",
+        os_info::get().version().to_string(),
+    );
 
-  if debug {
-    map.insert("TAURI_ENV_DEBUG", "true".into());
-  }
+    if debug {
+        map.insert("TAURI_ENV_DEBUG", "true".into());
+    }
 
-  map
+    map
 }
 
 pub fn resolve_tauri_path<P: AsRef<Path>>(path: P, crate_name: &str) -> PathBuf {
-  let path = path.as_ref();
-  if path.is_absolute() {
-    path.join(crate_name)
-  } else {
-    PathBuf::from("..").join(path).join(crate_name)
-  }
+    let path = path.as_ref();
+    if path.is_absolute() {
+        path.join(crate_name)
+    } else {
+        PathBuf::from("..").join(path).join(crate_name)
+    }
 }
 
 pub fn cross_command(bin: &str) -> Command {
-  // Resolve the actual executable (e.g. `npm.cmd`, `bun.exe`)
-  #[cfg(target_os = "windows")]
-  let cmd = Command::new(which::which(bin).unwrap_or_else(|_| bin.into()));
-  #[cfg(not(target_os = "windows"))]
-  let cmd = Command::new(bin);
-  cmd
+    // Resolve the actual executable (e.g. `npm.cmd`, `bun.exe`)
+    #[cfg(target_os = "windows")]
+    let cmd = Command::new(which::which(bin).unwrap_or_else(|_| bin.into()));
+    #[cfg(not(target_os = "windows"))]
+    let cmd = Command::new(bin);
+    cmd
 }
 
 pub fn run_hook(
-  name: &str,
-  hook: HookCommand,
-  interface: &AppInterface,
-  debug: bool,
-  frontend_dir: &Path,
+    name: &str,
+    hook: HookCommand,
+    interface: &AppInterface,
+    debug: bool,
+    frontend_dir: &Path,
 ) -> crate::Result<()> {
-  let (script, script_cwd) = match hook {
-    HookCommand::Script(s) if s.is_empty() => (None, None),
-    HookCommand::Script(s) => (Some(s), None),
-    HookCommand::ScriptWithOptions { script, cwd } => (Some(script), cwd.map(Into::into)),
-  };
-  let cwd = script_cwd.unwrap_or_else(|| frontend_dir.to_owned());
-  if let Some(script) = script {
-    log::info!(action = "Running"; "{} `{}`", name, script);
+    let (script, script_cwd) = match hook {
+        HookCommand::Script(s) if s.is_empty() => (None, None),
+        HookCommand::Script(s) => (Some(s), None),
+        HookCommand::ScriptWithOptions { script, cwd } => (Some(script), cwd.map(Into::into)),
+    };
+    let cwd = script_cwd.unwrap_or_else(|| frontend_dir.to_owned());
+    if let Some(script) = script {
+        log::info!(action = "Running"; "{} `{}`", name, script);
 
-    let mut env = command_env(debug);
-    env.extend(interface.env());
+        let mut env = command_env(debug);
+        env.extend(interface.env());
 
-    log::debug!("Setting environment for hook {:?}", env);
+        log::debug!("Setting environment for hook {:?}", env);
 
-    #[cfg(target_os = "windows")]
-    let status = Command::new("cmd")
-      .arg("/S")
-      .arg("/C")
-      .arg(&script)
-      .current_dir(cwd)
-      .envs(env)
-      .piped()
-      .map_err(|error| crate::error::Error::CommandFailed {
-        command: script.clone(),
-        error,
-      })?;
-    #[cfg(not(target_os = "windows"))]
-    let status = Command::new("sh")
-      .arg("-c")
-      .arg(&script)
-      .current_dir(cwd)
-      .envs(env)
-      .piped()
-      .map_err(|error| Error::CommandFailed {
-        command: script.clone(),
-        error,
-      })?;
+        #[cfg(target_os = "windows")]
+        let status = Command::new("cmd")
+            .arg("/S")
+            .arg("/C")
+            .arg(&script)
+            .current_dir(cwd)
+            .envs(env)
+            .piped()
+            .map_err(|error| crate::error::Error::CommandFailed {
+                command: script.clone(),
+                error,
+            })?;
+        #[cfg(not(target_os = "windows"))]
+        let status = Command::new("sh")
+            .arg("-c")
+            .arg(&script)
+            .current_dir(cwd)
+            .envs(env)
+            .piped()
+            .map_err(|error| Error::CommandFailed {
+                command: script.clone(),
+                error,
+            })?;
 
-    if !status.success() {
-      crate::error::bail!(
-        "{} `{}` failed with exit code {}",
-        name,
-        script,
-        status.code().unwrap_or_default()
-      );
+        if !status.success() {
+            crate::error::bail!(
+                "{} `{}` failed with exit code {}",
+                name,
+                script,
+                status.code().unwrap_or_default()
+            );
+        }
     }
-  }
 
-  Ok(())
+    Ok(())
 }
 
 #[cfg(target_os = "macos")]
 pub fn strip_semver_prerelease_tag(version: &mut semver::Version) -> crate::Result<()> {
-  use crate::error::Context;
-  if !version.pre.is_empty()
-    && let Some((_prerelease_tag, number)) = version.pre.as_str().to_string().split_once('.')
-  {
-    version.pre = semver::Prerelease::EMPTY;
-    version.build = semver::BuildMetadata::new(&format!(
+    use crate::error::Context;
+    if !version.pre.is_empty()
+        && let Some((_prerelease_tag, number)) = version.pre.as_str().to_string().split_once('.')
+    {
+        version.pre = semver::Prerelease::EMPTY;
+        version.build = semver::BuildMetadata::new(&format!(
       "{prefix}{number}",
       prefix = if version.build.is_empty() {
         "".to_string()
@@ -143,7 +143,7 @@ pub fn strip_semver_prerelease_tag(version: &mut semver::Version) -> crate::Resu
         "failed to parse {version} as semver: bundle version {number:?} prerelease is invalid"
       )
     })?;
-  }
+    }
 
-  Ok(())
+    Ok(())
 }

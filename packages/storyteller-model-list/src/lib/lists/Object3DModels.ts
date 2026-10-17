@@ -30,7 +30,7 @@ export const OBJECT_3D_MODELS: Object3DModel[] = [
 ];
 
 export const OBJECT_3D_MODELS_BY_ID: Map<string, Object3DModel> = new Map(
-  OBJECT_3D_MODELS.map((model) => [model.id, model]),
+  OBJECT_3D_MODELS.map(model => [model.id, model]),
 );
 
 if (OBJECT_3D_MODELS_BY_ID.size !== OBJECT_3D_MODELS.length) {

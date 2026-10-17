@@ -24,28 +24,18 @@ export function detectPythonEnvironment(): PythonEnvironmentStatus {
   const ruffBin = Bun.which("ruff");
 
   const pythonVersion = pyBin
-    ? Bun.spawnSync([pyBin, "--version"], { windowsHide: true })
-        .stdout.toString()
-        .trim() || null
+    ? Bun.spawnSync([pyBin, "--version"], { windowsHide: true }).stdout.toString().trim() || null
     : null;
   const uvVersion = uvBin
-    ? Bun.spawnSync([uvBin, "--version"], { windowsHide: true })
-        .stdout.toString()
-        .trim() || null
+    ? Bun.spawnSync([uvBin, "--version"], { windowsHide: true }).stdout.toString().trim() || null
     : null;
   const maturinVersion = maturinBin
-    ? Bun.spawnSync([maturinBin, "--version"], { windowsHide: true })
-        .stdout.toString()
-        .trim() || null
+    ? Bun.spawnSync([maturinBin, "--version"], { windowsHide: true }).stdout.toString().trim() || null
     : null;
   const ruffVersion = ruffBin
-    ? Bun.spawnSync([ruffBin, "--version"], { windowsHide: true })
-        .stdout.toString()
-        .trim() || null
+    ? Bun.spawnSync([ruffBin, "--version"], { windowsHide: true }).stdout.toString().trim() || null
     : null;
-  const venvActive = Boolean(
-    process.env.VIRTUAL_ENV && existsSync(process.env.VIRTUAL_ENV),
-  );
+  const venvActive = Boolean(process.env.VIRTUAL_ENV && existsSync(process.env.VIRTUAL_ENV));
 
   return {
     schema: "yolo.python/1",
@@ -64,9 +54,7 @@ export async function runUvCommand(
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   const uvBin = Bun.which("uv");
   if (!uvBin) {
-    throw new Error(
-      "Astral uv binary not found on PATH. Install uv to run native Python operations.",
-    );
+    throw new Error("Astral uv binary not found on PATH. Install uv to run native Python operations.");
   }
   const proc = Bun.spawn([uvBin, ...args], {
     windowsHide: true,

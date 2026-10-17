@@ -19,17 +19,9 @@ export {
   upsertPathKeyframe,
 } from "./keyframes";
 
-export {
-  getElementLocalTime,
-  resolveAnimationPathValueAtTime,
-} from "./resolve";
+export { getElementLocalTime, resolveAnimationPathValueAtTime } from "./resolve";
 
-export {
-  getElementKeyframes,
-  getKeyframeById,
-  getKeyframeAtTime,
-  hasKeyframesForPath,
-} from "./keyframe-query";
+export { getElementKeyframes, getKeyframeById, getKeyframeAtTime, hasKeyframesForPath } from "./keyframe-query";
 
 export {
   type EditableScalarChannels,
@@ -38,10 +30,7 @@ export {
   getScalarKeyframeContext,
 } from "./graph-channels";
 
-export {
-  getCurveHandlesForNormalizedCubicBezier,
-  getNormalizedCubicBezierForScalarSegment,
-} from "./curve-bridge";
+export { getCurveHandlesForNormalizedCubicBezier, getNormalizedCubicBezierForScalarSegment } from "./curve-bridge";
 
 export {
   buildGraphicParamPath,
@@ -58,11 +47,7 @@ export {
   resolveEffectParamsAtTime,
 } from "./effect-param-channel";
 
-export {
-  getGroupKeyframesAtTime,
-  hasGroupKeyframeAtTime,
-  type GroupKeyframeRef,
-} from "./property-groups";
+export { getGroupKeyframesAtTime, hasGroupKeyframeAtTime, type GroupKeyframeRef } from "./property-groups";
 
 export { isAnimationPath, isAnimationPropertyPath } from "./path";
 

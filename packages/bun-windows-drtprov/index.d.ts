@@ -5,13 +5,23 @@ interface Functions {
   /** drtprov.dll!DrtCreateDerivedKey */
   DrtCreateDerivedKey(pLocalCert: Win32Pointer, pKey: Win32Pointer): number;
   /** drtprov.dll!DrtCreateDerivedKeySecurityProvider */
-  DrtCreateDerivedKeySecurityProvider(pRootCert: Win32Pointer, pLocalCert: Win32Pointer, ppSecurityProvider: Win32Pointer): number;
+  DrtCreateDerivedKeySecurityProvider(
+    pRootCert: Win32Pointer,
+    pLocalCert: Win32Pointer,
+    ppSecurityProvider: Win32Pointer,
+  ): number;
   /** drtprov.dll!DrtCreateDnsBootstrapResolver */
   DrtCreateDnsBootstrapResolver(port: number, pwszAddress: string | Win32Pointer, ppModule: Win32Pointer): number;
   /** drtprov.dll!DrtCreateNullSecurityProvider */
   DrtCreateNullSecurityProvider(ppSecurityProvider: Win32Pointer): number;
   /** drtprov.dll!DrtCreatePnrpBootstrapResolver */
-  DrtCreatePnrpBootstrapResolver(fPublish: number, pwzPeerName: string | Win32Pointer, pwzCloudName: string | Win32Pointer, pwzPublishingIdentity: string | Win32Pointer, ppResolver: Win32Pointer): number;
+  DrtCreatePnrpBootstrapResolver(
+    fPublish: number,
+    pwzPeerName: string | Win32Pointer,
+    pwzCloudName: string | Win32Pointer,
+    pwzPublishingIdentity: string | Win32Pointer,
+    ppResolver: Win32Pointer,
+  ): number;
   /** drtprov.dll!DrtDeleteDerivedKeySecurityProvider */
   DrtDeleteDerivedKeySecurityProvider(pSecurityProvider: Win32Pointer): void;
   /** drtprov.dll!DrtDeleteDnsBootstrapResolver */

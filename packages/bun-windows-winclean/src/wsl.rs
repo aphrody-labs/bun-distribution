@@ -36,13 +36,17 @@ fn launcher() -> io::Result<PathBuf> {
         ));
     }
     if let Some(path) = std::env::var_os("PATH").and_then(|paths| {
-        std::env::split_paths(&paths).map(|dir| dir.join("wsl.exe")).find(|path| path.is_file())
+        std::env::split_paths(&paths)
+            .map(|dir| dir.join("wsl.exe"))
+            .find(|path| path.is_file())
     }) {
         return Ok(path);
     }
     // Respect the configured automount root rather than assuming /mnt/c.
     let output = capture(
-        Command::new("wslpath").no_window().args(["-u", r"C:\Windows\System32\wsl.exe"]),
+        Command::new("wslpath")
+            .no_window()
+            .args(["-u", r"C:\Windows\System32\wsl.exe"]),
         Duration::from_secs(5),
     )?;
     let path = PathBuf::from(String::from_utf8_lossy(&output.stdout).trim());
@@ -99,7 +103,7 @@ pub(crate) fn capture(command: &mut Command, timeout: Duration) -> io::Result<Ou
                 let _ = child.kill();
                 let _ = child.wait();
                 return Err(error);
-            },
+            }
         }
     };
     stdout.seek(SeekFrom::Start(0))?;
@@ -108,7 +112,13 @@ pub(crate) fn capture(command: &mut Command, timeout: Duration) -> io::Result<Ou
     let mut err = Vec::new();
     stdout.take(OUTPUT_LIMIT).read_to_end(&mut out)?;
     stderr.take(OUTPUT_LIMIT).read_to_end(&mut err)?;
-    Ok(Output { status, stdout: out, stderr: err, timed_out, truncated })
+    Ok(Output {
+        status,
+        stdout: out,
+        stderr: err,
+        timed_out,
+        truncated,
+    })
 }
 
 pub(crate) fn result(args: &[String]) -> serde_json::Value {
@@ -136,8 +146,13 @@ pub(crate) fn decode(bytes: &[u8]) -> String {
         || (pairs > 0 && (0..pairs).filter(|index| bytes[index * 2 + 1] == 0).count() * 2 >= pairs);
     if utf16 {
         let bytes = bytes.strip_prefix(&[0xff, 0xfe]).unwrap_or(bytes);
-        let units: Vec<_> =
-            bytes.as_chunks::<2>().0.iter().copied().map(u16::from_le_bytes).collect();
+        let units: Vec<_> = bytes
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .copied()
+            .map(u16::from_le_bytes)
+            .collect();
         String::from_utf16_lossy(&units)
     } else {
         String::from_utf8_lossy(bytes).into_owned()
@@ -161,8 +176,10 @@ mod tests {
     #[test]
     fn captures_large_streams_without_pipe_deadlock() {
         let output = capture(
-            Command::new("/bin/sh")
-                .args(["-c", "head -c 262144 /dev/zero; head -c 262144 /dev/zero >&2"]),
+            Command::new("/bin/sh").args([
+                "-c",
+                "head -c 262144 /dev/zero; head -c 262144 /dev/zero >&2",
+            ]),
             Duration::from_secs(5),
         )
         .unwrap();
@@ -175,8 +192,11 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn reaps_timed_out_launcher() {
-        let output =
-            capture(Command::new("/bin/sleep").arg("10"), Duration::from_millis(30)).unwrap();
+        let output = capture(
+            Command::new("/bin/sleep").arg("10"),
+            Duration::from_millis(30),
+        )
+        .unwrap();
         assert!(output.timed_out);
         assert!(!output.status.success());
     }

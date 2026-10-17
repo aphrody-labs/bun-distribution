@@ -11,12 +11,7 @@ export interface Box {
   bottom: number;
 }
 
-export const boxOf = (rect: {
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
-}): Box => ({
+export const boxOf = (rect: { left: number; top: number; right: number; bottom: number }): Box => ({
   left: rect.left,
   top: rect.top,
   right: rect.right,
@@ -27,8 +22,7 @@ const centerX = (b: Box) => (b.left + b.right) / 2;
 const centerY = (b: Box) => (b.top + b.bottom) / 2;
 
 /** Overlap length of two ranges (0 when they only touch or are apart). */
-const overlap = (a0: number, a1: number, b0: number, b1: number) =>
-  Math.max(0, Math.min(a1, b1) - Math.max(a0, b0));
+const overlap = (a0: number, a1: number, b0: number, b1: number) => Math.max(0, Math.min(a1, b1) - Math.max(a0, b0));
 
 /**
  * The candidate to move to from `from` in `direction`, or undefined. A candidate must lie in the direction (its
@@ -46,9 +40,7 @@ export function pickNext<T>(
   let best: { item: T; score: number } | undefined;
   for (const { item, box } of candidates) {
     if (box === from) continue;
-    const along = horizontal
-      ? centerX(box) - centerX(from)
-      : centerY(box) - centerY(from);
+    const along = horizontal ? centerX(box) - centerX(from) : centerY(box) - centerY(from);
     if (along * sign <= 1) continue;
     // Near edge of the candidate relative to the far edge of the origin, along the movement axis.
     const gap = horizontal
@@ -58,17 +50,8 @@ export function pickNext<T>(
       : sign > 0
         ? box.top - from.bottom
         : from.top - box.bottom;
-    if (
-      gap <
-      -Math.min(
-        horizontal ? from.right - from.left : from.bottom - from.top,
-        24,
-      )
-    )
-      continue;
-    const across = horizontal
-      ? Math.abs(centerY(box) - centerY(from))
-      : Math.abs(centerX(box) - centerX(from));
+    if (gap < -Math.min(horizontal ? from.right - from.left : from.bottom - from.top, 24)) continue;
+    const across = horizontal ? Math.abs(centerY(box) - centerY(from)) : Math.abs(centerX(box) - centerX(from));
     const shared = horizontal
       ? overlap(from.top, from.bottom, box.top, box.bottom)
       : overlap(from.left, from.right, box.left, box.right);
@@ -79,13 +62,7 @@ export function pickNext<T>(
 }
 
 /** Keys that mean "back" on TV platforms. */
-export const BACK_KEYS = new Set([
-  "Escape",
-  "Backspace",
-  "BrowserBack",
-  "GoBack",
-  "XF86Back",
-]);
+export const BACK_KEYS = new Set(["Escape", "Backspace", "BrowserBack", "GoBack", "XF86Back"]);
 export const BACK_KEY_CODES = new Set([4, 10009, 461]);
 
 const FOCUSABLE = [
@@ -122,22 +99,15 @@ function disabledByFieldset(element: HTMLElement): boolean {
     fieldset;
     fieldset = fieldset.parentElement?.closest("fieldset[disabled]") ?? null
   ) {
-    const legend = [...fieldset.children].find(
-      (child) => child.tagName === "LEGEND",
-    );
+    const legend = [...fieldset.children].find(child => child.tagName === "LEGEND");
     if (!legend?.contains(element)) return true;
   }
   return false;
 }
 /** The visible, enabled focusable elements under `root`. */
 export function focusables(root: ParentNode): HTMLElement[] {
-  return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => {
-    if (
-      el.closest(
-        "[hidden], [inert], [aria-hidden='true'], [aria-disabled='true']",
-      )
-    )
-      return false;
+  return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(el => {
+    if (el.closest("[hidden], [inert], [aria-hidden='true'], [aria-disabled='true']")) return false;
     if (
       disabledByFieldset(el) ||
       el.matches(":disabled") ||
@@ -154,16 +124,13 @@ export function focusables(root: ParentNode): HTMLElement[] {
 
 /** The topmost modal: an open dialog or an `aria-modal` container. Focus is confined to it. */
 export function activeModal(doc: Document): HTMLElement | null {
-  const modals = [
-    ...doc.querySelectorAll<HTMLElement>(
-      "dialog[open], md-dialog[open], [aria-modal='true']",
-    ),
-  ].filter((element) => {
-    if (element.closest("[hidden], [inert], [aria-hidden='true']"))
-      return false;
-    const style = getComputedStyle(element);
-    return style.display !== "none" && style.visibility !== "hidden";
-  });
+  const modals = [...doc.querySelectorAll<HTMLElement>("dialog[open], md-dialog[open], [aria-modal='true']")].filter(
+    element => {
+      if (element.closest("[hidden], [inert], [aria-hidden='true']")) return false;
+      const style = getComputedStyle(element);
+      return style.display !== "none" && style.visibility !== "hidden";
+    },
+  );
   return modals.at(-1) ?? null;
 }
 
@@ -182,21 +149,15 @@ export function attachDpad(options: DpadOptions = {}): () => void {
     const items = focusables(scope);
     if (items.length === 0) return false;
     const current = doc.activeElement as HTMLElement | null;
-    const origin =
-      current && items.includes(current)
-        ? current
-        : (current?.closest<HTMLElement>(FOCUSABLE) ?? null);
+    const origin = current && items.includes(current) ? current : (current?.closest<HTMLElement>(FOCUSABLE) ?? null);
     if (!origin) {
-      (items.find((el) => el.hasAttribute("data-dpad-start")) ??
-        items[0])!.focus();
+      (items.find(el => el.hasAttribute("data-dpad-start")) ?? items[0])!.focus();
       return true;
     }
     const from = boxOf(origin.getBoundingClientRect());
     const target = pickNext(
       from,
-      items
-        .filter((el) => el !== origin)
-        .map((el) => ({ item: el, box: boxOf(el.getBoundingClientRect()) })),
+      items.filter(el => el !== origin).map(el => ({ item: el, box: boxOf(el.getBoundingClientRect()) })),
       direction,
     );
     if (!target) return false;
@@ -206,16 +167,8 @@ export function attachDpad(options: DpadOptions = {}): () => void {
   };
 
   const onKeyDown = (event: KeyboardEvent): void => {
-    if (
-      event.defaultPrevented ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey
-    )
-      return;
-    const editing = (
-      event.composedPath()[0] as HTMLElement | undefined
-    )?.closest?.(
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+    const editing = (event.composedPath()[0] as HTMLElement | undefined)?.closest?.(
       "input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, [contenteditable='true']",
     );
     const direction = (
@@ -252,8 +205,7 @@ export function attachDpad(options: DpadOptions = {}): () => void {
       const modal = activeModal(doc);
       if (modal) {
         event.preventDefault();
-        if ("close" in modal && typeof modal.close === "function")
-          modal.close();
+        if ("close" in modal && typeof modal.close === "function") modal.close();
         else modal.dispatchEvent(new Event("close", { bubbles: true }));
         return;
       }

@@ -61,24 +61,24 @@ fn main() {
 Afterwards all the plugin's APIs are available through the JavaScript guest bindings:
 
 ```javascript
-import { openUrl, openPath, revealItemInDir } from '@aphrody/plugin-opener'
+import { openUrl, openPath, revealItemInDir } from "@aphrody/plugin-opener";
 
 // Opens the URL in the default browser
-await openUrl('https://example.com')
+await openUrl("https://example.com");
 // Or with a specific browser/app
-await openUrl('https://example.com', 'firefox')
+await openUrl("https://example.com", "firefox");
 
 // Opens the path with the system's default app
-await openPath('/path/to/file')
+await openPath("/path/to/file");
 // Or with a specific app
-await openPath('/path/to/file', 'firefox')
+await openPath("/path/to/file", "firefox");
 
 // Reveal a path with the system's default explorer
-await revealItemInDir('/path/to/file')
+await revealItemInDir("/path/to/file");
 
 // Reveal multiple paths with the system's default explorer
 // Note: will be renamed to `revealItemsInDir` in the next major version
-await revealItemInDir(['/path/to/file', '/path/to/another/file'])
+await revealItemInDir(["/path/to/file", "/path/to/another/file"]);
 ```
 
 ### Usage from Rust

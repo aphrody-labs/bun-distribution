@@ -8,7 +8,7 @@
  * @module
  */
 
-import { invoke } from '../api/core'
+import { invoke } from "../api/core";
 
 /**
  * Extension filters for the file dialog.
@@ -17,7 +17,7 @@ import { invoke } from '../api/core'
  */
 interface DialogFilter {
   /** The name of the filter, shown to the user in the dialog's filter selector. */
-  name: string
+  name: string;
   /**
    * Extensions to filter, without a `.` prefix.
    *
@@ -35,7 +35,7 @@ interface DialogFilter {
    * extensions: ['svg', 'png']
    * ```
    */
-  extensions: string[]
+  extensions: string[];
 }
 
 /**
@@ -45,7 +45,7 @@ interface DialogFilter {
  */
 interface OpenDialogOptions {
   /** The title of the dialog window (desktop only). */
-  title?: string
+  title?: string;
   /**
    * The filters of the dialog.
    * On mobile platforms, if either:
@@ -54,7 +54,7 @@ interface OpenDialogOptions {
    * B) the filters include **only** either image or video mime types, the media picker will be displayed.
    * Otherwise, the document picker will be displayed.
    */
-  filters?: DialogFilter[]
+  filters?: DialogFilter[];
   /**
    * Initial directory or file path.
    * If it's a directory path, the dialog interface will change to that folder.
@@ -63,25 +63,25 @@ interface OpenDialogOptions {
    * On mobile the file name is always used on the dialog's file name input.
    * If not provided, Android uses `(invalid).txt` as default file name.
    */
-  defaultPath?: string
+  defaultPath?: string;
   /** Whether the dialog allows multiple selection or not. */
-  multiple?: boolean
+  multiple?: boolean;
   /** Whether the dialog is a directory selection or not. */
-  directory?: boolean
+  directory?: boolean;
   /**
    * If `directory` is true, indicates that it will be read recursively later.
    * Defines whether subdirectories will be allowed on the scope or not.
    */
-  recursive?: boolean
+  recursive?: boolean;
   /** Whether to allow creating directories in the dialog. Enabled by default. **macOS Only** */
-  canCreateDirectories?: boolean
+  canCreateDirectories?: boolean;
   /**
    * The preferred mode of the dialog.
    * This is meant for mobile platforms (iOS and Android) which have distinct file and media pickers.
    * If not provided, the dialog will automatically choose the best mode based on the MIME types or extensions of the {@linkcode filters}.
    * On desktop, this option is ignored.
    */
-  pickerMode?: PickerMode
+  pickerMode?: PickerMode;
   /**
    * The file access mode of the dialog.
    * If not provided, `copy` is used, which matches the behavior of the {@linkcode open} method before the introduction of this option.
@@ -106,7 +106,7 @@ interface OpenDialogOptions {
    * This means there is no provision for using `scoped` mode with image or video pickers.
    * If an image or video picker is used, `copy` is always used.
    */
-  fileAccessMode?: FileAccessMode
+  fileAccessMode?: FileAccessMode;
 }
 
 /**
@@ -116,9 +116,9 @@ interface OpenDialogOptions {
  */
 interface SaveDialogOptions {
   /** The title of the dialog window (desktop only). */
-  title?: string
+  title?: string;
   /** The filters of the dialog. */
-  filters?: DialogFilter[]
+  filters?: DialogFilter[];
   /**
    * Initial directory or file path.
    * If it's a directory path, the dialog interface will change to that folder.
@@ -127,9 +127,9 @@ interface SaveDialogOptions {
    * On mobile the file name is always used on the dialog's file name input.
    * If not provided, Android uses `(invalid).txt` as default file name.
    */
-  defaultPath?: string
+  defaultPath?: string;
   /** Whether to allow creating directories in the dialog. Enabled by default. **macOS Only** */
-  canCreateDirectories?: boolean
+  canCreateDirectories?: boolean;
 }
 
 /**
@@ -140,7 +140,7 @@ interface SaveDialogOptions {
  *
  * **Note:** This option is only supported on iOS 14 and above. This parameter is ignored on iOS 13 and below.
  */
-export type PickerMode = 'document' | 'media' | 'image' | 'video'
+export type PickerMode = "document" | "media" | "image" | "video";
 
 /**
  * The file access mode of the dialog.
@@ -150,26 +150,20 @@ export type PickerMode = 'document' | 'media' | 'image' | 'video'
  *
  * **Note:** This option is only supported on iOS 14 and above. This parameter is ignored on iOS 13 and below.
  */
-export type FileAccessMode = 'copy' | 'scoped'
+export type FileAccessMode = "copy" | "scoped";
 
 /**
  * Default buttons for a message dialog.
  *
  * @since 2.4.0
  */
-export type MessageDialogDefaultButtons =
-  | 'Ok'
-  | 'OkCancel'
-  | 'YesNo'
-  | 'YesNoCancel'
+export type MessageDialogDefaultButtons = "Ok" | "OkCancel" | "YesNo" | "YesNoCancel";
 
 /** All possible button keys. */
-type ButtonKey = 'ok' | 'cancel' | 'yes' | 'no'
+type ButtonKey = "ok" | "cancel" | "yes" | "no";
 
 /** Ban everything except a set of keys. */
-type BanExcept<Allowed extends ButtonKey> = Partial<
-  Record<Exclude<ButtonKey, Allowed>, never>
->
+type BanExcept<Allowed extends ButtonKey> = Partial<Record<Exclude<ButtonKey, Allowed>, never>>;
 
 /**
  * The Yes, No and Cancel buttons of a message dialog.
@@ -178,12 +172,12 @@ type BanExcept<Allowed extends ButtonKey> = Partial<
  */
 export type MessageDialogButtonsYesNoCancel = {
   /** The label of the Yes button. */
-  yes: string
+  yes: string;
   /** The label of the No button. */
-  no: string
+  no: string;
   /** The label of the Cancel button. */
-  cancel: string
-} & BanExcept<'yes' | 'no' | 'cancel'>
+  cancel: string;
+} & BanExcept<"yes" | "no" | "cancel">;
 
 /**
  * The Ok and Cancel buttons of a message dialog.
@@ -192,10 +186,10 @@ export type MessageDialogButtonsYesNoCancel = {
  */
 export type MessageDialogButtonsOkCancel = {
   /** The label of the Ok button. */
-  ok: string
+  ok: string;
   /** The label of the Cancel button. */
-  cancel: string
-} & BanExcept<'ok' | 'cancel'>
+  cancel: string;
+} & BanExcept<"ok" | "cancel">;
 
 /**
  * The Ok button of a message dialog.
@@ -204,8 +198,8 @@ export type MessageDialogButtonsOkCancel = {
  */
 export type MessageDialogButtonsOk = {
   /** The label of the Ok button. */
-  ok: string
-} & BanExcept<'ok'>
+  ok: string;
+} & BanExcept<"ok">;
 
 /**
  * Custom buttons for a message dialog.
@@ -215,16 +209,14 @@ export type MessageDialogButtonsOk = {
 export type MessageDialogCustomButtons =
   | MessageDialogButtonsYesNoCancel
   | MessageDialogButtonsOkCancel
-  | MessageDialogButtonsOk
+  | MessageDialogButtonsOk;
 
 /**
  * The buttons of a message dialog.
  *
  * @since 2.4.0
  */
-export type MessageDialogButtons =
-  | MessageDialogDefaultButtons
-  | MessageDialogCustomButtons
+export type MessageDialogButtons = MessageDialogDefaultButtons | MessageDialogCustomButtons;
 
 /**
  * Options for the message dialog.
@@ -233,9 +225,9 @@ export type MessageDialogButtons =
  */
 interface MessageDialogOptions {
   /** The title of the dialog. Defaults to the app name. */
-  title?: string
+  title?: string;
   /** The kind of the dialog. Defaults to `info`. */
-  kind?: 'info' | 'warning' | 'error'
+  kind?: "info" | "warning" | "error";
   /**
    * The buttons of the dialog.
    *
@@ -258,7 +250,7 @@ interface MessageDialogOptions {
    *
    * @since 2.4.0
    */
-  buttons?: MessageDialogButtons
+  buttons?: MessageDialogButtons;
 }
 
 /**
@@ -266,22 +258,22 @@ interface MessageDialogOptions {
  */
 function buttonsToRust(buttons: MessageDialogButtons | undefined) {
   if (buttons === undefined) {
-    return undefined
+    return undefined;
   }
 
-  if (typeof buttons === 'string') {
-    return buttons
-  } else if ('ok' in buttons && 'cancel' in buttons) {
-    return { OkCancelCustom: [buttons.ok, buttons.cancel] }
-  } else if ('yes' in buttons && 'no' in buttons && 'cancel' in buttons) {
+  if (typeof buttons === "string") {
+    return buttons;
+  } else if ("ok" in buttons && "cancel" in buttons) {
+    return { OkCancelCustom: [buttons.ok, buttons.cancel] };
+  } else if ("yes" in buttons && "no" in buttons && "cancel" in buttons) {
     return {
-      YesNoCancelCustom: [buttons.yes, buttons.no, buttons.cancel]
-    }
-  } else if ('ok' in buttons) {
-    return { OkCustom: buttons.ok }
+      YesNoCancelCustom: [buttons.yes, buttons.no, buttons.cancel],
+    };
+  } else if ("ok" in buttons) {
+    return { OkCustom: buttons.ok };
   }
 
-  return undefined
+  return undefined;
 }
 
 /**
@@ -291,13 +283,13 @@ function buttonsToRust(buttons: MessageDialogButtons | undefined) {
  */
 interface ConfirmDialogOptions {
   /** The title of the dialog. Defaults to the app name. */
-  title?: string
+  title?: string;
   /** The kind of the dialog. Defaults to `info`. */
-  kind?: 'info' | 'warning' | 'error'
+  kind?: "info" | "warning" | "error";
   /** The label of the confirm button. */
-  okLabel?: string
+  okLabel?: string;
   /** The label of the cancel button. */
-  cancelLabel?: string
+  cancelLabel?: string;
 }
 
 /**
@@ -306,13 +298,13 @@ interface ConfirmDialogOptions {
  *
  * @since 2.0.0
  */
-type OpenDialogReturn<T extends OpenDialogOptions> = T['directory'] extends true
-  ? T['multiple'] extends true
+type OpenDialogReturn<T extends OpenDialogOptions> = T["directory"] extends true
+  ? T["multiple"] extends true
     ? string[] | null
     : string | null
-  : T['multiple'] extends true
+  : T["multiple"] extends true
     ? string[] | null
-    : string | null
+    : string | null;
 
 /**
  * Open a file/directory selection dialog.
@@ -368,14 +360,12 @@ type OpenDialogReturn<T extends OpenDialogOptions> = T['directory'] extends true
  *
  * @since 2.0.0
  */
-async function open<T extends OpenDialogOptions>(
-  options: T = {} as T
-): Promise<OpenDialogReturn<T>> {
-  if (typeof options === 'object') {
-    Object.freeze(options)
+async function open<T extends OpenDialogOptions>(options: T = {} as T): Promise<OpenDialogReturn<T>> {
+  if (typeof options === "object") {
+    Object.freeze(options);
   }
 
-  return await invoke('plugin:dialog|open', { options })
+  return await invoke("plugin:dialog|open", { options });
 }
 
 /**
@@ -405,11 +395,11 @@ async function open<T extends OpenDialogOptions>(
  * @since 2.0.0
  */
 async function save(options: SaveDialogOptions = {}): Promise<string | null> {
-  if (typeof options === 'object') {
-    Object.freeze(options)
+  if (typeof options === "object") {
+    Object.freeze(options);
   }
 
-  return await invoke('plugin:dialog|save', { options })
+  return await invoke("plugin:dialog|save", { options });
 }
 
 /**
@@ -420,15 +410,15 @@ async function save(options: SaveDialogOptions = {}): Promise<string | null> {
  *
  * @since 2.4.0
  */
-export type MessageDialogResult = 'Yes' | 'No' | 'Ok' | 'Cancel' | (string & {})
+export type MessageDialogResult = "Yes" | "No" | "Ok" | "Cancel" | (string & {});
 
 async function messageCommand(message: string, options?: MessageDialogOptions) {
-  return await invoke<MessageDialogResult>('plugin:dialog|message', {
+  return await invoke<MessageDialogResult>("plugin:dialog|message", {
     message,
     title: options?.title,
     kind: options?.kind,
-    buttons: buttonsToRust(options?.buttons)
-  })
+    buttons: buttonsToRust(options?.buttons),
+  });
 }
 
 /**
@@ -448,12 +438,9 @@ async function messageCommand(message: string, options?: MessageDialogOptions) {
  * @since 2.0.0
  *
  */
-async function message(
-  message: string,
-  options?: string | MessageDialogOptions
-): Promise<MessageDialogResult> {
-  const opts = typeof options === 'string' ? { title: options } : options
-  return messageCommand(message, opts)
+async function message(message: string, options?: string | MessageDialogOptions): Promise<MessageDialogResult> {
+  const opts = typeof options === "string" ? { title: options } : options;
+  return messageCommand(message, opts);
 }
 
 /**
@@ -475,22 +462,17 @@ async function message(
  *
  * @since 2.0.0
  */
-async function ask(
-  message: string,
-  options?: string | ConfirmDialogOptions
-): Promise<boolean> {
-  const opts = typeof options === 'string' ? { title: options } : options
-  const customButtons = opts?.okLabel || opts?.cancelLabel
-  const okLabel = opts?.okLabel ?? 'Yes'
+async function ask(message: string, options?: string | ConfirmDialogOptions): Promise<boolean> {
+  const opts = typeof options === "string" ? { title: options } : options;
+  const customButtons = opts?.okLabel || opts?.cancelLabel;
+  const okLabel = opts?.okLabel ?? "Yes";
   return (
     (await messageCommand(message, {
       title: opts?.title,
       kind: opts?.kind,
-      buttons: customButtons
-        ? { ok: okLabel, cancel: opts.cancelLabel ?? 'No' }
-        : 'YesNo'
+      buttons: customButtons ? { ok: okLabel, cancel: opts.cancelLabel ?? "No" } : "YesNo",
     })) === okLabel
-  )
+  );
 }
 
 /**
@@ -512,22 +494,17 @@ async function ask(
  *
  * @since 2.0.0
  */
-async function confirm(
-  message: string,
-  options?: string | ConfirmDialogOptions
-): Promise<boolean> {
-  const opts = typeof options === 'string' ? { title: options } : options
-  const customButtons = opts?.okLabel || opts?.cancelLabel
-  const okLabel = opts?.okLabel ?? 'Ok'
+async function confirm(message: string, options?: string | ConfirmDialogOptions): Promise<boolean> {
+  const opts = typeof options === "string" ? { title: options } : options;
+  const customButtons = opts?.okLabel || opts?.cancelLabel;
+  const okLabel = opts?.okLabel ?? "Ok";
   return (
     (await messageCommand(message, {
       title: opts?.title,
       kind: opts?.kind,
-      buttons: customButtons
-        ? { ok: okLabel, cancel: opts.cancelLabel ?? 'Cancel' }
-        : 'OkCancel'
+      buttons: customButtons ? { ok: okLabel, cancel: opts.cancelLabel ?? "Cancel" } : "OkCancel",
     })) === okLabel
-  )
+  );
 }
 
 export type {
@@ -536,7 +513,7 @@ export type {
   OpenDialogReturn,
   SaveDialogOptions,
   MessageDialogOptions,
-  ConfirmDialogOptions
-}
+  ConfirmDialogOptions,
+};
 
-export { open, save, message, ask, confirm }
+export { open, save, message, ask, confirm };

@@ -24,7 +24,7 @@ export function FilterButtons({ onClick, value }: Props) {
   return (
     <div>
       <div className="flex gap-2 overflow-x-auto overflow-y-hidden px-4">
-        {FILTERS.map((filter) => {
+        {FILTERS.map(filter => {
           const isBookmarks = filter.option === AssetFilterOption.BOOKMARKED;
           return (
             <button

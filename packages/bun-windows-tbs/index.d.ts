@@ -3,9 +3,19 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** tbs.dll!GetDeviceID */
-  GetDeviceID(pbWindowsAIK: Win32Pointer, cbWindowsAIK: number, pcbResult: Win32Pointer, pfProtectedByTPM: Win32Pointer): number;
+  GetDeviceID(
+    pbWindowsAIK: Win32Pointer,
+    cbWindowsAIK: number,
+    pcbResult: Win32Pointer,
+    pfProtectedByTPM: Win32Pointer,
+  ): number;
   /** tbs.dll!GetDeviceIDString */
-  GetDeviceIDString(pszWindowsAIK: string | Win32Pointer, cchWindowsAIK: number, pcchResult: Win32Pointer, pfProtectedByTPM: Win32Pointer): number;
+  GetDeviceIDString(
+    pszWindowsAIK: string | Win32Pointer,
+    cchWindowsAIK: number,
+    pcchResult: Win32Pointer,
+    pfProtectedByTPM: Win32Pointer,
+  ): number;
   /** tbs.dll!Tbsi_Context_Create */
   Tbsi_Context_Create(pContextParams: Win32Pointer, phContext: Win32Pointer): number;
   /** tbs.dll!Tbsi_Create_Windows_Key */
@@ -13,7 +23,12 @@ interface Functions {
   /** tbs.dll!Tbsi_GetDeviceInfo */
   Tbsi_GetDeviceInfo(Size: number, Info: Win32Pointer): number;
   /** tbs.dll!Tbsi_Get_OwnerAuth */
-  Tbsi_Get_OwnerAuth(hContext: Win32Pointer, ownerauthType: number, pOutputBuf: Win32Pointer, pOutputBufLen: Win32Pointer): number;
+  Tbsi_Get_OwnerAuth(
+    hContext: Win32Pointer,
+    ownerauthType: number,
+    pOutputBuf: Win32Pointer,
+    pOutputBufLen: Win32Pointer,
+  ): number;
   /** tbs.dll!Tbsi_Get_TCG_Log */
   Tbsi_Get_TCG_Log(hContext: Win32Pointer, pOutputBuf: Win32Pointer, pOutputBufLen: Win32Pointer): number;
   /** tbs.dll!Tbsi_Get_TCG_Log_Ex */
@@ -21,7 +36,13 @@ interface Functions {
   /** tbs.dll!Tbsi_Is_Tpm_Present */
   Tbsi_Is_Tpm_Present(): number;
   /** tbs.dll!Tbsi_Physical_Presence_Command */
-  Tbsi_Physical_Presence_Command(hContext: Win32Pointer, pabInput: Win32Pointer, cbInput: number, pabOutput: Win32Pointer, pcbOutput: Win32Pointer): number;
+  Tbsi_Physical_Presence_Command(
+    hContext: Win32Pointer,
+    pabInput: Win32Pointer,
+    cbInput: number,
+    pabOutput: Win32Pointer,
+    pcbOutput: Win32Pointer,
+  ): number;
   /** tbs.dll!Tbsi_Revoke_Attestation */
   Tbsi_Revoke_Attestation(): number;
   /** tbs.dll!Tbsi_Tpm_Vendor_Maintenance_Mode */
@@ -31,7 +52,15 @@ interface Functions {
   /** tbs.dll!Tbsip_Context_Close */
   Tbsip_Context_Close(hContext: Win32Pointer): number;
   /** tbs.dll!Tbsip_Submit_Command */
-  Tbsip_Submit_Command(hContext: Win32Pointer, Locality: number, Priority: number, pabCommand: Win32Pointer, cbCommand: number, pabResult: Win32Pointer, pcbResult: Win32Pointer): number;
+  Tbsip_Submit_Command(
+    hContext: Win32Pointer,
+    Locality: number,
+    Priority: number,
+    pabCommand: Win32Pointer,
+    cbCommand: number,
+    pabResult: Win32Pointer,
+    pcbResult: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -22,11 +22,7 @@ import {
   SectionTitle,
 } from "../../components/section";
 import { usePropertyDraft } from "../../panels/properties/hooks/use-property-draft";
-import {
-  formatNumberForDisplay,
-  getFractionDigitsForStep,
-  snapToStep,
-} from "../../utils/math";
+import { formatNumberForDisplay, getFractionDigitsForStep, snapToStep } from "../../utils/math";
 
 const SPEED_STEP = 0.01;
 const SPEED_FRACTION_DIGITS = getFractionDigitsForStep({ step: SPEED_STEP });
@@ -46,24 +42,12 @@ function parseSpeedInput({ input }: { input: string }): number | null {
   });
 }
 
-function buildRetime({
-  rate,
-  maintainPitch,
-}: {
-  rate: number;
-  maintainPitch: boolean;
-}) {
+function buildRetime({ rate, maintainPitch }: { rate: number; maintainPitch: boolean }) {
   if (rate === DEFAULT_RETIME_RATE && !maintainPitch) return undefined;
   return buildConstantRetime({ rate, maintainPitch });
 }
 
-export function SpeedTab({
-  element,
-  trackId,
-}: {
-  element: AudioElement | VideoElement;
-  trackId: string;
-}) {
+export function SpeedTab({ element, trackId }: { element: AudioElement | VideoElement; trackId: string }) {
   const editor = useEditor();
   const rate = clampRetimeRate({
     rate: element.retime?.rate ?? DEFAULT_RETIME_RATE,
@@ -88,8 +72,8 @@ export function SpeedTab({
 
   const speedDraft = usePropertyDraft({
     displayValue: rateToDisplay({ rate }),
-    parse: (input) => parseSpeedInput({ input }),
-    onPreview: (nextRate) => {
+    parse: input => parseSpeedInput({ input }),
+    onPreview: nextRate => {
       pendingRateRef.current = nextRate;
       editor.timeline.previewElements({
         updates: [
@@ -133,9 +117,7 @@ export function SpeedTab({
               onBlur={speedDraft.onBlur}
               onScrub={speedDraft.scrubTo}
               onScrubEnd={speedDraft.commitScrub}
-              onReset={() =>
-                commitRetime({ rate: DEFAULT_RETIME_RATE, maintainPitch })
-              }
+              onReset={() => commitRetime({ rate: DEFAULT_RETIME_RATE, maintainPitch })}
               isDefault={rate === DEFAULT_RETIME_RATE}
             />
           </SectionField>
@@ -144,9 +126,7 @@ export function SpeedTab({
             <Switch
               checked={!maintainPitch}
               disabled={!isPitchPreserveAvailable}
-              onCheckedChange={(checked) =>
-                commitRetime({ rate, maintainPitch: !checked })
-              }
+              onCheckedChange={checked => commitRetime({ rate, maintainPitch: !checked })}
             />
           </div>
         </SectionFields>

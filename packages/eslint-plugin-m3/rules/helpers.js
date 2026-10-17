@@ -26,12 +26,7 @@ export function isMdIconTag(name) {
 /** Récupère un attribut JSX par nom (insensible n/a). Retourne le node JSXAttribute ou null. */
 export function getAttr(openingElement, attrName) {
   for (const a of openingElement.attributes || []) {
-    if (
-      a.type === "JSXAttribute" &&
-      a.name &&
-      a.name.type === "JSXIdentifier" &&
-      a.name.name === attrName
-    ) {
+    if (a.type === "JSXAttribute" && a.name && a.name.type === "JSXIdentifier" && a.name.name === attrName) {
       return a;
     }
   }
@@ -45,19 +40,15 @@ export function attrStringValue(attr) {
   if (v.type === "Literal" && typeof v.value === "string") return v.value;
   if (v.type === "JSXExpressionContainer") {
     const e = v.expression;
-    if (e && e.type === "Literal" && typeof e.value === "string")
-      return e.value;
-    if (e && e.type === "TemplateLiteral" && e.quasis.length === 1)
-      return e.quasis[0].value.cooked;
+    if (e && e.type === "Literal" && typeof e.value === "string") return e.value;
+    if (e && e.type === "TemplateLiteral" && e.quasis.length === 1) return e.quasis[0].value.cooked;
   }
   return null;
 }
 
 /** Texte enfant unique d'un élément JSX (si c'est un seul JSXText). null sinon (vide/expr/multiple). */
 export function singleTextChild(jsxElement) {
-  const kids = (jsxElement.children || []).filter(
-    (c) => !(c.type === "JSXText" && c.value.trim() === ""),
-  );
+  const kids = (jsxElement.children || []).filter(c => !(c.type === "JSXText" && c.value.trim() === ""));
   if (kids.length !== 1) return null;
   const only = kids[0];
   if (only.type === "JSXText") return only.value.trim();

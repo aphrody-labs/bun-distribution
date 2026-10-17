@@ -8,11 +8,7 @@ export interface ReadonlyRequestCookies {
   get(name: string): RequestCookie | undefined;
   getAll(name?: string): RequestCookie[];
   has(name: string): boolean;
-  set?(
-    name: string,
-    value: string,
-    options?: { path?: string; maxAge?: number },
-  ): void;
+  set?(name: string, value: string, options?: { path?: string; maxAge?: number }): void;
   delete?(name: string): void;
 }
 
@@ -36,9 +32,7 @@ class ClientCookieStore implements ReadonlyRequestCookies {
       const token = part.trim();
       const separator = token.indexOf("=");
       if (separator < 1) continue;
-      parsed[decodeCookiePart(token.slice(0, separator))] = decodeCookiePart(
-        token.slice(separator + 1),
-      );
+      parsed[decodeCookiePart(token.slice(0, separator))] = decodeCookiePart(token.slice(separator + 1));
     }
     return parsed;
   }
@@ -67,11 +61,7 @@ class ClientCookieStore implements ReadonlyRequestCookies {
     return Object.hasOwn(parsed, name);
   }
 
-  set(
-    name: string,
-    value: string,
-    options?: { path?: string; maxAge?: number },
-  ): void {
+  set(name: string, value: string, options?: { path?: string; maxAge?: number }): void {
     if (typeof document === "undefined") return;
     let cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=${options?.path || "/"}`;
     if (options?.maxAge !== undefined) {

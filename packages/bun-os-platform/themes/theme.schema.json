@@ -16,10 +16,25 @@
       "additionalProperties": false,
       "properties": {
         "seed": { "$ref": "#/$defs/hex" },
-        "variant": { "enum": ["tonal-spot", "content", "fidelity", "expressive", "vibrant", "neutral", "monochrome", "rainbow", "fruit-salad"] },
+        "variant": {
+          "enum": [
+            "tonal-spot",
+            "content",
+            "fidelity",
+            "expressive",
+            "vibrant",
+            "neutral",
+            "monochrome",
+            "rainbow",
+            "fruit-salad"
+          ]
+        },
         "contrast": { "type": "number", "minimum": -1, "maximum": 1 },
         "mode": { "enum": ["dark", "light", "system"] },
-        "dynamic": { "enum": ["art", "none"], "description": "art: re-seed from the focused game's art (DIRECTION.md)." },
+        "dynamic": {
+          "enum": ["art", "none"],
+          "description": "art: re-seed from the focused game's art (DIRECTION.md)."
+        },
         "roles": { "$ref": "#/$defs/roles" },
         "light": { "$ref": "#/$defs/roles" },
         "dark": { "$ref": "#/$defs/roles" }

@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ArrowRightIcon,
-  BookIcon,
-  ChevronLeftIcon,
-  CircleHelpIcon,
-  NewspaperIcon,
-} from "lucide-react";
+import { ArrowRightIcon, BookIcon, ChevronLeftIcon, CircleHelpIcon, NewspaperIcon } from "lucide-react";
 import { DiscordIcon, GithubIcon, YoutubeIcon } from "@storyteller/icons";
 import { OpenUrl } from "@storyteller/tauri-api";
 import { Modal } from "@storyteller/ui-modal";
@@ -33,9 +27,7 @@ const NewsView = (_props: { onBack: () => void }) => {
     // Attempt to fetch fresh news
     const fetchNews = async () => {
       try {
-        const baseUrl = import.meta.env.DEV
-          ? "http://localhost:4200"
-          : "https://getartcraft.com";
+        const baseUrl = import.meta.env.DEV ? "http://localhost:4200" : "https://getartcraft.com";
         const res = await fetch(`${baseUrl}/news.json`);
         if (res.ok) {
           const data = await res.json();
@@ -52,14 +44,11 @@ const NewsView = (_props: { onBack: () => void }) => {
   }, []);
 
   const selectedPost = useMemo(
-    () => (selectedSlug ? items.find((i) => i.slug === selectedSlug) : null),
+    () => (selectedSlug ? items.find(i => i.slug === selectedSlug) : null),
     [selectedSlug, items],
   );
 
-  const html = useMemo(
-    () => (selectedPost ? markdownToHtml(selectedPost.body) : ""),
-    [selectedPost],
-  );
+  const html = useMemo(() => (selectedPost ? markdownToHtml(selectedPost.body) : ""), [selectedPost]);
 
   if (selectedPost) {
     return (
@@ -72,13 +61,9 @@ const NewsView = (_props: { onBack: () => void }) => {
         </button>
 
         <div className="article-content">
-          <h1 className="font-display text-2xl font-bold mb-2">
-            {selectedPost.title}
-          </h1>
+          <h1 className="font-display text-2xl font-bold mb-2">{selectedPost.title}</h1>
           {selectedPost.date && (
-            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/50 mb-4">
-              {selectedPost.date}
-            </p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/50 mb-4">{selectedPost.date}</p>
           )}
 
           {selectedPost.thumbnail && (
@@ -89,10 +74,7 @@ const NewsView = (_props: { onBack: () => void }) => {
             />
           )}
 
-          <div
-            dangerouslySetInnerHTML={{ __html: html }}
-            className="text-white/80 space-y-4"
-          />
+          <div dangerouslySetInnerHTML={{ __html: html }} className="text-white/80 space-y-4" />
         </div>
         <style>{`
           .article-content h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.5rem; }
@@ -117,7 +99,7 @@ const NewsView = (_props: { onBack: () => void }) => {
 
   return (
     <div className="flex flex-col gap-4 mt-2 h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-      {items.map((item) => (
+      {items.map(item => (
         <div
           key={item.slug}
           onClick={() => setSelectedSlug(item.slug)}
@@ -137,33 +119,24 @@ const NewsView = (_props: { onBack: () => void }) => {
               </span>
             )}
           </div>
-          <p className="text-sm text-white/60 mt-1 line-clamp-2">
-            {item.description}
-          </p>
+          <p className="text-sm text-white/60 mt-1 line-clamp-2">{item.description}</p>
         </div>
       ))}
-      {items.length === 0 && (
-        <div className="text-center text-white/40 py-10">No news yet.</div>
-      )}
+      {items.length === 0 && <div className="text-center text-white/40 py-10">No news yet.</div>}
     </div>
   );
 };
 
-export function HelpMenuButton({
-  items,
-  panelTitle = "Tutorials",
-  className,
-  onOpenChange,
-}: HelpMenuButtonProps) {
+export function HelpMenuButton({ items, panelTitle = "Tutorials", className, onOpenChange }: HelpMenuButtonProps) {
   const [open, setOpen] = useState(false);
   const tutorials = useMemo(() => items ?? defaultTutorials, [items]);
-  const view = useTutorialModalStore((s) => s.view);
-  const selected = useTutorialModalStore((s) => s.selected);
-  const setGrid = useTutorialModalStore((s) => s.setGrid);
-  const setNews = useTutorialModalStore((s) => s.setNews);
-  const viewTutorial = useTutorialModalStore((s) => s.viewTutorial);
-  const getProgress = useTutorialModalStore((s) => s.getProgress);
-  const setProgress = useTutorialModalStore((s) => s.setProgress);
+  const view = useTutorialModalStore(s => s.view);
+  const selected = useTutorialModalStore(s => s.selected);
+  const setGrid = useTutorialModalStore(s => s.setGrid);
+  const setNews = useTutorialModalStore(s => s.setNews);
+  const viewTutorial = useTutorialModalStore(s => s.viewTutorial);
+  const getProgress = useTutorialModalStore(s => s.getProgress);
+  const setProgress = useTutorialModalStore(s => s.setProgress);
 
   // Sync open state if managed externally? No, local state + optional callback.
 
@@ -269,11 +242,10 @@ export function HelpMenuButton({
     if (typeof window === "undefined") return;
     const w = window as any;
     if (w.YT && w.YT.Player) return;
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       const existing = document.getElementById("youtube-iframe-api");
       if (existing) {
-        const check = () =>
-          w.YT && w.YT.Player ? resolve() : setTimeout(check, 50);
+        const check = () => (w.YT && w.YT.Player ? resolve() : setTimeout(check, 50));
         check();
         return;
       }
@@ -311,9 +283,7 @@ export function HelpMenuButton({
             // Start polling current time
             progressTimerRef.current = window.setInterval(() => {
               try {
-                const t = Math.floor(
-                  playerRef.current?.getCurrentTime?.() ?? 0,
-                );
+                const t = Math.floor(playerRef.current?.getCurrentTime?.() ?? 0);
                 if (Number.isFinite(t)) setProgress(selected.id, t);
               } catch {}
             }, 1000);
@@ -337,12 +307,7 @@ export function HelpMenuButton({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, view, selected?.id]);
 
-  const modalTitle =
-    view === "video"
-      ? undefined
-      : view === "news"
-        ? "News & Updates"
-        : panelTitle;
+  const modalTitle = view === "video" ? undefined : view === "news" ? "News & Updates" : panelTitle;
 
   return (
     <div className={className}>
@@ -370,9 +335,7 @@ export function HelpMenuButton({
         {view === "grid" && (
           <>
             {tutorials.length === 0 ? (
-              <div className="flex items-center justify-center py-12 text-white/60">
-                No tutorials yet.
-              </div>
+              <div className="flex items-center justify-center py-12 text-white/60">No tutorials yet.</div>
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {tutorials.map((item: TutorialItem) => (
@@ -389,9 +352,7 @@ export function HelpMenuButton({
                         className="h-full w-full object-cover transition-transform group-hover:scale-[1.02]"
                       />
                     </div>
-                    <div className="p-3 text-sm text-white/90">
-                      {item.title}
-                    </div>
+                    <div className="p-3 text-sm text-white/90">{item.title}</div>
                   </button>
                 ))}
               </div>
@@ -410,9 +371,7 @@ export function HelpMenuButton({
               >
                 Back
               </Button>
-              <div className="font-display text-lg font-bold text-base-fg">
-                Tutorial: {selected.title}
-              </div>
+              <div className="font-display text-lg font-bold text-base-fg">Tutorial: {selected.title}</div>
             </div>
             <div className="w-full">
               <div className="aspect-video w-full overflow-hidden rounded-none border border-white/15 bg-black">

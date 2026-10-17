@@ -1,8 +1,4 @@
-import {
-  VisualNode,
-  type ResolvedVisualSourceNodeState,
-  type VisualNodeParams,
-} from "./visual-node";
+import { VisualNode, type ResolvedVisualSourceNodeState, type VisualNodeParams } from "./visual-node";
 
 export interface ImageNodeParams extends VisualNodeParams {
   url: string;
@@ -64,15 +60,10 @@ export function loadImageSource({
 
     const naturalWidth = image.naturalWidth;
     const naturalHeight = image.naturalHeight;
-    const exceedsLimit =
-      maxSourceSize &&
-      (naturalWidth > maxSourceSize || naturalHeight > maxSourceSize);
+    const exceedsLimit = maxSourceSize && (naturalWidth > maxSourceSize || naturalHeight > maxSourceSize);
 
     if (exceedsLimit) {
-      const scale = Math.min(
-        maxSourceSize / naturalWidth,
-        maxSourceSize / naturalHeight,
-      );
+      const scale = Math.min(maxSourceSize / naturalWidth, maxSourceSize / naturalHeight);
       const scaledWidth = Math.round(naturalWidth * scale);
       const scaledHeight = Math.round(naturalHeight * scale);
 
@@ -92,7 +83,4 @@ export function loadImageSource({
   return promise;
 }
 
-export class ImageNode extends VisualNode<
-  ImageNodeParams,
-  ResolvedVisualSourceNodeState
-> {}
+export class ImageNode extends VisualNode<ImageNodeParams, ResolvedVisualSourceNodeState> {}

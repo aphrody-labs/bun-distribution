@@ -6,12 +6,7 @@ import type { TActionWithOptionalArgs } from ".";
 import { getDefaultShortcuts } from ".";
 import { isTypableDOMElement } from "../utils/browser";
 import { isAppleDevice } from "../utils/platform";
-import type {
-  Key,
-  KeybindingConfig,
-  ModifierKeys,
-  ShortcutKey,
-} from "./keybinding";
+import type { Key, KeybindingConfig, ModifierKeys, ShortcutKey } from "./keybinding";
 import { isKey } from "./keybinding";
 import { runMigrations, CURRENT_VERSION } from "./keybindings/migrations";
 
@@ -29,10 +24,7 @@ interface KeybindingsState {
   isLoadingProject: boolean;
   isRecording: boolean;
 
-  updateKeybinding: (params: {
-    key: ShortcutKey;
-    action: TActionWithOptionalArgs;
-  }) => void;
+  updateKeybinding: (params: { key: ShortcutKey; action: TActionWithOptionalArgs }) => void;
   removeKeybinding: (key: ShortcutKey) => void;
   resetToDefaults: () => void;
   importKeybindings: (config: KeybindingConfig) => void;
@@ -41,10 +33,7 @@ interface KeybindingsState {
   closeOverlay: (overlayId: string) => void;
   setLoadingProject: (loading: boolean) => void;
   setIsRecording: (isRecording: boolean) => void;
-  validateKeybinding: (params: {
-    key: ShortcutKey;
-    action: TActionWithOptionalArgs;
-  }) => KeybindingConflict | null;
+  validateKeybinding: (params: { key: ShortcutKey; action: TActionWithOptionalArgs }) => KeybindingConflict | null;
   getKeybindingsForAction: (action: TActionWithOptionalArgs) => ShortcutKey[];
   getKeybindingString: (ev: KeyboardEvent) => ShortcutKey | null;
 }
@@ -62,11 +51,7 @@ function isPersistedState(value: unknown): value is PersistedState {
   if (!value || typeof value !== "object") return false;
   if (!("keybindings" in value) || !("isCustomized" in value)) return false;
   const { keybindings, isCustomized } = value;
-  return (
-    typeof keybindings === "object" &&
-    keybindings !== null &&
-    typeof isCustomized === "boolean"
-  );
+  return typeof keybindings === "object" && keybindings !== null && typeof isCustomized === "boolean";
 }
 
 export const useKeybindingsStore = create<KeybindingsState>()(
@@ -79,8 +64,8 @@ export const useKeybindingsStore = create<KeybindingsState>()(
       isLoadingProject: false,
       isRecording: false,
 
-      openOverlay: (overlayId) =>
-        set((s) => {
+      openOverlay: overlayId =>
+        set(s => {
           const openOverlayIds = s.openOverlayIds.includes(overlayId)
             ? s.openOverlayIds
             : [...s.openOverlayIds, overlayId];
@@ -89,22 +74,20 @@ export const useKeybindingsStore = create<KeybindingsState>()(
             overlayDepth: openOverlayIds.length,
           };
         }),
-      closeOverlay: (overlayId) =>
-        set((s) => {
-          const openOverlayIds = s.openOverlayIds.filter(
-            (id) => id !== overlayId,
-          );
+      closeOverlay: overlayId =>
+        set(s => {
+          const openOverlayIds = s.openOverlayIds.filter(id => id !== overlayId);
           return {
             openOverlayIds,
             overlayDepth: openOverlayIds.length,
           };
         }),
-      setLoadingProject: (loading) => {
+      setLoadingProject: loading => {
         set({ isLoadingProject: loading });
       },
 
       updateKeybinding: ({ key, action }) => {
-        set((state) => {
+        set(state => {
           const next = new Map(state.keybindings);
           next.set(key, action);
           return {
@@ -114,8 +97,8 @@ export const useKeybindingsStore = create<KeybindingsState>()(
         });
       },
 
-      removeKeybinding: (key) => {
-        set((state) => {
+      removeKeybinding: key => {
+        set(state => {
           const next = new Map(state.keybindings);
           next.delete(key);
           return {
@@ -132,7 +115,7 @@ export const useKeybindingsStore = create<KeybindingsState>()(
         });
       },
 
-      importKeybindings: (config) => {
+      importKeybindings: config => {
         const next = new Map<ShortcutKey, TActionWithOptionalArgs>();
         for (const [key, action] of Object.entries(config)) {
           if (typeof key !== "string" || key.length === 0) {
@@ -165,11 +148,11 @@ export const useKeybindingsStore = create<KeybindingsState>()(
         }
         return null;
       },
-      setIsRecording: (isRecording) => {
+      setIsRecording: isRecording => {
         set({ isRecording });
       },
 
-      getKeybindingsForAction: (action) => {
+      getKeybindingsForAction: action => {
         const result: ShortcutKey[] = [];
         for (const [key, mapped] of get().keybindings) {
           if (mapped === action) result.push(key);
@@ -177,7 +160,7 @@ export const useKeybindingsStore = create<KeybindingsState>()(
         return result;
       },
 
-      getKeybindingString: (ev) => generateKeybindingString(ev),
+      getKeybindingString: ev => generateKeybindingString(ev),
     }),
     {
       name: "opencut-keybindings",
@@ -186,16 +169,13 @@ export const useKeybindingsStore = create<KeybindingsState>()(
         keybindings: Object.fromEntries(state.keybindings),
         isCustomized: state.isCustomized,
       }),
-      migrate: (persisted, version) =>
-        runMigrations({ state: persisted, fromVersion: version }),
+      migrate: (persisted, version) => runMigrations({ state: persisted, fromVersion: version }),
       merge: (persisted, current) => {
         if (!isPersistedState(persisted)) return current;
         const entries = Object.entries(persisted.keybindings);
         // Persistence boundary: keys are normalized by the migration chain.
         // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-        const typedEntries = entries as Array<
-          [ShortcutKey, TActionWithOptionalArgs]
-        >;
+        const typedEntries = entries as Array<[ShortcutKey, TActionWithOptionalArgs]>;
         return {
           ...current,
           keybindings: new Map(typedEntries),
@@ -213,11 +193,7 @@ function generateKeybindingString(ev: KeyboardEvent): ShortcutKey | null {
   if (!key) return null;
 
   if (modifierKey) {
-    if (
-      modifierKey === "shift" &&
-      isDOMElement(target) &&
-      isTypableDOMElement({ element: target })
-    ) {
+    if (modifierKey === "shift" && isDOMElement(target) && isTypableDOMElement({ element: target })) {
       return null;
     }
 
@@ -235,8 +211,7 @@ function getPressedKey(ev: KeyboardEvent): Key | null {
   const raw = (ev.key ?? "").toLowerCase();
   const code = ev.code ?? "";
 
-  if (code === "Space" || raw === " " || raw === "spacebar" || raw === "space")
-    return "space";
+  if (code === "Space" || raw === " " || raw === "spacebar" || raw === "space") return "space";
 
   if (raw === "arrowup") return "up";
   if (raw === "arrowdown") return "down";

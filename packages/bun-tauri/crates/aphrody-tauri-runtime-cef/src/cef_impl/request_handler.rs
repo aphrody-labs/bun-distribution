@@ -3,38 +3,38 @@
 // SPDX-License-Identifier: MIT
 
 use std::{
-  borrow::Cow,
-  io::{Cursor, Read},
-  sync::{Arc, Mutex},
+    borrow::Cow,
+    io::{Cursor, Read},
+    sync::{Arc, Mutex},
 };
 
 use cef::{rc::*, *};
 use dioxus_debug_cell::RefCell;
 use html5ever::{LocalName, interface::QualName, namespace_url, ns};
 use http::{
-  HeaderMap, HeaderName, HeaderValue,
-  header::{CONTENT_SECURITY_POLICY, CONTENT_TYPE, ORIGIN},
+    HeaderMap, HeaderName, HeaderValue,
+    header::{CONTENT_SECURITY_POLICY, CONTENT_TYPE, ORIGIN},
 };
 use kuchiki::{Attribute, ExpandedName, NodeRef};
 use tauri_runtime::{
-  UserEvent,
-  webview::{NavigationHandler, UriSchemeProtocolHandler},
-  window::WindowId,
+    UserEvent,
+    webview::{NavigationHandler, UriSchemeProtocolHandler},
+    window::WindowId,
 };
 use tauri_utils::{
-  config::{Csp, CspDirectiveSources},
-  html::{parse as parse_html, serialize_node},
+    config::{Csp, CspDirectiveSources},
+    html::{parse as parse_html, serialize_node},
 };
 use url::Url;
 
 use crate::{
-  cef_impl::client::{
-    DragDropEventTarget, DragDropState, WebDragDropResourceRequestHandler,
-    WebDragDropResourceRequestHandlerArgs,
-  },
-  macros::wrap_with_args,
-  runtime::RuntimeContext,
-  webview::{CefInitScript, INITIAL_LOAD_URL},
+    cef_impl::client::{
+        DragDropEventTarget, DragDropState, WebDragDropResourceRequestHandler,
+        WebDragDropResourceRequestHandlerArgs,
+    },
+    macros::wrap_with_args,
+    runtime::RuntimeContext,
+    webview::{CefInitScript, INITIAL_LOAD_URL},
 };
 
 type HttpResponse = Arc<RefCell<Option<http::Response<Cursor<Vec<u8>>>>>>;
@@ -42,84 +42,84 @@ type HttpResponse = Arc<RefCell<Option<http::Response<Cursor<Vec<u8>>>>>>;
 /// the CEF-side handlers, which are not generic over the user event type, can carry it.
 pub(crate) type MainThreadDispatcher = Arc<dyn Fn(Box<dyn FnOnce() + Send>) + Send + Sync>;
 pub(crate) type SchemeRegistry = Arc<
-  Mutex<
-    std::collections::HashMap<
-      (i32, String),
-      (
-        String,
-        Arc<Box<UriSchemeProtocolHandler>>,
-        Arc<Vec<CefInitScript>>,
-      ),
+    Mutex<
+        std::collections::HashMap<
+            (i32, String),
+            (
+                String,
+                Arc<Box<UriSchemeProtocolHandler>>,
+                Arc<Vec<CefInitScript>>,
+            ),
+        >,
     >,
-  >,
 >;
 
 fn csp_inject_initialization_scripts_hashes(
-  existing_csp: String,
-  initialization_scripts: &[CefInitScript],
-  is_main_frame: bool,
+    existing_csp: String,
+    initialization_scripts: &[CefInitScript],
+    is_main_frame: bool,
 ) -> String {
-  if initialization_scripts.is_empty() {
-    return existing_csp;
-  }
+    if initialization_scripts.is_empty() {
+        return existing_csp;
+    }
 
-  let script_hashes: Vec<String> = initialization_scripts
-    .iter()
-    .filter(|script| script.runs_in_frame(is_main_frame))
-    .map(|s| s.hash.clone())
-    .collect();
+    let script_hashes: Vec<String> = initialization_scripts
+        .iter()
+        .filter(|script| script.runs_in_frame(is_main_frame))
+        .map(|s| s.hash.clone())
+        .collect();
 
-  if script_hashes.is_empty() {
-    return existing_csp;
-  }
+    if script_hashes.is_empty() {
+        return existing_csp;
+    }
 
-  let mut csp_map: std::collections::HashMap<String, CspDirectiveSources> =
-    Csp::Policy(existing_csp.to_string()).into();
+    let mut csp_map: std::collections::HashMap<String, CspDirectiveSources> =
+        Csp::Policy(existing_csp.to_string()).into();
 
-  let script_src = csp_map
-    .entry("script-src".to_string())
-    .or_insert_with(|| CspDirectiveSources::List(vec!["'self'".to_string()]));
+    let script_src = csp_map
+        .entry("script-src".to_string())
+        .or_insert_with(|| CspDirectiveSources::List(vec!["'self'".to_string()]));
 
-  script_src.extend(script_hashes);
+    script_src.extend(script_hashes);
 
-  Csp::DirectiveMap(csp_map).to_string()
+    Csp::DirectiveMap(csp_map).to_string()
 }
 
 fn inject_scripts_into_html_body(
-  body: &[u8],
-  initialization_scripts: &[CefInitScript],
-  is_main_frame: bool,
+    body: &[u8],
+    initialization_scripts: &[CefInitScript],
+    is_main_frame: bool,
 ) -> Option<Vec<u8>> {
-  let Ok(body_str) = std::str::from_utf8(body) else {
-    return None;
-  };
+    let Ok(body_str) = std::str::from_utf8(body) else {
+        return None;
+    };
 
-  let document = parse_html(body_str.to_string());
+    let document = parse_html(body_str.to_string());
 
-  let head = if let Ok(ref head_node) = document.select_first("head") {
-    head_node.as_node().clone()
-  } else {
-    let head_node = NodeRef::new_element(
-      QualName::new(None, ns!(html), LocalName::from("head")),
-      None,
-    );
-    document.prepend(head_node.clone());
-    head_node
-  };
+    let head = if let Ok(ref head_node) = document.select_first("head") {
+        head_node.as_node().clone()
+    } else {
+        let head_node = NodeRef::new_element(
+            QualName::new(None, ns!(html), LocalName::from("head")),
+            None,
+        );
+        document.prepend(head_node.clone());
+        head_node
+    };
 
-  for init_script in initialization_scripts
-    .iter()
-    .rev()
-    .filter(|script| script.runs_in_frame(is_main_frame))
-  {
-    let script_el = NodeRef::new_element(QualName::new(None, ns!(html), "script".into()), None);
-    script_el.append(NodeRef::new_text(init_script.script.as_str()));
-    head.prepend(script_el);
-  }
+    for init_script in initialization_scripts
+        .iter()
+        .rev()
+        .filter(|script| script.runs_in_frame(is_main_frame))
+    {
+        let script_el = NodeRef::new_element(QualName::new(None, ns!(html), "script".into()), None);
+        script_el.append(NodeRef::new_text(init_script.script.as_str()));
+        head.prepend(script_el);
+    }
 
-  keep_encoding_declaration_first(&document, &head);
+    keep_encoding_declaration_first(&document, &head);
 
-  Some(serialize_node(&document))
+    Some(serialize_node(&document))
 }
 
 /// Keeps the document's character encoding declaration ahead of the injected scripts.
@@ -132,37 +132,37 @@ fn inject_scripts_into_html_body(
 /// which additionally breaks the CSP hashes we compute over the UTF-8 source, so the
 /// browser refuses to execute the affected script.
 fn keep_encoding_declaration_first(document: &NodeRef, head: &NodeRef) {
-  let existing_declaration = document.select("meta").ok().and_then(|metas| {
-    metas.into_iter().find(|meta| {
-      let attributes = meta.attributes.borrow();
-      attributes.get("charset").is_some()
-        || attributes
-          .get("http-equiv")
-          .map(|value| value.trim().eq_ignore_ascii_case("content-type"))
-          .unwrap_or(false)
-    })
-  });
+    let existing_declaration = document.select("meta").ok().and_then(|metas| {
+        metas.into_iter().find(|meta| {
+            let attributes = meta.attributes.borrow();
+            attributes.get("charset").is_some()
+                || attributes
+                    .get("http-equiv")
+                    .map(|value| value.trim().eq_ignore_ascii_case("content-type"))
+                    .unwrap_or(false)
+        })
+    });
 
-  match existing_declaration {
-    // the document declares its encoding, move that declaration back into the pre-scan window
-    Some(declaration) => {
-      let node = declaration.as_node().clone();
-      node.detach();
-      head.prepend(node);
+    match existing_declaration {
+        // the document declares its encoding, move that declaration back into the pre-scan window
+        Some(declaration) => {
+            let node = declaration.as_node().clone();
+            node.detach();
+            head.prepend(node);
+        }
+        // no declaration at all: the assets are served as UTF-8 (this handler parses them as
+        // such), so make that explicit instead of leaving it to the fallback encoding
+        None => head.prepend(NodeRef::new_element(
+            QualName::new(None, ns!(html), LocalName::from("meta")),
+            [(
+                ExpandedName::new(ns!(), LocalName::from("charset")),
+                Attribute {
+                    prefix: None,
+                    value: "utf-8".into(),
+                },
+            )],
+        )),
     }
-    // no declaration at all: the assets are served as UTF-8 (this handler parses them as
-    // such), so make that explicit instead of leaving it to the fallback encoding
-    None => head.prepend(NodeRef::new_element(
-      QualName::new(None, ns!(html), LocalName::from("meta")),
-      [(
-        ExpandedName::new(ns!(), LocalName::from("charset")),
-        Attribute {
-          prefix: None,
-          value: "utf-8".into(),
-        },
-      )],
-    )),
-  }
 }
 
 wrap_with_args! {
@@ -600,111 +600,111 @@ wrap_scheme_handler_factory! {
 struct ThreadSafe<T>(T);
 
 impl<T> ThreadSafe<T> {
-  fn into_owned(self) -> T {
-    self.0
-  }
+    fn into_owned(self) -> T {
+        self.0
+    }
 }
 
 unsafe impl<T> Send for ThreadSafe<T> {}
 unsafe impl<T> Sync for ThreadSafe<T> {}
 
 fn read_request_body(request: &mut Request) -> Vec<u8> {
-  let mut body = Vec::new();
+    let mut body = Vec::new();
 
-  if let Some(post_data) = request.post_data() {
-    let mut elements = vec![None; post_data.element_count()];
-    post_data.elements(Some(&mut elements));
-    for element in elements.into_iter().flatten() {
-      match element.get_type().as_ref() {
-        sys::cef_postdataelement_type_t::PDE_TYPE_BYTES => {
-          let size = element.bytes_count();
-          if size > 0 {
-            let mut buf = vec![0u8; size];
-            // Copy bytes into our buffer
-            let copied = element.bytes(size, buf.as_mut_ptr());
-            // Safety: CEF promises it wrote `copied` bytes into buf
-            unsafe {
-              buf.set_len(copied);
+    if let Some(post_data) = request.post_data() {
+        let mut elements = vec![None; post_data.element_count()];
+        post_data.elements(Some(&mut elements));
+        for element in elements.into_iter().flatten() {
+            match element.get_type().as_ref() {
+                sys::cef_postdataelement_type_t::PDE_TYPE_BYTES => {
+                    let size = element.bytes_count();
+                    if size > 0 {
+                        let mut buf = vec![0u8; size];
+                        // Copy bytes into our buffer
+                        let copied = element.bytes(size, buf.as_mut_ptr());
+                        // Safety: CEF promises it wrote `copied` bytes into buf
+                        unsafe {
+                            buf.set_len(copied);
+                        }
+                        body.extend(buf);
+                    }
+                }
+                sys::cef_postdataelement_type_t::PDE_TYPE_FILE => {
+                    // Read file from disk
+                    let file_path = CefString::from(&element.file()).to_string();
+                    if let Ok(mut file) = std::fs::File::open(&file_path) {
+                        use std::io::Read;
+                        let mut buf = Vec::new();
+                        if file.read_to_end(&mut buf).is_ok() {
+                            body.extend(buf);
+                        }
+                    }
+                }
+                _ => {}
             }
-            body.extend(buf);
-          }
         }
-        sys::cef_postdataelement_type_t::PDE_TYPE_FILE => {
-          // Read file from disk
-          let file_path = CefString::from(&element.file()).to_string();
-          if let Ok(mut file) = std::fs::File::open(&file_path) {
-            use std::io::Read;
-            let mut buf = Vec::new();
-            if file.read_to_end(&mut buf).is_ok() {
-              body.extend(buf);
-            }
-          }
-        }
-        _ => {}
-      }
     }
-  }
 
-  body
+    body
 }
 
 fn get_request_headers(request: &mut Request) -> HeaderMap {
-  let mut headers = HeaderMap::new();
+    let mut headers = HeaderMap::new();
 
-  let mut map = CefStringMultimap::new();
+    let mut map = CefStringMultimap::new();
 
-  request.header_map(Some(&mut map));
+    request.header_map(Some(&mut map));
 
-  // Iterate through all entries
-  for (name, value) in map {
-    for v in value {
-      headers.append(
-        HeaderName::from_bytes(name.as_bytes()).unwrap(),
-        HeaderValue::from_str(&v).unwrap(),
-      );
+    // Iterate through all entries
+    for (name, value) in map {
+        for v in value {
+            headers.append(
+                HeaderName::from_bytes(name.as_bytes()).unwrap(),
+                HeaderValue::from_str(&v).unwrap(),
+            );
+        }
     }
-  }
 
-  headers
+    headers
 }
 
 // ==== Renderer termination boundary ====
 
 fn termination_reason(
-  status: TerminationStatus,
+    status: TerminationStatus,
 ) -> tauri_runtime::webview::WebContentProcessTerminationReason {
-  use tauri_runtime::webview::WebContentProcessTerminationReason as Reason;
-  match status {
-    TerminationStatus::ABNORMAL_TERMINATION => Reason::Abnormal,
-    TerminationStatus::PROCESS_WAS_KILLED => Reason::Killed,
-    TerminationStatus::PROCESS_CRASHED => Reason::Crashed,
-    TerminationStatus::PROCESS_OOM => Reason::OutOfMemory,
-    TerminationStatus::LAUNCH_FAILED => Reason::LaunchFailed,
-    TerminationStatus::INTEGRITY_FAILURE => Reason::IntegrityFailure,
-    _ => Reason::Unknown,
-  }
+    use tauri_runtime::webview::WebContentProcessTerminationReason as Reason;
+    match status {
+        TerminationStatus::ABNORMAL_TERMINATION => Reason::Abnormal,
+        TerminationStatus::PROCESS_WAS_KILLED => Reason::Killed,
+        TerminationStatus::PROCESS_CRASHED => Reason::Crashed,
+        TerminationStatus::PROCESS_OOM => Reason::OutOfMemory,
+        TerminationStatus::LAUNCH_FAILED => Reason::LaunchFailed,
+        TerminationStatus::INTEGRITY_FAILURE => Reason::IntegrityFailure,
+        _ => Reason::Unknown,
+    }
 }
 
 #[cfg(test)]
 mod termination_tests {
-  use super::*;
-  use tauri_runtime::webview::WebContentProcessTerminationReason as Reason;
+    use super::*;
+    use tauri_runtime::webview::WebContentProcessTerminationReason as Reason;
 
-  #[test]
-  fn preserves_every_cef_termination_reason() {
-    for (status, expected) in [
-      (TerminationStatus::ABNORMAL_TERMINATION, Reason::Abnormal),
-      (TerminationStatus::PROCESS_WAS_KILLED, Reason::Killed),
-      (TerminationStatus::PROCESS_CRASHED, Reason::Crashed),
-      (TerminationStatus::PROCESS_OOM, Reason::OutOfMemory),
-      (TerminationStatus::LAUNCH_FAILED, Reason::LaunchFailed),
-      (
-        TerminationStatus::INTEGRITY_FAILURE,
-        Reason::IntegrityFailure,
-      ),
-      (TerminationStatus::NUM_VALUES, Reason::Unknown),
-    ] {
-      assert_eq!(termination_reason(status), expected);
+    #[test]
+    fn preserves_every_cef_termination_reason() {
+        for (status, expected) in [
+            (TerminationStatus::ABNORMAL_TERMINATION, Reason::Abnormal),
+            (TerminationStatus::PROCESS_WAS_KILLED, Reason::Killed),
+            (TerminationStatus::PROCESS_CRASHED, Reason::Crashed),
+            (TerminationStatus::PROCESS_OOM, Reason::OutOfMemory),
+            (TerminationStatus::LAUNCH_FAILED, Reason::LaunchFailed),
+            (
+                TerminationStatus::INTEGRITY_FAILURE,
+                Reason::IntegrityFailure,
+            ),
+            (TerminationStatus::NUM_VALUES, Reason::Unknown),
+        ] {
+            assert_eq!(termination_reason(status), expected);
+        }
     }
-  }
 }

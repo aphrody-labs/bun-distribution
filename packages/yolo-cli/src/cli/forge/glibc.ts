@@ -76,10 +76,8 @@ function compare(a: number[], b: number[]): number {
 
 function layout(bytes: Uint8Array): Layout | null {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  if (bytes.length < 64 || view.getUint32(0, false) !== 0x7f454c46)
-    throw new Error("not an ELF file");
-  if (bytes[4] !== 2 || bytes[5] !== 1)
-    throw new Error("only little-endian ELF64 is supported");
+  if (bytes.length < 64 || view.getUint32(0, false) !== 0x7f454c46) throw new Error("not an ELF file");
+  if (bytes[4] !== 2 || bytes[5] !== 1) throw new Error("only little-endian ELF64 is supported");
   const shoff = Number(view.getBigUint64(0x28, true));
   const shentsize = view.getUint16(0x3a, true);
   const shnum = view.getUint16(0x3c, true);
@@ -94,9 +92,9 @@ function layout(bytes: Uint8Array): Layout | null {
       entsize: Number(view.getBigUint64(at + 0x38, true)),
     };
   });
-  const dynsym = sections.find((s) => s.type === SHT_DYNSYM);
-  const verneed = sections.find((s) => s.type === SHT_GNU_VERNEED);
-  const versym = sections.find((s) => s.type === SHT_GNU_VERSYM);
+  const dynsym = sections.find(s => s.type === SHT_DYNSYM);
+  const verneed = sections.find(s => s.type === SHT_GNU_VERNEED);
+  const versym = sections.find(s => s.type === SHT_GNU_VERSYM);
   if (!dynsym || !verneed || !versym) return null;
   const dynstr = sections[dynsym.link]!.offset;
   const strings = sections[verneed.link]!.offset;
@@ -133,10 +131,7 @@ function layout(bytes: Uint8Array): Layout | null {
 }
 
 /** Undefined dynamic symbols with the version index they are bound to. */
-function imports(
-  bytes: Uint8Array,
-  l: Layout,
-): { name: string; index: number }[] {
+function imports(bytes: Uint8Array, l: Layout): { name: string; index: number }[] {
   const out: { name: string; index: number }[] = [];
   const count = Math.floor(l.dynsym.size / (l.dynsym.entsize || 24));
   for (let i = 1; i < count; i++) {
@@ -152,14 +147,10 @@ function imports(
   return out;
 }
 
-function audit(
-  bytes: Uint8Array,
-  l: Layout | null,
-  ceiling: string,
-): GlibcAudit {
+function audit(bytes: Uint8Array, l: Layout | null, ceiling: string): GlibcAudit {
   if (!l) return { maxGlibc: null, above: [] };
   const limit = ceiling.split(".").map(Number);
-  const byIndex = new Map(l.auxes.map((a) => [a.index, a.version]));
+  const byIndex = new Map(l.auxes.map(a => [a.index, a.version]));
   let best: number[] | null = null;
   let maxGlibc: string | null = null;
   const above: string[] = [];
@@ -184,17 +175,12 @@ export function auditGlibc(bytes: Uint8Array, ceiling: string): GlibcAudit {
  * Rewrites, in place, the version requirement of the re-versioned libm symbols above `ceiling`. Returns what was
  * patched and the audit afterwards; throws when another import stays above the ceiling.
  */
-export function lowerGlibcCeiling(
-  bytes: Uint8Array,
-  ceiling: string,
-): GlibcPatch {
+export function lowerGlibcCeiling(bytes: Uint8Array, ceiling: string): GlibcPatch {
   const l = layout(bytes);
   const before = audit(bytes, l, ceiling);
   if (!l || before.above.length === 0) return { ...before, patched: [] };
   const limit = ceiling.split(".").map(Number);
-  const strange = before.above.filter(
-    (s) => !REVERSIONED_LIBM.has(s.split("@")[0]!),
-  );
+  const strange = before.above.filter(s => !REVERSIONED_LIBM.has(s.split("@")[0]!));
   if (strange.length > 0)
     throw new Error(
       `imports above glibc ${ceiling} that are not known re-versioned libm symbols: ${strange.join(", ")}`,
@@ -202,21 +188,18 @@ export function lowerGlibcCeiling(
 
   // Target: the lowest GLIBC version libm.so.6 is already required at (GLIBC_2.2.5 on x86_64, 2.17 on arm64).
   const libm = l.auxes
-    .filter((a) => a.file.startsWith("libm.so") && parseVersion(a.version))
-    .toSorted((a, b) =>
-      compare(parseVersion(a.version)!, parseVersion(b.version)!),
-    );
+    .filter(a => a.file.startsWith("libm.so") && parseVersion(a.version))
+    .toSorted((a, b) => compare(parseVersion(a.version)!, parseVersion(b.version)!));
   const target = libm[0];
   if (!target || compare(parseVersion(target.version)!, limit) > 0)
     throw new Error("no libm requirement at or below the ceiling to rebind to");
 
-  const byIndex = new Map(l.auxes.map((a) => [a.index, a]));
+  const byIndex = new Map(l.auxes.map(a => [a.index, a]));
   const moved = new Set<number>();
   const patched: string[] = [];
   for (const { name, index } of imports(bytes, l)) {
     const aux = byIndex.get(index);
-    if (!aux || !aux.file.startsWith("libm.so") || !REVERSIONED_LIBM.has(name))
-      continue;
+    if (!aux || !aux.file.startsWith("libm.so") || !REVERSIONED_LIBM.has(name)) continue;
     const parsed = parseVersion(aux.version);
     if (!parsed || compare(parsed, limit) <= 0) continue;
     patched.push(`${name}: ${aux.version} -> ${target.version}`);
@@ -229,7 +212,6 @@ export function lowerGlibcCeiling(
     l.view.setUint32(aux.at + 8, target.nameOffset, true);
   }
   const after = auditGlibc(bytes, ceiling);
-  if (after.above.length > 0)
-    throw new Error(`still above glibc ${ceiling}: ${after.above.join(", ")}`);
+  if (after.above.length > 0) throw new Error(`still above glibc ${ceiling}: ${after.above.join(", ")}`);
   return { ...after, patched };
 }

@@ -23,19 +23,14 @@ const ENTITIES: Record<string, string> = {
 };
 
 export function decodeEntities(text: string): string {
-  return text.replace(
-    /&(#x[0-9a-f]+|#\d+|[a-z]+);/gi,
-    (whole, name: string) => {
-      if (name[0] === "#") {
-        const code =
-          name[1] === "x" || name[1] === "X"
-            ? Number.parseInt(name.slice(2), 16)
-            : Number.parseInt(name.slice(1), 10);
-        return Number.isFinite(code) ? String.fromCodePoint(code) : whole;
-      }
-      return ENTITIES[name.toLowerCase()] ?? whole;
-    },
-  );
+  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, name: string) => {
+    if (name[0] === "#") {
+      const code =
+        name[1] === "x" || name[1] === "X" ? Number.parseInt(name.slice(2), 16) : Number.parseInt(name.slice(1), 10);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : whole;
+    }
+    return ENTITIES[name.toLowerCase()] ?? whole;
+  });
 }
 
 const BLOCK: Record<string, [string, string]> = {
@@ -139,7 +134,7 @@ export async function htmlToMarkdown(
     .on(
       root
         .split(",")
-        .map((selector) => `${selector.trim()} *`)
+        .map(selector => `${selector.trim()} *`)
         .join(", "),
       {
         element(element) {
@@ -173,11 +168,7 @@ export async function htmlToMarkdown(
           }
           if (tag === "a" && pre === 0 && code === 0) {
             const href = element.getAttribute("href");
-            if (
-              href &&
-              !href.startsWith("#") &&
-              !href.startsWith("javascript:")
-            ) {
+            if (href && !href.startsWith("#") && !href.startsWith("javascript:")) {
               let absolute = href;
               try {
                 absolute = new URL(decodeEntities(href), baseUrl).href;

@@ -51,10 +51,7 @@
         }
       ],
       "status": "parsed",
-      "spec": [
-        "https://www.nesdev.org/wiki/INES",
-        "https://www.nesdev.org/wiki/NES_2.0"
-      ]
+      "spec": ["https://www.nesdev.org/wiki/INES", "https://www.nesdev.org/wiki/NES_2.0"]
     },
     {
       "id": "unif",
@@ -99,10 +96,7 @@
         }
       ],
       "status": "identified",
-      "spec": [
-        "https://www.nesdev.org/wiki/FDS_disk_format",
-        "https://www.nesdev.org/wiki/FDS_file_format"
-      ]
+      "spec": ["https://www.nesdev.org/wiki/FDS_disk_format", "https://www.nesdev.org/wiki/FDS_file_format"]
     },
     {
       "id": "nsf",
@@ -494,10 +488,7 @@
         }
       ],
       "status": "identified",
-      "spec": [
-        "https://www.3dbrew.org/wiki/NCCH",
-        "https://www.3dbrew.org/wiki/NCCH/Extended_Header"
-      ]
+      "spec": ["https://www.3dbrew.org/wiki/NCCH", "https://www.3dbrew.org/wiki/NCCH/Extended_Header"]
     },
     {
       "id": "cia",
@@ -536,10 +527,7 @@
       "header": "ExeFS holds .code (LZ-reverse compressed when ExHeader flag set), icon, banner, logo",
       "parsers": [],
       "status": "external-only",
-      "spec": [
-        "https://www.3dbrew.org/wiki/ExeFS",
-        "https://www.3dbrew.org/wiki/RomFS"
-      ]
+      "spec": ["https://www.3dbrew.org/wiki/ExeFS", "https://www.3dbrew.org/wiki/RomFS"]
     },
     {
       "id": "3dsx",
@@ -578,15 +566,7 @@
     {
       "id": "ctr-assets",
       "consoles": ["nintendo-3ds"],
-      "extensions": [
-        ".bcstm",
-        ".bcwav",
-        ".bclim",
-        ".bch",
-        ".bcfnt",
-        ".cro",
-        ".crs"
-      ],
+      "extensions": [".bcstm", ".bcwav", ".bclim", ".bch", ".bcfnt", ".cro", ".crs"],
       "kind": "archive",
       "magic": [
         {
@@ -624,10 +604,7 @@
       "header": "NW4C/CTR SDK containers",
       "parsers": [],
       "status": "none",
-      "spec": [
-        "https://www.3dbrew.org/wiki/BCSTM",
-        "https://www.3dbrew.org/wiki/CRO0"
-      ]
+      "spec": ["https://www.3dbrew.org/wiki/BCSTM", "https://www.3dbrew.org/wiki/CRO0"]
     },
     {
       "id": "n64-rom",
@@ -717,10 +694,7 @@
         }
       ],
       "status": "parsed",
-      "spec": [
-        "https://wiibrew.org/wiki/Wii_disc",
-        "https://www.gc-forever.com/yagcd/chap13.html"
-      ]
+      "spec": ["https://wiibrew.org/wiki/Wii_disc", "https://www.gc-forever.com/yagcd/chap13.html"]
     },
     {
       "id": "wii-disc",
@@ -777,9 +751,7 @@
         }
       ],
       "status": "parsed",
-      "spec": [
-        "https://github.com/dolphin-emu/dolphin/blob/master/docs/WiaAndRvz.md"
-      ]
+      "spec": ["https://github.com/dolphin-emu/dolphin/blob/master/docs/WiaAndRvz.md"]
     },
     {
       "id": "wbfs",
@@ -801,10 +773,7 @@
         }
       ],
       "status": "identified",
-      "spec": [
-        "https://github.com/Wiimm/wiimms-iso-tools",
-        "https://wiki.gbatemp.net/wiki/WBFS"
-      ]
+      "spec": ["https://github.com/Wiimm/wiimms-iso-tools", "https://wiki.gbatemp.net/wiki/WBFS"]
     },
     {
       "id": "ciso-gc",
@@ -822,9 +791,7 @@
       "header": "Sparse block image",
       "parsers": [],
       "status": "none",
-      "spec": [
-        "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/DiscIO/CISOBlob.h"
-      ]
+      "spec": ["https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/DiscIO/CISOBlob.h"]
     },
     {
       "id": "gcz",
@@ -841,9 +808,7 @@
       "header": "Compressed size, data size, block size, block count, block pointer and hash tables",
       "parsers": [],
       "status": "none",
-      "spec": [
-        "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/DiscIO/CompressedBlob.h"
-      ]
+      "spec": ["https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/DiscIO/CompressedBlob.h"]
     },
     {
       "id": "tgc",
@@ -860,9 +825,7 @@
       "header": "Embedded GC image with FST/DOL offsets",
       "parsers": [],
       "status": "none",
-      "spec": [
-        "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/DiscIO/TGCBlob.h"
-      ]
+      "spec": ["https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/DiscIO/TGCBlob.h"]
     },
     {
       "id": "wad",
@@ -922,13 +885,7 @@
     },
     {
       "id": "elf",
-      "consoles": [
-        "nintendo-wii-gamecube",
-        "sony-playstation-2",
-        "sony-psp",
-        "nintendo-3ds",
-        "microsoft-xbox"
-      ],
+      "consoles": ["nintendo-wii-gamecube", "sony-playstation-2", "sony-psp", "nintendo-3ds", "microsoft-xbox"],
       "extensions": [".elf", ".irx", ".prx", ".rpx", ".rpl", ".axf"],
       "kind": "executable",
       "magic": [
@@ -967,18 +924,11 @@
         }
       ],
       "status": "parsed",
-      "spec": [
-        "https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.eheader.html",
-        "https://wiiubrew.org/wiki/RPX"
-      ]
+      "spec": ["https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.eheader.html", "https://wiiubrew.org/wiki/RPX"]
     },
     {
       "id": "u8-yaz0",
-      "consoles": [
-        "nintendo-wii-gamecube",
-        "nintendo-wii-u",
-        "nintendo-switch"
-      ],
+      "consoles": ["nintendo-wii-gamecube", "nintendo-wii-u", "nintendo-switch"],
       "extensions": [".arc", ".szs", ".bnr", ".app", ".carc"],
       "kind": "archive",
       "magic": [
@@ -1014,10 +964,7 @@
         }
       ],
       "status": "parsed",
-      "spec": [
-        "https://wiibrew.org/wiki/U8_archive",
-        "http://wiki.tockdom.com/wiki/YAZ0_(File_Format)"
-      ]
+      "spec": ["https://wiibrew.org/wiki/U8_archive", "http://wiki.tockdom.com/wiki/YAZ0_(File_Format)"]
     },
     {
       "id": "gc-wii-textures",
@@ -1050,10 +997,7 @@
         }
       ],
       "status": "parsed",
-      "spec": [
-        "https://wiki.tockdom.com/wiki/TPL_(File_Format)",
-        "https://wiki.tockdom.com/wiki/Image_Formats"
-      ]
+      "spec": ["https://wiki.tockdom.com/wiki/TPL_(File_Format)", "https://wiki.tockdom.com/wiki/Image_Formats"]
     },
     {
       "id": "gc-saves",
@@ -1069,10 +1013,7 @@
       "header": "GC memory card: 5 system blocks (header, directory x2, BAT x2) of 0x2000",
       "parsers": [],
       "status": "none",
-      "spec": [
-        "https://www.gc-forever.com/yagcd/chap12.html",
-        "https://wiibrew.org/wiki/Savegame_Files"
-      ]
+      "spec": ["https://www.gc-forever.com/yagcd/chap12.html", "https://wiibrew.org/wiki/Savegame_Files"]
     },
     {
       "id": "wud-wux",
@@ -1121,10 +1062,7 @@
       "header": "ZArchive: zstd-compressed blocks, name table, footer with section offsets",
       "parsers": [],
       "status": "none",
-      "spec": [
-        "https://github.com/Exzap/ZArchive",
-        "https://github.com/wiiu-env/wuhbtool"
-      ]
+      "spec": ["https://github.com/Exzap/ZArchive", "https://github.com/wiiu-env/wuhbtool"]
     },
     {
       "id": "wiiu-nus",
@@ -1419,17 +1357,7 @@
     {
       "id": "level5-cri",
       "consoles": ["nintendo-3ds", "nintendo-switch", "nintendo-ds"],
-      "extensions": [
-        ".cpk",
-        ".xpck",
-        ".g4tx",
-        ".g4md",
-        ".usm",
-        ".acb",
-        ".awb",
-        ".hca",
-        ".cfg.bin"
-      ],
+      "extensions": [".cpk", ".xpck", ".g4tx", ".g4md", ".usm", ".acb", ".awb", ".hca", ".cfg.bin"],
       "kind": "archive",
       "magic": [
         {
@@ -1495,16 +1423,7 @@
         "nec-pc-engine",
         "sega-dreamcast"
       ],
-      "extensions": [
-        ".bin",
-        ".cue",
-        ".img",
-        ".ccd",
-        ".sub",
-        ".mds",
-        ".mdf",
-        ".m3u"
-      ],
+      "extensions": [".bin", ".cue", ".img", ".ccd", ".sub", ".mds", ".mdf", ".m3u"],
       "kind": "disc",
       "magic": [
         {
@@ -1640,23 +1559,12 @@
         }
       ],
       "status": "parsed",
-      "spec": [
-        "https://psx-spx.consoledev.net/cdromdrive/#cdrom-file-playstation-exe-and-system-cnf"
-      ]
+      "spec": ["https://psx-spx.consoledev.net/cdromdrive/#cdrom-file-playstation-exe-and-system-cnf"]
     },
     {
       "id": "psx-saves-assets",
       "consoles": ["sony-playstation"],
-      "extensions": [
-        ".mcr",
-        ".mcd",
-        ".srm",
-        ".gme",
-        ".tim",
-        ".vag",
-        ".str",
-        ".xa"
-      ],
+      "extensions": [".mcr", ".mcd", ".srm", ".gme", ".tim", ".vag", ".str", ".xa"],
       "kind": "save",
       "magic": [
         {
@@ -1695,16 +1603,7 @@
         "nintendo-game-boy-advance",
         "nintendo-snes"
       ],
-      "extensions": [
-        ".psf",
-        ".minipsf",
-        ".psf2",
-        ".ssf",
-        ".dsf",
-        ".usf",
-        ".gsf",
-        ".snsf"
-      ],
+      "extensions": [".psf", ".minipsf", ".psf2", ".ssf", ".dsf", ".usf", ".gsf", ".snsf"],
       "kind": "audio",
       "magic": [
         {
@@ -1721,9 +1620,7 @@
       "header": "Reserved size 0x4, compressed program size 0x8, CRC32 0xC, zlib program, [TAG] block",
       "parsers": [],
       "status": "none",
-      "spec": [
-        "https://gist.github.com/SaxxonPike/a0b47f8579aad703b842001b24d40c00"
-      ]
+      "spec": ["https://gist.github.com/SaxxonPike/a0b47f8579aad703b842001b24d40c00"]
     },
     {
       "id": "ps2-disc-exec",
@@ -1777,9 +1674,7 @@
       "header": "Block index with high-bit 'uncompressed' flag; .gz = PCSX2 indexed gzip",
       "parsers": [],
       "status": "none",
-      "spec": [
-        "https://github.com/unknownbrackets/maxcso/blob/master/README_CSO.md"
-      ]
+      "spec": ["https://github.com/unknownbrackets/maxcso/blob/master/README_CSO.md"]
     },
     {
       "id": "ps2-memcard",
@@ -1796,9 +1691,7 @@
       "header": "8 MiB card, 512+16-byte pages, FAT-like cluster table",
       "parsers": [],
       "status": "none",
-      "spec": [
-        "https://babyno.top/en/posts/2023/09/parsing-ps2-memcard-file-system/"
-      ]
+      "spec": ["https://babyno.top/en/posts/2023/09/parsing-ps2-memcard-file-system/"]
     },
     {
       "id": "ps2-bios-romdir",
@@ -1908,12 +1801,7 @@
     },
     {
       "id": "sfo",
-      "consoles": [
-        "sony-psp",
-        "sony-playstation-3",
-        "sony-ps-vita",
-        "sony-playstation-4"
-      ],
+      "consoles": ["sony-psp", "sony-playstation-3", "sony-ps-vita", "sony-playstation-4"],
       "extensions": [".sfo"],
       "kind": "metadata",
       "magic": [
@@ -1960,10 +1848,7 @@
       "header": "SCE header: version, key revision, header type, metadata offset; ELF + program/section headers follow",
       "parsers": [],
       "status": "none",
-      "spec": [
-        "https://www.psdevwiki.com/ps3/SELF_-_SPRX",
-        "https://www.psdevwiki.com/vita/SELF_File_Format"
-      ]
+      "spec": ["https://www.psdevwiki.com/ps3/SELF_-_SPRX", "https://www.psdevwiki.com/vita/SELF_File_Format"]
     },
     {
       "id": "ps3-disc-npd",
@@ -1993,10 +1878,7 @@
       "header": "Blu-ray ISO 9660/UDF with PS3_GAME/PARAM.SFO and USRDIR/EBOOT.BIN",
       "parsers": [],
       "status": "none",
-      "spec": [
-        "https://www.psdevwiki.com/ps3/PS3_DISC.SFB",
-        "https://www.psdevwiki.com/ps3/EDAT_files"
-      ]
+      "spec": ["https://www.psdevwiki.com/ps3/PS3_DISC.SFB", "https://www.psdevwiki.com/ps3/EDAT_files"]
     },
     {
       "id": "vita-vpk",
@@ -2029,10 +1911,7 @@
         }
       ],
       "status": "identified",
-      "spec": [
-        "https://www.psdevwiki.com/vita/VPK",
-        "https://www.psdevwiki.com/vita/GXT"
-      ]
+      "spec": ["https://www.psdevwiki.com/vita/VPK", "https://www.psdevwiki.com/vita/GXT"]
     },
     {
       "id": "ps4-pkg-self",
@@ -2061,10 +1940,7 @@
       "header": "PKG: entry table, PFS image (pfs_image.dat), content ID 0x40",
       "parsers": [],
       "status": "none",
-      "spec": [
-        "https://www.psdevwiki.com/ps4/PKG_files",
-        "https://www.psdevwiki.com/ps4/SELF_File_Format"
-      ]
+      "spec": ["https://www.psdevwiki.com/ps4/PKG_files", "https://www.psdevwiki.com/ps4/SELF_File_Format"]
     },
     {
       "id": "xiso",
@@ -2173,10 +2049,7 @@
         }
       ],
       "status": "parsed",
-      "spec": [
-        "https://plutiedev.com/rom-header",
-        "https://segaretro.org/ROM_header"
-      ]
+      "spec": ["https://plutiedev.com/rom-header", "https://segaretro.org/ROM_header"]
     },
     {
       "id": "sms-gg",

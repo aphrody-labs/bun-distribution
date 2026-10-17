@@ -6,9 +6,7 @@ export const NARROW_QUERY = "(max-width: 839px)";
 
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(() =>
-    typeof window !== "undefined" && typeof window.matchMedia === "function"
-      ? window.matchMedia(query).matches
-      : false,
+    typeof window !== "undefined" && typeof window.matchMedia === "function" ? window.matchMedia(query).matches : false,
   );
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
@@ -21,15 +19,7 @@ export function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-export function Rail({
-  expanded,
-  label,
-  children,
-}: {
-  expanded: boolean;
-  label: string;
-  children: ReactNode;
-}) {
+export function Rail({ expanded, label, children }: { expanded: boolean; label: string; children: ReactNode }) {
   return (
     <aside
       id="app-rail"
@@ -46,10 +36,8 @@ export function Rail({
 /** Native tab stops only; invisible, inert and disabled controls cannot receive modal focus. */
 function focusTargets(scope: HTMLElement): HTMLElement[] {
   return [
-    ...scope.querySelectorAll<HTMLElement>(
-      'a[href], button, input:not([type="hidden"]), select, textarea, [tabindex]',
-    ),
-  ].filter((element) => {
+    ...scope.querySelectorAll<HTMLElement>('a[href], button, input:not([type="hidden"]), select, textarea, [tabindex]'),
+  ].filter(element => {
     if (
       element.tabIndex < 0 ||
       element.matches(":disabled") ||
@@ -60,12 +48,7 @@ function focusTargets(scope: HTMLElement): HTMLElement[] {
     let ancestor: HTMLElement | null = element;
     while (ancestor) {
       const style = getComputedStyle(ancestor);
-      if (
-        style.display === "none" ||
-        style.visibility === "hidden" ||
-        style.visibility === "collapse"
-      )
-        return false;
+      if (style.display === "none" || style.visibility === "hidden" || style.visibility === "collapse") return false;
       if (ancestor === scope) break;
       ancestor = ancestor.parentElement;
     }
@@ -93,33 +76,22 @@ export function RailDrawer({
     const pop = popoverRef.current;
     const panel = panelRef.current;
     if (!open || !pop || !panel) return;
-    const previous =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     // Native top-layer support is optional: the fixed modal and hidden attribute also work
     // in a WebView without the popover API.
     if (typeof pop.showPopover === "function") pop.showPopover();
     scrollerRef.current?.scrollTo({ left: 0, behavior: "instant" });
     (focusTargets(panel)[0] ?? panel).focus();
     return () => {
-      if (typeof pop.hidePopover === "function" && pop.matches(":popover-open"))
-        pop.hidePopover();
-      if (previous?.isConnected && !previous.closest("[inert], [hidden]"))
-        previous.focus();
+      if (typeof pop.hidePopover === "function" && pop.matches(":popover-open")) pop.hidePopover();
+      if (previous?.isConnected && !previous.closest("[inert], [hidden]")) previous.focus();
     };
   }, [open]);
 
   useEffect(() => {
     const scroller = scrollerRef.current;
     const panel = panelRef.current;
-    if (
-      !open ||
-      !scroller ||
-      !panel ||
-      typeof IntersectionObserver === "undefined"
-    )
-      return;
+    if (!open || !scroller || !panel || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry && !entry.isIntersecting) onOpenChange(false);
@@ -142,7 +114,7 @@ export function RailDrawer({
       aria-modal="true"
       aria-label={label}
       className="app-drawer"
-      onKeyDown={(event) => {
+      onKeyDown={event => {
         if (event.key === "Escape") {
           event.preventDefault();
           event.stopPropagation();
@@ -152,16 +124,10 @@ export function RailDrawer({
           const first = targets[0] ?? panelRef.current;
           const last = targets.at(-1) ?? first;
           const active = document.activeElement;
-          if (
-            event.shiftKey &&
-            (active === first || !targets.includes(active as HTMLElement))
-          ) {
+          if (event.shiftKey && (active === first || !targets.includes(active as HTMLElement))) {
             event.preventDefault();
             last.focus();
-          } else if (
-            !event.shiftKey &&
-            (active === last || !targets.includes(active as HTMLElement))
-          ) {
+          } else if (!event.shiftKey && (active === last || !targets.includes(active as HTMLElement))) {
             event.preventDefault();
             first.focus();
           }

@@ -40,8 +40,7 @@ export const VFX_SHOWCASE: VFXShowcaseEntry[] = [
     id: "showcase-relight",
     title: "Relight",
     description: "Match your subject's lighting to any reference.",
-    prompt:
-      "Cinematic golden-hour rim light, soft warm fill, shallow depth of field.",
+    prompt: "Cinematic golden-hour rim light, soft warm fill, shallow depth of field.",
     resolution: "720p",
     source: {
       url: "/resources/vfx/showcase/relight-source.mp4",
@@ -58,8 +57,7 @@ export const VFX_SHOWCASE: VFXShowcaseEntry[] = [
     id: "showcase-time-shift",
     title: "Time Shift",
     description: "Move the same shot from day to night, or season to season.",
-    prompt:
-      "Same composition, shifted to twilight blue hour with city lights coming on in the background.",
+    prompt: "Same composition, shifted to twilight blue hour with city lights coming on in the background.",
     resolution: "720p",
     source: {
       url: "/resources/vfx/showcase/time-shift-source.mp4",
@@ -76,8 +74,7 @@ export const VFX_SHOWCASE: VFXShowcaseEntry[] = [
     id: "showcase-object-swap",
     title: "Object Swap",
     description: "Swap props and wardrobe while preserving motion.",
-    prompt:
-      "Replace the coffee cup with a glass of red wine, keep the hand pose and motion identical.",
+    prompt: "Replace the coffee cup with a glass of red wine, keep the hand pose and motion identical.",
     resolution: "720p",
     source: {
       url: "/resources/vfx/showcase/object-swap-source.mp4",

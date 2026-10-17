@@ -52,8 +52,8 @@ export function ChannelSelect({
 
   const grouped = useMemo(() => {
     const all = data?.channels ?? [];
-    const cats = all.filter((c) => c.type === 4);
-    const filtered = all.filter((c) => types.includes(c.type));
+    const cats = all.filter(c => c.type === 4);
+    const filtered = all.filter(c => types.includes(c.type));
     const byCat = new Map<string | null, Channel[]>();
     for (const c of filtered) {
       const key = c.parentId ?? null;
@@ -63,9 +63,7 @@ export function ChannelSelect({
     for (const arr of byCat.values()) {
       arr.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
     }
-    const sortedCats = [...cats].toSorted(
-      (a, b) => (a.position ?? 0) - (b.position ?? 0),
-    );
+    const sortedCats = [...cats].toSorted((a, b) => (a.position ?? 0) - (b.position ?? 0));
     return { byCat, sortedCats };
   }, [data, types]);
 
@@ -73,23 +71,23 @@ export function ChannelSelect({
     <select
       className={`input ${className ?? ""}`}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={e => onChange(e.target.value)}
       required={required}
       disabled={disabled || isLoading}
     >
       <option value="">{isLoading ? "Chargement…" : placeholder}</option>
-      {grouped.byCat.get(null)?.map((c) => (
+      {grouped.byCat.get(null)?.map(c => (
         <option key={c.id} value={c.id}>
           {TYPE_PREFIX[c.type] ?? ""}
           {c.name}
         </option>
       ))}
-      {grouped.sortedCats.map((cat) => {
+      {grouped.sortedCats.map(cat => {
         const children = grouped.byCat.get(cat.id);
         if (!children?.length) return null;
         return (
           <optgroup key={cat.id} label={`▾ ${cat.name}`}>
-            {children.map((c) => (
+            {children.map(c => (
               <option key={c.id} value={c.id}>
                 {TYPE_PREFIX[c.type] ?? ""}
                 {c.name}

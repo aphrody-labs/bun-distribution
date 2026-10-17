@@ -14,10 +14,7 @@ import {
   type Turn,
 } from "./codex-chat";
 
-const buildReply = (
-  appr: ApprovalItem,
-  decision: "accept" | "acceptForSession" | "decline" | "cancel",
-) => ({
+const buildReply = (appr: ApprovalItem, decision: "accept" | "acceptForSession" | "decline" | "cancel") => ({
   id: appr.id,
   result: { decision },
   backendGeneration: appr.backendGeneration,
@@ -148,10 +145,8 @@ describe("Codex Chat - Item & Turn Reduction", () => {
     const delta = " in progress";
     const targetItemId = "item-2";
 
-    const updated = items.map((item) =>
-      item.itemId === targetItemId
-        ? Object.assign(item, { content: item.content + delta })
-        : item,
+    const updated = items.map(item =>
+      item.itemId === targetItemId ? Object.assign(item, { content: item.content + delta }) : item,
     );
 
     expect(updated[0].content).toBe("Hello");
@@ -161,10 +156,7 @@ describe("Codex Chat - Item & Turn Reduction", () => {
 
 describe("Codex Chat - Thread Actions & Wire Payloads", () => {
   it("builds exact payload for thread/name/update", () => {
-    const payload = buildThreadRenamePayload(
-      "thread-abc-123",
-      "Nouveau titre de session",
-    );
+    const payload = buildThreadRenamePayload("thread-abc-123", "Nouveau titre de session");
     expect(payload).toEqual({
       threadId: "thread-abc-123",
       name: "Nouveau titre de session",
@@ -194,29 +186,12 @@ describe("Codex Chat - Thread Actions & Wire Payloads", () => {
   });
 
   it("does not schedule another compaction when its terminal turn arrives", () => {
-    expect(
-      shouldAutoCompactThread(
-        { status: "completed", items: [{ type: "agentMessage" }] },
-        25,
-      ),
-    ).toBe(true);
-    expect(
-      shouldAutoCompactThread(
-        { status: "completed", items: [{ type: "contextCompaction" }] },
-        25,
-      ),
-    ).toBe(false);
-    expect(
-      shouldAutoCompactThread(
-        { status: "failed", items: [{ type: "agentMessage" }] },
-        25,
-      ),
-    ).toBe(false);
+    expect(shouldAutoCompactThread({ status: "completed", items: [{ type: "agentMessage" }] }, 25)).toBe(true);
+    expect(shouldAutoCompactThread({ status: "completed", items: [{ type: "contextCompaction" }] }, 25)).toBe(false);
+    expect(shouldAutoCompactThread({ status: "failed", items: [{ type: "agentMessage" }] }, 25)).toBe(false);
     expect(shouldAutoCompactThread({ status: "interrupted" }, 25)).toBe(false);
     expect(shouldAutoCompactThread({ status: "completed" }, 24)).toBe(false);
-    expect(shouldAutoCompactThread({ status: "completed" }, 26, 25)).toBe(
-      false,
-    );
+    expect(shouldAutoCompactThread({ status: "completed" }, 26, 25)).toBe(false);
     expect(shouldAutoCompactThread({ status: "completed" }, 50, 25)).toBe(true);
   });
 
@@ -236,7 +211,7 @@ describe("Codex Chat - Thread Actions & Wire Payloads", () => {
       },
     ];
 
-    const updated = threads.map((t) =>
+    const updated = threads.map(t =>
       t.id === "t-1"
         ? Object.assign(t, {
             name: "Renamed 1",
@@ -327,9 +302,7 @@ describe("Codex Chat - ThreadDrawer Component", () => {
       }),
     );
 
-    expect(html).toContain(
-      "Aucune session : envoyez un message pour en créer une",
-    );
+    expect(html).toContain("Aucune session : envoyez un message pour en créer une");
   });
 });
 

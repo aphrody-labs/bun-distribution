@@ -1,20 +1,7 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { twMerge } from "tailwind-merge";
-import {
-  ChevronLeftIcon,
-  EyeIcon,
-  ImageIcon,
-  RefreshCwIcon,
-  Trash2Icon,
-  UserIcon,
-} from "lucide-react";
+import { ChevronLeftIcon, EyeIcon, ImageIcon, RefreshCwIcon, Trash2Icon, UserIcon } from "lucide-react";
 import type { MentionItem } from "./MentionTextarea";
 
 const VIEWPORT_MARGIN = 8;
@@ -29,13 +16,12 @@ const MENU_ROW =
   "flex w-full items-center gap-2 rounded-[3px] px-2 py-2 text-sm text-base-fg transition-colors hover:bg-ui-controls/60 cursor-pointer";
 
 // Header subtitle and empty-replace-list copy per chip type.
-const TYPE_COPY: Record<MentionItem["type"], { title: string; empty: string }> =
-  {
-    character: { title: "Character", empty: "No other characters" },
-    image: { title: "Image reference", empty: "No other images" },
-    video: { title: "Video reference", empty: "No other videos" },
-    audio: { title: "Audio reference", empty: "No other audio" },
-  };
+const TYPE_COPY: Record<MentionItem["type"], { title: string; empty: string }> = {
+  character: { title: "Character", empty: "No other characters" },
+  image: { title: "Image reference", empty: "No other images" },
+  video: { title: "Video reference", empty: "No other videos" },
+  audio: { title: "Audio reference", empty: "No other audio" },
+};
 
 export interface MentionChipMenuProps {
   /** Viewport-space rect of the clicked chip. */
@@ -117,10 +103,7 @@ export function MentionChipMenu({
     }
     top = Math.max(VIEWPORT_MARGIN, top);
 
-    const left = Math.max(
-      VIEWPORT_MARGIN,
-      Math.min(liveRect.left, window.innerWidth - width - VIEWPORT_MARGIN),
-    );
+    const left = Math.max(VIEWPORT_MARGIN, Math.min(liveRect.left, window.innerWidth - width - VIEWPORT_MARGIN));
 
     setPlacement({ left, top, flippedAbove });
   }, [liveRect, view, replaceItems.length]);
@@ -142,10 +125,7 @@ export function MentionChipMenu({
     // its chip instead of closing (see OPEN_GRACE_MS); afterwards scrolling
     // or resizing dismisses as usual.
     const repositionOrClose = () => {
-      if (
-        performance.now() - openedAt.current < OPEN_GRACE_MS &&
-        anchorNode?.isConnected
-      ) {
+      if (performance.now() - openedAt.current < OPEN_GRACE_MS && anchorNode?.isConnected) {
         setLiveRect(anchorNode.getBoundingClientRect());
         return;
       }
@@ -171,10 +151,7 @@ export function MentionChipMenu({
     };
   }, [onClose, anchorNode]);
 
-  const handleRowKeyActivate = useCallback(
-    (e: React.PointerEvent) => e.preventDefault(),
-    [],
-  );
+  const handleRowKeyActivate = useCallback((e: React.PointerEvent) => e.preventDefault(), []);
 
   return createPortal(
     <div
@@ -185,8 +162,8 @@ export function MentionChipMenu({
       // Body-portaled, so the focus-mode modal's scroll lock
       // (react-remove-scroll) would preventDefault wheel/touch events over
       // this panel — stop propagation so the Replace list stays scrollable.
-      onWheel={(e) => e.stopPropagation()}
-      onTouchMove={(e) => e.stopPropagation()}
+      onWheel={e => e.stopPropagation()}
+      onTouchMove={e => e.stopPropagation()}
       className={twMerge(
         "fixed z-[9999] w-56 rounded-[3px] border border-ui-panel-border bg-ui-panel p-1 shadow-xl",
         "transform-gpu transition duration-75 ease-out",
@@ -218,46 +195,28 @@ export function MentionChipMenu({
               aria-label={`View ${currentName}`}
               className="group/avatar relative shrink-0 cursor-pointer overflow-hidden rounded-[3px]"
             >
-              <ChipAvatar
-                preview={currentPreview}
-                name={currentName}
-                type={currentType}
-              />
+              <ChipAvatar preview={currentPreview} name={currentName} type={currentType} />
               <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover/avatar:opacity-100">
                 <EyeIcon className="h-3 w-3 text-white" />
               </span>
             </button>
             <div className="min-w-0">
-              <div className="truncate text-sm font-medium text-base-fg">
-                {currentName}
-              </div>
-              <div className="text-[11px] text-base-fg/50">
-                {TYPE_COPY[currentType].title}
-              </div>
+              <div className="truncate text-sm font-medium text-base-fg">{currentName}</div>
+              <div className="text-[11px] text-base-fg/50">{TYPE_COPY[currentType].title}</div>
             </div>
           </div>
           <div className="my-1 border-t border-ui-panel-border" />
-          <button
-            type="button"
-            className={MENU_ROW}
-            onClick={() => setView("replace")}
-          >
+          <button type="button" className={MENU_ROW} onClick={() => setView("replace")}>
             <RefreshCwIcon className="h-3.5 w-3.5 opacity-60" />
             <span className="flex-1 text-left">Replace</span>
-            <span className="text-xs text-base-fg/40">
-              {replaceItems.length}
-            </span>
+            <span className="text-xs text-base-fg/40">{replaceItems.length}</span>
           </button>
           <button type="button" className={MENU_ROW} onClick={onPreview}>
             <EyeIcon className="h-3.5 w-3.5 opacity-60" />
             <span className="flex-1 text-left">Preview</span>
           </button>
           <div className="my-1 border-t border-ui-panel-border" />
-          <button
-            type="button"
-            className={twMerge(MENU_ROW, "text-red-500 hover:bg-red-500/10")}
-            onClick={onRemove}
-          >
+          <button type="button" className={twMerge(MENU_ROW, "text-red-500 hover:bg-red-500/10")} onClick={onRemove}>
             <Trash2Icon className="h-3.5 w-3.5 opacity-60" />
             <span className="flex-1 text-left">Remove</span>
           </button>
@@ -275,17 +234,13 @@ export function MentionChipMenu({
             </button>
             <div className="min-w-0">
               <div className="text-sm font-medium text-base-fg">Replace</div>
-              <div className="truncate text-[11px] text-base-fg/50">
-                Currently {currentName}
-              </div>
+              <div className="truncate text-[11px] text-base-fg/50">Currently {currentName}</div>
             </div>
           </div>
           <div className="my-1 border-t border-ui-panel-border" />
           <div className="max-h-64 overflow-y-auto">
             {replaceItems.length === 0 && (
-              <div className="px-2 py-3 text-center text-xs text-base-fg/50">
-                {TYPE_COPY[currentType].empty}
-              </div>
+              <div className="px-2 py-3 text-center text-xs text-base-fg/50">{TYPE_COPY[currentType].empty}</div>
             )}
             {replaceItems.map((item, i) => (
               <button
@@ -295,14 +250,8 @@ export function MentionChipMenu({
                 onPointerDown={handleRowKeyActivate}
                 onClick={() => onReplace(item)}
               >
-                <ChipAvatar
-                  preview={item.preview}
-                  name={item.label}
-                  type={item.type}
-                />
-                <span className="min-w-0 flex-1 truncate text-left">
-                  {item.label.replace(/^@/, "")}
-                </span>
+                <ChipAvatar preview={item.preview} name={item.label} type={item.type} />
+                <span className="min-w-0 flex-1 truncate text-left">{item.label.replace(/^@/, "")}</span>
               </button>
             ))}
           </div>

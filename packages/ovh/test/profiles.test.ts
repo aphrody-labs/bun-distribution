@@ -4,12 +4,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { selectAuthMode } from "../src/client.js";
-import {
-  KNOWN_PROFILES,
-  describeCredentials,
-  loadCredentials,
-  parseCredentialsText,
-} from "../src/profiles.js";
+import { KNOWN_PROFILES, describeCredentials, loadCredentials, parseCredentialsText } from "../src/profiles.js";
 
 describe("OVH Profiles and Credential Parsing", () => {
   it("parses bash export secrets format (.bash_secrets)", () => {
@@ -63,12 +58,8 @@ dns_ovh_consumer_key = cb_ck
     expect(KNOWN_PROFILES["dragonballfr.com"]).toBeDefined();
 
     expect(KNOWN_PROFILES["aphrody.com"].domains).toContain("aphrody.com");
-    expect(KNOWN_PROFILES["rosegriffon.fr"].domains).toContain(
-      "rosegriffon.fr",
-    );
-    expect(KNOWN_PROFILES["dragonballfr.com"].domains).toContain(
-      "dragonballfr.com",
-    );
+    expect(KNOWN_PROFILES["rosegriffon.fr"].domains).toContain("rosegriffon.fr");
+    expect(KNOWN_PROFILES["dragonballfr.com"].domains).toContain("dragonballfr.com");
   });
 });
 
@@ -89,10 +80,7 @@ describe("OVH authentication priority", () => {
   };
 
   it("parses client_id / client_secret from bash exports and INI sections", () => {
-    const bash = parseCredentialsText(
-      "export OVH_CLIENT_ID=id_b\nexport OVH_CLIENT_SECRET='secret_b'\n",
-      "ovh.env",
-    );
+    const bash = parseCredentialsText("export OVH_CLIENT_ID=id_b\nexport OVH_CLIENT_SECRET='secret_b'\n", "ovh.env");
     expect(bash?.clientId).toBe("id_b");
     expect(bash?.clientSecret).toBe("secret_b");
     expect(selectAuthMode(bash!)).toBe("oauth2");
@@ -103,9 +91,7 @@ describe("OVH authentication priority", () => {
     );
     expect(ini?.clientId).toBe("id_i");
     expect(ini?.applicationKey).toBe("ak");
-    expect(
-      parseCredentialsText("export OVH_CLIENT_ID=lonely\n", "x"),
-    ).toBeNull();
+    expect(parseCredentialsText("export OVH_CLIENT_ID=lonely\n", "x")).toBeNull();
   });
 
   it("uses the environment service account first, for the aphrody account only", () => {
@@ -122,9 +108,7 @@ describe("OVH authentication priority", () => {
       }),
       "rg.conf",
     );
-    expect(loadCredentials(tripletFile, { ...OAUTH_ENV }, home).authMode).toBe(
-      "application_key",
-    );
+    expect(loadCredentials(tripletFile, { ...OAUTH_ENV }, home).authMode).toBe("application_key");
   });
 
   it("prefers a profile OAuth2 pair over its triplet and reads the service account file", () => {
@@ -141,8 +125,7 @@ describe("OVH authentication priority", () => {
     expect(resolved.source).toBe(both);
 
     const home = fixtureDir({
-      ".config/aphrody/ovh.env":
-        "export OVH_CLIENT_ID=fid\nexport OVH_CLIENT_SECRET=fsecret\n",
+      ".config/aphrody/ovh.env": "export OVH_CLIENT_ID=fid\nexport OVH_CLIENT_SECRET=fsecret\n",
     });
     const fromFile = loadCredentials(undefined, {}, home);
     expect(fromFile.clientId).toBe("fid");
@@ -152,8 +135,7 @@ describe("OVH authentication priority", () => {
   it("keeps the application key triplet when no service account exists", () => {
     const file = join(
       fixtureDir({
-        "t.conf":
-          "export OVH_APPLICATION_KEY=a\nexport OVH_APPLICATION_SECRET=b\nexport OVH_CONSUMER_KEY=c\n",
+        "t.conf": "export OVH_APPLICATION_KEY=a\nexport OVH_APPLICATION_SECRET=b\nexport OVH_CONSUMER_KEY=c\n",
       }),
       "t.conf",
     );
@@ -165,14 +147,12 @@ describe("OVH authentication priority", () => {
 
   it("never prints secrets in its description or its failure", () => {
     const creds = loadCredentials(undefined, { ...OAUTH_ENV }, fixtureDir({}));
-    expect(describeCredentials(creds)).toBe(
-      "oauth2 (ovh-eu) from environment_variables",
-    );
+    expect(describeCredentials(creds)).toBe("oauth2 (ovh-eu) from environment_variables");
     expect(describeCredentials(creds)).not.toContain("env-secret");
     const missing = join(fixtureDir({}), "missing.conf");
-    expect(() =>
-      loadCredentials(missing, { OVH_CLIENT_ID: "lonely-id" }, fixtureDir({})),
-    ).toThrow(/No valid OVH credentials/);
+    expect(() => loadCredentials(missing, { OVH_CLIENT_ID: "lonely-id" }, fixtureDir({}))).toThrow(
+      /No valid OVH credentials/,
+    );
     try {
       loadCredentials(missing, { OVH_CLIENT_ID: "lonely-id" }, fixtureDir({}));
     } catch (error) {

@@ -44,7 +44,7 @@ export default function Primitives({ adaptive }: PageProps) {
     >
       <Section title="Actions and surfaces">
         <div className="grid gap-3 expanded:grid-cols-3">
-          {(["elevated", "filled", "outlined"] as const).map((variant) => (
+          {(["elevated", "filled", "outlined"] as const).map(variant => (
             <PrimitiveCard key={variant} variant={variant}>
               <CardHeader>
                 <CardTitle>{variant} card</CardTitle>
@@ -52,7 +52,7 @@ export default function Primitives({ adaptive }: PageProps) {
               <CardContent>
                 <Button
                   variant={variant === "elevated" ? "filled" : "outlined"}
-                  onClick={() => setCount((value) => value + 1)}
+                  onClick={() => setCount(value => value + 1)}
                 >
                   <Icon name="add" size={20} />
                   Activate
@@ -67,23 +67,16 @@ export default function Primitives({ adaptive }: PageProps) {
       </Section>
       <Section title="Controlled inputs">
         <Card className="flex flex-col gap-4">
-          <label
-            htmlFor="primitives-newsletter"
-            className="flex items-center gap-3"
-          >
+          <label htmlFor="primitives-newsletter" className="flex items-center gap-3">
             <CheckBox
               id="primitives-newsletter"
               checked={checked}
-              onChange={(event) => setChecked(event.target.checked)}
+              onChange={event => setChecked(event.target.checked)}
             />
             Receive a local demonstration newsletter
           </label>
           <label className="flex items-center gap-3">
-            <Switch
-              checked={enabled}
-              onCheckedChange={setEnabled}
-              aria-label="Enable preview"
-            />
+            <Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Enable preview" />
             Preview: {enabled ? "enabled" : "disabled"}
           </label>
           <Slider
@@ -107,17 +100,15 @@ export default function Primitives({ adaptive }: PageProps) {
             </TabsList>
             <TabsContent value="preview" className="pt-4">
               <Badge>Interactive preview</Badge>
-              <p className="mt-3 text-body-large">
-                Use left and right arrows in the tab list.
-              </p>
+              <p className="mt-3 text-body-large">Use left and right arrows in the tab list.</p>
             </TabsContent>
             <TabsContent value="details" className="pt-4">
               <AccordionRoot>
                 <AccordionItem value="accessibility">
                   <AccordionTrigger>Keyboard and focus</AccordionTrigger>
                   <AccordionPanel>
-                    Base UI owns focus movement, expanded state and dismissal.
-                    M3 owns typography, shape and theme roles.
+                    Base UI owns focus movement, expanded state and dismissal. M3 owns typography, shape and theme
+                    roles.
                   </AccordionPanel>
                 </AccordionItem>
               </AccordionRoot>
@@ -135,9 +126,7 @@ export default function Primitives({ adaptive }: PageProps) {
           </DialogTrigger>
           <DialogContent>
             <DialogTitle>Local preview dialog</DialogTitle>
-            <DialogDescription>
-              This demonstration changes no account or remote data.
-            </DialogDescription>
+            <DialogDescription>This demonstration changes no account or remote data.</DialogDescription>
             <div className="pt-4">
               <DialogClose asChild>
                 <Button>Close dialog</Button>

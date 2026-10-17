@@ -57,19 +57,11 @@ const MAX_BYTES = 2 * 1024 * 1024;
 /** Les types que le bucket accepte, dans la forme attendue par `accept`. */
 const TYPES_ACCEPTES = "image/png,image/jpeg,image/webp";
 
-export function AccountAvatarCard({
-  avatarUrl,
-  username,
-  role,
-  profileHref,
-  onUpload,
-}: AccountAvatarCardProps) {
+export function AccountAvatarCard({ avatarUrl, username, role, profileHref, onUpload }: AccountAvatarCardProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(
-    avatarUrl ?? null,
-  );
+  const [previewUrl, setPreviewUrl] = useState<string | null>(avatarUrl ?? null);
 
   const handleChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -97,11 +89,7 @@ export function AccountAvatarCard({
       toast.success("Avatar mis à jour.");
     } catch (error) {
       console.error("[compte] échec du téléversement d'avatar", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Erreur lors de l'envoi de l'image.",
-      );
+      toast.error(error instanceof Error ? error.message : "Erreur lors de l'envoi de l'image.");
     } finally {
       setUploading(false);
     }
@@ -112,11 +100,7 @@ export function AccountAvatarCard({
       <CardContent className="flex flex-col items-center gap-6 p-6 sm:p-8">
         <div className="group relative">
           <Avatar className="size-28 border-4 border-border shadow-lg transition-colors group-hover:border-primary/50 sm:size-36">
-            <AvatarImage
-              src={previewUrl ?? undefined}
-              alt=""
-              className="object-cover"
-            />
+            <AvatarImage src={previewUrl ?? undefined} alt="" className="object-cover" />
             <AvatarFallback className="select-none bg-primary/10 text-4xl font-bold text-primary uppercase">
               {username?.[0] ?? "?"}
             </AvatarFallback>
@@ -135,10 +119,7 @@ export function AccountAvatarCard({
 
           {uploading && (
             <div className="absolute inset-0 z-20 flex items-center justify-center rounded-full bg-foreground/60">
-              <Loader2
-                className="size-9 animate-spin text-background"
-                aria-hidden
-              />
+              <Loader2 className="size-9 animate-spin text-background" aria-hidden />
             </div>
           )}
 
@@ -167,30 +148,21 @@ export function AccountAvatarCard({
         </div>
 
         <div className="w-full space-y-2 text-center">
-          <p className="truncate text-lg font-bold text-foreground">
-            {username || "Utilisateur"}
-          </p>
+          <p className="truncate text-lg font-bold text-foreground">{username || "Utilisateur"}</p>
           {role && (
             <Badge variant="secondary" className="rounded-full">
               {libelleRole(role)}
             </Badge>
           )}
           {profileHref && (
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              className="w-full rounded-full"
-            >
+            <Button variant="outline" size="sm" asChild className="w-full rounded-full">
               <Link href={profileHref}>
                 <ExternalLink className="size-4" aria-hidden />
                 Voir mon profil public
               </Link>
             </Button>
           )}
-          <p className="text-xs text-muted-foreground">
-            PNG, JPEG ou WebP — 400 × 400 px recommandé, 2 Mo maximum.
-          </p>
+          <p className="text-xs text-muted-foreground">PNG, JPEG ou WebP — 400 × 400 px recommandé, 2 Mo maximum.</p>
         </div>
       </CardContent>
     </Card>

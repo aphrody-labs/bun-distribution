@@ -176,19 +176,19 @@ export class PlaybackManager {
   }
 
   private notify(): void {
-    this.listeners.forEach((fn) => {
+    this.listeners.forEach(fn => {
       fn();
     });
   }
 
   private notifyUpdate(time: MediaTime): void {
-    this.updateListeners.forEach((fn) => {
+    this.updateListeners.forEach(fn => {
       fn(time);
     });
   }
 
   private notifySeek(time: MediaTime): void {
-    this.seekListeners.forEach((fn) => {
+    this.seekListeners.forEach(fn => {
       fn(time);
     });
   }
@@ -214,8 +214,7 @@ export class PlaybackManager {
     if (!this.isPlaying) return;
 
     const fps = this.editor.project.getActive()?.settings.fps;
-    const elapsedSeconds =
-      (performance.now() - this.playbackStartWallTime) / 1000;
+    const elapsedSeconds = (performance.now() - this.playbackStartWallTime) / 1000;
     const rawTime = addMediaTime({
       a: this.playbackStartTime,
       b: mediaTimeFromSeconds({ seconds: elapsedSeconds }),

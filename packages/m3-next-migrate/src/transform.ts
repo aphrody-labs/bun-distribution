@@ -32,42 +32,20 @@ export interface TransformResult {
 
 /** Merge JSX classes once while stripping the hydration-only flag and its value. */
 function containerAttributes(attrs: string, className: string): string {
-  let clean = attrs
-    .replace(
-      /\bsuppressHydrationWarning(?:\s*=\s*(?:\{[^}]*\}|["'][^"']*["']))?/g,
-      "",
-    )
-    .trim();
+  let clean = attrs.replace(/\bsuppressHydrationWarning(?:\s*=\s*(?:\{[^}]*\}|["'][^"']*["']))?/g, "").trim();
   const match = /\bclassName\s*=\s*/.exec(clean);
   if (!match) return 'className="' + className + '" ' + clean;
   const start = match.index + match[0].length;
   const spans = skippedSpans(clean);
-  const token = spans.find((span) => span.start === start);
-  const end =
-    clean[start] === "{" ? matching(clean, start, spans) + 1 : token?.end;
-  if (!end || end <= start)
-    throw new Error(
-      "Cannot preserve the original Root Layout className expression",
-    );
-  const expression =
-    clean[start] === "{"
-      ? clean.slice(start + 1, end - 1)
-      : clean.slice(start, end);
+  const token = spans.find(span => span.start === start);
+  const end = clean[start] === "{" ? matching(clean, start, spans) + 1 : token?.end;
+  if (!end || end <= start) throw new Error("Cannot preserve the original Root Layout className expression");
+  const expression = clean[start] === "{" ? clean.slice(start + 1, end - 1) : clean.slice(start, end);
   clean = (clean.slice(0, match.index) + clean.slice(end)).trim();
-  return (
-    "className={[" +
-    JSON.stringify(className) +
-    ", " +
-    expression +
-    '].filter(Boolean).join(" ")} ' +
-    clean
-  );
+  return "className={[" + JSON.stringify(className) + ", " + expression + '].filter(Boolean).join(" ")} ' + clean;
 }
 
-export function transformComponent(
-  source: string,
-  options: TransformOptions = {},
-): TransformResult {
+export function transformComponent(source: string, options: TransformOptions = {}): TransformResult {
   const {
     target = "tauri",
     shimModule = "@aphrody/m3-next-migrate/shims",
@@ -89,19 +67,14 @@ export function transformComponent(
     const useClientRegex = /^[\t ]*(['"])use client\1;?[\r\n]*/m;
     if (useClientRegex.test(code)) {
       code = code.replace(useClientRegex, "");
-      transformations.push(
-        "Stripped 'use client' directive (unneeded in client webview / SPA)",
-      );
+      transformations.push("Stripped 'use client' directive (unneeded in client webview / SPA)");
     }
 
     // Directives: handle 'use server'
-    const useServerFileRegex =
-      /^((?:\s|\/\/[^\n]*(?:\n|$)|\/\*[\s\S]*?\*\/)*)((?:['"]))use server\2;?[\r\n]*/;
+    const useServerFileRegex = /^((?:\s|\/\/[^\n]*(?:\n|$)|\/\*[\s\S]*?\*\/)*)((?:['"]))use server\2;?[\r\n]*/;
     if (useServerFileRegex.test(code)) {
       code = code.replace(useServerFileRegex, "$1");
-      transformations.push(
-        "Converted file-level 'use server' to client module",
-      );
+      transformations.push("Converted file-level 'use server' to client module");
       warnings.push(
         `File contained 'use server'. Its backend operations require the ${target} native host adapter before activation.`,
       );
@@ -113,9 +86,7 @@ export function transformComponent(
   const nextNavRegex = /from\s+['"]next\/navigation['"]/g;
   if (nextNavRegex.test(code)) {
     code = code.replace(nextNavRegex, `from '${shimModule}/navigation'`);
-    transformations.push(
-      `Rewrote 'next/navigation' import to '${shimModule}/navigation'`,
-    );
+    transformations.push(`Rewrote 'next/navigation' import to '${shimModule}/navigation'`);
   }
 
   // next/link
@@ -129,48 +100,36 @@ export function transformComponent(
   const nextImageRegex = /from\s+['"]next\/image['"]/g;
   if (nextImageRegex.test(code)) {
     code = code.replace(nextImageRegex, `from '${shimModule}/image'`);
-    transformations.push(
-      `Rewrote 'next/image' import to '${shimModule}/image'`,
-    );
+    transformations.push(`Rewrote 'next/image' import to '${shimModule}/image'`);
   }
 
   // next/dynamic
   const nextDynamicRegex = /from\s+['"]next\/dynamic['"]/g;
   if (nextDynamicRegex.test(code)) {
     code = code.replace(nextDynamicRegex, `from '${shimModule}/dynamic'`);
-    transformations.push(
-      `Rewrote 'next/dynamic' import to '${shimModule}/dynamic'`,
-    );
+    transformations.push(`Rewrote 'next/dynamic' import to '${shimModule}/dynamic'`);
   }
 
   // next/font/google
   const nextFontGoogleRegex = /from\s+['"]next\/font\/google['"]/g;
   if (nextFontGoogleRegex.test(code)) {
     code = code.replace(nextFontGoogleRegex, `from '${shimModule}/font'`);
-    transformations.push(
-      `Rewrote 'next/font/google' import to '${shimModule}/font'`,
-    );
+    transformations.push(`Rewrote 'next/font/google' import to '${shimModule}/font'`);
   }
 
   // next/font/local
   const nextFontLocalRegex = /from\s+['"]next\/font\/local['"]/g;
   if (nextFontLocalRegex.test(code)) {
     code = code.replace(nextFontLocalRegex, `from '${shimModule}/font'`);
-    transformations.push(
-      `Rewrote 'next/font/local' import to '${shimModule}/font'`,
-    );
+    transformations.push(`Rewrote 'next/font/local' import to '${shimModule}/font'`);
   }
 
   // next/headers
   const nextHeadersRegex = /from\s+['"]next\/headers['"]/g;
   if (nextHeadersRegex.test(code)) {
     code = code.replace(nextHeadersRegex, `from '${shimModule}/headers'`);
-    transformations.push(
-      `Rewrote 'next/headers' import to '${shimModule}/headers'`,
-    );
-    warnings.push(
-      "Component used 'next/headers'. Shimmed with client cookies/headers store.",
-    );
+    transformations.push(`Rewrote 'next/headers' import to '${shimModule}/headers'`);
+    warnings.push("Component used 'next/headers'. Shimmed with client cookies/headers store.");
   }
 
   // next/form
@@ -183,38 +142,26 @@ export function transformComponent(
   // next/router (Pages router legacy)
   const nextRouterLegacyRegex = /from\s+['"]next\/router['"]/g;
   if (nextRouterLegacyRegex.test(code)) {
-    code = code.replace(
-      nextRouterLegacyRegex,
-      `from '${shimModule}/navigation'`,
-    );
-    transformations.push(
-      `Rewrote legacy 'next/router' import to '${shimModule}/navigation'`,
-    );
+    code = code.replace(nextRouterLegacyRegex, `from '${shimModule}/navigation'`);
+    transformations.push(`Rewrote legacy 'next/router' import to '${shimModule}/navigation'`);
   }
 
   // next/head (Pages router legacy)
   const nextHeadRegex = /from\s+['"]next\/head['"]/g;
   if (nextHeadRegex.test(code)) {
     code = code.replace(nextHeadRegex, `from '${shimModule}/metadata'`);
-    transformations.push(
-      `Rewrote 'next/head' import to '${shimModule}/metadata'`,
-    );
+    transformations.push(`Rewrote 'next/head' import to '${shimModule}/metadata'`);
   }
 
   // next types import: Metadata / ResolvingMetadata
-  const nextMetadataTypeRegex =
-    /import\s+(?:type\s+)?\{([^}]+)\}\s+from\s+['"]next['"]/g;
+  const nextMetadataTypeRegex = /import\s+(?:type\s+)?\{([^}]+)\}\s+from\s+['"]next['"]/g;
   if (nextMetadataTypeRegex.test(code)) {
     code = code.replace(nextMetadataTypeRegex, (_match, specifiers) => {
       const parts = specifiers.split(",").map((s: string) => s.trim());
       const metadataParts = parts.filter(
-        (s: string) =>
-          s === "Metadata" || s === "ResolvingMetadata" || s === "Viewport",
+        (s: string) => s === "Metadata" || s === "ResolvingMetadata" || s === "Viewport",
       );
-      const otherParts = parts.filter(
-        (s: string) =>
-          s !== "Metadata" && s !== "ResolvingMetadata" && s !== "Viewport",
-      );
+      const otherParts = parts.filter((s: string) => s !== "Metadata" && s !== "ResolvingMetadata" && s !== "Viewport");
 
       let replacement = "";
       if (metadataParts.length > 0) {
@@ -226,18 +173,14 @@ export function transformComponent(
       }
       return replacement;
     });
-    transformations.push(
-      `Rewrote 'next' Metadata types import to '${shimModule}/metadata'`,
-    );
+    transformations.push(`Rewrote 'next' Metadata types import to '${shimModule}/metadata'`);
   }
 
   // next/server (Route Handlers & Middleware)
   const nextServerRegex = /from\s+['"]next\/server['"]/g;
   if (nextServerRegex.test(code)) {
     code = code.replace(nextServerRegex, `from '${shimModule}/server'`);
-    transformations.push(
-      `Rewrote 'next/server' import to '${shimModule}/server' (Bun Web Standards)`,
-    );
+    transformations.push(`Rewrote 'next/server' import to '${shimModule}/server' (Bun Web Standards)`);
   }
 
   // 2b. Aggressive n2b transformations
@@ -254,50 +197,36 @@ export function transformComponent(
       /from\s+['"](fs|fs\/promises|path|crypto|os|child_process|stream|util|buffer|http|https)['"]/g;
     if (nodeBuiltinRegex.test(code)) {
       code = code.replace(nodeBuiltinRegex, "from 'node:$1'");
-      transformations.push(
-        "Standardized Node built-in imports to 'node:*' for Bun",
-      );
+      transformations.push("Standardized Node built-in imports to 'node:*' for Bun");
     }
 
     // Replace __dirname and __filename with import.meta
     if (/\b__dirname\b/.test(code)) {
       code = code.replace(/\b__dirname\b/g, "import.meta.dirname");
-      transformations.push(
-        "Replaced __dirname with Bun native import.meta.dirname",
-      );
+      transformations.push("Replaced __dirname with Bun native import.meta.dirname");
     }
     if (/\b__filename\b/.test(code)) {
       code = code.replace(/\b__filename\b/g, "import.meta.path");
-      transformations.push(
-        "Replaced __filename with Bun native import.meta.path",
-      );
+      transformations.push("Replaced __filename with Bun native import.meta.path");
     }
 
     // Strip redundant dotenv calls (Bun loads .env automatically)
     const dotenvImportRegex = /import\s+['"]dotenv\/config['"];?[\r\n]*/g;
     if (dotenvImportRegex.test(code)) {
       code = code.replace(dotenvImportRegex, "");
-      transformations.push(
-        "Removed redundant dotenv import (Bun loads .env automatically)",
-      );
+      transformations.push("Removed redundant dotenv import (Bun loads .env automatically)");
     }
-    const dotenvRequireRegex =
-      /require\(['"]dotenv['"]\)\.config\([^)]*\);?[\r\n]*/g;
+    const dotenvRequireRegex = /require\(['"]dotenv['"]\)\.config\([^)]*\);?[\r\n]*/g;
     if (dotenvRequireRegex.test(code)) {
       code = code.replace(dotenvRequireRegex, "");
-      transformations.push(
-        "Removed redundant dotenv.config() call (Bun loads .env automatically)",
-      );
+      transformations.push("Removed redundant dotenv.config() call (Bun loads .env automatically)");
     }
 
     // Strip redundant node-fetch and cross-fetch imports (Bun has native global fetch)
-    const nodeFetchRegex =
-      /import\s+(?:fetch,\s*)?\{?[^}]*\}?\s*from\s+['"](?:node-fetch|cross-fetch)['"];?[\r\n]*/g;
+    const nodeFetchRegex = /import\s+(?:fetch,\s*)?\{?[^}]*\}?\s*from\s+['"](?:node-fetch|cross-fetch)['"];?[\r\n]*/g;
     if (nodeFetchRegex.test(code)) {
       code = code.replace(nodeFetchRegex, "");
-      transformations.push(
-        "Replaced node-fetch/cross-fetch with Bun native fetch",
-      );
+      transformations.push("Replaced node-fetch/cross-fetch with Bun native fetch");
     }
   }
 
@@ -316,14 +245,11 @@ export function transformComponent(
         });
         return "";
       });
-      transformations.push(
-        "Modernized Button imports to @aphrody/m3-primitives",
-      );
+      transformations.push("Modernized Button imports to @aphrody/m3-primitives");
     }
 
     // Input: rewrite input imports
-    const inputImportRegex =
-      /import\s+\{([^}]+)\}\s+from\s+['"](?:@\/|\.\.?\/)*(?:components\/ui\/input)['"];?/g;
+    const inputImportRegex = /import\s+\{([^}]+)\}\s+from\s+['"](?:@\/|\.\.?\/)*(?:components\/ui\/input)['"];?/g;
     if (inputImportRegex.test(code)) {
       code = code.replace(inputImportRegex, (_match, specifiers) => {
         specifiers.split(",").forEach((s: string) => {
@@ -332,14 +258,11 @@ export function transformComponent(
         });
         return "";
       });
-      transformations.push(
-        "Modernized Input imports to @aphrody/m3-primitives",
-      );
+      transformations.push("Modernized Input imports to @aphrody/m3-primitives");
     }
 
     // Card: rewrite card imports
-    const cardImportRegex =
-      /import\s+\{([^}]+)\}\s+from\s+['"](?:@\/|\.\.?\/)*(?:components\/ui\/card)['"];?/g;
+    const cardImportRegex = /import\s+\{([^}]+)\}\s+from\s+['"](?:@\/|\.\.?\/)*(?:components\/ui\/card)['"];?/g;
     if (cardImportRegex.test(code)) {
       code = code.replace(cardImportRegex, (_match, specifiers) => {
         specifiers.split(",").forEach((s: string) => {
@@ -352,8 +275,7 @@ export function transformComponent(
     }
 
     // Badge: rewrite badge imports
-    const badgeImportRegex =
-      /import\s+\{([^}]+)\}\s+from\s+['"](?:@\/|\.\.?\/)*(?:components\/ui\/badge)['"];?/g;
+    const badgeImportRegex = /import\s+\{([^}]+)\}\s+from\s+['"](?:@\/|\.\.?\/)*(?:components\/ui\/badge)['"];?/g;
     if (badgeImportRegex.test(code)) {
       code = code.replace(badgeImportRegex, (_match, specifiers) => {
         specifiers.split(",").forEach((s: string) => {
@@ -362,9 +284,7 @@ export function transformComponent(
         });
         return "";
       });
-      transformations.push(
-        "Modernized Badge imports to @aphrody/m3-primitives",
-      );
+      transformations.push("Modernized Badge imports to @aphrody/m3-primitives");
     }
 
     // Tooltip: rewrite tooltip imports
@@ -384,9 +304,7 @@ export function transformComponent(
         });
         return "";
       });
-      transformations.push(
-        "Modernized Tooltip imports to @aphrody/m3-primitives",
-      );
+      transformations.push("Modernized Tooltip imports to @aphrody/m3-primitives");
     }
 
     // Collapsible: rewrite collapsible imports
@@ -400,9 +318,7 @@ export function transformComponent(
         });
         return "";
       });
-      transformations.push(
-        "Modernized Collapsible imports to @aphrody/m3-primitives",
-      );
+      transformations.push("Modernized Collapsible imports to @aphrody/m3-primitives");
     }
 
     // Consolidate @aphrody/m3-primitives imports
@@ -415,13 +331,10 @@ export function transformComponent(
 
     // JSX transforms for Button variants:
     // destructive -> accent (M3 filled error look), secondary -> tonal, ghost -> text, outline -> outlined
-    const btnDestructiveRegex =
-      /<Button\b([^>]*)\bvariant=['"]destructive['"]/g;
+    const btnDestructiveRegex = /<Button\b([^>]*)\bvariant=['"]destructive['"]/g;
     if (btnDestructiveRegex.test(code)) {
       code = code.replace(btnDestructiveRegex, "<Button$1variant='accent'");
-      transformations.push(
-        "Mapped Button variant='destructive' to M3 'accent'",
-      );
+      transformations.push("Mapped Button variant='destructive' to M3 'accent'");
     }
 
     const btnGhostRegex = /<Button\b([^>]*)\bvariant=['"]ghost['"]/g;
@@ -471,9 +384,7 @@ export function transformComponent(
       });
       code = code.replace(/<\/body>/gi, "</div>");
 
-      transformations.push(
-        "Adapted Root Layout <html>/<body> tags to desktop/SPA containers",
-      );
+      transformations.push("Adapted Root Layout <html>/<body> tags to desktop/SPA containers");
     }
   }
 
@@ -484,9 +395,7 @@ export function transformComponent(
       code = code.replace(nextPublicEnvRegex, (_match, varName) => {
         return `(import.meta.env.VITE_${varName} ?? import.meta.env.NEXT_PUBLIC_${varName})`;
       });
-      transformations.push(
-        "Rewrote process.env.NEXT_PUBLIC_* to import.meta.env",
-      );
+      transformations.push("Rewrote process.env.NEXT_PUBLIC_* to import.meta.env");
     }
 
     // Generic process.env.NODE_ENV
@@ -496,13 +405,10 @@ export function transformComponent(
   // 6. Adapt Next 16 async page props:
   // e.g. export default async function Page({ params, searchParams }: ...
   if (adaptNext16AsyncProps) {
-    const asyncPageFnRegex =
-      /export\s+default\s+async\s+function\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)/;
+    const asyncPageFnRegex = /export\s+default\s+async\s+function\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)/;
     if (asyncPageFnRegex.test(code)) {
       code = code.replace(asyncPageFnRegex, "export default function $1($2)");
-      transformations.push(
-        "Adapted Next 16 async Page component signature to synchronous client component",
-      );
+      transformations.push("Adapted Next 16 async Page component signature to synchronous client component");
     }
 
     // Replace `await params` or `await searchParams` with resolved values
@@ -515,20 +421,15 @@ export function transformComponent(
     const awaitSearchParamsRegex = /await\s+searchParams\b/g;
     if (awaitSearchParamsRegex.test(code)) {
       code = code.replace(awaitSearchParamsRegex, "searchParams");
-      transformations.push(
-        "Normalized Next 16 `await searchParams` to `searchParams`",
-      );
+      transformations.push("Normalized Next 16 `await searchParams` to `searchParams`");
     }
   }
 
   // 7. Check for Server Actions inside component: ("use server" inside async function)
-  const inlineServerActionRegex =
-    /(async\s+function\s+[A-Za-z0-9_]+\s*\([^)]*\)\s*\{)\s*(['"])use server\2;?/g;
+  const inlineServerActionRegex = /(async\s+function\s+[A-Za-z0-9_]+\s*\([^)]*\)\s*\{)\s*(['"])use server\2;?/g;
   if (inlineServerActionRegex.test(code)) {
     code = code.replace(inlineServerActionRegex, "$1");
-    transformations.push(
-      "Removed inline 'use server' inside component function",
-    );
+    transformations.push("Removed inline 'use server' inside component function");
     warnings.push(
       `Inline Server Action detected. Its backend operations require the ${target} native host adapter before activation.`,
     );
@@ -536,55 +437,37 @@ export function transformComponent(
 
   // 8. Metadata synchronization: export const metadata & generateMetadata
   if (syncMetadataTitle) {
-    const hasStaticMetadata =
-      /export\s+const\s+metadata(?::\s*Metadata)?\s*=\s*/.test(code);
-    const hasGenerateMetadata =
-      /export\s+(?:async\s+)?function\s+generateMetadata\b/.test(code);
+    const hasStaticMetadata = /export\s+const\s+metadata(?::\s*Metadata)?\s*=\s*/.test(code);
+    const hasGenerateMetadata = /export\s+(?:async\s+)?function\s+generateMetadata\b/.test(code);
 
     if (hasStaticMetadata || hasGenerateMetadata) {
       let needsMetadataHookImport = false;
 
       // Inject useMetadata hook into default exported function
-      const defaultExportFnRegex =
-        /(export\s+default\s+function(?:\s+[A-Za-z0-9_]+)?\s*\([^)]*\)\s*\{)/;
+      const defaultExportFnRegex = /(export\s+default\s+function(?:\s+[A-Za-z0-9_]+)?\s*\([^)]*\)\s*\{)/;
       if (defaultExportFnRegex.test(code)) {
         if (hasStaticMetadata) {
-          code = code.replace(
-            defaultExportFnRegex,
-            "$1\n  useMetadata(metadata);",
-          );
+          code = code.replace(defaultExportFnRegex, "$1\n  useMetadata(metadata);");
           needsMetadataHookImport = true;
-          transformations.push(
-            "Synchronized static metadata with Tauri window title and document.title",
-          );
+          transformations.push("Synchronized static metadata with Tauri window title and document.title");
         } else if (hasGenerateMetadata) {
           code = code.replace(
             defaultExportFnRegex,
             "$1\n  useMetadata(() => generateMetadata(arguments[0] || ({} as any)), []);",
           );
           needsMetadataHookImport = true;
-          transformations.push(
-            "Synchronized dynamic generateMetadata with Tauri window title and document.title",
-          );
+          transformations.push("Synchronized dynamic generateMetadata with Tauri window title and document.title");
         }
       }
 
-      if (
-        needsMetadataHookImport &&
-        !/import\s*\{[^}]*\buseMetadata\s*(?:,|\})/.test(code)
-      ) {
+      if (needsMetadataHookImport && !/import\s*\{[^}]*\buseMetadata\s*(?:,|\})/.test(code)) {
         code = `import { useMetadata } from '${shimModule}/metadata';\n` + code;
       }
     }
 
     // Native <title> or <meta> tags in JSX
-    if (
-      /<title\b[^>]*>([^<]+)<\/title>/i.test(code) ||
-      /<meta\b[^>]*>/i.test(code)
-    ) {
-      transformations.push(
-        "Observed <title>/<meta> tags for automatic document & Tauri window title sync",
-      );
+    if (/<title\b[^>]*>([^<]+)<\/title>/i.test(code) || /<meta\b[^>]*>/i.test(code)) {
+      transformations.push("Observed <title>/<meta> tags for automatic document & Tauri window title sync");
     }
   }
 

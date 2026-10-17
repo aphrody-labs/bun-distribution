@@ -5,26 +5,15 @@ import { toast } from "@storyteller/ui-toaster";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateIconButton } from "@storyteller/ui-button";
-import {
-  GenerateImage,
-  GenerateImageRequest,
-  commandErrorMessage,
-} from "@storyteller/tauri-api";
+import { GenerateImage, GenerateImageRequest, commandErrorMessage } from "@storyteller/tauri-api";
 import { ChevronDownIcon, ChevronUpIcon, MaximizeIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { ImageModel, imageModelForProvider } from "@storyteller/model-list";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { UploadMediaFn } from "@storyteller/api";
-import {
-  usePromptImageStore,
-  RefImage,
-  useEnterToGenerateStore,
-} from "./promptStore";
+import { usePromptImageStore, RefImage, useEnterToGenerateStore } from "./promptStore";
 import { useAutoGrowEditorHeight } from "./useAutoGrowEditorHeight";
-import {
-  PromptFullscreenModal,
-  useFullscreenPrompt,
-} from "./PromptFullscreenModal";
+import { PromptFullscreenModal, useFullscreenPrompt } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
 import { gtagEvent } from "@storyteller/google-analytics";
@@ -37,11 +26,7 @@ import { ResolutionPicker } from "./common/ResolutionPicker";
 import { QualityPicker } from "./common/QualityPicker";
 import { ReferenceDeck } from "./deck/ReferenceDeck";
 import { useDeckMedia } from "./deck/useDeckMedia";
-import {
-  PromptBoxDropOverlay,
-  usePromptBoxDrop,
-  type DroppedFiles,
-} from "./deck/usePromptBoxDrop";
+import { PromptBoxDropOverlay, usePromptBoxDrop, type DroppedFiles } from "./deck/usePromptBoxDrop";
 import { DeckAddAction, DeckItem } from "./deck/deckTypes";
 
 interface PromptBoxImageProps {
@@ -55,11 +40,7 @@ interface PromptBoxImageProps {
     assetFile: File;
     progressCallback: (newState: UploaderState) => void;
   }) => Promise<void>;
-  onEnqueuePressed?: (
-    prompt: string,
-    count: number,
-    subscriberId: string,
-  ) => void | Promise<void>;
+  onEnqueuePressed?: (prompt: string, count: number, subscriberId: string) => void | Promise<void>;
   selectedModel?: ImageModel;
   selectedProvider?: GenerationProvider;
   imageMediaId?: string;
@@ -88,11 +69,7 @@ export const PromptBoxImage = ({
   );
   const isDirectMidjourney = selectedProvider === GenerationProvider.Midjourney;
 
-  console.debug(
-    "Selected model and provider:",
-    selectedModel,
-    selectedProvider,
-  );
+  console.debug("Selected model and provider:", selectedModel, selectedProvider);
 
   useEffect(() => {
     if (imageMediaId && url) {
@@ -106,36 +83,29 @@ export const PromptBoxImage = ({
     }
   }, [imageMediaId, url]);
 
-  const prompt = usePromptImageStore((s) => s.prompt);
-  const setPrompt = usePromptImageStore((s) => s.setPrompt);
-  const aspectRatio = usePromptImageStore((s) => s.aspectRatio);
-  const setAspectRatio = usePromptImageStore((s) => s.setAspectRatio);
-  const resolution = usePromptImageStore((s) => s.resolution);
-  const setResolution = usePromptImageStore((s) => s.setResolution);
-  const storedGenerationCount = usePromptImageStore((s) => s.generationCount);
+  const prompt = usePromptImageStore(s => s.prompt);
+  const setPrompt = usePromptImageStore(s => s.setPrompt);
+  const aspectRatio = usePromptImageStore(s => s.aspectRatio);
+  const setAspectRatio = usePromptImageStore(s => s.setAspectRatio);
+  const resolution = usePromptImageStore(s => s.resolution);
+  const setResolution = usePromptImageStore(s => s.setResolution);
+  const storedGenerationCount = usePromptImageStore(s => s.generationCount);
   const generationCount = isDirectMidjourney ? 4 : storedGenerationCount;
-  const setGenerationCount = usePromptImageStore((s) => s.setGenerationCount);
+  const setGenerationCount = usePromptImageStore(s => s.setGenerationCount);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // Collapsed auto-grow + manual expand, position-aware and recomputed only on
   // toggle / content change / viewport resize (not every render).
-  const { isExpanded, toggleExpand } = useAutoGrowEditorHeight(
-    textareaRef,
-    prompt,
-  );
-  const { isFullscreen, openFullscreen, closeFullscreen } =
-    useFullscreenPrompt();
+  const { isExpanded, toggleExpand } = useAutoGrowEditorHeight(textareaRef, prompt);
+  const { isFullscreen, openFullscreen, closeFullscreen } = useFullscreenPrompt();
 
-  const referenceImages = usePromptImageStore((s) => s.referenceImages);
-  const setReferenceImages = usePromptImageStore((s) => s.setReferenceImages);
-  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
+  const referenceImages = usePromptImageStore(s => s.referenceImages);
+  const setReferenceImages = usePromptImageStore(s => s.setReferenceImages);
+  const enterToGenerate = useEnterToGenerateStore(s => s.enabled);
 
-  const maxImagePromptCount = Math.max(
-    1,
-    selectedModel?.maxImagePromptCount ?? 1,
-  );
+  const maxImagePromptCount = Math.max(1, selectedModel?.maxImagePromptCount ?? 1);
 
   const deck = useDeckMedia({
     referenceImages,
@@ -152,9 +122,7 @@ export const PromptBoxImage = ({
   const handleDroppedFiles = ({ images }: DroppedFiles) => {
     if (images.length === 0) return;
     if (deck.availableImageSlots <= 0) {
-      toast.error(
-        `Max ${maxImagePromptCount} image reference${maxImagePromptCount === 1 ? "" : "s"}`,
-      );
+      toast.error(`Max ${maxImagePromptCount} image reference${maxImagePromptCount === 1 ? "" : "s"}`);
       return;
     }
     deck.processImageFiles(images, "start");
@@ -222,26 +190,20 @@ export const PromptBoxImage = ({
           image: `${referenceImages.length}/${maxImagePromptCount}`,
         }}
         onAddClick={deck.openAnyUpload}
-        onRemove={(id) =>
-          setReferenceImages(referenceImages.filter((img) => img.id !== id))
-        }
-        onReorderImages={(from, to) =>
-          setReferenceImages(arrayMove(referenceImages, from, to))
-        }
+        onRemove={id => setReferenceImages(referenceImages.filter(img => img.id !== id))}
+        onReorderImages={(from, to) => setReferenceImages(arrayMove(referenceImages, from, to))}
         onClearAll={() => setReferenceImages([])}
         alwaysExpanded={alwaysExpanded}
       />
     ) : null;
 
   // New aspect ratio and resolution — stored globally so cost estimates can observe them
-  const commonAspectRatio = usePromptImageStore((s) => s.commonAspectRatio);
-  const setCommonAspectRatio = usePromptImageStore(
-    (s) => s.setCommonAspectRatio,
-  );
-  const commonResolution = usePromptImageStore((s) => s.commonResolution);
-  const setCommonResolution = usePromptImageStore((s) => s.setCommonResolution);
-  const commonQuality = usePromptImageStore((s) => s.commonQuality);
-  const setCommonQuality = usePromptImageStore((s) => s.setCommonQuality);
+  const commonAspectRatio = usePromptImageStore(s => s.commonAspectRatio);
+  const setCommonAspectRatio = usePromptImageStore(s => s.setCommonAspectRatio);
+  const commonResolution = usePromptImageStore(s => s.commonResolution);
+  const setCommonResolution = usePromptImageStore(s => s.setCommonResolution);
+  const commonQuality = usePromptImageStore(s => s.commonQuality);
+  const setCommonQuality = usePromptImageStore(s => s.setCommonQuality);
 
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
@@ -299,8 +261,8 @@ export const PromptBoxImage = ({
   }, [selectedModel, generationCount]);
 
   useEffect(() => {
-    setAspectRatioList((prev) =>
-      prev.map((item) => ({
+    setAspectRatioList(prev =>
+      prev.map(item => ({
         ...item,
         selected: item.label.toLowerCase() === aspectRatio,
       })),
@@ -308,8 +270,8 @@ export const PromptBoxImage = ({
   }, [aspectRatio]);
 
   useEffect(() => {
-    setResolutionList((prev) =>
-      prev.map((item) => ({
+    setResolutionList(prev =>
+      prev.map(item => ({
         ...item,
         selected: item.label.toLowerCase() === resolution,
       })),
@@ -318,8 +280,8 @@ export const PromptBoxImage = ({
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
     setAspectRatio(selectedItem.label.toLowerCase() as any);
-    setAspectRatioList((prev) =>
-      prev.map((item) => ({
+    setAspectRatioList(prev =>
+      prev.map(item => ({
         ...item,
         selected: item.label === selectedItem.label,
       })),
@@ -335,8 +297,7 @@ export const PromptBoxImage = ({
     const pastedText = e.clipboardData.getData("text");
     const target = e.currentTarget;
     const { selectionStart, selectionEnd, value } = target;
-    const next =
-      value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
+    const next = value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
     setPrompt(next);
     requestAnimationFrame(() => {
       const pos = Math.min(selectionStart + pastedText.length, next.length);
@@ -363,9 +324,7 @@ export const PromptBoxImage = ({
       return;
     }
     if (isFinite(maxLen) && prompt.length > maxLen) {
-      toast.error(
-        `Prompt exceeds the ${maxLen} character limit for this model`,
-      );
+      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
       return;
     }
 
@@ -381,9 +340,7 @@ export const PromptBoxImage = ({
 
     gtagEvent("enqueue_image");
 
-    const subscriberId = crypto.randomUUID
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2);
+    const subscriberId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 
     setTimeout(() => {
       console.debug("Turn off blocking of prompt box...");
@@ -415,19 +372,13 @@ export const PromptBoxImage = ({
         request.quality = selectedModel.resolveQuality(commonQuality);
       }
 
-      if (
-        selectedModel?.canUseImagePrompt &&
-        !!referenceImages &&
-        referenceImages.length > 0
-      ) {
-        request.image_media_tokens = referenceImages
-          .map((image) => image.mediaToken)
-          .filter((t) => t.length > 0);
+      if (selectedModel?.canUseImagePrompt && !!referenceImages && referenceImages.length > 0) {
+        request.image_media_tokens = referenceImages.map(image => image.mediaToken).filter(t => t.length > 0);
       }
 
       window.__storeTaskEnqueueMeta?.({
         prompt,
-        refImageUrls: referenceImages?.map((img) => img.url).filter(Boolean),
+        refImageUrls: referenceImages?.map(img => img.url).filter(Boolean),
         modelType: (selectedModel as any)?.tauriId || String(selectedModel),
         timestamp: Date.now(),
         batchCount: generationCount,
@@ -441,19 +392,14 @@ export const PromptBoxImage = ({
       await onEnqueuePressed?.(prompt, generationCount, subscriberId);
     } catch (err) {
       console.error("PromptBoxImage - enqueue failed", err);
-      toast.error(
-        commandErrorMessage(
-          err,
-          "Failed to start image generation. Please try again.",
-        ),
-      );
+      toast.error(commandErrorMessage(err, "Failed to start image generation. Please try again."));
     } finally {
       setIsEnqueueing(false);
     }
   };
 
   const getCurrentLegacyAspectRatioIcon = () => {
-    const selected = aspectRatioList.find((item) => item.selected);
+    const selected = aspectRatioList.find(item => item.selected);
     switch (selected?.label?.toLowerCase()) {
       case "wide":
         return <AspectRatioIcon ratio={[16, 10]} />;
@@ -482,10 +428,7 @@ export const PromptBoxImage = ({
 
       <div className="relative z-20 flex flex-col">
         <div
-          className={twMerge(
-            "glass relative w-full p-4 !transition-all duration-200",
-            isFocused && "border-primary",
-          )}
+          className={twMerge("glass relative w-full p-4 !transition-all duration-200", isFocused && "border-primary")}
           {...drop.dropZoneProps}
         >
           {dropOverlay}
@@ -523,24 +466,18 @@ export const PromptBoxImage = ({
                   handleCommonAspectRatioSelect={setCommonAspectRatio}
                 />
               )}
-              {selectedModel?.canChangeAspectRatio &&
-                !selectedModel?.supportsNewAspectRatio() && (
-                  <Tooltip
-                    content="Aspect Ratio (Legacy)"
-                    position="top"
-                    className="z-50"
-                    closeOnClick={true}
-                  >
-                    <PopoverMenu
-                      items={aspectRatioList}
-                      onSelect={handleAspectRatioSelect}
-                      mode="toggle"
-                      panelTitle="Aspect Ratio (Legacy)"
-                      showIconsInList
-                      triggerIcon={getCurrentLegacyAspectRatioIcon()}
-                    />
-                  </Tooltip>
-                )}
+              {selectedModel?.canChangeAspectRatio && !selectedModel?.supportsNewAspectRatio() && (
+                <Tooltip content="Aspect Ratio (Legacy)" position="top" className="z-50" closeOnClick={true}>
+                  <PopoverMenu
+                    items={aspectRatioList}
+                    onSelect={handleAspectRatioSelect}
+                    mode="toggle"
+                    panelTitle="Aspect Ratio (Legacy)"
+                    showIconsInList
+                    triggerIcon={getCurrentLegacyAspectRatioIcon()}
+                  />
+                </Tooltip>
+              )}
               {selectedModel?.supportsNewResolution() && (
                 <ResolutionPicker
                   model={selectedModel}
@@ -548,24 +485,18 @@ export const PromptBoxImage = ({
                   handleCommonResolutionSelect={setCommonResolution}
                 />
               )}
-              {selectedModel?.canChangeResolution &&
-                !selectedModel?.supportsNewResolution() && (
-                  <Tooltip
-                    content="Resolution"
-                    position="top"
-                    className="z-50"
-                    closeOnClick={true}
-                  >
-                    <PopoverMenu
-                      items={resolutionList}
-                      onSelect={handleResolutionSelect}
-                      mode="toggle"
-                      panelTitle="Resolution"
-                      showIconsInList
-                      triggerIcon={<MaximizeIcon className="h-4 w-4" />}
-                    />
-                  </Tooltip>
-                )}
+              {selectedModel?.canChangeResolution && !selectedModel?.supportsNewResolution() && (
+                <Tooltip content="Resolution" position="top" className="z-50" closeOnClick={true}>
+                  <PopoverMenu
+                    items={resolutionList}
+                    onSelect={handleResolutionSelect}
+                    mode="toggle"
+                    panelTitle="Resolution"
+                    showIconsInList
+                    triggerIcon={<MaximizeIcon className="h-4 w-4" />}
+                  />
+                </Tooltip>
+              )}
               {selectedModel?.supportsQuality() && (
                 <QualityPicker
                   model={selectedModel}
@@ -578,7 +509,7 @@ export const PromptBoxImage = ({
               <GenerationCountPicker
                 currentModel={selectedModel}
                 currentCount={generationCount}
-                handleCountChange={(count) => {
+                handleCountChange={count => {
                   setGenerationCount(count);
                 }}
               />
@@ -596,20 +527,13 @@ export const PromptBoxImage = ({
             </div>
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-            <Tooltip
-              content={isExpanded ? "Collapse" : "Expand"}
-              position="top"
-              className="-mb-2"
-            >
+            <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="top" className="-mb-2">
               <button
                 type="button"
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <DynamicIcon
-                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
-                  className="text-xs"
-                />
+                <DynamicIcon icon={isExpanded ? ChevronUpIcon : ChevronDownIcon} className="text-xs" />
               </button>
             </Tooltip>
           </div>

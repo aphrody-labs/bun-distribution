@@ -1,15 +1,7 @@
 import { createCanvasSurface } from "../canvas-utils";
-import {
-  DEFAULT_GRAPHIC_SOURCE_SIZE,
-  getGraphicDefinition,
-  registerDefaultGraphics,
-} from "../../../graphics";
+import { DEFAULT_GRAPHIC_SOURCE_SIZE, getGraphicDefinition, registerDefaultGraphics } from "../../../graphics";
 import type { ParamValues } from "../../../params";
-import {
-  VisualNode,
-  type ResolvedVisualNodeState,
-  type VisualNodeParams,
-} from "./visual-node";
+import { VisualNode, type ResolvedVisualNodeState, type VisualNodeParams } from "./visual-node";
 
 export interface GraphicNodeParams extends VisualNodeParams {
   definitionId: string;
@@ -20,10 +12,7 @@ export interface ResolvedGraphicNodeState extends ResolvedVisualNodeState {
   resolvedParams: ParamValues;
 }
 
-export class GraphicNode extends VisualNode<
-  GraphicNodeParams,
-  ResolvedGraphicNodeState
-> {
+export class GraphicNode extends VisualNode<GraphicNodeParams, ResolvedGraphicNodeState> {
   private cachedKey: string | null = null;
   private cachedSource: OffscreenCanvas | null = null;
 
@@ -32,11 +21,7 @@ export class GraphicNode extends VisualNode<
     registerDefaultGraphics();
   }
 
-  getSource({
-    resolvedParams,
-  }: {
-    resolvedParams: ParamValues;
-  }): OffscreenCanvas {
+  getSource({ resolvedParams }: { resolvedParams: ParamValues }): OffscreenCanvas {
     const definition = getGraphicDefinition({
       definitionId: this.params.definitionId,
     });

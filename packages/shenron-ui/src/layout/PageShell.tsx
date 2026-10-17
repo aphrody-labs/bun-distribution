@@ -74,9 +74,7 @@ export function PageShell({
           className="pointer-events-none absolute right-0 top-3 hidden opacity-[0.09] md:block"
         />
       )}
-      <div className={wikiDecorative ? "relative z-[1]" : undefined}>
-        {children}
-      </div>
+      <div className={wikiDecorative ? "relative z-[1]" : undefined}>{children}</div>
     </Tag>
   );
 }

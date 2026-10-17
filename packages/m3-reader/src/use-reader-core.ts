@@ -6,14 +6,7 @@
  * handle and the scroll-position sync of the virtualized vertical mode.
  */
 
-import {
-  type CSSProperties,
-  type RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type CSSProperties, type RefObject, useCallback, useEffect, useRef, useState } from "react";
 import type { Virtualizer } from "@tanstack/react-virtual";
 import type { SwiperClass } from "swiper/react";
 
@@ -43,29 +36,20 @@ export function useFullscreen(containerRef: RefObject<HTMLElement | null>) {
     if (mounted.current) setFullscreenError(null);
     try {
       if (doc.fullscreenElement === el) {
-        if (typeof doc.exitFullscreen !== "function")
-          throw new Error("Fullscreen exit is unavailable");
+        if (typeof doc.exitFullscreen !== "function") throw new Error("Fullscreen exit is unavailable");
         await doc.exitFullscreen();
       } else {
         // Request this container directly; never exit another component's fullscreen.
-        if (typeof el.requestFullscreen !== "function")
-          throw new Error("Fullscreen is unavailable");
+        if (typeof el.requestFullscreen !== "function") throw new Error("Fullscreen is unavailable");
         await el.requestFullscreen();
       }
       if (mounted.current && current === operation.current) {
-        setIsFullscreen(
-          Boolean(
-            containerRef.current &&
-            doc.fullscreenElement === containerRef.current,
-          ),
-        );
+        setIsFullscreen(Boolean(containerRef.current && doc.fullscreenElement === containerRef.current));
       }
       return true;
     } catch (reason) {
       if (mounted.current && current === operation.current) {
-        setFullscreenError(
-          reason instanceof Error ? reason : new Error(String(reason)),
-        );
+        setFullscreenError(reason instanceof Error ? reason : new Error(String(reason)));
       }
       return false;
     }
@@ -76,12 +60,7 @@ export function useFullscreen(containerRef: RefObject<HTMLElement | null>) {
     if (!doc) return;
     mounted.current = true;
     const onChange = () =>
-      setIsFullscreen(
-        Boolean(
-          containerRef.current &&
-          doc.fullscreenElement === containerRef.current,
-        ),
-      );
+      setIsFullscreen(Boolean(containerRef.current && doc.fullscreenElement === containerRef.current));
     onChange();
     doc.addEventListener("fullscreenchange", onChange);
     return () => {
@@ -130,9 +109,7 @@ export function useVerticalScrollSync(
     const onScroll = () => {
       if (restoring?.current) return;
       const mid = el.scrollTop + el.clientHeight / 2;
-      const item = virtualizer
-        .getVirtualItems()
-        .find((vi) => vi.start <= mid && vi.end >= mid);
+      const item = virtualizer.getVirtualItems().find(vi => vi.start <= mid && vi.end >= mid);
       if (item) setCurrent(item.index);
     };
     el.addEventListener("scroll", onScroll, { passive: true });

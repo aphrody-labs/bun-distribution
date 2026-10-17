@@ -44,8 +44,7 @@ export const InputVector = ({
   const wrapperCommonClasses =
     "relative flex items-center before:inline-block before:h-6 before:bg-brand-primary before:text-white before:rounded-l-[3px] before:w-1.5 before:text-center before:justify-center before:items-center before:font-semibold before:flex before:align-middle before:leading-8 text-xs";
 
-  const lockedCommonClasses =
-    "hover:cursor-not-allowed hover:bg-brand-secondary";
+  const lockedCommonClasses = "hover:cursor-not-allowed hover:bg-brand-secondary";
 
   function validateInput(newValue: string, oldValue: string) {
     if (newValue === "" || newValue === "-" || newValue === ".") {
@@ -61,10 +60,7 @@ export const InputVector = ({
       z: oldZ.current,
     };
 
-    newVector[event.target.name] = validateInput(
-      event.target.value,
-      newVector[event.target.name],
-    );
+    newVector[event.target.name] = validateInput(event.target.value, newVector[event.target.name]);
 
     onChange(newVector);
   }
@@ -76,10 +72,7 @@ export const InputVector = ({
   };
 
   // For dragging the input value to increment/decrement
-  const handleMouseDown = (
-    e: React.MouseEvent,
-    ref: RefObject<HTMLInputElement | null>,
-  ) => {
+  const handleMouseDown = (e: React.MouseEvent, ref: RefObject<HTMLInputElement | null>) => {
     e.stopPropagation();
     blurAllInputs();
     previousMousePosition.current = e.clientX;
@@ -103,12 +96,9 @@ export const InputVector = ({
         z: oldZ.current,
       } as Record<string, string>;
 
-      const newValue =
-        parseFloat(newVector[ref.current?.name ?? ""]) + direction * increment;
+      const newValue = parseFloat(newVector[ref.current?.name ?? ""]) + direction * increment;
 
-      newVector[ref.current?.name ?? ""] = (
-        Math.round(newValue * 1000) / 1000
-      ).toString();
+      newVector[ref.current?.name ?? ""] = (Math.round(newValue * 1000) / 1000).toString();
 
       onChange(newVector);
     };
@@ -131,20 +121,10 @@ export const InputVector = ({
 
   return (
     <div className="flex w-full flex-col justify-between gap-1.5">
-      <span
-        className={twMerge(
-          wrapperCommonClasses,
-          "before:bg-axis-x",
-          disabled && "opacity-60",
-        )}
-      >
+      <span className={twMerge(wrapperCommonClasses, "before:bg-axis-x", disabled && "opacity-60")}>
         <div className="absolute left-3.5 z-10 font-semibold">X</div>
         <input
-          className={twMerge(
-            inputCommonClasses,
-            "focus:outline-axis-x",
-            disabled && lockedCommonClasses,
-          )}
+          className={twMerge(inputCommonClasses, "focus:outline-axis-x", disabled && lockedCommonClasses)}
           type="text"
           name="x"
           onChange={handleOnChange}
@@ -157,26 +137,16 @@ export const InputVector = ({
           onBlur={() => {
             enableHotkeyInput(DomLevels.INPUT);
           }}
-          onMouseDown={(e) => {
+          onMouseDown={e => {
             handleMouseDown(e, xRef);
           }}
           onKeyDown={handleKeyDown}
         />
       </span>
-      <span
-        className={twMerge(
-          wrapperCommonClasses,
-          "before:bg-axis-y",
-          disabled && "opacity-60",
-        )}
-      >
+      <span className={twMerge(wrapperCommonClasses, "before:bg-axis-y", disabled && "opacity-60")}>
         <div className="absolute left-3.5 z-10 font-semibold">Y</div>
         <input
-          className={twMerge(
-            inputCommonClasses,
-            "focus:outline-axis-y",
-            disabled && lockedCommonClasses,
-          )}
+          className={twMerge(inputCommonClasses, "focus:outline-axis-y", disabled && lockedCommonClasses)}
           type="text"
           name="y"
           onChange={handleOnChange}
@@ -189,26 +159,16 @@ export const InputVector = ({
           onBlur={() => {
             enableHotkeyInput(DomLevels.INPUT);
           }}
-          onMouseDown={(e) => {
+          onMouseDown={e => {
             handleMouseDown(e, yRef);
           }}
           onKeyDown={handleKeyDown}
         />
       </span>
-      <span
-        className={twMerge(
-          wrapperCommonClasses,
-          "before:bg-axis-z",
-          disabled && "opacity-60",
-        )}
-      >
+      <span className={twMerge(wrapperCommonClasses, "before:bg-axis-z", disabled && "opacity-60")}>
         <div className="absolute left-3.5 z-10 font-semibold">Z</div>
         <input
-          className={twMerge(
-            inputCommonClasses,
-            "focus:outline-axis-z",
-            disabled && lockedCommonClasses,
-          )}
+          className={twMerge(inputCommonClasses, "focus:outline-axis-z", disabled && lockedCommonClasses)}
           type="text"
           name="z"
           onChange={handleOnChange}
@@ -221,7 +181,7 @@ export const InputVector = ({
           onBlur={() => {
             enableHotkeyInput(DomLevels.INPUT);
           }}
-          onMouseDown={(e) => {
+          onMouseDown={e => {
             handleMouseDown(e, zRef);
           }}
           onKeyDown={handleKeyDown}

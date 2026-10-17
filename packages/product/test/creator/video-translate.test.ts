@@ -64,7 +64,7 @@ type Handler = (seen: Seen, call: number) => string | undefined;
 /** Latin-only stand-in for a translation, so the validator sees no leftover source characters. */
 const english = (src: string): string =>
   `EN:${[...src]
-    .map((c) => (c.codePointAt(0) ?? 0).toString(36))
+    .map(c => (c.codePointAt(0) ?? 0).toString(36))
     .join("")
     .slice(0, 24)}`;
 
@@ -75,15 +75,12 @@ function fakeLlm(handler?: Handler) {
     port: 0,
     async fetch(request) {
       const url = new URL(request.url);
-      if (url.pathname === "/v1/models")
-        return Response.json({ data: [{ id: "fake-model" }] });
-      if (url.pathname !== "/v1/chat/completions")
-        return new Response("not found", { status: 404 });
+      if (url.pathname === "/v1/models") return Response.json({ data: [{ id: "fake-model" }] });
+      if (url.pathname !== "/v1/chat/completions") return new Response("not found", { status: 404 });
       const body = (await request.json()) as {
         messages: { role: string; content: string }[];
       };
-      const first =
-        body.messages.find((message) => message.role === "user")?.content ?? "";
+      const first = body.messages.find(message => message.role === "user")?.content ?? "";
       const kind: Seen["kind"] = first.includes("TRANSCRIPT:")
         ? "summary"
         : first.includes("TRANSLATE THESE CUES")
@@ -96,10 +93,9 @@ function fakeLlm(handler?: Handler) {
       const src: Record<number, string> = {};
       let ids: number[] = [];
       if (kind === "window") {
-        const line =
-          /TRANSLATE THESE CUES[^\n]*\n(.*)\n/.exec(first)?.[1] ?? "[]";
+        const line = /TRANSLATE THESE CUES[^\n]*\n(.*)\n/.exec(first)?.[1] ?? "[]";
         const items = JSON.parse(line) as { id: number; src: string }[];
-        ids = items.map((item) => item.id);
+        ids = items.map(item => item.id);
         for (const item of items) src[item.id] = item.src;
       }
       const entry: Seen = { kind, messages: body.messages, ids, src };
@@ -107,12 +103,8 @@ function fakeLlm(handler?: Handler) {
       calls += 1;
       let content = handler?.(entry, calls);
       if (content === undefined) {
-        if (kind === "summary")
-          content = "A Guilty Gear Strive commentary about okizeme.";
-        else if (kind === "window")
-          content = JSON.stringify(
-            ids.map((id) => ({ id, text: english(src[id] ?? "") })),
-          );
+        if (kind === "summary") content = "A Guilty Gear Strive commentary about okizeme.";
+        else if (kind === "window") content = JSON.stringify(ids.map(id => ({ id, text: english(src[id] ?? "") })));
         else if (kind === "review") content = "[]";
         else content = "[]";
       }
@@ -131,10 +123,7 @@ function fakeLlm(handler?: Handler) {
   };
 }
 
-const client = (
-  url: string,
-  extra: Partial<ConstructorParameters<typeof LlmClient>[0]> = {},
-) =>
+const client = (url: string, extra: Partial<ConstructorParameters<typeof LlmClient>[0]> = {}) =>
   new LlmClient({
     baseUrl: url,
     model: "fake-model",
@@ -186,9 +175,7 @@ describe("subtitles", () => {
   test("parses WebVTT (header, NOTE, settings, tags)", () => {
     const text =
       "WEBVTT\n\nNOTE a comment\n\n00:01.000 --> 00:02.000 align:start position:0%\n<c.yellow>Salut</c> &amp; hi\n\n";
-    expect(parseSubtitles(text)).toEqual([
-      { id: 1, start: 1000, end: 2000, text: "Salut & hi" },
-    ]);
+    expect(parseSubtitles(text)).toEqual([{ id: 1, start: 1000, end: 2000, text: "Salut & hi" }]);
   });
 
   test("parses ASS with commas in the text, override tags and \\N", () => {
@@ -202,7 +189,7 @@ describe("subtitles", () => {
       "Dialogue: 0,0:00:00.50,0:00:01.50,Default,,0,0,0,,First",
     ].join("\n");
     const cues = parseSubtitles(text);
-    expect(cues.map((c) => [c.start, c.end, c.text])).toEqual([
+    expect(cues.map(c => [c.start, c.end, c.text])).toEqual([
       [500, 1500, "First"],
       [2000, 3500, "Well, you know, it is fine"],
     ]);
@@ -220,7 +207,7 @@ describe("subtitles", () => {
       { id: 2, start: 3000, end: 4000, text: "A --> B {x}" },
     ];
     const srt = toSrt(cues);
-    expect(parseSubtitles(srt).map((c) => [c.start, c.end, c.text])).toEqual([
+    expect(parseSubtitles(srt).map(c => [c.start, c.end, c.text])).toEqual([
       [1000, 2500, "Line one Line two"],
       [3000, 4000, "A -> B"],
     ]);
@@ -230,9 +217,7 @@ describe("subtitles", () => {
       "原文",
       "Line one",
     ]);
-    expect(
-      toVtt(cues).startsWith("WEBVTT\n\n1\n00:00:01.000 --> 00:00:02.500"),
-    ).toBe(true);
+    expect(toVtt(cues).startsWith("WEBVTT\n\n1\n00:00:01.000 --> 00:00:02.500")).toBe(true);
     const ass = toAss(cues, { bilingual: true });
     expect(ass).toContain("[Events]");
     expect(ass).toContain(
@@ -250,11 +235,10 @@ describe("subtitles", () => {
 describe("layout", () => {
   test("wrapLines balances two lines under the limit", () => {
     expect(wrapLines("short", 42)).toEqual(["short"]);
-    const text =
-      "I can't believe he just threw that out on wakeup, what a read";
+    const text = "I can't believe he just threw that out on wakeup, what a read";
     const lines = wrapLines(text, 42);
     expect(lines).toHaveLength(2);
-    expect(lines.every((line) => line.length <= 42)).toBe(true);
+    expect(lines.every(line => line.length <= 42)).toBe(true);
     expect(lines.join(" ")).toBe(text);
   });
 
@@ -262,7 +246,7 @@ describe("layout", () => {
     const text =
       "This is the first sentence of the clip. Here comes the second one, which is a bit longer than the first. And a third.";
     const pieces = splitText(text, 60);
-    expect(pieces.every((piece) => piece.length <= 60)).toBe(true);
+    expect(pieces.every(piece => piece.length <= 60)).toBe(true);
     expect(pieces.join(" ")).toBe(text);
   });
 
@@ -285,15 +269,11 @@ describe("layout", () => {
       cue(1, 0, 3000, "First one is long enough to show"),
       cue(2, 2000, 4000, "Second one overlaps with it"),
     ]);
-    for (let i = 1; i < cues.length; i += 1)
-      expect(cues[i]?.start ?? 0).toBeGreaterThanOrEqual(cues[i - 1]?.end ?? 0);
+    for (let i = 1; i < cues.length; i += 1) expect(cues[i]?.start ?? 0).toBeGreaterThanOrEqual(cues[i - 1]?.end ?? 0);
   });
 
   test("merges starved fragments", () => {
-    const { cues, stats } = layoutCues([
-      cue(1, 0, 500, "Wait,"),
-      cue(2, 600, 1400, "what?!"),
-    ]);
+    const { cues, stats } = layoutCues([cue(1, 0, 500, "Wait,"), cue(2, 600, 1400, "what?!")]);
     expect(stats.merged).toBe(1);
     expect(cues).toHaveLength(1);
     expect(cues[0]).toMatchObject({
@@ -304,8 +284,7 @@ describe("layout", () => {
   });
 
   test("splits a long cue over its original time span", () => {
-    const sentence =
-      "He ran out of meter right after the burst bait and had to block the whole thing.";
+    const sentence = "He ran out of meter right after the burst bait and had to block the whole thing.";
     const text = Array.from({ length: 3 }, () => sentence).join(" ");
     const { cues, stats } = layoutCues([cue(1, 1000, 11_000, text)]);
     expect(stats.split).toBeGreaterThanOrEqual(2);
@@ -314,47 +293,35 @@ describe("layout", () => {
     for (const piece of cues) {
       const lines = piece.text.split("\n");
       expect(lines.length).toBeLessThanOrEqual(2);
-      expect(lines.every((line) => line.length <= 42)).toBe(true);
+      expect(lines.every(line => line.length <= 42)).toBe(true);
     }
   });
 
   test("empty cues are dropped and extend the previous contiguous cue", () => {
-    const { cues, stats } = layoutCues([
-      cue(1, 0, 2000, "A full sentence here."),
-      cue(2, 2000, 3500, ""),
-    ]);
+    const { cues, stats } = layoutCues([cue(1, 0, 2000, "A full sentence here."), cue(2, 2000, 3500, "")]);
     expect(cues).toHaveLength(1);
     expect(cues[0]?.end).toBe(3500);
     expect(stats.dropped).toBe(1);
   });
 
   test("reports what cannot be made readable and caps long extensions", () => {
-    const hard = layoutCues([
-      cue(1, 0, 1000, "x".repeat(60)),
-      cue(2, 1000, 3000, "next"),
-    ]);
+    const hard = layoutCues([cue(1, 0, 1000, "x".repeat(60)), cue(2, 1000, 3000, "next")]);
     expect(hard.stats.overCps).toContain(1);
     const long = layoutCues([cue(1, 0, 500, "word ".repeat(40).trim())], {
       maxCps: 8,
     });
-    expect(
-      (long.cues.at(-1)?.end ?? 0) - (long.cues[0]?.start ?? 0),
-    ).toBeLessThanOrEqual(DEFAULT_LAYOUT.maxDuration + 1);
+    expect((long.cues.at(-1)?.end ?? 0) - (long.cues[0]?.start ?? 0)).toBeLessThanOrEqual(
+      DEFAULT_LAYOUT.maxDuration + 1,
+    );
   });
 
   test("output respects 2 lines x 42 chars on arbitrary input", () => {
-    const words =
-      "oki mixup frame trap anti-air punish okizeme meaty reversal cross-up neutral footsies".split(
-        " ",
-      );
+    const words = "oki mixup frame trap anti-air punish okizeme meaty reversal cross-up neutral footsies".split(" ");
     const input: Cue[] = [];
     let t = 0;
     for (let i = 0; i < 40; i += 1) {
       const n = 3 + ((i * 7) % 30);
-      const text = Array.from(
-        { length: n },
-        (_, k) => words[(i + k) % words.length],
-      ).join(" ");
+      const text = Array.from({ length: n }, (_, k) => words[(i + k) % words.length]).join(" ");
       input.push(cue(i + 1, t, t + 700 + ((i * 331) % 3000), text));
       t += 900 + ((i * 211) % 2500);
     }
@@ -362,10 +329,9 @@ describe("layout", () => {
     for (const [index, out] of cues.entries()) {
       const lines = out.text.split("\n");
       expect(lines.length).toBeLessThanOrEqual(2);
-      expect(lines.every((line) => line.length <= 42)).toBe(true);
+      expect(lines.every(line => line.length <= 42)).toBe(true);
       expect(out.end).toBeGreaterThan(out.start);
-      if (index > 0)
-        expect(out.start).toBeGreaterThanOrEqual(cues[index - 1]?.end ?? 0);
+      if (index > 0) expect(out.start).toBeGreaterThanOrEqual(cues[index - 1]?.end ?? 0);
       expect(Number.isFinite(cps(out))).toBe(true);
     }
   });
@@ -377,11 +343,7 @@ describe("layout", () => {
 
 describe("glossary", () => {
   test("built-in files are valid, sourced and labelled", () => {
-    expect(BUILTIN_NAMES.toSorted()).toEqual([
-      "art-streams",
-      "fgc-common",
-      "guilty-gear",
-    ]);
+    expect(BUILTIN_NAMES.toSorted()).toEqual(["art-streams", "fgc-common", "guilty-gear"]);
     const ids = new Set<string>();
     for (const name of BUILTIN_NAMES) {
       const file = builtinGlossary(name);
@@ -393,14 +355,11 @@ describe("glossary", () => {
         for (const key of (entry.ref ?? "").split("+").filter(Boolean)) {
           expect(Object.keys(file.sources)).toContain(key);
         }
-        for (const source of Object.values(file.sources))
-          expect(source.url).toMatch(/^https:\/\//);
-        for (const avoid of entry.avoid ?? [])
-          expect(avoid.toLowerCase()).not.toBe(entry.en.toLowerCase());
+        for (const source of Object.values(file.sources)) expect(source.url).toMatch(/^https:\/\//);
+        for (const avoid of entry.avoid ?? []) expect(avoid.toLowerCase()).not.toBe(entry.en.toLowerCase());
         if (entry.confidence !== "unverified" && !entry.ref)
           throw new Error(`${entry.id}: verified/partial entry without ref`);
-        for (const unverified of entry.unverifiedSrc ?? [])
-          expect(entry.src).toContain(unverified);
+        for (const unverified of entry.unverifiedSrc ?? []) expect(entry.src).toContain(unverified);
       }
     }
   });
@@ -421,19 +380,15 @@ describe("glossary", () => {
       "Burst",
       "Roman Cancel",
     ];
-    const all = glossary.entries.map((entry) => entry.en);
+    const all = glossary.entries.map(entry => entry.en);
     for (const term of wanted) expect(all).toContain(term);
-    expect(
-      glossary.entries.filter((entry) => entry.kind === "character"),
-    ).toHaveLength(34);
+    expect(glossary.entries.filter(entry => entry.kind === "character")).toHaveLength(34);
   });
 
   test("script-aware matching: katakana boundaries, Latin words, ambiguous names", async () => {
     const { glossary } = await loadGlossaries(BUILTIN_NAMES);
-    const ids = (text: string) => glossary.match(text).map((entry) => entry.id);
-    expect(ids("今日はソルの起き攻めがきつい")).toEqual(
-      expect.arrayContaining(["char-sol", "okizeme"]),
-    );
+    const ids = (text: string) => glossary.match(text).map(entry => entry.id);
+    expect(ids("今日はソルの起き攻めがきつい")).toEqual(expect.arrayContaining(["char-sol", "okizeme"]));
     expect(ids("シンプルなメインのルール")).not.toContain("char-sin");
     expect(ids("シンプルなメインのルール")).not.toContain("char-may");
     expect(ids("ソルトを入れる")).not.toContain("char-sol");
@@ -450,20 +405,10 @@ describe("glossary", () => {
 
   test("detects banned literal renderings only when the source term is present", async () => {
     const { glossary } = await loadGlossaries(["fgc-common"]);
-    expect(
-      glossary
-        .violations("そこ暴れる？", "You rampage there?")
-        .map((v) => v.bad),
-    ).toEqual(["rampage"]);
-    expect(
-      glossary.violations("そこ暴れる？", "You're mashing there?"),
-    ).toEqual([]);
-    expect(glossary.violations("今日は晴れ", "He went on a rampage")).toEqual(
-      [],
-    );
-    const entry = glossary.entries.find(
-      (candidate) => candidate.id === "abare",
-    );
+    expect(glossary.violations("そこ暴れる？", "You rampage there?").map(v => v.bad)).toEqual(["rampage"]);
+    expect(glossary.violations("そこ暴れる？", "You're mashing there?")).toEqual([]);
+    expect(glossary.violations("今日は晴れ", "He went on a rampage")).toEqual([]);
+    const entry = glossary.entries.find(candidate => candidate.id === "abare");
     expect(entry && glossary.uses(entry, "He keeps mashing")).toBe(true);
   });
 
@@ -476,18 +421,12 @@ describe("glossary", () => {
   });
 
   test("user files are validated and override built-ins by id", async () => {
-    expect(() =>
-      validateGlossary(
-        { entries: [{ id: "x", src: [], en: "x", confidence: "verified" }] },
-        "t",
-      ),
-    ).toThrow(UsageError);
-    expect(() =>
-      validateGlossary(
-        { entries: [{ id: "x", src: ["a"], en: "x", confidence: "sure" }] },
-        "t",
-      ),
-    ).toThrow(/confidence/);
+    expect(() => validateGlossary({ entries: [{ id: "x", src: [], en: "x", confidence: "verified" }] }, "t")).toThrow(
+      UsageError,
+    );
+    expect(() => validateGlossary({ entries: [{ id: "x", src: ["a"], en: "x", confidence: "sure" }] }, "t")).toThrow(
+      /confidence/,
+    );
     const file = join(work, "mine.json");
     await writeFile(
       file,
@@ -504,12 +443,8 @@ describe("glossary", () => {
       }),
     );
     const { glossary } = await loadGlossaries(["fgc-common", file]);
-    expect(glossary.entries.find((entry) => entry.id === "okizeme")?.en).toBe(
-      "oki game",
-    );
-    await expect(
-      loadGlossaries(["/nonexistent/g.json"]),
-    ).rejects.toBeInstanceOf(UsageError);
+    expect(glossary.entries.find(entry => entry.id === "okizeme")?.en).toBe("oki game");
+    await expect(loadGlossaries(["/nonexistent/g.json"])).rejects.toBeInstanceOf(UsageError);
     expect(new Glossary([]).match("anything")).toEqual([]);
   });
 });
@@ -520,15 +455,9 @@ describe("glossary", () => {
 
 describe("json replies", () => {
   test("extractJson tolerates fences, prose, trailing commas and wrapper objects", () => {
-    expect(extractJson('```json\n[{"id":1,"text":"a"}]\n```')).toEqual([
-      { id: 1, text: "a" },
-    ]);
-    expect(
-      extractJson('Sure! Here it is: [{"id":1,"text":"a"},] Hope that helps'),
-    ).toEqual([{ id: 1, text: "a" }]);
-    expect(
-      toItems(extractJson('{"translations":[{"id":"2","en":"b"}]}')),
-    ).toEqual([{ id: 2, text: "b" }]);
+    expect(extractJson('```json\n[{"id":1,"text":"a"}]\n```')).toEqual([{ id: 1, text: "a" }]);
+    expect(extractJson('Sure! Here it is: [{"id":1,"text":"a"},] Hope that helps')).toEqual([{ id: 1, text: "a" }]);
+    expect(toItems(extractJson('{"translations":[{"id":"2","en":"b"}]}'))).toEqual([{ id: 2, text: "b" }]);
     expect(() => extractJson("no json here")).toThrow(/JSON/);
     expect(typeof toItems({ foo: 1 })).toBe("string");
     expect(typeof toItems([{ text: "x" }])).toBe("string");
@@ -574,12 +503,8 @@ describe("json replies", () => {
 
 describe("llm client", () => {
   test("url helpers", () => {
-    expect(normalizeBaseUrl("http://127.0.0.1:8795")).toBe(
-      "http://127.0.0.1:8795/v1",
-    );
-    expect(normalizeBaseUrl("http://127.0.0.1:8080/v1/chat/completions")).toBe(
-      "http://127.0.0.1:8080/v1",
-    );
+    expect(normalizeBaseUrl("http://127.0.0.1:8795")).toBe("http://127.0.0.1:8795/v1");
+    expect(normalizeBaseUrl("http://127.0.0.1:8080/v1/chat/completions")).toBe("http://127.0.0.1:8080/v1");
     expect(isLocalHost("http://127.0.0.1:1/v1")).toBe(true);
     expect(isLocalHost("http://192.168.1.4/v1")).toBe(true);
     expect(isLocalHost("https://api.openai.com/v1")).toBe(false);
@@ -599,8 +524,7 @@ describe("llm client", () => {
         bodies.push(body);
         headers.push(request.headers.get("authorization"));
         if (attempt === 1) return new Response("busy", { status: 503 });
-        if (attempt === 2)
-          return new Response("unknown field seed", { status: 400 });
+        if (attempt === 2) return new Response("unknown field seed", { status: 400 });
         return Response.json({
           choices: [{ message: { content: "<think>x</think>done" } }],
         });
@@ -633,11 +557,9 @@ describe("llm client", () => {
       fetch: () => (hits++, new Response("no", { status: 401 })),
     });
     try {
-      await expect(
-        client(`http://127.0.0.1:${server.port}/v1`).chat([
-          { role: "user", content: "x" },
-        ]),
-      ).rejects.toThrow(/authentification/);
+      await expect(client(`http://127.0.0.1:${server.port}/v1`).chat([{ role: "user", content: "x" }])).rejects.toThrow(
+        /authentification/,
+      );
       expect(hits).toBe(1);
     } finally {
       server.stop(true);
@@ -646,9 +568,7 @@ describe("llm client", () => {
     const port = dead.port;
     dead.stop(true);
     await expect(
-      client(`http://127.0.0.1:${port}/v1`, { maxAttempts: 2 }).chat([
-        { role: "user", content: "x" },
-      ]),
+      client(`http://127.0.0.1:${port}/v1`, { maxAttempts: 2 }).chat([{ role: "user", content: "x" }]),
     ).rejects.toBeInstanceOf(LlmError);
   });
 });
@@ -670,10 +590,7 @@ async function glossaryAll(): Promise<Glossary> {
   return (await loadGlossaries(BUILTIN_NAMES)).glossary;
 }
 
-const deps = async (
-  llm: LlmClient,
-  cache = new Cache(join(work, "unused-cache"), false, false),
-) => ({
+const deps = async (llm: LlmClient, cache = new Cache(join(work, "unused-cache"), false, false)) => ({
   llm,
   llmKey: "test",
   glossary: await glossaryAll(),
@@ -685,21 +602,15 @@ describe("translation", () => {
   test("windows carry the summary, previous translations, next source lines and only matching glossary entries", async () => {
     const server = fakeLlm();
     try {
-      const result = await translateCues(
-        SOURCE,
-        await deps(client(server.url)),
-        {
-          windowSize: 2,
-          before: 2,
-          after: 2,
-          sourceLang: "ja",
-        },
-      );
-      expect(result.cues.map((c) => c.text)).toEqual(
-        SOURCE.map((c) => english(c.text)),
-      );
-      expect(result.cues.map((c) => c.orig)).toEqual(SOURCE.map((c) => c.text));
-      const windows = server.seen.filter((s) => s.kind === "window");
+      const result = await translateCues(SOURCE, await deps(client(server.url)), {
+        windowSize: 2,
+        before: 2,
+        after: 2,
+        sourceLang: "ja",
+      });
+      expect(result.cues.map(c => c.text)).toEqual(SOURCE.map(c => english(c.text)));
+      expect(result.cues.map(c => c.orig)).toEqual(SOURCE.map(c => c.text));
+      const windows = server.seen.filter(s => s.kind === "window");
       expect(windows).toHaveLength(3);
       expect(server.seen[0]?.kind).toBe("summary");
       const first = windows[0]?.messages[1]?.content ?? "";
@@ -708,9 +619,7 @@ describe("translation", () => {
       expect(first).toContain('=> "mash"');
       expect(first).not.toContain("Multiply");
       const second = windows[1]?.messages[1]?.content ?? "";
-      expect(second).toContain(
-        `"en":"${english("ここからソルの起き攻めですね")}"`,
-      );
+      expect(second).toContain(`"en":"${english("ここからソルの起き攻めですね")}"`);
       expect(second).toContain(`"en":"${english("そこ暴れますか？")}"`);
       expect(second).toContain('"id":5,"src":"乗算で影を塗る"');
       expect(second).toContain('=> "guaranteed punish"');
@@ -725,7 +634,7 @@ describe("translation", () => {
 
   test("a wrong count triggers a repair prompt that names the problem", async () => {
     let first = true;
-    const server = fakeLlm((seen) => {
+    const server = fakeLlm(seen => {
       if (seen.kind === "window" && first) {
         first = false;
         return JSON.stringify([{ id: seen.ids[0], text: "only one" }]);
@@ -733,21 +642,13 @@ describe("translation", () => {
       return undefined;
     });
     try {
-      const result = await translateCues(
-        SOURCE.slice(0, 2),
-        await deps(client(server.url)),
-        {
-          windowSize: 2,
-        },
-      );
+      const result = await translateCues(SOURCE.slice(0, 2), await deps(client(server.url)), {
+        windowSize: 2,
+      });
       expect(result.stats.repairs).toBe(1);
       expect(result.stats.fallbackCues).toBe(0);
-      expect(result.cues.map((c) => c.text)).toEqual(
-        SOURCE.slice(0, 2).map((c) => english(c.text)),
-      );
-      const repair =
-        server.seen.filter((s) => s.kind === "window")[1]?.messages.at(-1)
-          ?.content ?? "";
+      expect(result.cues.map(c => c.text)).toEqual(SOURCE.slice(0, 2).map(c => english(c.text)));
+      const repair = server.seen.filter(s => s.kind === "window")[1]?.messages.at(-1)?.content ?? "";
       expect(repair).toMatch(/expected 2 items but got 1/);
       expect(repair).toMatch(/missing ids: 2/);
     } finally {
@@ -756,75 +657,51 @@ describe("translation", () => {
   });
 
   test("falls back cue by cue when the model keeps answering garbage for a window", async () => {
-    const server = fakeLlm((seen) =>
-      seen.kind === "window" && seen.ids.length > 1
-        ? "I cannot do that, sorry."
-        : undefined,
+    const server = fakeLlm(seen =>
+      seen.kind === "window" && seen.ids.length > 1 ? "I cannot do that, sorry." : undefined,
     );
     try {
-      const result = await translateCues(
-        SOURCE.slice(0, 3),
-        await deps(client(server.url)),
-        {
-          windowSize: 3,
-          retries: 1,
-        },
-      );
+      const result = await translateCues(SOURCE.slice(0, 3), await deps(client(server.url)), {
+        windowSize: 3,
+        retries: 1,
+      });
       expect(result.stats.fallbackCues).toBe(3);
       expect(result.stats.untranslated).toEqual([]);
-      expect(result.cues.map((c) => c.text)).toEqual(
-        SOURCE.slice(0, 3).map((c) => english(c.text)),
-      );
+      expect(result.cues.map(c => c.text)).toEqual(SOURCE.slice(0, 3).map(c => english(c.text)));
     } finally {
       server.stop();
     }
   });
 
   test("a cue the model never translates keeps its source text and is reported", async () => {
-    const server = fakeLlm((seen) =>
-      seen.kind === "window" ? "nope" : undefined,
-    );
+    const server = fakeLlm(seen => (seen.kind === "window" ? "nope" : undefined));
     try {
-      const result = await translateCues(
-        SOURCE.slice(0, 2),
-        await deps(client(server.url)),
-        {
-          windowSize: 2,
-          retries: 0,
-        },
-      );
+      const result = await translateCues(SOURCE.slice(0, 2), await deps(client(server.url)), {
+        windowSize: 2,
+        retries: 0,
+      });
       expect(result.stats.untranslated).toEqual([1, 2]);
-      expect(result.cues.map((c) => c.text)).toEqual(
-        SOURCE.slice(0, 2).map((c) => c.text),
-      );
+      expect(result.cues.map(c => c.text)).toEqual(SOURCE.slice(0, 2).map(c => c.text));
     } finally {
       server.stop();
     }
   });
 
   test("a banned literal rendering is rewritten with a targeted fix", async () => {
-    const server = fakeLlm((seen) => {
+    const server = fakeLlm(seen => {
       if (seen.kind === "window")
-        return JSON.stringify(
-          seen.ids.map((id) => ({ id, text: "He goes on a rampage there." })),
-        );
-      if (seen.kind === "fix")
-        return JSON.stringify([{ id: 1, text: "He keeps mashing there." }]);
+        return JSON.stringify(seen.ids.map(id => ({ id, text: "He goes on a rampage there." })));
+      if (seen.kind === "fix") return JSON.stringify([{ id: 1, text: "He keeps mashing there." }]);
       return undefined;
     });
     try {
-      const result = await translateCues(
-        [cue(1, 0, 3000, "そこ暴れますか？")],
-        await deps(client(server.url)),
-        { windowSize: 1 },
-      );
+      const result = await translateCues([cue(1, 0, 3000, "そこ暴れますか？")], await deps(client(server.url)), {
+        windowSize: 1,
+      });
       expect(result.cues[0]?.text).toBe("He keeps mashing there.");
       expect(result.stats.glossaryFixed).toBe(1);
-      expect(result.stats.glossaryViolations).toEqual([
-        { id: 1, term: "abare", bad: "rampage", fixed: true },
-      ]);
-      const fix =
-        server.seen.find((s) => s.kind === "fix")?.messages[1]?.content ?? "";
+      expect(result.stats.glossaryViolations).toEqual([{ id: 1, term: "abare", bad: "rampage", fixed: true }]);
+      const fix = server.seen.find(s => s.kind === "fix")?.messages[1]?.content ?? "";
       expect(fix).toContain('use \\"mash\\"');
     } finally {
       server.stop();
@@ -832,21 +709,15 @@ describe("translation", () => {
   });
 
   test("an unfixable violation is kept and reported, not hidden", async () => {
-    const server = fakeLlm((seen) =>
+    const server = fakeLlm(seen =>
       seen.kind === "window" || seen.kind === "fix"
         ? JSON.stringify(
-            seen.ids.length
-              ? seen.ids.map((id) => ({ id, text: "A rampage!" }))
-              : [{ id: 1, text: "Still a rampage" }],
+            seen.ids.length ? seen.ids.map(id => ({ id, text: "A rampage!" })) : [{ id: 1, text: "Still a rampage" }],
           )
         : undefined,
     );
     try {
-      const result = await translateCues(
-        [cue(1, 0, 3000, "暴れ")],
-        await deps(client(server.url)),
-        { windowSize: 1 },
-      );
+      const result = await translateCues([cue(1, 0, 3000, "暴れ")], await deps(client(server.url)), { windowSize: 1 });
       expect(result.stats.glossaryViolations[0]).toMatchObject({
         term: "abare",
         fixed: false,
@@ -857,7 +728,7 @@ describe("translation", () => {
   });
 
   test("empty strings are allowed for absorbed fragments and survive layout", async () => {
-    const server = fakeLlm((seen) =>
+    const server = fakeLlm(seen =>
       seen.kind === "window"
         ? JSON.stringify([
             { id: 1, text: "Wait, are you really going to do that?" },
@@ -866,19 +737,9 @@ describe("translation", () => {
         : undefined,
     );
     try {
-      const source = [
-        cue(1, 0, 1500, "ちょっと待って、"),
-        cue(2, 1500, 3000, "本当にそれやるの？"),
-      ];
-      const result = await translateCues(
-        source,
-        await deps(client(server.url)),
-        { windowSize: 2 },
-      );
-      expect(result.cues.map((c) => c.text)).toEqual([
-        "Wait, are you really going to do that?",
-        "",
-      ]);
+      const source = [cue(1, 0, 1500, "ちょっと待って、"), cue(2, 1500, 3000, "本当にそれやるの？")];
+      const result = await translateCues(source, await deps(client(server.url)), { windowSize: 2 });
+      expect(result.cues.map(c => c.text)).toEqual(["Wait, are you really going to do that?", ""]);
       const { cues } = layoutCues(result.cues);
       expect(cues).toHaveLength(1);
       expect(cues[0]).toMatchObject({ start: 0, end: 3000 });
@@ -888,7 +749,7 @@ describe("translation", () => {
   });
 
   test("review flags problems without rewriting, and applies only errors when asked", async () => {
-    const server = fakeLlm((seen) =>
+    const server = fakeLlm(seen =>
       seen.kind === "review"
         ? JSON.stringify([
             {
@@ -908,28 +769,20 @@ describe("translation", () => {
         : undefined,
     );
     try {
-      const flag = await translateCues(
-        SOURCE.slice(0, 2),
-        await deps(client(server.url)),
-        {
-          windowSize: 2,
-          review: true,
-        },
-      );
-      expect(flag.review.map((i) => [i.id, i.severity])).toEqual([
+      const flag = await translateCues(SOURCE.slice(0, 2), await deps(client(server.url)), {
+        windowSize: 2,
+        review: true,
+      });
+      expect(flag.review.map(i => [i.id, i.severity])).toEqual([
         [1, "error"],
         [2, "warn"],
       ]);
       expect(flag.cues[0]?.text).toBe(english(SOURCE[0]?.text ?? ""));
-      const apply = await translateCues(
-        SOURCE.slice(0, 2),
-        await deps(client(server.url)),
-        {
-          windowSize: 2,
-          review: true,
-          reviewApply: true,
-        },
-      );
+      const apply = await translateCues(SOURCE.slice(0, 2), await deps(client(server.url)), {
+        windowSize: 2,
+        review: true,
+        reviewApply: true,
+      });
       expect(apply.cues[0]?.text).toBe("His oki is brutal.");
       expect(apply.cues[1]?.text).toBe(english(SOURCE[1]?.text ?? ""));
       expect(apply.review[0]?.applied).toBe(true);
@@ -939,7 +792,7 @@ describe("translation", () => {
   });
 
   test("review-apply refuses suggestions that invent names, and laughter tags become haha", async () => {
-    const server = fakeLlm((seen) =>
+    const server = fakeLlm(seen =>
       seen.kind === "review"
         ? JSON.stringify([
             {
@@ -950,21 +803,15 @@ describe("translation", () => {
             },
           ])
         : seen.kind === "window"
-          ? JSON.stringify(
-              seen.ids.map((id) => ({ id, text: "That is sneaky (laugh)" })),
-            )
+          ? JSON.stringify(seen.ids.map(id => ({ id, text: "That is sneaky (laugh)" })))
           : undefined,
     );
     try {
-      const result = await translateCues(
-        SOURCE.slice(0, 1),
-        await deps(client(server.url)),
-        {
-          windowSize: 1,
-          review: true,
-          reviewApply: true,
-        },
-      );
+      const result = await translateCues(SOURCE.slice(0, 1), await deps(client(server.url)), {
+        windowSize: 1,
+        review: true,
+        reviewApply: true,
+      });
       expect(result.cues[0]?.text).toBe("That is sneaky, haha.");
       expect(result.review[0]?.applied).toBeUndefined();
       expect(result.review[0]?.skipped).toMatch(/unknown names: Banished/);
@@ -978,27 +825,15 @@ describe("translation", () => {
     const server = fakeLlm();
     try {
       const options = { windowSize: 3 };
-      const first = await translateCues(
-        SOURCE,
-        await deps(client(server.url), new Cache(dir, true)),
-        options,
-      );
+      const first = await translateCues(SOURCE, await deps(client(server.url), new Cache(dir, true)), options);
       const callsAfterFirst = server.calls;
       expect(callsAfterFirst).toBeGreaterThan(0);
       expect((await readdir(dir)).length).toBeGreaterThanOrEqual(3);
-      const second = await translateCues(
-        SOURCE,
-        await deps(client(server.url), new Cache(dir, true)),
-        options,
-      );
+      const second = await translateCues(SOURCE, await deps(client(server.url), new Cache(dir, true)), options);
       expect(server.calls).toBe(callsAfterFirst);
       expect(second.stats.cachedWindows).toBe(2);
       expect(second.cues).toEqual(first.cues);
-      const without = await translateCues(
-        SOURCE,
-        await deps(client(server.url), new Cache(dir, false)),
-        options,
-      );
+      const without = await translateCues(SOURCE, await deps(client(server.url), new Cache(dir, false)), options);
       expect(server.calls).toBeGreaterThan(callsAfterFirst);
       expect(without.stats.cachedWindows).toBe(0);
     } finally {
@@ -1012,8 +847,7 @@ describe("translation", () => {
 // ---------------------------------------------------------------------------------------------
 
 const JA_SRT = SOURCE.map(
-  (c, i) =>
-    `${i + 1}\n${formatTimestamp(c.start, "srt")} --> ${formatTimestamp(c.end, "srt")}\n${c.text}\n`,
+  (c, i) => `${i + 1}\n${formatTimestamp(c.start, "srt")} --> ${formatTimestamp(c.end, "srt")}\n${c.text}\n`,
 ).join("\n");
 
 const io = () => {
@@ -1038,10 +872,10 @@ async function fixture(name: string): Promise<{ dir: string; srt: string }> {
 
 describe("pipeline from subtitles", () => {
   test("writes valid, readable English subtitles next to the source and never touches the source", async () => {
-    const server = fakeLlm((seen) => {
+    const server = fakeLlm(seen => {
       if (seen.kind !== "window") return undefined;
       return JSON.stringify(
-        seen.ids.map((id) => ({
+        seen.ids.map(id => ({
           id,
           text:
             id === 2
@@ -1052,18 +886,9 @@ describe("pipeline from subtitles", () => {
     });
     try {
       const { dir, srt } = await fixture("subs");
-      const { config } = parseConfig([
-        "--subs-from",
-        srt,
-        "--llm-url",
-        server.url,
-        "--llm-model",
-        "fake-model",
-      ]);
+      const { config } = parseConfig(["--subs-from", srt, "--llm-url", server.url, "--llm-model", "fake-model"]);
       const sink = io();
-      expect(
-        await runPipeline(config as never, { env: process.env, io: sink.io }),
-      ).toBe(0);
+      expect(await runPipeline(config as never, { env: process.env, io: sink.io })).toBe(0);
       const out = join(dir, "clip.ja.en.srt");
       expect(await readFile(srt, "utf8")).toBe(JA_SRT);
       const cues = parseSubtitles(await readFile(out, "utf8"));
@@ -1071,8 +896,7 @@ describe("pipeline from subtitles", () => {
       for (const [index, c] of cues.entries()) {
         const lines = c.text.split(" ");
         expect(lines.length).toBeGreaterThan(0);
-        if (index > 0)
-          expect(c.start).toBeGreaterThanOrEqual(cues[index - 1]?.end ?? 0);
+        if (index > 0) expect(c.start).toBeGreaterThanOrEqual(cues[index - 1]?.end ?? 0);
         expect(c.end).toBeGreaterThan(c.start);
       }
       expect(await readFile(out, "utf8")).toContain("guaranteed punish");
@@ -1103,9 +927,7 @@ describe("pipeline from subtitles", () => {
         // oxlint-disable-next-line no-await-in-loop -- exécutions séquentielles du pipeline : chaque format écrit son fichier de sortie et la boucle reste ordonnée
         await runPipeline(config as never, { env: process.env, io: io().io });
       }
-      expect(
-        (await readFile(join(dir, "o.vtt"), "utf8")).startsWith("WEBVTT"),
-      ).toBe(true);
+      expect((await readFile(join(dir, "o.vtt"), "utf8")).startsWith("WEBVTT")).toBe(true);
       expect(await readFile(join(dir, "o.ass"), "utf8")).toContain("Dialogue:");
       const { config } = parseConfig([
         "--subs-from",
@@ -1121,9 +943,7 @@ describe("pipeline from subtitles", () => {
       await runPipeline(config as never, { env: process.env, io: io().io });
       const bilingual = await readFile(join(dir, "bi.srt"), "utf8");
       expect(bilingual).toContain("ここからソルの起き攻めですね");
-      expect(bilingual.indexOf("ここからソルの起き攻めですね")).toBeLessThan(
-        bilingual.indexOf("EN:"),
-      );
+      expect(bilingual.indexOf("ここからソルの起き攻めですね")).toBeLessThan(bilingual.indexOf("EN:"));
     } finally {
       server.stop();
     }
@@ -1143,9 +963,7 @@ describe("pipeline from subtitles", () => {
         "--out",
         srt,
       ]);
-      await expect(
-        runPipeline(config as never, { env: process.env, io: io().io }),
-      ).rejects.toBeInstanceOf(UsageError);
+      await expect(runPipeline(config as never, { env: process.env, io: io().io })).rejects.toBeInstanceOf(UsageError);
       expect(await readFile(srt, "utf8")).toBe(JA_SRT);
       expect(server.calls).toBe(0);
     } finally {
@@ -1167,9 +985,7 @@ describe("pipeline from subtitles", () => {
         "--review",
       ]);
       const sink = io();
-      expect(
-        await runPipeline(config as never, { env: process.env, io: sink.io }),
-      ).toBe(0);
+      expect(await runPipeline(config as never, { env: process.env, io: sink.io })).toBe(0);
       const plan = sink.out.join("\n");
       expect(plan).toContain("Plan (--dry-run");
       expect(plan).toContain("ASR            : ignoré (--subs-from, 6 cues)");
@@ -1189,14 +1005,7 @@ describe("pipeline from subtitles", () => {
     const server = fakeLlm();
     try {
       const { srt } = await fixture("resume");
-      const args = [
-        "--subs-from",
-        srt,
-        "--llm-url",
-        server.url,
-        "--llm-model",
-        "fake-model",
-      ];
+      const args = ["--subs-from", srt, "--llm-url", server.url, "--llm-model", "fake-model"];
       await runPipeline(parseConfig(args).config as never, {
         env: process.env,
         io: io().io,
@@ -1217,15 +1026,10 @@ describe("pipeline from subtitles", () => {
     const port = dead.port;
     dead.stop(true);
     const { srt } = await fixture("dead");
-    const { config } = parseConfig([
-      "--subs-from",
-      srt,
-      "--llm-url",
-      `http://127.0.0.1:${port}/v1`,
-    ]);
-    await expect(
-      runPipeline(config as never, { env: process.env, io: io().io }),
-    ).rejects.toThrow(/aphrody gateway serve/);
+    const { config } = parseConfig(["--subs-from", srt, "--llm-url", `http://127.0.0.1:${port}/v1`]);
+    await expect(runPipeline(config as never, { env: process.env, io: io().io })).rejects.toThrow(
+      /aphrody gateway serve/,
+    );
   });
 
   test("a remote endpoint is announced before any text is sent", async () => {
@@ -1255,22 +1059,12 @@ describe("options", () => {
     expect(() => parseConfig([])).toThrow(UsageError);
     expect(() => parseConfig(["a.mp4", "b.mp4"])).toThrow(UsageError);
     expect(() => parseConfig(["a.mp4", "--format", "doc"])).toThrow(/--format/);
-    expect(() => parseConfig(["a.mp4", "--from", "en"])).toThrow(
-      /déjà en anglais/,
-    );
+    expect(() => parseConfig(["a.mp4", "--from", "en"])).toThrow(/déjà en anglais/);
     expect(() => parseConfig(["a.mp4", "--window", "2"])).toThrow(/--window/);
-    expect(() => parseConfig(["a.mp4", "--asr", "endpoint"])).toThrow(
-      /--asr-url/,
-    );
-    expect(() => parseConfig(["a.mp4", "--llm-extra", "[1]"])).toThrow(
-      /--llm-extra/,
-    );
-    expect(() => parseConfig(["--subs-from", "a.srt", "--burn"])).toThrow(
-      /vidéo source/,
-    );
-    expect(() =>
-      parseConfig(["a.mp4", "--burn", "--mux", "--video-out", "x.mp4"]),
-    ).toThrow(/--video-out/);
+    expect(() => parseConfig(["a.mp4", "--asr", "endpoint"])).toThrow(/--asr-url/);
+    expect(() => parseConfig(["a.mp4", "--llm-extra", "[1]"])).toThrow(/--llm-extra/);
+    expect(() => parseConfig(["--subs-from", "a.srt", "--burn"])).toThrow(/vidéo source/);
+    expect(() => parseConfig(["a.mp4", "--burn", "--mux", "--video-out", "x.mp4"])).toThrow(/--video-out/);
     expect(parseConfig(["--help"]).help).toBe(true);
   });
 
@@ -1278,11 +1072,7 @@ describe("options", () => {
     const { config } = parseConfig(["talk.ja.srt"]);
     expect(config?.subsFrom).toBe("talk.ja.srt");
     expect(config?.input).toBeUndefined();
-    expect(config?.glossaries).toEqual([
-      "fgc-common",
-      "guilty-gear",
-      "art-streams",
-    ]);
+    expect(config?.glossaries).toEqual(["fgc-common", "guilty-gear", "art-streams"]);
     expect(config?.translate).toMatchObject({
       windowSize: 20,
       before: 5,
@@ -1295,20 +1085,11 @@ describe("options", () => {
       maxCps: 17,
     });
     expect(config?.temperature).toBe(0.2);
-    expect(parseConfig(["x.mp4", "--no-glossary"]).config?.glossaries).toEqual(
-      [],
-    );
-    expect(
-      parseConfig([
-        "x.mp4",
-        "--glossary",
-        "fgc-common",
-        "--glossary",
-        "my.json",
-      ]).config?.glossaries,
-    ).toEqual(["fgc-common", "my.json"]);
-    expect(
-      parseConfig(["x.mp4", "--review-apply"]).config?.translate.review,
-    ).toBe(true);
+    expect(parseConfig(["x.mp4", "--no-glossary"]).config?.glossaries).toEqual([]);
+    expect(parseConfig(["x.mp4", "--glossary", "fgc-common", "--glossary", "my.json"]).config?.glossaries).toEqual([
+      "fgc-common",
+      "my.json",
+    ]);
+    expect(parseConfig(["x.mp4", "--review-apply"]).config?.translate.review).toBe(true);
   });
 });

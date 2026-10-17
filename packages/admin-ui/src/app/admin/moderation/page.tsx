@@ -127,12 +127,7 @@ function ConfirmDialog({
             <h3 className="font-semibold text-white">{title}</h3>
             <p className="mt-1 text-sm text-zinc-400">{message}</p>
           </div>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="ml-auto btn btn-ghost px-1 py-1"
-            aria-label="Fermer"
-          >
+          <button type="button" onClick={onCancel} className="ml-auto btn btn-ghost px-1 py-1" aria-label="Fermer">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -169,9 +164,7 @@ export default function ModerationPage() {
   };
   const showError = (action: string, err: unknown) => {
     setSuccessMsg(null);
-    setErrorMsg(
-      `${action} : ${err instanceof Error ? err.message : "erreur inconnue"}`,
-    );
+    setErrorMsg(`${action} : ${err instanceof Error ? err.message : "erreur inconnue"}`);
   };
 
   const stats = useQuery({
@@ -181,14 +174,12 @@ export default function ModerationPage() {
   });
   const warns = useQuery({
     queryKey: ["moderation", "warns"],
-    queryFn: () =>
-      api.get<{ rows: Warn[]; total: number }>("/moderation/warns?limit=200"),
+    queryFn: () => api.get<{ rows: Warn[]; total: number }>("/moderation/warns?limit=200"),
     refetchInterval: 60_000,
   });
   const jails = useQuery({
     queryKey: ["moderation", "jails"],
-    queryFn: () =>
-      api.get<{ rows: Jail[]; total: number }>("/moderation/jails"),
+    queryFn: () => api.get<{ rows: Jail[]; total: number }>("/moderation/jails"),
     refetchInterval: 60_000,
   });
   const recent = useQuery({
@@ -206,16 +197,15 @@ export default function ModerationPage() {
       qc.invalidateQueries({ queryKey: ["moderation"] });
       showSuccess("Avertissement retiré avec succès.");
     },
-    onError: (err) => showError("Retrait de l'avertissement impossible", err),
+    onError: err => showError("Retrait de l'avertissement impossible", err),
   });
   const clearAllWarns = useMutation({
-    mutationFn: (userId: string) =>
-      api.post(`/moderation/warns/clear/${userId}`),
+    mutationFn: (userId: string) => api.post(`/moderation/warns/clear/${userId}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["moderation"] });
       showSuccess("Avertissements supprimés.");
     },
-    onError: (err) => showError("Purge des avertissements impossible", err),
+    onError: err => showError("Purge des avertissements impossible", err),
   });
   const unjail = useMutation({
     mutationFn: (userId: string) => api.delete(`/moderation/jails/${userId}`),
@@ -223,20 +213,14 @@ export default function ModerationPage() {
       qc.invalidateQueries({ queryKey: ["moderation"] });
       showSuccess("Membre libéré avec succès.");
     },
-    onError: (err) => showError("Libération impossible", err),
+    onError: err => showError("Libération impossible", err),
   });
 
   const filterWarns = (warns.data?.rows ?? []).filter(
-    (w) =>
-      !filter ||
-      w.userId.includes(filter) ||
-      (w.reason ?? "").toLowerCase().includes(filter.toLowerCase()),
+    w => !filter || w.userId.includes(filter) || (w.reason ?? "").toLowerCase().includes(filter.toLowerCase()),
   );
   const filterJails = (jails.data?.rows ?? []).filter(
-    (j) =>
-      !filter ||
-      j.userId.includes(filter) ||
-      (j.reason ?? "").toLowerCase().includes(filter.toLowerCase()),
+    j => !filter || j.userId.includes(filter) || (j.reason ?? "").toLowerCase().includes(filter.toLowerCase()),
   );
 
   return (
@@ -256,8 +240,8 @@ export default function ModerationPage() {
           </button>
         </div>
         <p className="mt-1 text-sm text-zinc-400">
-          Cette page regroupe les avertissements actifs, les membres en prison
-          et le journal des dernières actions des modérateurs.
+          Cette page regroupe les avertissements actifs, les membres en prison et le journal des dernières actions des
+          modérateurs.
         </p>
       </div>
 
@@ -285,15 +269,11 @@ export default function ModerationPage() {
           type="text"
           placeholder="Filtrer par identifiant Discord ou motif…"
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          onChange={e => setFilter(e.target.value)}
           className="input flex-1"
         />
         {filter && (
-          <button
-            type="button"
-            className="btn btn-ghost px-2"
-            onClick={() => setFilter("")}
-          >
+          <button type="button" className="btn btn-ghost px-2" onClick={() => setFilter("")}>
             <X className="h-4 w-4" />
           </button>
         )}
@@ -304,15 +284,15 @@ export default function ModerationPage() {
           rows={filterWarns}
           total={warns.data?.total ?? 0}
           loading={warns.isLoading}
-          onUnwarn={(id) => unwarn.mutate(id)}
-          onClearAll={(userId) => clearAllWarns.mutate(userId)}
+          onUnwarn={id => unwarn.mutate(id)}
+          onClearAll={userId => clearAllWarns.mutate(userId)}
           pending={unwarn.isPending || clearAllWarns.isPending}
         />
         <JailsCard
           rows={filterJails}
           total={jails.data?.total ?? 0}
           loading={jails.isLoading}
-          onUnjail={(userId) => unjail.mutate(userId)}
+          onUnjail={userId => unjail.mutate(userId)}
           pending={unjail.isPending}
         />
       </div>
@@ -322,13 +302,7 @@ export default function ModerationPage() {
   );
 }
 
-function KpisCard({
-  stats,
-  loading,
-}: {
-  stats: ModStats | undefined;
-  loading: boolean;
-}) {
+function KpisCard({ stats, loading }: { stats: ModStats | undefined; loading: boolean }) {
   if (loading)
     return (
       <div className="flex items-center gap-2 text-zinc-500">
@@ -382,15 +356,13 @@ function KpisCard({
   ];
   return (
     <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      {items.map((it) => (
+      {items.map(it => (
         <div key={it.label} className="card">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-zinc-500">
             <span className={it.color}>{it.icon}</span>
             {it.label}
           </div>
-          <div className="mt-1 text-2xl font-bold text-zinc-100">
-            {it.value}
-          </div>
+          <div className="mt-1 text-2xl font-bold text-zinc-100">{it.value}</div>
         </div>
       ))}
     </div>
@@ -473,38 +445,26 @@ function WarnsCard({
         ) : (
           <div className="max-h-[480px] space-y-2 overflow-y-auto pr-1">
             {[...byUser.entries()].map(([userId, list]) => (
-              <div
-                key={userId}
-                className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-2"
-              >
+              <div key={userId} className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-2">
                 <div className="flex items-center justify-between">
                   <div className="text-xs">
-                    <span className="badge badge-warning">
-                      {list.length} avert.
-                    </span>{" "}
-                    <span
-                      className="ml-1 font-mono text-zinc-300"
-                      title={`ID Discord : ${userId}`}
-                    >
+                    <span className="badge badge-warning">{list.length} avert.</span>{" "}
+                    <span className="ml-1 font-mono text-zinc-300" title={`ID Discord : ${userId}`}>
                       {userId.slice(0, 6)}…{userId.slice(-4)}
                     </span>
-                    <span className="ml-1 text-zinc-500 text-[10px]">
-                      ({userId})
-                    </span>
+                    <span className="ml-1 text-zinc-500 text-[10px]">({userId})</span>
                   </div>
                   <button
                     type="button"
                     className="btn btn-ghost text-xs text-red-400"
                     disabled={pending}
-                    onClick={() =>
-                      setConfirmClear({ userId, count: list.length })
-                    }
+                    onClick={() => setConfirmClear({ userId, count: list.length })}
                   >
                     <Trash2 className="h-3 w-3" /> Tout supprimer
                   </button>
                 </div>
                 <ul className="mt-2 space-y-1">
-                  {list.map((w) => {
+                  {list.map(w => {
                     const createdMs = ts(w.createdAt);
                     return (
                       <li
@@ -515,27 +475,13 @@ function WarnsCard({
                           <span className="text-zinc-500">#{w.id}</span>{" "}
                           <span
                             className="text-zinc-400"
-                            title={
-                              createdMs
-                                ? new Date(createdMs).toLocaleString("fr-FR")
-                                : ""
-                            }
+                            title={createdMs ? new Date(createdMs).toLocaleString("fr-FR") : ""}
                           >
                             {createdMs ? formatRelative(createdMs) : "—"}
                           </span>{" "}
-                          <span className="text-zinc-500">
-                            par {w.moderatorId.slice(0, 6)}…
-                          </span>
-                          {w.reason && (
-                            <div className="mt-0.5 text-zinc-400">
-                              {w.reason}
-                            </div>
-                          )}
-                          {!w.reason && (
-                            <div className="mt-0.5 text-zinc-600 italic">
-                              Aucun motif précisé
-                            </div>
-                          )}
+                          <span className="text-zinc-500">par {w.moderatorId.slice(0, 6)}…</span>
+                          {w.reason && <div className="mt-0.5 text-zinc-400">{w.reason}</div>}
+                          {!w.reason && <div className="mt-0.5 text-zinc-600 italic">Aucun motif précisé</div>}
                         </div>
                         <button
                           type="button"
@@ -605,7 +551,7 @@ function JailsCard({
           </div>
         ) : (
           <div className="max-h-[480px] space-y-2 overflow-y-auto pr-1">
-            {rows.map((j) => {
+            {rows.map(j => {
               const createdMs = ts(j.createdAt);
               const expiresMs = j.expiresAt ? ts(j.expiresAt) : null;
               const expired = expiresMs !== null && expiresMs < Date.now();
@@ -623,40 +569,21 @@ function JailsCard({
                     </div>
                     <div className="text-zinc-400 mt-0.5">
                       Emprisonné{" "}
-                      <span
-                        title={
-                          createdMs
-                            ? new Date(createdMs).toLocaleString("fr-FR")
-                            : ""
-                        }
-                      >
+                      <span title={createdMs ? new Date(createdMs).toLocaleString("fr-FR") : ""}>
                         {createdMs ? formatRelative(createdMs) : "—"}
                       </span>{" "}
                       par {j.moderatorId.slice(0, 6)}…
                     </div>
                     {expiresMs ? (
-                      <div
-                        className={
-                          expired ? "text-red-400 font-medium" : "text-zinc-500"
-                        }
-                      >
+                      <div className={expired ? "text-red-400 font-medium" : "text-zinc-500"}>
                         {expired ? "Peine expirée — " : "Expire "}
-                        <span
-                          title={new Date(expiresMs).toLocaleString("fr-FR")}
-                        >
-                          {formatRelative(expiresMs)}
-                        </span>
+                        <span title={new Date(expiresMs).toLocaleString("fr-FR")}>{formatRelative(expiresMs)}</span>
                       </div>
                     ) : (
                       <div className="text-zinc-500">Peine indéfinie</div>
                     )}
                     <div className="text-zinc-400">
-                      Motif :{" "}
-                      {j.reason ?? (
-                        <span className="italic text-zinc-600">
-                          Aucun motif précisé
-                        </span>
-                      )}
+                      Motif : {j.reason ?? <span className="italic text-zinc-600">Aucun motif précisé</span>}
                     </div>
                   </div>
                   <button
@@ -677,13 +604,7 @@ function JailsCard({
   );
 }
 
-function RecentCard({
-  rows,
-  loading,
-}: {
-  rows: ActionLog[];
-  loading: boolean;
-}) {
+function RecentCard({ rows, loading }: { rows: ActionLog[]; loading: boolean }) {
   return (
     <div className="card overflow-x-auto p-0">
       <div className="border-b border-zinc-800 p-4">
@@ -691,9 +612,7 @@ function RecentCard({
           <Activity className="h-4 w-4 text-brand-400" />
           Actions de modération récentes ({rows.length})
         </h3>
-        <p className="mt-1 text-xs text-zinc-500">
-          Historique des 50 dernières sanctions prononcées sur le serveur.
-        </p>
+        <p className="mt-1 text-xs text-zinc-500">Historique des 50 dernières sanctions prononcées sur le serveur.</p>
       </div>
       {loading ? (
         <div className="flex items-center gap-2 p-4 text-sm text-zinc-500">
@@ -701,9 +620,7 @@ function RecentCard({
           Chargement…
         </div>
       ) : rows.length === 0 ? (
-        <div className="p-4 text-sm text-zinc-500">
-          Aucune action de modération récente.
-        </div>
+        <div className="p-4 text-sm text-zinc-500">Aucune action de modération récente.</div>
       ) : (
         <table className="w-full text-sm">
           <thead className="bg-zinc-900/40 text-xs uppercase tracking-wide text-zinc-400">
@@ -716,25 +633,19 @@ function RecentCard({
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800 font-mono text-xs">
-            {rows.map((r) => {
+            {rows.map(r => {
               const createdMs = ts(r.createdAt);
               const actionMeta = ACTION_LABELS[r.action];
               return (
                 <tr key={r.id} className="hover:bg-zinc-900/30">
                   <td
                     className="px-3 py-2 text-zinc-400"
-                    title={
-                      createdMs
-                        ? new Date(createdMs).toLocaleString("fr-FR")
-                        : ""
-                    }
+                    title={createdMs ? new Date(createdMs).toLocaleString("fr-FR") : ""}
                   >
                     {createdMs ? formatRelative(createdMs) : "—"}
                   </td>
                   <td className="px-3 py-2">
-                    <span className={`badge ${actionMeta?.color ?? ""}`}>
-                      {actionMeta?.label ?? r.action}
-                    </span>
+                    <span className={`badge ${actionMeta?.color ?? ""}`}>{actionMeta?.label ?? r.action}</span>
                   </td>
                   <td className="px-3 py-2">
                     {r.userId ? (
@@ -755,9 +666,7 @@ function RecentCard({
                     )}
                   </td>
                   <td className="px-3 py-2 text-zinc-400 max-w-[200px] truncate">
-                    {r.reason ?? (
-                      <span className="italic text-zinc-600">Aucun motif</span>
-                    )}
+                    {r.reason ?? <span className="italic text-zinc-600">Aucun motif</span>}
                   </td>
                 </tr>
               );

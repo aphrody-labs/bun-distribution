@@ -5,16 +5,9 @@ import {
   canExtractSourceAudio,
   isSourceAudioSeparated,
 } from "../../../timeline/audio-separation";
-import {
-  applyPlacement,
-  resolveTrackPlacement,
-} from "../../../timeline/placement";
+import { applyPlacement, resolveTrackPlacement } from "../../../timeline/placement";
 import { updateElementInSceneTracks } from "../../../timeline/track-element-update";
-import type {
-  SceneTracks,
-  TimelineElement,
-  VideoElement,
-} from "../../../timeline/types";
+import type { SceneTracks, TimelineElement, VideoElement } from "../../../timeline/types";
 import { generateUUID } from "../../../utils/id";
 
 export class ToggleSourceAudioSeparationCommand extends Command {
@@ -33,17 +26,15 @@ export class ToggleSourceAudioSeparationCommand extends Command {
     const editor = EditorCore.getInstance();
     this.savedState = editor.scenes.getActiveScene().tracks;
 
-    const sourceTrack = [
-      ...this.savedState.overlay,
-      this.savedState.main,
-      ...this.savedState.audio,
-    ].find((track) => track.id === this.params.trackId);
+    const sourceTrack = [...this.savedState.overlay, this.savedState.main, ...this.savedState.audio].find(
+      track => track.id === this.params.trackId,
+    );
     if (!sourceTrack) {
       return;
     }
-    const sourceElement = sourceTrack.elements.find(
-      (element) => element.id === this.params.elementId,
-    ) as TimelineElement | undefined;
+    const sourceElement = sourceTrack.elements.find(element => element.id === this.params.elementId) as
+      | TimelineElement
+      | undefined;
     if (!sourceElement || sourceElement.type !== "video") {
       return;
     }
@@ -61,9 +52,7 @@ export class ToggleSourceAudioSeparationCommand extends Command {
       return;
     }
 
-    const mediaAsset = editor.media
-      .getAssets()
-      .find((asset) => asset.id === videoElement.mediaId);
+    const mediaAsset = editor.media.getAssets().find(asset => asset.id === videoElement.mediaId);
     if (!canExtractSourceAudio(videoElement, mediaAsset)) {
       return;
     }
@@ -136,9 +125,8 @@ function updateSourceAudioEnabled({
     tracks,
     trackId,
     elementId,
-    elementPredicate: (element): element is VideoElement =>
-      element.type === "video",
-    update: (element) => ({
+    elementPredicate: (element): element is VideoElement => element.type === "video",
+    update: element => ({
       ...element,
       isSourceAudioEnabled,
     }),

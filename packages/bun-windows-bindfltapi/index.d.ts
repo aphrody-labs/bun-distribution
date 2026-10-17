@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** bindfltapi.dll!CreateBindLink */
-  CreateBindLink(virtualPath: string | Win32Pointer, backingPath: string | Win32Pointer, createBindLinkFlags: number, exceptionCount: number, exceptionPaths: Win32Pointer): number;
+  CreateBindLink(
+    virtualPath: string | Win32Pointer,
+    backingPath: string | Win32Pointer,
+    createBindLinkFlags: number,
+    exceptionCount: number,
+    exceptionPaths: Win32Pointer,
+  ): number;
   /** bindfltapi.dll!RemoveBindLink */
   RemoveBindLink(virtualPath: string | Win32Pointer): number;
 }

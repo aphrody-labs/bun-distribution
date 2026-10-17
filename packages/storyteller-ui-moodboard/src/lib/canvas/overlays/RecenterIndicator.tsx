@@ -8,11 +8,11 @@ import { anyContentVisible } from "../layout/geometry";
 // board (nothing to recenter on) and whenever any node intersects the
 // visible viewport.
 export const RecenterIndicator = () => {
-  const nodes = useMoodboardStore((s) => s.nodes);
-  const rootOrder = useMoodboardStore((s) => s.rootOrder);
-  const viewport = useMoodboardStore((s) => s.viewport);
-  const canvasSize = useMoodboardStore((s) => s.canvasSize);
-  const fitToContent = useMoodboardStore((s) => s.fitToContent);
+  const nodes = useMoodboardStore(s => s.nodes);
+  const rootOrder = useMoodboardStore(s => s.rootOrder);
+  const viewport = useMoodboardStore(s => s.viewport);
+  const canvasSize = useMoodboardStore(s => s.canvasSize);
+  const fitToContent = useMoodboardStore(s => s.fitToContent);
 
   if (rootOrder.length === 0) return null;
   if (anyContentVisible(nodes, rootOrder, viewport, canvasSize)) return null;

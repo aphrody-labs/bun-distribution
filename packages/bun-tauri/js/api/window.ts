@@ -23,15 +23,8 @@
  * @module
  */
 
-import {
-  LogicalPosition,
-  LogicalSize,
-  PhysicalPosition,
-  PhysicalSize,
-  Position,
-  Size
-} from './dpi'
-import type { Event, EventName, EventCallback, UnlistenFn } from './event'
+import { LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize, Position, Size } from "./dpi";
+import type { Event, EventName, EventCallback, UnlistenFn } from "./event";
 import {
   TauriEvent,
   // imported for documentation purposes
@@ -39,12 +32,12 @@ import {
   emit,
   emitTo,
   listen,
-  once
-} from './event'
-import { invoke } from './core'
-import { WebviewWindow } from './webviewWindow'
-import type { DragDropEvent } from './webview'
-import { type JsImage, transformImage } from './image'
+  once,
+} from "./event";
+import { invoke } from "./core";
+import { WebviewWindow } from "./webviewWindow";
+import type { DragDropEvent } from "./webview";
+import { type JsImage, transformImage } from "./image";
 
 /**
  * Allows you to retrieve information about a given monitor.
@@ -53,7 +46,7 @@ import { type JsImage, transformImage } from './image'
  */
 export interface Monitor {
   /** Human-readable name of the monitor */
-  name: string | null
+  name: string | null;
   /**
    * The monitor's resolution in physical pixels.
    *
@@ -62,7 +55,7 @@ export interface Monitor {
    * const logicalSize = monitor.size.toLogical(monitor.scaleFactor);
    * ```
    */
-  size: PhysicalSize
+  size: PhysicalSize;
   /**
    * the Top-left corner position of the monitor relative to the larger full screen area, in physical pixels.
    *
@@ -79,7 +72,7 @@ export interface Monitor {
    * }
    * ```
    */
-  position: PhysicalPosition
+  position: PhysicalPosition;
   /**
    * The monitor's work area (the monitor area excluding taskbars and docks) in physical pixels.
    *
@@ -87,18 +80,18 @@ export interface Monitor {
    * {@linkcode Monitor.position}.
    */
   workArea: {
-    position: PhysicalPosition
-    size: PhysicalSize
-  }
+    position: PhysicalPosition;
+    size: PhysicalSize;
+  };
   /**
    * The scale factor that can be used to map physical pixels to logical pixels,
    * e.g. `monitor.position.toLogical(monitor.scaleFactor)`.
    */
-  scaleFactor: number
+  scaleFactor: number;
 }
 
 /** The light or dark appearance of a window or of the system. */
-type Theme = 'light' | 'dark'
+type Theme = "light" | "dark";
 
 /**
  * The style of the window title bar. **macOS only**
@@ -108,18 +101,10 @@ type Theme = 'light' | 'dark'
  * - `overlay`: the content extends under a transparent title bar, leaving only the
  *   traffic lights visible.
  */
-type TitleBarStyle = 'visible' | 'transparent' | 'overlay'
+type TitleBarStyle = "visible" | "transparent" | "overlay";
 
 /** The edge or corner a resize drag started from, see {@link Window.startResizeDragging}. */
-type ResizeDirection =
-  | 'East'
-  | 'North'
-  | 'NorthEast'
-  | 'NorthWest'
-  | 'South'
-  | 'SouthEast'
-  | 'SouthWest'
-  | 'West'
+type ResizeDirection = "East" | "North" | "NorthEast" | "NorthWest" | "South" | "SouthEast" | "SouthWest" | "West";
 
 /**
  * The payload for the `scaleChange` event.
@@ -128,9 +113,9 @@ type ResizeDirection =
  */
 interface ScaleFactorChanged {
   /** The new window scale factor. */
-  scaleFactor: number
+  scaleFactor: number;
   /** The new window size */
-  size: PhysicalSize
+  size: PhysicalSize;
 }
 
 /**
@@ -150,7 +135,7 @@ enum UserAttentionType {
    * - **macOS:** Bounces the dock icon once.
    * - **Windows:** Flashes the taskbar button until the application is in focus.
    */
-  Informational
+  Informational,
 }
 
 /**
@@ -161,14 +146,14 @@ enum UserAttentionType {
  */
 class CloseRequestedEvent {
   /** Event name */
-  event: EventName
+  event: EventName;
   /** Event identifier used to unlisten */
-  id: number
-  private _preventDefault = false
+  id: number;
+  private _preventDefault = false;
 
   constructor(event: Event<unknown>) {
-    this.event = event.event
-    this.id = event.id
+    this.event = event.event;
+    this.id = event.id;
   }
 
   /**
@@ -178,12 +163,12 @@ class CloseRequestedEvent {
    * otherwise the window is destroyed as usual.
    */
   preventDefault(): void {
-    this._preventDefault = true
+    this._preventDefault = true;
   }
 
   /** Whether {@link CloseRequestedEvent.preventDefault} was called on this event. */
   isPreventDefault(): boolean {
-    return this._preventDefault
+    return this._preventDefault;
   }
 }
 
@@ -195,45 +180,45 @@ class CloseRequestedEvent {
  * manager; unsupported values fall back to the default arrow.
  */
 export type CursorIcon =
-  | 'default'
-  | 'crosshair'
-  | 'hand'
-  | 'arrow'
-  | 'move'
-  | 'text'
-  | 'wait'
-  | 'help'
-  | 'progress'
+  | "default"
+  | "crosshair"
+  | "hand"
+  | "arrow"
+  | "move"
+  | "text"
+  | "wait"
+  | "help"
+  | "progress"
   // something cannot be done
-  | 'notAllowed'
-  | 'contextMenu'
-  | 'cell'
-  | 'verticalText'
-  | 'alias'
-  | 'copy'
-  | 'noDrop'
+  | "notAllowed"
+  | "contextMenu"
+  | "cell"
+  | "verticalText"
+  | "alias"
+  | "copy"
+  | "noDrop"
   // something can be grabbed
-  | 'grab'
+  | "grab"
   /// something is grabbed
-  | 'grabbing'
-  | 'allScroll'
-  | 'zoomIn'
-  | 'zoomOut'
+  | "grabbing"
+  | "allScroll"
+  | "zoomIn"
+  | "zoomOut"
   // edge is to be moved
-  | 'eResize'
-  | 'nResize'
-  | 'neResize'
-  | 'nwResize'
-  | 'sResize'
-  | 'seResize'
-  | 'swResize'
-  | 'wResize'
-  | 'ewResize'
-  | 'nsResize'
-  | 'neswResize'
-  | 'nwseResize'
-  | 'colResize'
-  | 'rowResize'
+  | "eResize"
+  | "nResize"
+  | "neResize"
+  | "nwResize"
+  | "sResize"
+  | "seResize"
+  | "swResize"
+  | "wResize"
+  | "ewResize"
+  | "nsResize"
+  | "neswResize"
+  | "nwseResize"
+  | "colResize"
+  | "rowResize";
 
 /**
  * The state of the taskbar/dock progress bar, see {@link Window.setProgressBar}.
@@ -244,23 +229,23 @@ export enum ProgressBarStatus {
   /**
    * Hide progress bar.
    */
-  None = 'none',
+  None = "none",
   /**
    * Normal state.
    */
-  Normal = 'normal',
+  Normal = "normal",
   /**
    * Indeterminate state. **Treated as Normal on Linux and macOS**
    */
-  Indeterminate = 'indeterminate',
+  Indeterminate = "indeterminate",
   /**
    * Paused state. **Treated as Normal on Linux**
    */
-  Paused = 'paused',
+  Paused = "paused",
   /**
    * Error state. **Treated as Normal on linux**
    */
-  Error = 'error'
+  Error = "error",
 }
 
 /**
@@ -283,13 +268,13 @@ export enum ProgressBarStatus {
  */
 export interface WindowSizeConstraints {
   /** The minimum width, in logical pixels. */
-  minWidth?: number
+  minWidth?: number;
   /** The minimum height, in logical pixels. */
-  minHeight?: number
+  minHeight?: number;
   /** The maximum width, in logical pixels. */
-  maxWidth?: number
+  maxWidth?: number;
   /** The maximum height, in logical pixels. */
-  maxHeight?: number
+  maxHeight?: number;
 }
 
 /**
@@ -301,11 +286,11 @@ export interface ProgressBarState {
   /**
    * The progress bar status.
    */
-  status?: ProgressBarStatus
+  status?: ProgressBarStatus;
   /**
    * The progress bar progress. This can be a value ranging from `0` to `100`
    */
-  progress?: number
+  progress?: number;
 }
 
 /**
@@ -316,8 +301,8 @@ export interface ProgressBarState {
 function getCurrentWindow(): Window {
   return new Window(window.__TAURI_INTERNALS__.metadata.currentWindow.label, {
     // @ts-expect-error `skip` is not defined in the public API but it is handled by the constructor
-    skip: true
-  })
+    skip: true,
+  });
 }
 
 /**
@@ -329,22 +314,22 @@ function getCurrentWindow(): Window {
  * @since 1.0.0
  */
 async function getAllWindows(): Promise<Window[]> {
-  return invoke<string[]>('plugin:window|get_all_windows').then((windows) =>
+  return invoke<string[]>("plugin:window|get_all_windows").then(windows =>
     windows.map(
-      (w) =>
+      w =>
         new Window(w, {
           // @ts-expect-error `skip` is not defined in the public API but it is handled by the constructor
-          skip: true
-        })
-    )
-  )
+          skip: true,
+        }),
+    ),
+  );
 }
 
 /** @ignore */
 // events that are emitted right here instead of by the created window
-const localTauriEvents = ['tauri://created', 'tauri://error']
+const localTauriEvents = ["tauri://created", "tauri://error"];
 /** @ignore */
-export type WindowLabel = string
+export type WindowLabel = string;
 
 /**
  * Create new window or get a handle to an existing one.
@@ -376,10 +361,10 @@ export type WindowLabel = string
  */
 class Window {
   /** The window label. It is a unique identifier for the window, can be used to reference it later. */
-  label: WindowLabel
+  label: WindowLabel;
   /** Local event listeners. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  listeners: Record<string, Array<EventCallback<any>>>
+  listeners: Record<string, Array<EventCallback<any>>>;
 
   /**
    * Creates a new Window.
@@ -403,24 +388,21 @@ class Window {
    * `core:window:default`).
    */
   constructor(label: WindowLabel, options: WindowOptions = {}) {
-    this.label = label
+    this.label = label;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    this.listeners = Object.create(null)
+    this.listeners = Object.create(null);
 
     // @ts-expect-error `skip` is not a public API so it is not defined in WindowOptions
     if (!options?.skip) {
-      invoke('plugin:window|create', {
+      invoke("plugin:window|create", {
         options: {
           ...options,
-          parent:
-            typeof options.parent === 'string'
-              ? options.parent
-              : options.parent?.label,
-          label
-        }
+          parent: typeof options.parent === "string" ? options.parent : options.parent?.label,
+          label,
+        },
       })
-        .then(async () => this.emit('tauri://created'))
-        .catch(async (e: string) => this.emit('tauri://error', e))
+        .then(async () => this.emit("tauri://created"))
+        .catch(async (e: string) => this.emit("tauri://error", e));
     }
   }
 
@@ -436,21 +418,21 @@ class Window {
    * @returns The Window instance to communicate with the window or null if the window doesn't exist.
    */
   static async getByLabel(label: string): Promise<Window | null> {
-    return (await getAllWindows()).find((w) => w.label === label) ?? null
+    return (await getAllWindows()).find(w => w.label === label) ?? null;
   }
 
   /**
    * Get an instance of `Window` for the current window.
    */
   static getCurrent(): Window {
-    return getCurrentWindow()
+    return getCurrentWindow();
   }
 
   /**
    * Gets a list of instances of `Window` for all available windows.
    */
   static async getAll(): Promise<Window[]> {
-    return getAllWindows()
+    return getAllWindows();
   }
 
   /**
@@ -466,10 +448,10 @@ class Window {
   static async getFocusedWindow(): Promise<Window | null> {
     for (const w of await getAllWindows()) {
       if (await w.isFocused()) {
-        return w
+        return w;
       }
     }
-    return null
+    return null;
   }
 
   /**
@@ -495,20 +477,17 @@ class Window {
    * returned function when the listener's own scope ends, e.g. on page navigation
    * or when a component unmounts.
    */
-  async listen<T>(
-    event: EventName,
-    handler: EventCallback<T>
-  ): Promise<UnlistenFn> {
+  async listen<T>(event: EventName, handler: EventCallback<T>): Promise<UnlistenFn> {
     if (this._handleTauriEvent(event, handler)) {
       return () => {
         // eslint-disable-next-line security/detect-object-injection
-        const listeners = this.listeners[event]
-        listeners.splice(listeners.indexOf(handler), 1)
-      }
+        const listeners = this.listeners[event];
+        listeners.splice(listeners.indexOf(handler), 1);
+      };
     }
     return listen(event, handler, {
-      target: { kind: 'Window', label: this.label }
-    })
+      target: { kind: "Window", label: this.label },
+    });
   }
 
   /**
@@ -533,20 +512,17 @@ class Window {
    * automatically when this window is destroyed. Do call the returned function if
    * the listener's own scope ends before the event arrives.
    */
-  async once<T>(
-    event: EventName,
-    handler: EventCallback<T>
-  ): Promise<UnlistenFn> {
+  async once<T>(event: EventName, handler: EventCallback<T>): Promise<UnlistenFn> {
     if (this._handleTauriEvent(event, handler)) {
       return () => {
         // eslint-disable-next-line security/detect-object-injection
-        const listeners = this.listeners[event]
-        listeners.splice(listeners.indexOf(handler), 1)
-      }
+        const listeners = this.listeners[event];
+        listeners.splice(listeners.indexOf(handler), 1);
+      };
     }
     return once(event, handler, {
-      target: { kind: 'Window', label: this.label }
-    })
+      target: { kind: "Window", label: this.label },
+    });
   }
 
   /**
@@ -567,12 +543,12 @@ class Window {
         handler({
           event,
           id: -1,
-          payload
-        })
+          payload,
+        });
       }
-      return
+      return;
     }
-    return emit<T>(event, payload)
+    return emit<T>(event, payload);
   }
 
   /**
@@ -587,23 +563,19 @@ class Window {
    * @param event Event name. Must include only alphanumeric characters, `-`, `/`, `:` and `_`.
    * @param payload Event payload.
    */
-  async emitTo<T>(
-    target: string | EventTarget,
-    event: string,
-    payload?: T
-  ): Promise<void> {
+  async emitTo<T>(target: string | EventTarget, event: string, payload?: T): Promise<void> {
     if (localTauriEvents.includes(event)) {
       // eslint-disable-next-line security/detect-object-injection
       for (const handler of this.listeners[event] || []) {
         handler({
           event,
           id: -1,
-          payload
-        })
+          payload,
+        });
       }
-      return
+      return;
     }
-    return emitTo<T>(target, event, payload)
+    return emitTo<T>(target, event, payload);
   }
 
   /** @ignore */
@@ -611,14 +583,14 @@ class Window {
     if (localTauriEvents.includes(event)) {
       if (!(event in this.listeners)) {
         // eslint-disable-next-line
-        this.listeners[event] = [handler]
+        this.listeners[event] = [handler];
       } else {
         // eslint-disable-next-line
-        this.listeners[event].push(handler)
+        this.listeners[event].push(handler);
       }
-      return true
+      return true;
     }
-    return false
+    return false;
   }
 
   // Getters
@@ -633,9 +605,9 @@ class Window {
    * @returns The window's monitor scale factor.
    */
   async scaleFactor(): Promise<number> {
-    return invoke('plugin:window|scale_factor', {
-      label: this.label
-    })
+    return invoke("plugin:window|scale_factor", {
+      label: this.label,
+    });
   }
 
   /**
@@ -649,9 +621,9 @@ class Window {
    * @returns The window's inner position.
    */
   async innerPosition(): Promise<PhysicalPosition> {
-    return invoke<{ x: number; y: number }>('plugin:window|inner_position', {
-      label: this.label
-    }).then((p) => new PhysicalPosition(p))
+    return invoke<{ x: number; y: number }>("plugin:window|inner_position", {
+      label: this.label,
+    }).then(p => new PhysicalPosition(p));
   }
 
   /**
@@ -665,9 +637,9 @@ class Window {
    * @returns The window's outer position.
    */
   async outerPosition(): Promise<PhysicalPosition> {
-    return invoke<{ x: number; y: number }>('plugin:window|outer_position', {
-      label: this.label
-    }).then((p) => new PhysicalPosition(p))
+    return invoke<{ x: number; y: number }>("plugin:window|outer_position", {
+      label: this.label,
+    }).then(p => new PhysicalPosition(p));
   }
 
   /**
@@ -682,12 +654,9 @@ class Window {
    * @returns The window's inner size.
    */
   async innerSize(): Promise<PhysicalSize> {
-    return invoke<{ width: number; height: number }>(
-      'plugin:window|inner_size',
-      {
-        label: this.label
-      }
-    ).then((s) => new PhysicalSize(s))
+    return invoke<{ width: number; height: number }>("plugin:window|inner_size", {
+      label: this.label,
+    }).then(s => new PhysicalSize(s));
   }
 
   /**
@@ -702,12 +671,9 @@ class Window {
    * @returns The window's outer size.
    */
   async outerSize(): Promise<PhysicalSize> {
-    return invoke<{ width: number; height: number }>(
-      'plugin:window|outer_size',
-      {
-        label: this.label
-      }
-    ).then((s) => new PhysicalSize(s))
+    return invoke<{ width: number; height: number }>("plugin:window|outer_size", {
+      label: this.label,
+    }).then(s => new PhysicalSize(s));
   }
 
   /**
@@ -721,9 +687,9 @@ class Window {
    * @returns Whether the window is in fullscreen mode or not.
    */
   async isFullscreen(): Promise<boolean> {
-    return invoke('plugin:window|is_fullscreen', {
-      label: this.label
-    })
+    return invoke("plugin:window|is_fullscreen", {
+      label: this.label,
+    });
   }
 
   /**
@@ -735,9 +701,9 @@ class Window {
    * ```
    */
   async isMinimized(): Promise<boolean> {
-    return invoke('plugin:window|is_minimized', {
-      label: this.label
-    })
+    return invoke("plugin:window|is_minimized", {
+      label: this.label,
+    });
   }
 
   /**
@@ -751,9 +717,9 @@ class Window {
    * @returns Whether the window is maximized or not.
    */
   async isMaximized(): Promise<boolean> {
-    return invoke('plugin:window|is_maximized', {
-      label: this.label
-    })
+    return invoke("plugin:window|is_maximized", {
+      label: this.label,
+    });
   }
 
   /**
@@ -767,9 +733,9 @@ class Window {
    * @returns Whether the window is focused or not.
    */
   async isFocused(): Promise<boolean> {
-    return invoke('plugin:window|is_focused', {
-      label: this.label
-    })
+    return invoke("plugin:window|is_focused", {
+      label: this.label,
+    });
   }
 
   /**
@@ -783,9 +749,9 @@ class Window {
    * @returns Whether the window is decorated or not.
    */
   async isDecorated(): Promise<boolean> {
-    return invoke('plugin:window|is_decorated', {
-      label: this.label
-    })
+    return invoke("plugin:window|is_decorated", {
+      label: this.label,
+    });
   }
 
   /**
@@ -799,9 +765,9 @@ class Window {
    * @returns Whether the window is resizable or not.
    */
   async isResizable(): Promise<boolean> {
-    return invoke('plugin:window|is_resizable', {
-      label: this.label
-    })
+    return invoke("plugin:window|is_resizable", {
+      label: this.label,
+    });
   }
 
   /**
@@ -820,9 +786,9 @@ class Window {
    * @returns Whether the window's native maximize button is enabled or not.
    */
   async isMaximizable(): Promise<boolean> {
-    return invoke('plugin:window|is_maximizable', {
-      label: this.label
-    })
+    return invoke("plugin:window|is_maximizable", {
+      label: this.label,
+    });
   }
 
   /**
@@ -841,9 +807,9 @@ class Window {
    * @returns Whether the window's native minimize button is enabled or not.
    */
   async isMinimizable(): Promise<boolean> {
-    return invoke('plugin:window|is_minimizable', {
-      label: this.label
-    })
+    return invoke("plugin:window|is_minimizable", {
+      label: this.label,
+    });
   }
 
   /**
@@ -862,9 +828,9 @@ class Window {
    * @returns Whether the window's native close button is enabled or not.
    */
   async isClosable(): Promise<boolean> {
-    return invoke('plugin:window|is_closable', {
-      label: this.label
-    })
+    return invoke("plugin:window|is_closable", {
+      label: this.label,
+    });
   }
 
   /**
@@ -878,9 +844,9 @@ class Window {
    * @returns Whether the window is visible or not.
    */
   async isVisible(): Promise<boolean> {
-    return invoke('plugin:window|is_visible', {
-      label: this.label
-    })
+    return invoke("plugin:window|is_visible", {
+      label: this.label,
+    });
   }
 
   /**
@@ -892,9 +858,9 @@ class Window {
    * ```
    */
   async title(): Promise<string> {
-    return invoke('plugin:window|title', {
-      label: this.label
-    })
+    return invoke("plugin:window|title", {
+      label: this.label,
+    });
   }
 
   /**
@@ -913,9 +879,9 @@ class Window {
    * @returns The window theme.
    */
   async theme(): Promise<Theme | null> {
-    return invoke('plugin:window|theme', {
-      label: this.label
-    })
+    return invoke("plugin:window|theme", {
+      label: this.label,
+    });
   }
 
   /**
@@ -929,9 +895,9 @@ class Window {
    * @returns Whether the window is visible or not.
    */
   async isAlwaysOnTop(): Promise<boolean> {
-    return invoke('plugin:window|is_always_on_top', {
-      label: this.label
-    })
+    return invoke("plugin:window|is_always_on_top", {
+      label: this.label,
+    });
   }
 
   /**
@@ -963,9 +929,9 @@ class Window {
    * @since 2.11.0
    */
   async activityName(): Promise<string> {
-    return invoke('plugin:window|activity_name', {
-      label: this.label
-    })
+    return invoke("plugin:window|activity_name", {
+      label: this.label,
+    });
   }
 
   /**
@@ -997,9 +963,9 @@ class Window {
    * @since 2.11.0
    */
   async sceneIdentifier(): Promise<string> {
-    return invoke('plugin:window|scene_identifier', {
-      label: this.label
-    })
+    return invoke("plugin:window|scene_identifier", {
+      label: this.label,
+    });
   }
 
   // Setters
@@ -1018,9 +984,9 @@ class Window {
    * in `core:window:default`).
    */
   async center(): Promise<void> {
-    return invoke('plugin:window|center', {
-      label: this.label
-    })
+    return invoke("plugin:window|center", {
+      label: this.label,
+    });
   }
 
   /**
@@ -1046,22 +1012,20 @@ class Window {
    * @remarks Requires the `core:window:allow-request-user-attention` permission (not included
    * in `core:window:default`).
    */
-  async requestUserAttention(
-    requestType: UserAttentionType | null
-  ): Promise<void> {
-    let requestType_ = null
+  async requestUserAttention(requestType: UserAttentionType | null): Promise<void> {
+    let requestType_ = null;
     if (requestType) {
       if (requestType === UserAttentionType.Critical) {
-        requestType_ = { type: 'Critical' }
+        requestType_ = { type: "Critical" };
       } else {
-        requestType_ = { type: 'Informational' }
+        requestType_ = { type: "Informational" };
       }
     }
 
-    return invoke('plugin:window|request_user_attention', {
+    return invoke("plugin:window|request_user_attention", {
       label: this.label,
-      value: requestType_
-    })
+      value: requestType_,
+    });
   }
 
   /**
@@ -1078,10 +1042,10 @@ class Window {
    * in `core:window:default`).
    */
   async setResizable(resizable: boolean): Promise<void> {
-    return invoke('plugin:window|set_resizable', {
+    return invoke("plugin:window|set_resizable", {
       label: this.label,
-      value: resizable
-    })
+      value: resizable,
+    });
   }
 
   /**
@@ -1100,10 +1064,10 @@ class Window {
    * @since 2.0.0
    */
   async setEnabled(enabled: boolean): Promise<void> {
-    return invoke('plugin:window|set_enabled', {
+    return invoke("plugin:window|set_enabled", {
       label: this.label,
-      value: enabled
-    })
+      value: enabled,
+    });
   }
 
   /**
@@ -1122,9 +1086,9 @@ class Window {
    * @since 2.0.0
    */
   async isEnabled(): Promise<boolean> {
-    return invoke('plugin:window|is_enabled', {
-      label: this.label
-    })
+    return invoke("plugin:window|is_enabled", {
+      label: this.label,
+    });
   }
 
   /**
@@ -1148,10 +1112,10 @@ class Window {
    * in `core:window:default`).
    */
   async setMaximizable(maximizable: boolean): Promise<void> {
-    return invoke('plugin:window|set_maximizable', {
+    return invoke("plugin:window|set_maximizable", {
       label: this.label,
-      value: maximizable
-    })
+      value: maximizable,
+    });
   }
 
   /**
@@ -1173,10 +1137,10 @@ class Window {
    * in `core:window:default`).
    */
   async setMinimizable(minimizable: boolean): Promise<void> {
-    return invoke('plugin:window|set_minimizable', {
+    return invoke("plugin:window|set_minimizable", {
       label: this.label,
-      value: minimizable
-    })
+      value: minimizable,
+    });
   }
 
   /**
@@ -1199,10 +1163,10 @@ class Window {
    * in `core:window:default`).
    */
   async setClosable(closable: boolean): Promise<void> {
-    return invoke('plugin:window|set_closable', {
+    return invoke("plugin:window|set_closable", {
       label: this.label,
-      value: closable
-    })
+      value: closable,
+    });
   }
 
   /**
@@ -1220,10 +1184,10 @@ class Window {
    * in `core:window:default`).
    */
   async setTitle(title: string): Promise<void> {
-    return invoke('plugin:window|set_title', {
+    return invoke("plugin:window|set_title", {
       label: this.label,
-      value: title
-    })
+      value: title,
+    });
   }
 
   /**
@@ -1240,9 +1204,9 @@ class Window {
    * in `core:window:default`).
    */
   async maximize(): Promise<void> {
-    return invoke('plugin:window|maximize', {
-      label: this.label
-    })
+    return invoke("plugin:window|maximize", {
+      label: this.label,
+    });
   }
 
   /**
@@ -1259,9 +1223,9 @@ class Window {
    * in `core:window:default`).
    */
   async unmaximize(): Promise<void> {
-    return invoke('plugin:window|unmaximize', {
-      label: this.label
-    })
+    return invoke("plugin:window|unmaximize", {
+      label: this.label,
+    });
   }
 
   /**
@@ -1278,9 +1242,9 @@ class Window {
    * in `core:window:default`).
    */
   async toggleMaximize(): Promise<void> {
-    return invoke('plugin:window|toggle_maximize', {
-      label: this.label
-    })
+    return invoke("plugin:window|toggle_maximize", {
+      label: this.label,
+    });
   }
 
   /**
@@ -1297,9 +1261,9 @@ class Window {
    * in `core:window:default`).
    */
   async minimize(): Promise<void> {
-    return invoke('plugin:window|minimize', {
-      label: this.label
-    })
+    return invoke("plugin:window|minimize", {
+      label: this.label,
+    });
   }
 
   /**
@@ -1316,9 +1280,9 @@ class Window {
    * in `core:window:default`).
    */
   async unminimize(): Promise<void> {
-    return invoke('plugin:window|unminimize', {
-      label: this.label
-    })
+    return invoke("plugin:window|unminimize", {
+      label: this.label,
+    });
   }
 
   /**
@@ -1335,9 +1299,9 @@ class Window {
    * in `core:window:default`).
    */
   async show(): Promise<void> {
-    return invoke('plugin:window|show', {
-      label: this.label
-    })
+    return invoke("plugin:window|show", {
+      label: this.label,
+    });
   }
 
   /**
@@ -1354,9 +1318,9 @@ class Window {
    * in `core:window:default`).
    */
   async hide(): Promise<void> {
-    return invoke('plugin:window|hide', {
-      label: this.label
-    })
+    return invoke("plugin:window|hide", {
+      label: this.label,
+    });
   }
 
   /**
@@ -1375,9 +1339,9 @@ class Window {
    * in `core:window:default`).
    */
   async close(): Promise<void> {
-    return invoke('plugin:window|close', {
-      label: this.label
-    })
+    return invoke("plugin:window|close", {
+      label: this.label,
+    });
   }
 
   /**
@@ -1394,9 +1358,9 @@ class Window {
    * in `core:window:default`).
    */
   async destroy(): Promise<void> {
-    return invoke('plugin:window|destroy', {
-      label: this.label
-    })
+    return invoke("plugin:window|destroy", {
+      label: this.label,
+    });
   }
 
   /**
@@ -1414,10 +1378,10 @@ class Window {
    * in `core:window:default`).
    */
   async setDecorations(decorations: boolean): Promise<void> {
-    return invoke('plugin:window|set_decorations', {
+    return invoke("plugin:window|set_decorations", {
       label: this.label,
-      value: decorations
-    })
+      value: decorations,
+    });
   }
 
   /**
@@ -1443,10 +1407,10 @@ class Window {
    * in `core:window:default`).
    */
   async setShadow(enable: boolean): Promise<void> {
-    return invoke('plugin:window|set_shadow', {
+    return invoke("plugin:window|set_shadow", {
       label: this.label,
-      value: enable
-    })
+      value: enable,
+    });
   }
 
   /**
@@ -1487,10 +1451,10 @@ class Window {
    * @since 2.0.0
    */
   async setEffects(effects: Effects): Promise<void> {
-    return invoke('plugin:window|set_effects', {
+    return invoke("plugin:window|set_effects", {
       label: this.label,
-      value: effects
-    })
+      value: effects,
+    });
   }
 
   /**
@@ -1510,10 +1474,10 @@ class Window {
    * @since 2.0.0
    */
   async clearEffects(): Promise<void> {
-    return invoke('plugin:window|set_effects', {
+    return invoke("plugin:window|set_effects", {
       label: this.label,
-      value: null
-    })
+      value: null,
+    });
   }
 
   /**
@@ -1531,10 +1495,10 @@ class Window {
    * in `core:window:default`).
    */
   async setAlwaysOnTop(alwaysOnTop: boolean): Promise<void> {
-    return invoke('plugin:window|set_always_on_top', {
+    return invoke("plugin:window|set_always_on_top", {
       label: this.label,
-      value: alwaysOnTop
-    })
+      value: alwaysOnTop,
+    });
   }
 
   /**
@@ -1552,10 +1516,10 @@ class Window {
    * in `core:window:default`).
    */
   async setAlwaysOnBottom(alwaysOnBottom: boolean): Promise<void> {
-    return invoke('plugin:window|set_always_on_bottom', {
+    return invoke("plugin:window|set_always_on_bottom", {
       label: this.label,
-      value: alwaysOnBottom
-    })
+      value: alwaysOnBottom,
+    });
   }
 
   /**
@@ -1572,10 +1536,10 @@ class Window {
    * in `core:window:default`).
    */
   async setContentProtected(protected_: boolean): Promise<void> {
-    return invoke('plugin:window|set_content_protected', {
+    return invoke("plugin:window|set_content_protected", {
       label: this.label,
-      value: protected_
-    })
+      value: protected_,
+    });
   }
 
   /**
@@ -1593,10 +1557,10 @@ class Window {
    * in `core:window:default`).
    */
   async setSize(size: LogicalSize | PhysicalSize | Size): Promise<void> {
-    return invoke('plugin:window|set_size', {
+    return invoke("plugin:window|set_size", {
       label: this.label,
-      value: size instanceof Size ? size : new Size(size)
-    })
+      value: size instanceof Size ? size : new Size(size),
+    });
   }
 
   /**
@@ -1613,13 +1577,11 @@ class Window {
    * @remarks Requires the `core:window:allow-set-min-size` permission (not included
    * in `core:window:default`).
    */
-  async setMinSize(
-    size: LogicalSize | PhysicalSize | Size | null | undefined
-  ): Promise<void> {
-    return invoke('plugin:window|set_min_size', {
+  async setMinSize(size: LogicalSize | PhysicalSize | Size | null | undefined): Promise<void> {
+    return invoke("plugin:window|set_min_size", {
       label: this.label,
-      value: size instanceof Size ? size : size ? new Size(size) : null
-    })
+      value: size instanceof Size ? size : size ? new Size(size) : null,
+    });
   }
 
   /**
@@ -1636,13 +1598,11 @@ class Window {
    * @remarks Requires the `core:window:allow-set-max-size` permission (not included
    * in `core:window:default`).
    */
-  async setMaxSize(
-    size: LogicalSize | PhysicalSize | Size | null | undefined
-  ): Promise<void> {
-    return invoke('plugin:window|set_max_size', {
+  async setMaxSize(size: LogicalSize | PhysicalSize | Size | null | undefined): Promise<void> {
+    return invoke("plugin:window|set_max_size", {
       label: this.label,
-      value: size instanceof Size ? size : size ? new Size(size) : null
-    })
+      value: size instanceof Size ? size : size ? new Size(size) : null,
+    });
   }
 
   /**
@@ -1661,22 +1621,20 @@ class Window {
    * @remarks Requires the `core:window:allow-set-size-constraints` permission (not included
    * in `core:window:default`).
    */
-  async setSizeConstraints(
-    constraints: WindowSizeConstraints | null | undefined
-  ): Promise<void> {
+  async setSizeConstraints(constraints: WindowSizeConstraints | null | undefined): Promise<void> {
     function logical(pixel?: number): { Logical: number } | null {
-      return pixel ? { Logical: pixel } : null
+      return pixel ? { Logical: pixel } : null;
     }
 
-    return invoke('plugin:window|set_size_constraints', {
+    return invoke("plugin:window|set_size_constraints", {
       label: this.label,
       value: {
         minWidth: logical(constraints?.minWidth),
         minHeight: logical(constraints?.minHeight),
         maxWidth: logical(constraints?.maxWidth),
-        maxHeight: logical(constraints?.maxHeight)
-      }
-    })
+        maxHeight: logical(constraints?.maxHeight),
+      },
+    });
   }
 
   /**
@@ -1693,13 +1651,11 @@ class Window {
    * @remarks Requires the `core:window:allow-set-position` permission (not included
    * in `core:window:default`).
    */
-  async setPosition(
-    position: LogicalPosition | PhysicalPosition | Position
-  ): Promise<void> {
-    return invoke('plugin:window|set_position', {
+  async setPosition(position: LogicalPosition | PhysicalPosition | Position): Promise<void> {
+    return invoke("plugin:window|set_position", {
       label: this.label,
-      value: position instanceof Position ? position : new Position(position)
-    })
+      value: position instanceof Position ? position : new Position(position),
+    });
   }
 
   /**
@@ -1717,10 +1673,10 @@ class Window {
    * in `core:window:default`).
    */
   async setFullscreen(fullscreen: boolean): Promise<void> {
-    return invoke('plugin:window|set_fullscreen', {
+    return invoke("plugin:window|set_fullscreen", {
       label: this.label,
-      value: fullscreen
-    })
+      value: fullscreen,
+    });
   }
 
   /**
@@ -1745,10 +1701,10 @@ class Window {
    * @since 2.12.0
    */
   async setFullscreenOnMonitor(position: PhysicalPosition): Promise<void> {
-    return invoke('plugin:window|set_fullscreen_on_monitor', {
+    return invoke("plugin:window|set_fullscreen_on_monitor", {
       label: this.label,
-      value: position
-    })
+      value: position,
+    });
   }
 
   /**
@@ -1772,10 +1728,10 @@ class Window {
    * @since 2.8.0
    */
   async setSimpleFullscreen(fullscreen: boolean): Promise<void> {
-    return invoke('plugin:window|set_simple_fullscreen', {
+    return invoke("plugin:window|set_simple_fullscreen", {
       label: this.label,
-      value: fullscreen
-    })
+      value: fullscreen,
+    });
   }
 
   /**
@@ -1792,9 +1748,9 @@ class Window {
    * in `core:window:default`).
    */
   async setFocus(): Promise<void> {
-    return invoke('plugin:window|set_focus', {
-      label: this.label
-    })
+    return invoke("plugin:window|set_focus", {
+      label: this.label,
+    });
   }
 
   /**
@@ -1818,10 +1774,10 @@ class Window {
    * in `core:window:default`).
    */
   async setFocusable(focusable: boolean): Promise<void> {
-    return invoke('plugin:window|set_focusable', {
+    return invoke("plugin:window|set_focusable", {
       label: this.label,
-      value: focusable
-    })
+      value: focusable,
+    });
   }
 
   /**
@@ -1846,10 +1802,10 @@ class Window {
    * in `core:window:default`).
    */
   async setIcon(icon: JsImage): Promise<void> {
-    return invoke('plugin:window|set_icon', {
+    return invoke("plugin:window|set_icon", {
       label: this.label,
-      value: transformImage(icon)
-    })
+      value: transformImage(icon),
+    });
   }
 
   /**
@@ -1871,10 +1827,10 @@ class Window {
    * in `core:window:default`).
    */
   async setSkipTaskbar(skip: boolean): Promise<void> {
-    return invoke('plugin:window|set_skip_taskbar', {
+    return invoke("plugin:window|set_skip_taskbar", {
       label: this.label,
-      value: skip
-    })
+      value: skip,
+    });
   }
 
   /**
@@ -1900,10 +1856,10 @@ class Window {
    * in `core:window:default`).
    */
   async setCursorGrab(grab: boolean): Promise<void> {
-    return invoke('plugin:window|set_cursor_grab', {
+    return invoke("plugin:window|set_cursor_grab", {
       label: this.label,
-      value: grab
-    })
+      value: grab,
+    });
   }
 
   /**
@@ -1927,10 +1883,10 @@ class Window {
    * in `core:window:default`).
    */
   async setCursorVisible(visible: boolean): Promise<void> {
-    return invoke('plugin:window|set_cursor_visible', {
+    return invoke("plugin:window|set_cursor_visible", {
       label: this.label,
-      value: visible
-    })
+      value: visible,
+    });
   }
 
   /**
@@ -1948,10 +1904,10 @@ class Window {
    * in `core:window:default`).
    */
   async setCursorIcon(icon: CursorIcon): Promise<void> {
-    return invoke('plugin:window|set_cursor_icon', {
+    return invoke("plugin:window|set_cursor_icon", {
       label: this.label,
-      value: icon
-    })
+      value: icon,
+    });
   }
 
   /**
@@ -1983,10 +1939,10 @@ class Window {
    * @since 2.1.0
    */
   async setBackgroundColor(color: Color): Promise<void> {
-    return invoke('plugin:window|set_background_color', {
+    return invoke("plugin:window|set_background_color", {
       label: this.label,
-      value: color
-    })
+      value: color,
+    });
   }
 
   /**
@@ -2003,13 +1959,11 @@ class Window {
    * @remarks Requires the `core:window:allow-set-cursor-position` permission (not included
    * in `core:window:default`).
    */
-  async setCursorPosition(
-    position: LogicalPosition | PhysicalPosition | Position
-  ): Promise<void> {
-    return invoke('plugin:window|set_cursor_position', {
+  async setCursorPosition(position: LogicalPosition | PhysicalPosition | Position): Promise<void> {
+    return invoke("plugin:window|set_cursor_position", {
       label: this.label,
-      value: position instanceof Position ? position : new Position(position)
-    })
+      value: position instanceof Position ? position : new Position(position),
+    });
   }
 
   /**
@@ -2028,10 +1982,10 @@ class Window {
    * in `core:window:default`).
    */
   async setIgnoreCursorEvents(ignore: boolean): Promise<void> {
-    return invoke('plugin:window|set_ignore_cursor_events', {
+    return invoke("plugin:window|set_ignore_cursor_events", {
       label: this.label,
-      value: ignore
-    })
+      value: ignore,
+    });
   }
 
   /**
@@ -2048,9 +2002,9 @@ class Window {
    * in `core:window:default`).
    */
   async startDragging(): Promise<void> {
-    return invoke('plugin:window|start_dragging', {
-      label: this.label
-    })
+    return invoke("plugin:window|start_dragging", {
+      label: this.label,
+    });
   }
 
   /**
@@ -2067,10 +2021,10 @@ class Window {
    * in `core:window:default`).
    */
   async startResizeDragging(direction: ResizeDirection): Promise<void> {
-    return invoke('plugin:window|start_resize_dragging', {
+    return invoke("plugin:window|start_resize_dragging", {
       label: this.label,
-      value: direction
-    })
+      value: direction,
+    });
   }
 
   /**
@@ -2093,10 +2047,10 @@ class Window {
    * in `core:window:default`).
    */
   async setBadgeCount(count?: number): Promise<void> {
-    return invoke('plugin:window|set_badge_count', {
+    return invoke("plugin:window|set_badge_count", {
       label: this.label,
-      value: count
-    })
+      value: count,
+    });
   }
 
   /**
@@ -2118,10 +2072,10 @@ class Window {
    * in `core:window:default`).
    */
   async setBadgeLabel(label?: string): Promise<void> {
-    return invoke('plugin:window|set_badge_label', {
+    return invoke("plugin:window|set_badge_label", {
       label: this.label,
-      value: label
-    })
+      value: label,
+    });
   }
 
   /**
@@ -2150,10 +2104,10 @@ class Window {
    * in `core:window:default`).
    */
   async setOverlayIcon(icon?: JsImage): Promise<void> {
-    return invoke('plugin:window|set_overlay_icon', {
+    return invoke("plugin:window|set_overlay_icon", {
       label: this.label,
-      value: icon ? transformImage(icon) : undefined
-    })
+      value: icon ? transformImage(icon) : undefined,
+    });
   }
 
   /**
@@ -2179,10 +2133,10 @@ class Window {
    * in `core:window:default`).
    */
   async setProgressBar(state: ProgressBarState): Promise<void> {
-    return invoke('plugin:window|set_progress_bar', {
+    return invoke("plugin:window|set_progress_bar", {
       label: this.label,
-      value: state
-    })
+      value: state,
+    });
   }
 
   /**
@@ -2207,10 +2161,10 @@ class Window {
    * @since 2.0.0
    */
   async setVisibleOnAllWorkspaces(visible: boolean): Promise<void> {
-    return invoke('plugin:window|set_visible_on_all_workspaces', {
+    return invoke("plugin:window|set_visible_on_all_workspaces", {
       label: this.label,
-      value: visible
-    })
+      value: visible,
+    });
   }
 
   /**
@@ -2236,10 +2190,10 @@ class Window {
    * @since 2.0.0
    */
   async setTitleBarStyle(style: TitleBarStyle): Promise<void> {
-    return invoke('plugin:window|set_title_bar_style', {
+    return invoke("plugin:window|set_title_bar_style", {
       label: this.label,
-      value: style
-    })
+      value: style,
+    });
   }
 
   /**
@@ -2270,10 +2224,10 @@ class Window {
    * @since 2.0.0
    */
   async setTheme(theme?: Theme | null): Promise<void> {
-    return invoke('plugin:window|set_theme', {
+    return invoke("plugin:window|set_theme", {
       label: this.label,
-      value: theme
-    })
+      value: theme,
+    });
   }
 
   // Listeners
@@ -2300,10 +2254,10 @@ class Window {
    * or when a component unmounts.
    */
   async onResized(handler: EventCallback<PhysicalSize>): Promise<UnlistenFn> {
-    return this.listen<PhysicalSize>(TauriEvent.WINDOW_RESIZED, (e) => {
-      e.payload = new PhysicalSize(e.payload)
-      handler(e)
-    })
+    return this.listen<PhysicalSize>(TauriEvent.WINDOW_RESIZED, e => {
+      e.payload = new PhysicalSize(e.payload);
+      handler(e);
+    });
   }
 
   /**
@@ -2328,10 +2282,10 @@ class Window {
    * or when a component unmounts.
    */
   async onMoved(handler: EventCallback<PhysicalPosition>): Promise<UnlistenFn> {
-    return this.listen<PhysicalPosition>(TauriEvent.WINDOW_MOVED, (e) => {
-      e.payload = new PhysicalPosition(e.payload)
-      handler(e)
-    })
+    return this.listen<PhysicalPosition>(TauriEvent.WINDOW_MOVED, e => {
+      e.payload = new PhysicalPosition(e.payload);
+      handler(e);
+    });
   }
 
   /**
@@ -2362,17 +2316,15 @@ class Window {
    * returned function when the listener's own scope ends, e.g. on page navigation
    * or when a component unmounts.
    */
-  async onCloseRequested(
-    handler: (event: CloseRequestedEvent) => void | Promise<void>
-  ): Promise<UnlistenFn> {
+  async onCloseRequested(handler: (event: CloseRequestedEvent) => void | Promise<void>): Promise<UnlistenFn> {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    return this.listen(TauriEvent.WINDOW_CLOSE_REQUESTED, async (event) => {
-      const evt = new CloseRequestedEvent(event)
-      await handler(evt)
+    return this.listen(TauriEvent.WINDOW_CLOSE_REQUESTED, async event => {
+      const evt = new CloseRequestedEvent(event);
+      await handler(evt);
       if (!evt.isPreventDefault()) {
-        await this.destroy()
+        await this.destroy();
       }
-    })
+    });
   }
 
   /**
@@ -2404,65 +2356,51 @@ class Window {
    * returned function when the listener's own scope ends, e.g. on page navigation
    * or when a component unmounts.
    */
-  async onDragDropEvent(
-    handler: EventCallback<DragDropEvent>
-  ): Promise<UnlistenFn> {
-    type DragPayload = { paths: string[]; position: PhysicalPosition }
+  async onDragDropEvent(handler: EventCallback<DragDropEvent>): Promise<UnlistenFn> {
+    type DragPayload = { paths: string[]; position: PhysicalPosition };
 
-    const unlistenDrag = await this.listen<DragPayload>(
-      TauriEvent.DRAG_ENTER,
-      (event) => {
-        handler({
-          ...event,
-          payload: {
-            type: 'enter',
-            paths: event.payload.paths,
-            position: new PhysicalPosition(event.payload.position)
-          }
-        })
-      }
-    )
+    const unlistenDrag = await this.listen<DragPayload>(TauriEvent.DRAG_ENTER, event => {
+      handler({
+        ...event,
+        payload: {
+          type: "enter",
+          paths: event.payload.paths,
+          position: new PhysicalPosition(event.payload.position),
+        },
+      });
+    });
 
-    const unlistenDragOver = await this.listen<DragPayload>(
-      TauriEvent.DRAG_OVER,
-      (event) => {
-        handler({
-          ...event,
-          payload: {
-            type: 'over',
-            position: new PhysicalPosition(event.payload.position)
-          }
-        })
-      }
-    )
+    const unlistenDragOver = await this.listen<DragPayload>(TauriEvent.DRAG_OVER, event => {
+      handler({
+        ...event,
+        payload: {
+          type: "over",
+          position: new PhysicalPosition(event.payload.position),
+        },
+      });
+    });
 
-    const unlistenDrop = await this.listen<DragPayload>(
-      TauriEvent.DRAG_DROP,
-      (event) => {
-        handler({
-          ...event,
-          payload: {
-            type: 'drop',
-            paths: event.payload.paths,
-            position: new PhysicalPosition(event.payload.position)
-          }
-        })
-      }
-    )
+    const unlistenDrop = await this.listen<DragPayload>(TauriEvent.DRAG_DROP, event => {
+      handler({
+        ...event,
+        payload: {
+          type: "drop",
+          paths: event.payload.paths,
+          position: new PhysicalPosition(event.payload.position),
+        },
+      });
+    });
 
-    const unlistenCancel = await this.listen<null>(
-      TauriEvent.DRAG_LEAVE,
-      (event) => {
-        handler({ ...event, payload: { type: 'leave' } })
-      }
-    )
+    const unlistenCancel = await this.listen<null>(TauriEvent.DRAG_LEAVE, event => {
+      handler({ ...event, payload: { type: "leave" } });
+    });
 
     return () => {
-      unlistenDrag()
-      unlistenDrop()
-      unlistenDragOver()
-      unlistenCancel()
-    }
+      unlistenDrag();
+      unlistenDrop();
+      unlistenDragOver();
+      unlistenCancel();
+    };
   }
 
   /**
@@ -2487,22 +2425,16 @@ class Window {
    * or when a component unmounts.
    */
   async onFocusChanged(handler: EventCallback<boolean>): Promise<UnlistenFn> {
-    const unlistenFocus = await this.listen<PhysicalPosition>(
-      TauriEvent.WINDOW_FOCUS,
-      (event) => {
-        handler({ ...event, payload: true })
-      }
-    )
-    const unlistenBlur = await this.listen<PhysicalPosition>(
-      TauriEvent.WINDOW_BLUR,
-      (event) => {
-        handler({ ...event, payload: false })
-      }
-    )
+    const unlistenFocus = await this.listen<PhysicalPosition>(TauriEvent.WINDOW_FOCUS, event => {
+      handler({ ...event, payload: true });
+    });
+    const unlistenBlur = await this.listen<PhysicalPosition>(TauriEvent.WINDOW_BLUR, event => {
+      handler({ ...event, payload: false });
+    });
     return () => {
-      unlistenFocus()
-      unlistenBlur()
-    }
+      unlistenFocus();
+      unlistenBlur();
+    };
   }
 
   /**
@@ -2530,13 +2462,8 @@ class Window {
    * returned function when the listener's own scope ends, e.g. on page navigation
    * or when a component unmounts.
    */
-  async onScaleChanged(
-    handler: EventCallback<ScaleFactorChanged>
-  ): Promise<UnlistenFn> {
-    return this.listen<ScaleFactorChanged>(
-      TauriEvent.WINDOW_SCALE_FACTOR_CHANGED,
-      handler
-    )
+  async onScaleChanged(handler: EventCallback<ScaleFactorChanged>): Promise<UnlistenFn> {
+    return this.listen<ScaleFactorChanged>(TauriEvent.WINDOW_SCALE_FACTOR_CHANGED, handler);
   }
 
   /**
@@ -2561,7 +2488,7 @@ class Window {
    * or when a component unmounts.
    */
   async onThemeChanged(handler: EventCallback<Theme>): Promise<UnlistenFn> {
-    return this.listen<Theme>(TauriEvent.WINDOW_THEME_CHANGED, handler)
+    return this.listen<Theme>(TauriEvent.WINDOW_THEME_CHANGED, handler);
   }
 }
 
@@ -2576,7 +2503,7 @@ type Color =
   | [number, number, number]
   | [number, number, number, number]
   | { red: number; green: number; blue: number; alpha: number }
-  | string
+  | string;
 
 /**
  * Background throttling policy
@@ -2584,9 +2511,9 @@ type Color =
  * @since 2.0.0
  */
 enum BackgroundThrottlingPolicy {
-  Disabled = 'disabled',
-  Throttle = 'throttle',
-  Suspend = 'suspend'
+  Disabled = "disabled",
+  Throttle = "throttle",
+  Suspend = "suspend",
 }
 
 /**
@@ -2602,14 +2529,14 @@ enum ScrollBarStyle {
   /**
    * The default scrollbar style for the webview.
    */
-  Default = 'default',
+  Default = "default",
   /**
    * Fluent UI style overlay scrollbars. **Windows Only**
    *
    * Requires WebView2 Runtime version 125.0.2535.41 or higher, does nothing on older versions,
    * see https://learn.microsoft.com/en-us/microsoft-edge/webview2/release-notes/?tabs=dotnetcsharp#10253541
    */
-  FluentOverlay = 'fluentOverlay'
+  FluentOverlay = "fluentOverlay",
 }
 
 /**
@@ -2623,99 +2550,99 @@ enum Effect {
    *
    * @deprecated since macOS 10.14. You should instead choose an appropriate semantic material.
    */
-  AppearanceBased = 'appearanceBased',
+  AppearanceBased = "appearanceBased",
   /**
    *  **macOS 10.14-**
    *
    * @deprecated since macOS 10.14. Use a semantic material instead.
    */
-  Light = 'light',
+  Light = "light",
   /**
    *  **macOS 10.14-**
    *
    * @deprecated since macOS 10.14. Use a semantic material instead.
    */
-  Dark = 'dark',
+  Dark = "dark",
   /**
    *  **macOS 10.14-**
    *
    * @deprecated since macOS 10.14. Use a semantic material instead.
    */
-  MediumLight = 'mediumLight',
+  MediumLight = "mediumLight",
   /**
    *  **macOS 10.14-**
    *
    * @deprecated since macOS 10.14. Use a semantic material instead.
    */
-  UltraDark = 'ultraDark',
+  UltraDark = "ultraDark",
   /**
    *  **macOS 10.10+**
    */
-  Titlebar = 'titlebar',
+  Titlebar = "titlebar",
   /**
    *  **macOS 10.10+**
    */
-  Selection = 'selection',
+  Selection = "selection",
   /**
    *  **macOS 10.11+**
    */
-  Menu = 'menu',
+  Menu = "menu",
   /**
    *  **macOS 10.11+**
    */
-  Popover = 'popover',
+  Popover = "popover",
   /**
    *  **macOS 10.11+**
    */
-  Sidebar = 'sidebar',
+  Sidebar = "sidebar",
   /**
    *  **macOS 10.14+**
    */
-  HeaderView = 'headerView',
+  HeaderView = "headerView",
   /**
    *  **macOS 10.14+**
    */
-  Sheet = 'sheet',
+  Sheet = "sheet",
   /**
    *  **macOS 10.14+**
    */
-  WindowBackground = 'windowBackground',
+  WindowBackground = "windowBackground",
   /**
    *  **macOS 10.14+**
    */
-  HudWindow = 'hudWindow',
+  HudWindow = "hudWindow",
   /**
    *  **macOS 10.14+**
    */
-  FullScreenUI = 'fullScreenUI',
+  FullScreenUI = "fullScreenUI",
   /**
    *  **macOS 10.14+**
    */
-  Tooltip = 'tooltip',
+  Tooltip = "tooltip",
   /**
    *  **macOS 10.14+**
    */
-  ContentBackground = 'contentBackground',
+  ContentBackground = "contentBackground",
   /**
    *  **macOS 10.14+**
    */
-  UnderWindowBackground = 'underWindowBackground',
+  UnderWindowBackground = "underWindowBackground",
   /**
    *  **macOS 10.14+**
    */
-  UnderPageBackground = 'underPageBackground',
+  UnderPageBackground = "underPageBackground",
   /**
    *  **macOS 26.0+**
    */
-  LiquidGlassRegular = 'liquidGlassRegular',
+  LiquidGlassRegular = "liquidGlassRegular",
   /**
    *  **macOS 26.0+**
    */
-  LiquidGlassClear = 'liquidGlassClear',
+  LiquidGlassClear = "liquidGlassClear",
   /**
    *  **Windows 11 Only**
    */
-  Mica = 'mica',
+  Mica = "mica",
   /**
    * **Windows 7/10/11(22H1) Only**
    *
@@ -2723,7 +2650,7 @@ enum Effect {
    *
    * This effect has bad performance when resizing/dragging the window on Windows 11 build 22621.
    */
-  Blur = 'blur',
+  Blur = "blur",
   /**
    * **Windows 10/11**
    *
@@ -2731,19 +2658,19 @@ enum Effect {
    *
    * This effect has bad performance when resizing/dragging the window on Windows 10 v1903+ and Windows 11 build 22000.
    */
-  Acrylic = 'acrylic',
+  Acrylic = "acrylic",
   /**
    * Tabbed effect that matches the system dark preference **Windows 11 Only**
    */
-  Tabbed = 'tabbed',
+  Tabbed = "tabbed",
   /**
    * Tabbed effect with dark mode but only if dark mode is enabled on the system **Windows 11 Only**
    */
-  TabbedDark = 'tabbedDark',
+  TabbedDark = "tabbedDark",
   /**
    * Tabbed effect with light mode **Windows 11 Only**
    */
-  TabbedLight = 'tabbedLight'
+  TabbedLight = "tabbedLight",
 }
 
 /**
@@ -2757,15 +2684,15 @@ enum EffectState {
   /**
    *  Make window effect state follow the window's active state **macOS only**
    */
-  FollowsWindowActiveState = 'followsWindowActiveState',
+  FollowsWindowActiveState = "followsWindowActiveState",
   /**
    *  Make window effect state always active **macOS only**
    */
-  Active = 'active',
+  Active = "active",
   /**
    *  Make window effect state always inactive **macOS only**
    */
-  Inactive = 'inactive'
+  Inactive = "inactive",
 }
 
 /** The window effects configuration object
@@ -2780,15 +2707,15 @@ interface Effects {
    * on macOS you can specify one Liquid Glass style and one Visual Effect material at the same time
    * to make Tauri fallback to the latter on macOS 15 and below.
    */
-  effects: Effect[]
+  effects: Effect[];
   /**
    * Window effect state **macOS Only**. Ignored for Liquid Glass Effects.
    */
-  state?: EffectState
+  state?: EffectState;
   /**
    * Window effect corner radius **macOS Only**
    */
-  radius?: number
+  radius?: number;
   /**
    *  Window effect color.
    *
@@ -2798,13 +2725,13 @@ interface Effects {
    * on Windows 10 v1903+. Doesn't have any effect on Windows 7 or Windows 11.
    * - **macOS**: Only affects Liquid Glass effects.
    */
-  color?: Color
+  color?: Color;
   /**
    * Enables interactive glass behavior, which adds a visual response to user interactions.
    *
    * **macOS 27.0+**. Only affects Liquid Glass effects.
    */
-  interactive?: boolean
+  interactive?: boolean;
 }
 
 /**
@@ -2817,9 +2744,9 @@ interface Effects {
  */
 interface PreventOverflowMargin {
   /** The horizontal margin, in logical pixels. */
-  width: number
+  width: number;
   /** The vertical margin, in logical pixels. */
-  height: number
+  height: number;
 }
 
 /**
@@ -2829,29 +2756,29 @@ interface PreventOverflowMargin {
  */
 interface WindowOptions {
   /** Show window in the center of the screen.. */
-  center?: boolean
+  center?: boolean;
   /**
    * The initial horizontal position in logical pixels, measured from the left edge
    * of the screen. Only applies if `y` is also set.
    */
-  x?: number
+  x?: number;
   /**
    * The initial vertical position in logical pixels, measured from the top edge of
    * the screen. Only applies if `x` is also set.
    */
-  y?: number
+  y?: number;
   /** The initial width in logical pixels. */
-  width?: number
+  width?: number;
   /** The initial height in logical pixels. */
-  height?: number
+  height?: number;
   /** The minimum width in logical pixels. Only applies if `minHeight` is also set. */
-  minWidth?: number
+  minWidth?: number;
   /** The minimum height in logical pixels. Only applies if `minWidth` is also set. */
-  minHeight?: number
+  minHeight?: number;
   /** The maximum width in logical pixels. Only applies if `maxHeight` is also set. */
-  maxWidth?: number
+  maxWidth?: number;
   /** The maximum height in logical pixels. Only applies if `maxWidth` is also set. */
-  maxHeight?: number
+  maxHeight?: number;
   /**
    * Prevent the window from overflowing the working area (e.g. monitor size - taskbar size)
    * on creation, which means the window size will be limited to `monitor size - taskbar size`
@@ -2866,44 +2793,44 @@ interface WindowOptions {
    *
    * - **iOS / Android:** Unsupported.
    */
-  preventOverflow?: boolean | PreventOverflowMargin
+  preventOverflow?: boolean | PreventOverflowMargin;
   /** Whether the window is resizable or not. */
-  resizable?: boolean
+  resizable?: boolean;
   /** Window title. */
-  title?: string
+  title?: string;
   /** Whether the window is in fullscreen mode or not. */
-  fullscreen?: boolean
+  fullscreen?: boolean;
   /** Whether the window will be initially focused or not. */
-  focus?: boolean
+  focus?: boolean;
   /** Whether the window can be focused or not. */
-  focusable?: boolean
+  focusable?: boolean;
   /**
    * Whether the window is transparent or not.
    *
    * On Windows, using `noRedirectionBitmap` can help avoid a white flash when creating a transparent window.
    */
-  transparent?: boolean
+  transparent?: boolean;
   /** Whether the window should be maximized upon creation or not. */
-  maximized?: boolean
+  maximized?: boolean;
   /** Whether the window should be immediately visible upon creation or not. */
-  visible?: boolean
+  visible?: boolean;
   /** Whether the window should have borders and bars or not. */
-  decorations?: boolean
+  decorations?: boolean;
   /** Whether the window should always be on top of other windows or not. */
-  alwaysOnTop?: boolean
+  alwaysOnTop?: boolean;
   /** Whether the window should always be below other windows. */
-  alwaysOnBottom?: boolean
+  alwaysOnBottom?: boolean;
   /** Prevents the window contents from being captured by other apps. */
-  contentProtected?: boolean
+  contentProtected?: boolean;
   /** Whether or not the window icon should be added to the taskbar. */
-  skipTaskbar?: boolean
+  skipTaskbar?: boolean;
   /**
    * This sets `WS_EX_NOREDIRECTIONBITMAP`.
    *
    * This can avoid the white flash that may appear before the webview content is rendered
    * when using a transparent window. **Windows only**.
    */
-  noRedirectionBitmap?: boolean
+  noRedirectionBitmap?: boolean;
   /**
    *  Whether or not the window has shadow.
    *
@@ -2917,17 +2844,17 @@ interface WindowOptions {
    *
    * @since 2.0.0
    */
-  shadow?: boolean
+  shadow?: boolean;
   /**
    * The initial window theme. Defaults to the system theme.
    *
    * Only implemented on Windows and macOS 10.14+.
    */
-  theme?: Theme
+  theme?: Theme;
   /**
    * The style of the macOS title bar.
    */
-  titleBarStyle?: TitleBarStyle
+  titleBarStyle?: TitleBarStyle;
   /**
    * The position of the window controls on macOS.
    *
@@ -2935,30 +2862,30 @@ interface WindowOptions {
    *
    * @since 2.4.0
    */
-  trafficLightPosition?: LogicalPosition
+  trafficLightPosition?: LogicalPosition;
   /**
    * If `true`, sets the window title to be hidden on macOS.
    */
-  hiddenTitle?: boolean
+  hiddenTitle?: boolean;
   /**
    * Defines the window [tabbing identifier](https://developer.apple.com/documentation/appkit/nswindow/1644704-tabbingidentifier) on macOS.
    *
    * Windows with the same tabbing identifier will be grouped together.
    * If the tabbing identifier is not set, automatic tabbing will be disabled.
    */
-  tabbingIdentifier?: string
+  tabbingIdentifier?: string;
   /**
    * Whether the window's native maximize button is enabled or not. Defaults to `true`.
    */
-  maximizable?: boolean
+  maximizable?: boolean;
   /**
    * Whether the window's native minimize button is enabled or not. Defaults to `true`.
    */
-  minimizable?: boolean
+  minimizable?: boolean;
   /**
    * Whether the window's native close button is enabled or not. Defaults to `true`.
    */
-  closable?: boolean
+  closable?: boolean;
   /**
    * Sets a parent to the window to be created. Can be either a {@linkcode Window} or a label of the window.
    *
@@ -2972,7 +2899,7 @@ interface WindowOptions {
    * - **Linux**: This makes the new window transient for parent, see <https://docs.gtk.org/gtk3/method.Window.set_transient_for.html>
    * - **macOS**: This adds the window as a child of parent, see <https://developer.apple.com/documentation/appkit/nswindow/1419152-addchildwindow?language=objc>
    */
-  parent?: Window | WebviewWindow | string
+  parent?: Window | WebviewWindow | string;
   /** Whether the window should be visible on all workspaces or virtual desktops.
    *
    * #### Platform-specific
@@ -2981,7 +2908,7 @@ interface WindowOptions {
    *
    * @since 2.0.0
    */
-  visibleOnAllWorkspaces?: boolean
+  visibleOnAllWorkspaces?: boolean;
   /**
    * Window effects.
    *
@@ -2992,7 +2919,7 @@ interface WindowOptions {
    * - **Windows**: If using decorations or shadows, you may want to try this workaround <https://github.com/tauri-apps/tao/issues/72#issuecomment-975607891>
    * - **Linux**: Unsupported
    */
-  windowEffects?: Effects
+  windowEffects?: Effects;
   /**
    * Set the window background color.
    *
@@ -3003,7 +2930,7 @@ interface WindowOptions {
    *
    * @since 2.1.0
    */
-  backgroundColor?: Color
+  backgroundColor?: Color;
 
   /** Change the default background throttling behaviour.
    *
@@ -3017,23 +2944,23 @@ interface WindowOptions {
    *
    * @since 2.3.0
    */
-  backgroundThrottling?: BackgroundThrottlingPolicy
+  backgroundThrottling?: BackgroundThrottlingPolicy;
   /**
    * Whether we should disable JavaScript code execution on the webview or not.
    */
-  javascriptDisabled?: boolean
+  javascriptDisabled?: boolean;
   /**
    * on macOS and iOS there is a link preview on long pressing links, this is enabled by default.
    * see https://docs.rs/objc2-web-kit/latest/objc2_web_kit/struct.WKWebView.html#method.allowsLinkPreview
    */
-  allowLinkPreview?: boolean
+  allowLinkPreview?: boolean;
   /**
    * Allows disabling the input accessory view on iOS.
    *
    * The accessory view is the view that appears above the keyboard when a text input element is focused.
    * It usually displays a view with "Done", "Next" buttons.
    */
-  disableInputAccessoryView?: boolean
+  disableInputAccessoryView?: boolean;
   /**
    * Specifies the native scrollbar style to use with the webview.
    * CSS styles that modify the scrollbar are applied on top of the native appearance configured here.
@@ -3048,24 +2975,24 @@ interface WindowOptions {
    *   - This option must be given the same value for all webviews.
    * - **Linux / Android / iOS / macOS**: Unsupported. Only supports `Default` and performs no operation.
    */
-  scrollBarStyle?: ScrollBarStyle
+  scrollBarStyle?: ScrollBarStyle;
   /**
    * The name of the Android activity to create for this window.
    */
-  activityName?: string
+  activityName?: string;
   /**
    * The name of the Android activity that is creating this webview window.
    *
    * This is important to determine which stack the activity will belong to.
    */
-  createdByActivityName?: string
+  createdByActivityName?: string;
   /**
    * Sets the identifier of the UIScene that is requesting the creation of this new scene,
    * establishing a relationship between the two scenes.
    *
    * By default the system uses the foreground scene.
    */
-  requestedBySceneIdentifier?: string
+  requestedBySceneIdentifier?: string;
 }
 
 function mapMonitor(m: Monitor | null): Monitor | null {
@@ -3078,9 +3005,9 @@ function mapMonitor(m: Monitor | null): Monitor | null {
         size: new PhysicalSize(m.size),
         workArea: {
           position: new PhysicalPosition(m.workArea.position),
-          size: new PhysicalSize(m.workArea.size)
-        }
-      }
+          size: new PhysicalSize(m.workArea.size),
+        },
+      };
 }
 
 /**
@@ -3095,9 +3022,7 @@ function mapMonitor(m: Monitor | null): Monitor | null {
  * @since 1.0.0
  */
 async function currentMonitor(): Promise<Monitor | null> {
-  return invoke<Monitor | null>('plugin:window|current_monitor').then(
-    mapMonitor
-  )
+  return invoke<Monitor | null>("plugin:window|current_monitor").then(mapMonitor);
 }
 
 /**
@@ -3112,9 +3037,7 @@ async function currentMonitor(): Promise<Monitor | null> {
  * @since 1.0.0
  */
 async function primaryMonitor(): Promise<Monitor | null> {
-  return invoke<Monitor | null>('plugin:window|primary_monitor').then(
-    mapMonitor
-  )
+  return invoke<Monitor | null>("plugin:window|primary_monitor").then(mapMonitor);
 }
 
 /**
@@ -3128,10 +3051,10 @@ async function primaryMonitor(): Promise<Monitor | null> {
  * @since 1.0.0
  */
 async function monitorFromPoint(x: number, y: number): Promise<Monitor | null> {
-  return invoke<Monitor | null>('plugin:window|monitor_from_point', {
+  return invoke<Monitor | null>("plugin:window|monitor_from_point", {
     x,
-    y
-  }).then(mapMonitor)
+    y,
+  }).then(mapMonitor);
 }
 
 /**
@@ -3145,9 +3068,7 @@ async function monitorFromPoint(x: number, y: number): Promise<Monitor | null> {
  * @since 1.0.0
  */
 async function availableMonitors(): Promise<Monitor[]> {
-  return invoke<Monitor[]>('plugin:window|available_monitors').then(
-    (ms) => ms.map(mapMonitor) as Monitor[]
-  )
+  return invoke<Monitor[]>("plugin:window|available_monitors").then(ms => ms.map(mapMonitor) as Monitor[]);
 }
 
 /**
@@ -3175,9 +3096,7 @@ async function availableMonitors(): Promise<Monitor[]> {
  * @since 2.0.0
  */
 async function cursorPosition(): Promise<PhysicalPosition> {
-  return invoke<PhysicalPosition>('plugin:window|cursor_position').then(
-    (v) => new PhysicalPosition(v)
-  )
+  return invoke<PhysicalPosition>("plugin:window|cursor_position").then(v => new PhysicalPosition(v));
 }
 
 export {
@@ -3196,8 +3115,8 @@ export {
   monitorFromPoint,
   primaryMonitor,
   availableMonitors,
-  cursorPosition
-}
+  cursorPosition,
+};
 
 export type {
   Effects,
@@ -3209,5 +3128,5 @@ export type {
   Color,
   BackgroundThrottlingPolicy,
   DragDropEvent,
-  ScrollBarStyle
-}
+  ScrollBarStyle,
+};

@@ -26,15 +26,15 @@
  * @module
  */
 
-import { Resource, invoke } from './core'
-import { NativeIcon } from './menu/iconMenuItem'
+import { Resource, invoke } from "./core";
+import { NativeIcon } from "./menu/iconMenuItem";
 
 /** Image dimensions, in pixels. */
 export interface ImageSize {
   /** Image width, in pixels. */
-  width: number
+  width: number;
   /** Image height, in pixels. */
-  height: number
+  height: number;
 }
 
 /**
@@ -59,10 +59,10 @@ export interface ImageSize {
  * The Rust [`JsImage::Rgba`](https://docs.rs/tauri/2/tauri/image/enum.JsImage.html#variant.Rgba) variant is intentionally not exposed here;
  * use {@linkcode Image.new} to create an image from raw RGBA data instead.
  */
-export type JsImage = string | Uint8Array | ArrayBuffer | number[] | Image
+export type JsImage = string | Uint8Array | ArrayBuffer | number[] | Image;
 
 /** A type that represents an icon that can be used in menu items. */
-export type MenuIcon = JsImage | NativeIcon
+export type MenuIcon = JsImage | NativeIcon;
 
 /**
  * An RGBA Image in row-major order from top to bottom.
@@ -90,7 +90,7 @@ export class Image extends Resource {
    * @ignore
    */
   constructor(rid: number) {
-    super(rid)
+    super(rid);
   }
 
   /**
@@ -110,16 +110,12 @@ export class Image extends Resource {
    *
    * @since 2.0.0
    */
-  static async new(
-    rgba: number[] | Uint8Array | ArrayBuffer,
-    width: number,
-    height: number
-  ): Promise<Image> {
-    return invoke<number>('plugin:image|new', {
+  static async new(rgba: number[] | Uint8Array | ArrayBuffer, width: number, height: number): Promise<Image> {
+    return invoke<number>("plugin:image|new", {
       rgba,
       width,
-      height
-    }).then((rid) => new Image(rid))
+      height,
+    }).then(rid => new Image(rid));
   }
 
   /**
@@ -144,12 +140,10 @@ export class Image extends Resource {
    *
    * @since 2.0.0
    */
-  static async fromBytes(
-    bytes: number[] | Uint8Array | ArrayBuffer
-  ): Promise<Image> {
-    return invoke<number>('plugin:image|from_bytes', {
-      bytes
-    }).then((rid) => new Image(rid))
+  static async fromBytes(bytes: number[] | Uint8Array | ArrayBuffer): Promise<Image> {
+    return invoke<number>("plugin:image|from_bytes", {
+      bytes,
+    }).then(rid => new Image(rid));
   }
 
   /**
@@ -179,9 +173,7 @@ export class Image extends Resource {
    * @since 2.0.0
    */
   static async fromPath(path: string): Promise<Image> {
-    return invoke<number>('plugin:image|from_path', { path }).then(
-      (rid) => new Image(rid)
-    )
+    return invoke<number>("plugin:image|from_path", { path }).then(rid => new Image(rid));
   }
 
   /**
@@ -200,9 +192,9 @@ export class Image extends Resource {
    * @since 2.0.0
    */
   async rgba(): Promise<Uint8Array<ArrayBuffer>> {
-    return invoke<number[]>('plugin:image|rgba', {
-      rid: this.rid
-    }).then((buffer) => new Uint8Array(buffer))
+    return invoke<number[]>("plugin:image|rgba", {
+      rid: this.rid,
+    }).then(buffer => new Uint8Array(buffer));
   }
 
   /**
@@ -219,7 +211,7 @@ export class Image extends Resource {
    * @since 2.0.0
    */
   async size(): Promise<ImageSize> {
-    return invoke<ImageSize>('plugin:image|size', { rid: this.rid })
+    return invoke<ImageSize>("plugin:image|size", { rid: this.rid });
   }
 }
 
@@ -230,14 +222,7 @@ export class Image extends Resource {
  * Note the API signature is not stable and might change.
  */
 export function transformImage<T>(image: JsImage | null): T {
-  const ret =
-    image == null
-      ? null
-      : typeof image === 'string'
-        ? image
-        : image instanceof Image
-          ? image.rid
-          : image
+  const ret = image == null ? null : typeof image === "string" ? image : image instanceof Image ? image.rid : image;
 
-  return ret as T
+  return ret as T;
 }

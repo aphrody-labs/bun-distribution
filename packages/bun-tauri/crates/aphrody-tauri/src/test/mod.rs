@@ -59,14 +59,14 @@ use serialize_to_javascript::DefaultTemplate;
 use std::{borrow::Cow, collections::HashMap, fmt::Debug};
 
 use crate::{
-  App, Assets, Builder, Context, Pattern, Runtime, Webview,
-  ipc::{InvokeError, InvokeResponse, InvokeResponseBody},
-  webview::InvokeRequest,
+    App, Assets, Builder, Context, Pattern, Runtime, Webview,
+    ipc::{InvokeError, InvokeResponse, InvokeResponseBody},
+    webview::InvokeRequest,
 };
 use tauri_utils::{
-  acl::resolved::Resolved,
-  assets::{AssetKey, AssetsIter, CspHash},
-  config::{AppConfig, Config},
+    acl::resolved::Resolved,
+    assets::{AssetKey, AssetsIter, CspHash},
+    config::{AppConfig, Config},
 };
 
 /// The invoke key used for tests.
@@ -74,77 +74,76 @@ pub const INVOKE_KEY: &str = "__invoke-key__";
 
 /// An empty [`Assets`] implementation.
 pub struct NoopAsset {
-  assets: HashMap<String, Vec<u8>>,
-  csp_hashes: Vec<CspHash<'static>>,
+    assets: HashMap<String, Vec<u8>>,
+    csp_hashes: Vec<CspHash<'static>>,
 }
 
 impl<R: Runtime> Assets<R> for NoopAsset {
-  fn get(&self, key: &AssetKey) -> Option<Cow<'_, [u8]>> {
-    None
-  }
+    fn get(&self, key: &AssetKey) -> Option<Cow<'_, [u8]>> {
+        None
+    }
 
-  fn iter(&self) -> Box<AssetsIter<'_>> {
-    Box::new(
-      self
-        .assets
-        .iter()
-        .map(|(k, b)| (Cow::Borrowed(k.as_str()), Cow::Borrowed(b.as_slice()))),
-    )
-  }
+    fn iter(&self) -> Box<AssetsIter<'_>> {
+        Box::new(
+            self.assets
+                .iter()
+                .map(|(k, b)| (Cow::Borrowed(k.as_str()), Cow::Borrowed(b.as_slice()))),
+        )
+    }
 
-  fn csp_hashes(&self, html_path: &AssetKey) -> Box<dyn Iterator<Item = CspHash<'_>> + '_> {
-    Box::new(self.csp_hashes.iter().copied())
-  }
+    fn csp_hashes(&self, html_path: &AssetKey) -> Box<dyn Iterator<Item = CspHash<'_>> + '_> {
+        Box::new(self.csp_hashes.iter().copied())
+    }
 }
 
 /// Creates a new empty [`Assets`] implementation.
 pub fn noop_assets() -> NoopAsset {
-  NoopAsset {
-    assets: Default::default(),
-    csp_hashes: Default::default(),
-  }
+    NoopAsset {
+        assets: Default::default(),
+        csp_hashes: Default::default(),
+    }
 }
 
 /// Creates a new [`crate::Context`] for testing.
 pub fn mock_context<R: Runtime, A: Assets<R>>(assets: A) -> crate::Context<R> {
-  Context {
-    config: Config {
-      schema: None,
-      product_name: Default::default(),
-      main_binary_name: Default::default(),
-      version: Default::default(),
-      identifier: Default::default(),
-      app: AppConfig {
-        with_global_tauri: Default::default(),
-        windows: Vec::new(),
-        security: Default::default(),
+    Context {
+        config: Config {
+            schema: None,
+            product_name: Default::default(),
+            main_binary_name: Default::default(),
+            version: Default::default(),
+            identifier: Default::default(),
+            app: AppConfig {
+                with_global_tauri: Default::default(),
+                windows: Vec::new(),
+                security: Default::default(),
+                tray_icon: None,
+                enable_gtk_app_id: false,
+                app_directories_override: None,
+            },
+            bundle: Default::default(),
+            build: Default::default(),
+            plugins: Default::default(),
+        },
+        assets: Box::new(assets),
+        default_window_icon: None,
+        app_icon: None,
+        #[cfg(all(desktop, feature = "tray-icon"))]
         tray_icon: None,
-        enable_gtk_app_id: false,
-        app_directories_override: None,
-      },
-      bundle: Default::default(),
-      build: Default::default(),
-      plugins: Default::default(),
-    },
-    assets: Box::new(assets),
-    default_window_icon: None,
-    app_icon: None,
-    #[cfg(all(desktop, feature = "tray-icon"))]
-    tray_icon: None,
-    package_info: crate::PackageInfo {
-      name: "test".into(),
-      version: "0.1.0".parse().unwrap(),
-      authors: "Tauri",
-      description: "Tauri test",
-      crate_name: "test",
-    },
-    pattern: Pattern::Brownfield,
-    runtime_authority: crate::runtime_authority!(Default::default(), Resolved::default()),
-    plugin_global_api_scripts: None,
+        package_info: crate::PackageInfo {
+            name: "test".into(),
+            version: "0.1.0".parse().unwrap(),
+            authors: "Tauri",
+            description: "Tauri test",
+            crate_name: "test",
+        },
+        pattern: Pattern::Brownfield,
+        runtime_authority: crate::runtime_authority!(Default::default(), Resolved::default()),
+        plugin_global_api_scripts: None,
 
-    #[cfg(dev)]
-    config_parent: None,
-  }
+        #[cfg(dev)]
+        config_parent: None,
+    }
 }
 
 /// Creates a new [`Builder`] using the [`MockRuntime`].
@@ -163,26 +162,26 @@ pub fn mock_context<R: Runtime, A: Assets<R>>(assets: A) -> crate::Context<R> {
 /// }
 /// ```
 pub fn mock_builder() -> Builder<MockRuntime> {
-  let mut builder = Builder::<MockRuntime>::new().enable_macos_default_menu(false);
+    let mut builder = Builder::<MockRuntime>::new().enable_macos_default_menu(false);
 
-  builder.invoke_initialization_script = crate::app::InvokeInitializationScript {
-    process_ipc_message_fn: crate::manager::webview::PROCESS_IPC_MESSAGE_FN,
-    os_name: std::env::consts::OS,
-    fetch_channel_data_command: crate::ipc::channel::FETCH_CHANNEL_DATA_COMMAND,
-    invoke_key: INVOKE_KEY,
-  }
-  .render_default(&Default::default())
-  .unwrap()
-  .into_string();
+    builder.invoke_initialization_script = crate::app::InvokeInitializationScript {
+        process_ipc_message_fn: crate::manager::webview::PROCESS_IPC_MESSAGE_FN,
+        os_name: std::env::consts::OS,
+        fetch_channel_data_command: crate::ipc::channel::FETCH_CHANNEL_DATA_COMMAND,
+        invoke_key: INVOKE_KEY,
+    }
+    .render_default(&Default::default())
+    .unwrap()
+    .into_string();
 
-  builder.invoke_key = INVOKE_KEY.to_string();
+    builder.invoke_key = INVOKE_KEY.to_string();
 
-  builder
+    builder
 }
 
 /// Creates a new [`App`] for testing using the [`mock_context`] with a [`noop_assets`].
 pub fn mock_app() -> App<MockRuntime> {
-  mock_builder().build(mock_context(noop_assets())).unwrap()
+    mock_builder().build(mock_context(noop_assets())).unwrap()
 }
 
 /// Executes the given IPC message and assert the response matches the expected value.
@@ -227,21 +226,21 @@ pub fn mock_app() -> App<MockRuntime> {
 /// }
 /// ```
 pub fn assert_ipc_response<
-  T: Serialize + Debug + Send + Sync + 'static,
-  W: AsRef<Webview<MockRuntime>>,
+    T: Serialize + Debug + Send + Sync + 'static,
+    W: AsRef<Webview<MockRuntime>>,
 >(
-  webview: &W,
-  request: InvokeRequest,
-  expected: Result<T, T>,
+    webview: &W,
+    request: InvokeRequest,
+    expected: Result<T, T>,
 ) {
-  let response =
-    get_ipc_response(webview, request).map(|b| b.deserialize::<serde_json::Value>().unwrap());
-  assert_eq!(
-    response,
-    expected
-      .map(|e| serde_json::to_value(e).unwrap())
-      .map_err(|e| serde_json::to_value(e).unwrap())
-  );
+    let response =
+        get_ipc_response(webview, request).map(|b| b.deserialize::<serde_json::Value>().unwrap());
+    assert_eq!(
+        response,
+        expected
+            .map(|e| serde_json::to_value(e).unwrap())
+            .map_err(|e| serde_json::to_value(e).unwrap())
+    );
 }
 
 #[allow(clippy::needless_doctest_main)]
@@ -288,45 +287,45 @@ pub fn assert_ipc_response<
 /// }
 ///```
 pub fn get_ipc_response<W: AsRef<Webview<MockRuntime>>>(
-  webview: &W,
-  request: InvokeRequest,
+    webview: &W,
+    request: InvokeRequest,
 ) -> Result<InvokeResponseBody, serde_json::Value> {
-  let (tx, rx) = std::sync::mpsc::sync_channel(1);
-  webview.as_ref().clone().on_message(
-    request,
-    Box::new(move |_window, _cmd, response, _callback, _error| {
-      tx.send(response).unwrap();
-    }),
-  );
+    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    webview.as_ref().clone().on_message(
+        request,
+        Box::new(move |_window, _cmd, response, _callback, _error| {
+            tx.send(response).unwrap();
+        }),
+    );
 
-  let res = rx.recv().expect("Failed to receive result from command");
-  match res {
-    InvokeResponse::Ok(b) => Ok(b),
-    InvokeResponse::Err(InvokeError(v)) => Err(v),
-  }
+    let res = rx.recv().expect("Failed to receive result from command");
+    match res {
+        InvokeResponse::Ok(b) => Ok(b),
+        InvokeResponse::Err(InvokeError(v)) => Err(v),
+    }
 }
 
 #[cfg(test)]
 mod tests {
-  use std::time::Duration;
+    use std::time::Duration;
 
-  use super::mock_app;
+    use super::mock_app;
 
-  #[test]
-  fn run_app() {
-    let app = mock_app();
+    #[test]
+    fn run_app() {
+        let app = mock_app();
 
-    let w = crate::WebviewWindowBuilder::new(&app, "main", Default::default())
-      .build()
-      .unwrap();
+        let w = crate::WebviewWindowBuilder::new(&app, "main", Default::default())
+            .build()
+            .unwrap();
 
-    std::thread::spawn(move || {
-      std::thread::sleep(Duration::from_secs(1));
-      w.close().unwrap();
-    });
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_secs(1));
+            w.close().unwrap();
+        });
 
-    app.run(|_app, event| {
-      println!("{event:?}");
-    });
-  }
+        app.run(|_app, event| {
+            println!("{event:?}");
+        });
+    }
 }

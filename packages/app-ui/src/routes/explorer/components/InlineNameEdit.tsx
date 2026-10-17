@@ -12,18 +12,11 @@ export interface InlineNameEditProps {
 /**
  * Domain adapter over @aphrody/m3-explorer's generic RenameInput component.
  */
-export function InlineNameEdit({
-  file,
-  onSave,
-  onCancel,
-  className,
-}: InlineNameEditProps) {
+export function InlineNameEdit({ file, onSave, onCancel, className }: InlineNameEditProps) {
   return (
     <RenameInput
       name={file.name}
-      extension={
-        file.extension && file.extension.length > 0 ? file.extension : undefined
-      }
+      extension={file.extension && file.extension.length > 0 ? file.extension : undefined}
       onSave={onSave}
       onCancel={onCancel}
       className={className}

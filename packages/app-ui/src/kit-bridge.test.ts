@@ -20,8 +20,7 @@ import { LINK_DESTINATIONS, parseLink } from "./open-requests";
 const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 afterEach(() => {
   clearKitCatalogsForTesting();
-  if (originalWindow)
-    Object.defineProperty(globalThis, "window", originalWindow);
+  if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow);
   else Reflect.deleteProperty(globalThis, "window");
 });
 
@@ -70,12 +69,9 @@ describe("kit bridge (aphrody.kit/1)", () => {
       { id: 1, text: "début", stream: "out" },
       { id: 2, text: "erreur", stream: "err" },
     ]);
-    expect(
-      reduceRun(
-        { ...idleRun, status: "running" },
-        { type: "exit", session: 1, code: null },
-      ).status,
-    ).toBe("stopped");
+    expect(reduceRun({ ...idleRun, status: "running" }, { type: "exit", session: 1, code: null }).status).toBe(
+      "stopped",
+    );
   });
 
   test("typed confirmations need the exact word", () => {
@@ -86,12 +82,8 @@ describe("kit bridge (aphrody.kit/1)", () => {
   });
 
   test("Windows-only actions are hidden elsewhere; admin needs the access pack", () => {
-    expect(visibleActions(catalog, "pc").map((action) => action.id)).toEqual([
-      "pc.2",
-    ]);
-    expect(
-      visibleActions({ ...catalog, platform: "win32" }, "pc"),
-    ).toHaveLength(2);
+    expect(visibleActions(catalog, "pc").map(action => action.id)).toEqual(["pc.2"]);
+    expect(visibleActions({ ...catalog, platform: "win32" }, "pc")).toHaveLength(2);
     expect(kitVisible(catalog, true)).toBe(true);
     expect(kitVisible({ ...catalog, admin: false }, true)).toBe(false);
     expect(kitVisible({ admin: false }, false)).toBe(true);
@@ -113,9 +105,7 @@ describe("kit bridge (aphrody.kit/1)", () => {
             const channel = args.channel as {
               onmessage: (event: KitEvent) => void;
             };
-            queueMicrotask(() =>
-              channel.onmessage({ type: "catalog", catalog }),
-            );
+            queueMicrotask(() => channel.onmessage({ type: "catalog", catalog }));
             return 7;
           },
         },
@@ -129,8 +119,7 @@ describe("kit bridge (aphrody.kit/1)", () => {
 
 describe("open requests reach the kit surfaces", () => {
   test("aphrody://admin and aphrody://creator open their routes", () => {
-    for (const destination of LINK_DESTINATIONS)
-      expect(destinationRoutes[destination]).toBeString();
+    for (const destination of LINK_DESTINATIONS) expect(destinationRoutes[destination]).toBeString();
     expect(routeOf(parseLink("aphrody://admin")!)).toEqual({ to: "/admin" });
     expect(routeOf(parseLink("aphrody://creator")!)).toEqual({
       to: "/creator",

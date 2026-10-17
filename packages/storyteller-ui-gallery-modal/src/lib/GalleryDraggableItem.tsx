@@ -8,10 +8,7 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryItem } from "./gallery-modal";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { GalleryItemMenuItems } from "./GalleryItemMenuItems";
-import {
-  showActionReminder,
-  isActionReminderOpen,
-} from "@storyteller/ui-action-reminder-modal";
+import { showActionReminder, isActionReminderOpen } from "@storyteller/ui-action-reminder-modal";
 import { toast } from "@storyteller/ui-toaster";
 
 type ModalMode = "select" | "view";
@@ -105,7 +102,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
 
   useEffect(() => {
     if (!isVideo || videoLoaded || !item.thumbnail) return;
-    const t = setInterval(() => setRetryAttempt((n) => n + 1), 5000);
+    const t = setInterval(() => setRetryAttempt(n => n + 1), 5000);
     return () => clearInterval(t);
   }, [isVideo, videoLoaded, item.thumbnail]);
 
@@ -126,8 +123,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       title: "Delete this media?",
       message: (
         <p className="text-sm text-white/70">
-          This will permanently remove the media from your library. This action
-          cannot be undone.
+          This will permanently remove the media from your library. This action cannot be undone.
         </p>
       ),
       primaryActionText: "Delete",
@@ -136,14 +132,8 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       onPrimaryAction: async () => {
         try {
           const result = await onDelete(item.id);
-          if (
-            result &&
-            typeof result === "object" &&
-            "status" in result &&
-            (result as any).status !== "success"
-          ) {
-            const msg =
-              (result as any).error_message || "Failed to delete media.";
+          if (result && typeof result === "object" && "status" in result && (result as any).status !== "success") {
+            const msg = (result as any).error_message || "Failed to delete media.";
             console.error("Delete failed:", result);
             toast.error(msg);
             return;
@@ -151,9 +141,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           onDeleted?.(item.id);
         } catch (err) {
           console.error("Delete threw:", err);
-          toast.error(
-            `Failed to delete media: ${err instanceof Error ? err.message : String(err)}`,
-          );
+          toast.error(`Failed to delete media: ${err instanceof Error ? err.message : String(err)}`);
         } finally {
           isActionReminderOpen.value = false;
         }
@@ -167,14 +155,9 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     if (!ctxMenu || !ctxPanelRef.current) return;
     const el = ctxPanelRef.current;
     const rect = el.getBoundingClientRect();
-    const x =
-      ctxMenu.x + rect.width > window.innerWidth
-        ? Math.max(8, window.innerWidth - rect.width - 8)
-        : ctxMenu.x;
+    const x = ctxMenu.x + rect.width > window.innerWidth ? Math.max(8, window.innerWidth - rect.width - 8) : ctxMenu.x;
     const y =
-      ctxMenu.y + rect.height > window.innerHeight
-        ? Math.max(8, window.innerHeight - rect.height - 8)
-        : ctxMenu.y;
+      ctxMenu.y + rect.height > window.innerHeight ? Math.max(8, window.innerHeight - rect.height - 8) : ctxMenu.y;
     el.style.left = `${x}px`;
     el.style.top = `${y}px`;
   }, [ctxMenu]);
@@ -202,10 +185,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       if (!dragStarted.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
         dragStarted.current = true;
         if (galleryDnd && !disableTooltipAndBadge) {
-          const bulkItems =
-            bulkSelectionMode && bulkSelected && getBulkDragItems
-              ? getBulkDragItems()
-              : undefined;
+          const bulkItems = bulkSelectionMode && bulkSelected && getBulkDragItems ? getBulkDragItems() : undefined;
           galleryDnd.onPointerDown(event, item, bulkItems);
         }
         window.removeEventListener("pointermove", moveListener);
@@ -324,7 +304,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     <div
       className="group relative w-full aspect-square"
       data-media-id={item.id}
-      onContextMenu={(e) => {
+      onContextMenu={e => {
         if (mode === "select") return;
         e.preventDefault();
         e.stopPropagation();
@@ -338,8 +318,8 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           // filter bar at z-10): z-[2]/z-[1] keep the in-tile ordering
           // (menu/checkbox above badges) without escaping the page layers.
           className="absolute right-2 top-2 z-[2] opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-opacity duration-75"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => {
             e.stopPropagation();
           }}
         >
@@ -352,7 +332,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             panelClassName="w-max min-w-44 p-1"
             closeOnUnhover
           >
-            {(close) => (
+            {close => (
               <GalleryItemMenuItems
                 item={item}
                 folders={folders}
@@ -376,7 +356,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             <div
               className="fixed inset-0 z-[9998]"
               onClick={() => setCtxMenu(null)}
-              onContextMenu={(e) => {
+              onContextMenu={e => {
                 e.preventDefault();
                 setCtxMenu(null);
               }}
@@ -408,15 +388,13 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         <div
           className={twMerge(
             "absolute left-2 top-2 z-[2] flex h-5 w-5 items-center justify-center rounded-[3px] border-2 cursor-pointer transition-all duration-100",
-            bulkSelected
-              ? "bg-primary border-primary"
-              : "border-white/60 bg-black/40 hover:border-white",
+            bulkSelected ? "bg-primary border-primary" : "border-white/60 bg-black/40 hover:border-white",
             bulkSelectionMode
               ? "opacity-100"
               : "opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100",
           )}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => {
             e.stopPropagation();
             onBulkSelectToggle?.();
           }}
@@ -427,9 +405,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {/* Media class badge on hover — bottom-left */}
       {!disableTooltipAndBadge && item.mediaClass && (
         <div className="pointer-events-none absolute left-2 bottom-2 z-[1] bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-          {item.mediaClass === "dimensional" ||
-          item.mediaClass === "mesh" ||
-          item.mediaClass === "splat"
+          {item.mediaClass === "dimensional" || item.mediaClass === "mesh" || item.mediaClass === "splat"
             ? "3D"
             : item.mediaClass}
         </div>
@@ -452,9 +428,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
                 <span>
                   <span className="font-bold">Drag</span>
                   <span className="opacity-50">
-                    {item.mediaClass === "dimensional" ||
-                    item.mediaClass === "mesh" ||
-                    item.mediaClass === "splat"
+                    {item.mediaClass === "dimensional" || item.mediaClass === "mesh" || item.mediaClass === "splat"
                       ? " to add to scene"
                       : " to add"}
                   </span>

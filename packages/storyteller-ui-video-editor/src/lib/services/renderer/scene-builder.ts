@@ -12,17 +12,13 @@ import { EffectLayerNode } from "./nodes/effect-layer-node";
 import type { AnyBaseNode } from "./nodes/base-node";
 import type { TBackground, TCanvasSize } from "../../project/types";
 import { DEFAULT_BACKGROUND_BLUR_INTENSITY } from "../../background/blur";
-import {
-  buildTransformFromParams,
-  readBlendModeFromParams,
-  readOpacityFromParams,
-} from "../../rendering";
+import { buildTransformFromParams, readBlendModeFromParams, readOpacityFromParams } from "../../rendering";
 
 const PREVIEW_MAX_IMAGE_SIZE = 2048;
 
 function getVisibleSortedElements({ track }: { track: TimelineTrack }) {
   return track.elements
-    .filter((element) => !("hidden" in element && element.hidden))
+    .filter(element => !("hidden" in element && element.hidden))
     .slice()
     .sort((a, b) => {
       if (a.startTime !== b.startTime) return a.startTime - b.startTime;
@@ -188,11 +184,7 @@ function buildBlurBackgroundNodes({
     }
 
     const mediaAsset = mediaMap.get(element.mediaId);
-    if (
-      !mediaAsset?.file ||
-      !mediaAsset?.url ||
-      (mediaAsset.type !== "video" && mediaAsset.type !== "image")
-    ) {
+    if (!mediaAsset?.file || !mediaAsset?.url || (mediaAsset.type !== "video" && mediaAsset.type !== "image")) {
       continue;
     }
 
@@ -224,19 +216,12 @@ export type BuildSceneParams = {
   isPreview?: boolean;
 };
 
-export function buildScene({
-  canvasSize,
-  tracks,
-  mediaAssets,
-  duration,
-  background,
-  isPreview,
-}: BuildSceneParams) {
+export function buildScene({ canvasSize, tracks, mediaAssets, duration, background, isPreview }: BuildSceneParams) {
   const rootNode = new RootNode({ duration });
-  const mediaMap = new Map(mediaAssets.map((m) => [m.id, m]));
+  const mediaMap = new Map(mediaAssets.map(m => [m.id, m]));
 
   const visibleTracks = [
-    ...tracks.overlay.filter((track) => !("hidden" in track && track.hidden)),
+    ...tracks.overlay.filter(track => !("hidden" in track && track.hidden)),
     ...(!tracks.main.hidden ? [tracks.main] : []),
   ];
   const orderedTracksBottomToTop = visibleTracks.slice().reverse();
@@ -253,16 +238,12 @@ export function buildScene({
     const blurNodes = buildBlurBackgroundNodes({
       track: mainTrack,
       mediaMap,
-      blurIntensity:
-        background.blurIntensity ?? DEFAULT_BACKGROUND_BLUR_INTENSITY,
+      blurIntensity: background.blurIntensity ?? DEFAULT_BACKGROUND_BLUR_INTENSITY,
     });
     for (const node of blurNodes) {
       rootNode.add(node);
     }
-  } else if (
-    background.type === "color" &&
-    background.color !== "transparent"
-  ) {
+  } else if (background.type === "color" && background.color !== "transparent") {
     rootNode.add(new ColorNode({ color: background.color }));
   }
 

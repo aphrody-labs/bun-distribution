@@ -25,9 +25,7 @@ export interface ProductionCacheOptions {
  * Without cache limits and sweepers, Discord.js retains all messages, threads,
  * and reactions indefinitely in RAM, leading to memory bloat over days or weeks of uptime.
  */
-export function createProductionCacheOptions(
-  config: ProductionCacheConfig = {},
-): ProductionCacheOptions {
+export function createProductionCacheOptions(config: ProductionCacheConfig = {}): ProductionCacheOptions {
   const messageLimit = config.messageLimit ?? 200;
   const threadLimit = config.threadLimit ?? 50;
   const reactionLimit = config.reactionLimit ?? 0;

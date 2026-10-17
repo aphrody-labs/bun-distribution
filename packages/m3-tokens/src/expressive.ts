@@ -76,9 +76,7 @@ export interface EmphasizedStyle {
   tracking: string;
 }
 
-export const EMPHASIZED_STYLES: readonly EmphasizedStyle[] = (
-  Object.keys(TYPE_BASE) as TypeStyleName[]
-).map((name) => {
+export const EMPHASIZED_STYLES: readonly EmphasizedStyle[] = (Object.keys(TYPE_BASE) as TypeStyleName[]).map(name => {
   const b = TYPE_BASE[name];
   return {
     name,
@@ -104,17 +102,11 @@ export const EXPRESSIVE_SPRINGS = {
 
 /** Directional corner shapes: `[ltr border-radius, rtl border-radius]` in terms of the corner scale. */
 export const DIRECTIONAL_SHAPES = {
-  "extra-small-top": [
-    "extra-small extra-small none none",
-    "extra-small extra-small none none",
-  ],
+  "extra-small-top": ["extra-small extra-small none none", "extra-small extra-small none none"],
   "large-top": ["large large none none", "large large none none"],
   "large-start": ["large none none large", "none large large none"],
   "large-end": ["none large large none", "large none none large"],
-  "extra-large-top": [
-    "extra-large extra-large none none",
-    "extra-large extra-large none none",
-  ],
+  "extra-large-top": ["extra-large extra-large none none", "extra-large extra-large none none"],
 } as const;
 
 export type DirectionalShape = keyof typeof DIRECTIONAL_SHAPES;
@@ -122,12 +114,12 @@ export type DirectionalShape = keyof typeof DIRECTIONAL_SHAPES;
 const corners = (spec: string): string =>
   spec
     .split(" ")
-    .map((c) => `var(--md-sys-shape-corner-${c})`)
+    .map(c => `var(--md-sys-shape-corner-${c})`)
     .join(" ");
 
 /** The stylesheet that `expressive.css` holds. */
 export function expressiveCss(): string {
-  const type = EMPHASIZED_STYLES.flatMap((s) => {
+  const type = EMPHASIZED_STYLES.flatMap(s => {
     const p = `--md-sys-typescale-${s.name}-emphasized`;
     return [
       `  ${p}-font: var(--md-ref-typeface-${s.font});`,

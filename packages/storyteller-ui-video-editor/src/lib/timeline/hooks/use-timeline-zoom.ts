@@ -9,10 +9,7 @@ import {
 import { useEditor } from "../../editor/use-editor";
 import { useCommittedRef } from "../../hooks/use-committed-ref";
 import { TIMELINE_ZOOM_MIN } from "../scale";
-import {
-  ZoomController,
-  type ZoomConfig,
-} from "../controllers/zoom-controller";
+import { ZoomController, type ZoomConfig } from "../controllers/zoom-controller";
 import type { MediaTime } from "../../wasm";
 
 interface UseTimelineZoomProps {
@@ -48,7 +45,7 @@ export function useTimelineZoom({
     getTracksScrollEl: () => tracksScrollRef.current,
     getRulerScrollEl: () => rulerScrollRef.current,
     getCurrentPlayheadTime: () => editor.playback.getCurrentTime(),
-    seek: (time) => editor.playback.seek({ time }),
+    seek: time => editor.playback.seek({ time }),
     setTimelineViewState: ({ zoomLevel, scrollLeft, playheadTime }) =>
       editor.project.setTimelineViewState({
         timelineViewState: {
@@ -59,9 +56,7 @@ export function useTimelineZoom({
       }),
   };
   const configRef = useCommittedRef(config);
-  const [controller] = useState(
-    () => new ZoomController({ configRef, initialZoom }),
-  );
+  const [controller] = useState(() => new ZoomController({ configRef, initialZoom }));
   const zoomLevel = controller.zoomLevel;
 
   const [, rerender] = useReducer((n: number) => n + 1, 0);

@@ -455,16 +455,8 @@
 
 @theme inline {
   --color-accent: var(--md-sys-color-primary);
-  --color-accent-faint: color-mix(
-    in srgb,
-    var(--md-sys-color-on-primary) 8%,
-    var(--md-sys-color-primary)
-  );
-  --color-accent-deep: color-mix(
-    in srgb,
-    var(--md-sys-color-on-primary) 10%,
-    var(--md-sys-color-primary)
-  );
+  --color-accent-faint: color-mix(in srgb, var(--md-sys-color-on-primary) 8%, var(--md-sys-color-primary));
+  --color-accent-deep: color-mix(in srgb, var(--md-sys-color-on-primary) 10%, var(--md-sys-color-primary));
   --color-ink: var(--md-sys-color-on-surface);
   --color-ink-dull: var(--md-sys-color-on-surface-variant);
   --color-ink-faint: var(--md-sys-color-outline);
@@ -486,16 +478,8 @@
     var(--md-sys-color-on-surface) 10%,
     var(--md-sys-color-surface-container)
   );
-  --color-app-hover: color-mix(
-    in srgb,
-    var(--md-sys-color-on-surface) 8%,
-    var(--md-sys-color-surface-container)
-  );
-  --color-app-active: color-mix(
-    in srgb,
-    var(--md-sys-color-on-surface) 10%,
-    var(--md-sys-color-surface-container)
-  );
+  --color-app-hover: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, var(--md-sys-color-surface-container));
+  --color-app-active: color-mix(in srgb, var(--md-sys-color-on-surface) 10%, var(--md-sys-color-surface-container));
   --color-app-shade: var(--md-sys-color-shadow);
   --color-app-frame: var(--md-sys-color-outline-variant);
   --color-app-slider: var(--md-sys-color-surface-container-highest);
@@ -514,11 +498,7 @@
   --color-menu-line: var(--md-sys-color-outline-variant);
   --color-menu-ink: var(--md-sys-color-on-surface);
   --color-menu-faint: var(--md-sys-color-on-surface-variant);
-  --color-menu-hover: color-mix(
-    in srgb,
-    var(--md-sys-color-on-surface) 8%,
-    var(--md-sys-color-surface-container)
-  );
+  --color-menu-hover: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, var(--md-sys-color-surface-container));
   --color-menu-selected: var(--md-sys-color-secondary-container);
   --color-menu-shade: var(--md-sys-color-shadow);
   --color-status-success: var(--md-ext-color-success);

@@ -8,11 +8,7 @@
 // Prints the generated CSS to stdout; diagnostics go to stderr.
 // -----------------------------------------------------------------------------
 
-import {
-  muiThemeToTokens,
-  normalizeHex,
-  type MuiTheme,
-} from "./theme-to-tokens";
+import { muiThemeToTokens, normalizeHex, type MuiTheme } from "./theme-to-tokens";
 
 async function main(): Promise<void> {
   const seedArg = normalizeHex(process.argv[2] ?? "");
@@ -57,9 +53,7 @@ async function main(): Promise<void> {
   const { css, mcuAvailable } = await muiThemeToTokens(muiTheme, {
     darkTheme: muiDark,
   });
-  process.stderr.write(
-    `\n[theme-to-tokens] MCU available: ${mcuAvailable}\n\n`,
-  );
+  process.stderr.write(`\n[theme-to-tokens] MCU available: ${mcuAvailable}\n\n`);
   process.stdout.write(css + "\n");
 }
 

@@ -23,13 +23,7 @@ function isMediaTime(value: number): value is MediaTime {
   return Number.isInteger(value);
 }
 
-function requireMediaTime({
-  value,
-  context,
-}: {
-  value: number;
-  context: string;
-}): MediaTime {
+function requireMediaTime({ value, context }: { value: number; context: string }): MediaTime {
   if (!isMediaTime(value)) {
     throw new Error(`${context}: expected an integer tick count, got ${value}`);
   }
@@ -61,16 +55,10 @@ export function roundMediaTime({ time }: { time: number }): MediaTime {
   });
 }
 
-export function mediaTimeFromSeconds({
-  seconds,
-}: {
-  seconds: number;
-}): MediaTime {
+export function mediaTimeFromSeconds({ seconds }: { seconds: number }): MediaTime {
   const result = _mediaTimeFromSeconds({ seconds });
   if (result === undefined) {
-    throw new Error(
-      `mediaTimeFromSeconds: rust returned undefined for seconds=${seconds}`,
-    );
+    throw new Error(`mediaTimeFromSeconds: rust returned undefined for seconds=${seconds}`);
   }
   return requireMediaTime({
     value: result,
@@ -82,86 +70,42 @@ export function mediaTimeToSeconds({ time }: { time: MediaTime }): number {
   return _mediaTimeToSeconds({ time });
 }
 
-export function addMediaTime({
-  a,
-  b,
-}: {
-  a: MediaTime;
-  b: MediaTime;
-}): MediaTime {
+export function addMediaTime({ a, b }: { a: MediaTime; b: MediaTime }): MediaTime {
   return requireMediaTime({
     value: a + b,
     context: "addMediaTime()",
   });
 }
 
-export function subMediaTime({
-  a,
-  b,
-}: {
-  a: MediaTime;
-  b: MediaTime;
-}): MediaTime {
+export function subMediaTime({ a, b }: { a: MediaTime; b: MediaTime }): MediaTime {
   return requireMediaTime({
     value: a - b,
     context: "subMediaTime()",
   });
 }
 
-export function maxMediaTime({
-  a,
-  b,
-}: {
-  a: MediaTime;
-  b: MediaTime;
-}): MediaTime {
+export function maxMediaTime({ a, b }: { a: MediaTime; b: MediaTime }): MediaTime {
   return a > b ? a : b;
 }
 
-export function minMediaTime({
-  a,
-  b,
-}: {
-  a: MediaTime;
-  b: MediaTime;
-}): MediaTime {
+export function minMediaTime({ a, b }: { a: MediaTime; b: MediaTime }): MediaTime {
   return a < b ? a : b;
 }
 
-export function clampMediaTime({
-  time,
-  min,
-  max,
-}: {
-  time: MediaTime;
-  min: MediaTime;
-  max: MediaTime;
-}): MediaTime {
+export function clampMediaTime({ time, min, max }: { time: MediaTime; min: MediaTime; max: MediaTime }): MediaTime {
   if (time < min) return min;
   if (time > max) return max;
   return time;
 }
 
-export function roundFrameTime({
-  time,
-  fps,
-}: {
-  time: MediaTime;
-  fps: FrameRate;
-}): MediaTime {
+export function roundFrameTime({ time, fps }: { time: MediaTime; fps: FrameRate }): MediaTime {
   return requireMediaTime({
     value: _roundToFrame({ time, rate: fps }) ?? time,
     context: "roundFrameTime()",
   });
 }
 
-export function roundFrameTicks({
-  ticks,
-  fps,
-}: {
-  ticks: number;
-  fps: FrameRate;
-}): number {
+export function roundFrameTicks({ ticks, fps }: { ticks: number; fps: FrameRate }): number {
   return _roundToFrame({ time: ticks, rate: fps }) ?? ticks;
 }
 
@@ -180,13 +124,7 @@ export function snapSeekMediaTime({
   });
 }
 
-export function lastFrameMediaTime({
-  duration,
-  fps,
-}: {
-  duration: MediaTime;
-  fps: FrameRate;
-}): MediaTime {
+export function lastFrameMediaTime({ duration, fps }: { duration: MediaTime; fps: FrameRate }): MediaTime {
   return requireMediaTime({
     value: _lastFrameTime({ duration, rate: fps }) ?? duration,
     context: "lastFrameMediaTime()",

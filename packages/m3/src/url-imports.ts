@@ -54,31 +54,25 @@ export const FILE_URL_EXTENSIONS: readonly string[] = [".svg"];
 
 /** How a `?url` import of `path` is bundled. */
 export function urlImportForm(path: string): "file" | "inline" {
-  return FILE_URL_EXTENSIONS.includes(extname(path).toLowerCase())
-    ? "file"
-    : "inline";
+  return FILE_URL_EXTENSIONS.includes(extname(path).toLowerCase()) ? "file" : "inline";
 }
 
 /** Register the `?url` resolver and loaders on a plugin builder. */
 export function setupUrlImports(build: PluginBuilder): void {
-  build.onResolve({ filter: /\?url$/ }, (args) => {
+  build.onResolve({ filter: /\?url$/ }, args => {
     const spec = args.path.slice(0, -URL_SUFFIX.length);
-    const path = isAbsolute(spec)
-      ? spec
-      : resolve(dirname(args.importer), spec);
+    const path = isAbsolute(spec) ? spec : resolve(dirname(args.importer), spec);
     if (urlImportForm(path) === "file") return { path };
     return { path: `${path}${URL_SUFFIX}`, namespace: URL_NAMESPACE };
   });
-  build.onLoad({ filter: /.*/, namespace: URL_NAMESPACE }, async (args) => {
-    const path = args.path.endsWith(URL_SUFFIX)
-      ? args.path.slice(0, -URL_SUFFIX.length)
-      : args.path;
+  build.onLoad({ filter: /.*/, namespace: URL_NAMESPACE }, async args => {
+    const path = args.path.endsWith(URL_SUFFIX) ? args.path.slice(0, -URL_SUFFIX.length) : args.path;
     return {
       contents: `export default ${JSON.stringify(await dataUrlFor(path))};`,
       loader: "js",
     };
   });
-  build.onLoad({ filter: /\.svg$/i, namespace: "file" }, async (args) => ({
+  build.onLoad({ filter: /\.svg$/i, namespace: "file" }, async args => ({
     contents: await Bun.file(args.path).bytes(),
     loader: "file",
   }));

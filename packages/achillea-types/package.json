@@ -3,6 +3,12 @@
   "version": "1.4.4",
   "private": false,
   "description": "Contrats d'API partagés (DTO + enums) — source unique pour le bot et le web",
+  "license": "Apache-2.0",
+  "files": [
+    "src",
+    "test",
+    "tsconfig.json"
+  ],
   "type": "module",
   "sideEffects": false,
   "main": "./src/index.ts",
@@ -12,6 +18,10 @@
     "./enums": "./src/enums/index.ts",
     "./enums/*": "./src/enums/*.ts",
     "./domain/*": "./src/domain/*.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "scripts": {
     "lint": "bun lint -c ../rg-config/oxlintrc.json -A style -A pedantic -A restriction src test",
@@ -25,15 +35,5 @@
   },
   "engines": {
     "bun": "=1.4.4"
-  },
-  "license": "Apache-2.0",
-  "files": [
-    "src",
-    "test",
-    "tsconfig.json"
-  ],
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   }
 }

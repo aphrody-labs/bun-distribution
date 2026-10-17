@@ -24,48 +24,25 @@ const Alert = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
 >(({ className, variant, children, ...props }, ref) => (
-  <div
-    ref={ref}
-    role="alert"
-    className={cn(alertVariants({ variant }), className)}
-    {...props}
-  >
-    {variant === "destructive" && (
-      <HugeiconsIcon
-        icon={Alert02Icon}
-        className="size-5 text-destructive mt-0.5"
-      />
-    )}
+  <div ref={ref} role="alert" className={cn(alertVariants({ variant }), className)} {...props}>
+    {variant === "destructive" && <HugeiconsIcon icon={Alert02Icon} className="size-5 text-destructive mt-0.5" />}
     {children}
   </div>
 ));
 Alert.displayName = "Alert";
 
-const AlertTitle = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h5
-    ref={ref}
-    className={cn(
-      "mb-2 text-base leading-none font-semibold tracking-tight",
-      className,
-    )}
-    {...props}
-  />
-));
+const AlertTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
+  ({ className, ...props }, ref) => (
+    <h5 ref={ref} className={cn("mb-2 text-base leading-none font-semibold tracking-tight", className)} {...props} />
+  ),
+);
 AlertTitle.displayName = "AlertTitle";
 
-const AlertDescription = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("text-sm [&_p]:leading-relaxed", className)}
-    {...props}
-  />
-));
+const AlertDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("text-sm [&_p]:leading-relaxed", className)} {...props} />
+  ),
+);
 AlertDescription.displayName = "AlertDescription";
 
 export { Alert, AlertTitle, AlertDescription };

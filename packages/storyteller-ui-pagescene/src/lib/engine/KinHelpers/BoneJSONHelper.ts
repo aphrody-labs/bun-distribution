@@ -10,10 +10,7 @@ export class BoneJSONHelper {
   private findHipBone(objectGroup: Object3D[]): Object3D | undefined {
     let hipBone = undefined;
     for (const child of objectGroup) {
-      if (
-        child.type === "Bone" &&
-        child.name.toLowerCase().includes("mixamorighips")
-      ) {
+      if (child.type === "Bone" && child.name.toLowerCase().includes("mixamorighips")) {
         hipBone = child;
         break;
       }

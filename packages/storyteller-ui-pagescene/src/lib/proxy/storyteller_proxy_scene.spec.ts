@@ -80,10 +80,7 @@ function makeTicket(): LoadTicket {
 
 // Returns a function that, once the load has created its box, subscribes
 // `onDispose` to that box's geometry.
-function trackFirstMeshGeometry(
-  scene: Scene,
-  onDispose: () => void,
-): () => void {
+function trackFirstMeshGeometry(scene: Scene, onDispose: () => void): () => void {
   return () => {
     const box = scene.scene.getObjectByProperty("name", "Box") as THREE.Mesh;
     box.geometry.addEventListener("dispose", onDispose);

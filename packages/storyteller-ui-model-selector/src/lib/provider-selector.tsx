@@ -8,10 +8,7 @@ import { ModelPage } from "./model-pages";
 import { Model } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { getProviderDisplayName, getProviderIcon } from "./provider-icons";
-import {
-  useClassyModelSelectorStore,
-  useSelectedProviderForModel,
-} from "./classy-model-selector-store";
+import { useClassyModelSelectorStore, useSelectedProviderForModel } from "./classy-model-selector-store";
 
 interface ProviderSelectorProps {
   page: ModelPage;
@@ -23,30 +20,16 @@ interface ProviderSelectorProps {
   triggerLabel?: string;
 }
 
-const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [
-  GenerationProvider.Artcraft,
-  GenerationProvider.Fal,
-];
+const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [GenerationProvider.Artcraft, GenerationProvider.Fal];
 
-export function ProviderSelector({
-  page,
-  model,
-  providersByModel,
-  ...popoverProps
-}: ProviderSelectorProps) {
+export function ProviderSelector({ page, model, providersByModel, ...popoverProps }: ProviderSelectorProps) {
   const { setSelectedProvider } = useClassyModelSelectorStore();
 
   const modelId = model?.id;
   const allowedProviders: GenerationProvider[] = useMemo(() => {
     if (!modelId) return DEFAULT_PROVIDER_OPTIONS;
-    const providers = (
-      providersByModel?.[modelId] ??
-      model?.getProviders() ??
-      DEFAULT_PROVIDER_OPTIONS
-    ).filter(
-      (provider) =>
-        provider !== GenerationProvider.Sora &&
-        provider !== GenerationProvider.WorldLabs,
+    const providers = (providersByModel?.[modelId] ?? model?.getProviders() ?? DEFAULT_PROVIDER_OPTIONS).filter(
+      provider => provider !== GenerationProvider.Sora && provider !== GenerationProvider.WorldLabs,
     );
     return providers.length > 0 ? providers : [GenerationProvider.Artcraft];
   }, [providersByModel, modelId, model]);
@@ -55,17 +38,14 @@ export function ProviderSelector({
 
   useEffect(() => {
     if (!modelId) return;
-    if (
-      (!selectedProvider || !allowedProviders.includes(selectedProvider)) &&
-      allowedProviders.length > 0
-    ) {
+    if ((!selectedProvider || !allowedProviders.includes(selectedProvider)) && allowedProviders.length > 0) {
       setSelectedProvider(page, modelId, allowedProviders[0]);
     }
   }, [page, modelId, selectedProvider, allowedProviders, setSelectedProvider]);
 
   const items: Omit<PopoverItem, "selected">[] = useMemo(
     () =>
-      allowedProviders.map((p) => ({
+      allowedProviders.map(p => ({
         label: getProviderDisplayName(p),
         icon: getProviderIcon(p),
         model: undefined,
@@ -76,7 +56,7 @@ export function ProviderSelector({
 
   const list = useMemo(
     () =>
-      items.map((item) => ({
+      items.map(item => ({
         ...item,
         selected: (item as any).provider === selectedProvider,
       })),
@@ -85,8 +65,7 @@ export function ProviderSelector({
 
   const handleSelect = (item: PopoverItem) => {
     if (!modelId) return;
-    const prov: GenerationProvider | undefined = (item as any).provider as
-      GenerationProvider | undefined;
+    const prov: GenerationProvider | undefined = (item as any).provider as GenerationProvider | undefined;
     if (!prov) return;
     setSelectedProvider(page, modelId, prov);
   };

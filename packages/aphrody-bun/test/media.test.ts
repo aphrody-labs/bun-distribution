@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Skips until the cdylib exists (cargo build -p aphrody-ffi, then APHRODY_FFI_DEV=1 or APHRODY_FFI_LIB=...).
 import { expect, test } from "bun:test";
-import {
-  webJobWait,
-  webMediaExtract,
-  webMediaResolveSubmit,
-} from "../src/engine";
+import { webJobWait, webMediaExtract, webMediaResolveSubmit } from "../src/engine";
 import { resolveNativeLibraryPath } from "../src/library";
 
 let available = false;
@@ -26,9 +22,7 @@ native("media extraction crosses the shared Rust ABI", () => {
 });
 
 native("invalid media URL completes without network access", async () => {
-  const result = JSON.parse(
-    await webJobWait(webMediaResolveSubmit("file:///tmp/video")),
-  ) as {
+  const result = JSON.parse(await webJobWait(webMediaResolveSubmit("file:///tmp/video"))) as {
     error: string;
   };
   expect(result.error).toContain("only http and https");

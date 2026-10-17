@@ -57,22 +57,8 @@ function buildHeartPath({
 
   const path = new Path2D();
   path.moveTo(start.x, start.y);
-  path.bezierCurveTo(
-    rightControl1.x,
-    rightControl1.y,
-    rightControl2.x,
-    rightControl2.y,
-    bottom.x,
-    bottom.y,
-  );
-  path.bezierCurveTo(
-    leftControl1.x,
-    leftControl1.y,
-    leftControl2.x,
-    leftControl2.y,
-    start.x,
-    start.y,
-  );
+  path.bezierCurveTo(rightControl1.x, rightControl1.y, rightControl2.x, rightControl2.y, bottom.x, bottom.y);
+  path.bezierCurveTo(leftControl1.x, leftControl1.y, leftControl2.x, leftControl2.y, start.x, start.y);
   path.closePath();
   return path;
 }
@@ -113,8 +99,7 @@ export const heartMaskDefinition: MaskDefinition<"heart"> = {
       kind: "fillPath",
       buildPath({ resolvedParams, width, height }) {
         const params = resolvedParams;
-        const { centerX, centerY, maskWidth, maskHeight, rotationRad } =
-          getBoxLikeGeometry({ params, width, height });
+        const { centerX, centerY, maskWidth, maskHeight, rotationRad } = getBoxLikeGeometry({ params, width, height });
         return buildHeartPath({
           centerX,
           centerY,
@@ -128,8 +113,7 @@ export const heartMaskDefinition: MaskDefinition<"heart"> = {
       kind: "strokeFromPath",
       buildStrokePath({ resolvedParams, width, height }) {
         const params = resolvedParams;
-        const { centerX, centerY, maskWidth, maskHeight, rotationRad } =
-          getBoxLikeGeometry({ params, width, height });
+        const { centerX, centerY, maskWidth, maskHeight, rotationRad } = getBoxLikeGeometry({ params, width, height });
         const offset = getStrokeOffset({
           strokeAlign: params.strokeAlign,
           strokeWidth: params.strokeWidth,

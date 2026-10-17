@@ -1,9 +1,5 @@
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
-import {
-  type IconSource,
-  m3FocusRing,
-  renderIcon,
-} from "@aphrody/m3-primitives";
+import { type IconSource, m3FocusRing, renderIcon } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -31,14 +27,8 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
 
   return (
-    <div
-      role="tablist"
-      className={clsx(
-        "flex gap-0.5 rounded-full bg-surface-container p-0.5",
-        className,
-      )}
-    >
-      {tabs.map((tab) => {
+    <div role="tablist" className={clsx("flex gap-0.5 rounded-full bg-surface-container p-0.5", className)}>
+      {tabs.map(tab => {
         const isActive = activeTab === tab.id;
         const isHovered = hoveredTab === tab.id;
 

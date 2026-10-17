@@ -3,12 +3,7 @@
 
 "use client";
 
-import {
-  Popover,
-  usePopover,
-  SelectPill,
-  type SelectPillProps,
-} from "@aphrody/m3-primitives";
+import { Popover, usePopover, SelectPill, type SelectPillProps } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 
@@ -43,17 +38,10 @@ export interface ModelSelectorProps {
 }
 
 /** Group models by provider, keeping the order of first appearance. */
-export function groupModelsByProvider(
-  models: ModelOption[],
-  search = "",
-): Record<string, ModelOption[]> {
+export function groupModelsByProvider(models: ModelOption[], search = ""): Record<string, ModelOption[]> {
   const q = search.trim().toLowerCase();
   const filtered = q
-    ? models.filter(
-        (m) =>
-          m.name.toLowerCase().includes(q) ||
-          m.provider.toLowerCase().includes(q),
-      )
+    ? models.filter(m => m.name.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q))
     : models;
 
   return filtered.reduce(
@@ -82,33 +70,23 @@ export interface ModelOptionListProps {
  * 48 dp two-line items (`text-label-large` + `text-body-small` supporting text), the selected
  * item on `secondary-container`, capabilities as small outlined chips.
  */
-export function ModelOptionList({
-  grouped,
-  value,
-  onSelect,
-  className,
-  labels,
-}: ModelOptionListProps) {
+export function ModelOptionList({ grouped, value, onSelect, className, labels }: ModelOptionListProps) {
   const l = resolveChatLabels(labels);
   const providers = Object.entries(grouped);
   const models = providers.flatMap(([, providerModels]) => providerModels);
   const [focusedId, setFocusedId] = useState(value);
-  const focusId = models.some((model) => model.id === focusedId)
+  const focusId = models.some(model => model.id === focusedId)
     ? focusedId
-    : (models.find((model) => model.id === value)?.id ?? models[0]?.id);
+    : (models.find(model => model.id === value)?.id ?? models[0]?.id);
   return (
     <div
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- M3 menu whose options are rich rows (headers, supporting text, chips); a native <select>/<datalist> cannot render them.
       role="listbox"
       aria-label={l.models}
       tabIndex={-1}
-      onKeyDown={(event) => {
+      onKeyDown={event => {
         if (event.defaultPrevented) return;
-        const options = Array.from(
-          event.currentTarget.querySelectorAll<HTMLButtonElement>(
-            '[role="option"]',
-          ),
-        );
+        const options = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="option"]'));
         const index = options.indexOf(event.target as HTMLButtonElement);
         if (index < 0) return;
         let next: number;
@@ -139,14 +117,10 @@ export function ModelOptionList({
           // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- provider section of the custom listbox with a visible M3 header row; <optgroup> only exists inside a native <select>.
           role="group"
           aria-label={provider}
-          className={clsx(
-            groupIndex > 0 && "mt-1 border-t border-outline-variant pt-1",
-          )}
+          className={clsx(groupIndex > 0 && "mt-1 border-t border-outline-variant pt-1")}
         >
-          <div className="px-3 pt-2 pb-1 text-title-small text-on-surface-variant">
-            {provider}
-          </div>
-          {providerModels.map((model) => {
+          <div className="px-3 pt-2 pb-1 text-title-small text-on-surface-variant">{provider}</div>
+          {providerModels.map(model => {
             const selected = model.id === value;
             return (
               <button
@@ -176,9 +150,7 @@ export function ModelOptionList({
                         <span
                           className={clsx(
                             "text-body-small",
-                            selected
-                              ? "text-on-secondary-container"
-                              : "text-on-surface-variant",
+                            selected ? "text-on-secondary-container" : "text-on-surface-variant",
                           )}
                         >
                           {formatLabel(l.contextTokens, {
@@ -186,14 +158,12 @@ export function ModelOptionList({
                           })}
                         </span>
                       ) : null}
-                      {model.capabilities?.map((capability) => (
+                      {model.capabilities?.map(capability => (
                         <span
                           key={capability}
                           className={clsx(
                             "inline-flex h-5 items-center rounded-small border border-outline-variant px-1.5 text-label-small",
-                            selected
-                              ? "text-on-secondary-container"
-                              : "text-on-surface-variant",
+                            selected ? "text-on-secondary-container" : "text-on-surface-variant",
                           )}
                         >
                           {capability}
@@ -209,9 +179,7 @@ export function ModelOptionList({
         </div>
       ))}
       {providers.length === 0 && (
-        <div className="px-3 py-3 text-center text-body-small text-on-surface-variant">
-          {l.noModels}
-        </div>
+        <div className="px-3 py-3 text-center text-body-small text-on-surface-variant">{l.noModels}</div>
       )}
     </div>
   );
@@ -243,7 +211,7 @@ function ModelSearchField({
         <input
           ref={inputRef}
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={event => onChange(event.target.value)}
           placeholder={placeholder}
           aria-label={placeholder}
           className="min-w-0 flex-1 bg-transparent text-body-large text-on-surface outline-none placeholder:text-on-surface-variant"
@@ -275,17 +243,14 @@ export const ModelSelector = forwardRef<HTMLButtonElement, ModelSelectorProps>(
     const popover = externalPopover ?? internalPopover;
     const [search, setSearch] = useState("");
 
-    const selectedModel = models.find((m) => m.id === value);
+    const selectedModel = models.find(m => m.id === value);
 
-    const grouped = useMemo(
-      () => groupModelsByProvider(models, search),
-      [models, search],
-    );
+    const grouped = useMemo(() => groupModelsByProvider(models, search), [models, search]);
 
     return (
       <Popover.Root
         open={popover.open}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           popover.setOpen(open);
           if (!open) setSearch("");
         }}
@@ -300,9 +265,7 @@ export const ModelSelector = forwardRef<HTMLButtonElement, ModelSelectorProps>(
             hideCaret
             className={clsx("w-full", className)}
           >
-            <span className="min-w-0 flex-1 truncate">
-              {selectedModel?.name ?? placeholder ?? l.selectModel}
-            </span>
+            <span className="min-w-0 flex-1 truncate">{selectedModel?.name ?? placeholder ?? l.selectModel}</span>
             <ChatIcon name="expand_more" size={18} />
           </SelectPill>
         </Popover.Trigger>
@@ -313,11 +276,7 @@ export const ModelSelector = forwardRef<HTMLButtonElement, ModelSelectorProps>(
           className="overflow-hidden rounded-extra-small! py-2"
         >
           {/* Search */}
-          <ModelSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder={searchPlaceholder ?? l.searchModels}
-          />
+          <ModelSearchField value={search} onChange={setSearch} placeholder={searchPlaceholder ?? l.searchModels} />
 
           {/* Grouped results */}
           <div className="max-h-[320px] overflow-y-auto">
@@ -325,7 +284,7 @@ export const ModelSelector = forwardRef<HTMLButtonElement, ModelSelectorProps>(
               grouped={grouped}
               value={value}
               labels={labels}
-              onSelect={(id) => {
+              onSelect={id => {
                 onChange(id);
                 popover.setOpen(false);
                 setSearch("");

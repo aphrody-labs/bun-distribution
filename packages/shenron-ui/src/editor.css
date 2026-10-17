@@ -85,9 +85,7 @@
 
 /* Repères discrets des conteneurs, pour ne pas écrire « à l'aveugle » dans une
    colonne ou un encadré. Invisibles à la publication. */
-.sh-editor
-  .ProseMirror
-  :is(.wiki-cols, .wiki-callout, .wiki-section, .wiki-grid) {
+.sh-editor .ProseMirror :is(.wiki-cols, .wiki-callout, .wiki-section, .wiki-grid) {
   position: relative;
   outline: 1px dashed color-mix(in srgb, currentColor 18%, transparent);
   outline-offset: 4px;
@@ -97,8 +95,7 @@
 .sh-editor .ed-raw {
   position: relative;
   border-radius: 6px;
-  outline: 1px dashed
-    color-mix(in srgb, var(--dbz-orange, #ffb200) 45%, transparent);
+  outline: 1px dashed color-mix(in srgb, var(--dbz-orange, #ffb200) 45%, transparent);
   outline-offset: 3px;
   opacity: 0.9;
 }

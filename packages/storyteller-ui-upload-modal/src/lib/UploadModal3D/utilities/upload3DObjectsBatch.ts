@@ -1,9 +1,4 @@
-import {
-  FileEntryStatus,
-  FilterEngineCategories,
-  MediaFileAnimationType,
-  UploaderStates,
-} from "../../Types";
+import { FileEntryStatus, FilterEngineCategories, MediaFileAnimationType, UploaderStates } from "../../Types";
 import { upload3DObjects } from "./upload3DObjects";
 
 export const upload3DObjectsBatch = async ({
@@ -22,11 +17,7 @@ export const upload3DObjectsBatch = async ({
   animationType?: MediaFileAnimationType;
   // Per-file clip durations; required by the backend for animation uploads.
   durationsMillis?: Map<File, number>;
-  onFileStatusChange: (
-    index: number,
-    status: FileEntryStatus,
-    errorMessage?: string,
-  ) => void;
+  onFileStatusChange: (index: number, status: FileEntryStatus, errorMessage?: string) => void;
   onOverallProgress: (completed: number, total: number) => void;
   onComplete: (allSucceeded: boolean, anySucceeded: boolean) => void;
 }) => {
@@ -48,7 +39,7 @@ export const upload3DObjectsBatch = async ({
           animationType,
           durationMillis: durationsMillis?.get(file),
           thumbnailSnapshot: thumbnails.get(file),
-          progressCallback: (state) => {
+          progressCallback: state => {
             if (state.status === UploaderStates.success) {
               successCount++;
               onFileStatusChange(i, "success");
@@ -79,11 +70,7 @@ export const upload3DObjectsBatch = async ({
   } catch (err) {
     files.forEach((_, i) => {
       if (!completedIndices.has(i)) {
-        onFileStatusChange(
-          i,
-          "error",
-          err instanceof Error ? err.message : "Unexpected error",
-        );
+        onFileStatusChange(i, "error", err instanceof Error ? err.message : "Unexpected error");
       }
     });
   }

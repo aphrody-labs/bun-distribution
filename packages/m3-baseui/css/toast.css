@@ -27,10 +27,8 @@
     box-shadow: var(--md-sys-elevation-level3);
     pointer-events: auto;
     transition:
-      opacity var(--md-sys-motion-duration-medium1)
-        var(--md-sys-motion-easing-emphasized-decelerate),
-      transform var(--md-sys-motion-duration-medium1)
-        var(--md-sys-motion-easing-emphasized-decelerate);
+      opacity var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate),
+      transform var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate);
   }
   .m3-bui-toast[data-starting-style],
   .m3-bui-toast[data-ending-style] {

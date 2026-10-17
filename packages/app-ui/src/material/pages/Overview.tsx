@@ -20,16 +20,11 @@ function useInfo(enabled: boolean): { info?: Info; error?: string } {
     if (!enabled) return;
     const controller = new AbortController();
     fetch("/api/m3/info", { signal: controller.signal })
-      .then((response) =>
-        response.ok
-          ? (response.json() as Promise<Info>)
-          : Promise.reject(new Error(`HTTP ${response.status}`)),
+      .then(response =>
+        response.ok ? (response.json() as Promise<Info>) : Promise.reject(new Error(`HTTP ${response.status}`)),
       )
-      .then((info) => setState({ info }))
-      .catch(
-        (error: Error) =>
-          error.name !== "AbortError" && setState({ error: error.message }),
-      );
+      .then(info => setState({ info }))
+      .catch((error: Error) => error.name !== "AbortError" && setState({ error: error.message }));
     return () => controller.abort();
   }, [enabled]);
   return state;
@@ -37,7 +32,7 @@ function useInfo(enabled: boolean): { info?: Info; error?: string } {
 
 export default function Overview({ adaptive, host = "bun" }: PageProps) {
   const { info, error } = useInfo(host === "bun");
-  const inWorkspace = PACKAGES.filter((p) => p.workspace).length;
+  const inWorkspace = PACKAGES.filter(p => p.workspace).length;
   const columns =
     adaptive.mode === "tv"
       ? "grid-cols-3"
@@ -61,8 +56,7 @@ export default function Overview({ adaptive, host = "bun" }: PageProps) {
           <Card>
             <h3 className="mb-2 text-title-medium">One process: UI and API</h3>
             <p className="mb-3 text-body-small text-on-surface-variant">
-              This card is a live <code>GET /api/m3/info</code> from the process
-              that served the page.
+              This card is a live <code>GET /api/m3/info</code> from the process that served the page.
             </p>
             {info ? (
               <Code>{JSON.stringify(info, null, 2)}</Code>
@@ -76,36 +70,25 @@ export default function Overview({ adaptive, host = "bun" }: PageProps) {
       }
     >
       <Section title="By the numbers">
-        <div
-          className="grid grid-cols-2 gap-3 expanded:grid-cols-4"
-          data-testid="stats"
-        >
+        <div className="grid grid-cols-2 gap-3 expanded:grid-cols-4" data-testid="stats">
           {[
             [String(PACKAGES.length), "packages and apps"],
             [String(inWorkspace), "in the Bun workspace"],
             [String(DESTINATIONS.length), "pages"],
             host === "native"
-              ? [
-                  String(PACKAGES.filter((entry) => !entry.private).length),
-                  "reusable packages",
-                ]
+              ? [String(PACKAGES.filter(entry => !entry.private).length), "reusable packages"]
               : [info ? `Bun ${info.bun}` : "…", "serving this page"],
           ].map(([value, label]) => (
             <Card key={label}>
               <div className="text-headline-medium text-primary">{value}</div>
-              <div className="text-body-small text-on-surface-variant">
-                {label}
-              </div>
+              <div className="text-body-small text-on-surface-variant">{label}</div>
             </Card>
           ))}
         </div>
       </Section>
-      <Section
-        title="Explore"
-        description="Each page imports and runs the packages it names."
-      >
+      <Section title="Explore" description="Each page imports and runs the packages it names.">
         <div className={`grid gap-3 ${columns}`} data-testid="destinations">
-          {DESTINATIONS.filter((d) => d.id !== "overview").map((d) => (
+          {DESTINATIONS.filter(d => d.id !== "overview").map(d => (
             <a
               key={d.id}
               href={host === "native" ? `/material-3/${d.id}` : `#/${d.id}`}
@@ -116,15 +99,9 @@ export default function Overview({ adaptive, host = "bun" }: PageProps) {
               <span className="flex items-center gap-2 text-title-medium text-on-surface">
                 <Svg html={d.icon} className="text-primary" />
                 {d.label}
-                <Svg
-                  html={arrowIcon}
-                  className="ml-auto text-on-surface-variant"
-                  small
-                />
+                <Svg html={arrowIcon} className="ml-auto text-on-surface-variant" small />
               </span>
-              <span className="text-body-small text-on-surface-variant">
-                {d.summary}
-              </span>
+              <span className="text-body-small text-on-surface-variant">{d.summary}</span>
               <Chips names={d.packages.slice(0, 3)} />
             </a>
           ))}

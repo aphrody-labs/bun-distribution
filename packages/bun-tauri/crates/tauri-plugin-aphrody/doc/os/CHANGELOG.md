@@ -60,7 +60,7 @@
 
 ## \[2.0.0-beta.8]
 
-- [`99d6ac0f`](https://github.com/tauri-apps/plugins-workspace/commit/99d6ac0f9506a6a4a1aa59c728157190a7441af6) ([#1606](https://github.com/tauri-apps/plugins-workspace/pull/1606) by [@FabianLars](https://github.com/tauri-apps/plugins-workspace/../../FabianLars)) The JS packages now specify the *minimum* `@tauri-apps/api` version instead of a single exact version.
+- [`99d6ac0f`](https://github.com/tauri-apps/plugins-workspace/commit/99d6ac0f9506a6a4a1aa59c728157190a7441af6) ([#1606](https://github.com/tauri-apps/plugins-workspace/pull/1606) by [@FabianLars](https://github.com/tauri-apps/plugins-workspace/../../FabianLars)) The JS packages now specify the _minimum_ `@tauri-apps/api` version instead of a single exact version.
 - [`6de87966`](https://github.com/tauri-apps/plugins-workspace/commit/6de87966ecc00ad9d91c25be452f1f46bd2b7e1f) ([#1597](https://github.com/tauri-apps/plugins-workspace/pull/1597) by [@Legend-Master](https://github.com/tauri-apps/plugins-workspace/../../Legend-Master)) Update to tauri beta.25.
 
 ## \[2.0.0-beta.7]
@@ -135,6 +135,7 @@
   - Removed `tempdir()` function and its equivalent on JS, use `std::env::temp_dir` instead of `temp_dir` from `tauri::path::PathResolver::temp_dir` and `path.tempDir` on JS.
   - Modified `platform()` implementation to return `windows` instead of `win32` and `macos` instead of `darwin` to align with Rust's `std::env::consts::OS`
   - `EOL` const in JS has been modified into a function `eol()` fix import issues in frameworks like `next.js`
+
 - [`d74fc0a`](https://github.com/tauri-apps/plugins-workspace/commit/d74fc0a097996e90a37be8f57d50b7d1f6ca616f)([#555](https://github.com/tauri-apps/plugins-workspace/pull/555)) Update to alpha.11.
 
 ## \[2.0.0-alpha.0]

@@ -41,9 +41,7 @@ describe("parseArgs", () => {
   });
 
   test("translate with unsupported lang throws InvalidLanguageError", () => {
-    expect(() => parseArgs(["translate", "docs", "de"])).toThrow(
-      InvalidLanguageError,
-    );
+    expect(() => parseArgs(["translate", "docs", "de"])).toThrow(InvalidLanguageError);
   });
 
   test("generate with and without out file", () => {
@@ -104,18 +102,14 @@ describe("main (exit codes)", () => {
   test("end-to-end generate offline writes a markdown file (exit 0)", async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), "doc-ai-cli-"));
     const tsFile = path.join(dir, "thing.ts");
-    await fs.writeFile(
-      tsFile,
-      '@customElement("md-thing")\nexport class MdThing {}\n',
-      "utf-8",
-    );
+    await fs.writeFile(tsFile, '@customElement("md-thing")\nexport class MdThing {}\n', "utf-8");
     // Force offline: clear any inherited credentials for this process call.
     const credentialKeys = [
       "GOOGLE_APPLICATION_CREDENTIALS",
       "GOOGLE_CLOUD_PROJECT",
       "APHRODY_VERTEX_PROJECT",
     ] as const;
-    const previous = credentialKeys.map((key) => process.env[key]);
+    const previous = credentialKeys.map(key => process.env[key]);
     for (const key of credentialKeys) delete process.env[key];
     try {
       const code = await main(["generate", tsFile]);
@@ -142,26 +136,13 @@ describe("USAGE", () => {
   });
 });
 
-async function invokeOffline(
-  args: string[],
-  cwd: string,
-  requireOnline = false,
-) {
+async function invokeOffline(args: string[], cwd: string, requireOnline = false) {
   const env = { ...process.env };
   env.DOC_AI_REQUIRE_ONLINE = requireOnline ? "1" : "0";
-  for (const key of [
-    "GOOGLE_APPLICATION_CREDENTIALS",
-    "GOOGLE_CLOUD_PROJECT",
-    "APHRODY_VERTEX_PROJECT",
-  ])
+  for (const key of ["GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_CLOUD_PROJECT", "APHRODY_VERTEX_PROJECT"])
     delete env[key];
   const child = Bun.spawn(
-    [
-      process.execPath,
-      path.resolve(import.meta.dir, "../../yolo-cli/src/index.ts"),
-      "doc-ai",
-      ...args,
-    ],
+    [process.execPath, path.resolve(import.meta.dir, "../../yolo-cli/src/index.ts"), "doc-ai", ...args],
     { windowsHide: true, cwd, env, stdout: "pipe", stderr: "pipe" },
   );
   const [code, stdout, stderr] = await Promise.all([
@@ -178,10 +159,7 @@ describe("standalone translation scope", () => {
     try {
       const docs = path.join(root, "docs");
       await fs.mkdir(docs);
-      await fs.writeFile(
-        path.join(docs, "guide.md"),
-        "# Guide\n\nUse the documented command.\n",
-      );
+      await fs.writeFile(path.join(docs, "guide.md"), "# Guide\n\nUse the documented command.\n");
       const excluded = [
         "upstream-bun/API.md",
         "migration/report.md",
@@ -202,7 +180,7 @@ describe("standalone translation scope", () => {
         "pointer.md",
       ];
       await Promise.all(
-        excluded.map(async (name) => {
+        excluded.map(async name => {
           await fs.mkdir(path.dirname(path.join(docs, name)), {
             recursive: true,
           });
@@ -217,39 +195,21 @@ describe("standalone translation scope", () => {
           await fs.writeFile(path.join(docs, name), content);
         }),
       );
-      await fs.symlink(
-        path.join(docs, "MEMORY.md"),
-        path.join(docs, "linked.md"),
-      );
-      await fs.symlink(
-        path.join(docs, "privateMarkdown"),
-        path.join(docs, "linked-directory"),
-      );
+      await fs.symlink(path.join(docs, "MEMORY.md"), path.join(docs, "linked.md"));
+      await fs.symlink(path.join(docs, "privateMarkdown"), path.join(docs, "linked-directory"));
       const result = await invokeOffline(["sync", "fr"], root);
-      expect(await Bun.file(path.join(docs, "linked.fr.md")).exists()).toBe(
-        false,
-      );
+      expect(await Bun.file(path.join(docs, "linked.fr.md")).exists()).toBe(false);
       expect(result.code).toBe(0);
-      expect(
-        await fs.readFile(path.join(docs, "guide.fr.md"), "utf8"),
-      ).not.toBe("# Preserve\n");
+      expect(await fs.readFile(path.join(docs, "guide.fr.md"), "utf8")).not.toBe("# Preserve\n");
       await Promise.all(
         excluded
-          .filter((candidate) => candidate !== "guide.fr.md")
-          .map(async (name) => {
-            expect(
-              await Bun.file(
-                path.join(docs, name.replace(/\.md$/, ".fr.md")),
-              ).exists(),
-            ).toBe(false);
+          .filter(candidate => candidate !== "guide.fr.md")
+          .map(async name => {
+            expect(await Bun.file(path.join(docs, name.replace(/\.md$/, ".fr.md"))).exists()).toBe(false);
           }),
       );
-      expect(await Bun.file(path.join(docs, "guide.fr.fr.md")).exists()).toBe(
-        false,
-      );
-      expect(await fs.readFile(path.join(docs, "another.en.md"), "utf8")).toBe(
-        "# Preserve\n",
-      );
+      expect(await Bun.file(path.join(docs, "guide.fr.fr.md")).exists()).toBe(false);
+      expect(await fs.readFile(path.join(docs, "another.en.md"), "utf8")).toBe("# Preserve\n");
     } finally {
       await fs.rm(root, { recursive: true, force: true });
     }
@@ -296,16 +256,10 @@ test("translation refuses symlink output and skips explicit symlink input", asyn
     const result = await invokeOffline(["translate", source], root);
     expect(result.code).toBe(1);
     expect(result.stderr).toContain("Refusing symbolic-link output");
-    expect(await fs.readFile(protectedFixture, "utf8")).toBe(
-      "synthetic fixture\n",
-    );
+    expect(await fs.readFile(protectedFixture, "utf8")).toBe("synthetic fixture\n");
     await fs.symlink(protectedFixture, path.join(root, "linked.md"));
-    expect((await invokeOffline(["translate", "linked.md"], root)).code).toBe(
-      0,
-    );
-    expect(await Bun.file(path.join(root, "linked.fr.md")).exists()).toBe(
-      false,
-    );
+    expect((await invokeOffline(["translate", "linked.md"], root)).code).toBe(0);
+    expect(await Bun.file(path.join(root, "linked.fr.md")).exists()).toBe(false);
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }

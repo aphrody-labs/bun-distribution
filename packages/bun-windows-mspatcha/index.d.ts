@@ -3,45 +3,190 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mspatcha.dll!ApplyPatchToFileA */
-  ApplyPatchToFileA(PatchFileName: string | Win32Pointer, OldFileName: string | Win32Pointer, NewFileName: string | Win32Pointer, ApplyOptionFlags: number): number;
+  ApplyPatchToFileA(
+    PatchFileName: string | Win32Pointer,
+    OldFileName: string | Win32Pointer,
+    NewFileName: string | Win32Pointer,
+    ApplyOptionFlags: number,
+  ): number;
   /** mspatcha.dll!ApplyPatchToFileByBuffers */
-  ApplyPatchToFileByBuffers(PatchFileMapped: Win32Pointer, PatchFileSize: number, OldFileMapped: Win32Pointer, OldFileSize: number, NewFileBuffer: Win32Pointer, NewFileBufferSize: number, NewFileActualSize: Win32Pointer, NewFileTime: Win32Pointer, ApplyOptionFlags: number, ProgressCallback: Win32Callback, CallbackContext: Win32Pointer): number;
+  ApplyPatchToFileByBuffers(
+    PatchFileMapped: Win32Pointer,
+    PatchFileSize: number,
+    OldFileMapped: Win32Pointer,
+    OldFileSize: number,
+    NewFileBuffer: Win32Pointer,
+    NewFileBufferSize: number,
+    NewFileActualSize: Win32Pointer,
+    NewFileTime: Win32Pointer,
+    ApplyOptionFlags: number,
+    ProgressCallback: Win32Callback,
+    CallbackContext: Win32Pointer,
+  ): number;
   /** mspatcha.dll!ApplyPatchToFileByHandles */
-  ApplyPatchToFileByHandles(PatchFileHandle: Win32Pointer, OldFileHandle: Win32Pointer, NewFileHandle: Win32Pointer, ApplyOptionFlags: number): number;
+  ApplyPatchToFileByHandles(
+    PatchFileHandle: Win32Pointer,
+    OldFileHandle: Win32Pointer,
+    NewFileHandle: Win32Pointer,
+    ApplyOptionFlags: number,
+  ): number;
   /** mspatcha.dll!ApplyPatchToFileByHandlesEx */
-  ApplyPatchToFileByHandlesEx(PatchFileHandle: Win32Pointer, OldFileHandle: Win32Pointer, NewFileHandle: Win32Pointer, ApplyOptionFlags: number, ProgressCallback: Win32Callback, CallbackContext: Win32Pointer): number;
+  ApplyPatchToFileByHandlesEx(
+    PatchFileHandle: Win32Pointer,
+    OldFileHandle: Win32Pointer,
+    NewFileHandle: Win32Pointer,
+    ApplyOptionFlags: number,
+    ProgressCallback: Win32Callback,
+    CallbackContext: Win32Pointer,
+  ): number;
   /** mspatcha.dll!ApplyPatchToFileExA */
-  ApplyPatchToFileExA(PatchFileName: string | Win32Pointer, OldFileName: string | Win32Pointer, NewFileName: string | Win32Pointer, ApplyOptionFlags: number, ProgressCallback: Win32Callback, CallbackContext: Win32Pointer): number;
+  ApplyPatchToFileExA(
+    PatchFileName: string | Win32Pointer,
+    OldFileName: string | Win32Pointer,
+    NewFileName: string | Win32Pointer,
+    ApplyOptionFlags: number,
+    ProgressCallback: Win32Callback,
+    CallbackContext: Win32Pointer,
+  ): number;
   /** mspatcha.dll!ApplyPatchToFileExW */
-  ApplyPatchToFileExW(PatchFileName: string | Win32Pointer, OldFileName: string | Win32Pointer, NewFileName: string | Win32Pointer, ApplyOptionFlags: number, ProgressCallback: Win32Callback, CallbackContext: Win32Pointer): number;
+  ApplyPatchToFileExW(
+    PatchFileName: string | Win32Pointer,
+    OldFileName: string | Win32Pointer,
+    NewFileName: string | Win32Pointer,
+    ApplyOptionFlags: number,
+    ProgressCallback: Win32Callback,
+    CallbackContext: Win32Pointer,
+  ): number;
   /** mspatcha.dll!ApplyPatchToFileExW */
-  ApplyPatchToFileEx(PatchFileName: string | Win32Pointer, OldFileName: string | Win32Pointer, NewFileName: string | Win32Pointer, ApplyOptionFlags: number, ProgressCallback: Win32Callback, CallbackContext: Win32Pointer): number;
+  ApplyPatchToFileEx(
+    PatchFileName: string | Win32Pointer,
+    OldFileName: string | Win32Pointer,
+    NewFileName: string | Win32Pointer,
+    ApplyOptionFlags: number,
+    ProgressCallback: Win32Callback,
+    CallbackContext: Win32Pointer,
+  ): number;
   /** mspatcha.dll!ApplyPatchToFileW */
-  ApplyPatchToFileW(PatchFileName: string | Win32Pointer, OldFileName: string | Win32Pointer, NewFileName: string | Win32Pointer, ApplyOptionFlags: number): number;
+  ApplyPatchToFileW(
+    PatchFileName: string | Win32Pointer,
+    OldFileName: string | Win32Pointer,
+    NewFileName: string | Win32Pointer,
+    ApplyOptionFlags: number,
+  ): number;
   /** mspatcha.dll!ApplyPatchToFileW */
-  ApplyPatchToFile(PatchFileName: string | Win32Pointer, OldFileName: string | Win32Pointer, NewFileName: string | Win32Pointer, ApplyOptionFlags: number): number;
+  ApplyPatchToFile(
+    PatchFileName: string | Win32Pointer,
+    OldFileName: string | Win32Pointer,
+    NewFileName: string | Win32Pointer,
+    ApplyOptionFlags: number,
+  ): number;
   /** mspatcha.dll!GetFilePatchSignatureA */
-  GetFilePatchSignatureA(FileName: string | Win32Pointer, OptionFlags: number, OptionData: Win32Pointer, IgnoreRangeCount: number, IgnoreRangeArray: Win32Pointer, RetainRangeCount: number, RetainRangeArray: Win32Pointer, SignatureBufferSize: number, SignatureBuffer: string | Win32Pointer): number;
+  GetFilePatchSignatureA(
+    FileName: string | Win32Pointer,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+    IgnoreRangeCount: number,
+    IgnoreRangeArray: Win32Pointer,
+    RetainRangeCount: number,
+    RetainRangeArray: Win32Pointer,
+    SignatureBufferSize: number,
+    SignatureBuffer: string | Win32Pointer,
+  ): number;
   /** mspatcha.dll!GetFilePatchSignatureByBuffer */
-  GetFilePatchSignatureByBuffer(FileBufferWritable: Win32Pointer, FileSize: number, OptionFlags: number, OptionData: Win32Pointer, IgnoreRangeCount: number, IgnoreRangeArray: Win32Pointer, RetainRangeCount: number, RetainRangeArray: Win32Pointer, SignatureBufferSize: number, SignatureBuffer: string | Win32Pointer): number;
+  GetFilePatchSignatureByBuffer(
+    FileBufferWritable: Win32Pointer,
+    FileSize: number,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+    IgnoreRangeCount: number,
+    IgnoreRangeArray: Win32Pointer,
+    RetainRangeCount: number,
+    RetainRangeArray: Win32Pointer,
+    SignatureBufferSize: number,
+    SignatureBuffer: string | Win32Pointer,
+  ): number;
   /** mspatcha.dll!GetFilePatchSignatureByHandle */
-  GetFilePatchSignatureByHandle(FileHandle: Win32Pointer, OptionFlags: number, OptionData: Win32Pointer, IgnoreRangeCount: number, IgnoreRangeArray: Win32Pointer, RetainRangeCount: number, RetainRangeArray: Win32Pointer, SignatureBufferSize: number, SignatureBuffer: string | Win32Pointer): number;
+  GetFilePatchSignatureByHandle(
+    FileHandle: Win32Pointer,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+    IgnoreRangeCount: number,
+    IgnoreRangeArray: Win32Pointer,
+    RetainRangeCount: number,
+    RetainRangeArray: Win32Pointer,
+    SignatureBufferSize: number,
+    SignatureBuffer: string | Win32Pointer,
+  ): number;
   /** mspatcha.dll!GetFilePatchSignatureW */
-  GetFilePatchSignatureW(FileName: string | Win32Pointer, OptionFlags: number, OptionData: Win32Pointer, IgnoreRangeCount: number, IgnoreRangeArray: Win32Pointer, RetainRangeCount: number, RetainRangeArray: Win32Pointer, SignatureBufferSize: number, SignatureBuffer: string | Win32Pointer): number;
+  GetFilePatchSignatureW(
+    FileName: string | Win32Pointer,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+    IgnoreRangeCount: number,
+    IgnoreRangeArray: Win32Pointer,
+    RetainRangeCount: number,
+    RetainRangeArray: Win32Pointer,
+    SignatureBufferSize: number,
+    SignatureBuffer: string | Win32Pointer,
+  ): number;
   /** mspatcha.dll!GetFilePatchSignatureW */
-  GetFilePatchSignature(FileName: string | Win32Pointer, OptionFlags: number, OptionData: Win32Pointer, IgnoreRangeCount: number, IgnoreRangeArray: Win32Pointer, RetainRangeCount: number, RetainRangeArray: Win32Pointer, SignatureBufferSize: number, SignatureBuffer: string | Win32Pointer): number;
+  GetFilePatchSignature(
+    FileName: string | Win32Pointer,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+    IgnoreRangeCount: number,
+    IgnoreRangeArray: Win32Pointer,
+    RetainRangeCount: number,
+    RetainRangeArray: Win32Pointer,
+    SignatureBufferSize: number,
+    SignatureBuffer: string | Win32Pointer,
+  ): number;
   /** mspatcha.dll!NormalizeFileForPatchSignature */
-  NormalizeFileForPatchSignature(FileBuffer: Win32Pointer, FileSize: number, OptionFlags: number, OptionData: Win32Pointer, NewFileCoffBase: number, NewFileCoffTime: number, IgnoreRangeCount: number, IgnoreRangeArray: Win32Pointer, RetainRangeCount: number, RetainRangeArray: Win32Pointer): number;
+  NormalizeFileForPatchSignature(
+    FileBuffer: Win32Pointer,
+    FileSize: number,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+    NewFileCoffBase: number,
+    NewFileCoffTime: number,
+    IgnoreRangeCount: number,
+    IgnoreRangeArray: Win32Pointer,
+    RetainRangeCount: number,
+    RetainRangeArray: Win32Pointer,
+  ): number;
   /** mspatcha.dll!TestApplyPatchToFileA */
-  TestApplyPatchToFileA(PatchFileName: string | Win32Pointer, OldFileName: string | Win32Pointer, ApplyOptionFlags: number): number;
+  TestApplyPatchToFileA(
+    PatchFileName: string | Win32Pointer,
+    OldFileName: string | Win32Pointer,
+    ApplyOptionFlags: number,
+  ): number;
   /** mspatcha.dll!TestApplyPatchToFileByBuffers */
-  TestApplyPatchToFileByBuffers(PatchFileBuffer: Win32Pointer, PatchFileSize: number, OldFileBuffer: Win32Pointer, OldFileSize: number, NewFileSize: Win32Pointer, ApplyOptionFlags: number): number;
+  TestApplyPatchToFileByBuffers(
+    PatchFileBuffer: Win32Pointer,
+    PatchFileSize: number,
+    OldFileBuffer: Win32Pointer,
+    OldFileSize: number,
+    NewFileSize: Win32Pointer,
+    ApplyOptionFlags: number,
+  ): number;
   /** mspatcha.dll!TestApplyPatchToFileByHandles */
-  TestApplyPatchToFileByHandles(PatchFileHandle: Win32Pointer, OldFileHandle: Win32Pointer, ApplyOptionFlags: number): number;
+  TestApplyPatchToFileByHandles(
+    PatchFileHandle: Win32Pointer,
+    OldFileHandle: Win32Pointer,
+    ApplyOptionFlags: number,
+  ): number;
   /** mspatcha.dll!TestApplyPatchToFileW */
-  TestApplyPatchToFileW(PatchFileName: string | Win32Pointer, OldFileName: string | Win32Pointer, ApplyOptionFlags: number): number;
+  TestApplyPatchToFileW(
+    PatchFileName: string | Win32Pointer,
+    OldFileName: string | Win32Pointer,
+    ApplyOptionFlags: number,
+  ): number;
   /** mspatcha.dll!TestApplyPatchToFileW */
-  TestApplyPatchToFile(PatchFileName: string | Win32Pointer, OldFileName: string | Win32Pointer, ApplyOptionFlags: number): number;
+  TestApplyPatchToFile(
+    PatchFileName: string | Win32Pointer,
+    OldFileName: string | Win32Pointer,
+    ApplyOptionFlags: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

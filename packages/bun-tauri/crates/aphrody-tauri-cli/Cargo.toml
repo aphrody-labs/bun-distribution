@@ -59,7 +59,13 @@ shared_child = "1"
 duct = "1.0"
 toml_edit = { workspace = true, features = ["serde"] }
 json-patch = "4"
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["isolation", "schema", "config-json5", "config-toml", "html-manipulation-2"] }
+tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+  "isolation",
+  "schema",
+  "config-json5",
+  "config-toml",
+  "html-manipulation-2",
+] }
 toml = { workspace = true }
 jsonschema = { version = "0.58", default-features = false }
 handlebars = "6"
@@ -117,12 +123,7 @@ pretty_assertions = { workspace = true }
 
 [target."cfg(windows)".dependencies.windows-sys]
 version = "0.61"
-features = [
-  "Win32_Security",
-  "Win32_Storage_FileSystem",
-  "Win32_System_IO",
-  "Win32_System_Console",
-]
+features = ["Win32_Security", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_System_Console"]
 
 [target."cfg(unix)".dependencies]
 libc = { workspace = true }
@@ -130,20 +131,12 @@ libc = { workspace = true }
 [target."cfg(target_os = \"macos\")".dependencies]
 plist = "1"
 tauri-macos-sign = { version = "=1.4.4", path = "../aphrody-tauri-macos-sign", package = "aphrody-tauri-macos-sign" }
-object = { version = "0.39", default-features = false, features = [
-  "macho",
-  "read_core",
-  "std",
-] }
+object = { version = "0.39", default-features = false, features = ["macho", "read_core", "std"] }
 ar = "0.9"
 
 [features]
 default = ["rustls", "platform-certs"]
-native-tls = [
-  "tauri-bundler/native-tls",
-  "cargo-mobile2/native-tls",
-  "ureq/native-tls",
-]
+native-tls = ["tauri-bundler/native-tls", "cargo-mobile2/native-tls", "ureq/native-tls"]
 native-tls-vendored = ["native-tls", "tauri-bundler/native-tls-vendored"]
 rustls = ["tauri-bundler/rustls", "cargo-mobile2/rustls", "ureq/rustls"]
 platform-certs = ["tauri-bundler/platform-certs", "ureq/platform-verifier"]

@@ -16,5 +16,4 @@ export interface PackageInfo {
 export const PACKAGES: readonly PackageInfo[] = data as PackageInfo[];
 
 /** Packages by name. */
-export const byName = (name: string): PackageInfo | undefined =>
-  PACKAGES.find((p) => p.name === name);
+export const byName = (name: string): PackageInfo | undefined => PACKAGES.find(p => p.name === name);

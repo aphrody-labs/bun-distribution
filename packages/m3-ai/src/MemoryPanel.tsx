@@ -56,10 +56,7 @@ export function MemoryPanel({
 }: MemoryPanelProps) {
   const l = resolveChatLabels(labels);
   const [confirming, setConfirming] = useState(false);
-  const dateFormat = useMemo(
-    () => new Intl.DateTimeFormat(locale, { dateStyle: "medium" }),
-    [locale],
-  );
+  const dateFormat = useMemo(() => new Intl.DateTimeFormat(locale, { dateStyle: "medium" }), [locale]);
   const format = (value: string | number | Date) => {
     const date = value instanceof Date ? value : new Date(value);
     if (Number.isNaN(date.getTime())) return "";
@@ -117,10 +114,7 @@ export function MemoryPanel({
                 setConfirming(false);
                 onClear?.();
               }}
-              className={clsx(
-                textButton,
-                "bg-error px-4 text-on-error hover:bg-error/92",
-              )}
+              className={clsx(textButton, "bg-error px-4 text-on-error hover:bg-error/92")}
             >
               {l.confirm}
             </button>
@@ -132,25 +126,19 @@ export function MemoryPanel({
           <CircularIndicator size={24} label={l.memoryLoading} />
         </div>
       ) : memories.length === 0 ? (
-        <p className="m-0 px-4 py-6 text-center text-body-medium text-on-surface-variant">
-          {l.memoryEmpty}
-        </p>
+        <p className="m-0 px-4 py-6 text-center text-body-medium text-on-surface-variant">{l.memoryEmpty}</p>
       ) : (
         <ul className="m-0 flex min-h-0 list-none flex-col overflow-y-auto p-0">
-          {memories.map((memory) => (
+          {memories.map(memory => (
             <li
               key={memory.id}
               className="group flex items-start gap-3 px-4 py-2 transition-colors duration-200 ease-standard hover:bg-on-surface/8"
             >
               <div className="min-w-0 flex-1">
-                <p className="m-0 text-body-medium break-words whitespace-pre-wrap text-on-surface">
-                  {memory.content}
-                </p>
+                <p className="m-0 text-body-medium break-words whitespace-pre-wrap text-on-surface">{memory.content}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                  <time className="text-label-small text-on-surface-variant">
-                    {format(memory.createdAt)}
-                  </time>
-                  {memory.tags?.map((tag) => (
+                  <time className="text-label-small text-on-surface-variant">{format(memory.createdAt)}</time>
+                  {memory.tags?.map(tag => (
                     <span
                       key={tag}
                       className="inline-flex h-6 items-center rounded-small border border-outline-variant px-2 text-label-small text-on-surface-variant"

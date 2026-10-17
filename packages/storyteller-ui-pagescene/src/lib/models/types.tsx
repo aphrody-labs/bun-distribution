@@ -1,11 +1,6 @@
 /// A common type returned by several endpoints.
 /// Basic information to display a user and their avatar.
-import {
-  MediaFileClass,
-  MediaFileType,
-  WeightCategory,
-  WeightType,
-} from "../enums";
+import { MediaFileClass, MediaFileType, WeightCategory, WeightType } from "../enums";
 import { MediaInfo } from "./mediaInfo";
 import { Pagination } from "./pagination";
 

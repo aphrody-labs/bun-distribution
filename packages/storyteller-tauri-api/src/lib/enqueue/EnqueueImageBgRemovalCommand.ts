@@ -41,8 +41,7 @@ export interface EnqueueImageBgRemovalSuccess extends CommandResult {
   payload: EnqueueImageBgRemovalPayload;
 }
 
-export type EnqueueImageBgRemovalResult =
-  EnqueueImageBgRemovalSuccess | EnqueueImageBgRemovalError;
+export type EnqueueImageBgRemovalResult = EnqueueImageBgRemovalSuccess | EnqueueImageBgRemovalError;
 
 export const EnqueueImageBgRemoval = async (
   request: EnqueueImageBgRemovalRequest,

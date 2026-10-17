@@ -2,11 +2,7 @@ import { ApiManager, ApiResponse, buildSessionHeaders } from "./ApiManager.js";
 import { FetchProxy as fetch } from "@storyteller/tauri-utils";
 
 export class PasswordResetApi extends ApiManager {
-  public async RequestPasswordReset({
-    usernameOrEmail,
-  }: {
-    usernameOrEmail: string;
-  }): Promise<ApiResponse<null>> {
+  public async RequestPasswordReset({ usernameOrEmail }: { usernameOrEmail: string }): Promise<ApiResponse<null>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/password_reset/request`;
     const body = {
       username_or_email: usernameOrEmail,
@@ -30,9 +26,7 @@ export class PasswordResetApi extends ApiManager {
         success: response.success,
         errorMessage:
           response.error_message ||
-          (response.error_fields
-            ? Object.values(response.error_fields).join(", ")
-            : undefined),
+          (response.error_fields ? Object.values(response.error_fields).join(", ") : undefined),
       };
     } catch (err: any) {
       return {
@@ -74,8 +68,7 @@ export class PasswordResetApi extends ApiManager {
       if (!response.ok) {
         return {
           success: false,
-          errorMessage:
-            data.message || "Failed to reset password. Please try again.",
+          errorMessage: data.message || "Failed to reset password. Please try again.",
         };
       }
 

@@ -9,7 +9,11 @@ interface Functions {
   /** api-ms-win-gaming-experience-l1-1-0.dll!IsGamingFullScreenExperienceSupported */
   IsGamingFullScreenExperienceSupported(): number;
   /** api-ms-win-gaming-experience-l1-1-0.dll!RegisterGamingFullScreenExperienceChangeNotification */
-  RegisterGamingFullScreenExperienceChangeNotification(routine: Win32Callback, context: Win32Pointer, registration: Win32Pointer): number;
+  RegisterGamingFullScreenExperienceChangeNotification(
+    routine: Win32Callback,
+    context: Win32Pointer,
+    registration: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-experience-l1-1-0.dll!SetGamingFullScreenExperience */
   SetGamingFullScreenExperience(active: number): number;
   /** api-ms-win-gaming-experience-l1-1-0.dll!UnregisterGamingFullScreenExperienceChangeNotification */

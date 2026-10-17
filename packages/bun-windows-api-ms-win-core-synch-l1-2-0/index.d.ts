@@ -3,7 +3,12 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-synch-l1-2-0.dll!WaitOnAddress */
-  WaitOnAddress(Address: Win32Pointer, CompareAddress: Win32Pointer, AddressSize: number | bigint, dwMilliseconds: number): number;
+  WaitOnAddress(
+    Address: Win32Pointer,
+    CompareAddress: Win32Pointer,
+    AddressSize: number | bigint,
+    dwMilliseconds: number,
+  ): number;
   /** api-ms-win-core-synch-l1-2-0.dll!WakeByAddressAll */
   WakeByAddressAll(Address: Win32Pointer): void;
   /** api-ms-win-core-synch-l1-2-0.dll!WakeByAddressSingle */

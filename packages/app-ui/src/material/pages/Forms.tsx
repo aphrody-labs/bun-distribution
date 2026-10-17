@@ -1,14 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from "react";
 import { useForm, type FieldErrors, type Resolver } from "react-hook-form";
-import {
-  Form,
-  InputField,
-  TextAreaField,
-  SelectField,
-  CheckboxField,
-  SwitchField,
-} from "@aphrody/m3-forms";
+import { Form, InputField, TextAreaField, SelectField, CheckboxField, SwitchField } from "@aphrody/m3-forms";
 import { Button } from "@aphrody/m3-primitives";
 import { Card, Code, Page, Section } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
@@ -29,7 +22,7 @@ const DEFAULTS: Profile = {
   consent: false,
   notifications: true,
 };
-const validate: Resolver<Profile> = (values) => {
+const validate: Resolver<Profile> = values => {
   const errors: FieldErrors<Profile> = {};
   if (values.name.trim().length < 2)
     errors.name = {
@@ -43,9 +36,7 @@ const validate: Resolver<Profile> = (values) => {
       type: "required",
       message: "Confirm this is local demonstration data.",
     };
-  return Object.keys(errors).length
-    ? { values: {}, errors }
-    : { values, errors: {} };
+  return Object.keys(errors).length ? { values: {}, errors } : { values, errors: {} };
 };
 
 export default function Forms({ adaptive }: PageProps) {
@@ -80,11 +71,7 @@ export default function Forms({ adaptive }: PageProps) {
       >
         <Card>
           <Form {...form}>
-            <form
-              noValidate
-              onSubmit={form.handleSubmit((values) => setSaved(values))}
-              className="flex flex-col gap-4"
-            >
+            <form noValidate onSubmit={form.handleSubmit(values => setSaved(values))} className="flex flex-col gap-4">
               <InputField
                 name="name"
                 label="Display name"
@@ -92,13 +79,7 @@ export default function Forms({ adaptive }: PageProps) {
                 description="At least two characters."
                 required
               />
-              <InputField
-                name="email"
-                label="Email address"
-                type="email"
-                placeholder="ada@example.invalid"
-                required
-              />
+              <InputField name="email" label="Email address" type="email" placeholder="ada@example.invalid" required />
               <SelectField
                 name="role"
                 label="Role"
@@ -108,17 +89,9 @@ export default function Forms({ adaptive }: PageProps) {
                   { value: "designer", label: "Designer" },
                 ]}
               />
-              <TextAreaField
-                name="biography"
-                label="About you"
-                description="Optional local sample text."
-              />
+              <TextAreaField name="biography" label="About you" description="Optional local sample text." />
               <SwitchField name="notifications" label="Notifications" />
-              <CheckboxField
-                name="consent"
-                label="These are local sample values"
-                required
-              />
+              <CheckboxField name="consent" label="These are local sample values" required />
               <div className="flex flex-wrap gap-3">
                 <Button type="submit">Preview profile</Button>
                 <Button
@@ -133,9 +106,7 @@ export default function Forms({ adaptive }: PageProps) {
                 </Button>
               </div>
               <output className="block text-body-medium text-on-surface-variant">
-                {saved
-                  ? "Valid preview ready. No data was sent."
-                  : "No profile has been saved."}
+                {saved ? "Valid preview ready. No data was sent." : "No profile has been saved."}
               </output>
             </form>
           </Form>

@@ -15,10 +15,7 @@ export const ZC_PANIC = -3;
 let scratch = new Uint8Array(4096);
 
 /** Call `fill(out, cap)` until the native document fits; return its decoded JSON. */
-function callJson(
-  name: string,
-  fill: (out: Uint8Array) => number | bigint,
-): unknown {
+function callJson(name: string, fill: (out: Uint8Array) => number | bigint): unknown {
   for (let attempt = 0; attempt < 2; attempt++) {
     const needed = Number(fill(scratch));
     if (needed === ZC_INVALID) throw new TypeError(`${name}: invalid argument`);
@@ -45,13 +42,8 @@ export function repairJson(input: string | Uint8Array): RepairResult {
   const bytes = typeof input === "string" ? encoder.encode(input) : input;
   const { symbols } = loadNativeLibrary();
   const source = bytes.length === 0 ? new Uint8Array(1) : bytes;
-  return callJson("repairJson", (out) =>
-    symbols.aphrody_toolcall_repair_json(
-      ptr(source),
-      bytes.length,
-      ptr(out),
-      out.length,
-    ),
+  return callJson("repairJson", out =>
+    symbols.aphrody_toolcall_repair_json(ptr(source), bytes.length, ptr(out), out.length),
   ) as RepairResult;
 }
 
@@ -61,14 +53,11 @@ export interface Violation {
 }
 
 /** Validate tool-call arguments (JSON) against a JSON-Schema subset. */
-export function validateArguments(
-  args: unknown,
-  schema: unknown,
-): { violations: Violation[] } | { error: string } {
+export function validateArguments(args: unknown, schema: unknown): { violations: Violation[] } | { error: string } {
   const argBytes = encoder.encode(JSON.stringify(args));
   const schemaBytes = encoder.encode(JSON.stringify(schema));
   const { symbols } = loadNativeLibrary();
-  return callJson("validateArguments", (out) =>
+  return callJson("validateArguments", out =>
     symbols.aphrody_toolcall_validate_json(
       ptr(argBytes),
       argBytes.length,
@@ -94,12 +83,7 @@ export interface Framebuffer {
 
 /** Allocate a framebuffer in JavaScript; Rust never owns it. */
 export function createFramebuffer(width: number, height: number): Framebuffer {
-  if (
-    !Number.isInteger(width) ||
-    !Number.isInteger(height) ||
-    width <= 0 ||
-    height <= 0
-  ) {
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0) {
     throw new RangeError("Framebuffer size must be positive integers");
   }
   return {
@@ -137,18 +121,14 @@ export function fillTriangle(
   }
   const verts = new Float32Array([...a, ...b, ...c]);
   const uv = options.uv === undefined ? null : Float32Array.from(options.uv);
-  if (uv !== null && uv.length !== 6)
-    throw new RangeError("uv must hold 6 numbers");
+  if (uv !== null && uv.length !== 6) throw new RangeError("uv must hold 6 numbers");
   const texture = options.texture ?? null;
   const tw = options.textureWidth ?? 0;
   const th = options.textureHeight ?? 0;
   if (texture !== null && texture.length !== tw * th * 4) {
-    throw new RangeError(
-      "texture must hold textureWidth * textureHeight * 4 bytes",
-    );
+    throw new RangeError("texture must hold textureWidth * textureHeight * 4 bytes");
   }
-  const base =
-    options.baseRgb === undefined ? null : Float32Array.from(options.baseRgb);
+  const base = options.baseRgb === undefined ? null : Float32Array.from(options.baseRgb);
   const { symbols } = loadNativeLibrary();
   const status = symbols.aphrody_raster_fill_triangle(
     ptr(pixels),
@@ -163,6 +143,5 @@ export function fillTriangle(
     options.shade ?? 1,
     base === null ? null : ptr(base),
   );
-  if (status !== 0)
-    throw new Error(`fillTriangle failed with status ${status}`);
+  if (status !== 0) throw new Error(`fillTriangle failed with status ${status}`);
 }

@@ -27,23 +27,18 @@ export function SelectableSurface({
   onRevealComplete,
   onSelectionChange,
 }: SelectableSurfaceProps) {
-  const [selectionState, setSelectionState] = useState<SelectionState>(() =>
-    clearSelection(),
-  );
+  const [selectionState, setSelectionState] = useState<SelectionState>(() => clearSelection());
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const itemElementsRef = useRef<Map<string, HTMLElement>>(new Map());
 
-  const registerItem = useCallback(
-    (id: string, element: HTMLElement | null) => {
-      if (element) {
-        itemElementsRef.current.set(id, element);
-      } else {
-        itemElementsRef.current.delete(id);
-      }
-    },
-    [],
-  );
+  const registerItem = useCallback((id: string, element: HTMLElement | null) => {
+    if (element) {
+      itemElementsRef.current.set(id, element);
+    } else {
+      itemElementsRef.current.delete(id);
+    }
+  }, []);
 
   const getSelectableElements = useCallback(() => {
     return itemElementsRef.current;
@@ -52,23 +47,11 @@ export function SelectableSurface({
   const getItemElement = useCallback((id: string) => {
     return itemElementsRef.current.get(id) ?? null;
   }, []);
-  const shouldStartSelection = useCallback(
-    (event: React.MouseEvent<Element>) => {
-      return !(
-        event.target instanceof Element &&
-        event.target.closest(`[${SELECTABLE_ITEM_ATTRIBUTE}='true']`)
-      );
-    },
-    [],
-  );
+  const shouldStartSelection = useCallback((event: React.MouseEvent<Element>) => {
+    return !(event.target instanceof Element && event.target.closest(`[${SELECTABLE_ITEM_ATTRIBUTE}='true']`));
+  }, []);
   const resolveIntersections = useCallback(
-    ({
-      startPos,
-      currentPos,
-    }: {
-      startPos: { x: number; y: number };
-      currentPos: { x: number; y: number };
-    }) => {
+    ({ startPos, currentPos }: { startPos: { x: number; y: number }; currentPos: { x: number; y: number } }) => {
       return resolveElementIntersections({
         startPos,
         currentPos,
@@ -82,26 +65,13 @@ export function SelectableSurface({
     setSelectionState(clearSelection());
   }, []);
 
-  const selectedIdSet = useMemo(
-    () => new Set(selectionState.selectedIds),
-    [selectionState.selectedIds],
-  );
+  const selectedIdSet = useMemo(() => new Set(selectionState.selectedIds), [selectionState.selectedIds]);
 
-  const isSelected = useCallback(
-    (id: string) => selectedIdSet.has(id),
-    [selectedIdSet],
-  );
+  const isSelected = useCallback((id: string) => selectedIdSet.has(id), [selectedIdSet]);
 
   const handleItemClick = useCallback(
-    ({
-      event,
-      id,
-    }: {
-      event:
-        React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>;
-      id: string;
-    }) => {
-      setSelectionState((state) => {
+    ({ event, id }: { event: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>; id: string }) => {
+      setSelectionState(state => {
         const isToggleSelection = event.ctrlKey || event.metaKey;
 
         if (event.shiftKey) {
@@ -130,7 +100,7 @@ export function SelectableSurface({
   );
 
   const selectUnselectedItem = useCallback((id: string) => {
-    setSelectionState((state) => {
+    setSelectionState(state => {
       if (getIsSelected({ state, id })) {
         return state;
       }
@@ -140,13 +110,7 @@ export function SelectableSurface({
   }, []);
 
   const handleItemMouseDown = useCallback(
-    ({
-      event,
-      id,
-    }: {
-      event: React.MouseEvent<HTMLDivElement>;
-      id: string;
-    }) => {
+    ({ event, id }: { event: React.MouseEvent<HTMLDivElement>; id: string }) => {
       if (event.button !== 2) {
         return;
       }
@@ -156,28 +120,23 @@ export function SelectableSurface({
     [selectUnselectedItem],
   );
 
-  const handleBoxSelectionChange = useCallback(
-    (change: Parameters<typeof applyBoxSelection>[0]) => {
-      setSelectionState(applyBoxSelection(change));
-    },
-    [],
-  );
+  const handleBoxSelectionChange = useCallback((change: Parameters<typeof applyBoxSelection>[0]) => {
+    setSelectionState(applyBoxSelection(change));
+  }, []);
 
-  const { selectionBox, handleMouseDown, isSelecting, shouldIgnoreClick } =
-    useBoxSelect({
-      containerRef,
-      resolveIntersections,
-      selectedIds: selectionState.selectedIds,
-      anchorId: selectionState.anchorId,
-      onSelectionChange: handleBoxSelectionChange,
-      shouldStartSelection,
-    });
+  const { selectionBox, handleMouseDown, isSelecting, shouldIgnoreClick } = useBoxSelect({
+    containerRef,
+    resolveIntersections,
+    selectedIds: selectionState.selectedIds,
+    anchorId: selectionState.anchorId,
+    onSelectionChange: handleBoxSelectionChange,
+    shouldStartSelection,
+  });
 
   const handleBackgroundClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       const clickedSelectableItem =
-        event.target instanceof Element &&
-        event.target.closest(`[${SELECTABLE_ITEM_ATTRIBUTE}='true']`);
+        event.target instanceof Element && event.target.closest(`[${SELECTABLE_ITEM_ATTRIBUTE}='true']`);
       const isIgnoringClick = shouldIgnoreClick();
       if (clickedSelectableItem || isIgnoringClick) {
         return;
@@ -194,11 +153,7 @@ export function SelectableSurface({
         return;
       }
 
-      if (
-        event.key !== "Enter" &&
-        event.key !== " " &&
-        event.key !== "Escape"
-      ) {
+      if (event.key !== "Enter" && event.key !== " " && event.key !== "Escape") {
         return;
       }
 
@@ -209,7 +164,7 @@ export function SelectableSurface({
   );
 
   useEffect(() => {
-    setSelectionState((state) =>
+    setSelectionState(state =>
       pruneSelection({
         state,
         orderedIds,

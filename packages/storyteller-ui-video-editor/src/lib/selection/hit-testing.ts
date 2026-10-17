@@ -1,10 +1,4 @@
-function isIntersecting({
-  selectionRect,
-  itemRect,
-}: {
-  selectionRect: DOMRect;
-  itemRect: DOMRect;
-}) {
+function isIntersecting({ selectionRect, itemRect }: { selectionRect: DOMRect; itemRect: DOMRect }) {
   return !(
     itemRect.right < selectionRect.left ||
     itemRect.left > selectionRect.right ||

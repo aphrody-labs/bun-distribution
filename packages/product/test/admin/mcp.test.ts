@@ -43,18 +43,14 @@ test("merge adds only mcpServers.aphrody and keeps everything else", () => {
   expect(JSON.parse(mergeDesktopConfig(undefined, spec).text)).toEqual({
     mcpServers: { aphrody: spec },
   });
-  expect(
-    JSON.parse(mergeDesktopConfig("  ", spec).text).mcpServers.aphrody,
-  ).toEqual(spec);
+  expect(JSON.parse(mergeDesktopConfig("  ", spec).text).mcpServers.aphrody).toEqual(spec);
 });
 
 test("an old aphrody entry is updated, a broken file is never overwritten", () => {
   const stale = JSON.stringify({
     mcpServers: { aphrody: { command: "old.exe", args: [] } },
   });
-  expect(
-    JSON.parse(mergeDesktopConfig(stale, spec).text).mcpServers.aphrody,
-  ).toEqual(spec);
+  expect(JSON.parse(mergeDesktopConfig(stale, spec).text).mcpServers.aphrody).toEqual(spec);
   expect(() => mergeDesktopConfig("{not json", spec)).toThrow(McpConfigError);
   expect(() => mergeDesktopConfig("[1]", spec)).toThrow(McpConfigError);
 });
@@ -67,48 +63,29 @@ test("Claude Desktop is configured where installed, with a backup of the previou
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, JSON.stringify({ keep: true }));
   expect(await desktopState(ctx.paths, spec)).toBe("pas-declare");
-  const done = await configureDesktop(
-    ctx.paths,
-    spec,
-    new Date("2026-10-06T12:00:00Z"),
-  );
-  expect(done).toEqual([
-    { client: "claude-desktop", state: "configure", detail: file },
-  ]);
+  const done = await configureDesktop(ctx.paths, spec, new Date("2026-10-06T12:00:00Z"));
+  expect(done).toEqual([{ client: "claude-desktop", state: "configure", detail: file }]);
   expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({
     keep: true,
     mcpServers: { aphrody: spec },
   });
-  const backups = readdirSync(dirname(file)).filter((name) =>
-    name.includes("avant-aphrody"),
-  );
+  const backups = readdirSync(dirname(file)).filter(name => name.includes("avant-aphrody"));
   expect(backups).toHaveLength(1);
-  expect(
-    JSON.parse(readFileSync(join(dirname(file), backups[0]!), "utf8")),
-  ).toEqual({
+  expect(JSON.parse(readFileSync(join(dirname(file), backups[0]!), "utf8"))).toEqual({
     keep: true,
   });
   expect(await desktopState(ctx.paths, spec)).toBe("configure");
-  expect((await configureDesktop(ctx.paths, spec, new Date()))[0]!.state).toBe(
-    "deja",
-  );
+  expect((await configureDesktop(ctx.paths, spec, new Date()))[0]!.state).toBe("deja");
   writeFileSync(file, "{broken");
-  expect((await configureDesktop(ctx.paths, spec, new Date()))[0]!.state).toBe(
-    "echec",
-  );
+  expect((await configureDesktop(ctx.paths, spec, new Date()))[0]!.state).toBe("echec");
   expect(readFileSync(file, "utf8")).toBe("{broken");
 });
 
 test("Claude Code is configured through its own CLI", async () => {
   const { ctx, sys } = testContext();
-  expect((await configureClaudeCode(sys, undefined, spec)).state).toBe(
-    "ignore",
-  );
+  expect((await configureClaudeCode(sys, undefined, spec)).state).toBe("ignore");
   expect(await claudeCodeState(sys, undefined, spec)).toBe("aucun");
-  sys.handlers.push(
-    { match: "claude mcp get", result: { code: 1 } },
-    { match: "claude mcp add", result: {} },
-  );
+  sys.handlers.push({ match: "claude mcp get", result: { code: 1 } }, { match: "claude mcp add", result: {} });
   const added = await configureClaudeCode(sys, "claude", spec);
   expect(added.state).toBe("configure");
   expect(sys.calls.at(-1)!.argv).toEqual([
@@ -145,27 +122,19 @@ test("probeMcp performs a real initialize + tools/list handshake over stdio", as
   const { root } = testContext();
   const script = join(root, "server.js");
   writeFileSync(script, FAKE_SERVER);
-  expect(
-    await probeMcp({ command: process.execPath, args: [script] }, 10_000),
-  ).toEqual({
+  expect(await probeMcp({ command: process.execPath, args: [script] }, 10_000)).toEqual({
     ok: true,
     tools: 3,
   });
 });
 
 test("probeMcp reports a missing program and a silent server", async () => {
-  const missing = await probeMcp(
-    { command: "/definitely/not/here", args: [] },
-    2000,
-  );
+  const missing = await probeMcp({ command: "/definitely/not/here", args: [] }, 2000);
   expect(missing.ok).toBe(false);
   const { root } = testContext();
   const script = join(root, "silent.js");
   writeFileSync(script, "setTimeout(() => {}, 30000);");
-  const silent = await probeMcp(
-    { command: process.execPath, args: [script] },
-    500,
-  );
+  const silent = await probeMcp({ command: process.execPath, args: [script] }, 500);
   expect(silent.ok).toBe(false);
 });
 

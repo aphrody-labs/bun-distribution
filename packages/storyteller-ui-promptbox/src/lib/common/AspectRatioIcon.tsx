@@ -41,35 +41,15 @@ export const AspectRatioIcon = ({
   const y = (size - h) / 2;
 
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect
-        x={x}
-        y={y}
-        width={w}
-        height={h}
-        rx={1.5}
-        stroke="currentColor"
-        strokeWidth={1.5}
-      />
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x={x} y={y} width={w} height={h} rx={1.5} stroke="currentColor" strokeWidth={1.5} />
     </svg>
   );
 };
 
 // "Auto" icon — magic wand sparkle, kept as SVG to avoid FontAwesome dependency
 export const AutoIcon = ({ size = 16 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 16 16"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M8 1l1.2 3.3L12.5 5.5l-3.3 1.2L8 10l-1.2-3.3L3.5 5.5l3.3-1.2L8 1z"
       stroke="currentColor"
@@ -85,9 +65,7 @@ export const AutoIcon = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
-function commonAspectRatioToProportions(
-  ratio: CommonAspectRatio,
-): [number, number] {
+function commonAspectRatioToProportions(ratio: CommonAspectRatio): [number, number] {
   switch (ratio) {
     // Square
     case CommonAspectRatio.Square:

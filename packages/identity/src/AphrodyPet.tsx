@@ -3,13 +3,7 @@
 // Honours `prefers-reduced-motion` (first frame only). The atlas URL is a prop so that a surface
 // chooses how it ships the 1.5 MB sheet (`@aphrody/identity/atlas`, an asset URL, a CDN).
 import { type CSSProperties, useEffect, useState } from "react";
-import {
-  frameAt,
-  PET,
-  type PetAnimation,
-  type PetTrack,
-  spriteStyle,
-} from "./pet";
+import { frameAt, PET, type PetAnimation, type PetTrack, spriteStyle } from "./pet";
 
 export interface AphrodyPetProps {
   /** Atlas image URL, e.g. `PET_ATLAS_URL` from `@aphrody/identity/atlas`. */
@@ -26,10 +20,7 @@ export interface AphrodyPetProps {
 }
 
 function prefersReducedMotion(): boolean {
-  return (
-    typeof matchMedia === "function" &&
-    matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
+  return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 export function AphrodyPet({ animation = "idle", ...props }: AphrodyPetProps) {

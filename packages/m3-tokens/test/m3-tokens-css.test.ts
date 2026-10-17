@@ -3,9 +3,7 @@ import { describe, expect, test } from "bun:test";
 // The runtime token asset consumed by Tailwind (`@theme`) and any host that
 // needs the M3 families @aphrody/material-web does NOT project as runtime vars
 // (typescale/shape/elevation/motion/state). This test pins that contract.
-const css = await Bun.file(
-  new URL("../src/m3-tokens.css", import.meta.url),
-).text();
+const css = await Bun.file(new URL("../src/m3-tokens.css", import.meta.url)).text();
 
 describe("m3-tokens.css runtime asset", () => {
   test("declares the non-colour M3 token families", () => {
@@ -27,9 +25,7 @@ describe("m3-tokens.css runtime asset", () => {
   test("keeps elevation shadows when relative colors are unavailable", () => {
     expect(css).toContain("@supports (color: rgb(from black r g b / 0.3))");
     for (let level = 1; level <= 5; level++) {
-      expect(
-        css.match(new RegExp(`--md-sys-elevation-level${level}:`, "g")),
-      ).toHaveLength(2);
+      expect(css.match(new RegExp(`--md-sys-elevation-level${level}:`, "g"))).toHaveLength(2);
     }
     expect(css).toContain("rgb(0 0 0 / 0.3)");
   });

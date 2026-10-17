@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 
-export type PreviewOverlayHudAnchor =
-  "top-left" | "top-right" | "bottom-left" | "bottom-right";
+export type PreviewOverlayHudAnchor = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
 export type PreviewOverlayMount =
   | {

@@ -31,7 +31,7 @@ describe("WebTextFieldState (pure logic)", () => {
     state.subscribe(() => {
       observed = { text: state.text, selStart: state.selection.start };
     });
-    state.edit((buffer) => {
+    state.edit(buffer => {
       buffer.text = "abXYZ";
       buffer.selection = { start: 5, end: 5 };
     });
@@ -57,7 +57,7 @@ describe("WebTextFieldState (pure logic)", () => {
   it("edit() leaves state untouched if the block throws", () => {
     const state = new WebTextFieldState("safe", { start: 2, end: 2 });
     expect(() => {
-      state.edit((buffer) => {
+      state.edit(buffer => {
         buffer.text = "corrupt";
         throw new Error("boom");
       });
@@ -117,9 +117,7 @@ describe("WebTextFieldState (pure logic)", () => {
   });
 });
 
-function makeElement(
-  value = "",
-): SelectionCapableElement & { setSelectionRange(s: number, e: number): void } {
+function makeElement(value = ""): SelectionCapableElement & { setSelectionRange(s: number, e: number): void } {
   return {
     value,
     selectionStart: 0,

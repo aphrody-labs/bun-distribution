@@ -4,10 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { useGalleryViewStore } from "./gallery-view-store";
-import {
-  markVideoThumbnailFailed,
-  useVideoThumbnailState,
-} from "./pending-video-thumbnails";
+import { markVideoThumbnailFailed, useVideoThumbnailState } from "./pending-video-thumbnails";
 
 // Media thumbnail shared by the masonry GalleryCard and the list GalleryRow.
 // Encapsulates the two awkward bits of thumbnail rendering: freshly generated
@@ -46,13 +43,10 @@ export function GalleryThumbnail({
   showRetryLabel = true,
   onLoad,
 }: GalleryThumbnailProps) {
-  const autoplayVideos = useGalleryViewStore((s) => s.autoplayVideos);
+  const autoplayVideos = useGalleryViewStore(s => s.autoplayVideos);
   // With autoplay off, videos freeze on their still first frame. The still is
   // also what gets re-checked in that mode.
-  const thumbnail =
-    isVideo && !autoplayVideos && stillThumbnail
-      ? stillThumbnail
-      : animatedThumbnail;
+  const thumbnail = isVideo && !autoplayVideos && stillThumbnail ? stillThumbnail : animatedThumbnail;
   const videoState = useVideoThumbnailState(isVideo ? thumbnail : null);
 
   const handleError = useCallback(
@@ -74,9 +68,7 @@ export function GalleryThumbnail({
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-2">
         <LoaderCircleIcon className="animate-spin text-lg text-white/30" />
-        {showRetryLabel && (
-          <span className="text-[10px] text-white/30">Loading thumbnail…</span>
-        )}
+        {showRetryLabel && <span className="text-[10px] text-white/30">Loading thumbnail…</span>}
       </div>
     );
   }

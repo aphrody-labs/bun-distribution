@@ -18,16 +18,16 @@
  * @module
  */
 
-import type { Menu, Submenu } from './menu'
-import { Channel, invoke, Resource } from './core'
-import { type JsImage, transformImage } from './image'
-import { PhysicalPosition, PhysicalSize } from './dpi'
+import type { Menu, Submenu } from "./menu";
+import { Channel, invoke, Resource } from "./core";
+import { type JsImage, transformImage } from "./image";
+import { PhysicalPosition, PhysicalSize } from "./dpi";
 
 /** Whether the mouse button was pressed (`Down`) or released (`Up`). */
-export type MouseButtonState = 'Up' | 'Down'
+export type MouseButtonState = "Up" | "Down";
 
 /** The mouse button that triggered a tray icon event. */
-export type MouseButton = 'Left' | 'Right' | 'Middle'
+export type MouseButton = "Left" | "Right" | "Middle";
 
 /**
  * The kind of a {@linkcode TrayIconEvent}.
@@ -38,35 +38,30 @@ export type MouseButton = 'Left' | 'Right' | 'Middle'
  * - `Move`: the cursor moved inside the icon area.
  * - `Leave`: the cursor left the icon area.
  */
-export type TrayIconEventType =
-  | 'Click'
-  | 'DoubleClick'
-  | 'Enter'
-  | 'Move'
-  | 'Leave'
+export type TrayIconEventType = "Click" | "DoubleClick" | "Enter" | "Move" | "Leave";
 
 /** The fields shared by every {@linkcode TrayIconEvent}. */
 export type TrayIconEventBase<T extends TrayIconEventType> = {
   /** The tray icon event type */
-  type: T
+  type: T;
   /** Id of the tray icon which triggered this event. */
-  id: string
+  id: string;
   /** Physical position of the click the triggered this event. */
-  position: PhysicalPosition
+  position: PhysicalPosition;
   /** Position and size of the tray icon. */
   rect: {
-    position: PhysicalPosition
-    size: PhysicalSize
-  }
-}
+    position: PhysicalPosition;
+    size: PhysicalSize;
+  };
+};
 
 /** The extra fields of the `Click` and `DoubleClick` {@linkcode TrayIconEvent} variants. */
 export type TrayIconClickEvent = {
   /** Mouse button that triggered this event. */
-  button: MouseButton
+  button: MouseButton;
   /** Mouse button state when this event was triggered. */
-  buttonState: MouseButtonState
-}
+  buttonState: MouseButtonState;
+};
 
 /**
  * Describes a tray icon event.
@@ -77,29 +72,29 @@ export type TrayIconClickEvent = {
  * the icon will still show a context menu on right click.
  */
 export type TrayIconEvent =
-  | (TrayIconEventBase<'Click'> & TrayIconClickEvent)
-  | (TrayIconEventBase<'DoubleClick'> & Omit<TrayIconClickEvent, 'buttonState'>)
-  | TrayIconEventBase<'Enter'>
-  | TrayIconEventBase<'Move'>
-  | TrayIconEventBase<'Leave'>
+  | (TrayIconEventBase<"Click"> & TrayIconClickEvent)
+  | (TrayIconEventBase<"DoubleClick"> & Omit<TrayIconClickEvent, "buttonState">)
+  | TrayIconEventBase<"Enter">
+  | TrayIconEventBase<"Move">
+  | TrayIconEventBase<"Leave">;
 
-type RustTrayIconEvent = Omit<TrayIconEvent, 'rect'> & {
+type RustTrayIconEvent = Omit<TrayIconEvent, "rect"> & {
   rect: {
     position: {
-      Physical: { x: number; y: number }
-    }
+      Physical: { x: number; y: number };
+    };
     size: {
-      Physical: { width: number; height: number }
-    }
-  }
-}
+      Physical: { width: number; height: number };
+    };
+  };
+};
 
 /** {@link TrayIcon.new|`TrayIcon`} creation options */
 export interface TrayIconOptions {
   /** The tray icon id. If undefined, a random one will be assigned */
-  id?: string
+  id?: string;
   /** The tray icon menu */
-  menu?: Menu | Submenu
+  menu?: Menu | Submenu;
   /**
    * The tray icon which could be icon bytes or path to the icon file.
    *
@@ -110,9 +105,9 @@ export interface TrayIconOptions {
    * tauri = { version = "...", features = ["...", "image-png"] }
    * ```
    */
-  icon?: JsImage
+  icon?: JsImage;
   /** The tray icon tooltip */
-  tooltip?: string
+  tooltip?: string;
   /**
    * The tray title
    *
@@ -125,18 +120,18 @@ export interface TrayIconOptions {
    * on the user's panel.  This may not be shown in all visualizations.
    * - **Windows:** Unsupported.
    */
-  title?: string
+  title?: string;
   /**
    * The tray icon temp dir path. **Linux only**.
    *
    * On Linux, we need to write the icon to the disk and usually it will
    * be `$XDG_RUNTIME_DIR/tray-icon` or `$TEMP/tray-icon`.
    */
-  tempDirPath?: string
+  tempDirPath?: string;
   /**
    * Use the icon as a [template](https://developer.apple.com/documentation/appkit/nsimage/1520017-template?language=objc). **macOS only**.
    */
-  iconAsTemplate?: boolean
+  iconAsTemplate?: boolean;
   /**
    * Whether to show the tray menu on left click or not, default is `true`.
    *
@@ -146,7 +141,7 @@ export interface TrayIconOptions {
    *
    * @deprecated use {@linkcode TrayIconOptions.showMenuOnLeftClick} instead.
    */
-  menuOnLeftClick?: boolean
+  menuOnLeftClick?: boolean;
   /**
    * Whether to show the tray menu on left click or not, default is `true`.
    *
@@ -156,9 +151,9 @@ export interface TrayIconOptions {
    *
    * @since 2.2.0
    */
-  showMenuOnLeftClick?: boolean
+  showMenuOnLeftClick?: boolean;
   /** A handler for an event on the tray icon. */
-  action?: (event: TrayIconEvent) => void
+  action?: (event: TrayIconEvent) => void;
 }
 
 /**
@@ -181,11 +176,11 @@ export interface TrayIconOptions {
  */
 export class TrayIcon extends Resource {
   /** The id associated with this tray icon.   */
-  public id: string
+  public id: string;
 
   private constructor(rid: number, id: string) {
-    super(rid)
-    this.id = id
+    super(rid);
+    this.id = id;
   }
 
   /**
@@ -204,9 +199,7 @@ export class TrayIcon extends Resource {
    * @returns The tray icon, or `null` if no tray icon with that id exists.
    */
   static async getById(id: string): Promise<TrayIcon | null> {
-    return invoke<number>('plugin:tray|get_by_id', { id }).then((rid) =>
-      rid ? new TrayIcon(rid, id) : null
-    )
+    return invoke<number>("plugin:tray|get_by_id", { id }).then(rid => (rid ? new TrayIcon(rid, id) : null));
   }
 
   /**
@@ -222,7 +215,7 @@ export class TrayIcon extends Resource {
    * ```
    */
   static async removeById(id: string): Promise<void> {
-    return invoke('plugin:tray|remove_by_id', { id })
+    return invoke("plugin:tray|remove_by_id", { id });
   }
 
   /**
@@ -259,23 +252,23 @@ export class TrayIcon extends Resource {
   static async new(options?: TrayIconOptions): Promise<TrayIcon> {
     if (options?.menu) {
       // @ts-expect-error we only need the rid and kind
-      options.menu = [options.menu.rid, options.menu.kind]
+      options.menu = [options.menu.rid, options.menu.kind];
     }
     if (options?.icon) {
-      options.icon = transformImage(options.icon)
+      options.icon = transformImage(options.icon);
     }
 
-    const handler = new Channel<RustTrayIconEvent>()
+    const handler = new Channel<RustTrayIconEvent>();
     if (options?.action) {
-      const action = options.action
-      handler.onmessage = (e) => action(mapEvent(e))
-      delete options.action
+      const action = options.action;
+      handler.onmessage = e => action(mapEvent(e));
+      delete options.action;
     }
 
-    return invoke<[number, string]>('plugin:tray|new', {
+    return invoke<[number, string]>("plugin:tray|new", {
       options: options ?? {},
-      handler
-    }).then(([rid, id]) => new TrayIcon(rid, id))
+      handler,
+    }).then(([rid, id]) => new TrayIcon(rid, id));
   }
 
   /**
@@ -297,11 +290,11 @@ export class TrayIcon extends Resource {
    * ```
    */
   async setIcon(icon: JsImage | null): Promise<void> {
-    let trayIcon = null
+    let trayIcon = null;
     if (icon) {
-      trayIcon = transformImage(icon)
+      trayIcon = transformImage(icon);
     }
-    return invoke('plugin:tray|set_icon', { rid: this.rid, icon: trayIcon })
+    return invoke("plugin:tray|set_icon", { rid: this.rid, icon: trayIcon });
   }
 
   /**
@@ -321,9 +314,9 @@ export class TrayIcon extends Resource {
   async setMenu(menu: Menu | Submenu | null): Promise<void> {
     if (menu) {
       // @ts-expect-error we only need the rid and kind
-      menu = [menu.rid, menu.kind]
+      menu = [menu.rid, menu.kind];
     }
-    return invoke('plugin:tray|set_menu', { rid: this.rid, menu })
+    return invoke("plugin:tray|set_menu", { rid: this.rid, menu });
   }
 
   /**
@@ -339,7 +332,7 @@ export class TrayIcon extends Resource {
    * ```
    */
   async setTooltip(tooltip: string | null): Promise<void> {
-    return invoke('plugin:tray|set_tooltip', { rid: this.rid, tooltip })
+    return invoke("plugin:tray|set_tooltip", { rid: this.rid, tooltip });
   }
 
   /**
@@ -360,7 +353,7 @@ export class TrayIcon extends Resource {
    * - **Windows:** Unsupported
    */
   async setTitle(title: string | null): Promise<void> {
-    return invoke('plugin:tray|set_title', { rid: this.rid, title })
+    return invoke("plugin:tray|set_title", { rid: this.rid, title });
   }
 
   /**
@@ -372,7 +365,7 @@ export class TrayIcon extends Resource {
    * ```
    */
   async setVisible(visible: boolean): Promise<void> {
-    return invoke('plugin:tray|set_visible', { rid: this.rid, visible })
+    return invoke("plugin:tray|set_visible", { rid: this.rid, visible });
   }
 
   /**
@@ -388,7 +381,7 @@ export class TrayIcon extends Resource {
    * ```
    */
   async setTempDirPath(path: string | null): Promise<void> {
-    return invoke('plugin:tray|set_temp_dir_path', { rid: this.rid, path })
+    return invoke("plugin:tray|set_temp_dir_path", { rid: this.rid, path });
   }
 
   /**
@@ -403,10 +396,10 @@ export class TrayIcon extends Resource {
    * ```
    */
   async setIconAsTemplate(asTemplate: boolean): Promise<void> {
-    return invoke('plugin:tray|set_icon_as_template', {
+    return invoke("plugin:tray|set_icon_as_template", {
       rid: this.rid,
-      asTemplate
-    })
+      asTemplate,
+    });
   }
 
   /**
@@ -429,19 +422,16 @@ export class TrayIcon extends Resource {
    * await tray.setIconWithAsTemplate(await Image.fromPath('icons/active.png'), true);
    * ```
    */
-  async setIconWithAsTemplate(
-    icon: JsImage | null,
-    asTemplate: boolean
-  ): Promise<void> {
-    let trayIcon = null
+  async setIconWithAsTemplate(icon: JsImage | null, asTemplate: boolean): Promise<void> {
+    let trayIcon = null;
     if (icon) {
-      trayIcon = transformImage(icon)
+      trayIcon = transformImage(icon);
     }
-    return invoke('plugin:tray|set_icon_with_as_template', {
+    return invoke("plugin:tray|set_icon_with_as_template", {
       rid: this.rid,
       icon: trayIcon,
-      asTemplate
-    })
+      asTemplate,
+    });
   }
 
   /**
@@ -459,10 +449,10 @@ export class TrayIcon extends Resource {
    * ```
    */
   async setMenuOnLeftClick(onLeft: boolean): Promise<void> {
-    return invoke('plugin:tray|set_show_menu_on_left_click', {
+    return invoke("plugin:tray|set_show_menu_on_left_click", {
       rid: this.rid,
-      onLeft
-    })
+      onLeft,
+    });
   }
 
   /**
@@ -484,19 +474,19 @@ export class TrayIcon extends Resource {
    * @since 2.2.0
    */
   async setShowMenuOnLeftClick(onLeft: boolean): Promise<void> {
-    return invoke('plugin:tray|set_show_menu_on_left_click', {
+    return invoke("plugin:tray|set_show_menu_on_left_click", {
       rid: this.rid,
-      onLeft
-    })
+      onLeft,
+    });
   }
 }
 
 function mapEvent(e: RustTrayIconEvent): TrayIconEvent {
-  const out = e as unknown as TrayIconEvent
+  const out = e as unknown as TrayIconEvent;
 
-  out.position = new PhysicalPosition(e.position)
-  out.rect.position = new PhysicalPosition(e.rect.position)
-  out.rect.size = new PhysicalSize(e.rect.size)
+  out.position = new PhysicalPosition(e.position);
+  out.rect.position = new PhysicalPosition(e.rect.position);
+  out.rect.size = new PhysicalSize(e.rect.size);
 
-  return out
+  return out;
 }

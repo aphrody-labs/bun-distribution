@@ -3,7 +3,11 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** deviceaccess.dll!CreateDeviceAccessInstance */
-  CreateDeviceAccessInstance(deviceInterfacePath: string | Win32Pointer, desiredAccess: number, createAsync: Win32Pointer): number;
+  CreateDeviceAccessInstance(
+    deviceInterfacePath: string | Win32Pointer,
+    desiredAccess: number,
+    createAsync: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

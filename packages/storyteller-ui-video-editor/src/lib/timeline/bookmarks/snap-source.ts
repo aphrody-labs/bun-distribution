@@ -12,13 +12,11 @@ export function getBookmarkSnapPoints({
   bookmarks: Bookmark[];
   excludeBookmarkTime?: MediaTime;
 }): SnapPoint[] {
-  return bookmarks.flatMap((bookmark) => {
+  return bookmarks.flatMap(bookmark => {
     if (excludeBookmarkTime != null && bookmark.time === excludeBookmarkTime) {
       return [];
     }
 
-    return [
-      { time: bookmark.time, type: "bookmark" satisfies SnapPoint["type"] },
-    ];
+    return [{ time: bookmark.time, type: "bookmark" satisfies SnapPoint["type"] }];
   });
 }

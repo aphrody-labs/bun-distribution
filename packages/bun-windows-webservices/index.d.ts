@@ -15,21 +15,58 @@ interface Functions {
   /** webservices.dll!WsAbortServiceProxy */
   WsAbortServiceProxy(serviceProxy: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsAcceptChannel */
-  WsAcceptChannel(listener: Win32Pointer, channel: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsAcceptChannel(
+    listener: Win32Pointer,
+    channel: Win32Pointer,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsAddCustomHeader */
-  WsAddCustomHeader(message: Win32Pointer, headerDescription: Win32Pointer, writeOption: number, value: Win32Pointer, valueSize: number, headerAttributes: number, error: Win32Pointer): number;
+  WsAddCustomHeader(
+    message: Win32Pointer,
+    headerDescription: Win32Pointer,
+    writeOption: number,
+    value: Win32Pointer,
+    valueSize: number,
+    headerAttributes: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsAddErrorString */
   WsAddErrorString(error: Win32Pointer, string: Win32Pointer): number;
   /** webservices.dll!WsAddMappedHeader */
-  WsAddMappedHeader(message: Win32Pointer, headerName: Win32Pointer, valueType: number, writeOption: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsAddMappedHeader(
+    message: Win32Pointer,
+    headerName: Win32Pointer,
+    valueType: number,
+    writeOption: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsAddressMessage */
   WsAddressMessage(message: Win32Pointer, address: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsAlloc */
   WsAlloc(heap: Win32Pointer, size: number | bigint, ptr: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsAsyncExecute */
-  WsAsyncExecute(asyncState: Win32Pointer, operation: Win32Callback, callbackModel: number, callbackState: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsAsyncExecute(
+    asyncState: Win32Pointer,
+    operation: Win32Callback,
+    callbackModel: number,
+    callbackState: Win32Pointer,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCall */
-  WsCall(serviceProxy: Win32Pointer, operation: Win32Pointer, arguments: Win32Pointer, heap: Win32Pointer, callProperties: Win32Pointer, callPropertyCount: number, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsCall(
+    serviceProxy: Win32Pointer,
+    operation: Win32Pointer,
+    arguments: Win32Pointer,
+    heap: Win32Pointer,
+    callProperties: Win32Pointer,
+    callPropertyCount: number,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCheckMustUnderstandHeaders */
   WsCheckMustUnderstandHeaders(message: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsCloseChannel */
@@ -41,45 +78,161 @@ interface Functions {
   /** webservices.dll!WsCloseServiceProxy */
   WsCloseServiceProxy(serviceProxy: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsCombineUrl */
-  WsCombineUrl(baseUrl: Win32Pointer, referenceUrl: Win32Pointer, flags: number, heap: Win32Pointer, resultUrl: Win32Pointer, error: Win32Pointer): number;
+  WsCombineUrl(
+    baseUrl: Win32Pointer,
+    referenceUrl: Win32Pointer,
+    flags: number,
+    heap: Win32Pointer,
+    resultUrl: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCopyError */
   WsCopyError(source: Win32Pointer, destination: Win32Pointer): number;
   /** webservices.dll!WsCopyNode */
   WsCopyNode(writer: Win32Pointer, reader: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsCreateChannel */
-  WsCreateChannel(channelType: number, channelBinding: number, properties: Win32Pointer, propertyCount: number, securityDescription: Win32Pointer, channel: Win32Pointer, error: Win32Pointer): number;
+  WsCreateChannel(
+    channelType: number,
+    channelBinding: number,
+    properties: Win32Pointer,
+    propertyCount: number,
+    securityDescription: Win32Pointer,
+    channel: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateChannelForListener */
-  WsCreateChannelForListener(listener: Win32Pointer, properties: Win32Pointer, propertyCount: number, channel: Win32Pointer, error: Win32Pointer): number;
+  WsCreateChannelForListener(
+    listener: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    channel: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateError */
   WsCreateError(properties: Win32Pointer, propertyCount: number, error: Win32Pointer): number;
   /** webservices.dll!WsCreateFaultFromError */
-  WsCreateFaultFromError(error: Win32Pointer, faultErrorCode: number, faultDisclosure: number, heap: Win32Pointer, fault: Win32Pointer): number;
+  WsCreateFaultFromError(
+    error: Win32Pointer,
+    faultErrorCode: number,
+    faultDisclosure: number,
+    heap: Win32Pointer,
+    fault: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateHeap */
-  WsCreateHeap(maxSize: number | bigint, trimSize: number | bigint, properties: Win32Pointer, propertyCount: number, heap: Win32Pointer, error: Win32Pointer): number;
+  WsCreateHeap(
+    maxSize: number | bigint,
+    trimSize: number | bigint,
+    properties: Win32Pointer,
+    propertyCount: number,
+    heap: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateListener */
-  WsCreateListener(channelType: number, channelBinding: number, properties: Win32Pointer, propertyCount: number, securityDescription: Win32Pointer, listener: Win32Pointer, error: Win32Pointer): number;
+  WsCreateListener(
+    channelType: number,
+    channelBinding: number,
+    properties: Win32Pointer,
+    propertyCount: number,
+    securityDescription: Win32Pointer,
+    listener: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateMessage */
-  WsCreateMessage(envelopeVersion: number, addressingVersion: number, properties: Win32Pointer, propertyCount: number, message: Win32Pointer, error: Win32Pointer): number;
+  WsCreateMessage(
+    envelopeVersion: number,
+    addressingVersion: number,
+    properties: Win32Pointer,
+    propertyCount: number,
+    message: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateMessageForChannel */
-  WsCreateMessageForChannel(channel: Win32Pointer, properties: Win32Pointer, propertyCount: number, message: Win32Pointer, error: Win32Pointer): number;
+  WsCreateMessageForChannel(
+    channel: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    message: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateMetadata */
-  WsCreateMetadata(properties: Win32Pointer, propertyCount: number, metadata: Win32Pointer, error: Win32Pointer): number;
+  WsCreateMetadata(
+    properties: Win32Pointer,
+    propertyCount: number,
+    metadata: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateReader */
   WsCreateReader(properties: Win32Pointer, propertyCount: number, reader: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsCreateServiceEndpointFromTemplate */
-  WsCreateServiceEndpointFromTemplate(channelType: number, properties: Win32Pointer, propertyCount: number, addressUrl: Win32Pointer, contract: Win32Pointer, authorizationCallback: Win32Callback, heap: Win32Pointer, templateType: number, templateValue: Win32Pointer, templateSize: number, templateDescription: Win32Pointer, templateDescriptionSize: number, serviceEndpoint: Win32Pointer, error: Win32Pointer): number;
+  WsCreateServiceEndpointFromTemplate(
+    channelType: number,
+    properties: Win32Pointer,
+    propertyCount: number,
+    addressUrl: Win32Pointer,
+    contract: Win32Pointer,
+    authorizationCallback: Win32Callback,
+    heap: Win32Pointer,
+    templateType: number,
+    templateValue: Win32Pointer,
+    templateSize: number,
+    templateDescription: Win32Pointer,
+    templateDescriptionSize: number,
+    serviceEndpoint: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateServiceHost */
-  WsCreateServiceHost(endpoints: Win32Pointer, endpointCount: number, serviceProperties: Win32Pointer, servicePropertyCount: number, serviceHost: Win32Pointer, error: Win32Pointer): number;
+  WsCreateServiceHost(
+    endpoints: Win32Pointer,
+    endpointCount: number,
+    serviceProperties: Win32Pointer,
+    servicePropertyCount: number,
+    serviceHost: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateServiceProxy */
-  WsCreateServiceProxy(channelType: number, channelBinding: number, securityDescription: Win32Pointer, properties: Win32Pointer, propertyCount: number, channelProperties: Win32Pointer, channelPropertyCount: number, serviceProxy: Win32Pointer, error: Win32Pointer): number;
+  WsCreateServiceProxy(
+    channelType: number,
+    channelBinding: number,
+    securityDescription: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    channelProperties: Win32Pointer,
+    channelPropertyCount: number,
+    serviceProxy: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateServiceProxyFromTemplate */
-  WsCreateServiceProxyFromTemplate(channelType: number, properties: Win32Pointer, propertyCount: number, templateType: number, templateValue: Win32Pointer, templateSize: number, templateDescription: Win32Pointer, templateDescriptionSize: number, serviceProxy: Win32Pointer, error: Win32Pointer): number;
+  WsCreateServiceProxyFromTemplate(
+    channelType: number,
+    properties: Win32Pointer,
+    propertyCount: number,
+    templateType: number,
+    templateValue: Win32Pointer,
+    templateSize: number,
+    templateDescription: Win32Pointer,
+    templateDescriptionSize: number,
+    serviceProxy: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateWriter */
   WsCreateWriter(properties: Win32Pointer, propertyCount: number, writer: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsCreateXmlBuffer */
-  WsCreateXmlBuffer(heap: Win32Pointer, properties: Win32Pointer, propertyCount: number, buffer: Win32Pointer, error: Win32Pointer): number;
+  WsCreateXmlBuffer(
+    heap: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    buffer: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsCreateXmlSecurityToken */
-  WsCreateXmlSecurityToken(tokenXml: Win32Pointer, tokenKey: Win32Pointer, properties: Win32Pointer, propertyCount: number, token: Win32Pointer, error: Win32Pointer): number;
+  WsCreateXmlSecurityToken(
+    tokenXml: Win32Pointer,
+    tokenKey: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    token: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsDateTimeToFileTime */
   WsDateTimeToFileTime(dateTime: Win32Pointer, fileTime: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsDecodeUrl */
@@ -97,7 +250,14 @@ interface Functions {
   /** webservices.dll!WsFillReader */
   WsFillReader(reader: Win32Pointer, minSize: number, asyncContext: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsFindAttribute */
-  WsFindAttribute(reader: Win32Pointer, localName: Win32Pointer, ns: Win32Pointer, required: number, attributeIndex: Win32Pointer, error: Win32Pointer): number;
+  WsFindAttribute(
+    reader: Win32Pointer,
+    localName: Win32Pointer,
+    ns: Win32Pointer,
+    required: number,
+    attributeIndex: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsFlushBody */
   WsFlushBody(message: Win32Pointer, minSize: number, asyncContext: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsFlushWriter */
@@ -125,9 +285,26 @@ interface Functions {
   /** webservices.dll!WsFreeWriter */
   WsFreeWriter(writer: Win32Pointer): void;
   /** webservices.dll!WsGetChannelProperty */
-  WsGetChannelProperty(channel: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetChannelProperty(
+    channel: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetCustomHeader */
-  WsGetCustomHeader(message: Win32Pointer, customHeaderDescription: Win32Pointer, repeatingOption: number, headerIndex: number, readOption: number, heap: Win32Pointer, value: Win32Pointer, valueSize: number, headerAttributes: Win32Pointer, error: Win32Pointer): number;
+  WsGetCustomHeader(
+    message: Win32Pointer,
+    customHeaderDescription: Win32Pointer,
+    repeatingOption: number,
+    headerIndex: number,
+    readOption: number,
+    heap: Win32Pointer,
+    value: Win32Pointer,
+    valueSize: number,
+    headerAttributes: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetDictionary */
   WsGetDictionary(encoding: number, dictionary: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsGetErrorProperty */
@@ -135,133 +312,420 @@ interface Functions {
   /** webservices.dll!WsGetErrorString */
   WsGetErrorString(error: Win32Pointer, index: number, string: Win32Pointer): number;
   /** webservices.dll!WsGetFaultErrorDetail */
-  WsGetFaultErrorDetail(error: Win32Pointer, faultDetailDescription: Win32Pointer, readOption: number, heap: Win32Pointer, value: Win32Pointer, valueSize: number): number;
+  WsGetFaultErrorDetail(
+    error: Win32Pointer,
+    faultDetailDescription: Win32Pointer,
+    readOption: number,
+    heap: Win32Pointer,
+    value: Win32Pointer,
+    valueSize: number,
+  ): number;
   /** webservices.dll!WsGetFaultErrorProperty */
   WsGetFaultErrorProperty(error: Win32Pointer, id: number, buffer: Win32Pointer, bufferSize: number): number;
   /** webservices.dll!WsGetHeader */
-  WsGetHeader(message: Win32Pointer, headerType: number, valueType: number, readOption: number, heap: Win32Pointer, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetHeader(
+    message: Win32Pointer,
+    headerType: number,
+    valueType: number,
+    readOption: number,
+    heap: Win32Pointer,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetHeaderAttributes */
-  WsGetHeaderAttributes(message: Win32Pointer, reader: Win32Pointer, headerAttributes: Win32Pointer, error: Win32Pointer): number;
+  WsGetHeaderAttributes(
+    message: Win32Pointer,
+    reader: Win32Pointer,
+    headerAttributes: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetHeapProperty */
-  WsGetHeapProperty(heap: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetHeapProperty(
+    heap: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetListenerProperty */
-  WsGetListenerProperty(listener: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetListenerProperty(
+    listener: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetMappedHeader */
-  WsGetMappedHeader(message: Win32Pointer, headerName: Win32Pointer, repeatingOption: number, headerIndex: number, valueType: number, readOption: number, heap: Win32Pointer, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetMappedHeader(
+    message: Win32Pointer,
+    headerName: Win32Pointer,
+    repeatingOption: number,
+    headerIndex: number,
+    valueType: number,
+    readOption: number,
+    heap: Win32Pointer,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetMessageProperty */
-  WsGetMessageProperty(message: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetMessageProperty(
+    message: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetMetadataEndpoints */
   WsGetMetadataEndpoints(metadata: Win32Pointer, endpoints: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsGetMetadataProperty */
-  WsGetMetadataProperty(metadata: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetMetadataProperty(
+    metadata: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetMissingMetadataDocumentAddress */
   WsGetMissingMetadataDocumentAddress(metadata: Win32Pointer, address: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsGetNamespaceFromPrefix */
-  WsGetNamespaceFromPrefix(reader: Win32Pointer, prefix: Win32Pointer, required: number, ns: Win32Pointer, error: Win32Pointer): number;
+  WsGetNamespaceFromPrefix(
+    reader: Win32Pointer,
+    prefix: Win32Pointer,
+    required: number,
+    ns: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetOperationContextProperty */
-  WsGetOperationContextProperty(context: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetOperationContextProperty(
+    context: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetPolicyAlternativeCount */
   WsGetPolicyAlternativeCount(policy: Win32Pointer, count: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsGetPolicyProperty */
-  WsGetPolicyProperty(policy: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetPolicyProperty(
+    policy: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetPrefixFromNamespace */
-  WsGetPrefixFromNamespace(writer: Win32Pointer, ns: Win32Pointer, required: number, prefix: Win32Pointer, error: Win32Pointer): number;
+  WsGetPrefixFromNamespace(
+    writer: Win32Pointer,
+    ns: Win32Pointer,
+    required: number,
+    prefix: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetReaderNode */
   WsGetReaderNode(xmlReader: Win32Pointer, node: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsGetReaderPosition */
   WsGetReaderPosition(reader: Win32Pointer, nodePosition: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsGetReaderProperty */
-  WsGetReaderProperty(reader: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetReaderProperty(
+    reader: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetSecurityContextProperty */
-  WsGetSecurityContextProperty(securityContext: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetSecurityContextProperty(
+    securityContext: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetSecurityTokenProperty */
-  WsGetSecurityTokenProperty(securityToken: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, heap: Win32Pointer, error: Win32Pointer): number;
+  WsGetSecurityTokenProperty(
+    securityToken: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    heap: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetServiceHostProperty */
-  WsGetServiceHostProperty(serviceHost: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetServiceHostProperty(
+    serviceHost: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetServiceProxyProperty */
-  WsGetServiceProxyProperty(serviceProxy: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetServiceProxyProperty(
+    serviceProxy: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetWriterPosition */
   WsGetWriterPosition(writer: Win32Pointer, nodePosition: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsGetWriterProperty */
-  WsGetWriterProperty(writer: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsGetWriterProperty(
+    writer: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsGetXmlAttribute */
-  WsGetXmlAttribute(reader: Win32Pointer, localName: Win32Pointer, heap: Win32Pointer, valueChars: Win32Pointer, valueCharCount: Win32Pointer, error: Win32Pointer): number;
+  WsGetXmlAttribute(
+    reader: Win32Pointer,
+    localName: Win32Pointer,
+    heap: Win32Pointer,
+    valueChars: Win32Pointer,
+    valueCharCount: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsInitializeMessage */
-  WsInitializeMessage(message: Win32Pointer, initialization: number, sourceMessage: Win32Pointer, error: Win32Pointer): number;
+  WsInitializeMessage(
+    message: Win32Pointer,
+    initialization: number,
+    sourceMessage: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsMarkHeaderAsUnderstood */
   WsMarkHeaderAsUnderstood(message: Win32Pointer, headerPosition: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsMatchPolicyAlternative */
-  WsMatchPolicyAlternative(policy: Win32Pointer, alternativeIndex: number, policyConstraints: Win32Pointer, matchRequired: number, heap: Win32Pointer, error: Win32Pointer): number;
+  WsMatchPolicyAlternative(
+    policy: Win32Pointer,
+    alternativeIndex: number,
+    policyConstraints: Win32Pointer,
+    matchRequired: number,
+    heap: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsMoveReader */
   WsMoveReader(reader: Win32Pointer, moveTo: number, found: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsMoveWriter */
   WsMoveWriter(writer: Win32Pointer, moveTo: number, found: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsOpenChannel */
-  WsOpenChannel(channel: Win32Pointer, endpointAddress: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsOpenChannel(
+    channel: Win32Pointer,
+    endpointAddress: Win32Pointer,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsOpenListener */
   WsOpenListener(listener: Win32Pointer, url: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsOpenServiceHost */
   WsOpenServiceHost(serviceHost: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsOpenServiceProxy */
-  WsOpenServiceProxy(serviceProxy: Win32Pointer, address: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsOpenServiceProxy(
+    serviceProxy: Win32Pointer,
+    address: Win32Pointer,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsPullBytes */
   WsPullBytes(writer: Win32Pointer, callback: Win32Callback, callbackState: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsPushBytes */
   WsPushBytes(writer: Win32Pointer, callback: Win32Callback, callbackState: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsReadArray */
-  WsReadArray(reader: Win32Pointer, localName: Win32Pointer, ns: Win32Pointer, valueType: number, array: Win32Pointer, arraySize: number, itemOffset: number, itemCount: number, actualItemCount: Win32Pointer, error: Win32Pointer): number;
+  WsReadArray(
+    reader: Win32Pointer,
+    localName: Win32Pointer,
+    ns: Win32Pointer,
+    valueType: number,
+    array: Win32Pointer,
+    arraySize: number,
+    itemOffset: number,
+    itemCount: number,
+    actualItemCount: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadAttribute */
-  WsReadAttribute(reader: Win32Pointer, attributeDescription: Win32Pointer, readOption: number, heap: Win32Pointer, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsReadAttribute(
+    reader: Win32Pointer,
+    attributeDescription: Win32Pointer,
+    readOption: number,
+    heap: Win32Pointer,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadBody */
-  WsReadBody(message: Win32Pointer, bodyDescription: Win32Pointer, readOption: number, heap: Win32Pointer, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsReadBody(
+    message: Win32Pointer,
+    bodyDescription: Win32Pointer,
+    readOption: number,
+    heap: Win32Pointer,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadBytes */
-  WsReadBytes(reader: Win32Pointer, bytes: Win32Pointer, maxByteCount: number, actualByteCount: Win32Pointer, error: Win32Pointer): number;
+  WsReadBytes(
+    reader: Win32Pointer,
+    bytes: Win32Pointer,
+    maxByteCount: number,
+    actualByteCount: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadChars */
-  WsReadChars(reader: Win32Pointer, chars: string | Win32Pointer, maxCharCount: number, actualCharCount: Win32Pointer, error: Win32Pointer): number;
+  WsReadChars(
+    reader: Win32Pointer,
+    chars: string | Win32Pointer,
+    maxCharCount: number,
+    actualCharCount: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadCharsUtf8 */
-  WsReadCharsUtf8(reader: Win32Pointer, bytes: Win32Pointer, maxByteCount: number, actualByteCount: Win32Pointer, error: Win32Pointer): number;
+  WsReadCharsUtf8(
+    reader: Win32Pointer,
+    bytes: Win32Pointer,
+    maxByteCount: number,
+    actualByteCount: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadElement */
-  WsReadElement(reader: Win32Pointer, elementDescription: Win32Pointer, readOption: number, heap: Win32Pointer, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsReadElement(
+    reader: Win32Pointer,
+    elementDescription: Win32Pointer,
+    readOption: number,
+    heap: Win32Pointer,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadEndAttribute */
   WsReadEndAttribute(reader: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsReadEndElement */
   WsReadEndElement(reader: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsReadEndpointAddressExtension */
-  WsReadEndpointAddressExtension(reader: Win32Pointer, endpointAddress: Win32Pointer, extensionType: number, readOption: number, heap: Win32Pointer, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsReadEndpointAddressExtension(
+    reader: Win32Pointer,
+    endpointAddress: Win32Pointer,
+    extensionType: number,
+    readOption: number,
+    heap: Win32Pointer,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadEnvelopeEnd */
   WsReadEnvelopeEnd(message: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsReadEnvelopeStart */
-  WsReadEnvelopeStart(message: Win32Pointer, reader: Win32Pointer, doneCallback: Win32Callback, doneCallbackState: Win32Pointer, error: Win32Pointer): number;
+  WsReadEnvelopeStart(
+    message: Win32Pointer,
+    reader: Win32Pointer,
+    doneCallback: Win32Callback,
+    doneCallbackState: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadMessageEnd */
-  WsReadMessageEnd(channel: Win32Pointer, message: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsReadMessageEnd(
+    channel: Win32Pointer,
+    message: Win32Pointer,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadMessageStart */
-  WsReadMessageStart(channel: Win32Pointer, message: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsReadMessageStart(
+    channel: Win32Pointer,
+    message: Win32Pointer,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadMetadata */
   WsReadMetadata(metadata: Win32Pointer, reader: Win32Pointer, url: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsReadNode */
   WsReadNode(reader: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsReadQualifiedName */
-  WsReadQualifiedName(reader: Win32Pointer, heap: Win32Pointer, prefix: Win32Pointer, localName: Win32Pointer, ns: Win32Pointer, error: Win32Pointer): number;
+  WsReadQualifiedName(
+    reader: Win32Pointer,
+    heap: Win32Pointer,
+    prefix: Win32Pointer,
+    localName: Win32Pointer,
+    ns: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadStartAttribute */
   WsReadStartAttribute(reader: Win32Pointer, attributeIndex: number, error: Win32Pointer): number;
   /** webservices.dll!WsReadStartElement */
   WsReadStartElement(reader: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsReadToStartElement */
-  WsReadToStartElement(reader: Win32Pointer, localName: Win32Pointer, ns: Win32Pointer, found: Win32Pointer, error: Win32Pointer): number;
+  WsReadToStartElement(
+    reader: Win32Pointer,
+    localName: Win32Pointer,
+    ns: Win32Pointer,
+    found: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadType */
-  WsReadType(reader: Win32Pointer, typeMapping: number, type: number, typeDescription: Win32Pointer, readOption: number, heap: Win32Pointer, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsReadType(
+    reader: Win32Pointer,
+    typeMapping: number,
+    type: number,
+    typeDescription: Win32Pointer,
+    readOption: number,
+    heap: Win32Pointer,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadValue */
-  WsReadValue(reader: Win32Pointer, valueType: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsReadValue(
+    reader: Win32Pointer,
+    valueType: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReadXmlBuffer */
   WsReadXmlBuffer(reader: Win32Pointer, heap: Win32Pointer, xmlBuffer: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsReadXmlBufferFromBytes */
-  WsReadXmlBufferFromBytes(reader: Win32Pointer, encoding: Win32Pointer, properties: Win32Pointer, propertyCount: number, bytes: Win32Pointer, byteCount: number, heap: Win32Pointer, xmlBuffer: Win32Pointer, error: Win32Pointer): number;
+  WsReadXmlBufferFromBytes(
+    reader: Win32Pointer,
+    encoding: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    bytes: Win32Pointer,
+    byteCount: number,
+    heap: Win32Pointer,
+    xmlBuffer: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsReceiveMessage */
-  WsReceiveMessage(channel: Win32Pointer, message: Win32Pointer, messageDescriptions: Win32Pointer, messageDescriptionCount: number, receiveOption: number, readBodyOption: number, heap: Win32Pointer, value: Win32Pointer, valueSize: number, index: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsReceiveMessage(
+    channel: Win32Pointer,
+    message: Win32Pointer,
+    messageDescriptions: Win32Pointer,
+    messageDescriptionCount: number,
+    receiveOption: number,
+    readBodyOption: number,
+    heap: Win32Pointer,
+    value: Win32Pointer,
+    valueSize: number,
+    index: Win32Pointer,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsRegisterOperationForCancel */
-  WsRegisterOperationForCancel(context: Win32Pointer, cancelCallback: Win32Callback, freestateCallback: Win32Callback, userState: Win32Pointer, error: Win32Pointer): number;
+  WsRegisterOperationForCancel(
+    context: Win32Pointer,
+    cancelCallback: Win32Callback,
+    freestateCallback: Win32Callback,
+    userState: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsRemoveCustomHeader */
-  WsRemoveCustomHeader(message: Win32Pointer, headerName: Win32Pointer, headerNs: Win32Pointer, error: Win32Pointer): number;
+  WsRemoveCustomHeader(
+    message: Win32Pointer,
+    headerName: Win32Pointer,
+    headerNs: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsRemoveHeader */
   WsRemoveHeader(message: Win32Pointer, headerType: number, error: Win32Pointer): number;
   /** webservices.dll!WsRemoveMappedHeader */
@@ -269,9 +733,31 @@ interface Functions {
   /** webservices.dll!WsRemoveNode */
   WsRemoveNode(nodePosition: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsRequestReply */
-  WsRequestReply(channel: Win32Pointer, requestMessage: Win32Pointer, requestMessageDescription: Win32Pointer, writeOption: number, requestBodyValue: Win32Pointer, requestBodyValueSize: number, replyMessage: Win32Pointer, replyMessageDescription: Win32Pointer, readOption: number, heap: Win32Pointer, value: Win32Pointer, valueSize: number, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsRequestReply(
+    channel: Win32Pointer,
+    requestMessage: Win32Pointer,
+    requestMessageDescription: Win32Pointer,
+    writeOption: number,
+    requestBodyValue: Win32Pointer,
+    requestBodyValueSize: number,
+    replyMessage: Win32Pointer,
+    replyMessageDescription: Win32Pointer,
+    readOption: number,
+    heap: Win32Pointer,
+    value: Win32Pointer,
+    valueSize: number,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsRequestSecurityToken */
-  WsRequestSecurityToken(channel: Win32Pointer, properties: Win32Pointer, propertyCount: number, token: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsRequestSecurityToken(
+    channel: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    token: Win32Pointer,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsResetChannel */
   WsResetChannel(channel: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsResetError */
@@ -291,33 +777,119 @@ interface Functions {
   /** webservices.dll!WsRevokeSecurityContext */
   WsRevokeSecurityContext(securityContext: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsSendFaultMessageForError */
-  WsSendFaultMessageForError(channel: Win32Pointer, replyMessage: Win32Pointer, faultError: Win32Pointer, faultErrorCode: number, faultDisclosure: number, requestMessage: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsSendFaultMessageForError(
+    channel: Win32Pointer,
+    replyMessage: Win32Pointer,
+    faultError: Win32Pointer,
+    faultErrorCode: number,
+    faultDisclosure: number,
+    requestMessage: Win32Pointer,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsSendMessage */
-  WsSendMessage(channel: Win32Pointer, message: Win32Pointer, messageDescription: Win32Pointer, writeOption: number, bodyValue: Win32Pointer, bodyValueSize: number, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsSendMessage(
+    channel: Win32Pointer,
+    message: Win32Pointer,
+    messageDescription: Win32Pointer,
+    writeOption: number,
+    bodyValue: Win32Pointer,
+    bodyValueSize: number,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsSendReplyMessage */
-  WsSendReplyMessage(channel: Win32Pointer, replyMessage: Win32Pointer, replyMessageDescription: Win32Pointer, writeOption: number, replyBodyValue: Win32Pointer, replyBodyValueSize: number, requestMessage: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsSendReplyMessage(
+    channel: Win32Pointer,
+    replyMessage: Win32Pointer,
+    replyMessageDescription: Win32Pointer,
+    writeOption: number,
+    replyBodyValue: Win32Pointer,
+    replyBodyValueSize: number,
+    requestMessage: Win32Pointer,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsSetChannelProperty */
-  WsSetChannelProperty(channel: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsSetChannelProperty(
+    channel: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsSetErrorProperty */
   WsSetErrorProperty(error: Win32Pointer, id: number, value: Win32Pointer, valueSize: number): number;
   /** webservices.dll!WsSetFaultErrorDetail */
-  WsSetFaultErrorDetail(error: Win32Pointer, faultDetailDescription: Win32Pointer, writeOption: number, value: Win32Pointer, valueSize: number): number;
+  WsSetFaultErrorDetail(
+    error: Win32Pointer,
+    faultDetailDescription: Win32Pointer,
+    writeOption: number,
+    value: Win32Pointer,
+    valueSize: number,
+  ): number;
   /** webservices.dll!WsSetFaultErrorProperty */
   WsSetFaultErrorProperty(error: Win32Pointer, id: number, value: Win32Pointer, valueSize: number): number;
   /** webservices.dll!WsSetHeader */
-  WsSetHeader(message: Win32Pointer, headerType: number, valueType: number, writeOption: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsSetHeader(
+    message: Win32Pointer,
+    headerType: number,
+    valueType: number,
+    writeOption: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsSetInput */
-  WsSetInput(reader: Win32Pointer, encoding: Win32Pointer, input: Win32Pointer, properties: Win32Pointer, propertyCount: number, error: Win32Pointer): number;
+  WsSetInput(
+    reader: Win32Pointer,
+    encoding: Win32Pointer,
+    input: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsSetInputToBuffer */
-  WsSetInputToBuffer(reader: Win32Pointer, buffer: Win32Pointer, properties: Win32Pointer, propertyCount: number, error: Win32Pointer): number;
+  WsSetInputToBuffer(
+    reader: Win32Pointer,
+    buffer: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsSetListenerProperty */
-  WsSetListenerProperty(listener: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsSetListenerProperty(
+    listener: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsSetMessageProperty */
-  WsSetMessageProperty(message: Win32Pointer, id: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsSetMessageProperty(
+    message: Win32Pointer,
+    id: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsSetOutput */
-  WsSetOutput(writer: Win32Pointer, encoding: Win32Pointer, output: Win32Pointer, properties: Win32Pointer, propertyCount: number, error: Win32Pointer): number;
+  WsSetOutput(
+    writer: Win32Pointer,
+    encoding: Win32Pointer,
+    output: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsSetOutputToBuffer */
-  WsSetOutputToBuffer(writer: Win32Pointer, buffer: Win32Pointer, properties: Win32Pointer, propertyCount: number, error: Win32Pointer): number;
+  WsSetOutputToBuffer(
+    writer: Win32Pointer,
+    buffer: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsSetReaderPosition */
   WsSetReaderPosition(reader: Win32Pointer, nodePosition: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsSetWriterPosition */
@@ -327,19 +899,63 @@ interface Functions {
   /** webservices.dll!WsSkipNode */
   WsSkipNode(reader: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsStartReaderCanonicalization */
-  WsStartReaderCanonicalization(reader: Win32Pointer, writeCallback: Win32Callback, writeCallbackState: Win32Pointer, properties: Win32Pointer, propertyCount: number, error: Win32Pointer): number;
+  WsStartReaderCanonicalization(
+    reader: Win32Pointer,
+    writeCallback: Win32Callback,
+    writeCallbackState: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsStartWriterCanonicalization */
-  WsStartWriterCanonicalization(writer: Win32Pointer, writeCallback: Win32Callback, writeCallbackState: Win32Pointer, properties: Win32Pointer, propertyCount: number, error: Win32Pointer): number;
+  WsStartWriterCanonicalization(
+    writer: Win32Pointer,
+    writeCallback: Win32Callback,
+    writeCallbackState: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsTrimXmlWhitespace */
-  WsTrimXmlWhitespace(chars: string | Win32Pointer, charCount: number, trimmedChars: Win32Pointer, trimmedCount: Win32Pointer, error: Win32Pointer): number;
+  WsTrimXmlWhitespace(
+    chars: string | Win32Pointer,
+    charCount: number,
+    trimmedChars: Win32Pointer,
+    trimmedCount: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsVerifyXmlNCName */
   WsVerifyXmlNCName(ncNameChars: string | Win32Pointer, ncNameCharCount: number, error: Win32Pointer): number;
   /** webservices.dll!WsWriteArray */
-  WsWriteArray(writer: Win32Pointer, localName: Win32Pointer, ns: Win32Pointer, valueType: number, array: Win32Pointer, arraySize: number, itemOffset: number, itemCount: number, error: Win32Pointer): number;
+  WsWriteArray(
+    writer: Win32Pointer,
+    localName: Win32Pointer,
+    ns: Win32Pointer,
+    valueType: number,
+    array: Win32Pointer,
+    arraySize: number,
+    itemOffset: number,
+    itemCount: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteAttribute */
-  WsWriteAttribute(writer: Win32Pointer, attributeDescription: Win32Pointer, writeOption: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsWriteAttribute(
+    writer: Win32Pointer,
+    attributeDescription: Win32Pointer,
+    writeOption: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteBody */
-  WsWriteBody(message: Win32Pointer, bodyDescription: Win32Pointer, writeOption: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsWriteBody(
+    message: Win32Pointer,
+    bodyDescription: Win32Pointer,
+    writeOption: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteBytes */
   WsWriteBytes(writer: Win32Pointer, bytes: Win32Pointer, byteCount: number, error: Win32Pointer): number;
   /** webservices.dll!WsWriteChars */
@@ -347,7 +963,14 @@ interface Functions {
   /** webservices.dll!WsWriteCharsUtf8 */
   WsWriteCharsUtf8(writer: Win32Pointer, bytes: Win32Pointer, byteCount: number, error: Win32Pointer): number;
   /** webservices.dll!WsWriteElement */
-  WsWriteElement(writer: Win32Pointer, elementDescription: Win32Pointer, writeOption: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsWriteElement(
+    writer: Win32Pointer,
+    elementDescription: Win32Pointer,
+    writeOption: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteEndAttribute */
   WsWriteEndAttribute(writer: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsWriteEndCData */
@@ -359,33 +982,99 @@ interface Functions {
   /** webservices.dll!WsWriteEnvelopeEnd */
   WsWriteEnvelopeEnd(message: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsWriteEnvelopeStart */
-  WsWriteEnvelopeStart(message: Win32Pointer, writer: Win32Pointer, doneCallback: Win32Callback, doneCallbackState: Win32Pointer, error: Win32Pointer): number;
+  WsWriteEnvelopeStart(
+    message: Win32Pointer,
+    writer: Win32Pointer,
+    doneCallback: Win32Callback,
+    doneCallbackState: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteMessageEnd */
-  WsWriteMessageEnd(channel: Win32Pointer, message: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsWriteMessageEnd(
+    channel: Win32Pointer,
+    message: Win32Pointer,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteMessageStart */
-  WsWriteMessageStart(channel: Win32Pointer, message: Win32Pointer, asyncContext: Win32Pointer, error: Win32Pointer): number;
+  WsWriteMessageStart(
+    channel: Win32Pointer,
+    message: Win32Pointer,
+    asyncContext: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteNode */
   WsWriteNode(writer: Win32Pointer, node: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsWriteQualifiedName */
-  WsWriteQualifiedName(writer: Win32Pointer, prefix: Win32Pointer, localName: Win32Pointer, ns: Win32Pointer, error: Win32Pointer): number;
+  WsWriteQualifiedName(
+    writer: Win32Pointer,
+    prefix: Win32Pointer,
+    localName: Win32Pointer,
+    ns: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteStartAttribute */
-  WsWriteStartAttribute(writer: Win32Pointer, prefix: Win32Pointer, localName: Win32Pointer, ns: Win32Pointer, singleQuote: number, error: Win32Pointer): number;
+  WsWriteStartAttribute(
+    writer: Win32Pointer,
+    prefix: Win32Pointer,
+    localName: Win32Pointer,
+    ns: Win32Pointer,
+    singleQuote: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteStartCData */
   WsWriteStartCData(writer: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsWriteStartElement */
-  WsWriteStartElement(writer: Win32Pointer, prefix: Win32Pointer, localName: Win32Pointer, ns: Win32Pointer, error: Win32Pointer): number;
+  WsWriteStartElement(
+    writer: Win32Pointer,
+    prefix: Win32Pointer,
+    localName: Win32Pointer,
+    ns: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteText */
   WsWriteText(writer: Win32Pointer, text: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsWriteType */
-  WsWriteType(writer: Win32Pointer, typeMapping: number, type: number, typeDescription: Win32Pointer, writeOption: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsWriteType(
+    writer: Win32Pointer,
+    typeMapping: number,
+    type: number,
+    typeDescription: Win32Pointer,
+    writeOption: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteValue */
-  WsWriteValue(writer: Win32Pointer, valueType: number, value: Win32Pointer, valueSize: number, error: Win32Pointer): number;
+  WsWriteValue(
+    writer: Win32Pointer,
+    valueType: number,
+    value: Win32Pointer,
+    valueSize: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteXmlBuffer */
   WsWriteXmlBuffer(writer: Win32Pointer, xmlBuffer: Win32Pointer, error: Win32Pointer): number;
   /** webservices.dll!WsWriteXmlBufferToBytes */
-  WsWriteXmlBufferToBytes(writer: Win32Pointer, xmlBuffer: Win32Pointer, encoding: Win32Pointer, properties: Win32Pointer, propertyCount: number, heap: Win32Pointer, bytes: Win32Pointer, byteCount: Win32Pointer, error: Win32Pointer): number;
+  WsWriteXmlBufferToBytes(
+    writer: Win32Pointer,
+    xmlBuffer: Win32Pointer,
+    encoding: Win32Pointer,
+    properties: Win32Pointer,
+    propertyCount: number,
+    heap: Win32Pointer,
+    bytes: Win32Pointer,
+    byteCount: Win32Pointer,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsWriteXmlnsAttribute */
-  WsWriteXmlnsAttribute(writer: Win32Pointer, prefix: Win32Pointer, ns: Win32Pointer, singleQuote: number, error: Win32Pointer): number;
+  WsWriteXmlnsAttribute(
+    writer: Win32Pointer,
+    prefix: Win32Pointer,
+    ns: Win32Pointer,
+    singleQuote: number,
+    error: Win32Pointer,
+  ): number;
   /** webservices.dll!WsXmlStringEquals */
   WsXmlStringEquals(string1: Win32Pointer, string2: Win32Pointer, error: Win32Pointer): number;
 }

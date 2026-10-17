@@ -9,13 +9,9 @@
  * @module
  */
 
-import {
-  invoke,
-  type PluginListener,
-  addPluginListener
-} from '../api/core'
+import { invoke, type PluginListener, addPluginListener } from "../api/core";
 
-export type { PermissionState } from '../api/core'
+export type { PermissionState } from "../api/core";
 
 /**
  * Options to send a notification.
@@ -26,50 +22,50 @@ interface Options {
   /**
    * The notification identifier to reference this object later. Must be a 32-bit integer.
    */
-  id?: number
+  id?: number;
   /**
    * Identifier of the {@link Channel} that deliveres this notification.
    *
    * If the channel does not exist, the notification won't fire.
    * Make sure the channel exists with {@link listChannels} and {@link createChannel}.
    */
-  channelId?: string
+  channelId?: string;
   /**
    * The title displayed on the notification.
    */
-  title: string
+  title: string;
   /**
    * Optional notification body.
    * */
-  body?: string
+  body?: string;
   /**
    * Schedule this notification to fire on a later time or a fixed interval.
    */
-  schedule?: Schedule
+  schedule?: Schedule;
   /**
    * Multiline text.
    * Changes the notification style to big text.
    * Cannot be used with `inboxLines`.
    */
-  largeBody?: string
+  largeBody?: string;
   /**
    * Detail text for the notification with `largeBody`, `inboxLines` or `groupSummary`.
    */
-  summary?: string
+  summary?: string;
   /**
    * Defines an action type for this notification.
    */
-  actionTypeId?: string
+  actionTypeId?: string;
   /**
    * Identifier used to group multiple notifications.
    *
    * https://developer.apple.com/documentation/usernotifications/unmutablenotificationcontent/1649872-threadidentifier
    */
-  group?: string
+  group?: string;
   /**
    * Instructs the system that this notification is the summary of a group on Android.
    */
-  groupSummary?: boolean
+  groupSummary?: boolean;
   /**
    * The sound resource name or file path for the notification.
    *
@@ -80,7 +76,7 @@ interface Options {
    * - On Windows: use file paths to sound files (.wav format)
    * - On Mobile: use resource names
    */
-  sound?: string
+  sound?: string;
   /**
    * List of lines to add to the notification.
    * Changes the notification style to inbox.
@@ -88,31 +84,31 @@ interface Options {
    *
    * Only supports up to 5 lines.
    */
-  inboxLines?: string[]
+  inboxLines?: string[];
   /**
    * Notification icon.
    *
    * On Android the icon must be placed in the app's `res/drawable` folder.
    */
-  icon?: string
+  icon?: string;
   /**
    * Notification large icon (Android).
    *
    * The icon must be placed in the app's `res/drawable` folder.
    */
-  largeIcon?: string
+  largeIcon?: string;
   /**
    * Icon color on Android.
    */
-  iconColor?: string
+  iconColor?: string;
   /**
    * Notification attachments.
    */
-  attachments?: Attachment[]
+  attachments?: Attachment[];
   /**
    * Extra payload to store in the notification.
    */
-  extra?: Record<string, unknown>
+  extra?: Record<string, unknown>;
   /**
    * If true, the notification cannot be dismissed by the user on Android.
    *
@@ -120,23 +116,23 @@ interface Options {
    * It is typically used to indicate a background task that is pending (e.g. a file download)
    * or the user is engaged with (e.g. playing music).
    */
-  ongoing?: boolean
+  ongoing?: boolean;
   /**
    * Automatically cancel the notification when the user clicks on it.
    */
-  autoCancel?: boolean
+  autoCancel?: boolean;
   /**
    * Changes the notification presentation to be silent on iOS (no badge, no sound, not listed).
    */
-  silent?: boolean
+  silent?: boolean;
   /**
    * Notification visibility.
    */
-  visibility?: Visibility
+  visibility?: Visibility;
   /**
    * Sets the number of items this notification represents on Android.
    */
-  number?: number
+  number?: number;
 }
 
 /**
@@ -149,15 +145,15 @@ interface ScheduleInterval {
   /**
    * The year the notification fires on.
    */
-  year?: number
+  year?: number;
   /**
    * The month of the year the notification fires on.
    */
-  month?: number
+  month?: number;
   /**
    * The day of the month the notification fires on.
    */
-  day?: number
+  day?: number;
   /**
    * The day of the week the notification fires on.
    *
@@ -169,19 +165,19 @@ interface ScheduleInterval {
    * 6 - Friday
    * 7 - Saturday
    */
-  weekday?: number
+  weekday?: number;
   /**
    * The hour of the day the notification fires on, in the 24-hour clock.
    */
-  hour?: number
+  hour?: number;
   /**
    * The minute of the hour the notification fires on.
    */
-  minute?: number
+  minute?: number;
   /**
    * The second of the minute the notification fires on.
    */
-  second?: number
+  second?: number;
 }
 
 /**
@@ -193,39 +189,39 @@ enum ScheduleEvery {
    *
    * On Android a year is approximated as 52 weeks.
    */
-  Year = 'year',
+  Year = "year",
   /**
    * The notification repeats every month.
    *
    * On Android a month is approximated as 30 days.
    */
-  Month = 'month',
+  Month = "month",
   /**
    * The notification repeats every two weeks.
    */
-  TwoWeeks = 'twoWeeks',
+  TwoWeeks = "twoWeeks",
   /**
    * The notification repeats every week.
    */
-  Week = 'week',
+  Week = "week",
   /**
    * The notification repeats every day.
    */
-  Day = 'day',
+  Day = "day",
   /**
    * The notification repeats every hour.
    */
-  Hour = 'hour',
+  Hour = "hour",
   /**
    * The notification repeats every minute.
    */
-  Minute = 'minute',
+  Minute = "minute",
   /**
    * The notification repeats every second.
    *
    * Not supported on iOS, where repeating triggers must be at least a minute apart.
    */
-  Second = 'second'
+  Second = "second",
 }
 
 /**
@@ -243,32 +239,32 @@ class Schedule {
    */
   at:
     | {
-        date: Date
-        repeating: boolean
-        allowWhileIdle: boolean
+        date: Date;
+        repeating: boolean;
+        allowWhileIdle: boolean;
       }
-    | undefined
+    | undefined;
 
   /**
    * Set when the notification fires whenever the current date matches the given fields.
    */
   interval:
     | {
-        interval: ScheduleInterval
-        allowWhileIdle: boolean
+        interval: ScheduleInterval;
+        allowWhileIdle: boolean;
       }
-    | undefined
+    | undefined;
 
   /**
    * Set when the notification repeats on a fixed interval.
    */
   every:
     | {
-        interval: ScheduleEvery
-        count: number
-        allowWhileIdle: boolean
+        interval: ScheduleEvery;
+        count: number;
+        allowWhileIdle: boolean;
       }
-    | undefined
+    | undefined;
 
   /**
    * Creates a schedule that fires the notification at the given date and time.
@@ -290,8 +286,8 @@ class Schedule {
     return {
       at: { date, repeating, allowWhileIdle },
       interval: undefined,
-      every: undefined
-    }
+      every: undefined,
+    };
   }
 
   /**
@@ -311,15 +307,12 @@ class Schedule {
    *
    * @returns A schedule that can be assigned to the `schedule` option of a notification.
    */
-  static interval(
-    interval: ScheduleInterval,
-    allowWhileIdle = false
-  ): Schedule {
+  static interval(interval: ScheduleInterval, allowWhileIdle = false): Schedule {
     return {
       at: undefined,
       interval: { interval, allowWhileIdle },
-      every: undefined
-    }
+      every: undefined,
+    };
   }
 
   /**
@@ -338,16 +331,12 @@ class Schedule {
    *
    * @returns A schedule that can be assigned to the `schedule` option of a notification.
    */
-  static every(
-    kind: ScheduleEvery,
-    count: number,
-    allowWhileIdle = false
-  ): Schedule {
+  static every(kind: ScheduleEvery, count: number, allowWhileIdle = false): Schedule {
     return {
       at: undefined,
       interval: undefined,
-      every: { interval: kind, count, allowWhileIdle }
-    }
+      every: { interval: kind, count, allowWhileIdle },
+    };
   }
 }
 
@@ -356,9 +345,9 @@ class Schedule {
  */
 interface Attachment {
   /** Attachment identifier. */
-  id: string
+  id: string;
   /** Attachment URL. Accepts the `asset` and `file` protocols. */
-  url: string
+  url: string;
 }
 
 /**
@@ -370,35 +359,35 @@ interface Action {
   /**
    * The identifier of this action, reported back when the user triggers it.
    */
-  id: string
+  id: string;
   /**
    * The text displayed on the action button.
    */
-  title: string
+  title: string;
   /**
    * Whether the device must be unlocked for the action to run. iOS only.
    */
-  requiresAuthentication?: boolean
+  requiresAuthentication?: boolean;
   /**
    * Whether the app is brought to the foreground when the action is triggered. iOS only.
    */
-  foreground?: boolean
+  foreground?: boolean;
   /**
    * Whether the action is displayed as destructive, usually in red. iOS only.
    */
-  destructive?: boolean
+  destructive?: boolean;
   /**
    * Whether triggering the action lets the user type a text response.
    */
-  input?: boolean
+  input?: boolean;
   /**
    * The text displayed on the button that submits the text input. iOS only.
    */
-  inputButtonTitle?: string
+  inputButtonTitle?: string;
   /**
    * The placeholder displayed on the empty text input field. iOS only.
    */
-  inputPlaceholder?: string
+  inputPlaceholder?: string;
 }
 
 /**
@@ -412,31 +401,31 @@ interface ActionType {
   /**
    * The identifier of this action type
    */
-  id: string
+  id: string;
   /**
    * The list of associated actions
    */
-  actions: Action[]
+  actions: Action[];
   /**
    * The placeholder shown instead of the notification body when previews are hidden. iOS only.
    */
-  hiddenPreviewsBodyPlaceholder?: string
+  hiddenPreviewsBodyPlaceholder?: string;
   /**
    * Whether the app is notified when the user dismisses the notification. iOS only.
    */
-  customDismissAction?: boolean
+  customDismissAction?: boolean;
   /**
    * Whether the notification can be displayed in a CarPlay environment. iOS only.
    */
-  allowInCarPlay?: boolean
+  allowInCarPlay?: boolean;
   /**
    * Whether the notification title is shown even when previews are hidden. iOS only.
    */
-  hiddenPreviewsShowTitle?: boolean
+  hiddenPreviewsShowTitle?: boolean;
   /**
    * Whether the notification subtitle is shown even when previews are hidden. iOS only.
    */
-  hiddenPreviewsShowSubtitle?: boolean
+  hiddenPreviewsShowSubtitle?: boolean;
 }
 
 /**
@@ -448,19 +437,19 @@ interface PendingNotification {
   /**
    * The identifier of the notification.
    */
-  id: number
+  id: number;
   /**
    * The title of the notification, if it was set.
    */
-  title?: string
+  title?: string;
   /**
    * The body of the notification, if it was set.
    */
-  body?: string
+  body?: string;
   /**
    * The schedule that determines when the notification is delivered.
    */
-  schedule: Schedule
+  schedule: Schedule;
 }
 
 /**
@@ -474,51 +463,51 @@ interface ActiveNotification {
   /**
    * The identifier of the notification.
    */
-  id: number
+  id: number;
   /**
    * The tag the notification was posted with. Android only.
    */
-  tag?: string
+  tag?: string;
   /**
    * The title of the notification, if it was set.
    */
-  title?: string
+  title?: string;
   /**
    * The body of the notification, if it was set.
    */
-  body?: string
+  body?: string;
   /**
    * The identifier of the group the notification belongs to. Android only.
    */
-  group?: string
+  group?: string;
   /**
    * Whether the notification is the summary of its group. Android only.
    */
-  groupSummary: boolean
+  groupSummary: boolean;
   /**
    * The platform extras attached to the notification, as string values. Android only.
    */
-  data: Record<string, string>
+  data: Record<string, string>;
   /**
    * The extra payload that was stored in the notification.
    */
-  extra: Record<string, unknown>
+  extra: Record<string, unknown>;
   /**
    * The attachments of the notification. iOS only.
    */
-  attachments: Attachment[]
+  attachments: Attachment[];
   /**
    * The identifier of the action type the notification was registered with. iOS only.
    */
-  actionTypeId?: string
+  actionTypeId?: string;
   /**
    * The schedule the notification was delivered with, if it was scheduled.
    */
-  schedule?: Schedule
+  schedule?: Schedule;
   /**
    * The sound resource name of the notification. iOS only.
    */
-  sound?: string
+  sound?: string;
 }
 
 /**
@@ -548,7 +537,7 @@ enum Importance {
   /**
    * The notifications are shown, make a sound and pop up as a heads-up notification.
    */
-  High
+  High,
 }
 
 /**
@@ -570,7 +559,7 @@ enum Visibility {
   /**
    * The notification is shown in full on the lock screen.
    */
-  Public
+  Public,
 }
 
 /**
@@ -583,41 +572,41 @@ interface Channel {
   /**
    * The identifier of this channel.
    */
-  id: string
+  id: string;
   /**
    * The user visible name of this channel.
    */
-  name: string
+  name: string;
   /**
    * The user visible description of this channel.
    */
-  description?: string
+  description?: string;
   /**
    * The name of the sound resource played by the notifications of this channel.
    *
    * The resource must be placed in the app's `res/raw` folder.
    */
-  sound?: string
+  sound?: string;
   /**
    * Whether the notifications of this channel blink the device light.
    */
-  lights?: boolean
+  lights?: boolean;
   /**
    * The color of the device light, as a color string such as `#ff0000`.
    */
-  lightColor?: string
+  lightColor?: string;
   /**
    * Whether the notifications of this channel vibrate the device.
    */
-  vibration?: boolean
+  vibration?: boolean;
   /**
    * How much the notifications of this channel interrupt the user.
    */
-  importance?: Importance
+  importance?: Importance;
   /**
    * How much of the notifications of this channel is shown on the lock screen.
    */
-  visibility?: Visibility
+  visibility?: Visibility;
 }
 
 /**
@@ -633,10 +622,10 @@ interface Channel {
  * @since 2.0.0
  */
 async function isPermissionGranted(): Promise<boolean> {
-  if (window.Notification.permission !== 'default') {
-    return await Promise.resolve(window.Notification.permission === 'granted')
+  if (window.Notification.permission !== "default") {
+    return await Promise.resolve(window.Notification.permission === "granted");
   }
-  return await invoke('plugin:notification|is_permission_granted')
+  return await invoke("plugin:notification|is_permission_granted");
 }
 
 /**
@@ -656,7 +645,7 @@ async function isPermissionGranted(): Promise<boolean> {
  * @since 2.0.0
  */
 async function requestPermission(): Promise<NotificationPermission> {
-  return await window.Notification.requestPermission()
+  return await window.Notification.requestPermission();
 }
 
 /**
@@ -680,10 +669,10 @@ async function requestPermission(): Promise<NotificationPermission> {
  * @since 2.0.0
  */
 function sendNotification(options: Options | string): void {
-  if (typeof options === 'string') {
-    new window.Notification(options)
+  if (typeof options === "string") {
+    new window.Notification(options);
   } else {
-    new window.Notification(options.title, options)
+    new window.Notification(options.title, options);
   }
 }
 
@@ -709,7 +698,7 @@ function sendNotification(options: Options | string): void {
  * @since 2.0.0
  */
 async function registerActionTypes(types: ActionType[]): Promise<void> {
-  await invoke('plugin:notification|register_action_types', { types })
+  await invoke("plugin:notification|register_action_types", { types });
 }
 
 /**
@@ -726,7 +715,7 @@ async function registerActionTypes(types: ActionType[]): Promise<void> {
  * @since 2.0.0
  */
 async function pending(): Promise<PendingNotification[]> {
-  return await invoke('plugin:notification|get_pending')
+  return await invoke("plugin:notification|get_pending");
 }
 
 /**
@@ -745,7 +734,7 @@ async function pending(): Promise<PendingNotification[]> {
  * @since 2.0.0
  */
 async function cancel(notifications: number[]): Promise<void> {
-  await invoke('plugin:notification|cancel', { notifications })
+  await invoke("plugin:notification|cancel", { notifications });
 }
 
 /**
@@ -762,7 +751,7 @@ async function cancel(notifications: number[]): Promise<void> {
  * @since 2.0.0
  */
 async function cancelAll(): Promise<void> {
-  await invoke('plugin:notification|cancel')
+  await invoke("plugin:notification|cancel");
 }
 
 /**
@@ -779,7 +768,7 @@ async function cancelAll(): Promise<void> {
  * @since 2.0.0
  */
 async function active(): Promise<ActiveNotification[]> {
-  return await invoke('plugin:notification|get_active')
+  return await invoke("plugin:notification|get_active");
 }
 
 /**
@@ -797,10 +786,8 @@ async function active(): Promise<ActiveNotification[]> {
  *
  * @since 2.0.0
  */
-async function removeActive(
-  notifications: Array<{ id: number; tag?: string }>
-): Promise<void> {
-  await invoke('plugin:notification|remove_active', { notifications })
+async function removeActive(notifications: Array<{ id: number; tag?: string }>): Promise<void> {
+  await invoke("plugin:notification|remove_active", { notifications });
 }
 
 /**
@@ -817,7 +804,7 @@ async function removeActive(
  * @since 2.0.0
  */
 async function removeAllActive(): Promise<void> {
-  await invoke('plugin:notification|remove_active')
+  await invoke("plugin:notification|remove_active");
 }
 
 /**
@@ -843,7 +830,7 @@ async function removeAllActive(): Promise<void> {
  * @since 2.0.0
  */
 async function createChannel(channel: Channel): Promise<void> {
-  await invoke('plugin:notification|create_channel', { ...channel })
+  await invoke("plugin:notification|create_channel", { ...channel });
 }
 
 /**
@@ -862,7 +849,7 @@ async function createChannel(channel: Channel): Promise<void> {
  * @since 2.0.0
  */
 async function removeChannel(id: string): Promise<void> {
-  await invoke('plugin:notification|delete_channel', { id })
+  await invoke("plugin:notification|delete_channel", { id });
 }
 
 /**
@@ -879,7 +866,7 @@ async function removeChannel(id: string): Promise<void> {
  * @since 2.0.0
  */
 async function channels(): Promise<Channel[]> {
-  return await invoke('plugin:notification|list_channels')
+  return await invoke("plugin:notification|list_channels");
 }
 
 /**
@@ -901,10 +888,8 @@ async function channels(): Promise<Channel[]> {
  *
  * @since 2.0.0
  */
-async function onNotificationReceived(
-  cb: (notification: Options) => void
-): Promise<PluginListener> {
-  return await addPluginListener('notification', 'notification', cb)
+async function onNotificationReceived(cb: (notification: Options) => void): Promise<PluginListener> {
+  return await addPluginListener("notification", "notification", cb);
 }
 
 /**
@@ -927,10 +912,8 @@ async function onNotificationReceived(
  *
  * @since 2.0.0
  */
-async function onAction(
-  cb: (notification: Options) => void
-): Promise<PluginListener> {
-  return await addPluginListener('notification', 'actionPerformed', cb)
+async function onAction(cb: (notification: Options) => void): Promise<PluginListener> {
+  return await addPluginListener("notification", "actionPerformed", cb);
 }
 
 export type {
@@ -941,8 +924,8 @@ export type {
   PendingNotification,
   ActiveNotification,
   Channel,
-  ScheduleInterval
-}
+  ScheduleInterval,
+};
 
 export {
   Importance,
@@ -963,5 +946,5 @@ export {
   onNotificationReceived,
   onAction,
   Schedule,
-  ScheduleEvery
-}
+  ScheduleEvery,
+};

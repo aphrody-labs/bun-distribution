@@ -20,19 +20,12 @@ export interface EditableScalarChannels {
   channels: ScalarGraphChannel[];
 }
 
-function isScalarAnimationChannel(
-  channel: ChannelData | undefined,
-): channel is ScalarAnimationChannel {
+function isScalarAnimationChannel(channel: ChannelData | undefined): channel is ScalarAnimationChannel {
   return isLeafChannelData(channel) && isScalarChannel(channel);
 }
 
-function getEasingModeForChannelData({
-  data,
-}: {
-  data: ChannelData | undefined;
-}): ChannelEasingMode {
-  return isCompositeChannelData(data) &&
-    ["r", "g", "b", "a"].every((componentKey) => componentKey in data)
+function getEasingModeForChannelData({ data }: { data: ChannelData | undefined }): ChannelEasingMode {
+  return isCompositeChannelData(data) && ["r", "g", "b", "a"].every(componentKey => componentKey in data)
     ? "shared"
     : "independent";
 }
@@ -49,8 +42,9 @@ export function getEditableScalarChannels({
     return null;
   }
 
-  const channelEntries: Array<[string, ChannelData | undefined]> =
-    isLeafChannelData(data) ? [["value", data]] : Object.entries(data);
+  const channelEntries: Array<[string, ChannelData | undefined]> = isLeafChannelData(data)
+    ? [["value", data]]
+    : Object.entries(data);
   const channels: ScalarGraphChannel[] = [];
   for (const [componentKey, channel] of channelEntries) {
     if (!isScalarAnimationChannel(channel)) {
@@ -72,10 +66,7 @@ export function getEditableScalarChannel({
   componentKey: string;
 }): ScalarGraphChannel | null {
   const result = getEditableScalarChannels({ animations, propertyPath });
-  return (
-    result?.channels.find((channel) => channel.componentKey === componentKey) ??
-    null
-  );
+  return result?.channels.find(channel => channel.componentKey === componentKey) ?? null;
 }
 
 export function getScalarKeyframeContext({
@@ -98,9 +89,7 @@ export function getScalarKeyframeContext({
     return null;
   }
 
-  const keyframeIndex = scalarChannel.channel.keys.findIndex(
-    (keyframe) => keyframe.id === keyframeId,
-  );
+  const keyframeIndex = scalarChannel.channel.keys.findIndex(keyframe => keyframe.id === keyframeId);
   if (keyframeIndex < 0) {
     return null;
   }

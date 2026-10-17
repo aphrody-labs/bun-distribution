@@ -4,11 +4,7 @@ import { createCanvasSurface } from "./canvas-utils";
 import { buildFrameDescriptor } from "./compositor/frame-descriptor";
 import { wasmCompositor } from "./compositor/wasm-compositor";
 import { resolveRenderTree } from "./resolve";
-import {
-  measureSpanAsync,
-  measureSpanSync,
-  onRenderPerfFrameComplete,
-} from "../../diagnostics/render-perf";
+import { measureSpanAsync, measureSpanSync, onRenderPerfFrameComplete } from "../../diagnostics/render-perf";
 
 export type CanvasRendererParams = {
   width: number;
@@ -91,14 +87,7 @@ export class CanvasRenderer {
 
     measureSpanSync({
       name: "drawImage",
-      fn: () =>
-        ctx.drawImage(
-          wasmCompositor.getCanvas(),
-          0,
-          0,
-          targetCanvas.width,
-          targetCanvas.height,
-        ),
+      fn: () => ctx.drawImage(wasmCompositor.getCanvas(), 0, 0, targetCanvas.width, targetCanvas.height),
     });
     onRenderPerfFrameComplete();
   }

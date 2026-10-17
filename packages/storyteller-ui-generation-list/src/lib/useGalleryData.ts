@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  GalleryModalApi,
-  FilterMediaClasses,
-  FilterMediaType,
-} from "@storyteller/api";
-import {
-  getMediaStillThumbnail,
-  getMediaThumbnail,
-  THUMBNAIL_SIZES,
-} from "@storyteller/common";
+import { GalleryModalApi, FilterMediaClasses, FilterMediaType } from "@storyteller/api";
+import { getMediaStillThumbnail, getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import type { GalleryItem } from "./types";
 import { is3DMediaClass } from "./types";
 
@@ -59,8 +51,7 @@ export function useGalleryData(options: {
   // their own model ids to keep each feed showing only its own product.
   filterModelIds?: string[];
 }) {
-  const { username, filterMediaClasses, excludeUploads, filterModelIds } =
-    options;
+  const { username, filterMediaClasses, excludeUploads, filterModelIds } = options;
 
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -120,10 +111,7 @@ export function useGalleryData(options: {
         });
 
         if (response.success && response.data) {
-          const modelIdSet =
-            filterModelIds && filterModelIds.length
-              ? new Set(filterModelIds)
-              : null;
+          const modelIdSet = filterModelIds && filterModelIds.length ? new Set(filterModelIds) : null;
 
           const newItems = response.data
             .filter(
@@ -145,7 +133,7 @@ export function useGalleryData(options: {
           if (reset) {
             setItems(newItems);
           } else {
-            setItems((prev) => [...prev, ...newItems]);
+            setItems(prev => [...prev, ...newItems]);
           }
 
           const current = response.pagination?.current ?? 0;
@@ -161,15 +149,7 @@ export function useGalleryData(options: {
       setIsInitialLoading(false);
       isLoadingRef.current = false;
     },
-    [
-      username,
-      filterMediaClasses,
-      pageIndex,
-      api,
-      mapApiItem,
-      excludeUploads,
-      filterModelIds,
-    ],
+    [username, filterMediaClasses, pageIndex, api, mapApiItem, excludeUploads, filterModelIds],
   );
 
   // Initial load + filter change. When logged out (no username), clear the
@@ -187,11 +167,7 @@ export function useGalleryData(options: {
     setIsInitialLoading(true);
     loadItems(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    username,
-    JSON.stringify(filterMediaClasses),
-    JSON.stringify(filterModelIds),
-  ]);
+  }, [username, JSON.stringify(filterMediaClasses), JSON.stringify(filterModelIds)]);
 
   const loadMore = useCallback(() => {
     if (hasMore && !isLoadingRef.current) {
@@ -208,7 +184,7 @@ export function useGalleryData(options: {
   }, [loadItems]);
 
   const removeItem = useCallback((id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    setItems(prev => prev.filter(item => item.id !== id));
   }, []);
 
   return {

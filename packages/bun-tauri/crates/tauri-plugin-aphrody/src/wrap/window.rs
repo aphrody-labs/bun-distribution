@@ -23,7 +23,10 @@ pub fn open_external(url: &Url) {
             eprintln!("aphrody-tauri-wrap: cannot open {url}: {error}");
         }
     } else {
-        eprintln!("aphrody-tauri-wrap: blocked a link with the {} scheme", url.scheme());
+        eprintln!(
+            "aphrody-tauri-wrap: blocked a link with the {} scheme",
+            url.scheme()
+        );
     }
 }
 
@@ -34,7 +37,7 @@ fn allow_navigation(policy: &Policy, url: &Url) -> bool {
         Decision::External => {
             open_external(url);
             false
-        },
+        }
         Decision::Deny => false,
     }
 }
@@ -46,7 +49,10 @@ fn unique_path(dir: &Path, name: &str) -> PathBuf {
         return candidate;
     }
     let path = Path::new(name);
-    let stem = path.file_stem().and_then(|stem| stem.to_str()).unwrap_or("download");
+    let stem = path
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .unwrap_or("download");
     let extension = path
         .extension()
         .and_then(|extension| extension.to_str())
@@ -148,7 +154,10 @@ mod tests {
     #[test]
     fn names_a_download_from_the_suggestion_or_the_url() {
         let url = Url::parse("https://example.com/files/report.pdf?x=1").unwrap();
-        assert_eq!(download_name(Path::new("/tmp/suggested.bin"), &url), "suggested.bin");
+        assert_eq!(
+            download_name(Path::new("/tmp/suggested.bin"), &url),
+            "suggested.bin"
+        );
         assert_eq!(download_name(Path::new("/"), &url), "report.pdf");
         assert_eq!(
             download_name(Path::new("/"), &Url::parse("https://example.com/").unwrap()),

@@ -94,13 +94,7 @@ export type PlatformKeyCombo = {
 } & { default: KeyCombo };
 
 // Keybind scope (context-aware)
-export type KeybindScope =
-  | "global"
-  | "explorer"
-  | "settings"
-  | "mediaViewer"
-  | "tagAssigner"
-  | "quickPreview";
+export type KeybindScope = "global" | "explorer" | "settings" | "mediaViewer" | "tagAssigner" | "quickPreview";
 
 // Keybind definition
 export interface KeybindDefinition {
@@ -117,8 +111,6 @@ export function defineKeybind<T extends KeybindDefinition>(def: T): T {
 }
 
 // Check if combo has platform-specific overrides
-export function isPlatformKeyCombo(
-  combo: KeyCombo | PlatformKeyCombo,
-): combo is PlatformKeyCombo {
+export function isPlatformKeyCombo(combo: KeyCombo | PlatformKeyCombo): combo is PlatformKeyCombo {
   return "default" in combo;
 }

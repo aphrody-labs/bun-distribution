@@ -25,18 +25,12 @@ const HELP =
 
 /** The command systemd runs to reach this forge: the standalone program, or `yolo forge` when yolo hosts it. */
 function selfCommand(): string {
-  const compiled =
-    Bun.main.startsWith("/$bunfs/") || Bun.main.startsWith("B:/~BUN/");
-  const program = compiled
-    ? process.execPath
-    : `${Bun.which("bun") ?? "bun"} ${Bun.main}`;
+  const compiled = Bun.main.startsWith("/$bunfs/") || Bun.main.startsWith("B:/~BUN/");
+  const program = compiled ? process.execPath : `${Bun.which("bun") ?? "bun"} ${Bun.main}`;
   return import.meta.main ? program : `${program} forge`;
 }
 
-async function main(
-  argv: string[],
-  invocationCommand?: string,
-): Promise<number> {
+async function main(argv: string[], invocationCommand?: string): Promise<number> {
   const options = parseArgs(argv, process.env);
   switch (options.command) {
     case "help":
@@ -65,16 +59,11 @@ async function main(
 }
 
 /** `yolo forge <argv>`: the exit status; refused input and system errors are reported and end with status 2. */
-export async function runForge(
-  argv: string[],
-  invocationCommand?: string,
-): Promise<number> {
+export async function runForge(argv: string[], invocationCommand?: string): Promise<number> {
   try {
     return await main(argv, invocationCommand);
   } catch (e) {
-    const system =
-      e instanceof Error &&
-      typeof (e as NodeJS.ErrnoException).code === "string";
+    const system = e instanceof Error && typeof (e as NodeJS.ErrnoException).code === "string";
     if (!(e instanceof ForgeError) && !system) throw e;
     console.error(`yolo forge: ${(e as Error).message}`);
     return 2;
@@ -83,7 +72,7 @@ export async function runForge(
 
 if (import.meta.main) {
   void runForge(Bun.argv.slice(2)).then(
-    (code) => {
+    code => {
       process.exitCode = code;
       return code;
     },

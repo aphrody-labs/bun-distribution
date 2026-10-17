@@ -9,12 +9,7 @@ version = "2.0.0"
 [dependencies.tauri]
 version = "2.0.0"
 default-features = false
-features = [
-  "wry",
-  "compression",
-  "x11",
-  "unstable",
-]
+features = ["wry", "compression", "x11", "unstable"]
 
 [dependencies]
 tauri-runtime-wry = "2.0.0"

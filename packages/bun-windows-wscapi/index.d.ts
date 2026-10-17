@@ -9,7 +9,12 @@ interface Functions {
   /** wscapi.dll!WscQueryAntiMalwareUri */
   WscQueryAntiMalwareUri(): number;
   /** wscapi.dll!WscRegisterForChanges */
-  WscRegisterForChanges(Reserved: Win32Pointer, phCallbackRegistration: Win32Pointer, lpCallbackAddress: Win32Callback, pContext: Win32Pointer): number;
+  WscRegisterForChanges(
+    Reserved: Win32Pointer,
+    phCallbackRegistration: Win32Pointer,
+    lpCallbackAddress: Win32Callback,
+    pContext: Win32Pointer,
+  ): number;
   /** wscapi.dll!WscRegisterForUserNotifications */
   WscRegisterForUserNotifications(): number;
   /** wscapi.dll!WscUnRegisterChanges */

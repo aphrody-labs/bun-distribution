@@ -20,20 +20,19 @@ export function bottomScreenPoint(canvas, event, system) {
   const top = rect.top + (rect.height - height * scale) / 2;
   const x = (event.clientX - left) / scale - (width - layout.bottom[0]) / 2;
   const y = (event.clientY - top) / scale - layout.top[1];
-  if (x < 0 || y < 0 || x >= layout.bottom[0] || y >= layout.bottom[1])
-    return null;
+  if (x < 0 || y < 0 || x >= layout.bottom[0] || y >= layout.bottom[1]) return null;
   return { x: Math.floor(x), y: Math.floor(y) };
 }
 
 /** Wire pointer events on `canvas` to `handle.set_touch(x, y, down)`. Returns an unbind function. */
 export function bindTouch(canvas, handle, system) {
   let down = false;
-  const move = (event) => {
+  const move = event => {
     const point = bottomScreenPoint(canvas, event, system);
     if (down && point) handle.set_touch(point.x, point.y, true);
     else if (down && !point) handle.set_touch(0, 0, false);
   };
-  const press = (event) => {
+  const press = event => {
     down = true;
     canvas.setPointerCapture?.(event.pointerId);
     move(event);

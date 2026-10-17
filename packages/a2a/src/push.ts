@@ -29,16 +29,13 @@ export function verifyPushAuthorization(
   expected: AuthenticationInfo,
 ): boolean {
   const received =
-    headers instanceof Headers
-      ? headers.get("authorization")
-      : (headers.authorization ?? headers.Authorization);
+    headers instanceof Headers ? headers.get("authorization") : (headers.authorization ?? headers.Authorization);
   if (!received) return false;
   const space = received.indexOf(" ");
   if (space < 0) return false;
   const scheme = received.slice(0, space);
   const credentials = received.slice(space + 1).trim();
   return (
-    scheme.toLowerCase() === expected.scheme.toLowerCase() &&
-    constantTimeEqual(credentials, expected.credentials ?? "")
+    scheme.toLowerCase() === expected.scheme.toLowerCase() && constantTimeEqual(credentials, expected.credentials ?? "")
   );
 }

@@ -28,15 +28,7 @@ import type Editor from "../engine/editor";
 // with an editable-element guard, so the user can fly without
 // clicking the canvas first to give it focus.
 
-const EDITABLE_INPUT_TYPES = new Set([
-  "text",
-  "search",
-  "email",
-  "password",
-  "number",
-  "url",
-  "tel",
-]);
+const EDITABLE_INPUT_TYPES = new Set(["text", "search", "email", "password", "number", "url", "tel"]);
 
 const isEventFromEditableElement = (event: KeyboardEvent): boolean => {
   const target = event.target;
@@ -75,14 +67,9 @@ const movementSpeedForEvent = (e: KeyboardEvent): number => {
   return BASE_MOVEMENT_SPEED;
 };
 
-export const useFreeCam = (
-  canvas: HTMLCanvasElement | null,
-  editor: Editor | null,
-) => {
+export const useFreeCam = (canvas: HTMLCanvasElement | null, editor: Editor | null) => {
   const stateRef = useRef<FreeCamControlState>(createFreeCamControlState());
-  const dragRef = useRef<{ x: number; y: number; pointerId: number } | null>(
-    null,
-  );
+  const dragRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
 
   // Resolve camera bindings into `code → slot` lookups. Recomputed (new identity)
   // only when the preset/overrides change, which re-attaches the key listeners.
@@ -195,16 +182,8 @@ export const useFreeCam = (
       if (Math.abs(dx) + Math.abs(dy) === 0) return;
 
       const pan = panFromDrag(dx, dy, state.movementSpeed);
-      state.velocity.x = MathUtils.lerp(
-        state.velocity.x,
-        pan.x,
-        state.smoothing,
-      );
-      state.velocity.y = MathUtils.lerp(
-        state.velocity.y,
-        pan.y,
-        state.smoothing,
-      );
+      state.velocity.x = MathUtils.lerp(state.velocity.x, pan.x, state.smoothing);
+      state.velocity.y = MathUtils.lerp(state.velocity.y, pan.y, state.smoothing);
       camera.translateX(state.velocity.x);
       camera.translateY(state.velocity.y);
     };

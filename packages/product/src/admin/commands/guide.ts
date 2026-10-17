@@ -17,13 +17,9 @@ const command: Command = {
   name: "guide",
   summary: "Ouvrir le guide (1 page)",
   async run(_argv, ctx) {
-    const file = guideCandidates(ctx).find((candidate) =>
-      existsSync(candidate),
-    );
+    const file = guideCandidates(ctx).find(candidate => existsSync(candidate));
     if (!file) {
-      ctx.ui.say(
-        "Le guide n'est pas à côté du programme. Demande-le à l'équipe (« omar-guide »).",
-      );
+      ctx.ui.say("Le guide n'est pas à côté du programme. Demande-le à l'équipe (« omar-guide »).");
       return 1;
     }
     if (ctx.sys.platform === "win32")

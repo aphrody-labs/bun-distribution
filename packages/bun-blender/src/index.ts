@@ -1,13 +1,6 @@
 export * from "./types.ts";
 export { findBlender, requireBlender } from "./discover.ts";
-export {
-  evalPython,
-  info,
-  jsonPython,
-  render,
-  runBlender,
-  runScript,
-} from "./headless.ts";
+export { evalPython, info, jsonPython, render, runBlender, runScript } from "./headless.ts";
 export { blenderPlugin, registerBlenderPlugin } from "./plugin.ts";
 export { liveAvailable, sendLive, type LiveReply } from "./bridge.ts";
 export { exec, openPython, pythonVersion, type BlenderPython } from "./ffi.ts";

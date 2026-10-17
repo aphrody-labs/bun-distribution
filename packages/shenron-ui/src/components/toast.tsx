@@ -9,10 +9,7 @@ import { cn } from "../lib/utils";
 const ToastProvider = ToastPrimitive.Provider;
 const ToastPortal = ToastPrimitive.Portal;
 
-function ToastViewport({
-  className,
-  ...props
-}: React.ComponentProps<typeof ToastPrimitive.Viewport>) {
+function ToastViewport({ className, ...props }: React.ComponentProps<typeof ToastPrimitive.Viewport>) {
   return (
     <ToastPortal>
       <ToastPrimitive.Viewport
@@ -40,12 +37,9 @@ function ToastRoot({
   const variants = {
     scouter:
       "border-2 border-green-500/80 bg-[#061408]/95 text-green-300 font-mono shadow-[0_0_15px_rgba(34,197,94,0.3)]",
-    shenron:
-      "border-2 border-black bg-[#0e0e14] text-gray-100 shadow-[4px_4px_0px_#000]",
-    warning:
-      "border-2 border-amber-500/90 bg-[#140e06] text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.3)]",
-    danger:
-      "border-2 border-red-600 bg-[#160608] text-red-200 shadow-[0_0_15px_rgba(220,38,38,0.3)]",
+    shenron: "border-2 border-black bg-[#0e0e14] text-gray-100 shadow-[4px_4px_0px_#000]",
+    warning: "border-2 border-amber-500/90 bg-[#140e06] text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.3)]",
+    danger: "border-2 border-red-600 bg-[#160608] text-red-200 shadow-[0_0_15px_rgba(220,38,38,0.3)]",
   };
 
   return (
@@ -72,34 +66,14 @@ function ToastRoot({
   );
 }
 
-function ToastTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof ToastPrimitive.Title>) {
+function ToastTitle({ className, ...props }: React.ComponentProps<typeof ToastPrimitive.Title>) {
+  return <ToastPrimitive.Title className={cn("text-xs font-bold uppercase tracking-wider", className)} {...props} />;
+}
+
+function ToastDescription({ className, ...props }: React.ComponentProps<typeof ToastPrimitive.Description>) {
   return (
-    <ToastPrimitive.Title
-      className={cn("text-xs font-bold uppercase tracking-wider", className)}
-      {...props}
-    />
+    <ToastPrimitive.Description className={cn("text-xs leading-relaxed opacity-90 font-sans", className)} {...props} />
   );
 }
 
-function ToastDescription({
-  className,
-  ...props
-}: React.ComponentProps<typeof ToastPrimitive.Description>) {
-  return (
-    <ToastPrimitive.Description
-      className={cn("text-xs leading-relaxed opacity-90 font-sans", className)}
-      {...props}
-    />
-  );
-}
-
-export {
-  ToastProvider,
-  ToastViewport,
-  ToastRoot,
-  ToastTitle,
-  ToastDescription,
-};
+export { ToastProvider, ToastViewport, ToastRoot, ToastTitle, ToastDescription };

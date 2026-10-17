@@ -23,11 +23,9 @@ export class DiagnosticsManager {
 
   getActive(options?: { scope?: string }): ReadonlyArray<DiagnosticDefinition> {
     const candidates =
-      options?.scope !== undefined
-        ? this.registrations.filter((r) => r.scope === options.scope)
-        : this.registrations;
+      options?.scope !== undefined ? this.registrations.filter(r => r.scope === options.scope) : this.registrations;
 
-    return candidates.filter((r) => r.check(this.editor));
+    return candidates.filter(r => r.check(this.editor));
   }
 
   subscribe(listener: () => void): () => void {
@@ -36,7 +34,7 @@ export class DiagnosticsManager {
   }
 
   notify(): void {
-    this.listeners.forEach((listener) => {
+    this.listeners.forEach(listener => {
       listener();
     });
   }

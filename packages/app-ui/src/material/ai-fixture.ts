@@ -40,23 +40,18 @@ function fixtureEvents(prompt: string): BaseEvent[] {
       }),
     },
     { type: EventType.TEXT_MESSAGE_START, messageId, role: "assistant" },
-    ...response
-      .match(/.{1,12}/g)!
-      .map((delta) => ({
-        type: EventType.TEXT_MESSAGE_CONTENT,
-        messageId,
-        delta,
-      })),
+    ...response.match(/.{1,12}/g)!.map(delta => ({
+      type: EventType.TEXT_MESSAGE_CONTENT,
+      messageId,
+      delta,
+    })),
     { type: EventType.TEXT_MESSAGE_END, messageId },
     { type: EventType.RUN_FINISHED, threadId: "material-fixture", runId },
   ] as BaseEvent[];
 }
 
 /** SSE body of the fixture for `prompt`, one event per tick; `signal` aborts the producer. */
-export function fixtureStream(
-  prompt: string,
-  signal: AbortSignal,
-): ReadableStream<Uint8Array> {
+export function fixtureStream(prompt: string, signal: AbortSignal): ReadableStream<Uint8Array> {
   const encoder = new EventEncoder();
   const events = fixtureEvents(prompt);
   let timer: ReturnType<typeof setInterval> | undefined;
@@ -78,9 +73,7 @@ export function fixtureStream(
       };
       signal.addEventListener("abort", abort, { once: true });
       timer = setInterval(() => {
-        controller.enqueue(
-          new TextEncoder().encode(encoder.encodeSSE(events[index++])),
-        );
+        controller.enqueue(new TextEncoder().encode(encoder.encodeSSE(events[index++])));
         if (index === events.length) {
           cleanup();
           controller.close();

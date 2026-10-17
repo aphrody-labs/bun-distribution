@@ -3,11 +3,26 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** compstui.dll!CommonPropertySheetUIA */
-  CommonPropertySheetUIA(hWndOwner: Win32Pointer, pfnPropSheetUI: Win32Callback, lParam: number | bigint, pResult: Win32Pointer): number;
+  CommonPropertySheetUIA(
+    hWndOwner: Win32Pointer,
+    pfnPropSheetUI: Win32Callback,
+    lParam: number | bigint,
+    pResult: Win32Pointer,
+  ): number;
   /** compstui.dll!CommonPropertySheetUIW */
-  CommonPropertySheetUIW(hWndOwner: Win32Pointer, pfnPropSheetUI: Win32Callback, lParam: number | bigint, pResult: Win32Pointer): number;
+  CommonPropertySheetUIW(
+    hWndOwner: Win32Pointer,
+    pfnPropSheetUI: Win32Callback,
+    lParam: number | bigint,
+    pResult: Win32Pointer,
+  ): number;
   /** compstui.dll!CommonPropertySheetUIW */
-  CommonPropertySheetUI(hWndOwner: Win32Pointer, pfnPropSheetUI: Win32Callback, lParam: number | bigint, pResult: Win32Pointer): number;
+  CommonPropertySheetUI(
+    hWndOwner: Win32Pointer,
+    pfnPropSheetUI: Win32Callback,
+    lParam: number | bigint,
+    pResult: Win32Pointer,
+  ): number;
   /** compstui.dll!GetCPSUIUserData */
   GetCPSUIUserData(hDlg: Win32Pointer): number | bigint;
   /** compstui.dll!SetCPSUIUserData */

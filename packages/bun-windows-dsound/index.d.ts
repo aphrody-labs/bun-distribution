@@ -23,7 +23,18 @@ interface Functions {
   /** dsound.dll!DirectSoundEnumerateW */
   DirectSoundEnumerate(pDSEnumCallback: Win32Callback, pContext: Win32Pointer): number;
   /** dsound.dll!DirectSoundFullDuplexCreate */
-  DirectSoundFullDuplexCreate(pcGuidCaptureDevice: Win32Pointer, pcGuidRenderDevice: Win32Pointer, pcDSCBufferDesc: Win32Pointer, pcDSBufferDesc: Win32Pointer, hWnd: Win32Pointer, dwLevel: number, ppDSFD: Win32Pointer, ppDSCBuffer8: Win32Pointer, ppDSBuffer8: Win32Pointer, pUnkOuter: Win32Pointer): number;
+  DirectSoundFullDuplexCreate(
+    pcGuidCaptureDevice: Win32Pointer,
+    pcGuidRenderDevice: Win32Pointer,
+    pcDSCBufferDesc: Win32Pointer,
+    pcDSBufferDesc: Win32Pointer,
+    hWnd: Win32Pointer,
+    dwLevel: number,
+    ppDSFD: Win32Pointer,
+    ppDSCBuffer8: Win32Pointer,
+    ppDSBuffer8: Win32Pointer,
+    pUnkOuter: Win32Pointer,
+  ): number;
   /** dsound.dll!GetDeviceID */
   GetDeviceID(pGuidSrc: Win32Pointer, pGuidDest: Win32Pointer): number;
 }

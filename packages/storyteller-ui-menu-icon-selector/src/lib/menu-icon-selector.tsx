@@ -31,7 +31,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
   disabled,
   disabledMessage,
 }) => {
-  const selectedIndex = menuItems.findIndex((item) => item.id === activeMenu);
+  const selectedIndex = menuItems.findIndex(item => item.id === activeMenu);
   const [hoveredIndex, setHoveredIndex] = useState<number>(-1);
   const itemsRef = useRef<(HTMLButtonElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -40,11 +40,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
 
   // Animate active background
   useLayoutEffect(() => {
-    if (
-      selectedIndex >= 0 &&
-      itemsRef.current[selectedIndex] &&
-      containerRef.current
-    ) {
+    if (selectedIndex >= 0 && itemsRef.current[selectedIndex] && containerRef.current) {
       const current = itemsRef.current[selectedIndex];
       const containerRect = containerRef.current.getBoundingClientRect();
       const currentRect = current!.getBoundingClientRect();
@@ -57,11 +53,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
 
   // Animate hover background
   useLayoutEffect(() => {
-    if (
-      hoveredIndex >= 0 &&
-      itemsRef.current[hoveredIndex] &&
-      containerRef.current
-    ) {
+    if (hoveredIndex >= 0 && itemsRef.current[hoveredIndex] && containerRef.current) {
       const current = itemsRef.current[hoveredIndex];
       const containerRect = containerRef.current.getBoundingClientRect();
       const currentRect = current!.getBoundingClientRect();
@@ -120,9 +112,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
           const interactive = item.tooltipInteractive ?? false;
           const position = item.tooltipPosition ?? "bottom";
           const imageSrc = item.tooltipContent ? undefined : item.imageSrc;
-          const description = item.tooltipContent
-            ? undefined
-            : item.description;
+          const description = item.tooltipContent ? undefined : item.description;
           return (
             <Tooltip
               // Include activeMenu in the key so the tooltip subtree remounts on
@@ -141,7 +131,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
               description={description || undefined}
             >
               <button
-                ref={(el) => {
+                ref={el => {
                   itemsRef.current[idx] = el;
                 }}
                 disabled={disabled}
@@ -149,9 +139,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
                 onMouseEnter={() => setHoveredIndex(idx)}
                 className={twMerge(
                   "relative z-30 flex flex-col items-center justify-center px-3 py-2 rounded-[2px] transition-colors duration-150",
-                  idx === selectedIndex
-                    ? "text-base-fg"
-                    : "text-base-fg/70 hover:text-base-fg",
+                  idx === selectedIndex ? "text-base-fg" : "text-base-fg/70 hover:text-base-fg",
                   disabled ? "cursor-not-allowed opacity-60" : "",
                 )}
                 tabIndex={0}
@@ -169,11 +157,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
   return (
     <>
       {disabled && disabledMessage ? (
-        <Tooltip
-          content={disabledMessage}
-          position="bottom"
-          className="bg-transparent border-none"
-        >
+        <Tooltip content={disabledMessage} position="bottom" className="bg-transparent border-none">
           {MenuGroupElement}
         </Tooltip>
       ) : (

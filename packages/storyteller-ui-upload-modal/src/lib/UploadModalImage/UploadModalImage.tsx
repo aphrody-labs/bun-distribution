@@ -12,10 +12,7 @@ import {
   initialUploaderState,
 } from "../Types";
 import type { LucideIcon } from "lucide-react";
-import {
-  galleryModalVisibleViewMode,
-  galleryModalVisibleDuringDrag,
-} from "@storyteller/ui-gallery-modal";
+import { galleryModalVisibleViewMode, galleryModalVisibleDuringDrag } from "@storyteller/ui-gallery-modal";
 
 interface Props {
   onClose: () => void;
@@ -30,8 +27,7 @@ const imageFileTypes = Object.values(IMAGEPLANE_FILE_TYPE);
 
 export function UploadModalImage(props: Props) {
   const { isOpen, onClose, onSuccess, title, titleIcon, initialFiles } = props;
-  const [uploaderState, setUploaderState] =
-    useState<UploaderState>(initialUploaderState);
+  const [uploaderState, setUploaderState] = useState<UploaderState>(initialUploaderState);
 
   const selectedCategory = FilterEngineCategories.IMAGE_PLANE;
 
@@ -71,9 +67,7 @@ export function UploadModalImage(props: Props) {
           <>
             <LoadingDots className="mb-1 bg-transparent" />
             <div className="w-100 text-center opacity-50">
-              {p && p.total > 1
-                ? `Uploading ${p.current} / ${p.total}...`
-                : "Uploading..."}
+              {p && p.total > 1 ? `Uploading ${p.current} / ${p.total}...` : "Uploading..."}
             </div>
           </>
         );
@@ -121,14 +115,7 @@ export function UploadModalImage(props: Props) {
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      titleIcon={titleIcon}
-      title={title}
-      className="max-w-xl"
-      showClose={true}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} titleIcon={titleIcon} title={title} className="max-w-xl" showClose={true}>
       {/* Inline call — `<Comp />` would be a fresh component reference each render, remounting the dropzone mid-click and breaking the file picker. */}
       {UploaderModalContent()}
     </Modal>

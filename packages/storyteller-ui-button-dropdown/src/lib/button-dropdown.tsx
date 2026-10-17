@@ -45,9 +45,7 @@ export const ButtonDropdown = ({
   showSelected,
 }: ButtonDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(
-    null,
-  );
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
 
   const closeModal = () => {
     setIsOpen(false);
@@ -70,21 +68,13 @@ export const ButtonDropdown = ({
     }
   };
 
-  const currentDialogProps =
-    selectedOptionIndex !== null
-      ? options[selectedOptionIndex]?.dialogProps
-      : null;
+  const currentDialogProps = selectedOptionIndex !== null ? options[selectedOptionIndex]?.dialogProps : null;
 
   return (
     <div className="relative">
       <Menu as="div" className="inline-block text-left">
         <Menu.Button as="div">
-          <Button
-            className={className}
-            icon={ChevronDownIcon}
-            iconFlip={true}
-            variant="secondary"
-          >
+          <Button className={className} icon={ChevronDownIcon} iconFlip={true} variant="secondary">
             {icon ? <DynamicIcon icon={icon} /> : null}
             {label}
           </Button>
@@ -108,9 +98,7 @@ export const ButtonDropdown = ({
             <div>
               {options.map((option, index) => (
                 <Fragment key={index}>
-                  {option.divider && (
-                    <div className="my-1.5 border-t border-white/15" />
-                  )}
+                  {option.divider && <div className="my-1.5 border-t border-white/15" />}
                   <Menu.Item>
                     {({ active }) => (
                       <button
@@ -118,21 +106,14 @@ export const ButtonDropdown = ({
                         className={twMerge(
                           "rounded-[3px] bg-transparent font-medium text-base-fg transition-colors duration-150",
                           active ? "bg-white/10" : "",
-                          option.disabled
-                            ? "pointer-events-none opacity-40"
-                            : "",
+                          option.disabled ? "pointer-events-none opacity-40" : "",
                           "group flex w-full items-center gap-2 px-2.5 py-2 text-sm",
                           option.className,
                         )}
                         onClick={() => handleOptionClick(index)}
                       >
                         <div className="flex w-full items-center">
-                          {option.icon && (
-                            <DynamicIcon
-                              icon={option.icon}
-                              className="mr-2 h-4 w-4 shrink-0"
-                            />
-                          )}
+                          {option.icon && <DynamicIcon icon={option.icon} className="mr-2 h-4 w-4 shrink-0" />}
                           <div className="grow text-start">{option.label}</div>
                           <div className="ml-6 font-mono text-[11px] font-normal text-white/45">
                             {option.description}
@@ -140,11 +121,7 @@ export const ButtonDropdown = ({
                           {showSelected && (
                             <>
                               {option.selected ? (
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 512 512"
-                                  className="ml-3 flex h-5"
-                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="ml-3 flex h-5">
                                   <path
                                     opacity="1"
                                     d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c-9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"
@@ -181,21 +158,16 @@ export const ButtonDropdown = ({
           {currentDialogProps.content}
 
           <div className="mt-6 flex justify-end gap-2">
-            {currentDialogProps.showClose !== false &&
-              currentDialogProps.closeButtonProps && (
-                <Button
-                  variant="secondary"
-                  {...currentDialogProps.closeButtonProps}
-                  onClick={closeModal}
-                >
-                  {currentDialogProps.closeButtonProps.label}
-                </Button>
-              )}
+            {currentDialogProps.showClose !== false && currentDialogProps.closeButtonProps && (
+              <Button variant="secondary" {...currentDialogProps.closeButtonProps} onClick={closeModal}>
+                {currentDialogProps.closeButtonProps.label}
+              </Button>
+            )}
 
             {currentDialogProps.confirmButtonProps && (
               <Button
                 {...currentDialogProps.confirmButtonProps}
-                onClick={(e) => {
+                onClick={e => {
                   if (currentDialogProps.confirmButtonProps?.onClick) {
                     currentDialogProps.confirmButtonProps?.onClick(e);
                   }

@@ -14,15 +14,12 @@ export const formatTimecodeFrames = (seconds: number, fps: number): string => {
   const totalFrames = Math.round(Math.max(0, seconds) * fps);
   const totalSeconds = Math.floor(totalFrames / fps);
   const frames = totalFrames % fps;
-  return `${formatTimecode(totalSeconds)}:${frames
-    .toString()
-    .padStart(2, "0")}`;
+  return `${formatTimecode(totalSeconds)}:${frames.toString().padStart(2, "0")}`;
 };
 
 // Quantize a scrubbed/dragged time to the timeline's frame grid so the
 // playhead and keyframes land on frame boundaries, not arbitrary floats.
-export const quantizeToFrame = (seconds: number, fps: number): number =>
-  Math.round(seconds * fps) / fps;
+export const quantizeToFrame = (seconds: number, fps: number): number => Math.round(seconds * fps) / fps;
 
 // Position (0..1) of a time within [0, duration].
 export const timeToFraction = (time: number, duration: number): number =>

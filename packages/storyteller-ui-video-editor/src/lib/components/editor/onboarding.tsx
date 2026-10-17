@@ -13,11 +13,7 @@ function useLocalStorage<T>({
 }: {
   key: string;
   defaultValue: T;
-}): [
-  T,
-  ({ value }: { value: T | ((previousValue: T) => T) }) => void,
-  boolean,
-] {
+}): [T, ({ value }: { value: T | ((previousValue: T) => T) }) => void, boolean] {
   const [value, setValue] = useState<T>(defaultValue);
   const [isReady, setIsReady] = useState(false);
   const valueRef = useRef(defaultValue);
@@ -48,18 +44,13 @@ function useLocalStorage<T>({
     }
   }, [key, value, isReady]);
 
-  const setValueWithCallback = useCallback(
-    ({ value: nextValue }: { value: T | ((previousValue: T) => T) }) => {
-      const resolvedValue =
-        typeof nextValue === "function"
-          ? (nextValue as (previousValue: T) => T)(valueRef.current)
-          : nextValue;
+  const setValueWithCallback = useCallback(({ value: nextValue }: { value: T | ((previousValue: T) => T) }) => {
+    const resolvedValue =
+      typeof nextValue === "function" ? (nextValue as (previousValue: T) => T)(valueRef.current) : nextValue;
 
-      valueRef.current = resolvedValue;
-      setValue(resolvedValue);
-    },
-    [],
-  );
+    valueRef.current = resolvedValue;
+    setValue(resolvedValue);
+  }, []);
 
   return [value, setValueWithCallback, isReady];
 }
@@ -156,13 +147,7 @@ function Description({ description }: { description: string }) {
   );
 }
 
-function NextButton({
-  children,
-  onClick,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-}) {
+function NextButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
   return (
     <Button onClick={onClick} variant="default" className="w-full">
       {children}

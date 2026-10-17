@@ -59,12 +59,7 @@ export interface BoardColorItem extends BoardItemBase {
   color: string;
 }
 
-export type BoardItem =
-  | BoardImageItem
-  | BoardVideoItem
-  | BoardTextItem
-  | BoardLinkItem
-  | BoardColorItem;
+export type BoardItem = BoardImageItem | BoardVideoItem | BoardTextItem | BoardLinkItem | BoardColorItem;
 
 export interface BoardSection {
   id: string;

@@ -15,8 +15,7 @@ export const defaultTutorials: TutorialItem[] = [
   {
     id: "turn-images-into-objects",
     title: "Turn Images into 3D Objects",
-    thumbnailUrl:
-      "/resources/images/tutorial-thumbnails/Turn_Images_Into_Objects.jpg",
+    thumbnailUrl: "/resources/images/tutorial-thumbnails/Turn_Images_Into_Objects.jpg",
     videoUrl: "https://youtu.be/t8F-sy_zyK4?si=P8lSzuiwSgdRttKa",
     category: TutorialCategory.Editor3D,
   },

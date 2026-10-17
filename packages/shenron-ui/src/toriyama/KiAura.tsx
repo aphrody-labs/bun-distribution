@@ -100,13 +100,7 @@ export function KiAura({
 
       {/* Crackling lightning sparks */}
       {sparks && (
-        <g
-          stroke={c.spark}
-          strokeWidth="1.6"
-          strokeLinecap="square"
-          fill="none"
-          opacity="0.9"
-        >
+        <g stroke={c.spark} strokeWidth="1.6" strokeLinecap="square" fill="none" opacity="0.9">
           <path d="M 40 28 L 44 36 L 40 40 L 46 48" />
           <path d="M 64 55 L 58 64 L 63 68 L 57 76" />
           <path d="M 28 58 L 34 62 L 31 69" />

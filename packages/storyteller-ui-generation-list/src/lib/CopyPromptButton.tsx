@@ -7,13 +7,7 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 // right of a row's prompt line. Shared by the completed / pending / failed
 // rows. stopPropagation keeps a tap from also triggering the row's onClick.
 // Hosts surface success/failure feedback (e.g. a toast) via `onCopyResult`.
-export function CopyPromptButton({
-  text,
-  onCopyResult,
-}: {
-  text: string;
-  onCopyResult?: (success: boolean) => void;
-}) {
+export function CopyPromptButton({ text, onCopyResult }: { text: string; onCopyResult?: (success: boolean) => void }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(

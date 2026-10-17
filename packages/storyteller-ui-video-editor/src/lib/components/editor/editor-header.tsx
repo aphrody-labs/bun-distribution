@@ -31,10 +31,7 @@ export interface EditorHeaderProps {
   exitTo?: string;
 }
 
-export function EditorHeader({
-  endSlot,
-  exitTo = "/projects",
-}: EditorHeaderProps) {
+export function EditorHeader({ endSlot, exitTo = "/projects" }: EditorHeaderProps) {
   return (
     <header className="bg-background flex h-[3.4rem] items-center justify-between px-3 pt-0.5">
       <div className="flex items-center gap-1">
@@ -66,13 +63,11 @@ function CurrentUserBadge() {
 }
 
 function ProjectDropdown({ exitTo }: { exitTo: string }) {
-  const [openDialog, setOpenDialog] = useState<
-    "delete" | "rename" | "shortcuts" | null
-  >(null);
+  const [openDialog, setOpenDialog] = useState<"delete" | "rename" | "shortcuts" | null>(null);
   const [isExiting, setIsExiting] = useState(false);
   const navigate = useNavigate();
   const editor = useEditor();
-  const activeProject = useEditor((e) => e.project.getActive());
+  const activeProject = useEditor(e => e.project.getActive());
   const { toast } = useEditorAdapters();
 
   const handleExit = async () => {
@@ -90,11 +85,7 @@ function ProjectDropdown({ exitTo }: { exitTo: string }) {
   };
 
   const handleSaveProjectName = async (newName: string) => {
-    if (
-      activeProject &&
-      newName.trim() &&
-      newName !== activeProject.metadata.name
-    ) {
+    if (activeProject && newName.trim() && newName !== activeProject.metadata.name) {
       try {
         await editor.project.renameProject({
           id: activeProject.metadata.id,
@@ -102,8 +93,7 @@ function ProjectDropdown({ exitTo }: { exitTo: string }) {
         });
       } catch (error) {
         toast.error("Failed to rename project", {
-          description:
-            error instanceof Error ? error.message : "Please try again",
+          description: error instanceof Error ? error.message : "Please try again",
         });
       } finally {
         setOpenDialog(null);
@@ -120,8 +110,7 @@ function ProjectDropdown({ exitTo }: { exitTo: string }) {
         navigate(exitTo);
       } catch (error) {
         toast.error("Failed to delete project", {
-          description:
-            error instanceof Error ? error.message : "Please try again",
+          description: error instanceof Error ? error.message : "Please try again",
         });
       } finally {
         setOpenDialog(null);
@@ -134,25 +123,15 @@ function ProjectDropdown({ exitTo }: { exitTo: string }) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="p-1 rounded-sm size-8">
-            <div
-              aria-label="Project menu"
-              className="size-5 rounded-sm bg-foreground/80"
-            />
+            <div aria-label="Project menu" className="size-5 rounded-sm bg-foreground/80" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="z-100 w-44">
-          <DropdownMenuItem
-            onClick={handleExit}
-            disabled={isExiting}
-            icon={<HugeiconsIcon icon={Logout05Icon} />}
-          >
+          <DropdownMenuItem onClick={handleExit} disabled={isExiting} icon={<HugeiconsIcon icon={Logout05Icon} />}>
             Exit project
           </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() => setOpenDialog("shortcuts")}
-            icon={<HugeiconsIcon icon={CommandIcon} />}
-          >
+          <DropdownMenuItem onClick={() => setOpenDialog("shortcuts")} icon={<HugeiconsIcon icon={CommandIcon} />}>
             Shortcuts
           </DropdownMenuItem>
 
@@ -161,19 +140,19 @@ function ProjectDropdown({ exitTo }: { exitTo: string }) {
       </DropdownMenu>
       <RenameProjectDialog
         isOpen={openDialog === "rename"}
-        onOpenChange={(isOpen) => setOpenDialog(isOpen ? "rename" : null)}
-        onConfirm={(newName) => handleSaveProjectName(newName)}
+        onOpenChange={isOpen => setOpenDialog(isOpen ? "rename" : null)}
+        onConfirm={newName => handleSaveProjectName(newName)}
         projectName={activeProject?.metadata.name || ""}
       />
       <DeleteProjectDialog
         isOpen={openDialog === "delete"}
-        onOpenChange={(isOpen) => setOpenDialog(isOpen ? "delete" : null)}
+        onOpenChange={isOpen => setOpenDialog(isOpen ? "delete" : null)}
         onConfirm={handleDeleteProject}
         projectNames={[activeProject?.metadata.name || ""]}
       />
       <ShortcutsDialog
         isOpen={openDialog === "shortcuts"}
-        onOpenChange={(isOpen) => setOpenDialog(isOpen ? "shortcuts" : null)}
+        onOpenChange={isOpen => setOpenDialog(isOpen ? "shortcuts" : null)}
       />
     </>
   );
@@ -181,7 +160,7 @@ function ProjectDropdown({ exitTo }: { exitTo: string }) {
 
 function EditableProjectName() {
   const editor = useEditor();
-  const activeProject = useEditor((e) => e.project.getActive());
+  const activeProject = useEditor(e => e.project.getActive());
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const originalNameRef = useRef("");
@@ -217,8 +196,7 @@ function EditableProjectName() {
         });
       } catch (error) {
         toast.error("Failed to rename project", {
-          description:
-            error instanceof Error ? error.message : "Please try again",
+          description: error instanceof Error ? error.message : "Please try again",
         });
       }
     }

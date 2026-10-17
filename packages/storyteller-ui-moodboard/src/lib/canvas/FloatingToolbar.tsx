@@ -8,10 +8,7 @@ interface FloatingToolbarProps {
 
 // Canvas top bar — the same glass island as the Grid toolbar (ToolbarShell),
 // centered and detached from the top edge.
-export const FloatingToolbar = ({
-  children,
-  className,
-}: FloatingToolbarProps) => (
+export const FloatingToolbar = ({ children, className }: FloatingToolbarProps) => (
   <div className="pointer-events-none flex w-full justify-center pt-3">
     <ToolbarShell className={className}>{children}</ToolbarShell>
   </div>

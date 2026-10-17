@@ -4,10 +4,7 @@ import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { PendingCard } from "./PendingCard";
 import { FailedCard } from "./FailedCard";
 import { GalleryCard } from "./GalleryCard";
-import {
-  useMergedGalleryEntries,
-  useInfiniteScrollSentinel,
-} from "./useGalleryEntries";
+import { useMergedGalleryEntries, useInfiniteScrollSentinel } from "./useGalleryEntries";
 import { usePrompts } from "./prompts-cache";
 import { useMediaPromptTokens } from "./media-prompt-token-cache";
 import type { RecreateSlotContext } from "./GenerationListView";
@@ -44,10 +41,7 @@ export interface GenerationGridViewProps {
   /** Per-card "Recreate" affordance for pending/failed cards. */
   renderRecreate?: (ctx: RecreateSlotContext) => ReactNode;
   /** Per-card hover quick-action cluster for completed cards. */
-  renderGalleryActions?: (
-    item: GalleryItem,
-    ctx: { modelId?: string; promptToken?: string },
-  ) => ReactNode;
+  renderGalleryActions?: (item: GalleryItem, ctx: { modelId?: string; promptToken?: string }) => ReactNode;
   /** Multi-select mode for completed cards (pending/failed cards are never
    *  selectable). See useGallerySelectionStore for the shared state. */
   selectionMode?: boolean;
@@ -91,18 +85,12 @@ export function GenerationGridView({
   // (media token → prompt token → prompt text) are batched + cached.
   const audioMediaTokensNeedingPrompt = useMemo(
     () =>
-      mergedEntries.flatMap((entry) =>
-        entry.kind === "gallery" &&
-        entry.item.mediaClass === "audio" &&
-        !entry.item.promptToken
-          ? [entry.item.id]
-          : [],
+      mergedEntries.flatMap(entry =>
+        entry.kind === "gallery" && entry.item.mediaClass === "audio" && !entry.item.promptToken ? [entry.item.id] : [],
       ),
     [mergedEntries],
   );
-  const resolvedPromptTokens = useMediaPromptTokens(
-    audioMediaTokensNeedingPrompt,
-  );
+  const resolvedPromptTokens = useMediaPromptTokens(audioMediaTokensNeedingPrompt);
 
   const audioPromptTokens = useMemo(() => {
     const tokens: string[] = [];
@@ -110,8 +98,7 @@ export function GenerationGridView({
       if (entry.kind !== "gallery" || entry.item.mediaClass !== "audio") {
         continue;
       }
-      const token =
-        entry.item.promptToken || resolvedPromptTokens.get(entry.item.id);
+      const token = entry.item.promptToken || resolvedPromptTokens.get(entry.item.id);
       if (token) tokens.push(token);
     }
     return tokens;
@@ -122,10 +109,7 @@ export function GenerationGridView({
     (item: GalleryItem): string | undefined => {
       if (item.mediaClass !== "audio") return undefined;
       const token = item.promptToken || resolvedPromptTokens.get(item.id);
-      return (
-        (token ? promptsMap.get(token)?.maybe_positive_prompt : undefined) ||
-        undefined
-      );
+      return (token ? promptsMap.get(token)?.maybe_positive_prompt : undefined) || undefined;
     },
     [resolvedPromptTokens, promptsMap],
   );
@@ -140,12 +124,8 @@ export function GenerationGridView({
 
   return (
     <>
-      <Masonry
-        breakpointCols={BREAKPOINT_COLS}
-        className={MASONRY_CLASS}
-        columnClassName={COLUMN_CLASS}
-      >
-        {mergedEntries.map((entry) => (
+      <Masonry breakpointCols={BREAKPOINT_COLS} className={MASONRY_CLASS} columnClassName={COLUMN_CLASS}>
+        {mergedEntries.map(entry => (
           <div key={entry.key} className="mb-[8px]">
             {entry.kind === "pending" && (
               <PendingCard

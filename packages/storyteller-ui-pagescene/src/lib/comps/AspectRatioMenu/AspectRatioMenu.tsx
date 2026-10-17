@@ -39,20 +39,19 @@ const RATIO_OPTIONS: RatioOption[] = [
 ];
 
 export const AspectRatioMenu = () => {
-  const aspect = usePageSceneStore((s) => s.cameraAspectRatio);
+  const aspect = usePageSceneStore(s => s.cameraAspectRatio);
   const editor = useContext(EngineContext);
 
-  const current =
-    RATIO_OPTIONS.find((o) => o.ratio === aspect) ?? RATIO_OPTIONS[0];
+  const current = RATIO_OPTIONS.find(o => o.ratio === aspect) ?? RATIO_OPTIONS[0];
 
-  const items: PopoverItem[] = RATIO_OPTIONS.map((option) => ({
+  const items: PopoverItem[] = RATIO_OPTIONS.map(option => ({
     label: option.label,
     selected: option.ratio === aspect,
     icon: <AspectRatioIcon ratio={option.proportions} />,
   }));
 
   const handleSelect = (item: PopoverItem) => {
-    const option = RATIO_OPTIONS.find((o) => o.label === item.label);
+    const option = RATIO_OPTIONS.find(o => o.label === item.label);
     if (option && editor) setCameraAspect(editor, option.ratio);
   };
 

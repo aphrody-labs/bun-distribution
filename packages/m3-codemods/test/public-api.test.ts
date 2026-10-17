@@ -16,7 +16,5 @@ test("the consumer API reports unsupported semantics instead of hiding migration
     'import { Button } from "@mui/material"; export default () => <Button sx={{ padding: 4 }}>Save</Button>;',
   );
   expect(result.diagnostics.join(" ")).toContain("sx");
-  expect(() => transformSource("", "invalid" as never)).toThrow(
-    "unknown migration",
-  );
+  expect(() => transformSource("", "invalid" as never)).toThrow("unknown migration");
 });

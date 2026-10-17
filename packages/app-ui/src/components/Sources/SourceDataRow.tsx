@@ -26,33 +26,16 @@ function cleanPreview(text: string): string {
     .trim();
 }
 
-export function SourceDataRow({
-  title,
-  preview,
-  subtitle,
-  date,
-}: SourceDataRowProps) {
+export function SourceDataRow({ title, preview, subtitle, date }: SourceDataRowProps) {
   return (
     <div className="hover:bg-on-surface/8 flex min-w-0 flex-col gap-0.5 overflow-hidden rounded-small px-3 py-2.5 transition-colors">
       {/* Title row */}
       <div className="flex min-w-0 items-baseline gap-2">
-        <span className="text-on-surface min-w-0 flex-1 truncate text-body-medium">
-          {title}
-        </span>
-        {date && (
-          <span className="text-outline shrink-0 text-[11px]">
-            {formatDate(date)}
-          </span>
-        )}
+        <span className="text-on-surface min-w-0 flex-1 truncate text-body-medium">{title}</span>
+        {date && <span className="text-outline shrink-0 text-[11px]">{formatDate(date)}</span>}
       </div>
-      {subtitle && (
-        <p className="text-outline truncate text-body-small">{subtitle}</p>
-      )}
-      {preview && (
-        <p className="text-outline/70 truncate text-body-small">
-          {cleanPreview(preview)}
-        </p>
-      )}
+      {subtitle && <p className="text-outline truncate text-body-small">{subtitle}</p>}
+      {preview && <p className="text-outline/70 truncate text-body-small">{cleanPreview(preview)}</p>}
     </div>
   );
 }

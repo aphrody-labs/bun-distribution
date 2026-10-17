@@ -59,11 +59,11 @@ fn main() {
 Afterwards all the plugin's APIs are available through the JavaScript guest bindings:
 
 ```javascript
-import { exit, relaunch } from '@aphrody/plugin-process'
+import { exit, relaunch } from "@aphrody/plugin-process";
 // exit the app with the given status code
-await exit(0)
+await exit(0);
 // restart the app
-await relaunch()
+await relaunch();
 ```
 
 ## Contributing

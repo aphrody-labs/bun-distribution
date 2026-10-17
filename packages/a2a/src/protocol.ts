@@ -26,10 +26,7 @@ export const TERMINAL_TASK_STATES: readonly TaskState[] = [
 ];
 
 /** Task states waiting for the client (input or credentials). */
-export const INTERRUPTED_TASK_STATES: readonly TaskState[] = [
-  "TASK_STATE_INPUT_REQUIRED",
-  "TASK_STATE_AUTH_REQUIRED",
-];
+export const INTERRUPTED_TASK_STATES: readonly TaskState[] = ["TASK_STATE_INPUT_REQUIRED", "TASK_STATE_AUTH_REQUIRED"];
 
 export function isTerminalState(state: TaskState | undefined): boolean {
   return state !== undefined && TERMINAL_TASK_STATES.includes(state);
@@ -40,24 +37,14 @@ export function isInterruptedState(state: TaskState | undefined): boolean {
 }
 
 /** The single member present in a `StreamResponse` or `SendMessageResponse`. */
-export type StreamPayloadKind =
-  "task" | "message" | "statusUpdate" | "artifactUpdate";
+export type StreamPayloadKind = "task" | "message" | "statusUpdate" | "artifactUpdate";
 
-const PAYLOAD_KEYS: readonly StreamPayloadKind[] = [
-  "task",
-  "message",
-  "statusUpdate",
-  "artifactUpdate",
-];
+const PAYLOAD_KEYS: readonly StreamPayloadKind[] = ["task", "message", "statusUpdate", "artifactUpdate"];
 
 /** Which of the oneof members is set, or `undefined` when the object is not a stream payload. */
-export function streamPayloadKind(
-  value: unknown,
-): StreamPayloadKind | undefined {
+export function streamPayloadKind(value: unknown): StreamPayloadKind | undefined {
   if (typeof value !== "object" || value === null) return undefined;
-  const present = PAYLOAD_KEYS.filter(
-    (key) => (value as Record<string, unknown>)[key] !== undefined,
-  );
+  const present = PAYLOAD_KEYS.filter(key => (value as Record<string, unknown>)[key] !== undefined);
   return present.length === 1 ? present[0] : undefined;
 }
 

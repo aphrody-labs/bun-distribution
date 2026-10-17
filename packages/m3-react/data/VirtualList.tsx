@@ -43,17 +43,12 @@ export function VirtualList<T>(props: VirtualListProps<T>) {
     estimateSize: () => estimateSize,
     overscan,
     gap,
-    getItemKey: getKey ? (index) => getKey(items[index]!, index) : undefined,
+    getItemKey: getKey ? index => getKey(items[index]!, index) : undefined,
     initialRect: { width: 0, height },
   });
   const virtualItems = virtualizer.getVirtualItems();
   const last = virtualItems.at(-1);
-  if (
-    onEndReached &&
-    last &&
-    last.index === items.length - 1 &&
-    endReported.current !== items.length
-  ) {
+  if (onEndReached && last && last.index === items.length - 1 && endReported.current !== items.length) {
     endReported.current = items.length;
     queueMicrotask(onEndReached);
   }
@@ -83,7 +78,7 @@ export function VirtualList<T>(props: VirtualListProps<T>) {
           listStyle: "none",
         }}
       >
-        {virtualItems.map((item) => (
+        {virtualItems.map(item => (
           <li
             key={item.key}
             aria-setsize={items.length}

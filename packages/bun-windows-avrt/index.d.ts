@@ -7,13 +7,36 @@ interface Functions {
   /** avrt.dll!AvRevertMmThreadCharacteristics */
   AvRevertMmThreadCharacteristics(AvrtHandle: Win32StructInit): number;
   /** avrt.dll!AvRtCreateThreadOrderingGroup */
-  AvRtCreateThreadOrderingGroup(Context: Win32Pointer, Period: Win32Pointer, ThreadOrderingGuid: Win32Pointer, Timeout: Win32Pointer): number;
+  AvRtCreateThreadOrderingGroup(
+    Context: Win32Pointer,
+    Period: Win32Pointer,
+    ThreadOrderingGuid: Win32Pointer,
+    Timeout: Win32Pointer,
+  ): number;
   /** avrt.dll!AvRtCreateThreadOrderingGroupExA */
-  AvRtCreateThreadOrderingGroupExA(Context: Win32Pointer, Period: Win32Pointer, ThreadOrderingGuid: Win32Pointer, Timeout: Win32Pointer, TaskName: string | Win32Pointer): number;
+  AvRtCreateThreadOrderingGroupExA(
+    Context: Win32Pointer,
+    Period: Win32Pointer,
+    ThreadOrderingGuid: Win32Pointer,
+    Timeout: Win32Pointer,
+    TaskName: string | Win32Pointer,
+  ): number;
   /** avrt.dll!AvRtCreateThreadOrderingGroupExW */
-  AvRtCreateThreadOrderingGroupExW(Context: Win32Pointer, Period: Win32Pointer, ThreadOrderingGuid: Win32Pointer, Timeout: Win32Pointer, TaskName: string | Win32Pointer): number;
+  AvRtCreateThreadOrderingGroupExW(
+    Context: Win32Pointer,
+    Period: Win32Pointer,
+    ThreadOrderingGuid: Win32Pointer,
+    Timeout: Win32Pointer,
+    TaskName: string | Win32Pointer,
+  ): number;
   /** avrt.dll!AvRtCreateThreadOrderingGroupExW */
-  AvRtCreateThreadOrderingGroupEx(Context: Win32Pointer, Period: Win32Pointer, ThreadOrderingGuid: Win32Pointer, Timeout: Win32Pointer, TaskName: string | Win32Pointer): number;
+  AvRtCreateThreadOrderingGroupEx(
+    Context: Win32Pointer,
+    Period: Win32Pointer,
+    ThreadOrderingGuid: Win32Pointer,
+    Timeout: Win32Pointer,
+    TaskName: string | Win32Pointer,
+  ): number;
   /** avrt.dll!AvRtDeleteThreadOrderingGroup */
   AvRtDeleteThreadOrderingGroup(Context: Win32StructInit): number;
   /** avrt.dll!AvRtJoinThreadOrderingGroup */
@@ -23,11 +46,23 @@ interface Functions {
   /** avrt.dll!AvRtWaitOnThreadOrderingGroup */
   AvRtWaitOnThreadOrderingGroup(Context: Win32StructInit): number;
   /** avrt.dll!AvSetMmMaxThreadCharacteristicsA */
-  AvSetMmMaxThreadCharacteristicsA(FirstTask: string | Win32Pointer, SecondTask: string | Win32Pointer, TaskIndex: Win32Pointer): Win32Struct;
+  AvSetMmMaxThreadCharacteristicsA(
+    FirstTask: string | Win32Pointer,
+    SecondTask: string | Win32Pointer,
+    TaskIndex: Win32Pointer,
+  ): Win32Struct;
   /** avrt.dll!AvSetMmMaxThreadCharacteristicsW */
-  AvSetMmMaxThreadCharacteristicsW(FirstTask: string | Win32Pointer, SecondTask: string | Win32Pointer, TaskIndex: Win32Pointer): Win32Struct;
+  AvSetMmMaxThreadCharacteristicsW(
+    FirstTask: string | Win32Pointer,
+    SecondTask: string | Win32Pointer,
+    TaskIndex: Win32Pointer,
+  ): Win32Struct;
   /** avrt.dll!AvSetMmMaxThreadCharacteristicsW */
-  AvSetMmMaxThreadCharacteristics(FirstTask: string | Win32Pointer, SecondTask: string | Win32Pointer, TaskIndex: Win32Pointer): Win32Struct;
+  AvSetMmMaxThreadCharacteristics(
+    FirstTask: string | Win32Pointer,
+    SecondTask: string | Win32Pointer,
+    TaskIndex: Win32Pointer,
+  ): Win32Struct;
   /** avrt.dll!AvSetMmThreadCharacteristicsA */
   AvSetMmThreadCharacteristicsA(TaskName: string | Win32Pointer, TaskIndex: Win32Pointer): Win32Struct;
   /** avrt.dll!AvSetMmThreadCharacteristicsW */

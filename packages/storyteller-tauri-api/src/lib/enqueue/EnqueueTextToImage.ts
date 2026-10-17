@@ -1,11 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult } from "../common/CommandStatus";
-import {
-  CommonAspectRatio,
-  CommonResolution,
-  CommonQuality,
-  Model,
-} from "@storyteller/model-list";
+import { CommonAspectRatio, CommonResolution, CommonQuality, Model } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 export enum EnqueueTextToImageErrorType {
@@ -114,12 +109,9 @@ export interface EnqueueTextToImageSuccess extends CommandResult {
   payload: EnqueueTextToImagePayload;
 }
 
-export type EnqueueTextToImageResult =
-  EnqueueTextToImageSuccess | EnqueueTextToImageError;
+export type EnqueueTextToImageResult = EnqueueTextToImageSuccess | EnqueueTextToImageError;
 
-export const EnqueueTextToImage = async (
-  request: EnqueueTextToImageRequest,
-): Promise<EnqueueTextToImageResult> => {
+export const EnqueueTextToImage = async (request: EnqueueTextToImageRequest): Promise<EnqueueTextToImageResult> => {
   let modelName = undefined;
 
   if (request.model) {
@@ -132,9 +124,7 @@ export const EnqueueTextToImage = async (
   }
 
   if (!modelName) {
-    throw new Error(
-      "No model specified in request: " + JSON.stringify(request),
-    );
+    throw new Error("No model specified in request: " + JSON.stringify(request));
   }
 
   let mutableRequest: EnqueueTextToImageRawRequest = {

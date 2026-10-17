@@ -3,6 +3,12 @@
   "version": "1.4.4",
   "private": true,
   "description": "PostgreSQL partagé Shenron : schéma Drizzle, pool postgres-js (Next) et driver Bun.SQL (scripts, API), indépendant du framework",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
+    "directory": "packages/shenron-db"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -37,16 +43,14 @@
     "drizzle-orm": "catalog:",
     "postgres": "catalog:"
   },
+  "devDependencies": {
+    "@aphrody/bun-types": "catalog:",
+    "@aphrody/bun-workspace": "workspace:*"
+  },
   "engines": {
     "bun": "=1.4.4"
   },
-  "license": "Apache-2.0",
   "packageManager": "bun@1.4.4",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
-    "directory": "packages/shenron-db"
-  },
   "bunos": {
     "runtime": {
       ".": "server",
@@ -68,9 +72,5 @@
       "./guards": "server",
       "./redis": "bun"
     }
-  },
-  "devDependencies": {
-    "@aphrody/bun-types": "catalog:",
-    "@aphrody/bun-workspace": "workspace:*"
   }
 }

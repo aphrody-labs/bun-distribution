@@ -3,13 +3,23 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** dxva2.dll!CapabilitiesRequestAndCapabilitiesReply */
-  CapabilitiesRequestAndCapabilitiesReply(hMonitor: Win32Pointer, pszASCIICapabilitiesString: string | Win32Pointer, dwCapabilitiesStringLengthInCharacters: number): number;
+  CapabilitiesRequestAndCapabilitiesReply(
+    hMonitor: Win32Pointer,
+    pszASCIICapabilitiesString: string | Win32Pointer,
+    dwCapabilitiesStringLengthInCharacters: number,
+  ): number;
   /** dxva2.dll!DXVA2CreateDirect3DDeviceManager9 */
   DXVA2CreateDirect3DDeviceManager9(pResetToken: Win32Pointer, ppDeviceManager: Win32Pointer): number;
   /** dxva2.dll!DXVA2CreateVideoService */
   DXVA2CreateVideoService(pDD: Win32Pointer, riid: Win32Pointer, ppService: Win32Pointer): number;
   /** dxva2.dll!DXVAHD_CreateDevice */
-  DXVAHD_CreateDevice(pD3DDevice: Win32Pointer, pContentDesc: Win32Pointer, Usage: number, pPlugin: Win32Callback, ppDevice: Win32Pointer): number;
+  DXVAHD_CreateDevice(
+    pD3DDevice: Win32Pointer,
+    pContentDesc: Win32Pointer,
+    Usage: number,
+    pPlugin: Win32Callback,
+    ppDevice: Win32Pointer,
+  ): number;
   /** dxva2.dll!DegaussMonitor */
   DegaussMonitor(hMonitor: Win32Pointer): number;
   /** dxva2.dll!DestroyPhysicalMonitor */
@@ -19,41 +29,111 @@ interface Functions {
   /** dxva2.dll!GetCapabilitiesStringLength */
   GetCapabilitiesStringLength(hMonitor: Win32Pointer, pdwCapabilitiesStringLengthInCharacters: Win32Pointer): number;
   /** dxva2.dll!GetMonitorBrightness */
-  GetMonitorBrightness(hMonitor: Win32Pointer, pdwMinimumBrightness: Win32Pointer, pdwCurrentBrightness: Win32Pointer, pdwMaximumBrightness: Win32Pointer): number;
+  GetMonitorBrightness(
+    hMonitor: Win32Pointer,
+    pdwMinimumBrightness: Win32Pointer,
+    pdwCurrentBrightness: Win32Pointer,
+    pdwMaximumBrightness: Win32Pointer,
+  ): number;
   /** dxva2.dll!GetMonitorCapabilities */
-  GetMonitorCapabilities(hMonitor: Win32Pointer, pdwMonitorCapabilities: Win32Pointer, pdwSupportedColorTemperatures: Win32Pointer): number;
+  GetMonitorCapabilities(
+    hMonitor: Win32Pointer,
+    pdwMonitorCapabilities: Win32Pointer,
+    pdwSupportedColorTemperatures: Win32Pointer,
+  ): number;
   /** dxva2.dll!GetMonitorColorTemperature */
   GetMonitorColorTemperature(hMonitor: Win32Pointer, pctCurrentColorTemperature: Win32Pointer): number;
   /** dxva2.dll!GetMonitorContrast */
-  GetMonitorContrast(hMonitor: Win32Pointer, pdwMinimumContrast: Win32Pointer, pdwCurrentContrast: Win32Pointer, pdwMaximumContrast: Win32Pointer): number;
+  GetMonitorContrast(
+    hMonitor: Win32Pointer,
+    pdwMinimumContrast: Win32Pointer,
+    pdwCurrentContrast: Win32Pointer,
+    pdwMaximumContrast: Win32Pointer,
+  ): number;
   /** dxva2.dll!GetMonitorDisplayAreaPosition */
-  GetMonitorDisplayAreaPosition(hMonitor: Win32Pointer, ptPositionType: number, pdwMinimumPosition: Win32Pointer, pdwCurrentPosition: Win32Pointer, pdwMaximumPosition: Win32Pointer): number;
+  GetMonitorDisplayAreaPosition(
+    hMonitor: Win32Pointer,
+    ptPositionType: number,
+    pdwMinimumPosition: Win32Pointer,
+    pdwCurrentPosition: Win32Pointer,
+    pdwMaximumPosition: Win32Pointer,
+  ): number;
   /** dxva2.dll!GetMonitorDisplayAreaSize */
-  GetMonitorDisplayAreaSize(hMonitor: Win32Pointer, stSizeType: number, pdwMinimumWidthOrHeight: Win32Pointer, pdwCurrentWidthOrHeight: Win32Pointer, pdwMaximumWidthOrHeight: Win32Pointer): number;
+  GetMonitorDisplayAreaSize(
+    hMonitor: Win32Pointer,
+    stSizeType: number,
+    pdwMinimumWidthOrHeight: Win32Pointer,
+    pdwCurrentWidthOrHeight: Win32Pointer,
+    pdwMaximumWidthOrHeight: Win32Pointer,
+  ): number;
   /** dxva2.dll!GetMonitorRedGreenOrBlueDrive */
-  GetMonitorRedGreenOrBlueDrive(hMonitor: Win32Pointer, dtDriveType: number, pdwMinimumDrive: Win32Pointer, pdwCurrentDrive: Win32Pointer, pdwMaximumDrive: Win32Pointer): number;
+  GetMonitorRedGreenOrBlueDrive(
+    hMonitor: Win32Pointer,
+    dtDriveType: number,
+    pdwMinimumDrive: Win32Pointer,
+    pdwCurrentDrive: Win32Pointer,
+    pdwMaximumDrive: Win32Pointer,
+  ): number;
   /** dxva2.dll!GetMonitorRedGreenOrBlueGain */
-  GetMonitorRedGreenOrBlueGain(hMonitor: Win32Pointer, gtGainType: number, pdwMinimumGain: Win32Pointer, pdwCurrentGain: Win32Pointer, pdwMaximumGain: Win32Pointer): number;
+  GetMonitorRedGreenOrBlueGain(
+    hMonitor: Win32Pointer,
+    gtGainType: number,
+    pdwMinimumGain: Win32Pointer,
+    pdwCurrentGain: Win32Pointer,
+    pdwMaximumGain: Win32Pointer,
+  ): number;
   /** dxva2.dll!GetMonitorTechnologyType */
   GetMonitorTechnologyType(hMonitor: Win32Pointer, pdtyDisplayTechnologyType: Win32Pointer): number;
   /** dxva2.dll!GetNumberOfPhysicalMonitorsFromHMONITOR */
   GetNumberOfPhysicalMonitorsFromHMONITOR(hMonitor: Win32Pointer, pdwNumberOfPhysicalMonitors: Win32Pointer): number;
   /** dxva2.dll!GetNumberOfPhysicalMonitorsFromIDirect3DDevice9 */
-  GetNumberOfPhysicalMonitorsFromIDirect3DDevice9(pDirect3DDevice9: Win32Pointer, pdwNumberOfPhysicalMonitors: Win32Pointer): number;
+  GetNumberOfPhysicalMonitorsFromIDirect3DDevice9(
+    pDirect3DDevice9: Win32Pointer,
+    pdwNumberOfPhysicalMonitors: Win32Pointer,
+  ): number;
   /** dxva2.dll!GetPhysicalMonitorsFromHMONITOR */
-  GetPhysicalMonitorsFromHMONITOR(hMonitor: Win32Pointer, dwPhysicalMonitorArraySize: number, pPhysicalMonitorArray: Win32Pointer): number;
+  GetPhysicalMonitorsFromHMONITOR(
+    hMonitor: Win32Pointer,
+    dwPhysicalMonitorArraySize: number,
+    pPhysicalMonitorArray: Win32Pointer,
+  ): number;
   /** dxva2.dll!GetPhysicalMonitorsFromIDirect3DDevice9 */
-  GetPhysicalMonitorsFromIDirect3DDevice9(pDirect3DDevice9: Win32Pointer, dwPhysicalMonitorArraySize: number, pPhysicalMonitorArray: Win32Pointer): number;
+  GetPhysicalMonitorsFromIDirect3DDevice9(
+    pDirect3DDevice9: Win32Pointer,
+    dwPhysicalMonitorArraySize: number,
+    pPhysicalMonitorArray: Win32Pointer,
+  ): number;
   /** dxva2.dll!GetTimingReport */
   GetTimingReport(hMonitor: Win32Pointer, pmtrMonitorTimingReport: Win32Pointer): number;
   /** dxva2.dll!GetVCPFeatureAndVCPFeatureReply */
-  GetVCPFeatureAndVCPFeatureReply(hMonitor: Win32Pointer, bVCPCode: number, pvct: Win32Pointer, pdwCurrentValue: Win32Pointer, pdwMaximumValue: Win32Pointer): number;
+  GetVCPFeatureAndVCPFeatureReply(
+    hMonitor: Win32Pointer,
+    bVCPCode: number,
+    pvct: Win32Pointer,
+    pdwCurrentValue: Win32Pointer,
+    pdwMaximumValue: Win32Pointer,
+  ): number;
   /** dxva2.dll!OPMGetVideoOutputForTarget */
-  OPMGetVideoOutputForTarget(pAdapterLuid: Win32Pointer, VidPnTarget: number, vos: number, ppOPMVideoOutput: Win32Pointer): number;
+  OPMGetVideoOutputForTarget(
+    pAdapterLuid: Win32Pointer,
+    VidPnTarget: number,
+    vos: number,
+    ppOPMVideoOutput: Win32Pointer,
+  ): number;
   /** dxva2.dll!OPMGetVideoOutputsFromHMONITOR */
-  OPMGetVideoOutputsFromHMONITOR(hMonitor: Win32Pointer, vos: number, pulNumVideoOutputs: Win32Pointer, pppOPMVideoOutputArray: Win32Pointer): number;
+  OPMGetVideoOutputsFromHMONITOR(
+    hMonitor: Win32Pointer,
+    vos: number,
+    pulNumVideoOutputs: Win32Pointer,
+    pppOPMVideoOutputArray: Win32Pointer,
+  ): number;
   /** dxva2.dll!OPMGetVideoOutputsFromIDirect3DDevice9Object */
-  OPMGetVideoOutputsFromIDirect3DDevice9Object(pDirect3DDevice9: Win32Pointer, vos: number, pulNumVideoOutputs: Win32Pointer, pppOPMVideoOutputArray: Win32Pointer): number;
+  OPMGetVideoOutputsFromIDirect3DDevice9Object(
+    pDirect3DDevice9: Win32Pointer,
+    vos: number,
+    pulNumVideoOutputs: Win32Pointer,
+    pppOPMVideoOutputArray: Win32Pointer,
+  ): number;
   /** dxva2.dll!RestoreMonitorFactoryColorDefaults */
   RestoreMonitorFactoryColorDefaults(hMonitor: Win32Pointer): number;
   /** dxva2.dll!RestoreMonitorFactoryDefaults */

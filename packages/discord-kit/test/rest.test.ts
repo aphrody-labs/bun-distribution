@@ -5,16 +5,9 @@ import { discordFetch, DiscordRESTError } from "../src/rest";
 test("REST authenticates with the requested identity and refuses credential redirects", async () => {
   const fetcher = ((url: string, init: RequestInit) => {
     expect(url).toBe("https://discord.com/api/v10/users/@me");
-    expect(new Headers(init.headers).get("authorization")).toBe(
-      "Bearer fixture",
-    );
+    expect(new Headers(init.headers).get("authorization")).toBe("Bearer fixture");
     expect(init.redirect).toBe("error");
-    return Promise.resolve(
-      Response.json(
-        { id: "42" },
-        { headers: { "X-RateLimit-Remaining": "9" } },
-      ),
-    );
+    return Promise.resolve(Response.json({ id: "42" }, { headers: { "X-RateLimit-Remaining": "9" } }));
   }) as typeof fetch;
   const result = await discordFetch<{ id: string }>("/users/@me", {
     mode: "Bearer",
@@ -29,12 +22,7 @@ test("REST retries rate limiting once and preserves the final Discord error", as
   let calls = 0;
   const fetcher = (() => {
     calls++;
-    return Promise.resolve(
-      Response.json(
-        { message: "limited", code: 20028, retry_after: 0 },
-        { status: 429 },
-      ),
-    );
+    return Promise.resolve(Response.json({ message: "limited", code: 20028, retry_after: 0 }, { status: 429 }));
   }) as typeof fetch;
   try {
     await discordFetch("/channels/42", {

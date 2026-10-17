@@ -2,14 +2,8 @@
 // SPDX-FileCopyrightText: 2026 aphrody contributors & Google DeepMind
 /** Pure vector operations shared by retrieval and model adapters. */
 function validateVector(vec: Float32Array): void {
-  if (
-    !(vec instanceof Float32Array) ||
-    !vec.length ||
-    !vec.every(Number.isFinite)
-  )
-    throw new Error(
-      "Vector must contain finite Float32 values and be non-empty",
-    );
+  if (!(vec instanceof Float32Array) || !vec.length || !vec.every(Number.isFinite))
+    throw new Error("Vector must contain finite Float32 values and be non-empty");
 }
 
 /** Normalizes a vector in-place to unit L2 norm. */

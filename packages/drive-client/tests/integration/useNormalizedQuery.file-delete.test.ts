@@ -18,14 +18,7 @@ import { clientFromTcpSocket } from "../../src/bun";
 // oxlint-disable-next-line import/no-unassigned-import -- effet de bord voulu : installe l'environnement DOM global avant les autres imports.
 import "./setup";
 
-import {
-  describe,
-  test,
-  expect,
-  beforeAll,
-  afterAll,
-  afterEach,
-} from "bun:test";
+import { describe, test, expect, beforeAll, afterAll, afterEach } from "bun:test";
 import { readFile, unlink } from "fs/promises";
 import { join } from "path";
 import { hostname } from "os";
@@ -75,12 +68,8 @@ beforeAll(async () => {
   console.log(`[TS] Library set to: ${bridgeConfig.library_id}`);
 
   // Hook into the subscription manager to collect all events
-  const originalCreateSubscription = (client as any).subscriptionManager
-    .createSubscription;
-  (client as any).subscriptionManager.createSubscription = function (
-    filter: any,
-    callback: any,
-  ) {
+  const originalCreateSubscription = (client as any).subscriptionManager.createSubscription;
+  (client as any).subscriptionManager.createSubscription = function (filter: any, callback: any) {
     const wrappedCallback = (event: any) => {
       allEventsReceived.push({
         timestamp: new Date().toISOString(),
@@ -96,9 +85,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   // Log all events at the end for debugging
-  console.log(
-    `[TS] ===== ALL EVENTS RECEIVED (${allEventsReceived.length}) =====`,
-  );
+  console.log(`[TS] ===== ALL EVENTS RECEIVED (${allEventsReceived.length}) =====`);
   allEventsReceived.forEach((item, idx) => {
     console.log(`[TS] Event ${idx + 1} at ${item.timestamp}:`);
     console.log(`[TS]   Filter:`, JSON.stringify(item.filter, null, 2));
@@ -153,41 +140,24 @@ describe("useNormalizedQuery - File Deletion Integration", () => {
       expect(folderResult.current.data).toBeDefined();
     });
 
-    console.log(
-      "[TS] Initial delete_test contents:",
-      folderResult.current.data,
-    );
+    console.log("[TS] Initial delete_test contents:", folderResult.current.data);
 
     // Verify initial state
     const initialData = folderResult.current.data as { files: any[] };
-    const initialFileCount = initialData.files.filter(
-      (f: any) => f.kind === "File",
-    ).length;
+    const initialFileCount = initialData.files.filter((f: any) => f.kind === "File").length;
 
     console.log("[TS] Initial file count:", initialFileCount);
     expect(initialFileCount).toBeGreaterThanOrEqual(3);
 
     // Get the files to delete
-    const filesToDelete = initialData.files
-      .filter((f: any) => f.kind === "File")
-      .slice(0, 3);
+    const filesToDelete = initialData.files.filter((f: any) => f.kind === "File").slice(0, 3);
 
-    console.log(
-      "[TS] Files to delete:",
-      JSON.stringify(filesToDelete, null, 2),
-    );
+    console.log("[TS] Files to delete:", JSON.stringify(filesToDelete, null, 2));
 
     const deletedFileUuids = filesToDelete.map((f: any) => f.id);
-    const deletedFileNames = filesToDelete.map(
-      (f: any) => `${f.name}.${f.extension}`,
-    );
+    const deletedFileNames = filesToDelete.map((f: any) => `${f.name}.${f.extension}`);
 
-    console.log(
-      "[TS] Deleting files:",
-      deletedFileNames,
-      "with UUIDs:",
-      deletedFileUuids,
-    );
+    console.log("[TS] Deleting files:", deletedFileNames, "with UUIDs:", deletedFileUuids);
 
     // Delete the files
     for (const fileName of deletedFileNames) {
@@ -204,22 +174,15 @@ describe("useNormalizedQuery - File Deletion Integration", () => {
     }
 
     // Wait for watcher to detect and emit events
-    await new Promise((resolve) => setTimeout(resolve, 8000));
+    await new Promise(resolve => setTimeout(resolve, 8000));
 
     // Verify cache updated correctly
     const finalData = folderResult.current.data as { files: any[] };
     console.log("[TS] Final delete_test contents:", finalData);
 
-    const finalFileCount = finalData.files.filter(
-      (f: any) => f.kind === "File",
-    ).length;
+    const finalFileCount = finalData.files.filter((f: any) => f.kind === "File").length;
 
-    console.log(
-      "[TS] File count: before",
-      initialFileCount,
-      "→ after",
-      finalFileCount,
-    );
+    console.log("[TS] File count: before", initialFileCount, "→ after", finalFileCount);
 
     // Verify file count decreased by 3
     expect(finalFileCount).toBe(initialFileCount - 3);
@@ -230,15 +193,11 @@ describe("useNormalizedQuery - File Deletion Integration", () => {
       const fileUuid = deletedFileUuids[i];
       const nameWithoutExt = fileName.split(".")[0];
 
-      const fileStillExists = finalData.files.find(
-        (f: any) => f.name === nameWithoutExt && f.kind === "File",
-      );
+      const fileStillExists = finalData.files.find((f: any) => f.name === nameWithoutExt && f.kind === "File");
 
       expect(fileStillExists).toBeUndefined();
 
-      const fileStillExistsById = finalData.files.find(
-        (f: any) => f.id === fileUuid,
-      );
+      const fileStillExistsById = finalData.files.find((f: any) => f.id === fileUuid);
 
       expect(fileStillExistsById).toBeUndefined();
 

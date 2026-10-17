@@ -34,29 +34,20 @@ function option(args: string[], name: string): string | undefined {
 /** A Chromium-family browser for the app window: the Bun Chromium build, Edge, then Chrome. */
 function appBrowser(): string | undefined {
   const local = Bun.env.LOCALAPPDATA ?? "";
-  const programs = [
-    Bun.env.ProgramFiles,
-    Bun.env["ProgramFiles(x86)"],
-    local,
-  ].filter(Boolean) as string[];
+  const programs = [Bun.env.ProgramFiles, Bun.env["ProgramFiles(x86)"], local].filter(Boolean) as string[];
   const candidates = [
     Bun.env.BUN_CHROME_PATH,
-    ...programs.flatMap((base) => [
+    ...programs.flatMap(base => [
       join(base, "BunChromium", "Application", "chrome.exe"),
       join(base, "Microsoft", "Edge", "Application", "msedge.exe"),
       join(base, "Google", "Chrome", "Application", "chrome.exe"),
       join(base, "Chromium", "Application", "chrome.exe"),
     ]),
-    ...[
-      "msedge",
-      "microsoft-edge",
-      "chromium",
-      "chromium-browser",
-      "google-chrome",
-      "chrome",
-    ].map((name) => Bun.which(name) ?? undefined),
+    ...["msedge", "microsoft-edge", "chromium", "chromium-browser", "google-chrome", "chrome"].map(
+      name => Bun.which(name) ?? undefined,
+    ),
   ];
-  return candidates.find((path) => path && existsSync(path));
+  return candidates.find(path => path && existsSync(path));
 }
 
 /**
@@ -64,9 +55,7 @@ function appBrowser(): string | undefined {
  * `--screenshot <png>` renders it headless through Bun.WebView instead (qualification).
  */
 export async function runFrontend(args: string[]): Promise<number> {
-  const port = Number(
-    option(args, "--port") ?? Bun.env.BUN_ENGINE_WEB_PORT ?? 50080,
-  );
+  const port = Number(option(args, "--port") ?? Bun.env.BUN_ENGINE_WEB_PORT ?? 50080);
   const server = createWorkspaceServer({ port });
   const url = new URL(option(args, "--path") ?? "/", server.url).href;
   console.log(`bun-engine frontend: ${url}`);
@@ -77,9 +66,7 @@ export async function runFrontend(args: string[]): Promise<number> {
     await view.evaluate(
       "new Promise(resolve => { const t = setInterval(() => { if (document.querySelector('[data-ready]')) { clearInterval(t); resolve(true); } }, 100); })",
     );
-    for (const key of (option(args, "--keys") ?? "")
-      .split(",")
-      .filter(Boolean)) {
+    for (const key of (option(args, "--keys") ?? "").split(",").filter(Boolean)) {
       await view.press(key as never);
       await Bun.sleep(250);
     }
@@ -91,8 +78,7 @@ export async function runFrontend(args: string[]): Promise<number> {
   }
   const browser = args.includes("--no-window") ? undefined : appBrowser();
   if (!browser) {
-    if (!args.includes("--no-window"))
-      console.log("no Chromium-family browser found; open the URL above");
+    if (!args.includes("--no-window")) console.log("no Chromium-family browser found; open the URL above");
     await new Promise(() => {});
   }
   const profile = join(usrRoot(), "var", "lib", "bep", "frontend-profile");
@@ -158,9 +144,7 @@ export async function runLibrary(args: string[]): Promise<number> {
         rows.push({
           system: system.id,
           games: counts[system.id] ?? 0,
-          routes: routes
-            .map((route) => `${route.available ? "+" : "-"}${route.id}`)
-            .join(" "),
+          routes: routes.map(route => `${route.available ? "+" : "-"}${route.id}`).join(" "),
         });
       }
       console.table(rows);
@@ -168,7 +152,7 @@ export async function runLibrary(args: string[]): Promise<number> {
     }
     case "games":
       return print(
-        gamesFor(rest[0]).map((game) => ({
+        gamesFor(rest[0]).map(game => ({
           id: game.id,
           system: game.system,
           name: game.title ?? game.name,
@@ -228,9 +212,7 @@ export async function runLibrary(args: string[]): Promise<number> {
       return print(setProfile(rest[0], parseAssignments(rest.slice(1))));
     case "check": {
       const frames = Number(option(rest, "--frames") ?? 120);
-      const wanted = rest.filter(
-        (arg, i) => !arg.startsWith("--") && rest[i - 1] !== "--frames",
-      );
+      const wanted = rest.filter((arg, i) => !arg.startsWith("--") && rest[i - 1] !== "--frames");
       const rows = [];
       for (const system of (await loadSystems()).systems) {
         if (wanted.length && !wanted.includes(system.id)) continue;
@@ -238,16 +220,10 @@ export async function runLibrary(args: string[]): Promise<number> {
         for (const route of await routesFor(system.id)) {
           if (!route.available) continue;
           const found = games.find(
-            (item) =>
-              !route.extensions ||
-              route.extensions.includes(
-                item.path.split(".").pop()!.toLowerCase(),
-              ),
+            item => !route.extensions || route.extensions.includes(item.path.split(".").pop()!.toLowerCase()),
           );
           // Release emulators are probed with help/version arguments, so they need no game.
-          const game =
-            found ??
-            (route.kind === "bin" ? placeholder(system.id) : undefined);
+          const game = found ?? (route.kind === "bin" ? placeholder(system.id) : undefined);
           if (!game) continue;
           const result = await launchGame(game, {
             route: route.id,
@@ -259,15 +235,9 @@ export async function runLibrary(args: string[]): Promise<number> {
             route: route.id,
             game: game.title ?? game.name,
             ok: result.ok,
-            exit: result.alive
-              ? "alive (stopped)"
-              : (result.exitCode ?? result.error),
+            exit: result.alive ? "alive (stopped)" : (result.exitCode ?? result.error),
             ms: result.ms,
-            output: (result.output ?? result.error ?? "")
-              .split("\n")
-              .slice(-2)
-              .join(" | ")
-              .slice(0, 160),
+            output: (result.output ?? result.error ?? "").split("\n").slice(-2).join(" | ").slice(0, 160),
           });
           console.error(
             `${result.ok ? "ok  " : "FAIL"} ${system.id} ${route.id} ${game.title ?? game.name} (${result.ms} ms)`,
@@ -275,7 +245,7 @@ export async function runLibrary(args: string[]): Promise<number> {
         }
       }
       print(rows);
-      return rows.every((row) => row.ok) ? 0 : 1;
+      return rows.every(row => row.ok) ? 0 : 1;
     }
   }
   console.error(usage);

@@ -53,10 +53,7 @@ export class AphrodyOvh {
     error?: string;
   }> {
     try {
-      const [zones, vpsList] = await Promise.all([
-        this.dns.listZones(),
-        this.vps.listVps(),
-      ]);
+      const [zones, vpsList] = await Promise.all([this.dns.listZones(), this.vps.listVps()]);
 
       return {
         authenticated: true,

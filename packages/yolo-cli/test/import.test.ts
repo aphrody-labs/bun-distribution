@@ -1,17 +1,7 @@
 import { describe, expect, it } from "bun:test";
-import {
-  serializeToml,
-  transformManifest,
-  type CrateInfo,
-  type TransformContext,
-} from "../src/import";
+import { serializeToml, transformManifest, type CrateInfo, type TransformContext } from "../src/import";
 
-const mk = (
-  source: string,
-  srcDir: string,
-  name: string,
-  version: string,
-): CrateInfo => ({
+const mk = (source: string, srcDir: string, name: string, version: string): CrateInfo => ({
   source,
   srcDir,
   name,
@@ -33,8 +23,8 @@ function context(crate: CrateInfo, files: string[] = []): TransformContext {
       prefix: "aphrody-",
       repository: "https://github.com/aphrody-labs/yolo",
     },
-    byName: new Map(all.map((c) => [c.name, c])),
-    byDir: new Map(all.map((c) => [`${c.source}:${c.srcDir}`, c])),
+    byName: new Map(all.map(c => [c.name, c])),
+    byDir: new Map(all.map(c => [`${c.source}:${c.srcDir}`, c])),
     wsPackage: {
       edition: "2024",
       license: "MIT OR Apache-2.0",
@@ -48,7 +38,7 @@ function context(crate: CrateInfo, files: string[] = []): TransformContext {
     },
     wsLints: { clippy: { collapsible_if: "allow" } },
     wsRootDir: ".",
-    hasFile: (p) => files.includes(p),
+    hasFile: p => files.includes(p),
   };
 }
 
@@ -56,9 +46,9 @@ const parse = (text: string) => Bun.TOML.parse(text) as any;
 
 describe("serializeToml", () => {
   it("serializes inline tables, arrays and scalars", () => {
-    expect(
-      serializeToml({ version: "1", features: ["a", "b"], optional: true }),
-    ).toBe('{ version = "1", features = ["a", "b"], optional = true }');
+    expect(serializeToml({ version: "1", features: ["a", "b"], optional: true })).toBe(
+      '{ version = "1", features = ["a", "b"], optional = true }',
+    );
   });
 });
 
@@ -82,10 +72,7 @@ anyhow = "1"
 [workspace]
 members = []
 `;
-    const { text: out } = transformManifest(
-      text,
-      context(plugin, ["plugins/fs/src/lib.rs"]),
-    );
+    const { text: out } = transformManifest(text, context(plugin, ["plugins/fs/src/lib.rs"]));
     const m = parse(out);
     expect(m.package.name).toBe("aphrody-tauri-plugin-fs");
     expect(m.package.links).toBe("tauri-plugin-fs");
@@ -119,10 +106,7 @@ tauri-cli = { version = "~3.0.0-alpha.1", path = "../tauri-cli", default-feature
 [dev-dependencies]
 tauri = { path = ".", features = ["test"] }
 `;
-    const { text: out } = transformManifest(
-      text,
-      context(tauri, ["crates/tauri/src/lib.rs"]),
-    );
+    const { text: out } = transformManifest(text, context(tauri, ["crates/tauri/src/lib.rs"]));
     const m = parse(out);
     expect(m.dependencies["tauri-cli"]).toEqual({
       version: "~3.0.0-alpha.4",
@@ -145,10 +129,7 @@ version = "0.1.0"
 [dependencies]
 serde = "1"
 `;
-    const { text: out } = transformManifest(
-      text,
-      context(restart, ["crates/tests/restart/src/main.rs"]),
-    );
+    const { text: out } = transformManifest(text, context(restart, ["crates/tests/restart/src/main.rs"]));
     const m = parse(out);
     expect(m.bin).toEqual([{ name: "restart", path: "src/main.rs" }]);
     expect(m.lib).toBeUndefined();
@@ -168,10 +149,7 @@ path = "src/main.rs"
 `;
     const { text: out } = transformManifest(
       text,
-      context(cli, [
-        "crates/tauri-cli/src/lib.rs",
-        "crates/tauri-cli/src/main.rs",
-      ]),
+      context(cli, ["crates/tauri-cli/src/lib.rs", "crates/tauri-cli/src/main.rs"]),
     );
     const m = parse(out);
     expect(m.bin).toEqual([{ name: "cargo-tauri", path: "src/main.rs" }]);
@@ -192,10 +170,7 @@ path = "src/main.rs"
   });
 
   it("drops a top-level `workspace = {}` key", () => {
-    const { text: out } = transformManifest(
-      `workspace = {}\n\n[package]\nname = "tauri-cli"\n`,
-      context(cli),
-    );
+    const { text: out } = transformManifest(`workspace = {}\n\n[package]\nname = "tauri-cli"\n`, context(cli));
     expect(parse(out).workspace).toBeUndefined();
     expect(parse(out).package.name).toBe("aphrody-tauri-cli");
   });
@@ -225,10 +200,7 @@ panic = "abort"
       ),
     ).toThrow(/workspace.package.foo/);
     expect(() =>
-      transformManifest(
-        `[package]\nname = "tauri-cli"\n[dependencies]\nnope = { workspace = true }\n`,
-        context(cli),
-      ),
+      transformManifest(`[package]\nname = "tauri-cli"\n[dependencies]\nnope = { workspace = true }\n`, context(cli)),
     ).toThrow(/nope/);
   });
 });

@@ -3,7 +3,14 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-winrt-string-l1-1-1.dll!WindowsInspectString2 */
-  WindowsInspectString2(targetHString: number | bigint, machine: number, callback: Win32Callback, context: Win32Pointer, length: Win32Pointer, targetStringAddress: Win32Pointer): number;
+  WindowsInspectString2(
+    targetHString: number | bigint,
+    machine: number,
+    callback: Win32Callback,
+    context: Win32Pointer,
+    length: Win32Pointer,
+    targetStringAddress: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

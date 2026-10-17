@@ -1,22 +1,12 @@
 import { EditorCore } from "../../../core";
-import {
-  getKeyframeAtTime,
-  updateScalarKeyframeCurve,
-  upsertPathKeyframe,
-} from "../../../animation";
+import { getKeyframeAtTime, updateScalarKeyframeCurve, upsertPathKeyframe } from "../../../animation";
 import { Command, type CommandResult } from "../../base-command";
 import type { KeyframeClipboardItem } from "../../../clipboard/types";
 import type { SceneTracks, TimelineElement } from "../../../timeline/types";
 import { updateElementInSceneTracks } from "../../../timeline/track-element-update";
 import { resolveAnimationTarget } from "../../../timeline/animation-targets";
 import { generateUUID } from "../../../utils/id";
-import {
-  addMediaTime,
-  type MediaTime,
-  maxMediaTime,
-  minMediaTime,
-  ZERO_MEDIA_TIME,
-} from "../../../wasm";
+import { addMediaTime, type MediaTime, maxMediaTime, minMediaTime, ZERO_MEDIA_TIME } from "../../../wasm";
 
 function pasteKeyframesIntoElement({
   element,
@@ -121,7 +111,7 @@ export class PasteKeyframesCommand extends Command {
       tracks: this.savedState,
       trackId: this.trackId,
       elementId: this.elementId,
-      update: (element) =>
+      update: element =>
         pasteKeyframesIntoElement({
           element,
           time: this.time,

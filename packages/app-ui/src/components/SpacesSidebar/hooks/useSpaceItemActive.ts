@@ -16,11 +16,7 @@ interface UseSpaceItemActiveOptions {
  * - Explorer routes match by comparing SD paths
  * - Special routes (/, /recents, etc.) match by exact pathname
  */
-export function useSpaceItemActive({
-  item,
-  path,
-  hasCustomOnClick,
-}: UseSpaceItemActiveOptions): boolean {
+export function useSpaceItemActive({ item, path, hasCustomOnClick }: UseSpaceItemActiveOptions): boolean {
   const location = useLocation();
   const { currentView, currentPath } = useExplorer();
 
@@ -36,8 +32,7 @@ export function useSpaceItemActive({
   // Check virtual view state for items without custom onClick
   if (currentView) {
     const itemIdStr = String(item.id);
-    const isViewMatch =
-      currentView.view === "device" && currentView.id === itemIdStr;
+    const isViewMatch = currentView.view === "device" && currentView.id === itemIdStr;
 
     if (isViewMatch) return true;
 
@@ -48,12 +43,7 @@ export function useSpaceItemActive({
 
   // Check path-based navigation via explorer context
   // Only use currentPath matching when we're actually on the explorer route
-  if (
-    location.pathname === "/explorer" &&
-    currentPath &&
-    path &&
-    path.startsWith("/explorer?")
-  ) {
+  if (location.pathname === "/explorer" && currentPath && path && path.startsWith("/explorer?")) {
     const itemPathParam = new URLSearchParams(path.split("?")[1]).get("path");
     if (itemPathParam) {
       try {

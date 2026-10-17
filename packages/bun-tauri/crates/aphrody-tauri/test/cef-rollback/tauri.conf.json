@@ -12,9 +12,6 @@
   },
   "bundle": {
     "active": false,
-    "icon": [
-      "../fixture/isolation/src-tauri/icons/icon.png",
-      "../fixture/isolation/src-tauri/icons/icon.ico"
-    ]
+    "icon": ["../fixture/isolation/src-tauri/icons/icon.png", "../fixture/isolation/src-tauri/icons/icon.ico"]
   }
 }

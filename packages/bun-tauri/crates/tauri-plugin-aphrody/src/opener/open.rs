@@ -6,7 +6,10 @@
 
 use std::{ffi::OsStr, path::Path};
 
-pub(crate) fn open<P: AsRef<OsStr>, S: AsRef<str>>(path: P, with: Option<S>) -> crate::opener::Result<()> {
+pub(crate) fn open<P: AsRef<OsStr>, S: AsRef<str>>(
+    path: P,
+    with: Option<S>,
+) -> crate::opener::Result<()> {
     match with {
         Some(program) => ::open::with_detached(path, program.as_ref()),
         None => ::open::that_detached(path),
@@ -30,7 +33,10 @@ pub(crate) fn open<P: AsRef<OsStr>, S: AsRef<str>>(path: P, with: Option<S>) -> 
 ///     Ok(())
 ///   });
 /// ```
-pub fn open_url<P: AsRef<str>, S: AsRef<str>>(url: P, with: Option<S>) -> crate::opener::Result<()> {
+pub fn open_url<P: AsRef<str>, S: AsRef<str>>(
+    url: P,
+    with: Option<S>,
+) -> crate::opener::Result<()> {
     let url = url.as_ref();
     open(url, with)
 }
@@ -51,7 +57,10 @@ pub fn open_url<P: AsRef<str>, S: AsRef<str>>(url: P, with: Option<S>) -> crate:
 ///     Ok(())
 ///   });
 /// ```
-pub fn open_path<P: AsRef<Path>, S: AsRef<str>>(path: P, with: Option<S>) -> crate::opener::Result<()> {
+pub fn open_path<P: AsRef<Path>, S: AsRef<str>>(
+    path: P,
+    with: Option<S>,
+) -> crate::opener::Result<()> {
     let path = path.as_ref();
     if with.is_none() {
         // Returns an IO error if not exists, and besides `exists()` is a shorthand for `metadata()`

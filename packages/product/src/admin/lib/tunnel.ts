@@ -16,25 +16,15 @@ import type { KitPaths } from "./paths.ts";
 import type { AccessPack } from "./profile.ts";
 import type { System } from "./system.ts";
 import { findTool } from "./tools.ts";
-import {
-  assembleConf,
-  generatePrivateKey,
-  isWgKey,
-  normaliseConf,
-  publicKeyOf,
-} from "./wireguard.ts";
+import { assembleConf, generatePrivateKey, isWgKey, normaliseConf, publicKeyOf } from "./wireguard.ts";
 
-export const serviceName = (tunnel: string): string =>
-  `WireGuardTunnel$${tunnel}`;
+export const serviceName = (tunnel: string): string => `WireGuardTunnel$${tunnel}`;
 
 export function parseServiceState(scOutput: string): string | undefined {
   return /STATE\s*:\s*\d+\s+(\w+)/.exec(scOutput)?.[1];
 }
 
-export async function tunnelState(
-  sys: System,
-  tunnel: string,
-): Promise<string | undefined> {
+export async function tunnelState(sys: System, tunnel: string): Promise<string | undefined> {
   const result = await sys.run(["sc", "query", serviceName(tunnel)], {
     timeoutMs: 15_000,
   });
@@ -45,11 +35,7 @@ export async function tunnelState(
 export async function restrictFile(sys: System, path: string): Promise<void> {
   if (sys.platform === "win32") {
     const user = sys.env.USERNAME ?? "";
-    const grants = [
-      "*S-1-5-18:F",
-      "*S-1-5-32-544:F",
-      ...(user ? [`${user}:F`] : []),
-    ];
+    const grants = ["*S-1-5-18:F", "*S-1-5-32-544:F", ...(user ? [`${user}:F`] : [])];
     await sys.run(["icacls", path, "/inheritance:r", "/grant:r", ...grants], {
       timeoutMs: 20_000,
     });
@@ -69,9 +55,7 @@ export async function ensureWgKey(
         privateKey: existing,
         publicKey: publicKeyOf(existing),
       };
-    throw new Error(
-      "la clé WireGuard enregistrée sur ce PC est illisible : ne la supprime pas, préviens l'équipe",
-    );
+    throw new Error("la clé WireGuard enregistrée sur ce PC est illisible : ne la supprime pas, préviens l'équipe");
   }
   const privateKey = generatePrivateKey();
   await mkdir(dirname(paths.wgKeyFile), { recursive: true });
@@ -95,23 +79,14 @@ export async function stageConf(
   completeConf?: string,
 ): Promise<StagedConf> {
   const wg = pack.wireguard;
-  if (!wg)
-    throw new Error("le fichier d'accès ne contient pas de réglage WireGuard");
+  if (!wg) throw new Error("le fichier d'accès ne contient pas de réglage WireGuard");
   const conf =
     completeConf !== undefined
       ? normaliseConf(completeConf)
       : wg.block
-        ? assembleConf(
-            privateKey,
-            wg.block.includes("[Interface]")
-              ? wg.block
-              : `[Interface]\n${wg.block}`,
-          )
+        ? assembleConf(privateKey, wg.block.includes("[Interface]") ? wg.block : `[Interface]\n${wg.block}`)
         : undefined;
-  if (!conf)
-    throw new Error(
-      "le fichier d'accès ne contient ni bloc WireGuard ni fichier .conf",
-    );
+  if (!conf) throw new Error("le fichier d'accès ne contient ni bloc WireGuard ni fichier .conf");
   const dir = join(paths.programData, "Aphrody", "Omar", "tmp");
   await mkdir(dir, { recursive: true });
   const path = join(dir, `${wg.tunnelName}.conf`);
@@ -123,12 +98,9 @@ export async function stageConf(
   };
 }
 
-const fingerprintFile = (paths: KitPaths): string =>
-  join(paths.dataDir, "wg", "derniere-empreinte.txt");
+const fingerprintFile = (paths: KitPaths): string => join(paths.dataDir, "wg", "derniere-empreinte.txt");
 
-export async function lastFingerprint(
-  paths: KitPaths,
-): Promise<string | undefined> {
+export async function lastFingerprint(paths: KitPaths): Promise<string | undefined> {
   try {
     return (await readFile(fingerprintFile(paths), "utf8")).trim();
   } catch {
@@ -136,10 +108,7 @@ export async function lastFingerprint(
   }
 }
 
-export async function rememberFingerprint(
-  paths: KitPaths,
-  fingerprint: string,
-): Promise<void> {
+export async function rememberFingerprint(paths: KitPaths, fingerprint: string): Promise<void> {
   await mkdir(dirname(fingerprintFile(paths)), { recursive: true });
   await writeFile(fingerprintFile(paths), `${fingerprint}\n`);
 }
@@ -149,24 +118,15 @@ const psQuote = (value: string): string => `'${value.replaceAll("'", "''")}'`;
 /** Command line that starts `argv` elevated (one Windows consent window) and waits for it. */
 export function elevatedCommand(argv: string[]): string[] {
   const [file, ...rest] = argv;
-  const list = rest.map((arg) => psQuote(`"${arg}"`)).join(",");
+  const list = rest.map(arg => psQuote(`"${arg}"`)).join(",");
   const script = `Start-Process -FilePath ${psQuote(file ?? "")} ${rest.length > 0 ? `-ArgumentList ${list} ` : ""}-Verb RunAs -Wait`;
-  return [
-    "powershell",
-    "-NoProfile",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-Command",
-    script,
-  ];
+  return ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script];
 }
 
 /** How to start this same program again: the exe itself, or bun + the entry file when run from sources. */
 export function selfCommand(ctx: Context): string[] {
   const name = ctx.exePath.split(/[\\/]/).pop() ?? "";
-  return /^(?:bun|yolo|vu)(\.exe)?$/i.test(name)
-    ? [ctx.exePath, process.argv[1] ?? "src/cli.ts"]
-    : [ctx.exePath];
+  return /^(?:bun|yolo|vu)(\.exe)?$/i.test(name) ? [ctx.exePath, process.argv[1] ?? "src/cli.ts"] : [ctx.exePath];
 }
 
 export interface TunnelResult {
@@ -175,30 +135,18 @@ export interface TunnelResult {
 }
 
 /** Called in the NON elevated program: stage, ask Windows for the elevation, check the outcome, clean up. */
-export async function importTunnel(
-  ctx: Context,
-  staged: StagedConf,
-  tunnel: string,
-): Promise<TunnelResult> {
+export async function importTunnel(ctx: Context, staged: StagedConf, tunnel: string): Promise<TunnelResult> {
   const { sys, log } = ctx;
   if (sys.platform !== "win32")
     return {
       ok: false,
       detail: "l'import du tunnel ne se fait que sous Windows",
     };
-  if (!findTool(sys, ctx.paths, "wireguard"))
-    return { ok: false, detail: "WireGuard n'est pas installé" };
+  if (!findTool(sys, ctx.paths, "wireguard")) return { ok: false, detail: "WireGuard n'est pas installé" };
   log(`tunnel : import élevé de ${tunnel}`);
-  const result = await sys.run(
-    elevatedCommand([
-      ...selfCommand(ctx),
-      "interne",
-      "wg-installer",
-      staged.path,
-      tunnel,
-    ]),
-    { timeoutMs: 180_000 },
-  );
+  const result = await sys.run(elevatedCommand([...selfCommand(ctx), "interne", "wg-installer", staged.path, tunnel]), {
+    timeoutMs: 180_000,
+  });
   await rm(staged.path, { force: true }).catch(() => undefined);
   if (result.code !== 0)
     return {
@@ -206,8 +154,7 @@ export async function importTunnel(
       detail: `Windows n'a pas lancé l'étape protégée (${redact(result.stderr).trim().slice(0, 160) || `code ${result.code}`}). As-tu cliqué sur « Oui » ?`,
     };
   for (let i = 0; i < 20; i += 1) {
-    if ((await tunnelState(sys, tunnel)) === "RUNNING")
-      return { ok: true, detail: `tunnel « ${tunnel} » actif` };
+    if ((await tunnelState(sys, tunnel)) === "RUNNING") return { ok: true, detail: `tunnel « ${tunnel} » actif` };
     await sys.sleep(1000);
   }
   return { ok: false, detail: `le tunnel « ${tunnel} » n'a pas démarré` };
@@ -222,23 +169,13 @@ export async function installTunnelElevated(
 ): Promise<TunnelResult> {
   const wireguard = findTool(sys, paths, "wireguard");
   if (!wireguard) return { ok: false, detail: "WireGuard introuvable" };
-  const configurations = join(
-    paths.programFiles,
-    "WireGuard",
-    "Data",
-    "Configurations",
-  );
+  const configurations = join(paths.programFiles, "WireGuard", "Data", "Configurations");
   try {
     if ((await tunnelState(sys, tunnel)) !== undefined) {
       await sys.run([wireguard, "/uninstalltunnelservice", tunnel], {
         timeoutMs: 60_000,
       });
-      for (
-        let i = 0;
-        i < 30 && (await tunnelState(sys, tunnel)) !== undefined;
-        i += 1
-      )
-        await sys.sleep(500);
+      for (let i = 0; i < 30 && (await tunnelState(sys, tunnel)) !== undefined; i += 1) await sys.sleep(500);
     }
     const conf = await readFile(confPath, "utf8");
     await mkdir(configurations, { recursive: true });
@@ -252,18 +189,13 @@ export async function installTunnelElevated(
       }
       await sys.sleep(500);
     }
-    const installed = await sys.run(
-      [wireguard, "/installtunnelservice", servicePath],
-      {
-        timeoutMs: 120_000,
-      },
-    );
+    const installed = await sys.run([wireguard, "/installtunnelservice", servicePath], {
+      timeoutMs: 120_000,
+    });
     if (installed.code !== 0)
       return {
         ok: false,
-        detail: `wireguard a répondu ${installed.code}: ${redact(
-          installed.stderr || installed.stdout,
-        )
+        detail: `wireguard a répondu ${installed.code}: ${redact(installed.stderr || installed.stdout)
           .trim()
           .slice(0, 160)}`,
       };

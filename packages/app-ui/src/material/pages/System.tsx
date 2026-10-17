@@ -30,34 +30,27 @@ export default function System({ adaptive }: PageProps) {
   const [scaffoldFile, setScaffoldFile] = useState("m3.config.ts");
   const [notice, setNotice] = useState("");
   const [source, setSource] = useState(sample);
-  const [migration, setMigration] = useState<SystemOutput["migration"] | null>(
-    null,
-  );
+  const [migration, setMigration] = useState<SystemOutput["migration"] | null>(null);
   const [busy, setBusy] = useState(false);
   const active = useRef<AbortController | null>(null);
   useEffect(() => () => active.current?.abort(), []);
-  const query =
-    "seed=" +
-    encodeURIComponent(seedColor) +
-    "&target=" +
-    encodeURIComponent(target);
+  const query = "seed=" + encodeURIComponent(seedColor) + "&target=" + encodeURIComponent(target);
   useEffect(() => {
     const controller = new AbortController();
     // oxlint-disable-next-line react/set-state-in-effect -- réinitialise le message de chargement à chaque changement de requête (graine ou cible)
     setNotice("Computing local system outputs…");
     void fetch("/api/system?" + query, { signal: controller.signal })
-      .then(async (response) => {
+      .then(async response => {
         const payload = await response.json();
-        if (!response.ok)
-          throw new Error(payload.error ?? "System outputs are unavailable.");
+        if (!response.ok) throw new Error(payload.error ?? "System outputs are unavailable.");
         if (!controller.signal.aborted) {
           const result = payload as SystemOutput;
           setData(result);
           setMigration(result.migration);
-          setPath((current) =>
-            result.themeFiles.some((file) => file.path === current)
+          setPath(current =>
+            result.themeFiles.some(file => file.path === current)
               ? current
-              : (result.themeFiles.find((file) => !file.binary)?.path ?? ""),
+              : (result.themeFiles.find(file => !file.binary)?.path ?? ""),
           );
           setNotice("Generated files are ready to inspect.");
         }
@@ -65,15 +58,11 @@ export default function System({ adaptive }: PageProps) {
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
-          setNotice(
-            error instanceof Error
-              ? error.message
-              : "System outputs are unavailable.",
-          );
+          setNotice(error instanceof Error ? error.message : "System outputs are unavailable.");
       });
     return () => controller.abort();
   }, [query]);
-  const selected = data?.themeFiles.find((file) => file.path === path);
+  const selected = data?.themeFiles.find(file => file.path === path);
   useEffect(() => {
     if (!path || selected?.binary) {
       // oxlint-disable-next-line react/set-state-in-effect -- vide l'aperçu quand aucun fichier texte n'est sélectionné (réaction au changement de sélection)
@@ -85,20 +74,15 @@ export default function System({ adaptive }: PageProps) {
     void fetch("/api/os-theme?" + query + "&path=" + encodeURIComponent(path), {
       signal: controller.signal,
     })
-      .then(async (response) => {
+      .then(async response => {
         const payload = await response.json();
-        if (!response.ok)
-          throw new Error(payload.error ?? "Theme file is unavailable.");
+        if (!response.ok) throw new Error(payload.error ?? "Theme file is unavailable.");
         if (!controller.signal.aborted) setContent(payload.content);
         return payload;
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
-          setNotice(
-            error instanceof Error
-              ? error.message
-              : "Theme file is unavailable.",
-          );
+          setNotice(error instanceof Error ? error.message : "Theme file is unavailable.");
       });
     return () => controller.abort();
   }, [path, query, selected?.binary]);
@@ -121,8 +105,7 @@ export default function System({ adaptive }: PageProps) {
         setNotice("Source transformed in memory.");
       }
     } catch (error) {
-      if (!controller.signal.aborted)
-        setNotice(error instanceof Error ? error.message : "Migration failed.");
+      if (!controller.signal.aborted) setNotice(error instanceof Error ? error.message : "Migration failed.");
     } finally {
       if (active.current === controller) {
         active.current = null;
@@ -162,9 +145,7 @@ export default function System({ adaptive }: PageProps) {
         ) : undefined
       }
     >
-      <output className="block text-body-medium text-on-surface-variant">
-        {notice}
-      </output>
+      <output className="block text-body-medium text-on-surface-variant">{notice}</output>
       <Section
         title="OS theme artifacts"
         description="Inspect generated files before applying them through their native installer."
@@ -175,9 +156,9 @@ export default function System({ adaptive }: PageProps) {
             <select
               className="h-12 rounded-small border border-outline bg-surface px-3"
               value={target}
-              onChange={(event) => setTarget(event.target.value)}
+              onChange={event => setTarget(event.target.value)}
             >
-              {["all", "windows", "gnome", "cosmic", "chromium"].map((name) => (
+              {["all", "windows", "gnome", "cosmic", "chromium"].map(name => (
                 <option key={name}>{name}</option>
               ))}
             </select>
@@ -189,9 +170,9 @@ export default function System({ adaptive }: PageProps) {
                 <select
                   className="h-12 rounded-small border border-outline bg-surface px-3"
                   value={path}
-                  onChange={(event) => setPath(event.target.value)}
+                  onChange={event => setPath(event.target.value)}
                 >
-                  {data.themeFiles.map((file) => (
+                  {data.themeFiles.map(file => (
                     <option key={file.path} value={file.path}>
                       {file.path} · {file.bytes} B
                     </option>
@@ -200,12 +181,7 @@ export default function System({ adaptive }: PageProps) {
               </label>
               {selected?.binary ? (
                 <img
-                  src={
-                    "/api/os-theme?" +
-                    query +
-                    "&path=" +
-                    encodeURIComponent(path)
-                  }
+                  src={"/api/os-theme?" + query + "&path=" + encodeURIComponent(path)}
                   width={256}
                   height={144}
                   className="rounded-medium"
@@ -230,9 +206,9 @@ export default function System({ adaptive }: PageProps) {
                 <select
                   className="h-12 rounded-small border border-outline bg-surface px-3"
                   value={scaffoldFile}
-                  onChange={(event) => setScaffoldFile(event.target.value)}
+                  onChange={event => setScaffoldFile(event.target.value)}
                 >
-                  {Object.keys(data.scaffold).map((file) => (
+                  {Object.keys(data.scaffold).map(file => (
                     <option key={file}>{file}</option>
                   ))}
                 </select>
@@ -245,24 +221,20 @@ export default function System({ adaptive }: PageProps) {
             description="These schemas are returned by the design server's real MCP discovery protocol."
           >
             <div className="grid gap-3 expanded:grid-cols-2">
-              {data.mcpTools.map((tool) => (
+              {data.mcpTools.map(tool => (
                 <Card key={tool.name}>
                   <h3 className="text-title-medium">{tool.name}</h3>
-                  <p className="text-body-medium text-on-surface-variant">
-                    {tool.description}
-                  </p>
+                  <p className="text-body-medium text-on-surface-variant">{tool.description}</p>
                 </Card>
               ))}
             </div>
           </Section>
           <Section title="M3 lint rules">
             <div className="grid gap-3 expanded:grid-cols-2">
-              {data.lintRules.map((rule) => (
+              {data.lintRules.map(rule => (
                 <Card key={rule.name}>
                   <h3 className="text-title-medium">{rule.name}</h3>
-                  <p className="text-body-medium text-on-surface-variant">
-                    {rule.description}
-                  </p>
+                  <p className="text-body-medium text-on-surface-variant">{rule.description}</p>
                 </Card>
               ))}
             </div>
@@ -283,7 +255,7 @@ export default function System({ adaptive }: PageProps) {
             rows={6}
             className="rounded-medium border border-outline bg-surface p-3 font-code text-body-small"
             value={source}
-            onChange={(event) => setSource(event.target.value)}
+            onChange={event => setSource(event.target.value)}
           />
           <Button
             disabled={busy || !source.trim()}

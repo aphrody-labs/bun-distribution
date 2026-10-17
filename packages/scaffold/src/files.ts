@@ -24,22 +24,13 @@ export class ScaffoldError extends Error {
 export type WriteMode = "new" | "empty" | "merge" | "overwrite";
 
 /** Writes `files` under `outDir` and returns the absolute paths written. Checks every path before writing any. */
-export async function writeFiles(
-  outDir: string,
-  files: FileMap,
-  mode: WriteMode = "empty",
-): Promise<string[]> {
+export async function writeFiles(outDir: string, files: FileMap, mode: WriteMode = "empty"): Promise<string[]> {
   const root = resolve(outDir);
-  if (mode === "new" && existsSync(root))
-    throw new ScaffoldError(`${root} already exists`);
-  if (
-    mode === "empty" &&
-    existsSync(root) &&
-    (await readdir(root)).length > 0
-  ) {
+  if (mode === "new" && existsSync(root)) throw new ScaffoldError(`${root} already exists`);
+  if (mode === "empty" && existsSync(root) && (await readdir(root)).length > 0) {
     throw new ScaffoldError(`${root} is not empty`);
   }
-  const targets = Object.keys(files).map((path) => {
+  const targets = Object.keys(files).map(path => {
     if (
       !path ||
       path.includes("\\") ||
@@ -58,33 +49,19 @@ export async function writeFiles(
     while (true) {
       try {
         const metadata = await lstat(current);
-        if (metadata.isSymbolicLink())
-          throw new ScaffoldError(
-            `refusing symbolic link in output path: ${current}`,
-          );
+        if (metadata.isSymbolicLink()) throw new ScaffoldError(`refusing symbolic link in output path: ${current}`);
       } catch (error) {
-        if (!(
-          error instanceof Error &&
-          "code" in error &&
-          error.code === "ENOENT"
-        ))
-          throw error;
+        if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
       }
       if (current === root) break;
       const parent = dirname(current);
       const within = relative(root, parent);
-      if (
-        parent === current ||
-        within === ".." ||
-        within.startsWith(`..${sep}`) ||
-        isAbsolute(within)
-      )
-        break;
+      if (parent === current || within === ".." || within.startsWith(`..${sep}`) || isAbsolute(within)) break;
       current = parent;
     }
   }
   if (mode === "merge") {
-    const clash = targets.find((target) => existsSync(target.full));
+    const clash = targets.find(target => existsSync(target.full));
     if (clash) throw new ScaffoldError(`refusing to overwrite ${clash.full}`);
   }
   const written: string[] = [];

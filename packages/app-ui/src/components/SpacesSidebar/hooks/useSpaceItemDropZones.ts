@@ -1,11 +1,6 @@
 import { useDroppable, useDndContext } from "@dnd-kit/core";
 import type { SpaceItem as SpaceItemType, SdPath } from "@aphrody/drive-client";
-import {
-  isDropTargetItem,
-  getDropTargetType,
-  buildDropTargetPath,
-  type DropTargetType,
-} from "./spaceItemUtils";
+import { isDropTargetItem, getDropTargetType, buildDropTargetPath, type DropTargetType } from "./spaceItemUtils";
 
 interface UseSpaceItemDropZonesOptions {
   item: SpaceItemType;

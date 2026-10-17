@@ -7,8 +7,7 @@ import { KernelClient, registerSubsystem } from "../src/index.ts";
 
 const exe = process.platform === "win32" ? "aphrody.exe" : "aphrody";
 // The kernel ships as `aphrody kernel`; cargo builds into CARGO_TARGET_DIR (else the workspace target/), APHRODY_BIN points at an installed build.
-const targetDir =
-  process.env.CARGO_TARGET_DIR || join(import.meta.dir, "../../../target");
+const targetDir = process.env.CARGO_TARGET_DIR || join(import.meta.dir, "../../../target");
 const binary = process.env.APHRODY_BIN ?? join(targetDir, "debug", exe);
 const endpoint =
   process.platform === "win32"
@@ -18,17 +17,12 @@ let server: ReturnType<typeof Bun.spawn> | undefined;
 
 beforeAll(async () => {
   if (!existsSync(binary))
-    throw new Error(
-      `Set APHRODY_BIN to a qualified kernel binary or build through the root Cargo owner: ${binary}`,
-    );
-  server = Bun.spawn(
-    [binary, "kernel", "--socket", endpoint, "serve", "--no-browser"],
-    {
-      windowsHide: true,
-      stderr: "pipe",
-      stdout: "pipe",
-    },
-  );
+    throw new Error(`Set APHRODY_BIN to a qualified kernel binary or build through the root Cargo owner: ${binary}`);
+  server = Bun.spawn([binary, "kernel", "--socket", endpoint, "serve", "--no-browser"], {
+    windowsHide: true,
+    stderr: "pipe",
+    stdout: "pipe",
+  });
   for (let i = 0; i < 200; i++) {
     try {
       // oxlint-disable-next-line no-await-in-loop -- sondage de démarrage : chaque tentative doit attendre l'échec précédent et le délai
@@ -70,7 +64,7 @@ test("a Bun subsystem is served to other clients and leaves on close", async () 
   const tools = (await agent.request("tools/list")) as {
     tools: { name: string }[];
   };
-  expect(tools.tools.map((t) => t.name)).toContain("bun_reverse");
+  expect(tools.tools.map(t => t.name)).toContain("bun_reverse");
   const out = (await agent.call("bun_reverse", { text: "aphrody" })) as {
     reversed: string;
   };
@@ -89,13 +83,13 @@ test("a Bun subsystem is served to other clients and leaves on close", async () 
     const after = (await agent.request("tools/list")) as {
       tools: { name: string }[];
     };
-    if (!after.tools.some((t) => t.name === "bun_reverse")) break;
+    if (!after.tools.some(t => t.name === "bun_reverse")) break;
     // oxlint-disable-next-line no-await-in-loop -- délai entre deux relectures du sondage
     await Bun.sleep(20);
   }
   const after = (await agent.request("tools/list")) as {
     tools: { name: string }[];
   };
-  expect(after.tools.map((t) => t.name)).not.toContain("bun_reverse");
+  expect(after.tools.map(t => t.name)).not.toContain("bun_reverse");
   agent.close();
 }, 60_000);

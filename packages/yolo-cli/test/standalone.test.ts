@@ -1,12 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { COMPILE_FLAGS } from "../../../../scripts/release/compile-flags";
@@ -15,29 +8,17 @@ import { hostTarget } from "@aphrody/runtime-sdk/artifact";
 import { libraryFile } from "@aphrody/runtime-sdk";
 
 const root = resolve(import.meta.dir, "../../../docs/aphrody");
-const version = readFileSync(
-  join(root, "packages/engine/yolo/VERSION"),
-  "utf8",
-).trim();
+const version = readFileSync(join(root, "packages/engine/yolo/VERSION"), "utf8").trim();
 const work = mkdtempSync(join(tmpdir(), "yolo-standalone-"));
 const home = join(work, "installation");
 const project = join(work, "project");
 const checkout = join(work, "checkout");
 const nodeProject = join(work, "node-project");
-const binary = join(
-  home,
-  "bin",
-  process.platform === "win32" ? "yolo.exe" : "yolo",
-);
+const binary = join(home, "bin", process.platform === "win32" ? "yolo.exe" : "yolo");
 const env = {
-  PATH:
-    process.platform === "win32"
-      ? join(process.env["SystemRoot"] ?? "C:\\Windows", "System32")
-      : "/usr/bin:/bin",
+  PATH: process.platform === "win32" ? join(process.env["SystemRoot"] ?? "C:\\Windows", "System32") : "/usr/bin:/bin",
   HOME: join(work, "user"),
-  ...(process.platform === "win32"
-    ? { SystemRoot: process.env["SystemRoot"] }
-    : {}),
+  ...(process.platform === "win32" ? { SystemRoot: process.env["SystemRoot"] } : {}),
 };
 
 function run(args: string[], cwd = project, input?: string) {
@@ -66,26 +47,14 @@ beforeAll(async () => {
     mkdirSync(path, { recursive: true });
   }
   writeFileSync(join(project, "sample.ts"), "export const portable = 1;\n");
-  writeFileSync(
-    join(nodeProject, "entry.js"),
-    "#!/usr/bin/env node\nconsole.log('hello');\n",
-  );
-  writeFileSync(
-    join(project, "preload.ts"),
-    'throw new Error("UNEXPECTED_PROJECT_PRELOAD");\n',
-  );
+  writeFileSync(join(nodeProject, "entry.js"), "#!/usr/bin/env node\nconsole.log('hello');\n");
+  writeFileSync(join(project, "preload.ts"), 'throw new Error("UNEXPECTED_PROJECT_PRELOAD");\n');
   writeFileSync(join(project, "bunfig.toml"), 'preload = ["./preload.ts"]\n');
   writeFileSync(join(project, ".env"), "YOLO_HOME=/unexpected-dotenv-home\n");
   writeFileSync(join(home, "VERSION"), "wrong-file-version\n");
-  writeFileSync(
-    join(home, "Cargo.toml"),
-    '[workspace]\nresolver = "1"\nmembers = []\n',
-  );
+  writeFileSync(join(home, "Cargo.toml"), '[workspace]\nresolver = "1"\nmembers = []\n');
   writeFileSync(join(checkout, "vendor.toml"), "# checkout fixture\n");
-  writeFileSync(
-    join(checkout, "Cargo.toml"),
-    '[workspace]\nresolver = "2"\nmembers = []\n',
-  );
+  writeFileSync(join(checkout, "Cargo.toml"), '[workspace]\nresolver = "2"\nmembers = []\n');
   // A checkout provides data; the compiled CLI must execute its own bundled implementation.
   writeFileSync(
     join(checkout, "packages/engine/yolo/src/index.ts"),
@@ -113,9 +82,7 @@ beforeAll(async () => {
     },
   );
   if (build.exitCode !== 0) {
-    throw new Error(
-      `Standalone compilation failed: ${build.stderr.toString()}`,
-    );
+    throw new Error(`Standalone compilation failed: ${build.stderr.toString()}`);
   }
 }, 35_000);
 
@@ -228,11 +195,9 @@ describe("compiled CLI without an installed Bun", () => {
     expect(report.schema_version).toBe(2);
     expect(report.mode).toBe("check");
     expect(report.root).toBe(nodeProject);
-    expect(
-      report.files[0].findings.some(
-        (finding: { rule_id: string }) => finding.rule_id === "shebang/node",
-      ),
-    ).toBe(true);
+    expect(report.files[0].findings.some((finding: { rule_id: string }) => finding.rule_id === "shebang/node")).toBe(
+      true,
+    );
     expect(readFileSync(file, "utf8")).toBe(original);
     const preview = run(["n2b", "--fix", "--dry-run", "--json"], nodeProject);
     expect(preview.exitCode).toBe(0);
@@ -251,11 +216,7 @@ describe("compiled CLI without an installed Bun", () => {
     expect(report.yoloVersion).toBe(version);
     expect(report.runtime.installed).toBe(false);
     for (const path of ["packages/engine/python/pyproject.toml"]) {
-      expect(
-        report.components.find(
-          (component: { path: string }) => component.path === path,
-        ).required,
-      ).toBe(false);
+      expect(report.components.find((component: { path: string }) => component.path === path).required).toBe(false);
     }
   });
 
@@ -273,32 +234,16 @@ describe("compiled CLI without an installed Bun", () => {
   it("hosts the tools and relative parsing from the caller's workspace", () => {
     const list = run(["tool", "list"], project);
     expect(list.exitCode).toBe(0);
-    expect(
-      JSON.parse(list.stdout.toString()).map(
-        (tool: { name: string }) => tool.name,
-      ),
-    ).toContain("yolo_scan");
-    const parse = run(
-      ["tool", "call", "yolo_parse", JSON.stringify({ path: "sample.ts" })],
-      project,
-    );
+    expect(JSON.parse(list.stdout.toString()).map((tool: { name: string }) => tool.name)).toContain("yolo_scan");
+    const parse = run(["tool", "call", "yolo_parse", JSON.stringify({ path: "sample.ts" })], project);
     expect(parse.exitCode).toBe(0);
-    expect(
-      JSON.parse(JSON.parse(parse.stdout.toString()).content[0].text).exports,
-    ).toEqual(["portable"]);
+    expect(JSON.parse(JSON.parse(parse.stdout.toString()).content[0].text).exports).toEqual(["portable"]);
     const scan = run(["tool", "call", "yolo_scan", "{}"], project);
-    expect(
-      JSON.parse(JSON.parse(scan.stdout.toString()).content[0].text).target,
-    ).toBe(project);
+    expect(JSON.parse(JSON.parse(scan.stdout.toString()).content[0].text).target).toBe(project);
 
-    const status = run(
-      ["tool", "call", "yolo_status", "{}"],
-      join(checkout, "packages"),
-    );
+    const status = run(["tool", "call", "yolo_status", "{}"], join(checkout, "packages"));
     expect(status.exitCode).toBe(0);
-    const report = JSON.parse(
-      JSON.parse(status.stdout.toString()).content[0].text,
-    );
+    const report = JSON.parse(JSON.parse(status.stdout.toString()).content[0].text);
     expect(report.root).toBe(checkout);
     expect(report.cargo.resolver).toBe("2");
   });
@@ -321,12 +266,9 @@ describe("compiled CLI without an installed Bun", () => {
       while (baseUrl === undefined) {
         // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle du flux stdout jusqu'à la ligne d'écoute du serveur
         const chunk = await reader.read();
-        if (chunk.done)
-          throw new Error(`API exited before listening: ${output}`);
+        if (chunk.done) throw new Error(`API exited before listening: ${output}`);
         output += decoder.decode(chunk.value, { stream: true });
-        baseUrl = output.match(
-          /Listening on: (http:\/\/127\.0\.0\.1:\d+)/,
-        )?.[1];
+        baseUrl = output.match(/Listening on: (http:\/\/127\.0\.0\.1:\d+)/)?.[1];
       }
       reader.releaseLock();
       const health = await fetch(`${baseUrl}/health`, {

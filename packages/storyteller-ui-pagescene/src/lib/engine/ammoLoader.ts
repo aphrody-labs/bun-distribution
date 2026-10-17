@@ -23,9 +23,7 @@ export const ensureAmmoLoaded = (): Promise<void> => {
     // this module took over), don't re-add it. Detect by querying for
     // an existing tag; the ammo.wasm.js script defines a global
     // `Ammo` symbol when it finishes evaluating.
-    const existing = document.querySelector<HTMLScriptElement>(
-      'script[src="jsm/libs/ammo.wasm.js"]',
-    );
+    const existing = document.querySelector<HTMLScriptElement>('script[src="jsm/libs/ammo.wasm.js"]');
     if (existing) {
       resolve();
       return;
@@ -35,8 +33,7 @@ export const ensureAmmoLoaded = (): Promise<void> => {
     script.src = "jsm/libs/ammo.wasm.js";
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () =>
-      reject(new Error("Failed to load jsm/libs/ammo.wasm.js"));
+    script.onerror = () => reject(new Error("Failed to load jsm/libs/ammo.wasm.js"));
     document.body.appendChild(script);
   });
 

@@ -6,18 +6,11 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { renderIcon } from "@aphrody/m3-primitives";
 
-import {
-  resolveItemMetadata,
-  isRawLocation,
-  type IconData,
-} from "./hooks/spaceItemUtils";
+import { resolveItemMetadata, isRawLocation, type IconData } from "./hooks/spaceItemUtils";
 import { useSpaceItemActive } from "./hooks/useSpaceItemActive";
 import { useSpaceItemDropZones } from "./hooks/useSpaceItemDropZones";
 import { useSpaceItemContextMenu } from "./hooks/useSpaceItemContextMenu";
-import {
-  useExplorer,
-  getSpaceItemKeyFromRoute,
-} from "../../routes/explorer/context";
+import { useExplorer, getSpaceItemKeyFromRoute } from "../../routes/explorer/context";
 
 // Overrides for customizing item appearance and behavior
 export interface SpaceItemOverrides {
@@ -52,33 +45,25 @@ function ItemIcon({ icon }: { icon: IconData }) {
   if (icon.type === "image") {
     return <img src={icon.icon} alt="" className="size-4 shrink-0" />;
   }
-  return (
-    <span className="shrink-0">{renderIcon(icon.icon, { size: 16 })}</span>
-  );
+  return <span className="shrink-0">{renderIcon(icon.icon, { size: 16 })}</span>;
 }
 
 // Insertion line indicator
 function InsertionLine({ visible }: { visible: boolean }) {
   if (!visible) return null;
-  return (
-    <div className="absolute -top-[1px] left-2 right-2 h-[2px] bg-primary z-20 rounded-full" />
-  );
+  return <div className="absolute -top-[1px] left-2 right-2 h-[2px] bg-primary z-20 rounded-full" />;
 }
 
 // Bottom insertion line (for last items)
 function BottomInsertionLine({ visible }: { visible: boolean }) {
   if (!visible) return null;
-  return (
-    <div className="absolute -bottom-[1px] left-2 right-2 h-[2px] bg-primary z-20 rounded-full" />
-  );
+  return <div className="absolute -bottom-[1px] left-2 right-2 h-[2px] bg-primary z-20 rounded-full" />;
 }
 
 // Drop highlight ring for drop-into targets
 function DropHighlight({ visible }: { visible: boolean }) {
   if (!visible) return null;
-  return (
-    <div className="absolute inset-0 rounded-small ring-2 ring-primary/50 ring-inset pointer-events-none z-10" />
-  );
+  return <div className="absolute inset-0 rounded-small ring-2 ring-primary/50 ring-inset pointer-events-none z-10" />;
 }
 
 // Drop zone overlays (invisible hit areas)
@@ -89,12 +74,7 @@ interface DropZoneOverlaysProps {
   setMiddleRef: (node: HTMLElement | null) => void;
 }
 
-function DropZoneOverlays({
-  isDropTarget,
-  setTopRef,
-  setBottomRef,
-  setMiddleRef,
-}: DropZoneOverlaysProps) {
+function DropZoneOverlays({ isDropTarget, setTopRef, setBottomRef, setMiddleRef }: DropZoneOverlaysProps) {
   if (isDropTarget) {
     return (
       <>
@@ -187,9 +167,7 @@ export function SpaceItem({
   });
 
   // Get resolved file for thumbnail rendering
-  const resolvedFile = isRawLocation(item)
-    ? undefined
-    : (item as SpaceItemType).resolved_file;
+  const resolvedFile = isRawLocation(item) ? undefined : (item as SpaceItemType).resolved_file;
 
   // Active state detection
   const isActive = useSpaceItemActive({
@@ -241,9 +219,7 @@ export function SpaceItem({
       effectiveOverrides.onClick(e);
     } else if (path) {
       // Extract pathname and search from the path
-      const [pathname, search] = path.includes("?")
-        ? [path.split("?")[0], "?" + path.split("?")[1]]
-        : [path, ""];
+      const [pathname, search] = path.includes("?") ? [path.split("?")[0], "?" + path.split("?")[1]] : [path, ""];
       const spaceItemKey = getSpaceItemKeyFromRoute(pathname, search);
       loadPreferencesForSpaceItem(spaceItemKey);
       navigate(path);
@@ -262,24 +238,13 @@ export function SpaceItem({
   };
 
   // Computed visibility for indicators
-  const showTopLine =
-    dropZones.isOverTop &&
-    !isSortableDragging &&
-    !dropZones.isDraggingSortableItem;
-  const showBottomLine =
-    dropZones.isOverBottom && isLastItem && !dropZones.isDraggingSortableItem;
+  const showTopLine = dropZones.isOverTop && !isSortableDragging && !dropZones.isDraggingSortableItem;
+  const showBottomLine = dropZones.isOverBottom && isLastItem && !dropZones.isDraggingSortableItem;
   const showDropHighlight =
-    dropZones.isOverMiddle &&
-    dropZones.isDropTarget &&
-    !isSortableDragging &&
-    !dropZones.isDraggingSortableItem;
+    dropZones.isOverMiddle && dropZones.isDropTarget && !isSortableDragging && !dropZones.isDraggingSortableItem;
 
   return (
-    <div
-      ref={setSortableRef}
-      style={style}
-      className={clsx("relative", isSortableDragging && "opacity-50 z-50")}
-    >
+    <div ref={setSortableRef} style={style} className={clsx("relative", isSortableDragging && "opacity-50 z-50")}>
       <InsertionLine visible={showTopLine} />
       <DropHighlight visible={showDropHighlight} />
 
@@ -299,18 +264,11 @@ export function SpaceItem({
             "flex w-full items-center gap-2 rounded-small px-2 py-1.5 text-label-large font-medium transition-colors relative cursor-pointer",
             isActive
               ? "bg-secondary-container/30 text-on-surface"
-              : [
-                  className || "text-sidebar-inkDull",
-                  "hover:text-on-surface hover:bg-secondary-container/20",
-                ],
+              : [className || "text-sidebar-inkDull", "hover:text-on-surface hover:bg-secondary-container/20"],
             showDropHighlight && "bg-primary/10",
           )}
         >
-          {resolvedFile ? (
-            <Thumb file={resolvedFile} size={16} className="shrink-0" />
-          ) : (
-            <ItemIcon icon={icon} />
-          )}
+          {resolvedFile ? <Thumb file={resolvedFile} size={16} className="shrink-0" /> : <ItemIcon icon={icon} />}
           <span className="flex-1 truncate text-left">{label}</span>
           {rightComponent}
         </button>

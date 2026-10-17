@@ -9,7 +9,12 @@ interface Functions {
   /** xaudio2_8.dll!CreateFX */
   CreateFX(clsid: Win32Pointer, pEffect: Win32Pointer, pInitDat: Win32Pointer, InitDataByteSize: number): number;
   /** xaudio2_8.dll!XAudio2CreateWithVersionInfo */
-  XAudio2CreateWithVersionInfo(ppXAudio2: Win32Pointer, Flags: number, XAudio2Processor: number, ntddiVersion: number): number;
+  XAudio2CreateWithVersionInfo(
+    ppXAudio2: Win32Pointer,
+    Flags: number,
+    XAudio2Processor: number,
+    ntddiVersion: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

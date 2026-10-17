@@ -1,10 +1,4 @@
-import {
-  Popover,
-  usePopover,
-  CircleButton,
-  Icon,
-  m3FocusRing,
-} from "@aphrody/m3-primitives";
+import { Popover, usePopover, CircleButton, Icon, m3FocusRing } from "@aphrody/m3-primitives";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
 import { clsx } from "clsx";
 import { useState } from "react";
@@ -22,15 +16,7 @@ export function JobManagerPopover({ className }: JobManagerPopoverProps) {
   const [showOnlyRunning, setShowOnlyRunning] = useState(true);
 
   // Unified hook for job data and badge/icon
-  const {
-    activeJobCount,
-    hasRunningJobs,
-    jobs,
-    pause,
-    resume,
-    cancel,
-    getSpeedHistory,
-  } = useJobsContext();
+  const { activeJobCount, hasRunningJobs, jobs, pause, resume, cancel, getSpeedHistory } = useJobsContext();
 
   // Reset filter to "active only" when popover opens (adjusted during render, no effect)
   const [wasOpen, setWasOpen] = useState(popover.open);
@@ -53,11 +39,7 @@ export function JobManagerPopover({ className }: JobManagerPopoverProps) {
         >
           <div className="size-4">
             {hasRunningJobs ? (
-              <Icon
-                name="progress_activity"
-                size={16}
-                className="animate-spin"
-              />
+              <Icon name="progress_activity" size={16} className="animate-spin" />
             ) : (
               <Icon name="format_list_bulleted" size={16} />
             )}
@@ -70,17 +52,10 @@ export function JobManagerPopover({ className }: JobManagerPopoverProps) {
           )}
         </button>
       </Popover.Trigger>
-      <Popover.Content
-        side="top"
-        align="start"
-        sideOffset={8}
-        className={clsx("w-[360px] max-h-[480px] z-50", "!p-0")}
-      >
+      <Popover.Content side="top" align="start" sideOffset={8} className={clsx("w-[360px] max-h-[480px] z-50", "!p-0")}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant">
-          <h3 className="text-title-small text-on-surface font-semibold">
-            Tâches
-          </h3>
+          <h3 className="text-title-small text-on-surface font-semibold">Tâches</h3>
 
           <div className="flex items-center gap-2">
             {activeJobCount > 0 && (
@@ -94,11 +69,7 @@ export function JobManagerPopover({ className }: JobManagerPopoverProps) {
               icon="filter_list"
               active={showOnlyRunning}
               onClick={() => setShowOnlyRunning(!showOnlyRunning)}
-              title={
-                showOnlyRunning
-                  ? "Toutes les tâches"
-                  : "Tâches actives uniquement"
-              }
+              title={showOnlyRunning ? "Toutes les tâches" : "Tâches actives uniquement"}
             />
           </div>
         </div>
@@ -137,9 +108,7 @@ function JobManagerPopoverContent({
   cancel: (jobId: string) => Promise<void>;
   getSpeedHistory: (jobId: string) => import("./hooks/useJobs").SpeedSample[];
 }) {
-  const filteredJobs = showOnlyRunning
-    ? jobs.filter((job) => job.status === "running" || job.status === "paused")
-    : jobs;
+  const filteredJobs = showOnlyRunning ? jobs.filter(job => job.status === "running" || job.status === "paused") : jobs;
 
   return (
     <motion.div
@@ -147,9 +116,7 @@ function JobManagerPopoverContent({
       initial={false}
       animate={{
         height:
-          filteredJobs.length === 0
-            ? CARD_HEIGHT + 16
-            : Math.min(filteredJobs.length * (CARD_HEIGHT + 8) + 16, 400),
+          filteredJobs.length === 0 ? CARD_HEIGHT + 16 : Math.min(filteredJobs.length * (CARD_HEIGHT + 8) + 16, 400),
       }}
       transition={{ duration: m3Durations.short4, ease: m3Easings.standard }}
     >

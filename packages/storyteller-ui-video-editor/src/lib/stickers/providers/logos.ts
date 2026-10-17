@@ -1,9 +1,4 @@
-import type {
-  StickerBrowseResult,
-  StickerItem,
-  StickerProvider,
-  StickerSearchResult,
-} from "../types";
+import type { StickerBrowseResult, StickerItem, StickerProvider, StickerSearchResult } from "../types";
 
 const LOGOS_PROVIDER_ID = "logos";
 

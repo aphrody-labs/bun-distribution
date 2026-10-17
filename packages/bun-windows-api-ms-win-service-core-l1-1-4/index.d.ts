@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-service-core-l1-1-4.dll!GetServiceDirectory */
-  GetServiceDirectory(hServiceStatus: Win32Pointer, eDirectoryType: number, lpPathBuffer: string | Win32Pointer, cchPathBufferLength: number, lpcchRequiredBufferLength: Win32Pointer): number;
+  GetServiceDirectory(
+    hServiceStatus: Win32Pointer,
+    eDirectoryType: number,
+    lpPathBuffer: string | Win32Pointer,
+    cchPathBufferLength: number,
+    lpcchRequiredBufferLength: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

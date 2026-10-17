@@ -8,10 +8,7 @@ import { cn } from "../lib/utils";
 const Collapsible = CollapsiblePrimitive.Root;
 const CollapsibleTrigger = CollapsiblePrimitive.Trigger;
 
-function CollapsiblePanel({
-  className,
-  ...props
-}: React.ComponentProps<typeof CollapsiblePrimitive.Panel>) {
+function CollapsiblePanel({ className, ...props }: React.ComponentProps<typeof CollapsiblePrimitive.Panel>) {
   return (
     <CollapsiblePrimitive.Panel
       className={cn(

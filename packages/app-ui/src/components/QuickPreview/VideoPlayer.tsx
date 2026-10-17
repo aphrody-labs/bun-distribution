@@ -3,10 +3,7 @@ import type { File } from "@aphrody/drive-client";
 import { Subtitles, type SubtitleSettings } from "./Subtitles";
 import { SubtitleSettingsMenu } from "./SubtitleSettingsMenu";
 import { useZoomPan } from "./useZoomPan";
-import type {
-  VideoControlsState,
-  VideoControlsCallbacks,
-} from "./VideoControls";
+import type { VideoControlsState, VideoControlsCallbacks } from "./VideoControls";
 
 interface VideoPlayerProps {
   src: string;
@@ -123,14 +120,11 @@ export function VideoPlayer({
     [duration],
   );
 
-  const handleTimelineHover = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const percent = (e.clientX - rect.left) / rect.width;
-      setTimelineHover({ percent, mouseX: e.clientX });
-    },
-    [],
-  );
+  const handleTimelineHover = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    setTimelineHover({ percent, mouseX: e.clientX });
+  }, []);
 
   const toggleFullscreen = useCallback(() => {
     if (!containerRef.current) return;
@@ -148,16 +142,10 @@ export function VideoPlayer({
 
   const handleSeekingStart = useCallback(() => setSeeking(true), []);
   const handleSeekingEnd = useCallback(() => setSeeking(false), []);
-  const handleMuteToggle = useCallback(() => setMuted((m) => !m), []);
-  const handleLoopToggle = useCallback(() => setLoop((l) => !l), []);
-  const handleSubtitlesToggle = useCallback(
-    () => setSubtitlesEnabled((s) => !s),
-    [],
-  );
-  const handleSubtitleSettingsToggle = useCallback(
-    () => setShowSubtitleSettings((s) => !s),
-    [],
-  );
+  const handleMuteToggle = useCallback(() => setMuted(m => !m), []);
+  const handleLoopToggle = useCallback(() => setLoop(l => !l), []);
+  const handleSubtitlesToggle = useCallback(() => setSubtitlesEnabled(s => !s), []);
+  const handleSubtitleSettingsToggle = useCallback(() => setShowSubtitleSettings(s => !s), []);
 
   // Show controls on mouse move, hide after 1s of inactivity
   const handleMouseMove = useCallback(() => {
@@ -223,25 +211,19 @@ export function VideoPlayer({
           break;
         case "ArrowLeft":
           e.preventDefault();
-          videoRef.current.currentTime = Math.max(
-            0,
-            videoRef.current.currentTime - 5,
-          );
+          videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 5);
           break;
         case "ArrowRight":
           e.preventDefault();
-          videoRef.current.currentTime = Math.min(
-            duration,
-            videoRef.current.currentTime + 5,
-          );
+          videoRef.current.currentTime = Math.min(duration, videoRef.current.currentTime + 5);
           break;
         case "ArrowUp":
           e.preventDefault();
-          setVolume((v) => Math.min(1, v + 0.1));
+          setVolume(v => Math.min(1, v + 0.1));
           break;
         case "ArrowDown":
           e.preventDefault();
-          setVolume((v) => Math.max(0, v - 0.1));
+          setVolume(v => Math.max(0, v - 0.1));
           break;
         case "KeyM":
           e.preventDefault();
@@ -264,14 +246,7 @@ export function VideoPlayer({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    duration,
-    togglePlay,
-    toggleFullscreen,
-    handleMuteToggle,
-    handleSubtitlesToggle,
-    handleLoopToggle,
-  ]);
+  }, [duration, togglePlay, toggleFullscreen, handleMuteToggle, handleSubtitlesToggle, handleLoopToggle]);
 
   // Sync video element state and persist to localStorage
   useEffect(() => {
@@ -319,11 +294,9 @@ export function VideoPlayer({
             className="max-h-screen max-w-screen"
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
-            onTimeUpdate={(e) =>
-              !seeking && setCurrentTime(e.currentTarget.currentTime)
-            }
-            onDurationChange={(e) => setDuration(e.currentTarget.duration)}
-            onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+            onTimeUpdate={e => !seeking && setCurrentTime(e.currentTarget.currentTime)}
+            onDurationChange={e => setDuration(e.currentTarget.duration)}
+            onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
           />
         </div>
       </div>
@@ -331,11 +304,7 @@ export function VideoPlayer({
       {/* Subtitles */}
       {subtitlesEnabled && (
         <div className="absolute inset-0 z-10 pointer-events-none">
-          <Subtitles
-            file={file}
-            videoElement={videoEl}
-            settings={subtitleSettings}
-          />
+          <Subtitles file={file} videoElement={videoEl} settings={subtitleSettings} />
         </div>
       )}
 

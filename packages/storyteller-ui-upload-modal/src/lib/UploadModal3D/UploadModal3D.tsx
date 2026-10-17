@@ -14,10 +14,7 @@ import {
   initialUploaderState,
 } from "../Types";
 import type { LucideIcon } from "lucide-react";
-import {
-  galleryModalVisibleViewMode,
-  galleryModalVisibleDuringDrag,
-} from "@storyteller/ui-gallery-modal";
+import { galleryModalVisibleViewMode, galleryModalVisibleDuringDrag } from "@storyteller/ui-gallery-modal";
 
 interface Props {
   onClose: () => void;
@@ -42,18 +39,8 @@ interface Props {
 const objectFileTypes = Object.values(OBJECT_FILE_TYPE);
 
 export function UploadModal3D(props: Props) {
-  const {
-    isOpen,
-    onClose,
-    onSuccess,
-    title,
-    titleIcon,
-    initialFiles,
-    initialCategory,
-    options,
-  } = props;
-  const [uploaderState, setUploaderState] =
-    useState<UploaderState>(initialUploaderState);
+  const { isOpen, onClose, onSuccess, title, titleIcon, initialFiles, initialCategory, options } = props;
+  const [uploaderState, setUploaderState] = useState<UploaderState>(initialUploaderState);
   const [isCharacter, setIsCharacter] = useState(false);
   const [isAnimation, setIsAnimation] = useState(false);
   // Once the user has touched either toggle, mesh-less auto-detection stops
@@ -71,16 +58,11 @@ export function UploadModal3D(props: Props) {
   // animation clips with Mixamo.
   const rigTypeOptions = useMemo(() => {
     if (!isCharacter && !isAnimation) return undefined;
-    const preferred = isAnimation
-      ? MediaFileAnimationType.Mixamo
-      : MediaFileAnimationType.MixamoArKit;
+    const preferred = isAnimation ? MediaFileAnimationType.Mixamo : MediaFileAnimationType.MixamoArKit;
     const values = Object.values(MediaFileAnimationType);
-    const sorted = values.sort((a, b) =>
-      a === preferred ? -1 : b === preferred ? 1 : a.localeCompare(b),
-    );
-    const toLabel = (v: string) =>
-      v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    return sorted.map((v) => ({ [toLabel(v)]: v }));
+    const sorted = values.sort((a, b) => (a === preferred ? -1 : b === preferred ? 1 : a.localeCompare(b)));
+    const toLabel = (v: string) => v.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    return sorted.map(v => ({ [toLabel(v)]: v }));
   }, [isCharacter, isAnimation]);
 
   const updateUploaderState = (newState: UploaderState) => {
@@ -112,7 +94,7 @@ export function UploadModal3D(props: Props) {
               <Checkbox
                 id="upload-as-character"
                 checked={isCharacter}
-                onChange={(e) => {
+                onChange={e => {
                   userTouchedCategory.current = true;
                   setIsCharacter(e.target.checked);
                   if (e.target.checked) setIsAnimation(false);
@@ -122,7 +104,7 @@ export function UploadModal3D(props: Props) {
               <Checkbox
                 id="upload-as-animation"
                 checked={isAnimation}
-                onChange={(e) => {
+                onChange={e => {
                   userTouchedCategory.current = true;
                   setIsAnimation(e.target.checked);
                   if (e.target.checked) setIsCharacter(false);
@@ -160,9 +142,7 @@ export function UploadModal3D(props: Props) {
           <>
             <LoadingDots className="mb-1 bg-transparent" />
             <div className="w-100 text-center opacity-50">
-              {p && p.total > 1
-                ? `Uploading ${p.current} / ${p.total}...`
-                : "Uploading..."}
+              {p && p.total > 1 ? `Uploading ${p.current} / ${p.total}...` : "Uploading..."}
             </div>
           </>
         );
@@ -212,14 +192,7 @@ export function UploadModal3D(props: Props) {
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      titleIcon={titleIcon}
-      title={title}
-      className="max-w-xl"
-      showClose={true}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} titleIcon={titleIcon} title={title} className="max-w-xl" showClose={true}>
       {/* Inline call — `<Comp />` would be a fresh component reference each render, remounting the dropzone mid-click and breaking the file picker. */}
       {UploaderModalContent()}
     </Modal>

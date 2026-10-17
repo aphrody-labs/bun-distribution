@@ -5,7 +5,8 @@ import { EIntermediateFile } from "./enums/EIntermediateFile.js";
 import { UploaderStates, UploaderState } from "@storyteller/common";
 
 type GetSessionTokenForUploadStuioShotResult =
-  { success: true; data?: string } | { success: false; errorMessage?: any };
+  | { success: true; data?: string }
+  | { success: false; errorMessage?: any };
 
 export class MediaUploadApi extends ApiManager {
   private sessionToken = "";
@@ -15,13 +16,13 @@ export class MediaUploadApi extends ApiManager {
     return await this.get<{
       maybe_signed_session: string;
     }>({ endpoint })
-      .then((response) => {
+      .then(response => {
         return {
           success: true,
           data: response["maybe_signed_session"],
         };
       })
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -135,12 +136,12 @@ export class MediaUploadApi extends ApiManager {
       media_file_token?: string;
       BadInput?: string;
     }>({ endpoint, formRecord, blob, blobFileName: fileName, uuid })
-      .then((response) => ({
+      .then(response => ({
         success: Boolean(response.success ?? false),
         data: response.media_file_token,
         errorMessage: response.BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -186,8 +187,7 @@ export class MediaUploadApi extends ApiManager {
   }): Promise<ApiResponse<string>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/upload/image`;
     const options: Record<string, string | number | undefined> = {
-      is_intermediate_system_file:
-        EIntermediateFile[is_intermediate_system_file],
+      is_intermediate_system_file: EIntermediateFile[is_intermediate_system_file],
       maybe_title,
       maybe_visibility: maybe_visibility?.toString(),
     };
@@ -287,8 +287,7 @@ export class MediaUploadApi extends ApiManager {
   }): Promise<ApiResponse<string>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/upload/new_video`;
     const options: Record<string, string | number | undefined> = {
-      is_intermediate_system_file:
-        EIntermediateFile[is_intermediate_system_file],
+      is_intermediate_system_file: EIntermediateFile[is_intermediate_system_file],
       maybe_title,
       maybe_visibility: maybe_visibility?.toString(),
       maybe_style_name,
@@ -370,8 +369,7 @@ export class MediaUploadApi extends ApiManager {
 
 // --- Upload media helpers ---
 
-const getFileName = (file: File) =>
-  file.name.substring(0, file.name.lastIndexOf("."));
+const getFileName = (file: File) => file.name.substring(0, file.name.lastIndexOf("."));
 
 export type UploadMediaFn = (args: {
   title: string;
@@ -379,11 +377,7 @@ export type UploadMediaFn = (args: {
   progressCallback: (newState: UploaderState) => void;
 }) => Promise<void>;
 
-export const UploadImageMedia: UploadMediaFn = async ({
-  title,
-  assetFile,
-  progressCallback,
-}) => {
+export const UploadImageMedia: UploadMediaFn = async ({ title, assetFile, progressCallback }) => {
   const api = new MediaUploadApi();
   progressCallback({ status: UploaderStates.uploadingImage });
 
@@ -406,11 +400,7 @@ export const UploadImageMedia: UploadMediaFn = async ({
   progressCallback({ status: UploaderStates.success, data: res.data });
 };
 
-export const UploadVideoMedia: UploadMediaFn = async ({
-  title,
-  assetFile,
-  progressCallback,
-}) => {
+export const UploadVideoMedia: UploadMediaFn = async ({ title, assetFile, progressCallback }) => {
   const api = new MediaUploadApi();
   progressCallback({ status: UploaderStates.uploadingImage });
 
@@ -433,11 +423,7 @@ export const UploadVideoMedia: UploadMediaFn = async ({
   progressCallback({ status: UploaderStates.success, data: res.data });
 };
 
-export const UploadAudioMedia: UploadMediaFn = async ({
-  title,
-  assetFile,
-  progressCallback,
-}) => {
+export const UploadAudioMedia: UploadMediaFn = async ({ title, assetFile, progressCallback }) => {
   const api = new MediaUploadApi();
   progressCallback({ status: UploaderStates.uploadingImage });
 

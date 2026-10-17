@@ -21,10 +21,7 @@ export {
 
 // Space item hooks
 export { useSpaceItemActive } from "./useSpaceItemActive";
-export {
-  useSpaceItemDropZones,
-  type UseSpaceItemDropZonesResult,
-} from "./useSpaceItemDropZones";
+export { useSpaceItemDropZones, type UseSpaceItemDropZonesResult } from "./useSpaceItemDropZones";
 export { useSpaceItemContextMenu } from "./useSpaceItemContextMenu";
 
 // Space data hooks

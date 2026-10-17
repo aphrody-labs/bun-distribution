@@ -6,9 +6,9 @@ import { usePageSceneStore } from "../PageSceneStore";
 // the canvas mounts/unmounts.
 
 export function useEditorCanvas(): HTMLCanvasElement | null {
-  return usePageSceneStore((s) => s.editorCanvasEl);
+  return usePageSceneStore(s => s.editorCanvasEl);
 }
 
 export function useCamViewCanvas(): HTMLCanvasElement | null {
-  return usePageSceneStore((s) => s.camViewCanvasEl);
+  return usePageSceneStore(s => s.camViewCanvasEl);
 }

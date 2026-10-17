@@ -36,7 +36,7 @@ export interface ChatStoreState {
   clearNewSessionRequest: () => void;
 }
 
-export const useChatStore = create<ChatStoreState>((set) => ({
+export const useChatStore = create<ChatStoreState>(set => ({
   threads: [],
   activeThreadId: null,
   unreadThreadIds: {},
@@ -48,38 +48,36 @@ export const useChatStore = create<ChatStoreState>((set) => ({
   accessMode: "full",
   cwd: "",
 
-  setThreads: (threads) => set(() => ({ threads })),
+  setThreads: threads => set(() => ({ threads })),
 
-  setActiveThreadId: (id) =>
-    set((state) => ({
+  setActiveThreadId: id =>
+    set(state => ({
       activeThreadId: id,
-      unreadThreadIds: id
-        ? { ...state.unreadThreadIds, [id]: false }
-        : state.unreadThreadIds,
+      unreadThreadIds: id ? { ...state.unreadThreadIds, [id]: false } : state.unreadThreadIds,
     })),
 
-  setSessionTitle: (title) => set(() => ({ sessionTitle: title })),
+  setSessionTitle: title => set(() => ({ sessionTitle: title })),
 
-  setModel: (model) => set(() => ({ model })),
+  setModel: model => set(() => ({ model })),
 
-  setEffort: (effort) => set(() => ({ effort })),
+  setEffort: effort => set(() => ({ effort })),
 
-  setAccessMode: (accessMode) => set(() => ({ accessMode })),
+  setAccessMode: accessMode => set(() => ({ accessMode })),
 
-  setCwd: (cwd) => set(() => ({ cwd })),
+  setCwd: cwd => set(() => ({ cwd })),
 
-  markThreadRead: (id) =>
-    set((state) => ({
+  markThreadRead: id =>
+    set(state => ({
       unreadThreadIds: { ...state.unreadThreadIds, [id]: false },
     })),
 
-  markThreadUnread: (id) =>
-    set((state) => ({
+  markThreadUnread: id =>
+    set(state => ({
       unreadThreadIds: { ...state.unreadThreadIds, [id]: true },
     })),
 
-  toggleProjectExpanded: (projectName) =>
-    set((state) => ({
+  toggleProjectExpanded: projectName =>
+    set(state => ({
       expandedProjects: {
         ...state.expandedProjects,
         [projectName]: !state.expandedProjects[projectName],
@@ -99,10 +97,7 @@ export const useChatStore = create<ChatStoreState>((set) => ({
     }),
 }));
 
-export function getProjectGroups(
-  threads: ThreadItem[],
-  expandedProjects: Record<string, boolean>,
-) {
+export function getProjectGroups(threads: ThreadItem[], expandedProjects: Record<string, boolean>) {
   const groups: Record<string, ThreadItem[]> = {};
 
   for (const t of threads) {
@@ -117,7 +112,7 @@ export function getProjectGroups(
     groups[projName].push(t);
   }
 
-  return Object.keys(groups).map((name) => ({
+  return Object.keys(groups).map(name => ({
     name,
     threads: groups[name],
     expanded: expandedProjects[name] ?? true,

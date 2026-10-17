@@ -10,14 +10,11 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
         background: "bg-background text-foreground hover:bg-background/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        "destructive-foreground":
-          "border bg-background hover:bg-destructive/15 text-destructive",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/80",
+        "destructive-foreground": "border bg-background hover:bg-destructive/15 text-destructive",
         caution: "text-caution hover:bg-caution/10",
         outline: "border border-border bg-background hover:bg-accent",
-        secondary:
-          "bg-secondary text-secondary-foreground border border-secondary-border",
+        secondary: "bg-secondary text-secondary-foreground border border-secondary-border",
         text: "bg-transparent rounded-none opacity-100 hover:opacity-75",
         ghost: "bg-transparent hover:bg-accent",
         link: "text-primary underline-offset-4 hover:underline !p-0 !h-auto",
@@ -38,9 +35,7 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
 }
 
@@ -50,9 +45,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const effectiveSize = size ?? (variant === "text" ? "text" : "default");
     return (
       <Comp
-        className={cn(
-          buttonVariants({ variant, size: effectiveSize, className }),
-        )}
+        className={cn(buttonVariants({ variant, size: effectiveSize, className }))}
         ref={ref}
         type="button"
         {...props}

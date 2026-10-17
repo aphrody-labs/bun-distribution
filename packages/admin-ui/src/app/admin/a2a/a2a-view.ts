@@ -42,27 +42,20 @@ export type A2ADispatchParse =
   | { ok: true; body: A2ADispatchBody }
   | {
       ok: false;
-      error:
-        | "invalid_body"
-        | "invalid_target"
-        | "invalid_kind"
-        | "invalid_instruction";
+      error: "invalid_body" | "invalid_target" | "invalid_kind" | "invalid_instruction";
     };
 
 /** Corps d'un ordre admin : allowlist stricte, aucune clé inconnue n'atteint le hub. */
 export function parseDispatchBody(raw: unknown): A2ADispatchParse {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw))
-    return { ok: false, error: "invalid_body" };
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { ok: false, error: "invalid_body" };
   const { target, kind, instruction } = raw as Record<string, unknown>;
-  const targetId = A2A_ADMIN_TARGETS.find((entry) => entry.id === target)?.id;
+  const targetId = A2A_ADMIN_TARGETS.find(entry => entry.id === target)?.id;
   if (!targetId) return { ok: false, error: "invalid_target" };
-  const kindId = A2A_ADMIN_KINDS.find((entry) => entry.id === kind)?.id;
+  const kindId = A2A_ADMIN_KINDS.find(entry => entry.id === kind)?.id;
   if (!kindId) return { ok: false, error: "invalid_kind" };
-  if (typeof instruction !== "string")
-    return { ok: false, error: "invalid_instruction" };
+  if (typeof instruction !== "string") return { ok: false, error: "invalid_instruction" };
   const text = instruction.trim();
-  if (!text || text.length > A2A_INSTRUCTION_MAX_CHARS)
-    return { ok: false, error: "invalid_instruction" };
+  if (!text || text.length > A2A_INSTRUCTION_MAX_CHARS) return { ok: false, error: "invalid_instruction" };
   return {
     ok: true,
     body: { target: targetId, kind: kindId, instruction: text },
@@ -81,8 +74,7 @@ export interface Envelope {
   re?: string;
 }
 
-const text = (value: unknown): string =>
-  typeof value === "string" ? value : "";
+const text = (value: unknown): string => (typeof value === "string" ? value : "");
 
 /**
  * Une ligne de boîte aux lettres est un JSON non fiable : sans `id` ni `from` ce n'est pas une
@@ -91,13 +83,7 @@ const text = (value: unknown): string =>
 export function normalizeEnvelope(raw: unknown): Envelope | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const row = raw as Record<string, unknown>;
-  if (
-    typeof row.id !== "string" ||
-    !row.id ||
-    typeof row.from !== "string" ||
-    !row.from
-  )
-    return null;
+  if (typeof row.id !== "string" || !row.id || typeof row.from !== "string" || !row.from) return null;
   return {
     ...(typeof row.v === "number" ? { v: row.v } : {}),
     ts: text(row.ts),
@@ -111,13 +97,7 @@ export function normalizeEnvelope(raw: unknown): Envelope | null {
   };
 }
 
-export type A2AFailureKind =
-  | "unauthenticated"
-  | "forbidden"
-  | "upstream"
-  | "rejected"
-  | "server"
-  | "network";
+export type A2AFailureKind = "unauthenticated" | "forbidden" | "upstream" | "rejected" | "server" | "network";
 
 export interface A2AFailure {
   kind: A2AFailureKind;
@@ -130,10 +110,7 @@ export interface A2AFailure {
  * Transforme une réponse non 2xx de `/api/admin/a2a` en état affichable. Le texte vient du statut et
  * du code d'erreur, jamais d'un message amont : aucune adresse ni aucun chemin interne n'atteint l'écran.
  */
-export function describeA2AFailure(
-  status: number,
-  code?: string | null,
-): A2AFailure {
+export function describeA2AFailure(status: number, code?: string | null): A2AFailure {
   if (status === 401) {
     return {
       kind: "unauthenticated",
@@ -242,7 +219,7 @@ export interface Poller {
 
 const GLOBAL_TIMERS: PollTimers = {
   set: (callback, ms) => setTimeout(callback, ms),
-  clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+  clear: handle => clearTimeout(handle as ReturnType<typeof setTimeout>),
 };
 
 /**
@@ -268,8 +245,7 @@ export function createSequentialPoller(options: PollerOptions): Poller {
 
   function schedule(outcome: PollOutcome): void {
     clearTimer();
-    if (stopped || !started || outcome === "halt" || !options.isVisible())
-      return;
+    if (stopped || !started || outcome === "halt" || !options.isVisible()) return;
     const delay = Math.min(maxIntervalMs, options.intervalMs * 2 ** failures);
     timer = timers.set(() => {
       timer = null;

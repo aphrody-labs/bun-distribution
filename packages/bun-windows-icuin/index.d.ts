@@ -3,21 +3,85 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** icuin.dll!u_formatMessage */
-  u_formatMessage(locale: string | Win32Pointer, pattern: Win32Pointer, patternLength: number, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
+  u_formatMessage(
+    locale: string | Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    result: Win32Pointer,
+    resultLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!u_formatMessageWithError */
-  u_formatMessageWithError(locale: string | Win32Pointer, pattern: Win32Pointer, patternLength: number, result: Win32Pointer, resultLength: number, parseError: Win32Pointer, status: Win32Pointer): number;
+  u_formatMessageWithError(
+    locale: string | Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    result: Win32Pointer,
+    resultLength: number,
+    parseError: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!u_parseMessage */
-  u_parseMessage(locale: string | Win32Pointer, pattern: Win32Pointer, patternLength: number, source: Win32Pointer, sourceLength: number, status: Win32Pointer): void;
+  u_parseMessage(
+    locale: string | Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    source: Win32Pointer,
+    sourceLength: number,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!u_parseMessageWithError */
-  u_parseMessageWithError(locale: string | Win32Pointer, pattern: Win32Pointer, patternLength: number, source: Win32Pointer, sourceLength: number, parseError: Win32Pointer, status: Win32Pointer): void;
+  u_parseMessageWithError(
+    locale: string | Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    source: Win32Pointer,
+    sourceLength: number,
+    parseError: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!u_vformatMessage */
-  u_vformatMessage(locale: string | Win32Pointer, pattern: Win32Pointer, patternLength: number, result: Win32Pointer, resultLength: number, ap: Win32Pointer, status: Win32Pointer): number;
+  u_vformatMessage(
+    locale: string | Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    result: Win32Pointer,
+    resultLength: number,
+    ap: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!u_vformatMessageWithError */
-  u_vformatMessageWithError(locale: string | Win32Pointer, pattern: Win32Pointer, patternLength: number, result: Win32Pointer, resultLength: number, parseError: Win32Pointer, ap: Win32Pointer, status: Win32Pointer): number;
+  u_vformatMessageWithError(
+    locale: string | Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    result: Win32Pointer,
+    resultLength: number,
+    parseError: Win32Pointer,
+    ap: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!u_vparseMessage */
-  u_vparseMessage(locale: string | Win32Pointer, pattern: Win32Pointer, patternLength: number, source: Win32Pointer, sourceLength: number, ap: Win32Pointer, status: Win32Pointer): void;
+  u_vparseMessage(
+    locale: string | Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    source: Win32Pointer,
+    sourceLength: number,
+    ap: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!u_vparseMessageWithError */
-  u_vparseMessageWithError(locale: string | Win32Pointer, pattern: Win32Pointer, patternLength: number, source: Win32Pointer, sourceLength: number, ap: Win32Pointer, parseError: Win32Pointer, status: Win32Pointer): void;
+  u_vparseMessageWithError(
+    locale: string | Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    source: Win32Pointer,
+    sourceLength: number,
+    ap: Win32Pointer,
+    parseError: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!ucal_add */
   ucal_add(cal: Win32Pointer, field: number, amount: number, status: Win32Pointer): void;
   /** icuin.dll!ucal_clear */
@@ -39,7 +103,14 @@ interface Functions {
   /** icuin.dll!ucal_getAvailable */
   ucal_getAvailable(localeIndex: number): number | null;
   /** icuin.dll!ucal_getCanonicalTimeZoneID */
-  ucal_getCanonicalTimeZoneID(id: Win32Pointer, len: number, result: Win32Pointer, resultCapacity: number, isSystemID: Win32Pointer, status: Win32Pointer): number;
+  ucal_getCanonicalTimeZoneID(
+    id: Win32Pointer,
+    len: number,
+    result: Win32Pointer,
+    resultCapacity: number,
+    isSystemID: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ucal_getDSTSavings */
   ucal_getDSTSavings(zoneID: Win32Pointer, ec: Win32Pointer): number;
   /** icuin.dll!ucal_getDayOfWeekType */
@@ -51,7 +122,12 @@ interface Functions {
   /** icuin.dll!ucal_getGregorianChange */
   ucal_getGregorianChange(cal: Win32Pointer, pErrorCode: Win32Pointer): number;
   /** icuin.dll!ucal_getKeywordValuesForLocale */
-  ucal_getKeywordValuesForLocale(key: string | Win32Pointer, locale: string | Win32Pointer, commonlyUsed: number, status: Win32Pointer): number | null;
+  ucal_getKeywordValuesForLocale(
+    key: string | Win32Pointer,
+    locale: string | Win32Pointer,
+    commonlyUsed: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!ucal_getLimit */
   ucal_getLimit(cal: Win32Pointer, field: number, type: number, status: Win32Pointer): number;
   /** icuin.dll!ucal_getLocaleByType */
@@ -63,19 +139,44 @@ interface Functions {
   /** icuin.dll!ucal_getTZDataVersion */
   ucal_getTZDataVersion(status: Win32Pointer): number | null;
   /** icuin.dll!ucal_getTimeZoneDisplayName */
-  ucal_getTimeZoneDisplayName(cal: Win32Pointer, type: number, locale: string | Win32Pointer, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
+  ucal_getTimeZoneDisplayName(
+    cal: Win32Pointer,
+    type: number,
+    locale: string | Win32Pointer,
+    result: Win32Pointer,
+    resultLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ucal_getTimeZoneID */
   ucal_getTimeZoneID(cal: Win32Pointer, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
   /** icuin.dll!ucal_getTimeZoneIDForWindowsID */
-  ucal_getTimeZoneIDForWindowsID(winid: Win32Pointer, len: number, region: string | Win32Pointer, id: Win32Pointer, idCapacity: number, status: Win32Pointer): number;
+  ucal_getTimeZoneIDForWindowsID(
+    winid: Win32Pointer,
+    len: number,
+    region: string | Win32Pointer,
+    id: Win32Pointer,
+    idCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ucal_getTimeZoneTransitionDate */
-  ucal_getTimeZoneTransitionDate(cal: Win32Pointer, type: number, transition: Win32Pointer, status: Win32Pointer): number;
+  ucal_getTimeZoneTransitionDate(
+    cal: Win32Pointer,
+    type: number,
+    transition: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ucal_getType */
   ucal_getType(cal: Win32Pointer, status: Win32Pointer): number | null;
   /** icuin.dll!ucal_getWeekendTransition */
   ucal_getWeekendTransition(cal: Win32Pointer, dayOfWeek: number, status: Win32Pointer): number;
   /** icuin.dll!ucal_getWindowsTimeZoneID */
-  ucal_getWindowsTimeZoneID(id: Win32Pointer, len: number, winid: Win32Pointer, winidCapacity: number, status: Win32Pointer): number;
+  ucal_getWindowsTimeZoneID(
+    id: Win32Pointer,
+    len: number,
+    winid: Win32Pointer,
+    winidCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ucal_inDaylightTime */
   ucal_inDaylightTime(cal: Win32Pointer, status: Win32Pointer): number;
   /** icuin.dll!ucal_isSet */
@@ -83,11 +184,22 @@ interface Functions {
   /** icuin.dll!ucal_isWeekend */
   ucal_isWeekend(cal: Win32Pointer, date: number, status: Win32Pointer): number;
   /** icuin.dll!ucal_open */
-  ucal_open(zoneID: Win32Pointer, len: number, locale: string | Win32Pointer, type: number, status: Win32Pointer): number | null;
+  ucal_open(
+    zoneID: Win32Pointer,
+    len: number,
+    locale: string | Win32Pointer,
+    type: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!ucal_openCountryTimeZones */
   ucal_openCountryTimeZones(country: string | Win32Pointer, ec: Win32Pointer): number | null;
   /** icuin.dll!ucal_openTimeZoneIDEnumeration */
-  ucal_openTimeZoneIDEnumeration(zoneType: number, region: string | Win32Pointer, rawOffset: Win32Pointer, ec: Win32Pointer): number | null;
+  ucal_openTimeZoneIDEnumeration(
+    zoneType: number,
+    region: string | Win32Pointer,
+    rawOffset: Win32Pointer,
+    ec: Win32Pointer,
+  ): number | null;
   /** icuin.dll!ucal_openTimeZones */
   ucal_openTimeZones(ec: Win32Pointer): number | null;
   /** icuin.dll!ucal_roll */
@@ -99,7 +211,16 @@ interface Functions {
   /** icuin.dll!ucal_setDate */
   ucal_setDate(cal: Win32Pointer, year: number, month: number, date: number, status: Win32Pointer): void;
   /** icuin.dll!ucal_setDateTime */
-  ucal_setDateTime(cal: Win32Pointer, year: number, month: number, date: number, hour: number, minute: number, second: number, status: Win32Pointer): void;
+  ucal_setDateTime(
+    cal: Win32Pointer,
+    year: number,
+    month: number,
+    date: number,
+    hour: number,
+    minute: number,
+    second: number,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!ucal_setDefaultTimeZone */
   ucal_setDefaultTimeZone(zoneID: Win32Pointer, ec: Win32Pointer): void;
   /** icuin.dll!ucal_setGregorianChange */
@@ -117,25 +238,68 @@ interface Functions {
   /** icuin.dll!ucol_countAvailable */
   ucol_countAvailable(): number;
   /** icuin.dll!ucol_equal */
-  ucol_equal(coll: Win32Pointer, source: Win32Pointer, sourceLength: number, target: Win32Pointer, targetLength: number): number;
+  ucol_equal(
+    coll: Win32Pointer,
+    source: Win32Pointer,
+    sourceLength: number,
+    target: Win32Pointer,
+    targetLength: number,
+  ): number;
   /** icuin.dll!ucol_getAttribute */
   ucol_getAttribute(coll: Win32Pointer, attr: number, status: Win32Pointer): number;
   /** icuin.dll!ucol_getAvailable */
   ucol_getAvailable(localeIndex: number): number | null;
   /** icuin.dll!ucol_getBound */
-  ucol_getBound(source: Win32Pointer, sourceLength: number, boundType: number, noOfLevels: number, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
+  ucol_getBound(
+    source: Win32Pointer,
+    sourceLength: number,
+    boundType: number,
+    noOfLevels: number,
+    result: Win32Pointer,
+    resultLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ucol_getContractionsAndExpansions */
-  ucol_getContractionsAndExpansions(coll: Win32Pointer, contractions: Win32Pointer, expansions: Win32Pointer, addPrefixes: number, status: Win32Pointer): void;
+  ucol_getContractionsAndExpansions(
+    coll: Win32Pointer,
+    contractions: Win32Pointer,
+    expansions: Win32Pointer,
+    addPrefixes: number,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!ucol_getDisplayName */
-  ucol_getDisplayName(objLoc: string | Win32Pointer, dispLoc: string | Win32Pointer, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
+  ucol_getDisplayName(
+    objLoc: string | Win32Pointer,
+    dispLoc: string | Win32Pointer,
+    result: Win32Pointer,
+    resultLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ucol_getEquivalentReorderCodes */
-  ucol_getEquivalentReorderCodes(reorderCode: number, dest: Win32Pointer, destCapacity: number, pErrorCode: Win32Pointer): number;
+  ucol_getEquivalentReorderCodes(
+    reorderCode: number,
+    dest: Win32Pointer,
+    destCapacity: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuin.dll!ucol_getFunctionalEquivalent */
-  ucol_getFunctionalEquivalent(result: string | Win32Pointer, resultCapacity: number, keyword: string | Win32Pointer, locale: string | Win32Pointer, isAvailable: Win32Pointer, status: Win32Pointer): number;
+  ucol_getFunctionalEquivalent(
+    result: string | Win32Pointer,
+    resultCapacity: number,
+    keyword: string | Win32Pointer,
+    locale: string | Win32Pointer,
+    isAvailable: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ucol_getKeywordValues */
   ucol_getKeywordValues(keyword: string | Win32Pointer, status: Win32Pointer): number | null;
   /** icuin.dll!ucol_getKeywordValuesForLocale */
-  ucol_getKeywordValuesForLocale(key: string | Win32Pointer, locale: string | Win32Pointer, commonlyUsed: number, status: Win32Pointer): number | null;
+  ucol_getKeywordValuesForLocale(
+    key: string | Win32Pointer,
+    locale: string | Win32Pointer,
+    commonlyUsed: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!ucol_getKeywords */
   ucol_getKeywords(status: Win32Pointer): number | null;
   /** icuin.dll!ucol_getLocaleByType */
@@ -153,7 +317,13 @@ interface Functions {
   /** icuin.dll!ucol_getRulesEx */
   ucol_getRulesEx(coll: Win32Pointer, delta: number, buffer: Win32Pointer, bufferLen: number): number;
   /** icuin.dll!ucol_getSortKey */
-  ucol_getSortKey(coll: Win32Pointer, source: Win32Pointer, sourceLength: number, result: Win32Pointer, resultLength: number): number;
+  ucol_getSortKey(
+    coll: Win32Pointer,
+    source: Win32Pointer,
+    sourceLength: number,
+    result: Win32Pointer,
+    resultLength: number,
+  ): number;
   /** icuin.dll!ucol_getStrength */
   ucol_getStrength(coll: Win32Pointer): number;
   /** icuin.dll!ucol_getTailoredSet */
@@ -165,17 +335,43 @@ interface Functions {
   /** icuin.dll!ucol_getVersion */
   ucol_getVersion(coll: Win32Pointer, info: Win32Pointer): void;
   /** icuin.dll!ucol_greater */
-  ucol_greater(coll: Win32Pointer, source: Win32Pointer, sourceLength: number, target: Win32Pointer, targetLength: number): number;
+  ucol_greater(
+    coll: Win32Pointer,
+    source: Win32Pointer,
+    sourceLength: number,
+    target: Win32Pointer,
+    targetLength: number,
+  ): number;
   /** icuin.dll!ucol_greaterOrEqual */
-  ucol_greaterOrEqual(coll: Win32Pointer, source: Win32Pointer, sourceLength: number, target: Win32Pointer, targetLength: number): number;
+  ucol_greaterOrEqual(
+    coll: Win32Pointer,
+    source: Win32Pointer,
+    sourceLength: number,
+    target: Win32Pointer,
+    targetLength: number,
+  ): number;
   /** icuin.dll!ucol_keyHashCode */
   ucol_keyHashCode(key: Win32Pointer, length: number): number;
   /** icuin.dll!ucol_mergeSortkeys */
-  ucol_mergeSortkeys(src1: Win32Pointer, src1Length: number, src2: Win32Pointer, src2Length: number, dest: Win32Pointer, destCapacity: number): number;
+  ucol_mergeSortkeys(
+    src1: Win32Pointer,
+    src1Length: number,
+    src2: Win32Pointer,
+    src2Length: number,
+    dest: Win32Pointer,
+    destCapacity: number,
+  ): number;
   /** icuin.dll!ucol_next */
   ucol_next(elems: Win32Pointer, status: Win32Pointer): number;
   /** icuin.dll!ucol_nextSortKeyPart */
-  ucol_nextSortKeyPart(coll: Win32Pointer, iter: Win32Pointer, state: Win32Pointer, dest: Win32Pointer, count: number, status: Win32Pointer): number;
+  ucol_nextSortKeyPart(
+    coll: Win32Pointer,
+    iter: Win32Pointer,
+    state: Win32Pointer,
+    dest: Win32Pointer,
+    count: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ucol_open */
   ucol_open(loc: string | Win32Pointer, status: Win32Pointer): number | null;
   /** icuin.dll!ucol_openAvailableLocales */
@@ -185,7 +381,14 @@ interface Functions {
   /** icuin.dll!ucol_openElements */
   ucol_openElements(coll: Win32Pointer, text: Win32Pointer, textLength: number, status: Win32Pointer): number | null;
   /** icuin.dll!ucol_openRules */
-  ucol_openRules(rules: Win32Pointer, rulesLength: number, normalizationMode: number, strength: number, parseError: Win32Pointer, status: Win32Pointer): number | null;
+  ucol_openRules(
+    rules: Win32Pointer,
+    rulesLength: number,
+    normalizationMode: number,
+    strength: number,
+    parseError: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!ucol_previous */
   ucol_previous(elems: Win32Pointer, status: Win32Pointer): number;
   /** icuin.dll!ucol_primaryOrder */
@@ -193,7 +396,12 @@ interface Functions {
   /** icuin.dll!ucol_reset */
   ucol_reset(elems: Win32Pointer): void;
   /** icuin.dll!ucol_safeClone */
-  ucol_safeClone(coll: Win32Pointer, stackBuffer: Win32Pointer, pBufferSize: Win32Pointer, status: Win32Pointer): number | null;
+  ucol_safeClone(
+    coll: Win32Pointer,
+    stackBuffer: Win32Pointer,
+    pBufferSize: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!ucol_secondaryOrder */
   ucol_secondaryOrder(order: number): number;
   /** icuin.dll!ucol_setAttribute */
@@ -203,17 +411,35 @@ interface Functions {
   /** icuin.dll!ucol_setOffset */
   ucol_setOffset(elems: Win32Pointer, offset: number, status: Win32Pointer): void;
   /** icuin.dll!ucol_setReorderCodes */
-  ucol_setReorderCodes(coll: Win32Pointer, reorderCodes: Win32Pointer, reorderCodesLength: number, pErrorCode: Win32Pointer): void;
+  ucol_setReorderCodes(
+    coll: Win32Pointer,
+    reorderCodes: Win32Pointer,
+    reorderCodesLength: number,
+    pErrorCode: Win32Pointer,
+  ): void;
   /** icuin.dll!ucol_setStrength */
   ucol_setStrength(coll: Win32Pointer, strength: number): void;
   /** icuin.dll!ucol_setText */
   ucol_setText(elems: Win32Pointer, text: Win32Pointer, textLength: number, status: Win32Pointer): void;
   /** icuin.dll!ucol_strcoll */
-  ucol_strcoll(coll: Win32Pointer, source: Win32Pointer, sourceLength: number, target: Win32Pointer, targetLength: number): number;
+  ucol_strcoll(
+    coll: Win32Pointer,
+    source: Win32Pointer,
+    sourceLength: number,
+    target: Win32Pointer,
+    targetLength: number,
+  ): number;
   /** icuin.dll!ucol_strcollIter */
   ucol_strcollIter(coll: Win32Pointer, sIter: Win32Pointer, tIter: Win32Pointer, status: Win32Pointer): number;
   /** icuin.dll!ucol_strcollUTF8 */
-  ucol_strcollUTF8(coll: Win32Pointer, source: string | Win32Pointer, sourceLength: number, target: string | Win32Pointer, targetLength: number, status: Win32Pointer): number;
+  ucol_strcollUTF8(
+    coll: Win32Pointer,
+    source: string | Win32Pointer,
+    sourceLength: number,
+    target: string | Win32Pointer,
+    targetLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ucol_tertiaryOrder */
   ucol_tertiaryOrder(order: number): number;
   /** icuin.dll!ucsdet_close */
@@ -239,13 +465,23 @@ interface Functions {
   /** icuin.dll!ucsdet_open */
   ucsdet_open(status: Win32Pointer): number | null;
   /** icuin.dll!ucsdet_setDeclaredEncoding */
-  ucsdet_setDeclaredEncoding(ucsd: Win32Pointer, encoding: string | Win32Pointer, length: number, status: Win32Pointer): void;
+  ucsdet_setDeclaredEncoding(
+    ucsd: Win32Pointer,
+    encoding: string | Win32Pointer,
+    length: number,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!ucsdet_setText */
   ucsdet_setText(ucsd: Win32Pointer, textIn: string | Win32Pointer, len: number, status: Win32Pointer): void;
   /** icuin.dll!udat_adoptNumberFormat */
   udat_adoptNumberFormat(fmt: Win32Pointer, numberFormatToAdopt: Win32Pointer): void;
   /** icuin.dll!udat_adoptNumberFormatForFields */
-  udat_adoptNumberFormatForFields(fmt: Win32Pointer, fields: Win32Pointer, numberFormatToSet: Win32Pointer, status: Win32Pointer): void;
+  udat_adoptNumberFormatForFields(
+    fmt: Win32Pointer,
+    fields: Win32Pointer,
+    numberFormatToSet: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!udat_applyPattern */
   udat_applyPattern(format: Win32Pointer, localized: number, pattern: Win32Pointer, patternLength: number): void;
   /** icuin.dll!udat_clone */
@@ -257,13 +493,41 @@ interface Functions {
   /** icuin.dll!udat_countSymbols */
   udat_countSymbols(fmt: Win32Pointer, type: number): number;
   /** icuin.dll!udat_format */
-  udat_format(format: Win32Pointer, dateToFormat: number, result: Win32Pointer, resultLength: number, position: Win32Pointer, status: Win32Pointer): number;
+  udat_format(
+    format: Win32Pointer,
+    dateToFormat: number,
+    result: Win32Pointer,
+    resultLength: number,
+    position: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!udat_formatCalendar */
-  udat_formatCalendar(format: Win32Pointer, calendar: Win32Pointer, result: Win32Pointer, capacity: number, position: Win32Pointer, status: Win32Pointer): number;
+  udat_formatCalendar(
+    format: Win32Pointer,
+    calendar: Win32Pointer,
+    result: Win32Pointer,
+    capacity: number,
+    position: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!udat_formatCalendarForFields */
-  udat_formatCalendarForFields(format: Win32Pointer, calendar: Win32Pointer, result: Win32Pointer, capacity: number, fpositer: Win32Pointer, status: Win32Pointer): number;
+  udat_formatCalendarForFields(
+    format: Win32Pointer,
+    calendar: Win32Pointer,
+    result: Win32Pointer,
+    capacity: number,
+    fpositer: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!udat_formatForFields */
-  udat_formatForFields(format: Win32Pointer, dateToFormat: number, result: Win32Pointer, resultLength: number, fpositer: Win32Pointer, status: Win32Pointer): number;
+  udat_formatForFields(
+    format: Win32Pointer,
+    dateToFormat: number,
+    result: Win32Pointer,
+    resultLength: number,
+    fpositer: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!udat_get2DigitYearStart */
   udat_get2DigitYearStart(fmt: Win32Pointer, status: Win32Pointer): number;
   /** icuin.dll!udat_getAvailable */
@@ -281,15 +545,44 @@ interface Functions {
   /** icuin.dll!udat_getNumberFormatForField */
   udat_getNumberFormatForField(fmt: Win32Pointer, field: number): number | null;
   /** icuin.dll!udat_getSymbols */
-  udat_getSymbols(fmt: Win32Pointer, type: number, symbolIndex: number, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
+  udat_getSymbols(
+    fmt: Win32Pointer,
+    type: number,
+    symbolIndex: number,
+    result: Win32Pointer,
+    resultLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!udat_isLenient */
   udat_isLenient(fmt: Win32Pointer): number;
   /** icuin.dll!udat_open */
-  udat_open(timeStyle: number, dateStyle: number, locale: string | Win32Pointer, tzID: Win32Pointer, tzIDLength: number, pattern: Win32Pointer, patternLength: number, status: Win32Pointer): number | null;
+  udat_open(
+    timeStyle: number,
+    dateStyle: number,
+    locale: string | Win32Pointer,
+    tzID: Win32Pointer,
+    tzIDLength: number,
+    pattern: Win32Pointer,
+    patternLength: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!udat_parse */
-  udat_parse(format: Win32Pointer, text: Win32Pointer, textLength: number, parsePos: Win32Pointer, status: Win32Pointer): number;
+  udat_parse(
+    format: Win32Pointer,
+    text: Win32Pointer,
+    textLength: number,
+    parsePos: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!udat_parseCalendar */
-  udat_parseCalendar(format: Win32Pointer, calendar: Win32Pointer, text: Win32Pointer, textLength: number, parsePos: Win32Pointer, status: Win32Pointer): void;
+  udat_parseCalendar(
+    format: Win32Pointer,
+    calendar: Win32Pointer,
+    text: Win32Pointer,
+    textLength: number,
+    parsePos: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!udat_set2DigitYearStart */
   udat_set2DigitYearStart(fmt: Win32Pointer, d: number, status: Win32Pointer): void;
   /** icuin.dll!udat_setBooleanAttribute */
@@ -303,13 +596,35 @@ interface Functions {
   /** icuin.dll!udat_setNumberFormat */
   udat_setNumberFormat(fmt: Win32Pointer, numberFormatToSet: Win32Pointer): void;
   /** icuin.dll!udat_setSymbols */
-  udat_setSymbols(format: Win32Pointer, type: number, symbolIndex: number, value: Win32Pointer, valueLength: number, status: Win32Pointer): void;
+  udat_setSymbols(
+    format: Win32Pointer,
+    type: number,
+    symbolIndex: number,
+    value: Win32Pointer,
+    valueLength: number,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!udat_toCalendarDateField */
   udat_toCalendarDateField(field: number): number;
   /** icuin.dll!udat_toPattern */
-  udat_toPattern(fmt: Win32Pointer, localized: number, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
+  udat_toPattern(
+    fmt: Win32Pointer,
+    localized: number,
+    result: Win32Pointer,
+    resultLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!udatpg_addPattern */
-  udatpg_addPattern(dtpg: Win32Pointer, pattern: Win32Pointer, patternLength: number, override: number, conflictingPattern: Win32Pointer, capacity: number, pLength: Win32Pointer, pErrorCode: Win32Pointer): number;
+  udatpg_addPattern(
+    dtpg: Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    override: number,
+    conflictingPattern: Win32Pointer,
+    capacity: number,
+    pLength: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuin.dll!udatpg_clone */
   udatpg_clone(dtpg: Win32Pointer, pErrorCode: Win32Pointer): number | null;
   /** icuin.dll!udatpg_close */
@@ -319,19 +634,53 @@ interface Functions {
   /** icuin.dll!udatpg_getAppendItemName */
   udatpg_getAppendItemName(dtpg: Win32Pointer, field: number, pLength: Win32Pointer): number | null;
   /** icuin.dll!udatpg_getBaseSkeleton */
-  udatpg_getBaseSkeleton(unusedDtpg: Win32Pointer, pattern: Win32Pointer, length: number, baseSkeleton: Win32Pointer, capacity: number, pErrorCode: Win32Pointer): number;
+  udatpg_getBaseSkeleton(
+    unusedDtpg: Win32Pointer,
+    pattern: Win32Pointer,
+    length: number,
+    baseSkeleton: Win32Pointer,
+    capacity: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuin.dll!udatpg_getBestPattern */
-  udatpg_getBestPattern(dtpg: Win32Pointer, skeleton: Win32Pointer, length: number, bestPattern: Win32Pointer, capacity: number, pErrorCode: Win32Pointer): number;
+  udatpg_getBestPattern(
+    dtpg: Win32Pointer,
+    skeleton: Win32Pointer,
+    length: number,
+    bestPattern: Win32Pointer,
+    capacity: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuin.dll!udatpg_getBestPatternWithOptions */
-  udatpg_getBestPatternWithOptions(dtpg: Win32Pointer, skeleton: Win32Pointer, length: number, options: number, bestPattern: Win32Pointer, capacity: number, pErrorCode: Win32Pointer): number;
+  udatpg_getBestPatternWithOptions(
+    dtpg: Win32Pointer,
+    skeleton: Win32Pointer,
+    length: number,
+    options: number,
+    bestPattern: Win32Pointer,
+    capacity: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuin.dll!udatpg_getDateTimeFormat */
   udatpg_getDateTimeFormat(dtpg: Win32Pointer, pLength: Win32Pointer): number | null;
   /** icuin.dll!udatpg_getDecimal */
   udatpg_getDecimal(dtpg: Win32Pointer, pLength: Win32Pointer): number | null;
   /** icuin.dll!udatpg_getPatternForSkeleton */
-  udatpg_getPatternForSkeleton(dtpg: Win32Pointer, skeleton: Win32Pointer, skeletonLength: number, pLength: Win32Pointer): number | null;
+  udatpg_getPatternForSkeleton(
+    dtpg: Win32Pointer,
+    skeleton: Win32Pointer,
+    skeletonLength: number,
+    pLength: Win32Pointer,
+  ): number | null;
   /** icuin.dll!udatpg_getSkeleton */
-  udatpg_getSkeleton(unusedDtpg: Win32Pointer, pattern: Win32Pointer, length: number, skeleton: Win32Pointer, capacity: number, pErrorCode: Win32Pointer): number;
+  udatpg_getSkeleton(
+    unusedDtpg: Win32Pointer,
+    pattern: Win32Pointer,
+    length: number,
+    skeleton: Win32Pointer,
+    capacity: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuin.dll!udatpg_open */
   udatpg_open(locale: string | Win32Pointer, pErrorCode: Win32Pointer): number | null;
   /** icuin.dll!udatpg_openBaseSkeletons */
@@ -341,9 +690,28 @@ interface Functions {
   /** icuin.dll!udatpg_openSkeletons */
   udatpg_openSkeletons(dtpg: Win32Pointer, pErrorCode: Win32Pointer): number | null;
   /** icuin.dll!udatpg_replaceFieldTypes */
-  udatpg_replaceFieldTypes(dtpg: Win32Pointer, pattern: Win32Pointer, patternLength: number, skeleton: Win32Pointer, skeletonLength: number, dest: Win32Pointer, destCapacity: number, pErrorCode: Win32Pointer): number;
+  udatpg_replaceFieldTypes(
+    dtpg: Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    skeleton: Win32Pointer,
+    skeletonLength: number,
+    dest: Win32Pointer,
+    destCapacity: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuin.dll!udatpg_replaceFieldTypesWithOptions */
-  udatpg_replaceFieldTypesWithOptions(dtpg: Win32Pointer, pattern: Win32Pointer, patternLength: number, skeleton: Win32Pointer, skeletonLength: number, options: number, dest: Win32Pointer, destCapacity: number, pErrorCode: Win32Pointer): number;
+  udatpg_replaceFieldTypesWithOptions(
+    dtpg: Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    skeleton: Win32Pointer,
+    skeletonLength: number,
+    options: number,
+    dest: Win32Pointer,
+    destCapacity: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuin.dll!udatpg_setAppendItemFormat */
   udatpg_setAppendItemFormat(dtpg: Win32Pointer, field: number, value: Win32Pointer, length: number): void;
   /** icuin.dll!udatpg_setAppendItemName */
@@ -355,9 +723,24 @@ interface Functions {
   /** icuin.dll!udtitvfmt_close */
   udtitvfmt_close(formatter: Win32Pointer): void;
   /** icuin.dll!udtitvfmt_format */
-  udtitvfmt_format(formatter: Win32Pointer, fromDate: number, toDate: number, result: Win32Pointer, resultCapacity: number, position: Win32Pointer, status: Win32Pointer): number;
+  udtitvfmt_format(
+    formatter: Win32Pointer,
+    fromDate: number,
+    toDate: number,
+    result: Win32Pointer,
+    resultCapacity: number,
+    position: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!udtitvfmt_open */
-  udtitvfmt_open(locale: string | Win32Pointer, skeleton: Win32Pointer, skeletonLength: number, tzID: Win32Pointer, tzIDLength: number, status: Win32Pointer): number | null;
+  udtitvfmt_open(
+    locale: string | Win32Pointer,
+    skeleton: Win32Pointer,
+    skeletonLength: number,
+    tzID: Win32Pointer,
+    tzIDLength: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!ufieldpositer_close */
   ufieldpositer_close(fpositer: Win32Pointer): void;
   /** icuin.dll!ufieldpositer_next */
@@ -399,27 +782,66 @@ interface Functions {
   /** icuin.dll!ulocdata_getCLDRVersion */
   ulocdata_getCLDRVersion(versionArray: Win32Pointer, status: Win32Pointer): void;
   /** icuin.dll!ulocdata_getDelimiter */
-  ulocdata_getDelimiter(uld: Win32Pointer, type: number, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
+  ulocdata_getDelimiter(
+    uld: Win32Pointer,
+    type: number,
+    result: Win32Pointer,
+    resultLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ulocdata_getExemplarSet */
-  ulocdata_getExemplarSet(uld: Win32Pointer, fillIn: Win32Pointer, options: number, extype: number, status: Win32Pointer): number | null;
+  ulocdata_getExemplarSet(
+    uld: Win32Pointer,
+    fillIn: Win32Pointer,
+    options: number,
+    extype: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!ulocdata_getLocaleDisplayPattern */
-  ulocdata_getLocaleDisplayPattern(uld: Win32Pointer, pattern: Win32Pointer, patternCapacity: number, status: Win32Pointer): number;
+  ulocdata_getLocaleDisplayPattern(
+    uld: Win32Pointer,
+    pattern: Win32Pointer,
+    patternCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ulocdata_getLocaleSeparator */
-  ulocdata_getLocaleSeparator(uld: Win32Pointer, separator: Win32Pointer, separatorCapacity: number, status: Win32Pointer): number;
+  ulocdata_getLocaleSeparator(
+    uld: Win32Pointer,
+    separator: Win32Pointer,
+    separatorCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ulocdata_getMeasurementSystem */
   ulocdata_getMeasurementSystem(localeID: string | Win32Pointer, status: Win32Pointer): number;
   /** icuin.dll!ulocdata_getNoSubstitute */
   ulocdata_getNoSubstitute(uld: Win32Pointer): number;
   /** icuin.dll!ulocdata_getPaperSize */
-  ulocdata_getPaperSize(localeID: string | Win32Pointer, height: Win32Pointer, width: Win32Pointer, status: Win32Pointer): void;
+  ulocdata_getPaperSize(
+    localeID: string | Win32Pointer,
+    height: Win32Pointer,
+    width: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!ulocdata_open */
   ulocdata_open(localeID: string | Win32Pointer, status: Win32Pointer): number | null;
   /** icuin.dll!ulocdata_setNoSubstitute */
   ulocdata_setNoSubstitute(uld: Win32Pointer, setting: number): void;
   /** icuin.dll!umsg_applyPattern */
-  umsg_applyPattern(fmt: Win32Pointer, pattern: Win32Pointer, patternLength: number, parseError: Win32Pointer, status: Win32Pointer): void;
+  umsg_applyPattern(
+    fmt: Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    parseError: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!umsg_autoQuoteApostrophe */
-  umsg_autoQuoteApostrophe(pattern: Win32Pointer, patternLength: number, dest: Win32Pointer, destCapacity: number, ec: Win32Pointer): number;
+  umsg_autoQuoteApostrophe(
+    pattern: Win32Pointer,
+    patternLength: number,
+    dest: Win32Pointer,
+    destCapacity: number,
+    ec: Win32Pointer,
+  ): number;
   /** icuin.dll!umsg_clone */
   umsg_clone(fmt: Win32Pointer, status: Win32Pointer): number | null;
   /** icuin.dll!umsg_close */
@@ -429,19 +851,51 @@ interface Functions {
   /** icuin.dll!umsg_getLocale */
   umsg_getLocale(fmt: Win32Pointer): number | null;
   /** icuin.dll!umsg_open */
-  umsg_open(pattern: Win32Pointer, patternLength: number, locale: string | Win32Pointer, parseError: Win32Pointer, status: Win32Pointer): number | null;
+  umsg_open(
+    pattern: Win32Pointer,
+    patternLength: number,
+    locale: string | Win32Pointer,
+    parseError: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!umsg_parse */
-  umsg_parse(fmt: Win32Pointer, source: Win32Pointer, sourceLength: number, count: Win32Pointer, status: Win32Pointer): void;
+  umsg_parse(
+    fmt: Win32Pointer,
+    source: Win32Pointer,
+    sourceLength: number,
+    count: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!umsg_setLocale */
   umsg_setLocale(fmt: Win32Pointer, locale: string | Win32Pointer): void;
   /** icuin.dll!umsg_toPattern */
   umsg_toPattern(fmt: Win32Pointer, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
   /** icuin.dll!umsg_vformat */
-  umsg_vformat(fmt: Win32Pointer, result: Win32Pointer, resultLength: number, ap: Win32Pointer, status: Win32Pointer): number;
+  umsg_vformat(
+    fmt: Win32Pointer,
+    result: Win32Pointer,
+    resultLength: number,
+    ap: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!umsg_vparse */
-  umsg_vparse(fmt: Win32Pointer, source: Win32Pointer, sourceLength: number, count: Win32Pointer, ap: Win32Pointer, status: Win32Pointer): void;
+  umsg_vparse(
+    fmt: Win32Pointer,
+    source: Win32Pointer,
+    sourceLength: number,
+    count: Win32Pointer,
+    ap: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!unum_applyPattern */
-  unum_applyPattern(format: Win32Pointer, localized: number, pattern: Win32Pointer, patternLength: number, parseError: Win32Pointer, status: Win32Pointer): void;
+  unum_applyPattern(
+    format: Win32Pointer,
+    localized: number,
+    pattern: Win32Pointer,
+    patternLength: number,
+    parseError: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!unum_clone */
   unum_clone(fmt: Win32Pointer, status: Win32Pointer): number | null;
   /** icuin.dll!unum_close */
@@ -449,19 +903,70 @@ interface Functions {
   /** icuin.dll!unum_countAvailable */
   unum_countAvailable(): number;
   /** icuin.dll!unum_format */
-  unum_format(fmt: Win32Pointer, number: number, result: Win32Pointer, resultLength: number, pos: Win32Pointer, status: Win32Pointer): number;
+  unum_format(
+    fmt: Win32Pointer,
+    number: number,
+    result: Win32Pointer,
+    resultLength: number,
+    pos: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unum_formatDecimal */
-  unum_formatDecimal(fmt: Win32Pointer, number: string | Win32Pointer, length: number, result: Win32Pointer, resultLength: number, pos: Win32Pointer, status: Win32Pointer): number;
+  unum_formatDecimal(
+    fmt: Win32Pointer,
+    number: string | Win32Pointer,
+    length: number,
+    result: Win32Pointer,
+    resultLength: number,
+    pos: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unum_formatDouble */
-  unum_formatDouble(fmt: Win32Pointer, number: number, result: Win32Pointer, resultLength: number, pos: Win32Pointer, status: Win32Pointer): number;
+  unum_formatDouble(
+    fmt: Win32Pointer,
+    number: number,
+    result: Win32Pointer,
+    resultLength: number,
+    pos: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unum_formatDoubleCurrency */
-  unum_formatDoubleCurrency(fmt: Win32Pointer, number: number, currency: Win32Pointer, result: Win32Pointer, resultLength: number, pos: Win32Pointer, status: Win32Pointer): number;
+  unum_formatDoubleCurrency(
+    fmt: Win32Pointer,
+    number: number,
+    currency: Win32Pointer,
+    result: Win32Pointer,
+    resultLength: number,
+    pos: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unum_formatDoubleForFields */
-  unum_formatDoubleForFields(format: Win32Pointer, number: number, result: Win32Pointer, resultLength: number, fpositer: Win32Pointer, status: Win32Pointer): number;
+  unum_formatDoubleForFields(
+    format: Win32Pointer,
+    number: number,
+    result: Win32Pointer,
+    resultLength: number,
+    fpositer: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unum_formatInt64 */
-  unum_formatInt64(fmt: Win32Pointer, number: number | bigint, result: Win32Pointer, resultLength: number, pos: Win32Pointer, status: Win32Pointer): number;
+  unum_formatInt64(
+    fmt: Win32Pointer,
+    number: number | bigint,
+    result: Win32Pointer,
+    resultLength: number,
+    pos: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unum_formatUFormattable */
-  unum_formatUFormattable(fmt: Win32Pointer, number: Win32Pointer, result: Win32Pointer, resultLength: number, pos: Win32Pointer, status: Win32Pointer): number;
+  unum_formatUFormattable(
+    fmt: Win32Pointer,
+    number: Win32Pointer,
+    result: Win32Pointer,
+    resultLength: number,
+    pos: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unum_getAttribute */
   unum_getAttribute(fmt: Win32Pointer, attr: number): number;
   /** icuin.dll!unum_getAvailable */
@@ -475,21 +980,74 @@ interface Functions {
   /** icuin.dll!unum_getSymbol */
   unum_getSymbol(fmt: Win32Pointer, symbol: number, buffer: Win32Pointer, size: number, status: Win32Pointer): number;
   /** icuin.dll!unum_getTextAttribute */
-  unum_getTextAttribute(fmt: Win32Pointer, tag: number, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
+  unum_getTextAttribute(
+    fmt: Win32Pointer,
+    tag: number,
+    result: Win32Pointer,
+    resultLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unum_open */
-  unum_open(style: number, pattern: Win32Pointer, patternLength: number, locale: string | Win32Pointer, parseErr: Win32Pointer, status: Win32Pointer): number | null;
+  unum_open(
+    style: number,
+    pattern: Win32Pointer,
+    patternLength: number,
+    locale: string | Win32Pointer,
+    parseErr: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!unum_parse */
-  unum_parse(fmt: Win32Pointer, text: Win32Pointer, textLength: number, parsePos: Win32Pointer, status: Win32Pointer): number;
+  unum_parse(
+    fmt: Win32Pointer,
+    text: Win32Pointer,
+    textLength: number,
+    parsePos: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unum_parseDecimal */
-  unum_parseDecimal(fmt: Win32Pointer, text: Win32Pointer, textLength: number, parsePos: Win32Pointer, outBuf: string | Win32Pointer, outBufLength: number, status: Win32Pointer): number;
+  unum_parseDecimal(
+    fmt: Win32Pointer,
+    text: Win32Pointer,
+    textLength: number,
+    parsePos: Win32Pointer,
+    outBuf: string | Win32Pointer,
+    outBufLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unum_parseDouble */
-  unum_parseDouble(fmt: Win32Pointer, text: Win32Pointer, textLength: number, parsePos: Win32Pointer, status: Win32Pointer): number;
+  unum_parseDouble(
+    fmt: Win32Pointer,
+    text: Win32Pointer,
+    textLength: number,
+    parsePos: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unum_parseDoubleCurrency */
-  unum_parseDoubleCurrency(fmt: Win32Pointer, text: Win32Pointer, textLength: number, parsePos: Win32Pointer, currency: Win32Pointer, status: Win32Pointer): number;
+  unum_parseDoubleCurrency(
+    fmt: Win32Pointer,
+    text: Win32Pointer,
+    textLength: number,
+    parsePos: Win32Pointer,
+    currency: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unum_parseInt64 */
-  unum_parseInt64(fmt: Win32Pointer, text: Win32Pointer, textLength: number, parsePos: Win32Pointer, status: Win32Pointer): bigint;
+  unum_parseInt64(
+    fmt: Win32Pointer,
+    text: Win32Pointer,
+    textLength: number,
+    parsePos: Win32Pointer,
+    status: Win32Pointer,
+  ): bigint;
   /** icuin.dll!unum_parseToUFormattable */
-  unum_parseToUFormattable(fmt: Win32Pointer, result: Win32Pointer, text: Win32Pointer, textLength: number, parsePos: Win32Pointer, status: Win32Pointer): number | null;
+  unum_parseToUFormattable(
+    fmt: Win32Pointer,
+    result: Win32Pointer,
+    text: Win32Pointer,
+    textLength: number,
+    parsePos: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!unum_setAttribute */
   unum_setAttribute(fmt: Win32Pointer, attr: number, newValue: number): void;
   /** icuin.dll!unum_setContext */
@@ -499,13 +1057,30 @@ interface Functions {
   /** icuin.dll!unum_setSymbol */
   unum_setSymbol(fmt: Win32Pointer, symbol: number, value: Win32Pointer, length: number, status: Win32Pointer): void;
   /** icuin.dll!unum_setTextAttribute */
-  unum_setTextAttribute(fmt: Win32Pointer, tag: number, newValue: Win32Pointer, newValueLength: number, status: Win32Pointer): void;
+  unum_setTextAttribute(
+    fmt: Win32Pointer,
+    tag: number,
+    newValue: Win32Pointer,
+    newValueLength: number,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!unum_toPattern */
-  unum_toPattern(fmt: Win32Pointer, isPatternLocalized: number, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
+  unum_toPattern(
+    fmt: Win32Pointer,
+    isPatternLocalized: number,
+    result: Win32Pointer,
+    resultLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unumsys_close */
   unumsys_close(unumsys: Win32Pointer): void;
   /** icuin.dll!unumsys_getDescription */
-  unumsys_getDescription(unumsys: Win32Pointer, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
+  unumsys_getDescription(
+    unumsys: Win32Pointer,
+    result: Win32Pointer,
+    resultLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!unumsys_getName */
   unumsys_getName(unumsys: Win32Pointer): number | null;
   /** icuin.dll!unumsys_getRadix */
@@ -527,13 +1102,36 @@ interface Functions {
   /** icuin.dll!uplrules_openForType */
   uplrules_openForType(locale: string | Win32Pointer, type: number, status: Win32Pointer): number | null;
   /** icuin.dll!uplrules_select */
-  uplrules_select(uplrules: Win32Pointer, number: number, keyword: Win32Pointer, capacity: number, status: Win32Pointer): number;
+  uplrules_select(
+    uplrules: Win32Pointer,
+    number: number,
+    keyword: Win32Pointer,
+    capacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uregex_appendReplacement */
-  uregex_appendReplacement(regexp: Win32Pointer, replacementText: Win32Pointer, replacementLength: number, destBuf: Win32Pointer, destCapacity: Win32Pointer, status: Win32Pointer): number;
+  uregex_appendReplacement(
+    regexp: Win32Pointer,
+    replacementText: Win32Pointer,
+    replacementLength: number,
+    destBuf: Win32Pointer,
+    destCapacity: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uregex_appendReplacementUText */
-  uregex_appendReplacementUText(regexp: Win32Pointer, replacementText: Win32Pointer, dest: Win32Pointer, status: Win32Pointer): void;
+  uregex_appendReplacementUText(
+    regexp: Win32Pointer,
+    replacementText: Win32Pointer,
+    dest: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!uregex_appendTail */
-  uregex_appendTail(regexp: Win32Pointer, destBuf: Win32Pointer, destCapacity: Win32Pointer, status: Win32Pointer): number;
+  uregex_appendTail(
+    regexp: Win32Pointer,
+    destBuf: Win32Pointer,
+    destCapacity: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uregex_appendTailUText */
   uregex_appendTailUText(regexp: Win32Pointer, dest: Win32Pointer, status: Win32Pointer): number | null;
   /** icuin.dll!uregex_clone */
@@ -553,9 +1151,19 @@ interface Functions {
   /** icuin.dll!uregex_flags */
   uregex_flags(regexp: Win32Pointer, status: Win32Pointer): number;
   /** icuin.dll!uregex_getFindProgressCallback */
-  uregex_getFindProgressCallback(regexp: Win32Pointer, callback: Win32Pointer, context: Win32Pointer, status: Win32Pointer): void;
+  uregex_getFindProgressCallback(
+    regexp: Win32Pointer,
+    callback: Win32Pointer,
+    context: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!uregex_getMatchCallback */
-  uregex_getMatchCallback(regexp: Win32Pointer, callback: Win32Pointer, context: Win32Pointer, status: Win32Pointer): void;
+  uregex_getMatchCallback(
+    regexp: Win32Pointer,
+    callback: Win32Pointer,
+    context: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!uregex_getStackLimit */
   uregex_getStackLimit(regexp: Win32Pointer, status: Win32Pointer): number;
   /** icuin.dll!uregex_getText */
@@ -565,15 +1173,37 @@ interface Functions {
   /** icuin.dll!uregex_getUText */
   uregex_getUText(regexp: Win32Pointer, dest: Win32Pointer, status: Win32Pointer): number | null;
   /** icuin.dll!uregex_group */
-  uregex_group(regexp: Win32Pointer, groupNum: number, dest: Win32Pointer, destCapacity: number, status: Win32Pointer): number;
+  uregex_group(
+    regexp: Win32Pointer,
+    groupNum: number,
+    dest: Win32Pointer,
+    destCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uregex_groupCount */
   uregex_groupCount(regexp: Win32Pointer, status: Win32Pointer): number;
   /** icuin.dll!uregex_groupNumberFromCName */
-  uregex_groupNumberFromCName(regexp: Win32Pointer, groupName: string | Win32Pointer, nameLength: number, status: Win32Pointer): number;
+  uregex_groupNumberFromCName(
+    regexp: Win32Pointer,
+    groupName: string | Win32Pointer,
+    nameLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uregex_groupNumberFromName */
-  uregex_groupNumberFromName(regexp: Win32Pointer, groupName: Win32Pointer, nameLength: number, status: Win32Pointer): number;
+  uregex_groupNumberFromName(
+    regexp: Win32Pointer,
+    groupName: Win32Pointer,
+    nameLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uregex_groupUText */
-  uregex_groupUText(regexp: Win32Pointer, groupNum: number, dest: Win32Pointer, groupLength: Win32Pointer, status: Win32Pointer): number | null;
+  uregex_groupUText(
+    regexp: Win32Pointer,
+    groupNum: number,
+    dest: Win32Pointer,
+    groupLength: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!uregex_hasAnchoringBounds */
   uregex_hasAnchoringBounds(regexp: Win32Pointer, status: Win32Pointer): number;
   /** icuin.dll!uregex_hasTransparentBounds */
@@ -589,7 +1219,13 @@ interface Functions {
   /** icuin.dll!uregex_matches64 */
   uregex_matches64(regexp: Win32Pointer, startIndex: number | bigint, status: Win32Pointer): number;
   /** icuin.dll!uregex_open */
-  uregex_open(pattern: Win32Pointer, patternLength: number, flags: number, pe: Win32Pointer, status: Win32Pointer): number | null;
+  uregex_open(
+    pattern: Win32Pointer,
+    patternLength: number,
+    flags: number,
+    pe: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!uregex_openC */
   uregex_openC(pattern: string | Win32Pointer, flags: number, pe: Win32Pointer, status: Win32Pointer): number | null;
   /** icuin.dll!uregex_openUText */
@@ -609,13 +1245,37 @@ interface Functions {
   /** icuin.dll!uregex_regionStart64 */
   uregex_regionStart64(regexp: Win32Pointer, status: Win32Pointer): bigint;
   /** icuin.dll!uregex_replaceAll */
-  uregex_replaceAll(regexp: Win32Pointer, replacementText: Win32Pointer, replacementLength: number, destBuf: Win32Pointer, destCapacity: number, status: Win32Pointer): number;
+  uregex_replaceAll(
+    regexp: Win32Pointer,
+    replacementText: Win32Pointer,
+    replacementLength: number,
+    destBuf: Win32Pointer,
+    destCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uregex_replaceAllUText */
-  uregex_replaceAllUText(regexp: Win32Pointer, replacement: Win32Pointer, dest: Win32Pointer, status: Win32Pointer): number | null;
+  uregex_replaceAllUText(
+    regexp: Win32Pointer,
+    replacement: Win32Pointer,
+    dest: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!uregex_replaceFirst */
-  uregex_replaceFirst(regexp: Win32Pointer, replacementText: Win32Pointer, replacementLength: number, destBuf: Win32Pointer, destCapacity: number, status: Win32Pointer): number;
+  uregex_replaceFirst(
+    regexp: Win32Pointer,
+    replacementText: Win32Pointer,
+    replacementLength: number,
+    destBuf: Win32Pointer,
+    destCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uregex_replaceFirstUText */
-  uregex_replaceFirstUText(regexp: Win32Pointer, replacement: Win32Pointer, dest: Win32Pointer, status: Win32Pointer): number | null;
+  uregex_replaceFirstUText(
+    regexp: Win32Pointer,
+    replacement: Win32Pointer,
+    dest: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!uregex_requireEnd */
   uregex_requireEnd(regexp: Win32Pointer, status: Win32Pointer): number;
   /** icuin.dll!uregex_reset */
@@ -623,15 +1283,36 @@ interface Functions {
   /** icuin.dll!uregex_reset64 */
   uregex_reset64(regexp: Win32Pointer, index: number | bigint, status: Win32Pointer): void;
   /** icuin.dll!uregex_setFindProgressCallback */
-  uregex_setFindProgressCallback(regexp: Win32Pointer, callback: Win32Callback, context: Win32Pointer, status: Win32Pointer): void;
+  uregex_setFindProgressCallback(
+    regexp: Win32Pointer,
+    callback: Win32Callback,
+    context: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!uregex_setMatchCallback */
-  uregex_setMatchCallback(regexp: Win32Pointer, callback: Win32Callback, context: Win32Pointer, status: Win32Pointer): void;
+  uregex_setMatchCallback(
+    regexp: Win32Pointer,
+    callback: Win32Callback,
+    context: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!uregex_setRegion */
   uregex_setRegion(regexp: Win32Pointer, regionStart: number, regionLimit: number, status: Win32Pointer): void;
   /** icuin.dll!uregex_setRegion64 */
-  uregex_setRegion64(regexp: Win32Pointer, regionStart: number | bigint, regionLimit: number | bigint, status: Win32Pointer): void;
+  uregex_setRegion64(
+    regexp: Win32Pointer,
+    regionStart: number | bigint,
+    regionLimit: number | bigint,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!uregex_setRegionAndStart */
-  uregex_setRegionAndStart(regexp: Win32Pointer, regionStart: number | bigint, regionLimit: number | bigint, startIndex: number | bigint, status: Win32Pointer): void;
+  uregex_setRegionAndStart(
+    regexp: Win32Pointer,
+    regionStart: number | bigint,
+    regionLimit: number | bigint,
+    startIndex: number | bigint,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!uregex_setStackLimit */
   uregex_setStackLimit(regexp: Win32Pointer, limit: number, status: Win32Pointer): void;
   /** icuin.dll!uregex_setText */
@@ -641,9 +1322,22 @@ interface Functions {
   /** icuin.dll!uregex_setUText */
   uregex_setUText(regexp: Win32Pointer, text: Win32Pointer, status: Win32Pointer): void;
   /** icuin.dll!uregex_split */
-  uregex_split(regexp: Win32Pointer, destBuf: Win32Pointer, destCapacity: number, requiredCapacity: Win32Pointer, destFields: Win32Pointer, destFieldsCapacity: number, status: Win32Pointer): number;
+  uregex_split(
+    regexp: Win32Pointer,
+    destBuf: Win32Pointer,
+    destCapacity: number,
+    requiredCapacity: Win32Pointer,
+    destFields: Win32Pointer,
+    destFieldsCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uregex_splitUText */
-  uregex_splitUText(regexp: Win32Pointer, destFields: Win32Pointer, destFieldsCapacity: number, status: Win32Pointer): number;
+  uregex_splitUText(
+    regexp: Win32Pointer,
+    destFields: Win32Pointer,
+    destFieldsCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uregex_start */
   uregex_start(regexp: Win32Pointer, groupNum: number, status: Win32Pointer): number;
   /** icuin.dll!uregex_start64 */
@@ -681,13 +1375,42 @@ interface Functions {
   /** icuin.dll!ureldatefmt_close */
   ureldatefmt_close(reldatefmt: Win32Pointer): void;
   /** icuin.dll!ureldatefmt_combineDateAndTime */
-  ureldatefmt_combineDateAndTime(reldatefmt: Win32Pointer, relativeDateString: Win32Pointer, relativeDateStringLen: number, timeString: Win32Pointer, timeStringLen: number, result: Win32Pointer, resultCapacity: number, status: Win32Pointer): number;
+  ureldatefmt_combineDateAndTime(
+    reldatefmt: Win32Pointer,
+    relativeDateString: Win32Pointer,
+    relativeDateStringLen: number,
+    timeString: Win32Pointer,
+    timeStringLen: number,
+    result: Win32Pointer,
+    resultCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ureldatefmt_format */
-  ureldatefmt_format(reldatefmt: Win32Pointer, offset: number, unit: number, result: Win32Pointer, resultCapacity: number, status: Win32Pointer): number;
+  ureldatefmt_format(
+    reldatefmt: Win32Pointer,
+    offset: number,
+    unit: number,
+    result: Win32Pointer,
+    resultCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ureldatefmt_formatNumeric */
-  ureldatefmt_formatNumeric(reldatefmt: Win32Pointer, offset: number, unit: number, result: Win32Pointer, resultCapacity: number, status: Win32Pointer): number;
+  ureldatefmt_formatNumeric(
+    reldatefmt: Win32Pointer,
+    offset: number,
+    unit: number,
+    result: Win32Pointer,
+    resultCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!ureldatefmt_open */
-  ureldatefmt_open(locale: string | Win32Pointer, nfToAdopt: Win32Pointer, width: number, capitalizationContext: number, status: Win32Pointer): number | null;
+  ureldatefmt_open(
+    locale: string | Win32Pointer,
+    nfToAdopt: Win32Pointer,
+    width: number,
+    capitalizationContext: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!usearch_close */
   usearch_close(searchiter: Win32Pointer): void;
   /** icuin.dll!usearch_first */
@@ -705,7 +1428,12 @@ interface Functions {
   /** icuin.dll!usearch_getMatchedStart */
   usearch_getMatchedStart(strsrch: Win32Pointer): number;
   /** icuin.dll!usearch_getMatchedText */
-  usearch_getMatchedText(strsrch: Win32Pointer, result: Win32Pointer, resultCapacity: number, status: Win32Pointer): number;
+  usearch_getMatchedText(
+    strsrch: Win32Pointer,
+    result: Win32Pointer,
+    resultCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!usearch_getOffset */
   usearch_getOffset(strsrch: Win32Pointer): number;
   /** icuin.dll!usearch_getPattern */
@@ -717,9 +1445,25 @@ interface Functions {
   /** icuin.dll!usearch_next */
   usearch_next(strsrch: Win32Pointer, status: Win32Pointer): number;
   /** icuin.dll!usearch_open */
-  usearch_open(pattern: Win32Pointer, patternlength: number, text: Win32Pointer, textlength: number, locale: string | Win32Pointer, breakiter: Win32Pointer, status: Win32Pointer): number | null;
+  usearch_open(
+    pattern: Win32Pointer,
+    patternlength: number,
+    text: Win32Pointer,
+    textlength: number,
+    locale: string | Win32Pointer,
+    breakiter: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!usearch_openFromCollator */
-  usearch_openFromCollator(pattern: Win32Pointer, patternlength: number, text: Win32Pointer, textlength: number, collator: Win32Pointer, breakiter: Win32Pointer, status: Win32Pointer): number | null;
+  usearch_openFromCollator(
+    pattern: Win32Pointer,
+    patternlength: number,
+    text: Win32Pointer,
+    textlength: number,
+    collator: Win32Pointer,
+    breakiter: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!usearch_preceding */
   usearch_preceding(strsrch: Win32Pointer, position: number, status: Win32Pointer): number;
   /** icuin.dll!usearch_previous */
@@ -739,17 +1483,55 @@ interface Functions {
   /** icuin.dll!usearch_setText */
   usearch_setText(strsrch: Win32Pointer, text: Win32Pointer, textlength: number, status: Win32Pointer): void;
   /** icuin.dll!uspoof_areConfusable */
-  uspoof_areConfusable(sc: Win32Pointer, id1: Win32Pointer, length1: number, id2: Win32Pointer, length2: number, status: Win32Pointer): number;
+  uspoof_areConfusable(
+    sc: Win32Pointer,
+    id1: Win32Pointer,
+    length1: number,
+    id2: Win32Pointer,
+    length2: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uspoof_areConfusableUTF8 */
-  uspoof_areConfusableUTF8(sc: Win32Pointer, id1: string | Win32Pointer, length1: number, id2: string | Win32Pointer, length2: number, status: Win32Pointer): number;
+  uspoof_areConfusableUTF8(
+    sc: Win32Pointer,
+    id1: string | Win32Pointer,
+    length1: number,
+    id2: string | Win32Pointer,
+    length2: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uspoof_check */
-  uspoof_check(sc: Win32Pointer, id: Win32Pointer, length: number, position: Win32Pointer, status: Win32Pointer): number;
+  uspoof_check(
+    sc: Win32Pointer,
+    id: Win32Pointer,
+    length: number,
+    position: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uspoof_check2 */
-  uspoof_check2(sc: Win32Pointer, id: Win32Pointer, length: number, checkResult: Win32Pointer, status: Win32Pointer): number;
+  uspoof_check2(
+    sc: Win32Pointer,
+    id: Win32Pointer,
+    length: number,
+    checkResult: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uspoof_check2UTF8 */
-  uspoof_check2UTF8(sc: Win32Pointer, id: string | Win32Pointer, length: number, checkResult: Win32Pointer, status: Win32Pointer): number;
+  uspoof_check2UTF8(
+    sc: Win32Pointer,
+    id: string | Win32Pointer,
+    length: number,
+    checkResult: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uspoof_checkUTF8 */
-  uspoof_checkUTF8(sc: Win32Pointer, id: string | Win32Pointer, length: number, position: Win32Pointer, status: Win32Pointer): number;
+  uspoof_checkUTF8(
+    sc: Win32Pointer,
+    id: string | Win32Pointer,
+    length: number,
+    position: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uspoof_clone */
   uspoof_clone(sc: Win32Pointer, status: Win32Pointer): number | null;
   /** icuin.dll!uspoof_close */
@@ -775,17 +1557,46 @@ interface Functions {
   /** icuin.dll!uspoof_getRestrictionLevel */
   uspoof_getRestrictionLevel(sc: Win32Pointer): number;
   /** icuin.dll!uspoof_getSkeleton */
-  uspoof_getSkeleton(sc: Win32Pointer, type: number, id: Win32Pointer, length: number, dest: Win32Pointer, destCapacity: number, status: Win32Pointer): number;
+  uspoof_getSkeleton(
+    sc: Win32Pointer,
+    type: number,
+    id: Win32Pointer,
+    length: number,
+    dest: Win32Pointer,
+    destCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uspoof_getSkeletonUTF8 */
-  uspoof_getSkeletonUTF8(sc: Win32Pointer, type: number, id: string | Win32Pointer, length: number, dest: string | Win32Pointer, destCapacity: number, status: Win32Pointer): number;
+  uspoof_getSkeletonUTF8(
+    sc: Win32Pointer,
+    type: number,
+    id: string | Win32Pointer,
+    length: number,
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!uspoof_open */
   uspoof_open(status: Win32Pointer): number | null;
   /** icuin.dll!uspoof_openCheckResult */
   uspoof_openCheckResult(status: Win32Pointer): number | null;
   /** icuin.dll!uspoof_openFromSerialized */
-  uspoof_openFromSerialized(data: Win32Pointer, length: number, pActualLength: Win32Pointer, pErrorCode: Win32Pointer): number | null;
+  uspoof_openFromSerialized(
+    data: Win32Pointer,
+    length: number,
+    pActualLength: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuin.dll!uspoof_openFromSource */
-  uspoof_openFromSource(confusables: string | Win32Pointer, confusablesLen: number, confusablesWholeScript: string | Win32Pointer, confusablesWholeScriptLen: number, errType: Win32Pointer, pe: Win32Pointer, status: Win32Pointer): number | null;
+  uspoof_openFromSource(
+    confusables: string | Win32Pointer,
+    confusablesLen: number,
+    confusablesWholeScript: string | Win32Pointer,
+    confusablesWholeScriptLen: number,
+    errType: Win32Pointer,
+    pe: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!uspoof_serialize */
   uspoof_serialize(sc: Win32Pointer, data: Win32Pointer, capacity: number, status: Win32Pointer): number;
   /** icuin.dll!uspoof_setAllowedChars */
@@ -809,7 +1620,12 @@ interface Functions {
   /** icuin.dll!utrans_countAvailableIDs */
   utrans_countAvailableIDs(): number;
   /** icuin.dll!utrans_getSourceSet */
-  utrans_getSourceSet(trans: Win32Pointer, ignoreFilter: number, fillIn: Win32Pointer, status: Win32Pointer): number | null;
+  utrans_getSourceSet(
+    trans: Win32Pointer,
+    ignoreFilter: number,
+    fillIn: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuin.dll!utrans_getUnicodeID */
   utrans_getUnicodeID(trans: Win32Pointer, resultLength: Win32Pointer): number | null;
   /** icuin.dll!utrans_openIDs */
@@ -817,21 +1633,68 @@ interface Functions {
   /** icuin.dll!utrans_openInverse */
   utrans_openInverse(trans: Win32Pointer, status: Win32Pointer): number | null;
   /** icuin.dll!utrans_openU */
-  utrans_openU(id: Win32Pointer, idLength: number, dir: number, rules: Win32Pointer, rulesLength: number, parseError: Win32Pointer, pErrorCode: Win32Pointer): number | null;
+  utrans_openU(
+    id: Win32Pointer,
+    idLength: number,
+    dir: number,
+    rules: Win32Pointer,
+    rulesLength: number,
+    parseError: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuin.dll!utrans_register */
   utrans_register(adoptedTrans: Win32Pointer, status: Win32Pointer): void;
   /** icuin.dll!utrans_setFilter */
-  utrans_setFilter(trans: Win32Pointer, filterPattern: Win32Pointer, filterPatternLen: number, status: Win32Pointer): void;
+  utrans_setFilter(
+    trans: Win32Pointer,
+    filterPattern: Win32Pointer,
+    filterPatternLen: number,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!utrans_toRules */
-  utrans_toRules(trans: Win32Pointer, escapeUnprintable: number, result: Win32Pointer, resultLength: number, status: Win32Pointer): number;
+  utrans_toRules(
+    trans: Win32Pointer,
+    escapeUnprintable: number,
+    result: Win32Pointer,
+    resultLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuin.dll!utrans_trans */
-  utrans_trans(trans: Win32Pointer, rep: Win32Pointer, repFunc: Win32Pointer, start: number, limit: Win32Pointer, status: Win32Pointer): void;
+  utrans_trans(
+    trans: Win32Pointer,
+    rep: Win32Pointer,
+    repFunc: Win32Pointer,
+    start: number,
+    limit: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!utrans_transIncremental */
-  utrans_transIncremental(trans: Win32Pointer, rep: Win32Pointer, repFunc: Win32Pointer, pos: Win32Pointer, status: Win32Pointer): void;
+  utrans_transIncremental(
+    trans: Win32Pointer,
+    rep: Win32Pointer,
+    repFunc: Win32Pointer,
+    pos: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!utrans_transIncrementalUChars */
-  utrans_transIncrementalUChars(trans: Win32Pointer, text: Win32Pointer, textLength: Win32Pointer, textCapacity: number, pos: Win32Pointer, status: Win32Pointer): void;
+  utrans_transIncrementalUChars(
+    trans: Win32Pointer,
+    text: Win32Pointer,
+    textLength: Win32Pointer,
+    textCapacity: number,
+    pos: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!utrans_transUChars */
-  utrans_transUChars(trans: Win32Pointer, text: Win32Pointer, textLength: Win32Pointer, textCapacity: number, start: number, limit: Win32Pointer, status: Win32Pointer): void;
+  utrans_transUChars(
+    trans: Win32Pointer,
+    text: Win32Pointer,
+    textLength: Win32Pointer,
+    textCapacity: number,
+    start: number,
+    limit: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuin.dll!utrans_unregisterID */
   utrans_unregisterID(id: Win32Pointer, idLength: number): void;
 }

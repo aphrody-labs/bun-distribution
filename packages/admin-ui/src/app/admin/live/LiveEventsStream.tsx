@@ -61,7 +61,7 @@ export function LiveEventsStream() {
   };
 
   // Filtrer les pings de keepalive pour ne pas polluer l'affichage
-  const visibleEvents = events.filter((e) => e.name !== "ping");
+  const visibleEvents = events.filter(e => e.name !== "ping");
 
   return (
     <div className="dbz-panel p-4">
@@ -77,36 +77,29 @@ export function LiveEventsStream() {
             }`}
             aria-hidden
           />
-          <span
-            className={`font-scouter text-xs tracking-[0.2em] ${STATUS_COLOR[status]}`}
-          >
+          <span className={`font-scouter text-xs tracking-[0.2em] ${STATUS_COLOR[status]}`}>
             {STATUS_LABEL[status]}
           </span>
         </div>
         <span className="text-[10px] text-dbz-blue-light/70 font-mono">
-          {visibleEvents.length} événement{visibleEvents.length > 1 ? "s" : ""}{" "}
-          · tampon 200
+          {visibleEvents.length} événement{visibleEvents.length > 1 ? "s" : ""} · tampon 200
         </span>
       </div>
 
       {status === "closed" && (
         <div className="mb-3 rounded border border-red-800 bg-red-900/20 p-2 text-xs text-red-300">
-          La connexion au bot est interrompue. La page se reconnectera
-          automatiquement.
+          La connexion au bot est interrompue. La page se reconnectera automatiquement.
         </div>
       )}
 
       <div className="font-mono text-xs space-y-1 max-h-[70vh] overflow-y-auto bg-dbz-bg/60 p-3 border border-dbz-border rounded">
         {visibleEvents.length === 0 && (
           <p className="text-dbz-blue-light/50 italic py-4 text-center">
-            {status === "connecting"
-              ? "Connexion au flux d'événements…"
-              : "En attente du prochain événement…"}
+            {status === "connecting" ? "Connexion au flux d'événements…" : "En attente du prochain événement…"}
           </p>
         )}
-        {visibleEvents.map((e) => {
-          const colorClass =
-            EVENT_TYPE_COLOR[e.name] ?? "text-dbz-blue-light border-dbz-border";
+        {visibleEvents.map(e => {
+          const colorClass = EVENT_TYPE_COLOR[e.name] ?? "text-dbz-blue-light border-dbz-border";
           const label = EVENT_TYPE_LABEL[e.name] ?? e.name;
           return (
             <div
@@ -114,9 +107,7 @@ export function LiveEventsStream() {
               className={`border-l-2 pl-2 py-1 hover:bg-dbz-blue-light/5 transition-colors ${colorClass.split(" ")[1] ?? "border-dbz-border"}`}
             >
               <div className="flex items-center gap-3">
-                <span className={`font-bold ${colorClass.split(" ")[0]}`}>
-                  {label}
-                </span>
+                <span className={`font-bold ${colorClass.split(" ")[0]}`}>{label}</span>
                 <code className="text-zinc-600 text-[9px]">{e.name}</code>
                 {e.ts && (
                   <span className="text-dbz-blue-light/50 text-[10px] ml-auto">
@@ -126,9 +117,7 @@ export function LiveEventsStream() {
               </div>
               {e.payload !== undefined && (
                 <details className="mt-0.5">
-                  <summary className="text-[10px] text-zinc-500 cursor-pointer select-none">
-                    Données
-                  </summary>
+                  <summary className="text-[10px] text-zinc-500 cursor-pointer select-none">Données</summary>
                   <pre className="text-[10px] text-dbz-blue-light/80 mt-1 whitespace-pre-wrap break-all pl-2">
                     {JSON.stringify(e.payload, null, 2)}
                   </pre>

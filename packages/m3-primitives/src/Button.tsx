@@ -29,9 +29,7 @@ type Button = {
   (props: LinkButtonProps): React.ReactElement;
 };
 
-const hasHref = (
-  props: ButtonProps | LinkButtonProps,
-): props is LinkButtonProps => "href" in props;
+const hasHref = (props: ButtonProps | LinkButtonProps): props is LinkButtonProps => "href" in props;
 
 // M3 common-button looks. Disabled: container on-surface 12 %, content on-surface 38 %.
 const filled = [
@@ -49,11 +47,7 @@ const outlined = [
   "disabled:border-on-surface/12 disabled:text-on-surface/38",
   m3StateLayer,
 ];
-const text = [
-  "border-transparent bg-transparent text-primary",
-  "disabled:text-on-surface/38",
-  m3StateLayer,
-];
+const text = ["border-transparent bg-transparent text-primary", "disabled:text-on-surface/38", m3StateLayer];
 const elevated = [
   "border-transparent bg-surface-container-low text-primary shadow-md3-1 hover:shadow-md3-2",
   "disabled:bg-on-surface/12 disabled:text-on-surface/38 disabled:shadow-none",
@@ -117,42 +111,41 @@ export const buttonStyles = cva(
   },
 );
 
-export const Button = forwardRef<
-  HTMLButtonElement | HTMLAnchorElement,
-  ButtonProps | LinkButtonProps
->(({ className, loading, ...props }, ref) => {
-  const isLink = hasHref(props);
-  if (loading && !isLink) (props as ButtonProps).disabled = true;
-  const { size, variant, rounding, children, ...rest } = props;
-  className = cx(
-    buttonStyles({ size, variant, rounding }),
-    loading && isLink && "pointer-events-none opacity-38",
-    className,
-  );
-  return isLink ? (
-    <a
-      data-m3-component="Button"
-      {...(rest as LinkButtonProps)}
-      aria-busy={loading || undefined}
-      aria-disabled={loading || undefined}
-      ref={ref as any}
-      className={cx(className, "no-underline")}
-    >
-      {children}
-    </a>
-  ) : (
-    <button
-      type="button"
-      data-m3-component="Button"
-      {...(rest as ButtonProps)}
-      aria-busy={loading || undefined}
-      ref={ref as any}
-      className={className}
-    >
-      {children}
-    </button>
-  );
-});
+export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps | LinkButtonProps>(
+  ({ className, loading, ...props }, ref) => {
+    const isLink = hasHref(props);
+    if (loading && !isLink) (props as ButtonProps).disabled = true;
+    const { size, variant, rounding, children, ...rest } = props;
+    className = cx(
+      buttonStyles({ size, variant, rounding }),
+      loading && isLink && "pointer-events-none opacity-38",
+      className,
+    );
+    return isLink ? (
+      <a
+        data-m3-component="Button"
+        {...(rest as LinkButtonProps)}
+        aria-busy={loading || undefined}
+        aria-disabled={loading || undefined}
+        ref={ref as any}
+        className={cx(className, "no-underline")}
+      >
+        {children}
+      </a>
+    ) : (
+      <button
+        type="button"
+        data-m3-component="Button"
+        {...(rest as ButtonProps)}
+        aria-busy={loading || undefined}
+        ref={ref as any}
+        className={className}
+      >
+        {children}
+      </button>
+    );
+  },
+);
 
 Button.displayName = "Button";
 

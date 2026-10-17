@@ -25,7 +25,12 @@ interface Functions {
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsCreateString */
   WindowsCreateString(sourceString: string | Win32Pointer, length: number, string: Win32Pointer): number;
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsCreateStringReference */
-  WindowsCreateStringReference(sourceString: string | Win32Pointer, length: number, hstringHeader: Win32Pointer, string: Win32Pointer): number;
+  WindowsCreateStringReference(
+    sourceString: string | Win32Pointer,
+    length: number,
+    hstringHeader: Win32Pointer,
+    string: Win32Pointer,
+  ): number;
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsDeleteString */
   WindowsDeleteString(string: Win32Pointer): number;
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsDeleteStringBuffer */
@@ -37,7 +42,14 @@ interface Functions {
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsGetStringRawBuffer */
   WindowsGetStringRawBuffer(string: Win32Pointer, length: Win32Pointer): number | null;
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsInspectString */
-  WindowsInspectString(targetHString: number | bigint, machine: number, callback: Win32Callback, context: Win32Pointer, length: Win32Pointer, targetStringAddress: Win32Pointer): number;
+  WindowsInspectString(
+    targetHString: number | bigint,
+    machine: number,
+    callback: Win32Callback,
+    context: Win32Pointer,
+    length: Win32Pointer,
+    targetStringAddress: Win32Pointer,
+  ): number;
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsIsStringEmpty */
   WindowsIsStringEmpty(string: Win32Pointer): number;
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsPreallocateStringBuffer */
@@ -45,13 +57,23 @@ interface Functions {
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsPromoteStringBuffer */
   WindowsPromoteStringBuffer(bufferHandle: Win32Pointer, string: Win32Pointer): number;
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsReplaceString */
-  WindowsReplaceString(string: Win32Pointer, stringReplaced: Win32Pointer, stringReplaceWith: Win32Pointer, newString: Win32Pointer): number;
+  WindowsReplaceString(
+    string: Win32Pointer,
+    stringReplaced: Win32Pointer,
+    stringReplaceWith: Win32Pointer,
+    newString: Win32Pointer,
+  ): number;
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsStringHasEmbeddedNull */
   WindowsStringHasEmbeddedNull(string: Win32Pointer, hasEmbedNull: Win32Pointer): number;
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsSubstring */
   WindowsSubstring(string: Win32Pointer, startIndex: number, newString: Win32Pointer): number;
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsSubstringWithSpecifiedLength */
-  WindowsSubstringWithSpecifiedLength(string: Win32Pointer, startIndex: number, length: number, newString: Win32Pointer): number;
+  WindowsSubstringWithSpecifiedLength(
+    string: Win32Pointer,
+    startIndex: number,
+    length: number,
+    newString: Win32Pointer,
+  ): number;
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsTrimStringEnd */
   WindowsTrimStringEnd(string: Win32Pointer, trimString: Win32Pointer, newString: Win32Pointer): number;
   /** api-ms-win-core-winrt-string-l1-1-0.dll!WindowsTrimStringStart */

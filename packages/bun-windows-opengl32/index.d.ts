@@ -15,7 +15,15 @@ interface Functions {
   /** opengl32.dll!glBindTexture */
   glBindTexture(target: number, texture: number): void;
   /** opengl32.dll!glBitmap */
-  glBitmap(width: number, height: number, xorig: number, yorig: number, xmove: number, ymove: number, bitmap: Win32Pointer): void;
+  glBitmap(
+    width: number,
+    height: number,
+    xorig: number,
+    yorig: number,
+    xmove: number,
+    ymove: number,
+    bitmap: Win32Pointer,
+  ): void;
   /** opengl32.dll!glBlendFunc */
   glBlendFunc(sfactor: number, dfactor: number): void;
   /** opengl32.dll!glCallList */
@@ -109,13 +117,39 @@ interface Functions {
   /** opengl32.dll!glCopyPixels */
   glCopyPixels(x: number, y: number, width: number, height: number, type: number): void;
   /** opengl32.dll!glCopyTexImage1D */
-  glCopyTexImage1D(target: number, level: number, internalFormat: number, x: number, y: number, width: number, border: number): void;
+  glCopyTexImage1D(
+    target: number,
+    level: number,
+    internalFormat: number,
+    x: number,
+    y: number,
+    width: number,
+    border: number,
+  ): void;
   /** opengl32.dll!glCopyTexImage2D */
-  glCopyTexImage2D(target: number, level: number, internalFormat: number, x: number, y: number, width: number, height: number, border: number): void;
+  glCopyTexImage2D(
+    target: number,
+    level: number,
+    internalFormat: number,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    border: number,
+  ): void;
   /** opengl32.dll!glCopyTexSubImage1D */
   glCopyTexSubImage1D(target: number, level: number, xoffset: number, x: number, y: number, width: number): void;
   /** opengl32.dll!glCopyTexSubImage2D */
-  glCopyTexSubImage2D(target: number, level: number, xoffset: number, yoffset: number, x: number, y: number, width: number, height: number): void;
+  glCopyTexSubImage2D(
+    target: number,
+    level: number,
+    xoffset: number,
+    yoffset: number,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): void;
   /** opengl32.dll!glCullFace */
   glCullFace(mode: number): void;
   /** opengl32.dll!glDeleteLists */
@@ -331,9 +365,31 @@ interface Functions {
   /** opengl32.dll!glMap1f */
   glMap1f(target: number, u1: number, u2: number, stride: number, order: number, points: Win32Pointer): void;
   /** opengl32.dll!glMap2d */
-  glMap2d(target: number, u1: number, u2: number, ustride: number, uorder: number, v1: number, v2: number, vstride: number, vorder: number, points: Win32Pointer): void;
+  glMap2d(
+    target: number,
+    u1: number,
+    u2: number,
+    ustride: number,
+    uorder: number,
+    v1: number,
+    v2: number,
+    vstride: number,
+    vorder: number,
+    points: Win32Pointer,
+  ): void;
   /** opengl32.dll!glMap2f */
-  glMap2f(target: number, u1: number, u2: number, ustride: number, uorder: number, v1: number, v2: number, vstride: number, vorder: number, points: Win32Pointer): void;
+  glMap2f(
+    target: number,
+    u1: number,
+    u2: number,
+    ustride: number,
+    uorder: number,
+    v1: number,
+    v2: number,
+    vstride: number,
+    vorder: number,
+    points: Win32Pointer,
+  ): void;
   /** opengl32.dll!glMapGrid1d */
   glMapGrid1d(un: number, u1: number, u2: number): void;
   /** opengl32.dll!glMapGrid1f */
@@ -477,7 +533,15 @@ interface Functions {
   /** opengl32.dll!glReadBuffer */
   glReadBuffer(mode: number): void;
   /** opengl32.dll!glReadPixels */
-  glReadPixels(x: number, y: number, width: number, height: number, format: number, type: number, pixels: Win32Pointer): void;
+  glReadPixels(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    format: number,
+    type: number,
+    pixels: Win32Pointer,
+  ): void;
   /** opengl32.dll!glRectd */
   glRectd(x1: number, y1: number, x2: number, y2: number): void;
   /** opengl32.dll!glRectdv */
@@ -603,9 +667,28 @@ interface Functions {
   /** opengl32.dll!glTexGeniv */
   glTexGeniv(coord: number, pname: number, params: Win32Pointer): void;
   /** opengl32.dll!glTexImage1D */
-  glTexImage1D(target: number, level: number, internalformat: number, width: number, border: number, format: number, type: number, pixels: Win32Pointer): void;
+  glTexImage1D(
+    target: number,
+    level: number,
+    internalformat: number,
+    width: number,
+    border: number,
+    format: number,
+    type: number,
+    pixels: Win32Pointer,
+  ): void;
   /** opengl32.dll!glTexImage2D */
-  glTexImage2D(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, pixels: Win32Pointer): void;
+  glTexImage2D(
+    target: number,
+    level: number,
+    internalformat: number,
+    width: number,
+    height: number,
+    border: number,
+    format: number,
+    type: number,
+    pixels: Win32Pointer,
+  ): void;
   /** opengl32.dll!glTexParameterf */
   glTexParameterf(target: number, pname: number, param2: number): void;
   /** opengl32.dll!glTexParameterfv */
@@ -615,9 +698,27 @@ interface Functions {
   /** opengl32.dll!glTexParameteriv */
   glTexParameteriv(target: number, pname: number, params: Win32Pointer): void;
   /** opengl32.dll!glTexSubImage1D */
-  glTexSubImage1D(target: number, level: number, xoffset: number, width: number, format: number, type: number, pixels: Win32Pointer): void;
+  glTexSubImage1D(
+    target: number,
+    level: number,
+    xoffset: number,
+    width: number,
+    format: number,
+    type: number,
+    pixels: Win32Pointer,
+  ): void;
   /** opengl32.dll!glTexSubImage2D */
-  glTexSubImage2D(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, pixels: Win32Pointer): void;
+  glTexSubImage2D(
+    target: number,
+    level: number,
+    xoffset: number,
+    yoffset: number,
+    width: number,
+    height: number,
+    format: number,
+    type: number,
+    pixels: Win32Pointer,
+  ): void;
   /** opengl32.dll!glTranslated */
   glTranslated(x: number, y: number, z: number): void;
   /** opengl32.dll!glTranslatef */
@@ -683,13 +784,25 @@ interface Functions {
   /** opengl32.dll!wglDeleteContext */
   wglDeleteContext(param0: Win32Pointer): number;
   /** opengl32.dll!wglDescribeLayerPlane */
-  wglDescribeLayerPlane(param0: Win32Pointer, param1: number, param2: number, param3: number, param4: Win32Pointer): number;
+  wglDescribeLayerPlane(
+    param0: Win32Pointer,
+    param1: number,
+    param2: number,
+    param3: number,
+    param4: Win32Pointer,
+  ): number;
   /** opengl32.dll!wglGetCurrentContext */
   wglGetCurrentContext(): number | null;
   /** opengl32.dll!wglGetCurrentDC */
   wglGetCurrentDC(): number | null;
   /** opengl32.dll!wglGetLayerPaletteEntries */
-  wglGetLayerPaletteEntries(param0: Win32Pointer, param1: number, param2: number, param3: number, param4: Win32Pointer): number;
+  wglGetLayerPaletteEntries(
+    param0: Win32Pointer,
+    param1: number,
+    param2: number,
+    param3: number,
+    param4: Win32Pointer,
+  ): number;
   /** opengl32.dll!wglGetProcAddress */
   wglGetProcAddress(param0: string | Win32Pointer): number | null;
   /** opengl32.dll!wglMakeCurrent */
@@ -697,7 +810,13 @@ interface Functions {
   /** opengl32.dll!wglRealizeLayerPalette */
   wglRealizeLayerPalette(param0: Win32Pointer, param1: number, param2: number): number;
   /** opengl32.dll!wglSetLayerPaletteEntries */
-  wglSetLayerPaletteEntries(param0: Win32Pointer, param1: number, param2: number, param3: number, param4: Win32Pointer): number;
+  wglSetLayerPaletteEntries(
+    param0: Win32Pointer,
+    param1: number,
+    param2: number,
+    param3: number,
+    param4: Win32Pointer,
+  ): number;
   /** opengl32.dll!wglShareLists */
   wglShareLists(param0: Win32Pointer, param1: Win32Pointer): number;
   /** opengl32.dll!wglSwapLayerBuffers */
@@ -711,11 +830,38 @@ interface Functions {
   /** opengl32.dll!wglUseFontBitmapsW */
   wglUseFontBitmaps(param0: Win32Pointer, param1: number, param2: number, param3: number): number;
   /** opengl32.dll!wglUseFontOutlinesA */
-  wglUseFontOutlinesA(param0: Win32Pointer, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: Win32Pointer): number;
+  wglUseFontOutlinesA(
+    param0: Win32Pointer,
+    param1: number,
+    param2: number,
+    param3: number,
+    param4: number,
+    param5: number,
+    param6: number,
+    param7: Win32Pointer,
+  ): number;
   /** opengl32.dll!wglUseFontOutlinesW */
-  wglUseFontOutlinesW(param0: Win32Pointer, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: Win32Pointer): number;
+  wglUseFontOutlinesW(
+    param0: Win32Pointer,
+    param1: number,
+    param2: number,
+    param3: number,
+    param4: number,
+    param5: number,
+    param6: number,
+    param7: Win32Pointer,
+  ): number;
   /** opengl32.dll!wglUseFontOutlinesW */
-  wglUseFontOutlines(param0: Win32Pointer, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: Win32Pointer): number;
+  wglUseFontOutlines(
+    param0: Win32Pointer,
+    param1: number,
+    param2: number,
+    param3: number,
+    param4: number,
+    param5: number,
+    param6: number,
+    param7: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

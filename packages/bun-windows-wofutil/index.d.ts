@@ -3,27 +3,63 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** wofutil.dll!WofEnumEntries */
-  WofEnumEntries(VolumeName: string | Win32Pointer, Provider: number, EnumProc: Win32Callback, UserData: Win32Pointer): number;
+  WofEnumEntries(
+    VolumeName: string | Win32Pointer,
+    Provider: number,
+    EnumProc: Win32Callback,
+    UserData: Win32Pointer,
+  ): number;
   /** wofutil.dll!WofFileEnumFiles */
-  WofFileEnumFiles(VolumeName: string | Win32Pointer, Algorithm: number, EnumProc: Win32Callback, UserData: Win32Pointer): number;
+  WofFileEnumFiles(
+    VolumeName: string | Win32Pointer,
+    Algorithm: number,
+    EnumProc: Win32Callback,
+    UserData: Win32Pointer,
+  ): number;
   /** wofutil.dll!WofGetDriverVersion */
   WofGetDriverVersion(FileOrVolumeHandle: Win32Pointer, Provider: number, WofVersion: Win32Pointer): number;
   /** wofutil.dll!WofIsExternalFile */
-  WofIsExternalFile(FilePath: string | Win32Pointer, IsExternalFile: Win32Pointer, Provider: Win32Pointer, ExternalFileInfo: Win32Pointer, BufferLength: Win32Pointer): number;
+  WofIsExternalFile(
+    FilePath: string | Win32Pointer,
+    IsExternalFile: Win32Pointer,
+    Provider: Win32Pointer,
+    ExternalFileInfo: Win32Pointer,
+    BufferLength: Win32Pointer,
+  ): number;
   /** wofutil.dll!WofSetFileDataLocation */
-  WofSetFileDataLocation(FileHandle: Win32Pointer, Provider: number, ExternalFileInfo: Win32Pointer, Length: number): number;
+  WofSetFileDataLocation(
+    FileHandle: Win32Pointer,
+    Provider: number,
+    ExternalFileInfo: Win32Pointer,
+    Length: number,
+  ): number;
   /** wofutil.dll!WofShouldCompressBinaries */
   WofShouldCompressBinaries(Volume: string | Win32Pointer, Algorithm: Win32Pointer): number;
   /** wofutil.dll!WofWimAddEntry */
-  WofWimAddEntry(VolumeName: string | Win32Pointer, WimPath: string | Win32Pointer, WimType: number, WimIndex: number, DataSourceId: Win32Pointer): number;
+  WofWimAddEntry(
+    VolumeName: string | Win32Pointer,
+    WimPath: string | Win32Pointer,
+    WimType: number,
+    WimIndex: number,
+    DataSourceId: Win32Pointer,
+  ): number;
   /** wofutil.dll!WofWimEnumFiles */
-  WofWimEnumFiles(VolumeName: string | Win32Pointer, DataSourceId: number | bigint, EnumProc: Win32Callback, UserData: Win32Pointer): number;
+  WofWimEnumFiles(
+    VolumeName: string | Win32Pointer,
+    DataSourceId: number | bigint,
+    EnumProc: Win32Callback,
+    UserData: Win32Pointer,
+  ): number;
   /** wofutil.dll!WofWimRemoveEntry */
   WofWimRemoveEntry(VolumeName: string | Win32Pointer, DataSourceId: number | bigint): number;
   /** wofutil.dll!WofWimSuspendEntry */
   WofWimSuspendEntry(VolumeName: string | Win32Pointer, DataSourceId: number | bigint): number;
   /** wofutil.dll!WofWimUpdateEntry */
-  WofWimUpdateEntry(VolumeName: string | Win32Pointer, DataSourceId: number | bigint, NewWimPath: string | Win32Pointer): number;
+  WofWimUpdateEntry(
+    VolumeName: string | Win32Pointer,
+    DataSourceId: number | bigint,
+    NewWimPath: string | Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

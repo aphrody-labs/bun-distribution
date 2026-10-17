@@ -5,9 +5,7 @@ import { CommonQuality } from "@storyteller/api-enums";
  *
  * Preserves all API quality tiers, including values added after this build.
  */
-export function stringToCommonQuality(
-  quality: string | undefined,
-): string | null {
+export function stringToCommonQuality(quality: string | undefined): string | null {
   switch (quality) {
     case "auto":
       return CommonQuality.Auto;

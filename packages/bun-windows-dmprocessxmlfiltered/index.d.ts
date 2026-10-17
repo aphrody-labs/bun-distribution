@@ -3,7 +3,12 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** dmprocessxmlfiltered.dll!DMProcessConfigXMLFiltered */
-  DMProcessConfigXMLFiltered(pszXmlIn: string | Win32Pointer, rgszAllowedCspNodes: Win32Pointer, dwNumAllowedCspNodes: number, pbstrXmlOut: Win32Pointer): number;
+  DMProcessConfigXMLFiltered(
+    pszXmlIn: string | Win32Pointer,
+    rgszAllowedCspNodes: Win32Pointer,
+    dwNumAllowedCspNodes: number,
+    pbstrXmlOut: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

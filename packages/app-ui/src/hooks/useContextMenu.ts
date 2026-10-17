@@ -4,11 +4,7 @@ import { usePlatform } from "../contexts/PlatformContext";
 import { useWebContextMenuController } from "../contexts/WebContextMenuContext";
 import type { KeybindId } from "../util/keybinds/registry";
 import { getKeybind } from "../util/keybinds/registry";
-import {
-  getComboForPlatform,
-  getCurrentPlatform,
-  toDisplayString,
-} from "../util/keybinds/platform";
+import { getComboForPlatform, getCurrentPlatform, toDisplayString } from "../util/keybinds/platform";
 
 export interface ContextMenuItem {
   type?: "separator" | "submenu";
@@ -83,7 +79,7 @@ function collapseSeparators(items: ContextMenuItem[]): ContextMenuItem[] {
  * Process menu items to resolve keybindId to display strings
  */
 function processMenuItems(items: ContextMenuItem[]): ContextMenuItem[] {
-  return items.map((item) => {
+  return items.map(item => {
     const processed = { ...item };
 
     // Resolve keybind display string
@@ -142,9 +138,7 @@ export function useContextMenu(config: ContextMenuConfig): ContextMenuResult {
       e.preventDefault();
       e.stopPropagation();
 
-      const filteredItems = config.items.filter(
-        (item) => !item.condition || item.condition(),
-      );
+      const filteredItems = config.items.filter(item => !item.condition || item.condition());
       const visibleItems = collapseSeparators(processMenuItems(filteredItems));
 
       const isTauri = platform.platform === "tauri";
@@ -155,10 +149,7 @@ export function useContextMenu(config: ContextMenuConfig): ContextMenuResult {
           await nativeShow(visibleItems, { x: e.clientX, y: e.clientY });
           return;
         } catch (err) {
-          console.error(
-            "[useContextMenu] native menu failed, falling back to web",
-            err,
-          );
+          console.error("[useContextMenu] native menu failed, falling back to web", err);
         }
       }
 

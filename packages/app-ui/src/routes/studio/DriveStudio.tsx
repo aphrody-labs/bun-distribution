@@ -3,18 +3,14 @@
 // the dbfr folder as a Spacedrive cloud volume (OpenDAL gdrive) with an indexed location.
 import { useState } from "react";
 import { Button, Card } from "@aphrody/m3-primitives";
-import type {
-  LocationAddInput,
-  VolumeAddCloudInput,
-} from "@aphrody/drive-client";
+import type { LocationAddInput, VolumeAddCloudInput } from "@aphrody/drive-client";
 import { StudioHeader } from "./StudioHeader";
 import { useLibraryMutation } from "../../contexts/SpacedriveContext";
 import { isTauri } from "../../tauri-bridge";
 import { authorizeGoogleDrive } from "../../studio-bridge";
 
 const buttonClass = "min-h-12 px-5 text-[18px]";
-const fieldClass =
-  "min-h-12 rounded-xl border border-outline bg-surface-container px-4 text-[18px]";
+const fieldClass = "min-h-12 rounded-xl border border-outline bg-surface-container px-4 text-[18px]";
 
 export function DriveStudio() {
   const addCloudVolume = useLibraryMutation("volumes.add_cloud");
@@ -25,11 +21,7 @@ export function DriveStudio() {
   const [error, setError] = useState<string | null>(null);
 
   if (!isTauri()) {
-    return (
-      <p className="text-[18px] text-on-surface-variant">
-        Le Drive dbfr nécessite l’application Aphrody.
-      </p>
-    );
+    return <p className="text-[18px] text-on-surface-variant">Le Drive dbfr nécessite l’application Aphrody.</p>;
   }
 
   const connect = async () => {
@@ -61,9 +53,7 @@ export function DriveStudio() {
         job_policies: {},
       };
       await addLocation.mutateAsync(location);
-      setDone(
-        `Dossier ${folder} monté et en cours d’indexation dans Fichiers.`,
-      );
+      setDone(`Dossier ${folder} monté et en cours d’indexation dans Fichiers.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -81,17 +71,9 @@ export function DriveStudio() {
       <Card className="flex flex-col gap-4 p-6">
         <label className="flex flex-col gap-2 text-[18px]">
           Dossier Google Drive
-          <input
-            className={fieldClass}
-            value={root}
-            onChange={(event) => setRoot(event.target.value)}
-          />
+          <input className={fieldClass} value={root} onChange={event => setRoot(event.target.value)} />
         </label>
-        <Button
-          className={buttonClass}
-          disabled={step !== null}
-          onClick={() => void connect()}
-        >
+        <Button className={buttonClass} disabled={step !== null} onClick={() => void connect()}>
           {step ?? "Connecter et monter"}
         </Button>
         {done ? <p className="text-[18px] text-primary">{done}</p> : null}

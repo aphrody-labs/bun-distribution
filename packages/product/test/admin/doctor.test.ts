@@ -67,8 +67,7 @@ async function readyPc(): Promise<TestContext> {
   return t;
 }
 
-const find = (checks: Check[], id: string) =>
-  checks.find((entry) => entry.id === id);
+const find = (checks: Check[], id: string) => checks.find(entry => entry.id === id);
 
 test("parseProbe reads every line of the host probe", () => {
   const probe = parseProbe(SONDE_OK);
@@ -83,20 +82,14 @@ test("parseProbe reads every line of the host probe", () => {
     repo: true,
     jobs: 0,
   });
-  expect(probe.gpus).toEqual([
-    { name: "NVIDIA RTX 4090", totalMiB: 24564, usedMiB: 1200, util: 3 },
-  ]);
+  expect(probe.gpus).toEqual([{ name: "NVIDIA RTX 4090", totalMiB: 24564, usedMiB: 1200, util: 3 }]);
   expect(parseProbe("gpu|aucun\naphrody|absent\nrepo|non").noGpu).toBe(true);
   expect(parseProbe("aphrody|absent").aphrodyAbsent).toBe(true);
 });
 
 test("readTrainStatus tells a JSON status from a build without the train feature", () => {
-  expect(
-    readTrainStatus('{ "gpu_lock_active": true }').json?.gpu_lock_active,
-  ).toBe(true);
-  expect(
-    readTrainStatus("× `aphrody train` requires --features train").missing,
-  ).toBe(true);
+  expect(readTrainStatus('{ "gpu_lock_active": true }').json?.gpu_lock_active).toBe(true);
+  expect(readTrainStatus("× `aphrody train` requires --features train").missing).toBe(true);
   expect(readTrainStatus("Segmentation fault").missing).toBe(false);
 });
 
@@ -124,22 +117,18 @@ test("a fully set up PC is ready, and training can start", async () => {
       artifacts: [],
     });
   const report = await runDoctor(ctx);
-  const failing = report.checks.filter((entry) => entry.status === "echec");
+  const failing = report.checks.filter(entry => entry.status === "echec");
   expect(failing).toEqual([]);
   expect(find(report.checks, "tunnel")?.status).toBe("ok");
   expect(find(report.checks, "ssh-gpu")?.detail).toContain("omar");
   expect(find(report.checks, "ressources-gpu")?.detail).toContain("16 coeurs");
-  expect(find(report.checks, "ressources-gpu")?.detail).toContain(
-    "GPU NVIDIA RTX 4090 23364 Mo libres",
-  );
+  expect(find(report.checks, "ressources-gpu")?.detail).toContain("GPU NVIDIA RTX 4090 23364 Mo libres");
   expect(find(report.checks, "entrainement-gpu")?.status).toBe("ok");
   expect(find(report.checks, "entrainement-vps")).toBeUndefined();
   expect(find(report.checks, "mcpHttp")?.status).toBe("ok");
   expect(find(report.checks, "a2a")?.status).toBe("ok");
   expect(report.entrainementPret).toBe(true);
-  expect(renderReport(report).join("\n")).toContain(
-    "Entraînement : prêt à être lancé.",
-  );
+  expect(renderReport(report).join("\n")).toContain("Entraînement : prêt à être lancé.");
 });
 
 test("tunnel down: the report says to start it and the servers are not blamed", async () => {
@@ -186,10 +175,7 @@ test("training feature missing on the host is a team problem, not Omar's", async
   sys.handlers.unshift({
     match: /^ssh /,
     result: {
-      stdout: SONDE_OK.replace(
-        /train\|.*/,
-        "train|× `aphrody train` requires --features train",
-      ),
+      stdout: SONDE_OK.replace(/train\|.*/, "train|× `aphrody train` requires --features train"),
     },
   });
   const report = await runDoctor(ctx);
@@ -205,15 +191,10 @@ test("a full disk or a missing GPU on the training host is flagged before launch
   sys.handlers.unshift({
     match: /^ssh /,
     result: {
-      stdout: SONDE_OK.replace(
-        "disk|412000000|500000000",
-        "disk|2000000|500000000",
-      ),
+      stdout: SONDE_OK.replace("disk|412000000|500000000", "disk|2000000|500000000"),
     },
   });
-  expect(find((await runDoctor(ctx)).checks, "ressources-gpu")?.status).toBe(
-    "echec",
-  );
+  expect(find((await runDoctor(ctx)).checks, "ressources-gpu")?.status).toBe("echec");
   sys.handlers.shift();
   sys.handlers.unshift({
     match: /^ssh /,
@@ -230,9 +211,7 @@ test("a GPU already reserved is a remark, not a failure", async () => {
     match: /^ssh /,
     result: { stdout: SONDE_OK.replace("false", "true") },
   });
-  expect(find((await runDoctor(ctx)).checks, "entrainement-gpu")?.status).toBe(
-    "attention",
-  );
+  expect(find((await runDoctor(ctx)).checks, "entrainement-gpu")?.status).toBe("attention");
 });
 
 test("server services that are not up yet are remarks for the team, never blockers", async () => {
@@ -268,9 +247,7 @@ test("a bare PC says what to do first, and aphrody not published for Windows is 
     });
   const report = await runDoctor(ctx);
   expect(find(report.checks, "git")?.status).toBe("echec");
-  expect(find(report.checks, "acces")?.action).toContain(
-    "aphrody-omar-acces.json",
-  );
+  expect(find(report.checks, "acces")?.action).toContain("aphrody-omar-acces.json");
   expect(find(report.checks, "aphrody")).toMatchObject({
     status: "attente",
     responsable: "equipe",
@@ -283,16 +260,14 @@ test("the check never modifies anything", async () => {
   const { ctx, sys } = await readyPc();
   await runDoctor(ctx);
   const mutating = sys.calls.filter(
-    (call) =>
-      /install|uninstall|clone|pull|add|remove|kill|rm /.test(
-        call.argv.join(" "),
-      ) && !call.argv.join(" ").startsWith("ssh "),
+    call =>
+      /install|uninstall|clone|pull|add|remove|kill|rm /.test(call.argv.join(" ")) &&
+      !call.argv.join(" ").startsWith("ssh "),
   );
   expect(mutating).toEqual([]);
-  const ssh = sys.calls.filter((call) => call.argv[0] === "ssh");
+  const ssh = sys.calls.filter(call => call.argv[0] === "ssh");
   expect(ssh.length).toBeGreaterThan(0);
-  for (const call of ssh)
-    expect(call.options.input).not.toMatch(/\brm\b|\bkill\b|\bmkdir\b/);
+  for (const call of ssh) expect(call.options.input).not.toMatch(/\brm\b|\bkill\b|\bmkdir\b/);
 });
 
 export type { FakeSystem };

@@ -13,12 +13,7 @@ import {
   type LoadOptions,
 } from "@aphrody/runtime-sdk";
 
-export const BROWSER_CAPABILITIES = [
-  "browser.navigate",
-  "browser.dom",
-  "browser.capture",
-  "browser.contexts",
-] as const;
+export const BROWSER_CAPABILITIES = ["browser.navigate", "browser.dom", "browser.capture", "browser.contexts"] as const;
 
 export interface BrowserContextOptions {
   /** Exact HTTP(S) origins permitted for navigation, redirects and every network request. */
@@ -119,9 +114,7 @@ export class BrowserRuntime implements Disposable {
     // ABI and capabilities are negotiated using existing symbols before binding any extension.
     // Existing ABI 1.4 core artifacts continue to load without browser symbols.
     using probe = Runtime.load(options);
-    const missing = BROWSER_CAPABILITIES.filter(
-      (capability) => !probe.capabilities().includes(capability),
-    );
+    const missing = BROWSER_CAPABILITIES.filter(capability => !probe.capabilities().includes(capability));
     if (missing.length > 0) {
       throw new RuntimeError(
         Status.AbiMismatch,
@@ -129,12 +122,7 @@ export class BrowserRuntime implements Disposable {
       );
     }
     const library = dlopen(path, SYMBOLS);
-    const createInfo = new Uint32Array([
-      16,
-      EXPECTED_ABI_MAJOR,
-      EXPECTED_ABI_MINOR,
-      options.maxOperations ?? 32,
-    ]);
+    const createInfo = new Uint32Array([16, EXPECTED_ABI_MAJOR, EXPECTED_ABI_MINOR, options.maxOperations ?? 32]);
     const out = new BigUint64Array(1);
     try {
       check(library.symbols, library.symbols.yolo_runtime_create(ptr(createInfo), ptr(out)));
@@ -239,8 +227,7 @@ export class BrowserContext implements Disposable {
   }
 
   #call<T>(command: unknown, options?: BrowserCallOptions): Promise<T> {
-    if (this.closed)
-      return Promise.reject(new RuntimeError(Status.InvalidHandle, "browser context is closed"));
+    if (this.closed) return Promise.reject(new RuntimeError(Status.InvalidHandle, "browser context is closed"));
     return this.#runtime.call<T>(this.#handle, command, options);
   }
 
@@ -264,12 +251,8 @@ export class BrowserContext implements Disposable {
   }
 
   async screenshot(options?: BrowserCallOptions): Promise<Uint8Array> {
-    const result = await this.#call<{ mimeType: string; data: string }>(
-      { method: "screenshot" },
-      options,
-    );
-    if (result.mimeType !== "image/png")
-      throw new Error("native browser returned an unsupported capture");
+    const result = await this.#call<{ mimeType: string; data: string }>({ method: "screenshot" }, options);
+    if (result.mimeType !== "image/png") throw new Error("native browser returned an unsupported capture");
     return new Uint8Array(Buffer.from(result.data, "base64"));
   }
 

@@ -9,8 +9,7 @@ interface NewsIndexProps {
 export const NewsIndex = ({ basePath }: NewsIndexProps) => {
   const items = getNewsPosts();
   const title = "News & Updates";
-  const description =
-    "Latest updates, features, and announcements from the ArtCraft team.";
+  const description = "Latest updates, features, and announcements from the ArtCraft team.";
 
   // Note: SEO/Head handling should be done by the consumer app if needed (e.g. Helmet)
   // But we can check if we want to include it here or let the parent handle it.
@@ -29,7 +28,7 @@ export const NewsIndex = ({ basePath }: NewsIndexProps) => {
         </div>
 
         <div className="flex flex-col gap-6">
-          {items.map((item) => (
+          {items.map(item => (
             <Link
               key={item.slug}
               to={`${basePath}/${item.slug}`}
@@ -40,22 +39,12 @@ export const NewsIndex = ({ basePath }: NewsIndexProps) => {
                   {item.title}
                   <ArrowRightIcon className="text-xl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
                 </h2>
-                {item.date && (
-                  <span className="text-white/50 text-sm font-mono shrink-0">
-                    {item.date}
-                  </span>
-                )}
+                {item.date && <span className="text-white/50 text-sm font-mono shrink-0">{item.date}</span>}
               </div>
-              <p className="text-white/70 text-base leading-relaxed">
-                {item.description}
-              </p>
+              <p className="text-white/70 text-base leading-relaxed">{item.description}</p>
             </Link>
           ))}
-          {items.length === 0 && (
-            <div className="text-center py-10 opacity-50">
-              No updates yet. Check back soon!
-            </div>
-          )}
+          {items.length === 0 && <div className="text-center py-10 opacity-50">No updates yet. Check back soon!</div>}
         </div>
       </div>
     </div>

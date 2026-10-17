@@ -16,23 +16,21 @@ function createBrandIcon(
   viewBoxHeight: number,
   pathData: string,
 ): LucideIcon {
-  const Icon = forwardRef<SVGSVGElement, LucideProps>(
-    ({ size, width, height, className, ...rest }, ref) => (
-      <svg
-        ref={ref}
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
-        fill="currentColor"
-        stroke="none"
-        width={width ?? size ?? "1em"}
-        height={height ?? size ?? "1em"}
-        className={className}
-        {...rest}
-      >
-        <path d={pathData} />
-      </svg>
-    ),
-  );
+  const Icon = forwardRef<SVGSVGElement, LucideProps>(({ size, width, height, className, ...rest }, ref) => (
+    <svg
+      ref={ref}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
+      fill="currentColor"
+      stroke="none"
+      width={width ?? size ?? "1em"}
+      height={height ?? size ?? "1em"}
+      className={className}
+      {...rest}
+    >
+      <path d={pathData} />
+    </svg>
+  ));
   Icon.displayName = displayName;
   return Icon as LucideIcon;
 }

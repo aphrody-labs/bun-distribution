@@ -27,12 +27,7 @@ const ColumnItemWrapper = memo(
     virtualRow: VirtualItem;
     selected: boolean;
     selectedFiles: File[];
-    onSelectFile: (
-      file: File,
-      files: File[],
-      multi?: boolean,
-      range?: boolean,
-    ) => void;
+    onSelectFile: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
     onNavigate: (path: SdPath) => void;
   }) {
     const contextMenu = useFileContextMenu({
@@ -103,12 +98,7 @@ interface ColumnProps {
   path: SdPath | null;
   isSelected: (fileId: string) => boolean;
   selectedFileIds: Set<string>;
-  onSelectFile: (
-    file: File,
-    files: File[],
-    multi?: boolean,
-    range?: boolean,
-  ) => void;
+  onSelectFile: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
   onNavigate: (path: SdPath) => void;
   nextColumnPath?: SdPath;
   columnIndex: number;
@@ -161,9 +151,7 @@ export const Column = memo(function Column({
         className="shrink-0 border-r border-outline-variant flex items-center justify-center"
         style={{ width: `${viewSettings.columnWidth}px` }}
       >
-        <div className="text-body-medium text-on-surface-variant">
-          Loading...
-        </div>
+        <div className="text-body-medium text-on-surface-variant">Loading...</div>
       </div>
     );
   }
@@ -171,10 +159,7 @@ export const Column = memo(function Column({
   return (
     <div
       ref={parentRef}
-      className={clsx(
-        "shrink-0 border-r border-outline-variant overflow-auto",
-        isActive && "bg-surface-container/30",
-      )}
+      className={clsx("shrink-0 border-r border-outline-variant overflow-auto", isActive && "bg-surface-container/30")}
       style={{ width: `${viewSettings.columnWidth}px` }}
     >
       <div
@@ -184,7 +169,7 @@ export const Column = memo(function Column({
           position: "relative",
         }}
       >
-        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+        {rowVirtualizer.getVirtualItems().map(virtualRow => {
           const file = files[virtualRow.index];
 
           // Check if this file is selected using O(1) lookup
@@ -192,9 +177,7 @@ export const Column = memo(function Column({
 
           // Check if this file is part of the navigation path
           const isInPath =
-            nextColumnPath && file.sd_path
-              ? JSON.stringify(file.sd_path) === JSON.stringify(nextColumnPath)
-              : false;
+            nextColumnPath && file.sd_path ? JSON.stringify(file.sd_path) === JSON.stringify(nextColumnPath) : false;
 
           return (
             <ColumnItemWrapper

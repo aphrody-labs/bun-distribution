@@ -3,9 +3,26 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-gaming-tcui-l1-1-3.dll!ShowGameInviteUIWithContext */
-  ShowGameInviteUIWithContext(serviceConfigurationId: Win32Pointer, sessionTemplateName: Win32Pointer, sessionId: Win32Pointer, invitationDisplayText: Win32Pointer, customActivationContext: Win32Pointer, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  ShowGameInviteUIWithContext(
+    serviceConfigurationId: Win32Pointer,
+    sessionTemplateName: Win32Pointer,
+    sessionId: Win32Pointer,
+    invitationDisplayText: Win32Pointer,
+    customActivationContext: Win32Pointer,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-3.dll!ShowGameInviteUIWithContextForUser */
-  ShowGameInviteUIWithContextForUser(user: Win32Pointer, serviceConfigurationId: Win32Pointer, sessionTemplateName: Win32Pointer, sessionId: Win32Pointer, invitationDisplayText: Win32Pointer, customActivationContext: Win32Pointer, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  ShowGameInviteUIWithContextForUser(
+    user: Win32Pointer,
+    serviceConfigurationId: Win32Pointer,
+    sessionTemplateName: Win32Pointer,
+    sessionId: Win32Pointer,
+    invitationDisplayText: Win32Pointer,
+    customActivationContext: Win32Pointer,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

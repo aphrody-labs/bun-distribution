@@ -23,10 +23,7 @@ export function KeyframeToggle({
       onClick={onToggle}
       className="[&>svg]:size-3.5 mb-0.5"
     >
-      <HugeiconsIcon
-        icon={KeyframeIcon}
-        className={cn(isActive && "text-primary fill-primary")}
-      />
+      <HugeiconsIcon icon={KeyframeIcon} className={cn(isActive && "text-primary fill-primary")} />
     </Button>
   );
 }

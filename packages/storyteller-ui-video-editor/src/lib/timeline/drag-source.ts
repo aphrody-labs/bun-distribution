@@ -12,13 +12,7 @@ const TIMELINE_DRAG_MIME = "application/x-timeline-drag";
 export class TimelineDragSource {
   private active: TimelineDragData | null = null;
 
-  begin({
-    dataTransfer,
-    dragData,
-  }: {
-    dataTransfer: DataTransfer;
-    dragData: TimelineDragData;
-  }): void {
+  begin({ dataTransfer, dragData }: { dataTransfer: DataTransfer; dragData: TimelineDragData }): void {
     dataTransfer.setData(TIMELINE_DRAG_MIME, JSON.stringify(dragData));
     dataTransfer.effectAllowed = "copy";
     this.active = dragData;

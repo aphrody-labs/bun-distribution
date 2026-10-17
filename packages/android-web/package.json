@@ -16,8 +16,8 @@
     "typecheck": "bun check -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@aphrody/tauri": "workspace:*",
-    "@aphrody/bun-android": "workspace:*"
+    "@aphrody/bun-android": "workspace:*",
+    "@aphrody/tauri": "workspace:*"
   },
   "engines": {
     "bun": "=1.4.4"

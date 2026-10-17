@@ -1,10 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult } from "../common/CommandStatus";
-import {
-  CommonAspectRatio,
-  CommonResolution,
-  VideoModel,
-} from "@storyteller/model-list";
+import { CommonAspectRatio, CommonResolution, VideoModel } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 export interface GenerateVideoRequest {
@@ -75,9 +71,7 @@ export interface GenerateVideoSuccess extends CommandResult {
 
 export type GenerateVideoResult = GenerateVideoSuccess | GenerateVideoError;
 
-export const GenerateVideo = async (
-  request: GenerateVideoRequest,
-): Promise<GenerateVideoResult> => {
+export const GenerateVideo = async (request: GenerateVideoRequest): Promise<GenerateVideoResult> => {
   let modelName: string | undefined;
 
   if (request.model) {
@@ -89,9 +83,7 @@ export const GenerateVideo = async (
   }
 
   if (!modelName) {
-    throw new Error(
-      "No model specified in request: " + JSON.stringify(request),
-    );
+    throw new Error("No model specified in request: " + JSON.stringify(request));
   }
 
   const mutableRequest = { ...request, model: modelName };

@@ -15,15 +15,7 @@ interface Props {
 // One section's header row. Click the title to rename inline; the chevron
 // collapses the lane; the trash removes the section (items fall back to
 // ungrouped). Absolutely positioned by the grid, so it spans the content width.
-export const SectionHeader = ({
-  name,
-  count,
-  collapsed,
-  editable,
-  onToggleCollapse,
-  onRename,
-  onDelete,
-}: Props) => {
+export const SectionHeader = ({ name, count, collapsed, editable, onToggleCollapse, onRename, onDelete }: Props) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -71,8 +63,8 @@ export const SectionHeader = ({
         <input
           ref={inputRef}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => {
             if (e.key === "Enter") commit();
             else if (e.key === "Escape") setEditing(false);
           }}

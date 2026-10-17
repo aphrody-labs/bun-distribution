@@ -47,7 +47,7 @@ export const CameraSettingsModal = ({
   disableHotkeyInput,
   enableHotkeyInput,
 }: CameraSettingsModalProps) => {
-  const selectedCamera = cameras.find((cam) => cam.id === selectedCameraId);
+  const selectedCamera = cameras.find(cam => cam.id === selectedCameraId);
   const [isDragging, setIsDragging] = useState(false);
   const [tempCameraName, setTempCameraName] = useState<string>("");
   const [editingCameraId, setEditingCameraId] = useState<string | null>(null);
@@ -101,14 +101,8 @@ export const CameraSettingsModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      className={twMerge(
-        "h-[500px] max-w-3xl duration-200",
-        isDragging ? "opacity-10" : "opacity-100",
-      )}
-      backdropClassName={twMerge(
-        "duration-200",
-        isDragging ? "opacity-0" : "opacity-100",
-      )}
+      className={twMerge("h-[500px] max-w-3xl duration-200", isDragging ? "opacity-10" : "opacity-100")}
+      backdropClassName={twMerge("duration-200", isDragging ? "opacity-0" : "opacity-100")}
       childPadding={false}
       disableHotkeyInput={disableHotkeyInput}
       enableHotkeyInput={enableHotkeyInput}
@@ -129,21 +123,17 @@ export const CameraSettingsModal = ({
           </div>
           <hr className="my-2 w-full border-white/15" />
           <div className="space-y-1">
-            {cameras.map((camera) => (
+            {cameras.map(camera => (
               <button
                 key={camera.id}
                 className={`h-9 w-full rounded-[3px] border-l-2 p-2 text-left transition-colors duration-100 ${
-                  camera.id === selectedCameraId
-                    ? "border-white bg-white/10"
-                    : "border-transparent hover:bg-white/5"
+                  camera.id === selectedCameraId ? "border-white bg-white/10" : "border-transparent hover:bg-white/5"
                 }`}
                 onClick={() => handleCameraSelect(camera)}
               >
                 <div className="flex items-center gap-2.5 text-sm">
                   {camera.icon}
-                  {editingCameraId === camera.id
-                    ? tempCameraName
-                    : camera.label}
+                  {editingCameraId === camera.id ? tempCameraName : camera.label}
                 </div>
               </button>
             ))}
@@ -153,15 +143,9 @@ export const CameraSettingsModal = ({
           <div className="flex h-full flex-col">
             <div>
               <div className="flex items-center justify-between gap-2.5 py-0.5 opacity-100">
-                <h2 className="font-display text-[18px] font-semibold">
-                  {selectedCamera?.label || "Camera"}
-                </h2>
+                <h2 className="font-display text-[18px] font-semibold">{selectedCamera?.label || "Camera"}</h2>
                 <Tooltip
-                  content={
-                    selectedCamera?.id === "main"
-                      ? "Cannot delete the main camera"
-                      : "Delete camera"
-                  }
+                  content={selectedCamera?.id === "main" ? "Cannot delete the main camera" : "Delete camera"}
                   position="top"
                   delay={200}
                 >
@@ -171,11 +155,7 @@ export const CameraSettingsModal = ({
                         ? "cursor-not-allowed text-white/30"
                         : "text-white/60 hover:bg-white/10 hover:text-white"
                     }`}
-                    onClick={() =>
-                      selectedCamera &&
-                      selectedCamera.id !== "main" &&
-                      onDeleteCamera(selectedCamera.id)
-                    }
+                    onClick={() => selectedCamera && selectedCamera.id !== "main" && onDeleteCamera(selectedCamera.id)}
                     disabled={selectedCamera?.id === "main"}
                   >
                     <Trash2Icon className="text-lg" />
@@ -190,28 +170,20 @@ export const CameraSettingsModal = ({
                     id="camera-name"
                     type="text"
                     value={tempCameraName}
-                    onChange={(e) => setTempCameraName(e.target.value)}
+                    onChange={e => setTempCameraName(e.target.value)}
                     onBlur={handleNameBlur}
-                    onFocus={() =>
-                      selectedCamera && handleNameFocus(selectedCamera.id)
-                    }
+                    onFocus={() => selectedCamera && handleNameFocus(selectedCamera.id)}
                     className="text-sm"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="focal-length">Focal Length</Label>
-                  <div
-                    className="mt-1 flex items-center gap-4"
-                    onPointerDown={handlePointerDown}
-                  >
+                  <div className="mt-1 flex items-center gap-4" onPointerDown={handlePointerDown}>
                     <SliderV2
                       min={10}
                       max={200}
                       value={selectedCamera?.focalLength || 35}
-                      onChange={(value) =>
-                        selectedCamera &&
-                        handleFocalLengthChange(selectedCamera.id, value)
-                      }
+                      onChange={value => selectedCamera && handleFocalLengthChange(selectedCamera.id, value)}
                       step={1}
                       suffix="mm"
                       showDecrement={true}

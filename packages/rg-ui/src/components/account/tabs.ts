@@ -11,19 +11,9 @@ import type { AccountTabId } from "./types";
  */
 
 /** Onglets connus, dans leur ordre canonique. */
-export const ACCOUNT_TAB_IDS = [
-  "profile",
-  "address",
-  "connections",
-  "security",
-] as const;
+export const ACCOUNT_TAB_IDS = ["profile", "address", "connections", "security"] as const;
 
 /** Normalise un `?tab=` arbitraire vers un onglet réellement monté. */
-export function resolveAccountTab(
-  raw: string | undefined,
-  available: readonly AccountTabId[],
-): AccountTabId {
-  return available.includes(raw as AccountTabId)
-    ? (raw as AccountTabId)
-    : (available[0] ?? "profile");
+export function resolveAccountTab(raw: string | undefined, available: readonly AccountTabId[]): AccountTabId {
+  return available.includes(raw as AccountTabId) ? (raw as AccountTabId) : (available[0] ?? "profile");
 }

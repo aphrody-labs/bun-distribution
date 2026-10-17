@@ -23,11 +23,7 @@ function Navigation() {
   return createElement(
     "div",
     {},
-    createElement(
-      "button",
-      { id: "launcher", onClick: () => setOpen(true) },
-      "Navigation",
-    ),
+    createElement("button", { id: "launcher", onClick: () => setOpen(true) }, "Navigation"),
     <RailDrawer open={open} onOpenChange={setOpen} label="Navigation">
       <div>
         <button id="destination">Files</button>

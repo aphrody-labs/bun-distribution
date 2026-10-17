@@ -34,14 +34,12 @@ export class PromptsApi extends ApiManager {
     console.log(response);
 
     const image_url = response.state.maybe_result?.media_links?.cdn_url;
-    const public_bucket_path =
-      response.state.maybe_result?.maybe_public_bucket_media_path;
+    const public_bucket_path = response.state.maybe_result?.maybe_public_bucket_media_path;
 
-    const thumbnail_url =
-      response.state.maybe_result?.media_links?.maybe_thumbnail_template?.replace(
-        "{WIDTH}",
-        thumbnailWidth.toString(),
-      );
+    const thumbnail_url = response.state.maybe_result?.media_links?.maybe_thumbnail_template?.replace(
+      "{WIDTH}",
+      thumbnailWidth.toString(),
+    );
 
     const progress_percentage = response.state.status.progress_percentage;
     const status_string = response.state.status.status;
@@ -79,11 +77,7 @@ export class PromptsApi extends ApiManager {
     };
   }
 
-  public GetPromptsByToken({
-    token,
-  }: {
-    token: string;
-  }): Promise<ApiResponse<Prompts>> {
+  public GetPromptsByToken({ token }: { token: string }): Promise<ApiResponse<Prompts>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/prompts/${token}`;
 
     return this.get<{
@@ -91,37 +85,31 @@ export class PromptsApi extends ApiManager {
       prompt: Prompts;
       error_reason?: string;
     }>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.prompt,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
 
-  public BatchGetPrompts({
-    tokens,
-  }: {
-    tokens: string[];
-  }): Promise<ApiResponse<Prompts[]>> {
+  public BatchGetPrompts({ tokens }: { tokens: string[] }): Promise<ApiResponse<Prompts[]>> {
     if (tokens.length === 0) {
       return Promise.resolve({ success: true, data: [] });
     }
-    const query = tokens
-      .map((t) => `tokens=${encodeURIComponent(t)}`)
-      .join("&");
+    const query = tokens.map(t => `tokens=${encodeURIComponent(t)}`).join("&");
     const endpoint = `${this.getApiSchemeAndHost()}/v1/prompt/batch?${query}`;
 
     return this.get<{
       success: boolean;
       prompts: Prompts[];
     }>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.prompts,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }

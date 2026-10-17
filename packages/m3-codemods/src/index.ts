@@ -11,20 +11,14 @@ export interface MigrationResult {
 }
 
 /** Transform one TSX source in memory. No files, subprocesses or network calls. */
-export function transformSource(
-  source: string,
-  kind: MigrationKind = "mui",
-): MigrationResult {
-  if (kind !== "mui" && kind !== "icons")
-    throw new TypeError(`unknown migration kind: ${kind}`);
+export function transformSource(source: string, kind: MigrationKind = "mui"): MigrationResult {
+  if (kind !== "mui" && kind !== "icons") throw new TypeError(`unknown migration kind: ${kind}`);
   const transformed = (kind === "icons" ? icons : mui)({
     path: "input.tsx",
     source,
   });
   return {
     source: transformed,
-    diagnostics: [...transformed.matchAll(/MIGRATION-TODO:\s*([^*\n]+)/g)].map(
-      (match) => match[1]!.trim(),
-    ),
+    diagnostics: [...transformed.matchAll(/MIGRATION-TODO:\s*([^*\n]+)/g)].map(match => match[1]!.trim()),
   };
 }

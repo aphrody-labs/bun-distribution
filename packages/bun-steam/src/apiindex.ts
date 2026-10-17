@@ -22,8 +22,7 @@ import { readAppInfo, readPackageInfo } from "./scan.js";
 import { kvObj, kvStr } from "./vdf.js";
 import { syncApiCatalog, syncStoreApps } from "./webapi.js";
 
-export const USER_AGENT =
-  "BunOS-bun-steam/1.4.4 (+https://aphrody.app; Steam index from public sources)";
+export const USER_AGENT = "BunOS-bun-steam/1.4.4 (+https://aphrody.app; Steam index from public sources)";
 
 /** Public sources with their licenses (recorded in `api_source`). */
 export const API_SOURCES = {
@@ -37,8 +36,7 @@ export const API_SOURCES = {
   },
   tracking: {
     url: "https://github.com/SteamTracking/SteamTracking",
-    license:
-      "no license file (public repository; facts only, files not redistributed)",
+    license: "no license file (public repository; facts only, files not redistributed)",
   },
   protobufs: {
     url: "https://github.com/SteamTracking/Protobufs",
@@ -77,11 +75,8 @@ CREATE TABLE IF NOT EXISTS api_change (sync_id INTEGER NOT NULL, key TEXT NOT NU
 /** Creates the index tables and adds columns introduced after the first release. */
 function ensureSchema(db: Database): void {
   db.run(SCHEMA);
-  const cols = (
-    db.query("PRAGMA table_info(api_item)").all() as { name: string }[]
-  ).map((c) => c.name);
-  if (!cols.includes("license"))
-    db.run("ALTER TABLE api_item ADD COLUMN license TEXT");
+  const cols = (db.query("PRAGMA table_info(api_item)").all() as { name: string }[]).map(c => c.name);
+  if (!cols.includes("license")) db.run("ALTER TABLE api_item ADD COLUMN license TEXT");
 }
 
 const licenseOf = (source: string): string | null =>
@@ -103,10 +98,7 @@ interface Fetched {
 }
 
 /** GET with a per-host delay, Bun OS User-Agent, conditional headers and 429/5xx backoff. */
-async function politeGet(
-  url: string,
-  prev?: { etag?: string | null; lastModified?: string | null },
-): Promise<Fetched> {
+async function politeGet(url: string, prev?: { etag?: string | null; lastModified?: string | null }): Promise<Fetched> {
   const host = new URL(url).host;
   for (let attempt = 0; attempt < 4; attempt++) {
     const wait = (lastHit.get(host) ?? 0) + (DELAY[host] ?? 500) - Date.now();
@@ -136,11 +128,7 @@ async function politeGet(
   throw new Error(`rate limited: ${url}`);
 }
 
-const hash = (v: unknown): string =>
-  new Bun.CryptoHasher("sha1")
-    .update(JSON.stringify(v))
-    .digest("hex")
-    .slice(0, 16);
+const hash = (v: unknown): string => new Bun.CryptoHasher("sha1").update(JSON.stringify(v)).digest("hex").slice(0, 16);
 
 interface Item {
   key: string;
@@ -163,23 +151,17 @@ class Sync {
   constructor(readonly db: Database) {
     ensureSchema(db);
     for (const [source, { license }] of Object.entries(API_SOURCES))
-      db.query(
-        "UPDATE api_item SET license = ? WHERE source = ? AND license IS NULL",
-      ).run(license, source);
+      db.query("UPDATE api_item SET license = ? WHERE source = ? AND license IS NULL").run(license, source);
     this.id = (
-      db
-        .query("INSERT INTO api_sync(started_at) VALUES (?) RETURNING id")
-        .get(new Date().toISOString()) as { id: number }
+      db.query("INSERT INTO api_sync(started_at) VALUES (?) RETURNING id").get(new Date().toISOString()) as {
+        id: number;
+      }
     ).id;
   }
 
   source(url: string): { etag: string | null; lastModified: string | null } {
     return (
-      (this.db
-        .query(
-          "SELECT etag, last_modified AS lastModified FROM api_source WHERE url = ?",
-        )
-        .get(url) as {
+      (this.db.query("SELECT etag, last_modified AS lastModified FROM api_source WHERE url = ?").get(url) as {
         etag: string | null;
         lastModified: string | null;
       } | null) ?? { etag: null, lastModified: null }
@@ -200,23 +182,12 @@ class Sync {
          last_modified=COALESCE(excluded.last_modified, last_modified), fetched_at=excluded.fetched_at, status=excluded.status,
          items=COALESCE(excluded.items, items)`,
       )
-      .run(
-        url,
-        kind,
-        license,
-        f.etag,
-        f.lastModified,
-        new Date().toISOString(),
-        f.status,
-        items,
-      );
+      .run(url, kind, license, f.etag, f.lastModified, new Date().toISOString(), f.status, items);
   }
 
   /** Upserts items of one source; `complete` marks the source fully listed (absent items are removed). */
   put(source: string, items: Item[]): void {
-    const get = this.db.query(
-      "SELECT hash, removed, last_seen FROM api_item WHERE key = ?",
-    );
+    const get = this.db.query("SELECT hash, removed, last_seen FROM api_item WHERE key = ?");
     const ins = this.db.query(
       `INSERT INTO api_item(key, source, kind, name, version, httpmethod, auth, params, description, data, hash, first_seen, last_seen, removed, license)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NULL,?)
@@ -229,27 +200,16 @@ class Sync {
     );
     this.db.transaction(() => {
       // The same key can appear twice in one source (a depot shared by several apps): last wins.
-      const unique = [...new Map(items.map((i) => [i.key, i])).values()];
+      const unique = [...new Map(items.map(i => [i.key, i])).values()];
       for (const it of unique) {
-        const h = hash([
-          it.kind,
-          it.name,
-          it.version,
-          it.httpmethod,
-          it.auth,
-          it.params,
-          it.description,
-          it.data,
-        ]);
+        const h = hash([it.kind, it.name, it.version, it.httpmethod, it.auth, it.params, it.description, it.data]);
         const old = get.get(it.key) as {
           hash: string;
           removed: number | null;
           last_seen: number;
         } | null;
-        if (!old || old.removed)
-          change.run(this.id, it.key, "added", old?.hash ?? null, h);
-        else if (old.hash !== h && old.last_seen !== this.id)
-          change.run(this.id, it.key, "changed", old.hash, h);
+        if (!old || old.removed) change.run(this.id, it.key, "added", old?.hash ?? null, h);
+        else if (old.hash !== h && old.last_seen !== this.id) change.run(this.id, it.key, "changed", old.hash, h);
         ins.run(
           it.key,
           source,
@@ -275,9 +235,7 @@ class Sync {
   /** After re-reading one file, items under `prefix` that the file no longer lists are removed. */
   removeMissing(prefix: string, keys: Set<string>): void {
     const rows = this.db
-      .query(
-        "SELECT key, hash FROM api_item WHERE substr(key, 1, ?1) = ?2 AND removed IS NULL",
-      )
+      .query("SELECT key, hash FROM api_item WHERE substr(key, 1, ?1) = ?2 AND removed IS NULL")
       .all(prefix.length, prefix) as { key: string; hash: string }[];
     const mark = this.db.query("UPDATE api_item SET removed = ? WHERE key = ?");
     const change = this.db.query(
@@ -292,9 +250,7 @@ class Sync {
 
   /** Marks items of fully listed sources that were not seen in this sync as removed. */
   finish(completeSources: string[]): Record<string, number> {
-    const rm = this.db.query(
-      "SELECT key, hash FROM api_item WHERE source = ? AND removed IS NULL AND last_seen < ?",
-    );
+    const rm = this.db.query("SELECT key, hash FROM api_item WHERE source = ? AND removed IS NULL AND last_seen < ?");
     const mark = this.db.query("UPDATE api_item SET removed = ? WHERE key = ?");
     const change = this.db.query(
       "INSERT OR REPLACE INTO api_change(sync_id, key, change, old_hash, new_hash) VALUES (?,?,'removed',?,NULL)",
@@ -309,14 +265,12 @@ class Sync {
     const changes = Object.fromEntries(
       (
         this.db
-          .query(
-            "SELECT change, COUNT(*) AS n FROM api_change WHERE sync_id = ? GROUP BY change",
-          )
+          .query("SELECT change, COUNT(*) AS n FROM api_change WHERE sync_id = ? GROUP BY change")
           .all(this.id) as {
           change: string;
           n: number;
         }[]
-      ).map((r) => [r.change, r.n]),
+      ).map(r => [r.change, r.n]),
     );
     const summary = { sync: this.id, items: this.counts, changes };
     this.db
@@ -340,24 +294,20 @@ interface ApiMethod {
   }[];
 }
 
-const webApiItems = (
-  source: string,
-  iface: string,
-  methods: ApiMethod[],
-): Item[] =>
-  methods.map((m) => ({
+const webApiItems = (source: string, iface: string, methods: ApiMethod[]): Item[] =>
+  methods.map(m => ({
     key: `${source}|${iface}/${m.name}/v${m.version}`,
     source,
     kind: "webapi",
     name: `${iface}/${m.name}`,
     version: m.version,
     httpmethod: m.httpmethod ?? "GET",
-    auth: (m.parameters ?? []).some((p) => p.name === "key" && !p.optional)
+    auth: (m.parameters ?? []).some(p => p.name === "key" && !p.optional)
       ? "key"
-      : (m.parameters ?? []).some((p) => p.name === "access_token")
+      : (m.parameters ?? []).some(p => p.name === "access_token")
         ? "access_token"
         : "none",
-    params: (m.parameters ?? []).map((p) => ({
+    params: (m.parameters ?? []).map(p => ({
       name: p.name,
       type: p.type ?? null,
       optional: !!p.optional,
@@ -366,8 +316,7 @@ const webApiItems = (
     description: m.description ?? null,
   }));
 
-const XPAW_RAW =
-  "https://raw.githubusercontent.com/xPaw/SteamWebAPIDocumentation/master";
+const XPAW_RAW = "https://raw.githubusercontent.com/xPaw/SteamWebAPIDocumentation/master";
 
 /**
  * xPaw/SteamWebAPIDocumentation (MIT): `api.json` maps every known interface to methods with
@@ -390,14 +339,11 @@ async function syncXpaw(sync: Sync): Promise<{
   const undocumented = new Set(
     (u.text ?? "")
       .split(/\r?\n/)
-      .map((l) => l.trim())
+      .map(l => l.trim())
       .filter(Boolean),
   );
   sync.record(undocUrl, "xpaw", API_SOURCES.xpaw.license, u, undocumented.size);
-  const map = JSON.parse(f.text) as Record<
-    string,
-    Record<string, ApiMethod & { _type?: string }>
-  >;
+  const map = JSON.parse(f.text) as Record<string, Record<string, ApiMethod & { _type?: string }>>;
   const items: Item[] = [];
   for (const [iface, methods] of Object.entries(map)) {
     const list = Object.entries(methods).map(([name, m]) => ({ ...m, name }));
@@ -405,8 +351,7 @@ async function syncXpaw(sync: Sync): Promise<{
       const m = list[i]!;
       it.data = {
         type: m._type ?? null,
-        undocumented:
-          m._type === "undocumented" || undocumented.has(`${iface}/${m.name}`),
+        undocumented: m._type === "undocumented" || undocumented.has(`${iface}/${m.name}`),
         public: it.auth === "none",
       };
       items.push(it);
@@ -418,20 +363,13 @@ async function syncXpaw(sync: Sync): Promise<{
     status: 200,
     interfaces: Object.keys(map).length,
     methods: items.length,
-    public: items.filter((i) => i.auth === "none").length,
-    undocumented: items.filter(
-      (i) => (i.data as { undocumented: boolean }).undocumented,
-    ).length,
+    public: items.filter(i => i.auth === "none").length,
+    undocumented: items.filter(i => (i.data as { undocumented: boolean }).undocumented).length,
   };
 }
 
 /** Lists a GitHub directory (contents API, ETag-conditional) and returns `{name, sha, download_url}`. */
-async function githubDir(
-  sync: Sync,
-  repo: string,
-  dir: string,
-  license: string,
-) {
+async function githubDir(sync: Sync, repo: string, dir: string, license: string) {
   const url = `https://api.github.com/repos/${repo}/contents/${dir}`;
   const f = await politeGet(url, sync.source(url));
   if (f.status === 304) {
@@ -446,7 +384,7 @@ async function githubDir(
     type: string;
   }[];
   sync.record(url, "github-dir", license, f, list.length);
-  return list.filter((x) => x.type === "file" && x.download_url);
+  return list.filter(x => x.type === "file" && x.download_url);
 }
 
 /** Fetches changed files of a GitHub directory listing (per-file sha as the ETag). */
@@ -467,13 +405,7 @@ async function githubFiles(
     const f = await politeGet(file.download_url!);
     if (f.status !== 200 || f.text === null) continue;
     onFile(file.name, f.text);
-    sync.record(
-      file.download_url!,
-      "github-file",
-      license,
-      { ...f, etag: `sha:${file.sha}` },
-      null,
-    );
+    sync.record(file.download_url!, "github-file", license, { ...f, etag: `sha:${file.sha}` }, null);
     fetched++;
   }
   return { fetched, unchanged };
@@ -487,9 +419,7 @@ export function protoRpcs(file: string, text: string): Item[] {
     for (const rpc of svc[2]!.matchAll(
       /rpc\s+(\w+)\s*\(\s*\.?([\w.]+)\s*\)\s*returns\s*\(\s*\.?([\w.]+)\s*\)\s*(\{[\s\S]*?\}|;)/g,
     )) {
-      const desc =
-        rpc[4]!.match(/method_description\)\s*=\s*"((?:[^"\\]|\\.)*)"/)?.[1] ??
-        null;
+      const desc = rpc[4]!.match(/method_description\)\s*=\s*"((?:[^"\\]|\\.)*)"/)?.[1] ?? null;
       const iface = `I${service}${service.endsWith("Service") ? "" : "Service"}`;
       items.push({
         key: `protobufs|${file}|${iface}/${rpc[1]}`,
@@ -520,11 +450,7 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
 
   log("Steam Web API: GetSupportedAPIList (no key)");
   const catalog = await syncApiCatalog(db);
-  const methods = db
-    .query(
-      "SELECT interface, name, version, httpmethod, description FROM api_method",
-    )
-    .all() as {
+  const methods = db.query("SELECT interface, name, version, httpmethod, description FROM api_method").all() as {
     interface: string;
     name: string;
     version: number;
@@ -549,7 +475,7 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
           optional: number;
           description: string | null;
         }[]
-      ).map((p) => ({
+      ).map(p => ({
         name: p.name,
         type: p.type,
         optional: !!p.optional,
@@ -577,16 +503,11 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
   if ((result.xpaw as { status: number }).status === 200) complete.push("xpaw");
 
   log("SteamTracking API dumps");
-  const dumps = await githubDir(
-    sync,
-    "SteamTracking/SteamTracking",
-    "API",
-    API_SOURCES.tracking.license,
-  );
+  const dumps = await githubDir(sync, "SteamTracking/SteamTracking", "API", API_SOURCES.tracking.license);
   if (dumps) {
     const t = await githubFiles(
       sync,
-      dumps.filter((f) => f.name.endsWith(".json")),
+      dumps.filter(f => f.name.endsWith(".json")),
       API_SOURCES.tracking.license,
       (name, text) => {
         try {
@@ -597,10 +518,7 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
           const iface = j.name ?? name.replace(/\.json$/, "");
           const items = webApiItems("tracking", iface, j.methods ?? []);
           sync.put("tracking", items);
-          sync.removeMissing(
-            `tracking|${iface}/`,
-            new Set(items.map((i) => i.key)),
-          );
+          sync.removeMissing(`tracking|${iface}/`, new Set(items.map(i => i.key)));
         } catch {
           /* malformed dump */
         }
@@ -610,24 +528,16 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
   } else result.tracking = { unchanged: true };
 
   log("SteamTracking Protobufs (steam/)");
-  const protos = await githubDir(
-    sync,
-    "SteamTracking/Protobufs",
-    "steam",
-    API_SOURCES.protobufs.license,
-  );
+  const protos = await githubDir(sync, "SteamTracking/Protobufs", "steam", API_SOURCES.protobufs.license);
   if (protos) {
     const p = await githubFiles(
       sync,
-      protos.filter((f) => f.name.endsWith(".proto")),
+      protos.filter(f => f.name.endsWith(".proto")),
       API_SOURCES.protobufs.license,
       (name, text) => {
         const items = protoRpcs(name, text);
         sync.put("protobufs", items);
-        sync.removeMissing(
-          `protobufs|${name}|`,
-          new Set(items.map((i) => i.key)),
-        );
+        sync.removeMissing(`protobufs|${name}|`, new Set(items.map(i => i.key)));
       },
     );
     result.protobufs = { files: protos.length, ...p };
@@ -645,13 +555,7 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
   const cell =
     Number(
       kvStr(
-        kvObj(
-          readVdf(clientConfigPath(steamRoot)),
-          "InstallConfigStore",
-          "Software",
-          "Valve",
-          "Steam",
-        ),
+        kvObj(readVdf(clientConfigPath(steamRoot)), "InstallConfigStore", "Software", "Valve", "Steam"),
         "CellIDServerOverride",
       ) ?? 0,
     ) || 0;
@@ -660,7 +564,7 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
     contentServers(cell, 50).catch(() => []),
   ]);
   sync.put("directory", [
-    ...cms.map((c) => ({
+    ...cms.map(c => ({
       key: `directory|cm/${c.endpoint}`,
       source: "directory",
       kind: "cm",
@@ -668,7 +572,7 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
       auth: "steam",
       data: { type: c.type, dc: c.dc },
     })),
-    ...servers.map((s) => ({
+    ...servers.map(s => ({
       key: `directory|content/${s.vhost}`,
       source: "directory",
       kind: "contentserver",
@@ -692,15 +596,13 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
   const packages = await readPackageInfo(db, steamRoot);
   const pics: Item[] = [
     ...(
-      db
-        .query("SELECT appid, name, type, change_number FROM app_info")
-        .all() as {
+      db.query("SELECT appid, name, type, change_number FROM app_info").all() as {
         appid: number;
         name: string | null;
         type: string | null;
         change_number: number;
       }[]
-    ).map((a) => ({
+    ).map(a => ({
       key: `pics|app/${a.appid}`,
       source: "pics",
       kind: "app",
@@ -709,17 +611,13 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
       data: { appid: a.appid, type: a.type },
     })),
     ...(
-      db
-        .query(
-          "SELECT appid, branch, buildid, timeupdated FROM app_info_branch",
-        )
-        .all() as {
+      db.query("SELECT appid, branch, buildid, timeupdated FROM app_info_branch").all() as {
         appid: number;
         branch: string;
         buildid: number;
         timeupdated: number;
       }[]
-    ).map((b) => ({
+    ).map(b => ({
       key: `pics|build/${b.appid}/${b.branch}`,
       source: "pics",
       kind: "build",
@@ -728,15 +626,13 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
       data: { timeupdated: b.timeupdated },
     })),
     ...(
-      db
-        .query("SELECT appid, depotid, name, public_gid FROM app_info_depot")
-        .all() as {
+      db.query("SELECT appid, depotid, name, public_gid FROM app_info_depot").all() as {
         appid: number;
         depotid: number;
         name: string | null;
         public_gid: string | null;
       }[]
-    ).map((d) => ({
+    ).map(d => ({
       key: `pics|depot/${d.depotid}`,
       source: "pics",
       kind: "depot",
@@ -744,17 +640,13 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
       data: { appid: d.appid, manifest: d.public_gid },
     })),
     ...(
-      db
-        .query(
-          "SELECT packageid, change_number, app_count, depot_count FROM package",
-        )
-        .all() as {
+      db.query("SELECT packageid, change_number, app_count, depot_count FROM package").all() as {
         packageid: number;
         change_number: number;
         app_count: number;
         depot_count: number;
       }[]
-    ).map((p) => ({
+    ).map(p => ({
       key: `pics|package/${p.packageid}`,
       source: "pics",
       kind: "package",
@@ -776,7 +668,7 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
           "SELECT appid FROM app_info WHERE type IN ('Game','game','DLC','dlc','Application','application') AND appid NOT IN (SELECT appid FROM store_app WHERE fetched_at > datetime('now','-7 days')) ORDER BY change_number DESC LIMIT ?",
         )
         .all(limit) as { appid: number }[]
-    ).map((r) => r.appid);
+    ).map(r => r.appid);
     const ok = await syncStoreApps(db, appIds);
     sync.put(
       "store",
@@ -793,7 +685,7 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
           currency: string | null;
           release_date: string | null;
         }[]
-      ).map((a) => ({
+      ).map(a => ({
         key: `store|app/${a.appid}`,
         source: "store",
         kind: "store-app",
@@ -808,23 +700,14 @@ export async function apiSync(db: Database, opts: ApiSyncOptions = {}) {
     );
     const pkgIds = (
       db
-        .query(
-          "SELECT packageid FROM package WHERE packageid > 0 ORDER BY change_number DESC LIMIT ?",
-        )
+        .query("SELECT packageid FROM package WHERE packageid > 0 ORDER BY change_number DESC LIMIT ?")
         .all(Math.max(1, Math.floor(limit / 2))) as { packageid: number }[]
-    ).map((r) => r.packageid);
+    ).map(r => r.packageid);
     const pkgItems: Item[] = [];
     for (const id of pkgIds) {
-      const f = await politeGet(
-        `https://store.steampowered.com/api/packagedetails?packageids=${id}`,
-      );
+      const f = await politeGet(`https://store.steampowered.com/api/packagedetails?packageids=${id}`);
       const d = f.text
-        ? (
-            JSON.parse(f.text) as Record<
-              string,
-              { success: boolean; data?: Record<string, unknown> }
-            >
-          )[String(id)]
+        ? (JSON.parse(f.text) as Record<string, { success: boolean; data?: Record<string, unknown> }>)[String(id)]
         : undefined;
       if (d?.success && d.data)
         pkgItems.push({
@@ -876,11 +759,9 @@ export function apiShow(db: Database, name: string) {
   ensureSchema(db);
   return (
     db
-      .query(
-        "SELECT * FROM api_item WHERE key = ?1 OR name = ?1 OR name LIKE ?2 ORDER BY source",
-      )
+      .query("SELECT * FROM api_item WHERE key = ?1 OR name = ?1 OR name LIKE ?2 ORDER BY source")
       .all(name, `%/${name}`) as Record<string, unknown>[]
-  ).map((r) => ({
+  ).map(r => ({
     ...r,
     params: r.params ? JSON.parse(String(r.params)) : null,
     data: r.data ? JSON.parse(String(r.data)) : null,
@@ -892,17 +773,12 @@ export function apiDiff(db: Database, syncId?: number) {
   ensureSchema(db);
   const id =
     syncId ??
-    (
-      db
-        .query(
-          "SELECT MAX(id) AS id FROM api_sync WHERE finished_at IS NOT NULL",
-        )
-        .get() as { id: number | null }
-    ).id;
+    (db.query("SELECT MAX(id) AS id FROM api_sync WHERE finished_at IS NOT NULL").get() as { id: number | null }).id;
   if (!id) return { sync: null, changes: [] };
-  const meta = db
-    .query("SELECT started_at, finished_at, summary FROM api_sync WHERE id = ?")
-    .get(id) as Record<string, string> | null;
+  const meta = db.query("SELECT started_at, finished_at, summary FROM api_sync WHERE id = ?").get(id) as Record<
+    string,
+    string
+  > | null;
   const changes = db
     .query(
       "SELECT c.change, c.key, i.kind, i.name, i.version FROM api_change c LEFT JOIN api_item i ON i.key = c.key WHERE c.sync_id = ? ORDER BY c.change, c.key",
@@ -941,22 +817,18 @@ export function apiMethod(db: Database, name: string, version?: number) {
     license: string | null;
   }[];
   const order = ["xpaw", "webapi", "tracking"];
-  rows.sort(
-    (a, b) =>
-      b.version - a.version ||
-      order.indexOf(a.source) - order.indexOf(b.source),
-  );
-  const pick = rows.find((r) => version === undefined || r.version === version);
+  rows.sort((a, b) => b.version - a.version || order.indexOf(a.source) - order.indexOf(b.source));
+  const pick = rows.find(r => version === undefined || r.version === version);
   if (!pick) return null;
-  const same = rows.filter((r) => r.version === pick.version);
+  const same = rows.filter(r => r.version === pick.version);
   return {
     name,
     version: pick.version,
     httpmethod: pick.httpmethod,
     // Callable without a key only when no source requires one.
-    public: same.every((r) => r.auth === "none"),
-    auth: [...new Set(same.map((r) => r.auth))],
-    sources: same.map((r) => ({ source: r.source, license: r.license })),
+    public: same.every(r => r.auth === "none"),
+    auth: [...new Set(same.map(r => r.auth))],
+    sources: same.map(r => ({ source: r.source, license: r.license })),
     params: pick.params
       ? (JSON.parse(pick.params) as {
           name: string;
@@ -971,21 +843,12 @@ export function apiMethod(db: Database, name: string, version?: number) {
  * Calls a public Web API method (no key, no access token) with Bun fetch, the Bun OS User-Agent
  * and the polite per-host delay. Methods that need a key are refused.
  */
-export async function apiCall(
-  db: Database,
-  name: string,
-  args: Record<string, string>,
-  version?: number,
-) {
+export async function apiCall(db: Database, name: string, args: Record<string, string>, version?: number) {
   const m = apiMethod(db, name, version);
   if (!m) throw new Error(`${name}: not in the index (run bun-steam api sync)`);
-  if (!m.public)
-    throw new Error(
-      `${name} v${m.version} needs ${m.auth.join("/")}; only public methods are callable`,
-    );
+  if (!m.public) throw new Error(`${name} v${m.version} needs ${m.auth.join("/")}; only public methods are callable`);
   for (const p of m.params)
-    if (!p.optional && !(p.name in args))
-      throw new Error(`${name}: missing required parameter ${p.name}`);
+    if (!p.optional && !(p.name in args)) throw new Error(`${name}: missing required parameter ${p.name}`);
   const base = `https://api.steampowered.com/${name}/v${m.version}/`;
   const query = new URLSearchParams({ format: "json", ...args });
   const host = "api.steampowered.com";
@@ -996,9 +859,7 @@ export async function apiCall(
     method: m.httpmethod === "POST" ? "POST" : "GET",
     headers: {
       "user-agent": USER_AGENT,
-      ...(m.httpmethod === "POST"
-        ? { "content-type": "application/x-www-form-urlencoded" }
-        : {}),
+      ...(m.httpmethod === "POST" ? { "content-type": "application/x-www-form-urlencoded" } : {}),
     },
     ...(m.httpmethod === "POST" ? { body: query.toString() } : {}),
     signal: AbortSignal.timeout(30_000),

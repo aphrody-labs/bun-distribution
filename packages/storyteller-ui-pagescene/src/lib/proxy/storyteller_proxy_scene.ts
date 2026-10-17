@@ -1,9 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import {
-  StoryTellerProxy3DObject,
-  ObjectJSON,
-} from "./storyteller_proxy_3d_object";
+import { StoryTellerProxy3DObject, ObjectJSON } from "./storyteller_proxy_3d_object";
 import Scene from "../engine/scene";
 import { BoneJSONHelper } from "../engine/KinHelpers/BoneJSONHelper";
 import type { LoadTicket } from "../engine/save_manager";
@@ -31,14 +28,10 @@ export class StoryTellerProxyScene {
 
   getChildren(child: THREE.Object3D) {
     if (this.lookUpDictionary[child.uuid] == null) {
-      this.lookUpDictionary[child.uuid] = new StoryTellerProxy3DObject(
-        this.version,
-        child.userData["media_id"],
-      );
+      this.lookUpDictionary[child.uuid] = new StoryTellerProxy3DObject(this.version, child.userData["media_id"]);
     }
 
-    const proxyObject3D: StoryTellerProxy3DObject =
-      this.lookUpDictionary[child.uuid];
+    const proxyObject3D: StoryTellerProxy3DObject = this.lookUpDictionary[child.uuid];
     proxyObject3D.position.copy(child.position);
     proxyObject3D.rotation.copy(child.rotation);
     proxyObject3D.scale.copy(child.scale);
@@ -67,13 +60,9 @@ export class StoryTellerProxyScene {
         if (isInternalBbox(child)) continue;
         if (child.userData["media_id"] != undefined) {
           if (this.lookUpDictionary[child.uuid] == null) {
-            this.lookUpDictionary[child.uuid] = new StoryTellerProxy3DObject(
-              this.version,
-              child.userData["media_id"],
-            );
+            this.lookUpDictionary[child.uuid] = new StoryTellerProxy3DObject(this.version, child.userData["media_id"]);
           }
-          const proxyObject3D: StoryTellerProxy3DObject =
-            this.lookUpDictionary[child.uuid];
+          const proxyObject3D: StoryTellerProxy3DObject = this.lookUpDictionary[child.uuid];
           proxyObject3D.position.copy(child.position);
           proxyObject3D.rotation.copy(child.rotation);
           proxyObject3D.scale.copy(child.scale);
@@ -136,9 +125,7 @@ export class StoryTellerProxyScene {
     // never hit the network for token→URL resolution. One batch call
     // (or N parallel singles via the fallback) instead of an N+1
     // sequential chain.
-    const mediaTokens = scene_json
-      .map((j) => j.media_file_token)
-      .filter((t) => t.startsWith("m_"));
+    const mediaTokens = scene_json.map(j => j.media_file_token).filter(t => t.startsWith("m_"));
     if (mediaTokens.length > 0) {
       await this.scene.warmMediaURLs(mediaTokens);
     }
@@ -172,9 +159,7 @@ export class StoryTellerProxyScene {
           // else branch and returns an empty Mesh with undefined
           // geometry, which renders invisibly and isn't raycast-
           // pickable.
-          const shapeKey =
-            (json_object.user_data?.shapeKey as string | undefined) ??
-            json_object.object_name;
+          const shapeKey = (json_object.user_data?.shapeKey as string | undefined) ?? json_object.object_name;
           const newScene = await this.scene.instantiate(shapeKey);
           return {
             json_object,
@@ -251,13 +236,7 @@ export class StoryTellerProxyScene {
       const { obj, json_object } = result.value;
       if (!obj) continue;
       obj.position.copy(json_object.position);
-      obj.rotation.copy(
-        new THREE.Euler(
-          json_object.rotation.x,
-          json_object.rotation.y,
-          json_object.rotation.z,
-        ),
-      );
+      obj.rotation.copy(new THREE.Euler(json_object.rotation.x, json_object.rotation.y, json_object.rotation.z));
       obj.scale.copy(json_object.scale);
       obj.name = json_object.object_name;
       obj.userData.name = json_object.object_user_data_name;
@@ -304,9 +283,7 @@ export class StoryTellerProxyScene {
   // and, when a newer load superseded this one, show up in its scene.
   // Lights are skipped: Scene tracks its base lights in fields that a
   // newer load may have re-pointed at them.
-  private discardLoadedObjects(
-    settled: PromiseSettledResult<{ obj: THREE.Object3D | undefined }>[],
-  ) {
+  private discardLoadedObjects(settled: PromiseSettledResult<{ obj: THREE.Object3D | undefined }>[]) {
     for (const result of settled) {
       if (result.status !== "fulfilled") continue;
       const { obj } = result.value;

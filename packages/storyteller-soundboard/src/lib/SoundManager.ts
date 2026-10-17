@@ -205,7 +205,7 @@ export class SoundManager {
   static readonly OPTIONS: SoundOption[] = [
     { value: "none", label: "None (Silent)" },
     ...SOUNDS.filter((s): s is SoundDef & { label: string } => !!s.label)
-      .map((s) => ({ value: s.key, label: s.label }))
+      .map(s => ({ value: s.key, label: s.label }))
       .sort((a, b) => a.label.localeCompare(b.label)),
   ];
 
@@ -216,10 +216,7 @@ export class SoundManager {
     if (this.installed) return;
     const r = SoundRegistry.getInstance();
     for (const s of SOUNDS) {
-      r.setSoundOnce(
-        s.key,
-        new SoundEffect(s.path, { defaultVolume: s.volume }),
-      );
+      r.setSoundOnce(s.key, new SoundEffect(s.path, { defaultVolume: s.volume }));
     }
     this.installed = true;
   }

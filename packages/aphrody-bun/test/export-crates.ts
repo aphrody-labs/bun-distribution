@@ -12,30 +12,19 @@ const REGISTRY_CRATES = ["aphrody-n2b-core", "aphrody-oxc-bridge"];
 
 function pinnedVersion(name: string): string {
   const manifest = readFileSync(join(repo, "Cargo.toml"), "utf8");
-  const m = manifest.match(
-    new RegExp(`^${name}\\s*=\\s*\\{[^}\\n]*version\\s*=\\s*"=([^"]+)"`, "m"),
-  );
-  if (!m)
-    throw new Error(
-      `${name} has no exact version pin in the workspace Cargo.toml`,
-    );
+  const m = manifest.match(new RegExp(`^${name}\\s*=\\s*\\{[^}\\n]*version\\s*=\\s*"=([^"]+)"`, "m"));
+  if (!m) throw new Error(`${name} has no exact version pin in the workspace Cargo.toml`);
   return m[1]!;
 }
 
 function registrySource(name: string): string {
   const version = pinnedVersion(name);
-  const root = join(
-    process.env.CARGO_HOME ?? join(homedir(), ".cargo"),
-    "registry",
-    "src",
-  );
+  const root = join(process.env.CARGO_HOME ?? join(homedir(), ".cargo"), "registry", "src");
   for (const index of existsSync(root) ? readdirSync(root) : []) {
     const dir = join(root, index, `${name}-${version}`, "src");
     if (existsSync(dir)) return dir;
   }
-  throw new Error(
-    `${name} ${version} is not in the Cargo registry; run \`cargo fetch\` first`,
-  );
+  throw new Error(`${name} ${version} is not in the Cargo registry; run \`cargo fetch\` first`);
 }
 
 export function exportCrateDirs(): string[] {

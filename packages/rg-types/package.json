@@ -3,6 +3,11 @@
   "version": "1.4.4",
   "private": false,
   "description": "Types métier partagés (roles, user, discord) — source unique de vérité bot/azalee/website",
+  "license": "Apache-2.0",
+  "files": [
+    "src",
+    "tsconfig.json"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -38,18 +43,13 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@rosegriffon/config": "workspace:*",
-    "@aphrody/bun-types": "workspace:*"
+    "@aphrody/bun-types": "workspace:*",
+    "@rosegriffon/config": "workspace:*"
   },
   "peerDependencies": {
     "@rosegriffon/db": "workspace:*"
   },
   "engines": {
     "bun": "=1.4.4"
-  },
-  "license": "Apache-2.0",
-  "files": [
-    "src",
-    "tsconfig.json"
-  ]
+  }
 }

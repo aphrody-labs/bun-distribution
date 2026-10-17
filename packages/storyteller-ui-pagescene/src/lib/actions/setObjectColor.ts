@@ -9,11 +9,7 @@ import { ColorAction } from "../engine/editor/actions/ColorAction";
 // onChange per slider pixel), use beginColorSession instead — it
 // applies each intermediate value to the engine for visual feedback
 // but records only ONE ColorAction on commit.
-export function setObjectColor(
-  editor: Editor,
-  uuid: string,
-  color: string,
-): void {
+export function setObjectColor(editor: Editor, uuid: string, color: string): void {
   const obj = editor.activeScene.scene.getObjectByProperty("uuid", uuid);
   if (!obj) return;
   const before = (obj.userData.color as string) ?? "#ffffff";

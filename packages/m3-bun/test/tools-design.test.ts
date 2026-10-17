@@ -8,8 +8,7 @@ import { cleanup, tmp } from "./helpers.ts";
 
 afterAll(cleanup);
 
-const BRIEF =
-  "A calm dashboard for a coffee shop with orders and a revenue chart";
+const BRIEF = "A calm dashboard for a coffee shop with orders and a revenue chart";
 const native = await nativeM3Css();
 
 describe("designApp", () => {
@@ -21,46 +20,28 @@ describe("designApp", () => {
       rawBrief: BRIEF,
     });
     expect(report.seed.toLowerCase()).toBe("#8c6c88");
-    expect(report.files.map((file) => file.path)).toEqual([
-      "src/theme.css",
-      "src/tokens.json",
-      "src/index.tsx",
-    ]);
-    expect(report.files.every((file) => file.bytes > 0)).toBe(true);
+    expect(report.files.map(file => file.path)).toEqual(["src/theme.css", "src/tokens.json", "src/index.tsx"]);
+    expect(report.files.every(file => file.bytes > 0)).toBe(true);
     expect(report.written).toEqual([]);
-    expect(
-      report.result.files.find((file) => file.path === "src/theme.css")!
-        .content,
-    ).toContain("--md-sys-color-primary");
+    expect(report.result.files.find(file => file.path === "src/theme.css")!.content).toContain(
+      "--md-sys-color-primary",
+    );
   });
 
   test("out writes the generated files", async () => {
     const out = tmp("m3-bun-design-");
     const report = await designApp({ prompt: BRIEF, out });
-    expect(report.written).toEqual(
-      report.files.map((file) => join(out, file.path)),
-    );
-    const tokens = JSON.parse(
-      readFileSync(join(out, "src", "tokens.json"), "utf8"),
-    ) as object;
+    expect(report.written).toEqual(report.files.map(file => join(out, file.path)));
+    const tokens = JSON.parse(readFileSync(join(out, "src", "tokens.json"), "utf8")) as object;
     expect(typeof tokens).toBe("object");
-    expect(readFileSync(join(out, "src", "index.tsx"), "utf8")).toContain(
-      "@aphrody/m3-react",
-    );
+    expect(readFileSync(join(out, "src", "index.tsx"), "utf8")).toContain("@aphrody/m3-react");
   });
 
   test("an empty brief is an error", async () => {
-    await expect(designApp({ prompt: "  " })).rejects.toThrow(
-      /the brief is empty/,
-    );
+    await expect(designApp({ prompt: "  " })).rejects.toThrow(/the brief is empty/);
   });
 
-  test.skipIf(native !== undefined)(
-    "validate without the native library says what is missing",
-    async () => {
-      await expect(
-        designApp({ prompt: BRIEF, validate: true }),
-      ).rejects.toThrow(/native library not found/);
-    },
-  );
+  test.skipIf(native !== undefined)("validate without the native library says what is missing", async () => {
+    await expect(designApp({ prompt: BRIEF, validate: true })).rejects.toThrow(/native library not found/);
+  });
 });

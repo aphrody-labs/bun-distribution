@@ -9,12 +9,9 @@ const result = await Bun.build({
   minify: true,
   sourcemap: "external",
 });
-if (!result.success)
-  throw new AggregateError(result.logs, "Browser bundle failed");
+if (!result.success) throw new AggregateError(result.logs, "Browser bundle failed");
 await Bun.write(
   new URL("../dist/index.html", import.meta.url),
   Bun.file(new URL("../src/index.html", import.meta.url)),
 );
-console.log(
-  `Built ${result.outputs.length} browser artifacts with Bun ${Bun.version} (${Bun.revision})`,
-);
+console.log(`Built ${result.outputs.length} browser artifacts with Bun ${Bun.version} (${Bun.revision})`);

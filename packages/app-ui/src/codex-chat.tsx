@@ -6,15 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { listen } from "@aphrody/tauri/api/event";
 import { clsx } from "clsx";
-import {
-  Badge,
-  Button,
-  CircleButton,
-  Icon,
-  Popover,
-  toast,
-  usePopover,
-} from "@aphrody/m3-primitives";
+import { Badge, Button, CircleButton, Icon, Popover, toast, usePopover } from "@aphrody/m3-primitives";
 import { Markdown, ToolCall, type ToolCallPair } from "@aphrody/m3-ai";
 
 type DictationRecognition = EventTarget & {
@@ -23,12 +15,7 @@ type DictationRecognition = EventTarget & {
   interimResults: boolean;
   onstart: (() => void) | null;
   onend: (() => void) | null;
-  onresult:
-    | ((event: {
-        resultIndex: number;
-        results: SpeechRecognitionResultList;
-      }) => void)
-    | null;
+  onresult: ((event: { resultIndex: number; results: SpeechRecognitionResultList }) => void) | null;
   start(): void;
   stop(): void;
 };
@@ -67,11 +54,7 @@ import { TITLE_GRADIENT_STOPS } from "./brand-tokens";
 export type PromptBarShape = "empty" | "content" | "docked";
 
 /** Gemini prompt bar corner state: 40px empty, 32px with content, docked 24 24 0 0 once a conversation runs or the feed scrolls. */
-export function promptBarShape(state: {
-  hasTurns: boolean;
-  scrolled: boolean;
-  hasContent: boolean;
-}): PromptBarShape {
+export function promptBarShape(state: { hasTurns: boolean; scrolled: boolean; hasContent: boolean }): PromptBarShape {
   if (state.hasTurns || state.scrolled) return "docked";
   return state.hasContent ? "content" : "empty";
 }
@@ -80,22 +63,11 @@ export function promptBarShape(state: {
 export function SparkleMark({ size = 24 }: { size?: number }) {
   const id = "app-sparkle-gradient";
   return (
-    <svg
-      className="app-sparkle"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      focusable="false"
-    >
+    <svg className="app-sparkle" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <defs>
         <linearGradient id={id} x1="0" y1="1" x2="1" y2="0">
           {TITLE_GRADIENT_STOPS.map((stop, i) => (
-            <stop
-              key={stop}
-              offset={i / (TITLE_GRADIENT_STOPS.length - 1)}
-              stopColor={stop}
-            />
+            <stop key={stop} offset={i / (TITLE_GRADIENT_STOPS.length - 1)} stopColor={stop} />
           ))}
         </linearGradient>
       </defs>
@@ -171,17 +143,11 @@ export interface ThreadSummary {
   cwd?: string;
 }
 
-export function buildThreadRenamePayload(
-  threadId: string,
-  name: string,
-): { threadId: string; name: string } {
+export function buildThreadRenamePayload(threadId: string, name: string): { threadId: string; name: string } {
   return { threadId, name };
 }
 
-export function buildThreadForkPayload(
-  threadId: string,
-  turnId?: string,
-): { threadId: string; turnId?: string } {
+export function buildThreadForkPayload(threadId: string, turnId?: string): { threadId: string; turnId?: string } {
   return turnId ? { threadId, turnId } : { threadId };
 }
 
@@ -199,7 +165,7 @@ export function shouldAutoCompactThread(
   return (
     turn?.status === "completed" &&
     displayedTurns - compactedAtTurns >= 25 &&
-    !turn.items?.some((item) => item.type === "contextCompaction")
+    !turn.items?.some(item => item.type === "contextCompaction")
   );
 }
 
@@ -247,7 +213,7 @@ export function ThreadDrawer({
     setEditingThreadId(null);
   };
 
-  const filteredThreads = threads.filter((t) => {
+  const filteredThreads = threads.filter(t => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     const title = (t.name || t.preview || "").toLowerCase();
@@ -273,13 +239,7 @@ export function ThreadDrawer({
             <Icon name="history" size={20} className="text-primary" />
             <span>Historique des sessions</span>
           </div>
-          <Button
-            variant="text"
-            size="icon"
-            onClick={onClose}
-            aria-label="Fermer le tiroir"
-            title="Fermer"
-          >
+          <Button variant="text" size="icon" onClick={onClose} aria-label="Fermer le tiroir" title="Fermer">
             <Icon name="close" size={20} />
           </Button>
         </div>
@@ -287,15 +247,11 @@ export function ThreadDrawer({
         {threads.length > 3 && (
           <div className="p-3 border-b border-outline-variant/20">
             <div className="relative flex items-center">
-              <Icon
-                name="search"
-                size={18}
-                className="absolute left-2.5 text-on-surface-variant pointer-events-none"
-              />
+              <Icon name="search" size={18} className="absolute left-2.5 text-on-surface-variant pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Filtrer les sessions..."
                 className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-surface-container text-body-medium text-on-surface placeholder:text-on-surface-variant/60 border border-outline-variant/40 focus:outline-none focus:border-primary"
               />
@@ -311,18 +267,19 @@ export function ThreadDrawer({
                 : "Aucune session ne correspond : modifiez la recherche"}
             </div>
           ) : (
-            filteredThreads.map((t) => {
+            filteredThreads.map(t => {
               const isActive = t.id === activeThreadId;
               const isEditing = editingThreadId === t.id;
               const displayName = t.name || t.preview || "Session sans titre";
-              const formattedDate = new Date(
-                t.createdAt > 1e11 ? t.createdAt : t.createdAt * 1000,
-              ).toLocaleDateString([], {
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              });
+              const formattedDate = new Date(t.createdAt > 1e11 ? t.createdAt : t.createdAt * 1000).toLocaleDateString(
+                [],
+                {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                },
+              );
 
               if (isEditing) {
                 return (
@@ -341,8 +298,8 @@ export function ThreadDrawer({
                       type="text"
                       className="w-full rounded-xl bg-surface-container px-3 py-1.5 text-body-medium text-on-surface border border-outline focus:outline-none focus:border-primary"
                       value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      onKeyDown={(e) => {
+                      onChange={e => setEditingName(e.target.value)}
+                      onKeyDown={e => {
                         if (e.key === "Enter") handleSaveRename(t.id);
                         if (e.key === "Escape") setEditingThreadId(null);
                       }}
@@ -391,10 +348,7 @@ export function ThreadDrawer({
                     }}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className="font-semibold text-body-medium truncate flex-1"
-                        title={displayName}
-                      >
+                      <span className="font-semibold text-body-medium truncate flex-1" title={displayName}>
                         {displayName}
                       </span>
                       {isActive && (
@@ -407,11 +361,7 @@ export function ThreadDrawer({
                       <span>{formattedDate}</span>
                       {t.cwd && (
                         <span className="truncate max-w-36" title={t.cwd}>
-                          ·{" "}
-                          {t.cwd
-                            .replace(/\\/g, "/")
-                            .split("/")
-                            .findLast(Boolean)}
+                          · {t.cwd.replace(/\\/g, "/").split("/").findLast(Boolean)}
                         </span>
                       )}
                     </div>
@@ -475,13 +425,7 @@ export function ThreadDrawer({
   );
 }
 
-export function DiffViewer({
-  diff,
-  filename,
-}: {
-  diff: string;
-  filename?: string;
-}) {
+export function DiffViewer({ diff, filename }: { diff: string; filename?: string }) {
   const lines = diff.split("\n");
 
   return (
@@ -508,10 +452,7 @@ export function DiffViewer({
           }
           return (
             // oxlint-disable-next-line react/no-array-index-key -- lignes de sortie append-only sans identité stable ni unicité garantie du contenu
-            <div
-              key={idx}
-              className={`px-2 py-0.5 whitespace-pre ${bgClass} ${lineClass}`}
-            >
+            <div key={idx} className={`px-2 py-0.5 whitespace-pre ${bgClass} ${lineClass}`}>
               {line}
             </div>
           );
@@ -556,17 +497,10 @@ export function FileChangeCard({
     <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-high/60 p-3.5 my-2 shadow-xs transition-colors">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <span
-            className={clsx(
-              "px-2 py-0.5 rounded-md text-label-small font-semibold border",
-              kindTone,
-            )}
-          >
+          <span className={clsx("px-2 py-0.5 rounded-md text-label-small font-semibold border", kindTone)}>
             {kindLabel}
           </span>
-          <span className="font-mono text-body-medium text-on-surface truncate">
-            {path}
-          </span>
+          <span className="font-mono text-body-medium text-on-surface truncate">{path}</span>
         </div>
 
         {diff && (
@@ -597,9 +531,7 @@ export function ApprovalCard({
   onDecide,
 }: {
   approval: ApprovalItem;
-  onDecide: (
-    decision: "accept" | "acceptForSession" | "decline" | "cancel",
-  ) => void;
+  onDecide: (decision: "accept" | "acceptForSession" | "decline" | "cancel") => void;
 }) {
   const isPending = approval.status === "pending";
 
@@ -610,17 +542,11 @@ export function ApprovalCard({
     >
       <div className="flex items-center gap-2 mb-2">
         <Icon name="gavel" size={20} className="text-amber-500" />
-        <h3 className="m-0 text-title-small font-semibold text-on-surface">
-          {approval.title}
-        </h3>
+        <h3 className="m-0 text-title-small font-semibold text-on-surface">{approval.title}</h3>
         <span className="flex-1" />
         {!isPending && (
           <Badge
-            variant={
-              approval.status === "approved" || approval.status === "session"
-                ? "accent"
-                : "error"
-            }
+            variant={approval.status === "approved" || approval.status === "session" ? "accent" : "error"}
             size="sm"
           >
             {approval.status === "approved"
@@ -632,11 +558,7 @@ export function ApprovalCard({
         )}
       </div>
 
-      {approval.reason && (
-        <p className="m-0 mb-2 text-body-medium text-on-surface-variant">
-          {approval.reason}
-        </p>
-      )}
+      {approval.reason && <p className="m-0 mb-2 text-body-medium text-on-surface-variant">{approval.reason}</p>}
 
       {approval.network && (
         <div className="mb-2 flex items-center gap-1.5 text-label-medium text-on-surface-variant">
@@ -669,20 +591,10 @@ export function ApprovalCard({
           >
             Refuser (Défaut)
           </Button>
-          <Button
-            variant="tonal"
-            size="sm"
-            disabled={approval.submitting}
-            onClick={() => onDecide("accept")}
-          >
+          <Button variant="tonal" size="sm" disabled={approval.submitting} onClick={() => onDecide("accept")}>
             Autoriser une fois
           </Button>
-          <Button
-            variant="text"
-            size="sm"
-            disabled={approval.submitting}
-            onClick={() => onDecide("acceptForSession")}
-          >
+          <Button variant="text" size="sm" disabled={approval.submitting} onClick={() => onDecide("acceptForSession")}>
             Autoriser pour ce projet
           </Button>
         </div>
@@ -715,10 +627,7 @@ export interface CodexChatProps {
   cwd: string;
   onCwdChange: (cwd: string) => void;
   sessionTitle?: string;
-  onApprovalDecision?: (
-    approval: ApprovalItem,
-    decision: "accept" | "acceptForSession" | "decline" | "cancel",
-  ) => void;
+  onApprovalDecision?: (approval: ApprovalItem, decision: "accept" | "acceptForSession" | "decline" | "cancel") => void;
   threads?: ThreadSummary[];
   onSelectThread?: (id: string) => void;
   activeThreadId?: string;
@@ -792,13 +701,10 @@ export function CodexChat({
   const handleCopyTranscript = async () => {
     if (turns.length === 0) return;
     const formatted = turns
-      .map((t) => {
-        if (t.role === "tool")
-          return `[TOOL] ${t.pair.name}\n${t.pair.resultRaw ?? ""}`;
-        if (t.role === "fileChange")
-          return `[FILE CHANGE] ${t.fileChange.path}\n${t.fileChange.diff}`;
-        if (t.role === "approval")
-          return `[APPROVAL] ${t.approval.title} (${t.approval.status})`;
+      .map(t => {
+        if (t.role === "tool") return `[TOOL] ${t.pair.name}\n${t.pair.resultRaw ?? ""}`;
+        if (t.role === "fileChange") return `[FILE CHANGE] ${t.fileChange.path}\n${t.fileChange.diff}`;
+        if (t.role === "approval") return `[APPROVAL] ${t.approval.title} (${t.approval.status})`;
         return `[${t.role.toUpperCase()}]\n${t.content}`;
       })
       .join("\n\n");
@@ -876,16 +782,12 @@ export function CodexChat({
 
   const showSlashMenu = useMemo(() => {
     const trimmed = draft.trim();
-    return (
-      trimmed.startsWith("/") && !trimmed.includes(" ") && trimmed.length <= 12
-    );
+    return trimmed.startsWith("/") && !trimmed.includes(" ") && trimmed.length <= 12;
   }, [draft]);
 
   const filteredSlashCommands = useMemo(() => {
     const q = draft.trim().toLowerCase();
-    return SLASH_COMMANDS.filter((c: SlashCommandItem) =>
-      c.command.toLowerCase().startsWith(q),
-    );
+    return SLASH_COMMANDS.filter((c: SlashCommandItem) => c.command.toLowerCase().startsWith(q));
   }, [draft, SLASH_COMMANDS]);
 
   const handleSelectSlashCommand = (cmd: string) => {
@@ -913,13 +815,10 @@ export function CodexChat({
 
   const handleDictation = () => {
     const SpeechRecognition =
-      (window as DictationWindow).SpeechRecognition ||
-      (window as DictationWindow).webkitSpeechRecognition;
+      (window as DictationWindow).SpeechRecognition || (window as DictationWindow).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      toast.info(
-        "Dictée indisponible : ce webview ne prend pas en charge SpeechRecognition",
-      );
+      toast.info("Dictée indisponible : ce webview ne prend pas en charge SpeechRecognition");
       return;
     }
 
@@ -945,15 +844,13 @@ export function CodexChat({
         toast.success("Dictée démarrée");
       };
 
-      recognition.onresult = (event) => {
+      recognition.onresult = event => {
         let textResult = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           textResult += event.results[i][0].transcript;
         }
         if (textResult) {
-          onDraftChange(
-            draft ? `${draft.trim()} ${textResult.trim()}` : textResult.trim(),
-          );
+          onDraftChange(draft ? `${draft.trim()} ${textResult.trim()}` : textResult.trim());
         }
       };
 
@@ -969,9 +866,7 @@ export function CodexChat({
       recognition.start();
     } catch {
       setIsListening(false);
-      toast.error(
-        "Micro inaccessible : autorisez le microphone pour l'application puis réessayez",
-      );
+      toast.error("Micro inaccessible : autorisez le microphone pour l'application puis réessayez");
     }
   };
 
@@ -985,8 +880,8 @@ export function CodexChat({
               <input
                 type="text"
                 value={editTitleDraft}
-                onChange={(e) => setEditTitleDraft(e.target.value)}
-                onKeyDown={(e) => {
+                onChange={e => setEditTitleDraft(e.target.value)}
+                onKeyDown={e => {
                   if (e.key === "Enter") handleCommitTitleRename();
                   if (e.key === "Escape") setIsEditingTitle(false);
                 }}
@@ -1069,7 +964,7 @@ export function CodexChat({
       {/* Main conversation feed: centred reading column (--app-reading-column, 760px) */}
       <div
         ref={scrollRef}
-        onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 0)}
+        onScroll={e => setScrolled(e.currentTarget.scrollTop > 0)}
         className="flex-1 min-h-0 overflow-y-auto px-4 py-6 scroll-smooth"
       >
         <div className="app-reading-column min-w-0 space-y-6">
@@ -1077,21 +972,17 @@ export function CodexChat({
             <div className="flex h-96 flex-col justify-end pb-8">
               <h2 className="app-greeting">
                 <SparkleMark size={32} />
-                <span className="app-greeting-text">
-                  Bonjour, par quoi commence-t-on ?
-                </span>
+                <span className="app-greeting-text">Bonjour, par quoi commence-t-on ?</span>
               </h2>
             </div>
           ) : (
-            turns.map((turn) => {
+            turns.map(turn => {
               if (turn.role === "approval") {
                 return (
                   <div key={turn.id} className="w-full">
                     <ApprovalCard
                       approval={turn.approval}
-                      onDecide={(decision) =>
-                        onApprovalDecision?.(turn.approval, decision)
-                      }
+                      onDecide={decision => onApprovalDecision?.(turn.approval, decision)}
                     />
                   </div>
                 );
@@ -1120,30 +1011,21 @@ export function CodexChat({
               // User Message Turn : bulle compacte arrondie (radius 28px, surface-container-high, max 75%)
               if (turn.role === "user") {
                 return (
-                  <div
-                    key={turn.id}
-                    className="flex flex-col items-end w-full py-1"
-                  >
+                  <div key={turn.id} className="flex flex-col items-end w-full py-1">
                     <div className="max-w-[75%] rounded-[28px] bg-surface-container-high px-6 py-3.5 text-body-large text-on-surface break-words shadow-xs">
                       <div className="whitespace-pre-wrap">{turn.content}</div>
                     </div>
                     {turn.attachments && turn.attachments.length > 0 && (
                       <div className="flex flex-wrap gap-2 justify-end mt-2 max-w-[75%]">
-                        {turn.attachments.map((filePath) => {
-                          const filename =
-                            filePath.replace(/\\/g, "/").split("/").pop() ||
-                            filePath;
+                        {turn.attachments.map(filePath => {
+                          const filename = filePath.replace(/\\/g, "/").split("/").pop() || filePath;
                           return (
                             <div
                               key={filePath}
                               className="app-chip flex items-center gap-1.5 px-3 py-1 bg-surface-container text-label-large text-on-surface"
                             >
-                              <span className="material-symbol text-title-small text-primary">
-                                description
-                              </span>
-                              <span className="truncate max-w-xs">
-                                {filename}
-                              </span>
+                              <span className="material-symbol text-title-small text-primary">description</span>
+                              <span className="truncate max-w-xs">{filename}</span>
                             </div>
                           );
                         })}
@@ -1155,10 +1037,7 @@ export function CodexChat({
 
               // Assistant Turn : texte brut à gauche, sans bulle, markdown propre, code Google Sans Code, actions au survol
               return (
-                <div
-                  key={turn.id}
-                  className="group flex flex-col py-2 w-full text-left"
-                >
+                <div key={turn.id} className="group flex flex-col py-2 w-full text-left">
                   <div className="flex w-full items-start gap-3">
                     <span className="mt-1">
                       <SparkleMark size={24} />
@@ -1167,11 +1046,7 @@ export function CodexChat({
                       className="min-w-0 flex-1 bg-transparent text-body-large text-on-surface"
                       aria-busy={turn.streaming || undefined}
                     >
-                      <Markdown
-                        content={turn.content}
-                        size="large"
-                        className="break-words font-sans"
-                      />
+                      <Markdown content={turn.content} size="large" className="break-words font-sans" />
                     </div>
                   </div>
                   {/* Copier ou bifurquer un fil réellement disponible. */}
@@ -1180,9 +1055,7 @@ export function CodexChat({
                       icon="content_copy"
                       variant="standard"
                       size="sm"
-                      onClick={() =>
-                        void copyChatText(turn.content, "Message copié")
-                      }
+                      onClick={() => void copyChatText(turn.content, "Message copié")}
                       title="Copier le message"
                       aria-label="Copier le message"
                     />
@@ -1205,12 +1078,7 @@ export function CodexChat({
       </div>
 
       {/* Floating Composer en bas - centré, clamp(560px, 72%, 960px) */}
-      <div
-        className={clsx(
-          "w-full px-4 shrink-0",
-          promptShape === "docked" ? "pb-0" : "pb-6",
-        )}
-      >
+      <div className={clsx("w-full px-4 shrink-0", promptShape === "docked" ? "pb-0" : "pb-6")}>
         <div className="app-reading-column min-w-0 relative">
           {/* Menu d'autocomplétion des commandes IA instantanées */}
           {showSlashMenu && filteredSlashCommands.length > 0 && (
@@ -1232,15 +1100,9 @@ export function CodexChat({
                     )}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="material-symbol text-title-small text-primary">
-                        {cmd.icon}
-                      </span>
-                      <span className="font-mono text-label-large font-bold">
-                        {cmd.command}
-                      </span>
-                      <span className="text-body-large text-on-surface-variant truncate max-w-[200px]">
-                        {cmd.desc}
-                      </span>
+                      <span className="material-symbol text-title-small text-primary">{cmd.icon}</span>
+                      <span className="font-mono text-label-large font-bold">{cmd.command}</span>
+                      <span className="text-body-large text-on-surface-variant truncate max-w-[200px]">{cmd.desc}</span>
                     </div>
                     <span className="text-label-small text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">
                       {cmd.badge}
@@ -1255,31 +1117,25 @@ export function CodexChat({
             {/* Input Textarea */}
             <textarea
               value={draft}
-              onChange={(e) => onDraftChange(e.target.value)}
-              onKeyDown={(e) => {
+              onChange={e => onDraftChange(e.target.value)}
+              onKeyDown={e => {
                 if (showSlashMenu && filteredSlashCommands.length > 0) {
                   if (e.key === "ArrowDown") {
                     e.preventDefault();
-                    setSelectedSlashIndex(
-                      (prev) => (prev + 1) % filteredSlashCommands.length,
-                    );
+                    setSelectedSlashIndex(prev => (prev + 1) % filteredSlashCommands.length);
                     return;
                   }
                   if (e.key === "ArrowUp") {
                     e.preventDefault();
                     setSelectedSlashIndex(
-                      (prev) =>
-                        (prev - 1 + filteredSlashCommands.length) %
-                        filteredSlashCommands.length,
+                      prev => (prev - 1 + filteredSlashCommands.length) % filteredSlashCommands.length,
                     );
                     return;
                   }
                   if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) {
                     e.preventDefault();
                     if (filteredSlashCommands[selectedSlashIndex]) {
-                      handleSelectSlashCommand(
-                        filteredSlashCommands[selectedSlashIndex].command,
-                      );
+                      handleSelectSlashCommand(filteredSlashCommands[selectedSlashIndex].command);
                     }
                     return;
                   }
@@ -1290,12 +1146,7 @@ export function CodexChat({
                 }
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  if (
-                    ready &&
-                    !busy &&
-                    (draft.trim() || attachedFiles.length > 0)
-                  )
-                    onSend();
+                  if (ready && !busy && (draft.trim() || attachedFiles.length > 0)) onSend();
                 } else if (e.key === "Escape" && busy) {
                   e.preventDefault();
                   onStop();
@@ -1309,17 +1160,14 @@ export function CodexChat({
             {/* Attached files chips under textarea */}
             {attachedFiles && attachedFiles.length > 0 && (
               <div className="flex flex-wrap items-center gap-2 mb-2 pt-1 border-t border-outline-variant/15">
-                {attachedFiles.map((filePath) => {
-                  const filename =
-                    filePath.replace(/\\/g, "/").split("/").pop() || filePath;
+                {attachedFiles.map(filePath => {
+                  const filename = filePath.replace(/\\/g, "/").split("/").pop() || filePath;
                   return (
                     <div
                       key={filePath}
                       className="app-chip flex items-center gap-2 px-3 py-1 bg-surface-container text-label-large text-on-surface"
                     >
-                      <span className="material-symbol text-title-small text-primary">
-                        attach_file
-                      </span>
+                      <span className="material-symbol text-title-small text-primary">attach_file</span>
                       <span className="truncate max-w-xs">{filename}</span>
                       <button
                         type="button"
@@ -1328,9 +1176,7 @@ export function CodexChat({
                         title="Retirer le fichier"
                         aria-label={`Retirer ${filename}`}
                       >
-                        <span className="material-symbol text-title-small">
-                          close
-                        </span>
+                        <span className="material-symbol text-title-small">close</span>
                       </button>
                     </div>
                   );
@@ -1343,10 +1189,7 @@ export function CodexChat({
               {/* Left Controls : + (menu Add & Tools), Badge Accès complet, Plug icon with dot */}
               <div className="flex items-center gap-2">
                 {/* Bouton + et Popover Menu */}
-                <Popover.Root
-                  open={plusPopover.open}
-                  onOpenChange={plusPopover.setOpen}
-                >
+                <Popover.Root open={plusPopover.open} onOpenChange={plusPopover.setOpen}>
                   <Popover.Trigger asChild>
                     <button
                       type="button"
@@ -1354,9 +1197,7 @@ export function CodexChat({
                       title="Ajouter ou outils"
                       aria-label="Ajouter ou outils"
                     >
-                      <span className="material-symbol text-title-medium">
-                        add
-                      </span>
+                      <span className="material-symbol text-title-medium">add</span>
                     </button>
                   </Popover.Trigger>
                   <Popover.Content
@@ -1374,9 +1215,7 @@ export function CodexChat({
                         onClick={handlePickAddFile}
                         className="flex w-full items-center gap-3 px-3 py-2 rounded-xl text-label-large text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer text-left"
                       >
-                        <span className="material-symbol text-title-small text-primary">
-                          attach_file
-                        </span>
+                        <span className="material-symbol text-title-small text-primary">attach_file</span>
                         <span>Fichiers et dossiers</span>
                       </button>
                       <button
@@ -1385,9 +1224,7 @@ export function CodexChat({
                         onClick={handlePickAddFolder}
                         className="flex w-full items-center gap-3 px-3 py-2 rounded-xl text-label-large text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer text-left"
                       >
-                        <span className="material-symbol text-title-small text-primary">
-                          folder_open
-                        </span>
+                        <span className="material-symbol text-title-small text-primary">folder_open</span>
                         <span>Dossier de travail</span>
                       </button>
                       <button
@@ -1396,14 +1233,10 @@ export function CodexChat({
                         className="flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer text-left"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="material-symbol text-title-small text-primary">
-                            search_insights
-                          </span>
+                          <span className="material-symbol text-title-small text-primary">search_insights</span>
                           <span>Recherche connaissances</span>
                         </div>
-                        <span className="text-label-small text-on-surface-variant font-mono">
-                          /rag
-                        </span>
+                        <span className="text-label-small text-on-surface-variant font-mono">/rag</span>
                       </button>
                       <button
                         type="button"
@@ -1411,14 +1244,10 @@ export function CodexChat({
                         className="flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer text-left"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="material-symbol text-title-small text-primary">
-                            track_changes
-                          </span>
+                          <span className="material-symbol text-title-small text-primary">track_changes</span>
                           <span>Objectif autonome</span>
                         </div>
-                        <span className="text-label-small text-on-surface-variant font-mono">
-                          /goal
-                        </span>
+                        <span className="text-label-small text-on-surface-variant font-mono">/goal</span>
                       </button>
                       <button
                         type="button"
@@ -1426,34 +1255,24 @@ export function CodexChat({
                         className="flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer text-left"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="material-symbol text-title-small text-primary">
-                            lightbulb
-                          </span>
+                          <span className="material-symbol text-title-small text-primary">lightbulb</span>
                           <span>Mode plan</span>
                         </div>
-                        <span className="text-label-small text-on-surface-variant font-mono">
-                          /plan
-                        </span>
+                        <span className="text-label-small text-on-surface-variant font-mono">/plan</span>
                       </button>
                     </div>
                   </Popover.Content>
                 </Popover.Root>
 
                 {/* Badge d'accès 'Accès complet' en rouge/orange */}
-                <Popover.Root
-                  open={accessPopover.open}
-                  onOpenChange={accessPopover.setOpen}
-                >
+                <Popover.Root open={accessPopover.open} onOpenChange={accessPopover.setOpen}>
                   <Popover.Trigger asChild>
                     <button
                       type="button"
                       className="app-chip flex items-center gap-1.5 px-3 py-1.5 text-label-large font-medium text-on-tertiary-container bg-tertiary-container hover:bg-tertiary-container/80 transition-colors cursor-pointer"
                       title={`Niveau d'accès : ${accessMode === "full" ? "accès complet" : accessMode === "ask" ? "demander avant modifications" : "lecture seule"}`}
                     >
-                      <span
-                        className="material-symbol text-title-small"
-                        aria-hidden="true"
-                      >
+                      <span className="material-symbol text-title-small" aria-hidden="true">
                         warning
                       </span>
                       <span className="app-chip-label">
@@ -1489,11 +1308,7 @@ export function CodexChat({
                         )}
                       >
                         <span>Accès complet (Bypass)</span>
-                        {accessMode === "full" && (
-                          <span className="material-symbol text-title-small">
-                            check
-                          </span>
-                        )}
+                        {accessMode === "full" && <span className="material-symbol text-title-small">check</span>}
                       </button>
                       <button
                         type="button"
@@ -1510,11 +1325,7 @@ export function CodexChat({
                         )}
                       >
                         <span>Demander avant modif</span>
-                        {accessMode === "ask" && (
-                          <span className="material-symbol text-title-small">
-                            check
-                          </span>
-                        )}
+                        {accessMode === "ask" && <span className="material-symbol text-title-small">check</span>}
                       </button>
                       <button
                         type="button"
@@ -1531,11 +1342,7 @@ export function CodexChat({
                         )}
                       >
                         <span>Lecture seule</span>
-                        {accessMode === "readonly" && (
-                          <span className="material-symbol text-title-small">
-                            check
-                          </span>
-                        )}
+                        {accessMode === "readonly" && <span className="material-symbol text-title-small">check</span>}
                       </button>
                     </div>
                   </Popover.Content>
@@ -1549,9 +1356,7 @@ export function CodexChat({
                   title="Extensions et outils"
                   aria-label="Extensions et outils"
                 >
-                  <span className="material-symbol text-title-medium">
-                    anchor
-                  </span>
+                  <span className="material-symbol text-title-medium">anchor</span>
                   <span className="absolute top-2 right-2 size-2 rounded-full bg-amber-400 ring-2 ring-surface-container-high" />
                 </button>
               </div>
@@ -1559,10 +1364,7 @@ export function CodexChat({
               {/* Right Controls : Sélecteur de modèle ('⚡ GPT-6 Luna Minimal ˅'), Micro, Bouton envoi/stop */}
               <div className="flex items-center gap-2">
                 {/* Sélecteur de modèle Popover pixel-perfect */}
-                <Popover.Root
-                  open={modelPopover.open}
-                  onOpenChange={modelPopover.setOpen}
-                >
+                <Popover.Root open={modelPopover.open} onOpenChange={modelPopover.setOpen}>
                   <Popover.Trigger asChild>
                     <button
                       type="button"
@@ -1573,24 +1375,14 @@ export function CodexChat({
                           : `Modèle : ${model || "Aucun modèle configuré"}`
                       }
                     >
-                      <span
-                        className="material-symbol text-primary text-title-small"
-                        aria-hidden="true"
-                      >
+                      <span className="material-symbol text-primary text-title-small" aria-hidden="true">
                         bolt
                       </span>
-                      <span className="app-chip-label font-semibold">
-                        {model || "Choisir un modèle"}
-                      </span>
+                      <span className="app-chip-label font-semibold">{model || "Choisir un modèle"}</span>
                       {onEffortChange && (
-                        <span className="app-chip-label text-on-surface-variant font-normal">
-                          {effort}
-                        </span>
+                        <span className="app-chip-label text-on-surface-variant font-normal">{effort}</span>
                       )}
-                      <span
-                        className="material-symbol text-on-surface-variant text-title-small"
-                        aria-hidden="true"
-                      >
+                      <span className="material-symbol text-on-surface-variant text-title-small" aria-hidden="true">
                         expand_more
                       </span>
                     </button>
@@ -1609,11 +1401,9 @@ export function CodexChat({
 
                     <div className="max-h-72 overflow-y-auto space-y-1">
                       {modelOptions.length === 0 ? (
-                        <p className="px-3 py-2 text-body-medium text-on-surface-variant">
-                          Aucun modèle configuré.
-                        </p>
+                        <p className="px-3 py-2 text-body-medium text-on-surface-variant">Aucun modèle configuré.</p>
                       ) : (
-                        modelOptions.map((option) => (
+                        modelOptions.map(option => (
                           <button
                             key={option.id}
                             type="button"
@@ -1630,17 +1420,11 @@ export function CodexChat({
                             )}
                           >
                             <span className="min-w-0">
-                              <span className="block truncate">
-                                {option.name}
-                              </span>
-                              <span className="block text-label-small text-on-surface-variant">
-                                {option.provider}
-                              </span>
+                              <span className="block truncate">{option.name}</span>
+                              <span className="block text-label-small text-on-surface-variant">{option.provider}</span>
                             </span>
                             {model === option.id && (
-                              <span className="material-symbol text-title-small text-primary">
-                                check
-                              </span>
+                              <span className="material-symbol text-title-small text-primary">check</span>
                             )}
                           </button>
                         ))
@@ -1650,19 +1434,9 @@ export function CodexChat({
                     {/* Le sélecteur d’effort exige un contrat fourni par le parent. */}
                     {onEffortChange && (
                       <div className="mt-2 pt-2 border-t border-outline-variant/20 px-2">
-                        <div className="text-label-small text-on-surface-variant mb-1.5">
-                          Niveau d'effort
-                        </div>
+                        <div className="text-label-small text-on-surface-variant mb-1.5">Niveau d'effort</div>
                         <div className="flex items-center gap-1">
-                          {(
-                            [
-                              "None",
-                              "Low",
-                              "Medium",
-                              "High",
-                              "Minimal",
-                            ] as const
-                          ).map((lvl) => (
+                          {(["None", "Low", "Medium", "High", "Minimal"] as const).map(lvl => (
                             <button
                               key={lvl}
                               type="button"
@@ -1696,30 +1470,17 @@ export function CodexChat({
                       ? "bg-error text-on-error animate-pulse shadow-md"
                       : "hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface",
                   )}
-                  title={
-                    isListening
-                      ? "Arrêter la dictée vocale (en cours...)"
-                      : "Dictée vocale"
-                  }
-                  aria-label={
-                    isListening
-                      ? "Arrêter la dictée vocale (en cours...)"
-                      : "Dictée vocale"
-                  }
+                  title={isListening ? "Arrêter la dictée vocale (en cours...)" : "Dictée vocale"}
+                  aria-label={isListening ? "Arrêter la dictée vocale (en cours...)" : "Dictée vocale"}
                 >
-                  <span className="material-symbol text-title-medium font-bold">
-                    mic
-                  </span>
+                  <span className="material-symbol text-title-medium font-bold">mic</span>
                 </button>
 
                 {/* Bouton rond d'envoi primary devenant Stop pendant l'exécution */}
                 <button
                   type="button"
                   onClick={busy ? onStop : onSend}
-                  disabled={
-                    !busy &&
-                    (!ready || (!draft.trim() && attachedFiles.length === 0))
-                  }
+                  disabled={!busy && (!ready || (!draft.trim() && attachedFiles.length === 0))}
                   className={clsx(
                     "size-11 rounded-full flex items-center justify-center shadow-md transition-all cursor-pointer",
                     busy
@@ -1732,13 +1493,9 @@ export function CodexChat({
                   aria-label={busy ? "Arrêter la génération" : "Envoyer"}
                 >
                   {busy ? (
-                    <span className="material-symbol text-title-medium font-bold">
-                      stop
-                    </span>
+                    <span className="material-symbol text-title-medium font-bold">stop</span>
                   ) : (
-                    <span className="material-symbol text-title-medium font-bold">
-                      arrow_upward
-                    </span>
+                    <span className="material-symbol text-title-medium font-bold">arrow_upward</span>
                   )}
                 </button>
               </div>
@@ -1750,18 +1507,13 @@ export function CodexChat({
   );
 }
 
-async function chatRpc(
-  method: string,
-  params: Record<string, unknown> = {},
-): Promise<Record<string, unknown>> {
+async function chatRpc(method: string, params: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
   return aphrodyRpc(method, params);
 }
 
 function chatErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
-  return /Server returned HTTP [0-9]+|HTTP [0-9]+|Failed to fetch|fetch failed|NetworkError/i.test(
-    message,
-  )
+  return /Server returned HTTP [0-9]+|HTTP [0-9]+|Failed to fetch|fetch failed|NetworkError/i.test(message)
     ? "Connexion au service indisponible."
     : message;
 }
@@ -1778,10 +1530,7 @@ type RouteIntent = {
 };
 
 /** Intention entrante (state de navigation ou query string) : prompt initial, dossier et fichiers de contexte. */
-function readRouteIntent(location: {
-  search: string;
-  state: unknown;
-}): RouteIntent {
+function readRouteIntent(location: { search: string; state: unknown }): RouteIntent {
   const state = location.state as {
     initialPrompt?: string;
     prompt?: string;
@@ -1858,9 +1607,7 @@ export function CodexChatRoute() {
 
   // Handle incoming routing query or state
   // Brouillon et pièces jointes dérivés de la navigation entrante, appliqués pendant le rendu (ajustement d'état).
-  const [consumedLocation, setConsumedLocation] = useState<
-    typeof location | null
-  >(null);
+  const [consumedLocation, setConsumedLocation] = useState<typeof location | null>(null);
   if (location !== consumedLocation) {
     setConsumedLocation(location);
     const intent = readRouteIntent(location);
@@ -1869,9 +1616,7 @@ export function CodexChatRoute() {
     }
     if (intent.contextFiles && intent.contextFiles.length > 0) {
       const contextFiles = intent.contextFiles;
-      setAttachedFiles((prev) =>
-        Array.from(new Set([...prev, ...contextFiles])),
-      );
+      setAttachedFiles(prev => Array.from(new Set([...prev, ...contextFiles])));
     }
   }
 
@@ -1889,16 +1634,11 @@ export function CodexChatRoute() {
 
   const loadThreads = async () => {
     const res = await chatRpc("thread/list", { limit: 20 });
-    const rawList = Array.isArray(res.threads)
-      ? res.threads
-      : Array.isArray(res.data)
-        ? res.data
-        : undefined;
+    const rawList = Array.isArray(res.threads) ? res.threads : Array.isArray(res.data) ? res.data : undefined;
     if (!rawList) throw new Error("Historique indisponible.");
     const loaded: ThreadSummary[] = rawList.map((value: unknown) => {
       const t = value as ThreadSummary;
-      if (typeof t.id !== "string" || !t.id)
-        throw new Error("Historique invalide.");
+      if (typeof t.id !== "string" || !t.id) throw new Error("Historique invalide.");
       return {
         id: t.id,
         name: t.name,
@@ -1945,37 +1685,24 @@ export function CodexChatRoute() {
       };
 
       if (epoch !== threadLoadEpoch.current) return;
-      if (!res.thread || res.thread.id !== id)
-        throw new Error("Le serveur n’a pas retourné ce chat.");
+      if (!res.thread || res.thread.id !== id) throw new Error("Le serveur n’a pas retourné ce chat.");
       setActiveThreadId(id);
       threadIdRef.current = id;
       if (res.thread?.cwd) setCwd(res.thread.cwd);
       if (res.thread?.model) setModel(res.thread.model);
-      const activeSummary = threads.find((t) => t.id === id);
-      setSessionTitle(
-        res.thread?.name ||
-          res.thread?.preview ||
-          activeSummary?.name ||
-          activeSummary?.preview,
-      );
+      const activeSummary = threads.find(t => t.id === id);
+      setSessionTitle(res.thread?.name || res.thread?.preview || activeSummary?.name || activeSummary?.preview);
 
       const reconstructed: Turn[] = [];
       for (const t of res.thread?.turns ?? []) {
         for (const item of t.items ?? []) {
-          if (
-            item.type === "userMessage" ||
-            (item.type === "userInput" && item.text)
-          ) {
+          if (item.type === "userMessage" || (item.type === "userInput" && item.text)) {
             reconstructed.push({
               id: item.id || `msg-${Date.now()}`,
               role: "user",
               content:
                 item.text ??
-                item.content
-                  ?.flatMap((part) =>
-                    typeof part.text === "string" ? [part.text] : [],
-                  )
-                  .join("\n") ??
+                item.content?.flatMap(part => (typeof part.text === "string" ? [part.text] : [])).join("\n") ??
                 "",
               turnId: t.id,
             });
@@ -2037,8 +1764,7 @@ export function CodexChatRoute() {
 
   // Sidebar selections use the same owner-backed history load as route actions.
   useEffect(() => {
-    if (!ready || !activeThreadId || activeThreadId === threadIdRef.current)
-      return;
+    if (!ready || !activeThreadId || activeThreadId === threadIdRef.current) return;
     if (busy) {
       setActiveThreadId(threadIdRef.current);
       toast.info("Arrêtez l’exécution avant de changer de chat.");
@@ -2053,9 +1779,7 @@ export function CodexChatRoute() {
       clearNewSessionRequest();
       if (busy) {
         setActiveThreadId(threadIdRef.current);
-        const summary = threads.find(
-          (thread) => thread.id === threadIdRef.current,
-        );
+        const summary = threads.find(thread => thread.id === threadIdRef.current);
         setSessionTitle(summary?.name || summary?.preview);
         toast.info("Arrêtez l’exécution avant de créer un nouveau chat.");
         return;
@@ -2069,14 +1793,7 @@ export function CodexChatRoute() {
       setTurnId(undefined);
       threadIdRef.current = null;
     }
-  }, [
-    newSessionRequested,
-    clearNewSessionRequest,
-    busy,
-    threads,
-    setActiveThreadId,
-    setSessionTitle,
-  ]);
+  }, [newSessionRequested, clearNewSessionRequest, busy, threads, setActiveThreadId, setSessionTitle]);
 
   // Backend initialization and catalog must succeed before a message can be sent.
   // Ne se rejoue qu'au montage et au bouton « Réessayer » : les valeurs de départ sont figées à l'ouverture de l'effet.
@@ -2096,27 +1813,20 @@ export function CodexChatRoute() {
       try {
         await ensureAphrodyInitialized();
         const listed = await chatRpc("model/list");
-        if (!Array.isArray(listed.data))
-          throw new Error("Catalogue de modèles indisponible.");
+        if (!Array.isArray(listed.data)) throw new Error("Catalogue de modèles indisponible.");
         const data = listed.data as Array<{
           id: string;
           provider: string;
           default?: boolean;
         }>;
-        const options = data.map((entry) => {
-          if (
-            typeof entry.id !== "string" ||
-            typeof entry.provider !== "string"
-          )
+        const options = data.map(entry => {
+          if (typeof entry.id !== "string" || typeof entry.provider !== "string")
             throw new Error("Catalogue de modèles invalide.");
           return { id: entry.id, name: entry.id, provider: entry.provider };
         });
         if (!active) return;
         setModelOptions(options);
-        const selected =
-          data.find((entry) => entry.id === snap.model) ??
-          data.find((entry) => entry.default) ??
-          data[0];
+        const selected = data.find(entry => entry.id === snap.model) ?? data.find(entry => entry.default) ?? data[0];
         snap.setModel(selected?.id ?? "");
         try {
           const res = await tauriInvoke<{ cwd?: string }>("aphrody_system_cwd");
@@ -2125,8 +1835,7 @@ export function CodexChatRoute() {
           /* A browser host can use the backend's configured directory. */
         }
         await snap.loadThreads();
-        if (active && snap.activeThreadId)
-          await snap.switchThread(snap.activeThreadId);
+        if (active && snap.activeThreadId) await snap.switchThread(snap.activeThreadId);
         if (active) setReady(true);
       } catch (error) {
         if (active) setConnectionError(chatErrorMessage(error));
@@ -2142,23 +1851,14 @@ export function CodexChatRoute() {
     approval: ApprovalItem,
     decision: "accept" | "acceptForSession" | "decline" | "cancel",
   ) => {
-    const newStatus =
-      decision === "accept"
-        ? "approved"
-        : decision === "acceptForSession"
-          ? "session"
-          : "denied";
+    const newStatus = decision === "accept" ? "approved" : decision === "acceptForSession" ? "session" : "denied";
 
     const replyKey = `${approval.backendGeneration ?? ""}:${approval.id}`;
-    if (
-      approvalReplies.current.has(replyKey) ||
-      confirmedApprovalReplies.current.has(replyKey)
-    )
-      return;
+    if (approvalReplies.current.has(replyKey) || confirmedApprovalReplies.current.has(replyKey)) return;
     approvalReplies.current.add(replyKey);
     const updateApproval = (patch: Partial<ApprovalItem>) =>
-      setTurns((items) =>
-        items.map((item) =>
+      setTurns(items =>
+        items.map(item =>
           item.role === "approval" &&
           item.approval.id === approval.id &&
           item.approval.backendGeneration === approval.backendGeneration
@@ -2234,11 +1934,7 @@ export function CodexChatRoute() {
       const tId = targetThreadId;
       const newName = params?.name;
       if (tId && newName) {
-        setThreads(
-          threads.map((it) =>
-            it.id === tId ? { ...it, name: newName, preview: newName } : it,
-          ),
-        );
+        setThreads(threads.map(it => (it.id === tId ? { ...it, name: newName, preview: newName } : it)));
         if (tId === threadIdRef.current) {
           setSessionTitle(newName);
         }
@@ -2251,7 +1947,7 @@ export function CodexChatRoute() {
       if (tId && tId === threadIdRef.current) {
         void switchThread(tId).catch(() => {});
       }
-      void loadThreads().catch((error) => toast.error(chatErrorMessage(error)));
+      void loadThreads().catch(error => toast.error(chatErrorMessage(error)));
       return;
     }
 
@@ -2266,9 +1962,7 @@ export function CodexChatRoute() {
     // Inline Server Requests (Approvals)
     if (notification.method === "item/commandExecution/requestApproval") {
       if (notification.id === undefined) {
-        console.warn(
-          "Command execution approval has no request ID; cannot safely reply",
-        );
+        console.warn("Command execution approval has no request ID; cannot safely reply");
         return;
       }
       // Command execution belongs to the separate native shell app, not this consumer webview.
@@ -2276,9 +1970,7 @@ export function CodexChatRoute() {
         id: notification.id,
         result: { decision: "decline" },
         backendGeneration: notification.backendGeneration,
-      }).catch((error) =>
-        console.warn("Command execution was declined by the UI host", error),
-      );
+      }).catch(error => console.warn("Command execution was declined by the UI host", error));
       return;
     }
 
@@ -2302,9 +1994,9 @@ export function CodexChatRoute() {
         itemId: params?.itemId,
       };
 
-      setTurns((items) =>
+      setTurns(items =>
         items.some(
-          (item) =>
+          item =>
             item.role === "approval" &&
             item.approval.id === reqId &&
             item.approval.backendGeneration === approval.backendGeneration,
@@ -2312,8 +2004,7 @@ export function CodexChatRoute() {
           ? items
           : [...items, { id: `approval-${reqId}`, role: "approval", approval }],
       );
-      if (accessMode === "full")
-        void handleApprovalDecision(approval, "accept");
+      if (accessMode === "full") void handleApprovalDecision(approval, "accept");
       return;
     }
 
@@ -2321,11 +2012,9 @@ export function CodexChatRoute() {
     if (notification.method === "item/agentMessage/delta") {
       const delta = params?.delta ?? "";
       const targetItemId = params?.itemId;
-      setTurns((items) => {
+      setTurns(items => {
         if (targetItemId) {
-          const foundIdx = items.findIndex(
-            (it) => it.role === "assistant" && it.itemId === targetItemId,
-          );
+          const foundIdx = items.findIndex(it => it.role === "assistant" && it.itemId === targetItemId);
           if (foundIdx !== -1) {
             const updated = [...items];
             const prev = updated[foundIdx] as {
@@ -2346,10 +2035,7 @@ export function CodexChatRoute() {
         }
         const last = items.at(-1);
         if (last && last.role === "assistant" && last.streaming) {
-          return [
-            ...items.slice(0, -1),
-            { ...last, content: last.content + delta },
-          ];
+          return [...items.slice(0, -1), { ...last, content: last.content + delta }];
         }
         return [
           ...items,
@@ -2363,18 +2049,13 @@ export function CodexChatRoute() {
           },
         ];
       });
-    } else if (
-      notification.method === "item/completed" &&
-      params?.item?.type === "agentMessage"
-    ) {
+    } else if (notification.method === "item/completed" && params?.item?.type === "agentMessage") {
       const targetItemId = params.item.id;
       const text = params.item.text ?? "";
-      setTurns((items) => {
+      setTurns(items => {
         if (targetItemId) {
           const foundIdx = items.findIndex(
-            (it) =>
-              it.role === "assistant" &&
-              (it.itemId === targetItemId || it.id === targetItemId),
+            it => it.role === "assistant" && (it.itemId === targetItemId || it.id === targetItemId),
           );
           if (foundIdx !== -1) {
             const updated = [...items];
@@ -2390,9 +2071,7 @@ export function CodexChatRoute() {
           }
         }
         return [
-          ...items.filter(
-            (item) => !(item.role === "assistant" && item.streaming),
-          ),
+          ...items.filter(item => !(item.role === "assistant" && item.streaming)),
           {
             id: targetItemId ?? `msg-${Date.now()}`,
             role: "assistant",
@@ -2403,10 +2082,7 @@ export function CodexChatRoute() {
           },
         ];
       });
-    } else if (
-      notification.method === "item/started" &&
-      params?.item?.type === "mcpToolCall"
-    ) {
+    } else if (notification.method === "item/started" && params?.item?.type === "mcpToolCall") {
       const toolName = params.item.toolName ?? "tool";
       const callId = params.item.id ?? `tool-${Date.now()}`;
       const pair: ToolCallPair = {
@@ -2419,7 +2095,7 @@ export function CodexChatRoute() {
         status: "running",
         title: toolName,
       };
-      setTurns((items) => [
+      setTurns(items => [
         ...items,
         {
           id: callId,
@@ -2429,17 +2105,13 @@ export function CodexChatRoute() {
           turnId: params.turnId,
         },
       ]);
-    } else if (
-      notification.method === "item/completed" &&
-      params?.item?.type === "mcpToolCall"
-    ) {
+    } else if (notification.method === "item/completed" && params?.item?.type === "mcpToolCall") {
       const callId = params.item.id;
       const toolName = params.item.toolName ?? "tool";
       const result = params.item.result;
-      const resultText =
-        params.item.text ?? (result ? JSON.stringify(result, null, 2) : "");
-      setTurns((items) =>
-        items.map((item) => {
+      const resultText = params.item.text ?? (result ? JSON.stringify(result, null, 2) : "");
+      setTurns(items =>
+        items.map(item => {
           if (
             item.role === "tool" &&
             (callId
@@ -2459,13 +2131,9 @@ export function CodexChatRoute() {
           return item;
         }),
       );
-    } else if (
-      notification.method === "item/completed" &&
-      params?.item?.type === "fileChange" &&
-      params.item.diff
-    ) {
+    } else if (notification.method === "item/completed" && params?.item?.type === "fileChange" && params.item.diff) {
       const callId = params.item.id ?? `patch-${Date.now()}`;
-      setTurns((items) => [
+      setTurns(items => [
         ...items,
         {
           id: callId,
@@ -2487,32 +2155,26 @@ export function CodexChatRoute() {
       setTurnId(undefined);
       if (params?.turn?.status === "failed") {
         toast.error(
-          params.turn.error?.message ??
-            "Le tour a échoué : relancez le message ou consultez les logs app-server",
+          params.turn.error?.message ?? "Le tour a échoué : relancez le message ou consultez les logs app-server",
         );
       } else if (
         params?.turn?.status === "completed" &&
-        params.turn.items?.some((item) => item.type === "contextCompaction")
+        params.turn.items?.some(item => item.type === "contextCompaction")
       ) {
-        if (activeThreadId)
-          compactedAtTurns.current.set(activeThreadId, turns.length);
+        if (activeThreadId) compactedAtTurns.current.set(activeThreadId, turns.length);
         toast.success("Compactage du fil terminé");
       }
-      void loadThreads().catch((error) => toast.error(chatErrorMessage(error)));
+      void loadThreads().catch(error => toast.error(chatErrorMessage(error)));
 
       // Auto-compact context (NHITL / YOLO continuous mode)
       // When turns accumulate (>= 25), trigger compact to maintain fast inference & low memory.
       if (
         activeThreadId &&
-        shouldAutoCompactThread(
-          params?.turn,
-          turns.length,
-          compactedAtTurns.current.get(activeThreadId),
-        )
+        shouldAutoCompactThread(params?.turn, turns.length, compactedAtTurns.current.get(activeThreadId))
       ) {
         void chatRpc("thread/compact/start", {
           threadId: activeThreadId,
-        }).catch((err) => console.warn("Auto-compact context skipped:", err));
+        }).catch(err => console.warn("Auto-compact context skipped:", err));
       }
     }
   };
@@ -2527,16 +2189,16 @@ export function CodexChatRoute() {
     let unsub: (() => void) | undefined;
     let active = true;
 
-    aphrodySessionStream(activeThreadId, (payload) => {
+    aphrodySessionStream(activeThreadId, payload => {
       if (!active) return;
       notificationHandler.current(payload);
     })
-      .then((cleanup) => {
+      .then(cleanup => {
         if (!active) cleanup();
         else unsub = cleanup;
         return null;
       })
-      .catch((error) => {
+      .catch(error => {
         if (active) {
           setConnectionError(chatErrorMessage(error));
           setReady(false);
@@ -2555,20 +2217,17 @@ export function CodexChatRoute() {
     let unlisten: (() => void) | undefined;
     let cancelled = false;
 
-    const nativeListen =
-      window.__TAURI__?.event?.listen ?? (isTauri() ? listen : undefined);
+    const nativeListen = window.__TAURI__?.event?.listen ?? (isTauri() ? listen : undefined);
     if (nativeListen) {
-      void nativeListen(
-        "aphrody://notification",
-        ({ payload }: { payload: unknown }) =>
-          notificationHandler.current(payload),
+      void nativeListen("aphrody://notification", ({ payload }: { payload: unknown }) =>
+        notificationHandler.current(payload),
       )
-        .then((stop) => {
+        .then(stop => {
           if (cancelled) stop();
           else unlisten = stop;
           return null;
         })
-        .catch((error) => {
+        .catch(error => {
           if (!cancelled) {
             setConnectionError(chatErrorMessage(error));
             setReady(false);
@@ -2584,14 +2243,7 @@ export function CodexChatRoute() {
 
   const handleSend = async () => {
     const text = draft.trim();
-    if (
-      (!text && attachedFiles.length === 0) ||
-      busy ||
-      loadingThread ||
-      !ready ||
-      connectionError
-    )
-      return;
+    if ((!text && attachedFiles.length === 0) || busy || loadingThread || !ready || connectionError) return;
 
     // Instant local commands with zero latency
     if (text === "/clear") {
@@ -2606,9 +2258,7 @@ export function CodexChatRoute() {
           toast.info("Créez un nouveau chat pour changer de modèle.");
           return;
         }
-        const option = modelOptions.find(
-          (entry) => entry.id === targetModel || entry.name === targetModel,
-        );
+        const option = modelOptions.find(entry => entry.id === targetModel || entry.name === targetModel);
         if (!option) {
           toast.error("Ce modèle n’est pas configuré.");
           return;
@@ -2625,10 +2275,7 @@ export function CodexChatRoute() {
         toast.info("Indiquez les termes à rechercher : /rag <requête>");
         return;
       }
-      setTurns((items) => [
-        ...items,
-        { id: `user-${Date.now()}`, role: "user", content: text },
-      ]);
+      setTurns(items => [...items, { id: `user-${Date.now()}`, role: "user", content: text }]);
       setDraft("");
       try {
         const ragRes = await runRagSearch(query, 5);
@@ -2646,7 +2293,7 @@ export function CodexChatRoute() {
         } else {
           responseContent += `*Aucun fragment documentaire ne correspond exactement à "${query}".*`;
         }
-        setTurns((items) => [
+        setTurns(items => [
           ...items,
           {
             id: `rag-${Date.now()}`,
@@ -2655,7 +2302,7 @@ export function CodexChatRoute() {
           },
         ]);
       } catch (err) {
-        setTurns((items) => [
+        setTurns(items => [
           ...items,
           {
             id: `rag-${Date.now()}`,
@@ -2676,19 +2323,14 @@ export function CodexChatRoute() {
         const params: Record<string, unknown> = {
           approvalPolicy: accessMode === "full" ? "never" : "on-request",
           sandbox:
-            accessMode === "full"
-              ? "danger-full-access"
-              : accessMode === "ask"
-                ? "workspace-write"
-                : "read-only",
+            accessMode === "full" ? "danger-full-access" : accessMode === "ask" ? "workspace-write" : "read-only",
         };
         if (model.trim()) params.model = model.trim();
         if (cwd.trim()) params.cwd = cwd.trim();
         const created = (await chatRpc("thread/start", params)) as {
           thread: { id: string };
         };
-        if (!created.thread?.id)
-          throw new Error("Le serveur n’a pas créé de chat.");
+        if (!created.thread?.id) throw new Error("Le serveur n’a pas créé de chat.");
         currentId = created.thread.id;
         setActiveThreadId(currentId);
         threadIdRef.current = currentId;
@@ -2699,16 +2341,15 @@ export function CodexChatRoute() {
         threadId: currentId,
         input: inputItems,
       })) as { turn: { id: string } };
-      if (!started.turn?.id)
-        throw new Error("Le serveur n’a pas confirmé l’envoi du message.");
+      if (!started.turn?.id) throw new Error("Le serveur n’a pas confirmé l’envoi du message.");
       const belongsToTurn = (item: Turn) =>
         (item.role === "fileChange"
           ? item.fileChange.turnId
           : item.role === "approval"
             ? item.approval.turnId
             : item.turnId) === started.turn.id;
-      setTurns((items) => [
-        ...items.filter((item) => !belongsToTurn(item)),
+      setTurns(items => [
+        ...items.filter(item => !belongsToTurn(item)),
         {
           id: `user-${started.turn.id}`,
           role: "user",
@@ -2721,8 +2362,7 @@ export function CodexChatRoute() {
       setDraft("");
       setAttachedFiles([]);
       setTurnId(started.turn.id);
-      if (stopRequested.current)
-        await requestInterrupt(currentId, started.turn.id);
+      if (stopRequested.current) await requestInterrupt(currentId, started.turn.id);
     } catch (e) {
       stopRequested.current = false;
       setBusy(false);
@@ -2736,8 +2376,7 @@ export function CodexChatRoute() {
         threadId,
         turnId: activeTurnId,
       });
-      if (result.status !== "interrupt_requested")
-        throw new Error("L’arrêt n’a pas été confirmé.");
+      if (result.status !== "interrupt_requested") throw new Error("L’arrêt n’a pas été confirmé.");
     } catch (error) {
       stopRequested.current = false;
       toast.error(`Arrêt impossible : ${chatErrorMessage(error)}`);
@@ -2747,8 +2386,7 @@ export function CodexChatRoute() {
   const handleStop = () => {
     if (!busy || stopRequested.current) return;
     stopRequested.current = true;
-    if (threadIdRef.current && turnId)
-      void requestInterrupt(threadIdRef.current, turnId);
+    if (threadIdRef.current && turnId) void requestInterrupt(threadIdRef.current, turnId);
   };
 
   const handleNewSession = () => {
@@ -2776,8 +2414,7 @@ export function CodexChatRoute() {
         thread?: { id: string; name?: string; preview?: string };
       };
       const forkedId = res.thread?.id;
-      if (!forkedId || forkedId === id)
-        throw new Error("Le serveur n’a pas créé de nouveau chat.");
+      if (!forkedId || forkedId === id) throw new Error("Le serveur n’a pas créé de nouveau chat.");
       await loadThreads();
       await switchThread(forkedId);
       toast.success("Fil bifurqué");
@@ -2813,18 +2450,14 @@ export function CodexChatRoute() {
             onClick={() => {
               setConnectionError(undefined);
               setReady(false);
-              setConnectionAttempt((attempt) => attempt + 1);
+              setConnectionAttempt(attempt => attempt + 1);
             }}
           >
             <Icon name="refresh" size={18} />
           </Button>
         </div>
       )}
-      {loadingThread && (
-        <output className="block px-4 py-2 text-on-surface-variant">
-          Chargement du chat…
-        </output>
-      )}
+      {loadingThread && <output className="block px-4 py-2 text-on-surface-variant">Chargement du chat…</output>}
       <CodexChat
         turns={turns}
         busy={busy}
@@ -2833,12 +2466,8 @@ export function CodexChatRoute() {
         draft={draft}
         onDraftChange={setDraft}
         attachedFiles={attachedFiles}
-        onAddAttachment={(file) =>
-          setAttachedFiles((prev) => Array.from(new Set([...prev, file])))
-        }
-        onRemoveAttachment={(file) =>
-          setAttachedFiles((prev) => prev.filter((f) => f !== file))
-        }
+        onAddAttachment={file => setAttachedFiles(prev => Array.from(new Set([...prev, file])))}
+        onRemoveAttachment={file => setAttachedFiles(prev => prev.filter(f => f !== file))}
         onSend={() => void handleSend()}
         onStop={handleStop}
         onNewSession={handleNewSession}
@@ -2854,7 +2483,7 @@ export function CodexChatRoute() {
         sessionTitle={sessionTitle}
         onApprovalDecision={handleApprovalDecision}
         threads={threads}
-        onSelectThread={(id) => void switchThread(id).catch(() => {})}
+        onSelectThread={id => void switchThread(id).catch(() => {})}
         activeThreadId={activeThreadId ?? undefined}
         onForkThread={handleForkThread}
         onCompactThread={handleCompactThread}

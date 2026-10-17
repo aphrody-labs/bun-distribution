@@ -11,27 +11,13 @@ import {
   useSensors,
   DragEndEvent,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
+import { SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { DeckAddAction, DeckItem } from "./deckTypes";
-import {
-  DeckAddMenu,
-  DeckCard,
-  DeckPreviewModal,
-  DeckStyles,
-} from "./DeckCard";
+import { DeckAddMenu, DeckCard, DeckPreviewModal, DeckStyles } from "./DeckCard";
 
 /** Collapsed-fan tilt/offset per stacked card, front to back. */
-const FAN_TRANSFORMS = [
-  "rotate(-8deg)",
-  "translateX(12px) rotate(2deg)",
-  "translateX(24px) rotate(9deg)",
-];
+const FAN_TRANSFORMS = ["rotate(-8deg)", "translateX(12px) rotate(2deg)", "translateX(24px) rotate(9deg)"];
 
 const CLOSE_DELAY_MS = 150;
 
@@ -108,24 +94,15 @@ export const ReferenceDeck = ({
     const root = rootRef.current;
     const box = root?.closest(".glass");
     if (root && box) {
-      const available =
-        box.getBoundingClientRect().right -
-        root.getBoundingClientRect().left -
-        12;
+      const available = box.getBoundingClientRect().right - root.getBoundingClientRect().left - 12;
       setPanelMaxWidth(available > 120 ? available : undefined);
     }
   }, [expanded, alwaysExpanded]);
 
-  const enabledActions = useMemo(
-    () => addActions.filter((a) => !a.disabled),
-    [addActions],
-  );
+  const enabledActions = useMemo(() => addActions.filter(a => !a.disabled), [addActions]);
 
   const imageItems = useMemo(
-    () =>
-      items.filter(
-        (i) => i.kind === "image" && !i.uploading && i.sortable !== false,
-      ),
+    () => items.filter(i => i.kind === "image" && !i.uploading && i.sortable !== false),
     [items],
   );
   const allowReorder = !!onReorderImages && imageItems.length > 1;
@@ -185,8 +162,8 @@ export const ReferenceDeck = ({
       setIsDragging(false);
       const { active, over } = event;
       if (!over || active.id === over.id) return;
-      const fromIndex = imageItems.findIndex((i) => i.id === active.id);
-      const toIndex = imageItems.findIndex((i) => i.id === over.id);
+      const fromIndex = imageItems.findIndex(i => i.id === active.id);
+      const toIndex = imageItems.findIndex(i => i.id === over.id);
       if (fromIndex === -1 || toIndex === -1) return;
       onReorderImages?.(fromIndex, toIndex);
     },
@@ -221,12 +198,7 @@ export const ReferenceDeck = ({
         className="-mb-0.5 border border-ui-controls-border bg-ui-controls p-1.5 text-base-fg"
         closeOnClick={true}
         onOpenChange={holdPanel ? setAddMenuOpen : undefined}
-        content={
-          <DeckAddMenu
-            actions={enabledActions}
-            groupHints={addMenuGroupHints}
-          />
-        }
+        content={<DeckAddMenu actions={enabledActions} groupHints={addMenuGroupHints} />}
       >
         {trigger}
       </Tooltip>
@@ -241,12 +213,7 @@ export const ReferenceDeck = ({
   // ---- Empty state: single tilted dashed placeholder card ----
   if (items.length === 0) {
     return (
-      <div
-        className={twMerge(
-          "relative flex shrink-0 items-center self-start",
-          className,
-        )}
-      >
+      <div className={twMerge("relative flex shrink-0 items-center self-start", className)}>
         <DeckStyles />
         {addMenu(
           <button
@@ -255,9 +222,7 @@ export const ReferenceDeck = ({
             className="glass flex aspect-square w-14 -rotate-6 flex-col items-center justify-center gap-0.5 rounded-[3px] border-2 border-dashed border-black/5 bg-ui-controls/40 text-base-fg transition-all duration-200 hover:rotate-0 hover:scale-105 hover:bg-ui-controls/60 dark:border-white/25"
           >
             <PlusIcon className="text-lg opacity-80" />
-            <span className="text-[9px] font-medium leading-none opacity-70">
-              {emptyLabel}
-            </span>
+            <span className="text-[9px] font-medium leading-none opacity-70">{emptyLabel}</span>
           </button>,
         )}
       </div>
@@ -282,11 +247,7 @@ export const ReferenceDeck = ({
                 : "pointer-events-none invisible translate-y-1 scale-95 opacity-0 [transition:opacity_.2s,transform_.2s,visibility_0s_.2s]",
             ),
       )}
-      style={
-        !alwaysExpanded && panelMaxWidth
-          ? { maxWidth: `${panelMaxWidth}px` }
-          : undefined
-      }
+      style={!alwaysExpanded && panelMaxWidth ? { maxWidth: `${panelMaxWidth}px` } : undefined}
     >
       {onClearAll && items.length > 1 && (
         <div className="mb-1.5 flex items-center justify-between px-0.5">
@@ -318,15 +279,9 @@ export const ReferenceDeck = ({
           onDragCancel={() => setIsDragging(false)}
           onDragEnd={handleDragEnd}
         >
-          <SortableContext
-            items={imageItems.map((i) => i.id)}
-            strategy={rectSortingStrategy}
-          >
-            {items.map((item) =>
-              allowReorder &&
-              item.kind === "image" &&
-              !item.uploading &&
-              item.sortable !== false ? (
+          <SortableContext items={imageItems.map(i => i.id)} strategy={rectSortingStrategy}>
+            {items.map(item =>
+              allowReorder && item.kind === "image" && !item.uploading && item.sortable !== false ? (
                 <SortableDeckCard
                   key={item.id}
                   item={item}
@@ -346,9 +301,7 @@ export const ReferenceDeck = ({
                     item={item}
                     animateIn
                     hideHoverChrome={isDragging}
-                    onRemove={
-                      item.uploading ? undefined : () => onRemove(item.id)
-                    }
+                    onRemove={item.uploading ? undefined : () => onRemove(item.id)}
                     onClick={() => setPreviewItem(item)}
                   />
                 </Tooltip>
@@ -377,18 +330,10 @@ export const ReferenceDeck = ({
       // mode), where the w-max panel makes the root's preferred width the
       // full unwrapped card row. min-w-0 + shrink lets the root collapse to
       // the row's width so the panel's max-w-full has a bounded reference.
-      <div
-        className={twMerge(
-          "relative flex min-w-0 max-w-full items-center",
-          className,
-        )}
-      >
+      <div className={twMerge("relative flex min-w-0 max-w-full items-center", className)}>
         <DeckStyles />
         {expandedPanel}
-        <DeckPreviewModal
-          item={previewItem}
-          onClose={() => setPreviewItem(null)}
-        />
+        <DeckPreviewModal item={previewItem} onClose={() => setPreviewItem(null)} />
       </div>
     );
   }
@@ -396,10 +341,7 @@ export const ReferenceDeck = ({
   return (
     <div
       ref={rootRef}
-      className={twMerge(
-        "relative flex shrink-0 items-center self-center",
-        className,
-      )}
+      className={twMerge("relative flex shrink-0 items-center self-center", className)}
       onMouseEnter={handleRootEnter}
       onMouseLeave={handleRootLeave}
     >
@@ -472,10 +414,7 @@ export const ReferenceDeck = ({
 
       {expandedPanel}
 
-      <DeckPreviewModal
-        item={previewItem}
-        onClose={() => setPreviewItem(null)}
-      />
+      <DeckPreviewModal item={previewItem} onClose={() => setPreviewItem(null)} />
     </div>
   );
 };
@@ -491,14 +430,7 @@ const SortableDeckCard = ({
   onClick: () => void;
   hideHoverChrome?: boolean;
 }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: item.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
 
   return (
     <div
@@ -512,12 +444,7 @@ const SortableDeckCard = ({
       {...listeners}
       className={isDragging ? "opacity-50" : undefined}
     >
-      <Tooltip
-        content={item.name}
-        position="top"
-        delay={150}
-        disabled={hideHoverChrome || isDragging}
-      >
+      <Tooltip content={item.name} position="top" delay={150} disabled={hideHoverChrome || isDragging}>
         <DeckCard
           item={item}
           animateIn

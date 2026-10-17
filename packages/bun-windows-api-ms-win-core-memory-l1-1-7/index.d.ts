@@ -3,9 +3,27 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-memory-l1-1-7.dll!CreateFileMapping2 */
-  CreateFileMapping2(File: Win32Pointer, SecurityAttributes: Win32Pointer, DesiredAccess: number, PageProtection: number, AllocationAttributes: number, MaximumSize: number | bigint, Name: string | Win32Pointer, ExtendedParameters: Win32Pointer, ParameterCount: number): number | null;
+  CreateFileMapping2(
+    File: Win32Pointer,
+    SecurityAttributes: Win32Pointer,
+    DesiredAccess: number,
+    PageProtection: number,
+    AllocationAttributes: number,
+    MaximumSize: number | bigint,
+    Name: string | Win32Pointer,
+    ExtendedParameters: Win32Pointer,
+    ParameterCount: number,
+  ): number | null;
   /** api-ms-win-core-memory-l1-1-7.dll!SetProcessValidCallTargetsForMappedView */
-  SetProcessValidCallTargetsForMappedView(Process: Win32Pointer, VirtualAddress: Win32Pointer, RegionSize: number | bigint, NumberOfOffsets: number, OffsetInformation: Win32Pointer, Section: Win32Pointer, ExpectedFileOffset: number | bigint): number;
+  SetProcessValidCallTargetsForMappedView(
+    Process: Win32Pointer,
+    VirtualAddress: Win32Pointer,
+    RegionSize: number | bigint,
+    NumberOfOffsets: number,
+    OffsetInformation: Win32Pointer,
+    Section: Win32Pointer,
+    ExpectedFileOffset: number | bigint,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

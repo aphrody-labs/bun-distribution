@@ -12,18 +12,13 @@ export function bunToolArgv(
 ): string[] {
   if (missingBuiltin && forkCheckout) {
     const entry = join(forkCheckout, "src", "js", "eval", "devtools.ts");
-    if (!existsSync(entry))
-      throw new Error(`Configured Bun fork has no devtools owner: ${entry}`);
+    if (!existsSync(entry)) throw new Error(`Configured Bun fork has no devtools owner: ${entry}`);
     return [bun, entry, command, ...args];
   }
   return [bun, command, ...args];
 }
 
-export async function runBunTool(
-  command: string,
-  args: readonly string[],
-  cwd: string,
-): Promise<number> {
+export async function runBunTool(command: string, args: readonly string[], cwd: string): Promise<number> {
   const bun = Bun.which("bun") ?? process.execPath;
   // A package script named after the built-in (the checkout's `docs`, `bench`) shadows it; Bun keeps the built-in
   // when the running lifecycle event carries the command's own name.
@@ -36,9 +31,7 @@ export async function runBunTool(
     stdout: "pipe",
     stderr: "pipe",
   });
-  const missingBuiltin =
-    probe.exitCode !== 0 &&
-    probe.stderr.toString().includes("Script not found");
+  const missingBuiltin = probe.exitCode !== 0 && probe.stderr.toString().includes("Script not found");
   const argv = bunToolArgv(bun, command, args, missingBuiltin);
   await using proc = Bun.spawn({
     windowsHide: true,

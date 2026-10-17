@@ -25,15 +25,12 @@ export const useFlashFileDownloadErrorEvent = (
     let unlisten: Promise<UnlistenFn>;
 
     const setup = async () => {
-      unlisten = listen<BasicEventWrapper<FlashFileDownloadErrorEvent>>(
-        EVENT_NAME,
-        async (wrappedEvent) => {
-          await asyncCallback(wrappedEvent.payload.data);
-        },
-      );
+      unlisten = listen<BasicEventWrapper<FlashFileDownloadErrorEvent>>(EVENT_NAME, async wrappedEvent => {
+        await asyncCallback(wrappedEvent.payload.data);
+      });
 
       if (isUnmounted) {
-        unlisten.then((f) => f()); // Unsubscribe if unmounted early.
+        unlisten.then(f => f()); // Unsubscribe if unmounted early.
       }
     };
 
@@ -41,7 +38,7 @@ export const useFlashFileDownloadErrorEvent = (
 
     return () => {
       isUnmounted = true;
-      unlisten.then((f) => f());
+      unlisten.then(f => f());
     };
   }, []);
 };

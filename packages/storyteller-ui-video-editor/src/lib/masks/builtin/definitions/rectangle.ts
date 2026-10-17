@@ -31,7 +31,7 @@ function buildRectanglePath({
     { x: centerX + halfWidth, y: centerY - halfHeight },
     { x: centerX + halfWidth, y: centerY + halfHeight },
     { x: centerX - halfWidth, y: centerY + halfHeight },
-  ].map((point) =>
+  ].map(point =>
     rotatePoint({
       ...point,
       centerX,
@@ -73,8 +73,7 @@ export const rectangleMaskDefinition: MaskDefinition<"rectangle"> = {
       kind: "fillPath",
       buildPath({ resolvedParams, width, height }) {
         const params = resolvedParams;
-        const { centerX, centerY, maskWidth, maskHeight, rotationRad } =
-          getBoxLikeGeometry({ params, width, height });
+        const { centerX, centerY, maskWidth, maskHeight, rotationRad } = getBoxLikeGeometry({ params, width, height });
         return buildRectanglePath({
           centerX,
           centerY,
@@ -88,8 +87,7 @@ export const rectangleMaskDefinition: MaskDefinition<"rectangle"> = {
       kind: "strokeFromPath",
       buildStrokePath({ resolvedParams, width, height }) {
         const params = resolvedParams;
-        const { centerX, centerY, maskWidth, maskHeight, rotationRad } =
-          getBoxLikeGeometry({ params, width, height });
+        const { centerX, centerY, maskWidth, maskHeight, rotationRad } = getBoxLikeGeometry({ params, width, height });
         const offset = getStrokeOffset({
           strokeAlign: params.strokeAlign,
           strokeWidth: params.strokeWidth,

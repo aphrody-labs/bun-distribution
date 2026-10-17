@@ -64,8 +64,7 @@ export interface EffectTrack extends BaseTrack {
   hidden: boolean;
 }
 
-export type TimelineTrack =
-  VideoTrack | TextTrack | AudioTrack | GraphicTrack | EffectTrack;
+export type TimelineTrack = VideoTrack | TextTrack | AudioTrack | GraphicTrack | EffectTrack;
 
 export type OverlayTrack = VideoTrack | TextTrack | GraphicTrack | EffectTrack;
 
@@ -177,35 +176,19 @@ function elementTypes<T extends ElementType[]>(...types: T): T {
 
 export const MASKABLE_ELEMENT_TYPES = elementTypes("video", "image", "graphic");
 
-export type MaskableElement = Extract<
-  TimelineElement,
-  { type: (typeof MASKABLE_ELEMENT_TYPES)[number] }
->;
+export type MaskableElement = Extract<TimelineElement, { type: (typeof MASKABLE_ELEMENT_TYPES)[number] }>;
 
 export const RETIMABLE_ELEMENT_TYPES = elementTypes("video", "audio");
 
-export type RetimableElement = Extract<
-  TimelineElement,
-  { type: (typeof RETIMABLE_ELEMENT_TYPES)[number] }
->;
+export type RetimableElement = Extract<TimelineElement, { type: (typeof RETIMABLE_ELEMENT_TYPES)[number] }>;
 
-export const VISUAL_ELEMENT_TYPES = elementTypes(
-  "video",
-  "image",
-  "text",
-  "sticker",
-  "graphic",
-);
+export const VISUAL_ELEMENT_TYPES = elementTypes("video", "image", "text", "sticker", "graphic");
 
-export type VisualElement = Extract<
-  TimelineElement,
-  { type: (typeof VISUAL_ELEMENT_TYPES)[number] }
->;
+export type VisualElement = Extract<TimelineElement, { type: (typeof VISUAL_ELEMENT_TYPES)[number] }>;
 
 export type CreateUploadAudioElement = Omit<UploadAudioElement, "id">;
 export type CreateLibraryAudioElement = Omit<LibraryAudioElement, "id">;
-export type CreateAudioElement =
-  CreateUploadAudioElement | CreateLibraryAudioElement;
+export type CreateAudioElement = CreateUploadAudioElement | CreateLibraryAudioElement;
 export type CreateVideoElement = Omit<VideoElement, "id">;
 export type CreateImageElement = Omit<ImageElement, "id">;
 export type CreateTextElement = Omit<TextElement, "id">;

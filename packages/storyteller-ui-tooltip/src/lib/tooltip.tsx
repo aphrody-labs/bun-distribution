@@ -62,19 +62,13 @@ export const Tooltip = ({
 
   const checkForOpenPopovers = () => {
     if (!triggerRef.current) return false;
-    return (
-      triggerRef.current.querySelectorAll('[data-headlessui-state="open"]')
-        .length > 0
-    );
+    return triggerRef.current.querySelectorAll('[data-headlessui-state="open"]').length > 0;
   };
 
   useEffect(() => {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (
-          mutation.type === "attributes" &&
-          mutation.attributeName === "data-headlessui-state"
-        ) {
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        if (mutation.type === "attributes" && mutation.attributeName === "data-headlessui-state") {
           const target = mutation.target as HTMLElement;
           if (target.getAttribute("data-headlessui-state") === "open") {
             setIsShowing(false);
@@ -103,17 +97,12 @@ export const Tooltip = ({
     if (node) {
       const w = node.getBoundingClientRect().width;
       if (w > 0) {
-        setMeasuredWidth((prev) => (prev !== w ? w : prev));
+        setMeasuredWidth(prev => (prev !== w ? w : prev));
       }
     }
   }, []);
 
-  const getAbsoluteStyle = (
-    rect: DOMRect,
-    vw: number,
-    estWidth: number,
-    padding: number,
-  ): React.CSSProperties => {
+  const getAbsoluteStyle = (rect: DOMRect, vw: number, estWidth: number, padding: number): React.CSSProperties => {
     switch (position) {
       case "top":
         return {
@@ -174,9 +163,7 @@ export const Tooltip = ({
       // backdrop-filter also establishes a containing block for position:fixed
       // in Chromium/WebKit (our glass surfaces use backdrop-blur), so a fixed
       // tooltip inside one would otherwise be positioned/clipped incorrectly.
-      const backdropFilter =
-        cs.backdropFilter ||
-        (cs as unknown as Record<string, string>)["webkitBackdropFilter"];
+      const backdropFilter = cs.backdropFilter || (cs as unknown as Record<string, string>)["webkitBackdropFilter"];
       if (
         cs.transform !== "none" ||
         cs.willChange === "transform" ||
@@ -191,12 +178,7 @@ export const Tooltip = ({
     return { x: 0, y: 0 };
   };
 
-  const getFixedStyle = (
-    rect: DOMRect,
-    vw: number,
-    estWidth: number,
-    padding: number,
-  ): React.CSSProperties => {
+  const getFixedStyle = (rect: DOMRect, vw: number, estWidth: number, padding: number): React.CSSProperties => {
     // A body portal has no transformed/filtered ancestor to compensate for.
     const offset = portal ? { x: 0, y: 0 } : getContainingBlockOffset();
     const GAP = 10;
@@ -284,8 +266,7 @@ export const Tooltip = ({
       return;
     }
     if (!checkForOpenPopovers()) {
-      const shouldShow =
-        isHoveringTrigger || (interactive && isHoveringTooltip);
+      const shouldShow = isHoveringTrigger || (interactive && isHoveringTooltip);
       setIsShowing(shouldShow);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -333,10 +314,7 @@ export const Tooltip = ({
   const tooltipPanel = (
     <Transition
       show={isShowing}
-      enter={twMerge(
-        "transition ease-out duration-200",
-        delay ? `delay-[${delay}ms]` : "delay-[300ms]",
-      )}
+      enter={twMerge("transition ease-out duration-200", delay ? `delay-[${delay}ms]` : "delay-[300ms]")}
       enterFrom="opacity-0"
       enterTo="opacity-100"
       leave="transition ease-in duration-150"
@@ -376,17 +354,9 @@ export const Tooltip = ({
         ) : (
           <div className="flex flex-col gap-1">
             {content}
-            {imageSrc && (
-              <img
-                src={imageSrc}
-                alt="tooltip"
-                className="mb-1 aspect-square w-56 rounded-none"
-              />
-            )}
+            {imageSrc && <img src={imageSrc} alt="tooltip" className="mb-1 aspect-square w-56 rounded-none" />}
             {description && (
-              <p className="font-sans text-xs font-normal normal-case tracking-normal text-base-fg/80">
-                {description}
-              </p>
+              <p className="font-sans text-xs font-normal normal-case tracking-normal text-base-fg/80">{description}</p>
             )}
           </div>
         )}

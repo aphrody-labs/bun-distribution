@@ -5,11 +5,32 @@ interface Functions {
   /** api-ms-win-gaming-tcui-l1-1-0.dll!ProcessPendingGameUI */
   ProcessPendingGameUI(waitForCompletion: number): number;
   /** api-ms-win-gaming-tcui-l1-1-0.dll!ShowChangeFriendRelationshipUI */
-  ShowChangeFriendRelationshipUI(targetUserXuid: Win32Pointer, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  ShowChangeFriendRelationshipUI(
+    targetUserXuid: Win32Pointer,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-0.dll!ShowGameInviteUI */
-  ShowGameInviteUI(serviceConfigurationId: Win32Pointer, sessionTemplateName: Win32Pointer, sessionId: Win32Pointer, invitationDisplayText: Win32Pointer, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  ShowGameInviteUI(
+    serviceConfigurationId: Win32Pointer,
+    sessionTemplateName: Win32Pointer,
+    sessionId: Win32Pointer,
+    invitationDisplayText: Win32Pointer,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-0.dll!ShowPlayerPickerUI */
-  ShowPlayerPickerUI(promptDisplayText: Win32Pointer, xuids: Win32Pointer, xuidsCount: number | bigint, preSelectedXuids: Win32Pointer, preSelectedXuidsCount: number | bigint, minSelectionCount: number | bigint, maxSelectionCount: number | bigint, completionRoutine: Win32Callback, context: Win32Pointer): number;
+  ShowPlayerPickerUI(
+    promptDisplayText: Win32Pointer,
+    xuids: Win32Pointer,
+    xuidsCount: number | bigint,
+    preSelectedXuids: Win32Pointer,
+    preSelectedXuidsCount: number | bigint,
+    minSelectionCount: number | bigint,
+    maxSelectionCount: number | bigint,
+    completionRoutine: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** api-ms-win-gaming-tcui-l1-1-0.dll!ShowProfileCardUI */
   ShowProfileCardUI(targetUserXuid: Win32Pointer, completionRoutine: Win32Callback, context: Win32Pointer): number;
   /** api-ms-win-gaming-tcui-l1-1-0.dll!ShowTitleAchievementsUI */

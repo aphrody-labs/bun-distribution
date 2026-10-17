@@ -10,10 +10,7 @@ interface Props {
   selected: boolean;
   // Receives the node id so parents can pass one stable callback to every
   // sibling rather than allocating a per-item closure on each render.
-  onSelect: (
-    id: string,
-    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
-  ) => void;
+  onSelect: (id: string, e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void;
 }
 
 const ImageNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
@@ -31,8 +28,7 @@ const ImageNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
     };
   }, [node.src]);
 
-  const handleSelect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) =>
-    onSelect(node.id, e);
+  const handleSelect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => onSelect(node.id, e);
 
   return (
     <>
@@ -50,7 +46,7 @@ const ImageNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
       )}
       <KonvaImage
         id={node.id}
-        ref={(n) => {
+        ref={n => {
           ref.current = n;
         }}
         image={img ?? undefined}

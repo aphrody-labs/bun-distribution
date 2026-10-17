@@ -45,9 +45,7 @@ export function buildSystemPrompt(options: SystemPromptOptions): string {
   const source = language
     ? `The speech is ${language}.`
     : "The speech is most likely Japanese but can also be French, Korean or Spanish: identify the language from the text.";
-  const context = options.userContext?.trim()
-    ? `\nExtra context from the user: ${options.userContext.trim()}\n`
-    : "";
+  const context = options.userContext?.trim() ? `\nExtra context from the user: ${options.userContext.trim()}\n` : "";
   return `You are a professional subtitle translator and localizer for the fighting-game community (Guilty Gear, Street Fighter, Tekken and similar) and for anime and illustration content (art streams, drawing process videos). You turn speech transcripts into English subtitles the way a native English-speaking FGC subtitler or anime fan-subber would write them. ${source}${context}
 
 Principles, in order of importance:
@@ -78,15 +76,11 @@ export interface WindowPromptInput {
 }
 
 export function buildWindowPrompt(input: WindowPromptInput): string {
-  const glossary = input.glossary.length
-    ? renderGlossary(input.glossary)
-    : "(none for this window)";
+  const glossary = input.glossary.length ? renderGlossary(input.glossary) : "(none for this window)";
   const previous = input.previous.length
     ? JSON.stringify(input.previous.map(({ id, src, en }) => ({ id, src, en })))
     : "[]";
-  const next = input.next.length
-    ? JSON.stringify(input.next.map(({ id, text }) => ({ id, src: text })))
-    : "[]";
+  const next = input.next.length ? JSON.stringify(input.next.map(({ id, text }) => ({ id, src: text }))) : "[]";
   const cues = JSON.stringify(
     input.cues.map(({ id, text, maxChars }) => ({
       id,
@@ -114,19 +108,13 @@ Reply with ONLY the JSON array [{"id": <int>, "text": "<English subtitle>"}].`;
 
 export function buildRepairPrompt(problems: string[], ids: number[]): string {
   return `Your previous answer was rejected for these reasons:
-${problems.map((problem) => `- ${problem}`).join("\n")}
+${problems.map(problem => `- ${problem}`).join("\n")}
 
 Return the corrected, complete answer: ONLY a JSON array with exactly these ids in this order: ${JSON.stringify(ids)}. Each element is {"id": <int>, "text": "<English subtitle>"}.`;
 }
 
-export function buildSummaryPrompt(options: {
-  transcript: string;
-  userContext?: string;
-  terms: string[];
-}): string {
-  const context = options.userContext?.trim()
-    ? `Context from the user: ${options.userContext.trim()}\n`
-    : "";
+export function buildSummaryPrompt(options: { transcript: string; userContext?: string; terms: string[] }): string {
+  const context = options.userContext?.trim() ? `Context from the user: ${options.userContext.trim()}\n` : "";
   const terms = options.terms.length
     ? `Terms detected in the transcript (English forms): ${options.terms.join(", ")}\n`
     : "";
@@ -137,10 +125,7 @@ TRANSCRIPT:
 ${options.transcript}`;
 }
 
-export function buildReviewPrompt(
-  items: { id: number; src: string; en: string }[],
-  summary: string,
-): string {
+export function buildReviewPrompt(items: { id: number; src: string; en: string }[], summary: string): string {
   return `You are a bilingual QA reviewer for fighting-game and anime subtitles. Video summary: ${summary || "(not available)"}
 
 Below, each item has the source line and its English subtitle. Flag ONLY real problems: a mistranslation, a missed joke or nuance, a wrong game term or character name, a wrong pronoun or speaker, or phrasing so literal that a native speaker would not say it. Do NOT flag stylistic preferences and do NOT rewrite lines that are fine. Most items are fine: an empty list is a normal answer.
@@ -151,9 +136,7 @@ ITEMS:
 ${JSON.stringify(items)}`;
 }
 
-export function buildGlossaryFixPrompt(
-  items: { id: number; src: string; current: string; fix: string }[],
-): string {
+export function buildGlossaryFixPrompt(items: { id: number; src: string; current: string; fix: string }[]): string {
   return `In these English subtitles a wrong literal rendering of a glossary term was used. For each item rewrite ONLY the English so it follows the instruction in "fix", keeping the rest of the line as it is. Return ONLY a JSON array [{"id": <int>, "text": "<English subtitle>"}] with exactly these ids in this order.
 
 ITEMS:

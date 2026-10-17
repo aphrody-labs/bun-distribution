@@ -17,9 +17,17 @@ interface Functions {
   /** kernel32.dll!AddAtomW */
   AddAtom(lpString: string | Win32Pointer): number;
   /** kernel32.dll!AddConsoleAliasA */
-  AddConsoleAliasA(Source: string | Win32Pointer, Target: string | Win32Pointer, ExeName: string | Win32Pointer): number;
+  AddConsoleAliasA(
+    Source: string | Win32Pointer,
+    Target: string | Win32Pointer,
+    ExeName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!AddConsoleAliasW */
-  AddConsoleAliasW(Source: string | Win32Pointer, Target: string | Win32Pointer, ExeName: string | Win32Pointer): number;
+  AddConsoleAliasW(
+    Source: string | Win32Pointer,
+    Target: string | Win32Pointer,
+    ExeName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!AddConsoleAliasW */
   AddConsoleAlias(Source: string | Win32Pointer, Target: string | Win32Pointer, ExeName: string | Win32Pointer): number;
   /** kernel32.dll!AddDllDirectory */
@@ -29,11 +37,25 @@ interface Functions {
   /** kernel32.dll!AddRefActCtx */
   AddRefActCtx(hActCtx: Win32Pointer): void;
   /** kernel32.dll!AddResourceAttributeAce */
-  AddResourceAttributeAce(pAcl: Win32Pointer, dwAceRevision: number, AceFlags: number, AccessMask: number, pSid: Win32Pointer, pAttributeInfo: Win32Pointer, pReturnLength: Win32Pointer): number;
+  AddResourceAttributeAce(
+    pAcl: Win32Pointer,
+    dwAceRevision: number,
+    AceFlags: number,
+    AccessMask: number,
+    pSid: Win32Pointer,
+    pAttributeInfo: Win32Pointer,
+    pReturnLength: Win32Pointer,
+  ): number;
   /** kernel32.dll!AddSIDToBoundaryDescriptor */
   AddSIDToBoundaryDescriptor(BoundaryDescriptor: Win32Pointer, RequiredSid: Win32Pointer): number;
   /** kernel32.dll!AddScopedPolicyIDAce */
-  AddScopedPolicyIDAce(pAcl: Win32Pointer, dwAceRevision: number, AceFlags: number, AccessMask: number, pSid: Win32Pointer): number;
+  AddScopedPolicyIDAce(
+    pAcl: Win32Pointer,
+    dwAceRevision: number,
+    AceFlags: number,
+    AccessMask: number,
+    pSid: Win32Pointer,
+  ): number;
   /** kernel32.dll!AddSecureMemoryCacheCallback */
   AddSecureMemoryCacheCallback(pfnCallBack: Win32Callback): number;
   /** kernel32.dll!AddVectoredContinueHandler */
@@ -49,7 +71,12 @@ interface Functions {
   /** kernel32.dll!AllocateUserPhysicalPages */
   AllocateUserPhysicalPages(hProcess: Win32Pointer, NumberOfPages: Win32Pointer, PageArray: Win32Pointer): number;
   /** kernel32.dll!AllocateUserPhysicalPagesNuma */
-  AllocateUserPhysicalPagesNuma(hProcess: Win32Pointer, NumberOfPages: Win32Pointer, PageArray: Win32Pointer, nndPreferred: number): number;
+  AllocateUserPhysicalPagesNuma(
+    hProcess: Win32Pointer,
+    NumberOfPages: Win32Pointer,
+    PageArray: Win32Pointer,
+    nndPreferred: number,
+  ): number;
   /** kernel32.dll!AppPolicyGetClrCompat */
   AppPolicyGetClrCompat(processToken: Win32Pointer, policy: Win32Pointer): number;
   /** kernel32.dll!AppPolicyGetCreateFileAccess */
@@ -79,11 +106,34 @@ interface Functions {
   /** kernel32.dll!AttachConsole */
   AttachConsole(dwProcessId: number): number;
   /** kernel32.dll!BackupRead */
-  BackupRead(hFile: Win32Pointer, lpBuffer: Win32Pointer, nNumberOfBytesToRead: number, lpNumberOfBytesRead: Win32Pointer, bAbort: number, bProcessSecurity: number, lpContext: Win32Pointer): number;
+  BackupRead(
+    hFile: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nNumberOfBytesToRead: number,
+    lpNumberOfBytesRead: Win32Pointer,
+    bAbort: number,
+    bProcessSecurity: number,
+    lpContext: Win32Pointer,
+  ): number;
   /** kernel32.dll!BackupSeek */
-  BackupSeek(hFile: Win32Pointer, dwLowBytesToSeek: number, dwHighBytesToSeek: number, lpdwLowByteSeeked: Win32Pointer, lpdwHighByteSeeked: Win32Pointer, lpContext: Win32Pointer): number;
+  BackupSeek(
+    hFile: Win32Pointer,
+    dwLowBytesToSeek: number,
+    dwHighBytesToSeek: number,
+    lpdwLowByteSeeked: Win32Pointer,
+    lpdwHighByteSeeked: Win32Pointer,
+    lpContext: Win32Pointer,
+  ): number;
   /** kernel32.dll!BackupWrite */
-  BackupWrite(hFile: Win32Pointer, lpBuffer: Win32Pointer, nNumberOfBytesToWrite: number, lpNumberOfBytesWritten: Win32Pointer, bAbort: number, bProcessSecurity: number, lpContext: Win32Pointer): number;
+  BackupWrite(
+    hFile: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nNumberOfBytesToWrite: number,
+    lpNumberOfBytesWritten: Win32Pointer,
+    bAbort: number,
+    bProcessSecurity: number,
+    lpContext: Win32Pointer,
+  ): number;
   /** kernel32.dll!Beep */
   Beep(dwFreq: number, dwDuration: number): number;
   /** kernel32.dll!BeginUpdateResourceA */
@@ -107,19 +157,77 @@ interface Functions {
   /** kernel32.dll!BuildCommDCBW */
   BuildCommDCB(lpDef: string | Win32Pointer, lpDCB: Win32Pointer): number;
   /** kernel32.dll!BuildIoRingFlushFile */
-  BuildIoRingFlushFile(ioRing: Win32Pointer, fileRef: Win32StructInit, flushMode: number, userData: number | bigint, sqeFlags: number): number;
+  BuildIoRingFlushFile(
+    ioRing: Win32Pointer,
+    fileRef: Win32StructInit,
+    flushMode: number,
+    userData: number | bigint,
+    sqeFlags: number,
+  ): number;
   /** kernel32.dll!BuildIoRingReadFileScatter */
-  BuildIoRingReadFileScatter(ioRing: Win32Pointer, fileRef: Win32StructInit, segmentCount: number, segmentArray: Win32Pointer, numberOfBytesToRead: number, fileOffset: number | bigint, userData: number | bigint, sqeFlags: number): number;
+  BuildIoRingReadFileScatter(
+    ioRing: Win32Pointer,
+    fileRef: Win32StructInit,
+    segmentCount: number,
+    segmentArray: Win32Pointer,
+    numberOfBytesToRead: number,
+    fileOffset: number | bigint,
+    userData: number | bigint,
+    sqeFlags: number,
+  ): number;
   /** kernel32.dll!BuildIoRingWriteFile */
-  BuildIoRingWriteFile(ioRing: Win32Pointer, fileRef: Win32StructInit, bufferRef: Win32StructInit, numberOfBytesToWrite: number, fileOffset: number | bigint, writeFlags: number, userData: number | bigint, sqeFlags: number): number;
+  BuildIoRingWriteFile(
+    ioRing: Win32Pointer,
+    fileRef: Win32StructInit,
+    bufferRef: Win32StructInit,
+    numberOfBytesToWrite: number,
+    fileOffset: number | bigint,
+    writeFlags: number,
+    userData: number | bigint,
+    sqeFlags: number,
+  ): number;
   /** kernel32.dll!BuildIoRingWriteFileGather */
-  BuildIoRingWriteFileGather(ioRing: Win32Pointer, fileRef: Win32StructInit, segmentCount: number, segmentArray: Win32Pointer, numberOfBytesToWrite: number, fileOffset: number | bigint, writeFlags: number, userData: number | bigint, sqeFlags: number): number;
+  BuildIoRingWriteFileGather(
+    ioRing: Win32Pointer,
+    fileRef: Win32StructInit,
+    segmentCount: number,
+    segmentArray: Win32Pointer,
+    numberOfBytesToWrite: number,
+    fileOffset: number | bigint,
+    writeFlags: number,
+    userData: number | bigint,
+    sqeFlags: number,
+  ): number;
   /** kernel32.dll!CallNamedPipeA */
-  CallNamedPipeA(lpNamedPipeName: string | Win32Pointer, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesRead: Win32Pointer, nTimeOut: number): number;
+  CallNamedPipeA(
+    lpNamedPipeName: string | Win32Pointer,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesRead: Win32Pointer,
+    nTimeOut: number,
+  ): number;
   /** kernel32.dll!CallNamedPipeW */
-  CallNamedPipeW(lpNamedPipeName: string | Win32Pointer, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesRead: Win32Pointer, nTimeOut: number): number;
+  CallNamedPipeW(
+    lpNamedPipeName: string | Win32Pointer,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesRead: Win32Pointer,
+    nTimeOut: number,
+  ): number;
   /** kernel32.dll!CallNamedPipeW */
-  CallNamedPipe(lpNamedPipeName: string | Win32Pointer, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesRead: Win32Pointer, nTimeOut: number): number;
+  CallNamedPipe(
+    lpNamedPipeName: string | Win32Pointer,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesRead: Win32Pointer,
+    nTimeOut: number,
+  ): number;
   /** kernel32.dll!CallbackMayRunLong */
   CallbackMayRunLong(pci: number | bigint): number;
   /** kernel32.dll!CancelDeviceWakeupRequest */
@@ -143,17 +251,44 @@ interface Functions {
   /** kernel32.dll!CheckIsMSIXPackage */
   CheckIsMSIXPackage(packageFullName: string | Win32Pointer, isMSIXPackage: Win32Pointer): number;
   /** kernel32.dll!CheckNameLegalDOS8Dot3A */
-  CheckNameLegalDOS8Dot3A(lpName: string | Win32Pointer, lpOemName: string | Win32Pointer, OemNameSize: number, pbNameContainsSpaces: Win32Pointer, pbNameLegal: Win32Pointer): number;
+  CheckNameLegalDOS8Dot3A(
+    lpName: string | Win32Pointer,
+    lpOemName: string | Win32Pointer,
+    OemNameSize: number,
+    pbNameContainsSpaces: Win32Pointer,
+    pbNameLegal: Win32Pointer,
+  ): number;
   /** kernel32.dll!CheckNameLegalDOS8Dot3W */
-  CheckNameLegalDOS8Dot3W(lpName: string | Win32Pointer, lpOemName: string | Win32Pointer, OemNameSize: number, pbNameContainsSpaces: Win32Pointer, pbNameLegal: Win32Pointer): number;
+  CheckNameLegalDOS8Dot3W(
+    lpName: string | Win32Pointer,
+    lpOemName: string | Win32Pointer,
+    OemNameSize: number,
+    pbNameContainsSpaces: Win32Pointer,
+    pbNameLegal: Win32Pointer,
+  ): number;
   /** kernel32.dll!CheckNameLegalDOS8Dot3W */
-  CheckNameLegalDOS8Dot3(lpName: string | Win32Pointer, lpOemName: string | Win32Pointer, OemNameSize: number, pbNameContainsSpaces: Win32Pointer, pbNameLegal: Win32Pointer): number;
+  CheckNameLegalDOS8Dot3(
+    lpName: string | Win32Pointer,
+    lpOemName: string | Win32Pointer,
+    OemNameSize: number,
+    pbNameContainsSpaces: Win32Pointer,
+    pbNameLegal: Win32Pointer,
+  ): number;
   /** kernel32.dll!CheckRemoteDebuggerPresent */
   CheckRemoteDebuggerPresent(hProcess: Win32Pointer, pbDebuggerPresent: Win32Pointer): number;
   /** kernel32.dll!CheckTokenCapability */
-  CheckTokenCapability(TokenHandle: Win32Pointer, CapabilitySidToCheck: Win32Pointer, HasCapability: Win32Pointer): number;
+  CheckTokenCapability(
+    TokenHandle: Win32Pointer,
+    CapabilitySidToCheck: Win32Pointer,
+    HasCapability: Win32Pointer,
+  ): number;
   /** kernel32.dll!CheckTokenMembershipEx */
-  CheckTokenMembershipEx(TokenHandle: Win32Pointer, SidToCheck: Win32Pointer, Flags: number, IsMember: Win32Pointer): number;
+  CheckTokenMembershipEx(
+    TokenHandle: Win32Pointer,
+    SidToCheck: Win32Pointer,
+    Flags: number,
+    IsMember: Win32Pointer,
+  ): number;
   /** kernel32.dll!ClearCommBreak */
   ClearCommBreak(hFile: Win32Pointer): number;
   /** kernel32.dll!ClearCommError */
@@ -173,7 +308,11 @@ interface Functions {
   /** kernel32.dll!CloseThreadpoolCleanupGroup */
   CloseThreadpoolCleanupGroup(ptpcg: number | bigint): void;
   /** kernel32.dll!CloseThreadpoolCleanupGroupMembers */
-  CloseThreadpoolCleanupGroupMembers(ptpcg: number | bigint, fCancelPendingCallbacks: number, pvCleanupContext: Win32Pointer): void;
+  CloseThreadpoolCleanupGroupMembers(
+    ptpcg: number | bigint,
+    fCancelPendingCallbacks: number,
+    pvCleanupContext: Win32Pointer,
+  ): void;
   /** kernel32.dll!CloseThreadpoolIo */
   CloseThreadpoolIo(pio: number | bigint): void;
   /** kernel32.dll!CloseThreadpoolTimer */
@@ -191,15 +330,52 @@ interface Functions {
   /** kernel32.dll!CompareFileTime */
   CompareFileTime(lpFileTime1: Win32Pointer, lpFileTime2: Win32Pointer): number;
   /** kernel32.dll!CompareStringA */
-  CompareStringA(Locale: number, dwCmpFlags: number, lpString1: Win32Pointer, cchCount1: number, lpString2: Win32Pointer, cchCount2: number): number;
+  CompareStringA(
+    Locale: number,
+    dwCmpFlags: number,
+    lpString1: Win32Pointer,
+    cchCount1: number,
+    lpString2: Win32Pointer,
+    cchCount2: number,
+  ): number;
   /** kernel32.dll!CompareStringEx */
-  CompareStringEx(lpLocaleName: string | Win32Pointer, dwCmpFlags: number, lpString1: string | Win32Pointer, cchCount1: number, lpString2: string | Win32Pointer, cchCount2: number, lpVersionInformation: Win32Pointer, lpReserved: Win32Pointer, lParam: number | bigint): number;
+  CompareStringEx(
+    lpLocaleName: string | Win32Pointer,
+    dwCmpFlags: number,
+    lpString1: string | Win32Pointer,
+    cchCount1: number,
+    lpString2: string | Win32Pointer,
+    cchCount2: number,
+    lpVersionInformation: Win32Pointer,
+    lpReserved: Win32Pointer,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!CompareStringOrdinal */
-  CompareStringOrdinal(lpString1: string | Win32Pointer, cchCount1: number, lpString2: string | Win32Pointer, cchCount2: number, bIgnoreCase: number): number;
+  CompareStringOrdinal(
+    lpString1: string | Win32Pointer,
+    cchCount1: number,
+    lpString2: string | Win32Pointer,
+    cchCount2: number,
+    bIgnoreCase: number,
+  ): number;
   /** kernel32.dll!CompareStringW */
-  CompareStringW(Locale: number, dwCmpFlags: number, lpString1: string | Win32Pointer, cchCount1: number, lpString2: string | Win32Pointer, cchCount2: number): number;
+  CompareStringW(
+    Locale: number,
+    dwCmpFlags: number,
+    lpString1: string | Win32Pointer,
+    cchCount1: number,
+    lpString2: string | Win32Pointer,
+    cchCount2: number,
+  ): number;
   /** kernel32.dll!CompareStringW */
-  CompareString(Locale: number, dwCmpFlags: number, lpString1: string | Win32Pointer, cchCount1: number, lpString2: string | Win32Pointer, cchCount2: number): number;
+  CompareString(
+    Locale: number,
+    dwCmpFlags: number,
+    lpString1: string | Win32Pointer,
+    cchCount1: number,
+    lpString2: string | Win32Pointer,
+    cchCount2: number,
+  ): number;
   /** kernel32.dll!ConnectNamedPipe */
   ConnectNamedPipe(hNamedPipe: Win32Pointer, lpOverlapped: Win32Pointer): number;
   /** kernel32.dll!ConsoleMenuControl */
@@ -221,25 +397,86 @@ interface Functions {
   /** kernel32.dll!CopyContext */
   CopyContext(Destination: Win32Pointer, ContextFlags: number, Source: Win32Pointer): number;
   /** kernel32.dll!CopyFile2 */
-  CopyFile2(pwszExistingFileName: string | Win32Pointer, pwszNewFileName: string | Win32Pointer, pExtendedParameters: Win32Pointer): number;
+  CopyFile2(
+    pwszExistingFileName: string | Win32Pointer,
+    pwszNewFileName: string | Win32Pointer,
+    pExtendedParameters: Win32Pointer,
+  ): number;
   /** kernel32.dll!CopyFileA */
-  CopyFileA(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, bFailIfExists: number): number;
+  CopyFileA(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    bFailIfExists: number,
+  ): number;
   /** kernel32.dll!CopyFileExA */
-  CopyFileExA(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, lpProgressRoutine: Win32Callback, lpData: Win32Pointer, pbCancel: Win32Pointer, dwCopyFlags: number): number;
+  CopyFileExA(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    lpProgressRoutine: Win32Callback,
+    lpData: Win32Pointer,
+    pbCancel: Win32Pointer,
+    dwCopyFlags: number,
+  ): number;
   /** kernel32.dll!CopyFileExW */
-  CopyFileExW(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, lpProgressRoutine: Win32Callback, lpData: Win32Pointer, pbCancel: Win32Pointer, dwCopyFlags: number): number;
+  CopyFileExW(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    lpProgressRoutine: Win32Callback,
+    lpData: Win32Pointer,
+    pbCancel: Win32Pointer,
+    dwCopyFlags: number,
+  ): number;
   /** kernel32.dll!CopyFileExW */
-  CopyFileEx(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, lpProgressRoutine: Win32Callback, lpData: Win32Pointer, pbCancel: Win32Pointer, dwCopyFlags: number): number;
+  CopyFileEx(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    lpProgressRoutine: Win32Callback,
+    lpData: Win32Pointer,
+    pbCancel: Win32Pointer,
+    dwCopyFlags: number,
+  ): number;
   /** kernel32.dll!CopyFileTransactedA */
-  CopyFileTransactedA(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, lpProgressRoutine: Win32Callback, lpData: Win32Pointer, pbCancel: Win32Pointer, dwCopyFlags: number, hTransaction: Win32Pointer): number;
+  CopyFileTransactedA(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    lpProgressRoutine: Win32Callback,
+    lpData: Win32Pointer,
+    pbCancel: Win32Pointer,
+    dwCopyFlags: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!CopyFileTransactedW */
-  CopyFileTransactedW(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, lpProgressRoutine: Win32Callback, lpData: Win32Pointer, pbCancel: Win32Pointer, dwCopyFlags: number, hTransaction: Win32Pointer): number;
+  CopyFileTransactedW(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    lpProgressRoutine: Win32Callback,
+    lpData: Win32Pointer,
+    pbCancel: Win32Pointer,
+    dwCopyFlags: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!CopyFileTransactedW */
-  CopyFileTransacted(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, lpProgressRoutine: Win32Callback, lpData: Win32Pointer, pbCancel: Win32Pointer, dwCopyFlags: number, hTransaction: Win32Pointer): number;
+  CopyFileTransacted(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    lpProgressRoutine: Win32Callback,
+    lpData: Win32Pointer,
+    pbCancel: Win32Pointer,
+    dwCopyFlags: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!CopyFileW */
-  CopyFileW(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, bFailIfExists: number): number;
+  CopyFileW(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    bFailIfExists: number,
+  ): number;
   /** kernel32.dll!CopyFileW */
-  CopyFile(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, bFailIfExists: number): number;
+  CopyFile(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    bFailIfExists: number,
+  ): number;
   /** kernel32.dll!CopyLZFile */
   CopyLZFile(hfSource: number, hfDest: number): number;
   /** kernel32.dll!CreateActCtxA */
@@ -255,93 +492,341 @@ interface Functions {
   /** kernel32.dll!CreateBoundaryDescriptorW */
   CreateBoundaryDescriptor(Name: string | Win32Pointer, Flags: number): number | null;
   /** kernel32.dll!CreateConsoleScreenBuffer */
-  CreateConsoleScreenBuffer(dwDesiredAccess: number, dwShareMode: number, lpSecurityAttributes: Win32Pointer, dwFlags: number, lpScreenBufferData: Win32Pointer): number | null;
+  CreateConsoleScreenBuffer(
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    lpSecurityAttributes: Win32Pointer,
+    dwFlags: number,
+    lpScreenBufferData: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateDirectory2A */
-  CreateDirectory2A(lpPathName: string | Win32Pointer, dwDesiredAccess: number, dwShareMode: number, DirectoryFlags: number, lpSecurityAttributes: Win32Pointer): number | null;
+  CreateDirectory2A(
+    lpPathName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    DirectoryFlags: number,
+    lpSecurityAttributes: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateDirectory2W */
-  CreateDirectory2W(lpPathName: string | Win32Pointer, dwDesiredAccess: number, dwShareMode: number, DirectoryFlags: number, lpSecurityAttributes: Win32Pointer): number | null;
+  CreateDirectory2W(
+    lpPathName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    DirectoryFlags: number,
+    lpSecurityAttributes: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateDirectory2W */
-  CreateDirectory2(lpPathName: string | Win32Pointer, dwDesiredAccess: number, dwShareMode: number, DirectoryFlags: number, lpSecurityAttributes: Win32Pointer): number | null;
+  CreateDirectory2(
+    lpPathName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    DirectoryFlags: number,
+    lpSecurityAttributes: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateDirectoryA */
   CreateDirectoryA(lpPathName: string | Win32Pointer, lpSecurityAttributes: Win32Pointer): number;
   /** kernel32.dll!CreateDirectoryExA */
-  CreateDirectoryExA(lpTemplateDirectory: string | Win32Pointer, lpNewDirectory: string | Win32Pointer, lpSecurityAttributes: Win32Pointer): number;
+  CreateDirectoryExA(
+    lpTemplateDirectory: string | Win32Pointer,
+    lpNewDirectory: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateDirectoryExW */
-  CreateDirectoryExW(lpTemplateDirectory: string | Win32Pointer, lpNewDirectory: string | Win32Pointer, lpSecurityAttributes: Win32Pointer): number;
+  CreateDirectoryExW(
+    lpTemplateDirectory: string | Win32Pointer,
+    lpNewDirectory: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateDirectoryExW */
-  CreateDirectoryEx(lpTemplateDirectory: string | Win32Pointer, lpNewDirectory: string | Win32Pointer, lpSecurityAttributes: Win32Pointer): number;
+  CreateDirectoryEx(
+    lpTemplateDirectory: string | Win32Pointer,
+    lpNewDirectory: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateDirectoryTransactedA */
-  CreateDirectoryTransactedA(lpTemplateDirectory: string | Win32Pointer, lpNewDirectory: string | Win32Pointer, lpSecurityAttributes: Win32Pointer, hTransaction: Win32Pointer): number;
+  CreateDirectoryTransactedA(
+    lpTemplateDirectory: string | Win32Pointer,
+    lpNewDirectory: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateDirectoryTransactedW */
-  CreateDirectoryTransactedW(lpTemplateDirectory: string | Win32Pointer, lpNewDirectory: string | Win32Pointer, lpSecurityAttributes: Win32Pointer, hTransaction: Win32Pointer): number;
+  CreateDirectoryTransactedW(
+    lpTemplateDirectory: string | Win32Pointer,
+    lpNewDirectory: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateDirectoryTransactedW */
-  CreateDirectoryTransacted(lpTemplateDirectory: string | Win32Pointer, lpNewDirectory: string | Win32Pointer, lpSecurityAttributes: Win32Pointer, hTransaction: Win32Pointer): number;
+  CreateDirectoryTransacted(
+    lpTemplateDirectory: string | Win32Pointer,
+    lpNewDirectory: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateDirectoryW */
   CreateDirectoryW(lpPathName: string | Win32Pointer, lpSecurityAttributes: Win32Pointer): number;
   /** kernel32.dll!CreateDirectoryW */
   CreateDirectory(lpPathName: string | Win32Pointer, lpSecurityAttributes: Win32Pointer): number;
   /** kernel32.dll!CreateEnclave */
-  CreateEnclave(hProcess: Win32Pointer, lpAddress: Win32Pointer, dwSize: number | bigint, dwInitialCommitment: number | bigint, flEnclaveType: number, lpEnclaveInformation: Win32Pointer, dwInfoLength: number, lpEnclaveError: Win32Pointer): number | null;
+  CreateEnclave(
+    hProcess: Win32Pointer,
+    lpAddress: Win32Pointer,
+    dwSize: number | bigint,
+    dwInitialCommitment: number | bigint,
+    flEnclaveType: number,
+    lpEnclaveInformation: Win32Pointer,
+    dwInfoLength: number,
+    lpEnclaveError: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateEventA */
-  CreateEventA(lpEventAttributes: Win32Pointer, bManualReset: number, bInitialState: number, lpName: string | Win32Pointer): number | null;
+  CreateEventA(
+    lpEventAttributes: Win32Pointer,
+    bManualReset: number,
+    bInitialState: number,
+    lpName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateEventExA */
-  CreateEventExA(lpEventAttributes: Win32Pointer, lpName: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number): number | null;
+  CreateEventExA(
+    lpEventAttributes: Win32Pointer,
+    lpName: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** kernel32.dll!CreateEventExW */
-  CreateEventExW(lpEventAttributes: Win32Pointer, lpName: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number): number | null;
+  CreateEventExW(
+    lpEventAttributes: Win32Pointer,
+    lpName: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** kernel32.dll!CreateEventExW */
-  CreateEventEx(lpEventAttributes: Win32Pointer, lpName: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number): number | null;
+  CreateEventEx(
+    lpEventAttributes: Win32Pointer,
+    lpName: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** kernel32.dll!CreateEventW */
-  CreateEventW(lpEventAttributes: Win32Pointer, bManualReset: number, bInitialState: number, lpName: string | Win32Pointer): number | null;
+  CreateEventW(
+    lpEventAttributes: Win32Pointer,
+    bManualReset: number,
+    bInitialState: number,
+    lpName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateEventW */
-  CreateEvent(lpEventAttributes: Win32Pointer, bManualReset: number, bInitialState: number, lpName: string | Win32Pointer): number | null;
+  CreateEvent(
+    lpEventAttributes: Win32Pointer,
+    bManualReset: number,
+    bInitialState: number,
+    lpName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFiber */
   CreateFiber(dwStackSize: number | bigint, lpStartAddress: Win32Callback, lpParameter: Win32Pointer): number | null;
   /** kernel32.dll!CreateFiberEx */
-  CreateFiberEx(dwStackCommitSize: number | bigint, dwStackReserveSize: number | bigint, dwFlags: number, lpStartAddress: Win32Callback, lpParameter: Win32Pointer): number | null;
+  CreateFiberEx(
+    dwStackCommitSize: number | bigint,
+    dwStackReserveSize: number | bigint,
+    dwFlags: number,
+    lpStartAddress: Win32Callback,
+    lpParameter: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFile2 */
-  CreateFile2(lpFileName: string | Win32Pointer, dwDesiredAccess: number, dwShareMode: number, dwCreationDisposition: number, pCreateExParams: Win32Pointer): number | null;
+  CreateFile2(
+    lpFileName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    dwCreationDisposition: number,
+    pCreateExParams: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFile3 */
-  CreateFile3(lpFileName: string | Win32Pointer, dwDesiredAccess: number, dwShareMode: number, dwCreationDisposition: number, pCreateExParams: Win32Pointer): number | null;
+  CreateFile3(
+    lpFileName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    dwCreationDisposition: number,
+    pCreateExParams: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFileA */
-  CreateFileA(lpFileName: string | Win32Pointer, dwDesiredAccess: number, dwShareMode: number, lpSecurityAttributes: Win32Pointer, dwCreationDisposition: number, dwFlagsAndAttributes: number, hTemplateFile: Win32Pointer): number | null;
+  CreateFileA(
+    lpFileName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    lpSecurityAttributes: Win32Pointer,
+    dwCreationDisposition: number,
+    dwFlagsAndAttributes: number,
+    hTemplateFile: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFileMappingA */
-  CreateFileMappingA(hFile: Win32Pointer, lpFileMappingAttributes: Win32Pointer, flProtect: number, dwMaximumSizeHigh: number, dwMaximumSizeLow: number, lpName: string | Win32Pointer): number | null;
+  CreateFileMappingA(
+    hFile: Win32Pointer,
+    lpFileMappingAttributes: Win32Pointer,
+    flProtect: number,
+    dwMaximumSizeHigh: number,
+    dwMaximumSizeLow: number,
+    lpName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFileMappingFromApp */
-  CreateFileMappingFromApp(hFile: Win32Pointer, SecurityAttributes: Win32Pointer, PageProtection: number, MaximumSize: number | bigint, Name: string | Win32Pointer): number | null;
+  CreateFileMappingFromApp(
+    hFile: Win32Pointer,
+    SecurityAttributes: Win32Pointer,
+    PageProtection: number,
+    MaximumSize: number | bigint,
+    Name: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFileMappingNumaA */
-  CreateFileMappingNumaA(hFile: Win32Pointer, lpFileMappingAttributes: Win32Pointer, flProtect: number, dwMaximumSizeHigh: number, dwMaximumSizeLow: number, lpName: string | Win32Pointer, nndPreferred: number): number | null;
+  CreateFileMappingNumaA(
+    hFile: Win32Pointer,
+    lpFileMappingAttributes: Win32Pointer,
+    flProtect: number,
+    dwMaximumSizeHigh: number,
+    dwMaximumSizeLow: number,
+    lpName: string | Win32Pointer,
+    nndPreferred: number,
+  ): number | null;
   /** kernel32.dll!CreateFileMappingNumaW */
-  CreateFileMappingNumaW(hFile: Win32Pointer, lpFileMappingAttributes: Win32Pointer, flProtect: number, dwMaximumSizeHigh: number, dwMaximumSizeLow: number, lpName: string | Win32Pointer, nndPreferred: number): number | null;
+  CreateFileMappingNumaW(
+    hFile: Win32Pointer,
+    lpFileMappingAttributes: Win32Pointer,
+    flProtect: number,
+    dwMaximumSizeHigh: number,
+    dwMaximumSizeLow: number,
+    lpName: string | Win32Pointer,
+    nndPreferred: number,
+  ): number | null;
   /** kernel32.dll!CreateFileMappingNumaW */
-  CreateFileMappingNuma(hFile: Win32Pointer, lpFileMappingAttributes: Win32Pointer, flProtect: number, dwMaximumSizeHigh: number, dwMaximumSizeLow: number, lpName: string | Win32Pointer, nndPreferred: number): number | null;
+  CreateFileMappingNuma(
+    hFile: Win32Pointer,
+    lpFileMappingAttributes: Win32Pointer,
+    flProtect: number,
+    dwMaximumSizeHigh: number,
+    dwMaximumSizeLow: number,
+    lpName: string | Win32Pointer,
+    nndPreferred: number,
+  ): number | null;
   /** kernel32.dll!CreateFileMappingW */
-  CreateFileMappingW(hFile: Win32Pointer, lpFileMappingAttributes: Win32Pointer, flProtect: number, dwMaximumSizeHigh: number, dwMaximumSizeLow: number, lpName: string | Win32Pointer): number | null;
+  CreateFileMappingW(
+    hFile: Win32Pointer,
+    lpFileMappingAttributes: Win32Pointer,
+    flProtect: number,
+    dwMaximumSizeHigh: number,
+    dwMaximumSizeLow: number,
+    lpName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFileMappingW */
-  CreateFileMapping(hFile: Win32Pointer, lpFileMappingAttributes: Win32Pointer, flProtect: number, dwMaximumSizeHigh: number, dwMaximumSizeLow: number, lpName: string | Win32Pointer): number | null;
+  CreateFileMapping(
+    hFile: Win32Pointer,
+    lpFileMappingAttributes: Win32Pointer,
+    flProtect: number,
+    dwMaximumSizeHigh: number,
+    dwMaximumSizeLow: number,
+    lpName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFileTransactedA */
-  CreateFileTransactedA(lpFileName: string | Win32Pointer, dwDesiredAccess: number, dwShareMode: number, lpSecurityAttributes: Win32Pointer, dwCreationDisposition: number, dwFlagsAndAttributes: number, hTemplateFile: Win32Pointer, hTransaction: Win32Pointer, pusMiniVersion: Win32Pointer, lpExtendedParameter: Win32Pointer): number | null;
+  CreateFileTransactedA(
+    lpFileName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    lpSecurityAttributes: Win32Pointer,
+    dwCreationDisposition: number,
+    dwFlagsAndAttributes: number,
+    hTemplateFile: Win32Pointer,
+    hTransaction: Win32Pointer,
+    pusMiniVersion: Win32Pointer,
+    lpExtendedParameter: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFileTransactedW */
-  CreateFileTransactedW(lpFileName: string | Win32Pointer, dwDesiredAccess: number, dwShareMode: number, lpSecurityAttributes: Win32Pointer, dwCreationDisposition: number, dwFlagsAndAttributes: number, hTemplateFile: Win32Pointer, hTransaction: Win32Pointer, pusMiniVersion: Win32Pointer, lpExtendedParameter: Win32Pointer): number | null;
+  CreateFileTransactedW(
+    lpFileName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    lpSecurityAttributes: Win32Pointer,
+    dwCreationDisposition: number,
+    dwFlagsAndAttributes: number,
+    hTemplateFile: Win32Pointer,
+    hTransaction: Win32Pointer,
+    pusMiniVersion: Win32Pointer,
+    lpExtendedParameter: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFileTransactedW */
-  CreateFileTransacted(lpFileName: string | Win32Pointer, dwDesiredAccess: number, dwShareMode: number, lpSecurityAttributes: Win32Pointer, dwCreationDisposition: number, dwFlagsAndAttributes: number, hTemplateFile: Win32Pointer, hTransaction: Win32Pointer, pusMiniVersion: Win32Pointer, lpExtendedParameter: Win32Pointer): number | null;
+  CreateFileTransacted(
+    lpFileName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    lpSecurityAttributes: Win32Pointer,
+    dwCreationDisposition: number,
+    dwFlagsAndAttributes: number,
+    hTemplateFile: Win32Pointer,
+    hTransaction: Win32Pointer,
+    pusMiniVersion: Win32Pointer,
+    lpExtendedParameter: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFileW */
-  CreateFileW(lpFileName: string | Win32Pointer, dwDesiredAccess: number, dwShareMode: number, lpSecurityAttributes: Win32Pointer, dwCreationDisposition: number, dwFlagsAndAttributes: number, hTemplateFile: Win32Pointer): number | null;
+  CreateFileW(
+    lpFileName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    lpSecurityAttributes: Win32Pointer,
+    dwCreationDisposition: number,
+    dwFlagsAndAttributes: number,
+    hTemplateFile: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateFileW */
-  CreateFile(lpFileName: string | Win32Pointer, dwDesiredAccess: number, dwShareMode: number, lpSecurityAttributes: Win32Pointer, dwCreationDisposition: number, dwFlagsAndAttributes: number, hTemplateFile: Win32Pointer): number | null;
+  CreateFile(
+    lpFileName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    lpSecurityAttributes: Win32Pointer,
+    dwCreationDisposition: number,
+    dwFlagsAndAttributes: number,
+    hTemplateFile: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateHardLinkA */
-  CreateHardLinkA(lpFileName: string | Win32Pointer, lpExistingFileName: string | Win32Pointer, lpSecurityAttributes: Win32Pointer): number;
+  CreateHardLinkA(
+    lpFileName: string | Win32Pointer,
+    lpExistingFileName: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateHardLinkTransactedA */
-  CreateHardLinkTransactedA(lpFileName: string | Win32Pointer, lpExistingFileName: string | Win32Pointer, lpSecurityAttributes: Win32Pointer, hTransaction: Win32Pointer): number;
+  CreateHardLinkTransactedA(
+    lpFileName: string | Win32Pointer,
+    lpExistingFileName: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateHardLinkTransactedW */
-  CreateHardLinkTransactedW(lpFileName: string | Win32Pointer, lpExistingFileName: string | Win32Pointer, lpSecurityAttributes: Win32Pointer, hTransaction: Win32Pointer): number;
+  CreateHardLinkTransactedW(
+    lpFileName: string | Win32Pointer,
+    lpExistingFileName: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateHardLinkTransactedW */
-  CreateHardLinkTransacted(lpFileName: string | Win32Pointer, lpExistingFileName: string | Win32Pointer, lpSecurityAttributes: Win32Pointer, hTransaction: Win32Pointer): number;
+  CreateHardLinkTransacted(
+    lpFileName: string | Win32Pointer,
+    lpExistingFileName: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateHardLinkW */
-  CreateHardLinkW(lpFileName: string | Win32Pointer, lpExistingFileName: string | Win32Pointer, lpSecurityAttributes: Win32Pointer): number;
+  CreateHardLinkW(
+    lpFileName: string | Win32Pointer,
+    lpExistingFileName: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateHardLinkW */
-  CreateHardLink(lpFileName: string | Win32Pointer, lpExistingFileName: string | Win32Pointer, lpSecurityAttributes: Win32Pointer): number;
+  CreateHardLink(
+    lpFileName: string | Win32Pointer,
+    lpExistingFileName: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateIoCompletionPort */
-  CreateIoCompletionPort(FileHandle: Win32Pointer, ExistingCompletionPort: Win32Pointer, CompletionKey: number | bigint, NumberOfConcurrentThreads: number): number | null;
+  CreateIoCompletionPort(
+    FileHandle: Win32Pointer,
+    ExistingCompletionPort: Win32Pointer,
+    CompletionKey: number | bigint,
+    NumberOfConcurrentThreads: number,
+  ): number | null;
   /** kernel32.dll!CreateJobObjectA */
   CreateJobObjectA(lpJobAttributes: Win32Pointer, lpName: string | Win32Pointer): number | null;
   /** kernel32.dll!CreateJobObjectW */
@@ -351,81 +836,276 @@ interface Functions {
   /** kernel32.dll!CreateJobSet */
   CreateJobSet(NumJob: number, UserJobSet: Win32Pointer, Flags: number): number;
   /** kernel32.dll!CreateMailslotA */
-  CreateMailslotA(lpName: string | Win32Pointer, nMaxMessageSize: number, lReadTimeout: number, lpSecurityAttributes: Win32Pointer): number | null;
+  CreateMailslotA(
+    lpName: string | Win32Pointer,
+    nMaxMessageSize: number,
+    lReadTimeout: number,
+    lpSecurityAttributes: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateMailslotW */
-  CreateMailslotW(lpName: string | Win32Pointer, nMaxMessageSize: number, lReadTimeout: number, lpSecurityAttributes: Win32Pointer): number | null;
+  CreateMailslotW(
+    lpName: string | Win32Pointer,
+    nMaxMessageSize: number,
+    lReadTimeout: number,
+    lpSecurityAttributes: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateMailslotW */
-  CreateMailslot(lpName: string | Win32Pointer, nMaxMessageSize: number, lReadTimeout: number, lpSecurityAttributes: Win32Pointer): number | null;
+  CreateMailslot(
+    lpName: string | Win32Pointer,
+    nMaxMessageSize: number,
+    lReadTimeout: number,
+    lpSecurityAttributes: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateMemoryResourceNotification */
   CreateMemoryResourceNotification(NotificationType: number): number | null;
   /** kernel32.dll!CreateMutexA */
   CreateMutexA(lpMutexAttributes: Win32Pointer, bInitialOwner: number, lpName: string | Win32Pointer): number | null;
   /** kernel32.dll!CreateMutexExA */
-  CreateMutexExA(lpMutexAttributes: Win32Pointer, lpName: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number): number | null;
+  CreateMutexExA(
+    lpMutexAttributes: Win32Pointer,
+    lpName: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** kernel32.dll!CreateMutexExW */
-  CreateMutexExW(lpMutexAttributes: Win32Pointer, lpName: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number): number | null;
+  CreateMutexExW(
+    lpMutexAttributes: Win32Pointer,
+    lpName: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** kernel32.dll!CreateMutexExW */
-  CreateMutexEx(lpMutexAttributes: Win32Pointer, lpName: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number): number | null;
+  CreateMutexEx(
+    lpMutexAttributes: Win32Pointer,
+    lpName: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** kernel32.dll!CreateMutexW */
   CreateMutexW(lpMutexAttributes: Win32Pointer, bInitialOwner: number, lpName: string | Win32Pointer): number | null;
   /** kernel32.dll!CreateMutexW */
   CreateMutex(lpMutexAttributes: Win32Pointer, bInitialOwner: number, lpName: string | Win32Pointer): number | null;
   /** kernel32.dll!CreateNamedPipeA */
-  CreateNamedPipeA(lpName: string | Win32Pointer, dwOpenMode: number, dwPipeMode: number, nMaxInstances: number, nOutBufferSize: number, nInBufferSize: number, nDefaultTimeOut: number, lpSecurityAttributes: Win32Pointer): number | null;
+  CreateNamedPipeA(
+    lpName: string | Win32Pointer,
+    dwOpenMode: number,
+    dwPipeMode: number,
+    nMaxInstances: number,
+    nOutBufferSize: number,
+    nInBufferSize: number,
+    nDefaultTimeOut: number,
+    lpSecurityAttributes: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateNamedPipeW */
-  CreateNamedPipeW(lpName: string | Win32Pointer, dwOpenMode: number, dwPipeMode: number, nMaxInstances: number, nOutBufferSize: number, nInBufferSize: number, nDefaultTimeOut: number, lpSecurityAttributes: Win32Pointer): number | null;
+  CreateNamedPipeW(
+    lpName: string | Win32Pointer,
+    dwOpenMode: number,
+    dwPipeMode: number,
+    nMaxInstances: number,
+    nOutBufferSize: number,
+    nInBufferSize: number,
+    nDefaultTimeOut: number,
+    lpSecurityAttributes: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateNamedPipeW */
-  CreateNamedPipe(lpName: string | Win32Pointer, dwOpenMode: number, dwPipeMode: number, nMaxInstances: number, nOutBufferSize: number, nInBufferSize: number, nDefaultTimeOut: number, lpSecurityAttributes: Win32Pointer): number | null;
+  CreateNamedPipe(
+    lpName: string | Win32Pointer,
+    dwOpenMode: number,
+    dwPipeMode: number,
+    nMaxInstances: number,
+    nOutBufferSize: number,
+    nInBufferSize: number,
+    nDefaultTimeOut: number,
+    lpSecurityAttributes: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreatePackageVirtualizationContext */
   CreatePackageVirtualizationContext(packageFamilyName: string | Win32Pointer, context: Win32Pointer): number;
   /** kernel32.dll!CreatePipe */
   CreatePipe(hReadPipe: Win32Pointer, hWritePipe: Win32Pointer, lpPipeAttributes: Win32Pointer, nSize: number): number;
   /** kernel32.dll!CreatePrivateNamespaceA */
-  CreatePrivateNamespaceA(lpPrivateNamespaceAttributes: Win32Pointer, lpBoundaryDescriptor: Win32Pointer, lpAliasPrefix: string | Win32Pointer): number | null;
+  CreatePrivateNamespaceA(
+    lpPrivateNamespaceAttributes: Win32Pointer,
+    lpBoundaryDescriptor: Win32Pointer,
+    lpAliasPrefix: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreatePrivateNamespaceW */
-  CreatePrivateNamespaceW(lpPrivateNamespaceAttributes: Win32Pointer, lpBoundaryDescriptor: Win32Pointer, lpAliasPrefix: string | Win32Pointer): number | null;
+  CreatePrivateNamespaceW(
+    lpPrivateNamespaceAttributes: Win32Pointer,
+    lpBoundaryDescriptor: Win32Pointer,
+    lpAliasPrefix: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreatePrivateNamespaceW */
-  CreatePrivateNamespace(lpPrivateNamespaceAttributes: Win32Pointer, lpBoundaryDescriptor: Win32Pointer, lpAliasPrefix: string | Win32Pointer): number | null;
+  CreatePrivateNamespace(
+    lpPrivateNamespaceAttributes: Win32Pointer,
+    lpBoundaryDescriptor: Win32Pointer,
+    lpAliasPrefix: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateProcessA */
-  CreateProcessA(lpApplicationName: string | Win32Pointer, lpCommandLine: string | Win32Pointer, lpProcessAttributes: Win32Pointer, lpThreadAttributes: Win32Pointer, bInheritHandles: number, dwCreationFlags: number, lpEnvironment: Win32Pointer, lpCurrentDirectory: string | Win32Pointer, lpStartupInfo: Win32Pointer, lpProcessInformation: Win32Pointer): number;
+  CreateProcessA(
+    lpApplicationName: string | Win32Pointer,
+    lpCommandLine: string | Win32Pointer,
+    lpProcessAttributes: Win32Pointer,
+    lpThreadAttributes: Win32Pointer,
+    bInheritHandles: number,
+    dwCreationFlags: number,
+    lpEnvironment: Win32Pointer,
+    lpCurrentDirectory: string | Win32Pointer,
+    lpStartupInfo: Win32Pointer,
+    lpProcessInformation: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateProcessW */
-  CreateProcessW(lpApplicationName: string | Win32Pointer, lpCommandLine: string | Win32Pointer, lpProcessAttributes: Win32Pointer, lpThreadAttributes: Win32Pointer, bInheritHandles: number, dwCreationFlags: number, lpEnvironment: Win32Pointer, lpCurrentDirectory: string | Win32Pointer, lpStartupInfo: Win32Pointer, lpProcessInformation: Win32Pointer): number;
+  CreateProcessW(
+    lpApplicationName: string | Win32Pointer,
+    lpCommandLine: string | Win32Pointer,
+    lpProcessAttributes: Win32Pointer,
+    lpThreadAttributes: Win32Pointer,
+    bInheritHandles: number,
+    dwCreationFlags: number,
+    lpEnvironment: Win32Pointer,
+    lpCurrentDirectory: string | Win32Pointer,
+    lpStartupInfo: Win32Pointer,
+    lpProcessInformation: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateProcessW */
-  CreateProcess(lpApplicationName: string | Win32Pointer, lpCommandLine: string | Win32Pointer, lpProcessAttributes: Win32Pointer, lpThreadAttributes: Win32Pointer, bInheritHandles: number, dwCreationFlags: number, lpEnvironment: Win32Pointer, lpCurrentDirectory: string | Win32Pointer, lpStartupInfo: Win32Pointer, lpProcessInformation: Win32Pointer): number;
+  CreateProcess(
+    lpApplicationName: string | Win32Pointer,
+    lpCommandLine: string | Win32Pointer,
+    lpProcessAttributes: Win32Pointer,
+    lpThreadAttributes: Win32Pointer,
+    bInheritHandles: number,
+    dwCreationFlags: number,
+    lpEnvironment: Win32Pointer,
+    lpCurrentDirectory: string | Win32Pointer,
+    lpStartupInfo: Win32Pointer,
+    lpProcessInformation: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreatePseudoConsole */
-  CreatePseudoConsole(size: Win32StructInit, hInput: Win32Pointer, hOutput: Win32Pointer, dwFlags: number, phPC: Win32Pointer): number;
+  CreatePseudoConsole(
+    size: Win32StructInit,
+    hInput: Win32Pointer,
+    hOutput: Win32Pointer,
+    dwFlags: number,
+    phPC: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateRemoteThread */
-  CreateRemoteThread(hProcess: Win32Pointer, lpThreadAttributes: Win32Pointer, dwStackSize: number | bigint, lpStartAddress: Win32Callback, lpParameter: Win32Pointer, dwCreationFlags: number, lpThreadId: Win32Pointer): number | null;
+  CreateRemoteThread(
+    hProcess: Win32Pointer,
+    lpThreadAttributes: Win32Pointer,
+    dwStackSize: number | bigint,
+    lpStartAddress: Win32Callback,
+    lpParameter: Win32Pointer,
+    dwCreationFlags: number,
+    lpThreadId: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateRemoteThreadEx */
-  CreateRemoteThreadEx(hProcess: Win32Pointer, lpThreadAttributes: Win32Pointer, dwStackSize: number | bigint, lpStartAddress: Win32Callback, lpParameter: Win32Pointer, dwCreationFlags: number, lpAttributeList: Win32Pointer, lpThreadId: Win32Pointer): number | null;
+  CreateRemoteThreadEx(
+    hProcess: Win32Pointer,
+    lpThreadAttributes: Win32Pointer,
+    dwStackSize: number | bigint,
+    lpStartAddress: Win32Callback,
+    lpParameter: Win32Pointer,
+    dwCreationFlags: number,
+    lpAttributeList: Win32Pointer,
+    lpThreadId: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateSemaphoreA */
-  CreateSemaphoreA(lpSemaphoreAttributes: Win32Pointer, lInitialCount: number, lMaximumCount: number, lpName: string | Win32Pointer): number | null;
+  CreateSemaphoreA(
+    lpSemaphoreAttributes: Win32Pointer,
+    lInitialCount: number,
+    lMaximumCount: number,
+    lpName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateSemaphoreExA */
-  CreateSemaphoreExA(lpSemaphoreAttributes: Win32Pointer, lInitialCount: number, lMaximumCount: number, lpName: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number): number | null;
+  CreateSemaphoreExA(
+    lpSemaphoreAttributes: Win32Pointer,
+    lInitialCount: number,
+    lMaximumCount: number,
+    lpName: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** kernel32.dll!CreateSemaphoreExW */
-  CreateSemaphoreExW(lpSemaphoreAttributes: Win32Pointer, lInitialCount: number, lMaximumCount: number, lpName: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number): number | null;
+  CreateSemaphoreExW(
+    lpSemaphoreAttributes: Win32Pointer,
+    lInitialCount: number,
+    lMaximumCount: number,
+    lpName: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** kernel32.dll!CreateSemaphoreExW */
-  CreateSemaphoreEx(lpSemaphoreAttributes: Win32Pointer, lInitialCount: number, lMaximumCount: number, lpName: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number): number | null;
+  CreateSemaphoreEx(
+    lpSemaphoreAttributes: Win32Pointer,
+    lInitialCount: number,
+    lMaximumCount: number,
+    lpName: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** kernel32.dll!CreateSemaphoreW */
-  CreateSemaphoreW(lpSemaphoreAttributes: Win32Pointer, lInitialCount: number, lMaximumCount: number, lpName: string | Win32Pointer): number | null;
+  CreateSemaphoreW(
+    lpSemaphoreAttributes: Win32Pointer,
+    lInitialCount: number,
+    lMaximumCount: number,
+    lpName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateSemaphoreW */
-  CreateSemaphore(lpSemaphoreAttributes: Win32Pointer, lInitialCount: number, lMaximumCount: number, lpName: string | Win32Pointer): number | null;
+  CreateSemaphore(
+    lpSemaphoreAttributes: Win32Pointer,
+    lInitialCount: number,
+    lMaximumCount: number,
+    lpName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateSymbolicLinkA */
-  CreateSymbolicLinkA(lpSymlinkFileName: string | Win32Pointer, lpTargetFileName: string | Win32Pointer, dwFlags: number): number;
+  CreateSymbolicLinkA(
+    lpSymlinkFileName: string | Win32Pointer,
+    lpTargetFileName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** kernel32.dll!CreateSymbolicLinkTransactedA */
-  CreateSymbolicLinkTransactedA(lpSymlinkFileName: string | Win32Pointer, lpTargetFileName: string | Win32Pointer, dwFlags: number, hTransaction: Win32Pointer): number;
+  CreateSymbolicLinkTransactedA(
+    lpSymlinkFileName: string | Win32Pointer,
+    lpTargetFileName: string | Win32Pointer,
+    dwFlags: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateSymbolicLinkTransactedW */
-  CreateSymbolicLinkTransactedW(lpSymlinkFileName: string | Win32Pointer, lpTargetFileName: string | Win32Pointer, dwFlags: number, hTransaction: Win32Pointer): number;
+  CreateSymbolicLinkTransactedW(
+    lpSymlinkFileName: string | Win32Pointer,
+    lpTargetFileName: string | Win32Pointer,
+    dwFlags: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateSymbolicLinkTransactedW */
-  CreateSymbolicLinkTransacted(lpSymlinkFileName: string | Win32Pointer, lpTargetFileName: string | Win32Pointer, dwFlags: number, hTransaction: Win32Pointer): number;
+  CreateSymbolicLinkTransacted(
+    lpSymlinkFileName: string | Win32Pointer,
+    lpTargetFileName: string | Win32Pointer,
+    dwFlags: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!CreateSymbolicLinkW */
-  CreateSymbolicLinkW(lpSymlinkFileName: string | Win32Pointer, lpTargetFileName: string | Win32Pointer, dwFlags: number): number;
+  CreateSymbolicLinkW(
+    lpSymlinkFileName: string | Win32Pointer,
+    lpTargetFileName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** kernel32.dll!CreateSymbolicLinkW */
-  CreateSymbolicLink(lpSymlinkFileName: string | Win32Pointer, lpTargetFileName: string | Win32Pointer, dwFlags: number): number;
+  CreateSymbolicLink(
+    lpSymlinkFileName: string | Win32Pointer,
+    lpTargetFileName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** kernel32.dll!CreateTapePartition */
   CreateTapePartition(hDevice: Win32Pointer, dwPartitionMethod: number, dwCount: number, dwSize: number): number;
   /** kernel32.dll!CreateThread */
-  CreateThread(lpThreadAttributes: Win32Pointer, dwStackSize: number | bigint, lpStartAddress: Win32Callback, lpParameter: Win32Pointer, dwCreationFlags: number, lpThreadId: Win32Pointer): number | null;
+  CreateThread(
+    lpThreadAttributes: Win32Pointer,
+    dwStackSize: number | bigint,
+    lpStartAddress: Win32Callback,
+    lpParameter: Win32Pointer,
+    dwCreationFlags: number,
+    lpThreadId: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateThreadpool */
   CreateThreadpool(reserved: Win32Pointer): number | bigint;
   /** kernel32.dll!CreateThreadpoolCleanupGroup */
@@ -441,7 +1121,15 @@ interface Functions {
   /** kernel32.dll!CreateTimerQueue */
   CreateTimerQueue(): number | null;
   /** kernel32.dll!CreateTimerQueueTimer */
-  CreateTimerQueueTimer(phNewTimer: Win32Pointer, TimerQueue: Win32Pointer, Callback: Win32Callback, Parameter: Win32Pointer, DueTime: number, Period: number, Flags: number): number;
+  CreateTimerQueueTimer(
+    phNewTimer: Win32Pointer,
+    TimerQueue: Win32Pointer,
+    Callback: Win32Callback,
+    Parameter: Win32Pointer,
+    DueTime: number,
+    Period: number,
+    Flags: number,
+  ): number;
   /** kernel32.dll!CreateToolhelp32Snapshot */
   CreateToolhelp32Snapshot(dwFlags: number, th32ProcessID: number): number | null;
   /** kernel32.dll!CreateUmsCompletionList */
@@ -449,17 +1137,44 @@ interface Functions {
   /** kernel32.dll!CreateUmsThreadContext */
   CreateUmsThreadContext(lpUmsThread: Win32Pointer): number;
   /** kernel32.dll!CreateWaitableTimerA */
-  CreateWaitableTimerA(lpTimerAttributes: Win32Pointer, bManualReset: number, lpTimerName: string | Win32Pointer): number | null;
+  CreateWaitableTimerA(
+    lpTimerAttributes: Win32Pointer,
+    bManualReset: number,
+    lpTimerName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateWaitableTimerExA */
-  CreateWaitableTimerExA(lpTimerAttributes: Win32Pointer, lpTimerName: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number): number | null;
+  CreateWaitableTimerExA(
+    lpTimerAttributes: Win32Pointer,
+    lpTimerName: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** kernel32.dll!CreateWaitableTimerExW */
-  CreateWaitableTimerExW(lpTimerAttributes: Win32Pointer, lpTimerName: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number): number | null;
+  CreateWaitableTimerExW(
+    lpTimerAttributes: Win32Pointer,
+    lpTimerName: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** kernel32.dll!CreateWaitableTimerExW */
-  CreateWaitableTimerEx(lpTimerAttributes: Win32Pointer, lpTimerName: string | Win32Pointer, dwFlags: number, dwDesiredAccess: number): number | null;
+  CreateWaitableTimerEx(
+    lpTimerAttributes: Win32Pointer,
+    lpTimerName: string | Win32Pointer,
+    dwFlags: number,
+    dwDesiredAccess: number,
+  ): number | null;
   /** kernel32.dll!CreateWaitableTimerW */
-  CreateWaitableTimerW(lpTimerAttributes: Win32Pointer, bManualReset: number, lpTimerName: string | Win32Pointer): number | null;
+  CreateWaitableTimerW(
+    lpTimerAttributes: Win32Pointer,
+    bManualReset: number,
+    lpTimerName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!CreateWaitableTimerW */
-  CreateWaitableTimer(lpTimerAttributes: Win32Pointer, bManualReset: number, lpTimerName: string | Win32Pointer): number | null;
+  CreateWaitableTimer(
+    lpTimerAttributes: Win32Pointer,
+    bManualReset: number,
+    lpTimerName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!DeactivateActCtx */
   DeactivateActCtx(dwFlags: number, ulCookie: number | bigint): number;
   /** kernel32.dll!DeactivatePackageVirtualizationContext */
@@ -531,9 +1246,22 @@ interface Functions {
   /** kernel32.dll!DeleteVolumeMountPointW */
   DeleteVolumeMountPoint(lpszVolumeMountPoint: string | Win32Pointer): number;
   /** kernel32.dll!DequeueUmsCompletionListItems */
-  DequeueUmsCompletionListItems(UmsCompletionList: Win32Pointer, WaitTimeOut: number, UmsThreadList: Win32Pointer): number;
+  DequeueUmsCompletionListItems(
+    UmsCompletionList: Win32Pointer,
+    WaitTimeOut: number,
+    UmsThreadList: Win32Pointer,
+  ): number;
   /** kernel32.dll!DeviceIoControl */
-  DeviceIoControl(hDevice: Win32Pointer, dwIoControlCode: number, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesReturned: Win32Pointer, lpOverlapped: Win32Pointer): number;
+  DeviceIoControl(
+    hDevice: Win32Pointer,
+    dwIoControlCode: number,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesReturned: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** kernel32.dll!DisableThreadLibraryCalls */
   DisableThreadLibraryCalls(hLibModule: Win32Pointer): number;
   /** kernel32.dll!DisableThreadProfiling */
@@ -545,25 +1273,59 @@ interface Functions {
   /** kernel32.dll!DisconnectNamedPipe */
   DisconnectNamedPipe(hNamedPipe: Win32Pointer): number;
   /** kernel32.dll!DnsHostnameToComputerNameA */
-  DnsHostnameToComputerNameA(Hostname: string | Win32Pointer, ComputerName: string | Win32Pointer, nSize: Win32Pointer): number;
+  DnsHostnameToComputerNameA(
+    Hostname: string | Win32Pointer,
+    ComputerName: string | Win32Pointer,
+    nSize: Win32Pointer,
+  ): number;
   /** kernel32.dll!DnsHostnameToComputerNameExW */
-  DnsHostnameToComputerNameExW(Hostname: string | Win32Pointer, ComputerName: string | Win32Pointer, nSize: Win32Pointer): number;
+  DnsHostnameToComputerNameExW(
+    Hostname: string | Win32Pointer,
+    ComputerName: string | Win32Pointer,
+    nSize: Win32Pointer,
+  ): number;
   /** kernel32.dll!DnsHostnameToComputerNameW */
-  DnsHostnameToComputerNameW(Hostname: string | Win32Pointer, ComputerName: string | Win32Pointer, nSize: Win32Pointer): number;
+  DnsHostnameToComputerNameW(
+    Hostname: string | Win32Pointer,
+    ComputerName: string | Win32Pointer,
+    nSize: Win32Pointer,
+  ): number;
   /** kernel32.dll!DnsHostnameToComputerNameW */
-  DnsHostnameToComputerName(Hostname: string | Win32Pointer, ComputerName: string | Win32Pointer, nSize: Win32Pointer): number;
+  DnsHostnameToComputerName(
+    Hostname: string | Win32Pointer,
+    ComputerName: string | Win32Pointer,
+    nSize: Win32Pointer,
+  ): number;
   /** kernel32.dll!DosDateTimeToFileTime */
   DosDateTimeToFileTime(wFatDate: number, wFatTime: number, lpFileTime: Win32Pointer): number;
   /** kernel32.dll!DuplicateConsoleHandle */
-  DuplicateConsoleHandle(hSourceHandle: Win32Pointer, dwDesiredAccess: number, bInheritHandle: number, dwOptions: number): number | null;
+  DuplicateConsoleHandle(
+    hSourceHandle: Win32Pointer,
+    dwDesiredAccess: number,
+    bInheritHandle: number,
+    dwOptions: number,
+  ): number | null;
   /** kernel32.dll!DuplicateHandle */
-  DuplicateHandle(hSourceProcessHandle: Win32Pointer, hSourceHandle: Win32Pointer, hTargetProcessHandle: Win32Pointer, lpTargetHandle: Win32Pointer, dwDesiredAccess: number, bInheritHandle: number, dwOptions: number): number;
+  DuplicateHandle(
+    hSourceProcessHandle: Win32Pointer,
+    hSourceHandle: Win32Pointer,
+    hTargetProcessHandle: Win32Pointer,
+    lpTargetHandle: Win32Pointer,
+    dwDesiredAccess: number,
+    bInheritHandle: number,
+    dwOptions: number,
+  ): number;
   /** kernel32.dll!DuplicatePackageVirtualizationContext */
   DuplicatePackageVirtualizationContext(sourceContext: Win32Pointer, destContext: Win32Pointer): number;
   /** kernel32.dll!EnableProcessOptionalXStateFeatures */
   EnableProcessOptionalXStateFeatures(Features: number | bigint): number;
   /** kernel32.dll!EnableThreadProfiling */
-  EnableThreadProfiling(ThreadHandle: Win32Pointer, Flags: number, HardwareCounters: number | bigint, PerformanceDataHandle: Win32Pointer): number;
+  EnableThreadProfiling(
+    ThreadHandle: Win32Pointer,
+    Flags: number,
+    HardwareCounters: number | bigint,
+    PerformanceDataHandle: Win32Pointer,
+  ): number;
   /** kernel32.dll!EncodePointer */
   EncodePointer(Ptr: Win32Pointer): number | null;
   /** kernel32.dll!EncodeSystemPointer */
@@ -585,7 +1347,14 @@ interface Functions {
   /** kernel32.dll!EnumCalendarInfoExA */
   EnumCalendarInfoExA(lpCalInfoEnumProcEx: Win32Callback, Locale: number, Calendar: number, CalType: number): number;
   /** kernel32.dll!EnumCalendarInfoExEx */
-  EnumCalendarInfoExEx(pCalInfoEnumProcExEx: Win32Callback, lpLocaleName: string | Win32Pointer, Calendar: number, lpReserved: string | Win32Pointer, CalType: number, lParam: number | bigint): number;
+  EnumCalendarInfoExEx(
+    pCalInfoEnumProcExEx: Win32Callback,
+    lpLocaleName: string | Win32Pointer,
+    Calendar: number,
+    lpReserved: string | Win32Pointer,
+    CalType: number,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!EnumCalendarInfoExW */
   EnumCalendarInfoExW(lpCalInfoEnumProcEx: Win32Callback, Locale: number, Calendar: number, CalType: number): number;
   /** kernel32.dll!EnumCalendarInfoExW */
@@ -599,7 +1368,12 @@ interface Functions {
   /** kernel32.dll!EnumDateFormatsExA */
   EnumDateFormatsExA(lpDateFmtEnumProcEx: Win32Callback, Locale: number, dwFlags: number): number;
   /** kernel32.dll!EnumDateFormatsExEx */
-  EnumDateFormatsExEx(lpDateFmtEnumProcExEx: Win32Callback, lpLocaleName: string | Win32Pointer, dwFlags: number, lParam: number | bigint): number;
+  EnumDateFormatsExEx(
+    lpDateFmtEnumProcExEx: Win32Callback,
+    lpLocaleName: string | Win32Pointer,
+    dwFlags: number,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!EnumDateFormatsExW */
   EnumDateFormatsExW(lpDateFmtEnumProcEx: Win32Callback, Locale: number, dwFlags: number): number;
   /** kernel32.dll!EnumDateFormatsExW */
@@ -609,43 +1383,154 @@ interface Functions {
   /** kernel32.dll!EnumDateFormatsW */
   EnumDateFormats(lpDateFmtEnumProc: Win32Callback, Locale: number, dwFlags: number): number;
   /** kernel32.dll!EnumLanguageGroupLocalesA */
-  EnumLanguageGroupLocalesA(lpLangGroupLocaleEnumProc: Win32Callback, LanguageGroup: number, dwFlags: number, lParam: number | bigint): number;
+  EnumLanguageGroupLocalesA(
+    lpLangGroupLocaleEnumProc: Win32Callback,
+    LanguageGroup: number,
+    dwFlags: number,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!EnumLanguageGroupLocalesW */
-  EnumLanguageGroupLocalesW(lpLangGroupLocaleEnumProc: Win32Callback, LanguageGroup: number, dwFlags: number, lParam: number | bigint): number;
+  EnumLanguageGroupLocalesW(
+    lpLangGroupLocaleEnumProc: Win32Callback,
+    LanguageGroup: number,
+    dwFlags: number,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!EnumLanguageGroupLocalesW */
-  EnumLanguageGroupLocales(lpLangGroupLocaleEnumProc: Win32Callback, LanguageGroup: number, dwFlags: number, lParam: number | bigint): number;
+  EnumLanguageGroupLocales(
+    lpLangGroupLocaleEnumProc: Win32Callback,
+    LanguageGroup: number,
+    dwFlags: number,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!EnumResourceLanguagesA */
-  EnumResourceLanguagesA(hModule: Win32Pointer, lpType: string | Win32Pointer, lpName: string | Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint): number;
+  EnumResourceLanguagesA(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!EnumResourceLanguagesExA */
-  EnumResourceLanguagesExA(hModule: Win32Pointer, lpType: string | Win32Pointer, lpName: string | Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint, dwFlags: number, LangId: number): number;
+  EnumResourceLanguagesExA(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+    dwFlags: number,
+    LangId: number,
+  ): number;
   /** kernel32.dll!EnumResourceLanguagesExW */
-  EnumResourceLanguagesExW(hModule: Win32Pointer, lpType: string | Win32Pointer, lpName: string | Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint, dwFlags: number, LangId: number): number;
+  EnumResourceLanguagesExW(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+    dwFlags: number,
+    LangId: number,
+  ): number;
   /** kernel32.dll!EnumResourceLanguagesExW */
-  EnumResourceLanguagesEx(hModule: Win32Pointer, lpType: string | Win32Pointer, lpName: string | Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint, dwFlags: number, LangId: number): number;
+  EnumResourceLanguagesEx(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+    dwFlags: number,
+    LangId: number,
+  ): number;
   /** kernel32.dll!EnumResourceLanguagesW */
-  EnumResourceLanguagesW(hModule: Win32Pointer, lpType: string | Win32Pointer, lpName: string | Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint): number;
+  EnumResourceLanguagesW(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!EnumResourceLanguagesW */
-  EnumResourceLanguages(hModule: Win32Pointer, lpType: string | Win32Pointer, lpName: string | Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint): number;
+  EnumResourceLanguages(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!EnumResourceNamesA */
-  EnumResourceNamesA(hModule: Win32Pointer, lpType: string | Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint): number;
+  EnumResourceNamesA(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!EnumResourceNamesExA */
-  EnumResourceNamesExA(hModule: Win32Pointer, lpType: string | Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint, dwFlags: number, LangId: number): number;
+  EnumResourceNamesExA(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+    dwFlags: number,
+    LangId: number,
+  ): number;
   /** kernel32.dll!EnumResourceNamesExW */
-  EnumResourceNamesExW(hModule: Win32Pointer, lpType: string | Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint, dwFlags: number, LangId: number): number;
+  EnumResourceNamesExW(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+    dwFlags: number,
+    LangId: number,
+  ): number;
   /** kernel32.dll!EnumResourceNamesExW */
-  EnumResourceNamesEx(hModule: Win32Pointer, lpType: string | Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint, dwFlags: number, LangId: number): number;
+  EnumResourceNamesEx(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+    dwFlags: number,
+    LangId: number,
+  ): number;
   /** kernel32.dll!EnumResourceNamesW */
-  EnumResourceNamesW(hModule: Win32Pointer, lpType: string | Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint): number;
+  EnumResourceNamesW(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!EnumResourceNamesW */
-  EnumResourceNames(hModule: Win32Pointer, lpType: string | Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint): number;
+  EnumResourceNames(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!EnumResourceTypesA */
   EnumResourceTypesA(hModule: Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint): number;
   /** kernel32.dll!EnumResourceTypesExA */
-  EnumResourceTypesExA(hModule: Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint, dwFlags: number, LangId: number): number;
+  EnumResourceTypesExA(
+    hModule: Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+    dwFlags: number,
+    LangId: number,
+  ): number;
   /** kernel32.dll!EnumResourceTypesExW */
-  EnumResourceTypesExW(hModule: Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint, dwFlags: number, LangId: number): number;
+  EnumResourceTypesExW(
+    hModule: Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+    dwFlags: number,
+    LangId: number,
+  ): number;
   /** kernel32.dll!EnumResourceTypesExW */
-  EnumResourceTypesEx(hModule: Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint, dwFlags: number, LangId: number): number;
+  EnumResourceTypesEx(
+    hModule: Win32Pointer,
+    lpEnumFunc: Win32Callback,
+    lParam: number | bigint,
+    dwFlags: number,
+    LangId: number,
+  ): number;
   /** kernel32.dll!EnumResourceTypesW */
   EnumResourceTypesW(hModule: Win32Pointer, lpEnumFunc: Win32Callback, lParam: number | bigint): number;
   /** kernel32.dll!EnumResourceTypesW */
@@ -657,7 +1542,11 @@ interface Functions {
   /** kernel32.dll!EnumSystemCodePagesW */
   EnumSystemCodePages(lpCodePageEnumProc: Win32Callback, dwFlags: number): number;
   /** kernel32.dll!EnumSystemFirmwareTables */
-  EnumSystemFirmwareTables(FirmwareTableProviderSignature: number, pFirmwareTableEnumBuffer: Win32Pointer, BufferSize: number): number;
+  EnumSystemFirmwareTables(
+    FirmwareTableProviderSignature: number,
+    pFirmwareTableEnumBuffer: Win32Pointer,
+    BufferSize: number,
+  ): number;
   /** kernel32.dll!EnumSystemGeoID */
   EnumSystemGeoID(GeoClass: number, ParentGeoId: number, lpGeoEnumProc: Win32Callback): number;
   /** kernel32.dll!EnumSystemGeoNames */
@@ -671,7 +1560,12 @@ interface Functions {
   /** kernel32.dll!EnumSystemLocalesA */
   EnumSystemLocalesA(lpLocaleEnumProc: Win32Callback, dwFlags: number): number;
   /** kernel32.dll!EnumSystemLocalesEx */
-  EnumSystemLocalesEx(lpLocaleEnumProcEx: Win32Callback, dwFlags: number, lParam: number | bigint, lpReserved: Win32Pointer): number;
+  EnumSystemLocalesEx(
+    lpLocaleEnumProcEx: Win32Callback,
+    dwFlags: number,
+    lParam: number | bigint,
+    lpReserved: Win32Pointer,
+  ): number;
   /** kernel32.dll!EnumSystemLocalesW */
   EnumSystemLocalesW(lpLocaleEnumProc: Win32Callback, dwFlags: number): number;
   /** kernel32.dll!EnumSystemLocalesW */
@@ -679,7 +1573,12 @@ interface Functions {
   /** kernel32.dll!EnumTimeFormatsA */
   EnumTimeFormatsA(lpTimeFmtEnumProc: Win32Callback, Locale: number, dwFlags: number): number;
   /** kernel32.dll!EnumTimeFormatsEx */
-  EnumTimeFormatsEx(lpTimeFmtEnumProcEx: Win32Callback, lpLocaleName: string | Win32Pointer, dwFlags: number, lParam: number | bigint): number;
+  EnumTimeFormatsEx(
+    lpTimeFmtEnumProcEx: Win32Callback,
+    lpLocaleName: string | Win32Pointer,
+    dwFlags: number,
+    lParam: number | bigint,
+  ): number;
   /** kernel32.dll!EnumTimeFormatsW */
   EnumTimeFormatsW(lpTimeFmtEnumProc: Win32Callback, Locale: number, dwFlags: number): number;
   /** kernel32.dll!EnumTimeFormatsW */
@@ -727,21 +1626,69 @@ interface Functions {
   /** kernel32.dll!FileTimeToSystemTime */
   FileTimeToSystemTime(lpFileTime: Win32Pointer, lpSystemTime: Win32Pointer): number;
   /** kernel32.dll!FillConsoleOutputAttribute */
-  FillConsoleOutputAttribute(hConsoleOutput: Win32Pointer, wAttribute: number, nLength: number, dwWriteCoord: Win32StructInit, lpNumberOfAttrsWritten: Win32Pointer): number;
+  FillConsoleOutputAttribute(
+    hConsoleOutput: Win32Pointer,
+    wAttribute: number,
+    nLength: number,
+    dwWriteCoord: Win32StructInit,
+    lpNumberOfAttrsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!FillConsoleOutputCharacterA */
-  FillConsoleOutputCharacterA(hConsoleOutput: Win32Pointer, cCharacter: number, nLength: number, dwWriteCoord: Win32StructInit, lpNumberOfCharsWritten: Win32Pointer): number;
+  FillConsoleOutputCharacterA(
+    hConsoleOutput: Win32Pointer,
+    cCharacter: number,
+    nLength: number,
+    dwWriteCoord: Win32StructInit,
+    lpNumberOfCharsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!FillConsoleOutputCharacterW */
-  FillConsoleOutputCharacterW(hConsoleOutput: Win32Pointer, cCharacter: number, nLength: number, dwWriteCoord: Win32StructInit, lpNumberOfCharsWritten: Win32Pointer): number;
+  FillConsoleOutputCharacterW(
+    hConsoleOutput: Win32Pointer,
+    cCharacter: number,
+    nLength: number,
+    dwWriteCoord: Win32StructInit,
+    lpNumberOfCharsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!FillConsoleOutputCharacterW */
-  FillConsoleOutputCharacter(hConsoleOutput: Win32Pointer, cCharacter: number, nLength: number, dwWriteCoord: Win32StructInit, lpNumberOfCharsWritten: Win32Pointer): number;
+  FillConsoleOutputCharacter(
+    hConsoleOutput: Win32Pointer,
+    cCharacter: number,
+    nLength: number,
+    dwWriteCoord: Win32StructInit,
+    lpNumberOfCharsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!FindActCtxSectionGuid */
-  FindActCtxSectionGuid(dwFlags: number, lpExtensionGuid: Win32Pointer, ulSectionId: number, lpGuidToFind: Win32Pointer, ReturnedData: Win32Pointer): number;
+  FindActCtxSectionGuid(
+    dwFlags: number,
+    lpExtensionGuid: Win32Pointer,
+    ulSectionId: number,
+    lpGuidToFind: Win32Pointer,
+    ReturnedData: Win32Pointer,
+  ): number;
   /** kernel32.dll!FindActCtxSectionStringA */
-  FindActCtxSectionStringA(dwFlags: number, lpExtensionGuid: Win32Pointer, ulSectionId: number, lpStringToFind: string | Win32Pointer, ReturnedData: Win32Pointer): number;
+  FindActCtxSectionStringA(
+    dwFlags: number,
+    lpExtensionGuid: Win32Pointer,
+    ulSectionId: number,
+    lpStringToFind: string | Win32Pointer,
+    ReturnedData: Win32Pointer,
+  ): number;
   /** kernel32.dll!FindActCtxSectionStringW */
-  FindActCtxSectionStringW(dwFlags: number, lpExtensionGuid: Win32Pointer, ulSectionId: number, lpStringToFind: string | Win32Pointer, ReturnedData: Win32Pointer): number;
+  FindActCtxSectionStringW(
+    dwFlags: number,
+    lpExtensionGuid: Win32Pointer,
+    ulSectionId: number,
+    lpStringToFind: string | Win32Pointer,
+    ReturnedData: Win32Pointer,
+  ): number;
   /** kernel32.dll!FindActCtxSectionStringW */
-  FindActCtxSectionString(dwFlags: number, lpExtensionGuid: Win32Pointer, ulSectionId: number, lpStringToFind: string | Win32Pointer, ReturnedData: Win32Pointer): number;
+  FindActCtxSectionString(
+    dwFlags: number,
+    lpExtensionGuid: Win32Pointer,
+    ulSectionId: number,
+    lpStringToFind: string | Win32Pointer,
+    ReturnedData: Win32Pointer,
+  ): number;
   /** kernel32.dll!FindAtomA */
   FindAtomA(lpString: string | Win32Pointer): number;
   /** kernel32.dll!FindAtomW */
@@ -753,53 +1700,163 @@ interface Functions {
   /** kernel32.dll!FindCloseChangeNotification */
   FindCloseChangeNotification(hChangeHandle: Win32Pointer): number;
   /** kernel32.dll!FindFirstChangeNotificationA */
-  FindFirstChangeNotificationA(lpPathName: string | Win32Pointer, bWatchSubtree: number, dwNotifyFilter: number): number | null;
+  FindFirstChangeNotificationA(
+    lpPathName: string | Win32Pointer,
+    bWatchSubtree: number,
+    dwNotifyFilter: number,
+  ): number | null;
   /** kernel32.dll!FindFirstChangeNotificationW */
-  FindFirstChangeNotificationW(lpPathName: string | Win32Pointer, bWatchSubtree: number, dwNotifyFilter: number): number | null;
+  FindFirstChangeNotificationW(
+    lpPathName: string | Win32Pointer,
+    bWatchSubtree: number,
+    dwNotifyFilter: number,
+  ): number | null;
   /** kernel32.dll!FindFirstChangeNotificationW */
-  FindFirstChangeNotification(lpPathName: string | Win32Pointer, bWatchSubtree: number, dwNotifyFilter: number): number | null;
+  FindFirstChangeNotification(
+    lpPathName: string | Win32Pointer,
+    bWatchSubtree: number,
+    dwNotifyFilter: number,
+  ): number | null;
   /** kernel32.dll!FindFirstFileA */
   FindFirstFileA(lpFileName: string | Win32Pointer, lpFindFileData: Win32Pointer): number | null;
   /** kernel32.dll!FindFirstFileExA */
-  FindFirstFileExA(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFindFileData: Win32Pointer, fSearchOp: number, lpSearchFilter: Win32Pointer, dwAdditionalFlags: number): number | null;
+  FindFirstFileExA(
+    lpFileName: string | Win32Pointer,
+    fInfoLevelId: number,
+    lpFindFileData: Win32Pointer,
+    fSearchOp: number,
+    lpSearchFilter: Win32Pointer,
+    dwAdditionalFlags: number,
+  ): number | null;
   /** kernel32.dll!FindFirstFileExW */
-  FindFirstFileExW(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFindFileData: Win32Pointer, fSearchOp: number, lpSearchFilter: Win32Pointer, dwAdditionalFlags: number): number | null;
+  FindFirstFileExW(
+    lpFileName: string | Win32Pointer,
+    fInfoLevelId: number,
+    lpFindFileData: Win32Pointer,
+    fSearchOp: number,
+    lpSearchFilter: Win32Pointer,
+    dwAdditionalFlags: number,
+  ): number | null;
   /** kernel32.dll!FindFirstFileExW */
-  FindFirstFileEx(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFindFileData: Win32Pointer, fSearchOp: number, lpSearchFilter: Win32Pointer, dwAdditionalFlags: number): number | null;
+  FindFirstFileEx(
+    lpFileName: string | Win32Pointer,
+    fInfoLevelId: number,
+    lpFindFileData: Win32Pointer,
+    fSearchOp: number,
+    lpSearchFilter: Win32Pointer,
+    dwAdditionalFlags: number,
+  ): number | null;
   /** kernel32.dll!FindFirstFileNameTransactedW */
-  FindFirstFileNameTransactedW(lpFileName: string | Win32Pointer, dwFlags: number, StringLength: Win32Pointer, LinkName: string | Win32Pointer, hTransaction: Win32Pointer): number | null;
+  FindFirstFileNameTransactedW(
+    lpFileName: string | Win32Pointer,
+    dwFlags: number,
+    StringLength: Win32Pointer,
+    LinkName: string | Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!FindFirstFileNameW */
-  FindFirstFileNameW(lpFileName: string | Win32Pointer, dwFlags: number, StringLength: Win32Pointer, LinkName: string | Win32Pointer): number | null;
+  FindFirstFileNameW(
+    lpFileName: string | Win32Pointer,
+    dwFlags: number,
+    StringLength: Win32Pointer,
+    LinkName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!FindFirstFileTransactedA */
-  FindFirstFileTransactedA(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFindFileData: Win32Pointer, fSearchOp: number, lpSearchFilter: Win32Pointer, dwAdditionalFlags: number, hTransaction: Win32Pointer): number | null;
+  FindFirstFileTransactedA(
+    lpFileName: string | Win32Pointer,
+    fInfoLevelId: number,
+    lpFindFileData: Win32Pointer,
+    fSearchOp: number,
+    lpSearchFilter: Win32Pointer,
+    dwAdditionalFlags: number,
+    hTransaction: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!FindFirstFileTransactedW */
-  FindFirstFileTransactedW(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFindFileData: Win32Pointer, fSearchOp: number, lpSearchFilter: Win32Pointer, dwAdditionalFlags: number, hTransaction: Win32Pointer): number | null;
+  FindFirstFileTransactedW(
+    lpFileName: string | Win32Pointer,
+    fInfoLevelId: number,
+    lpFindFileData: Win32Pointer,
+    fSearchOp: number,
+    lpSearchFilter: Win32Pointer,
+    dwAdditionalFlags: number,
+    hTransaction: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!FindFirstFileTransactedW */
-  FindFirstFileTransacted(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFindFileData: Win32Pointer, fSearchOp: number, lpSearchFilter: Win32Pointer, dwAdditionalFlags: number, hTransaction: Win32Pointer): number | null;
+  FindFirstFileTransacted(
+    lpFileName: string | Win32Pointer,
+    fInfoLevelId: number,
+    lpFindFileData: Win32Pointer,
+    fSearchOp: number,
+    lpSearchFilter: Win32Pointer,
+    dwAdditionalFlags: number,
+    hTransaction: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!FindFirstFileW */
   FindFirstFileW(lpFileName: string | Win32Pointer, lpFindFileData: Win32Pointer): number | null;
   /** kernel32.dll!FindFirstFileW */
   FindFirstFile(lpFileName: string | Win32Pointer, lpFindFileData: Win32Pointer): number | null;
   /** kernel32.dll!FindFirstStreamTransactedW */
-  FindFirstStreamTransactedW(lpFileName: string | Win32Pointer, InfoLevel: number, lpFindStreamData: Win32Pointer, dwFlags: number, hTransaction: Win32Pointer): number | null;
+  FindFirstStreamTransactedW(
+    lpFileName: string | Win32Pointer,
+    InfoLevel: number,
+    lpFindStreamData: Win32Pointer,
+    dwFlags: number,
+    hTransaction: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!FindFirstStreamW */
-  FindFirstStreamW(lpFileName: string | Win32Pointer, InfoLevel: number, lpFindStreamData: Win32Pointer, dwFlags: number): number | null;
+  FindFirstStreamW(
+    lpFileName: string | Win32Pointer,
+    InfoLevel: number,
+    lpFindStreamData: Win32Pointer,
+    dwFlags: number,
+  ): number | null;
   /** kernel32.dll!FindFirstVolumeA */
   FindFirstVolumeA(lpszVolumeName: string | Win32Pointer, cchBufferLength: number): number | null;
   /** kernel32.dll!FindFirstVolumeMountPointA */
-  FindFirstVolumeMountPointA(lpszRootPathName: string | Win32Pointer, lpszVolumeMountPoint: string | Win32Pointer, cchBufferLength: number): number | null;
+  FindFirstVolumeMountPointA(
+    lpszRootPathName: string | Win32Pointer,
+    lpszVolumeMountPoint: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number | null;
   /** kernel32.dll!FindFirstVolumeMountPointW */
-  FindFirstVolumeMountPointW(lpszRootPathName: string | Win32Pointer, lpszVolumeMountPoint: string | Win32Pointer, cchBufferLength: number): number | null;
+  FindFirstVolumeMountPointW(
+    lpszRootPathName: string | Win32Pointer,
+    lpszVolumeMountPoint: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number | null;
   /** kernel32.dll!FindFirstVolumeMountPointW */
-  FindFirstVolumeMountPoint(lpszRootPathName: string | Win32Pointer, lpszVolumeMountPoint: string | Win32Pointer, cchBufferLength: number): number | null;
+  FindFirstVolumeMountPoint(
+    lpszRootPathName: string | Win32Pointer,
+    lpszVolumeMountPoint: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number | null;
   /** kernel32.dll!FindFirstVolumeW */
   FindFirstVolumeW(lpszVolumeName: string | Win32Pointer, cchBufferLength: number): number | null;
   /** kernel32.dll!FindFirstVolumeW */
   FindFirstVolume(lpszVolumeName: string | Win32Pointer, cchBufferLength: number): number | null;
   /** kernel32.dll!FindNLSString */
-  FindNLSString(Locale: number, dwFindNLSStringFlags: number, lpStringSource: string | Win32Pointer, cchSource: number, lpStringValue: string | Win32Pointer, cchValue: number, pcchFound: Win32Pointer): number;
+  FindNLSString(
+    Locale: number,
+    dwFindNLSStringFlags: number,
+    lpStringSource: string | Win32Pointer,
+    cchSource: number,
+    lpStringValue: string | Win32Pointer,
+    cchValue: number,
+    pcchFound: Win32Pointer,
+  ): number;
   /** kernel32.dll!FindNLSStringEx */
-  FindNLSStringEx(lpLocaleName: string | Win32Pointer, dwFindNLSStringFlags: number, lpStringSource: string | Win32Pointer, cchSource: number, lpStringValue: string | Win32Pointer, cchValue: number, pcchFound: Win32Pointer, lpVersionInformation: Win32Pointer, lpReserved: Win32Pointer, sortHandle: number | bigint): number;
+  FindNLSStringEx(
+    lpLocaleName: string | Win32Pointer,
+    dwFindNLSStringFlags: number,
+    lpStringSource: string | Win32Pointer,
+    cchSource: number,
+    lpStringValue: string | Win32Pointer,
+    cchValue: number,
+    pcchFound: Win32Pointer,
+    lpVersionInformation: Win32Pointer,
+    lpReserved: Win32Pointer,
+    sortHandle: number | bigint,
+  ): number;
   /** kernel32.dll!FindNextChangeNotification */
   FindNextChangeNotification(hChangeHandle: Win32Pointer): number;
   /** kernel32.dll!FindNextFileA */
@@ -815,31 +1872,73 @@ interface Functions {
   /** kernel32.dll!FindNextVolumeA */
   FindNextVolumeA(hFindVolume: Win32Pointer, lpszVolumeName: string | Win32Pointer, cchBufferLength: number): number;
   /** kernel32.dll!FindNextVolumeMountPointA */
-  FindNextVolumeMountPointA(hFindVolumeMountPoint: Win32Pointer, lpszVolumeMountPoint: string | Win32Pointer, cchBufferLength: number): number;
+  FindNextVolumeMountPointA(
+    hFindVolumeMountPoint: Win32Pointer,
+    lpszVolumeMountPoint: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number;
   /** kernel32.dll!FindNextVolumeMountPointW */
-  FindNextVolumeMountPointW(hFindVolumeMountPoint: Win32Pointer, lpszVolumeMountPoint: string | Win32Pointer, cchBufferLength: number): number;
+  FindNextVolumeMountPointW(
+    hFindVolumeMountPoint: Win32Pointer,
+    lpszVolumeMountPoint: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number;
   /** kernel32.dll!FindNextVolumeMountPointW */
-  FindNextVolumeMountPoint(hFindVolumeMountPoint: Win32Pointer, lpszVolumeMountPoint: string | Win32Pointer, cchBufferLength: number): number;
+  FindNextVolumeMountPoint(
+    hFindVolumeMountPoint: Win32Pointer,
+    lpszVolumeMountPoint: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number;
   /** kernel32.dll!FindNextVolumeW */
   FindNextVolumeW(hFindVolume: Win32Pointer, lpszVolumeName: string | Win32Pointer, cchBufferLength: number): number;
   /** kernel32.dll!FindNextVolumeW */
   FindNextVolume(hFindVolume: Win32Pointer, lpszVolumeName: string | Win32Pointer, cchBufferLength: number): number;
   /** kernel32.dll!FindPackagesByPackageFamily */
-  FindPackagesByPackageFamily(packageFamilyName: string | Win32Pointer, packageFilters: number, count: Win32Pointer, packageFullNames: Win32Pointer, bufferLength: Win32Pointer, buffer: string | Win32Pointer, packageProperties: Win32Pointer): number;
+  FindPackagesByPackageFamily(
+    packageFamilyName: string | Win32Pointer,
+    packageFilters: number,
+    count: Win32Pointer,
+    packageFullNames: Win32Pointer,
+    bufferLength: Win32Pointer,
+    buffer: string | Win32Pointer,
+    packageProperties: Win32Pointer,
+  ): number;
   /** kernel32.dll!FindResourceA */
   FindResourceA(hModule: Win32Pointer, lpName: string | Win32Pointer, lpType: string | Win32Pointer): number | null;
   /** kernel32.dll!FindResourceExA */
-  FindResourceExA(hModule: Win32Pointer, lpType: string | Win32Pointer, lpName: string | Win32Pointer, wLanguage: number): number | null;
+  FindResourceExA(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    wLanguage: number,
+  ): number | null;
   /** kernel32.dll!FindResourceExW */
-  FindResourceExW(hModule: Win32Pointer, lpType: string | Win32Pointer, lpName: string | Win32Pointer, wLanguage: number): number | null;
+  FindResourceExW(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    wLanguage: number,
+  ): number | null;
   /** kernel32.dll!FindResourceExW */
-  FindResourceEx(hModule: Win32Pointer, lpType: string | Win32Pointer, lpName: string | Win32Pointer, wLanguage: number): number | null;
+  FindResourceEx(
+    hModule: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    wLanguage: number,
+  ): number | null;
   /** kernel32.dll!FindResourceW */
   FindResourceW(hModule: Win32Pointer, lpName: string | Win32Pointer, lpType: string | Win32Pointer): number | null;
   /** kernel32.dll!FindResourceW */
   FindResource(hModule: Win32Pointer, lpName: string | Win32Pointer, lpType: string | Win32Pointer): number | null;
   /** kernel32.dll!FindStringOrdinal */
-  FindStringOrdinal(dwFindStringOrdinalFlags: number, lpStringSource: string | Win32Pointer, cchSource: number, lpStringValue: string | Win32Pointer, cchValue: number, bIgnoreCase: number): number;
+  FindStringOrdinal(
+    dwFindStringOrdinalFlags: number,
+    lpStringSource: string | Win32Pointer,
+    cchSource: number,
+    lpStringValue: string | Win32Pointer,
+    cchValue: number,
+    bIgnoreCase: number,
+  ): number;
   /** kernel32.dll!FindVolumeClose */
   FindVolumeClose(hFindVolume: Win32Pointer): number;
   /** kernel32.dll!FindVolumeMountPointClose */
@@ -865,19 +1964,66 @@ interface Functions {
   /** kernel32.dll!FlushViewOfFile */
   FlushViewOfFile(lpBaseAddress: Win32Pointer, dwNumberOfBytesToFlush: number | bigint): number;
   /** kernel32.dll!FoldStringA */
-  FoldStringA(dwMapFlags: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpDestStr: string | Win32Pointer, cchDest: number): number;
+  FoldStringA(
+    dwMapFlags: number,
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpDestStr: string | Win32Pointer,
+    cchDest: number,
+  ): number;
   /** kernel32.dll!FoldStringW */
-  FoldStringW(dwMapFlags: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpDestStr: string | Win32Pointer, cchDest: number): number;
+  FoldStringW(
+    dwMapFlags: number,
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpDestStr: string | Win32Pointer,
+    cchDest: number,
+  ): number;
   /** kernel32.dll!FoldStringW */
-  FoldString(dwMapFlags: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpDestStr: string | Win32Pointer, cchDest: number): number;
+  FoldString(
+    dwMapFlags: number,
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpDestStr: string | Win32Pointer,
+    cchDest: number,
+  ): number;
   /** kernel32.dll!FormatApplicationUserModelId */
-  FormatApplicationUserModelId(packageFamilyName: string | Win32Pointer, packageRelativeApplicationId: string | Win32Pointer, applicationUserModelIdLength: Win32Pointer, applicationUserModelId: string | Win32Pointer): number;
+  FormatApplicationUserModelId(
+    packageFamilyName: string | Win32Pointer,
+    packageRelativeApplicationId: string | Win32Pointer,
+    applicationUserModelIdLength: Win32Pointer,
+    applicationUserModelId: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!FormatMessageA */
-  FormatMessageA(dwFlags: number, lpSource: Win32Pointer, dwMessageId: number, dwLanguageId: number, lpBuffer: string | Win32Pointer, nSize: number, Arguments: Win32Pointer): number;
+  FormatMessageA(
+    dwFlags: number,
+    lpSource: Win32Pointer,
+    dwMessageId: number,
+    dwLanguageId: number,
+    lpBuffer: string | Win32Pointer,
+    nSize: number,
+    Arguments: Win32Pointer,
+  ): number;
   /** kernel32.dll!FormatMessageW */
-  FormatMessageW(dwFlags: number, lpSource: Win32Pointer, dwMessageId: number, dwLanguageId: number, lpBuffer: string | Win32Pointer, nSize: number, Arguments: Win32Pointer): number;
+  FormatMessageW(
+    dwFlags: number,
+    lpSource: Win32Pointer,
+    dwMessageId: number,
+    dwLanguageId: number,
+    lpBuffer: string | Win32Pointer,
+    nSize: number,
+    Arguments: Win32Pointer,
+  ): number;
   /** kernel32.dll!FormatMessageW */
-  FormatMessage(dwFlags: number, lpSource: Win32Pointer, dwMessageId: number, dwLanguageId: number, lpBuffer: string | Win32Pointer, nSize: number, Arguments: Win32Pointer): number;
+  FormatMessage(
+    dwFlags: number,
+    lpSource: Win32Pointer,
+    dwMessageId: number,
+    dwLanguageId: number,
+    lpBuffer: string | Win32Pointer,
+    nSize: number,
+    Arguments: Win32Pointer,
+  ): number;
   /** kernel32.dll!FreeConsole */
   FreeConsole(): number;
   /** kernel32.dll!FreeEnvironmentStringsA */
@@ -907,15 +2053,41 @@ interface Functions {
   /** kernel32.dll!GetActiveProcessorGroupCount */
   GetActiveProcessorGroupCount(): number;
   /** kernel32.dll!GetAppContainerAce */
-  GetAppContainerAce(Acl: Win32Pointer, StartingAceIndex: number, AppContainerAce: Win32Pointer, AppContainerAceIndex: Win32Pointer): number;
+  GetAppContainerAce(
+    Acl: Win32Pointer,
+    StartingAceIndex: number,
+    AppContainerAce: Win32Pointer,
+    AppContainerAceIndex: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetAppContainerNamedObjectPath */
-  GetAppContainerNamedObjectPath(Token: Win32Pointer, AppContainerSid: Win32Pointer, ObjectPathLength: number, ObjectPath: string | Win32Pointer, ReturnLength: Win32Pointer): number;
+  GetAppContainerNamedObjectPath(
+    Token: Win32Pointer,
+    AppContainerSid: Win32Pointer,
+    ObjectPathLength: number,
+    ObjectPath: string | Win32Pointer,
+    ReturnLength: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetApplicationRecoveryCallback */
-  GetApplicationRecoveryCallback(hProcess: Win32Pointer, pRecoveryCallback: Win32Pointer, ppvParameter: Win32Pointer, pdwPingInterval: Win32Pointer, pdwFlags: Win32Pointer): number;
+  GetApplicationRecoveryCallback(
+    hProcess: Win32Pointer,
+    pRecoveryCallback: Win32Pointer,
+    ppvParameter: Win32Pointer,
+    pdwPingInterval: Win32Pointer,
+    pdwFlags: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetApplicationRestartSettings */
-  GetApplicationRestartSettings(hProcess: Win32Pointer, pwzCommandline: string | Win32Pointer, pcchSize: Win32Pointer, pdwFlags: Win32Pointer): number;
+  GetApplicationRestartSettings(
+    hProcess: Win32Pointer,
+    pwzCommandline: string | Win32Pointer,
+    pcchSize: Win32Pointer,
+    pdwFlags: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetApplicationUserModelId */
-  GetApplicationUserModelId(hProcess: Win32Pointer, applicationUserModelIdLength: Win32Pointer, applicationUserModelId: string | Win32Pointer): number;
+  GetApplicationUserModelId(
+    hProcess: Win32Pointer,
+    applicationUserModelIdLength: Win32Pointer,
+    applicationUserModelId: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetAtomNameA */
   GetAtomNameA(nAtom: number, lpBuffer: string | Win32Pointer, nSize: number): number;
   /** kernel32.dll!GetAtomNameW */
@@ -937,19 +2109,66 @@ interface Functions {
   /** kernel32.dll!GetCPInfoExW */
   GetCPInfoEx(CodePage: number, dwFlags: number, lpCPInfoEx: Win32Pointer): number;
   /** kernel32.dll!GetCachedSigningLevel */
-  GetCachedSigningLevel(File: Win32Pointer, Flags: Win32Pointer, SigningLevel: Win32Pointer, Thumbprint: Win32Pointer, ThumbprintSize: Win32Pointer, ThumbprintAlgorithm: Win32Pointer): number;
+  GetCachedSigningLevel(
+    File: Win32Pointer,
+    Flags: Win32Pointer,
+    SigningLevel: Win32Pointer,
+    Thumbprint: Win32Pointer,
+    ThumbprintSize: Win32Pointer,
+    ThumbprintAlgorithm: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCalendarDateFormatEx */
-  GetCalendarDateFormatEx(lpszLocale: string | Win32Pointer, dwFlags: number, lpCalDateTime: Win32Pointer, lpFormat: string | Win32Pointer, lpDateStr: string | Win32Pointer, cchDate: number): number;
+  GetCalendarDateFormatEx(
+    lpszLocale: string | Win32Pointer,
+    dwFlags: number,
+    lpCalDateTime: Win32Pointer,
+    lpFormat: string | Win32Pointer,
+    lpDateStr: string | Win32Pointer,
+    cchDate: number,
+  ): number;
   /** kernel32.dll!GetCalendarInfoA */
-  GetCalendarInfoA(Locale: number, Calendar: number, CalType: number, lpCalData: string | Win32Pointer, cchData: number, lpValue: Win32Pointer): number;
+  GetCalendarInfoA(
+    Locale: number,
+    Calendar: number,
+    CalType: number,
+    lpCalData: string | Win32Pointer,
+    cchData: number,
+    lpValue: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCalendarInfoEx */
-  GetCalendarInfoEx(lpLocaleName: string | Win32Pointer, Calendar: number, lpReserved: string | Win32Pointer, CalType: number, lpCalData: string | Win32Pointer, cchData: number, lpValue: Win32Pointer): number;
+  GetCalendarInfoEx(
+    lpLocaleName: string | Win32Pointer,
+    Calendar: number,
+    lpReserved: string | Win32Pointer,
+    CalType: number,
+    lpCalData: string | Win32Pointer,
+    cchData: number,
+    lpValue: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCalendarInfoW */
-  GetCalendarInfoW(Locale: number, Calendar: number, CalType: number, lpCalData: string | Win32Pointer, cchData: number, lpValue: Win32Pointer): number;
+  GetCalendarInfoW(
+    Locale: number,
+    Calendar: number,
+    CalType: number,
+    lpCalData: string | Win32Pointer,
+    cchData: number,
+    lpValue: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCalendarInfoW */
-  GetCalendarInfo(Locale: number, Calendar: number, CalType: number, lpCalData: string | Win32Pointer, cchData: number, lpValue: Win32Pointer): number;
+  GetCalendarInfo(
+    Locale: number,
+    Calendar: number,
+    CalType: number,
+    lpCalData: string | Win32Pointer,
+    cchData: number,
+    lpValue: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCalendarSupportedDateRange */
-  GetCalendarSupportedDateRange(Calendar: number, lpCalMinDateTime: Win32Pointer, lpCalMaxDateTime: Win32Pointer): number;
+  GetCalendarSupportedDateRange(
+    Calendar: number,
+    lpCalMinDateTime: Win32Pointer,
+    lpCalMaxDateTime: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCommConfig */
   GetCommConfig(hCommDev: Win32Pointer, lpCC: Win32Pointer, lpdwSize: Win32Pointer): number;
   /** kernel32.dll!GetCommMask */
@@ -971,11 +2190,23 @@ interface Functions {
   /** kernel32.dll!GetCompressedFileSizeA */
   GetCompressedFileSizeA(lpFileName: string | Win32Pointer, lpFileSizeHigh: Win32Pointer): number;
   /** kernel32.dll!GetCompressedFileSizeTransactedA */
-  GetCompressedFileSizeTransactedA(lpFileName: string | Win32Pointer, lpFileSizeHigh: Win32Pointer, hTransaction: Win32Pointer): number;
+  GetCompressedFileSizeTransactedA(
+    lpFileName: string | Win32Pointer,
+    lpFileSizeHigh: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCompressedFileSizeTransactedW */
-  GetCompressedFileSizeTransactedW(lpFileName: string | Win32Pointer, lpFileSizeHigh: Win32Pointer, hTransaction: Win32Pointer): number;
+  GetCompressedFileSizeTransactedW(
+    lpFileName: string | Win32Pointer,
+    lpFileSizeHigh: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCompressedFileSizeTransactedW */
-  GetCompressedFileSizeTransacted(lpFileName: string | Win32Pointer, lpFileSizeHigh: Win32Pointer, hTransaction: Win32Pointer): number;
+  GetCompressedFileSizeTransacted(
+    lpFileName: string | Win32Pointer,
+    lpFileSizeHigh: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCompressedFileSizeW */
   GetCompressedFileSizeW(lpFileName: string | Win32Pointer, lpFileSizeHigh: Win32Pointer): number;
   /** kernel32.dll!GetCompressedFileSizeW */
@@ -993,7 +2224,12 @@ interface Functions {
   /** kernel32.dll!GetComputerNameW */
   GetComputerName(lpBuffer: string | Win32Pointer, nSize: Win32Pointer): number;
   /** kernel32.dll!GetConsoleAliasA */
-  GetConsoleAliasA(Source: string | Win32Pointer, TargetBuffer: string | Win32Pointer, TargetBufferLength: number, ExeName: string | Win32Pointer): number;
+  GetConsoleAliasA(
+    Source: string | Win32Pointer,
+    TargetBuffer: string | Win32Pointer,
+    TargetBufferLength: number,
+    ExeName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetConsoleAliasExesA */
   GetConsoleAliasExesA(ExeNameBuffer: string | Win32Pointer, ExeNameBufferLength: number): number;
   /** kernel32.dll!GetConsoleAliasExesLengthA */
@@ -1007,11 +2243,25 @@ interface Functions {
   /** kernel32.dll!GetConsoleAliasExesW */
   GetConsoleAliasExes(ExeNameBuffer: string | Win32Pointer, ExeNameBufferLength: number): number;
   /** kernel32.dll!GetConsoleAliasW */
-  GetConsoleAliasW(Source: string | Win32Pointer, TargetBuffer: string | Win32Pointer, TargetBufferLength: number, ExeName: string | Win32Pointer): number;
+  GetConsoleAliasW(
+    Source: string | Win32Pointer,
+    TargetBuffer: string | Win32Pointer,
+    TargetBufferLength: number,
+    ExeName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetConsoleAliasW */
-  GetConsoleAlias(Source: string | Win32Pointer, TargetBuffer: string | Win32Pointer, TargetBufferLength: number, ExeName: string | Win32Pointer): number;
+  GetConsoleAlias(
+    Source: string | Win32Pointer,
+    TargetBuffer: string | Win32Pointer,
+    TargetBufferLength: number,
+    ExeName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetConsoleAliasesA */
-  GetConsoleAliasesA(AliasBuffer: string | Win32Pointer, AliasBufferLength: number, ExeName: string | Win32Pointer): number;
+  GetConsoleAliasesA(
+    AliasBuffer: string | Win32Pointer,
+    AliasBufferLength: number,
+    ExeName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetConsoleAliasesLengthA */
   GetConsoleAliasesLengthA(ExeName: string | Win32Pointer): number;
   /** kernel32.dll!GetConsoleAliasesLengthW */
@@ -1019,15 +2269,27 @@ interface Functions {
   /** kernel32.dll!GetConsoleAliasesLengthW */
   GetConsoleAliasesLength(ExeName: string | Win32Pointer): number;
   /** kernel32.dll!GetConsoleAliasesW */
-  GetConsoleAliasesW(AliasBuffer: string | Win32Pointer, AliasBufferLength: number, ExeName: string | Win32Pointer): number;
+  GetConsoleAliasesW(
+    AliasBuffer: string | Win32Pointer,
+    AliasBufferLength: number,
+    ExeName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetConsoleAliasesW */
-  GetConsoleAliases(AliasBuffer: string | Win32Pointer, AliasBufferLength: number, ExeName: string | Win32Pointer): number;
+  GetConsoleAliases(
+    AliasBuffer: string | Win32Pointer,
+    AliasBufferLength: number,
+    ExeName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetConsoleCP */
   GetConsoleCP(): number;
   /** kernel32.dll!GetConsoleCharType */
   GetConsoleCharType(hConsole: Win32Pointer, coordCheck: Win32StructInit, pdwType: Win32Pointer): number;
   /** kernel32.dll!GetConsoleCommandHistoryA */
-  GetConsoleCommandHistoryA(Commands: string | Win32Pointer, CommandBufferLength: number, ExeName: string | Win32Pointer): number;
+  GetConsoleCommandHistoryA(
+    Commands: string | Win32Pointer,
+    CommandBufferLength: number,
+    ExeName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetConsoleCommandHistoryLengthA */
   GetConsoleCommandHistoryLengthA(ExeName: string | Win32Pointer): number;
   /** kernel32.dll!GetConsoleCommandHistoryLengthW */
@@ -1035,9 +2297,17 @@ interface Functions {
   /** kernel32.dll!GetConsoleCommandHistoryLengthW */
   GetConsoleCommandHistoryLength(ExeName: string | Win32Pointer): number;
   /** kernel32.dll!GetConsoleCommandHistoryW */
-  GetConsoleCommandHistoryW(Commands: string | Win32Pointer, CommandBufferLength: number, ExeName: string | Win32Pointer): number;
+  GetConsoleCommandHistoryW(
+    Commands: string | Win32Pointer,
+    CommandBufferLength: number,
+    ExeName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetConsoleCommandHistoryW */
-  GetConsoleCommandHistory(Commands: string | Win32Pointer, CommandBufferLength: number, ExeName: string | Win32Pointer): number;
+  GetConsoleCommandHistory(
+    Commands: string | Win32Pointer,
+    CommandBufferLength: number,
+    ExeName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetConsoleCursorInfo */
   GetConsoleCursorInfo(hConsoleOutput: Win32Pointer, lpConsoleCursorInfo: Win32Pointer): number;
   /** kernel32.dll!GetConsoleCursorMode */
@@ -1045,7 +2315,12 @@ interface Functions {
   /** kernel32.dll!GetConsoleDisplayMode */
   GetConsoleDisplayMode(lpModeFlags: Win32Pointer): number;
   /** kernel32.dll!GetConsoleFontInfo */
-  GetConsoleFontInfo(hConsoleOutput: Win32Pointer, bMaximumWindow: number, nLength: number, lpConsoleFontInfo: Win32Pointer): number;
+  GetConsoleFontInfo(
+    hConsoleOutput: Win32Pointer,
+    bMaximumWindow: number,
+    nLength: number,
+    lpConsoleFontInfo: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetConsoleFontSize */
   GetConsoleFontSize(hConsoleOutput: Win32Pointer, nFont: number): Win32Struct;
   /** kernel32.dll!GetConsoleHardwareState */
@@ -1089,21 +2364,60 @@ interface Functions {
   /** kernel32.dll!GetConsoleWindow */
   GetConsoleWindow(): number | null;
   /** kernel32.dll!GetCurrencyFormatA */
-  GetCurrencyFormatA(Locale: number, dwFlags: number, lpValue: string | Win32Pointer, lpFormat: Win32Pointer, lpCurrencyStr: string | Win32Pointer, cchCurrency: number): number;
+  GetCurrencyFormatA(
+    Locale: number,
+    dwFlags: number,
+    lpValue: string | Win32Pointer,
+    lpFormat: Win32Pointer,
+    lpCurrencyStr: string | Win32Pointer,
+    cchCurrency: number,
+  ): number;
   /** kernel32.dll!GetCurrencyFormatEx */
-  GetCurrencyFormatEx(lpLocaleName: string | Win32Pointer, dwFlags: number, lpValue: string | Win32Pointer, lpFormat: Win32Pointer, lpCurrencyStr: string | Win32Pointer, cchCurrency: number): number;
+  GetCurrencyFormatEx(
+    lpLocaleName: string | Win32Pointer,
+    dwFlags: number,
+    lpValue: string | Win32Pointer,
+    lpFormat: Win32Pointer,
+    lpCurrencyStr: string | Win32Pointer,
+    cchCurrency: number,
+  ): number;
   /** kernel32.dll!GetCurrencyFormatW */
-  GetCurrencyFormatW(Locale: number, dwFlags: number, lpValue: string | Win32Pointer, lpFormat: Win32Pointer, lpCurrencyStr: string | Win32Pointer, cchCurrency: number): number;
+  GetCurrencyFormatW(
+    Locale: number,
+    dwFlags: number,
+    lpValue: string | Win32Pointer,
+    lpFormat: Win32Pointer,
+    lpCurrencyStr: string | Win32Pointer,
+    cchCurrency: number,
+  ): number;
   /** kernel32.dll!GetCurrencyFormatW */
-  GetCurrencyFormat(Locale: number, dwFlags: number, lpValue: string | Win32Pointer, lpFormat: Win32Pointer, lpCurrencyStr: string | Win32Pointer, cchCurrency: number): number;
+  GetCurrencyFormat(
+    Locale: number,
+    dwFlags: number,
+    lpValue: string | Win32Pointer,
+    lpFormat: Win32Pointer,
+    lpCurrencyStr: string | Win32Pointer,
+    cchCurrency: number,
+  ): number;
   /** kernel32.dll!GetCurrentActCtx */
   GetCurrentActCtx(lphActCtx: Win32Pointer): number;
   /** kernel32.dll!GetCurrentApplicationUserModelId */
-  GetCurrentApplicationUserModelId(applicationUserModelIdLength: Win32Pointer, applicationUserModelId: string | Win32Pointer): number;
+  GetCurrentApplicationUserModelId(
+    applicationUserModelIdLength: Win32Pointer,
+    applicationUserModelId: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCurrentConsoleFont */
-  GetCurrentConsoleFont(hConsoleOutput: Win32Pointer, bMaximumWindow: number, lpConsoleCurrentFont: Win32Pointer): number;
+  GetCurrentConsoleFont(
+    hConsoleOutput: Win32Pointer,
+    bMaximumWindow: number,
+    lpConsoleCurrentFont: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCurrentConsoleFontEx */
-  GetCurrentConsoleFontEx(hConsoleOutput: Win32Pointer, bMaximumWindow: number, lpConsoleCurrentFontEx: Win32Pointer): number;
+  GetCurrentConsoleFontEx(
+    hConsoleOutput: Win32Pointer,
+    bMaximumWindow: number,
+    lpConsoleCurrentFontEx: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCurrentDirectoryA */
   GetCurrentDirectoryA(nBufferLength: number, lpBuffer: string | Win32Pointer): number;
   /** kernel32.dll!GetCurrentDirectoryW */
@@ -1119,7 +2433,13 @@ interface Functions {
   /** kernel32.dll!GetCurrentPackageInfo */
   GetCurrentPackageInfo(flags: number, bufferLength: Win32Pointer, buffer: Win32Pointer, count: Win32Pointer): number;
   /** kernel32.dll!GetCurrentPackageInfo3 */
-  GetCurrentPackageInfo3(flags: number, packageInfoType: number, bufferLength: Win32Pointer, buffer: Win32Pointer, count: Win32Pointer): number;
+  GetCurrentPackageInfo3(
+    flags: number,
+    packageInfoType: number,
+    bufferLength: Win32Pointer,
+    buffer: Win32Pointer,
+    count: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetCurrentPackagePath */
   GetCurrentPackagePath(pathLength: Win32Pointer, path: string | Win32Pointer): number;
   /** kernel32.dll!GetCurrentPackageVirtualizationContext */
@@ -1141,13 +2461,42 @@ interface Functions {
   /** kernel32.dll!GetCurrentUmsThread */
   GetCurrentUmsThread(): number | null;
   /** kernel32.dll!GetDateFormatA */
-  GetDateFormatA(Locale: number, dwFlags: number, lpDate: Win32Pointer, lpFormat: string | Win32Pointer, lpDateStr: string | Win32Pointer, cchDate: number): number;
+  GetDateFormatA(
+    Locale: number,
+    dwFlags: number,
+    lpDate: Win32Pointer,
+    lpFormat: string | Win32Pointer,
+    lpDateStr: string | Win32Pointer,
+    cchDate: number,
+  ): number;
   /** kernel32.dll!GetDateFormatEx */
-  GetDateFormatEx(lpLocaleName: string | Win32Pointer, dwFlags: number, lpDate: Win32Pointer, lpFormat: string | Win32Pointer, lpDateStr: string | Win32Pointer, cchDate: number, lpCalendar: string | Win32Pointer): number;
+  GetDateFormatEx(
+    lpLocaleName: string | Win32Pointer,
+    dwFlags: number,
+    lpDate: Win32Pointer,
+    lpFormat: string | Win32Pointer,
+    lpDateStr: string | Win32Pointer,
+    cchDate: number,
+    lpCalendar: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetDateFormatW */
-  GetDateFormatW(Locale: number, dwFlags: number, lpDate: Win32Pointer, lpFormat: string | Win32Pointer, lpDateStr: string | Win32Pointer, cchDate: number): number;
+  GetDateFormatW(
+    Locale: number,
+    dwFlags: number,
+    lpDate: Win32Pointer,
+    lpFormat: string | Win32Pointer,
+    lpDateStr: string | Win32Pointer,
+    cchDate: number,
+  ): number;
   /** kernel32.dll!GetDateFormatW */
-  GetDateFormat(Locale: number, dwFlags: number, lpDate: Win32Pointer, lpFormat: string | Win32Pointer, lpDateStr: string | Win32Pointer, cchDate: number): number;
+  GetDateFormat(
+    Locale: number,
+    dwFlags: number,
+    lpDate: Win32Pointer,
+    lpFormat: string | Win32Pointer,
+    lpDateStr: string | Win32Pointer,
+    cchDate: number,
+  ): number;
   /** kernel32.dll!GetDefaultCommConfigA */
   GetDefaultCommConfigA(lpszName: string | Win32Pointer, lpCC: Win32Pointer, lpdwSize: Win32Pointer): number;
   /** kernel32.dll!GetDefaultCommConfigW */
@@ -1157,17 +2506,50 @@ interface Functions {
   /** kernel32.dll!GetDevicePowerState */
   GetDevicePowerState(hDevice: Win32Pointer, pfOn: Win32Pointer): number;
   /** kernel32.dll!GetDiskFreeSpaceA */
-  GetDiskFreeSpaceA(lpRootPathName: string | Win32Pointer, lpSectorsPerCluster: Win32Pointer, lpBytesPerSector: Win32Pointer, lpNumberOfFreeClusters: Win32Pointer, lpTotalNumberOfClusters: Win32Pointer): number;
+  GetDiskFreeSpaceA(
+    lpRootPathName: string | Win32Pointer,
+    lpSectorsPerCluster: Win32Pointer,
+    lpBytesPerSector: Win32Pointer,
+    lpNumberOfFreeClusters: Win32Pointer,
+    lpTotalNumberOfClusters: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetDiskFreeSpaceExA */
-  GetDiskFreeSpaceExA(lpDirectoryName: string | Win32Pointer, lpFreeBytesAvailableToCaller: Win32Pointer, lpTotalNumberOfBytes: Win32Pointer, lpTotalNumberOfFreeBytes: Win32Pointer): number;
+  GetDiskFreeSpaceExA(
+    lpDirectoryName: string | Win32Pointer,
+    lpFreeBytesAvailableToCaller: Win32Pointer,
+    lpTotalNumberOfBytes: Win32Pointer,
+    lpTotalNumberOfFreeBytes: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetDiskFreeSpaceExW */
-  GetDiskFreeSpaceExW(lpDirectoryName: string | Win32Pointer, lpFreeBytesAvailableToCaller: Win32Pointer, lpTotalNumberOfBytes: Win32Pointer, lpTotalNumberOfFreeBytes: Win32Pointer): number;
+  GetDiskFreeSpaceExW(
+    lpDirectoryName: string | Win32Pointer,
+    lpFreeBytesAvailableToCaller: Win32Pointer,
+    lpTotalNumberOfBytes: Win32Pointer,
+    lpTotalNumberOfFreeBytes: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetDiskFreeSpaceExW */
-  GetDiskFreeSpaceEx(lpDirectoryName: string | Win32Pointer, lpFreeBytesAvailableToCaller: Win32Pointer, lpTotalNumberOfBytes: Win32Pointer, lpTotalNumberOfFreeBytes: Win32Pointer): number;
+  GetDiskFreeSpaceEx(
+    lpDirectoryName: string | Win32Pointer,
+    lpFreeBytesAvailableToCaller: Win32Pointer,
+    lpTotalNumberOfBytes: Win32Pointer,
+    lpTotalNumberOfFreeBytes: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetDiskFreeSpaceW */
-  GetDiskFreeSpaceW(lpRootPathName: string | Win32Pointer, lpSectorsPerCluster: Win32Pointer, lpBytesPerSector: Win32Pointer, lpNumberOfFreeClusters: Win32Pointer, lpTotalNumberOfClusters: Win32Pointer): number;
+  GetDiskFreeSpaceW(
+    lpRootPathName: string | Win32Pointer,
+    lpSectorsPerCluster: Win32Pointer,
+    lpBytesPerSector: Win32Pointer,
+    lpNumberOfFreeClusters: Win32Pointer,
+    lpTotalNumberOfClusters: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetDiskFreeSpaceW */
-  GetDiskFreeSpace(lpRootPathName: string | Win32Pointer, lpSectorsPerCluster: Win32Pointer, lpBytesPerSector: Win32Pointer, lpNumberOfFreeClusters: Win32Pointer, lpTotalNumberOfClusters: Win32Pointer): number;
+  GetDiskFreeSpace(
+    lpRootPathName: string | Win32Pointer,
+    lpSectorsPerCluster: Win32Pointer,
+    lpBytesPerSector: Win32Pointer,
+    lpNumberOfFreeClusters: Win32Pointer,
+    lpTotalNumberOfClusters: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetDiskSpaceInformationA */
   GetDiskSpaceInformationA(rootPath: string | Win32Pointer, diskSpaceInfo: Win32Pointer): number;
   /** kernel32.dll!GetDiskSpaceInformationW */
@@ -1187,9 +2569,25 @@ interface Functions {
   /** kernel32.dll!GetDriveTypeW */
   GetDriveType(lpRootPathName: string | Win32Pointer): number;
   /** kernel32.dll!GetDurationFormat */
-  GetDurationFormat(Locale: number, dwFlags: number, lpDuration: Win32Pointer, ullDuration: number | bigint, lpFormat: string | Win32Pointer, lpDurationStr: string | Win32Pointer, cchDuration: number): number;
+  GetDurationFormat(
+    Locale: number,
+    dwFlags: number,
+    lpDuration: Win32Pointer,
+    ullDuration: number | bigint,
+    lpFormat: string | Win32Pointer,
+    lpDurationStr: string | Win32Pointer,
+    cchDuration: number,
+  ): number;
   /** kernel32.dll!GetDurationFormatEx */
-  GetDurationFormatEx(lpLocaleName: string | Win32Pointer, dwFlags: number, lpDuration: Win32Pointer, ullDuration: number | bigint, lpFormat: string | Win32Pointer, lpDurationStr: string | Win32Pointer, cchDuration: number): number;
+  GetDurationFormatEx(
+    lpLocaleName: string | Win32Pointer,
+    dwFlags: number,
+    lpDuration: Win32Pointer,
+    ullDuration: number | bigint,
+    lpFormat: string | Win32Pointer,
+    lpDurationStr: string | Win32Pointer,
+    cchDuration: number,
+  ): number;
   /** kernel32.dll!GetDynamicTimeZoneInformation */
   GetDynamicTimeZoneInformation(pTimeZoneInformation: Win32Pointer): number;
   /** kernel32.dll!GetEnabledXStateFeatures */
@@ -1219,81 +2617,243 @@ interface Functions {
   /** kernel32.dll!GetFileAttributesA */
   GetFileAttributesA(lpFileName: string | Win32Pointer): number;
   /** kernel32.dll!GetFileAttributesExA */
-  GetFileAttributesExA(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFileInformation: Win32Pointer): number;
+  GetFileAttributesExA(
+    lpFileName: string | Win32Pointer,
+    fInfoLevelId: number,
+    lpFileInformation: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFileAttributesExW */
-  GetFileAttributesExW(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFileInformation: Win32Pointer): number;
+  GetFileAttributesExW(
+    lpFileName: string | Win32Pointer,
+    fInfoLevelId: number,
+    lpFileInformation: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFileAttributesExW */
   GetFileAttributesEx(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFileInformation: Win32Pointer): number;
   /** kernel32.dll!GetFileAttributesTransactedA */
-  GetFileAttributesTransactedA(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFileInformation: Win32Pointer, hTransaction: Win32Pointer): number;
+  GetFileAttributesTransactedA(
+    lpFileName: string | Win32Pointer,
+    fInfoLevelId: number,
+    lpFileInformation: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFileAttributesTransactedW */
-  GetFileAttributesTransactedW(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFileInformation: Win32Pointer, hTransaction: Win32Pointer): number;
+  GetFileAttributesTransactedW(
+    lpFileName: string | Win32Pointer,
+    fInfoLevelId: number,
+    lpFileInformation: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFileAttributesTransactedW */
-  GetFileAttributesTransacted(lpFileName: string | Win32Pointer, fInfoLevelId: number, lpFileInformation: Win32Pointer, hTransaction: Win32Pointer): number;
+  GetFileAttributesTransacted(
+    lpFileName: string | Win32Pointer,
+    fInfoLevelId: number,
+    lpFileInformation: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFileAttributesW */
   GetFileAttributesW(lpFileName: string | Win32Pointer): number;
   /** kernel32.dll!GetFileAttributesW */
   GetFileAttributes(lpFileName: string | Win32Pointer): number;
   /** kernel32.dll!GetFileBandwidthReservation */
-  GetFileBandwidthReservation(hFile: Win32Pointer, lpPeriodMilliseconds: Win32Pointer, lpBytesPerPeriod: Win32Pointer, pDiscardable: Win32Pointer, lpTransferSize: Win32Pointer, lpNumOutstandingRequests: Win32Pointer): number;
+  GetFileBandwidthReservation(
+    hFile: Win32Pointer,
+    lpPeriodMilliseconds: Win32Pointer,
+    lpBytesPerPeriod: Win32Pointer,
+    pDiscardable: Win32Pointer,
+    lpTransferSize: Win32Pointer,
+    lpNumOutstandingRequests: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFileInformationByHandle */
   GetFileInformationByHandle(hFile: Win32Pointer, lpFileInformation: Win32Pointer): number;
   /** kernel32.dll!GetFileInformationByHandleEx */
-  GetFileInformationByHandleEx(hFile: Win32Pointer, FileInformationClass: number, lpFileInformation: Win32Pointer, dwBufferSize: number): number;
+  GetFileInformationByHandleEx(
+    hFile: Win32Pointer,
+    FileInformationClass: number,
+    lpFileInformation: Win32Pointer,
+    dwBufferSize: number,
+  ): number;
   /** kernel32.dll!GetFileInformationByName */
-  GetFileInformationByName(FileName: string | Win32Pointer, FileInformationClass: number, FileInfoBuffer: Win32Pointer, FileInfoBufferSize: number): number;
+  GetFileInformationByName(
+    FileName: string | Win32Pointer,
+    FileInformationClass: number,
+    FileInfoBuffer: Win32Pointer,
+    FileInfoBufferSize: number,
+  ): number;
   /** kernel32.dll!GetFileMUIInfo */
-  GetFileMUIInfo(dwFlags: number, pcwszFilePath: string | Win32Pointer, pFileMUIInfo: Win32Pointer, pcbFileMUIInfo: Win32Pointer): number;
+  GetFileMUIInfo(
+    dwFlags: number,
+    pcwszFilePath: string | Win32Pointer,
+    pFileMUIInfo: Win32Pointer,
+    pcbFileMUIInfo: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFileMUIPath */
-  GetFileMUIPath(dwFlags: number, pcwszFilePath: string | Win32Pointer, pwszLanguage: string | Win32Pointer, pcchLanguage: Win32Pointer, pwszFileMUIPath: string | Win32Pointer, pcchFileMUIPath: Win32Pointer, pululEnumerator: Win32Pointer): number;
+  GetFileMUIPath(
+    dwFlags: number,
+    pcwszFilePath: string | Win32Pointer,
+    pwszLanguage: string | Win32Pointer,
+    pcchLanguage: Win32Pointer,
+    pwszFileMUIPath: string | Win32Pointer,
+    pcchFileMUIPath: Win32Pointer,
+    pululEnumerator: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFileSize */
   GetFileSize(hFile: Win32Pointer, lpFileSizeHigh: Win32Pointer): number;
   /** kernel32.dll!GetFileSizeEx */
   GetFileSizeEx(hFile: Win32Pointer, lpFileSize: Win32Pointer): number;
   /** kernel32.dll!GetFileTime */
-  GetFileTime(hFile: Win32Pointer, lpCreationTime: Win32Pointer, lpLastAccessTime: Win32Pointer, lpLastWriteTime: Win32Pointer): number;
+  GetFileTime(
+    hFile: Win32Pointer,
+    lpCreationTime: Win32Pointer,
+    lpLastAccessTime: Win32Pointer,
+    lpLastWriteTime: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFileType */
   GetFileType(hFile: Win32Pointer): number;
   /** kernel32.dll!GetFinalPathNameByHandleA */
-  GetFinalPathNameByHandleA(hFile: Win32Pointer, lpszFilePath: string | Win32Pointer, cchFilePath: number, dwFlags: number): number;
+  GetFinalPathNameByHandleA(
+    hFile: Win32Pointer,
+    lpszFilePath: string | Win32Pointer,
+    cchFilePath: number,
+    dwFlags: number,
+  ): number;
   /** kernel32.dll!GetFinalPathNameByHandleW */
-  GetFinalPathNameByHandleW(hFile: Win32Pointer, lpszFilePath: string | Win32Pointer, cchFilePath: number, dwFlags: number): number;
+  GetFinalPathNameByHandleW(
+    hFile: Win32Pointer,
+    lpszFilePath: string | Win32Pointer,
+    cchFilePath: number,
+    dwFlags: number,
+  ): number;
   /** kernel32.dll!GetFinalPathNameByHandleW */
-  GetFinalPathNameByHandle(hFile: Win32Pointer, lpszFilePath: string | Win32Pointer, cchFilePath: number, dwFlags: number): number;
+  GetFinalPathNameByHandle(
+    hFile: Win32Pointer,
+    lpszFilePath: string | Win32Pointer,
+    cchFilePath: number,
+    dwFlags: number,
+  ): number;
   /** kernel32.dll!GetFirmwareEnvironmentVariableA */
-  GetFirmwareEnvironmentVariableA(lpName: string | Win32Pointer, lpGuid: string | Win32Pointer, pBuffer: Win32Pointer, nSize: number): number;
+  GetFirmwareEnvironmentVariableA(
+    lpName: string | Win32Pointer,
+    lpGuid: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!GetFirmwareEnvironmentVariableExA */
-  GetFirmwareEnvironmentVariableExA(lpName: string | Win32Pointer, lpGuid: string | Win32Pointer, pBuffer: Win32Pointer, nSize: number, pdwAttribubutes: Win32Pointer): number;
+  GetFirmwareEnvironmentVariableExA(
+    lpName: string | Win32Pointer,
+    lpGuid: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+    nSize: number,
+    pdwAttribubutes: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFirmwareEnvironmentVariableExW */
-  GetFirmwareEnvironmentVariableExW(lpName: string | Win32Pointer, lpGuid: string | Win32Pointer, pBuffer: Win32Pointer, nSize: number, pdwAttribubutes: Win32Pointer): number;
+  GetFirmwareEnvironmentVariableExW(
+    lpName: string | Win32Pointer,
+    lpGuid: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+    nSize: number,
+    pdwAttribubutes: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFirmwareEnvironmentVariableExW */
-  GetFirmwareEnvironmentVariableEx(lpName: string | Win32Pointer, lpGuid: string | Win32Pointer, pBuffer: Win32Pointer, nSize: number, pdwAttribubutes: Win32Pointer): number;
+  GetFirmwareEnvironmentVariableEx(
+    lpName: string | Win32Pointer,
+    lpGuid: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+    nSize: number,
+    pdwAttribubutes: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFirmwareEnvironmentVariableW */
-  GetFirmwareEnvironmentVariableW(lpName: string | Win32Pointer, lpGuid: string | Win32Pointer, pBuffer: Win32Pointer, nSize: number): number;
+  GetFirmwareEnvironmentVariableW(
+    lpName: string | Win32Pointer,
+    lpGuid: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!GetFirmwareEnvironmentVariableW */
-  GetFirmwareEnvironmentVariable(lpName: string | Win32Pointer, lpGuid: string | Win32Pointer, pBuffer: Win32Pointer, nSize: number): number;
+  GetFirmwareEnvironmentVariable(
+    lpName: string | Win32Pointer,
+    lpGuid: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!GetFirmwareType */
   GetFirmwareType(FirmwareType: Win32Pointer): number;
   /** kernel32.dll!GetFullPathNameA */
-  GetFullPathNameA(lpFileName: string | Win32Pointer, nBufferLength: number, lpBuffer: string | Win32Pointer, lpFilePart: Win32Pointer): number;
+  GetFullPathNameA(
+    lpFileName: string | Win32Pointer,
+    nBufferLength: number,
+    lpBuffer: string | Win32Pointer,
+    lpFilePart: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFullPathNameTransactedA */
-  GetFullPathNameTransactedA(lpFileName: string | Win32Pointer, nBufferLength: number, lpBuffer: string | Win32Pointer, lpFilePart: Win32Pointer, hTransaction: Win32Pointer): number;
+  GetFullPathNameTransactedA(
+    lpFileName: string | Win32Pointer,
+    nBufferLength: number,
+    lpBuffer: string | Win32Pointer,
+    lpFilePart: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFullPathNameTransactedW */
-  GetFullPathNameTransactedW(lpFileName: string | Win32Pointer, nBufferLength: number, lpBuffer: string | Win32Pointer, lpFilePart: Win32Pointer, hTransaction: Win32Pointer): number;
+  GetFullPathNameTransactedW(
+    lpFileName: string | Win32Pointer,
+    nBufferLength: number,
+    lpBuffer: string | Win32Pointer,
+    lpFilePart: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFullPathNameTransactedW */
-  GetFullPathNameTransacted(lpFileName: string | Win32Pointer, nBufferLength: number, lpBuffer: string | Win32Pointer, lpFilePart: Win32Pointer, hTransaction: Win32Pointer): number;
+  GetFullPathNameTransacted(
+    lpFileName: string | Win32Pointer,
+    nBufferLength: number,
+    lpBuffer: string | Win32Pointer,
+    lpFilePart: Win32Pointer,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFullPathNameW */
-  GetFullPathNameW(lpFileName: string | Win32Pointer, nBufferLength: number, lpBuffer: string | Win32Pointer, lpFilePart: Win32Pointer): number;
+  GetFullPathNameW(
+    lpFileName: string | Win32Pointer,
+    nBufferLength: number,
+    lpBuffer: string | Win32Pointer,
+    lpFilePart: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetFullPathNameW */
-  GetFullPathName(lpFileName: string | Win32Pointer, nBufferLength: number, lpBuffer: string | Win32Pointer, lpFilePart: Win32Pointer): number;
+  GetFullPathName(
+    lpFileName: string | Win32Pointer,
+    nBufferLength: number,
+    lpBuffer: string | Win32Pointer,
+    lpFilePart: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetGeoInfoA */
-  GetGeoInfoA(Location: number, GeoType: number, lpGeoData: string | Win32Pointer, cchData: number, LangId: number): number;
+  GetGeoInfoA(
+    Location: number,
+    GeoType: number,
+    lpGeoData: string | Win32Pointer,
+    cchData: number,
+    LangId: number,
+  ): number;
   /** kernel32.dll!GetGeoInfoEx */
-  GetGeoInfoEx(location: string | Win32Pointer, geoType: number, geoData: string | Win32Pointer, geoDataCount: number): number;
+  GetGeoInfoEx(
+    location: string | Win32Pointer,
+    geoType: number,
+    geoData: string | Win32Pointer,
+    geoDataCount: number,
+  ): number;
   /** kernel32.dll!GetGeoInfoW */
-  GetGeoInfoW(Location: number, GeoType: number, lpGeoData: string | Win32Pointer, cchData: number, LangId: number): number;
+  GetGeoInfoW(
+    Location: number,
+    GeoType: number,
+    lpGeoData: string | Win32Pointer,
+    cchData: number,
+    LangId: number,
+  ): number;
   /** kernel32.dll!GetGeoInfoW */
-  GetGeoInfo(Location: number, GeoType: number, lpGeoData: string | Win32Pointer, cchData: number, LangId: number): number;
+  GetGeoInfo(
+    Location: number,
+    GeoType: number,
+    lpGeoData: string | Win32Pointer,
+    cchData: number,
+    LangId: number,
+  ): number;
   /** kernel32.dll!GetHandleInformation */
   GetHandleInformation(hObject: Win32Pointer, lpdwFlags: Win32Pointer): number;
   /** kernel32.dll!GetLargePageMinimum */
@@ -1307,7 +2867,12 @@ interface Functions {
   /** kernel32.dll!GetLocaleInfoA */
   GetLocaleInfoA(Locale: number, LCType: number, lpLCData: string | Win32Pointer, cchData: number): number;
   /** kernel32.dll!GetLocaleInfoEx */
-  GetLocaleInfoEx(lpLocaleName: string | Win32Pointer, LCType: number, lpLCData: string | Win32Pointer, cchData: number): number;
+  GetLocaleInfoEx(
+    lpLocaleName: string | Win32Pointer,
+    LCType: number,
+    lpLCData: string | Win32Pointer,
+    cchData: number,
+  ): number;
   /** kernel32.dll!GetLocaleInfoW */
   GetLocaleInfoW(Locale: number, LCType: number, lpLCData: string | Win32Pointer, cchData: number): number;
   /** kernel32.dll!GetLocaleInfoW */
@@ -1323,23 +2888,56 @@ interface Functions {
   /** kernel32.dll!GetLogicalProcessorInformation */
   GetLogicalProcessorInformation(Buffer: Win32Pointer, ReturnedLength: Win32Pointer): number;
   /** kernel32.dll!GetLogicalProcessorInformationEx */
-  GetLogicalProcessorInformationEx(RelationshipType: number, Buffer: Win32Pointer, ReturnedLength: Win32Pointer): number;
+  GetLogicalProcessorInformationEx(
+    RelationshipType: number,
+    Buffer: Win32Pointer,
+    ReturnedLength: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetLongPathNameA */
-  GetLongPathNameA(lpszShortPath: string | Win32Pointer, lpszLongPath: string | Win32Pointer, cchBuffer: number): number;
+  GetLongPathNameA(
+    lpszShortPath: string | Win32Pointer,
+    lpszLongPath: string | Win32Pointer,
+    cchBuffer: number,
+  ): number;
   /** kernel32.dll!GetLongPathNameTransactedA */
-  GetLongPathNameTransactedA(lpszShortPath: string | Win32Pointer, lpszLongPath: string | Win32Pointer, cchBuffer: number, hTransaction: Win32Pointer): number;
+  GetLongPathNameTransactedA(
+    lpszShortPath: string | Win32Pointer,
+    lpszLongPath: string | Win32Pointer,
+    cchBuffer: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetLongPathNameTransactedW */
-  GetLongPathNameTransactedW(lpszShortPath: string | Win32Pointer, lpszLongPath: string | Win32Pointer, cchBuffer: number, hTransaction: Win32Pointer): number;
+  GetLongPathNameTransactedW(
+    lpszShortPath: string | Win32Pointer,
+    lpszLongPath: string | Win32Pointer,
+    cchBuffer: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetLongPathNameTransactedW */
-  GetLongPathNameTransacted(lpszShortPath: string | Win32Pointer, lpszLongPath: string | Win32Pointer, cchBuffer: number, hTransaction: Win32Pointer): number;
+  GetLongPathNameTransacted(
+    lpszShortPath: string | Win32Pointer,
+    lpszLongPath: string | Win32Pointer,
+    cchBuffer: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetLongPathNameW */
-  GetLongPathNameW(lpszShortPath: string | Win32Pointer, lpszLongPath: string | Win32Pointer, cchBuffer: number): number;
+  GetLongPathNameW(
+    lpszShortPath: string | Win32Pointer,
+    lpszLongPath: string | Win32Pointer,
+    cchBuffer: number,
+  ): number;
   /** kernel32.dll!GetLongPathNameW */
   GetLongPathName(lpszShortPath: string | Win32Pointer, lpszLongPath: string | Win32Pointer, cchBuffer: number): number;
   /** kernel32.dll!GetMachineTypeAttributes */
   GetMachineTypeAttributes(Machine: number, MachineTypeAttributes: Win32Pointer): number;
   /** kernel32.dll!GetMailslotInfo */
-  GetMailslotInfo(hMailslot: Win32Pointer, lpMaxMessageSize: Win32Pointer, lpNextSize: Win32Pointer, lpMessageCount: Win32Pointer, lpReadTimeout: Win32Pointer): number;
+  GetMailslotInfo(
+    hMailslot: Win32Pointer,
+    lpMaxMessageSize: Win32Pointer,
+    lpNextSize: Win32Pointer,
+    lpMessageCount: Win32Pointer,
+    lpReadTimeout: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetMaximumProcessorCount */
   GetMaximumProcessorCount(GroupNumber: number): number;
   /** kernel32.dll!GetMaximumProcessorGroupCount */
@@ -1369,23 +2967,65 @@ interface Functions {
   /** kernel32.dll!GetNLSVersionEx */
   GetNLSVersionEx(arg0: number, lpLocaleName: string | Win32Pointer, lpVersionInformation: Win32Pointer): number;
   /** kernel32.dll!GetNamedPipeClientComputerNameA */
-  GetNamedPipeClientComputerNameA(Pipe: Win32Pointer, ClientComputerName: string | Win32Pointer, ClientComputerNameLength: number): number;
+  GetNamedPipeClientComputerNameA(
+    Pipe: Win32Pointer,
+    ClientComputerName: string | Win32Pointer,
+    ClientComputerNameLength: number,
+  ): number;
   /** kernel32.dll!GetNamedPipeClientComputerNameW */
-  GetNamedPipeClientComputerNameW(Pipe: Win32Pointer, ClientComputerName: string | Win32Pointer, ClientComputerNameLength: number): number;
+  GetNamedPipeClientComputerNameW(
+    Pipe: Win32Pointer,
+    ClientComputerName: string | Win32Pointer,
+    ClientComputerNameLength: number,
+  ): number;
   /** kernel32.dll!GetNamedPipeClientComputerNameW */
-  GetNamedPipeClientComputerName(Pipe: Win32Pointer, ClientComputerName: string | Win32Pointer, ClientComputerNameLength: number): number;
+  GetNamedPipeClientComputerName(
+    Pipe: Win32Pointer,
+    ClientComputerName: string | Win32Pointer,
+    ClientComputerNameLength: number,
+  ): number;
   /** kernel32.dll!GetNamedPipeClientProcessId */
   GetNamedPipeClientProcessId(Pipe: Win32Pointer, ClientProcessId: Win32Pointer): number;
   /** kernel32.dll!GetNamedPipeClientSessionId */
   GetNamedPipeClientSessionId(Pipe: Win32Pointer, ClientSessionId: Win32Pointer): number;
   /** kernel32.dll!GetNamedPipeHandleStateA */
-  GetNamedPipeHandleStateA(hNamedPipe: Win32Pointer, lpState: Win32Pointer, lpCurInstances: Win32Pointer, lpMaxCollectionCount: Win32Pointer, lpCollectDataTimeout: Win32Pointer, lpUserName: string | Win32Pointer, nMaxUserNameSize: number): number;
+  GetNamedPipeHandleStateA(
+    hNamedPipe: Win32Pointer,
+    lpState: Win32Pointer,
+    lpCurInstances: Win32Pointer,
+    lpMaxCollectionCount: Win32Pointer,
+    lpCollectDataTimeout: Win32Pointer,
+    lpUserName: string | Win32Pointer,
+    nMaxUserNameSize: number,
+  ): number;
   /** kernel32.dll!GetNamedPipeHandleStateW */
-  GetNamedPipeHandleStateW(hNamedPipe: Win32Pointer, lpState: Win32Pointer, lpCurInstances: Win32Pointer, lpMaxCollectionCount: Win32Pointer, lpCollectDataTimeout: Win32Pointer, lpUserName: string | Win32Pointer, nMaxUserNameSize: number): number;
+  GetNamedPipeHandleStateW(
+    hNamedPipe: Win32Pointer,
+    lpState: Win32Pointer,
+    lpCurInstances: Win32Pointer,
+    lpMaxCollectionCount: Win32Pointer,
+    lpCollectDataTimeout: Win32Pointer,
+    lpUserName: string | Win32Pointer,
+    nMaxUserNameSize: number,
+  ): number;
   /** kernel32.dll!GetNamedPipeHandleStateW */
-  GetNamedPipeHandleState(hNamedPipe: Win32Pointer, lpState: Win32Pointer, lpCurInstances: Win32Pointer, lpMaxCollectionCount: Win32Pointer, lpCollectDataTimeout: Win32Pointer, lpUserName: string | Win32Pointer, nMaxUserNameSize: number): number;
+  GetNamedPipeHandleState(
+    hNamedPipe: Win32Pointer,
+    lpState: Win32Pointer,
+    lpCurInstances: Win32Pointer,
+    lpMaxCollectionCount: Win32Pointer,
+    lpCollectDataTimeout: Win32Pointer,
+    lpUserName: string | Win32Pointer,
+    nMaxUserNameSize: number,
+  ): number;
   /** kernel32.dll!GetNamedPipeInfo */
-  GetNamedPipeInfo(hNamedPipe: Win32Pointer, lpFlags: Win32Pointer, lpOutBufferSize: Win32Pointer, lpInBufferSize: Win32Pointer, lpMaxInstances: Win32Pointer): number;
+  GetNamedPipeInfo(
+    hNamedPipe: Win32Pointer,
+    lpFlags: Win32Pointer,
+    lpOutBufferSize: Win32Pointer,
+    lpInBufferSize: Win32Pointer,
+    lpMaxInstances: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetNamedPipeServerProcessId */
   GetNamedPipeServerProcessId(Pipe: Win32Pointer, ServerProcessId: Win32Pointer): number;
   /** kernel32.dll!GetNamedPipeServerSessionId */
@@ -1405,7 +3045,12 @@ interface Functions {
   /** kernel32.dll!GetNumaNodeProcessorMask */
   GetNumaNodeProcessorMask(Node: number, ProcessorMask: Win32Pointer): number;
   /** kernel32.dll!GetNumaNodeProcessorMask2 */
-  GetNumaNodeProcessorMask2(NodeNumber: number, ProcessorMasks: Win32Pointer, ProcessorMaskCount: number, RequiredMaskCount: Win32Pointer): number;
+  GetNumaNodeProcessorMask2(
+    NodeNumber: number,
+    ProcessorMasks: Win32Pointer,
+    ProcessorMaskCount: number,
+    RequiredMaskCount: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetNumaNodeProcessorMaskEx */
   GetNumaNodeProcessorMaskEx(Node: number, ProcessorMask: Win32Pointer): number;
   /** kernel32.dll!GetNumaProcessorNode */
@@ -1417,13 +3062,41 @@ interface Functions {
   /** kernel32.dll!GetNumaProximityNodeEx */
   GetNumaProximityNodeEx(ProximityId: number, NodeNumber: Win32Pointer): number;
   /** kernel32.dll!GetNumberFormatA */
-  GetNumberFormatA(Locale: number, dwFlags: number, lpValue: string | Win32Pointer, lpFormat: Win32Pointer, lpNumberStr: string | Win32Pointer, cchNumber: number): number;
+  GetNumberFormatA(
+    Locale: number,
+    dwFlags: number,
+    lpValue: string | Win32Pointer,
+    lpFormat: Win32Pointer,
+    lpNumberStr: string | Win32Pointer,
+    cchNumber: number,
+  ): number;
   /** kernel32.dll!GetNumberFormatEx */
-  GetNumberFormatEx(lpLocaleName: string | Win32Pointer, dwFlags: number, lpValue: string | Win32Pointer, lpFormat: Win32Pointer, lpNumberStr: string | Win32Pointer, cchNumber: number): number;
+  GetNumberFormatEx(
+    lpLocaleName: string | Win32Pointer,
+    dwFlags: number,
+    lpValue: string | Win32Pointer,
+    lpFormat: Win32Pointer,
+    lpNumberStr: string | Win32Pointer,
+    cchNumber: number,
+  ): number;
   /** kernel32.dll!GetNumberFormatW */
-  GetNumberFormatW(Locale: number, dwFlags: number, lpValue: string | Win32Pointer, lpFormat: Win32Pointer, lpNumberStr: string | Win32Pointer, cchNumber: number): number;
+  GetNumberFormatW(
+    Locale: number,
+    dwFlags: number,
+    lpValue: string | Win32Pointer,
+    lpFormat: Win32Pointer,
+    lpNumberStr: string | Win32Pointer,
+    cchNumber: number,
+  ): number;
   /** kernel32.dll!GetNumberFormatW */
-  GetNumberFormat(Locale: number, dwFlags: number, lpValue: string | Win32Pointer, lpFormat: Win32Pointer, lpNumberStr: string | Win32Pointer, cchNumber: number): number;
+  GetNumberFormat(
+    Locale: number,
+    dwFlags: number,
+    lpValue: string | Win32Pointer,
+    lpFormat: Win32Pointer,
+    lpNumberStr: string | Win32Pointer,
+    cchNumber: number,
+  ): number;
   /** kernel32.dll!GetNumberOfConsoleFonts */
   GetNumberOfConsoleFonts(): number;
   /** kernel32.dll!GetNumberOfConsoleInputEvents */
@@ -1433,69 +3106,209 @@ interface Functions {
   /** kernel32.dll!GetOEMCP */
   GetOEMCP(): number;
   /** kernel32.dll!GetOverlappedResult */
-  GetOverlappedResult(hFile: Win32Pointer, lpOverlapped: Win32Pointer, lpNumberOfBytesTransferred: Win32Pointer, bWait: number): number;
+  GetOverlappedResult(
+    hFile: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpNumberOfBytesTransferred: Win32Pointer,
+    bWait: number,
+  ): number;
   /** kernel32.dll!GetOverlappedResultEx */
-  GetOverlappedResultEx(hFile: Win32Pointer, lpOverlapped: Win32Pointer, lpNumberOfBytesTransferred: Win32Pointer, dwMilliseconds: number, bAlertable: number): number;
+  GetOverlappedResultEx(
+    hFile: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpNumberOfBytesTransferred: Win32Pointer,
+    dwMilliseconds: number,
+    bAlertable: number,
+  ): number;
   /** kernel32.dll!GetPackageApplicationIds */
-  GetPackageApplicationIds(packageInfoReference: Win32Pointer, bufferLength: Win32Pointer, buffer: Win32Pointer, count: Win32Pointer): number;
+  GetPackageApplicationIds(
+    packageInfoReference: Win32Pointer,
+    bufferLength: Win32Pointer,
+    buffer: Win32Pointer,
+    count: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPackageFamilyName */
-  GetPackageFamilyName(hProcess: Win32Pointer, packageFamilyNameLength: Win32Pointer, packageFamilyName: string | Win32Pointer): number;
+  GetPackageFamilyName(
+    hProcess: Win32Pointer,
+    packageFamilyNameLength: Win32Pointer,
+    packageFamilyName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPackageFullName */
-  GetPackageFullName(hProcess: Win32Pointer, packageFullNameLength: Win32Pointer, packageFullName: string | Win32Pointer): number;
+  GetPackageFullName(
+    hProcess: Win32Pointer,
+    packageFullNameLength: Win32Pointer,
+    packageFullName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPackageId */
   GetPackageId(hProcess: Win32Pointer, bufferLength: Win32Pointer, buffer: Win32Pointer): number;
   /** kernel32.dll!GetPackageInfo */
-  GetPackageInfo(packageInfoReference: Win32Pointer, flags: number, bufferLength: Win32Pointer, buffer: Win32Pointer, count: Win32Pointer): number;
+  GetPackageInfo(
+    packageInfoReference: Win32Pointer,
+    flags: number,
+    bufferLength: Win32Pointer,
+    buffer: Win32Pointer,
+    count: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPackagePath */
-  GetPackagePath(packageId: Win32Pointer, reserved: number, pathLength: Win32Pointer, path: string | Win32Pointer): number;
+  GetPackagePath(
+    packageId: Win32Pointer,
+    reserved: number,
+    pathLength: Win32Pointer,
+    path: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPackagePathByFullName */
-  GetPackagePathByFullName(packageFullName: string | Win32Pointer, pathLength: Win32Pointer, path: string | Win32Pointer): number;
+  GetPackagePathByFullName(
+    packageFullName: string | Win32Pointer,
+    pathLength: Win32Pointer,
+    path: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPackagesByPackageFamily */
-  GetPackagesByPackageFamily(packageFamilyName: string | Win32Pointer, count: Win32Pointer, packageFullNames: Win32Pointer, bufferLength: Win32Pointer, buffer: string | Win32Pointer): number;
+  GetPackagesByPackageFamily(
+    packageFamilyName: string | Win32Pointer,
+    count: Win32Pointer,
+    packageFullNames: Win32Pointer,
+    bufferLength: Win32Pointer,
+    buffer: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPhysicallyInstalledSystemMemory */
   GetPhysicallyInstalledSystemMemory(TotalMemoryInKilobytes: Win32Pointer): number;
   /** kernel32.dll!GetPriorityClass */
   GetPriorityClass(hProcess: Win32Pointer): number;
   /** kernel32.dll!GetPrivateProfileIntA */
-  GetPrivateProfileIntA(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, nDefault: number, lpFileName: string | Win32Pointer): number;
+  GetPrivateProfileIntA(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    nDefault: number,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileIntW */
-  GetPrivateProfileIntW(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, nDefault: number, lpFileName: string | Win32Pointer): number;
+  GetPrivateProfileIntW(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    nDefault: number,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileIntW */
-  GetPrivateProfileInt(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, nDefault: number, lpFileName: string | Win32Pointer): number;
+  GetPrivateProfileInt(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    nDefault: number,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileSectionA */
-  GetPrivateProfileSectionA(lpAppName: string | Win32Pointer, lpReturnedString: string | Win32Pointer, nSize: number, lpFileName: string | Win32Pointer): number;
+  GetPrivateProfileSectionA(
+    lpAppName: string | Win32Pointer,
+    lpReturnedString: string | Win32Pointer,
+    nSize: number,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileSectionNamesA */
-  GetPrivateProfileSectionNamesA(lpszReturnBuffer: string | Win32Pointer, nSize: number, lpFileName: string | Win32Pointer): number;
+  GetPrivateProfileSectionNamesA(
+    lpszReturnBuffer: string | Win32Pointer,
+    nSize: number,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileSectionNamesW */
-  GetPrivateProfileSectionNamesW(lpszReturnBuffer: string | Win32Pointer, nSize: number, lpFileName: string | Win32Pointer): number;
+  GetPrivateProfileSectionNamesW(
+    lpszReturnBuffer: string | Win32Pointer,
+    nSize: number,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileSectionNamesW */
-  GetPrivateProfileSectionNames(lpszReturnBuffer: string | Win32Pointer, nSize: number, lpFileName: string | Win32Pointer): number;
+  GetPrivateProfileSectionNames(
+    lpszReturnBuffer: string | Win32Pointer,
+    nSize: number,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileSectionW */
-  GetPrivateProfileSectionW(lpAppName: string | Win32Pointer, lpReturnedString: string | Win32Pointer, nSize: number, lpFileName: string | Win32Pointer): number;
+  GetPrivateProfileSectionW(
+    lpAppName: string | Win32Pointer,
+    lpReturnedString: string | Win32Pointer,
+    nSize: number,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileSectionW */
-  GetPrivateProfileSection(lpAppName: string | Win32Pointer, lpReturnedString: string | Win32Pointer, nSize: number, lpFileName: string | Win32Pointer): number;
+  GetPrivateProfileSection(
+    lpAppName: string | Win32Pointer,
+    lpReturnedString: string | Win32Pointer,
+    nSize: number,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileStringA */
-  GetPrivateProfileStringA(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, lpDefault: string | Win32Pointer, lpReturnedString: string | Win32Pointer, nSize: number, lpFileName: string | Win32Pointer): number;
+  GetPrivateProfileStringA(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    lpDefault: string | Win32Pointer,
+    lpReturnedString: string | Win32Pointer,
+    nSize: number,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileStringW */
-  GetPrivateProfileStringW(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, lpDefault: string | Win32Pointer, lpReturnedString: string | Win32Pointer, nSize: number, lpFileName: string | Win32Pointer): number;
+  GetPrivateProfileStringW(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    lpDefault: string | Win32Pointer,
+    lpReturnedString: string | Win32Pointer,
+    nSize: number,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileStringW */
-  GetPrivateProfileString(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, lpDefault: string | Win32Pointer, lpReturnedString: string | Win32Pointer, nSize: number, lpFileName: string | Win32Pointer): number;
+  GetPrivateProfileString(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    lpDefault: string | Win32Pointer,
+    lpReturnedString: string | Win32Pointer,
+    nSize: number,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileStructA */
-  GetPrivateProfileStructA(lpszSection: string | Win32Pointer, lpszKey: string | Win32Pointer, lpStruct: Win32Pointer, uSizeStruct: number, szFile: string | Win32Pointer): number;
+  GetPrivateProfileStructA(
+    lpszSection: string | Win32Pointer,
+    lpszKey: string | Win32Pointer,
+    lpStruct: Win32Pointer,
+    uSizeStruct: number,
+    szFile: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileStructW */
-  GetPrivateProfileStructW(lpszSection: string | Win32Pointer, lpszKey: string | Win32Pointer, lpStruct: Win32Pointer, uSizeStruct: number, szFile: string | Win32Pointer): number;
+  GetPrivateProfileStructW(
+    lpszSection: string | Win32Pointer,
+    lpszKey: string | Win32Pointer,
+    lpStruct: Win32Pointer,
+    uSizeStruct: number,
+    szFile: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetPrivateProfileStructW */
-  GetPrivateProfileStruct(lpszSection: string | Win32Pointer, lpszKey: string | Win32Pointer, lpStruct: Win32Pointer, uSizeStruct: number, szFile: string | Win32Pointer): number;
+  GetPrivateProfileStruct(
+    lpszSection: string | Win32Pointer,
+    lpszKey: string | Win32Pointer,
+    lpStruct: Win32Pointer,
+    uSizeStruct: number,
+    szFile: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetProcAddress */
   GetProcAddress(hModule: Win32Pointer, lpProcName: string | Win32Pointer): number | null;
   /** kernel32.dll!GetProcessAffinityMask */
-  GetProcessAffinityMask(hProcess: Win32Pointer, lpProcessAffinityMask: Win32Pointer, lpSystemAffinityMask: Win32Pointer): number;
+  GetProcessAffinityMask(
+    hProcess: Win32Pointer,
+    lpProcessAffinityMask: Win32Pointer,
+    lpSystemAffinityMask: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetProcessDEPPolicy */
   GetProcessDEPPolicy(hProcess: Win32Pointer, lpFlags: Win32Pointer, lpPermanent: Win32Pointer): number;
   /** kernel32.dll!GetProcessDefaultCpuSetMasks */
-  GetProcessDefaultCpuSetMasks(Process: Win32Pointer, CpuSetMasks: Win32Pointer, CpuSetMaskCount: number, RequiredMaskCount: Win32Pointer): number;
+  GetProcessDefaultCpuSetMasks(
+    Process: Win32Pointer,
+    CpuSetMasks: Win32Pointer,
+    CpuSetMaskCount: number,
+    RequiredMaskCount: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetProcessDefaultCpuSets */
-  GetProcessDefaultCpuSets(Process: Win32Pointer, CpuSetIds: Win32Pointer, CpuSetIdCount: number, RequiredIdCount: Win32Pointer): number;
+  GetProcessDefaultCpuSets(
+    Process: Win32Pointer,
+    CpuSetIds: Win32Pointer,
+    CpuSetIdCount: number,
+    RequiredIdCount: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetProcessGroupAffinity */
   GetProcessGroupAffinity(hProcess: Win32Pointer, GroupCount: Win32Pointer, GroupArray: Win32Pointer): number;
   /** kernel32.dll!GetProcessHandleCount */
@@ -1509,31 +3322,71 @@ interface Functions {
   /** kernel32.dll!GetProcessIdOfThread */
   GetProcessIdOfThread(Thread: Win32Pointer): number;
   /** kernel32.dll!GetProcessInformation */
-  GetProcessInformation(hProcess: Win32Pointer, ProcessInformationClass: number, ProcessInformation: Win32Pointer, ProcessInformationSize: number): number;
+  GetProcessInformation(
+    hProcess: Win32Pointer,
+    ProcessInformationClass: number,
+    ProcessInformation: Win32Pointer,
+    ProcessInformationSize: number,
+  ): number;
   /** kernel32.dll!GetProcessIoCounters */
   GetProcessIoCounters(hProcess: Win32Pointer, lpIoCounters: Win32Pointer): number;
   /** kernel32.dll!GetProcessMitigationPolicy */
-  GetProcessMitigationPolicy(hProcess: Win32Pointer, MitigationPolicy: number, lpBuffer: Win32Pointer, dwLength: number | bigint): number;
+  GetProcessMitigationPolicy(
+    hProcess: Win32Pointer,
+    MitigationPolicy: number,
+    lpBuffer: Win32Pointer,
+    dwLength: number | bigint,
+  ): number;
   /** kernel32.dll!GetProcessPreferredUILanguages */
-  GetProcessPreferredUILanguages(dwFlags: number, pulNumLanguages: Win32Pointer, pwszLanguagesBuffer: string | Win32Pointer, pcchLanguagesBuffer: Win32Pointer): number;
+  GetProcessPreferredUILanguages(
+    dwFlags: number,
+    pulNumLanguages: Win32Pointer,
+    pwszLanguagesBuffer: string | Win32Pointer,
+    pcchLanguagesBuffer: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetProcessPriorityBoost */
   GetProcessPriorityBoost(hProcess: Win32Pointer, pDisablePriorityBoost: Win32Pointer): number;
   /** kernel32.dll!GetProcessShutdownParameters */
   GetProcessShutdownParameters(lpdwLevel: Win32Pointer, lpdwFlags: Win32Pointer): number;
   /** kernel32.dll!GetProcessTimes */
-  GetProcessTimes(hProcess: Win32Pointer, lpCreationTime: Win32Pointer, lpExitTime: Win32Pointer, lpKernelTime: Win32Pointer, lpUserTime: Win32Pointer): number;
+  GetProcessTimes(
+    hProcess: Win32Pointer,
+    lpCreationTime: Win32Pointer,
+    lpExitTime: Win32Pointer,
+    lpKernelTime: Win32Pointer,
+    lpUserTime: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetProcessVersion */
   GetProcessVersion(ProcessId: number): number;
   /** kernel32.dll!GetProcessWorkingSetSize */
-  GetProcessWorkingSetSize(hProcess: Win32Pointer, lpMinimumWorkingSetSize: Win32Pointer, lpMaximumWorkingSetSize: Win32Pointer): number;
+  GetProcessWorkingSetSize(
+    hProcess: Win32Pointer,
+    lpMinimumWorkingSetSize: Win32Pointer,
+    lpMaximumWorkingSetSize: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetProcessWorkingSetSizeEx */
-  GetProcessWorkingSetSizeEx(hProcess: Win32Pointer, lpMinimumWorkingSetSize: Win32Pointer, lpMaximumWorkingSetSize: Win32Pointer, Flags: Win32Pointer): number;
+  GetProcessWorkingSetSizeEx(
+    hProcess: Win32Pointer,
+    lpMinimumWorkingSetSize: Win32Pointer,
+    lpMaximumWorkingSetSize: Win32Pointer,
+    Flags: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetProcessesInVirtualizationContext */
-  GetProcessesInVirtualizationContext(packageFamilyName: string | Win32Pointer, count: Win32Pointer, processes: Win32Pointer): number;
+  GetProcessesInVirtualizationContext(
+    packageFamilyName: string | Win32Pointer,
+    count: Win32Pointer,
+    processes: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetProcessorSystemCycleTime */
   GetProcessorSystemCycleTime(Group: number, Buffer: Win32Pointer, ReturnedLength: Win32Pointer): number;
   /** kernel32.dll!GetProductInfo */
-  GetProductInfo(dwOSMajorVersion: number, dwOSMinorVersion: number, dwSpMajorVersion: number, dwSpMinorVersion: number, pdwReturnedProductType: Win32Pointer): number;
+  GetProductInfo(
+    dwOSMajorVersion: number,
+    dwOSMinorVersion: number,
+    dwSpMajorVersion: number,
+    dwSpMinorVersion: number,
+    pdwReturnedProductType: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetProfileIntA */
   GetProfileIntA(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, nDefault: number): number;
   /** kernel32.dll!GetProfileIntW */
@@ -1547,25 +3400,78 @@ interface Functions {
   /** kernel32.dll!GetProfileSectionW */
   GetProfileSection(lpAppName: string | Win32Pointer, lpReturnedString: string | Win32Pointer, nSize: number): number;
   /** kernel32.dll!GetProfileStringA */
-  GetProfileStringA(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, lpDefault: string | Win32Pointer, lpReturnedString: string | Win32Pointer, nSize: number): number;
+  GetProfileStringA(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    lpDefault: string | Win32Pointer,
+    lpReturnedString: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!GetProfileStringW */
-  GetProfileStringW(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, lpDefault: string | Win32Pointer, lpReturnedString: string | Win32Pointer, nSize: number): number;
+  GetProfileStringW(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    lpDefault: string | Win32Pointer,
+    lpReturnedString: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!GetProfileStringW */
-  GetProfileString(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, lpDefault: string | Win32Pointer, lpReturnedString: string | Win32Pointer, nSize: number): number;
+  GetProfileString(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    lpDefault: string | Win32Pointer,
+    lpReturnedString: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!GetQueuedCompletionStatus */
-  GetQueuedCompletionStatus(CompletionPort: Win32Pointer, lpNumberOfBytesTransferred: Win32Pointer, lpCompletionKey: Win32Pointer, lpOverlapped: Win32Pointer, dwMilliseconds: number): number;
+  GetQueuedCompletionStatus(
+    CompletionPort: Win32Pointer,
+    lpNumberOfBytesTransferred: Win32Pointer,
+    lpCompletionKey: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    dwMilliseconds: number,
+  ): number;
   /** kernel32.dll!GetQueuedCompletionStatusEx */
-  GetQueuedCompletionStatusEx(CompletionPort: Win32Pointer, lpCompletionPortEntries: Win32Pointer, ulCount: number, ulNumEntriesRemoved: Win32Pointer, dwMilliseconds: number, fAlertable: number): number;
+  GetQueuedCompletionStatusEx(
+    CompletionPort: Win32Pointer,
+    lpCompletionPortEntries: Win32Pointer,
+    ulCount: number,
+    ulNumEntriesRemoved: Win32Pointer,
+    dwMilliseconds: number,
+    fAlertable: number,
+  ): number;
   /** kernel32.dll!GetRuntimeAttestationReport */
-  GetRuntimeAttestationReport(Nonce: Win32Pointer, PackageVersion: number, ReportTypesBitmap: number | bigint, ReportBuffer: Win32Pointer, ReportBufferSize: Win32Pointer): number;
+  GetRuntimeAttestationReport(
+    Nonce: Win32Pointer,
+    PackageVersion: number,
+    ReportTypesBitmap: number | bigint,
+    ReportBuffer: Win32Pointer,
+    ReportBufferSize: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetShortPathNameA */
-  GetShortPathNameA(lpszLongPath: string | Win32Pointer, lpszShortPath: string | Win32Pointer, cchBuffer: number): number;
+  GetShortPathNameA(
+    lpszLongPath: string | Win32Pointer,
+    lpszShortPath: string | Win32Pointer,
+    cchBuffer: number,
+  ): number;
   /** kernel32.dll!GetShortPathNameW */
-  GetShortPathNameW(lpszLongPath: string | Win32Pointer, lpszShortPath: string | Win32Pointer, cchBuffer: number): number;
+  GetShortPathNameW(
+    lpszLongPath: string | Win32Pointer,
+    lpszShortPath: string | Win32Pointer,
+    cchBuffer: number,
+  ): number;
   /** kernel32.dll!GetShortPathNameW */
-  GetShortPathName(lpszLongPath: string | Win32Pointer, lpszShortPath: string | Win32Pointer, cchBuffer: number): number;
+  GetShortPathName(
+    lpszLongPath: string | Win32Pointer,
+    lpszShortPath: string | Win32Pointer,
+    cchBuffer: number,
+  ): number;
   /** kernel32.dll!GetStagedPackagePathByFullName */
-  GetStagedPackagePathByFullName(packageFullName: string | Win32Pointer, pathLength: Win32Pointer, path: string | Win32Pointer): number;
+  GetStagedPackagePathByFullName(
+    packageFullName: string | Win32Pointer,
+    pathLength: Win32Pointer,
+    path: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetStartupInfoA */
   GetStartupInfoA(lpStartupInfo: Win32Pointer): void;
   /** kernel32.dll!GetStartupInfoW */
@@ -1575,21 +3481,57 @@ interface Functions {
   /** kernel32.dll!GetStdHandle */
   GetStdHandle(nStdHandle: number): number | null;
   /** kernel32.dll!GetStringScripts */
-  GetStringScripts(dwFlags: number, lpString: string | Win32Pointer, cchString: number, lpScripts: string | Win32Pointer, cchScripts: number): number;
+  GetStringScripts(
+    dwFlags: number,
+    lpString: string | Win32Pointer,
+    cchString: number,
+    lpScripts: string | Win32Pointer,
+    cchScripts: number,
+  ): number;
   /** kernel32.dll!GetStringTypeA */
-  GetStringTypeA(Locale: number, dwInfoType: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpCharType: Win32Pointer): number;
+  GetStringTypeA(
+    Locale: number,
+    dwInfoType: number,
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpCharType: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetStringTypeExA */
-  GetStringTypeExA(Locale: number, dwInfoType: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpCharType: Win32Pointer): number;
+  GetStringTypeExA(
+    Locale: number,
+    dwInfoType: number,
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpCharType: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetStringTypeExW */
-  GetStringTypeExW(Locale: number, dwInfoType: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpCharType: Win32Pointer): number;
+  GetStringTypeExW(
+    Locale: number,
+    dwInfoType: number,
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpCharType: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetStringTypeExW */
-  GetStringTypeEx(Locale: number, dwInfoType: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpCharType: Win32Pointer): number;
+  GetStringTypeEx(
+    Locale: number,
+    dwInfoType: number,
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpCharType: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetStringTypeW */
   GetStringTypeW(dwInfoType: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpCharType: Win32Pointer): number;
   /** kernel32.dll!GetStringTypeW */
   GetStringType(dwInfoType: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpCharType: Win32Pointer): number;
   /** kernel32.dll!GetSystemCpuSetInformation */
-  GetSystemCpuSetInformation(Information: Win32Pointer, BufferLength: number, ReturnedLength: Win32Pointer, Process: Win32Pointer, Flags: number): number;
+  GetSystemCpuSetInformation(
+    Information: Win32Pointer,
+    BufferLength: number,
+    ReturnedLength: Win32Pointer,
+    Process: Win32Pointer,
+    Flags: number,
+  ): number;
   /** kernel32.dll!GetSystemDEPPolicy */
   GetSystemDEPPolicy(): number;
   /** kernel32.dll!GetSystemDefaultLCID */
@@ -1607,9 +3549,18 @@ interface Functions {
   /** kernel32.dll!GetSystemDirectoryW */
   GetSystemDirectory(lpBuffer: string | Win32Pointer, uSize: number): number;
   /** kernel32.dll!GetSystemFileCacheSize */
-  GetSystemFileCacheSize(lpMinimumFileCacheSize: Win32Pointer, lpMaximumFileCacheSize: Win32Pointer, lpFlags: Win32Pointer): number;
+  GetSystemFileCacheSize(
+    lpMinimumFileCacheSize: Win32Pointer,
+    lpMaximumFileCacheSize: Win32Pointer,
+    lpFlags: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetSystemFirmwareTable */
-  GetSystemFirmwareTable(FirmwareTableProviderSignature: number, FirmwareTableID: number, pFirmwareTableBuffer: Win32Pointer, BufferSize: number): number;
+  GetSystemFirmwareTable(
+    FirmwareTableProviderSignature: number,
+    FirmwareTableID: number,
+    pFirmwareTableBuffer: Win32Pointer,
+    BufferSize: number,
+  ): number;
   /** kernel32.dll!GetSystemInfo */
   GetSystemInfo(lpSystemInfo: Win32Pointer): void;
   /** kernel32.dll!GetSystemLeapSecondInformation */
@@ -1617,13 +3568,22 @@ interface Functions {
   /** kernel32.dll!GetSystemPowerStatus */
   GetSystemPowerStatus(lpSystemPowerStatus: Win32Pointer): number;
   /** kernel32.dll!GetSystemPreferredUILanguages */
-  GetSystemPreferredUILanguages(dwFlags: number, pulNumLanguages: Win32Pointer, pwszLanguagesBuffer: string | Win32Pointer, pcchLanguagesBuffer: Win32Pointer): number;
+  GetSystemPreferredUILanguages(
+    dwFlags: number,
+    pulNumLanguages: Win32Pointer,
+    pwszLanguagesBuffer: string | Win32Pointer,
+    pcchLanguagesBuffer: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetSystemRegistryQuota */
   GetSystemRegistryQuota(pdwQuotaAllowed: Win32Pointer, pdwQuotaUsed: Win32Pointer): number;
   /** kernel32.dll!GetSystemTime */
   GetSystemTime(lpSystemTime: Win32Pointer): void;
   /** kernel32.dll!GetSystemTimeAdjustment */
-  GetSystemTimeAdjustment(lpTimeAdjustment: Win32Pointer, lpTimeIncrement: Win32Pointer, lpTimeAdjustmentDisabled: Win32Pointer): number;
+  GetSystemTimeAdjustment(
+    lpTimeAdjustment: Win32Pointer,
+    lpTimeIncrement: Win32Pointer,
+    lpTimeAdjustmentDisabled: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetSystemTimeAsFileTime */
   GetSystemTimeAsFileTime(lpSystemTimeAsFileTime: Win32Pointer): void;
   /** kernel32.dll!GetSystemTimePreciseAsFileTime */
@@ -1643,17 +3603,43 @@ interface Functions {
   /** kernel32.dll!GetSystemWow64DirectoryW */
   GetSystemWow64Directory(lpBuffer: string | Win32Pointer, uSize: number): number;
   /** kernel32.dll!GetTapeParameters */
-  GetTapeParameters(hDevice: Win32Pointer, dwOperation: number, lpdwSize: Win32Pointer, lpTapeInformation: Win32Pointer): number;
+  GetTapeParameters(
+    hDevice: Win32Pointer,
+    dwOperation: number,
+    lpdwSize: Win32Pointer,
+    lpTapeInformation: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetTapePosition */
-  GetTapePosition(hDevice: Win32Pointer, dwPositionType: number, lpdwPartition: Win32Pointer, lpdwOffsetLow: Win32Pointer, lpdwOffsetHigh: Win32Pointer): number;
+  GetTapePosition(
+    hDevice: Win32Pointer,
+    dwPositionType: number,
+    lpdwPartition: Win32Pointer,
+    lpdwOffsetLow: Win32Pointer,
+    lpdwOffsetHigh: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetTapeStatus */
   GetTapeStatus(hDevice: Win32Pointer): number;
   /** kernel32.dll!GetTempFileNameA */
-  GetTempFileNameA(lpPathName: string | Win32Pointer, lpPrefixString: string | Win32Pointer, uUnique: number, lpTempFileName: string | Win32Pointer): number;
+  GetTempFileNameA(
+    lpPathName: string | Win32Pointer,
+    lpPrefixString: string | Win32Pointer,
+    uUnique: number,
+    lpTempFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetTempFileNameW */
-  GetTempFileNameW(lpPathName: string | Win32Pointer, lpPrefixString: string | Win32Pointer, uUnique: number, lpTempFileName: string | Win32Pointer): number;
+  GetTempFileNameW(
+    lpPathName: string | Win32Pointer,
+    lpPrefixString: string | Win32Pointer,
+    uUnique: number,
+    lpTempFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetTempFileNameW */
-  GetTempFileName(lpPathName: string | Win32Pointer, lpPrefixString: string | Win32Pointer, uUnique: number, lpTempFileName: string | Win32Pointer): number;
+  GetTempFileName(
+    lpPathName: string | Win32Pointer,
+    lpPrefixString: string | Win32Pointer,
+    uUnique: number,
+    lpTempFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!GetTempPath2A */
   GetTempPath2A(BufferLength: number, Buffer: string | Win32Pointer): number;
   /** kernel32.dll!GetTempPath2W */
@@ -1683,23 +3669,49 @@ interface Functions {
   /** kernel32.dll!GetThreadIdealProcessorEx */
   GetThreadIdealProcessorEx(hThread: Win32Pointer, lpIdealProcessor: Win32Pointer): number;
   /** kernel32.dll!GetThreadInformation */
-  GetThreadInformation(hThread: Win32Pointer, ThreadInformationClass: number, ThreadInformation: Win32Pointer, ThreadInformationSize: number): number;
+  GetThreadInformation(
+    hThread: Win32Pointer,
+    ThreadInformationClass: number,
+    ThreadInformation: Win32Pointer,
+    ThreadInformationSize: number,
+  ): number;
   /** kernel32.dll!GetThreadLocale */
   GetThreadLocale(): number;
   /** kernel32.dll!GetThreadPreferredUILanguages */
-  GetThreadPreferredUILanguages(dwFlags: number, pulNumLanguages: Win32Pointer, pwszLanguagesBuffer: string | Win32Pointer, pcchLanguagesBuffer: Win32Pointer): number;
+  GetThreadPreferredUILanguages(
+    dwFlags: number,
+    pulNumLanguages: Win32Pointer,
+    pwszLanguagesBuffer: string | Win32Pointer,
+    pcchLanguagesBuffer: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetThreadPriority */
   GetThreadPriority(hThread: Win32Pointer): number;
   /** kernel32.dll!GetThreadPriorityBoost */
   GetThreadPriorityBoost(hThread: Win32Pointer, pDisablePriorityBoost: Win32Pointer): number;
   /** kernel32.dll!GetThreadSelectedCpuSetMasks */
-  GetThreadSelectedCpuSetMasks(Thread: Win32Pointer, CpuSetMasks: Win32Pointer, CpuSetMaskCount: number, RequiredMaskCount: Win32Pointer): number;
+  GetThreadSelectedCpuSetMasks(
+    Thread: Win32Pointer,
+    CpuSetMasks: Win32Pointer,
+    CpuSetMaskCount: number,
+    RequiredMaskCount: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetThreadSelectedCpuSets */
-  GetThreadSelectedCpuSets(Thread: Win32Pointer, CpuSetIds: Win32Pointer, CpuSetIdCount: number, RequiredIdCount: Win32Pointer): number;
+  GetThreadSelectedCpuSets(
+    Thread: Win32Pointer,
+    CpuSetIds: Win32Pointer,
+    CpuSetIdCount: number,
+    RequiredIdCount: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetThreadSelectorEntry */
   GetThreadSelectorEntry(hThread: Win32Pointer, dwSelector: number, lpSelectorEntry: Win32Pointer): number;
   /** kernel32.dll!GetThreadTimes */
-  GetThreadTimes(hThread: Win32Pointer, lpCreationTime: Win32Pointer, lpExitTime: Win32Pointer, lpKernelTime: Win32Pointer, lpUserTime: Win32Pointer): number;
+  GetThreadTimes(
+    hThread: Win32Pointer,
+    lpCreationTime: Win32Pointer,
+    lpExitTime: Win32Pointer,
+    lpKernelTime: Win32Pointer,
+    lpUserTime: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetThreadUILanguage */
   GetThreadUILanguage(): number;
   /** kernel32.dll!GetTickCount */
@@ -1707,19 +3719,53 @@ interface Functions {
   /** kernel32.dll!GetTickCount64 */
   GetTickCount64(): bigint;
   /** kernel32.dll!GetTimeFormatA */
-  GetTimeFormatA(Locale: number, dwFlags: number, lpTime: Win32Pointer, lpFormat: string | Win32Pointer, lpTimeStr: string | Win32Pointer, cchTime: number): number;
+  GetTimeFormatA(
+    Locale: number,
+    dwFlags: number,
+    lpTime: Win32Pointer,
+    lpFormat: string | Win32Pointer,
+    lpTimeStr: string | Win32Pointer,
+    cchTime: number,
+  ): number;
   /** kernel32.dll!GetTimeFormatEx */
-  GetTimeFormatEx(lpLocaleName: string | Win32Pointer, dwFlags: number, lpTime: Win32Pointer, lpFormat: string | Win32Pointer, lpTimeStr: string | Win32Pointer, cchTime: number): number;
+  GetTimeFormatEx(
+    lpLocaleName: string | Win32Pointer,
+    dwFlags: number,
+    lpTime: Win32Pointer,
+    lpFormat: string | Win32Pointer,
+    lpTimeStr: string | Win32Pointer,
+    cchTime: number,
+  ): number;
   /** kernel32.dll!GetTimeFormatW */
-  GetTimeFormatW(Locale: number, dwFlags: number, lpTime: Win32Pointer, lpFormat: string | Win32Pointer, lpTimeStr: string | Win32Pointer, cchTime: number): number;
+  GetTimeFormatW(
+    Locale: number,
+    dwFlags: number,
+    lpTime: Win32Pointer,
+    lpFormat: string | Win32Pointer,
+    lpTimeStr: string | Win32Pointer,
+    cchTime: number,
+  ): number;
   /** kernel32.dll!GetTimeFormatW */
-  GetTimeFormat(Locale: number, dwFlags: number, lpTime: Win32Pointer, lpFormat: string | Win32Pointer, lpTimeStr: string | Win32Pointer, cchTime: number): number;
+  GetTimeFormat(
+    Locale: number,
+    dwFlags: number,
+    lpTime: Win32Pointer,
+    lpFormat: string | Win32Pointer,
+    lpTimeStr: string | Win32Pointer,
+    cchTime: number,
+  ): number;
   /** kernel32.dll!GetTimeZoneInformation */
   GetTimeZoneInformation(lpTimeZoneInformation: Win32Pointer): number;
   /** kernel32.dll!GetTimeZoneInformationForYear */
   GetTimeZoneInformationForYear(wYear: number, pdtzi: Win32Pointer, ptzi: Win32Pointer): number;
   /** kernel32.dll!GetUILanguageInfo */
-  GetUILanguageInfo(dwFlags: number, pwmszLanguage: string | Win32Pointer, pwszFallbackLanguages: string | Win32Pointer, pcchFallbackLanguages: Win32Pointer, pAttributes: Win32Pointer): number;
+  GetUILanguageInfo(
+    dwFlags: number,
+    pwmszLanguage: string | Win32Pointer,
+    pwszFallbackLanguages: string | Win32Pointer,
+    pcchFallbackLanguages: Win32Pointer,
+    pAttributes: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetUmsCompletionListEvent */
   GetUmsCompletionListEvent(UmsCompletionList: Win32Pointer, UmsCompletionEvent: Win32Pointer): number;
   /** kernel32.dll!GetUmsSystemThreadInformation */
@@ -1737,7 +3783,12 @@ interface Functions {
   /** kernel32.dll!GetUserGeoID */
   GetUserGeoID(GeoClass: number): number;
   /** kernel32.dll!GetUserPreferredUILanguages */
-  GetUserPreferredUILanguages(dwFlags: number, pulNumLanguages: Win32Pointer, pwszLanguagesBuffer: string | Win32Pointer, pcchLanguagesBuffer: Win32Pointer): number;
+  GetUserPreferredUILanguages(
+    dwFlags: number,
+    pulNumLanguages: Win32Pointer,
+    pwszLanguagesBuffer: string | Win32Pointer,
+    pcchLanguagesBuffer: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetVersion */
   GetVersion(): number;
   /** kernel32.dll!GetVersionExA */
@@ -1747,31 +3798,106 @@ interface Functions {
   /** kernel32.dll!GetVersionExW */
   GetVersionEx(lpVersionInformation: Win32Pointer): number;
   /** kernel32.dll!GetVolumeInformationA */
-  GetVolumeInformationA(lpRootPathName: string | Win32Pointer, lpVolumeNameBuffer: string | Win32Pointer, nVolumeNameSize: number, lpVolumeSerialNumber: Win32Pointer, lpMaximumComponentLength: Win32Pointer, lpFileSystemFlags: Win32Pointer, lpFileSystemNameBuffer: string | Win32Pointer, nFileSystemNameSize: number): number;
+  GetVolumeInformationA(
+    lpRootPathName: string | Win32Pointer,
+    lpVolumeNameBuffer: string | Win32Pointer,
+    nVolumeNameSize: number,
+    lpVolumeSerialNumber: Win32Pointer,
+    lpMaximumComponentLength: Win32Pointer,
+    lpFileSystemFlags: Win32Pointer,
+    lpFileSystemNameBuffer: string | Win32Pointer,
+    nFileSystemNameSize: number,
+  ): number;
   /** kernel32.dll!GetVolumeInformationByHandleW */
-  GetVolumeInformationByHandleW(hFile: Win32Pointer, lpVolumeNameBuffer: string | Win32Pointer, nVolumeNameSize: number, lpVolumeSerialNumber: Win32Pointer, lpMaximumComponentLength: Win32Pointer, lpFileSystemFlags: Win32Pointer, lpFileSystemNameBuffer: string | Win32Pointer, nFileSystemNameSize: number): number;
+  GetVolumeInformationByHandleW(
+    hFile: Win32Pointer,
+    lpVolumeNameBuffer: string | Win32Pointer,
+    nVolumeNameSize: number,
+    lpVolumeSerialNumber: Win32Pointer,
+    lpMaximumComponentLength: Win32Pointer,
+    lpFileSystemFlags: Win32Pointer,
+    lpFileSystemNameBuffer: string | Win32Pointer,
+    nFileSystemNameSize: number,
+  ): number;
   /** kernel32.dll!GetVolumeInformationW */
-  GetVolumeInformationW(lpRootPathName: string | Win32Pointer, lpVolumeNameBuffer: string | Win32Pointer, nVolumeNameSize: number, lpVolumeSerialNumber: Win32Pointer, lpMaximumComponentLength: Win32Pointer, lpFileSystemFlags: Win32Pointer, lpFileSystemNameBuffer: string | Win32Pointer, nFileSystemNameSize: number): number;
+  GetVolumeInformationW(
+    lpRootPathName: string | Win32Pointer,
+    lpVolumeNameBuffer: string | Win32Pointer,
+    nVolumeNameSize: number,
+    lpVolumeSerialNumber: Win32Pointer,
+    lpMaximumComponentLength: Win32Pointer,
+    lpFileSystemFlags: Win32Pointer,
+    lpFileSystemNameBuffer: string | Win32Pointer,
+    nFileSystemNameSize: number,
+  ): number;
   /** kernel32.dll!GetVolumeInformationW */
-  GetVolumeInformation(lpRootPathName: string | Win32Pointer, lpVolumeNameBuffer: string | Win32Pointer, nVolumeNameSize: number, lpVolumeSerialNumber: Win32Pointer, lpMaximumComponentLength: Win32Pointer, lpFileSystemFlags: Win32Pointer, lpFileSystemNameBuffer: string | Win32Pointer, nFileSystemNameSize: number): number;
+  GetVolumeInformation(
+    lpRootPathName: string | Win32Pointer,
+    lpVolumeNameBuffer: string | Win32Pointer,
+    nVolumeNameSize: number,
+    lpVolumeSerialNumber: Win32Pointer,
+    lpMaximumComponentLength: Win32Pointer,
+    lpFileSystemFlags: Win32Pointer,
+    lpFileSystemNameBuffer: string | Win32Pointer,
+    nFileSystemNameSize: number,
+  ): number;
   /** kernel32.dll!GetVolumeNameForVolumeMountPointA */
-  GetVolumeNameForVolumeMountPointA(lpszVolumeMountPoint: string | Win32Pointer, lpszVolumeName: string | Win32Pointer, cchBufferLength: number): number;
+  GetVolumeNameForVolumeMountPointA(
+    lpszVolumeMountPoint: string | Win32Pointer,
+    lpszVolumeName: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number;
   /** kernel32.dll!GetVolumeNameForVolumeMountPointW */
-  GetVolumeNameForVolumeMountPointW(lpszVolumeMountPoint: string | Win32Pointer, lpszVolumeName: string | Win32Pointer, cchBufferLength: number): number;
+  GetVolumeNameForVolumeMountPointW(
+    lpszVolumeMountPoint: string | Win32Pointer,
+    lpszVolumeName: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number;
   /** kernel32.dll!GetVolumeNameForVolumeMountPointW */
-  GetVolumeNameForVolumeMountPoint(lpszVolumeMountPoint: string | Win32Pointer, lpszVolumeName: string | Win32Pointer, cchBufferLength: number): number;
+  GetVolumeNameForVolumeMountPoint(
+    lpszVolumeMountPoint: string | Win32Pointer,
+    lpszVolumeName: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number;
   /** kernel32.dll!GetVolumePathNameA */
-  GetVolumePathNameA(lpszFileName: string | Win32Pointer, lpszVolumePathName: string | Win32Pointer, cchBufferLength: number): number;
+  GetVolumePathNameA(
+    lpszFileName: string | Win32Pointer,
+    lpszVolumePathName: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number;
   /** kernel32.dll!GetVolumePathNameW */
-  GetVolumePathNameW(lpszFileName: string | Win32Pointer, lpszVolumePathName: string | Win32Pointer, cchBufferLength: number): number;
+  GetVolumePathNameW(
+    lpszFileName: string | Win32Pointer,
+    lpszVolumePathName: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number;
   /** kernel32.dll!GetVolumePathNameW */
-  GetVolumePathName(lpszFileName: string | Win32Pointer, lpszVolumePathName: string | Win32Pointer, cchBufferLength: number): number;
+  GetVolumePathName(
+    lpszFileName: string | Win32Pointer,
+    lpszVolumePathName: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number;
   /** kernel32.dll!GetVolumePathNamesForVolumeNameA */
-  GetVolumePathNamesForVolumeNameA(lpszVolumeName: string | Win32Pointer, lpszVolumePathNames: string | Win32Pointer, cchBufferLength: number, lpcchReturnLength: Win32Pointer): number;
+  GetVolumePathNamesForVolumeNameA(
+    lpszVolumeName: string | Win32Pointer,
+    lpszVolumePathNames: string | Win32Pointer,
+    cchBufferLength: number,
+    lpcchReturnLength: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetVolumePathNamesForVolumeNameW */
-  GetVolumePathNamesForVolumeNameW(lpszVolumeName: string | Win32Pointer, lpszVolumePathNames: string | Win32Pointer, cchBufferLength: number, lpcchReturnLength: Win32Pointer): number;
+  GetVolumePathNamesForVolumeNameW(
+    lpszVolumeName: string | Win32Pointer,
+    lpszVolumePathNames: string | Win32Pointer,
+    cchBufferLength: number,
+    lpcchReturnLength: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetVolumePathNamesForVolumeNameW */
-  GetVolumePathNamesForVolumeName(lpszVolumeName: string | Win32Pointer, lpszVolumePathNames: string | Win32Pointer, cchBufferLength: number, lpcchReturnLength: Win32Pointer): number;
+  GetVolumePathNamesForVolumeName(
+    lpszVolumeName: string | Win32Pointer,
+    lpszVolumePathNames: string | Win32Pointer,
+    cchBufferLength: number,
+    lpcchReturnLength: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetWindowsDirectoryA */
   GetWindowsDirectoryA(lpBuffer: string | Win32Pointer, uSize: number): number;
   /** kernel32.dll!GetWindowsDirectoryW */
@@ -1779,7 +3905,14 @@ interface Functions {
   /** kernel32.dll!GetWindowsDirectoryW */
   GetWindowsDirectory(lpBuffer: string | Win32Pointer, uSize: number): number;
   /** kernel32.dll!GetWriteWatch */
-  GetWriteWatch(dwFlags: number, lpBaseAddress: Win32Pointer, dwRegionSize: number | bigint, lpAddresses: Win32Pointer, lpdwCount: Win32Pointer, lpdwGranularity: Win32Pointer): number;
+  GetWriteWatch(
+    dwFlags: number,
+    lpBaseAddress: Win32Pointer,
+    dwRegionSize: number | bigint,
+    lpAddresses: Win32Pointer,
+    lpdwCount: Win32Pointer,
+    lpdwGranularity: Win32Pointer,
+  ): number;
   /** kernel32.dll!GetXStateFeaturesMask */
   GetXStateFeaturesMask(Context: Win32Pointer, FeatureMask: Win32Pointer): number;
   /** kernel32.dll!GlobalAddAtomA */
@@ -1859,11 +3992,22 @@ interface Functions {
   /** kernel32.dll!HeapLock */
   HeapLock(hHeap: Win32Pointer): number;
   /** kernel32.dll!HeapQueryInformation */
-  HeapQueryInformation(HeapHandle: Win32Pointer, HeapInformationClass: number, HeapInformation: Win32Pointer, HeapInformationLength: number | bigint, ReturnLength: Win32Pointer): number;
+  HeapQueryInformation(
+    HeapHandle: Win32Pointer,
+    HeapInformationClass: number,
+    HeapInformation: Win32Pointer,
+    HeapInformationLength: number | bigint,
+    ReturnLength: Win32Pointer,
+  ): number;
   /** kernel32.dll!HeapReAlloc */
   HeapReAlloc(hHeap: Win32Pointer, dwFlags: number, lpMem: Win32Pointer, dwBytes: number | bigint): number | null;
   /** kernel32.dll!HeapSetInformation */
-  HeapSetInformation(HeapHandle: Win32Pointer, HeapInformationClass: number, HeapInformation: Win32Pointer, HeapInformationLength: number | bigint): number;
+  HeapSetInformation(
+    HeapHandle: Win32Pointer,
+    HeapInformationClass: number,
+    HeapInformation: Win32Pointer,
+    HeapInformationLength: number | bigint,
+  ): number;
   /** kernel32.dll!HeapSize */
   HeapSize(hHeap: Win32Pointer, dwFlags: number, lpMem: Win32Pointer): number | bigint;
   /** kernel32.dll!HeapSummary */
@@ -1875,23 +4019,50 @@ interface Functions {
   /** kernel32.dll!HeapWalk */
   HeapWalk(hHeap: Win32Pointer, lpEntry: Win32Pointer): number;
   /** kernel32.dll!IdnToNameprepUnicode */
-  IdnToNameprepUnicode(dwFlags: number, lpUnicodeCharStr: string | Win32Pointer, cchUnicodeChar: number, lpNameprepCharStr: string | Win32Pointer, cchNameprepChar: number): number;
+  IdnToNameprepUnicode(
+    dwFlags: number,
+    lpUnicodeCharStr: string | Win32Pointer,
+    cchUnicodeChar: number,
+    lpNameprepCharStr: string | Win32Pointer,
+    cchNameprepChar: number,
+  ): number;
   /** kernel32.dll!InitAtomTable */
   InitAtomTable(nSize: number): number;
   /** kernel32.dll!InitOnceBeginInitialize */
-  InitOnceBeginInitialize(lpInitOnce: Win32Pointer, dwFlags: number, fPending: Win32Pointer, lpContext: Win32Pointer): number;
+  InitOnceBeginInitialize(
+    lpInitOnce: Win32Pointer,
+    dwFlags: number,
+    fPending: Win32Pointer,
+    lpContext: Win32Pointer,
+  ): number;
   /** kernel32.dll!InitOnceComplete */
   InitOnceComplete(lpInitOnce: Win32Pointer, dwFlags: number, lpContext: Win32Pointer): number;
   /** kernel32.dll!InitOnceExecuteOnce */
-  InitOnceExecuteOnce(InitOnce: Win32Pointer, InitFn: Win32Callback, Parameter: Win32Pointer, Context: Win32Pointer): number;
+  InitOnceExecuteOnce(
+    InitOnce: Win32Pointer,
+    InitFn: Win32Callback,
+    Parameter: Win32Pointer,
+    Context: Win32Pointer,
+  ): number;
   /** kernel32.dll!InitOnceInitialize */
   InitOnceInitialize(InitOnce: Win32Pointer): void;
   /** kernel32.dll!InitializeConditionVariable */
   InitializeConditionVariable(ConditionVariable: Win32Pointer): void;
   /** kernel32.dll!InitializeContext */
-  InitializeContext(Buffer: Win32Pointer, ContextFlags: number, Context: Win32Pointer, ContextLength: Win32Pointer): number;
+  InitializeContext(
+    Buffer: Win32Pointer,
+    ContextFlags: number,
+    Context: Win32Pointer,
+    ContextLength: Win32Pointer,
+  ): number;
   /** kernel32.dll!InitializeContext2 */
-  InitializeContext2(Buffer: Win32Pointer, ContextFlags: number, Context: Win32Pointer, ContextLength: Win32Pointer, XStateCompactionMask: number | bigint): number;
+  InitializeContext2(
+    Buffer: Win32Pointer,
+    ContextFlags: number,
+    Context: Win32Pointer,
+    ContextLength: Win32Pointer,
+    XStateCompactionMask: number | bigint,
+  ): number;
   /** kernel32.dll!InitializeCriticalSection */
   InitializeCriticalSection(lpCriticalSection: Win32Pointer): void;
   /** kernel32.dll!InitializeCriticalSectionAndSpinCount */
@@ -1899,9 +4070,20 @@ interface Functions {
   /** kernel32.dll!InitializeCriticalSectionEx */
   InitializeCriticalSectionEx(lpCriticalSection: Win32Pointer, dwSpinCount: number, Flags: number): number;
   /** kernel32.dll!InitializeEnclave */
-  InitializeEnclave(hProcess: Win32Pointer, lpAddress: Win32Pointer, lpEnclaveInformation: Win32Pointer, dwInfoLength: number, lpEnclaveError: Win32Pointer): number;
+  InitializeEnclave(
+    hProcess: Win32Pointer,
+    lpAddress: Win32Pointer,
+    lpEnclaveInformation: Win32Pointer,
+    dwInfoLength: number,
+    lpEnclaveError: Win32Pointer,
+  ): number;
   /** kernel32.dll!InitializeProcThreadAttributeList */
-  InitializeProcThreadAttributeList(lpAttributeList: Win32Pointer, dwAttributeCount: number, dwFlags: number, lpSize: Win32Pointer): number;
+  InitializeProcThreadAttributeList(
+    lpAttributeList: Win32Pointer,
+    dwAttributeCount: number,
+    dwFlags: number,
+    lpSize: Win32Pointer,
+  ): number;
   /** kernel32.dll!InitializeSListHead */
   InitializeSListHead(ListHead: Win32Pointer): void;
   /** kernel32.dll!InitializeSRWLock */
@@ -1917,7 +4099,12 @@ interface Functions {
   /** kernel32.dll!InterlockedPushEntrySList */
   InterlockedPushEntrySList(ListHead: Win32Pointer, ListEntry: Win32Pointer): number | null;
   /** kernel32.dll!InterlockedPushListSListEx */
-  InterlockedPushListSListEx(ListHead: Win32Pointer, List: Win32Pointer, ListEnd: Win32Pointer, Count: number): number | null;
+  InterlockedPushListSListEx(
+    ListHead: Win32Pointer,
+    List: Win32Pointer,
+    ListEnd: Win32Pointer,
+    Count: number,
+  ): number | null;
   /** kernel32.dll!InvalidateConsoleDIBits */
   InvalidateConsoleDIBits(hConsoleOutput: Win32Pointer, lpRect: Win32Pointer): number;
   /** kernel32.dll!IsBadCodePtr */
@@ -1947,7 +4134,13 @@ interface Functions {
   /** kernel32.dll!IsEnclaveTypeSupported */
   IsEnclaveTypeSupported(flEnclaveType: number): number;
   /** kernel32.dll!IsNLSDefinedString */
-  IsNLSDefinedString(Function: number, dwFlags: number, lpVersionInformation: Win32Pointer, lpString: string | Win32Pointer, cchStr: number): number;
+  IsNLSDefinedString(
+    Function: number,
+    dwFlags: number,
+    lpVersionInformation: Win32Pointer,
+    lpString: string | Win32Pointer,
+    cchStr: number,
+  ): number;
   /** kernel32.dll!IsNativeVhdBoot */
   IsNativeVhdBoot(NativeVhdBoot: Win32Pointer): number;
   /** kernel32.dll!IsNormalizedString */
@@ -1995,7 +4188,13 @@ interface Functions {
   /** kernel32.dll!K32EnumProcessModules */
   K32EnumProcessModules(hProcess: Win32Pointer, lphModule: Win32Pointer, cb: number, lpcbNeeded: Win32Pointer): number;
   /** kernel32.dll!K32EnumProcessModulesEx */
-  K32EnumProcessModulesEx(hProcess: Win32Pointer, lphModule: Win32Pointer, cb: number, lpcbNeeded: Win32Pointer, dwFilterFlag: number): number;
+  K32EnumProcessModulesEx(
+    hProcess: Win32Pointer,
+    lphModule: Win32Pointer,
+    cb: number,
+    lpcbNeeded: Win32Pointer,
+    dwFilterFlag: number,
+  ): number;
   /** kernel32.dll!K32EnumProcesses */
   K32EnumProcesses(lpidProcess: Win32Pointer, cb: number, lpcbNeeded: Win32Pointer): number;
   /** kernel32.dll!K32GetDeviceDriverBaseNameA */
@@ -2011,23 +4210,68 @@ interface Functions {
   /** kernel32.dll!K32GetDeviceDriverFileNameW */
   K32GetDeviceDriverFileName(ImageBase: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
   /** kernel32.dll!K32GetMappedFileNameA */
-  K32GetMappedFileNameA(hProcess: Win32Pointer, lpv: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
+  K32GetMappedFileNameA(
+    hProcess: Win32Pointer,
+    lpv: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!K32GetMappedFileNameW */
-  K32GetMappedFileNameW(hProcess: Win32Pointer, lpv: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
+  K32GetMappedFileNameW(
+    hProcess: Win32Pointer,
+    lpv: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!K32GetMappedFileNameW */
-  K32GetMappedFileName(hProcess: Win32Pointer, lpv: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
+  K32GetMappedFileName(
+    hProcess: Win32Pointer,
+    lpv: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!K32GetModuleBaseNameA */
-  K32GetModuleBaseNameA(hProcess: Win32Pointer, hModule: Win32Pointer, lpBaseName: string | Win32Pointer, nSize: number): number;
+  K32GetModuleBaseNameA(
+    hProcess: Win32Pointer,
+    hModule: Win32Pointer,
+    lpBaseName: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!K32GetModuleBaseNameW */
-  K32GetModuleBaseNameW(hProcess: Win32Pointer, hModule: Win32Pointer, lpBaseName: string | Win32Pointer, nSize: number): number;
+  K32GetModuleBaseNameW(
+    hProcess: Win32Pointer,
+    hModule: Win32Pointer,
+    lpBaseName: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!K32GetModuleBaseNameW */
-  K32GetModuleBaseName(hProcess: Win32Pointer, hModule: Win32Pointer, lpBaseName: string | Win32Pointer, nSize: number): number;
+  K32GetModuleBaseName(
+    hProcess: Win32Pointer,
+    hModule: Win32Pointer,
+    lpBaseName: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!K32GetModuleFileNameExA */
-  K32GetModuleFileNameExA(hProcess: Win32Pointer, hModule: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
+  K32GetModuleFileNameExA(
+    hProcess: Win32Pointer,
+    hModule: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!K32GetModuleFileNameExW */
-  K32GetModuleFileNameExW(hProcess: Win32Pointer, hModule: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
+  K32GetModuleFileNameExW(
+    hProcess: Win32Pointer,
+    hModule: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!K32GetModuleFileNameExW */
-  K32GetModuleFileNameEx(hProcess: Win32Pointer, hModule: Win32Pointer, lpFilename: string | Win32Pointer, nSize: number): number;
+  K32GetModuleFileNameEx(
+    hProcess: Win32Pointer,
+    hModule: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!K32GetModuleInformation */
   K32GetModuleInformation(hProcess: Win32Pointer, hModule: Win32Pointer, lpmodinfo: Win32Pointer, cb: number): number;
   /** kernel32.dll!K32GetPerformanceInfo */
@@ -2053,13 +4297,44 @@ interface Functions {
   /** kernel32.dll!LCIDToLocaleName */
   LCIDToLocaleName(Locale: number, lpName: string | Win32Pointer, cchName: number, dwFlags: number): number;
   /** kernel32.dll!LCMapStringA */
-  LCMapStringA(Locale: number, dwMapFlags: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpDestStr: string | Win32Pointer, cchDest: number): number;
+  LCMapStringA(
+    Locale: number,
+    dwMapFlags: number,
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpDestStr: string | Win32Pointer,
+    cchDest: number,
+  ): number;
   /** kernel32.dll!LCMapStringEx */
-  LCMapStringEx(lpLocaleName: string | Win32Pointer, dwMapFlags: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpDestStr: string | Win32Pointer, cchDest: number, lpVersionInformation: Win32Pointer, lpReserved: Win32Pointer, sortHandle: number | bigint): number;
+  LCMapStringEx(
+    lpLocaleName: string | Win32Pointer,
+    dwMapFlags: number,
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpDestStr: string | Win32Pointer,
+    cchDest: number,
+    lpVersionInformation: Win32Pointer,
+    lpReserved: Win32Pointer,
+    sortHandle: number | bigint,
+  ): number;
   /** kernel32.dll!LCMapStringW */
-  LCMapStringW(Locale: number, dwMapFlags: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpDestStr: string | Win32Pointer, cchDest: number): number;
+  LCMapStringW(
+    Locale: number,
+    dwMapFlags: number,
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpDestStr: string | Win32Pointer,
+    cchDest: number,
+  ): number;
   /** kernel32.dll!LCMapStringW */
-  LCMapString(Locale: number, dwMapFlags: number, lpSrcStr: string | Win32Pointer, cchSrc: number, lpDestStr: string | Win32Pointer, cchDest: number): number;
+  LCMapString(
+    Locale: number,
+    dwMapFlags: number,
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpDestStr: string | Win32Pointer,
+    cchDest: number,
+  ): number;
   /** kernel32.dll!LZClose */
   LZClose(hFile: number): void;
   /** kernel32.dll!LZCopy */
@@ -2085,7 +4360,17 @@ interface Functions {
   /** kernel32.dll!LeaveCriticalSectionWhenCallbackReturns */
   LeaveCriticalSectionWhenCallbackReturns(pci: number | bigint, pcs: Win32Pointer): void;
   /** kernel32.dll!LoadEnclaveData */
-  LoadEnclaveData(hProcess: Win32Pointer, lpAddress: Win32Pointer, lpBuffer: Win32Pointer, nSize: number | bigint, flProtect: number, lpPageInformation: Win32Pointer, dwInfoLength: number, lpNumberOfBytesWritten: Win32Pointer, lpEnclaveError: Win32Pointer): number;
+  LoadEnclaveData(
+    hProcess: Win32Pointer,
+    lpAddress: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nSize: number | bigint,
+    flProtect: number,
+    lpPageInformation: Win32Pointer,
+    dwInfoLength: number,
+    lpNumberOfBytesWritten: Win32Pointer,
+    lpEnclaveError: Win32Pointer,
+  ): number;
   /** kernel32.dll!LoadLibraryA */
   LoadLibraryA(lpLibFileName: string | Win32Pointer): number | null;
   /** kernel32.dll!LoadLibraryExA */
@@ -2111,7 +4396,11 @@ interface Functions {
   /** kernel32.dll!LocalFileTimeToFileTime */
   LocalFileTimeToFileTime(lpLocalFileTime: Win32Pointer, lpFileTime: Win32Pointer): number;
   /** kernel32.dll!LocalFileTimeToLocalSystemTime */
-  LocalFileTimeToLocalSystemTime(timeZoneInformation: Win32Pointer, localFileTime: Win32Pointer, localSystemTime: Win32Pointer): number;
+  LocalFileTimeToLocalSystemTime(
+    timeZoneInformation: Win32Pointer,
+    localFileTime: Win32Pointer,
+    localSystemTime: Win32Pointer,
+  ): number;
   /** kernel32.dll!LocalFlags */
   LocalFlags(hMem: Win32Pointer): number;
   /** kernel32.dll!LocalFree */
@@ -2127,7 +4416,11 @@ interface Functions {
   /** kernel32.dll!LocalSize */
   LocalSize(hMem: Win32Pointer): number | bigint;
   /** kernel32.dll!LocalSystemTimeToLocalFileTime */
-  LocalSystemTimeToLocalFileTime(timeZoneInformation: Win32Pointer, localSystemTime: Win32Pointer, localFileTime: Win32Pointer): number;
+  LocalSystemTimeToLocalFileTime(
+    timeZoneInformation: Win32Pointer,
+    localSystemTime: Win32Pointer,
+    localFileTime: Win32Pointer,
+  ): number;
   /** kernel32.dll!LocalUnlock */
   LocalUnlock(hMem: Win32Pointer): number;
   /** kernel32.dll!LocaleNameToLCID */
@@ -2135,23 +4428,66 @@ interface Functions {
   /** kernel32.dll!LocateXStateFeature */
   LocateXStateFeature(Context: Win32Pointer, FeatureId: number, Length: Win32Pointer): number | null;
   /** kernel32.dll!LockFile */
-  LockFile(hFile: Win32Pointer, dwFileOffsetLow: number, dwFileOffsetHigh: number, nNumberOfBytesToLockLow: number, nNumberOfBytesToLockHigh: number): number;
+  LockFile(
+    hFile: Win32Pointer,
+    dwFileOffsetLow: number,
+    dwFileOffsetHigh: number,
+    nNumberOfBytesToLockLow: number,
+    nNumberOfBytesToLockHigh: number,
+  ): number;
   /** kernel32.dll!LockFileEx */
-  LockFileEx(hFile: Win32Pointer, dwFlags: number, dwReserved: number, nNumberOfBytesToLockLow: number, nNumberOfBytesToLockHigh: number, lpOverlapped: Win32Pointer): number;
+  LockFileEx(
+    hFile: Win32Pointer,
+    dwFlags: number,
+    dwReserved: number,
+    nNumberOfBytesToLockLow: number,
+    nNumberOfBytesToLockHigh: number,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** kernel32.dll!LockResource */
   LockResource(hResData: Win32Pointer): number | null;
   /** kernel32.dll!MapUserPhysicalPages */
   MapUserPhysicalPages(VirtualAddress: Win32Pointer, NumberOfPages: number | bigint, PageArray: Win32Pointer): number;
   /** kernel32.dll!MapUserPhysicalPagesScatter */
-  MapUserPhysicalPagesScatter(VirtualAddresses: Win32Pointer, NumberOfPages: number | bigint, PageArray: Win32Pointer): number;
+  MapUserPhysicalPagesScatter(
+    VirtualAddresses: Win32Pointer,
+    NumberOfPages: number | bigint,
+    PageArray: Win32Pointer,
+  ): number;
   /** kernel32.dll!MapViewOfFile */
-  MapViewOfFile(hFileMappingObject: Win32Pointer, dwDesiredAccess: number, dwFileOffsetHigh: number, dwFileOffsetLow: number, dwNumberOfBytesToMap: number | bigint): Win32Struct;
+  MapViewOfFile(
+    hFileMappingObject: Win32Pointer,
+    dwDesiredAccess: number,
+    dwFileOffsetHigh: number,
+    dwFileOffsetLow: number,
+    dwNumberOfBytesToMap: number | bigint,
+  ): Win32Struct;
   /** kernel32.dll!MapViewOfFileEx */
-  MapViewOfFileEx(hFileMappingObject: Win32Pointer, dwDesiredAccess: number, dwFileOffsetHigh: number, dwFileOffsetLow: number, dwNumberOfBytesToMap: number | bigint, lpBaseAddress: Win32Pointer): Win32Struct;
+  MapViewOfFileEx(
+    hFileMappingObject: Win32Pointer,
+    dwDesiredAccess: number,
+    dwFileOffsetHigh: number,
+    dwFileOffsetLow: number,
+    dwNumberOfBytesToMap: number | bigint,
+    lpBaseAddress: Win32Pointer,
+  ): Win32Struct;
   /** kernel32.dll!MapViewOfFileExNuma */
-  MapViewOfFileExNuma(hFileMappingObject: Win32Pointer, dwDesiredAccess: number, dwFileOffsetHigh: number, dwFileOffsetLow: number, dwNumberOfBytesToMap: number | bigint, lpBaseAddress: Win32Pointer, nndPreferred: number): Win32Struct;
+  MapViewOfFileExNuma(
+    hFileMappingObject: Win32Pointer,
+    dwDesiredAccess: number,
+    dwFileOffsetHigh: number,
+    dwFileOffsetLow: number,
+    dwNumberOfBytesToMap: number | bigint,
+    lpBaseAddress: Win32Pointer,
+    nndPreferred: number,
+  ): Win32Struct;
   /** kernel32.dll!MapViewOfFileFromApp */
-  MapViewOfFileFromApp(hFileMappingObject: Win32Pointer, DesiredAccess: number, FileOffset: number | bigint, NumberOfBytesToMap: number | bigint): Win32Struct;
+  MapViewOfFileFromApp(
+    hFileMappingObject: Win32Pointer,
+    DesiredAccess: number,
+    FileOffset: number | bigint,
+    NumberOfBytesToMap: number | bigint,
+  ): Win32Struct;
   /** kernel32.dll!Module32First */
   Module32First(hSnapshot: Win32Pointer, lpme: Win32Pointer): number;
   /** kernel32.dll!Module32FirstW */
@@ -2169,25 +4505,71 @@ interface Functions {
   /** kernel32.dll!MoveFileExW */
   MoveFileEx(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, dwFlags: number): number;
   /** kernel32.dll!MoveFileTransactedA */
-  MoveFileTransactedA(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, lpProgressRoutine: Win32Callback, lpData: Win32Pointer, dwFlags: number, hTransaction: Win32Pointer): number;
+  MoveFileTransactedA(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    lpProgressRoutine: Win32Callback,
+    lpData: Win32Pointer,
+    dwFlags: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!MoveFileTransactedW */
-  MoveFileTransactedW(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, lpProgressRoutine: Win32Callback, lpData: Win32Pointer, dwFlags: number, hTransaction: Win32Pointer): number;
+  MoveFileTransactedW(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    lpProgressRoutine: Win32Callback,
+    lpData: Win32Pointer,
+    dwFlags: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!MoveFileTransactedW */
-  MoveFileTransacted(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, lpProgressRoutine: Win32Callback, lpData: Win32Pointer, dwFlags: number, hTransaction: Win32Pointer): number;
+  MoveFileTransacted(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    lpProgressRoutine: Win32Callback,
+    lpData: Win32Pointer,
+    dwFlags: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!MoveFileW */
   MoveFileW(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer): number;
   /** kernel32.dll!MoveFileW */
   MoveFile(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer): number;
   /** kernel32.dll!MoveFileWithProgressA */
-  MoveFileWithProgressA(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, lpProgressRoutine: Win32Callback, lpData: Win32Pointer, dwFlags: number): number;
+  MoveFileWithProgressA(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    lpProgressRoutine: Win32Callback,
+    lpData: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** kernel32.dll!MoveFileWithProgressW */
-  MoveFileWithProgressW(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, lpProgressRoutine: Win32Callback, lpData: Win32Pointer, dwFlags: number): number;
+  MoveFileWithProgressW(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    lpProgressRoutine: Win32Callback,
+    lpData: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** kernel32.dll!MoveFileWithProgressW */
-  MoveFileWithProgress(lpExistingFileName: string | Win32Pointer, lpNewFileName: string | Win32Pointer, lpProgressRoutine: Win32Callback, lpData: Win32Pointer, dwFlags: number): number;
+  MoveFileWithProgress(
+    lpExistingFileName: string | Win32Pointer,
+    lpNewFileName: string | Win32Pointer,
+    lpProgressRoutine: Win32Callback,
+    lpData: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** kernel32.dll!MulDiv */
   MulDiv(nNumber: number, nNumerator: number, nDenominator: number): number;
   /** kernel32.dll!MultiByteToWideChar */
-  MultiByteToWideChar(CodePage: number, dwFlags: number, lpMultiByteStr: string | Win32Pointer, cbMultiByte: number, lpWideCharStr: string | Win32Pointer, cchWideChar: number): number;
+  MultiByteToWideChar(
+    CodePage: number,
+    dwFlags: number,
+    lpMultiByteStr: string | Win32Pointer,
+    cbMultiByte: number,
+    lpWideCharStr: string | Win32Pointer,
+    cchWideChar: number,
+  ): number;
   /** kernel32.dll!NeedCurrentDirectoryForExePathA */
   NeedCurrentDirectoryForExePathA(ExeName: string | Win32Pointer): number;
   /** kernel32.dll!NeedCurrentDirectoryForExePathW */
@@ -2195,15 +4577,32 @@ interface Functions {
   /** kernel32.dll!NeedCurrentDirectoryForExePathW */
   NeedCurrentDirectoryForExePath(ExeName: string | Win32Pointer): number;
   /** kernel32.dll!NormalizeString */
-  NormalizeString(NormForm: number, lpSrcString: string | Win32Pointer, cwSrcLength: number, lpDstString: string | Win32Pointer, cwDstLength: number): number;
+  NormalizeString(
+    NormForm: number,
+    lpSrcString: string | Win32Pointer,
+    cwSrcLength: number,
+    lpDstString: string | Win32Pointer,
+    cwDstLength: number,
+  ): number;
   /** kernel32.dll!NotifyUILanguageChange */
-  NotifyUILanguageChange(dwFlags: number, pcwstrNewLanguage: string | Win32Pointer, pcwstrPreviousLanguage: string | Win32Pointer, dwReserved: number, pdwStatusRtrn: Win32Pointer): number;
+  NotifyUILanguageChange(
+    dwFlags: number,
+    pcwstrNewLanguage: string | Win32Pointer,
+    pcwstrPreviousLanguage: string | Win32Pointer,
+    dwReserved: number,
+    pdwStatusRtrn: Win32Pointer,
+  ): number;
   /** kernel32.dll!OOBEComplete */
   OOBEComplete(isOOBEComplete: Win32Pointer): number;
   /** kernel32.dll!OfferVirtualMemory */
   OfferVirtualMemory(VirtualAddress: Win32Pointer, Size: number | bigint, Priority: number): number;
   /** kernel32.dll!OpenConsoleW */
-  OpenConsoleW(lpConsoleDevice: string | Win32Pointer, dwDesiredAccess: number, bInheritHandle: number, dwShareMode: number): number | null;
+  OpenConsoleW(
+    lpConsoleDevice: string | Win32Pointer,
+    dwDesiredAccess: number,
+    bInheritHandle: number,
+    dwShareMode: number,
+  ): number | null;
   /** kernel32.dll!OpenEventA */
   OpenEventA(dwDesiredAccess: number, bInheritHandle: number, lpName: string | Win32Pointer): number | null;
   /** kernel32.dll!OpenEventW */
@@ -2213,7 +4612,14 @@ interface Functions {
   /** kernel32.dll!OpenFile */
   OpenFile(lpFileName: string | Win32Pointer, lpReOpenBuff: Win32Pointer, uStyle: number): number;
   /** kernel32.dll!OpenFileById */
-  OpenFileById(hVolumeHint: Win32Pointer, lpFileId: Win32Pointer, dwDesiredAccess: number, dwShareMode: number, lpSecurityAttributes: Win32Pointer, dwFlagsAndAttributes: number): number | null;
+  OpenFileById(
+    hVolumeHint: Win32Pointer,
+    lpFileId: Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    lpSecurityAttributes: Win32Pointer,
+    dwFlagsAndAttributes: number,
+  ): number | null;
   /** kernel32.dll!OpenFileMappingA */
   OpenFileMappingA(dwDesiredAccess: number, bInheritHandle: number, lpName: string | Win32Pointer): number | null;
   /** kernel32.dll!OpenFileMappingW */
@@ -2233,7 +4639,11 @@ interface Functions {
   /** kernel32.dll!OpenMutexW */
   OpenMutex(dwDesiredAccess: number, bInheritHandle: number, lpName: string | Win32Pointer): number | null;
   /** kernel32.dll!OpenPackageInfoByFullName */
-  OpenPackageInfoByFullName(packageFullName: string | Win32Pointer, reserved: number, packageInfoReference: Win32Pointer): number;
+  OpenPackageInfoByFullName(
+    packageFullName: string | Win32Pointer,
+    reserved: number,
+    packageInfoReference: Win32Pointer,
+  ): number;
   /** kernel32.dll!OpenPrivateNamespaceA */
   OpenPrivateNamespaceA(lpBoundaryDescriptor: Win32Pointer, lpAliasPrefix: string | Win32Pointer): number | null;
   /** kernel32.dll!OpenPrivateNamespaceW */
@@ -2251,9 +4661,17 @@ interface Functions {
   /** kernel32.dll!OpenThread */
   OpenThread(dwDesiredAccess: number, bInheritHandle: number, dwThreadId: number): number | null;
   /** kernel32.dll!OpenWaitableTimerA */
-  OpenWaitableTimerA(dwDesiredAccess: number, bInheritHandle: number, lpTimerName: string | Win32Pointer): number | null;
+  OpenWaitableTimerA(
+    dwDesiredAccess: number,
+    bInheritHandle: number,
+    lpTimerName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!OpenWaitableTimerW */
-  OpenWaitableTimerW(dwDesiredAccess: number, bInheritHandle: number, lpTimerName: string | Win32Pointer): number | null;
+  OpenWaitableTimerW(
+    dwDesiredAccess: number,
+    bInheritHandle: number,
+    lpTimerName: string | Win32Pointer,
+  ): number | null;
   /** kernel32.dll!OpenWaitableTimerW */
   OpenWaitableTimer(dwDesiredAccess: number, bInheritHandle: number, lpTimerName: string | Win32Pointer): number | null;
   /** kernel32.dll!OutputDebugStringA */
@@ -2263,27 +4681,83 @@ interface Functions {
   /** kernel32.dll!OutputDebugStringW */
   OutputDebugString(lpOutputString: string | Win32Pointer): void;
   /** kernel32.dll!PackageFamilyNameFromFullName */
-  PackageFamilyNameFromFullName(packageFullName: string | Win32Pointer, packageFamilyNameLength: Win32Pointer, packageFamilyName: string | Win32Pointer): number;
+  PackageFamilyNameFromFullName(
+    packageFullName: string | Win32Pointer,
+    packageFamilyNameLength: Win32Pointer,
+    packageFamilyName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!PackageFamilyNameFromId */
-  PackageFamilyNameFromId(packageId: Win32Pointer, packageFamilyNameLength: Win32Pointer, packageFamilyName: string | Win32Pointer): number;
+  PackageFamilyNameFromId(
+    packageId: Win32Pointer,
+    packageFamilyNameLength: Win32Pointer,
+    packageFamilyName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!PackageFullNameFromId */
-  PackageFullNameFromId(packageId: Win32Pointer, packageFullNameLength: Win32Pointer, packageFullName: string | Win32Pointer): number;
+  PackageFullNameFromId(
+    packageId: Win32Pointer,
+    packageFullNameLength: Win32Pointer,
+    packageFullName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!PackageIdFromFullName */
-  PackageIdFromFullName(packageFullName: string | Win32Pointer, flags: number, bufferLength: Win32Pointer, buffer: Win32Pointer): number;
+  PackageIdFromFullName(
+    packageFullName: string | Win32Pointer,
+    flags: number,
+    bufferLength: Win32Pointer,
+    buffer: Win32Pointer,
+  ): number;
   /** kernel32.dll!PackageNameAndPublisherIdFromFamilyName */
-  PackageNameAndPublisherIdFromFamilyName(packageFamilyName: string | Win32Pointer, packageNameLength: Win32Pointer, packageName: string | Win32Pointer, packagePublisherIdLength: Win32Pointer, packagePublisherId: string | Win32Pointer): number;
+  PackageNameAndPublisherIdFromFamilyName(
+    packageFamilyName: string | Win32Pointer,
+    packageNameLength: Win32Pointer,
+    packageName: string | Win32Pointer,
+    packagePublisherIdLength: Win32Pointer,
+    packagePublisherId: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!ParseApplicationUserModelId */
-  ParseApplicationUserModelId(applicationUserModelId: string | Win32Pointer, packageFamilyNameLength: Win32Pointer, packageFamilyName: string | Win32Pointer, packageRelativeApplicationIdLength: Win32Pointer, packageRelativeApplicationId: string | Win32Pointer): number;
+  ParseApplicationUserModelId(
+    applicationUserModelId: string | Win32Pointer,
+    packageFamilyNameLength: Win32Pointer,
+    packageFamilyName: string | Win32Pointer,
+    packageRelativeApplicationIdLength: Win32Pointer,
+    packageRelativeApplicationId: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!PeekConsoleInputA */
-  PeekConsoleInputA(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsRead: Win32Pointer): number;
+  PeekConsoleInputA(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsRead: Win32Pointer,
+  ): number;
   /** kernel32.dll!PeekConsoleInputW */
-  PeekConsoleInputW(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsRead: Win32Pointer): number;
+  PeekConsoleInputW(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsRead: Win32Pointer,
+  ): number;
   /** kernel32.dll!PeekConsoleInputW */
-  PeekConsoleInput(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsRead: Win32Pointer): number;
+  PeekConsoleInput(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsRead: Win32Pointer,
+  ): number;
   /** kernel32.dll!PeekNamedPipe */
-  PeekNamedPipe(hNamedPipe: Win32Pointer, lpBuffer: Win32Pointer, nBufferSize: number, lpBytesRead: Win32Pointer, lpTotalBytesAvail: Win32Pointer, lpBytesLeftThisMessage: Win32Pointer): number;
+  PeekNamedPipe(
+    hNamedPipe: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nBufferSize: number,
+    lpBytesRead: Win32Pointer,
+    lpTotalBytesAvail: Win32Pointer,
+    lpBytesLeftThisMessage: Win32Pointer,
+  ): number;
   /** kernel32.dll!PostQueuedCompletionStatus */
-  PostQueuedCompletionStatus(CompletionPort: Win32Pointer, dwNumberOfBytesTransferred: number, dwCompletionKey: number | bigint, lpOverlapped: Win32Pointer): number;
+  PostQueuedCompletionStatus(
+    CompletionPort: Win32Pointer,
+    dwNumberOfBytesTransferred: number,
+    dwCompletionKey: number | bigint,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** kernel32.dll!PowerClearRequest */
   PowerClearRequest(PowerRequest: Win32Pointer, RequestType: number): number;
   /** kernel32.dll!PowerCreateRequest */
@@ -2291,7 +4765,12 @@ interface Functions {
   /** kernel32.dll!PowerSetRequest */
   PowerSetRequest(PowerRequest: Win32Pointer, RequestType: number): number;
   /** kernel32.dll!PrefetchVirtualMemory */
-  PrefetchVirtualMemory(hProcess: Win32Pointer, NumberOfEntries: number | bigint, VirtualAddresses: Win32Pointer, Flags: number): number;
+  PrefetchVirtualMemory(
+    hProcess: Win32Pointer,
+    NumberOfEntries: number | bigint,
+    VirtualAddresses: Win32Pointer,
+    Flags: number,
+  ): number;
   /** kernel32.dll!PrepareTape */
   PrepareTape(hDevice: Win32Pointer, dwOperation: number, bImmediate: number): number;
   /** kernel32.dll!Process32First */
@@ -2305,13 +4784,29 @@ interface Functions {
   /** kernel32.dll!ProcessIdToSessionId */
   ProcessIdToSessionId(dwProcessId: number, pSessionId: Win32Pointer): number;
   /** kernel32.dll!PssCaptureSnapshot */
-  PssCaptureSnapshot(ProcessHandle: Win32Pointer, CaptureFlags: number, ThreadContextFlags: number, SnapshotHandle: Win32Pointer): number;
+  PssCaptureSnapshot(
+    ProcessHandle: Win32Pointer,
+    CaptureFlags: number,
+    ThreadContextFlags: number,
+    SnapshotHandle: Win32Pointer,
+  ): number;
   /** kernel32.dll!PssDuplicateSnapshot */
-  PssDuplicateSnapshot(SourceProcessHandle: Win32Pointer, SnapshotHandle: Win32Pointer, TargetProcessHandle: Win32Pointer, TargetSnapshotHandle: Win32Pointer, Flags: number): number;
+  PssDuplicateSnapshot(
+    SourceProcessHandle: Win32Pointer,
+    SnapshotHandle: Win32Pointer,
+    TargetProcessHandle: Win32Pointer,
+    TargetSnapshotHandle: Win32Pointer,
+    Flags: number,
+  ): number;
   /** kernel32.dll!PssFreeSnapshot */
   PssFreeSnapshot(ProcessHandle: Win32Pointer, SnapshotHandle: Win32Pointer): number;
   /** kernel32.dll!PssQuerySnapshot */
-  PssQuerySnapshot(SnapshotHandle: Win32Pointer, InformationClass: number, Buffer: Win32Pointer, BufferLength: number): number;
+  PssQuerySnapshot(
+    SnapshotHandle: Win32Pointer,
+    InformationClass: number,
+    Buffer: Win32Pointer,
+    BufferLength: number,
+  ): number;
   /** kernel32.dll!PssWalkMarkerCreate */
   PssWalkMarkerCreate(Allocator: Win32Pointer, WalkMarkerHandle: Win32Pointer): number;
   /** kernel32.dll!PssWalkMarkerFree */
@@ -2323,15 +4818,37 @@ interface Functions {
   /** kernel32.dll!PssWalkMarkerSetPosition */
   PssWalkMarkerSetPosition(WalkMarkerHandle: Win32Pointer, Position: number | bigint): number;
   /** kernel32.dll!PssWalkSnapshot */
-  PssWalkSnapshot(SnapshotHandle: Win32Pointer, InformationClass: number, WalkMarkerHandle: Win32Pointer, Buffer: Win32Pointer, BufferLength: number): number;
+  PssWalkSnapshot(
+    SnapshotHandle: Win32Pointer,
+    InformationClass: number,
+    WalkMarkerHandle: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferLength: number,
+  ): number;
   /** kernel32.dll!PulseEvent */
   PulseEvent(hEvent: Win32Pointer): number;
   /** kernel32.dll!PurgeComm */
   PurgeComm(hFile: Win32Pointer, dwFlags: number): number;
   /** kernel32.dll!QueryActCtxSettingsW */
-  QueryActCtxSettingsW(dwFlags: number, hActCtx: Win32Pointer, settingsNameSpace: string | Win32Pointer, settingName: string | Win32Pointer, pvBuffer: string | Win32Pointer, dwBuffer: number | bigint, pdwWrittenOrRequired: Win32Pointer): number;
+  QueryActCtxSettingsW(
+    dwFlags: number,
+    hActCtx: Win32Pointer,
+    settingsNameSpace: string | Win32Pointer,
+    settingName: string | Win32Pointer,
+    pvBuffer: string | Win32Pointer,
+    dwBuffer: number | bigint,
+    pdwWrittenOrRequired: Win32Pointer,
+  ): number;
   /** kernel32.dll!QueryActCtxW */
-  QueryActCtxW(dwFlags: number, hActCtx: Win32Pointer, pvSubInstance: Win32Pointer, ulInfoClass: number, pvBuffer: Win32Pointer, cbBuffer: number | bigint, pcbWrittenOrRequired: Win32Pointer): number;
+  QueryActCtxW(
+    dwFlags: number,
+    hActCtx: Win32Pointer,
+    pvSubInstance: Win32Pointer,
+    ulInfoClass: number,
+    pvBuffer: Win32Pointer,
+    cbBuffer: number | bigint,
+    pcbWrittenOrRequired: Win32Pointer,
+  ): number;
   /** kernel32.dll!QueryDepthSList */
   QueryDepthSList(ListHead: Win32Pointer): number;
   /** kernel32.dll!QueryDosDeviceA */
@@ -2341,19 +4858,49 @@ interface Functions {
   /** kernel32.dll!QueryDosDeviceW */
   QueryDosDevice(lpDeviceName: string | Win32Pointer, lpTargetPath: string | Win32Pointer, ucchMax: number): number;
   /** kernel32.dll!QueryFullProcessImageNameA */
-  QueryFullProcessImageNameA(hProcess: Win32Pointer, dwFlags: number, lpExeName: string | Win32Pointer, lpdwSize: Win32Pointer): number;
+  QueryFullProcessImageNameA(
+    hProcess: Win32Pointer,
+    dwFlags: number,
+    lpExeName: string | Win32Pointer,
+    lpdwSize: Win32Pointer,
+  ): number;
   /** kernel32.dll!QueryFullProcessImageNameW */
-  QueryFullProcessImageNameW(hProcess: Win32Pointer, dwFlags: number, lpExeName: string | Win32Pointer, lpdwSize: Win32Pointer): number;
+  QueryFullProcessImageNameW(
+    hProcess: Win32Pointer,
+    dwFlags: number,
+    lpExeName: string | Win32Pointer,
+    lpdwSize: Win32Pointer,
+  ): number;
   /** kernel32.dll!QueryFullProcessImageNameW */
-  QueryFullProcessImageName(hProcess: Win32Pointer, dwFlags: number, lpExeName: string | Win32Pointer, lpdwSize: Win32Pointer): number;
+  QueryFullProcessImageName(
+    hProcess: Win32Pointer,
+    dwFlags: number,
+    lpExeName: string | Win32Pointer,
+    lpdwSize: Win32Pointer,
+  ): number;
   /** kernel32.dll!QueryIdleProcessorCycleTime */
   QueryIdleProcessorCycleTime(BufferLength: Win32Pointer, ProcessorIdleCycleTime: Win32Pointer): number;
   /** kernel32.dll!QueryIdleProcessorCycleTimeEx */
-  QueryIdleProcessorCycleTimeEx(Group: number, BufferLength: Win32Pointer, ProcessorIdleCycleTime: Win32Pointer): number;
+  QueryIdleProcessorCycleTimeEx(
+    Group: number,
+    BufferLength: Win32Pointer,
+    ProcessorIdleCycleTime: Win32Pointer,
+  ): number;
   /** kernel32.dll!QueryInformationJobObject */
-  QueryInformationJobObject(hJob: Win32Pointer, JobObjectInformationClass: number, lpJobObjectInformation: Win32Pointer, cbJobObjectInformationLength: number, lpReturnLength: Win32Pointer): number;
+  QueryInformationJobObject(
+    hJob: Win32Pointer,
+    JobObjectInformationClass: number,
+    lpJobObjectInformation: Win32Pointer,
+    cbJobObjectInformationLength: number,
+    lpReturnLength: Win32Pointer,
+  ): number;
   /** kernel32.dll!QueryIoRateControlInformationJobObject */
-  QueryIoRateControlInformationJobObject(hJob: Win32Pointer, VolumeName: string | Win32Pointer, InfoBlocks: Win32Pointer, InfoBlockCount: Win32Pointer): number;
+  QueryIoRateControlInformationJobObject(
+    hJob: Win32Pointer,
+    VolumeName: string | Win32Pointer,
+    InfoBlocks: Win32Pointer,
+    InfoBlockCount: Win32Pointer,
+  ): number;
   /** kernel32.dll!QueryMemoryResourceNotification */
   QueryMemoryResourceNotification(ResourceNotificationHandle: Win32Pointer, ResourceState: Win32Pointer): number;
   /** kernel32.dll!QueryPerformanceCounter */
@@ -2373,7 +4920,13 @@ interface Functions {
   /** kernel32.dll!QueryThreadpoolStackInformation */
   QueryThreadpoolStackInformation(ptpp: number | bigint, ptpsi: Win32Pointer): number;
   /** kernel32.dll!QueryUmsThreadInformation */
-  QueryUmsThreadInformation(UmsThread: Win32Pointer, UmsThreadInfoClass: number, UmsThreadInformation: Win32Pointer, UmsThreadInformationLength: number, ReturnLength: Win32Pointer): number;
+  QueryUmsThreadInformation(
+    UmsThread: Win32Pointer,
+    UmsThreadInfoClass: number,
+    UmsThreadInformation: Win32Pointer,
+    UmsThreadInformationLength: number,
+    ReturnLength: Win32Pointer,
+  ): number;
   /** kernel32.dll!QueryUnbiasedInterruptTime */
   QueryUnbiasedInterruptTime(UnbiasedTime: Win32Pointer): number;
   /** kernel32.dll!QueueUserAPC */
@@ -2383,61 +4936,212 @@ interface Functions {
   /** kernel32.dll!QueueUserWorkItem */
   QueueUserWorkItem(Function: Win32Callback, Context: Win32Pointer, Flags: number): number;
   /** kernel32.dll!RaiseException */
-  RaiseException(dwExceptionCode: number, dwExceptionFlags: number, nNumberOfArguments: number, lpArguments: Win32Pointer): void;
+  RaiseException(
+    dwExceptionCode: number,
+    dwExceptionFlags: number,
+    nNumberOfArguments: number,
+    lpArguments: Win32Pointer,
+  ): void;
   /** kernel32.dll!RaiseFailFastException */
   RaiseFailFastException(pExceptionRecord: Win32Pointer, pContextRecord: Win32Pointer, dwFlags: number): void;
   /** kernel32.dll!ReOpenFile */
-  ReOpenFile(hOriginalFile: Win32Pointer, dwDesiredAccess: number, dwShareMode: number, dwFlagsAndAttributes: number): number | null;
+  ReOpenFile(
+    hOriginalFile: Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    dwFlagsAndAttributes: number,
+  ): number | null;
   /** kernel32.dll!ReadConsoleA */
-  ReadConsoleA(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nNumberOfCharsToRead: number, lpNumberOfCharsRead: Win32Pointer, pInputControl: Win32Pointer): number;
+  ReadConsoleA(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nNumberOfCharsToRead: number,
+    lpNumberOfCharsRead: Win32Pointer,
+    pInputControl: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadConsoleInputA */
-  ReadConsoleInputA(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsRead: Win32Pointer): number;
+  ReadConsoleInputA(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsRead: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadConsoleInputExA */
-  ReadConsoleInputExA(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsRead: Win32Pointer, wFlags: number): number;
+  ReadConsoleInputExA(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsRead: Win32Pointer,
+    wFlags: number,
+  ): number;
   /** kernel32.dll!ReadConsoleInputExW */
-  ReadConsoleInputExW(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsRead: Win32Pointer, wFlags: number): number;
+  ReadConsoleInputExW(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsRead: Win32Pointer,
+    wFlags: number,
+  ): number;
   /** kernel32.dll!ReadConsoleInputExW */
-  ReadConsoleInputEx(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsRead: Win32Pointer, wFlags: number): number;
+  ReadConsoleInputEx(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsRead: Win32Pointer,
+    wFlags: number,
+  ): number;
   /** kernel32.dll!ReadConsoleInputW */
-  ReadConsoleInputW(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsRead: Win32Pointer): number;
+  ReadConsoleInputW(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsRead: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadConsoleInputW */
-  ReadConsoleInput(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsRead: Win32Pointer): number;
+  ReadConsoleInput(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsRead: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadConsoleOutputA */
-  ReadConsoleOutputA(hConsoleOutput: Win32Pointer, lpBuffer: Win32Pointer, dwBufferSize: Win32StructInit, dwBufferCoord: Win32StructInit, lpReadRegion: Win32Pointer): number;
+  ReadConsoleOutputA(
+    hConsoleOutput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    dwBufferSize: Win32StructInit,
+    dwBufferCoord: Win32StructInit,
+    lpReadRegion: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadConsoleOutputAttribute */
-  ReadConsoleOutputAttribute(hConsoleOutput: Win32Pointer, lpAttribute: Win32Pointer, nLength: number, dwReadCoord: Win32StructInit, lpNumberOfAttrsRead: Win32Pointer): number;
+  ReadConsoleOutputAttribute(
+    hConsoleOutput: Win32Pointer,
+    lpAttribute: Win32Pointer,
+    nLength: number,
+    dwReadCoord: Win32StructInit,
+    lpNumberOfAttrsRead: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadConsoleOutputCharacterA */
-  ReadConsoleOutputCharacterA(hConsoleOutput: Win32Pointer, lpCharacter: string | Win32Pointer, nLength: number, dwReadCoord: Win32StructInit, lpNumberOfCharsRead: Win32Pointer): number;
+  ReadConsoleOutputCharacterA(
+    hConsoleOutput: Win32Pointer,
+    lpCharacter: string | Win32Pointer,
+    nLength: number,
+    dwReadCoord: Win32StructInit,
+    lpNumberOfCharsRead: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadConsoleOutputCharacterW */
-  ReadConsoleOutputCharacterW(hConsoleOutput: Win32Pointer, lpCharacter: string | Win32Pointer, nLength: number, dwReadCoord: Win32StructInit, lpNumberOfCharsRead: Win32Pointer): number;
+  ReadConsoleOutputCharacterW(
+    hConsoleOutput: Win32Pointer,
+    lpCharacter: string | Win32Pointer,
+    nLength: number,
+    dwReadCoord: Win32StructInit,
+    lpNumberOfCharsRead: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadConsoleOutputCharacterW */
-  ReadConsoleOutputCharacter(hConsoleOutput: Win32Pointer, lpCharacter: string | Win32Pointer, nLength: number, dwReadCoord: Win32StructInit, lpNumberOfCharsRead: Win32Pointer): number;
+  ReadConsoleOutputCharacter(
+    hConsoleOutput: Win32Pointer,
+    lpCharacter: string | Win32Pointer,
+    nLength: number,
+    dwReadCoord: Win32StructInit,
+    lpNumberOfCharsRead: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadConsoleOutputW */
-  ReadConsoleOutputW(hConsoleOutput: Win32Pointer, lpBuffer: Win32Pointer, dwBufferSize: Win32StructInit, dwBufferCoord: Win32StructInit, lpReadRegion: Win32Pointer): number;
+  ReadConsoleOutputW(
+    hConsoleOutput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    dwBufferSize: Win32StructInit,
+    dwBufferCoord: Win32StructInit,
+    lpReadRegion: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadConsoleOutputW */
-  ReadConsoleOutput(hConsoleOutput: Win32Pointer, lpBuffer: Win32Pointer, dwBufferSize: Win32StructInit, dwBufferCoord: Win32StructInit, lpReadRegion: Win32Pointer): number;
+  ReadConsoleOutput(
+    hConsoleOutput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    dwBufferSize: Win32StructInit,
+    dwBufferCoord: Win32StructInit,
+    lpReadRegion: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadConsoleW */
-  ReadConsoleW(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nNumberOfCharsToRead: number, lpNumberOfCharsRead: Win32Pointer, pInputControl: Win32Pointer): number;
+  ReadConsoleW(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nNumberOfCharsToRead: number,
+    lpNumberOfCharsRead: Win32Pointer,
+    pInputControl: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadConsoleW */
-  ReadConsole(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nNumberOfCharsToRead: number, lpNumberOfCharsRead: Win32Pointer, pInputControl: Win32Pointer): number;
+  ReadConsole(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nNumberOfCharsToRead: number,
+    lpNumberOfCharsRead: Win32Pointer,
+    pInputControl: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadDirectoryChangesExW */
-  ReadDirectoryChangesExW(hDirectory: Win32Pointer, lpBuffer: Win32Pointer, nBufferLength: number, bWatchSubtree: number, dwNotifyFilter: number, lpBytesReturned: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback, ReadDirectoryNotifyInformationClass: number): number;
+  ReadDirectoryChangesExW(
+    hDirectory: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nBufferLength: number,
+    bWatchSubtree: number,
+    dwNotifyFilter: number,
+    lpBytesReturned: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+    ReadDirectoryNotifyInformationClass: number,
+  ): number;
   /** kernel32.dll!ReadDirectoryChangesW */
-  ReadDirectoryChangesW(hDirectory: Win32Pointer, lpBuffer: Win32Pointer, nBufferLength: number, bWatchSubtree: number, dwNotifyFilter: number, lpBytesReturned: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback): number;
+  ReadDirectoryChangesW(
+    hDirectory: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nBufferLength: number,
+    bWatchSubtree: number,
+    dwNotifyFilter: number,
+    lpBytesReturned: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+  ): number;
   /** kernel32.dll!ReadFile */
-  ReadFile(hFile: Win32Pointer, lpBuffer: Win32Pointer, nNumberOfBytesToRead: number, lpNumberOfBytesRead: Win32Pointer, lpOverlapped: Win32Pointer): number;
+  ReadFile(
+    hFile: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nNumberOfBytesToRead: number,
+    lpNumberOfBytesRead: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadFileEx */
-  ReadFileEx(hFile: Win32Pointer, lpBuffer: Win32Pointer, nNumberOfBytesToRead: number, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback): number;
+  ReadFileEx(
+    hFile: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nNumberOfBytesToRead: number,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+  ): number;
   /** kernel32.dll!ReadFileScatter */
-  ReadFileScatter(hFile: Win32Pointer, aSegmentArray: Win32Pointer, nNumberOfBytesToRead: number, lpReserved: Win32Pointer, lpOverlapped: Win32Pointer): number;
+  ReadFileScatter(
+    hFile: Win32Pointer,
+    aSegmentArray: Win32Pointer,
+    nNumberOfBytesToRead: number,
+    lpReserved: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadProcessMemory */
-  ReadProcessMemory(hProcess: Win32Pointer, lpBaseAddress: Win32Pointer, lpBuffer: Win32Pointer, nSize: number | bigint, lpNumberOfBytesRead: Win32Pointer): number;
+  ReadProcessMemory(
+    hProcess: Win32Pointer,
+    lpBaseAddress: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nSize: number | bigint,
+    lpNumberOfBytesRead: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReadThreadProfilingData */
   ReadThreadProfilingData(PerformanceDataHandle: Win32Pointer, Flags: number, PerformanceData: Win32Pointer): number;
   /** kernel32.dll!ReclaimVirtualMemory */
   ReclaimVirtualMemory(VirtualAddress: Win32Pointer, Size: number | bigint): number;
   /** kernel32.dll!RegisterApplicationRecoveryCallback */
-  RegisterApplicationRecoveryCallback(pRecoveyCallback: Win32Callback, pvParameter: Win32Pointer, dwPingInterval: number, dwFlags: number): number;
+  RegisterApplicationRecoveryCallback(
+    pRecoveyCallback: Win32Callback,
+    pvParameter: Win32Pointer,
+    dwPingInterval: number,
+    dwFlags: number,
+  ): number;
   /** kernel32.dll!RegisterApplicationRestart */
   RegisterApplicationRestart(pwzCommandline: string | Win32Pointer, dwFlags: number): number;
   /** kernel32.dll!RegisterBadMemoryNotification */
@@ -2447,11 +5151,32 @@ interface Functions {
   /** kernel32.dll!RegisterConsoleOS2 */
   RegisterConsoleOS2(fOs2Register: number): number;
   /** kernel32.dll!RegisterConsoleVDM */
-  RegisterConsoleVDM(dwRegisterFlags: number, hStartHardwareEvent: Win32Pointer, hEndHardwareEvent: Win32Pointer, hErrorhardwareEvent: Win32Pointer, Reserved: number, lpStateLength: Win32Pointer, lpState: Win32Pointer, VDMBufferSize: Win32StructInit, lpVDMBuffer: Win32Pointer): number;
+  RegisterConsoleVDM(
+    dwRegisterFlags: number,
+    hStartHardwareEvent: Win32Pointer,
+    hEndHardwareEvent: Win32Pointer,
+    hErrorhardwareEvent: Win32Pointer,
+    Reserved: number,
+    lpStateLength: Win32Pointer,
+    lpState: Win32Pointer,
+    VDMBufferSize: Win32StructInit,
+    lpVDMBuffer: Win32Pointer,
+  ): number;
   /** kernel32.dll!RegisterWaitForSingleObject */
-  RegisterWaitForSingleObject(phNewWaitObject: Win32Pointer, hObject: Win32Pointer, Callback: Win32Callback, Context: Win32Pointer, dwMilliseconds: number, dwFlags: number): number;
+  RegisterWaitForSingleObject(
+    phNewWaitObject: Win32Pointer,
+    hObject: Win32Pointer,
+    Callback: Win32Callback,
+    Context: Win32Pointer,
+    dwMilliseconds: number,
+    dwFlags: number,
+  ): number;
   /** kernel32.dll!RegisterWaitUntilOOBECompleted */
-  RegisterWaitUntilOOBECompleted(OOBECompletedCallback: Win32Callback, CallbackContext: Win32Pointer, WaitHandle: Win32Pointer): number;
+  RegisterWaitUntilOOBECompleted(
+    OOBECompletedCallback: Win32Callback,
+    CallbackContext: Win32Pointer,
+    WaitHandle: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReleaseActCtx */
   ReleaseActCtx(hActCtx: Win32Pointer): void;
   /** kernel32.dll!ReleaseMutex */
@@ -2497,13 +5222,38 @@ interface Functions {
   /** kernel32.dll!RemoveVectoredExceptionHandler */
   RemoveVectoredExceptionHandler(Handle: Win32Pointer): number;
   /** kernel32.dll!ReplaceFileA */
-  ReplaceFileA(lpReplacedFileName: string | Win32Pointer, lpReplacementFileName: string | Win32Pointer, lpBackupFileName: string | Win32Pointer, dwReplaceFlags: number, lpExclude: Win32Pointer, lpReserved: Win32Pointer): number;
+  ReplaceFileA(
+    lpReplacedFileName: string | Win32Pointer,
+    lpReplacementFileName: string | Win32Pointer,
+    lpBackupFileName: string | Win32Pointer,
+    dwReplaceFlags: number,
+    lpExclude: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReplaceFileW */
-  ReplaceFileW(lpReplacedFileName: string | Win32Pointer, lpReplacementFileName: string | Win32Pointer, lpBackupFileName: string | Win32Pointer, dwReplaceFlags: number, lpExclude: Win32Pointer, lpReserved: Win32Pointer): number;
+  ReplaceFileW(
+    lpReplacedFileName: string | Win32Pointer,
+    lpReplacementFileName: string | Win32Pointer,
+    lpBackupFileName: string | Win32Pointer,
+    dwReplaceFlags: number,
+    lpExclude: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReplaceFileW */
-  ReplaceFile(lpReplacedFileName: string | Win32Pointer, lpReplacementFileName: string | Win32Pointer, lpBackupFileName: string | Win32Pointer, dwReplaceFlags: number, lpExclude: Win32Pointer, lpReserved: Win32Pointer): number;
+  ReplaceFile(
+    lpReplacedFileName: string | Win32Pointer,
+    lpReplacementFileName: string | Win32Pointer,
+    lpBackupFileName: string | Win32Pointer,
+    dwReplaceFlags: number,
+    lpExclude: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** kernel32.dll!ReplacePartitionUnit */
-  ReplacePartitionUnit(TargetPartition: string | Win32Pointer, SparePartition: string | Win32Pointer, Flags: number): number;
+  ReplacePartitionUnit(
+    TargetPartition: string | Win32Pointer,
+    SparePartition: string | Win32Pointer,
+    Flags: number,
+  ): number;
   /** kernel32.dll!RequestDeviceWakeup */
   RequestDeviceWakeup(hDevice: Win32Pointer): number;
   /** kernel32.dll!RequestWakeupLatency */
@@ -2515,7 +5265,11 @@ interface Functions {
   /** kernel32.dll!ResizePseudoConsole */
   ResizePseudoConsole(hPC: number | bigint, size: Win32StructInit): number;
   /** kernel32.dll!ResolveLocaleName */
-  ResolveLocaleName(lpNameToResolve: string | Win32Pointer, lpLocaleName: string | Win32Pointer, cchLocaleName: number): number;
+  ResolveLocaleName(
+    lpNameToResolve: string | Win32Pointer,
+    lpLocaleName: string | Win32Pointer,
+    cchLocaleName: number,
+  ): number;
   /** kernel32.dll!RestoreThreadPreferredUILanguages */
   RestoreThreadPreferredUILanguages(snapshot: Win32Pointer): void;
   /** kernel32.dll!ResumeThread */
@@ -2527,15 +5281,31 @@ interface Functions {
   /** kernel32.dll!RtlCaptureContext2 */
   RtlCaptureContext2(ContextRecord: Win32Pointer): void;
   /** kernel32.dll!RtlCaptureStackBackTrace */
-  RtlCaptureStackBackTrace(FramesToSkip: number, FramesToCapture: number, BackTrace: Win32Pointer, BackTraceHash: Win32Pointer): number;
+  RtlCaptureStackBackTrace(
+    FramesToSkip: number,
+    FramesToCapture: number,
+    BackTrace: Win32Pointer,
+    BackTraceHash: Win32Pointer,
+  ): number;
   /** kernel32.dll!RtlCompareMemory */
   RtlCompareMemory(Source1: Win32Pointer, Source2: Win32Pointer, Length: number | bigint): number | bigint;
   /** kernel32.dll!RtlDeleteFunctionTable */
   RtlDeleteFunctionTable(FunctionTable: Win32Pointer): number;
   /** kernel32.dll!RtlInstallFunctionTableCallback */
-  RtlInstallFunctionTableCallback(TableIdentifier: number | bigint, BaseAddress: number | bigint, Length: number, Callback: Win32Callback, Context: Win32Pointer, OutOfProcessCallbackDll: string | Win32Pointer): number;
+  RtlInstallFunctionTableCallback(
+    TableIdentifier: number | bigint,
+    BaseAddress: number | bigint,
+    Length: number,
+    Callback: Win32Callback,
+    Context: Win32Pointer,
+    OutOfProcessCallbackDll: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!RtlLookupFunctionEntry */
-  RtlLookupFunctionEntry(ControlPc: number | bigint, ImageBase: Win32Pointer, HistoryTable: Win32Pointer): number | null;
+  RtlLookupFunctionEntry(
+    ControlPc: number | bigint,
+    ImageBase: Win32Pointer,
+    HistoryTable: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!RtlPcToFileHeader */
   RtlPcToFileHeader(PcValue: Win32Pointer, BaseOfImage: Win32Pointer): number | null;
   /** kernel32.dll!RtlRaiseException */
@@ -2543,25 +5313,90 @@ interface Functions {
   /** kernel32.dll!RtlRestoreContext */
   RtlRestoreContext(ContextRecord: Win32Pointer, ExceptionRecord: Win32Pointer): void;
   /** kernel32.dll!RtlUnwind */
-  RtlUnwind(TargetFrame: Win32Pointer, TargetIp: Win32Pointer, ExceptionRecord: Win32Pointer, ReturnValue: Win32Pointer): void;
+  RtlUnwind(
+    TargetFrame: Win32Pointer,
+    TargetIp: Win32Pointer,
+    ExceptionRecord: Win32Pointer,
+    ReturnValue: Win32Pointer,
+  ): void;
   /** kernel32.dll!RtlUnwindEx */
-  RtlUnwindEx(TargetFrame: Win32Pointer, TargetIp: Win32Pointer, ExceptionRecord: Win32Pointer, ReturnValue: Win32Pointer, ContextRecord: Win32Pointer, HistoryTable: Win32Pointer): void;
+  RtlUnwindEx(
+    TargetFrame: Win32Pointer,
+    TargetIp: Win32Pointer,
+    ExceptionRecord: Win32Pointer,
+    ReturnValue: Win32Pointer,
+    ContextRecord: Win32Pointer,
+    HistoryTable: Win32Pointer,
+  ): void;
   /** kernel32.dll!RtlVirtualUnwind */
-  RtlVirtualUnwind(HandlerType: number, ImageBase: number | bigint, ControlPc: number | bigint, FunctionEntry: Win32Pointer, ContextRecord: Win32Pointer, HandlerData: Win32Pointer, EstablisherFrame: Win32Pointer, ContextPointers: Win32Pointer): number | null;
+  RtlVirtualUnwind(
+    HandlerType: number,
+    ImageBase: number | bigint,
+    ControlPc: number | bigint,
+    FunctionEntry: Win32Pointer,
+    ContextRecord: Win32Pointer,
+    HandlerData: Win32Pointer,
+    EstablisherFrame: Win32Pointer,
+    ContextPointers: Win32Pointer,
+  ): number | null;
   /** kernel32.dll!ScrollConsoleScreenBufferA */
-  ScrollConsoleScreenBufferA(hConsoleOutput: Win32Pointer, lpScrollRectangle: Win32Pointer, lpClipRectangle: Win32Pointer, dwDestinationOrigin: Win32StructInit, lpFill: Win32Pointer): number;
+  ScrollConsoleScreenBufferA(
+    hConsoleOutput: Win32Pointer,
+    lpScrollRectangle: Win32Pointer,
+    lpClipRectangle: Win32Pointer,
+    dwDestinationOrigin: Win32StructInit,
+    lpFill: Win32Pointer,
+  ): number;
   /** kernel32.dll!ScrollConsoleScreenBufferW */
-  ScrollConsoleScreenBufferW(hConsoleOutput: Win32Pointer, lpScrollRectangle: Win32Pointer, lpClipRectangle: Win32Pointer, dwDestinationOrigin: Win32StructInit, lpFill: Win32Pointer): number;
+  ScrollConsoleScreenBufferW(
+    hConsoleOutput: Win32Pointer,
+    lpScrollRectangle: Win32Pointer,
+    lpClipRectangle: Win32Pointer,
+    dwDestinationOrigin: Win32StructInit,
+    lpFill: Win32Pointer,
+  ): number;
   /** kernel32.dll!ScrollConsoleScreenBufferW */
-  ScrollConsoleScreenBuffer(hConsoleOutput: Win32Pointer, lpScrollRectangle: Win32Pointer, lpClipRectangle: Win32Pointer, dwDestinationOrigin: Win32StructInit, lpFill: Win32Pointer): number;
+  ScrollConsoleScreenBuffer(
+    hConsoleOutput: Win32Pointer,
+    lpScrollRectangle: Win32Pointer,
+    lpClipRectangle: Win32Pointer,
+    dwDestinationOrigin: Win32StructInit,
+    lpFill: Win32Pointer,
+  ): number;
   /** kernel32.dll!SearchPathA */
-  SearchPathA(lpPath: string | Win32Pointer, lpFileName: string | Win32Pointer, lpExtension: string | Win32Pointer, nBufferLength: number, lpBuffer: string | Win32Pointer, lpFilePart: Win32Pointer): number;
+  SearchPathA(
+    lpPath: string | Win32Pointer,
+    lpFileName: string | Win32Pointer,
+    lpExtension: string | Win32Pointer,
+    nBufferLength: number,
+    lpBuffer: string | Win32Pointer,
+    lpFilePart: Win32Pointer,
+  ): number;
   /** kernel32.dll!SearchPathW */
-  SearchPathW(lpPath: string | Win32Pointer, lpFileName: string | Win32Pointer, lpExtension: string | Win32Pointer, nBufferLength: number, lpBuffer: string | Win32Pointer, lpFilePart: Win32Pointer): number;
+  SearchPathW(
+    lpPath: string | Win32Pointer,
+    lpFileName: string | Win32Pointer,
+    lpExtension: string | Win32Pointer,
+    nBufferLength: number,
+    lpBuffer: string | Win32Pointer,
+    lpFilePart: Win32Pointer,
+  ): number;
   /** kernel32.dll!SearchPathW */
-  SearchPath(lpPath: string | Win32Pointer, lpFileName: string | Win32Pointer, lpExtension: string | Win32Pointer, nBufferLength: number, lpBuffer: string | Win32Pointer, lpFilePart: Win32Pointer): number;
+  SearchPath(
+    lpPath: string | Win32Pointer,
+    lpFileName: string | Win32Pointer,
+    lpExtension: string | Win32Pointer,
+    nBufferLength: number,
+    lpBuffer: string | Win32Pointer,
+    lpFilePart: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetCachedSigningLevel */
-  SetCachedSigningLevel(SourceFiles: Win32Pointer, SourceFileCount: number, Flags: number, TargetFile: Win32Pointer): number;
+  SetCachedSigningLevel(
+    SourceFiles: Win32Pointer,
+    SourceFileCount: number,
+    Flags: number,
+    TargetFile: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetCalendarInfoA */
   SetCalendarInfoA(Locale: number, Calendar: number, CalType: number, lpCalData: string | Win32Pointer): number;
   /** kernel32.dll!SetCalendarInfoW */
@@ -2607,11 +5442,19 @@ interface Functions {
   /** kernel32.dll!SetConsoleCursorPosition */
   SetConsoleCursorPosition(hConsoleOutput: Win32Pointer, dwCursorPosition: Win32StructInit): number;
   /** kernel32.dll!SetConsoleDisplayMode */
-  SetConsoleDisplayMode(hConsoleOutput: Win32Pointer, dwFlags: number, lpNewScreenBufferDimensions: Win32Pointer): number;
+  SetConsoleDisplayMode(
+    hConsoleOutput: Win32Pointer,
+    dwFlags: number,
+    lpNewScreenBufferDimensions: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetConsoleFont */
   SetConsoleFont(hConsoleOutput: Win32Pointer, nFont: number): number;
   /** kernel32.dll!SetConsoleHardwareState */
-  SetConsoleHardwareState(hConsoleOutput: Win32Pointer, dwResolution: Win32StructInit, dwFontSize: Win32StructInit): number;
+  SetConsoleHardwareState(
+    hConsoleOutput: Win32Pointer,
+    dwResolution: Win32StructInit,
+    dwFontSize: Win32StructInit,
+  ): number;
   /** kernel32.dll!SetConsoleHistoryInfo */
   SetConsoleHistoryInfo(lpConsoleHistoryInfo: Win32Pointer): number;
   /** kernel32.dll!SetConsoleIcon */
@@ -2625,7 +5468,12 @@ interface Functions {
   /** kernel32.dll!SetConsoleKeyShortcuts */
   SetConsoleKeyShortcuts(bSet: number, bReserveKeys: number, lpAppKeys: Win32Pointer, dwNumAppKeys: number): number;
   /** kernel32.dll!SetConsoleLocalEUDC */
-  SetConsoleLocalEUDC(hConsoleHandle: Win32Pointer, wCodePoint: number, cFontSize: Win32StructInit, lpSB: string | Win32Pointer): number;
+  SetConsoleLocalEUDC(
+    hConsoleHandle: Win32Pointer,
+    wCodePoint: number,
+    cFontSize: Win32StructInit,
+    lpSB: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!SetConsoleMenuClose */
   SetConsoleMenuClose(bEnable: number): number;
   /** kernel32.dll!SetConsoleMode */
@@ -2661,7 +5509,11 @@ interface Functions {
   /** kernel32.dll!SetCriticalSectionSpinCount */
   SetCriticalSectionSpinCount(lpCriticalSection: Win32Pointer, dwSpinCount: number): number;
   /** kernel32.dll!SetCurrentConsoleFontEx */
-  SetCurrentConsoleFontEx(hConsoleOutput: Win32Pointer, bMaximumWindow: number, lpConsoleCurrentFontEx: Win32Pointer): number;
+  SetCurrentConsoleFontEx(
+    hConsoleOutput: Win32Pointer,
+    bMaximumWindow: number,
+    lpConsoleCurrentFontEx: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetCurrentDirectoryA */
   SetCurrentDirectoryA(lpPathName: string | Win32Pointer): number;
   /** kernel32.dll!SetCurrentDirectoryW */
@@ -2711,27 +5563,61 @@ interface Functions {
   /** kernel32.dll!SetFileAttributesA */
   SetFileAttributesA(lpFileName: string | Win32Pointer, dwFileAttributes: number): number;
   /** kernel32.dll!SetFileAttributesTransactedA */
-  SetFileAttributesTransactedA(lpFileName: string | Win32Pointer, dwFileAttributes: number, hTransaction: Win32Pointer): number;
+  SetFileAttributesTransactedA(
+    lpFileName: string | Win32Pointer,
+    dwFileAttributes: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetFileAttributesTransactedW */
-  SetFileAttributesTransactedW(lpFileName: string | Win32Pointer, dwFileAttributes: number, hTransaction: Win32Pointer): number;
+  SetFileAttributesTransactedW(
+    lpFileName: string | Win32Pointer,
+    dwFileAttributes: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetFileAttributesTransactedW */
-  SetFileAttributesTransacted(lpFileName: string | Win32Pointer, dwFileAttributes: number, hTransaction: Win32Pointer): number;
+  SetFileAttributesTransacted(
+    lpFileName: string | Win32Pointer,
+    dwFileAttributes: number,
+    hTransaction: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetFileAttributesW */
   SetFileAttributesW(lpFileName: string | Win32Pointer, dwFileAttributes: number): number;
   /** kernel32.dll!SetFileAttributesW */
   SetFileAttributes(lpFileName: string | Win32Pointer, dwFileAttributes: number): number;
   /** kernel32.dll!SetFileBandwidthReservation */
-  SetFileBandwidthReservation(hFile: Win32Pointer, nPeriodMilliseconds: number, nBytesPerPeriod: number, bDiscardable: number, lpTransferSize: Win32Pointer, lpNumOutstandingRequests: Win32Pointer): number;
+  SetFileBandwidthReservation(
+    hFile: Win32Pointer,
+    nPeriodMilliseconds: number,
+    nBytesPerPeriod: number,
+    bDiscardable: number,
+    lpTransferSize: Win32Pointer,
+    lpNumOutstandingRequests: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetFileCompletionNotificationModes */
   SetFileCompletionNotificationModes(FileHandle: Win32Pointer, Flags: number): number;
   /** kernel32.dll!SetFileInformationByHandle */
-  SetFileInformationByHandle(hFile: Win32Pointer, FileInformationClass: number, lpFileInformation: Win32Pointer, dwBufferSize: number): number;
+  SetFileInformationByHandle(
+    hFile: Win32Pointer,
+    FileInformationClass: number,
+    lpFileInformation: Win32Pointer,
+    dwBufferSize: number,
+  ): number;
   /** kernel32.dll!SetFileIoOverlappedRange */
   SetFileIoOverlappedRange(FileHandle: Win32Pointer, OverlappedRangeStart: Win32Pointer, Length: number): number;
   /** kernel32.dll!SetFilePointer */
-  SetFilePointer(hFile: Win32Pointer, lDistanceToMove: number, lpDistanceToMoveHigh: Win32Pointer, dwMoveMethod: number): number;
+  SetFilePointer(
+    hFile: Win32Pointer,
+    lDistanceToMove: number,
+    lpDistanceToMoveHigh: Win32Pointer,
+    dwMoveMethod: number,
+  ): number;
   /** kernel32.dll!SetFilePointerEx */
-  SetFilePointerEx(hFile: Win32Pointer, liDistanceToMove: number | bigint, lpNewFilePointer: Win32Pointer, dwMoveMethod: number): number;
+  SetFilePointerEx(
+    hFile: Win32Pointer,
+    liDistanceToMove: number | bigint,
+    lpNewFilePointer: Win32Pointer,
+    dwMoveMethod: number,
+  ): number;
   /** kernel32.dll!SetFileShortNameA */
   SetFileShortNameA(hFile: Win32Pointer, lpShortName: string | Win32Pointer): number;
   /** kernel32.dll!SetFileShortNameW */
@@ -2739,27 +5625,70 @@ interface Functions {
   /** kernel32.dll!SetFileShortNameW */
   SetFileShortName(hFile: Win32Pointer, lpShortName: string | Win32Pointer): number;
   /** kernel32.dll!SetFileTime */
-  SetFileTime(hFile: Win32Pointer, lpCreationTime: Win32Pointer, lpLastAccessTime: Win32Pointer, lpLastWriteTime: Win32Pointer): number;
+  SetFileTime(
+    hFile: Win32Pointer,
+    lpCreationTime: Win32Pointer,
+    lpLastAccessTime: Win32Pointer,
+    lpLastWriteTime: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetFileValidData */
   SetFileValidData(hFile: Win32Pointer, ValidDataLength: number | bigint): number;
   /** kernel32.dll!SetFirmwareEnvironmentVariableA */
-  SetFirmwareEnvironmentVariableA(lpName: string | Win32Pointer, lpGuid: string | Win32Pointer, pValue: Win32Pointer, nSize: number): number;
+  SetFirmwareEnvironmentVariableA(
+    lpName: string | Win32Pointer,
+    lpGuid: string | Win32Pointer,
+    pValue: Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!SetFirmwareEnvironmentVariableExA */
-  SetFirmwareEnvironmentVariableExA(lpName: string | Win32Pointer, lpGuid: string | Win32Pointer, pValue: Win32Pointer, nSize: number, dwAttributes: number): number;
+  SetFirmwareEnvironmentVariableExA(
+    lpName: string | Win32Pointer,
+    lpGuid: string | Win32Pointer,
+    pValue: Win32Pointer,
+    nSize: number,
+    dwAttributes: number,
+  ): number;
   /** kernel32.dll!SetFirmwareEnvironmentVariableExW */
-  SetFirmwareEnvironmentVariableExW(lpName: string | Win32Pointer, lpGuid: string | Win32Pointer, pValue: Win32Pointer, nSize: number, dwAttributes: number): number;
+  SetFirmwareEnvironmentVariableExW(
+    lpName: string | Win32Pointer,
+    lpGuid: string | Win32Pointer,
+    pValue: Win32Pointer,
+    nSize: number,
+    dwAttributes: number,
+  ): number;
   /** kernel32.dll!SetFirmwareEnvironmentVariableExW */
-  SetFirmwareEnvironmentVariableEx(lpName: string | Win32Pointer, lpGuid: string | Win32Pointer, pValue: Win32Pointer, nSize: number, dwAttributes: number): number;
+  SetFirmwareEnvironmentVariableEx(
+    lpName: string | Win32Pointer,
+    lpGuid: string | Win32Pointer,
+    pValue: Win32Pointer,
+    nSize: number,
+    dwAttributes: number,
+  ): number;
   /** kernel32.dll!SetFirmwareEnvironmentVariableW */
-  SetFirmwareEnvironmentVariableW(lpName: string | Win32Pointer, lpGuid: string | Win32Pointer, pValue: Win32Pointer, nSize: number): number;
+  SetFirmwareEnvironmentVariableW(
+    lpName: string | Win32Pointer,
+    lpGuid: string | Win32Pointer,
+    pValue: Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!SetFirmwareEnvironmentVariableW */
-  SetFirmwareEnvironmentVariable(lpName: string | Win32Pointer, lpGuid: string | Win32Pointer, pValue: Win32Pointer, nSize: number): number;
+  SetFirmwareEnvironmentVariable(
+    lpName: string | Win32Pointer,
+    lpGuid: string | Win32Pointer,
+    pValue: Win32Pointer,
+    nSize: number,
+  ): number;
   /** kernel32.dll!SetHandleCount */
   SetHandleCount(uNumber: number): number;
   /** kernel32.dll!SetHandleInformation */
   SetHandleInformation(hObject: Win32Pointer, dwMask: number, dwFlags: number): number;
   /** kernel32.dll!SetInformationJobObject */
-  SetInformationJobObject(hJob: Win32Pointer, JobObjectInformationClass: number, lpJobObjectInformation: Win32Pointer, cbJobObjectInformationLength: number): number;
+  SetInformationJobObject(
+    hJob: Win32Pointer,
+    JobObjectInformationClass: number,
+    lpJobObjectInformation: Win32Pointer,
+    cbJobObjectInformationLength: number,
+  ): number;
   /** kernel32.dll!SetIoRateControlInformationJobObject */
   SetIoRateControlInformationJobObject(hJob: Win32Pointer, IoRateControlInfo: Win32Pointer): number;
   /** kernel32.dll!SetLastConsoleEventActive */
@@ -2779,7 +5708,12 @@ interface Functions {
   /** kernel32.dll!SetMessageWaitingIndicator */
   SetMessageWaitingIndicator(hMsgIndicator: Win32Pointer, ulMsgCount: number): number;
   /** kernel32.dll!SetNamedPipeHandleState */
-  SetNamedPipeHandleState(hNamedPipe: Win32Pointer, lpMode: Win32Pointer, lpMaxCollectionCount: Win32Pointer, lpCollectDataTimeout: Win32Pointer): number;
+  SetNamedPipeHandleState(
+    hNamedPipe: Win32Pointer,
+    lpMode: Win32Pointer,
+    lpMaxCollectionCount: Win32Pointer,
+    lpCollectDataTimeout: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetPriorityClass */
   SetPriorityClass(hProcess: Win32Pointer, dwPriorityClass: number): number;
   /** kernel32.dll!SetProcessAffinityMask */
@@ -2795,21 +5729,43 @@ interface Functions {
   /** kernel32.dll!SetProcessDynamicEHContinuationTargets */
   SetProcessDynamicEHContinuationTargets(Process: Win32Pointer, NumberOfTargets: number, Targets: Win32Pointer): number;
   /** kernel32.dll!SetProcessDynamicEnforcedCetCompatibleRanges */
-  SetProcessDynamicEnforcedCetCompatibleRanges(Process: Win32Pointer, NumberOfRanges: number, Ranges: Win32Pointer): number;
+  SetProcessDynamicEnforcedCetCompatibleRanges(
+    Process: Win32Pointer,
+    NumberOfRanges: number,
+    Ranges: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetProcessInformation */
-  SetProcessInformation(hProcess: Win32Pointer, ProcessInformationClass: number, ProcessInformation: Win32Pointer, ProcessInformationSize: number): number;
+  SetProcessInformation(
+    hProcess: Win32Pointer,
+    ProcessInformationClass: number,
+    ProcessInformation: Win32Pointer,
+    ProcessInformationSize: number,
+  ): number;
   /** kernel32.dll!SetProcessMitigationPolicy */
   SetProcessMitigationPolicy(MitigationPolicy: number, lpBuffer: Win32Pointer, dwLength: number | bigint): number;
   /** kernel32.dll!SetProcessPreferredUILanguages */
-  SetProcessPreferredUILanguages(dwFlags: number, pwszLanguagesBuffer: string | Win32Pointer, pulNumLanguages: Win32Pointer): number;
+  SetProcessPreferredUILanguages(
+    dwFlags: number,
+    pwszLanguagesBuffer: string | Win32Pointer,
+    pulNumLanguages: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetProcessPriorityBoost */
   SetProcessPriorityBoost(hProcess: Win32Pointer, bDisablePriorityBoost: number): number;
   /** kernel32.dll!SetProcessShutdownParameters */
   SetProcessShutdownParameters(dwLevel: number, dwFlags: number): number;
   /** kernel32.dll!SetProcessWorkingSetSize */
-  SetProcessWorkingSetSize(hProcess: Win32Pointer, dwMinimumWorkingSetSize: number | bigint, dwMaximumWorkingSetSize: number | bigint): number;
+  SetProcessWorkingSetSize(
+    hProcess: Win32Pointer,
+    dwMinimumWorkingSetSize: number | bigint,
+    dwMaximumWorkingSetSize: number | bigint,
+  ): number;
   /** kernel32.dll!SetProcessWorkingSetSizeEx */
-  SetProcessWorkingSetSizeEx(hProcess: Win32Pointer, dwMinimumWorkingSetSize: number | bigint, dwMaximumWorkingSetSize: number | bigint, Flags: number): number;
+  SetProcessWorkingSetSizeEx(
+    hProcess: Win32Pointer,
+    dwMinimumWorkingSetSize: number | bigint,
+    dwMaximumWorkingSetSize: number | bigint,
+    Flags: number,
+  ): number;
   /** kernel32.dll!SetProtectedPolicy */
   SetProtectedPolicy(PolicyGuid: Win32Pointer, PolicyValue: number | bigint, OldPolicyValue: Win32Pointer): number;
   /** kernel32.dll!SetSearchPathMode */
@@ -2819,7 +5775,11 @@ interface Functions {
   /** kernel32.dll!SetStdHandleEx */
   SetStdHandleEx(nStdHandle: number, hHandle: Win32Pointer, phPrevValue: Win32Pointer): number;
   /** kernel32.dll!SetSystemFileCacheSize */
-  SetSystemFileCacheSize(MinimumFileCacheSize: number | bigint, MaximumFileCacheSize: number | bigint, Flags: number): number;
+  SetSystemFileCacheSize(
+    MinimumFileCacheSize: number | bigint,
+    MaximumFileCacheSize: number | bigint,
+    Flags: number,
+  ): number;
   /** kernel32.dll!SetSystemPowerState */
   SetSystemPowerState(fSuspend: number, fForce: number): number;
   /** kernel32.dll!SetSystemTime */
@@ -2829,7 +5789,14 @@ interface Functions {
   /** kernel32.dll!SetTapeParameters */
   SetTapeParameters(hDevice: Win32Pointer, dwOperation: number, lpTapeInformation: Win32Pointer): number;
   /** kernel32.dll!SetTapePosition */
-  SetTapePosition(hDevice: Win32Pointer, dwPositionMethod: number, dwPartition: number, dwOffsetLow: number, dwOffsetHigh: number, bImmediate: number): number;
+  SetTapePosition(
+    hDevice: Win32Pointer,
+    dwPositionMethod: number,
+    dwPartition: number,
+    dwOffsetLow: number,
+    dwOffsetHigh: number,
+    bImmediate: number,
+  ): number;
   /** kernel32.dll!SetThreadAffinityMask */
   SetThreadAffinityMask(hThread: Win32Pointer, dwThreadAffinityMask: number | bigint): number | bigint;
   /** kernel32.dll!SetThreadContext */
@@ -2841,19 +5808,41 @@ interface Functions {
   /** kernel32.dll!SetThreadExecutionState */
   SetThreadExecutionState(esFlags: number): number;
   /** kernel32.dll!SetThreadGroupAffinity */
-  SetThreadGroupAffinity(hThread: Win32Pointer, GroupAffinity: Win32Pointer, PreviousGroupAffinity: Win32Pointer): number;
+  SetThreadGroupAffinity(
+    hThread: Win32Pointer,
+    GroupAffinity: Win32Pointer,
+    PreviousGroupAffinity: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetThreadIdealProcessor */
   SetThreadIdealProcessor(hThread: Win32Pointer, dwIdealProcessor: number): number;
   /** kernel32.dll!SetThreadIdealProcessorEx */
-  SetThreadIdealProcessorEx(hThread: Win32Pointer, lpIdealProcessor: Win32Pointer, lpPreviousIdealProcessor: Win32Pointer): number;
+  SetThreadIdealProcessorEx(
+    hThread: Win32Pointer,
+    lpIdealProcessor: Win32Pointer,
+    lpPreviousIdealProcessor: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetThreadInformation */
-  SetThreadInformation(hThread: Win32Pointer, ThreadInformationClass: number, ThreadInformation: Win32Pointer, ThreadInformationSize: number): number;
+  SetThreadInformation(
+    hThread: Win32Pointer,
+    ThreadInformationClass: number,
+    ThreadInformation: Win32Pointer,
+    ThreadInformationSize: number,
+  ): number;
   /** kernel32.dll!SetThreadLocale */
   SetThreadLocale(Locale: number): number;
   /** kernel32.dll!SetThreadPreferredUILanguages */
-  SetThreadPreferredUILanguages(dwFlags: number, pwszLanguagesBuffer: string | Win32Pointer, pulNumLanguages: Win32Pointer): number;
+  SetThreadPreferredUILanguages(
+    dwFlags: number,
+    pwszLanguagesBuffer: string | Win32Pointer,
+    pulNumLanguages: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetThreadPreferredUILanguages2 */
-  SetThreadPreferredUILanguages2(flags: number, languages: string | Win32Pointer, numLanguagesSet: Win32Pointer, snapshot: Win32Pointer): number;
+  SetThreadPreferredUILanguages2(
+    flags: number,
+    languages: string | Win32Pointer,
+    numLanguagesSet: Win32Pointer,
+    snapshot: Win32Pointer,
+  ): number;
   /** kernel32.dll!SetThreadPriority */
   SetThreadPriority(hThread: Win32Pointer, nPriority: number): number;
   /** kernel32.dll!SetThreadPriorityBoost */
@@ -2875,7 +5864,12 @@ interface Functions {
   /** kernel32.dll!SetThreadpoolTimer */
   SetThreadpoolTimer(pti: number | bigint, pftDueTime: Win32Pointer, msPeriod: number, msWindowLength: number): void;
   /** kernel32.dll!SetThreadpoolTimerEx */
-  SetThreadpoolTimerEx(pti: number | bigint, pftDueTime: Win32Pointer, msPeriod: number, msWindowLength: number): number;
+  SetThreadpoolTimerEx(
+    pti: number | bigint,
+    pftDueTime: Win32Pointer,
+    msPeriod: number,
+    msWindowLength: number,
+  ): number;
   /** kernel32.dll!SetThreadpoolWait */
   SetThreadpoolWait(pwa: number | bigint, h: Win32Pointer, pftTimeout: Win32Pointer): void;
   /** kernel32.dll!SetThreadpoolWaitEx */
@@ -2883,9 +5877,21 @@ interface Functions {
   /** kernel32.dll!SetTimeZoneInformation */
   SetTimeZoneInformation(lpTimeZoneInformation: Win32Pointer): number;
   /** kernel32.dll!SetTimerQueueTimer */
-  SetTimerQueueTimer(TimerQueue: Win32Pointer, Callback: Win32Callback, Parameter: Win32Pointer, DueTime: number, Period: number, PreferIo: number): number | null;
+  SetTimerQueueTimer(
+    TimerQueue: Win32Pointer,
+    Callback: Win32Callback,
+    Parameter: Win32Pointer,
+    DueTime: number,
+    Period: number,
+    PreferIo: number,
+  ): number | null;
   /** kernel32.dll!SetUmsThreadInformation */
-  SetUmsThreadInformation(UmsThread: Win32Pointer, UmsThreadInfoClass: number, UmsThreadInformation: Win32Pointer, UmsThreadInformationLength: number): number;
+  SetUmsThreadInformation(
+    UmsThread: Win32Pointer,
+    UmsThreadInfoClass: number,
+    UmsThreadInformation: Win32Pointer,
+    UmsThreadInformationLength: number,
+  ): number;
   /** kernel32.dll!SetUnhandledExceptionFilter */
   SetUnhandledExceptionFilter(lpTopLevelExceptionFilter: Win32Callback): number | null;
   /** kernel32.dll!SetUserGeoID */
@@ -2905,9 +5911,24 @@ interface Functions {
   /** kernel32.dll!SetVolumeMountPointW */
   SetVolumeMountPoint(lpszVolumeMountPoint: string | Win32Pointer, lpszVolumeName: string | Win32Pointer): number;
   /** kernel32.dll!SetWaitableTimer */
-  SetWaitableTimer(hTimer: Win32Pointer, lpDueTime: Win32Pointer, lPeriod: number, pfnCompletionRoutine: Win32Callback, lpArgToCompletionRoutine: Win32Pointer, fResume: number): number;
+  SetWaitableTimer(
+    hTimer: Win32Pointer,
+    lpDueTime: Win32Pointer,
+    lPeriod: number,
+    pfnCompletionRoutine: Win32Callback,
+    lpArgToCompletionRoutine: Win32Pointer,
+    fResume: number,
+  ): number;
   /** kernel32.dll!SetWaitableTimerEx */
-  SetWaitableTimerEx(hTimer: Win32Pointer, lpDueTime: Win32Pointer, lPeriod: number, pfnCompletionRoutine: Win32Callback, lpArgToCompletionRoutine: Win32Pointer, WakeContext: Win32Pointer, TolerableDelay: number): number;
+  SetWaitableTimerEx(
+    hTimer: Win32Pointer,
+    lpDueTime: Win32Pointer,
+    lPeriod: number,
+    pfnCompletionRoutine: Win32Callback,
+    lpArgToCompletionRoutine: Win32Pointer,
+    WakeContext: Win32Pointer,
+    TolerableDelay: number,
+  ): number;
   /** kernel32.dll!SetXStateFeaturesMask */
   SetXStateFeaturesMask(Context: Win32Pointer, FeatureMask: number | bigint): number;
   /** kernel32.dll!SetupComm */
@@ -2915,15 +5936,29 @@ interface Functions {
   /** kernel32.dll!ShowConsoleCursor */
   ShowConsoleCursor(hConsoleOutput: Win32Pointer, bShow: number): number;
   /** kernel32.dll!SignalObjectAndWait */
-  SignalObjectAndWait(hObjectToSignal: Win32Pointer, hObjectToWaitOn: Win32Pointer, dwMilliseconds: number, bAlertable: number): number;
+  SignalObjectAndWait(
+    hObjectToSignal: Win32Pointer,
+    hObjectToWaitOn: Win32Pointer,
+    dwMilliseconds: number,
+    bAlertable: number,
+  ): number;
   /** kernel32.dll!SizeofResource */
   SizeofResource(hModule: Win32Pointer, hResInfo: Win32Pointer): number;
   /** kernel32.dll!Sleep */
   Sleep(dwMilliseconds: number): void;
   /** kernel32.dll!SleepConditionVariableCS */
-  SleepConditionVariableCS(ConditionVariable: Win32Pointer, CriticalSection: Win32Pointer, dwMilliseconds: number): number;
+  SleepConditionVariableCS(
+    ConditionVariable: Win32Pointer,
+    CriticalSection: Win32Pointer,
+    dwMilliseconds: number,
+  ): number;
   /** kernel32.dll!SleepConditionVariableSRW */
-  SleepConditionVariableSRW(ConditionVariable: Win32Pointer, SRWLock: Win32Pointer, dwMilliseconds: number, Flags: number): number;
+  SleepConditionVariableSRW(
+    ConditionVariable: Win32Pointer,
+    SRWLock: Win32Pointer,
+    dwMilliseconds: number,
+    Flags: number,
+  ): number;
   /** kernel32.dll!SleepEx */
   SleepEx(dwMilliseconds: number, bAlertable: number): number;
   /** kernel32.dll!StartThreadpoolIo */
@@ -2939,9 +5974,17 @@ interface Functions {
   /** kernel32.dll!SystemTimeToFileTime */
   SystemTimeToFileTime(lpSystemTime: Win32Pointer, lpFileTime: Win32Pointer): number;
   /** kernel32.dll!SystemTimeToTzSpecificLocalTime */
-  SystemTimeToTzSpecificLocalTime(lpTimeZoneInformation: Win32Pointer, lpUniversalTime: Win32Pointer, lpLocalTime: Win32Pointer): number;
+  SystemTimeToTzSpecificLocalTime(
+    lpTimeZoneInformation: Win32Pointer,
+    lpUniversalTime: Win32Pointer,
+    lpLocalTime: Win32Pointer,
+  ): number;
   /** kernel32.dll!SystemTimeToTzSpecificLocalTimeEx */
-  SystemTimeToTzSpecificLocalTimeEx(lpTimeZoneInformation: Win32Pointer, lpUniversalTime: Win32Pointer, lpLocalTime: Win32Pointer): number;
+  SystemTimeToTzSpecificLocalTimeEx(
+    lpTimeZoneInformation: Win32Pointer,
+    lpUniversalTime: Win32Pointer,
+    lpLocalTime: Win32Pointer,
+  ): number;
   /** kernel32.dll!TerminateJobObject */
   TerminateJobObject(hJob: Win32Pointer, uExitCode: number): number;
   /** kernel32.dll!TerminateProcess */
@@ -2963,9 +6006,23 @@ interface Functions {
   /** kernel32.dll!TlsSetValue */
   TlsSetValue(dwTlsIndex: number, lpTlsValue: Win32Pointer): number;
   /** kernel32.dll!Toolhelp32ReadProcessMemory */
-  Toolhelp32ReadProcessMemory(th32ProcessID: number, lpBaseAddress: Win32Pointer, lpBuffer: Win32Pointer, cbRead: number | bigint, lpNumberOfBytesRead: Win32Pointer): number;
+  Toolhelp32ReadProcessMemory(
+    th32ProcessID: number,
+    lpBaseAddress: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    cbRead: number | bigint,
+    lpNumberOfBytesRead: Win32Pointer,
+  ): number;
   /** kernel32.dll!TransactNamedPipe */
-  TransactNamedPipe(hNamedPipe: Win32Pointer, lpInBuffer: Win32Pointer, nInBufferSize: number, lpOutBuffer: Win32Pointer, nOutBufferSize: number, lpBytesRead: Win32Pointer, lpOverlapped: Win32Pointer): number;
+  TransactNamedPipe(
+    hNamedPipe: Win32Pointer,
+    lpInBuffer: Win32Pointer,
+    nInBufferSize: number,
+    lpOutBuffer: Win32Pointer,
+    nOutBufferSize: number,
+    lpBytesRead: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** kernel32.dll!TransmitCommChar */
   TransmitCommChar(hFile: Win32Pointer, cChar: number): number;
   /** kernel32.dll!TryAcquireSRWLockExclusive */
@@ -2977,17 +6034,37 @@ interface Functions {
   /** kernel32.dll!TrySubmitThreadpoolCallback */
   TrySubmitThreadpoolCallback(pfns: Win32Callback, pv: Win32Pointer, pcbe: Win32Pointer): number;
   /** kernel32.dll!TzSpecificLocalTimeToSystemTime */
-  TzSpecificLocalTimeToSystemTime(lpTimeZoneInformation: Win32Pointer, lpLocalTime: Win32Pointer, lpUniversalTime: Win32Pointer): number;
+  TzSpecificLocalTimeToSystemTime(
+    lpTimeZoneInformation: Win32Pointer,
+    lpLocalTime: Win32Pointer,
+    lpUniversalTime: Win32Pointer,
+  ): number;
   /** kernel32.dll!TzSpecificLocalTimeToSystemTimeEx */
-  TzSpecificLocalTimeToSystemTimeEx(lpTimeZoneInformation: Win32Pointer, lpLocalTime: Win32Pointer, lpUniversalTime: Win32Pointer): number;
+  TzSpecificLocalTimeToSystemTimeEx(
+    lpTimeZoneInformation: Win32Pointer,
+    lpLocalTime: Win32Pointer,
+    lpUniversalTime: Win32Pointer,
+  ): number;
   /** kernel32.dll!UmsThreadYield */
   UmsThreadYield(SchedulerParam: Win32Pointer): number;
   /** kernel32.dll!UnhandledExceptionFilter */
   UnhandledExceptionFilter(ExceptionInfo: Win32Pointer): number;
   /** kernel32.dll!UnlockFile */
-  UnlockFile(hFile: Win32Pointer, dwFileOffsetLow: number, dwFileOffsetHigh: number, nNumberOfBytesToUnlockLow: number, nNumberOfBytesToUnlockHigh: number): number;
+  UnlockFile(
+    hFile: Win32Pointer,
+    dwFileOffsetLow: number,
+    dwFileOffsetHigh: number,
+    nNumberOfBytesToUnlockLow: number,
+    nNumberOfBytesToUnlockHigh: number,
+  ): number;
   /** kernel32.dll!UnlockFileEx */
-  UnlockFileEx(hFile: Win32Pointer, dwReserved: number, nNumberOfBytesToUnlockLow: number, nNumberOfBytesToUnlockHigh: number, lpOverlapped: Win32Pointer): number;
+  UnlockFileEx(
+    hFile: Win32Pointer,
+    dwReserved: number,
+    nNumberOfBytesToUnlockLow: number,
+    nNumberOfBytesToUnlockHigh: number,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** kernel32.dll!UnmapViewOfFile */
   UnmapViewOfFile(lpBaseAddress: Win32StructInit): number;
   /** kernel32.dll!UnmapViewOfFileEx */
@@ -3009,13 +6086,42 @@ interface Functions {
   /** kernel32.dll!UpdateCalendarDayOfWeek */
   UpdateCalendarDayOfWeek(lpCalDateTime: Win32Pointer): number;
   /** kernel32.dll!UpdateProcThreadAttribute */
-  UpdateProcThreadAttribute(lpAttributeList: Win32Pointer, dwFlags: number, Attribute: number | bigint, lpValue: Win32Pointer, cbSize: number | bigint, lpPreviousValue: Win32Pointer, lpReturnSize: Win32Pointer): number;
+  UpdateProcThreadAttribute(
+    lpAttributeList: Win32Pointer,
+    dwFlags: number,
+    Attribute: number | bigint,
+    lpValue: Win32Pointer,
+    cbSize: number | bigint,
+    lpPreviousValue: Win32Pointer,
+    lpReturnSize: Win32Pointer,
+  ): number;
   /** kernel32.dll!UpdateResourceA */
-  UpdateResourceA(hUpdate: Win32Pointer, lpType: string | Win32Pointer, lpName: string | Win32Pointer, wLanguage: number, lpData: Win32Pointer, cb: number): number;
+  UpdateResourceA(
+    hUpdate: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    wLanguage: number,
+    lpData: Win32Pointer,
+    cb: number,
+  ): number;
   /** kernel32.dll!UpdateResourceW */
-  UpdateResourceW(hUpdate: Win32Pointer, lpType: string | Win32Pointer, lpName: string | Win32Pointer, wLanguage: number, lpData: Win32Pointer, cb: number): number;
+  UpdateResourceW(
+    hUpdate: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    wLanguage: number,
+    lpData: Win32Pointer,
+    cb: number,
+  ): number;
   /** kernel32.dll!UpdateResourceW */
-  UpdateResource(hUpdate: Win32Pointer, lpType: string | Win32Pointer, lpName: string | Win32Pointer, wLanguage: number, lpData: Win32Pointer, cb: number): number;
+  UpdateResource(
+    hUpdate: Win32Pointer,
+    lpType: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    wLanguage: number,
+    lpData: Win32Pointer,
+    cb: number,
+  ): number;
   /** kernel32.dll!VDMConsoleOperation */
   VDMConsoleOperation(iFunction: number, lpData: Win32Pointer): number;
   /** kernel32.dll!VerLanguageNameA */
@@ -3029,7 +6135,13 @@ interface Functions {
   /** kernel32.dll!VerifyConsoleIoHandle */
   VerifyConsoleIoHandle(hIoHandle: Win32Pointer): number;
   /** kernel32.dll!VerifyScripts */
-  VerifyScripts(dwFlags: number, lpLocaleScripts: string | Win32Pointer, cchLocaleScripts: number, lpTestScripts: string | Win32Pointer, cchTestScripts: number): number;
+  VerifyScripts(
+    dwFlags: number,
+    lpLocaleScripts: string | Win32Pointer,
+    cchLocaleScripts: number,
+    lpTestScripts: string | Win32Pointer,
+    cchTestScripts: number,
+  ): number;
   /** kernel32.dll!VerifyVersionInfoA */
   VerifyVersionInfoA(lpVersionInformation: Win32Pointer, dwTypeMask: number, dwlConditionMask: number | bigint): number;
   /** kernel32.dll!VerifyVersionInfoW */
@@ -3037,11 +6149,29 @@ interface Functions {
   /** kernel32.dll!VerifyVersionInfoW */
   VerifyVersionInfo(lpVersionInformation: Win32Pointer, dwTypeMask: number, dwlConditionMask: number | bigint): number;
   /** kernel32.dll!VirtualAlloc */
-  VirtualAlloc(lpAddress: Win32Pointer, dwSize: number | bigint, flAllocationType: number, flProtect: number): number | null;
+  VirtualAlloc(
+    lpAddress: Win32Pointer,
+    dwSize: number | bigint,
+    flAllocationType: number,
+    flProtect: number,
+  ): number | null;
   /** kernel32.dll!VirtualAllocEx */
-  VirtualAllocEx(hProcess: Win32Pointer, lpAddress: Win32Pointer, dwSize: number | bigint, flAllocationType: number, flProtect: number): number | null;
+  VirtualAllocEx(
+    hProcess: Win32Pointer,
+    lpAddress: Win32Pointer,
+    dwSize: number | bigint,
+    flAllocationType: number,
+    flProtect: number,
+  ): number | null;
   /** kernel32.dll!VirtualAllocExNuma */
-  VirtualAllocExNuma(hProcess: Win32Pointer, lpAddress: Win32Pointer, dwSize: number | bigint, flAllocationType: number, flProtect: number, nndPreferred: number): number | null;
+  VirtualAllocExNuma(
+    hProcess: Win32Pointer,
+    lpAddress: Win32Pointer,
+    dwSize: number | bigint,
+    flAllocationType: number,
+    flProtect: number,
+    nndPreferred: number,
+  ): number | null;
   /** kernel32.dll!VirtualFree */
   VirtualFree(lpAddress: Win32Pointer, dwSize: number | bigint, dwFreeType: number): number;
   /** kernel32.dll!VirtualFreeEx */
@@ -3049,13 +6179,29 @@ interface Functions {
   /** kernel32.dll!VirtualLock */
   VirtualLock(lpAddress: Win32Pointer, dwSize: number | bigint): number;
   /** kernel32.dll!VirtualProtect */
-  VirtualProtect(lpAddress: Win32Pointer, dwSize: number | bigint, flNewProtect: number, lpflOldProtect: Win32Pointer): number;
+  VirtualProtect(
+    lpAddress: Win32Pointer,
+    dwSize: number | bigint,
+    flNewProtect: number,
+    lpflOldProtect: Win32Pointer,
+  ): number;
   /** kernel32.dll!VirtualProtectEx */
-  VirtualProtectEx(hProcess: Win32Pointer, lpAddress: Win32Pointer, dwSize: number | bigint, flNewProtect: number, lpflOldProtect: Win32Pointer): number;
+  VirtualProtectEx(
+    hProcess: Win32Pointer,
+    lpAddress: Win32Pointer,
+    dwSize: number | bigint,
+    flNewProtect: number,
+    lpflOldProtect: Win32Pointer,
+  ): number;
   /** kernel32.dll!VirtualQuery */
   VirtualQuery(lpAddress: Win32Pointer, lpBuffer: Win32Pointer, dwLength: number | bigint): number | bigint;
   /** kernel32.dll!VirtualQueryEx */
-  VirtualQueryEx(hProcess: Win32Pointer, lpAddress: Win32Pointer, lpBuffer: Win32Pointer, dwLength: number | bigint): number | bigint;
+  VirtualQueryEx(
+    hProcess: Win32Pointer,
+    lpAddress: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    dwLength: number | bigint,
+  ): number | bigint;
   /** kernel32.dll!VirtualUnlock */
   VirtualUnlock(lpAddress: Win32Pointer, dwSize: number | bigint): number;
   /** kernel32.dll!WTSGetActiveConsoleSessionId */
@@ -3069,7 +6215,13 @@ interface Functions {
   /** kernel32.dll!WaitForMultipleObjects */
   WaitForMultipleObjects(nCount: number, lpHandles: Win32Pointer, bWaitAll: number, dwMilliseconds: number): number;
   /** kernel32.dll!WaitForMultipleObjectsEx */
-  WaitForMultipleObjectsEx(nCount: number, lpHandles: Win32Pointer, bWaitAll: number, dwMilliseconds: number, bAlertable: number): number;
+  WaitForMultipleObjectsEx(
+    nCount: number,
+    lpHandles: Win32Pointer,
+    bWaitAll: number,
+    dwMilliseconds: number,
+    bAlertable: number,
+  ): number;
   /** kernel32.dll!WaitForSingleObject */
   WaitForSingleObject(hHandle: Win32Pointer, dwMilliseconds: number): number;
   /** kernel32.dll!WaitForSingleObjectEx */
@@ -3123,9 +6275,21 @@ interface Functions {
   /** kernel32.dll!WerUnregisterMemoryBlock */
   WerUnregisterMemoryBlock(pvAddress: Win32Pointer): number;
   /** kernel32.dll!WerUnregisterRuntimeExceptionModule */
-  WerUnregisterRuntimeExceptionModule(pwszOutOfProcessCallbackDll: string | Win32Pointer, pContext: Win32Pointer): number;
+  WerUnregisterRuntimeExceptionModule(
+    pwszOutOfProcessCallbackDll: string | Win32Pointer,
+    pContext: Win32Pointer,
+  ): number;
   /** kernel32.dll!WideCharToMultiByte */
-  WideCharToMultiByte(CodePage: number, dwFlags: number, lpWideCharStr: string | Win32Pointer, cchWideChar: number, lpMultiByteStr: string | Win32Pointer, cbMultiByte: number, lpDefaultChar: string | Win32Pointer, lpUsedDefaultChar: Win32Pointer): number;
+  WideCharToMultiByte(
+    CodePage: number,
+    dwFlags: number,
+    lpWideCharStr: string | Win32Pointer,
+    cchWideChar: number,
+    lpMultiByteStr: string | Win32Pointer,
+    cbMultiByte: number,
+    lpDefaultChar: string | Win32Pointer,
+    lpUsedDefaultChar: Win32Pointer,
+  ): number;
   /** kernel32.dll!WinExec */
   WinExec(lpCmdLine: string | Win32Pointer, uCmdShow: number): number;
   /** kernel32.dll!Wow64DisableWow64FsRedirection */
@@ -3143,63 +6307,222 @@ interface Functions {
   /** kernel32.dll!Wow64SuspendThread */
   Wow64SuspendThread(hThread: Win32Pointer): number;
   /** kernel32.dll!WriteConsoleA */
-  WriteConsoleA(hConsoleOutput: Win32Pointer, lpBuffer: string | Win32Pointer, nNumberOfCharsToWrite: number, lpNumberOfCharsWritten: Win32Pointer, lpReserved: Win32Pointer): number;
+  WriteConsoleA(
+    hConsoleOutput: Win32Pointer,
+    lpBuffer: string | Win32Pointer,
+    nNumberOfCharsToWrite: number,
+    lpNumberOfCharsWritten: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleInputA */
-  WriteConsoleInputA(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsWritten: Win32Pointer): number;
+  WriteConsoleInputA(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleInputVDMA */
-  WriteConsoleInputVDMA(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsWritten: Win32Pointer): number;
+  WriteConsoleInputVDMA(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleInputVDMW */
-  WriteConsoleInputVDMW(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsWritten: Win32Pointer): number;
+  WriteConsoleInputVDMW(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleInputVDMW */
-  WriteConsoleInputVDM(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsWritten: Win32Pointer): number;
+  WriteConsoleInputVDM(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleInputW */
-  WriteConsoleInputW(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsWritten: Win32Pointer): number;
+  WriteConsoleInputW(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleInputW */
-  WriteConsoleInput(hConsoleInput: Win32Pointer, lpBuffer: Win32Pointer, nLength: number, lpNumberOfEventsWritten: Win32Pointer): number;
+  WriteConsoleInput(
+    hConsoleInput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nLength: number,
+    lpNumberOfEventsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleOutputA */
-  WriteConsoleOutputA(hConsoleOutput: Win32Pointer, lpBuffer: Win32Pointer, dwBufferSize: Win32StructInit, dwBufferCoord: Win32StructInit, lpWriteRegion: Win32Pointer): number;
+  WriteConsoleOutputA(
+    hConsoleOutput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    dwBufferSize: Win32StructInit,
+    dwBufferCoord: Win32StructInit,
+    lpWriteRegion: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleOutputAttribute */
-  WriteConsoleOutputAttribute(hConsoleOutput: Win32Pointer, lpAttribute: Win32Pointer, nLength: number, dwWriteCoord: Win32StructInit, lpNumberOfAttrsWritten: Win32Pointer): number;
+  WriteConsoleOutputAttribute(
+    hConsoleOutput: Win32Pointer,
+    lpAttribute: Win32Pointer,
+    nLength: number,
+    dwWriteCoord: Win32StructInit,
+    lpNumberOfAttrsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleOutputCharacterA */
-  WriteConsoleOutputCharacterA(hConsoleOutput: Win32Pointer, lpCharacter: string | Win32Pointer, nLength: number, dwWriteCoord: Win32StructInit, lpNumberOfCharsWritten: Win32Pointer): number;
+  WriteConsoleOutputCharacterA(
+    hConsoleOutput: Win32Pointer,
+    lpCharacter: string | Win32Pointer,
+    nLength: number,
+    dwWriteCoord: Win32StructInit,
+    lpNumberOfCharsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleOutputCharacterW */
-  WriteConsoleOutputCharacterW(hConsoleOutput: Win32Pointer, lpCharacter: string | Win32Pointer, nLength: number, dwWriteCoord: Win32StructInit, lpNumberOfCharsWritten: Win32Pointer): number;
+  WriteConsoleOutputCharacterW(
+    hConsoleOutput: Win32Pointer,
+    lpCharacter: string | Win32Pointer,
+    nLength: number,
+    dwWriteCoord: Win32StructInit,
+    lpNumberOfCharsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleOutputCharacterW */
-  WriteConsoleOutputCharacter(hConsoleOutput: Win32Pointer, lpCharacter: string | Win32Pointer, nLength: number, dwWriteCoord: Win32StructInit, lpNumberOfCharsWritten: Win32Pointer): number;
+  WriteConsoleOutputCharacter(
+    hConsoleOutput: Win32Pointer,
+    lpCharacter: string | Win32Pointer,
+    nLength: number,
+    dwWriteCoord: Win32StructInit,
+    lpNumberOfCharsWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleOutputW */
-  WriteConsoleOutputW(hConsoleOutput: Win32Pointer, lpBuffer: Win32Pointer, dwBufferSize: Win32StructInit, dwBufferCoord: Win32StructInit, lpWriteRegion: Win32Pointer): number;
+  WriteConsoleOutputW(
+    hConsoleOutput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    dwBufferSize: Win32StructInit,
+    dwBufferCoord: Win32StructInit,
+    lpWriteRegion: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleOutputW */
-  WriteConsoleOutput(hConsoleOutput: Win32Pointer, lpBuffer: Win32Pointer, dwBufferSize: Win32StructInit, dwBufferCoord: Win32StructInit, lpWriteRegion: Win32Pointer): number;
+  WriteConsoleOutput(
+    hConsoleOutput: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    dwBufferSize: Win32StructInit,
+    dwBufferCoord: Win32StructInit,
+    lpWriteRegion: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleW */
-  WriteConsoleW(hConsoleOutput: Win32Pointer, lpBuffer: string | Win32Pointer, nNumberOfCharsToWrite: number, lpNumberOfCharsWritten: Win32Pointer, lpReserved: Win32Pointer): number;
+  WriteConsoleW(
+    hConsoleOutput: Win32Pointer,
+    lpBuffer: string | Win32Pointer,
+    nNumberOfCharsToWrite: number,
+    lpNumberOfCharsWritten: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteConsoleW */
-  WriteConsole(hConsoleOutput: Win32Pointer, lpBuffer: string | Win32Pointer, nNumberOfCharsToWrite: number, lpNumberOfCharsWritten: Win32Pointer, lpReserved: Win32Pointer): number;
+  WriteConsole(
+    hConsoleOutput: Win32Pointer,
+    lpBuffer: string | Win32Pointer,
+    nNumberOfCharsToWrite: number,
+    lpNumberOfCharsWritten: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteFile */
-  WriteFile(hFile: Win32Pointer, lpBuffer: Win32Pointer, nNumberOfBytesToWrite: number, lpNumberOfBytesWritten: Win32Pointer, lpOverlapped: Win32Pointer): number;
+  WriteFile(
+    hFile: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nNumberOfBytesToWrite: number,
+    lpNumberOfBytesWritten: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteFileEx */
-  WriteFileEx(hFile: Win32Pointer, lpBuffer: Win32Pointer, nNumberOfBytesToWrite: number, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback): number;
+  WriteFileEx(
+    hFile: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nNumberOfBytesToWrite: number,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+  ): number;
   /** kernel32.dll!WriteFileGather */
-  WriteFileGather(hFile: Win32Pointer, aSegmentArray: Win32Pointer, nNumberOfBytesToWrite: number, lpReserved: Win32Pointer, lpOverlapped: Win32Pointer): number;
+  WriteFileGather(
+    hFile: Win32Pointer,
+    aSegmentArray: Win32Pointer,
+    nNumberOfBytesToWrite: number,
+    lpReserved: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** kernel32.dll!WritePrivateProfileSectionA */
-  WritePrivateProfileSectionA(lpAppName: string | Win32Pointer, lpString: string | Win32Pointer, lpFileName: string | Win32Pointer): number;
+  WritePrivateProfileSectionA(
+    lpAppName: string | Win32Pointer,
+    lpString: string | Win32Pointer,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!WritePrivateProfileSectionW */
-  WritePrivateProfileSectionW(lpAppName: string | Win32Pointer, lpString: string | Win32Pointer, lpFileName: string | Win32Pointer): number;
+  WritePrivateProfileSectionW(
+    lpAppName: string | Win32Pointer,
+    lpString: string | Win32Pointer,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!WritePrivateProfileSectionW */
-  WritePrivateProfileSection(lpAppName: string | Win32Pointer, lpString: string | Win32Pointer, lpFileName: string | Win32Pointer): number;
+  WritePrivateProfileSection(
+    lpAppName: string | Win32Pointer,
+    lpString: string | Win32Pointer,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!WritePrivateProfileStringA */
-  WritePrivateProfileStringA(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, lpString: string | Win32Pointer, lpFileName: string | Win32Pointer): number;
+  WritePrivateProfileStringA(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    lpString: string | Win32Pointer,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!WritePrivateProfileStringW */
-  WritePrivateProfileStringW(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, lpString: string | Win32Pointer, lpFileName: string | Win32Pointer): number;
+  WritePrivateProfileStringW(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    lpString: string | Win32Pointer,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!WritePrivateProfileStringW */
-  WritePrivateProfileString(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, lpString: string | Win32Pointer, lpFileName: string | Win32Pointer): number;
+  WritePrivateProfileString(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    lpString: string | Win32Pointer,
+    lpFileName: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!WritePrivateProfileStructA */
-  WritePrivateProfileStructA(lpszSection: string | Win32Pointer, lpszKey: string | Win32Pointer, lpStruct: Win32Pointer, uSizeStruct: number, szFile: string | Win32Pointer): number;
+  WritePrivateProfileStructA(
+    lpszSection: string | Win32Pointer,
+    lpszKey: string | Win32Pointer,
+    lpStruct: Win32Pointer,
+    uSizeStruct: number,
+    szFile: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!WritePrivateProfileStructW */
-  WritePrivateProfileStructW(lpszSection: string | Win32Pointer, lpszKey: string | Win32Pointer, lpStruct: Win32Pointer, uSizeStruct: number, szFile: string | Win32Pointer): number;
+  WritePrivateProfileStructW(
+    lpszSection: string | Win32Pointer,
+    lpszKey: string | Win32Pointer,
+    lpStruct: Win32Pointer,
+    uSizeStruct: number,
+    szFile: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!WritePrivateProfileStructW */
-  WritePrivateProfileStruct(lpszSection: string | Win32Pointer, lpszKey: string | Win32Pointer, lpStruct: Win32Pointer, uSizeStruct: number, szFile: string | Win32Pointer): number;
+  WritePrivateProfileStruct(
+    lpszSection: string | Win32Pointer,
+    lpszKey: string | Win32Pointer,
+    lpStruct: Win32Pointer,
+    uSizeStruct: number,
+    szFile: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteProcessMemory */
-  WriteProcessMemory(hProcess: Win32Pointer, lpBaseAddress: Win32Pointer, lpBuffer: Win32Pointer, nSize: number | bigint, lpNumberOfBytesWritten: Win32Pointer): number;
+  WriteProcessMemory(
+    hProcess: Win32Pointer,
+    lpBaseAddress: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    nSize: number | bigint,
+    lpNumberOfBytesWritten: Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteProfileSectionA */
   WriteProfileSectionA(lpAppName: string | Win32Pointer, lpString: string | Win32Pointer): number;
   /** kernel32.dll!WriteProfileSectionW */
@@ -3207,11 +6530,23 @@ interface Functions {
   /** kernel32.dll!WriteProfileSectionW */
   WriteProfileSection(lpAppName: string | Win32Pointer, lpString: string | Win32Pointer): number;
   /** kernel32.dll!WriteProfileStringA */
-  WriteProfileStringA(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, lpString: string | Win32Pointer): number;
+  WriteProfileStringA(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    lpString: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteProfileStringW */
-  WriteProfileStringW(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, lpString: string | Win32Pointer): number;
+  WriteProfileStringW(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    lpString: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteProfileStringW */
-  WriteProfileString(lpAppName: string | Win32Pointer, lpKeyName: string | Win32Pointer, lpString: string | Win32Pointer): number;
+  WriteProfileString(
+    lpAppName: string | Win32Pointer,
+    lpKeyName: string | Win32Pointer,
+    lpString: string | Win32Pointer,
+  ): number;
   /** kernel32.dll!WriteTapemark */
   WriteTapemark(hDevice: Win32Pointer, dwTapemarkType: number, dwTapemarkCount: number, bImmediate: number): number;
   /** kernel32.dll!ZombifyActCtx */

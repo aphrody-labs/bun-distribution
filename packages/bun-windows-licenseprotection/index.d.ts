@@ -3,9 +3,18 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** licenseprotection.dll!RegisterLicenseKeyWithExpiration */
-  RegisterLicenseKeyWithExpiration(licenseKey: string | Win32Pointer, validityInDays: number, status: Win32Pointer): number;
+  RegisterLicenseKeyWithExpiration(
+    licenseKey: string | Win32Pointer,
+    validityInDays: number,
+    status: Win32Pointer,
+  ): number;
   /** licenseprotection.dll!ValidateLicenseKeyProtection */
-  ValidateLicenseKeyProtection(licenseKey: string | Win32Pointer, notValidBefore: Win32Pointer, notValidAfter: Win32Pointer, status: Win32Pointer): number;
+  ValidateLicenseKeyProtection(
+    licenseKey: string | Win32Pointer,
+    notValidBefore: Win32Pointer,
+    notValidAfter: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

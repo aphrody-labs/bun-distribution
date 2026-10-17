@@ -36,19 +36,13 @@ const command: Command = {
           say(`À jour (version ${VERSION}).`);
           break;
         case "available":
-          say(
-            `Nouvelle version ${result.latest} disponible (installée : ${VERSION}). Lance : creator-kit self-update`,
-          );
+          say(`Nouvelle version ${result.latest} disponible (installée : ${VERSION}). Lance : creator-kit self-update`);
           break;
         case "updated":
-          say(
-            `Mis à jour : ${VERSION} -> ${result.latest}. Active au prochain lancement.`,
-          );
+          say(`Mis à jour : ${VERSION} -> ${result.latest}. Active au prochain lancement.`);
           break;
         case "skipped":
-          say(
-            `Version ${result.latest} disponible, non installée : ${result.detail}`,
-          );
+          say(`Version ${result.latest} disponible, non installée : ${result.detail}`);
           break;
       }
       return 0;

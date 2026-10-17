@@ -5,21 +5,59 @@ interface Functions {
   /** windowscodecs.dll!WICConvertBitmapSource */
   WICConvertBitmapSource(dstFormat: Win32Pointer, pISrc: Win32Pointer, ppIDst: Win32Pointer): number;
   /** windowscodecs.dll!WICCreateBitmapFromSection */
-  WICCreateBitmapFromSection(width: number, height: number, pixelFormat: Win32Pointer, hSection: Win32Pointer, stride: number, offset: number, ppIBitmap: Win32Pointer): number;
+  WICCreateBitmapFromSection(
+    width: number,
+    height: number,
+    pixelFormat: Win32Pointer,
+    hSection: Win32Pointer,
+    stride: number,
+    offset: number,
+    ppIBitmap: Win32Pointer,
+  ): number;
   /** windowscodecs.dll!WICCreateBitmapFromSectionEx */
-  WICCreateBitmapFromSectionEx(width: number, height: number, pixelFormat: Win32Pointer, hSection: Win32Pointer, stride: number, offset: number, desiredAccessLevel: number, ppIBitmap: Win32Pointer): number;
+  WICCreateBitmapFromSectionEx(
+    width: number,
+    height: number,
+    pixelFormat: Win32Pointer,
+    hSection: Win32Pointer,
+    stride: number,
+    offset: number,
+    desiredAccessLevel: number,
+    ppIBitmap: Win32Pointer,
+  ): number;
   /** windowscodecs.dll!WICGetMetadataContentSize */
   WICGetMetadataContentSize(guidContainerFormat: Win32Pointer, pIWriter: Win32Pointer, pcbSize: Win32Pointer): number;
   /** windowscodecs.dll!WICMapGuidToShortName */
-  WICMapGuidToShortName(guid: Win32Pointer, cchName: number, wzName: string | Win32Pointer, pcchActual: Win32Pointer): number;
+  WICMapGuidToShortName(
+    guid: Win32Pointer,
+    cchName: number,
+    wzName: string | Win32Pointer,
+    pcchActual: Win32Pointer,
+  ): number;
   /** windowscodecs.dll!WICMapSchemaToName */
-  WICMapSchemaToName(guidMetadataFormat: Win32Pointer, pwzSchema: string | Win32Pointer, cchName: number, wzName: string | Win32Pointer, pcchActual: Win32Pointer): number;
+  WICMapSchemaToName(
+    guidMetadataFormat: Win32Pointer,
+    pwzSchema: string | Win32Pointer,
+    cchName: number,
+    wzName: string | Win32Pointer,
+    pcchActual: Win32Pointer,
+  ): number;
   /** windowscodecs.dll!WICMapShortNameToGuid */
   WICMapShortNameToGuid(wzName: string | Win32Pointer, pguid: Win32Pointer): number;
   /** windowscodecs.dll!WICMatchMetadataContent */
-  WICMatchMetadataContent(guidContainerFormat: Win32Pointer, pguidVendor: Win32Pointer, pIStream: Win32Pointer, pguidMetadataFormat: Win32Pointer): number;
+  WICMatchMetadataContent(
+    guidContainerFormat: Win32Pointer,
+    pguidVendor: Win32Pointer,
+    pIStream: Win32Pointer,
+    pguidMetadataFormat: Win32Pointer,
+  ): number;
   /** windowscodecs.dll!WICSerializeMetadataContent */
-  WICSerializeMetadataContent(guidContainerFormat: Win32Pointer, pIWriter: Win32Pointer, dwPersistOptions: number, pIStream: Win32Pointer): number;
+  WICSerializeMetadataContent(
+    guidContainerFormat: Win32Pointer,
+    pIWriter: Win32Pointer,
+    dwPersistOptions: number,
+    pIStream: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

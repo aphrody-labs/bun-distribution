@@ -6,10 +6,7 @@ import { MouseControls } from "./keybinds_controls";
 import { ClipGroup } from "../enums";
 import { XYZ } from "../datastructures/common";
 import type { EngineEventBus } from "./events/EngineEventBus";
-import {
-  CameraViewToggleRequestedEvent,
-  ObjectAddedEvent,
-} from "./events/EngineEvent";
+import { CameraViewToggleRequestedEvent, ObjectAddedEvent } from "./events/EngineEvent";
 import { isInternalBbox } from "./internalBbox";
 
 export type SceneObject = {
@@ -35,12 +32,7 @@ export interface SceneManagerAPI {
   create(media_token: string, name: string, position: THREE.Vector3): void;
   retrieve(object_uuid: string): void;
   delete(object_uuid: string): void;
-  update(
-    object_uuid: string,
-    position: THREE.Vector3,
-    rotation: THREE.Euler,
-    scale: THREE.Vector3,
-  ): void;
+  update(object_uuid: string, position: THREE.Vector3, rotation: THREE.Euler, scale: THREE.Vector3): void;
   selected(): void;
   render_outliner(timeline_characters: { [key: string]: ClipGroup }): void;
   select_object(id: string): void;
@@ -54,12 +46,7 @@ export class SceneManager implements SceneManagerAPI {
   private copiedObject: THREE.Object3D | undefined;
   private bus: EngineEventBus;
 
-  constructor(
-    version: number,
-    mouse_controls: MouseControls,
-    scene: Scene,
-    bus: EngineEventBus,
-  ) {
+  constructor(version: number, mouse_controls: MouseControls, scene: Scene, bus: EngineEventBus) {
     this.mouse_controls = mouse_controls;
     this.scene = scene;
     this.version = version;
@@ -86,13 +73,7 @@ export class SceneManager implements SceneManagerAPI {
         return obj as THREE.Object3D<THREE.Object3DEventMap>;
       }
 
-      const obj = await this.scene.loadObject(
-        media_token,
-        name,
-        true,
-        position,
-        this.version,
-      );
+      const obj = await this.scene.loadObject(media_token, name, true, position, this.version);
       if (obj) {
         obj.name = name;
         obj.userData["name"] = name;
@@ -114,7 +95,7 @@ export class SceneManager implements SceneManagerAPI {
     // Not permanent just in place until we have multi object select ability.
     const selected_item = this.selected();
     const signal_items: SceneObject[] = [];
-    this.scene.scene.children.forEach((child) => {
+    this.scene.scene.children.forEach(child => {
       // Internal selection-bbox helpers (children of splats) shouldn't
       // appear in the outliner. They're parented under the splat, so
       // top-level enumeration already skips them in practice — this
@@ -136,12 +117,7 @@ export class SceneManager implements SceneManagerAPI {
     return this.scene.get_object_by_uuid(object_uuid);
   }
 
-  public async update(
-    object_uuid: string,
-    position: THREE.Vector3,
-    rotation: THREE.Euler,
-    scale: THREE.Vector3,
-  ) {
+  public async update(object_uuid: string, position: THREE.Vector3, rotation: THREE.Euler, scale: THREE.Vector3) {
     const object = await this.retrieve(object_uuid);
     if (object) {
       object.position.copy(position);
@@ -208,10 +184,7 @@ export class SceneManager implements SceneManagerAPI {
   }
 
   // Converts a 3d object to signal item format.
-  private convert_object(
-    object: THREE.Object3D,
-    timeline_characters: { [key: string]: ClipGroup },
-  ) {
+  private convert_object(object: THREE.Object3D, timeline_characters: { [key: string]: ClipGroup }) {
     let faicon = BoxIcon;
     let name = object.name;
     // Human-readable kind shown as the outliner row's subtitle.
@@ -229,12 +202,10 @@ export class SceneManager implements SceneManagerAPI {
       locked = false;
     }
     let hasSkeleton = false;
-    object.traverse((child) => {
+    object.traverse(child => {
       if ((child as THREE.SkinnedMesh).isSkinnedMesh) hasSkeleton = true;
     });
-    const bakedClips = (object.animations ?? []).map(
-      (clip, index) => clip.name || `Clip ${index + 1}`,
-    );
+    const bakedClips = (object.animations ?? []).map((clip, index) => clip.name || `Clip ${index + 1}`);
     return {
       id: object.uuid,
       icon: faicon,

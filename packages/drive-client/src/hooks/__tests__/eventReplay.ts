@@ -25,7 +25,7 @@ export class EventReplaySimulator {
     const event = this.events[this.eventIndex++];
 
     if (this.speed > 0) {
-      await new Promise((resolve) => setTimeout(resolve, this.speed));
+      await new Promise(resolve => setTimeout(resolve, this.speed));
     }
 
     callback(event);
@@ -66,10 +66,7 @@ export function createMockClient(initialData: any) {
       // Return initial query response
       return initialData;
     },
-    subscribeFiltered: async (
-      filter: any,
-      callback: (event: Event) => void,
-    ) => {
+    subscribeFiltered: async (filter: any, callback: (event: Event) => void) => {
       // Store the callback
       const id = subscriptionId++;
       subscriptions.set(id, callback);
@@ -84,7 +81,7 @@ export function createMockClient(initialData: any) {
     getCurrentLibraryId: () => currentLibraryId,
     setCurrentLibrary: (libraryId: string) => {
       currentLibraryId = libraryId;
-      libraryChangeHandlers.forEach((h) => h(libraryId));
+      libraryChangeHandlers.forEach(h => h(libraryId));
     },
     on: (event: string, handler: Function) => {
       if (event === "library-changed") {
@@ -98,11 +95,7 @@ export function createMockClient(initialData: any) {
     },
     // Expose subscriptions for testing
     __testOnly_triggerEvent: (event: Event) => {
-      console.log(
-        "[MockClient] Triggering event to",
-        subscriptions.size,
-        "subscribers",
-      );
+      console.log("[MockClient] Triggering event to", subscriptions.size, "subscribers");
       subscriptions.forEach((callback, id) => {
         console.log("[MockClient] Calling subscriber", id);
         callback(event);

@@ -11,15 +11,10 @@ interface ShowcaseCarouselProps {
   className?: string;
 }
 
-export const ShowcaseCarousel = ({
-  entries,
-  activeId,
-  onSelect,
-  className,
-}: ShowcaseCarouselProps) => {
+export const ShowcaseCarousel = ({ entries, activeId, onSelect, className }: ShowcaseCarouselProps) => {
   const activeIndex = Math.max(
     0,
-    entries.findIndex((e) => e.id === activeId),
+    entries.findIndex(e => e.id === activeId),
   );
   const canPrev = activeIndex > 0;
   const canNext = activeIndex < entries.length - 1;
@@ -33,15 +28,12 @@ export const ShowcaseCarousel = ({
 
   return (
     <div
-      className={twMerge(
-        "mx-auto flex w-fit max-w-full items-center gap-2 rounded-full backdrop-blur mb-2",
-        className,
-      )}
+      className={twMerge("mx-auto flex w-fit max-w-full items-center gap-2 rounded-full backdrop-blur mb-2", className)}
     >
       <ArrowButton direction="prev" disabled={!canPrev} onClick={goPrev} />
 
       <div className="flex items-center gap-2">
-        {entries.map((entry) => {
+        {entries.map(entry => {
           const isActive = entry.id === activeId;
           return (
             <button
@@ -58,14 +50,8 @@ export const ShowcaseCarousel = ({
                   : "w-10 rounded-full border-white/15 opacity-70 hover:opacity-100",
               )}
             >
-              <img
-                src={entry.thumbnailUrl}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-              {!isActive && (
-                <span className="absolute inset-0 bg-black/20 transition-opacity hover:bg-black/0" />
-              )}
+              <img src={entry.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+              {!isActive && <span className="absolute inset-0 bg-black/20 transition-opacity hover:bg-black/0" />}
             </button>
           );
         })}
@@ -90,14 +76,9 @@ const ArrowButton = ({ direction, disabled, onClick }: ArrowButtonProps) => (
     aria-label={direction === "prev" ? "Previous showcase" : "Next showcase"}
     className={twMerge(
       "flex h-7 w-7 items-center justify-center rounded-full text-white/60 transition-colors",
-      disabled
-        ? "cursor-not-allowed opacity-30"
-        : "hover:bg-white/10 hover:text-white",
+      disabled ? "cursor-not-allowed opacity-30" : "hover:bg-white/10 hover:text-white",
     )}
   >
-    <DynamicIcon
-      icon={direction === "prev" ? ChevronLeftIcon : ChevronRightIcon}
-      className="h-3 w-3"
-    />
+    <DynamicIcon icon={direction === "prev" ? ChevronLeftIcon : ChevronRightIcon} className="h-3 w-3" />
   </button>
 );

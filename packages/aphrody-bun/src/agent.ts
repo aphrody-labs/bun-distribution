@@ -33,7 +33,7 @@ class EventQueue {
   async next(): Promise<Frame> {
     while (!this.items.length) {
       // eslint-disable-next-line no-await-in-loop -- Queue consumers wait for ordered events.
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         this.wake = resolve;
       });
     }
@@ -72,17 +72,14 @@ export class AgentClient {
 
   constructor(options: AgentOptions = {}) {
     this.timeout = options.requestTimeoutMs ?? 30_000;
-    this.process = Bun.spawn(
-      [options.executable ?? "aphrody", ...(options.args ?? ["app-server"])],
-      {
-        windowsHide: true,
-        cwd: options.cwd,
-        env: { ...Bun.env, ...options.env },
-        stdin: "pipe",
-        stdout: "pipe",
-        stderr: "pipe",
-      },
-    );
+    this.process = Bun.spawn([options.executable ?? "aphrody", ...(options.args ?? ["app-server"])], {
+      windowsHide: true,
+      cwd: options.cwd,
+      env: { ...Bun.env, ...options.env },
+      stdin: "pipe",
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     this.reader = this.read();
     this.stderr = this.drainStderr();
   }
@@ -100,13 +97,8 @@ export class AgentClient {
     return this.request("thread/start", params);
   }
 
-  async startTurn(
-    threadId: string,
-    text: string,
-    params: Record<string, unknown> = {},
-  ): Promise<AgentTurn> {
-    if (this.turns.has(threadId))
-      throw new Error("A turn stream already owns this thread");
+  async startTurn(threadId: string, text: string, params: Record<string, unknown> = {}): Promise<AgentTurn> {
+    if (this.turns.has(threadId)) throw new Error("A turn stream already owns this thread");
     const events = new EventQueue();
     this.turns.set(threadId, events);
     try {
@@ -116,19 +108,14 @@ export class AgentClient {
         input: [{ type: "text", text }],
       });
       if (!result?.turn?.id) throw new Error("Invalid turn/start response");
-      return new AgentTurn(this, threadId, result.turn, events, () =>
-        this.turns.delete(threadId),
-      );
+      return new AgentTurn(this, threadId, result.turn, events, () => this.turns.delete(threadId));
     } catch (error) {
       this.turns.delete(threadId);
       throw error;
     }
   }
 
-  request(
-    method: string,
-    params: Record<string, unknown> | null = null,
-  ): Promise<any> {
+  request(method: string, params: Record<string, unknown> | null = null): Promise<any> {
     if (this.failure) return Promise.reject(this.failure);
     const id = String(++this.sequence);
     return new Promise((resolve, reject) => {
@@ -170,14 +157,7 @@ export class AgentClient {
       if (!waiter) return;
       this.pending.delete(String(message.id));
       clearTimeout(waiter.timer);
-      if (message.error)
-        waiter.reject(
-          new AgentError(
-            message.error.code,
-            message.error.message,
-            message.error.data,
-          ),
-        );
+      if (message.error) waiter.reject(new AgentError(message.error.code, message.error.message, message.error.data));
       else waiter.resolve(message.result);
     }
   }
@@ -203,13 +183,7 @@ export class AgentClient {
         }
       }
       buffered += decoder.decode();
-      this.fail(
-        new Error(
-          buffered.trim()
-            ? "Truncated JSON-RPC frame"
-            : "Agent process closed stdout",
-        ),
-      );
+      this.fail(new Error(buffered.trim() ? "Truncated JSON-RPC frame" : "Agent process closed stdout"));
     } catch {
       this.fail(new Error("Agent transport failed"));
     } finally {
@@ -277,8 +251,7 @@ export class AgentTurn {
       while (true) {
         // eslint-disable-next-line no-await-in-loop -- Turn deltas must retain their wire order.
         const event = await this.queue.next();
-        if ((event.params?.turnId ?? event.params?.turn?.id) !== this.id)
-          continue;
+        if ((event.params?.turnId ?? event.params?.turn?.id) !== this.id) continue;
         yield event;
         if (event.method === "turn/completed") return;
       }

@@ -18,7 +18,7 @@
  * @module
  */
 
-import { invoke } from '../api/core'
+import { invoke } from "../api/core";
 
 /**
  * Opens a url with the system's default app, or the one specified with {@linkcode openWith}.
@@ -42,12 +42,12 @@ import { invoke } from '../api/core'
 export async function openUrl(
   url: string | URL,
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  openWith?: 'inAppBrowser' | string
+  openWith?: "inAppBrowser" | string,
 ): Promise<void> {
-  await invoke('plugin:opener|open_url', {
+  await invoke("plugin:opener|open_url", {
     url,
-    with: openWith
-  })
+    with: openWith,
+  });
 }
 
 /**
@@ -69,10 +69,10 @@ export async function openUrl(
  * @since 2.0.0
  */
 export async function openPath(path: string, openWith?: string): Promise<void> {
-  await invoke('plugin:opener|open_path', {
+  await invoke("plugin:opener|open_path", {
     path,
-    with: openWith
-  })
+    with: openWith,
+  });
 }
 
 /**
@@ -94,6 +94,6 @@ export async function openPath(path: string, openWith?: string): Promise<void> {
  * @since 2.0.0
  */
 export async function revealItemsInDir(path: string | string[]): Promise<void> {
-  const paths = typeof path === 'string' ? [path] : path
-  return invoke('plugin:opener|reveal_items_in_dir', { paths })
+  const paths = typeof path === "string" ? [path] : path;
+  return invoke("plugin:opener|reveal_items_in_dir", { paths });
 }

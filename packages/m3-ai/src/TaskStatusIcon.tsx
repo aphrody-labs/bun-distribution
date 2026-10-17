@@ -8,10 +8,7 @@ import type { TaskStatus } from "./types";
 import { TASK_STATUS_LABEL } from "./types";
 
 /** Material Symbols glyph and M3 color role per status. */
-const config: Record<
-  TaskStatus,
-  { icon: string; filled: boolean; color: string }
-> = {
+const config: Record<TaskStatus, { icon: string; filled: boolean; color: string }> = {
   done: { icon: "check_circle", filled: true, color: "text-success" },
   in_progress: { icon: "clock_loader_40", filled: true, color: "text-primary" },
   ready: { icon: "radio_button_checked", filled: false, color: "text-primary" },
@@ -31,12 +28,7 @@ export interface TaskStatusIconProps {
   label?: string;
 }
 
-export function TaskStatusIcon({
-  status,
-  size = 16,
-  className,
-  label,
-}: TaskStatusIconProps) {
+export function TaskStatusIcon({ status, size = 16, className, label }: TaskStatusIconProps) {
   const { icon, filled, color } = config[status];
   return (
     <Icon

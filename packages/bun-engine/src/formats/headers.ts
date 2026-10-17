@@ -1,24 +1,10 @@
 // Header types inferred from the parsers, used by the typed `import rom from "./x.nes"` declarations.
 import type { parseElf } from "./parsers/elf.js";
-import type {
-  parseFds,
-  parseGameBoy,
-  parseGba,
-  parseNds,
-  parseNes,
-} from "./parsers/handheld.js";
-import type {
-  parseDisc,
-  parseDol,
-  parseN64,
-  parseWbfs,
-  parseWia,
-} from "./parsers/home.js";
+import type { parseFds, parseGameBoy, parseGba, parseNds, parseNes } from "./parsers/handheld.js";
+import type { parseDisc, parseDol, parseN64, parseWbfs, parseWia } from "./parsers/home.js";
 import type { parseGenesis } from "./parsers/sega.js";
 
-type HeaderOf<
-  Parser extends (...args: never[]) => Promise<{ header: object }>,
-> = Awaited<ReturnType<Parser>>["header"];
+type HeaderOf<Parser extends (...args: never[]) => Promise<{ header: object }>> = Awaited<ReturnType<Parser>>["header"];
 
 export type NesHeader = HeaderOf<typeof parseNes>;
 export type FdsHeader = HeaderOf<typeof parseFds>;

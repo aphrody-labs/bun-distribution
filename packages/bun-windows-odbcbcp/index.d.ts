@@ -19,9 +19,27 @@ interface Functions {
   /** odbcbcp.dll!bcp_batch */
   bcp_batch(param0: Win32Pointer): number;
   /** odbcbcp.dll!bcp_bind */
-  bcp_bind(param0: Win32Pointer, param1: Win32Pointer, param2: number, param3: number, param4: Win32Pointer, param5: number, param6: number, param7: number): number;
+  bcp_bind(
+    param0: Win32Pointer,
+    param1: Win32Pointer,
+    param2: number,
+    param3: number,
+    param4: Win32Pointer,
+    param5: number,
+    param6: number,
+    param7: number,
+  ): number;
   /** odbcbcp.dll!bcp_colfmt */
-  bcp_colfmt(param0: Win32Pointer, param1: number, param2: number, param3: number, param4: number, param5: Win32Pointer, param6: number, param7: number): number;
+  bcp_colfmt(
+    param0: Win32Pointer,
+    param1: number,
+    param2: number,
+    param3: number,
+    param4: number,
+    param5: Win32Pointer,
+    param6: number,
+    param7: number,
+  ): number;
   /** odbcbcp.dll!bcp_collen */
   bcp_collen(param0: Win32Pointer, param1: number, param2: number): number;
   /** odbcbcp.dll!bcp_colptr */
@@ -35,13 +53,38 @@ interface Functions {
   /** odbcbcp.dll!bcp_exec */
   bcp_exec(param0: Win32Pointer, param1: Win32Pointer): number;
   /** odbcbcp.dll!bcp_getcolfmt */
-  bcp_getcolfmt(param0: Win32Pointer, param1: number, param2: number, param3: Win32Pointer, param4: number, param5: Win32Pointer): number;
+  bcp_getcolfmt(
+    param0: Win32Pointer,
+    param1: number,
+    param2: number,
+    param3: Win32Pointer,
+    param4: number,
+    param5: Win32Pointer,
+  ): number;
   /** odbcbcp.dll!bcp_initA */
-  bcp_initA(param0: Win32Pointer, param1: string | Win32Pointer, param2: string | Win32Pointer, param3: string | Win32Pointer, param4: number): number;
+  bcp_initA(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: string | Win32Pointer,
+    param3: string | Win32Pointer,
+    param4: number,
+  ): number;
   /** odbcbcp.dll!bcp_initW */
-  bcp_initW(param0: Win32Pointer, param1: string | Win32Pointer, param2: string | Win32Pointer, param3: string | Win32Pointer, param4: number): number;
+  bcp_initW(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: string | Win32Pointer,
+    param3: string | Win32Pointer,
+    param4: number,
+  ): number;
   /** odbcbcp.dll!bcp_initW */
-  bcp_init(param0: Win32Pointer, param1: string | Win32Pointer, param2: string | Win32Pointer, param3: string | Win32Pointer, param4: number): number;
+  bcp_init(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: string | Win32Pointer,
+    param3: string | Win32Pointer,
+    param4: number,
+  ): number;
   /** odbcbcp.dll!bcp_moretext */
   bcp_moretext(param0: Win32Pointer, param1: number, param2: Win32Pointer): number;
   /** odbcbcp.dll!bcp_readfmtA */

@@ -14,9 +14,7 @@ const subscribeNone = () => () => {};
 
 export function useEditor(): EditorCore;
 export function useEditor<T>(selector: (editor: EditorCore) => T): T;
-export function useEditor<T>(
-  selector?: (editor: EditorCore) => T,
-): EditorCore | T {
+export function useEditor<T>(selector?: (editor: EditorCore) => T): EditorCore | T {
   const editor = useMemo(() => EditorCore.getInstance(), []);
   const snapshotCacheRef = useRef<T | typeof SNAPSHOT_UNSET>(SNAPSHOT_UNSET);
 
@@ -34,7 +32,7 @@ export function useEditor<T>(
         editor.diagnostics.subscribe(onChange),
       ];
       return () => {
-        unsubscribers.forEach((unsubscribe) => {
+        unsubscribers.forEach(unsubscribe => {
           unsubscribe();
         });
       };
@@ -62,9 +60,5 @@ export function useEditor<T>(
     return next;
   }, [editor, selector]);
 
-  return useSyncExternalStore(
-    selector ? subscribeAll : subscribeNone,
-    getSnapshot,
-    getSnapshot,
-  );
+  return useSyncExternalStore(selector ? subscribeAll : subscribeNone, getSnapshot, getSnapshot);
 }

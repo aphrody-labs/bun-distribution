@@ -42,8 +42,7 @@ export function AudioTuningPopover({
   pitch = 0,
   onPitchChange,
 }: AudioTuningPopoverProps) {
-  const showSampleRate =
-    !!sampleRateOptions?.length && onSampleRateChange !== undefined;
+  const showSampleRate = !!sampleRateOptions?.length && onSampleRateChange !== undefined;
 
   return (
     <PopoverMenu
@@ -55,11 +54,9 @@ export function AudioTuningPopover({
       <div className="w-60 space-y-3.5 pb-0.5">
         {showSampleRate && (
           <div>
-            <div className="mb-1.5 text-xs font-medium text-base-fg/60">
-              Sample rate
-            </div>
+            <div className="mb-1.5 text-xs font-medium text-base-fg/60">Sample rate</div>
             <div className="flex flex-wrap gap-1">
-              {sampleRateOptions.map((hz) => (
+              {sampleRateOptions.map(hz => (
                 <button
                   key={hz}
                   type="button"
@@ -85,7 +82,7 @@ export function AudioTuningPopover({
             max={AUDIO_SPEED_MAX}
             step={0.05}
             value={speed}
-            onChange={(value) => onSpeedChange?.(value)}
+            onChange={value => onSpeedChange?.(value)}
           />
         )}
 
@@ -97,7 +94,7 @@ export function AudioTuningPopover({
             max={AUDIO_VOLUME_MAX}
             step={0.05}
             value={volume}
-            onChange={(value) => onVolumeChange?.(value)}
+            onChange={value => onVolumeChange?.(value)}
           />
         )}
 
@@ -109,7 +106,7 @@ export function AudioTuningPopover({
             max={AUDIO_PITCH_MAX}
             step={1}
             value={pitch}
-            onChange={(value) => onPitchChange?.(value)}
+            onChange={value => onPitchChange?.(value)}
           />
         )}
       </div>
@@ -127,39 +124,20 @@ interface TuningSliderRowProps {
   onChange: (value: number) => void;
 }
 
-function TuningSliderRow({
-  label,
-  valueLabel,
-  min,
-  max,
-  step,
-  value,
-  onChange,
-}: TuningSliderRowProps) {
+function TuningSliderRow({ label, valueLabel, min, max, step, value, onChange }: TuningSliderRowProps) {
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
         <span className="text-xs font-medium text-base-fg/60">{label}</span>
-        <span className="text-xs font-medium tabular-nums text-base-fg">
-          {valueLabel}
-        </span>
+        <span className="text-xs font-medium tabular-nums text-base-fg">{valueLabel}</span>
       </div>
-      <SliderV2
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={onChange}
-        variant="filled"
-      />
+      <SliderV2 min={min} max={max} step={step} value={value} onChange={onChange} variant="filled" />
     </div>
   );
 }
 
 export function formatSampleRateHz(hz: number): string {
   const kilohertz = hz / 1000;
-  const label = Number.isInteger(kilohertz)
-    ? kilohertz.toString()
-    : kilohertz.toFixed(1);
+  const label = Number.isInteger(kilohertz) ? kilohertz.toString() : kilohertz.toFixed(1);
   return `${label} kHz`;
 }

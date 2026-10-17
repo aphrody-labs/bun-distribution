@@ -11,27 +11,66 @@ interface Functions {
   /** dhcpcsvc.dll!DhcpGetOriginalSubnetMask */
   DhcpGetOriginalSubnetMask(sAdapterName: string | Win32Pointer, dwSubnetMask: Win32Pointer): number;
   /** dhcpcsvc.dll!DhcpRegisterParamChange */
-  DhcpRegisterParamChange(Flags: number, Reserved: Win32Pointer, AdapterName: string | Win32Pointer, ClassId: Win32Pointer, Params: Win32StructInit, Handle: Win32Pointer): number;
+  DhcpRegisterParamChange(
+    Flags: number,
+    Reserved: Win32Pointer,
+    AdapterName: string | Win32Pointer,
+    ClassId: Win32Pointer,
+    Params: Win32StructInit,
+    Handle: Win32Pointer,
+  ): number;
   /** dhcpcsvc.dll!DhcpRemoveDNSRegistrations */
   DhcpRemoveDNSRegistrations(): number;
   /** dhcpcsvc.dll!DhcpRequestParams */
-  DhcpRequestParams(Flags: number, Reserved: Win32Pointer, AdapterName: string | Win32Pointer, ClassId: Win32Pointer, SendParams: Win32StructInit, RecdParams: Win32StructInit, Buffer: Win32Pointer, pSize: Win32Pointer, RequestIdStr: string | Win32Pointer): number;
+  DhcpRequestParams(
+    Flags: number,
+    Reserved: Win32Pointer,
+    AdapterName: string | Win32Pointer,
+    ClassId: Win32Pointer,
+    SendParams: Win32StructInit,
+    RecdParams: Win32StructInit,
+    Buffer: Win32Pointer,
+    pSize: Win32Pointer,
+    RequestIdStr: string | Win32Pointer,
+  ): number;
   /** dhcpcsvc.dll!DhcpUndoRequestParams */
-  DhcpUndoRequestParams(Flags: number, Reserved: Win32Pointer, AdapterName: string | Win32Pointer, RequestIdStr: string | Win32Pointer): number;
+  DhcpUndoRequestParams(
+    Flags: number,
+    Reserved: Win32Pointer,
+    AdapterName: string | Win32Pointer,
+    RequestIdStr: string | Win32Pointer,
+  ): number;
   /** dhcpcsvc.dll!McastApiCleanup */
   McastApiCleanup(): void;
   /** dhcpcsvc.dll!McastApiStartup */
   McastApiStartup(Version: Win32Pointer): number;
   /** dhcpcsvc.dll!McastEnumerateScopes */
-  McastEnumerateScopes(AddrFamily: number, ReQuery: number, pScopeList: Win32Pointer, pScopeLen: Win32Pointer, pScopeCount: Win32Pointer): number;
+  McastEnumerateScopes(
+    AddrFamily: number,
+    ReQuery: number,
+    pScopeList: Win32Pointer,
+    pScopeLen: Win32Pointer,
+    pScopeCount: Win32Pointer,
+  ): number;
   /** dhcpcsvc.dll!McastGenUID */
   McastGenUID(pRequestID: Win32Pointer): number;
   /** dhcpcsvc.dll!McastReleaseAddress */
   McastReleaseAddress(AddrFamily: number, pRequestID: Win32Pointer, pReleaseRequest: Win32Pointer): number;
   /** dhcpcsvc.dll!McastRenewAddress */
-  McastRenewAddress(AddrFamily: number, pRequestID: Win32Pointer, pRenewRequest: Win32Pointer, pRenewResponse: Win32Pointer): number;
+  McastRenewAddress(
+    AddrFamily: number,
+    pRequestID: Win32Pointer,
+    pRenewRequest: Win32Pointer,
+    pRenewResponse: Win32Pointer,
+  ): number;
   /** dhcpcsvc.dll!McastRequestAddress */
-  McastRequestAddress(AddrFamily: number, pRequestID: Win32Pointer, pScopeCtx: Win32Pointer, pAddrRequest: Win32Pointer, pAddrResponse: Win32Pointer): number;
+  McastRequestAddress(
+    AddrFamily: number,
+    pRequestID: Win32Pointer,
+    pScopeCtx: Win32Pointer,
+    pAddrRequest: Win32Pointer,
+    pAddrResponse: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

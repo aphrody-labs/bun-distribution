@@ -11,9 +11,7 @@ export function useMeshCostEstimate(
   selectedProvider: string | null | undefined,
 ): { isLoading: boolean } {
   const [isLoading, setIsLoading] = useState(false);
-  const setCredits = useCostBreakdownModalStore(
-    (s) => s.setEstimatedCreditsForPage,
-  );
+  const setCredits = useCostBreakdownModalStore(s => s.setEstimatedCreditsForPage);
 
   useEffect(() => {
     if (activePage !== ModelPage.ImageTo3DObject || !selectedModel) {
@@ -25,13 +23,11 @@ export function useMeshCostEstimate(
     setCredits(activePage, null);
     EstimateMeshCost({
       model: selectedModel.tauriId,
-      provider:
-        (selectedProvider as GenerationProvider) ?? GenerationProvider.Artcraft,
+      provider: (selectedProvider as GenerationProvider) ?? GenerationProvider.Artcraft,
       reference_image_media_tokens: ["mf_estimate_reference"],
     })
-      .then((result) => {
-        if (!cancelled)
-          setCredits(activePage, result.payload.cost_in_credits ?? null);
+      .then(result => {
+        if (!cancelled) setCredits(activePage, result.payload.cost_in_credits ?? null);
       })
       .catch(() => {
         if (!cancelled) setCredits(activePage, null);

@@ -55,23 +55,15 @@ export type ParamChannelLayout =
 const toRgb = converter("rgb");
 
 function srgbToLinear({ value }: { value: number }): number {
-  return value <= 0.04045
-    ? value / 12.92
-    : Math.pow((value + 0.055) / 1.055, 2.4);
+  return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
 }
 
 function linearToSrgb({ value }: { value: number }): number {
   const clamped = clamp({ value, min: 0, max: 1 });
-  return clamped <= 0.0031308
-    ? clamped * 12.92
-    : 1.055 * Math.pow(clamped, 1 / 2.4) - 0.055;
+  return clamped <= 0.0031308 ? clamped * 12.92 : 1.055 * Math.pow(clamped, 1 / 2.4) - 0.055;
 }
 
-export function parseColorToLinearRgba({
-  color,
-}: {
-  color: string;
-}): LinearRgba | null {
+export function parseColorToLinearRgba({ color }: { color: string }): LinearRgba | null {
   const parsed = parse(color);
   const rgb = parsed ? toRgb(parsed) : null;
   if (!rgb) {
@@ -118,56 +110,42 @@ function createLeafChannelLayout<TValue extends ParamValue>({
       defaultInterpolation,
     },
     easingMode: "independent",
-    decompose: (value) => ({ value }),
+    decompose: value => ({ value }),
     compose: ({ value }) => value ?? null,
   };
 }
 
-export const NUMBER_CHANNEL_LAYOUT: LeafChannelLayout<number> =
-  createLeafChannelLayout<number>({
-    valueKind: "scalar",
-    defaultInterpolation: "linear",
-  });
+export const NUMBER_CHANNEL_LAYOUT: LeafChannelLayout<number> = createLeafChannelLayout<number>({
+  valueKind: "scalar",
+  defaultInterpolation: "linear",
+});
 
-export const BOOLEAN_CHANNEL_LAYOUT: LeafChannelLayout<boolean> =
-  createLeafChannelLayout<boolean>({
-    valueKind: "discrete",
-    defaultInterpolation: "hold",
-  });
+export const BOOLEAN_CHANNEL_LAYOUT: LeafChannelLayout<boolean> = createLeafChannelLayout<boolean>({
+  valueKind: "discrete",
+  defaultInterpolation: "hold",
+});
 
-export const STRING_CHANNEL_LAYOUT: LeafChannelLayout<string> =
-  createLeafChannelLayout<string>({
-    valueKind: "discrete",
-    defaultInterpolation: "hold",
-  });
+export const STRING_CHANNEL_LAYOUT: LeafChannelLayout<string> = createLeafChannelLayout<string>({
+  valueKind: "discrete",
+  defaultInterpolation: "hold",
+});
 
-const colorComponent = (
-  key: keyof LinearRgba,
-): ChannelComponentDefinition<keyof LinearRgba> => ({
+const colorComponent = (key: keyof LinearRgba): ChannelComponentDefinition<keyof LinearRgba> => ({
   key,
   valueKind: "scalar",
   defaultInterpolation: "linear",
 });
 
-export const COLOR_CHANNEL_LAYOUT: CompositeChannelLayout<string, LinearRgba> =
-  {
-    kind: "composite",
-    components: [
-      colorComponent("r"),
-      colorComponent("g"),
-      colorComponent("b"),
-      colorComponent("a"),
-    ],
-    easingMode: "shared",
-    decompose: (value) => parseColorToLinearRgba({ color: value }),
-    compose: ({ r, g, b, a }) =>
-      typeof r === "number" &&
-      typeof g === "number" &&
-      typeof b === "number" &&
-      typeof a === "number"
-        ? formatLinearRgba({ color: { r, g, b, a } })
-        : null,
-  };
+export const COLOR_CHANNEL_LAYOUT: CompositeChannelLayout<string, LinearRgba> = {
+  kind: "composite",
+  components: [colorComponent("r"), colorComponent("g"), colorComponent("b"), colorComponent("a")],
+  easingMode: "shared",
+  decompose: value => parseColorToLinearRgba({ color: value }),
+  compose: ({ r, g, b, a }) =>
+    typeof r === "number" && typeof g === "number" && typeof b === "number" && typeof a === "number"
+      ? formatLinearRgba({ color: { r, g, b, a } })
+      : null,
+};
 
 interface BaseParamDefinition<TKey extends string = string> {
   key: TKey;
@@ -177,9 +155,7 @@ interface BaseParamDefinition<TKey extends string = string> {
   dependencies?: Array<{ param: string; equals: ParamValue }>;
 }
 
-export interface NumberParamDefinition<
-  TKey extends string = string,
-> extends BaseParamDefinition<TKey> {
+export interface NumberParamDefinition<TKey extends string = string> extends BaseParamDefinition<TKey> {
   type: "number";
   default: number;
   channels?: LeafChannelLayout<number>;
@@ -194,42 +170,32 @@ export interface NumberParamDefinition<
   shortLabel?: string;
 }
 
-export interface BooleanParamDefinition<
-  TKey extends string = string,
-> extends BaseParamDefinition<TKey> {
+export interface BooleanParamDefinition<TKey extends string = string> extends BaseParamDefinition<TKey> {
   type: "boolean";
   default: boolean;
   channels?: LeafChannelLayout<boolean>;
 }
 
-export interface ColorParamDefinition<
-  TKey extends string = string,
-> extends BaseParamDefinition<TKey> {
+export interface ColorParamDefinition<TKey extends string = string> extends BaseParamDefinition<TKey> {
   type: "color";
   default: string;
   channels?: ChannelLayout<string, LinearRgba>;
 }
 
-export interface SelectParamDefinition<
-  TKey extends string = string,
-> extends BaseParamDefinition<TKey> {
+export interface SelectParamDefinition<TKey extends string = string> extends BaseParamDefinition<TKey> {
   type: "select";
   default: string;
   channels?: LeafChannelLayout<string>;
   options: Array<{ value: string; label: string }>;
 }
 
-export interface TextParamDefinition<
-  TKey extends string = string,
-> extends BaseParamDefinition<TKey> {
+export interface TextParamDefinition<TKey extends string = string> extends BaseParamDefinition<TKey> {
   type: "text";
   default: string;
   channels?: LeafChannelLayout<string>;
 }
 
-export interface FontParamDefinition<
-  TKey extends string = string,
-> extends BaseParamDefinition<TKey> {
+export interface FontParamDefinition<TKey extends string = string> extends BaseParamDefinition<TKey> {
   type: "font";
   default: string;
   channels?: LeafChannelLayout<string>;
@@ -243,11 +209,7 @@ export type ParamDefinition<TKey extends string = string> =
   | TextParamDefinition<TKey>
   | FontParamDefinition<TKey>;
 
-export function getParamChannelLayout({
-  param,
-}: {
-  param: ParamDefinition;
-}): ParamChannelLayout {
+export function getParamChannelLayout({ param }: { param: ParamDefinition }): ParamChannelLayout {
   switch (param.type) {
     case "number":
       return param.channels ?? NUMBER_CHANNEL_LAYOUT;
@@ -266,11 +228,7 @@ export function getParamChannelLayout({
   }
 }
 
-export function getParamValueKind({
-  param,
-}: {
-  param: ParamDefinition;
-}): "number" | "color" | "discrete" {
+export function getParamValueKind({ param }: { param: ParamDefinition }): "number" | "color" | "discrete" {
   const layout = getParamChannelLayout({ param });
   if (layout.kind === "composite") {
     return "color";
@@ -281,11 +239,7 @@ export function getParamValueKind({
   return "discrete";
 }
 
-export function getParamDefaultInterpolation({
-  param,
-}: {
-  param: ParamDefinition;
-}): "linear" | "hold" {
+export function getParamDefaultInterpolation({ param }: { param: ParamDefinition }): "linear" | "hold" {
   const layout = getParamChannelLayout({ param });
   if (layout.kind === "leaf") {
     return layout.component.defaultInterpolation;
@@ -309,13 +263,7 @@ export function getParamNumericRange({
   };
 }
 
-export function coerceParamValue({
-  param,
-  value,
-}: {
-  param: ParamDefinition;
-  value: unknown;
-}): ParamValue | null {
+export function coerceParamValue({ param, value }: { param: ParamDefinition; value: unknown }): ParamValue | null {
   switch (param.type) {
     case "number": {
       if (typeof value !== "number" || Number.isNaN(value)) {
@@ -333,10 +281,7 @@ export function coerceParamValue({
     case "font":
       return typeof value === "string" ? value : null;
     case "select":
-      return typeof value === "string" &&
-        param.options.some((option) => option.value === value)
-        ? value
-        : null;
+      return typeof value === "string" && param.options.some(option => option.value === value) ? value : null;
     default: {
       const exhaustive: never = param;
       return exhaustive;

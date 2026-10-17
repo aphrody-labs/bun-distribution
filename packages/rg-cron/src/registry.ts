@@ -133,8 +133,7 @@ export const REGISTRE_TACHES: Readonly<Record<string, DefinitionTache>> = Object
     executer: options => import("./tasks/campagnes-discord").then(m => m.recolterCreationsDiscord(slug(options))),
   },
   "campagnes:instagram": {
-    executer: options =>
-      import("./tasks/campagnes-instagram").then(m => m.revaliderCreationsInstagram(slug(options))),
+    executer: options => import("./tasks/campagnes-instagram").then(m => m.revaliderCreationsInstagram(slug(options))),
   },
   "campagnes:relais": {
     executer: options => import("./tasks/campagnes-relais-discord").then(m => m.relayerCampagnesDiscord(slug(options))),

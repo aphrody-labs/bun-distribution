@@ -20,15 +20,7 @@ class ChromaKeyMaterial extends THREE.ShaderMaterial {
    * @param {number} smoothness
    * @param {number} spill
    */
-  constructor(
-    VideoTexture,
-    keyColor,
-    width,
-    height,
-    similarity = 0.01,
-    smoothness = 0.18,
-    spill = 0.1,
-  ) {
+  constructor(VideoTexture, keyColor, width, height, similarity = 0.01, smoothness = 0.18, spill = 0.1) {
     super();
 
     this.texture = VideoTexture;

@@ -13,13 +13,7 @@ import { readdirSync, readFileSync, statfsSync, statSync } from "node:fs";
 import { hostname } from "node:os";
 import { join } from "node:path";
 import { clientConfigPath, readVdf } from "./config.js";
-import {
-  IS_WINDOWS,
-  isDir,
-  norm,
-  resolveSteamRoot,
-  userDataDirs,
-} from "./paths.js";
+import { IS_WINDOWS, isDir, norm, resolveSteamRoot, userDataDirs } from "./paths.js";
 import { listLibraries } from "./libraries.js";
 import { kvObj, kvStr } from "./vdf.js";
 
@@ -136,14 +130,11 @@ async function json<T>(url: string): Promise<T> {
 }
 
 /** Content servers for a cell (`IContentServerDirectoryService/GetServersForSteamPipe`). */
-export async function contentServers(
-  cellId: number,
-  max = 20,
-): Promise<ContentServer[]> {
+export async function contentServers(cellId: number, max = 20): Promise<ContentServer[]> {
   const j = await json<{ response: { servers?: Record<string, unknown>[] } }>(
     `${API}/IContentServerDirectoryService/GetServersForSteamPipe/v1/?cell_id=${cellId}&max_servers=${max}`,
   );
-  return (j.response.servers ?? []).map((s) => ({
+  return (j.response.servers ?? []).map(s => ({
     host: String(s.host),
     vhost: String(s.vhost ?? s.host),
     type: String(s.type),
@@ -160,10 +151,8 @@ export async function contentServers(
 export async function cmServers(cellId: number, max = 20): Promise<CmServer[]> {
   const j = await json<{
     response: { serverlist?: Record<string, unknown>[] };
-  }>(
-    `${API}/ISteamDirectory/GetCMListForConnect/v1/?cellid=${cellId}&maxcount=${max}`,
-  );
-  return (j.response.serverlist ?? []).map((s) => ({
+  }>(`${API}/ISteamDirectory/GetCMListForConnect/v1/?cellid=${cellId}&maxcount=${max}`);
+  return (j.response.serverlist ?? []).map(s => ({
     endpoint: String(s.endpoint),
     type: String(s.type),
     dc: String(s.dc),
@@ -173,13 +162,9 @@ export async function cmServers(cellId: number, max = 20): Promise<CmServer[]> {
 }
 
 /** TCP connect time to `host:port` (resolved by Bun) in milliseconds, or `null`. */
-export function tcpConnect(
-  hostname: string,
-  port: number,
-  timeoutMs = 3000,
-): Promise<number | null> {
+export function tcpConnect(hostname: string, port: number, timeoutMs = 3000): Promise<number | null> {
   const t0 = performance.now();
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const timer = setTimeout(() => resolve(null), timeoutMs);
     const done = (v: number | null) => {
       clearTimeout(timer);
@@ -206,17 +191,10 @@ export function tcpConnect(
 }
 
 /** TLS handshake on 443 with SNI: total time and the handshake share beyond the TCP connect. */
-export function tlsHandshake(
-  host: string,
-  tcpMs: number | null,
-  timeoutMs = 5000,
-): Promise<HostProbe["tls"]> {
+export function tlsHandshake(host: string, tcpMs: number | null, timeoutMs = 5000): Promise<HostProbe["tls"]> {
   const t0 = performance.now();
-  return new Promise((resolve) => {
-    const timer = setTimeout(
-      () => resolve({ handshakeMs: null, totalMs: null, error: "timeout" }),
-      timeoutMs,
-    );
+  return new Promise(resolve => {
+    const timer = setTimeout(() => resolve({ handshakeMs: null, totalMs: null, error: "timeout" }), timeoutMs);
     const done = (v: HostProbe["tls"]) => {
       clearTimeout(timer);
       resolve(v);
@@ -231,10 +209,7 @@ export function tlsHandshake(
           done(
             success
               ? {
-                  handshakeMs:
-                    tcpMs === null
-                      ? null
-                      : Math.round((total - tcpMs) * 10) / 10,
+                  handshakeMs: tcpMs === null ? null : Math.round((total - tcpMs) * 10) / 10,
                   totalMs: total,
                 }
               : {
@@ -253,9 +228,7 @@ export function tlsHandshake(
           done({ handshakeMs: null, totalMs: null, error: e.message });
         },
       },
-    }).catch((e: Error) =>
-      done({ handshakeMs: null, totalMs: null, error: e.message }),
-    );
+    }).catch((e: Error) => done({ handshakeMs: null, totalMs: null, error: e.message }));
   });
 }
 
@@ -291,7 +264,7 @@ async function httpGet(url: string): Promise<HttpTiming> {
 
 async function lookup(host: string, family: 4 | 6) {
   try {
-    return (await Bun.dns.lookup(host, { family })).map((r) => ({
+    return (await Bun.dns.lookup(host, { family })).map(r => ({
       address: r.address,
       ttl: r.ttl,
     }));
@@ -301,10 +274,7 @@ async function lookup(host: string, family: 4 | 6) {
 }
 
 /** DNS, TCP (v4 80/443, v6 443), TLS 443 and HTTP/HTTPS timings of one host. */
-export async function probeHost(
-  host: string,
-  https = true,
-): Promise<HostProbe> {
+export async function probeHost(host: string, https = true): Promise<HostProbe> {
   const t0 = performance.now();
   const [a, aaaa] = await Promise.all([lookup(host, 4), lookup(host, 6)]);
   const dnsMs = ms(t0);
@@ -337,10 +307,7 @@ export async function probeHost(
 }
 
 /** Round trip of one UDP DNS query (A `steamcontent.com`) to the first configured resolver. */
-export function resolverRtt(
-  server: string | undefined,
-  timeoutMs = 2000,
-): Promise<number | null> {
+export function resolverRtt(server: string | undefined, timeoutMs = 2000): Promise<number | null> {
   if (!server || server.includes(":")) return Promise.resolve(null);
   const name = "steamcontent.com".split(".");
   const query = new Uint8Array([
@@ -356,17 +323,14 @@ export function resolverRtt(
     0,
     0,
     0,
-    ...name.flatMap((label) => [
-      label.length,
-      ...new TextEncoder().encode(label),
-    ]),
+    ...name.flatMap(label => [label.length, ...new TextEncoder().encode(label)]),
     0,
     0,
     1,
     0,
     1,
   ]);
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     let t0 = 0;
     let socket: { close(): void } | undefined;
     const timer = setTimeout(() => {
@@ -383,7 +347,7 @@ export function resolverRtt(
         },
       },
     })
-      .then((s) => {
+      .then(s => {
         socket = s;
         t0 = performance.now();
         s.send(query, 53, server);
@@ -440,11 +404,7 @@ export function parseLogs(steamRoot: string) {
   let stalls = 0;
   for (const line of readLines(join(logs, "content_log.txt"))) {
     let m: RegExpMatchArray | null;
-    if (
-      (m = line.match(
-        /Created download interface of type '(\w+)' \(\d+\) to host (\S+)/,
-      ))
-    )
+    if ((m = line.match(/Created download interface of type '(\w+)' \(\d+\) to host (\S+)/)))
       host(m[2]!, m[1]!).interfaces++;
     else if (
       (m = line.match(
@@ -457,12 +417,8 @@ export function parseLogs(steamRoot: string) {
       h.hits += Number(m[5]);
       h.misses += Number(m[6]);
       h.samples++;
-    } else if ((m = line.match(/Current download rate: ([\d.]+) Mbps/)))
-      rates.push(Number(m[1]));
-    else if (
-      (m = line.match(/via ContentServerDirectoryService::\w+ \(CellID (\d+)/))
-    )
-      cellUsed = Number(m[1]);
+    } else if ((m = line.match(/Current download rate: ([\d.]+) Mbps/))) rates.push(Number(m[1]));
+    else if ((m = line.match(/via ContentServerDirectoryService::\w+ \(CellID (\d+)/))) cellUsed = Number(m[1]);
     else if ((m = line.match(/App update changed : (.+?),?\s*$/)))
       for (const p of m[1]!.split(",")) bump(phases, p.trim());
     else if ((m = line.match(/\(\w+,\d+\) - (\S+) .*?: (.*ERROR.*)$/)))
@@ -474,9 +430,7 @@ export function parseLogs(steamRoot: string) {
     .map(([h, v]) => ({
       host: h,
       ...v,
-      mbps: v.seconds
-        ? Math.round(((v.bytes * 8) / v.seconds / 1e6) * 100) / 100
-        : null,
+      mbps: v.seconds ? Math.round(((v.bytes * 8) / v.seconds / 1e6) * 100) / 100 : null,
     }))
     .sort((a, b) => b.bytes - a.bytes);
 
@@ -487,38 +441,21 @@ export function parseLogs(steamRoot: string) {
   let connectivity: string | null = null;
   for (const line of readLines(join(logs, "connection_log.txt"))) {
     let m: RegExpMatchArray | null;
-    if ((m = line.match(/ConnectionCompleted\(\) \(\S+, (\w+)\)/)))
-      bump(transports, m[1]!);
-    else if (
-      (m = line.match(
-        /Ping\w*CM\(\) \((\S+)\) results: ([\d.]+)ms \+ load ([\d.]+)/,
-      ))
-    )
+    if ((m = line.match(/ConnectionCompleted\(\) \(\S+, (\w+)\)/))) bump(transports, m[1]!);
+    else if ((m = line.match(/Ping\w*CM\(\) \((\S+)\) results: ([\d.]+)ms \+ load ([\d.]+)/)))
       cmPings.push({ host: m[1]!, ms: Number(m[2]), load: Number(m[3]) });
-    else if ((m = line.match(/Client thinks it can connect via: (.*)$/)))
-      canConnect = m[1]!;
-    else if (
-      (m = line.match(/IPv6 (UDP|HTTP) connectivity test .* - ([A-Z]+)\b/))
-    )
-      ipv6[m[1]!] = m[2]!;
-    else if ((m = line.match(/Connectivity test: result=(\w+)/)))
-      connectivity = m[1]!;
+    else if ((m = line.match(/Client thinks it can connect via: (.*)$/))) canConnect = m[1]!;
+    else if ((m = line.match(/IPv6 (UDP|HTTP) connectivity test .* - ([A-Z]+)\b/))) ipv6[m[1]!] = m[2]!;
+    else if ((m = line.match(/Connectivity test: result=(\w+)/))) connectivity = m[1]!;
   }
 
   const sessions: { at: string; peer: string; mode: string }[] = [];
   const disconnects: Record<string, number> = {};
   for (const line of readLines(join(logs, "remote_connections.txt"))) {
     let m: RegExpMatchArray | null;
-    if (
-      (m = line.match(
-        /^\[([^\]]+)\] Client \d+ \(([^)]+)\) connected via (\w+) connection/,
-      ))
-    )
+    if ((m = line.match(/^\[([^\]]+)\] Client \d+ \(([^)]+)\) connected via (\w+) connection/)))
       sessions.push({ at: m[1]!, peer: m[2]!, mode: m[3]! });
-    else if (
-      (m = line.match(/Disconnected from remote client: (0x[0-9a-f]+)/i))
-    )
-      bump(disconnects, m[1]!);
+    else if ((m = line.match(/Disconnected from remote client: (0x[0-9a-f]+)/i))) bump(disconnects, m[1]!);
   }
   const streaming = {
     codec: null as string | null,
@@ -528,20 +465,11 @@ export function parseLogs(steamRoot: string) {
   };
   for (const line of readLines(join(logs, "streaming_log.txt"))) {
     let m: RegExpMatchArray | null;
-    if ((m = line.match(/\b(HEVC|H\.?265|H\.?264|AV1)\b/i)))
-      streaming.codec = m[1]!.toUpperCase();
-    if (
-      (m = line.match(/\b(NVENC|AMF|QSV|VAAPI|libx264|software encod\w*)\b/i))
-    )
-      streaming.encoder = m[1]!;
-    if (
-      (m = line.match(
-        /bitrate[^\d]{0,12}([\d.]+\s*[kKmM]bit(?:s|\/s)?|[\d.]+\s*[kKmM]bps)/i,
-      ))
-    )
+    if ((m = line.match(/\b(HEVC|H\.?265|H\.?264|AV1)\b/i))) streaming.codec = m[1]!.toUpperCase();
+    if ((m = line.match(/\b(NVENC|AMF|QSV|VAAPI|libx264|software encod\w*)\b/i))) streaming.encoder = m[1]!;
+    if ((m = line.match(/bitrate[^\d]{0,12}([\d.]+\s*[kKmM]bit(?:s|\/s)?|[\d.]+\s*[kKmM]bps)/i)))
       streaming.bitrate = m[1]!;
-    if ((m = line.match(/(?:packet )?loss[^\d]{0,12}([\d.]+\s*%)/i)))
-      streaming.packetLoss = m[1]!;
+    if ((m = line.match(/(?:packet )?loss[^\d]{0,12}([\d.]+\s*%)/i))) streaming.packetLoss = m[1]!;
   }
   return {
     content: {
@@ -572,9 +500,7 @@ export function parseLogs(steamRoot: string) {
 }
 
 /** `steam_dev.cfg` (`@key value` lines) of the Steam root, or `null` when absent. */
-export function readSteamDevCfg(
-  steamRoot: string,
-): Record<string, string> | null {
+export function readSteamDevCfg(steamRoot: string): Record<string, string> | null {
   const lines = readLines(join(steamRoot, "steam_dev.cfg"));
   if (!lines.length) return null;
   const out: Record<string, string> = {};
@@ -598,8 +524,7 @@ function largestFile(dir: string, budget = 20_000): string | null {
     for (const e of entries) {
       if (++seen > budget) return;
       const p = join(d, e.name);
-      if (e.isDirectory() && depth < 6 && e.name !== "Steam Controller Configs")
-        walk(p, depth + 1);
+      if (e.isDirectory() && depth < 6 && e.name !== "Steam Controller Configs") walk(p, depth + 1);
       else if (e.isFile()) {
         try {
           const size = statSync(p).size;
@@ -634,8 +559,7 @@ async function diskProbe(library: string, mb: number) {
     const len = Math.min(file.size, mb * 2 ** 20);
     const start = Math.max(0, Math.floor((file.size - len) / 2));
     const t0 = performance.now();
-    sampleBytes = (await file.slice(start, start + len).arrayBuffer())
-      .byteLength;
+    sampleBytes = (await file.slice(start, start + len).arrayBuffer()).byteLength;
     const secs = (performance.now() - t0) / 1000;
     readMBps = secs > 0 ? Math.round(sampleBytes / 2 ** 20 / secs) : null;
   }
@@ -679,20 +603,14 @@ function linuxNet(): Record<string, string | null> | null {
     "net.ipv4.tcp_rmem": sys("net/ipv4/tcp_rmem"),
     "net.ipv4.tcp_wmem": sys("net/ipv4/tcp_wmem"),
     "net.ipv4.tcp_congestion_control": sys("net/ipv4/tcp_congestion_control"),
-    "net.ipv4.tcp_available_congestion_control": sys(
-      "net/ipv4/tcp_available_congestion_control",
-    ),
+    "net.ipv4.tcp_available_congestion_control": sys("net/ipv4/tcp_available_congestion_control"),
     "net.core.default_qdisc": sys("net/core/default_qdisc"),
     defaultRouteInterface: iface,
     qdisc,
   };
 }
 
-async function pool<T, R>(
-  items: T[],
-  n: number,
-  fn: (t: T) => Promise<R>,
-): Promise<R[]> {
+async function pool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Promise<R[]> {
   const out: R[] = Array.from({ length: items.length });
   let next = 0;
   await Promise.all(
@@ -726,18 +644,12 @@ export async function runAudit(opts: AuditOptions = {}): Promise<AuditReport> {
   const store = kvObj(readVdf(clientConfigPath(steamRoot)), ...STORE);
   const override = Number(kvStr(store, "CellIDServerOverride") ?? NaN);
   const logs = parseLogs(steamRoot);
-  const cell =
-    opts.cellId ??
-    (Number.isFinite(override) ? override : (logs.content.cellUsed ?? 0));
+  const cell = opts.cellId ?? (Number.isFinite(override) ? override : (logs.content.cellUsed ?? 0));
 
   log(`content servers and CMs for cell ${cell}`);
   const cells = [...new Set([cell, 0])];
   const [servers, cms] = await Promise.all([
-    Promise.all(
-      cells.map((c) =>
-        contentServers(c, opts.maxServers ?? 20).catch(() => []),
-      ),
-    ).then((l) => l.flat()),
+    Promise.all(cells.map(c => contentServers(c, opts.maxServers ?? 20).catch(() => []))).then(l => l.flat()),
     cmServers(cell, 12).catch(() => []),
   ]);
   const byHost = new Map<string, ContentServer>();
@@ -748,10 +660,8 @@ export async function runAudit(opts: AuditOptions = {}): Promise<AuditReport> {
   }
   const servers2 = [...byHost.values()];
   log(`probing ${servers2.length} content servers`);
-  const probes = await pool(servers2, 4, (s) =>
-    probeHost(s.vhost, s.https !== "unavailable"),
-  );
-  const cmProbes = await pool(cms, 6, async (c) => {
+  const probes = await pool(servers2, 4, s => probeHost(s.vhost, s.https !== "unavailable"));
+  const cmProbes = await pool(cms, 6, async c => {
     const [h, p] = c.endpoint.split(":");
     return { ...c, tcpMs: await tcpConnect(h!, Number(p)) };
   });
@@ -771,21 +681,14 @@ export async function runAudit(opts: AuditOptions = {}): Promise<AuditReport> {
 
   const throttle = kvStr(store, "DownloadThrottleKbps");
   const localStreaming = userDataDirs(steamRoot)
-    .map((d) =>
-      kvObj(
-        readVdf(join(d, "config", "localconfig.vdf")),
-        "UserLocalConfigStore",
-        "streaming_v2",
-      ),
-    )
+    .map(d => kvObj(readVdf(join(d, "config", "localconfig.vdf")), "UserLocalConfigStore", "streaming_v2"))
     .find(Boolean);
   const shader = kvObj(store, "ShaderCacheManager");
   const flat = (o: ReturnType<typeof kvObj>, keep?: RegExp) =>
     o
       ? Object.fromEntries(
           Object.entries(o).filter(
-            (e): e is [string, string] =>
-              typeof e[1] === "string" && (!keep || keep.test(e[0])),
+            (e): e is [string, string] => typeof e[1] === "string" && (!keep || keep.test(e[0])),
           ),
         )
       : null;
@@ -805,12 +708,9 @@ export async function runAudit(opts: AuditOptions = {}): Promise<AuditReport> {
     ),
   };
 
-  const libs = [
-    ...new Set([
-      ...listLibraries(steamRoot).map((l) => l.path),
-      ...(opts.libraries ?? []).map(norm),
-    ]),
-  ].filter(isDir);
+  const libs = [...new Set([...listLibraries(steamRoot).map(l => l.path), ...(opts.libraries ?? []).map(norm)])].filter(
+    isDir,
+  );
   log(`disk probe of ${libs.length} libraries`);
   const disk = [];
   for (const lib of libs) disk.push(await diskProbe(lib, opts.diskMiB ?? 256));
@@ -850,11 +750,8 @@ export async function runAudit(opts: AuditOptions = {}): Promise<AuditReport> {
 function derive(r: AuditReport): void {
   const F = r.findings;
   const R = r.recommendations;
-  const reachable = r.contentServers.filter(
-    (s) => s.probe.http.ttfbMs !== null || s.probe.https.ttfbMs !== null,
-  );
-  const rtt = (s: (typeof reachable)[number]) =>
-    s.probe.tcp.v4_443 ?? s.probe.tcp.v4_80 ?? 999;
+  const reachable = r.contentServers.filter(s => s.probe.http.ttfbMs !== null || s.probe.https.ttfbMs !== null);
+  const rtt = (s: (typeof reachable)[number]) => s.probe.tcp.v4_443 ?? s.probe.tcp.v4_80 ?? 999;
   const score = (s: (typeof reachable)[number]) => rtt(s) + s.weightedLoad / 10;
   const ranked = [...reachable].sort((x, y) => score(x) - score(y));
   const best = ranked[0];
@@ -869,7 +766,7 @@ function derive(r: AuditReport): void {
       id: "best-content-server",
       severity: "info",
       message: `${best.vhost} (${best.type}${best.cellId === null ? ", global CDN" : `, cell ${best.cellId}`}, load ${best.weightedLoad}) answers fastest: TCP ${rtt(best)} ms`,
-      evidence: ranked.slice(0, 5).map((s) => ({
+      evidence: ranked.slice(0, 5).map(s => ({
         host: s.vhost,
         type: s.type,
         cell: s.cellId,
@@ -882,21 +779,16 @@ function derive(r: AuditReport): void {
   // Region: compare the caches returned for the configured cell with those of the IP-based cell 0.
   const caches = (cell: number) =>
     reachable
-      .filter((s) => s.queriedCells.includes(cell) && s.type === "SteamCache")
+      .filter(s => s.queriedCells.includes(cell) && s.type === "SteamCache")
       .map(rtt)
       .sort((x, y) => x - y);
-  const median = (l: number[]) =>
-    l.length ? l[Math.floor(l.length / 2)]! : null;
+  const median = (l: number[]) => (l.length ? l[Math.floor(l.length / 2)]! : null);
   const configured = r.cell.override;
   if (configured !== null && configured !== 0) {
     const mine = median(caches(configured));
     const auto = median(caches(0));
     const autoCells = [
-      ...new Set(
-        reachable
-          .filter((s) => s.queriedCells.includes(0) && s.cellId !== null)
-          .map((s) => s.cellId),
-      ),
+      ...new Set(reachable.filter(s => s.queriedCells.includes(0) && s.cellId !== null).map(s => s.cellId)),
     ];
     F.push({
       id: "download-region",
@@ -911,15 +803,11 @@ function derive(r: AuditReport): void {
       });
   }
   const tlsCost = reachable
-    .map((s) => (s.probe.https.ttfbMs ?? NaN) - (s.probe.http.ttfbMs ?? NaN))
+    .map(s => (s.probe.https.ttfbMs ?? NaN) - (s.probe.http.ttfbMs ?? NaN))
     .filter(Number.isFinite);
-  const mandatory = r.contentServers.filter(
-    (s) => s.https === "mandatory",
-  ).length;
+  const mandatory = r.contentServers.filter(s => s.https === "mandatory").length;
   if (tlsCost.length) {
-    const median = tlsCost.sort((a, b) => a - b)[
-      Math.floor(tlsCost.length / 2)
-    ]!;
+    const median = tlsCost.sort((a, b) => a - b)[Math.floor(tlsCost.length / 2)]!;
     F.push({
       id: "http-vs-https",
       severity: "info",
@@ -932,17 +820,13 @@ function derive(r: AuditReport): void {
     r.host.platform === "win32"
       ? "@nClientDownloadEnableHTTP2PlatformWindows"
       : "@nClientDownloadEnableHTTP2PlatformLinux";
-  const slowHosts = c.hosts.filter(
-    (h) => h.mbps !== null && h.mbps < 20 && h.samples > 0,
-  );
+  const slowHosts = c.hosts.filter(h => h.mbps !== null && h.mbps < 20 && h.samples > 0);
   if (slowHosts.length)
     F.push({
       id: "slow-cache-hosts",
       severity: "warn",
       message: `${slowHosts.length} content hosts averaged under 20 Mbps per connection in content_log`,
-      evidence: slowHosts
-        .slice(0, 5)
-        .map((h) => ({ host: h.host, mbps: h.mbps })),
+      evidence: slowHosts.slice(0, 5).map(h => ({ host: h.host, mbps: h.mbps })),
     });
   if (c.http2 && dev[http2Key] !== "0")
     R.push({
@@ -968,7 +852,7 @@ function derive(r: AuditReport): void {
       reason: `downloads are throttled to ${r.config.downloadThrottleKbps} kbps`,
       apply: { file: "config.vdf", key: "DownloadThrottleKbps", value: null },
     });
-  for (const e of c.errors.filter((x) => x.count >= 20))
+  for (const e of c.errors.filter(x => x.count >= 20))
     F.push({
       id: "cdn-errors",
       severity: "warn",
@@ -982,16 +866,14 @@ function derive(r: AuditReport): void {
     });
 
   const conn = r.logs.connection;
-  if (Object.values(conn.ipv6).some((v) => !/^(OK|SUCCESS)$/.test(v)))
+  if (Object.values(conn.ipv6).some(v => !/^(OK|SUCCESS)$/.test(v)))
     F.push({
       id: "ipv6",
       severity: "info",
       message: "IPv6 connectivity tests fail; the client uses IPv4 only",
       evidence: conn.ipv6,
     });
-  const v6Reach = r.contentServers.filter(
-    (s) => s.probe.tcp.v6_443 !== null,
-  ).length;
+  const v6Reach = r.contentServers.filter(s => s.probe.tcp.v6_443 !== null).length;
   if (v6Reach)
     F.push({
       id: "ipv6-cdn",
@@ -1007,7 +889,7 @@ function derive(r: AuditReport): void {
     });
 
   const rp = r.logs.remotePlay;
-  if (rp.sessions.some((s) => s.mode !== "direct"))
+  if (rp.sessions.some(s => s.mode !== "direct"))
     R.push({
       id: "remote-play-direct",
       reason: "Remote Play fell back to a relayed session",
@@ -1072,14 +954,7 @@ export function recordAudit(db: Database, report: AuditReport): number {
     "CREATE TABLE IF NOT EXISTS audit_run (id INTEGER PRIMARY KEY, at TEXT NOT NULL, host TEXT NOT NULL, schema TEXT NOT NULL, report TEXT NOT NULL)",
   );
   const row = db
-    .query(
-      "INSERT INTO audit_run(at, host, schema, report) VALUES (?,?,?,?) RETURNING id",
-    )
-    .get(
-      report.generatedAt,
-      report.host.name,
-      report.schema,
-      JSON.stringify(report),
-    ) as { id: number };
+    .query("INSERT INTO audit_run(at, host, schema, report) VALUES (?,?,?,?) RETURNING id")
+    .get(report.generatedAt, report.host.name, report.schema, JSON.stringify(report)) as { id: number };
   return row.id;
 }

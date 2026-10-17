@@ -6,12 +6,7 @@
  *  - `illustration` (défaut) : 1200 × 648, queue fuselée — header, décor, loaders ;
  *  - `icone` : carré 512 sur pastille sombre — quand il faut un repère carré.
  */
-import {
-  KINTO_UN_ICONE,
-  KINTO_UN_ILLUSTRATION,
-  corpsIcone,
-  corpsNuage,
-} from "../toriyama-svg/kinto-un";
+import { KINTO_UN_ICONE, KINTO_UN_ILLUSTRATION, corpsIcone, corpsNuage } from "../toriyama-svg/kinto-un";
 
 export function KintoUn({
   variante = "illustration",
@@ -73,9 +68,7 @@ export function KintoUnLoader({
     <span
       className={`kt-loader inline-flex items-center ${className}`}
       style={{ width: largeur + size * 0.9, height: size * 1.4 }}
-      {...(decorative
-        ? { "aria-hidden": true }
-        : { "aria-label": "Chargement", role: "status" })}
+      {...(decorative ? { "aria-hidden": true } : { "aria-label": "Chargement", role: "status" })}
     >
       <svg
         viewBox="0 0 40 20"
@@ -93,10 +86,7 @@ export function KintoUnLoader({
         <path className="kt-t2" d="M14 12h22" />
         <path className="kt-t3" d="M2 17h26" />
       </svg>
-      <span
-        className="kt-nuage inline-block"
-        style={{ width: largeur, height: size }}
-      >
+      <span className="kt-nuage inline-block" style={{ width: largeur, height: size }}>
         <KintoUn hauteur={size} decorative />
       </span>
       <style>{`

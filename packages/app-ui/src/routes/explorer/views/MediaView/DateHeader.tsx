@@ -15,10 +15,10 @@ export function DateHeader({ date }: DateHeaderProps) {
     const node = ref.current;
     if (!node) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => entry && setIsSticky(!entry.isIntersecting),
-      { rootMargin: "-52px 0px 0px 0px", threshold: [1] },
-    );
+    const observer = new IntersectionObserver(([entry]) => entry && setIsSticky(!entry.isIntersecting), {
+      rootMargin: "-52px 0px 0px 0px",
+      threshold: [1],
+    });
 
     observer.observe(node);
     return () => observer.disconnect();
@@ -28,9 +28,7 @@ export function DateHeader({ date }: DateHeaderProps) {
     <div
       ref={ref}
       style={{ height: DATE_HEADER_HEIGHT }}
-      className={clsx(
-        "pointer-events-none sticky inset-x-0 -top-px z-10 p-5 text-on-surface",
-      )}
+      className={clsx("pointer-events-none sticky inset-x-0 -top-px z-10 p-5 text-on-surface")}
     >
       <div
         className={clsx(
@@ -38,9 +36,7 @@ export function DateHeader({ date }: DateHeaderProps) {
           isSticky ? "opacity-100" : "opacity-0",
         )}
       />
-      <div className={clsx("relative text-title-large", !date && "opacity-75")}>
-        {date ?? "No date"}
-      </div>
+      <div className={clsx("relative text-title-large", !date && "opacity-75")}>{date ?? "No date"}</div>
     </div>
   );
 }

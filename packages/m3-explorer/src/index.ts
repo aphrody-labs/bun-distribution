@@ -18,7 +18,4 @@ export { GridItem } from "./GridItem";
 export type { GridItemProps, GridItemTag } from "./GridItem";
 
 export { GoogleDriveListView } from "./GoogleDriveListView";
-export type {
-  GoogleDriveListViewProps,
-  DriveItem,
-} from "./GoogleDriveListView";
+export type { GoogleDriveListViewProps, DriveItem } from "./GoogleDriveListView";

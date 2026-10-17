@@ -9,11 +9,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function getPersistedKeybindingsState({
-  state,
-}: {
-  state: unknown;
-}): PersistedKeybindingsState | null {
+export function getPersistedKeybindingsState({ state }: { state: unknown }): PersistedKeybindingsState | null {
   if (!isRecord(state)) return null;
 
   const { keybindings, isCustomized } = state;

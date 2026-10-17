@@ -135,10 +135,7 @@ export const GEOMETRIES = {
    */
   lienExterne: {
     titre: "Ouvrir dans un nouvel onglet",
-    traits: [
-      "M 19.5 13 L 19.5 20.5 L 3.5 20.5 L 3.5 4.5 L 11 4.5",
-      "M 12 12 L 18.5 5.5",
-    ],
+    traits: ["M 19.5 13 L 19.5 20.5 L 3.5 20.5 L 3.5 4.5 L 11 4.5", "M 12 12 L 18.5 5.5"],
     aplats: ["M 21.5 2.5 L 21.5 10 L 14 2.5 Z"],
   },
 
@@ -173,10 +170,7 @@ export const GEOMETRIES = {
    */
   livre: {
     titre: "Lire",
-    traits: [
-      "M 12 7.5 L 2.5 4.5 L 2.5 18.5 L 12 21.5 L 21.5 18.5 L 21.5 4.5 Z",
-      "M 12 7.5 L 12 21.5",
-    ],
+    traits: ["M 12 7.5 L 2.5 4.5 L 2.5 18.5 L 12 21.5 L 21.5 18.5 L 21.5 4.5 Z", "M 12 7.5 L 12 21.5"],
   },
 
   /**
@@ -259,14 +253,8 @@ export const GEOMETRIES = {
    */
   rafraichir: {
     titre: "Rafraîchir",
-    traits: [
-      "M 4.6 13.3 A 7.5 7.5 0 0 1 14.6 5",
-      "M 19.4 10.7 A 7.5 7.5 0 0 1 9.4 19",
-    ],
-    aplats: [
-      "M 18.5 6.4 L 13.1 7.3 L 15 2.2 Z",
-      "M 5.5 17.6 L 10.9 16.7 L 9 21.8 Z",
-    ],
+    traits: ["M 4.6 13.3 A 7.5 7.5 0 0 1 14.6 5", "M 19.4 10.7 A 7.5 7.5 0 0 1 9.4 19"],
+    aplats: ["M 18.5 6.4 L 13.1 7.3 L 15 2.2 Z", "M 5.5 17.6 L 10.9 16.7 L 9 21.8 Z"],
   },
 
   /**
@@ -285,10 +273,7 @@ export const GEOMETRIES = {
    */
   historique: {
     titre: "Historique",
-    traits: [
-      "M 12.6 3.62 A 8.4 8.4 0 1 1 5.1 7.2",
-      "M 12 7.6 L 12 12.4 L 15.8 14.6",
-    ],
+    traits: ["M 12.6 3.62 A 8.4 8.4 0 1 1 5.1 7.2", "M 12 7.6 L 12 12.4 L 15.8 14.6"],
     aplats: ["M 6.3 4.2 L 13.2 0.9 L 13.2 7.5 Z"],
   },
 
@@ -355,10 +340,7 @@ export const GEOMETRIES = {
   /** Le même écu, coche à l'intérieur. Remplace `ShieldCheck`. */
   bouclierCoche: {
     titre: "Vérifié",
-    traits: [
-      "M 12 2.5 L 20.5 5.5 L 20.5 12 L 12 21.5 L 3.5 12 L 3.5 5.5 Z",
-      "M 8 10.8 L 11 13.8 L 16 8.2",
-    ],
+    traits: ["M 12 2.5 L 20.5 5.5 L 20.5 12 L 12 21.5 L 3.5 12 L 3.5 5.5 Z", "M 8 10.8 L 11 13.8 L 16 8.2"],
   },
 
   /**
@@ -375,11 +357,7 @@ export const GEOMETRIES = {
   /** Feuille à coin replié (le pli est un aplat) et deux lignes. Remplace `FileText`. */
   document: {
     titre: "Document",
-    traits: [
-      "M 4 2.5 L 14 2.5 L 20 8.5 L 20 21.5 L 4 21.5 Z",
-      "M 7.5 12.5 L 16.5 12.5",
-      "M 7.5 16.5 L 16.5 16.5",
-    ],
+    traits: ["M 4 2.5 L 14 2.5 L 20 8.5 L 20 21.5 L 4 21.5 Z", "M 7.5 12.5 L 16.5 12.5", "M 7.5 16.5 L 16.5 16.5"],
     aplats: ["M 14 2.5 L 20 8.5 L 14 8.5 Z"],
   },
 
@@ -397,10 +375,7 @@ export const GEOMETRIES = {
   /** Deux cadres décalés, angles vifs. Remplace `Copy`. */
   copie: {
     titre: "Copier",
-    traits: [
-      "M 8 8 L 20.5 8 L 20.5 20.5 L 8 20.5 Z",
-      "M 16.5 8 L 16.5 3.5 L 3.5 3.5 L 3.5 16.5 L 8 16.5",
-    ],
+    traits: ["M 8 8 L 20.5 8 L 20.5 20.5 L 8 20.5 Z", "M 16.5 8 L 16.5 3.5 L 3.5 3.5 L 3.5 16.5 L 8 16.5"],
   },
 
   /** Quatre équerres de visée et deux lignes de texte. Remplace `ScanText`. */
@@ -434,11 +409,7 @@ export const GEOMETRIES = {
   /** Trois losanges empilés vus de trois quarts. Remplace `Layers`. */
   couches: {
     titre: "Couches",
-    traits: [
-      "M 12 2.5 L 21.5 8 L 12 13.5 L 2.5 8 Z",
-      "M 2.5 12 L 12 17.5 L 21.5 12",
-      "M 2.5 16 L 12 21.5 L 21.5 16",
-    ],
+    traits: ["M 12 2.5 L 21.5 8 L 12 13.5 L 2.5 8 Z", "M 2.5 12 L 12 17.5 L 21.5 12", "M 2.5 16 L 12 21.5 L 21.5 16"],
   },
 
   /**
@@ -472,20 +443,13 @@ export const GEOMETRIES = {
   /** Écran et deux antennes en V. Remplace `Tv` et `Tv2`. */
   tv: {
     titre: "Diffusion",
-    traits: [
-      "M 2.5 6.5 L 21.5 6.5 L 21.5 19.5 L 2.5 19.5 Z",
-      "M 7 2.5 L 12 6.5",
-      "M 17 2.5 L 12 6.5",
-    ],
+    traits: ["M 2.5 6.5 L 21.5 6.5 L 21.5 19.5 L 2.5 19.5 Z", "M 7 2.5 L 12 6.5", "M 17 2.5 L 12 6.5"],
   },
 
   /** Cadre, ligne d'horizon brisée, soleil en losange. Remplace `ImageIcon` et `Image`. */
   image: {
     titre: "Image",
-    traits: [
-      "M 3 4.5 L 21 4.5 L 21 19.5 L 3 19.5 Z",
-      "M 3 16 L 9 9 L 13.5 14 L 16.5 11.5 L 21 16",
-    ],
+    traits: ["M 3 4.5 L 21 4.5 L 21 19.5 L 3 19.5 Z", "M 3 16 L 9 9 L 13.5 14 L 16.5 11.5 L 21 16"],
     aplats: ["M 16.5 7 L 17.9 8.4 L 16.5 9.8 L 15.1 8.4 Z"],
   },
 
@@ -521,9 +485,7 @@ export const GEOMETRIES = {
   /** Bulle rectangulaire à queue triangulaire. Remplace `MessageSquare`. */
   bulle: {
     titre: "Message",
-    traits: [
-      "M 3 4.5 L 21 4.5 L 21 16.5 L 10.5 16.5 L 5 21 L 6.5 16.5 L 3 16.5 Z",
-    ],
+    traits: ["M 3 4.5 L 21 4.5 L 21 16.5 L 10.5 16.5 L 5 21 L 6.5 16.5 L 3 16.5 Z"],
   },
 
   /** Deux bustes : têtes en aplat (seules lisibles à 16 px), épaules au trait. Remplace `Users`. */
@@ -533,18 +495,13 @@ export const GEOMETRIES = {
       "M 2.6 20.5 L 2.6 17.3 L 5.9 13.7 L 13.3 13.7 L 16.6 17.3 L 16.6 20.5",
       "M 16.8 13.7 L 19.3 13.7 L 21.6 17.3 L 21.6 20.5",
     ],
-    aplats: [
-      "M 9.6 4 A 3.2 3.2 0 1 1 9.59 4 Z",
-      "M 17.9 4.2 A 2.4 2.4 0 1 1 17.89 4.2 Z",
-    ],
+    aplats: ["M 9.6 4 A 3.2 3.2 0 1 1 9.59 4 Z", "M 17.9 4.2 A 2.4 2.4 0 1 1 17.89 4.2 Z"],
   },
 
   /** Cœur à sept sommets, aucun arc. Remplace `Heart`. */
   coeur: {
     titre: "Favori",
-    aplats: [
-      "M 12 21.2 L 2.8 11.4 L 2.8 7.6 L 6.6 3.8 L 12 7.6 L 17.4 3.8 L 21.2 7.6 L 21.2 11.4 Z",
-    ],
+    aplats: ["M 12 21.2 L 2.8 11.4 L 2.8 7.6 L 6.6 3.8 L 12 7.6 L 17.4 3.8 L 21.2 7.6 L 21.2 11.4 Z"],
   },
 
   /** Étoile à cinq branches, pleine. Remplace `Star`. */
@@ -558,11 +515,7 @@ export const GEOMETRIES = {
   /** Coupe et socle en aplat, anses au trait. Remplace `Trophy`. */
   trophee: {
     titre: "Classement",
-    traits: [
-      "M 6.5 5 L 3 5 L 3 8 L 6.4 10.5",
-      "M 17.5 5 L 21 5 L 21 8 L 17.6 10.5",
-      "M 12 12.5 L 12 17",
-    ],
+    traits: ["M 6.5 5 L 3 5 L 3 8 L 6.4 10.5", "M 17.5 5 L 21 5 L 21 8 L 17.6 10.5", "M 12 12.5 L 12 17"],
     aplats: [
       "M 6.5 3.5 L 17.5 3.5 L 17.5 8.5 L 14.5 12.5 L 9.5 12.5 L 6.5 8.5 Z",
       "M 8 17 L 16 17 L 17.5 20.5 L 6.5 20.5 Z",
@@ -573,17 +526,13 @@ export const GEOMETRIES = {
   recompense: {
     titre: "Récompense",
     traits: ["M 9.5 13.2 L 7 21.5 L 12 18.8 L 17 21.5 L 14.5 13.2"],
-    aplats: [
-      "M 9.6 2.5 L 14.4 2.5 L 17.5 5.6 L 17.5 10.4 L 14.4 13.5 L 9.6 13.5 L 6.5 10.4 L 6.5 5.6 Z",
-    ],
+    aplats: ["M 9.6 2.5 L 14.4 2.5 L 17.5 5.6 L 17.5 10.4 L 14.4 13.5 L 9.6 13.5 L 6.5 10.4 L 6.5 5.6 Z"],
   },
 
   /** Couronne à trois pointes, pleine. Remplace `Crown`. */
   couronne: {
     titre: "Rang",
-    aplats: [
-      "M 2.5 6 L 7.2 11.5 L 12 3.5 L 16.8 11.5 L 21.5 6 L 19.8 19.5 L 4.2 19.5 Z",
-    ],
+    aplats: ["M 2.5 6 L 7.2 11.5 L 12 3.5 L 16.8 11.5 L 21.5 6 L 19.8 19.5 L 4.2 19.5 Z"],
   },
 
   /**
@@ -603,10 +552,7 @@ export const GEOMETRIES = {
   /** Sac à anse trapézoïdale. Remplace `ShoppingBag` et `ShoppingCart`. */
   sac: {
     titre: "Boutique",
-    traits: [
-      "M 3.5 7.5 L 20.5 7.5 L 20.5 20.5 L 3.5 20.5 Z",
-      "M 8.5 11 L 8.5 6 L 12 2.5 L 15.5 6 L 15.5 11",
-    ],
+    traits: ["M 3.5 7.5 L 20.5 7.5 L 20.5 20.5 L 3.5 20.5 Z", "M 8.5 11 L 8.5 6 L 12 2.5 L 15.5 6 L 15.5 11"],
   },
 
   /** Boîte, ruban vertical, nœud en deux ailes pleines. Remplace `Gift`. */
@@ -617,10 +563,7 @@ export const GEOMETRIES = {
       "M 4.5 13.5 L 4.5 20.5 L 19.5 20.5 L 19.5 13.5",
       "M 12 9.5 L 12 20.5",
     ],
-    aplats: [
-      "M 12 9.4 L 5.5 9.4 L 6.6 5 L 12 7.6 Z",
-      "M 12 9.4 L 18.5 9.4 L 17.4 5 L 12 7.6 Z",
-    ],
+    aplats: ["M 12 9.4 L 5.5 9.4 L 6.6 5 L 12 7.6 Z", "M 12 9.4 L 18.5 9.4 L 17.4 5 L 12 7.6 Z"],
   },
 
   /** Hampe au trait, oriflamme à échancrure en aplat. Remplace `Flag`. */
@@ -633,9 +576,7 @@ export const GEOMETRIES = {
   /** Flamme à pans coupés, avec l'échancrure gauche qui la distingue d'une goutte. Remplace `Flame`. */
   flamme: {
     titre: "Série en cours",
-    aplats: [
-      "M 12.5 1.5 L 19 12 L 19 16.5 L 14.5 21.5 L 9 21.5 L 5 16.5 L 5.5 11.5 L 9.5 15.5 L 8.5 7.5 Z",
-    ],
+    aplats: ["M 12.5 1.5 L 19 12 L 19 16.5 L 14.5 21.5 L 9 21.5 L 5 16.5 L 5.5 11.5 L 9.5 15.5 L 8.5 7.5 Z"],
   },
 
   /** Éclair plein à six sommets. Remplace `Zap`. */
@@ -659,11 +600,7 @@ export const GEOMETRIES = {
   /** Le même anneau, barré : l'arrêt. Remplace `PowerOff`. */
   alimentationCoupee: {
     titre: "Éteindre",
-    traits: [
-      "M 12 2.5 L 12 9",
-      "M 6.5 6.5 A 8 8 0 1 0 17.5 6.5",
-      "M 4.5 19.5 L 19.5 4.5",
-    ],
+    traits: ["M 12 2.5 L 12 9", "M 6.5 6.5 A 8 8 0 1 0 17.5 6.5", "M 4.5 19.5 L 19.5 4.5"],
   },
 
   /** Cylindre à facettes : trois losanges et deux flancs droits. Remplace `Database`. */
@@ -692,11 +629,7 @@ export const GEOMETRIES = {
   /** Trois rails et trois molettes rectangulaires pleines. Remplace `SlidersHorizontal`. */
   curseurs: {
     titre: "Réglages fins",
-    traits: [
-      "M 2.5 6.5 L 21.5 6.5",
-      "M 2.5 12 L 21.5 12",
-      "M 2.5 17.5 L 21.5 17.5",
-    ],
+    traits: ["M 2.5 6.5 L 21.5 6.5", "M 2.5 12 L 21.5 12", "M 2.5 17.5 L 21.5 17.5"],
     aplats: [
       "M 7.5 3.5 L 11 3.5 L 11 9.5 L 7.5 9.5 Z",
       "M 13.5 9 L 17 9 L 17 15 L 13.5 15 Z",
@@ -734,10 +667,7 @@ export const GEOMETRIES = {
   /** Dard de papier : deux triangles pleins pliés sur la même arête. Remplace `Send`. */
   envoyer: {
     titre: "Envoyer",
-    aplats: [
-      "M 21.5 2.5 L 2 10.2 L 9.6 13.2 Z",
-      "M 21.5 2.5 L 9.6 13.2 L 12.6 21 Z",
-    ],
+    aplats: ["M 21.5 2.5 L 2 10.2 L 9.6 13.2 Z", "M 21.5 2.5 L 9.6 13.2 L 12.6 21 Z"],
   },
 
   /** Hampe, pointe pleine, plateau ouvert. Remplace `Download`. */
@@ -750,21 +680,13 @@ export const GEOMETRIES = {
   /** L'amande du lot 1, barrée ; la pupille saute, la barre la remplace. Remplace `EyeOff`. */
   oeilBarre: {
     titre: "Masquer",
-    traits: [
-      "M 2 12 C 6.5 4.4 17.5 4.4 22 12 C 17.5 19.6 6.5 19.6 2 12 Z",
-      "M 3.5 20.5 L 20.5 3.5",
-    ],
+    traits: ["M 2 12 C 6.5 4.4 17.5 4.4 22 12 C 17.5 19.6 6.5 19.6 2 12 Z", "M 3.5 20.5 L 20.5 3.5"],
   },
 
   /** Croisillon à montants penchés. Remplace `Hash`. */
   diese: {
     titre: "Salon",
-    traits: [
-      "M 8.5 3 L 6.5 21",
-      "M 17.5 3 L 15.5 21",
-      "M 3.5 8.5 L 20.5 8.5",
-      "M 3 15.5 L 20 15.5",
-    ],
+    traits: ["M 8.5 3 L 6.5 21", "M 17.5 3 L 15.5 21", "M 3.5 8.5 L 20.5 8.5", "M 3 15.5 L 20 15.5"],
   },
 
   /** Ligne brisée montante terminée par la pointe pleine. Remplace `TrendingUp`. */
@@ -792,10 +714,7 @@ export const GEOMETRIES = {
    */
   maison: {
     titre: "Accueil",
-    traits: [
-      "M 2 11.5 L 12 3 L 22 11.5",
-      "M 4.5 9.6 L 4.5 20.5 L 19.5 20.5 L 19.5 9.6",
-    ],
+    traits: ["M 2 11.5 L 12 3 L 22 11.5", "M 4.5 9.6 L 4.5 20.5 L 19.5 20.5 L 19.5 9.6"],
   },
 
   /**
@@ -805,9 +724,7 @@ export const GEOMETRIES = {
    */
   maisonPleine: {
     titre: "Accueil",
-    aplats: [
-      "M 12 2.6 L 1.4 11.6 L 3 13.5 L 4 12.65 L 4 21.5 L 20 21.5 L 20 12.65 L 21 13.5 L 22.6 11.6 Z",
-    ],
+    aplats: ["M 12 2.6 L 1.4 11.6 L 3 13.5 L 4 12.65 L 4 21.5 L 20 21.5 L 20 12.65 L 21 13.5 L 22.6 11.6 Z"],
   },
 
   /**
@@ -869,10 +786,7 @@ export const GEOMETRIES = {
       "M 12 6.5 L 12 19.5",
       "M 12 9.5 A 3.5 3.5 0 1 1 11.99 9.5 Z",
     ],
-    aplats: [
-      "M 14.5 9.5 L 17.5 11 L 15 12.5 Z",
-      "M 8 15.5 L 9.5 14 L 9.5 17 Z",
-    ],
+    aplats: ["M 14.5 9.5 L 17.5 11 L 15 12.5 Z", "M 8 15.5 L 9.5 14 L 9.5 17 Z"],
   },
 
   /**
@@ -954,14 +868,8 @@ export const GEOMETRIES = {
    */
   potara: {
     titre: "Potara",
-    traits: [
-      "M 12 2.5 A 3.5 3.5 0 0 1 12 9.5 L 12 11",
-      "M 12 13.5 A 4.5 4.5 0 1 1 11.99 13.5 Z",
-    ],
-    aplats: [
-      "M 10.5 10.5 L 13.5 10.5 L 13.5 12.5 L 10.5 12.5 Z",
-      "M 10 14 A 1.2 1.2 0 1 1 9.99 14 Z",
-    ],
+    traits: ["M 12 2.5 A 3.5 3.5 0 0 1 12 9.5 L 12 11", "M 12 13.5 A 4.5 4.5 0 1 1 11.99 13.5 Z"],
+    aplats: ["M 10.5 10.5 L 13.5 10.5 L 13.5 12.5 L 10.5 12.5 Z", "M 10 14 A 1.2 1.2 0 1 1 9.99 14 Z"],
   },
 
   /**
@@ -985,9 +893,7 @@ export const GEOMETRIES = {
    */
   majin: {
     titre: "Majin",
-    aplats: [
-      "M 3 6 L 6 6 L 8.5 13 L 12 8 L 15.5 13 L 18 6 L 21 6 L 18 18 L 15 18 L 12 13 L 9 18 L 6 18 Z",
-    ],
+    aplats: ["M 3 6 L 6 6 L 8.5 13 L 12 8 L 15.5 13 L 18 6 L 21 6 L 18 18 L 15 18 L 12 13 L 9 18 L 6 18 Z"],
   },
 
   /**
@@ -1003,10 +909,7 @@ export const GEOMETRIES = {
       "M 4 15 C 5 19 8 18 8 18",
       "M 20 15 C 19 19 16 18 16 18",
     ],
-    aplats: [
-      "M 9.5 12.5 L 11 13 L 9.5 14 Z",
-      "M 14.5 12.5 L 13 13 L 14.5 14 Z",
-    ],
+    aplats: ["M 9.5 12.5 L 11 13 L 9.5 14 Z", "M 14.5 12.5 L 13 13 L 14.5 14 Z"],
   },
 
   /**
@@ -1030,12 +933,7 @@ export const GEOMETRIES = {
    */
   manga: {
     titre: "Manga & Guides",
-    traits: [
-      "M 3 3.5 L 21 3.5 L 21 20.5 L 3 20.5 Z",
-      "M 3 11 L 21 11",
-      "M 13 11 L 11 20.5",
-      "M 6.5 7.25 L 12 7.25",
-    ],
+    traits: ["M 3 3.5 L 21 3.5 L 21 20.5 L 3 20.5 Z", "M 3 11 L 21 11", "M 13 11 L 11 20.5", "M 6.5 7.25 L 12 7.25"],
   },
 } as const satisfies Record<string, GeometrieIcone>;
 
@@ -1051,22 +949,13 @@ export const NOMS_ICONES = Object.keys(GEOMETRIES) as NomIcone[];
  */
 export function svgIcone(
   nom: NomIcone,
-  {
-    taille = 24,
-    couleur = "#131B08",
-    trait = TRAIT_ICONE,
-  }: { taille?: number; couleur?: string; trait?: number } = {},
+  { taille = 24, couleur = "#131B08", trait = TRAIT_ICONE }: { taille?: number; couleur?: string; trait?: number } = {},
 ): string {
   const g: GeometrieIcone = GEOMETRIES[nom];
   const traits = (g.traits ?? [])
-    .map(
-      (d) =>
-        `<path d="${d}" fill="none" stroke="${couleur}" stroke-width="${trait}" />`,
-    )
+    .map(d => `<path d="${d}" fill="none" stroke="${couleur}" stroke-width="${trait}" />`)
     .join("");
-  const aplats = (g.aplats ?? [])
-    .map((d) => `<path d="${d}" fill="${couleur}" stroke="none" />`)
-    .join("");
+  const aplats = (g.aplats ?? []).map(d => `<path d="${d}" fill="${couleur}" stroke="none" />`).join("");
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${taille}" height="${taille}" viewBox="0 0 ${BOITE_ICONE} ${BOITE_ICONE}" ` +
     `stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="${POINTE_ICONE}">${traits}${aplats}</svg>`

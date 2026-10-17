@@ -20,10 +20,8 @@ export const summaries: Record<string, string> = {
   flotte: "Flotte native Windows/Python et depot GPU prive",
   "access-pack": "Préparer un fichier d’accès privé",
   installer: "Tout installer ou réparer sur ce PC",
-  verifier:
-    "Vérifier que tout est prêt (tunnel, SSH, MCP, A2A, GPU/CPU, disque)",
-  entrainement:
-    "Entraîner un modèle sur un serveur (état, démarrer, journal, arrêter)",
+  verifier: "Vérifier que tout est prêt (tunnel, SSH, MCP, A2A, GPU/CPU, disque)",
+  entrainement: "Entraîner un modèle sur un serveur (état, démarrer, journal, arrêter)",
   acces: "Clés, fichier d'accès de l'équipe, tunnel privé",
   diagnostic: "Préparer le message d'aide à envoyer à l'équipe",
   guide: "Ouvrir le guide (1 page)",

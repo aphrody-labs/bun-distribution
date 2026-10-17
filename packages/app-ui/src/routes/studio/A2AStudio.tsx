@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useEffect, useState } from "react";
-import {
-  loadAgentInventory,
-  type AgentInventory,
-} from "../../backend-inventory";
+import { loadAgentInventory, type AgentInventory } from "../../backend-inventory";
 
 const serverLabels: Record<string, string> = {
   disabled: "Désactivé",
@@ -28,7 +25,7 @@ export function A2AStudio() {
     setFailed(false);
     setInventory(null);
     void loadAgentInventory()
-      .then((result) => {
+      .then(result => {
         if (active) setInventory(result);
         return undefined;
       })
@@ -44,10 +41,8 @@ export function A2AStudio() {
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- revision is the refresh trigger that reloads the inventory; the effect body does not read it
   }, [revision]);
 
-  const tools = inventory?.tools.filter((tool) =>
-    (tool.name + " " + tool.description)
-      .toLocaleLowerCase()
-      .includes(query.toLocaleLowerCase().trim()),
+  const tools = inventory?.tools.filter(tool =>
+    (tool.name + " " + tool.description).toLocaleLowerCase().includes(query.toLocaleLowerCase().trim()),
   );
 
   return (
@@ -56,29 +51,22 @@ export function A2AStudio() {
         <div className="min-w-0">
           <h2 className="text-headline-small">Outils des agents</h2>
           <p className="mt-2 max-w-prose text-on-surface-variant">
-            Consultez les outils disponibles pour vos conversations et les
-            connexions configurées.
+            Consultez les outils disponibles pour vos conversations et les connexions configurées.
           </p>
         </div>
         <button
           type="button"
           disabled={loading}
-          onClick={() => setRevision((value) => value + 1)}
+          onClick={() => setRevision(value => value + 1)}
           className="min-h-12 rounded-full bg-primary px-6 text-on-primary disabled:opacity-50"
         >
           {loading ? "Chargement…" : failed ? "Réessayer" : "Actualiser"}
         </button>
       </header>
-      {loading && (
-        <output className="block">Lecture des outils disponibles…</output>
-      )}
+      {loading && <output className="block">Lecture des outils disponibles…</output>}
       {failed && (
-        <p
-          role="alert"
-          className="rounded-2xl bg-error-container p-5 text-on-error-container"
-        >
-          Impossible de lire les outils. Vérifiez la connexion au service puis
-          réessayez.
+        <p role="alert" className="rounded-2xl bg-error-container p-5 text-on-error-container">
+          Impossible de lire les outils. Vérifiez la connexion au service puis réessayez.
         </p>
       )}
       {inventory && (
@@ -88,9 +76,7 @@ export function A2AStudio() {
               Connexions
             </h3>
             {inventory.servers.length === 0 ? (
-              <p className="mt-3 text-on-surface-variant">
-                Aucune connexion externe configurée.
-              </p>
+              <p className="mt-3 text-on-surface-variant">Aucune connexion externe configurée.</p>
             ) : (
               <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                 {inventory.servers.map((server, index) => (
@@ -99,12 +85,8 @@ export function A2AStudio() {
                     key={server.name + index}
                     className="flex flex-wrap justify-between gap-3 rounded-2xl border border-outline-variant p-4"
                   >
-                    <span className="break-words font-medium">
-                      {server.name}
-                    </span>
-                    <span className="text-on-surface-variant">
-                      {serverLabels[server.status] ?? "État non reconnu"}
-                    </span>
+                    <span className="break-words font-medium">{server.name}</span>
+                    <span className="text-on-surface-variant">{serverLabels[server.status] ?? "État non reconnu"}</span>
                   </li>
                 ))}
               </ul>
@@ -119,7 +101,7 @@ export function A2AStudio() {
               <input
                 type="search"
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={event => setQuery(event.target.value)}
                 className="min-h-12 w-full rounded-xl border border-outline bg-surface-container px-4 text-on-surface"
               />
             </label>
@@ -139,9 +121,7 @@ export function A2AStudio() {
                   >
                     <h4 className="break-words font-semibold">{tool.name}</h4>
                     {tool.description && (
-                      <p className="mt-2 whitespace-pre-wrap break-words text-on-surface-variant">
-                        {tool.description}
-                      </p>
+                      <p className="mt-2 whitespace-pre-wrap break-words text-on-surface-variant">{tool.description}</p>
                     )}
                   </li>
                 ))}

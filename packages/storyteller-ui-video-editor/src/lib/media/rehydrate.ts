@@ -35,17 +35,17 @@ export async function rehydrateProjectMedia({
   const fetched = await mapWithConcurrency({
     items: manifest,
     limit: MAX_CONCURRENT_FETCHES,
-    run: (entry) => fetchEntry({ entry, mediaSource, toast }),
+    run: entry => fetchEntry({ entry, mediaSource, toast }),
   });
   const entries = fetched.filter((entry): entry is FetchedEntry => !!entry);
   if (entries.length === 0) return [];
 
   return processMediaAssets({
-    files: entries.map((entry) => entry.file),
+    files: entries.map(entry => entry.file),
     toast,
     mediaSource,
-    existingHandles: entries.map((entry) => entry.handle),
-    existingResolved: entries.map((entry) => entry.resolved),
+    existingHandles: entries.map(entry => entry.handle),
+    existingResolved: entries.map(entry => entry.resolved),
   });
 }
 
@@ -61,15 +61,12 @@ async function mapWithConcurrency<T, R>({
 }): Promise<R[]> {
   const results: R[] = Array.from({ length: items.length });
   let nextIndex = 0;
-  const workers = Array.from(
-    { length: Math.min(limit, items.length) },
-    async () => {
-      while (nextIndex < items.length) {
-        const index = nextIndex++;
-        results[index] = await run(items[index]);
-      }
-    },
-  );
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      results[index] = await run(items[index]);
+    }
+  });
   await Promise.all(workers);
   return results;
 }

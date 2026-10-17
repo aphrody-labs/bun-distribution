@@ -28,38 +28,22 @@ const MAX_SUGGESTIONS = 8;
  * on an empty draft removes the last chip. Duplicates (case-insensitive) are
  * rejected locally with a brief flash on the existing chip.
  */
-export function TagChipInput({
-  chips,
-  suggestions,
-  disabled,
-  dropUp,
-  onAdd,
-  onRemove,
-}: TagChipInputProps) {
+export function TagChipInput({ chips, suggestions, disabled, dropUp, onAdd, onRemove }: TagChipInputProps) {
   const [draft, setDraft] = useState("");
   const [focused, setFocused] = useState(false);
   // -1 = free-typing (Enter commits the draft, not a suggestion).
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [flashValue, setFlashValue] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const flashTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
+  const flashTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const chipsLower = useMemo(
-    () => new Set(chips.map((c) => c.toLowerCase())),
-    [chips],
-  );
+  const chipsLower = useMemo(() => new Set(chips.map(c => c.toLowerCase())), [chips]);
 
   const filtered = useMemo(() => {
     const query = draft.trim().toLowerCase();
     if (!query) return [];
     return suggestions
-      .filter(
-        (s) =>
-          s.value.toLowerCase().includes(query) &&
-          !chipsLower.has(s.value.toLowerCase()),
-      )
+      .filter(s => s.value.toLowerCase().includes(query) && !chipsLower.has(s.value.toLowerCase()))
       .slice(0, MAX_SUGGESTIONS);
   }, [draft, suggestions, chipsLower]);
 
@@ -77,14 +61,14 @@ export function TagChipInput({
   const commit = (raw: string) => {
     const values = raw
       .split(",")
-      .map((v) => v.trim())
+      .map(v => v.trim())
       .filter(Boolean);
     const fresh: string[] = [];
     const seen = new Set<string>();
     for (const value of values) {
       const lower = value.toLowerCase();
       if (chipsLower.has(lower)) {
-        flashChip(chips.find((c) => c.toLowerCase() === lower) ?? value);
+        flashChip(chips.find(c => c.toLowerCase() === lower) ?? value);
         continue;
       }
       if (seen.has(lower)) continue;
@@ -115,10 +99,10 @@ export function TagChipInput({
       onRemove(chips[chips.length - 1]);
     } else if (e.key === "ArrowDown" && dropdownOpen) {
       e.preventDefault();
-      setHighlightIndex((i) => Math.min(i + 1, filtered.length - 1));
+      setHighlightIndex(i => Math.min(i + 1, filtered.length - 1));
     } else if (e.key === "ArrowUp" && dropdownOpen) {
       e.preventDefault();
-      setHighlightIndex((i) => Math.max(i - 1, -1));
+      setHighlightIndex(i => Math.max(i - 1, -1));
     } else if (e.key === "Escape") {
       setHighlightIndex(-1);
       inputRef.current?.blur();
@@ -146,7 +130,7 @@ export function TagChipInput({
         }`}
         onClick={() => inputRef.current?.focus()}
       >
-        {chips.map((value) =>
+        {chips.map(value =>
           disabled ? (
             <span key={value.toLowerCase()} className={chipClass(value)}>
               <TagIcon className="h-2.5 w-2.5 text-base-fg/40" />
@@ -156,7 +140,7 @@ export function TagChipInput({
             <button
               key={value.toLowerCase()}
               type="button"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onRemove(value);
               }}
@@ -172,7 +156,7 @@ export function TagChipInput({
           <input
             ref={inputRef}
             value={draft}
-            onChange={(e) => {
+            onChange={e => {
               setDraft(e.target.value);
               setHighlightIndex(-1);
             }}
@@ -184,9 +168,7 @@ export function TagChipInput({
               if (draft.trim()) commit(draft);
             }}
             aria-label="Tags"
-            placeholder={
-              chips.length === 0 ? "Add tags (comma separated)" : "Add tag"
-            }
+            placeholder={chips.length === 0 ? "Add tags (comma separated)" : "Add tag"}
             className="min-w-[7rem] flex-1 bg-transparent py-0.5 text-sm text-base-fg placeholder:text-base-fg/40 focus:outline-none"
           />
         )}
@@ -203,20 +185,16 @@ export function TagChipInput({
               key={suggestion.value.toLowerCase()}
               type="button"
               // preventDefault so the input's blur doesn't fire before the click.
-              onMouseDown={(e) => e.preventDefault()}
+              onMouseDown={e => e.preventDefault()}
               onClick={() => pickSuggestion(suggestion.value)}
               onMouseEnter={() => setHighlightIndex(index)}
               className={`flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-sm text-base-fg transition-colors ${
-                highlight === index
-                  ? "bg-ui-controls/60"
-                  : "hover:bg-ui-controls/40"
+                highlight === index ? "bg-ui-controls/60" : "hover:bg-ui-controls/40"
               }`}
             >
               <TagIcon className="text-[10px] text-base-fg/40" />
               <span className="truncate">{suggestion.value}</span>
-              <span className="ml-auto text-[11px] text-base-fg/40">
-                {suggestion.useCount}
-              </span>
+              <span className="ml-auto text-[11px] text-base-fg/40">{suggestion.useCount}</span>
             </button>
           ))}
         </div>

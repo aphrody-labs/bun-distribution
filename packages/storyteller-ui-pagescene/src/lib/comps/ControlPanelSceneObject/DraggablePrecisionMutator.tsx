@@ -49,8 +49,7 @@ export const DraggablePrecisionMutator = ({
       // Check how far the mouse has moved, and calculate the updated change
       const distX = event.x - dragStartCoordsRef.current.x;
       const scaledDistX = distX / 10;
-      const scaledPrecision =
-        Math.round(scaledDistX) * store.precisionSelectedValue;
+      const scaledPrecision = Math.round(scaledDistX) * store.precisionSelectedValue;
       localAdjustedValueRef.current = initialValue + scaledPrecision;
 
       // Update the listeners
@@ -84,12 +83,7 @@ export const DraggablePrecisionMutator = ({
 
       event.preventDefault();
       event.stopPropagation();
-      usePageSceneStore
-        .getState()
-        .showPrecisionSelector(
-          { x: event.clientX, y: event.clientY },
-          precisions,
-        );
+      usePageSceneStore.getState().showPrecisionSelector({ x: event.clientX, y: event.clientY }, precisions);
       isDraggingRef.current = true;
 
       document.addEventListener("mousemove", handleMouseMove);

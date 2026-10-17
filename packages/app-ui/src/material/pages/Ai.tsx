@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useEffect, useRef, useState } from "react";
-import {
-  AgUiEventAccumulator,
-  ChatComposer,
-  MessageBubble,
-  ToolCall,
-  type AgUiStreamState,
-} from "@aphrody/m3-ai";
+import { AgUiEventAccumulator, ChatComposer, MessageBubble, ToolCall, type AgUiStreamState } from "@aphrody/m3-ai";
 import type { BaseEvent } from "@aphrody/m3-ai/ag-ui";
 import { Button } from "@aphrody/m3-primitives";
 import { Card, Code, Page, Section } from "../ui.tsx";
@@ -34,8 +28,7 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
     setRunning(true);
     try {
       let body: ReadableStream<Uint8Array>;
-      if (host === "native")
-        body = fixtureStream(draft.trim(), controller.signal);
+      if (host === "native") body = fixtureStream(draft.trim(), controller.signal);
       else {
         const response = await fetch("/api/ai/stream", {
           method: "POST",
@@ -43,8 +36,7 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
           body: JSON.stringify({ prompt: draft.trim() }),
           signal: controller.signal,
         });
-        if (!response.ok || !response.body)
-          throw new Error("The local fixture stream is unavailable.");
+        if (!response.ok || !response.body) throw new Error("The local fixture stream is unavailable.");
         body = response.body;
       }
       const reader = body.getReader();
@@ -56,8 +48,8 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
         for (const packet of packets) {
           const data = packet
             .split(/\r?\n/)
-            .filter((line) => line.startsWith("data:"))
-            .map((line) => line.slice(5).trimStart())
+            .filter(line => line.startsWith("data:"))
+            .map(line => line.slice(5).trimStart())
             .join("\n");
           if (data) accumulator.push(JSON.parse(data) as BaseEvent);
         }
@@ -65,11 +57,7 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
       };
       try {
         // eslint-disable-next-line no-await-in-loop -- Each SSE read extends the pending event frame from the previous chunk.
-        for (
-          let chunk = await reader.read();
-          !chunk.done;
-          chunk = await reader.read()
-        ) {
+        for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
           pending += decoder.decode(chunk.value, { stream: true });
           consume();
         }
@@ -79,10 +67,7 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
         reader.releaseLock();
       }
     } catch (error) {
-      if (!controller.signal.aborted)
-        setNotice(
-          error instanceof Error ? error.message : "The fixture stream failed.",
-        );
+      if (!controller.signal.aborted) setNotice(error instanceof Error ? error.message : "The fixture stream failed.");
     } finally {
       if (active.current === controller) {
         active.current = null;
@@ -125,11 +110,7 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
         description="This app streams its package inventory as labelled AG-UI events."
       >
         <Card className="flex flex-col gap-4">
-          <div
-            aria-live="polite"
-            aria-busy={running}
-            className="flex flex-col gap-3"
-          >
+          <div aria-live="polite" aria-busy={running} className="flex flex-col gap-3">
             {prompt ? (
               <MessageBubble content={prompt} isUser />
             ) : (
@@ -147,7 +128,7 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
                   content={item.text}
                   isUser={false}
                   isStreaming={running}
-                  onCopy={(content) => {
+                  onCopy={content => {
                     if (!navigator.clipboard) {
                       setNotice("Clipboard access is unavailable.");
                       return;

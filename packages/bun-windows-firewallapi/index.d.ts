@@ -5,7 +5,13 @@ interface Functions {
   /** firewallapi.dll!NetworkIsolationEnumerateAppContainerRules */
   NetworkIsolationEnumerateAppContainerRules(newEnum: Win32Pointer): number;
   /** firewallapi.dll!NetworkIsolationGetEnterpriseIdAsync */
-  NetworkIsolationGetEnterpriseIdAsync(wszServerName: string | Win32Pointer, dwFlags: number, context: Win32Pointer, callback: Win32Callback, hOperation: Win32Pointer): number;
+  NetworkIsolationGetEnterpriseIdAsync(
+    wszServerName: string | Win32Pointer,
+    dwFlags: number,
+    context: Win32Pointer,
+    callback: Win32Callback,
+    hOperation: Win32Pointer,
+  ): number;
   /** firewallapi.dll!NetworkIsolationGetEnterpriseIdClose */
   NetworkIsolationGetEnterpriseIdClose(hOperation: Win32Pointer, bWaitForOperation: number): number;
 }

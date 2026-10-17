@@ -39,8 +39,7 @@ export function slugify(title: string): string {
 }
 
 export function githubRepo(url: string): string | undefined {
-  const match =
-    /^https?:\/\/(?:www\.)?github\.com\/([^/#?\s]+)\/([^/#?\s]+)/.exec(url);
+  const match = /^https?:\/\/(?:www\.)?github\.com\/([^/#?\s]+)\/([^/#?\s]+)/.exec(url);
   if (match === null) return undefined;
   return `${match[1]}/${(match[2] as string).replace(/\.git$/, "")}`;
 }
@@ -56,9 +55,7 @@ export function parseAwesome(markdown: string): AwesomeSection[] {
     const heading = /^##\s+(.+?)\s*#*\s*$/.exec(line);
     if (heading !== null) {
       const title = (heading[1] as string).trim();
-      current = SKIPPED_SECTIONS.has(title.toLowerCase())
-        ? undefined
-        : { title, entries: [] };
+      current = SKIPPED_SECTIONS.has(title.toLowerCase()) ? undefined : { title, entries: [] };
       if (current !== undefined) sections.push(current);
       continue;
     }
@@ -79,36 +76,29 @@ export function parseAwesome(markdown: string): AwesomeSection[] {
       github: githubRepo(url),
     });
   }
-  return sections.map((s) => ({
+  return sections.map(s => ({
     title: s.title,
     slug: slugify(s.title),
     entries: s.entries,
   }));
 }
 
-export function findSection(
-  sections: readonly AwesomeSection[],
-  query: string,
-): AwesomeSection | undefined {
+export function findSection(sections: readonly AwesomeSection[], query: string): AwesomeSection | undefined {
   const wanted = slugify(query);
   return (
-    sections.find((s) => s.slug === wanted) ??
-    sections.find((s) => s.slug.startsWith(wanted)) ??
-    sections.find((s) => s.title.toLowerCase().includes(query.toLowerCase()))
+    sections.find(s => s.slug === wanted) ??
+    sections.find(s => s.slug.startsWith(wanted)) ??
+    sections.find(s => s.title.toLowerCase().includes(query.toLowerCase()))
   );
 }
 
-export function searchEntries(
-  sections: readonly AwesomeSection[],
-  query: string,
-): AwesomeEntry[] {
+export function searchEntries(sections: readonly AwesomeSection[], query: string): AwesomeEntry[] {
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   return sections
-    .flatMap((s) => s.entries)
-    .filter((entry) => {
-      const haystack =
-        `${entry.name} ${entry.url} ${entry.description} ${entry.section}`.toLowerCase();
-      return terms.every((term) => haystack.includes(term));
+    .flatMap(s => s.entries)
+    .filter(entry => {
+      const haystack = `${entry.name} ${entry.url} ${entry.description} ${entry.section}`.toLowerCase();
+      return terms.every(term => haystack.includes(term));
     });
 }
 
@@ -125,31 +115,21 @@ export interface SourceOptions {
   readonly cacheDir: string;
 }
 
-export async function loadReadme(
-  options: SourceOptions,
-): Promise<{ text: string; origin: string }> {
+export async function loadReadme(options: SourceOptions): Promise<{ text: string; origin: string }> {
   if (options.file !== undefined) {
     return { text: await Bun.file(options.file).text(), origin: options.file };
   }
-  const cachePath = resolve(
-    options.cacheDir,
-    options.repo,
-    options.ref,
-    "README.md",
-  );
+  const cachePath = resolve(options.cacheDir, options.repo, options.ref, "README.md");
   const cached = Bun.file(cachePath);
   if (!options.refresh && (await cached.exists())) {
     return { text: await cached.text(), origin: `cache ${cachePath}` };
   }
   if (options.offline) {
-    throw new Error(
-      `No cached README for ${options.repo}@${options.ref}; run without --offline first`,
-    );
+    throw new Error(`No cached README for ${options.repo}@${options.ref}; run without --offline first`);
   }
   const url = `https://raw.githubusercontent.com/${options.repo}/${options.ref}/README.md`;
   const response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
-  if (!response.ok)
-    throw new Error(`GET ${url} failed: HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`GET ${url} failed: HTTP ${response.status}`);
   const text = await response.text();
   mkdirSync(dirname(cachePath), { recursive: true });
   await Bun.write(cachePath, text);
@@ -197,16 +177,13 @@ export async function checkLinks(
     }
     return { entry, status: "error" };
   };
-  const workers = Array.from(
-    { length: Math.max(1, options.concurrency) },
-    async () => {
-      while (next < entries.length) {
-        const index = next++;
-        // oxlint-disable-next-line no-await-in-loop -- file de travail à concurrence bornée : chaque worker enchaîne ses sondes
-        results[index] = await probe(entries[index] as AwesomeEntry);
-      }
-    },
-  );
+  const workers = Array.from({ length: Math.max(1, options.concurrency) }, async () => {
+    while (next < entries.length) {
+      const index = next++;
+      // oxlint-disable-next-line no-await-in-loop -- file de travail à concurrence bornée : chaque worker enchaîne ses sondes
+      results[index] = await probe(entries[index] as AwesomeEntry);
+    }
+  });
   await Promise.all(workers);
   return results;
 }
@@ -242,12 +219,7 @@ export interface CuratedEntry extends AwesomeEntry {
   readonly httpStatus?: number | "error" | undefined;
 }
 
-const OFFICIAL_HOSTS = new Set([
-  "bun.sh",
-  "bun.com",
-  "www.bun.sh",
-  "www.bun.com",
-]);
+const OFFICIAL_HOSTS = new Set(["bun.sh", "bun.com", "www.bun.sh", "www.bun.com"]);
 /** Sections made of undated posts and videos: they predate the Rust rewrite and cannot be verified. */
 const DATED_SECTIONS = new Set(["articles", "videos"]);
 
@@ -321,32 +293,20 @@ export function judge(
     httpStatus,
   });
 
-  if (DATED_SECTIONS.has(slugify(entry.section)))
-    return drop("undated content from before the Rust rewrite");
+  if (DATED_SECTIONS.has(slugify(entry.section))) return drop("undated content from before the Rust rewrite");
   const text = `${entry.name} ${entry.description}`.toLowerCase();
   if (/\bzig\b/.test(text)) return drop("depends on Zig-era internals");
 
   if (entry.github !== undefined) {
     if (facts === "missing") return drop("repository not found");
-    if (facts === "error" || facts === undefined)
-      return drop("repository state could not be verified");
-    if (facts.archived || facts.disabled)
-      return drop("archived or disabled repository");
-    if (
-      httpStatus === "error" ||
-      (httpStatus !== undefined && httpStatus >= 400)
-    )
+    if (facts === "error" || facts === undefined) return drop("repository state could not be verified");
+    if (facts.archived || facts.disabled) return drop("archived or disabled repository");
+    if (httpStatus === "error" || (httpStatus !== undefined && httpStatus >= 400))
       return drop(`link answers ${String(httpStatus)}`);
-    if (
-      /\bzig\b/i.test(`${facts.description} ${facts.topics.join(" ")}`) ||
-      facts.language === "Zig"
-    )
+    if (/\bzig\b/i.test(`${facts.description} ${facts.topics.join(" ")}`) || facts.language === "Zig")
       return drop("Zig project");
-    if (facts.pushedAt.slice(0, 10) < since)
-      return drop(`no activity since ${since}`);
-    return keep(
-      `active since the Rust rewrite (last push ${facts.pushedAt.slice(0, 10)})`,
-    );
+    if (facts.pushedAt.slice(0, 10) < since) return drop(`no activity since ${since}`);
+    return keep(`active since the Rust rewrite (last push ${facts.pushedAt.slice(0, 10)})`);
   }
 
   let host = "";
@@ -368,41 +328,23 @@ export async function auditEntries(
   const token = await githubToken();
   // Links outside GitHub, and GitHub links that point inside a repository (tree/blob paths).
   const linkChecked = entries.filter(
-    (e) =>
-      !DATED_SECTIONS.has(slugify(e.section)) &&
-      (e.github === undefined || /\/(?:tree|blob)\//.test(e.url)),
+    e => !DATED_SECTIONS.has(slugify(e.section)) && (e.github === undefined || /\/(?:tree|blob)\//.test(e.url)),
   );
-  const links = new Map(
-    (await checkLinks(linkChecked, options)).map(
-      (r) => [r.entry.url, r.status] as const,
-    ),
-  );
+  const links = new Map((await checkLinks(linkChecked, options)).map(r => [r.entry.url, r.status] as const));
   const facts = new Map<string, RepoFacts | "missing" | "error">();
-  const repos = [
-    ...new Set(
-      entries.flatMap((e) => (e.github === undefined ? [] : [e.github])),
-    ),
-  ];
+  const repos = [...new Set(entries.flatMap(e => (e.github === undefined ? [] : [e.github])))];
   let next = 0;
   await Promise.all(
-    Array.from(
-      { length: Math.max(1, Math.min(options.concurrency, 6)) },
-      async () => {
-        while (next < repos.length) {
-          const repo = repos[next++] as string;
-          // oxlint-disable-next-line no-await-in-loop -- file de travail à concurrence bornée (6 max) : chaque worker enchaîne ses dépôts
-          facts.set(repo, await fetchRepoFacts(repo, token));
-        }
-      },
-    ),
+    Array.from({ length: Math.max(1, Math.min(options.concurrency, 6)) }, async () => {
+      while (next < repos.length) {
+        const repo = repos[next++] as string;
+        // oxlint-disable-next-line no-await-in-loop -- file de travail à concurrence bornée (6 max) : chaque worker enchaîne ses dépôts
+        facts.set(repo, await fetchRepoFacts(repo, token));
+      }
+    }),
   );
-  return entries.map((entry) =>
-    judge(
-      entry,
-      entry.github === undefined ? undefined : facts.get(entry.github),
-      links.get(entry.url),
-      options.since,
-    ),
+  return entries.map(entry =>
+    judge(entry, entry.github === undefined ? undefined : facts.get(entry.github), links.get(entry.url), options.since),
   );
 }
 
@@ -423,30 +365,19 @@ export function renderCleanReadme(
     kept.set(entry.section, [...(kept.get(entry.section) ?? []), entry]);
   }
   const headerEnd = original.search(/^## Contents/m);
-  const rawHeader =
-    headerEnd > 0 ? original.slice(0, headerEnd).trimEnd() : "# Awesome Bun";
+  const rawHeader = headerEnd > 0 ? original.slice(0, headerEnd).trimEnd() : "# Awesome Bun";
   const header =
     base === undefined
       ? rawHeader
       : rawHeader
-          .replace(
-            /(\s(?:src|href)=["'])\.?\/?(?![a-z][a-z0-9+.-]*:|#|\/)([^"']+)/gi,
-            `$1${base}$2`,
-          )
-          .replace(
-            /(\]\()\.?\/?(?![a-z][a-z0-9+.-]*:|#|\/)([^)\s]+)/gi,
-            `$1${base}$2`,
-          );
+          .replace(/(\s(?:src|href)=["'])\.?\/?(?![a-z][a-z0-9+.-]*:|#|\/)([^"']+)/gi, `$1${base}$2`)
+          .replace(/(\]\()\.?\/?(?![a-z][a-z0-9+.-]*:|#|\/)([^)\s]+)/gi, `$1${base}$2`);
   const sectionTitles = [...kept.keys()];
-  const contents = sectionTitles
-    .map((t) => `- [${t}](#${slugify(t)})`)
-    .join("\n");
+  const contents = sectionTitles.map(t => `- [${t}](#${slugify(t)})`).join("\n");
   const body = sectionTitles
-    .map((title) => {
-      const lines = (kept.get(title) ?? []).map((e) =>
-        e.description
-          ? `- [${e.name}](${e.url}) - ${e.description}`
-          : `- [${e.name}](${e.url})`,
+    .map(title => {
+      const lines = (kept.get(title) ?? []).map(e =>
+        e.description ? `- [${e.name}](${e.url}) - ${e.description}` : `- [${e.name}](${e.url})`,
       );
       return `## ${title}\n\n${lines.join("\n")}`;
     })
@@ -487,10 +418,7 @@ Options: --repo owner/name  --ref branch (default ${DEFAULT_REF})  --refresh  --
 const line = (e: AwesomeEntry): string =>
   `  ${e.name}  \x1b[2m${e.url}\x1b[0m${e.description ? `\n    ${e.description}` : ""}`;
 
-export async function runAwesomeCommand(
-  args: readonly string[],
-  rootDir: string = process.cwd(),
-): Promise<number> {
+export async function runAwesomeCommand(args: readonly string[], rootDir: string = process.cwd()): Promise<number> {
   const positional: string[] = [];
   let repo = DEFAULT_REPO;
   let ref = DEFAULT_REF;
@@ -543,13 +471,11 @@ export async function runAwesomeCommand(
   switch (command) {
     case "stats": {
       const total = sections.reduce((n, s) => n + s.entries.length, 0);
-      const github = sections
-        .flatMap((s) => s.entries)
-        .filter((e) => e.github !== undefined).length;
+      const github = sections.flatMap(s => s.entries).filter(e => e.github !== undefined).length;
       print(
         {
           source: origin,
-          sections: sections.map((s) => ({
+          sections: sections.map(s => ({
             title: s.title,
             entries: s.entries.length,
           })),
@@ -558,8 +484,7 @@ export async function runAwesomeCommand(
         },
         () => {
           console.log(`\x1b[1m${repo}@${ref}\x1b[0m  (${origin})`);
-          for (const s of sections)
-            console.log(`  ${s.title.padEnd(24)} ${s.entries.length}`);
+          for (const s of sections) console.log(`  ${s.title.padEnd(24)} ${s.entries.length}`);
           console.log(`  ${"total".padEnd(24)} ${total} (${github} on GitHub)`);
         },
       );
@@ -567,26 +492,21 @@ export async function runAwesomeCommand(
     }
     case "sections":
       print(
-        sections.map((s) => s.title),
-        () => sections.forEach((s) => console.log(s.title)),
+        sections.map(s => s.title),
+        () => sections.forEach(s => console.log(s.title)),
       );
       return 0;
     case "list": {
       const query = rest.join(" ");
-      const chosen =
-        query === ""
-          ? sections
-          : [findSection(sections, query)].filter((s) => s !== undefined);
+      const chosen = query === "" ? sections : [findSection(sections, query)].filter(s => s !== undefined);
       if (chosen.length === 0) {
-        console.error(
-          `No section matches "${query}". Sections: ${sections.map((s) => s.title).join(", ")}`,
-        );
+        console.error(`No section matches "${query}". Sections: ${sections.map(s => s.title).join(", ")}`);
         return 1;
       }
       print(chosen, () => {
         for (const s of chosen) {
           console.log(`\x1b[1m${s.title}\x1b[0m (${s.entries.length})`);
-          s.entries.forEach((e) => console.log(line(e)));
+          s.entries.forEach(e => console.log(line(e)));
         }
       });
       return 0;
@@ -595,37 +515,24 @@ export async function runAwesomeCommand(
       if (rest.length === 0) throw new Error("search needs at least one word");
       const found = searchEntries(sections, rest.join(" "));
       print(found, () => {
-        found.forEach((e) =>
-          console.log(`\x1b[2m${e.section}\x1b[0m\n${line(e)}`),
-        );
+        found.forEach(e => console.log(`\x1b[2m${e.section}\x1b[0m\n${line(e)}`));
         console.log(`${found.length} match(es)`);
       });
       return found.length > 0 ? 0 : 1;
     }
     case "github": {
       const repos = sections
-        .flatMap((s) => s.entries)
-        .flatMap((e) =>
-          e.github === undefined
-            ? []
-            : [{ repo: e.github, section: e.section, name: e.name }],
-        );
-      print(repos, () =>
-        repos.forEach((r) => console.log(`${r.repo.padEnd(48)} ${r.section}`)),
-      );
+        .flatMap(s => s.entries)
+        .flatMap(e => (e.github === undefined ? [] : [{ repo: e.github, section: e.section, name: e.name }]));
+      print(repos, () => repos.forEach(r => console.log(`${r.repo.padEnd(48)} ${r.section}`)));
       return 0;
     }
     case "check": {
       const query = rest.join(" ");
-      const scope =
-        query === ""
-          ? sections
-          : [findSection(sections, query)].filter((s) => s !== undefined);
-      const entries = scope.flatMap((s) => s.entries);
+      const scope = query === "" ? sections : [findSection(sections, query)].filter(s => s !== undefined);
+      const entries = scope.flatMap(s => s.entries);
       const results = await checkLinks(entries, { concurrency, timeoutMs });
-      const broken = results.filter(
-        (r) => r.status === "error" || r.status >= 400,
-      );
+      const broken = results.filter(r => r.status === "error" || r.status >= 400);
       print({ checked: results.length, broken }, () => {
         for (const r of broken) {
           console.log(
@@ -638,13 +545,13 @@ export async function runAwesomeCommand(
     }
     case "audit":
     case "curate": {
-      const all = sections.flatMap((s) => s.entries);
+      const all = sections.flatMap(s => s.entries);
       const curated = await auditEntries(all, {
         since,
         concurrency,
         timeoutMs,
       });
-      const kept = curated.filter((e) => e.verdict === "keep");
+      const kept = curated.filter(e => e.verdict === "keep");
       const record = {
         source: `${repo}@${ref}`,
         rustBunSince: since,
@@ -654,10 +561,7 @@ export async function runAwesomeCommand(
         dropped: curated.length - kept.length,
         entries: curated,
       };
-      await Bun.write(
-        resolve(rootDir, "tools/config/yolo/awesome-audit.json"),
-        `${JSON.stringify(record, null, 2)}\n`,
-      );
+      await Bun.write(resolve(rootDir, "tools/config/yolo/awesome-audit.json"), `${JSON.stringify(record, null, 2)}\n`);
       if (command === "curate") {
         await Bun.write(
           resolve(rootDir, "tools/config/yolo/awesome.curated.json"),
@@ -669,31 +573,17 @@ export async function runAwesomeCommand(
         );
         await Bun.write(
           out ?? resolve(rootDir, "docs/reference/yolo/AWESOME.md"),
-          renderCleanReadme(
-            text,
-            curated,
-            since,
-            `https://raw.githubusercontent.com/${repo}/${ref}/`,
-          ),
+          renderCleanReadme(text, curated, since, `https://raw.githubusercontent.com/${repo}/${ref}/`),
         );
       }
-      print(
-        { total: record.total, kept: record.kept, dropped: record.dropped },
-        () => {
-          const reasons = new Map<string, number>();
-          for (const e of curated)
-            if (e.verdict === "drop")
-              reasons.set(e.reason, (reasons.get(e.reason) ?? 0) + 1);
-          console.log(`${record.kept}/${record.total} kept (since ${since})`);
-          for (const [reason, count] of [...reasons].toSorted(
-            (a, b) => b[1] - a[1],
-          )) {
-            console.log(
-              `  dropped ${String(count).padStart(3)}  ${reason.replace(/\(last push.*\)/, "")}`,
-            );
-          }
-        },
-      );
+      print({ total: record.total, kept: record.kept, dropped: record.dropped }, () => {
+        const reasons = new Map<string, number>();
+        for (const e of curated) if (e.verdict === "drop") reasons.set(e.reason, (reasons.get(e.reason) ?? 0) + 1);
+        console.log(`${record.kept}/${record.total} kept (since ${since})`);
+        for (const [reason, count] of [...reasons].toSorted((a, b) => b[1] - a[1])) {
+          console.log(`  dropped ${String(count).padStart(3)}  ${reason.replace(/\(last push.*\)/, "")}`);
+        }
+      });
       return 0;
     }
     default:

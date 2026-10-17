@@ -3,13 +3,49 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** dssec.dll!DSCreateISecurityInfoObject */
-  DSCreateISecurityInfoObject(pwszObjectPath: string | Win32Pointer, pwszObjectClass: string | Win32Pointer, dwFlags: number, ppSI: Win32Pointer, pfnReadSD: Win32Callback, pfnWriteSD: Win32Callback, lpContext: number | bigint): number;
+  DSCreateISecurityInfoObject(
+    pwszObjectPath: string | Win32Pointer,
+    pwszObjectClass: string | Win32Pointer,
+    dwFlags: number,
+    ppSI: Win32Pointer,
+    pfnReadSD: Win32Callback,
+    pfnWriteSD: Win32Callback,
+    lpContext: number | bigint,
+  ): number;
   /** dssec.dll!DSCreateISecurityInfoObjectEx */
-  DSCreateISecurityInfoObjectEx(pwszObjectPath: string | Win32Pointer, pwszObjectClass: string | Win32Pointer, pwszServer: string | Win32Pointer, pwszUserName: string | Win32Pointer, pwszPassword: string | Win32Pointer, dwFlags: number, ppSI: Win32Pointer, pfnReadSD: Win32Callback, pfnWriteSD: Win32Callback, lpContext: number | bigint): number;
+  DSCreateISecurityInfoObjectEx(
+    pwszObjectPath: string | Win32Pointer,
+    pwszObjectClass: string | Win32Pointer,
+    pwszServer: string | Win32Pointer,
+    pwszUserName: string | Win32Pointer,
+    pwszPassword: string | Win32Pointer,
+    dwFlags: number,
+    ppSI: Win32Pointer,
+    pfnReadSD: Win32Callback,
+    pfnWriteSD: Win32Callback,
+    lpContext: number | bigint,
+  ): number;
   /** dssec.dll!DSCreateSecurityPage */
-  DSCreateSecurityPage(pwszObjectPath: string | Win32Pointer, pwszObjectClass: string | Win32Pointer, dwFlags: number, phPage: Win32Pointer, pfnReadSD: Win32Callback, pfnWriteSD: Win32Callback, lpContext: number | bigint): number;
+  DSCreateSecurityPage(
+    pwszObjectPath: string | Win32Pointer,
+    pwszObjectClass: string | Win32Pointer,
+    dwFlags: number,
+    phPage: Win32Pointer,
+    pfnReadSD: Win32Callback,
+    pfnWriteSD: Win32Callback,
+    lpContext: number | bigint,
+  ): number;
   /** dssec.dll!DSEditSecurity */
-  DSEditSecurity(hwndOwner: Win32Pointer, pwszObjectPath: string | Win32Pointer, pwszObjectClass: string | Win32Pointer, dwFlags: number, pwszCaption: string | Win32Pointer, pfnReadSD: Win32Callback, pfnWriteSD: Win32Callback, lpContext: number | bigint): number;
+  DSEditSecurity(
+    hwndOwner: Win32Pointer,
+    pwszObjectPath: string | Win32Pointer,
+    pwszObjectClass: string | Win32Pointer,
+    dwFlags: number,
+    pwszCaption: string | Win32Pointer,
+    pfnReadSD: Win32Callback,
+    pfnWriteSD: Win32Callback,
+    lpContext: number | bigint,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

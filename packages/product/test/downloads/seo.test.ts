@@ -15,10 +15,7 @@ test("document summaries use article prose and escape markup while preserving ex
   expect(html).not.toContain("&#38;amp;");
   expect(html).not.toContain('content="Navigation');
   expect(html).toContain("Streams - Aphrody · guides / streams / to json");
-  const existing = source.replace(
-    "</head>",
-    '<meta name="description" content="Maintained summary"></head>',
-  );
+  const existing = source.replace("</head>", '<meta name="description" content="Maintained summary"></head>');
   const retained = await documentSeo(existing, "/docs/runtime/streams");
   expect(retained).toContain('content="Maintained summary"');
   expect(retained.match(/name="description"/g)).toHaveLength(1);
@@ -48,10 +45,7 @@ test("real handler corrects HTML even with stale compressed assets and keeps HEA
       join(root, "docs", "streams.html"),
       "<html><head><title>Streams</title></head><body><article><p>Read stream values.</p></article></body></html>",
     );
-    writeFileSync(
-      join(root, "docs", "streams.html.gz"),
-      "stale compressed payload",
-    );
+    writeFileSync(join(root, "docs", "streams.html.gz"), "stale compressed payload");
     const handler = createHandler(root, {
       root,
       hosts: new Set(["aphrody.test"]),
@@ -63,9 +57,7 @@ test("real handler corrects HTML even with stale compressed assets and keeps HEA
     );
     expect(response.headers.get("content-encoding")).toBeNull();
     expect(await response.text()).toContain('content="Read stream values."');
-    const head = await handler(
-      new Request("https://aphrody.test/docs/streams", { method: "HEAD" }),
-    );
+    const head = await handler(new Request("https://aphrody.test/docs/streams", { method: "HEAD" }));
     expect(await head.text()).toBe("");
     expect(head.headers.get("content-type")).toContain("text/html");
   } finally {

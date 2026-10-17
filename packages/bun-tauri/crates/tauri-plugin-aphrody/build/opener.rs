@@ -112,6 +112,8 @@ const COMMANDS: &[&str] = &["open_url", "open_path", "reveal_items_in_dir"];
 pub fn builder() -> tauri_plugin::Builder<'static> {
     tauri_plugin::Builder::new(COMMANDS)
         .global_api_script_path("iife/opener.js")
-        .global_scope_schema(schemars::SchemaGenerator::new(schemars::generate::SchemaSettings::draft07())
-                .into_root_schema_for::<OpenerScopeEntry>())
+        .global_scope_schema(
+            schemars::SchemaGenerator::new(schemars::generate::SchemaSettings::draft07())
+                .into_root_schema_for::<OpenerScopeEntry>(),
+        )
 }

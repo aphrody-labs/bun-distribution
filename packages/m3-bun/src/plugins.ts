@@ -45,10 +45,7 @@ export function resolveDirs(configDir: string = process.cwd()): string[] {
 }
 
 /** Absolute path of `specifier` from the first directory that resolves it. */
-export function resolveFrom(
-  specifier: string,
-  dirs: readonly string[],
-): string | undefined {
+export function resolveFrom(specifier: string, dirs: readonly string[]): string | undefined {
   for (const dir of dirs) {
     try {
       return Bun.resolveSync(specifier, dir);
@@ -71,12 +68,9 @@ export async function importFrom<T = Record<string, any>>(
   try {
     return (await import(path)) as T;
   } catch (error) {
-    throw new Error(
-      `m3-bun: ${feature}: importing ${specifier} failed: ${(error as Error).message}`,
-      {
-        cause: error,
-      },
-    );
+    throw new Error(`m3-bun: ${feature}: importing ${specifier} failed: ${(error as Error).message}`, {
+      cause: error,
+    });
   }
 }
 
@@ -102,34 +96,20 @@ export interface RecordedPlugin {
 }
 
 const matches = (hook: Hook, path: string, namespace: string | undefined) =>
-  (hook.namespace ?? "file") === (namespace || "file") &&
-  hook.filter.test(path);
+  (hook.namespace ?? "file") === (namespace || "file") && hook.filter.test(path);
 
 /** Run `plugin.setup` against a recording builder; native hooks are refused (they only work during setup). */
-export async function recordPlugin(
-  plugin: BunPlugin,
-  config?: PluginBuilder["config"],
-): Promise<RecordedPlugin> {
+export async function recordPlugin(plugin: BunPlugin, config?: PluginBuilder["config"]): Promise<RecordedPlugin> {
   const loads: Handler<OnLoadArgs, OnLoadResult>[] = [];
-  const resolves: Handler<OnResolveArgs, OnResolveResult | undefined | null>[] =
-    [];
+  const resolves: Handler<OnResolveArgs, OnResolveResult | undefined | null>[] = [];
   const ends: ((result: BuildOutput) => void | Promise<void>)[] = [];
   const builder = {
     config: config ?? ({ plugins: [] } as unknown as PluginBuilder["config"]),
-    onLoad(
-      hook: Hook,
-      callback: Handler<OnLoadArgs, OnLoadResult>["callback"],
-    ) {
+    onLoad(hook: Hook, callback: Handler<OnLoadArgs, OnLoadResult>["callback"]) {
       loads.push({ ...hook, callback });
       return builder;
     },
-    onResolve(
-      hook: Hook,
-      callback: Handler<
-        OnResolveArgs,
-        OnResolveResult | undefined | null
-      >["callback"],
-    ) {
+    onResolve(hook: Hook, callback: Handler<OnResolveArgs, OnResolveResult | undefined | null>["callback"]) {
       resolves.push({ ...hook, callback });
       return builder;
     },
@@ -142,14 +122,10 @@ export async function recordPlugin(
       return builder;
     },
     onBeforeParse() {
-      throw new Error(
-        `m3-bun: ${plugin.name} registers a native onBeforeParse hook, which must load with the build`,
-      );
+      throw new Error(`m3-bun: ${plugin.name} registers a native onBeforeParse hook, which must load with the build`);
     },
     module() {
-      throw new Error(
-        `m3-bun: ${plugin.name} registers runtime modules, which a composed plugin cannot defer`,
-      );
+      throw new Error(`m3-bun: ${plugin.name} registers runtime modules, which a composed plugin cannot defer`);
     },
   };
   await plugin.setup(builder as unknown as PluginBuilder);
@@ -194,15 +170,10 @@ export function lazyPlugin(spec: LazyPluginSpec): BunPlugin {
     name: spec.name,
     setup(build) {
       let recorded: Promise<RecordedPlugin> | undefined;
-      const get = () =>
-        (recorded ??= spec
-          .load()
-          .then((plugin) => recordPlugin(plugin, build.config)));
-      for (const hook of spec.onResolve ?? [])
-        build.onResolve(hook, async (args) => (await get()).resolve(args));
-      for (const hook of spec.onLoad ?? [])
-        build.onLoad(hook, async (args) => (await get()).load(args));
-      build.onEnd?.(async (result) => {
+      const get = () => (recorded ??= spec.load().then(plugin => recordPlugin(plugin, build.config)));
+      for (const hook of spec.onResolve ?? []) build.onResolve(hook, async args => (await get()).resolve(args));
+      for (const hook of spec.onLoad ?? []) build.onLoad(hook, async args => (await get()).load(args));
+      build.onEnd?.(async result => {
         // A failed import already failed the module that triggered it.
         const plugin = await recorded?.catch(() => undefined);
         await plugin?.end(result);
@@ -248,11 +219,7 @@ export interface OxcOptions {
   transform?: Record<string, unknown>;
   sourcemap?: boolean;
   minify?: boolean | Record<string, unknown>;
-  lint?:
-    | false
-    | "warn"
-    | "error"
-    | ({ level: "warn" | "error" } & Record<string, unknown>);
+  lint?: false | "warn" | "error" | ({ level: "warn" | "error" } & Record<string, unknown>);
   dts?: { outdir: string; root?: string; stripInternal?: boolean };
   /** `Bun.build` only: Oxc as a native `onBeforeParse` hook, imported during setup. */
   native?: boolean;
@@ -271,15 +238,11 @@ export interface ForkPluginOptions {
   oxc?: boolean | OxcOptions;
 }
 
-const objectOf = <T extends object>(
-  value: boolean | T | undefined,
-): T | undefined => (typeof value === "object" ? value : undefined);
+const objectOf = <T extends object>(value: boolean | T | undefined): T | undefined =>
+  typeof value === "object" ? value : undefined;
 
 /** The fork plugins selected by `options`, in composition order. */
-export function forkPlugins(
-  options: ForkPluginOptions,
-  configDir: string = process.cwd(),
-): BunPlugin[] {
+export function forkPlugins(options: ForkPluginOptions, configDir: string = process.cwd()): BunPlugin[] {
   const dirs = resolveDirs(configDir);
   const plugins: BunPlugin[] = [];
   if (options.yaml === true)
@@ -287,11 +250,7 @@ export function forkPlugins(
       lazyPlugin({
         name: "m3-bun:yaml",
         load: async () => {
-          const mod = await importFrom<{ default: () => BunPlugin }>(
-            "@aphrody/bun-plugin-yaml",
-            dirs,
-            "yaml",
-          );
+          const mod = await importFrom<{ default: () => BunPlugin }>("@aphrody/bun-plugin-yaml", dirs, "yaml");
           return mod.default();
         },
         onLoad: [{ filter: /\.(yaml|yml)$/ }],
@@ -307,22 +266,14 @@ export function forkPlugins(
           }>("@aphrody/bun-plugin-svelte", dirs, "svelte");
           return mod.SveltePlugin(objectOf(options.svelte));
         },
-        onLoad: [
-          { filter: /\.svelte$/ },
-          { filter: /\.svelte.[tj]s$/ },
-          { filter: /\.css$/, namespace: "bun-svelte" },
-        ],
+        onLoad: [{ filter: /\.svelte$/ }, { filter: /\.svelte.[tj]s$/ }, { filter: /\.css$/, namespace: "bun-svelte" }],
         onResolve: [{ filter: /^bun-svelte:/ }],
       }),
     );
   if (options.mdx === true)
     plugins.push(
       eagerPlugin("m3-bun:mdx", async () => {
-        const mod = await importFrom<{ default: () => BunPlugin }>(
-          "@aphrody/bun-mdx-rs",
-          dirs,
-          "mdx",
-        );
+        const mod = await importFrom<{ default: () => BunPlugin }>("@aphrody/bun-mdx-rs", dirs, "mdx");
         return mod.default();
       }),
     );
@@ -363,10 +314,7 @@ export function forkPlugins(
 }
 
 /** Directory of the module `specifier` resolves to, for packages that resolve their own dependencies. */
-export function packageDir(
-  specifier: string,
-  dirs: readonly string[],
-): string | undefined {
+export function packageDir(specifier: string, dirs: readonly string[]): string | undefined {
   const path = resolveFrom(specifier, dirs);
   return path ? dirname(path) : undefined;
 }

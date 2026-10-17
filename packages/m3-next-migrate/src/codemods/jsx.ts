@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // JSX tags and attributes for codemods: names, attribute lists with their raw values, closing tags.
-import {
-  inSkipped,
-  matching,
-  skippedSpans,
-  type Span,
-} from "@aphrody/next-bun/codemods/lex";
+import { inSkipped, matching, skippedSpans, type Span } from "@aphrody/next-bun/codemods/lex";
 
 export interface Attr {
   name: string;
@@ -32,16 +27,9 @@ export interface Tag {
 }
 
 /** Opening tags of the given element names (`Button`, `Typography`), skipping strings and comments. */
-export function findTags(
-  src: string,
-  names: readonly string[],
-  spans: readonly Span[] = skippedSpans(src),
-): Tag[] {
+export function findTags(src: string, names: readonly string[], spans: readonly Span[] = skippedSpans(src)): Tag[] {
   const tags: Tag[] = [];
-  const re = new RegExp(
-    `<(${names.map((n) => n.replace(/[$]/g, "\\$")).join("|")})(?=[\\s/>])`,
-    "g",
-  );
+  const re = new RegExp(`<(${names.map(n => n.replace(/[$]/g, "\\$")).join("|")})(?=[\\s/>])`, "g");
   for (let m = re.exec(src); m !== null; m = re.exec(src)) {
     if (inSkipped(spans, m.index)) continue;
     const nameStart = m.index + 1;

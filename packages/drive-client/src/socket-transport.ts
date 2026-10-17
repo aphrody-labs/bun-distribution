@@ -57,10 +57,7 @@ export class TcpSocketTransport implements Transport {
     });
   }
 
-  async subscribe(
-    callback: (event: any) => void,
-    options?: SubscriptionOptions,
-  ): Promise<() => void> {
+  async subscribe(callback: (event: any) => void, options?: SubscriptionOptions): Promise<() => void> {
     // Parse socket address
     const [hostname, portStr] = this.socketAddr.split(":");
     const port = parseInt(portStr, 10);
@@ -94,10 +91,7 @@ export class TcpSocketTransport implements Transport {
                 const response = JSON.parse(line);
 
                 // Handle DaemonResponse variants
-                if (
-                  response === "Subscribed" ||
-                  response.Subscribed !== undefined
-                ) {
+                if (response === "Subscribed" || response.Subscribed !== undefined) {
                   // Subscription acknowledgment, don't forward
                 } else if (response.Event) {
                   // Event message, forward to callback
@@ -106,10 +100,7 @@ export class TcpSocketTransport implements Transport {
                   // Log message, forward to callback
                   callback(response.LogMessage);
                 } else {
-                  console.warn(
-                    "[TcpSocketTransport] Unexpected response:",
-                    response,
-                  );
+                  console.warn("[TcpSocketTransport] Unexpected response:", response);
                 }
               } catch (e) {
                 console.error("[TcpSocketTransport] Parse error:", e);
@@ -191,10 +182,7 @@ export class UnixSocketTransport implements Transport {
     });
   }
 
-  async subscribe(
-    callback: (event: any) => void,
-    options?: SubscriptionOptions,
-  ): Promise<() => void> {
+  async subscribe(callback: (event: any) => void, options?: SubscriptionOptions): Promise<() => void> {
     // Subscribe to relevant events (excludes spammy LogMessage/JobProgress)
     const subscribeRequest = {
       Subscribe: {
@@ -220,11 +208,7 @@ export class UnixSocketTransport implements Transport {
 
             try {
               const response = JSON.parse(line);
-              if (
-                response &&
-                typeof response === "object" &&
-                "Event" in response
-              ) {
+              if (response && typeof response === "object" && "Event" in response) {
                 callback(response.Event);
               }
             } catch (error) {

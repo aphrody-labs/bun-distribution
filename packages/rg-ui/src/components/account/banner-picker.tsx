@@ -51,13 +51,7 @@ interface BannerPickerProps {
   endpoint?: string;
 }
 
-export function BannerPicker({
-  open,
-  onOpenChange,
-  valeur,
-  onChoisir,
-  endpoint = ROUTE_GALERIE,
-}: BannerPickerProps) {
+export function BannerPicker({ open, onOpenChange, valeur, onChoisir, endpoint = ROUTE_GALERIE }: BannerPickerProps) {
   const [illustrations, setIllustrations] = useState<IllustrationGalerie[]>([]);
   const [categorie, setCategorie] = useState("");
   const [recherche, setRecherche] = useState("");
@@ -122,7 +116,7 @@ export function BannerPicker({
               variant="outline"
               size="sm"
               disabled={page <= 1 || chargement}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
             >
               Précédent
             </Button>
@@ -134,7 +128,7 @@ export function BannerPicker({
               variant="outline"
               size="sm"
               disabled={page >= pages || chargement}
-              onClick={() => setPage((p) => p + 1)}
+              onClick={() => setPage(p => p + 1)}
             >
               Suivant
             </Button>
@@ -145,7 +139,7 @@ export function BannerPicker({
       <div className="space-y-4">
         <form
           className="flex gap-2"
-          onSubmit={(evenement) => {
+          onSubmit={evenement => {
             evenement.preventDefault();
             setPage(1);
             setRecherche(saisie);
@@ -153,22 +147,17 @@ export function BannerPicker({
         >
           <Input
             value={saisie}
-            onChange={(evenement) => setSaisie(evenement.target.value)}
+            onChange={evenement => setSaisie(evenement.target.value)}
             placeholder="Chercher (nom du fichier : stadium, chronicle…)"
             aria-label="Chercher une illustration"
           />
-          <Button
-            type="submit"
-            variant="secondary"
-            size="icon"
-            aria-label="Chercher"
-          >
+          <Button type="submit" variant="secondary" size="icon" aria-label="Chercher">
             <Search className="size-4" aria-hidden />
           </Button>
         </form>
 
         <div className="flex flex-wrap gap-1.5">
-          {CATEGORIES_GALERIE.map((entree) => (
+          {CATEGORIES_GALERIE.map(entree => (
             <Button
               key={entree.valeur || "toutes"}
               type="button"
@@ -195,12 +184,9 @@ export function BannerPicker({
         <div className="grid max-h-[50vh] grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-4">
           {chargement && illustrations.length === 0
             ? Array.from({ length: GALERIE_PAR_PAGE }, (_, index) => (
-                <div
-                  key={index}
-                  className="aspect-video animate-pulse rounded-lg border border-border bg-muted"
-                />
+                <div key={index} className="aspect-video animate-pulse rounded-lg border border-border bg-muted" />
               ))
-            : illustrations.map((illustration) => {
+            : illustrations.map(illustration => {
                 const choisie = valeur === illustration.pleine;
                 return (
                   <button
@@ -214,9 +200,7 @@ export function BannerPicker({
                     }}
                     className={cn(
                       "group relative aspect-video overflow-hidden rounded-lg border-2 transition-colors",
-                      choisie
-                        ? "border-primary ring-2 ring-ring/30"
-                        : "border-border hover:border-muted-foreground/50",
+                      choisie ? "border-primary ring-2 ring-ring/30" : "border-border hover:border-muted-foreground/50",
                     )}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}

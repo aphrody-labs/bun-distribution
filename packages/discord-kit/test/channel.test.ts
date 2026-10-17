@@ -31,13 +31,9 @@ test("sendText uses the configured transport and returns a message reference", a
     room: "room 1",
     channelId: "discord",
   });
-  expect(requestedUrl).toBe(
-    "https://discord.com/api/v10/channels/room%201/messages",
-  );
+  expect(requestedUrl).toBe("https://discord.com/api/v10/channels/room%201/messages");
   expect(requestedInit?.method).toBe("POST");
-  expect(new Headers(requestedInit?.headers).get("authorization")).toBe(
-    "Bot test-token",
-  );
+  expect(new Headers(requestedInit?.headers).get("authorization")).toBe("Bot test-token");
   expect(JSON.parse(String(requestedInit?.body))).toEqual({ content: "Hello" });
 });
 
@@ -51,11 +47,7 @@ test("sendFile sends the file through multipart form data", async () => {
     }) as typeof fetch,
   });
 
-  await channel.sendFile(
-    "room-2",
-    new File(["data"], "note.txt"),
-    "text/plain",
-  );
+  await channel.sendFile("room-2", new File(["data"], "note.txt"), "text/plain");
   expect(form?.get("payload_json")).toBe("{}");
   const upload = form?.get("files[0]");
   expect(upload).toBeInstanceOf(File);
@@ -66,11 +58,7 @@ test("sendFile sends the file through multipart form data", async () => {
 test("Discord API errors retain the code and transport failures retain the cause", async () => {
   const api = new DiscordChannel({
     token: "test-token",
-    fetch: (async () =>
-      json(
-        { code: 50013, message: "Missing Permissions" },
-        403,
-      )) as typeof fetch,
+    fetch: (async () => json({ code: 50013, message: "Missing Permissions" }, 403)) as typeof fetch,
   });
   expect(api.sendText("room", "Hello")).rejects.toMatchObject({
     name: "ChannelError",
@@ -120,7 +108,7 @@ test("the shared REST client waits and retries a Discord 429", async () => {
 test("rooms maps Discord channel kinds and tolerates one inaccessible guild", async () => {
   const channel = new DiscordChannel({
     token: "test-token",
-    fetch: (async (input) => {
+    fetch: (async input => {
       const path = new URL(String(input)).pathname;
       if (path.endsWith("users/@me/guilds"))
         return json([
@@ -153,9 +141,7 @@ test("streamInbox makes no request when already cancelled", async () => {
   });
   const controller = new AbortController();
   controller.abort();
-  expect(
-    await channel.streamInbox({ signal: controller.signal }).next(),
-  ).toEqual({
+  expect(await channel.streamInbox({ signal: controller.signal }).next()).toEqual({
     value: undefined,
     done: true,
   });
@@ -165,7 +151,7 @@ test("streamInbox makes no request when already cancelled", async () => {
 test("streamInbox aborts room discovery in flight", async () => {
   const controller = new AbortController();
   let started!: () => void;
-  const requestStarted = new Promise<void>((resolve) => {
+  const requestStarted = new Promise<void>(resolve => {
     started = resolve;
   });
   const channel = new DiscordChannel({
@@ -177,13 +163,9 @@ test("streamInbox aborts room discovery in flight", async () => {
           reject(new DOMException("Aborted", "AbortError"));
           return;
         }
-        init?.signal?.addEventListener(
-          "abort",
-          () => reject(new DOMException("Aborted", "AbortError")),
-          {
-            once: true,
-          },
-        );
+        init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), {
+          once: true,
+        });
       });
     }) as typeof fetch,
   });
@@ -198,49 +180,35 @@ test("streamInbox backfills every page newer than its saved cursor", async () =>
   const channel = new DiscordChannel({
     token: "test-token",
     pollIntervalMs: 1,
-    fetch: (async (input) => {
+    fetch: (async input => {
       const url = new URL(String(input));
-      if (url.pathname.endsWith("users/@me/guilds"))
-        return json([{ id: "g1", name: "one" }]);
-      if (url.pathname.endsWith("guilds/g1/channels"))
-        return json([{ id: "c1", name: "general", type: 0 }]);
+      if (url.pathname.endsWith("users/@me/guilds")) return json([{ id: "g1", name: "one" }]);
+      if (url.pathname.endsWith("guilds/g1/channels")) return json([{ id: "c1", name: "general", type: 0 }]);
       queries.push(url.search);
       if (url.searchParams.get("after") === "0") return json([message(10)]);
       if (url.searchParams.get("after") === "10")
-        return json(
-          Array.from({ length: 100 }, (_, index) => message(112 - index)),
-        );
-      if (url.searchParams.get("before") === "13")
-        return json([message(12), message(11), message(10)]);
+        return json(Array.from({ length: 100 }, (_, index) => message(112 - index)));
+      if (url.searchParams.get("before") === "13") return json([message(12), message(11), message(10)]);
       throw new Error(`unexpected page: ${url.search}`);
     }) as typeof fetch,
   });
   const controller = new AbortController();
   const inbox = channel.streamInbox({ signal: controller.signal });
   const ids: string[] = [];
-  for (let index = 0; index < 103; index++)
-    ids.push((await inbox.next()).value!.id);
+  for (let index = 0; index < 103; index++) ids.push((await inbox.next()).value!.id);
   controller.abort();
-  expect(ids).toEqual(
-    Array.from({ length: 103 }, (_, index) => String(index + 10)),
-  );
-  expect(queries).toEqual([
-    "?after=0&limit=100",
-    "?after=10&limit=100",
-    "?before=13&limit=100",
-  ]);
+  expect(ids).toEqual(Array.from({ length: 103 }, (_, index) => String(index + 10)));
+  expect(queries).toEqual(["?after=0&limit=100", "?after=10&limit=100", "?before=13&limit=100"]);
 });
 
 test("streamInbox stops within a page after cancellation", async () => {
   const controller = new AbortController();
   const channel = new DiscordChannel({
     token: "test-token",
-    fetch: (async (input) => {
+    fetch: (async input => {
       const path = new URL(String(input)).pathname;
-      if (path.endsWith("users/@me/guilds"))
-        return json([{ id: "g1", name: "one" }]);
-      if (path.endsWith("guilds/g1/channels"))
-        return json([{ id: "c1", name: "general", type: 0 }]);
+      if (path.endsWith("users/@me/guilds")) return json([{ id: "g1", name: "one" }]);
+      if (path.endsWith("guilds/g1/channels")) return json([{ id: "c1", name: "general", type: 0 }]);
       return json([
         { id: "2", channel_id: "c1", content: "second" },
         { id: "1", channel_id: "c1", content: "first" },

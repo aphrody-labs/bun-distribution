@@ -10,10 +10,7 @@ interface Props {
   selected: boolean;
   // Receives the node id so parents can pass one stable callback to every
   // sibling rather than allocating a per-item closure on each render.
-  onSelect: (
-    id: string,
-    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
-  ) => void;
+  onSelect: (id: string, e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void;
 }
 
 // Konva can't render a <video> directly — it paints whatever HTMLImageElement
@@ -62,8 +59,7 @@ const VideoNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
     };
   }, [video]);
 
-  const handleSelect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) =>
-    onSelect(node.id, e);
+  const handleSelect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => onSelect(node.id, e);
 
   return (
     <>
@@ -81,7 +77,7 @@ const VideoNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
       )}
       <KonvaImage
         id={node.id}
-        ref={(n) => {
+        ref={n => {
           ref.current = n;
         }}
         image={video ?? undefined}

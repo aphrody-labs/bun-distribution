@@ -1,10 +1,5 @@
 import React, { useCallback, useContext, useState } from "react";
-import {
-  FileIcon,
-  KeyboardIcon,
-  SquareCheckIcon,
-  SquareIcon,
-} from "lucide-react";
+import { FileIcon, KeyboardIcon, SquareCheckIcon, SquareIcon } from "lucide-react";
 import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
@@ -12,10 +7,7 @@ import { useCheatsheetPin } from "@storyteller/keybinds";
 import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
-import {
-  usePageSceneStore,
-  useIsVisitingOthersScene,
-} from "../../PageSceneStore";
+import { usePageSceneStore, useIsVisitingOthersScene } from "../../PageSceneStore";
 import { DEFAULT_CAMERA_ASPECT_RATIO, ToastTypes } from "../../enums";
 import { getSceneGenerationMetaData } from "../../sceneMetadata";
 import { LoadUserScenes } from "./LoadUserScenes";
@@ -26,17 +18,15 @@ const isNumberString = (s: string): boolean => /^\d+$/.test(s);
 
 export const ControlsTopButtons = () => {
   const editor = useContext(EngineContext);
-  const cheatsheetPinned = useCheatsheetPin((s) => s.pinned);
-  const toggleCheatsheet = useCheatsheetPin((s) => s.togglePinned);
+  const cheatsheetPinned = useCheatsheetPin(s => s.pinned);
+  const toggleCheatsheet = useCheatsheetPin(s => s.togglePinned);
 
-  const sceneMeta = usePageSceneStore((s) => s.sceneMeta);
-  const currentUserToken = usePageSceneStore((s) => s.currentUserToken);
-  const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
+  const sceneMeta = usePageSceneStore(s => s.sceneMeta);
+  const currentUserToken = usePageSceneStore(s => s.currentUserToken);
+  const outlinerShowing = usePageSceneStore(s => s.outlinerShowing);
   const isVisitingOthersScene = useIsVisitingOthersScene();
 
-  const [sceneTitleInput, setSceneTitleInput] = useState<string>(
-    sceneMeta.title || "",
-  );
+  const [sceneTitleInput, setSceneTitleInput] = useState<string>(sceneMeta.title || "");
   const [sceneTokenSelected, setSceneTokenSelected] = useState<string>("");
 
   // Keep the scene-title input in sync with the loaded scene's title.
@@ -48,16 +38,12 @@ export const ControlsTopButtons = () => {
     }
   }, [sceneMeta.isInitializing, sceneMeta.title]);
 
-  const handleChangeSceneTitleInput = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleChangeSceneTitleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSceneTitleInput(e.target.value);
   };
 
   const handleResetScene = () => {
-    editor?.cameraController.changeRenderCameraAspectRatio(
-      DEFAULT_CAMERA_ASPECT_RATIO,
-    );
+    editor?.cameraController.changeRenderCameraAspectRatio(DEFAULT_CAMERA_ASPECT_RATIO);
   };
 
   const handleButtonSave = async () => {
@@ -78,10 +64,7 @@ export const ControlsTopButtons = () => {
     });
 
     if (retSceneMediaToken === "") {
-      editor.adapter.showToast(
-        ToastTypes.ERROR,
-        "Failed to Save Scene Try again Later!",
-      );
+      editor.adapter.showToast(ToastTypes.ERROR, "Failed to Save Scene Try again Later!");
     }
 
     if (retSceneMediaToken) {
@@ -116,10 +99,7 @@ export const ControlsTopButtons = () => {
     });
 
     if (retSceneMediaToken === "") {
-      editor.adapter.showToast(
-        ToastTypes.ERROR,
-        "Failed to Save Scene Try again Later!",
-      );
+      editor.adapter.showToast(ToastTypes.ERROR, "Failed to Save Scene Try again Later!");
       return;
     }
 
@@ -159,7 +139,7 @@ export const ControlsTopButtons = () => {
 
   const handleButtonLoadScene = () => {
     handleResetScene();
-    editor?.loadScene(sceneTokenSelected).catch((err) => {
+    editor?.loadScene(sceneTokenSelected).catch(err => {
       editor.adapter.showToast(ToastTypes.ERROR, err.message);
     });
   };
@@ -189,24 +169,17 @@ export const ControlsTopButtons = () => {
   // visitor's primary "Save copy" item AND the owner's standalone
   // "Save scene as copy" item, so it lives in a single closure.
   const bumpCopyCountInTitle = () => {
-    const copyCountStr = sceneTitleInput.substring(
-      sceneTitleInput.lastIndexOf("(") + 1,
-      sceneTitleInput.length - 1,
-    );
+    const copyCountStr = sceneTitleInput.substring(sceneTitleInput.lastIndexOf("(") + 1, sceneTitleInput.length - 1);
     if (isNumberString(copyCountStr)) {
       const newCopyCountStr = String(Number(copyCountStr) + 1);
-      setSceneTitleInput(
-        sceneTitleInput.replace(copyCountStr, newCopyCountStr),
-      );
+      setSceneTitleInput(sceneTitleInput.replace(copyCountStr, newCopyCountStr));
     } else {
       setSceneTitleInput(sceneTitleInput + " (1)");
     }
   };
 
   const saveAsCopyDialogProps = {
-    title: isVisitingOthersScene
-      ? "Save a copy to your account"
-      : "Save Scene as Copy",
+    title: isVisitingOthersScene ? "Save a copy to your account" : "Save Scene as Copy",
     content: (
       <Input
         value={sceneTitleInput}
@@ -266,12 +239,7 @@ export const ControlsTopButtons = () => {
                 : {
                     dialogProps: {
                       title: "Create New Scene",
-                      content: (
-                        <h4>
-                          Make sure you&apos;ve saved your scene. Unsaved
-                          changes will be lost. Continue?
-                        </h4>
-                      ),
+                      content: <h4>Make sure you&apos;ve saved your scene. Unsaved changes will be lost. Continue?</h4>,
                       confirmButtonProps: {
                         label: "Create new scene",
                         onClick: async () => {
@@ -293,9 +261,7 @@ export const ControlsTopButtons = () => {
                 ? {
                     dialogProps: {
                       title: "Load a Saved Scene",
-                      content: (
-                        <LoadUserScenes onSceneSelect={handleSceneSelection} />
-                      ),
+                      content: <LoadUserScenes onSceneSelect={handleSceneSelection} />,
                       confirmButtonProps: {
                         label: "Load",
                         disabled: sceneTokenSelected === "",
@@ -356,16 +322,14 @@ export const ControlsTopButtons = () => {
               ? [
                   {
                     label: "Reset to original",
-                    className:
-                      "text-error-400 hover:bg-error-500/15 focus:bg-error-500/15",
+                    className: "text-error-400 hover:bg-error-500/15 focus:bg-error-500/15",
                     divider: true,
                     dialogProps: {
                       title: "Reset scene to original?",
                       content: (
                         <p>
-                          This will discard every change you&apos;ve made in
-                          this session and restore the scene to the version the
-                          author shared. This cannot be undone.
+                          This will discard every change you&apos;ve made in this session and restore the scene to the
+                          version the author shared. This cannot be undone.
                         </p>
                       ),
                       confirmButtonProps: {
@@ -387,10 +351,7 @@ export const ControlsTopButtons = () => {
         <Button
           icon={outlinerShowing ? SquareCheckIcon : SquareIcon}
           className={TOOLBAR_BUTTON_CLASS_NAME}
-          iconClassName={twMerge(
-            "text-[16px]",
-            outlinerShowing ? "text-white" : "text-white/20",
-          )}
+          iconClassName={twMerge("text-[16px]", outlinerShowing ? "text-white" : "text-white/20")}
           variant="secondary"
           onClick={handleShowOutliner}
         >
@@ -405,10 +366,7 @@ export const ControlsTopButtons = () => {
           icon={KeyboardIcon}
           variant="secondary"
           className={TOOLBAR_BUTTON_CLASS_NAME}
-          iconClassName={twMerge(
-            "text-[16px]",
-            cheatsheetPinned ? "text-white" : "text-white/20",
-          )}
+          iconClassName={twMerge("text-[16px]", cheatsheetPinned ? "text-white" : "text-white/20")}
           onClick={toggleCheatsheet}
           data-cheatsheet-toggle
         >

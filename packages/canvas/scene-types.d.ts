@@ -19,8 +19,7 @@ export type Corners = { tl: number; tr: number; br: number; bl: number };
 
 export type Rgba8 = { r: number; g: number; b: number; a: number };
 
-export type Paint =
-  { kind: "role"; value: M3Role } | { kind: "fixed"; value: Rgba8 };
+export type Paint = { kind: "role"; value: M3Role } | { kind: "fixed"; value: Rgba8 };
 
 export type Outline = { color: Paint; width: number };
 

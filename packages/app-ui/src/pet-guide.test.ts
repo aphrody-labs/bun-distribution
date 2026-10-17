@@ -57,9 +57,7 @@ describe("resting spots", () => {
 
   test("no spot when every margin is covered", () => {
     const everywhere: Box = { x: 0, y: 0, width: 1000, height: 800 };
-    expect(
-      nearestRestingSpot(bottomRight, viewport, pet, [everywhere]),
-    ).toBeNull();
+    expect(nearestRestingSpot(bottomRight, viewport, pet, [everywhere])).toBeNull();
   });
 });
 
@@ -83,19 +81,13 @@ describe("decideGuide", () => {
     const field: Box = { x: 700, y: 700, width: 280, height: 60 };
     const action = decideGuide({ ...base, typing: true, obstacles: [field] });
     expect(action.kind).toBe("step-aside");
-    if (action.kind === "step-aside")
-      expect(action.to).not.toEqual(bottomRight);
+    if (action.kind === "step-aside") expect(action.to).not.toEqual(bottomRight);
   });
 
   test("steps aside during a fast scroll and stays for a slow one", () => {
     const middle = { x: 450, y: 350 };
-    expect(
-      decideGuide({ ...base, position: middle, scrollSpeed: SCROLL_FAST + 1 })
-        .kind,
-    ).toBe("step-aside");
-    expect(
-      decideGuide({ ...base, position: middle, scrollSpeed: SCROLL_FAST }).kind,
-    ).toBe("stay");
+    expect(decideGuide({ ...base, position: middle, scrollSpeed: SCROLL_FAST + 1 }).kind).toBe("step-aside");
+    expect(decideGuide({ ...base, position: middle, scrollSpeed: SCROLL_FAST }).kind).toBe("stay");
   });
 
   test("stays when it already rests on the best spot", () => {
@@ -160,12 +152,8 @@ describe("message admission", () => {
   test("respects the minimum interval", () => {
     const first = admitMessage(NO_MESSAGES, 1000);
     expect(first.allowed).toBe(true);
-    expect(
-      admitMessage(first.gate, 1000 + MESSAGE_MIN_INTERVAL_MS - 1).allowed,
-    ).toBe(false);
-    expect(
-      admitMessage(first.gate, 1000 + MESSAGE_MIN_INTERVAL_MS).allowed,
-    ).toBe(true);
+    expect(admitMessage(first.gate, 1000 + MESSAGE_MIN_INTERVAL_MS - 1).allowed).toBe(false);
+    expect(admitMessage(first.gate, 1000 + MESSAGE_MIN_INTERVAL_MS).allowed).toBe(true);
   });
 
   test("caps messages per visit", () => {

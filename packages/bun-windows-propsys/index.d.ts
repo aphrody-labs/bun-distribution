@@ -81,23 +81,59 @@ interface Functions {
   /** propsys.dll!PSCreateAdapterFromPropertyStore */
   PSCreateAdapterFromPropertyStore(pps: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** propsys.dll!PSCreateDelayedMultiplexPropertyStore */
-  PSCreateDelayedMultiplexPropertyStore(flags: number, pdpsf: Win32Pointer, rgStoreIds: Win32Pointer, cStores: number, riid: Win32Pointer, ppv: Win32Pointer): number;
+  PSCreateDelayedMultiplexPropertyStore(
+    flags: number,
+    pdpsf: Win32Pointer,
+    rgStoreIds: Win32Pointer,
+    cStores: number,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** propsys.dll!PSCreateMemoryPropertyStore */
   PSCreateMemoryPropertyStore(riid: Win32Pointer, ppv: Win32Pointer): number;
   /** propsys.dll!PSCreateMultiplexPropertyStore */
-  PSCreateMultiplexPropertyStore(prgpunkStores: Win32Pointer, cStores: number, riid: Win32Pointer, ppv: Win32Pointer): number;
+  PSCreateMultiplexPropertyStore(
+    prgpunkStores: Win32Pointer,
+    cStores: number,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** propsys.dll!PSCreatePropertyChangeArray */
-  PSCreatePropertyChangeArray(rgpropkey: Win32Pointer, rgflags: Win32Pointer, rgpropvar: Win32Pointer, cChanges: number, riid: Win32Pointer, ppv: Win32Pointer): number;
+  PSCreatePropertyChangeArray(
+    rgpropkey: Win32Pointer,
+    rgflags: Win32Pointer,
+    rgpropvar: Win32Pointer,
+    cChanges: number,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** propsys.dll!PSCreatePropertyStoreFromObject */
   PSCreatePropertyStoreFromObject(punk: Win32Pointer, grfMode: number, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** propsys.dll!PSCreatePropertyStoreFromPropertySetStorage */
-  PSCreatePropertyStoreFromPropertySetStorage(ppss: Win32Pointer, grfMode: number, riid: Win32Pointer, ppv: Win32Pointer): number;
+  PSCreatePropertyStoreFromPropertySetStorage(
+    ppss: Win32Pointer,
+    grfMode: number,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** propsys.dll!PSCreateSimplePropertyChange */
-  PSCreateSimplePropertyChange(flags: number, key: Win32Pointer, propvar: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  PSCreateSimplePropertyChange(
+    flags: number,
+    key: Win32Pointer,
+    propvar: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** propsys.dll!PSEnumeratePropertyDescriptions */
   PSEnumeratePropertyDescriptions(filterOn: number, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** propsys.dll!PSFormatForDisplay */
-  PSFormatForDisplay(propkey: Win32Pointer, propvar: Win32Pointer, pdfFlags: number, pwszText: string | Win32Pointer, cchText: number): number;
+  PSFormatForDisplay(
+    propkey: Win32Pointer,
+    propvar: Win32Pointer,
+    pdfFlags: number,
+    pwszText: string | Win32Pointer,
+    cchText: number,
+  ): number;
   /** propsys.dll!PSFormatForDisplayAlloc */
   PSFormatForDisplayAlloc(key: Win32Pointer, propvar: Win32Pointer, pdff: number, ppszDisplay: Win32Pointer): number;
   /** propsys.dll!PSFormatPropertyValue */
@@ -107,19 +143,43 @@ interface Functions {
   /** propsys.dll!PSGetItemPropertyHandler */
   PSGetItemPropertyHandler(punkItem: Win32Pointer, fReadWrite: number, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** propsys.dll!PSGetItemPropertyHandlerWithCreateObject */
-  PSGetItemPropertyHandlerWithCreateObject(punkItem: Win32Pointer, fReadWrite: number, punkCreateObject: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  PSGetItemPropertyHandlerWithCreateObject(
+    punkItem: Win32Pointer,
+    fReadWrite: number,
+    punkCreateObject: Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** propsys.dll!PSGetNameFromPropertyKey */
   PSGetNameFromPropertyKey(propkey: Win32Pointer, ppszCanonicalName: Win32Pointer): number;
   /** propsys.dll!PSGetNamedPropertyFromPropertyStorage */
-  PSGetNamedPropertyFromPropertyStorage(psps: number | bigint, cb: number, pszName: string | Win32Pointer, ppropvar: Win32Pointer): number;
+  PSGetNamedPropertyFromPropertyStorage(
+    psps: number | bigint,
+    cb: number,
+    pszName: string | Win32Pointer,
+    ppropvar: Win32Pointer,
+  ): number;
   /** propsys.dll!PSGetPropertyDescription */
   PSGetPropertyDescription(propkey: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
   /** propsys.dll!PSGetPropertyDescriptionByName */
-  PSGetPropertyDescriptionByName(pszCanonicalName: string | Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  PSGetPropertyDescriptionByName(
+    pszCanonicalName: string | Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** propsys.dll!PSGetPropertyDescriptionListFromString */
-  PSGetPropertyDescriptionListFromString(pszPropList: string | Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  PSGetPropertyDescriptionListFromString(
+    pszPropList: string | Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** propsys.dll!PSGetPropertyFromPropertyStorage */
-  PSGetPropertyFromPropertyStorage(psps: number | bigint, cb: number, rpkey: Win32Pointer, ppropvar: Win32Pointer): number;
+  PSGetPropertyFromPropertyStorage(
+    psps: number | bigint,
+    cb: number,
+    rpkey: Win32Pointer,
+    ppropvar: Win32Pointer,
+  ): number;
   /** propsys.dll!PSGetPropertyKeyFromName */
   PSGetPropertyKeyFromName(pszName: string | Win32Pointer, ppropkey: Win32Pointer): number;
   /** propsys.dll!PSGetPropertySystem */
@@ -153,17 +213,32 @@ interface Functions {
   /** propsys.dll!PSPropertyBag_ReadSHORT */
   PSPropertyBag_ReadSHORT(propBag: Win32Pointer, propName: string | Win32Pointer, value: Win32Pointer): number;
   /** propsys.dll!PSPropertyBag_ReadStr */
-  PSPropertyBag_ReadStr(propBag: Win32Pointer, propName: string | Win32Pointer, value: string | Win32Pointer, characterCount: number): number;
+  PSPropertyBag_ReadStr(
+    propBag: Win32Pointer,
+    propName: string | Win32Pointer,
+    value: string | Win32Pointer,
+    characterCount: number,
+  ): number;
   /** propsys.dll!PSPropertyBag_ReadStrAlloc */
   PSPropertyBag_ReadStrAlloc(propBag: Win32Pointer, propName: string | Win32Pointer, value: Win32Pointer): number;
   /** propsys.dll!PSPropertyBag_ReadStream */
   PSPropertyBag_ReadStream(propBag: Win32Pointer, propName: string | Win32Pointer, value: Win32Pointer): number;
   /** propsys.dll!PSPropertyBag_ReadType */
-  PSPropertyBag_ReadType(propBag: Win32Pointer, propName: string | Win32Pointer, arg2: Win32Pointer, type: number): number;
+  PSPropertyBag_ReadType(
+    propBag: Win32Pointer,
+    propName: string | Win32Pointer,
+    arg2: Win32Pointer,
+    type: number,
+  ): number;
   /** propsys.dll!PSPropertyBag_ReadULONGLONG */
   PSPropertyBag_ReadULONGLONG(propBag: Win32Pointer, propName: string | Win32Pointer, value: Win32Pointer): number;
   /** propsys.dll!PSPropertyBag_ReadUnknown */
-  PSPropertyBag_ReadUnknown(propBag: Win32Pointer, propName: string | Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
+  PSPropertyBag_ReadUnknown(
+    propBag: Win32Pointer,
+    propName: string | Win32Pointer,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** propsys.dll!PSPropertyBag_WriteBOOL */
   PSPropertyBag_WriteBOOL(propBag: Win32Pointer, propName: string | Win32Pointer, value: number): number;
   /** propsys.dll!PSPropertyBag_WriteBSTR */

@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mmdevapi.dll!ActivateAudioInterfaceAsync */
-  ActivateAudioInterfaceAsync(deviceInterfacePath: string | Win32Pointer, riid: Win32Pointer, activationParams: Win32Pointer, completionHandler: Win32Pointer, activationOperation: Win32Pointer): number;
+  ActivateAudioInterfaceAsync(
+    deviceInterfacePath: string | Win32Pointer,
+    riid: Win32Pointer,
+    activationParams: Win32Pointer,
+    completionHandler: Win32Pointer,
+    activationOperation: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

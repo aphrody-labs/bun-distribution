@@ -12,10 +12,7 @@ export type StaticImageData = {
   blurHeight?: number;
 };
 
-export interface ImageProps extends Omit<
-  ImgHTMLAttributes<HTMLImageElement>,
-  "src" | "width" | "height" | "loading"
-> {
+export interface ImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "width" | "height" | "loading"> {
   src: string | StaticImageData;
   alt: string;
   width?: number | `${number}`;
@@ -51,8 +48,7 @@ export function getImageProps(props: ImageProps): {
 
   const resolvedSrc = typeof src === "string" ? src : src?.src || "";
   const resolvedWidth = typeof src === "object" && !width ? src.width : width;
-  const resolvedHeight =
-    typeof src === "object" && !height ? src.height : height;
+  const resolvedHeight = typeof src === "object" && !height ? src.height : height;
 
   const computedStyle: CSSProperties = {
     ...style,
@@ -83,11 +79,9 @@ export function getImageProps(props: ImageProps): {
   };
 }
 
-export const Image = forwardRef<HTMLImageElement, ImageProps>(
-  function Image(props, ref) {
-    const { props: imgProps } = getImageProps(props);
-    return <img ref={ref} alt={imgProps.alt} {...imgProps} />;
-  },
-);
+export const Image = forwardRef<HTMLImageElement, ImageProps>(function Image(props, ref) {
+  const { props: imgProps } = getImageProps(props);
+  return <img ref={ref} alt={imgProps.alt} {...imgProps} />;
+});
 
 export default Image;

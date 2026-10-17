@@ -11,10 +11,10 @@ export function useRafLoop(callback: ({ time }: { time: number }) => void) {
         callback({ time: deltaTime });
       }
       previousTimeRef.current = time;
-      requestRef.current = requestAnimationFrame((time) => loop({ time }));
+      requestRef.current = requestAnimationFrame(time => loop({ time }));
     };
 
-    requestRef.current = requestAnimationFrame((time) => loop({ time }));
+    requestRef.current = requestAnimationFrame(time => loop({ time }));
     return () => cancelAnimationFrame(requestRef.current);
   }, [callback]);
 }

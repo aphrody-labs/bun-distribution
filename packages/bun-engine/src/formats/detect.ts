@@ -3,11 +3,7 @@
 import { extname } from "node:path";
 import { catalogFormats } from "./catalog.js";
 import { crc16, BinaryView, type BinarySource } from "./stream.js";
-import {
-  armBiosFormat,
-  hasArmVectors,
-  looksLikeNdsFirmware,
-} from "./parsers/firmware.js";
+import { armBiosFormat, hasArmVectors, looksLikeNdsFirmware } from "./parsers/firmware.js";
 import { gbLogoPrefix, looksLikeNds } from "./parsers/handheld.js";
 import { looksLikeDol, n64Order } from "./parsers/home.js";
 import { cdSync } from "./parsers/playstation.js";
@@ -88,8 +84,7 @@ const byExtension: Record<string, FormatId> = {
 function magic(view: BinaryView, path: string): FormatId | undefined {
   if (view.equals(0, "\x7fELF")) return "elf";
   if (view.equals(0, "NES\x1a")) return "nes";
-  if (view.equals(0, "FDS\x1a") || view.equals(1, "*NINTENDO-HVC*"))
-    return "fds";
+  if (view.equals(0, "FDS\x1a") || view.equals(1, "*NINTENDO-HVC*")) return "fds";
   if (view.length >= 4 && n64Order(view.u32(0, "be"))) return "n64";
   if (view.equals(0, "PS-X EXE")) return "psx-exe";
   if (view.equals(0, "MComprHD")) return "chd";
@@ -102,28 +97,13 @@ function magic(view: BinaryView, path: string): FormatId | undefined {
   if (view.equals(0x10, "NRO0")) return "nro";
   if (view.equals(0x100, "NCSD")) return "3ds-ncsd";
   if (view.equals(0x100, "NCCH")) return "3ds-ncch";
-  if (view.equals(0x100, "SEGA") || view.equals(0x101, "SEGA"))
-    return "genesis";
-  if (view.has(0, 0x20) && view.u32(0x1c, "be") === 0xc2339f3d)
-    return "gamecube-disc";
-  if (view.has(0, 0x20) && view.u32(0x18, "be") === 0x5d1c9ea3)
-    return "wii-disc";
-  if (
-    view.has(0, 0x200) &&
-    crc16(view.slice(0xc0, 0x9c)) === 0xcf56 &&
-    view.u16(0x15c) === 0xcf56
-  )
-    return "nds";
-  if (
-    view.has(0, 0xc0) &&
-    view.u8(0xb2) === 0x96 &&
-    crc16(view.slice(0x04, 0x9c)) === 0xcf56
-  )
-    return "gba";
-  if (view.equals(0x104, gbLogoPrefix))
-    return view.u8(0x143) & 0x80 ? "gbc" : "gb";
-  if (cdSync.every((byte, index) => view.bytes[index] === byte))
-    return "psx-disc";
+  if (view.equals(0x100, "SEGA") || view.equals(0x101, "SEGA")) return "genesis";
+  if (view.has(0, 0x20) && view.u32(0x1c, "be") === 0xc2339f3d) return "gamecube-disc";
+  if (view.has(0, 0x20) && view.u32(0x18, "be") === 0x5d1c9ea3) return "wii-disc";
+  if (view.has(0, 0x200) && crc16(view.slice(0xc0, 0x9c)) === 0xcf56 && view.u16(0x15c) === 0xcf56) return "nds";
+  if (view.has(0, 0xc0) && view.u8(0xb2) === 0x96 && crc16(view.slice(0x04, 0x9c)) === 0xcf56) return "gba";
+  if (view.equals(0x104, gbLogoPrefix)) return view.u8(0x143) & 0x80 ? "gbc" : "gb";
+  if (cdSync.every((byte, index) => view.bytes[index] === byte)) return "psx-disc";
   if (view.equals(0x8001, "CD001")) return "iso9660";
   if (
     extname(path).toLowerCase() === ".cue" &&
@@ -147,29 +127,19 @@ function looksLikePsxReset(view: BinaryView): boolean {
   );
 }
 
-async function heuristic(
-  view: BinaryView,
-  path: string,
-  source: BinarySource,
-): Promise<FormatId | undefined> {
+async function heuristic(view: BinaryView, path: string, source: BinarySource): Promise<FormatId | undefined> {
   const size = source.size;
   if (looksLikeDol(view.with("be"), size)) return "dol";
   if (looksLikeNds(view, size)) return "nds";
   if (isInterleavedSmd(view.bytes, size)) return "genesis";
-  if ((size === 0x4000 || size === 0x1000) && hasArmVectors(view))
-    return armBiosFormat(path, size);
+  if ((size === 0x4000 || size === 0x1000) && hasArmVectors(view)) return armBiosFormat(path, size);
   if (
     size === 0x80000 &&
     (looksLikePsxReset(view) ||
-      /Sony Computer Entertainment/.test(
-        new TextDecoder("latin1").decode(view.slice(0x100, 0x80)),
-      ))
+      /Sony Computer Entertainment/.test(new TextDecoder("latin1").decode(view.slice(0x100, 0x80))))
   )
     return "psx-bios";
-  if (
-    [0x20000, 0x40000, 0x80000].includes(size) &&
-    looksLikeNdsFirmware(await source.view(size - 0x200, 0x200))
-  )
+  if ([0x20000, 0x40000, 0x80000].includes(size) && looksLikeNdsFirmware(await source.view(size - 0x200, 0x200)))
     return "nds-firmware";
   return undefined;
 }
@@ -195,10 +165,7 @@ export async function detect(
     confidence = 0.3;
   }
   const catalog = await catalogFormats(view.bytes, path);
-  const magika =
-    options.magika || (!format && !catalog.length)
-      ? await magikaIdentify(path)
-      : undefined;
+  const magika = options.magika || (!format && !catalog.length) ? await magikaIdentify(path) : undefined;
   let platform = format ? platforms[format] : "unknown";
   if (!format) {
     format = "unknown";

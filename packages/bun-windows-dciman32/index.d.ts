@@ -7,7 +7,18 @@ interface Functions {
   /** dciman32.dll!DCICloseProvider */
   DCICloseProvider(hdc: Win32Pointer): void;
   /** dciman32.dll!DCICreateOffscreen */
-  DCICreateOffscreen(hdc: Win32Pointer, dwCompression: number, dwRedMask: number, dwGreenMask: number, dwBlueMask: number, dwWidth: number, dwHeight: number, dwDCICaps: number, dwBitCount: number, lplpSurface: Win32Pointer): number;
+  DCICreateOffscreen(
+    hdc: Win32Pointer,
+    dwCompression: number,
+    dwRedMask: number,
+    dwGreenMask: number,
+    dwBlueMask: number,
+    dwWidth: number,
+    dwHeight: number,
+    dwDCICaps: number,
+    dwBitCount: number,
+    lplpSurface: Win32Pointer,
+  ): number;
   /** dciman32.dll!DCICreateOverlay */
   DCICreateOverlay(hdc: Win32Pointer, lpOffscreenSurf: Win32Pointer, lplpSurface: Win32Pointer): number;
   /** dciman32.dll!DCICreatePrimary */
@@ -19,7 +30,13 @@ interface Functions {
   /** dciman32.dll!DCIEndAccess */
   DCIEndAccess(pdci: Win32Pointer): void;
   /** dciman32.dll!DCIEnum */
-  DCIEnum(hdc: Win32Pointer, lprDst: Win32Pointer, lprSrc: Win32Pointer, lpFnCallback: Win32Pointer, lpContext: Win32Pointer): number;
+  DCIEnum(
+    hdc: Win32Pointer,
+    lprDst: Win32Pointer,
+    lprSrc: Win32Pointer,
+    lpFnCallback: Win32Pointer,
+    lpContext: Win32Pointer,
+  ): number;
   /** dciman32.dll!DCIOpenProvider */
   DCIOpenProvider(): number | null;
   /** dciman32.dll!DCISetClipList */

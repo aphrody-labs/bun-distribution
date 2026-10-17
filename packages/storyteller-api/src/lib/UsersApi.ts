@@ -1,10 +1,4 @@
-import {
-  ApiManager,
-  ApiResponse,
-  buildSessionHeaders,
-  storeSignedSession,
-  clearSignedSession,
-} from "./ApiManager.js";
+import { ApiManager, ApiResponse, buildSessionHeaders, storeSignedSession, clearSignedSession } from "./ApiManager.js";
 import { UserInfo } from "./models/Users.js";
 import { FetchProxy as fetch } from "@storyteller/tauri-utils";
 
@@ -79,7 +73,7 @@ export class UsersApi extends ApiManager {
       };
       error_message?: string;
     }>({ endpoint: endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: {
           loggedIn: response.logged_in,
@@ -87,7 +81,7 @@ export class UsersApi extends ApiManager {
           onboarding: response.user?.onboarding,
         },
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -107,13 +101,13 @@ export class UsersApi extends ApiManager {
       user?: UserInfo;
       error_message?: string;
     }>({ endpoint: endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: {
           user: response.user,
         },
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -154,9 +148,7 @@ export class UsersApi extends ApiManager {
       }
       return {
         success: response.success,
-        data: response.success
-          ? { signedSession: response.signed_session }
-          : undefined,
+        data: response.success ? { signedSession: response.signed_session } : undefined,
         errorMessage: response.error_message,
       };
     } catch (err: any) {
@@ -173,10 +165,10 @@ export class UsersApi extends ApiManager {
     return this.post<null, { success: boolean; error_message?: string }>({
       endpoint: endpoint,
     })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -195,10 +187,7 @@ export class UsersApi extends ApiManager {
     };
 
     try {
-      const response = await this.authFetch<
-        { maybe_referral_url: string | null },
-        { success: boolean }
-      >(endpoint, {
+      const response = await this.authFetch<{ maybe_referral_url: string | null }, { success: boolean }>(endpoint, {
         method: "POST",
         body,
       });
@@ -272,12 +261,8 @@ export class UsersApi extends ApiManager {
       }
       return {
         success: response.success,
-        data: response.success
-          ? { signedSession: response.signed_session }
-          : undefined,
-        errorMessage:
-          response.error_message ||
-          Object.values(response.error_fields ?? {}).join(", "),
+        data: response.success ? { signedSession: response.signed_session } : undefined,
+        errorMessage: response.error_message || Object.values(response.error_fields ?? {}).join(", "),
       };
     } catch (err: any) {
       return {
@@ -351,9 +336,7 @@ export class UsersApi extends ApiManager {
 
       return {
         success: response.success,
-        data: response.success
-          ? { usernameNotYetCustomized: response.username_not_yet_customized }
-          : undefined,
+        data: response.success ? { usernameNotYetCustomized: response.username_not_yet_customized } : undefined,
         errorMessage: response.error_message,
       };
     } catch (err: any) {
@@ -401,11 +384,7 @@ export class UsersApi extends ApiManager {
     }
   }
 
-  public async EditEmail({
-    emailAddress,
-  }: {
-    emailAddress: string;
-  }): Promise<ApiResponse<null>> {
+  public async EditEmail({ emailAddress }: { emailAddress: string }): Promise<ApiResponse<null>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/user/edit_email`;
     const body = {
       email_address: emailAddress,
@@ -435,11 +414,7 @@ export class UsersApi extends ApiManager {
     }
   }
 
-  public async EditUsername({
-    displayName,
-  }: {
-    displayName: string;
-  }): Promise<ApiResponse<null>> {
+  public async EditUsername({ displayName }: { displayName: string }): Promise<ApiResponse<null>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/user/edit_username`;
     const body = {
       display_name: displayName,

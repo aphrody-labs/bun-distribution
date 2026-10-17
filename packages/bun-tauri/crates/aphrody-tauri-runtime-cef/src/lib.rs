@@ -16,7 +16,7 @@ mod environment;
 mod external_message_pump;
 mod frame;
 pub use dialog::{
-  NativeDialogKind, NativeDialogObservation, NativeDialogSnapshot, NativeDialogToken,
+    NativeDialogKind, NativeDialogObservation, NativeDialogSnapshot, NativeDialogToken,
 };
 pub use environment::DebugEnvironment;
 mod frame_navigation;

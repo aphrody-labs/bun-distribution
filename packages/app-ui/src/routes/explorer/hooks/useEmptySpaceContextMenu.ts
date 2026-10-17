@@ -59,9 +59,7 @@ export function useEmptySpaceContextMenu() {
             destination: currentPath,
             onComplete: () => {
               if (clipboard.operation === "cut") {
-                console.log(
-                  "[Clipboard] Operation completed, clearing clipboard",
-                );
+                console.log("[Clipboard] Operation completed, clearing clipboard");
                 clipboard.clearClipboard();
               } else {
                 console.log("[Clipboard] Copy operation completed");

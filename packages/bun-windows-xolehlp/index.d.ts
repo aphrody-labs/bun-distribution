@@ -3,15 +3,52 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** xolehlp.dll!DtcGetTransactionManager */
-  DtcGetTransactionManager(i_pszHost: string | Win32Pointer, i_pszTmName: string | Win32Pointer, i_riid: Win32Pointer, i_dwReserved1: number, i_wcbReserved2: number, i_pvReserved2: Win32Pointer, o_ppvObject: Win32Pointer): number;
+  DtcGetTransactionManager(
+    i_pszHost: string | Win32Pointer,
+    i_pszTmName: string | Win32Pointer,
+    i_riid: Win32Pointer,
+    i_dwReserved1: number,
+    i_wcbReserved2: number,
+    i_pvReserved2: Win32Pointer,
+    o_ppvObject: Win32Pointer,
+  ): number;
   /** xolehlp.dll!DtcGetTransactionManagerC */
-  DtcGetTransactionManagerC(i_pszHost: string | Win32Pointer, i_pszTmName: string | Win32Pointer, i_riid: Win32Pointer, i_dwReserved1: number, i_wcbReserved2: number, i_pvReserved2: Win32Pointer, o_ppvObject: Win32Pointer): number;
+  DtcGetTransactionManagerC(
+    i_pszHost: string | Win32Pointer,
+    i_pszTmName: string | Win32Pointer,
+    i_riid: Win32Pointer,
+    i_dwReserved1: number,
+    i_wcbReserved2: number,
+    i_pvReserved2: Win32Pointer,
+    o_ppvObject: Win32Pointer,
+  ): number;
   /** xolehlp.dll!DtcGetTransactionManagerExA */
-  DtcGetTransactionManagerExA(i_pszHost: string | Win32Pointer, i_pszTmName: string | Win32Pointer, i_riid: Win32Pointer, i_grfOptions: number, i_pvConfigParams: Win32Pointer, o_ppvObject: Win32Pointer): number;
+  DtcGetTransactionManagerExA(
+    i_pszHost: string | Win32Pointer,
+    i_pszTmName: string | Win32Pointer,
+    i_riid: Win32Pointer,
+    i_grfOptions: number,
+    i_pvConfigParams: Win32Pointer,
+    o_ppvObject: Win32Pointer,
+  ): number;
   /** xolehlp.dll!DtcGetTransactionManagerExW */
-  DtcGetTransactionManagerExW(i_pwszHost: string | Win32Pointer, i_pwszTmName: string | Win32Pointer, i_riid: Win32Pointer, i_grfOptions: number, i_pvConfigParams: Win32Pointer, o_ppvObject: Win32Pointer): number;
+  DtcGetTransactionManagerExW(
+    i_pwszHost: string | Win32Pointer,
+    i_pwszTmName: string | Win32Pointer,
+    i_riid: Win32Pointer,
+    i_grfOptions: number,
+    i_pvConfigParams: Win32Pointer,
+    o_ppvObject: Win32Pointer,
+  ): number;
   /** xolehlp.dll!DtcGetTransactionManagerExW */
-  DtcGetTransactionManagerEx(i_pwszHost: string | Win32Pointer, i_pwszTmName: string | Win32Pointer, i_riid: Win32Pointer, i_grfOptions: number, i_pvConfigParams: Win32Pointer, o_ppvObject: Win32Pointer): number;
+  DtcGetTransactionManagerEx(
+    i_pwszHost: string | Win32Pointer,
+    i_pwszTmName: string | Win32Pointer,
+    i_riid: Win32Pointer,
+    i_grfOptions: number,
+    i_pvConfigParams: Win32Pointer,
+    o_ppvObject: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

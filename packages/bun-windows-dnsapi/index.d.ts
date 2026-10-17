@@ -29,9 +29,22 @@ interface Functions {
   /** dnsapi.dll!DnsConnectionGetProxyInfo */
   DnsConnectionGetProxyInfo(pwszConnectionName: string | Win32Pointer, Type: number, pProxyInfo: Win32Pointer): number;
   /** dnsapi.dll!DnsConnectionGetProxyInfoForHostUrl */
-  DnsConnectionGetProxyInfoForHostUrl(pwszHostUrl: string | Win32Pointer, pSelectionContext: Win32Pointer, dwSelectionContextLength: number, dwExplicitInterfaceIndex: number, pProxyInfoEx: Win32Pointer): number;
+  DnsConnectionGetProxyInfoForHostUrl(
+    pwszHostUrl: string | Win32Pointer,
+    pSelectionContext: Win32Pointer,
+    dwSelectionContextLength: number,
+    dwExplicitInterfaceIndex: number,
+    pProxyInfoEx: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsConnectionGetProxyInfoForHostUrlEx */
-  DnsConnectionGetProxyInfoForHostUrlEx(pwszHostUrl: string | Win32Pointer, pSelectionContext: Win32Pointer, dwSelectionContextLength: number, dwExplicitInterfaceIndex: number, pwszConnectionName: string | Win32Pointer, pProxyInfoEx: Win32Pointer): number;
+  DnsConnectionGetProxyInfoForHostUrlEx(
+    pwszHostUrl: string | Win32Pointer,
+    pSelectionContext: Win32Pointer,
+    dwSelectionContextLength: number,
+    dwExplicitInterfaceIndex: number,
+    pwszConnectionName: string | Win32Pointer,
+    pProxyInfoEx: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsConnectionGetProxyList */
   DnsConnectionGetProxyList(pwszConnectionName: string | Win32Pointer, pProxyList: Win32Pointer): number;
   /** dnsapi.dll!DnsConnectionSetPolicyEntries */
@@ -53,17 +66,51 @@ interface Functions {
   /** dnsapi.dll!DnsGetApplicationSettings */
   DnsGetApplicationSettings(pcServers: Win32Pointer, ppDefaultServers: Win32Pointer, pSettings: Win32Pointer): number;
   /** dnsapi.dll!DnsGetProxyInformation */
-  DnsGetProxyInformation(hostName: string | Win32Pointer, proxyInformation: Win32Pointer, defaultProxyInformation: Win32Pointer, completionRoutine: Win32Callback, completionContext: Win32Pointer): number;
+  DnsGetProxyInformation(
+    hostName: string | Win32Pointer,
+    proxyInformation: Win32Pointer,
+    defaultProxyInformation: Win32Pointer,
+    completionRoutine: Win32Callback,
+    completionContext: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsIsFlatRecord */
   DnsIsFlatRecord(pRecord: Win32Pointer, ullFlags: number | bigint, pfFlat: Win32Pointer): number;
   /** dnsapi.dll!DnsModifyRecordsInSet_A */
-  DnsModifyRecordsInSet_A(pAddRecords: Win32Pointer, pDeleteRecords: Win32Pointer, Options: number, hCredentials: Win32Pointer, pExtraList: Win32Pointer, pReserved: Win32Pointer): number;
+  DnsModifyRecordsInSet_A(
+    pAddRecords: Win32Pointer,
+    pDeleteRecords: Win32Pointer,
+    Options: number,
+    hCredentials: Win32Pointer,
+    pExtraList: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsModifyRecordsInSet_UTF8 */
-  DnsModifyRecordsInSet_UTF8(pAddRecords: Win32Pointer, pDeleteRecords: Win32Pointer, Options: number, hCredentials: Win32Pointer, pExtraList: Win32Pointer, pReserved: Win32Pointer): number;
+  DnsModifyRecordsInSet_UTF8(
+    pAddRecords: Win32Pointer,
+    pDeleteRecords: Win32Pointer,
+    Options: number,
+    hCredentials: Win32Pointer,
+    pExtraList: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsModifyRecordsInSet_W */
-  DnsModifyRecordsInSet_W(pAddRecords: Win32Pointer, pDeleteRecords: Win32Pointer, Options: number, hCredentials: Win32Pointer, pExtraList: Win32Pointer, pReserved: Win32Pointer): number;
+  DnsModifyRecordsInSet_W(
+    pAddRecords: Win32Pointer,
+    pDeleteRecords: Win32Pointer,
+    Options: number,
+    hCredentials: Win32Pointer,
+    pExtraList: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsModifyRecordsInSet_W */
-  DnsModifyRecordsInSet_(pAddRecords: Win32Pointer, pDeleteRecords: Win32Pointer, Options: number, hCredentials: Win32Pointer, pExtraList: Win32Pointer, pReserved: Win32Pointer): number;
+  DnsModifyRecordsInSet_(
+    pAddRecords: Win32Pointer,
+    pDeleteRecords: Win32Pointer,
+    Options: number,
+    hCredentials: Win32Pointer,
+    pExtraList: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsNameCompare_A */
   DnsNameCompare_A(pName1: string | Win32Pointer, pName2: string | Win32Pointer): number;
   /** dnsapi.dll!DnsNameCompare_W */
@@ -71,7 +118,14 @@ interface Functions {
   /** dnsapi.dll!DnsNameCompare_W */
   DnsNameCompare_(pName1: string | Win32Pointer, pName2: string | Win32Pointer): number;
   /** dnsapi.dll!DnsQueryConfig */
-  DnsQueryConfig(Config: number, Flag: number, pwsAdapterName: string | Win32Pointer, pReserved: Win32Pointer, pBuffer: Win32Pointer, pBufLen: Win32Pointer): number;
+  DnsQueryConfig(
+    Config: number,
+    Flag: number,
+    pwsAdapterName: string | Win32Pointer,
+    pReserved: Win32Pointer,
+    pBuffer: Win32Pointer,
+    pBufLen: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsQueryEx */
   DnsQueryEx(pQueryRequest: Win32Pointer, pQueryResults: Win32Pointer, pCancelHandle: Win32Pointer): number;
   /** dnsapi.dll!DnsQueryRaw */
@@ -79,13 +133,41 @@ interface Functions {
   /** dnsapi.dll!DnsQueryRawResultFree */
   DnsQueryRawResultFree(queryResults: Win32Pointer): void;
   /** dnsapi.dll!DnsQuery_A */
-  DnsQuery_A(pszName: string | Win32Pointer, wType: number, Options: number, pExtra: Win32Pointer, ppQueryResults: Win32Pointer, pReserved: Win32Pointer): number;
+  DnsQuery_A(
+    pszName: string | Win32Pointer,
+    wType: number,
+    Options: number,
+    pExtra: Win32Pointer,
+    ppQueryResults: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsQuery_UTF8 */
-  DnsQuery_UTF8(pszName: string | Win32Pointer, wType: number, Options: number, pExtra: Win32Pointer, ppQueryResults: Win32Pointer, pReserved: Win32Pointer): number;
+  DnsQuery_UTF8(
+    pszName: string | Win32Pointer,
+    wType: number,
+    Options: number,
+    pExtra: Win32Pointer,
+    ppQueryResults: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsQuery_W */
-  DnsQuery_W(pszName: string | Win32Pointer, wType: number, Options: number, pExtra: Win32Pointer, ppQueryResults: Win32Pointer, pReserved: Win32Pointer): number;
+  DnsQuery_W(
+    pszName: string | Win32Pointer,
+    wType: number,
+    Options: number,
+    pExtra: Win32Pointer,
+    ppQueryResults: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsQuery_W */
-  DnsQuery_(pszName: string | Win32Pointer, wType: number, Options: number, pExtra: Win32Pointer, ppQueryResults: Win32Pointer, pReserved: Win32Pointer): number;
+  DnsQuery_(
+    pszName: string | Win32Pointer,
+    wType: number,
+    Options: number,
+    pExtra: Win32Pointer,
+    ppQueryResults: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsRecordCompare */
   DnsRecordCompare(pRecord1: Win32Pointer, pRecord2: Win32Pointer): number;
   /** dnsapi.dll!DnsRecordCopyEx */
@@ -99,19 +181,54 @@ interface Functions {
   /** dnsapi.dll!DnsReleaseContextHandle */
   DnsReleaseContextHandle(hContext: Win32Pointer): void;
   /** dnsapi.dll!DnsReplaceRecordSetA */
-  DnsReplaceRecordSetA(pReplaceSet: Win32Pointer, Options: number, hContext: Win32Pointer, pExtraInfo: Win32Pointer, pReserved: Win32Pointer): number;
+  DnsReplaceRecordSetA(
+    pReplaceSet: Win32Pointer,
+    Options: number,
+    hContext: Win32Pointer,
+    pExtraInfo: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsReplaceRecordSetUTF8 */
-  DnsReplaceRecordSetUTF8(pReplaceSet: Win32Pointer, Options: number, hContext: Win32Pointer, pExtraInfo: Win32Pointer, pReserved: Win32Pointer): number;
+  DnsReplaceRecordSetUTF8(
+    pReplaceSet: Win32Pointer,
+    Options: number,
+    hContext: Win32Pointer,
+    pExtraInfo: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsReplaceRecordSetW */
-  DnsReplaceRecordSetW(pReplaceSet: Win32Pointer, Options: number, hContext: Win32Pointer, pExtraInfo: Win32Pointer, pReserved: Win32Pointer): number;
+  DnsReplaceRecordSetW(
+    pReplaceSet: Win32Pointer,
+    Options: number,
+    hContext: Win32Pointer,
+    pExtraInfo: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsReplaceRecordSetW */
-  DnsReplaceRecordSet(pReplaceSet: Win32Pointer, Options: number, hContext: Win32Pointer, pExtraInfo: Win32Pointer, pReserved: Win32Pointer): number;
+  DnsReplaceRecordSet(
+    pReplaceSet: Win32Pointer,
+    Options: number,
+    hContext: Win32Pointer,
+    pExtraInfo: Win32Pointer,
+    pReserved: Win32Pointer,
+  ): number;
   /** dnsapi.dll!DnsServiceBrowse */
   DnsServiceBrowse(pRequest: Win32Pointer, pCancel: Win32Pointer): number;
   /** dnsapi.dll!DnsServiceBrowseCancel */
   DnsServiceBrowseCancel(pCancelHandle: Win32Pointer): number;
   /** dnsapi.dll!DnsServiceConstructInstance */
-  DnsServiceConstructInstance(pServiceName: string | Win32Pointer, pHostName: string | Win32Pointer, pIp4: Win32Pointer, pIp6: Win32Pointer, wPort: number, wPriority: number, wWeight: number, dwPropertiesCount: number, keys: Win32Pointer, values: Win32Pointer): number | null;
+  DnsServiceConstructInstance(
+    pServiceName: string | Win32Pointer,
+    pHostName: string | Win32Pointer,
+    pIp4: Win32Pointer,
+    pIp6: Win32Pointer,
+    wPort: number,
+    wPriority: number,
+    wWeight: number,
+    dwPropertiesCount: number,
+    keys: Win32Pointer,
+    values: Win32Pointer,
+  ): number | null;
   /** dnsapi.dll!DnsServiceCopyInstance */
   DnsServiceCopyInstance(pOrig: Win32Pointer): number | null;
   /** dnsapi.dll!DnsServiceDeRegister */
@@ -141,9 +258,23 @@ interface Functions {
   /** dnsapi.dll!DnsValidateName_W */
   DnsValidateName_(pszName: string | Win32Pointer, Format: number): number;
   /** dnsapi.dll!DnsWriteQuestionToBuffer_UTF8 */
-  DnsWriteQuestionToBuffer_UTF8(pDnsBuffer: Win32Pointer, pdwBufferSize: Win32Pointer, pszName: string | Win32Pointer, wType: number, Xid: number, fRecursionDesired: number): number;
+  DnsWriteQuestionToBuffer_UTF8(
+    pDnsBuffer: Win32Pointer,
+    pdwBufferSize: Win32Pointer,
+    pszName: string | Win32Pointer,
+    wType: number,
+    Xid: number,
+    fRecursionDesired: number,
+  ): number;
   /** dnsapi.dll!DnsWriteQuestionToBuffer_W */
-  DnsWriteQuestionToBuffer_W(pDnsBuffer: Win32Pointer, pdwBufferSize: Win32Pointer, pszName: string | Win32Pointer, wType: number, Xid: number, fRecursionDesired: number): number;
+  DnsWriteQuestionToBuffer_W(
+    pDnsBuffer: Win32Pointer,
+    pdwBufferSize: Win32Pointer,
+    pszName: string | Win32Pointer,
+    wType: number,
+    Xid: number,
+    fRecursionDesired: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

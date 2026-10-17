@@ -16,9 +16,7 @@ export interface SseEvent {
  * stream (no terminating blank line) is dropped, as the specification requires. The reader is
  * cancelled when the consumer stops early.
  */
-export async function* readSse(
-  body: ReadableStream<Uint8Array>,
-): AsyncGenerator<SseEvent> {
+export async function* readSse(body: ReadableStream<Uint8Array>): AsyncGenerator<SseEvent> {
   const reader = body.getReader();
   const decoder = new TextDecoder("utf-8");
   let buffer = "";
@@ -79,16 +77,11 @@ export async function* readSse(
         first = false;
       }
       // A trailing "\r" may be the first half of "\r\n": wait for the next chunk.
-      const limit =
-        done || !buffer.endsWith("\r") ? buffer.length : buffer.length - 1;
+      const limit = done || !buffer.endsWith("\r") ? buffer.length : buffer.length - 1;
       const text = buffer.slice(0, limit);
       let start = 0;
       const terminators = /\r\n|\n|\r/g;
-      for (
-        let match = terminators.exec(text);
-        match;
-        match = terminators.exec(text)
-      ) {
+      for (let match = terminators.exec(text); match; match = terminators.exec(text)) {
         const event = consumeLine(text.slice(start, match.index));
         start = match.index + match[0].length;
         if (event) yield event;

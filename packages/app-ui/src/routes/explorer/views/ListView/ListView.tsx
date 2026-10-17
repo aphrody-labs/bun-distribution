@@ -7,26 +7,14 @@ import { clsx } from "clsx";
 import { useExplorer } from "../../context";
 import { useSelection } from "../../SelectionContext";
 import { TableRow } from "./TableRow";
-import {
-  useTable,
-  ROW_HEIGHT,
-  TABLE_PADDING_X,
-  TABLE_PADDING_Y,
-  TABLE_HEADER_HEIGHT,
-} from "./useTable";
+import { useTable, ROW_HEIGHT, TABLE_PADDING_X, TABLE_PADDING_Y, TABLE_HEADER_HEIGHT } from "./useTable";
 import type { DirectorySortBy } from "@aphrody/drive-client";
 import { useExplorerFiles } from "../../hooks/useExplorerFiles";
 import { DragSelect } from "../DragSelect";
 import { useEmptySpaceContextMenu } from "../../hooks/useEmptySpaceContextMenu";
 
 export const ListView = memo(function ListView() {
-  const {
-    sortBy,
-    setSortBy,
-    setCurrentFiles,
-    scrollPosition,
-    setScrollPosition,
-  } = useExplorer();
+  const { sortBy, setSortBy, setCurrentFiles, scrollPosition, setScrollPosition } = useExplorer();
   const {
     focusedIndex,
     setFocusedIndex,
@@ -43,10 +31,8 @@ export const ListView = memo(function ListView() {
   const emptySpaceContextMenu = useEmptySpaceContextMenu();
 
   useLayoutEffect(() => {
-    if (containerRef.current)
-      containerRef.current.scrollTop = scrollPosition.top;
-    if (bodyScrollRef.current)
-      bodyScrollRef.current.scrollLeft = scrollPosition.left;
+    if (containerRef.current) containerRef.current.scrollTop = scrollPosition.top;
+    if (bodyScrollRef.current) bodyScrollRef.current.scrollLeft = scrollPosition.left;
   }, [scrollPosition.top, scrollPosition.left]);
 
   // Get files from centralized hook (handles search, virtual, and directory)
@@ -118,9 +104,7 @@ export const ListView = memo(function ListView() {
 
         const currentIndex = focusedIndex >= 0 ? focusedIndex : 0;
         const newIndex =
-          direction === "down"
-            ? Math.min(currentIndex + 1, currentFiles.length - 1)
-            : Math.max(currentIndex - 1, 0);
+          direction === "down" ? Math.min(currentIndex + 1, currentFiles.length - 1) : Math.max(currentIndex - 1, 0);
 
         if (e.shiftKey) {
           // Range selection with shift
@@ -186,53 +170,36 @@ export const ListView = memo(function ListView() {
                 paddingRight: TABLE_PADDING_X,
               }}
             >
-              {headerGroups.map((headerGroup) =>
-                headerGroup.headers.map((header) => {
+              {headerGroups.map(headerGroup =>
+                headerGroup.headers.map(header => {
                   const isSorted = sortBy === header.id;
                   const canResize = header.column.getCanResize();
 
                   return (
-                    <div
-                      key={header.id}
-                      className="relative"
-                      style={{ width: header.getSize() }}
-                    >
+                    <div key={header.id} className="relative" style={{ width: header.getSize() }}>
                       <button
                         type="button"
                         className={clsx(
                           "flex w-full cursor-pointer select-none items-center gap-1 px-2 py-2 text-label-medium hover:text-on-surface",
-                          isSorted
-                            ? "text-on-surface"
-                            : "text-on-surface-variant",
+                          isSorted ? "text-on-surface" : "text-on-surface-variant",
                         )}
                         onClick={() => handleHeaderClick(header.id)}
                       >
                         <span className="truncate">
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                          {flexRender(header.column.columnDef.header, header.getContext())}
                         </span>
 
-                        {isSorted && (
-                          <Icon
-                            name="expand_more"
-                            size={14}
-                            className="text-on-surface-variant"
-                          />
-                        )}
+                        {isSorted && <Icon name="expand_more" size={14} className="text-on-surface-variant" />}
                       </button>
                       {canResize && (
                         // oxlint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- poignée de redimensionnement de colonne au pointeur (souris et tactile) : pas d'équivalent clavier dans la table actuelle
                         <div
                           onMouseDown={header.getResizeHandler()}
                           onTouchStart={header.getResizeHandler()}
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={e => e.stopPropagation()}
                           className={clsx(
                             "absolute right-0 top-1/2 h-4 w-1 -translate-y-1/2 cursor-col-resize rounded-full",
-                            header.column.getIsResizing()
-                              ? "bg-primary"
-                              : "bg-transparent hover:bg-on-surface/38",
+                            header.column.getIsResizing() ? "bg-primary" : "bg-transparent hover:bg-on-surface/38",
                           )}
                         />
                       )}
@@ -266,7 +233,7 @@ export const ListView = memo(function ListView() {
                 pointerEvents: "auto",
               }}
             >
-              {virtualRows.map((virtualRow) => {
+              {virtualRows.map(virtualRow => {
                 const row = rows[virtualRow.index];
                 if (!row) return null;
 
@@ -277,12 +244,8 @@ export const ListView = memo(function ListView() {
                 const previousRow = rows[virtualRow.index - 1];
                 const nextRow = rows[virtualRow.index + 1];
                 // Use O(1) Set lookup for adjacent selection detection
-                const isPreviousSelected = previousRow
-                  ? selectedFileIds.has(previousRow.original.id)
-                  : false;
-                const isNextSelected = nextRow
-                  ? selectedFileIds.has(nextRow.original.id)
-                  : false;
+                const isPreviousSelected = previousRow ? selectedFileIds.has(previousRow.original.id) : false;
+                const isNextSelected = nextRow ? selectedFileIds.has(nextRow.original.id) : false;
 
                 return (
                   <TableRow

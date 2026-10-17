@@ -38,8 +38,7 @@ async function file(path: string | undefined): Promise<Response> {
   const ext = path.slice(path.lastIndexOf(".")).toLowerCase();
   // Published files live under content-addressed directories (`<core>/<hash>/`), so they can
   // be cached forever; everything else revalidates.
-  const immutable =
-    (ext === ".wasm" || ext === ".js") && /[\\/][0-9a-f]{12}[\\/]/.test(path);
+  const immutable = (ext === ".wasm" || ext === ".js") && /[\\/][0-9a-f]{12}[\\/]/.test(path);
   return new Response(blob, {
     headers: {
       "content-type": types[ext] ?? "application/octet-stream",
@@ -59,18 +58,12 @@ export function serve(port = Number(Bun.env.PORT ?? 8787)) {
     async fetch(request) {
       const url = new URL(request.url);
       let response: Response;
-      if (url.pathname === "/api/emulation")
-        response = await file(join(dist, "index.json"));
+      if (url.pathname === "/api/emulation") response = await file(join(dist, "index.json"));
       else if (url.pathname.startsWith("/emulation/"))
-        response = await file(
-          contained(dist, url.pathname.slice("/emulation/".length)),
-        );
+        response = await file(contained(dist, url.pathname.slice("/emulation/".length)));
       else if (url.pathname.startsWith("/roms/"))
-        response = await file(
-          contained(roms, url.pathname.slice("/roms/".length)),
-        );
-      else if (url.pathname === "/smoke/" || url.pathname === "/")
-        response = await file(join(here, "smoke.html"));
+        response = await file(contained(roms, url.pathname.slice("/roms/".length)));
+      else if (url.pathname === "/smoke/" || url.pathname === "/") response = await file(join(here, "smoke.html"));
       else response = new Response("not found", { status: 404 });
       response.headers.set("cross-origin-opener-policy", "same-origin");
       response.headers.set("cross-origin-embedder-policy", "credentialless");

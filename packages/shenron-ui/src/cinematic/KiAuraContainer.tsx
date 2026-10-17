@@ -11,10 +11,7 @@ export interface KiAuraContainerProps {
   className?: string;
 }
 
-const AURA_ANIMATIONS: Record<
-  AuraForm,
-  { shadow: string; border: string; auraGlow: string }
-> = {
+const AURA_ANIMATIONS: Record<AuraForm, { shadow: string; border: string; auraGlow: string }> = {
   base: {
     shadow: "shadow-white/10",
     border: "border-neutral-500",
@@ -76,11 +73,7 @@ export const KiAuraContainer: React.FC<KiAuraContainerProps> = ({
 }) => {
   const anim = AURA_ANIMATIONS[form];
   const blurIntensity =
-    intensity === "burst"
-      ? "blur-xl scale-105"
-      : intensity === "medium"
-        ? "blur-lg scale-102"
-        : "blur-md";
+    intensity === "burst" ? "blur-xl scale-105" : intensity === "medium" ? "blur-lg scale-102" : "blur-md";
 
   return (
     <div className={"relative inline-block isolate " + className}>
@@ -96,10 +89,7 @@ export const KiAuraContainer: React.FC<KiAuraContainerProps> = ({
       />
 
       {/* Lightning Sparks for SSJ2, Beast, and Broly */}
-      {(showLightning ||
-        form === "ssj2" ||
-        form === "beast" ||
-        form === "broly-fp") && (
+      {(showLightning || form === "ssj2" || form === "beast" || form === "broly-fp") && (
         <div className="absolute -inset-2 pointer-events-none overflow-hidden rounded-2xl z-20 opacity-90">
           <div className="absolute top-1 left-2 w-4 h-0.5 bg-cyan-200 rotate-45 animate-ping" />
           <div className="absolute bottom-2 right-3 w-5 h-0.5 bg-cyan-100 -rotate-30 animate-pulse" />
@@ -110,10 +100,7 @@ export const KiAuraContainer: React.FC<KiAuraContainerProps> = ({
       {/* Core Children Content */}
       <div
         className={
-          "relative z-10 rounded-xl border-2 transition-shadow duration-500 " +
-          anim.border +
-          " " +
-          anim.shadow
+          "relative z-10 rounded-xl border-2 transition-shadow duration-500 " + anim.border + " " + anim.shadow
         }
       >
         {children}

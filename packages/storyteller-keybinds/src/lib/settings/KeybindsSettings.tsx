@@ -44,19 +44,15 @@ interface PendingConflict {
 // The shared body of the Settings → Keybinds section. Rendered identically in
 // the desktop and web settings shells. Dependency-free (no @storyteller/ui-*),
 // styled with the app's tailwind tokens.
-export function KeybindsSettings({
-  onOpenVideoEditorShortcuts,
-}: {
-  onOpenVideoEditorShortcuts?: () => void;
-}) {
-  const selectedPreset = useKeybindsStore((s) => s.selectedPreset);
-  const overrides = useKeybindsStore((s) => s.overrides);
-  const setPreset = useKeybindsStore((s) => s.setPreset);
-  const setBinding = useKeybindsStore((s) => s.setBinding);
-  const resetAction = useKeybindsStore((s) => s.resetAction);
-  const resetSurface = useKeybindsStore((s) => s.resetSurface);
-  const resetAll = useKeybindsStore((s) => s.resetAll);
-  const findConflicts = useKeybindsStore((s) => s.findConflicts);
+export function KeybindsSettings({ onOpenVideoEditorShortcuts }: { onOpenVideoEditorShortcuts?: () => void }) {
+  const selectedPreset = useKeybindsStore(s => s.selectedPreset);
+  const overrides = useKeybindsStore(s => s.overrides);
+  const setPreset = useKeybindsStore(s => s.setPreset);
+  const setBinding = useKeybindsStore(s => s.setBinding);
+  const resetAction = useKeybindsStore(s => s.resetAction);
+  const resetSurface = useKeybindsStore(s => s.resetSurface);
+  const resetAll = useKeybindsStore(s => s.resetAll);
+  const findConflicts = useKeybindsStore(s => s.findConflicts);
   const { forAction } = useResolvedKeybinds();
 
   const [searchMode, setSearchMode] = useState<SearchMode>("name");
@@ -75,7 +71,7 @@ export function KeybindsSettings({
   // Key-mode search listens for a literal shortcut, since "⇧D" can't be typed.
   useKeybindCapture({
     active: listening,
-    onCapture: (b) => {
+    onCapture: b => {
       setKeyQuery(b);
       setListening(false);
     },
@@ -83,10 +79,7 @@ export function KeybindsSettings({
   });
 
   const surfaces = useMemo(
-    () =>
-      (Object.keys(SURFACE_TITLES) as Surface[]).filter(
-        (s) => ACTIONS_BY_SURFACE[s].length > 0,
-      ),
+    () => (Object.keys(SURFACE_TITLES) as Surface[]).filter(s => ACTIONS_BY_SURFACE[s].length > 0),
     [],
   );
 
@@ -98,9 +91,9 @@ export function KeybindsSettings({
   const filtered = useMemo(() => {
     const matchAction = (a: ActionDef) =>
       searchMode === "key"
-        ? !keyQuery || forAction(a.id).some((b) => bindingsEqual(b, keyQuery))
+        ? !keyQuery || forAction(a.id).some(b => bindingsEqual(b, keyQuery))
         : actionMatchesQuery(a, forAction(a.id), query);
-    return surfaces.map((surface) => {
+    return surfaces.map(surface => {
       const actions = ACTIONS_BY_SURFACE[surface].filter(matchAction);
       return { surface, groups: groupActions(actions), count: actions.length };
     });
@@ -116,7 +109,7 @@ export function KeybindsSettings({
     }
     return counts;
   }, [overrides]);
-  const allOpen = surfaces.every((s) => openSurfaces[s]);
+  const allOpen = surfaces.every(s => openSurfaces[s]);
 
   const switchMode = (mode: SearchMode) => {
     setSearchMode(mode);
@@ -128,8 +121,7 @@ export function KeybindsSettings({
     setListening(true);
   };
 
-  const applyBinding = (id: ActionId, binding: Binding) =>
-    setBinding(id, [binding]);
+  const applyBinding = (id: ActionId, binding: Binding) => setBinding(id, [binding]);
 
   const handleCapture = (id: ActionId, binding: Binding) => {
     const conflicts = findConflicts(id, binding);
@@ -144,9 +136,7 @@ export function KeybindsSettings({
     if (!pending) return;
     // Take the key from the conflicting actions, then assign it here.
     for (const other of pending.conflicts) {
-      const remaining = forAction(other).filter(
-        (b) => !bindingsEqual(b, pending.binding),
-      );
+      const remaining = forAction(other).filter(b => !bindingsEqual(b, pending.binding));
       setBinding(other, remaining);
     }
     applyBinding(pending.id, pending.binding);
@@ -155,12 +145,7 @@ export function KeybindsSettings({
 
   const toggleAll = () => {
     const next = !allOpen;
-    setOpenSurfaces(
-      surfaces.reduce(
-        (acc, s) => ({ ...acc, [s]: next }),
-        {} as Record<Surface, boolean>,
-      ),
-    );
+    setOpenSurfaces(surfaces.reduce((acc, s) => ({ ...acc, [s]: next }), {} as Record<Surface, boolean>));
   };
 
   return (
@@ -191,13 +176,7 @@ export function KeybindsSettings({
           )}
         </div>
 
-        {pending && (
-          <ConflictAlert
-            pending={pending}
-            onConfirm={confirmRebind}
-            onCancel={() => setPending(null)}
-          />
-        )}
+        {pending && <ConflictAlert pending={pending} onConfirm={confirmRebind} onCancel={() => setPending(null)} />}
       </div>
 
       {/* ── Meta row: counts + expand/collapse ─────────────────────────────── */}
@@ -238,25 +217,20 @@ export function KeybindsSettings({
                 overriddenCount={overriddenBySurface[surface] ?? 0}
                 open={open}
                 locked={locked}
-                onToggle={() =>
-                  setOpenSurfaces((s) => ({ ...s, [surface]: !s[surface] }))
-                }
+                onToggle={() => setOpenSurfaces(s => ({ ...s, [surface]: !s[surface] }))}
                 onReset={() => resetSurface(surface)}
               >
                 {groups.map(({ group, actions }) => (
                   <div key={group}>
                     <GroupLabel>{group}</GroupLabel>
-                    {actions.map((action) => (
+                    {actions.map(action => (
                       <ActionRow
                         key={action.id}
                         action={action}
                         bindings={forAction(action.id)}
-                        defaultBindings={presetDefault(
-                          action.id,
-                          selectedPreset,
-                        )}
+                        defaultBindings={presetDefault(action.id, selectedPreset)}
                         overridden={!!overrides[action.id]}
-                        onCapture={(b) => handleCapture(action.id, b)}
+                        onCapture={b => handleCapture(action.id, b)}
                         onReset={() => resetAction(action.id)}
                       />
                     ))}
@@ -275,16 +249,10 @@ export function KeybindsSettings({
       {overriddenCount > 0 && (
         <div className="flex items-center justify-between gap-4 rounded-none bg-red/[0.04] p-4 ring-1 ring-red/20">
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-[13px] font-medium text-base-fg/90">
-              Reset all customizations
-            </span>
+            <span className="text-[13px] font-medium text-base-fg/90">Reset all customizations</span>
             <span className="text-xs leading-relaxed text-base-fg/50">
-              Removes{" "}
-              {overriddenCount === 1
-                ? "your 1 custom binding"
-                : `all ${overriddenCount} custom bindings`}{" "}
-              on every surface. Your preset stays selected. This can’t be
-              undone.
+              Removes {overriddenCount === 1 ? "your 1 custom binding" : `all ${overriddenCount} custom bindings`} on
+              every surface. Your preset stays selected. This can’t be undone.
             </span>
           </div>
           <ConfirmResetButton
@@ -326,13 +294,7 @@ export function KeybindsSettings({
 
 // ── Preset dropdown ───────────────────────────────────────────────────────────
 
-function PresetDropdown({
-  value,
-  onChange,
-}: {
-  value: PresetId;
-  onChange: (id: PresetId) => void;
-}) {
+function PresetDropdown({ value, onChange }: { value: PresetId; onChange: (id: PresetId) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const def = PRESETS[value];
@@ -340,8 +302,7 @@ function PresetDropdown({
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("mousedown", onDown);
@@ -356,7 +317,7 @@ function PresetDropdown({
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(o => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
         className={twMerge(
@@ -367,9 +328,7 @@ function PresetDropdown({
       >
         <div className="flex min-w-0 grow flex-col gap-0.5 px-3 py-1.5">
           <span className="text-sm font-medium text-base-fg">{def.label}</span>
-          <span className="text-[12px] leading-relaxed text-base-fg/60">
-            {def.description}
-          </span>
+          <span className="text-[12px] leading-relaxed text-base-fg/60">{def.description}</span>
         </div>
         <ChevronIcon
           className={twMerge(
@@ -386,12 +345,10 @@ function PresetDropdown({
         className={twMerge(
           "absolute left-0 right-0 top-full z-20 mt-2 origin-top rounded-none bg-ui-modal shadow-[0_20px_50px_-16px_rgba(0,0,0,0.7)] ring-1 ring-white/10 transition-all duration-200 overflow-hidden",
           EASE,
-          open
-            ? "scale-100 opacity-100"
-            : "pointer-events-none scale-95 opacity-0",
+          open ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0",
         )}
       >
-        {PRESET_ORDER.map((id) => {
+        {PRESET_ORDER.map(id => {
           const p = PRESETS[id];
           const selected = id === value;
           return (
@@ -419,12 +376,8 @@ function PresetDropdown({
                 <CheckIcon className="h-2.5 w-2.5" />
               </span>
               <div className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-sm font-medium text-base-fg">
-                  {p.label}
-                </span>
-                <span className="text-[12px] leading-relaxed text-base-fg/55">
-                  {p.description}
-                </span>
+                <span className="text-sm font-medium text-base-fg">{p.label}</span>
+                <span className="text-[12px] leading-relaxed text-base-fg/55">{p.description}</span>
               </div>
             </button>
           );
@@ -437,13 +390,9 @@ function PresetDropdown({
 function LayeringNote({ preset }: { preset: PresetId }) {
   return (
     <p className="text-[13px] leading-relaxed text-base-fg/55">
-      Every shortcut starts from the{" "}
-      <span className="font-medium text-base-fg/80">
-        {PRESETS[preset].label}
-      </span>{" "}
-      preset. Any key you change is saved as your own{" "}
-      <span className="font-medium text-base-fg/80">override</span> on top —
-      these sit beside the dimmed preset default
+      Every shortcut starts from the <span className="font-medium text-base-fg/80">{PRESETS[preset].label}</span>{" "}
+      preset. Any key you change is saved as your own <span className="font-medium text-base-fg/80">override</span> on
+      top — these sit beside the dimmed preset default
       <span className="mx-1 inline-block h-1.5 w-1.5 translate-y-px rounded-full bg-primary align-middle" />
       and revert with ↺.
     </p>
@@ -452,16 +401,10 @@ function LayeringNote({ preset }: { preset: PresetId }) {
 
 // ── Search fields ─────────────────────────────────────────────────────────────
 
-function ModeToggle({
-  mode,
-  onChange,
-}: {
-  mode: SearchMode;
-  onChange: (mode: SearchMode) => void;
-}) {
+function ModeToggle({ mode, onChange }: { mode: SearchMode; onChange: (mode: SearchMode) => void }) {
   return (
     <div className="flex shrink-0 items-center gap-0.5 rounded-[3px] bg-ui-modal/60 p-0.5">
-      {(["name", "key"] as SearchMode[]).map((m) => (
+      {(["name", "key"] as SearchMode[]).map(m => (
         <button
           key={m}
           type="button"
@@ -482,13 +425,7 @@ function ModeToggle({
   );
 }
 
-function NameSearchField({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+function NameSearchField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div
       className={twMerge(
@@ -501,7 +438,7 @@ function NameSearchField({
       <input
         type="search"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         placeholder="Search by name — “rotate”, “camera up”…"
         className="h-10 w-full bg-transparent px-3 text-sm text-base-fg placeholder:text-base-fg/35 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
       />
@@ -541,30 +478,17 @@ function KeySearchField({
         listening ? "ring-primary/60" : "ring-transparent",
       )}
     >
-      <button
-        type="button"
-        onClick={onArm}
-        className="flex h-10 grow items-center gap-2 px-3 text-left"
-      >
-        <KeyIcon
-          className={twMerge(
-            "h-4 w-4 shrink-0",
-            listening ? "text-primary" : "text-base-fg/35",
-          )}
-        />
+      <button type="button" onClick={onArm} className="flex h-10 grow items-center gap-2 px-3 text-left">
+        <KeyIcon className={twMerge("h-4 w-4 shrink-0", listening ? "text-primary" : "text-base-fg/35")} />
         {listening ? (
-          <span className="animate-pulse text-[13px] font-medium text-primary">
-            Listening… press a shortcut
-          </span>
+          <span className="animate-pulse text-[13px] font-medium text-primary">Listening… press a shortcut</span>
         ) : binding ? (
           <span className="flex items-center gap-2 text-[13px] text-base-fg/60">
             <KbdBindings bindings={[binding]} />
             <span className="text-base-fg/35">— filtering by this key</span>
           </span>
         ) : (
-          <span className="text-sm text-base-fg/35">
-            Click, then press a shortcut to filter…
-          </span>
+          <span className="text-sm text-base-fg/35">Click, then press a shortcut to filter…</span>
         )}
       </button>
       {binding && (
@@ -634,9 +558,7 @@ function CollapsibleSurface({
               )}
             />
             <div className="flex min-w-0 grow flex-col">
-              <span className="truncate text-sm font-medium text-base-fg">
-                {title}
-              </span>
+              <span className="truncate text-sm font-medium text-base-fg">{title}</span>
               <span className="truncate text-xs text-base-fg/40">{hint}</span>
             </div>
           </button>
@@ -731,7 +653,7 @@ function ConfirmResetButton({
       type="button"
       onClick={handleClick}
       onBlur={disarm}
-      onKeyDown={(e) => {
+      onKeyDown={e => {
         // While armed, Escape cancels the confirm instead of closing the modal.
         if (e.key === "Escape" && armed) {
           e.stopPropagation();
@@ -758,21 +680,9 @@ function ConfirmResetButton({
           fresh transition. */}
       {armed &&
         (ready ? (
-          <TimedFill
-            key="drain"
-            from={1}
-            to={0}
-            durationMs={DISARM_MS}
-            className="bg-red"
-          />
+          <TimedFill key="drain" from={1} to={0} durationMs={DISARM_MS} className="bg-red" />
         ) : (
-          <TimedFill
-            key="charge"
-            from={0}
-            to={1}
-            durationMs={confirmDelayMs}
-            className="bg-red/40"
-          />
+          <TimedFill key="charge" from={0} to={1} durationMs={confirmDelayMs} className="bg-red/40" />
         ))}
       <span className="relative">{armed ? confirmLabel : idleLabel}</span>
     </button>
@@ -808,10 +718,7 @@ function TimedFill({
   return (
     <span
       aria-hidden="true"
-      className={twMerge(
-        "pointer-events-none absolute inset-0 origin-left",
-        className,
-      )}
+      className={twMerge("pointer-events-none absolute inset-0 origin-left", className)}
       style={{
         transform: `scaleX(${engaged ? to : from})`,
         transition: `transform ${durationMs}ms linear`,
@@ -852,9 +759,7 @@ function ActionRow({
         )}
         title={overridden ? "Customized" : undefined}
       />
-      <span className="grow truncate text-[13px] text-base-fg/90">
-        {action.label}
-      </span>
+      <span className="grow truncate text-[13px] text-base-fg/90">{action.label}</span>
 
       {/* Layering made literal: dimmed preset default → revert → live override. */}
       {overridden && (
@@ -879,11 +784,7 @@ function ActionRow({
           <ResetIcon className="h-3.5 w-3.5" />
         </button>
       )}
-      <KeybindCaptureInput
-        bindings={bindings}
-        accent={overridden}
-        onCapture={onCapture}
-      />
+      <KeybindCaptureInput bindings={bindings} accent={overridden} onCapture={onCapture} />
     </div>
   );
 }
@@ -898,15 +799,10 @@ function ConflictAlert({
   onCancel: () => void;
 }) {
   return (
-    <div
-      role="alert"
-      className="flex flex-col gap-2.5 rounded-none bg-red/[0.08] p-3.5 text-[13px] ring-1 ring-red/30"
-    >
+    <div role="alert" className="flex flex-col gap-2.5 rounded-none bg-red/[0.08] p-3.5 text-[13px] ring-1 ring-red/30">
       <span className="leading-relaxed text-base-fg/80">
         <KbdBindings bindings={[pending.binding]} /> is already used by{" "}
-        <strong className="font-medium text-base-fg">
-          {pending.conflicts.map((c) => ACTIONS[c]?.label).join(", ")}
-        </strong>
+        <strong className="font-medium text-base-fg">{pending.conflicts.map(c => ACTIONS[c]?.label).join(", ")}</strong>
         .
       </span>
       <div className="flex gap-2">
@@ -935,15 +831,7 @@ function ConflictAlert({
   );
 }
 
-function EmptyState({
-  mode,
-  query,
-  binding,
-}: {
-  mode: SearchMode;
-  query: string;
-  binding: Binding | null;
-}) {
+function EmptyState({ mode, query, binding }: { mode: SearchMode; query: string; binding: Binding | null }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-none bg-white/[0.06] px-6 py-12 text-center ring-1 ring-white/15">
       {mode === "key" ? (
@@ -968,9 +856,7 @@ function EmptyState({
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-      {children}
-    </span>
+    <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">{children}</span>
   );
 }
 
@@ -990,31 +876,16 @@ function presetDefault(id: ActionId, preset: PresetId): Binding[] {
 
 function SearchIcon({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="m20 20-3.4-3.4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
+      <path d="m20 20-3.4-3.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
 
 function KeyIcon({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <circle cx="8" cy="8" r="4.5" stroke="currentColor" strokeWidth="1.5" />
       <path
         d="m11.2 11.2 8 8M16 16l2.2-2.2M18.4 18.4 21 15.8"
@@ -1029,49 +900,23 @@ function KeyIcon({ className }: { className?: string }) {
 
 function ChevronIcon({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        d="m9 6 6 6-6 6"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="m9 6 6 6-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
 function ClearIcon({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        d="M6 6l12 12M18 6 6 18"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
 
 function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path
         d="m5 12.5 4.5 4.5L19 7"
         stroke="currentColor"
@@ -1085,19 +930,8 @@ function CheckIcon({ className }: { className?: string }) {
 
 function ResetIcon({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        d="M4 5v4h4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M4 5v4h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       <path
         d="M4.2 13a7.5 7.5 0 1 0 1.9-6.4L4 9"
         stroke="currentColor"
@@ -1111,19 +945,9 @@ function ResetIcon({ className }: { className?: string }) {
 
 function InfoIcon({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M12 11v5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
+      <path d="M12 11v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       <circle cx="12" cy="8" r="0.9" fill="currentColor" />
     </svg>
   );

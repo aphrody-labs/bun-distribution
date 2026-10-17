@@ -2795,10 +2795,7 @@ export type ToolArgsMap = {
 
 /** One typed async method per WinClean tool. */
 export abstract class GeneratedTools {
-  abstract call<N extends ToolName>(
-    name: N,
-    args?: ToolArgsMap[N],
-  ): Promise<ToolResult>;
+  abstract call<N extends ToolName>(name: N, args?: ToolArgsMap[N]): Promise<ToolResult>;
 
   /**
    * Performs static analysis and symbol recovery on a target Windows PE binary (.exe or .dll). Recovers sections, imports, entry point disassembly, and maps symbols using heuristics (no execution).
@@ -3069,18 +3066,14 @@ export abstract class GeneratedTools {
   /**
    * Sends a full Xbox 360 controller state update. buttons bitmask: DPAD_UP=1, DPAD_DOWN=2, DPAD_LEFT=4, DPAD_RIGHT=8, START=16, BACK=32, L3=64, R3=128, LB=256, RB=512, GUIDE=1024, A=4096, B=8192, X=16384, Y=32768. Axes lx/ly/rx/ry: [-32768, 32767]. Triggers lt/rt: [0, 255].
    */
-  gamepadSendXbox360State(
-    args: GamepadSendXbox360StateArgs,
-  ): Promise<ToolResult> {
+  gamepadSendXbox360State(args: GamepadSendXbox360StateArgs): Promise<ToolResult> {
     return this.call("gamepad_send_xbox360_state", args);
   }
 
   /**
    * Measures sustained capture throughput of a window for durationMs: GPU grabs with CPU readback per second (grabFps, grab latency avg/p95/max) and frames delivered by the compositor (deliveredFps). Windows also reports the GDI PrintWindow PNG rate for comparison.
    */
-  gamingCaptureBenchmark(
-    args?: GamingCaptureBenchmarkArgs,
-  ): Promise<ToolResult> {
+  gamingCaptureBenchmark(args?: GamingCaptureBenchmarkArgs): Promise<ToolResult> {
     return this.call("gaming_capture_benchmark", args);
   }
 
@@ -3108,18 +3101,14 @@ export abstract class GeneratedTools {
   /**
    * Read-only: background apps switch (BackgroundAccessApplications GlobalUserDisabled) and the LetAppsRunInBackground policy.
    */
-  gamingGetBackgroundApps(
-    args?: GamingGetBackgroundAppsArgs,
-  ): Promise<ToolResult> {
+  gamingGetBackgroundApps(args?: GamingGetBackgroundAppsArgs): Promise<ToolResult> {
     return this.call("gaming_get_background_apps", args);
   }
 
   /**
    * Read-only: Xbox Game Bar background recording and app capture (GameConfigStore GameDVR_Enabled, GameDVR AppCaptureEnabled, AllowGameDVR policy).
    */
-  gamingGetGameBarCapture(
-    args?: GamingGetGameBarCaptureArgs,
-  ): Promise<ToolResult> {
+  gamingGetGameBarCapture(args?: GamingGetGameBarCaptureArgs): Promise<ToolResult> {
     return this.call("gaming_get_game_bar_capture", args);
   }
 
@@ -3140,9 +3129,7 @@ export abstract class GeneratedTools {
   /**
    * Read-only: current, finest and coarsest kernel timer resolution (NtQueryTimerResolution) and the Windows 11 GlobalTimerResolutionRequests setting.
    */
-  gamingGetTimerResolution(
-    args?: GamingGetTimerResolutionArgs,
-  ): Promise<ToolResult> {
+  gamingGetTimerResolution(args?: GamingGetTimerResolutionArgs): Promise<ToolResult> {
     return this.call("gaming_get_timer_resolution", args);
   }
 
@@ -3415,9 +3402,7 @@ export abstract class GeneratedTools {
   /**
    * Enables SeDebugPrivilege on the current MCP process so subsequent OpenProcess calls can attach to protected processes (most non-PPL user-mode targets). Idempotent — safe to call repeatedly.
    */
-  memEnableDebugPrivilege(
-    args?: MemEnableDebugPrivilegeArgs,
-  ): Promise<ToolResult> {
+  memEnableDebugPrivilege(args?: MemEnableDebugPrivilegeArgs): Promise<ToolResult> {
     return this.call("mem_enable_debug_privilege", args);
   }
 

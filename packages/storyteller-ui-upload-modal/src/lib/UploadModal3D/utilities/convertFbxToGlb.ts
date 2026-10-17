@@ -70,10 +70,8 @@ function getWorker(): Worker | null {
   }
   try {
     worker = new ConvertFbxToGlbWorker();
-    worker.onmessage = (event) => {
-      const data = event.data as
-        | { id: number; ok: true; glb: ArrayBuffer }
-        | { id: number; ok: false; error: string };
+    worker.onmessage = event => {
+      const data = event.data as { id: number; ok: true; glb: ArrayBuffer } | { id: number; ok: false; error: string };
       const job = pendingJobs.get(data.id);
       if (!job) return;
       pendingJobs.delete(data.id);
@@ -99,9 +97,7 @@ function getWorker(): Worker | null {
       const jobs = [...pendingJobs.values()];
       pendingJobs.clear();
       for (const job of jobs) {
-        job.reject(
-          new Error("FBX conversion result failed to decode — please retry."),
-        );
+        job.reject(new Error("FBX conversion result failed to decode — please retry."));
       }
     };
   } catch {
@@ -110,10 +106,7 @@ function getWorker(): Worker | null {
   return worker;
 }
 
-function convertInWorker(
-  workerInstance: Worker,
-  buffer: ArrayBuffer,
-): Promise<ArrayBuffer> {
+function convertInWorker(workerInstance: Worker, buffer: ArrayBuffer): Promise<ArrayBuffer> {
   return new Promise<ArrayBuffer>((resolve, reject) => {
     const id = nextJobId++;
     pendingJobs.set(id, { resolve, reject });
@@ -126,14 +119,14 @@ async function convertOnMainThread(buffer: ArrayBuffer): Promise<ArrayBuffer> {
   return new Promise<ArrayBuffer>((resolve, reject) => {
     new GLTFExporter().parse(
       group,
-      (result) => {
+      result => {
         if (result instanceof ArrayBuffer) {
           resolve(result);
         } else {
           reject(new Error("GLTF export did not produce binary output."));
         }
       },
-      (error) => reject(error),
+      error => reject(error),
       { binary: true, animations: group.animations ?? [] },
     );
   });

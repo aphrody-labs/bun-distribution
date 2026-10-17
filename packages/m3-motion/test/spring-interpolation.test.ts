@@ -65,9 +65,7 @@ describe("springDurationMs", () => {
   });
 
   test("clamps an undamped spring to the maximum", () => {
-    expect(springDurationMs({ stiffness: 200, damping: 0, mass: 1 })).toBe(
-      2000,
-    );
+    expect(springDurationMs({ stiffness: 200, damping: 0, mass: 1 })).toBe(2000);
   });
 
   test("clamps an extremely over-damped/stiff spring to the minimum floor", () => {
@@ -87,8 +85,7 @@ describe("springDurationMs", () => {
 // ---------------------------------------------------------------------------
 
 describe("springToCssEasing", () => {
-  const bezierRe =
-    /^cubic-bezier\(\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*\)$/;
+  const bezierRe = /^cubic-bezier\(\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*\)$/;
 
   test("returns a syntactically valid cubic-bezier for all regimes", () => {
     for (const p of [underDamped, criticallyDamped, overDamped]) {
@@ -100,9 +97,7 @@ describe("springToCssEasing", () => {
 
   test("bouncy (under-damped) springs fall back to the M3 emphasized decelerate", () => {
     // zeta < 0.85 -> documented fallback (overshoot is impossible in cubic-bezier).
-    expect(springToCssEasing(underDamped)).toBe(
-      "cubic-bezier(0.05, 0.7, 0.1, 1)",
-    );
+    expect(springToCssEasing(underDamped)).toBe("cubic-bezier(0.05, 0.7, 0.1, 1)");
   });
 
   test("x control points stay within the valid [0,1] range", () => {
@@ -154,7 +149,7 @@ describe("springToWaapiKeyframes", () => {
     });
     // Some interior sample must exceed `to` (1) — the bounce.
     const interior = samples.slice(1, samples.length - 1);
-    const overshoots = interior.some((s) => s.value > 1.001);
+    const overshoots = interior.some(s => s.value > 1.001);
     expect(overshoots).toBe(true);
   });
 
@@ -165,7 +160,7 @@ describe("springToWaapiKeyframes", () => {
         to: 1,
         steps: 120,
       });
-      const maxValue = Math.max(...samples.map((s) => s.value));
+      const maxValue = Math.max(...samples.map(s => s.value));
       expect(maxValue).toBeLessThanOrEqual(1 + 1e-6);
     }
   });
@@ -190,12 +185,8 @@ describe("springToWaapiKeyframes", () => {
   });
 
   test("respects a custom step count (min 2 enforced)", () => {
-    expect(
-      springToWaapiKeyframes(underDamped, { steps: 10 }).samples,
-    ).toHaveLength(10);
-    expect(
-      springToWaapiKeyframes(underDamped, { steps: 1 }).samples,
-    ).toHaveLength(2);
+    expect(springToWaapiKeyframes(underDamped, { steps: 10 }).samples).toHaveLength(10);
+    expect(springToWaapiKeyframes(underDamped, { steps: 1 }).samples).toHaveLength(2);
   });
 
   test("emits property keyframes when a property + format is supplied", () => {
@@ -204,7 +195,7 @@ describe("springToWaapiKeyframes", () => {
       to: 0,
       steps: 20,
       property: "transform",
-      format: (v) => `translateX(${v}px)`,
+      format: v => `translateX(${v}px)`,
     });
     expect(keyframes).toHaveLength(20);
     const first = keyframes[0] as { offset: number; transform: string };
@@ -282,7 +273,7 @@ describe("springFromPreset", () => {
   test("round-trips a preset through the full WAAPI pipeline without NaN", () => {
     const params = springFromPreset(m3Springs.default.spatial);
     const { samples, options } = springToWaapiKeyframes(params, { steps: 40 });
-    expect(samples.every((s) => isFinite(s.value))).toBe(true);
+    expect(samples.every(s => isFinite(s.value))).toBe(true);
     expect(isFinite(options.duration)).toBe(true);
   });
 });

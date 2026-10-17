@@ -23,9 +23,7 @@ export function buildMoveGroup({
     tracks,
     trackId: anchorRef.trackId,
   });
-  const anchorElement = anchorTrack?.elements.find(
-    (element) => element.id === anchorRef.elementId,
-  );
+  const anchorElement = anchorTrack?.elements.find(element => element.id === anchorRef.elementId);
   const anchorPlacement = getTrackPlacementById({
     tracks,
     trackId: anchorRef.trackId,
@@ -35,7 +33,7 @@ export function buildMoveGroup({
   }
 
   const seen = new Set<string>();
-  const orderedRefs = [anchorRef, ...selectedElements].filter((elementRef) => {
+  const orderedRefs = [anchorRef, ...selectedElements].filter(elementRef => {
     if (seen.has(elementRef.elementId)) {
       return false;
     }
@@ -49,9 +47,7 @@ export function buildMoveGroup({
       tracks,
       trackId: elementRef.trackId,
     });
-    const element = track?.elements.find(
-      (trackElement) => trackElement.id === elementRef.elementId,
-    );
+    const element = track?.elements.find(trackElement => trackElement.id === elementRef.elementId);
     const placement = getTrackPlacementById({
       tracks,
       trackId: elementRef.trackId,
@@ -82,9 +78,7 @@ export function buildMoveGroup({
   }
 
   const anchor = members.find(
-    (member) =>
-      member.trackId === anchorRef.trackId &&
-      member.elementId === anchorRef.elementId,
+    member => member.trackId === anchorRef.trackId && member.elementId === anchorRef.elementId,
   );
   if (!anchor) {
     return null;

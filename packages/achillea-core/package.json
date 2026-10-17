@@ -3,6 +3,13 @@
   "version": "1.4.4",
   "private": false,
   "description": "Logique métier portable (multi-runtime : navigateur, edge Deno/Web, Node, Bun) — Elo, classement, sanctions, licences, votes, validation. Aucune dépendance Discord / ORM / DI.",
+  "license": "Apache-2.0",
+  "files": [
+    "README.md",
+    "src",
+    "tests",
+    "tsconfig.json"
+  ],
   "type": "module",
   "sideEffects": false,
   "main": "./src/index.ts",
@@ -39,6 +46,10 @@
     "./votes": "./src/votes/index.ts",
     "./wallet": "./src/wallet/index.ts"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "scripts": {
     "lint": "bun lint -c ../rg-config/oxlintrc.json -A style -A pedantic -A restriction src tests",
     "lint:fix": "bun lint -c ../rg-config/oxlintrc.json -A style -A pedantic -A restriction --fix src tests",
@@ -58,16 +69,5 @@
   },
   "engines": {
     "bun": "=1.4.4"
-  },
-  "license": "Apache-2.0",
-  "files": [
-    "README.md",
-    "src",
-    "tests",
-    "tsconfig.json"
-  ],
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   }
 }

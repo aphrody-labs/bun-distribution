@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, it } from "bun:test";
-import {
-  openExternalUrl,
-  type ExternalOpenerWindow,
-} from "../src/shims/provider";
+import { openExternalUrl, type ExternalOpenerWindow } from "../src/shims/provider";
 
 function fakeWindow(extra: Partial<ExternalOpenerWindow> = {}) {
   const calls: string[] = [];
@@ -20,8 +17,8 @@ describe("openExternalUrl", () => {
   it("prefers the Tauri 3 opener plugin", async () => {
     const { win, calls } = fakeWindow({
       __TAURI__: {
-        opener: { openUrl: async (url) => void calls.push(`opener ${url}`) },
-        shell: { open: async (url) => void calls.push(`shell ${url}`) },
+        opener: { openUrl: async url => void calls.push(`opener ${url}`) },
+        shell: { open: async url => void calls.push(`shell ${url}`) },
       },
     });
     await openExternalUrl("https://example.com", "tauri", win);
@@ -31,7 +28,7 @@ describe("openExternalUrl", () => {
   it("keeps the Tauri 2 shell plugin working", async () => {
     const { win, calls } = fakeWindow({
       __TAURI__: {
-        shell: { open: async (url) => void calls.push(`shell ${url}`) },
+        shell: { open: async url => void calls.push(`shell ${url}`) },
       },
     });
     await openExternalUrl("https://example.com", "tauri", win);
@@ -49,27 +46,21 @@ describe("openExternalUrl", () => {
       },
     });
     await openExternalUrl("https://example.com", "tauri", throwing.win);
-    expect(throwing.calls).toEqual([
-      "window.open https://example.com _blank noopener,noreferrer",
-    ]);
+    expect(throwing.calls).toEqual(["window.open https://example.com _blank noopener,noreferrer"]);
 
     const bare = fakeWindow();
     await openExternalUrl("https://example.com", "tauri", bare.win);
-    expect(bare.calls).toEqual([
-      "window.open https://example.com _blank noopener,noreferrer",
-    ]);
+    expect(bare.calls).toEqual(["window.open https://example.com _blank noopener,noreferrer"]);
   });
 
   it("never calls Tauri plugins outside tauri mode and ignores a missing window", async () => {
     const { win, calls } = fakeWindow({
       __TAURI__: {
-        opener: { openUrl: async (url) => void calls.push(`opener ${url}`) },
+        opener: { openUrl: async url => void calls.push(`opener ${url}`) },
       },
     });
     await openExternalUrl("https://example.com", "browser", win);
-    expect(calls).toEqual([
-      "window.open https://example.com _blank noopener,noreferrer",
-    ]);
+    expect(calls).toEqual(["window.open https://example.com _blank noopener,noreferrer"]);
     await openExternalUrl("https://example.com", "tauri", undefined);
   });
 });

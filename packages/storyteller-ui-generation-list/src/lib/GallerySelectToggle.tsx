@@ -6,8 +6,8 @@ import { useGallerySelectionStore } from "./gallery-selection-store";
 // Sits next to GalleryViewToggle; the mode is shared with the gallery via
 // useGallerySelectionStore.
 export function GallerySelectToggle() {
-  const active = useGallerySelectionStore((s) => s.active);
-  const setActive = useGallerySelectionStore((s) => s.setActive);
+  const active = useGallerySelectionStore(s => s.active);
+  const setActive = useGallerySelectionStore(s => s.setActive);
   const label = active ? "Exit selection" : "Select items";
 
   return (
@@ -19,9 +19,7 @@ export function GallerySelectToggle() {
           aria-pressed={active}
           onClick={() => setActive(!active)}
           className={`flex h-6 w-6 items-center justify-center rounded-[3px] text-xs transition-colors ${
-            active
-              ? "bg-white/10 text-white"
-              : "text-white/45 hover:text-white/80"
+            active ? "bg-white/10 text-white" : "text-white/45 hover:text-white/80"
           }`}
         >
           <SquareCheckIcon />

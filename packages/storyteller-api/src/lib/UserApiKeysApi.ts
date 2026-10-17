@@ -53,7 +53,7 @@ export class UserApiKeysApi extends ApiManager {
         api_keys?: ApiKeyInfo[];
       } & ErrorBody
     >(endpoint, { method: "GET" })
-      .then((response) => {
+      .then(response => {
         if (!response.success) {
           return {
             success: false,
@@ -65,21 +65,15 @@ export class UserApiKeysApi extends ApiManager {
           data: { api_keys: response.api_keys ?? [] },
         };
       })
-      .catch((err) => ({ success: false, errorMessage: err.message }));
+      .catch(err => ({ success: false, errorMessage: err.message }));
   }
 
   // Single-key lookup. Not currently used by the settings UI (the list already
   // carries everything), but provided for parity with the backend.
-  public GetApiKey({
-    token,
-  }: {
-    token: string;
-  }): Promise<ApiResponse<ApiKeyInfo>> {
+  public GetApiKey({ token }: { token: string }): Promise<ApiResponse<ApiKeyInfo>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/api_keys/${encodeURIComponent(token)}`;
-    return this.jsonFetch<
-      { success: boolean; api_key?: ApiKeyInfo } & ErrorBody
-    >(endpoint, { method: "GET" })
-      .then((response) => {
+    return this.jsonFetch<{ success: boolean; api_key?: ApiKeyInfo } & ErrorBody>(endpoint, { method: "GET" })
+      .then(response => {
         if (!response.success || !response.api_key) {
           return {
             success: false,
@@ -88,7 +82,7 @@ export class UserApiKeysApi extends ApiManager {
         }
         return { success: true, data: response.api_key };
       })
-      .catch((err) => ({ success: false, errorMessage: err.message }));
+      .catch(err => ({ success: false, errorMessage: err.message }));
   }
 
   public CreateApiKey({
@@ -109,7 +103,7 @@ export class UserApiKeysApi extends ApiManager {
       method: "POST",
       body: { name, maybe_description: maybeDescription ?? null },
     })
-      .then((response) => {
+      .then(response => {
         if (!response.success || !response.api_key_token || !response.api_key) {
           return {
             success: false,
@@ -124,7 +118,7 @@ export class UserApiKeysApi extends ApiManager {
           },
         };
       })
-      .catch((err) => ({ success: false, errorMessage: err.message }));
+      .catch(err => ({ success: false, errorMessage: err.message }));
   }
 
   public UpdateApiKey({
@@ -139,7 +133,7 @@ export class UserApiKeysApi extends ApiManager {
       method: "PUT",
       body: { maybe_description: maybeDescription },
     })
-      .then((response) => {
+      .then(response => {
         if (!response.success) {
           return {
             success: false,
@@ -148,19 +142,15 @@ export class UserApiKeysApi extends ApiManager {
         }
         return { success: true };
       })
-      .catch((err) => ({ success: false, errorMessage: err.message }));
+      .catch(err => ({ success: false, errorMessage: err.message }));
   }
 
-  public DeleteApiKey({
-    token,
-  }: {
-    token: string;
-  }): Promise<ApiResponse<null>> {
+  public DeleteApiKey({ token }: { token: string }): Promise<ApiResponse<null>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/api_keys/${encodeURIComponent(token)}`;
     return this.jsonFetch<{ success: boolean } & ErrorBody>(endpoint, {
       method: "DELETE",
     })
-      .then((response) => {
+      .then(response => {
         if (!response.success) {
           return {
             success: false,
@@ -169,15 +159,12 @@ export class UserApiKeysApi extends ApiManager {
         }
         return { success: true };
       })
-      .catch((err) => ({ success: false, errorMessage: err.message }));
+      .catch(err => ({ success: false, errorMessage: err.message }));
   }
 
   // Parses JSON for both 2xx and 4xx so `BadInputWithSimpleMessage` text
   // reaches the caller. The base ApiManager.fetch throws on non-2xx.
-  private async jsonFetch<T>(
-    endpoint: string,
-    { method, body }: { method: string; body?: unknown },
-  ): Promise<T> {
+  private async jsonFetch<T>(endpoint: string, { method, body }: { method: string; body?: unknown }): Promise<T> {
     const response = await fetch(endpoint, {
       method,
       headers: buildSessionHeaders({

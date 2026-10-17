@@ -65,12 +65,7 @@ export function realSystem(env: Env = process.env): System {
           windowsHide: true,
           cwd: options.cwd,
           env: { ...process.env, ...env, ...options.env },
-          stdin:
-            options.input === undefined
-              ? options.inherit
-                ? "inherit"
-                : "ignore"
-              : "pipe",
+          stdin: options.input === undefined ? (options.inherit ? "inherit" : "ignore") : "pipe",
           stdout: options.inherit ? "inherit" : "pipe",
           stderr: options.inherit ? "inherit" : "pipe",
         });
@@ -82,11 +77,7 @@ export function realSystem(env: Env = process.env): System {
           timedOut: false,
         };
       }
-      if (
-        options.input !== undefined &&
-        proc.stdin &&
-        typeof proc.stdin !== "number"
-      ) {
+      if (options.input !== undefined && proc.stdin && typeof proc.stdin !== "number") {
         proc.stdin.write(options.input);
         await proc.stdin.end();
       }
@@ -97,17 +88,13 @@ export function realSystem(env: Env = process.env): System {
             proc.kill();
           }, options.timeoutMs)
         : undefined;
-      const [stdout, stderr, code] = await Promise.all([
-        readStream(proc.stdout),
-        readStream(proc.stderr),
-        proc.exited,
-      ]);
+      const [stdout, stderr, code] = await Promise.all([readStream(proc.stdout), readStream(proc.stderr), proc.exited]);
       if (timer) clearTimeout(timer);
       return { code: timedOut ? 124 : code, stdout, stderr, timedOut };
     },
-    which: (name) => Bun.which(name) ?? undefined,
+    which: name => Bun.which(name) ?? undefined,
     tcpOpen: (host, port, timeoutMs) =>
-      new Promise((resolve) => {
+      new Promise(resolve => {
         const socket = connect({ host, port });
         const done = (ok: boolean) => {
           socket.destroy();
@@ -135,7 +122,7 @@ export function realSystem(env: Env = process.env): System {
         return undefined;
       }
     },
-    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    sleep: ms => new Promise(resolve => setTimeout(resolve, ms)),
     now: () => new Date(),
   };
 }
@@ -149,15 +136,11 @@ export interface FakeSystem extends System {
   free: number | undefined;
   handlers: {
     match: string | RegExp;
-    result:
-      | Partial<RunResult>
-      | ((argv: string[], options: RunOptions) => Partial<RunResult>);
+    result: Partial<RunResult> | ((argv: string[], options: RunOptions) => Partial<RunResult>);
   }[];
 }
 
-export function fakeSystem(
-  init: Partial<Pick<FakeSystem, "platform" | "env" | "tools" | "free">> = {},
-): FakeSystem {
+export function fakeSystem(init: Partial<Pick<FakeSystem, "platform" | "env" | "tools" | "free">> = {}): FakeSystem {
   const fake: FakeSystem = {
     platform: init.platform ?? "win32",
     env: init.env ?? {},
@@ -171,15 +154,9 @@ export function fakeSystem(
       fake.calls.push({ argv, options });
       const line = argv.join(" ");
       for (const handler of fake.handlers) {
-        const hit =
-          typeof handler.match === "string"
-            ? line.startsWith(handler.match)
-            : handler.match.test(line);
+        const hit = typeof handler.match === "string" ? line.startsWith(handler.match) : handler.match.test(line);
         if (!hit) continue;
-        const partial =
-          typeof handler.result === "function"
-            ? handler.result(argv, options)
-            : handler.result;
+        const partial = typeof handler.result === "function" ? handler.result(argv, options) : handler.result;
         return { code: 0, stdout: "", stderr: "", timedOut: false, ...partial };
       }
       return {
@@ -189,9 +166,9 @@ export function fakeSystem(
         timedOut: false,
       };
     },
-    which: (name) => fake.tools[name],
+    which: name => fake.tools[name],
     tcpOpen: async (host, port) => fake.open.has(`${host}:${port}`),
-    httpGet: async (url) => fake.http[url],
+    httpGet: async url => fake.http[url],
     freeBytes: async () => fake.free,
     sleep: async () => {},
     now: () => new Date("2026-10-06T12:00:00Z"),

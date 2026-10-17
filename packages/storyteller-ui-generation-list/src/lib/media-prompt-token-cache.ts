@@ -27,9 +27,7 @@ function notifySubscribers() {
 }
 
 async function fetchMissing(mediaTokens: readonly string[]): Promise<void> {
-  const missing = mediaTokens.filter(
-    (t) => t && !tokenCache.has(t) && !inFlight.has(t),
-  );
+  const missing = mediaTokens.filter(t => t && !tokenCache.has(t) && !inFlight.has(t));
   if (missing.length === 0) return;
   for (const t of missing) inFlight.add(t);
 
@@ -38,11 +36,7 @@ async function fetchMissing(mediaTokens: readonly string[]): Promise<void> {
     for (let i = 0; i < missing.length; i += CHUNK_SIZE) {
       chunks.push(missing.slice(i, i + CHUNK_SIZE));
     }
-    const responses = await Promise.all(
-      chunks.map((chunk) =>
-        getApi().ListMediaFilesByTokens({ mediaTokens: chunk }),
-      ),
-    );
+    const responses = await Promise.all(chunks.map(chunk => getApi().ListMediaFilesByTokens({ mediaTokens: chunk })));
     for (const response of responses) {
       if (!response.success || !response.data) continue;
       for (const file of response.data) {
@@ -69,13 +63,11 @@ async function fetchMissing(mediaTokens: readonly string[]): Promise<void> {
 // absent from the map is still resolving (use `.has()` to distinguish that
 // from a resolved-but-promptless item). Triggers a batched fetch for any not
 // yet resolved.
-export function useMediaPromptTokens(
-  mediaTokens: readonly (string | null | undefined)[],
-): Map<string, string> {
+export function useMediaPromptTokens(mediaTokens: readonly (string | null | undefined)[]): Map<string, string> {
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
-    const cb = () => forceUpdate((n) => n + 1);
+    const cb = () => forceUpdate(n => n + 1);
     subscribers.add(cb);
     return () => {
       subscribers.delete(cb);

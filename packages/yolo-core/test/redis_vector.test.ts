@@ -69,8 +69,7 @@ describe("Native Bun Redis Vector & Train DB", () => {
     // Add instruction tuning sample
     await trainDb.addInstruction({
       id: "inst-1",
-      instruction:
-        "Convert natural language query to vector search parameters.",
+      instruction: "Convert natural language query to vector search parameters.",
       input: "Search for Gemma 4 sliding window documentation.",
       output: JSON.stringify({ query: "Gemma 4 sliding window", topK: 5 }),
       thought: "Extract topic and default topK to 5.",
@@ -92,9 +91,7 @@ describe("Native Bun Redis Vector & Train DB", () => {
 
     const record = await trainDb.getRecord("inst-1");
     expect(record).not.toBeNull();
-    expect(record?.instruction).toBe(
-      "Convert natural language query to vector search parameters.",
-    );
+    expect(record?.instruction).toBe("Convert natural language query to vector search parameters.");
 
     const list = await trainDb.listRecords(10);
     expect(list.length).toBe(2);

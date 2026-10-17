@@ -3,9 +3,19 @@
   "version": "1.4.4",
   "private": false,
   "description": "Recherche unifiée sur les trois domaines du réseau : association, wiki Azalée, e-sport Achilléa",
+  "license": "Apache-2.0",
+  "files": [
+    "src",
+    "test",
+    "tsconfig.json"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "scripts": {
     "lint": "bun lint -c ../rg-config/oxlintrc.json src",
@@ -15,15 +25,5 @@
   },
   "engines": {
     "bun": "=1.4.4"
-  },
-  "license": "Apache-2.0",
-  "files": [
-    "src",
-    "test",
-    "tsconfig.json"
-  ],
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   }
 }

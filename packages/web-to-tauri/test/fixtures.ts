@@ -20,8 +20,7 @@ export function startSite(): Site {
     hostname: "127.0.0.1",
     fetch(req) {
       const url = new URL(req.url);
-      if (url.pathname === "/hop")
-        return Response.redirect(`${aOrigin}/home`, 302);
+      if (url.pathname === "/hop") return Response.redirect(`${aOrigin}/home`, 302);
       return new Response("b", { headers: { "content-type": "text/plain" } });
     },
   });
@@ -39,10 +38,7 @@ export function startSite(): Site {
           const headers = new Headers({
             "content-type": "text/html; charset=utf-8",
           });
-          headers.append(
-            "set-cookie",
-            "sid=abc123; Path=/; Secure; HttpOnly; SameSite=None",
-          );
+          headers.append("set-cookie", "sid=abc123; Path=/; Secure; HttpOnly; SameSite=None");
           headers.append("set-cookie", "__Host-t=1; Secure; Path=/");
           return new Response(
             `<!doctype html><html lang="fr"><head><title>Demo Site</title>
@@ -77,17 +73,12 @@ export function startSite(): Site {
             start_url: "/home",
             display: "standalone",
             theme_color: "#336699",
-            icons: [
-              { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
-            ],
+            icons: [{ src: "/icon-512.png", sizes: "512x512", type: "image/png" }],
           });
         case "/icon-512.png":
-          return new Response(
-            solidIconPng(512, [10, 20, 30, 255]).slice().buffer as ArrayBuffer,
-            {
-              headers: { "content-type": "image/png" },
-            },
-          );
+          return new Response(solidIconPng(512, [10, 20, 30, 255]).slice().buffer as ArrayBuffer, {
+            headers: { "content-type": "image/png" },
+          });
         default:
           return new Response("not found", { status: 404 });
       }
@@ -98,7 +89,7 @@ export function startSite(): Site {
   return {
     a: aOrigin,
     b: bOrigin,
-    stop: () => servers.forEach((server) => server.stop(true)),
+    stop: () => servers.forEach(server => server.stop(true)),
   };
 }
 
@@ -106,10 +97,7 @@ export async function tempDir(prefix: string): Promise<string> {
   return mkdtemp(join(tmpdir(), prefix));
 }
 
-export async function writeTree(
-  root: string,
-  files: Record<string, string>,
-): Promise<void> {
+export async function writeTree(root: string, files: Record<string, string>): Promise<void> {
   for (const [path, content] of Object.entries(files)) {
     const full = join(root, path);
     await mkdir(dirname(full), { recursive: true });

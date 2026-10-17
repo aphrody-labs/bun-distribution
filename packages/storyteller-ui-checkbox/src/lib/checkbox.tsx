@@ -17,20 +17,11 @@ const CheckIcon = ({ className }: { className?: string }) => (
     xmlns="http://www.w3.org/2000/svg"
     className={twMerge("block", className)}
   >
-    <path
-      d="M1 4L3.6 6.6L9 1"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <path d="M1 4L3.6 6.6L9 1" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-type NativeInputProps = Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "type" | "size"
->;
+type NativeInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "size">;
 
 export interface CheckboxProps extends NativeInputProps {
   label?: ReactNode;
@@ -107,22 +98,11 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           )}
         >
           {isChecked && (
-            <CheckIcon
-              className={twMerge(
-                "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-                iconDims,
-              )}
-            />
+            <CheckIcon className={twMerge("absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2", iconDims)} />
           )}
         </span>
         {label != null && (
-          <span
-            className={twMerge(
-              "text-sm text-base-fg/70",
-              disabled && "text-base-fg/40",
-              labelClassName,
-            )}
-          >
+          <span className={twMerge("text-sm text-base-fg/70", disabled && "text-base-fg/40", labelClassName)}>
             {label}
           </span>
         )}

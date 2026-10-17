@@ -18,18 +18,7 @@ export const languageMapping = Object.entries({
   objc: ["m", "mm"],
   ocaml: ["ml", "mli", "mll", "mly"],
   perl: ["pl"],
-  php: [
-    "php",
-    "php1",
-    "php2",
-    "php3",
-    "php4",
-    "php5",
-    "php6",
-    "phps",
-    "phpt",
-    "phtml",
-  ],
+  php: ["php", "php1", "php2", "php3", "php4", "php5", "php6", "phps", "phpt", "phtml"],
   powershell: ["ps1", "psd1", "psm1"],
   rust: ["rs"],
 }).reduce<Map<string, string>>((mapping, [id, exts]) => {
@@ -38,9 +27,7 @@ export const languageMapping = Object.entries({
 }, new Map());
 
 export function WithPrismTheme() {
-  const [isDark, setIsDark] = useState(
-    () => window.matchMedia("(prefers-color-scheme: dark)").matches,
-  );
+  const [isDark, setIsDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -50,9 +37,5 @@ export function WithPrismTheme() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  return isDark ? (
-    <link rel="stylesheet" href={oneDarkCss} />
-  ) : (
-    <link rel="stylesheet" href={oneLightCss} />
-  );
+  return isDark ? <link rel="stylesheet" href={oneDarkCss} /> : <link rel="stylesheet" href={oneLightCss} />;
 }

@@ -56,9 +56,7 @@ export const LETTRES_DRAGON_AVANT_BOULE: readonly LettreMesuree[] = [
   ["A", 0.756],
   ["G", 0.679],
 ];
-export const LETTRES_DRAGON_APRES_BOULE: readonly LettreMesuree[] = [
-  ["N", 0.641],
-];
+export const LETTRES_DRAGON_APRES_BOULE: readonly LettreMesuree[] = [["N", 0.641]];
 export const LETTRES_BALL: readonly LettreMesuree[] = [
   ["B", 0.641],
   ["A", 0.667],

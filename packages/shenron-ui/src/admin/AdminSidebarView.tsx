@@ -48,7 +48,7 @@ export function AdminSidebarView({
   }, []);
 
   const toggleCollapsed = () =>
-    setCollapsed((v) => {
+    setCollapsed(v => {
       const next = !v;
       localStorage.setItem("admin-sidebar-collapsed", next ? "1" : "0");
       if (next) setQ(""); // la recherche est masquée en mode replié
@@ -59,7 +59,7 @@ export function AdminSidebarView({
     if (!q.trim()) return links;
     const needle = q.trim().toLowerCase();
     return links.filter(
-      (l) =>
+      l =>
         l.label.toLowerCase().includes(needle) ||
         l.description.toLowerCase().includes(needle) ||
         l.href.toLowerCase().includes(needle),
@@ -70,14 +70,14 @@ export function AdminSidebarView({
     () =>
       sections
         .map(({ id }) => {
-          const config = sections.find((s) => s.id === id);
+          const config = sections.find(s => s.id === id);
           return {
             id,
             label: config?.label ?? id,
-            items: filtered.filter((l) => l.section === id),
+            items: filtered.filter(l => l.section === id),
           };
         })
-        .filter((g) => g.items.length > 0),
+        .filter(g => g.items.length > 0),
     [filtered, sections],
   );
 
@@ -87,24 +87,19 @@ export function AdminSidebarView({
   const activeHref = useMemo(
     () =>
       links
-        .filter(
-          (link) =>
-            pathname === link.href || pathname?.startsWith(`${link.href}/`),
-        )
+        .filter(link => pathname === link.href || pathname?.startsWith(`${link.href}/`))
         .toSorted((a, b) => b.href.length - a.href.length)[0]?.href,
     [pathname, links],
   );
 
   useEffect(() => {
-    const activeSection = links.find(
-      (link) => link.href === activeHref,
-    )?.section;
+    const activeSection = links.find(link => link.href === activeHref)?.section;
     if (!activeSection) return;
-    setExpandedSections((current) => new Set(current).add(activeSection));
+    setExpandedSections(current => new Set(current).add(activeSection));
   }, [activeHref, links]);
 
   const toggleSection = (section: SectionId) =>
-    setExpandedSections((current) => {
+    setExpandedSections(current => {
       const next = new Set(current);
       if (next.has(section)) next.delete(section);
       else next.add(section);
@@ -115,12 +110,10 @@ export function AdminSidebarView({
     <>
       {/* Barre mobile — bouton d'ouverture du tiroir */}
       <div className="sticky top-16 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-white/10 bg-[#171717]/95 px-4 backdrop-blur min-[600px]:hidden">
-        <span className="text-sm font-semibold tracking-tight text-white">
-          Administration
-        </span>
+        <span className="text-sm font-semibold tracking-tight text-white">Administration</span>
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setOpen(v => !v)}
           className="min-h-12 rounded-xl bg-blue-500 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
           aria-expanded={open}
           aria-label={open ? "Fermer le menu admin" : "Ouvrir le menu admin"}
@@ -158,12 +151,8 @@ export function AdminSidebarView({
               <>
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-semibold tracking-tight text-white">
-                      {brand}
-                    </p>
-                    <p className="mt-0.5 text-xs text-white/50">
-                      Espace administrateur
-                    </p>
+                    <p className="text-sm font-semibold tracking-tight text-white">{brand}</p>
+                    <p className="mt-0.5 text-xs text-white/50">Espace administrateur</p>
                   </div>
                   <button
                     type="button"
@@ -179,7 +168,7 @@ export function AdminSidebarView({
                   <input
                     type="search"
                     value={q}
-                    onChange={(e) => setQ(e.target.value)}
+                    onChange={e => setQ(e.target.value)}
                     placeholder="Rechercher dans l’administration"
                     className="h-12 w-full rounded-xl border border-white/10 bg-white/[.04] px-3 text-sm text-white placeholder:text-white/40 outline-none transition-colors focus:border-blue-400 focus:bg-white/[.06] focus:ring-2 focus:ring-blue-400/20"
                     aria-label="Filtrer le menu"
@@ -190,16 +179,13 @@ export function AdminSidebarView({
           </div>
 
           {/* Navigation par sections — flex-1 + scroll interne */}
-          <nav
-            className="flex-1 space-y-6 overflow-y-auto px-3 py-4 min-[600px]:px-4"
-            aria-label="Navigation admin"
-          >
+          <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4 min-[600px]:px-4" aria-label="Navigation admin">
             {grouped.length === 0 ? (
               <p className="px-2 text-sm text-white/50">
                 Aucune section ne correspond à &laquo;&nbsp;{q}&nbsp;&raquo;.
               </p>
             ) : (
-              grouped.map((group) => (
+              grouped.map(group => (
                 <div key={group.id} className="space-y-1.5">
                   {/* Les familles limitent la densité visuelle ; la recherche ouvre tous les résultats. */}
                   {collapsed ? (
@@ -208,9 +194,7 @@ export function AdminSidebarView({
                     <button
                       type="button"
                       onClick={() => toggleSection(group.id)}
-                      aria-expanded={
-                        q.trim() ? true : expandedSections.has(group.id)
-                      }
+                      aria-expanded={q.trim() ? true : expandedSections.has(group.id)}
                       className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2 py-1 text-left transition-colors hover:bg-white/[.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"
                     >
                       <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/45">
@@ -222,35 +206,25 @@ export function AdminSidebarView({
                       </span>
                       <ChevronDown
                         className={`h-4 w-4 text-white/40 transition-transform ${
-                          q.trim() || expandedSections.has(group.id)
-                            ? "rotate-180"
-                            : ""
+                          q.trim() || expandedSections.has(group.id) ? "rotate-180" : ""
                         }`}
                       />
                     </button>
                   )}
 
-                  {(collapsed ||
-                    q.trim() ||
-                    expandedSections.has(group.id)) && (
+                  {(collapsed || q.trim() || expandedSections.has(group.id)) && (
                     <ul className="space-y-1">
-                      {group.items.map((l) => {
+                      {group.items.map(l => {
                         const active = activeHref === l.href;
                         return (
                           <li key={l.href}>
                             <Link
                               href={l.href}
                               onClick={() => setOpen(false)}
-                              title={
-                                collapsed
-                                  ? `${l.label} — ${l.description}`
-                                  : l.description
-                              }
+                              title={collapsed ? `${l.label} — ${l.description}` : l.description}
                               aria-current={active ? "page" : undefined}
                               className={`group relative flex min-h-12 items-center gap-3 rounded-xl px-2.5 py-2 transition-colors ${
-                                collapsed
-                                  ? "min-[600px]:justify-center min-[600px]:gap-0"
-                                  : ""
+                                collapsed ? "min-[600px]:justify-center min-[600px]:gap-0" : ""
                               } ${
                                 active
                                   ? "bg-blue-500/15 text-white"
@@ -270,14 +244,10 @@ export function AdminSidebarView({
                               </span>
 
                               {/* Libellé + description — masqués en mode replié (desktop) */}
-                              <div
-                                className={`flex-1 min-w-0 ${collapsed ? "min-[600px]:hidden" : ""}`}
-                              >
+                              <div className={`flex-1 min-w-0 ${collapsed ? "min-[600px]:hidden" : ""}`}>
                                 <span
                                   className={`block text-sm font-medium leading-tight transition-colors ${
-                                    active
-                                      ? "text-white"
-                                      : "text-white/85 group-hover:text-white"
+                                    active ? "text-white" : "text-white/85 group-hover:text-white"
                                   }`}
                                 >
                                   {l.label}
@@ -306,11 +276,7 @@ export function AdminSidebarView({
             >
               {collapsed ? <span aria-hidden>&larr;</span> : "← Retour au site"}
             </Link>
-            {!collapsed && (
-              <span className="text-xs text-white/35">
-                {links.length} rubriques
-              </span>
-            )}
+            {!collapsed && <span className="text-xs text-white/35">{links.length} rubriques</span>}
           </div>
         </div>
       </aside>

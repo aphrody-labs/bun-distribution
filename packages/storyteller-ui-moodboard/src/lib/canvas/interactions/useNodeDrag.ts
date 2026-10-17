@@ -18,14 +18,14 @@ export interface NodeDragHandlers {
 // the guides. Reads the store imperatively inside handlers so the hook itself
 // doesn't re-render on every node move.
 export const useNodeDrag = (nodeId: string): NodeDragHandlers => {
-  const updateNode = useMoodboardStore((s) => s.updateNode);
-  const pushHistory = useMoodboardStore((s) => s.pushHistory);
-  const setGuides = useMoodboardStore((s) => s.setGuides);
+  const updateNode = useMoodboardStore(s => s.updateNode);
+  const pushHistory = useMoodboardStore(s => s.pushHistory);
+  const setGuides = useMoodboardStore(s => s.setGuides);
 
   return useMemo(
     () => ({
       onDragStart: () => pushHistory(),
-      onDragMove: (e) => {
+      onDragMove: e => {
         const target = e.target;
         const state = useMoodboardStore.getState();
         if (!state.snapEnabled) return;
@@ -42,8 +42,7 @@ export const useNodeDrag = (nodeId: string): NodeDragHandlers => {
         for (const id of state.rootOrder) {
           if (id === nodeId) continue;
           const n = state.nodes[id];
-          if (n)
-            others.push({ x: n.x, y: n.y, width: n.width, height: n.height });
+          if (n) others.push({ x: n.x, y: n.y, width: n.width, height: n.height });
         }
 
         const threshold = SNAP_SCREEN_PX / state.viewport.zoom;
@@ -52,7 +51,7 @@ export const useNodeDrag = (nodeId: string): NodeDragHandlers => {
         target.y(result.y);
         setGuides(result.guides);
       },
-      onDragEnd: (e) => {
+      onDragEnd: e => {
         updateNode(nodeId, { x: e.target.x(), y: e.target.y() });
         setGuides([]);
       },

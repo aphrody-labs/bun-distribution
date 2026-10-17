@@ -63,11 +63,7 @@ export {
   mediaAssetToData,
 } from "./lib/services/storage/serialization";
 export type { ProjectDocument } from "./lib/services/storage/serialization";
-export type {
-  MediaAssetData,
-  SerializedProject,
-  SerializedScene,
-} from "./lib/services/storage/types";
+export type { MediaAssetData, SerializedProject, SerializedScene } from "./lib/services/storage/types";
 
 // --- MediaTime + frame math (the wasm boundary) ---
 export {
@@ -91,11 +87,7 @@ export {
 export type { MediaTime } from "./lib/wasm";
 
 // --- Timeline math + scale ---
-export {
-  BASE_TIMELINE_PIXELS_PER_SECOND,
-  TIMELINE_ZOOM_MIN,
-  TIMELINE_ZOOM_MAX,
-} from "./lib/timeline/scale";
+export { BASE_TIMELINE_PIXELS_PER_SECOND, TIMELINE_ZOOM_MIN, TIMELINE_ZOOM_MAX } from "./lib/timeline/scale";
 export {
   TIMELINE_INDICATOR_LINE_WIDTH_PX,
   getTimelinePixelsPerSecond,
@@ -119,20 +111,11 @@ export {
 // wrap the scrub callbacks with React state writes — break the
 // contract and scrubbing visibly stutters.
 export { SeekController } from "./lib/timeline/controllers/seek-controller";
-export type {
-  SeekConfig,
-  SeekConfigRef,
-} from "./lib/timeline/controllers/seek-controller";
+export type { SeekConfig, SeekConfigRef } from "./lib/timeline/controllers/seek-controller";
 export { ZoomController } from "./lib/timeline/controllers/zoom-controller";
-export type {
-  ZoomConfig,
-  ZoomConfigRef,
-} from "./lib/timeline/controllers/zoom-controller";
+export type { ZoomConfig, ZoomConfigRef } from "./lib/timeline/controllers/zoom-controller";
 export { PlayheadController } from "./lib/timeline/controllers/playhead-controller";
-export type {
-  PlayheadConfig,
-  PlayheadConfigRef,
-} from "./lib/timeline/controllers/playhead-controller";
+export type { PlayheadConfig, PlayheadConfigRef } from "./lib/timeline/controllers/playhead-controller";
 
 // --- Remaining timeline controllers ---
 // Same smoothness contract as the controllers above — class-based,
@@ -163,32 +146,17 @@ export type {
   KeyframeDragState,
 } from "./lib/timeline/controllers/keyframe-drag-controller";
 export { ResizeController } from "./lib/timeline/controllers/resize-controller";
-export type {
-  ResizeConfig,
-  ResizeConfigRef,
-} from "./lib/timeline/controllers/resize-controller";
+export type { ResizeConfig, ResizeConfigRef } from "./lib/timeline/controllers/resize-controller";
 
 // --- Timeline snapping ---
-export {
-  buildTimelineSnapPoints,
-  resolveTimelineSnap,
-  getTimelineSnapThresholdInTicks,
-} from "./lib/timeline/snapping";
-export type {
-  SnapPoint,
-  SnapPointType,
-  SnapResult,
-  TimelineSnapPointSource,
-} from "./lib/timeline/snapping";
+export { buildTimelineSnapPoints, resolveTimelineSnap, getTimelineSnapThresholdInTicks } from "./lib/timeline/snapping";
+export type { SnapPoint, SnapPointType, SnapResult, TimelineSnapPointSource } from "./lib/timeline/snapping";
 
 // --- Editor stores ---
 export { useEditorStore } from "./lib/editor/editor-store";
 export { usePanelStore } from "./lib/editor/panel-store";
 export type { PanelSizes, PanelId } from "./lib/editor/panel-store";
-export {
-  registerCanceller,
-  cancelInteraction,
-} from "./lib/editor/cancel-interaction";
+export { registerCanceller, cancelInteraction } from "./lib/editor/cancel-interaction";
 
 // --- Timeline element constructors + type guards ---
 // Hosts that want to inject elements directly (drag-and-drop from the
@@ -262,11 +230,7 @@ export {
   polygonGraphicDefinition,
   starGraphicDefinition,
 } from "./lib/graphics";
-export type {
-  GraphicDefinition,
-  GraphicInstance,
-  GraphicRenderContext,
-} from "./lib/graphics/types";
+export type { GraphicDefinition, GraphicInstance, GraphicRenderContext } from "./lib/graphics/types";
 
 // --- Animation surface ---
 export {
@@ -294,22 +258,12 @@ export type {
 } from "./lib/animation/types";
 
 // --- Rendering primitives ---
-export {
-  buildTransformFromParams,
-  readOpacityFromParams,
-  readBlendModeFromParams,
-} from "./lib/rendering";
+export { buildTransformFromParams, readOpacityFromParams, readBlendModeFromParams } from "./lib/rendering";
 export { resolveTransformAtTime } from "./lib/rendering/animation-values";
 export type { Transform, BlendMode } from "./lib/rendering";
 
 // --- Params + registry ---
-export type {
-  ParamValue,
-  ParamValues,
-  ParamDefinition,
-  ParamChannelLayout,
-  LinearRgba,
-} from "./lib/params";
+export type { ParamValue, ParamValues, ParamDefinition, ParamChannelLayout, LinearRgba } from "./lib/params";
 export {
   buildDefaultParamValues,
   getElementParams,
@@ -393,17 +347,8 @@ export {
   getEdgeHandlePosition,
   ROTATION_HANDLE_OFFSET,
 } from "./lib/preview/element-bounds";
-export type {
-  ElementBounds,
-  ElementWithBounds,
-  Corner,
-  Edge,
-} from "./lib/preview/element-bounds";
-export {
-  hitTest,
-  getHitElements,
-  resolvePreferredHit,
-} from "./lib/preview/hit-test";
+export type { ElementBounds, ElementWithBounds, Corner, Edge } from "./lib/preview/element-bounds";
+export { hitTest, getHitElements, resolvePreferredHit } from "./lib/preview/hit-test";
 export {
   snapPosition,
   snapScale,
@@ -461,19 +406,10 @@ export {
   enforceMainTrackStart,
   getEarliestMainTrackElement,
 } from "./lib/timeline/placement";
-export type {
-  PlacementResult,
-  PlacementStrategy,
-  PlacementSubject,
-  PlacementTimeSpan,
-} from "./lib/timeline/placement";
+export type { PlacementResult, PlacementStrategy, PlacementSubject, PlacementTimeSpan } from "./lib/timeline/placement";
 
 // --- Group move + resize solvers ---
-export {
-  buildMoveGroup,
-  resolveGroupMove,
-  snapGroupEdges,
-} from "./lib/timeline/group-move";
+export { buildMoveGroup, resolveGroupMove, snapGroupEdges } from "./lib/timeline/group-move";
 export type {
   MoveGroup,
   GroupMember,
@@ -510,11 +446,7 @@ export {
 } from "./lib/timeline/audio-separation";
 
 // --- Ripple (gap-closing after deletes/shrinks) ---
-export {
-  applyRippleAdjustments,
-  computeRippleAdjustments,
-  rippleShiftElements,
-} from "./lib/ripple";
+export { applyRippleAdjustments, computeRippleAdjustments, rippleShiftElements } from "./lib/ripple";
 export type { RippleAdjustment } from "./lib/ripple";
 
 // --- Commands base + clipboard types ---
@@ -598,32 +530,20 @@ export {
   extractRmsBuckets,
   getSampleBucketRange,
 } from "./lib/media/audio";
-export type {
-  CollectedAudioElement,
-  DecodedAudio,
-  AudibleElementCandidate,
-  AudioClipSource,
-} from "./lib/media/audio";
+export type { CollectedAudioElement, DecodedAudio, AudibleElementCandidate, AudioClipSource } from "./lib/media/audio";
 export {
   buildSourceWaveformSummary,
   buildWaveformSampleBuckets,
   sampleSourceWaveformSummary,
   computeRmsBuckets,
 } from "./lib/media/waveform-summary";
-export type {
-  SourceWaveformSummary,
-  SampleBucket,
-} from "./lib/media/waveform-summary";
+export type { SourceWaveformSummary, SampleBucket } from "./lib/media/waveform-summary";
 export {
   applyAudioMasteringToBuffer,
   createAudioMasteringChain,
   getAudioBufferPeak,
 } from "./lib/media/audio-mastering";
-export {
-  getMediaTypeFromFile,
-  mediaSupportsAudio,
-  SUPPORTS_AUDIO,
-} from "./lib/media/media-utils";
+export { getMediaTypeFromFile, mediaSupportsAudio, SUPPORTS_AUDIO } from "./lib/media/media-utils";
 export type { MediaAsset, MediaType } from "./lib/media/types";
 
 // --- Caching services (decoded video frames + waveform summaries) ---
@@ -669,42 +589,21 @@ export type { SceneExporterEvents } from "./lib/services/renderer/scene-exporter
 export { buildScene } from "./lib/services/renderer/scene-builder";
 export type { BuildSceneParams } from "./lib/services/renderer/scene-builder";
 export { BaseNode } from "./lib/services/renderer/nodes/base-node";
-export type {
-  AnyBaseNode,
-  BaseNodeParams,
-} from "./lib/services/renderer/nodes/base-node";
+export type { AnyBaseNode, BaseNodeParams } from "./lib/services/renderer/nodes/base-node";
 export { RootNode } from "./lib/services/renderer/nodes/root-node";
 export type { RootNodeParams } from "./lib/services/renderer/nodes/root-node";
 export { ColorNode } from "./lib/services/renderer/nodes/color-node";
 export type { ColorNodeParams } from "./lib/services/renderer/nodes/color-node";
 export { VideoNode } from "./lib/services/renderer/nodes/video-node";
 export type { VideoNodeParams } from "./lib/services/renderer/nodes/video-node";
-export {
-  ImageNode,
-  loadImageSource,
-} from "./lib/services/renderer/nodes/image-node";
-export type {
-  ImageNodeParams,
-  CachedImageSource,
-} from "./lib/services/renderer/nodes/image-node";
-export {
-  StickerNode,
-  loadStickerSource,
-} from "./lib/services/renderer/nodes/sticker-node";
+export { ImageNode, loadImageSource } from "./lib/services/renderer/nodes/image-node";
+export type { ImageNodeParams, CachedImageSource } from "./lib/services/renderer/nodes/image-node";
+export { StickerNode, loadStickerSource } from "./lib/services/renderer/nodes/sticker-node";
 export type { StickerNodeParams } from "./lib/services/renderer/nodes/sticker-node";
 export { GraphicNode } from "./lib/services/renderer/nodes/graphic-node";
-export type {
-  GraphicNodeParams,
-  ResolvedGraphicNodeState,
-} from "./lib/services/renderer/nodes/graphic-node";
-export {
-  TextNode,
-  renderTextToContext,
-} from "./lib/services/renderer/nodes/text-node";
-export type {
-  TextNodeParams,
-  ResolvedTextNodeState,
-} from "./lib/services/renderer/nodes/text-node";
+export type { GraphicNodeParams, ResolvedGraphicNodeState } from "./lib/services/renderer/nodes/graphic-node";
+export { TextNode, renderTextToContext } from "./lib/services/renderer/nodes/text-node";
+export type { TextNodeParams, ResolvedTextNodeState } from "./lib/services/renderer/nodes/text-node";
 export { BlurBackgroundNode } from "./lib/services/renderer/nodes/blur-background-node";
 export type {
   BlurBackgroundNodeParams,
@@ -723,11 +622,7 @@ export type {
   ResolvedVisualSourceNodeState,
 } from "./lib/services/renderer/nodes/visual-node";
 export { effectPreviewService } from "./lib/services/renderer/effect-preview";
-export {
-  gpuRenderer,
-  initializeGpuRenderer,
-  isGpuAvailable,
-} from "./lib/services/renderer/gpu-renderer";
+export { gpuRenderer, initializeGpuRenderer, isGpuAvailable } from "./lib/services/renderer/gpu-renderer";
 export { applyMaskFeather } from "./lib/services/renderer/mask-feather";
 export { createCanvasSurface } from "./lib/services/renderer/canvas-utils";
 
@@ -739,34 +634,16 @@ export {
   getExportMimeType,
   downloadBuffer,
 } from "./lib/export";
-export type {
-  ExportFormat,
-  ExportQuality,
-  ExportOptions,
-  ExportResult,
-  ExportState,
-} from "./lib/export";
+export type { ExportFormat, ExportQuality, ExportOptions, ExportResult, ExportState } from "./lib/export";
 export { DEFAULT_EXPORT_OPTIONS } from "./lib/export/defaults";
 export { EXPORT_MIME_TYPES } from "./lib/export/mime-types";
 
 // --- Gradients ---
-export {
-  drawCssBackground,
-  parseGradient,
-  GradientParser,
-} from "./lib/gradients";
-export type {
-  GradientAst,
-  GradientOrientation,
-  Color,
-  ColorStop,
-} from "./lib/gradients";
+export { drawCssBackground, parseGradient, GradientParser } from "./lib/gradients";
+export type { GradientAst, GradientOrientation, Color, ColorStop } from "./lib/gradients";
 
 // --- Background defaults ---
-export {
-  BACKGROUND_BLUR_INTENSITY_PRESETS,
-  DEFAULT_BACKGROUND_BLUR_INTENSITY,
-} from "./lib/background/blur";
+export { BACKGROUND_BLUR_INTENSITY_PRESETS, DEFAULT_BACKGROUND_BLUR_INTENSITY } from "./lib/background/blur";
 export { DEFAULT_BACKGROUND_COLOR } from "./lib/background/color";
 
 // --- Timeline UI ---
@@ -788,10 +665,7 @@ export { GraphEditorPopover } from "./lib/timeline/components/graph-editor/popov
 export { useGraphEditorController } from "./lib/timeline/components/graph-editor/use-controller";
 export { TimelineTick } from "./lib/timeline/components/timeline-tick";
 export { DragLine } from "./lib/timeline/components/drag-line";
-export {
-  BezierGraph,
-  BEZIER_GRAPH_MIN_HEIGHT,
-} from "./lib/timeline/components/graph-editor/bezier-graph";
+export { BezierGraph, BEZIER_GRAPH_MIN_HEIGHT } from "./lib/timeline/components/graph-editor/bezier-graph";
 
 // --- Timeline UI store (snapping + ripple toggles, expanded keyframe IDs) ---
 export { useTimelineStore } from "./lib/timeline/timeline-store";
@@ -838,18 +712,11 @@ export {
   getPropertyLabel,
 } from "./lib/timeline/components/expanded-layout";
 export type { ExpandedRow } from "./lib/timeline/components/expanded-layout";
-export {
-  computeDropTarget,
-  getDropLineY,
-} from "./lib/timeline/components/drop-target";
+export { computeDropTarget, getDropLineY } from "./lib/timeline/components/drop-target";
 export { resolveTimelineElementIntersections } from "./lib/timeline/components/selection-hit-testing";
 
 // --- Audio display curves (db ↔ line-position mapping for AudioVolumeLine) ---
-export {
-  getLinePosFromDb,
-  getDbFromLinePos,
-  getBarFractionFromOutputAmplitude,
-} from "./lib/timeline/audio-display";
+export { getLinePosFromDb, getDbFromLinePos, getBarFractionFromOutputAmplitude } from "./lib/timeline/audio-display";
 
 // --- Timeline bookmarks ---
 export {
@@ -871,10 +738,7 @@ export {
 export type { BookmarkDragState } from "./lib/timeline/bookmarks";
 
 // --- Graph editor (curve editor popover for keyframe easing) ---
-export {
-  BUILTIN_PRESETS,
-  PRESET_MATCH_TOLERANCE,
-} from "./lib/timeline/components/graph-editor/easing-presets";
+export { BUILTIN_PRESETS, PRESET_MATCH_TOLERANCE } from "./lib/timeline/components/graph-editor/easing-presets";
 export type { EasingPreset } from "./lib/timeline/components/graph-editor/easing-presets";
 export {
   useCustomPresets,
@@ -1019,11 +883,7 @@ export { useFullscreen } from "./lib/hooks/use-fullscreen";
 export { PropertiesPanel } from "./lib/panels/properties";
 export { usePropertiesStore } from "./lib/panels/properties/stores/properties-store";
 export { getPropertiesConfig } from "./lib/panels/properties/registry";
-export type {
-  TabContentProps,
-  PropertiesTabDef,
-  ElementPropertiesConfig,
-} from "./lib/panels/properties/registry";
+export type { TabContentProps, PropertiesTabDef, ElementPropertiesConfig } from "./lib/panels/properties/registry";
 export { PropertyParamField } from "./lib/panels/properties/components/property-param-field";
 export { KeyframeToggle } from "./lib/panels/properties/components/keyframe-toggle";
 export { ElementParamsTab } from "./lib/panels/properties/components/element-params-tab";
@@ -1170,12 +1030,7 @@ export {
   loadFullFont,
   loadFonts,
 } from "./lib/fonts";
-export type {
-  FontOption,
-  GoogleFontMeta,
-  FontAtlas,
-  FontAtlasEntry,
-} from "./lib/fonts";
+export type { FontOption, GoogleFontMeta, FontAtlas, FontAtlasEntry } from "./lib/fonts";
 
 // --- Text view ---
 // AssetsPanel "Text" tab content. Drags a default text element onto the
@@ -1206,11 +1061,7 @@ export { DeleteProjectDialog } from "./lib/project/components/delete-project-dia
 export { SoundsView } from "./lib/sounds/components/assets-view";
 export { useSoundsStore } from "./lib/sounds/sounds-store";
 export { useSoundSearch } from "./lib/sounds/use-sound-search";
-export type {
-  SoundEffect,
-  SavedSound,
-  SavedSoundsData,
-} from "./lib/sounds/types";
+export type { SoundEffect, SavedSound, SavedSoundsData } from "./lib/sounds/types";
 export type { SoundsAdapter, SoundsSearchResult } from "./lib/adapters";
 export { emptySoundsAdapter } from "./lib/adapters/default";
 
@@ -1239,10 +1090,7 @@ export {
   parseStickerId,
   buildStickerId,
 } from "./lib/stickers";
-export {
-  shapesProvider,
-  parseShapeStickerId,
-} from "./lib/stickers/providers/shapes";
+export { shapesProvider, parseShapeStickerId } from "./lib/stickers/providers/shapes";
 export { logosProvider } from "./lib/stickers/providers/logos";
 export type {
   StickerBrowseResult,

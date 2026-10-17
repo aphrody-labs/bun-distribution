@@ -31,10 +31,7 @@ export interface M3NextApp {
 
 const LOCAL = /-\s+Local:\s+(https?:\/\/\S+)/;
 
-async function announcedUrl(
-  child: Subprocess<"ignore", "pipe", "pipe">,
-  timeout: number,
-): Promise<string> {
+async function announcedUrl(child: Subprocess<"ignore", "pipe", "pipe">, timeout: number): Promise<string> {
   const decoder = new TextDecoder();
   let seen = "";
   const reader = child.stdout.getReader();
@@ -59,9 +56,7 @@ async function announcedUrl(
     clearTimeout(timer);
   }
   const stderr = await new Response(child.stderr).text().catch(() => "");
-  throw new Error(
-    `m3-bun next: next exited or timed out before serving: ${(stderr || seen).trim().slice(-2000)}`,
-  );
+  throw new Error(`m3-bun next: next exited or timed out before serving: ${(stderr || seen).trim().slice(-2000)}`);
 }
 
 /** Start the Next app of `options.dir` and return its URL and proxy. */
@@ -70,14 +65,7 @@ export async function startNextApp(options: M3NextOptions): Promise<M3NextApp> {
     loadOptional<NextRun>("@aphrody/next-bun/run", "Next.js app"),
     loadOptional<M3Server>("@aphrody/m3/server", "Next.js app"),
   ]);
-  const args = [
-    options.mode ?? "dev",
-    "-p",
-    "0",
-    "-H",
-    options.hostname ?? "127.0.0.1",
-    ...(options.args ?? []),
-  ];
+  const args = [options.mode ?? "dev", "-p", "0", "-H", options.hostname ?? "127.0.0.1", ...(options.args ?? [])];
   let command: ReturnType<NextRun["nextCommand"]>;
   try {
     command = run.nextCommand(args, options.dir);

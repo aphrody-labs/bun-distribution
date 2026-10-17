@@ -228,12 +228,7 @@ class Scanner {
         let j = i + 1;
         while (j < s.length && ID_PART.test(s[j]!)) j++;
         const word = s.slice(i, j);
-        if (
-          topLevel &&
-          depth === 0 &&
-          word === "import" &&
-          statementStart(prev)
-        ) {
+        if (topLevel && depth === 0 && word === "import" && statementStart(prev)) {
           const decl = parseImport(s, i);
           if (decl) {
             this.imports.push(decl);
@@ -448,11 +443,7 @@ class Scanner {
 }
 
 function statementStart(prev: Prev): boolean {
-  return (
-    prev.t === "start" ||
-    (prev.t === "punct" && prev.v === ";") ||
-    (prev.t === "close" && prev.v === "}")
-  );
+  return prev.t === "start" || (prev.t === "punct" && prev.v === ";") || (prev.t === "close" && prev.v === "}");
 }
 
 function jsxAllowed(prev: Prev): boolean {
@@ -484,8 +475,7 @@ function regexAllowed(prev: Prev): boolean {
   }
 }
 
-const IMPORT_FROM =
-  /^import\s+(type\s+)?([\s\S]*?)\s*\bfrom\s*(["'])([^"'\n]*)\3/;
+const IMPORT_FROM = /^import\s+(type\s+)?([\s\S]*?)\s*\bfrom\s*(["'])([^"'\n]*)\3/;
 const IMPORT_BARE = /^import\s*(["'])([^"'\n]*)\1/;
 
 /** Parse the import declaration at `i` (`import` keyword), or null for `import(` / `import.meta`. */
@@ -531,10 +521,8 @@ function parseClause(clause: string): ImportSpec[] {
   const specs: ImportSpec[] = [];
   const text = stripComments(clause).trim();
   const brace = text.indexOf("{");
-  const head = (brace === -1 ? text : text.slice(0, brace))
-    .replace(/,\s*$/, "")
-    .trim();
-  for (const part of head.split(",").map((p) => p.trim())) {
+  const head = (brace === -1 ? text : text.slice(0, brace)).replace(/,\s*$/, "").trim();
+  for (const part of head.split(",").map(p => p.trim())) {
     if (!part) continue;
     const ns = /^\*\s*as\s+([\w$]+)$/.exec(part);
     if (ns)
@@ -554,13 +542,9 @@ function parseClause(clause: string): ImportSpec[] {
   }
   if (brace !== -1) {
     const body = text.slice(brace + 1, text.lastIndexOf("}"));
-    for (const part of body
-      .split(",")
-      .map((p) => p.trim().replace(/\s+/g, " "))) {
+    for (const part of body.split(",").map(p => p.trim().replace(/\s+/g, " "))) {
       if (!part) continue;
-      const m = /^(?:type )?(?:([\w$]+)|(["'])(.*)\2)(?: as ([\w$]+))?$/.exec(
-        part,
-      );
+      const m = /^(?:type )?(?:([\w$]+)|(["'])(.*)\2)(?: as ([\w$]+))?$/.exec(part);
       if (!m) continue;
       const imported = m[1] ?? m[3]!;
       specs.push({
@@ -608,7 +592,5 @@ export function scanTsx(src: string): ScanResult {
 
 /** Name of a JSX element when it is a plain identifier (`Button`, `md-icon`), else null. */
 export function jsxName(node: JsxNode): string | null {
-  return node.kind === "element" && /^[A-Za-z_$][\w$-]*$/.test(node.rawName)
-    ? node.rawName
-    : null;
+  return node.kind === "element" && /^[A-Za-z_$][\w$-]*$/.test(node.rawName) ? node.rawName : null;
 }

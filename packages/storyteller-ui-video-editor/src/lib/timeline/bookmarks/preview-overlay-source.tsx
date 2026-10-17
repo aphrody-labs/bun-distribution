@@ -13,22 +13,16 @@ export const bookmarkNotesPreviewOverlay: PreviewOverlayDefinition = {
   defaultVisible: true,
 };
 
-function BookmarkNotesOverlay({
-  bookmarks,
-}: {
-  bookmarks: Array<{ time: MediaTime; note: string; color?: string }>;
-}) {
+function BookmarkNotesOverlay({ bookmarks }: { bookmarks: Array<{ time: MediaTime; note: string; color?: string }> }) {
   return (
     <div className="flex flex-col gap-1.5" aria-live="polite">
-      {bookmarks.map((bookmark) => (
+      {bookmarks.map(bookmark => (
         <div
           key={bookmark.time}
           className="flex max-w-[min(200px,50vw)] px-2.5 py-1.5 text-left text-white text-xs shadow-md backdrop-blur-sm"
           style={{
             backgroundColor: "rgb(0 0 0 / 0.5)",
-            borderLeft: bookmark.color
-              ? `3px solid ${bookmark.color}`
-              : "3px solid var(--primary)",
+            borderLeft: bookmark.color ? `3px solid ${bookmark.color}` : "3px solid var(--primary)",
           }}
         >
           {bookmark.note}
@@ -50,7 +44,7 @@ export function getBookmarkPreviewOverlaySource({
   const bookmarksWithNotes = getBookmarksActiveAtTime({
     bookmarks,
     time,
-  }).flatMap((bookmark) => {
+  }).flatMap(bookmark => {
     if (bookmark.note == null || bookmark.note.trim() === "") {
       return [];
     }

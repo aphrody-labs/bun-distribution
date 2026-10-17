@@ -5,23 +5,14 @@ import { ContextMenu as ContextMenuPrimitive } from "radix-ui";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../utils/ui";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Tick02Icon,
-  ArrowRightIcon,
-  CircleIcon,
-} from "@hugeicons/core-free-icons";
+import { Tick02Icon, ArrowRightIcon, CircleIcon } from "@hugeicons/core-free-icons";
 import { useOverlayOpenChange } from "./use-overlay-open-change";
 
-function ContextMenu({
-  onOpenChange,
-  ...props
-}: React.ComponentProps<typeof ContextMenuPrimitive.Root>) {
+function ContextMenu({ onOpenChange, ...props }: React.ComponentProps<typeof ContextMenuPrimitive.Root>) {
   const handleOpenChange = useOverlayOpenChange({
     onOpenChange,
   });
-  return (
-    <ContextMenuPrimitive.Root onOpenChange={handleOpenChange} {...props} />
-  );
+  return <ContextMenuPrimitive.Root onOpenChange={handleOpenChange} {...props} />;
 }
 
 const ContextMenuTrigger = ContextMenuPrimitive.Trigger;
@@ -39,10 +30,8 @@ const contextMenuItemVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "focus:bg-accent focus:text-accent-foreground [&_svg]:text-muted-foreground",
-        destructive:
-          "text-destructive focus:bg-destructive/10 focus:text-destructive [&_svg]:text-destructive",
+        default: "focus:bg-accent focus:text-accent-foreground [&_svg]:text-muted-foreground",
+        destructive: "text-destructive focus:bg-destructive/10 focus:text-destructive [&_svg]:text-destructive",
       },
     },
     defaultVariants: {
@@ -58,32 +47,22 @@ const ContextMenuSubTrigger = React.forwardRef<
     variant?: VariantProps<typeof contextMenuItemVariants>["variant"];
     icon?: React.ReactNode;
   }
->(
-  (
-    { className, inset, children, variant = "default", icon, ...props },
-    ref,
-  ) => (
-    <ContextMenuPrimitive.SubTrigger
-      ref={ref}
-      className={cn(
-        contextMenuItemVariants({ variant }),
-        "data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
-        inset && "pl-8",
-        className,
-      )}
-      {...props}
-    >
-      {icon && (
-        <span className="size-4 shrink-0 text-muted-foreground">{icon}</span>
-      )}
-      {children}
-      <HugeiconsIcon
-        icon={ArrowRightIcon}
-        className="ml-auto text-muted-foreground/80"
-      />
-    </ContextMenuPrimitive.SubTrigger>
-  ),
-);
+>(({ className, inset, children, variant = "default", icon, ...props }, ref) => (
+  <ContextMenuPrimitive.SubTrigger
+    ref={ref}
+    className={cn(
+      contextMenuItemVariants({ variant }),
+      "data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+      inset && "pl-8",
+      className,
+    )}
+    {...props}
+  >
+    {icon && <span className="size-4 shrink-0 text-muted-foreground">{icon}</span>}
+    {children}
+    <HugeiconsIcon icon={ArrowRightIcon} className="ml-auto text-muted-foreground/80" />
+  </ContextMenuPrimitive.SubTrigger>
+));
 ContextMenuSubTrigger.displayName = ContextMenuPrimitive.SubTrigger.displayName;
 
 const ContextMenuSubContent = React.forwardRef<
@@ -128,46 +107,27 @@ const ContextMenuItem = React.forwardRef<
     icon?: React.ReactNode;
     textRight?: string;
   }
->(
-  (
-    {
-      className,
-      inset,
-      variant = "default",
-      icon,
-      children,
-      textRight,
-      ...props
-    },
-    ref,
-  ) => {
-    const shouldInsetContent = inset || Boolean(icon);
+>(({ className, inset, variant = "default", icon, children, textRight, ...props }, ref) => {
+  const shouldInsetContent = inset || Boolean(icon);
 
-    return (
-      <ContextMenuPrimitive.Item
-        ref={ref}
-        className={cn(
-          contextMenuItemVariants({ variant }),
-          shouldInsetContent && "pl-8",
-          className,
-        )}
-        {...props}
-      >
-        {icon && (
-          <span className="absolute left-3 flex size-3.5 items-center justify-center text-muted-foreground [&_svg]:size-3.5 [&_svg]:shrink-0">
-            {icon}
-          </span>
-        )}
-        {children}
-        {textRight && (
-          <span className="ml-auto text-[0.60rem] tracking-widest text-muted-foreground/80 mb-0.5">
-            {textRight}
-          </span>
-        )}
-      </ContextMenuPrimitive.Item>
-    );
-  },
-);
+  return (
+    <ContextMenuPrimitive.Item
+      ref={ref}
+      className={cn(contextMenuItemVariants({ variant }), shouldInsetContent && "pl-8", className)}
+      {...props}
+    >
+      {icon && (
+        <span className="absolute left-3 flex size-3.5 items-center justify-center text-muted-foreground [&_svg]:size-3.5 [&_svg]:shrink-0">
+          {icon}
+        </span>
+      )}
+      {children}
+      {textRight && (
+        <span className="ml-auto text-[0.60rem] tracking-widest text-muted-foreground/80 mb-0.5">{textRight}</span>
+      )}
+    </ContextMenuPrimitive.Item>
+  );
+});
 ContextMenuItem.displayName = ContextMenuPrimitive.Item.displayName;
 
 const ContextMenuCheckboxItem = React.forwardRef<
@@ -176,35 +136,23 @@ const ContextMenuCheckboxItem = React.forwardRef<
     variant?: VariantProps<typeof contextMenuItemVariants>["variant"];
     icon?: React.ReactNode;
   }
->(
-  (
-    { className, children, checked, variant = "default", icon, ...props },
-    ref,
-  ) => (
-    <ContextMenuPrimitive.CheckboxItem
-      ref={ref}
-      className={cn(
-        contextMenuItemVariants({ variant }),
-        "pr-2 pl-8",
-        className,
-      )}
-      checked={checked}
-      {...props}
-    >
-      <span className="absolute left-3 flex size-3.5 items-center justify-center">
-        <ContextMenuPrimitive.ItemIndicator>
-          <HugeiconsIcon icon={Tick02Icon} className="size-4" />
-        </ContextMenuPrimitive.ItemIndicator>
-      </span>
-      {icon && (
-        <span className="size-4 shrink-0 text-muted-foreground">{icon}</span>
-      )}
-      {children}
-    </ContextMenuPrimitive.CheckboxItem>
-  ),
-);
-ContextMenuCheckboxItem.displayName =
-  ContextMenuPrimitive.CheckboxItem.displayName;
+>(({ className, children, checked, variant = "default", icon, ...props }, ref) => (
+  <ContextMenuPrimitive.CheckboxItem
+    ref={ref}
+    className={cn(contextMenuItemVariants({ variant }), "pr-2 pl-8", className)}
+    checked={checked}
+    {...props}
+  >
+    <span className="absolute left-3 flex size-3.5 items-center justify-center">
+      <ContextMenuPrimitive.ItemIndicator>
+        <HugeiconsIcon icon={Tick02Icon} className="size-4" />
+      </ContextMenuPrimitive.ItemIndicator>
+    </span>
+    {icon && <span className="size-4 shrink-0 text-muted-foreground">{icon}</span>}
+    {children}
+  </ContextMenuPrimitive.CheckboxItem>
+));
+ContextMenuCheckboxItem.displayName = ContextMenuPrimitive.CheckboxItem.displayName;
 
 const ContextMenuRadioItem = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.RadioItem>,
@@ -223,9 +171,7 @@ const ContextMenuRadioItem = React.forwardRef<
         <HugeiconsIcon icon={CircleIcon} className="size-2 fill-current" />
       </ContextMenuPrimitive.ItemIndicator>
     </span>
-    {icon && (
-      <span className="size-4 shrink-0 text-muted-foreground">{icon}</span>
-    )}
+    {icon && <span className="size-4 shrink-0 text-muted-foreground">{icon}</span>}
     {children}
   </ContextMenuPrimitive.RadioItem>
 ));
@@ -247,9 +193,7 @@ const ContextMenuLabel = React.forwardRef<
     )}
     {...props}
   >
-    {icon && (
-      <span className="size-4 shrink-0 text-muted-foreground">{icon}</span>
-    )}
+    {icon && <span className="size-4 shrink-0 text-muted-foreground">{icon}</span>}
     {children}
   </ContextMenuPrimitive.Label>
 ));
@@ -259,26 +203,13 @@ const ContextMenuSeparator = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Separator>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Separator>
 >(({ className, ...props }, ref) => (
-  <ContextMenuPrimitive.Separator
-    ref={ref}
-    className={cn("bg-border mx-1 my-1.5 h-px", className)}
-    {...props}
-  />
+  <ContextMenuPrimitive.Separator ref={ref} className={cn("bg-border mx-1 my-1.5 h-px", className)} {...props} />
 ));
 ContextMenuSeparator.displayName = ContextMenuPrimitive.Separator.displayName;
 
-const ContextMenuShortcut = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement>) => {
+const ContextMenuShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
-    <span
-      className={cn(
-        "ml-auto text-xs tracking-widest text-muted-foreground opacity-60",
-        className,
-      )}
-      {...props}
-    />
+    <span className={cn("ml-auto text-xs tracking-widest text-muted-foreground opacity-60", className)} {...props} />
   );
 };
 ContextMenuShortcut.displayName = "ContextMenuShortcut";

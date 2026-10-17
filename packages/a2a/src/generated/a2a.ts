@@ -3,8 +3,7 @@
 // Do not edit: change the proto, then regenerate. ProtoJSON shape: camelCase members, enum names.
 
 /** Any JSON value (`google.protobuf.Value`). */
-export type JsonValue =
-  null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
+export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 /** A JSON object (`google.protobuf.Struct`). */
 export type JsonObject = { [key: string]: JsonValue };
 /** RFC 3339 UTC timestamp (`google.protobuf.Timestamp`), e.g. `2026-10-06T10:00:00.000Z`. */
@@ -868,10 +867,7 @@ export const A2A_METHODS = [
 export type A2AMethod = (typeof A2A_METHODS)[number];
 
 /** Methods answered with a Server-Sent Events stream. */
-export const A2A_STREAMING_METHODS = [
-  "SendStreamingMessage",
-  "SubscribeToTask",
-] as const;
+export const A2A_STREAMING_METHODS = ["SendStreamingMessage", "SubscribeToTask"] as const;
 export type A2AStreamingMethod = (typeof A2A_STREAMING_METHODS)[number];
 
 /** Request and response type of every method. */

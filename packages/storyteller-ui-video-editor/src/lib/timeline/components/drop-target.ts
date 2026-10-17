@@ -3,12 +3,7 @@ import type { ComputeDropTargetParams, DropTarget } from "../types";
 import { resolveTrackPlacement } from "../placement";
 import { TIMELINE_TRACK_GAP_PX } from "./layout";
 import { getTrackHeight } from "./track-layout";
-import {
-  mediaTime,
-  type MediaTime,
-  roundMediaTime,
-  TICKS_PER_SECOND,
-} from "../../wasm";
+import { mediaTime, type MediaTime, roundMediaTime, TICKS_PER_SECOND } from "../../wasm";
 
 function findElementAtPosition({
   mouseX,
@@ -26,9 +21,7 @@ function findElementAtPosition({
   zoomLevel: number;
 }): { elementId: string; trackId: string } | null {
   const time = mediaTime({
-    ticks: Math.round(
-      (mouseX / (pixelsPerSecond * zoomLevel)) * TICKS_PER_SECOND,
-    ),
+    ticks: Math.round((mouseX / (pixelsPerSecond * zoomLevel)) * TICKS_PER_SECOND),
   });
   const track = tracks[trackIndex];
   if (!track || !("elements" in track)) return null;
@@ -86,11 +79,7 @@ function getTrackAtY({
 
 const EMPTY_TARGET_ELEMENT = null;
 
-function fallbackNewTrackDropTarget({
-  xPosition,
-}: {
-  xPosition: MediaTime;
-}): DropTarget {
+function fallbackNewTrackDropTarget({ xPosition }: { xPosition: MediaTime }): DropTarget {
   return {
     trackIndex: 0,
     isNewTrack: true,
@@ -122,19 +111,14 @@ export function computeDropTarget({
       : isExternalDrop
         ? playheadTime
         : mediaTime({
-            ticks: Math.round(
-              Math.max(0, mouseX / (pixelsPerSecond * zoomLevel)) *
-                TICKS_PER_SECOND,
-            ),
+            ticks: Math.round(Math.max(0, mouseX / (pixelsPerSecond * zoomLevel)) * TICKS_PER_SECOND),
           });
 
   if (orderedTracks.length === 0) {
     const placementResult = resolveTrackPlacement({
       tracks,
       elementType,
-      timeSpans: [
-        { startTime: xPosition, duration: elementDuration, excludeElementId },
-      ],
+      timeSpans: [{ startTime: xPosition, duration: elementDuration, excludeElementId }],
       strategy: {
         type: "preferIndex",
         trackIndex: 0,
@@ -142,8 +126,7 @@ export function computeDropTarget({
         createNewTrackOnly: true,
       },
     });
-    const emptyTimelineResult =
-      placementResult?.kind === "newTrack" ? placementResult : null;
+    const emptyTimelineResult = placementResult?.kind === "newTrack" ? placementResult : null;
     if (!emptyTimelineResult) {
       return fallbackNewTrackDropTarget({ xPosition });
     }
@@ -169,9 +152,7 @@ export function computeDropTarget({
     const placementResult = resolveTrackPlacement({
       tracks,
       elementType,
-      timeSpans: [
-        { startTime: xPosition, duration: elementDuration, excludeElementId },
-      ],
+      timeSpans: [{ startTime: xPosition, duration: elementDuration, excludeElementId }],
       strategy: {
         type: "preferIndex",
         trackIndex: isAboveAllTracks ? 0 : orderedTracks.length - 1,
@@ -179,8 +160,7 @@ export function computeDropTarget({
         createNewTrackOnly: true,
       },
     });
-    const outOfBoundsResult =
-      placementResult?.kind === "newTrack" ? placementResult : null;
+    const outOfBoundsResult = placementResult?.kind === "newTrack" ? placementResult : null;
     if (!outOfBoundsResult) {
       return fallbackNewTrackDropTarget({ xPosition });
     }
@@ -221,9 +201,7 @@ export function computeDropTarget({
   const placementResult = resolveTrackPlacement({
     tracks,
     elementType,
-    timeSpans: [
-      { startTime: xPosition, duration: elementDuration, excludeElementId },
-    ],
+    timeSpans: [{ startTime: xPosition, duration: elementDuration, excludeElementId }],
     strategy: {
       type: "preferIndex",
       trackIndex,
@@ -259,17 +237,8 @@ export function computeDropTarget({
   };
 }
 
-export function getDropLineY({
-  dropTarget,
-  tracks,
-}: {
-  dropTarget: DropTarget;
-  tracks: TimelineTrack[];
-}): number {
-  const safeTrackIndex = Math.min(
-    Math.max(dropTarget.trackIndex, 0),
-    tracks.length,
-  );
+export function getDropLineY({ dropTarget, tracks }: { dropTarget: DropTarget; tracks: TimelineTrack[] }): number {
+  const safeTrackIndex = Math.min(Math.max(dropTarget.trackIndex, 0), tracks.length);
   let y = 0;
 
   for (let i = 0; i < safeTrackIndex; i++) {

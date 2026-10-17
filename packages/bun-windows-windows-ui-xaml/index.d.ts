@@ -3,9 +3,22 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** windows.ui.xaml.dll!InitializeXamlDiagnostic */
-  InitializeXamlDiagnostic(endPointName: string | Win32Pointer, pid: number, wszDllXamlDiagnostics: string | Win32Pointer, wszTAPDllName: string | Win32Pointer, tapClsid: Win32StructInit): number;
+  InitializeXamlDiagnostic(
+    endPointName: string | Win32Pointer,
+    pid: number,
+    wszDllXamlDiagnostics: string | Win32Pointer,
+    wszTAPDllName: string | Win32Pointer,
+    tapClsid: Win32StructInit,
+  ): number;
   /** windows.ui.xaml.dll!InitializeXamlDiagnosticsEx */
-  InitializeXamlDiagnosticsEx(endPointName: string | Win32Pointer, pid: number, wszDllXamlDiagnostics: string | Win32Pointer, wszTAPDllName: string | Win32Pointer, tapClsid: Win32StructInit, wszInitializationData: string | Win32Pointer): number;
+  InitializeXamlDiagnosticsEx(
+    endPointName: string | Win32Pointer,
+    pid: number,
+    wszDllXamlDiagnostics: string | Win32Pointer,
+    wszTAPDllName: string | Win32Pointer,
+    tapClsid: Win32StructInit,
+    wszInitializationData: string | Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

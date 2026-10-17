@@ -9,13 +9,7 @@ import { toast } from "sonner";
 import { cn } from "../../lib/utils";
 import { Badge } from "../badge";
 import { Button } from "../button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../card";
 import type { AccountSession } from "./types";
 
 /**
@@ -82,19 +76,11 @@ interface AccountSessionsProps {
   onRevokeOthers: () => Promise<void>;
 }
 
-export function AccountSessions({
-  sessions,
-  onRevoke,
-  onRevokeOthers,
-}: AccountSessionsProps) {
+export function AccountSessions({ sessions, onRevoke, onRevokeOthers }: AccountSessionsProps) {
   const [busy, setBusy] = useState<string | null>(null);
-  const others = sessions.filter((s) => !s.current);
+  const others = sessions.filter(s => !s.current);
 
-  const run = async (
-    key: string,
-    action: () => Promise<void>,
-    success: string,
-  ) => {
+  const run = async (key: string, action: () => Promise<void>, success: string) => {
     setBusy(key);
     try {
       await action();
@@ -115,8 +101,7 @@ export function AccountSessions({
             <CardTitle>Sessions actives</CardTitle>
             <CardDescription>
               {sessions.length} session{sessions.length > 1 ? "s" : ""} ouverte
-              {sessions.length > 1 ? "s" : ""}. Révoque celles que tu ne
-              reconnais pas.
+              {sessions.length > 1 ? "s" : ""}. Révoque celles que tu ne reconnais pas.
             </CardDescription>
           </div>
           {others.length > 0 && (
@@ -124,13 +109,7 @@ export function AccountSessions({
               variant="outline"
               size="sm"
               disabled={busy !== null}
-              onClick={() =>
-                run(
-                  "all",
-                  onRevokeOthers,
-                  "Toutes les autres sessions ont été révoquées.",
-                )
-              }
+              onClick={() => run("all", onRevokeOthers, "Toutes les autres sessions ont été révoquées.")}
             >
               {busy === "all" ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -150,10 +129,8 @@ export function AccountSessions({
           </p>
         )}
 
-        {sessions.map((session) => {
-          const { browser, system, mobile } = describeUserAgent(
-            session.userAgent,
-          );
+        {sessions.map(session => {
+          const { browser, system, mobile } = describeUserAgent(session.userAgent);
           const Icon = mobile ? Smartphone : Monitor;
 
           return (
@@ -165,9 +142,7 @@ export function AccountSessions({
                 <span
                   className={cn(
                     "flex size-9 shrink-0 items-center justify-center rounded-lg",
-                    session.current
-                      ? "bg-primary/10 text-primary"
-                      : "bg-muted text-muted-foreground",
+                    session.current ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
                   )}
                 >
                   <Icon className="size-4" aria-hidden />
@@ -177,11 +152,7 @@ export function AccountSessions({
                     <p className="font-semibold text-foreground">
                       {browser} — {system}
                     </p>
-                    {session.current && (
-                      <Badge className="bg-succes/15 text-succes">
-                        Session courante
-                      </Badge>
-                    )}
+                    {session.current && <Badge className="bg-succes/15 text-succes">Session courante</Badge>}
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {session.ipAddress ?? "IP inconnue"} · ouverte{" "}
@@ -192,12 +163,7 @@ export function AccountSessions({
                   </p>
                   {session.expiresAt && (
                     <p className="text-xs text-muted-foreground">
-                      Expire le{" "}
-                      {format(
-                        new Date(session.expiresAt),
-                        "d MMMM yyyy 'à' HH:mm",
-                        { locale: fr },
-                      )}
+                      Expire le {format(new Date(session.expiresAt), "d MMMM yyyy 'à' HH:mm", { locale: fr })}
                     </p>
                   )}
                 </div>
@@ -208,13 +174,7 @@ export function AccountSessions({
                   variant="ghost"
                   size="sm"
                   disabled={busy !== null}
-                  onClick={() =>
-                    run(
-                      session.id,
-                      () => onRevoke(session.id),
-                      "Session révoquée.",
-                    )
-                  }
+                  onClick={() => run(session.id, () => onRevoke(session.id), "Session révoquée.")}
                   className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                 >
                   {busy === session.id ? (

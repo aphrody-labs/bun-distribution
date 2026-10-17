@@ -4,7 +4,6 @@
 
 //! Simple, persistent key-value store.
 
-
 pub use error::{Error, Result};
 use serde::{Deserialize, Serialize};
 pub use serde_json::Value as JsonValue;
@@ -447,7 +446,7 @@ impl Builder {
     /// ```
     pub fn build<R: Runtime>(self) -> TauriPlugin<R> {
         plugin::Builder::new("store")
-            .invoke_handler(tauri::generate_handler![#![plugin(store)] 
+            .invoke_handler(tauri::generate_handler![#![plugin(store)]
                 load, get_store, set, get, has, delete, clear, reset, keys, values, length,
                 entries, reload, save,
             ])

@@ -19,13 +19,7 @@ import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import { PromptClearAllButton } from "@storyteller/ui-promptbox";
 import { UploaderStates, type UploaderState } from "@storyteller/common";
 import { useVFXStore } from "./store";
-import {
-  MAX_SOURCE_DURATION_S,
-  RESOLUTION_OPTIONS,
-  VFX_MODELS,
-  type VFXModelId,
-  type VFXResolution,
-} from "./types";
+import { MAX_SOURCE_DURATION_S, RESOLUTION_OPTIONS, VFX_MODELS, type VFXModelId, type VFXResolution } from "./types";
 
 export type VFXUploadFn = (args: {
   title: string;
@@ -54,20 +48,19 @@ export const PromptBoxVFX = ({
   containerClassName,
   hideResolution = false,
 }: PromptBoxVFXProps) => {
-  const source = useVFXStore((s) => s.source);
-  const mask = useVFXStore((s) => s.mask);
-  const reference = useVFXStore((s) => s.reference);
-  const prompt = useVFXStore((s) => s.prompt);
-  const resolution = useVFXStore((s) => s.resolution);
-  const selectedModelId = useVFXStore((s) => s.selectedModelId);
-  const setSource = useVFXStore((s) => s.setSource);
-  const setMask = useVFXStore((s) => s.setMask);
-  const setReference = useVFXStore((s) => s.setReference);
-  const setPrompt = useVFXStore((s) => s.setPrompt);
-  const setResolution = useVFXStore((s) => s.setResolution);
-  const setSelectedModelId = useVFXStore((s) => s.setSelectedModelId);
-  const selectedModel =
-    VFX_MODELS.find((m) => m.id === selectedModelId) ?? VFX_MODELS[0];
+  const source = useVFXStore(s => s.source);
+  const mask = useVFXStore(s => s.mask);
+  const reference = useVFXStore(s => s.reference);
+  const prompt = useVFXStore(s => s.prompt);
+  const resolution = useVFXStore(s => s.resolution);
+  const selectedModelId = useVFXStore(s => s.selectedModelId);
+  const setSource = useVFXStore(s => s.setSource);
+  const setMask = useVFXStore(s => s.setMask);
+  const setReference = useVFXStore(s => s.setReference);
+  const setPrompt = useVFXStore(s => s.setPrompt);
+  const setResolution = useVFXStore(s => s.setResolution);
+  const setSelectedModelId = useVFXStore(s => s.setSelectedModelId);
+  const selectedModel = VFX_MODELS.find(m => m.id === selectedModelId) ?? VFX_MODELS[0];
 
   const sourceInputRef = useRef<HTMLInputElement>(null);
   const maskInputRef = useRef<HTMLInputElement>(null);
@@ -106,7 +99,7 @@ export const PromptBoxVFX = ({
       await uploadVideo({
         title: `vfx-source-${Math.random().toString(36).slice(2, 10)}`,
         assetFile: file,
-        progressCallback: (state) => {
+        progressCallback: state => {
           if (state.status === UploaderStates.success && state.data) {
             setSource({
               id: Math.random().toString(36).slice(2),
@@ -114,10 +107,7 @@ export const PromptBoxVFX = ({
               mediaToken: state.data,
             });
             setSourceUploading(false);
-          } else if (
-            state.status === UploaderStates.assetError ||
-            state.status === UploaderStates.imageCreateError
-          ) {
+          } else if (state.status === UploaderStates.assetError || state.status === UploaderStates.imageCreateError) {
             onError("Failed to upload source video. Use an MP4 file.");
             setSourceUploading(false);
             URL.revokeObjectURL(previewUrl);
@@ -129,25 +119,21 @@ export const PromptBoxVFX = ({
   );
 
   const handleImageUpload = useCallback(
-    async (
-      event: React.ChangeEvent<HTMLInputElement>,
-      kind: "mask" | "reference",
-    ) => {
+    async (event: React.ChangeEvent<HTMLInputElement>, kind: "mask" | "reference") => {
       const file = event.target.files?.[0];
       const inputRef = kind === "mask" ? maskInputRef : referenceInputRef;
       if (inputRef.current) inputRef.current.value = "";
       if (!file) return;
 
       const previewUrl = URL.createObjectURL(file);
-      const setUploading =
-        kind === "mask" ? setMaskUploading : setReferenceUploading;
+      const setUploading = kind === "mask" ? setMaskUploading : setReferenceUploading;
       const setRef = kind === "mask" ? setMask : setReference;
 
       setUploading(true);
       await uploadImage({
         title: `vfx-${kind}-${Math.random().toString(36).slice(2, 10)}`,
         assetFile: file,
-        progressCallback: (state) => {
+        progressCallback: state => {
           if (state.status === UploaderStates.success && state.data) {
             setRef({
               id: Math.random().toString(36).slice(2),
@@ -155,15 +141,8 @@ export const PromptBoxVFX = ({
               mediaToken: state.data,
             });
             setUploading(false);
-          } else if (
-            state.status === UploaderStates.assetError ||
-            state.status === UploaderStates.imageCreateError
-          ) {
-            onError(
-              kind === "mask"
-                ? "Failed to upload mask image."
-                : "Failed to upload reference image.",
-            );
+          } else if (state.status === UploaderStates.assetError || state.status === UploaderStates.imageCreateError) {
+            onError(kind === "mask" ? "Failed to upload mask image." : "Failed to upload reference image.");
             setUploading(false);
             URL.revokeObjectURL(previewUrl);
           }
@@ -211,7 +190,7 @@ export const PromptBoxVFX = ({
     else referenceInputRef.current?.click();
   }, []);
 
-  const resolutionItems: PopoverItem[] = RESOLUTION_OPTIONS.map((r) => ({
+  const resolutionItems: PopoverItem[] = RESOLUTION_OPTIONS.map(r => ({
     label: r,
     selected: r === resolution,
     action: r,
@@ -225,7 +204,7 @@ export const PromptBoxVFX = ({
     [setResolution],
   );
 
-  const modelItems: PopoverItem[] = VFX_MODELS.map((m) => ({
+  const modelItems: PopoverItem[] = VFX_MODELS.map(m => ({
     label: m.label,
     description: m.description,
     selected: m.id === selectedModelId,
@@ -235,18 +214,13 @@ export const PromptBoxVFX = ({
   const handleModelSelect = useCallback(
     (item: PopoverItem) => {
       const next = (item.action ?? "") as VFXModelId;
-      if (VFX_MODELS.some((m) => m.id === next)) setSelectedModelId(next);
+      if (VFX_MODELS.some(m => m.id === next)) setSelectedModelId(next);
     },
     [setSelectedModelId],
   );
 
   const canSubmit =
-    !!source &&
-    !!reference &&
-    !isSubmitting &&
-    !sourceUploading &&
-    !maskUploading &&
-    !referenceUploading;
+    !!source && !!reference && !isSubmitting && !sourceUploading && !maskUploading && !referenceUploading;
 
   const hasPrompt = prompt.trim().length > 0;
 
@@ -281,11 +255,11 @@ export const PromptBoxVFX = ({
             <textarea
               ref={promptTextareaRef}
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={e => setPrompt(e.target.value)}
               placeholder="Describe the new scene, lighting, or change..."
               rows={3}
               className="max-h-40 min-h-[3.5rem] w-full resize-none bg-transparent text-sm text-base-fg placeholder-base-fg/50 focus:outline-none"
-              onKeyDown={(e) => {
+              onKeyDown={e => {
                 if (e.key === "Escape") {
                   e.preventDefault();
                   setShowPromptPopover(false);
@@ -317,14 +291,14 @@ export const PromptBoxVFX = ({
           type="file"
           className="hidden"
           accept="image/*"
-          onChange={(e) => handleImageUpload(e, "mask")}
+          onChange={e => handleImageUpload(e, "mask")}
         />
         <input
           ref={referenceInputRef}
           type="file"
           className="hidden"
           accept="image/*"
-          onChange={(e) => handleImageUpload(e, "reference")}
+          onChange={e => handleImageUpload(e, "reference")}
         />
 
         {/* Primary inputs — centered, all aspect-video. Source + Reference are required, Mask is optional */}
@@ -380,29 +354,20 @@ export const PromptBoxVFX = ({
             </Tooltip>
           )}
 
-          <Tooltip
-            content={hasPrompt ? "Edit prompt" : "Add an optional prompt"}
-            position="top"
-          >
+          <Tooltip content={hasPrompt ? "Edit prompt" : "Add an optional prompt"} position="top">
             <button
               type="button"
-              onClick={() => setShowPromptPopover((v) => !v)}
+              onClick={() => setShowPromptPopover(v => !v)}
               className={twMerge(
                 "flex items-center gap-2 rounded-lg border border-ui-controls-border bg-ui-controls px-3 py-1.5 text-sm font-medium text-base-fg shadow-sm outline-none transition-all duration-150 hover:bg-ui-controls/80 active:scale-95",
                 showPromptPopover && "bg-base-fg/15",
-                hasPrompt &&
-                  "border-primary/30 bg-primary/15 text-primary-300 hover:bg-primary/20",
+                hasPrompt && "border-primary/30 bg-primary/15 text-primary-300 hover:bg-primary/20",
               )}
             >
-              <DynamicIcon
-                icon={hasPrompt ? SquarePenIcon : PlusIcon}
-                className="hidden h-3 w-3 sm:inline-block"
-              />
+              <DynamicIcon icon={hasPrompt ? SquarePenIcon : PlusIcon} className="hidden h-3 w-3 sm:inline-block" />
               <span className="truncate">
                 <span className="sm:hidden">Prompt</span>
-                <span className="hidden sm:inline">
-                  {hasPrompt ? "Prompt" : "Add prompt"}
-                </span>
+                <span className="hidden sm:inline">{hasPrompt ? "Prompt" : "Add prompt"}</span>
               </span>
             </button>
           </Tooltip>
@@ -494,12 +459,7 @@ const UploadTile = ({
           className="bg-ui-controls text-base-fg border border-ui-controls-border p-2 -mb-0.5"
           content={
             <div className="flex flex-col gap-1.5">
-              <Button
-                variant="primary"
-                onClick={onUpload}
-                icon={PlusIcon}
-                className="w-full"
-              >
+              <Button variant="primary" onClick={onUpload} icon={PlusIcon} className="w-full">
                 Upload
               </Button>
               <Button
@@ -521,10 +481,7 @@ const UploadTile = ({
             )}
             onClick={onUpload}
           >
-            <DynamicIcon
-              icon={icon}
-              className="text-2xl opacity-80 text-base-fg"
-            />
+            <DynamicIcon icon={icon} className="text-2xl opacity-80 text-base-fg" />
           </Button>
         </Tooltip>
       ) : (
@@ -540,18 +497,9 @@ const UploadTile = ({
           ) : (
             <>
               {isVideo ? (
-                <video
-                  src={previewUrl}
-                  muted
-                  preload="metadata"
-                  className="h-full w-full object-contain"
-                />
+                <video src={previewUrl} muted preload="metadata" className="h-full w-full object-contain" />
               ) : (
-                <img
-                  src={previewUrl}
-                  alt={label}
-                  className="h-full w-full object-contain"
-                />
+                <img src={previewUrl} alt={label} className="h-full w-full object-contain" />
               )}
               <button
                 type="button"
@@ -569,7 +517,7 @@ const UploadTile = ({
 };
 
 const measureVideoDuration = (src: string): Promise<number> =>
-  new Promise((resolve) => {
+  new Promise(resolve => {
     const v = document.createElement("video");
     v.preload = "metadata";
     v.onloadedmetadata = () => resolve(v.duration);

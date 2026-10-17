@@ -8,20 +8,10 @@ import {
 } from "../../panels/properties/hooks/use-keyframed-param-property";
 import type { ParamDefinition, ParamValues } from "../../params";
 import type { GraphicElement } from "../../timeline/types";
-import {
-  graphicsRegistry,
-  registerDefaultGraphics,
-  resolveGraphicElementParamsAtTime,
-} from "..";
+import { graphicsRegistry, registerDefaultGraphics, resolveGraphicElementParamsAtTime } from "..";
 import { useElementPreview } from "../../timeline/hooks/use-element-preview";
 import { useEditor } from "../../editor/use-editor";
-import {
-  Section,
-  SectionContent,
-  SectionFields,
-  SectionHeader,
-  SectionTitle,
-} from "../../components/section";
+import { Section, SectionContent, SectionFields, SectionHeader, SectionTitle } from "../../components/section";
 import { PropertyParamField } from "../../panels/properties/components/property-param-field";
 import { Button } from "../../components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -33,13 +23,7 @@ registerDefaultGraphics();
 
 const DEFAULT_STROKE_WIDTH = 2;
 
-export function GraphicTab({
-  element,
-  trackId,
-}: {
-  element: GraphicElement;
-  trackId: string;
-}) {
+export function GraphicTab({ element, trackId }: { element: GraphicElement; trackId: string }) {
   const definition = graphicsRegistry.get(element.definitionId);
   const { localTime, isPlayheadWithinElementRange } = useElementPlayhead({
     startTime: element.startTime,
@@ -57,8 +41,8 @@ export function GraphicTab({
     localTime,
   });
 
-  const shapeParams = definition.params.filter((p) => p.group !== "stroke");
-  const hasStrokeParams = definition.params.some((p) => p.group === "stroke");
+  const shapeParams = definition.params.filter(p => p.group !== "stroke");
+  const hasStrokeParams = definition.params.some(p => p.group === "stroke");
 
   return (
     <div className="flex flex-col">
@@ -68,7 +52,7 @@ export function GraphicTab({
         </SectionHeader>
         <SectionContent>
           <SectionFields>
-            {shapeParams.map((param) => (
+            {shapeParams.map(param => (
               <AnimatedGraphicParamField
                 key={param.key}
                 param={param}
@@ -87,13 +71,7 @@ export function GraphicTab({
   );
 }
 
-function StrokeSection({
-  element,
-  trackId,
-}: {
-  element: GraphicElement;
-  trackId: string;
-}) {
+function StrokeSection({ element, trackId }: { element: GraphicElement; trackId: string }) {
   const editor = useEditor();
   const definition = graphicsRegistry.get(element.definitionId);
   const { localTime, isPlayheadWithinElementRange } = useElementPlayhead({
@@ -111,15 +89,13 @@ function StrokeSection({
     element: liveElement,
     localTime,
   });
-  const strokeParams = definition.params.filter((p) => p.group === "stroke");
+  const strokeParams = definition.params.filter(p => p.group === "stroke");
   const lastStrokeWidth = useRef(DEFAULT_STROKE_WIDTH);
   const isStrokeEnabled = Number(element.params.strokeWidth ?? 0) > 0;
 
   const toggleStroke = () => {
     if (isStrokeEnabled) {
-      lastStrokeWidth.current = Number(
-        element.params.strokeWidth ?? DEFAULT_STROKE_WIDTH,
-      );
+      lastStrokeWidth.current = Number(element.params.strokeWidth ?? DEFAULT_STROKE_WIDTH);
       editor.timeline.updateElements({
         updates: [
           {
@@ -148,35 +124,26 @@ function StrokeSection({
   };
 
   return (
-    <Section
-      collapsible
-      defaultOpen={isStrokeEnabled}
-      sectionKey={`${element.id}:stroke`}
-    >
+    <Section collapsible defaultOpen={isStrokeEnabled} sectionKey={`${element.id}:stroke`}>
       <SectionHeader
         trailing={
           <Button
             variant="ghost"
             size="icon"
-            onClick={(event) => {
+            onClick={event => {
               event.stopPropagation();
               toggleStroke();
             }}
           >
-            <HugeiconsIcon
-              icon={isStrokeEnabled ? MinusSignIcon : PlusSignIcon}
-              strokeWidth={1}
-            />
+            <HugeiconsIcon icon={isStrokeEnabled ? MinusSignIcon : PlusSignIcon} strokeWidth={1} />
           </Button>
         }
       >
         <SectionTitle>Stroke</SectionTitle>
       </SectionHeader>
-      <SectionContent
-        className={cn(!isStrokeEnabled && "pointer-events-none opacity-50")}
-      >
+      <SectionContent className={cn(!isStrokeEnabled && "pointer-events-none opacity-50")}>
         <SectionFields>
-          {strokeParams.map((param) => (
+          {strokeParams.map(param => (
             <AnimatedGraphicParamField
               key={param.key}
               param={param}
@@ -209,23 +176,21 @@ function AnimatedGraphicParamField({
   isPlayheadWithinElementRange: boolean;
   resolvedParams: ParamValues;
 }) {
-  const animatedParam: KeyframedParamPropertyResult = useKeyframedParamProperty(
-    {
-      param,
-      trackId,
-      elementId: element.id,
-      animations: element.animations,
-      localTime,
-      isPlayheadWithinElementRange,
-      resolvedValue: resolvedParams[param.key] ?? param.default,
-      buildBaseUpdates: ({ value }) => ({
-        params: {
-          ...element.params,
-          [param.key]: value,
-        },
-      }),
-    },
-  );
+  const animatedParam: KeyframedParamPropertyResult = useKeyframedParamProperty({
+    param,
+    trackId,
+    elementId: element.id,
+    animations: element.animations,
+    localTime,
+    isPlayheadWithinElementRange,
+    resolvedValue: resolvedParams[param.key] ?? param.default,
+    buildBaseUpdates: ({ value }) => ({
+      params: {
+        ...element.params,
+        [param.key]: value,
+      },
+    }),
+  });
 
   return (
     <PropertyParamField

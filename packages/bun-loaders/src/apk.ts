@@ -52,19 +52,12 @@ export function readZip(data: Uint8Array): {
       break;
     }
   }
-  if (eocd < 0)
-    throw new TypeError("not a ZIP archive (no end of central directory)");
+  if (eocd < 0) throw new TypeError("not a ZIP archive (no end of central directory)");
   const total = view.getUint16(eocd + 10, true);
   let o = view.getUint32(eocd + 16, true);
   const utf8 = new TextDecoder();
   const entries: ZipEntry[] = [];
-  for (
-    let i = 0;
-    i < total &&
-    o + 46 <= data.length &&
-    view.getUint32(o, true) === 0x02014b50;
-    i++
-  ) {
+  for (let i = 0; i < total && o + 46 <= data.length && view.getUint32(o, true) === 0x02014b50; i++) {
     const nameLen = view.getUint16(o + 28, true);
     const extra = view.getUint16(o + 30, true);
     const comment = view.getUint16(o + 32, true);
@@ -81,16 +74,12 @@ export function readZip(data: Uint8Array): {
     entries,
     read(entry) {
       const h = entry.offset;
-      if (view.getUint32(h, true) !== 0x04034b50)
-        throw new TypeError(`bad local header: ${entry.name}`);
-      const start =
-        h + 30 + view.getUint16(h + 26, true) + view.getUint16(h + 28, true);
+      if (view.getUint32(h, true) !== 0x04034b50) throw new TypeError(`bad local header: ${entry.name}`);
+      const start = h + 30 + view.getUint16(h + 26, true) + view.getUint16(h + 28, true);
       const raw = data.subarray(start, start + entry.compressedSize);
       if (entry.method === 0) return raw;
       if (entry.method === 8) return Bun.inflateSync(raw.slice());
-      throw new TypeError(
-        `unsupported ZIP method ${entry.method}: ${entry.name}`,
-      );
+      throw new TypeError(`unsupported ZIP method ${entry.method}: ${entry.name}`);
     },
   };
 }
@@ -126,8 +115,7 @@ function stringPool(data: Uint8Array, view: DataView, o: number): string[] {
 /** Decode Android binary XML (AXML) into an element tree. */
 export function decodeAxml(data: Uint8Array): AxmlElement {
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-  if (view.getUint16(0, true) !== 0x0003)
-    throw new TypeError("not an Android binary XML document");
+  if (view.getUint16(0, true) !== 0x0003) throw new TypeError("not an Android binary XML document");
   let strings: string[] = [];
   const root: AxmlElement = { tag: "#document", attributes: {}, children: [] };
   const stack = [root];
@@ -172,11 +160,11 @@ export function decodeAxml(data: Uint8Array): AxmlElement {
 
 const androidName = (el: AxmlElement) => String(el.attributes.name ?? "");
 const all = (el: AxmlElement | undefined, tag: string): AxmlElement[] =>
-  el ? el.children.filter((c) => c.tag === tag) : [];
+  el ? el.children.filter(c => c.tag === tag) : [];
 
 export function parseApk(data: Uint8Array, path = "<memory>"): ApkInfo {
   const zip = readZip(data);
-  const byName = new Map(zip.entries.map((e) => [e.name, e]));
+  const byName = new Map(zip.entries.map(e => [e.name, e]));
   const manifestEntry = byName.get("AndroidManifest.xml");
   const manifest = manifestEntry ? decodeAxml(zip.read(manifestEntry)) : null;
   const app = manifest ? all(manifest, "application")[0] : undefined;
@@ -195,15 +183,11 @@ export function parseApk(data: Uint8Array, path = "<memory>"): ApkInfo {
       const headerSize = view.getUint16(2, true);
       resources = {
         packages: view.getUint32(8, true),
-        strings:
-          view.getUint16(headerSize, true) === 0x0001
-            ? view.getUint32(headerSize + 8, true)
-            : 0,
+        strings: view.getUint16(headerSize, true) === 0x0001 ? view.getUint32(headerSize + 8, true) : 0,
       };
     }
   }
-  const attr = (el: AxmlElement | undefined, key: string) =>
-    el?.attributes[key] ?? null;
+  const attr = (el: AxmlElement | undefined, key: string) => el?.attributes[key] ?? null;
   return {
     path,
     name: basename(path),
@@ -215,27 +199,16 @@ export function parseApk(data: Uint8Array, path = "<memory>"): ApkInfo {
     targetSdk: attr(sdk, "targetSdkVersion") as number | null,
     application: app?.attributes ?? {},
     permissions: manifest
-      ? [
-          ...all(manifest, "uses-permission"),
-          ...all(manifest, "uses-permission-sdk-23"),
-        ].map(androidName)
+      ? [...all(manifest, "uses-permission"), ...all(manifest, "uses-permission-sdk-23")].map(androidName)
       : [],
-    activities: [...all(app, "activity"), ...all(app, "activity-alias")].map(
-      androidName,
-    ),
+    activities: [...all(app, "activity"), ...all(app, "activity-alias")].map(androidName),
     services: all(app, "service").map(androidName),
     receivers: all(app, "receiver").map(androidName),
     providers: all(app, "provider").map(androidName),
-    features: manifest
-      ? all(manifest, "uses-feature").map(androidName).filter(Boolean)
-      : [],
+    features: manifest ? all(manifest, "uses-feature").map(androidName).filter(Boolean) : [],
     abis,
-    dex: zip.entries
-      .filter((e) => /^classes\d*\.dex$/.test(e.name))
-      .map((e) => e.name),
-    signatures: zip.entries
-      .filter((e) => /^META-INF\/.+\.(RSA|DSA|EC)$/i.test(e.name))
-      .map((e) => e.name),
+    dex: zip.entries.filter(e => /^classes\d*\.dex$/.test(e.name)).map(e => e.name),
+    signatures: zip.entries.filter(e => /^META-INF\/.+\.(RSA|DSA|EC)$/i.test(e.name)).map(e => e.name),
     resources,
     entries: zip.entries.length,
     manifest,

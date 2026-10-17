@@ -8,11 +8,7 @@ interface MeshOrbitOwner {
 }
 
 /** Own the official Three controls and their DOM listeners for one mesh preview. */
-export function bindMeshOrbitControls(
-  camera: Camera,
-  element: HTMLElement,
-  invalidate: () => void,
-): MeshOrbitOwner {
+export function bindMeshOrbitControls(camera: Camera, element: HTMLElement, invalidate: () => void): MeshOrbitOwner {
   const previousTouchAction = element.style.touchAction;
   const controls = new OrbitControls(camera, element);
   controls.enableDamping = true;

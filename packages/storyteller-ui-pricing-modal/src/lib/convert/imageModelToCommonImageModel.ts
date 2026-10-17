@@ -5,13 +5,9 @@ import { CommonImageModel } from "@storyteller/api-enums";
 // case is a direct pass-through. The switch below only remains to translate
 // LEGACY tauri ids (old bookmarks/state); do not add new cases.
 
-const COMMON_IMAGE_MODEL_VALUES: Set<string> = new Set(
-  Object.values(CommonImageModel),
-);
+const COMMON_IMAGE_MODEL_VALUES: Set<string> = new Set(Object.values(CommonImageModel));
 
-export function imageModelToCommonImageModel(
-  tauriId: string,
-): CommonImageModel | null {
+export function imageModelToCommonImageModel(tauriId: string): CommonImageModel | null {
   if (COMMON_IMAGE_MODEL_VALUES.has(tauriId)) {
     return tauriId as CommonImageModel;
   }

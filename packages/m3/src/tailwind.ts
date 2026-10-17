@@ -34,9 +34,7 @@ export function tailwindM3Plugin(): BunPlugin {
                   },
                 ]
               : [{ ...compiler.root, negated: false }];
-        sources.push(
-          ...compiler.sources.map((source) => ({ ...source, negated: false })),
-        );
+        sources.push(...compiler.sources.map(source => ({ ...source, negated: false })));
         const candidates = new Scanner({ sources }).scan();
         return { contents: compiler.build(candidates), loader: "css" };
       });

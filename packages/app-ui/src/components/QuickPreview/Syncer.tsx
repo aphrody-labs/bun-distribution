@@ -17,10 +17,7 @@ export function QuickPreviewSyncer() {
     if (!quickPreviewFileId) return;
 
     // When selection changes and QuickPreview is open, update preview to match selection
-    if (
-      selectedFiles.length === 1 &&
-      selectedFiles[0].id !== quickPreviewFileId
-    ) {
+    if (selectedFiles.length === 1 && selectedFiles[0].id !== quickPreviewFileId) {
       openQuickPreview(selectedFiles[0].id);
     }
   }, [selectedFiles, quickPreviewFileId, openQuickPreview]);

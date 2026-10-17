@@ -1,11 +1,6 @@
 import { UserDetailsLight } from "./types";
 
-import {
-  MediaFileClass,
-  MediaFileType,
-  WeightCategory,
-  WeightType,
-} from "../enums";
+import { MediaFileClass, MediaFileType, WeightCategory, WeightType } from "../enums";
 
 export interface MediaInfo {
   token: string;

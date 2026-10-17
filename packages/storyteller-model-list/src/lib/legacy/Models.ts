@@ -1,11 +1,7 @@
 import { ModelCreator } from "../classes/metadata/ModelCreator.js";
 import { ModelInfo } from "./ModelInfo.js";
 import { ModelTag } from "../classes/metadata/ModelTag.js";
-import {
-  ModelConfig,
-  ModelCapabilities,
-  ModelCategory,
-} from "./ModelConfig.js";
+import { ModelConfig, ModelCapabilities, ModelCategory } from "./ModelConfig.js";
 import { Model } from "../classes/Model.js";
 
 const mc = ModelCreator;
@@ -263,23 +259,16 @@ const ALL_MODELS: ModelConfig[] = [
 export const getAllModels = (): ModelConfig[] => ALL_MODELS;
 
 export const getModelsByCategory = (category: ModelCategory): ModelConfig[] =>
-  ALL_MODELS.filter((m) => m.category === category);
+  ALL_MODELS.filter(m => m.category === category);
 
 export const getInstructiveImageEditModels = (): ModelConfig[] =>
-  ALL_MODELS.filter(
-    (m) => m.category === "image" && m.tags?.includes("instructiveEdit"),
-  );
+  ALL_MODELS.filter(m => m.category === "image" && m.tags?.includes("instructiveEdit"));
 
 export const getMaskedInpaintModels = (): ModelConfig[] =>
-  ALL_MODELS.filter(
-    (m) =>
-      m.category === "image" && m.tags?.includes(ModelTag.MaskedInpainting),
-  );
+  ALL_MODELS.filter(m => m.category === "image" && m.tags?.includes(ModelTag.MaskedInpainting));
 
-export const lookupModelByTauriId = (
-  tauriId: string,
-): ModelConfig | undefined =>
-  ALL_MODELS.find((m) => m.info.tauri_id === tauriId);
+export const lookupModelByTauriId = (tauriId: string): ModelConfig | undefined =>
+  ALL_MODELS.find(m => m.info.tauri_id === tauriId);
 
 // Single exported capability resolver so callers never need to touch anything else
 export const getCapabilitiesForModel = (model?: Model): ModelCapabilities => {

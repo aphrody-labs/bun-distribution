@@ -21,11 +21,7 @@ function targetDir(): string {
   return join(runtimeHome(), hostTarget());
 }
 
-function point(
-  dir: string,
-  name: "current" | "previous",
-  to: string | undefined,
-): void {
+function point(dir: string, name: "current" | "previous", to: string | undefined): void {
   const link = join(dir, name);
   if (existsSync(link) || isLink(link)) rmSync(link, { force: true });
   if (to === undefined) return;
@@ -50,9 +46,7 @@ function read(dir: string, name: "current" | "previous"): string | undefined {
 
 export function install(source: string): string {
   const manifest = verifyArtifact(source);
-  const lib = Object.entries(manifest.files).find(([f]) =>
-    /\.(so|dylib|dll)$/.test(f),
-  );
+  const lib = Object.entries(manifest.files).find(([f]) => /\.(so|dylib|dll)$/.test(f));
   const hash8 = (lib?.[1].sha256 ?? "unknown").slice(0, 8);
   const name = `${manifest.version}-${hash8}`;
   const dir = targetDir();
@@ -77,8 +71,7 @@ export function rollback(): { current: string; previous: string | undefined } {
   const dir = targetDir();
   const previous = read(dir, "previous");
   const current = read(dir, "current");
-  if (previous === undefined)
-    throw new Error("Nothing to roll back to: no previous artifact");
+  if (previous === undefined) throw new Error("Nothing to roll back to: no previous artifact");
   verifyArtifact(join(dir, previous));
   point(dir, "previous", current);
   point(dir, "current", previous);
@@ -95,12 +88,9 @@ export function list(): {
   const current = read(dir, "current");
   const previous = read(dir, "previous");
   return readdirSync(dir)
-    .filter(
-      (entry) =>
-        entry !== "current" && entry !== "previous" && !entry.endsWith(".tmp"),
-    )
+    .filter(entry => entry !== "current" && entry !== "previous" && !entry.endsWith(".tmp"))
     .toSorted()
-    .map((name) => ({
+    .map(name => ({
       name,
       current: name === current,
       previous: name === previous,

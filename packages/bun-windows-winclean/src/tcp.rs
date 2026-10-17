@@ -75,7 +75,7 @@ fn parse_proc_address(hex: &str) -> Option<std::net::IpAddr> {
                 target.copy_from_slice(&word(hex.get(index * 8..index * 8 + 8)?)?);
             }
             Some(std::net::IpAddr::from(bytes))
-        },
+        }
         _ => None,
     }
 }
@@ -83,7 +83,10 @@ fn parse_proc_address(hex: &str) -> Option<std::net::IpAddr> {
 #[cfg(any(target_os = "linux", test))]
 fn parse_proc_endpoint(value: &str) -> Option<(std::net::IpAddr, u16)> {
     let (address, port) = value.split_once(':')?;
-    Some((parse_proc_address(address)?, u16::from_str_radix(port, 16).ok()?))
+    Some((
+        parse_proc_address(address)?,
+        u16::from_str_radix(port, 16).ok()?,
+    ))
 }
 
 /// Parse the body of `/proc/net/tcp` or `/proc/net/tcp6` (the header line is skipped).
@@ -107,7 +110,10 @@ fn parse_proc_net_tcp(contents: &str) -> Vec<ProcTcpRow> {
 /// The inode of a `/proc/<pid>/fd/<n>` link target such as `socket:[12345]`.
 #[cfg(any(target_os = "linux", test))]
 fn socket_inode(link: &str) -> Option<u64> {
-    link.strip_prefix("socket:[")?.strip_suffix(']')?.parse().ok()
+    link.strip_prefix("socket:[")?
+        .strip_suffix(']')?
+        .parse()
+        .ok()
 }
 
 #[cfg(windows)]
@@ -154,7 +160,7 @@ mod imp {
                     // Leave headroom: connections may appear between the two calls.
                     buffer = vec![0u32; (size as usize).div_ceil(4) + 64];
                     size = u32::try_from(buffer.len() * 4).unwrap_or(u32::MAX);
-                },
+                }
                 other => return Err(win32_error(other, "GetExtendedTcpTable")),
             }
         }
@@ -248,7 +254,10 @@ mod imp {
             return owners;
         };
         for process in processes.flatten() {
-            let Some(pid) = process.file_name().to_str().and_then(|name| name.parse::<u32>().ok())
+            let Some(pid) = process
+                .file_name()
+                .to_str()
+                .and_then(|name| name.parse::<u32>().ok())
             else {
                 continue;
             };
@@ -272,7 +281,7 @@ mod imp {
         match std::fs::read_to_string("/proc/net/tcp6") {
             Ok(contents) => rows.extend(parse_proc_net_tcp(&contents)),
             // Kernels built without IPv6 have no tcp6 table.
-            Err(error) if error.kind() == io::ErrorKind::NotFound => {},
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
             Err(error) => return Err(error),
         }
         let owners = socket_owners();

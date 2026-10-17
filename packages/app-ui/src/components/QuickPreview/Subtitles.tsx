@@ -21,20 +21,14 @@ const DEFAULT_SETTINGS: SubtitleSettings = {
   backgroundOpacity: 0.9,
 };
 
-export function Subtitles({
-  file,
-  videoElement,
-  settings = DEFAULT_SETTINGS,
-}: SubtitlesProps) {
+export function Subtitles({ file, videoElement, settings = DEFAULT_SETTINGS }: SubtitlesProps) {
   const [cues, setCues] = useState<SubtitleCue[]>([]);
   const [currentCue, setCurrentCue] = useState<SubtitleCue | null>(null);
   const { buildSidecarUrl } = useServer();
 
   // Load SRT sidecar if available
   useEffect(() => {
-    const srtSidecar = file.sidecars?.find(
-      (s) => s.kind === "transcript" && s.variant === "srt",
-    );
+    const srtSidecar = file.sidecars?.find(s => s.kind === "transcript" && s.variant === "srt");
 
     if (!srtSidecar || !file.content_identity?.uuid) {
       return;
@@ -42,12 +36,7 @@ export function Subtitles({
 
     // Map "text" format to "txt" extension (DB stores "text", file is .txt)
     const extension = srtSidecar.format === "text" ? "txt" : srtSidecar.format;
-    const srtUrl = buildSidecarUrl(
-      file.content_identity.uuid,
-      srtSidecar.kind,
-      srtSidecar.variant,
-      extension,
-    );
+    const srtUrl = buildSidecarUrl(file.content_identity.uuid, srtSidecar.kind, srtSidecar.variant, extension);
 
     if (!srtUrl) {
       console.warn("[Subtitles] Server URL or Library ID not available");
@@ -57,34 +46,25 @@ export function Subtitles({
     console.log("[Subtitles] Loading SRT from:", srtUrl);
 
     fetch(srtUrl)
-      .then(async (res) => {
+      .then(async res => {
         if (!res.ok) {
           if (res.status === 404) {
-            console.log(
-              "[Subtitles] No subtitle file found (not generated yet)",
-            );
+            console.log("[Subtitles] No subtitle file found (not generated yet)");
           } else {
-            console.error(
-              "[Subtitles] Failed to fetch SRT, status:",
-              res.status,
-            );
+            console.error("[Subtitles] Failed to fetch SRT, status:", res.status);
           }
           return null;
         }
         return res.text();
       })
-      .then((srtContent) => {
+      .then(srtContent => {
         if (!srtContent) return null;
         const parsed = parseSRT(srtContent);
-        console.log(
-          "[Subtitles] Loaded and parsed",
-          parsed.length,
-          "subtitle cues",
-        );
+        console.log("[Subtitles] Loaded and parsed", parsed.length, "subtitle cues");
         setCues(parsed);
         return null;
       })
-      .catch((err) => {
+      .catch(err => {
         console.log("[Subtitles] Subtitles not available:", err.message);
       });
   }, [file, buildSidecarUrl]);
@@ -92,12 +72,7 @@ export function Subtitles({
   // Sync with video playback
   useEffect(() => {
     if (!videoElement || cues.length === 0) {
-      console.log(
-        "[Subtitles] Not setting up sync - videoElement:",
-        !!videoElement,
-        "cues:",
-        cues.length,
-      );
+      console.log("[Subtitles] Not setting up sync - videoElement:", !!videoElement, "cues:", cues.length);
       return;
     }
 
@@ -105,9 +80,7 @@ export function Subtitles({
 
     const updateSubtitle = () => {
       const currentTime = videoElement.currentTime;
-      const activeCue = cues.find(
-        (cue) => currentTime >= cue.startTime && currentTime <= cue.endTime,
-      );
+      const activeCue = cues.find(cue => currentTime >= cue.startTime && currentTime <= cue.endTime);
 
       if (activeCue !== currentCue) {
         setCurrentCue(activeCue || null);
@@ -133,9 +106,7 @@ export function Subtitles({
   const positionClass = settings.position === "top" ? "top-16" : "bottom-16";
 
   return (
-    <div
-      className={`pointer-events-none absolute ${positionClass} left-0 right-0 flex justify-center px-8`}
-    >
+    <div className={`pointer-events-none absolute ${positionClass} left-0 right-0 flex justify-center px-8`}>
       <div
         className="max-w-4xl rounded-small px-6 py-3 text-center backdrop-blur-sm"
         style={{

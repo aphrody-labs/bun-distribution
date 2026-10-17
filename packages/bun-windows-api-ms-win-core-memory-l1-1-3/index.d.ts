@@ -5,11 +5,27 @@ interface Functions {
   /** api-ms-win-core-memory-l1-1-3.dll!OpenFileMappingFromApp */
   OpenFileMappingFromApp(DesiredAccess: number, InheritHandle: number, Name: string | Win32Pointer): number | null;
   /** api-ms-win-core-memory-l1-1-3.dll!SetProcessValidCallTargets */
-  SetProcessValidCallTargets(hProcess: Win32Pointer, VirtualAddress: Win32Pointer, RegionSize: number | bigint, NumberOfOffsets: number, OffsetInformation: Win32Pointer): number;
+  SetProcessValidCallTargets(
+    hProcess: Win32Pointer,
+    VirtualAddress: Win32Pointer,
+    RegionSize: number | bigint,
+    NumberOfOffsets: number,
+    OffsetInformation: Win32Pointer,
+  ): number;
   /** api-ms-win-core-memory-l1-1-3.dll!VirtualAllocFromApp */
-  VirtualAllocFromApp(BaseAddress: Win32Pointer, Size: number | bigint, AllocationType: number, Protection: number): number | null;
+  VirtualAllocFromApp(
+    BaseAddress: Win32Pointer,
+    Size: number | bigint,
+    AllocationType: number,
+    Protection: number,
+  ): number | null;
   /** api-ms-win-core-memory-l1-1-3.dll!VirtualProtectFromApp */
-  VirtualProtectFromApp(Address: Win32Pointer, Size: number | bigint, NewProtection: number, OldProtection: Win32Pointer): number;
+  VirtualProtectFromApp(
+    Address: Win32Pointer,
+    Size: number | bigint,
+    NewProtection: number,
+    OldProtection: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

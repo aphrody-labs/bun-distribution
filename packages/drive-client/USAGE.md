@@ -251,12 +251,12 @@ function EventListener() {
   const client = useSpacedriveClient();
 
   useEffect(() => {
-    const unlisten = client.subscribe((event) => {
+    const unlisten = client.subscribe(event => {
       // event is fully typed as Event union!
       console.log("Received event:", event);
     });
 
-    return () => unlisten.then((fn) => fn());
+    return () => unlisten.then(fn => fn());
   }, [client]);
 
   return null;

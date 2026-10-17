@@ -3,25 +3,72 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** wldp.dll!WldpCanExecuteBuffer */
-  WldpCanExecuteBuffer(host: Win32Pointer, options: number, buffer: Win32Pointer, bufferSize: number, auditInfo: string | Win32Pointer, result: Win32Pointer): number;
+  WldpCanExecuteBuffer(
+    host: Win32Pointer,
+    options: number,
+    buffer: Win32Pointer,
+    bufferSize: number,
+    auditInfo: string | Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** wldp.dll!WldpCanExecuteFile */
-  WldpCanExecuteFile(host: Win32Pointer, options: number, fileHandle: Win32Pointer, auditInfo: string | Win32Pointer, result: Win32Pointer): number;
+  WldpCanExecuteFile(
+    host: Win32Pointer,
+    options: number,
+    fileHandle: Win32Pointer,
+    auditInfo: string | Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** wldp.dll!WldpCanExecuteFileFromDetachedSignature */
-  WldpCanExecuteFileFromDetachedSignature(host: Win32Pointer, options: number, contentFileHandle: Win32Pointer, signatureFileHandle: Win32Pointer, auditInfo: string | Win32Pointer, result: Win32Pointer): number;
+  WldpCanExecuteFileFromDetachedSignature(
+    host: Win32Pointer,
+    options: number,
+    contentFileHandle: Win32Pointer,
+    signatureFileHandle: Win32Pointer,
+    auditInfo: string | Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** wldp.dll!WldpCanExecuteStream */
-  WldpCanExecuteStream(host: Win32Pointer, options: number, stream: Win32Pointer, auditInfo: string | Win32Pointer, result: Win32Pointer): number;
+  WldpCanExecuteStream(
+    host: Win32Pointer,
+    options: number,
+    stream: Win32Pointer,
+    auditInfo: string | Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** wldp.dll!WldpGetApplicationSettingBoolean */
-  WldpGetApplicationSettingBoolean(id: string | Win32Pointer, setting: string | Win32Pointer, result: Win32Pointer): number;
+  WldpGetApplicationSettingBoolean(
+    id: string | Win32Pointer,
+    setting: string | Win32Pointer,
+    result: Win32Pointer,
+  ): number;
   /** wldp.dll!WldpGetApplicationSettingStringList */
-  WldpGetApplicationSettingStringList(id: string | Win32Pointer, setting: string | Win32Pointer, dataCount: number | bigint, requiredCount: Win32Pointer, result: string | Win32Pointer): number;
+  WldpGetApplicationSettingStringList(
+    id: string | Win32Pointer,
+    setting: string | Win32Pointer,
+    dataCount: number | bigint,
+    requiredCount: Win32Pointer,
+    result: string | Win32Pointer,
+  ): number;
   /** wldp.dll!WldpGetApplicationSettingStringSet */
-  WldpGetApplicationSettingStringSet(id: string | Win32Pointer, setting: string | Win32Pointer, dataCount: number | bigint, requiredCount: Win32Pointer, result: string | Win32Pointer): number;
+  WldpGetApplicationSettingStringSet(
+    id: string | Win32Pointer,
+    setting: string | Win32Pointer,
+    dataCount: number | bigint,
+    requiredCount: Win32Pointer,
+    result: string | Win32Pointer,
+  ): number;
   /** wldp.dll!WldpGetLockdownPolicy */
   WldpGetLockdownPolicy(hostInformation: Win32Pointer, lockdownState: Win32Pointer, lockdownFlags: number): number;
   /** wldp.dll!WldpIsAppApprovedByPolicy */
   WldpIsAppApprovedByPolicy(PackageFamilyName: string | Win32Pointer, PackageVersion: number | bigint): number;
   /** wldp.dll!WldpIsClassInApprovedList */
-  WldpIsClassInApprovedList(classID: Win32Pointer, hostInformation: Win32Pointer, isApproved: Win32Pointer, optionalFlags: number): number;
+  WldpIsClassInApprovedList(
+    classID: Win32Pointer,
+    hostInformation: Win32Pointer,
+    isApproved: Win32Pointer,
+    optionalFlags: number,
+  ): number;
   /** wldp.dll!WldpIsDynamicCodePolicyEnabled */
   WldpIsDynamicCodePolicyEnabled(isEnabled: Win32Pointer): number;
   /** wldp.dll!WldpIsProductionConfiguration */
@@ -29,7 +76,11 @@ interface Functions {
   /** wldp.dll!WldpIsWcosProductionConfiguration */
   WldpIsWcosProductionConfiguration(IsProductionConfiguration: Win32Pointer): number;
   /** wldp.dll!WldpQueryDeviceSecurityInformation */
-  WldpQueryDeviceSecurityInformation(information: Win32Pointer, informationLength: number, returnLength: Win32Pointer): number;
+  WldpQueryDeviceSecurityInformation(
+    information: Win32Pointer,
+    informationLength: number,
+    returnLength: Win32Pointer,
+  ): number;
   /** wldp.dll!WldpQueryDynamicCodeTrust */
   WldpQueryDynamicCodeTrust(fileHandle: Win32Pointer, baseImage: Win32Pointer, imageSize: number): number;
   /** wldp.dll!WldpQueryPolicySettingEnabled */
@@ -37,7 +88,14 @@ interface Functions {
   /** wldp.dll!WldpQueryPolicySettingEnabled2 */
   WldpQueryPolicySettingEnabled2(SettingString: string | Win32Pointer, Enabled: Win32Pointer): number;
   /** wldp.dll!WldpQuerySecurityPolicy */
-  WldpQuerySecurityPolicy(providerName: Win32Pointer, keyName: Win32Pointer, valueName: Win32Pointer, valueType: Win32Pointer, valueAddress: Win32Pointer, valueSize: Win32Pointer): number;
+  WldpQuerySecurityPolicy(
+    providerName: Win32Pointer,
+    keyName: Win32Pointer,
+    valueName: Win32Pointer,
+    valueType: Win32Pointer,
+    valueAddress: Win32Pointer,
+    valueSize: Win32Pointer,
+  ): number;
   /** wldp.dll!WldpQueryWindowsLockdownMode */
   WldpQueryWindowsLockdownMode(lockdownMode: Win32Pointer): number;
   /** wldp.dll!WldpQueryWindowsLockdownRestriction */

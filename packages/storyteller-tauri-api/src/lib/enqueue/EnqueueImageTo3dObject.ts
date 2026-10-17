@@ -50,8 +50,7 @@ export interface EnqueueImageTo3dObjectSuccess extends CommandResult {
   payload: EnqueueImageTo3dObjectPayload;
 }
 
-export type EnqueueImageTo3dObjectResult =
-  EnqueueImageTo3dObjectSuccess | EnqueueImageTo3dObjectError;
+export type EnqueueImageTo3dObjectResult = EnqueueImageTo3dObjectSuccess | EnqueueImageTo3dObjectError;
 
 export const EnqueueImageTo3dObject = async (
   request: EnqueueImageTo3dObjectRequest,

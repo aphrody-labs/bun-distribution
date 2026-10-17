@@ -1,9 +1,6 @@
 import type { VideoModel } from "./VideoModel.js";
 
-export function resolveVideoOutputFormat(
-  model: VideoModel,
-  current?: string | null,
-): string | undefined {
+export function resolveVideoOutputFormat(model: VideoModel, current?: string | null): string | undefined {
   const options = model.outputFormatOptions;
   if (!options?.length) return undefined;
   if (current && options.includes(current)) return current;
@@ -11,19 +8,13 @@ export function resolveVideoOutputFormat(
 }
 
 export function videoGenerationCounts(model: VideoModel): number[] {
-  return model.generationCountOptions?.length
-    ? model.generationCountOptions
-    : [1];
+  return model.generationCountOptions?.length ? model.generationCountOptions : [1];
 }
 
-export function resolveVideoGenerationCount(
-  model: VideoModel,
-  current: number,
-): number {
+export function resolveVideoGenerationCount(model: VideoModel, current: number): number {
   const options = videoGenerationCounts(model);
   if (options.includes(current)) return current;
-  return model.defaultGenerationCount != null &&
-    options.includes(model.defaultGenerationCount)
+  return model.defaultGenerationCount != null && options.includes(model.defaultGenerationCount)
     ? model.defaultGenerationCount
     : options[0];
 }
@@ -44,28 +35,17 @@ export function videoResolutionValue(value: string): string {
   return legacy[value] ?? value;
 }
 
-export function videoDurationRange(
-  model: VideoModel,
-  referenceMode: boolean,
-): { min: number; max: number } | null {
-  const max = referenceMode
-    ? (model.maxDurationWithImageReferences ?? model.maxDuration)
-    : model.maxDuration;
+export function videoDurationRange(model: VideoModel, referenceMode: boolean): { min: number; max: number } | null {
+  const max = referenceMode ? (model.maxDurationWithImageReferences ?? model.maxDuration) : model.maxDuration;
   if (model.minDuration != null && max != null) {
     return { min: model.minDuration, max };
   }
   const options = model.durationOptions;
-  return options?.length
-    ? { min: Math.min(...options), max: Math.max(...options) }
-    : null;
+  return options?.length ? { min: Math.min(...options), max: Math.max(...options) } : null;
 }
 
 /** Match the web prompt box: clamp ranges, snap sparse lists, retain defaults. */
-export function resolveVideoDuration(
-  model: VideoModel,
-  current: number | null,
-  referenceMode: boolean,
-): number | null {
+export function resolveVideoDuration(model: VideoModel, current: number | null, referenceMode: boolean): number | null {
   const value = current ?? model.defaultDuration;
   if (value == null) return null;
   const range = videoDurationRange(model, referenceMode);
@@ -76,10 +56,7 @@ export function resolveVideoDuration(
     return model.durationOptions.reduce((best, option) => {
       const distance = Math.abs(option - value);
       const bestDistance = Math.abs(best - value);
-      return distance < bestDistance ||
-        (distance === bestDistance && option > best)
-        ? option
-        : best;
+      return distance < bestDistance || (distance === bestDistance && option > best) ? option : best;
     });
   }
   return model.defaultDuration ?? null;

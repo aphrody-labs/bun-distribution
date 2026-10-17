@@ -66,12 +66,8 @@ describe("moodboard document serialization", () => {
       m_board1: "https://cdn/board1.png",
       m_canvas1: "https://cdn/canvas1.png",
     });
-    expect(
-      (patched.board.items["item-blob-tokened"] as { src: string }).src,
-    ).toBe("https://cdn/board1.png");
-    expect((patched.canvas.nodes["node-blob-tokened"] as ImageNode).src).toBe(
-      "https://cdn/canvas1.png",
-    );
+    expect((patched.board.items["item-blob-tokened"] as { src: string }).src).toBe("https://cdn/board1.png");
+    expect((patched.canvas.nodes["node-blob-tokened"] as ImageNode).src).toBe("https://cdn/canvas1.png");
   });
 
   it("rejects malformed payloads", () => {
@@ -89,12 +85,8 @@ describe("moodboard document serialization", () => {
     // Backend returned nothing for these tokens (media deleted): the item
     // stays visible with the placeholder instead of an invisible tile.
     const patched = applyResolvedMediaUrls(document, {});
-    expect(
-      (patched.board.items["item-blob-tokened"] as { src: string }).src,
-    ).toBe(UNRESOLVED_MEDIA_SRC);
-    expect((patched.canvas.nodes["node-blob-tokened"] as ImageNode).src).toBe(
-      UNRESOLVED_MEDIA_SRC,
-    );
+    expect((patched.board.items["item-blob-tokened"] as { src: string }).src).toBe(UNRESOLVED_MEDIA_SRC);
+    expect((patched.canvas.nodes["node-blob-tokened"] as ImageNode).src).toBe(UNRESOLVED_MEDIA_SRC);
 
     // The placeholder is never persisted: a re-serialize clears it back to
     // "" so every future load re-attempts resolution (self-healing if the
@@ -107,9 +99,7 @@ describe("moodboard document serialization", () => {
       },
       canvas: { ...buildCanvas(), nodes: patched.canvas.nodes },
     });
-    expect(
-      (reserialized.board.items["item-blob-tokened"] as { src: string }).src,
-    ).toBe("");
+    expect((reserialized.board.items["item-blob-tokened"] as { src: string }).src).toBe("");
     expect(collectUnresolvedMediaTokens(reserialized)).toContain("m_board1");
   });
 });
@@ -187,12 +177,7 @@ function buildCanvas(): MoodboardCanvasDocument {
     viewport: { zoom: 1.75, pan: { x: -120, y: 40 } },
     gridSpacing: 24,
     snapEnabled: false,
-    rootOrder: [
-      "node-remote",
-      "node-blob-tokened",
-      "node-blob-untokened",
-      "node-group",
-    ],
+    rootOrder: ["node-remote", "node-blob-tokened", "node-blob-untokened", "node-group"],
     nodes: {
       "node-remote": {
         ...base,

@@ -5,22 +5,10 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { cva } from "class-variance-authority";
 import { clsx } from "clsx";
-import {
-  type ButtonHTMLAttributes,
-  type ReactElement,
-  type ReactNode,
-  forwardRef,
-  useEffect,
-  useState,
-} from "react";
+import { type ButtonHTMLAttributes, type ReactElement, type ReactNode, forwardRef, useEffect, useState } from "react";
 import { type FieldValues, type UseFormHandleSubmit } from "react-hook-form";
 
-import {
-  type AsChildProp,
-  asChildProps,
-  createPortalScope,
-  withClassName,
-} from "./base-ui";
+import { type AsChildProp, asChildProps, createPortalScope, withClassName } from "./base-ui";
 import { Icon, type IconSource, renderIcon } from "./Icon";
 import { Loader } from "./Loader";
 import { Form, type FormProps } from "./forms/Form";
@@ -43,10 +31,7 @@ class DialogManager {
   private states = new Map<number, DialogState>();
   private components = new Map<number, React.FC>();
 
-  create(
-    dialog: (props: UseDialogProps) => ReactElement,
-    options?: DialogOptions,
-  ) {
+  create(dialog: (props: UseDialogProps) => ReactElement, options?: DialogOptions) {
     const id = this.getId();
 
     this.components.set(id, () => dialog({ id, ...options }));
@@ -55,7 +40,7 @@ class DialogManager {
 
     this.notifyGlobalListeners();
 
-    return new Promise<void>((res) => {
+    return new Promise<void>(res => {
       const checkInterval = setInterval(() => {
         if (!this.components.has(id)) {
           clearInterval(checkInterval);
@@ -82,7 +67,7 @@ class DialogManager {
 
     const listeners = this.listeners.get(id);
     if (listeners) {
-      listeners.forEach((listener) => listener(newState));
+      listeners.forEach(listener => listener(newState));
     }
   }
 
@@ -110,7 +95,7 @@ class DialogManager {
   }
 
   private notifyGlobalListeners() {
-    this.globalListeners.forEach((listener) => listener());
+    this.globalListeners.forEach(listener => listener());
   }
 
   getComponents() {
@@ -118,7 +103,7 @@ class DialogManager {
   }
 
   isAnyDialogOpen() {
-    return Array.from(this.states.values()).some((s) => s.open);
+    return Array.from(this.states.values()).some(s => s.open);
   }
 
   remove(id: number) {
@@ -218,37 +203,29 @@ const dialogActionStyles = cva(
   {
     variants: {
       tone: {
-        primary:
-          "text-primary hover:bg-primary/8 active:bg-primary/10 focus-visible:bg-primary/10",
-        danger:
-          "text-error hover:bg-error/8 active:bg-error/10 focus-visible:bg-error/10",
+        primary: "text-primary hover:bg-primary/8 active:bg-primary/10 focus-visible:bg-primary/10",
+        danger: "text-error hover:bg-error/8 active:bg-error/10 focus-visible:bg-error/10",
       },
     },
     defaultVariants: { tone: "primary" },
   },
 );
 
-const DialogAction = forwardRef<
-  HTMLButtonElement,
-  ButtonHTMLAttributes<HTMLButtonElement> & { danger?: boolean }
->(({ danger, className, type = "button", ...props }, ref) => (
-  <button
-    ref={ref}
-    type={type}
-    className={clsx(
-      dialogActionStyles({ tone: danger ? "danger" : "primary" }),
-      className,
-    )}
-    {...props}
-  />
-));
+const DialogAction = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { danger?: boolean }>(
+  ({ danger, className, type = "button", ...props }, ref) => (
+    <button
+      ref={ref}
+      type={type}
+      className={clsx(dialogActionStyles({ tone: danger ? "danger" : "primary" }), className)}
+      {...props}
+    />
+  ),
+);
 
 DialogAction.displayName = "DialogAction";
 
 export interface DialogProps<S extends FieldValues>
-  extends
-    Omit<DialogPrimitive.Root.Props, "children">,
-    Omit<FormProps<S>, "onSubmit"> {
+  extends Omit<DialogPrimitive.Root.Props, "children">, Omit<FormProps<S>, "onSubmit"> {
   title?: string;
   dialog: ReturnType<typeof useDialog>;
   loading?: boolean;
@@ -287,15 +264,11 @@ export function Dialog<S extends FieldValues>({
   invertButtonFocus,
   ...props
 }: DialogProps<S>) {
-  const setOpen = (v: boolean) =>
-    dialogManager.setState(dialog.id, { open: v });
+  const setOpen = (v: boolean) => dialogManager.setState(dialog.id, { open: v });
 
   const cancelButton = (
     <DialogClose asChild>
-      <DialogAction
-        danger={props.cancelDanger}
-        onClick={typeof onCancelled === "function" ? onCancelled : undefined}
-      >
+      <DialogAction danger={props.cancelDanger} onClick={typeof onCancelled === "function" ? onCancelled : undefined}>
         {props.cancelLabel || "Cancel"}
       </DialogAction>
     </DialogClose>
@@ -303,10 +276,7 @@ export function Dialog<S extends FieldValues>({
 
   const closeButton = (
     <DialogClose asChild>
-      <DialogAction
-        disabled={props.loading}
-        onClick={typeof onCancelled === "function" ? onCancelled : undefined}
-      >
+      <DialogAction disabled={props.loading} onClick={typeof onCancelled === "function" ? onCancelled : undefined}>
         {props.closeLabel || "Close"}
       </DialogAction>
     </DialogClose>
@@ -314,13 +284,10 @@ export function Dialog<S extends FieldValues>({
 
   const disableCheck = props.errorMessageException
     ? !form.formState.isValid &&
-      !form.formState.errors.root?.serverError?.message?.startsWith(
-        props.errorMessageException as string,
-      )
+      !form.formState.errors.root?.serverError?.message?.startsWith(props.errorMessageException as string)
     : !form.formState.isValid;
 
-  const submitDisabled =
-    form.formState.isSubmitting || props.submitDisabled || disableCheck;
+  const submitDisabled = form.formState.isSubmitting || props.submitDisabled || disableCheck;
 
   const submitButton = props.ctaLabel ? (
     !props.ctaSecondLabel ? (
@@ -366,20 +333,17 @@ export function Dialog<S extends FieldValues>({
   ) : null;
 
   const showActions =
-    props.buttonsSideContent ||
-    (!props.hideButtons && (submitButton || props.cancelBtn || onCancelled));
+    props.buttonsSideContent || (!props.hideButtons && (submitButton || props.cancelBtn || onCancelled));
 
   return (
     <DialogPrimitive.Root
       open={dialog.state.open}
-      onOpenChange={(open) => setOpen(open)}
+      onOpenChange={open => setOpen(open)}
       disablePointerDismissal={props.ignoreClickOutside}
     >
       {props.trigger && <DialogTrigger asChild>{props.trigger}</DialogTrigger>}
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop
-          className={clsx("fixed inset-0 z-[102] bg-scrim/32", scrimMotion)}
-        />
+        <DialogPrimitive.Backdrop className={clsx("fixed inset-0 z-[102] bg-scrim/32", scrimMotion)} />
         <DialogPrimitive.Viewport className="fixed inset-0 z-[103] grid place-items-center overflow-y-auto">
           <DialogPrimitive.Popup
             className={clsx("my-8 outline-none", surfaceMotion)}
@@ -387,7 +351,7 @@ export function Dialog<S extends FieldValues>({
           >
             <Form
               form={form}
-              onSubmit={async (e) => {
+              onSubmit={async e => {
                 e?.preventDefault();
                 if (onSubmit) {
                   await onSubmit(e);
@@ -397,16 +361,9 @@ export function Dialog<S extends FieldValues>({
             >
               {!props.hideHeader && (
                 <div
-                  className={clsx(
-                    "mb-4 flex flex-col gap-4",
-                    props.icon ? "items-center text-center" : "items-start",
-                  )}
+                  className={clsx("mb-4 flex flex-col gap-4", props.icon ? "items-center text-center" : "items-start")}
                 >
-                  {props.icon && (
-                    <span className="flex text-secondary">
-                      {renderIcon(props.icon, { size: 24 })}
-                    </span>
-                  )}
+                  {props.icon && <span className="flex text-secondary">{renderIcon(props.icon, { size: 24 })}</span>}
                   <DialogPrimitive.Title className="text-headline-small text-on-surface">
                     {props.title}
                   </DialogPrimitive.Title>
@@ -424,17 +381,10 @@ export function Dialog<S extends FieldValues>({
               {showActions && (
                 <div className="mt-6 flex items-center justify-end gap-2">
                   {form.formState.isSubmitting && <Loader />}
-                  {props.buttonsSideContent && (
-                    <div>{props.buttonsSideContent}</div>
-                  )}
+                  {props.buttonsSideContent && <div>{props.buttonsSideContent}</div>}
                   <div className="grow" />
                   {!props.hideButtons && (
-                    <div
-                      className={clsx(
-                        invertButtonFocus ? "flex-row-reverse" : "flex-row",
-                        "flex gap-2",
-                      )}
-                    >
+                    <div className={clsx(invertButtonFocus ? "flex-row-reverse" : "flex-row", "flex gap-2")}>
                       {invertButtonFocus ? (
                         <>
                           {submitButton}
@@ -463,50 +413,29 @@ export function Dialog<S extends FieldValues>({
 
 export const DialogRoot = DialogPrimitive.Root;
 
-export interface DialogTriggerProps
-  extends DialogPrimitive.Trigger.Props, AsChildProp {}
+export interface DialogTriggerProps extends DialogPrimitive.Trigger.Props, AsChildProp {}
 
 export const DialogTrigger = forwardRef<HTMLButtonElement, DialogTriggerProps>(
   ({ asChild, children, ...props }, ref) => (
-    <DialogPrimitive.Trigger
-      ref={ref}
-      {...asChildProps(asChild, children)}
-      {...props}
-    />
+    <DialogPrimitive.Trigger ref={ref} {...asChildProps(asChild, children)} {...props} />
   ),
 );
 DialogTrigger.displayName = "DialogTrigger";
 
-const { Portal: DialogPortal, EnsurePortal } = createPortalScope(
-  DialogPrimitive.Portal,
-  "DialogPortal",
-);
+const { Portal: DialogPortal, EnsurePortal } = createPortalScope(DialogPrimitive.Portal, "DialogPortal");
 export { DialogPortal };
 
-export interface DialogCloseProps
-  extends DialogPrimitive.Close.Props, AsChildProp {}
+export interface DialogCloseProps extends DialogPrimitive.Close.Props, AsChildProp {}
 
-export const DialogClose = forwardRef<HTMLButtonElement, DialogCloseProps>(
-  ({ asChild, children, ...props }, ref) => (
-    <DialogPrimitive.Close
-      ref={ref}
-      {...asChildProps(asChild, children)}
-      {...props}
-    />
-  ),
-);
+export const DialogClose = forwardRef<HTMLButtonElement, DialogCloseProps>(({ asChild, children, ...props }, ref) => (
+  <DialogPrimitive.Close ref={ref} {...asChildProps(asChild, children)} {...props} />
+));
 DialogClose.displayName = "DialogClose";
 
 /** M3 scrim (Base UI `Dialog.Backdrop`): `scrim` at 32 %. */
-export const DialogOverlay = ({
-  className,
-  ...props
-}: DialogPrimitive.Backdrop.Props) => (
+export const DialogOverlay = ({ className, ...props }: DialogPrimitive.Backdrop.Props) => (
   <DialogPrimitive.Backdrop
-    className={withClassName(
-      clsx("fixed inset-0 z-50 bg-scrim/32", scrimMotion),
-      className,
-    )}
+    className={withClassName(clsx("fixed inset-0 z-50 bg-scrim/32", scrimMotion), className)}
     {...props}
   />
 );
@@ -523,12 +452,7 @@ export interface DialogContentProps extends DialogPrimitive.Popup.Props {
  * Base UI popup (focus trap, Escape and outside-press dismissal, `role="dialog"`), with a
  * trailing close icon button.
  */
-export const DialogContent = ({
-  className,
-  children,
-  forceMount,
-  ...props
-}: DialogContentProps) => (
+export const DialogContent = ({ className, children, forceMount, ...props }: DialogContentProps) => (
   <EnsurePortal keepMounted={forceMount}>
     <DialogOverlay />
     <DialogPrimitive.Popup
@@ -561,54 +485,27 @@ export const DialogContent = ({
 
 DialogContent.displayName = "DialogContent";
 
-export const DialogHeader = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={clsx("flex flex-col gap-4 text-left", className)}
-    {...props}
-  />
+export const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={clsx("flex flex-col gap-4 text-left", className)} {...props} />
 );
 
 DialogHeader.displayName = "DialogHeader";
 
-export const DialogFooter = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={clsx(
-      "flex flex-row flex-wrap items-center justify-end gap-2 pt-2",
-      className,
-    )}
-    {...props}
-  />
+export const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={clsx("flex flex-row flex-wrap items-center justify-end gap-2 pt-2", className)} {...props} />
 );
 
 DialogFooter.displayName = "DialogFooter";
 
-export const DialogTitle = ({
-  className,
-  ...props
-}: DialogPrimitive.Title.Props) => (
-  <DialogPrimitive.Title
-    className={withClassName("text-headline-small text-on-surface", className)}
-    {...props}
-  />
+export const DialogTitle = ({ className, ...props }: DialogPrimitive.Title.Props) => (
+  <DialogPrimitive.Title className={withClassName("text-headline-small text-on-surface", className)} {...props} />
 );
 
 DialogTitle.displayName = "DialogTitle";
 
-export const DialogDescription = ({
-  className,
-  ...props
-}: DialogPrimitive.Description.Props) => (
+export const DialogDescription = ({ className, ...props }: DialogPrimitive.Description.Props) => (
   <DialogPrimitive.Description
-    className={withClassName(
-      "text-body-medium text-on-surface-variant",
-      className,
-    )}
+    className={withClassName("text-body-medium text-on-surface-variant", className)}
     {...props}
   />
 );

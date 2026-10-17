@@ -40,10 +40,7 @@ export const LoadingBar = ({
     }
   }
 
-  const wrapperClassName = twMerge(
-    "w-full h-full relative bg-ui-background",
-    propsWrapperClassName,
-  );
+  const wrapperClassName = twMerge("w-full h-full relative bg-ui-background", propsWrapperClassName);
   const innerWrapperClassName = twMerge(
     "w-full h-full p-4 gap-6 m-auto flex flex-col justify-center items-center",
     propsInnerWrapperClassName,
@@ -75,26 +72,15 @@ export const LoadingBar = ({
         <div className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-2.5">
             {hasSpinner && <LoadingSpinner className="h-5" />}
-            {progressData.label && (
-              <label className="text-lg font-medium">
-                {progressData.label}
-              </label>
-            )}
+            {progressData.label && <label className="text-lg font-medium">{progressData.label}</label>}
           </div>
         </div>
 
         <div className={progressBackgroundClassName}>
-          <div
-            className={progressClassName}
-            style={{ width: progressData.progress + "%" }}
-          />
+          <div className={progressClassName} style={{ width: progressData.progress + "%" }} />
         </div>
 
-        {progressData.message && (
-          <p className="text-center text-sm opacity-75">
-            {progressData.message}
-          </p>
-        )}
+        {progressData.message && <p className="text-center text-sm opacity-75">{progressData.message}</p>}
       </div>
     </Transition>
   );

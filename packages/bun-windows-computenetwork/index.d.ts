@@ -13,15 +13,41 @@ interface Functions {
   /** computenetwork.dll!HcnCloseNetwork */
   HcnCloseNetwork(Network: Win32Pointer): number;
   /** computenetwork.dll!HcnCreateEndpoint */
-  HcnCreateEndpoint(Network: Win32Pointer, Id: Win32Pointer, Settings: string | Win32Pointer, Endpoint: Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnCreateEndpoint(
+    Network: Win32Pointer,
+    Id: Win32Pointer,
+    Settings: string | Win32Pointer,
+    Endpoint: Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnCreateGuestNetworkService */
-  HcnCreateGuestNetworkService(Id: Win32Pointer, Settings: string | Win32Pointer, GuestNetworkService: Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnCreateGuestNetworkService(
+    Id: Win32Pointer,
+    Settings: string | Win32Pointer,
+    GuestNetworkService: Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnCreateLoadBalancer */
-  HcnCreateLoadBalancer(Id: Win32Pointer, Settings: string | Win32Pointer, LoadBalancer: Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnCreateLoadBalancer(
+    Id: Win32Pointer,
+    Settings: string | Win32Pointer,
+    LoadBalancer: Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnCreateNamespace */
-  HcnCreateNamespace(Id: Win32Pointer, Settings: string | Win32Pointer, Namespace: Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnCreateNamespace(
+    Id: Win32Pointer,
+    Settings: string | Win32Pointer,
+    Namespace: Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnCreateNetwork */
-  HcnCreateNetwork(Id: Win32Pointer, Settings: string | Win32Pointer, Network: Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnCreateNetwork(
+    Id: Win32Pointer,
+    Settings: string | Win32Pointer,
+    Network: Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnDeleteEndpoint */
   HcnDeleteEndpoint(Id: Win32Pointer, ErrorRecord: Win32Pointer): number;
   /** computenetwork.dll!HcnDeleteGuestNetworkService */
@@ -37,7 +63,11 @@ interface Functions {
   /** computenetwork.dll!HcnEnumerateGuestNetworkPortReservations */
   HcnEnumerateGuestNetworkPortReservations(ReturnCount: Win32Pointer, PortEntries: Win32Pointer): number;
   /** computenetwork.dll!HcnEnumerateLoadBalancers */
-  HcnEnumerateLoadBalancers(Query: string | Win32Pointer, LoadBalancer: Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnEnumerateLoadBalancers(
+    Query: string | Win32Pointer,
+    LoadBalancer: Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnEnumerateNamespaces */
   HcnEnumerateNamespaces(Query: string | Win32Pointer, Namespaces: Win32Pointer, ErrorRecord: Win32Pointer): number;
   /** computenetwork.dll!HcnEnumerateNetworks */
@@ -47,7 +77,11 @@ interface Functions {
   /** computenetwork.dll!HcnModifyEndpoint */
   HcnModifyEndpoint(Endpoint: Win32Pointer, Settings: string | Win32Pointer, ErrorRecord: Win32Pointer): number;
   /** computenetwork.dll!HcnModifyGuestNetworkService */
-  HcnModifyGuestNetworkService(GuestNetworkService: Win32Pointer, Settings: string | Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnModifyGuestNetworkService(
+    GuestNetworkService: Win32Pointer,
+    Settings: string | Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnModifyLoadBalancer */
   HcnModifyLoadBalancer(LoadBalancer: Win32Pointer, Settings: string | Win32Pointer, ErrorRecord: Win32Pointer): number;
   /** computenetwork.dll!HcnModifyNamespace */
@@ -63,27 +97,73 @@ interface Functions {
   /** computenetwork.dll!HcnOpenNetwork */
   HcnOpenNetwork(Id: Win32Pointer, Network: Win32Pointer, ErrorRecord: Win32Pointer): number;
   /** computenetwork.dll!HcnQueryEndpointAddresses */
-  HcnQueryEndpointAddresses(Endpoint: Win32Pointer, Query: string | Win32Pointer, Addresses: Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnQueryEndpointAddresses(
+    Endpoint: Win32Pointer,
+    Query: string | Win32Pointer,
+    Addresses: Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnQueryEndpointProperties */
-  HcnQueryEndpointProperties(Endpoint: Win32Pointer, Query: string | Win32Pointer, Properties: Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnQueryEndpointProperties(
+    Endpoint: Win32Pointer,
+    Query: string | Win32Pointer,
+    Properties: Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnQueryEndpointStats */
-  HcnQueryEndpointStats(Endpoint: Win32Pointer, Query: string | Win32Pointer, Stats: Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnQueryEndpointStats(
+    Endpoint: Win32Pointer,
+    Query: string | Win32Pointer,
+    Stats: Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnQueryLoadBalancerProperties */
-  HcnQueryLoadBalancerProperties(LoadBalancer: Win32Pointer, Query: string | Win32Pointer, Properties: Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnQueryLoadBalancerProperties(
+    LoadBalancer: Win32Pointer,
+    Query: string | Win32Pointer,
+    Properties: Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnQueryNamespaceProperties */
-  HcnQueryNamespaceProperties(Namespace: Win32Pointer, Query: string | Win32Pointer, Properties: Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnQueryNamespaceProperties(
+    Namespace: Win32Pointer,
+    Query: string | Win32Pointer,
+    Properties: Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnQueryNetworkProperties */
-  HcnQueryNetworkProperties(Network: Win32Pointer, Query: string | Win32Pointer, Properties: Win32Pointer, ErrorRecord: Win32Pointer): number;
+  HcnQueryNetworkProperties(
+    Network: Win32Pointer,
+    Query: string | Win32Pointer,
+    Properties: Win32Pointer,
+    ErrorRecord: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnRegisterGuestNetworkServiceCallback */
-  HcnRegisterGuestNetworkServiceCallback(GuestNetworkService: Win32Pointer, Callback: Win32Callback, Context: Win32Pointer, CallbackHandle: Win32Pointer): number;
+  HcnRegisterGuestNetworkServiceCallback(
+    GuestNetworkService: Win32Pointer,
+    Callback: Win32Callback,
+    Context: Win32Pointer,
+    CallbackHandle: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnRegisterServiceCallback */
   HcnRegisterServiceCallback(Callback: Win32Callback, Context: Win32Pointer, CallbackHandle: Win32Pointer): number;
   /** computenetwork.dll!HcnReleaseGuestNetworkServicePortReservationHandle */
   HcnReleaseGuestNetworkServicePortReservationHandle(PortReservationHandle: Win32Pointer): number;
   /** computenetwork.dll!HcnReserveGuestNetworkServicePort */
-  HcnReserveGuestNetworkServicePort(GuestNetworkService: Win32Pointer, Protocol: number, Access: number, Port: number, PortReservationHandle: Win32Pointer): number;
+  HcnReserveGuestNetworkServicePort(
+    GuestNetworkService: Win32Pointer,
+    Protocol: number,
+    Access: number,
+    Port: number,
+    PortReservationHandle: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnReserveGuestNetworkServicePortRange */
-  HcnReserveGuestNetworkServicePortRange(GuestNetworkService: Win32Pointer, PortCount: number, PortRangeReservation: Win32Pointer, PortReservationHandle: Win32Pointer): number;
+  HcnReserveGuestNetworkServicePortRange(
+    GuestNetworkService: Win32Pointer,
+    PortCount: number,
+    PortRangeReservation: Win32Pointer,
+    PortReservationHandle: Win32Pointer,
+  ): number;
   /** computenetwork.dll!HcnUnregisterGuestNetworkServiceCallback */
   HcnUnregisterGuestNetworkServiceCallback(CallbackHandle: Win32Pointer): number;
   /** computenetwork.dll!HcnUnregisterServiceCallback */

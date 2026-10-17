@@ -7,7 +7,7 @@ export function browserSessionStream(
 ): () => void {
   let active = true;
   // oxlint-disable-next-line unicorn/prefer-add-event-listener -- the source contract is the onmessage property (fake EventSource in browser-session-stream.test.ts delivers through it)
-  source.onmessage = (event) => {
+  source.onmessage = event => {
     if (!active) return;
     let message: { params?: { threadId?: string; thread?: { id?: string } } };
     try {

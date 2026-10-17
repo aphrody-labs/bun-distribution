@@ -25,9 +25,9 @@ export const ColorPickerPopover = ({ onAdd }: Props) => (
       triggerIcon={<PaletteIcon className="h-4 w-4" aria-label="Add color" />}
       buttonClassName="h-9 w-9 rounded-[10px] border-transparent bg-transparent p-0 text-base-fg/80 shadow-none hover:bg-base-fg/10 hover:text-base-fg"
     >
-      {(close) => (
+      {close => (
         <ColorPickerPanel
-          onAdd={(color) => {
+          onAdd={color => {
             onAdd(color);
             close();
           }}
@@ -42,11 +42,7 @@ const ColorPickerPanel = ({ onAdd }: Props) => {
   const normalized = color.toUpperCase();
   return (
     <div className="flex flex-col gap-3 p-1">
-      <HexColorPicker
-        color={color}
-        onChange={setColor}
-        style={{ width: "100%", height: 168 }}
-      />
+      <HexColorPicker color={color} onChange={setColor} style={{ width: "100%", height: 168 }} />
       <div className="flex items-center gap-2">
         <span
           className="h-9 w-9 shrink-0 rounded-lg border border-ui-divider"
@@ -61,11 +57,7 @@ const ColorPickerPanel = ({ onAdd }: Props) => {
           className="h-9 w-full rounded-lg border border-ui-controls-border bg-ui-controls px-2.5 text-sm uppercase text-base-fg outline-none focus:border-primary"
         />
       </div>
-      <Button
-        variant="primary"
-        onClick={() => onAdd(normalized)}
-        className="w-full justify-center"
-      >
+      <Button variant="primary" onClick={() => onAdd(normalized)} className="w-full justify-center">
         Add color
       </Button>
     </div>

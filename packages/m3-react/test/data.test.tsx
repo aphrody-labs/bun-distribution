@@ -17,24 +17,14 @@ const people: Person[] = Array.from({ length: 60 }, (_, i) => ({
   age: 20 + (i % 40),
 }));
 const col = dataColumns<Person>();
-const columns = [
-  col.accessor("name", { header: "Name" }),
-  col.accessor("age", { header: "Age" }),
-];
+const columns = [col.accessor("name", { header: "Name" }), col.accessor("age", { header: "Age" })];
 
-const cellTexts = (html: string) =>
-  [...html.matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map((m) => m[1]);
+const cellTexts = (html: string) => [...html.matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map(m => m[1]);
 
 describe("DataTable", () => {
   test("renders a semantic table with headers, a caption and the first page", () => {
     const html = renderToString(
-      <DataTable
-        data={people}
-        columns={columns}
-        caption="People"
-        pageSize={10}
-        getRowId={(p) => p.id}
-      />,
+      <DataTable data={people} columns={columns} caption="People" pageSize={10} getRowId={p => p.id} />,
     );
     expect(html).toContain("<caption");
     expect(html).toContain("People");
@@ -46,12 +36,7 @@ describe("DataTable", () => {
 
   test("initial sorting orders rows and marks the header", () => {
     const html = renderToString(
-      <DataTable
-        data={people}
-        columns={columns}
-        pageSize={5}
-        initialSorting={[{ id: "name", desc: true }]}
-      />,
+      <DataTable data={people} columns={columns} pageSize={5} initialSorting={[{ id: "name", desc: true }]} />,
     );
     expect(cellTexts(html)[0]).toBe("Person 59");
     expect(html).toContain('aria-sort="descending"');
@@ -59,11 +44,7 @@ describe("DataTable", () => {
 
   test("virtual mode renders a window of rows with spacers and no pager", () => {
     const html = renderToString(
-      <DataTable
-        data={people}
-        columns={columns}
-        virtual={{ height: 260, rowHeight: 52, overscan: 0 }}
-      />,
+      <DataTable data={people} columns={columns} virtual={{ height: 260, rowHeight: 52, overscan: 0 }} />,
     );
     const rendered = html.match(/data-row-id=/g)?.length ?? 0;
     expect(rendered).toBeGreaterThan(0);
@@ -73,36 +54,23 @@ describe("DataTable", () => {
   });
 
   test("an empty table shows the empty label", () => {
-    expect(
-      renderToString(
-        <DataTable data={[]} columns={columns} emptyLabel="Nobody" />,
-      ),
-    ).toContain("Nobody");
+    expect(renderToString(<DataTable data={[]} columns={columns} emptyLabel="Nobody" />)).toContain("Nobody");
   });
 
   test("clicking a header sorts, the search field filters", async () => {
     const container = document.createElement("div");
     document.body.append(container);
     const root = createRoot(container);
-    await act(async () =>
-      root.render(
-        <DataTable data={people} columns={columns} searchable pageSize={100} />,
-      ),
-    );
+    await act(async () => root.render(<DataTable data={people} columns={columns} searchable pageSize={100} />));
     const firstName = () => container.querySelector("tbody td")?.textContent;
     expect(firstName()).toBe("Person 00");
     const sortName = container.querySelector<HTMLButtonElement>("th button")!;
     await act(async () => sortName.click());
     await act(async () => sortName.click());
     expect(firstName()).toBe("Person 59");
-    const search = container.querySelector<HTMLInputElement>(
-      'input[type="search"]',
-    )!;
+    const search = container.querySelector<HTMLInputElement>('input[type="search"]')!;
     await act(async () => {
-      const setter = Object.getOwnPropertyDescriptor(
-        HTMLInputElement.prototype,
-        "value",
-      )!.set!;
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
       setter.call(search, "Person 42");
       search.dispatchEvent(new Event("input", { bubbles: true }));
     });
@@ -122,7 +90,7 @@ describe("VirtualList", () => {
         height={280}
         estimateSize={56}
         overscan={2}
-        renderItem={(item) => <span>{item}</span>}
+        renderItem={item => <span>{item}</span>}
       />,
     );
     const rendered = html.match(/<li[\s>]/g)?.length ?? 0;

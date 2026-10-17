@@ -2,11 +2,7 @@ import { motion } from "motion/react";
 import { BallBlue } from "@aphrody/assets/images";
 import Orb from "../../components/Orb";
 import { CircleButton } from "@aphrody/m3-primitives";
-import {
-  GlobeHemisphereWest,
-  GithubLogo,
-  DiscordLogo,
-} from "@phosphor-icons/react";
+import { GlobeHemisphereWest, GithubLogo, DiscordLogo } from "@phosphor-icons/react";
 import contributors from "../../contributors.json";
 
 export function AboutSettings() {
@@ -21,22 +17,11 @@ export function AboutSettings() {
       >
         {/* Ball image - behind the orb */}
         <div className="absolute inset-[8%] z-0">
-          <img
-            src={BallBlue}
-            alt="Spacedrive"
-            className="w-full h-full object-contain select-none"
-            draggable={false}
-          />
+          <img src={BallBlue} alt="Spacedrive" className="w-full h-full object-contain select-none" draggable={false} />
         </div>
         {/* Orb animation - inset to make it smaller */}
         <div className="absolute inset-[15%] z-10">
-          <Orb
-            palette="blue"
-            hue={0}
-            hoverIntensity={0}
-            rotateOnHover={false}
-            forceHoverState={true}
-          />
+          <Orb palette="blue" hue={0} hoverIntensity={0} rotateOnHover={false} forceHoverState={true} />
         </div>
       </motion.div>
 
@@ -47,12 +32,8 @@ export function AboutSettings() {
         transition={{ duration: 0.5, delay: 0.3 }}
         className="text-center mb-6"
       >
-        <h3 className="text-headline-small font-bold text-white mb-2">
-          Spacedrive
-        </h3>
-        <p className="text-body-medium text-white/60">
-          A file explorer from the future.
-        </p>
+        <h3 className="text-headline-small font-bold text-white mb-2">Spacedrive</h3>
+        <p className="text-body-medium text-white/60">A file explorer from the future.</p>
       </motion.div>
 
       {/* Manifesto */}
@@ -63,10 +44,9 @@ export function AboutSettings() {
         className="max-w-md text-center mb-8 px-4"
       >
         <p className="text-body-medium text-white/70 leading-relaxed">
-          Infrastructure for the next era of computing. An architecture designed
-          for multi-device environments from the ground up—not cloud services
-          retrofitted with offline support, but local-first sync that scales to
-          the cloud when you want it.
+          Infrastructure for the next era of computing. An architecture designed for multi-device environments from the
+          ground up—not cloud services retrofitted with offline support, but local-first sync that scales to the cloud
+          when you want it.
         </p>
       </motion.div>
 
@@ -77,25 +57,13 @@ export function AboutSettings() {
         transition={{ duration: 0.5, delay: 0.4 }}
         className="flex gap-3 mb-6"
       >
-        <a
-          href="https://spacedrive.com"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href="https://spacedrive.com" target="_blank" rel="noopener noreferrer">
           <CircleButton icon={GlobeHemisphereWest}>Website</CircleButton>
         </a>
-        <a
-          href="https://github.com/spacedriveapp/spacedrive"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href="https://github.com/spacedriveapp/spacedrive" target="_blank" rel="noopener noreferrer">
           <CircleButton icon={GithubLogo}>GitHub</CircleButton>
         </a>
-        <a
-          href="https://discord.gg/spacedrive"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href="https://discord.gg/spacedrive" target="_blank" rel="noopener noreferrer">
           <CircleButton icon={DiscordLogo}>Discord</CircleButton>
         </a>
       </motion.div>

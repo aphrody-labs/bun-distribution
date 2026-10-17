@@ -14,7 +14,8 @@ import { describe, listOwned } from "./store";
 
 export const uploadChunkBytes = 8 * 1024 * 1024;
 
-const json = (value: unknown, status = 200) => Response.json(value, { status, headers: { "cache-control": "no-store" } });
+const json = (value: unknown, status = 200) =>
+  Response.json(value, { status, headers: { "cache-control": "no-store" } });
 
 function uploadPath(id: string): string {
   if (!/^[0-9a-f-]{36}$/.test(id)) throw new Error("bad upload id");
@@ -22,7 +23,9 @@ function uploadPath(id: string): string {
 }
 
 function safeName(name: string): string {
-  const clean = basename(name.replaceAll("\\", "/")).replace(/[^\w.() +-]+/g, "_").slice(0, 160);
+  const clean = basename(name.replaceAll("\\", "/"))
+    .replace(/[^\w.() +-]+/g, "_")
+    .slice(0, 160);
   if (!clean || clean.startsWith(".")) throw new Error("bad file name");
   return clean;
 }
@@ -54,14 +57,17 @@ export function ownedRoutes(): Record<string, Record<string, Handler>> {
         }),
     },
     "/api/owned/drop.js": {
-      GET: () => new Response(dropScript, { headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-store" } }),
+      GET: () =>
+        new Response(dropScript, {
+          headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-store" },
+        }),
     },
     "/api/owned/upload/:id": {
-      GET: safe((request) => {
+      GET: safe(request => {
         const path = uploadPath((request.params as { id: string }).id);
         return json({ received: existsSync(path) ? statSync(path).size : 0 });
       }),
-      PUT: safe(async (request) => {
+      PUT: safe(async request => {
         const path = uploadPath((request.params as { id: string }).id);
         const offset = Number(new URL(request.url).searchParams.get("offset") ?? "0");
         const received = existsSync(path) ? statSync(path).size : 0;

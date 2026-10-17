@@ -3,7 +3,7 @@
 // yields a usable tile.
 
 export const measureImage = (url: string): Promise<{ w: number; h: number }> =>
-  new Promise((resolve) => {
+  new Promise(resolve => {
     const img = new window.Image();
     // No crossOrigin: we only read naturalWidth/Height (which never taint a
     // canvas), and forcing anonymous CORS makes non-CORS images fail to load —
@@ -15,12 +15,11 @@ export const measureImage = (url: string): Promise<{ w: number; h: number }> =>
   });
 
 export const measureVideo = (url: string): Promise<{ w: number; h: number }> =>
-  new Promise((resolve) => {
+  new Promise(resolve => {
     const v = document.createElement("video");
     v.preload = "metadata";
     v.muted = true;
-    v.onloadedmetadata = () =>
-      resolve({ w: v.videoWidth || 320, h: v.videoHeight || 320 });
+    v.onloadedmetadata = () => resolve({ w: v.videoWidth || 320, h: v.videoHeight || 320 });
     v.onerror = () => resolve({ w: 320, h: 320 });
     v.src = url;
   });

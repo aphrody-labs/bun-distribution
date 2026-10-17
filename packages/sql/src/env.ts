@@ -24,9 +24,7 @@ function defaultEnv(): EnvSource {
  * literal `"undefined"`/`"null"` (shell interpolation accidents) nor an
  * undecrypted dotenvx payload. The value is not trimmed.
  */
-export function isUsableEnvValue(
-  value: string | undefined | null,
-): value is string {
+export function isUsableEnvValue(value: string | undefined | null): value is string {
   return (
     typeof value === "string" &&
     value.length > 0 &&
@@ -60,9 +58,7 @@ export interface DatabaseUrlNamesOptions {
  * (migrations, COPY, LISTEN) never use the pooled name. Fallback contract
  * names come last. Duplicates are removed.
  */
-export function databaseUrlNames(
-  options: DatabaseUrlNamesOptions = {},
-): string[] {
+export function databaseUrlNames(options: DatabaseUrlNamesOptions = {}): string[] {
   const names: string[] = [];
   if (options.prefix !== undefined) {
     const prefix = normalizeEnvPrefix(options.prefix);
@@ -88,28 +84,21 @@ export interface ResolvedDatabaseUrl {
 }
 
 /** First usable URL among {@link databaseUrlNames}, or `null`. Never throws. */
-export function resolveDatabaseUrl(
-  options: ResolveDatabaseUrlOptions = {},
-): ResolvedDatabaseUrl | null {
+export function resolveDatabaseUrl(options: ResolveDatabaseUrlOptions = {}): ResolvedDatabaseUrl | null {
   const env = options.env ?? defaultEnv();
   for (const name of databaseUrlNames(options)) {
     const raw = env[name]?.trim();
-    if (isUsableEnvValue(raw))
-      return { url: raw, name, pooled: name.endsWith("_POOLED") };
+    if (isUsableEnvValue(raw)) return { url: raw, name, pooled: name.endsWith("_POOLED") };
   }
   return null;
 }
 
 /** Like {@link resolveDatabaseUrl} but throws an error naming the variables tried (never values). */
-export function requireDatabaseUrl(
-  options: ResolveDatabaseUrlOptions = {},
-): ResolvedDatabaseUrl {
+export function requireDatabaseUrl(options: ResolveDatabaseUrlOptions = {}): ResolvedDatabaseUrl {
   const resolved = resolveDatabaseUrl(options);
   if (resolved) return resolved;
   const tried = databaseUrlNames(options);
-  throw new Error(
-    `No database URL configured (tried ${tried.length ? tried.join(", ") : "no variable"}).`,
-  );
+  throw new Error(`No database URL configured (tried ${tried.length ? tried.join(", ") : "no variable"}).`);
 }
 
 export interface PoolSizeOptions {
@@ -120,17 +109,13 @@ export interface PoolSizeOptions {
 }
 
 /** Parses a pool size such as `DATABASE_POOL_MAX` (`parseInt` semantics). */
-export function resolvePoolSize(
-  raw: string | undefined,
-  options: PoolSizeOptions,
-): number {
+export function resolvePoolSize(raw: string | undefined, options: PoolSizeOptions): number {
   const value = Number.parseInt(raw ?? "", 10);
   if (!Number.isFinite(value) || value <= 0) return options.fallback;
   return Math.min(value, options.ceiling);
 }
 
-const SECRET_PARAMS =
-  /^(password|pass|sslpassword|sslkey|token|secret|api[_-]?key)$/i;
+const SECRET_PARAMS = /^(password|pass|sslpassword|sslkey|token|secret|api[_-]?key)$/i;
 
 /**
  * URL with the password and secret-looking query parameters replaced by
@@ -165,13 +150,7 @@ export function urlHost(url: string): string {
 /** Loopback or local socket host (`localhost`, `127.0.0.0/8`, `::1`, empty). */
 export function isLoopbackHost(host: string): boolean {
   const h = host.toLowerCase();
-  return (
-    h === "" ||
-    h === "localhost" ||
-    h.endsWith(".localhost") ||
-    h === "::1" ||
-    /^127(?:\.\d{1,3}){3}$/.test(h)
-  );
+  return h === "" || h === "localhost" || h.endsWith(".localhost") || h === "::1" || /^127(?:\.\d{1,3}){3}$/.test(h);
 }
 
 /** Ports used by PgBouncer (6432) and Supavisor transaction mode (6543). */
@@ -209,8 +188,7 @@ function stripQuotes(value: string): string {
   if (v.length >= 2) {
     const first = v[0];
     const last = v[v.length - 1];
-    if ((first === '"' || first === "'" || first === "`") && last === first)
-      return v.slice(1, -1);
+    if ((first === '"' || first === "'" || first === "`") && last === first) return v.slice(1, -1);
   }
   return v;
 }

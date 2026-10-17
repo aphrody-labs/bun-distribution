@@ -16,42 +16,31 @@ const REDIRECT_STATUSES = new Set([301, 302]);
  */
 module.exports = async function loadImage(source, options = {}) {
   // use the same buffer without copying if the source is a buffer
-  if (Buffer.isBuffer(source) || source instanceof Uint8Array)
-    return createImage(source, options.alt);
+  if (Buffer.isBuffer(source) || source instanceof Uint8Array) return createImage(source, options.alt);
   // load readable stream as image
-  if (source instanceof Readable)
-    return createImage(await consumeStream(source), options.alt);
+  if (source instanceof Readable) return createImage(await consumeStream(source), options.alt);
   // construct a Uint8Array if the source is ArrayBuffer or SharedArrayBuffer
   if (source instanceof ArrayBuffer || source instanceof SharedArrayBuffer)
     return createImage(new Uint8Array(source), options.alt);
   // construct a buffer if the source is buffer-like
-  if (isBufferLike(source))
-    return createImage(Buffer.from(source), options.alt);
+  if (isBufferLike(source)) return createImage(Buffer.from(source), options.alt);
   // if the source is Image instance, copy the image src to new image
   if (source instanceof Image) return createImage(source.src, options.alt);
   // if source is string and in data uri format, construct image using data uri
   if (typeof source === "string" && source.trimStart().startsWith("data:")) {
     const commaIdx = source.indexOf(",");
-    const encoding =
-      source.lastIndexOf("base64", commaIdx) < 0 ? "utf-8" : "base64";
+    const encoding = source.lastIndexOf("base64", commaIdx) < 0 ? "utf-8" : "base64";
     const data = Buffer.from(source.slice(commaIdx + 1), encoding);
     // Empty payload would silently complete on Image (HTML spec) and the loadImage
     // promise would never settle; reject upfront instead.
     // See https://github.com/Brooooooklyn/canvas/issues/1255
-    if (data.length === 0)
-      throw new Error(
-        `Invalid data URI: empty payload in ${source.slice(0, 64)}`,
-      );
+    if (data.length === 0) throw new Error(`Invalid data URI: empty payload in ${source.slice(0, 64)}`);
     return createImage(data, options.alt);
   }
   // if source is a string or URL instance
   if (typeof source === "string") {
     // if the source exists as a file, construct image from that file
-    if (
-      !source.startsWith("http") &&
-      !source.startsWith("https") &&
-      (await exists(source))
-    ) {
+    if (!source.startsWith("http") && !source.startsWith("https") && (await exists(source))) {
       return createImage(source, options.alt);
     } else {
       // the source is a remote url here
@@ -62,9 +51,7 @@ module.exports = async function loadImage(source, options = {}) {
           source,
           resolve,
           reject,
-          typeof options.maxRedirects === "number" && options.maxRedirects >= 0
-            ? options.maxRedirects
-            : MAX_REDIRECTS,
+          typeof options.maxRedirects === "number" && options.maxRedirects >= 0 ? options.maxRedirects : MAX_REDIRECTS,
           options.requestOptions,
         ),
       );
@@ -75,21 +62,14 @@ module.exports = async function loadImage(source, options = {}) {
   if (source instanceof URL) {
     if (source.protocol === "file:") {
       // remove the leading slash on windows
-      return createImage(
-        process.platform === "win32"
-          ? source.pathname.substring(1)
-          : source.pathname,
-        options.alt,
-      );
+      return createImage(process.platform === "win32" ? source.pathname.substring(1) : source.pathname, options.alt);
     } else {
       const data = await new Promise((resolve, reject) =>
         makeRequest(
           source,
           resolve,
           reject,
-          typeof options.maxRedirects === "number" && options.maxRedirects >= 0
-            ? options.maxRedirects
-            : MAX_REDIRECTS,
+          typeof options.maxRedirects === "number" && options.maxRedirects >= 0 ? options.maxRedirects : MAX_REDIRECTS,
           options.requestOptions,
         ),
       );
@@ -104,20 +84,12 @@ module.exports = async function loadImage(source, options = {}) {
 function makeRequest(url, resolve, reject, redirectCount, requestOptions) {
   const isHttps = url.protocol === "https:";
   // lazy load the lib
-  const lib = isHttps
-    ? !https
-      ? (https = require("https"))
-      : https
-    : !http
-      ? (http = require("http"))
-      : http;
+  const lib = isHttps ? (!https ? (https = require("https")) : https) : !http ? (http = require("http")) : http;
 
   lib
-    .get(url.toString(), requestOptions || {}, (res) => {
+    .get(url.toString(), requestOptions || {}, res => {
       try {
-        const shouldRedirect =
-          REDIRECT_STATUSES.has(res.statusCode) &&
-          typeof res.headers.location === "string";
+        const shouldRedirect = REDIRECT_STATUSES.has(res.statusCode) && typeof res.headers.location === "string";
         if (shouldRedirect && redirectCount > 0)
           return makeRequest(
             new URL(res.headers.location, url.origin),
@@ -126,15 +98,8 @@ function makeRequest(url, resolve, reject, redirectCount, requestOptions) {
             redirectCount - 1,
             requestOptions,
           );
-        if (
-          typeof res.statusCode === "number" &&
-          (res.statusCode < 200 || res.statusCode >= 300)
-        ) {
-          return reject(
-            new Error(
-              `remote source rejected with status code ${res.statusCode}`,
-            ),
-          );
+        if (typeof res.statusCode === "number" && (res.statusCode < 200 || res.statusCode >= 300)) {
+          return reject(new Error(`remote source rejected with status code ${res.statusCode}`));
         }
 
         consumeStream(res).then(resolve, reject);
@@ -150,7 +115,7 @@ function consumeStream(res) {
   return new Promise((resolve, reject) => {
     const chunks = [];
 
-    res.on("data", (chunk) => chunks.push(chunk));
+    res.on("data", chunk => chunks.push(chunk));
     res.on("end", () => resolve(Buffer.concat(chunks)));
     res.on("error", reject);
   });
@@ -176,7 +141,7 @@ async function createImage(src, alt) {
         .then(() => image.decode())
         .then(() => resolve(image), reject);
     };
-    image.onerror = (e) => reject(e);
+    image.onerror = e => reject(e);
     image.src = src;
   });
 }

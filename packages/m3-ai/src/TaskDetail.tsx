@@ -1,13 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 AND MIT
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/ai/src/TaskDetail.tsx), MIT, rebuilt on Material Design 3.
 
-import {
-  Button,
-  CircleButton,
-  Icon,
-  Select,
-  SelectOption,
-} from "@aphrody/m3-primitives";
+import { Button, CircleButton, Icon, Select, SelectOption } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 
 import { focusRing } from "./internal";
@@ -15,11 +9,7 @@ import { Markdown } from "./Markdown";
 import { TaskPriorityIcon } from "./TaskPriorityIcon";
 import { TaskStatusIcon } from "./TaskStatusIcon";
 import type { Task, TaskStatus } from "./types";
-import {
-  TASK_PRIORITY_LABEL,
-  TASK_STATUS_LABEL,
-  TASK_STATUS_ORDER,
-} from "./types";
+import { TASK_PRIORITY_LABEL, TASK_STATUS_LABEL, TASK_STATUS_ORDER } from "./types";
 
 export interface TaskDetailProps {
   task: Task;
@@ -41,19 +31,11 @@ function formatDate(iso: string) {
   });
 }
 
-function Property({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Property({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
       <span className="text-label-medium text-on-surface-variant">{label}</span>
-      <span className="flex min-h-8 items-center gap-1.5 text-body-medium text-on-surface">
-        {children}
-      </span>
+      <span className="flex min-h-8 items-center gap-1.5 text-body-medium text-on-surface">{children}</span>
     </div>
   );
 }
@@ -72,37 +54,21 @@ export function TaskDetail({
   onClose,
   className,
 }: TaskDetailProps) {
-  const ownerName =
-    resolveAgentName?.(task.owner_agent_id) ?? task.owner_agent_id;
-  const assigneeName =
-    resolveAgentName?.(task.assigned_agent_id) ?? task.assigned_agent_id;
-  const completedCount = task.subtasks.filter((s) => s.completed).length;
+  const ownerName = resolveAgentName?.(task.owner_agent_id) ?? task.owner_agent_id;
+  const assigneeName = resolveAgentName?.(task.assigned_agent_id) ?? task.assigned_agent_id;
+  const completedCount = task.subtasks.filter(s => s.completed).length;
 
   return (
-    <div
-      className={clsx(
-        "flex flex-col gap-6 bg-surface p-6 text-on-surface",
-        className,
-      )}
-    >
+    <div className={clsx("flex flex-col gap-6 bg-surface p-6 text-on-surface", className)}>
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <div className="flex flex-1 items-center gap-2">
             <TaskStatusIcon status={task.status} size={20} />
             <TaskPriorityIcon priority={task.priority} size={18} />
-            <span className="font-code text-body-small text-on-surface-variant">
-              SPC-{task.task_number}
-            </span>
+            <span className="font-code text-body-small text-on-surface-variant">SPC-{task.task_number}</span>
           </div>
-          {onClose && (
-            <CircleButton
-              icon="close"
-              variant="standard"
-              onClick={onClose}
-              aria-label="Close"
-            />
-          )}
+          {onClose && <CircleButton icon="close" variant="standard" onClick={onClose} aria-label="Close" />}
         </div>
         <h2 className="text-headline-small text-on-surface">{task.title}</h2>
       </div>
@@ -111,12 +77,8 @@ export function TaskDetail({
       <div className="grid grid-cols-2 gap-x-6 gap-y-4 medium:grid-cols-4">
         <Property label="Status">
           {onStatusChange ? (
-            <Select
-              value={task.status}
-              size="md"
-              onChange={(value) => onStatusChange(task, value as TaskStatus)}
-            >
-              {TASK_STATUS_ORDER.map((s) => (
+            <Select value={task.status} size="md" onChange={value => onStatusChange(task, value as TaskStatus)}>
+              {TASK_STATUS_ORDER.map(s => (
                 <SelectOption key={s} value={s}>
                   {TASK_STATUS_LABEL[s]}
                 </SelectOption>
@@ -167,21 +129,15 @@ export function TaskDetail({
                   <span
                     className={clsx(
                       "flex size-[18px] shrink-0 items-center justify-center rounded-[2px] transition-colors duration-200 ease-standard",
-                      subtask.completed
-                        ? "bg-primary text-on-primary"
-                        : "border-2 border-on-surface-variant",
+                      subtask.completed ? "bg-primary text-on-primary" : "border-2 border-on-surface-variant",
                     )}
                   >
-                    {subtask.completed && (
-                      <Icon name="check" size={16} weight={700} />
-                    )}
+                    {subtask.completed && <Icon name="check" size={16} weight={700} />}
                   </span>
                   <span
                     className={clsx(
                       "min-w-0 flex-1",
-                      subtask.completed
-                        ? "text-on-surface-variant line-through"
-                        : "text-on-surface",
+                      subtask.completed ? "text-on-surface-variant line-through" : "text-on-surface",
                     )}
                   >
                     {subtask.title}
@@ -199,9 +155,7 @@ export function TaskDetail({
         {task.description ? (
           <Markdown content={task.description} size="medium" />
         ) : (
-          <p className="text-body-medium text-on-surface-variant">
-            No description
-          </p>
+          <p className="text-body-medium text-on-surface-variant">No description</p>
         )}
       </section>
 
@@ -209,48 +163,29 @@ export function TaskDetail({
       <div className="flex flex-col gap-1 text-body-small text-on-surface-variant">
         <span>Created {formatDate(task.created_at)}</span>
         <span>Updated {formatDate(task.updated_at)}</span>
-        {task.completed_at && (
-          <span>Completed {formatDate(task.completed_at)}</span>
-        )}
+        {task.completed_at && <span>Completed {formatDate(task.completed_at)}</span>}
       </div>
 
       {/* Actions */}
       {(onStatusChange || onDelete) && (
         <div className="flex flex-wrap items-center gap-2">
           {onStatusChange && task.status === "pending_approval" && (
-            <Button
-              variant="filled"
-              size="lg"
-              onClick={() => onStatusChange(task, "ready")}
-            >
+            <Button variant="filled" size="lg" onClick={() => onStatusChange(task, "ready")}>
               Approve
             </Button>
           )}
           {onStatusChange && task.status === "backlog" && (
-            <Button
-              variant="filled"
-              size="lg"
-              onClick={() => onStatusChange(task, "in_progress")}
-            >
+            <Button variant="filled" size="lg" onClick={() => onStatusChange(task, "in_progress")}>
               Execute
             </Button>
           )}
-          {onStatusChange &&
-            (task.status === "in_progress" || task.status === "ready") && (
-              <Button
-                variant="filled"
-                size="lg"
-                onClick={() => onStatusChange(task, "done")}
-              >
-                Mark Done
-              </Button>
-            )}
+          {onStatusChange && (task.status === "in_progress" || task.status === "ready") && (
+            <Button variant="filled" size="lg" onClick={() => onStatusChange(task, "done")}>
+              Mark Done
+            </Button>
+          )}
           {onStatusChange && task.status === "done" && (
-            <Button
-              variant="text"
-              size="lg"
-              onClick={() => onStatusChange(task, "ready")}
-            >
+            <Button variant="text" size="lg" onClick={() => onStatusChange(task, "ready")}>
               Reopen
             </Button>
           )}

@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { SoundManager } from "@storyteller/soundboard";
 import { Button } from "@storyteller/ui-button";
 import { PlayIcon } from "lucide-react";
-import {
-  AppPreferencesPayload,
-  GetAppPreferences,
-} from "@storyteller/tauri-api";
+import { AppPreferencesPayload, GetAppPreferences } from "@storyteller/tauri-api";
 import { PreferenceName, UpdateAppPreferences } from "@storyteller/tauri-api";
 import { Select, SelectValue } from "@storyteller/ui-select";
 import { Switch } from "@storyteller/ui-switch";
@@ -14,9 +11,7 @@ import { Label } from "@storyteller/ui-label";
 interface AudioSettingsPaneProps {}
 
 export const AudioSettingsPane = (_args: AudioSettingsPaneProps) => {
-  const [preferences, setPreferences] = useState<
-    AppPreferencesPayload | undefined
-  >(undefined);
+  const [preferences, setPreferences] = useState<AppPreferencesPayload | undefined>(undefined);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -139,9 +134,7 @@ export const AudioSettingsPane = (_args: AudioSettingsPaneProps) => {
             <Select
               id="success-sound"
               value={enqueueSuccessSound}
-              onChange={(val: SelectValue) =>
-                setEnqueueSuccessSound(val as string)
-              }
+              onChange={(val: SelectValue) => setEnqueueSuccessSound(val as string)}
               options={SoundManager.OPTIONS}
               className="grow"
             />
@@ -160,9 +153,7 @@ export const AudioSettingsPane = (_args: AudioSettingsPaneProps) => {
             <Select
               id="success-sound"
               value={enqueueFailureSound}
-              onChange={(val: SelectValue) =>
-                setEnqueueFailureSound(val as string)
-              }
+              onChange={(val: SelectValue) => setEnqueueFailureSound(val as string)}
               options={SoundManager.OPTIONS}
               className="grow"
             />

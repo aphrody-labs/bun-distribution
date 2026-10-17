@@ -14,14 +14,7 @@ interface Props {
   hasMore?: boolean;
 }
 
-export const ItemElements = ({
-  busy,
-  className,
-  debug,
-  items,
-  onLoadMore,
-  hasMore,
-}: Props) => {
+export const ItemElements = ({ busy, className, debug, items, onLoadMore, hasMore }: Props) => {
   const GRID_GAP = 12;
   const ASPECT_RATIO = 16 / 12;
   const TEXT_HEIGHT = 32;
@@ -102,9 +95,7 @@ export const ItemElements = ({
     <div className={`h-full w-full ${className || ""}`}>
       <AutoSizer className="w-full">
         {({ height, width }) => {
-          const cellWidth = Math.floor(
-            (width - GRID_GAP * (COLUMN_COUNT + 1)) / COLUMN_COUNT,
-          );
+          const cellWidth = Math.floor((width - GRID_GAP * (COLUMN_COUNT + 1)) / COLUMN_COUNT);
           const imageHeight = Math.floor(cellWidth / ASPECT_RATIO);
           const cellHeight = imageHeight + TEXT_HEIGHT + GRID_GAP;
 

@@ -29,11 +29,9 @@ export async function safeExecuteInteraction(
   options: SafeExecuteInteractionOptions = {},
 ): Promise<void> {
   const logger = options.logger ?? console;
-  const failureMessage =
-    options.failureMessage ?? "❌ La commande a rencontré une erreur interne.";
+  const failureMessage = options.failureMessage ?? "❌ La commande a rencontré une erreur interne.";
   const unhandledMessage =
-    options.unhandledMessage ??
-    "Commande inconnue ou expirée. Rechargez Discord (Ctrl+R) pour actualiser la liste.";
+    options.unhandledMessage ?? "Commande inconnue ou expirée. Rechargez Discord (Ctrl+R) pour actualiser la liste.";
 
   let executionFailed = false;
   try {
@@ -71,9 +69,7 @@ export async function safeExecuteInteraction(
     if ((replyErr as { code?: unknown })?.code === 10062) return;
     logger.warn?.(
       "[discord-kit] Failed to send interaction fallback reply:",
-      replyErr instanceof Error
-        ? (replyErr.stack ?? replyErr.message)
-        : replyErr,
+      replyErr instanceof Error ? (replyErr.stack ?? replyErr.message) : replyErr,
     );
   }
 }

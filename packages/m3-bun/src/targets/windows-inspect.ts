@@ -21,9 +21,7 @@ interface BunWindows {
     get(path: string, name?: string): { type: string; value: unknown } | null;
   };
   services: {
-    get(
-      name: string,
-    ): { state: string; startType: string; binaryPath: string } | null;
+    get(name: string): { state: string; startType: string; binaryPath: string } | null;
   };
 }
 
@@ -51,9 +49,7 @@ export interface WindowsInspection {
 export const uninstallKey = (c: Pick<TargetContext, "name">): string =>
   `HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${c.name}`;
 
-export const shortcutName = (
-  c: Pick<TargetContext, "name" | "windows">,
-): string => `${c.windows?.title ?? c.name}.lnk`;
+export const shortcutName = (c: Pick<TargetContext, "name" | "windows">): string => `${c.windows?.title ?? c.name}.lnk`;
 
 async function bunWindows(): Promise<BunWindows> {
   const specifier = "bun:windows";
@@ -66,8 +62,7 @@ async function bunWindows(): Promise<BunWindows> {
       { cause: error },
     );
   }
-  if (!windows.isSupported)
-    throw new Error("m3-bun: inspectWindows runs on Windows only");
+  if (!windows.isSupported) throw new Error("m3-bun: inspectWindows runs on Windows only");
   return windows;
 }
 
@@ -85,10 +80,7 @@ export async function inspectWindows(
   const displayName = text(key, "DisplayName");
   const displayVersion = text(key, "DisplayVersion");
   const installLocation = text(key, "InstallLocation");
-  const dir =
-    installDir ??
-    installLocation ??
-    join(windows.knownFolder("ProgramFiles"), c.name);
+  const dir = installDir ?? installLocation ?? join(windows.knownFolder("ProgramFiles"), c.name);
   const exe = join(dir, `${c.name}.exe`);
   const lnk = shortcutName(c);
   const startMenu = join(windows.knownFolder("StartMenu"), "Programs", lnk);
@@ -96,9 +88,7 @@ export async function inspectWindows(
   const service = windows.services.get(c.name);
   const version = windows.version();
   return {
-    windows:
-      version.productName ??
-      `${version.major}.${version.minor}.${version.build}`,
+    windows: version.productName ?? `${version.major}.${version.minor}.${version.build}`,
     elevated: windows.isElevated(),
     executable: { path: exe, exists: existsSync(exe) },
     shortcuts: {

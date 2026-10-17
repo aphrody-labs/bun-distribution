@@ -85,23 +85,18 @@ const registerModal = (entry: ModalRegistryEntry) => {
 };
 
 const unregisterModal = (id: number) => {
-  const idx = modalRegistry.findIndex((m) => m.id === id);
+  const idx = modalRegistry.findIndex(m => m.id === id);
   if (idx !== -1) modalRegistry.splice(idx, 1);
   releaseStrandedBodyLock();
 };
 
-const updateModal = (
-  id: number,
-  data: Partial<{ zIndex: number; onClose: () => void; closeOnEsc: boolean }>,
-) => {
-  const entry = modalRegistry.find((m) => m.id === id);
+const updateModal = (id: number, data: Partial<{ zIndex: number; onClose: () => void; closeOnEsc: boolean }>) => {
+  const entry = modalRegistry.find(m => m.id === id);
   if (entry) Object.assign(entry, data);
 };
 
 const getTopEscapableModal = (): ModalRegistryEntry | undefined => {
-  return modalRegistry
-    .filter((m) => m.closeOnEsc)
-    .sort((a, b) => b.zIndex - a.zIndex)[0];
+  return modalRegistry.filter(m => m.closeOnEsc).sort((a, b) => b.zIndex - a.zIndex)[0];
 };
 
 // Install one global ESC listener (once per page load)
@@ -168,9 +163,7 @@ interface ModalExpandContextType {
   expanded: boolean;
   toggleExpanded: () => void;
 }
-const ModalExpandContext = createContext<ModalExpandContextType | undefined>(
-  undefined,
-);
+const ModalExpandContext = createContext<ModalExpandContextType | undefined>(undefined);
 
 // Expand button subcomponent
 interface ExpandButtonProps {
@@ -280,9 +273,7 @@ export const Modal = ({
   accessibleDescription?: string;
 }) => {
   // Draggable logic
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(
-    null,
-  );
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [dragging, setDragging] = useState(false);
   const [resizing, setResizing] = useState(false);
   const dragStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -361,8 +352,7 @@ export const Modal = ({
         setPosition({ ...lastNonExpandedPosition.current });
         positionRef.current = { ...lastNonExpandedPosition.current };
         if (modalRef.current) {
-          modalRef.current.style.left =
-            lastNonExpandedPosition.current.x + "px";
+          modalRef.current.style.left = lastNonExpandedPosition.current.x + "px";
           modalRef.current.style.top = lastNonExpandedPosition.current.y + "px";
           modalRef.current.style.margin = "0";
           modalRef.current.style.position = "fixed";
@@ -396,14 +386,13 @@ export const Modal = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded, zIndex]);
-  const toggleExpanded = () => setExpanded((v) => !v);
+  const toggleExpanded = () => setExpanded(v => !v);
 
   // Reset position when modal is closed or opened
   useEffect(() => {
     if (!isOpen) {
       // Don't reset position, just store the last position
-      if (positionRef.current)
-        lastPositionRef.current = { ...positionRef.current };
+      if (positionRef.current) lastPositionRef.current = { ...positionRef.current };
       // setPosition(null); // Don't reset position
       // positionRef.current = null; // Don't reset position
     } else {
@@ -526,12 +515,11 @@ export const Modal = ({
   if (draggable) {
     let foundHandle = false;
     enhancedChildren = Array.isArray(children)
-      ? children.map((child) => {
+      ? children.map(child => {
           if (
             !foundHandle &&
             isValidElement(child) &&
-            (child.type === DragHandle ||
-              (child.type as any).displayName === "ModalDragHandle")
+            (child.type === DragHandle || (child.type as any).displayName === "ModalDragHandle")
           ) {
             foundHandle = true;
             const typedChild = child as React.ReactElement<{
@@ -539,10 +527,7 @@ export const Modal = ({
             }>;
             return cloneElement(typedChild, {
               children: (
-                <div
-                  style={{ cursor: "move", userSelect: "none" }}
-                  onMouseDown={handleDragStart}
-                >
+                <div style={{ cursor: "move", userSelect: "none" }} onMouseDown={handleDragStart}>
                   {typedChild.props.children}
                 </div>
               ),
@@ -551,18 +536,14 @@ export const Modal = ({
           return child;
         })
       : isValidElement(children) &&
-          (children.type === DragHandle ||
-            (children.type as any).displayName === "ModalDragHandle")
+          (children.type === DragHandle || (children.type as any).displayName === "ModalDragHandle")
         ? (() => {
             const typedChildren = children as React.ReactElement<{
               children: ReactNode;
             }>;
             return cloneElement(typedChildren, {
               children: (
-                <div
-                  style={{ cursor: "move", userSelect: "none" }}
-                  onMouseDown={handleDragStart}
-                >
+                <div style={{ cursor: "move", userSelect: "none" }} onMouseDown={handleDragStart}>
                   {typedChildren.props.children}
                 </div>
               ),
@@ -607,8 +588,7 @@ export const Modal = ({
     if (!resizing) return;
     let animationFrame: number | null = null;
     const handleMouseMove = (e: MouseEvent) => {
-      if (!modalRef.current || !resizeStart.current || !resizeDirRef.current)
-        return;
+      if (!modalRef.current || !resizeStart.current || !resizeDirRef.current) return;
       const dx = e.clientX - resizeStart.current.mouseX;
       const dy = e.clientY - resizeStart.current.mouseY;
 
@@ -627,10 +607,8 @@ export const Modal = ({
         const cs = window.getComputedStyle(modalRef.current);
         const parsedMinW = parseFloat(cs.minWidth || "0");
         const parsedMinH = parseFloat(cs.minHeight || "0");
-        if (!Number.isNaN(parsedMinW) && parsedMinW > 0)
-          minWidth = Math.max(minWidth, parsedMinW);
-        if (!Number.isNaN(parsedMinH) && parsedMinH > 0)
-          minHeight = Math.max(minHeight, parsedMinH);
+        if (!Number.isNaN(parsedMinW) && parsedMinW > 0) minWidth = Math.max(minWidth, parsedMinW);
+        if (!Number.isNaN(parsedMinH) && parsedMinH > 0) minHeight = Math.max(minHeight, parsedMinH);
       } catch {}
 
       if (dir.includes("right")) {
@@ -740,20 +718,18 @@ export const Modal = ({
       "bottom-right": "se-resize",
     };
 
-    return handles.map((h) => (
+    return handles.map(h => (
       <div
         key={h.dir}
         className={`${baseClass} ${h.className}`}
         style={{ cursor: cursorMap[h.dir] }}
-        onMouseDown={(e) => handleResizeStart(e, h.dir)}
+        onMouseDown={e => handleResizeStart(e, h.dir)}
       />
     ));
   };
 
   // Size (width & height) state for resizable modal
-  const [size, setSize] = useState<{ width: number; height: number } | null>(
-    null,
-  );
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const sizeRef = useRef<{ width: number; height: number } | null>(null);
   const lastSizeRef = useRef<{ width: number; height: number } | null>(null);
 
@@ -821,10 +797,7 @@ export const Modal = ({
         if (isInPopover) return;
 
         // Allow if target is a form element that might be outside the modal
-        if (
-          target.matches("input, textarea, select, button, [contenteditable]")
-        )
-          return;
+        if (target.matches("input, textarea, select, button, [contenteditable]")) return;
       }
 
       e.stopPropagation();
@@ -863,13 +836,9 @@ export const Modal = ({
     }
 
     // MutationObserver to keep stripping inert from THIS modal element if reapplied
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((m) => {
-        if (
-          m.type === "attributes" &&
-          m.attributeName === "inert" &&
-          m.target instanceof HTMLElement
-        ) {
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(m => {
+        if (m.type === "attributes" && m.attributeName === "inert" && m.target instanceof HTMLElement) {
           const target = m.target as HTMLElement;
           // Only touch if the target is this modal or one of its ancestors
           if (target === node || node.contains(target)) {
@@ -888,26 +857,17 @@ export const Modal = ({
     // siblings of the one just created. We strip inert from ANY portal container
     // so long as background interaction is requested.
     const stripInertFromPortals = () => {
-      const portals = document.querySelectorAll(
-        "[data-radix-portal][inert], [data-headlessui-portal][inert]",
-      );
-      portals.forEach((el) => el.removeAttribute("inert"));
+      const portals = document.querySelectorAll("[data-radix-portal][inert], [data-headlessui-portal][inert]");
+      portals.forEach(el => el.removeAttribute("inert"));
     };
 
     stripInertFromPortals();
 
-    const globalObserver = new MutationObserver((mutList) => {
-      mutList.forEach((m) => {
-        if (
-          m.type === "attributes" &&
-          m.attributeName === "inert" &&
-          (m.target as HTMLElement).hasAttribute("inert")
-        ) {
+    const globalObserver = new MutationObserver(mutList => {
+      mutList.forEach(m => {
+        if (m.type === "attributes" && m.attributeName === "inert" && (m.target as HTMLElement).hasAttribute("inert")) {
           const target = m.target as HTMLElement;
-          if (
-            target.hasAttribute("data-radix-portal") ||
-            target.hasAttribute("data-headlessui-portal")
-          ) {
+          if (target.hasAttribute("data-radix-portal") || target.hasAttribute("data-headlessui-portal")) {
             stripInert(target as HTMLElement);
           }
         }
@@ -978,9 +938,7 @@ export const Modal = ({
     if (!draggable || !position) {
       // For regular modals, only apply size if resizable to prevent layout issues
       return {
-        ...(resizable && size
-          ? { width: size.width, height: size.height }
-          : {}),
+        ...(resizable && size ? { width: size.width, height: size.height } : {}),
         ...pointerStyle,
       };
     }
@@ -998,15 +956,13 @@ export const Modal = ({
   return (
     <Dialog.Root
       open={isOpen}
-      onOpenChange={(open) => !open && closeOnOutsideClick && onClose()}
+      onOpenChange={open => !open && closeOnOutsideClick && onClose()}
       modal={!allowBackgroundInteraction}
     >
       <Dialog.Portal>
         <div
           className="fixed inset-0 z-[70]"
-          style={
-            allowBackgroundInteraction ? { pointerEvents: "none" } : undefined
-          }
+          style={allowBackgroundInteraction ? { pointerEvents: "none" } : undefined}
         >
           {/* Animated Backdrop */}
           {!allowBackgroundInteraction &&
@@ -1022,20 +978,13 @@ export const Modal = ({
               ) : null,
             )}
           {allowBackgroundInteraction && (
-            <div
-              className={twMerge("fixed inset-0 z-[69]", backdropClassName)}
-              style={{ pointerEvents: "none" }}
-            />
+            <div className={twMerge("fixed inset-0 z-[69]", backdropClassName)} style={{ pointerEvents: "none" }} />
           )}
 
           <ModalExpandContext.Provider value={{ expanded, toggleExpanded }}>
             <div
               className="flex min-h-full items-center justify-center p-0 sm:p-4 text-center"
-              style={
-                allowBackgroundInteraction
-                  ? { pointerEvents: "none" }
-                  : undefined
-              }
+              style={allowBackgroundInteraction ? { pointerEvents: "none" } : undefined}
             >
               {/* Animated Modal Content */}
               {transitions((styles, item) => {
@@ -1043,10 +992,8 @@ export const Modal = ({
                   <Dialog.Content
                     forceMount
                     asChild
-                    {...(accessibleDescription
-                      ? {}
-                      : ({ "aria-describedby": undefined } as any))}
-                    onPointerDownOutside={(e) => {
+                    {...(accessibleDescription ? {} : ({ "aria-describedby": undefined } as any))}
+                    onPointerDownOutside={e => {
                       const target = e.target as HTMLElement | null;
                       if (
                         !closeOnOutsideClick ||
@@ -1056,18 +1003,15 @@ export const Modal = ({
                         e.preventDefault();
                       }
                     }}
-                    onEscapeKeyDown={(e) => {
+                    onEscapeKeyDown={e => {
                       // Radix listens on document in the capture phase, so an
                       // open outside-safe panel must be checked here too — its
                       // own Escape handling runs later in the bubble phase.
-                      if (
-                        !closeOnEsc ||
-                        document.querySelector(OUTSIDE_SAFE_SELECTOR)
-                      ) {
+                      if (!closeOnEsc || document.querySelector(OUTSIDE_SAFE_SELECTOR)) {
                         e.preventDefault();
                       }
                     }}
-                    onInteractOutside={(e) => {
+                    onInteractOutside={e => {
                       if (allowBackgroundInteraction) {
                         e.preventDefault();
                       }
@@ -1079,8 +1023,7 @@ export const Modal = ({
                         childPadding && !expanded ? "p-4" : "",
                         className,
                         "!transition-none", // Always disable CSS transitions for spring animations
-                        expanded &&
-                          "w-screen h-screen max-w-screen max-h-screen rounded-none",
+                        expanded && "w-screen h-screen max-w-screen max-h-screen rounded-none",
                       )}
                       ref={modalRef}
                       style={{
@@ -1090,14 +1033,10 @@ export const Modal = ({
                         // paired scale-down. Composed with the open/close spring
                         // so both animations coexist (factor multiplies opacity;
                         // the scale-down is appended to the spring transform).
-                        opacity: to(
-                          [styles.opacity, dimSpring.factor],
-                          (o, f) => (o as number) * (f as number),
-                        ),
+                        opacity: to([styles.opacity, dimSpring.factor], (o, f) => (o as number) * (f as number)),
                         transform: to(
                           [styles.transform, dimSpring.factor],
-                          (tr, f) =>
-                            `${tr} scale(${0.93 + 0.07 * (f as number)})`,
+                          (tr, f) => `${tr} scale(${0.93 + 0.07 * (f as number)})`,
                         ),
                         transformOrigin: "center center",
                         willChange: "transform, opacity", // Optimize for animations
@@ -1117,39 +1056,22 @@ export const Modal = ({
                       >
                         {accessibleDescription && (
                           <VisuallyHidden asChild>
-                            <Dialog.Description>
-                              {accessibleDescription}
-                            </Dialog.Description>
+                            <Dialog.Description>{accessibleDescription}</Dialog.Description>
                           </VisuallyHidden>
                         )}
                         {title ? (
                           <Dialog.Title
-                            className={twMerge(
-                              "mb-4 flex justify-between pb-0 text-xl font-bold text-base-fg",
-                            )}
+                            className={twMerge("mb-4 flex justify-between pb-0 text-xl font-bold text-base-fg")}
                           >
                             <>
                               {onTitleIconClick ? (
-                                <button
-                                  className="flex items-center gap-3"
-                                  onClick={onTitleIconClick}
-                                >
-                                  {titleIcon && (
-                                    <DynamicIcon
-                                      icon={titleIcon}
-                                      className={titleIconClassName}
-                                    />
-                                  )}
+                                <button className="flex items-center gap-3" onClick={onTitleIconClick}>
+                                  {titleIcon && <DynamicIcon icon={titleIcon} className={titleIconClassName} />}
                                   {title}
                                 </button>
                               ) : (
                                 <div className="flex items-center gap-3">
-                                  {titleIcon && (
-                                    <DynamicIcon
-                                      icon={titleIcon}
-                                      className={titleIconClassName}
-                                    />
-                                  )}
+                                  {titleIcon && <DynamicIcon icon={titleIcon} className={titleIconClassName} />}
                                   {title}
                                 </div>
                               )}
@@ -1157,14 +1079,10 @@ export const Modal = ({
                           </Dialog.Title>
                         ) : (
                           <VisuallyHidden asChild>
-                            <Dialog.Title>
-                              {accessibleTitle ?? "Dialog"}
-                            </Dialog.Title>
+                            <Dialog.Title>{accessibleTitle ?? "Dialog"}</Dialog.Title>
                           </VisuallyHidden>
                         )}
-                        <div className={`h-full`.trim()}>
-                          {enhancedChildren}
-                        </div>
+                        <div className={`h-full`.trim()}>{enhancedChildren}</div>
                         {/* resize handles inside panel so clicks don't count as outside */}
                         {renderResizeHandles()}
                       </div>

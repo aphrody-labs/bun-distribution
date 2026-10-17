@@ -24,9 +24,7 @@ export interface BenchMetrics {
 }
 
 export function runBenchMetrics(iterations: number = 500_000): BenchMetrics {
-  const testBuffer = Buffer.from(
-    "Aphrody YOLO Bun Industrial Engine Benchmark Data String",
-  );
+  const testBuffer = Buffer.from("Aphrody YOLO Bun Industrial Engine Benchmark Data String");
 
   // 1. Wyhash
   const t0 = Bun.nanoseconds();
@@ -34,9 +32,7 @@ export function runBenchMetrics(iterations: number = 500_000): BenchMetrics {
   for (let i = 0; i < iterations; i++) {
     lastHash = Bun.hash.wyhash(testBuffer, BigInt(i));
   }
-  const elapsedWyhash = Number(
-    ((Bun.nanoseconds() - t0) / 1_000_000).toFixed(2),
-  );
+  const elapsedWyhash = Number(((Bun.nanoseconds() - t0) / 1_000_000).toFixed(2));
 
   // 2. CRC32
   const t1 = Bun.nanoseconds();

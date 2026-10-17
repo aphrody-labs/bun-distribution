@@ -4,14 +4,12 @@ import { EditorStates } from "../../enums";
 import { CameraFrame } from "./CameraFrame";
 
 export const SceneContainer = ({ children }: { children: React.ReactNode }) => {
-  const editorLetterBox = usePageSceneStore((s) => s.editorLetterBox);
-  const editorState = usePageSceneStore((s) => s.editorState);
-  const sceneMode = usePageSceneStore((s) => s.sceneMode);
+  const editorLetterBox = usePageSceneStore(s => s.editorLetterBox);
+  const editorState = usePageSceneStore(s => s.editorState);
+  const sceneMode = usePageSceneStore(s => s.sceneMode);
   // The framing overlay only makes sense while rendering through a camera:
   // camera view and record mode. The free viewport shows no aspect mattes.
-  const showCameraFrame =
-    editorLetterBox &&
-    (editorState === EditorStates.CAMERA_VIEW || sceneMode === "record");
+  const showCameraFrame = editorLetterBox && (editorState === EditorStates.CAMERA_VIEW || sceneMode === "record");
   const [size, setSize] = useState({ width: 0, height: 0 });
   const nodeRef = useRef<HTMLDivElement | null>(null);
 
@@ -38,15 +36,9 @@ export const SceneContainer = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <div
-      ref={callbackRef}
-      id="video-scene-container"
-      className="relative h-full w-full"
-    >
+    <div ref={callbackRef} id="video-scene-container" className="relative h-full w-full">
       {children}
-      {showCameraFrame && (
-        <CameraFrame width={size.width} height={size.height} />
-      )}
+      {showCameraFrame && <CameraFrame width={size.width} height={size.height} />}
     </div>
   );
 };

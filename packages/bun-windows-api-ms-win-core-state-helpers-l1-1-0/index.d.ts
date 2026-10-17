@@ -3,7 +3,18 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-state-helpers-l1-1-0.dll!GetRegistryValueWithFallbackW */
-  GetRegistryValueWithFallbackW(hkeyPrimary: Win32Pointer, pwszPrimarySubKey: string | Win32Pointer, hkeyFallback: Win32Pointer, pwszFallbackSubKey: string | Win32Pointer, pwszValue: string | Win32Pointer, dwFlags: number, pdwType: Win32Pointer, pvData: Win32Pointer, cbDataIn: number, pcbDataOut: Win32Pointer): number;
+  GetRegistryValueWithFallbackW(
+    hkeyPrimary: Win32Pointer,
+    pwszPrimarySubKey: string | Win32Pointer,
+    hkeyFallback: Win32Pointer,
+    pwszFallbackSubKey: string | Win32Pointer,
+    pwszValue: string | Win32Pointer,
+    dwFlags: number,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    cbDataIn: number,
+    pcbDataOut: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -10,11 +10,7 @@ export { cn } from "./lib/utils";
 export { ADSENSE_CLIENT, ADSENSE_PUBLISHER } from "./lib/adsense";
 // Même règle que ci-dessus : une page SERVEUR lit ces badges, ils ne peuvent
 // donc pas être exportés depuis le formulaire `"use client"`.
-export {
-  AVAILABLE_BADGES,
-  MAX_BADGES,
-  type BadgeProfilAffichable,
-} from "./lib/badges-profil";
+export { AVAILABLE_BADGES, MAX_BADGES, type BadgeProfilAffichable } from "./lib/badges-profil";
 // Module PUR, exporté depuis `lib/` et jamais depuis le composant client :
 // une route serveur lit ces constantes (cf. l'en-tête de `lib/galerie-cdn.ts`).
 export {
@@ -29,21 +25,12 @@ export {
 } from "./lib/galerie-cdn";
 
 // Hooks
-export {
-  useIsMobile,
-  useBreakpoint,
-  breakpointForWidth,
-  BREAKPOINTS,
-  type Breakpoint,
-} from "./hooks/use-mobile";
+export { useIsMobile, useBreakpoint, breakpointForWidth, BREAKPOINTS, type Breakpoint } from "./hooks/use-mobile";
 export { useMediaQuery } from "./hooks/use-media-query";
 export { useSwipe } from "./hooks/use-swipe";
 
 export * from "./components/account";
-export {
-  CarteJoueur,
-  type CarteJoueurProps,
-} from "./components/profil/carte-joueur";
+export { CarteJoueur, type CarteJoueurProps } from "./components/profil/carte-joueur";
 export * from "./components/accordion";
 export * from "./components/adsense";
 export * from "./components/admin-page-header";

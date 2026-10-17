@@ -7,10 +7,7 @@ export interface EnqueueGenerationResult {
 }
 
 export class GenerationApi extends ApiManager {
-  public async Enqueue(
-    endpoint: string,
-    body: Record<string, unknown>,
-  ): Promise<EnqueueGenerationResult> {
+  public async Enqueue(endpoint: string, body: Record<string, unknown>): Promise<EnqueueGenerationResult> {
     const fullEndpoint = `${this.getApiSchemeAndHost()}${endpoint}`;
 
     return this.post<
@@ -21,7 +18,7 @@ export class GenerationApi extends ApiManager {
         BadInput?: string;
       }
     >({ endpoint: fullEndpoint, body })
-      .then((response) => {
+      .then(response => {
         if (response.success && response.inference_job_token) {
           return { success: true, jobToken: response.inference_job_token };
         }
@@ -30,7 +27,7 @@ export class GenerationApi extends ApiManager {
           error: response.BadInput ?? "Generation failed",
         };
       })
-      .catch((err) => ({
+      .catch(err => ({
         success: false,
         error: err.message ?? "Request failed",
       }));

@@ -1,9 +1,5 @@
 import { clampAnimationsToDuration } from "../animation";
-import {
-  clampRetimeRate,
-  getSourceSpanAtClipTime,
-  getTimelineDurationForSourceSpan,
-} from "../retime";
+import { clampRetimeRate, getSourceSpanAtClipTime, getTimelineDurationForSourceSpan } from "../retime";
 import type { RetimeConfig, SceneTracks, TimelineElement } from "./types";
 import { isRetimableElement } from "./element-utils";
 import { ZERO_MEDIA_TIME, roundMediaTime } from "../wasm";
@@ -62,17 +58,10 @@ const deriveRules: ElementUpdateRule[] = [
         trimStart: originalElement.trimStart,
         trimEnd: originalElement.trimEnd,
         duration: originalElement.duration,
-        sourceDuration: isRetimableElement(originalElement)
-          ? originalElement.sourceDuration
-          : undefined,
-        retime: isRetimableElement(originalElement)
-          ? originalElement.retime
-          : undefined,
+        sourceDuration: isRetimableElement(originalElement) ? originalElement.sourceDuration : undefined,
+        retime: isRetimableElement(originalElement) ? originalElement.retime : undefined,
       });
-      const visibleSourceSpan = Math.max(
-        0,
-        sourceDuration - element.trimStart - element.trimEnd,
-      );
+      const visibleSourceSpan = Math.max(0, sourceDuration - element.trimStart - element.trimEnd);
       const nextDuration = roundMediaTime({
         time: getTimelineDurationForSourceSpan({
           sourceSpan: visibleSourceSpan,
@@ -108,10 +97,7 @@ const enforceRules: ElementUpdateRule[] = [
   {
     triggers: ["startTime"],
     apply: ({ element, context }) => {
-      const requestedStartTime =
-        element.startTime < ZERO_MEDIA_TIME
-          ? ZERO_MEDIA_TIME
-          : element.startTime;
+      const requestedStartTime = element.startTime < ZERO_MEDIA_TIME ? ZERO_MEDIA_TIME : element.startTime;
       if (context.trackId !== context.tracks.main.id) {
         return {
           element: {
@@ -122,7 +108,7 @@ const enforceRules: ElementUpdateRule[] = [
       }
 
       const earliestElement = context.tracks.main.elements
-        .filter((candidate) => candidate.id !== element.id)
+        .filter(candidate => candidate.id !== element.id)
         .reduce<TimelineElement | null>((earliest, candidate) => {
           if (!earliest || candidate.startTime < earliest.startTime) {
             return candidate;
@@ -134,9 +120,7 @@ const enforceRules: ElementUpdateRule[] = [
         element: {
           ...element,
           startTime:
-            !earliestElement || requestedStartTime <= earliestElement.startTime
-              ? ZERO_MEDIA_TIME
-              : requestedStartTime,
+            !earliestElement || requestedStartTime <= earliestElement.startTime ? ZERO_MEDIA_TIME : requestedStartTime,
         },
       };
     },
@@ -202,7 +186,7 @@ function shouldApplyRule({
   rule: ElementUpdateRule;
   changedFields: Set<ElementUpdateField>;
 }): boolean {
-  return rule.triggers.some((trigger) => changedFields.has(trigger));
+  return rule.triggers.some(trigger => changedFields.has(trigger));
 }
 
 function getSourceDuration({

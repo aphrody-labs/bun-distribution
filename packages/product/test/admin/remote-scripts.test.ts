@@ -2,15 +2,7 @@
 /* oxlint-disable no-await-in-loop -- sequential by design: ordered steps, polling and one host after the other */
 /** The shell scripts that run on the hosts, executed for real with `sh` against a fake `aphrody` in a temp HOME. */
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import {
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -19,14 +11,7 @@ import type { HostEntry } from "../../src/admin/lib/profile.ts";
 import { SCRIPTS } from "../../src/admin/lib/remote.ts";
 import { runRemote } from "../../src/admin/lib/ssh.ts";
 import { realSystem, type System } from "../../src/admin/lib/system.ts";
-import {
-  launchJob,
-  listJobs,
-  readLog,
-  stopJob,
-  trainFlags,
-  type TrainRequest,
-} from "../../src/admin/lib/train.ts";
+import { launchJob, listJobs, readLog, stopJob, trainFlags, type TrainRequest } from "../../src/admin/lib/train.ts";
 import { testContext } from "./helpers.ts";
 
 const FAKE_APHRODY = `#!/bin/sh
@@ -100,11 +85,7 @@ beforeAll(() => {
 
 afterAll(() => rmSync(home, { recursive: true, force: true }));
 
-const request = (
-  type: TrainRequest["type"],
-  id: string,
-  extra: Partial<TrainRequest> = {},
-): TrainRequest => ({
+const request = (type: TrainRequest["type"], id: string, extra: Partial<TrainRequest> = {}): TrainRequest => ({
   type,
   host: "gpu",
   id,
@@ -113,10 +94,7 @@ const request = (
   ...extra,
 });
 
-async function waitFor<T>(
-  read: () => Promise<T | undefined> | T | undefined,
-  ms = 8000,
-): Promise<T> {
+async function waitFor<T>(read: () => Promise<T | undefined> | T | undefined, ms = 8000): Promise<T> {
   const start = Date.now();
   for (;;) {
     const value = await read();
@@ -126,12 +104,8 @@ async function waitFor<T>(
   }
 }
 
-const jobState = async (
-  paths: ReturnType<typeof testContext>["ctx"]["paths"],
-  id: string,
-) =>
-  (await listJobs(remote, paths, "gpu")).jobs.find((job) => job.id === id)
-    ?.state;
+const jobState = async (paths: ReturnType<typeof testContext>["ctx"]["paths"], id: string) =>
+  (await listJobs(remote, paths, "gpu")).jobs.find(job => job.id === id)?.state;
 
 test("sonde reports the host in one read-only round trip", async () => {
   const { ctx } = testContext();
@@ -159,42 +133,24 @@ test("sonde reports the host in one read-only round trip", async () => {
   expect(missing.aphrodyAbsent).toBe(true);
 });
 
-detached(
-  "a short job runs detached, finishes and is reported as finished with its log",
-  async () => {
-    const { ctx } = testContext();
-    const started = await launchJob(
-      remote,
-      ctx.paths,
-      request("test", "kit-test-finish"),
-      host,
-    );
-    expect(started.ok).toBe(true);
-    expect(started.pid).toMatch(/^\d+$/);
-    expect(
-      await waitFor(async () =>
-        (await jobState(ctx.paths, "kit-test-finish")) === "termine"
-          ? "yes"
-          : undefined,
-      ),
-    ).toBe("yes");
-    const log = await readLog(remote, ctx.paths, "gpu", "kit-test-finish", 20);
-    expect(log.ok).toBe(true);
-    expect(log.stdout).toContain("finished fine");
-    const last = await readLog(remote, ctx.paths, "gpu", undefined, 20);
-    expect(last.stdout).toContain("JOURNAL|kit-test-finish");
-    const jobs = (await listJobs(remote, ctx.paths, "gpu")).jobs;
-    expect(jobs.find((job) => job.id === "kit-test-finish")?.last).toContain(
-      "done",
-    );
-    // the supervisor's output folder lives inside the job folder, never elsewhere
-    expect(
-      existsSync(
-        join(home, ".aphrody/omar-train/kit-test-finish/out/events.jsonl"),
-      ),
-    ).toBe(true);
-  },
-);
+detached("a short job runs detached, finishes and is reported as finished with its log", async () => {
+  const { ctx } = testContext();
+  const started = await launchJob(remote, ctx.paths, request("test", "kit-test-finish"), host);
+  expect(started.ok).toBe(true);
+  expect(started.pid).toMatch(/^\d+$/);
+  expect(
+    await waitFor(async () => ((await jobState(ctx.paths, "kit-test-finish")) === "termine" ? "yes" : undefined)),
+  ).toBe("yes");
+  const log = await readLog(remote, ctx.paths, "gpu", "kit-test-finish", 20);
+  expect(log.ok).toBe(true);
+  expect(log.stdout).toContain("finished fine");
+  const last = await readLog(remote, ctx.paths, "gpu", undefined, 20);
+  expect(last.stdout).toContain("JOURNAL|kit-test-finish");
+  const jobs = (await listJobs(remote, ctx.paths, "gpu")).jobs;
+  expect(jobs.find(job => job.id === "kit-test-finish")?.last).toContain("done");
+  // the supervisor's output folder lives inside the job folder, never elsewhere
+  expect(existsSync(join(home, ".aphrody/omar-train/kit-test-finish/out/events.jsonl"))).toBe(true);
+});
 
 detached("a failing job is reported as failed", async () => {
   const { ctx } = testContext();
@@ -211,124 +167,71 @@ detached("a failing job is reported as failed", async () => {
     ).ok,
   ).toBe(true);
   expect(
-    await waitFor(async () =>
-      (await jobState(ctx.paths, "kit-test-fail")) === "echec"
-        ? "yes"
-        : undefined,
-    ),
+    await waitFor(async () => ((await jobState(ctx.paths, "kit-test-fail")) === "echec" ? "yes" : undefined)),
   ).toBe("yes");
-  expect(
-    (await readLog(remote, ctx.paths, "gpu", "kit-test-fail", 5)).stdout,
-  ).toContain("boom");
+  expect((await readLog(remote, ctx.paths, "gpu", "kit-test-fail", 5)).stdout).toContain("boom");
 });
 
-detached(
-  "flags reach aphrody expanded and quoted; ~/ is expanded on the host",
-  async () => {
-    const { ctx } = testContext();
-    const flags = request("embeddings", "kit-test-args", {
-      entree: "~/data/triples.jsonl",
-      domaine: "dbfr",
-      steps: 7,
-    });
-    const started = await launchJob(remote, ctx.paths, flags, host);
-    expect(started.ok).toBe(true);
-    await waitFor(() =>
-      existsSync(join(home, "last-args.txt")) ? true : undefined,
-    );
-    const args = readFileSync(join(home, "last-args.txt"), "utf8")
-      .trim()
-      .split("\n");
-    expect(args).toEqual([
-      "--kind",
-      "embed",
-      "--id",
-      "kit-test-args",
-      "--steps",
-      "7",
-      "--input",
-      `${home}/data/triples.jsonl`,
-      "--allow-cpu",
-      "--out-dir",
-      `${home}/.aphrody/omar-train/kit-test-args/out`,
-    ]);
-    expect(
-      readFileSync(
-        join(home, ".aphrody/omar-train/kit-test-args/job.json"),
-        "utf8",
-      ),
-    ).toContain('"kind":"embed"');
-    expect(
-      (await stopJob(remote, ctx.paths, "gpu", "kit-test-args", false)).ok,
-    ).toBe(true);
-  },
-);
+detached("flags reach aphrody expanded and quoted; ~/ is expanded on the host", async () => {
+  const { ctx } = testContext();
+  const flags = request("embeddings", "kit-test-args", {
+    entree: "~/data/triples.jsonl",
+    domaine: "dbfr",
+    steps: 7,
+  });
+  const started = await launchJob(remote, ctx.paths, flags, host);
+  expect(started.ok).toBe(true);
+  await waitFor(() => (existsSync(join(home, "last-args.txt")) ? true : undefined));
+  const args = readFileSync(join(home, "last-args.txt"), "utf8").trim().split("\n");
+  expect(args).toEqual([
+    "--kind",
+    "embed",
+    "--id",
+    "kit-test-args",
+    "--steps",
+    "7",
+    "--input",
+    `${home}/data/triples.jsonl`,
+    "--allow-cpu",
+    "--out-dir",
+    `${home}/.aphrody/omar-train/kit-test-args/out`,
+  ]);
+  expect(readFileSync(join(home, ".aphrody/omar-train/kit-test-args/job.json"), "utf8")).toContain('"kind":"embed"');
+  expect((await stopJob(remote, ctx.paths, "gpu", "kit-test-args", false)).ok).toBe(true);
+});
 
-detached(
-  "one job at a time, no overwrite, polite stop that keeps every file",
-  async () => {
-    const { ctx } = testContext();
-    const first = await launchJob(
-      remote,
-      ctx.paths,
-      request("embeddings", "kit-test-long", { entree: "data/in.jsonl" }),
-      host,
-    );
-    expect(first.ok).toBe(true);
-    expect(await jobState(ctx.paths, "kit-test-long")).toBe("en-cours");
+detached("one job at a time, no overwrite, polite stop that keeps every file", async () => {
+  const { ctx } = testContext();
+  const first = await launchJob(
+    remote,
+    ctx.paths,
+    request("embeddings", "kit-test-long", { entree: "data/in.jsonl" }),
+    host,
+  );
+  expect(first.ok).toBe(true);
+  expect(await jobState(ctx.paths, "kit-test-long")).toBe("en-cours");
 
-    const second = await launchJob(
-      remote,
-      ctx.paths,
-      request("test", "kit-test-second"),
-      host,
-    );
-    expect(second.ok).toBe(false);
-    expect(second.message).toContain("déjà en cours");
-    expect(existsSync(join(home, ".aphrody/omar-train/kit-test-second"))).toBe(
-      false,
-    );
+  const second = await launchJob(remote, ctx.paths, request("test", "kit-test-second"), host);
+  expect(second.ok).toBe(false);
+  expect(second.message).toContain("déjà en cours");
+  expect(existsSync(join(home, ".aphrody/omar-train/kit-test-second"))).toBe(false);
 
-    const pid = Number(first.pid);
-    const stopped = await stopJob(
-      remote,
-      ctx.paths,
-      "gpu",
-      "kit-test-long",
-      false,
-    );
-    expect(stopped).toMatchObject({ ok: true, stillRunning: false });
-    expect(() => process.kill(pid, 0)).toThrow();
-    expect(await jobState(ctx.paths, "kit-test-long")).toBe("arrete");
-    expect(
-      existsSync(
-        join(home, ".aphrody/omar-train/kit-test-long/out/events.jsonl"),
-      ),
-    ).toBe(true);
-    expect(
-      existsSync(join(home, ".aphrody/omar-train/kit-test-long/run.log")),
-    ).toBe(true);
+  const pid = Number(first.pid);
+  const stopped = await stopJob(remote, ctx.paths, "gpu", "kit-test-long", false);
+  expect(stopped).toMatchObject({ ok: true, stillRunning: false });
+  expect(() => process.kill(pid, 0)).toThrow();
+  expect(await jobState(ctx.paths, "kit-test-long")).toBe("arrete");
+  expect(existsSync(join(home, ".aphrody/omar-train/kit-test-long/out/events.jsonl"))).toBe(true);
+  expect(existsSync(join(home, ".aphrody/omar-train/kit-test-long/run.log"))).toBe(true);
 
-    const again = await stopJob(
-      remote,
-      ctx.paths,
-      "gpu",
-      "kit-test-long",
-      false,
-    );
-    expect(again.ok).toBe(false);
-    expect(again.message).toContain("pas en cours");
+  const again = await stopJob(remote, ctx.paths, "gpu", "kit-test-long", false);
+  expect(again.ok).toBe(false);
+  expect(again.message).toContain("pas en cours");
 
-    const reuse = await launchJob(
-      remote,
-      ctx.paths,
-      request("test", "kit-test-long"),
-      host,
-    );
-    expect(reuse.ok).toBe(false);
-    expect(reuse.message).toContain("existe déjà");
-  },
-);
+  const reuse = await launchJob(remote, ctx.paths, request("test", "kit-test-long"), host);
+  expect(reuse.ok).toBe(false);
+  expect(reuse.message).toContain("existe déjà");
+});
 
 test("stop never signals a process that only happens to have the pid of an old job", async () => {
   const { ctx } = testContext();
@@ -338,13 +241,7 @@ test("stop never signals a process that only happens to have the pid of an old j
   writeFileSync(join(dir, "pid"), `${innocent.pid}\n`);
   try {
     expect(await jobState(ctx.paths, "kit-test-stale")).toBe("interrompu");
-    const refused = await stopJob(
-      remote,
-      ctx.paths,
-      "gpu",
-      "kit-test-stale",
-      true,
-    );
+    const refused = await stopJob(remote, ctx.paths, "gpu", "kit-test-stale", true);
     expect(refused.ok).toBe(false);
     expect(() => process.kill(innocent.pid, 0)).not.toThrow();
   } finally {
@@ -354,51 +251,26 @@ test("stop never signals a process that only happens to have the pid of an old j
 
 test("unknown ids and unsafe ids are refused before anything is sent", async () => {
   const { ctx } = testContext();
-  expect((await stopJob(remote, ctx.paths, "gpu", "nope-nope", false)).ok).toBe(
-    false,
-  );
-  expect(
-    (await stopJob(remote, ctx.paths, "gpu", "x; rm -rf /", false)).message,
-  ).toContain("invalide");
-  expect(
-    (await readLog(remote, ctx.paths, "gpu", "../../etc", 5)).message,
-  ).toContain("invalide");
-  const bad = await launchJob(
-    remote,
-    ctx.paths,
-    request("test", "x; id"),
-    host,
-  );
+  expect((await stopJob(remote, ctx.paths, "gpu", "nope-nope", false)).ok).toBe(false);
+  expect((await stopJob(remote, ctx.paths, "gpu", "x; rm -rf /", false)).message).toContain("invalide");
+  expect((await readLog(remote, ctx.paths, "gpu", "../../etc", 5)).message).toContain("invalide");
+  const bad = await launchJob(remote, ctx.paths, request("test", "x; id"), host);
   expect(bad.ok).toBe(false);
   expect(trainFlags(request("test", "kit-x"))).toContain("--allow-cpu");
 });
 
 test("a missing repository or binary is reported before anything starts", async () => {
   const { ctx } = testContext();
-  const noRepo = await launchJob(
-    remote,
-    ctx.paths,
-    request("test", "kit-test-norepo"),
-    {
-      ...host,
-      repoDir: "/definitely/missing",
-    },
-  );
+  const noRepo = await launchJob(remote, ctx.paths, request("test", "kit-test-norepo"), {
+    ...host,
+    repoDir: "/definitely/missing",
+  });
   expect(noRepo.message).toContain("dépôt");
-  const noBin = await launchJob(
-    remote,
-    ctx.paths,
-    request("test", "kit-test-nobin"),
-    {
-      ...host,
-      aphrodyBin: "no-such-aphrody",
-    },
-  );
+  const noBin = await launchJob(remote, ctx.paths, request("test", "kit-test-nobin"), {
+    ...host,
+    aphrodyBin: "no-such-aphrody",
+  });
   expect(noBin.message).toContain("aphrody est introuvable");
-  expect(existsSync(join(home, ".aphrody/omar-train/kit-test-norepo"))).toBe(
-    false,
-  );
-  expect(existsSync(join(home, ".aphrody/omar-train/kit-test-nobin"))).toBe(
-    false,
-  );
+  expect(existsSync(join(home, ".aphrody/omar-train/kit-test-norepo"))).toBe(false);
+  expect(existsSync(join(home, ".aphrody/omar-train/kit-test-nobin"))).toBe(false);
 });

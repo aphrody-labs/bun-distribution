@@ -1,8 +1,5 @@
 import { createAudioContext } from "../../media/audio";
-import {
-  buildSourceWaveformSummary,
-  type SourceWaveformSummary,
-} from "../../media/waveform-summary";
+import { buildSourceWaveformSummary, type SourceWaveformSummary } from "../../media/waveform-summary";
 
 // Cache for decoded waveform summaries. We never call decodeAudioData
 // twice for the same source — the first call latches the promise and
@@ -36,7 +33,7 @@ export class WaveformCache {
       audioBuffer,
       sourceFile,
       audioUrl,
-    }).catch((error) => {
+    }).catch(error => {
       this.summaries.delete(sourceKey);
       throw error;
     });

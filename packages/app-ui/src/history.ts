@@ -22,8 +22,7 @@ type RawThread = {
 };
 
 const str = (value: unknown) => (typeof value === "string" ? value : "");
-const num = (value: unknown) =>
-  typeof value === "number" && Number.isFinite(value) ? value : 0;
+const num = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : 0);
 
 /** Decode a `thread/list` result (`{ threads, nextCursor }`, `data` accepted for older servers). */
 export function normalizeThreads(result: unknown): {
@@ -35,17 +34,12 @@ export function normalizeThreads(result: unknown): {
     data?: unknown;
     nextCursor?: unknown;
   };
-  const raw = Array.isArray(record.threads)
-    ? record.threads
-    : Array.isArray(record.data)
-      ? record.data
-      : [];
+  const raw = Array.isArray(record.threads) ? record.threads : Array.isArray(record.data) ? record.data : [];
   const threads = (raw as RawThread[])
-    .filter((item) => typeof item?.id === "string" && item.id.length > 0)
-    .map((item) => ({
+    .filter(item => typeof item?.id === "string" && item.id.length > 0)
+    .map(item => ({
       id: item.id as string,
-      title:
-        str(item.name).trim() || str(item.preview).trim() || "Untitled thread",
+      title: str(item.name).trim() || str(item.preview).trim() || "Untitled thread",
       updatedAt: num(item.updatedAt) || num(item.createdAt),
       model: str(item.model) || undefined,
       status: typeof item.status === "string" ? item.status : undefined,
@@ -62,15 +56,12 @@ const fold = (text: string) =>
     .toLowerCase();
 
 /** Case- and accent-insensitive search over title and model; every word must match. */
-export function filterThreads(
-  threads: ThreadSummary[],
-  query: string,
-): ThreadSummary[] {
+export function filterThreads(threads: ThreadSummary[], query: string): ThreadSummary[] {
   const words = fold(query).split(/\s+/).filter(Boolean);
   if (words.length === 0) return threads;
-  return threads.filter((thread) => {
+  return threads.filter(thread => {
     const haystack = fold(`${thread.title} ${thread.model ?? ""}`);
-    return words.every((word) => haystack.includes(word));
+    return words.every(word => haystack.includes(word));
   });
 }
 
@@ -80,15 +71,10 @@ export type DateGroup = {
   threads: ThreadSummary[];
 };
 
-const startOfDay = (date: Date) =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 
 /** Group threads (already sorted newest first) into Today / Yesterday / 7 days / 30 days / months. */
-export function groupByDate(
-  threads: ThreadSummary[],
-  now: Date = new Date(),
-  locale = "en",
-): DateGroup[] {
+export function groupByDate(threads: ThreadSummary[], now: Date = new Date(), locale = "en"): DateGroup[] {
   const today = startOfDay(now);
   const day = 86_400_000;
   const groups = new Map<string, DateGroup>();
@@ -103,8 +89,7 @@ export function groupByDate(
     if (at >= today) [key, label] = ["today", "Today"];
     else if (at >= today - day) [key, label] = ["yesterday", "Yesterday"];
     else if (at >= today - 7 * day) [key, label] = ["week", "Previous 7 days"];
-    else if (at >= today - 30 * day)
-      [key, label] = ["month", "Previous 30 days"];
+    else if (at >= today - 30 * day) [key, label] = ["month", "Previous 30 days"];
     else {
       const date = new Date(at);
       key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -129,19 +114,14 @@ type RawItem = {
 /** Plain-text transcript of a `thread/read` (`includeTurns: true`) result, for local sharing. */
 export function transcript(result: unknown): string {
   const thread = ((result ?? {}) as { thread?: RawThread }).thread ?? {};
-  const title =
-    str(thread.name).trim() || str(thread.preview).trim() || "Untitled thread";
+  const title = str(thread.name).trim() || str(thread.preview).trim() || "Untitled thread";
   const lines = [`# ${title}`];
-  const turns = Array.isArray(thread.turns)
-    ? (thread.turns as Array<{ items?: RawItem[] }>)
-    : [];
+  const turns = Array.isArray(thread.turns) ? (thread.turns as Array<{ items?: RawItem[] }>) : [];
   for (const turn of turns) {
     for (const item of turn.items ?? []) {
       if (item.type === "userMessage") {
         const text = (item.content ?? [])
-          .flatMap((part) =>
-            part.type === "text" && part.text ? [part.text] : [],
-          )
+          .flatMap(part => (part.type === "text" && part.text ? [part.text] : []))
           .join("\n");
         if (text) lines.push("", `**You:** ${text}`);
       } else if (item.type === "agentMessage" && item.text) {

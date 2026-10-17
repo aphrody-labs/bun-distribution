@@ -10,11 +10,7 @@ export const publicDestinations = [
 export function isPublicDestination(pathname: string): boolean {
   return (
     pathname === "/" ||
-    publicDestinations
-      .slice(1)
-      .some(
-        ({ route }) => pathname === route || pathname.startsWith(`${route}/`),
-      ) ||
+    publicDestinations.slice(1).some(({ route }) => pathname === route || pathname.startsWith(`${route}/`)) ||
     pathname === "/showcase" ||
     pathname.startsWith("/showcase/")
   );

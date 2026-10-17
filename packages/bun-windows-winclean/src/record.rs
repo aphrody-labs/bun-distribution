@@ -22,14 +22,23 @@ fn record_windows(arguments: &Value) -> Result<Value, String> {
         time::{Duration, Instant},
     };
 
-    let window_handle = arguments.get("windowHandle").and_then(Value::as_i64).unwrap_or(0);
+    let window_handle = arguments
+        .get("windowHandle")
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
     if window_handle < 0 {
         return Err("windowHandle must be a non-negative HWND".into());
     }
-    let duration_ms =
-        arguments.get("durationMs").and_then(Value::as_i64).unwrap_or(5000).clamp(100, 30_000)
-            as u64;
-    let fps = arguments.get("fps").and_then(Value::as_i64).unwrap_or(10).clamp(1, 30) as u32;
+    let duration_ms = arguments
+        .get("durationMs")
+        .and_then(Value::as_i64)
+        .unwrap_or(5000)
+        .clamp(100, 30_000) as u64;
+    let fps = arguments
+        .get("fps")
+        .and_then(Value::as_i64)
+        .unwrap_or(10)
+        .clamp(1, 30) as u32;
     let path = arguments
         .get("outputPath")
         .and_then(Value::as_str)
@@ -38,7 +47,10 @@ fn record_windows(arguments: &Value) -> Result<Value, String> {
         .unwrap_or_else(|| {
             std::env::temp_dir().join(format!("winclean-clip-{}.avi", std::process::id()))
         });
-    if let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
         std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
     }
 
@@ -61,7 +73,9 @@ fn record_windows(arguments: &Value) -> Result<Value, String> {
             None => aphrody_capture::capture_primary_screen(),
         }
         .map_err(|error| error.to_string())?;
-        let image = image::load_from_memory(&png).map_err(|error| error.to_string())?.to_rgb8();
+        let image = image::load_from_memory(&png)
+            .map_err(|error| error.to_string())?
+            .to_rgb8();
         frames.push(image);
         next += interval;
         if let Some(delay) = next.checked_sub(started.elapsed())
@@ -78,7 +92,10 @@ fn record_windows(arguments: &Value) -> Result<Value, String> {
     if width == 0 || height == 0 {
         return Err("recording produced an empty frame".into());
     }
-    if frames.iter().any(|frame| frame.width() != width || frame.height() != height) {
+    if frames
+        .iter()
+        .any(|frame| frame.width() != width || frame.height() != height)
+    {
         return Err("capture dimensions changed during recording".into());
     }
     let frame_bytes = bgr24_frames(&frames);
@@ -131,9 +148,17 @@ fn write_avi(
     let frame_size = frames[0].len() as u32;
     let max_bytes = frame_size.saturating_mul(fps);
     let mut hdrl = Vec::new();
-    chunk(b"avih", &avih(width, height, fps, frame_count, frame_size, max_bytes), &mut hdrl);
+    chunk(
+        b"avih",
+        &avih(width, height, fps, frame_count, frame_size, max_bytes),
+        &mut hdrl,
+    );
     let mut strl = Vec::new();
-    chunk(b"strh", &strh(width, height, fps, frame_count, frame_size), &mut strl);
+    chunk(
+        b"strh",
+        &strh(width, height, fps, frame_count, frame_size),
+        &mut strl,
+    );
     chunk(b"strf", &strf(width, height, frame_size), &mut strl);
     list(b"strl", &strl, &mut hdrl);
     let mut header = Vec::new();
@@ -191,9 +216,22 @@ fn avih(
     max_bytes: u32,
 ) -> Vec<u8> {
     let mut data = Vec::with_capacity(56);
-    for value in
-        [1_000_000 / fps, max_bytes, 0, 0x10, frames, 0, 1, frame_size, width, height, 0, 0, 0, 0]
-    {
+    for value in [
+        1_000_000 / fps,
+        max_bytes,
+        0,
+        0x10,
+        frames,
+        0,
+        1,
+        frame_size,
+        width,
+        height,
+        0,
+        0,
+        0,
+        0,
+    ] {
         data.extend_from_slice(&value.to_le_bytes());
     }
     data

@@ -30,22 +30,17 @@ export function TimelineRuler({
   handleRulerTrackingMouseDown,
   handleRulerMouseDown,
 }: TimelineRulerProps) {
-  const durationTicks = useEditor((e) => e.timeline.getTotalDuration());
+  const durationTicks = useEditor(e => e.timeline.getTotalDuration());
   const durationSeconds = mediaTimeToSeconds({ time: durationTicks });
   const pixelsPerSecond = BASE_TIMELINE_PIXELS_PER_SECOND * zoomLevel;
   const visibleDurationSeconds = dynamicTimelineWidth / pixelsPerSecond;
-  const effectiveDurationSeconds = Math.max(
-    durationSeconds,
-    visibleDurationSeconds,
-  );
-  const fps =
-    useEditor((e) => e.project.getActiveOrNull()?.settings.fps) ?? DEFAULT_FPS;
+  const effectiveDurationSeconds = Math.max(durationSeconds, visibleDurationSeconds);
+  const fps = useEditor(e => e.project.getActiveOrNull()?.settings.fps) ?? DEFAULT_FPS;
   const { labelIntervalSeconds, tickIntervalSeconds } = getRulerConfig({
     zoomLevel,
     fps,
   });
-  const tickCount =
-    Math.ceil(effectiveDurationSeconds / tickIntervalSeconds) + 1;
+  const tickCount = Math.ceil(effectiveDurationSeconds / tickIntervalSeconds) + 1;
 
   const { scrollLeft, viewportWidth } = useScrollPosition({
     scrollRef: tracksScrollRef,
@@ -55,28 +50,14 @@ export function TimelineRuler({
   // settle on different frames.
   const bufferPx = Math.max(200, (scrollLeft + viewportWidth) * 0.15);
 
-  const visibleStartTimeSeconds = Math.max(
-    0,
-    (scrollLeft - bufferPx) / pixelsPerSecond,
-  );
-  const visibleEndTimeSeconds =
-    (scrollLeft + viewportWidth + bufferPx) / pixelsPerSecond;
+  const visibleStartTimeSeconds = Math.max(0, (scrollLeft - bufferPx) / pixelsPerSecond);
+  const visibleEndTimeSeconds = (scrollLeft + viewportWidth + bufferPx) / pixelsPerSecond;
 
-  const startTickIndex = Math.max(
-    0,
-    Math.floor(visibleStartTimeSeconds / tickIntervalSeconds),
-  );
-  const endTickIndex = Math.min(
-    tickCount - 1,
-    Math.ceil(visibleEndTimeSeconds / tickIntervalSeconds),
-  );
+  const startTickIndex = Math.max(0, Math.floor(visibleStartTimeSeconds / tickIntervalSeconds));
+  const endTickIndex = Math.min(tickCount - 1, Math.ceil(visibleEndTimeSeconds / tickIntervalSeconds));
 
   const timelineTicks: Array<JSX.Element> = [];
-  for (
-    let tickIndex = startTickIndex;
-    tickIndex <= endTickIndex;
-    tickIndex += 1
-  ) {
+  for (let tickIndex = startTickIndex; tickIndex <= endTickIndex; tickIndex += 1) {
     const timeSeconds = tickIndex * tickIntervalSeconds;
     if (timeSeconds > effectiveDurationSeconds) break;
 
@@ -108,7 +89,7 @@ export function TimelineRuler({
       className="relative flex-1 overflow-x-visible"
       style={{ height: TIMELINE_RULER_HEIGHT_PX }}
       onWheel={handleWheel}
-      onClick={(event) => {
+      onClick={event => {
         // Ruler seek already happens on mousedown via playhead scrubbing.
         // Forwarding the follow-up click re-enters the selection-clearing path.
         if (event.target === event.currentTarget) {

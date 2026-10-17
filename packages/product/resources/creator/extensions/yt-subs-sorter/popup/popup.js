@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* YouTube Subs Sorter - popup: groups, settings, JSON backup. Same storage key as the content script. */
-const $ = (id) => document.getElementById(id);
+const $ = id => document.getElementById(id);
 
 (function () {
   "use strict";
@@ -39,7 +39,7 @@ const $ = (id) => document.getElementById(id);
       if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
       else el.setAttribute(k, v === true ? "" : v);
     }
-    el.append(...kids.flat().filter((x) => x !== null && x !== undefined));
+    el.append(...kids.flat().filter(x => x !== null && x !== undefined));
     return el;
   }
 
@@ -52,17 +52,13 @@ const $ = (id) => document.getElementById(id);
   function renderGroups() {
     const { counts, assigned } = core.countByGroup(state);
     $("groups").replaceChildren(
-      ...state.groups.map((g) => {
+      ...state.groups.map(g => {
         const color = h("input", {
           type: "color",
           value: g.color,
           "aria-label": `Couleur de ${g.name}`,
         });
-        color.addEventListener("change", () =>
-          mutate(
-            (s) => core.updateGroup(s, g.id, { color: color.value }).state,
-          ),
-        );
+        color.addEventListener("change", () => mutate(s => core.updateGroup(s, g.id, { color: color.value }).state));
         const name = h("input", {
           type: "text",
           value: g.name,
@@ -70,17 +66,13 @@ const $ = (id) => document.getElementById(id);
           "aria-label": "Nom du groupe",
         });
         name.addEventListener("change", () =>
-          mutate((s) => {
+          mutate(s => {
             const res = core.updateGroup(s, g.id, { name: name.value });
             showGroupError(res.error);
             return res.state;
           }),
         );
-        const del = h(
-          "button",
-          { type: "button", "aria-label": `Supprimer ${g.name}` },
-          "✕",
-        );
+        const del = h("button", { type: "button", "aria-label": `Supprimer ${g.name}` }, "✕");
         let armed = 0;
         del.addEventListener("click", () => {
           if (!armed) {
@@ -94,17 +86,10 @@ const $ = (id) => document.getElementById(id);
             return;
           }
           clearTimeout(armed);
-          mutate((s) => core.deleteGroup(s, g.id));
+          mutate(s => core.deleteGroup(s, g.id));
         });
         const n = counts[g.id] || 0;
-        return h(
-          "li",
-          null,
-          color,
-          name,
-          h("span", { class: "count" }, `${n} chaîne${n > 1 ? "s" : ""}`),
-          del,
-        );
+        return h("li", null, color, name, h("span", { class: "count" }, `${n} chaîne${n > 1 ? "s" : ""}`), del);
       }),
     );
     $("empty").hidden = state.groups.length > 0;
@@ -130,12 +115,9 @@ const $ = (id) => document.getElementById(id);
   }
 
   const setSetting = (key, value) =>
-    mutate((s) => ({
+    mutate(s => ({
       ...s,
-      settings: core.normalizeSettings(
-        { ...s.settings, [key]: value },
-        s.groups,
-      ),
+      settings: core.normalizeSettings({ ...s.settings, [key]: value }, s.groups),
     }));
 
   function status(text, isError) {
@@ -149,9 +131,9 @@ const $ = (id) => document.getElementById(id);
   }
 
   function bind() {
-    $("add-group").addEventListener("submit", (ev) => {
+    $("add-group").addEventListener("submit", ev => {
       ev.preventDefault();
-      mutate((s) => {
+      mutate(s => {
         const res = core.addGroup(s, $("new-name").value, $("new-color").value);
         showGroupError(res.error);
         if (res.group) $("new-name").value = "";
@@ -159,27 +141,19 @@ const $ = (id) => document.getElementById(id);
       });
     });
     for (const id of ["hideShorts", "hideWatched", "badges"])
-      $(id).addEventListener("change", (ev) =>
-        setSetting(id, ev.currentTarget.checked),
-      );
-    $("threshold").addEventListener("input", (ev) => {
+      $(id).addEventListener("change", ev => setSetting(id, ev.currentTarget.checked));
+    $("threshold").addEventListener("input", ev => {
       $("threshold-out").textContent = `${ev.currentTarget.value} %`;
     });
-    $("threshold").addEventListener("change", (ev) =>
-      setSetting("watchedThreshold", Number(ev.currentTarget.value)),
-    );
-    $("sort").addEventListener("change", (ev) =>
-      setSetting("sort", ev.currentTarget.value),
-    );
+    $("threshold").addEventListener("change", ev => setSetting("watchedThreshold", Number(ev.currentTarget.value)));
+    $("sort").addEventListener("change", ev => setSetting("sort", ev.currentTarget.value));
 
     $("export").addEventListener("click", () => {
       $("json").value = exportText();
       status("Sauvegarde générée ci-dessus.");
     });
     $("download").addEventListener("click", () => {
-      const url = URL.createObjectURL(
-        new Blob([exportText()], { type: "application/json" }),
-      );
+      const url = URL.createObjectURL(new Blob([exportText()], { type: "application/json" }));
       const a = h("a", {
         href: url,
         download: `yt-subs-sorter-${new Date().toISOString().slice(0, 10)}.json`,
@@ -201,7 +175,7 @@ const $ = (id) => document.getElementById(id);
         status("Copie auto refusée : texte sélectionné, fais Ctrl+C.", true);
       }
     });
-    $("file").addEventListener("change", async (ev) => {
+    $("file").addEventListener("change", async ev => {
       const file = ev.currentTarget.files && ev.currentTarget.files[0];
       if (!file) return;
       $("json").value = await file.text();
@@ -214,10 +188,8 @@ const $ = (id) => document.getElementById(id);
         return;
       }
       const mode = document.querySelector('input[name="mode"]:checked').value;
-      await mutate((s) => core.mergeImport(s, res.state, mode));
-      const warn = res.warnings.length
-        ? ` (${res.warnings.length} entrée(s) ignorée(s))`
-        : "";
+      await mutate(s => core.mergeImport(s, res.state, mode));
+      const warn = res.warnings.length ? ` (${res.warnings.length} entrée(s) ignorée(s))` : "";
       status(
         `Import terminé (${mode === "replace" ? "remplacement" : "fusion"}) : ${res.state.groups.length} groupe(s), ${Object.keys(res.state.channels).length} chaîne(s)${warn}.`,
       );

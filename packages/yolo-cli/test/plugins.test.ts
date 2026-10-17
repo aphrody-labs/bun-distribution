@@ -3,30 +3,17 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  generateUnifiedYoloPlugin,
-  type PluginHooksManifest,
-  type PluginManifest,
-} from "../src/cli/plugin/index";
+import { generateUnifiedYoloPlugin, type PluginHooksManifest, type PluginManifest } from "../src/cli/plugin/index";
 
 test("the CLI dispatch creates a plugin through the absorbed command", () => {
   const target = join(root, "cli-plugin");
-  const run = Bun.spawnSync(
-    [
-      process.execPath,
-      join(import.meta.dir, "../src/index.ts"),
-      "plugin",
-      "create",
-      target,
-    ],
-    {
-      windowsHide: true,
-      cwd: root,
-      env: { ...process.env, APHRODY_YOLO_ROOT: join(root, "empty-yolo") },
-      stdout: "pipe",
-      stderr: "pipe",
-    },
-  );
+  const run = Bun.spawnSync([process.execPath, join(import.meta.dir, "../src/index.ts"), "plugin", "create", target], {
+    windowsHide: true,
+    cwd: root,
+    env: { ...process.env, APHRODY_YOLO_ROOT: join(root, "empty-yolo") },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   expect(run.exitCode).toBe(0);
   expect(run.stdout.toString()).toContain("Successfully generated");
   expect(Bun.file(join(target, "plugin.json")).size).toBeGreaterThan(0);
@@ -35,8 +22,7 @@ test("the CLI dispatch creates a plugin through the absorbed command", () => {
 const root = mkdtempSync(join(tmpdir(), "yolo-plugins-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-const readManifest = (pluginDir: string, f: string) =>
-  Bun.file(join(pluginDir, f)).json() as Promise<PluginManifest>;
+const readManifest = (pluginDir: string, f: string) => Bun.file(join(pluginDir, f)).json() as Promise<PluginManifest>;
 
 describe("generateUnifiedYoloPlugin", async () => {
   // A yolo root without vendor/bun: the generator indexes nothing and still writes a complete plugin.
@@ -83,18 +69,12 @@ describe("generateUnifiedYoloPlugin", async () => {
   });
 
   test("hooks register the session-start script and skills carry front matter", async () => {
-    const hooks = (await Bun.file(
-      join(result.pluginDir, "hooks/hooks.json"),
-    ).json()) as PluginHooksManifest;
-    expect(hooks["fixture"]?.SessionStart?.[0]?.hooks[0]?.command).toContain(
-      "hooks/scripts/session-start.sh",
-    );
+    const hooks = (await Bun.file(join(result.pluginDir, "hooks/hooks.json")).json()) as PluginHooksManifest;
+    expect(hooks["fixture"]?.SessionStart?.[0]?.hooks[0]?.command).toContain("hooks/scripts/session-start.sh");
     const skills = await Promise.all(
-      ["yolo", "bun-doctrine", "typescript7-bun"].map(async (skill) => ({
+      ["yolo", "bun-doctrine", "typescript7-bun"].map(async skill => ({
         skill,
-        text: await Bun.file(
-          join(result.pluginDir, `skills/${skill}/SKILL.md`),
-        ).text(),
+        text: await Bun.file(join(result.pluginDir, `skills/${skill}/SKILL.md`)).text(),
       })),
     );
     for (const { skill, text } of skills) {
@@ -103,17 +83,12 @@ describe("generateUnifiedYoloPlugin", async () => {
   });
 
   test("the generated session context runs under Bun and emits hook JSON", () => {
-    const run = Bun.spawnSync(
-      ["bun", join(result.pluginDir, "hooks/scripts/session-context.ts")],
-      {
-        windowsHide: true,
-        cwd: root,
-        stdout: "pipe",
-      },
-    );
+    const run = Bun.spawnSync(["bun", join(result.pluginDir, "hooks/scripts/session-context.ts")], {
+      windowsHide: true,
+      cwd: root,
+      stdout: "pipe",
+    });
     expect(run.exitCode).toBe(0);
-    expect(
-      JSON.parse(run.stdout.toString()).hookSpecificOutput.hookEventName,
-    ).toBe("SessionStart");
+    expect(JSON.parse(run.stdout.toString()).hookSpecificOutput.hookEventName).toBe("SessionStart");
   });
 });

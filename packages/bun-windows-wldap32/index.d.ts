@@ -7,9 +7,19 @@ interface Functions {
   /** wldap32.dll!LdapMapErrorToWin32 */
   LdapMapErrorToWin32(LdapError: number): number;
   /** wldap32.dll!LdapUTF8ToUnicode */
-  LdapUTF8ToUnicode(lpSrcStr: string | Win32Pointer, cchSrc: number, lpDestStr: string | Win32Pointer, cchDest: number): number;
+  LdapUTF8ToUnicode(
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpDestStr: string | Win32Pointer,
+    cchDest: number,
+  ): number;
   /** wldap32.dll!LdapUnicodeToUTF8 */
-  LdapUnicodeToUTF8(lpSrcStr: string | Win32Pointer, cchSrc: number, lpDestStr: string | Win32Pointer, cchDest: number): number;
+  LdapUnicodeToUTF8(
+    lpSrcStr: string | Win32Pointer,
+    cchSrc: number,
+    lpDestStr: string | Win32Pointer,
+    cchDest: number,
+  ): number;
   /** wldap32.dll!ber_alloc_t */
   ber_alloc_t(options: number): number | null;
   /** wldap32.dll!ber_bvdup */
@@ -51,17 +61,56 @@ interface Functions {
   /** wldap32.dll!ldap_addW */
   ldap_addW(ld: Win32Pointer, dn: string | Win32Pointer, attrs: Win32Pointer): number;
   /** wldap32.dll!ldap_add_ext */
-  ldap_add_ext(ld: Win32Pointer, dn: string | Win32Pointer, attrs: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_add_ext(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    attrs: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_add_extA */
-  ldap_add_extA(ld: Win32Pointer, dn: string | Win32Pointer, attrs: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_add_extA(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    attrs: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_add_extW */
-  ldap_add_extW(ld: Win32Pointer, dn: string | Win32Pointer, attrs: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_add_extW(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    attrs: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_add_ext_s */
-  ldap_add_ext_s(ld: Win32Pointer, dn: string | Win32Pointer, attrs: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_add_ext_s(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    attrs: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_add_ext_sA */
-  ldap_add_ext_sA(ld: Win32Pointer, dn: string | Win32Pointer, attrs: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_add_ext_sA(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    attrs: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_add_ext_sW */
-  ldap_add_ext_sW(ld: Win32Pointer, dn: string | Win32Pointer, attrs: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_add_ext_sW(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    attrs: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_add_s */
   ldap_add_s(ld: Win32Pointer, dn: string | Win32Pointer, attrs: Win32Pointer): number;
   /** wldap32.dll!ldap_add_sA */
@@ -91,29 +140,110 @@ interface Functions {
   /** wldap32.dll!ldap_close_extended_op */
   ldap_close_extended_op(ld: Win32Pointer, MessageNumber: number): number;
   /** wldap32.dll!ldap_compare */
-  ldap_compare(ld: Win32Pointer, dn: string | Win32Pointer, attr: string | Win32Pointer, value: string | Win32Pointer): number;
+  ldap_compare(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    attr: string | Win32Pointer,
+    value: string | Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_compareA */
-  ldap_compareA(ld: Win32Pointer, dn: string | Win32Pointer, attr: string | Win32Pointer, value: string | Win32Pointer): number;
+  ldap_compareA(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    attr: string | Win32Pointer,
+    value: string | Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_compareW */
-  ldap_compareW(ld: Win32Pointer, dn: string | Win32Pointer, attr: string | Win32Pointer, value: string | Win32Pointer): number;
+  ldap_compareW(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    attr: string | Win32Pointer,
+    value: string | Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_compare_ext */
-  ldap_compare_ext(ld: Win32Pointer, dn: string | Win32Pointer, Attr: string | Win32Pointer, Value: string | Win32Pointer, Data: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_compare_ext(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    Attr: string | Win32Pointer,
+    Value: string | Win32Pointer,
+    Data: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_compare_extA */
-  ldap_compare_extA(ld: Win32Pointer, dn: string | Win32Pointer, Attr: string | Win32Pointer, Value: string | Win32Pointer, Data: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_compare_extA(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    Attr: string | Win32Pointer,
+    Value: string | Win32Pointer,
+    Data: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_compare_extW */
-  ldap_compare_extW(ld: Win32Pointer, dn: string | Win32Pointer, Attr: string | Win32Pointer, Value: string | Win32Pointer, Data: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_compare_extW(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    Attr: string | Win32Pointer,
+    Value: string | Win32Pointer,
+    Data: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_compare_ext_s */
-  ldap_compare_ext_s(ld: Win32Pointer, dn: string | Win32Pointer, Attr: string | Win32Pointer, Value: string | Win32Pointer, Data: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_compare_ext_s(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    Attr: string | Win32Pointer,
+    Value: string | Win32Pointer,
+    Data: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_compare_ext_sA */
-  ldap_compare_ext_sA(ld: Win32Pointer, dn: string | Win32Pointer, Attr: string | Win32Pointer, Value: string | Win32Pointer, Data: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_compare_ext_sA(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    Attr: string | Win32Pointer,
+    Value: string | Win32Pointer,
+    Data: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_compare_ext_sW */
-  ldap_compare_ext_sW(ld: Win32Pointer, dn: string | Win32Pointer, Attr: string | Win32Pointer, Value: string | Win32Pointer, Data: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_compare_ext_sW(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    Attr: string | Win32Pointer,
+    Value: string | Win32Pointer,
+    Data: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_compare_s */
-  ldap_compare_s(ld: Win32Pointer, dn: string | Win32Pointer, attr: string | Win32Pointer, value: string | Win32Pointer): number;
+  ldap_compare_s(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    attr: string | Win32Pointer,
+    value: string | Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_compare_sA */
-  ldap_compare_sA(ld: Win32Pointer, dn: string | Win32Pointer, attr: string | Win32Pointer, value: string | Win32Pointer): number;
+  ldap_compare_sA(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    attr: string | Win32Pointer,
+    value: string | Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_compare_sW */
-  ldap_compare_sW(ld: Win32Pointer, dn: string | Win32Pointer, attr: string | Win32Pointer, value: string | Win32Pointer): number;
+  ldap_compare_sW(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    attr: string | Win32Pointer,
+    value: string | Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_conn_from_msg */
   ldap_conn_from_msg(PrimaryConn: Win32Pointer, res: Win32Pointer): number | null;
   /** wldap32.dll!ldap_connect */
@@ -143,23 +273,71 @@ interface Functions {
   /** wldap32.dll!ldap_count_values_len */
   ldap_count_values_len(vals: Win32Pointer): number;
   /** wldap32.dll!ldap_create_page_control */
-  ldap_create_page_control(ExternalHandle: Win32Pointer, PageSize: number, Cookie: Win32Pointer, IsCritical: number, Control: Win32Pointer): number;
+  ldap_create_page_control(
+    ExternalHandle: Win32Pointer,
+    PageSize: number,
+    Cookie: Win32Pointer,
+    IsCritical: number,
+    Control: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_create_page_controlA */
-  ldap_create_page_controlA(ExternalHandle: Win32Pointer, PageSize: number, Cookie: Win32Pointer, IsCritical: number, Control: Win32Pointer): number;
+  ldap_create_page_controlA(
+    ExternalHandle: Win32Pointer,
+    PageSize: number,
+    Cookie: Win32Pointer,
+    IsCritical: number,
+    Control: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_create_page_controlW */
-  ldap_create_page_controlW(ExternalHandle: Win32Pointer, PageSize: number, Cookie: Win32Pointer, IsCritical: number, Control: Win32Pointer): number;
+  ldap_create_page_controlW(
+    ExternalHandle: Win32Pointer,
+    PageSize: number,
+    Cookie: Win32Pointer,
+    IsCritical: number,
+    Control: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_create_sort_control */
-  ldap_create_sort_control(ExternalHandle: Win32Pointer, SortKeys: Win32Pointer, IsCritical: number, Control: Win32Pointer): number;
+  ldap_create_sort_control(
+    ExternalHandle: Win32Pointer,
+    SortKeys: Win32Pointer,
+    IsCritical: number,
+    Control: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_create_sort_controlA */
-  ldap_create_sort_controlA(ExternalHandle: Win32Pointer, SortKeys: Win32Pointer, IsCritical: number, Control: Win32Pointer): number;
+  ldap_create_sort_controlA(
+    ExternalHandle: Win32Pointer,
+    SortKeys: Win32Pointer,
+    IsCritical: number,
+    Control: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_create_sort_controlW */
-  ldap_create_sort_controlW(ExternalHandle: Win32Pointer, SortKeys: Win32Pointer, IsCritical: number, Control: Win32Pointer): number;
+  ldap_create_sort_controlW(
+    ExternalHandle: Win32Pointer,
+    SortKeys: Win32Pointer,
+    IsCritical: number,
+    Control: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_create_vlv_controlA */
-  ldap_create_vlv_controlA(ExternalHandle: Win32Pointer, VlvInfo: Win32Pointer, IsCritical: number, Control: Win32Pointer): number;
+  ldap_create_vlv_controlA(
+    ExternalHandle: Win32Pointer,
+    VlvInfo: Win32Pointer,
+    IsCritical: number,
+    Control: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_create_vlv_controlW */
-  ldap_create_vlv_controlW(ExternalHandle: Win32Pointer, VlvInfo: Win32Pointer, IsCritical: number, Control: Win32Pointer): number;
+  ldap_create_vlv_controlW(
+    ExternalHandle: Win32Pointer,
+    VlvInfo: Win32Pointer,
+    IsCritical: number,
+    Control: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_create_vlv_controlW */
-  ldap_create_vlv_control(ExternalHandle: Win32Pointer, VlvInfo: Win32Pointer, IsCritical: number, Control: Win32Pointer): number;
+  ldap_create_vlv_control(
+    ExternalHandle: Win32Pointer,
+    VlvInfo: Win32Pointer,
+    IsCritical: number,
+    Control: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_delete */
   ldap_delete(ld: Win32Pointer, dn: string | Win32Pointer): number;
   /** wldap32.dll!ldap_deleteA */
@@ -167,17 +345,50 @@ interface Functions {
   /** wldap32.dll!ldap_deleteW */
   ldap_deleteW(ld: Win32Pointer, dn: string | Win32Pointer): number;
   /** wldap32.dll!ldap_delete_ext */
-  ldap_delete_ext(ld: Win32Pointer, dn: string | Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_delete_ext(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_delete_extA */
-  ldap_delete_extA(ld: Win32Pointer, dn: string | Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_delete_extA(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_delete_extW */
-  ldap_delete_extW(ld: Win32Pointer, dn: string | Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_delete_extW(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_delete_ext_s */
-  ldap_delete_ext_s(ld: Win32Pointer, dn: string | Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_delete_ext_s(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_delete_ext_sA */
-  ldap_delete_ext_sA(ld: Win32Pointer, dn: string | Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_delete_ext_sA(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_delete_ext_sW */
-  ldap_delete_ext_sW(ld: Win32Pointer, dn: string | Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_delete_ext_sW(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_delete_s */
   ldap_delete_s(ld: Win32Pointer, dn: string | Win32Pointer): number;
   /** wldap32.dll!ldap_delete_sA */
@@ -191,11 +402,26 @@ interface Functions {
   /** wldap32.dll!ldap_dn2ufnW */
   ldap_dn2ufnW(dn: string | Win32Pointer): number | null;
   /** wldap32.dll!ldap_encode_sort_controlA */
-  ldap_encode_sort_controlA(ExternalHandle: Win32Pointer, SortKeys: Win32Pointer, Control: Win32Pointer, Criticality: number): number;
+  ldap_encode_sort_controlA(
+    ExternalHandle: Win32Pointer,
+    SortKeys: Win32Pointer,
+    Control: Win32Pointer,
+    Criticality: number,
+  ): number;
   /** wldap32.dll!ldap_encode_sort_controlW */
-  ldap_encode_sort_controlW(ExternalHandle: Win32Pointer, SortKeys: Win32Pointer, Control: Win32Pointer, Criticality: number): number;
+  ldap_encode_sort_controlW(
+    ExternalHandle: Win32Pointer,
+    SortKeys: Win32Pointer,
+    Control: Win32Pointer,
+    Criticality: number,
+  ): number;
   /** wldap32.dll!ldap_encode_sort_controlW */
-  ldap_encode_sort_control(ExternalHandle: Win32Pointer, SortKeys: Win32Pointer, Control: Win32Pointer, Criticality: number): number;
+  ldap_encode_sort_control(
+    ExternalHandle: Win32Pointer,
+    SortKeys: Win32Pointer,
+    Control: Win32Pointer,
+    Criticality: number,
+  ): number;
   /** wldap32.dll!ldap_err2string */
   ldap_err2string(err: number): number | null;
   /** wldap32.dll!ldap_err2stringA */
@@ -203,11 +429,26 @@ interface Functions {
   /** wldap32.dll!ldap_err2stringW */
   ldap_err2stringW(err: number): number | null;
   /** wldap32.dll!ldap_escape_filter_element */
-  ldap_escape_filter_element(sourceFilterElement: string | Win32Pointer, sourceLength: number, destFilterElement: string | Win32Pointer, destLength: number): number;
+  ldap_escape_filter_element(
+    sourceFilterElement: string | Win32Pointer,
+    sourceLength: number,
+    destFilterElement: string | Win32Pointer,
+    destLength: number,
+  ): number;
   /** wldap32.dll!ldap_escape_filter_elementA */
-  ldap_escape_filter_elementA(sourceFilterElement: string | Win32Pointer, sourceLength: number, destFilterElement: string | Win32Pointer, destLength: number): number;
+  ldap_escape_filter_elementA(
+    sourceFilterElement: string | Win32Pointer,
+    sourceLength: number,
+    destFilterElement: string | Win32Pointer,
+    destLength: number,
+  ): number;
   /** wldap32.dll!ldap_escape_filter_elementW */
-  ldap_escape_filter_elementW(sourceFilterElement: string | Win32Pointer, sourceLength: number, destFilterElement: string | Win32Pointer, destLength: number): number;
+  ldap_escape_filter_elementW(
+    sourceFilterElement: string | Win32Pointer,
+    sourceLength: number,
+    destFilterElement: string | Win32Pointer,
+    destLength: number,
+  ): number;
   /** wldap32.dll!ldap_explode_dn */
   ldap_explode_dn(dn: string | Win32Pointer, notypes: number): number | null;
   /** wldap32.dll!ldap_explode_dnA */
@@ -215,17 +456,62 @@ interface Functions {
   /** wldap32.dll!ldap_explode_dnW */
   ldap_explode_dnW(dn: string | Win32Pointer, notypes: number): number | null;
   /** wldap32.dll!ldap_extended_operation */
-  ldap_extended_operation(ld: Win32Pointer, Oid: string | Win32Pointer, Data: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_extended_operation(
+    ld: Win32Pointer,
+    Oid: string | Win32Pointer,
+    Data: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_extended_operationA */
-  ldap_extended_operationA(ld: Win32Pointer, Oid: string | Win32Pointer, Data: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_extended_operationA(
+    ld: Win32Pointer,
+    Oid: string | Win32Pointer,
+    Data: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_extended_operationW */
-  ldap_extended_operationW(ld: Win32Pointer, Oid: string | Win32Pointer, Data: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_extended_operationW(
+    ld: Win32Pointer,
+    Oid: string | Win32Pointer,
+    Data: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_extended_operation_sA */
-  ldap_extended_operation_sA(ExternalHandle: Win32Pointer, Oid: string | Win32Pointer, Data: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, ReturnedOid: Win32Pointer, ReturnedData: Win32Pointer): number;
+  ldap_extended_operation_sA(
+    ExternalHandle: Win32Pointer,
+    Oid: string | Win32Pointer,
+    Data: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    ReturnedOid: Win32Pointer,
+    ReturnedData: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_extended_operation_sW */
-  ldap_extended_operation_sW(ExternalHandle: Win32Pointer, Oid: string | Win32Pointer, Data: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, ReturnedOid: Win32Pointer, ReturnedData: Win32Pointer): number;
+  ldap_extended_operation_sW(
+    ExternalHandle: Win32Pointer,
+    Oid: string | Win32Pointer,
+    Data: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    ReturnedOid: Win32Pointer,
+    ReturnedData: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_extended_operation_sW */
-  ldap_extended_operation_s(ExternalHandle: Win32Pointer, Oid: string | Win32Pointer, Data: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, ReturnedOid: Win32Pointer, ReturnedData: Win32Pointer): number;
+  ldap_extended_operation_s(
+    ExternalHandle: Win32Pointer,
+    Oid: string | Win32Pointer,
+    Data: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    ReturnedOid: Win32Pointer,
+    ReturnedData: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_first_attribute */
   ldap_first_attribute(ld: Win32Pointer, entry: Win32Pointer, ptr: Win32Pointer): number | null;
   /** wldap32.dll!ldap_first_attributeA */
@@ -249,15 +535,32 @@ interface Functions {
   /** wldap32.dll!ldap_get_dnW */
   ldap_get_dnW(ld: Win32Pointer, entry: Win32Pointer): number | null;
   /** wldap32.dll!ldap_get_next_page */
-  ldap_get_next_page(ExternalHandle: Win32Pointer, SearchHandle: number | bigint, PageSize: number, MessageNumber: Win32Pointer): number;
+  ldap_get_next_page(
+    ExternalHandle: Win32Pointer,
+    SearchHandle: number | bigint,
+    PageSize: number,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_get_next_page_s */
-  ldap_get_next_page_s(ExternalHandle: Win32Pointer, SearchHandle: number | bigint, timeout: Win32Pointer, PageSize: number, TotalCount: Win32Pointer, Results: Win32Pointer): number;
+  ldap_get_next_page_s(
+    ExternalHandle: Win32Pointer,
+    SearchHandle: number | bigint,
+    timeout: Win32Pointer,
+    PageSize: number,
+    TotalCount: Win32Pointer,
+    Results: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_get_option */
   ldap_get_option(ld: Win32Pointer, option: number, outvalue: Win32Pointer): number;
   /** wldap32.dll!ldap_get_optionW */
   ldap_get_optionW(ld: Win32Pointer, option: number, outvalue: Win32Pointer): number;
   /** wldap32.dll!ldap_get_paged_count */
-  ldap_get_paged_count(ExternalHandle: Win32Pointer, SearchBlock: number | bigint, TotalCount: Win32Pointer, Results: Win32Pointer): number;
+  ldap_get_paged_count(
+    ExternalHandle: Win32Pointer,
+    SearchBlock: number | bigint,
+    TotalCount: Win32Pointer,
+    Results: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_get_values */
   ldap_get_values(ld: Win32Pointer, entry: Win32Pointer, attr: string | Win32Pointer): number | null;
   /** wldap32.dll!ldap_get_valuesA */
@@ -289,17 +592,56 @@ interface Functions {
   /** wldap32.dll!ldap_modifyW */
   ldap_modifyW(ld: Win32Pointer, dn: string | Win32Pointer, mods: Win32Pointer): number;
   /** wldap32.dll!ldap_modify_ext */
-  ldap_modify_ext(ld: Win32Pointer, dn: string | Win32Pointer, mods: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_modify_ext(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    mods: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_modify_extA */
-  ldap_modify_extA(ld: Win32Pointer, dn: string | Win32Pointer, mods: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_modify_extA(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    mods: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_modify_extW */
-  ldap_modify_extW(ld: Win32Pointer, dn: string | Win32Pointer, mods: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_modify_extW(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    mods: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_modify_ext_s */
-  ldap_modify_ext_s(ld: Win32Pointer, dn: string | Win32Pointer, mods: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_modify_ext_s(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    mods: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_modify_ext_sA */
-  ldap_modify_ext_sA(ld: Win32Pointer, dn: string | Win32Pointer, mods: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_modify_ext_sA(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    mods: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_modify_ext_sW */
-  ldap_modify_ext_sW(ld: Win32Pointer, dn: string | Win32Pointer, mods: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_modify_ext_sW(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    mods: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_modify_s */
   ldap_modify_s(ld: Win32Pointer, dn: string | Win32Pointer, mods: Win32Pointer): number;
   /** wldap32.dll!ldap_modify_sA */
@@ -307,29 +649,83 @@ interface Functions {
   /** wldap32.dll!ldap_modify_sW */
   ldap_modify_sW(ld: Win32Pointer, dn: string | Win32Pointer, mods: Win32Pointer): number;
   /** wldap32.dll!ldap_modrdn */
-  ldap_modrdn(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, NewDistinguishedName: string | Win32Pointer): number;
+  ldap_modrdn(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    NewDistinguishedName: string | Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_modrdn2 */
-  ldap_modrdn2(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, NewDistinguishedName: string | Win32Pointer, DeleteOldRdn: number): number;
+  ldap_modrdn2(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    NewDistinguishedName: string | Win32Pointer,
+    DeleteOldRdn: number,
+  ): number;
   /** wldap32.dll!ldap_modrdn2A */
-  ldap_modrdn2A(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, NewDistinguishedName: string | Win32Pointer, DeleteOldRdn: number): number;
+  ldap_modrdn2A(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    NewDistinguishedName: string | Win32Pointer,
+    DeleteOldRdn: number,
+  ): number;
   /** wldap32.dll!ldap_modrdn2W */
-  ldap_modrdn2W(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, NewDistinguishedName: string | Win32Pointer, DeleteOldRdn: number): number;
+  ldap_modrdn2W(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    NewDistinguishedName: string | Win32Pointer,
+    DeleteOldRdn: number,
+  ): number;
   /** wldap32.dll!ldap_modrdn2_s */
-  ldap_modrdn2_s(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, NewDistinguishedName: string | Win32Pointer, DeleteOldRdn: number): number;
+  ldap_modrdn2_s(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    NewDistinguishedName: string | Win32Pointer,
+    DeleteOldRdn: number,
+  ): number;
   /** wldap32.dll!ldap_modrdn2_sA */
-  ldap_modrdn2_sA(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, NewDistinguishedName: string | Win32Pointer, DeleteOldRdn: number): number;
+  ldap_modrdn2_sA(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    NewDistinguishedName: string | Win32Pointer,
+    DeleteOldRdn: number,
+  ): number;
   /** wldap32.dll!ldap_modrdn2_sW */
-  ldap_modrdn2_sW(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, NewDistinguishedName: string | Win32Pointer, DeleteOldRdn: number): number;
+  ldap_modrdn2_sW(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    NewDistinguishedName: string | Win32Pointer,
+    DeleteOldRdn: number,
+  ): number;
   /** wldap32.dll!ldap_modrdnA */
-  ldap_modrdnA(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, NewDistinguishedName: string | Win32Pointer): number;
+  ldap_modrdnA(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    NewDistinguishedName: string | Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_modrdnW */
-  ldap_modrdnW(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, NewDistinguishedName: string | Win32Pointer): number;
+  ldap_modrdnW(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    NewDistinguishedName: string | Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_modrdn_s */
-  ldap_modrdn_s(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, NewDistinguishedName: string | Win32Pointer): number;
+  ldap_modrdn_s(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    NewDistinguishedName: string | Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_modrdn_sA */
-  ldap_modrdn_sA(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, NewDistinguishedName: string | Win32Pointer): number;
+  ldap_modrdn_sA(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    NewDistinguishedName: string | Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_modrdn_sW */
-  ldap_modrdn_sW(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, NewDistinguishedName: string | Win32Pointer): number;
+  ldap_modrdn_sW(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    NewDistinguishedName: string | Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_msgfree */
   ldap_msgfree(res: Win32Pointer): number;
   /** wldap32.dll!ldap_next_attribute */
@@ -349,17 +745,50 @@ interface Functions {
   /** wldap32.dll!ldap_openW */
   ldap_openW(HostName: string | Win32Pointer, PortNumber: number): number | null;
   /** wldap32.dll!ldap_parse_extended_resultA */
-  ldap_parse_extended_resultA(Connection: Win32Pointer, ResultMessage: Win32Pointer, ResultOID: Win32Pointer, ResultData: Win32Pointer, Freeit: number): number;
+  ldap_parse_extended_resultA(
+    Connection: Win32Pointer,
+    ResultMessage: Win32Pointer,
+    ResultOID: Win32Pointer,
+    ResultData: Win32Pointer,
+    Freeit: number,
+  ): number;
   /** wldap32.dll!ldap_parse_extended_resultW */
-  ldap_parse_extended_resultW(Connection: Win32Pointer, ResultMessage: Win32Pointer, ResultOID: Win32Pointer, ResultData: Win32Pointer, Freeit: number): number;
+  ldap_parse_extended_resultW(
+    Connection: Win32Pointer,
+    ResultMessage: Win32Pointer,
+    ResultOID: Win32Pointer,
+    ResultData: Win32Pointer,
+    Freeit: number,
+  ): number;
   /** wldap32.dll!ldap_parse_extended_resultW */
-  ldap_parse_extended_result(Connection: Win32Pointer, ResultMessage: Win32Pointer, ResultOID: Win32Pointer, ResultData: Win32Pointer, Freeit: number): number;
+  ldap_parse_extended_result(
+    Connection: Win32Pointer,
+    ResultMessage: Win32Pointer,
+    ResultOID: Win32Pointer,
+    ResultData: Win32Pointer,
+    Freeit: number,
+  ): number;
   /** wldap32.dll!ldap_parse_page_control */
-  ldap_parse_page_control(ExternalHandle: Win32Pointer, ServerControls: Win32Pointer, TotalCount: Win32Pointer, Cookie: Win32Pointer): number;
+  ldap_parse_page_control(
+    ExternalHandle: Win32Pointer,
+    ServerControls: Win32Pointer,
+    TotalCount: Win32Pointer,
+    Cookie: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_parse_page_controlA */
-  ldap_parse_page_controlA(ExternalHandle: Win32Pointer, ServerControls: Win32Pointer, TotalCount: Win32Pointer, Cookie: Win32Pointer): number;
+  ldap_parse_page_controlA(
+    ExternalHandle: Win32Pointer,
+    ServerControls: Win32Pointer,
+    TotalCount: Win32Pointer,
+    Cookie: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_parse_page_controlW */
-  ldap_parse_page_controlW(ExternalHandle: Win32Pointer, ServerControls: Win32Pointer, TotalCount: Win32Pointer, Cookie: Win32Pointer): number;
+  ldap_parse_page_controlW(
+    ExternalHandle: Win32Pointer,
+    ServerControls: Win32Pointer,
+    TotalCount: Win32Pointer,
+    Cookie: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_parse_reference */
   ldap_parse_reference(Connection: Win32Pointer, ResultMessage: Win32Pointer, Referrals: Win32Pointer): number;
   /** wldap32.dll!ldap_parse_referenceA */
@@ -367,91 +796,433 @@ interface Functions {
   /** wldap32.dll!ldap_parse_referenceW */
   ldap_parse_referenceW(Connection: Win32Pointer, ResultMessage: Win32Pointer, Referrals: Win32Pointer): number;
   /** wldap32.dll!ldap_parse_result */
-  ldap_parse_result(Connection: Win32Pointer, ResultMessage: Win32Pointer, ReturnCode: Win32Pointer, MatchedDNs: Win32Pointer, ErrorMessage: Win32Pointer, Referrals: Win32Pointer, ServerControls: Win32Pointer, Freeit: number): number;
+  ldap_parse_result(
+    Connection: Win32Pointer,
+    ResultMessage: Win32Pointer,
+    ReturnCode: Win32Pointer,
+    MatchedDNs: Win32Pointer,
+    ErrorMessage: Win32Pointer,
+    Referrals: Win32Pointer,
+    ServerControls: Win32Pointer,
+    Freeit: number,
+  ): number;
   /** wldap32.dll!ldap_parse_resultA */
-  ldap_parse_resultA(Connection: Win32Pointer, ResultMessage: Win32Pointer, ReturnCode: Win32Pointer, MatchedDNs: Win32Pointer, ErrorMessage: Win32Pointer, Referrals: Win32Pointer, ServerControls: Win32Pointer, Freeit: number): number;
+  ldap_parse_resultA(
+    Connection: Win32Pointer,
+    ResultMessage: Win32Pointer,
+    ReturnCode: Win32Pointer,
+    MatchedDNs: Win32Pointer,
+    ErrorMessage: Win32Pointer,
+    Referrals: Win32Pointer,
+    ServerControls: Win32Pointer,
+    Freeit: number,
+  ): number;
   /** wldap32.dll!ldap_parse_resultW */
-  ldap_parse_resultW(Connection: Win32Pointer, ResultMessage: Win32Pointer, ReturnCode: Win32Pointer, MatchedDNs: Win32Pointer, ErrorMessage: Win32Pointer, Referrals: Win32Pointer, ServerControls: Win32Pointer, Freeit: number): number;
+  ldap_parse_resultW(
+    Connection: Win32Pointer,
+    ResultMessage: Win32Pointer,
+    ReturnCode: Win32Pointer,
+    MatchedDNs: Win32Pointer,
+    ErrorMessage: Win32Pointer,
+    Referrals: Win32Pointer,
+    ServerControls: Win32Pointer,
+    Freeit: number,
+  ): number;
   /** wldap32.dll!ldap_parse_sort_control */
-  ldap_parse_sort_control(ExternalHandle: Win32Pointer, Control: Win32Pointer, Result: Win32Pointer, Attribute: Win32Pointer): number;
+  ldap_parse_sort_control(
+    ExternalHandle: Win32Pointer,
+    Control: Win32Pointer,
+    Result: Win32Pointer,
+    Attribute: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_parse_sort_controlA */
-  ldap_parse_sort_controlA(ExternalHandle: Win32Pointer, Control: Win32Pointer, Result: Win32Pointer, Attribute: Win32Pointer): number;
+  ldap_parse_sort_controlA(
+    ExternalHandle: Win32Pointer,
+    Control: Win32Pointer,
+    Result: Win32Pointer,
+    Attribute: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_parse_sort_controlW */
-  ldap_parse_sort_controlW(ExternalHandle: Win32Pointer, Control: Win32Pointer, Result: Win32Pointer, Attribute: Win32Pointer): number;
+  ldap_parse_sort_controlW(
+    ExternalHandle: Win32Pointer,
+    Control: Win32Pointer,
+    Result: Win32Pointer,
+    Attribute: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_parse_vlv_controlA */
-  ldap_parse_vlv_controlA(ExternalHandle: Win32Pointer, Control: Win32Pointer, TargetPos: Win32Pointer, ListCount: Win32Pointer, Context: Win32Pointer, ErrCode: Win32Pointer): number;
+  ldap_parse_vlv_controlA(
+    ExternalHandle: Win32Pointer,
+    Control: Win32Pointer,
+    TargetPos: Win32Pointer,
+    ListCount: Win32Pointer,
+    Context: Win32Pointer,
+    ErrCode: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_parse_vlv_controlW */
-  ldap_parse_vlv_controlW(ExternalHandle: Win32Pointer, Control: Win32Pointer, TargetPos: Win32Pointer, ListCount: Win32Pointer, Context: Win32Pointer, ErrCode: Win32Pointer): number;
+  ldap_parse_vlv_controlW(
+    ExternalHandle: Win32Pointer,
+    Control: Win32Pointer,
+    TargetPos: Win32Pointer,
+    ListCount: Win32Pointer,
+    Context: Win32Pointer,
+    ErrCode: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_parse_vlv_controlW */
-  ldap_parse_vlv_control(ExternalHandle: Win32Pointer, Control: Win32Pointer, TargetPos: Win32Pointer, ListCount: Win32Pointer, Context: Win32Pointer, ErrCode: Win32Pointer): number;
+  ldap_parse_vlv_control(
+    ExternalHandle: Win32Pointer,
+    Control: Win32Pointer,
+    TargetPos: Win32Pointer,
+    ListCount: Win32Pointer,
+    Context: Win32Pointer,
+    ErrCode: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_perror */
   ldap_perror(ld: Win32Pointer, msg: string | Win32Pointer): void;
   /** wldap32.dll!ldap_rename_ext */
-  ldap_rename_ext(ld: Win32Pointer, dn: string | Win32Pointer, NewRDN: string | Win32Pointer, NewParent: string | Win32Pointer, DeleteOldRdn: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_rename_ext(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    NewRDN: string | Win32Pointer,
+    NewParent: string | Win32Pointer,
+    DeleteOldRdn: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_rename_extA */
-  ldap_rename_extA(ld: Win32Pointer, dn: string | Win32Pointer, NewRDN: string | Win32Pointer, NewParent: string | Win32Pointer, DeleteOldRdn: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_rename_extA(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    NewRDN: string | Win32Pointer,
+    NewParent: string | Win32Pointer,
+    DeleteOldRdn: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_rename_extW */
-  ldap_rename_extW(ld: Win32Pointer, dn: string | Win32Pointer, NewRDN: string | Win32Pointer, NewParent: string | Win32Pointer, DeleteOldRdn: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_rename_extW(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    NewRDN: string | Win32Pointer,
+    NewParent: string | Win32Pointer,
+    DeleteOldRdn: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_rename_ext_s */
-  ldap_rename_ext_s(ld: Win32Pointer, dn: string | Win32Pointer, NewRDN: string | Win32Pointer, NewParent: string | Win32Pointer, DeleteOldRdn: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_rename_ext_s(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    NewRDN: string | Win32Pointer,
+    NewParent: string | Win32Pointer,
+    DeleteOldRdn: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_rename_ext_sA */
-  ldap_rename_ext_sA(ld: Win32Pointer, dn: string | Win32Pointer, NewRDN: string | Win32Pointer, NewParent: string | Win32Pointer, DeleteOldRdn: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_rename_ext_sA(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    NewRDN: string | Win32Pointer,
+    NewParent: string | Win32Pointer,
+    DeleteOldRdn: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_rename_ext_sW */
-  ldap_rename_ext_sW(ld: Win32Pointer, dn: string | Win32Pointer, NewRDN: string | Win32Pointer, NewParent: string | Win32Pointer, DeleteOldRdn: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_rename_ext_sW(
+    ld: Win32Pointer,
+    dn: string | Win32Pointer,
+    NewRDN: string | Win32Pointer,
+    NewParent: string | Win32Pointer,
+    DeleteOldRdn: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_result */
   ldap_result(ld: Win32Pointer, msgid: number, all: number, timeout: Win32Pointer, res: Win32Pointer): number;
   /** wldap32.dll!ldap_result2error */
   ldap_result2error(ld: Win32Pointer, res: Win32Pointer, freeit: number): number;
   /** wldap32.dll!ldap_sasl_bindA */
-  ldap_sasl_bindA(ExternalHandle: Win32Pointer, DistName: string | Win32Pointer, AuthMechanism: string | Win32Pointer, cred: Win32Pointer, ServerCtrls: Win32Pointer, ClientCtrls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_sasl_bindA(
+    ExternalHandle: Win32Pointer,
+    DistName: string | Win32Pointer,
+    AuthMechanism: string | Win32Pointer,
+    cred: Win32Pointer,
+    ServerCtrls: Win32Pointer,
+    ClientCtrls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_sasl_bindW */
-  ldap_sasl_bindW(ExternalHandle: Win32Pointer, DistName: string | Win32Pointer, AuthMechanism: string | Win32Pointer, cred: Win32Pointer, ServerCtrls: Win32Pointer, ClientCtrls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_sasl_bindW(
+    ExternalHandle: Win32Pointer,
+    DistName: string | Win32Pointer,
+    AuthMechanism: string | Win32Pointer,
+    cred: Win32Pointer,
+    ServerCtrls: Win32Pointer,
+    ClientCtrls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_sasl_bindW */
-  ldap_sasl_bind(ExternalHandle: Win32Pointer, DistName: string | Win32Pointer, AuthMechanism: string | Win32Pointer, cred: Win32Pointer, ServerCtrls: Win32Pointer, ClientCtrls: Win32Pointer, MessageNumber: Win32Pointer): number;
+  ldap_sasl_bind(
+    ExternalHandle: Win32Pointer,
+    DistName: string | Win32Pointer,
+    AuthMechanism: string | Win32Pointer,
+    cred: Win32Pointer,
+    ServerCtrls: Win32Pointer,
+    ClientCtrls: Win32Pointer,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_sasl_bind_sA */
-  ldap_sasl_bind_sA(ExternalHandle: Win32Pointer, DistName: string | Win32Pointer, AuthMechanism: string | Win32Pointer, cred: Win32Pointer, ServerCtrls: Win32Pointer, ClientCtrls: Win32Pointer, ServerData: Win32Pointer): number;
+  ldap_sasl_bind_sA(
+    ExternalHandle: Win32Pointer,
+    DistName: string | Win32Pointer,
+    AuthMechanism: string | Win32Pointer,
+    cred: Win32Pointer,
+    ServerCtrls: Win32Pointer,
+    ClientCtrls: Win32Pointer,
+    ServerData: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_sasl_bind_sW */
-  ldap_sasl_bind_sW(ExternalHandle: Win32Pointer, DistName: string | Win32Pointer, AuthMechanism: string | Win32Pointer, cred: Win32Pointer, ServerCtrls: Win32Pointer, ClientCtrls: Win32Pointer, ServerData: Win32Pointer): number;
+  ldap_sasl_bind_sW(
+    ExternalHandle: Win32Pointer,
+    DistName: string | Win32Pointer,
+    AuthMechanism: string | Win32Pointer,
+    cred: Win32Pointer,
+    ServerCtrls: Win32Pointer,
+    ClientCtrls: Win32Pointer,
+    ServerData: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_sasl_bind_sW */
-  ldap_sasl_bind_s(ExternalHandle: Win32Pointer, DistName: string | Win32Pointer, AuthMechanism: string | Win32Pointer, cred: Win32Pointer, ServerCtrls: Win32Pointer, ClientCtrls: Win32Pointer, ServerData: Win32Pointer): number;
+  ldap_sasl_bind_s(
+    ExternalHandle: Win32Pointer,
+    DistName: string | Win32Pointer,
+    AuthMechanism: string | Win32Pointer,
+    cred: Win32Pointer,
+    ServerCtrls: Win32Pointer,
+    ClientCtrls: Win32Pointer,
+    ServerData: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_search */
-  ldap_search(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number): number;
+  ldap_search(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+  ): number;
   /** wldap32.dll!ldap_searchA */
-  ldap_searchA(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number): number;
+  ldap_searchA(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+  ): number;
   /** wldap32.dll!ldap_searchW */
-  ldap_searchW(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number): number;
+  ldap_searchW(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+  ): number;
   /** wldap32.dll!ldap_search_abandon_page */
   ldap_search_abandon_page(ExternalHandle: Win32Pointer, SearchBlock: number | bigint): number;
   /** wldap32.dll!ldap_search_ext */
-  ldap_search_ext(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer, TimeLimit: number, SizeLimit: number, MessageNumber: Win32Pointer): number;
+  ldap_search_ext(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    TimeLimit: number,
+    SizeLimit: number,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_search_extA */
-  ldap_search_extA(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer, TimeLimit: number, SizeLimit: number, MessageNumber: Win32Pointer): number;
+  ldap_search_extA(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    TimeLimit: number,
+    SizeLimit: number,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_search_extW */
-  ldap_search_extW(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer, TimeLimit: number, SizeLimit: number, MessageNumber: Win32Pointer): number;
+  ldap_search_extW(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    TimeLimit: number,
+    SizeLimit: number,
+    MessageNumber: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_search_ext_s */
-  ldap_search_ext_s(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer, timeout: Win32Pointer, SizeLimit: number, res: Win32Pointer): number;
+  ldap_search_ext_s(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    timeout: Win32Pointer,
+    SizeLimit: number,
+    res: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_search_ext_sA */
-  ldap_search_ext_sA(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer, timeout: Win32Pointer, SizeLimit: number, res: Win32Pointer): number;
+  ldap_search_ext_sA(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    timeout: Win32Pointer,
+    SizeLimit: number,
+    res: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_search_ext_sW */
-  ldap_search_ext_sW(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer, timeout: Win32Pointer, SizeLimit: number, res: Win32Pointer): number;
+  ldap_search_ext_sW(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    timeout: Win32Pointer,
+    SizeLimit: number,
+    res: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_search_init_page */
-  ldap_search_init_page(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, ScopeOfSearch: number, SearchFilter: string | Win32Pointer, AttributeList: Win32Pointer, AttributesOnly: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer, PageTimeLimit: number, TotalSizeLimit: number, SortKeys: Win32Pointer): number | bigint;
+  ldap_search_init_page(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    ScopeOfSearch: number,
+    SearchFilter: string | Win32Pointer,
+    AttributeList: Win32Pointer,
+    AttributesOnly: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    PageTimeLimit: number,
+    TotalSizeLimit: number,
+    SortKeys: Win32Pointer,
+  ): number | bigint;
   /** wldap32.dll!ldap_search_init_pageA */
-  ldap_search_init_pageA(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, ScopeOfSearch: number, SearchFilter: string | Win32Pointer, AttributeList: Win32Pointer, AttributesOnly: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer, PageTimeLimit: number, TotalSizeLimit: number, SortKeys: Win32Pointer): number | bigint;
+  ldap_search_init_pageA(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    ScopeOfSearch: number,
+    SearchFilter: string | Win32Pointer,
+    AttributeList: Win32Pointer,
+    AttributesOnly: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    PageTimeLimit: number,
+    TotalSizeLimit: number,
+    SortKeys: Win32Pointer,
+  ): number | bigint;
   /** wldap32.dll!ldap_search_init_pageW */
-  ldap_search_init_pageW(ExternalHandle: Win32Pointer, DistinguishedName: string | Win32Pointer, ScopeOfSearch: number, SearchFilter: string | Win32Pointer, AttributeList: Win32Pointer, AttributesOnly: number, ServerControls: Win32Pointer, ClientControls: Win32Pointer, PageTimeLimit: number, TotalSizeLimit: number, SortKeys: Win32Pointer): number | bigint;
+  ldap_search_init_pageW(
+    ExternalHandle: Win32Pointer,
+    DistinguishedName: string | Win32Pointer,
+    ScopeOfSearch: number,
+    SearchFilter: string | Win32Pointer,
+    AttributeList: Win32Pointer,
+    AttributesOnly: number,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+    PageTimeLimit: number,
+    TotalSizeLimit: number,
+    SortKeys: Win32Pointer,
+  ): number | bigint;
   /** wldap32.dll!ldap_search_s */
-  ldap_search_s(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number, res: Win32Pointer): number;
+  ldap_search_s(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+    res: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_search_sA */
-  ldap_search_sA(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number, res: Win32Pointer): number;
+  ldap_search_sA(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+    res: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_search_sW */
-  ldap_search_sW(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number, res: Win32Pointer): number;
+  ldap_search_sW(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+    res: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_search_st */
-  ldap_search_st(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number, timeout: Win32Pointer, res: Win32Pointer): number;
+  ldap_search_st(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+    timeout: Win32Pointer,
+    res: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_search_stA */
-  ldap_search_stA(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number, timeout: Win32Pointer, res: Win32Pointer): number;
+  ldap_search_stA(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+    timeout: Win32Pointer,
+    res: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_search_stW */
-  ldap_search_stW(ld: Win32Pointer, base: string | Win32Pointer, scope: number, filter: string | Win32Pointer, attrs: Win32Pointer, attrsonly: number, timeout: Win32Pointer, res: Win32Pointer): number;
+  ldap_search_stW(
+    ld: Win32Pointer,
+    base: string | Win32Pointer,
+    scope: number,
+    filter: string | Win32Pointer,
+    attrs: Win32Pointer,
+    attrsonly: number,
+    timeout: Win32Pointer,
+    res: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_set_dbg_flags */
   ldap_set_dbg_flags(NewFlags: number): number;
   /** wldap32.dll!ldap_set_dbg_routine */
@@ -479,11 +1250,29 @@ interface Functions {
   /** wldap32.dll!ldap_sslinitW */
   ldap_sslinitW(HostName: string | Win32Pointer, PortNumber: number, secure: number): number | null;
   /** wldap32.dll!ldap_start_tls_sA */
-  ldap_start_tls_sA(ExternalHandle: Win32Pointer, ServerReturnValue: Win32Pointer, result: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_start_tls_sA(
+    ExternalHandle: Win32Pointer,
+    ServerReturnValue: Win32Pointer,
+    result: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_start_tls_sW */
-  ldap_start_tls_sW(ExternalHandle: Win32Pointer, ServerReturnValue: Win32Pointer, result: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_start_tls_sW(
+    ExternalHandle: Win32Pointer,
+    ServerReturnValue: Win32Pointer,
+    result: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_start_tls_sW */
-  ldap_start_tls_s(ExternalHandle: Win32Pointer, ServerReturnValue: Win32Pointer, result: Win32Pointer, ServerControls: Win32Pointer, ClientControls: Win32Pointer): number;
+  ldap_start_tls_s(
+    ExternalHandle: Win32Pointer,
+    ServerReturnValue: Win32Pointer,
+    result: Win32Pointer,
+    ServerControls: Win32Pointer,
+    ClientControls: Win32Pointer,
+  ): number;
   /** wldap32.dll!ldap_startup */
   ldap_startup(version: Win32Pointer, Instance: Win32Pointer): number;
   /** wldap32.dll!ldap_stop_tls_s */

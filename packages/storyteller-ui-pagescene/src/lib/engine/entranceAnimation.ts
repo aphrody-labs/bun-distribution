@@ -63,10 +63,8 @@ export class EntranceAnimator {
     // render loop's first tick.
     handle.setProgress(0, 0);
 
-    const base = isSplat
-      ? ENTRANCE_BASE_DURATIONS.splat
-      : ENTRANCE_BASE_DURATIONS.mesh;
-    this.entries = this.entries.filter((entry) => entry.object !== object);
+    const base = isSplat ? ENTRANCE_BASE_DURATIONS.splat : ENTRANCE_BASE_DURATIONS.mesh;
+    this.entries = this.entries.filter(entry => entry.object !== object);
     this.entries.push({
       object,
       handle,
@@ -98,10 +96,10 @@ export class EntranceAnimator {
 
   /** Finish an object's entrance immediately and stop tracking it. */
   cancel(object: THREE.Object3D): void {
-    const entry = this.entries.find((candidate) => candidate.object === object);
+    const entry = this.entries.find(candidate => candidate.object === object);
     if (!entry) return;
     entry.handle.finish();
-    this.entries = this.entries.filter((candidate) => candidate !== entry);
+    this.entries = this.entries.filter(candidate => candidate !== entry);
   }
 
   /** Finish all entrances (e.g. on scene clear/teardown). */

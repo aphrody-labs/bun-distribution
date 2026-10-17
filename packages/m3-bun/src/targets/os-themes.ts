@@ -14,30 +14,23 @@ const HOST = {
 
 async function load() {
   try {
-    const [themes, cli] = await Promise.all([
-      import("@aphrody/m3-os-themes"),
-      import("@aphrody/m3-os-themes/cli"),
-    ]);
+    const [themes, cli] = await Promise.all([import("@aphrody/m3-os-themes"), import("@aphrody/m3-os-themes/cli")]);
     return {
       generate: themes.generate,
       targets: themes.TARGETS,
       installCommand: cli.installCommand,
     };
   } catch (error) {
-    throw new Error(
-      `m3-bun: the os-themes target needs @aphrody/m3-os-themes (${(error as Error).message})`,
-      { cause: error },
-    );
+    throw new Error(`m3-bun: the os-themes target needs @aphrody/m3-os-themes (${(error as Error).message})`, {
+      cause: error,
+    });
   }
 }
 
 /** `m3.config.ts` names are npm-like; theme names are `[A-Za-z0-9_-]+`. */
-export const themeName = (name: string): string =>
-  name.replace(/^@/, "").replace(/[^A-Za-z0-9_-]+/g, "-");
+export const themeName = (name: string): string => name.replace(/^@/, "").replace(/[^A-Za-z0-9_-]+/g, "-");
 
-export async function generateOsThemes(
-  c: TargetContext,
-): Promise<TargetFile[]> {
+export async function generateOsThemes(c: TargetContext): Promise<TargetFile[]> {
   const { generate, targets, installCommand } = await load();
   const name = themeName(c.name);
   const seed = c.seed ?? "#6750a4";
@@ -47,14 +40,8 @@ export async function generateOsThemes(
     mode: "auto",
     ...(c.variant ? { variant: c.variant as never } : {}),
   });
-  const commands = targets.map((target) => {
-    const { cmd, reason } = installCommand(
-      target,
-      ".",
-      "auto",
-      false,
-      HOST[target],
-    );
+  const commands = targets.map(target => {
+    const { cmd, reason } = installCommand(target, ".", "auto", false, HOST[target]);
     return `- **${target}**: ${cmd.length > 0 ? `\`${cmd.join(" ").replaceAll("\\", "/")}\`` : reason}`;
   });
   const readme = `<!-- ${GENERATED_NOTE} -->

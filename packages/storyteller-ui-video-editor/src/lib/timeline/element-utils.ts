@@ -27,10 +27,7 @@ import type { MediaType } from "../media/types";
 import { buildDefaultEffectInstance } from "../effects";
 import { buildDefaultGraphicInstance } from "../graphics";
 import type { ParamValues } from "../params";
-import {
-  buildDefaultParamValues,
-  getBuiltInElementParams,
-} from "../params/registry";
+import { buildDefaultParamValues, getBuiltInElementParams } from "../params/registry";
 import { capitalizeFirstLetter } from "../utils/string";
 import { type MediaTime, ZERO_MEDIA_TIME } from "../wasm";
 
@@ -40,55 +37,35 @@ import { type MediaTime, ZERO_MEDIA_TIME } from "../wasm";
 // params/registry so the panel and the renderer always see the same
 // initial state.
 
-export function canElementHaveAudio(
-  element: TimelineElement,
-): element is AudioElement | VideoElement {
+export function canElementHaveAudio(element: TimelineElement): element is AudioElement | VideoElement {
   return element.type === "audio" || element.type === "video";
 }
 
-export function isVisualElement(
-  element: TimelineElement,
-): element is VisualElement {
+export function isVisualElement(element: TimelineElement): element is VisualElement {
   return (VISUAL_ELEMENT_TYPES as readonly string[]).includes(element.type);
 }
 
-export function isMaskableElement(
-  element: TimelineElement,
-): element is MaskableElement {
+export function isMaskableElement(element: TimelineElement): element is MaskableElement {
   return (MASKABLE_ELEMENT_TYPES as readonly string[]).includes(element.type);
 }
 
-export function isRetimableElement(
-  element: TimelineElement,
-): element is RetimableElement {
+export function isRetimableElement(element: TimelineElement): element is RetimableElement {
   return (RETIMABLE_ELEMENT_TYPES as readonly string[]).includes(element.type);
 }
 
-export function canElementBeHidden(
-  element: TimelineElement,
-): element is VisualElement {
+export function canElementBeHidden(element: TimelineElement): element is VisualElement {
   return isVisualElement(element);
 }
 
-export function hasElementEffects({
-  element,
-}: {
-  element: TimelineElement;
-}): boolean {
+export function hasElementEffects({ element }: { element: TimelineElement }): boolean {
   return isVisualElement(element) && (element.effects?.length ?? 0) > 0;
 }
 
-export function hasMediaId(
-  element: TimelineElement,
-): element is UploadAudioElement | VideoElement | ImageElement {
+export function hasMediaId(element: TimelineElement): element is UploadAudioElement | VideoElement | ImageElement {
   return "mediaId" in element;
 }
 
-export function requiresMediaId({
-  element,
-}: {
-  element: CreateTimelineElement;
-}): boolean {
+export function requiresMediaId({ element }: { element: CreateTimelineElement }): boolean {
   return (
     element.type === "video" ||
     element.type === "image" ||
@@ -96,11 +73,7 @@ export function requiresMediaId({
   );
 }
 
-function buildDefaultElementParams({
-  type,
-}: {
-  type: TimelineElement["type"];
-}): ParamValues {
+function buildDefaultElementParams({ type }: { type: TimelineElement["type"] }): ParamValues {
   return buildDefaultParamValues(getBuiltInElementParams({ type }));
 }
 
@@ -162,8 +135,7 @@ export function buildStickerElement({
   intrinsicWidth?: number;
   intrinsicHeight?: number;
 }): CreateStickerElement {
-  const stickerNameFromId =
-    stickerId.split(":").slice(1).pop()?.replaceAll("-", " ") ?? stickerId;
+  const stickerNameFromId = stickerId.split(":").slice(1).pop()?.replaceAll("-", " ") ?? stickerId;
   return {
     type: "sticker",
     name: name ?? stickerNameFromId,
@@ -208,13 +180,7 @@ export function buildGraphicElement({
   };
 }
 
-function mergeParamValues({
-  base,
-  overrides,
-}: {
-  base: ParamValues;
-  overrides?: Partial<ParamValues>;
-}): ParamValues {
+function mergeParamValues({ base, overrides }: { base: ParamValues; overrides?: Partial<ParamValues> }): ParamValues {
   const result: ParamValues = { ...base };
   for (const [key, value] of Object.entries(overrides ?? {})) {
     if (value !== undefined) {
@@ -391,18 +357,11 @@ export function getElementsAtTime({
   return result;
 }
 
-export function getElementFontFamilies({
-  tracks,
-}: {
-  tracks: SceneTracks;
-}): string[] {
+export function getElementFontFamilies({ tracks }: { tracks: SceneTracks }): string[] {
   const families = new Set<string>();
   for (const track of [...tracks.overlay, tracks.main, ...tracks.audio]) {
     for (const element of track.elements) {
-      if (
-        element.type === "text" &&
-        typeof element.params.fontFamily === "string"
-      ) {
+      if (element.type === "text" && typeof element.params.fontFamily === "string") {
         families.add(element.params.fontFamily);
       }
       if ("masks" in element) {

@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useCommittedRef } from "../../hooks/use-committed-ref";
 import {
   canvasToOverlay,
@@ -34,54 +26,25 @@ interface PreviewViewportContextValue {
   sceneTop: number;
   sceneWidth: number;
   zoomPercent: number;
-  canvasToOverlay: ({
-    canvasX,
-    canvasY,
-  }: {
-    canvasX: number;
-    canvasY: number;
-  }) => { x: number; y: number };
+  canvasToOverlay: ({ canvasX, canvasY }: { canvasX: number; canvasY: number }) => { x: number; y: number };
   fitToScreen: () => void;
   getDisplayScale: () => { x: number; y: number };
   handlePanPointerDown: ({ event }: { event: React.PointerEvent }) => boolean;
   handlePanPointerMove: ({ event }: { event: React.PointerEvent }) => boolean;
   handlePanPointerUp: ({ event }: { event: React.PointerEvent }) => boolean;
-  positionToOverlay: ({
-    positionX,
-    positionY,
-  }: {
-    positionX: number;
-    positionY: number;
-  }) => { x: number; y: number };
-  panByScreenDelta: ({
-    deltaX,
-    deltaY,
-  }: {
-    deltaX: number;
-    deltaY: number;
-  }) => void;
+  positionToOverlay: ({ positionX, positionY }: { positionX: number; positionY: number }) => { x: number; y: number };
+  panByScreenDelta: ({ deltaX, deltaY }: { deltaX: number; deltaY: number }) => void;
   resetPan: () => void;
   scaleZoom: ({ factor }: { factor: number }) => void;
-  screenPixelsToLogicalThreshold: ({
-    screenPixels,
-  }: {
-    screenPixels: number;
-  }) => { x: number; y: number };
-  screenToCanvas: ({
-    clientX,
-    clientY,
-  }: {
-    clientX: number;
-    clientY: number;
-  }) => { x: number; y: number } | null;
+  screenPixelsToLogicalThreshold: ({ screenPixels }: { screenPixels: number }) => { x: number; y: number };
+  screenToCanvas: ({ clientX, clientY }: { clientX: number; clientY: number }) => { x: number; y: number } | null;
   setActualSize: () => void;
   setViewportPercent: ({ percent }: { percent: number }) => void;
   zoomIn: () => void;
   zoomOut: () => void;
 }
 
-const PreviewViewportContext =
-  createContext<PreviewViewportContextValue | null>(null);
+const PreviewViewportContext = createContext<PreviewViewportContextValue | null>(null);
 
 interface PreviewViewportProviderProps {
   children: React.ReactNode;
@@ -175,12 +138,7 @@ function getFitScale({
   viewportHeight: number;
   viewportWidth: number;
 }): number {
-  if (
-    canvasHeight <= 0 ||
-    canvasWidth <= 0 ||
-    viewportHeight <= 0 ||
-    viewportWidth <= 0
-  ) {
+  if (canvasHeight <= 0 || canvasWidth <= 0 || viewportHeight <= 0 || viewportWidth <= 0) {
     return 1;
   }
 
@@ -195,15 +153,8 @@ function getClampedZoom({ zoom }: { zoom: number }): number {
   });
 }
 
-export function PreviewViewportProvider({
-  children,
-  value,
-}: PreviewViewportProviderProps) {
-  return (
-    <PreviewViewportContext.Provider value={value}>
-      {children}
-    </PreviewViewportContext.Provider>
-  );
+export function PreviewViewportProvider({ children, value }: PreviewViewportProviderProps) {
+  return <PreviewViewportContext.Provider value={value}>{children}</PreviewViewportContext.Provider>;
 }
 
 export function usePreviewViewportState({
@@ -243,19 +194,11 @@ export function usePreviewViewportState({
       viewportHeight,
       viewportWidth,
     }),
-    [
-      canvasHeight,
-      canvasWidth,
-      center.x,
-      center.y,
-      viewportHeight,
-      viewportScale,
-      viewportWidth,
-    ],
+    [canvasHeight, canvasWidth, center.x, center.y, viewportHeight, viewportScale, viewportWidth],
   );
 
   const scaleZoom = useCallback(({ factor }: { factor: number }) => {
-    setZoomState((previousZoom) =>
+    setZoomState(previousZoom =>
       getClampedZoom({
         zoom: previousZoom * factor,
       }),
@@ -268,7 +211,7 @@ export function usePreviewViewportState({
         return;
       }
 
-      setCenter((previousCenter) =>
+      setCenter(previousCenter =>
         clampViewportCenter({
           canvasHeight,
           canvasWidth,
@@ -280,14 +223,7 @@ export function usePreviewViewportState({
         }),
       );
     },
-    [
-      canvasHeight,
-      canvasWidth,
-      viewportHeight,
-      viewportScale,
-      viewportWidth,
-      zoom,
-    ],
+    [canvasHeight, canvasWidth, viewportHeight, viewportScale, viewportWidth, zoom],
   );
 
   const resetPan = useCallback(() => {
@@ -306,7 +242,7 @@ export function usePreviewViewportState({
   }, [canvasHeight, canvasWidth]);
 
   const zoomIn = useCallback(() => {
-    setZoomState((previousZoom) =>
+    setZoomState(previousZoom =>
       getClampedZoom({
         zoom: previousZoom * PREVIEW_ZOOM.step,
       }),
@@ -314,7 +250,7 @@ export function usePreviewViewportState({
   }, []);
 
   const zoomOut = useCallback(() => {
-    setZoomState((previousZoom) =>
+    setZoomState(previousZoom =>
       getClampedZoom({
         zoom: previousZoom / PREVIEW_ZOOM.step,
       }),
@@ -338,10 +274,7 @@ export function usePreviewViewportState({
     [fitScale],
   );
 
-  const getViewportRect = useCallback(
-    () => viewportRef.current?.getBoundingClientRect() ?? null,
-    [viewportRef],
-  );
+  const getViewportRect = useCallback(() => viewportRef.current?.getBoundingClientRect() ?? null, [viewportRef]);
 
   const screenToCanvasWithViewport = useCallback(
     ({ clientX, clientY }: { clientX: number; clientY: number }) => {
@@ -378,10 +311,7 @@ export function usePreviewViewportState({
     [geometry],
   );
 
-  const getDisplayScaleWithViewport = useCallback(
-    () => getDisplayScale({ geometry }),
-    [geometry],
-  );
+  const getDisplayScaleWithViewport = useCallback(() => getDisplayScale({ geometry }), [geometry]);
 
   const getLogicalThresholdForScreenPixels = useCallback(
     ({ screenPixels }: { screenPixels: number }) =>
@@ -443,23 +373,20 @@ export function usePreviewViewportState({
     [canvasHeight, canvasWidth, viewportHeight, viewportScale, viewportWidth],
   );
 
-  const handlePanPointerUp = useCallback(
-    ({ event }: { event: React.PointerEvent }) => {
-      const panSession = panSessionRef.current;
-      if (!panSession) {
-        return false;
-      }
+  const handlePanPointerUp = useCallback(({ event }: { event: React.PointerEvent }) => {
+    const panSession = panSessionRef.current;
+    if (!panSession) {
+      return false;
+    }
 
-      if (event.currentTarget.hasPointerCapture(panSession.pointerId)) {
-        event.currentTarget.releasePointerCapture(panSession.pointerId);
-      }
+    if (event.currentTarget.hasPointerCapture(panSession.pointerId)) {
+      event.currentTarget.releasePointerCapture(panSession.pointerId);
+    }
 
-      panSessionRef.current = null;
-      setIsPanning(false);
-      return true;
-    },
-    [],
-  );
+    panSessionRef.current = null;
+    setIsPanning(false);
+    return true;
+  }, []);
 
   useEffect(() => {
     setZoomState(1);
@@ -472,7 +399,7 @@ export function usePreviewViewportState({
   }, [canvasHeight, canvasWidth]);
 
   useEffect(() => {
-    setCenter((previousCenter) =>
+    setCenter(previousCenter =>
       clampViewportCenter({
         canvasHeight,
         canvasWidth,
@@ -561,9 +488,7 @@ export function usePreviewViewportState({
 export function usePreviewViewport() {
   const context = useContext(PreviewViewportContext);
   if (!context) {
-    throw new Error(
-      "usePreviewViewport must be used within PreviewViewportProvider",
-    );
+    throw new Error("usePreviewViewport must be used within PreviewViewportProvider");
   }
 
   return context;

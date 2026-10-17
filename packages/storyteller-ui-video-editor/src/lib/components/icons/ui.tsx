@@ -55,10 +55,7 @@ export function OcCheckerboardIcon({ className = "", size = 32 }: IconProps) {
   );
 }
 
-export function OcSlidersVerticalIcon({
-  className = "",
-  size = 32,
-}: IconProps) {
+export function OcSlidersVerticalIcon({ className = "", size = 32 }: IconProps) {
   return (
     <svg
       width={size}
@@ -69,18 +66,8 @@ export function OcSlidersVerticalIcon({
       xmlns="http://www.w3.org/2000/svg"
     >
       <title>Sliders Vertical</title>
-      <path
-        d="M17.5103 2.82471L17.5103 21.1753"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M6.48975 2.82471L6.48975 21.1753"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
+      <path d="M17.5103 2.82471L17.5103 21.1753" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M6.48975 2.82471L6.48975 21.1753" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       <path
         d="M17.51 6.00665C19.3023 6.00665 20.755 7.45952 20.7551 9.25177C20.7551 11.0441 19.3023 12.4969 17.51 12.4969C15.7178 12.4968 14.2649 11.044 14.2649 9.25177C14.265 7.45959 15.7178 6.00675 17.51 6.00665Z"
         fill="white"
@@ -203,11 +190,7 @@ export function OcFontIcon({ className = "", size = 32 }: IconProps) {
   );
 }
 
-export function OcShapesIcon({
-  className = "",
-  size = 32,
-  strokeWidth = 1.5,
-}: IconProps) {
+export function OcShapesIcon({ className = "", size = 32, strokeWidth = 1.5 }: IconProps) {
   return (
     <svg
       width={size}
@@ -224,22 +207,8 @@ export function OcShapesIcon({
           <path d="M0 0H24V24H0ZM8 8H24V24H8Z" clipRule="evenodd" />
         </clipPath>
       </defs>
-      <circle
-        cx="8.5"
-        cy="8.5"
-        r="7.75"
-        stroke="currentColor"
-        strokeWidth={strokeWidth}
-        clipPath="url(#clip)"
-      />
-      <rect
-        x="8.75"
-        y="8.75"
-        width="14.5"
-        height="14.5"
-        stroke="currentColor"
-        strokeWidth={strokeWidth}
-      />
+      <circle cx="8.5" cy="8.5" r="7.75" stroke="currentColor" strokeWidth={strokeWidth} clipPath="url(#clip)" />
+      <rect x="8.75" y="8.75" width="14.5" height="14.5" stroke="currentColor" strokeWidth={strokeWidth} />
     </svg>
   );
 }
@@ -278,11 +247,7 @@ export function OcMirrorIcon({ className = "", size = 32 }: IconProps) {
   );
 }
 
-export function OcSquarePlusIcon({
-  className = "",
-  size = 32,
-  strokeWidth = 1.5,
-}: IconProps) {
+export function OcSquarePlusIcon({ className = "", size = 32, strokeWidth = 1.5 }: IconProps) {
   return (
     <svg
       width={size}
@@ -297,13 +262,7 @@ export function OcSquarePlusIcon({
       <defs>
         <mask id="frameMask" maskUnits="userSpaceOnUse">
           <rect width="24" height="24" fill="white" />
-          <rect
-            x="14.636"
-            y="14.636"
-            width="9.364"
-            height="9.364"
-            fill="black"
-          />
+          <rect x="14.636" y="14.636" width="9.364" height="9.364" fill="black" />
         </mask>
         <clipPath id="plusClip" clipPathUnits="userSpaceOnUse">
           <rect x="16" y="16" width="9" height="8" />
@@ -319,31 +278,13 @@ export function OcSquarePlusIcon({
         strokeWidth={strokeWidth}
         mask="url(#frameMask)"
       />
-      <rect
-        x="19.493"
-        y="16.486"
-        width="1.503"
-        height="7.514"
-        fill="currentColor"
-        clipPath="url(#plusClip)"
-      />
-      <rect
-        x="16.487"
-        y="19.492"
-        width="7.514"
-        height="1.503"
-        fill="currentColor"
-        clipPath="url(#plusClip)"
-      />
+      <rect x="19.493" y="16.486" width="1.503" height="7.514" fill="currentColor" clipPath="url(#plusClip)" />
+      <rect x="16.487" y="19.492" width="7.514" height="1.503" fill="currentColor" clipPath="url(#plusClip)" />
     </svg>
   );
 }
 
-export function OcRippleIcon({
-  className = "",
-  size = 24,
-  strokeWidth = 1.5,
-}: IconProps) {
+export function OcRippleIcon({ className = "", size = 24, strokeWidth = 1.5 }: IconProps) {
   return (
     <svg
       width={size}

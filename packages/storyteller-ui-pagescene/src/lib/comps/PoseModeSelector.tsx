@@ -11,7 +11,7 @@ interface PoseModeSelectorProps {}
 
 export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
   const { poseMode, showPoseControls, setPoseMode } = usePageSceneStore(
-    useShallow((s) => ({
+    useShallow(s => ({
       poseMode: s.poseMode,
       showPoseControls: s.showPoseControls,
       setPoseMode: s.setPoseMode,
@@ -30,15 +30,10 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
   return (
     <div
       className="fixed left-1/2 top-32 flex -translate-x-1/2 transform items-center justify-center gap-2"
-      onClick={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
+      onMouseDown={e => e.stopPropagation()}
     >
-      <Tooltip
-        content={"Toggle pose mode (K)"}
-        position={"bottom"}
-        delay={300}
-        closeOnClick={true}
-      >
+      <Tooltip content={"Toggle pose mode (K)"} position={"bottom"} delay={300} closeOnClick={true}>
         <>
           {poseMode === "select" ? (
             <Button
@@ -62,12 +57,7 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
       {/* Animations-only library for the selected character. Hidden while
           posing so the row stays a single "Done" affordance. */}
       {poseMode === "select" && (
-        <Tooltip
-          content={"Add an animation to this character"}
-          position={"bottom"}
-          delay={300}
-          closeOnClick={true}
-        >
+        <Tooltip content={"Add an animation to this character"} position={"bottom"} delay={300} closeOnClick={true}>
           <Button
             icon={FilmIcon}
             onClick={() => openAnimationsModal()}

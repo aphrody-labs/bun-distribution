@@ -63,10 +63,7 @@ describe("disposeObject3D", () => {
   it("disposes skinned mesh skeletons", () => {
     const bone = new THREE.Bone();
     const skeleton = new THREE.Skeleton([bone]);
-    const mesh = new THREE.SkinnedMesh(
-      new THREE.BoxGeometry(),
-      new THREE.MeshBasicMaterial(),
-    );
+    const mesh = new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
     mesh.add(bone);
     mesh.bind(skeleton);
     const dispose = vi.spyOn(skeleton, "dispose");
@@ -148,9 +145,7 @@ describe("disposeObject3D", () => {
 });
 
 // Records which resources dispatched their "dispose" event.
-function trackDisposals(
-  resources: Array<THREE.Texture | THREE.Material | THREE.BufferGeometry>,
-): Set<unknown> {
+function trackDisposals(resources: Array<THREE.Texture | THREE.Material | THREE.BufferGeometry>): Set<unknown> {
   const disposed = new Set<unknown>();
   for (const resource of resources) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

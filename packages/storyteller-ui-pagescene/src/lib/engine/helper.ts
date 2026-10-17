@@ -4,10 +4,7 @@ import type { TransformControls } from "./TransformControls.js";
 
 import Scene from "./scene";
 import type { EngineEventBus } from "./events/EngineEventBus";
-import {
-  InspectorPanelChangedEvent,
-  ObjectRemovedEvent,
-} from "./events/EngineEvent";
+import { InspectorPanelChangedEvent, ObjectRemovedEvent } from "./events/EngineEvent";
 
 // Capabilities SceneUtils needs from outside its own state. Editor
 // wires these in inline at construction (Phase 2 idiom — same shape
@@ -45,9 +42,7 @@ export class SceneUtils {
 
   // If string is empty.
   isEmpty(value: string): boolean {
-    return (
-      value == null || (typeof value === "string" && value.trim().length === 0)
-    );
+    return value == null || (typeof value === "string" && value.trim().length === 0);
   }
 
   // Returns if the object is locked or unlocked.
@@ -104,10 +99,8 @@ export class SceneUtils {
   getSelectedSum(): number {
     const selected = this.deps.getSelectedObject();
     if (selected === undefined) return 0;
-    const posCombo =
-      selected.position.x + selected.position.y + selected.position.z;
-    const rotCombo =
-      selected.rotation.x + selected.rotation.y + selected.rotation.z;
+    const posCombo = selected.position.x + selected.position.y + selected.position.z;
+    const rotCombo = selected.rotation.x + selected.rotation.y + selected.rotation.z;
     const sclCombo = selected.scale.x + selected.scale.y + selected.scale.z;
     return posCombo + rotCombo + sclCombo;
   }

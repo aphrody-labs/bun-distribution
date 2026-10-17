@@ -21,13 +21,7 @@ import { KeyRound, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "../button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../card";
 import { Input } from "../input";
 import { Label } from "../label";
 
@@ -95,9 +89,7 @@ export function TwoFactorChallenge({
       <CardContent>
         <form className="space-y-4" onSubmit={envoyer}>
           <div className="space-y-1.5">
-            <Label htmlFor="code-2fa">
-              {secours ? "Code de secours" : "Code à six chiffres"}
-            </Label>
+            <Label htmlFor="code-2fa">{secours ? "Code de secours" : "Code à six chiffres"}</Label>
             <Input
               id="code-2fa"
               autoFocus
@@ -106,7 +98,7 @@ export function TwoFactorChallenge({
               maxLength={secours ? 32 : 6}
               placeholder={secours ? "xxxxx-xxxxx" : "123456"}
               value={code}
-              onChange={(evenement) => setCode(evenement.target.value)}
+              onChange={evenement => setCode(evenement.target.value)}
             />
           </div>
 
@@ -116,18 +108,13 @@ export function TwoFactorChallenge({
                 type="checkbox"
                 className="mt-0.5 size-4 accent-primary"
                 checked={confiance}
-                onChange={(evenement) => setConfiance(evenement.target.checked)}
+                onChange={evenement => setConfiance(evenement.target.checked)}
               />
-              Faire confiance à cet appareil (aucun code ne sera demandé pendant
-              60 jours).
+              Faire confiance à cet appareil (aucun code ne sera demandé pendant 60 jours).
             </label>
           )}
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={enCours || code.trim().length === 0}
-          >
+          <Button type="submit" className="w-full" disabled={enCours || code.trim().length === 0}>
             {enCours && <Loader2 className="size-4 animate-spin" aria-hidden />}
             Vérifier
           </Button>
@@ -139,19 +126,14 @@ export function TwoFactorChallenge({
               size="sm"
               className="px-1"
               onClick={() => {
-                setSecours((valeur) => !valeur);
+                setSecours(valeur => !valeur);
                 setCode("");
               }}
             >
               <KeyRound className="size-3.5" aria-hidden />
-              {secours
-                ? "Utiliser mon application"
-                : "Utiliser un code de secours"}
+              {secours ? "Utiliser mon application" : "Utiliser un code de secours"}
             </Button>
-            <a
-              href={hrefAide}
-              className="text-muted-foreground underline underline-offset-2"
-            >
+            <a href={hrefAide} className="text-muted-foreground underline underline-offset-2">
               Je n&apos;ai plus ni l&apos;un ni l&apos;autre
             </a>
           </div>

@@ -41,10 +41,7 @@ export class Object3D {
   }
 
   getColorAsHexString(object: THREE.Object3D): string {
-    if (
-      object instanceof THREE.Mesh &&
-      object.material instanceof THREE.MeshBasicMaterial
-    ) {
+    if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshBasicMaterial) {
       return "#" + object.material.color.getHexString();
     }
     return "#FFFFFF";

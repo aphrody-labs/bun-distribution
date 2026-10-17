@@ -33,54 +33,37 @@ const avatarVariants = cva(
   },
 );
 
-export type AvatarRootProps = AvatarPrimitive.Root.Props &
-  VariantProps<typeof avatarVariants>;
+export type AvatarRootProps = AvatarPrimitive.Root.Props & VariantProps<typeof avatarVariants>;
 
-export const AvatarRoot = forwardRef<HTMLSpanElement, AvatarRootProps>(
-  ({ className, size, shape, ...props }, ref) => (
-    <AvatarPrimitive.Root
-      ref={ref}
-      className={withClassName(
-        clsx(
-          avatarVariants({ size, shape }),
-          "bg-primary-container text-on-primary-container",
-        ),
-        className,
-      )}
-      data-m3-component="Avatar"
-      {...props}
-    />
-  ),
-);
+export const AvatarRoot = forwardRef<HTMLSpanElement, AvatarRootProps>(({ className, size, shape, ...props }, ref) => (
+  <AvatarPrimitive.Root
+    ref={ref}
+    className={withClassName(
+      clsx(avatarVariants({ size, shape }), "bg-primary-container text-on-primary-container"),
+      className,
+    )}
+    data-m3-component="Avatar"
+    {...props}
+  />
+));
 AvatarRoot.displayName = "AvatarRoot";
 
 export type AvatarImageProps = AvatarPrimitive.Image.Props;
 
-export const AvatarImage = forwardRef<HTMLImageElement, AvatarImageProps>(
-  ({ className, ...props }, ref) => (
-    <AvatarPrimitive.Image
-      ref={ref}
-      className={withClassName("size-full object-cover", className)}
-      {...props}
-    />
-  ),
-);
+export const AvatarImage = forwardRef<HTMLImageElement, AvatarImageProps>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Image ref={ref} className={withClassName("size-full object-cover", className)} {...props} />
+));
 AvatarImage.displayName = "AvatarImage";
 
 export type AvatarFallbackProps = AvatarPrimitive.Fallback.Props;
 
-export const AvatarFallback = forwardRef<HTMLDivElement, AvatarFallbackProps>(
-  ({ className, ...props }, ref) => (
-    <AvatarPrimitive.Fallback
-      ref={ref}
-      className={withClassName(
-        "flex size-full items-center justify-center bg-inherit text-inherit",
-        className,
-      )}
-      {...props}
-    />
-  ),
-);
+export const AvatarFallback = forwardRef<HTMLDivElement, AvatarFallbackProps>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Fallback
+    ref={ref}
+    className={withClassName("flex size-full items-center justify-center bg-inherit text-inherit", className)}
+    {...props}
+  />
+));
 AvatarFallback.displayName = "AvatarFallback";
 
 export interface AvatarProps extends AvatarRootProps {
@@ -90,20 +73,11 @@ export interface AvatarProps extends AvatarRootProps {
 }
 
 /** Pre-composed M3 Avatar with automatic image and fallback. */
-export function Avatar({
-  src,
-  alt,
-  fallback,
-  size,
-  shape,
-  ...props
-}: AvatarProps) {
+export function Avatar({ src, alt, fallback, size, shape, ...props }: AvatarProps) {
   return (
     <AvatarRoot size={size} shape={shape} {...props}>
       {src && <AvatarImage src={src} alt={alt} />}
-      <AvatarFallback>
-        {fallback ?? (alt ? alt.slice(0, 2).toUpperCase() : "?")}
-      </AvatarFallback>
+      <AvatarFallback>{fallback ?? (alt ? alt.slice(0, 2).toUpperCase() : "?")}</AvatarFallback>
     </AvatarRoot>
   );
 }

@@ -1,7 +1,5 @@
 .pricing-hud {
-  font-family:
-    var(--font-geist-mono, "Geist Mono"), ui-monospace, SFMono-Regular, Menlo,
-    Consolas, monospace;
+  font-family: var(--font-geist-mono, "Geist Mono"), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.6875rem;
   font-weight: 500;
   line-height: 1.5;
@@ -18,11 +16,7 @@
   --plan-ink: #ddd;
   min-width: 0;
   background:
-    linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--plan) 14%, transparent),
-      transparent 50%
-    ),
+    linear-gradient(to bottom, color-mix(in srgb, var(--plan) 14%, transparent), transparent 50%),
     var(--pricing-surface, #101014);
 }
 .website-plan-card.plan-green {

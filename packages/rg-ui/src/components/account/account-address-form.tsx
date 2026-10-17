@@ -7,21 +7,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "../button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../form";
 import { Input } from "../input";
 import type { AccountActionResult, AccountAddressValues } from "./types";
 
@@ -47,10 +34,7 @@ interface AccountAddressFormProps {
  * un aller-retour qui écrasait ces colonnes par une chaîne vide dès que la
  * lecture initiale était partielle.
  */
-export function AccountAddressForm({
-  values,
-  onSubmit,
-}: AccountAddressFormProps) {
+export function AccountAddressForm({ values, onSubmit }: AccountAddressFormProps) {
   const form = useForm({
     defaultValues: values,
     resolver: zodResolver(schema),
@@ -82,15 +66,12 @@ export function AccountAddressForm({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Truck
-            className="size-5 shrink-0 text-muted-foreground"
-            aria-hidden
-          />
+          <Truck className="size-5 shrink-0 text-muted-foreground" aria-hidden />
           Adresse de livraison
         </CardTitle>
         <CardDescription>
-          Utilisée pour les commandes de la boutique (goodies, contreparties
-          Patreon). Privée : jamais affichée publiquement.
+          Utilisée pour les commandes de la boutique (goodies, contreparties Patreon). Privée : jamais affichée
+          publiquement.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -103,11 +84,7 @@ export function AccountAddressForm({
                 <FormItem>
                   <FormLabel>Adresse (ligne 1)</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="123 rue Inazuma"
-                      autoComplete="address-line1"
-                      {...field}
-                    />
+                    <Input placeholder="123 rue Inazuma" autoComplete="address-line1" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -138,11 +115,7 @@ export function AccountAddressForm({
                   <FormItem>
                     <FormLabel>Code postal</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="75001"
-                        autoComplete="postal-code"
-                        {...field}
-                      />
+                      <Input placeholder="75001" autoComplete="postal-code" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -155,11 +128,7 @@ export function AccountAddressForm({
                   <FormItem>
                     <FormLabel>Ville</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Paris"
-                        autoComplete="address-level2"
-                        {...field}
-                      />
+                      <Input placeholder="Paris" autoComplete="address-level2" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -173,25 +142,15 @@ export function AccountAddressForm({
                 <FormItem>
                   <FormLabel>Pays</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="France"
-                      autoComplete="country-name"
-                      {...field}
-                    />
+                    <Input placeholder="France" autoComplete="country-name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <div className="flex justify-end border-t border-border pt-6">
-              <Button
-                type="submit"
-                disabled={form.formState.isSubmitting}
-                className="rounded-full px-8"
-              >
-                {form.formState.isSubmitting
-                  ? "Enregistrement…"
-                  : "Enregistrer l'adresse"}
+              <Button type="submit" disabled={form.formState.isSubmitting} className="rounded-full px-8">
+                {form.formState.isSubmitting ? "Enregistrement…" : "Enregistrer l'adresse"}
               </Button>
             </div>
           </form>

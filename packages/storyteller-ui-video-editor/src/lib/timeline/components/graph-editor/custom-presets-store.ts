@@ -14,7 +14,7 @@ function isValidPresetArray(value: unknown): value is EasingPreset[] {
   return (
     Array.isArray(value) &&
     value.every(
-      (item) =>
+      item =>
         typeof item === "object" &&
         item !== null &&
         typeof item.id === "string" &&
@@ -97,7 +97,7 @@ export function savePreset({ value }: { value: NormalizedCubicBezier }): void {
 
 export function removePreset({ id }: { id: string }): void {
   writeToStorage({
-    presets: getSnapshot().filter((preset) => preset.id !== id),
+    presets: getSnapshot().filter(preset => preset.id !== id),
   });
   notify();
 }

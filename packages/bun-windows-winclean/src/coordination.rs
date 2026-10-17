@@ -31,13 +31,17 @@ fn root() -> Result<PathBuf, SubsystemError> {
         return if path.is_absolute() {
             Ok(path)
         } else {
-            Err(SubsystemError::InvalidArguments("APHRODY_COORD_ROOT must be absolute".into()))
+            Err(SubsystemError::InvalidArguments(
+                "APHRODY_COORD_ROOT must be absolute".into(),
+            ))
         };
     }
     #[cfg(windows)]
-    let base = std::env::var_os("LOCALAPPDATA").map(PathBuf::from).or_else(|| {
-        std::env::var_os("USERPROFILE").map(|home| PathBuf::from(home).join("AppData/Local"))
-    });
+    let base = std::env::var_os("LOCALAPPDATA")
+        .map(PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("USERPROFILE").map(|home| PathBuf::from(home).join("AppData/Local"))
+        });
     #[cfg(not(windows))]
     let base = std::env::var_os("XDG_STATE_HOME")
         .map(PathBuf::from)
@@ -49,9 +53,14 @@ fn root() -> Result<PathBuf, SubsystemError> {
 
 fn agent_file(agent: &str) -> Result<PathBuf, SubsystemError> {
     let name = agent.trim();
-    if name.is_empty() || name.chars().any(|c| c == '/' || c == '\\' || c == ':' || c.is_control())
+    if name.is_empty()
+        || name
+            .chars()
+            .any(|c| c == '/' || c == '\\' || c == ':' || c.is_control())
     {
-        return Err(SubsystemError::InvalidArguments("agent must be a non-empty safe name".into()));
+        return Err(SubsystemError::InvalidArguments(
+            "agent must be a non-empty safe name".into(),
+        ));
     }
     let canonical = match name.to_ascii_uppercase().as_str() {
         "CLAUDE" | "WINCLEAN-CLAUDE" => "CLAUDE".to_owned(),

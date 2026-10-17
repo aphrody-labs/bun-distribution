@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** drttransport.dll!DrtCreateIpv6UdpTransport */
-  DrtCreateIpv6UdpTransport(scope: number, dwScopeId: number, dwLocalityThreshold: number, pwPort: Win32Pointer, phTransport: Win32Pointer): number;
+  DrtCreateIpv6UdpTransport(
+    scope: number,
+    dwScopeId: number,
+    dwLocalityThreshold: number,
+    pwPort: Win32Pointer,
+    phTransport: Win32Pointer,
+  ): number;
   /** drttransport.dll!DrtDeleteIpv6UdpTransport */
   DrtDeleteIpv6UdpTransport(hTransport: Win32Pointer): number;
 }

@@ -6,8 +6,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "IA & Canon Cockpit — Console Unifiée",
-  description:
-    "Supervision temps réel, doctrine de canonicité, entraînement RAG et modèles",
+  description: "Supervision temps réel, doctrine de canonicité, entraînement RAG et modèles",
 };
 
 export default async function AdminIaPage() {

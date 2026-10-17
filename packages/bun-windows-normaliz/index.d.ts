@@ -3,9 +3,21 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** normaliz.dll!IdnToAscii */
-  IdnToAscii(dwFlags: number, lpUnicodeCharStr: string | Win32Pointer, cchUnicodeChar: number, lpASCIICharStr: string | Win32Pointer, cchASCIIChar: number): number;
+  IdnToAscii(
+    dwFlags: number,
+    lpUnicodeCharStr: string | Win32Pointer,
+    cchUnicodeChar: number,
+    lpASCIICharStr: string | Win32Pointer,
+    cchASCIIChar: number,
+  ): number;
   /** normaliz.dll!IdnToUnicode */
-  IdnToUnicode(dwFlags: number, lpASCIICharStr: string | Win32Pointer, cchASCIIChar: number, lpUnicodeCharStr: string | Win32Pointer, cchUnicodeChar: number): number;
+  IdnToUnicode(
+    dwFlags: number,
+    lpASCIICharStr: string | Win32Pointer,
+    cchASCIIChar: number,
+    lpUnicodeCharStr: string | Win32Pointer,
+    cchUnicodeChar: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

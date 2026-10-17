@@ -30,15 +30,13 @@ export type TranscriptStep =
 
 // Paired transcript item for rendering
 
-export type TranscriptItem =
-  { kind: "text"; text: string } | { kind: "tool"; pair: ToolCallPair };
+export type TranscriptItem = { kind: "text"; text: string } | { kind: "tool"; pair: ToolCallPair };
 
 // ---------------------------------------------------------------------------
 // Task board types
 // ---------------------------------------------------------------------------
 
-export type TaskStatus =
-  "pending_approval" | "backlog" | "ready" | "in_progress" | "done";
+export type TaskStatus = "pending_approval" | "backlog" | "ready" | "in_progress" | "done";
 export type TaskPriority = "critical" | "high" | "medium" | "low";
 
 export interface Subtask {
@@ -64,13 +62,7 @@ export interface Task {
   completed_at?: string | null;
 }
 
-export const TASK_STATUS_ORDER: TaskStatus[] = [
-  "in_progress",
-  "ready",
-  "pending_approval",
-  "backlog",
-  "done",
-];
+export const TASK_STATUS_ORDER: TaskStatus[] = ["in_progress", "ready", "pending_approval", "backlog", "done"];
 
 export const TASK_STATUS_LABEL: Record<TaskStatus, string> = {
   in_progress: "In Progress",
@@ -137,11 +129,7 @@ export function tryParseJson(text: string): Record<string, unknown> | null {
   if (!text || text.trim().length === 0) return null;
   try {
     const parsed = JSON.parse(text);
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      !Array.isArray(parsed)
-    ) {
+    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
       return parsed as Record<string, unknown>;
     }
     return null;
@@ -150,15 +138,11 @@ export function tryParseJson(text: string): Record<string, unknown> | null {
   }
 }
 
-export function isErrorResult(
-  text: string,
-  parsed: Record<string, unknown> | null,
-): boolean {
+export function isErrorResult(text: string, parsed: Record<string, unknown> | null): boolean {
   if (parsed?.error) return true;
   if (parsed?.status === "error") return true;
   if (parsed?.success === false) return true;
-  if (typeof parsed?.exit_code === "number" && parsed.exit_code !== 0)
-    return true;
+  if (typeof parsed?.exit_code === "number" && parsed.exit_code !== 0) return true;
   const lower = text.toLowerCase();
   return (
     lower.startsWith("error:") ||
@@ -199,9 +183,7 @@ export function pairTranscriptSteps(steps: TranscriptStep[]): TranscriptItem[] {
           const parsedArgs = tryParseJson(content.args);
           const parsedResult = result ? tryParseJson(result.text) : null;
 
-          const hasError = result
-            ? isErrorResult(result.text, parsedResult)
-            : false;
+          const hasError = result ? isErrorResult(result.text, parsedResult) : false;
 
           items.push({
             kind: "tool",

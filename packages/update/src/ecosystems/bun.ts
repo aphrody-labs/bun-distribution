@@ -14,13 +14,7 @@
  * Reuses ../tools.ts (runtime pin), ../tauri/sync.ts (Tauri family), ../deps/inventory.ts (OSV, pool, bun.lock),
  * ../deps/sync.ts (version order) and the workspace manifest listing. Report-only unless `apply`.
  */
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-} from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { Ctx } from "../context.ts";
 import { cmpVersion } from "../deps/sync.ts";
@@ -32,26 +26,13 @@ import { firstPartyManifests } from "../manifests.ts";
 
 // ---------------------------------------------------------------- types
 
-export const DEP_SECTIONS = [
-  "dependencies",
-  "devDependencies",
-  "optionalDependencies",
-] as const;
+export const DEP_SECTIONS = ["dependencies", "devDependencies", "optionalDependencies"] as const;
 export type DepSection = (typeof DEP_SECTIONS)[number];
 export type Manifest = Record<string, any>;
 
 /** One direct dependency: a catalog entry or a literal range in a manifest, deduplicated by name and spec. */
 export type Direct = { name: string; spec: string; where: string[] };
-export type SpecKind =
-  | "workspace"
-  | "file"
-  | "link"
-  | "git"
-  | "url"
-  | "alias"
-  | "catalog"
-  | "tag"
-  | "version";
+export type SpecKind = "workspace" | "file" | "link" | "git" | "url" | "alias" | "catalog" | "tag" | "version";
 export type BumpKind = "none" | "ahead" | "patch" | "minor" | "major" | "pre";
 
 export type Row = Direct & {
@@ -92,13 +73,7 @@ export const RUNTIME_TOOLS = ["bun", "typescript", "oxlint", "oxfmt"];
 /** Packages owned by `tauri sync` (its own gate, mirrors and release-age rules): never bumped here. */
 export const TAURI_OWNED = /^@tauri-apps\//;
 /** Packages whose version `tools/config/update/pins.json` rewrites everywhere (runtime and toolchain pins): moved by `tools --apply`. */
-export const PIN_OWNED = new Set([
-  "bun-types",
-  "@types/bun",
-  "typescript",
-  "oxlint",
-  "oxfmt",
-]);
+export const PIN_OWNED = new Set(["bun-types", "@types/bun", "typescript", "oxlint", "oxfmt"]);
 
 // ---------------------------------------------------------------- specs
 
@@ -108,30 +83,22 @@ export function specKind(spec: string): SpecKind {
   if (spec.startsWith("file:")) return "file";
   if (spec.startsWith("link:")) return "link";
   if (spec.startsWith("npm:")) return "alias";
-  if (
-    /^(git|github|git\+\w+|gitlab|bitbucket):/.test(spec) ||
-    /^[\w.-]+\/[\w.-]+(#.*)?$/.test(spec)
-  )
-    return "git";
+  if (/^(git|github|git\+\w+|gitlab|bitbucket):/.test(spec) || /^[\w.-]+\/[\w.-]+(#.*)?$/.test(spec)) return "git";
   if (/^https?:/.test(spec)) return "url";
-  if (/^[\^~>=<v\d*xX\s|.-]/.test(spec) && /\d|[*xX]/.test(spec))
-    return "version";
+  if (/^[\^~>=<v\d*xX\s|.-]/.test(spec) && /\d|[*xX]/.test(spec)) return "version";
   return "tag"; // latest, next, canary, ...
 }
 
-const numericOrZero = (s: string | undefined) =>
-  s && /^\d+$/.test(s) ? s : "0";
+const numericOrZero = (s: string | undefined) => (s && /^\d+$/.test(s) ? s : "0");
 
 /** Lowest bound of the highest alternative of a range (`^1.2.3`, `~1.2`, `>=1 <2 || ^3.1.0`); undefined when open. */
 export function specBase(spec: string): string | undefined {
   const alt =
     spec
       .split("||")
-      .map((a) => a.trim())
+      .map(a => a.trim())
       .findLast(Boolean) ?? "";
-  const m = /(\d+)(?:\.(\d+|[xX*]))?(?:\.(\d+|[xX*]))?(-[0-9A-Za-z.-]+)?/.exec(
-    alt,
-  );
+  const m = /(\d+)(?:\.(\d+|[xX*]))?(?:\.(\d+|[xX*]))?(-[0-9A-Za-z.-]+)?/.exec(alt);
   if (!m) return undefined;
   return `${m[1]}.${numericOrZero(m[2])}.${numericOrZero(m[3])}${m[4] ?? ""}`;
 }
@@ -144,10 +111,7 @@ export function rewriteSpec(spec: string, version: string): string {
   return `${op === "=" ? "" : op}${version}`;
 }
 
-export function bumpKind(
-  base: string | undefined,
-  latest: string | undefined,
-): BumpKind {
+export function bumpKind(base: string | undefined, latest: string | undefined): BumpKind {
   if (!base || !latest) return "none";
   const a = parseSemver(base);
   const b = parseSemver(latest);
@@ -179,33 +143,21 @@ export function catalogEntries(root: Manifest): Record<string, string> {
   const out: Record<string, string> = {
     ...(root.workspaces?.catalog ?? root.catalog),
   };
-  for (const named of Object.values<Record<string, string>>(
-    root.workspaces?.catalogs ?? root.catalogs ?? {},
-  )) {
+  for (const named of Object.values<Record<string, string>>(root.workspaces?.catalogs ?? root.catalogs ?? {})) {
     for (const [n, s] of Object.entries(named)) out[n] ??= s;
   }
   return out;
 }
 
 /** name -> declared spec of one manifest with `catalog:` references resolved through the root catalog. */
-export function resolvedDeps(
-  manifest: Manifest,
-  root: Manifest,
-): Map<string, string> {
+export function resolvedDeps(manifest: Manifest, root: Manifest): Map<string, string> {
   const catalog = root.workspaces?.catalog ?? root.catalog ?? {};
-  const catalogs: Record<string, Record<string, string>> = root.workspaces
-    ?.catalogs ??
-  root.catalogs ??
-  {};
+  const catalogs: Record<string, Record<string, string>> = root.workspaces?.catalogs ?? root.catalogs ?? {};
   const out = new Map<string, string>();
   for (const section of DEP_SECTIONS) {
-    for (const [name, spec] of Object.entries<string>(
-      manifest[section] ?? {},
-    )) {
-      if (spec === "catalog:" || spec === "catalog:default")
-        out.set(name, catalog[name] ?? spec);
-      else if (spec.startsWith("catalog:"))
-        out.set(name, catalogs[spec.slice(8)]?.[name] ?? spec);
+    for (const [name, spec] of Object.entries<string>(manifest[section] ?? {})) {
+      if (spec === "catalog:" || spec === "catalog:default") out.set(name, catalog[name] ?? spec);
+      else if (spec.startsWith("catalog:")) out.set(name, catalogs[spec.slice(8)]?.[name] ?? spec);
       else out.set(name, spec);
     }
   }
@@ -213,10 +165,7 @@ export function resolvedDeps(
 }
 
 /** Direct dependencies of the whole workspace: catalog entries first, then literal ranges of each manifest. */
-export function collectDirect(
-  root: Manifest,
-  manifests: Record<string, Manifest>,
-): Direct[] {
+export function collectDirect(root: Manifest, manifests: Record<string, Manifest>): Direct[] {
   const map = new Map<string, Direct>();
   const add = (name: string, spec: string, where: string) => {
     const k = `${name}\u0000${spec}`;
@@ -224,8 +173,7 @@ export function collectDirect(
     if (!d.where.includes(where)) d.where.push(where);
     map.set(k, d);
   };
-  for (const [name, spec] of Object.entries(catalogEntries(root)))
-    add(name, spec, "catalog");
+  for (const [name, spec] of Object.entries(catalogEntries(root))) add(name, spec, "catalog");
   for (const [path, m] of Object.entries(manifests)) {
     for (const section of DEP_SECTIONS) {
       for (const [name, spec] of Object.entries<string>(m[section] ?? {})) {
@@ -234,9 +182,7 @@ export function collectDirect(
       }
     }
   }
-  return [...map.values()].toSorted(
-    (a, b) => a.name.localeCompare(b.name) || a.spec.localeCompare(b.spec),
-  );
+  return [...map.values()].toSorted((a, b) => a.name.localeCompare(b.name) || a.spec.localeCompare(b.spec));
 }
 
 /** Manifests whose resolved dependency specs differ between two states (catalog edits propagate to their users). */
@@ -247,11 +193,8 @@ export function touchedManifests(
   const out: string[] = [];
   for (const [path, m] of Object.entries(after.manifests)) {
     const a = resolvedDeps(m, after.root);
-    const b = before.manifests[path]
-      ? resolvedDeps(before.manifests[path]!, before.root)
-      : new Map<string, string>();
-    const changed =
-      a.size !== b.size || [...a].some(([n, s]) => b.get(n) !== s);
+    const b = before.manifests[path] ? resolvedDeps(before.manifests[path]!, before.root) : new Map<string, string>();
+    const changed = a.size !== b.size || [...a].some(([n, s]) => b.get(n) !== s);
     if (changed) out.push(path);
   }
   return out.toSorted();
@@ -282,26 +225,19 @@ export function parseHolds(text: string): Holds {
 }
 
 /** Hold that applies to this row: a release in a major above `maxMajor`, or above `maxVersion`, is refused. */
-export function holdFor(
-  holds: Hold[],
-  name: string,
-  latest: string | undefined,
-): Hold | undefined {
+export function holdFor(holds: Hold[], name: string, latest: string | undefined): Hold | undefined {
   const major = latest ? parseSemver(latest)?.major : undefined;
   if (!latest || major === undefined) return undefined;
   return holds.find(
-    (h) =>
+    h =>
       h.name === name &&
       ((h.maxMajor !== undefined && major > h.maxMajor) ||
         (h.maxVersion !== undefined && cmpVersion(latest, h.maxVersion) > 0)),
   );
 }
 
-export function advisoryHeld(
-  holds: AdvisoryHold[],
-  name: string,
-): AdvisoryHold | undefined {
-  return holds.find((h) => h.ecosystem === "npm" && h.name === name);
+export function advisoryHeld(holds: AdvisoryHold[], name: string): AdvisoryHold | undefined {
+  return holds.find(h => h.ecosystem === "npm" && h.name === name);
 }
 
 /** Packages that must move together (peer or release-train coupling); a named member pulls its behind siblings. */
@@ -319,17 +255,11 @@ export const FAMILIES: RegExp[][] = [
   [/^vitest$/, /^@vitest\//],
   [/^@colyseus\//],
   [/^@ai-sdk\//, /^ai$/],
-  [
-    /^graphql$/,
-    /^graphql-scalars$/,
-    /^graphql-yoga$/,
-    /^@graphql-yoga\//,
-    /^@envelop\//,
-  ],
+  [/^graphql$/, /^graphql-scalars$/, /^graphql-yoga$/, /^@graphql-yoga\//, /^@envelop\//],
 ];
 
 export function familyOf(name: string): RegExp[] | undefined {
-  return FAMILIES.find((f) => f.some((re) => re.test(name)));
+  return FAMILIES.find(f => f.some(re => re.test(name)));
 }
 
 /** Names requested through `--majors`, plus the behind-by-major siblings of their family. */
@@ -338,9 +268,7 @@ export function expandMajors(requested: string[], rows: Row[]): string[] {
   for (const name of requested) {
     const fam = familyOf(name);
     if (!fam) continue;
-    for (const r of rows)
-      if (r.kind === "major" && !r.inRange && fam.some((re) => re.test(r.name)))
-        out.add(r.name);
+    for (const r of rows) if (r.kind === "major" && !r.inRange && fam.some(re => re.test(r.name))) out.add(r.name);
   }
   return [...out].toSorted();
 }
@@ -368,17 +296,12 @@ export function eligibleVersion(
   name: string,
   now: number,
 ): { eligible?: string; ageGated: boolean } {
-  if (!times || isExcluded(name, age) || age.seconds <= 0)
-    return { eligible: latest, ageGated: false };
+  if (!times || isExcluded(name, age) || age.seconds <= 0) return { eligible: latest, ageGated: false };
   const line = parseSemver(latest);
   if (!line) return { eligible: latest, ageGated: false };
   const candidates = line.pre.length
     ? times
-    : Object.fromEntries(
-        Object.entries(times).filter(
-          ([v]) => (parseSemver(v)?.pre.length ?? 1) === 0,
-        ),
-      );
+    : Object.fromEntries(Object.entries(times).filter(([v]) => (parseSemver(v)?.pre.length ?? 1) === 0));
   const { eligible } = pickEligible(candidates, line.major, now, age.seconds);
   return { eligible: eligible ?? undefined, ageGated: eligible !== latest };
 }
@@ -405,13 +328,7 @@ export function buildRows(input: RowInput): Row[] {
     else if (PIN_OWNED.has(d.name)) row.owner = "pins";
     row.hold = holdFor(input.holds, d.name, latest);
     if (latest && kind !== "none" && kind !== "ahead") {
-      const e = eligibleVersion(
-        input.times?.get(d.name),
-        latest,
-        age,
-        d.name,
-        now,
-      );
+      const e = eligibleVersion(input.times?.get(d.name), latest, age, d.name, now);
       row.eligible = e.eligible;
       row.ageGated = e.ageGated;
     }
@@ -421,12 +338,10 @@ export function buildRows(input: RowInput): Row[] {
 }
 
 /** Rows that still need a decision: behind latest, not owned by tauri sync or the pin manifest. */
-export const behind = (rows: Row[]) =>
-  rows.filter((r) => r.kind !== "none" && r.kind !== "ahead" && !r.owner);
+export const behind = (rows: Row[]) => rows.filter(r => r.kind !== "none" && r.kind !== "ahead" && !r.owner);
 
 /** Version `apply` would install: the release-age-eligible one, else the latest. */
-export const targetOf = (r: Row): string | undefined =>
-  r.ageGated ? r.eligible : r.latest;
+export const targetOf = (r: Row): string | undefined => (r.ageGated ? r.eligible : r.latest);
 
 export type Plan = {
   /** A newer release inside the declared range: `bun update -r` moves it. */
@@ -474,7 +389,7 @@ export function specEdits(
   const edits: Edit[] = [];
   const errors: string[] = [];
   for (const name of names) {
-    const mine = rows.filter((r) => r.name === name && !r.owner);
+    const mine = rows.filter(r => r.name === name && !r.owner);
     if (!mine.length) {
       errors.push(`${name}: not a direct dependency`);
       continue;
@@ -503,20 +418,11 @@ export function specEdits(
   return { edits, errors };
 }
 
-const escapeForPattern = (s: string) =>
-  s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const escapeForPattern = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Replace `"name": "from"` by `"name": "to"` in JSON text, keeping the formatting; returns the new text and the count. */
-export function applyEdit(
-  text: string,
-  name: string,
-  from: string,
-  to: string,
-): { text: string; count: number } {
-  const re = new RegExp(
-    `("${escapeForPattern(name)}"\\s*:\\s*")${escapeForPattern(from)}(")`,
-    "g",
-  );
+export function applyEdit(text: string, name: string, from: string, to: string): { text: string; count: number } {
+  const re = new RegExp(`("${escapeForPattern(name)}"\\s*:\\s*")${escapeForPattern(from)}(")`, "g");
   let count = 0;
   const out = text.replace(re, (_m, a: string, b: string) => {
     count++;
@@ -531,7 +437,7 @@ const UA = {
   "user-agent": "aphrody-bun-update (contact@aphrody.com)",
   accept: "application/json",
 };
-const noSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const noSleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 
 /** GET with exponential backoff on 429, 5xx and network errors; honours Retry-After. 404 is returned as is. */
 export async function fetchWithBackoff(
@@ -558,23 +464,14 @@ export async function fetchWithBackoff(
     if (i === attempts - 1) break;
     const retry = Number(res?.headers.get("retry-after"));
     // oxlint-disable-next-line no-await-in-loop -- attente de Retry-After entre deux relances séquentielles
-    await sleep(
-      Math.min(
-        60_000,
-        Number.isFinite(retry) && retry > 0 ? retry * 1000 : base * 2 ** i,
-      ),
-    );
+    await sleep(Math.min(60_000, Number.isFinite(retry) && retry > 0 ? retry * 1000 : base * 2 ** i));
   }
   return res && res.ok ? res : undefined;
 }
 
-export const npmUrl = (name: string, suffix = "") =>
-  `https://registry.npmjs.org/${name.replace("/", "%2f")}${suffix}`;
+export const npmUrl = (name: string, suffix = "") => `https://registry.npmjs.org/${name.replace("/", "%2f")}${suffix}`;
 
-export async function npmLatest(
-  name: string,
-  opts: Parameters<typeof fetchWithBackoff>[1] = {},
-): Promise<Latest> {
+export async function npmLatest(name: string, opts: Parameters<typeof fetchWithBackoff>[1] = {}): Promise<Latest> {
   const res = await fetchWithBackoff(npmUrl(name, "/latest"), opts);
   if (!res?.ok) return {};
   const d = (await res.json()) as { version?: string; deprecated?: string };
@@ -616,9 +513,7 @@ export function loadAdvisoryHolds(c: Ctx): AdvisoryHold[] {
 }
 
 export function loadReleaseAge(c: Ctx): ReleaseAge {
-  return c.exists("bunfig.toml")
-    ? parseReleaseAge(c.read("bunfig.toml"))
-    : { seconds: 0, excludes: [] };
+  return c.exists("bunfig.toml") ? parseReleaseAge(c.read("bunfig.toml")) : { seconds: 0, excludes: [] };
 }
 
 export type Override = {
@@ -631,12 +526,7 @@ export type Override = {
 };
 
 /** Root `overrides` (and `resolutions`), with what bun.lock resolves and whether a local tarball exists. */
-export function describeOverrides(
-  c: Ctx,
-  root: Manifest,
-  lock: Dep[],
-  latest: Map<string, Latest>,
-): Override[] {
+export function describeOverrides(c: Ctx, root: Manifest, lock: Dep[], latest: Map<string, Latest>): Override[] {
   const o: Record<string, string> = { ...root.resolutions, ...root.overrides };
   return Object.entries(o).map(([name, spec]) => {
     const local = specKind(spec) === "file";
@@ -644,9 +534,7 @@ export function describeOverrides(
       name,
       spec,
       local,
-      resolved: [
-        ...new Set(lock.filter((d) => d.name === name).map((d) => d.version)),
-      ].toSorted(cmpVersion),
+      resolved: [...new Set(lock.filter(d => d.name === name).map(d => d.version))].toSorted(cmpVersion),
       latest: latest.get(name)?.version,
       missing: local ? !c.exists(spec.replace(/^file:/, "")) : undefined,
     };
@@ -676,12 +564,12 @@ export async function openAdvisories(
     const m = /^npm:(.+)@([^@]+)$/.exec(k)!;
     return { name: m[1]!, version: m[2]!, ids };
   });
-  const names = [...new Set(rows.map((r) => r.name))];
+  const names = [...new Set(rows.map(r => r.name))];
   const latest = new Map<string, Latest>();
-  await pool(names, 6, async (n) => {
+  await pool(names, 6, async n => {
     latest.set(n, await fetchLatest(n));
   });
-  const all: Advisory[] = rows.map((r) => {
+  const all: Advisory[] = rows.map(r => {
     const l = latest.get(r.name)?.version;
     return Object.assign(r, {
       latest: l,
@@ -689,8 +577,8 @@ export async function openAdvisories(
     });
   });
   return {
-    open: all.filter((a) => !advisoryHeld(holds, a.name)),
-    held: all.filter((a) => advisoryHeld(holds, a.name)),
+    open: all.filter(a => !advisoryHeld(holds, a.name)),
+    held: all.filter(a => advisoryHeld(holds, a.name)),
   };
 }
 
@@ -707,10 +595,7 @@ export type Status = {
   manifests: number;
 };
 
-export async function collectStatus(
-  c: Ctx,
-  o: { offline?: boolean; advisories?: boolean } = {},
-): Promise<Status> {
+export async function collectStatus(c: Ctx, o: { offline?: boolean; advisories?: boolean } = {}): Promise<Status> {
   const repo = await loadRepo(c);
   const directs = collectDirect(repo.root, repo.manifests);
   const age = loadReleaseAge(c);
@@ -720,30 +605,21 @@ export async function collectStatus(
   const times = new Map<string, Record<string, string>>();
   let runtime: ToolRow[] = [];
   if (!o.offline) {
-    const names = [
-      ...new Set(
-        directs
-          .filter((d) => specKind(d.spec) === "version")
-          .map((d) => d.name),
-      ),
-    ];
-    await pool(names, 8, async (n) => {
+    const names = [...new Set(directs.filter(d => specKind(d.spec) === "version").map(d => d.name))];
+    await pool(names, 8, async n => {
       latest.set(n, await npmLatest(n));
     });
-    for (const o2 of Object.keys({ ...repo.root.overrides }))
-      if (!latest.has(o2)) latest.set(o2, await npmLatest(o2));
+    for (const o2 of Object.keys({ ...repo.root.overrides })) if (!latest.has(o2)) latest.set(o2, await npmLatest(o2));
     const probe = buildRows({ directs, latest, holds, age });
     await pool(
-      behind(probe).filter((r) => !isExcluded(r.name, age)),
+      behind(probe).filter(r => !isExcluded(r.name, age)),
       6,
-      async (r) => {
+      async r => {
         const t = await npmTimes(r.name);
         if (t) times.set(r.name, t);
       },
     );
-    runtime = (await toolsPlan(c)).filter((r) =>
-      RUNTIME_TOOLS.includes(r.tool),
-    );
+    runtime = (await toolsPlan(c)).filter(r => RUNTIME_TOOLS.includes(r.tool));
   }
   const rows = buildRows({ directs, latest, holds, age, times });
   const status: Status = {
@@ -755,8 +631,7 @@ export async function collectStatus(
     manifests: Object.keys(repo.manifests).length + 1,
     overrides: describeOverrides(c, repo.root, lock, latest),
   };
-  if (!o.offline && o.advisories !== false)
-    status.advisories = await openAdvisories(lock, loadAdvisoryHolds(c));
+  if (!o.offline && o.advisories !== false) status.advisories = await openAdvisories(lock, loadAdvisoryHolds(c));
   return status;
 }
 
@@ -771,9 +646,7 @@ export function renderStatus(s: Status): string[] {
       `runtime ${r.tool.padEnd(10)} pinned ${r.pinned ?? "?"}  installed ${r.installed ?? "-"}  latest ${r.latest ?? "?"}${lag ? "  <- behind" : ""}${r.installed && r.pinned && r.installed !== r.pinned ? "  <- installed differs from pin" : ""}`,
     );
   }
-  out.push(
-    `manifests ${s.manifests} first-party, ${s.rows.length} direct registry ranges`,
-  );
+  out.push(`manifests ${s.manifests} first-party, ${s.rows.length} direct registry ranges`);
   out.push(
     `release-age ${s.releaseAge.seconds}s (${Math.round(s.releaseAge.seconds / 86400)} d), ${s.releaseAge.excludes.length} exclude(s): ${s.releaseAge.excludes.join(", ") || "none"}`,
   );
@@ -782,17 +655,14 @@ export function renderStatus(s: Status): string[] {
       `override ${o.name} ${o.spec.length > 60 ? `${o.spec.slice(0, 57)}...` : o.spec}${o.local ? (o.missing ? "  <- tarball missing" : "  (local tarball)") : `  resolved ${o.resolved.join(", ") || "-"}  latest ${o.latest ?? "?"}`}`,
     );
   const b = behind(s.rows);
-  const owned = s.rows.filter(
-    (r) => r.owner && r.kind !== "none" && r.kind !== "ahead",
-  );
+  const owned = s.rows.filter(r => r.owner && r.kind !== "none" && r.kind !== "ahead");
   out.push(
     `behind ${b.length} direct (in-range ${s.plan.inRange.length}, pinned ${s.plan.pinned.length}, majors ${s.plan.majors.length}, held ${s.plan.held.length}, waiting for release age ${s.plan.waiting.length})`,
   );
   for (const r of s.plan.inRange) out.push(`  in-range ${fmtRow(r)}`);
   for (const r of s.plan.pinned) out.push(`  pinned   ${fmtRow(r)}`);
   for (const r of s.plan.majors) out.push(`  major    ${fmtRow(r)}`);
-  for (const r of s.plan.held)
-    out.push(`  held     ${fmtRow(r)}  - ${r.hold!.reason}`);
+  for (const r of s.plan.held) out.push(`  held     ${fmtRow(r)}  - ${r.hold!.reason}`);
   for (const r of s.plan.waiting) out.push(`  waiting  ${fmtRow(r)}`);
   for (const r of owned)
     out.push(
@@ -814,20 +684,10 @@ export function renderStatus(s: Status): string[] {
 
 /** Files a bump may touch: every first-party manifest, the root manifest and bun.lock. */
 export async function bumpFiles(c: Ctx): Promise<string[]> {
-  return [
-    ...new Set([
-      "package.json",
-      "bun.lock",
-      ...(await firstPartyManifests(c.root)),
-    ]),
-  ].toSorted();
+  return [...new Set(["package.json", "bun.lock", ...(await firstPartyManifests(c.root))])].toSorted();
 }
 
-export function snapshot(
-  c: Ctx,
-  files: string[],
-  stamp = new Date().toISOString().replace(/[:.]/g, "-"),
-): string {
+export function snapshot(c: Ctx, files: string[], stamp = new Date().toISOString().replace(/[:.]/g, "-")): string {
   const dir = join(SNAPSHOT_DIR, stamp);
   for (const f of files) {
     if (!c.exists(f)) continue;
@@ -842,8 +702,8 @@ export function latestSnapshot(c: Ctx): string | undefined {
   const base = join(c.root, SNAPSHOT_DIR);
   if (!existsSync(base)) return undefined;
   const d = readdirSync(base, { withFileTypes: true })
-    .filter((e) => e.isDirectory())
-    .map((e) => e.name)
+    .filter(e => e.isDirectory())
+    .map(e => e.name)
     .toSorted()
     .at(-1);
   return d ? join(SNAPSHOT_DIR, d) : undefined;
@@ -859,10 +719,7 @@ export function restoreSnapshot(c: Ctx, dir: string): string[] {
       if (e.isDirectory()) walk(r);
       else {
         const dst = join(c.root, r);
-        if (
-          readFileSync(join(c.root, dir, r), "utf8") !==
-          (existsSync(dst) ? readFileSync(dst, "utf8") : undefined)
-        ) {
+        if (readFileSync(join(c.root, dir, r), "utf8") !== (existsSync(dst) ? readFileSync(dst, "utf8") : undefined)) {
           mkdirSync(dirname(dst), { recursive: true });
           copyFileSync(join(c.root, dir, r), dst);
           restored.push(r);
@@ -878,11 +735,7 @@ export function restoreSnapshot(c: Ctx, dir: string): string[] {
 
 export type Step = { name: string; ok: boolean; detail?: string };
 
-function sh(
-  c: Ctx,
-  cmd: string,
-  args: string[],
-): { ok: boolean; tail: string } {
+function sh(c: Ctx, cmd: string, args: string[]): { ok: boolean; tail: string } {
   const r = c.run(cmd, args);
   const text = `${r.stdout ?? ""}${r.stderr ?? ""}`.trim().split("\n");
   return { ok: r.status === 0, tail: text.slice(-12).join("\n") };
@@ -904,11 +757,7 @@ export async function touchedSince(c: Ctx, ref = "HEAD"): Promise<string[]> {
   return touchedManifests(before, now);
 }
 
-export async function verify(
-  c: Ctx,
-  touched: string[],
-  o: { skipTests?: boolean } = {},
-): Promise<Step[]> {
+export async function verify(c: Ctx, touched: string[], o: { skipTests?: boolean } = {}): Promise<Step[]> {
   const steps: Step[] = [];
   const run = (name: string, cmd: string, args: string[]) => {
     const r = sh(c, cmd, args);
@@ -918,17 +767,15 @@ export async function verify(
       console.log(
         r.tail
           .split("\n")
-          .map((l) => `         ${l}`)
+          .map(l => `         ${l}`)
           .join("\n"),
       );
   };
   run("bun run bun:check", "bun", ["run", "bun:check"]);
   run("bun run monorepo:layout", "bun", ["run", "monorepo:layout"]);
   if (!o.skipTests) run("bun run test (workspace)", "bun", ["run", "test"]);
-  const dirs = [
-    ...new Set([...touched.map((p) => dirname(p)), "packages/infra/update"]),
-  ]
-    .filter((d) => d !== ".")
+  const dirs = [...new Set([...touched.map(p => dirname(p)), "packages/infra/update"])]
+    .filter(d => d !== ".")
     .toSorted();
   for (const d of dirs) {
     const m = JSON.parse(c.read(join(d, "package.json"))) as Manifest;
@@ -976,7 +823,7 @@ export function parseArgs(argv: string[], cwd = process.cwd()): Args {
       a.majors.push(
         ...(v ?? "")
           .split(",")
-          .map((s) => s.trim())
+          .map(s => s.trim())
           .filter(Boolean),
       );
     } else if (!x.startsWith("-") && !subSet) {
@@ -991,15 +838,13 @@ export function parseArgs(argv: string[], cwd = process.cwd()): Args {
 
 export function renderPlan(s: Status, majors: string[]): string[] {
   const out: string[] = [];
-  const rt = s.runtime.find((r) => r.tool === "bun");
+  const rt = s.runtime.find(r => r.tool === "bun");
   out.push(
     rt && rt.latest && rt.pinned && cmpVersion(rt.pinned, rt.latest) < 0
       ? `1 runtime   bun ${rt.pinned} -> ${rt.latest} (tools --apply, re-pins 12 targets)`
       : "1 runtime   bun pin is current",
   );
-  out.push(
-    "2 tauri     `tauri-sync --apply` runs when its check reports drift (own gate and release age)",
-  );
+  out.push("2 tauri     `tauri-sync --apply` runs when its check reports drift (own gate and release age)");
   out.push(
     `3 in-range  \`bun update -r\`: ${s.plan.inRange.length} direct range(s) have a newer release inside their range`,
   );
@@ -1010,12 +855,8 @@ export function renderPlan(s: Status, majors: string[]): string[] {
   out.push(
     `4 majors    ${s.plan.majors.length} candidate(s); requested ${want.length ? want.join(", ") : "none (pass --majors a,b after reading the release notes)"}`,
   );
-  for (const r of s.plan.majors)
-    out.push(`            ${want.includes(r.name) ? "*" : " "} ${fmtRow(r)}`);
-  if (s.plan.held.length)
-    out.push(
-      `5 held      ${s.plan.held.map((r) => `${r.name} (${r.hold!.reason})`).join("; ")}`,
-    );
+  for (const r of s.plan.majors) out.push(`            ${want.includes(r.name) ? "*" : " "} ${fmtRow(r)}`);
+  if (s.plan.held.length) out.push(`5 held      ${s.plan.held.map(r => `${r.name} (${r.hold!.reason})`).join("; ")}`);
   out.push(
     "6 verify    bun:check, monorepo:layout, workspace tests, typecheck of every package whose resolved deps changed",
   );
@@ -1030,36 +871,27 @@ async function applyBumps(c: Ctx, args: Args): Promise<number> {
   const snap = snapshot(c, files);
   console.log(`snapshot ${snap} (restore with: yolo update bun rollback)`);
   const s = await collectStatus(c, { advisories: false });
-  const rt = s.runtime.find((r) => r.tool === "bun");
-  if (rt?.latest && rt.pinned && cmpVersion(rt.pinned, rt.latest) < 0)
-    await runTools(c, ["tools", "bun"]);
+  const rt = s.runtime.find(r => r.tool === "bun");
+  if (rt?.latest && rt.pinned && cmpVersion(rt.pinned, rt.latest) < 0) await runTools(c, ["tools", "bun"]);
   const tauri = await runTauriSync(["--check", "--root", c.root]);
   if (tauri !== 0) {
     console.log("tauri  drift reported, applying through tauri sync");
     const code = await runTauriSync(["--apply", "--root", c.root]);
     if (code !== 0) {
-      console.error(
-        "tauri sync failed; nothing else was changed after the snapshot step",
-      );
+      console.error("tauri sync failed; nothing else was changed after the snapshot step");
       return code;
     }
   }
   const upd = c.run("bun", ["update", "-r"], { inherit: true });
   if (upd.status !== 0) {
-    console.error(
-      "bun update -r failed; restore with `yolo update bun rollback`",
-    );
+    console.error("bun update -r failed; restore with `yolo update bun rollback`");
     return 1;
   }
   {
     const s2 = await collectStatus(c, { advisories: false });
     // Floors follow the lock: pinned and in-range specs are raised to the installable release, majors only when named.
     const names = [
-      ...new Set(
-        [...s2.plan.pinned, ...s2.plan.inRange]
-          .map((r) => r.name)
-          .concat(expandMajors(args.majors, s2.rows)),
-      ),
+      ...new Set([...s2.plan.pinned, ...s2.plan.inRange].map(r => r.name).concat(expandMajors(args.majors, s2.rows))),
     ].toSorted();
     const { edits, errors } = specEdits(s2.rows, names, targetOf);
     for (const e of errors) console.error(`bump   skip ${e}`);
@@ -1068,23 +900,17 @@ async function applyBumps(c: Ctx, args: Args): Promise<number> {
       if (r.count) {
         c.write(e.file, r.text);
         console.log(`bump   ${e.name} ${e.from} -> ${e.to} (${e.file})`);
-      } else
-        console.error(`bump   ${e.name}: "${e.from}" not found in ${e.file}`);
+      } else console.error(`bump   ${e.name}: "${e.from}" not found in ${e.file}`);
     }
-    if (
-      edits.length &&
-      c.run("bun", ["install"], { inherit: true }).status !== 0
-    ) {
-      console.error(
-        "bun install failed after the spec edits; restore with `yolo update bun rollback`",
-      );
+    if (edits.length && c.run("bun", ["install"], { inherit: true }).status !== 0) {
+      console.error("bun install failed after the spec edits; restore with `yolo update bun rollback`");
       return 1;
     }
   }
   const touched = await touchedSince(c);
   console.log(`touched ${touched.length} manifest(s) against HEAD`);
   const steps = await verify(c, touched, { skipTests: args.skipTests });
-  return steps.every((x) => x.ok) ? 0 : 1;
+  return steps.every(x => x.ok) ? 0 : 1;
 }
 
 export async function runBun(argv: string[]): Promise<number> {
@@ -1105,9 +931,7 @@ export async function runBun(argv: string[]): Promise<number> {
         offline: args.offline,
         advisories: !args.noAdvisories,
       });
-      console.log(
-        args.json ? JSON.stringify(s, null, 2) : renderStatus(s).join("\n"),
-      );
+      console.log(args.json ? JSON.stringify(s, null, 2) : renderStatus(s).join("\n"));
       if (!args.offline && !args.json) await runSources(c, ["forks"]);
       return 0;
     }
@@ -1118,11 +942,7 @@ export async function runBun(argv: string[]): Promise<number> {
       });
       console.log(
         args.json
-          ? JSON.stringify(
-              { plan: s.plan, majors: expandMajors(args.majors, s.rows) },
-              null,
-              2,
-            )
+          ? JSON.stringify({ plan: s.plan, majors: expandMajors(args.majors, s.rows) }, null, 2)
           : renderPlan(s, args.majors).join("\n"),
       );
       return 0;
@@ -1133,7 +953,7 @@ export async function runBun(argv: string[]): Promise<number> {
       const steps = await verify(c, await touchedSince(c), {
         skipTests: args.skipTests,
       });
-      return steps.every((x) => x.ok) ? 0 : 1;
+      return steps.every(x => x.ok) ? 0 : 1;
     }
     case "rollback": {
       const dir = latestSnapshot(c);
@@ -1143,7 +963,7 @@ export async function runBun(argv: string[]): Promise<number> {
       }
       const files = restoreSnapshot(c, dir);
       console.log(
-        `rollback ${dir}: ${files.length} file(s) restored${files.length ? `\n${files.map((f) => `  ${f}`).join("\n")}\nrun bun install to realign node_modules` : ""}`,
+        `rollback ${dir}: ${files.length} file(s) restored${files.length ? `\n${files.map(f => `  ${f}`).join("\n")}\nrun bun install to realign node_modules` : ""}`,
       );
       return 0;
     }

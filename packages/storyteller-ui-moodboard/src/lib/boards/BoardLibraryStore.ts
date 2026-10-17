@@ -63,18 +63,11 @@ interface BoardLibraryState extends PersistedLibrary {
   // Item entry — typed creators that fill base fields + aspect.
   addImageItem: (
     boardId: string,
-    data: Pick<BoardImageItem, "src" | "mediaId" | "naturalW" | "naturalH"> &
-      Partial<Pick<BoardImageItem, "caption">>,
+    data: Pick<BoardImageItem, "src" | "mediaId" | "naturalW" | "naturalH"> & Partial<Pick<BoardImageItem, "caption">>,
   ) => string;
-  addVideoItem: (
-    boardId: string,
-    data: Pick<BoardVideoItem, "src" | "mediaId" | "naturalW" | "naturalH">,
-  ) => string;
+  addVideoItem: (boardId: string, data: Pick<BoardVideoItem, "src" | "mediaId" | "naturalW" | "naturalH">) => string;
   addTextItem: (boardId: string, text: string) => string;
-  addLinkItem: (
-    boardId: string,
-    data: Pick<BoardLinkItem, "url" | "title" | "description" | "image">,
-  ) => string;
+  addLinkItem: (boardId: string, data: Pick<BoardLinkItem, "url" | "title" | "description" | "image">) => string;
   addColorItem: (boardId: string, color: string) => string;
 
   updateItem: (boardId: string, id: string, patch: Partial<BoardItem>) => void;
@@ -88,11 +81,7 @@ interface BoardLibraryState extends PersistedLibrary {
   deleteSection: (boardId: string, sectionId: string) => void;
   toggleSectionCollapsed: (boardId: string, sectionId: string) => void;
   // Move items into a section (or back to the ungrouped flow with null).
-  assignItemsToSection: (
-    boardId: string,
-    ids: string[],
-    sectionId: string | null,
-  ) => void;
+  assignItemsToSection: (boardId: string, ids: string[], sectionId: string | null) => void;
 
   // View + filters
   setViewMode: (mode: ViewMode) => void;
@@ -149,7 +138,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
         return get().createBoard();
       },
 
-      createBoard: (name) => {
+      createBoard: name => {
         const id = crypto.randomUUID();
         const order = nextSeq();
         const board: Board = {
@@ -161,7 +150,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
           items: {},
           sections: [],
         };
-        set((s) => ({
+        set(s => ({
           boards: { ...s.boards, [id]: board },
           boardOrder: [...s.boardOrder, id],
           activeBoardId: id,
@@ -170,7 +159,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
       },
 
       renameBoard: (id, name) => {
-        set((s) => {
+        set(s => {
           const board = s.boards[id];
           if (!board) return s;
           return {
@@ -182,26 +171,25 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
         });
       },
 
-      deleteBoard: (id) => {
-        set((s) => {
+      deleteBoard: id => {
+        set(s => {
           if (!s.boards[id]) return s;
           Object.values(s.boards[id].items).forEach(revokeBlobSrc);
           const boards = { ...s.boards };
           delete boards[id];
-          const boardOrder = s.boardOrder.filter((b) => b !== id);
-          const activeBoardId =
-            s.activeBoardId === id ? (boardOrder[0] ?? null) : s.activeBoardId;
+          const boardOrder = s.boardOrder.filter(b => b !== id);
+          const activeBoardId = s.activeBoardId === id ? (boardOrder[0] ?? null) : s.activeBoardId;
           return { boards, boardOrder, activeBoardId };
         });
       },
 
-      setActiveBoard: (id) => {
+      setActiveBoard: id => {
         if (!get().boards[id]) return;
         set({ activeBoardId: id, selectedItemIds: new Set() });
       },
 
       setBoardRemoteToken: (id, token) => {
-        set((s) => {
+        set(s => {
           const board = s.boards[id];
           if (!board || board.remoteToken === token) return s;
           return {
@@ -210,8 +198,8 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
         });
       },
 
-      markBoardNeedsSync: (id) => {
-        set((s) => {
+      markBoardNeedsSync: id => {
+        set(s => {
           const board = s.boards[id];
           if (!board || board.needsSync === true) return s;
           return {
@@ -221,7 +209,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
       },
 
       markBoardSynced: (id, { ownerId }) => {
-        set((s) => {
+        set(s => {
           const board = s.boards[id];
           if (!board) return s;
           if (board.needsSync !== true && board.ownerId === ownerId) return s;
@@ -234,19 +222,10 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
         });
       },
 
-      upsertRemoteBoard: ({
-        token,
-        name,
-        ownerId,
-        itemOrder,
-        items,
-        sections,
-      }) => {
-        const existing = Object.values(get().boards).find(
-          (b) => b.remoteToken === token,
-        );
+      upsertRemoteBoard: ({ token, name, ownerId, itemOrder, items, sections }) => {
+        const existing = Object.values(get().boards).find(b => b.remoteToken === token);
         if (existing) {
-          set((s) => ({
+          set(s => ({
             boards: {
               ...s.boards,
               [existing.id]: {
@@ -278,7 +257,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
           ownerId,
           needsSync: false,
         };
-        set((s) => ({
+        set(s => ({
           boards: { ...s.boards, [id]: board },
           boardOrder: [...s.boardOrder, id],
         }));
@@ -286,7 +265,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
       },
 
       addImageItem: (boardId, data) =>
-        addItemToBoard(set, get, boardId, (base) => ({
+        addItemToBoard(set, get, boardId, base => ({
           ...base,
           kind: "image",
           src: data.src,
@@ -298,7 +277,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
         })),
 
       addVideoItem: (boardId, data) =>
-        addItemToBoard(set, get, boardId, (base) => ({
+        addItemToBoard(set, get, boardId, base => ({
           ...base,
           kind: "video",
           src: data.src,
@@ -309,7 +288,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
         })),
 
       addTextItem: (boardId, text) =>
-        addItemToBoard(set, get, boardId, (base) => ({
+        addItemToBoard(set, get, boardId, base => ({
           ...base,
           kind: "text",
           text,
@@ -317,7 +296,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
         })),
 
       addLinkItem: (boardId, data) =>
-        addItemToBoard(set, get, boardId, (base) => ({
+        addItemToBoard(set, get, boardId, base => ({
           ...base,
           kind: "link",
           url: data.url,
@@ -328,7 +307,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
         })),
 
       addColorItem: (boardId, color) =>
-        addItemToBoard(set, get, boardId, (base) => ({
+        addItemToBoard(set, get, boardId, base => ({
           ...base,
           kind: "color",
           color,
@@ -336,7 +315,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
         })),
 
       updateItem: (boardId, id, patch) => {
-        set((s) => {
+        set(s => {
           const board = s.boards[boardId];
           if (!board || !board.items[id]) return s;
           const merged = { ...board.items[id], ...patch } as BoardItem;
@@ -355,24 +334,24 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
 
       removeItems: (boardId, ids) => {
         if (ids.length === 0) return;
-        set((s) => {
+        set(s => {
           const board = s.boards[boardId];
           if (!board) return s;
           const remove = new Set(ids);
           const items = { ...board.items };
-          remove.forEach((id) => {
+          remove.forEach(id => {
             revokeBlobSrc(items[id]);
             delete items[id];
           });
           const selectedItemIds = new Set(s.selectedItemIds);
-          remove.forEach((id) => selectedItemIds.delete(id));
+          remove.forEach(id => selectedItemIds.delete(id));
           return {
             boards: {
               ...s.boards,
               [boardId]: {
                 ...board,
                 items,
-                itemOrder: board.itemOrder.filter((x) => !remove.has(x)),
+                itemOrder: board.itemOrder.filter(x => !remove.has(x)),
                 updatedAt: nextSeq(),
               },
             },
@@ -384,11 +363,11 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
       rateItems: (boardId, ids, rating) => {
         if (ids.length === 0) return;
         const clamped = Math.max(0, Math.min(5, Math.round(rating)));
-        set((s) => {
+        set(s => {
           const board = s.boards[boardId];
           if (!board) return s;
           const items = { ...board.items };
-          ids.forEach((id) => {
+          ids.forEach(id => {
             const it = items[id];
             if (it) items[id] = { ...it, rating: clamped };
           });
@@ -403,7 +382,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
 
       createSection: (boardId, name) => {
         const id = crypto.randomUUID();
-        set((s) => {
+        set(s => {
           const board = s.boards[boardId];
           if (!board) return s;
           const section = { id, name: name?.trim() || DEFAULT_SECTION_NAME };
@@ -422,7 +401,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
       },
 
       renameSection: (boardId, sectionId, name) => {
-        set((s) => {
+        set(s => {
           const board = s.boards[boardId];
           if (!board) return s;
           return {
@@ -430,10 +409,8 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
               ...s.boards,
               [boardId]: {
                 ...board,
-                sections: board.sections.map((sec) =>
-                  sec.id === sectionId
-                    ? { ...sec, name: name.trim() || DEFAULT_SECTION_NAME }
-                    : sec,
+                sections: board.sections.map(sec =>
+                  sec.id === sectionId ? { ...sec, name: name.trim() || DEFAULT_SECTION_NAME } : sec,
                 ),
               },
             },
@@ -442,14 +419,13 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
       },
 
       deleteSection: (boardId, sectionId) => {
-        set((s) => {
+        set(s => {
           const board = s.boards[boardId];
           if (!board) return s;
           // Items in the section fall back to the ungrouped flow.
           const items = { ...board.items };
           for (const [id, it] of Object.entries(items)) {
-            if (it.sectionId === sectionId)
-              items[id] = { ...it, sectionId: null };
+            if (it.sectionId === sectionId) items[id] = { ...it, sectionId: null };
           }
           return {
             boards: {
@@ -457,7 +433,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
               [boardId]: {
                 ...board,
                 items,
-                sections: board.sections.filter((sec) => sec.id !== sectionId),
+                sections: board.sections.filter(sec => sec.id !== sectionId),
                 updatedAt: nextSeq(),
               },
             },
@@ -466,7 +442,7 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
       },
 
       toggleSectionCollapsed: (boardId, sectionId) => {
-        set((s) => {
+        set(s => {
           const board = s.boards[boardId];
           if (!board) return s;
           return {
@@ -474,10 +450,8 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
               ...s.boards,
               [boardId]: {
                 ...board,
-                sections: board.sections.map((sec) =>
-                  sec.id === sectionId
-                    ? { ...sec, collapsed: !sec.collapsed }
-                    : sec,
+                sections: board.sections.map(sec =>
+                  sec.id === sectionId ? { ...sec, collapsed: !sec.collapsed } : sec,
                 ),
               },
             },
@@ -487,12 +461,12 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
 
       assignItemsToSection: (boardId, ids, sectionId) => {
         if (ids.length === 0) return;
-        set((s) => {
+        set(s => {
           const board = s.boards[boardId];
           if (!board) return s;
           const target = new Set(ids);
           const items = { ...board.items };
-          target.forEach((id) => {
+          target.forEach(id => {
             const it = items[id];
             if (it) items[id] = { ...it, sectionId };
           });
@@ -505,28 +479,26 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
         });
       },
 
-      setViewMode: (mode) => set({ viewMode: mode }),
-      setDensity: (density) => set({ density }),
-      setSearchQuery: (q) => set({ searchQuery: q }),
-      toggleTagFilter: (tag) =>
-        set((s) => ({
+      setViewMode: mode => set({ viewMode: mode }),
+      setDensity: density => set({ density }),
+      setSearchQuery: q => set({ searchQuery: q }),
+      toggleTagFilter: tag =>
+        set(s => ({
           activeTagFilters: s.activeTagFilters.includes(tag)
-            ? s.activeTagFilters.filter((t) => t !== tag)
+            ? s.activeTagFilters.filter(t => t !== tag)
             : [...s.activeTagFilters, tag],
         })),
-      setRatingFilter: (min) =>
-        set({ ratingFilter: Math.max(0, Math.min(5, min)) }),
-      clearFilters: () =>
-        set({ searchQuery: "", activeTagFilters: [], ratingFilter: 0 }),
+      setRatingFilter: min => set({ ratingFilter: Math.max(0, Math.min(5, min)) }),
+      clearFilters: () => set({ searchQuery: "", activeTagFilters: [], ratingFilter: 0 }),
 
-      setSelection: (ids) => set({ selectedItemIds: new Set(ids) }),
+      setSelection: ids => set({ selectedItemIds: new Set(ids) }),
       // Every click accumulates: a plain click adds the item to the current
       // selection (or removes it if already selected), so clicking item after
       // item builds up a multi-selection without needing a modifier. The
       // `additive` flag (ctrl/cmd/shift-click) behaves identically here; the
       // distinction is only meaningful for marquee/range selection.
-      toggleSelection: (id) =>
-        set((s) => {
+      toggleSelection: id =>
+        set(s => {
           const next = new Set(s.selectedItemIds);
           if (next.has(id)) next.delete(id);
           else next.add(id);
@@ -555,12 +527,12 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
       }),
       // Keep `seq` ahead of any restored ordering values so new items always
       // sort after persisted ones.
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => state => {
         if (!state) return;
         let max = 0;
-        Object.values(state.boards).forEach((b) => {
+        Object.values(state.boards).forEach(b => {
           max = Math.max(max, b.createdAt, b.updatedAt);
-          Object.values(b.items).forEach((it) => {
+          Object.values(b.items).forEach(it => {
             max = Math.max(max, it.createdAt);
           });
         });
@@ -593,9 +565,7 @@ const revokeBlobSrc = (item: BoardItem | undefined): void => {
 
 // Persistence view of the boards with blob-backed (ephemeral) items removed and
 // their order entries pruned. Non-blob image/video (library picks) are kept.
-const stripEphemeralItems = (
-  boards: Record<string, Board>,
-): Record<string, Board> => {
+const stripEphemeralItems = (boards: Record<string, Board>): Record<string, Board> => {
   const out: Record<string, Board> = {};
   for (const [boardId, board] of Object.entries(boards)) {
     const items: Record<string, BoardItem> = {};
@@ -605,7 +575,7 @@ const stripEphemeralItems = (
     out[boardId] = {
       ...board,
       items,
-      itemOrder: board.itemOrder.filter((id) => items[id]),
+      itemOrder: board.itemOrder.filter(id => items[id]),
     };
   }
   return out;
@@ -617,13 +587,7 @@ const addItemToBoard = (
   set: (fn: (s: BoardLibraryState) => Partial<BoardLibraryState>) => void,
   get: () => BoardLibraryState,
   boardId: string,
-  build: (base: {
-    id: string;
-    sectionId: null;
-    createdAt: number;
-    tags: string[];
-    rating: number;
-  }) => BoardItem,
+  build: (base: { id: string; sectionId: null; createdAt: number; tags: string[]; rating: number }) => BoardItem,
 ): string => {
   const id = crypto.randomUUID();
   const item = build({
@@ -633,7 +597,7 @@ const addItemToBoard = (
     tags: [],
     rating: 0,
   });
-  set((s) => {
+  set(s => {
     const board = s.boards[boardId];
     if (!board) return s;
     return {

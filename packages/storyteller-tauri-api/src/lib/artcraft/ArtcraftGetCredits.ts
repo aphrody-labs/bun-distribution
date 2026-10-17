@@ -12,9 +12,6 @@ export interface ArtcraftGetCreditsPayload {
   sum_total_credits: number;
 }
 
-export const ArtcraftGetCredits =
-  async (): Promise<ArtcraftGetCreditsSuccess> => {
-    return (await invoke(
-      "storyteller_get_credits_command",
-    )) as ArtcraftGetCreditsSuccess;
-  };
+export const ArtcraftGetCredits = async (): Promise<ArtcraftGetCreditsSuccess> => {
+  return (await invoke("storyteller_get_credits_command")) as ArtcraftGetCreditsSuccess;
+};

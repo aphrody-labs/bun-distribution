@@ -1,19 +1,12 @@
 import type { RouteObject } from "react-router-dom";
-import {
-  SpacedriveProvider,
-  type SpacedriveClient,
-} from "./contexts/SpacedriveContext";
+import { SpacedriveProvider, type SpacedriveClient } from "./contexts/SpacedriveContext";
 import { ServerProvider } from "./contexts/ServerContext";
 import { RouterProvider } from "react-router-dom";
 import { Dialogs, Toaster, TooltipProvider } from "@aphrody/m3-primitives";
 
 import { explorerRoutes } from "./router";
 import { DndProvider } from "./components/DndProvider";
-import {
-  TabManagerProvider,
-  TabKeyboardHandler,
-  useTabManager,
-} from "./components/TabManager";
+import { TabManagerProvider, TabKeyboardHandler, useTabManager } from "./components/TabManager";
 import { usePlatform } from "./contexts/PlatformContext";
 import { useTheme } from "./hooks/useTheme";
 
@@ -43,13 +36,7 @@ function ShellWithTabs({ embedded = false }: { embedded?: boolean }) {
  * Tauri-specific wrapper that mounts the M3 ShellLayout and tab manager immediately,
  * without blocking UI rendering on daemon status.
  */
-function ShellWithDaemonCheck({
-  embedded = false,
-  routes,
-}: {
-  embedded?: boolean;
-  routes?: RouteObject[];
-}) {
+function ShellWithDaemonCheck({ embedded = false, routes }: { embedded?: boolean; routes?: RouteObject[] }) {
   return (
     <>
       <TabManagerProvider routes={routes ?? explorerRoutes}>

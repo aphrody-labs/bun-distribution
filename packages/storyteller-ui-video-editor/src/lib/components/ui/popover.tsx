@@ -5,22 +5,12 @@ import { Popover as PopoverPrimitive } from "radix-ui";
 import { cn } from "../../utils/ui";
 import { useOverlayOpenChange } from "./use-overlay-open-change";
 
-function Popover({
-  open,
-  onOpenChange,
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Root>) {
+function Popover({ open, onOpenChange, ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
   const handleOpenChange = useOverlayOpenChange({
     open,
     onOpenChange,
   });
-  return (
-    <PopoverPrimitive.Root
-      open={open}
-      onOpenChange={handleOpenChange}
-      {...props}
-    />
-  );
+  return <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange} {...props} />;
 }
 
 const PopoverTrigger = PopoverPrimitive.Trigger;

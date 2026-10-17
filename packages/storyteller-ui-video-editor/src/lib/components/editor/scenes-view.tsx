@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "../ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../ui/sheet";
 import { Button } from "../ui/button";
 import { Check, ListCheck, Trash2 } from "lucide-react";
 import { cn } from "../../utils/ui";
@@ -47,7 +40,7 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
   };
 
   const toggleSceneSelection = ({ sceneId }: { sceneId: string }) => {
-    setSelectedScenes((prev) => {
+    setSelectedScenes(prev => {
       const newSet = new Set(prev);
       if (newSet.has(sceneId)) {
         newSet.delete(sceneId);
@@ -65,7 +58,7 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
 
   const handleDeleteSelected = async () => {
     for (const sceneId of selectedScenes) {
-      const scene = scenes.find((scene) => scene.id === sceneId);
+      const scene = scenes.find(scene => scene.id === sceneId);
       if (!scene) {
         continue;
       }
@@ -96,13 +89,9 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>
-            {isSelectMode ? `Select scenes (${selectedScenes.size})` : "Scenes"}
-          </SheetTitle>
+          <SheetTitle>{isSelectMode ? `Select scenes (${selectedScenes.size})` : "Scenes"}</SheetTitle>
           <SheetDescription>
-            {isSelectMode
-              ? "Select scenes to delete"
-              : "Switch between scenes in your project"}
+            {isSelectMode ? "Select scenes to delete" : "Switch between scenes in your project"}
           </SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-4 py-4">
@@ -122,12 +111,7 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
                 onDelete={handleDeleteSelected}
                 disabled={isMainSceneSelected}
                 trigger={
-                  <Button
-                    className="rounded-md"
-                    variant="destructive"
-                    disabled={isMainSceneSelected}
-                    size="sm"
-                  >
+                  <Button className="rounded-md" variant="destructive" disabled={isMainSceneSelected} size="sm">
                     <Trash2 />
                     Delete ({selectedScenes.size})
                   </Button>
@@ -136,32 +120,24 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
             )}
           </div>
           {scenes.length === 0 ? (
-            <div className="text-muted-foreground text-sm">
-              No scenes available
-            </div>
+            <div className="text-muted-foreground text-sm">No scenes available</div>
           ) : (
             <div className="space-y-2">
-              {scenes.map((scene) => (
+              {scenes.map(scene => (
                 <Button
                   key={scene.id}
                   variant="outline"
                   className={cn(
                     "w-full justify-between font-normal",
-                    currentScene?.id === scene.id &&
-                      !isSelectMode &&
-                      "border-primary !text-primary",
-                    isSelectMode &&
-                      selectedScenes.has(scene.id) &&
-                      "bg-accent border-foreground/30",
+                    currentScene?.id === scene.id && !isSelectMode && "border-primary !text-primary",
+                    isSelectMode && selectedScenes.has(scene.id) && "bg-accent border-foreground/30",
                   )}
                   onClick={() => handleSceneSwitch(scene.id)}
                 >
                   <span>{scene.name}</span>
                   <div className="flex items-center gap-2">
                     {((isSelectMode && selectedScenes.has(scene.id)) ||
-                      (!isSelectMode && currentScene?.id === scene.id)) && (
-                      <Check className="size-4" />
-                    )}
+                      (!isSelectMode && currentScene?.id === scene.id)) && <Check className="size-4" />}
                   </div>
                 </Button>
               ))}
@@ -206,11 +182,7 @@ function DeleteDialog({
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={disabled}
-          >
+          <Button variant="destructive" onClick={handleDelete} disabled={disabled}>
             Delete
           </Button>
         </DialogFooter>

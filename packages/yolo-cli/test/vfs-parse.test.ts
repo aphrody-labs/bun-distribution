@@ -2,17 +2,11 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  parseTsSource,
-  renderParseMarkdown,
-} from "../../yolo-core/src/vfs/parse.ts";
+import { parseTsSource, renderParseMarkdown } from "../../yolo-core/src/vfs/parse.ts";
 
 const directories: string[] = [];
 
-async function fixture(
-  source: string | Uint8Array,
-  filename = "fixture.ts",
-): Promise<string> {
+async function fixture(source: string | Uint8Array, filename = "fixture.ts"): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), "yolo-module-parse-"));
   directories.push(directory);
   const path = join(directory, filename);
@@ -21,11 +15,7 @@ async function fixture(
 }
 
 afterEach(async () => {
-  await Promise.all(
-    directories
-      .splice(0)
-      .map((directory) => rm(directory, { recursive: true, force: true })),
-  );
+  await Promise.all(directories.splice(0).map(directory => rm(directory, { recursive: true, force: true })));
 });
 
 describe("canonical VFS module parsing", () => {
@@ -69,12 +59,7 @@ describe("canonical VFS module parsing", () => {
       "all-types",
       "side-effect",
     ]);
-    expect(parsed.exports).toEqual([
-      "PublicValue",
-      "PublicThing",
-      "*",
-      "namespace",
-    ]);
+    expect(parsed.exports).toEqual(["PublicValue", "PublicThing", "*", "namespace"]);
   });
 
   test("reports public names for defaults, destructured variables and TypeScript declarations", async () => {
@@ -124,12 +109,7 @@ describe("canonical VFS module parsing", () => {
   });
 
   test("supports JSX and declaration files using their filename syntax", async () => {
-    const jsx = await parseTsSource(
-      await fixture(
-        'import React from "react"; export default <div />;',
-        "fixture.jsx",
-      ),
-    );
+    const jsx = await parseTsSource(await fixture('import React from "react"; export default <div />;', "fixture.jsx"));
     expect(jsx.exports).toEqual(["default"]);
     expect(jsx.imports).toEqual(["react"]);
     const declaration = await parseTsSource(
@@ -142,8 +122,7 @@ describe("canonical VFS module parsing", () => {
   });
 
   test("deduplicates merged type exports and preserves raw byte metrics with a BOM", async () => {
-    const source =
-      "\uFEFFexport interface Café { a: string }\nexport interface Café { b: number }\n";
+    const source = "\uFEFFexport interface Café { a: string }\nexport interface Café { b: number }\n";
     const raw = new TextEncoder().encode(source);
     const path = await fixture(raw);
     const parsed = await parseTsSource(path);

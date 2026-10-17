@@ -10,18 +10,9 @@ import { repoRoot } from "../../src/paths";
 const engine = join(repoRoot, "packages", "bun-engine");
 type Formats = typeof import("../../../bun-engine/src/formats/index.ts");
 let formats: Promise<Formats> | null = null;
-const load = () =>
-  (formats ??= import(
-    join(engine, "src", "formats", "index.ts")
-  ) as Promise<Formats>);
+const load = () => (formats ??= import(join(engine, "src", "formats", "index.ts")) as Promise<Formats>);
 
-const FIRMWARE = new Set([
-  "gba-bios",
-  "nds-arm7-bios",
-  "nds-arm9-bios",
-  "nds-firmware",
-  "psx-bios",
-]);
+const FIRMWARE = new Set(["gba-bios", "nds-arm7-bios", "nds-arm9-bios", "nds-firmware", "psx-bios"]);
 
 export default definePlugin({
   name: "bun-engine",
@@ -65,8 +56,7 @@ export default definePlugin({
     const { consoleIds } = (await import(
       join(engine, "src", "plugins", "consoles.ts")
     )) as typeof import("../../../bun-engine/src/plugins/consoles.ts");
-    for (const id of consoleIds)
-      build.addMachine({ id, systems: [id], console: `bun-engine:${id}` });
+    for (const id of consoleIds) build.addMachine({ id, systems: [id], console: `bun-engine:${id}` });
 
     const consoles = join(engine, "plugins", "consoles");
     build.addGameSource({
@@ -81,7 +71,7 @@ export default definePlugin({
             source?: string;
           }[];
         };
-        return roms.packs.map((p) => ({
+        return roms.packs.map(p => ({
           id: p.id,
           title: p.id,
           system: p.console,
@@ -97,11 +87,11 @@ export default definePlugin({
     };
     build.addTransferProvider({
       id: "bep-mirrors",
-      match: (url) => url.startsWith("bep:"),
+      match: url => url.startsWith("bep:"),
       async resolve(url) {
         const [service, ...rest] = url.slice(4).split("/");
         const urls = mirrors.services[service ?? ""]?.urls ?? [];
-        return urls.map((u) => `${u.replace(/\/$/, "")}/${rest.join("/")}`);
+        return urls.map(u => `${u.replace(/\/$/, "")}/${rest.join("/")}`);
       },
     });
   },

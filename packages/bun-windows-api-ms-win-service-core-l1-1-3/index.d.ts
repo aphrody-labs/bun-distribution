@@ -3,7 +3,12 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-service-core-l1-1-3.dll!GetServiceRegistryStateKey */
-  GetServiceRegistryStateKey(ServiceStatusHandle: Win32Pointer, StateType: number, AccessMask: number, ServiceStateKey: Win32Pointer): number;
+  GetServiceRegistryStateKey(
+    ServiceStatusHandle: Win32Pointer,
+    StateType: number,
+    AccessMask: number,
+    ServiceStateKey: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

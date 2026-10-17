@@ -26,12 +26,7 @@ import { getElementEdgeSnapPoints } from "../element-snap-source";
 import { getPlayheadSnapPoints } from "../playhead-snap-source";
 import { getAnimationKeyframeSnapPointsForTimeline } from "../animation-snap-points";
 import { isRetimableElement } from "../element-utils";
-import type {
-  ElementRef,
-  SceneTracks,
-  TimelineElement,
-  TimelineTrack,
-} from "../types";
+import type { ElementRef, SceneTracks, TimelineElement, TimelineTrack } from "../types";
 import type { FrameRate } from "opencut-wasm";
 
 // --- Session ---
@@ -76,50 +71,28 @@ export function buildResizeMembers({
   tracks: SceneTracks;
   selectedElements: ElementRef[];
 }): GroupResizeMember[] {
-  const selectedElementIds = new Set(
-    selectedElements.map((el) => el.elementId),
-  );
-  const trackMap = new Map(
-    [...tracks.overlay, tracks.main, ...tracks.audio].map((track) => [
-      track.id,
-      track,
-    ]),
-  );
+  const selectedElementIds = new Set(selectedElements.map(el => el.elementId));
+  const trackMap = new Map([...tracks.overlay, tracks.main, ...tracks.audio].map(track => [track.id, track]));
 
   return selectedElements.flatMap(({ trackId, elementId }) => {
     const track = trackMap.get(trackId);
-    const element = track?.elements.find((el) => el.id === elementId);
+    const element = track?.elements.find(el => el.id === elementId);
     if (!track || !element) return [];
 
-    const otherElements = track.elements.filter(
-      (el) => !selectedElementIds.has(el.id),
-    );
+    const otherElements = track.elements.filter(el => !selectedElementIds.has(el.id));
     const leftNeighborBound = otherElements
-      .filter(
-        (el) =>
-          addMediaTime({ a: el.startTime, b: el.duration }) <=
-          element.startTime,
-      )
+      .filter(el => addMediaTime({ a: el.startTime, b: el.duration }) <= element.startTime)
       .reduce<MediaTime | null>((bound, el) => {
         const elementEnd = addMediaTime({
           a: el.startTime,
           b: el.duration,
         });
-        return bound === null
-          ? elementEnd
-          : maxMediaTime({ a: bound, b: elementEnd });
+        return bound === null ? elementEnd : maxMediaTime({ a: bound, b: elementEnd });
       }, null);
     const rightNeighborBound = otherElements
-      .filter(
-        (el) =>
-          el.startTime >=
-          addMediaTime({ a: element.startTime, b: element.duration }),
-      )
+      .filter(el => el.startTime >= addMediaTime({ a: element.startTime, b: element.duration }))
       .reduce<MediaTime | null>(
-        (bound, el) =>
-          bound === null
-            ? el.startTime
-            : minMediaTime({ a: bound, b: el.startTime }),
+        (bound, el) => (bound === null ? el.startTime : minMediaTime({ a: bound, b: el.startTime })),
         null,
       );
 
@@ -140,15 +113,9 @@ export function buildResizeMembers({
   });
 }
 
-function hasResizeChanges({
-  members,
-  result,
-}: {
-  members: GroupResizeMember[];
-  result: GroupResizeResult;
-}): boolean {
-  return result.updates.some((update) => {
-    const member = members.find((m) => m.elementId === update.elementId);
+function hasResizeChanges({ members, result }: { members: GroupResizeMember[]; result: GroupResizeResult }): boolean {
+  return result.updates.some(update => {
+    const member = members.find(m => m.elementId === update.elementId);
     return (
       member?.trimStart !== update.patch.trimStart ||
       member?.trimEnd !== update.patch.trimEnd ||
@@ -218,7 +185,7 @@ export class ResizeController {
 
     const ref = { trackId: track.id, elementId: element.id };
     const activeSelection = this.config.selectedElements.some(
-      (el) => el.trackId === track.id && el.elementId === element.id,
+      el => el.trackId === track.id && el.elementId === element.id,
     )
       ? this.config.selectedElements
       : [ref];
@@ -264,13 +231,7 @@ export class ResizeController {
     this.notify();
   }
 
-  private snappedDelta({
-    session,
-    rawDeltaTime,
-  }: {
-    session: ResizeSession;
-    rawDeltaTime: MediaTime;
-  }): MediaTime {
+  private snappedDelta({ session, rawDeltaTime }: { session: ResizeSession; rawDeltaTime: MediaTime }): MediaTime {
     const { snappingEnabled, isShiftHeld, zoomLevel } = this.config;
 
     if (!snappingEnabled || isShiftHeld()) {
@@ -280,7 +241,7 @@ export class ResizeController {
 
     const tracks = this.config.getSceneTracks();
     const playheadTime = this.config.getCurrentPlayheadTime();
-    const excludeElementIds = new Set(session.members.map((m) => m.elementId));
+    const excludeElementIds = new Set(session.members.map(m => m.elementId));
 
     const snapPoints = buildTimelineSnapPoints({
       sources: [
@@ -301,18 +262,13 @@ export class ResizeController {
 
     for (const member of session.members) {
       const baseEdgeTime =
-        session.side === "left"
-          ? member.startTime
-          : addMediaTime({ a: member.startTime, b: member.duration });
+        session.side === "left" ? member.startTime : addMediaTime({ a: member.startTime, b: member.duration });
       const snapResult = resolveTimelineSnap({
         targetTime: addMediaTime({ a: baseEdgeTime, b: rawDeltaTime }),
         snapPoints,
         maxSnapDistance,
       });
-      if (
-        snapResult.snapPoint &&
-        snapResult.snapDistance < closestSnapDistance
-      ) {
+      if (snapResult.snapPoint && snapResult.snapDistance < closestSnapDistance) {
         closestSnapDistance = snapResult.snapDistance;
         closestSnapPoint = snapResult.snapPoint;
         deltaTime = subMediaTime({
@@ -332,9 +288,7 @@ export class ResizeController {
 
     const rawDeltaTime = mediaTime({
       ticks: Math.round(
-        ((clientX - session.startX) /
-          (BASE_TIMELINE_PIXELS_PER_SECOND * this.config.zoomLevel)) *
-          TICKS_PER_SECOND,
+        ((clientX - session.startX) / (BASE_TIMELINE_PIXELS_PER_SECOND * this.config.zoomLevel)) * TICKS_PER_SECOND,
       ),
     });
     const deltaTime = this.snappedDelta({ session, rawDeltaTime });
@@ -355,10 +309,7 @@ export class ResizeController {
 
     this.config.discardPreview();
 
-    if (
-      session.result &&
-      hasResizeChanges({ members: session.members, result: session.result })
-    ) {
+    if (session.result && hasResizeChanges({ members: session.members, result: session.result })) {
       this.config.commitElements(session.result.updates);
     }
 

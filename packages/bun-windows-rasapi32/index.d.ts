@@ -25,17 +25,46 @@ interface Functions {
   /** rasapi32.dll!RasDeleteEntryW */
   RasDeleteEntry(param0: string | Win32Pointer, param1: string | Win32Pointer): number;
   /** rasapi32.dll!RasDeleteSubEntryA */
-  RasDeleteSubEntryA(pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, dwSubentryId: number): number;
+  RasDeleteSubEntryA(
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    dwSubentryId: number,
+  ): number;
   /** rasapi32.dll!RasDeleteSubEntryW */
-  RasDeleteSubEntryW(pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, dwSubEntryId: number): number;
+  RasDeleteSubEntryW(
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    dwSubEntryId: number,
+  ): number;
   /** rasapi32.dll!RasDeleteSubEntryW */
   RasDeleteSubEntry(pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, dwSubEntryId: number): number;
   /** rasapi32.dll!RasDialA */
-  RasDialA(param0: Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: number, param4: Win32Pointer, param5: Win32Pointer): number;
+  RasDialA(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: number,
+    param4: Win32Pointer,
+    param5: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasDialW */
-  RasDialW(param0: Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: number, param4: Win32Pointer, param5: Win32Pointer): number;
+  RasDialW(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: number,
+    param4: Win32Pointer,
+    param5: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasDialW */
-  RasDial(param0: Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: number, param4: Win32Pointer, param5: Win32Pointer): number;
+  RasDial(
+    param0: Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: number,
+    param4: Win32Pointer,
+    param5: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasEditPhonebookEntryA */
   RasEditPhonebookEntryA(param0: Win32Pointer, param1: string | Win32Pointer, param2: string | Win32Pointer): number;
   /** rasapi32.dll!RasEditPhonebookEntryW */
@@ -43,11 +72,23 @@ interface Functions {
   /** rasapi32.dll!RasEditPhonebookEntryW */
   RasEditPhonebookEntry(param0: Win32Pointer, param1: string | Win32Pointer, param2: string | Win32Pointer): number;
   /** rasapi32.dll!RasEnumAutodialAddressesA */
-  RasEnumAutodialAddressesA(lppRasAutodialAddresses: Win32Pointer, lpdwcbRasAutodialAddresses: Win32Pointer, lpdwcRasAutodialAddresses: Win32Pointer): number;
+  RasEnumAutodialAddressesA(
+    lppRasAutodialAddresses: Win32Pointer,
+    lpdwcbRasAutodialAddresses: Win32Pointer,
+    lpdwcRasAutodialAddresses: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasEnumAutodialAddressesW */
-  RasEnumAutodialAddressesW(lppRasAutodialAddresses: Win32Pointer, lpdwcbRasAutodialAddresses: Win32Pointer, lpdwcRasAutodialAddresses: Win32Pointer): number;
+  RasEnumAutodialAddressesW(
+    lppRasAutodialAddresses: Win32Pointer,
+    lpdwcbRasAutodialAddresses: Win32Pointer,
+    lpdwcRasAutodialAddresses: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasEnumAutodialAddressesW */
-  RasEnumAutodialAddresses(lppRasAutodialAddresses: Win32Pointer, lpdwcbRasAutodialAddresses: Win32Pointer, lpdwcRasAutodialAddresses: Win32Pointer): number;
+  RasEnumAutodialAddresses(
+    lppRasAutodialAddresses: Win32Pointer,
+    lpdwcbRasAutodialAddresses: Win32Pointer,
+    lpdwcRasAutodialAddresses: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasEnumConnectionsA */
   RasEnumConnectionsA(param0: Win32Pointer, param1: Win32Pointer, param2: Win32Pointer): number;
   /** rasapi32.dll!RasEnumConnectionsW */
@@ -61,11 +102,29 @@ interface Functions {
   /** rasapi32.dll!RasEnumDevicesW */
   RasEnumDevices(param0: Win32Pointer, param1: Win32Pointer, param2: Win32Pointer): number;
   /** rasapi32.dll!RasEnumEntriesA */
-  RasEnumEntriesA(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: Win32Pointer, param4: Win32Pointer): number;
+  RasEnumEntriesA(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: Win32Pointer,
+    param4: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasEnumEntriesW */
-  RasEnumEntriesW(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: Win32Pointer, param4: Win32Pointer): number;
+  RasEnumEntriesW(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: Win32Pointer,
+    param4: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasEnumEntriesW */
-  RasEnumEntries(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: Win32Pointer, param4: Win32Pointer): number;
+  RasEnumEntries(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: Win32Pointer,
+    param4: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasFreeEapUserIdentityA */
   RasFreeEapUserIdentityA(pRasEapUserIdentity: Win32Pointer): void;
   /** rasapi32.dll!RasFreeEapUserIdentityW */
@@ -73,11 +132,29 @@ interface Functions {
   /** rasapi32.dll!RasFreeEapUserIdentityW */
   RasFreeEapUserIdentity(pRasEapUserIdentity: Win32Pointer): void;
   /** rasapi32.dll!RasGetAutodialAddressA */
-  RasGetAutodialAddressA(param0: string | Win32Pointer, param1: Win32Pointer, param2: Win32Pointer, param3: Win32Pointer, param4: Win32Pointer): number;
+  RasGetAutodialAddressA(
+    param0: string | Win32Pointer,
+    param1: Win32Pointer,
+    param2: Win32Pointer,
+    param3: Win32Pointer,
+    param4: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetAutodialAddressW */
-  RasGetAutodialAddressW(param0: string | Win32Pointer, param1: Win32Pointer, param2: Win32Pointer, param3: Win32Pointer, param4: Win32Pointer): number;
+  RasGetAutodialAddressW(
+    param0: string | Win32Pointer,
+    param1: Win32Pointer,
+    param2: Win32Pointer,
+    param3: Win32Pointer,
+    param4: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetAutodialAddressW */
-  RasGetAutodialAddress(param0: string | Win32Pointer, param1: Win32Pointer, param2: Win32Pointer, param3: Win32Pointer, param4: Win32Pointer): number;
+  RasGetAutodialAddress(
+    param0: string | Win32Pointer,
+    param1: Win32Pointer,
+    param2: Win32Pointer,
+    param3: Win32Pointer,
+    param4: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetAutodialEnableA */
   RasGetAutodialEnableA(param0: number, param1: Win32Pointer): number;
   /** rasapi32.dll!RasGetAutodialEnableW */
@@ -111,23 +188,74 @@ interface Functions {
   /** rasapi32.dll!RasGetCredentialsW */
   RasGetCredentials(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer): number;
   /** rasapi32.dll!RasGetCustomAuthDataA */
-  RasGetCustomAuthDataA(pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, pbCustomAuthData: Win32Pointer, pdwSizeofCustomAuthData: Win32Pointer): number;
+  RasGetCustomAuthDataA(
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    pbCustomAuthData: Win32Pointer,
+    pdwSizeofCustomAuthData: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetCustomAuthDataW */
-  RasGetCustomAuthDataW(pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, pbCustomAuthData: Win32Pointer, pdwSizeofCustomAuthData: Win32Pointer): number;
+  RasGetCustomAuthDataW(
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    pbCustomAuthData: Win32Pointer,
+    pdwSizeofCustomAuthData: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetCustomAuthDataW */
-  RasGetCustomAuthData(pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, pbCustomAuthData: Win32Pointer, pdwSizeofCustomAuthData: Win32Pointer): number;
+  RasGetCustomAuthData(
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    pbCustomAuthData: Win32Pointer,
+    pdwSizeofCustomAuthData: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetEapUserDataA */
-  RasGetEapUserDataA(hToken: Win32Pointer, pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, pbEapData: Win32Pointer, pdwSizeofEapData: Win32Pointer): number;
+  RasGetEapUserDataA(
+    hToken: Win32Pointer,
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    pbEapData: Win32Pointer,
+    pdwSizeofEapData: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetEapUserDataW */
-  RasGetEapUserDataW(hToken: Win32Pointer, pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, pbEapData: Win32Pointer, pdwSizeofEapData: Win32Pointer): number;
+  RasGetEapUserDataW(
+    hToken: Win32Pointer,
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    pbEapData: Win32Pointer,
+    pdwSizeofEapData: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetEapUserDataW */
-  RasGetEapUserData(hToken: Win32Pointer, pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, pbEapData: Win32Pointer, pdwSizeofEapData: Win32Pointer): number;
+  RasGetEapUserData(
+    hToken: Win32Pointer,
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    pbEapData: Win32Pointer,
+    pdwSizeofEapData: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetEapUserIdentityA */
-  RasGetEapUserIdentityA(pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, dwFlags: number, hwnd: Win32Pointer, ppRasEapUserIdentity: Win32Pointer): number;
+  RasGetEapUserIdentityA(
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    dwFlags: number,
+    hwnd: Win32Pointer,
+    ppRasEapUserIdentity: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetEapUserIdentityW */
-  RasGetEapUserIdentityW(pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, dwFlags: number, hwnd: Win32Pointer, ppRasEapUserIdentity: Win32Pointer): number;
+  RasGetEapUserIdentityW(
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    dwFlags: number,
+    hwnd: Win32Pointer,
+    ppRasEapUserIdentity: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetEapUserIdentityW */
-  RasGetEapUserIdentity(pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, dwFlags: number, hwnd: Win32Pointer, ppRasEapUserIdentity: Win32Pointer): number;
+  RasGetEapUserIdentity(
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    dwFlags: number,
+    hwnd: Win32Pointer,
+    ppRasEapUserIdentity: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetEntryDialParamsA */
   RasGetEntryDialParamsA(param0: string | Win32Pointer, param1: Win32Pointer, param2: Win32Pointer): number;
   /** rasapi32.dll!RasGetEntryDialParamsW */
@@ -135,11 +263,32 @@ interface Functions {
   /** rasapi32.dll!RasGetEntryDialParamsW */
   RasGetEntryDialParams(param0: string | Win32Pointer, param1: Win32Pointer, param2: Win32Pointer): number;
   /** rasapi32.dll!RasGetEntryPropertiesA */
-  RasGetEntryPropertiesA(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: Win32Pointer, param4: Win32Pointer, param5: Win32Pointer): number;
+  RasGetEntryPropertiesA(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: Win32Pointer,
+    param4: Win32Pointer,
+    param5: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetEntryPropertiesW */
-  RasGetEntryPropertiesW(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: Win32Pointer, param4: Win32Pointer, param5: Win32Pointer): number;
+  RasGetEntryPropertiesW(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: Win32Pointer,
+    param4: Win32Pointer,
+    param5: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetEntryPropertiesW */
-  RasGetEntryProperties(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: Win32Pointer, param4: Win32Pointer, param5: Win32Pointer): number;
+  RasGetEntryProperties(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: Win32Pointer,
+    param4: Win32Pointer,
+    param5: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetErrorStringA */
   RasGetErrorStringA(ResourceId: number, lpszString: string | Win32Pointer, InBufSize: number): number;
   /** rasapi32.dll!RasGetErrorStringW */
@@ -165,11 +314,35 @@ interface Functions {
   /** rasapi32.dll!RasGetSubEntryHandleW */
   RasGetSubEntryHandle(param0: Win32Pointer, param1: number, param2: Win32Pointer): number;
   /** rasapi32.dll!RasGetSubEntryPropertiesA */
-  RasGetSubEntryPropertiesA(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: number, param3: Win32Pointer, param4: Win32Pointer, param5: Win32Pointer, param6: Win32Pointer): number;
+  RasGetSubEntryPropertiesA(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: number,
+    param3: Win32Pointer,
+    param4: Win32Pointer,
+    param5: Win32Pointer,
+    param6: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetSubEntryPropertiesW */
-  RasGetSubEntryPropertiesW(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: number, param3: Win32Pointer, param4: Win32Pointer, param5: Win32Pointer, param6: Win32Pointer): number;
+  RasGetSubEntryPropertiesW(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: number,
+    param3: Win32Pointer,
+    param4: Win32Pointer,
+    param5: Win32Pointer,
+    param6: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasGetSubEntryPropertiesW */
-  RasGetSubEntryProperties(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: number, param3: Win32Pointer, param4: Win32Pointer, param5: Win32Pointer, param6: Win32Pointer): number;
+  RasGetSubEntryProperties(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: number,
+    param3: Win32Pointer,
+    param4: Win32Pointer,
+    param5: Win32Pointer,
+    param6: Win32Pointer,
+  ): number;
   /** rasapi32.dll!RasHangUpA */
   RasHangUpA(param0: Win32Pointer): number;
   /** rasapi32.dll!RasHangUpW */
@@ -185,11 +358,29 @@ interface Functions {
   /** rasapi32.dll!RasRenameEntryW */
   RasRenameEntry(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: string | Win32Pointer): number;
   /** rasapi32.dll!RasSetAutodialAddressA */
-  RasSetAutodialAddressA(param0: string | Win32Pointer, param1: number, param2: Win32Pointer, param3: number, param4: number): number;
+  RasSetAutodialAddressA(
+    param0: string | Win32Pointer,
+    param1: number,
+    param2: Win32Pointer,
+    param3: number,
+    param4: number,
+  ): number;
   /** rasapi32.dll!RasSetAutodialAddressW */
-  RasSetAutodialAddressW(param0: string | Win32Pointer, param1: number, param2: Win32Pointer, param3: number, param4: number): number;
+  RasSetAutodialAddressW(
+    param0: string | Win32Pointer,
+    param1: number,
+    param2: Win32Pointer,
+    param3: number,
+    param4: number,
+  ): number;
   /** rasapi32.dll!RasSetAutodialAddressW */
-  RasSetAutodialAddress(param0: string | Win32Pointer, param1: number, param2: Win32Pointer, param3: number, param4: number): number;
+  RasSetAutodialAddress(
+    param0: string | Win32Pointer,
+    param1: number,
+    param2: Win32Pointer,
+    param3: number,
+    param4: number,
+  ): number;
   /** rasapi32.dll!RasSetAutodialEnableA */
   RasSetAutodialEnableA(param0: number, param1: number): number;
   /** rasapi32.dll!RasSetAutodialEnableW */
@@ -203,23 +394,71 @@ interface Functions {
   /** rasapi32.dll!RasSetAutodialParamW */
   RasSetAutodialParam(param0: number, param1: Win32Pointer, param2: number): number;
   /** rasapi32.dll!RasSetCredentialsA */
-  RasSetCredentialsA(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: number): number;
+  RasSetCredentialsA(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: number,
+  ): number;
   /** rasapi32.dll!RasSetCredentialsW */
-  RasSetCredentialsW(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: number): number;
+  RasSetCredentialsW(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: number,
+  ): number;
   /** rasapi32.dll!RasSetCredentialsW */
-  RasSetCredentials(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: number): number;
+  RasSetCredentials(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: number,
+  ): number;
   /** rasapi32.dll!RasSetCustomAuthDataA */
-  RasSetCustomAuthDataA(pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, pbCustomAuthData: Win32Pointer, dwSizeofCustomAuthData: number): number;
+  RasSetCustomAuthDataA(
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    pbCustomAuthData: Win32Pointer,
+    dwSizeofCustomAuthData: number,
+  ): number;
   /** rasapi32.dll!RasSetCustomAuthDataW */
-  RasSetCustomAuthDataW(pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, pbCustomAuthData: Win32Pointer, dwSizeofCustomAuthData: number): number;
+  RasSetCustomAuthDataW(
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    pbCustomAuthData: Win32Pointer,
+    dwSizeofCustomAuthData: number,
+  ): number;
   /** rasapi32.dll!RasSetCustomAuthDataW */
-  RasSetCustomAuthData(pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, pbCustomAuthData: Win32Pointer, dwSizeofCustomAuthData: number): number;
+  RasSetCustomAuthData(
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    pbCustomAuthData: Win32Pointer,
+    dwSizeofCustomAuthData: number,
+  ): number;
   /** rasapi32.dll!RasSetEapUserDataA */
-  RasSetEapUserDataA(hToken: Win32Pointer, pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, pbEapData: Win32Pointer, dwSizeofEapData: number): number;
+  RasSetEapUserDataA(
+    hToken: Win32Pointer,
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    pbEapData: Win32Pointer,
+    dwSizeofEapData: number,
+  ): number;
   /** rasapi32.dll!RasSetEapUserDataW */
-  RasSetEapUserDataW(hToken: Win32Pointer, pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, pbEapData: Win32Pointer, dwSizeofEapData: number): number;
+  RasSetEapUserDataW(
+    hToken: Win32Pointer,
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    pbEapData: Win32Pointer,
+    dwSizeofEapData: number,
+  ): number;
   /** rasapi32.dll!RasSetEapUserDataW */
-  RasSetEapUserData(hToken: Win32Pointer, pszPhonebook: string | Win32Pointer, pszEntry: string | Win32Pointer, pbEapData: Win32Pointer, dwSizeofEapData: number): number;
+  RasSetEapUserData(
+    hToken: Win32Pointer,
+    pszPhonebook: string | Win32Pointer,
+    pszEntry: string | Win32Pointer,
+    pbEapData: Win32Pointer,
+    dwSizeofEapData: number,
+  ): number;
   /** rasapi32.dll!RasSetEntryDialParamsA */
   RasSetEntryDialParamsA(param0: string | Win32Pointer, param1: Win32Pointer, param2: number): number;
   /** rasapi32.dll!RasSetEntryDialParamsW */
@@ -227,17 +466,62 @@ interface Functions {
   /** rasapi32.dll!RasSetEntryDialParamsW */
   RasSetEntryDialParams(param0: string | Win32Pointer, param1: Win32Pointer, param2: number): number;
   /** rasapi32.dll!RasSetEntryPropertiesA */
-  RasSetEntryPropertiesA(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: number, param4: Win32Pointer, param5: number): number;
+  RasSetEntryPropertiesA(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: number,
+    param4: Win32Pointer,
+    param5: number,
+  ): number;
   /** rasapi32.dll!RasSetEntryPropertiesW */
-  RasSetEntryPropertiesW(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: number, param4: Win32Pointer, param5: number): number;
+  RasSetEntryPropertiesW(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: number,
+    param4: Win32Pointer,
+    param5: number,
+  ): number;
   /** rasapi32.dll!RasSetEntryPropertiesW */
-  RasSetEntryProperties(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: Win32Pointer, param3: number, param4: Win32Pointer, param5: number): number;
+  RasSetEntryProperties(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: Win32Pointer,
+    param3: number,
+    param4: Win32Pointer,
+    param5: number,
+  ): number;
   /** rasapi32.dll!RasSetSubEntryPropertiesA */
-  RasSetSubEntryPropertiesA(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: number, param3: Win32Pointer, param4: number, param5: Win32Pointer, param6: number): number;
+  RasSetSubEntryPropertiesA(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: number,
+    param3: Win32Pointer,
+    param4: number,
+    param5: Win32Pointer,
+    param6: number,
+  ): number;
   /** rasapi32.dll!RasSetSubEntryPropertiesW */
-  RasSetSubEntryPropertiesW(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: number, param3: Win32Pointer, param4: number, param5: Win32Pointer, param6: number): number;
+  RasSetSubEntryPropertiesW(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: number,
+    param3: Win32Pointer,
+    param4: number,
+    param5: Win32Pointer,
+    param6: number,
+  ): number;
   /** rasapi32.dll!RasSetSubEntryPropertiesW */
-  RasSetSubEntryProperties(param0: string | Win32Pointer, param1: string | Win32Pointer, param2: number, param3: Win32Pointer, param4: number, param5: Win32Pointer, param6: number): number;
+  RasSetSubEntryProperties(
+    param0: string | Win32Pointer,
+    param1: string | Win32Pointer,
+    param2: number,
+    param3: Win32Pointer,
+    param4: number,
+    param5: Win32Pointer,
+    param6: number,
+  ): number;
   /** rasapi32.dll!RasUpdateConnection */
   RasUpdateConnection(hrasconn: Win32Pointer, lprasupdateconn: Win32Pointer): number;
   /** rasapi32.dll!RasValidateEntryNameA */

@@ -2,7 +2,7 @@ import { Transition } from "@headlessui/react";
 import { usePageSceneStore } from "../../PageSceneStore";
 
 export const FocalLengthDisplay = () => {
-  const focalLengthDragging = usePageSceneStore((s) => s.focalLengthDragging);
+  const focalLengthDragging = usePageSceneStore(s => s.focalLengthDragging);
 
   return (
     <Transition

@@ -98,10 +98,7 @@ export class OvhDns {
   /**
    * List record IDs for a zone, optionally filtered by fieldType and subDomain.
    */
-  public async listRecordIds(
-    zone: string,
-    filter?: { fieldType?: string; subDomain?: string },
-  ): Promise<number[]> {
+  public async listRecordIds(zone: string, filter?: { fieldType?: string; subDomain?: string }): Promise<number[]> {
     return this.client.get<number[]>(`/domain/zone/${zone}/record`, {
       fieldType: filter?.fieldType,
       subDomain: filter?.subDomain,
@@ -112,18 +109,13 @@ export class OvhDns {
    * Fetch details of a single record by ID.
    */
   public async getRecord(zone: string, recordId: number): Promise<DnsRecord> {
-    return this.client.get<DnsRecord>(
-      `/domain/zone/${zone}/record/${recordId}`,
-    );
+    return this.client.get<DnsRecord>(`/domain/zone/${zone}/record/${recordId}`);
   }
 
   /**
    * List all records in a zone with concurrent batch fetching.
    */
-  public async listRecords(
-    zone: string,
-    filter?: { fieldType?: string; subDomain?: string },
-  ): Promise<DnsRecord[]> {
+  public async listRecords(zone: string, filter?: { fieldType?: string; subDomain?: string }): Promise<DnsRecord[]> {
     const ids = await this.listRecordIds(zone, filter);
     if (!ids || ids.length === 0) return [];
 
@@ -134,9 +126,7 @@ export class OvhDns {
     for (let i = 0; i < ids.length; i += chunkSize) {
       const slice = ids.slice(i, i + chunkSize);
       // oxlint-disable-next-line no-await-in-loop -- chunks run one after another to cap concurrent OVH requests at 15
-      const batch = await Promise.all(
-        slice.map((id) => this.getRecord(zone, id)),
-      );
+      const batch = await Promise.all(slice.map(id => this.getRecord(zone, id)));
       records.push(...batch);
     }
 
@@ -173,10 +163,7 @@ export class OvhDns {
       ttl: record.ttl ?? 300,
     };
 
-    const created = await this.client.post<DnsRecord>(
-      `/domain/zone/${zone}/record`,
-      payload,
-    );
+    const created = await this.client.post<DnsRecord>(`/domain/zone/${zone}/record`, payload);
 
     if (options.autoRefresh !== false) {
       await this.refreshZone(zone);
@@ -265,7 +252,7 @@ export class OvhDns {
   ): Promise<{ updatedRecords: number[]; targetIp: string; applied: boolean }> {
     const targets = options.subdomains ?? ["", "www"];
     const records = await this.listRecords(zone, { fieldType: "A" });
-    const toUpdate = records.filter((r) => targets.includes(r.subDomain || ""));
+    const toUpdate = records.filter(r => targets.includes(r.subDomain || ""));
 
     const updatedIds: number[] = [];
 
@@ -283,7 +270,7 @@ export class OvhDns {
         await this.refreshZone(zone);
       }
     } else {
-      updatedIds.push(...toUpdate.map((r) => r.id));
+      updatedIds.push(...toUpdate.map(r => r.id));
     }
 
     return {
@@ -308,39 +295,23 @@ export class OvhDns {
     const warnings: string[] = [];
 
     if (!info.isSigned && info.dnssecSupported) {
-      warnings.push(
-        "DNSSEC is supported for this zone but is not currently active",
-      );
+      warnings.push("DNSSEC is supported for this zone but is not currently active");
     }
 
     let aphrodyInvariants: DnsAuditReport["aphrodyInvariants"];
 
     // Verified 11 production subdomains invariant for aphrody.com
     if (zone === "aphrody.com") {
-      const expected = [
-        "@",
-        "n2b",
-        "www",
-        "nie",
-        "api",
-        "cdn",
-        "mcp",
-        "bxc",
-        "downloads",
-        "bot",
-        "admin",
-      ];
+      const expected = ["@", "n2b", "www", "nie", "api", "cdn", "mcp", "bxc", "downloads", "bot", "admin"];
       const foundSubdomains = new Set(
         records
-          .filter((r) => r.fieldType === "A" || r.fieldType === "CNAME")
-          .map((r) => (r.subDomain === "" ? "@" : r.subDomain)),
+          .filter(r => r.fieldType === "A" || r.fieldType === "CNAME")
+          .map(r => (r.subDomain === "" ? "@" : r.subDomain)),
       );
 
-      const missing = expected.filter((s) => !foundSubdomains.has(s));
+      const missing = expected.filter(s => !foundSubdomains.has(s));
       if (missing.length > 0) {
-        warnings.push(
-          `Missing production expected subdomains: ${missing.join(", ")}`,
-        );
+        warnings.push(`Missing production expected subdomains: ${missing.join(", ")}`);
       }
 
       aphrodyInvariants = {

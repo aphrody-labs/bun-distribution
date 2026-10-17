@@ -48,25 +48,15 @@ const actionsOf = (group: string, items: MenuItem[]): OmarAction[] =>
     title: item.title,
     item,
     // PC_MENU lists PC_ACTIONS first, in order, then the server health entry.
-    ...(group === "pc" && PC_ACTIONS[index]?.windowsOnly
-      ? { windowsOnly: true }
-      : {}),
+    ...(group === "pc" && PC_ACTIONS[index]?.windowsOnly ? { windowsOnly: true } : {}),
   }));
 
 function actions(): OmarAction[] {
-  const main = MAIN_MENU.filter(
-    (item) => ![...SUBMENUS].some((title) => item.title.startsWith(title)),
-  );
-  return [
-    ...actionsOf("principal", main),
-    ...actionsOf("entrainement", TRAIN_MENU),
-    ...actionsOf("pc", PC_MENU),
-  ];
+  const main = MAIN_MENU.filter(item => ![...SUBMENUS].some(title => item.title.startsWith(title)));
+  return [...actionsOf("principal", main), ...actionsOf("entrainement", TRAIN_MENU), ...actionsOf("pc", PC_MENU)];
 }
 
-export function omarCatalog(
-  ctx: Pick<Context, "paths" | "sys"> = defaultContext(),
-): KitCatalog {
+export function omarCatalog(ctx: Pick<Context, "paths" | "sys"> = defaultContext()): KitCatalog {
   return {
     protocol: KIT_PROTOCOL,
     kit: "omar",
@@ -89,10 +79,7 @@ export function desktopUi(channel: KitChannel): Ui {
       return ask(channel, kind, question, expect ? { expect } : {});
     },
     confirm(question, fallback = false) {
-      return parseYesNo(
-        ask(channel, "confirm", question, { fallback }),
-        fallback,
-      );
+      return parseYesNo(ask(channel, "confirm", question, { fallback }), fallback);
     },
     pause() {},
   };
@@ -109,8 +96,7 @@ export function desktopSystem(sys: System, channel: KitChannel): System {
         [result.stdout, "out"],
         [result.stderr, "err"],
       ] as const) {
-        for (const line of text.trimEnd().split(/\r?\n/))
-          if (line) channel.emit({ type: "say", text: line, stream });
+        for (const line of text.trimEnd().split(/\r?\n/)) if (line) channel.emit({ type: "say", text: line, stream });
       }
       return result;
     },
@@ -121,7 +107,7 @@ export function omarBridge(base: () => Context = defaultContext): KitBridge {
   return {
     catalog: () => omarCatalog(base()),
     async run(action, _input, channel) {
-      const entry = actions().find((candidate) => candidate.id === action.id);
+      const entry = actions().find(candidate => candidate.id === action.id);
       if (!entry) throw new Error(`Action inconnue : ${action.id}`);
       const ctx = base();
       const desktop: Context = {
@@ -137,8 +123,5 @@ export function omarBridge(base: () => Context = defaultContext): KitBridge {
   };
 }
 
-export const desktopMain = (
-  argv: string[],
-  channel?: KitChannel,
-  base?: () => Context,
-): Promise<number> => runDesktop(argv, omarBridge(base), channel);
+export const desktopMain = (argv: string[], channel?: KitChannel, base?: () => Context): Promise<number> =>
+  runDesktop(argv, omarBridge(base), channel);

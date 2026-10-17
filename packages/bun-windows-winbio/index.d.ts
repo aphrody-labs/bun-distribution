@@ -13,23 +13,81 @@ interface Functions {
   /** winbio.dll!WinBioAsyncMonitorFrameworkChanges */
   WinBioAsyncMonitorFrameworkChanges(FrameworkHandle: number, ChangeTypes: number): number;
   /** winbio.dll!WinBioAsyncOpenFramework */
-  WinBioAsyncOpenFramework(NotificationMethod: number, TargetWindow: Win32Pointer, MessageCode: number, CallbackRoutine: Win32Callback, UserData: Win32Pointer, AsynchronousOpen: number, FrameworkHandle: Win32Pointer): number;
+  WinBioAsyncOpenFramework(
+    NotificationMethod: number,
+    TargetWindow: Win32Pointer,
+    MessageCode: number,
+    CallbackRoutine: Win32Callback,
+    UserData: Win32Pointer,
+    AsynchronousOpen: number,
+    FrameworkHandle: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioAsyncOpenSession */
-  WinBioAsyncOpenSession(Factor: number, PoolType: number, Flags: number, UnitArray: Win32Pointer, UnitCount: number | bigint, DatabaseId: Win32Pointer, NotificationMethod: number, TargetWindow: Win32Pointer, MessageCode: number, CallbackRoutine: Win32Callback, UserData: Win32Pointer, AsynchronousOpen: number, SessionHandle: Win32Pointer): number;
+  WinBioAsyncOpenSession(
+    Factor: number,
+    PoolType: number,
+    Flags: number,
+    UnitArray: Win32Pointer,
+    UnitCount: number | bigint,
+    DatabaseId: Win32Pointer,
+    NotificationMethod: number,
+    TargetWindow: Win32Pointer,
+    MessageCode: number,
+    CallbackRoutine: Win32Callback,
+    UserData: Win32Pointer,
+    AsynchronousOpen: number,
+    SessionHandle: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioCancel */
   WinBioCancel(SessionHandle: number): number;
   /** winbio.dll!WinBioCaptureSample */
-  WinBioCaptureSample(SessionHandle: number, Purpose: number, Flags: number, UnitId: Win32Pointer, Sample: Win32Pointer, SampleSize: Win32Pointer, RejectDetail: Win32Pointer): number;
+  WinBioCaptureSample(
+    SessionHandle: number,
+    Purpose: number,
+    Flags: number,
+    UnitId: Win32Pointer,
+    Sample: Win32Pointer,
+    SampleSize: Win32Pointer,
+    RejectDetail: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioCaptureSampleWithCallback */
-  WinBioCaptureSampleWithCallback(SessionHandle: number, Purpose: number, Flags: number, CaptureCallback: Win32Callback, CaptureCallbackContext: Win32Pointer): number;
+  WinBioCaptureSampleWithCallback(
+    SessionHandle: number,
+    Purpose: number,
+    Flags: number,
+    CaptureCallback: Win32Callback,
+    CaptureCallbackContext: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioCloseFramework */
   WinBioCloseFramework(FrameworkHandle: number): number;
   /** winbio.dll!WinBioCloseSession */
   WinBioCloseSession(SessionHandle: number): number;
   /** winbio.dll!WinBioControlUnit */
-  WinBioControlUnit(SessionHandle: number, UnitId: number, Component: number, ControlCode: number, SendBuffer: Win32Pointer, SendBufferSize: number | bigint, ReceiveBuffer: Win32Pointer, ReceiveBufferSize: number | bigint, ReceiveDataSize: Win32Pointer, OperationStatus: Win32Pointer): number;
+  WinBioControlUnit(
+    SessionHandle: number,
+    UnitId: number,
+    Component: number,
+    ControlCode: number,
+    SendBuffer: Win32Pointer,
+    SendBufferSize: number | bigint,
+    ReceiveBuffer: Win32Pointer,
+    ReceiveBufferSize: number | bigint,
+    ReceiveDataSize: Win32Pointer,
+    OperationStatus: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioControlUnitPrivileged */
-  WinBioControlUnitPrivileged(SessionHandle: number, UnitId: number, Component: number, ControlCode: number, SendBuffer: Win32Pointer, SendBufferSize: number | bigint, ReceiveBuffer: Win32Pointer, ReceiveBufferSize: number | bigint, ReceiveDataSize: Win32Pointer, OperationStatus: Win32Pointer): number;
+  WinBioControlUnitPrivileged(
+    SessionHandle: number,
+    UnitId: number,
+    Component: number,
+    ControlCode: number,
+    SendBuffer: Win32Pointer,
+    SendBufferSize: number | bigint,
+    ReceiveBuffer: Win32Pointer,
+    ReceiveBufferSize: number | bigint,
+    ReceiveDataSize: Win32Pointer,
+    OperationStatus: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioDeleteTemplate */
   WinBioDeleteTemplate(SessionHandle: number, UnitId: number, Identity: Win32Pointer, SubFactor: number): number;
   /** winbio.dll!WinBioEnrollBegin */
@@ -37,7 +95,11 @@ interface Functions {
   /** winbio.dll!WinBioEnrollCapture */
   WinBioEnrollCapture(SessionHandle: number, RejectDetail: Win32Pointer): number;
   /** winbio.dll!WinBioEnrollCaptureWithCallback */
-  WinBioEnrollCaptureWithCallback(SessionHandle: number, EnrollCallback: Win32Callback, EnrollCallbackContext: Win32Pointer): number;
+  WinBioEnrollCaptureWithCallback(
+    SessionHandle: number,
+    EnrollCallback: Win32Callback,
+    EnrollCallbackContext: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioEnrollCommit */
   WinBioEnrollCommit(SessionHandle: number, Identity: Win32Pointer, IsNewTemplate: Win32Pointer): number;
   /** winbio.dll!WinBioEnrollDiscard */
@@ -49,7 +111,13 @@ interface Functions {
   /** winbio.dll!WinBioEnumDatabases */
   WinBioEnumDatabases(Factor: number, StorageSchemaArray: Win32Pointer, StorageCount: Win32Pointer): number;
   /** winbio.dll!WinBioEnumEnrollments */
-  WinBioEnumEnrollments(SessionHandle: number, UnitId: number, Identity: Win32Pointer, SubFactorArray: Win32Pointer, SubFactorCount: Win32Pointer): number;
+  WinBioEnumEnrollments(
+    SessionHandle: number,
+    UnitId: number,
+    Identity: Win32Pointer,
+    SubFactorArray: Win32Pointer,
+    SubFactorCount: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioEnumServiceProviders */
   WinBioEnumServiceProviders(Factor: number, BspSchemaArray: Win32Pointer, BspCount: Win32Pointer): number;
   /** winbio.dll!WinBioFree */
@@ -65,11 +133,30 @@ interface Functions {
   /** winbio.dll!WinBioGetLogonSetting */
   WinBioGetLogonSetting(Value: Win32Pointer, Source: Win32Pointer): void;
   /** winbio.dll!WinBioGetProperty */
-  WinBioGetProperty(SessionHandle: number, PropertyType: number, PropertyId: number, UnitId: number, Identity: Win32Pointer, SubFactor: number, PropertyBuffer: Win32Pointer, PropertyBufferSize: Win32Pointer): number;
+  WinBioGetProperty(
+    SessionHandle: number,
+    PropertyType: number,
+    PropertyId: number,
+    UnitId: number,
+    Identity: Win32Pointer,
+    SubFactor: number,
+    PropertyBuffer: Win32Pointer,
+    PropertyBufferSize: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioIdentify */
-  WinBioIdentify(SessionHandle: number, UnitId: Win32Pointer, Identity: Win32Pointer, SubFactor: Win32Pointer, RejectDetail: Win32Pointer): number;
+  WinBioIdentify(
+    SessionHandle: number,
+    UnitId: Win32Pointer,
+    Identity: Win32Pointer,
+    SubFactor: Win32Pointer,
+    RejectDetail: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioIdentifyWithCallback */
-  WinBioIdentifyWithCallback(SessionHandle: number, IdentifyCallback: Win32Callback, IdentifyCallbackContext: Win32Pointer): number;
+  WinBioIdentifyWithCallback(
+    SessionHandle: number,
+    IdentifyCallback: Win32Callback,
+    IdentifyCallbackContext: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioImproveBegin */
   WinBioImproveBegin(SessionHandle: number, UnitId: number): number;
   /** winbio.dll!WinBioImproveEnd */
@@ -79,7 +166,11 @@ interface Functions {
   /** winbio.dll!WinBioLocateSensor */
   WinBioLocateSensor(SessionHandle: number, UnitId: Win32Pointer): number;
   /** winbio.dll!WinBioLocateSensorWithCallback */
-  WinBioLocateSensorWithCallback(SessionHandle: number, LocateCallback: Win32Callback, LocateCallbackContext: Win32Pointer): number;
+  WinBioLocateSensorWithCallback(
+    SessionHandle: number,
+    LocateCallback: Win32Callback,
+    LocateCallbackContext: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioLockUnit */
   WinBioLockUnit(SessionHandle: number, UnitId: number): number;
   /** winbio.dll!WinBioLogonIdentifiedUser */
@@ -87,9 +178,22 @@ interface Functions {
   /** winbio.dll!WinBioMonitorPresence */
   WinBioMonitorPresence(SessionHandle: number, UnitId: number): number;
   /** winbio.dll!WinBioOpenSession */
-  WinBioOpenSession(Factor: number, PoolType: number, Flags: number, UnitArray: Win32Pointer, UnitCount: number | bigint, DatabaseId: Win32Pointer, SessionHandle: Win32Pointer): number;
+  WinBioOpenSession(
+    Factor: number,
+    PoolType: number,
+    Flags: number,
+    UnitArray: Win32Pointer,
+    UnitCount: number | bigint,
+    DatabaseId: Win32Pointer,
+    SessionHandle: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioRegisterEventMonitor */
-  WinBioRegisterEventMonitor(SessionHandle: number, EventMask: number, EventCallback: Win32Callback, EventCallbackContext: Win32Pointer): number;
+  WinBioRegisterEventMonitor(
+    SessionHandle: number,
+    EventMask: number,
+    EventCallback: Win32Callback,
+    EventCallbackContext: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioReleaseFocus */
   WinBioReleaseFocus(): number;
   /** winbio.dll!WinBioRemoveAllCredentials */
@@ -101,15 +205,37 @@ interface Functions {
   /** winbio.dll!WinBioSetCredential */
   WinBioSetCredential(Type: number, Credential: Win32Pointer, CredentialSize: number | bigint, Format: number): number;
   /** winbio.dll!WinBioSetProperty */
-  WinBioSetProperty(SessionHandle: number, PropertyType: number, PropertyId: number, UnitId: number, Identity: Win32Pointer, SubFactor: number, PropertyBuffer: Win32Pointer, PropertyBufferSize: number | bigint): number;
+  WinBioSetProperty(
+    SessionHandle: number,
+    PropertyType: number,
+    PropertyId: number,
+    UnitId: number,
+    Identity: Win32Pointer,
+    SubFactor: number,
+    PropertyBuffer: Win32Pointer,
+    PropertyBufferSize: number | bigint,
+  ): number;
   /** winbio.dll!WinBioUnlockUnit */
   WinBioUnlockUnit(SessionHandle: number, UnitId: number): number;
   /** winbio.dll!WinBioUnregisterEventMonitor */
   WinBioUnregisterEventMonitor(SessionHandle: number): number;
   /** winbio.dll!WinBioVerify */
-  WinBioVerify(SessionHandle: number, Identity: Win32Pointer, SubFactor: number, UnitId: Win32Pointer, Match: Win32Pointer, RejectDetail: Win32Pointer): number;
+  WinBioVerify(
+    SessionHandle: number,
+    Identity: Win32Pointer,
+    SubFactor: number,
+    UnitId: Win32Pointer,
+    Match: Win32Pointer,
+    RejectDetail: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioVerifyWithCallback */
-  WinBioVerifyWithCallback(SessionHandle: number, Identity: Win32Pointer, SubFactor: number, VerifyCallback: Win32Callback, VerifyCallbackContext: Win32Pointer): number;
+  WinBioVerifyWithCallback(
+    SessionHandle: number,
+    Identity: Win32Pointer,
+    SubFactor: number,
+    VerifyCallback: Win32Callback,
+    VerifyCallbackContext: Win32Pointer,
+  ): number;
   /** winbio.dll!WinBioWait */
   WinBioWait(SessionHandle: number): number;
 }

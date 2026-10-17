@@ -81,10 +81,7 @@ export function getCreatorDisplayName(creator: ModelCreator): string {
 /** Family name for a model id (canonical or tauri form), falling back to the
  *  creator's display name. Returns undefined when neither is known — callers
  *  bucket those under "Other". */
-export function getModelFamilyName(
-  modelId?: string,
-  creator?: ModelCreator,
-): string | undefined {
+export function getModelFamilyName(modelId?: string, creator?: ModelCreator): string | undefined {
   if (modelId) {
     const normalized = modelId.toLowerCase();
     for (const [prefix, family] of MODEL_ID_PREFIX_FAMILIES) {

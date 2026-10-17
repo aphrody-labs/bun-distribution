@@ -10,13 +10,11 @@ interface Props {
 // react-konva pattern. Phase 1 has no zoom/pan, so absolute positioning is
 // simply (node.x, node.y) within the container.
 export const TextEditOverlay = (_props: Props) => {
-  const editingId = useMoodboardStore((s) => s.transient.editingTextId);
-  const node = useMoodboardStore((s) =>
-    editingId ? s.nodes[editingId] : null,
-  );
-  const updateNode = useMoodboardStore((s) => s.updateNode);
-  const pushHistory = useMoodboardStore((s) => s.pushHistory);
-  const setEditingText = useMoodboardStore((s) => s.setEditingText);
+  const editingId = useMoodboardStore(s => s.transient.editingTextId);
+  const node = useMoodboardStore(s => (editingId ? s.nodes[editingId] : null));
+  const updateNode = useMoodboardStore(s => s.updateNode);
+  const pushHistory = useMoodboardStore(s => s.pushHistory);
+  const setEditingText = useMoodboardStore(s => s.setEditingText);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const initialTextRef = useRef<string>("");
 
@@ -51,7 +49,7 @@ export const TextEditOverlay = (_props: Props) => {
       ref={taRef}
       defaultValue={node.text}
       onBlur={commit}
-      onKeyDown={(e) => {
+      onKeyDown={e => {
         if (e.key === "Escape") {
           e.preventDefault();
           cancel();

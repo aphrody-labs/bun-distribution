@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // <m3-theme seed="#6750a4" mode="auto" variant="tonalSpot" contrast="0"> scopes a dynamic M3 colour
 // scheme to its subtree (display: contents) with no framework: any <md-*> inside re-themes live.
-import {
-  schemeFromSeed,
-  type SchemeVariant,
-} from "@aphrody/m3-tokens/dynamic-color";
+import { schemeFromSeed, type SchemeVariant } from "@aphrody/m3-tokens/dynamic-color";
 
 export type ThemeMode = "light" | "dark" | "auto";
 
 // Importing the pure front helpers must also work in server renderers without a DOM.
 // The browser receives the real HTMLElement; the server never constructs or registers elements.
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- The SSR fallback is only a constructor base and never instantiated.
-const HTMLElementBase =
-  globalThis.HTMLElement ?? (class {} as typeof HTMLElement);
+const HTMLElementBase = globalThis.HTMLElement ?? (class {} as typeof HTMLElement);
 
 export class M3ThemeElement extends HTMLElementBase {
   static observedAttributes = ["seed", "mode", "variant", "contrast"];
@@ -24,10 +20,7 @@ export class M3ThemeElement extends HTMLElementBase {
 
   connectedCallback(): void {
     this.style.display = "contents";
-    this.#media =
-      this.ownerDocument.defaultView?.matchMedia?.(
-        "(prefers-color-scheme: dark)",
-      ) ?? null;
+    this.#media = this.ownerDocument.defaultView?.matchMedia?.("(prefers-color-scheme: dark)") ?? null;
     this.#media?.addEventListener("change", this.#listener);
     this.apply();
   }
@@ -118,10 +111,7 @@ export function defineM3Theme(tag = "m3-theme"): void {
   const registry = globalThis.customElements;
   if (!registry || registry.get(tag)) return;
   // A CustomElementRegistry cannot associate one constructor with multiple tags.
-  registry.define(
-    tag,
-    tag === "m3-theme" ? M3ThemeElement : class extends M3ThemeElement {},
-  );
+  registry.define(tag, tag === "m3-theme" ? M3ThemeElement : class extends M3ThemeElement {});
 }
 
 defineM3Theme();

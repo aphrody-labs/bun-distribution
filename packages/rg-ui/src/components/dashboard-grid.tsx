@@ -14,13 +14,7 @@ interface QuickActionProps {
 /**
  * Shared Quick Action card for Dashboards.
  */
-export function QuickActionCard({
-  title,
-  description,
-  href,
-  icon: Icon,
-  accent = "text-primary",
-}: QuickActionProps) {
+export function QuickActionCard({ title, description, href, icon: Icon, accent = "text-primary" }: QuickActionProps) {
   return (
     <Link href={href} className="group">
       <Card className="h-full transition-all group-hover:border-primary/40 group-hover:-translate-y-0.5 group-hover:shadow-md">
@@ -30,9 +24,7 @@ export function QuickActionCard({
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-foreground">{title}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {description}
-            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
           </div>
         </CardContent>
       </Card>
@@ -49,23 +41,11 @@ interface DashboardGridProps {
 /**
  * Responsive grid for Dashboard sections.
  */
-export function DashboardGrid({
-  children,
-  title,
-  className,
-}: DashboardGridProps) {
+export function DashboardGrid({ children, title, className }: DashboardGridProps) {
   return (
     <section className="space-y-3">
-      {title && (
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          {title}
-        </h2>
-      )}
-      <div
-        className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-4", className)}
-      >
-        {children}
-      </div>
+      {title && <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{title}</h2>}
+      <div className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-4", className)}>{children}</div>
     </section>
   );
 }

@@ -1,51 +1,31 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useEffect, useRef } from "react";
-import {
-  AlertDialog,
-  Icon,
-  Switch,
-  Button,
-  Card,
-} from "@aphrody/m3-primitives";
-import {
-  checkForAppUpdate,
-  installAppUpdate,
-  isTauri,
-  tauriInvoke,
-  type UpdateMetadata,
-} from "../../tauri-bridge";
+import { AlertDialog, Icon, Switch, Button, Card } from "@aphrody/m3-primitives";
+import { checkForAppUpdate, installAppUpdate, isTauri, tauriInvoke, type UpdateMetadata } from "../../tauri-bridge";
 
 export interface GeneralSettingsBackend {
   isDesktop(): boolean;
   readAutostart(): Promise<boolean>;
   writeAutostart(enabled: boolean): Promise<void>;
   checkUpdate(): Promise<UpdateMetadata | null>;
-  installUpdate(
-    update: UpdateMetadata,
-    onProgress: (received: number, total: number | null) => void,
-  ): Promise<void>;
+  installUpdate(update: UpdateMetadata, onProgress: (received: number, total: number | null) => void): Promise<void>;
 }
 
 const backend: GeneralSettingsBackend = {
   isDesktop: isTauri,
   readAutostart: async () => {
     const enabled = await tauriInvoke<boolean>("plugin:autostart|is_enabled");
-    if (typeof enabled !== "boolean")
-      throw new Error("État de démarrage invalide.");
+    if (typeof enabled !== "boolean") throw new Error("État de démarrage invalide.");
     return enabled;
   },
-  writeAutostart: async (enabled) => {
-    await tauriInvoke(
-      enabled ? "plugin:autostart|enable" : "plugin:autostart|disable",
-    );
+  writeAutostart: async enabled => {
+    await tauriInvoke(enabled ? "plugin:autostart|enable" : "plugin:autostart|disable");
   },
   checkUpdate: checkForAppUpdate,
   installUpdate: installAppUpdate,
 };
 
-export function GeneralSettings({
-  services = backend,
-}: { services?: GeneralSettingsBackend } = {}) {
+export function GeneralSettings({ services = backend }: { services?: GeneralSettingsBackend } = {}) {
   const desktop = services.isDesktop();
   const [startWithSystem, setStartWithSystem] = useState<boolean | null>(null);
   const [readingAutostart, setReadingAutostart] = useState(desktop);
@@ -65,7 +45,7 @@ export function GeneralSettings({
     let active = true;
     void services
       .readAutostart()
-      .then((enabled) => {
+      .then(enabled => {
         if (active) {
           setStartWithSystem(enabled);
           setReadingAutostart(false);
@@ -76,9 +56,7 @@ export function GeneralSettings({
         if (active) {
           setStartWithSystem(null);
           setReadingAutostart(false);
-          setAutostartError(
-            error instanceof Error ? error.message : String(error),
-          );
+          setAutostartError(error instanceof Error ? error.message : String(error));
         }
       });
     return () => {
@@ -99,13 +77,8 @@ export function GeneralSettings({
       written = true;
       const actual = await services.readAutostart();
       setStartWithSystem(actual);
-      if (actual !== enabled)
-        throw new Error("Le système n'a pas confirmé ce changement.");
-      setAutostartStatus(
-        actual
-          ? "Démarrage automatique activé."
-          : "Démarrage automatique désactivé.",
-      );
+      if (actual !== enabled) throw new Error("Le système n'a pas confirmé ce changement.");
+      setAutostartStatus(actual ? "Démarrage automatique activé." : "Démarrage automatique désactivé.");
     } catch (error) {
       if (written) setStartWithSystem(null);
       setAutostartError(error instanceof Error ? error.message : String(error));
@@ -128,9 +101,7 @@ export function GeneralSettings({
         setUpdateStatus("Votre application est à jour.");
       }
     } catch {
-      setUpdateStatus(
-        "Vérification impossible. Réessayez lorsque le service de mises à jour est accessible.",
-      );
+      setUpdateStatus("Vérification impossible. Réessayez lorsque le service de mises à jour est accessible.");
     } finally {
       setChecking(false);
     }
@@ -150,9 +121,7 @@ export function GeneralSettings({
       setUpdateStatus("Mise à jour installée ; redémarrage demandé.");
       setUpdate(null);
     } catch {
-      setUpdateStatus(
-        "Installation ou redémarrage impossible. Aucun succès confirmé.",
-      );
+      setUpdateStatus("Installation ou redémarrage impossible. Aucun succès confirmé.");
     } finally {
       setInstalling(false);
     }
@@ -170,33 +139,21 @@ export function GeneralSettings({
         onConfirm={() => void handleInstallUpdate()}
       />
       <div>
-        <h2 className="text-headline-small font-bold text-on-surface">
-          Général
-        </h2>
-        <p className="text-body-large text-on-surface-variant mt-1">
-          Démarrage et mises à jour de l'application.
-        </p>
+        <h2 className="text-headline-small font-bold text-on-surface">Général</h2>
+        <p className="text-body-large text-on-surface-variant mt-1">Démarrage et mises à jour de l'application.</p>
       </div>
       {!desktop ? (
-        <Card
-          variant="elevated"
-          className="p-6 border border-outline-variant/30"
-        >
+        <Card variant="elevated" className="p-6 border border-outline-variant/30">
           <p className="text-body-large text-on-surface-variant">
             Ces réglages système sont disponibles dans l'application de bureau.
           </p>
         </Card>
       ) : (
         <div className="space-y-6">
-          <Card
-            variant="elevated"
-            className="p-6 border border-outline-variant/30 space-y-4"
-          >
+          <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-4">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h3 className="text-title-medium font-medium text-on-surface">
-                  Lancer avec le système
-                </h3>
+                <h3 className="text-title-medium font-medium text-on-surface">Lancer avec le système</h3>
                 <p className="text-body-large text-on-surface-variant mt-1">
                   Démarrer Aphrody à l'ouverture de votre session.
                 </p>
@@ -205,26 +162,14 @@ export function GeneralSettings({
                 <Switch
                   checked={startWithSystem}
                   disabled={savingAutostart}
-                  onCheckedChange={(enabled) =>
-                    void handleStartWithSystemChange(enabled)
-                  }
+                  onCheckedChange={enabled => void handleStartWithSystemChange(enabled)}
                   aria-label="Lancer avec le système"
                 />
               )}
             </div>
-            {readingAutostart && (
-              <output className="block">
-                Lecture du démarrage automatique…
-              </output>
-            )}
-            {savingAutostart && (
-              <output className="block">
-                Modification du démarrage automatique…
-              </output>
-            )}
-            {autostartStatus && (
-              <output className="block">{autostartStatus}</output>
-            )}
+            {readingAutostart && <output className="block">Lecture du démarrage automatique…</output>}
+            {savingAutostart && <output className="block">Modification du démarrage automatique…</output>}
+            {autostartStatus && <output className="block">{autostartStatus}</output>}
             {autostartError && (
               <div role="alert" className="space-y-3 text-error">
                 <p>Démarrage automatique indisponible : {autostartError}</p>
@@ -236,7 +181,7 @@ export function GeneralSettings({
                   onClick={() => {
                     setReadingAutostart(true);
                     setAutostartError(null);
-                    setReload((value) => value + 1);
+                    setReload(value => value + 1);
                   }}
                 >
                   <Icon name="refresh" size={18} />
@@ -244,27 +189,17 @@ export function GeneralSettings({
               </div>
             )}
           </Card>
-          <Card
-            variant="elevated"
-            className="p-6 border border-outline-variant/30 space-y-4"
-          >
+          <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="text-title-medium font-medium text-on-surface">
-                  Mise à jour de l'application
-                </h3>
+                <h3 className="text-title-medium font-medium text-on-surface">Mise à jour de l'application</h3>
                 {update && (
                   <p className="text-body-large text-on-surface-variant mt-1">
-                    Version actuelle :{" "}
-                    <span className="font-semibold text-on-surface">
-                      {update.currentVersion}
-                    </span>
+                    Version actuelle : <span className="font-semibold text-on-surface">{update.currentVersion}</span>
                   </p>
                 )}
                 {updateStatus && (
-                  <output className="block text-body-large text-on-surface-variant mt-2">
-                    {updateStatus}
-                  </output>
+                  <output className="block text-body-large text-on-surface-variant mt-2">{updateStatus}</output>
                 )}
               </div>
               <Button
@@ -273,21 +208,11 @@ export function GeneralSettings({
                 disabled={checking || installing}
                 className="h-12 px-6 shrink-0 flex items-center gap-2"
               >
-                <Icon
-                  name="sync"
-                  size={20}
-                  className={checking ? "animate-spin" : ""}
-                />
-                <span>
-                  {checking ? "Vérification..." : "Vérifier les mises à jour"}
-                </span>
+                <Icon name="sync" size={20} className={checking ? "animate-spin" : ""} />
+                <span>{checking ? "Vérification..." : "Vérifier les mises à jour"}</span>
               </Button>
               {update && (
-                <Button
-                  variant="filled"
-                  disabled={installing}
-                  onClick={() => setConfirmUpdate(true)}
-                >
+                <Button variant="filled" disabled={installing} onClick={() => setConfirmUpdate(true)}>
                   {installing ? "Installation…" : "Installer et redémarrer"}
                 </Button>
               )}

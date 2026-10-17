@@ -3,17 +3,47 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** pdh.dll!PdhAddCounterA */
-  PdhAddCounterA(hQuery: Win32Pointer, szFullCounterPath: string | Win32Pointer, dwUserData: number | bigint, phCounter: Win32Pointer): number;
+  PdhAddCounterA(
+    hQuery: Win32Pointer,
+    szFullCounterPath: string | Win32Pointer,
+    dwUserData: number | bigint,
+    phCounter: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhAddCounterW */
-  PdhAddCounterW(hQuery: Win32Pointer, szFullCounterPath: string | Win32Pointer, dwUserData: number | bigint, phCounter: Win32Pointer): number;
+  PdhAddCounterW(
+    hQuery: Win32Pointer,
+    szFullCounterPath: string | Win32Pointer,
+    dwUserData: number | bigint,
+    phCounter: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhAddCounterW */
-  PdhAddCounter(hQuery: Win32Pointer, szFullCounterPath: string | Win32Pointer, dwUserData: number | bigint, phCounter: Win32Pointer): number;
+  PdhAddCounter(
+    hQuery: Win32Pointer,
+    szFullCounterPath: string | Win32Pointer,
+    dwUserData: number | bigint,
+    phCounter: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhAddEnglishCounterA */
-  PdhAddEnglishCounterA(hQuery: Win32Pointer, szFullCounterPath: string | Win32Pointer, dwUserData: number | bigint, phCounter: Win32Pointer): number;
+  PdhAddEnglishCounterA(
+    hQuery: Win32Pointer,
+    szFullCounterPath: string | Win32Pointer,
+    dwUserData: number | bigint,
+    phCounter: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhAddEnglishCounterW */
-  PdhAddEnglishCounterW(hQuery: Win32Pointer, szFullCounterPath: string | Win32Pointer, dwUserData: number | bigint, phCounter: Win32Pointer): number;
+  PdhAddEnglishCounterW(
+    hQuery: Win32Pointer,
+    szFullCounterPath: string | Win32Pointer,
+    dwUserData: number | bigint,
+    phCounter: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhAddEnglishCounterW */
-  PdhAddEnglishCounter(hQuery: Win32Pointer, szFullCounterPath: string | Win32Pointer, dwUserData: number | bigint, phCounter: Win32Pointer): number;
+  PdhAddEnglishCounter(
+    hQuery: Win32Pointer,
+    szFullCounterPath: string | Win32Pointer,
+    dwUserData: number | bigint,
+    phCounter: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhBindInputDataSourceA */
   PdhBindInputDataSourceA(phDataSource: Win32Pointer, LogFileNameList: string | Win32Pointer): number;
   /** pdh.dll!PdhBindInputDataSourceW */
@@ -33,7 +63,13 @@ interface Functions {
   /** pdh.dll!PdhBrowseCountersW */
   PdhBrowseCounters(pBrowseDlgData: Win32Pointer): number;
   /** pdh.dll!PdhCalculateCounterFromRawValue */
-  PdhCalculateCounterFromRawValue(hCounter: Win32Pointer, dwFormat: number, rawValue1: Win32Pointer, rawValue2: Win32Pointer, fmtValue: Win32Pointer): number;
+  PdhCalculateCounterFromRawValue(
+    hCounter: Win32Pointer,
+    dwFormat: number,
+    rawValue1: Win32Pointer,
+    rawValue2: Win32Pointer,
+    fmtValue: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhCloseLog */
   PdhCloseLog(hLog: Win32Pointer, dwFlags: number): number;
   /** pdh.dll!PdhCloseQuery */
@@ -45,7 +81,14 @@ interface Functions {
   /** pdh.dll!PdhCollectQueryDataWithTime */
   PdhCollectQueryDataWithTime(hQuery: Win32Pointer, pllTimeStamp: Win32Pointer): number;
   /** pdh.dll!PdhComputeCounterStatistics */
-  PdhComputeCounterStatistics(hCounter: Win32Pointer, dwFormat: number, dwFirstEntry: number, dwNumEntries: number, lpRawValueArray: Win32Pointer, data: Win32Pointer): number;
+  PdhComputeCounterStatistics(
+    hCounter: Win32Pointer,
+    dwFormat: number,
+    dwFirstEntry: number,
+    dwNumEntries: number,
+    lpRawValueArray: Win32Pointer,
+    data: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhConnectMachineA */
   PdhConnectMachineA(szMachineName: string | Win32Pointer): number;
   /** pdh.dll!PdhConnectMachineW */
@@ -59,155 +102,553 @@ interface Functions {
   /** pdh.dll!PdhCreateSQLTablesW */
   PdhCreateSQLTables(szDataSource: string | Win32Pointer): number;
   /** pdh.dll!PdhEnumLogSetNamesA */
-  PdhEnumLogSetNamesA(szDataSource: string | Win32Pointer, mszDataSetNameList: string | Win32Pointer, pcchBufferLength: Win32Pointer): number;
+  PdhEnumLogSetNamesA(
+    szDataSource: string | Win32Pointer,
+    mszDataSetNameList: string | Win32Pointer,
+    pcchBufferLength: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhEnumLogSetNamesW */
-  PdhEnumLogSetNamesW(szDataSource: string | Win32Pointer, mszDataSetNameList: string | Win32Pointer, pcchBufferLength: Win32Pointer): number;
+  PdhEnumLogSetNamesW(
+    szDataSource: string | Win32Pointer,
+    mszDataSetNameList: string | Win32Pointer,
+    pcchBufferLength: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhEnumLogSetNamesW */
-  PdhEnumLogSetNames(szDataSource: string | Win32Pointer, mszDataSetNameList: string | Win32Pointer, pcchBufferLength: Win32Pointer): number;
+  PdhEnumLogSetNames(
+    szDataSource: string | Win32Pointer,
+    mszDataSetNameList: string | Win32Pointer,
+    pcchBufferLength: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhEnumMachinesA */
-  PdhEnumMachinesA(szDataSource: string | Win32Pointer, mszMachineList: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhEnumMachinesA(
+    szDataSource: string | Win32Pointer,
+    mszMachineList: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhEnumMachinesHA */
-  PdhEnumMachinesHA(hDataSource: Win32Pointer, mszMachineList: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhEnumMachinesHA(
+    hDataSource: Win32Pointer,
+    mszMachineList: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhEnumMachinesHW */
-  PdhEnumMachinesHW(hDataSource: Win32Pointer, mszMachineList: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhEnumMachinesHW(
+    hDataSource: Win32Pointer,
+    mszMachineList: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhEnumMachinesHW */
-  PdhEnumMachinesH(hDataSource: Win32Pointer, mszMachineList: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhEnumMachinesH(
+    hDataSource: Win32Pointer,
+    mszMachineList: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhEnumMachinesW */
-  PdhEnumMachinesW(szDataSource: string | Win32Pointer, mszMachineList: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhEnumMachinesW(
+    szDataSource: string | Win32Pointer,
+    mszMachineList: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhEnumMachinesW */
-  PdhEnumMachines(szDataSource: string | Win32Pointer, mszMachineList: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhEnumMachines(
+    szDataSource: string | Win32Pointer,
+    mszMachineList: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhEnumObjectItemsA */
-  PdhEnumObjectItemsA(szDataSource: string | Win32Pointer, szMachineName: string | Win32Pointer, szObjectName: string | Win32Pointer, mszCounterList: string | Win32Pointer, pcchCounterListLength: Win32Pointer, mszInstanceList: string | Win32Pointer, pcchInstanceListLength: Win32Pointer, dwDetailLevel: number, dwFlags: number): number;
+  PdhEnumObjectItemsA(
+    szDataSource: string | Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szObjectName: string | Win32Pointer,
+    mszCounterList: string | Win32Pointer,
+    pcchCounterListLength: Win32Pointer,
+    mszInstanceList: string | Win32Pointer,
+    pcchInstanceListLength: Win32Pointer,
+    dwDetailLevel: number,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhEnumObjectItemsHA */
-  PdhEnumObjectItemsHA(hDataSource: Win32Pointer, szMachineName: string | Win32Pointer, szObjectName: string | Win32Pointer, mszCounterList: string | Win32Pointer, pcchCounterListLength: Win32Pointer, mszInstanceList: string | Win32Pointer, pcchInstanceListLength: Win32Pointer, dwDetailLevel: number, dwFlags: number): number;
+  PdhEnumObjectItemsHA(
+    hDataSource: Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szObjectName: string | Win32Pointer,
+    mszCounterList: string | Win32Pointer,
+    pcchCounterListLength: Win32Pointer,
+    mszInstanceList: string | Win32Pointer,
+    pcchInstanceListLength: Win32Pointer,
+    dwDetailLevel: number,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhEnumObjectItemsHW */
-  PdhEnumObjectItemsHW(hDataSource: Win32Pointer, szMachineName: string | Win32Pointer, szObjectName: string | Win32Pointer, mszCounterList: string | Win32Pointer, pcchCounterListLength: Win32Pointer, mszInstanceList: string | Win32Pointer, pcchInstanceListLength: Win32Pointer, dwDetailLevel: number, dwFlags: number): number;
+  PdhEnumObjectItemsHW(
+    hDataSource: Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szObjectName: string | Win32Pointer,
+    mszCounterList: string | Win32Pointer,
+    pcchCounterListLength: Win32Pointer,
+    mszInstanceList: string | Win32Pointer,
+    pcchInstanceListLength: Win32Pointer,
+    dwDetailLevel: number,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhEnumObjectItemsHW */
-  PdhEnumObjectItemsH(hDataSource: Win32Pointer, szMachineName: string | Win32Pointer, szObjectName: string | Win32Pointer, mszCounterList: string | Win32Pointer, pcchCounterListLength: Win32Pointer, mszInstanceList: string | Win32Pointer, pcchInstanceListLength: Win32Pointer, dwDetailLevel: number, dwFlags: number): number;
+  PdhEnumObjectItemsH(
+    hDataSource: Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szObjectName: string | Win32Pointer,
+    mszCounterList: string | Win32Pointer,
+    pcchCounterListLength: Win32Pointer,
+    mszInstanceList: string | Win32Pointer,
+    pcchInstanceListLength: Win32Pointer,
+    dwDetailLevel: number,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhEnumObjectItemsW */
-  PdhEnumObjectItemsW(szDataSource: string | Win32Pointer, szMachineName: string | Win32Pointer, szObjectName: string | Win32Pointer, mszCounterList: string | Win32Pointer, pcchCounterListLength: Win32Pointer, mszInstanceList: string | Win32Pointer, pcchInstanceListLength: Win32Pointer, dwDetailLevel: number, dwFlags: number): number;
+  PdhEnumObjectItemsW(
+    szDataSource: string | Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szObjectName: string | Win32Pointer,
+    mszCounterList: string | Win32Pointer,
+    pcchCounterListLength: Win32Pointer,
+    mszInstanceList: string | Win32Pointer,
+    pcchInstanceListLength: Win32Pointer,
+    dwDetailLevel: number,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhEnumObjectItemsW */
-  PdhEnumObjectItems(szDataSource: string | Win32Pointer, szMachineName: string | Win32Pointer, szObjectName: string | Win32Pointer, mszCounterList: string | Win32Pointer, pcchCounterListLength: Win32Pointer, mszInstanceList: string | Win32Pointer, pcchInstanceListLength: Win32Pointer, dwDetailLevel: number, dwFlags: number): number;
+  PdhEnumObjectItems(
+    szDataSource: string | Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szObjectName: string | Win32Pointer,
+    mszCounterList: string | Win32Pointer,
+    pcchCounterListLength: Win32Pointer,
+    mszInstanceList: string | Win32Pointer,
+    pcchInstanceListLength: Win32Pointer,
+    dwDetailLevel: number,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhEnumObjectsA */
-  PdhEnumObjectsA(szDataSource: string | Win32Pointer, szMachineName: string | Win32Pointer, mszObjectList: string | Win32Pointer, pcchBufferSize: Win32Pointer, dwDetailLevel: number, bRefresh: number): number;
+  PdhEnumObjectsA(
+    szDataSource: string | Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    mszObjectList: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+    dwDetailLevel: number,
+    bRefresh: number,
+  ): number;
   /** pdh.dll!PdhEnumObjectsHA */
-  PdhEnumObjectsHA(hDataSource: Win32Pointer, szMachineName: string | Win32Pointer, mszObjectList: string | Win32Pointer, pcchBufferSize: Win32Pointer, dwDetailLevel: number, bRefresh: number): number;
+  PdhEnumObjectsHA(
+    hDataSource: Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    mszObjectList: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+    dwDetailLevel: number,
+    bRefresh: number,
+  ): number;
   /** pdh.dll!PdhEnumObjectsHW */
-  PdhEnumObjectsHW(hDataSource: Win32Pointer, szMachineName: string | Win32Pointer, mszObjectList: string | Win32Pointer, pcchBufferSize: Win32Pointer, dwDetailLevel: number, bRefresh: number): number;
+  PdhEnumObjectsHW(
+    hDataSource: Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    mszObjectList: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+    dwDetailLevel: number,
+    bRefresh: number,
+  ): number;
   /** pdh.dll!PdhEnumObjectsHW */
-  PdhEnumObjectsH(hDataSource: Win32Pointer, szMachineName: string | Win32Pointer, mszObjectList: string | Win32Pointer, pcchBufferSize: Win32Pointer, dwDetailLevel: number, bRefresh: number): number;
+  PdhEnumObjectsH(
+    hDataSource: Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    mszObjectList: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+    dwDetailLevel: number,
+    bRefresh: number,
+  ): number;
   /** pdh.dll!PdhEnumObjectsW */
-  PdhEnumObjectsW(szDataSource: string | Win32Pointer, szMachineName: string | Win32Pointer, mszObjectList: string | Win32Pointer, pcchBufferSize: Win32Pointer, dwDetailLevel: number, bRefresh: number): number;
+  PdhEnumObjectsW(
+    szDataSource: string | Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    mszObjectList: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+    dwDetailLevel: number,
+    bRefresh: number,
+  ): number;
   /** pdh.dll!PdhEnumObjectsW */
-  PdhEnumObjects(szDataSource: string | Win32Pointer, szMachineName: string | Win32Pointer, mszObjectList: string | Win32Pointer, pcchBufferSize: Win32Pointer, dwDetailLevel: number, bRefresh: number): number;
+  PdhEnumObjects(
+    szDataSource: string | Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    mszObjectList: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+    dwDetailLevel: number,
+    bRefresh: number,
+  ): number;
   /** pdh.dll!PdhExpandCounterPathA */
-  PdhExpandCounterPathA(szWildCardPath: string | Win32Pointer, mszExpandedPathList: string | Win32Pointer, pcchPathListLength: Win32Pointer): number;
+  PdhExpandCounterPathA(
+    szWildCardPath: string | Win32Pointer,
+    mszExpandedPathList: string | Win32Pointer,
+    pcchPathListLength: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhExpandCounterPathW */
-  PdhExpandCounterPathW(szWildCardPath: string | Win32Pointer, mszExpandedPathList: string | Win32Pointer, pcchPathListLength: Win32Pointer): number;
+  PdhExpandCounterPathW(
+    szWildCardPath: string | Win32Pointer,
+    mszExpandedPathList: string | Win32Pointer,
+    pcchPathListLength: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhExpandCounterPathW */
-  PdhExpandCounterPath(szWildCardPath: string | Win32Pointer, mszExpandedPathList: string | Win32Pointer, pcchPathListLength: Win32Pointer): number;
+  PdhExpandCounterPath(
+    szWildCardPath: string | Win32Pointer,
+    mszExpandedPathList: string | Win32Pointer,
+    pcchPathListLength: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhExpandWildCardPathA */
-  PdhExpandWildCardPathA(szDataSource: string | Win32Pointer, szWildCardPath: string | Win32Pointer, mszExpandedPathList: string | Win32Pointer, pcchPathListLength: Win32Pointer, dwFlags: number): number;
+  PdhExpandWildCardPathA(
+    szDataSource: string | Win32Pointer,
+    szWildCardPath: string | Win32Pointer,
+    mszExpandedPathList: string | Win32Pointer,
+    pcchPathListLength: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhExpandWildCardPathHA */
-  PdhExpandWildCardPathHA(hDataSource: Win32Pointer, szWildCardPath: string | Win32Pointer, mszExpandedPathList: string | Win32Pointer, pcchPathListLength: Win32Pointer, dwFlags: number): number;
+  PdhExpandWildCardPathHA(
+    hDataSource: Win32Pointer,
+    szWildCardPath: string | Win32Pointer,
+    mszExpandedPathList: string | Win32Pointer,
+    pcchPathListLength: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhExpandWildCardPathHW */
-  PdhExpandWildCardPathHW(hDataSource: Win32Pointer, szWildCardPath: string | Win32Pointer, mszExpandedPathList: string | Win32Pointer, pcchPathListLength: Win32Pointer, dwFlags: number): number;
+  PdhExpandWildCardPathHW(
+    hDataSource: Win32Pointer,
+    szWildCardPath: string | Win32Pointer,
+    mszExpandedPathList: string | Win32Pointer,
+    pcchPathListLength: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhExpandWildCardPathHW */
-  PdhExpandWildCardPathH(hDataSource: Win32Pointer, szWildCardPath: string | Win32Pointer, mszExpandedPathList: string | Win32Pointer, pcchPathListLength: Win32Pointer, dwFlags: number): number;
+  PdhExpandWildCardPathH(
+    hDataSource: Win32Pointer,
+    szWildCardPath: string | Win32Pointer,
+    mszExpandedPathList: string | Win32Pointer,
+    pcchPathListLength: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhExpandWildCardPathW */
-  PdhExpandWildCardPathW(szDataSource: string | Win32Pointer, szWildCardPath: string | Win32Pointer, mszExpandedPathList: string | Win32Pointer, pcchPathListLength: Win32Pointer, dwFlags: number): number;
+  PdhExpandWildCardPathW(
+    szDataSource: string | Win32Pointer,
+    szWildCardPath: string | Win32Pointer,
+    mszExpandedPathList: string | Win32Pointer,
+    pcchPathListLength: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhExpandWildCardPathW */
-  PdhExpandWildCardPath(szDataSource: string | Win32Pointer, szWildCardPath: string | Win32Pointer, mszExpandedPathList: string | Win32Pointer, pcchPathListLength: Win32Pointer, dwFlags: number): number;
+  PdhExpandWildCardPath(
+    szDataSource: string | Win32Pointer,
+    szWildCardPath: string | Win32Pointer,
+    mszExpandedPathList: string | Win32Pointer,
+    pcchPathListLength: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhFormatFromRawValue */
-  PdhFormatFromRawValue(dwCounterType: number, dwFormat: number, pTimeBase: Win32Pointer, pRawValue1: Win32Pointer, pRawValue2: Win32Pointer, pFmtValue: Win32Pointer): number;
+  PdhFormatFromRawValue(
+    dwCounterType: number,
+    dwFormat: number,
+    pTimeBase: Win32Pointer,
+    pRawValue1: Win32Pointer,
+    pRawValue2: Win32Pointer,
+    pFmtValue: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetCounterInfoA */
-  PdhGetCounterInfoA(hCounter: Win32Pointer, bRetrieveExplainText: number, pdwBufferSize: Win32Pointer, lpBuffer: Win32Pointer): number;
+  PdhGetCounterInfoA(
+    hCounter: Win32Pointer,
+    bRetrieveExplainText: number,
+    pdwBufferSize: Win32Pointer,
+    lpBuffer: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetCounterInfoW */
-  PdhGetCounterInfoW(hCounter: Win32Pointer, bRetrieveExplainText: number, pdwBufferSize: Win32Pointer, lpBuffer: Win32Pointer): number;
+  PdhGetCounterInfoW(
+    hCounter: Win32Pointer,
+    bRetrieveExplainText: number,
+    pdwBufferSize: Win32Pointer,
+    lpBuffer: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetCounterInfoW */
-  PdhGetCounterInfo(hCounter: Win32Pointer, bRetrieveExplainText: number, pdwBufferSize: Win32Pointer, lpBuffer: Win32Pointer): number;
+  PdhGetCounterInfo(
+    hCounter: Win32Pointer,
+    bRetrieveExplainText: number,
+    pdwBufferSize: Win32Pointer,
+    lpBuffer: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetCounterTimeBase */
   PdhGetCounterTimeBase(hCounter: Win32Pointer, pTimeBase: Win32Pointer): number;
   /** pdh.dll!PdhGetDataSourceTimeRangeA */
-  PdhGetDataSourceTimeRangeA(szDataSource: string | Win32Pointer, pdwNumEntries: Win32Pointer, pInfo: Win32Pointer, pdwBufferSize: Win32Pointer): number;
+  PdhGetDataSourceTimeRangeA(
+    szDataSource: string | Win32Pointer,
+    pdwNumEntries: Win32Pointer,
+    pInfo: Win32Pointer,
+    pdwBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDataSourceTimeRangeH */
-  PdhGetDataSourceTimeRangeH(hDataSource: Win32Pointer, pdwNumEntries: Win32Pointer, pInfo: Win32Pointer, pdwBufferSize: Win32Pointer): number;
+  PdhGetDataSourceTimeRangeH(
+    hDataSource: Win32Pointer,
+    pdwNumEntries: Win32Pointer,
+    pInfo: Win32Pointer,
+    pdwBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDataSourceTimeRangeW */
-  PdhGetDataSourceTimeRangeW(szDataSource: string | Win32Pointer, pdwNumEntries: Win32Pointer, pInfo: Win32Pointer, pdwBufferSize: Win32Pointer): number;
+  PdhGetDataSourceTimeRangeW(
+    szDataSource: string | Win32Pointer,
+    pdwNumEntries: Win32Pointer,
+    pInfo: Win32Pointer,
+    pdwBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDataSourceTimeRangeW */
-  PdhGetDataSourceTimeRange(szDataSource: string | Win32Pointer, pdwNumEntries: Win32Pointer, pInfo: Win32Pointer, pdwBufferSize: Win32Pointer): number;
+  PdhGetDataSourceTimeRange(
+    szDataSource: string | Win32Pointer,
+    pdwNumEntries: Win32Pointer,
+    pInfo: Win32Pointer,
+    pdwBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDefaultPerfCounterA */
-  PdhGetDefaultPerfCounterA(szDataSource: string | Win32Pointer, szMachineName: string | Win32Pointer, szObjectName: string | Win32Pointer, szDefaultCounterName: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhGetDefaultPerfCounterA(
+    szDataSource: string | Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szObjectName: string | Win32Pointer,
+    szDefaultCounterName: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDefaultPerfCounterHA */
-  PdhGetDefaultPerfCounterHA(hDataSource: Win32Pointer, szMachineName: string | Win32Pointer, szObjectName: string | Win32Pointer, szDefaultCounterName: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhGetDefaultPerfCounterHA(
+    hDataSource: Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szObjectName: string | Win32Pointer,
+    szDefaultCounterName: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDefaultPerfCounterHW */
-  PdhGetDefaultPerfCounterHW(hDataSource: Win32Pointer, szMachineName: string | Win32Pointer, szObjectName: string | Win32Pointer, szDefaultCounterName: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhGetDefaultPerfCounterHW(
+    hDataSource: Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szObjectName: string | Win32Pointer,
+    szDefaultCounterName: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDefaultPerfCounterHW */
-  PdhGetDefaultPerfCounterH(hDataSource: Win32Pointer, szMachineName: string | Win32Pointer, szObjectName: string | Win32Pointer, szDefaultCounterName: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhGetDefaultPerfCounterH(
+    hDataSource: Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szObjectName: string | Win32Pointer,
+    szDefaultCounterName: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDefaultPerfCounterW */
-  PdhGetDefaultPerfCounterW(szDataSource: string | Win32Pointer, szMachineName: string | Win32Pointer, szObjectName: string | Win32Pointer, szDefaultCounterName: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhGetDefaultPerfCounterW(
+    szDataSource: string | Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szObjectName: string | Win32Pointer,
+    szDefaultCounterName: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDefaultPerfCounterW */
-  PdhGetDefaultPerfCounter(szDataSource: string | Win32Pointer, szMachineName: string | Win32Pointer, szObjectName: string | Win32Pointer, szDefaultCounterName: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhGetDefaultPerfCounter(
+    szDataSource: string | Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szObjectName: string | Win32Pointer,
+    szDefaultCounterName: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDefaultPerfObjectA */
-  PdhGetDefaultPerfObjectA(szDataSource: string | Win32Pointer, szMachineName: string | Win32Pointer, szDefaultObjectName: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhGetDefaultPerfObjectA(
+    szDataSource: string | Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szDefaultObjectName: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDefaultPerfObjectHA */
-  PdhGetDefaultPerfObjectHA(hDataSource: Win32Pointer, szMachineName: string | Win32Pointer, szDefaultObjectName: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhGetDefaultPerfObjectHA(
+    hDataSource: Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szDefaultObjectName: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDefaultPerfObjectHW */
-  PdhGetDefaultPerfObjectHW(hDataSource: Win32Pointer, szMachineName: string | Win32Pointer, szDefaultObjectName: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhGetDefaultPerfObjectHW(
+    hDataSource: Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szDefaultObjectName: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDefaultPerfObjectHW */
-  PdhGetDefaultPerfObjectH(hDataSource: Win32Pointer, szMachineName: string | Win32Pointer, szDefaultObjectName: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhGetDefaultPerfObjectH(
+    hDataSource: Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szDefaultObjectName: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDefaultPerfObjectW */
-  PdhGetDefaultPerfObjectW(szDataSource: string | Win32Pointer, szMachineName: string | Win32Pointer, szDefaultObjectName: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhGetDefaultPerfObjectW(
+    szDataSource: string | Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szDefaultObjectName: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDefaultPerfObjectW */
-  PdhGetDefaultPerfObject(szDataSource: string | Win32Pointer, szMachineName: string | Win32Pointer, szDefaultObjectName: string | Win32Pointer, pcchBufferSize: Win32Pointer): number;
+  PdhGetDefaultPerfObject(
+    szDataSource: string | Win32Pointer,
+    szMachineName: string | Win32Pointer,
+    szDefaultObjectName: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetDllVersion */
   PdhGetDllVersion(lpdwVersion: Win32Pointer): number;
   /** pdh.dll!PdhGetFormattedCounterArrayA */
-  PdhGetFormattedCounterArrayA(hCounter: Win32Pointer, dwFormat: number, lpdwBufferSize: Win32Pointer, lpdwItemCount: Win32Pointer, ItemBuffer: Win32Pointer): number;
+  PdhGetFormattedCounterArrayA(
+    hCounter: Win32Pointer,
+    dwFormat: number,
+    lpdwBufferSize: Win32Pointer,
+    lpdwItemCount: Win32Pointer,
+    ItemBuffer: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetFormattedCounterArrayW */
-  PdhGetFormattedCounterArrayW(hCounter: Win32Pointer, dwFormat: number, lpdwBufferSize: Win32Pointer, lpdwItemCount: Win32Pointer, ItemBuffer: Win32Pointer): number;
+  PdhGetFormattedCounterArrayW(
+    hCounter: Win32Pointer,
+    dwFormat: number,
+    lpdwBufferSize: Win32Pointer,
+    lpdwItemCount: Win32Pointer,
+    ItemBuffer: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetFormattedCounterArrayW */
-  PdhGetFormattedCounterArray(hCounter: Win32Pointer, dwFormat: number, lpdwBufferSize: Win32Pointer, lpdwItemCount: Win32Pointer, ItemBuffer: Win32Pointer): number;
+  PdhGetFormattedCounterArray(
+    hCounter: Win32Pointer,
+    dwFormat: number,
+    lpdwBufferSize: Win32Pointer,
+    lpdwItemCount: Win32Pointer,
+    ItemBuffer: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetFormattedCounterValue */
-  PdhGetFormattedCounterValue(hCounter: Win32Pointer, dwFormat: number, lpdwType: Win32Pointer, pValue: Win32Pointer): number;
+  PdhGetFormattedCounterValue(
+    hCounter: Win32Pointer,
+    dwFormat: number,
+    lpdwType: Win32Pointer,
+    pValue: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetLogFileSize */
   PdhGetLogFileSize(hLog: Win32Pointer, llSize: Win32Pointer): number;
   /** pdh.dll!PdhGetLogSetGUID */
   PdhGetLogSetGUID(hLog: Win32Pointer, pGuid: Win32Pointer, pRunId: Win32Pointer): number;
   /** pdh.dll!PdhGetRawCounterArrayA */
-  PdhGetRawCounterArrayA(hCounter: Win32Pointer, lpdwBufferSize: Win32Pointer, lpdwItemCount: Win32Pointer, ItemBuffer: Win32Pointer): number;
+  PdhGetRawCounterArrayA(
+    hCounter: Win32Pointer,
+    lpdwBufferSize: Win32Pointer,
+    lpdwItemCount: Win32Pointer,
+    ItemBuffer: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetRawCounterArrayW */
-  PdhGetRawCounterArrayW(hCounter: Win32Pointer, lpdwBufferSize: Win32Pointer, lpdwItemCount: Win32Pointer, ItemBuffer: Win32Pointer): number;
+  PdhGetRawCounterArrayW(
+    hCounter: Win32Pointer,
+    lpdwBufferSize: Win32Pointer,
+    lpdwItemCount: Win32Pointer,
+    ItemBuffer: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetRawCounterArrayW */
-  PdhGetRawCounterArray(hCounter: Win32Pointer, lpdwBufferSize: Win32Pointer, lpdwItemCount: Win32Pointer, ItemBuffer: Win32Pointer): number;
+  PdhGetRawCounterArray(
+    hCounter: Win32Pointer,
+    lpdwBufferSize: Win32Pointer,
+    lpdwItemCount: Win32Pointer,
+    ItemBuffer: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhGetRawCounterValue */
   PdhGetRawCounterValue(hCounter: Win32Pointer, lpdwType: Win32Pointer, pValue: Win32Pointer): number;
   /** pdh.dll!PdhIsRealTimeQuery */
   PdhIsRealTimeQuery(hQuery: Win32Pointer): number;
   /** pdh.dll!PdhLookupPerfIndexByNameA */
-  PdhLookupPerfIndexByNameA(szMachineName: string | Win32Pointer, szNameBuffer: string | Win32Pointer, pdwIndex: Win32Pointer): number;
+  PdhLookupPerfIndexByNameA(
+    szMachineName: string | Win32Pointer,
+    szNameBuffer: string | Win32Pointer,
+    pdwIndex: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhLookupPerfIndexByNameW */
-  PdhLookupPerfIndexByNameW(szMachineName: string | Win32Pointer, szNameBuffer: string | Win32Pointer, pdwIndex: Win32Pointer): number;
+  PdhLookupPerfIndexByNameW(
+    szMachineName: string | Win32Pointer,
+    szNameBuffer: string | Win32Pointer,
+    pdwIndex: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhLookupPerfIndexByNameW */
-  PdhLookupPerfIndexByName(szMachineName: string | Win32Pointer, szNameBuffer: string | Win32Pointer, pdwIndex: Win32Pointer): number;
+  PdhLookupPerfIndexByName(
+    szMachineName: string | Win32Pointer,
+    szNameBuffer: string | Win32Pointer,
+    pdwIndex: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhLookupPerfNameByIndexA */
-  PdhLookupPerfNameByIndexA(szMachineName: string | Win32Pointer, dwNameIndex: number, szNameBuffer: string | Win32Pointer, pcchNameBufferSize: Win32Pointer): number;
+  PdhLookupPerfNameByIndexA(
+    szMachineName: string | Win32Pointer,
+    dwNameIndex: number,
+    szNameBuffer: string | Win32Pointer,
+    pcchNameBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhLookupPerfNameByIndexW */
-  PdhLookupPerfNameByIndexW(szMachineName: string | Win32Pointer, dwNameIndex: number, szNameBuffer: string | Win32Pointer, pcchNameBufferSize: Win32Pointer): number;
+  PdhLookupPerfNameByIndexW(
+    szMachineName: string | Win32Pointer,
+    dwNameIndex: number,
+    szNameBuffer: string | Win32Pointer,
+    pcchNameBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhLookupPerfNameByIndexW */
-  PdhLookupPerfNameByIndex(szMachineName: string | Win32Pointer, dwNameIndex: number, szNameBuffer: string | Win32Pointer, pcchNameBufferSize: Win32Pointer): number;
+  PdhLookupPerfNameByIndex(
+    szMachineName: string | Win32Pointer,
+    dwNameIndex: number,
+    szNameBuffer: string | Win32Pointer,
+    pcchNameBufferSize: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhMakeCounterPathA */
-  PdhMakeCounterPathA(pCounterPathElements: Win32Pointer, szFullPathBuffer: string | Win32Pointer, pcchBufferSize: Win32Pointer, dwFlags: number): number;
+  PdhMakeCounterPathA(
+    pCounterPathElements: Win32Pointer,
+    szFullPathBuffer: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhMakeCounterPathW */
-  PdhMakeCounterPathW(pCounterPathElements: Win32Pointer, szFullPathBuffer: string | Win32Pointer, pcchBufferSize: Win32Pointer, dwFlags: number): number;
+  PdhMakeCounterPathW(
+    pCounterPathElements: Win32Pointer,
+    szFullPathBuffer: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhMakeCounterPathW */
-  PdhMakeCounterPath(pCounterPathElements: Win32Pointer, szFullPathBuffer: string | Win32Pointer, pcchBufferSize: Win32Pointer, dwFlags: number): number;
+  PdhMakeCounterPath(
+    pCounterPathElements: Win32Pointer,
+    szFullPathBuffer: string | Win32Pointer,
+    pcchBufferSize: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhOpenLogA */
-  PdhOpenLogA(szLogFileName: string | Win32Pointer, dwAccessFlags: number, lpdwLogType: Win32Pointer, hQuery: Win32Pointer, dwMaxSize: number, szUserCaption: string | Win32Pointer, phLog: Win32Pointer): number;
+  PdhOpenLogA(
+    szLogFileName: string | Win32Pointer,
+    dwAccessFlags: number,
+    lpdwLogType: Win32Pointer,
+    hQuery: Win32Pointer,
+    dwMaxSize: number,
+    szUserCaption: string | Win32Pointer,
+    phLog: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhOpenLogW */
-  PdhOpenLogW(szLogFileName: string | Win32Pointer, dwAccessFlags: number, lpdwLogType: Win32Pointer, hQuery: Win32Pointer, dwMaxSize: number, szUserCaption: string | Win32Pointer, phLog: Win32Pointer): number;
+  PdhOpenLogW(
+    szLogFileName: string | Win32Pointer,
+    dwAccessFlags: number,
+    lpdwLogType: Win32Pointer,
+    hQuery: Win32Pointer,
+    dwMaxSize: number,
+    szUserCaption: string | Win32Pointer,
+    phLog: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhOpenLogW */
-  PdhOpenLog(szLogFileName: string | Win32Pointer, dwAccessFlags: number, lpdwLogType: Win32Pointer, hQuery: Win32Pointer, dwMaxSize: number, szUserCaption: string | Win32Pointer, phLog: Win32Pointer): number;
+  PdhOpenLog(
+    szLogFileName: string | Win32Pointer,
+    dwAccessFlags: number,
+    lpdwLogType: Win32Pointer,
+    hQuery: Win32Pointer,
+    dwMaxSize: number,
+    szUserCaption: string | Win32Pointer,
+    phLog: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhOpenQueryA */
   PdhOpenQueryA(szDataSource: string | Win32Pointer, dwUserData: number | bigint, phQuery: Win32Pointer): number;
   /** pdh.dll!PdhOpenQueryH */
@@ -217,27 +658,83 @@ interface Functions {
   /** pdh.dll!PdhOpenQueryW */
   PdhOpenQuery(szDataSource: string | Win32Pointer, dwUserData: number | bigint, phQuery: Win32Pointer): number;
   /** pdh.dll!PdhParseCounterPathA */
-  PdhParseCounterPathA(szFullPathBuffer: string | Win32Pointer, pCounterPathElements: Win32Pointer, pdwBufferSize: Win32Pointer, dwFlags: number): number;
+  PdhParseCounterPathA(
+    szFullPathBuffer: string | Win32Pointer,
+    pCounterPathElements: Win32Pointer,
+    pdwBufferSize: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhParseCounterPathW */
-  PdhParseCounterPathW(szFullPathBuffer: string | Win32Pointer, pCounterPathElements: Win32Pointer, pdwBufferSize: Win32Pointer, dwFlags: number): number;
+  PdhParseCounterPathW(
+    szFullPathBuffer: string | Win32Pointer,
+    pCounterPathElements: Win32Pointer,
+    pdwBufferSize: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhParseCounterPathW */
-  PdhParseCounterPath(szFullPathBuffer: string | Win32Pointer, pCounterPathElements: Win32Pointer, pdwBufferSize: Win32Pointer, dwFlags: number): number;
+  PdhParseCounterPath(
+    szFullPathBuffer: string | Win32Pointer,
+    pCounterPathElements: Win32Pointer,
+    pdwBufferSize: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** pdh.dll!PdhParseInstanceNameA */
-  PdhParseInstanceNameA(szInstanceString: string | Win32Pointer, szInstanceName: string | Win32Pointer, pcchInstanceNameLength: Win32Pointer, szParentName: string | Win32Pointer, pcchParentNameLength: Win32Pointer, lpIndex: Win32Pointer): number;
+  PdhParseInstanceNameA(
+    szInstanceString: string | Win32Pointer,
+    szInstanceName: string | Win32Pointer,
+    pcchInstanceNameLength: Win32Pointer,
+    szParentName: string | Win32Pointer,
+    pcchParentNameLength: Win32Pointer,
+    lpIndex: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhParseInstanceNameW */
-  PdhParseInstanceNameW(szInstanceString: string | Win32Pointer, szInstanceName: string | Win32Pointer, pcchInstanceNameLength: Win32Pointer, szParentName: string | Win32Pointer, pcchParentNameLength: Win32Pointer, lpIndex: Win32Pointer): number;
+  PdhParseInstanceNameW(
+    szInstanceString: string | Win32Pointer,
+    szInstanceName: string | Win32Pointer,
+    pcchInstanceNameLength: Win32Pointer,
+    szParentName: string | Win32Pointer,
+    pcchParentNameLength: Win32Pointer,
+    lpIndex: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhParseInstanceNameW */
-  PdhParseInstanceName(szInstanceString: string | Win32Pointer, szInstanceName: string | Win32Pointer, pcchInstanceNameLength: Win32Pointer, szParentName: string | Win32Pointer, pcchParentNameLength: Win32Pointer, lpIndex: Win32Pointer): number;
+  PdhParseInstanceName(
+    szInstanceString: string | Win32Pointer,
+    szInstanceName: string | Win32Pointer,
+    pcchInstanceNameLength: Win32Pointer,
+    szParentName: string | Win32Pointer,
+    pcchParentNameLength: Win32Pointer,
+    lpIndex: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhReadRawLogRecord */
-  PdhReadRawLogRecord(hLog: Win32Pointer, ftRecord: Win32StructInit, pRawLogRecord: Win32Pointer, pdwBufferLength: Win32Pointer): number;
+  PdhReadRawLogRecord(
+    hLog: Win32Pointer,
+    ftRecord: Win32StructInit,
+    pRawLogRecord: Win32Pointer,
+    pdwBufferLength: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhRemoveCounter */
   PdhRemoveCounter(hCounter: Win32Pointer): number;
   /** pdh.dll!PdhSelectDataSourceA */
-  PdhSelectDataSourceA(hWndOwner: Win32Pointer, dwFlags: number, szDataSource: string | Win32Pointer, pcchBufferLength: Win32Pointer): number;
+  PdhSelectDataSourceA(
+    hWndOwner: Win32Pointer,
+    dwFlags: number,
+    szDataSource: string | Win32Pointer,
+    pcchBufferLength: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhSelectDataSourceW */
-  PdhSelectDataSourceW(hWndOwner: Win32Pointer, dwFlags: number, szDataSource: string | Win32Pointer, pcchBufferLength: Win32Pointer): number;
+  PdhSelectDataSourceW(
+    hWndOwner: Win32Pointer,
+    dwFlags: number,
+    szDataSource: string | Win32Pointer,
+    pcchBufferLength: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhSelectDataSourceW */
-  PdhSelectDataSource(hWndOwner: Win32Pointer, dwFlags: number, szDataSource: string | Win32Pointer, pcchBufferLength: Win32Pointer): number;
+  PdhSelectDataSource(
+    hWndOwner: Win32Pointer,
+    dwFlags: number,
+    szDataSource: string | Win32Pointer,
+    pcchBufferLength: Win32Pointer,
+  ): number;
   /** pdh.dll!PdhSetCounterScaleFactor */
   PdhSetCounterScaleFactor(hCounter: Win32Pointer, lFactor: number): number;
   /** pdh.dll!PdhSetDefaultRealTimeDataSource */

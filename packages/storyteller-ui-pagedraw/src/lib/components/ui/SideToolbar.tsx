@@ -21,21 +21,13 @@ import "../../pagedraw.css";
 import { HsvaColorPicker, HsvaColor } from "react-colorful";
 import { hsvaToHex } from "@uiw/color-convert";
 import SliderWithIndicator from "./SliderWithIndicator";
-import {
-  formatBinding,
-  useResolvedKeybinds,
-  type ActionId,
-} from "@storyteller/keybinds";
+import { formatBinding, useResolvedKeybinds, type ActionId } from "@storyteller/keybinds";
 import { ActiveTool, useSceneStore } from "../../stores/SceneState";
 import { Node } from "../../Node";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import {
-  showActionReminder,
-  isActionReminderOpen,
-} from "@storyteller/ui-action-reminder-modal";
+import { showActionReminder, isActionReminderOpen } from "@storyteller/ui-action-reminder-modal";
 
-const shapeIconBtn =
-  "flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-white/10";
+const shapeIconBtn = "flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-white/10";
 
 // Toolbar entry → registry action whose resolved key renders as the button's
 // corner badge (updates live when the user remaps in Settings → Keybinds).
@@ -48,10 +40,7 @@ const TOOL_ACTION_IDS: Record<string, ActionId> = {
 };
 
 // Debounce function
-function useDebounced<T extends (...args: A) => void, A extends unknown[]>(
-  fn: T,
-  ms = 75,
-) {
+function useDebounced<T extends (...args: A) => void, A extends unknown[]>(fn: T, ms = 75) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   return (...args: A) => {
     if (timer.current) clearTimeout(timer.current);
@@ -107,20 +96,13 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
 
   // Get selected nodes for shape color picker
   const selectedNodes =
-    store.selectedNodeIds.length > 0
-      ? store.drawNodes.filter((node) =>
-          store.selectedNodeIds.includes(node.id),
-        )
-      : [];
+    store.selectedNodeIds.length > 0 ? store.drawNodes.filter(node => store.selectedNodeIds.includes(node.id)) : [];
 
   // Get only colorable nodes (shapes, not images or lines)
-  const selectedColorableNodes = selectedNodes.filter(
-    (node) => node.type !== "image" && node.type !== "line",
-  ) as Node[];
+  const selectedColorableNodes = selectedNodes.filter(node => node.type !== "image" && node.type !== "line") as Node[];
 
   // Get first selected colorable node for color preview (when multiple selected, show first one's color)
-  const firstSelectedColorableNode =
-    selectedColorableNodes.length > 0 ? selectedColorableNodes[0] : null;
+  const firstSelectedColorableNode = selectedColorableNodes.length > 0 ? selectedColorableNodes[0] : null;
 
   // State for shape color picker
   const [shapeHsva, setShapeHsva] = useState<HsvaColor>({
@@ -158,30 +140,24 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     }
   }, [firstSelectedColorableNode?.fill, store.shapeColor]);
 
-  const sendPaint = useDebounced<
-    (hex: string, size: number, opacity: number) => void,
-    [string, number, number]
-  >(onPaintBrush, 75);
-
-  const sendBg = useDebounced<(hex: string) => void, [string]>(
-    onCanvasBackground,
+  const sendPaint = useDebounced<(hex: string, size: number, opacity: number) => void, [string, number, number]>(
+    onPaintBrush,
     75,
   );
 
-  const sendShapeColor = useDebounced<(hex: string) => void, [string]>(
-    (hex: string) => {
-      store.setShapeColor(hex);
+  const sendBg = useDebounced<(hex: string) => void, [string]>(onCanvasBackground, 75);
 
-      selectedColorableNodes.forEach((node) => {
-        store.updateNode(node.id, { fill: hex }, false);
-      });
+  const sendShapeColor = useDebounced<(hex: string) => void, [string]>((hex: string) => {
+    store.setShapeColor(hex);
 
-      if (selectedColorableNodes.length > 0) {
-        store.saveState();
-      }
-    },
-    75,
-  );
+    selectedColorableNodes.forEach(node => {
+      store.updateNode(node.id, { fill: hex }, false);
+    });
+
+    if (selectedColorableNodes.length > 0) {
+      store.saveState();
+    }
+  }, 75);
 
   // Picker helper
   const makePicker = (
@@ -197,7 +173,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
 
       <HsvaColorPicker
         color={hsva}
-        onChange={(c) => {
+        onChange={c => {
           setHsva(c);
           sendHex(hsvaToHex(c));
         }}
@@ -211,14 +187,14 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   const BrushPopout = makePicker(
     brushHsva,
     setBrushHsva,
-    (hex) => sendPaint(hex, brushSize, brushHsva.a),
+    hex => sendPaint(hex, brushSize, brushHsva.a),
 
     <>
       <div className="relative">
         <p className="mb-2 text-sm font-medium text-white">Brush Size</p>
         <SliderWithIndicator
           value={brushSize}
-          onChange={(size) => {
+          onChange={size => {
             setBrushSize(size);
             sendPaint(hsvaToHex(brushHsva), size, brushHsva.a);
           }}
@@ -237,12 +213,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   const EraserPopout = (
     <div className="glass relative w-56 rounded-2xl p-4 shadow-lg">
       <p className="mb-2 text-sm font-medium text-white">Eraser Size</p>
-      <SliderWithIndicator
-        value={eraserSize}
-        onChange={setEraserSize}
-        min={1}
-        max={64}
-      />
+      <SliderWithIndicator value={eraserSize} onChange={setEraserSize} min={1} max={64} />
     </div>
   );
 
@@ -276,9 +247,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
             return (
               <button
                 key={i}
-                className={`${shapeIconBtn} ${
-                  isCurrent ? "bg-primary/30 ring-1 ring-primary" : ""
-                }`}
+                className={`${shapeIconBtn} ${isCurrent ? "bg-primary/30 ring-1 ring-primary" : ""}`}
                 onClick={() => {
                   onActivateShapeTool(shapes[i]);
                   setOpen(null);
@@ -377,16 +346,15 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       primaryActionBtnClassName: "bg-red hover:bg-red/80",
       message: (
         <p className="text-sm text-white/70">
-          Are you sure you want to reset the canvas? This will clear all your
-          work and cannot be undone.
+          Are you sure you want to reset the canvas? This will clear all your work and cannot be undone.
         </p>
       ),
       primaryActionText: "Reset all",
       onPrimaryAction: () => {
         store.setNodes([]);
         store.drawNodes
-          .filter((n) => n.type === "line")
-          .forEach((lineNode) => {
+          .filter(n => n.type === "line")
+          .forEach(lineNode => {
             store.removeLineNode(lineNode.id, false);
           });
         store.selectNode(null);
@@ -398,9 +366,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   };
 
   return (
-    <aside
-      className={`glass ml-4 flex flex-col items-center gap-3 rounded-xl p-1.5 shadow-lg ${className}`}
-    >
+    <aside className={`glass ml-4 flex flex-col items-center gap-3 rounded-xl p-1.5 shadow-lg ${className}`}>
       {/* Shape Color Picker - appears above toolbar when shape is selected */}
       {selectedColorableNodes.length > 0 && (
         <div className="glass absolute -top-14 left-1/2 -translate-x-1/2 rounded-xl border-2 border-primary/50 shadow-lg">
@@ -427,7 +393,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
         </div>
       )}
 
-      {tools.map((tool) => {
+      {tools.map(tool => {
         if (tool.type === "separator") {
           return <div key={tool.id} className="my-1 h-px w-8 bg-white/15" />;
         }
@@ -441,9 +407,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
 
         // Resolved shortcut badge in the button corner (switchable tools only).
         const toolActionId = TOOL_ACTION_IDS[id];
-        const toolBinding = toolActionId
-          ? forAction(toolActionId)[0]
-          : undefined;
+        const toolBinding = toolActionId ? forAction(toolActionId)[0] : undefined;
         const keyBadge = toolBinding ? (
           <span className="pointer-events-none absolute bottom-0 right-0 min-w-[13px] rounded-[4px] bg-black/60 px-0.5 text-center text-[9px] font-medium leading-[13px] text-white/80">
             {formatBinding(toolBinding)}
@@ -473,9 +437,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
             circle: CircleIcon,
             triangle: TriangleIcon,
           } as const;
-          displayIcon = (
-            <DynamicIcon icon={shapeIcons[currentShape]} className="h-5 w-5" />
-          );
+          displayIcon = <DynamicIcon icon={shapeIcons[currentShape]} className="h-5 w-5" />;
         }
 
         const tooltipLabel =
@@ -512,13 +474,8 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                     onMouseLeave={() => {
                       if (id === "draw" && active) {
                         setTimeout(() => {
-                          const popoverElement = document.querySelector(
-                            `[data-popover="${id}"]`,
-                          );
-                          if (
-                            !popoverElement ||
-                            !popoverElement.matches(":hover")
-                          ) {
+                          const popoverElement = document.querySelector(`[data-popover="${id}"]`);
+                          if (!popoverElement || !popoverElement.matches(":hover")) {
                             setOpen(null);
                           }
                         }, 200);
@@ -563,13 +520,8 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                     onMouseLeave={() => {
                       if (id === "draw" && active) {
                         setTimeout(() => {
-                          const popoverElement = document.querySelector(
-                            `[data-popover="${id}"]`,
-                          );
-                          if (
-                            !popoverElement ||
-                            !popoverElement.matches(":hover")
-                          ) {
+                          const popoverElement = document.querySelector(`[data-popover="${id}"]`);
+                          if (!popoverElement || !popoverElement.matches(":hover")) {
                             setOpen(null);
                           }
                         }, 100);

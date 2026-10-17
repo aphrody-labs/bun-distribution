@@ -41,7 +41,7 @@ export const ThumbstripScrubber = memo(function ThumbstripScrubber({
   const { buildSidecarUrl } = useServer();
 
   // Find thumbstrip sidecar
-  const thumbstripSidecar = file.sidecars?.find((s) => s.kind === "thumbstrip");
+  const thumbstripSidecar = file.sidecars?.find(s => s.kind === "thumbstrip");
 
   if (!thumbstripSidecar) {
     return null;
@@ -112,10 +112,7 @@ export const ThumbstripScrubber = memo(function ThumbstripScrubber({
   }
 
   // Calculate which frame to show based on hover position
-  const frameIndex = Math.min(
-    Math.floor(hoverProgress * totalFrames),
-    totalFrames - 1,
-  );
+  const frameIndex = Math.min(Math.floor(hoverProgress * totalFrames), totalFrames - 1);
 
   const row = Math.floor(frameIndex / grid.columns);
   const col = frameIndex % grid.columns;
@@ -191,10 +188,7 @@ export const ThumbstripScrubber = memo(function ThumbstripScrubber({
         >
           {/* Progress indicator */}
           <div className="absolute bottom-1 left-1 right-1 h-0.5 bg-black/50 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary"
-              style={{ width: `${hoverProgress * 100}%` }}
-            />
+            <div className="h-full bg-primary" style={{ width: `${hoverProgress * 100}%` }} />
           </div>
         </div>
       )}

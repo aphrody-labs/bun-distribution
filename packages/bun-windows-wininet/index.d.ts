@@ -3,11 +3,26 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** wininet.dll!AppCacheCheckManifest */
-  AppCacheCheckManifest(pwszMasterUrl: string | Win32Pointer, pwszManifestUrl: string | Win32Pointer, pbManifestData: Win32Pointer, dwManifestDataSize: number, pbManifestResponseHeaders: Win32Pointer, dwManifestResponseHeadersSize: number, peState: Win32Pointer, phNewAppCache: Win32Pointer): number;
+  AppCacheCheckManifest(
+    pwszMasterUrl: string | Win32Pointer,
+    pwszManifestUrl: string | Win32Pointer,
+    pbManifestData: Win32Pointer,
+    dwManifestDataSize: number,
+    pbManifestResponseHeaders: Win32Pointer,
+    dwManifestResponseHeadersSize: number,
+    peState: Win32Pointer,
+    phNewAppCache: Win32Pointer,
+  ): number;
   /** wininet.dll!AppCacheCloseHandle */
   AppCacheCloseHandle(hAppCache: Win32Pointer): void;
   /** wininet.dll!AppCacheCreateAndCommitFile */
-  AppCacheCreateAndCommitFile(hAppCache: Win32Pointer, pwszSourceFilePath: string | Win32Pointer, pwszUrl: string | Win32Pointer, pbResponseHeaders: Win32Pointer, dwResponseHeadersSize: number): number;
+  AppCacheCreateAndCommitFile(
+    hAppCache: Win32Pointer,
+    pwszSourceFilePath: string | Win32Pointer,
+    pwszUrl: string | Win32Pointer,
+    pbResponseHeaders: Win32Pointer,
+    dwResponseHeadersSize: number,
+  ): number;
   /** wininet.dll!AppCacheDeleteGroup */
   AppCacheDeleteGroup(pwszManifestUrl: string | Win32Pointer): number;
   /** wininet.dll!AppCacheDeleteIEGroup */
@@ -15,7 +30,12 @@ interface Functions {
   /** wininet.dll!AppCacheDuplicateHandle */
   AppCacheDuplicateHandle(hAppCache: Win32Pointer, phDuplicatedAppCache: Win32Pointer): number;
   /** wininet.dll!AppCacheFinalize */
-  AppCacheFinalize(hAppCache: Win32Pointer, pbManifestData: Win32Pointer, dwManifestDataSize: number, peState: Win32Pointer): number;
+  AppCacheFinalize(
+    hAppCache: Win32Pointer,
+    pbManifestData: Win32Pointer,
+    dwManifestDataSize: number,
+    peState: Win32Pointer,
+  ): number;
   /** wininet.dll!AppCacheFreeDownloadList */
   AppCacheFreeDownloadList(pDownloadList: Win32Pointer): void;
   /** wininet.dll!AppCacheFreeGroupList */
@@ -27,7 +47,11 @@ interface Functions {
   /** wininet.dll!AppCacheGetDownloadList */
   AppCacheGetDownloadList(hAppCache: Win32Pointer, pDownloadList: Win32Pointer): number;
   /** wininet.dll!AppCacheGetFallbackUrl */
-  AppCacheGetFallbackUrl(hAppCache: Win32Pointer, pwszUrl: string | Win32Pointer, ppwszFallbackUrl: Win32Pointer): number;
+  AppCacheGetFallbackUrl(
+    hAppCache: Win32Pointer,
+    pwszUrl: string | Win32Pointer,
+    ppwszFallbackUrl: Win32Pointer,
+  ): number;
   /** wininet.dll!AppCacheGetGroupList */
   AppCacheGetGroupList(pAppCacheGroupList: Win32Pointer): number;
   /** wininet.dll!AppCacheGetIEGroupList */
@@ -39,29 +63,123 @@ interface Functions {
   /** wininet.dll!AppCacheLookup */
   AppCacheLookup(pwszUrl: string | Win32Pointer, dwFlags: number, phAppCache: Win32Pointer): number;
   /** wininet.dll!CommitUrlCacheEntryA */
-  CommitUrlCacheEntryA(lpszUrlName: string | Win32Pointer, lpszLocalFileName: string | Win32Pointer, ExpireTime: Win32StructInit, LastModifiedTime: Win32StructInit, CacheEntryType: number, lpHeaderInfo: Win32Pointer, cchHeaderInfo: number, lpszFileExtension: string | Win32Pointer, lpszOriginalUrl: string | Win32Pointer): number;
+  CommitUrlCacheEntryA(
+    lpszUrlName: string | Win32Pointer,
+    lpszLocalFileName: string | Win32Pointer,
+    ExpireTime: Win32StructInit,
+    LastModifiedTime: Win32StructInit,
+    CacheEntryType: number,
+    lpHeaderInfo: Win32Pointer,
+    cchHeaderInfo: number,
+    lpszFileExtension: string | Win32Pointer,
+    lpszOriginalUrl: string | Win32Pointer,
+  ): number;
   /** wininet.dll!CommitUrlCacheEntryBinaryBlob */
-  CommitUrlCacheEntryBinaryBlob(pwszUrlName: string | Win32Pointer, dwType: number, ftExpireTime: Win32StructInit, ftModifiedTime: Win32StructInit, pbBlob: Win32Pointer, cbBlob: number): number;
+  CommitUrlCacheEntryBinaryBlob(
+    pwszUrlName: string | Win32Pointer,
+    dwType: number,
+    ftExpireTime: Win32StructInit,
+    ftModifiedTime: Win32StructInit,
+    pbBlob: Win32Pointer,
+    cbBlob: number,
+  ): number;
   /** wininet.dll!CommitUrlCacheEntryW */
-  CommitUrlCacheEntryW(lpszUrlName: string | Win32Pointer, lpszLocalFileName: string | Win32Pointer, ExpireTime: Win32StructInit, LastModifiedTime: Win32StructInit, CacheEntryType: number, lpszHeaderInfo: string | Win32Pointer, cchHeaderInfo: number, lpszFileExtension: string | Win32Pointer, lpszOriginalUrl: string | Win32Pointer): number;
+  CommitUrlCacheEntryW(
+    lpszUrlName: string | Win32Pointer,
+    lpszLocalFileName: string | Win32Pointer,
+    ExpireTime: Win32StructInit,
+    LastModifiedTime: Win32StructInit,
+    CacheEntryType: number,
+    lpszHeaderInfo: string | Win32Pointer,
+    cchHeaderInfo: number,
+    lpszFileExtension: string | Win32Pointer,
+    lpszOriginalUrl: string | Win32Pointer,
+  ): number;
   /** wininet.dll!CommitUrlCacheEntryW */
-  CommitUrlCacheEntry(lpszUrlName: string | Win32Pointer, lpszLocalFileName: string | Win32Pointer, ExpireTime: Win32StructInit, LastModifiedTime: Win32StructInit, CacheEntryType: number, lpszHeaderInfo: string | Win32Pointer, cchHeaderInfo: number, lpszFileExtension: string | Win32Pointer, lpszOriginalUrl: string | Win32Pointer): number;
+  CommitUrlCacheEntry(
+    lpszUrlName: string | Win32Pointer,
+    lpszLocalFileName: string | Win32Pointer,
+    ExpireTime: Win32StructInit,
+    LastModifiedTime: Win32StructInit,
+    CacheEntryType: number,
+    lpszHeaderInfo: string | Win32Pointer,
+    cchHeaderInfo: number,
+    lpszFileExtension: string | Win32Pointer,
+    lpszOriginalUrl: string | Win32Pointer,
+  ): number;
   /** wininet.dll!CreateMD5SSOHash */
-  CreateMD5SSOHash(pszChallengeInfo: string | Win32Pointer, pwszRealm: string | Win32Pointer, pwszTarget: string | Win32Pointer, pbHexHash: Win32Pointer): number;
+  CreateMD5SSOHash(
+    pszChallengeInfo: string | Win32Pointer,
+    pwszRealm: string | Win32Pointer,
+    pwszTarget: string | Win32Pointer,
+    pbHexHash: Win32Pointer,
+  ): number;
   /** wininet.dll!CreateUrlCacheContainerA */
-  CreateUrlCacheContainerA(Name: string | Win32Pointer, lpCachePrefix: string | Win32Pointer, lpszCachePath: string | Win32Pointer, KBCacheLimit: number, dwContainerType: number, dwOptions: number, pvBuffer: Win32Pointer, cbBuffer: Win32Pointer): number;
+  CreateUrlCacheContainerA(
+    Name: string | Win32Pointer,
+    lpCachePrefix: string | Win32Pointer,
+    lpszCachePath: string | Win32Pointer,
+    KBCacheLimit: number,
+    dwContainerType: number,
+    dwOptions: number,
+    pvBuffer: Win32Pointer,
+    cbBuffer: Win32Pointer,
+  ): number;
   /** wininet.dll!CreateUrlCacheContainerW */
-  CreateUrlCacheContainerW(Name: string | Win32Pointer, lpCachePrefix: string | Win32Pointer, lpszCachePath: string | Win32Pointer, KBCacheLimit: number, dwContainerType: number, dwOptions: number, pvBuffer: Win32Pointer, cbBuffer: Win32Pointer): number;
+  CreateUrlCacheContainerW(
+    Name: string | Win32Pointer,
+    lpCachePrefix: string | Win32Pointer,
+    lpszCachePath: string | Win32Pointer,
+    KBCacheLimit: number,
+    dwContainerType: number,
+    dwOptions: number,
+    pvBuffer: Win32Pointer,
+    cbBuffer: Win32Pointer,
+  ): number;
   /** wininet.dll!CreateUrlCacheContainerW */
-  CreateUrlCacheContainer(Name: string | Win32Pointer, lpCachePrefix: string | Win32Pointer, lpszCachePath: string | Win32Pointer, KBCacheLimit: number, dwContainerType: number, dwOptions: number, pvBuffer: Win32Pointer, cbBuffer: Win32Pointer): number;
+  CreateUrlCacheContainer(
+    Name: string | Win32Pointer,
+    lpCachePrefix: string | Win32Pointer,
+    lpszCachePath: string | Win32Pointer,
+    KBCacheLimit: number,
+    dwContainerType: number,
+    dwOptions: number,
+    pvBuffer: Win32Pointer,
+    cbBuffer: Win32Pointer,
+  ): number;
   /** wininet.dll!CreateUrlCacheEntryA */
-  CreateUrlCacheEntryA(lpszUrlName: string | Win32Pointer, dwExpectedFileSize: number, lpszFileExtension: string | Win32Pointer, lpszFileName: string | Win32Pointer, dwReserved: number): number;
+  CreateUrlCacheEntryA(
+    lpszUrlName: string | Win32Pointer,
+    dwExpectedFileSize: number,
+    lpszFileExtension: string | Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!CreateUrlCacheEntryExW */
-  CreateUrlCacheEntryExW(lpszUrlName: string | Win32Pointer, dwExpectedFileSize: number, lpszFileExtension: string | Win32Pointer, lpszFileName: string | Win32Pointer, dwReserved: number, fPreserveIncomingFileName: number): number;
+  CreateUrlCacheEntryExW(
+    lpszUrlName: string | Win32Pointer,
+    dwExpectedFileSize: number,
+    lpszFileExtension: string | Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    dwReserved: number,
+    fPreserveIncomingFileName: number,
+  ): number;
   /** wininet.dll!CreateUrlCacheEntryW */
-  CreateUrlCacheEntryW(lpszUrlName: string | Win32Pointer, dwExpectedFileSize: number, lpszFileExtension: string | Win32Pointer, lpszFileName: string | Win32Pointer, dwReserved: number): number;
+  CreateUrlCacheEntryW(
+    lpszUrlName: string | Win32Pointer,
+    dwExpectedFileSize: number,
+    lpszFileExtension: string | Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!CreateUrlCacheEntryW */
-  CreateUrlCacheEntry(lpszUrlName: string | Win32Pointer, dwExpectedFileSize: number, lpszFileExtension: string | Win32Pointer, lpszFileName: string | Win32Pointer, dwReserved: number): number;
+  CreateUrlCacheEntry(
+    lpszUrlName: string | Win32Pointer,
+    dwExpectedFileSize: number,
+    lpszFileExtension: string | Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!CreateUrlCacheGroup */
   CreateUrlCacheGroup(dwFlags: number, lpReserved: Win32Pointer): bigint;
   /** wininet.dll!DeleteIE3Cache */
@@ -95,43 +213,152 @@ interface Functions {
   /** wininet.dll!FindCloseUrlCache */
   FindCloseUrlCache(hEnumHandle: Win32Pointer): number;
   /** wininet.dll!FindFirstUrlCacheContainerA */
-  FindFirstUrlCacheContainerA(pdwModified: Win32Pointer, lpContainerInfo: Win32Pointer, lpcbContainerInfo: Win32Pointer, dwOptions: number): number | null;
+  FindFirstUrlCacheContainerA(
+    pdwModified: Win32Pointer,
+    lpContainerInfo: Win32Pointer,
+    lpcbContainerInfo: Win32Pointer,
+    dwOptions: number,
+  ): number | null;
   /** wininet.dll!FindFirstUrlCacheContainerW */
-  FindFirstUrlCacheContainerW(pdwModified: Win32Pointer, lpContainerInfo: Win32Pointer, lpcbContainerInfo: Win32Pointer, dwOptions: number): number | null;
+  FindFirstUrlCacheContainerW(
+    pdwModified: Win32Pointer,
+    lpContainerInfo: Win32Pointer,
+    lpcbContainerInfo: Win32Pointer,
+    dwOptions: number,
+  ): number | null;
   /** wininet.dll!FindFirstUrlCacheContainerW */
-  FindFirstUrlCacheContainer(pdwModified: Win32Pointer, lpContainerInfo: Win32Pointer, lpcbContainerInfo: Win32Pointer, dwOptions: number): number | null;
+  FindFirstUrlCacheContainer(
+    pdwModified: Win32Pointer,
+    lpContainerInfo: Win32Pointer,
+    lpcbContainerInfo: Win32Pointer,
+    dwOptions: number,
+  ): number | null;
   /** wininet.dll!FindFirstUrlCacheEntryA */
-  FindFirstUrlCacheEntryA(lpszUrlSearchPattern: string | Win32Pointer, lpFirstCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer): number | null;
+  FindFirstUrlCacheEntryA(
+    lpszUrlSearchPattern: string | Win32Pointer,
+    lpFirstCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+  ): number | null;
   /** wininet.dll!FindFirstUrlCacheEntryExA */
-  FindFirstUrlCacheEntryExA(lpszUrlSearchPattern: string | Win32Pointer, dwFlags: number, dwFilter: number, GroupId: number | bigint, lpFirstCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, lpGroupAttributes: Win32Pointer, lpcbGroupAttributes: Win32Pointer, lpReserved: Win32Pointer): number | null;
+  FindFirstUrlCacheEntryExA(
+    lpszUrlSearchPattern: string | Win32Pointer,
+    dwFlags: number,
+    dwFilter: number,
+    GroupId: number | bigint,
+    lpFirstCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    lpGroupAttributes: Win32Pointer,
+    lpcbGroupAttributes: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number | null;
   /** wininet.dll!FindFirstUrlCacheEntryExW */
-  FindFirstUrlCacheEntryExW(lpszUrlSearchPattern: string | Win32Pointer, dwFlags: number, dwFilter: number, GroupId: number | bigint, lpFirstCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, lpGroupAttributes: Win32Pointer, lpcbGroupAttributes: Win32Pointer, lpReserved: Win32Pointer): number | null;
+  FindFirstUrlCacheEntryExW(
+    lpszUrlSearchPattern: string | Win32Pointer,
+    dwFlags: number,
+    dwFilter: number,
+    GroupId: number | bigint,
+    lpFirstCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    lpGroupAttributes: Win32Pointer,
+    lpcbGroupAttributes: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number | null;
   /** wininet.dll!FindFirstUrlCacheEntryExW */
-  FindFirstUrlCacheEntryEx(lpszUrlSearchPattern: string | Win32Pointer, dwFlags: number, dwFilter: number, GroupId: number | bigint, lpFirstCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, lpGroupAttributes: Win32Pointer, lpcbGroupAttributes: Win32Pointer, lpReserved: Win32Pointer): number | null;
+  FindFirstUrlCacheEntryEx(
+    lpszUrlSearchPattern: string | Win32Pointer,
+    dwFlags: number,
+    dwFilter: number,
+    GroupId: number | bigint,
+    lpFirstCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    lpGroupAttributes: Win32Pointer,
+    lpcbGroupAttributes: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number | null;
   /** wininet.dll!FindFirstUrlCacheEntryW */
-  FindFirstUrlCacheEntryW(lpszUrlSearchPattern: string | Win32Pointer, lpFirstCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer): number | null;
+  FindFirstUrlCacheEntryW(
+    lpszUrlSearchPattern: string | Win32Pointer,
+    lpFirstCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+  ): number | null;
   /** wininet.dll!FindFirstUrlCacheEntryW */
-  FindFirstUrlCacheEntry(lpszUrlSearchPattern: string | Win32Pointer, lpFirstCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer): number | null;
+  FindFirstUrlCacheEntry(
+    lpszUrlSearchPattern: string | Win32Pointer,
+    lpFirstCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+  ): number | null;
   /** wininet.dll!FindFirstUrlCacheGroup */
-  FindFirstUrlCacheGroup(dwFlags: number, dwFilter: number, lpSearchCondition: Win32Pointer, dwSearchCondition: number, lpGroupId: Win32Pointer, lpReserved: Win32Pointer): number | null;
+  FindFirstUrlCacheGroup(
+    dwFlags: number,
+    dwFilter: number,
+    lpSearchCondition: Win32Pointer,
+    dwSearchCondition: number,
+    lpGroupId: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number | null;
   /** wininet.dll!FindNextUrlCacheContainerA */
-  FindNextUrlCacheContainerA(hEnumHandle: Win32Pointer, lpContainerInfo: Win32Pointer, lpcbContainerInfo: Win32Pointer): number;
+  FindNextUrlCacheContainerA(
+    hEnumHandle: Win32Pointer,
+    lpContainerInfo: Win32Pointer,
+    lpcbContainerInfo: Win32Pointer,
+  ): number;
   /** wininet.dll!FindNextUrlCacheContainerW */
-  FindNextUrlCacheContainerW(hEnumHandle: Win32Pointer, lpContainerInfo: Win32Pointer, lpcbContainerInfo: Win32Pointer): number;
+  FindNextUrlCacheContainerW(
+    hEnumHandle: Win32Pointer,
+    lpContainerInfo: Win32Pointer,
+    lpcbContainerInfo: Win32Pointer,
+  ): number;
   /** wininet.dll!FindNextUrlCacheContainerW */
-  FindNextUrlCacheContainer(hEnumHandle: Win32Pointer, lpContainerInfo: Win32Pointer, lpcbContainerInfo: Win32Pointer): number;
+  FindNextUrlCacheContainer(
+    hEnumHandle: Win32Pointer,
+    lpContainerInfo: Win32Pointer,
+    lpcbContainerInfo: Win32Pointer,
+  ): number;
   /** wininet.dll!FindNextUrlCacheEntryA */
-  FindNextUrlCacheEntryA(hEnumHandle: Win32Pointer, lpNextCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer): number;
+  FindNextUrlCacheEntryA(
+    hEnumHandle: Win32Pointer,
+    lpNextCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+  ): number;
   /** wininet.dll!FindNextUrlCacheEntryExA */
-  FindNextUrlCacheEntryExA(hEnumHandle: Win32Pointer, lpNextCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, lpGroupAttributes: Win32Pointer, lpcbGroupAttributes: Win32Pointer, lpReserved: Win32Pointer): number;
+  FindNextUrlCacheEntryExA(
+    hEnumHandle: Win32Pointer,
+    lpNextCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    lpGroupAttributes: Win32Pointer,
+    lpcbGroupAttributes: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!FindNextUrlCacheEntryExW */
-  FindNextUrlCacheEntryExW(hEnumHandle: Win32Pointer, lpNextCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, lpGroupAttributes: Win32Pointer, lpcbGroupAttributes: Win32Pointer, lpReserved: Win32Pointer): number;
+  FindNextUrlCacheEntryExW(
+    hEnumHandle: Win32Pointer,
+    lpNextCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    lpGroupAttributes: Win32Pointer,
+    lpcbGroupAttributes: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!FindNextUrlCacheEntryExW */
-  FindNextUrlCacheEntryEx(hEnumHandle: Win32Pointer, lpNextCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, lpGroupAttributes: Win32Pointer, lpcbGroupAttributes: Win32Pointer, lpReserved: Win32Pointer): number;
+  FindNextUrlCacheEntryEx(
+    hEnumHandle: Win32Pointer,
+    lpNextCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    lpGroupAttributes: Win32Pointer,
+    lpcbGroupAttributes: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!FindNextUrlCacheEntryW */
-  FindNextUrlCacheEntryW(hEnumHandle: Win32Pointer, lpNextCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer): number;
+  FindNextUrlCacheEntryW(
+    hEnumHandle: Win32Pointer,
+    lpNextCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+  ): number;
   /** wininet.dll!FindNextUrlCacheEntryW */
-  FindNextUrlCacheEntry(hEnumHandle: Win32Pointer, lpNextCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer): number;
+  FindNextUrlCacheEntry(
+    hEnumHandle: Win32Pointer,
+    lpNextCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+  ): number;
   /** wininet.dll!FindNextUrlCacheGroup */
   FindNextUrlCacheGroup(hFind: Win32Pointer, lpGroupId: Win32Pointer, lpReserved: Win32Pointer): number;
   /** wininet.dll!FindP3PPolicySymbol */
@@ -143,11 +370,32 @@ interface Functions {
   /** wininet.dll!FreeUrlCacheSpaceW */
   FreeUrlCacheSpace(lpszCachePath: string | Win32Pointer, dwSize: number, dwFilter: number): number;
   /** wininet.dll!FtpCommandA */
-  FtpCommandA(hConnect: Win32Pointer, fExpectResponse: number, dwFlags: number, lpszCommand: string | Win32Pointer, dwContext: number | bigint, phFtpCommand: Win32Pointer): number;
+  FtpCommandA(
+    hConnect: Win32Pointer,
+    fExpectResponse: number,
+    dwFlags: number,
+    lpszCommand: string | Win32Pointer,
+    dwContext: number | bigint,
+    phFtpCommand: Win32Pointer,
+  ): number;
   /** wininet.dll!FtpCommandW */
-  FtpCommandW(hConnect: Win32Pointer, fExpectResponse: number, dwFlags: number, lpszCommand: string | Win32Pointer, dwContext: number | bigint, phFtpCommand: Win32Pointer): number;
+  FtpCommandW(
+    hConnect: Win32Pointer,
+    fExpectResponse: number,
+    dwFlags: number,
+    lpszCommand: string | Win32Pointer,
+    dwContext: number | bigint,
+    phFtpCommand: Win32Pointer,
+  ): number;
   /** wininet.dll!FtpCommandW */
-  FtpCommand(hConnect: Win32Pointer, fExpectResponse: number, dwFlags: number, lpszCommand: string | Win32Pointer, dwContext: number | bigint, phFtpCommand: Win32Pointer): number;
+  FtpCommand(
+    hConnect: Win32Pointer,
+    fExpectResponse: number,
+    dwFlags: number,
+    lpszCommand: string | Win32Pointer,
+    dwContext: number | bigint,
+    phFtpCommand: Win32Pointer,
+  ): number;
   /** wininet.dll!FtpCreateDirectoryA */
   FtpCreateDirectoryA(hConnect: Win32Pointer, lpszDirectory: string | Win32Pointer): number;
   /** wininet.dll!FtpCreateDirectoryW */
@@ -161,41 +409,145 @@ interface Functions {
   /** wininet.dll!FtpDeleteFileW */
   FtpDeleteFile(hConnect: Win32Pointer, lpszFileName: string | Win32Pointer): number;
   /** wininet.dll!FtpFindFirstFileA */
-  FtpFindFirstFileA(hConnect: Win32Pointer, lpszSearchFile: string | Win32Pointer, lpFindFileData: Win32Pointer, dwFlags: number, dwContext: number | bigint): number | null;
+  FtpFindFirstFileA(
+    hConnect: Win32Pointer,
+    lpszSearchFile: string | Win32Pointer,
+    lpFindFileData: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!FtpFindFirstFileW */
-  FtpFindFirstFileW(hConnect: Win32Pointer, lpszSearchFile: string | Win32Pointer, lpFindFileData: Win32Pointer, dwFlags: number, dwContext: number | bigint): number | null;
+  FtpFindFirstFileW(
+    hConnect: Win32Pointer,
+    lpszSearchFile: string | Win32Pointer,
+    lpFindFileData: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!FtpFindFirstFileW */
-  FtpFindFirstFile(hConnect: Win32Pointer, lpszSearchFile: string | Win32Pointer, lpFindFileData: Win32Pointer, dwFlags: number, dwContext: number | bigint): number | null;
+  FtpFindFirstFile(
+    hConnect: Win32Pointer,
+    lpszSearchFile: string | Win32Pointer,
+    lpFindFileData: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!FtpGetCurrentDirectoryA */
-  FtpGetCurrentDirectoryA(hConnect: Win32Pointer, lpszCurrentDirectory: string | Win32Pointer, lpdwCurrentDirectory: Win32Pointer): number;
+  FtpGetCurrentDirectoryA(
+    hConnect: Win32Pointer,
+    lpszCurrentDirectory: string | Win32Pointer,
+    lpdwCurrentDirectory: Win32Pointer,
+  ): number;
   /** wininet.dll!FtpGetCurrentDirectoryW */
-  FtpGetCurrentDirectoryW(hConnect: Win32Pointer, lpszCurrentDirectory: string | Win32Pointer, lpdwCurrentDirectory: Win32Pointer): number;
+  FtpGetCurrentDirectoryW(
+    hConnect: Win32Pointer,
+    lpszCurrentDirectory: string | Win32Pointer,
+    lpdwCurrentDirectory: Win32Pointer,
+  ): number;
   /** wininet.dll!FtpGetCurrentDirectoryW */
-  FtpGetCurrentDirectory(hConnect: Win32Pointer, lpszCurrentDirectory: string | Win32Pointer, lpdwCurrentDirectory: Win32Pointer): number;
+  FtpGetCurrentDirectory(
+    hConnect: Win32Pointer,
+    lpszCurrentDirectory: string | Win32Pointer,
+    lpdwCurrentDirectory: Win32Pointer,
+  ): number;
   /** wininet.dll!FtpGetFileA */
-  FtpGetFileA(hConnect: Win32Pointer, lpszRemoteFile: string | Win32Pointer, lpszNewFile: string | Win32Pointer, fFailIfExists: number, dwFlagsAndAttributes: number, dwFlags: number, dwContext: number | bigint): number;
+  FtpGetFileA(
+    hConnect: Win32Pointer,
+    lpszRemoteFile: string | Win32Pointer,
+    lpszNewFile: string | Win32Pointer,
+    fFailIfExists: number,
+    dwFlagsAndAttributes: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!FtpGetFileEx */
-  FtpGetFileEx(hFtpSession: Win32Pointer, lpszRemoteFile: string | Win32Pointer, lpszNewFile: string | Win32Pointer, fFailIfExists: number, dwFlagsAndAttributes: number, dwFlags: number, dwContext: number | bigint): number;
+  FtpGetFileEx(
+    hFtpSession: Win32Pointer,
+    lpszRemoteFile: string | Win32Pointer,
+    lpszNewFile: string | Win32Pointer,
+    fFailIfExists: number,
+    dwFlagsAndAttributes: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!FtpGetFileSize */
   FtpGetFileSize(hFile: Win32Pointer, lpdwFileSizeHigh: Win32Pointer): number;
   /** wininet.dll!FtpGetFileW */
-  FtpGetFileW(hConnect: Win32Pointer, lpszRemoteFile: string | Win32Pointer, lpszNewFile: string | Win32Pointer, fFailIfExists: number, dwFlagsAndAttributes: number, dwFlags: number, dwContext: number | bigint): number;
+  FtpGetFileW(
+    hConnect: Win32Pointer,
+    lpszRemoteFile: string | Win32Pointer,
+    lpszNewFile: string | Win32Pointer,
+    fFailIfExists: number,
+    dwFlagsAndAttributes: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!FtpGetFileW */
-  FtpGetFile(hConnect: Win32Pointer, lpszRemoteFile: string | Win32Pointer, lpszNewFile: string | Win32Pointer, fFailIfExists: number, dwFlagsAndAttributes: number, dwFlags: number, dwContext: number | bigint): number;
+  FtpGetFile(
+    hConnect: Win32Pointer,
+    lpszRemoteFile: string | Win32Pointer,
+    lpszNewFile: string | Win32Pointer,
+    fFailIfExists: number,
+    dwFlagsAndAttributes: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!FtpOpenFileA */
-  FtpOpenFileA(hConnect: Win32Pointer, lpszFileName: string | Win32Pointer, dwAccess: number, dwFlags: number, dwContext: number | bigint): number | null;
+  FtpOpenFileA(
+    hConnect: Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    dwAccess: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!FtpOpenFileW */
-  FtpOpenFileW(hConnect: Win32Pointer, lpszFileName: string | Win32Pointer, dwAccess: number, dwFlags: number, dwContext: number | bigint): number | null;
+  FtpOpenFileW(
+    hConnect: Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    dwAccess: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!FtpOpenFileW */
-  FtpOpenFile(hConnect: Win32Pointer, lpszFileName: string | Win32Pointer, dwAccess: number, dwFlags: number, dwContext: number | bigint): number | null;
+  FtpOpenFile(
+    hConnect: Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    dwAccess: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!FtpPutFileA */
-  FtpPutFileA(hConnect: Win32Pointer, lpszLocalFile: string | Win32Pointer, lpszNewRemoteFile: string | Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  FtpPutFileA(
+    hConnect: Win32Pointer,
+    lpszLocalFile: string | Win32Pointer,
+    lpszNewRemoteFile: string | Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!FtpPutFileEx */
-  FtpPutFileEx(hFtpSession: Win32Pointer, lpszLocalFile: string | Win32Pointer, lpszNewRemoteFile: string | Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  FtpPutFileEx(
+    hFtpSession: Win32Pointer,
+    lpszLocalFile: string | Win32Pointer,
+    lpszNewRemoteFile: string | Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!FtpPutFileW */
-  FtpPutFileW(hConnect: Win32Pointer, lpszLocalFile: string | Win32Pointer, lpszNewRemoteFile: string | Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  FtpPutFileW(
+    hConnect: Win32Pointer,
+    lpszLocalFile: string | Win32Pointer,
+    lpszNewRemoteFile: string | Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!FtpPutFileW */
-  FtpPutFile(hConnect: Win32Pointer, lpszLocalFile: string | Win32Pointer, lpszNewRemoteFile: string | Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  FtpPutFile(
+    hConnect: Win32Pointer,
+    lpszLocalFile: string | Win32Pointer,
+    lpszNewRemoteFile: string | Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!FtpRemoveDirectoryA */
   FtpRemoveDirectoryA(hConnect: Win32Pointer, lpszDirectory: string | Win32Pointer): number;
   /** wininet.dll!FtpRemoveDirectoryW */
@@ -215,53 +567,207 @@ interface Functions {
   /** wininet.dll!FtpSetCurrentDirectoryW */
   FtpSetCurrentDirectory(hConnect: Win32Pointer, lpszDirectory: string | Win32Pointer): number;
   /** wininet.dll!GetDiskInfoA */
-  GetDiskInfoA(pszPath: string | Win32Pointer, pdwClusterSize: Win32Pointer, pdlAvail: Win32Pointer, pdlTotal: Win32Pointer): number;
+  GetDiskInfoA(
+    pszPath: string | Win32Pointer,
+    pdwClusterSize: Win32Pointer,
+    pdlAvail: Win32Pointer,
+    pdlTotal: Win32Pointer,
+  ): number;
   /** wininet.dll!GetUrlCacheConfigInfoA */
-  GetUrlCacheConfigInfoA(lpCacheConfigInfo: Win32Pointer, lpcbCacheConfigInfo: Win32Pointer, dwFieldControl: number): number;
+  GetUrlCacheConfigInfoA(
+    lpCacheConfigInfo: Win32Pointer,
+    lpcbCacheConfigInfo: Win32Pointer,
+    dwFieldControl: number,
+  ): number;
   /** wininet.dll!GetUrlCacheConfigInfoW */
-  GetUrlCacheConfigInfoW(lpCacheConfigInfo: Win32Pointer, lpcbCacheConfigInfo: Win32Pointer, dwFieldControl: number): number;
+  GetUrlCacheConfigInfoW(
+    lpCacheConfigInfo: Win32Pointer,
+    lpcbCacheConfigInfo: Win32Pointer,
+    dwFieldControl: number,
+  ): number;
   /** wininet.dll!GetUrlCacheConfigInfoW */
-  GetUrlCacheConfigInfo(lpCacheConfigInfo: Win32Pointer, lpcbCacheConfigInfo: Win32Pointer, dwFieldControl: number): number;
+  GetUrlCacheConfigInfo(
+    lpCacheConfigInfo: Win32Pointer,
+    lpcbCacheConfigInfo: Win32Pointer,
+    dwFieldControl: number,
+  ): number;
   /** wininet.dll!GetUrlCacheEntryBinaryBlob */
-  GetUrlCacheEntryBinaryBlob(pwszUrlName: string | Win32Pointer, dwType: Win32Pointer, pftExpireTime: Win32Pointer, pftAccessTime: Win32Pointer, pftModifiedTime: Win32Pointer, ppbBlob: Win32Pointer, pcbBlob: Win32Pointer): number;
+  GetUrlCacheEntryBinaryBlob(
+    pwszUrlName: string | Win32Pointer,
+    dwType: Win32Pointer,
+    pftExpireTime: Win32Pointer,
+    pftAccessTime: Win32Pointer,
+    pftModifiedTime: Win32Pointer,
+    ppbBlob: Win32Pointer,
+    pcbBlob: Win32Pointer,
+  ): number;
   /** wininet.dll!GetUrlCacheEntryInfoA */
-  GetUrlCacheEntryInfoA(lpszUrlName: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer): number;
+  GetUrlCacheEntryInfoA(
+    lpszUrlName: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+  ): number;
   /** wininet.dll!GetUrlCacheEntryInfoExA */
-  GetUrlCacheEntryInfoExA(lpszUrl: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, lpszRedirectUrl: string | Win32Pointer, lpcbRedirectUrl: Win32Pointer, lpReserved: Win32Pointer, dwFlags: number): number;
+  GetUrlCacheEntryInfoExA(
+    lpszUrl: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    lpszRedirectUrl: string | Win32Pointer,
+    lpcbRedirectUrl: Win32Pointer,
+    lpReserved: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wininet.dll!GetUrlCacheEntryInfoExW */
-  GetUrlCacheEntryInfoExW(lpszUrl: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, lpszRedirectUrl: string | Win32Pointer, lpcbRedirectUrl: Win32Pointer, lpReserved: Win32Pointer, dwFlags: number): number;
+  GetUrlCacheEntryInfoExW(
+    lpszUrl: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    lpszRedirectUrl: string | Win32Pointer,
+    lpcbRedirectUrl: Win32Pointer,
+    lpReserved: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wininet.dll!GetUrlCacheEntryInfoExW */
-  GetUrlCacheEntryInfoEx(lpszUrl: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, lpszRedirectUrl: string | Win32Pointer, lpcbRedirectUrl: Win32Pointer, lpReserved: Win32Pointer, dwFlags: number): number;
+  GetUrlCacheEntryInfoEx(
+    lpszUrl: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    lpszRedirectUrl: string | Win32Pointer,
+    lpcbRedirectUrl: Win32Pointer,
+    lpReserved: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wininet.dll!GetUrlCacheEntryInfoW */
-  GetUrlCacheEntryInfoW(lpszUrlName: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer): number;
+  GetUrlCacheEntryInfoW(
+    lpszUrlName: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+  ): number;
   /** wininet.dll!GetUrlCacheEntryInfoW */
-  GetUrlCacheEntryInfo(lpszUrlName: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer): number;
+  GetUrlCacheEntryInfo(
+    lpszUrlName: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+  ): number;
   /** wininet.dll!GetUrlCacheGroupAttributeA */
-  GetUrlCacheGroupAttributeA(gid: number | bigint, dwFlags: number, dwAttributes: number, lpGroupInfo: Win32Pointer, lpcbGroupInfo: Win32Pointer, lpReserved: Win32Pointer): number;
+  GetUrlCacheGroupAttributeA(
+    gid: number | bigint,
+    dwFlags: number,
+    dwAttributes: number,
+    lpGroupInfo: Win32Pointer,
+    lpcbGroupInfo: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!GetUrlCacheGroupAttributeW */
-  GetUrlCacheGroupAttributeW(gid: number | bigint, dwFlags: number, dwAttributes: number, lpGroupInfo: Win32Pointer, lpcbGroupInfo: Win32Pointer, lpReserved: Win32Pointer): number;
+  GetUrlCacheGroupAttributeW(
+    gid: number | bigint,
+    dwFlags: number,
+    dwAttributes: number,
+    lpGroupInfo: Win32Pointer,
+    lpcbGroupInfo: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!GetUrlCacheGroupAttributeW */
-  GetUrlCacheGroupAttribute(gid: number | bigint, dwFlags: number, dwAttributes: number, lpGroupInfo: Win32Pointer, lpcbGroupInfo: Win32Pointer, lpReserved: Win32Pointer): number;
+  GetUrlCacheGroupAttribute(
+    gid: number | bigint,
+    dwFlags: number,
+    dwAttributes: number,
+    lpGroupInfo: Win32Pointer,
+    lpcbGroupInfo: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!GetUrlCacheHeaderData */
   GetUrlCacheHeaderData(nIdx: number, lpdwData: Win32Pointer): number;
   /** wininet.dll!GopherCreateLocatorA */
-  GopherCreateLocatorA(lpszHost: string | Win32Pointer, nServerPort: number, lpszDisplayString: string | Win32Pointer, lpszSelectorString: string | Win32Pointer, dwGopherType: number, lpszLocator: string | Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  GopherCreateLocatorA(
+    lpszHost: string | Win32Pointer,
+    nServerPort: number,
+    lpszDisplayString: string | Win32Pointer,
+    lpszSelectorString: string | Win32Pointer,
+    dwGopherType: number,
+    lpszLocator: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** wininet.dll!GopherCreateLocatorW */
-  GopherCreateLocatorW(lpszHost: string | Win32Pointer, nServerPort: number, lpszDisplayString: string | Win32Pointer, lpszSelectorString: string | Win32Pointer, dwGopherType: number, lpszLocator: string | Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  GopherCreateLocatorW(
+    lpszHost: string | Win32Pointer,
+    nServerPort: number,
+    lpszDisplayString: string | Win32Pointer,
+    lpszSelectorString: string | Win32Pointer,
+    dwGopherType: number,
+    lpszLocator: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** wininet.dll!GopherCreateLocatorW */
-  GopherCreateLocator(lpszHost: string | Win32Pointer, nServerPort: number, lpszDisplayString: string | Win32Pointer, lpszSelectorString: string | Win32Pointer, dwGopherType: number, lpszLocator: string | Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  GopherCreateLocator(
+    lpszHost: string | Win32Pointer,
+    nServerPort: number,
+    lpszDisplayString: string | Win32Pointer,
+    lpszSelectorString: string | Win32Pointer,
+    dwGopherType: number,
+    lpszLocator: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** wininet.dll!GopherFindFirstFileA */
-  GopherFindFirstFileA(hConnect: Win32Pointer, lpszLocator: string | Win32Pointer, lpszSearchString: string | Win32Pointer, lpFindData: Win32Pointer, dwFlags: number, dwContext: number | bigint): number | null;
+  GopherFindFirstFileA(
+    hConnect: Win32Pointer,
+    lpszLocator: string | Win32Pointer,
+    lpszSearchString: string | Win32Pointer,
+    lpFindData: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!GopherFindFirstFileW */
-  GopherFindFirstFileW(hConnect: Win32Pointer, lpszLocator: string | Win32Pointer, lpszSearchString: string | Win32Pointer, lpFindData: Win32Pointer, dwFlags: number, dwContext: number | bigint): number | null;
+  GopherFindFirstFileW(
+    hConnect: Win32Pointer,
+    lpszLocator: string | Win32Pointer,
+    lpszSearchString: string | Win32Pointer,
+    lpFindData: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!GopherFindFirstFileW */
-  GopherFindFirstFile(hConnect: Win32Pointer, lpszLocator: string | Win32Pointer, lpszSearchString: string | Win32Pointer, lpFindData: Win32Pointer, dwFlags: number, dwContext: number | bigint): number | null;
+  GopherFindFirstFile(
+    hConnect: Win32Pointer,
+    lpszLocator: string | Win32Pointer,
+    lpszSearchString: string | Win32Pointer,
+    lpFindData: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!GopherGetAttributeA */
-  GopherGetAttributeA(hConnect: Win32Pointer, lpszLocator: string | Win32Pointer, lpszAttributeName: string | Win32Pointer, lpBuffer: Win32Pointer, dwBufferLength: number, lpdwCharactersReturned: Win32Pointer, lpfnEnumerator: Win32Callback, dwContext: number | bigint): number;
+  GopherGetAttributeA(
+    hConnect: Win32Pointer,
+    lpszLocator: string | Win32Pointer,
+    lpszAttributeName: string | Win32Pointer,
+    lpBuffer: Win32Pointer,
+    dwBufferLength: number,
+    lpdwCharactersReturned: Win32Pointer,
+    lpfnEnumerator: Win32Callback,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!GopherGetAttributeW */
-  GopherGetAttributeW(hConnect: Win32Pointer, lpszLocator: string | Win32Pointer, lpszAttributeName: string | Win32Pointer, lpBuffer: Win32Pointer, dwBufferLength: number, lpdwCharactersReturned: Win32Pointer, lpfnEnumerator: Win32Callback, dwContext: number | bigint): number;
+  GopherGetAttributeW(
+    hConnect: Win32Pointer,
+    lpszLocator: string | Win32Pointer,
+    lpszAttributeName: string | Win32Pointer,
+    lpBuffer: Win32Pointer,
+    dwBufferLength: number,
+    lpdwCharactersReturned: Win32Pointer,
+    lpfnEnumerator: Win32Callback,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!GopherGetAttributeW */
-  GopherGetAttribute(hConnect: Win32Pointer, lpszLocator: string | Win32Pointer, lpszAttributeName: string | Win32Pointer, lpBuffer: Win32Pointer, dwBufferLength: number, lpdwCharactersReturned: Win32Pointer, lpfnEnumerator: Win32Callback, dwContext: number | bigint): number;
+  GopherGetAttribute(
+    hConnect: Win32Pointer,
+    lpszLocator: string | Win32Pointer,
+    lpszAttributeName: string | Win32Pointer,
+    lpBuffer: Win32Pointer,
+    dwBufferLength: number,
+    lpdwCharactersReturned: Win32Pointer,
+    lpfnEnumerator: Win32Callback,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!GopherGetLocatorTypeA */
   GopherGetLocatorTypeA(lpszLocator: string | Win32Pointer, lpdwGopherType: Win32Pointer): number;
   /** wininet.dll!GopherGetLocatorTypeW */
@@ -269,35 +775,105 @@ interface Functions {
   /** wininet.dll!GopherGetLocatorTypeW */
   GopherGetLocatorType(lpszLocator: string | Win32Pointer, lpdwGopherType: Win32Pointer): number;
   /** wininet.dll!GopherOpenFileA */
-  GopherOpenFileA(hConnect: Win32Pointer, lpszLocator: string | Win32Pointer, lpszView: string | Win32Pointer, dwFlags: number, dwContext: number | bigint): number | null;
+  GopherOpenFileA(
+    hConnect: Win32Pointer,
+    lpszLocator: string | Win32Pointer,
+    lpszView: string | Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!GopherOpenFileW */
-  GopherOpenFileW(hConnect: Win32Pointer, lpszLocator: string | Win32Pointer, lpszView: string | Win32Pointer, dwFlags: number, dwContext: number | bigint): number | null;
+  GopherOpenFileW(
+    hConnect: Win32Pointer,
+    lpszLocator: string | Win32Pointer,
+    lpszView: string | Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!GopherOpenFileW */
-  GopherOpenFile(hConnect: Win32Pointer, lpszLocator: string | Win32Pointer, lpszView: string | Win32Pointer, dwFlags: number, dwContext: number | bigint): number | null;
+  GopherOpenFile(
+    hConnect: Win32Pointer,
+    lpszLocator: string | Win32Pointer,
+    lpszView: string | Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!HttpAddRequestHeadersA */
-  HttpAddRequestHeadersA(hRequest: Win32Pointer, lpszHeaders: string | Win32Pointer, dwHeadersLength: number, dwModifiers: number): number;
+  HttpAddRequestHeadersA(
+    hRequest: Win32Pointer,
+    lpszHeaders: string | Win32Pointer,
+    dwHeadersLength: number,
+    dwModifiers: number,
+  ): number;
   /** wininet.dll!HttpAddRequestHeadersW */
-  HttpAddRequestHeadersW(hRequest: Win32Pointer, lpszHeaders: string | Win32Pointer, dwHeadersLength: number, dwModifiers: number): number;
+  HttpAddRequestHeadersW(
+    hRequest: Win32Pointer,
+    lpszHeaders: string | Win32Pointer,
+    dwHeadersLength: number,
+    dwModifiers: number,
+  ): number;
   /** wininet.dll!HttpAddRequestHeadersW */
-  HttpAddRequestHeaders(hRequest: Win32Pointer, lpszHeaders: string | Win32Pointer, dwHeadersLength: number, dwModifiers: number): number;
+  HttpAddRequestHeaders(
+    hRequest: Win32Pointer,
+    lpszHeaders: string | Win32Pointer,
+    dwHeadersLength: number,
+    dwModifiers: number,
+  ): number;
   /** wininet.dll!HttpCheckDavComplianceA */
-  HttpCheckDavComplianceA(lpszUrl: string | Win32Pointer, lpszComplianceToken: string | Win32Pointer, lpfFound: Win32Pointer, hWnd: Win32Pointer, lpvReserved: Win32Pointer): number;
+  HttpCheckDavComplianceA(
+    lpszUrl: string | Win32Pointer,
+    lpszComplianceToken: string | Win32Pointer,
+    lpfFound: Win32Pointer,
+    hWnd: Win32Pointer,
+    lpvReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!HttpCheckDavComplianceW */
-  HttpCheckDavComplianceW(lpszUrl: string | Win32Pointer, lpszComplianceToken: string | Win32Pointer, lpfFound: Win32Pointer, hWnd: Win32Pointer, lpvReserved: Win32Pointer): number;
+  HttpCheckDavComplianceW(
+    lpszUrl: string | Win32Pointer,
+    lpszComplianceToken: string | Win32Pointer,
+    lpfFound: Win32Pointer,
+    hWnd: Win32Pointer,
+    lpvReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!HttpCheckDavComplianceW */
-  HttpCheckDavCompliance(lpszUrl: string | Win32Pointer, lpszComplianceToken: string | Win32Pointer, lpfFound: Win32Pointer, hWnd: Win32Pointer, lpvReserved: Win32Pointer): number;
+  HttpCheckDavCompliance(
+    lpszUrl: string | Win32Pointer,
+    lpszComplianceToken: string | Win32Pointer,
+    lpfFound: Win32Pointer,
+    hWnd: Win32Pointer,
+    lpvReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!HttpCloseDependencyHandle */
   HttpCloseDependencyHandle(hDependencyHandle: Win32Pointer): void;
   /** wininet.dll!HttpDuplicateDependencyHandle */
   HttpDuplicateDependencyHandle(hDependencyHandle: Win32Pointer, phDuplicatedDependencyHandle: Win32Pointer): number;
   /** wininet.dll!HttpEndRequestA */
-  HttpEndRequestA(hRequest: Win32Pointer, lpBuffersOut: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  HttpEndRequestA(
+    hRequest: Win32Pointer,
+    lpBuffersOut: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!HttpEndRequestW */
-  HttpEndRequestW(hRequest: Win32Pointer, lpBuffersOut: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  HttpEndRequestW(
+    hRequest: Win32Pointer,
+    lpBuffersOut: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!HttpEndRequestW */
-  HttpEndRequest(hRequest: Win32Pointer, lpBuffersOut: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  HttpEndRequest(
+    hRequest: Win32Pointer,
+    lpBuffersOut: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!HttpGetServerCredentials */
-  HttpGetServerCredentials(pwszUrl: string | Win32Pointer, ppwszUserName: Win32Pointer, ppwszPassword: Win32Pointer): number;
+  HttpGetServerCredentials(
+    pwszUrl: string | Win32Pointer,
+    ppwszUserName: Win32Pointer,
+    ppwszPassword: Win32Pointer,
+  ): number;
   /** wininet.dll!HttpIndicatePageLoadComplete */
   HttpIndicatePageLoadComplete(hDependencyHandle: Win32Pointer): number;
   /** wininet.dll!HttpIsHostHstsEnabled */
@@ -305,11 +881,38 @@ interface Functions {
   /** wininet.dll!HttpOpenDependencyHandle */
   HttpOpenDependencyHandle(hRequestHandle: Win32Pointer, fBackground: number, phDependencyHandle: Win32Pointer): number;
   /** wininet.dll!HttpOpenRequestA */
-  HttpOpenRequestA(hConnect: Win32Pointer, lpszVerb: string | Win32Pointer, lpszObjectName: string | Win32Pointer, lpszVersion: string | Win32Pointer, lpszReferrer: string | Win32Pointer, lplpszAcceptTypes: Win32Pointer, dwFlags: number, dwContext: number | bigint): number | null;
+  HttpOpenRequestA(
+    hConnect: Win32Pointer,
+    lpszVerb: string | Win32Pointer,
+    lpszObjectName: string | Win32Pointer,
+    lpszVersion: string | Win32Pointer,
+    lpszReferrer: string | Win32Pointer,
+    lplpszAcceptTypes: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!HttpOpenRequestW */
-  HttpOpenRequestW(hConnect: Win32Pointer, lpszVerb: string | Win32Pointer, lpszObjectName: string | Win32Pointer, lpszVersion: string | Win32Pointer, lpszReferrer: string | Win32Pointer, lplpszAcceptTypes: Win32Pointer, dwFlags: number, dwContext: number | bigint): number | null;
+  HttpOpenRequestW(
+    hConnect: Win32Pointer,
+    lpszVerb: string | Win32Pointer,
+    lpszObjectName: string | Win32Pointer,
+    lpszVersion: string | Win32Pointer,
+    lpszReferrer: string | Win32Pointer,
+    lplpszAcceptTypes: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!HttpOpenRequestW */
-  HttpOpenRequest(hConnect: Win32Pointer, lpszVerb: string | Win32Pointer, lpszObjectName: string | Win32Pointer, lpszVersion: string | Win32Pointer, lpszReferrer: string | Win32Pointer, lplpszAcceptTypes: Win32Pointer, dwFlags: number, dwContext: number | bigint): number | null;
+  HttpOpenRequest(
+    hConnect: Win32Pointer,
+    lpszVerb: string | Win32Pointer,
+    lpszObjectName: string | Win32Pointer,
+    lpszVersion: string | Win32Pointer,
+    lpszReferrer: string | Win32Pointer,
+    lplpszAcceptTypes: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!HttpPushClose */
   HttpPushClose(hWait: Win32Pointer): void;
   /** wininet.dll!HttpPushEnable */
@@ -317,35 +920,116 @@ interface Functions {
   /** wininet.dll!HttpPushWait */
   HttpPushWait(hWait: Win32Pointer, eType: number, pNotificationStatus: Win32Pointer): number;
   /** wininet.dll!HttpQueryInfoA */
-  HttpQueryInfoA(hRequest: Win32Pointer, dwInfoLevel: number, lpBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer, lpdwIndex: Win32Pointer): number;
+  HttpQueryInfoA(
+    hRequest: Win32Pointer,
+    dwInfoLevel: number,
+    lpBuffer: Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    lpdwIndex: Win32Pointer,
+  ): number;
   /** wininet.dll!HttpQueryInfoW */
-  HttpQueryInfoW(hRequest: Win32Pointer, dwInfoLevel: number, lpBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer, lpdwIndex: Win32Pointer): number;
+  HttpQueryInfoW(
+    hRequest: Win32Pointer,
+    dwInfoLevel: number,
+    lpBuffer: Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    lpdwIndex: Win32Pointer,
+  ): number;
   /** wininet.dll!HttpQueryInfoW */
-  HttpQueryInfo(hRequest: Win32Pointer, dwInfoLevel: number, lpBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer, lpdwIndex: Win32Pointer): number;
+  HttpQueryInfo(
+    hRequest: Win32Pointer,
+    dwInfoLevel: number,
+    lpBuffer: Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    lpdwIndex: Win32Pointer,
+  ): number;
   /** wininet.dll!HttpSendRequestA */
-  HttpSendRequestA(hRequest: Win32Pointer, lpszHeaders: string | Win32Pointer, dwHeadersLength: number, lpOptional: Win32Pointer, dwOptionalLength: number): number;
+  HttpSendRequestA(
+    hRequest: Win32Pointer,
+    lpszHeaders: string | Win32Pointer,
+    dwHeadersLength: number,
+    lpOptional: Win32Pointer,
+    dwOptionalLength: number,
+  ): number;
   /** wininet.dll!HttpSendRequestExA */
-  HttpSendRequestExA(hRequest: Win32Pointer, lpBuffersIn: Win32Pointer, lpBuffersOut: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  HttpSendRequestExA(
+    hRequest: Win32Pointer,
+    lpBuffersIn: Win32Pointer,
+    lpBuffersOut: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!HttpSendRequestExW */
-  HttpSendRequestExW(hRequest: Win32Pointer, lpBuffersIn: Win32Pointer, lpBuffersOut: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  HttpSendRequestExW(
+    hRequest: Win32Pointer,
+    lpBuffersIn: Win32Pointer,
+    lpBuffersOut: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!HttpSendRequestExW */
-  HttpSendRequestEx(hRequest: Win32Pointer, lpBuffersIn: Win32Pointer, lpBuffersOut: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  HttpSendRequestEx(
+    hRequest: Win32Pointer,
+    lpBuffersIn: Win32Pointer,
+    lpBuffersOut: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!HttpSendRequestW */
-  HttpSendRequestW(hRequest: Win32Pointer, lpszHeaders: string | Win32Pointer, dwHeadersLength: number, lpOptional: Win32Pointer, dwOptionalLength: number): number;
+  HttpSendRequestW(
+    hRequest: Win32Pointer,
+    lpszHeaders: string | Win32Pointer,
+    dwHeadersLength: number,
+    lpOptional: Win32Pointer,
+    dwOptionalLength: number,
+  ): number;
   /** wininet.dll!HttpSendRequestW */
-  HttpSendRequest(hRequest: Win32Pointer, lpszHeaders: string | Win32Pointer, dwHeadersLength: number, lpOptional: Win32Pointer, dwOptionalLength: number): number;
+  HttpSendRequest(
+    hRequest: Win32Pointer,
+    lpszHeaders: string | Win32Pointer,
+    dwHeadersLength: number,
+    lpOptional: Win32Pointer,
+    dwOptionalLength: number,
+  ): number;
   /** wininet.dll!HttpWebSocketClose */
-  HttpWebSocketClose(hWebSocket: Win32Pointer, usStatus: number, pvReason: Win32Pointer, dwReasonLength: number): number;
+  HttpWebSocketClose(
+    hWebSocket: Win32Pointer,
+    usStatus: number,
+    pvReason: Win32Pointer,
+    dwReasonLength: number,
+  ): number;
   /** wininet.dll!HttpWebSocketCompleteUpgrade */
   HttpWebSocketCompleteUpgrade(hRequest: Win32Pointer, dwContext: number | bigint): number | null;
   /** wininet.dll!HttpWebSocketQueryCloseStatus */
-  HttpWebSocketQueryCloseStatus(hWebSocket: Win32Pointer, pusStatus: Win32Pointer, pvReason: Win32Pointer, dwReasonLength: number, pdwReasonLengthConsumed: Win32Pointer): number;
+  HttpWebSocketQueryCloseStatus(
+    hWebSocket: Win32Pointer,
+    pusStatus: Win32Pointer,
+    pvReason: Win32Pointer,
+    dwReasonLength: number,
+    pdwReasonLengthConsumed: Win32Pointer,
+  ): number;
   /** wininet.dll!HttpWebSocketReceive */
-  HttpWebSocketReceive(hWebSocket: Win32Pointer, pvBuffer: Win32Pointer, dwBufferLength: number, pdwBytesRead: Win32Pointer, pBufferType: Win32Pointer): number;
+  HttpWebSocketReceive(
+    hWebSocket: Win32Pointer,
+    pvBuffer: Win32Pointer,
+    dwBufferLength: number,
+    pdwBytesRead: Win32Pointer,
+    pBufferType: Win32Pointer,
+  ): number;
   /** wininet.dll!HttpWebSocketSend */
-  HttpWebSocketSend(hWebSocket: Win32Pointer, BufferType: number, pvBuffer: Win32Pointer, dwBufferLength: number): number;
+  HttpWebSocketSend(
+    hWebSocket: Win32Pointer,
+    BufferType: number,
+    pvBuffer: Win32Pointer,
+    dwBufferLength: number,
+  ): number;
   /** wininet.dll!HttpWebSocketShutdown */
-  HttpWebSocketShutdown(hWebSocket: Win32Pointer, usStatus: number, pvReason: Win32Pointer, dwReasonLength: number): number;
+  HttpWebSocketShutdown(
+    hWebSocket: Win32Pointer,
+    usStatus: number,
+    pvReason: Win32Pointer,
+    dwReasonLength: number,
+  ): number;
   /** wininet.dll!ImportCookieFileA */
   ImportCookieFileA(szFilename: string | Win32Pointer): number;
   /** wininet.dll!ImportCookieFileW */
@@ -355,13 +1039,32 @@ interface Functions {
   /** wininet.dll!IncrementUrlCacheHeaderData */
   IncrementUrlCacheHeaderData(nIdx: number, lpdwData: Win32Pointer): number;
   /** wininet.dll!InternalInternetGetCookie */
-  InternalInternetGetCookie(lpszUrl: string | Win32Pointer, lpszCookieData: string | Win32Pointer, lpdwDataSize: Win32Pointer): number;
+  InternalInternetGetCookie(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+    lpdwDataSize: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetAlgIdToStringA */
-  InternetAlgIdToStringA(ai: number, lpstr: string | Win32Pointer, lpdwstrLength: Win32Pointer, dwReserved: number): number;
+  InternetAlgIdToStringA(
+    ai: number,
+    lpstr: string | Win32Pointer,
+    lpdwstrLength: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!InternetAlgIdToStringW */
-  InternetAlgIdToStringW(ai: number, lpstr: string | Win32Pointer, lpdwstrLength: Win32Pointer, dwReserved: number): number;
+  InternetAlgIdToStringW(
+    ai: number,
+    lpstr: string | Win32Pointer,
+    lpdwstrLength: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!InternetAlgIdToStringW */
-  InternetAlgIdToString(ai: number, lpstr: string | Win32Pointer, lpdwstrLength: Win32Pointer, dwReserved: number): number;
+  InternetAlgIdToString(
+    ai: number,
+    lpstr: string | Win32Pointer,
+    lpdwstrLength: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!InternetAttemptConnect */
   InternetAttemptConnect(dwReserved: number): number;
   /** wininet.dll!InternetAutodial */
@@ -369,11 +1072,26 @@ interface Functions {
   /** wininet.dll!InternetAutodialHangup */
   InternetAutodialHangup(dwReserved: number): number;
   /** wininet.dll!InternetCanonicalizeUrlA */
-  InternetCanonicalizeUrlA(lpszUrl: string | Win32Pointer, lpszBuffer: string | Win32Pointer, lpdwBufferLength: Win32Pointer, dwFlags: number): number;
+  InternetCanonicalizeUrlA(
+    lpszUrl: string | Win32Pointer,
+    lpszBuffer: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wininet.dll!InternetCanonicalizeUrlW */
-  InternetCanonicalizeUrlW(lpszUrl: string | Win32Pointer, lpszBuffer: string | Win32Pointer, lpdwBufferLength: Win32Pointer, dwFlags: number): number;
+  InternetCanonicalizeUrlW(
+    lpszUrl: string | Win32Pointer,
+    lpszBuffer: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wininet.dll!InternetCanonicalizeUrlW */
-  InternetCanonicalizeUrl(lpszUrl: string | Win32Pointer, lpszBuffer: string | Win32Pointer, lpdwBufferLength: Win32Pointer, dwFlags: number): number;
+  InternetCanonicalizeUrl(
+    lpszUrl: string | Win32Pointer,
+    lpszBuffer: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wininet.dll!InternetCheckConnectionA */
   InternetCheckConnectionA(lpszUrl: string | Win32Pointer, dwFlags: number, dwReserved: number): number;
   /** wininet.dll!InternetCheckConnectionW */
@@ -385,51 +1103,189 @@ interface Functions {
   /** wininet.dll!InternetCloseHandle */
   InternetCloseHandle(hInternet: Win32Pointer): number;
   /** wininet.dll!InternetCombineUrlA */
-  InternetCombineUrlA(lpszBaseUrl: string | Win32Pointer, lpszRelativeUrl: string | Win32Pointer, lpszBuffer: string | Win32Pointer, lpdwBufferLength: Win32Pointer, dwFlags: number): number;
+  InternetCombineUrlA(
+    lpszBaseUrl: string | Win32Pointer,
+    lpszRelativeUrl: string | Win32Pointer,
+    lpszBuffer: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wininet.dll!InternetCombineUrlW */
-  InternetCombineUrlW(lpszBaseUrl: string | Win32Pointer, lpszRelativeUrl: string | Win32Pointer, lpszBuffer: string | Win32Pointer, lpdwBufferLength: Win32Pointer, dwFlags: number): number;
+  InternetCombineUrlW(
+    lpszBaseUrl: string | Win32Pointer,
+    lpszRelativeUrl: string | Win32Pointer,
+    lpszBuffer: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wininet.dll!InternetCombineUrlW */
-  InternetCombineUrl(lpszBaseUrl: string | Win32Pointer, lpszRelativeUrl: string | Win32Pointer, lpszBuffer: string | Win32Pointer, lpdwBufferLength: Win32Pointer, dwFlags: number): number;
+  InternetCombineUrl(
+    lpszBaseUrl: string | Win32Pointer,
+    lpszRelativeUrl: string | Win32Pointer,
+    lpszBuffer: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** wininet.dll!InternetConfirmZoneCrossing */
-  InternetConfirmZoneCrossing(hWnd: Win32Pointer, szUrlPrev: string | Win32Pointer, szUrlNew: string | Win32Pointer, bPost: number): number;
+  InternetConfirmZoneCrossing(
+    hWnd: Win32Pointer,
+    szUrlPrev: string | Win32Pointer,
+    szUrlNew: string | Win32Pointer,
+    bPost: number,
+  ): number;
   /** wininet.dll!InternetConfirmZoneCrossingA */
-  InternetConfirmZoneCrossingA(hWnd: Win32Pointer, szUrlPrev: string | Win32Pointer, szUrlNew: string | Win32Pointer, bPost: number): number;
+  InternetConfirmZoneCrossingA(
+    hWnd: Win32Pointer,
+    szUrlPrev: string | Win32Pointer,
+    szUrlNew: string | Win32Pointer,
+    bPost: number,
+  ): number;
   /** wininet.dll!InternetConfirmZoneCrossingW */
-  InternetConfirmZoneCrossingW(hWnd: Win32Pointer, szUrlPrev: string | Win32Pointer, szUrlNew: string | Win32Pointer, bPost: number): number;
+  InternetConfirmZoneCrossingW(
+    hWnd: Win32Pointer,
+    szUrlPrev: string | Win32Pointer,
+    szUrlNew: string | Win32Pointer,
+    bPost: number,
+  ): number;
   /** wininet.dll!InternetConnectA */
-  InternetConnectA(hInternet: Win32Pointer, lpszServerName: string | Win32Pointer, nServerPort: number, lpszUserName: string | Win32Pointer, lpszPassword: string | Win32Pointer, dwService: number, dwFlags: number, dwContext: number | bigint): number | null;
+  InternetConnectA(
+    hInternet: Win32Pointer,
+    lpszServerName: string | Win32Pointer,
+    nServerPort: number,
+    lpszUserName: string | Win32Pointer,
+    lpszPassword: string | Win32Pointer,
+    dwService: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!InternetConnectW */
-  InternetConnectW(hInternet: Win32Pointer, lpszServerName: string | Win32Pointer, nServerPort: number, lpszUserName: string | Win32Pointer, lpszPassword: string | Win32Pointer, dwService: number, dwFlags: number, dwContext: number | bigint): number | null;
+  InternetConnectW(
+    hInternet: Win32Pointer,
+    lpszServerName: string | Win32Pointer,
+    nServerPort: number,
+    lpszUserName: string | Win32Pointer,
+    lpszPassword: string | Win32Pointer,
+    dwService: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!InternetConnectW */
-  InternetConnect(hInternet: Win32Pointer, lpszServerName: string | Win32Pointer, nServerPort: number, lpszUserName: string | Win32Pointer, lpszPassword: string | Win32Pointer, dwService: number, dwFlags: number, dwContext: number | bigint): number | null;
+  InternetConnect(
+    hInternet: Win32Pointer,
+    lpszServerName: string | Win32Pointer,
+    nServerPort: number,
+    lpszUserName: string | Win32Pointer,
+    lpszPassword: string | Win32Pointer,
+    dwService: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!InternetConvertUrlFromWireToWideChar */
-  InternetConvertUrlFromWireToWideChar(pcszUrl: string | Win32Pointer, cchUrl: number, pcwszBaseUrl: string | Win32Pointer, dwCodePageHost: number, dwCodePagePath: number, fEncodePathExtra: number, dwCodePageExtra: number, ppwszConvertedUrl: Win32Pointer): number;
+  InternetConvertUrlFromWireToWideChar(
+    pcszUrl: string | Win32Pointer,
+    cchUrl: number,
+    pcwszBaseUrl: string | Win32Pointer,
+    dwCodePageHost: number,
+    dwCodePagePath: number,
+    fEncodePathExtra: number,
+    dwCodePageExtra: number,
+    ppwszConvertedUrl: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetCrackUrlA */
-  InternetCrackUrlA(lpszUrl: string | Win32Pointer, dwUrlLength: number, dwFlags: number, lpUrlComponents: Win32Pointer): number;
+  InternetCrackUrlA(
+    lpszUrl: string | Win32Pointer,
+    dwUrlLength: number,
+    dwFlags: number,
+    lpUrlComponents: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetCrackUrlW */
-  InternetCrackUrlW(lpszUrl: string | Win32Pointer, dwUrlLength: number, dwFlags: number, lpUrlComponents: Win32Pointer): number;
+  InternetCrackUrlW(
+    lpszUrl: string | Win32Pointer,
+    dwUrlLength: number,
+    dwFlags: number,
+    lpUrlComponents: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetCrackUrlW */
-  InternetCrackUrl(lpszUrl: string | Win32Pointer, dwUrlLength: number, dwFlags: number, lpUrlComponents: Win32Pointer): number;
+  InternetCrackUrl(
+    lpszUrl: string | Win32Pointer,
+    dwUrlLength: number,
+    dwFlags: number,
+    lpUrlComponents: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetCreateUrlA */
-  InternetCreateUrlA(lpUrlComponents: Win32Pointer, dwFlags: number, lpszUrl: string | Win32Pointer, lpdwUrlLength: Win32Pointer): number;
+  InternetCreateUrlA(
+    lpUrlComponents: Win32Pointer,
+    dwFlags: number,
+    lpszUrl: string | Win32Pointer,
+    lpdwUrlLength: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetCreateUrlW */
-  InternetCreateUrlW(lpUrlComponents: Win32Pointer, dwFlags: number, lpszUrl: string | Win32Pointer, lpdwUrlLength: Win32Pointer): number;
+  InternetCreateUrlW(
+    lpUrlComponents: Win32Pointer,
+    dwFlags: number,
+    lpszUrl: string | Win32Pointer,
+    lpdwUrlLength: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetCreateUrlW */
-  InternetCreateUrl(lpUrlComponents: Win32Pointer, dwFlags: number, lpszUrl: string | Win32Pointer, lpdwUrlLength: Win32Pointer): number;
+  InternetCreateUrl(
+    lpUrlComponents: Win32Pointer,
+    dwFlags: number,
+    lpszUrl: string | Win32Pointer,
+    lpdwUrlLength: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetDial */
-  InternetDial(hwndParent: Win32Pointer, lpszConnectoid: string | Win32Pointer, dwFlags: number, lpdwConnection: Win32Pointer, dwReserved: number): number;
+  InternetDial(
+    hwndParent: Win32Pointer,
+    lpszConnectoid: string | Win32Pointer,
+    dwFlags: number,
+    lpdwConnection: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!InternetDialA */
-  InternetDialA(hwndParent: Win32Pointer, lpszConnectoid: string | Win32Pointer, dwFlags: number, lpdwConnection: Win32Pointer, dwReserved: number): number;
+  InternetDialA(
+    hwndParent: Win32Pointer,
+    lpszConnectoid: string | Win32Pointer,
+    dwFlags: number,
+    lpdwConnection: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!InternetDialW */
-  InternetDialW(hwndParent: Win32Pointer, lpszConnectoid: string | Win32Pointer, dwFlags: number, lpdwConnection: Win32Pointer, dwReserved: number): number;
+  InternetDialW(
+    hwndParent: Win32Pointer,
+    lpszConnectoid: string | Win32Pointer,
+    dwFlags: number,
+    lpdwConnection: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!InternetEnumPerSiteCookieDecisionA */
-  InternetEnumPerSiteCookieDecisionA(pszSiteName: string | Win32Pointer, pcSiteNameSize: Win32Pointer, pdwDecision: Win32Pointer, dwIndex: number): number;
+  InternetEnumPerSiteCookieDecisionA(
+    pszSiteName: string | Win32Pointer,
+    pcSiteNameSize: Win32Pointer,
+    pdwDecision: Win32Pointer,
+    dwIndex: number,
+  ): number;
   /** wininet.dll!InternetEnumPerSiteCookieDecisionW */
-  InternetEnumPerSiteCookieDecisionW(pszSiteName: string | Win32Pointer, pcSiteNameSize: Win32Pointer, pdwDecision: Win32Pointer, dwIndex: number): number;
+  InternetEnumPerSiteCookieDecisionW(
+    pszSiteName: string | Win32Pointer,
+    pcSiteNameSize: Win32Pointer,
+    pdwDecision: Win32Pointer,
+    dwIndex: number,
+  ): number;
   /** wininet.dll!InternetEnumPerSiteCookieDecisionW */
-  InternetEnumPerSiteCookieDecision(pszSiteName: string | Win32Pointer, pcSiteNameSize: Win32Pointer, pdwDecision: Win32Pointer, dwIndex: number): number;
+  InternetEnumPerSiteCookieDecision(
+    pszSiteName: string | Win32Pointer,
+    pcSiteNameSize: Win32Pointer,
+    pdwDecision: Win32Pointer,
+    dwIndex: number,
+  ): number;
   /** wininet.dll!InternetErrorDlg */
-  InternetErrorDlg(hWnd: Win32Pointer, hRequest: Win32Pointer, dwError: number, dwFlags: number, lppvData: Win32Pointer): number;
+  InternetErrorDlg(
+    hWnd: Win32Pointer,
+    hRequest: Win32Pointer,
+    dwError: number,
+    dwFlags: number,
+    lppvData: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetFindNextFileA */
   InternetFindNextFileA(hFind: Win32Pointer, lpvFindData: Win32Pointer): number;
   /** wininet.dll!InternetFindNextFileW */
@@ -445,31 +1301,100 @@ interface Functions {
   /** wininet.dll!InternetGetConnectedState */
   InternetGetConnectedState(lpdwFlags: Win32Pointer, dwReserved: number): number;
   /** wininet.dll!InternetGetConnectedStateEx */
-  InternetGetConnectedStateEx(lpdwFlags: Win32Pointer, lpszConnectionName: string | Win32Pointer, dwNameLen: number, dwReserved: number): number;
+  InternetGetConnectedStateEx(
+    lpdwFlags: Win32Pointer,
+    lpszConnectionName: string | Win32Pointer,
+    dwNameLen: number,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!InternetGetConnectedStateExA */
-  InternetGetConnectedStateExA(lpdwFlags: Win32Pointer, lpszConnectionName: string | Win32Pointer, cchNameLen: number, dwReserved: number): number;
+  InternetGetConnectedStateExA(
+    lpdwFlags: Win32Pointer,
+    lpszConnectionName: string | Win32Pointer,
+    cchNameLen: number,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!InternetGetConnectedStateExW */
-  InternetGetConnectedStateExW(lpdwFlags: Win32Pointer, lpszConnectionName: string | Win32Pointer, cchNameLen: number, dwReserved: number): number;
+  InternetGetConnectedStateExW(
+    lpdwFlags: Win32Pointer,
+    lpszConnectionName: string | Win32Pointer,
+    cchNameLen: number,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!InternetGetCookieA */
-  InternetGetCookieA(lpszUrl: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer, lpdwSize: Win32Pointer): number;
+  InternetGetCookieA(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+    lpdwSize: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetCookieEx2 */
-  InternetGetCookieEx2(pcwszUrl: string | Win32Pointer, pcwszCookieName: string | Win32Pointer, dwFlags: number, ppCookies: Win32Pointer, pdwCookieCount: Win32Pointer): number;
+  InternetGetCookieEx2(
+    pcwszUrl: string | Win32Pointer,
+    pcwszCookieName: string | Win32Pointer,
+    dwFlags: number,
+    ppCookies: Win32Pointer,
+    pdwCookieCount: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetCookieExA */
-  InternetGetCookieExA(lpszUrl: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer, lpdwSize: Win32Pointer, dwFlags: number, lpReserved: Win32Pointer): number;
+  InternetGetCookieExA(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+    lpdwSize: Win32Pointer,
+    dwFlags: number,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetCookieExW */
-  InternetGetCookieExW(lpszUrl: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer, lpdwSize: Win32Pointer, dwFlags: number, lpReserved: Win32Pointer): number;
+  InternetGetCookieExW(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+    lpdwSize: Win32Pointer,
+    dwFlags: number,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetCookieExW */
-  InternetGetCookieEx(lpszUrl: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer, lpdwSize: Win32Pointer, dwFlags: number, lpReserved: Win32Pointer): number;
+  InternetGetCookieEx(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+    lpdwSize: Win32Pointer,
+    dwFlags: number,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetCookieW */
-  InternetGetCookieW(lpszUrl: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer, lpdwSize: Win32Pointer): number;
+  InternetGetCookieW(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+    lpdwSize: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetCookieW */
-  InternetGetCookie(lpszUrl: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer, lpdwSize: Win32Pointer): number;
+  InternetGetCookie(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+    lpdwSize: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetLastResponseInfoA */
-  InternetGetLastResponseInfoA(lpdwError: Win32Pointer, lpszBuffer: string | Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  InternetGetLastResponseInfoA(
+    lpdwError: Win32Pointer,
+    lpszBuffer: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetLastResponseInfoW */
-  InternetGetLastResponseInfoW(lpdwError: Win32Pointer, lpszBuffer: string | Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  InternetGetLastResponseInfoW(
+    lpdwError: Win32Pointer,
+    lpszBuffer: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetLastResponseInfoW */
-  InternetGetLastResponseInfo(lpdwError: Win32Pointer, lpszBuffer: string | Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  InternetGetLastResponseInfo(
+    lpdwError: Win32Pointer,
+    lpszBuffer: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetPerSiteCookieDecisionA */
   InternetGetPerSiteCookieDecisionA(pchHostName: string | Win32Pointer, pResult: Win32Pointer): number;
   /** wininet.dll!InternetGetPerSiteCookieDecisionW */
@@ -477,13 +1402,29 @@ interface Functions {
   /** wininet.dll!InternetGetPerSiteCookieDecisionW */
   InternetGetPerSiteCookieDecision(pchHostName: string | Win32Pointer, pResult: Win32Pointer): number;
   /** wininet.dll!InternetGetProxyForUrl */
-  InternetGetProxyForUrl(hInternet: Win32Pointer, pcwszUrl: string | Win32Pointer, pProxyInfoList: Win32Pointer): number;
+  InternetGetProxyForUrl(
+    hInternet: Win32Pointer,
+    pcwszUrl: string | Win32Pointer,
+    pProxyInfoList: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetSecurityInfoByURL */
-  InternetGetSecurityInfoByURL(lpszURL: string | Win32Pointer, ppCertChain: Win32Pointer, pdwSecureFlags: Win32Pointer): number;
+  InternetGetSecurityInfoByURL(
+    lpszURL: string | Win32Pointer,
+    ppCertChain: Win32Pointer,
+    pdwSecureFlags: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetSecurityInfoByURLA */
-  InternetGetSecurityInfoByURLA(lpszURL: string | Win32Pointer, ppCertChain: Win32Pointer, pdwSecureFlags: Win32Pointer): number;
+  InternetGetSecurityInfoByURLA(
+    lpszURL: string | Win32Pointer,
+    ppCertChain: Win32Pointer,
+    pdwSecureFlags: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGetSecurityInfoByURLW */
-  InternetGetSecurityInfoByURLW(lpszURL: string | Win32Pointer, ppCertChain: Win32Pointer, pdwSecureFlags: Win32Pointer): number;
+  InternetGetSecurityInfoByURLW(
+    lpszURL: string | Win32Pointer,
+    ppCertChain: Win32Pointer,
+    pdwSecureFlags: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetGoOnline */
   InternetGoOnline(lpszURL: string | Win32Pointer, hwndParent: Win32Pointer, dwFlags: number): number;
   /** wininet.dll!InternetGoOnlineA */
@@ -497,55 +1438,185 @@ interface Functions {
   /** wininet.dll!InternetLockRequestFile */
   InternetLockRequestFile(hInternet: Win32Pointer, lphLockRequestInfo: Win32Pointer): number;
   /** wininet.dll!InternetOpenA */
-  InternetOpenA(lpszAgent: string | Win32Pointer, dwAccessType: number, lpszProxy: string | Win32Pointer, lpszProxyBypass: string | Win32Pointer, dwFlags: number): number | null;
+  InternetOpenA(
+    lpszAgent: string | Win32Pointer,
+    dwAccessType: number,
+    lpszProxy: string | Win32Pointer,
+    lpszProxyBypass: string | Win32Pointer,
+    dwFlags: number,
+  ): number | null;
   /** wininet.dll!InternetOpenUrlA */
-  InternetOpenUrlA(hInternet: Win32Pointer, lpszUrl: string | Win32Pointer, lpszHeaders: string | Win32Pointer, dwHeadersLength: number, dwFlags: number, dwContext: number | bigint): number | null;
+  InternetOpenUrlA(
+    hInternet: Win32Pointer,
+    lpszUrl: string | Win32Pointer,
+    lpszHeaders: string | Win32Pointer,
+    dwHeadersLength: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!InternetOpenUrlW */
-  InternetOpenUrlW(hInternet: Win32Pointer, lpszUrl: string | Win32Pointer, lpszHeaders: string | Win32Pointer, dwHeadersLength: number, dwFlags: number, dwContext: number | bigint): number | null;
+  InternetOpenUrlW(
+    hInternet: Win32Pointer,
+    lpszUrl: string | Win32Pointer,
+    lpszHeaders: string | Win32Pointer,
+    dwHeadersLength: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!InternetOpenUrlW */
-  InternetOpenUrl(hInternet: Win32Pointer, lpszUrl: string | Win32Pointer, lpszHeaders: string | Win32Pointer, dwHeadersLength: number, dwFlags: number, dwContext: number | bigint): number | null;
+  InternetOpenUrl(
+    hInternet: Win32Pointer,
+    lpszUrl: string | Win32Pointer,
+    lpszHeaders: string | Win32Pointer,
+    dwHeadersLength: number,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number | null;
   /** wininet.dll!InternetOpenW */
-  InternetOpenW(lpszAgent: string | Win32Pointer, dwAccessType: number, lpszProxy: string | Win32Pointer, lpszProxyBypass: string | Win32Pointer, dwFlags: number): number | null;
+  InternetOpenW(
+    lpszAgent: string | Win32Pointer,
+    dwAccessType: number,
+    lpszProxy: string | Win32Pointer,
+    lpszProxyBypass: string | Win32Pointer,
+    dwFlags: number,
+  ): number | null;
   /** wininet.dll!InternetOpenW */
-  InternetOpen(lpszAgent: string | Win32Pointer, dwAccessType: number, lpszProxy: string | Win32Pointer, lpszProxyBypass: string | Win32Pointer, dwFlags: number): number | null;
+  InternetOpen(
+    lpszAgent: string | Win32Pointer,
+    dwAccessType: number,
+    lpszProxy: string | Win32Pointer,
+    lpszProxyBypass: string | Win32Pointer,
+    dwFlags: number,
+  ): number | null;
   /** wininet.dll!InternetQueryDataAvailable */
-  InternetQueryDataAvailable(hFile: Win32Pointer, lpdwNumberOfBytesAvailable: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  InternetQueryDataAvailable(
+    hFile: Win32Pointer,
+    lpdwNumberOfBytesAvailable: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!InternetQueryFortezzaStatus */
   InternetQueryFortezzaStatus(pdwStatus: Win32Pointer, dwReserved: number | bigint): number;
   /** wininet.dll!InternetQueryOptionA */
-  InternetQueryOptionA(hInternet: Win32Pointer, dwOption: number, lpBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  InternetQueryOptionA(
+    hInternet: Win32Pointer,
+    dwOption: number,
+    lpBuffer: Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetQueryOptionW */
-  InternetQueryOptionW(hInternet: Win32Pointer, dwOption: number, lpBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  InternetQueryOptionW(
+    hInternet: Win32Pointer,
+    dwOption: number,
+    lpBuffer: Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetQueryOptionW */
-  InternetQueryOption(hInternet: Win32Pointer, dwOption: number, lpBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  InternetQueryOption(
+    hInternet: Win32Pointer,
+    dwOption: number,
+    lpBuffer: Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetReadFile */
-  InternetReadFile(hFile: Win32Pointer, lpBuffer: Win32Pointer, dwNumberOfBytesToRead: number, lpdwNumberOfBytesRead: Win32Pointer): number;
+  InternetReadFile(
+    hFile: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    dwNumberOfBytesToRead: number,
+    lpdwNumberOfBytesRead: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetReadFileExA */
-  InternetReadFileExA(hFile: Win32Pointer, lpBuffersOut: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  InternetReadFileExA(
+    hFile: Win32Pointer,
+    lpBuffersOut: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!InternetReadFileExW */
-  InternetReadFileExW(hFile: Win32Pointer, lpBuffersOut: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  InternetReadFileExW(
+    hFile: Win32Pointer,
+    lpBuffersOut: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!InternetReadFileExW */
-  InternetReadFileEx(hFile: Win32Pointer, lpBuffersOut: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  InternetReadFileEx(
+    hFile: Win32Pointer,
+    lpBuffersOut: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!InternetSecurityProtocolToStringA */
-  InternetSecurityProtocolToStringA(dwProtocol: number, lpstr: string | Win32Pointer, lpdwstrLength: Win32Pointer, dwReserved: number): number;
+  InternetSecurityProtocolToStringA(
+    dwProtocol: number,
+    lpstr: string | Win32Pointer,
+    lpdwstrLength: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!InternetSecurityProtocolToStringW */
-  InternetSecurityProtocolToStringW(dwProtocol: number, lpstr: string | Win32Pointer, lpdwstrLength: Win32Pointer, dwReserved: number): number;
+  InternetSecurityProtocolToStringW(
+    dwProtocol: number,
+    lpstr: string | Win32Pointer,
+    lpdwstrLength: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!InternetSecurityProtocolToStringW */
-  InternetSecurityProtocolToString(dwProtocol: number, lpstr: string | Win32Pointer, lpdwstrLength: Win32Pointer, dwReserved: number): number;
+  InternetSecurityProtocolToString(
+    dwProtocol: number,
+    lpstr: string | Win32Pointer,
+    lpdwstrLength: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!InternetSetCookieA */
-  InternetSetCookieA(lpszUrl: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer): number;
+  InternetSetCookieA(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+  ): number;
   /** wininet.dll!InternetSetCookieEx2 */
-  InternetSetCookieEx2(pcwszUrl: string | Win32Pointer, pCookie: Win32Pointer, pcwszP3PPolicy: string | Win32Pointer, dwFlags: number, pdwCookieState: Win32Pointer): number;
+  InternetSetCookieEx2(
+    pcwszUrl: string | Win32Pointer,
+    pCookie: Win32Pointer,
+    pcwszP3PPolicy: string | Win32Pointer,
+    dwFlags: number,
+    pdwCookieState: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetSetCookieExA */
-  InternetSetCookieExA(lpszUrl: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer, dwFlags: number, dwReserved: number | bigint): number;
+  InternetSetCookieExA(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+    dwFlags: number,
+    dwReserved: number | bigint,
+  ): number;
   /** wininet.dll!InternetSetCookieExW */
-  InternetSetCookieExW(lpszUrl: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer, dwFlags: number, dwReserved: number | bigint): number;
+  InternetSetCookieExW(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+    dwFlags: number,
+    dwReserved: number | bigint,
+  ): number;
   /** wininet.dll!InternetSetCookieExW */
-  InternetSetCookieEx(lpszUrl: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer, dwFlags: number, dwReserved: number | bigint): number;
+  InternetSetCookieEx(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+    dwFlags: number,
+    dwReserved: number | bigint,
+  ): number;
   /** wininet.dll!InternetSetCookieW */
-  InternetSetCookieW(lpszUrl: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer): number;
+  InternetSetCookieW(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+  ): number;
   /** wininet.dll!InternetSetCookieW */
-  InternetSetCookie(lpszUrl: string | Win32Pointer, lpszCookieName: string | Win32Pointer, lpszCookieData: string | Win32Pointer): number;
+  InternetSetCookie(
+    lpszUrl: string | Win32Pointer,
+    lpszCookieName: string | Win32Pointer,
+    lpszCookieData: string | Win32Pointer,
+  ): number;
   /** wininet.dll!InternetSetDialState */
   InternetSetDialState(lpszConnectoid: string | Win32Pointer, dwState: number, dwReserved: number): number;
   /** wininet.dll!InternetSetDialStateA */
@@ -553,15 +1624,39 @@ interface Functions {
   /** wininet.dll!InternetSetDialStateW */
   InternetSetDialStateW(lpszConnectoid: string | Win32Pointer, dwState: number, dwReserved: number): number;
   /** wininet.dll!InternetSetFilePointer */
-  InternetSetFilePointer(hFile: Win32Pointer, lDistanceToMove: number, lpDistanceToMoveHigh: Win32Pointer, dwMoveMethod: number, dwContext: number | bigint): number;
+  InternetSetFilePointer(
+    hFile: Win32Pointer,
+    lDistanceToMove: number,
+    lpDistanceToMoveHigh: Win32Pointer,
+    dwMoveMethod: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!InternetSetOptionA */
   InternetSetOptionA(hInternet: Win32Pointer, dwOption: number, lpBuffer: Win32Pointer, dwBufferLength: number): number;
   /** wininet.dll!InternetSetOptionExA */
-  InternetSetOptionExA(hInternet: Win32Pointer, dwOption: number, lpBuffer: Win32Pointer, dwBufferLength: number, dwFlags: number): number;
+  InternetSetOptionExA(
+    hInternet: Win32Pointer,
+    dwOption: number,
+    lpBuffer: Win32Pointer,
+    dwBufferLength: number,
+    dwFlags: number,
+  ): number;
   /** wininet.dll!InternetSetOptionExW */
-  InternetSetOptionExW(hInternet: Win32Pointer, dwOption: number, lpBuffer: Win32Pointer, dwBufferLength: number, dwFlags: number): number;
+  InternetSetOptionExW(
+    hInternet: Win32Pointer,
+    dwOption: number,
+    lpBuffer: Win32Pointer,
+    dwBufferLength: number,
+    dwFlags: number,
+  ): number;
   /** wininet.dll!InternetSetOptionExW */
-  InternetSetOptionEx(hInternet: Win32Pointer, dwOption: number, lpBuffer: Win32Pointer, dwBufferLength: number, dwFlags: number): number;
+  InternetSetOptionEx(
+    hInternet: Win32Pointer,
+    dwOption: number,
+    lpBuffer: Win32Pointer,
+    dwBufferLength: number,
+    dwFlags: number,
+  ): number;
   /** wininet.dll!InternetSetOptionW */
   InternetSetOptionW(hInternet: Win32Pointer, dwOption: number, lpBuffer: Win32Pointer, dwBufferLength: number): number;
   /** wininet.dll!InternetSetOptionW */
@@ -587,9 +1682,19 @@ interface Functions {
   /** wininet.dll!InternetTimeFromSystemTime */
   InternetTimeFromSystemTime(pst: Win32Pointer, dwRFC: number, lpszTime: string | Win32Pointer, cbTime: number): number;
   /** wininet.dll!InternetTimeFromSystemTimeA */
-  InternetTimeFromSystemTimeA(pst: Win32Pointer, dwRFC: number, lpszTime: string | Win32Pointer, cbTime: number): number;
+  InternetTimeFromSystemTimeA(
+    pst: Win32Pointer,
+    dwRFC: number,
+    lpszTime: string | Win32Pointer,
+    cbTime: number,
+  ): number;
   /** wininet.dll!InternetTimeFromSystemTimeW */
-  InternetTimeFromSystemTimeW(pst: Win32Pointer, dwRFC: number, lpszTime: string | Win32Pointer, cbTime: number): number;
+  InternetTimeFromSystemTimeW(
+    pst: Win32Pointer,
+    dwRFC: number,
+    lpszTime: string | Win32Pointer,
+    cbTime: number,
+  ): number;
   /** wininet.dll!InternetTimeToSystemTime */
   InternetTimeToSystemTime(lpszTime: string | Win32Pointer, pst: Win32Pointer, dwReserved: number): number;
   /** wininet.dll!InternetTimeToSystemTimeA */
@@ -599,13 +1704,33 @@ interface Functions {
   /** wininet.dll!InternetUnlockRequestFile */
   InternetUnlockRequestFile(hLockRequestInfo: Win32Pointer): number;
   /** wininet.dll!InternetWriteFile */
-  InternetWriteFile(hFile: Win32Pointer, lpBuffer: Win32Pointer, dwNumberOfBytesToWrite: number, lpdwNumberOfBytesWritten: Win32Pointer): number;
+  InternetWriteFile(
+    hFile: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    dwNumberOfBytesToWrite: number,
+    lpdwNumberOfBytesWritten: Win32Pointer,
+  ): number;
   /** wininet.dll!InternetWriteFileExA */
-  InternetWriteFileExA(hFile: Win32Pointer, lpBuffersIn: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  InternetWriteFileExA(
+    hFile: Win32Pointer,
+    lpBuffersIn: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!InternetWriteFileExW */
-  InternetWriteFileExW(hFile: Win32Pointer, lpBuffersIn: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  InternetWriteFileExW(
+    hFile: Win32Pointer,
+    lpBuffersIn: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!InternetWriteFileExW */
-  InternetWriteFileEx(hFile: Win32Pointer, lpBuffersIn: Win32Pointer, dwFlags: number, dwContext: number | bigint): number;
+  InternetWriteFileEx(
+    hFile: Win32Pointer,
+    lpBuffersIn: Win32Pointer,
+    dwFlags: number,
+    dwContext: number | bigint,
+  ): number;
   /** wininet.dll!IsDomainLegalCookieDomainA */
   IsDomainLegalCookieDomainA(pchDomain: string | Win32Pointer, pchFullDomain: string | Win32Pointer): number;
   /** wininet.dll!IsDomainLegalCookieDomainW */
@@ -625,35 +1750,118 @@ interface Functions {
   /** wininet.dll!LoadUrlCacheContent */
   LoadUrlCacheContent(): number;
   /** wininet.dll!ParseX509EncodedCertificateForListBoxEntry */
-  ParseX509EncodedCertificateForListBoxEntry(lpCert: Win32Pointer, cbCert: number, lpszListBoxEntry: string | Win32Pointer, lpdwListBoxEntry: Win32Pointer): number;
+  ParseX509EncodedCertificateForListBoxEntry(
+    lpCert: Win32Pointer,
+    cbCert: number,
+    lpszListBoxEntry: string | Win32Pointer,
+    lpdwListBoxEntry: Win32Pointer,
+  ): number;
   /** wininet.dll!PerformOperationOverUrlCacheA */
-  PerformOperationOverUrlCacheA(pszUrlSearchPattern: string | Win32Pointer, dwFlags: number, dwFilter: number, GroupId: number | bigint, pReserved1: Win32Pointer, pdwReserved2: Win32Pointer, pReserved3: Win32Pointer, op: Win32Callback, pOperatorData: Win32Pointer): number;
+  PerformOperationOverUrlCacheA(
+    pszUrlSearchPattern: string | Win32Pointer,
+    dwFlags: number,
+    dwFilter: number,
+    GroupId: number | bigint,
+    pReserved1: Win32Pointer,
+    pdwReserved2: Win32Pointer,
+    pReserved3: Win32Pointer,
+    op: Win32Callback,
+    pOperatorData: Win32Pointer,
+  ): number;
   /** wininet.dll!PrivacyGetZonePreferenceW */
-  PrivacyGetZonePreferenceW(dwZone: number, dwType: number, pdwTemplate: Win32Pointer, pszBuffer: string | Win32Pointer, pdwBufferLength: Win32Pointer): number;
+  PrivacyGetZonePreferenceW(
+    dwZone: number,
+    dwType: number,
+    pdwTemplate: Win32Pointer,
+    pszBuffer: string | Win32Pointer,
+    pdwBufferLength: Win32Pointer,
+  ): number;
   /** wininet.dll!PrivacySetZonePreferenceW */
-  PrivacySetZonePreferenceW(dwZone: number, dwType: number, dwTemplate: number, pszPreference: string | Win32Pointer): number;
+  PrivacySetZonePreferenceW(
+    dwZone: number,
+    dwType: number,
+    dwTemplate: number,
+    pszPreference: string | Win32Pointer,
+  ): number;
   /** wininet.dll!ReadGuidsForConnectedNetworks */
-  ReadGuidsForConnectedNetworks(pcNetworks: Win32Pointer, pppwszNetworkGuids: Win32Pointer, pppbstrNetworkNames: Win32Pointer, pppwszGWMacs: Win32Pointer, pcGatewayMacs: Win32Pointer, pdwFlags: Win32Pointer): number;
+  ReadGuidsForConnectedNetworks(
+    pcNetworks: Win32Pointer,
+    pppwszNetworkGuids: Win32Pointer,
+    pppbstrNetworkNames: Win32Pointer,
+    pppwszGWMacs: Win32Pointer,
+    pcGatewayMacs: Win32Pointer,
+    pdwFlags: Win32Pointer,
+  ): number;
   /** wininet.dll!ReadUrlCacheEntryStream */
-  ReadUrlCacheEntryStream(hUrlCacheStream: Win32Pointer, dwLocation: number, lpBuffer: Win32Pointer, lpdwLen: Win32Pointer, Reserved: number): number;
+  ReadUrlCacheEntryStream(
+    hUrlCacheStream: Win32Pointer,
+    dwLocation: number,
+    lpBuffer: Win32Pointer,
+    lpdwLen: Win32Pointer,
+    Reserved: number,
+  ): number;
   /** wininet.dll!ReadUrlCacheEntryStreamEx */
-  ReadUrlCacheEntryStreamEx(hUrlCacheStream: Win32Pointer, qwLocation: number | bigint, lpBuffer: Win32Pointer, lpdwLen: Win32Pointer): number;
+  ReadUrlCacheEntryStreamEx(
+    hUrlCacheStream: Win32Pointer,
+    qwLocation: number | bigint,
+    lpBuffer: Win32Pointer,
+    lpdwLen: Win32Pointer,
+  ): number;
   /** wininet.dll!RegisterUrlCacheNotification */
-  RegisterUrlCacheNotification(hWnd: Win32Pointer, uMsg: number, gid: number | bigint, dwOpsFilter: number, dwReserved: number): number;
+  RegisterUrlCacheNotification(
+    hWnd: Win32Pointer,
+    uMsg: number,
+    gid: number | bigint,
+    dwOpsFilter: number,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!ResumeSuspendedDownload */
   ResumeSuspendedDownload(hRequest: Win32Pointer, dwResultCode: number): number;
   /** wininet.dll!RetrieveUrlCacheEntryFileA */
-  RetrieveUrlCacheEntryFileA(lpszUrlName: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, dwReserved: number): number;
+  RetrieveUrlCacheEntryFileA(
+    lpszUrlName: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!RetrieveUrlCacheEntryFileW */
-  RetrieveUrlCacheEntryFileW(lpszUrlName: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, dwReserved: number): number;
+  RetrieveUrlCacheEntryFileW(
+    lpszUrlName: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!RetrieveUrlCacheEntryFileW */
-  RetrieveUrlCacheEntryFile(lpszUrlName: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, dwReserved: number): number;
+  RetrieveUrlCacheEntryFile(
+    lpszUrlName: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** wininet.dll!RetrieveUrlCacheEntryStreamA */
-  RetrieveUrlCacheEntryStreamA(lpszUrlName: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, fRandomRead: number, dwReserved: number): number | null;
+  RetrieveUrlCacheEntryStreamA(
+    lpszUrlName: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    fRandomRead: number,
+    dwReserved: number,
+  ): number | null;
   /** wininet.dll!RetrieveUrlCacheEntryStreamW */
-  RetrieveUrlCacheEntryStreamW(lpszUrlName: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, fRandomRead: number, dwReserved: number): number | null;
+  RetrieveUrlCacheEntryStreamW(
+    lpszUrlName: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    fRandomRead: number,
+    dwReserved: number,
+  ): number | null;
   /** wininet.dll!RetrieveUrlCacheEntryStreamW */
-  RetrieveUrlCacheEntryStream(lpszUrlName: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, lpcbCacheEntryInfo: Win32Pointer, fRandomRead: number, dwReserved: number): number | null;
+  RetrieveUrlCacheEntryStream(
+    lpszUrlName: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    lpcbCacheEntryInfo: Win32Pointer,
+    fRandomRead: number,
+    dwReserved: number,
+  ): number | null;
   /** wininet.dll!RunOnceUrlCache */
   RunOnceUrlCache(hwnd: Win32Pointer, hinst: Win32Pointer, lpszCmd: string | Win32Pointer, nCmdShow: number): number;
   /** wininet.dll!SetUrlCacheConfigInfoA */
@@ -663,23 +1871,74 @@ interface Functions {
   /** wininet.dll!SetUrlCacheConfigInfoW */
   SetUrlCacheConfigInfo(lpCacheConfigInfo: Win32Pointer, dwFieldControl: number): number;
   /** wininet.dll!SetUrlCacheEntryGroup */
-  SetUrlCacheEntryGroup(lpszUrlName: string | Win32Pointer, dwFlags: number, GroupId: number | bigint, pbGroupAttributes: Win32Pointer, cbGroupAttributes: number, lpReserved: Win32Pointer): number;
+  SetUrlCacheEntryGroup(
+    lpszUrlName: string | Win32Pointer,
+    dwFlags: number,
+    GroupId: number | bigint,
+    pbGroupAttributes: Win32Pointer,
+    cbGroupAttributes: number,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!SetUrlCacheEntryGroupA */
-  SetUrlCacheEntryGroupA(lpszUrlName: string | Win32Pointer, dwFlags: number, GroupId: number | bigint, pbGroupAttributes: Win32Pointer, cbGroupAttributes: number, lpReserved: Win32Pointer): number;
+  SetUrlCacheEntryGroupA(
+    lpszUrlName: string | Win32Pointer,
+    dwFlags: number,
+    GroupId: number | bigint,
+    pbGroupAttributes: Win32Pointer,
+    cbGroupAttributes: number,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!SetUrlCacheEntryGroupW */
-  SetUrlCacheEntryGroupW(lpszUrlName: string | Win32Pointer, dwFlags: number, GroupId: number | bigint, pbGroupAttributes: Win32Pointer, cbGroupAttributes: number, lpReserved: Win32Pointer): number;
+  SetUrlCacheEntryGroupW(
+    lpszUrlName: string | Win32Pointer,
+    dwFlags: number,
+    GroupId: number | bigint,
+    pbGroupAttributes: Win32Pointer,
+    cbGroupAttributes: number,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!SetUrlCacheEntryInfoA */
-  SetUrlCacheEntryInfoA(lpszUrlName: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, dwFieldControl: number): number;
+  SetUrlCacheEntryInfoA(
+    lpszUrlName: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    dwFieldControl: number,
+  ): number;
   /** wininet.dll!SetUrlCacheEntryInfoW */
-  SetUrlCacheEntryInfoW(lpszUrlName: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, dwFieldControl: number): number;
+  SetUrlCacheEntryInfoW(
+    lpszUrlName: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    dwFieldControl: number,
+  ): number;
   /** wininet.dll!SetUrlCacheEntryInfoW */
-  SetUrlCacheEntryInfo(lpszUrlName: string | Win32Pointer, lpCacheEntryInfo: Win32Pointer, dwFieldControl: number): number;
+  SetUrlCacheEntryInfo(
+    lpszUrlName: string | Win32Pointer,
+    lpCacheEntryInfo: Win32Pointer,
+    dwFieldControl: number,
+  ): number;
   /** wininet.dll!SetUrlCacheGroupAttributeA */
-  SetUrlCacheGroupAttributeA(gid: number | bigint, dwFlags: number, dwAttributes: number, lpGroupInfo: Win32Pointer, lpReserved: Win32Pointer): number;
+  SetUrlCacheGroupAttributeA(
+    gid: number | bigint,
+    dwFlags: number,
+    dwAttributes: number,
+    lpGroupInfo: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!SetUrlCacheGroupAttributeW */
-  SetUrlCacheGroupAttributeW(gid: number | bigint, dwFlags: number, dwAttributes: number, lpGroupInfo: Win32Pointer, lpReserved: Win32Pointer): number;
+  SetUrlCacheGroupAttributeW(
+    gid: number | bigint,
+    dwFlags: number,
+    dwAttributes: number,
+    lpGroupInfo: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!SetUrlCacheGroupAttributeW */
-  SetUrlCacheGroupAttribute(gid: number | bigint, dwFlags: number, dwAttributes: number, lpGroupInfo: Win32Pointer, lpReserved: Win32Pointer): number;
+  SetUrlCacheGroupAttribute(
+    gid: number | bigint,
+    dwFlags: number,
+    dwAttributes: number,
+    lpGroupInfo: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** wininet.dll!SetUrlCacheHeaderData */
   SetUrlCacheHeaderData(nIdx: number, dwData: number): number;
   /** wininet.dll!ShowClientAuthCerts */
@@ -705,9 +1964,22 @@ interface Functions {
   /** wininet.dll!UrlCacheContainerSetEntryMaximumAge */
   UrlCacheContainerSetEntryMaximumAge(pwszPrefix: string | Win32Pointer, dwEntryMaxAge: number): number;
   /** wininet.dll!UrlCacheCreateContainer */
-  UrlCacheCreateContainer(pwszName: string | Win32Pointer, pwszPrefix: string | Win32Pointer, pwszDirectory: string | Win32Pointer, ullLimit: number | bigint, dwOptions: number): number;
+  UrlCacheCreateContainer(
+    pwszName: string | Win32Pointer,
+    pwszPrefix: string | Win32Pointer,
+    pwszDirectory: string | Win32Pointer,
+    ullLimit: number | bigint,
+    dwOptions: number,
+  ): number;
   /** wininet.dll!UrlCacheFindFirstEntry */
-  UrlCacheFindFirstEntry(pwszPrefix: string | Win32Pointer, dwFlags: number, dwFilter: number, GroupId: number | bigint, pCacheEntryInfo: Win32Pointer, phFind: Win32Pointer): number;
+  UrlCacheFindFirstEntry(
+    pwszPrefix: string | Win32Pointer,
+    dwFlags: number,
+    dwFilter: number,
+    GroupId: number | bigint,
+    pCacheEntryInfo: Win32Pointer,
+    phFind: Win32Pointer,
+  ): number;
   /** wininet.dll!UrlCacheFindNextEntry */
   UrlCacheFindNextEntry(hFind: Win32Pointer, pCacheEntryInfo: Win32Pointer): number;
   /** wininet.dll!UrlCacheFreeEntryInfo */
@@ -723,19 +1995,41 @@ interface Functions {
   /** wininet.dll!UrlCacheGetGlobalLimit */
   UrlCacheGetGlobalLimit(limitType: number, pullLimit: Win32Pointer): number;
   /** wininet.dll!UrlCacheReadEntryStream */
-  UrlCacheReadEntryStream(hUrlCacheStream: Win32Pointer, ullLocation: number | bigint, pBuffer: Win32Pointer, dwBufferLen: number, pdwBufferLen: Win32Pointer): number;
+  UrlCacheReadEntryStream(
+    hUrlCacheStream: Win32Pointer,
+    ullLocation: number | bigint,
+    pBuffer: Win32Pointer,
+    dwBufferLen: number,
+    pdwBufferLen: Win32Pointer,
+  ): number;
   /** wininet.dll!UrlCacheReloadSettings */
   UrlCacheReloadSettings(): number;
   /** wininet.dll!UrlCacheRetrieveEntryFile */
-  UrlCacheRetrieveEntryFile(hAppCache: Win32Pointer, pcwszUrl: string | Win32Pointer, pCacheEntryInfo: Win32Pointer, phEntryFile: Win32Pointer): number;
+  UrlCacheRetrieveEntryFile(
+    hAppCache: Win32Pointer,
+    pcwszUrl: string | Win32Pointer,
+    pCacheEntryInfo: Win32Pointer,
+    phEntryFile: Win32Pointer,
+  ): number;
   /** wininet.dll!UrlCacheRetrieveEntryStream */
-  UrlCacheRetrieveEntryStream(hAppCache: Win32Pointer, pcwszUrl: string | Win32Pointer, fRandomRead: number, pCacheEntryInfo: Win32Pointer, phEntryStream: Win32Pointer): number;
+  UrlCacheRetrieveEntryStream(
+    hAppCache: Win32Pointer,
+    pcwszUrl: string | Win32Pointer,
+    fRandomRead: number,
+    pCacheEntryInfo: Win32Pointer,
+    phEntryStream: Win32Pointer,
+  ): number;
   /** wininet.dll!UrlCacheServer */
   UrlCacheServer(): number;
   /** wininet.dll!UrlCacheSetGlobalLimit */
   UrlCacheSetGlobalLimit(limitType: number, ullLimit: number | bigint): number;
   /** wininet.dll!UrlCacheUpdateEntryExtraData */
-  UrlCacheUpdateEntryExtraData(hAppCache: Win32Pointer, pcwszUrl: string | Win32Pointer, pbExtraData: Win32Pointer, cbExtraData: number): number;
+  UrlCacheUpdateEntryExtraData(
+    hAppCache: Win32Pointer,
+    pcwszUrl: string | Win32Pointer,
+    pbExtraData: Win32Pointer,
+    cbExtraData: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

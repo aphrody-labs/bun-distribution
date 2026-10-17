@@ -22,11 +22,8 @@ export interface MakeOptions {
 }
 
 /** Pure: tunnel declaration + options -> validated access pack. Throws with a reason when something is missing or unsafe. */
-export function buildAccessPack(
-  tunnel: Tunnel,
-  options: MakeOptions,
-): AccessPack {
-  const peer = tunnel.peers.find((entry) => entry.id === options.peer);
+export function buildAccessPack(tunnel: Tunnel, options: MakeOptions): AccessPack {
+  const peer = tunnel.peers.find(entry => entry.id === options.peer);
   if (!peer) throw new Error(`pair inconnu dans le tunnel : ${options.peer}`);
   const granted = new Set(tunnel.grants[options.peer] ?? []);
   const hosts: Record<string, unknown> = {};
@@ -41,16 +38,13 @@ export function buildAccessPack(
       aphrodyBin: options.aphrodyBins?.[service.host] ?? "aphrody",
     };
   }
-  if (Object.keys(hosts).length === 0)
-    throw new Error(`aucun accès SSH accordé à ${options.peer} dans le tunnel`);
+  if (Object.keys(hosts).length === 0) throw new Error(`aucun accès SSH accordé à ${options.peer} dans le tunnel`);
   const services: Record<string, unknown> = {};
   for (const service of tunnel.services) {
     if (!granted.has(service.id) || service.port === undefined) continue;
     const root = `http://${service.address}:${service.port}`;
-    if (service.id === "mcp-http")
-      services.mcpHttp = { url: `${root}/mcp`, health: `${root}/healthz` };
-    if (service.id === "a2a")
-      services.a2a = { url: root, health: `${root}/ping` };
+    if (service.id === "mcp-http") services.mcpHttp = { url: `${root}/mcp`, health: `${root}/healthz` };
+    if (service.id === "a2a") services.a2a = { url: root, health: `${root}/ping` };
   }
   return parseAccessPack({
     schemaVersion: 1,

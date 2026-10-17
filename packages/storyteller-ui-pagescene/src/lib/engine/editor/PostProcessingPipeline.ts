@@ -71,17 +71,12 @@ export class PostProcessingPipeline {
     const depthTexture = new THREE.DepthTexture(width, height);
     depthTexture.type = THREE.UnsignedShortType;
 
-    const renderTarget = new THREE.WebGLRenderTarget(
-      window.innerWidth,
-      window.innerHeight,
-      { depthTexture, depthBuffer: true },
-    );
+    const renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
+      depthTexture,
+      depthBuffer: true,
+    });
 
-    this.customOutlinerPass = new CustomOutlinePass(
-      new THREE.Vector2(width, height),
-      scene,
-      renderCamera,
-    );
+    this.customOutlinerPass = new CustomOutlinePass(new THREE.Vector2(width, height), scene, renderCamera);
     this.surfaceFinder = new FindSurfaces();
     this.render_composer = new EffectComposer(rawRenderer, renderTarget);
     this.render_composer.addPass(new RenderPass(scene, renderCamera));
@@ -126,8 +121,6 @@ export class PostProcessingPipeline {
   private refreshSurfaceIds() {
     if (this.surfaceFinder === undefined) return;
     this.surfaceFinder.surfaceId = 0;
-    this.customOutlinerPass?.updateMaxSurfaceId(
-      this.surfaceFinder.surfaceId + 1,
-    );
+    this.customOutlinerPass?.updateMaxSurfaceId(this.surfaceFinder.surfaceId + 1);
   }
 }

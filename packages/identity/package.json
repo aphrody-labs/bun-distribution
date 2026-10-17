@@ -43,12 +43,11 @@
     "demo": "bun demo/serve.ts",
     "measure": "bun scripts/measure.ts"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
-    "@types/bun": "catalog:",
-    "@aphrody/paths": "workspace:*",
     "@aphrody/m3": "workspace:*",
+    "@aphrody/paths": "workspace:*",
+    "@types/bun": "catalog:",
     "@types/react": "catalog:",
     "react": "catalog:"
   },

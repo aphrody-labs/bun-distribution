@@ -2,7 +2,7 @@
 
 use serde::Serialize;
 use serde_json::Value;
-use tauri::{command, AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Manager, Runtime, command};
 
 /// Information about a webview window.
 #[derive(Debug, Clone, Serialize)]

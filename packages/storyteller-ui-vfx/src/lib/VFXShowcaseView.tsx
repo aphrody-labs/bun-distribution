@@ -10,8 +10,8 @@ interface VFXShowcaseViewProps {
 }
 
 export const VFXShowcaseView = ({ onTryThis }: VFXShowcaseViewProps) => {
-  const selectedShowcaseId = useVFXStore((s) => s.selectedShowcaseId);
-  const setSelectedShowcaseId = useVFXStore((s) => s.setSelectedShowcaseId);
+  const selectedShowcaseId = useVFXStore(s => s.selectedShowcaseId);
+  const setSelectedShowcaseId = useVFXStore(s => s.setSelectedShowcaseId);
 
   useEffect(() => {
     if (!selectedShowcaseId && VFX_SHOWCASE.length > 0) {
@@ -20,7 +20,7 @@ export const VFXShowcaseView = ({ onTryThis }: VFXShowcaseViewProps) => {
   }, [selectedShowcaseId, setSelectedShowcaseId]);
 
   const activeId = selectedShowcaseId ?? VFX_SHOWCASE[0]?.id ?? "";
-  const entry = VFX_SHOWCASE.find((e) => e.id === activeId) ?? VFX_SHOWCASE[0];
+  const entry = VFX_SHOWCASE.find(e => e.id === activeId) ?? VFX_SHOWCASE[0];
   if (!entry) return null;
 
   return (
@@ -29,23 +29,14 @@ export const VFXShowcaseView = ({ onTryThis }: VFXShowcaseViewProps) => {
         aria-hidden
         className="pointer-events-none absolute inset-0 z-0"
         style={{
-          maskImage:
-            "radial-gradient(ellipse 60% 60% at 50% 45%, black 30%, transparent 85%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse 60% 60% at 50% 45%, black 30%, transparent 85%)",
+          maskImage: "radial-gradient(ellipse 60% 60% at 50% 45%, black 30%, transparent 85%)",
+          WebkitMaskImage: "radial-gradient(ellipse 60% 60% at 50% 45%, black 30%, transparent 85%)",
         }}
       >
-        <TruchetPattern
-          intensity={0.2}
-          className="absolute inset-0 h-full w-full"
-        />
+        <TruchetPattern intensity={0.2} className="absolute inset-0 h-full w-full" />
       </div>
       <div className="relative z-10 flex min-h-full flex-col items-center [justify-content:safe_center] gap-6 py-4 pb-6">
-        <ShowcaseCarousel
-          entries={VFX_SHOWCASE}
-          activeId={activeId}
-          onSelect={setSelectedShowcaseId}
-        />
+        <ShowcaseCarousel entries={VFX_SHOWCASE} activeId={activeId} onSelect={setSelectedShowcaseId} />
 
         <div className="flex flex-col items-center gap-1 text-center">
           <h2 className="text-2xl font-bold text-white">{entry.title}</h2>

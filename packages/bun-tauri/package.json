@@ -3,6 +3,12 @@
   "version": "1.4.4",
   "description": "Tauri API, every plugin guest binding of tauri-plugin-aphrody, and the Bun runtime bridge",
   "license": "Apache-2.0 OR MIT",
+  "files": [
+    "js",
+    "crates/tauri-plugin-aphrody/iife",
+    "README.md",
+    "LICENSE-*"
+  ],
   "type": "module",
   "exports": {
     ".": "./js/index.ts",
@@ -13,12 +19,6 @@
     "./server": "./js/server.ts",
     "./package.json": "./package.json"
   },
-  "files": [
-    "js",
-    "crates/tauri-plugin-aphrody/iife",
-    "README.md",
-    "LICENSE-*"
-  ],
   "scripts": {
     "check": "bun ../../scripts/cargo.ts exec -- check --locked -p tauri-plugin-aphrody --tests",
     "test": "bun ../../scripts/cargo.ts exec -- test --locked -p tauri-plugin-aphrody"

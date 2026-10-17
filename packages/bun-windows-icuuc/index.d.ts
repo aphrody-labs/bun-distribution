@@ -3,21 +3,81 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** icuuc.dll!UCNV_FROM_U_CALLBACK_ESCAPE */
-  UCNV_FROM_U_CALLBACK_ESCAPE(context: Win32Pointer, fromUArgs: Win32Pointer, codeUnits: Win32Pointer, length: number, codePoint: number, reason: number, err: Win32Pointer): void;
+  UCNV_FROM_U_CALLBACK_ESCAPE(
+    context: Win32Pointer,
+    fromUArgs: Win32Pointer,
+    codeUnits: Win32Pointer,
+    length: number,
+    codePoint: number,
+    reason: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!UCNV_FROM_U_CALLBACK_SKIP */
-  UCNV_FROM_U_CALLBACK_SKIP(context: Win32Pointer, fromUArgs: Win32Pointer, codeUnits: Win32Pointer, length: number, codePoint: number, reason: number, err: Win32Pointer): void;
+  UCNV_FROM_U_CALLBACK_SKIP(
+    context: Win32Pointer,
+    fromUArgs: Win32Pointer,
+    codeUnits: Win32Pointer,
+    length: number,
+    codePoint: number,
+    reason: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!UCNV_FROM_U_CALLBACK_STOP */
-  UCNV_FROM_U_CALLBACK_STOP(context: Win32Pointer, fromUArgs: Win32Pointer, codeUnits: Win32Pointer, length: number, codePoint: number, reason: number, err: Win32Pointer): void;
+  UCNV_FROM_U_CALLBACK_STOP(
+    context: Win32Pointer,
+    fromUArgs: Win32Pointer,
+    codeUnits: Win32Pointer,
+    length: number,
+    codePoint: number,
+    reason: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!UCNV_FROM_U_CALLBACK_SUBSTITUTE */
-  UCNV_FROM_U_CALLBACK_SUBSTITUTE(context: Win32Pointer, fromUArgs: Win32Pointer, codeUnits: Win32Pointer, length: number, codePoint: number, reason: number, err: Win32Pointer): void;
+  UCNV_FROM_U_CALLBACK_SUBSTITUTE(
+    context: Win32Pointer,
+    fromUArgs: Win32Pointer,
+    codeUnits: Win32Pointer,
+    length: number,
+    codePoint: number,
+    reason: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!UCNV_TO_U_CALLBACK_ESCAPE */
-  UCNV_TO_U_CALLBACK_ESCAPE(context: Win32Pointer, toUArgs: Win32Pointer, codeUnits: string | Win32Pointer, length: number, reason: number, err: Win32Pointer): void;
+  UCNV_TO_U_CALLBACK_ESCAPE(
+    context: Win32Pointer,
+    toUArgs: Win32Pointer,
+    codeUnits: string | Win32Pointer,
+    length: number,
+    reason: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!UCNV_TO_U_CALLBACK_SKIP */
-  UCNV_TO_U_CALLBACK_SKIP(context: Win32Pointer, toUArgs: Win32Pointer, codeUnits: string | Win32Pointer, length: number, reason: number, err: Win32Pointer): void;
+  UCNV_TO_U_CALLBACK_SKIP(
+    context: Win32Pointer,
+    toUArgs: Win32Pointer,
+    codeUnits: string | Win32Pointer,
+    length: number,
+    reason: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!UCNV_TO_U_CALLBACK_STOP */
-  UCNV_TO_U_CALLBACK_STOP(context: Win32Pointer, toUArgs: Win32Pointer, codeUnits: string | Win32Pointer, length: number, reason: number, err: Win32Pointer): void;
+  UCNV_TO_U_CALLBACK_STOP(
+    context: Win32Pointer,
+    toUArgs: Win32Pointer,
+    codeUnits: string | Win32Pointer,
+    length: number,
+    reason: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!UCNV_TO_U_CALLBACK_SUBSTITUTE */
-  UCNV_TO_U_CALLBACK_SUBSTITUTE(context: Win32Pointer, toUArgs: Win32Pointer, codeUnits: string | Win32Pointer, length: number, reason: number, err: Win32Pointer): void;
+  UCNV_TO_U_CALLBACK_SUBSTITUTE(
+    context: Win32Pointer,
+    toUArgs: Win32Pointer,
+    codeUnits: string | Win32Pointer,
+    length: number,
+    reason: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!u_UCharsToChars */
   u_UCharsToChars(us: Win32Pointer, cs: string | Win32Pointer, length: number): void;
   /** icuuc.dll!u_austrcpy */
@@ -27,7 +87,14 @@ interface Functions {
   /** icuuc.dll!u_catclose */
   u_catclose(catd: Win32Pointer): void;
   /** icuuc.dll!u_catgets */
-  u_catgets(catd: Win32Pointer, set_num: number, msg_num: number, s: Win32Pointer, len: Win32Pointer, ec: Win32Pointer): number | null;
+  u_catgets(
+    catd: Win32Pointer,
+    set_num: number,
+    msg_num: number,
+    s: Win32Pointer,
+    len: Win32Pointer,
+    ec: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_catopen */
   u_catopen(name: string | Win32Pointer, locale: string | Win32Pointer, ec: Win32Pointer): number | null;
   /** icuuc.dll!u_charAge */
@@ -41,7 +108,13 @@ interface Functions {
   /** icuuc.dll!u_charMirror */
   u_charMirror(c: number): number;
   /** icuuc.dll!u_charName */
-  u_charName(code: number, nameChoice: number, buffer: string | Win32Pointer, bufferLength: number, pErrorCode: Win32Pointer): number;
+  u_charName(
+    code: number,
+    nameChoice: number,
+    buffer: string | Win32Pointer,
+    bufferLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!u_charType */
   u_charType(c: number): number;
   /** icuuc.dll!u_charsToUChars */
@@ -53,7 +126,14 @@ interface Functions {
   /** icuuc.dll!u_digit */
   u_digit(ch: number, radix: number): number;
   /** icuuc.dll!u_enumCharNames */
-  u_enumCharNames(start: number, limit: number, fn: Win32Pointer, context: Win32Pointer, nameChoice: number, pErrorCode: Win32Pointer): void;
+  u_enumCharNames(
+    start: number,
+    limit: number,
+    fn: Win32Pointer,
+    context: Win32Pointer,
+    nameChoice: number,
+    pErrorCode: Win32Pointer,
+  ): void;
   /** icuuc.dll!u_enumCharTypes */
   u_enumCharTypes(enumRange: Win32Pointer, context: Win32Pointer): void;
   /** icuuc.dll!u_errorName */
@@ -171,11 +251,31 @@ interface Functions {
   /** icuuc.dll!u_memset */
   u_memset(dest: Win32Pointer, c: number, count: number): number | null;
   /** icuuc.dll!u_setMemoryFunctions */
-  u_setMemoryFunctions(context: Win32Pointer, a: Win32Pointer, r: Win32Pointer, f: Win32Pointer, status: Win32Pointer): void;
+  u_setMemoryFunctions(
+    context: Win32Pointer,
+    a: Win32Pointer,
+    r: Win32Pointer,
+    f: Win32Pointer,
+    status: Win32Pointer,
+  ): void;
   /** icuuc.dll!u_shapeArabic */
-  u_shapeArabic(source: Win32Pointer, sourceLength: number, dest: Win32Pointer, destSize: number, options: number, pErrorCode: Win32Pointer): number;
+  u_shapeArabic(
+    source: Win32Pointer,
+    sourceLength: number,
+    dest: Win32Pointer,
+    destSize: number,
+    options: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!u_strCaseCompare */
-  u_strCaseCompare(s1: Win32Pointer, length1: number, s2: Win32Pointer, length2: number, options: number, pErrorCode: Win32Pointer): number;
+  u_strCaseCompare(
+    s1: Win32Pointer,
+    length1: number,
+    s2: Win32Pointer,
+    length2: number,
+    options: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!u_strCompare */
   u_strCompare(s1: Win32Pointer, length1: number, s2: Win32Pointer, length2: number, codePointOrder: number): number;
   /** icuuc.dll!u_strCompareIter */
@@ -185,41 +285,171 @@ interface Functions {
   /** icuuc.dll!u_strFindLast */
   u_strFindLast(s: Win32Pointer, length: number, substring: Win32Pointer, subLength: number): number | null;
   /** icuuc.dll!u_strFoldCase */
-  u_strFoldCase(dest: Win32Pointer, destCapacity: number, src: Win32Pointer, srcLength: number, options: number, pErrorCode: Win32Pointer): number;
+  u_strFoldCase(
+    dest: Win32Pointer,
+    destCapacity: number,
+    src: Win32Pointer,
+    srcLength: number,
+    options: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!u_strFromJavaModifiedUTF8WithSub */
-  u_strFromJavaModifiedUTF8WithSub(dest: Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: string | Win32Pointer, srcLength: number, subchar: number, pNumSubstitutions: Win32Pointer, pErrorCode: Win32Pointer): number | null;
+  u_strFromJavaModifiedUTF8WithSub(
+    dest: Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: string | Win32Pointer,
+    srcLength: number,
+    subchar: number,
+    pNumSubstitutions: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strFromUTF32 */
-  u_strFromUTF32(dest: Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number | null;
+  u_strFromUTF32(
+    dest: Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strFromUTF32WithSub */
-  u_strFromUTF32WithSub(dest: Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: Win32Pointer, srcLength: number, subchar: number, pNumSubstitutions: Win32Pointer, pErrorCode: Win32Pointer): number | null;
+  u_strFromUTF32WithSub(
+    dest: Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: Win32Pointer,
+    srcLength: number,
+    subchar: number,
+    pNumSubstitutions: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strFromUTF8 */
-  u_strFromUTF8(dest: Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: string | Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number | null;
+  u_strFromUTF8(
+    dest: Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: string | Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strFromUTF8Lenient */
-  u_strFromUTF8Lenient(dest: Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: string | Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number | null;
+  u_strFromUTF8Lenient(
+    dest: Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: string | Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strFromUTF8WithSub */
-  u_strFromUTF8WithSub(dest: Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: string | Win32Pointer, srcLength: number, subchar: number, pNumSubstitutions: Win32Pointer, pErrorCode: Win32Pointer): number | null;
+  u_strFromUTF8WithSub(
+    dest: Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: string | Win32Pointer,
+    srcLength: number,
+    subchar: number,
+    pNumSubstitutions: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strFromWCS */
-  u_strFromWCS(dest: Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: string | Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number | null;
+  u_strFromWCS(
+    dest: Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: string | Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strHasMoreChar32Than */
   u_strHasMoreChar32Than(s: Win32Pointer, length: number, number: number): number;
   /** icuuc.dll!u_strToJavaModifiedUTF8 */
-  u_strToJavaModifiedUTF8(dest: string | Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number | null;
+  u_strToJavaModifiedUTF8(
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strToLower */
-  u_strToLower(dest: Win32Pointer, destCapacity: number, src: Win32Pointer, srcLength: number, locale: string | Win32Pointer, pErrorCode: Win32Pointer): number;
+  u_strToLower(
+    dest: Win32Pointer,
+    destCapacity: number,
+    src: Win32Pointer,
+    srcLength: number,
+    locale: string | Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!u_strToTitle */
-  u_strToTitle(dest: Win32Pointer, destCapacity: number, src: Win32Pointer, srcLength: number, titleIter: Win32Pointer, locale: string | Win32Pointer, pErrorCode: Win32Pointer): number;
+  u_strToTitle(
+    dest: Win32Pointer,
+    destCapacity: number,
+    src: Win32Pointer,
+    srcLength: number,
+    titleIter: Win32Pointer,
+    locale: string | Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!u_strToUTF32 */
-  u_strToUTF32(dest: Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number | null;
+  u_strToUTF32(
+    dest: Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strToUTF32WithSub */
-  u_strToUTF32WithSub(dest: Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: Win32Pointer, srcLength: number, subchar: number, pNumSubstitutions: Win32Pointer, pErrorCode: Win32Pointer): number | null;
+  u_strToUTF32WithSub(
+    dest: Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: Win32Pointer,
+    srcLength: number,
+    subchar: number,
+    pNumSubstitutions: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strToUTF8 */
-  u_strToUTF8(dest: string | Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number | null;
+  u_strToUTF8(
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strToUTF8WithSub */
-  u_strToUTF8WithSub(dest: string | Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: Win32Pointer, srcLength: number, subchar: number, pNumSubstitutions: Win32Pointer, pErrorCode: Win32Pointer): number | null;
+  u_strToUTF8WithSub(
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: Win32Pointer,
+    srcLength: number,
+    subchar: number,
+    pNumSubstitutions: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strToUpper */
-  u_strToUpper(dest: Win32Pointer, destCapacity: number, src: Win32Pointer, srcLength: number, locale: string | Win32Pointer, pErrorCode: Win32Pointer): number;
+  u_strToUpper(
+    dest: Win32Pointer,
+    destCapacity: number,
+    src: Win32Pointer,
+    srcLength: number,
+    locale: string | Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!u_strToWCS */
-  u_strToWCS(dest: string | Win32Pointer, destCapacity: number, pDestLength: Win32Pointer, src: Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number | null;
+  u_strToWCS(
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    pDestLength: Win32Pointer,
+    src: Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!u_strcasecmp */
   u_strcasecmp(s1: Win32Pointer, s2: Win32Pointer, options: number): number;
   /** icuuc.dll!u_strcat */
@@ -307,13 +537,32 @@ interface Functions {
   /** icuuc.dll!ubidi_getLogicalMap */
   ubidi_getLogicalMap(pBiDi: Win32Pointer, indexMap: Win32Pointer, pErrorCode: Win32Pointer): void;
   /** icuuc.dll!ubidi_getLogicalRun */
-  ubidi_getLogicalRun(pBiDi: Win32Pointer, logicalPosition: number, pLogicalLimit: Win32Pointer, pLevel: Win32Pointer): void;
+  ubidi_getLogicalRun(
+    pBiDi: Win32Pointer,
+    logicalPosition: number,
+    pLogicalLimit: Win32Pointer,
+    pLevel: Win32Pointer,
+  ): void;
   /** icuuc.dll!ubidi_getParaLevel */
   ubidi_getParaLevel(pBiDi: Win32Pointer): number;
   /** icuuc.dll!ubidi_getParagraph */
-  ubidi_getParagraph(pBiDi: Win32Pointer, charIndex: number, pParaStart: Win32Pointer, pParaLimit: Win32Pointer, pParaLevel: Win32Pointer, pErrorCode: Win32Pointer): number;
+  ubidi_getParagraph(
+    pBiDi: Win32Pointer,
+    charIndex: number,
+    pParaStart: Win32Pointer,
+    pParaLimit: Win32Pointer,
+    pParaLevel: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ubidi_getParagraphByIndex */
-  ubidi_getParagraphByIndex(pBiDi: Win32Pointer, paraIndex: number, pParaStart: Win32Pointer, pParaLimit: Win32Pointer, pParaLevel: Win32Pointer, pErrorCode: Win32Pointer): void;
+  ubidi_getParagraphByIndex(
+    pBiDi: Win32Pointer,
+    paraIndex: number,
+    pParaStart: Win32Pointer,
+    pParaLimit: Win32Pointer,
+    pParaLevel: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): void;
   /** icuuc.dll!ubidi_getProcessedLength */
   ubidi_getProcessedLength(pBiDi: Win32Pointer): number;
   /** icuuc.dll!ubidi_getReorderingMode */
@@ -347,29 +596,82 @@ interface Functions {
   /** icuuc.dll!ubidi_reorderVisual */
   ubidi_reorderVisual(levels: Win32Pointer, length: number, indexMap: Win32Pointer): void;
   /** icuuc.dll!ubidi_setClassCallback */
-  ubidi_setClassCallback(pBiDi: Win32Pointer, newFn: Win32Callback, newContext: Win32Pointer, oldFn: Win32Pointer, oldContext: Win32Pointer, pErrorCode: Win32Pointer): void;
+  ubidi_setClassCallback(
+    pBiDi: Win32Pointer,
+    newFn: Win32Callback,
+    newContext: Win32Pointer,
+    oldFn: Win32Pointer,
+    oldContext: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): void;
   /** icuuc.dll!ubidi_setContext */
-  ubidi_setContext(pBiDi: Win32Pointer, prologue: Win32Pointer, proLength: number, epilogue: Win32Pointer, epiLength: number, pErrorCode: Win32Pointer): void;
+  ubidi_setContext(
+    pBiDi: Win32Pointer,
+    prologue: Win32Pointer,
+    proLength: number,
+    epilogue: Win32Pointer,
+    epiLength: number,
+    pErrorCode: Win32Pointer,
+  ): void;
   /** icuuc.dll!ubidi_setInverse */
   ubidi_setInverse(pBiDi: Win32Pointer, isInverse: number): void;
   /** icuuc.dll!ubidi_setLine */
-  ubidi_setLine(pParaBiDi: Win32Pointer, start: number, limit: number, pLineBiDi: Win32Pointer, pErrorCode: Win32Pointer): void;
+  ubidi_setLine(
+    pParaBiDi: Win32Pointer,
+    start: number,
+    limit: number,
+    pLineBiDi: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): void;
   /** icuuc.dll!ubidi_setPara */
-  ubidi_setPara(pBiDi: Win32Pointer, text: Win32Pointer, length: number, paraLevel: number, embeddingLevels: Win32Pointer, pErrorCode: Win32Pointer): void;
+  ubidi_setPara(
+    pBiDi: Win32Pointer,
+    text: Win32Pointer,
+    length: number,
+    paraLevel: number,
+    embeddingLevels: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): void;
   /** icuuc.dll!ubidi_setReorderingMode */
   ubidi_setReorderingMode(pBiDi: Win32Pointer, reorderingMode: number): void;
   /** icuuc.dll!ubidi_setReorderingOptions */
   ubidi_setReorderingOptions(pBiDi: Win32Pointer, reorderingOptions: number): void;
   /** icuuc.dll!ubidi_writeReordered */
-  ubidi_writeReordered(pBiDi: Win32Pointer, dest: Win32Pointer, destSize: number, options: number, pErrorCode: Win32Pointer): number;
+  ubidi_writeReordered(
+    pBiDi: Win32Pointer,
+    dest: Win32Pointer,
+    destSize: number,
+    options: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ubidi_writeReverse */
-  ubidi_writeReverse(src: Win32Pointer, srcLength: number, dest: Win32Pointer, destSize: number, options: number, pErrorCode: Win32Pointer): number;
+  ubidi_writeReverse(
+    src: Win32Pointer,
+    srcLength: number,
+    dest: Win32Pointer,
+    destSize: number,
+    options: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ubiditransform_close */
   ubiditransform_close(pBidiTransform: Win32Pointer): void;
   /** icuuc.dll!ubiditransform_open */
   ubiditransform_open(pErrorCode: Win32Pointer): number | null;
   /** icuuc.dll!ubiditransform_transform */
-  ubiditransform_transform(pBiDiTransform: Win32Pointer, src: Win32Pointer, srcLength: number, dest: Win32Pointer, destSize: number, inParaLevel: number, inOrder: number, outParaLevel: number, outOrder: number, doMirroring: number, shapingOptions: number, pErrorCode: Win32Pointer): number;
+  ubiditransform_transform(
+    pBiDiTransform: Win32Pointer,
+    src: Win32Pointer,
+    srcLength: number,
+    dest: Win32Pointer,
+    destSize: number,
+    inParaLevel: number,
+    inOrder: number,
+    outParaLevel: number,
+    outOrder: number,
+    doMirroring: number,
+    shapingOptions: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ublock_getCode */
   ublock_getCode(c: number): number;
   /** icuuc.dll!ubrk_close */
@@ -399,11 +701,30 @@ interface Functions {
   /** icuuc.dll!ubrk_next */
   ubrk_next(bi: Win32Pointer): number;
   /** icuuc.dll!ubrk_open */
-  ubrk_open(type: number, locale: string | Win32Pointer, text: Win32Pointer, textLength: number, status: Win32Pointer): number | null;
+  ubrk_open(
+    type: number,
+    locale: string | Win32Pointer,
+    text: Win32Pointer,
+    textLength: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ubrk_openBinaryRules */
-  ubrk_openBinaryRules(binaryRules: Win32Pointer, rulesLength: number, text: Win32Pointer, textLength: number, status: Win32Pointer): number | null;
+  ubrk_openBinaryRules(
+    binaryRules: Win32Pointer,
+    rulesLength: number,
+    text: Win32Pointer,
+    textLength: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ubrk_openRules */
-  ubrk_openRules(rules: Win32Pointer, rulesLength: number, text: Win32Pointer, textLength: number, parseErr: Win32Pointer, status: Win32Pointer): number | null;
+  ubrk_openRules(
+    rules: Win32Pointer,
+    rulesLength: number,
+    text: Win32Pointer,
+    textLength: number,
+    parseErr: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ubrk_preceding */
   ubrk_preceding(bi: Win32Pointer, offset: number): number;
   /** icuuc.dll!ubrk_previous */
@@ -411,7 +732,12 @@ interface Functions {
   /** icuuc.dll!ubrk_refreshUText */
   ubrk_refreshUText(bi: Win32Pointer, text: Win32Pointer, status: Win32Pointer): void;
   /** icuuc.dll!ubrk_safeClone */
-  ubrk_safeClone(bi: Win32Pointer, stackBuffer: Win32Pointer, pBufferSize: Win32Pointer, status: Win32Pointer): number | null;
+  ubrk_safeClone(
+    bi: Win32Pointer,
+    stackBuffer: Win32Pointer,
+    pBufferSize: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ubrk_setText */
   ubrk_setText(bi: Win32Pointer, text: Win32Pointer, textLength: number, status: Win32Pointer): void;
   /** icuuc.dll!ubrk_setUText */
@@ -433,33 +759,108 @@ interface Functions {
   /** icuuc.dll!ucasemap_setOptions */
   ucasemap_setOptions(csm: Win32Pointer, options: number, pErrorCode: Win32Pointer): void;
   /** icuuc.dll!ucasemap_toTitle */
-  ucasemap_toTitle(csm: Win32Pointer, dest: Win32Pointer, destCapacity: number, src: Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number;
+  ucasemap_toTitle(
+    csm: Win32Pointer,
+    dest: Win32Pointer,
+    destCapacity: number,
+    src: Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucasemap_utf8FoldCase */
-  ucasemap_utf8FoldCase(csm: Win32Pointer, dest: string | Win32Pointer, destCapacity: number, src: string | Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number;
+  ucasemap_utf8FoldCase(
+    csm: Win32Pointer,
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    src: string | Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucasemap_utf8ToLower */
-  ucasemap_utf8ToLower(csm: Win32Pointer, dest: string | Win32Pointer, destCapacity: number, src: string | Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number;
+  ucasemap_utf8ToLower(
+    csm: Win32Pointer,
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    src: string | Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucasemap_utf8ToTitle */
-  ucasemap_utf8ToTitle(csm: Win32Pointer, dest: string | Win32Pointer, destCapacity: number, src: string | Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number;
+  ucasemap_utf8ToTitle(
+    csm: Win32Pointer,
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    src: string | Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucasemap_utf8ToUpper */
-  ucasemap_utf8ToUpper(csm: Win32Pointer, dest: string | Win32Pointer, destCapacity: number, src: string | Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number;
+  ucasemap_utf8ToUpper(
+    csm: Win32Pointer,
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    src: string | Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucnv_cbFromUWriteBytes */
-  ucnv_cbFromUWriteBytes(args: Win32Pointer, source: string | Win32Pointer, length: number, offsetIndex: number, err: Win32Pointer): void;
+  ucnv_cbFromUWriteBytes(
+    args: Win32Pointer,
+    source: string | Win32Pointer,
+    length: number,
+    offsetIndex: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!ucnv_cbFromUWriteSub */
   ucnv_cbFromUWriteSub(args: Win32Pointer, offsetIndex: number, err: Win32Pointer): void;
   /** icuuc.dll!ucnv_cbFromUWriteUChars */
-  ucnv_cbFromUWriteUChars(args: Win32Pointer, source: Win32Pointer, sourceLimit: Win32Pointer, offsetIndex: number, err: Win32Pointer): void;
+  ucnv_cbFromUWriteUChars(
+    args: Win32Pointer,
+    source: Win32Pointer,
+    sourceLimit: Win32Pointer,
+    offsetIndex: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!ucnv_cbToUWriteSub */
   ucnv_cbToUWriteSub(args: Win32Pointer, offsetIndex: number, err: Win32Pointer): void;
   /** icuuc.dll!ucnv_cbToUWriteUChars */
-  ucnv_cbToUWriteUChars(args: Win32Pointer, source: Win32Pointer, length: number, offsetIndex: number, err: Win32Pointer): void;
+  ucnv_cbToUWriteUChars(
+    args: Win32Pointer,
+    source: Win32Pointer,
+    length: number,
+    offsetIndex: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!ucnv_close */
   ucnv_close(converter: Win32Pointer): void;
   /** icuuc.dll!ucnv_compareNames */
   ucnv_compareNames(name1: string | Win32Pointer, name2: string | Win32Pointer): number;
   /** icuuc.dll!ucnv_convert */
-  ucnv_convert(toConverterName: string | Win32Pointer, fromConverterName: string | Win32Pointer, target: string | Win32Pointer, targetCapacity: number, source: string | Win32Pointer, sourceLength: number, pErrorCode: Win32Pointer): number;
+  ucnv_convert(
+    toConverterName: string | Win32Pointer,
+    fromConverterName: string | Win32Pointer,
+    target: string | Win32Pointer,
+    targetCapacity: number,
+    source: string | Win32Pointer,
+    sourceLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucnv_convertEx */
-  ucnv_convertEx(targetCnv: Win32Pointer, sourceCnv: Win32Pointer, target: Win32Pointer, targetLimit: string | Win32Pointer, source: Win32Pointer, sourceLimit: string | Win32Pointer, pivotStart: Win32Pointer, pivotSource: Win32Pointer, pivotTarget: Win32Pointer, pivotLimit: Win32Pointer, reset: number, flush: number, pErrorCode: Win32Pointer): void;
+  ucnv_convertEx(
+    targetCnv: Win32Pointer,
+    sourceCnv: Win32Pointer,
+    target: Win32Pointer,
+    targetLimit: string | Win32Pointer,
+    source: Win32Pointer,
+    sourceLimit: string | Win32Pointer,
+    pivotStart: Win32Pointer,
+    pivotSource: Win32Pointer,
+    pivotTarget: Win32Pointer,
+    pivotLimit: Win32Pointer,
+    reset: number,
+    flush: number,
+    pErrorCode: Win32Pointer,
+  ): void;
   /** icuuc.dll!ucnv_countAliases */
   ucnv_countAliases(alias: string | Win32Pointer, pErrorCode: Win32Pointer): number;
   /** icuuc.dll!ucnv_countAvailable */
@@ -467,19 +868,48 @@ interface Functions {
   /** icuuc.dll!ucnv_countStandards */
   ucnv_countStandards(): number;
   /** icuuc.dll!ucnv_detectUnicodeSignature */
-  ucnv_detectUnicodeSignature(source: string | Win32Pointer, sourceLength: number, signatureLength: Win32Pointer, pErrorCode: Win32Pointer): number | null;
+  ucnv_detectUnicodeSignature(
+    source: string | Win32Pointer,
+    sourceLength: number,
+    signatureLength: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ucnv_fixFileSeparator */
   ucnv_fixFileSeparator(cnv: Win32Pointer, source: Win32Pointer, sourceLen: number): void;
   /** icuuc.dll!ucnv_flushCache */
   ucnv_flushCache(): number;
   /** icuuc.dll!ucnv_fromAlgorithmic */
-  ucnv_fromAlgorithmic(cnv: Win32Pointer, algorithmicType: number, target: string | Win32Pointer, targetCapacity: number, source: string | Win32Pointer, sourceLength: number, pErrorCode: Win32Pointer): number;
+  ucnv_fromAlgorithmic(
+    cnv: Win32Pointer,
+    algorithmicType: number,
+    target: string | Win32Pointer,
+    targetCapacity: number,
+    source: string | Win32Pointer,
+    sourceLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucnv_fromUChars */
-  ucnv_fromUChars(cnv: Win32Pointer, dest: string | Win32Pointer, destCapacity: number, src: Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number;
+  ucnv_fromUChars(
+    cnv: Win32Pointer,
+    dest: string | Win32Pointer,
+    destCapacity: number,
+    src: Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucnv_fromUCountPending */
   ucnv_fromUCountPending(cnv: Win32Pointer, status: Win32Pointer): number;
   /** icuuc.dll!ucnv_fromUnicode */
-  ucnv_fromUnicode(converter: Win32Pointer, target: Win32Pointer, targetLimit: string | Win32Pointer, source: Win32Pointer, sourceLimit: Win32Pointer, offsets: Win32Pointer, flush: number, err: Win32Pointer): void;
+  ucnv_fromUnicode(
+    converter: Win32Pointer,
+    target: Win32Pointer,
+    targetLimit: string | Win32Pointer,
+    source: Win32Pointer,
+    sourceLimit: Win32Pointer,
+    offsets: Win32Pointer,
+    flush: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!ucnv_getAlias */
   ucnv_getAlias(alias: string | Win32Pointer, n: number, pErrorCode: Win32Pointer): number | null;
   /** icuuc.dll!ucnv_getAliases */
@@ -489,15 +919,30 @@ interface Functions {
   /** icuuc.dll!ucnv_getCCSID */
   ucnv_getCCSID(converter: Win32Pointer, err: Win32Pointer): number;
   /** icuuc.dll!ucnv_getCanonicalName */
-  ucnv_getCanonicalName(alias: string | Win32Pointer, standard: string | Win32Pointer, pErrorCode: Win32Pointer): number | null;
+  ucnv_getCanonicalName(
+    alias: string | Win32Pointer,
+    standard: string | Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ucnv_getDefaultName */
   ucnv_getDefaultName(): number | null;
   /** icuuc.dll!ucnv_getDisplayName */
-  ucnv_getDisplayName(converter: Win32Pointer, displayLocale: string | Win32Pointer, displayName: Win32Pointer, displayNameCapacity: number, err: Win32Pointer): number;
+  ucnv_getDisplayName(
+    converter: Win32Pointer,
+    displayLocale: string | Win32Pointer,
+    displayName: Win32Pointer,
+    displayNameCapacity: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucnv_getFromUCallBack */
   ucnv_getFromUCallBack(converter: Win32Pointer, action: Win32Pointer, context: Win32Pointer): void;
   /** icuuc.dll!ucnv_getInvalidChars */
-  ucnv_getInvalidChars(converter: Win32Pointer, errBytes: string | Win32Pointer, len: Win32Pointer, err: Win32Pointer): void;
+  ucnv_getInvalidChars(
+    converter: Win32Pointer,
+    errBytes: string | Win32Pointer,
+    len: Win32Pointer,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!ucnv_getInvalidUChars */
   ucnv_getInvalidUChars(converter: Win32Pointer, errUChars: Win32Pointer, len: Win32Pointer, err: Win32Pointer): void;
   /** icuuc.dll!ucnv_getMaxCharSize */
@@ -507,17 +952,31 @@ interface Functions {
   /** icuuc.dll!ucnv_getName */
   ucnv_getName(converter: Win32Pointer, err: Win32Pointer): number | null;
   /** icuuc.dll!ucnv_getNextUChar */
-  ucnv_getNextUChar(converter: Win32Pointer, source: Win32Pointer, sourceLimit: string | Win32Pointer, err: Win32Pointer): number;
+  ucnv_getNextUChar(
+    converter: Win32Pointer,
+    source: Win32Pointer,
+    sourceLimit: string | Win32Pointer,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucnv_getPlatform */
   ucnv_getPlatform(converter: Win32Pointer, err: Win32Pointer): number;
   /** icuuc.dll!ucnv_getStandard */
   ucnv_getStandard(n: number, pErrorCode: Win32Pointer): number | null;
   /** icuuc.dll!ucnv_getStandardName */
-  ucnv_getStandardName(name: string | Win32Pointer, standard: string | Win32Pointer, pErrorCode: Win32Pointer): number | null;
+  ucnv_getStandardName(
+    name: string | Win32Pointer,
+    standard: string | Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ucnv_getStarters */
   ucnv_getStarters(converter: Win32Pointer, starters: Win32Pointer, err: Win32Pointer): void;
   /** icuuc.dll!ucnv_getSubstChars */
-  ucnv_getSubstChars(converter: Win32Pointer, subChars: string | Win32Pointer, len: Win32Pointer, err: Win32Pointer): void;
+  ucnv_getSubstChars(
+    converter: Win32Pointer,
+    subChars: string | Win32Pointer,
+    len: Win32Pointer,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!ucnv_getToUCallBack */
   ucnv_getToUCallBack(converter: Win32Pointer, action: Win32Pointer, context: Win32Pointer): void;
   /** icuuc.dll!ucnv_getType */
@@ -535,9 +994,17 @@ interface Functions {
   /** icuuc.dll!ucnv_openCCSID */
   ucnv_openCCSID(codepage: number, platform: number, err: Win32Pointer): number | null;
   /** icuuc.dll!ucnv_openPackage */
-  ucnv_openPackage(packageName: string | Win32Pointer, converterName: string | Win32Pointer, err: Win32Pointer): number | null;
+  ucnv_openPackage(
+    packageName: string | Win32Pointer,
+    converterName: string | Win32Pointer,
+    err: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ucnv_openStandardNames */
-  ucnv_openStandardNames(convName: string | Win32Pointer, standard: string | Win32Pointer, pErrorCode: Win32Pointer): number | null;
+  ucnv_openStandardNames(
+    convName: string | Win32Pointer,
+    standard: string | Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ucnv_openU */
   ucnv_openU(name: Win32Pointer, err: Win32Pointer): number | null;
   /** icuuc.dll!ucnv_reset */
@@ -547,39 +1014,93 @@ interface Functions {
   /** icuuc.dll!ucnv_resetToUnicode */
   ucnv_resetToUnicode(converter: Win32Pointer): void;
   /** icuuc.dll!ucnv_safeClone */
-  ucnv_safeClone(cnv: Win32Pointer, stackBuffer: Win32Pointer, pBufferSize: Win32Pointer, status: Win32Pointer): number | null;
+  ucnv_safeClone(
+    cnv: Win32Pointer,
+    stackBuffer: Win32Pointer,
+    pBufferSize: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ucnv_setDefaultName */
   ucnv_setDefaultName(name: string | Win32Pointer): void;
   /** icuuc.dll!ucnv_setFallback */
   ucnv_setFallback(cnv: Win32Pointer, usesFallback: number): void;
   /** icuuc.dll!ucnv_setFromUCallBack */
-  ucnv_setFromUCallBack(converter: Win32Pointer, newAction: Win32Callback, newContext: Win32Pointer, oldAction: Win32Pointer, oldContext: Win32Pointer, err: Win32Pointer): void;
+  ucnv_setFromUCallBack(
+    converter: Win32Pointer,
+    newAction: Win32Callback,
+    newContext: Win32Pointer,
+    oldAction: Win32Pointer,
+    oldContext: Win32Pointer,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!ucnv_setSubstChars */
   ucnv_setSubstChars(converter: Win32Pointer, subChars: string | Win32Pointer, len: number, err: Win32Pointer): void;
   /** icuuc.dll!ucnv_setSubstString */
   ucnv_setSubstString(cnv: Win32Pointer, s: Win32Pointer, length: number, err: Win32Pointer): void;
   /** icuuc.dll!ucnv_setToUCallBack */
-  ucnv_setToUCallBack(converter: Win32Pointer, newAction: Win32Callback, newContext: Win32Pointer, oldAction: Win32Pointer, oldContext: Win32Pointer, err: Win32Pointer): void;
+  ucnv_setToUCallBack(
+    converter: Win32Pointer,
+    newAction: Win32Callback,
+    newContext: Win32Pointer,
+    oldAction: Win32Pointer,
+    oldContext: Win32Pointer,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!ucnv_toAlgorithmic */
-  ucnv_toAlgorithmic(algorithmicType: number, cnv: Win32Pointer, target: string | Win32Pointer, targetCapacity: number, source: string | Win32Pointer, sourceLength: number, pErrorCode: Win32Pointer): number;
+  ucnv_toAlgorithmic(
+    algorithmicType: number,
+    cnv: Win32Pointer,
+    target: string | Win32Pointer,
+    targetCapacity: number,
+    source: string | Win32Pointer,
+    sourceLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucnv_toUChars */
-  ucnv_toUChars(cnv: Win32Pointer, dest: Win32Pointer, destCapacity: number, src: string | Win32Pointer, srcLength: number, pErrorCode: Win32Pointer): number;
+  ucnv_toUChars(
+    cnv: Win32Pointer,
+    dest: Win32Pointer,
+    destCapacity: number,
+    src: string | Win32Pointer,
+    srcLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucnv_toUCountPending */
   ucnv_toUCountPending(cnv: Win32Pointer, status: Win32Pointer): number;
   /** icuuc.dll!ucnv_toUnicode */
-  ucnv_toUnicode(converter: Win32Pointer, target: Win32Pointer, targetLimit: Win32Pointer, source: Win32Pointer, sourceLimit: string | Win32Pointer, offsets: Win32Pointer, flush: number, err: Win32Pointer): void;
+  ucnv_toUnicode(
+    converter: Win32Pointer,
+    target: Win32Pointer,
+    targetLimit: Win32Pointer,
+    source: Win32Pointer,
+    sourceLimit: string | Win32Pointer,
+    offsets: Win32Pointer,
+    flush: number,
+    err: Win32Pointer,
+  ): void;
   /** icuuc.dll!ucnv_usesFallback */
   ucnv_usesFallback(cnv: Win32Pointer): number;
   /** icuuc.dll!ucnvsel_close */
   ucnvsel_close(sel: Win32Pointer): void;
   /** icuuc.dll!ucnvsel_open */
-  ucnvsel_open(converterList: Win32Pointer, converterListSize: number, excludedCodePoints: Win32Pointer, whichSet: number, status: Win32Pointer): number | null;
+  ucnvsel_open(
+    converterList: Win32Pointer,
+    converterListSize: number,
+    excludedCodePoints: Win32Pointer,
+    whichSet: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ucnvsel_openFromSerialized */
   ucnvsel_openFromSerialized(buffer: Win32Pointer, length: number, status: Win32Pointer): number | null;
   /** icuuc.dll!ucnvsel_selectForString */
   ucnvsel_selectForString(sel: Win32Pointer, s: Win32Pointer, length: number, status: Win32Pointer): number | null;
   /** icuuc.dll!ucnvsel_selectForUTF8 */
-  ucnvsel_selectForUTF8(sel: Win32Pointer, s: string | Win32Pointer, length: number, status: Win32Pointer): number | null;
+  ucnvsel_selectForUTF8(
+    sel: Win32Pointer,
+    s: string | Win32Pointer,
+    length: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ucnvsel_serialize */
   ucnvsel_serialize(sel: Win32Pointer, buffer: Win32Pointer, bufferCapacity: number, status: Win32Pointer): number;
   /** icuuc.dll!ucurr_countCurrencies */
@@ -587,19 +1108,45 @@ interface Functions {
   /** icuuc.dll!ucurr_forLocale */
   ucurr_forLocale(locale: string | Win32Pointer, buff: Win32Pointer, buffCapacity: number, ec: Win32Pointer): number;
   /** icuuc.dll!ucurr_forLocaleAndDate */
-  ucurr_forLocaleAndDate(locale: string | Win32Pointer, date: number, index: number, buff: Win32Pointer, buffCapacity: number, ec: Win32Pointer): number;
+  ucurr_forLocaleAndDate(
+    locale: string | Win32Pointer,
+    date: number,
+    index: number,
+    buff: Win32Pointer,
+    buffCapacity: number,
+    ec: Win32Pointer,
+  ): number;
   /** icuuc.dll!ucurr_getDefaultFractionDigits */
   ucurr_getDefaultFractionDigits(currency: Win32Pointer, ec: Win32Pointer): number;
   /** icuuc.dll!ucurr_getDefaultFractionDigitsForUsage */
   ucurr_getDefaultFractionDigitsForUsage(currency: Win32Pointer, usage: number, ec: Win32Pointer): number;
   /** icuuc.dll!ucurr_getKeywordValuesForLocale */
-  ucurr_getKeywordValuesForLocale(key: string | Win32Pointer, locale: string | Win32Pointer, commonlyUsed: number, status: Win32Pointer): number | null;
+  ucurr_getKeywordValuesForLocale(
+    key: string | Win32Pointer,
+    locale: string | Win32Pointer,
+    commonlyUsed: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ucurr_getName */
-  ucurr_getName(currency: Win32Pointer, locale: string | Win32Pointer, nameStyle: number, isChoiceFormat: Win32Pointer, len: Win32Pointer, ec: Win32Pointer): number | null;
+  ucurr_getName(
+    currency: Win32Pointer,
+    locale: string | Win32Pointer,
+    nameStyle: number,
+    isChoiceFormat: Win32Pointer,
+    len: Win32Pointer,
+    ec: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ucurr_getNumericCode */
   ucurr_getNumericCode(currency: Win32Pointer): number;
   /** icuuc.dll!ucurr_getPluralName */
-  ucurr_getPluralName(currency: Win32Pointer, locale: string | Win32Pointer, isChoiceFormat: Win32Pointer, pluralCount: string | Win32Pointer, len: Win32Pointer, ec: Win32Pointer): number | null;
+  ucurr_getPluralName(
+    currency: Win32Pointer,
+    locale: string | Win32Pointer,
+    isChoiceFormat: Win32Pointer,
+    pluralCount: string | Win32Pointer,
+    len: Win32Pointer,
+    ec: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ucurr_getRoundingIncrement */
   ucurr_getRoundingIncrement(currency: Win32Pointer, ec: Win32Pointer): number;
   /** icuuc.dll!ucurr_getRoundingIncrementForUsage */
@@ -629,21 +1176,85 @@ interface Functions {
   /** icuuc.dll!uidna_close */
   uidna_close(idna: Win32Pointer): void;
   /** icuuc.dll!uidna_labelToASCII */
-  uidna_labelToASCII(idna: Win32Pointer, label: Win32Pointer, length: number, dest: Win32Pointer, capacity: number, pInfo: Win32Pointer, pErrorCode: Win32Pointer): number;
+  uidna_labelToASCII(
+    idna: Win32Pointer,
+    label: Win32Pointer,
+    length: number,
+    dest: Win32Pointer,
+    capacity: number,
+    pInfo: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uidna_labelToASCII_UTF8 */
-  uidna_labelToASCII_UTF8(idna: Win32Pointer, label: string | Win32Pointer, length: number, dest: string | Win32Pointer, capacity: number, pInfo: Win32Pointer, pErrorCode: Win32Pointer): number;
+  uidna_labelToASCII_UTF8(
+    idna: Win32Pointer,
+    label: string | Win32Pointer,
+    length: number,
+    dest: string | Win32Pointer,
+    capacity: number,
+    pInfo: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uidna_labelToUnicode */
-  uidna_labelToUnicode(idna: Win32Pointer, label: Win32Pointer, length: number, dest: Win32Pointer, capacity: number, pInfo: Win32Pointer, pErrorCode: Win32Pointer): number;
+  uidna_labelToUnicode(
+    idna: Win32Pointer,
+    label: Win32Pointer,
+    length: number,
+    dest: Win32Pointer,
+    capacity: number,
+    pInfo: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uidna_labelToUnicodeUTF8 */
-  uidna_labelToUnicodeUTF8(idna: Win32Pointer, label: string | Win32Pointer, length: number, dest: string | Win32Pointer, capacity: number, pInfo: Win32Pointer, pErrorCode: Win32Pointer): number;
+  uidna_labelToUnicodeUTF8(
+    idna: Win32Pointer,
+    label: string | Win32Pointer,
+    length: number,
+    dest: string | Win32Pointer,
+    capacity: number,
+    pInfo: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uidna_nameToASCII */
-  uidna_nameToASCII(idna: Win32Pointer, name: Win32Pointer, length: number, dest: Win32Pointer, capacity: number, pInfo: Win32Pointer, pErrorCode: Win32Pointer): number;
+  uidna_nameToASCII(
+    idna: Win32Pointer,
+    name: Win32Pointer,
+    length: number,
+    dest: Win32Pointer,
+    capacity: number,
+    pInfo: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uidna_nameToASCII_UTF8 */
-  uidna_nameToASCII_UTF8(idna: Win32Pointer, name: string | Win32Pointer, length: number, dest: string | Win32Pointer, capacity: number, pInfo: Win32Pointer, pErrorCode: Win32Pointer): number;
+  uidna_nameToASCII_UTF8(
+    idna: Win32Pointer,
+    name: string | Win32Pointer,
+    length: number,
+    dest: string | Win32Pointer,
+    capacity: number,
+    pInfo: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uidna_nameToUnicode */
-  uidna_nameToUnicode(idna: Win32Pointer, name: Win32Pointer, length: number, dest: Win32Pointer, capacity: number, pInfo: Win32Pointer, pErrorCode: Win32Pointer): number;
+  uidna_nameToUnicode(
+    idna: Win32Pointer,
+    name: Win32Pointer,
+    length: number,
+    dest: Win32Pointer,
+    capacity: number,
+    pInfo: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uidna_nameToUnicodeUTF8 */
-  uidna_nameToUnicodeUTF8(idna: Win32Pointer, name: string | Win32Pointer, length: number, dest: string | Win32Pointer, capacity: number, pInfo: Win32Pointer, pErrorCode: Win32Pointer): number;
+  uidna_nameToUnicodeUTF8(
+    idna: Win32Pointer,
+    name: string | Win32Pointer,
+    length: number,
+    dest: string | Win32Pointer,
+    capacity: number,
+    pInfo: Win32Pointer,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uidna_openUTS46 */
   uidna_openUTS46(options: number, pErrorCode: Win32Pointer): number | null;
   /** icuuc.dll!uiter_current32 */
@@ -671,67 +1282,213 @@ interface Functions {
   /** icuuc.dll!uldn_getLocale */
   uldn_getLocale(ldn: Win32Pointer): number | null;
   /** icuuc.dll!uldn_keyDisplayName */
-  uldn_keyDisplayName(ldn: Win32Pointer, key: string | Win32Pointer, result: Win32Pointer, maxResultSize: number, pErrorCode: Win32Pointer): number;
+  uldn_keyDisplayName(
+    ldn: Win32Pointer,
+    key: string | Win32Pointer,
+    result: Win32Pointer,
+    maxResultSize: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uldn_keyValueDisplayName */
-  uldn_keyValueDisplayName(ldn: Win32Pointer, key: string | Win32Pointer, value: string | Win32Pointer, result: Win32Pointer, maxResultSize: number, pErrorCode: Win32Pointer): number;
+  uldn_keyValueDisplayName(
+    ldn: Win32Pointer,
+    key: string | Win32Pointer,
+    value: string | Win32Pointer,
+    result: Win32Pointer,
+    maxResultSize: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uldn_languageDisplayName */
-  uldn_languageDisplayName(ldn: Win32Pointer, lang: string | Win32Pointer, result: Win32Pointer, maxResultSize: number, pErrorCode: Win32Pointer): number;
+  uldn_languageDisplayName(
+    ldn: Win32Pointer,
+    lang: string | Win32Pointer,
+    result: Win32Pointer,
+    maxResultSize: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uldn_localeDisplayName */
-  uldn_localeDisplayName(ldn: Win32Pointer, locale: string | Win32Pointer, result: Win32Pointer, maxResultSize: number, pErrorCode: Win32Pointer): number;
+  uldn_localeDisplayName(
+    ldn: Win32Pointer,
+    locale: string | Win32Pointer,
+    result: Win32Pointer,
+    maxResultSize: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uldn_open */
   uldn_open(locale: string | Win32Pointer, dialectHandling: number, pErrorCode: Win32Pointer): number | null;
   /** icuuc.dll!uldn_openForContext */
-  uldn_openForContext(locale: string | Win32Pointer, contexts: Win32Pointer, length: number, pErrorCode: Win32Pointer): number | null;
+  uldn_openForContext(
+    locale: string | Win32Pointer,
+    contexts: Win32Pointer,
+    length: number,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!uldn_regionDisplayName */
-  uldn_regionDisplayName(ldn: Win32Pointer, region: string | Win32Pointer, result: Win32Pointer, maxResultSize: number, pErrorCode: Win32Pointer): number;
+  uldn_regionDisplayName(
+    ldn: Win32Pointer,
+    region: string | Win32Pointer,
+    result: Win32Pointer,
+    maxResultSize: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uldn_scriptCodeDisplayName */
-  uldn_scriptCodeDisplayName(ldn: Win32Pointer, scriptCode: number, result: Win32Pointer, maxResultSize: number, pErrorCode: Win32Pointer): number;
+  uldn_scriptCodeDisplayName(
+    ldn: Win32Pointer,
+    scriptCode: number,
+    result: Win32Pointer,
+    maxResultSize: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uldn_scriptDisplayName */
-  uldn_scriptDisplayName(ldn: Win32Pointer, script: string | Win32Pointer, result: Win32Pointer, maxResultSize: number, pErrorCode: Win32Pointer): number;
+  uldn_scriptDisplayName(
+    ldn: Win32Pointer,
+    script: string | Win32Pointer,
+    result: Win32Pointer,
+    maxResultSize: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!uldn_variantDisplayName */
-  uldn_variantDisplayName(ldn: Win32Pointer, variant: string | Win32Pointer, result: Win32Pointer, maxResultSize: number, pErrorCode: Win32Pointer): number;
+  uldn_variantDisplayName(
+    ldn: Win32Pointer,
+    variant: string | Win32Pointer,
+    result: Win32Pointer,
+    maxResultSize: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ulistfmt_close */
   ulistfmt_close(listfmt: Win32Pointer): void;
   /** icuuc.dll!ulistfmt_format */
-  ulistfmt_format(listfmt: Win32Pointer, strings: Win32Pointer, stringLengths: Win32Pointer, stringCount: number, result: Win32Pointer, resultCapacity: number, status: Win32Pointer): number;
+  ulistfmt_format(
+    listfmt: Win32Pointer,
+    strings: Win32Pointer,
+    stringLengths: Win32Pointer,
+    stringCount: number,
+    result: Win32Pointer,
+    resultCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!ulistfmt_open */
   ulistfmt_open(locale: string | Win32Pointer, status: Win32Pointer): number | null;
   /** icuuc.dll!uloc_acceptLanguage */
-  uloc_acceptLanguage(result: string | Win32Pointer, resultAvailable: number, outResult: Win32Pointer, acceptList: Win32Pointer, acceptListCount: number, availableLocales: Win32Pointer, status: Win32Pointer): number;
+  uloc_acceptLanguage(
+    result: string | Win32Pointer,
+    resultAvailable: number,
+    outResult: Win32Pointer,
+    acceptList: Win32Pointer,
+    acceptListCount: number,
+    availableLocales: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_acceptLanguageFromHTTP */
-  uloc_acceptLanguageFromHTTP(result: string | Win32Pointer, resultAvailable: number, outResult: Win32Pointer, httpAcceptLanguage: string | Win32Pointer, availableLocales: Win32Pointer, status: Win32Pointer): number;
+  uloc_acceptLanguageFromHTTP(
+    result: string | Win32Pointer,
+    resultAvailable: number,
+    outResult: Win32Pointer,
+    httpAcceptLanguage: string | Win32Pointer,
+    availableLocales: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_addLikelySubtags */
-  uloc_addLikelySubtags(localeID: string | Win32Pointer, maximizedLocaleID: string | Win32Pointer, maximizedLocaleIDCapacity: number, err: Win32Pointer): number;
+  uloc_addLikelySubtags(
+    localeID: string | Win32Pointer,
+    maximizedLocaleID: string | Win32Pointer,
+    maximizedLocaleIDCapacity: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_canonicalize */
-  uloc_canonicalize(localeID: string | Win32Pointer, name: string | Win32Pointer, nameCapacity: number, err: Win32Pointer): number;
+  uloc_canonicalize(
+    localeID: string | Win32Pointer,
+    name: string | Win32Pointer,
+    nameCapacity: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_countAvailable */
   uloc_countAvailable(): number;
   /** icuuc.dll!uloc_forLanguageTag */
-  uloc_forLanguageTag(langtag: string | Win32Pointer, localeID: string | Win32Pointer, localeIDCapacity: number, parsedLength: Win32Pointer, err: Win32Pointer): number;
+  uloc_forLanguageTag(
+    langtag: string | Win32Pointer,
+    localeID: string | Win32Pointer,
+    localeIDCapacity: number,
+    parsedLength: Win32Pointer,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getAvailable */
   uloc_getAvailable(n: number): number | null;
   /** icuuc.dll!uloc_getBaseName */
-  uloc_getBaseName(localeID: string | Win32Pointer, name: string | Win32Pointer, nameCapacity: number, err: Win32Pointer): number;
+  uloc_getBaseName(
+    localeID: string | Win32Pointer,
+    name: string | Win32Pointer,
+    nameCapacity: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getCharacterOrientation */
   uloc_getCharacterOrientation(localeId: string | Win32Pointer, status: Win32Pointer): number;
   /** icuuc.dll!uloc_getCountry */
-  uloc_getCountry(localeID: string | Win32Pointer, country: string | Win32Pointer, countryCapacity: number, err: Win32Pointer): number;
+  uloc_getCountry(
+    localeID: string | Win32Pointer,
+    country: string | Win32Pointer,
+    countryCapacity: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getDefault */
   uloc_getDefault(): number | null;
   /** icuuc.dll!uloc_getDisplayCountry */
-  uloc_getDisplayCountry(locale: string | Win32Pointer, displayLocale: string | Win32Pointer, country: Win32Pointer, countryCapacity: number, status: Win32Pointer): number;
+  uloc_getDisplayCountry(
+    locale: string | Win32Pointer,
+    displayLocale: string | Win32Pointer,
+    country: Win32Pointer,
+    countryCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getDisplayKeyword */
-  uloc_getDisplayKeyword(keyword: string | Win32Pointer, displayLocale: string | Win32Pointer, dest: Win32Pointer, destCapacity: number, status: Win32Pointer): number;
+  uloc_getDisplayKeyword(
+    keyword: string | Win32Pointer,
+    displayLocale: string | Win32Pointer,
+    dest: Win32Pointer,
+    destCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getDisplayKeywordValue */
-  uloc_getDisplayKeywordValue(locale: string | Win32Pointer, keyword: string | Win32Pointer, displayLocale: string | Win32Pointer, dest: Win32Pointer, destCapacity: number, status: Win32Pointer): number;
+  uloc_getDisplayKeywordValue(
+    locale: string | Win32Pointer,
+    keyword: string | Win32Pointer,
+    displayLocale: string | Win32Pointer,
+    dest: Win32Pointer,
+    destCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getDisplayLanguage */
-  uloc_getDisplayLanguage(locale: string | Win32Pointer, displayLocale: string | Win32Pointer, language: Win32Pointer, languageCapacity: number, status: Win32Pointer): number;
+  uloc_getDisplayLanguage(
+    locale: string | Win32Pointer,
+    displayLocale: string | Win32Pointer,
+    language: Win32Pointer,
+    languageCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getDisplayName */
-  uloc_getDisplayName(localeID: string | Win32Pointer, inLocaleID: string | Win32Pointer, result: Win32Pointer, maxResultSize: number, err: Win32Pointer): number;
+  uloc_getDisplayName(
+    localeID: string | Win32Pointer,
+    inLocaleID: string | Win32Pointer,
+    result: Win32Pointer,
+    maxResultSize: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getDisplayScript */
-  uloc_getDisplayScript(locale: string | Win32Pointer, displayLocale: string | Win32Pointer, script: Win32Pointer, scriptCapacity: number, status: Win32Pointer): number;
+  uloc_getDisplayScript(
+    locale: string | Win32Pointer,
+    displayLocale: string | Win32Pointer,
+    script: Win32Pointer,
+    scriptCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getDisplayVariant */
-  uloc_getDisplayVariant(locale: string | Win32Pointer, displayLocale: string | Win32Pointer, variant: Win32Pointer, variantCapacity: number, status: Win32Pointer): number;
+  uloc_getDisplayVariant(
+    locale: string | Win32Pointer,
+    displayLocale: string | Win32Pointer,
+    variant: Win32Pointer,
+    variantCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getISO3Country */
   uloc_getISO3Country(localeID: string | Win32Pointer): number | null;
   /** icuuc.dll!uloc_getISO3Language */
@@ -741,35 +1498,88 @@ interface Functions {
   /** icuuc.dll!uloc_getISOLanguages */
   uloc_getISOLanguages(): number | null;
   /** icuuc.dll!uloc_getKeywordValue */
-  uloc_getKeywordValue(localeID: string | Win32Pointer, keywordName: string | Win32Pointer, buffer: string | Win32Pointer, bufferCapacity: number, status: Win32Pointer): number;
+  uloc_getKeywordValue(
+    localeID: string | Win32Pointer,
+    keywordName: string | Win32Pointer,
+    buffer: string | Win32Pointer,
+    bufferCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getLCID */
   uloc_getLCID(localeID: string | Win32Pointer): number;
   /** icuuc.dll!uloc_getLanguage */
-  uloc_getLanguage(localeID: string | Win32Pointer, language: string | Win32Pointer, languageCapacity: number, err: Win32Pointer): number;
+  uloc_getLanguage(
+    localeID: string | Win32Pointer,
+    language: string | Win32Pointer,
+    languageCapacity: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getLineOrientation */
   uloc_getLineOrientation(localeId: string | Win32Pointer, status: Win32Pointer): number;
   /** icuuc.dll!uloc_getLocaleForLCID */
-  uloc_getLocaleForLCID(hostID: number, locale: string | Win32Pointer, localeCapacity: number, status: Win32Pointer): number;
+  uloc_getLocaleForLCID(
+    hostID: number,
+    locale: string | Win32Pointer,
+    localeCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getName */
-  uloc_getName(localeID: string | Win32Pointer, name: string | Win32Pointer, nameCapacity: number, err: Win32Pointer): number;
+  uloc_getName(
+    localeID: string | Win32Pointer,
+    name: string | Win32Pointer,
+    nameCapacity: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getParent */
-  uloc_getParent(localeID: string | Win32Pointer, parent: string | Win32Pointer, parentCapacity: number, err: Win32Pointer): number;
+  uloc_getParent(
+    localeID: string | Win32Pointer,
+    parent: string | Win32Pointer,
+    parentCapacity: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getScript */
-  uloc_getScript(localeID: string | Win32Pointer, script: string | Win32Pointer, scriptCapacity: number, err: Win32Pointer): number;
+  uloc_getScript(
+    localeID: string | Win32Pointer,
+    script: string | Win32Pointer,
+    scriptCapacity: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_getVariant */
-  uloc_getVariant(localeID: string | Win32Pointer, variant: string | Win32Pointer, variantCapacity: number, err: Win32Pointer): number;
+  uloc_getVariant(
+    localeID: string | Win32Pointer,
+    variant: string | Win32Pointer,
+    variantCapacity: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_isRightToLeft */
   uloc_isRightToLeft(locale: string | Win32Pointer): number;
   /** icuuc.dll!uloc_minimizeSubtags */
-  uloc_minimizeSubtags(localeID: string | Win32Pointer, minimizedLocaleID: string | Win32Pointer, minimizedLocaleIDCapacity: number, err: Win32Pointer): number;
+  uloc_minimizeSubtags(
+    localeID: string | Win32Pointer,
+    minimizedLocaleID: string | Win32Pointer,
+    minimizedLocaleIDCapacity: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_openKeywords */
   uloc_openKeywords(localeID: string | Win32Pointer, status: Win32Pointer): number | null;
   /** icuuc.dll!uloc_setDefault */
   uloc_setDefault(localeID: string | Win32Pointer, status: Win32Pointer): void;
   /** icuuc.dll!uloc_setKeywordValue */
-  uloc_setKeywordValue(keywordName: string | Win32Pointer, keywordValue: string | Win32Pointer, buffer: string | Win32Pointer, bufferCapacity: number, status: Win32Pointer): number;
+  uloc_setKeywordValue(
+    keywordName: string | Win32Pointer,
+    keywordValue: string | Win32Pointer,
+    buffer: string | Win32Pointer,
+    bufferCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_toLanguageTag */
-  uloc_toLanguageTag(localeID: string | Win32Pointer, langtag: string | Win32Pointer, langtagCapacity: number, strict: number, err: Win32Pointer): number;
+  uloc_toLanguageTag(
+    localeID: string | Win32Pointer,
+    langtag: string | Win32Pointer,
+    langtagCapacity: number,
+    strict: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uloc_toLegacyKey */
   uloc_toLegacyKey(keyword: string | Win32Pointer): number | null;
   /** icuuc.dll!uloc_toLegacyType */
@@ -779,7 +1589,15 @@ interface Functions {
   /** icuuc.dll!uloc_toUnicodeLocaleType */
   uloc_toUnicodeLocaleType(keyword: string | Win32Pointer, value: string | Win32Pointer): number | null;
   /** icuuc.dll!unorm2_append */
-  unorm2_append(norm2: Win32Pointer, first: Win32Pointer, firstLength: number, firstCapacity: number, second: Win32Pointer, secondLength: number, pErrorCode: Win32Pointer): number;
+  unorm2_append(
+    norm2: Win32Pointer,
+    first: Win32Pointer,
+    firstLength: number,
+    firstCapacity: number,
+    second: Win32Pointer,
+    secondLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!unorm2_close */
   unorm2_close(norm2: Win32Pointer): void;
   /** icuuc.dll!unorm2_composePair */
@@ -787,9 +1605,20 @@ interface Functions {
   /** icuuc.dll!unorm2_getCombiningClass */
   unorm2_getCombiningClass(norm2: Win32Pointer, c: number): number;
   /** icuuc.dll!unorm2_getDecomposition */
-  unorm2_getDecomposition(norm2: Win32Pointer, c: number, decomposition: Win32Pointer, capacity: number, pErrorCode: Win32Pointer): number;
+  unorm2_getDecomposition(
+    norm2: Win32Pointer,
+    c: number,
+    decomposition: Win32Pointer,
+    capacity: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!unorm2_getInstance */
-  unorm2_getInstance(packageName: string | Win32Pointer, name: string | Win32Pointer, mode: number, pErrorCode: Win32Pointer): number | null;
+  unorm2_getInstance(
+    packageName: string | Win32Pointer,
+    name: string | Win32Pointer,
+    mode: number,
+    pErrorCode: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!unorm2_getNFCInstance */
   unorm2_getNFCInstance(pErrorCode: Win32Pointer): number | null;
   /** icuuc.dll!unorm2_getNFDInstance */
@@ -801,7 +1630,13 @@ interface Functions {
   /** icuuc.dll!unorm2_getNFKDInstance */
   unorm2_getNFKDInstance(pErrorCode: Win32Pointer): number | null;
   /** icuuc.dll!unorm2_getRawDecomposition */
-  unorm2_getRawDecomposition(norm2: Win32Pointer, c: number, decomposition: Win32Pointer, capacity: number, pErrorCode: Win32Pointer): number;
+  unorm2_getRawDecomposition(
+    norm2: Win32Pointer,
+    c: number,
+    decomposition: Win32Pointer,
+    capacity: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!unorm2_hasBoundaryAfter */
   unorm2_hasBoundaryAfter(norm2: Win32Pointer, c: number): number;
   /** icuuc.dll!unorm2_hasBoundaryBefore */
@@ -811,9 +1646,24 @@ interface Functions {
   /** icuuc.dll!unorm2_isNormalized */
   unorm2_isNormalized(norm2: Win32Pointer, s: Win32Pointer, length: number, pErrorCode: Win32Pointer): number;
   /** icuuc.dll!unorm2_normalize */
-  unorm2_normalize(norm2: Win32Pointer, src: Win32Pointer, length: number, dest: Win32Pointer, capacity: number, pErrorCode: Win32Pointer): number;
+  unorm2_normalize(
+    norm2: Win32Pointer,
+    src: Win32Pointer,
+    length: number,
+    dest: Win32Pointer,
+    capacity: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!unorm2_normalizeSecondAndAppend */
-  unorm2_normalizeSecondAndAppend(norm2: Win32Pointer, first: Win32Pointer, firstLength: number, firstCapacity: number, second: Win32Pointer, secondLength: number, pErrorCode: Win32Pointer): number;
+  unorm2_normalizeSecondAndAppend(
+    norm2: Win32Pointer,
+    first: Win32Pointer,
+    firstLength: number,
+    firstCapacity: number,
+    second: Win32Pointer,
+    secondLength: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!unorm2_openFiltered */
   unorm2_openFiltered(norm2: Win32Pointer, filterSet: Win32Pointer, pErrorCode: Win32Pointer): number | null;
   /** icuuc.dll!unorm2_quickCheck */
@@ -821,15 +1671,32 @@ interface Functions {
   /** icuuc.dll!unorm2_spanQuickCheckYes */
   unorm2_spanQuickCheckYes(norm2: Win32Pointer, s: Win32Pointer, length: number, pErrorCode: Win32Pointer): number;
   /** icuuc.dll!unorm_compare */
-  unorm_compare(s1: Win32Pointer, length1: number, s2: Win32Pointer, length2: number, options: number, pErrorCode: Win32Pointer): number;
+  unorm_compare(
+    s1: Win32Pointer,
+    length1: number,
+    s2: Win32Pointer,
+    length2: number,
+    options: number,
+    pErrorCode: Win32Pointer,
+  ): number;
   /** icuuc.dll!ures_close */
   ures_close(resourceBundle: Win32Pointer): void;
   /** icuuc.dll!ures_getBinary */
   ures_getBinary(resourceBundle: Win32Pointer, len: Win32Pointer, status: Win32Pointer): number | null;
   /** icuuc.dll!ures_getByIndex */
-  ures_getByIndex(resourceBundle: Win32Pointer, indexR: number, fillIn: Win32Pointer, status: Win32Pointer): number | null;
+  ures_getByIndex(
+    resourceBundle: Win32Pointer,
+    indexR: number,
+    fillIn: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ures_getByKey */
-  ures_getByKey(resourceBundle: Win32Pointer, key: string | Win32Pointer, fillIn: Win32Pointer, status: Win32Pointer): number | null;
+  ures_getByKey(
+    resourceBundle: Win32Pointer,
+    key: string | Win32Pointer,
+    fillIn: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ures_getInt */
   ures_getInt(resourceBundle: Win32Pointer, status: Win32Pointer): number;
   /** icuuc.dll!ures_getIntVector */
@@ -841,25 +1708,60 @@ interface Functions {
   /** icuuc.dll!ures_getNextResource */
   ures_getNextResource(resourceBundle: Win32Pointer, fillIn: Win32Pointer, status: Win32Pointer): number | null;
   /** icuuc.dll!ures_getNextString */
-  ures_getNextString(resourceBundle: Win32Pointer, len: Win32Pointer, key: Win32Pointer, status: Win32Pointer): number | null;
+  ures_getNextString(
+    resourceBundle: Win32Pointer,
+    len: Win32Pointer,
+    key: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ures_getSize */
   ures_getSize(resourceBundle: Win32Pointer): number;
   /** icuuc.dll!ures_getString */
   ures_getString(resourceBundle: Win32Pointer, len: Win32Pointer, status: Win32Pointer): number | null;
   /** icuuc.dll!ures_getStringByIndex */
-  ures_getStringByIndex(resourceBundle: Win32Pointer, indexS: number, len: Win32Pointer, status: Win32Pointer): number | null;
+  ures_getStringByIndex(
+    resourceBundle: Win32Pointer,
+    indexS: number,
+    len: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ures_getStringByKey */
-  ures_getStringByKey(resB: Win32Pointer, key: string | Win32Pointer, len: Win32Pointer, status: Win32Pointer): number | null;
+  ures_getStringByKey(
+    resB: Win32Pointer,
+    key: string | Win32Pointer,
+    len: Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ures_getType */
   ures_getType(resourceBundle: Win32Pointer): number;
   /** icuuc.dll!ures_getUInt */
   ures_getUInt(resourceBundle: Win32Pointer, status: Win32Pointer): number;
   /** icuuc.dll!ures_getUTF8String */
-  ures_getUTF8String(resB: Win32Pointer, dest: string | Win32Pointer, length: Win32Pointer, forceCopy: number, status: Win32Pointer): number | null;
+  ures_getUTF8String(
+    resB: Win32Pointer,
+    dest: string | Win32Pointer,
+    length: Win32Pointer,
+    forceCopy: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ures_getUTF8StringByIndex */
-  ures_getUTF8StringByIndex(resB: Win32Pointer, stringIndex: number, dest: string | Win32Pointer, pLength: Win32Pointer, forceCopy: number, status: Win32Pointer): number | null;
+  ures_getUTF8StringByIndex(
+    resB: Win32Pointer,
+    stringIndex: number,
+    dest: string | Win32Pointer,
+    pLength: Win32Pointer,
+    forceCopy: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ures_getUTF8StringByKey */
-  ures_getUTF8StringByKey(resB: Win32Pointer, key: string | Win32Pointer, dest: string | Win32Pointer, pLength: Win32Pointer, forceCopy: number, status: Win32Pointer): number | null;
+  ures_getUTF8StringByKey(
+    resB: Win32Pointer,
+    key: string | Win32Pointer,
+    dest: string | Win32Pointer,
+    pLength: Win32Pointer,
+    forceCopy: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ures_getVersion */
   ures_getVersion(resB: Win32Pointer, versionInfo: Win32Pointer): void;
   /** icuuc.dll!ures_hasNext */
@@ -869,7 +1771,11 @@ interface Functions {
   /** icuuc.dll!ures_openAvailableLocales */
   ures_openAvailableLocales(packageName: string | Win32Pointer, status: Win32Pointer): number | null;
   /** icuuc.dll!ures_openDirect */
-  ures_openDirect(packageName: string | Win32Pointer, locale: string | Win32Pointer, status: Win32Pointer): number | null;
+  ures_openDirect(
+    packageName: string | Win32Pointer,
+    locale: string | Win32Pointer,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!ures_openU */
   ures_openU(packageName: Win32Pointer, locale: string | Win32Pointer, status: Win32Pointer): number | null;
   /** icuuc.dll!ures_resetIterator */
@@ -877,7 +1783,12 @@ interface Functions {
   /** icuuc.dll!uscript_breaksBetweenLetters */
   uscript_breaksBetweenLetters(script: number): number;
   /** icuuc.dll!uscript_getCode */
-  uscript_getCode(nameOrAbbrOrLocale: string | Win32Pointer, fillIn: Win32Pointer, capacity: number, err: Win32Pointer): number;
+  uscript_getCode(
+    nameOrAbbrOrLocale: string | Win32Pointer,
+    fillIn: Win32Pointer,
+    capacity: number,
+    err: Win32Pointer,
+  ): number;
   /** icuuc.dll!uscript_getName */
   uscript_getName(scriptCode: number): number | null;
   /** icuuc.dll!uscript_getSampleString */
@@ -909,9 +1820,22 @@ interface Functions {
   /** icuuc.dll!uset_applyIntPropertyValue */
   uset_applyIntPropertyValue(set: Win32Pointer, prop: number, value: number, ec: Win32Pointer): void;
   /** icuuc.dll!uset_applyPattern */
-  uset_applyPattern(set: Win32Pointer, pattern: Win32Pointer, patternLength: number, options: number, status: Win32Pointer): number;
+  uset_applyPattern(
+    set: Win32Pointer,
+    pattern: Win32Pointer,
+    patternLength: number,
+    options: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!uset_applyPropertyAlias */
-  uset_applyPropertyAlias(set: Win32Pointer, prop: Win32Pointer, propLength: number, value: Win32Pointer, valueLength: number, ec: Win32Pointer): void;
+  uset_applyPropertyAlias(
+    set: Win32Pointer,
+    prop: Win32Pointer,
+    propLength: number,
+    value: Win32Pointer,
+    valueLength: number,
+    ec: Win32Pointer,
+  ): void;
   /** icuuc.dll!uset_charAt */
   uset_charAt(set: Win32Pointer, charIndex: number): number;
   /** icuuc.dll!uset_clear */
@@ -949,7 +1873,15 @@ interface Functions {
   /** icuuc.dll!uset_freeze */
   uset_freeze(set: Win32Pointer): void;
   /** icuuc.dll!uset_getItem */
-  uset_getItem(set: Win32Pointer, itemIndex: number, start: Win32Pointer, end: Win32Pointer, str: Win32Pointer, strCapacity: number, ec: Win32Pointer): number;
+  uset_getItem(
+    set: Win32Pointer,
+    itemIndex: number,
+    start: Win32Pointer,
+    end: Win32Pointer,
+    str: Win32Pointer,
+    strCapacity: number,
+    ec: Win32Pointer,
+  ): number;
   /** icuuc.dll!uset_getItemCount */
   uset_getItemCount(set: Win32Pointer): number;
   /** icuuc.dll!uset_getSerializedRange */
@@ -971,7 +1903,12 @@ interface Functions {
   /** icuuc.dll!uset_openPattern */
   uset_openPattern(pattern: Win32Pointer, patternLength: number, ec: Win32Pointer): number | null;
   /** icuuc.dll!uset_openPatternOptions */
-  uset_openPatternOptions(pattern: Win32Pointer, patternLength: number, options: number, ec: Win32Pointer): number | null;
+  uset_openPatternOptions(
+    pattern: Win32Pointer,
+    patternLength: number,
+    options: number,
+    ec: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!uset_remove */
   uset_remove(set: Win32Pointer, c: number): void;
   /** icuuc.dll!uset_removeAll */
@@ -1007,7 +1944,13 @@ interface Functions {
   /** icuuc.dll!uset_spanUTF8 */
   uset_spanUTF8(set: Win32Pointer, s: string | Win32Pointer, length: number, spanCondition: number): number;
   /** icuuc.dll!uset_toPattern */
-  uset_toPattern(set: Win32Pointer, result: Win32Pointer, resultCapacity: number, escapeUnprintable: number, ec: Win32Pointer): number;
+  uset_toPattern(
+    set: Win32Pointer,
+    result: Win32Pointer,
+    resultCapacity: number,
+    escapeUnprintable: number,
+    ec: Win32Pointer,
+  ): number;
   /** icuuc.dll!usprep_close */
   usprep_close(profile: Win32Pointer): void;
   /** icuuc.dll!usprep_open */
@@ -1015,21 +1958,50 @@ interface Functions {
   /** icuuc.dll!usprep_openByType */
   usprep_openByType(type: number, status: Win32Pointer): number | null;
   /** icuuc.dll!usprep_prepare */
-  usprep_prepare(prep: Win32Pointer, src: Win32Pointer, srcLength: number, dest: Win32Pointer, destCapacity: number, options: number, parseError: Win32Pointer, status: Win32Pointer): number;
+  usprep_prepare(
+    prep: Win32Pointer,
+    src: Win32Pointer,
+    srcLength: number,
+    dest: Win32Pointer,
+    destCapacity: number,
+    options: number,
+    parseError: Win32Pointer,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!utext_char32At */
   utext_char32At(ut: Win32Pointer, nativeIndex: number | bigint): number;
   /** icuuc.dll!utext_clone */
-  utext_clone(dest: Win32Pointer, src: Win32Pointer, deep: number, readOnly: number, status: Win32Pointer): number | null;
+  utext_clone(
+    dest: Win32Pointer,
+    src: Win32Pointer,
+    deep: number,
+    readOnly: number,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!utext_close */
   utext_close(ut: Win32Pointer): number | null;
   /** icuuc.dll!utext_copy */
-  utext_copy(ut: Win32Pointer, nativeStart: number | bigint, nativeLimit: number | bigint, destIndex: number | bigint, move: number, status: Win32Pointer): void;
+  utext_copy(
+    ut: Win32Pointer,
+    nativeStart: number | bigint,
+    nativeLimit: number | bigint,
+    destIndex: number | bigint,
+    move: number,
+    status: Win32Pointer,
+  ): void;
   /** icuuc.dll!utext_current32 */
   utext_current32(ut: Win32Pointer): number;
   /** icuuc.dll!utext_equals */
   utext_equals(a: Win32Pointer, b: Win32Pointer): number;
   /** icuuc.dll!utext_extract */
-  utext_extract(ut: Win32Pointer, nativeStart: number | bigint, nativeLimit: number | bigint, dest: Win32Pointer, destCapacity: number, status: Win32Pointer): number;
+  utext_extract(
+    ut: Win32Pointer,
+    nativeStart: number | bigint,
+    nativeLimit: number | bigint,
+    dest: Win32Pointer,
+    destCapacity: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!utext_freeze */
   utext_freeze(ut: Win32Pointer): void;
   /** icuuc.dll!utext_getNativeIndex */
@@ -1053,13 +2025,25 @@ interface Functions {
   /** icuuc.dll!utext_openUChars */
   utext_openUChars(ut: Win32Pointer, s: Win32Pointer, length: number | bigint, status: Win32Pointer): number | null;
   /** icuuc.dll!utext_openUTF8 */
-  utext_openUTF8(ut: Win32Pointer, s: string | Win32Pointer, length: number | bigint, status: Win32Pointer): number | null;
+  utext_openUTF8(
+    ut: Win32Pointer,
+    s: string | Win32Pointer,
+    length: number | bigint,
+    status: Win32Pointer,
+  ): number | null;
   /** icuuc.dll!utext_previous32 */
   utext_previous32(ut: Win32Pointer): number;
   /** icuuc.dll!utext_previous32From */
   utext_previous32From(ut: Win32Pointer, nativeIndex: number | bigint): number;
   /** icuuc.dll!utext_replace */
-  utext_replace(ut: Win32Pointer, nativeStart: number | bigint, nativeLimit: number | bigint, replacementText: Win32Pointer, replacementLength: number, status: Win32Pointer): number;
+  utext_replace(
+    ut: Win32Pointer,
+    nativeStart: number | bigint,
+    nativeLimit: number | bigint,
+    replacementText: Win32Pointer,
+    replacementLength: number,
+    status: Win32Pointer,
+  ): number;
   /** icuuc.dll!utext_setNativeIndex */
   utext_setNativeIndex(ut: Win32Pointer, nativeIndex: number | bigint): void;
   /** icuuc.dll!utext_setup */
@@ -1085,7 +2069,13 @@ interface Functions {
   /** icuuc.dll!utrace_setLevel */
   utrace_setLevel(traceLevel: number): void;
   /** icuuc.dll!utrace_vformat */
-  utrace_vformat(outBuf: string | Win32Pointer, capacity: number, indent: number, fmt: string | Win32Pointer, args: Win32Pointer): number;
+  utrace_vformat(
+    outBuf: string | Win32Pointer,
+    capacity: number,
+    indent: number,
+    fmt: string | Win32Pointer,
+    args: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

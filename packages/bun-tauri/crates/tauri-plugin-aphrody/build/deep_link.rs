@@ -74,8 +74,7 @@ fn intent_filter(domain: &AssociatedDomain) -> String {
 
 /// Build description of the `deep-link` plugin.
 pub fn builder() -> tauri_plugin::Builder<'static> {
-    tauri_plugin::Builder::new(COMMANDS)
-        .global_api_script_path("iife/deep-link.js")
+    tauri_plugin::Builder::new(COMMANDS).global_api_script_path("iife/deep-link.js")
 }
 
 /// Applies the `plugins > deep-link` configuration to the mobile projects.

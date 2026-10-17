@@ -15,9 +15,21 @@ interface Functions {
   /** msajapi.dll!AllJoynEventSelect */
   AllJoynEventSelect(connectedBusHandle: Win32Pointer, eventHandle: Win32Pointer, eventTypes: number): number;
   /** msajapi.dll!AllJoynReceiveFromBus */
-  AllJoynReceiveFromBus(connectedBusHandle: Win32Pointer, buffer: Win32Pointer, bytesToRead: number, bytesTransferred: Win32Pointer, reserved: Win32Pointer): number;
+  AllJoynReceiveFromBus(
+    connectedBusHandle: Win32Pointer,
+    buffer: Win32Pointer,
+    bytesToRead: number,
+    bytesTransferred: Win32Pointer,
+    reserved: Win32Pointer,
+  ): number;
   /** msajapi.dll!AllJoynSendToBus */
-  AllJoynSendToBus(connectedBusHandle: Win32Pointer, buffer: Win32Pointer, bytesToWrite: number, bytesTransferred: Win32Pointer, reserved: Win32Pointer): number;
+  AllJoynSendToBus(
+    connectedBusHandle: Win32Pointer,
+    buffer: Win32Pointer,
+    bytesToWrite: number,
+    bytesTransferred: Win32Pointer,
+    reserved: Win32Pointer,
+  ): number;
   /** msajapi.dll!QCC_StatusText */
   QCC_StatusText(status: number): number | null;
   /** msajapi.dll!alljoyn_aboutdata_create */
@@ -27,13 +39,21 @@ interface Functions {
   /** msajapi.dll!alljoyn_aboutdata_create_full */
   alljoyn_aboutdata_create_full(arg: number | bigint, language: string | Win32Pointer): number | bigint;
   /** msajapi.dll!alljoyn_aboutdata_createfrommsgarg */
-  alljoyn_aboutdata_createfrommsgarg(data: number | bigint, arg: number | bigint, language: string | Win32Pointer): number;
+  alljoyn_aboutdata_createfrommsgarg(
+    data: number | bigint,
+    arg: number | bigint,
+    language: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutdata_createfromxml */
   alljoyn_aboutdata_createfromxml(data: number | bigint, aboutDataXml: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_destroy */
   alljoyn_aboutdata_destroy(data: number | bigint): void;
   /** msajapi.dll!alljoyn_aboutdata_getaboutdata */
-  alljoyn_aboutdata_getaboutdata(data: number | bigint, msgArg: number | bigint, language: string | Win32Pointer): number;
+  alljoyn_aboutdata_getaboutdata(
+    data: number | bigint,
+    msgArg: number | bigint,
+    language: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutdata_getajsoftwareversion */
   alljoyn_aboutdata_getajsoftwareversion(data: number | bigint, ajSoftwareVersion: Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_getannouncedaboutdata */
@@ -47,27 +67,52 @@ interface Functions {
   /** msajapi.dll!alljoyn_aboutdata_getdefaultlanguage */
   alljoyn_aboutdata_getdefaultlanguage(data: number | bigint, defaultLanguage: Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_getdescription */
-  alljoyn_aboutdata_getdescription(data: number | bigint, description: Win32Pointer, language: string | Win32Pointer): number;
+  alljoyn_aboutdata_getdescription(
+    data: number | bigint,
+    description: Win32Pointer,
+    language: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutdata_getdeviceid */
   alljoyn_aboutdata_getdeviceid(data: number | bigint, deviceId: Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_getdevicename */
-  alljoyn_aboutdata_getdevicename(data: number | bigint, deviceName: Win32Pointer, language: string | Win32Pointer): number;
+  alljoyn_aboutdata_getdevicename(
+    data: number | bigint,
+    deviceName: Win32Pointer,
+    language: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutdata_getfield */
-  alljoyn_aboutdata_getfield(data: number | bigint, name: string | Win32Pointer, value: Win32Pointer, language: string | Win32Pointer): number;
+  alljoyn_aboutdata_getfield(
+    data: number | bigint,
+    name: string | Win32Pointer,
+    value: Win32Pointer,
+    language: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutdata_getfields */
-  alljoyn_aboutdata_getfields(data: number | bigint, fields: Win32Pointer, num_fields: number | bigint): number | bigint;
+  alljoyn_aboutdata_getfields(
+    data: number | bigint,
+    fields: Win32Pointer,
+    num_fields: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_aboutdata_getfieldsignature */
   alljoyn_aboutdata_getfieldsignature(data: number | bigint, fieldName: string | Win32Pointer): number | null;
   /** msajapi.dll!alljoyn_aboutdata_gethardwareversion */
   alljoyn_aboutdata_gethardwareversion(data: number | bigint, hardwareVersion: Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_getmanufacturer */
-  alljoyn_aboutdata_getmanufacturer(data: number | bigint, manufacturer: Win32Pointer, language: string | Win32Pointer): number;
+  alljoyn_aboutdata_getmanufacturer(
+    data: number | bigint,
+    manufacturer: Win32Pointer,
+    language: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutdata_getmodelnumber */
   alljoyn_aboutdata_getmodelnumber(data: number | bigint, modelNumber: Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_getsoftwareversion */
   alljoyn_aboutdata_getsoftwareversion(data: number | bigint, softwareVersion: Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_getsupportedlanguages */
-  alljoyn_aboutdata_getsupportedlanguages(data: number | bigint, languageTags: Win32Pointer, num: number | bigint): number | bigint;
+  alljoyn_aboutdata_getsupportedlanguages(
+    data: number | bigint,
+    languageTags: Win32Pointer,
+    num: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_aboutdata_getsupporturl */
   alljoyn_aboutdata_getsupporturl(data: number | bigint, supportUrl: Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_isfieldannounced */
@@ -83,23 +128,44 @@ interface Functions {
   /** msajapi.dll!alljoyn_aboutdata_setappid_fromstring */
   alljoyn_aboutdata_setappid_fromstring(data: number | bigint, appId: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_setappname */
-  alljoyn_aboutdata_setappname(data: number | bigint, appName: string | Win32Pointer, language: string | Win32Pointer): number;
+  alljoyn_aboutdata_setappname(
+    data: number | bigint,
+    appName: string | Win32Pointer,
+    language: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutdata_setdateofmanufacture */
   alljoyn_aboutdata_setdateofmanufacture(data: number | bigint, dateOfManufacture: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_setdefaultlanguage */
   alljoyn_aboutdata_setdefaultlanguage(data: number | bigint, defaultLanguage: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_setdescription */
-  alljoyn_aboutdata_setdescription(data: number | bigint, description: string | Win32Pointer, language: string | Win32Pointer): number;
+  alljoyn_aboutdata_setdescription(
+    data: number | bigint,
+    description: string | Win32Pointer,
+    language: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutdata_setdeviceid */
   alljoyn_aboutdata_setdeviceid(data: number | bigint, deviceId: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_setdevicename */
-  alljoyn_aboutdata_setdevicename(data: number | bigint, deviceName: string | Win32Pointer, language: string | Win32Pointer): number;
+  alljoyn_aboutdata_setdevicename(
+    data: number | bigint,
+    deviceName: string | Win32Pointer,
+    language: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutdata_setfield */
-  alljoyn_aboutdata_setfield(data: number | bigint, name: string | Win32Pointer, value: number | bigint, language: string | Win32Pointer): number;
+  alljoyn_aboutdata_setfield(
+    data: number | bigint,
+    name: string | Win32Pointer,
+    value: number | bigint,
+    language: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutdata_sethardwareversion */
   alljoyn_aboutdata_sethardwareversion(data: number | bigint, hardwareVersion: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_setmanufacturer */
-  alljoyn_aboutdata_setmanufacturer(data: number | bigint, manufacturer: string | Win32Pointer, language: string | Win32Pointer): number;
+  alljoyn_aboutdata_setmanufacturer(
+    data: number | bigint,
+    manufacturer: string | Win32Pointer,
+    language: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutdata_setmodelnumber */
   alljoyn_aboutdata_setmodelnumber(data: number | bigint, modelNumber: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutdata_setsoftwareversion */
@@ -123,7 +189,13 @@ interface Functions {
   /** msajapi.dll!alljoyn_abouticon_geturl */
   alljoyn_abouticon_geturl(icon: number | bigint, type: Win32Pointer, url: Win32Pointer): void;
   /** msajapi.dll!alljoyn_abouticon_setcontent */
-  alljoyn_abouticon_setcontent(icon: number | bigint, type: string | Win32Pointer, data: Win32Pointer, csize: number | bigint, ownsData: number): number;
+  alljoyn_abouticon_setcontent(
+    icon: number | bigint,
+    type: string | Win32Pointer,
+    data: Win32Pointer,
+    csize: number | bigint,
+    ownsData: number,
+  ): number;
   /** msajapi.dll!alljoyn_abouticon_setcontent_frommsgarg */
   alljoyn_abouticon_setcontent_frommsgarg(icon: number | bigint, arg: number | bigint): number;
   /** msajapi.dll!alljoyn_abouticon_seturl */
@@ -133,7 +205,11 @@ interface Functions {
   /** msajapi.dll!alljoyn_abouticonobj_destroy */
   alljoyn_abouticonobj_destroy(icon: number | bigint): void;
   /** msajapi.dll!alljoyn_abouticonproxy_create */
-  alljoyn_abouticonproxy_create(bus: number | bigint, busName: string | Win32Pointer, sessionId: number): number | bigint;
+  alljoyn_abouticonproxy_create(
+    bus: number | bigint,
+    busName: string | Win32Pointer,
+    sessionId: number,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_abouticonproxy_destroy */
   alljoyn_abouticonproxy_destroy(proxy: number | bigint): void;
   /** msajapi.dll!alljoyn_abouticonproxy_geticon */
@@ -147,7 +223,11 @@ interface Functions {
   /** msajapi.dll!alljoyn_aboutobj_announce */
   alljoyn_aboutobj_announce(obj: number | bigint, sessionPort: number, aboutData: number | bigint): number;
   /** msajapi.dll!alljoyn_aboutobj_announce_using_datalistener */
-  alljoyn_aboutobj_announce_using_datalistener(obj: number | bigint, sessionPort: number, aboutListener: number | bigint): number;
+  alljoyn_aboutobj_announce_using_datalistener(
+    obj: number | bigint,
+    sessionPort: number,
+    aboutListener: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_aboutobj_create */
   alljoyn_aboutobj_create(bus: number | bigint, isAnnounced: number): number | bigint;
   /** msajapi.dll!alljoyn_aboutobj_destroy */
@@ -165,17 +245,38 @@ interface Functions {
   /** msajapi.dll!alljoyn_aboutobjectdescription_destroy */
   alljoyn_aboutobjectdescription_destroy(description: number | bigint): void;
   /** msajapi.dll!alljoyn_aboutobjectdescription_getinterfacepaths */
-  alljoyn_aboutobjectdescription_getinterfacepaths(description: number | bigint, interfaceName: string | Win32Pointer, paths: Win32Pointer, numPaths: number | bigint): number | bigint;
+  alljoyn_aboutobjectdescription_getinterfacepaths(
+    description: number | bigint,
+    interfaceName: string | Win32Pointer,
+    paths: Win32Pointer,
+    numPaths: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_aboutobjectdescription_getinterfaces */
-  alljoyn_aboutobjectdescription_getinterfaces(description: number | bigint, path: string | Win32Pointer, interfaces: Win32Pointer, numInterfaces: number | bigint): number | bigint;
+  alljoyn_aboutobjectdescription_getinterfaces(
+    description: number | bigint,
+    path: string | Win32Pointer,
+    interfaces: Win32Pointer,
+    numInterfaces: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_aboutobjectdescription_getmsgarg */
   alljoyn_aboutobjectdescription_getmsgarg(description: number | bigint, msgArg: number | bigint): number;
   /** msajapi.dll!alljoyn_aboutobjectdescription_getpaths */
-  alljoyn_aboutobjectdescription_getpaths(description: number | bigint, paths: Win32Pointer, numPaths: number | bigint): number | bigint;
+  alljoyn_aboutobjectdescription_getpaths(
+    description: number | bigint,
+    paths: Win32Pointer,
+    numPaths: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_aboutobjectdescription_hasinterface */
-  alljoyn_aboutobjectdescription_hasinterface(description: number | bigint, interfaceName: string | Win32Pointer): number;
+  alljoyn_aboutobjectdescription_hasinterface(
+    description: number | bigint,
+    interfaceName: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutobjectdescription_hasinterfaceatpath */
-  alljoyn_aboutobjectdescription_hasinterfaceatpath(description: number | bigint, path: string | Win32Pointer, interfaceName: string | Win32Pointer): number;
+  alljoyn_aboutobjectdescription_hasinterfaceatpath(
+    description: number | bigint,
+    path: string | Win32Pointer,
+    interfaceName: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_aboutobjectdescription_haspath */
   alljoyn_aboutobjectdescription_haspath(description: number | bigint, path: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_aboutproxy_create */
@@ -183,7 +284,11 @@ interface Functions {
   /** msajapi.dll!alljoyn_aboutproxy_destroy */
   alljoyn_aboutproxy_destroy(proxy: number | bigint): void;
   /** msajapi.dll!alljoyn_aboutproxy_getaboutdata */
-  alljoyn_aboutproxy_getaboutdata(proxy: number | bigint, language: string | Win32Pointer, data: number | bigint): number;
+  alljoyn_aboutproxy_getaboutdata(
+    proxy: number | bigint,
+    language: string | Win32Pointer,
+    data: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_aboutproxy_getobjectdescription */
   alljoyn_aboutproxy_getobjectdescription(proxy: number | bigint, objectDesc: number | bigint): number;
   /** msajapi.dll!alljoyn_aboutproxy_getversion */
@@ -197,19 +302,41 @@ interface Functions {
   /** msajapi.dll!alljoyn_authlistener_destroy */
   alljoyn_authlistener_destroy(listener: number | bigint): void;
   /** msajapi.dll!alljoyn_authlistener_requestcredentialsresponse */
-  alljoyn_authlistener_requestcredentialsresponse(listener: number | bigint, authContext: Win32Pointer, accept: number, credentials: number | bigint): number;
+  alljoyn_authlistener_requestcredentialsresponse(
+    listener: number | bigint,
+    authContext: Win32Pointer,
+    accept: number,
+    credentials: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_authlistener_setsharedsecret */
-  alljoyn_authlistener_setsharedsecret(listener: number | bigint, sharedSecret: Win32Pointer, sharedSecretSize: number | bigint): number;
+  alljoyn_authlistener_setsharedsecret(
+    listener: number | bigint,
+    sharedSecret: Win32Pointer,
+    sharedSecretSize: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_authlistener_verifycredentialsresponse */
-  alljoyn_authlistener_verifycredentialsresponse(listener: number | bigint, authContext: Win32Pointer, accept: number): number;
+  alljoyn_authlistener_verifycredentialsresponse(
+    listener: number | bigint,
+    authContext: Win32Pointer,
+    accept: number,
+  ): number;
   /** msajapi.dll!alljoyn_authlistenerasync_create */
   alljoyn_authlistenerasync_create(callbacks: Win32Pointer, context: Win32Pointer): number | bigint;
   /** msajapi.dll!alljoyn_authlistenerasync_destroy */
   alljoyn_authlistenerasync_destroy(listener: number | bigint): void;
   /** msajapi.dll!alljoyn_autopinger_adddestination */
-  alljoyn_autopinger_adddestination(autopinger: number | bigint, group: string | Win32Pointer, destination: string | Win32Pointer): number;
+  alljoyn_autopinger_adddestination(
+    autopinger: number | bigint,
+    group: string | Win32Pointer,
+    destination: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_autopinger_addpinggroup */
-  alljoyn_autopinger_addpinggroup(autopinger: number | bigint, group: string | Win32Pointer, listener: number | bigint, pinginterval: number): void;
+  alljoyn_autopinger_addpinggroup(
+    autopinger: number | bigint,
+    group: string | Win32Pointer,
+    listener: number | bigint,
+    pinginterval: number,
+  ): void;
   /** msajapi.dll!alljoyn_autopinger_create */
   alljoyn_autopinger_create(bus: number | bigint): number | bigint;
   /** msajapi.dll!alljoyn_autopinger_destroy */
@@ -217,31 +344,65 @@ interface Functions {
   /** msajapi.dll!alljoyn_autopinger_pause */
   alljoyn_autopinger_pause(autopinger: number | bigint): void;
   /** msajapi.dll!alljoyn_autopinger_removedestination */
-  alljoyn_autopinger_removedestination(autopinger: number | bigint, group: string | Win32Pointer, destination: string | Win32Pointer, removeall: number): number;
+  alljoyn_autopinger_removedestination(
+    autopinger: number | bigint,
+    group: string | Win32Pointer,
+    destination: string | Win32Pointer,
+    removeall: number,
+  ): number;
   /** msajapi.dll!alljoyn_autopinger_removepinggroup */
   alljoyn_autopinger_removepinggroup(autopinger: number | bigint, group: string | Win32Pointer): void;
   /** msajapi.dll!alljoyn_autopinger_resume */
   alljoyn_autopinger_resume(autopinger: number | bigint): void;
   /** msajapi.dll!alljoyn_autopinger_setpinginterval */
-  alljoyn_autopinger_setpinginterval(autopinger: number | bigint, group: string | Win32Pointer, pinginterval: number): number;
+  alljoyn_autopinger_setpinginterval(
+    autopinger: number | bigint,
+    group: string | Win32Pointer,
+    pinginterval: number,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_addlogonentry */
-  alljoyn_busattachment_addlogonentry(bus: number | bigint, authMechanism: string | Win32Pointer, userName: string | Win32Pointer, password: string | Win32Pointer): number;
+  alljoyn_busattachment_addlogonentry(
+    bus: number | bigint,
+    authMechanism: string | Win32Pointer,
+    userName: string | Win32Pointer,
+    password: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_addmatch */
   alljoyn_busattachment_addmatch(bus: number | bigint, rule: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_busattachment_advertisename */
   alljoyn_busattachment_advertisename(bus: number | bigint, name: string | Win32Pointer, transports: number): number;
   /** msajapi.dll!alljoyn_busattachment_bindsessionport */
-  alljoyn_busattachment_bindsessionport(bus: number | bigint, sessionPort: Win32Pointer, opts: number | bigint, listener: number | bigint): number;
+  alljoyn_busattachment_bindsessionport(
+    bus: number | bigint,
+    sessionPort: Win32Pointer,
+    opts: number | bigint,
+    listener: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_canceladvertisename */
-  alljoyn_busattachment_canceladvertisename(bus: number | bigint, name: string | Win32Pointer, transports: number): number;
+  alljoyn_busattachment_canceladvertisename(
+    bus: number | bigint,
+    name: string | Win32Pointer,
+    transports: number,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_cancelfindadvertisedname */
   alljoyn_busattachment_cancelfindadvertisedname(bus: number | bigint, namePrefix: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_busattachment_cancelfindadvertisednamebytransport */
-  alljoyn_busattachment_cancelfindadvertisednamebytransport(bus: number | bigint, namePrefix: string | Win32Pointer, transports: number): number;
+  alljoyn_busattachment_cancelfindadvertisednamebytransport(
+    bus: number | bigint,
+    namePrefix: string | Win32Pointer,
+    transports: number,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_cancelwhoimplements_interface */
-  alljoyn_busattachment_cancelwhoimplements_interface(bus: number | bigint, implementsInterface: string | Win32Pointer): number;
+  alljoyn_busattachment_cancelwhoimplements_interface(
+    bus: number | bigint,
+    implementsInterface: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_cancelwhoimplements_interfaces */
-  alljoyn_busattachment_cancelwhoimplements_interfaces(bus: number | bigint, implementsInterfaces: Win32Pointer, numberInterfaces: number | bigint): number;
+  alljoyn_busattachment_cancelwhoimplements_interfaces(
+    bus: number | bigint,
+    implementsInterfaces: Win32Pointer,
+    numberInterfaces: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_clearkeys */
   alljoyn_busattachment_clearkeys(bus: number | bigint, guid: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_busattachment_clearkeystore */
@@ -251,11 +412,20 @@ interface Functions {
   /** msajapi.dll!alljoyn_busattachment_create */
   alljoyn_busattachment_create(applicationName: string | Win32Pointer, allowRemoteMessages: number): number | bigint;
   /** msajapi.dll!alljoyn_busattachment_create_concurrency */
-  alljoyn_busattachment_create_concurrency(applicationName: string | Win32Pointer, allowRemoteMessages: number, concurrency: number): number | bigint;
+  alljoyn_busattachment_create_concurrency(
+    applicationName: string | Win32Pointer,
+    allowRemoteMessages: number,
+    concurrency: number,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_busattachment_createinterface */
   alljoyn_busattachment_createinterface(bus: number | bigint, name: string | Win32Pointer, iface: Win32Pointer): number;
   /** msajapi.dll!alljoyn_busattachment_createinterface_secure */
-  alljoyn_busattachment_createinterface_secure(bus: number | bigint, name: string | Win32Pointer, iface: Win32Pointer, secPolicy: number): number;
+  alljoyn_busattachment_createinterface_secure(
+    bus: number | bigint,
+    name: string | Win32Pointer,
+    iface: Win32Pointer,
+    secPolicy: number,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_createinterfacesfromxml */
   alljoyn_busattachment_createinterfacesfromxml(bus: number | bigint, xml: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_busattachment_deletedefaultkeystore */
@@ -269,13 +439,30 @@ interface Functions {
   /** msajapi.dll!alljoyn_busattachment_enableconcurrentcallbacks */
   alljoyn_busattachment_enableconcurrentcallbacks(bus: number | bigint): void;
   /** msajapi.dll!alljoyn_busattachment_enablepeersecurity */
-  alljoyn_busattachment_enablepeersecurity(bus: number | bigint, authMechanisms: string | Win32Pointer, listener: number | bigint, keyStoreFileName: string | Win32Pointer, isShared: number): number;
+  alljoyn_busattachment_enablepeersecurity(
+    bus: number | bigint,
+    authMechanisms: string | Win32Pointer,
+    listener: number | bigint,
+    keyStoreFileName: string | Win32Pointer,
+    isShared: number,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_enablepeersecuritywithpermissionconfigurationlistener */
-  alljoyn_busattachment_enablepeersecuritywithpermissionconfigurationlistener(bus: number | bigint, authMechanisms: string | Win32Pointer, authListener: number | bigint, keyStoreFileName: string | Win32Pointer, isShared: number, permissionConfigurationListener: number | bigint): number;
+  alljoyn_busattachment_enablepeersecuritywithpermissionconfigurationlistener(
+    bus: number | bigint,
+    authMechanisms: string | Win32Pointer,
+    authListener: number | bigint,
+    keyStoreFileName: string | Win32Pointer,
+    isShared: number,
+    permissionConfigurationListener: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_findadvertisedname */
   alljoyn_busattachment_findadvertisedname(bus: number | bigint, namePrefix: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_busattachment_findadvertisednamebytransport */
-  alljoyn_busattachment_findadvertisednamebytransport(bus: number | bigint, namePrefix: string | Win32Pointer, transports: number): number;
+  alljoyn_busattachment_findadvertisednamebytransport(
+    bus: number | bigint,
+    namePrefix: string | Win32Pointer,
+    transports: number,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_getalljoyndebugobj */
   alljoyn_busattachment_getalljoyndebugobj(bus: number | bigint): number | bigint;
   /** msajapi.dll!alljoyn_busattachment_getalljoynproxyobj */
@@ -291,11 +478,24 @@ interface Functions {
   /** msajapi.dll!alljoyn_busattachment_getinterface */
   alljoyn_busattachment_getinterface(bus: number | bigint, name: string | Win32Pointer): number | bigint;
   /** msajapi.dll!alljoyn_busattachment_getinterfaces */
-  alljoyn_busattachment_getinterfaces(bus: number | bigint, ifaces: Win32Pointer, numIfaces: number | bigint): number | bigint;
+  alljoyn_busattachment_getinterfaces(
+    bus: number | bigint,
+    ifaces: Win32Pointer,
+    numIfaces: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_busattachment_getkeyexpiration */
-  alljoyn_busattachment_getkeyexpiration(bus: number | bigint, guid: string | Win32Pointer, timeout: Win32Pointer): number;
+  alljoyn_busattachment_getkeyexpiration(
+    bus: number | bigint,
+    guid: string | Win32Pointer,
+    timeout: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_getpeerguid */
-  alljoyn_busattachment_getpeerguid(bus: number | bigint, name: string | Win32Pointer, guid: string | Win32Pointer, guidSz: Win32Pointer): number;
+  alljoyn_busattachment_getpeerguid(
+    bus: number | bigint,
+    name: string | Win32Pointer,
+    guid: string | Win32Pointer,
+    guidSz: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_getpermissionconfigurator */
   alljoyn_busattachment_getpermissionconfigurator(bus: number | bigint): number | bigint;
   /** msajapi.dll!alljoyn_busattachment_gettimestamp */
@@ -313,9 +513,24 @@ interface Functions {
   /** msajapi.dll!alljoyn_busattachment_join */
   alljoyn_busattachment_join(bus: number | bigint): number;
   /** msajapi.dll!alljoyn_busattachment_joinsession */
-  alljoyn_busattachment_joinsession(bus: number | bigint, sessionHost: string | Win32Pointer, sessionPort: number, listener: number | bigint, sessionId: Win32Pointer, opts: number | bigint): number;
+  alljoyn_busattachment_joinsession(
+    bus: number | bigint,
+    sessionHost: string | Win32Pointer,
+    sessionPort: number,
+    listener: number | bigint,
+    sessionId: Win32Pointer,
+    opts: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_joinsessionasync */
-  alljoyn_busattachment_joinsessionasync(bus: number | bigint, sessionHost: string | Win32Pointer, sessionPort: number, listener: number | bigint, opts: number | bigint, callback: Win32Callback, context: Win32Pointer): number;
+  alljoyn_busattachment_joinsessionasync(
+    bus: number | bigint,
+    sessionHost: string | Win32Pointer,
+    sessionPort: number,
+    listener: number | bigint,
+    opts: number | bigint,
+    callback: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_leavesession */
   alljoyn_busattachment_leavesession(bus: number | bigint, sessionId: number): number;
   /** msajapi.dll!alljoyn_busattachment_namehasowner */
@@ -335,9 +550,19 @@ interface Functions {
   /** msajapi.dll!alljoyn_busattachment_registerkeystorelistener */
   alljoyn_busattachment_registerkeystorelistener(bus: number | bigint, listener: number | bigint): number;
   /** msajapi.dll!alljoyn_busattachment_registersignalhandler */
-  alljoyn_busattachment_registersignalhandler(bus: number | bigint, signal_handler: Win32Callback, member: Win32StructInit, srcPath: string | Win32Pointer): number;
+  alljoyn_busattachment_registersignalhandler(
+    bus: number | bigint,
+    signal_handler: Win32Callback,
+    member: Win32StructInit,
+    srcPath: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_registersignalhandlerwithrule */
-  alljoyn_busattachment_registersignalhandlerwithrule(bus: number | bigint, signal_handler: Win32Callback, member: Win32StructInit, matchRule: string | Win32Pointer): number;
+  alljoyn_busattachment_registersignalhandlerwithrule(
+    bus: number | bigint,
+    signal_handler: Win32Callback,
+    member: Win32StructInit,
+    matchRule: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_releasename */
   alljoyn_busattachment_releasename(bus: number | bigint, name: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_busattachment_reloadkeystore */
@@ -345,13 +570,21 @@ interface Functions {
   /** msajapi.dll!alljoyn_busattachment_removematch */
   alljoyn_busattachment_removematch(bus: number | bigint, rule: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_busattachment_removesessionmember */
-  alljoyn_busattachment_removesessionmember(bus: number | bigint, sessionId: number, memberName: string | Win32Pointer): number;
+  alljoyn_busattachment_removesessionmember(
+    bus: number | bigint,
+    sessionId: number,
+    memberName: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_requestname */
   alljoyn_busattachment_requestname(bus: number | bigint, requestedName: string | Win32Pointer, flags: number): number;
   /** msajapi.dll!alljoyn_busattachment_secureconnection */
   alljoyn_busattachment_secureconnection(bus: number | bigint, name: string | Win32Pointer, forceAuth: number): number;
   /** msajapi.dll!alljoyn_busattachment_secureconnectionasync */
-  alljoyn_busattachment_secureconnectionasync(bus: number | bigint, name: string | Win32Pointer, forceAuth: number): number;
+  alljoyn_busattachment_secureconnectionasync(
+    bus: number | bigint,
+    name: string | Win32Pointer,
+    forceAuth: number,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_setdaemondebug */
   alljoyn_busattachment_setdaemondebug(bus: number | bigint, module: string | Win32Pointer, level: number): number;
   /** msajapi.dll!alljoyn_busattachment_setkeyexpiration */
@@ -359,7 +592,13 @@ interface Functions {
   /** msajapi.dll!alljoyn_busattachment_setlinktimeout */
   alljoyn_busattachment_setlinktimeout(bus: number | bigint, sessionid: number, linkTimeout: Win32Pointer): number;
   /** msajapi.dll!alljoyn_busattachment_setlinktimeoutasync */
-  alljoyn_busattachment_setlinktimeoutasync(bus: number | bigint, sessionid: number, linkTimeout: number, callback: Win32Callback, context: Win32Pointer): number;
+  alljoyn_busattachment_setlinktimeoutasync(
+    bus: number | bigint,
+    sessionid: number,
+    linkTimeout: number,
+    callback: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_setsessionlistener */
   alljoyn_busattachment_setsessionlistener(bus: number | bigint, sessionId: number, listener: number | bigint): number;
   /** msajapi.dll!alljoyn_busattachment_start */
@@ -381,13 +620,30 @@ interface Functions {
   /** msajapi.dll!alljoyn_busattachment_unregisterbusobject */
   alljoyn_busattachment_unregisterbusobject(bus: number | bigint, object: number | bigint): void;
   /** msajapi.dll!alljoyn_busattachment_unregistersignalhandler */
-  alljoyn_busattachment_unregistersignalhandler(bus: number | bigint, signal_handler: Win32Callback, member: Win32StructInit, srcPath: string | Win32Pointer): number;
+  alljoyn_busattachment_unregistersignalhandler(
+    bus: number | bigint,
+    signal_handler: Win32Callback,
+    member: Win32StructInit,
+    srcPath: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_unregistersignalhandlerwithrule */
-  alljoyn_busattachment_unregistersignalhandlerwithrule(bus: number | bigint, signal_handler: Win32Callback, member: Win32StructInit, matchRule: string | Win32Pointer): number;
+  alljoyn_busattachment_unregistersignalhandlerwithrule(
+    bus: number | bigint,
+    signal_handler: Win32Callback,
+    member: Win32StructInit,
+    matchRule: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_whoimplements_interface */
-  alljoyn_busattachment_whoimplements_interface(bus: number | bigint, implementsInterface: string | Win32Pointer): number;
+  alljoyn_busattachment_whoimplements_interface(
+    bus: number | bigint,
+    implementsInterface: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busattachment_whoimplements_interfaces */
-  alljoyn_busattachment_whoimplements_interfaces(bus: number | bigint, implementsInterfaces: Win32Pointer, numberInterfaces: number | bigint): number;
+  alljoyn_busattachment_whoimplements_interfaces(
+    bus: number | bigint,
+    implementsInterfaces: Win32Pointer,
+    numberInterfaces: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_buslistener_create */
   alljoyn_buslistener_create(callbacks: Win32Pointer, context: Win32Pointer): number | bigint;
   /** msajapi.dll!alljoyn_buslistener_destroy */
@@ -397,7 +653,12 @@ interface Functions {
   /** msajapi.dll!alljoyn_busobject_addinterface_announced */
   alljoyn_busobject_addinterface_announced(bus: number | bigint, iface: number | bigint): number;
   /** msajapi.dll!alljoyn_busobject_addmethodhandler */
-  alljoyn_busobject_addmethodhandler(bus: number | bigint, member: Win32StructInit, handler: Win32Callback, context: Win32Pointer): number;
+  alljoyn_busobject_addmethodhandler(
+    bus: number | bigint,
+    member: Win32StructInit,
+    handler: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busobject_addmethodhandlers */
   alljoyn_busobject_addmethodhandlers(bus: number | bigint, entries: Win32Pointer, numEntries: number | bigint): number;
   /** msajapi.dll!alljoyn_busobject_cancelsessionlessmessage */
@@ -405,33 +666,78 @@ interface Functions {
   /** msajapi.dll!alljoyn_busobject_cancelsessionlessmessage_serial */
   alljoyn_busobject_cancelsessionlessmessage_serial(bus: number | bigint, serialNumber: number): number;
   /** msajapi.dll!alljoyn_busobject_create */
-  alljoyn_busobject_create(path: string | Win32Pointer, isPlaceholder: number, callbacks_in: Win32Pointer, context_in: Win32Pointer): number | bigint;
+  alljoyn_busobject_create(
+    path: string | Win32Pointer,
+    isPlaceholder: number,
+    callbacks_in: Win32Pointer,
+    context_in: Win32Pointer,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_busobject_destroy */
   alljoyn_busobject_destroy(bus: number | bigint): void;
   /** msajapi.dll!alljoyn_busobject_emitpropertieschanged */
-  alljoyn_busobject_emitpropertieschanged(bus: number | bigint, ifcName: string | Win32Pointer, propNames: Win32Pointer, numProps: number | bigint, id: number): void;
+  alljoyn_busobject_emitpropertieschanged(
+    bus: number | bigint,
+    ifcName: string | Win32Pointer,
+    propNames: Win32Pointer,
+    numProps: number | bigint,
+    id: number,
+  ): void;
   /** msajapi.dll!alljoyn_busobject_emitpropertychanged */
-  alljoyn_busobject_emitpropertychanged(bus: number | bigint, ifcName: string | Win32Pointer, propName: string | Win32Pointer, val: number | bigint, id: number): void;
+  alljoyn_busobject_emitpropertychanged(
+    bus: number | bigint,
+    ifcName: string | Win32Pointer,
+    propName: string | Win32Pointer,
+    val: number | bigint,
+    id: number,
+  ): void;
   /** msajapi.dll!alljoyn_busobject_getannouncedinterfacenames */
-  alljoyn_busobject_getannouncedinterfacenames(bus: number | bigint, interfaces: Win32Pointer, numInterfaces: number | bigint): number | bigint;
+  alljoyn_busobject_getannouncedinterfacenames(
+    bus: number | bigint,
+    interfaces: Win32Pointer,
+    numInterfaces: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_busobject_getbusattachment */
   alljoyn_busobject_getbusattachment(bus: number | bigint): number | bigint;
   /** msajapi.dll!alljoyn_busobject_getname */
-  alljoyn_busobject_getname(bus: number | bigint, buffer: string | Win32Pointer, bufferSz: number | bigint): number | bigint;
+  alljoyn_busobject_getname(
+    bus: number | bigint,
+    buffer: string | Win32Pointer,
+    bufferSz: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_busobject_getpath */
   alljoyn_busobject_getpath(bus: number | bigint): number | null;
   /** msajapi.dll!alljoyn_busobject_issecure */
   alljoyn_busobject_issecure(bus: number | bigint): number;
   /** msajapi.dll!alljoyn_busobject_methodreply_args */
-  alljoyn_busobject_methodreply_args(bus: number | bigint, msg: number | bigint, args: number | bigint, numArgs: number | bigint): number;
+  alljoyn_busobject_methodreply_args(
+    bus: number | bigint,
+    msg: number | bigint,
+    args: number | bigint,
+    numArgs: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_busobject_methodreply_err */
-  alljoyn_busobject_methodreply_err(bus: number | bigint, msg: number | bigint, error: string | Win32Pointer, errorMessage: string | Win32Pointer): number;
+  alljoyn_busobject_methodreply_err(
+    bus: number | bigint,
+    msg: number | bigint,
+    error: string | Win32Pointer,
+    errorMessage: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_busobject_methodreply_status */
   alljoyn_busobject_methodreply_status(bus: number | bigint, msg: number | bigint, status: number): number;
   /** msajapi.dll!alljoyn_busobject_setannounceflag */
   alljoyn_busobject_setannounceflag(bus: number | bigint, iface: number | bigint, isAnnounced: number): number;
   /** msajapi.dll!alljoyn_busobject_signal */
-  alljoyn_busobject_signal(bus: number | bigint, destination: string | Win32Pointer, sessionId: number, signal: Win32StructInit, args: number | bigint, numArgs: number | bigint, timeToLive: number, flags: number, msg: number | bigint): number;
+  alljoyn_busobject_signal(
+    bus: number | bigint,
+    destination: string | Win32Pointer,
+    sessionId: number,
+    signal: Win32StructInit,
+    args: number | bigint,
+    numArgs: number | bigint,
+    timeToLive: number,
+    flags: number,
+    msg: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_credentials_clear */
   alljoyn_credentials_clear(cred: number | bigint): void;
   /** msajapi.dll!alljoyn_credentials_create */
@@ -475,127 +781,359 @@ interface Functions {
   /** msajapi.dll!alljoyn_interfacedescription_activate */
   alljoyn_interfacedescription_activate(iface: number | bigint): void;
   /** msajapi.dll!alljoyn_interfacedescription_addannotation */
-  alljoyn_interfacedescription_addannotation(iface: number | bigint, name: string | Win32Pointer, value: string | Win32Pointer): number;
+  alljoyn_interfacedescription_addannotation(
+    iface: number | bigint,
+    name: string | Win32Pointer,
+    value: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_addargannotation */
-  alljoyn_interfacedescription_addargannotation(iface: number | bigint, member: string | Win32Pointer, argName: string | Win32Pointer, name: string | Win32Pointer, value: string | Win32Pointer): number;
+  alljoyn_interfacedescription_addargannotation(
+    iface: number | bigint,
+    member: string | Win32Pointer,
+    argName: string | Win32Pointer,
+    name: string | Win32Pointer,
+    value: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_addmember */
-  alljoyn_interfacedescription_addmember(iface: number | bigint, type: number, name: string | Win32Pointer, inputSig: string | Win32Pointer, outSig: string | Win32Pointer, argNames: string | Win32Pointer, annotation: number): number;
+  alljoyn_interfacedescription_addmember(
+    iface: number | bigint,
+    type: number,
+    name: string | Win32Pointer,
+    inputSig: string | Win32Pointer,
+    outSig: string | Win32Pointer,
+    argNames: string | Win32Pointer,
+    annotation: number,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_addmemberannotation */
-  alljoyn_interfacedescription_addmemberannotation(iface: number | bigint, member: string | Win32Pointer, name: string | Win32Pointer, value: string | Win32Pointer): number;
+  alljoyn_interfacedescription_addmemberannotation(
+    iface: number | bigint,
+    member: string | Win32Pointer,
+    name: string | Win32Pointer,
+    value: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_addmethod */
-  alljoyn_interfacedescription_addmethod(iface: number | bigint, name: string | Win32Pointer, inputSig: string | Win32Pointer, outSig: string | Win32Pointer, argNames: string | Win32Pointer, annotation: number, accessPerms: string | Win32Pointer): number;
+  alljoyn_interfacedescription_addmethod(
+    iface: number | bigint,
+    name: string | Win32Pointer,
+    inputSig: string | Win32Pointer,
+    outSig: string | Win32Pointer,
+    argNames: string | Win32Pointer,
+    annotation: number,
+    accessPerms: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_addproperty */
-  alljoyn_interfacedescription_addproperty(iface: number | bigint, name: string | Win32Pointer, signature: string | Win32Pointer, access: number): number;
+  alljoyn_interfacedescription_addproperty(
+    iface: number | bigint,
+    name: string | Win32Pointer,
+    signature: string | Win32Pointer,
+    access: number,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_addpropertyannotation */
-  alljoyn_interfacedescription_addpropertyannotation(iface: number | bigint, property: string | Win32Pointer, name: string | Win32Pointer, value: string | Win32Pointer): number;
+  alljoyn_interfacedescription_addpropertyannotation(
+    iface: number | bigint,
+    property: string | Win32Pointer,
+    name: string | Win32Pointer,
+    value: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_addsignal */
-  alljoyn_interfacedescription_addsignal(iface: number | bigint, name: string | Win32Pointer, sig: string | Win32Pointer, argNames: string | Win32Pointer, annotation: number, accessPerms: string | Win32Pointer): number;
+  alljoyn_interfacedescription_addsignal(
+    iface: number | bigint,
+    name: string | Win32Pointer,
+    sig: string | Win32Pointer,
+    argNames: string | Win32Pointer,
+    annotation: number,
+    accessPerms: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_eql */
   alljoyn_interfacedescription_eql(one: number | bigint, other: number | bigint): number;
   /** msajapi.dll!alljoyn_interfacedescription_getannotation */
-  alljoyn_interfacedescription_getannotation(iface: number | bigint, name: string | Win32Pointer, value: string | Win32Pointer, value_size: Win32Pointer): number;
+  alljoyn_interfacedescription_getannotation(
+    iface: number | bigint,
+    name: string | Win32Pointer,
+    value: string | Win32Pointer,
+    value_size: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_getannotationatindex */
-  alljoyn_interfacedescription_getannotationatindex(iface: number | bigint, index: number | bigint, name: string | Win32Pointer, name_size: Win32Pointer, value: string | Win32Pointer, value_size: Win32Pointer): void;
+  alljoyn_interfacedescription_getannotationatindex(
+    iface: number | bigint,
+    index: number | bigint,
+    name: string | Win32Pointer,
+    name_size: Win32Pointer,
+    value: string | Win32Pointer,
+    value_size: Win32Pointer,
+  ): void;
   /** msajapi.dll!alljoyn_interfacedescription_getannotationscount */
   alljoyn_interfacedescription_getannotationscount(iface: number | bigint): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_getargdescriptionforlanguage */
-  alljoyn_interfacedescription_getargdescriptionforlanguage(iface: number | bigint, member: string | Win32Pointer, arg: string | Win32Pointer, description: string | Win32Pointer, maxLanguageLength: number | bigint, languageTag: string | Win32Pointer): number | bigint;
+  alljoyn_interfacedescription_getargdescriptionforlanguage(
+    iface: number | bigint,
+    member: string | Win32Pointer,
+    arg: string | Win32Pointer,
+    description: string | Win32Pointer,
+    maxLanguageLength: number | bigint,
+    languageTag: string | Win32Pointer,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_getdescriptionforlanguage */
-  alljoyn_interfacedescription_getdescriptionforlanguage(iface: number | bigint, description: string | Win32Pointer, maxLanguageLength: number | bigint, languageTag: string | Win32Pointer): number | bigint;
+  alljoyn_interfacedescription_getdescriptionforlanguage(
+    iface: number | bigint,
+    description: string | Win32Pointer,
+    maxLanguageLength: number | bigint,
+    languageTag: string | Win32Pointer,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_getdescriptionlanguages */
-  alljoyn_interfacedescription_getdescriptionlanguages(iface: number | bigint, languages: Win32Pointer, size: number | bigint): number | bigint;
+  alljoyn_interfacedescription_getdescriptionlanguages(
+    iface: number | bigint,
+    languages: Win32Pointer,
+    size: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_getdescriptionlanguages2 */
-  alljoyn_interfacedescription_getdescriptionlanguages2(iface: number | bigint, languages: string | Win32Pointer, languagesSize: number | bigint): number | bigint;
+  alljoyn_interfacedescription_getdescriptionlanguages2(
+    iface: number | bigint,
+    languages: string | Win32Pointer,
+    languagesSize: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_getdescriptiontranslationcallback */
   alljoyn_interfacedescription_getdescriptiontranslationcallback(iface: number | bigint): number | null;
   /** msajapi.dll!alljoyn_interfacedescription_getmember */
-  alljoyn_interfacedescription_getmember(iface: number | bigint, name: string | Win32Pointer, member: Win32Pointer): number;
+  alljoyn_interfacedescription_getmember(
+    iface: number | bigint,
+    name: string | Win32Pointer,
+    member: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_getmemberannotation */
-  alljoyn_interfacedescription_getmemberannotation(iface: number | bigint, member: string | Win32Pointer, name: string | Win32Pointer, value: string | Win32Pointer, value_size: Win32Pointer): number;
+  alljoyn_interfacedescription_getmemberannotation(
+    iface: number | bigint,
+    member: string | Win32Pointer,
+    name: string | Win32Pointer,
+    value: string | Win32Pointer,
+    value_size: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_getmemberargannotation */
-  alljoyn_interfacedescription_getmemberargannotation(iface: number | bigint, member: string | Win32Pointer, argName: string | Win32Pointer, name: string | Win32Pointer, value: string | Win32Pointer, value_size: Win32Pointer): number;
+  alljoyn_interfacedescription_getmemberargannotation(
+    iface: number | bigint,
+    member: string | Win32Pointer,
+    argName: string | Win32Pointer,
+    name: string | Win32Pointer,
+    value: string | Win32Pointer,
+    value_size: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_getmemberdescriptionforlanguage */
-  alljoyn_interfacedescription_getmemberdescriptionforlanguage(iface: number | bigint, member: string | Win32Pointer, description: string | Win32Pointer, maxLanguageLength: number | bigint, languageTag: string | Win32Pointer): number | bigint;
+  alljoyn_interfacedescription_getmemberdescriptionforlanguage(
+    iface: number | bigint,
+    member: string | Win32Pointer,
+    description: string | Win32Pointer,
+    maxLanguageLength: number | bigint,
+    languageTag: string | Win32Pointer,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_getmembers */
-  alljoyn_interfacedescription_getmembers(iface: number | bigint, members: Win32Pointer, numMembers: number | bigint): number | bigint;
+  alljoyn_interfacedescription_getmembers(
+    iface: number | bigint,
+    members: Win32Pointer,
+    numMembers: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_getmethod */
-  alljoyn_interfacedescription_getmethod(iface: number | bigint, name: string | Win32Pointer, member: Win32Pointer): number;
+  alljoyn_interfacedescription_getmethod(
+    iface: number | bigint,
+    name: string | Win32Pointer,
+    member: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_getname */
   alljoyn_interfacedescription_getname(iface: number | bigint): number | null;
   /** msajapi.dll!alljoyn_interfacedescription_getproperties */
-  alljoyn_interfacedescription_getproperties(iface: number | bigint, props: Win32Pointer, numProps: number | bigint): number | bigint;
+  alljoyn_interfacedescription_getproperties(
+    iface: number | bigint,
+    props: Win32Pointer,
+    numProps: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_getproperty */
-  alljoyn_interfacedescription_getproperty(iface: number | bigint, name: string | Win32Pointer, property: Win32Pointer): number;
+  alljoyn_interfacedescription_getproperty(
+    iface: number | bigint,
+    name: string | Win32Pointer,
+    property: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_getpropertyannotation */
-  alljoyn_interfacedescription_getpropertyannotation(iface: number | bigint, property: string | Win32Pointer, name: string | Win32Pointer, value: string | Win32Pointer, str_size: Win32Pointer): number;
+  alljoyn_interfacedescription_getpropertyannotation(
+    iface: number | bigint,
+    property: string | Win32Pointer,
+    name: string | Win32Pointer,
+    value: string | Win32Pointer,
+    str_size: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_getpropertydescriptionforlanguage */
-  alljoyn_interfacedescription_getpropertydescriptionforlanguage(iface: number | bigint, property: string | Win32Pointer, description: string | Win32Pointer, maxLanguageLength: number | bigint, languageTag: string | Win32Pointer): number | bigint;
+  alljoyn_interfacedescription_getpropertydescriptionforlanguage(
+    iface: number | bigint,
+    property: string | Win32Pointer,
+    description: string | Win32Pointer,
+    maxLanguageLength: number | bigint,
+    languageTag: string | Win32Pointer,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_getsecuritypolicy */
   alljoyn_interfacedescription_getsecuritypolicy(iface: number | bigint): number;
   /** msajapi.dll!alljoyn_interfacedescription_getsignal */
-  alljoyn_interfacedescription_getsignal(iface: number | bigint, name: string | Win32Pointer, member: Win32Pointer): number;
+  alljoyn_interfacedescription_getsignal(
+    iface: number | bigint,
+    name: string | Win32Pointer,
+    member: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_hasdescription */
   alljoyn_interfacedescription_hasdescription(iface: number | bigint): number;
   /** msajapi.dll!alljoyn_interfacedescription_hasmember */
-  alljoyn_interfacedescription_hasmember(iface: number | bigint, name: string | Win32Pointer, inSig: string | Win32Pointer, outSig: string | Win32Pointer): number;
+  alljoyn_interfacedescription_hasmember(
+    iface: number | bigint,
+    name: string | Win32Pointer,
+    inSig: string | Win32Pointer,
+    outSig: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_hasproperties */
   alljoyn_interfacedescription_hasproperties(iface: number | bigint): number;
   /** msajapi.dll!alljoyn_interfacedescription_hasproperty */
   alljoyn_interfacedescription_hasproperty(iface: number | bigint, name: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_interfacedescription_introspect */
-  alljoyn_interfacedescription_introspect(iface: number | bigint, str: string | Win32Pointer, buf: number | bigint, indent: number | bigint): number | bigint;
+  alljoyn_interfacedescription_introspect(
+    iface: number | bigint,
+    str: string | Win32Pointer,
+    buf: number | bigint,
+    indent: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_issecure */
   alljoyn_interfacedescription_issecure(iface: number | bigint): number;
   /** msajapi.dll!alljoyn_interfacedescription_member_eql */
   alljoyn_interfacedescription_member_eql(one: Win32StructInit, other: Win32StructInit): number;
   /** msajapi.dll!alljoyn_interfacedescription_member_getannotation */
-  alljoyn_interfacedescription_member_getannotation(member: Win32StructInit, name: string | Win32Pointer, value: string | Win32Pointer, value_size: Win32Pointer): number;
+  alljoyn_interfacedescription_member_getannotation(
+    member: Win32StructInit,
+    name: string | Win32Pointer,
+    value: string | Win32Pointer,
+    value_size: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_member_getannotationatindex */
-  alljoyn_interfacedescription_member_getannotationatindex(member: Win32StructInit, index: number | bigint, name: string | Win32Pointer, name_size: Win32Pointer, value: string | Win32Pointer, value_size: Win32Pointer): void;
+  alljoyn_interfacedescription_member_getannotationatindex(
+    member: Win32StructInit,
+    index: number | bigint,
+    name: string | Win32Pointer,
+    name_size: Win32Pointer,
+    value: string | Win32Pointer,
+    value_size: Win32Pointer,
+  ): void;
   /** msajapi.dll!alljoyn_interfacedescription_member_getannotationscount */
   alljoyn_interfacedescription_member_getannotationscount(member: Win32StructInit): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_member_getargannotation */
-  alljoyn_interfacedescription_member_getargannotation(member: Win32StructInit, argName: string | Win32Pointer, name: string | Win32Pointer, value: string | Win32Pointer, value_size: Win32Pointer): number;
+  alljoyn_interfacedescription_member_getargannotation(
+    member: Win32StructInit,
+    argName: string | Win32Pointer,
+    name: string | Win32Pointer,
+    value: string | Win32Pointer,
+    value_size: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_member_getargannotationatindex */
-  alljoyn_interfacedescription_member_getargannotationatindex(member: Win32StructInit, argName: string | Win32Pointer, index: number | bigint, name: string | Win32Pointer, name_size: Win32Pointer, value: string | Win32Pointer, value_size: Win32Pointer): void;
+  alljoyn_interfacedescription_member_getargannotationatindex(
+    member: Win32StructInit,
+    argName: string | Win32Pointer,
+    index: number | bigint,
+    name: string | Win32Pointer,
+    name_size: Win32Pointer,
+    value: string | Win32Pointer,
+    value_size: Win32Pointer,
+  ): void;
   /** msajapi.dll!alljoyn_interfacedescription_member_getargannotationscount */
-  alljoyn_interfacedescription_member_getargannotationscount(member: Win32StructInit, argName: string | Win32Pointer): number | bigint;
+  alljoyn_interfacedescription_member_getargannotationscount(
+    member: Win32StructInit,
+    argName: string | Win32Pointer,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_property_eql */
   alljoyn_interfacedescription_property_eql(one: Win32StructInit, other: Win32StructInit): number;
   /** msajapi.dll!alljoyn_interfacedescription_property_getannotation */
-  alljoyn_interfacedescription_property_getannotation(property: Win32StructInit, name: string | Win32Pointer, value: string | Win32Pointer, value_size: Win32Pointer): number;
+  alljoyn_interfacedescription_property_getannotation(
+    property: Win32StructInit,
+    name: string | Win32Pointer,
+    value: string | Win32Pointer,
+    value_size: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_property_getannotationatindex */
-  alljoyn_interfacedescription_property_getannotationatindex(property: Win32StructInit, index: number | bigint, name: string | Win32Pointer, name_size: Win32Pointer, value: string | Win32Pointer, value_size: Win32Pointer): void;
+  alljoyn_interfacedescription_property_getannotationatindex(
+    property: Win32StructInit,
+    index: number | bigint,
+    name: string | Win32Pointer,
+    name_size: Win32Pointer,
+    value: string | Win32Pointer,
+    value_size: Win32Pointer,
+  ): void;
   /** msajapi.dll!alljoyn_interfacedescription_property_getannotationscount */
   alljoyn_interfacedescription_property_getannotationscount(property: Win32StructInit): number | bigint;
   /** msajapi.dll!alljoyn_interfacedescription_setargdescription */
-  alljoyn_interfacedescription_setargdescription(iface: number | bigint, member: string | Win32Pointer, argName: string | Win32Pointer, description: string | Win32Pointer): number;
+  alljoyn_interfacedescription_setargdescription(
+    iface: number | bigint,
+    member: string | Win32Pointer,
+    argName: string | Win32Pointer,
+    description: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_setargdescriptionforlanguage */
-  alljoyn_interfacedescription_setargdescriptionforlanguage(iface: number | bigint, member: string | Win32Pointer, arg: string | Win32Pointer, description: string | Win32Pointer, languageTag: string | Win32Pointer): number;
+  alljoyn_interfacedescription_setargdescriptionforlanguage(
+    iface: number | bigint,
+    member: string | Win32Pointer,
+    arg: string | Win32Pointer,
+    description: string | Win32Pointer,
+    languageTag: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_setdescription */
   alljoyn_interfacedescription_setdescription(iface: number | bigint, description: string | Win32Pointer): void;
   /** msajapi.dll!alljoyn_interfacedescription_setdescriptionforlanguage */
-  alljoyn_interfacedescription_setdescriptionforlanguage(iface: number | bigint, description: string | Win32Pointer, languageTag: string | Win32Pointer): number;
+  alljoyn_interfacedescription_setdescriptionforlanguage(
+    iface: number | bigint,
+    description: string | Win32Pointer,
+    languageTag: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_setdescriptionlanguage */
   alljoyn_interfacedescription_setdescriptionlanguage(iface: number | bigint, language: string | Win32Pointer): void;
   /** msajapi.dll!alljoyn_interfacedescription_setdescriptiontranslationcallback */
-  alljoyn_interfacedescription_setdescriptiontranslationcallback(iface: number | bigint, translationCallback: Win32Callback): void;
+  alljoyn_interfacedescription_setdescriptiontranslationcallback(
+    iface: number | bigint,
+    translationCallback: Win32Callback,
+  ): void;
   /** msajapi.dll!alljoyn_interfacedescription_setmemberdescription */
-  alljoyn_interfacedescription_setmemberdescription(iface: number | bigint, member: string | Win32Pointer, description: string | Win32Pointer): number;
+  alljoyn_interfacedescription_setmemberdescription(
+    iface: number | bigint,
+    member: string | Win32Pointer,
+    description: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_setmemberdescriptionforlanguage */
-  alljoyn_interfacedescription_setmemberdescriptionforlanguage(iface: number | bigint, member: string | Win32Pointer, description: string | Win32Pointer, languageTag: string | Win32Pointer): number;
+  alljoyn_interfacedescription_setmemberdescriptionforlanguage(
+    iface: number | bigint,
+    member: string | Win32Pointer,
+    description: string | Win32Pointer,
+    languageTag: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_setpropertydescription */
-  alljoyn_interfacedescription_setpropertydescription(iface: number | bigint, name: string | Win32Pointer, description: string | Win32Pointer): number;
+  alljoyn_interfacedescription_setpropertydescription(
+    iface: number | bigint,
+    name: string | Win32Pointer,
+    description: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_interfacedescription_setpropertydescriptionforlanguage */
-  alljoyn_interfacedescription_setpropertydescriptionforlanguage(iface: number | bigint, name: string | Win32Pointer, description: string | Win32Pointer, languageTag: string | Win32Pointer): number;
+  alljoyn_interfacedescription_setpropertydescriptionforlanguage(
+    iface: number | bigint,
+    name: string | Win32Pointer,
+    description: string | Win32Pointer,
+    languageTag: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_keystorelistener_create */
   alljoyn_keystorelistener_create(callbacks: Win32Pointer, context: Win32Pointer): number | bigint;
   /** msajapi.dll!alljoyn_keystorelistener_destroy */
   alljoyn_keystorelistener_destroy(listener: number | bigint): void;
   /** msajapi.dll!alljoyn_keystorelistener_getkeys */
-  alljoyn_keystorelistener_getkeys(listener: number | bigint, keyStore: number | bigint, sink: string | Win32Pointer, sink_sz: Win32Pointer): number;
+  alljoyn_keystorelistener_getkeys(
+    listener: number | bigint,
+    keyStore: number | bigint,
+    sink: string | Win32Pointer,
+    sink_sz: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_keystorelistener_putkeys */
-  alljoyn_keystorelistener_putkeys(listener: number | bigint, keyStore: number | bigint, source: string | Win32Pointer, password: string | Win32Pointer): number;
+  alljoyn_keystorelistener_putkeys(
+    listener: number | bigint,
+    keyStore: number | bigint,
+    source: string | Win32Pointer,
+    password: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_keystorelistener_with_synchronization_create */
   alljoyn_keystorelistener_with_synchronization_create(callbacks: Win32Pointer, context: Win32Pointer): number | bigint;
   /** msajapi.dll!alljoyn_message_create */
@@ -619,7 +1157,11 @@ interface Functions {
   /** msajapi.dll!alljoyn_message_getdestination */
   alljoyn_message_getdestination(msg: number | bigint): number | null;
   /** msajapi.dll!alljoyn_message_geterrorname */
-  alljoyn_message_geterrorname(msg: number | bigint, errorMessage: string | Win32Pointer, errorMessage_size: Win32Pointer): number | null;
+  alljoyn_message_geterrorname(
+    msg: number | bigint,
+    errorMessage: string | Win32Pointer,
+    errorMessage_size: Win32Pointer,
+  ): number | null;
   /** msajapi.dll!alljoyn_message_getflags */
   alljoyn_message_getflags(msg: number | bigint): number;
   /** msajapi.dll!alljoyn_message_getinterface */
@@ -669,11 +1211,27 @@ interface Functions {
   /** msajapi.dll!alljoyn_msgarg_array_set */
   alljoyn_msgarg_array_set(args: number | bigint, numArgs: Win32Pointer, signature: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_msgarg_array_set_offset */
-  alljoyn_msgarg_array_set_offset(args: number | bigint, argOffset: number | bigint, numArgs: Win32Pointer, signature: string | Win32Pointer): number;
+  alljoyn_msgarg_array_set_offset(
+    args: number | bigint,
+    argOffset: number | bigint,
+    numArgs: Win32Pointer,
+    signature: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_msgarg_array_signature */
-  alljoyn_msgarg_array_signature(values: number | bigint, numValues: number | bigint, str: string | Win32Pointer, buf: number | bigint): number | bigint;
+  alljoyn_msgarg_array_signature(
+    values: number | bigint,
+    numValues: number | bigint,
+    str: string | Win32Pointer,
+    buf: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_msgarg_array_tostring */
-  alljoyn_msgarg_array_tostring(args: number | bigint, numArgs: number | bigint, str: string | Win32Pointer, buf: number | bigint, indent: number | bigint): number | bigint;
+  alljoyn_msgarg_array_tostring(
+    args: number | bigint,
+    numArgs: number | bigint,
+    str: string | Win32Pointer,
+    buf: number | bigint,
+    indent: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_msgarg_clear */
   alljoyn_msgarg_clear(arg: number | bigint): void;
   /** msajapi.dll!alljoyn_msgarg_clone */
@@ -741,7 +1299,12 @@ interface Functions {
   /** msajapi.dll!alljoyn_msgarg_get_variant */
   alljoyn_msgarg_get_variant(arg: number | bigint, v: number | bigint): number;
   /** msajapi.dll!alljoyn_msgarg_get_variant_array */
-  alljoyn_msgarg_get_variant_array(arg: number | bigint, signature: string | Win32Pointer, length: Win32Pointer, av: Win32Pointer): number;
+  alljoyn_msgarg_get_variant_array(
+    arg: number | bigint,
+    signature: string | Win32Pointer,
+    length: Win32Pointer,
+    av: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_msgarg_getdictelement */
   alljoyn_msgarg_getdictelement(arg: number | bigint, elemSig: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_msgarg_getkey */
@@ -817,19 +1380,36 @@ interface Functions {
   /** msajapi.dll!alljoyn_msgarg_stabilize */
   alljoyn_msgarg_stabilize(arg: number | bigint): void;
   /** msajapi.dll!alljoyn_msgarg_tostring */
-  alljoyn_msgarg_tostring(arg: number | bigint, str: string | Win32Pointer, buf: number | bigint, indent: number | bigint): number | bigint;
+  alljoyn_msgarg_tostring(
+    arg: number | bigint,
+    str: string | Win32Pointer,
+    buf: number | bigint,
+    indent: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_observer_create */
-  alljoyn_observer_create(bus: number | bigint, mandatoryInterfaces: Win32Pointer, numMandatoryInterfaces: number | bigint): number | bigint;
+  alljoyn_observer_create(
+    bus: number | bigint,
+    mandatoryInterfaces: Win32Pointer,
+    numMandatoryInterfaces: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_observer_destroy */
   alljoyn_observer_destroy(observer: number | bigint): void;
   /** msajapi.dll!alljoyn_observer_get */
-  alljoyn_observer_get(observer: number | bigint, uniqueBusName: string | Win32Pointer, objectPath: string | Win32Pointer): number | bigint;
+  alljoyn_observer_get(
+    observer: number | bigint,
+    uniqueBusName: string | Win32Pointer,
+    objectPath: string | Win32Pointer,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_observer_getfirst */
   alljoyn_observer_getfirst(observer: number | bigint): number | bigint;
   /** msajapi.dll!alljoyn_observer_getnext */
   alljoyn_observer_getnext(observer: number | bigint, proxyref: number | bigint): number | bigint;
   /** msajapi.dll!alljoyn_observer_registerlistener */
-  alljoyn_observer_registerlistener(observer: number | bigint, listener: number | bigint, triggerOnExisting: number): void;
+  alljoyn_observer_registerlistener(
+    observer: number | bigint,
+    listener: number | bigint,
+    triggerOnExisting: number,
+  ): void;
   /** msajapi.dll!alljoyn_observer_unregisteralllisteners */
   alljoyn_observer_unregisteralllisteners(observer: number | bigint): void;
   /** msajapi.dll!alljoyn_observer_unregisterlistener */
@@ -851,37 +1431,72 @@ interface Functions {
   /** msajapi.dll!alljoyn_permissionconfigurator_certificateidarray_cleanup */
   alljoyn_permissionconfigurator_certificateidarray_cleanup(certificateIdArray: Win32Pointer): void;
   /** msajapi.dll!alljoyn_permissionconfigurator_claim */
-  alljoyn_permissionconfigurator_claim(configurator: number | bigint, caKey: Win32Pointer, identityCertificateChain: Win32Pointer, groupId: Win32Pointer, groupSize: number | bigint, groupAuthority: Win32Pointer, manifestsXmls: Win32Pointer, manifestsCount: number | bigint): number;
+  alljoyn_permissionconfigurator_claim(
+    configurator: number | bigint,
+    caKey: Win32Pointer,
+    identityCertificateChain: Win32Pointer,
+    groupId: Win32Pointer,
+    groupSize: number | bigint,
+    groupAuthority: Win32Pointer,
+    manifestsXmls: Win32Pointer,
+    manifestsCount: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_endmanagement */
   alljoyn_permissionconfigurator_endmanagement(configurator: number | bigint): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_getapplicationstate */
   alljoyn_permissionconfigurator_getapplicationstate(configurator: number | bigint, state: Win32Pointer): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_getclaimcapabilities */
-  alljoyn_permissionconfigurator_getclaimcapabilities(configurator: number | bigint, claimCapabilities: Win32Pointer): number;
+  alljoyn_permissionconfigurator_getclaimcapabilities(
+    configurator: number | bigint,
+    claimCapabilities: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_getclaimcapabilitiesadditionalinfo */
-  alljoyn_permissionconfigurator_getclaimcapabilitiesadditionalinfo(configurator: number | bigint, additionalInfo: Win32Pointer): number;
+  alljoyn_permissionconfigurator_getclaimcapabilitiesadditionalinfo(
+    configurator: number | bigint,
+    additionalInfo: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_getdefaultclaimcapabilities */
   alljoyn_permissionconfigurator_getdefaultclaimcapabilities(): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_getdefaultpolicy */
   alljoyn_permissionconfigurator_getdefaultpolicy(configurator: number | bigint, policyXml: Win32Pointer): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_getidentity */
-  alljoyn_permissionconfigurator_getidentity(configurator: number | bigint, identityCertificateChain: Win32Pointer): number;
+  alljoyn_permissionconfigurator_getidentity(
+    configurator: number | bigint,
+    identityCertificateChain: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_getidentitycertificateid */
-  alljoyn_permissionconfigurator_getidentitycertificateid(configurator: number | bigint, certificateId: Win32Pointer): number;
+  alljoyn_permissionconfigurator_getidentitycertificateid(
+    configurator: number | bigint,
+    certificateId: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_getmanifests */
   alljoyn_permissionconfigurator_getmanifests(configurator: number | bigint, manifestArray: Win32Pointer): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_getmanifesttemplate */
-  alljoyn_permissionconfigurator_getmanifesttemplate(configurator: number | bigint, manifestTemplateXml: Win32Pointer): number;
+  alljoyn_permissionconfigurator_getmanifesttemplate(
+    configurator: number | bigint,
+    manifestTemplateXml: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_getmembershipsummaries */
-  alljoyn_permissionconfigurator_getmembershipsummaries(configurator: number | bigint, certificateIds: Win32Pointer): number;
+  alljoyn_permissionconfigurator_getmembershipsummaries(
+    configurator: number | bigint,
+    certificateIds: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_getpolicy */
   alljoyn_permissionconfigurator_getpolicy(configurator: number | bigint, policyXml: Win32Pointer): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_getpublickey */
   alljoyn_permissionconfigurator_getpublickey(configurator: number | bigint, publicKey: Win32Pointer): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_installmanifests */
-  alljoyn_permissionconfigurator_installmanifests(configurator: number | bigint, manifestsXmls: Win32Pointer, manifestsCount: number | bigint, append: number): number;
+  alljoyn_permissionconfigurator_installmanifests(
+    configurator: number | bigint,
+    manifestsXmls: Win32Pointer,
+    manifestsCount: number | bigint,
+    append: number,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_installmembership */
-  alljoyn_permissionconfigurator_installmembership(configurator: number | bigint, membershipCertificateChain: Win32Pointer): number;
+  alljoyn_permissionconfigurator_installmembership(
+    configurator: number | bigint,
+    membershipCertificateChain: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_manifestarray_cleanup */
   alljoyn_permissionconfigurator_manifestarray_cleanup(manifestArray: Win32Pointer): void;
   /** msajapi.dll!alljoyn_permissionconfigurator_manifesttemplate_destroy */
@@ -891,7 +1506,14 @@ interface Functions {
   /** msajapi.dll!alljoyn_permissionconfigurator_publickey_destroy */
   alljoyn_permissionconfigurator_publickey_destroy(publicKey: Win32Pointer): void;
   /** msajapi.dll!alljoyn_permissionconfigurator_removemembership */
-  alljoyn_permissionconfigurator_removemembership(configurator: number | bigint, serial: Win32Pointer, serialLen: number | bigint, issuerPublicKey: Win32Pointer, issuerAki: Win32Pointer, issuerAkiLen: number | bigint): number;
+  alljoyn_permissionconfigurator_removemembership(
+    configurator: number | bigint,
+    serial: Win32Pointer,
+    serialLen: number | bigint,
+    issuerPublicKey: Win32Pointer,
+    issuerAki: Win32Pointer,
+    issuerAkiLen: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_reset */
   alljoyn_permissionconfigurator_reset(configurator: number | bigint): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_resetpolicy */
@@ -901,13 +1523,24 @@ interface Functions {
   /** msajapi.dll!alljoyn_permissionconfigurator_setclaimcapabilities */
   alljoyn_permissionconfigurator_setclaimcapabilities(configurator: number | bigint, claimCapabilities: number): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_setclaimcapabilitiesadditionalinfo */
-  alljoyn_permissionconfigurator_setclaimcapabilitiesadditionalinfo(configurator: number | bigint, additionalInfo: number): number;
+  alljoyn_permissionconfigurator_setclaimcapabilitiesadditionalinfo(
+    configurator: number | bigint,
+    additionalInfo: number,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_setmanifesttemplatefromxml */
-  alljoyn_permissionconfigurator_setmanifesttemplatefromxml(configurator: number | bigint, manifestTemplateXml: Win32Pointer): number;
+  alljoyn_permissionconfigurator_setmanifesttemplatefromxml(
+    configurator: number | bigint,
+    manifestTemplateXml: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_startmanagement */
   alljoyn_permissionconfigurator_startmanagement(configurator: number | bigint): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_updateidentity */
-  alljoyn_permissionconfigurator_updateidentity(configurator: number | bigint, identityCertificateChain: Win32Pointer, manifestsXmls: Win32Pointer, manifestsCount: number | bigint): number;
+  alljoyn_permissionconfigurator_updateidentity(
+    configurator: number | bigint,
+    identityCertificateChain: Win32Pointer,
+    manifestsXmls: Win32Pointer,
+    manifestsCount: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_permissionconfigurator_updatepolicy */
   alljoyn_permissionconfigurator_updatepolicy(configurator: number | bigint, policyXml: Win32Pointer): number;
   /** msajapi.dll!alljoyn_pinglistener_create */
@@ -923,31 +1556,71 @@ interface Functions {
   /** msajapi.dll!alljoyn_proxybusobject_copy */
   alljoyn_proxybusobject_copy(source: number | bigint): number | bigint;
   /** msajapi.dll!alljoyn_proxybusobject_create */
-  alljoyn_proxybusobject_create(bus: number | bigint, service: string | Win32Pointer, path: string | Win32Pointer, sessionId: number): number | bigint;
+  alljoyn_proxybusobject_create(
+    bus: number | bigint,
+    service: string | Win32Pointer,
+    path: string | Win32Pointer,
+    sessionId: number,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_proxybusobject_create_secure */
-  alljoyn_proxybusobject_create_secure(bus: number | bigint, service: string | Win32Pointer, path: string | Win32Pointer, sessionId: number): number | bigint;
+  alljoyn_proxybusobject_create_secure(
+    bus: number | bigint,
+    service: string | Win32Pointer,
+    path: string | Win32Pointer,
+    sessionId: number,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_proxybusobject_destroy */
   alljoyn_proxybusobject_destroy(proxyObj: number | bigint): void;
   /** msajapi.dll!alljoyn_proxybusobject_enablepropertycaching */
   alljoyn_proxybusobject_enablepropertycaching(proxyObj: number | bigint): void;
   /** msajapi.dll!alljoyn_proxybusobject_getallproperties */
-  alljoyn_proxybusobject_getallproperties(proxyObj: number | bigint, iface: string | Win32Pointer, values: number | bigint): number;
+  alljoyn_proxybusobject_getallproperties(
+    proxyObj: number | bigint,
+    iface: string | Win32Pointer,
+    values: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_getallpropertiesasync */
-  alljoyn_proxybusobject_getallpropertiesasync(proxyObj: number | bigint, iface: string | Win32Pointer, callback: Win32Callback, timeout: number, context: Win32Pointer): number;
+  alljoyn_proxybusobject_getallpropertiesasync(
+    proxyObj: number | bigint,
+    iface: string | Win32Pointer,
+    callback: Win32Callback,
+    timeout: number,
+    context: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_getchild */
   alljoyn_proxybusobject_getchild(proxyObj: number | bigint, path: string | Win32Pointer): number | bigint;
   /** msajapi.dll!alljoyn_proxybusobject_getchildren */
-  alljoyn_proxybusobject_getchildren(proxyObj: number | bigint, children: Win32Pointer, numChildren: number | bigint): number | bigint;
+  alljoyn_proxybusobject_getchildren(
+    proxyObj: number | bigint,
+    children: Win32Pointer,
+    numChildren: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_proxybusobject_getinterface */
   alljoyn_proxybusobject_getinterface(proxyObj: number | bigint, iface: string | Win32Pointer): number | bigint;
   /** msajapi.dll!alljoyn_proxybusobject_getinterfaces */
-  alljoyn_proxybusobject_getinterfaces(proxyObj: number | bigint, ifaces: Win32Pointer, numIfaces: number | bigint): number | bigint;
+  alljoyn_proxybusobject_getinterfaces(
+    proxyObj: number | bigint,
+    ifaces: Win32Pointer,
+    numIfaces: number | bigint,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_proxybusobject_getpath */
   alljoyn_proxybusobject_getpath(proxyObj: number | bigint): number | null;
   /** msajapi.dll!alljoyn_proxybusobject_getproperty */
-  alljoyn_proxybusobject_getproperty(proxyObj: number | bigint, iface: string | Win32Pointer, property: string | Win32Pointer, value: number | bigint): number;
+  alljoyn_proxybusobject_getproperty(
+    proxyObj: number | bigint,
+    iface: string | Win32Pointer,
+    property: string | Win32Pointer,
+    value: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_getpropertyasync */
-  alljoyn_proxybusobject_getpropertyasync(proxyObj: number | bigint, iface: string | Win32Pointer, property: string | Win32Pointer, callback: Win32Callback, timeout: number, context: Win32Pointer): number;
+  alljoyn_proxybusobject_getpropertyasync(
+    proxyObj: number | bigint,
+    iface: string | Win32Pointer,
+    property: string | Win32Pointer,
+    callback: Win32Callback,
+    timeout: number,
+    context: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_getservicename */
   alljoyn_proxybusobject_getservicename(proxyObj: number | bigint): number | null;
   /** msajapi.dll!alljoyn_proxybusobject_getsessionid */
@@ -959,25 +1632,82 @@ interface Functions {
   /** msajapi.dll!alljoyn_proxybusobject_introspectremoteobject */
   alljoyn_proxybusobject_introspectremoteobject(proxyObj: number | bigint): number;
   /** msajapi.dll!alljoyn_proxybusobject_introspectremoteobjectasync */
-  alljoyn_proxybusobject_introspectremoteobjectasync(proxyObj: number | bigint, callback: Win32Callback, context: Win32Pointer): number;
+  alljoyn_proxybusobject_introspectremoteobjectasync(
+    proxyObj: number | bigint,
+    callback: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_issecure */
   alljoyn_proxybusobject_issecure(proxyObj: number | bigint): number;
   /** msajapi.dll!alljoyn_proxybusobject_isvalid */
   alljoyn_proxybusobject_isvalid(proxyObj: number | bigint): number;
   /** msajapi.dll!alljoyn_proxybusobject_methodcall */
-  alljoyn_proxybusobject_methodcall(proxyObj: number | bigint, ifaceName: string | Win32Pointer, methodName: string | Win32Pointer, args: number | bigint, numArgs: number | bigint, replyMsg: number | bigint, timeout: number, flags: number): number;
+  alljoyn_proxybusobject_methodcall(
+    proxyObj: number | bigint,
+    ifaceName: string | Win32Pointer,
+    methodName: string | Win32Pointer,
+    args: number | bigint,
+    numArgs: number | bigint,
+    replyMsg: number | bigint,
+    timeout: number,
+    flags: number,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_methodcall_member */
-  alljoyn_proxybusobject_methodcall_member(proxyObj: number | bigint, method: Win32StructInit, args: number | bigint, numArgs: number | bigint, replyMsg: number | bigint, timeout: number, flags: number): number;
+  alljoyn_proxybusobject_methodcall_member(
+    proxyObj: number | bigint,
+    method: Win32StructInit,
+    args: number | bigint,
+    numArgs: number | bigint,
+    replyMsg: number | bigint,
+    timeout: number,
+    flags: number,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_methodcall_member_noreply */
-  alljoyn_proxybusobject_methodcall_member_noreply(proxyObj: number | bigint, method: Win32StructInit, args: number | bigint, numArgs: number | bigint, flags: number): number;
+  alljoyn_proxybusobject_methodcall_member_noreply(
+    proxyObj: number | bigint,
+    method: Win32StructInit,
+    args: number | bigint,
+    numArgs: number | bigint,
+    flags: number,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_methodcall_noreply */
-  alljoyn_proxybusobject_methodcall_noreply(proxyObj: number | bigint, ifaceName: string | Win32Pointer, methodName: string | Win32Pointer, args: number | bigint, numArgs: number | bigint, flags: number): number;
+  alljoyn_proxybusobject_methodcall_noreply(
+    proxyObj: number | bigint,
+    ifaceName: string | Win32Pointer,
+    methodName: string | Win32Pointer,
+    args: number | bigint,
+    numArgs: number | bigint,
+    flags: number,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_methodcallasync */
-  alljoyn_proxybusobject_methodcallasync(proxyObj: number | bigint, ifaceName: string | Win32Pointer, methodName: string | Win32Pointer, replyFunc: Win32Callback, args: number | bigint, numArgs: number | bigint, context: Win32Pointer, timeout: number, flags: number): number;
+  alljoyn_proxybusobject_methodcallasync(
+    proxyObj: number | bigint,
+    ifaceName: string | Win32Pointer,
+    methodName: string | Win32Pointer,
+    replyFunc: Win32Callback,
+    args: number | bigint,
+    numArgs: number | bigint,
+    context: Win32Pointer,
+    timeout: number,
+    flags: number,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_methodcallasync_member */
-  alljoyn_proxybusobject_methodcallasync_member(proxyObj: number | bigint, method: Win32StructInit, replyFunc: Win32Callback, args: number | bigint, numArgs: number | bigint, context: Win32Pointer, timeout: number, flags: number): number;
+  alljoyn_proxybusobject_methodcallasync_member(
+    proxyObj: number | bigint,
+    method: Win32StructInit,
+    replyFunc: Win32Callback,
+    args: number | bigint,
+    numArgs: number | bigint,
+    context: Win32Pointer,
+    timeout: number,
+    flags: number,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_parsexml */
-  alljoyn_proxybusobject_parsexml(proxyObj: number | bigint, xml: string | Win32Pointer, identifier: string | Win32Pointer): number;
+  alljoyn_proxybusobject_parsexml(
+    proxyObj: number | bigint,
+    xml: string | Win32Pointer,
+    identifier: string | Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_ref_create */
   alljoyn_proxybusobject_ref_create(proxy: number | bigint): number | bigint;
   /** msajapi.dll!alljoyn_proxybusobject_ref_decref */
@@ -987,7 +1717,14 @@ interface Functions {
   /** msajapi.dll!alljoyn_proxybusobject_ref_incref */
   alljoyn_proxybusobject_ref_incref(ref: number | bigint): void;
   /** msajapi.dll!alljoyn_proxybusobject_registerpropertieschangedlistener */
-  alljoyn_proxybusobject_registerpropertieschangedlistener(proxyObj: number | bigint, iface: string | Win32Pointer, properties: Win32Pointer, numProperties: number | bigint, callback: Win32Callback, context: Win32Pointer): number;
+  alljoyn_proxybusobject_registerpropertieschangedlistener(
+    proxyObj: number | bigint,
+    iface: string | Win32Pointer,
+    properties: Win32Pointer,
+    numProperties: number | bigint,
+    callback: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_removechild */
   alljoyn_proxybusobject_removechild(proxyObj: number | bigint, path: string | Win32Pointer): number;
   /** msajapi.dll!alljoyn_proxybusobject_secureconnection */
@@ -995,11 +1732,28 @@ interface Functions {
   /** msajapi.dll!alljoyn_proxybusobject_secureconnectionasync */
   alljoyn_proxybusobject_secureconnectionasync(proxyObj: number | bigint, forceAuth: number): number;
   /** msajapi.dll!alljoyn_proxybusobject_setproperty */
-  alljoyn_proxybusobject_setproperty(proxyObj: number | bigint, iface: string | Win32Pointer, property: string | Win32Pointer, value: number | bigint): number;
+  alljoyn_proxybusobject_setproperty(
+    proxyObj: number | bigint,
+    iface: string | Win32Pointer,
+    property: string | Win32Pointer,
+    value: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_setpropertyasync */
-  alljoyn_proxybusobject_setpropertyasync(proxyObj: number | bigint, iface: string | Win32Pointer, property: string | Win32Pointer, value: number | bigint, callback: Win32Callback, timeout: number, context: Win32Pointer): number;
+  alljoyn_proxybusobject_setpropertyasync(
+    proxyObj: number | bigint,
+    iface: string | Win32Pointer,
+    property: string | Win32Pointer,
+    value: number | bigint,
+    callback: Win32Callback,
+    timeout: number,
+    context: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_proxybusobject_unregisterpropertieschangedlistener */
-  alljoyn_proxybusobject_unregisterpropertieschangedlistener(proxyObj: number | bigint, iface: string | Win32Pointer, callback: Win32Callback): number;
+  alljoyn_proxybusobject_unregisterpropertieschangedlistener(
+    proxyObj: number | bigint,
+    iface: string | Win32Pointer,
+    callback: Win32Callback,
+  ): number;
   /** msajapi.dll!alljoyn_routerinit */
   alljoyn_routerinit(): number;
   /** msajapi.dll!alljoyn_routerinitwithconfig */
@@ -1007,11 +1761,29 @@ interface Functions {
   /** msajapi.dll!alljoyn_routershutdown */
   alljoyn_routershutdown(): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_claim */
-  alljoyn_securityapplicationproxy_claim(proxy: number | bigint, caKey: Win32Pointer, identityCertificateChain: Win32Pointer, groupId: Win32Pointer, groupSize: number | bigint, groupAuthority: Win32Pointer, manifestsXmls: Win32Pointer, manifestsCount: number | bigint): number;
+  alljoyn_securityapplicationproxy_claim(
+    proxy: number | bigint,
+    caKey: Win32Pointer,
+    identityCertificateChain: Win32Pointer,
+    groupId: Win32Pointer,
+    groupSize: number | bigint,
+    groupAuthority: Win32Pointer,
+    manifestsXmls: Win32Pointer,
+    manifestsCount: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_computemanifestdigest */
-  alljoyn_securityapplicationproxy_computemanifestdigest(unsignedManifestXml: Win32Pointer, identityCertificatePem: Win32Pointer, digest: Win32Pointer, digestSize: Win32Pointer): number;
+  alljoyn_securityapplicationproxy_computemanifestdigest(
+    unsignedManifestXml: Win32Pointer,
+    identityCertificatePem: Win32Pointer,
+    digest: Win32Pointer,
+    digestSize: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_create */
-  alljoyn_securityapplicationproxy_create(bus: number | bigint, appBusName: Win32Pointer, sessionId: number): number | bigint;
+  alljoyn_securityapplicationproxy_create(
+    bus: number | bigint,
+    appBusName: Win32Pointer,
+    sessionId: number,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_securityapplicationproxy_destroy */
   alljoyn_securityapplicationproxy_destroy(proxy: number | bigint): void;
   /** msajapi.dll!alljoyn_securityapplicationproxy_digest_destroy */
@@ -1025,19 +1797,28 @@ interface Functions {
   /** msajapi.dll!alljoyn_securityapplicationproxy_getclaimcapabilities */
   alljoyn_securityapplicationproxy_getclaimcapabilities(proxy: number | bigint, capabilities: Win32Pointer): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_getclaimcapabilitiesadditionalinfo */
-  alljoyn_securityapplicationproxy_getclaimcapabilitiesadditionalinfo(proxy: number | bigint, additionalInfo: Win32Pointer): number;
+  alljoyn_securityapplicationproxy_getclaimcapabilitiesadditionalinfo(
+    proxy: number | bigint,
+    additionalInfo: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_getdefaultpolicy */
   alljoyn_securityapplicationproxy_getdefaultpolicy(proxy: number | bigint, policyXml: Win32Pointer): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_geteccpublickey */
   alljoyn_securityapplicationproxy_geteccpublickey(proxy: number | bigint, eccPublicKey: Win32Pointer): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_getmanifesttemplate */
-  alljoyn_securityapplicationproxy_getmanifesttemplate(proxy: number | bigint, manifestTemplateXml: Win32Pointer): number;
+  alljoyn_securityapplicationproxy_getmanifesttemplate(
+    proxy: number | bigint,
+    manifestTemplateXml: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_getpermissionmanagementsessionport */
   alljoyn_securityapplicationproxy_getpermissionmanagementsessionport(): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_getpolicy */
   alljoyn_securityapplicationproxy_getpolicy(proxy: number | bigint, policyXml: Win32Pointer): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_installmembership */
-  alljoyn_securityapplicationproxy_installmembership(proxy: number | bigint, membershipCertificateChain: Win32Pointer): number;
+  alljoyn_securityapplicationproxy_installmembership(
+    proxy: number | bigint,
+    membershipCertificateChain: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_manifest_destroy */
   alljoyn_securityapplicationproxy_manifest_destroy(signedManifestXml: Win32Pointer): void;
   /** msajapi.dll!alljoyn_securityapplicationproxy_manifesttemplate_destroy */
@@ -1049,13 +1830,29 @@ interface Functions {
   /** msajapi.dll!alljoyn_securityapplicationproxy_resetpolicy */
   alljoyn_securityapplicationproxy_resetpolicy(proxy: number | bigint): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_setmanifestsignature */
-  alljoyn_securityapplicationproxy_setmanifestsignature(unsignedManifestXml: Win32Pointer, identityCertificatePem: Win32Pointer, signature: Win32Pointer, signatureSize: number | bigint, signedManifestXml: Win32Pointer): number;
+  alljoyn_securityapplicationproxy_setmanifestsignature(
+    unsignedManifestXml: Win32Pointer,
+    identityCertificatePem: Win32Pointer,
+    signature: Win32Pointer,
+    signatureSize: number | bigint,
+    signedManifestXml: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_signmanifest */
-  alljoyn_securityapplicationproxy_signmanifest(unsignedManifestXml: Win32Pointer, identityCertificatePem: Win32Pointer, signingPrivateKeyPem: Win32Pointer, signedManifestXml: Win32Pointer): number;
+  alljoyn_securityapplicationproxy_signmanifest(
+    unsignedManifestXml: Win32Pointer,
+    identityCertificatePem: Win32Pointer,
+    signingPrivateKeyPem: Win32Pointer,
+    signedManifestXml: Win32Pointer,
+  ): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_startmanagement */
   alljoyn_securityapplicationproxy_startmanagement(proxy: number | bigint): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_updateidentity */
-  alljoyn_securityapplicationproxy_updateidentity(proxy: number | bigint, identityCertificateChain: Win32Pointer, manifestsXmls: Win32Pointer, manifestsCount: number | bigint): number;
+  alljoyn_securityapplicationproxy_updateidentity(
+    proxy: number | bigint,
+    identityCertificateChain: Win32Pointer,
+    manifestsXmls: Win32Pointer,
+    manifestsCount: number | bigint,
+  ): number;
   /** msajapi.dll!alljoyn_securityapplicationproxy_updatepolicy */
   alljoyn_securityapplicationproxy_updatepolicy(proxy: number | bigint, policyXml: Win32Pointer): number;
   /** msajapi.dll!alljoyn_sessionlistener_create */
@@ -1065,7 +1862,12 @@ interface Functions {
   /** msajapi.dll!alljoyn_sessionopts_cmp */
   alljoyn_sessionopts_cmp(one: number | bigint, other: number | bigint): number;
   /** msajapi.dll!alljoyn_sessionopts_create */
-  alljoyn_sessionopts_create(traffic: number, isMultipoint: number, proximity: number, transports: number): number | bigint;
+  alljoyn_sessionopts_create(
+    traffic: number,
+    isMultipoint: number,
+    proximity: number,
+    transports: number,
+  ): number | bigint;
   /** msajapi.dll!alljoyn_sessionopts_destroy */
   alljoyn_sessionopts_destroy(opts: number | bigint): void;
   /** msajapi.dll!alljoyn_sessionopts_get_multipoint */

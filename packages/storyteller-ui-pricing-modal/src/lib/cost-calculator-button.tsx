@@ -8,22 +8,13 @@ export interface CostCalculatorButtonProps {
   modelPage?: ModelPage;
 }
 
-export function CostCalculatorButton({
-  className,
-  modelPage,
-}: CostCalculatorButtonProps) {
+export function CostCalculatorButton({ className, modelPage }: CostCalculatorButtonProps) {
   const { openModal, estimatedCreditsByPage } = useCostBreakdownModalStore();
 
-  const credits =
-    modelPage != null ? estimatedCreditsByPage[modelPage] : undefined;
+  const credits = modelPage != null ? estimatedCreditsByPage[modelPage] : undefined;
 
   return (
-    <Button
-      variant="action"
-      onClick={openModal}
-      className={className}
-      title="Cost Calculator"
-    >
+    <Button variant="action" onClick={openModal} className={className} title="Cost Calculator">
       <CalculatorIcon className="text-base-fg" />
       <span>Costs</span>
       {credits != null && (

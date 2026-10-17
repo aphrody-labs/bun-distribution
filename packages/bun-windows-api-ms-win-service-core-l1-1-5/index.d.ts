@@ -3,9 +3,20 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-service-core-l1-1-5.dll!GetSharedServiceDirectory */
-  GetSharedServiceDirectory(ServiceHandle: Win32Pointer, DirectoryType: number, PathBuffer: string | Win32Pointer, PathBufferLength: number, RequiredBufferLength: Win32Pointer): number;
+  GetSharedServiceDirectory(
+    ServiceHandle: Win32Pointer,
+    DirectoryType: number,
+    PathBuffer: string | Win32Pointer,
+    PathBufferLength: number,
+    RequiredBufferLength: Win32Pointer,
+  ): number;
   /** api-ms-win-service-core-l1-1-5.dll!GetSharedServiceRegistryStateKey */
-  GetSharedServiceRegistryStateKey(ServiceHandle: Win32Pointer, StateType: number, AccessMask: number, ServiceStateKey: Win32Pointer): number;
+  GetSharedServiceRegistryStateKey(
+    ServiceHandle: Win32Pointer,
+    StateType: number,
+    AccessMask: number,
+    ServiceStateKey: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

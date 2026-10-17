@@ -3,21 +3,51 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** rstrtmgr.dll!RmAddFilter */
-  RmAddFilter(dwSessionHandle: number, strModuleName: string | Win32Pointer, pProcess: Win32Pointer, strServiceShortName: string | Win32Pointer, FilterAction: number): number;
+  RmAddFilter(
+    dwSessionHandle: number,
+    strModuleName: string | Win32Pointer,
+    pProcess: Win32Pointer,
+    strServiceShortName: string | Win32Pointer,
+    FilterAction: number,
+  ): number;
   /** rstrtmgr.dll!RmCancelCurrentTask */
   RmCancelCurrentTask(dwSessionHandle: number): number;
   /** rstrtmgr.dll!RmEndSession */
   RmEndSession(dwSessionHandle: number): number;
   /** rstrtmgr.dll!RmGetFilterList */
-  RmGetFilterList(dwSessionHandle: number, pbFilterBuf: Win32Pointer, cbFilterBuf: number, cbFilterBufNeeded: Win32Pointer): number;
+  RmGetFilterList(
+    dwSessionHandle: number,
+    pbFilterBuf: Win32Pointer,
+    cbFilterBuf: number,
+    cbFilterBufNeeded: Win32Pointer,
+  ): number;
   /** rstrtmgr.dll!RmGetList */
-  RmGetList(dwSessionHandle: number, pnProcInfoNeeded: Win32Pointer, pnProcInfo: Win32Pointer, rgAffectedApps: Win32Pointer, lpdwRebootReasons: Win32Pointer): number;
+  RmGetList(
+    dwSessionHandle: number,
+    pnProcInfoNeeded: Win32Pointer,
+    pnProcInfo: Win32Pointer,
+    rgAffectedApps: Win32Pointer,
+    lpdwRebootReasons: Win32Pointer,
+  ): number;
   /** rstrtmgr.dll!RmJoinSession */
   RmJoinSession(pSessionHandle: Win32Pointer, strSessionKey: string | Win32Pointer): number;
   /** rstrtmgr.dll!RmRegisterResources */
-  RmRegisterResources(dwSessionHandle: number, nFiles: number, rgsFileNames: Win32Pointer, nApplications: number, rgApplications: Win32Pointer, nServices: number, rgsServiceNames: Win32Pointer): number;
+  RmRegisterResources(
+    dwSessionHandle: number,
+    nFiles: number,
+    rgsFileNames: Win32Pointer,
+    nApplications: number,
+    rgApplications: Win32Pointer,
+    nServices: number,
+    rgsServiceNames: Win32Pointer,
+  ): number;
   /** rstrtmgr.dll!RmRemoveFilter */
-  RmRemoveFilter(dwSessionHandle: number, strModuleName: string | Win32Pointer, pProcess: Win32Pointer, strServiceShortName: string | Win32Pointer): number;
+  RmRemoveFilter(
+    dwSessionHandle: number,
+    strModuleName: string | Win32Pointer,
+    pProcess: Win32Pointer,
+    strServiceShortName: string | Win32Pointer,
+  ): number;
   /** rstrtmgr.dll!RmRestart */
   RmRestart(dwSessionHandle: number, dwRestartFlags: number, fnStatus: Win32Callback): number;
   /** rstrtmgr.dll!RmShutdown */

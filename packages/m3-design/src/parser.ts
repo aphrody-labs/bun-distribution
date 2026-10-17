@@ -7,10 +7,7 @@ import type { DesignBrief, OutputKind } from "./types.ts";
  * Parses a raw natural language prompt and extracts structured design directives.
  * Bypasses the turn-1 blocking forms by automating parameter extraction.
  */
-export function parseBrief(
-  rawBrief: string,
-  optionalSeedColor?: string,
-): DesignBrief {
+export function parseBrief(rawBrief: string, optionalSeedColor?: string): DesignBrief {
   const lowercase = rawBrief.toLowerCase();
   const normalized = lowercase.normalize("NFD").replace(/\p{M}/gu, "");
   const words = new Set(normalized.match(/[\p{L}\p{N}]+/gu) ?? []);
@@ -59,10 +56,8 @@ export function parseBrief(
   // 2. Detect target platforms
   const platforms: string[] = [];
   const androidRequested = words.has("android");
-  const iosRequested =
-    words.has("ios") || words.has("iphone") || words.has("ipad");
-  const genericMobileRequested =
-    lowercase.includes("mobile") || lowercase.includes("phone");
+  const iosRequested = words.has("ios") || words.has("iphone") || words.has("ipad");
+  const genericMobileRequested = lowercase.includes("mobile") || lowercase.includes("phone");
   if (iosRequested || (genericMobileRequested && !androidRequested)) {
     platforms.push("ios");
   }
@@ -110,21 +105,13 @@ export function parseBrief(
     lowercase.includes("cadre")
   ) {
     audience = "enterprise executives and decision makers";
-  } else if (
-    lowercase.includes("consumer") ||
-    lowercase.includes("b2c") ||
-    lowercase.includes("grand public")
-  ) {
+  } else if (lowercase.includes("consumer") || lowercase.includes("b2c") || lowercase.includes("grand public")) {
     audience = "general consumers";
   }
 
   // 4. Extract visual tones
   const tones: string[] = [];
-  if (
-    lowercase.includes("editorial") ||
-    lowercase.includes("magazine") ||
-    lowercase.includes("serif")
-  ) {
+  if (lowercase.includes("editorial") || lowercase.includes("magazine") || lowercase.includes("serif")) {
     tones.push("editorial");
   }
   if (
@@ -135,18 +122,10 @@ export function parseBrief(
   ) {
     tones.push("minimal");
   }
-  if (
-    lowercase.includes("utility") ||
-    lowercase.includes("tech") ||
-    lowercase.includes("dense")
-  ) {
+  if (lowercase.includes("utility") || lowercase.includes("tech") || lowercase.includes("dense")) {
     tones.push("tech-utility");
   }
-  if (
-    lowercase.includes("playful") ||
-    lowercase.includes("gamified") ||
-    lowercase.includes("ludique")
-  ) {
+  if (lowercase.includes("playful") || lowercase.includes("gamified") || lowercase.includes("ludique")) {
     tones.push("playful");
   }
   if (tones.length === 0) {
@@ -161,17 +140,9 @@ export function parseBrief(
   } else if (!optionalSeedColor) {
     if (lowercase.includes("rouge") || lowercase.includes("red")) {
       seedColor = "#D32F2F";
-    } else if (
-      lowercase.includes("bleu") ||
-      lowercase.includes("blue") ||
-      lowercase.includes("cobalt")
-    ) {
+    } else if (lowercase.includes("bleu") || lowercase.includes("blue") || lowercase.includes("cobalt")) {
       seedColor = "#0F52BA";
-    } else if (
-      lowercase.includes("vert") ||
-      lowercase.includes("green") ||
-      lowercase.includes("emerald")
-    ) {
+    } else if (lowercase.includes("vert") || lowercase.includes("green") || lowercase.includes("emerald")) {
       seedColor = "#10B981";
     } else if (lowercase.includes("violet") || lowercase.includes("purple")) {
       seedColor = "#6750A4"; // default M3 seed
@@ -180,9 +151,7 @@ export function parseBrief(
 
   // 6. Extract scale
   let scale = "1 screen";
-  const slideMatch = rawBrief.match(
-    /(\d+)\s*(slide|page|screen|deck|transparence|écran)/,
-  );
+  const slideMatch = rawBrief.match(/(\d+)\s*(slide|page|screen|deck|transparence|écran)/);
   if (slideMatch) {
     scale = `${slideMatch[1]} ${slideMatch[2]}s`;
   } else if (outputKind === "deck") {
@@ -216,39 +185,21 @@ export function parseBrief(
       "transparentes",
       "transparency",
       "transparence",
-    ].some((word) => words.has(word)) ||
+    ].some(word => words.has(word)) ||
     /\b(?:augmented|virtual|extended|mixed)[\s-]*reality\b/.test(normalized) ||
     /\brealite[\s-]*(?:augmentee|virtuelle|etendue|mixte)\b/.test(normalized)
   ) {
-    constraintList.push(
-      "Transparent screens additive contrast (desaturated colors, no absolute black)",
-    );
+    constraintList.push("Transparent screens additive contrast (desaturated colors, no absolute black)");
   }
-  const constraints =
-    constraintList.length > 0
-      ? constraintList.join(", ")
-      : "Standard M3 styling rules";
+  const constraints = constraintList.length > 0 ? constraintList.join(", ") : "Standard M3 styling rules";
 
   // 8. Extract layoutType
-  let layoutType: "feed" | "list-detail" | "supporting-pane" | "scaffold" =
-    "scaffold";
-  if (
-    lowercase.includes("list-detail") ||
-    lowercase.includes("split") ||
-    lowercase.includes("detail")
-  ) {
+  let layoutType: "feed" | "list-detail" | "supporting-pane" | "scaffold" = "scaffold";
+  if (lowercase.includes("list-detail") || lowercase.includes("split") || lowercase.includes("detail")) {
     layoutType = "list-detail";
-  } else if (
-    lowercase.includes("supporting") ||
-    lowercase.includes("auxiliary") ||
-    lowercase.includes("sidebar")
-  ) {
+  } else if (lowercase.includes("supporting") || lowercase.includes("auxiliary") || lowercase.includes("sidebar")) {
     layoutType = "supporting-pane";
-  } else if (
-    lowercase.includes("feed") ||
-    lowercase.includes("grid") ||
-    lowercase.includes("cards")
-  ) {
+  } else if (lowercase.includes("feed") || lowercase.includes("grid") || lowercase.includes("cards")) {
     layoutType = "feed";
   } else if (lowercase.includes("scaffold") || lowercase.includes("standard")) {
     layoutType = "scaffold";
@@ -256,11 +207,7 @@ export function parseBrief(
 
   // 9. Extract density
   let density: "default" | "high" | "low" = "default";
-  if (
-    lowercase.includes("dense") ||
-    lowercase.includes("compact") ||
-    lowercase.includes("serré")
-  ) {
+  if (lowercase.includes("dense") || lowercase.includes("compact") || lowercase.includes("serré")) {
     density = "high";
   } else if (
     lowercase.includes("low") ||

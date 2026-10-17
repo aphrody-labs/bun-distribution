@@ -4,14 +4,7 @@ import type { TActionWithOptionalArgs } from "./types";
  * Alt is also regarded as macOS OPTION (⌥) key
  * Ctrl is also regarded as macOS COMMAND (⌘) key (NOTE: this differs from HTML Keyboard spec where COMMAND is Meta key!)
  */
-export type ModifierKeys =
-  | "ctrl"
-  | "alt"
-  | "shift"
-  | "ctrl+shift"
-  | "alt+shift"
-  | "ctrl+alt"
-  | "ctrl+alt+shift";
+export type ModifierKeys = "ctrl" | "alt" | "shift" | "ctrl+shift" | "alt+shift" | "ctrl+alt" | "ctrl+alt+shift";
 
 const KEYS = [
   "a",

@@ -204,8 +204,7 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
     id: "wiki-images",
     group: "images",
     title: "Images d'un wiki",
-    description:
-      "Télécharge les images d'une page, d'une galerie ou d'une catégorie (MediaWiki, Fandom).",
+    description: "Télécharge les images d'une page, d'une galerie ou d'une catégorie (MediaWiki, Fandom).",
     argv: ["wiki-images"],
     fields: [
       {
@@ -240,8 +239,7 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
     id: "img-compress",
     group: "images",
     title: "Compresser des images",
-    description:
-      "En local ; les originaux ne sont pas modifiés sauf « remplacer ».",
+    description: "En local ; les originaux ne sont pas modifiés sauf « remplacer ».",
     argv: ["img-compress"],
     fields: [
       {
@@ -301,8 +299,7 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
     id: "adobe-apply",
     group: "nettoyage",
     title: "Nettoyer Adobe",
-    description:
-      "Ferme l'arrière-plan Creative Cloud et vide les caches régénérables.",
+    description: "Ferme l'arrière-plan Creative Cloud et vide les caches régénérables.",
     argv: ["adobe-clean", "all", "--apply"],
     confirm: {
       message:
@@ -351,8 +348,7 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
       },
     ],
     confirm: {
-      message:
-        "Vider les caches régénérables ? Tes documents ne sont pas touchés.",
+      message: "Vider les caches régénérables ? Tes documents ne sont pas touchés.",
     },
   },
   {
@@ -431,14 +427,12 @@ export const CREATOR_ACTIONS: CreatorAction[] = [
     id: "crash-report",
     group: "kit",
     title: "Rapport de plantage",
-    description:
-      "Le dernier journal d'erreur, à envoyer si quelque chose a planté.",
+    description: "Le dernier journal d'erreur, à envoyer si quelque chose a planté.",
     argv: [],
   },
 ];
 
-const publicAction = ({ argv: _argv, ...action }: CreatorAction): KitAction =>
-  action;
+const publicAction = ({ argv: _argv, ...action }: CreatorAction): KitAction => action;
 
 export function creatorCatalog(): KitCatalog {
   return {
@@ -453,9 +447,7 @@ export function creatorCatalog(): KitCatalog {
 }
 
 /** The end of the crash log (or a sentence saying there is none). */
-export function crashReport(
-  env: Record<string, string | undefined> = process.env,
-): string[] {
+export function crashReport(env: Record<string, string | undefined> = process.env): string[] {
   const path = crashLogPath(env);
   if (!existsSync(path)) return ["Aucun plantage enregistré."];
   const text = readFileSync(path, "utf8");
@@ -464,18 +456,14 @@ export function crashReport(
 
 /** Command line of one desktop action (exported for tests). */
 export function creatorArgv(actionId: string, input: KitInput): string[] {
-  const action = CREATOR_ACTIONS.find((entry) => entry.id === actionId);
+  const action = CREATOR_ACTIONS.find(entry => entry.id === actionId);
   if (!action) throw new Error(`Action inconnue : ${actionId}`);
   return argvFor(action.argv, action.fields, input);
 }
 
 export const creatorBridge: KitBridge = {
   catalog: creatorCatalog,
-  async run(
-    action: KitAction,
-    input: KitInput,
-    channel: KitChannel,
-  ): Promise<number> {
+  async run(action: KitAction, input: KitInput, channel: KitChannel): Promise<number> {
     if (action.id === "crash-report") {
       for (const text of crashReport()) channel.emit({ type: "say", text });
       return 0;
@@ -488,10 +476,7 @@ export const creatorBridge: KitBridge = {
       try {
         return await command.run(rest);
       } catch (error) {
-        if (
-          error instanceof UsageError ||
-          (error as { code?: string }).code?.startsWith("ERR_PARSE_ARGS")
-        ) {
+        if (error instanceof UsageError || (error as { code?: string }).code?.startsWith("ERR_PARSE_ARGS")) {
           console.error((error as Error).message);
           return 2;
         }
@@ -501,7 +486,5 @@ export const creatorBridge: KitBridge = {
   },
 };
 
-export const desktopMain = (
-  argv: string[],
-  channel?: KitChannel,
-): Promise<number> => runDesktop(argv, creatorBridge, channel);
+export const desktopMain = (argv: string[], channel?: KitChannel): Promise<number> =>
+  runDesktop(argv, creatorBridge, channel);

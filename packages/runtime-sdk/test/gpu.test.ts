@@ -27,12 +27,8 @@ describe.skipIf(!available)("GPU runtime (ABI 1.5)", () => {
       workgroups: [4, 1, 1],
       data: input,
     });
-    const output = new Uint32Array(
-      data.buffer,
-      data.byteOffset,
-      data.byteLength / 4,
-    );
-    expect([...output]).toEqual([...input].map((v) => v * 2 + 1));
+    const output = new Uint32Array(data.buffer, data.byteOffset, data.byteLength / 4);
+    expect([...output]).toEqual([...input].map(v => v * 2 + 1));
   });
 
   it("turns GPU errors into rejections without breaking the device", async () => {

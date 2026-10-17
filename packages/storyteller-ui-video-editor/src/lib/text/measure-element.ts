@@ -33,14 +33,12 @@ export interface MeasuredTextElement extends MeasuredTextLayout {
   visualRect: { left: number; top: number; width: number; height: number };
 }
 
-let textMeasurementContext:
-  CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null = null;
+let textMeasurementContext: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null = null;
 
 // Shared measurement context — reused across all measureTextElement
 // calls so we don't create a canvas per measurement. Falls back from
 // OffscreenCanvas (workers + main thread) to a hidden <canvas>.
-export function getTextMeasurementContext():
-  CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D {
+export function getTextMeasurementContext(): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D {
   if (textMeasurementContext) {
     return textMeasurementContext;
   }
@@ -133,11 +131,7 @@ export function measureTextElement({
   };
 }
 
-export function buildTextLayoutParamsFromElement({
-  element,
-}: {
-  element: TextElement;
-}): TextLayoutParams {
+export function buildTextLayoutParamsFromElement({ element }: { element: TextElement }): TextLayoutParams {
   return {
     content: readStringParam({
       params: element.params,
@@ -183,11 +177,7 @@ export function buildTextLayoutParamsFromElement({
   };
 }
 
-export function buildTextBackgroundFromElement({
-  element,
-}: {
-  element: TextElement;
-}): TextBackground {
+export function buildTextBackgroundFromElement({ element }: { element: TextElement }): TextBackground {
   return {
     enabled: readBooleanParam({
       params: element.params,
@@ -266,46 +256,18 @@ function readBooleanParam({
   return typeof value === "boolean" ? value : fallback;
 }
 
-function readTextAlign({
-  value,
-  fallback,
-}: {
-  value: unknown;
-  fallback: TextAlign;
-}): TextAlign {
-  return value === "left" || value === "center" || value === "right"
-    ? value
-    : fallback;
+function readTextAlign({ value, fallback }: { value: unknown; fallback: TextAlign }): TextAlign {
+  return value === "left" || value === "center" || value === "right" ? value : fallback;
 }
 
-function readFontWeight({
-  value,
-  fallback,
-}: {
-  value: unknown;
-  fallback: TextFontWeight;
-}): TextFontWeight {
+function readFontWeight({ value, fallback }: { value: unknown; fallback: TextFontWeight }): TextFontWeight {
   return value === "bold" || value === "normal" ? value : fallback;
 }
 
-function readFontStyle({
-  value,
-  fallback,
-}: {
-  value: unknown;
-  fallback: TextFontStyle;
-}): TextFontStyle {
+function readFontStyle({ value, fallback }: { value: unknown; fallback: TextFontStyle }): TextFontStyle {
   return value === "italic" || value === "normal" ? value : fallback;
 }
 
-function readTextDecoration({
-  value,
-  fallback,
-}: {
-  value: unknown;
-  fallback: TextDecoration;
-}): TextDecoration {
-  return value === "none" || value === "underline" || value === "line-through"
-    ? value
-    : fallback;
+function readTextDecoration({ value, fallback }: { value: unknown; fallback: TextDecoration }): TextDecoration {
+  return value === "none" || value === "underline" || value === "line-through" ? value : fallback;
 }

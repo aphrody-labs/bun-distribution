@@ -47,7 +47,7 @@ export async function loadSystems(): Promise<SystemRegistry> {
 }
 
 export async function systemById(id: string): Promise<SystemDefinition> {
-  const system = (await loadSystems()).systems.find((item) => item.id === id);
+  const system = (await loadSystems()).systems.find(item => item.id === id);
   if (!system) throw new Error(`unknown system ${id}`);
   return system;
 }
@@ -57,12 +57,8 @@ export function extensionOf(path: string): string {
 }
 
 /** Systems whose catalog consoles include `console` (bep store and free ROM packs). */
-export async function systemsForConsole(
-  console: string,
-): Promise<SystemDefinition[]> {
-  return (await loadSystems()).systems.filter((system) =>
-    system.consoles.includes(console),
-  );
+export async function systemsForConsole(console: string): Promise<SystemDefinition[]> {
+  return (await loadSystems()).systems.filter(system => system.consoles.includes(console));
 }
 
 /**
@@ -79,11 +75,11 @@ export async function detectSystem(
   const accepts = (system: SystemDefinition) =>
     system.extensions.includes(ext) || system.native?.extensions.includes(ext);
   if (declared) {
-    const system = systems.find((item) => item.id === declared);
+    const system = systems.find(item => item.id === declared);
     return system && accepts(system) ? system : undefined;
   }
   for (const segment of relativePath.split(/[\\/]/).slice(0, -1).reverse()) {
-    const system = systems.find((item) => item.id === segment.toLowerCase());
+    const system = systems.find(item => item.id === segment.toLowerCase());
     if (system && accepts(system)) return system;
   }
   if (autoDetect.exclude.includes(ext)) return undefined;

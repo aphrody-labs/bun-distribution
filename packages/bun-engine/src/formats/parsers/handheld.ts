@@ -3,12 +3,7 @@
 // packages/re/src/replica/nds.ts; validation is delegated to the native `bun-engine info`.
 import { BinaryView, crc16, hex, hex32 } from "../stream.js";
 import { nativeNdsInfo } from "../tools.js";
-import {
-  parsed,
-  type FileEntry,
-  type ParseContext,
-  type Section,
-} from "../types.js";
+import { parsed, type FileEntry, type ParseContext, type Section } from "../types.js";
 
 export const regionByGameCode: Record<string, string> = {
   A: "Asia",
@@ -64,17 +59,10 @@ export async function parseNes({ source, head }: ParseContext) {
   const flags7 = view.u8(7);
   const nes2 = (flags7 & 0x0c) === 0x08;
   const romUnits = (lsb: number, msb: number, unit: number) =>
-    msb === 0x0f
-      ? 2 ** (lsb >> 2) * ((lsb & 3) * 2 + 1)
-      : ((msb << 8) | lsb) * unit;
-  const prgBytes = nes2
-    ? romUnits(view.u8(4), view.u8(9) & 0x0f, 16384)
-    : view.u8(4) * 16384;
-  const chrBytes = nes2
-    ? romUnits(view.u8(5), view.u8(9) >> 4, 8192)
-    : view.u8(5) * 8192;
-  const mapper =
-    (flags6 >> 4) | (flags7 & 0xf0) | (nes2 ? (view.u8(8) & 0x0f) << 8 : 0);
+    msb === 0x0f ? 2 ** (lsb >> 2) * ((lsb & 3) * 2 + 1) : ((msb << 8) | lsb) * unit;
+  const prgBytes = nes2 ? romUnits(view.u8(4), view.u8(9) & 0x0f, 16384) : view.u8(4) * 16384;
+  const chrBytes = nes2 ? romUnits(view.u8(5), view.u8(9) >> 4, 8192) : view.u8(5) * 8192;
+  const mapper = (flags6 >> 4) | (flags7 & 0xf0) | (nes2 ? (view.u8(8) & 0x0f) << 8 : 0);
   const trainer = (flags6 & 0x04) !== 0;
   const prgOffset = 16 + (trainer ? 512 : 0);
   const chrOffset = prgOffset + prgBytes;
@@ -85,11 +73,8 @@ export async function parseNes({ source, head }: ParseContext) {
       : "NTSC";
 
   const vectors = await source.view(prgOffset + prgBytes - 6, 6);
-  const vector = (at: number) =>
-    vectors.length >= at + 2 ? vectors.u16(at) : 0;
-  const sections: Section[] = [
-    { name: "header", offset: 0, size: 16, kind: "header" },
-  ];
+  const vector = (at: number) => (vectors.length >= at + 2 ? vectors.u16(at) : 0);
+  const sections: Section[] = [{ name: "header", offset: 0, size: 16, kind: "header" }];
   if (trainer)
     sections.push({
       name: "trainer",
@@ -141,9 +126,7 @@ export async function parseNes({ source, head }: ParseContext) {
 
   const [prgCrc, chrCrc] = await Promise.all([
     source.crc32(prgOffset, prgOffset + prgBytes),
-    chrBytes
-      ? source.crc32(chrOffset, chrOffset + chrBytes)
-      : Promise.resolve(0),
+    chrBytes ? source.crc32(chrOffset, chrOffset + chrBytes) : Promise.resolve(0),
   ]);
   return parsed({
     header: {
@@ -154,14 +137,11 @@ export async function parseNes({ source, head }: ParseContext) {
       mapper,
       mapperName: nesMappers[mapper] ?? "unknown",
       submapper: nes2 ? view.u8(8) >> 4 : undefined,
-      mirroring:
-        flags6 & 0x08 ? "four-screen" : flags6 & 1 ? "vertical" : "horizontal",
+      mirroring: flags6 & 0x08 ? "four-screen" : flags6 & 1 ? "vertical" : "horizontal",
       battery: (flags6 & 0x02) !== 0,
       trainer,
       timing,
-      console: ["NES/Famicom", "Vs. System", "PlayChoice-10", "extended"][
-        flags7 & 3
-      ],
+      console: ["NES/Famicom", "Vs. System", "PlayChoice-10", "extended"][flags7 & 3],
       vectors: {
         nmi: hex(vector(0), 4),
         reset: hex(vector(2), 4),
@@ -184,9 +164,7 @@ export async function parseFds({ source, head }: ParseContext) {
   const base = wrapped ? 16 : 0;
   const sideBytes = 65500;
   const sides = wrapped ? view.u8(4) : Math.floor(source.size / sideBytes);
-  const sections: Section[] = wrapped
-    ? [{ name: "header", offset: 0, size: 16, kind: "header" }]
-    : [];
+  const sections: Section[] = wrapped ? [{ name: "header", offset: 0, size: 16, kind: "header" }] : [];
   for (let side = 0; side < sides; side++)
     sections.push({
       name: `side[${side}]`,
@@ -243,14 +221,12 @@ export async function parseGameBoy({ source, head }: ParseContext) {
   const cgbFlag = view.u8(0x143);
   const cgb = (cgbFlag & 0x80) !== 0;
   let headerSum = 0;
-  for (let at = 0x134; at <= 0x14c; at++)
-    headerSum = (headerSum - view.u8(at) - 1) & 0xff;
+  for (let at = 0x134; at <= 0x14c; at++) headerSum = (headerSum - view.u8(at) - 1) & 0xff;
   let globalSum = 0;
   for await (const { offset, bytes } of source.chunks()) {
     for (let index = 0; index < bytes.byteLength; index++) {
       const at = offset + index;
-      if (at !== 0x14e && at !== 0x14f)
-        globalSum = (globalSum + bytes[index]!) & 0xffff;
+      if (at !== 0x14e && at !== 0x14f) globalSum = (globalSum + bytes[index]!) & 0xffff;
     }
   }
   const romBytes = 0x8000 << view.u8(0x148);
@@ -285,8 +261,7 @@ export async function parseGameBoy({ source, head }: ParseContext) {
       romBytes,
       ramKiB: ramBytes,
       region: view.u8(0x14a) === 0 ? "Japan" : "Overseas",
-      licensee:
-        view.u8(0x14b) === 0x33 ? view.ascii(0x144, 2) : hex(view.u8(0x14b), 2),
+      licensee: view.u8(0x14b) === 0x33 ? view.ascii(0x144, 2) : hex(view.u8(0x14b), 2),
       version: view.u8(0x14c),
       headerChecksum: hex(view.u8(0x14d), 2),
       headerChecksumValid: headerSum === view.u8(0x14d),
@@ -301,10 +276,7 @@ export async function parseGameBoy({ source, head }: ParseContext) {
 }
 
 /** Decodes the target of an ARM `B` instruction at `address`. */
-export function armBranchTarget(
-  word: number,
-  address: number,
-): number | undefined {
+export function armBranchTarget(word: number, address: number): number | undefined {
   if (word >>> 24 !== 0xea) return undefined;
   const offset = ((word & 0xffffff) << 8) >> 6;
   return (address + 8 + offset) >>> 0;
@@ -316,14 +288,10 @@ export async function parseGba({ source, head, path }: ParseContext) {
   const multiboot = /\.mb$/i.test(path);
   const base = multiboot ? 0x02000000 : 0x08000000;
   let complement = 0;
-  for (let at = 0xa0; at <= 0xbc; at++)
-    complement = (complement - view.u8(at)) & 0xff;
+  for (let at = 0xa0; at <= 0xbc; at++) complement = (complement - view.u8(at)) & 0xff;
   complement = (complement - 0x19) & 0xff;
   const gameCode = view.ascii(0xac, 4);
-  const saves = await source.matches(
-    /(EEPROM|SRAM_F|SRAM|FLASH1M|FLASH512|FLASH)_V(\d{3})?/,
-    { limit: 8 },
-  );
+  const saves = await source.matches(/(EEPROM|SRAM_F|SRAM|FLASH1M|FLASH512|FLASH)_V(\d{3})?/, { limit: 8 });
   const entry = armBranchTarget(view.u32(0), base) ?? base;
   return parsed({
     header: {
@@ -340,7 +308,7 @@ export async function parseGba({ source, head, path }: ParseContext) {
       logoValid: crc16(view.slice(0x04, 0x9c)) === 0xcf56,
       entry: hex32(entry),
       multiboot,
-      saveType: [...new Set(saves.map((save) => save.text))],
+      saveType: [...new Set(saves.map(save => save.text))],
       romBytes: source.size,
     },
     sections: [
@@ -362,20 +330,9 @@ export async function parseGba({ source, head, path }: ParseContext) {
 /** Structural DS header check for homebrew/test images that carry no boot logo. */
 export function looksLikeNds(view: BinaryView, size: number): boolean {
   if (!view.has(0, 0x200)) return false;
-  const inRange = (value: number, low: number, high: number) =>
-    value >= low && value < high;
-  const [arm9Offset, arm9Entry, arm9Ram, arm9Bytes] = [
-    view.u32(0x20),
-    view.u32(0x24),
-    view.u32(0x28),
-    view.u32(0x2c),
-  ];
-  const [arm7Offset, arm7Entry, arm7Ram, arm7Bytes] = [
-    view.u32(0x30),
-    view.u32(0x34),
-    view.u32(0x38),
-    view.u32(0x3c),
-  ];
+  const inRange = (value: number, low: number, high: number) => value >= low && value < high;
+  const [arm9Offset, arm9Entry, arm9Ram, arm9Bytes] = [view.u32(0x20), view.u32(0x24), view.u32(0x28), view.u32(0x2c)];
+  const [arm7Offset, arm7Entry, arm7Ram, arm7Bytes] = [view.u32(0x30), view.u32(0x34), view.u32(0x38), view.u32(0x3c)];
   return (
     /^[ -~]{1,12}$/.test(view.ascii(0, 12)) &&
     arm9Offset >= 0x200 &&
@@ -386,8 +343,7 @@ export function looksLikeNds(view: BinaryView, size: number): boolean {
     arm7Offset + arm7Bytes <= size &&
     inRange(arm9Ram, 0x02000000, 0x02400000) &&
     inRange(arm9Entry, arm9Ram, arm9Ram + arm9Bytes) &&
-    (inRange(arm7Ram, 0x02000000, 0x02400000) ||
-      inRange(arm7Ram, 0x03000000, 0x03810000)) &&
+    (inRange(arm7Ram, 0x02000000, 0x02400000) || inRange(arm7Ram, 0x03000000, 0x03810000)) &&
     inRange(arm7Entry, arm7Ram, arm7Ram + arm7Bytes)
   );
 }
@@ -449,9 +405,7 @@ export async function parseNds({ source, head, path }: ParseContext) {
       size: view.u32(0x4c),
       kind: "filesystem",
     },
-  ].filter(
-    (section) => section.kind === "header" || section.size > 0,
-  ) as Section[];
+  ].filter(section => section.kind === "header" || section.size > 0) as Section[];
   if (view.u32(0x54))
     sections.push({
       name: "arm9-overlays",
@@ -469,9 +423,7 @@ export async function parseNds({ source, head, path }: ParseContext) {
   if (bannerOffset && bannerOffset + 0x840 <= source.size) {
     const bannerView = await source.view(bannerOffset, 0x23c0);
     const version = bannerView.u16(0);
-    const title = new TextDecoder("utf-16le")
-      .decode(bannerView.slice(0x340, 0x100))
-      .replace(/\0.*$/s, "");
+    const title = new TextDecoder("utf-16le").decode(bannerView.slice(0x340, 0x100)).replace(/\0.*$/s, "");
     banner = {
       version,
       crc16: hex(bannerView.u16(2), 4),
@@ -514,12 +466,7 @@ export async function parseNds({ source, head, path }: ParseContext) {
       makerCode: view.ascii(0x10, 2),
       region: regionByGameCode[gameCode[3] ?? ""] ?? "unknown",
       unitCode,
-      platform:
-        unitCode === 3
-          ? "Nintendo DSi"
-          : unitCode === 2
-            ? "Nintendo DS (DSi enhanced)"
-            : "Nintendo DS",
+      platform: unitCode === 3 ? "Nintendo DSi" : unitCode === 2 ? "Nintendo DS (DSi enhanced)" : "Nintendo DS",
       encryptionSeed: view.u8(0x13),
       capacityBytes: 0x20000 << view.u8(0x14),
       version: view.u8(0x1e),
@@ -537,9 +484,7 @@ export async function parseNds({ source, head, path }: ParseContext) {
       usedRomBytes: view.u32(0x80),
       headerBytes: view.u32(0x84),
       secureAreaCrc16: hex(view.u16(0x6c), 4),
-      logoCrcValid:
-        crc16(view.slice(0xc0, 0x9c)) === view.u16(0x15c) &&
-        view.u16(0x15c) === 0xcf56,
+      logoCrcValid: crc16(view.slice(0xc0, 0x9c)) === view.u16(0x15c) && view.u16(0x15c) === 0xcf56,
       headerCrcValid: crc16(view.slice(0, 0x15e)) === view.u16(0x15e),
       banner,
       native,
@@ -552,12 +497,9 @@ export async function parseNds({ source, head, path }: ParseContext) {
 }
 
 /** NitroFS file list from the FNT/FAT tables (directory tree flattened to paths). */
-export async function ndsFiles(
-  context: Pick<ParseContext, "source">,
-  sections: Section[],
-): Promise<FileEntry[]> {
-  const fnt = sections.find((section) => section.name === "fnt");
-  const fat = sections.find((section) => section.name === "fat");
+export async function ndsFiles(context: Pick<ParseContext, "source">, sections: Section[]): Promise<FileEntry[]> {
+  const fnt = sections.find(section => section.name === "fnt");
+  const fat = sections.find(section => section.name === "fat");
   if (!fnt?.size || !fat?.size) return [];
   const [names, alloc] = await Promise.all([
     context.source.view(fnt.offset, fnt.size),

@@ -93,10 +93,7 @@ export function useSwipe({
 /**
  * Hook pour ajouter des événements de swipe à un élément DOM
  */
-export function useSwipeElement(
-  elementRef: React.RefObject<HTMLElement | null>,
-  handlers: SwipeInput,
-) {
+export function useSwipeElement(elementRef: React.RefObject<HTMLElement | null>, handlers: SwipeInput) {
   const swipe = useSwipe(handlers);
 
   useEffect(() => {

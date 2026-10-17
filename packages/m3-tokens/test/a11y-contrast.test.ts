@@ -8,8 +8,8 @@ import { schemeFromSeed } from "../src/dynamic-color.js";
 
 function relativeLuminance(hex: string): number {
   const channels = [1, 3, 5]
-    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
-    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    .map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
   return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 }
 
@@ -35,14 +35,7 @@ const PAIRS: [string, string][] = [
   ["inverse-surface", "inverse-on-surface"],
 ];
 
-const SEEDS = [
-  "#6750a4",
-  "#00658f",
-  "#3a6a1e",
-  "#9a4521",
-  "#b3261e",
-  "#ffd700",
-];
+const SEEDS = ["#6750a4", "#00658f", "#3a6a1e", "#9a4521", "#b3261e", "#ffd700"];
 const AA = 4.5;
 const AAA = 7;
 
@@ -52,10 +45,7 @@ describe("dynamic colour — WCAG AA contrast (standard)", () => {
       test(`${seed} ${dark ? "dark" : "light"}: every on-* pair ≥ ${AA}:1`, () => {
         const scheme = schemeFromSeed(seed, { dark });
         for (const [bg, fg] of PAIRS) {
-          const ratio = contrast(
-            scheme[`--md-sys-color-${bg}`],
-            scheme[`--md-sys-color-${fg}`],
-          );
+          const ratio = contrast(scheme[`--md-sys-color-${bg}`], scheme[`--md-sys-color-${fg}`]);
           expect(
             ratio,
             `${fg} on ${bg} (${dark ? "dark" : "light"}, seed ${seed}) = ${ratio.toFixed(2)}:1`,
@@ -72,10 +62,7 @@ describe("dynamic colour — WCAG AAA contrast (high-contrast mode)", () => {
       test(`${seed} ${dark ? "dark" : "light"} @contrast=1: every on-* pair ≥ ${AAA}:1`, () => {
         const scheme = schemeFromSeed(seed, { dark, contrast: 1 });
         for (const [bg, fg] of PAIRS) {
-          const ratio = contrast(
-            scheme[`--md-sys-color-${bg}`],
-            scheme[`--md-sys-color-${fg}`],
-          );
+          const ratio = contrast(scheme[`--md-sys-color-${bg}`], scheme[`--md-sys-color-${fg}`]);
           expect(
             ratio,
             `${fg} on ${bg} (${dark ? "dark" : "light"}, seed ${seed}) = ${ratio.toFixed(2)}:1`,

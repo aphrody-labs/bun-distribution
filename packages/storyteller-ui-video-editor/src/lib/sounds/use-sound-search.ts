@@ -2,13 +2,7 @@ import { useEffect } from "react";
 import { useSoundsStore } from "./sounds-store";
 import { EditorCore } from "../core";
 
-export function useSoundSearch({
-  query,
-  commercialOnly,
-}: {
-  query: string;
-  commercialOnly: boolean;
-}) {
+export function useSoundSearch({ query, commercialOnly }: { query: string; commercialOnly: boolean }) {
   const {
     searchResults,
     isSearching,

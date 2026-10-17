@@ -28,16 +28,14 @@ export class TtsApi extends ApiManager {
 
     const body = {
       ...request,
-      ...(request.creator_set_visibility
-        ? {}
-        : { creator_set_visibility: Visibility.Public }),
+      ...(request.creator_set_visibility ? {} : { creator_set_visibility: Visibility.Public }),
     };
 
     return this.post<GenerateTtsAudioRequest, GenerateTtsAudioResponse>({
       endpoint,
       body: body,
     })
-      .then((response) => {
+      .then(response => {
         if (!response.success) {
           return {
             success: false,

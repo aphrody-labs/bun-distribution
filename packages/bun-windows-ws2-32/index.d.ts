@@ -9,57 +9,225 @@ interface Functions {
   /** ws2_32.dll!FreeAddrInfoW */
   FreeAddrInfoW(pAddrInfo: Win32Pointer): void;
   /** ws2_32.dll!GetAddrInfoExA */
-  GetAddrInfoExA(pName: string | Win32Pointer, pServiceName: string | Win32Pointer, dwNameSpace: number, lpNspId: Win32Pointer, hints: Win32Pointer, ppResult: Win32Pointer, timeout: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback, lpNameHandle: Win32Pointer): number;
+  GetAddrInfoExA(
+    pName: string | Win32Pointer,
+    pServiceName: string | Win32Pointer,
+    dwNameSpace: number,
+    lpNspId: Win32Pointer,
+    hints: Win32Pointer,
+    ppResult: Win32Pointer,
+    timeout: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+    lpNameHandle: Win32Pointer,
+  ): number;
   /** ws2_32.dll!GetAddrInfoExCancel */
   GetAddrInfoExCancel(lpHandle: Win32Pointer): number;
   /** ws2_32.dll!GetAddrInfoExOverlappedResult */
   GetAddrInfoExOverlappedResult(lpOverlapped: Win32Pointer): number;
   /** ws2_32.dll!GetAddrInfoExW */
-  GetAddrInfoExW(pName: string | Win32Pointer, pServiceName: string | Win32Pointer, dwNameSpace: number, lpNspId: Win32Pointer, hints: Win32Pointer, ppResult: Win32Pointer, timeout: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback, lpHandle: Win32Pointer): number;
+  GetAddrInfoExW(
+    pName: string | Win32Pointer,
+    pServiceName: string | Win32Pointer,
+    dwNameSpace: number,
+    lpNspId: Win32Pointer,
+    hints: Win32Pointer,
+    ppResult: Win32Pointer,
+    timeout: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+    lpHandle: Win32Pointer,
+  ): number;
   /** ws2_32.dll!GetAddrInfoExW */
-  GetAddrInfoEx(pName: string | Win32Pointer, pServiceName: string | Win32Pointer, dwNameSpace: number, lpNspId: Win32Pointer, hints: Win32Pointer, ppResult: Win32Pointer, timeout: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback, lpHandle: Win32Pointer): number;
+  GetAddrInfoEx(
+    pName: string | Win32Pointer,
+    pServiceName: string | Win32Pointer,
+    dwNameSpace: number,
+    lpNspId: Win32Pointer,
+    hints: Win32Pointer,
+    ppResult: Win32Pointer,
+    timeout: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+    lpHandle: Win32Pointer,
+  ): number;
   /** ws2_32.dll!GetAddrInfoW */
-  GetAddrInfoW(pNodeName: string | Win32Pointer, pServiceName: string | Win32Pointer, pHints: Win32Pointer, ppResult: Win32Pointer): number;
+  GetAddrInfoW(
+    pNodeName: string | Win32Pointer,
+    pServiceName: string | Win32Pointer,
+    pHints: Win32Pointer,
+    ppResult: Win32Pointer,
+  ): number;
   /** ws2_32.dll!GetHostNameW */
   GetHostNameW(name: string | Win32Pointer, namelen: number): number;
   /** ws2_32.dll!GetNameInfoW */
-  GetNameInfoW(pSockaddr: Win32Pointer, SockaddrLength: number, pNodeBuffer: string | Win32Pointer, NodeBufferSize: number, pServiceBuffer: string | Win32Pointer, ServiceBufferSize: number, Flags: number): number;
+  GetNameInfoW(
+    pSockaddr: Win32Pointer,
+    SockaddrLength: number,
+    pNodeBuffer: string | Win32Pointer,
+    NodeBufferSize: number,
+    pServiceBuffer: string | Win32Pointer,
+    ServiceBufferSize: number,
+    Flags: number,
+  ): number;
   /** ws2_32.dll!InetNtopW */
-  InetNtopW(Family: number, pAddr: Win32Pointer, pStringBuf: string | Win32Pointer, StringBufSize: number | bigint): number | null;
+  InetNtopW(
+    Family: number,
+    pAddr: Win32Pointer,
+    pStringBuf: string | Win32Pointer,
+    StringBufSize: number | bigint,
+  ): number | null;
   /** ws2_32.dll!InetPtonW */
   InetPtonW(Family: number, pszAddrString: string | Win32Pointer, pAddrBuf: Win32Pointer): number;
   /** ws2_32.dll!ProcessSocketNotifications */
-  ProcessSocketNotifications(completionPort: Win32Pointer, registrationCount: number, registrationInfos: Win32Pointer, timeoutMs: number, completionCount: number, completionPortEntries: Win32Pointer, receivedEntryCount: Win32Pointer): number;
+  ProcessSocketNotifications(
+    completionPort: Win32Pointer,
+    registrationCount: number,
+    registrationInfos: Win32Pointer,
+    timeoutMs: number,
+    completionCount: number,
+    completionPortEntries: Win32Pointer,
+    receivedEntryCount: Win32Pointer,
+  ): number;
   /** ws2_32.dll!SetAddrInfoExA */
-  SetAddrInfoExA(pName: string | Win32Pointer, pServiceName: string | Win32Pointer, pAddresses: Win32Pointer, dwAddressCount: number, lpBlob: Win32Pointer, dwFlags: number, dwNameSpace: number, lpNspId: Win32Pointer, timeout: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback, lpNameHandle: Win32Pointer): number;
+  SetAddrInfoExA(
+    pName: string | Win32Pointer,
+    pServiceName: string | Win32Pointer,
+    pAddresses: Win32Pointer,
+    dwAddressCount: number,
+    lpBlob: Win32Pointer,
+    dwFlags: number,
+    dwNameSpace: number,
+    lpNspId: Win32Pointer,
+    timeout: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+    lpNameHandle: Win32Pointer,
+  ): number;
   /** ws2_32.dll!SetAddrInfoExW */
-  SetAddrInfoExW(pName: string | Win32Pointer, pServiceName: string | Win32Pointer, pAddresses: Win32Pointer, dwAddressCount: number, lpBlob: Win32Pointer, dwFlags: number, dwNameSpace: number, lpNspId: Win32Pointer, timeout: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback, lpNameHandle: Win32Pointer): number;
+  SetAddrInfoExW(
+    pName: string | Win32Pointer,
+    pServiceName: string | Win32Pointer,
+    pAddresses: Win32Pointer,
+    dwAddressCount: number,
+    lpBlob: Win32Pointer,
+    dwFlags: number,
+    dwNameSpace: number,
+    lpNspId: Win32Pointer,
+    timeout: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+    lpNameHandle: Win32Pointer,
+  ): number;
   /** ws2_32.dll!SetAddrInfoExW */
-  SetAddrInfoEx(pName: string | Win32Pointer, pServiceName: string | Win32Pointer, pAddresses: Win32Pointer, dwAddressCount: number, lpBlob: Win32Pointer, dwFlags: number, dwNameSpace: number, lpNspId: Win32Pointer, timeout: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback, lpNameHandle: Win32Pointer): number;
+  SetAddrInfoEx(
+    pName: string | Win32Pointer,
+    pServiceName: string | Win32Pointer,
+    pAddresses: Win32Pointer,
+    dwAddressCount: number,
+    lpBlob: Win32Pointer,
+    dwFlags: number,
+    dwNameSpace: number,
+    lpNspId: Win32Pointer,
+    timeout: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+    lpNameHandle: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WPUCompleteOverlappedRequest */
-  WPUCompleteOverlappedRequest(s: number | bigint, lpOverlapped: Win32Pointer, dwError: number, cbTransferred: number, lpErrno: Win32Pointer): number;
+  WPUCompleteOverlappedRequest(
+    s: number | bigint,
+    lpOverlapped: Win32Pointer,
+    dwError: number,
+    cbTransferred: number,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAAccept */
-  WSAAccept(s: number | bigint, addr: Win32Pointer, addrlen: Win32Pointer, lpfnCondition: Win32Callback, dwCallbackData: number | bigint): number | bigint;
+  WSAAccept(
+    s: number | bigint,
+    addr: Win32Pointer,
+    addrlen: Win32Pointer,
+    lpfnCondition: Win32Callback,
+    dwCallbackData: number | bigint,
+  ): number | bigint;
   /** ws2_32.dll!WSAAddressToStringA */
-  WSAAddressToStringA(lpsaAddress: Win32Pointer, dwAddressLength: number, lpProtocolInfo: Win32Pointer, lpszAddressString: string | Win32Pointer, lpdwAddressStringLength: Win32Pointer): number;
+  WSAAddressToStringA(
+    lpsaAddress: Win32Pointer,
+    dwAddressLength: number,
+    lpProtocolInfo: Win32Pointer,
+    lpszAddressString: string | Win32Pointer,
+    lpdwAddressStringLength: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAAddressToStringW */
-  WSAAddressToStringW(lpsaAddress: Win32Pointer, dwAddressLength: number, lpProtocolInfo: Win32Pointer, lpszAddressString: string | Win32Pointer, lpdwAddressStringLength: Win32Pointer): number;
+  WSAAddressToStringW(
+    lpsaAddress: Win32Pointer,
+    dwAddressLength: number,
+    lpProtocolInfo: Win32Pointer,
+    lpszAddressString: string | Win32Pointer,
+    lpdwAddressStringLength: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAAddressToStringW */
-  WSAAddressToString(lpsaAddress: Win32Pointer, dwAddressLength: number, lpProtocolInfo: Win32Pointer, lpszAddressString: string | Win32Pointer, lpdwAddressStringLength: Win32Pointer): number;
+  WSAAddressToString(
+    lpsaAddress: Win32Pointer,
+    dwAddressLength: number,
+    lpProtocolInfo: Win32Pointer,
+    lpszAddressString: string | Win32Pointer,
+    lpdwAddressStringLength: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAAdvertiseProvider */
   WSAAdvertiseProvider(puuidProviderId: Win32Pointer, pNSPv2Routine: Win32Pointer): number;
   /** ws2_32.dll!WSAAsyncGetHostByAddr */
-  WSAAsyncGetHostByAddr(hWnd: Win32Pointer, wMsg: number, addr: string | Win32Pointer, len: number, type: number, buf: string | Win32Pointer, buflen: number): number | null;
+  WSAAsyncGetHostByAddr(
+    hWnd: Win32Pointer,
+    wMsg: number,
+    addr: string | Win32Pointer,
+    len: number,
+    type: number,
+    buf: string | Win32Pointer,
+    buflen: number,
+  ): number | null;
   /** ws2_32.dll!WSAAsyncGetHostByName */
-  WSAAsyncGetHostByName(hWnd: Win32Pointer, wMsg: number, name: string | Win32Pointer, buf: string | Win32Pointer, buflen: number): number | null;
+  WSAAsyncGetHostByName(
+    hWnd: Win32Pointer,
+    wMsg: number,
+    name: string | Win32Pointer,
+    buf: string | Win32Pointer,
+    buflen: number,
+  ): number | null;
   /** ws2_32.dll!WSAAsyncGetProtoByName */
-  WSAAsyncGetProtoByName(hWnd: Win32Pointer, wMsg: number, name: string | Win32Pointer, buf: string | Win32Pointer, buflen: number): number | null;
+  WSAAsyncGetProtoByName(
+    hWnd: Win32Pointer,
+    wMsg: number,
+    name: string | Win32Pointer,
+    buf: string | Win32Pointer,
+    buflen: number,
+  ): number | null;
   /** ws2_32.dll!WSAAsyncGetProtoByNumber */
-  WSAAsyncGetProtoByNumber(hWnd: Win32Pointer, wMsg: number, number: number, buf: string | Win32Pointer, buflen: number): number | null;
+  WSAAsyncGetProtoByNumber(
+    hWnd: Win32Pointer,
+    wMsg: number,
+    number: number,
+    buf: string | Win32Pointer,
+    buflen: number,
+  ): number | null;
   /** ws2_32.dll!WSAAsyncGetServByName */
-  WSAAsyncGetServByName(hWnd: Win32Pointer, wMsg: number, name: string | Win32Pointer, proto: string | Win32Pointer, buf: string | Win32Pointer, buflen: number): number | null;
+  WSAAsyncGetServByName(
+    hWnd: Win32Pointer,
+    wMsg: number,
+    name: string | Win32Pointer,
+    proto: string | Win32Pointer,
+    buf: string | Win32Pointer,
+    buflen: number,
+  ): number | null;
   /** ws2_32.dll!WSAAsyncGetServByPort */
-  WSAAsyncGetServByPort(hWnd: Win32Pointer, wMsg: number, port: number, proto: string | Win32Pointer, buf: string | Win32Pointer, buflen: number): number | null;
+  WSAAsyncGetServByPort(
+    hWnd: Win32Pointer,
+    wMsg: number,
+    port: number,
+    proto: string | Win32Pointer,
+    buf: string | Win32Pointer,
+    buflen: number,
+  ): number | null;
   /** ws2_32.dll!WSAAsyncSelect */
   WSAAsyncSelect(s: number | bigint, hWnd: Win32Pointer, wMsg: number, lEvent: number): number;
   /** ws2_32.dll!WSACancelAsyncRequest */
@@ -71,15 +239,62 @@ interface Functions {
   /** ws2_32.dll!WSACloseEvent */
   WSACloseEvent(hEvent: number | bigint): number;
   /** ws2_32.dll!WSAConnect */
-  WSAConnect(s: number | bigint, name: Win32Pointer, namelen: number, lpCallerData: Win32Pointer, lpCalleeData: Win32Pointer, lpSQOS: Win32Pointer, lpGQOS: Win32Pointer): number;
+  WSAConnect(
+    s: number | bigint,
+    name: Win32Pointer,
+    namelen: number,
+    lpCallerData: Win32Pointer,
+    lpCalleeData: Win32Pointer,
+    lpSQOS: Win32Pointer,
+    lpGQOS: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAConnectByList */
-  WSAConnectByList(s: number | bigint, SocketAddress: Win32Pointer, LocalAddressLength: Win32Pointer, LocalAddress: Win32Pointer, RemoteAddressLength: Win32Pointer, RemoteAddress: Win32Pointer, timeout: Win32Pointer, Reserved: Win32Pointer): number;
+  WSAConnectByList(
+    s: number | bigint,
+    SocketAddress: Win32Pointer,
+    LocalAddressLength: Win32Pointer,
+    LocalAddress: Win32Pointer,
+    RemoteAddressLength: Win32Pointer,
+    RemoteAddress: Win32Pointer,
+    timeout: Win32Pointer,
+    Reserved: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAConnectByNameA */
-  WSAConnectByNameA(s: number | bigint, nodename: string | Win32Pointer, servicename: string | Win32Pointer, LocalAddressLength: Win32Pointer, LocalAddress: Win32Pointer, RemoteAddressLength: Win32Pointer, RemoteAddress: Win32Pointer, timeout: Win32Pointer, Reserved: Win32Pointer): number;
+  WSAConnectByNameA(
+    s: number | bigint,
+    nodename: string | Win32Pointer,
+    servicename: string | Win32Pointer,
+    LocalAddressLength: Win32Pointer,
+    LocalAddress: Win32Pointer,
+    RemoteAddressLength: Win32Pointer,
+    RemoteAddress: Win32Pointer,
+    timeout: Win32Pointer,
+    Reserved: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAConnectByNameW */
-  WSAConnectByNameW(s: number | bigint, nodename: string | Win32Pointer, servicename: string | Win32Pointer, LocalAddressLength: Win32Pointer, LocalAddress: Win32Pointer, RemoteAddressLength: Win32Pointer, RemoteAddress: Win32Pointer, timeout: Win32Pointer, Reserved: Win32Pointer): number;
+  WSAConnectByNameW(
+    s: number | bigint,
+    nodename: string | Win32Pointer,
+    servicename: string | Win32Pointer,
+    LocalAddressLength: Win32Pointer,
+    LocalAddress: Win32Pointer,
+    RemoteAddressLength: Win32Pointer,
+    RemoteAddress: Win32Pointer,
+    timeout: Win32Pointer,
+    Reserved: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAConnectByNameW */
-  WSAConnectByName(s: number | bigint, nodename: string | Win32Pointer, servicename: string | Win32Pointer, LocalAddressLength: Win32Pointer, LocalAddress: Win32Pointer, RemoteAddressLength: Win32Pointer, RemoteAddress: Win32Pointer, timeout: Win32Pointer, Reserved: Win32Pointer): number;
+  WSAConnectByName(
+    s: number | bigint,
+    nodename: string | Win32Pointer,
+    servicename: string | Win32Pointer,
+    LocalAddressLength: Win32Pointer,
+    LocalAddress: Win32Pointer,
+    RemoteAddressLength: Win32Pointer,
+    RemoteAddress: Win32Pointer,
+    timeout: Win32Pointer,
+    Reserved: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSACreateEvent */
   WSACreateEvent(): number | bigint;
   /** ws2_32.dll!WSADuplicateSocketA */
@@ -113,21 +328,54 @@ interface Functions {
   /** ws2_32.dll!WSAGetLastError */
   WSAGetLastError(): number;
   /** ws2_32.dll!WSAGetOverlappedResult */
-  WSAGetOverlappedResult(s: number | bigint, lpOverlapped: Win32Pointer, lpcbTransfer: Win32Pointer, fWait: number, lpdwFlags: Win32Pointer): number;
+  WSAGetOverlappedResult(
+    s: number | bigint,
+    lpOverlapped: Win32Pointer,
+    lpcbTransfer: Win32Pointer,
+    fWait: number,
+    lpdwFlags: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAGetQOSByName */
   WSAGetQOSByName(s: number | bigint, lpQOSName: Win32Pointer, lpQOS: Win32Pointer): number;
   /** ws2_32.dll!WSAGetServiceClassInfoA */
-  WSAGetServiceClassInfoA(lpProviderId: Win32Pointer, lpServiceClassId: Win32Pointer, lpdwBufSize: Win32Pointer, lpServiceClassInfo: Win32Pointer): number;
+  WSAGetServiceClassInfoA(
+    lpProviderId: Win32Pointer,
+    lpServiceClassId: Win32Pointer,
+    lpdwBufSize: Win32Pointer,
+    lpServiceClassInfo: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAGetServiceClassInfoW */
-  WSAGetServiceClassInfoW(lpProviderId: Win32Pointer, lpServiceClassId: Win32Pointer, lpdwBufSize: Win32Pointer, lpServiceClassInfo: Win32Pointer): number;
+  WSAGetServiceClassInfoW(
+    lpProviderId: Win32Pointer,
+    lpServiceClassId: Win32Pointer,
+    lpdwBufSize: Win32Pointer,
+    lpServiceClassInfo: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAGetServiceClassInfoW */
-  WSAGetServiceClassInfo(lpProviderId: Win32Pointer, lpServiceClassId: Win32Pointer, lpdwBufSize: Win32Pointer, lpServiceClassInfo: Win32Pointer): number;
+  WSAGetServiceClassInfo(
+    lpProviderId: Win32Pointer,
+    lpServiceClassId: Win32Pointer,
+    lpdwBufSize: Win32Pointer,
+    lpServiceClassInfo: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAGetServiceClassNameByClassIdA */
-  WSAGetServiceClassNameByClassIdA(lpServiceClassId: Win32Pointer, lpszServiceClassName: string | Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  WSAGetServiceClassNameByClassIdA(
+    lpServiceClassId: Win32Pointer,
+    lpszServiceClassName: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAGetServiceClassNameByClassIdW */
-  WSAGetServiceClassNameByClassIdW(lpServiceClassId: Win32Pointer, lpszServiceClassName: string | Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  WSAGetServiceClassNameByClassIdW(
+    lpServiceClassId: Win32Pointer,
+    lpszServiceClassName: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAGetServiceClassNameByClassIdW */
-  WSAGetServiceClassNameByClassId(lpServiceClassId: Win32Pointer, lpszServiceClassName: string | Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  WSAGetServiceClassNameByClassId(
+    lpServiceClassId: Win32Pointer,
+    lpszServiceClassName: string | Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAHtonl */
   WSAHtonl(s: number | bigint, hostlong: number, lpnetlong: Win32Pointer): number;
   /** ws2_32.dll!WSAHtons */
@@ -139,11 +387,30 @@ interface Functions {
   /** ws2_32.dll!WSAInstallServiceClassW */
   WSAInstallServiceClass(lpServiceClassInfo: Win32Pointer): number;
   /** ws2_32.dll!WSAIoctl */
-  WSAIoctl(s: number | bigint, dwIoControlCode: number, lpvInBuffer: Win32Pointer, cbInBuffer: number, lpvOutBuffer: Win32Pointer, cbOutBuffer: number, lpcbBytesReturned: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback): number;
+  WSAIoctl(
+    s: number | bigint,
+    dwIoControlCode: number,
+    lpvInBuffer: Win32Pointer,
+    cbInBuffer: number,
+    lpvOutBuffer: Win32Pointer,
+    cbOutBuffer: number,
+    lpcbBytesReturned: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+  ): number;
   /** ws2_32.dll!WSAIsBlocking */
   WSAIsBlocking(): number;
   /** ws2_32.dll!WSAJoinLeaf */
-  WSAJoinLeaf(s: number | bigint, name: Win32Pointer, namelen: number, lpCallerData: Win32Pointer, lpCalleeData: Win32Pointer, lpSQOS: Win32Pointer, lpGQOS: Win32Pointer, dwFlags: number): number | bigint;
+  WSAJoinLeaf(
+    s: number | bigint,
+    name: Win32Pointer,
+    namelen: number,
+    lpCallerData: Win32Pointer,
+    lpCalleeData: Win32Pointer,
+    lpSQOS: Win32Pointer,
+    lpGQOS: Win32Pointer,
+    dwFlags: number,
+  ): number | bigint;
   /** ws2_32.dll!WSALookupServiceBeginA */
   WSALookupServiceBeginA(lpqsRestrictions: Win32Pointer, dwControlFlags: number, lphLookup: Win32Pointer): number;
   /** ws2_32.dll!WSALookupServiceBeginW */
@@ -153,13 +420,37 @@ interface Functions {
   /** ws2_32.dll!WSALookupServiceEnd */
   WSALookupServiceEnd(hLookup: Win32Pointer): number;
   /** ws2_32.dll!WSALookupServiceNextA */
-  WSALookupServiceNextA(hLookup: Win32Pointer, dwControlFlags: number, lpdwBufferLength: Win32Pointer, lpqsResults: Win32Pointer): number;
+  WSALookupServiceNextA(
+    hLookup: Win32Pointer,
+    dwControlFlags: number,
+    lpdwBufferLength: Win32Pointer,
+    lpqsResults: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSALookupServiceNextW */
-  WSALookupServiceNextW(hLookup: Win32Pointer, dwControlFlags: number, lpdwBufferLength: Win32Pointer, lpqsResults: Win32Pointer): number;
+  WSALookupServiceNextW(
+    hLookup: Win32Pointer,
+    dwControlFlags: number,
+    lpdwBufferLength: Win32Pointer,
+    lpqsResults: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSALookupServiceNextW */
-  WSALookupServiceNext(hLookup: Win32Pointer, dwControlFlags: number, lpdwBufferLength: Win32Pointer, lpqsResults: Win32Pointer): number;
+  WSALookupServiceNext(
+    hLookup: Win32Pointer,
+    dwControlFlags: number,
+    lpdwBufferLength: Win32Pointer,
+    lpqsResults: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSANSPIoctl */
-  WSANSPIoctl(hLookup: Win32Pointer, dwControlCode: number, lpvInBuffer: Win32Pointer, cbInBuffer: number, lpvOutBuffer: Win32Pointer, cbOutBuffer: number, lpcbBytesReturned: Win32Pointer, lpCompletion: Win32Pointer): number;
+  WSANSPIoctl(
+    hLookup: Win32Pointer,
+    dwControlCode: number,
+    lpvInBuffer: Win32Pointer,
+    cbInBuffer: number,
+    lpvOutBuffer: Win32Pointer,
+    cbOutBuffer: number,
+    lpcbBytesReturned: Win32Pointer,
+    lpCompletion: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSANtohl */
   WSANtohl(s: number | bigint, netlong: number, lphostlong: Win32Pointer): number;
   /** ws2_32.dll!WSANtohs */
@@ -169,25 +460,72 @@ interface Functions {
   /** ws2_32.dll!WSAProviderCompleteAsyncCall */
   WSAProviderCompleteAsyncCall(hAsyncCall: Win32Pointer, iRetCode: number): number;
   /** ws2_32.dll!WSAProviderConfigChange */
-  WSAProviderConfigChange(lpNotificationHandle: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback): number;
+  WSAProviderConfigChange(
+    lpNotificationHandle: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+  ): number;
   /** ws2_32.dll!WSARecv */
-  WSARecv(s: number | bigint, lpBuffers: Win32Pointer, dwBufferCount: number, lpNumberOfBytesRecvd: Win32Pointer, lpFlags: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback): number;
+  WSARecv(
+    s: number | bigint,
+    lpBuffers: Win32Pointer,
+    dwBufferCount: number,
+    lpNumberOfBytesRecvd: Win32Pointer,
+    lpFlags: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+  ): number;
   /** ws2_32.dll!WSARecvDisconnect */
   WSARecvDisconnect(s: number | bigint, lpInboundDisconnectData: Win32Pointer): number;
   /** ws2_32.dll!WSARecvFrom */
-  WSARecvFrom(s: number | bigint, lpBuffers: Win32Pointer, dwBufferCount: number, lpNumberOfBytesRecvd: Win32Pointer, lpFlags: Win32Pointer, lpFrom: Win32Pointer, lpFromlen: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback): number;
+  WSARecvFrom(
+    s: number | bigint,
+    lpBuffers: Win32Pointer,
+    dwBufferCount: number,
+    lpNumberOfBytesRecvd: Win32Pointer,
+    lpFlags: Win32Pointer,
+    lpFrom: Win32Pointer,
+    lpFromlen: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+  ): number;
   /** ws2_32.dll!WSARemoveServiceClass */
   WSARemoveServiceClass(lpServiceClassId: Win32Pointer): number;
   /** ws2_32.dll!WSAResetEvent */
   WSAResetEvent(hEvent: number | bigint): number;
   /** ws2_32.dll!WSASend */
-  WSASend(s: number | bigint, lpBuffers: Win32Pointer, dwBufferCount: number, lpNumberOfBytesSent: Win32Pointer, dwFlags: number, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback): number;
+  WSASend(
+    s: number | bigint,
+    lpBuffers: Win32Pointer,
+    dwBufferCount: number,
+    lpNumberOfBytesSent: Win32Pointer,
+    dwFlags: number,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+  ): number;
   /** ws2_32.dll!WSASendDisconnect */
   WSASendDisconnect(s: number | bigint, lpOutboundDisconnectData: Win32Pointer): number;
   /** ws2_32.dll!WSASendMsg */
-  WSASendMsg(Handle: number | bigint, lpMsg: Win32Pointer, dwFlags: number, lpNumberOfBytesSent: Win32Pointer, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback): number;
+  WSASendMsg(
+    Handle: number | bigint,
+    lpMsg: Win32Pointer,
+    dwFlags: number,
+    lpNumberOfBytesSent: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+  ): number;
   /** ws2_32.dll!WSASendTo */
-  WSASendTo(s: number | bigint, lpBuffers: Win32Pointer, dwBufferCount: number, lpNumberOfBytesSent: Win32Pointer, dwFlags: number, lpTo: Win32Pointer, iTolen: number, lpOverlapped: Win32Pointer, lpCompletionRoutine: Win32Callback): number;
+  WSASendTo(
+    s: number | bigint,
+    lpBuffers: Win32Pointer,
+    dwBufferCount: number,
+    lpNumberOfBytesSent: Win32Pointer,
+    dwFlags: number,
+    lpTo: Win32Pointer,
+    iTolen: number,
+    lpOverlapped: Win32Pointer,
+    lpCompletionRoutine: Win32Callback,
+  ): number;
   /** ws2_32.dll!WSASetBlockingHook */
   WSASetBlockingHook(lpBlockFunc: Win32Callback): number | null;
   /** ws2_32.dll!WSASetEvent */
@@ -201,25 +539,70 @@ interface Functions {
   /** ws2_32.dll!WSASetServiceW */
   WSASetService(lpqsRegInfo: Win32Pointer, essoperation: number, dwControlFlags: number): number;
   /** ws2_32.dll!WSASocketA */
-  WSASocketA(af: number, type: number, protocol: number, lpProtocolInfo: Win32Pointer, g: number, dwFlags: number): number | bigint;
+  WSASocketA(
+    af: number,
+    type: number,
+    protocol: number,
+    lpProtocolInfo: Win32Pointer,
+    g: number,
+    dwFlags: number,
+  ): number | bigint;
   /** ws2_32.dll!WSASocketW */
-  WSASocketW(af: number, type: number, protocol: number, lpProtocolInfo: Win32Pointer, g: number, dwFlags: number): number | bigint;
+  WSASocketW(
+    af: number,
+    type: number,
+    protocol: number,
+    lpProtocolInfo: Win32Pointer,
+    g: number,
+    dwFlags: number,
+  ): number | bigint;
   /** ws2_32.dll!WSASocketW */
-  WSASocket(af: number, type: number, protocol: number, lpProtocolInfo: Win32Pointer, g: number, dwFlags: number): number | bigint;
+  WSASocket(
+    af: number,
+    type: number,
+    protocol: number,
+    lpProtocolInfo: Win32Pointer,
+    g: number,
+    dwFlags: number,
+  ): number | bigint;
   /** ws2_32.dll!WSAStartup */
   WSAStartup(wVersionRequested: number, lpWSAData: Win32Pointer): number;
   /** ws2_32.dll!WSAStringToAddressA */
-  WSAStringToAddressA(AddressString: string | Win32Pointer, AddressFamily: number, lpProtocolInfo: Win32Pointer, lpAddress: Win32Pointer, lpAddressLength: Win32Pointer): number;
+  WSAStringToAddressA(
+    AddressString: string | Win32Pointer,
+    AddressFamily: number,
+    lpProtocolInfo: Win32Pointer,
+    lpAddress: Win32Pointer,
+    lpAddressLength: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAStringToAddressW */
-  WSAStringToAddressW(AddressString: string | Win32Pointer, AddressFamily: number, lpProtocolInfo: Win32Pointer, lpAddress: Win32Pointer, lpAddressLength: Win32Pointer): number;
+  WSAStringToAddressW(
+    AddressString: string | Win32Pointer,
+    AddressFamily: number,
+    lpProtocolInfo: Win32Pointer,
+    lpAddress: Win32Pointer,
+    lpAddressLength: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAStringToAddressW */
-  WSAStringToAddress(AddressString: string | Win32Pointer, AddressFamily: number, lpProtocolInfo: Win32Pointer, lpAddress: Win32Pointer, lpAddressLength: Win32Pointer): number;
+  WSAStringToAddress(
+    AddressString: string | Win32Pointer,
+    AddressFamily: number,
+    lpProtocolInfo: Win32Pointer,
+    lpAddress: Win32Pointer,
+    lpAddressLength: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSAUnadvertiseProvider */
   WSAUnadvertiseProvider(puuidProviderId: Win32Pointer): number;
   /** ws2_32.dll!WSAUnhookBlockingHook */
   WSAUnhookBlockingHook(): number;
   /** ws2_32.dll!WSAWaitForMultipleEvents */
-  WSAWaitForMultipleEvents(cEvents: number, lphEvents: Win32Pointer, fWaitAll: number, dwTimeout: number, fAlertable: number): number;
+  WSAWaitForMultipleEvents(
+    cEvents: number,
+    lphEvents: Win32Pointer,
+    fWaitAll: number,
+    dwTimeout: number,
+    fAlertable: number,
+  ): number;
   /** ws2_32.dll!WSCDeinstallProvider */
   WSCDeinstallProvider(lpProviderId: Win32Pointer, lpErrno: Win32Pointer): number;
   /** ws2_32.dll!WSCDeinstallProvider32 */
@@ -233,47 +616,170 @@ interface Functions {
   /** ws2_32.dll!WSCEnumNameSpaceProvidersEx32 */
   WSCEnumNameSpaceProvidersEx32(lpdwBufferLength: Win32Pointer, lpnspBuffer: Win32Pointer): number;
   /** ws2_32.dll!WSCEnumProtocols */
-  WSCEnumProtocols(lpiProtocols: Win32Pointer, lpProtocolBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer, lpErrno: Win32Pointer): number;
+  WSCEnumProtocols(
+    lpiProtocols: Win32Pointer,
+    lpProtocolBuffer: Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCEnumProtocols32 */
-  WSCEnumProtocols32(lpiProtocols: Win32Pointer, lpProtocolBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer, lpErrno: Win32Pointer): number;
+  WSCEnumProtocols32(
+    lpiProtocols: Win32Pointer,
+    lpProtocolBuffer: Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCGetApplicationCategory */
-  WSCGetApplicationCategory(Path: string | Win32Pointer, PathLength: number, Extra: string | Win32Pointer, ExtraLength: number, pPermittedLspCategories: Win32Pointer, lpErrno: Win32Pointer): number;
+  WSCGetApplicationCategory(
+    Path: string | Win32Pointer,
+    PathLength: number,
+    Extra: string | Win32Pointer,
+    ExtraLength: number,
+    pPermittedLspCategories: Win32Pointer,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCGetProviderInfo */
-  WSCGetProviderInfo(lpProviderId: Win32Pointer, InfoType: number, Info: Win32Pointer, InfoSize: Win32Pointer, Flags: number, lpErrno: Win32Pointer): number;
+  WSCGetProviderInfo(
+    lpProviderId: Win32Pointer,
+    InfoType: number,
+    Info: Win32Pointer,
+    InfoSize: Win32Pointer,
+    Flags: number,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCGetProviderInfo32 */
-  WSCGetProviderInfo32(lpProviderId: Win32Pointer, InfoType: number, Info: Win32Pointer, InfoSize: Win32Pointer, Flags: number, lpErrno: Win32Pointer): number;
+  WSCGetProviderInfo32(
+    lpProviderId: Win32Pointer,
+    InfoType: number,
+    Info: Win32Pointer,
+    InfoSize: Win32Pointer,
+    Flags: number,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCGetProviderPath */
-  WSCGetProviderPath(lpProviderId: Win32Pointer, lpszProviderDllPath: string | Win32Pointer, lpProviderDllPathLen: Win32Pointer, lpErrno: Win32Pointer): number;
+  WSCGetProviderPath(
+    lpProviderId: Win32Pointer,
+    lpszProviderDllPath: string | Win32Pointer,
+    lpProviderDllPathLen: Win32Pointer,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCGetProviderPath32 */
-  WSCGetProviderPath32(lpProviderId: Win32Pointer, lpszProviderDllPath: string | Win32Pointer, lpProviderDllPathLen: Win32Pointer, lpErrno: Win32Pointer): number;
+  WSCGetProviderPath32(
+    lpProviderId: Win32Pointer,
+    lpszProviderDllPath: string | Win32Pointer,
+    lpProviderDllPathLen: Win32Pointer,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCInstallNameSpace */
-  WSCInstallNameSpace(lpszIdentifier: string | Win32Pointer, lpszPathName: string | Win32Pointer, dwNameSpace: number, dwVersion: number, lpProviderId: Win32Pointer): number;
+  WSCInstallNameSpace(
+    lpszIdentifier: string | Win32Pointer,
+    lpszPathName: string | Win32Pointer,
+    dwNameSpace: number,
+    dwVersion: number,
+    lpProviderId: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCInstallNameSpace32 */
-  WSCInstallNameSpace32(lpszIdentifier: string | Win32Pointer, lpszPathName: string | Win32Pointer, dwNameSpace: number, dwVersion: number, lpProviderId: Win32Pointer): number;
+  WSCInstallNameSpace32(
+    lpszIdentifier: string | Win32Pointer,
+    lpszPathName: string | Win32Pointer,
+    dwNameSpace: number,
+    dwVersion: number,
+    lpProviderId: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCInstallNameSpaceEx */
-  WSCInstallNameSpaceEx(lpszIdentifier: string | Win32Pointer, lpszPathName: string | Win32Pointer, dwNameSpace: number, dwVersion: number, lpProviderId: Win32Pointer, lpProviderSpecific: Win32Pointer): number;
+  WSCInstallNameSpaceEx(
+    lpszIdentifier: string | Win32Pointer,
+    lpszPathName: string | Win32Pointer,
+    dwNameSpace: number,
+    dwVersion: number,
+    lpProviderId: Win32Pointer,
+    lpProviderSpecific: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCInstallNameSpaceEx32 */
-  WSCInstallNameSpaceEx32(lpszIdentifier: string | Win32Pointer, lpszPathName: string | Win32Pointer, dwNameSpace: number, dwVersion: number, lpProviderId: Win32Pointer, lpProviderSpecific: Win32Pointer): number;
+  WSCInstallNameSpaceEx32(
+    lpszIdentifier: string | Win32Pointer,
+    lpszPathName: string | Win32Pointer,
+    dwNameSpace: number,
+    dwVersion: number,
+    lpProviderId: Win32Pointer,
+    lpProviderSpecific: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCInstallProvider */
-  WSCInstallProvider(lpProviderId: Win32Pointer, lpszProviderDllPath: string | Win32Pointer, lpProtocolInfoList: Win32Pointer, dwNumberOfEntries: number, lpErrno: Win32Pointer): number;
+  WSCInstallProvider(
+    lpProviderId: Win32Pointer,
+    lpszProviderDllPath: string | Win32Pointer,
+    lpProtocolInfoList: Win32Pointer,
+    dwNumberOfEntries: number,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCInstallProvider64_32 */
-  WSCInstallProvider64_32(lpProviderId: Win32Pointer, lpszProviderDllPath: string | Win32Pointer, lpProtocolInfoList: Win32Pointer, dwNumberOfEntries: number, lpErrno: Win32Pointer): number;
+  WSCInstallProvider64_32(
+    lpProviderId: Win32Pointer,
+    lpszProviderDllPath: string | Win32Pointer,
+    lpProtocolInfoList: Win32Pointer,
+    dwNumberOfEntries: number,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCInstallProviderAndChains64_32 */
-  WSCInstallProviderAndChains64_32(lpProviderId: Win32Pointer, lpszProviderDllPath: string | Win32Pointer, lpszProviderDllPath32: string | Win32Pointer, lpszLspName: string | Win32Pointer, dwServiceFlags: number, lpProtocolInfoList: Win32Pointer, dwNumberOfEntries: number, lpdwCatalogEntryId: Win32Pointer, lpErrno: Win32Pointer): number;
+  WSCInstallProviderAndChains64_32(
+    lpProviderId: Win32Pointer,
+    lpszProviderDllPath: string | Win32Pointer,
+    lpszProviderDllPath32: string | Win32Pointer,
+    lpszLspName: string | Win32Pointer,
+    dwServiceFlags: number,
+    lpProtocolInfoList: Win32Pointer,
+    dwNumberOfEntries: number,
+    lpdwCatalogEntryId: Win32Pointer,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCSetApplicationCategory */
-  WSCSetApplicationCategory(Path: string | Win32Pointer, PathLength: number, Extra: string | Win32Pointer, ExtraLength: number, PermittedLspCategories: number, pPrevPermLspCat: Win32Pointer, lpErrno: Win32Pointer): number;
+  WSCSetApplicationCategory(
+    Path: string | Win32Pointer,
+    PathLength: number,
+    Extra: string | Win32Pointer,
+    ExtraLength: number,
+    PermittedLspCategories: number,
+    pPrevPermLspCat: Win32Pointer,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCSetProviderInfo */
-  WSCSetProviderInfo(lpProviderId: Win32Pointer, InfoType: number, Info: Win32Pointer, InfoSize: number | bigint, Flags: number, lpErrno: Win32Pointer): number;
+  WSCSetProviderInfo(
+    lpProviderId: Win32Pointer,
+    InfoType: number,
+    Info: Win32Pointer,
+    InfoSize: number | bigint,
+    Flags: number,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCSetProviderInfo32 */
-  WSCSetProviderInfo32(lpProviderId: Win32Pointer, InfoType: number, Info: Win32Pointer, InfoSize: number | bigint, Flags: number, lpErrno: Win32Pointer): number;
+  WSCSetProviderInfo32(
+    lpProviderId: Win32Pointer,
+    InfoType: number,
+    Info: Win32Pointer,
+    InfoSize: number | bigint,
+    Flags: number,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCUnInstallNameSpace */
   WSCUnInstallNameSpace(lpProviderId: Win32Pointer): number;
   /** ws2_32.dll!WSCUnInstallNameSpace32 */
   WSCUnInstallNameSpace32(lpProviderId: Win32Pointer): number;
   /** ws2_32.dll!WSCUpdateProvider */
-  WSCUpdateProvider(lpProviderId: Win32Pointer, lpszProviderDllPath: string | Win32Pointer, lpProtocolInfoList: Win32Pointer, dwNumberOfEntries: number, lpErrno: Win32Pointer): number;
+  WSCUpdateProvider(
+    lpProviderId: Win32Pointer,
+    lpszProviderDllPath: string | Win32Pointer,
+    lpProtocolInfoList: Win32Pointer,
+    dwNumberOfEntries: number,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCUpdateProvider32 */
-  WSCUpdateProvider32(lpProviderId: Win32Pointer, lpszProviderDllPath: string | Win32Pointer, lpProtocolInfoList: Win32Pointer, dwNumberOfEntries: number, lpErrno: Win32Pointer): number;
+  WSCUpdateProvider32(
+    lpProviderId: Win32Pointer,
+    lpszProviderDllPath: string | Win32Pointer,
+    lpProtocolInfoList: Win32Pointer,
+    dwNumberOfEntries: number,
+    lpErrno: Win32Pointer,
+  ): number;
   /** ws2_32.dll!WSCWriteNameSpaceOrder */
   WSCWriteNameSpaceOrder(lpProviderId: Win32Pointer, dwNumberOfEntries: number): number;
   /** ws2_32.dll!WSCWriteNameSpaceOrder32 */
@@ -295,7 +801,12 @@ interface Functions {
   /** ws2_32.dll!freeaddrinfo */
   freeaddrinfo(pAddrInfo: Win32Pointer): void;
   /** ws2_32.dll!getaddrinfo */
-  getaddrinfo(pNodeName: string | Win32Pointer, pServiceName: string | Win32Pointer, pHints: Win32Pointer, ppResult: Win32Pointer): number;
+  getaddrinfo(
+    pNodeName: string | Win32Pointer,
+    pServiceName: string | Win32Pointer,
+    pHints: Win32Pointer,
+    ppResult: Win32Pointer,
+  ): number;
   /** ws2_32.dll!gethostbyaddr */
   gethostbyaddr(addr: string | Win32Pointer, len: number, type: number): number | null;
   /** ws2_32.dll!gethostbyname */
@@ -303,7 +814,15 @@ interface Functions {
   /** ws2_32.dll!gethostname */
   gethostname(name: string | Win32Pointer, namelen: number): number;
   /** ws2_32.dll!getnameinfo */
-  getnameinfo(pSockaddr: Win32Pointer, SockaddrLength: number, pNodeBuffer: string | Win32Pointer, NodeBufferSize: number, pServiceBuffer: string | Win32Pointer, ServiceBufferSize: number, Flags: number): number;
+  getnameinfo(
+    pSockaddr: Win32Pointer,
+    SockaddrLength: number,
+    pNodeBuffer: string | Win32Pointer,
+    NodeBufferSize: number,
+    pServiceBuffer: string | Win32Pointer,
+    ServiceBufferSize: number,
+    Flags: number,
+  ): number;
   /** ws2_32.dll!getpeername */
   getpeername(s: number | bigint, name: Win32Pointer, namelen: Win32Pointer): number;
   /** ws2_32.dll!getprotobyname */
@@ -317,7 +836,13 @@ interface Functions {
   /** ws2_32.dll!getsockname */
   getsockname(s: number | bigint, name: Win32Pointer, namelen: Win32Pointer): number;
   /** ws2_32.dll!getsockopt */
-  getsockopt(s: number | bigint, level: number, optname: number, optval: string | Win32Pointer, optlen: Win32Pointer): number;
+  getsockopt(
+    s: number | bigint,
+    level: number,
+    optname: number,
+    optval: string | Win32Pointer,
+    optlen: Win32Pointer,
+  ): number;
   /** ws2_32.dll!htonl */
   htonl(hostlong: number): number;
   /** ws2_32.dll!htons */
@@ -327,7 +852,12 @@ interface Functions {
   /** ws2_32.dll!inet_ntoa */
   inet_ntoa(arg0: Win32StructInit): number | null;
   /** ws2_32.dll!inet_ntop */
-  inet_ntop(Family: number, pAddr: Win32Pointer, pStringBuf: string | Win32Pointer, StringBufSize: number | bigint): number | null;
+  inet_ntop(
+    Family: number,
+    pAddr: Win32Pointer,
+    pStringBuf: string | Win32Pointer,
+    StringBufSize: number | bigint,
+  ): number | null;
   /** ws2_32.dll!inet_pton */
   inet_pton(Family: number, pszAddrString: string | Win32Pointer, pAddrBuf: Win32Pointer): number;
   /** ws2_32.dll!ioctlsocket */
@@ -341,13 +871,33 @@ interface Functions {
   /** ws2_32.dll!recv */
   recv(s: number | bigint, buf: string | Win32Pointer, len: number, flags: number): number;
   /** ws2_32.dll!recvfrom */
-  recvfrom(s: number | bigint, buf: string | Win32Pointer, len: number, flags: number, from: Win32Pointer, fromlen: Win32Pointer): number;
+  recvfrom(
+    s: number | bigint,
+    buf: string | Win32Pointer,
+    len: number,
+    flags: number,
+    from: Win32Pointer,
+    fromlen: Win32Pointer,
+  ): number;
   /** ws2_32.dll!select */
-  select(nfds: number, readfds: Win32Pointer, writefds: Win32Pointer, exceptfds: Win32Pointer, timeout: Win32Pointer): number;
+  select(
+    nfds: number,
+    readfds: Win32Pointer,
+    writefds: Win32Pointer,
+    exceptfds: Win32Pointer,
+    timeout: Win32Pointer,
+  ): number;
   /** ws2_32.dll!send */
   send(s: number | bigint, buf: string | Win32Pointer, len: number, flags: number): number;
   /** ws2_32.dll!sendto */
-  sendto(s: number | bigint, buf: string | Win32Pointer, len: number, flags: number, to: Win32Pointer, tolen: number): number;
+  sendto(
+    s: number | bigint,
+    buf: string | Win32Pointer,
+    len: number,
+    flags: number,
+    to: Win32Pointer,
+    tolen: number,
+  ): number;
   /** ws2_32.dll!setsockopt */
   setsockopt(s: number | bigint, level: number, optname: number, optval: string | Win32Pointer, optlen: number): number;
   /** ws2_32.dll!shutdown */

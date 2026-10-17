@@ -2,23 +2,126 @@
   "schemaVersion": 1,
   "note": "Upstream release binaries bep installs into the gitignored usr/ root. `asset` patterns match one release asset per platform; `exe` names the launcher inside the archive.",
   "packages": {
-    "melonds": { "console": "nintendo-ds-dsi", "repo": "melonDS-emu/melonDS", "source": "vendor/melonds", "asset": { "win32-x64": "windows-x86_64\\.zip$", "linux-x64": "appimage-x86_64\\.zip$" }, "exe": "melonDS" },
-    "pcsx2": { "console": "sony-playstation-2", "repo": "PCSX2/pcsx2", "source": "vendor/pcsx2", "asset": { "win32-x64": "windows-x64-Qt\\.7z$", "linux-x64": "linux-appimage-x64-Qt\\.AppImage$" }, "exe": "pcsx2-qt" },
-    "duckstation": { "console": "sony-playstation", "repo": "stenzek/duckstation", "asset": { "win32-x64": "^duckstation-windows-x64-release\\.zip$", "linux-x64": "^DuckStation-x64\\.AppImage$" }, "exe": "duckstation-qt-x64-ReleaseLTCG" },
-    "azahar": { "console": "nintendo-3ds", "repo": "azahar-emu/azahar", "source": "vendor/azahar", "asset": { "win32-x64": "^azahar-windows-msvc-[0-9.]+\\.zip$", "linux-x64": "^azahar.*x86_64.*\\.AppImage$" }, "exe": "azahar" },
-    "cemu": { "console": "nintendo-wii-u", "repo": "cemu-project/Cemu", "asset": { "win32-x64": "windows-x64\\.zip$", "linux-x64": "x86_64\\.AppImage$" }, "exe": "Cemu" },
-    "mgba": { "console": "nintendo-game-boy-advance", "repo": "mgba-emu/mgba", "asset": { "win32-x64": "win64\\.7z$", "linux-x64": "appimage-x64\\.appimage$" }, "exe": "mGBA" },
-    "rpcs3": { "console": "sony-playstation-3", "repo": "RPCS3/rpcs3-binaries-win", "asset": { "win32-x64": "win64_msvc\\.7z$" }, "exe": "rpcs3" },
-    "ares": { "console": "multi-system", "repo": "ares-emulator/ares", "source": "vendor/ares", "asset": { "win32-x64": "^ares-windows-x64\\.zip$" }, "exe": "ares" },
-    "xemu": { "console": "microsoft-xbox", "repo": "xemu-project/xemu", "asset": { "win32-x64": "^xemu-[0-9.]+-windows-x86_64\\.zip$", "linux-x64": "^xemu-[0-9.]+-x86_64\\.AppImage$" }, "exe": "xemu" },
-    "flycast": { "console": "sega-dreamcast", "repo": "flyinghead/flycast", "asset": { "win32-x64": "win64-[0-9.]+\\.zip$", "linux-x64": "x86_64-[0-9.]+\\.AppImage$" }, "exe": "flycast" },
-    "vita3k": { "console": "sony-playstation-vita", "repo": "Vita3K/Vita3K", "asset": { "win32-x64": "^windows-latest\\.zip$", "linux-x64": "^Vita3K-x86_64\\.AppImage$" }, "exe": "Vita3K" },
-    "shadps4": { "console": "sony-playstation-4", "repo": "shadps4-emu/shadPS4", "asset": { "win32-x64": "win64-sdl.*\\.zip$", "linux-x64": "linux-sdl.*\\.zip$" }, "exe": "shadps4" },
-    "ppsspp": { "console": "sony-psp", "repo": "hrydgard/ppsspp", "asset": { "win32-x64": "Windows-x64\\.zip$", "linux-x64": "anylinux-x86_64\\.AppImage$" }, "exe": "PPSSPPWindows64" },
-    "mame": { "console": "multi-system", "repo": "mamedev/mame", "source": "vendor/mame", "asset": { "win32-x64": "_x64\\.exe$" }, "exe": "mame", "selfExtracting": true },
-    "tetanes": { "console": "nintendo-nes", "repo": "lukexor/tetanes", "source": "vendor/tetanes", "asset": { "win32-x64": "x86_64-pc-windows-msvc\\.zip$", "linux-x64": "x86_64-unknown-linux-gnu\\.tar\\.gz$" }, "exe": "tetanes" },
-    "gopher64": { "console": "nintendo-64", "repo": "gopher64/gopher64", "source": "vendor/gopher64", "asset": { "win32-x64": "^gopher64-windows-x86_64\\.exe$", "linux-x64": "^gopher64-linux-x86_64$" }, "exe": "gopher64" },
-    "jgenesis": { "console": "multi-system", "repo": "jsgroth/jgenesis", "source": "vendor/jgenesis", "asset": { "win32-x64": "windows-x86_64\\.zip$", "linux-x64": "x86_64\\.AppImage$" }, "exe": "jgenesis-gui" },
-    "retroarch": { "console": "multi-system", "repo": "libretro/RetroArch", "source": "vendor/retroarch", "url": { "win32-x64": "https://buildbot.libretro.com/stable/{version}/windows/x86_64/RetroArch.7z", "linux-x64": "https://buildbot.libretro.com/stable/{version}/linux/x86_64/RetroArch.7z" }, "exe": "retroarch" }
+    "melonds": {
+      "console": "nintendo-ds-dsi",
+      "repo": "melonDS-emu/melonDS",
+      "source": "vendor/melonds",
+      "asset": { "win32-x64": "windows-x86_64\\.zip$", "linux-x64": "appimage-x86_64\\.zip$" },
+      "exe": "melonDS"
+    },
+    "pcsx2": {
+      "console": "sony-playstation-2",
+      "repo": "PCSX2/pcsx2",
+      "source": "vendor/pcsx2",
+      "asset": { "win32-x64": "windows-x64-Qt\\.7z$", "linux-x64": "linux-appimage-x64-Qt\\.AppImage$" },
+      "exe": "pcsx2-qt"
+    },
+    "duckstation": {
+      "console": "sony-playstation",
+      "repo": "stenzek/duckstation",
+      "asset": { "win32-x64": "^duckstation-windows-x64-release\\.zip$", "linux-x64": "^DuckStation-x64\\.AppImage$" },
+      "exe": "duckstation-qt-x64-ReleaseLTCG"
+    },
+    "azahar": {
+      "console": "nintendo-3ds",
+      "repo": "azahar-emu/azahar",
+      "source": "vendor/azahar",
+      "asset": { "win32-x64": "^azahar-windows-msvc-[0-9.]+\\.zip$", "linux-x64": "^azahar.*x86_64.*\\.AppImage$" },
+      "exe": "azahar"
+    },
+    "cemu": {
+      "console": "nintendo-wii-u",
+      "repo": "cemu-project/Cemu",
+      "asset": { "win32-x64": "windows-x64\\.zip$", "linux-x64": "x86_64\\.AppImage$" },
+      "exe": "Cemu"
+    },
+    "mgba": {
+      "console": "nintendo-game-boy-advance",
+      "repo": "mgba-emu/mgba",
+      "asset": { "win32-x64": "win64\\.7z$", "linux-x64": "appimage-x64\\.appimage$" },
+      "exe": "mGBA"
+    },
+    "rpcs3": {
+      "console": "sony-playstation-3",
+      "repo": "RPCS3/rpcs3-binaries-win",
+      "asset": { "win32-x64": "win64_msvc\\.7z$" },
+      "exe": "rpcs3"
+    },
+    "ares": {
+      "console": "multi-system",
+      "repo": "ares-emulator/ares",
+      "source": "vendor/ares",
+      "asset": { "win32-x64": "^ares-windows-x64\\.zip$" },
+      "exe": "ares"
+    },
+    "xemu": {
+      "console": "microsoft-xbox",
+      "repo": "xemu-project/xemu",
+      "asset": { "win32-x64": "^xemu-[0-9.]+-windows-x86_64\\.zip$", "linux-x64": "^xemu-[0-9.]+-x86_64\\.AppImage$" },
+      "exe": "xemu"
+    },
+    "flycast": {
+      "console": "sega-dreamcast",
+      "repo": "flyinghead/flycast",
+      "asset": { "win32-x64": "win64-[0-9.]+\\.zip$", "linux-x64": "x86_64-[0-9.]+\\.AppImage$" },
+      "exe": "flycast"
+    },
+    "vita3k": {
+      "console": "sony-playstation-vita",
+      "repo": "Vita3K/Vita3K",
+      "asset": { "win32-x64": "^windows-latest\\.zip$", "linux-x64": "^Vita3K-x86_64\\.AppImage$" },
+      "exe": "Vita3K"
+    },
+    "shadps4": {
+      "console": "sony-playstation-4",
+      "repo": "shadps4-emu/shadPS4",
+      "asset": { "win32-x64": "win64-sdl.*\\.zip$", "linux-x64": "linux-sdl.*\\.zip$" },
+      "exe": "shadps4"
+    },
+    "ppsspp": {
+      "console": "sony-psp",
+      "repo": "hrydgard/ppsspp",
+      "asset": { "win32-x64": "Windows-x64\\.zip$", "linux-x64": "anylinux-x86_64\\.AppImage$" },
+      "exe": "PPSSPPWindows64"
+    },
+    "mame": {
+      "console": "multi-system",
+      "repo": "mamedev/mame",
+      "source": "vendor/mame",
+      "asset": { "win32-x64": "_x64\\.exe$" },
+      "exe": "mame",
+      "selfExtracting": true
+    },
+    "tetanes": {
+      "console": "nintendo-nes",
+      "repo": "lukexor/tetanes",
+      "source": "vendor/tetanes",
+      "asset": { "win32-x64": "x86_64-pc-windows-msvc\\.zip$", "linux-x64": "x86_64-unknown-linux-gnu\\.tar\\.gz$" },
+      "exe": "tetanes"
+    },
+    "gopher64": {
+      "console": "nintendo-64",
+      "repo": "gopher64/gopher64",
+      "source": "vendor/gopher64",
+      "asset": { "win32-x64": "^gopher64-windows-x86_64\\.exe$", "linux-x64": "^gopher64-linux-x86_64$" },
+      "exe": "gopher64"
+    },
+    "jgenesis": {
+      "console": "multi-system",
+      "repo": "jsgroth/jgenesis",
+      "source": "vendor/jgenesis",
+      "asset": { "win32-x64": "windows-x86_64\\.zip$", "linux-x64": "x86_64\\.AppImage$" },
+      "exe": "jgenesis-gui"
+    },
+    "retroarch": {
+      "console": "multi-system",
+      "repo": "libretro/RetroArch",
+      "source": "vendor/retroarch",
+      "url": {
+        "win32-x64": "https://buildbot.libretro.com/stable/{version}/windows/x86_64/RetroArch.7z",
+        "linux-x64": "https://buildbot.libretro.com/stable/{version}/linux/x86_64/RetroArch.7z"
+      },
+      "exe": "retroarch"
+    }
   }
 }

@@ -26,8 +26,7 @@ export interface InputBaseProps extends VariantProps<typeof inputStyles> {
   supportingText?: ReactNode;
 }
 
-export type InputProps = InputBaseProps &
-  Omit<React.ComponentProps<"input">, "size">;
+export type InputProps = InputBaseProps & Omit<React.ComponentProps<"input">, "size">;
 
 export type TextareaProps = InputBaseProps & React.ComponentProps<"textarea">;
 
@@ -42,8 +41,7 @@ export const inputSizes = {
 
 type InputSize = keyof typeof inputSizes;
 
-const isDense = (size: InputSize | null | undefined) =>
-  size === "xs" || size === "sm";
+const isDense = (size: InputSize | null | undefined) => size === "xs" || size === "sm";
 
 const outlined = [
   "rounded-extra-small border border-outline bg-transparent",
@@ -104,23 +102,8 @@ export const inputStyles = cva(
   },
 );
 
-function SupportingText({
-  error,
-  children,
-}: {
-  error?: boolean | null;
-  children: ReactNode;
-}) {
-  return (
-    <p
-      className={clsx(
-        "px-4 text-body-small",
-        error ? "text-error" : "text-on-surface-variant",
-      )}
-    >
-      {children}
-    </p>
-  );
+function SupportingText({ error, children }: { error?: boolean | null; children: ReactNode }) {
+  return <p className={clsx("px-4 text-body-small", error ? "text-error" : "text-on-surface-variant")}>{children}</p>;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -155,23 +138,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           }),
         )}
       >
-        <div
-          className={clsx(
-            "flex h-full flex-1 overflow-hidden",
-            iconPosition === "right" && "flex-row-reverse",
-          )}
-        >
+        <div className={clsx("flex h-full flex-1 overflow-hidden", iconPosition === "right" && "flex-row-reverse")}>
           {icon && (
             <div
               className={clsx(
                 "flex h-full items-center text-on-surface-variant",
-                iconPosition === "left"
-                  ? dense
-                    ? "pl-2 pr-2"
-                    : "pl-3 pr-4"
-                  : dense
-                    ? "pl-2 pr-2"
-                    : "pl-4 pr-3",
+                iconPosition === "left" ? (dense ? "pl-2 pr-2" : "pl-3 pr-4") : dense ? "pl-2 pr-2" : "pl-4 pr-3",
               )}
             >
               {renderIcon(icon, {
@@ -191,7 +163,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               resolvedSize === "xs" && "py-0",
               inputElementClassName,
             )}
-            onKeyDown={(e) => {
+            onKeyDown={e => {
               e.stopPropagation();
             }}
             ref={ref}
@@ -203,10 +175,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
         {right && (
           <div
-            className={clsx(
-              "flex h-full min-w-[12px] items-center text-on-surface-variant",
-              dense ? "px-0.5" : "px-1",
-            )}
+            className={clsx("flex h-full min-w-[12px] items-center text-on-surface-variant", dense ? "px-0.5" : "px-1")}
           >
             {right}
           </div>
@@ -228,9 +197,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 Input.displayName = "Input";
 
 /** @deprecated Use `SearchBar` instead. */
-export const SearchInput = forwardRef<HTMLInputElement, InputProps>(
-  (props, ref) => <Input {...props} ref={ref} icon="search" />,
-);
+export const SearchInput = forwardRef<HTMLInputElement, InputProps>((props, ref) => (
+  <Input {...props} ref={ref} icon="search" />
+));
 
 SearchInput.displayName = "SearchInput";
 
@@ -257,14 +226,12 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {...props}
         ref={ref}
         aria-invalid={error ? true : undefined}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           e.stopPropagation();
         }}
         className={clsx(
           "h-auto placeholder:text-on-surface-variant",
-          dense
-            ? "min-h-9 px-3 py-2 text-body-medium"
-            : "min-h-14 px-4 py-4 text-body-large",
+          dense ? "min-h-9 px-3 py-2 text-body-medium" : "min-h-14 px-4 py-4 text-body-large",
           inputStyles({ size: null, variant, error }),
           "disabled:cursor-not-allowed disabled:opacity-38",
           className,
@@ -285,10 +252,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
 TextArea.displayName = "TextArea";
 
-export interface LabelProps extends Omit<
-  React.ComponentProps<"label">,
-  "htmlFor"
-> {
+export interface LabelProps extends Omit<React.ComponentProps<"label">, "htmlFor"> {
   slug?: string;
 }
 
@@ -310,46 +274,44 @@ interface PasswordInputProps extends InputProps {
   buttonClassnames?: string;
 }
 
-export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
-  ({ buttonClassnames, ...props }, ref) => {
-    const [showPassword, setShowPassword] = useState(false);
-    const dense = isDense(props.size);
+export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(({ buttonClassnames, ...props }, ref) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const dense = isDense(props.size);
 
-    return (
-      <Input
-        {...props}
-        type={showPassword ? "text" : "password"}
-        ref={ref}
-        onKeyDown={(e) => {
-          e.stopPropagation();
-        }}
-        right={
-          <button
-            type="button"
-            tabIndex={0}
-            onClick={() => setShowPassword(!showPassword)}
-            aria-label={showPassword ? "Hide Password" : "Show Password"}
-            aria-pressed={showPassword}
-            disabled={props.disabled}
-            className={clsx(
-              "inline-flex shrink-0 items-center justify-center rounded-full text-on-surface-variant outline-none",
-              "transition-colors duration-200 ease-standard hover:bg-on-surface-variant/8 active:bg-on-surface-variant/10",
-              "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-secondary",
-              "disabled:pointer-events-none disabled:opacity-38",
-              dense ? "size-8" : "size-10",
-              buttonClassnames,
-            )}
-          >
-            <Icon
-              name={showPassword ? "visibility_off" : "visibility"}
-              size={dense ? 20 : 24}
-              className="pointer-events-none"
-            />
-          </button>
-        }
-      />
-    );
-  },
-);
+  return (
+    <Input
+      {...props}
+      type={showPassword ? "text" : "password"}
+      ref={ref}
+      onKeyDown={e => {
+        e.stopPropagation();
+      }}
+      right={
+        <button
+          type="button"
+          tabIndex={0}
+          onClick={() => setShowPassword(!showPassword)}
+          aria-label={showPassword ? "Hide Password" : "Show Password"}
+          aria-pressed={showPassword}
+          disabled={props.disabled}
+          className={clsx(
+            "inline-flex shrink-0 items-center justify-center rounded-full text-on-surface-variant outline-none",
+            "transition-colors duration-200 ease-standard hover:bg-on-surface-variant/8 active:bg-on-surface-variant/10",
+            "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-secondary",
+            "disabled:pointer-events-none disabled:opacity-38",
+            dense ? "size-8" : "size-10",
+            buttonClassnames,
+          )}
+        >
+          <Icon
+            name={showPassword ? "visibility_off" : "visibility"}
+            size={dense ? 20 : 24}
+            className="pointer-events-none"
+          />
+        </button>
+      }
+    />
+  );
+});
 
 PasswordInput.displayName = "PasswordInput";

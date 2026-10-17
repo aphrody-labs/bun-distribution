@@ -15,15 +15,13 @@ export function SpeedGraph({ jobId, speedHistory }: SpeedGraphProps) {
   if (speedHistory.length === 0) {
     return (
       <div className="h-24 bg-surface-container-low rounded-medium flex items-center justify-center">
-        <span className="text-body-small text-on-surface-variant">
-          No speed data yet
-        </span>
+        <span className="text-body-small text-on-surface-variant">No speed data yet</span>
       </div>
     );
   }
 
   // Calculate stats
-  const rates = speedHistory.map((s) => s.bytesPerSecond);
+  const rates = speedHistory.map(s => s.bytesPerSecond);
   const maxRate = Math.max(...rates);
   const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
 
@@ -33,27 +31,17 @@ export function SpeedGraph({ jobId, speedHistory }: SpeedGraphProps) {
         <span className="text-title-small text-on-surface">Transfer speed</span>
         <div className="flex gap-3 text-label-small">
           <span className="text-on-surface-variant">
-            Avg:{" "}
-            <span className="text-on-surface font-medium">
-              {formatSpeed(avgRate)}
-            </span>
+            Avg: <span className="text-on-surface font-medium">{formatSpeed(avgRate)}</span>
           </span>
           <span className="text-on-surface-variant">
-            Peak:{" "}
-            <span className="text-on-surface font-medium">
-              {formatSpeed(maxRate)}
-            </span>
+            Peak: <span className="text-on-surface font-medium">{formatSpeed(maxRate)}</span>
           </span>
         </div>
       </div>
 
       {/* Speed graph */}
       <div className="h-24 bg-surface-container-low rounded-medium border border-outline-variant overflow-hidden">
-        <SpeedGraphVisualization
-          jobId={jobId}
-          speedHistory={speedHistory}
-          maxRate={maxRate}
-        />
+        <SpeedGraphVisualization jobId={jobId} speedHistory={speedHistory} maxRate={maxRate} />
       </div>
     </div>
   );
@@ -103,9 +91,7 @@ function SpeedGraphVisualization({
     if (index === 0) {
       acc.push(sample.bytesPerSecond);
     } else {
-      const smoothed =
-        acc[index - 1] +
-        smoothingFactor * (sample.bytesPerSecond - acc[index - 1]);
+      const smoothed = acc[index - 1] + smoothingFactor * (sample.bytesPerSecond - acc[index - 1]);
       acc.push(smoothed);
     }
     return acc;
@@ -113,9 +99,7 @@ function SpeedGraphVisualization({
 
   // Generate points for the line using smoothed rates
   const points = smoothedRates.map((smoothedRate, index) => {
-    const x =
-      padding.left +
-      (index / Math.max(speedHistory.length - 1, 1)) * graphWidth;
+    const x = padding.left + (index / Math.max(speedHistory.length - 1, 1)) * graphWidth;
     const y = padding.top + graphHeight - (smoothedRate / yMax) * graphHeight;
     return { x, y, rate: smoothedRate };
   });
@@ -136,28 +120,14 @@ function SpeedGraphVisualization({
       <svg width={width} height={height} className="w-full h-full">
         <defs>
           {/* Gradient fill for area under curve */}
-          <linearGradient
-            id={`speed-gradient-${jobId}`}
-            x1="0%"
-            y1="0%"
-            x2="0%"
-            y2="100%"
-          >
-            <stop
-              offset="0%"
-              stopOpacity="0.3"
-              style={{ stopColor: "var(--md-sys-color-primary)" }}
-            />
-            <stop
-              offset="100%"
-              stopOpacity="0.05"
-              style={{ stopColor: "var(--md-sys-color-primary)" }}
-            />
+          <linearGradient id={`speed-gradient-${jobId}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopOpacity="0.3" style={{ stopColor: "var(--md-sys-color-primary)" }} />
+            <stop offset="100%" stopOpacity="0.05" style={{ stopColor: "var(--md-sys-color-primary)" }} />
           </linearGradient>
         </defs>
 
         {/* Grid lines for reference */}
-        {[0.25, 0.5, 0.75].map((fraction) => {
+        {[0.25, 0.5, 0.75].map(fraction => {
           const y = padding.top + graphHeight * fraction;
           return (
             <line
@@ -174,9 +144,7 @@ function SpeedGraphVisualization({
         })}
 
         {/* Area fill */}
-        {areaPath && (
-          <path d={areaPath} fill={`url(#speed-gradient-${jobId})`} />
-        )}
+        {areaPath && <path d={areaPath} fill={`url(#speed-gradient-${jobId})`} />}
 
         {/* Line graph */}
         {linePath && (
@@ -209,9 +177,7 @@ function SpeedGraphVisualization({
 }
 
 // Generate smooth path using cubic bezier curves (Catmull-Rom inspired)
-function generateSmoothPath(
-  points: Array<{ x: number; y: number; rate: number }>,
-): string {
+function generateSmoothPath(points: Array<{ x: number; y: number; rate: number }>): string {
   if (points.length === 0) return "";
   if (points.length === 1) return `M ${points[0].x},${points[0].y}`;
   if (points.length === 2) {

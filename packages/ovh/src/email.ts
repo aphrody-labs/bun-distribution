@@ -62,17 +62,13 @@ export class OvhEmail {
    * List all mailbox accounts for a domain.
    */
   public async listAccounts(domain: string): Promise<EmailAccount[]> {
-    const names = await this.client.get<string[]>(
-      `/email/domain/${domain}/account`,
-    );
+    const names = await this.client.get<string[]>(`/email/domain/${domain}/account`);
     if (!names || names.length === 0) return [];
 
     const accounts = await Promise.all(
-      names.map(async (name) => {
+      names.map(async name => {
         try {
-          return await this.client.get<EmailAccount>(
-            `/email/domain/${domain}/account/${name}`,
-          );
+          return await this.client.get<EmailAccount>(`/email/domain/${domain}/account/${name}`);
         } catch {
           return { accountName: name };
         }
@@ -86,16 +82,12 @@ export class OvhEmail {
    * List email redirections (aliases/forwarders) configured on a domain.
    */
   public async listRedirections(domain: string): Promise<EmailRedirection[]> {
-    const ids = await this.client.get<string[]>(
-      `/email/domain/${domain}/redirection`,
-    );
+    const ids = await this.client.get<string[]>(`/email/domain/${domain}/redirection`);
     if (!ids || ids.length === 0) return [];
 
     const redirections = await Promise.all(
-      ids.map(async (id) => {
-        return this.client.get<EmailRedirection>(
-          `/email/domain/${domain}/redirection/${id}`,
-        );
+      ids.map(async id => {
+        return this.client.get<EmailRedirection>(`/email/domain/${domain}/redirection/${id}`);
       }),
     );
 
@@ -116,14 +108,11 @@ export class OvhEmail {
       return { planned: true };
     }
 
-    const res = await this.client.post<EmailRedirection>(
-      `/email/domain/${domain}/redirection`,
-      {
-        from,
-        to,
-        localCopy,
-      },
-    );
+    const res = await this.client.post<EmailRedirection>(`/email/domain/${domain}/redirection`, {
+      from,
+      to,
+      localCopy,
+    });
 
     return { planned: false, redirection: res };
   }
@@ -140,9 +129,7 @@ export class OvhEmail {
       return { planned: true, deletedId: redirectionId };
     }
 
-    await this.client.delete(
-      `/email/domain/${domain}/redirection/${redirectionId}`,
-    );
+    await this.client.delete(`/email/domain/${domain}/redirection/${redirectionId}`);
     return { planned: false, deletedId: redirectionId };
   }
 
@@ -154,18 +141,15 @@ export class OvhEmail {
 
     // 1. Audit MX records
     const mxRecords = records
-      .filter(
-        (r) =>
-          r.fieldType === "MX" && (r.subDomain === "" || r.subDomain === "@"),
-      )
-      .map((r) => r.target);
+      .filter(r => r.fieldType === "MX" && (r.subDomain === "" || r.subDomain === "@"))
+      .map(r => r.target);
 
-    const hasOvhMx = mxRecords.some((t) => t.includes("mail.ovh.net"));
+    const hasOvhMx = mxRecords.some(t => t.includes("mail.ovh.net"));
     const mxValid = mxRecords.length > 0 && hasOvhMx;
 
     // 2. Audit SPF record
     const spfRec = records.find(
-      (r) =>
+      r =>
         (r.fieldType === "SPF" || r.fieldType === "TXT") &&
         (r.subDomain === "" || r.subDomain === "@") &&
         r.target.includes("v=spf1"),
@@ -174,50 +158,33 @@ export class OvhEmail {
 
     // 3. Audit DMARC
     const dmarcRec = records.find(
-      (r) =>
-        r.fieldType === "TXT" &&
-        r.subDomain === "_dmarc" &&
-        r.target.includes("v=DMARC1"),
+      r => r.fieldType === "TXT" && r.subDomain === "_dmarc" && r.target.includes("v=DMARC1"),
     );
     const dmarcValid = !!dmarcRec;
 
     // 4. Audit DKIM selectors
     const dkimRecords = records.filter(
-      (r) =>
-        r.subDomain.includes("._domainkey") &&
-        (r.fieldType === "CNAME" || r.fieldType === "TXT"),
+      r => r.subDomain.includes("._domainkey") && (r.fieldType === "CNAME" || r.fieldType === "TXT"),
     );
-    const dkimSelectors = dkimRecords.map(
-      (r) => `${r.subDomain} -> ${r.target}`,
-    );
+    const dkimSelectors = dkimRecords.map(r => `${r.subDomain} -> ${r.target}`);
     const dkimValid = dkimRecords.length >= 2;
 
     // 5. Autodiscover
-    const autodiscoverRec = records.find(
-      (r) => r.fieldType === "SRV" && r.subDomain.includes("_autodiscover"),
-    );
+    const autodiscoverRec = records.find(r => r.fieldType === "SRV" && r.subDomain.includes("_autodiscover"));
     const autodiscoverValid = !!autodiscoverRec;
 
     const recommendations: string[] = [];
     if (!mxValid) {
-      recommendations.push(
-        "Ensure OVH MX servers (1 mx0.mail.ovh.net, 5 mx1, 50 mx2, 100 mx3) are configured",
-      );
+      recommendations.push("Ensure OVH MX servers (1 mx0.mail.ovh.net, 5 mx1, 50 mx2, 100 mx3) are configured");
     }
     if (!spfValid) {
-      recommendations.push(
-        "Configure SPF record with 'v=spf1 include:mx.ovh.com ~all'",
-      );
+      recommendations.push("Configure SPF record with 'v=spf1 include:mx.ovh.com ~all'");
     }
     if (!dmarcValid) {
-      recommendations.push(
-        "Add DMARC policy record on _dmarc TXT: 'v=DMARC1; p=none; adkim=s; aspf=s'",
-      );
+      recommendations.push("Add DMARC policy record on _dmarc TXT: 'v=DMARC1; p=none; adkim=s; aspf=s'");
     }
     if (!dkimValid) {
-      recommendations.push(
-        "Ensure both ovhmo-selector-1 and ovhmo-selector-2 CNAME records are published for DKIM",
-      );
+      recommendations.push("Ensure both ovhmo-selector-1 and ovhmo-selector-2 CNAME records are published for DKIM");
     }
 
     let score: EmailDnsAuditScorecard["score"] = "SECURE";

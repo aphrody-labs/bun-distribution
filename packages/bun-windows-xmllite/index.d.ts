@@ -5,15 +5,39 @@ interface Functions {
   /** xmllite.dll!CreateXmlReader */
   CreateXmlReader(riid: Win32Pointer, ppvObject: Win32Pointer, pMalloc: Win32Pointer): number;
   /** xmllite.dll!CreateXmlReaderInputWithEncodingCodePage */
-  CreateXmlReaderInputWithEncodingCodePage(pInputStream: Win32Pointer, pMalloc: Win32Pointer, nEncodingCodePage: number, fEncodingHint: number, pwszBaseUri: string | Win32Pointer, ppInput: Win32Pointer): number;
+  CreateXmlReaderInputWithEncodingCodePage(
+    pInputStream: Win32Pointer,
+    pMalloc: Win32Pointer,
+    nEncodingCodePage: number,
+    fEncodingHint: number,
+    pwszBaseUri: string | Win32Pointer,
+    ppInput: Win32Pointer,
+  ): number;
   /** xmllite.dll!CreateXmlReaderInputWithEncodingName */
-  CreateXmlReaderInputWithEncodingName(pInputStream: Win32Pointer, pMalloc: Win32Pointer, pwszEncodingName: string | Win32Pointer, fEncodingHint: number, pwszBaseUri: string | Win32Pointer, ppInput: Win32Pointer): number;
+  CreateXmlReaderInputWithEncodingName(
+    pInputStream: Win32Pointer,
+    pMalloc: Win32Pointer,
+    pwszEncodingName: string | Win32Pointer,
+    fEncodingHint: number,
+    pwszBaseUri: string | Win32Pointer,
+    ppInput: Win32Pointer,
+  ): number;
   /** xmllite.dll!CreateXmlWriter */
   CreateXmlWriter(riid: Win32Pointer, ppvObject: Win32Pointer, pMalloc: Win32Pointer): number;
   /** xmllite.dll!CreateXmlWriterOutputWithEncodingCodePage */
-  CreateXmlWriterOutputWithEncodingCodePage(pOutputStream: Win32Pointer, pMalloc: Win32Pointer, nEncodingCodePage: number, ppOutput: Win32Pointer): number;
+  CreateXmlWriterOutputWithEncodingCodePage(
+    pOutputStream: Win32Pointer,
+    pMalloc: Win32Pointer,
+    nEncodingCodePage: number,
+    ppOutput: Win32Pointer,
+  ): number;
   /** xmllite.dll!CreateXmlWriterOutputWithEncodingName */
-  CreateXmlWriterOutputWithEncodingName(pOutputStream: Win32Pointer, pMalloc: Win32Pointer, pwszEncodingName: string | Win32Pointer, ppOutput: Win32Pointer): number;
+  CreateXmlWriterOutputWithEncodingName(
+    pOutputStream: Win32Pointer,
+    pMalloc: Win32Pointer,
+    pwszEncodingName: string | Win32Pointer,
+    ppOutput: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

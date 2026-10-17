@@ -23,13 +23,8 @@ export function useKeyframeDrag({
   displayedStartTime: MediaTime;
 }) {
   const editor = useEditor();
-  const {
-    selectedKeyframes,
-    isKeyframeSelected,
-    setKeyframeSelection,
-    toggleKeyframeSelection,
-    selectKeyframeRange,
-  } = useKeyframeSelection();
+  const { selectedKeyframes, isKeyframeSelected, setKeyframeSelection, toggleKeyframeSelection, selectKeyframeRange } =
+    useKeyframeSelection();
 
   const config: KeyframeDragConfig = {
     zoomLevel,
@@ -41,14 +36,12 @@ export function useKeyframeDrag({
     setKeyframeSelection,
     toggleKeyframeSelection,
     selectKeyframeRange,
-    executeCommand: (command) => editor.command.execute({ command }),
+    executeCommand: command => editor.command.execute({ command }),
     seek: ({ time }) => editor.playback.seek({ time }),
     getTotalDuration: () => editor.timeline.getTotalDuration(),
   };
   const configRef = useCommittedRef(config);
-  const [controller] = useState(
-    () => new KeyframeDragController({ configRef }),
-  );
+  const [controller] = useState(() => new KeyframeDragController({ configRef }));
 
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   useEffect(() => controller.subscribe(rerender), [controller]);

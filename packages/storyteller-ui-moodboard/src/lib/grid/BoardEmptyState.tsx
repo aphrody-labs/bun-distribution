@@ -19,29 +19,17 @@ export const BoardEmptyState = ({ onUpload, onLibrary }: Props) => {
         <span className="mb-5 rounded-full border border-ui-divider px-3 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-base-fg/50">
           Moodboard
         </span>
-        <h2 className="text-3xl font-semibold tracking-[-0.02em] text-base-fg">
-          Start collecting ideas
-        </h2>
+        <h2 className="text-3xl font-semibold tracking-[-0.02em] text-base-fg">Start collecting ideas</h2>
         <p className="mt-3 text-sm leading-relaxed text-base-fg/55">
-          Drag images in, paste from anywhere, or pull from your library.
-          Everything you gather here can later steer a generation.
+          Drag images in, paste from anywhere, or pull from your library. Everything you gather here can later steer a
+          generation.
         </p>
 
         <div className="mt-7 flex items-center gap-3">
-          <Button
-            variant="primary"
-            onClick={onUpload}
-            icon={UploadIcon}
-            className={CTA_CLASS}
-          >
+          <Button variant="primary" onClick={onUpload} icon={UploadIcon} className={CTA_CLASS}>
             Upload
           </Button>
-          <Button
-            variant="secondary"
-            onClick={onLibrary}
-            icon={ImagesIcon}
-            className={CTA_CLASS}
-          >
+          <Button variant="secondary" onClick={onLibrary} icon={ImagesIcon} className={CTA_CLASS}>
             From library
           </Button>
         </div>

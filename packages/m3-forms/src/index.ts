@@ -2,16 +2,7 @@
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/forms/src/index.ts), MIT, rebuilt on Material Design 3.
 // @aphrody/m3-forms - Material Design 3 form fields built on react-hook-form
 
-export {
-  useFormField,
-  Form,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-  FormField,
-} from "./Form";
+export { useFormField, Form, FormItem, FormLabel, FormControl, FormDescription, FormMessage, FormField } from "./Form";
 export type { FormLabelProps } from "./Form";
 
 export { InputField } from "./InputField";

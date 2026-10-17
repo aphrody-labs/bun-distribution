@@ -20,10 +20,7 @@ interface UseReturn {
 // paste (image + URL), note. The platform-specific bits — how a file is
 // uploaded and what the library picker is — come from the adapter. (Color entry
 // lives in the toolbar's ColorPickerPopover, which commits via addColorItem.)
-export const useBoardItemEntry = (
-  adapter: MoodboardAdapter,
-  enabled: boolean,
-): UseReturn => {
+export const useBoardItemEntry = (adapter: MoodboardAdapter, enabled: boolean): UseReturn => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -63,7 +60,7 @@ export const useBoardItemEntry = (
       });
       if (!adapter.uploadImage) return;
       adapter.uploadImage(file).then(
-        (token) => {
+        token => {
           if (!token) return;
           const current = useBoardLibraryStore.getState();
           // The item may have been deleted while the upload was in flight.
@@ -71,7 +68,7 @@ export const useBoardItemEntry = (
           const patch: Partial<BoardImageItem> = { mediaId: token };
           current.updateItem(boardId, itemId, patch);
         },
-        (err) => {
+        err => {
           console.error("[Moodboard] upload failed", err);
         },
       );
@@ -130,7 +127,7 @@ export const useBoardItemEntry = (
       if (!data) return;
 
       const imageFile = Array.from(data.items)
-        .find((it) => it.type.startsWith("image/"))
+        .find(it => it.type.startsWith("image/"))
         ?.getAsFile();
       if (imageFile) {
         e.preventDefault();
@@ -157,18 +154,11 @@ export const useBoardItemEntry = (
 
   const modals = (
     <>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={handleFileChange}
-      />
+      <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
       {adapter.renderLibraryPicker?.({
         open: pickerOpen,
         onClose: () => setPickerOpen(false),
-        onPick: (items) => void handlePicked(items),
+        onPick: items => void handlePicked(items),
       })}
     </>
   );

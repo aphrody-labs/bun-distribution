@@ -71,8 +71,7 @@ export function buildOpenApiSpec(version: string, bunVersion: string) {
             required: true,
             content: {
               "application/json": {
-                schema: TOOLS.find((tool) => tool.name === "yolo_parse")!
-                  .inputSchema,
+                schema: TOOLS.find(tool => tool.name === "yolo_parse")!.inputSchema,
               },
             },
           },
@@ -89,8 +88,7 @@ export function buildOpenApiSpec(version: string, bunVersion: string) {
             required: true,
             content: {
               "application/json": {
-                schema: TOOLS.find((tool) => tool.name === "yolo_verify")!
-                  .inputSchema,
+                schema: TOOLS.find(tool => tool.name === "yolo_verify")!.inputSchema,
               },
             },
           },
@@ -108,7 +106,7 @@ export function buildOpenApiSpec(version: string, bunVersion: string) {
             content: {
               "application/json": {
                 schema: {
-                  oneOf: TOOLS.map((tool) => ({
+                  oneOf: TOOLS.map(tool => ({
                     type: "object",
                     required: ["name"],
                     properties: {

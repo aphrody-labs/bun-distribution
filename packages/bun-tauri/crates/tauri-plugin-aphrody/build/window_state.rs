@@ -6,6 +6,5 @@ const COMMANDS: &[&str] = &["save_window_state", "restore_state", "filename"];
 
 /// Build description of the `window-state` plugin.
 pub fn builder() -> tauri_plugin::Builder<'static> {
-    tauri_plugin::Builder::new(COMMANDS)
-        .global_api_script_path("iife/window-state.js")
+    tauri_plugin::Builder::new(COMMANDS).global_api_script_path("iife/window-state.js")
 }

@@ -60,53 +60,29 @@ const cubeIcon = <BoxIcon className="h-4 w-4" />;
  * backend-reconciled list from `useModelsStore`.
  */
 
-export const buildTextToImagePageList = (
-  imageModels: ImageModel[],
-): ModelList =>
-  buildItems(
-    sortedBySelectorName(imageModels.filter((m) => m.canTextToImage)),
-    imageIcon,
-  );
+export const buildTextToImagePageList = (imageModels: ImageModel[]): ModelList =>
+  buildItems(sortedBySelectorName(imageModels.filter(m => m.canTextToImage)), imageIcon);
 
 export const buildCanvas2dPageList = (imageModels: ImageModel[]): ModelList =>
   buildItems(
-    sortedBySelectorName(
-      imageModels.filter(
-        (m) => m.canEditImages || m.tags?.includes(ModelTag.InstructiveEdit),
-      ),
-    ),
+    sortedBySelectorName(imageModels.filter(m => m.canEditImages || m.tags?.includes(ModelTag.InstructiveEdit))),
     imageIcon,
   );
 
 export const buildStage3dPageList = (imageModels: ImageModel[]): ModelList =>
-  buildItems(
-    sortedBySelectorName(
-      imageModels.filter((m) => m.tags?.includes(ModelTag.InstructiveEdit)),
-    ),
-    imageIcon,
-  );
+  buildItems(sortedBySelectorName(imageModels.filter(m => m.tags?.includes(ModelTag.InstructiveEdit))), imageIcon);
 
-export const buildImageEditorPageList = (
-  imageModels: ImageModel[],
-): ModelList =>
-  buildItems(
-    sortedBySelectorName(imageModels.filter((m) => m.canEditImages)),
-    imageIcon,
-  );
+export const buildImageEditorPageList = (imageModels: ImageModel[]): ModelList =>
+  buildItems(sortedBySelectorName(imageModels.filter(m => m.canEditImages)), imageIcon);
 
 export const buildAnglesPageList = (imageModels: ImageModel[]): ModelList =>
-  buildItems(
-    sortedBySelectorName(imageModels.filter((m) => m.canEditAngles)),
-    imageIcon,
-  );
+  buildItems(sortedBySelectorName(imageModels.filter(m => m.canEditAngles)), imageIcon);
 
-export const buildImageToVideoPageList = (
-  videoModels: VideoModel[],
-): ModelList =>
+export const buildImageToVideoPageList = (videoModels: VideoModel[]): ModelList =>
   buildItems(
     // SwitchX is a VFX/background-change model with its own page; keep it
     // out of the general video selector.
-    sortedBySelectorName(videoModels.filter((m) => m.id !== "switch_x")),
+    sortedBySelectorName(videoModels.filter(m => m.id !== "switch_x")),
     filmIcon,
   );
 
@@ -115,15 +91,9 @@ export const buildImageToVideoPageList = (
 // the omni backend, so these stay overlay-driven (no hook counterparts).
 // ---------------------------------------------------------------------------
 
-export const IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST: ModelList = buildItems(
-  SPLAT_MODELS as Model[],
-  cubeIcon,
-);
+export const IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST: ModelList = buildItems(SPLAT_MODELS as Model[], cubeIcon);
 
-export const IMAGE_TO_3D_OBJECT_PAGE_MODEL_LIST: ModelList = buildItems(
-  OBJECT_3D_MODELS as Model[],
-  cubeIcon,
-);
+export const IMAGE_TO_3D_OBJECT_PAGE_MODEL_LIST: ModelList = buildItems(OBJECT_3D_MODELS as Model[], cubeIcon);
 
 // ---------------------------------------------------------------------------
 // Live, backend-reconciled hooks. Use these in React components; they fall back

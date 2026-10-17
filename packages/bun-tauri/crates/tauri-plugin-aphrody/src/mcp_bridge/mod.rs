@@ -96,7 +96,7 @@ use logging::{mcp_log_error, mcp_log_info};
 use monitor::IPCMonitor;
 use script_registry::create_shared_registry;
 use std::sync::{Arc, Mutex};
-use tauri::{plugin::Builder as PluginBuilder, plugin::TauriPlugin, Manager, Runtime};
+use tauri::{Manager, Runtime, plugin::Builder as PluginBuilder, plugin::TauriPlugin};
 use tokio::sync::broadcast;
 
 /// Initializes the MCP Bridge plugin.
@@ -163,7 +163,7 @@ pub fn init_with_config<R: Runtime>(config: Config) -> TauriPlugin<R> {
     };
 
     PluginBuilder::<R>::new("mcp-bridge")
-        .invoke_handler(tauri::generate_handler![#![plugin(mcp_bridge)] 
+        .invoke_handler(tauri::generate_handler![
             commands::execute_command::execute_command,
             commands::window_info::get_window_info,
             commands::backend_state::get_backend_state,

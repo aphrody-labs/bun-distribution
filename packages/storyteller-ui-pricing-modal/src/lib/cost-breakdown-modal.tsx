@@ -3,10 +3,7 @@ import { Modal } from "@storyteller/ui-modal";
 import { useMemo } from "react";
 import { CoinsIcon, LoaderIcon } from "lucide-react";
 import { Select } from "@storyteller/ui-select";
-import {
-  useCostBreakdownModalStore,
-  TAB_TO_MODEL_PAGE,
-} from "./cost-breakdown-modal-store";
+import { useCostBreakdownModalStore, TAB_TO_MODEL_PAGE } from "./cost-breakdown-modal-store";
 import {
   ModelPage,
   useSelectedModel,
@@ -35,9 +32,7 @@ import { useImageCostEstimate } from "./useImageCostEstimate";
 import { useSplatCostEstimate } from "./useSplatCostEstimate";
 
 // Drag handle subcomponent that Modal looks for
-const DragHandle = ({ children }: { children: React.ReactNode }) => (
-  <>{children}</>
-);
+const DragHandle = ({ children }: { children: React.ReactNode }) => <>{children}</>;
 DragHandle.displayName = "ModalDragHandle";
 
 // Provider display name mapping
@@ -52,7 +47,7 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
 
 // Extract the concrete `Model` instances out of a page's selectable item list.
 const modelsFromList = (list: { model?: Model }[]): Model[] =>
-  list.map((item) => item.model).filter((m): m is Model => m !== undefined);
+  list.map(item => item.model).filter((m): m is Model => m !== undefined);
 
 export interface CostBreakdownModalProps {
   /** The current active tab ID from the app (e.g. "IMAGE", "VIDEO", "2D", "3D") */
@@ -60,8 +55,7 @@ export interface CostBreakdownModalProps {
 }
 
 export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
-  const { isOpen, closeModal, estimatedCreditsByPage } =
-    useCostBreakdownModalStore();
+  const { isOpen, closeModal, estimatedCreditsByPage } = useCostBreakdownModalStore();
   const { currency, setCurrency, formatPrice, currencyOptions } = useCurrency();
 
   // Map TabId to ModelPage, default to TextToImage
@@ -104,48 +98,17 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
       default:
         return [];
     }
-  }, [
-    activePage,
-    textToImageList,
-    imageToVideoList,
-    canvas2dList,
-    stage3dList,
-    imageEditorList,
-    anglesList,
-  ]);
-  const selectedModel =
-    selectedModelFromStore ?? defaultModelForPage(modelsForPage, activePage);
+  }, [activePage, textToImageList, imageToVideoList, canvas2dList, stage3dList, imageEditorList, anglesList]);
+  const selectedModel = selectedModelFromStore ?? defaultModelForPage(modelsForPage, activePage);
 
-  const selectedProvider = useSelectedProviderForModel(
-    activePage,
-    selectedModel?.id,
-  );
+  const selectedProvider = useSelectedProviderForModel(activePage, selectedModel?.id);
 
-  const { isLoading: isVideoEstimateLoading } = useVideoCostEstimate(
-    activePage,
-    selectedModel,
-    selectedProvider,
-  );
-  const { isLoading: isImageEstimateLoading } = useImageCostEstimate(
-    activePage,
-    selectedModel,
-    selectedProvider,
-  );
-  const { isLoading: isSplatEstimateLoading } = useSplatCostEstimate(
-    activePage,
-    selectedModel,
-    selectedProvider,
-  );
-  const { isLoading: isMeshEstimateLoading } = useMeshCostEstimate(
-    activePage,
-    selectedModel,
-    selectedProvider,
-  );
+  const { isLoading: isVideoEstimateLoading } = useVideoCostEstimate(activePage, selectedModel, selectedProvider);
+  const { isLoading: isImageEstimateLoading } = useImageCostEstimate(activePage, selectedModel, selectedProvider);
+  const { isLoading: isSplatEstimateLoading } = useSplatCostEstimate(activePage, selectedModel, selectedProvider);
+  const { isLoading: isMeshEstimateLoading } = useMeshCostEstimate(activePage, selectedModel, selectedProvider);
   const isEstimateLoading =
-    isVideoEstimateLoading ||
-    isImageEstimateLoading ||
-    isSplatEstimateLoading ||
-    isMeshEstimateLoading;
+    isVideoEstimateLoading || isImageEstimateLoading || isSplatEstimateLoading || isMeshEstimateLoading;
 
   // Get generation settings from the appropriate stores based on active page
   const prompt2D = usePrompt2DStore();
@@ -223,21 +186,17 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
   ]);
 
   const isLiveEstimatePage = LIVE_ESTIMATE_PAGES.has(activePage);
-  const liveCredits = isLiveEstimatePage
-    ? (estimatedCreditsByPage[activePage] ?? null)
-    : null;
+  const liveCredits = isLiveEstimatePage ? (estimatedCreditsByPage[activePage] ?? null) : null;
 
   const creditsPerGeneration = 1;
-  const totalCredits = isLiveEstimatePage
-    ? liveCredits
-    : creditsPerGeneration * storeData.generationCount;
+  const totalCredits = isLiveEstimatePage ? liveCredits : creditsPerGeneration * storeData.generationCount;
 
   // Convert credits to USD first (1 credit = $0.01), then to selected currency
   const usdAmount = (totalCredits ?? 0) * 0.01;
   const formattedPrice = formatPrice(usdAmount);
 
   // Select options formatted for the Select component
-  const selectOptions = currencyOptions.map((o) => ({
+  const selectOptions = currencyOptions.map(o => ({
     value: o.value,
     label: o.label,
   }));
@@ -252,7 +211,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
     // Fallback: Convert snake_case to Title Case
     return provider
       .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(" ");
   };
 
@@ -307,8 +266,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
     "flux_2_lora_angles",
     "qwen_edit_2511_angles",
   ]);
-  const hasCostData =
-    selectedModel != null && MODELS_WITH_COST_DATA.has(selectedModel.id);
+  const hasCostData = selectedModel != null && MODELS_WITH_COST_DATA.has(selectedModel.id);
 
   return (
     <Modal
@@ -336,19 +294,14 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
       <div className="space-y-3 font-sans text-base-fg text-xs mt-3">
         {/* Page indicator */}
         {pageName && (
-          <div className="font-mono text-[10px] text-base-fg/55 uppercase tracking-[0.12em] text-start">
-            {pageName}
-          </div>
+          <div className="font-mono text-[10px] text-base-fg/55 uppercase tracking-[0.12em] text-start">{pageName}</div>
         )}
 
         {/* Model row — always shown */}
         {selectedModel && (
           <div className="flex justify-between items-center">
             <span className="text-base-fg/60">Model</span>
-            <span
-              className="text-base-fg font-medium truncate max-w-[140px]"
-              title={selectedModel.selectorName}
-            >
+            <span className="text-base-fg font-medium truncate max-w-[140px]" title={selectedModel.selectorName}>
               {selectedModel.selectorName}
             </span>
           </div>
@@ -361,25 +314,19 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
               {storeData.resolution && (
                 <div className="flex justify-between items-center">
                   <span className="text-base-fg/60">Resolution</span>
-                  <span className="text-base-fg font-medium uppercase">
-                    {storeData.resolution}
-                  </span>
+                  <span className="text-base-fg font-medium uppercase">{storeData.resolution}</span>
                 </div>
               )}
               {storeData.generationCount > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="text-base-fg/60">{storeData.label}</span>
-                  <span className="text-base-fg font-medium">
-                    {storeData.generationCount}
-                  </span>
+                  <span className="text-base-fg font-medium">{storeData.generationCount}</span>
                 </div>
               )}
               {selectedProvider && (
                 <div className="flex justify-between items-center">
                   <span className="text-base-fg/60">Provider</span>
-                  <span className="text-base-fg font-medium">
-                    {formatProvider(selectedProvider)}
-                  </span>
+                  <span className="text-base-fg font-medium">{formatProvider(selectedProvider)}</span>
                 </div>
               )}
             </div>
@@ -388,16 +335,12 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
             <div className="bg-ui-sunken rounded-none p-3 border border-ui-panel-border space-y-2.5">
               {/* Credits row */}
               <div>
-                <div className="font-mono text-[10px] text-base-fg/50 uppercase tracking-[0.12em] mb-0.5">
-                  Credits
-                </div>
+                <div className="font-mono text-[10px] text-base-fg/50 uppercase tracking-[0.12em] mb-0.5">Credits</div>
                 <div className="font-display text-lg font-medium tracking-[-0.02em] text-base-fg flex items-center gap-1.5">
                   {isEstimateLoading && isLiveEstimatePage ? (
                     <>
                       <LoaderIcon className="animate-spin text-base" />
-                      <span className="text-base-fg/50 text-sm">
-                        Calculating…
-                      </span>
+                      <span className="text-base-fg/50 text-sm">Calculating…</span>
                     </>
                   ) : totalCredits != null ? (
                     <>

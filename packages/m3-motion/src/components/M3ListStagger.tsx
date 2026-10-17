@@ -3,10 +3,7 @@ import * as React from "react";
 import { AnimatePresence, motion, useIsPresent } from "motion/react";
 import type { HTMLMotionProps, Variants } from "motion/react";
 import { m3Easings, m3Durations } from "../easings";
-import {
-  motionVariants,
-  useM3ReducedMotion,
-} from "../hooks/useM3ReducedMotion";
+import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion";
 
 export interface M3ListStaggerProps {
   /**
@@ -72,21 +69,8 @@ const itemVariants: Variants = {
  *     {items.map(item => <M3ListStaggerItem key={item.id}>{item.label}</M3ListStaggerItem>)}
  *   </M3ListStagger>
  */
-export const M3ListStagger = React.forwardRef<
-  HTMLDivElement,
-  M3ListStaggerProps
->(
-  (
-    {
-      staggerDelay = 0.05,
-      delayChildren = 0,
-      appear = true,
-      children,
-      className,
-      style,
-    },
-    ref,
-  ) => {
+export const M3ListStagger = React.forwardRef<HTMLDivElement, M3ListStaggerProps>(
+  ({ staggerDelay = 0.05, delayChildren = 0, appear = true, children, className, style }, ref) => {
     const reduced = useM3ReducedMotion();
     return (
       <motion.div
@@ -99,9 +83,7 @@ export const M3ListStagger = React.forwardRef<
         exit="exit"
         custom={{ staggerDelay, delayChildren }}
       >
-        <AnimatePresence initial={appear && !reduced}>
-          {children}
-        </AnimatePresence>
+        <AnimatePresence initial={appear && !reduced}>{children}</AnimatePresence>
       </motion.div>
     );
   },
@@ -113,24 +95,23 @@ M3ListStagger.displayName = "M3ListStagger";
  * M3ListStaggerItem — a single animated item inside M3ListStagger.
  * Must be a direct or indirect descendant of M3ListStagger to inherit variants.
  */
-export const M3ListStaggerItem = React.forwardRef<
-  HTMLDivElement,
-  M3ListStaggerItemProps
->(({ children, style, ...props }, ref) => {
-  const present = useIsPresent();
-  const reduced = useM3ReducedMotion();
-  return (
-    <motion.div
-      ref={ref}
-      variants={motionVariants(itemVariants, reduced)}
-      style={{ willChange: "opacity, transform", ...style }}
-      {...props}
-      inert={!present || props.inert}
-      aria-hidden={!present || props["aria-hidden"]}
-    >
-      {children}
-    </motion.div>
-  );
-});
+export const M3ListStaggerItem = React.forwardRef<HTMLDivElement, M3ListStaggerItemProps>(
+  ({ children, style, ...props }, ref) => {
+    const present = useIsPresent();
+    const reduced = useM3ReducedMotion();
+    return (
+      <motion.div
+        ref={ref}
+        variants={motionVariants(itemVariants, reduced)}
+        style={{ willChange: "opacity, transform", ...style }}
+        {...props}
+        inert={!present || props.inert}
+        aria-hidden={!present || props["aria-hidden"]}
+      >
+        {children}
+      </motion.div>
+    );
+  },
+);
 
 M3ListStaggerItem.displayName = "M3ListStaggerItem";

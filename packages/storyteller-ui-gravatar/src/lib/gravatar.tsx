@@ -14,9 +14,7 @@ interface Props {
 function Gravatar(props: Props) {
   //url to the local fallback image
   const localDefaultUrl =
-    props.avatarIndex === undefined
-      ? "/resources/avatars/0.webp"
-      : `/resources/avatars/${props.avatarIndex}.webp`;
+    props.avatarIndex === undefined ? "/resources/avatars/0.webp" : `/resources/avatars/${props.avatarIndex}.webp`;
 
   // submitted fallback need to be a url served from our server for gravatar to grab it
   const defaultImageUrl =
@@ -66,12 +64,7 @@ function Gravatar(props: Props) {
   }
 
   return (
-    <div
-      className={twMerge(
-        "relative aspect-square overflow-hidden border border-white",
-        props.className,
-      )}
-    >
+    <div className={twMerge("relative aspect-square overflow-hidden border border-white", props.className)}>
       {showLoader && (
         <div className="absolute flex h-full w-full items-center justify-center bg-brand-secondary">
           <LoaderCircleIcon className="animate-spin" size="1.25em" />
@@ -85,15 +78,14 @@ function Gravatar(props: Props) {
         width={props.size}
         style={{ backgroundColor: getBackgroundColor(props.backgroundIndex) }}
         onLoad={() => {
-          setState((curr) => ({
+          setState(curr => ({
             imgUrl: curr.imgUrl,
             showLoader: false,
           }));
         }}
         onError={() => {
-          setState((curr) => ({
-            imgUrl:
-              curr.imgUrl !== localDefaultUrl ? localDefaultUrl : curr.imgUrl,
+          setState(curr => ({
+            imgUrl: curr.imgUrl !== localDefaultUrl ? localDefaultUrl : curr.imgUrl,
             showLoader: false,
           }));
         }}

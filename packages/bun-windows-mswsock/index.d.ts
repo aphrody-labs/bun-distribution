@@ -3,7 +3,16 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mswsock.dll!AcceptEx */
-  AcceptEx(sListenSocket: number | bigint, sAcceptSocket: number | bigint, lpOutputBuffer: Win32Pointer, dwReceiveDataLength: number, dwLocalAddressLength: number, dwRemoteAddressLength: number, lpdwBytesReceived: Win32Pointer, lpOverlapped: Win32Pointer): number;
+  AcceptEx(
+    sListenSocket: number | bigint,
+    sAcceptSocket: number | bigint,
+    lpOutputBuffer: Win32Pointer,
+    dwReceiveDataLength: number,
+    dwLocalAddressLength: number,
+    dwRemoteAddressLength: number,
+    lpdwBytesReceived: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+  ): number;
   /** mswsock.dll!EnumProtocolsA */
   EnumProtocolsA(lpiProtocols: Win32Pointer, lpProtocolBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer): number;
   /** mswsock.dll!EnumProtocolsW */
@@ -11,13 +20,55 @@ interface Functions {
   /** mswsock.dll!EnumProtocolsW */
   EnumProtocols(lpiProtocols: Win32Pointer, lpProtocolBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer): number;
   /** mswsock.dll!GetAcceptExSockaddrs */
-  GetAcceptExSockaddrs(lpOutputBuffer: Win32Pointer, dwReceiveDataLength: number, dwLocalAddressLength: number, dwRemoteAddressLength: number, LocalSockaddr: Win32Pointer, LocalSockaddrLength: Win32Pointer, RemoteSockaddr: Win32Pointer, RemoteSockaddrLength: Win32Pointer): void;
+  GetAcceptExSockaddrs(
+    lpOutputBuffer: Win32Pointer,
+    dwReceiveDataLength: number,
+    dwLocalAddressLength: number,
+    dwRemoteAddressLength: number,
+    LocalSockaddr: Win32Pointer,
+    LocalSockaddrLength: Win32Pointer,
+    RemoteSockaddr: Win32Pointer,
+    RemoteSockaddrLength: Win32Pointer,
+  ): void;
   /** mswsock.dll!GetAddressByNameA */
-  GetAddressByNameA(dwNameSpace: number, lpServiceType: Win32Pointer, lpServiceName: string | Win32Pointer, lpiProtocols: Win32Pointer, dwResolution: number, lpServiceAsyncInfo: Win32Pointer, lpCsaddrBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer, lpAliasBuffer: string | Win32Pointer, lpdwAliasBufferLength: Win32Pointer): number;
+  GetAddressByNameA(
+    dwNameSpace: number,
+    lpServiceType: Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    lpiProtocols: Win32Pointer,
+    dwResolution: number,
+    lpServiceAsyncInfo: Win32Pointer,
+    lpCsaddrBuffer: Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    lpAliasBuffer: string | Win32Pointer,
+    lpdwAliasBufferLength: Win32Pointer,
+  ): number;
   /** mswsock.dll!GetAddressByNameW */
-  GetAddressByNameW(dwNameSpace: number, lpServiceType: Win32Pointer, lpServiceName: string | Win32Pointer, lpiProtocols: Win32Pointer, dwResolution: number, lpServiceAsyncInfo: Win32Pointer, lpCsaddrBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer, lpAliasBuffer: string | Win32Pointer, lpdwAliasBufferLength: Win32Pointer): number;
+  GetAddressByNameW(
+    dwNameSpace: number,
+    lpServiceType: Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    lpiProtocols: Win32Pointer,
+    dwResolution: number,
+    lpServiceAsyncInfo: Win32Pointer,
+    lpCsaddrBuffer: Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    lpAliasBuffer: string | Win32Pointer,
+    lpdwAliasBufferLength: Win32Pointer,
+  ): number;
   /** mswsock.dll!GetAddressByNameW */
-  GetAddressByName(dwNameSpace: number, lpServiceType: Win32Pointer, lpServiceName: string | Win32Pointer, lpiProtocols: Win32Pointer, dwResolution: number, lpServiceAsyncInfo: Win32Pointer, lpCsaddrBuffer: Win32Pointer, lpdwBufferLength: Win32Pointer, lpAliasBuffer: string | Win32Pointer, lpdwAliasBufferLength: Win32Pointer): number;
+  GetAddressByName(
+    dwNameSpace: number,
+    lpServiceType: Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    lpiProtocols: Win32Pointer,
+    dwResolution: number,
+    lpServiceAsyncInfo: Win32Pointer,
+    lpCsaddrBuffer: Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+    lpAliasBuffer: string | Win32Pointer,
+    lpdwAliasBufferLength: Win32Pointer,
+  ): number;
   /** mswsock.dll!GetNameByTypeA */
   GetNameByTypeA(lpServiceType: Win32Pointer, lpServiceName: string | Win32Pointer, dwNameLength: number): number;
   /** mswsock.dll!GetNameByTypeW */
@@ -25,11 +76,35 @@ interface Functions {
   /** mswsock.dll!GetNameByTypeW */
   GetNameByType(lpServiceType: Win32Pointer, lpServiceName: string | Win32Pointer, dwNameLength: number): number;
   /** mswsock.dll!GetServiceA */
-  GetServiceA(dwNameSpace: number, lpGuid: Win32Pointer, lpServiceName: string | Win32Pointer, dwProperties: number, lpBuffer: Win32Pointer, lpdwBufferSize: Win32Pointer, lpServiceAsyncInfo: Win32Pointer): number;
+  GetServiceA(
+    dwNameSpace: number,
+    lpGuid: Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    dwProperties: number,
+    lpBuffer: Win32Pointer,
+    lpdwBufferSize: Win32Pointer,
+    lpServiceAsyncInfo: Win32Pointer,
+  ): number;
   /** mswsock.dll!GetServiceW */
-  GetServiceW(dwNameSpace: number, lpGuid: Win32Pointer, lpServiceName: string | Win32Pointer, dwProperties: number, lpBuffer: Win32Pointer, lpdwBufferSize: Win32Pointer, lpServiceAsyncInfo: Win32Pointer): number;
+  GetServiceW(
+    dwNameSpace: number,
+    lpGuid: Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    dwProperties: number,
+    lpBuffer: Win32Pointer,
+    lpdwBufferSize: Win32Pointer,
+    lpServiceAsyncInfo: Win32Pointer,
+  ): number;
   /** mswsock.dll!GetServiceW */
-  GetService(dwNameSpace: number, lpGuid: Win32Pointer, lpServiceName: string | Win32Pointer, dwProperties: number, lpBuffer: Win32Pointer, lpdwBufferSize: Win32Pointer, lpServiceAsyncInfo: Win32Pointer): number;
+  GetService(
+    dwNameSpace: number,
+    lpGuid: Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    dwProperties: number,
+    lpBuffer: Win32Pointer,
+    lpdwBufferSize: Win32Pointer,
+    lpServiceAsyncInfo: Win32Pointer,
+  ): number;
   /** mswsock.dll!GetTypeByNameA */
   GetTypeByNameA(lpServiceName: string | Win32Pointer, lpServiceType: Win32Pointer): number;
   /** mswsock.dll!GetTypeByNameW */
@@ -37,13 +112,42 @@ interface Functions {
   /** mswsock.dll!GetTypeByNameW */
   GetTypeByName(lpServiceName: string | Win32Pointer, lpServiceType: Win32Pointer): number;
   /** mswsock.dll!SetServiceA */
-  SetServiceA(dwNameSpace: number, dwOperation: number, dwFlags: number, lpServiceInfo: Win32Pointer, lpServiceAsyncInfo: Win32Pointer, lpdwStatusFlags: Win32Pointer): number;
+  SetServiceA(
+    dwNameSpace: number,
+    dwOperation: number,
+    dwFlags: number,
+    lpServiceInfo: Win32Pointer,
+    lpServiceAsyncInfo: Win32Pointer,
+    lpdwStatusFlags: Win32Pointer,
+  ): number;
   /** mswsock.dll!SetServiceW */
-  SetServiceW(dwNameSpace: number, dwOperation: number, dwFlags: number, lpServiceInfo: Win32Pointer, lpServiceAsyncInfo: Win32Pointer, lpdwStatusFlags: Win32Pointer): number;
+  SetServiceW(
+    dwNameSpace: number,
+    dwOperation: number,
+    dwFlags: number,
+    lpServiceInfo: Win32Pointer,
+    lpServiceAsyncInfo: Win32Pointer,
+    lpdwStatusFlags: Win32Pointer,
+  ): number;
   /** mswsock.dll!SetServiceW */
-  SetService(dwNameSpace: number, dwOperation: number, dwFlags: number, lpServiceInfo: Win32Pointer, lpServiceAsyncInfo: Win32Pointer, lpdwStatusFlags: Win32Pointer): number;
+  SetService(
+    dwNameSpace: number,
+    dwOperation: number,
+    dwFlags: number,
+    lpServiceInfo: Win32Pointer,
+    lpServiceAsyncInfo: Win32Pointer,
+    lpdwStatusFlags: Win32Pointer,
+  ): number;
   /** mswsock.dll!TransmitFile */
-  TransmitFile(hSocket: number | bigint, hFile: Win32Pointer, nNumberOfBytesToWrite: number, nNumberOfBytesPerSend: number, lpOverlapped: Win32Pointer, lpTransmitBuffers: Win32Pointer, dwReserved: number): number;
+  TransmitFile(
+    hSocket: number | bigint,
+    hFile: Win32Pointer,
+    nNumberOfBytesToWrite: number,
+    nNumberOfBytesPerSend: number,
+    lpOverlapped: Win32Pointer,
+    lpTransmitBuffers: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** mswsock.dll!WSARecvEx */
   WSARecvEx(s: number | bigint, buf: string | Win32Pointer, len: number, flags: Win32Pointer): number;
 }

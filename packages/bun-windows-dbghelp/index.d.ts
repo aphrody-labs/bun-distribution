@@ -7,41 +7,131 @@ interface Functions {
   /** dbghelp.dll!DbgHelpCreateUserDumpW */
   DbgHelpCreateUserDumpW(FileName: string | Win32Pointer, Callback: Win32Callback, UserData: Win32Pointer): number;
   /** dbghelp.dll!EnumDirTree */
-  EnumDirTree(hProcess: Win32Pointer, RootPath: string | Win32Pointer, InputPathName: string | Win32Pointer, OutputPathBuffer: string | Win32Pointer, cb: Win32Callback, data: Win32Pointer): number;
+  EnumDirTree(
+    hProcess: Win32Pointer,
+    RootPath: string | Win32Pointer,
+    InputPathName: string | Win32Pointer,
+    OutputPathBuffer: string | Win32Pointer,
+    cb: Win32Callback,
+    data: Win32Pointer,
+  ): number;
   /** dbghelp.dll!EnumDirTreeW */
-  EnumDirTreeW(hProcess: Win32Pointer, RootPath: string | Win32Pointer, InputPathName: string | Win32Pointer, OutputPathBuffer: string | Win32Pointer, cb: Win32Callback, data: Win32Pointer): number;
+  EnumDirTreeW(
+    hProcess: Win32Pointer,
+    RootPath: string | Win32Pointer,
+    InputPathName: string | Win32Pointer,
+    OutputPathBuffer: string | Win32Pointer,
+    cb: Win32Callback,
+    data: Win32Pointer,
+  ): number;
   /** dbghelp.dll!EnumerateLoadedModules64 */
-  EnumerateLoadedModules64(hProcess: Win32Pointer, EnumLoadedModulesCallback: Win32Callback, UserContext: Win32Pointer): number;
+  EnumerateLoadedModules64(
+    hProcess: Win32Pointer,
+    EnumLoadedModulesCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!EnumerateLoadedModulesEx */
-  EnumerateLoadedModulesEx(hProcess: Win32Pointer, EnumLoadedModulesCallback: Win32Callback, UserContext: Win32Pointer): number;
+  EnumerateLoadedModulesEx(
+    hProcess: Win32Pointer,
+    EnumLoadedModulesCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!EnumerateLoadedModulesExW */
-  EnumerateLoadedModulesExW(hProcess: Win32Pointer, EnumLoadedModulesCallback: Win32Callback, UserContext: Win32Pointer): number;
+  EnumerateLoadedModulesExW(
+    hProcess: Win32Pointer,
+    EnumLoadedModulesCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!EnumerateLoadedModulesW64 */
-  EnumerateLoadedModulesW64(hProcess: Win32Pointer, EnumLoadedModulesCallback: Win32Callback, UserContext: Win32Pointer): number;
+  EnumerateLoadedModulesW64(
+    hProcess: Win32Pointer,
+    EnumLoadedModulesCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!FindDebugInfoFile */
-  FindDebugInfoFile(FileName: string | Win32Pointer, SymbolPath: string | Win32Pointer, DebugFilePath: string | Win32Pointer): number | null;
+  FindDebugInfoFile(
+    FileName: string | Win32Pointer,
+    SymbolPath: string | Win32Pointer,
+    DebugFilePath: string | Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!FindDebugInfoFileEx */
-  FindDebugInfoFileEx(FileName: string | Win32Pointer, SymbolPath: string | Win32Pointer, DebugFilePath: string | Win32Pointer, Callback: Win32Callback, CallerData: Win32Pointer): number | null;
+  FindDebugInfoFileEx(
+    FileName: string | Win32Pointer,
+    SymbolPath: string | Win32Pointer,
+    DebugFilePath: string | Win32Pointer,
+    Callback: Win32Callback,
+    CallerData: Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!FindDebugInfoFileExW */
-  FindDebugInfoFileExW(FileName: string | Win32Pointer, SymbolPath: string | Win32Pointer, DebugFilePath: string | Win32Pointer, Callback: Win32Callback, CallerData: Win32Pointer): number | null;
+  FindDebugInfoFileExW(
+    FileName: string | Win32Pointer,
+    SymbolPath: string | Win32Pointer,
+    DebugFilePath: string | Win32Pointer,
+    Callback: Win32Callback,
+    CallerData: Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!FindExecutableImage */
-  FindExecutableImage(FileName: string | Win32Pointer, SymbolPath: string | Win32Pointer, ImageFilePath: string | Win32Pointer): number | null;
+  FindExecutableImage(
+    FileName: string | Win32Pointer,
+    SymbolPath: string | Win32Pointer,
+    ImageFilePath: string | Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!FindExecutableImageEx */
-  FindExecutableImageEx(FileName: string | Win32Pointer, SymbolPath: string | Win32Pointer, ImageFilePath: string | Win32Pointer, Callback: Win32Callback, CallerData: Win32Pointer): number | null;
+  FindExecutableImageEx(
+    FileName: string | Win32Pointer,
+    SymbolPath: string | Win32Pointer,
+    ImageFilePath: string | Win32Pointer,
+    Callback: Win32Callback,
+    CallerData: Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!FindExecutableImageExW */
-  FindExecutableImageExW(FileName: string | Win32Pointer, SymbolPath: string | Win32Pointer, ImageFilePath: string | Win32Pointer, Callback: Win32Callback, CallerData: Win32Pointer): number | null;
+  FindExecutableImageExW(
+    FileName: string | Win32Pointer,
+    SymbolPath: string | Win32Pointer,
+    ImageFilePath: string | Win32Pointer,
+    Callback: Win32Callback,
+    CallerData: Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!FindFileInPath */
-  FindFileInPath(hprocess: Win32Pointer, SearchPathA: string | Win32Pointer, FileName: string | Win32Pointer, id: Win32Pointer, two: number, three: number, flags: number, FilePath: string | Win32Pointer): number;
+  FindFileInPath(
+    hprocess: Win32Pointer,
+    SearchPathA: string | Win32Pointer,
+    FileName: string | Win32Pointer,
+    id: Win32Pointer,
+    two: number,
+    three: number,
+    flags: number,
+    FilePath: string | Win32Pointer,
+  ): number;
   /** dbghelp.dll!FindFileInSearchPath */
-  FindFileInSearchPath(hprocess: Win32Pointer, SearchPathA: string | Win32Pointer, FileName: string | Win32Pointer, one: number, two: number, three: number, FilePath: string | Win32Pointer): number;
+  FindFileInSearchPath(
+    hprocess: Win32Pointer,
+    SearchPathA: string | Win32Pointer,
+    FileName: string | Win32Pointer,
+    one: number,
+    two: number,
+    three: number,
+    FilePath: string | Win32Pointer,
+  ): number;
   /** dbghelp.dll!GetSymLoadError */
   GetSymLoadError(): number;
   /** dbghelp.dll!GetTimestampForLoadedLibrary */
   GetTimestampForLoadedLibrary(Module: Win32Pointer): number;
   /** dbghelp.dll!ImageDirectoryEntryToData */
-  ImageDirectoryEntryToData(Base: Win32Pointer, MappedAsImage: number, DirectoryEntry: number, Size: Win32Pointer): number | null;
+  ImageDirectoryEntryToData(
+    Base: Win32Pointer,
+    MappedAsImage: number,
+    DirectoryEntry: number,
+    Size: Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!ImageDirectoryEntryToDataEx */
-  ImageDirectoryEntryToDataEx(Base: Win32Pointer, MappedAsImage: number, DirectoryEntry: number, Size: Win32Pointer, FoundHeader: Win32Pointer): number | null;
+  ImageDirectoryEntryToDataEx(
+    Base: Win32Pointer,
+    MappedAsImage: number,
+    DirectoryEntry: number,
+    Size: Win32Pointer,
+    FoundHeader: Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!ImageNtHeader */
   ImageNtHeader(Base: Win32Pointer): number | null;
   /** dbghelp.dll!ImageRvaToSection */
@@ -55,129 +145,446 @@ interface Functions {
   /** dbghelp.dll!MakeSureDirectoryPathExists */
   MakeSureDirectoryPathExists(DirPath: string | Win32Pointer): number;
   /** dbghelp.dll!MiniDumpReadDumpStream */
-  MiniDumpReadDumpStream(BaseOfDump: Win32Pointer, StreamNumber: number, Dir: Win32Pointer, StreamPointer: Win32Pointer, StreamSize: Win32Pointer): number;
+  MiniDumpReadDumpStream(
+    BaseOfDump: Win32Pointer,
+    StreamNumber: number,
+    Dir: Win32Pointer,
+    StreamPointer: Win32Pointer,
+    StreamSize: Win32Pointer,
+  ): number;
   /** dbghelp.dll!MiniDumpWriteDump */
-  MiniDumpWriteDump(hProcess: Win32Pointer, ProcessId: number, hFile: Win32Pointer, DumpType: number, ExceptionParam: Win32Pointer, UserStreamParam: Win32Pointer, CallbackParam: Win32Pointer): number;
+  MiniDumpWriteDump(
+    hProcess: Win32Pointer,
+    ProcessId: number,
+    hFile: Win32Pointer,
+    DumpType: number,
+    ExceptionParam: Win32Pointer,
+    UserStreamParam: Win32Pointer,
+    CallbackParam: Win32Pointer,
+  ): number;
   /** dbghelp.dll!RangeMapAddPeImageSections */
-  RangeMapAddPeImageSections(RmapHandle: Win32Pointer, ImageName: string | Win32Pointer, MappedImage: Win32Pointer, MappingBytes: number, ImageBase: number | bigint, UserTag: number | bigint, MappingFlags: number): number;
+  RangeMapAddPeImageSections(
+    RmapHandle: Win32Pointer,
+    ImageName: string | Win32Pointer,
+    MappedImage: Win32Pointer,
+    MappingBytes: number,
+    ImageBase: number | bigint,
+    UserTag: number | bigint,
+    MappingFlags: number,
+  ): number;
   /** dbghelp.dll!RangeMapCreate */
   RangeMapCreate(): number | null;
   /** dbghelp.dll!RangeMapFree */
   RangeMapFree(RmapHandle: Win32Pointer): void;
   /** dbghelp.dll!RangeMapRead */
-  RangeMapRead(RmapHandle: Win32Pointer, Offset: number | bigint, Buffer: Win32Pointer, RequestBytes: number, Flags: number, DoneBytes: Win32Pointer): number;
+  RangeMapRead(
+    RmapHandle: Win32Pointer,
+    Offset: number | bigint,
+    Buffer: Win32Pointer,
+    RequestBytes: number,
+    Flags: number,
+    DoneBytes: Win32Pointer,
+  ): number;
   /** dbghelp.dll!RangeMapRemove */
   RangeMapRemove(RmapHandle: Win32Pointer, UserTag: number | bigint): number;
   /** dbghelp.dll!RangeMapWrite */
-  RangeMapWrite(RmapHandle: Win32Pointer, Offset: number | bigint, Buffer: Win32Pointer, RequestBytes: number, Flags: number, DoneBytes: Win32Pointer): number;
+  RangeMapWrite(
+    RmapHandle: Win32Pointer,
+    Offset: number | bigint,
+    Buffer: Win32Pointer,
+    RequestBytes: number,
+    Flags: number,
+    DoneBytes: Win32Pointer,
+  ): number;
   /** dbghelp.dll!RemoveInvalidModuleList */
   RemoveInvalidModuleList(hProcess: Win32Pointer): void;
   /** dbghelp.dll!ReportSymbolLoadSummary */
-  ReportSymbolLoadSummary(hProcess: Win32Pointer, pLoadModule: string | Win32Pointer, pSymbolData: Win32Pointer): number;
+  ReportSymbolLoadSummary(
+    hProcess: Win32Pointer,
+    pLoadModule: string | Win32Pointer,
+    pSymbolData: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SearchTreeForFile */
-  SearchTreeForFile(RootPath: string | Win32Pointer, InputPathName: string | Win32Pointer, OutputPathBuffer: string | Win32Pointer): number;
+  SearchTreeForFile(
+    RootPath: string | Win32Pointer,
+    InputPathName: string | Win32Pointer,
+    OutputPathBuffer: string | Win32Pointer,
+  ): number;
   /** dbghelp.dll!SearchTreeForFileW */
-  SearchTreeForFileW(RootPath: string | Win32Pointer, InputPathName: string | Win32Pointer, OutputPathBuffer: string | Win32Pointer): number;
+  SearchTreeForFileW(
+    RootPath: string | Win32Pointer,
+    InputPathName: string | Win32Pointer,
+    OutputPathBuffer: string | Win32Pointer,
+  ): number;
   /** dbghelp.dll!SetCheckUserInterruptShared */
   SetCheckUserInterruptShared(lpStartAddress: Win32Callback): void;
   /** dbghelp.dll!SetSymLoadError */
   SetSymLoadError(error: number): void;
   /** dbghelp.dll!StackWalk2 */
-  StackWalk2(MachineType: number, hProcess: Win32Pointer, hThread: Win32Pointer, StackFrame: Win32Pointer, ContextRecord: Win32Pointer, ReadMemoryRoutine: Win32Callback, FunctionTableAccessRoutine: Win32Callback, GetModuleBaseRoutine: Win32Callback, TranslateAddress: Win32Callback, GetTargetAttributeValue: Win32Callback, Flags: number): number;
+  StackWalk2(
+    MachineType: number,
+    hProcess: Win32Pointer,
+    hThread: Win32Pointer,
+    StackFrame: Win32Pointer,
+    ContextRecord: Win32Pointer,
+    ReadMemoryRoutine: Win32Callback,
+    FunctionTableAccessRoutine: Win32Callback,
+    GetModuleBaseRoutine: Win32Callback,
+    TranslateAddress: Win32Callback,
+    GetTargetAttributeValue: Win32Callback,
+    Flags: number,
+  ): number;
   /** dbghelp.dll!StackWalk64 */
-  StackWalk64(MachineType: number, hProcess: Win32Pointer, hThread: Win32Pointer, StackFrame: Win32Pointer, ContextRecord: Win32Pointer, ReadMemoryRoutine: Win32Callback, FunctionTableAccessRoutine: Win32Callback, GetModuleBaseRoutine: Win32Callback, TranslateAddress: Win32Callback): number;
+  StackWalk64(
+    MachineType: number,
+    hProcess: Win32Pointer,
+    hThread: Win32Pointer,
+    StackFrame: Win32Pointer,
+    ContextRecord: Win32Pointer,
+    ReadMemoryRoutine: Win32Callback,
+    FunctionTableAccessRoutine: Win32Callback,
+    GetModuleBaseRoutine: Win32Callback,
+    TranslateAddress: Win32Callback,
+  ): number;
   /** dbghelp.dll!StackWalkEx */
-  StackWalkEx(MachineType: number, hProcess: Win32Pointer, hThread: Win32Pointer, StackFrame: Win32Pointer, ContextRecord: Win32Pointer, ReadMemoryRoutine: Win32Callback, FunctionTableAccessRoutine: Win32Callback, GetModuleBaseRoutine: Win32Callback, TranslateAddress: Win32Callback, Flags: number): number;
+  StackWalkEx(
+    MachineType: number,
+    hProcess: Win32Pointer,
+    hThread: Win32Pointer,
+    StackFrame: Win32Pointer,
+    ContextRecord: Win32Pointer,
+    ReadMemoryRoutine: Win32Callback,
+    FunctionTableAccessRoutine: Win32Callback,
+    GetModuleBaseRoutine: Win32Callback,
+    TranslateAddress: Win32Callback,
+    Flags: number,
+  ): number;
   /** dbghelp.dll!SymAddSourceStream */
-  SymAddSourceStream(hProcess: Win32Pointer, Base: number | bigint, StreamFile: string | Win32Pointer, Buffer: Win32Pointer, Size: number | bigint): number;
+  SymAddSourceStream(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    StreamFile: string | Win32Pointer,
+    Buffer: Win32Pointer,
+    Size: number | bigint,
+  ): number;
   /** dbghelp.dll!SymAddSourceStreamA */
-  SymAddSourceStreamA(hProcess: Win32Pointer, Base: number | bigint, StreamFile: string | Win32Pointer, Buffer: Win32Pointer, Size: number | bigint): number;
+  SymAddSourceStreamA(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    StreamFile: string | Win32Pointer,
+    Buffer: Win32Pointer,
+    Size: number | bigint,
+  ): number;
   /** dbghelp.dll!SymAddSourceStreamW */
-  SymAddSourceStreamW(hProcess: Win32Pointer, Base: number | bigint, FileSpec: string | Win32Pointer, Buffer: Win32Pointer, Size: number | bigint): number;
+  SymAddSourceStreamW(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    FileSpec: string | Win32Pointer,
+    Buffer: Win32Pointer,
+    Size: number | bigint,
+  ): number;
   /** dbghelp.dll!SymAddSymbol */
-  SymAddSymbol(hProcess: Win32Pointer, BaseOfDll: number | bigint, Name: string | Win32Pointer, Address: number | bigint, Size: number, Flags: number): number;
+  SymAddSymbol(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    Name: string | Win32Pointer,
+    Address: number | bigint,
+    Size: number,
+    Flags: number,
+  ): number;
   /** dbghelp.dll!SymAddSymbolW */
-  SymAddSymbolW(hProcess: Win32Pointer, BaseOfDll: number | bigint, Name: string | Win32Pointer, Address: number | bigint, Size: number, Flags: number): number;
+  SymAddSymbolW(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    Name: string | Win32Pointer,
+    Address: number | bigint,
+    Size: number,
+    Flags: number,
+  ): number;
   /** dbghelp.dll!SymAddrIncludeInlineTrace */
   SymAddrIncludeInlineTrace(hProcess: Win32Pointer, Address: number | bigint): number;
   /** dbghelp.dll!SymCleanup */
   SymCleanup(hProcess: Win32Pointer): number;
   /** dbghelp.dll!SymCompareInlineTrace */
-  SymCompareInlineTrace(hProcess: Win32Pointer, Address1: number | bigint, InlineContext1: number, RetAddress1: number | bigint, Address2: number | bigint, RetAddress2: number | bigint): number;
+  SymCompareInlineTrace(
+    hProcess: Win32Pointer,
+    Address1: number | bigint,
+    InlineContext1: number,
+    RetAddress1: number | bigint,
+    Address2: number | bigint,
+    RetAddress2: number | bigint,
+  ): number;
   /** dbghelp.dll!SymDeleteSymbol */
-  SymDeleteSymbol(hProcess: Win32Pointer, BaseOfDll: number | bigint, Name: string | Win32Pointer, Address: number | bigint, Flags: number): number;
+  SymDeleteSymbol(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    Name: string | Win32Pointer,
+    Address: number | bigint,
+    Flags: number,
+  ): number;
   /** dbghelp.dll!SymDeleteSymbolW */
-  SymDeleteSymbolW(hProcess: Win32Pointer, BaseOfDll: number | bigint, Name: string | Win32Pointer, Address: number | bigint, Flags: number): number;
+  SymDeleteSymbolW(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    Name: string | Win32Pointer,
+    Address: number | bigint,
+    Flags: number,
+  ): number;
   /** dbghelp.dll!SymEnumLines */
-  SymEnumLines(hProcess: Win32Pointer, Base: number | bigint, Obj: string | Win32Pointer, File: string | Win32Pointer, EnumLinesCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumLines(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    Obj: string | Win32Pointer,
+    File: string | Win32Pointer,
+    EnumLinesCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumLinesW */
-  SymEnumLinesW(hProcess: Win32Pointer, Base: number | bigint, Obj: string | Win32Pointer, File: string | Win32Pointer, EnumLinesCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumLinesW(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    Obj: string | Win32Pointer,
+    File: string | Win32Pointer,
+    EnumLinesCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumProcesses */
   SymEnumProcesses(EnumProcessesCallback: Win32Callback, UserContext: Win32Pointer): number;
   /** dbghelp.dll!SymEnumSourceFileTokens */
   SymEnumSourceFileTokens(hProcess: Win32Pointer, Base: number | bigint, Callback: Win32Callback): number;
   /** dbghelp.dll!SymEnumSourceFiles */
-  SymEnumSourceFiles(hProcess: Win32Pointer, ModBase: number | bigint, Mask: string | Win32Pointer, cbSrcFiles: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumSourceFiles(
+    hProcess: Win32Pointer,
+    ModBase: number | bigint,
+    Mask: string | Win32Pointer,
+    cbSrcFiles: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumSourceFilesW */
-  SymEnumSourceFilesW(hProcess: Win32Pointer, ModBase: number | bigint, Mask: string | Win32Pointer, cbSrcFiles: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumSourceFilesW(
+    hProcess: Win32Pointer,
+    ModBase: number | bigint,
+    Mask: string | Win32Pointer,
+    cbSrcFiles: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumSourceLines */
-  SymEnumSourceLines(hProcess: Win32Pointer, Base: number | bigint, Obj: string | Win32Pointer, File: string | Win32Pointer, Line: number, Flags: number, EnumLinesCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumSourceLines(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    Obj: string | Win32Pointer,
+    File: string | Win32Pointer,
+    Line: number,
+    Flags: number,
+    EnumLinesCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumSourceLinesW */
-  SymEnumSourceLinesW(hProcess: Win32Pointer, Base: number | bigint, Obj: string | Win32Pointer, File: string | Win32Pointer, Line: number, Flags: number, EnumLinesCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumSourceLinesW(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    Obj: string | Win32Pointer,
+    File: string | Win32Pointer,
+    Line: number,
+    Flags: number,
+    EnumLinesCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumSym */
-  SymEnumSym(hProcess: Win32Pointer, BaseOfDll: number | bigint, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumSym(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumSymbols */
-  SymEnumSymbols(hProcess: Win32Pointer, BaseOfDll: number | bigint, Mask: string | Win32Pointer, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumSymbols(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    Mask: string | Win32Pointer,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumSymbolsEx */
-  SymEnumSymbolsEx(hProcess: Win32Pointer, BaseOfDll: number | bigint, Mask: string | Win32Pointer, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer, Options: number): number;
+  SymEnumSymbolsEx(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    Mask: string | Win32Pointer,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+    Options: number,
+  ): number;
   /** dbghelp.dll!SymEnumSymbolsExW */
-  SymEnumSymbolsExW(hProcess: Win32Pointer, BaseOfDll: number | bigint, Mask: string | Win32Pointer, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer, Options: number): number;
+  SymEnumSymbolsExW(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    Mask: string | Win32Pointer,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+    Options: number,
+  ): number;
   /** dbghelp.dll!SymEnumSymbolsForAddr */
-  SymEnumSymbolsForAddr(hProcess: Win32Pointer, Address: number | bigint, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumSymbolsForAddr(
+    hProcess: Win32Pointer,
+    Address: number | bigint,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumSymbolsForAddrW */
-  SymEnumSymbolsForAddrW(hProcess: Win32Pointer, Address: number | bigint, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumSymbolsForAddrW(
+    hProcess: Win32Pointer,
+    Address: number | bigint,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumSymbolsW */
-  SymEnumSymbolsW(hProcess: Win32Pointer, BaseOfDll: number | bigint, Mask: string | Win32Pointer, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumSymbolsW(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    Mask: string | Win32Pointer,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumTypes */
-  SymEnumTypes(hProcess: Win32Pointer, BaseOfDll: number | bigint, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumTypes(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumTypesByName */
-  SymEnumTypesByName(hProcess: Win32Pointer, BaseOfDll: number | bigint, mask: string | Win32Pointer, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumTypesByName(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    mask: string | Win32Pointer,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumTypesByNameW */
-  SymEnumTypesByNameW(hProcess: Win32Pointer, BaseOfDll: number | bigint, mask: string | Win32Pointer, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumTypesByNameW(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    mask: string | Win32Pointer,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumTypesW */
-  SymEnumTypesW(hProcess: Win32Pointer, BaseOfDll: number | bigint, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumTypesW(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumerateModules64 */
   SymEnumerateModules64(hProcess: Win32Pointer, EnumModulesCallback: Win32Callback, UserContext: Win32Pointer): number;
   /** dbghelp.dll!SymEnumerateModulesW64 */
   SymEnumerateModulesW64(hProcess: Win32Pointer, EnumModulesCallback: Win32Callback, UserContext: Win32Pointer): number;
   /** dbghelp.dll!SymEnumerateSymbols64 */
-  SymEnumerateSymbols64(hProcess: Win32Pointer, BaseOfDll: number | bigint, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumerateSymbols64(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymEnumerateSymbolsW64 */
-  SymEnumerateSymbolsW64(hProcess: Win32Pointer, BaseOfDll: number | bigint, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer): number;
+  SymEnumerateSymbolsW64(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymFindDebugInfoFile */
-  SymFindDebugInfoFile(hProcess: Win32Pointer, FileName: string | Win32Pointer, DebugFilePath: string | Win32Pointer, Callback: Win32Callback, CallerData: Win32Pointer): number | null;
+  SymFindDebugInfoFile(
+    hProcess: Win32Pointer,
+    FileName: string | Win32Pointer,
+    DebugFilePath: string | Win32Pointer,
+    Callback: Win32Callback,
+    CallerData: Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!SymFindDebugInfoFileW */
-  SymFindDebugInfoFileW(hProcess: Win32Pointer, FileName: string | Win32Pointer, DebugFilePath: string | Win32Pointer, Callback: Win32Callback, CallerData: Win32Pointer): number | null;
+  SymFindDebugInfoFileW(
+    hProcess: Win32Pointer,
+    FileName: string | Win32Pointer,
+    DebugFilePath: string | Win32Pointer,
+    Callback: Win32Callback,
+    CallerData: Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!SymFindExecutableImage */
-  SymFindExecutableImage(hProcess: Win32Pointer, FileName: string | Win32Pointer, ImageFilePath: string | Win32Pointer, Callback: Win32Callback, CallerData: Win32Pointer): number | null;
+  SymFindExecutableImage(
+    hProcess: Win32Pointer,
+    FileName: string | Win32Pointer,
+    ImageFilePath: string | Win32Pointer,
+    Callback: Win32Callback,
+    CallerData: Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!SymFindExecutableImageW */
-  SymFindExecutableImageW(hProcess: Win32Pointer, FileName: string | Win32Pointer, ImageFilePath: string | Win32Pointer, Callback: Win32Callback, CallerData: Win32Pointer): number | null;
+  SymFindExecutableImageW(
+    hProcess: Win32Pointer,
+    FileName: string | Win32Pointer,
+    ImageFilePath: string | Win32Pointer,
+    Callback: Win32Callback,
+    CallerData: Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!SymFindFileInPath */
-  SymFindFileInPath(hprocess: Win32Pointer, SearchPathA: string | Win32Pointer, FileName: string | Win32Pointer, id: Win32Pointer, two: number, three: number, flags: number, FoundFile: string | Win32Pointer, callback: Win32Callback, context: Win32Pointer): number;
+  SymFindFileInPath(
+    hprocess: Win32Pointer,
+    SearchPathA: string | Win32Pointer,
+    FileName: string | Win32Pointer,
+    id: Win32Pointer,
+    two: number,
+    three: number,
+    flags: number,
+    FoundFile: string | Win32Pointer,
+    callback: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymFindFileInPathW */
-  SymFindFileInPathW(hprocess: Win32Pointer, SearchPathA: string | Win32Pointer, FileName: string | Win32Pointer, id: Win32Pointer, two: number, three: number, flags: number, FoundFile: string | Win32Pointer, callback: Win32Callback, context: Win32Pointer): number;
+  SymFindFileInPathW(
+    hprocess: Win32Pointer,
+    SearchPathA: string | Win32Pointer,
+    FileName: string | Win32Pointer,
+    id: Win32Pointer,
+    two: number,
+    three: number,
+    flags: number,
+    FoundFile: string | Win32Pointer,
+    callback: Win32Callback,
+    context: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymFromAddr */
-  SymFromAddr(hProcess: Win32Pointer, Address: number | bigint, Displacement: Win32Pointer, Symbol: Win32Pointer): number;
+  SymFromAddr(
+    hProcess: Win32Pointer,
+    Address: number | bigint,
+    Displacement: Win32Pointer,
+    Symbol: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymFromAddrW */
-  SymFromAddrW(hProcess: Win32Pointer, Address: number | bigint, Displacement: Win32Pointer, Symbol: Win32Pointer): number;
+  SymFromAddrW(
+    hProcess: Win32Pointer,
+    Address: number | bigint,
+    Displacement: Win32Pointer,
+    Symbol: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymFromIndex */
   SymFromIndex(hProcess: Win32Pointer, BaseOfDll: number | bigint, Index: number, Symbol: Win32Pointer): number;
   /** dbghelp.dll!SymFromIndexW */
   SymFromIndexW(hProcess: Win32Pointer, BaseOfDll: number | bigint, Index: number, Symbol: Win32Pointer): number;
   /** dbghelp.dll!SymFromInlineContext */
-  SymFromInlineContext(hProcess: Win32Pointer, Address: number | bigint, InlineContext: number, Displacement: Win32Pointer, Symbol: Win32Pointer): number;
+  SymFromInlineContext(
+    hProcess: Win32Pointer,
+    Address: number | bigint,
+    InlineContext: number,
+    Displacement: Win32Pointer,
+    Symbol: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymFromInlineContextW */
-  SymFromInlineContextW(hProcess: Win32Pointer, Address: number | bigint, InlineContext: number, Displacement: Win32Pointer, Symbol: Win32Pointer): number;
+  SymFromInlineContextW(
+    hProcess: Win32Pointer,
+    Address: number | bigint,
+    InlineContext: number,
+    Displacement: Win32Pointer,
+    Symbol: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymFromName */
   SymFromName(hProcess: Win32Pointer, Name: string | Win32Pointer, Symbol: Win32Pointer): number;
   /** dbghelp.dll!SymFromNameW */
@@ -189,27 +596,76 @@ interface Functions {
   /** dbghelp.dll!SymFunctionTableAccess64 */
   SymFunctionTableAccess64(hProcess: Win32Pointer, AddrBase: number | bigint): number | null;
   /** dbghelp.dll!SymFunctionTableAccess64AccessRoutines */
-  SymFunctionTableAccess64AccessRoutines(hProcess: Win32Pointer, AddrBase: number | bigint, ReadMemoryRoutine: Win32Callback, GetModuleBaseRoutine: Win32Callback): number | null;
+  SymFunctionTableAccess64AccessRoutines(
+    hProcess: Win32Pointer,
+    AddrBase: number | bigint,
+    ReadMemoryRoutine: Win32Callback,
+    GetModuleBaseRoutine: Win32Callback,
+  ): number | null;
   /** dbghelp.dll!SymGetExtendedOption */
   SymGetExtendedOption(option: number): number;
   /** dbghelp.dll!SymGetFileLineOffsets64 */
-  SymGetFileLineOffsets64(hProcess: Win32Pointer, ModuleName: string | Win32Pointer, FileName: string | Win32Pointer, Buffer: Win32Pointer, BufferLines: number): number;
+  SymGetFileLineOffsets64(
+    hProcess: Win32Pointer,
+    ModuleName: string | Win32Pointer,
+    FileName: string | Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferLines: number,
+  ): number;
   /** dbghelp.dll!SymGetHomeDirectory */
   SymGetHomeDirectory(type: number, dir: string | Win32Pointer, size: number | bigint): number | null;
   /** dbghelp.dll!SymGetHomeDirectoryW */
   SymGetHomeDirectoryW(type: number, dir: string | Win32Pointer, size: number | bigint): number | null;
   /** dbghelp.dll!SymGetLineFromAddr64 */
-  SymGetLineFromAddr64(hProcess: Win32Pointer, qwAddr: number | bigint, pdwDisplacement: Win32Pointer, Line64: Win32Pointer): number;
+  SymGetLineFromAddr64(
+    hProcess: Win32Pointer,
+    qwAddr: number | bigint,
+    pdwDisplacement: Win32Pointer,
+    Line64: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetLineFromAddrW64 */
-  SymGetLineFromAddrW64(hProcess: Win32Pointer, dwAddr: number | bigint, pdwDisplacement: Win32Pointer, Line: Win32Pointer): number;
+  SymGetLineFromAddrW64(
+    hProcess: Win32Pointer,
+    dwAddr: number | bigint,
+    pdwDisplacement: Win32Pointer,
+    Line: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetLineFromInlineContext */
-  SymGetLineFromInlineContext(hProcess: Win32Pointer, qwAddr: number | bigint, InlineContext: number, qwModuleBaseAddress: number | bigint, pdwDisplacement: Win32Pointer, Line64: Win32Pointer): number;
+  SymGetLineFromInlineContext(
+    hProcess: Win32Pointer,
+    qwAddr: number | bigint,
+    InlineContext: number,
+    qwModuleBaseAddress: number | bigint,
+    pdwDisplacement: Win32Pointer,
+    Line64: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetLineFromInlineContextW */
-  SymGetLineFromInlineContextW(hProcess: Win32Pointer, dwAddr: number | bigint, InlineContext: number, qwModuleBaseAddress: number | bigint, pdwDisplacement: Win32Pointer, Line: Win32Pointer): number;
+  SymGetLineFromInlineContextW(
+    hProcess: Win32Pointer,
+    dwAddr: number | bigint,
+    InlineContext: number,
+    qwModuleBaseAddress: number | bigint,
+    pdwDisplacement: Win32Pointer,
+    Line: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetLineFromName64 */
-  SymGetLineFromName64(hProcess: Win32Pointer, ModuleName: string | Win32Pointer, FileName: string | Win32Pointer, dwLineNumber: number, plDisplacement: Win32Pointer, Line: Win32Pointer): number;
+  SymGetLineFromName64(
+    hProcess: Win32Pointer,
+    ModuleName: string | Win32Pointer,
+    FileName: string | Win32Pointer,
+    dwLineNumber: number,
+    plDisplacement: Win32Pointer,
+    Line: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetLineFromNameW64 */
-  SymGetLineFromNameW64(hProcess: Win32Pointer, ModuleName: string | Win32Pointer, FileName: string | Win32Pointer, dwLineNumber: number, plDisplacement: Win32Pointer, Line: Win32Pointer): number;
+  SymGetLineFromNameW64(
+    hProcess: Win32Pointer,
+    ModuleName: string | Win32Pointer,
+    FileName: string | Win32Pointer,
+    dwLineNumber: number,
+    plDisplacement: Win32Pointer,
+    Line: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetLineNext64 */
   SymGetLineNext64(hProcess: Win32Pointer, Line: Win32Pointer): number;
   /** dbghelp.dll!SymGetLineNextW64 */
@@ -225,7 +681,14 @@ interface Functions {
   /** dbghelp.dll!SymGetModuleInfoW64 */
   SymGetModuleInfoW64(hProcess: Win32Pointer, qwAddr: number | bigint, ModuleInfo: Win32Pointer): number;
   /** dbghelp.dll!SymGetOmaps */
-  SymGetOmaps(hProcess: Win32Pointer, BaseOfDll: number | bigint, OmapTo: Win32Pointer, cOmapTo: Win32Pointer, OmapFrom: Win32Pointer, cOmapFrom: Win32Pointer): number;
+  SymGetOmaps(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    OmapTo: Win32Pointer,
+    cOmapTo: Win32Pointer,
+    OmapFrom: Win32Pointer,
+    cOmapFrom: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetOptions */
   SymGetOptions(): number;
   /** dbghelp.dll!SymGetParentWindow */
@@ -239,35 +702,138 @@ interface Functions {
   /** dbghelp.dll!SymGetSearchPathW */
   SymGetSearchPathW(hProcess: Win32Pointer, SearchPathA: string | Win32Pointer, SearchPathLength: number): number;
   /** dbghelp.dll!SymGetSourceFile */
-  SymGetSourceFile(hProcess: Win32Pointer, Base: number | bigint, Params: string | Win32Pointer, FileSpec: string | Win32Pointer, FilePath: string | Win32Pointer, Size: number): number;
+  SymGetSourceFile(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    Params: string | Win32Pointer,
+    FileSpec: string | Win32Pointer,
+    FilePath: string | Win32Pointer,
+    Size: number,
+  ): number;
   /** dbghelp.dll!SymGetSourceFileChecksum */
-  SymGetSourceFileChecksum(hProcess: Win32Pointer, Base: number | bigint, FileSpec: string | Win32Pointer, pCheckSumType: Win32Pointer, pChecksum: Win32Pointer, checksumSize: number, pActualBytesWritten: Win32Pointer): number;
+  SymGetSourceFileChecksum(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    FileSpec: string | Win32Pointer,
+    pCheckSumType: Win32Pointer,
+    pChecksum: Win32Pointer,
+    checksumSize: number,
+    pActualBytesWritten: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetSourceFileChecksumW */
-  SymGetSourceFileChecksumW(hProcess: Win32Pointer, Base: number | bigint, FileSpec: string | Win32Pointer, pCheckSumType: Win32Pointer, pChecksum: Win32Pointer, checksumSize: number, pActualBytesWritten: Win32Pointer): number;
+  SymGetSourceFileChecksumW(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    FileSpec: string | Win32Pointer,
+    pCheckSumType: Win32Pointer,
+    pChecksum: Win32Pointer,
+    checksumSize: number,
+    pActualBytesWritten: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetSourceFileFromToken */
-  SymGetSourceFileFromToken(hProcess: Win32Pointer, Token: Win32Pointer, Params: string | Win32Pointer, FilePath: string | Win32Pointer, Size: number): number;
+  SymGetSourceFileFromToken(
+    hProcess: Win32Pointer,
+    Token: Win32Pointer,
+    Params: string | Win32Pointer,
+    FilePath: string | Win32Pointer,
+    Size: number,
+  ): number;
   /** dbghelp.dll!SymGetSourceFileFromTokenByTokenName */
-  SymGetSourceFileFromTokenByTokenName(hProcess: Win32Pointer, Token: Win32Pointer, TokenName: string | Win32Pointer, Params: string | Win32Pointer, FilePath: string | Win32Pointer, Size: number): number;
+  SymGetSourceFileFromTokenByTokenName(
+    hProcess: Win32Pointer,
+    Token: Win32Pointer,
+    TokenName: string | Win32Pointer,
+    Params: string | Win32Pointer,
+    FilePath: string | Win32Pointer,
+    Size: number,
+  ): number;
   /** dbghelp.dll!SymGetSourceFileFromTokenByTokenNameW */
-  SymGetSourceFileFromTokenByTokenNameW(hProcess: Win32Pointer, Token: Win32Pointer, TokenName: string | Win32Pointer, Params: string | Win32Pointer, FilePath: string | Win32Pointer, Size: number): number;
+  SymGetSourceFileFromTokenByTokenNameW(
+    hProcess: Win32Pointer,
+    Token: Win32Pointer,
+    TokenName: string | Win32Pointer,
+    Params: string | Win32Pointer,
+    FilePath: string | Win32Pointer,
+    Size: number,
+  ): number;
   /** dbghelp.dll!SymGetSourceFileFromTokenW */
-  SymGetSourceFileFromTokenW(hProcess: Win32Pointer, Token: Win32Pointer, Params: string | Win32Pointer, FilePath: string | Win32Pointer, Size: number): number;
+  SymGetSourceFileFromTokenW(
+    hProcess: Win32Pointer,
+    Token: Win32Pointer,
+    Params: string | Win32Pointer,
+    FilePath: string | Win32Pointer,
+    Size: number,
+  ): number;
   /** dbghelp.dll!SymGetSourceFileToken */
-  SymGetSourceFileToken(hProcess: Win32Pointer, Base: number | bigint, FileSpec: string | Win32Pointer, Token: Win32Pointer, Size: Win32Pointer): number;
+  SymGetSourceFileToken(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    FileSpec: string | Win32Pointer,
+    Token: Win32Pointer,
+    Size: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetSourceFileTokenByTokenName */
-  SymGetSourceFileTokenByTokenName(hProcess: Win32Pointer, Base: number | bigint, FileSpec: string | Win32Pointer, TokenName: string | Win32Pointer, TokenParameters: string | Win32Pointer, Token: Win32Pointer, Size: Win32Pointer): number;
+  SymGetSourceFileTokenByTokenName(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    FileSpec: string | Win32Pointer,
+    TokenName: string | Win32Pointer,
+    TokenParameters: string | Win32Pointer,
+    Token: Win32Pointer,
+    Size: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetSourceFileTokenByTokenNameW */
-  SymGetSourceFileTokenByTokenNameW(hProcess: Win32Pointer, Base: number | bigint, FileSpec: string | Win32Pointer, TokenName: string | Win32Pointer, TokenParameters: string | Win32Pointer, Token: Win32Pointer, Size: Win32Pointer): number;
+  SymGetSourceFileTokenByTokenNameW(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    FileSpec: string | Win32Pointer,
+    TokenName: string | Win32Pointer,
+    TokenParameters: string | Win32Pointer,
+    Token: Win32Pointer,
+    Size: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetSourceFileTokenW */
-  SymGetSourceFileTokenW(hProcess: Win32Pointer, Base: number | bigint, FileSpec: string | Win32Pointer, Token: Win32Pointer, Size: Win32Pointer): number;
+  SymGetSourceFileTokenW(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    FileSpec: string | Win32Pointer,
+    Token: Win32Pointer,
+    Size: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetSourceFileW */
-  SymGetSourceFileW(hProcess: Win32Pointer, Base: number | bigint, Params: string | Win32Pointer, FileSpec: string | Win32Pointer, FilePath: string | Win32Pointer, Size: number): number;
+  SymGetSourceFileW(
+    hProcess: Win32Pointer,
+    Base: number | bigint,
+    Params: string | Win32Pointer,
+    FileSpec: string | Win32Pointer,
+    FilePath: string | Win32Pointer,
+    Size: number,
+  ): number;
   /** dbghelp.dll!SymGetSourceVarFromToken */
-  SymGetSourceVarFromToken(hProcess: Win32Pointer, Token: Win32Pointer, Params: string | Win32Pointer, VarName: string | Win32Pointer, Value: string | Win32Pointer, Size: number): number;
+  SymGetSourceVarFromToken(
+    hProcess: Win32Pointer,
+    Token: Win32Pointer,
+    Params: string | Win32Pointer,
+    VarName: string | Win32Pointer,
+    Value: string | Win32Pointer,
+    Size: number,
+  ): number;
   /** dbghelp.dll!SymGetSourceVarFromTokenW */
-  SymGetSourceVarFromTokenW(hProcess: Win32Pointer, Token: Win32Pointer, Params: string | Win32Pointer, VarName: string | Win32Pointer, Value: string | Win32Pointer, Size: number): number;
+  SymGetSourceVarFromTokenW(
+    hProcess: Win32Pointer,
+    Token: Win32Pointer,
+    Params: string | Win32Pointer,
+    VarName: string | Win32Pointer,
+    Value: string | Win32Pointer,
+    Size: number,
+  ): number;
   /** dbghelp.dll!SymGetSymFromAddr64 */
-  SymGetSymFromAddr64(hProcess: Win32Pointer, qwAddr: number | bigint, pdwDisplacement: Win32Pointer, Symbol: Win32Pointer): number;
+  SymGetSymFromAddr64(
+    hProcess: Win32Pointer,
+    qwAddr: number | bigint,
+    pdwDisplacement: Win32Pointer,
+    Symbol: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetSymFromName64 */
   SymGetSymFromName64(hProcess: Win32Pointer, Name: string | Win32Pointer, Symbol: Win32Pointer): number;
   /** dbghelp.dll!SymGetSymNext64 */
@@ -275,15 +841,49 @@ interface Functions {
   /** dbghelp.dll!SymGetSymPrev64 */
   SymGetSymPrev64(hProcess: Win32Pointer, Symbol: Win32Pointer): number;
   /** dbghelp.dll!SymGetSymbolFile */
-  SymGetSymbolFile(hProcess: Win32Pointer, SymPath: string | Win32Pointer, ImageFile: string | Win32Pointer, Type: number, SymbolFile: string | Win32Pointer, cSymbolFile: number | bigint, DbgFile: string | Win32Pointer, cDbgFile: number | bigint): number;
+  SymGetSymbolFile(
+    hProcess: Win32Pointer,
+    SymPath: string | Win32Pointer,
+    ImageFile: string | Win32Pointer,
+    Type: number,
+    SymbolFile: string | Win32Pointer,
+    cSymbolFile: number | bigint,
+    DbgFile: string | Win32Pointer,
+    cDbgFile: number | bigint,
+  ): number;
   /** dbghelp.dll!SymGetSymbolFileW */
-  SymGetSymbolFileW(hProcess: Win32Pointer, SymPath: string | Win32Pointer, ImageFile: string | Win32Pointer, Type: number, SymbolFile: string | Win32Pointer, cSymbolFile: number | bigint, DbgFile: string | Win32Pointer, cDbgFile: number | bigint): number;
+  SymGetSymbolFileW(
+    hProcess: Win32Pointer,
+    SymPath: string | Win32Pointer,
+    ImageFile: string | Win32Pointer,
+    Type: number,
+    SymbolFile: string | Win32Pointer,
+    cSymbolFile: number | bigint,
+    DbgFile: string | Win32Pointer,
+    cDbgFile: number | bigint,
+  ): number;
   /** dbghelp.dll!SymGetTypeFromName */
-  SymGetTypeFromName(hProcess: Win32Pointer, BaseOfDll: number | bigint, Name: string | Win32Pointer, Symbol: Win32Pointer): number;
+  SymGetTypeFromName(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    Name: string | Win32Pointer,
+    Symbol: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetTypeFromNameW */
-  SymGetTypeFromNameW(hProcess: Win32Pointer, BaseOfDll: number | bigint, Name: string | Win32Pointer, Symbol: Win32Pointer): number;
+  SymGetTypeFromNameW(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    Name: string | Win32Pointer,
+    Symbol: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetTypeInfo */
-  SymGetTypeInfo(hProcess: Win32Pointer, ModBase: number | bigint, TypeId: number, GetType: number, pInfo: Win32Pointer): number;
+  SymGetTypeInfo(
+    hProcess: Win32Pointer,
+    ModBase: number | bigint,
+    TypeId: number,
+    GetType: number,
+    pInfo: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymGetTypeInfoEx */
   SymGetTypeInfoEx(hProcess: Win32Pointer, ModBase: number | bigint, Params: Win32Pointer): number;
   /** dbghelp.dll!SymGetUnwindInfo */
@@ -293,15 +893,50 @@ interface Functions {
   /** dbghelp.dll!SymInitializeW */
   SymInitializeW(hProcess: Win32Pointer, UserSearchPath: string | Win32Pointer, fInvadeProcess: number): number;
   /** dbghelp.dll!SymLoadModule64 */
-  SymLoadModule64(hProcess: Win32Pointer, hFile: Win32Pointer, ImageName: string | Win32Pointer, ModuleName: string | Win32Pointer, BaseOfDll: number | bigint, SizeOfDll: number): bigint;
+  SymLoadModule64(
+    hProcess: Win32Pointer,
+    hFile: Win32Pointer,
+    ImageName: string | Win32Pointer,
+    ModuleName: string | Win32Pointer,
+    BaseOfDll: number | bigint,
+    SizeOfDll: number,
+  ): bigint;
   /** dbghelp.dll!SymLoadModuleEx */
-  SymLoadModuleEx(hProcess: Win32Pointer, hFile: Win32Pointer, ImageName: string | Win32Pointer, ModuleName: string | Win32Pointer, BaseOfDll: number | bigint, DllSize: number, Data: Win32Pointer, Flags: number): bigint;
+  SymLoadModuleEx(
+    hProcess: Win32Pointer,
+    hFile: Win32Pointer,
+    ImageName: string | Win32Pointer,
+    ModuleName: string | Win32Pointer,
+    BaseOfDll: number | bigint,
+    DllSize: number,
+    Data: Win32Pointer,
+    Flags: number,
+  ): bigint;
   /** dbghelp.dll!SymLoadModuleExW */
-  SymLoadModuleExW(hProcess: Win32Pointer, hFile: Win32Pointer, ImageName: string | Win32Pointer, ModuleName: string | Win32Pointer, BaseOfDll: number | bigint, DllSize: number, Data: Win32Pointer, Flags: number): bigint;
+  SymLoadModuleExW(
+    hProcess: Win32Pointer,
+    hFile: Win32Pointer,
+    ImageName: string | Win32Pointer,
+    ModuleName: string | Win32Pointer,
+    BaseOfDll: number | bigint,
+    DllSize: number,
+    Data: Win32Pointer,
+    Flags: number,
+  ): bigint;
   /** dbghelp.dll!SymMatchFileName */
-  SymMatchFileName(FileName: string | Win32Pointer, Match: string | Win32Pointer, FileNameStop: Win32Pointer, MatchStop: Win32Pointer): number;
+  SymMatchFileName(
+    FileName: string | Win32Pointer,
+    Match: string | Win32Pointer,
+    FileNameStop: Win32Pointer,
+    MatchStop: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymMatchFileNameW */
-  SymMatchFileNameW(FileName: string | Win32Pointer, Match: string | Win32Pointer, FileNameStop: Win32Pointer, MatchStop: Win32Pointer): number;
+  SymMatchFileNameW(
+    FileName: string | Win32Pointer,
+    Match: string | Win32Pointer,
+    FileNameStop: Win32Pointer,
+    MatchStop: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymMatchString */
   SymMatchString(string: string | Win32Pointer, expression: string | Win32Pointer, fCase: number): number;
   /** dbghelp.dll!SymMatchStringA */
@@ -317,7 +952,15 @@ interface Functions {
   /** dbghelp.dll!SymPrevW */
   SymPrevW(hProcess: Win32Pointer, siw: Win32Pointer): number;
   /** dbghelp.dll!SymQueryInlineTrace */
-  SymQueryInlineTrace(hProcess: Win32Pointer, StartAddress: number | bigint, StartContext: number, StartRetAddress: number | bigint, CurAddress: number | bigint, CurContext: Win32Pointer, CurFrameIndex: Win32Pointer): number;
+  SymQueryInlineTrace(
+    hProcess: Win32Pointer,
+    StartAddress: number | bigint,
+    StartContext: number,
+    StartRetAddress: number | bigint,
+    CurAddress: number | bigint,
+    CurContext: Win32Pointer,
+    CurFrameIndex: Win32Pointer,
+  ): number;
   /** dbghelp.dll!SymRefreshModuleList */
   SymRefreshModuleList(hProcess: Win32Pointer): number;
   /** dbghelp.dll!SymRegisterCallback64 */
@@ -325,11 +968,35 @@ interface Functions {
   /** dbghelp.dll!SymRegisterCallbackW64 */
   SymRegisterCallbackW64(hProcess: Win32Pointer, CallbackFunction: Win32Callback, UserContext: number | bigint): number;
   /** dbghelp.dll!SymRegisterFunctionEntryCallback64 */
-  SymRegisterFunctionEntryCallback64(hProcess: Win32Pointer, CallbackFunction: Win32Callback, UserContext: number | bigint): number;
+  SymRegisterFunctionEntryCallback64(
+    hProcess: Win32Pointer,
+    CallbackFunction: Win32Callback,
+    UserContext: number | bigint,
+  ): number;
   /** dbghelp.dll!SymSearch */
-  SymSearch(hProcess: Win32Pointer, BaseOfDll: number | bigint, Index: number, SymTag: number, Mask: string | Win32Pointer, Address: number | bigint, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer, Options: number): number;
+  SymSearch(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    Index: number,
+    SymTag: number,
+    Mask: string | Win32Pointer,
+    Address: number | bigint,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+    Options: number,
+  ): number;
   /** dbghelp.dll!SymSearchW */
-  SymSearchW(hProcess: Win32Pointer, BaseOfDll: number | bigint, Index: number, SymTag: number, Mask: string | Win32Pointer, Address: number | bigint, EnumSymbolsCallback: Win32Callback, UserContext: Win32Pointer, Options: number): number;
+  SymSearchW(
+    hProcess: Win32Pointer,
+    BaseOfDll: number | bigint,
+    Index: number,
+    SymTag: number,
+    Mask: string | Win32Pointer,
+    Address: number | bigint,
+    EnumSymbolsCallback: Win32Callback,
+    UserContext: Win32Pointer,
+    Options: number,
+  ): number;
   /** dbghelp.dll!SymSetContext */
   SymSetContext(hProcess: Win32Pointer, StackFrame: Win32Pointer, Context: Win32Pointer): number;
   /** dbghelp.dll!SymSetExtendedOption */
@@ -353,45 +1020,125 @@ interface Functions {
   /** dbghelp.dll!SymSetSearchPathW */
   SymSetSearchPathW(hProcess: Win32Pointer, SearchPathA: string | Win32Pointer): number;
   /** dbghelp.dll!SymSrvDeltaName */
-  SymSrvDeltaName(hProcess: Win32Pointer, SymPath: string | Win32Pointer, Type: string | Win32Pointer, File1: string | Win32Pointer, File2: string | Win32Pointer): number | null;
+  SymSrvDeltaName(
+    hProcess: Win32Pointer,
+    SymPath: string | Win32Pointer,
+    Type: string | Win32Pointer,
+    File1: string | Win32Pointer,
+    File2: string | Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!SymSrvDeltaNameW */
-  SymSrvDeltaNameW(hProcess: Win32Pointer, SymPath: string | Win32Pointer, Type: string | Win32Pointer, File1: string | Win32Pointer, File2: string | Win32Pointer): number | null;
+  SymSrvDeltaNameW(
+    hProcess: Win32Pointer,
+    SymPath: string | Win32Pointer,
+    Type: string | Win32Pointer,
+    File1: string | Win32Pointer,
+    File2: string | Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!SymSrvGetFileIndexInfo */
   SymSrvGetFileIndexInfo(File: string | Win32Pointer, Info: Win32Pointer, Flags: number): number;
   /** dbghelp.dll!SymSrvGetFileIndexInfoW */
   SymSrvGetFileIndexInfoW(File: string | Win32Pointer, Info: Win32Pointer, Flags: number): number;
   /** dbghelp.dll!SymSrvGetFileIndexString */
-  SymSrvGetFileIndexString(hProcess: Win32Pointer, SrvPath: string | Win32Pointer, File: string | Win32Pointer, Index: string | Win32Pointer, Size: number | bigint, Flags: number): number;
+  SymSrvGetFileIndexString(
+    hProcess: Win32Pointer,
+    SrvPath: string | Win32Pointer,
+    File: string | Win32Pointer,
+    Index: string | Win32Pointer,
+    Size: number | bigint,
+    Flags: number,
+  ): number;
   /** dbghelp.dll!SymSrvGetFileIndexStringW */
-  SymSrvGetFileIndexStringW(hProcess: Win32Pointer, SrvPath: string | Win32Pointer, File: string | Win32Pointer, Index: string | Win32Pointer, Size: number | bigint, Flags: number): number;
+  SymSrvGetFileIndexStringW(
+    hProcess: Win32Pointer,
+    SrvPath: string | Win32Pointer,
+    File: string | Win32Pointer,
+    Index: string | Win32Pointer,
+    Size: number | bigint,
+    Flags: number,
+  ): number;
   /** dbghelp.dll!SymSrvGetFileIndexes */
-  SymSrvGetFileIndexes(File: string | Win32Pointer, Id: Win32Pointer, Val1: Win32Pointer, Val2: Win32Pointer, Flags: number): number;
+  SymSrvGetFileIndexes(
+    File: string | Win32Pointer,
+    Id: Win32Pointer,
+    Val1: Win32Pointer,
+    Val2: Win32Pointer,
+    Flags: number,
+  ): number;
   /** dbghelp.dll!SymSrvGetFileIndexesW */
-  SymSrvGetFileIndexesW(File: string | Win32Pointer, Id: Win32Pointer, Val1: Win32Pointer, Val2: Win32Pointer, Flags: number): number;
+  SymSrvGetFileIndexesW(
+    File: string | Win32Pointer,
+    Id: Win32Pointer,
+    Val1: Win32Pointer,
+    Val2: Win32Pointer,
+    Flags: number,
+  ): number;
   /** dbghelp.dll!SymSrvGetSupplement */
-  SymSrvGetSupplement(hProcess: Win32Pointer, SymPath: string | Win32Pointer, Node: string | Win32Pointer, File: string | Win32Pointer): number | null;
+  SymSrvGetSupplement(
+    hProcess: Win32Pointer,
+    SymPath: string | Win32Pointer,
+    Node: string | Win32Pointer,
+    File: string | Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!SymSrvGetSupplementW */
-  SymSrvGetSupplementW(hProcess: Win32Pointer, SymPath: string | Win32Pointer, Node: string | Win32Pointer, File: string | Win32Pointer): number | null;
+  SymSrvGetSupplementW(
+    hProcess: Win32Pointer,
+    SymPath: string | Win32Pointer,
+    Node: string | Win32Pointer,
+    File: string | Win32Pointer,
+  ): number | null;
   /** dbghelp.dll!SymSrvIsStore */
   SymSrvIsStore(hProcess: Win32Pointer, path: string | Win32Pointer): number;
   /** dbghelp.dll!SymSrvIsStoreW */
   SymSrvIsStoreW(hProcess: Win32Pointer, path: string | Win32Pointer): number;
   /** dbghelp.dll!SymSrvStoreFile */
-  SymSrvStoreFile(hProcess: Win32Pointer, SrvPath: string | Win32Pointer, File: string | Win32Pointer, Flags: number): number | null;
+  SymSrvStoreFile(
+    hProcess: Win32Pointer,
+    SrvPath: string | Win32Pointer,
+    File: string | Win32Pointer,
+    Flags: number,
+  ): number | null;
   /** dbghelp.dll!SymSrvStoreFileW */
-  SymSrvStoreFileW(hProcess: Win32Pointer, SrvPath: string | Win32Pointer, File: string | Win32Pointer, Flags: number): number | null;
+  SymSrvStoreFileW(
+    hProcess: Win32Pointer,
+    SrvPath: string | Win32Pointer,
+    File: string | Win32Pointer,
+    Flags: number,
+  ): number | null;
   /** dbghelp.dll!SymSrvStoreSupplement */
-  SymSrvStoreSupplement(hProcess: Win32Pointer, SrvPath: string | Win32Pointer, Node: string | Win32Pointer, File: string | Win32Pointer, Flags: number): number | null;
+  SymSrvStoreSupplement(
+    hProcess: Win32Pointer,
+    SrvPath: string | Win32Pointer,
+    Node: string | Win32Pointer,
+    File: string | Win32Pointer,
+    Flags: number,
+  ): number | null;
   /** dbghelp.dll!SymSrvStoreSupplementW */
-  SymSrvStoreSupplementW(hProcess: Win32Pointer, SymPath: string | Win32Pointer, Node: string | Win32Pointer, File: string | Win32Pointer, Flags: number): number | null;
+  SymSrvStoreSupplementW(
+    hProcess: Win32Pointer,
+    SymPath: string | Win32Pointer,
+    Node: string | Win32Pointer,
+    File: string | Win32Pointer,
+    Flags: number,
+  ): number | null;
   /** dbghelp.dll!SymUnDName64 */
   SymUnDName64(sym: Win32Pointer, UnDecName: string | Win32Pointer, UnDecNameLength: number): number;
   /** dbghelp.dll!SymUnloadModule64 */
   SymUnloadModule64(hProcess: Win32Pointer, BaseOfDll: number | bigint): number;
   /** dbghelp.dll!UnDecorateSymbolName */
-  UnDecorateSymbolName(name: string | Win32Pointer, outputString: string | Win32Pointer, maxStringLength: number, flags: number): number;
+  UnDecorateSymbolName(
+    name: string | Win32Pointer,
+    outputString: string | Win32Pointer,
+    maxStringLength: number,
+    flags: number,
+  ): number;
   /** dbghelp.dll!UnDecorateSymbolNameW */
-  UnDecorateSymbolNameW(name: string | Win32Pointer, outputString: string | Win32Pointer, maxStringLength: number, flags: number): number;
+  UnDecorateSymbolNameW(
+    name: string | Win32Pointer,
+    outputString: string | Win32Pointer,
+    maxStringLength: number,
+    flags: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -3,23 +3,13 @@
 //   desktop (medium and up)    navigation rail (medium, expanded) or standard drawer (large, extra large) beside the content
 //   tv                         10-foot drawer, large type, focus ring, D-pad (arrow keys + Enter + Back) navigation
 import { useM3Theme } from "@aphrody/m3-theme/react";
-import {
-  Component,
-  Suspense,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { Component, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import closeIcon from "m3:icons/close";
 import contrastIcon from "m3:icons/contrast";
 import darkIcon from "m3:icons/dark_mode";
 import lightIcon from "m3:icons/light_mode";
 import { attachDpad } from "../../../src/material/adaptive/dpad.ts";
-import {
-  useAdaptive,
-  type AdaptiveState,
-} from "../../../src/material/adaptive/window.ts";
+import { useAdaptive, type AdaptiveState } from "../../../src/material/adaptive/window.ts";
 import { Svg } from "../../../src/material/ui.tsx";
 import { PAGES } from "../../../src/material/pages/index.ts";
 import { useRoute } from "../router.ts";
@@ -36,18 +26,8 @@ const MODE_LABEL = { light: "Light", dark: "Dark", system: "System" } as const;
 
 function ThemeModeButton() {
   const { themeMode, setThemeMode } = useM3Theme();
-  const next =
-    themeMode === "system"
-      ? "light"
-      : themeMode === "light"
-        ? "dark"
-        : "system";
-  const icon =
-    themeMode === "light"
-      ? lightIcon
-      : themeMode === "dark"
-        ? darkIcon
-        : contrastIcon;
+  const next = themeMode === "system" ? "light" : themeMode === "light" ? "dark" : "system";
+  const icon = themeMode === "light" ? lightIcon : themeMode === "dark" ? darkIcon : contrastIcon;
   return (
     <button
       type="button"
@@ -63,10 +43,7 @@ function ThemeModeButton() {
 
 function TopBar({ a, current }: { a: AdaptiveState; current: Destination }) {
   return (
-    <header
-      className="flex h-16 shrink-0 items-center gap-2 bg-surface px-(--m3-gutter) text-on-surface"
-      role="banner"
-    >
+    <header className="flex h-16 shrink-0 items-center gap-2 bg-surface px-(--m3-gutter) text-on-surface" role="banner">
       <div
         className={`${a.mode === "tv" ? "text-headline-medium" : "text-title-large"} flex-1 truncate`}
         data-testid="top-title"
@@ -105,14 +82,8 @@ function NavItem({
         data-testid={`nav-${item.id}`}
         aria-current={selected ? "page" : undefined}
         className={`state-layer flex h-14 w-full items-center gap-3 rounded-full px-4 text-label-large ${selected ? "bg-secondary-container text-on-secondary-container" : "text-on-surface-variant"}`}
-        onClick={(event) => {
-          if (
-            event.button === 0 &&
-            !event.metaKey &&
-            !event.ctrlKey &&
-            !event.shiftKey &&
-            !event.altKey
-          ) {
+        onClick={event => {
+          if (event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
             event.preventDefault();
             onSelect(item.id);
           }
@@ -142,15 +113,7 @@ function NavItem({
   );
 }
 
-function SideNav({
-  a,
-  route,
-  navigate,
-}: {
-  a: AdaptiveState;
-  route: string;
-  navigate: (id: string) => void;
-}) {
+function SideNav({ a, route, navigate }: { a: AdaptiveState; route: string; navigate: (id: string) => void }) {
   const drawer = a.mode === "tv" || a.navigation === "rail-expanded";
   return (
     <nav
@@ -158,7 +121,7 @@ function SideNav({
       className={`m3-scroll flex shrink-0 flex-col gap-1 overflow-y-auto bg-surface p-3 ${drawer ? (a.mode === "tv" ? "w-[19rem]" : "w-[22.5rem]") : "w-24"}`}
       data-testid={drawer ? "drawer" : "rail"}
     >
-      {DESTINATIONS.map((item) => (
+      {DESTINATIONS.map(item => (
         <NavItem
           key={item.id}
           item={item}
@@ -171,33 +134,17 @@ function SideNav({
   );
 }
 
-function BottomBar({
-  route,
-  navigate,
-  onMore,
-}: {
-  route: string;
-  navigate: (id: string) => void;
-  onMore: () => void;
-}) {
+function BottomBar({ route, navigate, onMore }: { route: string; navigate: (id: string) => void; onMore: () => void }) {
   const primary = PRIMARY_IDS.map(findDestination);
-  const moreSelected = !PRIMARY_IDS.includes(
-    route as (typeof PRIMARY_IDS)[number],
-  );
+  const moreSelected = !PRIMARY_IDS.includes(route as (typeof PRIMARY_IDS)[number]);
   return (
     <nav
       aria-label="Destinations"
       className="flex h-20 shrink-0 items-stretch bg-surface-container px-2 pb-[env(safe-area-inset-bottom)]"
       data-testid="bottom-bar"
     >
-      {primary.map((item) => (
-        <NavItem
-          key={item.id}
-          item={item}
-          selected={route === item.id}
-          variant="bar"
-          onSelect={navigate}
-        />
+      {primary.map(item => (
+        <NavItem key={item.id} item={item} selected={route === item.id} variant="bar" onSelect={navigate} />
       ))}
       <button
         type="button"
@@ -241,7 +188,7 @@ function MoreSheet({
     <dialog
       ref={ref}
       onClose={onClose}
-      onClick={(event) => event.target === ref.current && onClose()}
+      onClick={event => event.target === ref.current && onClose()}
       className="m-0 mt-auto w-full max-w-none rounded-t-extra-large bg-surface-container-low p-4 text-on-surface backdrop:bg-scrim/32"
       data-testid="more-sheet"
       aria-label="All destinations"
@@ -258,21 +205,15 @@ function MoreSheet({
         </button>
       </div>
       <div className="grid grid-cols-3 gap-2">
-        {DESTINATIONS.map((item) => (
+        {DESTINATIONS.map(item => (
           <a
             key={item.id}
             href={`#/${item.id}`}
             data-testid={`more-${item.id}`}
             aria-current={route === item.id ? "page" : undefined}
             className={`state-layer flex flex-col items-center gap-1 rounded-large p-3 text-label-medium ${route === item.id ? "bg-secondary-container text-on-secondary-container" : "text-on-surface-variant"}`}
-            onClick={(event) => {
-              if (
-                event.button === 0 &&
-                !event.metaKey &&
-                !event.ctrlKey &&
-                !event.shiftKey &&
-                !event.altKey
-              ) {
+            onClick={event => {
+              if (event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
                 event.preventDefault();
                 navigate(item.id);
                 onClose();
@@ -288,15 +229,7 @@ function MoreSheet({
   );
 }
 
-function PageSlot({
-  a,
-  route,
-  children,
-}: {
-  a: AdaptiveState;
-  route: string;
-  children: ReactNode;
-}) {
+function PageSlot({ a, route, children }: { a: AdaptiveState; route: string; children: ReactNode }) {
   const heading = useRef<HTMLDivElement>(null);
   useEffect(() => {
     // After a route change the page, not the nav, takes focus: screen readers announce the new title. TV keeps the nav focused.
@@ -319,10 +252,7 @@ function PageSlot({
   );
 }
 
-class PageBoundary extends Component<
-  { children: ReactNode },
-  { failed: boolean }
-> {
+class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
@@ -367,14 +297,10 @@ export function Shell() {
   }, [current.label]);
 
   return (
-    <div
-      className="flex h-full flex-col bg-surface"
-      data-testid="shell"
-      data-layout={a.mode}
-    >
+    <div className="flex h-full flex-col bg-surface" data-testid="shell" data-layout={a.mode}>
       <a
         href="#main"
-        onClick={(event) => {
+        onClick={event => {
           event.preventDefault();
           document.getElementById("main")?.focus();
         }}
@@ -384,16 +310,12 @@ export function Shell() {
       </a>
       <TopBar a={a} current={current} />
       <div className="flex min-h-0 flex-1">
-        {a.mode !== "mobile" ? (
-          <SideNav a={a} route={current.id} navigate={navigate} />
-        ) : null}
+        {a.mode !== "mobile" ? <SideNav a={a} route={current.id} navigate={navigate} /> : null}
         <PageSlot a={a} route={current.id}>
           <PageBoundary key={current.id}>
             <Suspense
               fallback={
-                <output className="block p-6 text-body-medium text-on-surface-variant">
-                  Loading {current.label}…
-                </output>
+                <output className="block p-6 text-body-medium text-on-surface-variant">Loading {current.label}…</output>
               }
             >
               <Page adaptive={a} />
@@ -401,20 +323,9 @@ export function Shell() {
           </PageBoundary>
         </PageSlot>
       </div>
+      {a.mode === "mobile" ? <BottomBar route={current.id} navigate={navigate} onMore={() => setMore(true)} /> : null}
       {a.mode === "mobile" ? (
-        <BottomBar
-          route={current.id}
-          navigate={navigate}
-          onMore={() => setMore(true)}
-        />
-      ) : null}
-      {a.mode === "mobile" ? (
-        <MoreSheet
-          open={more}
-          route={current.id}
-          navigate={navigate}
-          onClose={() => setMore(false)}
-        />
+        <MoreSheet open={more} route={current.id} navigate={navigate} onClose={() => setMore(false)} />
       ) : null}
     </div>
   );

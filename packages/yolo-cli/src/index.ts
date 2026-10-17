@@ -55,36 +55,23 @@ export const inspectPackages: Status["inspectPackages"] = async (...args) =>
   (await vendorStatus()).inspectPackages(...args);
 export const readVendorStatus: Status["readVendorStatus"] = async (...args) =>
   (await vendorStatus()).readVendorStatus(...args);
-export const collectStatusReport: Status["collectStatusReport"] = async (
-  ...args
-) => (await vendorStatus()).collectStatusReport(...args);
-export const resolveGitDir: Status["resolveGitDir"] = async (...args) =>
-  (await vendorStatus()).resolveGitDir(...args);
-export const readWorkspaceCargo: Cargo["readWorkspaceCargo"] = async (
-  ...args
-) => (await vendorCargo()).readWorkspaceCargo(...args);
-export const generateBunCatalog: Catalog["generateBunCatalog"] = async (
-  ...args
-) => (await vendorCatalog()).generateBunCatalog(...args);
-export const parseTsSource: Parse["parseTsSource"] = async (...args) =>
-  (await vfsParse()).parseTsSource(...args);
+export const collectStatusReport: Status["collectStatusReport"] = async (...args) =>
+  (await vendorStatus()).collectStatusReport(...args);
+export const resolveGitDir: Status["resolveGitDir"] = async (...args) => (await vendorStatus()).resolveGitDir(...args);
+export const readWorkspaceCargo: Cargo["readWorkspaceCargo"] = async (...args) =>
+  (await vendorCargo()).readWorkspaceCargo(...args);
+export const generateBunCatalog: Catalog["generateBunCatalog"] = async (...args) =>
+  (await vendorCatalog()).generateBunCatalog(...args);
+export const parseTsSource: Parse["parseTsSource"] = async (...args) => (await vfsParse()).parseTsSource(...args);
 // The pure renderers are synchronous in the core API, so they load their module with a lazy `require`.
 export const renderStatusMarkdown: Status["renderStatusMarkdown"] = (...args) =>
-  (
-    require("../../../../packages/engine/core/src/vendor/status") as Status
-  ).renderStatusMarkdown(...args);
+  (require("../../../../packages/engine/core/src/vendor/status") as Status).renderStatusMarkdown(...args);
 export const renderParseMarkdown: Parse["renderParseMarkdown"] = (...args) =>
-  (
-    require("../../../../packages/engine/core/src/vfs/parse") as Parse
-  ).renderParseMarkdown(...args);
+  (require("../../../../packages/engine/core/src/vfs/parse") as Parse).renderParseMarkdown(...args);
 export const runBenchMetrics: Bench["runBenchMetrics"] = (...args) =>
-  (
-    require("../../../../packages/engine/core/src/sys/benchmark") as Bench
-  ).runBenchMetrics(...args);
+  (require("../../../../packages/engine/core/src/sys/benchmark") as Bench).runBenchMetrics(...args);
 export const renderBenchMarkdown: Bench["renderBenchMarkdown"] = (...args) =>
-  (
-    require("../../../../packages/engine/core/src/sys/benchmark") as Bench
-  ).renderBenchMarkdown(...args);
+  (require("../../../../packages/engine/core/src/sys/benchmark") as Bench).renderBenchMarkdown(...args);
 
 let cachedRoot: string | undefined;
 /** The yolo home, resolved on first use (it walks parent directories, which `version` and `help` do not need). */
@@ -96,10 +83,7 @@ export const WEB_APP_DIR = "m3/packages/app-ui";
 const workspaceRoot = (): string => findCheckout() ?? process.cwd();
 
 /** Native tools keep their own argv, working directory, environment and standard streams. */
-async function runNativePythonTool(
-  tool: "uv" | "ruff",
-  args: string[],
-): Promise<number> {
+async function runNativePythonTool(tool: "uv" | "ruff", args: string[]): Promise<number> {
   const executable = Bun.which(tool, { PATH: process.env.PATH ?? "" });
   if (executable === null) {
     console.error(`yolo ${tool}: native ${tool} executable not found on PATH`);
@@ -114,16 +98,13 @@ async function runNativePythonTool(
     });
     return await child.exited;
   } catch (error) {
-    console.error(
-      `yolo ${tool}: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    console.error(`yolo ${tool}: ${error instanceof Error ? error.message : String(error)}`);
     return (error as NodeJS.ErrnoException).code === "ENOENT" ? 127 : 126;
   }
 }
 
 export function printHelp(): void {
-  const header =
-    "\x1b[1m\x1b[36mYOLO Industrial Engine CLI\x1b[0m (100% Native Bun Powered)";
+  const header = "\x1b[1m\x1b[36mYOLO Industrial Engine CLI\x1b[0m (100% Native Bun Powered)";
   console.log(`
 ${header}
 
@@ -232,47 +213,30 @@ async function main(): Promise<void> {
         break;
       }
 
-      console.log(
-        `\x1b[1m\x1b[36m=== YOLO Monorepo Status (Native Bun Engine) ===\x1b[0m`,
-      );
+      console.log(`\x1b[1m\x1b[36m=== YOLO Monorepo Status (Native Bun Engine) ===\x1b[0m`);
       for (const p of report.packages) {
-        const status = p.exists
-          ? `\x1b[32m[LOADED]\x1b[0m`
-          : `\x1b[31m[MISSING]\x1b[0m`;
+        const status = p.exists ? `\x1b[32m[LOADED]\x1b[0m` : `\x1b[31m[MISSING]\x1b[0m`;
         const commit = p.headCommit ? `(${p.headCommit})` : "";
-        const sampleCount =
-          p.filesCount !== undefined ? `[~${p.filesCount}+ files]` : "";
-        console.log(
-          `  ${status} vendor/${p.name.padEnd(10)} ${commit.padEnd(14)} ${sampleCount}`,
-        );
+        const sampleCount = p.filesCount !== undefined ? `[~${p.filesCount}+ files]` : "";
+        console.log(`  ${status} vendor/${p.name.padEnd(10)} ${commit.padEnd(14)} ${sampleCount}`);
       }
 
       if (report.vendor) {
-        console.log(
-          `\n\x1b[1m\x1b[36m=== Vendored crates (vendor.lock) ===\x1b[0m`,
-        );
-        console.log(
-          `  ${report.vendor.crates} crates imported into crates/aphrody-*`,
-        );
+        console.log(`\n\x1b[1m\x1b[36m=== Vendored crates (vendor.lock) ===\x1b[0m`);
+        console.log(`  ${report.vendor.crates} crates imported into crates/aphrody-*`);
         for (const source of report.vendor.sources) {
           const state = source.inSync
             ? "\x1b[32min sync\x1b[0m"
             : `\x1b[33mdrift (submodule at ${source.headSha?.slice(0, 10) ?? "?"}), run \`just vendor-update\`\x1b[0m`;
-          console.log(
-            `  ${source.name.padEnd(18)} ${source.lockedSha.slice(0, 10)} ${state}`,
-          );
+          console.log(`  ${source.name.padEnd(18)} ${source.lockedSha.slice(0, 10)} ${state}`);
         }
       }
 
       if (report.cargo) {
-        console.log(
-          `\n\x1b[1m\x1b[36m=== Cargo Workspace Config (via Bun.TOML) ===\x1b[0m`,
-        );
+        console.log(`\n\x1b[1m\x1b[36m=== Cargo Workspace Config (via Bun.TOML) ===\x1b[0m`);
         console.log(`  Resolver: v${report.cargo.resolver}`);
         console.log(`  Members:  ${report.cargo.members.join(", ")}`);
-        console.log(
-          `  Default:  ${report.cargo.defaultMembers?.join(", ") ?? "Cargo implicit selection"}`,
-        );
+        console.log(`  Default:  ${report.cargo.defaultMembers?.join(", ") ?? "Cargo implicit selection"}`);
         console.log(
           `  Release:  opt-level=${String(report.cargo.releaseProfile["opt-level"] ?? "z")}, strip=${String(report.cargo.releaseProfile["strip"] ?? true)}`,
         );
@@ -286,22 +250,12 @@ async function main(): Promise<void> {
         console.log(JSON.stringify(report, null, 2));
         break;
       }
-      console.log(
-        `\x1b[1m\x1b[36m=== Autonomous Bun Upstream Generator ===\x1b[0m`,
-      );
-      console.log(
-        `  Scanning upstream vendor/bun for Web APIs, Server, React, CSS, Image, JSON, Markdown...`,
-      );
+      console.log(`\x1b[1m\x1b[36m=== Autonomous Bun Upstream Generator ===\x1b[0m`);
+      console.log(`  Scanning upstream vendor/bun for Web APIs, Server, React, CSS, Image, JSON, Markdown...`);
       const report = await generateBunCatalog();
-      console.log(
-        `  \x1b[32m[SUCCESS]\x1b[0m Generated code catalog in ${report.elapsedMs} ms`,
-      );
-      console.log(
-        `  Target:   ${relative(rootDir(), report.targetCatalogPath)}`,
-      );
-      console.log(
-        `  Indexed:  ${report.totalDocFilesIndexed} docs, ${report.totalTypeFilesIndexed} type declarations`,
-      );
+      console.log(`  \x1b[32m[SUCCESS]\x1b[0m Generated code catalog in ${report.elapsedMs} ms`);
+      console.log(`  Target:   ${relative(rootDir(), report.targetCatalogPath)}`);
+      console.log(`  Indexed:  ${report.totalDocFilesIndexed} docs, ${report.totalTypeFilesIndexed} type declarations`);
       console.log(`\n  \x1b[1mDomains Cataloged:\x1b[0m`);
       for (const d of report.domains) {
         console.log(
@@ -313,27 +267,18 @@ async function main(): Promise<void> {
 
     case "parse": {
       const { runBunTool } = await import("./bun-tools");
-      process.exitCode = await runBunTool(
-        "parse",
-        args.slice(1),
-        process.cwd(),
-      );
+      process.exitCode = await runBunTool("parse", args.slice(1), process.cwd());
       break;
     }
 
     case "bench": {
       if (args.includes("--supervisor")) {
-        const { runSupervisorBenchCli } =
-          await import("@aphrody/yolo-core/src/sys/supervisor-benchmark.ts");
+        const { runSupervisorBenchCli } = await import("@aphrody/yolo-core/src/sys/supervisor-benchmark.ts");
         process.exitCode = await runSupervisorBenchCli(args.slice(1));
         break;
       }
       const { runBunTool } = await import("./bun-tools");
-      process.exitCode = await runBunTool(
-        "bench",
-        args.slice(1),
-        process.cwd(),
-      );
+      process.exitCode = await runBunTool("bench", args.slice(1), process.cwd());
       break;
     }
 
@@ -380,12 +325,10 @@ async function main(): Promise<void> {
               ? resolve(arg)
               : arg,
         );
-      if (!docsArgs.some((a) => a === "--dir" || a.startsWith("--dir="))) {
-        const { bunCheckout } =
-          await import("@aphrody/yolo-core/src/vendor/catalog.ts");
+      if (!docsArgs.some(a => a === "--dir" || a.startsWith("--dir="))) {
+        const { bunCheckout } = await import("@aphrody/yolo-core/src/vendor/catalog.ts");
         const checkout = bunCheckout();
-        const dir =
-          process.env.BUN_DOCS_DIR || (checkout && resolve(checkout, "docs"));
+        const dir = process.env.BUN_DOCS_DIR || (checkout && resolve(checkout, "docs"));
         if (dir) docsArgs.push("--dir", resolve(dir));
       }
       const { runBunTool } = await import("./bun-tools");
@@ -409,10 +352,7 @@ async function main(): Promise<void> {
 
     case "scan": {
       const { runScanCommand } = await import("./scan");
-      process.exitCode = await runScanCommand(
-        args.slice(1),
-        isCompiled() ? process.cwd() : rootDir(),
-      );
+      process.exitCode = await runScanCommand(args.slice(1), isCompiled() ? process.cwd() : rootDir());
       break;
     }
 
@@ -423,8 +363,7 @@ async function main(): Promise<void> {
     }
 
     case "tool": {
-      const { runToolHost } =
-        await import("@aphrody/yolo-core/src/tools/host.ts");
+      const { runToolHost } = await import("@aphrody/yolo-core/src/tools/host.ts");
       process.exitCode = await runToolHost(args.slice(1), workspaceRoot());
       break;
     }
@@ -437,8 +376,7 @@ async function main(): Promise<void> {
     }
 
     case "desktop-runtime": {
-      const { runDesktopRelease } =
-        await import("@aphrody/yolo-core/src/distribution/desktop-release.ts");
+      const { runDesktopRelease } = await import("@aphrody/yolo-core/src/distribution/desktop-release.ts");
       process.exitCode = runDesktopRelease(args.slice(1));
       break;
     }
@@ -481,19 +419,13 @@ async function main(): Promise<void> {
 
     case "rename": {
       const { runRenameCommand } = await import("./rename");
-      process.exitCode = await runRenameCommand(
-        args.slice(1),
-        isCompiled() ? process.cwd() : rootDir(),
-      );
+      process.exitCode = await runRenameCommand(args.slice(1), isCompiled() ? process.cwd() : rootDir());
       break;
     }
 
     case "plugin": {
       const { runPluginCommand } = await import("./cli/plugin/command");
-      process.exitCode = await runPluginCommand(
-        args.slice(1),
-        isCompiled() ? workspaceRoot() : rootDir(),
-      );
+      process.exitCode = await runPluginCommand(args.slice(1), isCompiled() ? workspaceRoot() : rootDir());
       break;
     }
 
@@ -522,11 +454,7 @@ async function main(): Promise<void> {
     case "ship":
     case "hooks": {
       const { runAphrodyCommand } = await import("./aphrody");
-      process.exitCode = await runAphrodyCommand(
-        command,
-        args.slice(1),
-        rootDir(),
-      );
+      process.exitCode = await runAphrodyCommand(command, args.slice(1), rootDir());
       break;
     }
 
@@ -541,14 +469,9 @@ async function main(): Promise<void> {
     case "browser":
     case "forge":
     case "m3": {
-      const { resolvePackageCommand, runPackageCommand } =
-        await import("./package-commands");
+      const { resolvePackageCommand, runPackageCommand } = await import("./package-commands");
       const status = await runPackageCommand(command, args.slice(1));
-      if (
-        status !== 0 ||
-        !resolvePackageCommand(command, args.slice(1))?.keepAlive
-      )
-        process.exit(status);
+      if (status !== 0 || !resolvePackageCommand(command, args.slice(1))?.keepAlive) process.exit(status);
       break;
     }
 

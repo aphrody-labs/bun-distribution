@@ -67,9 +67,7 @@ export function markVideoThumbnailFailed(url: string) {
   scheduleNextTick();
 }
 
-export function getVideoThumbnailState(
-  url: string,
-): VideoThumbnailState | undefined {
+export function getVideoThumbnailState(url: string): VideoThumbnailState | undefined {
   if (pending.has(url)) return PENDING_STATE;
   return settled.get(url);
 }
@@ -78,11 +76,9 @@ export function getVideoThumbnailState(
  * The render state for a video thumbnail URL. Untracked URLs render as-is.
  * Pass null to opt out (non-video media, or no thumbnail).
  */
-export function useVideoThumbnailState(
-  url: string | null,
-): VideoThumbnailState | undefined {
+export function useVideoThumbnailState(url: string | null): VideoThumbnailState | undefined {
   return useSyncExternalStore(
-    (onChange) => (url ? subscribe(url, onChange) : () => {}),
+    onChange => (url ? subscribe(url, onChange) : () => {}),
     () => (url ? getVideoThumbnailState(url) : undefined),
   );
 }
@@ -149,7 +145,7 @@ function probe(url: string, entry: PendingEntry) {
 }
 
 function checkInterval(ageMs: number): number {
-  const slot = CHECK_SCHEDULE.find((w) => ageMs < w.untilMs);
+  const slot = CHECK_SCHEDULE.find(w => ageMs < w.untilMs);
   return (slot ?? CHECK_SCHEDULE[CHECK_SCHEDULE.length - 1]).everyMs;
 }
 
@@ -186,7 +182,7 @@ function subscribe(url: string, onChange: () => void) {
 }
 
 function notify(url: string) {
-  listeners.get(url)?.forEach((cb) => cb());
+  listeners.get(url)?.forEach(cb => cb());
 }
 
 function withCacheBust(url: string): string {

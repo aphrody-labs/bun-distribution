@@ -44,18 +44,9 @@ export const ellipseMaskDefinition: MaskDefinition<"ellipse"> = {
       kind: "fillPath",
       buildPath({ resolvedParams, width, height }) {
         const params = resolvedParams;
-        const { centerX, centerY, maskWidth, maskHeight, rotationRad } =
-          getBoxLikeGeometry({ params, width, height });
+        const { centerX, centerY, maskWidth, maskHeight, rotationRad } = getBoxLikeGeometry({ params, width, height });
         const path = new Path2D();
-        path.ellipse(
-          centerX,
-          centerY,
-          maskWidth / 2,
-          maskHeight / 2,
-          rotationRad,
-          0,
-          Math.PI * 2,
-        );
+        path.ellipse(centerX, centerY, maskWidth / 2, maskHeight / 2, rotationRad, 0, Math.PI * 2);
         return path;
       },
     },
@@ -63,8 +54,7 @@ export const ellipseMaskDefinition: MaskDefinition<"ellipse"> = {
       kind: "strokeFromPath",
       buildStrokePath({ resolvedParams, width, height }) {
         const params = resolvedParams;
-        const { centerX, centerY, maskWidth, maskHeight, rotationRad } =
-          getBoxLikeGeometry({ params, width, height });
+        const { centerX, centerY, maskWidth, maskHeight, rotationRad } = getBoxLikeGeometry({ params, width, height });
         const offset = getStrokeOffset({
           strokeAlign: params.strokeAlign,
           strokeWidth: params.strokeWidth,

@@ -1,22 +1,10 @@
-import {
-  PopoverMenu,
-  type PopoverItem,
-  groupModelItems,
-  useModelPickerStyleStore,
-} from "@storyteller/ui-popover";
-import {
-  useClassyModelSelectorStore,
-  useSelectedProviderForModel,
-} from "./classy-model-selector-store";
+import { PopoverMenu, type PopoverItem, groupModelItems, useModelPickerStyleStore } from "@storyteller/ui-popover";
+import { useClassyModelSelectorStore, useSelectedProviderForModel } from "./classy-model-selector-store";
 import { useEffect, useMemo } from "react";
 import { ModelPage } from "./model-pages";
 import { Provider } from "@storyteller/tauri-api";
 import { getProviderDisplayName, getProviderIcon } from "./provider-icons";
-import {
-  Model,
-  getCreatorIcon,
-  getModelFamilyName,
-} from "@storyteller/model-list";
+import { Model, getCreatorIcon, getModelFamilyName } from "@storyteller/model-list";
 import { ChevronUpIcon, CheckIcon } from "lucide-react";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -57,9 +45,7 @@ interface ClassyModelSelectorProps {
 const isSameModel = (a: Model | undefined, b: Model | undefined): boolean =>
   a !== undefined && b !== undefined && a.tauriId === b.tauriId;
 
-const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [
-  GenerationProvider.Artcraft,
-];
+const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [GenerationProvider.Artcraft];
 
 function ProviderTooltipContent({
   page,
@@ -75,17 +61,13 @@ function ProviderTooltipContent({
   allowedProviders: GenerationProvider[];
   onFinished?: () => void;
 }) {
-  const { setSelectedModel, setSelectedProvider } =
-    useClassyModelSelectorStore();
+  const { setSelectedModel, setSelectedProvider } = useClassyModelSelectorStore();
   const selectedProvider = useSelectedProviderForModel(page, modelId);
 
   // Reset selections that are no longer offered for this model.
   useEffect(() => {
     if (!modelId) return;
-    if (
-      (!selectedProvider || !allowedProviders.includes(selectedProvider)) &&
-      allowedProviders.length > 0
-    ) {
+    if ((!selectedProvider || !allowedProviders.includes(selectedProvider)) && allowedProviders.length > 0) {
       setSelectedProvider(page, modelId, allowedProviders[0]);
     }
   }, [page, modelId, selectedProvider, allowedProviders, setSelectedProvider]);
@@ -94,11 +76,9 @@ function ProviderTooltipContent({
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">
-        Select Provider
-      </div>
+      <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">Select Provider</div>
       <div className="flex flex-col gap-0">
-        {allowedProviders.map((p) => (
+        {allowedProviders.map(p => (
           <button
             key={p}
             onClick={() => {
@@ -110,9 +90,7 @@ function ProviderTooltipContent({
             }}
             type="button"
             className={`group flex cursor-pointer items-center justify-between rounded-[3px] px-2 py-2 transition-all ${
-              selectedProvider === p
-                ? "bg-ui-controls/70 border-l-4 border-primary"
-                : "hover:bg-ui-controls/50"
+              selectedProvider === p ? "bg-ui-controls/70 border-l-4 border-primary" : "hover:bg-ui-controls/50"
             }`}
           >
             <span className="flex items-center gap-2 text-sm text-base-fg">
@@ -121,11 +99,7 @@ function ProviderTooltipContent({
             </span>
             {selectedProvider === p && (
               <span className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center text-white">
-                <CheckIcon
-                  aria-hidden="true"
-                  className="h-4 w-4"
-                  strokeWidth={2.5}
-                />
+                <CheckIcon aria-hidden="true" className="h-4 w-4" strokeWidth={2.5} />
               </span>
             )}
           </button>
@@ -145,17 +119,11 @@ export function ClassyModelSelector({
   showProviderSelection = true,
   ...popoverProps
 }: ClassyModelSelectorProps) {
-  const { selectedModels, setSelectedModel, setSelectedProvider } =
-    useClassyModelSelectorStore();
-  const itemModels: Model[] = items
-    .map((item) => item.model)
-    .filter((model) => model !== undefined);
-  const selectedModel =
-    selectedModels[page] || defaultModelForPage(itemModels, page);
+  const { selectedModels, setSelectedModel, setSelectedProvider } = useClassyModelSelectorStore();
+  const itemModels: Model[] = items.map(item => item.model).filter(model => model !== undefined);
+  const selectedModel = selectedModels[page] || defaultModelForPage(itemModels, page);
   const selectedProvider = useSelectedProviderForModel(page, selectedModel?.id);
-  const selectedProvidersByModel = useClassyModelSelectorStore(
-    (s) => s.selectedProviders[page] ?? {},
-  );
+  const selectedProvidersByModel = useClassyModelSelectorStore(s => s.selectedProviders[page] ?? {});
 
   // For the first mount, make sure the selected model is set for other components to listen
   useEffect(() => {
@@ -172,7 +140,7 @@ export function ClassyModelSelector({
   useEffect(() => {
     const selected = selectedModels[page];
     if (!selected) return;
-    const fresh = itemModels.find((m) => m.tauriId === selected.tauriId);
+    const fresh = itemModels.find(m => m.tauriId === selected.tauriId);
     if (fresh !== undefined && fresh !== selected) {
       setSelectedModel(page, fresh);
     }
@@ -200,15 +168,13 @@ export function ClassyModelSelector({
 
   const modelList = useMemo(
     () =>
-      items.map((item) => {
+      items.map(item => {
         const modelId = item.model?.id;
-        const allowedProviders =
-          item.model?.getProviders() || DEFAULT_PROVIDER_OPTIONS;
+        const allowedProviders = item.model?.getProviders() || DEFAULT_PROVIDER_OPTIONS;
 
         // When provider selection is hidden, treat every model as
         // single-provider so the submenu and provider chips never render.
-        const hasMultipleProviders =
-          showProviderSelection && allowedProviders.length >= 2;
+        const hasMultipleProviders = showProviderSelection && allowedProviders.length >= 2;
 
         return {
           ...item,
@@ -227,12 +193,9 @@ export function ClassyModelSelector({
             : undefined,
           tooltipDelayMs: providerTooltipDelayMs,
           trailing:
-            !isSameModel(item.model as Model | undefined, selectedModel) &&
-            hasMultipleProviders
+            !isSameModel(item.model as Model | undefined, selectedModel) && hasMultipleProviders
               ? (() => {
-                  const prov = modelId
-                    ? selectedProvidersByModel[modelId]
-                    : undefined;
+                  const prov = modelId ? selectedProvidersByModel[modelId] : undefined;
                   const iconProvider = prov ?? allowedProviders[0];
                   return iconProvider ? (
                     <div className="mr-1 p-1.5 bg-ui-controls/60 group-hover:bg-ui-controls/80 transition-colors">
@@ -244,9 +207,7 @@ export function ClassyModelSelector({
                 })()
               : undefined,
           selectedRight:
-            isSameModel(item.model as Model | undefined, selectedModel) &&
-            selectedProvider &&
-            hasMultipleProviders ? (
+            isSameModel(item.model as Model | undefined, selectedModel) && selectedProvider && hasMultipleProviders ? (
               <div className="mr-1 p-1.5 bg-primary/60 group-hover:bg-primary/80 transition-colors">
                 <span className="text-base-fg/70 group-hover:text-base-fg/90 text-lg">
                   {getProviderIcon(selectedProvider)}
@@ -270,13 +231,11 @@ export function ClassyModelSelector({
   // Fold the (decorated) flat list into family submenus when the user prefers
   // the grouped picker. Only the embedded richList variant renders groups; the
   // floating hoverSelect list stays flat.
-  const pickerStyle = useModelPickerStyleStore((s) => s.style);
+  const pickerStyle = useModelPickerStyleStore(s => s.style);
   const embeddedList = useMemo(
     () =>
       pickerStyle === "grouped"
-        ? groupModelItems(modelList, (i) =>
-            getModelFamilyName(i.model?.id, i.model?.creator),
-          )
+        ? groupModelItems(modelList, i => getModelFamilyName(i.model?.id, i.model?.creator))
         : modelList,
     [modelList, pickerStyle],
   );
@@ -284,9 +243,7 @@ export function ClassyModelSelector({
   if (variant === "embedded") {
     // The trigger pill keeps the mono icon; the color variants are only for
     // list rows.
-    const selectedIcon = selectedModel
-      ? getCreatorIcon(selectedModel.creator)
-      : modelList.find((i) => i.selected)?.icon;
+    const selectedIcon = selectedModel ? getCreatorIcon(selectedModel.creator) : modelList.find(i => i.selected)?.icon;
     return (
       <Tooltip content="Model" position="top" className="z-50" closeOnClick>
         <PopoverMenu
@@ -300,9 +257,7 @@ export function ClassyModelSelector({
           buttonClassName="max-w-48"
           triggerIcon={
             selectedIcon ? (
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-                {selectedIcon}
-              </span>
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center">{selectedIcon}</span>
             ) : undefined
           }
         />
@@ -320,30 +275,19 @@ export function ClassyModelSelector({
         maxListHeight={maxListHeight}
         {...popoverProps}
         buttonClassName="rounded-[3px] bg-ui-controls text-left shadow-sm px-3 py-1 gap-3 border border-ui-controls-border"
-        renderTrigger={(selectedItem) => {
-          const modelTitle =
-            selectedItem?.label ?? selectedModel?.selectorName ?? "";
-          const providerIcon = selectedProvider
-            ? getProviderIcon(selectedProvider)
-            : null;
+        renderTrigger={selectedItem => {
+          const modelTitle = selectedItem?.label ?? selectedModel?.selectorName ?? "";
+          const providerIcon = selectedProvider ? getProviderIcon(selectedProvider) : null;
           return (
             <div className="flex items-center justify-between w-full gap-3">
               <div className="flex min-w-0 flex-col">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="truncate text-base font-semibold text-base-fg">
-                    {modelTitle}
-                  </span>
+                  <span className="truncate text-base font-semibold text-base-fg">{modelTitle}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-base-fg/60 text-[13px] -mt-[1px]">
                   <span>via</span>
-                  {providerIcon && (
-                    <span className="opacity-70">{providerIcon}</span>
-                  )}
-                  <span className="truncate">
-                    {selectedProvider
-                      ? getProviderDisplayName(selectedProvider)
-                      : ""}
-                  </span>
+                  {providerIcon && <span className="opacity-70">{providerIcon}</span>}
+                  <span className="truncate">{selectedProvider ? getProviderDisplayName(selectedProvider) : ""}</span>
                 </div>
               </div>
               <ChevronUpIcon className="text-base text-base-fg/70 self-center" />

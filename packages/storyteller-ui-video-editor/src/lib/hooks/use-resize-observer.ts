@@ -11,7 +11,7 @@ export function useResizeObserver({
     const element = ref.current;
     if (!element) return undefined;
 
-    const observer = new ResizeObserver((entries) => {
+    const observer = new ResizeObserver(entries => {
       for (const entry of entries) {
         onResize(entry);
       }

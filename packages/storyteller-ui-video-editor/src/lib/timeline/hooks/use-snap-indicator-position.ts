@@ -33,8 +33,7 @@ export function useSnapIndicatorPosition({
     time: snapPoint?.time ?? 0,
     zoomLevel,
   });
-  const leftPosition =
-    TIMELINE_TRACK_LABELS_COLUMN_WIDTH_PX + timelinePosition - scrollLeft;
+  const leftPosition = TIMELINE_TRACK_LABELS_COLUMN_WIDTH_PX + timelinePosition - scrollLeft;
 
   return {
     leftPosition,

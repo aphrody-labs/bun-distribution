@@ -51,10 +51,5 @@ export interface PageDrawAdapter {
   }): ReactNode;
 
   /** Optional telemetry hook called just before an enqueue. */
-  onEnqueueMeta?: (meta: {
-    prompt: string;
-    refImageUrls: string[];
-    modelType: string;
-    timestamp: number;
-  }) => void;
+  onEnqueueMeta?: (meta: { prompt: string; refImageUrls: string[]; modelType: string; timestamp: number }) => void;
 }

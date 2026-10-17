@@ -85,23 +85,9 @@ interface CanvasPathDrawingStyles {
 }
 
 interface CanvasPath {
-  arc(
-    x: number,
-    y: number,
-    radius: number,
-    startAngle: number,
-    endAngle: number,
-    counterclockwise?: boolean,
-  ): void;
+  arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, counterclockwise?: boolean): void;
   arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): void;
-  bezierCurveTo(
-    cp1x: number,
-    cp1y: number,
-    cp2x: number,
-    cp2y: number,
-    x: number,
-    y: number,
-  ): void;
+  bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void;
   closePath(): void;
   ellipse(
     x: number,
@@ -137,23 +123,9 @@ interface CanvasTransform {
   resetTransform(): void;
   rotate(angle: number): void;
   scale(x: number, y: number): void;
-  setTransform(
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-    e: number,
-    f: number,
-  ): void;
+  setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void;
   setTransform(transform?: DOMMatrix2DInit): void;
-  transform(
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-    e: number,
-    f: number,
-  ): void;
+  transform(a: number, b: number, c: number, d: number, e: number, f: number): void;
   translate(x: number, y: number): void;
 }
 
@@ -167,13 +139,7 @@ interface CanvasPDFAnnotations {
    * @param bottom - Bottom coordinate of the link rectangle
    * @param url - The URL to link to
    */
-  annotateLinkUrl(
-    left: number,
-    top: number,
-    right: number,
-    bottom: number,
-    url: string,
-  ): void;
+  annotateLinkUrl(left: number, top: number, right: number, bottom: number, url: string): void;
 
   /**
    * Create a named destination at a specific point in a PDF document.
@@ -193,13 +159,7 @@ interface CanvasPDFAnnotations {
    * @param bottom - Bottom coordinate of the link rectangle
    * @param name - Name of the destination to link to
    */
-  annotateLinkToDestination(
-    left: number,
-    top: number,
-    right: number,
-    bottom: number,
-    name: string,
-  ): void;
+  annotateLinkToDestination(left: number, top: number, right: number, bottom: number, name: string): void;
 }
 
 type PredefinedColorSpace = "display-p3" | "srgb";
@@ -208,19 +168,9 @@ interface ImageDataSettings {
   colorSpace?: PredefinedColorSpace;
 }
 interface CanvasImageData {
-  createImageData(
-    sw: number,
-    sh: number,
-    settings?: ImageDataSettings,
-  ): ImageData;
+  createImageData(sw: number, sh: number, settings?: ImageDataSettings): ImageData;
   createImageData(imagedata: ImageData): ImageData;
-  getImageData(
-    sx: number,
-    sy: number,
-    sw: number,
-    sh: number,
-    settings?: ImageDataSettings,
-  ): ImageData;
+  getImageData(sx: number, sy: number, sw: number, sh: number, settings?: ImageDataSettings): ImageData;
   putImageData(imagedata: ImageData, dx: number, dy: number): void;
   putImageData(
     imagedata: ImageData,
@@ -254,10 +204,8 @@ type CanvasFontVariantCaps =
   | "titling-caps"
   | "unicase";
 type CanvasTextAlign = "center" | "end" | "left" | "right" | "start";
-type CanvasTextBaseline =
-  "alphabetic" | "bottom" | "hanging" | "ideographic" | "middle" | "top";
-type CanvasTextRendering =
-  "auto" | "geometricPrecision" | "optimizeLegibility" | "optimizeSpeed";
+type CanvasTextBaseline = "alphabetic" | "bottom" | "hanging" | "ideographic" | "middle" | "top";
+type CanvasTextRendering = "auto" | "geometricPrecision" | "optimizeLegibility" | "optimizeSpeed";
 
 interface CanvasTextDrawingStyles {
   direction: CanvasDirection;
@@ -282,20 +230,8 @@ interface CanvasFillStrokeStyles {
   fillStyle: string | CanvasGradient | CanvasPattern;
   strokeStyle: string | CanvasGradient | CanvasPattern;
   createConicGradient(startAngle: number, x: number, y: number): CanvasGradient;
-  createLinearGradient(
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number,
-  ): CanvasGradient;
-  createRadialGradient(
-    x0: number,
-    y0: number,
-    r0: number,
-    x1: number,
-    y1: number,
-    r1: number,
-  ): CanvasGradient;
+  createLinearGradient(x0: number, y0: number, x1: number, y1: number): CanvasGradient;
+  createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): CanvasGradient;
 }
 
 type CanvasFillRule = "evenodd" | "nonzero";
@@ -307,12 +243,7 @@ interface CanvasDrawPath {
   fill(fillRule?: CanvasFillRule): void;
   fill(path: Path2D, fillRule?: CanvasFillRule): void;
   isPointInPath(x: number, y: number, fillRule?: CanvasFillRule): boolean;
-  isPointInPath(
-    path: Path2D,
-    x: number,
-    y: number,
-    fillRule?: CanvasFillRule,
-  ): boolean;
+  isPointInPath(path: Path2D, x: number, y: number, fillRule?: CanvasFillRule): boolean;
   isPointInStroke(x: number, y: number): boolean;
   isPointInStroke(path: Path2D, x: number, y: number): boolean;
   stroke(): void;
@@ -428,12 +359,7 @@ interface DOMMatrixReadOnly {
   inverse(): DOMMatrix;
   multiply(other?: DOMMatrixInit): DOMMatrix;
   rotate(rotX?: number, rotY?: number, rotZ?: number): DOMMatrix;
-  rotateAxisAngle(
-    x?: number,
-    y?: number,
-    z?: number,
-    angle?: number,
-  ): DOMMatrix;
+  rotateAxisAngle(x?: number, y?: number, z?: number, angle?: number): DOMMatrix;
   rotateFromVector(x?: number, y?: number): DOMMatrix;
   scale(
     scaleX?: number,
@@ -443,12 +369,7 @@ interface DOMMatrixReadOnly {
     originY?: number,
     originZ?: number,
   ): DOMMatrix;
-  scale3d(
-    scale?: number,
-    originX?: number,
-    originY?: number,
-    originZ?: number,
-  ): DOMMatrix;
+  scale3d(scale?: number, originX?: number, originY?: number, originZ?: number): DOMMatrix;
   skewX(sx?: number): DOMMatrix;
   skewY(sy?: number): DOMMatrix;
   toFloat32Array(): Float32Array;
@@ -484,20 +405,10 @@ export interface DOMMatrix extends DOMMatrixReadOnly {
   invertSelf(): DOMMatrix;
   multiplySelf(other?: DOMMatrixInit): DOMMatrix;
   preMultiplySelf(other?: DOMMatrixInit): DOMMatrix;
-  rotateAxisAngleSelf(
-    x?: number,
-    y?: number,
-    z?: number,
-    angle?: number,
-  ): DOMMatrix;
+  rotateAxisAngleSelf(x?: number, y?: number, z?: number, angle?: number): DOMMatrix;
   rotateFromVectorSelf(x?: number, y?: number): DOMMatrix;
   rotateSelf(rotX?: number, rotY?: number, rotZ?: number): DOMMatrix;
-  scale3dSelf(
-    scale?: number,
-    originX?: number,
-    originY?: number,
-    originZ?: number,
-  ): DOMMatrix;
+  scale3dSelf(scale?: number, originX?: number, originY?: number, originZ?: number): DOMMatrix;
   scaleSelf(
     scaleX?: number,
     scaleY?: number,
@@ -514,9 +425,7 @@ export interface DOMMatrix extends DOMMatrixReadOnly {
 }
 
 type OmitMatrixMethod = {
-  [K in keyof DOMMatrix]: DOMMatrix[K] extends (...args: any[]) => any
-    ? never
-    : K;
+  [K in keyof DOMMatrix]: DOMMatrix[K] extends (...args: any[]) => any ? never : K;
 };
 
 type OmitNeverOfMatrix = OmitMatrixMethod[keyof OmitMatrixMethod];
@@ -592,21 +501,13 @@ export class ImageData {
 
   constructor(sw: number, sh: number, attr?: { colorSpace?: ColorSpace });
   constructor(imageData: ImageData, attr?: { colorSpace?: ColorSpace });
-  constructor(
-    data: Uint8ClampedArray | Uint16Array | Float16Array | Float32Array,
-    sw: number,
-    sh?: number,
-  );
+  constructor(data: Uint8ClampedArray | Uint16Array | Float16Array | Float32Array, sw: number, sh?: number);
 }
 
 export class Image {
   constructor();
   // attrs only affects SVG
-  constructor(
-    width: number,
-    height: number,
-    attrs?: { colorSpace?: ColorSpace },
-  );
+  constructor(width: number, height: number, attrs?: { colorSpace?: ColorSpace });
   width: number;
   height: number;
   readonly naturalWidth: number;
@@ -626,23 +527,9 @@ export class Path2D {
   constructor(path?: Path2D | string);
 
   addPath(path: Path2D, transform?: DOMMatrix2DInit): void;
-  arc(
-    x: number,
-    y: number,
-    radius: number,
-    startAngle: number,
-    endAngle: number,
-    anticlockwise?: boolean,
-  ): void;
+  arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise?: boolean): void;
   arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): void;
-  bezierCurveTo(
-    cp1x: number,
-    cp1y: number,
-    cp2x: number,
-    cp2y: number,
-    x: number,
-    y: number,
-  ): void;
+  bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void;
   closePath(): void;
   ellipse(
     x: number,
@@ -658,13 +545,7 @@ export class Path2D {
   moveTo(x: number, y: number): void;
   quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
   rect(x: number, y: number, w: number, h: number): void;
-  roundRect(
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    radii?: number | number[],
-  ): void;
+  roundRect(x: number, y: number, w: number, h: number, radii?: number | number[]): void;
 
   // PathKit methods
   op(path: Path2D, operation: PathOp): Path2D;
@@ -677,12 +558,7 @@ export class Path2D {
   stroke(stroke?: StrokeOptions): Path2D;
   transform(transform: DOMMatrix2DInit): Path2D;
   getBounds(): [left: number, top: number, right: number, bottom: number];
-  computeTightBounds(): [
-    left: number,
-    top: number,
-    right: number,
-    bottom: number,
-  ];
+  computeTightBounds(): [left: number, top: number, right: number, bottom: number];
   trim(start: number, end: number, isComplement?: boolean): Path2D;
   dash(on: number, off: number, phase: number): Path2D;
   round(radius: number): Path2D;
@@ -705,13 +581,7 @@ export interface SKRSContext2D extends CanvasRenderingContext2D {
    */
   createConicGradient(startAngle: number, x: number, y: number): CanvasGradient;
   drawImage(image: Image | Canvas, dx: number, dy: number): void;
-  drawImage(
-    image: Image | Canvas,
-    dx: number,
-    dy: number,
-    dw: number,
-    dh: number,
-  ): void;
+  drawImage(image: Image | Canvas, dx: number, dy: number, dw: number, dh: number): void;
   drawImage(
     image: Image | Canvas,
     sx: number,
@@ -730,13 +600,7 @@ export interface SKRSContext2D extends CanvasRenderingContext2D {
    * drawImage. Falls back to bitmap rendering if no picture is available.
    */
   drawCanvas(canvas: Canvas, dx: number, dy: number): void;
-  drawCanvas(
-    canvas: Canvas,
-    dx: number,
-    dy: number,
-    dWidth: number,
-    dHeight: number,
-  ): void;
+  drawCanvas(canvas: Canvas, dx: number, dy: number, dWidth: number, dHeight: number): void;
   drawCanvas(
     canvas: Canvas,
     sx: number,
@@ -769,10 +633,7 @@ export interface ContextAttributes {
 export interface SvgCanvas {
   width: number;
   height: number;
-  getContext(
-    contextType: "2d",
-    contextAttributes?: ContextAttributes,
-  ): SKRSContext2D;
+  getContext(contextType: "2d", contextAttributes?: ContextAttributes): SKRSContext2D;
 
   getContent(): Buffer;
 }
@@ -883,12 +744,7 @@ export class GifEncoder implements Disposable {
    * @param height - Height of the frame in pixels
    * @param config - Optional frame configuration
    */
-  addFrame(
-    data: Uint8Array,
-    width: number,
-    height: number,
-    config?: GifFrameConfig,
-  ): void;
+  addFrame(data: Uint8Array, width: number, height: number, config?: GifFrameConfig): void;
 
   /**
    * Finish encoding and return the GIF data.
@@ -962,10 +818,7 @@ export class Canvas {
 
   width: number;
   height: number;
-  getContext(
-    contextType: "2d",
-    contextAttributes?: ContextAttributes,
-  ): SKRSContext2D;
+  getContext(contextType: "2d", contextAttributes?: ContextAttributes): SKRSContext2D;
   encodeSync(format: "webp" | "jpeg", quality?: number): Buffer;
   encodeSync(format: "png"): Buffer;
   encodeSync(format: "avif", cfg?: AvifConfig): Buffer;
@@ -974,10 +827,7 @@ export class Canvas {
   encode(format: "png"): Promise<Buffer>;
   encode(format: "avif", cfg?: AvifConfig): Promise<Buffer>;
   encode(format: "gif", quality?: number): Promise<Buffer>;
-  encodeStream(
-    format: "webp" | "jpeg",
-    quality?: number,
-  ): ReadableStream<Buffer>;
+  encodeStream(format: "webp" | "jpeg", quality?: number): ReadableStream<Buffer>;
   encodeStream(format: "png"): ReadableStream<Buffer>;
   toBuffer(mime: "image/png"): Buffer;
   toBuffer(mime: "image/jpeg" | "image/webp", quality?: number): Buffer;
@@ -988,39 +838,22 @@ export class Canvas {
   toDataURL(mime?: "image/png"): string;
   toDataURL(mime: "image/jpeg" | "image/webp", quality?: number): string;
   toDataURL(mime: "image/gif", quality?: number): string;
-  toDataURL(
-    mime?: "image/jpeg" | "image/webp" | "image/png" | "image/gif",
-    quality?: number,
-  ): string;
+  toDataURL(mime?: "image/jpeg" | "image/webp" | "image/png" | "image/gif", quality?: number): string;
   toDataURL(mime?: "image/avif", cfg?: AvifConfig): string;
 
   toDataURLAsync(mime?: "image/png"): Promise<string>;
-  toDataURLAsync(
-    mime: "image/jpeg" | "image/webp",
-    quality?: number,
-  ): Promise<string>;
+  toDataURLAsync(mime: "image/jpeg" | "image/webp", quality?: number): Promise<string>;
   toDataURLAsync(mime: "image/gif", quality?: number): Promise<string>;
-  toDataURLAsync(
-    mime?: "image/jpeg" | "image/webp" | "image/png" | "image/gif",
-    quality?: number,
-  ): Promise<string>;
+  toDataURLAsync(mime?: "image/jpeg" | "image/webp" | "image/png" | "image/gif", quality?: number): Promise<string>;
   toDataURLAsync(mime?: "image/avif", cfg?: AvifConfig): Promise<string>;
 
-  toBlob(
-    callback: (blob: Blob | null) => void,
-    mime?: string,
-    quality?: number,
-  ): void;
+  toBlob(callback: (blob: Blob | null) => void, mime?: string, quality?: number): void;
   convertToBlob(options?: ConvertToBlobOptions): Promise<Blob>;
 }
 
 export function createCanvas(width: number, height: number): Canvas;
 
-export function createCanvas(
-  width: number,
-  height: number,
-  svgExportFlag: SvgExportFlag,
-): SvgCanvas;
+export function createCanvas(width: number, height: number, svgExportFlag: SvgExportFlag): SvgCanvas;
 
 export declare class FontKey {
   // make it a unique type
@@ -1082,12 +915,7 @@ interface IGlobalFonts {
    * @param slant Font slant (0 = upright, 1 = italic, 2 = oblique)
    * @returns Array of variation axes or empty array if not a variable font
    */
-  getVariationAxes(
-    familyName: string,
-    weight: number,
-    width: number,
-    slant: number,
-  ): FontVariationAxis[];
+  getVariationAxes(familyName: string, weight: number, width: number, slant: number): FontVariationAxis[];
   /**
    * Check if a font has variable font capabilities
    * @param familyName The font family name
@@ -1096,12 +924,7 @@ interface IGlobalFonts {
    * @param slant Font slant (0 = upright, 1 = italic, 2 = oblique)
    * @returns true if the font is a variable font
    */
-  hasVariations(
-    familyName: string,
-    weight: number,
-    width: number,
-    slant: number,
-  ): boolean;
+  hasVariations(familyName: string, weight: number, width: number, slant: number): boolean;
 }
 
 export const GlobalFonts: IGlobalFonts;
@@ -1148,14 +971,7 @@ export interface LoadImageOptions {
 }
 
 export function loadImage(
-  source:
-    | string
-    | URL
-    | Buffer
-    | ArrayBufferLike
-    | Uint8Array
-    | Image
-    | import("stream").Readable,
+  source: string | URL | Buffer | ArrayBufferLike | Uint8Array | Image | import("stream").Readable,
   options?: LoadImageOptions,
 ): Promise<Image>;
 
@@ -1191,11 +1007,7 @@ export interface Rect {
 
 export declare class PDFDocument {
   constructor(metadata?: PDFMetadata | undefined | null);
-  beginPage(
-    width: number,
-    height: number,
-    rect?: Rect | undefined | null,
-  ): CanvasRenderingContext2D;
+  beginPage(width: number, height: number, rect?: Rect | undefined | null): CanvasRenderingContext2D;
   endPage(): void;
   close(): Buffer;
 }
@@ -1237,10 +1049,7 @@ export declare class LottieAnimation {
    * @param data - JSON string or Buffer containing Lottie animation data
    * @param options - Optional configuration
    */
-  static loadFromData(
-    data: string | Buffer,
-    options?: LottieAnimationOptions,
-  ): LottieAnimation;
+  static loadFromData(data: string | Buffer, options?: LottieAnimationOptions): LottieAnimation;
 
   /**
    * Load animation from file path

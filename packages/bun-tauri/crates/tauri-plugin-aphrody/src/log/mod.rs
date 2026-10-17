@@ -9,7 +9,6 @@
 //! - **colored**: Enables `Builder::with_colors`, which uses `fern`'s `colored` feature for ANSI-colored outputs.
 //! - **tracing**: Emit both log and tracing for the JavaScript log commands.
 
-
 use fern::{Filter, FormatCallback};
 use log::{LevelFilter, Record};
 use serde::Serialize;
@@ -850,7 +849,8 @@ impl Builder {
     }
 
     fn plugin_builder<R: Runtime>() -> plugin::Builder<R> {
-        plugin::Builder::new("log").invoke_handler(tauri::generate_handler![#![plugin(log)] commands::log])
+        plugin::Builder::new("log")
+            .invoke_handler(tauri::generate_handler![#![plugin(log)] commands::log])
     }
 
     /// Builds the [`TauriPlugin`] and returns it together with the configured [`log::LevelFilter`] and [`log::Log`]

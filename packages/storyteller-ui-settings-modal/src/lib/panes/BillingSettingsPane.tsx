@@ -5,11 +5,7 @@ import { CoinsIcon, InfoIcon, StarIcon } from "lucide-react";
 import { usePricingModalStore } from "@storyteller/ui-pricing-modal";
 import { useCreditsModalStore } from "@storyteller/ui-pricing-modal";
 import { useCreditsState, CreditsState } from "@storyteller/credits";
-import {
-  FREE_PLAN,
-  SubscriptionPlanDetails,
-  useSubscriptionState,
-} from "@storyteller/subscription";
+import { FREE_PLAN, SubscriptionPlanDetails, useSubscriptionState } from "@storyteller/subscription";
 import { SUBSCRIPTION_PLANS_BY_SLUG } from "@storyteller/subscription";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -32,14 +28,10 @@ export const BillingSettingsPane = (_args: BillingSettingsPaneProps) => {
 
   const canCancelPlan = subscriptionStore.canCancelPlan();
 
-  const nextBillAt =
-    subscriptionStore.subscriptionInfo?.nextBillAt?.toLocaleDateString();
-  const subscriptionEndAt =
-    subscriptionStore.subscriptionInfo?.subscriptionEndAt?.toLocaleDateString();
+  const nextBillAt = subscriptionStore.subscriptionInfo?.nextBillAt?.toLocaleDateString();
+  const subscriptionEndAt = subscriptionStore.subscriptionInfo?.subscriptionEndAt?.toLocaleDateString();
 
-  const changeOrUpgradePlanButtonLabel = canCancelPlan
-    ? "Change plan"
-    : "Upgrade plan";
+  const changeOrUpgradePlanButtonLabel = canCancelPlan ? "Change plan" : "Upgrade plan";
 
   useEffect(() => {
     creditsStore.fetchFromServer();
@@ -51,8 +43,8 @@ export const BillingSettingsPane = (_args: BillingSettingsPaneProps) => {
       <div className="flex flex-col gap-0.5 pt-3 text-base-fg">
         <Label>Support ArtCraft</Label>
         <p className="text-xs opacity-70">
-          You do not have to purchase anything from us to use ArtCraft, but you
-          can support ArtCraft development by subscribing or buying credits.
+          You do not have to purchase anything from us to use ArtCraft, but you can support ArtCraft development by
+          subscribing or buying credits.
         </p>
       </div>
 
@@ -69,11 +61,7 @@ export const BillingSettingsPane = (_args: BillingSettingsPaneProps) => {
             <div className="flex gap-2">
               {canCancelPlan && <CancelPlanButton />}
 
-              <Button
-                variant="primary"
-                className="h-9 shrink-0 px-4"
-                onClick={() => toggleSubscriptionModal()}
-              >
+              <Button variant="primary" className="h-9 shrink-0 px-4" onClick={() => toggleSubscriptionModal()}>
                 {changeOrUpgradePlanButtonLabel}
               </Button>
             </div>
@@ -111,9 +99,7 @@ export const BillingSettingsPane = (_args: BillingSettingsPaneProps) => {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <CoinsIcon className="text-lg text-base-fg/70" />
-              <span className="font-display text-2xl font-medium tracking-[-0.02em]">
-                {sumTotalCredits}
-              </span>
+              <span className="font-display text-2xl font-medium tracking-[-0.02em]">{sumTotalCredits}</span>
             </div>
             <div className="flex gap-2">
               <BuyCreditsButton />
@@ -133,11 +119,7 @@ const CancelPlanButton = () => {
   };
 
   return (
-    <Button
-      variant="secondary"
-      className="h-9 shrink-0 px-3"
-      onClick={handleClick}
-    >
+    <Button variant="secondary" className="h-9 shrink-0 px-3" onClick={handleClick}>
       Cancel plan
     </Button>
   );
@@ -147,11 +129,7 @@ const BuyCreditsButton = () => {
   const { toggleModal: toggleCreditsModal } = useCreditsModalStore();
 
   return (
-    <Button
-      variant="primary"
-      className="h-9 shrink-0 px-4"
-      onClick={() => toggleCreditsModal()}
-    >
+    <Button variant="primary" className="h-9 shrink-0 px-4" onClick={() => toggleCreditsModal()}>
       Buy credits
     </Button>
   );
@@ -164,17 +142,13 @@ const CreditsTally = ({ creditsStore }: { creditsStore: CreditsState }) => {
         <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
           Monthly credits (refilled monthly)
         </span>
-        <span className="text-sm font-medium">
-          {creditsStore.monthlyCredits}
-        </span>
+        <span className="text-sm font-medium">{creditsStore.monthlyCredits}</span>
       </li>
       <li className="flex items-baseline justify-between gap-3 px-3 py-2">
         <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
           Purchased credits
         </span>
-        <span className="text-sm font-medium">
-          {creditsStore.bankedCredits}
-        </span>
+        <span className="text-sm font-medium">{creditsStore.bankedCredits}</span>
       </li>
     </ul>
   );

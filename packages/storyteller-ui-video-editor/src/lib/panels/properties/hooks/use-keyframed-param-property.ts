@@ -1,21 +1,9 @@
 "use client";
 
 import { useEditor } from "../../../editor/use-editor";
-import {
-  buildGraphicParamPath,
-  getKeyframeAtTime,
-  hasKeyframesForPath,
-  upsertPathKeyframe,
-} from "../../../animation";
-import type {
-  AnimationPath,
-  ElementAnimations,
-} from "../../../animation/types";
-import {
-  coerceParamValue,
-  getParamChannelLayout,
-  type ParamDefinition,
-} from "../../../params";
+import { buildGraphicParamPath, getKeyframeAtTime, hasKeyframesForPath, upsertPathKeyframe } from "../../../animation";
+import type { AnimationPath, ElementAnimations } from "../../../animation/types";
+import { coerceParamValue, getParamChannelLayout, type ParamDefinition } from "../../../params";
 import type { TimelineElement } from "../../../timeline/types";
 import type { MediaTime } from "../../../wasm";
 
@@ -47,15 +35,10 @@ export function useKeyframedParamProperty({
   localTime: MediaTime;
   isPlayheadWithinElementRange: boolean;
   resolvedValue: number | string | boolean;
-  buildBaseUpdates: ({
-    value,
-  }: {
-    value: number | string | boolean;
-  }) => Partial<TimelineElement>;
+  buildBaseUpdates: ({ value }: { value: number | string | boolean }) => Partial<TimelineElement>;
 }): KeyframedParamPropertyResult {
   const editor = useEditor();
-  const resolvedPropertyPath =
-    propertyPath ?? buildGraphicParamPath({ paramKey: param.key });
+  const resolvedPropertyPath = propertyPath ?? buildGraphicParamPath({ paramKey: param.key });
   const hasAnimatedKeyframes = hasKeyframesForPath({
     animations,
     propertyPath: resolvedPropertyPath,
@@ -69,10 +52,9 @@ export function useKeyframedParamProperty({
     : null;
   const keyframeIdAtTime = keyframeAtTime?.id ?? null;
   const isKeyframedAtTime = keyframeAtTime !== null;
-  const shouldUseAnimatedChannel =
-    hasAnimatedKeyframes && isPlayheadWithinElementRange;
+  const shouldUseAnimatedChannel = hasAnimatedKeyframes && isPlayheadWithinElementRange;
 
-  const previewValue: KeyframedParamPropertyResult["onPreview"] = (value) => {
+  const previewValue: KeyframedParamPropertyResult["onPreview"] = value => {
     if (shouldUseAnimatedChannel) {
       editor.timeline.previewElements({
         updates: [

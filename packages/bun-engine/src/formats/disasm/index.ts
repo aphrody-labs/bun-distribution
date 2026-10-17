@@ -72,35 +72,23 @@ export function maxInstructionBytes(arch: Arch): number {
 
 function available(backend: Backend, arch: Arch): boolean {
   if (backend === "ts") return arch === "6502";
-  if (backend === "unidasm")
-    return !!unidasmArch[arch] && !!mameTool("unidasm");
+  if (backend === "unidasm") return !!unidasmArch[arch] && !!mameTool("unidasm");
   if (backend === "llvm") return !!llvmTriple[arch] && !!llvmObjdump();
   return !!rizinArch[arch] && !!rizinAsm();
 }
 
 export function backendFor(arch: Arch, preferred?: Backend): Backend {
   if (preferred) {
-    if (!available(preferred, arch))
-      throw new Error(
-        `disassembler backend ${preferred} is unavailable for ${arch}`,
-      );
+    if (!available(preferred, arch)) throw new Error(`disassembler backend ${preferred} is unavailable for ${arch}`);
     return preferred;
   }
-  const order: Backend[] =
-    arch === "aarch64" ? ["llvm", "rizin"] : ["unidasm", "llvm", "rizin", "ts"];
-  const backend = order.find((candidate) => available(candidate, arch));
-  if (!backend)
-    throw new Error(
-      `no disassembler for ${arch}: install MAME with \`bep install mame\`, LLVM or Rizin`,
-    );
+  const order: Backend[] = arch === "aarch64" ? ["llvm", "rizin"] : ["unidasm", "llvm", "rizin", "ts"];
+  const backend = order.find(candidate => available(candidate, arch));
+  if (!backend) throw new Error(`no disassembler for ${arch}: install MAME with \`bep install mame\`, LLVM or Rizin`);
   return backend;
 }
 
-async function withTemp<T>(
-  bytes: Uint8Array,
-  suffix: string,
-  use: (path: string) => Promise<T>,
-): Promise<T> {
+async function withTemp<T>(bytes: Uint8Array, suffix: string, use: (path: string) => Promise<T>): Promise<T> {
   const path = join(tmpdir(), `bun-engine-formats-${randomUUID()}${suffix}`);
   await Bun.write(path, bytes);
   try {
@@ -114,12 +102,9 @@ function hexAddress(value: number): string {
   return value.toString(16);
 }
 
-async function viaUnidasm(
-  bytes: Uint8Array,
-  options: DisasmOptions,
-): Promise<DisasmLine[]> {
+async function viaUnidasm(bytes: Uint8Array, options: DisasmOptions): Promise<DisasmLine[]> {
   const tool = mameTool("unidasm")!;
-  const result = await withTemp(bytes, ".bin", (path) =>
+  const result = await withTemp(bytes, ".bin", path =>
     runTool([
       tool,
       path,
@@ -131,28 +116,19 @@ async function viaUnidasm(
       String(bytes.byteLength),
     ]),
   );
-  if (result.code !== 0)
-    throw new Error(`unidasm failed: ${result.stderr || result.stdout}`);
-  return result.stdout.split(/\r?\n/).flatMap((line) => {
+  if (result.code !== 0) throw new Error(`unidasm failed: ${result.stderr || result.stdout}`);
+  return result.stdout.split(/\r?\n/).flatMap(line => {
     const match = /^([0-9a-f]+): (.*)$/i.exec(line);
     if (!match) return [];
     const split = /\s{2,}/.exec(match[2]!);
     const raw = split ? match[2]!.slice(0, split.index) : match[2]!;
-    const text = split
-      ? match[2]!.slice(split.index).trim().replace(/\s+/g, " ")
-      : "";
-    return [
-      { address: Number.parseInt(match[1]!, 16), bytes: raw.trim(), text },
-    ];
+    const text = split ? match[2]!.slice(split.index).trim().replace(/\s+/g, " ") : "";
+    return [{ address: Number.parseInt(match[1]!, 16), bytes: raw.trim(), text }];
   });
 }
 
 /** Minimal relocatable-free ELF holding `bytes` as an executable .text at `address`. */
-export function wrapElf(
-  bytes: Uint8Array,
-  address: number,
-  arch: Arch,
-): Uint8Array {
+export function wrapElf(bytes: Uint8Array, address: number, arch: Arch): Uint8Array {
   const is64 = arch === "aarch64";
   const machine = is64 ? 183 : 40;
   const ehsize = is64 ? 64 : 52;
@@ -168,9 +144,7 @@ export function wrapElf(
   view.setUint16(18, machine, true);
   view.setUint32(20, 1, true);
   const word = (at: number, value: number) =>
-    is64
-      ? view.setBigUint64(at, BigInt(value), true)
-      : view.setUint32(at, value, true);
+    is64 ? view.setBigUint64(at, BigInt(value), true) : view.setUint32(at, value, true);
   if (is64) {
     word(24, address);
     word(40, shoff);
@@ -220,29 +194,14 @@ export function wrapElf(
   return out;
 }
 
-async function viaLlvm(
-  bytes: Uint8Array,
-  options: DisasmOptions,
-): Promise<DisasmLine[]> {
+async function viaLlvm(bytes: Uint8Array, options: DisasmOptions): Promise<DisasmLine[]> {
   const tool = llvmObjdump()!;
-  const result = await withTemp(
-    wrapElf(bytes, options.address, options.arch),
-    ".o",
-    (path) =>
-      runTool([
-        tool,
-        "-d",
-        "--print-imm-hex",
-        `--triple=${llvmTriple[options.arch]}`,
-        path,
-      ]),
+  const result = await withTemp(wrapElf(bytes, options.address, options.arch), ".o", path =>
+    runTool([tool, "-d", "--print-imm-hex", `--triple=${llvmTriple[options.arch]}`, path]),
   );
-  if (result.code !== 0)
-    throw new Error(`llvm-objdump failed: ${result.stderr}`);
-  return result.stdout.split(/\r?\n/).flatMap((line) => {
-    const match = /^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2,8} )+)\s*	(.*)$/i.exec(
-      line,
-    );
+  if (result.code !== 0) throw new Error(`llvm-objdump failed: ${result.stderr}`);
+  return result.stdout.split(/\r?\n/).flatMap(line => {
+    const match = /^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2,8} )+)\s*	(.*)$/i.exec(line);
     if (!match) return [];
     const text = match[3]!
       .replace(/\s+<\.text[^>]*>/, "")
@@ -259,10 +218,7 @@ async function viaLlvm(
   });
 }
 
-async function viaRizin(
-  bytes: Uint8Array,
-  options: DisasmOptions,
-): Promise<DisasmLine[]> {
+async function viaRizin(bytes: Uint8Array, options: DisasmOptions): Promise<DisasmLine[]> {
   const tool = rizinAsm()!;
   const result = await runTool([
     tool,
@@ -273,10 +229,8 @@ async function viaRizin(
     Buffer.from(bytes).toString("hex"),
   ]);
   if (result.code !== 0) throw new Error(`rz-asm failed: ${result.stderr}`);
-  return result.stdout.split(/\r?\n/).flatMap((line) => {
-    const match = /^0x([0-9a-f]+)\s+\d+\s+([0-9a-f]+)\s+(.*)$/i.exec(
-      line.trim(),
-    );
+  return result.stdout.split(/\r?\n/).flatMap(line => {
+    const match = /^0x([0-9a-f]+)\s+\d+\s+([0-9a-f]+)\s+(.*)$/i.exec(line.trim());
     return match
       ? [
           {
@@ -290,10 +244,7 @@ async function viaRizin(
 }
 
 /** Disassembles `bytes` loaded at `address`; returns at most `count` instructions. */
-export async function disassembleBytes(
-  bytes: Uint8Array,
-  options: DisasmOptions,
-): Promise<DisasmResult> {
+export async function disassembleBytes(bytes: Uint8Array, options: DisasmOptions): Promise<DisasmResult> {
   const backend = backendFor(options.arch, options.backend);
   const run = {
     unidasm: viaUnidasm,

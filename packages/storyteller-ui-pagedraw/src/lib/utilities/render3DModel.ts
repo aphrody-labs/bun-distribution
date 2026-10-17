@@ -60,10 +60,7 @@ function buildScene(): {
   return { scene, camera, renderer };
 }
 
-function normalizeAndPlaceModel(
-  model: THREE.Object3D,
-  modelScale: number,
-): void {
+function normalizeAndPlaceModel(model: THREE.Object3D, modelScale: number): void {
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
   const maxDim = Math.max(size.x, size.y, size.z);
@@ -97,23 +94,15 @@ export async function render3DModelToDataUrl(
 
   camera.aspect = width / height;
   camera.fov = params.fov;
-  camera.position.set(
-    params.cameraPosition.x,
-    params.cameraPosition.y,
-    params.cameraPosition.z,
-  );
-  camera.lookAt(
-    params.cameraTarget.x,
-    params.cameraTarget.y,
-    params.cameraTarget.z,
-  );
+  camera.position.set(params.cameraPosition.x, params.cameraPosition.y, params.cameraPosition.z);
+  camera.lookAt(params.cameraTarget.x, params.cameraTarget.y, params.cameraTarget.z);
   camera.updateProjectionMatrix();
 
   return new Promise<string>((resolve, reject) => {
     const loader = new GLTFLoader();
     loader.load(
       modelUrl,
-      (gltf) => {
+      gltf => {
         const model = gltf.scene;
         normalizeAndPlaceModel(model, params.modelScale);
         scene.add(model);
@@ -125,7 +114,7 @@ export async function render3DModelToDataUrl(
         resolve(dataUrl);
       },
       undefined,
-      (error) => {
+      error => {
         disposeScene(scene, renderer);
         reject(error);
       },

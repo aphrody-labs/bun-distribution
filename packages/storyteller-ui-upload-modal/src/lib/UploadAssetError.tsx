@@ -7,12 +7,7 @@ interface Props {
   errorMessage?: string;
 }
 
-export const UploadAssetError = ({
-  onCancel,
-  onRetry,
-  type,
-  errorMessage,
-}: Props) => {
+export const UploadAssetError = ({ onCancel, onRetry, type, errorMessage }: Props) => {
   return (
     <>
       <h3>Error in Uploading {type}</h3>

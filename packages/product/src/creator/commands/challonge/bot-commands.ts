@@ -33,8 +33,7 @@ export function commandDefinitions(): CommandDefinition[] {
         {
           type: SUB_COMMAND,
           name: "creer",
-          description:
-            "Créer un tournoi et ouvrir les inscriptions (organisateurs)",
+          description: "Créer un tournoi et ouvrir les inscriptions (organisateurs)",
           options: [
             {
               type: STRING,
@@ -71,8 +70,7 @@ export function commandDefinitions(): CommandDefinition[] {
             {
               type: STRING,
               name: "pseudo",
-              description:
-                "Nom affiché dans le bracket (défaut : ton pseudo Discord)",
+              description: "Nom affiché dans le bracket (défaut : ton pseudo Discord)",
               max_length: 60,
             },
           ],
@@ -103,8 +101,7 @@ export function commandDefinitions(): CommandDefinition[] {
             {
               type: STRING,
               name: "score",
-              description:
-                "Score joueur1-joueur2, ex. 2-1 (plusieurs manches : 3-1,2-4,3-0)",
+              description: "Score joueur1-joueur2, ex. 2-1 (plusieurs manches : 3-1,2-4,3-0)",
               required: true,
             },
             {
@@ -122,8 +119,7 @@ export function commandDefinitions(): CommandDefinition[] {
         {
           type: SUB_COMMAND,
           name: "terminer",
-          description:
-            "Clôturer le tournoi et figer le classement (organisateurs)",
+          description: "Clôturer le tournoi et figer le classement (organisateurs)",
         },
         {
           type: SUB_COMMAND,

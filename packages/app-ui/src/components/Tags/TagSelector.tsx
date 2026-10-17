@@ -1,16 +1,9 @@
 import { MagnifyingGlass, Plus } from "@phosphor-icons/react";
-import type {
-  SearchTagsInput,
-  SearchTagsOutput,
-  Tag,
-} from "@aphrody/drive-client";
+import type { SearchTagsInput, SearchTagsOutput, Tag } from "@aphrody/drive-client";
 import { Popover, usePopover } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { useState } from "react";
-import {
-  useLibraryMutation,
-  useNormalizedQuery,
-} from "../../contexts/SpacedriveContext";
+import { useLibraryMutation, useNormalizedQuery } from "../../contexts/SpacedriveContext";
 import { useRefetchTagQueries } from "../../hooks/useRefetchTagQueries";
 
 interface TagSelectorProps {
@@ -29,13 +22,7 @@ interface TagSelectorProps {
  * Dropdown menu for searching and selecting tags
  * Features fuzzy search, context-aware suggestions, and keyboard navigation
  */
-export function TagSelector({
-  onSelect,
-  onClose,
-  className,
-  fileId,
-  contentId,
-}: TagSelectorProps) {
+export function TagSelector({ onSelect, onClose, className, fileId, contentId }: TagSelectorProps) {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -45,11 +32,7 @@ export function TagSelector({
   });
 
   // Fetch all tags using search with an empty query and normalize result wrappers.
-  const { data: allTags = [] } = useNormalizedQuery<
-    SearchTagsInput,
-    SearchTagsOutput,
-    Tag[]
-  >({
+  const { data: allTags = [] } = useNormalizedQuery<SearchTagsInput, SearchTagsOutput, Tag[]>({
     query: "tags.search",
     input: {
       query: "",
@@ -61,23 +44,19 @@ export function TagSelector({
       context_tag_ids: null,
     },
     resourceType: "tag",
-    select: (data) => data.tags.map((result) => result.tag),
+    select: data => data.tags.map(result => result.tag),
   });
 
   // Check if query matches an existing tag
-  const exactMatch = allTags.find(
-    (tag) => tag.canonical_name.toLowerCase() === query.toLowerCase(),
-  );
+  const exactMatch = allTags.find(tag => tag.canonical_name.toLowerCase() === query.toLowerCase());
 
   // Filter tags based on search query
   const filteredTags =
     query.length > 0
       ? allTags.filter(
-          (tag) =>
+          tag =>
             tag.canonical_name.toLowerCase().includes(query.toLowerCase()) ||
-            tag.aliases?.some((alias) =>
-              alias.toLowerCase().includes(query.toLowerCase()),
-            ) ||
+            tag.aliases?.some(alias => alias.toLowerCase().includes(query.toLowerCase())) ||
             tag.abbreviation?.toLowerCase().includes(query.toLowerCase()),
         )
       : allTags;
@@ -93,10 +72,10 @@ export function TagSelector({
   const handleKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex((prev) => Math.min(prev + 1, filteredTags.length - 1));
+      setSelectedIndex(prev => Math.min(prev + 1, filteredTags.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex((prev) => Math.max(prev - 1, 0));
+      setSelectedIndex(prev => Math.max(prev - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
       // If there's a match, select it
@@ -184,14 +163,11 @@ export function TagSelector({
     <div className={clsx("flex flex-col overflow-hidden", className)}>
       {/* Search Input */}
       <div className="border-outline-variant flex items-center gap-2 border-b px-3 py-2">
-        <MagnifyingGlass
-          size={16}
-          className="text-on-surface-variant flex-shrink-0"
-        />
+        <MagnifyingGlass size={16} className="text-on-surface-variant flex-shrink-0" />
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={e => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Search tags..."
 
@@ -217,9 +193,7 @@ export function TagSelector({
             <span className="flex-1 text-left">
               Create tag "<strong>{query}</strong>"
             </span>
-            <kbd className="text-outline bg-outline-variant rounded-extra-small px-1.5 py-0.5 text-body-small">
-              ↵
-            </kbd>
+            <kbd className="text-outline bg-outline-variant rounded-extra-small px-1.5 py-0.5 text-body-small">↵</kbd>
           </button>
         )}
 
@@ -249,9 +223,7 @@ export function TagSelector({
               />
 
               {/* Tag name */}
-              <span className="flex-1 truncate text-left">
-                {tag.canonical_name}
-              </span>
+              <span className="flex-1 truncate text-left">{tag.canonical_name}</span>
 
               {/* Namespace badge */}
               {tag.namespace && (
@@ -280,13 +252,7 @@ interface TagSelectorButtonProps {
 /**
  * Wrapper component that shows TagSelector in a dropdown when trigger is clicked
  */
-export function TagSelectorButton({
-  onSelect,
-  trigger,
-  contextTags,
-  fileId,
-  contentId,
-}: TagSelectorButtonProps) {
+export function TagSelectorButton({ onSelect, trigger, contextTags, fileId, contentId }: TagSelectorButtonProps) {
   const popover = usePopover();
 
   return (
@@ -294,7 +260,7 @@ export function TagSelectorButton({
       <Popover.Trigger asChild>{trigger}</Popover.Trigger>
       <Popover.Content className="w-64 p-0">
         <TagSelector
-          onSelect={(tag) => {
+          onSelect={tag => {
             onSelect(tag);
             popover.setOpen(false);
           }}

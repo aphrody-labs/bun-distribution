@@ -12,12 +12,9 @@ export const DragComponent = () => (
     height={120}
     crossOrigin="anonymous"
     getState={() => {
-      const { dragItem, dragPosition, assetDraggingUnder, animationDropState } =
-        usePageSceneStore.getState();
+      const { dragItem, dragPosition, assetDraggingUnder, animationDropState } = usePageSceneStore.getState();
       if (!dragItem || !assetDraggingUnder) return null;
-      const thumbnail =
-        dragItem.thumbnail ||
-        `/resources/images/default-covers/${dragItem.imageIndex || 0}.webp`;
+      const thumbnail = dragItem.thumbnail || `/resources/images/default-covers/${dragItem.imageIndex || 0}.webp`;
       return {
         x: dragPosition.currX,
         y: dragPosition.currY,
@@ -25,10 +22,7 @@ export const DragComponent = () => (
         label: dragItem.name || dragItem.media_id,
         // Animation drags validate their target live; "checking" renders no
         // badge (verdict unknown while the clip is still loading).
-        indicator:
-          animationDropState === "ok" || animationDropState === "blocked"
-            ? animationDropState
-            : undefined,
+        indicator: animationDropState === "ok" || animationDropState === "blocked" ? animationDropState : undefined,
       };
     }}
   />

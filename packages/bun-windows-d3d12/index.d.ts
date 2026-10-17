@@ -3,21 +3,50 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** d3d12.dll!D3D12CreateDevice */
-  D3D12CreateDevice(pAdapter: Win32Pointer, MinimumFeatureLevel: number, riid: Win32Pointer, ppDevice: Win32Pointer): number;
+  D3D12CreateDevice(
+    pAdapter: Win32Pointer,
+    MinimumFeatureLevel: number,
+    riid: Win32Pointer,
+    ppDevice: Win32Pointer,
+  ): number;
   /** d3d12.dll!D3D12CreateRootSignatureDeserializer */
-  D3D12CreateRootSignatureDeserializer(pSrcData: Win32Pointer, SrcDataSizeInBytes: number | bigint, pRootSignatureDeserializerInterface: Win32Pointer, ppRootSignatureDeserializer: Win32Pointer): number;
+  D3D12CreateRootSignatureDeserializer(
+    pSrcData: Win32Pointer,
+    SrcDataSizeInBytes: number | bigint,
+    pRootSignatureDeserializerInterface: Win32Pointer,
+    ppRootSignatureDeserializer: Win32Pointer,
+  ): number;
   /** d3d12.dll!D3D12CreateVersionedRootSignatureDeserializer */
-  D3D12CreateVersionedRootSignatureDeserializer(pSrcData: Win32Pointer, SrcDataSizeInBytes: number | bigint, pRootSignatureDeserializerInterface: Win32Pointer, ppRootSignatureDeserializer: Win32Pointer): number;
+  D3D12CreateVersionedRootSignatureDeserializer(
+    pSrcData: Win32Pointer,
+    SrcDataSizeInBytes: number | bigint,
+    pRootSignatureDeserializerInterface: Win32Pointer,
+    ppRootSignatureDeserializer: Win32Pointer,
+  ): number;
   /** d3d12.dll!D3D12EnableExperimentalFeatures */
-  D3D12EnableExperimentalFeatures(NumFeatures: number, pIIDs: Win32Pointer, pConfigurationStructs: Win32Pointer, pConfigurationStructSizes: Win32Pointer): number;
+  D3D12EnableExperimentalFeatures(
+    NumFeatures: number,
+    pIIDs: Win32Pointer,
+    pConfigurationStructs: Win32Pointer,
+    pConfigurationStructSizes: Win32Pointer,
+  ): number;
   /** d3d12.dll!D3D12GetDebugInterface */
   D3D12GetDebugInterface(riid: Win32Pointer, ppvDebug: Win32Pointer): number;
   /** d3d12.dll!D3D12GetInterface */
   D3D12GetInterface(rclsid: Win32Pointer, riid: Win32Pointer, ppvDebug: Win32Pointer): number;
   /** d3d12.dll!D3D12SerializeRootSignature */
-  D3D12SerializeRootSignature(pRootSignature: Win32Pointer, Version: number, ppBlob: Win32Pointer, ppErrorBlob: Win32Pointer): number;
+  D3D12SerializeRootSignature(
+    pRootSignature: Win32Pointer,
+    Version: number,
+    ppBlob: Win32Pointer,
+    ppErrorBlob: Win32Pointer,
+  ): number;
   /** d3d12.dll!D3D12SerializeVersionedRootSignature */
-  D3D12SerializeVersionedRootSignature(pRootSignature: Win32Pointer, ppBlob: Win32Pointer, ppErrorBlob: Win32Pointer): number;
+  D3D12SerializeVersionedRootSignature(
+    pRootSignature: Win32Pointer,
+    ppBlob: Win32Pointer,
+    ppErrorBlob: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

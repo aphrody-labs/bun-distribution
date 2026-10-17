@@ -21,10 +21,7 @@ const srgba = (c: string, alpha = "1.000000"): string => {
 };
 
 /** Builder keys (cosmic-config file names) mapped to RON values. */
-export function builderEntries(
-  roles: Roles,
-  mode: Mode,
-): Record<string, string> {
+export function builderEntries(roles: Roles, mode: Mode): Record<string, string> {
   return {
     accent: `Some(${srgb(roles["primary"]!)})`,
     bg_color: `Some(${srgba(roles["surface"]!)})`,

@@ -9,23 +9,63 @@ interface Functions {
   /** wsdapi.dll!WSDCreateDeviceHost */
   WSDCreateDeviceHost(pszLocalId: string | Win32Pointer, pContext: Win32Pointer, ppDeviceHost: Win32Pointer): number;
   /** wsdapi.dll!WSDCreateDeviceHost2 */
-  WSDCreateDeviceHost2(pszLocalId: string | Win32Pointer, pContext: Win32Pointer, pConfigParams: Win32Pointer, dwConfigParamCount: number, ppDeviceHost: Win32Pointer): number;
+  WSDCreateDeviceHost2(
+    pszLocalId: string | Win32Pointer,
+    pContext: Win32Pointer,
+    pConfigParams: Win32Pointer,
+    dwConfigParamCount: number,
+    ppDeviceHost: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDCreateDeviceHostAdvanced */
-  WSDCreateDeviceHostAdvanced(pszLocalId: string | Win32Pointer, pContext: Win32Pointer, ppHostAddresses: Win32Pointer, dwHostAddressCount: number, ppDeviceHost: Win32Pointer): number;
+  WSDCreateDeviceHostAdvanced(
+    pszLocalId: string | Win32Pointer,
+    pContext: Win32Pointer,
+    ppHostAddresses: Win32Pointer,
+    dwHostAddressCount: number,
+    ppDeviceHost: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDCreateDeviceProxy */
-  WSDCreateDeviceProxy(pszDeviceId: string | Win32Pointer, pszLocalId: string | Win32Pointer, pContext: Win32Pointer, ppDeviceProxy: Win32Pointer): number;
+  WSDCreateDeviceProxy(
+    pszDeviceId: string | Win32Pointer,
+    pszLocalId: string | Win32Pointer,
+    pContext: Win32Pointer,
+    ppDeviceProxy: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDCreateDeviceProxy2 */
-  WSDCreateDeviceProxy2(pszDeviceId: string | Win32Pointer, pszLocalId: string | Win32Pointer, pContext: Win32Pointer, pConfigParams: Win32Pointer, dwConfigParamCount: number, ppDeviceProxy: Win32Pointer): number;
+  WSDCreateDeviceProxy2(
+    pszDeviceId: string | Win32Pointer,
+    pszLocalId: string | Win32Pointer,
+    pContext: Win32Pointer,
+    pConfigParams: Win32Pointer,
+    dwConfigParamCount: number,
+    ppDeviceProxy: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDCreateDeviceProxyAdvanced */
-  WSDCreateDeviceProxyAdvanced(pszDeviceId: string | Win32Pointer, pDeviceAddress: Win32Pointer, pszLocalId: string | Win32Pointer, pContext: Win32Pointer, ppDeviceProxy: Win32Pointer): number;
+  WSDCreateDeviceProxyAdvanced(
+    pszDeviceId: string | Win32Pointer,
+    pDeviceAddress: Win32Pointer,
+    pszLocalId: string | Win32Pointer,
+    pContext: Win32Pointer,
+    ppDeviceProxy: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDCreateDiscoveryProvider */
   WSDCreateDiscoveryProvider(pContext: Win32Pointer, ppProvider: Win32Pointer): number;
   /** wsdapi.dll!WSDCreateDiscoveryProvider2 */
-  WSDCreateDiscoveryProvider2(pContext: Win32Pointer, pConfigParams: Win32Pointer, dwConfigParamCount: number, ppProvider: Win32Pointer): number;
+  WSDCreateDiscoveryProvider2(
+    pContext: Win32Pointer,
+    pConfigParams: Win32Pointer,
+    dwConfigParamCount: number,
+    ppProvider: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDCreateDiscoveryPublisher */
   WSDCreateDiscoveryPublisher(pContext: Win32Pointer, ppPublisher: Win32Pointer): number;
   /** wsdapi.dll!WSDCreateDiscoveryPublisher2 */
-  WSDCreateDiscoveryPublisher2(pContext: Win32Pointer, pConfigParams: Win32Pointer, dwConfigParamCount: number, ppPublisher: Win32Pointer): number;
+  WSDCreateDiscoveryPublisher2(
+    pContext: Win32Pointer,
+    pConfigParams: Win32Pointer,
+    dwConfigParamCount: number,
+    ppPublisher: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDCreateHttpAddress */
   WSDCreateHttpAddress(ppAddress: Win32Pointer): number;
   /** wsdapi.dll!WSDCreateHttpMessageParameters */
@@ -41,31 +81,67 @@ interface Functions {
   /** wsdapi.dll!WSDFreeLinkedMemory */
   WSDFreeLinkedMemory(pVoid: Win32Pointer): void;
   /** wsdapi.dll!WSDGenerateFault */
-  WSDGenerateFault(pszCode: string | Win32Pointer, pszSubCode: string | Win32Pointer, pszReason: string | Win32Pointer, pszDetail: string | Win32Pointer, pContext: Win32Pointer, ppFault: Win32Pointer): number;
+  WSDGenerateFault(
+    pszCode: string | Win32Pointer,
+    pszSubCode: string | Win32Pointer,
+    pszReason: string | Win32Pointer,
+    pszDetail: string | Win32Pointer,
+    pContext: Win32Pointer,
+    ppFault: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDGenerateFaultEx */
-  WSDGenerateFaultEx(pCode: Win32Pointer, pSubCode: Win32Pointer, pReasons: Win32Pointer, pszDetail: string | Win32Pointer, ppFault: Win32Pointer): number;
+  WSDGenerateFaultEx(
+    pCode: Win32Pointer,
+    pSubCode: Win32Pointer,
+    pReasons: Win32Pointer,
+    pszDetail: string | Win32Pointer,
+    ppFault: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDGetConfigurationOption */
   WSDGetConfigurationOption(dwOption: number, pVoid: Win32Pointer, cbOutBuffer: number): number;
   /** wsdapi.dll!WSDSetConfigurationOption */
   WSDSetConfigurationOption(dwOption: number, pVoid: Win32Pointer, cbInBuffer: number): number;
   /** wsdapi.dll!WSDUriDecode */
-  WSDUriDecode(source: string | Win32Pointer, cchSource: number, destOut: Win32Pointer, cchDestOut: Win32Pointer): number;
+  WSDUriDecode(
+    source: string | Win32Pointer,
+    cchSource: number,
+    destOut: Win32Pointer,
+    cchDestOut: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDUriEncode */
-  WSDUriEncode(source: string | Win32Pointer, cchSource: number, destOut: Win32Pointer, cchDestOut: Win32Pointer): number;
+  WSDUriEncode(
+    source: string | Win32Pointer,
+    cchSource: number,
+    destOut: Win32Pointer,
+    cchDestOut: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDXMLAddChild */
   WSDXMLAddChild(pParent: Win32Pointer, pChild: Win32Pointer): number;
   /** wsdapi.dll!WSDXMLAddSibling */
   WSDXMLAddSibling(pFirst: Win32Pointer, pSecond: Win32Pointer): number;
   /** wsdapi.dll!WSDXMLBuildAnyForSingleElement */
-  WSDXMLBuildAnyForSingleElement(pElementName: Win32Pointer, pszText: string | Win32Pointer, ppAny: Win32Pointer): number;
+  WSDXMLBuildAnyForSingleElement(
+    pElementName: Win32Pointer,
+    pszText: string | Win32Pointer,
+    ppAny: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDXMLCleanupElement */
   WSDXMLCleanupElement(pAny: Win32Pointer): number;
   /** wsdapi.dll!WSDXMLCreateContext */
   WSDXMLCreateContext(ppContext: Win32Pointer): number;
   /** wsdapi.dll!WSDXMLGetNameFromBuiltinNamespace */
-  WSDXMLGetNameFromBuiltinNamespace(pszNamespace: string | Win32Pointer, pszName: string | Win32Pointer, ppName: Win32Pointer): number;
+  WSDXMLGetNameFromBuiltinNamespace(
+    pszNamespace: string | Win32Pointer,
+    pszName: string | Win32Pointer,
+    ppName: Win32Pointer,
+  ): number;
   /** wsdapi.dll!WSDXMLGetValueFromAny */
-  WSDXMLGetValueFromAny(pszNamespace: string | Win32Pointer, pszName: string | Win32Pointer, pAny: Win32Pointer, ppszValue: Win32Pointer): number;
+  WSDXMLGetValueFromAny(
+    pszNamespace: string | Win32Pointer,
+    pszName: string | Win32Pointer,
+    pAny: Win32Pointer,
+    ppszValue: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

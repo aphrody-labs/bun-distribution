@@ -3,7 +3,11 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mqrt.dll!MQADsPathToFormatName */
-  MQADsPathToFormatName(lpwcsADsPath: string | Win32Pointer, lpwcsFormatName: string | Win32Pointer, lpdwFormatNameLength: Win32Pointer): number;
+  MQADsPathToFormatName(
+    lpwcsADsPath: string | Win32Pointer,
+    lpwcsFormatName: string | Win32Pointer,
+    lpdwFormatNameLength: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQBeginTransaction */
   MQBeginTransaction(ppTransaction: Win32Pointer): number;
   /** mqrt.dll!MQCloseCursor */
@@ -13,7 +17,12 @@ interface Functions {
   /** mqrt.dll!MQCreateCursor */
   MQCreateCursor(hQueue: number | bigint, phCursor: Win32Pointer): number;
   /** mqrt.dll!MQCreateQueue */
-  MQCreateQueue(pSecurityDescriptor: Win32Pointer, pQueueProps: Win32Pointer, lpwcsFormatName: string | Win32Pointer, lpdwFormatNameLength: Win32Pointer): number;
+  MQCreateQueue(
+    pSecurityDescriptor: Win32Pointer,
+    pQueueProps: Win32Pointer,
+    lpwcsFormatName: string | Win32Pointer,
+    lpdwFormatNameLength: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQDeleteQueue */
   MQDeleteQueue(lpwcsFormatName: string | Win32Pointer): number;
   /** mqrt.dll!MQFreeMemory */
@@ -21,7 +30,11 @@ interface Functions {
   /** mqrt.dll!MQFreeSecurityContext */
   MQFreeSecurityContext(hSecurityContext: Win32Pointer): void;
   /** mqrt.dll!MQGetMachineProperties */
-  MQGetMachineProperties(lpwcsMachineName: string | Win32Pointer, pguidMachineId: Win32Pointer, pQMProps: Win32Pointer): number;
+  MQGetMachineProperties(
+    lpwcsMachineName: string | Win32Pointer,
+    pguidMachineId: Win32Pointer,
+    pQMProps: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQGetOverlappedResult */
   MQGetOverlappedResult(lpOverlapped: Win32Pointer): number;
   /** mqrt.dll!MQGetPrivateComputerInformation */
@@ -29,17 +42,41 @@ interface Functions {
   /** mqrt.dll!MQGetQueueProperties */
   MQGetQueueProperties(lpwcsFormatName: string | Win32Pointer, pQueueProps: Win32Pointer): number;
   /** mqrt.dll!MQGetQueueSecurity */
-  MQGetQueueSecurity(lpwcsFormatName: string | Win32Pointer, RequestedInformation: number, pSecurityDescriptor: Win32Pointer, nLength: number, lpnLengthNeeded: Win32Pointer): number;
+  MQGetQueueSecurity(
+    lpwcsFormatName: string | Win32Pointer,
+    RequestedInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+    nLength: number,
+    lpnLengthNeeded: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQGetSecurityContext */
   MQGetSecurityContext(lpCertBuffer: Win32Pointer, dwCertBufferLength: number, phSecurityContext: Win32Pointer): number;
   /** mqrt.dll!MQGetSecurityContextEx */
-  MQGetSecurityContextEx(lpCertBuffer: Win32Pointer, dwCertBufferLength: number, phSecurityContext: Win32Pointer): number;
+  MQGetSecurityContextEx(
+    lpCertBuffer: Win32Pointer,
+    dwCertBufferLength: number,
+    phSecurityContext: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQHandleToFormatName */
-  MQHandleToFormatName(hQueue: number | bigint, lpwcsFormatName: string | Win32Pointer, lpdwFormatNameLength: Win32Pointer): number;
+  MQHandleToFormatName(
+    hQueue: number | bigint,
+    lpwcsFormatName: string | Win32Pointer,
+    lpdwFormatNameLength: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQInstanceToFormatName */
-  MQInstanceToFormatName(pGuid: Win32Pointer, lpwcsFormatName: string | Win32Pointer, lpdwFormatNameLength: Win32Pointer): number;
+  MQInstanceToFormatName(
+    pGuid: Win32Pointer,
+    lpwcsFormatName: string | Win32Pointer,
+    lpdwFormatNameLength: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQLocateBegin */
-  MQLocateBegin(lpwcsContext: string | Win32Pointer, pRestriction: Win32Pointer, pColumns: Win32Pointer, pSort: Win32Pointer, phEnum: Win32Pointer): number;
+  MQLocateBegin(
+    lpwcsContext: string | Win32Pointer,
+    pRestriction: Win32Pointer,
+    pColumns: Win32Pointer,
+    pSort: Win32Pointer,
+    phEnum: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQLocateEnd */
   MQLocateEnd(hEnum: Win32Pointer): number;
   /** mqrt.dll!MQLocateNext */
@@ -47,21 +84,60 @@ interface Functions {
   /** mqrt.dll!MQMarkMessageRejected */
   MQMarkMessageRejected(hQueue: Win32Pointer, ullLookupId: number | bigint): number;
   /** mqrt.dll!MQMgmtAction */
-  MQMgmtAction(pComputerName: string | Win32Pointer, pObjectName: string | Win32Pointer, pAction: string | Win32Pointer): number;
+  MQMgmtAction(
+    pComputerName: string | Win32Pointer,
+    pObjectName: string | Win32Pointer,
+    pAction: string | Win32Pointer,
+  ): number;
   /** mqrt.dll!MQMgmtGetInfo */
-  MQMgmtGetInfo(pComputerName: string | Win32Pointer, pObjectName: string | Win32Pointer, pMgmtProps: Win32Pointer): number;
+  MQMgmtGetInfo(
+    pComputerName: string | Win32Pointer,
+    pObjectName: string | Win32Pointer,
+    pMgmtProps: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQMoveMessage */
-  MQMoveMessage(hSourceQueue: number | bigint, hDestinationQueue: number | bigint, ullLookupId: number | bigint, pTransaction: Win32Pointer): number;
+  MQMoveMessage(
+    hSourceQueue: number | bigint,
+    hDestinationQueue: number | bigint,
+    ullLookupId: number | bigint,
+    pTransaction: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQOpenQueue */
-  MQOpenQueue(lpwcsFormatName: string | Win32Pointer, dwAccess: number, dwShareMode: number, phQueue: Win32Pointer): number;
+  MQOpenQueue(
+    lpwcsFormatName: string | Win32Pointer,
+    dwAccess: number,
+    dwShareMode: number,
+    phQueue: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQPathNameToFormatName */
-  MQPathNameToFormatName(lpwcsPathName: string | Win32Pointer, lpwcsFormatName: string | Win32Pointer, lpdwFormatNameLength: Win32Pointer): number;
+  MQPathNameToFormatName(
+    lpwcsPathName: string | Win32Pointer,
+    lpwcsFormatName: string | Win32Pointer,
+    lpdwFormatNameLength: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQPurgeQueue */
   MQPurgeQueue(hQueue: number | bigint): number;
   /** mqrt.dll!MQReceiveMessage */
-  MQReceiveMessage(hSource: number | bigint, dwTimeout: number, dwAction: number, pMessageProps: Win32Pointer, lpOverlapped: Win32Pointer, fnReceiveCallback: Win32Callback, hCursor: Win32Pointer, pTransaction: Win32Pointer): number;
+  MQReceiveMessage(
+    hSource: number | bigint,
+    dwTimeout: number,
+    dwAction: number,
+    pMessageProps: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    fnReceiveCallback: Win32Callback,
+    hCursor: Win32Pointer,
+    pTransaction: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQReceiveMessageByLookupId */
-  MQReceiveMessageByLookupId(hSource: number | bigint, ullLookupId: number | bigint, dwLookupAction: number, pMessageProps: Win32Pointer, lpOverlapped: Win32Pointer, fnReceiveCallback: Win32Callback, pTransaction: Win32Pointer): number;
+  MQReceiveMessageByLookupId(
+    hSource: number | bigint,
+    ullLookupId: number | bigint,
+    dwLookupAction: number,
+    pMessageProps: Win32Pointer,
+    lpOverlapped: Win32Pointer,
+    fnReceiveCallback: Win32Callback,
+    pTransaction: Win32Pointer,
+  ): number;
   /** mqrt.dll!MQRegisterCertificate */
   MQRegisterCertificate(dwFlags: number, lpCertBuffer: Win32Pointer, dwCertBufferLength: number): number;
   /** mqrt.dll!MQSendMessage */
@@ -69,7 +145,11 @@ interface Functions {
   /** mqrt.dll!MQSetQueueProperties */
   MQSetQueueProperties(lpwcsFormatName: string | Win32Pointer, pQueueProps: Win32Pointer): number;
   /** mqrt.dll!MQSetQueueSecurity */
-  MQSetQueueSecurity(lpwcsFormatName: string | Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer): number;
+  MQSetQueueSecurity(
+    lpwcsFormatName: string | Win32Pointer,
+    SecurityInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

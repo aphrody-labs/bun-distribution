@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Transient Win32 notification compatibility.
 
-use crate::dispatch::string_arg;
 use crate::SubsystemError;
+use crate::dispatch::string_arg;
 use serde_json::Value;
 
 /// Show the frozen transient Win32 balloon contract.
@@ -92,11 +92,15 @@ pub(crate) fn send_notification(arguments: &Value) -> Result<Value, SubsystemErr
             std::thread::sleep(std::time::Duration::from_millis(150));
             let _ = Shell_NotifyIconW(NIM_DELETE, &mut data);
         }
-        Ok(Value::String(format!("Notification dispatched: '{title}'.")))
+        Ok(Value::String(format!(
+            "Notification dispatched: '{title}'."
+        )))
     }
     #[cfg(not(windows))]
     {
         let _ = (title, message);
-        Err(SubsystemError::Failed("notifications are Windows-only".into()))
+        Err(SubsystemError::Failed(
+            "notifications are Windows-only".into(),
+        ))
     }
 }

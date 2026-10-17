@@ -1,5 +1,3 @@
-
-
 /// Build description of the `mcp-bridge` plugin.
 pub fn builder() -> tauri_plugin::Builder<'static> {
     tauri_plugin::Builder::new(&[

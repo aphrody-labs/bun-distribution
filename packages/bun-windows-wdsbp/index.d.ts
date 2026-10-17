@@ -11,11 +11,27 @@ interface Functions {
   /** wdsbp.dll!WdsBpInitialize */
   WdsBpInitialize(bPacketType: number, phHandle: Win32Pointer): number;
   /** wdsbp.dll!WdsBpParseInitialize */
-  WdsBpParseInitialize(pPacket: Win32Pointer, uPacketLen: number, pbPacketType: Win32Pointer, phHandle: Win32Pointer): number;
+  WdsBpParseInitialize(
+    pPacket: Win32Pointer,
+    uPacketLen: number,
+    pbPacketType: Win32Pointer,
+    phHandle: Win32Pointer,
+  ): number;
   /** wdsbp.dll!WdsBpParseInitializev6 */
-  WdsBpParseInitializev6(pPacket: Win32Pointer, uPacketLen: number, pbPacketType: Win32Pointer, phHandle: Win32Pointer): number;
+  WdsBpParseInitializev6(
+    pPacket: Win32Pointer,
+    uPacketLen: number,
+    pbPacketType: Win32Pointer,
+    phHandle: Win32Pointer,
+  ): number;
   /** wdsbp.dll!WdsBpQueryOption */
-  WdsBpQueryOption(hHandle: Win32Pointer, uOption: number, uValueLen: number, pValue: Win32Pointer, puBytes: Win32Pointer): number;
+  WdsBpQueryOption(
+    hHandle: Win32Pointer,
+    uOption: number,
+    uValueLen: number,
+    pValue: Win32Pointer,
+    puBytes: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

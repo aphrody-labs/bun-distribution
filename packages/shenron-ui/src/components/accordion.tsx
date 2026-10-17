@@ -8,10 +8,7 @@ import { cn } from "../lib/utils";
 
 const Accordion = AccordionPrimitive.Root;
 
-function AccordionItem({
-  className,
-  ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Item>) {
+function AccordionItem({ className, ...props }: React.ComponentProps<typeof AccordionPrimitive.Item>) {
   return (
     <AccordionPrimitive.Item
       className={cn(
@@ -24,11 +21,7 @@ function AccordionItem({
   );
 }
 
-function AccordionTrigger({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {
+function AccordionTrigger({ className, children, ...props }: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {
   return (
     <AccordionPrimitive.Header className="flex">
       <AccordionPrimitive.Trigger
@@ -47,17 +40,10 @@ function AccordionTrigger({
   );
 }
 
-function AccordionPanel({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Panel>) {
+function AccordionPanel({ className, children, ...props }: React.ComponentProps<typeof AccordionPrimitive.Panel>) {
   return (
     <AccordionPrimitive.Panel
-      className={cn(
-        "overflow-hidden px-5 pb-5 pt-1 text-sm text-gray-300 leading-relaxed transition-all",
-        className,
-      )}
+      className={cn("overflow-hidden px-5 pb-5 pt-1 text-sm text-gray-300 leading-relaxed transition-all", className)}
       {...props}
     >
       <div className="border-t border-black/40 pt-4">{children}</div>

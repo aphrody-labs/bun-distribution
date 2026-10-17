@@ -15,12 +15,12 @@ export class UserRatingApi extends ApiManager {
       ratings?: UserRating[];
       BadInput?: string;
     }>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success ?? false,
         data: response.ratings,
         errorMessage: response.BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
@@ -54,12 +54,12 @@ export class UserRatingApi extends ApiManager {
         BadInput?: string;
       }
     >({ endpoint, body })
-      .then((response) => ({
+      .then(response => ({
         success: response.success ?? false,
         data: response.new_positive_rating_count_for_entity,
         errorMessage: response.BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }
@@ -78,14 +78,14 @@ export class UserRatingApi extends ApiManager {
       maybe_rating_value?: string;
       BadInput?: string;
     }>({ endpoint })
-      .then((response) => {
+      .then(response => {
         return {
           success: response.success ?? false,
           data: response.maybe_rating_value,
           errorMessage: response.BadInput,
         };
       })
-      .catch((err) => {
+      .catch(err => {
         return { success: false, errorMessage: err.message };
       });
   }

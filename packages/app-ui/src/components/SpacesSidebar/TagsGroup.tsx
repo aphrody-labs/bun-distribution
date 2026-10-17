@@ -1,17 +1,10 @@
 import { CaretRight, Plus, Tag as TagIcon, Trash } from "@phosphor-icons/react";
-import type {
-  SearchTagsInput,
-  SearchTagsOutput,
-  Tag,
-} from "@aphrody/drive-client";
+import type { SearchTagsInput, SearchTagsOutput, Tag } from "@aphrody/drive-client";
 import { clsx } from "clsx";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePlatform } from "../../contexts/PlatformContext";
-import {
-  useLibraryMutation,
-  useNormalizedQuery,
-} from "../../contexts/SpacedriveContext";
+import { useLibraryMutation, useNormalizedQuery } from "../../contexts/SpacedriveContext";
 import { useContextMenu } from "../../hooks/useContextMenu";
 import { useRefetchTagQueries } from "../../hooks/useRefetchTagQueries";
 import { useExplorer } from "../../routes/explorer/context";
@@ -58,7 +51,7 @@ function TagItem({ tag, depth = 0 }: TagItemProps) {
         onClick: () => {
           platform.confirm(
             `Delete tag "${tag.canonical_name || tag.display_name || "this tag"}"? This will remove it from all files.`,
-            async (confirmed) => {
+            async confirmed => {
               if (!confirmed) return;
               try {
                 await deleteTag.mutateAsync({ tag_id: tag.id });
@@ -94,11 +87,8 @@ function TagItem({ tag, depth = 0 }: TagItemProps) {
           <CaretRight
             size={10}
             weight="bold"
-            className={clsx(
-              "flex-shrink-0 transition-transform",
-              isExpanded && "rotate-90",
-            )}
-            onClick={(e) => {
+            className={clsx("flex-shrink-0 transition-transform", isExpanded && "rotate-90")}
+            onClick={e => {
               e.stopPropagation();
               setIsExpanded(!isExpanded);
             }}
@@ -106,35 +96,20 @@ function TagItem({ tag, depth = 0 }: TagItemProps) {
         )}
 
         {tag.icon ? (
-          <TagIcon
-            size={16}
-            weight="bold"
-            style={{ color: tag.color || "#3B82F6" }}
-          />
+          <TagIcon size={16} weight="bold" style={{ color: tag.color || "#3B82F6" }} />
         ) : (
-          <span
-            className="size-2 flex-shrink-0 rounded-full"
-            style={{ backgroundColor: tag.color || "#3B82F6" }}
-          />
+          <span className="size-2 flex-shrink-0 rounded-full" style={{ backgroundColor: tag.color || "#3B82F6" }} />
         )}
 
         <span className="flex-1 truncate text-left">{tag.canonical_name}</span>
       </button>
 
-      {isExpanded &&
-        children.map((child) => (
-          <TagItem key={child.id} tag={child} depth={depth + 1} />
-        ))}
+      {isExpanded && children.map(child => <TagItem key={child.id} tag={child} depth={depth + 1} />)}
     </div>
   );
 }
 
-export function TagsGroup({
-  isCollapsed,
-  onToggle,
-  sortableAttributes,
-  sortableListeners,
-}: TagsGroupProps) {
+export function TagsGroup({ isCollapsed, onToggle, sortableAttributes, sortableListeners }: TagsGroupProps) {
   const navigate = useNavigate();
   const { loadPreferencesForSpaceItem } = useExplorer();
   const [isCreating, setIsCreating] = useState(false);
@@ -145,11 +120,7 @@ export function TagsGroup({
     onSuccess: refetchTagQueries,
   });
 
-  const { data: tags = [], isLoading } = useNormalizedQuery<
-    SearchTagsInput,
-    SearchTagsOutput,
-    Tag[]
-  >({
+  const { data: tags = [], isLoading } = useNormalizedQuery<SearchTagsInput, SearchTagsOutput, Tag[]>({
     query: "tags.search",
     input: {
       query: "",
@@ -161,7 +132,7 @@ export function TagsGroup({
       context_tag_ids: null,
     },
     resourceType: "tag",
-    select: (data) => data.tags.map((result) => result.tag),
+    select: data => data.tags.map(result => result.tag),
   });
 
   const handleCreateTag = async () => {
@@ -208,23 +179,15 @@ export function TagsGroup({
         onToggle={onToggle}
         sortableAttributes={sortableAttributes}
         sortableListeners={sortableListeners}
-        rightComponent={
-          tags.length > 0 && (
-            <span className="text-outline ml-auto">{tags.length}</span>
-          )
-        }
+        rightComponent={tags.length > 0 && <span className="text-outline ml-auto">{tags.length}</span>}
       />
 
       {!isCollapsed && (
         <div className="space-y-0.5">
           {isLoading ? (
-            <div className="text-outline px-2 py-1 text-body-small">
-              Loading...
-            </div>
+            <div className="text-outline px-2 py-1 text-body-small">Loading...</div>
           ) : tags.length === 0 ? (
-            <div className="text-outline px-2 py-1 text-body-small">
-              No tags: create one to group files
-            </div>
+            <div className="text-outline px-2 py-1 text-body-small">No tags: create one to group files</div>
           ) : (
             tags.map((tag: Tag) => <TagItem key={tag.id} tag={tag} />)
           )}
@@ -234,8 +197,8 @@ export function TagsGroup({
               <input
                 type="text"
                 value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
-                onKeyDown={(e) => {
+                onChange={e => setNewTagName(e.target.value)}
+                onKeyDown={e => {
                   if (e.key === "Enter") {
                     handleCreateTag();
                   } else if (e.key === "Escape") {

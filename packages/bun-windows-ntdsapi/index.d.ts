@@ -3,19 +3,77 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** ntdsapi.dll!DsAddSidHistoryA */
-  DsAddSidHistoryA(hDS: Win32Pointer, Flags: number, SrcDomain: string | Win32Pointer, SrcPrincipal: string | Win32Pointer, SrcDomainController: string | Win32Pointer, SrcDomainCreds: Win32Pointer, DstDomain: string | Win32Pointer, DstPrincipal: string | Win32Pointer): number;
+  DsAddSidHistoryA(
+    hDS: Win32Pointer,
+    Flags: number,
+    SrcDomain: string | Win32Pointer,
+    SrcPrincipal: string | Win32Pointer,
+    SrcDomainController: string | Win32Pointer,
+    SrcDomainCreds: Win32Pointer,
+    DstDomain: string | Win32Pointer,
+    DstPrincipal: string | Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsAddSidHistoryW */
-  DsAddSidHistoryW(hDS: Win32Pointer, Flags: number, SrcDomain: string | Win32Pointer, SrcPrincipal: string | Win32Pointer, SrcDomainController: string | Win32Pointer, SrcDomainCreds: Win32Pointer, DstDomain: string | Win32Pointer, DstPrincipal: string | Win32Pointer): number;
+  DsAddSidHistoryW(
+    hDS: Win32Pointer,
+    Flags: number,
+    SrcDomain: string | Win32Pointer,
+    SrcPrincipal: string | Win32Pointer,
+    SrcDomainController: string | Win32Pointer,
+    SrcDomainCreds: Win32Pointer,
+    DstDomain: string | Win32Pointer,
+    DstPrincipal: string | Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsAddSidHistoryW */
-  DsAddSidHistory(hDS: Win32Pointer, Flags: number, SrcDomain: string | Win32Pointer, SrcPrincipal: string | Win32Pointer, SrcDomainController: string | Win32Pointer, SrcDomainCreds: Win32Pointer, DstDomain: string | Win32Pointer, DstPrincipal: string | Win32Pointer): number;
+  DsAddSidHistory(
+    hDS: Win32Pointer,
+    Flags: number,
+    SrcDomain: string | Win32Pointer,
+    SrcPrincipal: string | Win32Pointer,
+    SrcDomainController: string | Win32Pointer,
+    SrcDomainCreds: Win32Pointer,
+    DstDomain: string | Win32Pointer,
+    DstPrincipal: string | Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindA */
-  DsBindA(DomainControllerName: string | Win32Pointer, DnsDomainName: string | Win32Pointer, phDS: Win32Pointer): number;
+  DsBindA(
+    DomainControllerName: string | Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindByInstanceA */
-  DsBindByInstanceA(ServerName: string | Win32Pointer, Annotation: string | Win32Pointer, InstanceGuid: Win32Pointer, DnsDomainName: string | Win32Pointer, AuthIdentity: Win32Pointer, ServicePrincipalName: string | Win32Pointer, BindFlags: number, phDS: Win32Pointer): number;
+  DsBindByInstanceA(
+    ServerName: string | Win32Pointer,
+    Annotation: string | Win32Pointer,
+    InstanceGuid: Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    ServicePrincipalName: string | Win32Pointer,
+    BindFlags: number,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindByInstanceW */
-  DsBindByInstanceW(ServerName: string | Win32Pointer, Annotation: string | Win32Pointer, InstanceGuid: Win32Pointer, DnsDomainName: string | Win32Pointer, AuthIdentity: Win32Pointer, ServicePrincipalName: string | Win32Pointer, BindFlags: number, phDS: Win32Pointer): number;
+  DsBindByInstanceW(
+    ServerName: string | Win32Pointer,
+    Annotation: string | Win32Pointer,
+    InstanceGuid: Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    ServicePrincipalName: string | Win32Pointer,
+    BindFlags: number,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindByInstanceW */
-  DsBindByInstance(ServerName: string | Win32Pointer, Annotation: string | Win32Pointer, InstanceGuid: Win32Pointer, DnsDomainName: string | Win32Pointer, AuthIdentity: Win32Pointer, ServicePrincipalName: string | Win32Pointer, BindFlags: number, phDS: Win32Pointer): number;
+  DsBindByInstance(
+    ServerName: string | Win32Pointer,
+    Annotation: string | Win32Pointer,
+    InstanceGuid: Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    ServicePrincipalName: string | Win32Pointer,
+    BindFlags: number,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindToISTGA */
   DsBindToISTGA(SiteName: string | Win32Pointer, phDS: Win32Pointer): number;
   /** ntdsapi.dll!DsBindToISTGW */
@@ -23,41 +81,138 @@ interface Functions {
   /** ntdsapi.dll!DsBindToISTGW */
   DsBindToISTG(SiteName: string | Win32Pointer, phDS: Win32Pointer): number;
   /** ntdsapi.dll!DsBindW */
-  DsBindW(DomainControllerName: string | Win32Pointer, DnsDomainName: string | Win32Pointer, phDS: Win32Pointer): number;
+  DsBindW(
+    DomainControllerName: string | Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindW */
   DsBind(DomainControllerName: string | Win32Pointer, DnsDomainName: string | Win32Pointer, phDS: Win32Pointer): number;
   /** ntdsapi.dll!DsBindWithCredA */
-  DsBindWithCredA(DomainControllerName: string | Win32Pointer, DnsDomainName: string | Win32Pointer, AuthIdentity: Win32Pointer, phDS: Win32Pointer): number;
+  DsBindWithCredA(
+    DomainControllerName: string | Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindWithCredW */
-  DsBindWithCredW(DomainControllerName: string | Win32Pointer, DnsDomainName: string | Win32Pointer, AuthIdentity: Win32Pointer, phDS: Win32Pointer): number;
+  DsBindWithCredW(
+    DomainControllerName: string | Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindWithCredW */
-  DsBindWithCred(DomainControllerName: string | Win32Pointer, DnsDomainName: string | Win32Pointer, AuthIdentity: Win32Pointer, phDS: Win32Pointer): number;
+  DsBindWithCred(
+    DomainControllerName: string | Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindWithSpnA */
-  DsBindWithSpnA(DomainControllerName: string | Win32Pointer, DnsDomainName: string | Win32Pointer, AuthIdentity: Win32Pointer, ServicePrincipalName: string | Win32Pointer, phDS: Win32Pointer): number;
+  DsBindWithSpnA(
+    DomainControllerName: string | Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    ServicePrincipalName: string | Win32Pointer,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindWithSpnExA */
-  DsBindWithSpnExA(DomainControllerName: string | Win32Pointer, DnsDomainName: string | Win32Pointer, AuthIdentity: Win32Pointer, ServicePrincipalName: string | Win32Pointer, BindFlags: number, phDS: Win32Pointer): number;
+  DsBindWithSpnExA(
+    DomainControllerName: string | Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    ServicePrincipalName: string | Win32Pointer,
+    BindFlags: number,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindWithSpnExW */
-  DsBindWithSpnExW(DomainControllerName: string | Win32Pointer, DnsDomainName: string | Win32Pointer, AuthIdentity: Win32Pointer, ServicePrincipalName: string | Win32Pointer, BindFlags: number, phDS: Win32Pointer): number;
+  DsBindWithSpnExW(
+    DomainControllerName: string | Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    ServicePrincipalName: string | Win32Pointer,
+    BindFlags: number,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindWithSpnExW */
-  DsBindWithSpnEx(DomainControllerName: string | Win32Pointer, DnsDomainName: string | Win32Pointer, AuthIdentity: Win32Pointer, ServicePrincipalName: string | Win32Pointer, BindFlags: number, phDS: Win32Pointer): number;
+  DsBindWithSpnEx(
+    DomainControllerName: string | Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    ServicePrincipalName: string | Win32Pointer,
+    BindFlags: number,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindWithSpnW */
-  DsBindWithSpnW(DomainControllerName: string | Win32Pointer, DnsDomainName: string | Win32Pointer, AuthIdentity: Win32Pointer, ServicePrincipalName: string | Win32Pointer, phDS: Win32Pointer): number;
+  DsBindWithSpnW(
+    DomainControllerName: string | Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    ServicePrincipalName: string | Win32Pointer,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindWithSpnW */
-  DsBindWithSpn(DomainControllerName: string | Win32Pointer, DnsDomainName: string | Win32Pointer, AuthIdentity: Win32Pointer, ServicePrincipalName: string | Win32Pointer, phDS: Win32Pointer): number;
+  DsBindWithSpn(
+    DomainControllerName: string | Win32Pointer,
+    DnsDomainName: string | Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    ServicePrincipalName: string | Win32Pointer,
+    phDS: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsBindingSetTimeout */
   DsBindingSetTimeout(hDS: Win32Pointer, cTimeoutSecs: number): number;
   /** ntdsapi.dll!DsClientMakeSpnForTargetServerA */
-  DsClientMakeSpnForTargetServerA(ServiceClass: string | Win32Pointer, ServiceName: string | Win32Pointer, pcSpnLength: Win32Pointer, pszSpn: string | Win32Pointer): number;
+  DsClientMakeSpnForTargetServerA(
+    ServiceClass: string | Win32Pointer,
+    ServiceName: string | Win32Pointer,
+    pcSpnLength: Win32Pointer,
+    pszSpn: string | Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsClientMakeSpnForTargetServerW */
-  DsClientMakeSpnForTargetServerW(ServiceClass: string | Win32Pointer, ServiceName: string | Win32Pointer, pcSpnLength: Win32Pointer, pszSpn: string | Win32Pointer): number;
+  DsClientMakeSpnForTargetServerW(
+    ServiceClass: string | Win32Pointer,
+    ServiceName: string | Win32Pointer,
+    pcSpnLength: Win32Pointer,
+    pszSpn: string | Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsClientMakeSpnForTargetServerW */
-  DsClientMakeSpnForTargetServer(ServiceClass: string | Win32Pointer, ServiceName: string | Win32Pointer, pcSpnLength: Win32Pointer, pszSpn: string | Win32Pointer): number;
+  DsClientMakeSpnForTargetServer(
+    ServiceClass: string | Win32Pointer,
+    ServiceName: string | Win32Pointer,
+    pcSpnLength: Win32Pointer,
+    pszSpn: string | Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsCrackNamesA */
-  DsCrackNamesA(hDS: Win32Pointer, flags: number, formatOffered: number, formatDesired: number, cNames: number, rpNames: Win32Pointer, ppResult: Win32Pointer): number;
+  DsCrackNamesA(
+    hDS: Win32Pointer,
+    flags: number,
+    formatOffered: number,
+    formatDesired: number,
+    cNames: number,
+    rpNames: Win32Pointer,
+    ppResult: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsCrackNamesW */
-  DsCrackNamesW(hDS: Win32Pointer, flags: number, formatOffered: number, formatDesired: number, cNames: number, rpNames: Win32Pointer, ppResult: Win32Pointer): number;
+  DsCrackNamesW(
+    hDS: Win32Pointer,
+    flags: number,
+    formatOffered: number,
+    formatDesired: number,
+    cNames: number,
+    rpNames: Win32Pointer,
+    ppResult: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsCrackNamesW */
-  DsCrackNames(hDS: Win32Pointer, flags: number, formatOffered: number, formatDesired: number, cNames: number, rpNames: Win32Pointer, ppResult: Win32Pointer): number;
+  DsCrackNames(
+    hDS: Win32Pointer,
+    flags: number,
+    formatOffered: number,
+    formatDesired: number,
+    cNames: number,
+    rpNames: Win32Pointer,
+    ppResult: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsFreeDomainControllerInfoA */
   DsFreeDomainControllerInfoA(InfoLevel: number, cInfo: number, pInfo: Win32Pointer): void;
   /** ntdsapi.dll!DsFreeDomainControllerInfoW */
@@ -85,23 +240,86 @@ interface Functions {
   /** ntdsapi.dll!DsFreeSpnArrayW */
   DsFreeSpnArray(cSpn: number, rpszSpn: Win32Pointer): void;
   /** ntdsapi.dll!DsGetDomainControllerInfoA */
-  DsGetDomainControllerInfoA(hDs: Win32Pointer, DomainName: string | Win32Pointer, InfoLevel: number, pcOut: Win32Pointer, ppInfo: Win32Pointer): number;
+  DsGetDomainControllerInfoA(
+    hDs: Win32Pointer,
+    DomainName: string | Win32Pointer,
+    InfoLevel: number,
+    pcOut: Win32Pointer,
+    ppInfo: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsGetDomainControllerInfoW */
-  DsGetDomainControllerInfoW(hDs: Win32Pointer, DomainName: string | Win32Pointer, InfoLevel: number, pcOut: Win32Pointer, ppInfo: Win32Pointer): number;
+  DsGetDomainControllerInfoW(
+    hDs: Win32Pointer,
+    DomainName: string | Win32Pointer,
+    InfoLevel: number,
+    pcOut: Win32Pointer,
+    ppInfo: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsGetDomainControllerInfoW */
-  DsGetDomainControllerInfo(hDs: Win32Pointer, DomainName: string | Win32Pointer, InfoLevel: number, pcOut: Win32Pointer, ppInfo: Win32Pointer): number;
+  DsGetDomainControllerInfo(
+    hDs: Win32Pointer,
+    DomainName: string | Win32Pointer,
+    InfoLevel: number,
+    pcOut: Win32Pointer,
+    ppInfo: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsGetSpnA */
-  DsGetSpnA(ServiceType: number, ServiceClass: string | Win32Pointer, ServiceName: string | Win32Pointer, InstancePort: number, cInstanceNames: number, pInstanceNames: Win32Pointer, pInstancePorts: Win32Pointer, pcSpn: Win32Pointer, prpszSpn: Win32Pointer): number;
+  DsGetSpnA(
+    ServiceType: number,
+    ServiceClass: string | Win32Pointer,
+    ServiceName: string | Win32Pointer,
+    InstancePort: number,
+    cInstanceNames: number,
+    pInstanceNames: Win32Pointer,
+    pInstancePorts: Win32Pointer,
+    pcSpn: Win32Pointer,
+    prpszSpn: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsGetSpnW */
-  DsGetSpnW(ServiceType: number, ServiceClass: string | Win32Pointer, ServiceName: string | Win32Pointer, InstancePort: number, cInstanceNames: number, pInstanceNames: Win32Pointer, pInstancePorts: Win32Pointer, pcSpn: Win32Pointer, prpszSpn: Win32Pointer): number;
+  DsGetSpnW(
+    ServiceType: number,
+    ServiceClass: string | Win32Pointer,
+    ServiceName: string | Win32Pointer,
+    InstancePort: number,
+    cInstanceNames: number,
+    pInstanceNames: Win32Pointer,
+    pInstancePorts: Win32Pointer,
+    pcSpn: Win32Pointer,
+    prpszSpn: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsGetSpnW */
-  DsGetSpn(ServiceType: number, ServiceClass: string | Win32Pointer, ServiceName: string | Win32Pointer, InstancePort: number, cInstanceNames: number, pInstanceNames: Win32Pointer, pInstancePorts: Win32Pointer, pcSpn: Win32Pointer, prpszSpn: Win32Pointer): number;
+  DsGetSpn(
+    ServiceType: number,
+    ServiceClass: string | Win32Pointer,
+    ServiceName: string | Win32Pointer,
+    InstancePort: number,
+    cInstanceNames: number,
+    pInstanceNames: Win32Pointer,
+    pInstancePorts: Win32Pointer,
+    pcSpn: Win32Pointer,
+    prpszSpn: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsInheritSecurityIdentityA */
-  DsInheritSecurityIdentityA(hDS: Win32Pointer, Flags: number, SrcPrincipal: string | Win32Pointer, DstPrincipal: string | Win32Pointer): number;
+  DsInheritSecurityIdentityA(
+    hDS: Win32Pointer,
+    Flags: number,
+    SrcPrincipal: string | Win32Pointer,
+    DstPrincipal: string | Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsInheritSecurityIdentityW */
-  DsInheritSecurityIdentityW(hDS: Win32Pointer, Flags: number, SrcPrincipal: string | Win32Pointer, DstPrincipal: string | Win32Pointer): number;
+  DsInheritSecurityIdentityW(
+    hDS: Win32Pointer,
+    Flags: number,
+    SrcPrincipal: string | Win32Pointer,
+    DstPrincipal: string | Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsInheritSecurityIdentityW */
-  DsInheritSecurityIdentity(hDS: Win32Pointer, Flags: number, SrcPrincipal: string | Win32Pointer, DstPrincipal: string | Win32Pointer): number;
+  DsInheritSecurityIdentity(
+    hDS: Win32Pointer,
+    Flags: number,
+    SrcPrincipal: string | Win32Pointer,
+    DstPrincipal: string | Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsListDomainsInSiteA */
   DsListDomainsInSiteA(hDs: Win32Pointer, site: string | Win32Pointer, ppDomains: Win32Pointer): number;
   /** ntdsapi.dll!DsListDomainsInSiteW */
@@ -121,11 +339,26 @@ interface Functions {
   /** ntdsapi.dll!DsListRolesW */
   DsListRoles(hDs: Win32Pointer, ppRoles: Win32Pointer): number;
   /** ntdsapi.dll!DsListServersForDomainInSiteA */
-  DsListServersForDomainInSiteA(hDs: Win32Pointer, domain: string | Win32Pointer, site: string | Win32Pointer, ppServers: Win32Pointer): number;
+  DsListServersForDomainInSiteA(
+    hDs: Win32Pointer,
+    domain: string | Win32Pointer,
+    site: string | Win32Pointer,
+    ppServers: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsListServersForDomainInSiteW */
-  DsListServersForDomainInSiteW(hDs: Win32Pointer, domain: string | Win32Pointer, site: string | Win32Pointer, ppServers: Win32Pointer): number;
+  DsListServersForDomainInSiteW(
+    hDs: Win32Pointer,
+    domain: string | Win32Pointer,
+    site: string | Win32Pointer,
+    ppServers: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsListServersForDomainInSiteW */
-  DsListServersForDomainInSite(hDs: Win32Pointer, domain: string | Win32Pointer, site: string | Win32Pointer, ppServers: Win32Pointer): number;
+  DsListServersForDomainInSite(
+    hDs: Win32Pointer,
+    domain: string | Win32Pointer,
+    site: string | Win32Pointer,
+    ppServers: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsListServersInSiteA */
   DsListServersInSiteA(hDs: Win32Pointer, site: string | Win32Pointer, ppServers: Win32Pointer): number;
   /** ntdsapi.dll!DsListServersInSiteW */
@@ -139,11 +372,26 @@ interface Functions {
   /** ntdsapi.dll!DsListSitesW */
   DsListSites(hDs: Win32Pointer, ppSites: Win32Pointer): number;
   /** ntdsapi.dll!DsMakePasswordCredentialsA */
-  DsMakePasswordCredentialsA(User: string | Win32Pointer, Domain: string | Win32Pointer, Password: string | Win32Pointer, pAuthIdentity: Win32Pointer): number;
+  DsMakePasswordCredentialsA(
+    User: string | Win32Pointer,
+    Domain: string | Win32Pointer,
+    Password: string | Win32Pointer,
+    pAuthIdentity: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsMakePasswordCredentialsW */
-  DsMakePasswordCredentialsW(User: string | Win32Pointer, Domain: string | Win32Pointer, Password: string | Win32Pointer, pAuthIdentity: Win32Pointer): number;
+  DsMakePasswordCredentialsW(
+    User: string | Win32Pointer,
+    Domain: string | Win32Pointer,
+    Password: string | Win32Pointer,
+    pAuthIdentity: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsMakePasswordCredentialsW */
-  DsMakePasswordCredentials(User: string | Win32Pointer, Domain: string | Win32Pointer, Password: string | Win32Pointer, pAuthIdentity: Win32Pointer): number;
+  DsMakePasswordCredentials(
+    User: string | Win32Pointer,
+    Domain: string | Win32Pointer,
+    Password: string | Win32Pointer,
+    pAuthIdentity: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsMapSchemaGuidsA */
   DsMapSchemaGuidsA(hDs: Win32Pointer, cGuids: number, rGuids: Win32Pointer, ppGuidMap: Win32Pointer): number;
   /** ntdsapi.dll!DsMapSchemaGuidsW */
@@ -151,11 +399,32 @@ interface Functions {
   /** ntdsapi.dll!DsMapSchemaGuidsW */
   DsMapSchemaGuids(hDs: Win32Pointer, cGuids: number, rGuids: Win32Pointer, ppGuidMap: Win32Pointer): number;
   /** ntdsapi.dll!DsQuerySitesByCostA */
-  DsQuerySitesByCostA(hDS: Win32Pointer, pszFromSite: string | Win32Pointer, rgszToSites: Win32Pointer, cToSites: number, dwFlags: number, prgSiteInfo: Win32Pointer): number;
+  DsQuerySitesByCostA(
+    hDS: Win32Pointer,
+    pszFromSite: string | Win32Pointer,
+    rgszToSites: Win32Pointer,
+    cToSites: number,
+    dwFlags: number,
+    prgSiteInfo: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsQuerySitesByCostW */
-  DsQuerySitesByCostW(hDS: Win32Pointer, pwszFromSite: string | Win32Pointer, rgwszToSites: Win32Pointer, cToSites: number, dwFlags: number, prgSiteInfo: Win32Pointer): number;
+  DsQuerySitesByCostW(
+    hDS: Win32Pointer,
+    pwszFromSite: string | Win32Pointer,
+    rgwszToSites: Win32Pointer,
+    cToSites: number,
+    dwFlags: number,
+    prgSiteInfo: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsQuerySitesByCostW */
-  DsQuerySitesByCost(hDS: Win32Pointer, pwszFromSite: string | Win32Pointer, rgwszToSites: Win32Pointer, cToSites: number, dwFlags: number, prgSiteInfo: Win32Pointer): number;
+  DsQuerySitesByCost(
+    hDS: Win32Pointer,
+    pwszFromSite: string | Win32Pointer,
+    rgwszToSites: Win32Pointer,
+    cToSites: number,
+    dwFlags: number,
+    prgSiteInfo: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsQuerySitesFree */
   DsQuerySitesFree(rgSiteInfo: Win32Pointer): void;
   /** ntdsapi.dll!DsRemoveDsDomainA */
@@ -165,67 +434,251 @@ interface Functions {
   /** ntdsapi.dll!DsRemoveDsDomainW */
   DsRemoveDsDomain(hDs: Win32Pointer, DomainDN: string | Win32Pointer): number;
   /** ntdsapi.dll!DsRemoveDsServerA */
-  DsRemoveDsServerA(hDs: Win32Pointer, ServerDN: string | Win32Pointer, DomainDN: string | Win32Pointer, fLastDcInDomain: Win32Pointer, fCommit: number): number;
+  DsRemoveDsServerA(
+    hDs: Win32Pointer,
+    ServerDN: string | Win32Pointer,
+    DomainDN: string | Win32Pointer,
+    fLastDcInDomain: Win32Pointer,
+    fCommit: number,
+  ): number;
   /** ntdsapi.dll!DsRemoveDsServerW */
-  DsRemoveDsServerW(hDs: Win32Pointer, ServerDN: string | Win32Pointer, DomainDN: string | Win32Pointer, fLastDcInDomain: Win32Pointer, fCommit: number): number;
+  DsRemoveDsServerW(
+    hDs: Win32Pointer,
+    ServerDN: string | Win32Pointer,
+    DomainDN: string | Win32Pointer,
+    fLastDcInDomain: Win32Pointer,
+    fCommit: number,
+  ): number;
   /** ntdsapi.dll!DsRemoveDsServerW */
-  DsRemoveDsServer(hDs: Win32Pointer, ServerDN: string | Win32Pointer, DomainDN: string | Win32Pointer, fLastDcInDomain: Win32Pointer, fCommit: number): number;
+  DsRemoveDsServer(
+    hDs: Win32Pointer,
+    ServerDN: string | Win32Pointer,
+    DomainDN: string | Win32Pointer,
+    fLastDcInDomain: Win32Pointer,
+    fCommit: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaAddA */
-  DsReplicaAddA(hDS: Win32Pointer, NameContext: string | Win32Pointer, SourceDsaDn: string | Win32Pointer, TransportDn: string | Win32Pointer, SourceDsaAddress: string | Win32Pointer, pSchedule: Win32Pointer, Options: number): number;
+  DsReplicaAddA(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    SourceDsaDn: string | Win32Pointer,
+    TransportDn: string | Win32Pointer,
+    SourceDsaAddress: string | Win32Pointer,
+    pSchedule: Win32Pointer,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaAddW */
-  DsReplicaAddW(hDS: Win32Pointer, NameContext: string | Win32Pointer, SourceDsaDn: string | Win32Pointer, TransportDn: string | Win32Pointer, SourceDsaAddress: string | Win32Pointer, pSchedule: Win32Pointer, Options: number): number;
+  DsReplicaAddW(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    SourceDsaDn: string | Win32Pointer,
+    TransportDn: string | Win32Pointer,
+    SourceDsaAddress: string | Win32Pointer,
+    pSchedule: Win32Pointer,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaAddW */
-  DsReplicaAdd(hDS: Win32Pointer, NameContext: string | Win32Pointer, SourceDsaDn: string | Win32Pointer, TransportDn: string | Win32Pointer, SourceDsaAddress: string | Win32Pointer, pSchedule: Win32Pointer, Options: number): number;
+  DsReplicaAdd(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    SourceDsaDn: string | Win32Pointer,
+    TransportDn: string | Win32Pointer,
+    SourceDsaAddress: string | Win32Pointer,
+    pSchedule: Win32Pointer,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaConsistencyCheck */
   DsReplicaConsistencyCheck(hDS: Win32Pointer, TaskID: number, dwFlags: number): number;
   /** ntdsapi.dll!DsReplicaDelA */
-  DsReplicaDelA(hDS: Win32Pointer, NameContext: string | Win32Pointer, DsaSrc: string | Win32Pointer, Options: number): number;
+  DsReplicaDelA(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    DsaSrc: string | Win32Pointer,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaDelW */
-  DsReplicaDelW(hDS: Win32Pointer, NameContext: string | Win32Pointer, DsaSrc: string | Win32Pointer, Options: number): number;
+  DsReplicaDelW(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    DsaSrc: string | Win32Pointer,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaDelW */
-  DsReplicaDel(hDS: Win32Pointer, NameContext: string | Win32Pointer, DsaSrc: string | Win32Pointer, Options: number): number;
+  DsReplicaDel(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    DsaSrc: string | Win32Pointer,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaFreeInfo */
   DsReplicaFreeInfo(InfoType: number, pInfo: Win32Pointer): void;
   /** ntdsapi.dll!DsReplicaGetInfo2W */
-  DsReplicaGetInfo2W(hDS: Win32Pointer, InfoType: number, pszObject: string | Win32Pointer, puuidForSourceDsaObjGuid: Win32Pointer, pszAttributeName: string | Win32Pointer, pszValue: string | Win32Pointer, dwFlags: number, dwEnumerationContext: number, ppInfo: Win32Pointer): number;
+  DsReplicaGetInfo2W(
+    hDS: Win32Pointer,
+    InfoType: number,
+    pszObject: string | Win32Pointer,
+    puuidForSourceDsaObjGuid: Win32Pointer,
+    pszAttributeName: string | Win32Pointer,
+    pszValue: string | Win32Pointer,
+    dwFlags: number,
+    dwEnumerationContext: number,
+    ppInfo: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsReplicaGetInfoW */
-  DsReplicaGetInfoW(hDS: Win32Pointer, InfoType: number, pszObject: string | Win32Pointer, puuidForSourceDsaObjGuid: Win32Pointer, ppInfo: Win32Pointer): number;
+  DsReplicaGetInfoW(
+    hDS: Win32Pointer,
+    InfoType: number,
+    pszObject: string | Win32Pointer,
+    puuidForSourceDsaObjGuid: Win32Pointer,
+    ppInfo: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsReplicaModifyA */
-  DsReplicaModifyA(hDS: Win32Pointer, NameContext: string | Win32Pointer, pUuidSourceDsa: Win32Pointer, TransportDn: string | Win32Pointer, SourceDsaAddress: string | Win32Pointer, pSchedule: Win32Pointer, ReplicaFlags: number, ModifyFields: number, Options: number): number;
+  DsReplicaModifyA(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    pUuidSourceDsa: Win32Pointer,
+    TransportDn: string | Win32Pointer,
+    SourceDsaAddress: string | Win32Pointer,
+    pSchedule: Win32Pointer,
+    ReplicaFlags: number,
+    ModifyFields: number,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaModifyW */
-  DsReplicaModifyW(hDS: Win32Pointer, NameContext: string | Win32Pointer, pUuidSourceDsa: Win32Pointer, TransportDn: string | Win32Pointer, SourceDsaAddress: string | Win32Pointer, pSchedule: Win32Pointer, ReplicaFlags: number, ModifyFields: number, Options: number): number;
+  DsReplicaModifyW(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    pUuidSourceDsa: Win32Pointer,
+    TransportDn: string | Win32Pointer,
+    SourceDsaAddress: string | Win32Pointer,
+    pSchedule: Win32Pointer,
+    ReplicaFlags: number,
+    ModifyFields: number,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaModifyW */
-  DsReplicaModify(hDS: Win32Pointer, NameContext: string | Win32Pointer, pUuidSourceDsa: Win32Pointer, TransportDn: string | Win32Pointer, SourceDsaAddress: string | Win32Pointer, pSchedule: Win32Pointer, ReplicaFlags: number, ModifyFields: number, Options: number): number;
+  DsReplicaModify(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    pUuidSourceDsa: Win32Pointer,
+    TransportDn: string | Win32Pointer,
+    SourceDsaAddress: string | Win32Pointer,
+    pSchedule: Win32Pointer,
+    ReplicaFlags: number,
+    ModifyFields: number,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaSyncA */
-  DsReplicaSyncA(hDS: Win32Pointer, NameContext: string | Win32Pointer, pUuidDsaSrc: Win32Pointer, Options: number): number;
+  DsReplicaSyncA(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    pUuidDsaSrc: Win32Pointer,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaSyncAllA */
-  DsReplicaSyncAllA(hDS: Win32Pointer, pszNameContext: string | Win32Pointer, ulFlags: number, pFnCallBack: number | bigint, pCallbackData: Win32Pointer, pErrors: Win32Pointer): number;
+  DsReplicaSyncAllA(
+    hDS: Win32Pointer,
+    pszNameContext: string | Win32Pointer,
+    ulFlags: number,
+    pFnCallBack: number | bigint,
+    pCallbackData: Win32Pointer,
+    pErrors: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsReplicaSyncAllW */
-  DsReplicaSyncAllW(hDS: Win32Pointer, pszNameContext: string | Win32Pointer, ulFlags: number, pFnCallBack: number | bigint, pCallbackData: Win32Pointer, pErrors: Win32Pointer): number;
+  DsReplicaSyncAllW(
+    hDS: Win32Pointer,
+    pszNameContext: string | Win32Pointer,
+    ulFlags: number,
+    pFnCallBack: number | bigint,
+    pCallbackData: Win32Pointer,
+    pErrors: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsReplicaSyncAllW */
-  DsReplicaSyncAll(hDS: Win32Pointer, pszNameContext: string | Win32Pointer, ulFlags: number, pFnCallBack: number | bigint, pCallbackData: Win32Pointer, pErrors: Win32Pointer): number;
+  DsReplicaSyncAll(
+    hDS: Win32Pointer,
+    pszNameContext: string | Win32Pointer,
+    ulFlags: number,
+    pFnCallBack: number | bigint,
+    pCallbackData: Win32Pointer,
+    pErrors: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsReplicaSyncW */
-  DsReplicaSyncW(hDS: Win32Pointer, NameContext: string | Win32Pointer, pUuidDsaSrc: Win32Pointer, Options: number): number;
+  DsReplicaSyncW(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    pUuidDsaSrc: Win32Pointer,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaSyncW */
-  DsReplicaSync(hDS: Win32Pointer, NameContext: string | Win32Pointer, pUuidDsaSrc: Win32Pointer, Options: number): number;
+  DsReplicaSync(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    pUuidDsaSrc: Win32Pointer,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaUpdateRefsA */
-  DsReplicaUpdateRefsA(hDS: Win32Pointer, NameContext: string | Win32Pointer, DsaDest: string | Win32Pointer, pUuidDsaDest: Win32Pointer, Options: number): number;
+  DsReplicaUpdateRefsA(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    DsaDest: string | Win32Pointer,
+    pUuidDsaDest: Win32Pointer,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaUpdateRefsW */
-  DsReplicaUpdateRefsW(hDS: Win32Pointer, NameContext: string | Win32Pointer, DsaDest: string | Win32Pointer, pUuidDsaDest: Win32Pointer, Options: number): number;
+  DsReplicaUpdateRefsW(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    DsaDest: string | Win32Pointer,
+    pUuidDsaDest: Win32Pointer,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaUpdateRefsW */
-  DsReplicaUpdateRefs(hDS: Win32Pointer, NameContext: string | Win32Pointer, DsaDest: string | Win32Pointer, pUuidDsaDest: Win32Pointer, Options: number): number;
+  DsReplicaUpdateRefs(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    DsaDest: string | Win32Pointer,
+    pUuidDsaDest: Win32Pointer,
+    Options: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaVerifyObjectsA */
-  DsReplicaVerifyObjectsA(hDS: Win32Pointer, NameContext: string | Win32Pointer, pUuidDsaSrc: Win32Pointer, ulOptions: number): number;
+  DsReplicaVerifyObjectsA(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    pUuidDsaSrc: Win32Pointer,
+    ulOptions: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaVerifyObjectsW */
-  DsReplicaVerifyObjectsW(hDS: Win32Pointer, NameContext: string | Win32Pointer, pUuidDsaSrc: Win32Pointer, ulOptions: number): number;
+  DsReplicaVerifyObjectsW(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    pUuidDsaSrc: Win32Pointer,
+    ulOptions: number,
+  ): number;
   /** ntdsapi.dll!DsReplicaVerifyObjectsW */
-  DsReplicaVerifyObjects(hDS: Win32Pointer, NameContext: string | Win32Pointer, pUuidDsaSrc: Win32Pointer, ulOptions: number): number;
+  DsReplicaVerifyObjects(
+    hDS: Win32Pointer,
+    NameContext: string | Win32Pointer,
+    pUuidDsaSrc: Win32Pointer,
+    ulOptions: number,
+  ): number;
   /** ntdsapi.dll!DsServerRegisterSpnA */
-  DsServerRegisterSpnA(Operation: number, ServiceClass: string | Win32Pointer, UserObjectDN: string | Win32Pointer): number;
+  DsServerRegisterSpnA(
+    Operation: number,
+    ServiceClass: string | Win32Pointer,
+    UserObjectDN: string | Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsServerRegisterSpnW */
-  DsServerRegisterSpnW(Operation: number, ServiceClass: string | Win32Pointer, UserObjectDN: string | Win32Pointer): number;
+  DsServerRegisterSpnW(
+    Operation: number,
+    ServiceClass: string | Win32Pointer,
+    UserObjectDN: string | Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsServerRegisterSpnW */
-  DsServerRegisterSpn(Operation: number, ServiceClass: string | Win32Pointer, UserObjectDN: string | Win32Pointer): number;
+  DsServerRegisterSpn(
+    Operation: number,
+    ServiceClass: string | Win32Pointer,
+    UserObjectDN: string | Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsUnBindA */
   DsUnBindA(phDS: Win32Pointer): number;
   /** ntdsapi.dll!DsUnBindW */
@@ -233,11 +686,29 @@ interface Functions {
   /** ntdsapi.dll!DsUnBindW */
   DsUnBind(phDS: Win32Pointer): number;
   /** ntdsapi.dll!DsWriteAccountSpnA */
-  DsWriteAccountSpnA(hDS: Win32Pointer, Operation: number, pszAccount: string | Win32Pointer, cSpn: number, rpszSpn: Win32Pointer): number;
+  DsWriteAccountSpnA(
+    hDS: Win32Pointer,
+    Operation: number,
+    pszAccount: string | Win32Pointer,
+    cSpn: number,
+    rpszSpn: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsWriteAccountSpnW */
-  DsWriteAccountSpnW(hDS: Win32Pointer, Operation: number, pszAccount: string | Win32Pointer, cSpn: number, rpszSpn: Win32Pointer): number;
+  DsWriteAccountSpnW(
+    hDS: Win32Pointer,
+    Operation: number,
+    pszAccount: string | Win32Pointer,
+    cSpn: number,
+    rpszSpn: Win32Pointer,
+  ): number;
   /** ntdsapi.dll!DsWriteAccountSpnW */
-  DsWriteAccountSpn(hDS: Win32Pointer, Operation: number, pszAccount: string | Win32Pointer, cSpn: number, rpszSpn: Win32Pointer): number;
+  DsWriteAccountSpn(
+    hDS: Win32Pointer,
+    Operation: number,
+    pszAccount: string | Win32Pointer,
+    cSpn: number,
+    rpszSpn: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

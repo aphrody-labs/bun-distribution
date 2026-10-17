@@ -25,9 +25,7 @@ export type OmniGenErrorNotifier = (message: string) => void;
 
 let errorNotifier: OmniGenErrorNotifier = () => {};
 
-export const setOmniGenErrorNotifier = (
-  notifier: OmniGenErrorNotifier,
-): void => {
+export const setOmniGenErrorNotifier = (notifier: OmniGenErrorNotifier): void => {
   errorNotifier = notifier;
 };
 
@@ -59,27 +57,27 @@ let splatModelsError: string | null = null;
 let splatModelsListeners: Array<() => void> = [];
 
 function notifyImageListeners() {
-  imageModelsListeners.forEach((cb) => cb());
+  imageModelsListeners.forEach(cb => cb());
   imageModelsListeners = [];
 }
 
 function notifyVideoListeners() {
-  videoModelsListeners.forEach((cb) => cb());
+  videoModelsListeners.forEach(cb => cb());
   videoModelsListeners = [];
 }
 
 function notifyAudioListeners() {
-  audioModelsListeners.forEach((cb) => cb());
+  audioModelsListeners.forEach(cb => cb());
   audioModelsListeners = [];
 }
 
 function notifyMeshListeners() {
-  meshModelsListeners.forEach((cb) => cb());
+  meshModelsListeners.forEach(cb => cb());
   meshModelsListeners = [];
 }
 
 function notifySplatListeners() {
-  splatModelsListeners.forEach((cb) => cb());
+  splatModelsListeners.forEach(cb => cb());
   splatModelsListeners = [];
 }
 
@@ -89,10 +87,10 @@ function fetchImageModelsOnce() {
   imageModelsError = null;
   const api = new OmniGenApi();
   api.getImageModels().then(
-    (res) => {
+    res => {
       imageModelsFetching = false;
       if (res.success && res.models?.length) {
-        imageModelsCache = res.models.filter((m) => m.is_disabled !== true);
+        imageModelsCache = res.models.filter(m => m.is_disabled !== true);
       } else {
         imageModelsError = "No image models returned from API";
         console.warn("[OmniGen] Image models response:", res);
@@ -100,7 +98,7 @@ function fetchImageModelsOnce() {
       }
       notifyImageListeners();
     },
-    (err) => {
+    err => {
       imageModelsFetching = false;
       imageModelsError = err?.message ?? "Failed to fetch image models";
       console.error("[OmniGen] Failed to fetch image models:", err);
@@ -116,10 +114,10 @@ function fetchVideoModelsOnce() {
   videoModelsError = null;
   const api = new OmniGenApi();
   api.getVideoModels().then(
-    (res) => {
+    res => {
       videoModelsFetching = false;
       if (res.success && res.models?.length) {
-        videoModelsCache = res.models.filter((m) => m.is_disabled !== true);
+        videoModelsCache = res.models.filter(m => m.is_disabled !== true);
       } else {
         videoModelsError = "No video models returned from API";
         console.warn("[OmniGen] Video models response:", res);
@@ -127,7 +125,7 @@ function fetchVideoModelsOnce() {
       }
       notifyVideoListeners();
     },
-    (err) => {
+    err => {
       videoModelsFetching = false;
       videoModelsError = err?.message ?? "Failed to fetch video models";
       console.error("[OmniGen] Failed to fetch video models:", err);
@@ -143,10 +141,10 @@ function fetchAudioModelsOnce() {
   audioModelsError = null;
   const api = new OmniGenApi();
   api.getAudioModels().then(
-    (res) => {
+    res => {
       audioModelsFetching = false;
       if (res.success && res.models?.length) {
-        audioModelsCache = res.models.filter((m) => m.is_disabled !== true);
+        audioModelsCache = res.models.filter(m => m.is_disabled !== true);
       } else {
         audioModelsError = "No audio models returned from API";
         console.warn("[OmniGen] Audio models response:", res);
@@ -154,7 +152,7 @@ function fetchAudioModelsOnce() {
       }
       notifyAudioListeners();
     },
-    (err) => {
+    err => {
       audioModelsFetching = false;
       audioModelsError = err?.message ?? "Failed to fetch audio models";
       console.error("[OmniGen] Failed to fetch audio models:", err);
@@ -170,10 +168,10 @@ function fetchMeshModelsOnce() {
   meshModelsError = null;
   const api = new OmniGenApi();
   api.getMeshModels().then(
-    (res) => {
+    res => {
       meshModelsFetching = false;
       if (res.success && res.models?.length) {
-        meshModelsCache = res.models.filter((m) => m.is_disabled !== true);
+        meshModelsCache = res.models.filter(m => m.is_disabled !== true);
       } else {
         meshModelsError = "No mesh models returned from API";
         console.warn("[OmniGen] Mesh models response:", res);
@@ -181,7 +179,7 @@ function fetchMeshModelsOnce() {
       }
       notifyMeshListeners();
     },
-    (err) => {
+    err => {
       meshModelsFetching = false;
       meshModelsError = err?.message ?? "Failed to fetch mesh models";
       console.error("[OmniGen] Failed to fetch mesh models:", err);
@@ -197,10 +195,10 @@ function fetchSplatModelsOnce() {
   splatModelsError = null;
   const api = new OmniGenApi();
   api.getSplatModels().then(
-    (res) => {
+    res => {
       splatModelsFetching = false;
       if (res.success && res.models?.length) {
-        splatModelsCache = res.models.filter((m) => m.is_disabled !== true);
+        splatModelsCache = res.models.filter(m => m.is_disabled !== true);
       } else {
         splatModelsError = "No splat models returned from API";
         console.warn("[OmniGen] Splat models response:", res);
@@ -208,7 +206,7 @@ function fetchSplatModelsOnce() {
       }
       notifySplatListeners();
     },
-    (err) => {
+    err => {
       splatModelsFetching = false;
       splatModelsError = err?.message ?? "Failed to fetch splat models";
       console.error("[OmniGen] Failed to fetch splat models:", err);
@@ -225,9 +223,7 @@ export function useOmniGenImageModels(): {
   isLoading: boolean;
   error: string | null;
 } {
-  const [models, setModels] = useState<OmniGenImageModelInfo[]>(
-    imageModelsCache ?? [],
-  );
+  const [models, setModels] = useState<OmniGenImageModelInfo[]>(imageModelsCache ?? []);
   const [isLoading, setIsLoading] = useState(!imageModelsCache);
   const [error, setError] = useState<string | null>(imageModelsError);
 
@@ -253,9 +249,7 @@ export function useOmniGenImageModels(): {
     fetchImageModelsOnce();
 
     return () => {
-      imageModelsListeners = imageModelsListeners.filter(
-        (cb) => cb !== onReady,
-      );
+      imageModelsListeners = imageModelsListeners.filter(cb => cb !== onReady);
     };
   }, []);
 
@@ -267,9 +261,7 @@ export function useOmniGenVideoModels(): {
   isLoading: boolean;
   error: string | null;
 } {
-  const [models, setModels] = useState<OmniGenVideoModelInfo[]>(
-    videoModelsCache ?? [],
-  );
+  const [models, setModels] = useState<OmniGenVideoModelInfo[]>(videoModelsCache ?? []);
   const [isLoading, setIsLoading] = useState(!videoModelsCache);
   const [error, setError] = useState<string | null>(videoModelsError);
 
@@ -295,9 +287,7 @@ export function useOmniGenVideoModels(): {
     fetchVideoModelsOnce();
 
     return () => {
-      videoModelsListeners = videoModelsListeners.filter(
-        (cb) => cb !== onReady,
-      );
+      videoModelsListeners = videoModelsListeners.filter(cb => cb !== onReady);
     };
   }, []);
 
@@ -309,9 +299,7 @@ export function useOmniGenAudioModels(): {
   isLoading: boolean;
   error: string | null;
 } {
-  const [models, setModels] = useState<OmniGenAudioModelDetails[]>(
-    audioModelsCache ?? [],
-  );
+  const [models, setModels] = useState<OmniGenAudioModelDetails[]>(audioModelsCache ?? []);
   const [isLoading, setIsLoading] = useState(!audioModelsCache);
   const [error, setError] = useState<string | null>(audioModelsError);
 
@@ -337,9 +325,7 @@ export function useOmniGenAudioModels(): {
     fetchAudioModelsOnce();
 
     return () => {
-      audioModelsListeners = audioModelsListeners.filter(
-        (cb) => cb !== onReady,
-      );
+      audioModelsListeners = audioModelsListeners.filter(cb => cb !== onReady);
     };
   }, []);
 
@@ -351,9 +337,7 @@ export function useOmniGenMeshModels(): {
   isLoading: boolean;
   error: string | null;
 } {
-  const [models, setModels] = useState<OmniGenMeshModelInfo[]>(
-    meshModelsCache ?? [],
-  );
+  const [models, setModels] = useState<OmniGenMeshModelInfo[]>(meshModelsCache ?? []);
   const [isLoading, setIsLoading] = useState(!meshModelsCache);
   const [error, setError] = useState<string | null>(meshModelsError);
 
@@ -379,7 +363,7 @@ export function useOmniGenMeshModels(): {
     fetchMeshModelsOnce();
 
     return () => {
-      meshModelsListeners = meshModelsListeners.filter((cb) => cb !== onReady);
+      meshModelsListeners = meshModelsListeners.filter(cb => cb !== onReady);
     };
   }, []);
 
@@ -391,9 +375,7 @@ export function useOmniGenSplatModels(): {
   isLoading: boolean;
   error: string | null;
 } {
-  const [models, setModels] = useState<OmniGenSplatModelInfo[]>(
-    splatModelsCache ?? [],
-  );
+  const [models, setModels] = useState<OmniGenSplatModelInfo[]>(splatModelsCache ?? []);
   const [isLoading, setIsLoading] = useState(!splatModelsCache);
   const [error, setError] = useState<string | null>(splatModelsError);
 
@@ -419,9 +401,7 @@ export function useOmniGenSplatModels(): {
     fetchSplatModelsOnce();
 
     return () => {
-      splatModelsListeners = splatModelsListeners.filter(
-        (cb) => cb !== onReady,
-      );
+      splatModelsListeners = splatModelsListeners.filter(cb => cb !== onReady);
     };
   }, []);
 

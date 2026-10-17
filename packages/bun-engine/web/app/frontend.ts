@@ -85,22 +85,13 @@ const state: {
 const h = (value: unknown) =>
   String(value ?? "").replace(
     /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ]!,
+    c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
   );
 
-async function api<T>(
-  path: string,
-  init?: RequestInit & { json?: unknown },
-): Promise<T> {
+async function api<T>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
   const response = await fetch(path, {
     ...init,
-    headers:
-      init?.json === undefined
-        ? undefined
-        : { "content-type": "application/json" },
+    headers: init?.json === undefined ? undefined : { "content-type": "application/json" },
     body: init?.json === undefined ? init?.body : JSON.stringify(init.json),
   });
   const value = (await response.json()) as T & { error?: string };
@@ -113,16 +104,11 @@ function toast(message: string, kind: "info" | "ok" | "error" = "info"): void {
   toastBox.textContent = message;
   toastBox.className = `toast show ${kind}`;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(
-    () => (toastBox.className = "toast"),
-    kind === "error" ? 7000 : 3500,
-  );
+  toastTimer = setTimeout(() => (toastBox.className = "toast"), kind === "error" ? 7000 : 3500);
 }
 
 function setHints(items: Array<[string, string]>): void {
-  hints.innerHTML = items
-    .map(([key, label]) => `<span><kbd>${h(key)}</kbd>${h(label)}</span>`)
-    .join("");
+  hints.innerHTML = items.map(([key, label]) => `<span><kbd>${h(key)}</kbd>${h(label)}</span>`).join("");
 }
 
 const accents: Record<string, string> = {
@@ -137,7 +123,7 @@ const accents: Record<string, string> = {
 function routeChips(routes: Route[], defaultRoute: string | null): string {
   return routes
     .map(
-      (route) =>
+      route =>
         `<span class="chip ${route.kind} ${route.available ? "on" : "off"}" title="${h(route.reason ?? "")}">${route.id === defaultRoute ? "★ " : ""}${h(route.label)}</span>`,
     )
     .join("");
@@ -163,13 +149,13 @@ async function showSystems(): Promise<void> {
   view.innerHTML = `
     <section class="systems-head">
       <h1>Systems</h1>
-      <p>${total} games across ${state.systems.filter((s) => s.games).length} systems · ${state.systems.length} systems defined</p>
+      <p>${total} games across ${state.systems.filter(s => s.games).length} systems · ${state.systems.length} systems defined</p>
       <button data-nav data-action="scan" class="ghost">Rescan library</button>
     </section>
     <section class="systems">
       ${state.systems
-        .map((system) => {
-          const available = system.routes.filter((route) => route.available);
+        .map(system => {
+          const available = system.routes.filter(route => route.available);
           return `<button data-nav class="system ${system.games ? "" : "dim"}" data-system="${h(system.id)}" style="--accent:${accents[system.manufacturer] ?? "#64748b"}">
             <span class="maker">${h(system.manufacturer)} · ${system.year}</span>
             <span class="name">${h(system.name)}</span>
@@ -186,11 +172,7 @@ async function showSystems(): Promise<void> {
     ["Y / R", "Rescan"],
   ]);
   markTab();
-  focusFirst(
-    state.lastSystem
-      ? `[data-system="${CSS.escape(state.lastSystem)}"]`
-      : ".system",
-  );
+  focusFirst(state.lastSystem ? `[data-system="${CSS.escape(state.lastSystem)}"]` : ".system");
 }
 
 async function showGames(systemId: string): Promise<void> {
@@ -201,14 +183,14 @@ async function showGames(systemId: string): Promise<void> {
     api<Game[]>(`/api/systems/${systemId}/games`),
   ]);
   state.systems = systems;
-  state.system = systems.find((system) => system.id === systemId)!;
+  state.system = systems.find(system => system.id === systemId)!;
   state.games = games;
   const system = state.system;
   view.innerHTML = `
     <section class="games-head" style="--accent:${accents[system.manufacturer] ?? "#64748b"}">
       <button data-nav data-action="back" class="ghost">‹ Systems</button>
       <h1>${h(system.name)}</h1>
-      <span class="sub">${games.length} games · ${h(system.extensions.map((ext) => `.${ext}`).join(" "))}</span>
+      <span class="sub">${games.length} games · ${h(system.extensions.map(ext => `.${ext}`).join(" "))}</span>
     </section>
     <section class="games">
       <div class="list" id="list">
@@ -216,9 +198,7 @@ async function showGames(systemId: string): Promise<void> {
           games.length
             ? games
                 .map(
-                  (
-                    game,
-                  ) => `<button data-nav class="game" data-game="${game.id}">
+                  game => `<button data-nav class="game" data-game="${game.id}">
                     <span class="fav">${game.favorite ? "★" : ""}</span>
                     <span class="title">${h(game.title ?? game.name)}</span>
                     <span class="meta">${game.dat ? "DB" : ""}${game.playCount ? ` · ${game.playCount}×` : ""}</span>
@@ -246,9 +226,7 @@ async function showGames(systemId: string): Promise<void> {
     return;
   }
   const target =
-    state.lastGame && games.some((game) => game.id === state.lastGame)
-      ? `[data-game="${state.lastGame}"]`
-      : ".game";
+    state.lastGame && games.some(game => game.id === state.lastGame) ? `[data-game="${state.lastGame}"]` : ".game";
   focusFirst(target);
 }
 
@@ -259,10 +237,10 @@ function renderDetail(game: Game | undefined): void {
   state.game = game;
   const routes = system.routes;
   if (!game) {
-    detail.innerHTML = `<h2>Launch routes</h2><div class="route-list">${routes.map((route) => routeButton(route, system.defaultRoute, undefined)).join("")}</div>`;
+    detail.innerHTML = `<h2>Launch routes</h2><div class="route-list">${routes.map(route => routeButton(route, system.defaultRoute, undefined)).join("")}</div>`;
     return;
   }
-  const running = state.running.find((item) => item.game === game.id);
+  const running = state.running.find(item => item.game === game.id);
   detail.innerHTML = `
     <h2>${h(game.title ?? game.name)}</h2>
     <dl>
@@ -295,15 +273,11 @@ function renderDetail(game: Game | undefined): void {
       ${running ? `<button data-nav data-action="stop" data-pid="${running.pid}" class="danger">■ Stop</button>` : ""}
     </div>
     <h3>Launch routes</h3>
-    <div class="route-list">${routes.map((route) => routeButton(route, system.defaultRoute, game)).join("")}</div>
+    <div class="route-list">${routes.map(route => routeButton(route, system.defaultRoute, game)).join("")}</div>
     <pre class="log" id="log" hidden></pre>`;
 }
 
-function routeButton(
-  route: Route,
-  defaultRoute: string | null,
-  game: Game | undefined,
-): string {
+function routeButton(route: Route, defaultRoute: string | null, game: Game | undefined): string {
   const ext = game?.path.split(".").pop()?.toLowerCase();
   const fits = !route.extensions || !ext || route.extensions.includes(ext);
   const usable = route.available && fits;
@@ -311,7 +285,7 @@ function routeButton(
     ? route.reason
     : fits
       ? ""
-      : `loads ${route.extensions!.map((e) => `.${e}`).join(" ")} only`;
+      : `loads ${route.extensions!.map(e => `.${e}`).join(" ")} only`;
   return `<button data-nav class="route ${route.kind} ${usable ? "on" : "off"}" data-route="${h(route.id)}" aria-disabled="${!usable}">
     <span class="kind">${route.kind}</span>
     <span class="label">${route.id === defaultRoute ? "★ " : ""}${h(route.label)}${game?.route === route.id ? " (game)" : ""}</span>
@@ -354,8 +328,7 @@ async function showBios(): Promise<void> {
     }>;
   }>("/api/bios");
   const cores = new Map<string, typeof bios.libretro>();
-  for (const row of bios.libretro)
-    cores.set(row.core, [...(cores.get(row.core) ?? []), row]);
+  for (const row of bios.libretro) cores.set(row.core, [...(cores.get(row.core) ?? []), row]);
   view.innerHTML = `
     <section class="page">
       <h1>BIOS</h1>
@@ -364,10 +337,10 @@ async function showBios(): Promise<void> {
       <div class="cards">
         ${bios.native
           .map(
-            (row) => `<div class="card">
+            row => `<div class="card">
               <div class="row"><strong>${h(row.system.toUpperCase())}</strong><span class="badge ${row.status}">${h(row.status)}</span></div>
               <div class="muted">${h(row.console)} · ${row.required ? "required" : "optional"}</div>
-              ${row.images.map((image) => `<div class="mono small">${image.sha256.slice(0, 16)}… ${formatSize(image.bytes)}</div>`).join("")}
+              ${row.images.map(image => `<div class="mono small">${image.sha256.slice(0, 16)}… ${formatSize(image.bytes)}</div>`).join("")}
               <button data-nav data-install="free-firmware" data-id="${h(row.freeFirmware)}">${row.images.length ? "Reinstall" : "Install"} ${h(row.freeFirmware)}</button>
               <div class="muted small">${h(row.license ?? "")}</div>
             </div>`,
@@ -378,9 +351,7 @@ async function showBios(): Promise<void> {
       <table><tbody>
         ${bios.freeFirmware
           .map(
-            (
-              fw,
-            ) => `<tr><td><strong>${h(fw.id)}</strong></td><td>${h(fw.console)}</td><td class="muted">${h(fw.license)}</td>
+            fw => `<tr><td><strong>${h(fw.id)}</strong></td><td>${h(fw.console)}</td><td class="muted">${h(fw.license)}</td>
               <td><button data-nav data-install="free-firmware" data-id="${h(fw.id)}">Install</button></td></tr>`,
           )
           .join("")}
@@ -393,9 +364,7 @@ async function showBios(): Promise<void> {
                 ([core, rows]) =>
                   `<h3>${h(core)}</h3><table><tbody>${rows
                     .map(
-                      (
-                        row,
-                      ) => `<tr><td class="mono">${h(row.file)}</td><td>${h(row.desc)}</td><td class="mono small">${h(row.md5 ?? "")}</td>
+                      row => `<tr><td class="mono">${h(row.file)}</td><td>${h(row.desc)}</td><td class="mono small">${h(row.md5 ?? "")}</td>
                       <td><span class="badge ${row.status}${row.optional ? " optional" : ""}">${h(row.status)}${row.optional ? " (optional)" : ""}</span></td></tr>`,
                     )
                     .join("")}</tbody></table>`,
@@ -404,7 +373,7 @@ async function showBios(): Promise<void> {
           : '<p class="muted">No installed core declares BIOS files.</p>'
       }
       <h2>Firmware store</h2>
-      <table><tbody>${bios.store.map((image) => `<tr><td>${h(image.console)}</td><td class="mono">${h(image.file)}</td><td>${formatSize(image.bytes)}</td></tr>`).join("")}</tbody></table>
+      <table><tbody>${bios.store.map(image => `<tr><td>${h(image.console)}</td><td class="mono">${h(image.file)}</td><td>${formatSize(image.bytes)}</td></tr>`).join("")}</tbody></table>
     </section>`;
   setHints([
     ["←↑→↓", "Move"],
@@ -455,10 +424,8 @@ async function showInstaller(): Promise<void> {
       <table><tbody>
         ${data.binaries
           .map(
-            (
-              bin,
-            ) => `<tr><td><strong>${h(bin.id)}</strong><div class="muted small">${h(bin.repo)}</div></td>
-              <td>${bin.systems.map((id) => `<span class="chip">${h(id)}</span>`).join("")}</td>
+            bin => `<tr><td><strong>${h(bin.id)}</strong><div class="muted small">${h(bin.repo)}</div></td>
+              <td>${bin.systems.map(id => `<span class="chip">${h(id)}</span>`).join("")}</td>
               <td>${bin.installed ? `<span class="badge present">${h(bin.installed.version)}</span>` : '<span class="badge missing">not installed</span>'}</td>
               <td class="buttons"><button data-nav data-install="bin" data-id="${h(bin.id)}">${bin.installed ? "Reinstall" : "Install"}</button>
               <button data-nav data-install="update" data-id="${h(bin.id)}">Update</button>
@@ -470,10 +437,8 @@ async function showInstaller(): Promise<void> {
       <table><tbody>
         ${data.libretro
           .map(
-            (
-              core,
-            ) => `<tr><td><strong>${h(core.id)}</strong><div class="muted small">${h(core.name)} · ${h(core.license)}</div></td>
-              <td>${core.systems.map((id) => `<span class="chip">${h(id)}</span>`).join("")}</td>
+            core => `<tr><td><strong>${h(core.id)}</strong><div class="muted small">${h(core.name)} · ${h(core.license)}</div></td>
+              <td>${core.systems.map(id => `<span class="chip">${h(id)}</span>`).join("")}</td>
               <td>${core.installed ? '<span class="badge present">installed</span>' : '<span class="badge missing">not installed</span>'}</td>
               <td class="buttons"><button data-nav data-install="libretro" data-id="${h(core.id)}">${core.installed ? "Reinstall" : "Install"}</button>
               <button data-nav data-install="remove" data-id="${h(core.id)}" class="danger">Remove</button></td></tr>`,
@@ -485,9 +450,7 @@ async function showInstaller(): Promise<void> {
         data.mirrors.length
           ? `<table><tbody>${data.mirrors
               .map(
-                (
-                  row,
-                ) => `<tr><td><strong>${h(row.service)}</strong></td><td>${row.healthy}/${row.endpoints} healthy</td>
+                row => `<tr><td><strong>${h(row.service)}</strong></td><td>${row.healthy}/${row.endpoints} healthy</td>
                   <td class="mono small">${h(row.best ?? "")}</td><td>${row.latencyMs == null ? "" : `${row.latencyMs} ms`}</td></tr>`,
               )
               .join("")}</tbody></table>`
@@ -509,9 +472,7 @@ function jobsHtml(): string {
   if (!state.jobs.length) return '<p class="muted">No jobs yet.</p>';
   return `<table><tbody>${state.jobs
     .map(
-      (
-        job,
-      ) => `<tr><td>#${job.id}</td><td>${h(job.title)}</td><td><span class="badge ${job.status === "done" ? "present" : job.status === "failed" ? "missing" : "running"}">${job.status}</span></td>
+      job => `<tr><td>#${job.id}</td><td>${h(job.title)}</td><td><span class="badge ${job.status === "done" ? "present" : job.status === "failed" ? "missing" : "running"}">${job.status}</span></td>
         <td class="mono small">${h(job.error ?? (job.result === undefined ? "" : JSON.stringify(job.result).slice(0, 160)))}</td></tr>`,
     )
     .join("")}</tbody></table>`;
@@ -519,11 +480,9 @@ function jobsHtml(): string {
 
 async function showSources(): Promise<void> {
   state.tab = "sources";
-  const sources = await api<
-    Array<{ id: number; kind: string; path: string; system: string | null }>
-  >("/api/library/sources");
-  if (!state.systems.length)
-    state.systems = await api<SystemRow[]>("/api/systems");
+  const sources =
+    await api<Array<{ id: number; kind: string; path: string; system: string | null }>>("/api/library/sources");
+  if (!state.systems.length) state.systems = await api<SystemRow[]>("/api/systems");
   const describe = (source: { kind: string; path: string }) =>
     source.kind === "bep"
       ? "bep project (package.json bunEngine + bep.lock)"
@@ -539,9 +498,7 @@ async function showSources(): Promise<void> {
       <table><tbody>
         ${sources
           .map(
-            (
-              source,
-            ) => `<tr><td><span class="chip">${h(source.kind)}</span></td><td>${h(describe(source))}</td><td>${h(source.system ?? "")}</td>
+            source => `<tr><td><span class="chip">${h(source.kind)}</span></td><td>${h(describe(source))}</td><td>${h(source.system ?? "")}</td>
               <td><button data-nav data-remove-source="${source.id}" class="danger">Remove</button></td></tr>`,
           )
           .join("")}
@@ -549,7 +506,7 @@ async function showSources(): Promise<void> {
       <h2>Add folder</h2>
       <form class="add" id="add">
         <input data-nav name="path" placeholder="C:\\Games\\roms" autocomplete="off" />
-        <select data-nav name="system"><option value="">auto-detect</option>${state.systems.map((s) => `<option value="${h(s.id)}">${h(s.name)}</option>`).join("")}</select>
+        <select data-nav name="system"><option value="">auto-detect</option>${state.systems.map(s => `<option value="${h(s.id)}">${h(s.name)}</option>`).join("")}</select>
         <button data-nav type="submit">Add</button>
       </form>
       <div class="toolbar"><button data-nav data-action="scan" class="primary">Rescan library</button></div>
@@ -572,17 +529,12 @@ function show(tab: Tab): Promise<void> {
     installer: showInstaller,
     sources: showSources,
   };
-  return tab === "games"
-    ? showGames(state.lastSystem ?? "nes")
-    : screens[tab]();
+  return tab === "games" ? showGames(state.lastSystem ?? "nes") : screens[tab]();
 }
 
 function markTab(active: Tab = state.tab): void {
   for (const button of document.querySelectorAll<HTMLElement>("[data-tab]"))
-    button.classList.toggle(
-      "active",
-      button.dataset.tab === (active === "games" ? "systems" : active),
-    );
+    button.classList.toggle("active", button.dataset.tab === (active === "games" ? "systems" : active));
 }
 
 async function runJob(action: string, id?: string): Promise<void> {
@@ -603,11 +555,7 @@ async function scan(): Promise<void> {
 async function launch(check: boolean, route?: string): Promise<void> {
   const game = state.game;
   if (!game) return;
-  toast(
-    check
-      ? `Checking ${route ?? "default route"}…`
-      : `Launching ${game.title ?? game.name}…`,
-  );
+  toast(check ? `Checking ${route ?? "default route"}…` : `Launching ${game.title ?? game.name}…`);
   const result = await api<LaunchResult>(`/api/games/${game.id}/launch`, {
     method: "POST",
     json: { route, check },
@@ -651,16 +599,13 @@ async function activate(element: HTMLElement): Promise<void> {
   }
   if (data.route) {
     if (element.getAttribute("aria-disabled") === "true") {
-      toast(
-        element.querySelector(".why")?.textContent || "route unavailable",
-        "error",
-      );
+      toast(element.querySelector(".why")?.textContent || "route unavailable", "error");
       return;
     }
     return launch(false, data.route);
   }
   if (data.game) {
-    renderDetail(state.games.find((game) => game.id === Number(data.game)));
+    renderDetail(state.games.find(game => game.id === Number(data.game)));
     return launch(false);
   }
   if (data.install) return runJob(data.install, data.id);
@@ -708,52 +653,35 @@ async function setDefault(): Promise<void> {
 let jobTimer: ReturnType<typeof setTimeout> | undefined;
 async function pollJobs(): Promise<void> {
   clearTimeout(jobTimer);
-  const before = new Map(state.jobs.map((job) => [job.id, job.status]));
+  const before = new Map(state.jobs.map(job => [job.id, job.status]));
   state.jobs = await api<Job[]>("/api/jobs");
   for (const job of state.jobs) {
     const was = before.get(job.id);
-    if (
-      job.status !== "running" &&
-      was !== job.status &&
-      (was === "running" || was === undefined)
-    ) {
+    if (job.status !== "running" && was !== job.status && (was === "running" || was === undefined)) {
       toast(
-        job.status === "done"
-          ? `Done: ${job.title}`
-          : `Failed: ${job.title}: ${job.error}`,
+        job.status === "done" ? `Done: ${job.title}` : `Failed: ${job.title}: ${job.error}`,
         job.status === "done" ? "ok" : "error",
       );
-      if (
-        job.title === "Scan library" &&
-        (state.tab === "systems" || state.tab === "sources")
-      )
-        void show(state.tab);
+      if (job.title === "Scan library" && (state.tab === "systems" || state.tab === "sources")) void show(state.tab);
       if (state.tab === "bios" && job.status === "done") void showBios();
     }
   }
   const jobs = document.querySelector("#jobs");
   if (jobs) jobs.innerHTML = jobsHtml();
   renderStatus();
-  if (state.jobs.some((job) => job.status === "running"))
-    jobTimer = setTimeout(pollJobs, 1500);
+  if (state.jobs.some(job => job.status === "running")) jobTimer = setTimeout(pollJobs, 1500);
 }
 
 async function pollRunning(): Promise<void> {
-  state.running = await api<typeof state.running>("/api/running").catch(
-    () => state.running,
-  );
+  state.running = await api<typeof state.running>("/api/running").catch(() => state.running);
   renderStatus();
 }
 
 function renderStatus(): void {
-  const running = state.jobs.filter((job) => job.status === "running").length;
+  const running = state.jobs.filter(job => job.status === "running").length;
   status.innerHTML = [
-    state.running.length
-      ? `<span class="pill play">▶ ${state.running.length} running</span>`
-      : "",
-    running
-      ? `<span class="pill busy">⟳ ${running} job${running > 1 ? "s" : ""}</span>`
-      : "",
+    state.running.length ? `<span class="pill play">▶ ${state.running.length} running</span>` : "",
+    running ? `<span class="pill busy">⟳ ${running} job${running > 1 ? "s" : ""}</span>` : "",
     `<span class="pill" id="pad">${navigator.getGamepads?.().some(Boolean) ? "🎮 gamepad" : "⌨ keyboard"}</span>`,
   ].join("");
 }
@@ -761,15 +689,11 @@ function renderStatus(): void {
 // ---- spatial navigation ---------------------------------------------------------------------------
 
 function focusable(): HTMLElement[] {
-  return [...document.querySelectorAll<HTMLElement>("[data-nav]")].filter(
-    (element) => element.offsetParent !== null,
-  );
+  return [...document.querySelectorAll<HTMLElement>("[data-nav]")].filter(element => element.offsetParent !== null);
 }
 
 function focusFirst(selector: string): void {
-  const element =
-    document.querySelector<HTMLElement>(selector) ??
-    focusable().find((item) => !item.closest(".tabs"));
+  const element = document.querySelector<HTMLElement>(selector) ?? focusable().find(item => !item.closest(".tabs"));
   element?.focus({ preventScroll: true });
   element?.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
@@ -794,13 +718,7 @@ function move(direction: Direction): void {
     const dx = to.left + to.width / 2 - cx;
     const dy = to.top + to.height / 2 - cy;
     const [main, cross] =
-      direction === "left"
-        ? [-dx, dy]
-        : direction === "right"
-          ? [dx, dy]
-          : direction === "up"
-            ? [-dy, dx]
-            : [dy, dx];
+      direction === "left" ? [-dx, dy] : direction === "right" ? [dx, dy] : direction === "up" ? [-dy, dx] : [dy, dx];
     if (main <= 1) continue;
     const overlap =
       direction === "left" || direction === "right"
@@ -831,29 +749,25 @@ function cycleTab(step: number): void {
 function guarded(action: () => Promise<void> | void): void {
   Promise.resolve()
     .then(action)
-    .catch((error) =>
-      toast(error instanceof Error ? error.message : String(error), "error"),
-    );
+    .catch(error => toast(error instanceof Error ? error.message : String(error), "error"));
 }
 
-document.addEventListener("focusin", (event) => {
+document.addEventListener("focusin", event => {
   const target = event.target as HTMLElement;
   if (target.dataset.game) {
     state.lastGame = Number(target.dataset.game);
-    renderDetail(state.games.find((game) => game.id === state.lastGame));
+    renderDetail(state.games.find(game => game.id === state.lastGame));
   }
 });
 
-document.addEventListener("click", (event) => {
-  const target = (event.target as HTMLElement).closest<HTMLElement>(
-    "[data-nav]",
-  );
+document.addEventListener("click", event => {
+  const target = (event.target as HTMLElement).closest<HTMLElement>("[data-nav]");
   if (!target || target.matches("input, select, button[type=submit]")) return;
   event.preventDefault();
   guarded(() => activate(target));
 });
 
-document.addEventListener("submit", (event) => {
+document.addEventListener("submit", event => {
   event.preventDefault();
   const form = event.target as HTMLFormElement;
   const values = Object.fromEntries(new FormData(form)) as {
@@ -868,7 +782,7 @@ document.addEventListener("submit", (event) => {
   });
 });
 
-document.addEventListener("keydown", (event) => {
+document.addEventListener("keydown", event => {
   const target = event.target as HTMLElement;
   const typing = target.matches("input, select");
   const keys: Record<string, () => void> = {
@@ -885,9 +799,7 @@ document.addEventListener("keydown", (event) => {
     c: () =>
       !typing &&
       state.tab === "games" &&
-      guarded(() =>
-        launch(true, (document.activeElement as HTMLElement)?.dataset.route),
-      ),
+      guarded(() => launch(true, (document.activeElement as HTMLElement)?.dataset.route)),
     f: () => !typing && state.tab === "games" && guarded(toggleFavorite),
     d: () => !typing && state.tab === "games" && guarded(setDefault),
     r: () => !typing && guarded(scan),
@@ -896,11 +808,7 @@ document.addEventListener("keydown", (event) => {
   if (handler) {
     event.preventDefault();
     handler();
-  } else if (
-    event.key === "Enter" &&
-    !typing &&
-    target.dataset.nav !== undefined
-  ) {
+  } else if (event.key === "Enter" && !typing && target.dataset.nav !== undefined) {
     event.preventDefault();
     guarded(() => activate(target));
   }
@@ -937,12 +845,7 @@ function pollGamepad(time: number): void {
     press(2, () => state.tab === "games" && guarded(toggleFavorite));
     press(3, () =>
       state.tab === "games"
-        ? guarded(() =>
-            launch(
-              true,
-              (document.activeElement as HTMLElement)?.dataset.route,
-            ),
-          )
+        ? guarded(() => launch(true, (document.activeElement as HTMLElement)?.dataset.route))
         : guarded(scan),
     );
     press(4, () => cycleTab(-1));
@@ -951,15 +854,7 @@ function pollGamepad(time: number): void {
     const [x = 0, y = 0] = pad.axes;
     if (time - axisAt > 180 && Math.max(Math.abs(x), Math.abs(y)) > 0.6) {
       axisAt = time;
-      move(
-        Math.abs(x) > Math.abs(y)
-          ? x > 0
-            ? "right"
-            : "left"
-          : y > 0
-            ? "down"
-            : "up",
-      );
+      move(Math.abs(x) > Math.abs(y) ? (x > 0 ? "right" : "left") : y > 0 ? "down" : "up");
     }
   }
   requestAnimationFrame(pollGamepad);
@@ -978,7 +873,7 @@ async function boot(): Promise<void> {
   state.jobs = await api<Job[]>("/api/jobs");
   await pollRunning();
   const systems = await api<SystemRow[]>("/api/systems");
-  if (!systems.some((system) => system.games)) await scan();
+  if (!systems.some(system => system.games)) await scan();
   await showSystems();
   document.body.dataset.ready = "1";
   setInterval(() => void pollRunning(), 4000);

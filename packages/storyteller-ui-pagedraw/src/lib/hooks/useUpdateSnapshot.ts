@@ -19,15 +19,13 @@ export const captureStageEditsBitmap = async (
   };
 
   // Hide all transformers
-  Object.values(transformerRefs.current || {}).forEach(
-    (transformer: Konva.Transformer) => {
-      transformer.visible(false);
-    },
-  );
+  Object.values(transformerRefs.current || {}).forEach((transformer: Konva.Transformer) => {
+    transformer.visible(false);
+  });
 
   // Disable all the layers that we don't need
   // We only need the base image layer and the edits layer
-  stageRef.current.getLayers().forEach((layer) => {
+  stageRef.current.getLayers().forEach(layer => {
     if (layer.id() == BG_LAYER_ID || layer.id() == DRAW_LAYER_ID) {
       layer.visible(true);
     } else {
@@ -52,14 +50,12 @@ export const captureStageEditsBitmap = async (
     return undefined;
   } finally {
     // Restore transformers
-    Object.values(transformerRefs.current || {}).forEach(
-      (transformer: Konva.Transformer) => {
-        transformer.visible(true);
-      },
-    );
+    Object.values(transformerRefs.current || {}).forEach((transformer: Konva.Transformer) => {
+      transformer.visible(true);
+    });
 
     // Restore all layers visibility
-    stageRef.current.getLayers().forEach((layer) => {
+    stageRef.current.getLayers().forEach(layer => {
       layer.visible(true);
     });
 
@@ -91,11 +87,9 @@ export const useStageSnapshot = (
     };
 
     // Hide all transformers
-    Object.values(transformerRefs.current || {}).forEach(
-      (transformer: Konva.Transformer) => {
-        transformer.visible(false);
-      },
-    );
+    Object.values(transformerRefs.current || {}).forEach((transformer: Konva.Transformer) => {
+      transformer.visible(false);
+    });
 
     stageRef.current.position({ x: 0, y: 0 });
     stageRef.current.scale({ x: 1, y: 1 });
@@ -103,11 +97,9 @@ export const useStageSnapshot = (
     const uri = stageRef.current.toDataURL({ width, height, pixelRatio: 1 });
 
     // Restore transformers
-    Object.values(transformerRefs.current || {}).forEach(
-      (transformer: Konva.Transformer) => {
-        transformer.visible(true);
-      },
-    );
+    Object.values(transformerRefs.current || {}).forEach((transformer: Konva.Transformer) => {
+      transformer.visible(true);
+    });
 
     stageRef.current.position(oldPos);
     stageRef.current.scale(oldScale);

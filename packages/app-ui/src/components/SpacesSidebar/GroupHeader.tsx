@@ -1,9 +1,4 @@
-import {
-  CaretRight,
-  DotsSixVertical,
-  PencilSimple,
-  Trash,
-} from "@phosphor-icons/react";
+import { CaretRight, DotsSixVertical, PencilSimple, Trash } from "@phosphor-icons/react";
 import { clsx } from "clsx";
 import { useState } from "react";
 import { useContextMenu } from "../../hooks/useContextMenu";
@@ -128,8 +123,8 @@ export function GroupHeader({
         <input
           type="text"
           value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => {
+          onChange={e => setNewName(e.target.value)}
+          onKeyDown={e => {
             if (e.key === "Enter") {
               handleRename();
             } else if (e.key === "Escape") {
@@ -147,14 +142,7 @@ export function GroupHeader({
           onContextMenu={handleContextMenu}
           className="flex-1 flex items-center gap-2 py-2 text-label-small font-semibold tracking-wider opacity-60 text-outline hover:text-on-surface transition-colors min-h-[32px]"
         >
-          <CaretRight
-            className={clsx(
-              "transition-transform",
-              !isCollapsed && "rotate-90",
-            )}
-            size={10}
-            weight="bold"
-          />
+          <CaretRight className={clsx("transition-transform", !isCollapsed && "rotate-90")} size={10} weight="bold" />
           <span>{displayLabel}</span>
           {rightComponent}
         </button>

@@ -23,8 +23,7 @@ export interface AphrodyJob {
   displayName: string;
   target: string;
   targetPath?: string;
-  status:
-    "queued" | "running" | "paused" | "completed" | "failed" | "cancelled";
+  status: "queued" | "running" | "paused" | "completed" | "failed" | "cancelled";
   progress: number; // 0 to 1
   status_message?: string;
   created_at: string;
@@ -51,7 +50,7 @@ export interface AphrodyJobStoreState {
 export const useAphrodyJobStore = create<AphrodyJobStoreState>((set, get) => ({
   jobs: [],
 
-  addJob: (jobInput) => {
+  addJob: jobInput => {
     const id = `aphrody-job-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const newJob: AphrodyJob = {
       ...jobInput,
@@ -59,7 +58,7 @@ export const useAphrodyJobStore = create<AphrodyJobStoreState>((set, get) => ({
       created_at: new Date().toISOString(),
     };
 
-    set((state) => ({
+    set(state => ({
       jobs: [newJob, ...state.jobs],
     }));
 
@@ -67,8 +66,8 @@ export const useAphrodyJobStore = create<AphrodyJobStoreState>((set, get) => ({
   },
 
   updateProgress: (id, progress, message) => {
-    set((state) => ({
-      jobs: state.jobs.map((job) =>
+    set(state => ({
+      jobs: state.jobs.map(job =>
         job.id === id
           ? {
               ...job,
@@ -81,8 +80,8 @@ export const useAphrodyJobStore = create<AphrodyJobStoreState>((set, get) => ({
   },
 
   completeJob: (id, resultAction) => {
-    set((state) => ({
-      jobs: state.jobs.map((job) =>
+    set(state => ({
+      jobs: state.jobs.map(job =>
         job.id === id
           ? {
               ...job,
@@ -98,8 +97,8 @@ export const useAphrodyJobStore = create<AphrodyJobStoreState>((set, get) => ({
   },
 
   failJob: (id, error) => {
-    set((state) => ({
-      jobs: state.jobs.map((job) =>
+    set(state => ({
+      jobs: state.jobs.map(job =>
         job.id === id
           ? {
               ...job,
@@ -112,29 +111,21 @@ export const useAphrodyJobStore = create<AphrodyJobStoreState>((set, get) => ({
     }));
   },
 
-  pauseJob: async (id) => {
-    set((state) => ({
-      jobs: state.jobs.map((job) =>
-        job.id === id
-          ? { ...job, status: "paused", status_message: "En pause" }
-          : job,
-      ),
+  pauseJob: async id => {
+    set(state => ({
+      jobs: state.jobs.map(job => (job.id === id ? { ...job, status: "paused", status_message: "En pause" } : job)),
     }));
   },
 
-  resumeJob: async (id) => {
-    set((state) => ({
-      jobs: state.jobs.map((job) =>
-        job.id === id
-          ? { ...job, status: "running", status_message: "En cours" }
-          : job,
-      ),
+  resumeJob: async id => {
+    set(state => ({
+      jobs: state.jobs.map(job => (job.id === id ? { ...job, status: "running", status_message: "En cours" } : job)),
     }));
   },
 
-  cancelJob: async (id) => {
-    set((state) => ({
-      jobs: state.jobs.map((job) =>
+  cancelJob: async id => {
+    set(state => ({
+      jobs: state.jobs.map(job =>
         job.id === id
           ? {
               ...job,
@@ -147,21 +138,19 @@ export const useAphrodyJobStore = create<AphrodyJobStoreState>((set, get) => ({
     }));
   },
 
-  removeJob: (id) => {
-    set((state) => ({
-      jobs: state.jobs.filter((job) => job.id !== id),
+  removeJob: id => {
+    set(state => ({
+      jobs: state.jobs.filter(job => job.id !== id),
     }));
   },
 
   clearCompleted: () => {
-    set((state) => ({
-      jobs: state.jobs.filter(
-        (job) => job.status !== "completed" && job.status !== "cancelled",
-      ),
+    set(state => ({
+      jobs: state.jobs.filter(job => job.status !== "completed" && job.status !== "cancelled"),
     }));
   },
 
-  getJob: (id) => {
-    return get().jobs.find((job) => job.id === id);
+  getJob: id => {
+    return get().jobs.find(job => job.id === id);
   },
 }));

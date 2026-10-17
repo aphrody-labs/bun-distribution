@@ -3,7 +3,12 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** bcp47mrm.dll!GetDistanceOfClosestLanguageInList */
-  GetDistanceOfClosestLanguageInList(pszLanguage: string | Win32Pointer, pszLanguagesList: string | Win32Pointer, wchListDelimiter: number, pClosestDistance: Win32Pointer): number;
+  GetDistanceOfClosestLanguageInList(
+    pszLanguage: string | Win32Pointer,
+    pszLanguagesList: string | Win32Pointer,
+    wchListDelimiter: number,
+    pClosestDistance: Win32Pointer,
+  ): number;
   /** bcp47mrm.dll!IsWellFormedTag */
   IsWellFormedTag(pszTag: string | Win32Pointer): number;
 }

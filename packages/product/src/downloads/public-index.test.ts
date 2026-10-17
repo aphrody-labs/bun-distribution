@@ -3,15 +3,10 @@ import { expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile, copyFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  configuredPublicIndexSearch,
-  createHandler,
-  publicIndexResponse,
-} from "./server.ts";
+import { configuredPublicIndexSearch, createHandler, publicIndexResponse } from "./server.ts";
 import type { PublicIndexSearch } from "./public-index.ts";
 
-const url =
-  "https://aphrody.com/api/index/search?query=Bun&collection=public-docs";
+const url = "https://aphrody.com/api/index/search?query=Bun&collection=public-docs";
 const owner: PublicIndexSearch = async ({ query, collection }) => ({
   body: {
     query,
@@ -75,10 +70,10 @@ test("public index rejects invalid, duplicate, privileged and overbudget query p
       "query=Bun&collection=public-docs&num=0",
       "query=Bun&collection=public-docs&start=1001",
       `query=${"é".repeat(2049)}&collection=public-docs`,
-    ].map(async (query) => {
+    ].map(async query => {
       const response = await publicIndexResponse(
         new Request(`https://aphrody.com/api/index/search?${query}`),
-        async (input) => {
+        async input => {
           calls++;
           return owner(input);
         },
@@ -87,17 +82,14 @@ test("public index rejects invalid, duplicate, privileged and overbudget query p
     }),
   );
   expect(calls).toBe(0);
-  const response = await publicIndexResponse(
-    new Request(url, { method: "POST" }),
-    owner,
-  );
+  const response = await publicIndexResponse(new Request(url, { method: "POST" }), owner);
   expect(response.status).toBe(405);
   expect(response.headers.get("allow")).toBe("GET");
 });
 
 test("public index returns empty 304 only after owner verification and reflects changed snapshot ETag", async () => {
   let calls = 0;
-  const cached: PublicIndexSearch = async (input) => {
+  const cached: PublicIndexSearch = async input => {
     calls++;
     return { ...(await owner(input)), cache: "hit" };
   };
@@ -113,7 +105,7 @@ test("public index returns empty 304 only after owner verification and reflects 
   expect(calls).toBe(1);
   const changed = await publicIndexResponse(
     new Request(url, { headers: { "if-none-match": '"snapshot-a"' } }),
-    async (input) => ({ ...(await owner(input)), etag: '"snapshot-b"' }),
+    async input => ({ ...(await owner(input)), etag: '"snapshot-b"' }),
   );
   expect(changed.status).toBe(200);
   expect(changed.headers.get("etag")).toBe('"snapshot-b"');
@@ -122,10 +114,8 @@ test("public index returns empty 304 only after owner verification and reflects 
 test("public index preserves Unicode and punctuation as owner input, without executing a search language", async () => {
   const query = 'Été "Bun" OR (世界):*';
   const response = await publicIndexResponse(
-    new Request(
-      `${url.replace("query=Bun", `query=${encodeURIComponent(query)}`)}&num=20&start=1000`,
-    ),
-    async (input) => {
+    new Request(`${url.replace("query=Bun", `query=${encodeURIComponent(query)}`)}&num=20&start=1000`),
+    async input => {
       expect(input).toEqual({
         query,
         collection: "public-docs",
@@ -139,8 +129,7 @@ test("public index preserves Unicode and punctuation as owner input, without exe
   expect((await response.json()).query).toBe(query);
 });
 
-const missing: PublicIndexSearch = async (input, signal) =>
-  (await configuredPublicIndexSearch({}))(input, signal);
+const missing: PublicIndexSearch = async (input, signal) => (await configuredPublicIndexSearch({}))(input, signal);
 
 test("public index redacts missing configuration, unsafe owner output and upstream errors", async () => {
   const searches = [
@@ -148,25 +137,23 @@ test("public index redacts missing configuration, unsafe owner output and upstre
     async () => {
       throw new Error("secret /private/home");
     },
-    async (input) => {
+    async input => {
       const result = await owner(input);
       result.body.organic[0]!.url = "javascript:private";
       return result;
     },
-    async (input) => {
+    async input => {
       const result = await owner(input);
       result.etag = "private\r\nheader";
       return result;
     },
   ] satisfies PublicIndexSearch[];
   await Promise.all(
-    searches.map(async (search) => {
+    searches.map(async search => {
       const response = await publicIndexResponse(new Request(url), search);
       expect(response.status).toBe(503);
       expect(response.headers.get("cache-control")).toBe("no-store");
-      expect(await response.text()).toBe(
-        '{"error":"Public index is unavailable. Please try again."}',
-      );
+      expect(await response.text()).toBe('{"error":"Public index is unavailable. Please try again."}');
     }),
   );
 });
@@ -177,25 +164,19 @@ test("public index stops aborted requests before loading and after owner cancell
   let calls = 0;
   expect(
     (
-      await publicIndexResponse(
-        new Request(url, { signal: controller.signal }),
-        async (input) => {
-          calls++;
-          return owner(input);
-        },
-      )
+      await publicIndexResponse(new Request(url, { signal: controller.signal }), async input => {
+        calls++;
+        return owner(input);
+      })
     ).status,
   ).toBe(503);
   expect(calls).toBe(0);
   const later = new AbortController();
-  const response = await publicIndexResponse(
-    new Request(url, { signal: later.signal }),
-    async (input, signal) => {
-      later.abort();
-      expect(signal?.aborted).toBe(true);
-      return owner(input);
-    },
-  );
+  const response = await publicIndexResponse(new Request(url, { signal: later.signal }), async (input, signal) => {
+    later.abort();
+    expect(signal?.aborted).toBe(true);
+    return owner(input);
+  });
   expect(response.status).toBe(503);
 });
 
@@ -210,10 +191,7 @@ test("public index route is restricted to declared site hosts", async () => {
     owner,
   );
   expect((await handler(new Request(url))).status).toBe(200);
-  expect(
-    (await handler(new Request(url.replace("aphrody.com", "foreign.test"))))
-      .status,
-  ).toBe(404);
+  expect((await handler(new Request(url.replace("aphrody.com", "foreign.test")))).status).toBe(404);
 });
 
 test("explicit SDK configuration resolves real fixture module and standalone server erases type-only imports", async () => {
@@ -238,9 +216,7 @@ test("explicit SDK configuration resolves real fixture module and standalone ser
       PUBLIC_INDEX_COLLECTIONS: JSON.stringify(collections),
     };
     const configured = await configuredPublicIndexSearch(env);
-    expect(
-      (await publicIndexResponse(new Request(url), configured)).status,
-    ).toBe(200);
+    expect((await publicIndexResponse(new Request(url), configured)).status).toBe(200);
     const missingModule: PublicIndexSearch = async (input, signal) =>
       (
         await configuredPublicIndexSearch({
@@ -248,9 +224,7 @@ test("explicit SDK configuration resolves real fixture module and standalone ser
           PUBLIC_INDEX_SDK_MODULE: join(root, "absent.ts"),
         })
       )(input, signal);
-    expect(
-      (await publicIndexResponse(new Request(url), missingModule)).status,
-    ).toBe(503);
+    expect((await publicIndexResponse(new Request(url), missingModule)).status).toBe(503);
     await Promise.all(
       [
         { ...env, PUBLIC_INDEX_ROOT: "relative" },
@@ -265,7 +239,7 @@ test("explicit SDK configuration resolves real fixture module and standalone ser
             },
           }),
         },
-      ].map(async (invalid) => {
+      ].map(async invalid => {
         await expect(configuredPublicIndexSearch(invalid)).rejects.toThrow();
       }),
     );

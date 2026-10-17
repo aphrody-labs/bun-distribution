@@ -64,13 +64,13 @@ fn main() {
 Afterwards all the plugin's APIs are available through the JavaScript guest bindings:
 
 ```javascript
-import { check } from '@aphrody/plugin-updater'
-import { relaunch } from '@aphrody/plugin-process'
-const update = await check()
+import { check } from "@aphrody/plugin-updater";
+import { relaunch } from "@aphrody/plugin-process";
+const update = await check();
 if (update) {
-  await update.downloadAndInstall()
+  await update.downloadAndInstall();
   // Relaunch the app on macOS and Linux to run the newly install version
-  await relaunch()
+  await relaunch();
 }
 ```
 

@@ -1,16 +1,10 @@
 import { Location } from "@aphrody/assets/icons";
-import type {
-  SpaceItem as SpaceItemType,
-  ItemType,
-  File,
-  SdPath,
-} from "@aphrody/drive-client";
+import type { SpaceItem as SpaceItemType, ItemType, File, SdPath } from "@aphrody/drive-client";
 import type { IconSource } from "@aphrody/m3-primitives";
 
 // Icon data returned from metadata resolution. `component` icons are Material Symbols
 // (a symbol name, an element or a component), rendered with `renderIcon`.
-export type IconData =
-  { type: "component"; icon: IconSource } | { type: "image"; icon: string };
+export type IconData = { type: "component"; icon: IconSource } | { type: "image"; icon: string };
 
 // Metadata resolved for a space item
 export interface ItemMetadata {
@@ -36,15 +30,11 @@ export function isFileKindsItem(t: ItemType): t is "FileKinds" {
   return t === "FileKinds";
 }
 
-export function isLocationItem(
-  t: ItemType,
-): t is { Location: { location_id: string } } {
+export function isLocationItem(t: ItemType): t is { Location: { location_id: string } } {
   return typeof t === "object" && "Location" in t;
 }
 
-export function isVolumeItem(
-  t: ItemType,
-): t is { Volume: { volume_id: string } } {
+export function isVolumeItem(t: ItemType): t is { Volume: { volume_id: string } } {
   return typeof t === "object" && "Volume" in t;
 }
 
@@ -64,16 +54,12 @@ export function isRedundancyItem(t: ItemType): t is "Redundancy" {
   return t === "Redundancy";
 }
 
-export function isSourceItem(
-  t: ItemType,
-): t is { Source: { source_id: string } } {
+export function isSourceItem(t: ItemType): t is { Source: { source_id: string } } {
   return typeof t === "object" && "Source" in t;
 }
 
 // Check if item is a "raw" location (legacy format with name/sd_path but no item_type)
-export function isRawLocation(
-  item: SpaceItemType | Record<string, unknown>,
-): boolean {
+export function isRawLocation(item: SpaceItemType | Record<string, unknown>): boolean {
   return "name" in item && "sd_path" in item && !("item_type" in item);
 }
 
@@ -82,11 +68,9 @@ function getItemIcon(itemType: ItemType): IconData {
   if (isOverviewItem(itemType)) return { type: "component", icon: "home" };
   if (isRecentsItem(itemType)) return { type: "component", icon: "schedule" };
   if (isFavoritesItem(itemType)) return { type: "component", icon: "favorite" };
-  if (isFileKindsItem(itemType))
-    return { type: "component", icon: "folder_copy" };
+  if (isFileKindsItem(itemType)) return { type: "component", icon: "folder_copy" };
   if (isSourcesItem(itemType)) return { type: "component", icon: "database" };
-  if (isRedundancyItem(itemType))
-    return { type: "component", icon: "verified_user" };
+  if (isRedundancyItem(itemType)) return { type: "component", icon: "verified_user" };
   if (isLocationItem(itemType)) return { type: "image", icon: Location };
   if (isVolumeItem(itemType)) return { type: "component", icon: "hard_drive" };
   if (isTagItem(itemType)) return { type: "component", icon: "sell" };
@@ -107,8 +91,7 @@ function getItemLabel(itemType: ItemType, resolvedFile?: File | null): string {
   if (isVolumeItem(itemType))
     return (
       resolvedFile?.name ||
-      (itemType as { Volume: { volume_id: string; name?: string } }).Volume
-        .name ||
+      (itemType as { Volume: { volume_id: string; name?: string } }).Volume.name ||
       "Unnamed Volume"
     );
   if (isTagItem(itemType)) return resolvedFile?.name || "Unnamed Tag";
@@ -117,9 +100,7 @@ function getItemLabel(itemType: ItemType, resolvedFile?: File | null): string {
     if (resolvedFile?.name) return resolvedFile.name;
     const sdPath = itemType.Path.sd_path;
     if (typeof sdPath === "object" && "Physical" in sdPath) {
-      const parts = (
-        sdPath as { Physical: { path: string } }
-      ).Physical.path.split("/");
+      const parts = (sdPath as { Physical: { path: string } }).Physical.path.split("/");
       return parts[parts.length - 1] || "Path";
     }
     return "Path";
@@ -197,14 +178,10 @@ export function resolveItemMetadata(
   if (isRawLocation(item)) {
     const rawItem = item as { name?: string; sd_path?: SdPath };
     const label = customLabel || rawItem.name || "Unnamed Location";
-    const path = rawItem.sd_path
-      ? `/explorer?path=${encodeURIComponent(JSON.stringify(rawItem.sd_path))}`
-      : null;
+    const path = rawItem.sd_path ? `/explorer?path=${encodeURIComponent(JSON.stringify(rawItem.sd_path))}` : null;
 
     return {
-      icon: customIcon
-        ? { type: "image", icon: customIcon }
-        : { type: "image", icon: Location },
+      icon: customIcon ? { type: "image", icon: customIcon } : { type: "image", icon: Location },
       label,
       path,
     };
@@ -213,17 +190,11 @@ export function resolveItemMetadata(
   // Handle proper SpaceItem
   const spaceItem = item as SpaceItemType;
   const resolvedFile = spaceItem.resolved_file;
-  const itemSdPath = (spaceItem as SpaceItemType & { sd_path?: SdPath })
-    .sd_path;
+  const itemSdPath = (spaceItem as SpaceItemType & { sd_path?: SdPath }).sd_path;
 
-  const icon: IconData = customIcon
-    ? { type: "image", icon: customIcon }
-    : getItemIcon(spaceItem.item_type);
+  const icon: IconData = customIcon ? { type: "image", icon: customIcon } : getItemIcon(spaceItem.item_type);
 
-  const label =
-    customLabel ||
-    resolvedFile?.name ||
-    getItemLabel(spaceItem.item_type, resolvedFile);
+  const label = customLabel || resolvedFile?.name || getItemLabel(spaceItem.item_type, resolvedFile);
 
   const path = getItemPath(spaceItem.item_type, volumeData, itemSdPath);
 
@@ -231,9 +202,7 @@ export function resolveItemMetadata(
 }
 
 // Determine if an item can be a drop target (for files to be moved into)
-export function isDropTargetItem(
-  item: SpaceItemType | Record<string, unknown>,
-): boolean {
+export function isDropTargetItem(item: SpaceItemType | Record<string, unknown>): boolean {
   if (isRawLocation(item)) return true;
 
   const spaceItem = item as SpaceItemType;
@@ -241,18 +210,14 @@ export function isDropTargetItem(
   const resolvedFile = spaceItem.resolved_file;
 
   return (
-    isLocationItem(itemType) ||
-    isVolumeItem(itemType) ||
-    (isPathItem(itemType) && resolvedFile?.kind === "Directory")
+    isLocationItem(itemType) || isVolumeItem(itemType) || (isPathItem(itemType) && resolvedFile?.kind === "Directory")
   );
 }
 
 // Get the target type for drop operations
 export type DropTargetType = "location" | "volume" | "folder" | "other";
 
-export function getDropTargetType(
-  item: SpaceItemType | Record<string, unknown>,
-): DropTargetType {
+export function getDropTargetType(item: SpaceItemType | Record<string, unknown>): DropTargetType {
   if (isRawLocation(item)) return "location";
 
   const spaceItem = item as SpaceItemType;
@@ -261,8 +226,7 @@ export function getDropTargetType(
 
   if (isLocationItem(itemType)) return "location";
   if (isVolumeItem(itemType)) return "volume";
-  if (isPathItem(itemType) && resolvedFile?.kind === "Directory")
-    return "folder";
+  if (isPathItem(itemType) && resolvedFile?.kind === "Directory") return "folder";
 
   return "other";
 }
@@ -278,8 +242,7 @@ export function buildDropTargetPath(
 
   const spaceItem = item as SpaceItemType;
   const itemType = spaceItem.item_type;
-  const itemSdPath = (spaceItem as SpaceItemType & { sd_path?: SdPath })
-    .sd_path;
+  const itemSdPath = (spaceItem as SpaceItemType & { sd_path?: SdPath }).sd_path;
 
   if (isPathItem(itemType)) {
     return itemType.Path.sd_path;

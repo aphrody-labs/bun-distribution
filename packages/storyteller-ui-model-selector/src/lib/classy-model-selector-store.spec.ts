@@ -40,39 +40,21 @@ it.each(RETIRED_SELECTIONS)(
     useClassyModelSelectorStore.setState({
       selectedProviders: { [page]: { [modelId]: provider } },
     });
-    const { result } = renderHook(() =>
-      useSelectedProviderForModel(page, modelId),
-    );
+    const { result } = renderHook(() => useSelectedProviderForModel(page, modelId));
     expect(result.current).toBe(GenerationProvider.Artcraft);
-    expect(getSelectedProviderForModel(page, modelId)).toBe(
-      GenerationProvider.Artcraft,
-    );
+    expect(getSelectedProviderForModel(page, modelId)).toBe(GenerationProvider.Artcraft);
 
-    act(() =>
-      useClassyModelSelectorStore
-        .getState()
-        .setSelectedProvider(page, modelId, provider),
-    );
-    expect(
-      useClassyModelSelectorStore.getState().selectedProviders[page]?.[modelId],
-    ).toBe(GenerationProvider.Artcraft);
+    act(() => useClassyModelSelectorStore.getState().setSelectedProvider(page, modelId, provider));
+    expect(useClassyModelSelectorStore.getState().selectedProviders[page]?.[modelId]).toBe(GenerationProvider.Artcraft);
   },
 );
 
 it("preserves other provider selections and missing defaults", () => {
   const page = ModelPage.TextToImage;
   const modelId = "midjourney";
-  const { result } = renderHook(() =>
-    useSelectedProviderForModel(page, modelId),
-  );
+  const { result } = renderHook(() => useSelectedProviderForModel(page, modelId));
   expect(result.current).toBeUndefined();
-  act(() =>
-    useClassyModelSelectorStore
-      .getState()
-      .setSelectedProvider(page, modelId, GenerationProvider.Midjourney),
-  );
+  act(() => useClassyModelSelectorStore.getState().setSelectedProvider(page, modelId, GenerationProvider.Midjourney));
   expect(result.current).toBe(GenerationProvider.Midjourney);
-  expect(getSelectedProviderForModel(page, modelId)).toBe(
-    GenerationProvider.Midjourney,
-  );
+  expect(getSelectedProviderForModel(page, modelId)).toBe(GenerationProvider.Midjourney);
 });

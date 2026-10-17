@@ -10,16 +10,7 @@ import { generateTypes, parseProto } from "./proto-to-ts.ts";
 
 const packageRoot = join(import.meta.dir, "..");
 const repoRoot = join(packageRoot, "..", "..", "..");
-const protoFile = join(
-  repoRoot,
-  "crates",
-  "os",
-  "kernel",
-  "comps",
-  "a2a-pb",
-  "proto",
-  "a2a.proto",
-);
+const protoFile = join(repoRoot, "crates", "os", "kernel", "comps", "a2a-pb", "proto", "a2a.proto");
 const outFile = join(packageRoot, "src", "generated", "a2a.ts");
 
 export async function renderGenerated(): Promise<string> {
@@ -33,13 +24,9 @@ export async function renderGenerated(): Promise<string> {
 if (import.meta.main) {
   const rendered = await renderGenerated();
   if (process.argv.includes("--check")) {
-    const current = (await Bun.file(outFile).exists())
-      ? await Bun.file(outFile).text()
-      : "";
+    const current = (await Bun.file(outFile).exists()) ? await Bun.file(outFile).text() : "";
     if (current !== rendered) {
-      console.error(
-        "src/generated/a2a.ts is stale: run `bun run generate` in packages/os/a2a",
-      );
+      console.error("src/generated/a2a.ts is stale: run `bun run generate` in packages/os/a2a");
       process.exit(1);
     }
     console.log("src/generated/a2a.ts is up to date");

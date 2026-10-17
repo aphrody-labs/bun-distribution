@@ -17,13 +17,8 @@ export interface PlanPricing {
 /** Pricing for a plan in the given cadence. The current price is unchanged; the
  *  base/anchor is current ÷ (1 − PROMO_PCT), rounded to a whole dollar so prices
  *  never show cents. */
-export const planPricing = (
-  plan: SubscriptionPlanDetails,
-  isYearly: boolean,
-): PlanPricing => {
-  const current = isYearly
-    ? Math.round(plan.yearlyPrice / 12)
-    : (plan.originalMonthlyPrice ?? plan.monthlyPrice);
+export const planPricing = (plan: SubscriptionPlanDetails, isYearly: boolean): PlanPricing => {
+  const current = isYearly ? Math.round(plan.yearlyPrice / 12) : (plan.originalMonthlyPrice ?? plan.monthlyPrice);
   const basePrice = Math.round(current / (1 - PROMO_PCT / 100));
   return { current, basePrice, discountPct: PROMO_PCT };
 };

@@ -17,11 +17,7 @@ import canvasModule, {
   type SKRSContext2D,
   type SvgCanvas,
 } from "@aphrody/canvas";
-import {
-  createBrowserCanvas,
-  createM3CanvasSurface,
-  type M3CanvasSurface,
-} from "@aphrody/canvas/site";
+import { createBrowserCanvas, createM3CanvasSurface, type M3CanvasSurface } from "@aphrody/canvas/site";
 
 export async function consumerView(scene: M3Scene): Promise<void> {
   const version: "1.4.4" = aphrodyCanvasVersion;
@@ -33,13 +29,8 @@ export async function consumerView(scene: M3Scene): Promise<void> {
   const image: Image = await loadImage(png);
   const decoded: Image = await loadNativeImage(webp);
   const native: Canvas = await createNativeCanvas(8, 8);
-  const svg: SvgCanvas = await createNativeCanvas(
-    8,
-    8,
-    SvgExportFlag.NoPrettyXML,
-  );
-  const sameModule: typeof createCanvas = (await loadNativeCanvas())
-    .createCanvas;
+  const svg: SvgCanvas = await createNativeCanvas(8, 8, SvgExportFlag.NoPrettyXML);
+  const sameModule: typeof createCanvas = (await loadNativeCanvas()).createCanvas;
   const viaDefault: Canvas = canvasModule.createCanvas(1, 1);
   const fonts: boolean = GlobalFonts.has("Roboto");
   const surface: M3CanvasSurface = createM3CanvasSurface({
@@ -53,17 +44,5 @@ export async function consumerView(scene: M3Scene): Promise<void> {
   const drawn: Canvas = await drawM3Scene(scene);
   // @ts-expect-error the scene contract is the precise Rust mirror, not an open record
   await drawM3Scene({ width: 1, height: 1 });
-  void [
-    version,
-    image,
-    decoded,
-    native,
-    svg,
-    sameModule,
-    viaDefault,
-    fonts,
-    surface,
-    element,
-    drawn,
-  ];
+  void [version, image, decoded, native, svg, sameModule, viaDefault, fonts, surface, element, drawn];
 }

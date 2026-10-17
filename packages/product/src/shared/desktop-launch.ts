@@ -12,17 +12,12 @@ export type Env = Record<string, string | undefined>;
 const BINARY = "aphrody-app";
 
 /** Install locations of the desktop app, most specific first (NSIS per-user, MSI per-machine, Linux and macOS). */
-export function desktopCandidates(
-  env: Env,
-  platform: NodeJS.Platform = process.platform,
-): string[] {
+export function desktopCandidates(env: Env, platform: NodeJS.Platform = process.platform): string[] {
   const out: string[] = [];
   if (env.APHRODY_DESKTOP_BIN) out.push(env.APHRODY_DESKTOP_BIN);
   if (platform === "win32") {
-    if (env.LOCALAPPDATA)
-      out.push(join(env.LOCALAPPDATA, "aphrody", `${BINARY}.exe`));
-    if (env.ProgramFiles)
-      out.push(join(env.ProgramFiles, "aphrody", `${BINARY}.exe`));
+    if (env.LOCALAPPDATA) out.push(join(env.LOCALAPPDATA, "aphrody", `${BINARY}.exe`));
+    if (env.ProgramFiles) out.push(join(env.ProgramFiles, "aphrody", `${BINARY}.exe`));
   } else if (platform === "darwin") {
     out.push("/Applications/aphrody.app/Contents/MacOS/aphrody-app");
   } else {
@@ -38,11 +33,7 @@ export function findDesktop(
   exists: (path: string) => boolean = existsSync,
   which: (name: string) => string | null = Bun.which,
 ): string | undefined {
-  return (
-    desktopCandidates(env, platform).find((path) => exists(path)) ??
-    which(BINARY) ??
-    undefined
-  );
+  return desktopCandidates(env, platform).find(path => exists(path)) ?? which(BINARY) ?? undefined;
 }
 
 export function consoleForced(argv: string[], env: Env): boolean {

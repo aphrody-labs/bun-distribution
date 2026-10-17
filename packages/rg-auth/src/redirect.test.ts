@@ -12,15 +12,11 @@ import { safeReturnUrl } from "./redirect";
 describe("safeReturnUrl", () => {
   test("laisse passer un chemin interne", () => {
     expect(safeReturnUrl("/achillea/clans")).toBe("/achillea/clans");
-    expect(safeReturnUrl("/achillea/ranked?onglet=historique")).toBe(
-      "/achillea/ranked?onglet=historique",
-    );
+    expect(safeReturnUrl("/achillea/ranked?onglet=historique")).toBe("/achillea/ranked?onglet=historique");
   });
 
   test("refuse une URL absolue", () => {
-    expect(safeReturnUrl("https://exemple-malveillant.test/phish")).toBe(
-      "/achillea",
-    );
+    expect(safeReturnUrl("https://exemple-malveillant.test/phish")).toBe("/achillea");
     expect(safeReturnUrl("http://exemple-malveillant.test")).toBe("/achillea");
   });
 
@@ -34,9 +30,7 @@ describe("safeReturnUrl", () => {
   });
 
   test("refuse les caractères de contrôle, qui coupent l'en-tête de redirection", () => {
-    expect(safeReturnUrl("/ok\nLocation: https://ailleurs.test")).toBe(
-      "/achillea",
-    );
+    expect(safeReturnUrl("/ok\nLocation: https://ailleurs.test")).toBe("/achillea");
     expect(safeReturnUrl("/ok\r\nSet-Cookie: a=b")).toBe("/achillea");
     expect(safeReturnUrl("/ok ")).toBe("/achillea");
   });

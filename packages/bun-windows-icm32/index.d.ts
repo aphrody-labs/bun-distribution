@@ -3,31 +3,93 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** icm32.dll!CMCheckColors */
-  CMCheckColors(hcmTransform: number | bigint, lpaInputColors: Win32Pointer, nColors: number, ctInput: number, lpaResult: Win32Pointer): number;
+  CMCheckColors(
+    hcmTransform: number | bigint,
+    lpaInputColors: Win32Pointer,
+    nColors: number,
+    ctInput: number,
+    lpaResult: Win32Pointer,
+  ): number;
   /** icm32.dll!CMCheckColorsInGamut */
-  CMCheckColorsInGamut(hcmTransform: number | bigint, lpaRGBTriple: Win32Pointer, lpaResult: Win32Pointer, nCount: number): number;
+  CMCheckColorsInGamut(
+    hcmTransform: number | bigint,
+    lpaRGBTriple: Win32Pointer,
+    lpaResult: Win32Pointer,
+    nCount: number,
+  ): number;
   /** icm32.dll!CMCheckRGBs */
-  CMCheckRGBs(hcmTransform: number | bigint, lpSrcBits: Win32Pointer, bmInput: number, dwWidth: number, dwHeight: number, dwStride: number, lpaResult: Win32Pointer, pfnCallback: Win32Callback, ulCallbackData: number | bigint): number;
+  CMCheckRGBs(
+    hcmTransform: number | bigint,
+    lpSrcBits: Win32Pointer,
+    bmInput: number,
+    dwWidth: number,
+    dwHeight: number,
+    dwStride: number,
+    lpaResult: Win32Pointer,
+    pfnCallback: Win32Callback,
+    ulCallbackData: number | bigint,
+  ): number;
   /** icm32.dll!CMConvertColorNameToIndex */
-  CMConvertColorNameToIndex(hProfile: number | bigint, paColorName: Win32Pointer, paIndex: Win32Pointer, dwCount: number): number;
+  CMConvertColorNameToIndex(
+    hProfile: number | bigint,
+    paColorName: Win32Pointer,
+    paIndex: Win32Pointer,
+    dwCount: number,
+  ): number;
   /** icm32.dll!CMConvertIndexToColorName */
-  CMConvertIndexToColorName(hProfile: number | bigint, paIndex: Win32Pointer, paColorName: Win32Pointer, dwCount: number): number;
+  CMConvertIndexToColorName(
+    hProfile: number | bigint,
+    paIndex: Win32Pointer,
+    paColorName: Win32Pointer,
+    dwCount: number,
+  ): number;
   /** icm32.dll!CMCreateDeviceLinkProfile */
-  CMCreateDeviceLinkProfile(pahProfiles: Win32Pointer, nProfiles: number, padwIntents: Win32Pointer, nIntents: number, dwFlags: number, lpProfileData: Win32Pointer): number;
+  CMCreateDeviceLinkProfile(
+    pahProfiles: Win32Pointer,
+    nProfiles: number,
+    padwIntents: Win32Pointer,
+    nIntents: number,
+    dwFlags: number,
+    lpProfileData: Win32Pointer,
+  ): number;
   /** icm32.dll!CMCreateMultiProfileTransform */
-  CMCreateMultiProfileTransform(pahProfiles: Win32Pointer, nProfiles: number, padwIntents: Win32Pointer, nIntents: number, dwFlags: number): number | bigint;
+  CMCreateMultiProfileTransform(
+    pahProfiles: Win32Pointer,
+    nProfiles: number,
+    padwIntents: Win32Pointer,
+    nIntents: number,
+    dwFlags: number,
+  ): number | bigint;
   /** icm32.dll!CMCreateProfile */
   CMCreateProfile(lpColorSpace: Win32Pointer, lpProfileData: Win32Pointer): number;
   /** icm32.dll!CMCreateProfileW */
   CMCreateProfileW(lpColorSpace: Win32Pointer, lpProfileData: Win32Pointer): number;
   /** icm32.dll!CMCreateTransform */
-  CMCreateTransform(lpColorSpace: Win32Pointer, lpDevCharacter: Win32Pointer, lpTargetDevCharacter: Win32Pointer): number | bigint;
+  CMCreateTransform(
+    lpColorSpace: Win32Pointer,
+    lpDevCharacter: Win32Pointer,
+    lpTargetDevCharacter: Win32Pointer,
+  ): number | bigint;
   /** icm32.dll!CMCreateTransformExt */
-  CMCreateTransformExt(lpColorSpace: Win32Pointer, lpDevCharacter: Win32Pointer, lpTargetDevCharacter: Win32Pointer, dwFlags: number): number | bigint;
+  CMCreateTransformExt(
+    lpColorSpace: Win32Pointer,
+    lpDevCharacter: Win32Pointer,
+    lpTargetDevCharacter: Win32Pointer,
+    dwFlags: number,
+  ): number | bigint;
   /** icm32.dll!CMCreateTransformExtW */
-  CMCreateTransformExtW(lpColorSpace: Win32Pointer, lpDevCharacter: Win32Pointer, lpTargetDevCharacter: Win32Pointer, dwFlags: number): number | bigint;
+  CMCreateTransformExtW(
+    lpColorSpace: Win32Pointer,
+    lpDevCharacter: Win32Pointer,
+    lpTargetDevCharacter: Win32Pointer,
+    dwFlags: number,
+  ): number | bigint;
   /** icm32.dll!CMCreateTransformW */
-  CMCreateTransformW(lpColorSpace: Win32Pointer, lpDevCharacter: Win32Pointer, lpTargetDevCharacter: Win32Pointer): number | bigint;
+  CMCreateTransformW(
+    lpColorSpace: Win32Pointer,
+    lpDevCharacter: Win32Pointer,
+    lpTargetDevCharacter: Win32Pointer,
+  ): number | bigint;
   /** icm32.dll!CMDeleteTransform */
   CMDeleteTransform(hcmTransform: number | bigint): number;
   /** icm32.dll!CMGetInfo */
@@ -37,13 +99,42 @@ interface Functions {
   /** icm32.dll!CMIsProfileValid */
   CMIsProfileValid(hProfile: number | bigint, lpbValid: Win32Pointer): number;
   /** icm32.dll!CMTranslateColors */
-  CMTranslateColors(hcmTransform: number | bigint, lpaInputColors: Win32Pointer, nColors: number, ctInput: number, lpaOutputColors: Win32Pointer, ctOutput: number): number;
+  CMTranslateColors(
+    hcmTransform: number | bigint,
+    lpaInputColors: Win32Pointer,
+    nColors: number,
+    ctInput: number,
+    lpaOutputColors: Win32Pointer,
+    ctOutput: number,
+  ): number;
   /** icm32.dll!CMTranslateRGB */
   CMTranslateRGB(hcmTransform: number | bigint, ColorRef: number, lpColorRef: Win32Pointer, dwFlags: number): number;
   /** icm32.dll!CMTranslateRGBs */
-  CMTranslateRGBs(hcmTransform: number | bigint, lpSrcBits: Win32Pointer, bmInput: number, dwWidth: number, dwHeight: number, dwStride: number, lpDestBits: Win32Pointer, bmOutput: number, dwTranslateDirection: number): number;
+  CMTranslateRGBs(
+    hcmTransform: number | bigint,
+    lpSrcBits: Win32Pointer,
+    bmInput: number,
+    dwWidth: number,
+    dwHeight: number,
+    dwStride: number,
+    lpDestBits: Win32Pointer,
+    bmOutput: number,
+    dwTranslateDirection: number,
+  ): number;
   /** icm32.dll!CMTranslateRGBsExt */
-  CMTranslateRGBsExt(hcmTransform: number | bigint, lpSrcBits: Win32Pointer, bmInput: number, dwWidth: number, dwHeight: number, dwInputStride: number, lpDestBits: Win32Pointer, bmOutput: number, dwOutputStride: number, lpfnCallback: Win32Callback, ulCallbackData: number | bigint): number;
+  CMTranslateRGBsExt(
+    hcmTransform: number | bigint,
+    lpSrcBits: Win32Pointer,
+    bmInput: number,
+    dwWidth: number,
+    dwHeight: number,
+    dwInputStride: number,
+    lpDestBits: Win32Pointer,
+    bmOutput: number,
+    dwOutputStride: number,
+    lpfnCallback: Win32Callback,
+    ulCallbackData: number | bigint,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

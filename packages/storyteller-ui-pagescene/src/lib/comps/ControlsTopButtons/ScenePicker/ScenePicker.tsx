@@ -9,11 +9,7 @@ interface ScenePickerProps {
   showDate?: boolean;
 }
 
-export const ScenePicker: React.FC<ScenePickerProps> = ({
-  scenes,
-  onSceneSelect,
-  showDate,
-}) => {
+export const ScenePicker: React.FC<ScenePickerProps> = ({ scenes, onSceneSelect, showDate }) => {
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,7 +26,7 @@ export const ScenePicker: React.FC<ScenePickerProps> = ({
 
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {scenes.map((scene) => (
+      {scenes.map(scene => (
         <SceneCard
           key={scene.token}
           scene={scene}

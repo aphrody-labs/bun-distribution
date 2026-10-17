@@ -61,7 +61,7 @@ function insertPointIntoElementMask({
   let insertedPointId: string | null = null;
   let didInsertPoint = false;
 
-  const nextMasks = currentMasks.map((mask) => {
+  const nextMasks = currentMasks.map(mask => {
     if (mask.id !== maskId || mask.type !== "freeform") {
       return mask;
     }
@@ -130,7 +130,7 @@ export class InsertFreeformPathMaskPointCommand extends Command {
       trackId: this.trackId,
       elementId: this.elementId,
       elementPredicate: isMaskableElement,
-      update: (element) => {
+      update: element => {
         if (!isMaskableElement(element)) return element;
         const result = insertPointIntoElementMask({
           element,

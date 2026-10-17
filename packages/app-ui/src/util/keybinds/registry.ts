@@ -444,8 +444,7 @@ export const KEYBINDS = {
 
 // Extract all keybind IDs as union type
 type KeybindCategory = typeof KEYBINDS;
-type ExtractIds<T> =
-  T extends Record<string, KeybindDefinition> ? T[keyof T]["id"] : never;
+type ExtractIds<T> = T extends Record<string, KeybindDefinition> ? T[keyof T]["id"] : never;
 
 export type KeybindId =
   | ExtractIds<KeybindCategory["explorer"]>
@@ -465,10 +464,10 @@ export function getKeybind(id: KeybindId): KeybindDefinition | undefined {
 
 // Get all keybinds as flat array
 export function getAllKeybinds(): KeybindDefinition[] {
-  return Object.values(KEYBINDS).flatMap((category) => Object.values(category));
+  return Object.values(KEYBINDS).flatMap(category => Object.values(category));
 }
 
 // Get keybinds by scope
 export function getKeybindsByScope(scope: KeybindScope): KeybindDefinition[] {
-  return getAllKeybinds().filter((kb) => kb.scope === scope);
+  return getAllKeybinds().filter(kb => kb.scope === scope);
 }

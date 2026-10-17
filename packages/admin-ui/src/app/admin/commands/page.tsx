@@ -1,23 +1,10 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  ChevronDown,
-  Lock,
-  Power,
-  RotateCcw,
-  Shield,
-  Slash,
-  Trash2,
-  UserMinus,
-  X,
-} from "lucide-react";
+import { ChevronDown, Lock, Power, RotateCcw, Shield, Slash, Trash2, UserMinus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
-import {
-  RoleBadge,
-  RoleSelect,
-} from "@aphrody/admin-ui/components/admin/RoleSelect";
+import { RoleBadge, RoleSelect } from "@aphrody/admin-ui/components/admin/RoleSelect";
 
 interface CommandLeaf {
   name: string;
@@ -40,29 +27,23 @@ export default function CommandsPage() {
 
   const commands = useQuery({
     queryKey: ["bot", "commands", "expanded"],
-    queryFn: () =>
-      api.get<{ commands: CommandLeaf[] }>("/bot/commands/expanded"),
+    queryFn: () => api.get<{ commands: CommandLeaf[] }>("/bot/commands/expanded"),
     staleTime: 60_000,
   });
 
   const rules = useQuery({
     queryKey: ["commands", "permissions"],
-    queryFn: () =>
-      api.get<{ rules: PermissionRule[] }>("/bot/commands/permissions"),
+    queryFn: () => api.get<{ rules: PermissionRule[] }>("/bot/commands/permissions"),
     staleTime: 30_000,
   });
 
   const upsert = useMutation({
-    mutationFn: (rule: PermissionRule) =>
-      api.post("/bot/commands/permissions", rule),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["commands", "permissions"] }),
+    mutationFn: (rule: PermissionRule) => api.post("/bot/commands/permissions", rule),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["commands", "permissions"] }),
   });
   const remove = useMutation({
-    mutationFn: (name: string) =>
-      api.post("/bot/commands/permissions/delete", { name }),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["commands", "permissions"] }),
+    mutationFn: (name: string) => api.post("/bot/commands/permissions/delete", { name }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["commands", "permissions"] }),
   });
 
   const ruleByName = useMemo(() => {
@@ -86,14 +67,11 @@ export default function CommandsPage() {
       .toSorted((a, b) => a.group.localeCompare(b.group));
   }, [commands.data]);
 
-  const overriddenCount =
-    ruleByName.size - (ruleByName.has(GLOBAL_KEY) ? 1 : 0);
+  const overriddenCount = ruleByName.size - (ruleByName.has(GLOBAL_KEY) ? 1 : 0);
   const globalRule = ruleByName.get(GLOBAL_KEY);
 
   if (commands.isLoading || rules.isLoading) {
-    return (
-      <div className="text-zinc-500 text-sm">Chargement des commandes…</div>
-    );
+    return <div className="text-zinc-500 text-sm">Chargement des commandes…</div>;
   }
 
   return (
@@ -101,30 +79,23 @@ export default function CommandsPage() {
       <div className="dbz-panel p-4">
         <div className="flex items-center gap-2 mb-2">
           <Slash className="h-5 w-5 text-dbz-orange" />
-          <h2 className="text-lg font-saiyan text-dbz-orange uppercase">
-            Permissions des commandes Discord
-          </h2>
+          <h2 className="text-lg font-saiyan text-dbz-orange uppercase">Permissions des commandes Discord</h2>
         </div>
         <p className="text-sm text-zinc-300">
-          Définissez qui peut utiliser chaque commande slash du bot : activer /
-          désactiver une commande, l'autoriser uniquement à certains rôles ou
-          l'interdire à des utilisateurs spécifiques. Les propriétaires du
-          serveur et les membres avec la permission{" "}
-          <strong>Administrateur</strong> Discord contournent toujours ces
-          règles.
+          Définissez qui peut utiliser chaque commande slash du bot : activer / désactiver une commande, l'autoriser
+          uniquement à certains rôles ou l'interdire à des utilisateurs spécifiques. Les propriétaires du serveur et les
+          membres avec la permission <strong>Administrateur</strong> Discord contournent toujours ces règles.
         </p>
         <p className="mt-1 text-xs text-dbz-blue-light">
-          {commands.data?.commands.length ?? 0} commandes disponibles ·{" "}
-          {overriddenCount} règle
+          {commands.data?.commands.length ?? 0} commandes disponibles · {overriddenCount} règle
           {overriddenCount > 1 ? "s" : ""} personnalisée
-          {overriddenCount > 1 ? "s" : ""} · cache bot 30 s · hiérarchie : règle
-          exacte → joker du groupe → joker global
+          {overriddenCount > 1 ? "s" : ""} · cache bot 30 s · hiérarchie : règle exacte → joker du groupe → joker global
         </p>
       </div>
 
       <GlobalRuleCard
         rule={globalRule}
-        onSet={(r) => upsert.mutate(r)}
+        onSet={r => upsert.mutate(r)}
         onUnset={() => remove.mutate(GLOBAL_KEY)}
         pending={upsert.isPending || remove.isPending}
       />
@@ -135,8 +106,8 @@ export default function CommandsPage() {
           group={group}
           items={items}
           ruleByName={ruleByName}
-          onSet={(r) => upsert.mutate(r)}
-          onUnset={(name) => remove.mutate(name)}
+          onSet={r => upsert.mutate(r)}
+          onUnset={name => remove.mutate(name)}
           pending={upsert.isPending || remove.isPending}
         />
       ))}
@@ -160,18 +131,15 @@ function GlobalRuleCard({
     <div className="dbz-panel p-0">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(o => !o)}
         className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-dbz-blue-light/5"
       >
         <Shield className="h-5 w-5 shrink-0 text-amber-400" />
         <div className="flex-1">
           <h3 className="font-semibold text-zinc-100">
-            Règle par défaut (s'applique à toutes les commandes sans règle
-            spécifique)
+            Règle par défaut (s'applique à toutes les commandes sans règle spécifique)
           </h3>
-          <p className="text-xs text-zinc-500">
-            Si une commande n'a pas de règle propre, cette règle s'applique.
-          </p>
+          <p className="text-xs text-zinc-500">Si une commande n'a pas de règle propre, cette règle s'applique.</p>
         </div>
         {rule ? (
           <span className="text-xs px-2 py-0.5 rounded bg-amber-900/40 text-amber-300 border border-amber-700/50">
@@ -180,9 +148,7 @@ function GlobalRuleCard({
         ) : (
           <span className="text-xs text-zinc-500">aucune règle définie</span>
         )}
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div className="border-t border-dbz-border p-4">
@@ -218,15 +184,14 @@ function GroupSection({
   const [open, setOpen] = useState(false);
   const wildcardName = `${group} *`;
   const wildcardRule = ruleByName.get(wildcardName);
-  const overridden =
-    items.filter((c) => ruleByName.has(c.name)).length + (wildcardRule ? 1 : 0);
+  const overridden = items.filter(c => ruleByName.has(c.name)).length + (wildcardRule ? 1 : 0);
   const hasMultipleLeaves = items.length > 1 || items[0]?.name !== group;
 
   return (
     <div className="dbz-panel p-0">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(o => !o)}
         className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-dbz-blue-light/5"
       >
         <Slash className="h-5 w-5 shrink-0 text-dbz-orange" />
@@ -240,9 +205,7 @@ function GroupSection({
           {overridden} / {items.length + (hasMultipleLeaves ? 1 : 0)} règle
           {overridden > 1 ? "s" : ""}
         </span>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div className="space-y-3 border-t border-dbz-border p-4">
@@ -257,7 +220,7 @@ function GroupSection({
               pending={pending}
             />
           )}
-          {items.map((c) => (
+          {items.map(c => (
             <RuleEditor
               key={c.name}
               name={c.name}
@@ -316,12 +279,7 @@ function RuleEditor({
   }
 
   function handleUnset() {
-    if (
-      !confirm(
-        `Supprimer la règle pour « ${label} » ?\n\nLes réglages par défaut s'appliqueront à nouveau.`,
-      )
-    )
-      return;
+    if (!confirm(`Supprimer la règle pour « ${label} » ?\n\nLes réglages par défaut s'appliqueront à nouveau.`)) return;
     onUnset();
   }
 
@@ -343,9 +301,7 @@ function RuleEditor({
               </span>
             )}
           </div>
-          {description && (
-            <p className="mt-0.5 text-xs text-zinc-400">{description}</p>
-          )}
+          {description && <p className="mt-0.5 text-xs text-zinc-400">{description}</p>}
           {summary && <p className="mt-1 text-xs text-zinc-500">{summary}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -354,11 +310,7 @@ function RuleEditor({
             onClick={editing ? () => setEditing(false) : startEdit}
             className="text-xs px-2 py-1 border border-dbz-border text-zinc-300 hover:text-dbz-orange hover:border-dbz-orange/50 rounded transition-colors"
           >
-            {editing
-              ? "Fermer"
-              : isOverridden
-                ? "Modifier"
-                : "Définir une règle"}
+            {editing ? "Fermer" : isOverridden ? "Modifier" : "Définir une règle"}
           </button>
           {isOverridden && (
             <button
@@ -379,17 +331,14 @@ function RuleEditor({
             <input
               type="checkbox"
               checked={draft.enabled}
-              onChange={(e) =>
-                setDraft({ ...draft, enabled: e.target.checked })
-              }
+              onChange={e => setDraft({ ...draft, enabled: e.target.checked })}
               className="h-4 w-4 accent-dbz-orange"
             />
             <Power className="h-4 w-4 text-zinc-500" />
             <span className="text-zinc-200">
               Commande activée
               <span className="ml-1 text-xs text-zinc-500">
-                (décocher pour la désactiver pour tout le monde, sauf
-                administrateurs)
+                (décocher pour la désactiver pour tout le monde, sauf administrateurs)
               </span>
             </span>
           </label>
@@ -399,7 +348,7 @@ function RuleEditor({
             hint="Si la liste n'est pas vide, seuls les membres ayant au moins un de ces rôles pourront utiliser la commande."
             icon={<Shield className="h-4 w-4 text-emerald-400" />}
             roles={draft.allowedRoles}
-            onChange={(roles) => setDraft({ ...draft, allowedRoles: roles })}
+            onChange={roles => setDraft({ ...draft, allowedRoles: roles })}
           />
 
           <RoleListEditor
@@ -407,7 +356,7 @@ function RuleEditor({
             hint="Les membres ayant un de ces rôles seront refusés, quelles que soient les autres règles."
             icon={<Lock className="h-4 w-4 text-red-400" />}
             roles={draft.deniedRoles}
-            onChange={(roles) => setDraft({ ...draft, deniedRoles: roles })}
+            onChange={roles => setDraft({ ...draft, deniedRoles: roles })}
           />
 
           <UserIdListEditor
@@ -415,7 +364,7 @@ function RuleEditor({
             hint="Identifiant Discord de l'utilisateur (numéro à 17-20 chiffres, visible dans les paramètres Discord)."
             icon={<UserMinus className="h-4 w-4 text-red-400" />}
             users={draft.deniedUsers}
-            onChange={(users) => setDraft({ ...draft, deniedUsers: users })}
+            onChange={users => setDraft({ ...draft, deniedUsers: users })}
           />
 
           <div className="flex items-center gap-2">
@@ -487,15 +436,12 @@ function RoleListEditor({
       <p className="mb-2 text-xs text-zinc-500">{hint}</p>
       {roles.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2">
-          {roles.map((id) => (
-            <span
-              key={id}
-              className="inline-flex items-center gap-1.5 rounded bg-zinc-800 px-2 py-1 text-xs"
-            >
+          {roles.map(id => (
+            <span key={id} className="inline-flex items-center gap-1.5 rounded bg-zinc-800 px-2 py-1 text-xs">
               <RoleBadge roleId={id} />
               <button
                 type="button"
-                onClick={() => onChange(roles.filter((r) => r !== id))}
+                onClick={() => onChange(roles.filter(r => r !== id))}
                 className="text-zinc-500 hover:text-red-400"
                 title="Retirer ce rôle"
               >
@@ -549,15 +495,12 @@ function UserIdListEditor({
       <p className="mb-2 text-xs text-zinc-500">{hint}</p>
       {users.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2">
-          {users.map((id) => (
-            <span
-              key={id}
-              className="inline-flex items-center gap-1.5 rounded bg-zinc-800 px-2 py-1 font-mono text-xs"
-            >
+          {users.map(id => (
+            <span key={id} className="inline-flex items-center gap-1.5 rounded bg-zinc-800 px-2 py-1 font-mono text-xs">
               {id}
               <button
                 type="button"
-                onClick={() => onChange(users.filter((u) => u !== id))}
+                onClick={() => onChange(users.filter(u => u !== id))}
                 className="text-zinc-500 hover:text-red-400"
                 title="Retirer cet utilisateur"
               >
@@ -570,7 +513,7 @@ function UserIdListEditor({
       <div className="flex items-center gap-2">
         <input
           value={pick}
-          onChange={(e) => setPick(e.target.value)}
+          onChange={e => setPick(e.target.value)}
           placeholder="Identifiant Discord (17-20 chiffres)"
           className="flex-1 bg-dbz-bg border border-dbz-border rounded px-2 py-1 font-mono text-xs focus:border-dbz-orange outline-none"
         />

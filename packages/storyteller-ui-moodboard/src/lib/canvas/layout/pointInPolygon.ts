@@ -9,8 +9,7 @@ export const pointInPolygon = (point: Vec2, polygon: Vec2[]): boolean => {
     const xj = polygon[j].x;
     const yj = polygon[j].y;
     const intersect =
-      yi > point.y !== yj > point.y &&
-      point.x < ((xj - xi) * (point.y - yi)) / (yj - yi + Number.EPSILON) + xi;
+      yi > point.y !== yj > point.y && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi + Number.EPSILON) + xi;
     if (intersect) inside = !inside;
   }
   return inside;

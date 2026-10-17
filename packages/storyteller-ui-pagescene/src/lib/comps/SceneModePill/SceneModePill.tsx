@@ -9,7 +9,7 @@ const TABS: TabItem[] = [
 
 export const SceneModePill = () => {
   const { sceneMode, setSceneMode } = usePageSceneStore(
-    useShallow((s) => ({
+    useShallow(s => ({
       sceneMode: s.sceneMode,
       setSceneMode: s.setSceneMode,
     })),
@@ -20,7 +20,7 @@ export const SceneModePill = () => {
       <TabSelector
         tabs={TABS}
         activeTab={sceneMode}
-        onTabChange={(id) => setSceneMode(id as SceneMode)}
+        onTabChange={id => setSceneMode(id as SceneMode)}
         className="w-auto"
         listClassName="rounded-none border border-ui-panel-border bg-ui-controls px-1"
         tabClassName="rounded-[3px] px-5 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-300"

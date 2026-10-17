@@ -1,8 +1,8 @@
 {
   "name": "@aphrody/bun-engine-android",
   "version": "1.4.4",
-  "type": "module",
   "license": "MIT",
+  "type": "module",
   "exports": "./src/index.ts",
   "scripts": {
     "test": "bun test",

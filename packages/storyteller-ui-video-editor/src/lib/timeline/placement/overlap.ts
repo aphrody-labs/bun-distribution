@@ -16,7 +16,7 @@ function wouldElementOverlap({
   endTime: number;
   excludeElementId?: string;
 }): boolean {
-  return elements.some((element) => {
+  return elements.some(element => {
     if (excludeElementId && element.id === excludeElementId) {
       return false;
     }

@@ -21,8 +21,7 @@ interface PaginationControlsProps {
   }>;
 }
 
-const defaultPageLabel = (current: number, total: number) =>
-  `Page ${current} sur ${total}`;
+const defaultPageLabel = (current: number, total: number) => `Page ${current} sur ${total}`;
 
 export function PaginationControls({
   currentPage,
@@ -59,9 +58,7 @@ export function PaginationControls({
 
   return (
     <div className="flex items-center justify-between gap-4">
-      <p className="text-sm text-muted-foreground">
-        {pageLabel(currentPage, totalPages)}
-      </p>
+      <p className="text-sm text-muted-foreground">{pageLabel(currentPage, totalPages)}</p>
       <div className="flex gap-2">
         {isFirst ? (
           <span className={inactiveClass} aria-disabled="true">

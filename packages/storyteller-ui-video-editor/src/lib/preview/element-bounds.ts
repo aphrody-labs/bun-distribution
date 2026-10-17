@@ -50,10 +50,7 @@ function getVisualElementBounds({
     rotate: number;
   };
 }): ElementBounds {
-  const containScale = Math.min(
-    canvasWidth / sourceWidth,
-    canvasHeight / sourceHeight,
-  );
+  const containScale = Math.min(canvasWidth / sourceWidth, canvasHeight / sourceHeight);
   const scaledWidth = sourceWidth * containScale * transform.scaleX;
   const scaledHeight = sourceHeight * containScale * transform.scaleY;
   const cx = canvasWidth / 2 + transform.position.x;
@@ -92,16 +89,8 @@ function getTransformedRectBounds({
   const cos = Math.cos(rotationRad);
   const sin = Math.sin(rotationRad);
   return {
-    cx:
-      canvasWidth / 2 +
-      transform.position.x +
-      scaledCenterX * cos -
-      scaledCenterY * sin,
-    cy:
-      canvasHeight / 2 +
-      transform.position.y +
-      scaledCenterX * sin +
-      scaledCenterY * cos,
+    cx: canvasWidth / 2 + transform.position.x + scaledCenterX * cos - scaledCenterY * sin,
+    cy: canvasHeight / 2 + transform.position.y + scaledCenterX * sin + scaledCenterY * cos,
     width: rect.width * transform.scaleX,
     height: rect.height * transform.scaleY,
     rotation: transform.rotate,
@@ -205,42 +194,33 @@ export const ROTATION_HANDLE_OFFSET = 24;
 export type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 export type Edge = "right" | "left" | "bottom";
 
-export function getCornerPosition({
-  bounds,
-  corner,
-}: {
-  bounds: ElementBounds;
-  corner: Corner;
-}): { x: number; y: number } {
+export function getCornerPosition({ bounds, corner }: { bounds: ElementBounds; corner: Corner }): {
+  x: number;
+  y: number;
+} {
   const halfW = bounds.width / 2;
   const halfH = bounds.height / 2;
   const angleRad = (bounds.rotation * Math.PI) / 180;
   const cos = Math.cos(angleRad);
   const sin = Math.sin(angleRad);
-  const localX =
-    corner === "top-left" || corner === "bottom-left" ? -halfW : halfW;
-  const localY =
-    corner === "top-left" || corner === "top-right" ? -halfH : halfH;
+  const localX = corner === "top-left" || corner === "bottom-left" ? -halfW : halfW;
+  const localY = corner === "top-left" || corner === "top-right" ? -halfH : halfH;
   return {
     x: bounds.cx + (localX * cos - localY * sin),
     y: bounds.cy + (localX * sin + localY * cos),
   };
 }
 
-export function getEdgeHandlePosition({
-  bounds,
-  edge,
-}: {
-  bounds: ElementBounds;
-  edge: Edge;
-}): { x: number; y: number } {
+export function getEdgeHandlePosition({ bounds, edge }: { bounds: ElementBounds; edge: Edge }): {
+  x: number;
+  y: number;
+} {
   const halfWidth = bounds.width / 2;
   const halfHeight = bounds.height / 2;
   const angleRad = (bounds.rotation * Math.PI) / 180;
   const cos = Math.cos(angleRad);
   const sin = Math.sin(angleRad);
-  const localX =
-    edge === "right" ? halfWidth : edge === "left" ? -halfWidth : 0;
+  const localX = edge === "right" ? halfWidth : edge === "left" ? -halfWidth : 0;
   const localY = edge === "bottom" ? halfHeight : 0;
   return {
     x: bounds.cx + (localX * cos - localY * sin),
@@ -259,9 +239,9 @@ export function getVisibleElementsWithBounds({
   canvasSize: { width: number; height: number };
   mediaAssets: MediaAsset[];
 }): ElementWithBounds[] {
-  const mediaMap = new Map(mediaAssets.map((m) => [m.id, m]));
+  const mediaMap = new Map(mediaAssets.map(m => [m.id, m]));
   const orderedTracks = [
-    ...tracks.overlay.filter((track) => !("hidden" in track && track.hidden)),
+    ...tracks.overlay.filter(track => !("hidden" in track && track.hidden)),
     ...(!tracks.main.hidden ? [tracks.main] : []),
   ].reverse();
 
@@ -269,12 +249,8 @@ export function getVisibleElementsWithBounds({
 
   for (const track of orderedTracks) {
     const elements = track.elements
-      .filter((element) => !("hidden" in element && element.hidden))
-      .filter(
-        (element) =>
-          currentTime >= element.startTime &&
-          currentTime < element.startTime + element.duration,
-      )
+      .filter(element => !("hidden" in element && element.hidden))
+      .filter(element => currentTime >= element.startTime && currentTime < element.startTime + element.duration)
       .slice()
       .sort((a, b) => {
         if (a.startTime !== b.startTime) return a.startTime - b.startTime;
@@ -288,9 +264,7 @@ export function getVisibleElementsWithBounds({
         elementDuration: element.duration,
       });
       const mediaAsset =
-        element.type === "video" || element.type === "image"
-          ? mediaMap.get(element.mediaId)
-          : undefined;
+        element.type === "video" || element.type === "image" ? mediaMap.get(element.mediaId) : undefined;
       const bounds = getElementBounds({
         element,
         canvasSize,

@@ -26,28 +26,17 @@ export function AdminPageHeader({
   ...props
 }: AdminPageHeaderProps) {
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-4 border-b border-border pb-6",
-        className,
-      )}
-      {...props}
-    >
+    <div className={cn("flex flex-col gap-4 border-b border-border pb-6", className)} {...props}>
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
           {breadcrumbs.map((crumb, i) => (
             <React.Fragment key={i}>
               {crumb.href ? (
-                <Link
-                  href={crumb.href}
-                  className="hover:text-foreground transition-colors"
-                >
+                <Link href={crumb.href} className="hover:text-foreground transition-colors">
                   {crumb.label}
                 </Link>
               ) : (
-                <span className="font-medium text-foreground">
-                  {crumb.label}
-                </span>
+                <span className="font-medium text-foreground">{crumb.label}</span>
               )}
               {i < breadcrumbs.length - 1 && <span>/</span>}
             </React.Fragment>
@@ -63,22 +52,12 @@ export function AdminPageHeader({
             </div>
           )}
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              {title}
-            </h1>
-            {(subtitle || description) && (
-              <p className="text-sm text-muted-foreground">
-                {subtitle || description}
-              </p>
-            )}
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{title}</h1>
+            {(subtitle || description) && <p className="text-sm text-muted-foreground">{subtitle || description}</p>}
             {children}
           </div>
         </div>
-        {actions && (
-          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-            {actions}
-          </div>
-        )}
+        {actions && <div className="flex flex-wrap items-center gap-2 sm:justify-end">{actions}</div>}
       </div>
     </div>
   );

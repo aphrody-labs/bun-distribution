@@ -79,10 +79,8 @@ export interface DownloadRequest {
 
 type Resolver = (url: string) => Promise<string[]>;
 
-const PRIVATE_IP =
-  /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|::1$|f[cd])/;
-const STEAM_CDN =
-  /(^|\.)steamcontent\.com$|(^|\.)steampipe\.akamaized\.net$|^cache\d+-[a-z0-9-]+\.steamcontent\.com$/;
+const PRIVATE_IP = /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|::1$|f[cd])/;
+const STEAM_CDN = /(^|\.)steamcontent\.com$|(^|\.)steampipe\.akamaized\.net$|^cache\d+-[a-z0-9-]+\.steamcontent\.com$/;
 
 /** The LAN cache endpoint, if one is configured or announced by DNS (lancache.steamcontent.com). */
 export async function lancacheEndpoint(): Promise<string | null> {
@@ -103,10 +101,7 @@ export class TransferService extends EventTarget {
   readonly global: Throttle;
   private readonly running = new Map<string, AbortController>();
   private readonly resolvers: Resolver[] = [];
-  private readonly rates = new Map<
-    string,
-    { at: number; bytes: number; rate: number }
-  >();
+  private readonly rates = new Map<string, { at: number; bytes: number; rate: number }>();
   concurrency = 3;
 
   constructor(options: { db?: string; bandwidth?: number } = {}) {
@@ -121,9 +116,7 @@ export class TransferService extends EventTarget {
       state TEXT NOT NULL, error TEXT, via TEXT, bandwidth INTEGER NOT NULL DEFAULT 0,
       created TEXT NOT NULL, updated TEXT NOT NULL)`);
     // A killed process leaves `running` rows: they resume from their part file.
-    this.db.run(
-      "UPDATE transfers SET state = 'queued' WHERE state = 'running'",
-    );
+    this.db.run("UPDATE transfers SET state = 'queued' WHERE state = 'running'");
     this.global = new Throttle(options.bandwidth ?? 0);
   }
 
@@ -134,30 +127,24 @@ export class TransferService extends EventTarget {
 
   list(): TransferRecord[] {
     return (
-      this.db.query("SELECT * FROM transfers ORDER BY created").all() as (Omit<
-        TransferRecord,
-        "urls"
-      > & { urls: string })[]
-    ).map((r) => ({
+      this.db.query("SELECT * FROM transfers ORDER BY created").all() as (Omit<TransferRecord, "urls"> & {
+        urls: string;
+      })[]
+    ).map(r => ({
       ...r,
       urls: JSON.parse(r.urls) as string[],
     }));
   }
 
   get(id: string): TransferRecord | null {
-    return this.list().find((r) => r.id === id) ?? null;
+    return this.list().find(r => r.id === id) ?? null;
   }
 
-  private update(
-    id: string,
-    patch: Partial<Omit<TransferRecord, "id" | "urls">>,
-  ): void {
+  private update(id: string, patch: Partial<Omit<TransferRecord, "id" | "urls">>): void {
     const keys = Object.keys(patch);
     if (!keys.length) return;
     this.db
-      .query(
-        `UPDATE transfers SET ${keys.map((k) => `${k} = $${k}`).join(", ")}, updated = $updated WHERE id = $id`,
-      )
+      .query(`UPDATE transfers SET ${keys.map(k => `${k} = $${k}`).join(", ")}, updated = $updated WHERE id = $id`)
       .run({ ...patch, updated: new Date().toISOString(), id } as never);
   }
 
@@ -165,10 +152,8 @@ export class TransferService extends EventTarget {
     const now = performance.now();
     const prev = this.rates.get(r.id);
     let rate = prev?.rate ?? 0;
-    if (prev && now - prev.at >= 1000)
-      rate = ((r.received - prev.bytes) * 1000) / (now - prev.at);
-    if (!prev || now - prev.at >= 1000)
-      this.rates.set(r.id, { at: now, bytes: r.received, rate });
+    if (prev && now - prev.at >= 1000) rate = ((r.received - prev.bytes) * 1000) / (now - prev.at);
+    if (!prev || now - prev.at >= 1000) this.rates.set(r.id, { at: now, bytes: r.received, rate });
     const detail: TransferEvent = {
       id: r.id,
       state: r.state,
@@ -198,12 +183,7 @@ export class TransferService extends EventTarget {
     }
     const dest =
       request.dest ??
-      join(
-        platformPaths().downloads,
-        basename(
-          new URL(request.url.replace(/^bep:/, "https://bep/")).pathname,
-        ) || id,
-      );
+      join(platformPaths().downloads, basename(new URL(request.url.replace(/^bep:/, "https://bep/")).pathname) || id);
     const now = new Date().toISOString();
     this.db
       .query(
@@ -248,7 +228,7 @@ export class TransferService extends EventTarget {
 
   /** Starts queued transfers up to the concurrency limit. */
   async pump(): Promise<void> {
-    const queued = this.list().filter((r) => r.state === "queued");
+    const queued = this.list().filter(r => r.state === "queued");
     for (const r of queued) {
       if (this.running.size >= this.concurrency) break;
       if (this.running.has(r.id)) continue;
@@ -263,15 +243,10 @@ export class TransferService extends EventTarget {
 
   /** Resolves when the transfer leaves the queue (done, failed or paused). */
   wait(id: string): Promise<TransferRecord> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const check = () => {
         const r = this.get(id);
-        if (
-          !r ||
-          r.state === "done" ||
-          r.state === "failed" ||
-          r.state === "paused"
-        ) {
+        if (!r || r.state === "done" || r.state === "failed" || r.state === "paused") {
           this.removeEventListener("progress", onProgress);
           resolve(r as TransferRecord);
           return true;
@@ -301,8 +276,7 @@ export class TransferService extends EventTarget {
       }
     }
     const lancache = await lancacheEndpoint();
-    const out: { url: string; via: string; headers: Record<string, string> }[] =
-      [];
+    const out: { url: string; via: string; headers: Record<string, string> }[] = [];
     for (const url of new Set(urls)) {
       const u = new URL(url);
       if (lancache && STEAM_CDN.test(u.hostname))
@@ -316,10 +290,7 @@ export class TransferService extends EventTarget {
     return out;
   }
 
-  private async run(
-    record: TransferRecord,
-    signal: AbortSignal,
-  ): Promise<void> {
+  private async run(record: TransferRecord, signal: AbortSignal): Promise<void> {
     const r = { ...record, state: "running" as TransferState };
     this.update(r.id, { state: "running", error: null });
     const part = `${r.dest}.part`;
@@ -371,11 +342,8 @@ export class TransferService extends EventTarget {
             closeSync(fd);
           }
         }
-        const length = Number(
-          response.headers.get("content-length") ?? Number.NaN,
-        );
-        if (r.size === null && Number.isFinite(length))
-          r.size = offset + length;
+        const length = Number(response.headers.get("content-length") ?? Number.NaN);
+        if (r.size === null && Number.isFinite(length)) r.size = offset + length;
         r.via = candidate.via;
         r.url = candidate.url;
         this.update(r.id, { size: r.size, via: r.via });
@@ -387,8 +355,7 @@ export class TransferService extends EventTarget {
               for (const piece of slices(chunk, 64 * 1024)) {
                 await this.global.take(piece.length);
                 await perTransfer.take(piece.length);
-                if (signal.aborted)
-                  throw new DOMException(String(signal.reason), "AbortError");
+                if (signal.aborted) throw new DOMException(String(signal.reason), "AbortError");
                 writeSync(fd, piece);
                 hashers.sha256?.update(piece);
                 hashers.sha512?.update(piece);
@@ -408,15 +375,11 @@ export class TransferService extends EventTarget {
         this.update(r.id, { received: r.received });
         for (const [algorithm, hasher] of Object.entries(hashers)) {
           if (!hasher) continue;
-          const expected = (
-            algorithm === "sha256" ? r.sha256 : r.sha512
-          ) as string;
+          const expected = (algorithm === "sha256" ? r.sha256 : r.sha512) as string;
           const actual = hasher.digest("hex");
           if (actual !== expected) {
             rmSync(part, { force: true });
-            throw new Error(
-              `${algorithm} mismatch: expected ${expected}, got ${actual}`,
-            );
+            throw new Error(`${algorithm} mismatch: expected ${expected}, got ${actual}`);
           }
         }
         renameSync(part, r.dest);
@@ -431,11 +394,9 @@ export class TransferService extends EventTarget {
       }
     }
     if (signal.aborted) {
-      const state: TransferState =
-        signal.reason === "cancelled" ? "failed" : "paused";
+      const state: TransferState = signal.reason === "cancelled" ? "failed" : "paused";
       r.state = state;
-      if (state === "paused")
-        this.update(r.id, { state, received: r.received });
+      if (state === "paused") this.update(r.id, { state, received: r.received });
       this.emit(r);
       return;
     }
@@ -459,8 +420,7 @@ export async function transfers(): Promise<TransferService> {
   const service = new TransferService({ bandwidth: settings.bandwidth ?? 0 });
   const { plugins } = await import("../plugins");
   const registry = await plugins();
-  for (const p of registry.providers)
-    service.addResolver(async (url) => (p.match(url) ? p.resolve(url) : []));
+  for (const p of registry.providers) service.addResolver(async url => (p.match(url) ? p.resolve(url) : []));
   shared = service;
   void service.pump();
   return service;
@@ -469,28 +429,13 @@ export async function transfers(): Promise<TransferService> {
 // ------------------------------------------------------------------ object storage (R2 / S3)
 
 interface R2Owner {
-  loadCloudflareEnvironment(
-    file?: string,
-  ): Promise<Record<string, string | undefined>>;
-  createR2Client(o: {
-    bucket: string;
-    env: Record<string, string | undefined>;
-  }): Bun.S3Client;
+  loadCloudflareEnvironment(file?: string): Promise<Record<string, string | undefined>>;
+  createR2Client(o: { bucket: string; env: Record<string, string | undefined> }): Bun.S3Client;
 }
 
 /** The R2 owner of the Bun checkout (toolchains/bun/packages/bun-cloudflare), as infra/assets.ts. */
 function r2Owner(): Promise<R2Owner> {
-  return import(
-    join(
-      repoRoot,
-      "toolchains",
-      "bun",
-      "packages",
-      "bun-cloudflare",
-      "src",
-      "api.ts",
-    )
-  ) as Promise<R2Owner>;
+  return import(join(repoRoot, "toolchains", "bun", "packages", "bun-cloudflare", "src", "api.ts")) as Promise<R2Owner>;
 }
 
 async function credentials(): Promise<Record<string, string | undefined>> {
@@ -525,11 +470,7 @@ async function client(bucket: string): Promise<Bun.S3Client> {
   const explain = (error: unknown): never => {
     const e = error as { code?: string; message?: string };
     // HEAD requests (stat) carry no error body: a key-scope refusal surfaces as UnknownError.
-    if (
-      e?.code === "AccessDenied" ||
-      e?.code === "UnknownError" ||
-      /access denied/i.test(e?.message ?? "")
-    )
+    if (e?.code === "AccessDenied" || e?.code === "UnknownError" || /access denied/i.test(e?.message ?? ""))
       throw Object.assign(
         new Error(
           `R2 refused access to bucket "${bucket}": the R2 S3 key in the protected store (~/.aphrody/config/cloudflare.env) is not granted on it. The owner must grant that key on "${bucket}" or issue an R2 key for it and store it there; nothing else is missing.`,
@@ -545,28 +486,20 @@ async function client(bucket: string): Promise<Bun.S3Client> {
         if (typeof value !== "function") return value;
         if (prop === "writer") {
           return (...args: unknown[]) => {
-            const w = (value as (...a: unknown[]) => Bun.NetworkSink).apply(
-              target,
-              args,
-            );
+            const w = (value as (...a: unknown[]) => Bun.NetworkSink).apply(target, args);
             return new Proxy(w, {
               get(t, p, r) {
                 const v = Reflect.get(t, p, r);
                 if (p === "end" || p === "flush")
                   return (...a: unknown[]) =>
-                    Promise.resolve(
-                      (v as (...x: unknown[]) => unknown).apply(t, a),
-                    ).catch(explain);
+                    Promise.resolve((v as (...x: unknown[]) => unknown).apply(t, a)).catch(explain);
                 return typeof v === "function" ? v.bind(t) : v;
               },
             });
           };
         }
         return (...args: unknown[]) => {
-          const out = (value as (...a: unknown[]) => unknown).apply(
-            target,
-            args,
-          );
+          const out = (value as (...a: unknown[]) => unknown).apply(target, args);
           return out instanceof Promise ? out.catch(explain) : out;
         };
       },
@@ -575,10 +508,7 @@ async function client(bucket: string): Promise<Bun.S3Client> {
     get(target, prop, receiver) {
       const value = Reflect.get(target, prop, receiver);
       if (prop === "file")
-        return (...args: unknown[]) =>
-          wrapFile(
-            (value as (...a: unknown[]) => Bun.S3File).apply(target, args),
-          );
+        return (...args: unknown[]) => wrapFile((value as (...a: unknown[]) => Bun.S3File).apply(target, args));
       return typeof value === "function" ? value.bind(target) : value;
     },
   });
@@ -594,14 +524,10 @@ export interface ObjectTarget {
 }
 
 /** Parses `s3://<bucket>/<prefix>`, `r2://<bucket>/<prefix>`, `r2:private[/<prefix>]`, `r2:<bucket>[/<prefix>]`. */
-export function parseObjectSpec(
-  spec: string,
-  settingsBucket?: string,
-): { bucket: string; prefix: string } {
+export function parseObjectSpec(spec: string, settingsBucket?: string): { bucket: string; prefix: string } {
   const m =
-    /^(?:s3|r2):\/\/([a-z0-9][a-z0-9.-]{1,61}[a-z0-9])(?:\/(.*))?$/.exec(
-      spec,
-    ) ?? /^r2:([a-z0-9][a-z0-9-]{1,61}[a-z0-9])(?:\/(.*))?$/.exec(spec);
+    /^(?:s3|r2):\/\/([a-z0-9][a-z0-9.-]{1,61}[a-z0-9])(?:\/(.*))?$/.exec(spec) ??
+    /^r2:([a-z0-9][a-z0-9-]{1,61}[a-z0-9])(?:\/(.*))?$/.exec(spec);
   if (!m) throw new TypeError(`unsupported object spec ${spec}`);
   let bucket = m[1] as string;
   if (bucket === "private") {
@@ -626,18 +552,14 @@ export async function objectTarget(
 ): Promise<ObjectTarget> {
   const settings = await readSettings();
   const { bucket, prefix } = parseObjectSpec(spec, settings.uploadBucket);
-  const privateBucket =
-    Bun.env.BUN_OS_R2_PRIVATE_BUCKET ?? settings.uploadBucket;
+  const privateBucket = Bun.env.BUN_OS_R2_PRIVATE_BUCKET ?? settings.uploadBucket;
   if (options.private && bucket !== privateBucket)
-    throw new Error(
-      `${bucket} is not the configured private bucket; use r2:private`,
-    );
+    throw new Error(`${bucket} is not the configured private bucket; use r2:private`);
   const s3 = await client(bucket);
   const local = new Throttle(options.bandwidth ?? 0);
   const global = new Throttle(settings.bandwidth ?? 0);
   const keyOf = (key: string) => {
-    if (!key || key.includes("..") || key.startsWith("/"))
-      throw new TypeError(`invalid object key ${key}`);
+    if (!key || key.includes("..") || key.startsWith("/")) throw new TypeError(`invalid object key ${key}`);
     return prefix ? `${prefix}/${key}` : key;
   };
   const acl = options.private ? ({ acl: "private" } as const) : {};
@@ -667,11 +589,7 @@ export async function objectTarget(
         return { size: s.size, etag: s.etag };
       } catch (error) {
         const e = error as { code?: string; message?: string };
-        if (
-          /NoSuchKey|NotFound/i.test(e.code ?? "") ||
-          /not ?found|NoSuchKey|404/i.test(e.message ?? "")
-        )
-          return null;
+        if (/NoSuchKey|NotFound/i.test(e.code ?? "") || /not ?found|NoSuchKey|404/i.test(e.message ?? "")) return null;
         throw error;
       }
     },
@@ -711,10 +629,7 @@ export async function uploadFile(
   } = {},
 ): Promise<{ bucket: string; key: string; size: number; sha256: string }> {
   const settings = await readSettings();
-  const { bucket, prefix } = parseObjectSpec(
-    options.spec ?? "r2:private/bun-os/uploads",
-    settings.uploadBucket,
-  );
+  const { bucket, prefix } = parseObjectSpec(options.spec ?? "r2:private/bun-os/uploads", settings.uploadBucket);
   const s3 = await client(bucket);
   const source = Bun.file(path);
   const size = source.size;
@@ -744,10 +659,7 @@ export async function deleteObject(spec: string, key: string): Promise<void> {
   await (await client(bucket)).file(key).delete();
 }
 
-export async function statObject(
-  spec: string,
-  key: string,
-): Promise<{ size: number; etag?: string } | null> {
+export async function statObject(spec: string, key: string): Promise<{ size: number; etag?: string } | null> {
   const settings = await readSettings();
   const { bucket } = parseObjectSpec(spec, settings.uploadBucket);
   try {

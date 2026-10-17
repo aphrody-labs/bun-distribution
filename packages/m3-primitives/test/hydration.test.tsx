@@ -23,9 +23,9 @@ async function hydrate(
   const before = container.innerHTML;
   const errors: unknown[] = [];
   const root = hydrateRoot(container, element, {
-    onRecoverableError: (error) => errors.push(error),
+    onRecoverableError: error => errors.push(error),
   });
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await new Promise(resolve => setTimeout(resolve, 50));
   const after = container.innerHTML;
   root.unmount();
   container.remove();
@@ -53,18 +53,13 @@ describe("SSR hydration parity (m3-primitives)", () => {
   });
 
   test("form control hydrates cleanly", async () => {
-    const { errors, before, after } = await hydrate(
-      <Switch aria-label="Notifications" />,
-    );
+    const { errors, before, after } = await hydrate(<Switch aria-label="Notifications" />);
     expect(errors).toEqual([]);
     expect(after).toBe(before);
   });
 
   test("control: a server/client mismatch is reported", async () => {
-    const { errors } = await hydrate(
-      <Badge>Client</Badge>,
-      <Badge>Server</Badge>,
-    );
+    const { errors } = await hydrate(<Badge>Client</Badge>, <Badge>Server</Badge>);
     expect(errors.length).toBeGreaterThan(0);
   });
 });

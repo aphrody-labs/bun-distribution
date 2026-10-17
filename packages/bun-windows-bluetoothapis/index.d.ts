@@ -7,7 +7,12 @@ interface Functions {
   /** bluetoothapis.dll!BluetoothEnableIncomingConnections */
   BluetoothEnableIncomingConnections(hRadio: Win32Pointer, fEnabled: number): number;
   /** bluetoothapis.dll!BluetoothEnumerateInstalledServices */
-  BluetoothEnumerateInstalledServices(hRadio: Win32Pointer, pbtdi: Win32Pointer, pcServiceInout: Win32Pointer, pGuidServices: Win32Pointer): number;
+  BluetoothEnumerateInstalledServices(
+    hRadio: Win32Pointer,
+    pbtdi: Win32Pointer,
+    pcServiceInout: Win32Pointer,
+    pGuidServices: Win32Pointer,
+  ): number;
   /** bluetoothapis.dll!BluetoothFindDeviceClose */
   BluetoothFindDeviceClose(hFind: Win32Pointer): number;
   /** bluetoothapis.dll!BluetoothFindFirstDevice */
@@ -27,23 +32,83 @@ interface Functions {
   /** bluetoothapis.dll!BluetoothGATTEndReliableWrite */
   BluetoothGATTEndReliableWrite(hDevice: Win32Pointer, ReliableWriteContext: number | bigint, Flags: number): number;
   /** bluetoothapis.dll!BluetoothGATTGetCharacteristicValue */
-  BluetoothGATTGetCharacteristicValue(hDevice: Win32Pointer, Characteristic: Win32Pointer, CharacteristicValueDataSize: number, CharacteristicValue: Win32Pointer, CharacteristicValueSizeRequired: Win32Pointer, Flags: number): number;
+  BluetoothGATTGetCharacteristicValue(
+    hDevice: Win32Pointer,
+    Characteristic: Win32Pointer,
+    CharacteristicValueDataSize: number,
+    CharacteristicValue: Win32Pointer,
+    CharacteristicValueSizeRequired: Win32Pointer,
+    Flags: number,
+  ): number;
   /** bluetoothapis.dll!BluetoothGATTGetCharacteristics */
-  BluetoothGATTGetCharacteristics(hDevice: Win32Pointer, Service: Win32Pointer, CharacteristicsBufferCount: number, CharacteristicsBuffer: Win32Pointer, CharacteristicsBufferActual: Win32Pointer, Flags: number): number;
+  BluetoothGATTGetCharacteristics(
+    hDevice: Win32Pointer,
+    Service: Win32Pointer,
+    CharacteristicsBufferCount: number,
+    CharacteristicsBuffer: Win32Pointer,
+    CharacteristicsBufferActual: Win32Pointer,
+    Flags: number,
+  ): number;
   /** bluetoothapis.dll!BluetoothGATTGetDescriptorValue */
-  BluetoothGATTGetDescriptorValue(hDevice: Win32Pointer, Descriptor: Win32Pointer, DescriptorValueDataSize: number, DescriptorValue: Win32Pointer, DescriptorValueSizeRequired: Win32Pointer, Flags: number): number;
+  BluetoothGATTGetDescriptorValue(
+    hDevice: Win32Pointer,
+    Descriptor: Win32Pointer,
+    DescriptorValueDataSize: number,
+    DescriptorValue: Win32Pointer,
+    DescriptorValueSizeRequired: Win32Pointer,
+    Flags: number,
+  ): number;
   /** bluetoothapis.dll!BluetoothGATTGetDescriptors */
-  BluetoothGATTGetDescriptors(hDevice: Win32Pointer, Characteristic: Win32Pointer, DescriptorsBufferCount: number, DescriptorsBuffer: Win32Pointer, DescriptorsBufferActual: Win32Pointer, Flags: number): number;
+  BluetoothGATTGetDescriptors(
+    hDevice: Win32Pointer,
+    Characteristic: Win32Pointer,
+    DescriptorsBufferCount: number,
+    DescriptorsBuffer: Win32Pointer,
+    DescriptorsBufferActual: Win32Pointer,
+    Flags: number,
+  ): number;
   /** bluetoothapis.dll!BluetoothGATTGetIncludedServices */
-  BluetoothGATTGetIncludedServices(hDevice: Win32Pointer, ParentService: Win32Pointer, IncludedServicesBufferCount: number, IncludedServicesBuffer: Win32Pointer, IncludedServicesBufferActual: Win32Pointer, Flags: number): number;
+  BluetoothGATTGetIncludedServices(
+    hDevice: Win32Pointer,
+    ParentService: Win32Pointer,
+    IncludedServicesBufferCount: number,
+    IncludedServicesBuffer: Win32Pointer,
+    IncludedServicesBufferActual: Win32Pointer,
+    Flags: number,
+  ): number;
   /** bluetoothapis.dll!BluetoothGATTGetServices */
-  BluetoothGATTGetServices(hDevice: Win32Pointer, ServicesBufferCount: number, ServicesBuffer: Win32Pointer, ServicesBufferActual: Win32Pointer, Flags: number): number;
+  BluetoothGATTGetServices(
+    hDevice: Win32Pointer,
+    ServicesBufferCount: number,
+    ServicesBuffer: Win32Pointer,
+    ServicesBufferActual: Win32Pointer,
+    Flags: number,
+  ): number;
   /** bluetoothapis.dll!BluetoothGATTRegisterEvent */
-  BluetoothGATTRegisterEvent(hService: Win32Pointer, EventType: number, EventParameterIn: Win32Pointer, Callback: Win32Callback, CallbackContext: Win32Pointer, pEventHandle: Win32Pointer, Flags: number): number;
+  BluetoothGATTRegisterEvent(
+    hService: Win32Pointer,
+    EventType: number,
+    EventParameterIn: Win32Pointer,
+    Callback: Win32Callback,
+    CallbackContext: Win32Pointer,
+    pEventHandle: Win32Pointer,
+    Flags: number,
+  ): number;
   /** bluetoothapis.dll!BluetoothGATTSetCharacteristicValue */
-  BluetoothGATTSetCharacteristicValue(hDevice: Win32Pointer, Characteristic: Win32Pointer, CharacteristicValue: Win32Pointer, ReliableWriteContext: number | bigint, Flags: number): number;
+  BluetoothGATTSetCharacteristicValue(
+    hDevice: Win32Pointer,
+    Characteristic: Win32Pointer,
+    CharacteristicValue: Win32Pointer,
+    ReliableWriteContext: number | bigint,
+    Flags: number,
+  ): number;
   /** bluetoothapis.dll!BluetoothGATTSetDescriptorValue */
-  BluetoothGATTSetDescriptorValue(hDevice: Win32Pointer, Descriptor: Win32Pointer, DescriptorValue: Win32Pointer, Flags: number): number;
+  BluetoothGATTSetDescriptorValue(
+    hDevice: Win32Pointer,
+    Descriptor: Win32Pointer,
+    DescriptorValue: Win32Pointer,
+    Flags: number,
+  ): number;
   /** bluetoothapis.dll!BluetoothGATTUnregisterEvent */
   BluetoothGATTUnregisterEvent(EventHandle: number | bigint, Flags: number): number;
   /** bluetoothapis.dll!BluetoothGetDeviceInfo */
@@ -57,29 +122,75 @@ interface Functions {
   /** bluetoothapis.dll!BluetoothIsVersionAvailable */
   BluetoothIsVersionAvailable(MajorVersion: number, MinorVersion: number): number;
   /** bluetoothapis.dll!BluetoothRegisterForAuthentication */
-  BluetoothRegisterForAuthentication(pbtdi: Win32Pointer, phRegHandle: Win32Pointer, pfnCallback: Win32Callback, pvParam: Win32Pointer): number;
+  BluetoothRegisterForAuthentication(
+    pbtdi: Win32Pointer,
+    phRegHandle: Win32Pointer,
+    pfnCallback: Win32Callback,
+    pvParam: Win32Pointer,
+  ): number;
   /** bluetoothapis.dll!BluetoothRegisterForAuthenticationEx */
-  BluetoothRegisterForAuthenticationEx(pbtdiIn: Win32Pointer, phRegHandleOut: Win32Pointer, pfnCallbackIn: Win32Callback, pvParam: Win32Pointer): number;
+  BluetoothRegisterForAuthenticationEx(
+    pbtdiIn: Win32Pointer,
+    phRegHandleOut: Win32Pointer,
+    pfnCallbackIn: Win32Callback,
+    pvParam: Win32Pointer,
+  ): number;
   /** bluetoothapis.dll!BluetoothRemoveDevice */
   BluetoothRemoveDevice(pAddress: Win32Pointer): number;
   /** bluetoothapis.dll!BluetoothSdpEnumAttributes */
-  BluetoothSdpEnumAttributes(pSDPStream: Win32Pointer, cbStreamSize: number, pfnCallback: Win32Callback, pvParam: Win32Pointer): number;
+  BluetoothSdpEnumAttributes(
+    pSDPStream: Win32Pointer,
+    cbStreamSize: number,
+    pfnCallback: Win32Callback,
+    pvParam: Win32Pointer,
+  ): number;
   /** bluetoothapis.dll!BluetoothSdpGetAttributeValue */
-  BluetoothSdpGetAttributeValue(pRecordStream: Win32Pointer, cbRecordLength: number, usAttributeId: number, pAttributeData: Win32Pointer): number;
+  BluetoothSdpGetAttributeValue(
+    pRecordStream: Win32Pointer,
+    cbRecordLength: number,
+    usAttributeId: number,
+    pAttributeData: Win32Pointer,
+  ): number;
   /** bluetoothapis.dll!BluetoothSdpGetContainerElementData */
-  BluetoothSdpGetContainerElementData(pContainerStream: Win32Pointer, cbContainerLength: number, pElement: Win32Pointer, pData: Win32Pointer): number;
+  BluetoothSdpGetContainerElementData(
+    pContainerStream: Win32Pointer,
+    cbContainerLength: number,
+    pElement: Win32Pointer,
+    pData: Win32Pointer,
+  ): number;
   /** bluetoothapis.dll!BluetoothSdpGetElementData */
   BluetoothSdpGetElementData(pSdpStream: Win32Pointer, cbSdpStreamLength: number, pData: Win32Pointer): number;
   /** bluetoothapis.dll!BluetoothSdpGetString */
-  BluetoothSdpGetString(pRecordStream: Win32Pointer, cbRecordLength: number, pStringData: Win32Pointer, usStringOffset: number, pszString: string | Win32Pointer, pcchStringLength: Win32Pointer): number;
+  BluetoothSdpGetString(
+    pRecordStream: Win32Pointer,
+    cbRecordLength: number,
+    pStringData: Win32Pointer,
+    usStringOffset: number,
+    pszString: string | Win32Pointer,
+    pcchStringLength: Win32Pointer,
+  ): number;
   /** bluetoothapis.dll!BluetoothSendAuthenticationResponse */
-  BluetoothSendAuthenticationResponse(hRadio: Win32Pointer, pbtdi: Win32Pointer, pszPasskey: string | Win32Pointer): number;
+  BluetoothSendAuthenticationResponse(
+    hRadio: Win32Pointer,
+    pbtdi: Win32Pointer,
+    pszPasskey: string | Win32Pointer,
+  ): number;
   /** bluetoothapis.dll!BluetoothSendAuthenticationResponseEx */
   BluetoothSendAuthenticationResponseEx(hRadioIn: Win32Pointer, pauthResponse: Win32Pointer): number;
   /** bluetoothapis.dll!BluetoothSetLocalServiceInfo */
-  BluetoothSetLocalServiceInfo(hRadioIn: Win32Pointer, pClassGuid: Win32Pointer, ulInstance: number, pServiceInfoIn: Win32Pointer): number;
+  BluetoothSetLocalServiceInfo(
+    hRadioIn: Win32Pointer,
+    pClassGuid: Win32Pointer,
+    ulInstance: number,
+    pServiceInfoIn: Win32Pointer,
+  ): number;
   /** bluetoothapis.dll!BluetoothSetServiceState */
-  BluetoothSetServiceState(hRadio: Win32Pointer, pbtdi: Win32Pointer, pGuidService: Win32Pointer, dwServiceFlags: number): number;
+  BluetoothSetServiceState(
+    hRadio: Win32Pointer,
+    pbtdi: Win32Pointer,
+    pGuidService: Win32Pointer,
+    dwServiceFlags: number,
+  ): number;
   /** bluetoothapis.dll!BluetoothUnregisterAuthentication */
   BluetoothUnregisterAuthentication(hRegHandle: number | bigint): number;
   /** bluetoothapis.dll!BluetoothUpdateDeviceRecord */

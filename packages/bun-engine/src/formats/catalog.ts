@@ -69,9 +69,7 @@ const cache = new Map<string, Promise<unknown>>();
 function catalog<T>(name: string): Promise<T | undefined> {
   if (!cache.has(name)) {
     const root = workspaceRoot();
-    const path = root
-      ? join(root, "packages", "bun-engine", "plugins", "consoles", name)
-      : undefined;
+    const path = root ? join(root, "packages", "bun-engine", "plugins", "consoles", name) : undefined;
     cache.set(
       name,
       path
@@ -84,70 +82,43 @@ function catalog<T>(name: string): Promise<T | undefined> {
   return cache.get(name) as Promise<T | undefined>;
 }
 
-function patternMatches(
-  head: Uint8Array,
-  magic: CatalogMagic,
-): boolean | undefined {
-  if (
-    !magic.hex ||
-    !/^0x[0-9a-f]+$/i.test(magic.offset) ||
-    !/^[0-9a-f]{2}( [0-9a-f]{2})*$/i.test(magic.hex)
-  )
+function patternMatches(head: Uint8Array, magic: CatalogMagic): boolean | undefined {
+  if (!magic.hex || !/^0x[0-9a-f]+$/i.test(magic.offset) || !/^[0-9a-f]{2}( [0-9a-f]{2})*$/i.test(magic.hex))
     return undefined;
   const offset = Number.parseInt(magic.offset, 16);
-  const bytes = magic.hex.split(" ").map((byte) => Number.parseInt(byte, 16));
-  return (
-    offset + bytes.length <= head.byteLength &&
-    bytes.every((byte, index) => head[offset + index] === byte)
-  );
+  const bytes = magic.hex.split(" ").map(byte => Number.parseInt(byte, 16));
+  return offset + bytes.length <= head.byteLength && bytes.every((byte, index) => head[offset + index] === byte);
 }
 
 /** formats.json entries whose magic matches the head (a 3+ byte signature, or every pattern). */
-export async function catalogFormats(
-  head: Uint8Array,
-  path: string,
-): Promise<CatalogMatch[]> {
-  const formats =
-    (await catalog<{ formats: CatalogFormat[] }>("formats.json"))?.formats ??
-    [];
+export async function catalogFormats(head: Uint8Array, path: string): Promise<CatalogMatch[]> {
+  const formats = (await catalog<{ formats: CatalogFormat[] }>("formats.json"))?.formats ?? [];
   const extension = extname(path).toLowerCase();
-  const matches = formats.filter((format) => {
+  const matches = formats.filter(format => {
     const results = (format.magic ?? [])
-      .map((magic) => ({ magic, hit: patternMatches(head, magic) }))
-      .filter((result) => result.hit !== undefined);
+      .map(magic => ({ magic, hit: patternMatches(head, magic) }))
+      .filter(result => result.hit !== undefined);
     if (!results.length) return false;
     return (
-      results.some(
-        (result) =>
-          result.hit && (result.magic.hex?.split(" ").length ?? 0) >= 3,
-      ) || results.every((result) => result.hit)
+      results.some(result => result.hit && (result.magic.hex?.split(" ").length ?? 0) >= 3) ||
+      results.every(result => result.hit)
     );
   });
-  matches.sort(
-    (a, b) =>
-      Number(b.extensions.includes(extension)) -
-      Number(a.extensions.includes(extension)),
-  );
-  return matches.map((format) => ({
+  matches.sort((a, b) => Number(b.extensions.includes(extension)) - Number(a.extensions.includes(extension)));
+  return matches.map(format => ({
     id: format.id,
     kind: format.kind,
     consoles: format.consoles,
     status: format.status,
-    owners: (format.parsers ?? []).map(
-      (parser) => `${parser.path} (${parser.scope})`,
-    ),
+    owners: (format.parsers ?? []).map(parser => `${parser.path} (${parser.scope})`),
     spec: format.spec ?? [],
   }));
 }
 
 /** firmware.json dumps (documented CRC-32/MD5/SHA-1), vendored free replacements (SHA-1) and the
  * free-firmware.json registry (SHA-256). */
-export async function catalogFirmware(
-  digest: StreamDigest,
-): Promise<FirmwareMatch[]> {
-  const consoles =
-    (await catalog<{ consoles: CatalogConsole[] }>("firmware.json"))
-      ?.consoles ?? [];
+export async function catalogFirmware(digest: StreamDigest): Promise<FirmwareMatch[]> {
+  const consoles = (await catalog<{ consoles: CatalogConsole[] }>("firmware.json"))?.consoles ?? [];
   const crc = digest.crc32.replace(/^0x/, "");
   const known: FirmwareMatch[] = [];
   for (const entry of consoles) {
@@ -183,17 +154,11 @@ export async function catalogFirmware(
   const registry =
     (
       await catalog<{
-        firmware: Record<
-          string,
-          { console: string; file: string; sha256?: string; license?: string }
-        >;
+        firmware: Record<string, { console: string; file: string; sha256?: string; license?: string }>;
       }>("free-firmware.json")
     )?.firmware ?? {};
   for (const [id, entry] of Object.entries(registry)) {
-    if (
-      entry.sha256 === digest.sha256 &&
-      !known.some((match) => match.free && match.console === entry.console)
-    )
+    if (entry.sha256 === digest.sha256 && !known.some(match => match.free && match.console === entry.console))
       known.push({
         console: entry.console,
         file: `${id} (${entry.file})`,
@@ -207,13 +172,9 @@ export async function catalogFirmware(
 
 /** Free replacements documented for a console id of firmware.json. */
 export async function freeReplacements(consoleId: string): Promise<string[]> {
-  const consoles =
-    (await catalog<{ consoles: CatalogConsole[] }>("firmware.json"))
-      ?.consoles ?? [];
-  return (
-    consoles.find((entry) => entry.id === consoleId)?.freeReplacements ?? []
-  ).map(
-    (replacement) =>
+  const consoles = (await catalog<{ consoles: CatalogConsole[] }>("firmware.json"))?.consoles ?? [];
+  return (consoles.find(entry => entry.id === consoleId)?.freeReplacements ?? []).map(
+    replacement =>
       `${replacement.name}${replacement.license ? ` (${replacement.license})` : ""}${replacement.vendored?.path ? ` — ${replacement.vendored.path}` : ""}`,
   );
 }

@@ -19,21 +19,52 @@ interface Functions {
   /** resutils.dll!ClusWorkerTerminateEx */
   ClusWorkerTerminateEx(ClusWorker: Win32Pointer, TimeoutInMilliseconds: number, WaitOnly: number): number;
   /** resutils.dll!ClusWorkersTerminate */
-  ClusWorkersTerminate(ClusWorkers: Win32Pointer, ClusWorkersCount: number | bigint, TimeoutInMilliseconds: number, WaitOnly: number): number;
+  ClusWorkersTerminate(
+    ClusWorkers: Win32Pointer,
+    ClusWorkersCount: number | bigint,
+    TimeoutInMilliseconds: number,
+    WaitOnly: number,
+  ): number;
   /** resutils.dll!ClusterClearBackupStateForSharedVolume */
   ClusterClearBackupStateForSharedVolume(lpszVolumePathName: string | Win32Pointer): number;
   /** resutils.dll!ClusterDecrypt */
-  ClusterDecrypt(hClusCryptProvider: number | bigint, pCryptInput: Win32Pointer, cbCryptInput: number, ppCryptOutput: Win32Pointer, pcbCryptOutput: Win32Pointer): number;
+  ClusterDecrypt(
+    hClusCryptProvider: number | bigint,
+    pCryptInput: Win32Pointer,
+    cbCryptInput: number,
+    ppCryptOutput: Win32Pointer,
+    pcbCryptOutput: Win32Pointer,
+  ): number;
   /** resutils.dll!ClusterEncrypt */
-  ClusterEncrypt(hClusCryptProvider: number | bigint, pData: Win32Pointer, cbData: number, ppData: Win32Pointer, pcbData: Win32Pointer): number;
+  ClusterEncrypt(
+    hClusCryptProvider: number | bigint,
+    pData: Win32Pointer,
+    cbData: number,
+    ppData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** resutils.dll!ClusterGetVolumeNameForVolumeMountPoint */
-  ClusterGetVolumeNameForVolumeMountPoint(lpszVolumeMountPoint: string | Win32Pointer, lpszVolumeName: string | Win32Pointer, cchBufferLength: number): number;
+  ClusterGetVolumeNameForVolumeMountPoint(
+    lpszVolumeMountPoint: string | Win32Pointer,
+    lpszVolumeName: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number;
   /** resutils.dll!ClusterGetVolumePathName */
-  ClusterGetVolumePathName(lpszFileName: string | Win32Pointer, lpszVolumePathName: string | Win32Pointer, cchBufferLength: number): number;
+  ClusterGetVolumePathName(
+    lpszFileName: string | Win32Pointer,
+    lpszVolumePathName: string | Win32Pointer,
+    cchBufferLength: number,
+  ): number;
   /** resutils.dll!ClusterIsPathOnSharedVolume */
   ClusterIsPathOnSharedVolume(lpszPathName: string | Win32Pointer): number;
   /** resutils.dll!ClusterPrepareSharedVolumeForBackup */
-  ClusterPrepareSharedVolumeForBackup(lpszFileName: string | Win32Pointer, lpszVolumePathName: string | Win32Pointer, lpcchVolumePathName: Win32Pointer, lpszVolumeName: string | Win32Pointer, lpcchVolumeName: Win32Pointer): number;
+  ClusterPrepareSharedVolumeForBackup(
+    lpszFileName: string | Win32Pointer,
+    lpszVolumePathName: string | Win32Pointer,
+    lpcchVolumePathName: Win32Pointer,
+    lpszVolumeName: string | Win32Pointer,
+    lpcchVolumeName: Win32Pointer,
+  ): number;
   /** resutils.dll!FreeClusterCrypt */
   FreeClusterCrypt(pCryptInfo: Win32Pointer): number;
   /** resutils.dll!FreeClusterHealthFault */
@@ -45,11 +76,29 @@ interface Functions {
   /** resutils.dll!InitializeClusterHealthFaultArray */
   InitializeClusterHealthFaultArray(clusterHealthFaultArray: Win32Pointer): number;
   /** resutils.dll!OpenClusterCryptProvider */
-  OpenClusterCryptProvider(lpszResource: string | Win32Pointer, lpszProvider: Win32Pointer, dwType: number, dwFlags: number): number | bigint;
+  OpenClusterCryptProvider(
+    lpszResource: string | Win32Pointer,
+    lpszProvider: Win32Pointer,
+    dwType: number,
+    dwFlags: number,
+  ): number | bigint;
   /** resutils.dll!OpenClusterCryptProviderEx */
-  OpenClusterCryptProviderEx(lpszResource: string | Win32Pointer, lpszKeyname: string | Win32Pointer, lpszProvider: Win32Pointer, dwType: number, dwFlags: number): number | bigint;
+  OpenClusterCryptProviderEx(
+    lpszResource: string | Win32Pointer,
+    lpszKeyname: string | Win32Pointer,
+    lpszProvider: Win32Pointer,
+    dwType: number,
+    dwFlags: number,
+  ): number | bigint;
   /** resutils.dll!ResUtilAddUnknownProperties */
-  ResUtilAddUnknownProperties(hkeyClusterKey: Win32Pointer, pPropertyTable: Win32Pointer, pOutPropertyList: Win32Pointer, pcbOutPropertyListSize: number, pcbBytesReturned: Win32Pointer, pcbRequired: Win32Pointer): number;
+  ResUtilAddUnknownProperties(
+    hkeyClusterKey: Win32Pointer,
+    pPropertyTable: Win32Pointer,
+    pOutPropertyList: Win32Pointer,
+    pcbOutPropertyListSize: number,
+    pcbBytesReturned: Win32Pointer,
+    pcbRequired: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilCreateDirectoryTree */
   ResUtilCreateDirectoryTree(pszPath: string | Win32Pointer): number;
   /** resutils.dll!ResUtilDupGroup */
@@ -61,51 +110,164 @@ interface Functions {
   /** resutils.dll!ResUtilDupString */
   ResUtilDupString(pszInString: string | Win32Pointer): number | null;
   /** resutils.dll!ResUtilEnumGroups */
-  ResUtilEnumGroups(hCluster: number | bigint, hSelf: number | bigint, pResCallBack: Win32Callback, pParameter: Win32Pointer): number;
+  ResUtilEnumGroups(
+    hCluster: number | bigint,
+    hSelf: number | bigint,
+    pResCallBack: Win32Callback,
+    pParameter: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilEnumGroupsEx */
-  ResUtilEnumGroupsEx(hCluster: number | bigint, hSelf: number | bigint, groupType: number, pResCallBack: Win32Callback, pParameter: Win32Pointer): number;
+  ResUtilEnumGroupsEx(
+    hCluster: number | bigint,
+    hSelf: number | bigint,
+    groupType: number,
+    pResCallBack: Win32Callback,
+    pParameter: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilEnumPrivateProperties */
-  ResUtilEnumPrivateProperties(hkeyClusterKey: Win32Pointer, pszOutProperties: string | Win32Pointer, cbOutPropertiesSize: number, pcbBytesReturned: Win32Pointer, pcbRequired: Win32Pointer): number;
+  ResUtilEnumPrivateProperties(
+    hkeyClusterKey: Win32Pointer,
+    pszOutProperties: string | Win32Pointer,
+    cbOutPropertiesSize: number,
+    pcbBytesReturned: Win32Pointer,
+    pcbRequired: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilEnumProperties */
-  ResUtilEnumProperties(pPropertyTable: Win32Pointer, pszOutProperties: string | Win32Pointer, cbOutPropertiesSize: number, pcbBytesReturned: Win32Pointer, pcbRequired: Win32Pointer): number;
+  ResUtilEnumProperties(
+    pPropertyTable: Win32Pointer,
+    pszOutProperties: string | Win32Pointer,
+    cbOutPropertiesSize: number,
+    pcbBytesReturned: Win32Pointer,
+    pcbRequired: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilEnumResources */
-  ResUtilEnumResources(hSelf: number | bigint, lpszResTypeName: string | Win32Pointer, pResCallBack: Win32Callback, pParameter: Win32Pointer): number;
+  ResUtilEnumResources(
+    hSelf: number | bigint,
+    lpszResTypeName: string | Win32Pointer,
+    pResCallBack: Win32Callback,
+    pParameter: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilEnumResourcesEx */
-  ResUtilEnumResourcesEx(hCluster: number | bigint, hSelf: number | bigint, lpszResTypeName: string | Win32Pointer, pResCallBack: Win32Callback, pParameter: Win32Pointer): number;
+  ResUtilEnumResourcesEx(
+    hCluster: number | bigint,
+    hSelf: number | bigint,
+    lpszResTypeName: string | Win32Pointer,
+    pResCallBack: Win32Callback,
+    pParameter: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilEnumResourcesEx2 */
-  ResUtilEnumResourcesEx2(hCluster: number | bigint, hSelf: number | bigint, lpszResTypeName: string | Win32Pointer, pResCallBack: Win32Callback, pParameter: Win32Pointer, dwDesiredAccess: number): number;
+  ResUtilEnumResourcesEx2(
+    hCluster: number | bigint,
+    hSelf: number | bigint,
+    lpszResTypeName: string | Win32Pointer,
+    pResCallBack: Win32Callback,
+    pParameter: Win32Pointer,
+    dwDesiredAccess: number,
+  ): number;
   /** resutils.dll!ResUtilExpandEnvironmentStrings */
   ResUtilExpandEnvironmentStrings(pszSrc: string | Win32Pointer): number | null;
   /** resutils.dll!ResUtilFindBinaryProperty */
-  ResUtilFindBinaryProperty(pPropertyList: Win32Pointer, cbPropertyListSize: number, pszPropertyName: string | Win32Pointer, pbPropertyValue: Win32Pointer, pcbPropertyValueSize: Win32Pointer): number;
+  ResUtilFindBinaryProperty(
+    pPropertyList: Win32Pointer,
+    cbPropertyListSize: number,
+    pszPropertyName: string | Win32Pointer,
+    pbPropertyValue: Win32Pointer,
+    pcbPropertyValueSize: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilFindDependentDiskResourceDriveLetter */
-  ResUtilFindDependentDiskResourceDriveLetter(hCluster: number | bigint, hResource: number | bigint, pszDriveLetter: string | Win32Pointer, pcchDriveLetter: Win32Pointer): number;
+  ResUtilFindDependentDiskResourceDriveLetter(
+    hCluster: number | bigint,
+    hResource: number | bigint,
+    pszDriveLetter: string | Win32Pointer,
+    pcchDriveLetter: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilFindDwordProperty */
-  ResUtilFindDwordProperty(pPropertyList: Win32Pointer, cbPropertyListSize: number, pszPropertyName: string | Win32Pointer, pdwPropertyValue: Win32Pointer): number;
+  ResUtilFindDwordProperty(
+    pPropertyList: Win32Pointer,
+    cbPropertyListSize: number,
+    pszPropertyName: string | Win32Pointer,
+    pdwPropertyValue: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilFindExpandSzProperty */
-  ResUtilFindExpandSzProperty(pPropertyList: Win32Pointer, cbPropertyListSize: number, pszPropertyName: string | Win32Pointer, pszPropertyValue: Win32Pointer): number;
+  ResUtilFindExpandSzProperty(
+    pPropertyList: Win32Pointer,
+    cbPropertyListSize: number,
+    pszPropertyName: string | Win32Pointer,
+    pszPropertyValue: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilFindExpandedSzProperty */
-  ResUtilFindExpandedSzProperty(pPropertyList: Win32Pointer, cbPropertyListSize: number, pszPropertyName: string | Win32Pointer, pszPropertyValue: Win32Pointer): number;
+  ResUtilFindExpandedSzProperty(
+    pPropertyList: Win32Pointer,
+    cbPropertyListSize: number,
+    pszPropertyName: string | Win32Pointer,
+    pszPropertyValue: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilFindFileTimeProperty */
-  ResUtilFindFileTimeProperty(pPropertyList: Win32Pointer, cbPropertyListSize: number, pszPropertyName: string | Win32Pointer, pftPropertyValue: Win32Pointer): number;
+  ResUtilFindFileTimeProperty(
+    pPropertyList: Win32Pointer,
+    cbPropertyListSize: number,
+    pszPropertyName: string | Win32Pointer,
+    pftPropertyValue: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilFindLongProperty */
-  ResUtilFindLongProperty(pPropertyList: Win32Pointer, cbPropertyListSize: number, pszPropertyName: string | Win32Pointer, plPropertyValue: Win32Pointer): number;
+  ResUtilFindLongProperty(
+    pPropertyList: Win32Pointer,
+    cbPropertyListSize: number,
+    pszPropertyName: string | Win32Pointer,
+    plPropertyValue: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilFindMultiSzProperty */
-  ResUtilFindMultiSzProperty(pPropertyList: Win32Pointer, cbPropertyListSize: number, pszPropertyName: string | Win32Pointer, pszPropertyValue: Win32Pointer, pcbPropertyValueSize: Win32Pointer): number;
+  ResUtilFindMultiSzProperty(
+    pPropertyList: Win32Pointer,
+    cbPropertyListSize: number,
+    pszPropertyName: string | Win32Pointer,
+    pszPropertyValue: Win32Pointer,
+    pcbPropertyValueSize: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilFindSzProperty */
-  ResUtilFindSzProperty(pPropertyList: Win32Pointer, cbPropertyListSize: number, pszPropertyName: string | Win32Pointer, pszPropertyValue: Win32Pointer): number;
+  ResUtilFindSzProperty(
+    pPropertyList: Win32Pointer,
+    cbPropertyListSize: number,
+    pszPropertyName: string | Win32Pointer,
+    pszPropertyValue: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilFindULargeIntegerProperty */
-  ResUtilFindULargeIntegerProperty(pPropertyList: Win32Pointer, cbPropertyListSize: number, pszPropertyName: string | Win32Pointer, plPropertyValue: Win32Pointer): number;
+  ResUtilFindULargeIntegerProperty(
+    pPropertyList: Win32Pointer,
+    cbPropertyListSize: number,
+    pszPropertyName: string | Win32Pointer,
+    plPropertyValue: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilFreeEnvironment */
   ResUtilFreeEnvironment(lpEnvironment: Win32Pointer): number;
   /** resutils.dll!ResUtilFreeParameterBlock */
   ResUtilFreeParameterBlock(pOutParams: Win32Pointer, pInParams: Win32Pointer, pPropertyTable: Win32Pointer): void;
   /** resutils.dll!ResUtilGetAllProperties */
-  ResUtilGetAllProperties(hkeyClusterKey: Win32Pointer, pPropertyTable: Win32Pointer, pOutPropertyList: Win32Pointer, cbOutPropertyListSize: number, pcbBytesReturned: Win32Pointer, pcbRequired: Win32Pointer): number;
+  ResUtilGetAllProperties(
+    hkeyClusterKey: Win32Pointer,
+    pPropertyTable: Win32Pointer,
+    pOutPropertyList: Win32Pointer,
+    cbOutPropertyListSize: number,
+    pcbBytesReturned: Win32Pointer,
+    pcbRequired: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetBinaryProperty */
-  ResUtilGetBinaryProperty(ppbOutValue: Win32Pointer, pcbOutValueSize: Win32Pointer, pValueStruct: Win32Pointer, pbOldValue: Win32Pointer, cbOldValueSize: number, ppPropertyList: Win32Pointer, pcbPropertyListSize: Win32Pointer): number;
+  ResUtilGetBinaryProperty(
+    ppbOutValue: Win32Pointer,
+    pcbOutValueSize: Win32Pointer,
+    pValueStruct: Win32Pointer,
+    pbOldValue: Win32Pointer,
+    cbOldValueSize: number,
+    ppPropertyList: Win32Pointer,
+    pcbPropertyListSize: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetBinaryValue */
-  ResUtilGetBinaryValue(hkeyClusterKey: Win32Pointer, pszValueName: string | Win32Pointer, ppbOutValue: Win32Pointer, pcbOutValueSize: Win32Pointer): number;
+  ResUtilGetBinaryValue(
+    hkeyClusterKey: Win32Pointer,
+    pszValueName: string | Win32Pointer,
+    ppbOutValue: Win32Pointer,
+    pcbOutValueSize: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetClusterGroupType */
   ResUtilGetClusterGroupType(hGroup: number | bigint, groupType: Win32Pointer): number;
   /** resutils.dll!ResUtilGetClusterId */
@@ -113,59 +275,197 @@ interface Functions {
   /** resutils.dll!ResUtilGetClusterRoleState */
   ResUtilGetClusterRoleState(hCluster: number | bigint, eClusterRole: number): number;
   /** resutils.dll!ResUtilGetCoreClusterResources */
-  ResUtilGetCoreClusterResources(hCluster: number | bigint, phClusterNameResource: Win32Pointer, phClusterIPAddressResource: Win32Pointer, phClusterQuorumResource: Win32Pointer): number;
+  ResUtilGetCoreClusterResources(
+    hCluster: number | bigint,
+    phClusterNameResource: Win32Pointer,
+    phClusterIPAddressResource: Win32Pointer,
+    phClusterQuorumResource: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetCoreClusterResourcesEx */
-  ResUtilGetCoreClusterResourcesEx(hClusterIn: number | bigint, phClusterNameResourceOut: Win32Pointer, phClusterQuorumResourceOut: Win32Pointer, dwDesiredAccess: number): number;
+  ResUtilGetCoreClusterResourcesEx(
+    hClusterIn: number | bigint,
+    phClusterNameResourceOut: Win32Pointer,
+    phClusterQuorumResourceOut: Win32Pointer,
+    dwDesiredAccess: number,
+  ): number;
   /** resutils.dll!ResUtilGetCoreGroup */
   ResUtilGetCoreGroup(hCluster: number | bigint): number | bigint;
   /** resutils.dll!ResUtilGetDwordProperty */
-  ResUtilGetDwordProperty(pdwOutValue: Win32Pointer, pValueStruct: Win32Pointer, dwOldValue: number, dwMinimum: number, dwMaximum: number, ppPropertyList: Win32Pointer, pcbPropertyListSize: Win32Pointer): number;
+  ResUtilGetDwordProperty(
+    pdwOutValue: Win32Pointer,
+    pValueStruct: Win32Pointer,
+    dwOldValue: number,
+    dwMinimum: number,
+    dwMaximum: number,
+    ppPropertyList: Win32Pointer,
+    pcbPropertyListSize: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetDwordValue */
-  ResUtilGetDwordValue(hkeyClusterKey: Win32Pointer, pszValueName: string | Win32Pointer, pdwOutValue: Win32Pointer, dwDefaultValue: number): number;
+  ResUtilGetDwordValue(
+    hkeyClusterKey: Win32Pointer,
+    pszValueName: string | Win32Pointer,
+    pdwOutValue: Win32Pointer,
+    dwDefaultValue: number,
+  ): number;
   /** resutils.dll!ResUtilGetEnvironmentWithNetName */
   ResUtilGetEnvironmentWithNetName(hResource: number | bigint): number | null;
   /** resutils.dll!ResUtilGetFileTimeProperty */
-  ResUtilGetFileTimeProperty(pftOutValue: Win32Pointer, pValueStruct: Win32Pointer, ftOldValue: Win32StructInit, ftMinimum: Win32StructInit, ftMaximum: Win32StructInit, ppPropertyList: Win32Pointer, pcbPropertyListSize: Win32Pointer): number;
+  ResUtilGetFileTimeProperty(
+    pftOutValue: Win32Pointer,
+    pValueStruct: Win32Pointer,
+    ftOldValue: Win32StructInit,
+    ftMinimum: Win32StructInit,
+    ftMaximum: Win32StructInit,
+    ppPropertyList: Win32Pointer,
+    pcbPropertyListSize: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetLongProperty */
-  ResUtilGetLongProperty(plOutValue: Win32Pointer, pValueStruct: Win32Pointer, lOldValue: number, lMinimum: number, lMaximum: number, ppPropertyList: Win32Pointer, pcbPropertyListSize: Win32Pointer): number;
+  ResUtilGetLongProperty(
+    plOutValue: Win32Pointer,
+    pValueStruct: Win32Pointer,
+    lOldValue: number,
+    lMinimum: number,
+    lMaximum: number,
+    ppPropertyList: Win32Pointer,
+    pcbPropertyListSize: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetMultiSzProperty */
-  ResUtilGetMultiSzProperty(ppszOutValue: Win32Pointer, pcbOutValueSize: Win32Pointer, pValueStruct: Win32Pointer, pszOldValue: string | Win32Pointer, cbOldValueSize: number, ppPropertyList: Win32Pointer, pcbPropertyListSize: Win32Pointer): number;
+  ResUtilGetMultiSzProperty(
+    ppszOutValue: Win32Pointer,
+    pcbOutValueSize: Win32Pointer,
+    pValueStruct: Win32Pointer,
+    pszOldValue: string | Win32Pointer,
+    cbOldValueSize: number,
+    ppPropertyList: Win32Pointer,
+    pcbPropertyListSize: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetPrivateProperties */
-  ResUtilGetPrivateProperties(hkeyClusterKey: Win32Pointer, pOutPropertyList: Win32Pointer, cbOutPropertyListSize: number, pcbBytesReturned: Win32Pointer, pcbRequired: Win32Pointer): number;
+  ResUtilGetPrivateProperties(
+    hkeyClusterKey: Win32Pointer,
+    pOutPropertyList: Win32Pointer,
+    cbOutPropertyListSize: number,
+    pcbBytesReturned: Win32Pointer,
+    pcbRequired: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetProperties */
-  ResUtilGetProperties(hkeyClusterKey: Win32Pointer, pPropertyTable: Win32Pointer, pOutPropertyList: Win32Pointer, cbOutPropertyListSize: number, pcbBytesReturned: Win32Pointer, pcbRequired: Win32Pointer): number;
+  ResUtilGetProperties(
+    hkeyClusterKey: Win32Pointer,
+    pPropertyTable: Win32Pointer,
+    pOutPropertyList: Win32Pointer,
+    cbOutPropertyListSize: number,
+    pcbBytesReturned: Win32Pointer,
+    pcbRequired: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetPropertiesToParameterBlock */
-  ResUtilGetPropertiesToParameterBlock(hkeyClusterKey: Win32Pointer, pPropertyTable: Win32Pointer, pOutParams: Win32Pointer, bCheckForRequiredProperties: number, pszNameOfPropInError: Win32Pointer): number;
+  ResUtilGetPropertiesToParameterBlock(
+    hkeyClusterKey: Win32Pointer,
+    pPropertyTable: Win32Pointer,
+    pOutParams: Win32Pointer,
+    bCheckForRequiredProperties: number,
+    pszNameOfPropInError: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetProperty */
-  ResUtilGetProperty(hkeyClusterKey: Win32Pointer, pPropertyTableItem: Win32Pointer, pOutPropertyItem: Win32Pointer, pcbOutPropertyItemSize: Win32Pointer): number;
+  ResUtilGetProperty(
+    hkeyClusterKey: Win32Pointer,
+    pPropertyTableItem: Win32Pointer,
+    pOutPropertyItem: Win32Pointer,
+    pcbOutPropertyItemSize: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetPropertyFormats */
-  ResUtilGetPropertyFormats(pPropertyTable: Win32Pointer, pOutPropertyFormatList: Win32Pointer, cbPropertyFormatListSize: number, pcbBytesReturned: Win32Pointer, pcbRequired: Win32Pointer): number;
+  ResUtilGetPropertyFormats(
+    pPropertyTable: Win32Pointer,
+    pOutPropertyFormatList: Win32Pointer,
+    cbPropertyFormatListSize: number,
+    pcbBytesReturned: Win32Pointer,
+    pcbRequired: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetPropertySize */
-  ResUtilGetPropertySize(hkeyClusterKey: Win32Pointer, pPropertyTableItem: Win32Pointer, pcbOutPropertyListSize: Win32Pointer, pnPropertyCount: Win32Pointer): number;
+  ResUtilGetPropertySize(
+    hkeyClusterKey: Win32Pointer,
+    pPropertyTableItem: Win32Pointer,
+    pcbOutPropertyListSize: Win32Pointer,
+    pnPropertyCount: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetQwordValue */
-  ResUtilGetQwordValue(hkeyClusterKey: Win32Pointer, pszValueName: string | Win32Pointer, pqwOutValue: Win32Pointer, qwDefaultValue: number | bigint): number;
+  ResUtilGetQwordValue(
+    hkeyClusterKey: Win32Pointer,
+    pszValueName: string | Win32Pointer,
+    pqwOutValue: Win32Pointer,
+    qwDefaultValue: number | bigint,
+  ): number;
   /** resutils.dll!ResUtilGetResourceDependency */
   ResUtilGetResourceDependency(hSelf: Win32Pointer, lpszResourceType: string | Win32Pointer): number | bigint;
   /** resutils.dll!ResUtilGetResourceDependencyByClass */
-  ResUtilGetResourceDependencyByClass(hCluster: number | bigint, hSelf: Win32Pointer, prci: Win32Pointer, bRecurse: number): number | bigint;
+  ResUtilGetResourceDependencyByClass(
+    hCluster: number | bigint,
+    hSelf: Win32Pointer,
+    prci: Win32Pointer,
+    bRecurse: number,
+  ): number | bigint;
   /** resutils.dll!ResUtilGetResourceDependencyByClassEx */
-  ResUtilGetResourceDependencyByClassEx(hCluster: number | bigint, hSelf: Win32Pointer, prci: Win32Pointer, bRecurse: number, dwDesiredAccess: number): number | bigint;
+  ResUtilGetResourceDependencyByClassEx(
+    hCluster: number | bigint,
+    hSelf: Win32Pointer,
+    prci: Win32Pointer,
+    bRecurse: number,
+    dwDesiredAccess: number,
+  ): number | bigint;
   /** resutils.dll!ResUtilGetResourceDependencyByName */
-  ResUtilGetResourceDependencyByName(hCluster: number | bigint, hSelf: Win32Pointer, lpszResourceType: string | Win32Pointer, bRecurse: number): number | bigint;
+  ResUtilGetResourceDependencyByName(
+    hCluster: number | bigint,
+    hSelf: Win32Pointer,
+    lpszResourceType: string | Win32Pointer,
+    bRecurse: number,
+  ): number | bigint;
   /** resutils.dll!ResUtilGetResourceDependencyByNameEx */
-  ResUtilGetResourceDependencyByNameEx(hCluster: number | bigint, hSelf: Win32Pointer, lpszResourceType: string | Win32Pointer, bRecurse: number, dwDesiredAccess: number): number | bigint;
+  ResUtilGetResourceDependencyByNameEx(
+    hCluster: number | bigint,
+    hSelf: Win32Pointer,
+    lpszResourceType: string | Win32Pointer,
+    bRecurse: number,
+    dwDesiredAccess: number,
+  ): number | bigint;
   /** resutils.dll!ResUtilGetResourceDependencyEx */
-  ResUtilGetResourceDependencyEx(hSelf: Win32Pointer, lpszResourceType: string | Win32Pointer, dwDesiredAccess: number): number | bigint;
+  ResUtilGetResourceDependencyEx(
+    hSelf: Win32Pointer,
+    lpszResourceType: string | Win32Pointer,
+    dwDesiredAccess: number,
+  ): number | bigint;
   /** resutils.dll!ResUtilGetResourceDependentIPAddressProps */
-  ResUtilGetResourceDependentIPAddressProps(hResource: number | bigint, pszAddress: string | Win32Pointer, pcchAddress: Win32Pointer, pszSubnetMask: string | Win32Pointer, pcchSubnetMask: Win32Pointer, pszNetwork: string | Win32Pointer, pcchNetwork: Win32Pointer): number;
+  ResUtilGetResourceDependentIPAddressProps(
+    hResource: number | bigint,
+    pszAddress: string | Win32Pointer,
+    pcchAddress: Win32Pointer,
+    pszSubnetMask: string | Win32Pointer,
+    pcchSubnetMask: Win32Pointer,
+    pszNetwork: string | Win32Pointer,
+    pcchNetwork: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetResourceName */
-  ResUtilGetResourceName(hResource: number | bigint, pszResourceName: string | Win32Pointer, pcchResourceNameInOut: Win32Pointer): number;
+  ResUtilGetResourceName(
+    hResource: number | bigint,
+    pszResourceName: string | Win32Pointer,
+    pcchResourceNameInOut: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetResourceNameDependency */
-  ResUtilGetResourceNameDependency(lpszResourceName: string | Win32Pointer, lpszResourceType: string | Win32Pointer): number | bigint;
+  ResUtilGetResourceNameDependency(
+    lpszResourceName: string | Win32Pointer,
+    lpszResourceType: string | Win32Pointer,
+  ): number | bigint;
   /** resutils.dll!ResUtilGetResourceNameDependencyEx */
-  ResUtilGetResourceNameDependencyEx(lpszResourceName: string | Win32Pointer, lpszResourceType: string | Win32Pointer, dwDesiredAccess: number): number | bigint;
+  ResUtilGetResourceNameDependencyEx(
+    lpszResourceName: string | Win32Pointer,
+    lpszResourceType: string | Win32Pointer,
+    dwDesiredAccess: number,
+  ): number | bigint;
   /** resutils.dll!ResUtilGetSzProperty */
-  ResUtilGetSzProperty(ppszOutValue: Win32Pointer, pValueStruct: Win32Pointer, pszOldValue: string | Win32Pointer, ppPropertyList: Win32Pointer, pcbPropertyListSize: Win32Pointer): number;
+  ResUtilGetSzProperty(
+    ppszOutValue: Win32Pointer,
+    pValueStruct: Win32Pointer,
+    pszOldValue: string | Win32Pointer,
+    ppPropertyList: Win32Pointer,
+    pcbPropertyListSize: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilGetSzValue */
   ResUtilGetSzValue(hkeyClusterKey: Win32Pointer, pszValueName: string | Win32Pointer): number | null;
   /** resutils.dll!ResUtilGroupsEqual */
@@ -181,47 +481,165 @@ interface Functions {
   /** resutils.dll!ResUtilPaxosComparer */
   ResUtilPaxosComparer(left: Win32Pointer, right: Win32Pointer): number;
   /** resutils.dll!ResUtilPropertyListFromParameterBlock */
-  ResUtilPropertyListFromParameterBlock(pPropertyTable: Win32Pointer, pOutPropertyList: Win32Pointer, pcbOutPropertyListSize: Win32Pointer, pInParams: Win32Pointer, pcbBytesReturned: Win32Pointer, pcbRequired: Win32Pointer): number;
+  ResUtilPropertyListFromParameterBlock(
+    pPropertyTable: Win32Pointer,
+    pOutPropertyList: Win32Pointer,
+    pcbOutPropertyListSize: Win32Pointer,
+    pInParams: Win32Pointer,
+    pcbBytesReturned: Win32Pointer,
+    pcbRequired: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilRemoveResourceServiceEnvironment */
-  ResUtilRemoveResourceServiceEnvironment(pszServiceName: string | Win32Pointer, pfnLogEvent: Win32Callback, hResourceHandle: number | bigint): number;
+  ResUtilRemoveResourceServiceEnvironment(
+    pszServiceName: string | Win32Pointer,
+    pfnLogEvent: Win32Callback,
+    hResourceHandle: number | bigint,
+  ): number;
   /** resutils.dll!ResUtilResourceDepEnum */
-  ResUtilResourceDepEnum(hSelf: number | bigint, enumType: number, pResCallBack: Win32Callback, pParameter: Win32Pointer): number;
+  ResUtilResourceDepEnum(
+    hSelf: number | bigint,
+    enumType: number,
+    pResCallBack: Win32Callback,
+    pParameter: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilResourceTypesEqual */
   ResUtilResourceTypesEqual(lpszResourceTypeName: string | Win32Pointer, hResource: number | bigint): number;
   /** resutils.dll!ResUtilResourcesEqual */
   ResUtilResourcesEqual(hSelf: number | bigint, hResource: number | bigint): number;
   /** resutils.dll!ResUtilSetBinaryValue */
-  ResUtilSetBinaryValue(hkeyClusterKey: Win32Pointer, pszValueName: string | Win32Pointer, pbNewValue: Win32Pointer, cbNewValueSize: number, ppbOutValue: Win32Pointer, pcbOutValueSize: Win32Pointer): number;
+  ResUtilSetBinaryValue(
+    hkeyClusterKey: Win32Pointer,
+    pszValueName: string | Win32Pointer,
+    pbNewValue: Win32Pointer,
+    cbNewValueSize: number,
+    ppbOutValue: Win32Pointer,
+    pcbOutValueSize: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilSetDwordValue */
-  ResUtilSetDwordValue(hkeyClusterKey: Win32Pointer, pszValueName: string | Win32Pointer, dwNewValue: number, pdwOutValue: Win32Pointer): number;
+  ResUtilSetDwordValue(
+    hkeyClusterKey: Win32Pointer,
+    pszValueName: string | Win32Pointer,
+    dwNewValue: number,
+    pdwOutValue: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilSetExpandSzValue */
-  ResUtilSetExpandSzValue(hkeyClusterKey: Win32Pointer, pszValueName: string | Win32Pointer, pszNewValue: string | Win32Pointer, ppszOutString: Win32Pointer): number;
+  ResUtilSetExpandSzValue(
+    hkeyClusterKey: Win32Pointer,
+    pszValueName: string | Win32Pointer,
+    pszNewValue: string | Win32Pointer,
+    ppszOutString: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilSetMultiSzValue */
-  ResUtilSetMultiSzValue(hkeyClusterKey: Win32Pointer, pszValueName: string | Win32Pointer, pszNewValue: string | Win32Pointer, cbNewValueSize: number, ppszOutValue: Win32Pointer, pcbOutValueSize: Win32Pointer): number;
+  ResUtilSetMultiSzValue(
+    hkeyClusterKey: Win32Pointer,
+    pszValueName: string | Win32Pointer,
+    pszNewValue: string | Win32Pointer,
+    cbNewValueSize: number,
+    ppszOutValue: Win32Pointer,
+    pcbOutValueSize: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilSetPrivatePropertyList */
-  ResUtilSetPrivatePropertyList(hkeyClusterKey: Win32Pointer, pInPropertyList: Win32Pointer, cbInPropertyListSize: number): number;
+  ResUtilSetPrivatePropertyList(
+    hkeyClusterKey: Win32Pointer,
+    pInPropertyList: Win32Pointer,
+    cbInPropertyListSize: number,
+  ): number;
   /** resutils.dll!ResUtilSetPropertyParameterBlock */
-  ResUtilSetPropertyParameterBlock(hkeyClusterKey: Win32Pointer, pPropertyTable: Win32Pointer, Reserved: Win32Pointer, pInParams: Win32Pointer, pInPropertyList: Win32Pointer, cbInPropertyListSize: number, pOutParams: Win32Pointer): number;
+  ResUtilSetPropertyParameterBlock(
+    hkeyClusterKey: Win32Pointer,
+    pPropertyTable: Win32Pointer,
+    Reserved: Win32Pointer,
+    pInParams: Win32Pointer,
+    pInPropertyList: Win32Pointer,
+    cbInPropertyListSize: number,
+    pOutParams: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilSetPropertyParameterBlockEx */
-  ResUtilSetPropertyParameterBlockEx(hkeyClusterKey: Win32Pointer, pPropertyTable: Win32Pointer, Reserved: Win32Pointer, pInParams: Win32Pointer, pInPropertyList: Win32Pointer, cbInPropertyListSize: number, bForceWrite: number, pOutParams: Win32Pointer): number;
+  ResUtilSetPropertyParameterBlockEx(
+    hkeyClusterKey: Win32Pointer,
+    pPropertyTable: Win32Pointer,
+    Reserved: Win32Pointer,
+    pInParams: Win32Pointer,
+    pInPropertyList: Win32Pointer,
+    cbInPropertyListSize: number,
+    bForceWrite: number,
+    pOutParams: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilSetPropertyTable */
-  ResUtilSetPropertyTable(hkeyClusterKey: Win32Pointer, pPropertyTable: Win32Pointer, Reserved: Win32Pointer, bAllowUnknownProperties: number, pInPropertyList: Win32Pointer, cbInPropertyListSize: number, pOutParams: Win32Pointer): number;
+  ResUtilSetPropertyTable(
+    hkeyClusterKey: Win32Pointer,
+    pPropertyTable: Win32Pointer,
+    Reserved: Win32Pointer,
+    bAllowUnknownProperties: number,
+    pInPropertyList: Win32Pointer,
+    cbInPropertyListSize: number,
+    pOutParams: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilSetPropertyTableEx */
-  ResUtilSetPropertyTableEx(hkeyClusterKey: Win32Pointer, pPropertyTable: Win32Pointer, Reserved: Win32Pointer, bAllowUnknownProperties: number, pInPropertyList: Win32Pointer, cbInPropertyListSize: number, bForceWrite: number, pOutParams: Win32Pointer): number;
+  ResUtilSetPropertyTableEx(
+    hkeyClusterKey: Win32Pointer,
+    pPropertyTable: Win32Pointer,
+    Reserved: Win32Pointer,
+    bAllowUnknownProperties: number,
+    pInPropertyList: Win32Pointer,
+    cbInPropertyListSize: number,
+    bForceWrite: number,
+    pOutParams: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilSetQwordValue */
-  ResUtilSetQwordValue(hkeyClusterKey: Win32Pointer, pszValueName: string | Win32Pointer, qwNewValue: number | bigint, pqwOutValue: Win32Pointer): number;
+  ResUtilSetQwordValue(
+    hkeyClusterKey: Win32Pointer,
+    pszValueName: string | Win32Pointer,
+    qwNewValue: number | bigint,
+    pqwOutValue: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilSetResourceServiceEnvironment */
-  ResUtilSetResourceServiceEnvironment(pszServiceName: string | Win32Pointer, hResource: number | bigint, pfnLogEvent: Win32Callback, hResourceHandle: number | bigint): number;
+  ResUtilSetResourceServiceEnvironment(
+    pszServiceName: string | Win32Pointer,
+    hResource: number | bigint,
+    pfnLogEvent: Win32Callback,
+    hResourceHandle: number | bigint,
+  ): number;
   /** resutils.dll!ResUtilSetResourceServiceStartParameters */
-  ResUtilSetResourceServiceStartParameters(pszServiceName: string | Win32Pointer, schSCMHandle: Win32Pointer, phService: Win32Pointer, pfnLogEvent: Win32Callback, hResourceHandle: number | bigint): number;
+  ResUtilSetResourceServiceStartParameters(
+    pszServiceName: string | Win32Pointer,
+    schSCMHandle: Win32Pointer,
+    phService: Win32Pointer,
+    pfnLogEvent: Win32Callback,
+    hResourceHandle: number | bigint,
+  ): number;
   /** resutils.dll!ResUtilSetResourceServiceStartParametersEx */
-  ResUtilSetResourceServiceStartParametersEx(pszServiceName: string | Win32Pointer, schSCMHandle: Win32Pointer, phService: Win32Pointer, dwDesiredAccess: number, pfnLogEvent: Win32Callback, hResourceHandle: number | bigint): number;
+  ResUtilSetResourceServiceStartParametersEx(
+    pszServiceName: string | Win32Pointer,
+    schSCMHandle: Win32Pointer,
+    phService: Win32Pointer,
+    dwDesiredAccess: number,
+    pfnLogEvent: Win32Callback,
+    hResourceHandle: number | bigint,
+  ): number;
   /** resutils.dll!ResUtilSetSzValue */
-  ResUtilSetSzValue(hkeyClusterKey: Win32Pointer, pszValueName: string | Win32Pointer, pszNewValue: string | Win32Pointer, ppszOutString: Win32Pointer): number;
+  ResUtilSetSzValue(
+    hkeyClusterKey: Win32Pointer,
+    pszValueName: string | Win32Pointer,
+    pszNewValue: string | Win32Pointer,
+    ppszOutString: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilSetUnknownProperties */
-  ResUtilSetUnknownProperties(hkeyClusterKey: Win32Pointer, pPropertyTable: Win32Pointer, pInPropertyList: Win32Pointer, cbInPropertyListSize: number): number;
+  ResUtilSetUnknownProperties(
+    hkeyClusterKey: Win32Pointer,
+    pPropertyTable: Win32Pointer,
+    pInPropertyList: Win32Pointer,
+    cbInPropertyListSize: number,
+  ): number;
   /** resutils.dll!ResUtilSetValueEx */
-  ResUtilSetValueEx(hkeyClusterKey: Win32Pointer, valueName: string | Win32Pointer, valueType: number, valueData: Win32Pointer, valueSize: number, flags: number): number;
+  ResUtilSetValueEx(
+    hkeyClusterKey: Win32Pointer,
+    valueName: string | Win32Pointer,
+    valueType: number,
+    valueData: Win32Pointer,
+    valueSize: number,
+    flags: number,
+  ): number;
   /** resutils.dll!ResUtilStartResourceService */
   ResUtilStartResourceService(pszServiceName: string | Win32Pointer, phServiceHandle: Win32Pointer): number;
   /** resutils.dll!ResUtilStopResourceService */
@@ -229,11 +647,24 @@ interface Functions {
   /** resutils.dll!ResUtilStopService */
   ResUtilStopService(hServiceHandle: Win32Pointer): number;
   /** resutils.dll!ResUtilTerminateServiceProcessFromResDll */
-  ResUtilTerminateServiceProcessFromResDll(dwServicePid: number, bOffline: number, pdwResourceState: Win32Pointer, pfnLogEvent: Win32Callback, hResourceHandle: number | bigint): number;
+  ResUtilTerminateServiceProcessFromResDll(
+    dwServicePid: number,
+    bOffline: number,
+    pdwResourceState: Win32Pointer,
+    pfnLogEvent: Win32Callback,
+    hResourceHandle: number | bigint,
+  ): number;
   /** resutils.dll!ResUtilVerifyPrivatePropertyList */
   ResUtilVerifyPrivatePropertyList(pInPropertyList: Win32Pointer, cbInPropertyListSize: number): number;
   /** resutils.dll!ResUtilVerifyPropertyTable */
-  ResUtilVerifyPropertyTable(pPropertyTable: Win32Pointer, Reserved: Win32Pointer, bAllowUnknownProperties: number, pInPropertyList: Win32Pointer, cbInPropertyListSize: number, pOutParams: Win32Pointer): number;
+  ResUtilVerifyPropertyTable(
+    pPropertyTable: Win32Pointer,
+    Reserved: Win32Pointer,
+    bAllowUnknownProperties: number,
+    pInPropertyList: Win32Pointer,
+    cbInPropertyListSize: number,
+    pOutParams: Win32Pointer,
+  ): number;
   /** resutils.dll!ResUtilVerifyResourceService */
   ResUtilVerifyResourceService(pszServiceName: string | Win32Pointer): number;
   /** resutils.dll!ResUtilVerifyService */

@@ -3,6 +3,13 @@
   "version": "1.4.4",
   "private": false,
   "description": "Shared static assets for Rose Griffon apps",
+  "license": "Apache-2.0",
+  "files": [
+    "public",
+    "scripts",
+    "src",
+    "website-public.json"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -12,17 +19,10 @@
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
-  "engines": {
-    "bun": "=1.4.4"
-  },
-  "license": "Apache-2.0",
-  "files": [
-    "public",
-    "scripts",
-    "src",
-    "website-public.json"
-  ],
   "scripts": {
     "typecheck": "bun check -p tsconfig.json --noEmit"
+  },
+  "engines": {
+    "bun": "=1.4.4"
   }
 }

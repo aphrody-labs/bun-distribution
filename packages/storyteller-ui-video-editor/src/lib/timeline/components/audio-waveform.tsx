@@ -129,10 +129,7 @@ export function AudioWaveform({
       clipRight = Math.min(elementWidth, parentRect.right - containerRect.left);
     } else {
       clipLeft = Math.max(0, -containerRect.left);
-      clipRight = Math.min(
-        elementWidth,
-        window.innerWidth - containerRect.left,
-      );
+      clipRight = Math.min(elementWidth, window.innerWidth - containerRect.left);
     }
 
     const visibleWidth = clipRight - clipLeft;
@@ -218,10 +215,7 @@ export function AudioWaveform({
 
     for (let i = 0; i < barCount; i++) {
       const barCenterPx = clipLeft + i * BAR_STEP + BAR_WIDTH * 0.5;
-      const clipCenterSec = Math.max(
-        0,
-        Math.min(clipDurationSecValue, barCenterPx / pixelsPerSecondValue),
-      );
+      const clipCenterSec = Math.max(0, Math.min(clipDurationSecValue, barCenterPx / pixelsPerSecondValue));
       const gain =
         gainSamplesValue != null
           ? sampleGainAtClipTime({
@@ -241,30 +235,17 @@ export function AudioWaveform({
       const barLeft = i * BAR_STEP;
       const barRight = barLeft + BAR_WIDTH;
       const deviceLeft = Math.round(barLeft * backingScaleX);
-      const deviceRight = Math.max(
-        deviceLeft + 1,
-        Math.round(barRight * backingScaleX),
-      );
+      const deviceRight = Math.max(deviceLeft + 1, Math.round(barRight * backingScaleX));
       const deviceTop = Math.round((height - barH) * backingScaleY);
       const deviceHeight = Math.max(1, clipBottom - deviceTop);
 
       ctx.fillStyle = colorValue;
-      ctx.fillRect(
-        deviceLeft,
-        deviceTop,
-        deviceRight - deviceLeft,
-        deviceHeight,
-      );
+      ctx.fillRect(deviceLeft, deviceTop, deviceRight - deviceLeft, deviceHeight);
 
       if (outputAmplitude > 1) {
         const burnHeight = Math.max(1, Math.round(BAR_WIDTH * backingScaleY));
         ctx.fillStyle = burnColorValue;
-        ctx.fillRect(
-          deviceLeft,
-          deviceTop,
-          deviceRight - deviceLeft,
-          burnHeight,
-        );
+        ctx.fillRect(deviceLeft, deviceTop, deviceRight - deviceLeft, burnHeight);
       }
     }
   }, [clearCanvas, waveformConfigRef]);
@@ -281,7 +262,7 @@ export function AudioWaveform({
         sourceFile,
         audioUrl,
       })
-      .then((summary) => {
+      .then(summary => {
         if (isCancelled) {
           return;
         }
@@ -303,16 +284,7 @@ export function AudioWaveform({
 
   useLayoutEffect(() => {
     drawVisible();
-  }, [
-    drawVisible,
-    gainSamples,
-    pixelsPerSecond,
-    clipDurationSec,
-    retime,
-    sourceStartSec,
-    color,
-    burnColor,
-  ]);
+  }, [drawVisible, gainSamples, pixelsPerSecond, clipDurationSec, retime, sourceStartSec, color, burnColor]);
 
   useEffect(() => {
     const container = containerRef.current;

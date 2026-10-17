@@ -36,11 +36,7 @@ export async function requestJson(
   const deadline = AbortSignal.timeout(options.timeoutMs);
   const signal = init.signal ? AbortSignal.any([deadline, init.signal]) : deadline;
   const failure = (stage: JsonTransportError["stage"], cause: unknown) =>
-    new JsonTransportError(
-      stage,
-      deadline.aborted || (cause instanceof Error && cause.name === "TimeoutError"),
-      cause,
-    );
+    new JsonTransportError(stage, deadline.aborted || (cause instanceof Error && cause.name === "TimeoutError"), cause);
   let response: Response;
   try {
     response = await (options.fetch ?? globalThis.fetch)(url, {

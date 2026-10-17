@@ -87,7 +87,7 @@ describe("computeSectionedLayout", () => {
       600,
       DENSITY,
     );
-    expect(layout.bands.map((b) => b.id)).toEqual([null, "s1"]);
+    expect(layout.bands.map(b => b.id)).toEqual([null, "s1"]);
     expect(layout.bands[0].headerY).toBe(0);
     // Second band starts below the first header + its single row of content.
     expect(layout.bands[1].headerY).toBeGreaterThan(SECTION_HEADER_HEIGHT);

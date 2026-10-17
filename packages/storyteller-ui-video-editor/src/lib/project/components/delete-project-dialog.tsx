@@ -1,12 +1,5 @@
 import { Button } from "../../components/ui/button";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
 import { Label } from "../../components/ui/label";
 import { Input } from "../../components/ui/input";
@@ -29,7 +22,7 @@ export function DeleteProjectDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
-        onOpenAutoFocus={(event) => {
+        onOpenAutoFocus={event => {
           event.preventDefault();
           event.stopPropagation();
         }}
@@ -39,9 +32,7 @@ export function DeleteProjectDialog({
             {singleName ? (
               <>
                 {"Delete '"}
-                <span className="inline-block max-w-[300px] truncate align-bottom">
-                  {singleName}
-                </span>
+                <span className="inline-block max-w-[300px] truncate align-bottom">{singleName}</span>
                 {"'?"}
               </>
             ) : (
@@ -53,21 +44,13 @@ export function DeleteProjectDialog({
           <Alert variant="destructive">
             <AlertTitle>Warning</AlertTitle>
             <AlertDescription>
-              This will permanently delete{" "}
-              {singleName ? `"${singleName}"` : `${count} projects`} and all
-              associated files.
+              This will permanently delete {singleName ? `"${singleName}"` : `${count} projects`} and all associated
+              files.
             </AlertDescription>
           </Alert>
           <div className="flex flex-col gap-3">
-            <Label className="text-xs font-semibold text-slate-500">
-              Type "DELETE" to confirm
-            </Label>
-            <Input
-              type="text"
-              placeholder="DELETE"
-              size="lg"
-              variant="destructive"
-            />
+            <Label className="text-xs font-semibold text-slate-500">Type "DELETE" to confirm</Label>
+            <Input type="text" placeholder="DELETE" size="lg" variant="destructive" />
           </div>
         </DialogBody>
         <DialogFooter>

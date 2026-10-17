@@ -105,23 +105,17 @@ describe("requirements and pyproject", () => {
       spec: ">=0.28",
       marker: undefined,
     });
-    expect(
-      parseRequirement("Sentence_Transformers[onnx]>=5.7,<6"),
-    ).toMatchObject({
+    expect(parseRequirement("Sentence_Transformers[onnx]>=5.7,<6")).toMatchObject({
       name: "sentence-transformers",
       extras: ["onnx"],
       spec: ">=5.7,<6",
     });
-    expect(
-      parseRequirement("torch==2.8.0 ; sys_platform == 'linux'"),
-    ).toMatchObject({
+    expect(parseRequirement("torch==2.8.0 ; sys_platform == 'linux'")).toMatchObject({
       name: "torch",
       spec: "==2.8.0",
       marker: "sys_platform == 'linux'",
     });
-    expect(
-      parseRequirement("pkg @ https://example.test/pkg.whl"),
-    ).toMatchObject({
+    expect(parseRequirement("pkg @ https://example.test/pkg.whl")).toMatchObject({
       name: "pkg",
       spec: "",
     });
@@ -151,9 +145,7 @@ describe("requirements and pyproject", () => {
     expect(p.requiresPython).toBe(">=3.12,<3.13");
     expect(p.requiredVersion).toBe("==0.12.22");
     expect(p.members).toEqual(["a", "b"]);
-    expect(
-      p.deps.map((d) => `${d.section}:${d.req.name}${d.req.spec}`),
-    ).toEqual([
+    expect(p.deps.map(d => `${d.section}:${d.req.name}${d.req.spec}`)).toEqual([
       "dependencies:click>=8.1",
       "extra:full:torch==2.8.0",
       "extra:full:numpy>=1.26",
@@ -198,13 +190,7 @@ describe("uv.lock", () => {
     const info = parseLock(LOCK);
     expect(info.revision).toBe(5);
     expect(info.requiresPython).toBe("==3.12.*");
-    expect(info.packages.map((p) => p.kind)).toEqual([
-      "registry",
-      "registry",
-      "registry",
-      "git",
-      "workspace",
-    ]);
+    expect(info.packages.map(p => p.kind)).toEqual(["registry", "registry", "registry", "git", "workspace"]);
     expect(lockVersions(info).get("click")).toEqual(["8.3.0", "8.2.0"]);
     expect(lockVersions(info).has("langextract")).toBe(false);
   });
@@ -247,15 +233,9 @@ describe("uv.lock", () => {
   });
   test("owning lock is the nearest ancestor", () => {
     const locks = [".", "packages/aphrody", "packages/aphrody-train"];
-    expect(lockFor("packages/aphrody/pyproject.toml", locks)).toBe(
-      "packages/aphrody",
-    );
-    expect(lockFor("packages/aphrody-train/pyproject.toml", locks)).toBe(
-      "packages/aphrody-train",
-    );
-    expect(lockFor("packages/embedding-fixtures/pyproject.toml", locks)).toBe(
-      ".",
-    );
+    expect(lockFor("packages/aphrody/pyproject.toml", locks)).toBe("packages/aphrody");
+    expect(lockFor("packages/aphrody-train/pyproject.toml", locks)).toBe("packages/aphrody-train");
+    expect(lockFor("packages/embedding-fixtures/pyproject.toml", locks)).toBe(".");
     expect(lockFor("pyproject.toml", locks)).toBe(".");
     expect(lockFor("x/pyproject.toml", ["a"])).toBeUndefined();
     expect(lockLabel(".")).toBe("uv.lock");
@@ -272,13 +252,9 @@ describe("holds", () => {
   test("version and major ceilings", () => {
     expect(holdFor(holds, "torch", "2.14.1")?.reason).toBe("windows");
     expect(holdFor(holds, "torch", "2.8.0")).toBeUndefined();
-    expect(holdFor(holds, "transformers", "5.18.0")?.reason).toBe(
-      "optimum-onnx",
-    );
+    expect(holdFor(holds, "transformers", "5.18.0")?.reason).toBe("optimum-onnx");
     expect(holdFor(holds, "transformers", "4.57.6")).toBeUndefined();
-    expect(holdFor(holds, "nvidia-nccl-cu12", "2.32.3")?.reason).toBe(
-      "follows torch",
-    );
+    expect(holdFor(holds, "nvidia-nccl-cu12", "2.32.3")?.reason).toBe("follows torch");
     expect(holdFor(holds, "numpy", "2.5.3")).toBeUndefined();
     expect(holdFor(holds, "torch", undefined)).toBeUndefined();
   });
@@ -401,9 +377,7 @@ describe("classifyDirect", () => {
       spec: "==2.8.0",
       locked: ["2.8.0"],
       release: { latest: "2.14.1" },
-      advisoryHolds: [
-        { ecosystem: "PyPI", name: "torch", reason: "advisory reason" },
-      ],
+      advisoryHolds: [{ ecosystem: "PyPI", name: "torch", reason: "advisory reason" }],
     });
     expect(r.reason).toBe("advisory reason");
   });
@@ -439,9 +413,7 @@ describe("classifyDirect", () => {
         release: { latest: "1" },
       }).state,
     ).toBe("unlocked");
-    expect(
-      classifyDirect({ ...base, name: "x", spec: "", locked: ["1"] }).state,
-    ).toBe("unknown");
+    expect(classifyDirect({ ...base, name: "x", spec: "", locked: ["1"] }).state).toBe("unknown");
   });
 });
 
@@ -504,7 +476,7 @@ describe("python policy", () => {
         pinned: "3.14",
         requires: [{ file: "tools/x/pyproject.toml", spec: ">=3.12,<3.13" }],
         interpreters: [{ version: "3.14.7", managed: true, installed: true }],
-      }).some((l) => l.includes("excludes the pinned interpreter")),
+      }).some(l => l.includes("excludes the pinned interpreter")),
     ).toBe(true);
     const behind = pythonPolicy({
       pinned: "3.14",
@@ -514,9 +486,7 @@ describe("python policy", () => {
         { version: "3.14.8", managed: true, installed: false },
       ],
     });
-    expect(behind).toEqual([
-      "managed 3.14.7 is behind 3.14.8 (uv python upgrade)",
-    ]);
+    expect(behind).toEqual(["managed 3.14.7 is behind 3.14.8 (uv python upgrade)"]);
     expect(
       pythonPolicy({
         pinned: "3.14",
@@ -570,15 +540,7 @@ describe("arguments and command lines", () => {
       "b",
       "--dry-run",
     ]);
-    expect(syncArgs()).toEqual([
-      "sync",
-      "--all-packages",
-      "--locked",
-      "--extra",
-      "rag",
-      "--extra",
-      "dedup",
-    ]);
+    expect(syncArgs()).toEqual(["sync", "--all-packages", "--locked", "--extra", "rag", "--extra", "dedup"]);
   });
   test("pypi payload", () => {
     const text = JSON.stringify({
@@ -596,14 +558,8 @@ function fixture(): { root: string; py: string; c: Ctx } {
   const root = mkdtempSync(join(tmpdir(), "uv-test-"));
   const py = join(root, "py");
   for (const [dir, body] of [
-    [
-      ".",
-      '[tool.uv.workspace]\nmembers = ["pkg/a", "pkg/b"]\n[tool.uv]\nrequired-version = "==0.12.22"\n',
-    ],
-    [
-      "pkg/a",
-      '[project]\nname = "a"\nrequires-python = ">=3.12"\ndependencies = ["click>=8"]\n',
-    ],
+    [".", '[tool.uv.workspace]\nmembers = ["pkg/a", "pkg/b"]\n[tool.uv]\nrequired-version = "==0.12.22"\n'],
+    ["pkg/a", '[project]\nname = "a"\nrequires-python = ">=3.12"\ndependencies = ["click>=8"]\n'],
     ["pkg/b", '[project]\nname = "b"\nrequires-python = ">=3.12"\n'],
     ["docs/vendored", '[project]\nname = "vendored"\n'],
   ] as const) {
@@ -625,11 +581,7 @@ describe("repository access", () => {
     const { py } = fixture();
     const layout = discover(py);
     expect(layout.locks).toEqual(["."]);
-    expect(layout.projects).toEqual([
-      "pkg/a/pyproject.toml",
-      "pkg/b/pyproject.toml",
-      "pyproject.toml",
-    ]);
+    expect(layout.projects).toEqual(["pkg/a/pyproject.toml", "pkg/b/pyproject.toml", "pyproject.toml"]);
     expect(testDirs(layout)).toEqual(["pkg/a/tests"]);
   });
   test("lock states and plans go through the runner", () => {
@@ -652,15 +604,8 @@ describe("repository access", () => {
       },
     ]);
     const plans = planLocks(layout, ["click"], run);
-    expect(calls.at(-1)).toEqual([
-      "lock",
-      "--upgrade-package",
-      "click",
-      "--dry-run",
-    ]);
-    expect(plans[0]!.changes).toEqual([
-      { ecosystem: "uv-lock", name: "click", from: "8.2.0", to: "8.3.0" },
-    ]);
+    expect(calls.at(-1)).toEqual(["lock", "--upgrade-package", "click", "--dry-run"]);
+    expect(plans[0]!.changes).toEqual([{ ecosystem: "uv-lock", name: "click", from: "8.2.0", to: "8.3.0" }]);
   });
   test("snapshot and restore round trip", () => {
     const { py, c } = fixture();
@@ -703,9 +648,7 @@ describe("status verdicts", () => {
           latest: "0.12.22",
           required: [{ file: "pyproject.toml", version: "0.12.21" }],
         },
-        locks: [
-          { dir: "a", fresh: false, packages: 1, detail: "needs update" },
-        ],
+        locks: [{ dir: "a", fresh: false, packages: 1, detail: "needs update" }],
         direct: [
           {
             name: "maturin",
@@ -748,14 +691,10 @@ describe("status verdicts", () => {
     const lines = renderPlan(s, [
       {
         dir: ".",
-        changes: [
-          { ecosystem: "uv-lock", name: "click", from: "8.2.0", to: "8.3.0" },
-        ],
+        changes: [{ ecosystem: "uv-lock", name: "click", from: "8.2.0", to: "8.3.0" }],
       },
     ]);
     expect(lines.join("\n")).toContain("click 8.2.0 -> 8.3.0  [minor]");
-    expect(lines.join("\n")).toContain(
-      "1 direct requirement(s) behind latest and not held (1 major)",
-    );
+    expect(lines.join("\n")).toContain("1 direct requirement(s) behind latest and not held (1 major)");
   });
 });

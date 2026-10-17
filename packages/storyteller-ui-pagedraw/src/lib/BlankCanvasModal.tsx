@@ -42,11 +42,7 @@ const PRESETS: { group: string; items: ResolutionPreset[] }[] = [
   },
 ];
 
-export const BlankCanvasModal = ({
-  isOpen,
-  onClose,
-  onConfirm,
-}: BlankCanvasModalProps) => {
+export const BlankCanvasModal = ({ isOpen, onClose, onConfirm }: BlankCanvasModalProps) => {
   const [selected, setSelected] = useState<ResolutionPreset | null>(null);
 
   const handleConfirm = () => {
@@ -61,29 +57,17 @@ export const BlankCanvasModal = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      title="Choose Canvas Size"
-      onClose={handleClose}
-      width={560}
-    >
+    <Modal isOpen={isOpen} title="Choose Canvas Size" onClose={handleClose} width={560}>
       <div className="flex flex-col gap-5 p-1">
-        {PRESETS.map((group) => (
+        {PRESETS.map(group => (
           <div key={group.group}>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-base-fg/50">
-              {group.group}
-            </p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-base-fg/50">{group.group}</p>
             <div className="flex flex-wrap gap-2">
-              {group.items.map((preset) => {
-                const isSelected =
-                  selected?.width === preset.width &&
-                  selected?.height === preset.height;
+              {group.items.map(preset => {
+                const isSelected = selected?.width === preset.width && selected?.height === preset.height;
                 const maxW = 56;
                 const maxH = 36;
-                const scale = Math.min(
-                  maxW / preset.width,
-                  maxH / preset.height,
-                );
+                const scale = Math.min(maxW / preset.width, maxH / preset.height);
                 const previewW = Math.round(preset.width * scale);
                 const previewH = Math.round(preset.height * scale);
 
@@ -93,18 +77,14 @@ export const BlankCanvasModal = ({
                     onClick={() => setSelected(preset)}
                     className={twMerge(
                       "flex flex-col items-center gap-2 rounded-xl border-2 bg-ui-panel px-4 py-3 text-sm font-medium text-base-fg transition-colors hover:border-primary/60",
-                      isSelected
-                        ? "border-primary bg-primary/10"
-                        : "border-ui-panel-border",
+                      isSelected ? "border-primary bg-primary/10" : "border-ui-panel-border",
                     )}
                   >
                     <div
                       className="rounded-sm border border-base-fg/20 bg-white"
                       style={{ width: previewW, height: previewH }}
                     />
-                    <span className="whitespace-nowrap text-xs">
-                      {preset.label}
-                    </span>
+                    <span className="whitespace-nowrap text-xs">{preset.label}</span>
                   </button>
                 );
               })}
@@ -116,11 +96,7 @@ export const BlankCanvasModal = ({
           <Button variant="action" onClick={handleClose}>
             Cancel
           </Button>
-          <Button
-            variant="primary"
-            onClick={handleConfirm}
-            disabled={!selected}
-          >
+          <Button variant="primary" onClick={handleConfirm} disabled={!selected}>
             Create Canvas
           </Button>
         </div>

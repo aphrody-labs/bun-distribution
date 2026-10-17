@@ -31,9 +31,7 @@ export const SPLAT_MODELS: SplatModel[] = [
   }),
 ];
 
-export const SPLAT_MODELS_BY_ID: Map<string, SplatModel> = new Map(
-  SPLAT_MODELS.map((model) => [model.id, model]),
-);
+export const SPLAT_MODELS_BY_ID: Map<string, SplatModel> = new Map(SPLAT_MODELS.map(model => [model.id, model]));
 
 if (SPLAT_MODELS_BY_ID.size !== SPLAT_MODELS.length) {
   throw new Error("All splat models must have unique IDs");

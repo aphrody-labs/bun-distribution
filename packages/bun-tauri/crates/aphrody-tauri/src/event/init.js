@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 // eslint-disable-next-line
-Object.defineProperty(window, '__TAURI_EVENT_PLUGIN_INTERNALS__', {
+Object.defineProperty(window, "__TAURI_EVENT_PLUGIN_INTERNALS__", {
   value: {
-    unregisterListener: __RAW_unregister_listener_function__
-  }
-})
+    unregisterListener: __RAW_unregister_listener_function__,
+  },
+});

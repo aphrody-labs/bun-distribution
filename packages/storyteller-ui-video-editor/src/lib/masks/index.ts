@@ -9,11 +9,7 @@ export { registerDefaultMasks } from "./builtin/definitions";
 // `withMaskId` switch is more verbose than needed but lets TypeScript
 // narrow each branch so the resulting Mask is concretely typed.
 
-type MaskWithoutId = Mask extends infer TMask
-  ? TMask extends Mask
-    ? Omit<TMask, "id">
-    : never
-  : never;
+type MaskWithoutId = Mask extends infer TMask ? (TMask extends Mask ? Omit<TMask, "id"> : never) : never;
 
 function withMaskId({ mask, id }: { mask: MaskWithoutId; id: string }): Mask {
   switch (mask.type) {

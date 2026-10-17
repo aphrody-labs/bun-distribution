@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
@@ -28,11 +21,7 @@ import { createImagePreviewUrl, revokeIfBlobUrl } from "./common/imagePreview";
 import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
-import {
-  AUDIO_FILE_ACCEPT,
-  AUDIO_FILE_TYPE_ERROR,
-  isAudioFile,
-} from "./common/audioFiles";
+import { AUDIO_FILE_ACCEPT, AUDIO_FILE_TYPE_ERROR, isAudioFile } from "./common/audioFiles";
 import {
   DndContext,
   closestCenter,
@@ -128,17 +117,12 @@ const AudioRefTile = ({
 
   return (
     <div className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer flex items-center justify-center">
-      <button
-        onClick={handleTogglePlay}
-        className="flex items-center justify-center w-full h-full"
-      >
+      <button onClick={handleTogglePlay} className="flex items-center justify-center w-full h-full">
         <DynamicIcon
           icon={isPlaying ? SquareIcon : PlayIcon}
           className={twMerge(
             "h-5 w-5 transition-colors",
-            isPlaying
-              ? "text-red-400"
-              : "text-base-fg/60 group-hover:text-base-fg",
+            isPlaying ? "text-red-400" : "text-base-fg/60 group-hover:text-base-fg",
           )}
         />
       </button>
@@ -146,7 +130,7 @@ const AudioRefTile = ({
         #{index + 1} · {audio.duration}s
       </div>
       <button
-        onClick={(e) => {
+        onClick={e => {
           e.stopPropagation();
           if (audioRef.current) {
             audioRef.current.pause();
@@ -195,19 +179,11 @@ export const ImagePromptRow = ({
   const audioFileInputRef = useRef<HTMLInputElement>(null);
   // `previewUrl` is a downscaled object URL, empty until the downscale
   // finishes (full-res uploading previews used to OOM-crash iOS tabs).
-  const [uploadingImages, setUploadingImages] = useState<
-    { id: string; file: File; previewUrl: string }[]
-  >([]);
+  const [uploadingImages, setUploadingImages] = useState<{ id: string; file: File; previewUrl: string }[]>([]);
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
-  const [galleryTarget, setGalleryTarget] = useState<"start" | "end" | "video">(
-    "start",
-  );
-  const [uploadTarget, setUploadTarget] = useState<"start" | "end" | "video">(
-    "start",
-  );
-  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
-    [],
-  );
+  const [galleryTarget, setGalleryTarget] = useState<"start" | "end" | "video">("start");
+  const [uploadTarget, setUploadTarget] = useState<"start" | "end" | "video">("start");
+  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>([]);
   const [uploadingEnd, setUploadingEnd] = useState<{
     id: string;
     file: File;
@@ -232,10 +208,7 @@ export const ImagePromptRow = ({
   // entry removal — commits reuse the entry's id, so hide entries whose ref
   // is already committed to avoid the card flashing next to its spinner.
   const visibleUploadingImages = useMemo(
-    () =>
-      uploadingImages.filter(
-        (entry) => !referenceImages.some((img) => img.id === entry.id),
-      ),
+    () => uploadingImages.filter(entry => !referenceImages.some(img => img.id === entry.id)),
     [uploadingImages, referenceImages],
   );
 
@@ -253,21 +226,8 @@ export const ImagePromptRow = ({
     }),
   );
 
-  const SortableImage = ({
-    image,
-    index,
-  }: {
-    image: RefImage;
-    index: number;
-  }) => {
-    const {
-      attributes,
-      listeners,
-      setNodeRef,
-      transform,
-      transition,
-      isDragging,
-    } = useSortable({ id: image.id });
+  const SortableImage = ({ image, index }: { image: RefImage; index: number }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: image.id });
 
     const style: CSSProperties = {
       transform: CSS.Transform.toString(transform),
@@ -282,32 +242,26 @@ export const ImagePromptRow = ({
         {...(allowReorder ? { ...attributes, ...listeners } : {})}
         className={twMerge(
           "glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 transition-opacity group",
-          allowReorder
-            ? "cursor-move hover:border-white/80"
-            : "cursor-pointer hover:border-white/80",
+          allowReorder ? "cursor-move hover:border-white/80" : "cursor-pointer hover:border-white/80",
           isDragging ? "opacity-50 shadow-lg" : "",
         )}
         onClick={() => onImageClick?.(image)}
       >
-        <img
-          src={image.url}
-          alt="Reference"
-          className="h-full w-full object-cover"
-        />
+        <img src={image.url} alt="Reference" className="h-full w-full object-cover" />
         {isReferenceMode && (
           <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-black/60 py-0.5 text-[11px] font-bold text-white">
             {index + 1}
           </div>
         )}
         <button
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             handleRemoveReference(image.id);
           }}
-          onMouseDown={(e) => {
+          onMouseDown={e => {
             e.stopPropagation();
           }}
-          onPointerDown={(e) => {
+          onPointerDown={e => {
             e.stopPropagation();
           }}
           className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
@@ -321,57 +275,29 @@ export const ImagePromptRow = ({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = referenceImages.findIndex((img) => img.id === active.id);
-    const newIndex = referenceImages.findIndex((img) => img.id === over.id);
+    const oldIndex = referenceImages.findIndex(img => img.id === active.id);
+    const newIndex = referenceImages.findIndex(img => img.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
     const newOrder = arrayMove(referenceImages, oldIndex, newIndex);
     setReferenceImages(newOrder);
   };
 
   const usedSlotsRender = useMemo(
-    () =>
-      Math.min(
-        maxImagePromptCount,
-        referenceImages.length + visibleUploadingImages.length,
-      ),
-    [
-      maxImagePromptCount,
-      referenceImages.length,
-      visibleUploadingImages.length,
-    ],
+    () => Math.min(maxImagePromptCount, referenceImages.length + visibleUploadingImages.length),
+    [maxImagePromptCount, referenceImages.length, visibleUploadingImages.length],
   );
   const availableSlotsRender = useMemo(
-    () =>
-      Math.max(
-        0,
-        maxImagePromptCount -
-          referenceImages.length -
-          visibleUploadingImages.length,
-      ),
-    [
-      maxImagePromptCount,
-      referenceImages.length,
-      visibleUploadingImages.length,
-    ],
+    () => Math.max(0, maxImagePromptCount - referenceImages.length - visibleUploadingImages.length),
+    [maxImagePromptCount, referenceImages.length, visibleUploadingImages.length],
   );
 
   useEffect(() => {
-    const anyVisible =
-      visible &&
-      (referenceImages.length > 0 ||
-        visibleUploadingImages.length > 0 ||
-        allowUpload);
+    const anyVisible = visible && (referenceImages.length > 0 || visibleUploadingImages.length > 0 || allowUpload);
     onVisibilityChange?.(!!anyVisible);
-  }, [
-    visible,
-    referenceImages.length,
-    visibleUploadingImages.length,
-    allowUpload,
-    onVisibilityChange,
-  ]);
+  }, [visible, referenceImages.length, visibleUploadingImages.length, allowUpload, onVisibilityChange]);
 
   const handleRemoveReference = (id: string) => {
-    setReferenceImages(referenceImages.filter((img) => img.id !== id));
+    setReferenceImages(referenceImages.filter(img => img.id !== id));
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -395,7 +321,7 @@ export const ImagePromptRow = ({
   }, [referenceVideos]);
 
   const getVideoDurationFromSrc = (src: string): Promise<number> =>
-    new Promise((resolve) => {
+    new Promise(resolve => {
       const video = document.createElement("video");
       video.preload = "metadata";
       video.onloadedmetadata = () => resolve(Math.round(video.duration));
@@ -408,31 +334,22 @@ export const ImagePromptRow = ({
     return getVideoDurationFromSrc(src).finally(() => URL.revokeObjectURL(src));
   };
 
-  const totalVideoDuration = useMemo(
-    () => referenceVideos.reduce((sum, v) => sum + v.duration, 0),
-    [referenceVideos],
-  );
+  const totalVideoDuration = useMemo(() => referenceVideos.reduce((sum, v) => sum + v.duration, 0), [referenceVideos]);
 
   // Tokens already in the slot the picker targets, greyed out in the gallery
   // so one media file can't be added twice to the same field. Reusing an image
   // across slots (e.g. start AND end frame) stays allowed.
   const disabledGalleryIds = useMemo(() => {
     if (galleryTarget === "video") {
-      return referenceVideos
-        .map((video) => video.mediaToken)
-        .filter((t): t is string => !!t);
+      return referenceVideos.map(video => video.mediaToken).filter((t): t is string => !!t);
     }
     if (galleryTarget === "end") {
       return endFrameImage?.mediaToken ? [endFrameImage.mediaToken] : [];
     }
-    return referenceImages
-      .map((img) => img.mediaToken)
-      .filter((t): t is string => !!t);
+    return referenceImages.map(img => img.mediaToken).filter((t): t is string => !!t);
   }, [galleryTarget, referenceImages, referenceVideos, endFrameImage]);
 
-  const handleVideoFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleVideoFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
@@ -441,10 +358,7 @@ export const ImagePromptRow = ({
     const baseVideos = [...referenceVideos];
     const availableSlots = Math.max(0, maxVideoCount - baseVideos.length);
     if (availableSlots <= 0) {
-      toast.error(
-        `Max ${maxVideoCount} videos / ${maxVideoRefDuration}s total`,
-        { id: "video-ref-limit" },
-      );
+      toast.error(`Max ${maxVideoCount} videos / ${maxVideoRefDuration}s total`, { id: "video-ref-limit" });
       if (videoFileInputRef.current) videoFileInputRef.current.value = "";
       return;
     }
@@ -457,10 +371,7 @@ export const ImagePromptRow = ({
       const currentTotal = committed.reduce((sum, v) => sum + v.duration, 0);
 
       if (currentTotal + duration > maxVideoRefDuration) {
-        toast.error(
-          `Total video duration cannot exceed ${maxVideoRefDuration}s`,
-          { id: "video-ref-limit" },
-        );
+        toast.error(`Total video duration cannot exceed ${maxVideoRefDuration}s`, { id: "video-ref-limit" });
         break;
       }
 
@@ -469,11 +380,9 @@ export const ImagePromptRow = ({
 
       if (uploadVideo) {
         await uploadVideo({
-          title: `reference-video-${Math.random()
-            .toString(36)
-            .substring(2, 15)}`,
+          title: `reference-video-${Math.random().toString(36).substring(2, 15)}`,
           assetFile: file,
-          progressCallback: (newState) => {
+          progressCallback: newState => {
             if (newState.status === UploaderStates.success && newState.data) {
               const refVideo: RefVideo = {
                 id: Math.random().toString(36).substring(7),
@@ -512,7 +421,7 @@ export const ImagePromptRow = ({
   };
 
   const handleRemoveVideo = (id: string) => {
-    setReferenceVideos?.(referenceVideos.filter((v) => v.id !== id));
+    setReferenceVideos?.(referenceVideos.filter(v => v.id !== id));
     if (videoFileInputRef.current) videoFileInputRef.current.value = "";
   };
 
@@ -526,7 +435,7 @@ export const ImagePromptRow = ({
   }, [referenceAudios]);
 
   const getAudioDuration = (file: File): Promise<number> =>
-    new Promise((resolve) => {
+    new Promise(resolve => {
       const audio = document.createElement("audio");
       audio.preload = "metadata";
       audio.onloadedmetadata = () => {
@@ -540,14 +449,9 @@ export const ImagePromptRow = ({
       audio.src = URL.createObjectURL(file);
     });
 
-  const totalAudioDuration = useMemo(
-    () => referenceAudios.reduce((sum, a) => sum + a.duration, 0),
-    [referenceAudios],
-  );
+  const totalAudioDuration = useMemo(() => referenceAudios.reduce((sum, a) => sum + a.duration, 0), [referenceAudios]);
 
-  const handleAudioFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleAudioFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
@@ -566,15 +470,10 @@ export const ImagePromptRow = ({
 
     for (const file of filesToProcess) {
       const duration = await getAudioDuration(file);
-      const currentTotal = referenceAudiosRef.current.reduce(
-        (sum, a) => sum + a.duration,
-        0,
-      );
+      const currentTotal = referenceAudiosRef.current.reduce((sum, a) => sum + a.duration, 0);
 
       if (currentTotal + duration > maxAudioRefDuration) {
-        toast.error(
-          `Total audio duration cannot exceed ${maxAudioRefDuration}s`,
-        );
+        toast.error(`Total audio duration cannot exceed ${maxAudioRefDuration}s`);
         break;
       }
 
@@ -583,11 +482,9 @@ export const ImagePromptRow = ({
 
       if (uploadAudio) {
         await uploadAudio({
-          title: `reference-audio-${Math.random()
-            .toString(36)
-            .substring(2, 15)}`,
+          title: `reference-audio-${Math.random().toString(36).substring(2, 15)}`,
           assetFile: file,
-          progressCallback: (newState) => {
+          progressCallback: newState => {
             if (newState.status === UploaderStates.success && newState.data) {
               const refAudio: RefAudio = {
                 id: Math.random().toString(36).substring(7),
@@ -623,7 +520,7 @@ export const ImagePromptRow = ({
   };
 
   const handleRemoveAudio = (id: string) => {
-    setReferenceAudios?.(referenceAudios.filter((a) => a.id !== id));
+    setReferenceAudios?.(referenceAudios.filter(a => a.id !== id));
     if (audioFileInputRef.current) audioFileInputRef.current.value = "";
   };
 
@@ -638,42 +535,30 @@ export const ImagePromptRow = ({
       return;
     }
 
-    const filesToProcess =
-      uploadTarget === "end"
-        ? files.slice(0, 1)
-        : files.slice(0, availableSlots);
+    const filesToProcess = uploadTarget === "end" ? files.slice(0, 1) : files.slice(0, availableSlots);
 
-    filesToProcess.forEach(async (file) => {
+    filesToProcess.forEach(async file => {
       const uploadId = Math.random().toString(36).substring(7);
       if (uploadTarget === "end") {
         setUploadingEnd({ id: uploadId, file, previewUrl: "" });
       } else {
-        setUploadingImages((prev) => [
-          ...prev,
-          { id: uploadId, file, previewUrl: "" },
-        ]);
+        setUploadingImages(prev => [...prev, { id: uploadId, file, previewUrl: "" }]);
       }
 
       // Downscaled preview; the committed thumbnail reuses it while the
       // original file backs the full-res preview modal via `fullUrl`.
       const previewUrl = await createImagePreviewUrl(file);
       if (uploadTarget === "end") {
-        setUploadingEnd((prev) =>
-          prev && prev.id === uploadId ? { ...prev, previewUrl } : prev,
-        );
+        setUploadingEnd(prev => (prev && prev.id === uploadId ? { ...prev, previewUrl } : prev));
       } else {
-        setUploadingImages((prev) =>
-          prev.map((e) => (e.id === uploadId ? { ...e, previewUrl } : e)),
-        );
+        setUploadingImages(prev => prev.map(e => (e.id === uploadId ? { ...e, previewUrl } : e)));
       }
 
       const removeEntry = () => {
         if (uploadTarget === "end") {
           setUploadingEnd(null);
         } else {
-          setUploadingImages((prev) =>
-            prev.filter((img) => img.id !== uploadId),
-          );
+          setUploadingImages(prev => prev.filter(img => img.id !== uploadId));
         }
       };
 
@@ -696,11 +581,9 @@ export const ImagePromptRow = ({
 
       if (uploadImage) {
         await uploadImage({
-          title: `reference-image-${Math.random()
-            .toString(36)
-            .substring(2, 15)}`,
+          title: `reference-image-${Math.random().toString(36).substring(2, 15)}`,
           assetFile: file,
-          progressCallback: (newState) => {
+          progressCallback: newState => {
             if (newState.status === UploaderStates.success && newState.data) {
               commit(newState.data);
             } else if (
@@ -726,8 +609,8 @@ export const ImagePromptRow = ({
   };
 
   const handleImageSelect = (id: string) => {
-    setSelectedGalleryImages((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
+    setSelectedGalleryImages(prev => {
+      if (prev.includes(id)) return prev.filter(x => x !== id);
       const maxSelections =
         galleryTarget === "video"
           ? Math.max(1, maxVideoCount - referenceVideos.length)
@@ -748,27 +631,20 @@ export const ImagePromptRow = ({
       const baseVideos = [...referenceVideos];
       const availableSlots = Math.max(0, maxVideoCount - baseVideos.length);
       if (availableSlots <= 0) {
-        toast.error(
-          `Max ${maxVideoCount} videos / ${maxVideoRefDuration}s total`,
-          { id: "video-ref-limit" },
-        );
+        toast.error(`Max ${maxVideoCount} videos / ${maxVideoRefDuration}s total`, { id: "video-ref-limit" });
         setIsGalleryModalOpen(false);
         setSelectedGalleryImages([]);
         return;
       }
       const itemsToProcess = selectedItems
         .slice(0, availableSlots)
-        .filter((item): item is GalleryItem & { fullImage: string } =>
-          Boolean(item.fullImage),
-        );
+        .filter((item): item is GalleryItem & { fullImage: string } => Boolean(item.fullImage));
 
       setIsProcessingGallery(true);
       try {
         // Parallelize duration probes — sequential metadata loads was the
         // source of the perceived lag on the "Use selected" click.
-        const durations = await Promise.all(
-          itemsToProcess.map((item) => getVideoDurationFromSrc(item.fullImage)),
-        );
+        const durations = await Promise.all(itemsToProcess.map(item => getVideoDurationFromSrc(item.fullImage)));
 
         const newVideos: RefVideo[] = [];
         let currentTotal = baseVideos.reduce((sum, v) => sum + v.duration, 0);
@@ -790,10 +666,7 @@ export const ImagePromptRow = ({
           });
         }
         if (exceeded) {
-          toast.error(
-            `Total video duration cannot exceed ${maxVideoRefDuration}s`,
-            { id: "video-ref-limit" },
-          );
+          toast.error(`Total video duration cannot exceed ${maxVideoRefDuration}s`, { id: "video-ref-limit" });
         }
         if (newVideos.length > 0) {
           setReferenceVideos?.([...baseVideos, ...newVideos]);
@@ -819,10 +692,7 @@ export const ImagePromptRow = ({
       setSelectedGalleryImages([]);
       return;
     }
-    const availableSlots = Math.max(
-      0,
-      maxImagePromptCount - referenceImages.length,
-    );
+    const availableSlots = Math.max(0, maxImagePromptCount - referenceImages.length);
     if (availableSlots <= 0) {
       setIsGalleryModalOpen(false);
       setSelectedGalleryImages([]);
@@ -830,7 +700,7 @@ export const ImagePromptRow = ({
     }
 
     const newRefs = [...referenceImages];
-    selectedItems.slice(0, availableSlots).forEach((item) => {
+    selectedItems.slice(0, availableSlots).forEach(item => {
       if (!item.fullImage) return;
       newRefs.push({
         id: Math.random().toString(36).substring(7),
@@ -884,27 +754,18 @@ export const ImagePromptRow = ({
           showVideoReferenceSection ? "-top-[144px]" : "-top-[72px]",
           className,
         )}
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-        onMouseUp={(e) => e.stopPropagation()}
+        onMouseDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
+        onMouseUp={e => e.stopPropagation()}
       >
         <div className="grow flex flex-col">
-          <div
-            className={twMerge(
-              "grid grid-cols-1",
-              isVideo && showEndFrameSection && "grid-cols-2",
-            )}
-          >
+          <div className={twMerge("grid grid-cols-1", isVideo && showEndFrameSection && "grid-cols-2")}>
             <div className="flex gap-2 py-2 px-3">
               <div className="flex flex-col grow gap-1">
                 <div className="flex items-center gap-2 opacity-90 text-base-fg">
                   <ImageIcon className="h-3.5 w-3.5" />
                   <span className="text-sm font-medium flex items-center gap-1.5">
-                    {isVideo
-                      ? isReferenceMode
-                        ? "Image Ref"
-                        : "Start Frame"
-                      : "Image Prompts"}
+                    {isVideo ? (isReferenceMode ? "Image Ref" : "Start Frame") : "Image Prompts"}
                     {(!isVideo || isReferenceMode) && (
                       <span className="text-base-fg/60 font-semibold">
                         ({usedSlotsRender}/{maxImagePromptCount})
@@ -913,74 +774,49 @@ export const ImagePromptRow = ({
                   </span>
                 </div>
                 <span className="text-[13px] text-base-fg/60">
-                  {isVideo
-                    ? isReferenceMode
-                      ? "Upload images"
-                      : "Animate an image"
-                    : "Use the elements of an image"}
+                  {isVideo ? (isReferenceMode ? "Upload images" : "Animate an image") : "Use the elements of an image"}
                 </span>
               </div>
 
               <div className="flex gap-2">
                 {allowReorder ? (
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                  >
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext
-                      items={referenceImages
-                        .slice(0, Math.max(0, maxImagePromptCount))
-                        .map((img) => img.id)}
+                      items={referenceImages.slice(0, Math.max(0, maxImagePromptCount)).map(img => img.id)}
                       strategy={horizontalListSortingStrategy}
                     >
-                      {referenceImages
-                        .slice(0, Math.max(0, maxImagePromptCount))
-                        .map((image, index) => (
-                          <SortableImage
-                            key={image.id}
-                            image={image}
-                            index={index}
-                          />
-                        ))}
+                      {referenceImages.slice(0, Math.max(0, maxImagePromptCount)).map((image, index) => (
+                        <SortableImage key={image.id} image={image} index={index} />
+                      ))}
                     </SortableContext>
                   </DndContext>
                 ) : (
-                  referenceImages
-                    .slice(0, Math.max(0, maxImagePromptCount))
-                    .map((image, index) => (
-                      <div
-                        key={image.id}
-                        className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
-                        onClick={() => onImageClick?.(image)}
+                  referenceImages.slice(0, Math.max(0, maxImagePromptCount)).map((image, index) => (
+                    <div
+                      key={image.id}
+                      className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
+                      onClick={() => onImageClick?.(image)}
+                    >
+                      <img src={image.url} alt="Reference" className="h-full w-full object-cover" />
+                      {isReferenceMode && (
+                        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-black/60 py-0.5 text-[11px] font-bold text-white">
+                          {index + 1}
+                        </div>
+                      )}
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleRemoveReference(image.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                       >
-                        <img
-                          src={image.url}
-                          alt="Reference"
-                          className="h-full w-full object-cover"
-                        />
-                        {isReferenceMode && (
-                          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-black/60 py-0.5 text-[11px] font-bold text-white">
-                            {index + 1}
-                          </div>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveReference(image.id);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
-                        >
-                          <XIcon className="h-2.5 w-2.5" />
-                        </button>
-                      </div>
-                    ))
+                        <XIcon className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                  ))
                 )}
                 {visibleUploadingImages
-                  .slice(
-                    0,
-                    Math.max(0, maxImagePromptCount - referenceImages.length),
-                  )
+                  .slice(0, Math.max(0, maxImagePromptCount - referenceImages.length))
                   .map(({ id, previewUrl }) => (
                     <div
                       key={id}
@@ -1000,8 +836,7 @@ export const ImagePromptRow = ({
                       </div>
                     </div>
                   ))}
-                {referenceImages.length + visibleUploadingImages.length <
-                  maxImagePromptCount && (
+                {referenceImages.length + visibleUploadingImages.length < maxImagePromptCount && (
                   <Tooltip
                     interactive={true}
                     position="top"
@@ -1011,12 +846,7 @@ export const ImagePromptRow = ({
                     content={
                       <div className="flex flex-col gap-1.5">
                         {allowUpload && (
-                          <Button
-                            variant="primary"
-                            onClick={handleUploadClickStart}
-                            icon={PlusIcon}
-                            className="w-full"
-                          >
+                          <Button variant="primary" onClick={handleUploadClickStart} icon={PlusIcon} className="w-full">
                             Upload
                           </Button>
                         )}
@@ -1059,15 +889,10 @@ export const ImagePromptRow = ({
                     <div className="flex items-center gap-2 opacity-90 text-base-fg">
                       <ImageIcon className="h-3.5 w-3.5" />
                       <span className="text-sm font-medium flex items-center gap-1.5">
-                        End Frame{" "}
-                        <span className="text-base-fg/60 text-xs">
-                          (optional)
-                        </span>
+                        End Frame <span className="text-base-fg/60 text-xs">(optional)</span>
                       </span>
                     </div>
-                    <span className="text-[13px] text-base-fg/60">
-                      How video ends
-                    </span>
+                    <span className="text-[13px] text-base-fg/60">How video ends</span>
                   </div>
                 </div>
                 <div className="flex gap-2 items-center">
@@ -1076,13 +901,9 @@ export const ImagePromptRow = ({
                       className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
                       onClick={() => onImageClick?.(endFrameImage)}
                     >
-                      <img
-                        src={endFrameImage.url}
-                        alt="Ending Frame"
-                        className="h-full w-full object-cover"
-                      />
+                      <img src={endFrameImage.url} alt="Ending Frame" className="h-full w-full object-cover" />
                       <button
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
                           setEndFrameImage?.(undefined);
                         }}
@@ -1116,12 +937,7 @@ export const ImagePromptRow = ({
                       content={
                         <div className="flex flex-col gap-1.5">
                           {allowUploadEnd && (
-                            <Button
-                              variant="primary"
-                              onClick={handleUploadClickEnd}
-                              icon={PlusIcon}
-                              className="w-full"
-                            >
+                            <Button variant="primary" onClick={handleUploadClickEnd} icon={PlusIcon} className="w-full">
                               Upload
                             </Button>
                           )}
@@ -1177,22 +993,17 @@ export const ImagePromptRow = ({
                   </span>
                 </div>
                 <div className="flex gap-2 items-center">
-                  {referenceVideos.map((video) => (
+                  {referenceVideos.map(video => (
                     <div
                       key={video.id}
                       className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer"
                     >
-                      <video
-                        src={video.url}
-                        muted
-                        preload="metadata"
-                        className="h-full w-full object-cover"
-                      />
+                      <video src={video.url} muted preload="metadata" className="h-full w-full object-cover" />
                       <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-black/70 py-0.5 text-[10px] font-bold text-white">
                         {video.duration}s
                       </div>
                       <button
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
                           handleRemoveVideo(video.id);
                         }}
@@ -1217,47 +1028,41 @@ export const ImagePromptRow = ({
                       </div>
                     </div>
                   )}
-                  {referenceVideos.length < maxVideoCount &&
-                    !uploadingVideo && (
-                      <Tooltip
-                        interactive={true}
-                        position="top"
-                        delay={100}
-                        className="bg-ui-controls text-base-fg border border-ui-controls-border p-2 -mb-0.5"
-                        closeOnClick={true}
-                        content={
-                          <div className="flex flex-col gap-1.5">
-                            <Button
-                              variant="primary"
-                              onClick={handleUploadClickVideo}
-                              icon={PlusIcon}
-                              className="w-full"
-                            >
-                              Upload
-                            </Button>
-                            <Button
-                              variant="action"
-                              onClick={() => {
-                                setGalleryTarget("video");
-                                setIsGalleryModalOpen(true);
-                              }}
-                              icon={ImagesIcon}
-                              className="w-full bg-base-fg/10 hover:bg-base-fg/20"
-                            >
-                              Pick from library
-                            </Button>
-                          </div>
-                        }
+                  {referenceVideos.length < maxVideoCount && !uploadingVideo && (
+                    <Tooltip
+                      interactive={true}
+                      position="top"
+                      delay={100}
+                      className="bg-ui-controls text-base-fg border border-ui-controls-border p-2 -mb-0.5"
+                      closeOnClick={true}
+                      content={
+                        <div className="flex flex-col gap-1.5">
+                          <Button variant="primary" onClick={handleUploadClickVideo} icon={PlusIcon} className="w-full">
+                            Upload
+                          </Button>
+                          <Button
+                            variant="action"
+                            onClick={() => {
+                              setGalleryTarget("video");
+                              setIsGalleryModalOpen(true);
+                            }}
+                            icon={ImagesIcon}
+                            className="w-full bg-base-fg/10 hover:bg-base-fg/20"
+                          >
+                            Pick from library
+                          </Button>
+                        </div>
+                      }
+                    >
+                      <Button
+                        variant="action"
+                        className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-[3px] w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
+                        onClick={handleUploadClickVideo}
                       >
-                        <Button
-                          variant="action"
-                          className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-[3px] w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
-                          onClick={handleUploadClickVideo}
-                        >
-                          <PlusIcon className="text-2xl opacity-80 text-base-fg" />
-                        </Button>
-                      </Tooltip>
-                    )}
+                        <PlusIcon className="text-2xl opacity-80 text-base-fg" />
+                      </Button>
+                    </Tooltip>
+                  )}
                 </div>
               </div>
               {/* Audio References - Right */}
@@ -1281,28 +1086,22 @@ export const ImagePromptRow = ({
                 </div>
                 <div className="flex gap-2 items-center">
                   {referenceAudios.map((audio, index) => (
-                    <AudioRefTile
-                      key={audio.id}
-                      audio={audio}
-                      index={index}
-                      onRemove={handleRemoveAudio}
-                    />
+                    <AudioRefTile key={audio.id} audio={audio} index={index} onRemove={handleRemoveAudio} />
                   ))}
                   {uploadingAudio && (
                     <div className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 flex items-center justify-center">
                       <LoaderCircleIcon className="h-6 w-6 animate-spin text-white" />
                     </div>
                   )}
-                  {referenceAudios.length < maxAudioCount &&
-                    !uploadingAudio && (
-                      <Button
-                        variant="action"
-                        className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-[3px] w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
-                        onClick={handleUploadClickAudio}
-                      >
-                        <PlusIcon className="text-2xl opacity-80 text-base-fg" />
-                      </Button>
-                    )}
+                  {referenceAudios.length < maxAudioCount && !uploadingAudio && (
+                    <Button
+                      variant="action"
+                      className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-[3px] w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
+                      onClick={handleUploadClickAudio}
+                    >
+                      <PlusIcon className="text-2xl opacity-80 text-base-fg" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

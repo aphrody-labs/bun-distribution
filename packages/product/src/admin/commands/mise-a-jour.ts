@@ -26,8 +26,7 @@ const command: Command = {
       ctx.ui.say(HELP);
       return 0;
     }
-    const say = (line: string) =>
-      values.discret || values.quiet || ctx.ui.say(line);
+    const say = (line: string) => values.discret || values.quiet || ctx.ui.say(line);
     try {
       const result = await updateKit(ctx, {
         checkOnly: values.verifier === true,
@@ -42,9 +41,7 @@ const command: Command = {
           );
           break;
         case "updated":
-          say(
-            `Mis à jour : ${ctx.version} -> ${result.latest}. Actif au prochain lancement.`,
-          );
+          say(`Mis à jour : ${ctx.version} -> ${result.latest}. Actif au prochain lancement.`);
           break;
         case "skipped":
           say(`Pas de mise à jour : ${result.detail ?? "rien à installer"}`);

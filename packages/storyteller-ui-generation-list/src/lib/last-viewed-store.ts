@@ -12,9 +12,7 @@ interface LastViewedGenerationState {
   setId: (id: string) => void;
 }
 
-export const useLastViewedGenerationStore = create<LastViewedGenerationState>(
-  (set) => ({
-    id: null,
-    setId: (id) => set({ id }),
-  }),
-);
+export const useLastViewedGenerationStore = create<LastViewedGenerationState>(set => ({
+  id: null,
+  setId: id => set({ id }),
+}));

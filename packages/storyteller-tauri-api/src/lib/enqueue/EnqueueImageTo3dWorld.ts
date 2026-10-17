@@ -40,8 +40,7 @@ export interface EnqueueImageTo3dWorldSuccess extends CommandResult {
   payload: EnqueueImageTo3dWorldPayload;
 }
 
-export type EnqueueImageTo3dWorldResult =
-  EnqueueImageTo3dWorldSuccess | EnqueueImageTo3dWorldError;
+export type EnqueueImageTo3dWorldResult = EnqueueImageTo3dWorldSuccess | EnqueueImageTo3dWorldError;
 
 export const EnqueueImageTo3dWorld = async (
   request: EnqueueImageTo3dWorldRequest,

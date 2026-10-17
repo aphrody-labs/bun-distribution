@@ -5,7 +5,13 @@ interface Functions {
   /** traffic.dll!TcAddFilter */
   TcAddFilter(FlowHandle: Win32Pointer, pGenericFilter: Win32Pointer, pFilterHandle: Win32Pointer): number;
   /** traffic.dll!TcAddFlow */
-  TcAddFlow(IfcHandle: Win32Pointer, ClFlowCtx: Win32Pointer, Flags: number, pGenericFlow: Win32Pointer, pFlowHandle: Win32Pointer): number;
+  TcAddFlow(
+    IfcHandle: Win32Pointer,
+    ClFlowCtx: Win32Pointer,
+    Flags: number,
+    pGenericFlow: Win32Pointer,
+    pFlowHandle: Win32Pointer,
+  ): number;
   /** traffic.dll!TcCloseInterface */
   TcCloseInterface(IfcHandle: Win32Pointer): number;
   /** traffic.dll!TcDeleteFilter */
@@ -15,7 +21,13 @@ interface Functions {
   /** traffic.dll!TcDeregisterClient */
   TcDeregisterClient(ClientHandle: Win32Pointer): number;
   /** traffic.dll!TcEnumerateFlows */
-  TcEnumerateFlows(IfcHandle: Win32Pointer, pEnumHandle: Win32Pointer, pFlowCount: Win32Pointer, pBufSize: Win32Pointer, Buffer: Win32Pointer): number;
+  TcEnumerateFlows(
+    IfcHandle: Win32Pointer,
+    pEnumHandle: Win32Pointer,
+    pFlowCount: Win32Pointer,
+    pBufSize: Win32Pointer,
+    Buffer: Win32Pointer,
+  ): number;
   /** traffic.dll!TcEnumerateInterfaces */
   TcEnumerateInterfaces(ClientHandle: Win32Pointer, pBufferSize: Win32Pointer, InterfaceBuffer: Win32Pointer): number;
   /** traffic.dll!TcGetFlowNameA */
@@ -27,27 +39,83 @@ interface Functions {
   /** traffic.dll!TcModifyFlow */
   TcModifyFlow(FlowHandle: Win32Pointer, pGenericFlow: Win32Pointer): number;
   /** traffic.dll!TcOpenInterfaceA */
-  TcOpenInterfaceA(pInterfaceName: string | Win32Pointer, ClientHandle: Win32Pointer, ClIfcCtx: Win32Pointer, pIfcHandle: Win32Pointer): number;
+  TcOpenInterfaceA(
+    pInterfaceName: string | Win32Pointer,
+    ClientHandle: Win32Pointer,
+    ClIfcCtx: Win32Pointer,
+    pIfcHandle: Win32Pointer,
+  ): number;
   /** traffic.dll!TcOpenInterfaceW */
-  TcOpenInterfaceW(pInterfaceName: string | Win32Pointer, ClientHandle: Win32Pointer, ClIfcCtx: Win32Pointer, pIfcHandle: Win32Pointer): number;
+  TcOpenInterfaceW(
+    pInterfaceName: string | Win32Pointer,
+    ClientHandle: Win32Pointer,
+    ClIfcCtx: Win32Pointer,
+    pIfcHandle: Win32Pointer,
+  ): number;
   /** traffic.dll!TcOpenInterfaceW */
-  TcOpenInterface(pInterfaceName: string | Win32Pointer, ClientHandle: Win32Pointer, ClIfcCtx: Win32Pointer, pIfcHandle: Win32Pointer): number;
+  TcOpenInterface(
+    pInterfaceName: string | Win32Pointer,
+    ClientHandle: Win32Pointer,
+    ClIfcCtx: Win32Pointer,
+    pIfcHandle: Win32Pointer,
+  ): number;
   /** traffic.dll!TcQueryFlowA */
-  TcQueryFlowA(pFlowName: string | Win32Pointer, pGuidParam: Win32Pointer, pBufferSize: Win32Pointer, Buffer: Win32Pointer): number;
+  TcQueryFlowA(
+    pFlowName: string | Win32Pointer,
+    pGuidParam: Win32Pointer,
+    pBufferSize: Win32Pointer,
+    Buffer: Win32Pointer,
+  ): number;
   /** traffic.dll!TcQueryFlowW */
-  TcQueryFlowW(pFlowName: string | Win32Pointer, pGuidParam: Win32Pointer, pBufferSize: Win32Pointer, Buffer: Win32Pointer): number;
+  TcQueryFlowW(
+    pFlowName: string | Win32Pointer,
+    pGuidParam: Win32Pointer,
+    pBufferSize: Win32Pointer,
+    Buffer: Win32Pointer,
+  ): number;
   /** traffic.dll!TcQueryFlowW */
-  TcQueryFlow(pFlowName: string | Win32Pointer, pGuidParam: Win32Pointer, pBufferSize: Win32Pointer, Buffer: Win32Pointer): number;
+  TcQueryFlow(
+    pFlowName: string | Win32Pointer,
+    pGuidParam: Win32Pointer,
+    pBufferSize: Win32Pointer,
+    Buffer: Win32Pointer,
+  ): number;
   /** traffic.dll!TcQueryInterface */
-  TcQueryInterface(IfcHandle: Win32Pointer, pGuidParam: Win32Pointer, NotifyChange: number, pBufferSize: Win32Pointer, Buffer: Win32Pointer): number;
+  TcQueryInterface(
+    IfcHandle: Win32Pointer,
+    pGuidParam: Win32Pointer,
+    NotifyChange: number,
+    pBufferSize: Win32Pointer,
+    Buffer: Win32Pointer,
+  ): number;
   /** traffic.dll!TcRegisterClient */
-  TcRegisterClient(TciVersion: number, ClRegCtx: Win32Pointer, ClientHandlerList: Win32Pointer, pClientHandle: Win32Pointer): number;
+  TcRegisterClient(
+    TciVersion: number,
+    ClRegCtx: Win32Pointer,
+    ClientHandlerList: Win32Pointer,
+    pClientHandle: Win32Pointer,
+  ): number;
   /** traffic.dll!TcSetFlowA */
-  TcSetFlowA(pFlowName: string | Win32Pointer, pGuidParam: Win32Pointer, BufferSize: number, Buffer: Win32Pointer): number;
+  TcSetFlowA(
+    pFlowName: string | Win32Pointer,
+    pGuidParam: Win32Pointer,
+    BufferSize: number,
+    Buffer: Win32Pointer,
+  ): number;
   /** traffic.dll!TcSetFlowW */
-  TcSetFlowW(pFlowName: string | Win32Pointer, pGuidParam: Win32Pointer, BufferSize: number, Buffer: Win32Pointer): number;
+  TcSetFlowW(
+    pFlowName: string | Win32Pointer,
+    pGuidParam: Win32Pointer,
+    BufferSize: number,
+    Buffer: Win32Pointer,
+  ): number;
   /** traffic.dll!TcSetFlowW */
-  TcSetFlow(pFlowName: string | Win32Pointer, pGuidParam: Win32Pointer, BufferSize: number, Buffer: Win32Pointer): number;
+  TcSetFlow(
+    pFlowName: string | Win32Pointer,
+    pGuidParam: Win32Pointer,
+    BufferSize: number,
+    Buffer: Win32Pointer,
+  ): number;
   /** traffic.dll!TcSetInterface */
   TcSetInterface(IfcHandle: Win32Pointer, pGuidParam: Win32Pointer, BufferSize: number, Buffer: Win32Pointer): number;
 }

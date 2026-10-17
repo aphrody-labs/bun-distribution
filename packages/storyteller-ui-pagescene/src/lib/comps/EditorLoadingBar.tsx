@@ -6,7 +6,7 @@ import { usePageSceneStore } from "../PageSceneStore";
 // owns the loading bar UI; hosts that want a different visual can
 // build their own component reading from the same store slice.
 export const EditorLoadingBar = () => {
-  const editorLoader = usePageSceneStore((s) => s.editorLoader);
+  const editorLoader = usePageSceneStore(s => s.editorLoader);
   return (
     <LoadingBar
       id="editor-loading-bar"

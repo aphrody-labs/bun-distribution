@@ -57,7 +57,7 @@ export function useElementInteraction({
       getCurrentTime: () => editor.playback.getCurrentTime(),
     },
     timeline: {
-      moveElements: (args) => editor.timeline.moveElements(args),
+      moveElements: args => editor.timeline.moveElements(args),
     },
     snap: {
       isEnabled: () => snappingEnabled,
@@ -65,9 +65,7 @@ export function useElementInteraction({
     },
   };
   const depsRef = useCommittedRef(deps) as ElementInteractionDepsRef;
-  const [controller] = useState(
-    () => new ElementInteractionController({ depsRef }),
-  );
+  const [controller] = useState(() => new ElementInteractionController({ depsRef }));
 
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   useEffect(() => controller.subscribe(rerender), [controller]);

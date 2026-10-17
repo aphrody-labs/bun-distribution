@@ -6,10 +6,7 @@ import type Editor from "../engine/editor";
 // userData.skeletonVisible. Deliberately not undoable (view state, not
 // scene content), matching the FK-mode visualization it complements.
 export function toggleSkeletonHelper(editor: Editor, uuid: string): void {
-  editor.skeletonHelpers.setVisible(
-    uuid,
-    !editor.skeletonHelpers.isVisible(uuid),
-  );
+  editor.skeletonHelpers.setVisible(uuid, !editor.skeletonHelpers.isVisible(uuid));
   // Refresh so the outliner row's bone icon reflects the new state.
   editor.selection.refreshOutliner();
 }

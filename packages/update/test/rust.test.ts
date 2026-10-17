@@ -105,7 +105,7 @@ yara-x = { version = "=1.7.0", default-features = false }
 describe("manifest declarations", () => {
   test("registry dependencies only, with renames and workspace inheritance", () => {
     const d = readDecls("crates/x/Cargo.toml", MANIFEST);
-    const by = (n: string) => d.find((x) => x.name === n);
+    const by = (n: string) => d.find(x => x.name === n);
     expect(by("serde")).toMatchObject({
       req: "1",
       crate: "serde",
@@ -121,21 +121,15 @@ describe("manifest declarations", () => {
     expect(by("fork")).toBeUndefined();
   });
   test("direct dependencies join workspace entries with their consumers", () => {
-    const decls = [
-      ...readDecls("Cargo.toml", ROOT),
-      ...readDecls("crates/x/Cargo.toml", MANIFEST),
-    ];
+    const decls = [...readDecls("Cargo.toml", ROOT), ...readDecls("crates/x/Cargo.toml", MANIFEST)];
     const rows = directDeps(decls);
-    const shared = rows.find((r) => r.crate === "shared")!;
+    const shared = rows.find(r => r.crate === "shared")!;
     expect(shared.req).toBe("0.9");
     expect(shared.consumers).toEqual(["demo"]);
     expect(shared.declaredIn).toEqual(["Cargo.toml"]);
-    const serde = rows.find((r) => r.crate === "serde")!;
-    expect(serde.declaredIn.toSorted()).toEqual([
-      "Cargo.toml",
-      "crates/x/Cargo.toml",
-    ]);
-    expect(rows.find((r) => r.crate === "yara-x")?.req).toBe("=1.7.0");
+    const serde = rows.find(r => r.crate === "serde")!;
+    expect(serde.declaredIn.toSorted()).toEqual(["Cargo.toml", "crates/x/Cargo.toml"]);
+    expect(rows.find(r => r.crate === "yara-x")?.req).toBe("=1.7.0");
   });
 });
 
@@ -143,21 +137,15 @@ describe("rewriteReq", () => {
   test("rewrites only the named dependency in dependency sections", () => {
     const a = rewriteReq(MANIFEST, "tokio", "1.52", "1.53");
     expect(a.count).toBe(1);
-    expect(a.text).toContain(
-      'tokio = { version = "1.53", default-features = false',
-    );
-    expect(rewriteReq(MANIFEST, "serde", "1", "2").text).toContain(
-      'serde = "2"',
-    );
+    expect(a.text).toContain('tokio = { version = "1.53", default-features = false');
+    expect(rewriteReq(MANIFEST, "serde", "1", "2").text).toContain('serde = "2"');
     const t = rewriteReq(MANIFEST, "detailed", "0.3", "0.4");
     expect(t.count).toBe(1);
     expect(t.text).toContain('version = "0.4"');
     expect(t.text).toContain('version = "0.1.0"\n\n[dependencies]'); // [package] version untouched
     const w = rewriteReq(MANIFEST, "windows-sys", "0.61", "0.62");
     expect(w.count).toBe(1);
-    expect(rewriteReq(ROOT, "yara-x", "=1.7.0", "=1.19.0").text).toContain(
-      'version = "=1.19.0"',
-    );
+    expect(rewriteReq(ROOT, "yara-x", "=1.7.0", "=1.19.0").text).toContain('version = "=1.19.0"');
   });
   test("does not touch a name that is only a prefix, or a stale requirement", () => {
     expect(rewriteReq(MANIFEST, "tok", "1.52", "1.53").count).toBe(0);
@@ -226,9 +214,7 @@ describe("lock pins", () => {
       { crate: "yara-x-parser", reason: "r", lockVersion: "1.7.0" },
       { crate: "other", reason: "r" },
     ];
-    expect(lockPinDrift(lock, holds)).toEqual([
-      { crate: "yara-x-proto", from: "1.21.0", to: "1.7.0" },
-    ]);
+    expect(lockPinDrift(lock, holds)).toEqual([{ crate: "yara-x-proto", from: "1.21.0", to: "1.7.0" }]);
   });
 });
 
@@ -256,8 +242,7 @@ describe("cargo update output", () => {
   });
 });
 
-const index = (v: string[], yanked: string[] = []) =>
-  v.map((vers) => ({ vers, yanked: yanked.includes(vers) }));
+const index = (v: string[], yanked: string[] = []) => v.map(vers => ({ vers, yanked: yanked.includes(vers) }));
 
 describe("classification", () => {
   const lock = [
@@ -317,8 +302,7 @@ describe("classification", () => {
     owners: new Map([["tauri", "tauri-sync"]]),
     toolchain: "1.98.1",
   });
-  const row = (c: string, r?: string) =>
-    rows.find((x) => x.crate === c && (!r || x.req === r))!;
+  const row = (c: string, r?: string) => rows.find(x => x.crate === c && (!r || x.req === r))!;
 
   test("in-range and beyond are separate, pre-releases and yanked releases are skipped", () => {
     expect(row("tokio")).toMatchObject({
@@ -347,7 +331,7 @@ describe("classification", () => {
     expect(row("tauri").owner).toBe("tauri-sync");
   });
   test("a declared but unlocked dependency yields no row", () => {
-    expect(rows.find((r) => r.crate === "unused")).toBeUndefined();
+    expect(rows.find(r => r.crate === "unused")).toBeUndefined();
   });
   test("plan separates precise updates, majors and held", () => {
     const p = buildPlan(
@@ -356,15 +340,13 @@ describe("classification", () => {
     );
     expect(p.precise).toEqual([]); // the bulk refresh already covers tokio
     const q = buildPlan([row("tokio")], []);
-    expect(q.precise).toEqual([
-      { crate: "tokio", from: "1.52.0", to: "1.53.1" },
-    ]);
+    expect(q.precise).toEqual([{ crate: "tokio", from: "1.52.0", to: "1.53.1" }]);
     expect(q.majors[0]).toMatchObject({
       crate: "tokio",
       to: "2.0.0",
       newReq: "2.0",
     });
-    expect(p.held.map((h) => h.crate)).toEqual(["yara-x"]);
+    expect(p.held.map(h => h.crate)).toEqual(["yara-x"]);
   });
 });
 
@@ -408,8 +390,7 @@ describe("build metadata and quoted keys", () => {
     });
   });
   test("rewriteReq handles a quoted version key", () => {
-    const text =
-      '[workspace.dependencies]\nresvg = {"version" = "0.47", "default-features" = false}\n';
+    const text = '[workspace.dependencies]\nresvg = {"version" = "0.47", "default-features" = false}\n';
     const out = rewriteReq(text, "resvg", "0.47", "0.48");
     expect(out.count).toBe(1);
     expect(out.text).toContain('{"version" = "0.48"');
@@ -418,12 +399,10 @@ describe("build metadata and quoted keys", () => {
     const m =
       '[package]\nname = "n"\n[features]\nstealth = ["wreq", "dep:other"]\n[dependencies]\nwreq = { version = "=6.0.0-rc.29", optional = true }\nother = { version = "1", optional = true }\n';
     const rows = directDeps(readDecls("n/Cargo.toml", m));
-    expect(rows.find((r) => r.crate === "wreq")?.optional).toEqual({
+    expect(rows.find(r => r.crate === "wreq")?.optional).toEqual({
       n: ["stealth"],
     });
-    expect(
-      featuresEnabling({ a: ["x/y"], b: ["dep:x"], c: ["z"] }, "x"),
-    ).toEqual(["a", "b"]);
+    expect(featuresEnabling({ a: ["x/y"], b: ["dep:x"], c: ["z"] }, "x")).toEqual(["a", "b"]);
   });
 });
 
@@ -454,27 +433,20 @@ describe("advisories and channels", () => {
       { ecosystem: "crates.io", name: "rsa", reason: "no patched release" },
       { ecosystem: "npm", name: "foo", reason: "other ecosystem" },
     ]);
-    expect(s.open).toEqual([
-      { crate: "foo", version: "1.0.0", ids: ["GHSA-xxxx"] },
-    ]);
+    expect(s.open).toEqual([{ crate: "foo", version: "1.0.0", ids: ["GHSA-xxxx"] }]);
     expect(s.held[0]).toMatchObject({
       crate: "rsa",
       reason: "no patched release",
     });
   });
   test("toolchain and channel manifests", () => {
-    expect(parseToolchainChannel('[toolchain]\nchannel = "1.98.1"\n')).toBe(
-      "1.98.1",
-    );
+    expect(parseToolchainChannel('[toolchain]\nchannel = "1.98.1"\n')).toBe("1.98.1");
+    expect(parseChannelManifest('date = "2026-10-01"\n[pkg.rust]\nversion = "1.99.0 (abc 2026-09-30)"\n')).toEqual({
+      date: "2026-10-01",
+      version: "1.99.0",
+    });
     expect(
-      parseChannelManifest(
-        'date = "2026-10-01"\n[pkg.rust]\nversion = "1.99.0 (abc 2026-09-30)"\n',
-      ),
-    ).toEqual({ date: "2026-10-01", version: "1.99.0" });
-    expect(
-      parseIndex(
-        '{"vers":"1.0.0","yanked":false,"rust_version":"1.70"}\n{"vers":"1.0.1","yanked":true}\nbroken',
-      ),
+      parseIndex('{"vers":"1.0.0","yanked":false,"rust_version":"1.70"}\n{"vers":"1.0.1","yanked":true}\nbroken'),
     ).toEqual([
       { vers: "1.0.0", yanked: false, rustVersion: "1.70" },
       { vers: "1.0.1", yanked: true, rustVersion: undefined },

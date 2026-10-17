@@ -3,12 +3,7 @@
 
 "use client";
 
-import {
-  CircleButton,
-  Popover,
-  SelectPill,
-  usePopover,
-} from "@aphrody/m3-primitives";
+import { CircleButton, Popover, SelectPill, usePopover } from "@aphrody/m3-primitives";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
 import { clsx } from "clsx";
 import { AnimatePresence, motion } from "motion/react";
@@ -113,11 +108,7 @@ export function ChatComposer({
     <>
       {heading && (
         <div className="mb-3 flex items-center gap-2 px-1 text-title-small text-on-surface-variant">
-          <ChatIcon
-            name="auto_awesome_filled"
-            size={18}
-            className="text-primary"
-          />
+          <ChatIcon name="auto_awesome_filled" size={18} className="text-primary" />
           {heading}
         </div>
       )}
@@ -131,8 +122,8 @@ export function ChatComposer({
       >
         <textarea
           value={draft}
-          onChange={(event) => onDraftChange(event.target.value)}
-          onKeyDown={(event) => {
+          onChange={event => onDraftChange(event.target.value)}
+          onKeyDown={event => {
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
               if (canSend) onSend();
@@ -148,20 +139,10 @@ export function ChatComposer({
         <div className="mt-2 flex items-center justify-between gap-2">
           {projectSelector ? (
             <div className="w-[210px]">
-              <Popover.Root
-                open={projectSelector.popover.open}
-                onOpenChange={projectSelector.popover.setOpen}
-              >
+              <Popover.Root open={projectSelector.popover.open} onOpenChange={projectSelector.popover.setOpen}>
                 <Popover.Trigger asChild>
-                  <SelectPill
-                    className="w-full"
-                    aria-haspopup="listbox"
-                    disabled={disabled}
-                    hideCaret
-                  >
-                    <span className="min-w-0 flex-1 truncate">
-                      {projectSelector.value}
-                    </span>
+                  <SelectPill className="w-full" aria-haspopup="listbox" disabled={disabled} hideCaret>
+                    <span className="min-w-0 flex-1 truncate">{projectSelector.value}</span>
                     <ChatIcon name="expand_more" size={18} />
                   </SelectPill>
                 </Popover.Trigger>
@@ -175,7 +156,7 @@ export function ChatComposer({
                     role="listbox"
                     aria-label={l.projects}
                   >
-                    {projectSelector.options.map((option) => {
+                    {projectSelector.options.map(option => {
                       const selected = option === projectSelector.value;
                       return (
                         <button
@@ -198,9 +179,7 @@ export function ChatComposer({
                             "focus-visible:outline-offset-[-3px]",
                           )}
                         >
-                          <span className="min-w-0 flex-1 truncate">
-                            {option}
-                          </span>
+                          <span className="min-w-0 flex-1 truncate">{option}</span>
                           {selected && <ChatIcon name="check" size={20} />}
                         </button>
                       );

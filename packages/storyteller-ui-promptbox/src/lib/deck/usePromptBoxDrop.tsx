@@ -54,14 +54,12 @@ const dropZoneCountListeners = new Set<(count: number) => void>();
 
 const adjustActiveDropZoneCount = (delta: number) => {
   activeDropZoneCount = Math.max(0, activeDropZoneCount + delta);
-  dropZoneCountListeners.forEach((listener) => listener(activeDropZoneCount));
+  dropZoneCountListeners.forEach(listener => listener(activeDropZoneCount));
 };
 
 export const isPromptBoxDropZoneActive = () => activeDropZoneCount > 0;
 
-export const subscribeToPromptBoxDropZones = (
-  listener: (count: number) => void,
-) => {
+export const subscribeToPromptBoxDropZones = (listener: (count: number) => void) => {
   dropZoneCountListeners.add(listener);
   return () => {
     dropZoneCountListeners.delete(listener);
@@ -106,8 +104,7 @@ const kindOfMime = (mime: string): DropKind | null =>
         ? "audio"
         : null;
 
-const extensionOf = (path: string) =>
-  path.split(/[/\\]/).pop()?.split(".").pop()?.toLowerCase() ?? "";
+const extensionOf = (path: string) => path.split(/[/\\]/).pop()?.split(".").pop()?.toLowerCase() ?? "";
 
 const kindOfPath = (path: string): DropKind | null => {
   const ext = extensionOf(path);
@@ -120,9 +117,7 @@ const kindOfPath = (path: string): DropKind | null => {
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const listKinds = (labels: string[]) =>
-  labels.length <= 1
-    ? (labels[0] ?? "")
-    : `${labels.slice(0, -1).join(", ")} or ${labels[labels.length - 1]}`;
+  labels.length <= 1 ? (labels[0] ?? "") : `${labels.slice(0, -1).join(", ")} or ${labels[labels.length - 1]}`;
 
 /**
  * Makes the prompt box a drop target for reference media, and catches
@@ -136,12 +131,7 @@ const listKinds = (labels: string[]) =>
  * driven from `onDragDropEvent` and the cursor position is hit-tested
  * against the element `dropZoneProps.ref` is attached to.
  */
-export function usePromptBoxDrop({
-  acceptsImages,
-  acceptsVideos,
-  acceptsAudio,
-  onDropFiles,
-}: UsePromptBoxDropOptions) {
+export function usePromptBoxDrop({ acceptsImages, acceptsVideos, acceptsAudio, onDropFiles }: UsePromptBoxDropOptions) {
   const [dragState, setDragState] = useState<DropDragState>("idle");
   const zoneRef = useRef<HTMLDivElement>(null);
   // Second zone for the focus-mode modal (PromptFullscreenModal); mounted
@@ -152,13 +142,7 @@ export function usePromptBoxDrop({
 
   const acceptsKind = useCallback(
     (kind: DropKind | null) =>
-      kind === "image"
-        ? acceptsImages
-        : kind === "video"
-          ? acceptsVideos
-          : kind === "audio"
-            ? acceptsAudio
-            : false,
+      kind === "image" ? acceptsImages : kind === "video" ? acceptsVideos : kind === "audio" ? acceptsAudio : false,
     [acceptsImages, acceptsVideos, acceptsAudio],
   );
 
@@ -189,18 +173,13 @@ export function usePromptBoxDrop({
       }
     }
 
-    const anyAccepted =
-      accepted.images.length > 0 ||
-      accepted.videos.length > 0 ||
-      accepted.audios.length > 0;
+    const anyAccepted = accepted.images.length > 0 || accepted.videos.length > 0 || accepted.audios.length > 0;
     if (anyAccepted) onDropFiles(accepted);
 
     // Mode-neutral wording: a kind can be off because the model lacks it or
     // because the current input mode (e.g. keyframes) doesn't show it.
     if (rejectedKinds.size > 0) {
-      toast.error(
-        `${capitalize(listKinds([...rejectedKinds]))} references aren't available here`,
-      );
+      toast.error(`${capitalize(listKinds([...rejectedKinds]))} references aren't available here`);
     } else if (unknownCount > 0 && !anyAccepted) {
       toast.error(
         `Only ${listKinds(acceptedKindLabels(acceptsImages, acceptsVideos, acceptsAudio))} files can be added here`,
@@ -247,11 +226,9 @@ export function usePromptBoxDrop({
   // so unknown types count as acceptable until the drop resolves them.
   const inspectDrag = useCallback(
     (dt: DataTransfer): DropDragState => {
-      const fileItems = Array.from(dt.items).filter((i) => i.kind === "file");
+      const fileItems = Array.from(dt.items).filter(i => i.kind === "file");
       if (fileItems.length === 0) return "accept";
-      const ok = fileItems.some(
-        (i) => i.type === "" || acceptsKind(kindOfMime(i.type)),
-      );
+      const ok = fileItems.some(i => i.type === "" || acceptsKind(kindOfMime(i.type)));
       return ok ? "accept" : "reject";
     },
     [acceptsKind],
@@ -270,12 +247,7 @@ export function usePromptBoxDrop({
     // Child elements fire enter/leave pairs constantly; only reset when the
     // pointer actually exits the drop target's bounds.
     const rect = e.currentTarget.getBoundingClientRect();
-    if (
-      e.clientX < rect.left ||
-      e.clientX >= rect.right ||
-      e.clientY < rect.top ||
-      e.clientY >= rect.bottom
-    ) {
+    if (e.clientX < rect.left || e.clientX >= rect.right || e.clientY < rect.top || e.clientY >= rect.bottom) {
       setDragState("idle");
     }
   };
@@ -307,19 +279,16 @@ export function usePromptBoxDrop({
       const x = position.x / scale;
       const y = position.y / scale;
       const rect = zone.getBoundingClientRect();
-      return (
-        x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom
-      );
+      return x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom;
     };
 
     const setup = async () => {
       try {
-        const { getCurrentWebviewWindow } =
-          await import("@tauri-apps/api/webviewWindow");
+        const { getCurrentWebviewWindow } = await import("@tauri-apps/api/webviewWindow");
         const { convertFileSrc } = await import("@tauri-apps/api/core");
         const appWindow = getCurrentWebviewWindow();
 
-        const stop = await appWindow.onDragDropEvent(async (event) => {
+        const stop = await appWindow.onDragDropEvent(async event => {
           const payload = event.payload;
 
           if (payload.type === "enter" || payload.type === "over") {
@@ -341,15 +310,11 @@ export function usePromptBoxDrop({
           // Only read the files this box can actually take; unsupported ones
           // still reach routeFiles (as zero-byte stand-ins) so it can raise
           // the same "not available here" toast the browser path does.
-          const readable = payload.paths.filter(
-            (path) => kindOfPath(path) !== null,
-          );
-          const unsupported = payload.paths.filter(
-            (path) => kindOfPath(path) === null,
-          );
+          const readable = payload.paths.filter(path => kindOfPath(path) !== null);
+          const unsupported = payload.paths.filter(path => kindOfPath(path) === null);
 
           const files = await Promise.all(
-            readable.map(async (path) => {
+            readable.map(async path => {
               const fileName = path.split(/[/\\]/).pop() ?? "file";
               const type = MIME_BY_EXTENSION[extensionOf(path)] ?? "";
               try {
@@ -369,14 +334,10 @@ export function usePromptBoxDrop({
           const readFiles = files.filter((file): file is File => file !== null);
           const failedCount = readable.length - readFiles.length;
           if (failedCount > 0) {
-            toast.error(
-              `Couldn't read ${failedCount} file${failedCount > 1 ? "s" : ""}`,
-            );
+            toast.error(`Couldn't read ${failedCount} file${failedCount > 1 ? "s" : ""}`);
           }
 
-          const placeholders = unsupported.map(
-            (path) => new File([], path.split(/[/\\]/).pop() ?? "file"),
-          );
+          const placeholders = unsupported.map(path => new File([], path.split(/[/\\]/).pop() ?? "file"));
           const allFiles = [...readFiles, ...placeholders];
           if (allFiles.length > 0) routeFilesRef.current(allFiles);
         });
@@ -454,9 +415,7 @@ export function PromptBoxDropOverlay({
   if (dragState === "idle") return null;
 
   const kinds = [
-    ...(acceptsImages
-      ? [{ icon: ImagesIcon, label: keyframeMode ? "Frames" : "Images" }]
-      : []),
+    ...(acceptsImages ? [{ icon: ImagesIcon, label: keyframeMode ? "Frames" : "Images" }] : []),
     ...(acceptsVideos ? [{ icon: VideoIcon, label: "Video" }] : []),
     ...(acceptsAudio ? [{ icon: MusicIcon, label: "Audio" }] : []),
   ];
@@ -490,20 +449,12 @@ export function PromptBoxDropOverlay({
       <div className="-mt-1 text-xs text-base-fg/60">
         {rejected
           ? `Accepts ${listKinds(acceptedKindLabels(acceptsImages, acceptsVideos, acceptsAudio))} files`
-          : kinds.map((kind) => kind.label).join(" · ")}
+          : kinds.map(kind => kind.label).join(" · ")}
       </div>
     </div>
   );
 }
 
-function acceptedKindLabels(
-  acceptsImages: boolean,
-  acceptsVideos: boolean,
-  acceptsAudio: boolean,
-): string[] {
-  return [
-    ...(acceptsImages ? ["image"] : []),
-    ...(acceptsVideos ? ["video"] : []),
-    ...(acceptsAudio ? ["audio"] : []),
-  ];
+function acceptedKindLabels(acceptsImages: boolean, acceptsVideos: boolean, acceptsAudio: boolean): string[] {
+  return [...(acceptsImages ? ["image"] : []), ...(acceptsVideos ? ["video"] : []), ...(acceptsAudio ? ["audio"] : [])];
 }

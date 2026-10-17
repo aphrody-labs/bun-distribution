@@ -8,10 +8,7 @@ import { ScanText, ExternalLink } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function DatabooksAdminPage() {
-  const [progression, campagne] = await Promise.all([
-    progressionTranscription(),
-    getCampagneStats(),
-  ]);
+  const [progression, campagne] = await Promise.all([progressionTranscription(), getCampagneStats()]);
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6">
@@ -20,10 +17,7 @@ export default async function DatabooksAdminPage() {
         subtitle="Catalogue des 451 ouvrages officiels · Pilotage des campagnes de traduction FR et suivi de la qualité OCR"
         right={
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/admin/transcriptions"
-              className="btn btn-ghost h-9 px-3 text-xs flex items-center gap-1.5"
-            >
+            <Link href="/admin/transcriptions" className="btn btn-ghost h-9 px-3 text-xs flex items-center gap-1.5">
               <ScanText className="h-3.5 w-3.5" />
               Transcriptions &amp; Arbitrage
             </Link>
@@ -40,10 +34,7 @@ export default async function DatabooksAdminPage() {
         }
       />
 
-      <DatabooksCatalogManager
-        initialFiches={progression.fiches}
-        initialCampagne={campagne}
-      />
+      <DatabooksCatalogManager initialFiches={progression.fiches} initialCampagne={campagne} />
     </div>
   );
 }

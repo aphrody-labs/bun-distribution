@@ -11,22 +11,9 @@ import type {
   ScalarCurveKeyframePatch,
   ScalarSegmentType,
 } from "./types";
-import type {
-  ChannelComponentDefinition,
-  ParamChannelLayout,
-  ParamValue,
-} from "../params";
-import {
-  getChannelsFromData,
-  isCompositeChannelData,
-  isAnimationStorageKey,
-  isLeafChannelData,
-} from "./channel-data";
-import {
-  getDefaultLeftHandle,
-  getDefaultRightHandle,
-  solveBezierProgressForTime,
-} from "./bezier";
+import type { ChannelComponentDefinition, ParamChannelLayout, ParamValue } from "../params";
+import { getChannelsFromData, isCompositeChannelData, isAnimationStorageKey, isLeafChannelData } from "./channel-data";
+import { getDefaultLeftHandle, getDefaultRightHandle, solveBezierProgressForTime } from "./bezier";
 import {
   getChannelValueAtTime,
   getScalarSegmentInterpolation,
@@ -35,12 +22,7 @@ import {
   normalizeDiscreteChannel,
   normalizeScalarChannel,
 } from "./interpolation";
-import {
-  type MediaTime,
-  roundMediaTime,
-  subMediaTime,
-  ZERO_MEDIA_TIME,
-} from "../wasm";
+import { type MediaTime, roundMediaTime, subMediaTime, ZERO_MEDIA_TIME } from "../wasm";
 import { generateUUID } from "../utils/id";
 
 // Keyframe CRUD over the (composite-or-leaf) channel-data tree. The
@@ -52,40 +34,21 @@ import { generateUUID } from "../utils/id";
 // half-segments that exactly reproduce the original curve. Discrete
 // channels just split at the boundary.
 
-function isNearlySameTime({
-  leftTime,
-  rightTime,
-}: {
-  leftTime: number;
-  rightTime: number;
-}): boolean {
+function isNearlySameTime({ leftTime, rightTime }: { leftTime: number; rightTime: number }): boolean {
   return leftTime === rightTime;
 }
 
-function hasChannelKeys({
-  channel,
-}: {
-  channel: AnimationChannel | undefined;
-}): boolean {
+function hasChannelKeys({ channel }: { channel: AnimationChannel | undefined }): boolean {
   return Boolean(channel && channel.keys.length > 0);
 }
 
 function hasChannelData({ data }: { data: ChannelData | undefined }): boolean {
-  return getChannelsFromData({ data }).some((channel) =>
-    hasChannelKeys({ channel }),
-  );
+  return getChannelsFromData({ data }).some(channel => hasChannelKeys({ channel }));
 }
 
-function toAnimation({
-  animations,
-}: {
-  animations: ElementAnimations;
-}): ElementAnimations | undefined {
+function toAnimation({ animations }: { animations: ElementAnimations }): ElementAnimations | undefined {
   const nextAnimations = Object.fromEntries(
-    Object.entries(animations).filter(
-      ([key, data]) =>
-        isAnimationStorageKey({ key }) && hasChannelData({ data }),
-    ),
+    Object.entries(animations).filter(([key, data]) => isAnimationStorageKey({ key }) && hasChannelData({ data })),
   );
   if (Object.keys(nextAnimations).length === 0) {
     return undefined;
@@ -94,11 +57,7 @@ function toAnimation({
   return nextAnimations;
 }
 
-function cloneAnimationsState({
-  animations,
-}: {
-  animations: ElementAnimations | undefined;
-}): ElementAnimations {
+function cloneAnimationsState({ animations }: { animations: ElementAnimations | undefined }): ElementAnimations {
   return { ...animations };
 }
 
@@ -120,21 +79,11 @@ function getChannelFromData({
 
 type LayoutComponent = ChannelComponentDefinition<string>;
 
-function getLayoutComponents({
-  channelLayout,
-}: {
-  channelLayout: ParamChannelLayout;
-}): LayoutComponent[] {
-  return channelLayout.kind === "leaf"
-    ? [channelLayout.component]
-    : channelLayout.components;
+function getLayoutComponents({ channelLayout }: { channelLayout: ParamChannelLayout }): LayoutComponent[] {
+  return channelLayout.kind === "leaf" ? [channelLayout.component] : channelLayout.components;
 }
 
-function getPrimaryComponentKey({
-  channelLayout,
-}: {
-  channelLayout: ParamChannelLayout;
-}): string {
+function getPrimaryComponentKey({ channelLayout }: { channelLayout: ParamChannelLayout }): string {
   return getLayoutComponents({ channelLayout })[0]?.key ?? "value";
 }
 
@@ -183,11 +132,7 @@ function getChannelDataEntries({
   return isCompositeChannelData(data) ? Object.entries(data) : [];
 }
 
-function getScalarSegmentType({
-  interpolation,
-}: {
-  interpolation: AnimationInterpolation;
-}): ScalarSegmentType {
+function getScalarSegmentType({ interpolation }: { interpolation: AnimationInterpolation }): ScalarSegmentType {
   if (interpolation === "hold") {
     return "step";
   }
@@ -205,11 +150,7 @@ function getInterpolationForComponent({
     return "hold";
   }
 
-  if (
-    interpolation === "linear" ||
-    interpolation === "hold" ||
-    interpolation === "bezier"
-  ) {
+  if (interpolation === "linear" || interpolation === "hold" || interpolation === "bezier") {
     return interpolation;
   }
 
@@ -253,9 +194,7 @@ function createScalarKey({
     value,
     leftHandle: previousKey?.leftHandle,
     rightHandle: previousKey?.rightHandle,
-    segmentToNext:
-      previousKey?.segmentToNext ??
-      getScalarSegmentType({ interpolation: interpolation ?? "linear" }),
+    segmentToNext: previousKey?.segmentToNext ?? getScalarSegmentType({ interpolation: interpolation ?? "linear" }),
     tangentMode: previousKey?.tangentMode ?? "flat",
   };
 }
@@ -276,9 +215,7 @@ function createDiscreteKey({
   };
 }
 
-function isDiscreteChannel(
-  channel: AnimationChannel | undefined,
-): channel is DiscreteAnimationChannel {
+function isDiscreteChannel(channel: AnimationChannel | undefined): channel is DiscreteAnimationChannel {
   return channel != null && !isScalarChannel(channel);
 }
 
@@ -301,11 +238,10 @@ function getTargetKeyMetadata({
   time: MediaTime;
   keyframeId?: string;
 }) {
-  const normalizedChannel =
-    channel != null ? normalizeChannel({ channel }) : undefined;
+  const normalizedChannel = channel != null ? normalizeChannel({ channel }) : undefined;
   const keys = normalizedChannel?.keys ?? [];
   if (keyframeId) {
-    const keyById = keys.find((key) => key.id === keyframeId);
+    const keyById = keys.find(key => key.id === keyframeId);
     if (keyById) {
       return {
         id: keyById.id,
@@ -314,9 +250,7 @@ function getTargetKeyMetadata({
     }
   }
 
-  const keyAtTime = keys.find((key) =>
-    isNearlySameTime({ leftTime: key.time, rightTime: time }),
-  );
+  const keyAtTime = keys.find(key => isNearlySameTime({ leftTime: key.time, rightTime: time }));
   if (keyAtTime) {
     return {
       id: keyAtTime.id,
@@ -346,7 +280,7 @@ function upsertDiscreteChannelKey({
   });
   const keys = [...normalizedChannel.keys];
   if (keyframeId) {
-    const existingIndex = keys.findIndex((key) => key.id === keyframeId);
+    const existingIndex = keys.findIndex(key => key.id === keyframeId);
     if (existingIndex >= 0) {
       keys[existingIndex] = createDiscreteKey({
         id: keys[existingIndex].id,
@@ -359,9 +293,7 @@ function upsertDiscreteChannelKey({
     }
   }
 
-  const existingAtTimeIndex = keys.findIndex((key) =>
-    isNearlySameTime({ leftTime: key.time, rightTime: time }),
-  );
+  const existingAtTimeIndex = keys.findIndex(key => isNearlySameTime({ leftTime: key.time, rightTime: time }));
   if (existingAtTimeIndex >= 0) {
     keys[existingAtTimeIndex] = createDiscreteKey({
       id: keys[existingAtTimeIndex].id,
@@ -405,7 +337,7 @@ function upsertScalarChannelKey({
   });
   const keys = [...normalizedChannel.keys];
   if (keyframeId) {
-    const existingIndex = keys.findIndex((key) => key.id === keyframeId);
+    const existingIndex = keys.findIndex(key => key.id === keyframeId);
     if (existingIndex >= 0) {
       keys[existingIndex] = createScalarKey({
         id: keys[existingIndex].id,
@@ -429,9 +361,7 @@ function upsertScalarChannelKey({
     }
   }
 
-  const existingAtTimeIndex = keys.findIndex((key) =>
-    isNearlySameTime({ leftTime: key.time, rightTime: time }),
-  );
+  const existingAtTimeIndex = keys.findIndex(key => isNearlySameTime({ leftTime: key.time, rightTime: time }));
   if (existingAtTimeIndex >= 0) {
     keys[existingAtTimeIndex] = createScalarKey({
       id: keys[existingAtTimeIndex].id,
@@ -561,16 +491,10 @@ export function upsertPathKeyframe({
       continue;
     }
     const nextChannel = upsertScalarChannelKey({
-      channel:
-        currentChannel != null && isScalarChannel(currentChannel)
-          ? currentChannel
-          : undefined,
+      channel: currentChannel != null && isScalarChannel(currentChannel) ? currentChannel : undefined,
       time: targetKey.time,
       value: nextValue,
-      interpolation:
-        interpolation != null
-          ? getInterpolationForComponent({ component, interpolation })
-          : undefined,
+      interpolation: interpolation != null ? getInterpolationForComponent({ component, interpolation }) : undefined,
       defaultInterpolation: component.defaultInterpolation,
       keyframeId: targetKey.id,
     });
@@ -638,9 +562,7 @@ export function removeKeyframe({
   }
 
   if (isScalarChannel(channel)) {
-    const nextKeys = channel.keys.filter(
-      (keyframe) => keyframe.id !== keyframeId,
-    );
+    const nextKeys = channel.keys.filter(keyframe => keyframe.id !== keyframeId);
     if (nextKeys.length === 0) {
       return undefined;
     }
@@ -653,9 +575,7 @@ export function removeKeyframe({
     });
   }
 
-  const nextKeys = channel.keys.filter(
-    (keyframe) => keyframe.id !== keyframeId,
-  );
+  const nextKeys = channel.keys.filter(keyframe => keyframe.id !== keyframeId);
   if (nextKeys.length === 0) {
     return undefined;
   }
@@ -682,9 +602,7 @@ export function retimeKeyframe({
   }
 
   if (isScalarChannel(channel)) {
-    const keyframeByIdIndex = channel.keys.findIndex(
-      (keyframe) => keyframe.id === keyframeId,
-    );
+    const keyframeByIdIndex = channel.keys.findIndex(keyframe => keyframe.id === keyframeId);
     if (keyframeByIdIndex < 0) {
       return channel;
     }
@@ -703,9 +621,7 @@ export function retimeKeyframe({
     });
   }
 
-  const keyframeByIdIndex = channel.keys.findIndex(
-    (keyframe) => keyframe.id === keyframeId,
-  );
+  const keyframeByIdIndex = channel.keys.findIndex(keyframe => keyframe.id === keyframeId);
   if (keyframeByIdIndex < 0) {
     return channel;
   }
@@ -756,10 +672,7 @@ export function setBindingComponentChannel({
   nextAnimations[propertyPath] = setChannelInData({
     data: nextAnimations[propertyPath],
     componentKey,
-    channel:
-      channel && hasChannelKeys({ channel })
-        ? normalizeChannel({ channel })
-        : undefined,
+    channel: channel && hasChannelKeys({ channel }) ? normalizeChannel({ channel }) : undefined,
   });
   return toAnimation({
     animations: nextAnimations,
@@ -787,9 +700,7 @@ export function updateScalarKeyframeCurve({
     return animations;
   }
 
-  const keyframeIndex = channel.keys.findIndex(
-    (keyframe) => keyframe.id === keyframeId,
-  );
+  const keyframeIndex = channel.keys.findIndex(keyframe => keyframe.id === keyframeId);
   if (keyframeIndex < 0) {
     return animations;
   }
@@ -798,14 +709,8 @@ export function updateScalarKeyframeCurve({
   const currentKey = nextKeys[keyframeIndex];
   nextKeys[keyframeIndex] = {
     ...currentKey,
-    leftHandle:
-      patch.leftHandle === undefined
-        ? currentKey.leftHandle
-        : (patch.leftHandle ?? undefined),
-    rightHandle:
-      patch.rightHandle === undefined
-        ? currentKey.rightHandle
-        : (patch.rightHandle ?? undefined),
+    leftHandle: patch.leftHandle === undefined ? currentKey.leftHandle : (patch.leftHandle ?? undefined),
+    rightHandle: patch.rightHandle === undefined ? currentKey.rightHandle : (patch.rightHandle ?? undefined),
     segmentToNext: patch.segmentToNext ?? currentKey.segmentToNext,
     tangentMode: patch.tangentMode ?? currentKey.tangentMode,
   };
@@ -832,7 +737,7 @@ function cloneChannelWithKeyIds({
     ? normalizeScalarChannel({
         channel: {
           ...channel,
-          keys: channel.keys.map((key) => ({
+          keys: channel.keys.map(key => ({
             ...key,
             id: keyIdMap.get(key.id) ?? key.id,
           })),
@@ -841,7 +746,7 @@ function cloneChannelWithKeyIds({
     : normalizeDiscreteChannel({
         channel: {
           ...channel,
-          keys: channel.keys.map((key) => ({
+          keys: channel.keys.map(key => ({
             ...key,
             id: keyIdMap.get(key.id) ?? key.id,
           })),
@@ -861,18 +766,13 @@ export function cloneAnimations({
   }
 
   const nextAnimations = cloneAnimationsState({ animations });
-  for (const [propertyPath, data] of Object.entries(animations).filter(
-    ([key]) => isAnimationStorageKey({ key }),
-  )) {
+  for (const [propertyPath, data] of Object.entries(animations).filter(([key]) => isAnimationStorageKey({ key }))) {
     const channels = getChannelsFromData({ data });
     const primaryChannel = channels[0];
     const keyIdMap = new Map<string, string>();
     if (primaryChannel) {
       for (const key of primaryChannel.keys) {
-        keyIdMap.set(
-          key.id,
-          shouldRegenerateKeyframeIds ? generateUUID() : key.id,
-        );
+        keyIdMap.set(key.id, shouldRegenerateKeyframeIds ? generateUUID() : key.id);
       }
     }
 
@@ -952,21 +852,17 @@ function splitDiscreteChannelAtTime({
   }
 
   const normalizedChannel = normalizeChannel({ channel });
-  let leftKeys = normalizedChannel.keys.filter((key) => key.time <= splitTime);
+  let leftKeys = normalizedChannel.keys.filter(key => key.time <= splitTime);
   let rightKeys = normalizedChannel.keys
-    .filter((key) => key.time >= splitTime)
-    .map((key) => ({
+    .filter(key => key.time >= splitTime)
+    .map(key => ({
       ...key,
       time: subMediaTime({ a: key.time, b: splitTime }),
     }));
 
   if (shouldIncludeSplitBoundary) {
-    const hasBoundaryOnLeft = leftKeys.some((key) =>
-      isNearlySameTime({ leftTime: key.time, rightTime: splitTime }),
-    );
-    const hasBoundaryOnRight = rightKeys.some((key) =>
-      isNearlySameTime({ leftTime: key.time, rightTime: 0 }),
-    );
+    const hasBoundaryOnLeft = leftKeys.some(key => isNearlySameTime({ leftTime: key.time, rightTime: splitTime }));
+    const hasBoundaryOnRight = rightKeys.some(key => isNearlySameTime({ leftTime: key.time, rightTime: 0 }));
     const boundaryValue = getChannelValueAtTime({
       channel: normalizedChannel,
       time: splitTime,
@@ -995,12 +891,8 @@ function splitDiscreteChannelAtTime({
   }
 
   return {
-    leftChannel: leftKeys.length
-      ? normalizeChannel({ channel: { keys: leftKeys } })
-      : undefined,
-    rightChannel: rightKeys.length
-      ? normalizeChannel({ channel: { keys: rightKeys } })
-      : undefined,
+    leftChannel: leftKeys.length ? normalizeChannel({ channel: { keys: leftKeys } }) : undefined,
+    rightChannel: rightKeys.length ? normalizeChannel({ channel: { keys: rightKeys } }) : undefined,
   };
 }
 
@@ -1025,24 +917,17 @@ function splitScalarChannelAtTime({
   }
 
   const normalizedChannel = normalizeChannel({ channel });
-  let leftKeys = normalizedChannel.keys.filter((key) => key.time <= splitTime);
+  let leftKeys = normalizedChannel.keys.filter(key => key.time <= splitTime);
   let rightKeys = normalizedChannel.keys
-    .filter((key) => key.time >= splitTime)
-    .map((key) => ({
+    .filter(key => key.time >= splitTime)
+    .map(key => ({
       ...key,
       time: subMediaTime({ a: key.time, b: splitTime }),
     }));
 
-  const hasBoundaryOnLeft = leftKeys.some((key) =>
-    isNearlySameTime({ leftTime: key.time, rightTime: splitTime }),
-  );
-  const hasBoundaryOnRight = rightKeys.some((key) =>
-    isNearlySameTime({ leftTime: key.time, rightTime: 0 }),
-  );
-  if (
-    !shouldIncludeSplitBoundary ||
-    (hasBoundaryOnLeft && hasBoundaryOnRight)
-  ) {
+  const hasBoundaryOnLeft = leftKeys.some(key => isNearlySameTime({ leftTime: key.time, rightTime: splitTime }));
+  const hasBoundaryOnRight = rightKeys.some(key => isNearlySameTime({ leftTime: key.time, rightTime: 0 }));
+  if (!shouldIncludeSplitBoundary || (hasBoundaryOnLeft && hasBoundaryOnRight)) {
     return {
       leftChannel: leftKeys.length
         ? normalizeChannel({
@@ -1064,11 +949,7 @@ function splitScalarChannelAtTime({
   }
 
   // de Casteljau split for the Bezier segment containing splitTime.
-  for (
-    let keyIndex = 0;
-    keyIndex < normalizedChannel.keys.length - 1;
-    keyIndex++
-  ) {
+  for (let keyIndex = 0; keyIndex < normalizedChannel.keys.length - 1; keyIndex++) {
     const leftKey = normalizedChannel.keys[keyIndex];
     const rightKey = normalizedChannel.keys[keyIndex + 1];
     if (!(splitTime > leftKey.time && splitTime < rightKey.time)) {
@@ -1082,10 +963,8 @@ function splitScalarChannelAtTime({
     });
 
     if (leftKey.segmentToNext === "bezier") {
-      const rightHandle =
-        leftKey.rightHandle ?? getDefaultRightHandle({ leftKey, rightKey });
-      const leftHandle =
-        rightKey.leftHandle ?? getDefaultLeftHandle({ leftKey, rightKey });
+      const rightHandle = leftKey.rightHandle ?? getDefaultRightHandle({ leftKey, rightKey });
+      const leftHandle = rightKey.leftHandle ?? getDefaultLeftHandle({ leftKey, rightKey });
       const progress = solveBezierProgressForTime({
         time: splitTime,
         leftKey,
@@ -1108,7 +987,7 @@ function splitScalarChannelAtTime({
       const r1 = lerpPoint({ left: q1, right: q2, progress });
       const splitPoint = lerpPoint({ left: r0, right: r1, progress });
       leftKeys = [
-        ...normalizedChannel.keys.filter((key) => key.time < splitTime),
+        ...normalizedChannel.keys.filter(key => key.time < splitTime),
         {
           ...leftKey,
           rightHandle: {
@@ -1149,8 +1028,8 @@ function splitScalarChannelAtTime({
           },
         },
         ...normalizedChannel.keys
-          .filter((key) => key.time > rightKey.time)
-          .map((key) => ({
+          .filter(key => key.time > rightKey.time)
+          .map(key => ({
             ...key,
             time: subMediaTime({ a: key.time, b: splitTime }),
           })),
@@ -1236,8 +1115,7 @@ function splitChannelAtTime({
         shouldIncludeSplitBoundary,
       })
     : splitScalarChannelAtTime({
-        channel:
-          channel != null && isScalarChannel(channel) ? channel : undefined,
+        channel: channel != null && isScalarChannel(channel) ? channel : undefined,
         splitTime,
         leftBoundaryId,
         rightBoundaryId,
@@ -1264,9 +1142,7 @@ export function splitAnimationsAtTime({
   const leftAnimations = cloneAnimationsState({ animations: undefined });
   const rightAnimations = cloneAnimationsState({ animations: undefined });
 
-  for (const [propertyPath, data] of Object.entries(animations).filter(
-    ([key]) => isAnimationStorageKey({ key }),
-  )) {
+  for (const [propertyPath, data] of Object.entries(animations).filter(([key]) => isAnimationStorageKey({ key }))) {
     if (!data) {
       continue;
     }

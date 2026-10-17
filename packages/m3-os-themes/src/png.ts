@@ -11,10 +11,7 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
   view.setUint32(0, data.length);
   for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
   out.set(data, 8);
-  view.setUint32(
-    8 + data.length,
-    Bun.hash.crc32(out.subarray(4, 8 + data.length)) >>> 0,
-  );
+  view.setUint32(8 + data.length, Bun.hash.crc32(out.subarray(4, 8 + data.length)) >>> 0);
   return out;
 }
 
@@ -42,12 +39,7 @@ export function encodePng(
   header[9] = 2;
   // PNG IDAT requires a zlib stream; Bun.deflateSync emits raw DEFLATE on this runtime.
   const idat = deflateSync(raw);
-  const parts = [
-    SIGNATURE,
-    chunk("IHDR", header),
-    chunk("IDAT", idat),
-    chunk("IEND", new Uint8Array()),
-  ];
+  const parts = [SIGNATURE, chunk("IHDR", header), chunk("IDAT", idat), chunk("IEND", new Uint8Array())];
   const png = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let at = 0;
   for (const p of parts) {
@@ -58,20 +50,11 @@ export function encodePng(
 }
 
 /** Vertical gradient between two `#rrggbb` colours. */
-export function gradientPng(
-  width: number,
-  height: number,
-  top: string,
-  bottom: string,
-): Uint8Array {
+export function gradientPng(width: number, height: number, top: string, bottom: string): Uint8Array {
   const a = rgb(top);
   const b = rgb(bottom);
   return encodePng(width, height, (_x, y) => {
     const t = height <= 1 ? 0 : y / (height - 1);
-    return [0, 1, 2].map((i) => Math.round(a[i]! + (b[i]! - a[i]!) * t)) as [
-      number,
-      number,
-      number,
-    ];
+    return [0, 1, 2].map(i => Math.round(a[i]! + (b[i]! - a[i]!) * t)) as [number, number, number];
   });
 }

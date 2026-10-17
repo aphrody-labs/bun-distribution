@@ -9,13 +9,26 @@ interface Functions {
   /** wtsapi32.dll!WTSCloudAuthClose */
   WTSCloudAuthClose(cloudAuthHandle: Win32Pointer): void;
   /** wtsapi32.dll!WTSCloudAuthConvertAssertionToSerializedUserCredential */
-  WTSCloudAuthConvertAssertionToSerializedUserCredential(cloudAuthHandle: Win32Pointer, assertion: string | Win32Pointer, assertionLength: number, resourceId: string | Win32Pointer, userCredential: Win32Pointer): number;
+  WTSCloudAuthConvertAssertionToSerializedUserCredential(
+    cloudAuthHandle: Win32Pointer,
+    assertion: string | Win32Pointer,
+    assertionLength: number,
+    resourceId: string | Win32Pointer,
+    userCredential: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSCloudAuthDuplicateSerializedUserCredential */
-  WTSCloudAuthDuplicateSerializedUserCredential(userCredential: Win32Pointer, duplicatedUserCredential: Win32Pointer): number;
+  WTSCloudAuthDuplicateSerializedUserCredential(
+    userCredential: Win32Pointer,
+    duplicatedUserCredential: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSCloudAuthGetServerNonce */
   WTSCloudAuthGetServerNonce(cloudAuthHandle: Win32Pointer, serverNonce: Win32Pointer): number;
   /** wtsapi32.dll!WTSCloudAuthNetworkLogonWithSerializedCredential */
-  WTSCloudAuthNetworkLogonWithSerializedCredential(cloudAuthHandle: Win32Pointer, userCredential: Win32Pointer, token: Win32Pointer): number;
+  WTSCloudAuthNetworkLogonWithSerializedCredential(
+    cloudAuthHandle: Win32Pointer,
+    userCredential: Win32Pointer,
+    token: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSCloudAuthOpen */
   WTSCloudAuthOpen(activityId: Win32Pointer): number | null;
   /** wtsapi32.dll!WTSConnectSessionA */
@@ -25,51 +38,180 @@ interface Functions {
   /** wtsapi32.dll!WTSConnectSessionW */
   WTSConnectSession(LogonId: number, TargetLogonId: number, pPassword: string | Win32Pointer, bWait: number): number;
   /** wtsapi32.dll!WTSCreateListenerA */
-  WTSCreateListenerA(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListenerName: string | Win32Pointer, pBuffer: Win32Pointer, flag: number): number;
+  WTSCreateListenerA(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListenerName: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+    flag: number,
+  ): number;
   /** wtsapi32.dll!WTSCreateListenerW */
-  WTSCreateListenerW(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListenerName: string | Win32Pointer, pBuffer: Win32Pointer, flag: number): number;
+  WTSCreateListenerW(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListenerName: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+    flag: number,
+  ): number;
   /** wtsapi32.dll!WTSCreateListenerW */
-  WTSCreateListener(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListenerName: string | Win32Pointer, pBuffer: Win32Pointer, flag: number): number;
+  WTSCreateListener(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListenerName: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+    flag: number,
+  ): number;
   /** wtsapi32.dll!WTSDisconnectSession */
   WTSDisconnectSession(hServer: Win32Pointer, SessionId: number, bWait: number): number;
   /** wtsapi32.dll!WTSEnableChildSessions */
   WTSEnableChildSessions(bEnable: number): number;
   /** wtsapi32.dll!WTSEnumerateListenersA */
-  WTSEnumerateListenersA(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListeners: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateListenersA(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListeners: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateListenersW */
-  WTSEnumerateListenersW(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListeners: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateListenersW(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListeners: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateListenersW */
-  WTSEnumerateListeners(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListeners: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateListeners(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListeners: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateProcessesA */
-  WTSEnumerateProcessesA(hServer: Win32Pointer, Reserved: number, Version: number, ppProcessInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateProcessesA(
+    hServer: Win32Pointer,
+    Reserved: number,
+    Version: number,
+    ppProcessInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateProcessesExA */
-  WTSEnumerateProcessesExA(hServer: Win32Pointer, pLevel: Win32Pointer, SessionId: number, ppProcessInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateProcessesExA(
+    hServer: Win32Pointer,
+    pLevel: Win32Pointer,
+    SessionId: number,
+    ppProcessInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateProcessesExW */
-  WTSEnumerateProcessesExW(hServer: Win32Pointer, pLevel: Win32Pointer, SessionId: number, ppProcessInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateProcessesExW(
+    hServer: Win32Pointer,
+    pLevel: Win32Pointer,
+    SessionId: number,
+    ppProcessInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateProcessesExW */
-  WTSEnumerateProcessesEx(hServer: Win32Pointer, pLevel: Win32Pointer, SessionId: number, ppProcessInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateProcessesEx(
+    hServer: Win32Pointer,
+    pLevel: Win32Pointer,
+    SessionId: number,
+    ppProcessInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateProcessesW */
-  WTSEnumerateProcessesW(hServer: Win32Pointer, Reserved: number, Version: number, ppProcessInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateProcessesW(
+    hServer: Win32Pointer,
+    Reserved: number,
+    Version: number,
+    ppProcessInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateProcessesW */
-  WTSEnumerateProcesses(hServer: Win32Pointer, Reserved: number, Version: number, ppProcessInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateProcesses(
+    hServer: Win32Pointer,
+    Reserved: number,
+    Version: number,
+    ppProcessInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateServersA */
-  WTSEnumerateServersA(pDomainName: string | Win32Pointer, Reserved: number, Version: number, ppServerInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateServersA(
+    pDomainName: string | Win32Pointer,
+    Reserved: number,
+    Version: number,
+    ppServerInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateServersW */
-  WTSEnumerateServersW(pDomainName: string | Win32Pointer, Reserved: number, Version: number, ppServerInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateServersW(
+    pDomainName: string | Win32Pointer,
+    Reserved: number,
+    Version: number,
+    ppServerInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateServersW */
-  WTSEnumerateServers(pDomainName: string | Win32Pointer, Reserved: number, Version: number, ppServerInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateServers(
+    pDomainName: string | Win32Pointer,
+    Reserved: number,
+    Version: number,
+    ppServerInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateSessionsA */
-  WTSEnumerateSessionsA(hServer: Win32Pointer, Reserved: number, Version: number, ppSessionInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateSessionsA(
+    hServer: Win32Pointer,
+    Reserved: number,
+    Version: number,
+    ppSessionInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateSessionsExA */
-  WTSEnumerateSessionsExA(hServer: Win32Pointer, pLevel: Win32Pointer, Filter: number, ppSessionInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateSessionsExA(
+    hServer: Win32Pointer,
+    pLevel: Win32Pointer,
+    Filter: number,
+    ppSessionInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateSessionsExW */
-  WTSEnumerateSessionsExW(hServer: Win32Pointer, pLevel: Win32Pointer, Filter: number, ppSessionInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateSessionsExW(
+    hServer: Win32Pointer,
+    pLevel: Win32Pointer,
+    Filter: number,
+    ppSessionInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateSessionsExW */
-  WTSEnumerateSessionsEx(hServer: Win32Pointer, pLevel: Win32Pointer, Filter: number, ppSessionInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateSessionsEx(
+    hServer: Win32Pointer,
+    pLevel: Win32Pointer,
+    Filter: number,
+    ppSessionInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateSessionsW */
-  WTSEnumerateSessionsW(hServer: Win32Pointer, Reserved: number, Version: number, ppSessionInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateSessionsW(
+    hServer: Win32Pointer,
+    Reserved: number,
+    Version: number,
+    ppSessionInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSEnumerateSessionsW */
-  WTSEnumerateSessions(hServer: Win32Pointer, Reserved: number, Version: number, ppSessionInfo: Win32Pointer, pCount: Win32Pointer): number;
+  WTSEnumerateSessions(
+    hServer: Win32Pointer,
+    Reserved: number,
+    Version: number,
+    ppSessionInfo: Win32Pointer,
+    pCount: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSFreeMemory */
   WTSFreeMemory(pMemory: Win32Pointer): void;
   /** wtsapi32.dll!WTSFreeMemoryExA */
@@ -81,11 +223,38 @@ interface Functions {
   /** wtsapi32.dll!WTSGetChildSessionId */
   WTSGetChildSessionId(pSessionId: Win32Pointer): number;
   /** wtsapi32.dll!WTSGetListenerSecurityA */
-  WTSGetListenerSecurityA(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListenerName: string | Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer, nLength: number, lpnLengthNeeded: Win32Pointer): number;
+  WTSGetListenerSecurityA(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListenerName: string | Win32Pointer,
+    SecurityInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+    nLength: number,
+    lpnLengthNeeded: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSGetListenerSecurityW */
-  WTSGetListenerSecurityW(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListenerName: string | Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer, nLength: number, lpnLengthNeeded: Win32Pointer): number;
+  WTSGetListenerSecurityW(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListenerName: string | Win32Pointer,
+    SecurityInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+    nLength: number,
+    lpnLengthNeeded: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSGetListenerSecurityW */
-  WTSGetListenerSecurity(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListenerName: string | Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer, nLength: number, lpnLengthNeeded: Win32Pointer): number;
+  WTSGetListenerSecurity(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListenerName: string | Win32Pointer,
+    SecurityInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+    nLength: number,
+    lpnLengthNeeded: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSIsChildSessionsEnabled */
   WTSIsChildSessionsEnabled(pbEnabled: Win32Pointer): number;
   /** wtsapi32.dll!WTSLogoffSession */
@@ -103,23 +272,77 @@ interface Functions {
   /** wtsapi32.dll!WTSOpenServerW */
   WTSOpenServer(pServerName: string | Win32Pointer): number | null;
   /** wtsapi32.dll!WTSQueryListenerConfigA */
-  WTSQueryListenerConfigA(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListenerName: string | Win32Pointer, pBuffer: Win32Pointer): number;
+  WTSQueryListenerConfigA(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListenerName: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSQueryListenerConfigW */
-  WTSQueryListenerConfigW(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListenerName: string | Win32Pointer, pBuffer: Win32Pointer): number;
+  WTSQueryListenerConfigW(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListenerName: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSQueryListenerConfigW */
-  WTSQueryListenerConfig(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListenerName: string | Win32Pointer, pBuffer: Win32Pointer): number;
+  WTSQueryListenerConfig(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListenerName: string | Win32Pointer,
+    pBuffer: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSQuerySessionInformationA */
-  WTSQuerySessionInformationA(hServer: Win32Pointer, SessionId: number, WTSInfoClass: number, ppBuffer: Win32Pointer, pBytesReturned: Win32Pointer): number;
+  WTSQuerySessionInformationA(
+    hServer: Win32Pointer,
+    SessionId: number,
+    WTSInfoClass: number,
+    ppBuffer: Win32Pointer,
+    pBytesReturned: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSQuerySessionInformationW */
-  WTSQuerySessionInformationW(hServer: Win32Pointer, SessionId: number, WTSInfoClass: number, ppBuffer: Win32Pointer, pBytesReturned: Win32Pointer): number;
+  WTSQuerySessionInformationW(
+    hServer: Win32Pointer,
+    SessionId: number,
+    WTSInfoClass: number,
+    ppBuffer: Win32Pointer,
+    pBytesReturned: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSQuerySessionInformationW */
-  WTSQuerySessionInformation(hServer: Win32Pointer, SessionId: number, WTSInfoClass: number, ppBuffer: Win32Pointer, pBytesReturned: Win32Pointer): number;
+  WTSQuerySessionInformation(
+    hServer: Win32Pointer,
+    SessionId: number,
+    WTSInfoClass: number,
+    ppBuffer: Win32Pointer,
+    pBytesReturned: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSQueryUserConfigA */
-  WTSQueryUserConfigA(pServerName: string | Win32Pointer, pUserName: string | Win32Pointer, WTSConfigClass: number, ppBuffer: Win32Pointer, pBytesReturned: Win32Pointer): number;
+  WTSQueryUserConfigA(
+    pServerName: string | Win32Pointer,
+    pUserName: string | Win32Pointer,
+    WTSConfigClass: number,
+    ppBuffer: Win32Pointer,
+    pBytesReturned: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSQueryUserConfigW */
-  WTSQueryUserConfigW(pServerName: string | Win32Pointer, pUserName: string | Win32Pointer, WTSConfigClass: number, ppBuffer: Win32Pointer, pBytesReturned: Win32Pointer): number;
+  WTSQueryUserConfigW(
+    pServerName: string | Win32Pointer,
+    pUserName: string | Win32Pointer,
+    WTSConfigClass: number,
+    ppBuffer: Win32Pointer,
+    pBytesReturned: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSQueryUserConfigW */
-  WTSQueryUserConfig(pServerName: string | Win32Pointer, pUserName: string | Win32Pointer, WTSConfigClass: number, ppBuffer: Win32Pointer, pBytesReturned: Win32Pointer): number;
+  WTSQueryUserConfig(
+    pServerName: string | Win32Pointer,
+    pUserName: string | Win32Pointer,
+    WTSConfigClass: number,
+    ppBuffer: Win32Pointer,
+    pBytesReturned: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSQueryUserToken */
   WTSQueryUserToken(SessionId: number, phToken: Win32Pointer): number;
   /** wtsapi32.dll!WTSRegisterSessionNotification */
@@ -127,33 +350,126 @@ interface Functions {
   /** wtsapi32.dll!WTSRegisterSessionNotificationEx */
   WTSRegisterSessionNotificationEx(hServer: Win32Pointer, hWnd: Win32Pointer, dwFlags: number): number;
   /** wtsapi32.dll!WTSSendMessageA */
-  WTSSendMessageA(hServer: Win32Pointer, SessionId: number, pTitle: string | Win32Pointer, TitleLength: number, pMessage: string | Win32Pointer, MessageLength: number, Style: number, Timeout: number, pResponse: Win32Pointer, bWait: number): number;
+  WTSSendMessageA(
+    hServer: Win32Pointer,
+    SessionId: number,
+    pTitle: string | Win32Pointer,
+    TitleLength: number,
+    pMessage: string | Win32Pointer,
+    MessageLength: number,
+    Style: number,
+    Timeout: number,
+    pResponse: Win32Pointer,
+    bWait: number,
+  ): number;
   /** wtsapi32.dll!WTSSendMessageW */
-  WTSSendMessageW(hServer: Win32Pointer, SessionId: number, pTitle: string | Win32Pointer, TitleLength: number, pMessage: string | Win32Pointer, MessageLength: number, Style: number, Timeout: number, pResponse: Win32Pointer, bWait: number): number;
+  WTSSendMessageW(
+    hServer: Win32Pointer,
+    SessionId: number,
+    pTitle: string | Win32Pointer,
+    TitleLength: number,
+    pMessage: string | Win32Pointer,
+    MessageLength: number,
+    Style: number,
+    Timeout: number,
+    pResponse: Win32Pointer,
+    bWait: number,
+  ): number;
   /** wtsapi32.dll!WTSSendMessageW */
-  WTSSendMessage(hServer: Win32Pointer, SessionId: number, pTitle: string | Win32Pointer, TitleLength: number, pMessage: string | Win32Pointer, MessageLength: number, Style: number, Timeout: number, pResponse: Win32Pointer, bWait: number): number;
+  WTSSendMessage(
+    hServer: Win32Pointer,
+    SessionId: number,
+    pTitle: string | Win32Pointer,
+    TitleLength: number,
+    pMessage: string | Win32Pointer,
+    MessageLength: number,
+    Style: number,
+    Timeout: number,
+    pResponse: Win32Pointer,
+    bWait: number,
+  ): number;
   /** wtsapi32.dll!WTSSetListenerSecurityA */
-  WTSSetListenerSecurityA(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListenerName: string | Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer): number;
+  WTSSetListenerSecurityA(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListenerName: string | Win32Pointer,
+    SecurityInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSSetListenerSecurityW */
-  WTSSetListenerSecurityW(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListenerName: string | Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer): number;
+  WTSSetListenerSecurityW(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListenerName: string | Win32Pointer,
+    SecurityInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSSetListenerSecurityW */
-  WTSSetListenerSecurity(hServer: Win32Pointer, pReserved: Win32Pointer, Reserved: number, pListenerName: string | Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer): number;
+  WTSSetListenerSecurity(
+    hServer: Win32Pointer,
+    pReserved: Win32Pointer,
+    Reserved: number,
+    pListenerName: string | Win32Pointer,
+    SecurityInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSSetRenderHint */
-  WTSSetRenderHint(pRenderHintID: Win32Pointer, hwndOwner: Win32Pointer, renderHintType: number, cbHintDataLength: number, pHintData: Win32Pointer): number;
+  WTSSetRenderHint(
+    pRenderHintID: Win32Pointer,
+    hwndOwner: Win32Pointer,
+    renderHintType: number,
+    cbHintDataLength: number,
+    pHintData: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSSetUserConfigA */
-  WTSSetUserConfigA(pServerName: string | Win32Pointer, pUserName: string | Win32Pointer, WTSConfigClass: number, pBuffer: string | Win32Pointer, DataLength: number): number;
+  WTSSetUserConfigA(
+    pServerName: string | Win32Pointer,
+    pUserName: string | Win32Pointer,
+    WTSConfigClass: number,
+    pBuffer: string | Win32Pointer,
+    DataLength: number,
+  ): number;
   /** wtsapi32.dll!WTSSetUserConfigW */
-  WTSSetUserConfigW(pServerName: string | Win32Pointer, pUserName: string | Win32Pointer, WTSConfigClass: number, pBuffer: string | Win32Pointer, DataLength: number): number;
+  WTSSetUserConfigW(
+    pServerName: string | Win32Pointer,
+    pUserName: string | Win32Pointer,
+    WTSConfigClass: number,
+    pBuffer: string | Win32Pointer,
+    DataLength: number,
+  ): number;
   /** wtsapi32.dll!WTSSetUserConfigW */
-  WTSSetUserConfig(pServerName: string | Win32Pointer, pUserName: string | Win32Pointer, WTSConfigClass: number, pBuffer: string | Win32Pointer, DataLength: number): number;
+  WTSSetUserConfig(
+    pServerName: string | Win32Pointer,
+    pUserName: string | Win32Pointer,
+    WTSConfigClass: number,
+    pBuffer: string | Win32Pointer,
+    DataLength: number,
+  ): number;
   /** wtsapi32.dll!WTSShutdownSystem */
   WTSShutdownSystem(hServer: Win32Pointer, ShutdownFlag: number): number;
   /** wtsapi32.dll!WTSStartRemoteControlSessionA */
-  WTSStartRemoteControlSessionA(pTargetServerName: string | Win32Pointer, TargetLogonId: number, HotkeyVk: number, HotkeyModifiers: number): number;
+  WTSStartRemoteControlSessionA(
+    pTargetServerName: string | Win32Pointer,
+    TargetLogonId: number,
+    HotkeyVk: number,
+    HotkeyModifiers: number,
+  ): number;
   /** wtsapi32.dll!WTSStartRemoteControlSessionW */
-  WTSStartRemoteControlSessionW(pTargetServerName: string | Win32Pointer, TargetLogonId: number, HotkeyVk: number, HotkeyModifiers: number): number;
+  WTSStartRemoteControlSessionW(
+    pTargetServerName: string | Win32Pointer,
+    TargetLogonId: number,
+    HotkeyVk: number,
+    HotkeyModifiers: number,
+  ): number;
   /** wtsapi32.dll!WTSStartRemoteControlSessionW */
-  WTSStartRemoteControlSession(pTargetServerName: string | Win32Pointer, TargetLogonId: number, HotkeyVk: number, HotkeyModifiers: number): number;
+  WTSStartRemoteControlSession(
+    pTargetServerName: string | Win32Pointer,
+    TargetLogonId: number,
+    HotkeyVk: number,
+    HotkeyModifiers: number,
+  ): number;
   /** wtsapi32.dll!WTSStopRemoteControlSession */
   WTSStopRemoteControlSession(LogonId: number): number;
   /** wtsapi32.dll!WTSTerminateProcess */
@@ -173,11 +489,27 @@ interface Functions {
   /** wtsapi32.dll!WTSVirtualChannelPurgeOutput */
   WTSVirtualChannelPurgeOutput(hChannelHandle: Win32Pointer): number;
   /** wtsapi32.dll!WTSVirtualChannelQuery */
-  WTSVirtualChannelQuery(hChannelHandle: Win32Pointer, param1: number, ppBuffer: Win32Pointer, pBytesReturned: Win32Pointer): number;
+  WTSVirtualChannelQuery(
+    hChannelHandle: Win32Pointer,
+    param1: number,
+    ppBuffer: Win32Pointer,
+    pBytesReturned: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSVirtualChannelRead */
-  WTSVirtualChannelRead(hChannelHandle: Win32Pointer, TimeOut: number, Buffer: string | Win32Pointer, BufferSize: number, pBytesRead: Win32Pointer): number;
+  WTSVirtualChannelRead(
+    hChannelHandle: Win32Pointer,
+    TimeOut: number,
+    Buffer: string | Win32Pointer,
+    BufferSize: number,
+    pBytesRead: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSVirtualChannelWrite */
-  WTSVirtualChannelWrite(hChannelHandle: Win32Pointer, Buffer: string | Win32Pointer, Length: number, pBytesWritten: Win32Pointer): number;
+  WTSVirtualChannelWrite(
+    hChannelHandle: Win32Pointer,
+    Buffer: string | Win32Pointer,
+    Length: number,
+    pBytesWritten: Win32Pointer,
+  ): number;
   /** wtsapi32.dll!WTSWaitSystemEvent */
   WTSWaitSystemEvent(hServer: Win32Pointer, EventMask: number, pEventFlags: Win32Pointer): number;
 }

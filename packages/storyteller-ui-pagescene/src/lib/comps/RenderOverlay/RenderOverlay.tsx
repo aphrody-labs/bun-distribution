@@ -6,9 +6,9 @@ import { usePageSceneStore } from "../../PageSceneStore";
 // Video encodes are abortable: the Cancel button (and the Escape keybind)
 // flip the store's encodeCancelSignal, which recordTimeline polls per frame.
 export const RenderOverlay = () => {
-  const progress = usePageSceneStore((s) => s.recordingProgress);
-  const cancellable = usePageSceneStore((s) => s.encodeCancelSignal !== null);
-  const requestEncodeCancel = usePageSceneStore((s) => s.requestEncodeCancel);
+  const progress = usePageSceneStore(s => s.recordingProgress);
+  const cancellable = usePageSceneStore(s => s.encodeCancelSignal !== null);
+  const requestEncodeCancel = usePageSceneStore(s => s.requestEncodeCancel);
 
   const pct = Math.round((progress?.pct ?? 0) * 100);
   const message =

@@ -60,10 +60,7 @@ export const modifierSymbols: Record<
   ArrowRight: { Other: "→" },
 };
 
-export const keySymbols: Record<
-  string,
-  { macOS?: string; Windows?: string; Other: string }
-> = {
+export const keySymbols: Record<string, { macOS?: string; Windows?: string; Other: string }> = {
   " ": { Other: "␣" },
   Tab: { macOS: "⇥", Other: "⭾" },
   Enter: { macOS: "", Other: "↵" },

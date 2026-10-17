@@ -23,12 +23,8 @@ export function useM3ReducedMotion(): boolean {
 }
 
 function immediate(target: TargetAndTransition): TargetAndTransition;
-function immediate(
-  target: TargetAndTransition | string,
-): TargetAndTransition | string;
-function immediate(
-  target: TargetAndTransition | string,
-): TargetAndTransition | string {
+function immediate(target: TargetAndTransition | string): TargetAndTransition | string;
+function immediate(target: TargetAndTransition | string): TargetAndTransition | string {
   if (typeof target === "string") return target;
   return { ...target, transition: { type: "tween", duration: 0, delay: 0 } };
 }

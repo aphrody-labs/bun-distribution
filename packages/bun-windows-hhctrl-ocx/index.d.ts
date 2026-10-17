@@ -3,11 +3,26 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** hhctrl.ocx!HtmlHelpA */
-  HtmlHelpA(hwndCaller: Win32Pointer, pszFile: string | Win32Pointer, uCommand: number, dwData: number | bigint): number | null;
+  HtmlHelpA(
+    hwndCaller: Win32Pointer,
+    pszFile: string | Win32Pointer,
+    uCommand: number,
+    dwData: number | bigint,
+  ): number | null;
   /** hhctrl.ocx!HtmlHelpW */
-  HtmlHelpW(hwndCaller: Win32Pointer, pszFile: string | Win32Pointer, uCommand: number, dwData: number | bigint): number | null;
+  HtmlHelpW(
+    hwndCaller: Win32Pointer,
+    pszFile: string | Win32Pointer,
+    uCommand: number,
+    dwData: number | bigint,
+  ): number | null;
   /** hhctrl.ocx!HtmlHelpW */
-  HtmlHelp(hwndCaller: Win32Pointer, pszFile: string | Win32Pointer, uCommand: number, dwData: number | bigint): number | null;
+  HtmlHelp(
+    hwndCaller: Win32Pointer,
+    pszFile: string | Win32Pointer,
+    uCommand: number,
+    dwData: number | bigint,
+  ): number | null;
 }
 
 declare const family: Win32Family & Functions;

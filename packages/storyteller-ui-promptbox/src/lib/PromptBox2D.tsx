@@ -16,20 +16,13 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 
-import {
-  Prompt2DStore,
-  RefImage,
-  useEnterToGenerateStore,
-} from "./promptStore";
+import { Prompt2DStore, RefImage, useEnterToGenerateStore } from "./promptStore";
 import { ImageModel } from "@storyteller/model-list";
 import { ImagePromptRow, UploadImageFn } from "./ImagePromptRow";
 import { twMerge } from "tailwind-merge";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
-import {
-  PromptFullscreenModal,
-  useFullscreenPrompt,
-} from "./PromptFullscreenModal";
+import { PromptFullscreenModal, useFullscreenPrompt } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
 import { StoreApi, UseBoundStore } from "zustand";
@@ -81,14 +74,13 @@ export const PromptBox2D = ({
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const { isFullscreen, openFullscreen, closeFullscreen } =
-    useFullscreenPrompt();
+  const { isFullscreen, openFullscreen, closeFullscreen } = useFullscreenPrompt();
 
   // CSS viewport units handle resize reactivity automatically
   const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
 
   const toggleExpand = () => {
-    setIsExpanded((prev) => {
+    setIsExpanded(prev => {
       const next = !prev;
       if (textareaRef.current) {
         textareaRef.current.style.height = next ? EXPANDED_HEIGHT : "auto";
@@ -100,17 +92,17 @@ export const PromptBox2D = ({
   const [content, setContent] = useState<React.ReactNode>("");
 
   //const { lastRenderedBitmap } = useCanvasSignal();
-  const prompt = usePrompt2DStore((s) => s.prompt);
-  const setPrompt = usePrompt2DStore((s) => s.setPrompt);
-  const aspectRatio = usePrompt2DStore((s) => s.aspectRatio);
-  const setAspectRatio = usePrompt2DStore((s) => s.setAspectRatio);
-  const resolution = usePrompt2DStore((s) => s.resolution);
-  const setResolution = usePrompt2DStore((s) => s.setResolution);
+  const prompt = usePrompt2DStore(s => s.prompt);
+  const setPrompt = usePrompt2DStore(s => s.setPrompt);
+  const aspectRatio = usePrompt2DStore(s => s.aspectRatio);
+  const setAspectRatio = usePrompt2DStore(s => s.setAspectRatio);
+  const resolution = usePrompt2DStore(s => s.resolution);
+  const setResolution = usePrompt2DStore(s => s.setResolution);
   const [internalEnqueueing, setInternalEnqueueing] = useState(false);
 
-  const referenceImages = usePrompt2DStore((s) => s.referenceImages);
-  const setReferenceImages = usePrompt2DStore((s) => s.setReferenceImages);
-  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
+  const referenceImages = usePrompt2DStore(s => s.referenceImages);
+  const setReferenceImages = usePrompt2DStore(s => s.setReferenceImages);
+  const enterToGenerate = useEnterToGenerateStore(s => s.enabled);
   const [showImagePrompts, setShowImagePrompts] = useState(false);
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
@@ -157,8 +149,8 @@ export const PromptBox2D = ({
   }, [selectedImageModel, generationCount]);
 
   useEffect(() => {
-    setResolutionList((prev) =>
-      prev.map((item) => ({
+    setResolutionList(prev =>
+      prev.map(item => ({
         ...item,
         selected: item.label.toLowerCase() === resolution,
       })),
@@ -167,9 +159,7 @@ export const PromptBox2D = ({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isImageRowVisible =
-    showImagePrompts ||
-    (selectedImageModel?.canUseImagePrompt && referenceImages.length > 0) ||
-    false;
+    showImagePrompts || (selectedImageModel?.canUseImagePrompt && referenceImages.length > 0) || false;
 
   useEffect(() => {
     if (isExpanded) return;
@@ -183,8 +173,8 @@ export const PromptBox2D = ({
     const value = selectedItem.label.toLowerCase() as AspectRatio;
     onAspectRatioChange?.(value);
     setAspectRatio(value);
-    setAspectRatioList((prev) =>
-      prev.map((item) => ({
+    setAspectRatioList(prev =>
+      prev.map(item => ({
         ...item,
         selected: item.label === selectedItem.label,
       })),
@@ -203,8 +193,7 @@ export const PromptBox2D = ({
     const pastedText = e.clipboardData.getData("text");
     const target = e.currentTarget;
     const { selectionStart, selectionEnd, value } = target;
-    const next =
-      value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
+    const next = value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
     setPrompt(next);
     requestAnimationFrame(() => {
       const pos = Math.min(selectionStart + pastedText.length, next.length);
@@ -289,9 +278,7 @@ export const PromptBox2D = ({
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
     if (isFinite(maxLen) && prompt.length > maxLen) {
-      toast.error(
-        `Prompt exceeds the ${maxLen} character limit for this model`,
-      );
+      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
       return;
     }
     setInternalEnqueueing(true);
@@ -314,7 +301,7 @@ export const PromptBox2D = ({
   };
 
   const getCurrentAspectRatioIcon = (): LucideIcon => {
-    const selected = aspectRatioList.find((item) => item.selected);
+    const selected = aspectRatioList.find(item => item.selected);
     if (!selected?.icon) return RectangleHorizontalIcon;
     return (selected.icon as React.ReactElement).type as LucideIcon;
   };
@@ -373,15 +360,12 @@ export const PromptBox2D = ({
         {selectedImageModel?.canUseImagePrompt && isImageRowVisible && (
           <ImagePromptRow
             visible={true}
-            maxImagePromptCount={Math.max(
-              1,
-              selectedImageModel?.maxImagePromptCount ?? 1,
-            )}
+            maxImagePromptCount={Math.max(1, selectedImageModel?.maxImagePromptCount ?? 1)}
             allowUpload={true}
             referenceImages={referenceImages}
             setReferenceImages={setReferenceImages}
             uploadImage={uploadImage as any}
-            onImageClick={(image) => {
+            onImageClick={image => {
               setContent(
                 <img
                   src={image.fullUrl ?? image.url}
@@ -396,9 +380,7 @@ export const PromptBox2D = ({
         <div
           className={twMerge(
             "glass relative w-full p-4",
-            selectedImageModel?.canUseImagePrompt &&
-              isImageRowVisible &&
-              "rounded-t-none",
+            selectedImageModel?.canUseImagePrompt && isImageRowVisible && "rounded-t-none",
           )}
         >
           <div className="flex gap-3">
@@ -415,7 +397,7 @@ export const PromptBox2D = ({
                     "h-8 w-8 p-0 bg-transparent hover:bg-transparent group transition-all border-0 shadow-none",
                     isImageRowVisible && "text-white",
                   )}
-                  onClick={() => setShowImagePrompts((prev) => !prev)}
+                  onClick={() => setShowImagePrompts(prev => !prev)}
                 >
                   <svg
                     width="24"
@@ -460,34 +442,19 @@ export const PromptBox2D = ({
             <div className="flex flex-wrap items-center gap-2">
               {modelSelector}
               {selectedImageModel?.canChangeAspectRatio && (
-                <Tooltip
-                  content="Aspect ratio"
-                  position="top"
-                  className="z-50"
-                  closeOnClick={true}
-                >
+                <Tooltip content="Aspect ratio" position="top" className="z-50" closeOnClick={true}>
                   <PopoverMenu
                     items={aspectRatioList}
                     onSelect={handleAspectRatioSelect}
                     mode="toggle"
                     panelTitle="Aspect Ratio"
                     showIconsInList
-                    triggerIcon={
-                      <DynamicIcon
-                        icon={getCurrentAspectRatioIcon()}
-                        className="h-4 w-4"
-                      />
-                    }
+                    triggerIcon={<DynamicIcon icon={getCurrentAspectRatioIcon()} className="h-4 w-4" />}
                   />
                 </Tooltip>
               )}
               {selectedImageModel?.canChangeResolution && (
-                <Tooltip
-                  content="Resolution"
-                  position="top"
-                  className="z-50"
-                  closeOnClick={true}
-                >
+                <Tooltip content="Resolution" position="top" className="z-50" closeOnClick={true}>
                   <PopoverMenu
                     items={resolutionList}
                     onSelect={handleResolutionSelect}
@@ -501,12 +468,7 @@ export const PromptBox2D = ({
             </div>
             <div className="flex items-center gap-2">
               {onFitPressed && (
-                <Tooltip
-                  content={"Fit canvas to screen"}
-                  position="top"
-                  className="z-50"
-                  delay={200}
-                >
+                <Tooltip content={"Fit canvas to screen"} position="top" className="z-50" delay={200}>
                   <Button
                     variant="secondary"
                     className="h-9 bg-ui-controls/60 px-3 text-base-fg hover:bg-ui-controls/90"
@@ -520,7 +482,7 @@ export const PromptBox2D = ({
               <GenerationCountPicker
                 currentModel={selectedImageModel}
                 currentCount={generationCount}
-                handleCountChange={(count) => {
+                handleCountChange={count => {
                   onGenerationCountChange?.(count);
                 }}
               />
@@ -541,20 +503,13 @@ export const PromptBox2D = ({
             </div>
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-            <Tooltip
-              content={isExpanded ? "Collapse" : "Expand"}
-              position="top"
-              className="-mb-2"
-            >
+            <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="top" className="-mb-2">
               <button
                 type="button"
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <DynamicIcon
-                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
-                  className="text-xs"
-                />
+                <DynamicIcon icon={isExpanded ? ChevronUpIcon : ChevronDownIcon} className="text-xs" />
               </button>
             </Tooltip>
           </div>
@@ -577,10 +532,7 @@ export const PromptBox2D = ({
           selectedImageModel?.canUseImagePrompt ? (
             <ImagePromptRow
               visible={true}
-              maxImagePromptCount={Math.max(
-                1,
-                selectedImageModel?.maxImagePromptCount ?? 1,
-              )}
+              maxImagePromptCount={Math.max(1, selectedImageModel?.maxImagePromptCount ?? 1)}
               allowUpload={true}
               referenceImages={referenceImages}
               setReferenceImages={setReferenceImages}

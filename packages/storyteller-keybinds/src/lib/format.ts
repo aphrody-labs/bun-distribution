@@ -3,9 +3,7 @@ import { Binding } from "./types";
 // Human-readable rendering of a binding. macOS uses symbol glyphs (⌘⇧⌥);
 // other platforms use word modifiers joined with "+".
 
-const isMac =
-  typeof navigator !== "undefined" &&
-  /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
 
 // event.code → display token.
 const CODE_LABELS: Record<string, string> = {

@@ -16,10 +16,7 @@ import { BoardItem } from "../boards/boardTypes";
 import { hostnameOf } from "../boards/linkMeta";
 import { extractPalette } from "../boards/palette";
 import { Favicon } from "./Favicon";
-import {
-  isEventFromEditableElement,
-  useResolvedKeybinds,
-} from "@storyteller/keybinds";
+import { isEventFromEditableElement, useResolvedKeybinds } from "@storyteller/keybinds";
 
 interface Props {
   item: BoardItem;
@@ -90,7 +87,7 @@ export const ItemInspector = ({
     setPalette([]);
     if (!imageSrc) return undefined;
     let alive = true;
-    void extractPalette(imageSrc, 6).then((c) => {
+    void extractPalette(imageSrc, 6).then(c => {
       if (alive) setPalette(c);
     });
     return () => {
@@ -140,7 +137,7 @@ export const ItemInspector = ({
 
             <Section title="Rating">
               <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((n) => (
+                {[1, 2, 3, 4, 5].map(n => (
                   <button
                     key={n}
                     type="button"
@@ -162,7 +159,7 @@ export const ItemInspector = ({
 
             <Section title="Tags">
               <div className="flex flex-wrap gap-1.5">
-                {item.tags.map((tag) => (
+                {item.tags.map(tag => (
                   <button
                     key={tag}
                     type="button"
@@ -175,8 +172,8 @@ export const ItemInspector = ({
                 ))}
                 <input
                   value={tagDraft}
-                  onChange={(e) => setTagDraft(e.target.value)}
-                  onKeyDown={(e) => {
+                  onChange={e => setTagDraft(e.target.value)}
+                  onKeyDown={e => {
                     if (e.key === "Enter") commitTag();
                   }}
                   onBlur={commitTag}
@@ -189,7 +186,7 @@ export const ItemInspector = ({
             {item.kind === "image" && palette.length > 0 && (
               <Section title="Palette">
                 <div className="flex flex-wrap gap-1.5">
-                  {palette.map((hex) => (
+                  {palette.map(hex => (
                     <button
                       key={hex}
                       type="button"
@@ -242,13 +239,7 @@ export const ItemInspector = ({
   );
 };
 
-const Section = ({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) => (
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="space-y-1.5">
     <div className="text-sm font-medium text-base-fg/90">{title}</div>
     {children}
@@ -258,31 +249,12 @@ const Section = ({
 const Media = ({ item }: { item: BoardItem }) => {
   switch (item.kind) {
     case "image":
-      return (
-        <img
-          src={item.src}
-          alt={item.caption || ""}
-          className="h-full w-full object-contain"
-        />
-      );
+      return <img src={item.src} alt={item.caption || ""} className="h-full w-full object-contain" />;
     case "video":
-      return (
-        <video
-          src={item.src}
-          autoPlay
-          muted
-          loop
-          controls
-          playsInline
-          className="h-full w-full object-contain"
-        />
-      );
+      return <video src={item.src} autoPlay muted loop controls playsInline className="h-full w-full object-contain" />;
     case "color":
       return (
-        <div
-          className="flex h-72 w-72 items-end rounded-2xl p-4 shadow-2xl"
-          style={{ background: item.color }}
-        >
+        <div className="flex h-72 w-72 items-end rounded-2xl p-4 shadow-2xl" style={{ background: item.color }}>
           <span className="rounded-full bg-black/40 px-3 py-1 text-sm font-medium uppercase tracking-wider text-white backdrop-blur">
             {item.color}
           </span>
@@ -291,9 +263,7 @@ const Media = ({ item }: { item: BoardItem }) => {
     case "text":
       return (
         <div className="max-h-full max-w-2xl overflow-auto rounded-2xl bg-ui-panel p-8 shadow-2xl">
-          <p className="whitespace-pre-wrap text-lg leading-relaxed text-base-fg">
-            {item.text || "Note"}
-          </p>
+          <p className="whitespace-pre-wrap text-lg leading-relaxed text-base-fg">{item.text || "Note"}</p>
         </div>
       );
     case "link":
@@ -304,20 +274,14 @@ const Media = ({ item }: { item: BoardItem }) => {
           rel="noreferrer"
           className="flex max-w-lg flex-col overflow-hidden rounded-2xl bg-ui-panel shadow-2xl"
         >
-          {item.image && (
-            <img src={item.image} alt="" className="w-full object-cover" />
-          )}
+          {item.image && <img src={item.image} alt="" className="w-full object-cover" />}
           <div className="flex items-start gap-3 p-5">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-base-fg/8">
               <Favicon url={item.url} className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <p className="text-base font-medium text-base-fg">
-                {item.title || hostnameOf(item.url)}
-              </p>
-              <p className="mt-1 truncate text-sm text-base-fg/55">
-                {item.url}
-              </p>
+              <p className="text-base font-medium text-base-fg">{item.title || hostnameOf(item.url)}</p>
+              <p className="mt-1 truncate text-sm text-base-fg/55">{item.url}</p>
             </div>
           </div>
         </a>
@@ -328,17 +292,11 @@ const Media = ({ item }: { item: BoardItem }) => {
 };
 
 // Hover-reveal navigation arrow, styled to match the shared LightboxModal.
-const NavArrow = ({
-  side,
-  onClick,
-}: {
-  side: "left" | "right";
-  onClick: () => void;
-}) => (
+const NavArrow = ({ side, onClick }: { side: "left" | "right"; onClick: () => void }) => (
   <button
     type="button"
     aria-label={side === "left" ? "Previous" : "Next"}
-    onClick={(e) => {
+    onClick={e => {
       e.stopPropagation();
       onClick();
     }}
@@ -349,9 +307,6 @@ const NavArrow = ({
       side === "left" ? "left-3" : "right-3",
     ].join(" ")}
   >
-    <DynamicIcon
-      icon={side === "left" ? ChevronLeftIcon : ChevronRightIcon}
-      className="text-lg"
-    />
+    <DynamicIcon icon={side === "left" ? ChevronLeftIcon : ChevronRightIcon} className="text-lg" />
   </button>
 );

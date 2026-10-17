@@ -28,19 +28,18 @@ export const MUI_CODEMODS: readonly Codemod[] = [
     group: "mui",
     title:
       "MUI Button, Switch, Checkbox, Divider -> Base UI wrappers; Typography, Stack, Box, Paper -> elements with M3 classes",
-    test: (p) => /\.(tsx|jsx)$/.test(p),
-    run: (source) => muiToM3(source),
+    test: p => /\.(tsx|jsx)$/.test(p),
+    run: source => muiToM3(source),
   },
 ];
 
 export const CODEMODS: readonly Codemod[] = [
   ...NEXT16_CODEMODS,
   ...MUI_CODEMODS,
-  ...TAILWIND4_CODEMODS.map((codemod) =>
+  ...TAILWIND4_CODEMODS.map(codemod =>
     codemod.id === "tailwind-config-v4"
       ? Object.assign({}, codemod, {
-          run: (source: string, path: string) =>
-            tailwindConfigToCss(source, path, M3_TAILWIND_HEADER),
+          run: (source: string, path: string) => tailwindConfigToCss(source, path, M3_TAILWIND_HEADER),
         })
       : codemod,
   ),

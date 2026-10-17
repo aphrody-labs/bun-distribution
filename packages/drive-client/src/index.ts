@@ -47,11 +47,7 @@ export { TauriTransport, HttpTransport } from "./transport";
 export { SubscriptionManager } from "./subscriptionManager";
 
 // Event filtering utilities
-export {
-  DEFAULT_EVENT_SUBSCRIPTION,
-  NOISY_EVENTS,
-  type EventVariant,
-} from "./event-filter";
+export { DEFAULT_EVENT_SUBSCRIPTION, NOISY_EVENTS, type EventVariant } from "./event-filter";
 
 // React hooks (requires @tanstack/react-query peer dependency)
 export * from "./hooks";

@@ -4,22 +4,9 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export type ExternalCheckout =
-  | "aphrody-py"
-  | "iecode"
-  | "rg"
-  | "source"
-  | "bxc"
-  | "yolo"
-  | "m3"
-  | "bun"
-  | "material";
+export type ExternalCheckout = "aphrody-py" | "iecode" | "rg" | "source" | "bxc" | "yolo" | "m3" | "bun" | "material";
 
-const rootMarkers = [
-  "rust-toolchain.toml",
-  "Cargo.toml",
-  "package.json",
-] as const;
+const rootMarkers = ["rust-toolchain.toml", "Cargo.toml", "package.json"] as const;
 const envNames: Record<ExternalCheckout, readonly string[]> = {
   "aphrody-py": ["APHRODY_PY_ROOT"],
   iecode: ["APHRODY_IECODE_ROOT", "IECODE_ROOT", "NIE_ROOT"],
@@ -33,28 +20,20 @@ const envNames: Record<ExternalCheckout, readonly string[]> = {
 };
 
 /** Find this Aphrody checkout by its root manifests, starting at a file or directory. */
-export function findWorkspaceRoot(
-  from?: string,
-  env: Record<string, string | undefined> = process.env,
-): string {
-  const explicit =
-    from === undefined &&
-    (env.APHRODY_WORKSPACE_ROOT?.trim() || env.APHRODY_ROOT?.trim());
+export function findWorkspaceRoot(from?: string, env: Record<string, string | undefined> = process.env): string {
+  const explicit = from === undefined && (env.APHRODY_WORKSPACE_ROOT?.trim() || env.APHRODY_ROOT?.trim());
   if (explicit) {
     const root = resolve(explicit);
-    if (!isDirectory(root))
-      throw new Error(`Configured Aphrody root is not a directory: ${root}`);
+    if (!isDirectory(root)) throw new Error(`Configured Aphrody root is not a directory: ${root}`);
     return root;
   }
   const start = from ?? process.cwd();
   let current = resolve(start);
   if (!existsSync(current) || !isDirectory(current)) current = dirname(current);
   while (true) {
-    if (rootMarkers.every((marker) => existsSync(join(current, marker))))
-      return current;
+    if (rootMarkers.every(marker => existsSync(join(current, marker)))) return current;
     const parent = dirname(current);
-    if (parent === current)
-      throw new Error(`Aphrody workspace root not found above ${start}`);
+    if (parent === current) throw new Error(`Aphrody workspace root not found above ${start}`);
     current = parent;
   }
 }
@@ -85,9 +64,7 @@ export function checkoutRoot(
   const parent = dirname(root);
   switch (checkout) {
     case "aphrody-py":
-      return existsSync(join(root, "py"))
-        ? join(root, "py")
-        : resolve(parent, "aphrody-py");
+      return existsSync(join(root, "py")) ? join(root, "py") : resolve(parent, "aphrody-py");
     case "iecode":
       return resolve(parent, "iecode");
     case "rg":
@@ -102,21 +79,16 @@ export function checkoutRoot(
     case "material":
       return resolve(parent, "material");
     case "bun":
-      return isDirectory(join(root, "toolchains/bun"))
-        ? join(root, "toolchains/bun")
-        : resolve(parent, "bun");
+      return isDirectory(join(root, "toolchains/bun")) ? join(root, "toolchains/bun") : resolve(parent, "bun");
   }
 }
 
 /** Root of the Rose Griffon website within the consolidated monorepo or legacy checkout. */
 export function rgWebsiteRoot(): string {
-  const override =
-    process.env.RG_REPO_ROOT?.trim() || process.env.APHRODY_RG_ROOT?.trim();
+  const override = process.env.RG_REPO_ROOT?.trim() || process.env.APHRODY_RG_ROOT?.trim();
   if (override) {
     const legacy = resolve(override, "apps", "website");
-    return existsSync(legacy)
-      ? legacy
-      : resolve(override, "apps", "rg", "website");
+    return existsSync(legacy) ? legacy : resolve(override, "apps", "rg", "website");
   }
   return workspacePath("apps", "rg", "website");
 }
@@ -128,10 +100,7 @@ export function iecodeRoot(): string {
 
 /** Game data root, relocatable independently from the game source checkout. */
 export function iecodeDataPath(...parts: string[]): string {
-  const explicit =
-    process.env.DATA_PATH?.trim() ||
-    process.env.DATA_ROOT?.trim() ||
-    process.env.NIE_DATA_ROOT?.trim();
+  const explicit = process.env.DATA_PATH?.trim() || process.env.DATA_ROOT?.trim() || process.env.NIE_DATA_ROOT?.trim();
   return resolve(explicit || checkoutPath("iecode", "data"), ...parts);
 }
 
@@ -145,16 +114,11 @@ export function inagleRoot(): string {
   }
   const root = findWorkspaceRoot();
   const currentLayout = resolve(root, "packages", "rg", "inagle");
-  return existsSync(currentLayout)
-    ? currentLayout
-    : resolve(root, "packages", "inagle");
+  return existsSync(currentLayout) ? currentLayout : resolve(root, "packages", "inagle");
 }
 
 /** Resolve under a sibling checkout. */
-export function checkoutPath(
-  checkout: ExternalCheckout,
-  ...parts: string[]
-): string {
+export function checkoutPath(checkout: ExternalCheckout, ...parts: string[]): string {
   return resolve(checkoutRoot(checkout), ...parts);
 }
 
@@ -165,10 +129,7 @@ export function homePath(...parts: string[]): string {
 
 /** Canonical user-owned agent plugin store, independent of any source checkout. */
 export function pluginStorePath(...parts: string[]): string {
-  return resolve(
-    process.env.APHRODY_PLUGINS_ROOT?.trim() || statePath("plugins"),
-    ...parts,
-  );
+  return resolve(process.env.APHRODY_PLUGINS_ROOT?.trim() || statePath("plugins"), ...parts);
 }
 
 /** Resolve in the host's temporary directory (TMPDIR/TEMP aware). */
@@ -188,19 +149,9 @@ export function cachePath(...parts: string[]): string {
   const explicit = process.env.APHRODY_CACHE_DIR?.trim();
   if (explicit) return resolve(explicit, ...parts);
   if (process.platform === "win32")
-    return resolve(
-      process.env.LOCALAPPDATA || homePath("AppData", "Local"),
-      "Aphrody",
-      "cache",
-      ...parts,
-    );
-  if (process.platform === "darwin")
-    return homePath("Library", "Caches", "Aphrody", ...parts);
-  return resolve(
-    process.env.XDG_CACHE_HOME || homePath(".cache"),
-    "aphrody",
-    ...parts,
-  );
+    return resolve(process.env.LOCALAPPDATA || homePath("AppData", "Local"), "Aphrody", "cache", ...parts);
+  if (process.platform === "darwin") return homePath("Library", "Caches", "Aphrody", ...parts);
+  return resolve(process.env.XDG_CACHE_HOME || homePath(".cache"), "aphrody", ...parts);
 }
 
 /** Read the host/user environment home, including Windows USERPROFILE fallback. */
@@ -223,11 +174,7 @@ export function moduleDirectory(moduleUrl: string): string {
  * `target/{release,debug}` of the workspace, `CARGO_TARGET_DIR` and the shared Aphrody Cargo
  * target directories, then `PATH`.
  */
-export function findNativeBinary(
-  name: string,
-  envName: string,
-  from?: string,
-): string | undefined {
+export function findNativeBinary(name: string, envName: string, from?: string): string | undefined {
   const override = process.env[envName];
   if (override && existsSync(override)) return override;
   let root: string | undefined;

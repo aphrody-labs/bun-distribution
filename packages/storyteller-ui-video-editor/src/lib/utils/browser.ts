@@ -1,10 +1,4 @@
-export function downloadBlob({
-  blob,
-  filename,
-}: {
-  blob: Blob;
-  filename: string;
-}): void {
+export function downloadBlob({ blob, filename }: { blob: Blob; filename: string }): void {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
@@ -15,11 +9,7 @@ export function downloadBlob({
   URL.revokeObjectURL(url);
 }
 
-export function findScrollParent({
-  element,
-}: {
-  element: HTMLElement;
-}): HTMLElement | null {
+export function findScrollParent({ element }: { element: HTMLElement }): HTMLElement | null {
   let parent = element.parentElement;
   while (parent) {
     const { overflow, overflowX } = window.getComputedStyle(parent);
@@ -29,11 +19,7 @@ export function findScrollParent({
   return null;
 }
 
-export function isTypableDOMElement({
-  element,
-}: {
-  element: HTMLElement;
-}): boolean {
+export function isTypableDOMElement({ element }: { element: HTMLElement }): boolean {
   if (element.isContentEditable) return true;
 
   if (element.tagName === "INPUT") {

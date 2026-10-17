@@ -60,8 +60,7 @@ export function selectAuthMode(parts: {
   consumerKey?: string;
 }): OvhAuthMode | null {
   if (parts.clientId && parts.clientSecret) return "oauth2";
-  if (parts.applicationKey && parts.applicationSecret && parts.consumerKey)
-    return "application_key";
+  if (parts.applicationKey && parts.applicationSecret && parts.consumerKey) return "application_key";
   return null;
 }
 
@@ -101,10 +100,7 @@ export class OvhApiError extends Error {
  * Computes SHA1 hex digest using Bun native hasher when available, or node:crypto fallback.
  */
 export function sha1(content: string): string {
-  if (
-    typeof Bun !== "undefined" &&
-    typeof (Bun as { CryptoHasher?: unknown }).CryptoHasher === "function"
-  ) {
+  if (typeof Bun !== "undefined" && typeof (Bun as { CryptoHasher?: unknown }).CryptoHasher === "function") {
     const hasher = new Bun.CryptoHasher("sha1");
     hasher.update(content);
     return hasher.digest("hex");
@@ -152,12 +148,9 @@ export class OvhClient {
       (endpoint.startsWith("http") ? endpoint : ENDPOINT_URLS["ovh-eu"]);
     this.baseUrlV2 = v2BaseUrl(this.baseUrl);
 
-    const tokenUrl =
-      options.tokenUrl ?? OAUTH2_TOKEN_URLS[endpoint as OvhEndpoint];
+    const tokenUrl = options.tokenUrl ?? OAUTH2_TOKEN_URLS[endpoint as OvhEndpoint];
     if (mode === "oauth2" && !tokenUrl) {
-      throw new Error(
-        `OvhClient: no OAuth2 token URL for endpoint '${endpoint}'; pass tokenUrl`,
-      );
+      throw new Error(`OvhClient: no OAuth2 token URL for endpoint '${endpoint}'; pass tokenUrl`);
     }
     this.tokenUrl = tokenUrl ?? "";
   }
@@ -169,13 +162,8 @@ export class OvhClient {
 
   /** Cached access token, renewed 60 s before expiry (or when forced). */
   public async accessToken(force = false): Promise<string> {
-    if (this.authMode !== "oauth2")
-      throw new Error("OvhClient: access tokens need OAuth2 mode");
-    if (
-      !force &&
-      this.#token &&
-      this.#now() < this.#token.expiresAtMs - TOKEN_REFRESH_MARGIN_SEC * 1000
-    ) {
+    if (this.authMode !== "oauth2") throw new Error("OvhClient: access tokens need OAuth2 mode");
+    if (!force && this.#token && this.#now() < this.#token.expiresAtMs - TOKEN_REFRESH_MARGIN_SEC * 1000) {
       return this.#token.value;
     }
     if (!force && this.#tokenInFlight) return this.#tokenInFlight;
@@ -219,21 +207,13 @@ export class OvhClient {
     }
     if (!response.ok || typeof json.access_token !== "string") {
       // Only the OAuth2 error code is surfaced, never the request or the raw body.
-      const code =
-        typeof json.error === "string" ? json.error : "unexpected_response";
-      throw new OvhApiError(
-        response.status,
-        `OAuth2 token request failed (${code})`,
-        "POST",
-        "/auth/oauth2/token",
-      );
+      const code = typeof json.error === "string" ? json.error : "unexpected_response";
+      throw new OvhApiError(response.status, `OAuth2 token request failed (${code})`, "POST", "/auth/oauth2/token");
     }
     const ttlSec = Number(json.expires_in);
     this.#token = {
       value: json.access_token,
-      expiresAtMs:
-        this.#now() +
-        (Number.isFinite(ttlSec) && ttlSec > 0 ? ttlSec : 3600) * 1000,
+      expiresAtMs: this.#now() + (Number.isFinite(ttlSec) && ttlSec > 0 ? ttlSec : 3600) * 1000,
     };
     return json.access_token;
   }
@@ -272,12 +252,7 @@ export class OvhClient {
    * Generates signature string for an OVH API request.
    * Format: $1$ + SHA1(applicationSecret + "+" + consumerKey + "+" + method + "+" + url + "+" + body + "+" + timestamp)
    */
-  public sign(
-    method: string,
-    url: string,
-    bodyStr: string,
-    timestamp: number,
-  ): string {
+  public sign(method: string, url: string, bodyStr: string, timestamp: number): string {
     const raw = `${this.applicationSecret}+${this.consumerKey}+${method.toUpperCase()}+${url}+${bodyStr}+${timestamp}`;
     return `$1$${sha1(raw)}`;
   }
@@ -292,8 +267,7 @@ export class OvhClient {
     query?: Query,
     version: OvhApiVersion = "1.0",
   ): Promise<T> {
-    if (method === "GET" && body !== undefined)
-      throw new TypeError("OVH GET requests cannot have a body");
+    if (method === "GET" && body !== undefined) throw new TypeError("OVH GET requests cannot have a body");
     if (this.authMode === "application_key" && !this.timeSynced) {
       await this.syncTime();
     }
@@ -333,12 +307,7 @@ export class OvhClient {
       headers["X-Ovh-Application"] = this.applicationKey;
       headers["X-Ovh-Consumer"] = this.consumerKey;
       headers["X-Ovh-Timestamp"] = String(timestamp);
-      headers["X-Ovh-Signature"] = this.sign(
-        method,
-        fullUrl,
-        bodyStr,
-        timestamp,
-      );
+      headers["X-Ovh-Signature"] = this.sign(method, fullUrl, bodyStr, timestamp);
     }
 
     if (bodyStr) {
@@ -364,27 +333,13 @@ export class OvhClient {
         text.toLowerCase().includes("timestamp")
       ) {
         await this.syncTime();
-        return this.executeWithRetry<T>(
-          method,
-          path,
-          body,
-          query,
-          false,
-          version,
-        );
+        return this.executeWithRetry<T>(method, path, body, query, false, version);
       }
       // Expired or revoked access token: fetch a new one once.
       if (this.authMode === "oauth2" && response.status === 401 && allowRetry) {
         this.invalidateToken();
         await this.accessToken(true);
-        return this.executeWithRetry<T>(
-          method,
-          path,
-          body,
-          query,
-          false,
-          version,
-        );
+        return this.executeWithRetry<T>(method, path, body, query, false, version);
       }
 
       let parsedMessage = text;

@@ -45,14 +45,8 @@ export interface UseOpenAIChatResult {
   setMessages: (messages: ChatMessage[]) => void;
 }
 
-export function useOpenAIChat(
-  options: UseOpenAIChatOptions,
-): UseOpenAIChatResult {
-  const [state, dispatch] = useReducer(
-    chatReducer,
-    options.initialMessages,
-    initialChatState,
-  );
+export function useOpenAIChat(options: UseOpenAIChatOptions): UseOpenAIChatResult {
+  const [state, dispatch] = useReducer(chatReducer, options.initialMessages, initialChatState);
   const controller = useRef<AbortController | null>(null);
   const latest = useRef({ options, state });
 
@@ -63,8 +57,7 @@ export function useOpenAIChat(
 
   const send = useCallback(async (content: string) => {
     const { options: o, state: s } = latest.current;
-    if (s.status === "streaming" || controller.current || !content.trim())
-      return;
+    if (s.status === "streaming" || controller.current || !content.trim()) return;
     const user: ChatMessage = { id: newMessageId(), role: "user", content };
     const assistantId = newMessageId();
     const abort = new AbortController();
@@ -94,10 +87,7 @@ export function useOpenAIChat(
       dispatch({ type: "finish" });
       o.onFinish?.(assistant);
     } catch (cause) {
-      const error =
-        cause instanceof ChatStreamError
-          ? cause
-          : new ChatStreamError("stream", String(cause), { cause });
+      const error = cause instanceof ChatStreamError ? cause : new ChatStreamError("stream", String(cause), { cause });
       if (error.kind === "aborted" || abort.signal.aborted) {
         dispatch({ type: "stop" });
       } else {

@@ -24,6 +24,5 @@ const COMMANDS: &[&str] = &[
 
 /// Build description of the `notification` plugin.
 pub fn builder() -> tauri_plugin::Builder<'static> {
-    tauri_plugin::Builder::new(COMMANDS)
-        .global_api_script_path("iife/notification.js")
+    tauri_plugin::Builder::new(COMMANDS).global_api_script_path("iife/notification.js")
 }

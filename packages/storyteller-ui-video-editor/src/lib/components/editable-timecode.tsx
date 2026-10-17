@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  formatTimecode,
-  type FrameRate,
-  type TimeCodeFormat,
-} from "opencut-wasm";
+import { formatTimecode, type FrameRate, type TimeCodeFormat } from "opencut-wasm";
 import { cn } from "../utils/ui";
 import { parseMediaTimecode, snapSeekMediaTime, type MediaTime } from "../wasm";
 
@@ -62,9 +58,7 @@ export function EditableTimecode({
       return;
     }
 
-    const clampedTime = duration
-      ? snapSeekMediaTime({ time: parsedTime, duration, fps })
-      : parsedTime;
+    const clampedTime = duration ? snapSeekMediaTime({ time: parsedTime, duration, fps }) : parsedTime;
 
     onTimeChange?.({ time: clampedTime });
     setIsEditing(false);
@@ -84,9 +78,7 @@ export function EditableTimecode({
     }
   };
 
-  const handleInputChange = ({
-    target,
-  }: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = ({ target }: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(target.value);
     setHasError(false);
   };
@@ -97,9 +89,7 @@ export function EditableTimecode({
     }
   };
 
-  const handleDisplayKeyDown = (
-    event: React.KeyboardEvent<HTMLButtonElement>,
-  ) => {
+  const handleDisplayKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     if (disabled) return;
 
     if (event.key === "Enter" || event.key === " ") {

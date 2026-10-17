@@ -22,8 +22,7 @@ export default {
     type: "problem",
     fixable: "code",
     docs: {
-      description:
-        "Disallow MUI prop names on material-web wrappers (renamed props).",
+      description: "Disallow MUI prop names on material-web wrappers (renamed props).",
     },
     schema: [],
   },
@@ -41,7 +40,7 @@ export default {
               node: attr,
               message: `<${name}> : la prop MUI \`${muiProp}\` se nomme \`${m3Prop}\` en material-web.`,
               // Autofix : renomme l'identifiant de l'attribut (la valeur est conservée).
-              fix: (fixer) => fixer.replaceText(attr.name, m3Prop),
+              fix: fixer => fixer.replaceText(attr.name, m3Prop),
             });
           }
         }

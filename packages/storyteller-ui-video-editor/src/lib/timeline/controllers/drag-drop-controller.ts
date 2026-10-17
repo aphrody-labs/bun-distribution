@@ -1,8 +1,5 @@
 import type { DragEvent } from "react";
-import {
-  DEFAULT_NEW_ELEMENT_DURATION,
-  toElementDurationTicks,
-} from "../creation";
+import { DEFAULT_NEW_ELEMENT_DURATION, toElementDurationTicks } from "../creation";
 import { BASE_TIMELINE_PIXELS_PER_SECOND } from "../scale";
 import type { FrameRate } from "opencut-wasm";
 import {
@@ -17,14 +14,7 @@ import { BatchCommand } from "../../commands";
 import type { Command } from "../../commands/base-command";
 import { computeDropTarget } from "../components/drop-target";
 import type { TimelineDragSource } from "../drag-source";
-import type {
-  TrackType,
-  DropTarget,
-  ElementType,
-  SceneTracks,
-  TimelineTrack,
-  CreateTimelineElement,
-} from "../types";
+import type { TrackType, DropTarget, ElementType, SceneTracks, TimelineTrack, CreateTimelineElement } from "../types";
 import type { TimelineDragData } from "../drag";
 import type { MediaAsset } from "../../media/types";
 import type { ProcessedMediaAsset } from "../../media/processing";
@@ -61,20 +51,10 @@ export interface DragDropConfig {
   getCurrentPlayheadTime: () => MediaTime;
   getMediaAssets: () => MediaAsset[];
   dragSource: TimelineDragSource;
-  addMediaAsset: (args: {
-    projectId: string;
-    asset: ProcessedMediaAsset;
-  }) => Promise<MediaAsset | null>;
+  addMediaAsset: (args: { projectId: string; asset: ProcessedMediaAsset }) => Promise<MediaAsset | null>;
   executeCommand: (command: Command) => void;
-  insertElement: (args: {
-    placement: { mode: "explicit"; trackId: string };
-    element: CreateTimelineElement;
-  }) => void;
-  addClipEffect: (args: {
-    trackId: string;
-    elementId: string;
-    effectType: string;
-  }) => void;
+  insertElement: (args: { placement: { mode: "explicit"; trackId: string }; element: CreateTimelineElement }) => void;
+  addClipEffect: (args: { trackId: string; elementId: string; effectType: string }) => void;
   // Host-provided file processing pipeline. Returns processed assets
   // ready to be registered via addMediaAsset. If omitted, file drops
   // from the OS are ignored — only drags from the in-app library work.
@@ -111,11 +91,7 @@ interface TimelineCoords {
 
 // --- Pure helpers ---
 
-function elementTypeFromDrag({
-  dragData,
-}: {
-  dragData: TimelineDragData;
-}): ElementType {
+function elementTypeFromDrag({ dragData }: { dragData: TimelineDragData }): ElementType {
   switch (dragData.type) {
     case "text":
       return "text";
@@ -130,11 +106,7 @@ function elementTypeFromDrag({
   }
 }
 
-function getTargetElementTypesForDrag({
-  dragData,
-}: {
-  dragData: TimelineDragData;
-}): string[] | undefined {
+function getTargetElementTypesForDrag({ dragData }: { dragData: TimelineDragData }): string[] | undefined {
   if (dragData.type === "effect") return dragData.targetElementTypes;
   if (dragData.type === "media") return dragData.targetElementTypes;
   return undefined;
@@ -148,15 +120,11 @@ function getDurationForDrag({
   mediaAssets: MediaAsset[];
 }): MediaTime {
   if (dragData.type !== "media") return DEFAULT_NEW_ELEMENT_DURATION;
-  const media = mediaAssets.find((asset) => asset.id === dragData.id);
+  const media = mediaAssets.find(asset => asset.id === dragData.id);
   return toElementDurationTicks({ seconds: media?.duration });
 }
 
-function orderedTracks({
-  sceneTracks,
-}: {
-  sceneTracks: SceneTracks;
-}): TimelineTrack[] {
+function orderedTracks({ sceneTracks }: { sceneTracks: SceneTracks }): TimelineTrack[] {
   return [...sceneTracks.overlay, sceneTracks.main, ...sceneTracks.audio];
 }
 
@@ -254,9 +222,7 @@ export class DragDropController {
     });
 
     const fps = this.config.getActiveProjectFps();
-    target.xPosition = fps
-      ? roundFrameTime({ time: target.xPosition, fps })
-      : target.xPosition;
+    target.xPosition = fps ? roundFrameTime({ time: target.xPosition, fps }) : target.xPosition;
 
     this.setOver({ dropTarget: target, elementType });
     event.dataTransfer.dropEffect = "copy";
@@ -295,7 +261,7 @@ export class DragDropController {
         files: Array.from(event.dataTransfer.files),
         mouseX: coords.mouseX,
         mouseY: coords.mouseY,
-      }).catch((error) => {
+      }).catch(error => {
         console.error("Failed to process file drop:", error);
       });
     } catch (error) {
@@ -305,10 +271,7 @@ export class DragDropController {
 
   // --- Private ---
 
-  private setOver(state: {
-    dropTarget: DropTarget | null;
-    elementType: ElementType | null;
-  }): void {
+  private setOver(state: { dropTarget: DropTarget | null; elementType: ElementType | null }): void {
     this.state = { kind: "over", ...state };
     this.notify();
   }
@@ -322,21 +285,15 @@ export class DragDropController {
     for (const fn of this.subscribers) fn();
   }
 
-  private getMouseTimelineCoords({
-    event,
-  }: {
-    event: DragEvent;
-  }): TimelineCoords | null {
+  private getMouseTimelineCoords({ event }: { event: DragEvent }): TimelineCoords | null {
     const scrollContainer = this.config.getTracksScrollEl();
     const referenceRect =
-      scrollContainer?.getBoundingClientRect() ??
-      this.config.getContainerEl()?.getBoundingClientRect();
+      scrollContainer?.getBoundingClientRect() ?? this.config.getContainerEl()?.getBoundingClientRect();
     if (!referenceRect) return null;
 
     const scrollLeft = scrollContainer?.scrollLeft ?? 0;
     const scrollTop = scrollContainer?.scrollTop ?? 0;
-    const headerHeight =
-      this.config.getHeaderEl()?.getBoundingClientRect().height ?? 0;
+    const headerHeight = this.config.getHeaderEl()?.getBoundingClientRect().height ?? 0;
 
     return {
       mouseX: event.clientX - referenceRect.left + scrollLeft,
@@ -380,13 +337,7 @@ export class DragDropController {
     });
   }
 
-  private executeAssetDrop({
-    target,
-    dragData,
-  }: {
-    target: DropTarget;
-    dragData: TimelineDragData;
-  }): void {
+  private executeAssetDrop({ target, dragData }: { target: DropTarget; dragData: TimelineDragData }): void {
     switch (dragData.type) {
       case "text":
         this.executeTextDrop({ target, dragData });
@@ -466,13 +417,10 @@ export class DragDropController {
       return;
     }
 
-    const mediaAsset = this.config
-      .getMediaAssets()
-      .find((asset) => asset.id === dragData.id);
+    const mediaAsset = this.config.getMediaAssets().find(asset => asset.id === dragData.id);
     if (!mediaAsset) return;
 
-    const trackType: TrackType =
-      dragData.mediaType === "audio" ? "audio" : "video";
+    const trackType: TrackType = dragData.mediaType === "audio" ? "audio" : "video";
     const element = buildElementFromMedia({
       mediaId: mediaAsset.id,
       mediaType: mediaAsset.type,
@@ -506,7 +454,7 @@ export class DragDropController {
 
     const existingEffectTrack = orderedTracks({
       sceneTracks: this.config.getSceneTracks(),
-    }).find((track) => track.type === "effect");
+    }).find(track => track.type === "effect");
 
     if (existingEffectTrack) {
       this.config.insertElement({
@@ -591,8 +539,7 @@ export class DragDropController {
           zoomLevel: this.config.zoomLevel,
         });
 
-        const trackType: TrackType =
-          createdAsset.type === "audio" ? "audio" : "video";
+        const trackType: TrackType = createdAsset.type === "audio" ? "audio" : "video";
         this.insertAtTarget({
           element: buildElementFromMedia({
             mediaId: createdAsset.id,
@@ -608,7 +555,7 @@ export class DragDropController {
 
       return {
         uploadedCount: processedAssets.length,
-        assetNames: processedAssets.map((asset) => asset.name),
+        assetNames: processedAssets.map(asset => asset.name),
       };
     };
 

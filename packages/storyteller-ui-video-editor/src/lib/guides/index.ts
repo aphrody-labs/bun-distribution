@@ -10,5 +10,5 @@ export function getGuideById(guideId: string | null): GuideDefinition | null {
     return null;
   }
 
-  return GUIDE_REGISTRY.find((guide) => guide.id === guideId) ?? null;
+  return GUIDE_REGISTRY.find(guide => guide.id === guideId) ?? null;
 }

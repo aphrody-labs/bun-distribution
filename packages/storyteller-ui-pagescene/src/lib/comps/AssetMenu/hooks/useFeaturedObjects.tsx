@@ -2,10 +2,7 @@ import { useCallback, useContext, useEffect, useState, useRef } from "react";
 import { EngineContext } from "../../../contexts/EngineContext/EngineContext";
 import { FetchStatus } from "../../../enums";
 import type { FilterEngineCategories, FilterMediaType } from "../../../enums";
-import {
-  FetchMediaItemStates,
-  fetchFeaturedMediaItems,
-} from "../utilities/fetchMediaItems";
+import { FetchMediaItemStates, fetchFeaturedMediaItems } from "../utilities/fetchMediaItems";
 
 const MAX_FAILED_FETCHES = 5;
 
@@ -21,11 +18,7 @@ export const useFeaturedObjects = (props: useFeaturedObjectsProps) => {
   const firstFetch = useRef<FetchStatus>(FetchStatus.READY);
 
   const [
-    {
-      mediaItems: featuredObjects,
-      status: featuredFetchStatus,
-      nextPageInf: nextFeaturedObjects,
-    },
+    { mediaItems: featuredObjects, status: featuredFetchStatus, nextPageInf: nextFeaturedObjects },
     setFeaturedFetch,
   ] = useState<FetchMediaItemStates>({
     mediaItems: undefined,
@@ -37,7 +30,7 @@ export const useFeaturedObjects = (props: useFeaturedObjectsProps) => {
   const fetchFeaturedObjects = useCallback(async () => {
     if (!editor) return;
     let breakFlag = false;
-    setFeaturedFetch((curr) => {
+    setFeaturedFetch(curr => {
       if (curr.status === FetchStatus.IN_PROGRESS) {
         breakFlag = true;
         return curr;
@@ -50,8 +43,7 @@ export const useFeaturedObjects = (props: useFeaturedObjectsProps) => {
     if (breakFlag) {
       return;
     }
-    const { filterEngineCategories, filterMediaTypes, defaultErrorMessage } =
-      props;
+    const { filterEngineCategories, filterMediaTypes, defaultErrorMessage } = props;
 
     const result = await fetchFeaturedMediaItems(
       {
@@ -72,7 +64,7 @@ export const useFeaturedObjects = (props: useFeaturedObjectsProps) => {
       firstFetch.current = FetchStatus.SUCCESS;
     }
 
-    setFeaturedFetch((curr) => ({
+    setFeaturedFetch(curr => ({
       status: result.status,
       mediaItems: result.mediaItems
         ? curr.mediaItems
@@ -91,8 +83,7 @@ export const useFeaturedObjects = (props: useFeaturedObjectsProps) => {
     // skip the actual fetch forever. See PR #1492 regression.
     if (!editor) return;
     if (
-      (firstFetch.current === FetchStatus.READY ||
-        firstFetch.current === FetchStatus.ERROR) &&
+      (firstFetch.current === FetchStatus.READY || firstFetch.current === FetchStatus.ERROR) &&
       failedFetches.current <= MAX_FAILED_FETCHES
     ) {
       firstFetch.current = FetchStatus.IN_PROGRESS;

@@ -23,12 +23,9 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-function tx<T>(
-  mode: IDBTransactionMode,
-  run: (store: IDBObjectStore) => IDBRequest<T> | void,
-): Promise<T> {
+function tx<T>(mode: IDBTransactionMode, run: (store: IDBObjectStore) => IDBRequest<T> | void): Promise<T> {
   return openDb().then(
-    (db) =>
+    db =>
       new Promise<T>((resolve, reject) => {
         const t = db.transaction(STORE, mode);
         const store = t.objectStore(STORE);
@@ -58,22 +55,19 @@ export function createIndexedDBProjectStorage(): ProjectStorageAdapter {
     async loadProject(id) {
       const project = await tx<EditorProject | undefined>(
         "readonly",
-        (s) => s.get(id) as IDBRequest<EditorProject | undefined>,
+        s => s.get(id) as IDBRequest<EditorProject | undefined>,
       );
       return project ?? null;
     },
     async saveProject(project) {
-      await tx("readwrite", (s) => s.put(project));
+      await tx("readwrite", s => s.put(project));
     },
     async deleteProject(id) {
-      await tx("readwrite", (s) => s.delete(id));
+      await tx("readwrite", s => s.delete(id));
     },
     async listProjects() {
-      const all = await tx<EditorProject[]>(
-        "readonly",
-        (s) => s.getAll() as IDBRequest<EditorProject[]>,
-      );
-      const metas: ProjectMeta[] = (all ?? []).map((p) => ({
+      const all = await tx<EditorProject[]>("readonly", s => s.getAll() as IDBRequest<EditorProject[]>);
+      const metas: ProjectMeta[] = (all ?? []).map(p => ({
         id: p.id,
         name: p.name,
         updatedAt: p.updatedAt,
@@ -88,7 +82,7 @@ export function createIndexedDBProjectStorage(): ProjectStorageAdapter {
         updatedAt: Date.now(),
         data: null,
       };
-      await tx("readwrite", (s) => s.put(project));
+      await tx("readwrite", s => s.put(project));
       return project;
     },
   };

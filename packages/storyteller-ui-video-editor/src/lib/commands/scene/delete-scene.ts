@@ -1,10 +1,7 @@
 import { Command, type CommandResult } from "../base-command";
 import { EditorCore } from "../../core";
 import type { TScene } from "../../timeline/types";
-import {
-  canDeleteScene,
-  getFallbackSceneAfterDelete,
-} from "../../timeline/scenes";
+import { canDeleteScene, getFallbackSceneAfterDelete } from "../../timeline/scenes";
 
 export class DeleteSceneCommand extends Command {
   private savedScenes: TScene[] | null = null;
@@ -23,8 +20,7 @@ export class DeleteSceneCommand extends Command {
     this.savedScenes = [...scenes];
     this.savedActiveSceneId = activeScene?.id ?? null;
 
-    this.deletedScene =
-      scenes.find((s: TScene) => s.id === this.sceneId) ?? null;
+    this.deletedScene = scenes.find((s: TScene) => s.id === this.sceneId) ?? null;
 
     if (!this.deletedScene) {
       console.error("Scene not found:", this.sceneId);

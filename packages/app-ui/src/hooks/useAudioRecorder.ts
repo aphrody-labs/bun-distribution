@@ -14,17 +14,10 @@ interface UseAudioRecorderReturn {
 
 const SPECTRUM_BAR_COUNT = 45;
 
-function buildSpectrumLevels(
-  frequencyData: Uint8Array,
-  previousLevels: number[],
-): number[] {
+function buildSpectrumLevels(frequencyData: Uint8Array, previousLevels: number[]): number[] {
   return Array.from({ length: SPECTRUM_BAR_COUNT }, (_, index) => {
-    const start = Math.floor(
-      (index * frequencyData.length) / SPECTRUM_BAR_COUNT,
-    );
-    const end = Math.floor(
-      ((index + 1) * frequencyData.length) / SPECTRUM_BAR_COUNT,
-    );
+    const start = Math.floor((index * frequencyData.length) / SPECTRUM_BAR_COUNT);
+    const end = Math.floor(((index + 1) * frequencyData.length) / SPECTRUM_BAR_COUNT);
     let sum = 0;
     for (let i = start; i < end; i += 1) {
       sum += frequencyData[i] ?? 0;
@@ -57,14 +50,12 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const resolveStopRef = useRef<((blob: Blob | null) => void) | null>(null);
   const smoothedLevelRef = useRef(0);
   const noiseFloorRef = useRef(0.008);
-  const smoothedSpectrumRef = useRef<number[]>(
-    Array.from({ length: SPECTRUM_BAR_COUNT }, () => 0),
-  );
+  const smoothedSpectrumRef = useRef<number[]>(Array.from({ length: SPECTRUM_BAR_COUNT }, () => 0));
 
   const cleanupAudioGraph = useCallback(() => {
     cancelAnimationFrame(animFrameRef.current);
     analyserRef.current = null;
-    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current?.getTracks().forEach(track => track.stop());
     streamRef.current = null;
     if (audioContextRef.current) {
       void audioContextRef.current.close();
@@ -73,10 +64,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     smoothedLevelRef.current = 0;
     noiseFloorRef.current = 0.008;
     setAudioLevel(0);
-    smoothedSpectrumRef.current = Array.from(
-      { length: SPECTRUM_BAR_COUNT },
-      () => 0,
-    );
+    smoothedSpectrumRef.current = Array.from({ length: SPECTRUM_BAR_COUNT }, () => 0);
     setSpectrumLevels(smoothedSpectrumRef.current);
   }, []);
 
@@ -136,10 +124,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         }
         const rms = Math.sqrt(sumSquares / dataArray.length);
 
-        const noiseFloor = Math.min(
-          0.03,
-          noiseFloorRef.current * 0.995 + rms * 0.005,
-        );
+        const noiseFloor = Math.min(0.03, noiseFloorRef.current * 0.995 + rms * 0.005);
         noiseFloorRef.current = noiseFloor;
 
         const gated = Math.max(0, rms - noiseFloor * 1.35);
@@ -148,10 +133,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         smoothedLevelRef.current = smoothed;
         setAudioLevel(smoothed);
 
-        const nextSpectrum = buildSpectrumLevels(
-          frequencyData,
-          smoothedSpectrumRef.current,
-        );
+        const nextSpectrum = buildSpectrumLevels(frequencyData, smoothedSpectrumRef.current);
         smoothedSpectrumRef.current = nextSpectrum;
         setSpectrumLevels(nextSpectrum);
         animFrameRef.current = requestAnimationFrame(updateLevel);
@@ -165,7 +147,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       const recorder = new MediaRecorder(stream, { mimeType });
       chunksRef.current = [];
 
-      recorder.ondataavailable = (event) => {
+      recorder.ondataavailable = event => {
         if (event.data.size > 0) {
           chunksRef.current.push(event.data);
         }
@@ -195,7 +177,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   }, [cleanupAudioGraph, state]);
 
   const stopRecording = useCallback((): Promise<Blob | null> => {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const recorder = mediaRecorderRef.current;
       if (!recorder || recorder.state !== "recording") {
         resolve(null);

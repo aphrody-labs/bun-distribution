@@ -38,9 +38,7 @@ export interface ScanStats {
   }>;
 }
 
-export async function scanNextDirectory(
-  targetPath: string,
-): Promise<ScanStats> {
+export async function scanNextDirectory(targetPath: string): Promise<ScanStats> {
   const stats: ScanStats = {
     totalFiles: 0,
     clientComponents: 0,
@@ -184,21 +182,17 @@ export async function scanNextDirectory(
     }
 
     // M3 candidate UI components: Button, Input, Card, Badge, Tooltip, Collapsible
-    const m3Matches = content.match(
-      /components\/ui\/(button|input|card|badge|tooltip|collapsible)/g,
-    );
+    const m3Matches = content.match(/components\/ui\/(button|input|card|badge|tooltip|collapsible)/g);
     if (m3Matches) {
       stats.m3CandidateCount++;
-      m3Matches.forEach((m) => {
+      m3Matches.forEach(m => {
         const comp = m.split("/").pop();
         if (comp) m3ComponentSet.add(comp);
       });
       features.push("m3-candidate");
     }
 
-    const envMatches = content.matchAll(
-      /process\.env\.(NEXT_PUBLIC_[A-Z0-9_]+)/g,
-    );
+    const envMatches = content.matchAll(/process\.env\.(NEXT_PUBLIC_[A-Z0-9_]+)/g);
     for (const match of envMatches) {
       envSet.add(match[1]);
     }

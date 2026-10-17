@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  ThemeProvider as NextThemesProvider,
-  type ThemeProviderProps,
-  useTheme as useNextTheme,
-} from "next-themes";
+import { ThemeProvider as NextThemesProvider, type ThemeProviderProps, useTheme as useNextTheme } from "next-themes";
 import * as React from "react";
 import { THEMES, type ThemeType } from "../lib/themes";
 
@@ -12,13 +8,7 @@ export interface RGThemeProviderProps extends ThemeProviderProps {
   children: React.ReactNode;
 }
 
-export const CHROME_THEMES: ThemeType[] = [
-  "roy",
-  "gaelle",
-  "azalee-light",
-  "azalee-dark",
-  "achillea",
-];
+export const CHROME_THEMES: ThemeType[] = ["roy", "gaelle", "azalee-light", "azalee-dark", "achillea"];
 
 /**
  * Provider thèmes Rose Griffon — wrap next-themes avec la liste explicite

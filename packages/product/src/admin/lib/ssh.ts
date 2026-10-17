@@ -40,10 +40,7 @@ const BEGIN = "# >>> aphrody-omar >>>";
 const END = "# <<< aphrody-omar <<<";
 
 /** Pure: put (or refresh) our marked Include block at the top of a user ssh config. Everything else is kept as is. */
-export function withIncludeBlock(
-  existing: string,
-  includePath: string,
-): string {
+export function withIncludeBlock(existing: string, includePath: string): string {
   const block = `${BEGIN}\nInclude "${slashes(includePath)}"\n${END}\n`;
   const eol = existing.includes("\r\n") ? "\r\n" : "\n";
   const stripped = removeIncludeBlock(existing);
@@ -62,21 +59,13 @@ export interface SshFiles {
 }
 
 /** Write the kit's ssh_config and known_hosts, and the Include block of the user's own config (saved first). */
-export async function writeSshFiles(
-  pack: AccessPack,
-  paths: KitPaths,
-  now: Date,
-): Promise<SshFiles> {
+export async function writeSshFiles(pack: AccessPack, paths: KitPaths, now: Date): Promise<SshFiles> {
   await mkdir(dirname(paths.sshConfigFile), { recursive: true });
   await writeFile(paths.sshConfigFile, renderSshConfig(pack, paths));
-  if (pack.hostKeys.length > 0)
-    await writeFile(paths.knownHostsFile, `${pack.hostKeys.join("\n")}\n`);
-  else if (!existsSync(paths.knownHostsFile))
-    await writeFile(paths.knownHostsFile, "");
+  if (pack.hostKeys.length > 0) await writeFile(paths.knownHostsFile, `${pack.hostKeys.join("\n")}\n`);
+  else if (!existsSync(paths.knownHostsFile)) await writeFile(paths.knownHostsFile, "");
   await mkdir(dirname(paths.userSshConfig), { recursive: true });
-  const before = existsSync(paths.userSshConfig)
-    ? await readFile(paths.userSshConfig, "utf8")
-    : "";
+  const before = existsSync(paths.userSshConfig) ? await readFile(paths.userSshConfig, "utf8") : "";
   const after = withIncludeBlock(before, paths.sshConfigFile);
   if (after === before) return { changedUserConfig: false };
   let backup: string | undefined;
@@ -96,52 +85,24 @@ export interface SshOptions {
 }
 
 /** argv of `ssh` running `sh -s -- <args>` on the host, the script itself being sent on stdin (nothing is interpolated). */
-export function sshArgv(
-  paths: KitPaths,
-  hostId: string,
-  options: SshOptions = {},
-): string[] {
-  const argv = [
-    "ssh",
-    "-F",
-    paths.sshConfigFile,
-    "-o",
-    `BatchMode=${options.batch === false ? "no" : "yes"}`,
-  ];
-  if (options.connectTimeoutSecs)
-    argv.push("-o", `ConnectTimeout=${options.connectTimeoutSecs}`);
-  argv.push(
-    hostAlias(hostId),
-    `sh -s -- ${(options.args ?? []).map(shellQuote).join(" ")}`.trimEnd(),
-  );
+export function sshArgv(paths: KitPaths, hostId: string, options: SshOptions = {}): string[] {
+  const argv = ["ssh", "-F", paths.sshConfigFile, "-o", `BatchMode=${options.batch === false ? "no" : "yes"}`];
+  if (options.connectTimeoutSecs) argv.push("-o", `ConnectTimeout=${options.connectTimeoutSecs}`);
+  argv.push(hostAlias(hostId), `sh -s -- ${(options.args ?? []).map(shellQuote).join(" ")}`.trimEnd());
   return argv;
 }
 
 export interface RemoteResult extends RunResult {
   /** Plain-language reason when ssh itself failed (not the remote script). */
-  problem?:
-    | "cle-refusee"
-    | "hote-inconnu"
-    | "injoignable"
-    | "delai"
-    | "ssh-absent"
-    | "autre";
+  problem?: "cle-refusee" | "hote-inconnu" | "injoignable" | "delai" | "ssh-absent" | "autre";
 }
 
 export function classifySshFailure(result: RunResult): RemoteResult["problem"] {
   const text = `${result.stderr}`.toLowerCase();
   if (result.timedOut) return "delai";
-  if (
-    result.code === 127 &&
-    !text.includes("not found") &&
-    result.stdout === ""
-  )
-    return "ssh-absent";
+  if (result.code === 127 && !text.includes("not found") && result.stdout === "") return "ssh-absent";
   if (text.includes("permission denied")) return "cle-refusee";
-  if (
-    text.includes("host key verification failed") ||
-    text.includes("remote host identification has changed")
-  )
+  if (text.includes("host key verification failed") || text.includes("remote host identification has changed"))
     return "hote-inconnu";
   if (
     text.includes("timed out") ||
@@ -176,14 +137,9 @@ export async function runRemote(
   };
 }
 
-export const SSH_PROBLEM_TEXT: Record<
-  NonNullable<RemoteResult["problem"]>,
-  string
-> = {
-  "cle-refusee":
-    "le serveur refuse ta clé : elle n'est pas encore autorisée (envoie le fichier de clés à l'équipe)",
-  "hote-inconnu":
-    "l'empreinte du serveur ne correspond pas à celle attendue : ne continue pas, préviens l'équipe",
+export const SSH_PROBLEM_TEXT: Record<NonNullable<RemoteResult["problem"]>, string> = {
+  "cle-refusee": "le serveur refuse ta clé : elle n'est pas encore autorisée (envoie le fichier de clés à l'équipe)",
+  "hote-inconnu": "l'empreinte du serveur ne correspond pas à celle attendue : ne continue pas, préviens l'équipe",
   injoignable: "le serveur ne répond pas : le tunnel est-il actif ?",
   delai: "le serveur met trop de temps à répondre",
   "ssh-absent":
@@ -204,27 +160,13 @@ export async function ensureSshKey(
   if (existsSync(paths.sshKey)) {
     // private key without its public half: derive it, never overwrite the private key
     const derived = await sys.run([keygen, "-y", "-f", paths.sshKey]);
-    if (derived.code !== 0)
-      throw new Error(
-        "clé SSH existante illisible (protégée par une phrase secrète ?)",
-      );
+    if (derived.code !== 0) throw new Error("clé SSH existante illisible (protégée par une phrase secrète ?)");
     const line = `${derived.stdout.trim()} ${comment}`;
     await writeFile(pub, `${line}\n`);
     return { created: false, publicKey: line };
   }
   await mkdir(dirname(paths.sshKey), { recursive: true });
-  const made = await sys.run([
-    keygen,
-    "-t",
-    "ed25519",
-    "-N",
-    "",
-    "-C",
-    comment,
-    "-f",
-    paths.sshKey,
-    "-q",
-  ]);
+  const made = await sys.run([keygen, "-t", "ed25519", "-N", "", "-C", comment, "-f", paths.sshKey, "-q"]);
   if (made.code !== 0 || !existsSync(pub))
     throw new Error(
       `ssh-keygen a échoué : ${redact(made.stderr || made.stdout)

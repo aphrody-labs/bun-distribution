@@ -28,15 +28,8 @@ const winclean = (tool: string): PcAction["commands"][number] => ({
 export const PC_ACTIONS: PcAction[] = [
   {
     key: "etat",
-    titre:
-      "Voir l'état de mon PC (Windows, processeur, mémoire, disques, antivirus)",
-    commands: [
-      "get_os_info",
-      "get_cpu_info",
-      "get_memory_info",
-      "get_disk_info",
-      "get_defender_status",
-    ].map(winclean),
+    titre: "Voir l'état de mon PC (Windows, processeur, mémoire, disques, antivirus)",
+    commands: ["get_os_info", "get_cpu_info", "get_memory_info", "get_disk_info", "get_defender_status"].map(winclean),
     windowsOnly: true,
   },
   {
@@ -48,9 +41,7 @@ export const PC_ACTIONS: PcAction[] = [
   {
     key: "memoire",
     titre: "Libérer de la mémoire (ne supprime aucun fichier)",
-    commands: ["perf_purge_standby_list", "perf_empty_working_sets"].map(
-      winclean,
-    ),
+    commands: ["perf_purge_standby_list", "perf_empty_working_sets"].map(winclean),
     confirm:
       "Je vais vider la mémoire en cache de Windows et réduire la mémoire des programmes ouverts. Aucun fichier n'est touché, mais le PC peut ralentir quelques secondes.",
     windowsOnly: true,
@@ -74,18 +65,16 @@ export const PC_ACTIONS: PcAction[] = [
 ];
 
 export async function runPcAction(ctx: Context, key: string): Promise<number> {
-  const action = PC_ACTIONS.find((entry) => entry.key === key);
+  const action = PC_ACTIONS.find(entry => entry.key === key);
   if (!action) {
-    ctx.ui.say(
-      `Action inconnue : ${key} (${PC_ACTIONS.map((entry) => entry.key).join(", ")})`,
-    );
+    ctx.ui.say(`Action inconnue : ${key} (${PC_ACTIONS.map(entry => entry.key).join(", ")})`);
     return 2;
   }
   if (action.windowsOnly && ctx.sys.platform !== "win32") {
     ctx.ui.say("Cette action ne fonctionne que sous Windows.");
     return 1;
   }
-  for (const tool of new Set(action.commands.map((command) => command.tool))) {
+  for (const tool of new Set(action.commands.map(command => command.tool))) {
     if (!findTool(ctx.sys, ctx.paths, tool)) {
       ctx.ui.say(
         `${tool} n'est pas installé sur ce PC (ou pas encore publié pour Windows) : choisis « Tout installer ou réparer » ou préviens l'équipe.`,
@@ -97,11 +86,7 @@ export async function runPcAction(ctx: Context, key: string): Promise<number> {
     ctx.ui.say(action.confirm);
     if (
       !ctx.ui.interactive ||
-      ctx.ui
-        .ask(
-          "Tape OUI (en majuscules) pour continuer, autre chose pour annuler",
-        )
-        ?.trim() !== "OUI"
+      ctx.ui.ask("Tape OUI (en majuscules) pour continuer, autre chose pour annuler")?.trim() !== "OUI"
     ) {
       ctx.ui.say("Annulé : rien n'a été modifié.");
       return 0;
@@ -130,23 +115,16 @@ export async function serverStatus(ctx: Context): Promise<number> {
   const pack = await loadProfile(ctx.paths);
   const aphrody = findTool(ctx.sys, ctx.paths, "aphrody");
   if (!pack || !aphrody) {
-    ctx.ui.say(
-      "Il faut le fichier d'accès de l'équipe et aphrody : choisis « Tout installer ou réparer ».",
-    );
+    ctx.ui.say("Il faut le fichier d'accès de l'équipe et aphrody : choisis « Tout installer ou réparer ».");
     return 1;
   }
   let code = 0;
-  for (const host of Object.keys(pack.hosts).filter(
-    (id) => id === "vps" || id === "dbfr",
-  )) {
+  for (const host of Object.keys(pack.hosts).filter(id => id === "vps" || id === "dbfr")) {
     ctx.ui.say(`Serveur ${host} :`);
-    const result = await ctx.sys.run(
-      [aphrody, "infra", "ssh", "status", "--host", host],
-      {
-        inherit: true,
-        timeoutMs: 60_000,
-      },
-    );
+    const result = await ctx.sys.run([aphrody, "infra", "ssh", "status", "--host", host], {
+      inherit: true,
+      timeoutMs: 60_000,
+    });
     if (result.code !== 0) code = 1;
   }
   return code;
@@ -159,9 +137,7 @@ const command: Command = {
     const { positionals } = parse(argv, {});
     const [key] = positionals;
     if (!key) {
-      ctx.ui.say(
-        `Actions : ${[...PC_ACTIONS.map((entry) => entry.key), "serveurs"].join(", ")}`,
-      );
+      ctx.ui.say(`Actions : ${[...PC_ACTIONS.map(entry => entry.key), "serveurs"].join(", ")}`);
       return 0;
     }
     return key === "serveurs" ? serverStatus(ctx) : runPcAction(ctx, key);

@@ -25,17 +25,16 @@ const FILENAME_OPTIONS = [
 ];
 
 export const DownloadsSettingsPane = () => {
-  const [preferences, setPreferences] = useState<
-    AppPreferencesPayload | undefined
-  >(undefined);
+  const [preferences, setPreferences] = useState<AppPreferencesPayload | undefined>(undefined);
   const [filenameMode, setFilenameMode] = useState("artcraft_convention");
   const [customFormat, setCustomFormat] = useState(DEFAULT_CUSTOM_FORMAT);
   const [formatError, setFormatError] = useState<string | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [askLocationBeforeDownload, setAskLocationBeforeDownloadState] =
-    useState<boolean>(() => getAskLocationBeforeDownload());
+  const [askLocationBeforeDownload, setAskLocationBeforeDownloadState] = useState<boolean>(() =>
+    getAskLocationBeforeDownload(),
+  );
 
   const toggleAskLocationBeforeDownload = (enabled: boolean) => {
     setAskLocationBeforeDownload(enabled);
@@ -52,19 +51,13 @@ export const DownloadsSettingsPane = () => {
         setCustomFormat(filename.custom_format);
       }
     };
-    fetchData().catch((error) => setSettingsError(String(error)));
+    fetchData().catch(error => setSettingsError(String(error)));
   }, []);
 
   // NB: This might be a complex type.
   const outerDownloadObject = preferences?.preferred_download_directory || {};
-  const downloadDirectory =
-    "custom" in outerDownloadObject
-      ? (outerDownloadObject.custom as string)
-      : "";
-  const currentDownloadLabel =
-    "system" in outerDownloadObject
-      ? "System Download Directory"
-      : downloadDirectory;
+  const downloadDirectory = "custom" in outerDownloadObject ? (outerDownloadObject.custom as string) : "";
+  const currentDownloadLabel = "system" in outerDownloadObject ? "System Download Directory" : downloadDirectory;
 
   const reloadPreferences = async () => {
     const prefs = await GetAppPreferences();
@@ -143,9 +136,7 @@ export const DownloadsSettingsPane = () => {
       return;
     }
     if (/[/\\'"`%<>|:*?\p{Cc}]/u.test(format) || format.includes("..")) {
-      setFormatError(
-        "Format cannot contain slashes, quotes, or other unsafe characters",
-      );
+      setFormatError("Format cannot contain slashes, quotes, or other unsafe characters");
       return;
     }
     await saveFilenamePreference({ custom_format: format });
@@ -160,14 +151,9 @@ export const DownloadsSettingsPane = () => {
       )}
       <div className="space-y-2">
         <Label htmlFor="download-path">Default Download Directory</Label>
-        <p className="text-xs opacity-70">
-          This is where downloads are placed after downloading. The current path
-          is:
-        </p>
+        <p className="text-xs opacity-70">This is where downloads are placed after downloading. The current path is:</p>
         <div className="mt-1 border border-ui-panel-border bg-ui-sunken px-3 py-2 text-base-fg">
-          <pre className="whitespace-pre-wrap break-all font-mono text-xs">
-            {currentDownloadLabel}
-          </pre>
+          <pre className="whitespace-pre-wrap break-all font-mono text-xs">{currentDownloadLabel}</pre>
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -187,9 +173,7 @@ export const DownloadsSettingsPane = () => {
       <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
           <Label htmlFor="auto-download">Auto Download</Label>
-          <p className="text-xs opacity-70">
-            Downloads to your system the minute generations complete
-          </p>
+          <p className="text-xs opacity-70">Downloads to your system the minute generations complete</p>
         </div>
         <Switch
           id="auto-download"
@@ -201,14 +185,11 @@ export const DownloadsSettingsPane = () => {
       </div>
       <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
-          <Label htmlFor="ask-location-before-download">
-            Ask location before download
-          </Label>
+          <Label htmlFor="ask-location-before-download">Ask location before download</Label>
           <p className="text-xs opacity-70">
-            When on, a system file picker appears every time you download from
-            the lightbox or anywhere in the app, letting you choose the save
-            location for that file. When off, downloads go straight to the
-            default download directory above.
+            When on, a system file picker appears every time you download from the lightbox or anywhere in the app,
+            letting you choose the save location for that file. When off, downloads go straight to the default download
+            directory above.
           </p>
         </div>
         <Switch
@@ -218,13 +199,8 @@ export const DownloadsSettingsPane = () => {
           setEnabled={toggleAskLocationBeforeDownload}
         />
       </div>
-      <fieldset
-        disabled={!preferences || saving}
-        className="flex flex-col gap-2 border-0 p-0"
-      >
-        <Label htmlFor="download-filename-mode">
-          Preferred download naming scheme
-        </Label>
+      <fieldset disabled={!preferences || saving} className="flex flex-col gap-2 border-0 p-0">
+        <Label htmlFor="download-filename-mode">Preferred download naming scheme</Label>
         <p className="text-xs opacity-70">
           {
             "The ArtCraft convention is {model}_{date}.{ext}, with a batch number when a generation produces several files."
@@ -235,7 +211,7 @@ export const DownloadsSettingsPane = () => {
             id="download-filename-mode"
             options={FILENAME_OPTIONS}
             value={filenameMode}
-            onChange={(value) => {
+            onChange={value => {
               setFormatError(null);
               if (value === "custom") {
                 setFilenameMode("custom");
@@ -253,7 +229,7 @@ export const DownloadsSettingsPane = () => {
                 id="download-filename-format"
                 type="text"
                 value={customFormat}
-                onChange={(event) => setCustomFormat(event.target.value)}
+                onChange={event => setCustomFormat(event.target.value)}
                 placeholder={DEFAULT_CUSTOM_FORMAT}
                 spellCheck={false}
                 className="min-w-0 flex-1 rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 py-2 font-mono text-xs outline-none focus:border-base-fg/40"
@@ -267,9 +243,7 @@ export const DownloadsSettingsPane = () => {
                 "Tokens: {model}, {date}, {YYYY}, {YY}, {MM}, {DD}, {HH}, {mm}, {SS}, {batch_index}. The file extension is added automatically. Batch numbers are added automatically if omitted."
               }
             </p>
-            <p className="text-xs opacity-70">
-              Changes apply after you click Save format.
-            </p>
+            <p className="text-xs opacity-70">Changes apply after you click Save format.</p>
           </>
         )}
         {formatError && (

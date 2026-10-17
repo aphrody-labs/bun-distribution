@@ -9,11 +9,7 @@ export async function addObject(
   item: MediaItem,
   position?: THREE.Vector3,
 ): Promise<string | undefined> {
-  const obj = await editor.sceneManager?.create(
-    item.media_id,
-    item.name ?? "object",
-    position ?? new THREE.Vector3(),
-  );
+  const obj = await editor.sceneManager?.create(item.media_id, item.name ?? "object", position ?? new THREE.Vector3());
   if (!obj) return undefined;
 
   // Animate it in (mask-reveal for meshes, per-gaussian radial settle for

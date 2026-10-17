@@ -21,10 +21,7 @@ export interface SpawnSyncResult {
 }
 
 function run(cmd: string, args: readonly string[], o: SpawnSyncOptions) {
-  const [i, so, se] =
-    typeof o.stdio === "string"
-      ? [o.stdio, o.stdio, o.stdio]
-      : (o.stdio ?? ["pipe", "pipe", "pipe"]);
+  const [i, so, se] = typeof o.stdio === "string" ? [o.stdio, o.stdio, o.stdio] : (o.stdio ?? ["pipe", "pipe", "pipe"]);
   return Bun.spawnSync([cmd, ...args], {
     cwd: o.cwd,
     env: o.env as Record<string, string> | undefined,
@@ -37,11 +34,7 @@ function run(cmd: string, args: readonly string[], o: SpawnSyncOptions) {
   });
 }
 
-export function spawnSync(
-  cmd: string,
-  args: readonly string[] = [],
-  o: SpawnSyncOptions = {},
-): SpawnSyncResult {
+export function spawnSync(cmd: string, args: readonly string[] = [], o: SpawnSyncOptions = {}): SpawnSyncResult {
   try {
     const r = run(cmd, args, o);
     return {
@@ -67,21 +60,11 @@ export function execFileSync(
   args: readonly string[],
   o: SpawnSyncOptions & { encoding: "utf8" | "utf-8" },
 ): string;
-export function execFileSync(
-  cmd: string,
-  args: readonly string[],
-  o?: SpawnSyncOptions,
-): Buffer;
-export function execFileSync(
-  cmd: string,
-  args: readonly string[],
-  o: SpawnSyncOptions = {},
-): string | Buffer {
+export function execFileSync(cmd: string, args: readonly string[], o?: SpawnSyncOptions): Buffer;
+export function execFileSync(cmd: string, args: readonly string[], o: SpawnSyncOptions = {}): string | Buffer {
   const r = run(cmd, args, o);
   if (r.exitCode !== 0) {
-    const err = new Error(
-      `Command failed: ${cmd} ${args.join(" ")}\n${r.stderr?.toString() ?? ""}`,
-    ) as Error & {
+    const err = new Error(`Command failed: ${cmd} ${args.join(" ")}\n${r.stderr?.toString() ?? ""}`) as Error & {
       status: number | null;
     };
     err.status = r.exitCode ?? null;
@@ -92,8 +75,6 @@ export function execFileSync(
 }
 
 /** Spawn options with `windowsHide: true` unless the caller overrides it (no console window on Windows). */
-export function hidden<T extends { windowsHide?: boolean }>(
-  options?: T,
-): T & { windowsHide: boolean } {
+export function hidden<T extends { windowsHide?: boolean }>(options?: T): T & { windowsHide: boolean } {
   return { windowsHide: true, ...options } as T & { windowsHide: boolean };
 }

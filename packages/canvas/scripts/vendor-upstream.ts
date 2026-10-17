@@ -20,14 +20,7 @@ import { join, resolve } from "node:path";
 export const PACKAGE_DIR = resolve(import.meta.dir, "..");
 export const REPO_DIR = resolve(PACKAGE_DIR, "../../..");
 export const UPSTREAM_DIR = join(REPO_DIR, "third_party", "canvas");
-export const SCENE_TYPES_SOURCE = join(
-  REPO_DIR,
-  "packages",
-  "interop",
-  "native",
-  "src",
-  "scene-types.ts",
-);
+export const SCENE_TYPES_SOURCE = join(REPO_DIR, "packages", "interop", "native", "src", "scene-types.ts");
 export const UPSTREAM_REPOSITORY = "https://github.com/Brooooooklyn/canvas";
 export const UPSTREAM_PACKAGE = "@napi-rs/canvas";
 
@@ -82,29 +75,21 @@ function git(cwd: string, ...args: string[]): string {
     stderr: "pipe",
   });
   if (result.exitCode !== 0) {
-    throw new Error(
-      `git ${args.join(" ")} failed in ${cwd}: ${result.stderr.toString().trim()}`,
-    );
+    throw new Error(`git ${args.join(" ")} failed in ${cwd}: ${result.stderr.toString().trim()}`);
   }
   return result.stdout.toString().trim();
 }
 
 export async function readUpstream(): Promise<UpstreamSnapshot> {
   if (!(await upstreamCheckedOut())) {
-    throw new Error(
-      "third_party/canvas is not checked out: run `git submodule update --init third_party/canvas`",
-    );
+    throw new Error("third_party/canvas is not checked out: run `git submodule update --init third_party/canvas`");
   }
   const manifest = await Bun.file(join(UPSTREAM_DIR, "package.json")).json();
   if (manifest.name !== UPSTREAM_PACKAGE) {
-    throw new Error(
-      `third_party/canvas is ${manifest.name}, expected ${UPSTREAM_PACKAGE}`,
-    );
+    throw new Error(`third_party/canvas is ${manifest.name}, expected ${UPSTREAM_PACKAGE}`);
   }
   const files = new Map<string, string>();
-  const vendoredTexts = await Promise.all(
-    VENDORED_FILES.map((name) => Bun.file(join(UPSTREAM_DIR, name)).text()),
-  );
+  const vendoredTexts = await Promise.all(VENDORED_FILES.map(name => Bun.file(join(UPSTREAM_DIR, name)).text()));
   for (const [index, name] of VENDORED_FILES.entries()) {
     files.set(name, normalizeEol(vendoredTexts[index]));
   }
@@ -113,11 +98,9 @@ export async function readUpstream(): Promise<UpstreamSnapshot> {
   });
   const platformPackages = await Promise.all(
     platformDirs
-      .filter((entry) => entry.isDirectory())
-      .map(async (entry) => {
-        const platform = await Bun.file(
-          join(UPSTREAM_DIR, "npm", entry.name, "package.json"),
-        ).json();
+      .filter(entry => entry.isDirectory())
+      .map(async entry => {
+        const platform = await Bun.file(join(UPSTREAM_DIR, "npm", entry.name, "package.json")).json();
         return String(platform.name);
       }),
   );
@@ -134,16 +117,11 @@ export async function readUpstream(): Promise<UpstreamSnapshot> {
 export async function verifyRegistryCopies(): Promise<Drift[]> {
   const record = await Bun.file(join(PACKAGE_DIR, "vendor/UPSTREAM.md")).text();
   const version = /`@napi-rs\/canvas@([^`]+)`/.exec(record)?.[1];
-  if (!version || !/^\d+\.\d+\.\d+$/.test(version))
-    throw new Error("invalid recorded upstream version");
-  const response = await fetch(
-    `https://registry.npmjs.org/@napi-rs%2fcanvas/${version}`,
-    {
-      signal: AbortSignal.timeout(30000),
-    },
-  );
-  if (!response.ok)
-    throw new Error(`upstream metadata: HTTP ${response.status}`);
+  if (!version || !/^\d+\.\d+\.\d+$/.test(version)) throw new Error("invalid recorded upstream version");
+  const response = await fetch(`https://registry.npmjs.org/@napi-rs%2fcanvas/${version}`, {
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!response.ok) throw new Error(`upstream metadata: HTTP ${response.status}`);
   const metadata = (await response.json()) as {
     dist: { tarball: string; integrity: string };
   };
@@ -152,34 +130,26 @@ export async function verifyRegistryCopies(): Promise<Drift[]> {
   const download = await fetch(metadata.dist.tarball, {
     signal: AbortSignal.timeout(30000),
   });
-  if (!download.ok)
-    throw new Error(`upstream tarball: HTTP ${download.status}`);
+  if (!download.ok) throw new Error(`upstream tarball: HTTP ${download.status}`);
   const bytes = await download.arrayBuffer();
   const integrity = `sha512-${new Bun.CryptoHasher("sha512").update(bytes).digest("base64")}`;
-  if (integrity !== metadata.dist.integrity)
-    throw new Error("upstream tarball integrity mismatch");
+  if (integrity !== metadata.dist.integrity) throw new Error("upstream tarball integrity mismatch");
   const dir = await mkdtemp(join(tmpdir(), "aphrody-canvas-upstream-"));
   try {
     const tarball = join(dir, "upstream.tgz");
     await Bun.write(tarball, bytes);
     const drift: Drift[] = [];
     const hashes = parseRecordedHashes(record);
-    const extracted = VENDORED_FILES.map((name) => {
-      const result = Bun.spawnSync(
-        ["tar", "-xOf", tarball, `package/${name}`],
-        {
-          windowsHide: true,
-          stdout: "pipe",
-          stderr: "pipe",
-        },
-      );
-      if (result.exitCode !== 0)
-        throw new Error(`upstream file missing: ${name}`);
+    const extracted = VENDORED_FILES.map(name => {
+      const result = Bun.spawnSync(["tar", "-xOf", tarball, `package/${name}`], {
+        windowsHide: true,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      if (result.exitCode !== 0) throw new Error(`upstream file missing: ${name}`);
       return { name, expected: normalizeEol(result.stdout.toString()) };
     });
-    const actuals = await Promise.all(
-      extracted.map(({ name }) => readText(`vendor/${name}`)),
-    );
+    const actuals = await Promise.all(extracted.map(({ name }) => readText(`vendor/${name}`)));
     for (const [index, { name, expected }] of extracted.entries()) {
       if (sha256(expected) !== hashes.get(name))
         drift.push({
@@ -192,10 +162,7 @@ export async function verifyRegistryCopies(): Promise<Drift[]> {
           reason: "differs from immutable npm upstream",
         });
     }
-    if (
-      (await readText("scene-types.d.ts")) !==
-      normalizeEol(await Bun.file(SCENE_TYPES_SOURCE).text())
-    )
+    if ((await readText("scene-types.d.ts")) !== normalizeEol(await Bun.file(SCENE_TYPES_SOURCE).text()))
       drift.push({
         path: "scene-types.d.ts",
         reason: "differs from the native owner",
@@ -212,9 +179,7 @@ export async function verifyRegistryCopies(): Promise<Drift[]> {
 }
 
 export function renderUpstreamRecord(upstream: UpstreamSnapshot): string {
-  const rows = [...upstream.files].map(
-    ([name, text]) => `| \`${name}\` | \`${sha256(text)}\` |`,
-  );
+  const rows = [...upstream.files].map(([name, text]) => `| \`${name}\` | \`${sha256(text)}\` |`);
   return [
     "# Upstream provenance",
     "",
@@ -241,34 +206,23 @@ export function renderUpstreamRecord(upstream: UpstreamSnapshot): string {
 /** `| \`name\` | \`sha\` |` rows of `vendor/UPSTREAM.md`. */
 export function parseRecordedHashes(record: string): Map<string, string> {
   const hashes = new Map<string, string>();
-  for (const match of record.matchAll(
-    /^\| `([^`]+)` \| `([0-9a-f]{64})` \|$/gm,
-  )) {
+  for (const match of record.matchAll(/^\| `([^`]+)` \| `([0-9a-f]{64})` \|$/gm)) {
     hashes.set(match[1] as string, match[2] as string);
   }
   return hashes;
 }
 
-export function expectedOptionalDependencies(
-  upstream: UpstreamSnapshot,
-): Record<string, string> {
-  return Object.fromEntries(
-    upstream.platformPackages.map((name) => [name, upstream.version]),
-  );
+export function expectedOptionalDependencies(upstream: UpstreamSnapshot): Record<string, string> {
+  return Object.fromEntries(upstream.platformPackages.map(name => [name, upstream.version]));
 }
 
 /** Every generated file, keyed by its path relative to the package. */
-export async function expectedFiles(
-  upstream: UpstreamSnapshot,
-): Promise<Map<string, string>> {
+export async function expectedFiles(upstream: UpstreamSnapshot): Promise<Map<string, string>> {
   const files = new Map<string, string>();
   for (const [name, text] of upstream.files) files.set(`vendor/${name}`, text);
   files.set("vendor/package.json", VENDOR_MANIFEST);
   files.set("vendor/UPSTREAM.md", renderUpstreamRecord(upstream));
-  files.set(
-    "scene-types.d.ts",
-    normalizeEol(await Bun.file(SCENE_TYPES_SOURCE).text()),
-  );
+  files.set("scene-types.d.ts", normalizeEol(await Bun.file(SCENE_TYPES_SOURCE).text()));
   return files;
 }
 
@@ -284,15 +238,11 @@ export async function findDrift(upstream: UpstreamSnapshot): Promise<Drift[]> {
   for (const [index, [path, expected]] of entries.entries()) {
     const actual = actuals[index];
     if (actual === undefined) drift.push({ path, reason: "missing" });
-    else if (actual !== expected)
-      drift.push({ path, reason: "differs from its source" });
+    else if (actual !== expected) drift.push({ path, reason: "differs from its source" });
   }
   const manifest = await Bun.file(join(PACKAGE_DIR, "package.json")).json();
   const expectedOptional = expectedOptionalDependencies(upstream);
-  if (
-    JSON.stringify(manifest.optionalDependencies ?? {}) !==
-    JSON.stringify(expectedOptional)
-  ) {
+  if (JSON.stringify(manifest.optionalDependencies ?? {}) !== JSON.stringify(expectedOptional)) {
     drift.push({
       path: "package.json",
       reason: `optionalDependencies must be ${JSON.stringify(expectedOptional)}`,
@@ -301,9 +251,7 @@ export async function findDrift(upstream: UpstreamSnapshot): Promise<Drift[]> {
   return drift;
 }
 
-export async function writeCopies(
-  upstream: UpstreamSnapshot,
-): Promise<string[]> {
+export async function writeCopies(upstream: UpstreamSnapshot): Promise<string[]> {
   const written: string[] = [];
   const entries = [...(await expectedFiles(upstream))];
   const changed = await Promise.all(
@@ -317,10 +265,7 @@ export async function writeCopies(
   const manifestFile = Bun.file(join(PACKAGE_DIR, "package.json"));
   const manifest = await manifestFile.json();
   const expectedOptional = expectedOptionalDependencies(upstream);
-  if (
-    JSON.stringify(manifest.optionalDependencies ?? {}) !==
-    JSON.stringify(expectedOptional)
-  ) {
+  if (JSON.stringify(manifest.optionalDependencies ?? {}) !== JSON.stringify(expectedOptional)) {
     manifest.optionalDependencies = expectedOptional;
     await Bun.write(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
     written.push("package.json");
@@ -331,24 +276,18 @@ export async function writeCopies(
 if (import.meta.main) {
   if (Bun.argv.includes("--check") && !(await upstreamCheckedOut())) {
     const drift = await verifyRegistryCopies();
-    for (const { path, reason } of drift)
-      console.error(`drift  ${path}: ${reason}`);
-    console.log(
-      `@aphrody/canvas immutable npm provenance: ${drift.length} drift(s)`,
-    );
+    for (const { path, reason } of drift) console.error(`drift  ${path}: ${reason}`);
+    console.log(`@aphrody/canvas immutable npm provenance: ${drift.length} drift(s)`);
     process.exit(drift.length === 0 ? 0 : 1);
   }
   const upstream = await readUpstream().catch((error: unknown) => {
-    console.error(
-      `@aphrody/canvas: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    console.error(`@aphrody/canvas: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   });
   const label = `${UPSTREAM_PACKAGE}@${upstream.version} (${upstream.commit.slice(0, 7)})`;
   if (Bun.argv.includes("--check")) {
     const drift = await findDrift(upstream);
-    for (const { path, reason } of drift)
-      console.error(`drift  ${path}: ${reason}`);
+    for (const { path, reason } of drift) console.error(`drift  ${path}: ${reason}`);
     console.log(
       drift.length === 0
         ? `@aphrody/canvas copies match ${label}`
@@ -358,7 +297,5 @@ if (import.meta.main) {
   }
   const written = await writeCopies(upstream);
   for (const path of written) console.log(`wrote  ${path}`);
-  console.log(
-    `@aphrody/canvas synced with ${label}: ${written.length} file(s) updated`,
-  );
+  console.log(`@aphrody/canvas synced with ${label}: ${written.length} file(s) updated`);
 }

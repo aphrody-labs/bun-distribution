@@ -9,67 +9,392 @@ interface Functions {
   /** advapi32.dll!AbortSystemShutdownW */
   AbortSystemShutdown(lpMachineName: string | Win32Pointer): number;
   /** advapi32.dll!AccessCheck */
-  AccessCheck(pSecurityDescriptor: Win32Pointer, ClientToken: Win32Pointer, DesiredAccess: number, GenericMapping: Win32Pointer, PrivilegeSet: Win32Pointer, PrivilegeSetLength: Win32Pointer, GrantedAccess: Win32Pointer, AccessStatus: Win32Pointer): number;
+  AccessCheck(
+    pSecurityDescriptor: Win32Pointer,
+    ClientToken: Win32Pointer,
+    DesiredAccess: number,
+    GenericMapping: Win32Pointer,
+    PrivilegeSet: Win32Pointer,
+    PrivilegeSetLength: Win32Pointer,
+    GrantedAccess: Win32Pointer,
+    AccessStatus: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckAndAuditAlarmA */
-  AccessCheckAndAuditAlarmA(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, SecurityDescriptor: Win32Pointer, DesiredAccess: number, GenericMapping: Win32Pointer, ObjectCreation: number, GrantedAccess: Win32Pointer, AccessStatus: Win32Pointer, pfGenerateOnClose: Win32Pointer): number;
+  AccessCheckAndAuditAlarmA(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    DesiredAccess: number,
+    GenericMapping: Win32Pointer,
+    ObjectCreation: number,
+    GrantedAccess: Win32Pointer,
+    AccessStatus: Win32Pointer,
+    pfGenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckAndAuditAlarmW */
-  AccessCheckAndAuditAlarmW(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, SecurityDescriptor: Win32Pointer, DesiredAccess: number, GenericMapping: Win32Pointer, ObjectCreation: number, GrantedAccess: Win32Pointer, AccessStatus: Win32Pointer, pfGenerateOnClose: Win32Pointer): number;
+  AccessCheckAndAuditAlarmW(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    DesiredAccess: number,
+    GenericMapping: Win32Pointer,
+    ObjectCreation: number,
+    GrantedAccess: Win32Pointer,
+    AccessStatus: Win32Pointer,
+    pfGenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckAndAuditAlarmW */
-  AccessCheckAndAuditAlarm(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, SecurityDescriptor: Win32Pointer, DesiredAccess: number, GenericMapping: Win32Pointer, ObjectCreation: number, GrantedAccess: Win32Pointer, AccessStatus: Win32Pointer, pfGenerateOnClose: Win32Pointer): number;
+  AccessCheckAndAuditAlarm(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    DesiredAccess: number,
+    GenericMapping: Win32Pointer,
+    ObjectCreation: number,
+    GrantedAccess: Win32Pointer,
+    AccessStatus: Win32Pointer,
+    pfGenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckByType */
-  AccessCheckByType(pSecurityDescriptor: Win32Pointer, PrincipalSelfSid: Win32Pointer, ClientToken: Win32Pointer, DesiredAccess: number, ObjectTypeList: Win32Pointer, ObjectTypeListLength: number, GenericMapping: Win32Pointer, PrivilegeSet: Win32Pointer, PrivilegeSetLength: Win32Pointer, GrantedAccess: Win32Pointer, AccessStatus: Win32Pointer): number;
+  AccessCheckByType(
+    pSecurityDescriptor: Win32Pointer,
+    PrincipalSelfSid: Win32Pointer,
+    ClientToken: Win32Pointer,
+    DesiredAccess: number,
+    ObjectTypeList: Win32Pointer,
+    ObjectTypeListLength: number,
+    GenericMapping: Win32Pointer,
+    PrivilegeSet: Win32Pointer,
+    PrivilegeSetLength: Win32Pointer,
+    GrantedAccess: Win32Pointer,
+    AccessStatus: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckByTypeAndAuditAlarmA */
-  AccessCheckByTypeAndAuditAlarmA(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, SecurityDescriptor: Win32Pointer, PrincipalSelfSid: Win32Pointer, DesiredAccess: number, AuditType: number, Flags: number, ObjectTypeList: Win32Pointer, ObjectTypeListLength: number, GenericMapping: Win32Pointer, ObjectCreation: number, GrantedAccess: Win32Pointer, AccessStatus: Win32Pointer, pfGenerateOnClose: Win32Pointer): number;
+  AccessCheckByTypeAndAuditAlarmA(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    PrincipalSelfSid: Win32Pointer,
+    DesiredAccess: number,
+    AuditType: number,
+    Flags: number,
+    ObjectTypeList: Win32Pointer,
+    ObjectTypeListLength: number,
+    GenericMapping: Win32Pointer,
+    ObjectCreation: number,
+    GrantedAccess: Win32Pointer,
+    AccessStatus: Win32Pointer,
+    pfGenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckByTypeAndAuditAlarmW */
-  AccessCheckByTypeAndAuditAlarmW(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, SecurityDescriptor: Win32Pointer, PrincipalSelfSid: Win32Pointer, DesiredAccess: number, AuditType: number, Flags: number, ObjectTypeList: Win32Pointer, ObjectTypeListLength: number, GenericMapping: Win32Pointer, ObjectCreation: number, GrantedAccess: Win32Pointer, AccessStatus: Win32Pointer, pfGenerateOnClose: Win32Pointer): number;
+  AccessCheckByTypeAndAuditAlarmW(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    PrincipalSelfSid: Win32Pointer,
+    DesiredAccess: number,
+    AuditType: number,
+    Flags: number,
+    ObjectTypeList: Win32Pointer,
+    ObjectTypeListLength: number,
+    GenericMapping: Win32Pointer,
+    ObjectCreation: number,
+    GrantedAccess: Win32Pointer,
+    AccessStatus: Win32Pointer,
+    pfGenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckByTypeAndAuditAlarmW */
-  AccessCheckByTypeAndAuditAlarm(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, SecurityDescriptor: Win32Pointer, PrincipalSelfSid: Win32Pointer, DesiredAccess: number, AuditType: number, Flags: number, ObjectTypeList: Win32Pointer, ObjectTypeListLength: number, GenericMapping: Win32Pointer, ObjectCreation: number, GrantedAccess: Win32Pointer, AccessStatus: Win32Pointer, pfGenerateOnClose: Win32Pointer): number;
+  AccessCheckByTypeAndAuditAlarm(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    PrincipalSelfSid: Win32Pointer,
+    DesiredAccess: number,
+    AuditType: number,
+    Flags: number,
+    ObjectTypeList: Win32Pointer,
+    ObjectTypeListLength: number,
+    GenericMapping: Win32Pointer,
+    ObjectCreation: number,
+    GrantedAccess: Win32Pointer,
+    AccessStatus: Win32Pointer,
+    pfGenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckByTypeResultList */
-  AccessCheckByTypeResultList(pSecurityDescriptor: Win32Pointer, PrincipalSelfSid: Win32Pointer, ClientToken: Win32Pointer, DesiredAccess: number, ObjectTypeList: Win32Pointer, ObjectTypeListLength: number, GenericMapping: Win32Pointer, PrivilegeSet: Win32Pointer, PrivilegeSetLength: Win32Pointer, GrantedAccessList: Win32Pointer, AccessStatusList: Win32Pointer): number;
+  AccessCheckByTypeResultList(
+    pSecurityDescriptor: Win32Pointer,
+    PrincipalSelfSid: Win32Pointer,
+    ClientToken: Win32Pointer,
+    DesiredAccess: number,
+    ObjectTypeList: Win32Pointer,
+    ObjectTypeListLength: number,
+    GenericMapping: Win32Pointer,
+    PrivilegeSet: Win32Pointer,
+    PrivilegeSetLength: Win32Pointer,
+    GrantedAccessList: Win32Pointer,
+    AccessStatusList: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckByTypeResultListAndAuditAlarmA */
-  AccessCheckByTypeResultListAndAuditAlarmA(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, SecurityDescriptor: Win32Pointer, PrincipalSelfSid: Win32Pointer, DesiredAccess: number, AuditType: number, Flags: number, ObjectTypeList: Win32Pointer, ObjectTypeListLength: number, GenericMapping: Win32Pointer, ObjectCreation: number, GrantedAccess: Win32Pointer, AccessStatusList: Win32Pointer, pfGenerateOnClose: Win32Pointer): number;
+  AccessCheckByTypeResultListAndAuditAlarmA(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    PrincipalSelfSid: Win32Pointer,
+    DesiredAccess: number,
+    AuditType: number,
+    Flags: number,
+    ObjectTypeList: Win32Pointer,
+    ObjectTypeListLength: number,
+    GenericMapping: Win32Pointer,
+    ObjectCreation: number,
+    GrantedAccess: Win32Pointer,
+    AccessStatusList: Win32Pointer,
+    pfGenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckByTypeResultListAndAuditAlarmByHandleA */
-  AccessCheckByTypeResultListAndAuditAlarmByHandleA(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ClientToken: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, SecurityDescriptor: Win32Pointer, PrincipalSelfSid: Win32Pointer, DesiredAccess: number, AuditType: number, Flags: number, ObjectTypeList: Win32Pointer, ObjectTypeListLength: number, GenericMapping: Win32Pointer, ObjectCreation: number, GrantedAccess: Win32Pointer, AccessStatusList: Win32Pointer, pfGenerateOnClose: Win32Pointer): number;
+  AccessCheckByTypeResultListAndAuditAlarmByHandleA(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ClientToken: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    PrincipalSelfSid: Win32Pointer,
+    DesiredAccess: number,
+    AuditType: number,
+    Flags: number,
+    ObjectTypeList: Win32Pointer,
+    ObjectTypeListLength: number,
+    GenericMapping: Win32Pointer,
+    ObjectCreation: number,
+    GrantedAccess: Win32Pointer,
+    AccessStatusList: Win32Pointer,
+    pfGenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckByTypeResultListAndAuditAlarmByHandleW */
-  AccessCheckByTypeResultListAndAuditAlarmByHandleW(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ClientToken: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, SecurityDescriptor: Win32Pointer, PrincipalSelfSid: Win32Pointer, DesiredAccess: number, AuditType: number, Flags: number, ObjectTypeList: Win32Pointer, ObjectTypeListLength: number, GenericMapping: Win32Pointer, ObjectCreation: number, GrantedAccessList: Win32Pointer, AccessStatusList: Win32Pointer, pfGenerateOnClose: Win32Pointer): number;
+  AccessCheckByTypeResultListAndAuditAlarmByHandleW(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ClientToken: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    PrincipalSelfSid: Win32Pointer,
+    DesiredAccess: number,
+    AuditType: number,
+    Flags: number,
+    ObjectTypeList: Win32Pointer,
+    ObjectTypeListLength: number,
+    GenericMapping: Win32Pointer,
+    ObjectCreation: number,
+    GrantedAccessList: Win32Pointer,
+    AccessStatusList: Win32Pointer,
+    pfGenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckByTypeResultListAndAuditAlarmByHandleW */
-  AccessCheckByTypeResultListAndAuditAlarmByHandle(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ClientToken: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, SecurityDescriptor: Win32Pointer, PrincipalSelfSid: Win32Pointer, DesiredAccess: number, AuditType: number, Flags: number, ObjectTypeList: Win32Pointer, ObjectTypeListLength: number, GenericMapping: Win32Pointer, ObjectCreation: number, GrantedAccessList: Win32Pointer, AccessStatusList: Win32Pointer, pfGenerateOnClose: Win32Pointer): number;
+  AccessCheckByTypeResultListAndAuditAlarmByHandle(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ClientToken: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    PrincipalSelfSid: Win32Pointer,
+    DesiredAccess: number,
+    AuditType: number,
+    Flags: number,
+    ObjectTypeList: Win32Pointer,
+    ObjectTypeListLength: number,
+    GenericMapping: Win32Pointer,
+    ObjectCreation: number,
+    GrantedAccessList: Win32Pointer,
+    AccessStatusList: Win32Pointer,
+    pfGenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckByTypeResultListAndAuditAlarmW */
-  AccessCheckByTypeResultListAndAuditAlarmW(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, SecurityDescriptor: Win32Pointer, PrincipalSelfSid: Win32Pointer, DesiredAccess: number, AuditType: number, Flags: number, ObjectTypeList: Win32Pointer, ObjectTypeListLength: number, GenericMapping: Win32Pointer, ObjectCreation: number, GrantedAccessList: Win32Pointer, AccessStatusList: Win32Pointer, pfGenerateOnClose: Win32Pointer): number;
+  AccessCheckByTypeResultListAndAuditAlarmW(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    PrincipalSelfSid: Win32Pointer,
+    DesiredAccess: number,
+    AuditType: number,
+    Flags: number,
+    ObjectTypeList: Win32Pointer,
+    ObjectTypeListLength: number,
+    GenericMapping: Win32Pointer,
+    ObjectCreation: number,
+    GrantedAccessList: Win32Pointer,
+    AccessStatusList: Win32Pointer,
+    pfGenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!AccessCheckByTypeResultListAndAuditAlarmW */
-  AccessCheckByTypeResultListAndAuditAlarm(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, SecurityDescriptor: Win32Pointer, PrincipalSelfSid: Win32Pointer, DesiredAccess: number, AuditType: number, Flags: number, ObjectTypeList: Win32Pointer, ObjectTypeListLength: number, GenericMapping: Win32Pointer, ObjectCreation: number, GrantedAccessList: Win32Pointer, AccessStatusList: Win32Pointer, pfGenerateOnClose: Win32Pointer): number;
+  AccessCheckByTypeResultListAndAuditAlarm(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    PrincipalSelfSid: Win32Pointer,
+    DesiredAccess: number,
+    AuditType: number,
+    Flags: number,
+    ObjectTypeList: Win32Pointer,
+    ObjectTypeListLength: number,
+    GenericMapping: Win32Pointer,
+    ObjectCreation: number,
+    GrantedAccessList: Win32Pointer,
+    AccessStatusList: Win32Pointer,
+    pfGenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!AddAccessAllowedAce */
   AddAccessAllowedAce(pAcl: Win32Pointer, dwAceRevision: number, AccessMask: number, pSid: Win32Pointer): number;
   /** advapi32.dll!AddAccessAllowedAceEx */
-  AddAccessAllowedAceEx(pAcl: Win32Pointer, dwAceRevision: number, AceFlags: number, AccessMask: number, pSid: Win32Pointer): number;
+  AddAccessAllowedAceEx(
+    pAcl: Win32Pointer,
+    dwAceRevision: number,
+    AceFlags: number,
+    AccessMask: number,
+    pSid: Win32Pointer,
+  ): number;
   /** advapi32.dll!AddAccessAllowedObjectAce */
-  AddAccessAllowedObjectAce(pAcl: Win32Pointer, dwAceRevision: number, AceFlags: number, AccessMask: number, ObjectTypeGuid: Win32Pointer, InheritedObjectTypeGuid: Win32Pointer, pSid: Win32Pointer): number;
+  AddAccessAllowedObjectAce(
+    pAcl: Win32Pointer,
+    dwAceRevision: number,
+    AceFlags: number,
+    AccessMask: number,
+    ObjectTypeGuid: Win32Pointer,
+    InheritedObjectTypeGuid: Win32Pointer,
+    pSid: Win32Pointer,
+  ): number;
   /** advapi32.dll!AddAccessDeniedAce */
   AddAccessDeniedAce(pAcl: Win32Pointer, dwAceRevision: number, AccessMask: number, pSid: Win32Pointer): number;
   /** advapi32.dll!AddAccessDeniedAceEx */
-  AddAccessDeniedAceEx(pAcl: Win32Pointer, dwAceRevision: number, AceFlags: number, AccessMask: number, pSid: Win32Pointer): number;
+  AddAccessDeniedAceEx(
+    pAcl: Win32Pointer,
+    dwAceRevision: number,
+    AceFlags: number,
+    AccessMask: number,
+    pSid: Win32Pointer,
+  ): number;
   /** advapi32.dll!AddAccessDeniedObjectAce */
-  AddAccessDeniedObjectAce(pAcl: Win32Pointer, dwAceRevision: number, AceFlags: number, AccessMask: number, ObjectTypeGuid: Win32Pointer, InheritedObjectTypeGuid: Win32Pointer, pSid: Win32Pointer): number;
+  AddAccessDeniedObjectAce(
+    pAcl: Win32Pointer,
+    dwAceRevision: number,
+    AceFlags: number,
+    AccessMask: number,
+    ObjectTypeGuid: Win32Pointer,
+    InheritedObjectTypeGuid: Win32Pointer,
+    pSid: Win32Pointer,
+  ): number;
   /** advapi32.dll!AddAce */
-  AddAce(pAcl: Win32Pointer, dwAceRevision: number, dwStartingAceIndex: number, pAceList: Win32Pointer, nAceListLength: number): number;
+  AddAce(
+    pAcl: Win32Pointer,
+    dwAceRevision: number,
+    dwStartingAceIndex: number,
+    pAceList: Win32Pointer,
+    nAceListLength: number,
+  ): number;
   /** advapi32.dll!AddAuditAccessAce */
-  AddAuditAccessAce(pAcl: Win32Pointer, dwAceRevision: number, dwAccessMask: number, pSid: Win32Pointer, bAuditSuccess: number, bAuditFailure: number): number;
+  AddAuditAccessAce(
+    pAcl: Win32Pointer,
+    dwAceRevision: number,
+    dwAccessMask: number,
+    pSid: Win32Pointer,
+    bAuditSuccess: number,
+    bAuditFailure: number,
+  ): number;
   /** advapi32.dll!AddAuditAccessAceEx */
-  AddAuditAccessAceEx(pAcl: Win32Pointer, dwAceRevision: number, AceFlags: number, dwAccessMask: number, pSid: Win32Pointer, bAuditSuccess: number, bAuditFailure: number): number;
+  AddAuditAccessAceEx(
+    pAcl: Win32Pointer,
+    dwAceRevision: number,
+    AceFlags: number,
+    dwAccessMask: number,
+    pSid: Win32Pointer,
+    bAuditSuccess: number,
+    bAuditFailure: number,
+  ): number;
   /** advapi32.dll!AddAuditAccessObjectAce */
-  AddAuditAccessObjectAce(pAcl: Win32Pointer, dwAceRevision: number, AceFlags: number, AccessMask: number, ObjectTypeGuid: Win32Pointer, InheritedObjectTypeGuid: Win32Pointer, pSid: Win32Pointer, bAuditSuccess: number, bAuditFailure: number): number;
+  AddAuditAccessObjectAce(
+    pAcl: Win32Pointer,
+    dwAceRevision: number,
+    AceFlags: number,
+    AccessMask: number,
+    ObjectTypeGuid: Win32Pointer,
+    InheritedObjectTypeGuid: Win32Pointer,
+    pSid: Win32Pointer,
+    bAuditSuccess: number,
+    bAuditFailure: number,
+  ): number;
   /** advapi32.dll!AddConditionalAce */
-  AddConditionalAce(pAcl: Win32Pointer, dwAceRevision: number, AceFlags: number, AceType: number, AccessMask: number, pSid: Win32Pointer, ConditionStr: string | Win32Pointer, ReturnLength: Win32Pointer): number;
+  AddConditionalAce(
+    pAcl: Win32Pointer,
+    dwAceRevision: number,
+    AceFlags: number,
+    AceType: number,
+    AccessMask: number,
+    pSid: Win32Pointer,
+    ConditionStr: string | Win32Pointer,
+    ReturnLength: Win32Pointer,
+  ): number;
   /** advapi32.dll!AddMandatoryAce */
-  AddMandatoryAce(pAcl: Win32Pointer, dwAceRevision: number, AceFlags: number, MandatoryPolicy: number, pLabelSid: Win32Pointer): number;
+  AddMandatoryAce(
+    pAcl: Win32Pointer,
+    dwAceRevision: number,
+    AceFlags: number,
+    MandatoryPolicy: number,
+    pLabelSid: Win32Pointer,
+  ): number;
   /** advapi32.dll!AddUsersToEncryptedFile */
   AddUsersToEncryptedFile(lpFileName: string | Win32Pointer, pEncryptionCertificates: Win32Pointer): number;
   /** advapi32.dll!AdjustTokenGroups */
-  AdjustTokenGroups(TokenHandle: Win32Pointer, ResetToDefault: number, NewState: Win32Pointer, BufferLength: number, PreviousState: Win32Pointer, ReturnLength: Win32Pointer): number;
+  AdjustTokenGroups(
+    TokenHandle: Win32Pointer,
+    ResetToDefault: number,
+    NewState: Win32Pointer,
+    BufferLength: number,
+    PreviousState: Win32Pointer,
+    ReturnLength: Win32Pointer,
+  ): number;
   /** advapi32.dll!AdjustTokenPrivileges */
-  AdjustTokenPrivileges(TokenHandle: Win32Pointer, DisableAllPrivileges: number, NewState: Win32Pointer, BufferLength: number, PreviousState: Win32Pointer, ReturnLength: Win32Pointer): number;
+  AdjustTokenPrivileges(
+    TokenHandle: Win32Pointer,
+    DisableAllPrivileges: number,
+    NewState: Win32Pointer,
+    BufferLength: number,
+    PreviousState: Win32Pointer,
+    ReturnLength: Win32Pointer,
+  ): number;
   /** advapi32.dll!AllocateAndInitializeSid */
-  AllocateAndInitializeSid(pIdentifierAuthority: Win32Pointer, nSubAuthorityCount: number, nSubAuthority0: number, nSubAuthority1: number, nSubAuthority2: number, nSubAuthority3: number, nSubAuthority4: number, nSubAuthority5: number, nSubAuthority6: number, nSubAuthority7: number, pSid: Win32Pointer): number;
+  AllocateAndInitializeSid(
+    pIdentifierAuthority: Win32Pointer,
+    nSubAuthorityCount: number,
+    nSubAuthority0: number,
+    nSubAuthority1: number,
+    nSubAuthority2: number,
+    nSubAuthority3: number,
+    nSubAuthority4: number,
+    nSubAuthority5: number,
+    nSubAuthority6: number,
+    nSubAuthority7: number,
+    pSid: Win32Pointer,
+  ): number;
   /** advapi32.dll!AllocateLocallyUniqueId */
   AllocateLocallyUniqueId(Luid: Win32Pointer): number;
   /** advapi32.dll!AreAllAccessesGranted */
@@ -77,15 +402,30 @@ interface Functions {
   /** advapi32.dll!AreAnyAccessesGranted */
   AreAnyAccessesGranted(GrantedAccess: number, DesiredAccess: number): number;
   /** advapi32.dll!AuditComputeEffectivePolicyBySid */
-  AuditComputeEffectivePolicyBySid(pSid: Win32Pointer, pSubCategoryGuids: Win32Pointer, dwPolicyCount: number, ppAuditPolicy: Win32Pointer): number;
+  AuditComputeEffectivePolicyBySid(
+    pSid: Win32Pointer,
+    pSubCategoryGuids: Win32Pointer,
+    dwPolicyCount: number,
+    ppAuditPolicy: Win32Pointer,
+  ): number;
   /** advapi32.dll!AuditComputeEffectivePolicyByToken */
-  AuditComputeEffectivePolicyByToken(hTokenHandle: Win32Pointer, pSubCategoryGuids: Win32Pointer, dwPolicyCount: number, ppAuditPolicy: Win32Pointer): number;
+  AuditComputeEffectivePolicyByToken(
+    hTokenHandle: Win32Pointer,
+    pSubCategoryGuids: Win32Pointer,
+    dwPolicyCount: number,
+    ppAuditPolicy: Win32Pointer,
+  ): number;
   /** advapi32.dll!AuditEnumerateCategories */
   AuditEnumerateCategories(ppAuditCategoriesArray: Win32Pointer, pdwCountReturned: Win32Pointer): number;
   /** advapi32.dll!AuditEnumeratePerUserPolicy */
   AuditEnumeratePerUserPolicy(ppAuditSidArray: Win32Pointer): number;
   /** advapi32.dll!AuditEnumerateSubCategories */
-  AuditEnumerateSubCategories(pAuditCategoryGuid: Win32Pointer, bRetrieveAllSubCategories: number, ppAuditSubCategoriesArray: Win32Pointer, pdwCountReturned: Win32Pointer): number;
+  AuditEnumerateSubCategories(
+    pAuditCategoryGuid: Win32Pointer,
+    bRetrieveAllSubCategories: number,
+    ppAuditSubCategoriesArray: Win32Pointer,
+    pdwCountReturned: Win32Pointer,
+  ): number;
   /** advapi32.dll!AuditFree */
   AuditFree(Buffer: Win32Pointer): void;
   /** advapi32.dll!AuditLookupCategoryGuidFromCategoryId */
@@ -111,7 +451,12 @@ interface Functions {
   /** advapi32.dll!AuditQueryGlobalSaclW */
   AuditQueryGlobalSacl(ObjectTypeName: string | Win32Pointer, Acl: Win32Pointer): number;
   /** advapi32.dll!AuditQueryPerUserPolicy */
-  AuditQueryPerUserPolicy(pSid: Win32Pointer, pSubCategoryGuids: Win32Pointer, dwPolicyCount: number, ppAuditPolicy: Win32Pointer): number;
+  AuditQueryPerUserPolicy(
+    pSid: Win32Pointer,
+    pSubCategoryGuids: Win32Pointer,
+    dwPolicyCount: number,
+    ppAuditPolicy: Win32Pointer,
+  ): number;
   /** advapi32.dll!AuditQuerySecurity */
   AuditQuerySecurity(SecurityInformation: number, ppSecurityDescriptor: Win32Pointer): number;
   /** advapi32.dll!AuditQuerySystemPolicy */
@@ -135,17 +480,56 @@ interface Functions {
   /** advapi32.dll!BackupEventLogW */
   BackupEventLog(hEventLog: Win32Pointer, lpBackupFileName: string | Win32Pointer): number;
   /** advapi32.dll!BuildExplicitAccessWithNameA */
-  BuildExplicitAccessWithNameA(pExplicitAccess: Win32Pointer, pTrusteeName: string | Win32Pointer, AccessPermissions: number, AccessMode: number, Inheritance: number): void;
+  BuildExplicitAccessWithNameA(
+    pExplicitAccess: Win32Pointer,
+    pTrusteeName: string | Win32Pointer,
+    AccessPermissions: number,
+    AccessMode: number,
+    Inheritance: number,
+  ): void;
   /** advapi32.dll!BuildExplicitAccessWithNameW */
-  BuildExplicitAccessWithNameW(pExplicitAccess: Win32Pointer, pTrusteeName: string | Win32Pointer, AccessPermissions: number, AccessMode: number, Inheritance: number): void;
+  BuildExplicitAccessWithNameW(
+    pExplicitAccess: Win32Pointer,
+    pTrusteeName: string | Win32Pointer,
+    AccessPermissions: number,
+    AccessMode: number,
+    Inheritance: number,
+  ): void;
   /** advapi32.dll!BuildExplicitAccessWithNameW */
-  BuildExplicitAccessWithName(pExplicitAccess: Win32Pointer, pTrusteeName: string | Win32Pointer, AccessPermissions: number, AccessMode: number, Inheritance: number): void;
+  BuildExplicitAccessWithName(
+    pExplicitAccess: Win32Pointer,
+    pTrusteeName: string | Win32Pointer,
+    AccessPermissions: number,
+    AccessMode: number,
+    Inheritance: number,
+  ): void;
   /** advapi32.dll!BuildImpersonateExplicitAccessWithNameA */
-  BuildImpersonateExplicitAccessWithNameA(pExplicitAccess: Win32Pointer, pTrusteeName: string | Win32Pointer, pTrustee: Win32Pointer, AccessPermissions: number, AccessMode: number, Inheritance: number): void;
+  BuildImpersonateExplicitAccessWithNameA(
+    pExplicitAccess: Win32Pointer,
+    pTrusteeName: string | Win32Pointer,
+    pTrustee: Win32Pointer,
+    AccessPermissions: number,
+    AccessMode: number,
+    Inheritance: number,
+  ): void;
   /** advapi32.dll!BuildImpersonateExplicitAccessWithNameW */
-  BuildImpersonateExplicitAccessWithNameW(pExplicitAccess: Win32Pointer, pTrusteeName: string | Win32Pointer, pTrustee: Win32Pointer, AccessPermissions: number, AccessMode: number, Inheritance: number): void;
+  BuildImpersonateExplicitAccessWithNameW(
+    pExplicitAccess: Win32Pointer,
+    pTrusteeName: string | Win32Pointer,
+    pTrustee: Win32Pointer,
+    AccessPermissions: number,
+    AccessMode: number,
+    Inheritance: number,
+  ): void;
   /** advapi32.dll!BuildImpersonateExplicitAccessWithNameW */
-  BuildImpersonateExplicitAccessWithName(pExplicitAccess: Win32Pointer, pTrusteeName: string | Win32Pointer, pTrustee: Win32Pointer, AccessPermissions: number, AccessMode: number, Inheritance: number): void;
+  BuildImpersonateExplicitAccessWithName(
+    pExplicitAccess: Win32Pointer,
+    pTrusteeName: string | Win32Pointer,
+    pTrustee: Win32Pointer,
+    AccessPermissions: number,
+    AccessMode: number,
+    Inheritance: number,
+  ): void;
   /** advapi32.dll!BuildImpersonateTrusteeA */
   BuildImpersonateTrusteeA(pTrustee: Win32Pointer, pImpersonateTrustee: Win32Pointer): void;
   /** advapi32.dll!BuildImpersonateTrusteeW */
@@ -153,11 +537,41 @@ interface Functions {
   /** advapi32.dll!BuildImpersonateTrusteeW */
   BuildImpersonateTrustee(pTrustee: Win32Pointer, pImpersonateTrustee: Win32Pointer): void;
   /** advapi32.dll!BuildSecurityDescriptorA */
-  BuildSecurityDescriptorA(pOwner: Win32Pointer, pGroup: Win32Pointer, cCountOfAccessEntries: number, pListOfAccessEntries: Win32Pointer, cCountOfAuditEntries: number, pListOfAuditEntries: Win32Pointer, pOldSD: Win32Pointer, pSizeNewSD: Win32Pointer, pNewSD: Win32Pointer): number;
+  BuildSecurityDescriptorA(
+    pOwner: Win32Pointer,
+    pGroup: Win32Pointer,
+    cCountOfAccessEntries: number,
+    pListOfAccessEntries: Win32Pointer,
+    cCountOfAuditEntries: number,
+    pListOfAuditEntries: Win32Pointer,
+    pOldSD: Win32Pointer,
+    pSizeNewSD: Win32Pointer,
+    pNewSD: Win32Pointer,
+  ): number;
   /** advapi32.dll!BuildSecurityDescriptorW */
-  BuildSecurityDescriptorW(pOwner: Win32Pointer, pGroup: Win32Pointer, cCountOfAccessEntries: number, pListOfAccessEntries: Win32Pointer, cCountOfAuditEntries: number, pListOfAuditEntries: Win32Pointer, pOldSD: Win32Pointer, pSizeNewSD: Win32Pointer, pNewSD: Win32Pointer): number;
+  BuildSecurityDescriptorW(
+    pOwner: Win32Pointer,
+    pGroup: Win32Pointer,
+    cCountOfAccessEntries: number,
+    pListOfAccessEntries: Win32Pointer,
+    cCountOfAuditEntries: number,
+    pListOfAuditEntries: Win32Pointer,
+    pOldSD: Win32Pointer,
+    pSizeNewSD: Win32Pointer,
+    pNewSD: Win32Pointer,
+  ): number;
   /** advapi32.dll!BuildSecurityDescriptorW */
-  BuildSecurityDescriptor(pOwner: Win32Pointer, pGroup: Win32Pointer, cCountOfAccessEntries: number, pListOfAccessEntries: Win32Pointer, cCountOfAuditEntries: number, pListOfAuditEntries: Win32Pointer, pOldSD: Win32Pointer, pSizeNewSD: Win32Pointer, pNewSD: Win32Pointer): number;
+  BuildSecurityDescriptor(
+    pOwner: Win32Pointer,
+    pGroup: Win32Pointer,
+    cCountOfAccessEntries: number,
+    pListOfAccessEntries: Win32Pointer,
+    cCountOfAuditEntries: number,
+    pListOfAuditEntries: Win32Pointer,
+    pOldSD: Win32Pointer,
+    pSizeNewSD: Win32Pointer,
+    pNewSD: Win32Pointer,
+  ): number;
   /** advapi32.dll!BuildTrusteeWithNameA */
   BuildTrusteeWithNameA(pTrustee: Win32Pointer, pName: string | Win32Pointer): void;
   /** advapi32.dll!BuildTrusteeWithNameW */
@@ -165,17 +579,56 @@ interface Functions {
   /** advapi32.dll!BuildTrusteeWithNameW */
   BuildTrusteeWithName(pTrustee: Win32Pointer, pName: string | Win32Pointer): void;
   /** advapi32.dll!BuildTrusteeWithObjectsAndNameA */
-  BuildTrusteeWithObjectsAndNameA(pTrustee: Win32Pointer, pObjName: Win32Pointer, ObjectType: number, ObjectTypeName: string | Win32Pointer, InheritedObjectTypeName: string | Win32Pointer, Name: string | Win32Pointer): void;
+  BuildTrusteeWithObjectsAndNameA(
+    pTrustee: Win32Pointer,
+    pObjName: Win32Pointer,
+    ObjectType: number,
+    ObjectTypeName: string | Win32Pointer,
+    InheritedObjectTypeName: string | Win32Pointer,
+    Name: string | Win32Pointer,
+  ): void;
   /** advapi32.dll!BuildTrusteeWithObjectsAndNameW */
-  BuildTrusteeWithObjectsAndNameW(pTrustee: Win32Pointer, pObjName: Win32Pointer, ObjectType: number, ObjectTypeName: string | Win32Pointer, InheritedObjectTypeName: string | Win32Pointer, Name: string | Win32Pointer): void;
+  BuildTrusteeWithObjectsAndNameW(
+    pTrustee: Win32Pointer,
+    pObjName: Win32Pointer,
+    ObjectType: number,
+    ObjectTypeName: string | Win32Pointer,
+    InheritedObjectTypeName: string | Win32Pointer,
+    Name: string | Win32Pointer,
+  ): void;
   /** advapi32.dll!BuildTrusteeWithObjectsAndNameW */
-  BuildTrusteeWithObjectsAndName(pTrustee: Win32Pointer, pObjName: Win32Pointer, ObjectType: number, ObjectTypeName: string | Win32Pointer, InheritedObjectTypeName: string | Win32Pointer, Name: string | Win32Pointer): void;
+  BuildTrusteeWithObjectsAndName(
+    pTrustee: Win32Pointer,
+    pObjName: Win32Pointer,
+    ObjectType: number,
+    ObjectTypeName: string | Win32Pointer,
+    InheritedObjectTypeName: string | Win32Pointer,
+    Name: string | Win32Pointer,
+  ): void;
   /** advapi32.dll!BuildTrusteeWithObjectsAndSidA */
-  BuildTrusteeWithObjectsAndSidA(pTrustee: Win32Pointer, pObjSid: Win32Pointer, pObjectGuid: Win32Pointer, pInheritedObjectGuid: Win32Pointer, pSid: Win32Pointer): void;
+  BuildTrusteeWithObjectsAndSidA(
+    pTrustee: Win32Pointer,
+    pObjSid: Win32Pointer,
+    pObjectGuid: Win32Pointer,
+    pInheritedObjectGuid: Win32Pointer,
+    pSid: Win32Pointer,
+  ): void;
   /** advapi32.dll!BuildTrusteeWithObjectsAndSidW */
-  BuildTrusteeWithObjectsAndSidW(pTrustee: Win32Pointer, pObjSid: Win32Pointer, pObjectGuid: Win32Pointer, pInheritedObjectGuid: Win32Pointer, pSid: Win32Pointer): void;
+  BuildTrusteeWithObjectsAndSidW(
+    pTrustee: Win32Pointer,
+    pObjSid: Win32Pointer,
+    pObjectGuid: Win32Pointer,
+    pInheritedObjectGuid: Win32Pointer,
+    pSid: Win32Pointer,
+  ): void;
   /** advapi32.dll!BuildTrusteeWithObjectsAndSidW */
-  BuildTrusteeWithObjectsAndSid(pTrustee: Win32Pointer, pObjSid: Win32Pointer, pObjectGuid: Win32Pointer, pInheritedObjectGuid: Win32Pointer, pSid: Win32Pointer): void;
+  BuildTrusteeWithObjectsAndSid(
+    pTrustee: Win32Pointer,
+    pObjSid: Win32Pointer,
+    pObjectGuid: Win32Pointer,
+    pInheritedObjectGuid: Win32Pointer,
+    pSid: Win32Pointer,
+  ): void;
   /** advapi32.dll!BuildTrusteeWithSidA */
   BuildTrusteeWithSidA(pTrustee: Win32Pointer, pSid: Win32Pointer): void;
   /** advapi32.dll!BuildTrusteeWithSidW */
@@ -189,11 +642,47 @@ interface Functions {
   /** advapi32.dll!ChangeServiceConfig2W */
   ChangeServiceConfig2(hService: Win32Pointer, dwInfoLevel: number, lpInfo: Win32Pointer): number;
   /** advapi32.dll!ChangeServiceConfigA */
-  ChangeServiceConfigA(hService: Win32Pointer, dwServiceType: number, dwStartType: number, dwErrorControl: number, lpBinaryPathName: string | Win32Pointer, lpLoadOrderGroup: string | Win32Pointer, lpdwTagId: Win32Pointer, lpDependencies: string | Win32Pointer, lpServiceStartName: string | Win32Pointer, lpPassword: string | Win32Pointer, lpDisplayName: string | Win32Pointer): number;
+  ChangeServiceConfigA(
+    hService: Win32Pointer,
+    dwServiceType: number,
+    dwStartType: number,
+    dwErrorControl: number,
+    lpBinaryPathName: string | Win32Pointer,
+    lpLoadOrderGroup: string | Win32Pointer,
+    lpdwTagId: Win32Pointer,
+    lpDependencies: string | Win32Pointer,
+    lpServiceStartName: string | Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!ChangeServiceConfigW */
-  ChangeServiceConfigW(hService: Win32Pointer, dwServiceType: number, dwStartType: number, dwErrorControl: number, lpBinaryPathName: string | Win32Pointer, lpLoadOrderGroup: string | Win32Pointer, lpdwTagId: Win32Pointer, lpDependencies: string | Win32Pointer, lpServiceStartName: string | Win32Pointer, lpPassword: string | Win32Pointer, lpDisplayName: string | Win32Pointer): number;
+  ChangeServiceConfigW(
+    hService: Win32Pointer,
+    dwServiceType: number,
+    dwStartType: number,
+    dwErrorControl: number,
+    lpBinaryPathName: string | Win32Pointer,
+    lpLoadOrderGroup: string | Win32Pointer,
+    lpdwTagId: Win32Pointer,
+    lpDependencies: string | Win32Pointer,
+    lpServiceStartName: string | Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!ChangeServiceConfigW */
-  ChangeServiceConfig(hService: Win32Pointer, dwServiceType: number, dwStartType: number, dwErrorControl: number, lpBinaryPathName: string | Win32Pointer, lpLoadOrderGroup: string | Win32Pointer, lpdwTagId: Win32Pointer, lpDependencies: string | Win32Pointer, lpServiceStartName: string | Win32Pointer, lpPassword: string | Win32Pointer, lpDisplayName: string | Win32Pointer): number;
+  ChangeServiceConfig(
+    hService: Win32Pointer,
+    dwServiceType: number,
+    dwStartType: number,
+    dwErrorControl: number,
+    lpBinaryPathName: string | Win32Pointer,
+    lpLoadOrderGroup: string | Win32Pointer,
+    lpdwTagId: Win32Pointer,
+    lpDependencies: string | Win32Pointer,
+    lpServiceStartName: string | Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!CheckForHiberboot */
   CheckForHiberboot(pHiberboot: Win32Pointer, bClearFlag: number): number;
   /** advapi32.dll!CheckTokenMembership */
@@ -215,27 +704,79 @@ interface Functions {
   /** advapi32.dll!CloseTrace */
   CloseTrace(TraceHandle: Win32StructInit): number;
   /** advapi32.dll!CommandLineFromMsiDescriptor */
-  CommandLineFromMsiDescriptor(Descriptor: string | Win32Pointer, CommandLine: string | Win32Pointer, CommandLineLength: Win32Pointer): number;
+  CommandLineFromMsiDescriptor(
+    Descriptor: string | Win32Pointer,
+    CommandLine: string | Win32Pointer,
+    CommandLineLength: Win32Pointer,
+  ): number;
   /** advapi32.dll!ControlService */
   ControlService(hService: Win32Pointer, dwControl: number, lpServiceStatus: Win32Pointer): number;
   /** advapi32.dll!ControlServiceExA */
-  ControlServiceExA(hService: Win32Pointer, dwControl: number, dwInfoLevel: number, pControlParams: Win32Pointer): number;
+  ControlServiceExA(
+    hService: Win32Pointer,
+    dwControl: number,
+    dwInfoLevel: number,
+    pControlParams: Win32Pointer,
+  ): number;
   /** advapi32.dll!ControlServiceExW */
-  ControlServiceExW(hService: Win32Pointer, dwControl: number, dwInfoLevel: number, pControlParams: Win32Pointer): number;
+  ControlServiceExW(
+    hService: Win32Pointer,
+    dwControl: number,
+    dwInfoLevel: number,
+    pControlParams: Win32Pointer,
+  ): number;
   /** advapi32.dll!ControlServiceExW */
-  ControlServiceEx(hService: Win32Pointer, dwControl: number, dwInfoLevel: number, pControlParams: Win32Pointer): number;
+  ControlServiceEx(
+    hService: Win32Pointer,
+    dwControl: number,
+    dwInfoLevel: number,
+    pControlParams: Win32Pointer,
+  ): number;
   /** advapi32.dll!ControlTraceA */
-  ControlTraceA(TraceId: number | bigint, InstanceName: string | Win32Pointer, Properties: Win32Pointer, ControlCode: number): number;
+  ControlTraceA(
+    TraceId: number | bigint,
+    InstanceName: string | Win32Pointer,
+    Properties: Win32Pointer,
+    ControlCode: number,
+  ): number;
   /** advapi32.dll!ControlTraceW */
-  ControlTraceW(TraceId: number | bigint, InstanceName: string | Win32Pointer, Properties: Win32Pointer, ControlCode: number): number;
+  ControlTraceW(
+    TraceId: number | bigint,
+    InstanceName: string | Win32Pointer,
+    Properties: Win32Pointer,
+    ControlCode: number,
+  ): number;
   /** advapi32.dll!ControlTraceW */
-  ControlTrace(TraceId: number | bigint, InstanceName: string | Win32Pointer, Properties: Win32Pointer, ControlCode: number): number;
+  ControlTrace(
+    TraceId: number | bigint,
+    InstanceName: string | Win32Pointer,
+    Properties: Win32Pointer,
+    ControlCode: number,
+  ): number;
   /** advapi32.dll!ConvertSecurityDescriptorToStringSecurityDescriptorA */
-  ConvertSecurityDescriptorToStringSecurityDescriptorA(SecurityDescriptor: Win32Pointer, RequestedStringSDRevision: number, SecurityInformation: number, StringSecurityDescriptor: Win32Pointer, StringSecurityDescriptorLen: Win32Pointer): number;
+  ConvertSecurityDescriptorToStringSecurityDescriptorA(
+    SecurityDescriptor: Win32Pointer,
+    RequestedStringSDRevision: number,
+    SecurityInformation: number,
+    StringSecurityDescriptor: Win32Pointer,
+    StringSecurityDescriptorLen: Win32Pointer,
+  ): number;
   /** advapi32.dll!ConvertSecurityDescriptorToStringSecurityDescriptorW */
-  ConvertSecurityDescriptorToStringSecurityDescriptorW(SecurityDescriptor: Win32Pointer, RequestedStringSDRevision: number, SecurityInformation: number, StringSecurityDescriptor: Win32Pointer, StringSecurityDescriptorLen: Win32Pointer): number;
+  ConvertSecurityDescriptorToStringSecurityDescriptorW(
+    SecurityDescriptor: Win32Pointer,
+    RequestedStringSDRevision: number,
+    SecurityInformation: number,
+    StringSecurityDescriptor: Win32Pointer,
+    StringSecurityDescriptorLen: Win32Pointer,
+  ): number;
   /** advapi32.dll!ConvertSecurityDescriptorToStringSecurityDescriptorW */
-  ConvertSecurityDescriptorToStringSecurityDescriptor(SecurityDescriptor: Win32Pointer, RequestedStringSDRevision: number, SecurityInformation: number, StringSecurityDescriptor: Win32Pointer, StringSecurityDescriptorLen: Win32Pointer): number;
+  ConvertSecurityDescriptorToStringSecurityDescriptor(
+    SecurityDescriptor: Win32Pointer,
+    RequestedStringSDRevision: number,
+    SecurityInformation: number,
+    StringSecurityDescriptor: Win32Pointer,
+    StringSecurityDescriptorLen: Win32Pointer,
+  ): number;
   /** advapi32.dll!ConvertSidToStringSidA */
   ConvertSidToStringSidA(Sid: Win32Pointer, StringSid: Win32Pointer): number;
   /** advapi32.dll!ConvertSidToStringSidW */
@@ -243,11 +784,26 @@ interface Functions {
   /** advapi32.dll!ConvertSidToStringSidW */
   ConvertSidToStringSid(Sid: Win32Pointer, StringSid: Win32Pointer): number;
   /** advapi32.dll!ConvertStringSecurityDescriptorToSecurityDescriptorA */
-  ConvertStringSecurityDescriptorToSecurityDescriptorA(StringSecurityDescriptor: string | Win32Pointer, StringSDRevision: number, SecurityDescriptor: Win32Pointer, SecurityDescriptorSize: Win32Pointer): number;
+  ConvertStringSecurityDescriptorToSecurityDescriptorA(
+    StringSecurityDescriptor: string | Win32Pointer,
+    StringSDRevision: number,
+    SecurityDescriptor: Win32Pointer,
+    SecurityDescriptorSize: Win32Pointer,
+  ): number;
   /** advapi32.dll!ConvertStringSecurityDescriptorToSecurityDescriptorW */
-  ConvertStringSecurityDescriptorToSecurityDescriptorW(StringSecurityDescriptor: string | Win32Pointer, StringSDRevision: number, SecurityDescriptor: Win32Pointer, SecurityDescriptorSize: Win32Pointer): number;
+  ConvertStringSecurityDescriptorToSecurityDescriptorW(
+    StringSecurityDescriptor: string | Win32Pointer,
+    StringSDRevision: number,
+    SecurityDescriptor: Win32Pointer,
+    SecurityDescriptorSize: Win32Pointer,
+  ): number;
   /** advapi32.dll!ConvertStringSecurityDescriptorToSecurityDescriptorW */
-  ConvertStringSecurityDescriptorToSecurityDescriptor(StringSecurityDescriptor: string | Win32Pointer, StringSDRevision: number, SecurityDescriptor: Win32Pointer, SecurityDescriptorSize: Win32Pointer): number;
+  ConvertStringSecurityDescriptorToSecurityDescriptor(
+    StringSecurityDescriptor: string | Win32Pointer,
+    StringSDRevision: number,
+    SecurityDescriptor: Win32Pointer,
+    SecurityDescriptorSize: Win32Pointer,
+  ): number;
   /** advapi32.dll!ConvertStringSidToSidA */
   ConvertStringSidToSidA(StringSid: string | Win32Pointer, Sid: Win32Pointer): number;
   /** advapi32.dll!ConvertStringSidToSidW */
@@ -255,37 +811,185 @@ interface Functions {
   /** advapi32.dll!ConvertStringSidToSidW */
   ConvertStringSidToSid(StringSid: string | Win32Pointer, Sid: Win32Pointer): number;
   /** advapi32.dll!ConvertToAutoInheritPrivateObjectSecurity */
-  ConvertToAutoInheritPrivateObjectSecurity(ParentDescriptor: Win32Pointer, CurrentSecurityDescriptor: Win32Pointer, NewSecurityDescriptor: Win32Pointer, ObjectType: Win32Pointer, IsDirectoryObject: number, GenericMapping: Win32Pointer): number;
+  ConvertToAutoInheritPrivateObjectSecurity(
+    ParentDescriptor: Win32Pointer,
+    CurrentSecurityDescriptor: Win32Pointer,
+    NewSecurityDescriptor: Win32Pointer,
+    ObjectType: Win32Pointer,
+    IsDirectoryObject: number,
+    GenericMapping: Win32Pointer,
+  ): number;
   /** advapi32.dll!CopySid */
   CopySid(nDestinationSidLength: number, pDestinationSid: Win32Pointer, pSourceSid: Win32Pointer): number;
   /** advapi32.dll!CreatePrivateObjectSecurity */
-  CreatePrivateObjectSecurity(ParentDescriptor: Win32Pointer, CreatorDescriptor: Win32Pointer, NewDescriptor: Win32Pointer, IsDirectoryObject: number, Token: Win32Pointer, GenericMapping: Win32Pointer): number;
+  CreatePrivateObjectSecurity(
+    ParentDescriptor: Win32Pointer,
+    CreatorDescriptor: Win32Pointer,
+    NewDescriptor: Win32Pointer,
+    IsDirectoryObject: number,
+    Token: Win32Pointer,
+    GenericMapping: Win32Pointer,
+  ): number;
   /** advapi32.dll!CreatePrivateObjectSecurityEx */
-  CreatePrivateObjectSecurityEx(ParentDescriptor: Win32Pointer, CreatorDescriptor: Win32Pointer, NewDescriptor: Win32Pointer, ObjectType: Win32Pointer, IsContainerObject: number, AutoInheritFlags: number, Token: Win32Pointer, GenericMapping: Win32Pointer): number;
+  CreatePrivateObjectSecurityEx(
+    ParentDescriptor: Win32Pointer,
+    CreatorDescriptor: Win32Pointer,
+    NewDescriptor: Win32Pointer,
+    ObjectType: Win32Pointer,
+    IsContainerObject: number,
+    AutoInheritFlags: number,
+    Token: Win32Pointer,
+    GenericMapping: Win32Pointer,
+  ): number;
   /** advapi32.dll!CreatePrivateObjectSecurityWithMultipleInheritance */
-  CreatePrivateObjectSecurityWithMultipleInheritance(ParentDescriptor: Win32Pointer, CreatorDescriptor: Win32Pointer, NewDescriptor: Win32Pointer, ObjectTypes: Win32Pointer, GuidCount: number, IsContainerObject: number, AutoInheritFlags: number, Token: Win32Pointer, GenericMapping: Win32Pointer): number;
+  CreatePrivateObjectSecurityWithMultipleInheritance(
+    ParentDescriptor: Win32Pointer,
+    CreatorDescriptor: Win32Pointer,
+    NewDescriptor: Win32Pointer,
+    ObjectTypes: Win32Pointer,
+    GuidCount: number,
+    IsContainerObject: number,
+    AutoInheritFlags: number,
+    Token: Win32Pointer,
+    GenericMapping: Win32Pointer,
+  ): number;
   /** advapi32.dll!CreateProcessAsUserA */
-  CreateProcessAsUserA(hToken: Win32Pointer, lpApplicationName: string | Win32Pointer, lpCommandLine: string | Win32Pointer, lpProcessAttributes: Win32Pointer, lpThreadAttributes: Win32Pointer, bInheritHandles: number, dwCreationFlags: number, lpEnvironment: Win32Pointer, lpCurrentDirectory: string | Win32Pointer, lpStartupInfo: Win32Pointer, lpProcessInformation: Win32Pointer): number;
+  CreateProcessAsUserA(
+    hToken: Win32Pointer,
+    lpApplicationName: string | Win32Pointer,
+    lpCommandLine: string | Win32Pointer,
+    lpProcessAttributes: Win32Pointer,
+    lpThreadAttributes: Win32Pointer,
+    bInheritHandles: number,
+    dwCreationFlags: number,
+    lpEnvironment: Win32Pointer,
+    lpCurrentDirectory: string | Win32Pointer,
+    lpStartupInfo: Win32Pointer,
+    lpProcessInformation: Win32Pointer,
+  ): number;
   /** advapi32.dll!CreateProcessAsUserW */
-  CreateProcessAsUserW(hToken: Win32Pointer, lpApplicationName: string | Win32Pointer, lpCommandLine: string | Win32Pointer, lpProcessAttributes: Win32Pointer, lpThreadAttributes: Win32Pointer, bInheritHandles: number, dwCreationFlags: number, lpEnvironment: Win32Pointer, lpCurrentDirectory: string | Win32Pointer, lpStartupInfo: Win32Pointer, lpProcessInformation: Win32Pointer): number;
+  CreateProcessAsUserW(
+    hToken: Win32Pointer,
+    lpApplicationName: string | Win32Pointer,
+    lpCommandLine: string | Win32Pointer,
+    lpProcessAttributes: Win32Pointer,
+    lpThreadAttributes: Win32Pointer,
+    bInheritHandles: number,
+    dwCreationFlags: number,
+    lpEnvironment: Win32Pointer,
+    lpCurrentDirectory: string | Win32Pointer,
+    lpStartupInfo: Win32Pointer,
+    lpProcessInformation: Win32Pointer,
+  ): number;
   /** advapi32.dll!CreateProcessAsUserW */
-  CreateProcessAsUser(hToken: Win32Pointer, lpApplicationName: string | Win32Pointer, lpCommandLine: string | Win32Pointer, lpProcessAttributes: Win32Pointer, lpThreadAttributes: Win32Pointer, bInheritHandles: number, dwCreationFlags: number, lpEnvironment: Win32Pointer, lpCurrentDirectory: string | Win32Pointer, lpStartupInfo: Win32Pointer, lpProcessInformation: Win32Pointer): number;
+  CreateProcessAsUser(
+    hToken: Win32Pointer,
+    lpApplicationName: string | Win32Pointer,
+    lpCommandLine: string | Win32Pointer,
+    lpProcessAttributes: Win32Pointer,
+    lpThreadAttributes: Win32Pointer,
+    bInheritHandles: number,
+    dwCreationFlags: number,
+    lpEnvironment: Win32Pointer,
+    lpCurrentDirectory: string | Win32Pointer,
+    lpStartupInfo: Win32Pointer,
+    lpProcessInformation: Win32Pointer,
+  ): number;
   /** advapi32.dll!CreateProcessWithLogonW */
-  CreateProcessWithLogonW(lpUsername: string | Win32Pointer, lpDomain: string | Win32Pointer, lpPassword: string | Win32Pointer, dwLogonFlags: number, lpApplicationName: string | Win32Pointer, lpCommandLine: string | Win32Pointer, dwCreationFlags: number, lpEnvironment: Win32Pointer, lpCurrentDirectory: string | Win32Pointer, lpStartupInfo: Win32Pointer, lpProcessInformation: Win32Pointer): number;
+  CreateProcessWithLogonW(
+    lpUsername: string | Win32Pointer,
+    lpDomain: string | Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    dwLogonFlags: number,
+    lpApplicationName: string | Win32Pointer,
+    lpCommandLine: string | Win32Pointer,
+    dwCreationFlags: number,
+    lpEnvironment: Win32Pointer,
+    lpCurrentDirectory: string | Win32Pointer,
+    lpStartupInfo: Win32Pointer,
+    lpProcessInformation: Win32Pointer,
+  ): number;
   /** advapi32.dll!CreateProcessWithTokenW */
-  CreateProcessWithTokenW(hToken: Win32Pointer, dwLogonFlags: number, lpApplicationName: string | Win32Pointer, lpCommandLine: string | Win32Pointer, dwCreationFlags: number, lpEnvironment: Win32Pointer, lpCurrentDirectory: string | Win32Pointer, lpStartupInfo: Win32Pointer, lpProcessInformation: Win32Pointer): number;
+  CreateProcessWithTokenW(
+    hToken: Win32Pointer,
+    dwLogonFlags: number,
+    lpApplicationName: string | Win32Pointer,
+    lpCommandLine: string | Win32Pointer,
+    dwCreationFlags: number,
+    lpEnvironment: Win32Pointer,
+    lpCurrentDirectory: string | Win32Pointer,
+    lpStartupInfo: Win32Pointer,
+    lpProcessInformation: Win32Pointer,
+  ): number;
   /** advapi32.dll!CreateRestrictedToken */
-  CreateRestrictedToken(ExistingTokenHandle: Win32Pointer, Flags: number, DisableSidCount: number, SidsToDisable: Win32Pointer, DeletePrivilegeCount: number, PrivilegesToDelete: Win32Pointer, RestrictedSidCount: number, SidsToRestrict: Win32Pointer, NewTokenHandle: Win32Pointer): number;
+  CreateRestrictedToken(
+    ExistingTokenHandle: Win32Pointer,
+    Flags: number,
+    DisableSidCount: number,
+    SidsToDisable: Win32Pointer,
+    DeletePrivilegeCount: number,
+    PrivilegesToDelete: Win32Pointer,
+    RestrictedSidCount: number,
+    SidsToRestrict: Win32Pointer,
+    NewTokenHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!CreateServiceA */
-  CreateServiceA(hSCManager: Win32Pointer, lpServiceName: string | Win32Pointer, lpDisplayName: string | Win32Pointer, dwDesiredAccess: number, dwServiceType: number, dwStartType: number, dwErrorControl: number, lpBinaryPathName: string | Win32Pointer, lpLoadOrderGroup: string | Win32Pointer, lpdwTagId: Win32Pointer, lpDependencies: string | Win32Pointer, lpServiceStartName: string | Win32Pointer, lpPassword: string | Win32Pointer): number | null;
+  CreateServiceA(
+    hSCManager: Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwServiceType: number,
+    dwStartType: number,
+    dwErrorControl: number,
+    lpBinaryPathName: string | Win32Pointer,
+    lpLoadOrderGroup: string | Win32Pointer,
+    lpdwTagId: Win32Pointer,
+    lpDependencies: string | Win32Pointer,
+    lpServiceStartName: string | Win32Pointer,
+    lpPassword: string | Win32Pointer,
+  ): number | null;
   /** advapi32.dll!CreateServiceW */
-  CreateServiceW(hSCManager: Win32Pointer, lpServiceName: string | Win32Pointer, lpDisplayName: string | Win32Pointer, dwDesiredAccess: number, dwServiceType: number, dwStartType: number, dwErrorControl: number, lpBinaryPathName: string | Win32Pointer, lpLoadOrderGroup: string | Win32Pointer, lpdwTagId: Win32Pointer, lpDependencies: string | Win32Pointer, lpServiceStartName: string | Win32Pointer, lpPassword: string | Win32Pointer): number | null;
+  CreateServiceW(
+    hSCManager: Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwServiceType: number,
+    dwStartType: number,
+    dwErrorControl: number,
+    lpBinaryPathName: string | Win32Pointer,
+    lpLoadOrderGroup: string | Win32Pointer,
+    lpdwTagId: Win32Pointer,
+    lpDependencies: string | Win32Pointer,
+    lpServiceStartName: string | Win32Pointer,
+    lpPassword: string | Win32Pointer,
+  ): number | null;
   /** advapi32.dll!CreateServiceW */
-  CreateService(hSCManager: Win32Pointer, lpServiceName: string | Win32Pointer, lpDisplayName: string | Win32Pointer, dwDesiredAccess: number, dwServiceType: number, dwStartType: number, dwErrorControl: number, lpBinaryPathName: string | Win32Pointer, lpLoadOrderGroup: string | Win32Pointer, lpdwTagId: Win32Pointer, lpDependencies: string | Win32Pointer, lpServiceStartName: string | Win32Pointer, lpPassword: string | Win32Pointer): number | null;
+  CreateService(
+    hSCManager: Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+    dwDesiredAccess: number,
+    dwServiceType: number,
+    dwStartType: number,
+    dwErrorControl: number,
+    lpBinaryPathName: string | Win32Pointer,
+    lpLoadOrderGroup: string | Win32Pointer,
+    lpdwTagId: Win32Pointer,
+    lpDependencies: string | Win32Pointer,
+    lpServiceStartName: string | Win32Pointer,
+    lpPassword: string | Win32Pointer,
+  ): number | null;
   /** advapi32.dll!CreateTraceInstanceId */
   CreateTraceInstanceId(RegHandle: Win32Pointer, InstInfo: Win32Pointer): number;
   /** advapi32.dll!CreateWellKnownSid */
-  CreateWellKnownSid(WellKnownSidType: number, DomainSid: Win32Pointer, pSid: Win32Pointer, cbSid: Win32Pointer): number;
+  CreateWellKnownSid(
+    WellKnownSidType: number,
+    DomainSid: Win32Pointer,
+    pSid: Win32Pointer,
+    cbSid: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredDeleteA */
   CredDeleteA(TargetName: string | Win32Pointer, Type: number, Flags: number): number;
   /** advapi32.dll!CredDeleteW */
@@ -299,11 +1003,26 @@ interface Functions {
   /** advapi32.dll!CredEnumerateW */
   CredEnumerate(Filter: string | Win32Pointer, Flags: number, Count: Win32Pointer, Credential: Win32Pointer): number;
   /** advapi32.dll!CredFindBestCredentialA */
-  CredFindBestCredentialA(TargetName: string | Win32Pointer, Type: number, Flags: number, Credential: Win32Pointer): number;
+  CredFindBestCredentialA(
+    TargetName: string | Win32Pointer,
+    Type: number,
+    Flags: number,
+    Credential: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredFindBestCredentialW */
-  CredFindBestCredentialW(TargetName: string | Win32Pointer, Type: number, Flags: number, Credential: Win32Pointer): number;
+  CredFindBestCredentialW(
+    TargetName: string | Win32Pointer,
+    Type: number,
+    Flags: number,
+    Credential: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredFindBestCredentialW */
-  CredFindBestCredential(TargetName: string | Win32Pointer, Type: number, Flags: number, Credential: Win32Pointer): number;
+  CredFindBestCredential(
+    TargetName: string | Win32Pointer,
+    Type: number,
+    Flags: number,
+    Credential: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredFree */
   CredFree(Buffer: Win32Pointer): void;
   /** advapi32.dll!CredGetSessionTypes */
@@ -333,41 +1052,122 @@ interface Functions {
   /** advapi32.dll!CredMarshalCredentialW */
   CredMarshalCredential(CredType: number, Credential: Win32Pointer, MarshaledCredential: Win32Pointer): number;
   /** advapi32.dll!CredProtectA */
-  CredProtectA(fAsSelf: number, pszCredentials: string | Win32Pointer, cchCredentials: number, pszProtectedCredentials: string | Win32Pointer, pcchMaxChars: Win32Pointer, ProtectionType: Win32Pointer): number;
+  CredProtectA(
+    fAsSelf: number,
+    pszCredentials: string | Win32Pointer,
+    cchCredentials: number,
+    pszProtectedCredentials: string | Win32Pointer,
+    pcchMaxChars: Win32Pointer,
+    ProtectionType: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredProtectW */
-  CredProtectW(fAsSelf: number, pszCredentials: string | Win32Pointer, cchCredentials: number, pszProtectedCredentials: string | Win32Pointer, pcchMaxChars: Win32Pointer, ProtectionType: Win32Pointer): number;
+  CredProtectW(
+    fAsSelf: number,
+    pszCredentials: string | Win32Pointer,
+    cchCredentials: number,
+    pszProtectedCredentials: string | Win32Pointer,
+    pcchMaxChars: Win32Pointer,
+    ProtectionType: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredProtectW */
-  CredProtect(fAsSelf: number, pszCredentials: string | Win32Pointer, cchCredentials: number, pszProtectedCredentials: string | Win32Pointer, pcchMaxChars: Win32Pointer, ProtectionType: Win32Pointer): number;
+  CredProtect(
+    fAsSelf: number,
+    pszCredentials: string | Win32Pointer,
+    cchCredentials: number,
+    pszProtectedCredentials: string | Win32Pointer,
+    pcchMaxChars: Win32Pointer,
+    ProtectionType: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredReadA */
   CredReadA(TargetName: string | Win32Pointer, Type: number, Flags: number, Credential: Win32Pointer): number;
   /** advapi32.dll!CredReadDomainCredentialsA */
-  CredReadDomainCredentialsA(TargetInfo: Win32Pointer, Flags: number, Count: Win32Pointer, Credential: Win32Pointer): number;
+  CredReadDomainCredentialsA(
+    TargetInfo: Win32Pointer,
+    Flags: number,
+    Count: Win32Pointer,
+    Credential: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredReadDomainCredentialsW */
-  CredReadDomainCredentialsW(TargetInfo: Win32Pointer, Flags: number, Count: Win32Pointer, Credential: Win32Pointer): number;
+  CredReadDomainCredentialsW(
+    TargetInfo: Win32Pointer,
+    Flags: number,
+    Count: Win32Pointer,
+    Credential: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredReadDomainCredentialsW */
-  CredReadDomainCredentials(TargetInfo: Win32Pointer, Flags: number, Count: Win32Pointer, Credential: Win32Pointer): number;
+  CredReadDomainCredentials(
+    TargetInfo: Win32Pointer,
+    Flags: number,
+    Count: Win32Pointer,
+    Credential: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredReadW */
   CredReadW(TargetName: string | Win32Pointer, Type: number, Flags: number, Credential: Win32Pointer): number;
   /** advapi32.dll!CredReadW */
   CredRead(TargetName: string | Win32Pointer, Type: number, Flags: number, Credential: Win32Pointer): number;
   /** advapi32.dll!CredRenameA */
-  CredRenameA(OldTargetName: string | Win32Pointer, NewTargetName: string | Win32Pointer, Type: number, Flags: number): number;
+  CredRenameA(
+    OldTargetName: string | Win32Pointer,
+    NewTargetName: string | Win32Pointer,
+    Type: number,
+    Flags: number,
+  ): number;
   /** advapi32.dll!CredRenameW */
-  CredRenameW(OldTargetName: string | Win32Pointer, NewTargetName: string | Win32Pointer, Type: number, Flags: number): number;
+  CredRenameW(
+    OldTargetName: string | Win32Pointer,
+    NewTargetName: string | Win32Pointer,
+    Type: number,
+    Flags: number,
+  ): number;
   /** advapi32.dll!CredRenameW */
-  CredRename(OldTargetName: string | Win32Pointer, NewTargetName: string | Win32Pointer, Type: number, Flags: number): number;
+  CredRename(
+    OldTargetName: string | Win32Pointer,
+    NewTargetName: string | Win32Pointer,
+    Type: number,
+    Flags: number,
+  ): number;
   /** advapi32.dll!CredUnmarshalCredentialA */
-  CredUnmarshalCredentialA(MarshaledCredential: string | Win32Pointer, CredType: Win32Pointer, Credential: Win32Pointer): number;
+  CredUnmarshalCredentialA(
+    MarshaledCredential: string | Win32Pointer,
+    CredType: Win32Pointer,
+    Credential: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredUnmarshalCredentialW */
-  CredUnmarshalCredentialW(MarshaledCredential: string | Win32Pointer, CredType: Win32Pointer, Credential: Win32Pointer): number;
+  CredUnmarshalCredentialW(
+    MarshaledCredential: string | Win32Pointer,
+    CredType: Win32Pointer,
+    Credential: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredUnmarshalCredentialW */
-  CredUnmarshalCredential(MarshaledCredential: string | Win32Pointer, CredType: Win32Pointer, Credential: Win32Pointer): number;
+  CredUnmarshalCredential(
+    MarshaledCredential: string | Win32Pointer,
+    CredType: Win32Pointer,
+    Credential: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredUnprotectA */
-  CredUnprotectA(fAsSelf: number, pszProtectedCredentials: string | Win32Pointer, cchProtectedCredentials: number, pszCredentials: string | Win32Pointer, pcchMaxChars: Win32Pointer): number;
+  CredUnprotectA(
+    fAsSelf: number,
+    pszProtectedCredentials: string | Win32Pointer,
+    cchProtectedCredentials: number,
+    pszCredentials: string | Win32Pointer,
+    pcchMaxChars: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredUnprotectW */
-  CredUnprotectW(fAsSelf: number, pszProtectedCredentials: string | Win32Pointer, cchProtectedCredentials: number, pszCredentials: string | Win32Pointer, pcchMaxChars: Win32Pointer): number;
+  CredUnprotectW(
+    fAsSelf: number,
+    pszProtectedCredentials: string | Win32Pointer,
+    cchProtectedCredentials: number,
+    pszCredentials: string | Win32Pointer,
+    pcchMaxChars: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredUnprotectW */
-  CredUnprotect(fAsSelf: number, pszProtectedCredentials: string | Win32Pointer, cchProtectedCredentials: number, pszCredentials: string | Win32Pointer, pcchMaxChars: Win32Pointer): number;
+  CredUnprotect(
+    fAsSelf: number,
+    pszProtectedCredentials: string | Win32Pointer,
+    cchProtectedCredentials: number,
+    pszCredentials: string | Win32Pointer,
+    pcchMaxChars: Win32Pointer,
+  ): number;
   /** advapi32.dll!CredWriteA */
   CredWriteA(Credential: Win32Pointer, Flags: number): number;
   /** advapi32.dll!CredWriteDomainCredentialsA */
@@ -381,19 +1181,56 @@ interface Functions {
   /** advapi32.dll!CredWriteW */
   CredWrite(Credential: Win32Pointer, Flags: number): number;
   /** advapi32.dll!CryptAcquireContextA */
-  CryptAcquireContextA(phProv: Win32Pointer, szContainer: string | Win32Pointer, szProvider: string | Win32Pointer, dwProvType: number, dwFlags: number): number;
+  CryptAcquireContextA(
+    phProv: Win32Pointer,
+    szContainer: string | Win32Pointer,
+    szProvider: string | Win32Pointer,
+    dwProvType: number,
+    dwFlags: number,
+  ): number;
   /** advapi32.dll!CryptAcquireContextW */
-  CryptAcquireContextW(phProv: Win32Pointer, szContainer: string | Win32Pointer, szProvider: string | Win32Pointer, dwProvType: number, dwFlags: number): number;
+  CryptAcquireContextW(
+    phProv: Win32Pointer,
+    szContainer: string | Win32Pointer,
+    szProvider: string | Win32Pointer,
+    dwProvType: number,
+    dwFlags: number,
+  ): number;
   /** advapi32.dll!CryptAcquireContextW */
-  CryptAcquireContext(phProv: Win32Pointer, szContainer: string | Win32Pointer, szProvider: string | Win32Pointer, dwProvType: number, dwFlags: number): number;
+  CryptAcquireContext(
+    phProv: Win32Pointer,
+    szContainer: string | Win32Pointer,
+    szProvider: string | Win32Pointer,
+    dwProvType: number,
+    dwFlags: number,
+  ): number;
   /** advapi32.dll!CryptContextAddRef */
   CryptContextAddRef(hProv: number | bigint, pdwReserved: Win32Pointer, dwFlags: number): number;
   /** advapi32.dll!CryptCreateHash */
-  CryptCreateHash(hProv: number | bigint, Algid: number, hKey: number | bigint, dwFlags: number, phHash: Win32Pointer): number;
+  CryptCreateHash(
+    hProv: number | bigint,
+    Algid: number,
+    hKey: number | bigint,
+    dwFlags: number,
+    phHash: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptDecrypt */
-  CryptDecrypt(hKey: number | bigint, hHash: number | bigint, Final: number, dwFlags: number, pbData: Win32Pointer, pdwDataLen: Win32Pointer): number;
+  CryptDecrypt(
+    hKey: number | bigint,
+    hHash: number | bigint,
+    Final: number,
+    dwFlags: number,
+    pbData: Win32Pointer,
+    pdwDataLen: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptDeriveKey */
-  CryptDeriveKey(hProv: number | bigint, Algid: number, hBaseData: number | bigint, dwFlags: number, phKey: Win32Pointer): number;
+  CryptDeriveKey(
+    hProv: number | bigint,
+    Algid: number,
+    hBaseData: number | bigint,
+    dwFlags: number,
+    phKey: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptDestroyHash */
   CryptDestroyHash(hHash: number | bigint): number;
   /** advapi32.dll!CryptDestroyKey */
@@ -403,37 +1240,130 @@ interface Functions {
   /** advapi32.dll!CryptDuplicateKey */
   CryptDuplicateKey(hKey: number | bigint, pdwReserved: Win32Pointer, dwFlags: number, phKey: Win32Pointer): number;
   /** advapi32.dll!CryptEncrypt */
-  CryptEncrypt(hKey: number | bigint, hHash: number | bigint, Final: number, dwFlags: number, pbData: Win32Pointer, pdwDataLen: Win32Pointer, dwBufLen: number): number;
+  CryptEncrypt(
+    hKey: number | bigint,
+    hHash: number | bigint,
+    Final: number,
+    dwFlags: number,
+    pbData: Win32Pointer,
+    pdwDataLen: Win32Pointer,
+    dwBufLen: number,
+  ): number;
   /** advapi32.dll!CryptEnumProviderTypesA */
-  CryptEnumProviderTypesA(dwIndex: number, pdwReserved: Win32Pointer, dwFlags: number, pdwProvType: Win32Pointer, szTypeName: string | Win32Pointer, pcbTypeName: Win32Pointer): number;
+  CryptEnumProviderTypesA(
+    dwIndex: number,
+    pdwReserved: Win32Pointer,
+    dwFlags: number,
+    pdwProvType: Win32Pointer,
+    szTypeName: string | Win32Pointer,
+    pcbTypeName: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptEnumProviderTypesW */
-  CryptEnumProviderTypesW(dwIndex: number, pdwReserved: Win32Pointer, dwFlags: number, pdwProvType: Win32Pointer, szTypeName: string | Win32Pointer, pcbTypeName: Win32Pointer): number;
+  CryptEnumProviderTypesW(
+    dwIndex: number,
+    pdwReserved: Win32Pointer,
+    dwFlags: number,
+    pdwProvType: Win32Pointer,
+    szTypeName: string | Win32Pointer,
+    pcbTypeName: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptEnumProviderTypesW */
-  CryptEnumProviderTypes(dwIndex: number, pdwReserved: Win32Pointer, dwFlags: number, pdwProvType: Win32Pointer, szTypeName: string | Win32Pointer, pcbTypeName: Win32Pointer): number;
+  CryptEnumProviderTypes(
+    dwIndex: number,
+    pdwReserved: Win32Pointer,
+    dwFlags: number,
+    pdwProvType: Win32Pointer,
+    szTypeName: string | Win32Pointer,
+    pcbTypeName: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptEnumProvidersA */
-  CryptEnumProvidersA(dwIndex: number, pdwReserved: Win32Pointer, dwFlags: number, pdwProvType: Win32Pointer, szProvName: string | Win32Pointer, pcbProvName: Win32Pointer): number;
+  CryptEnumProvidersA(
+    dwIndex: number,
+    pdwReserved: Win32Pointer,
+    dwFlags: number,
+    pdwProvType: Win32Pointer,
+    szProvName: string | Win32Pointer,
+    pcbProvName: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptEnumProvidersW */
-  CryptEnumProvidersW(dwIndex: number, pdwReserved: Win32Pointer, dwFlags: number, pdwProvType: Win32Pointer, szProvName: string | Win32Pointer, pcbProvName: Win32Pointer): number;
+  CryptEnumProvidersW(
+    dwIndex: number,
+    pdwReserved: Win32Pointer,
+    dwFlags: number,
+    pdwProvType: Win32Pointer,
+    szProvName: string | Win32Pointer,
+    pcbProvName: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptEnumProvidersW */
-  CryptEnumProviders(dwIndex: number, pdwReserved: Win32Pointer, dwFlags: number, pdwProvType: Win32Pointer, szProvName: string | Win32Pointer, pcbProvName: Win32Pointer): number;
+  CryptEnumProviders(
+    dwIndex: number,
+    pdwReserved: Win32Pointer,
+    dwFlags: number,
+    pdwProvType: Win32Pointer,
+    szProvName: string | Win32Pointer,
+    pcbProvName: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptExportKey */
-  CryptExportKey(hKey: number | bigint, hExpKey: number | bigint, dwBlobType: number, dwFlags: number, pbData: Win32Pointer, pdwDataLen: Win32Pointer): number;
+  CryptExportKey(
+    hKey: number | bigint,
+    hExpKey: number | bigint,
+    dwBlobType: number,
+    dwFlags: number,
+    pbData: Win32Pointer,
+    pdwDataLen: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptGenKey */
   CryptGenKey(hProv: number | bigint, Algid: number, dwFlags: number, phKey: Win32Pointer): number;
   /** advapi32.dll!CryptGenRandom */
   CryptGenRandom(hProv: number | bigint, dwLen: number, pbBuffer: Win32Pointer): number;
   /** advapi32.dll!CryptGetDefaultProviderA */
-  CryptGetDefaultProviderA(dwProvType: number, pdwReserved: Win32Pointer, dwFlags: number, pszProvName: string | Win32Pointer, pcbProvName: Win32Pointer): number;
+  CryptGetDefaultProviderA(
+    dwProvType: number,
+    pdwReserved: Win32Pointer,
+    dwFlags: number,
+    pszProvName: string | Win32Pointer,
+    pcbProvName: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptGetDefaultProviderW */
-  CryptGetDefaultProviderW(dwProvType: number, pdwReserved: Win32Pointer, dwFlags: number, pszProvName: string | Win32Pointer, pcbProvName: Win32Pointer): number;
+  CryptGetDefaultProviderW(
+    dwProvType: number,
+    pdwReserved: Win32Pointer,
+    dwFlags: number,
+    pszProvName: string | Win32Pointer,
+    pcbProvName: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptGetDefaultProviderW */
-  CryptGetDefaultProvider(dwProvType: number, pdwReserved: Win32Pointer, dwFlags: number, pszProvName: string | Win32Pointer, pcbProvName: Win32Pointer): number;
+  CryptGetDefaultProvider(
+    dwProvType: number,
+    pdwReserved: Win32Pointer,
+    dwFlags: number,
+    pszProvName: string | Win32Pointer,
+    pcbProvName: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptGetHashParam */
-  CryptGetHashParam(hHash: number | bigint, dwParam: number, pbData: Win32Pointer, pdwDataLen: Win32Pointer, dwFlags: number): number;
+  CryptGetHashParam(
+    hHash: number | bigint,
+    dwParam: number,
+    pbData: Win32Pointer,
+    pdwDataLen: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advapi32.dll!CryptGetKeyParam */
-  CryptGetKeyParam(hKey: number | bigint, dwParam: number, pbData: Win32Pointer, pdwDataLen: Win32Pointer, dwFlags: number): number;
+  CryptGetKeyParam(
+    hKey: number | bigint,
+    dwParam: number,
+    pbData: Win32Pointer,
+    pdwDataLen: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advapi32.dll!CryptGetProvParam */
-  CryptGetProvParam(hProv: number | bigint, dwParam: number, pbData: Win32Pointer, pdwDataLen: Win32Pointer, dwFlags: number): number;
+  CryptGetProvParam(
+    hProv: number | bigint,
+    dwParam: number,
+    pbData: Win32Pointer,
+    pdwDataLen: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advapi32.dll!CryptGetUserKey */
   CryptGetUserKey(hProv: number | bigint, dwKeySpec: number, phUserKey: Win32Pointer): number;
   /** advapi32.dll!CryptHashData */
@@ -441,7 +1371,14 @@ interface Functions {
   /** advapi32.dll!CryptHashSessionKey */
   CryptHashSessionKey(hHash: number | bigint, hKey: number | bigint, dwFlags: number): number;
   /** advapi32.dll!CryptImportKey */
-  CryptImportKey(hProv: number | bigint, pbData: Win32Pointer, dwDataLen: number, hPubKey: number | bigint, dwFlags: number, phKey: Win32Pointer): number;
+  CryptImportKey(
+    hProv: number | bigint,
+    pbData: Win32Pointer,
+    dwDataLen: number,
+    hPubKey: number | bigint,
+    dwFlags: number,
+    phKey: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptReleaseContext */
   CryptReleaseContext(hProv: number | bigint, dwFlags: number): number;
   /** advapi32.dll!CryptSetHashParam */
@@ -453,27 +1390,84 @@ interface Functions {
   /** advapi32.dll!CryptSetProviderA */
   CryptSetProviderA(pszProvName: string | Win32Pointer, dwProvType: number): number;
   /** advapi32.dll!CryptSetProviderExA */
-  CryptSetProviderExA(pszProvName: string | Win32Pointer, dwProvType: number, pdwReserved: Win32Pointer, dwFlags: number): number;
+  CryptSetProviderExA(
+    pszProvName: string | Win32Pointer,
+    dwProvType: number,
+    pdwReserved: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advapi32.dll!CryptSetProviderExW */
-  CryptSetProviderExW(pszProvName: string | Win32Pointer, dwProvType: number, pdwReserved: Win32Pointer, dwFlags: number): number;
+  CryptSetProviderExW(
+    pszProvName: string | Win32Pointer,
+    dwProvType: number,
+    pdwReserved: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advapi32.dll!CryptSetProviderExW */
-  CryptSetProviderEx(pszProvName: string | Win32Pointer, dwProvType: number, pdwReserved: Win32Pointer, dwFlags: number): number;
+  CryptSetProviderEx(
+    pszProvName: string | Win32Pointer,
+    dwProvType: number,
+    pdwReserved: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advapi32.dll!CryptSetProviderW */
   CryptSetProviderW(pszProvName: string | Win32Pointer, dwProvType: number): number;
   /** advapi32.dll!CryptSetProviderW */
   CryptSetProvider(pszProvName: string | Win32Pointer, dwProvType: number): number;
   /** advapi32.dll!CryptSignHashA */
-  CryptSignHashA(hHash: number | bigint, dwKeySpec: number, szDescription: string | Win32Pointer, dwFlags: number, pbSignature: Win32Pointer, pdwSigLen: Win32Pointer): number;
+  CryptSignHashA(
+    hHash: number | bigint,
+    dwKeySpec: number,
+    szDescription: string | Win32Pointer,
+    dwFlags: number,
+    pbSignature: Win32Pointer,
+    pdwSigLen: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptSignHashW */
-  CryptSignHashW(hHash: number | bigint, dwKeySpec: number, szDescription: string | Win32Pointer, dwFlags: number, pbSignature: Win32Pointer, pdwSigLen: Win32Pointer): number;
+  CryptSignHashW(
+    hHash: number | bigint,
+    dwKeySpec: number,
+    szDescription: string | Win32Pointer,
+    dwFlags: number,
+    pbSignature: Win32Pointer,
+    pdwSigLen: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptSignHashW */
-  CryptSignHash(hHash: number | bigint, dwKeySpec: number, szDescription: string | Win32Pointer, dwFlags: number, pbSignature: Win32Pointer, pdwSigLen: Win32Pointer): number;
+  CryptSignHash(
+    hHash: number | bigint,
+    dwKeySpec: number,
+    szDescription: string | Win32Pointer,
+    dwFlags: number,
+    pbSignature: Win32Pointer,
+    pdwSigLen: Win32Pointer,
+  ): number;
   /** advapi32.dll!CryptVerifySignatureA */
-  CryptVerifySignatureA(hHash: number | bigint, pbSignature: Win32Pointer, dwSigLen: number, hPubKey: number | bigint, szDescription: string | Win32Pointer, dwFlags: number): number;
+  CryptVerifySignatureA(
+    hHash: number | bigint,
+    pbSignature: Win32Pointer,
+    dwSigLen: number,
+    hPubKey: number | bigint,
+    szDescription: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advapi32.dll!CryptVerifySignatureW */
-  CryptVerifySignatureW(hHash: number | bigint, pbSignature: Win32Pointer, dwSigLen: number, hPubKey: number | bigint, szDescription: string | Win32Pointer, dwFlags: number): number;
+  CryptVerifySignatureW(
+    hHash: number | bigint,
+    pbSignature: Win32Pointer,
+    dwSigLen: number,
+    hPubKey: number | bigint,
+    szDescription: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advapi32.dll!CryptVerifySignatureW */
-  CryptVerifySignature(hHash: number | bigint, pbSignature: Win32Pointer, dwSigLen: number, hPubKey: number | bigint, szDescription: string | Win32Pointer, dwFlags: number): number;
+  CryptVerifySignature(
+    hHash: number | bigint,
+    pbSignature: Win32Pointer,
+    dwSigLen: number,
+    hPubKey: number | bigint,
+    szDescription: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advapi32.dll!CveEventWrite */
   CveEventWrite(CveId: string | Win32Pointer, AdditionalDetails: string | Win32Pointer): number;
   /** advapi32.dll!DecryptFileA */
@@ -491,17 +1485,59 @@ interface Functions {
   /** advapi32.dll!DestroyPrivateObjectSecurity */
   DestroyPrivateObjectSecurity(ObjectDescriptor: Win32Pointer): number;
   /** advapi32.dll!DuplicateEncryptionInfoFile */
-  DuplicateEncryptionInfoFile(SrcFileName: string | Win32Pointer, DstFileName: string | Win32Pointer, dwCreationDistribution: number, dwAttributes: number, lpSecurityAttributes: Win32Pointer): number;
+  DuplicateEncryptionInfoFile(
+    SrcFileName: string | Win32Pointer,
+    DstFileName: string | Win32Pointer,
+    dwCreationDistribution: number,
+    dwAttributes: number,
+    lpSecurityAttributes: Win32Pointer,
+  ): number;
   /** advapi32.dll!DuplicateToken */
-  DuplicateToken(ExistingTokenHandle: Win32Pointer, ImpersonationLevel: number, DuplicateTokenHandle: Win32Pointer): number;
+  DuplicateToken(
+    ExistingTokenHandle: Win32Pointer,
+    ImpersonationLevel: number,
+    DuplicateTokenHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!DuplicateTokenEx */
-  DuplicateTokenEx(hExistingToken: Win32Pointer, dwDesiredAccess: number, lpTokenAttributes: Win32Pointer, ImpersonationLevel: number, TokenType: number, phNewToken: Win32Pointer): number;
+  DuplicateTokenEx(
+    hExistingToken: Win32Pointer,
+    dwDesiredAccess: number,
+    lpTokenAttributes: Win32Pointer,
+    ImpersonationLevel: number,
+    TokenType: number,
+    phNewToken: Win32Pointer,
+  ): number;
   /** advapi32.dll!EnableTrace */
-  EnableTrace(Enable: number, EnableFlag: number, EnableLevel: number, ControlGuid: Win32Pointer, TraceId: number | bigint): number;
+  EnableTrace(
+    Enable: number,
+    EnableFlag: number,
+    EnableLevel: number,
+    ControlGuid: Win32Pointer,
+    TraceId: number | bigint,
+  ): number;
   /** advapi32.dll!EnableTraceEx */
-  EnableTraceEx(ProviderId: Win32Pointer, SourceId: Win32Pointer, TraceId: number | bigint, IsEnabled: number, Level: number, MatchAnyKeyword: number | bigint, MatchAllKeyword: number | bigint, EnableProperty: number, EnableFilterDesc: Win32Pointer): number;
+  EnableTraceEx(
+    ProviderId: Win32Pointer,
+    SourceId: Win32Pointer,
+    TraceId: number | bigint,
+    IsEnabled: number,
+    Level: number,
+    MatchAnyKeyword: number | bigint,
+    MatchAllKeyword: number | bigint,
+    EnableProperty: number,
+    EnableFilterDesc: Win32Pointer,
+  ): number;
   /** advapi32.dll!EnableTraceEx2 */
-  EnableTraceEx2(TraceId: number | bigint, ProviderId: Win32Pointer, ControlCode: number, Level: number, MatchAnyKeyword: number | bigint, MatchAllKeyword: number | bigint, Timeout: number, EnableParameters: Win32Pointer): number;
+  EnableTraceEx2(
+    TraceId: number | bigint,
+    ProviderId: Win32Pointer,
+    ControlCode: number,
+    Level: number,
+    MatchAnyKeyword: number | bigint,
+    MatchAllKeyword: number | bigint,
+    Timeout: number,
+    EnableParameters: Win32Pointer,
+  ): number;
   /** advapi32.dll!EncryptFileA */
   EncryptFileA(lpFileName: string | Win32Pointer): number;
   /** advapi32.dll!EncryptFileW */
@@ -511,29 +1547,117 @@ interface Functions {
   /** advapi32.dll!EncryptionDisable */
   EncryptionDisable(DirPath: string | Win32Pointer, Disable: number): number;
   /** advapi32.dll!EnumDependentServicesA */
-  EnumDependentServicesA(hService: Win32Pointer, dwServiceState: number, lpServices: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer, lpServicesReturned: Win32Pointer): number;
+  EnumDependentServicesA(
+    hService: Win32Pointer,
+    dwServiceState: number,
+    lpServices: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+    lpServicesReturned: Win32Pointer,
+  ): number;
   /** advapi32.dll!EnumDependentServicesW */
-  EnumDependentServicesW(hService: Win32Pointer, dwServiceState: number, lpServices: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer, lpServicesReturned: Win32Pointer): number;
+  EnumDependentServicesW(
+    hService: Win32Pointer,
+    dwServiceState: number,
+    lpServices: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+    lpServicesReturned: Win32Pointer,
+  ): number;
   /** advapi32.dll!EnumDependentServicesW */
-  EnumDependentServices(hService: Win32Pointer, dwServiceState: number, lpServices: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer, lpServicesReturned: Win32Pointer): number;
+  EnumDependentServices(
+    hService: Win32Pointer,
+    dwServiceState: number,
+    lpServices: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+    lpServicesReturned: Win32Pointer,
+  ): number;
   /** advapi32.dll!EnumDynamicTimeZoneInformation */
   EnumDynamicTimeZoneInformation(dwIndex: number, lpTimeZoneInformation: Win32Pointer): number;
   /** advapi32.dll!EnumServicesStatusA */
-  EnumServicesStatusA(hSCManager: Win32Pointer, dwServiceType: number, dwServiceState: number, lpServices: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer, lpServicesReturned: Win32Pointer, lpResumeHandle: Win32Pointer): number;
+  EnumServicesStatusA(
+    hSCManager: Win32Pointer,
+    dwServiceType: number,
+    dwServiceState: number,
+    lpServices: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+    lpServicesReturned: Win32Pointer,
+    lpResumeHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!EnumServicesStatusExA */
-  EnumServicesStatusExA(hSCManager: Win32Pointer, InfoLevel: number, dwServiceType: number, dwServiceState: number, lpServices: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer, lpServicesReturned: Win32Pointer, lpResumeHandle: Win32Pointer, pszGroupName: string | Win32Pointer): number;
+  EnumServicesStatusExA(
+    hSCManager: Win32Pointer,
+    InfoLevel: number,
+    dwServiceType: number,
+    dwServiceState: number,
+    lpServices: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+    lpServicesReturned: Win32Pointer,
+    lpResumeHandle: Win32Pointer,
+    pszGroupName: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!EnumServicesStatusExW */
-  EnumServicesStatusExW(hSCManager: Win32Pointer, InfoLevel: number, dwServiceType: number, dwServiceState: number, lpServices: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer, lpServicesReturned: Win32Pointer, lpResumeHandle: Win32Pointer, pszGroupName: string | Win32Pointer): number;
+  EnumServicesStatusExW(
+    hSCManager: Win32Pointer,
+    InfoLevel: number,
+    dwServiceType: number,
+    dwServiceState: number,
+    lpServices: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+    lpServicesReturned: Win32Pointer,
+    lpResumeHandle: Win32Pointer,
+    pszGroupName: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!EnumServicesStatusExW */
-  EnumServicesStatusEx(hSCManager: Win32Pointer, InfoLevel: number, dwServiceType: number, dwServiceState: number, lpServices: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer, lpServicesReturned: Win32Pointer, lpResumeHandle: Win32Pointer, pszGroupName: string | Win32Pointer): number;
+  EnumServicesStatusEx(
+    hSCManager: Win32Pointer,
+    InfoLevel: number,
+    dwServiceType: number,
+    dwServiceState: number,
+    lpServices: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+    lpServicesReturned: Win32Pointer,
+    lpResumeHandle: Win32Pointer,
+    pszGroupName: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!EnumServicesStatusW */
-  EnumServicesStatusW(hSCManager: Win32Pointer, dwServiceType: number, dwServiceState: number, lpServices: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer, lpServicesReturned: Win32Pointer, lpResumeHandle: Win32Pointer): number;
+  EnumServicesStatusW(
+    hSCManager: Win32Pointer,
+    dwServiceType: number,
+    dwServiceState: number,
+    lpServices: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+    lpServicesReturned: Win32Pointer,
+    lpResumeHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!EnumServicesStatusW */
-  EnumServicesStatus(hSCManager: Win32Pointer, dwServiceType: number, dwServiceState: number, lpServices: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer, lpServicesReturned: Win32Pointer, lpResumeHandle: Win32Pointer): number;
+  EnumServicesStatus(
+    hSCManager: Win32Pointer,
+    dwServiceType: number,
+    dwServiceState: number,
+    lpServices: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+    lpServicesReturned: Win32Pointer,
+    lpResumeHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!EnumerateTraceGuids */
   EnumerateTraceGuids(GuidPropertiesArray: Win32Pointer, PropertyArrayCount: number, GuidCount: Win32Pointer): number;
   /** advapi32.dll!EnumerateTraceGuidsEx */
-  EnumerateTraceGuidsEx(TraceQueryInfoClass: number, InBuffer: Win32Pointer, InBufferSize: number, OutBuffer: Win32Pointer, OutBufferSize: number, ReturnLength: Win32Pointer): number;
+  EnumerateTraceGuidsEx(
+    TraceQueryInfoClass: number,
+    InBuffer: Win32Pointer,
+    InBufferSize: number,
+    OutBuffer: Win32Pointer,
+    OutBufferSize: number,
+    ReturnLength: Win32Pointer,
+  ): number;
   /** advapi32.dll!EqualDomainSid */
   EqualDomainSid(pSid1: Win32Pointer, pSid2: Win32Pointer, pfEqual: Win32Pointer): number;
   /** advapi32.dll!EqualPrefixSid */
@@ -541,7 +1665,13 @@ interface Functions {
   /** advapi32.dll!EqualSid */
   EqualSid(pSid1: Win32Pointer, pSid2: Win32Pointer): number;
   /** advapi32.dll!EventAccessControl */
-  EventAccessControl(Guid: Win32Pointer, Operation: number, Sid: Win32Pointer, Rights: number, AllowOrDeny: number): number;
+  EventAccessControl(
+    Guid: Win32Pointer,
+    Operation: number,
+    Sid: Win32Pointer,
+    Rights: number,
+    AllowOrDeny: number,
+  ): number;
   /** advapi32.dll!EventAccessQuery */
   EventAccessQuery(Guid: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer): number;
   /** advapi32.dll!EventAccessRemove */
@@ -553,19 +1683,55 @@ interface Functions {
   /** advapi32.dll!EventProviderEnabled */
   EventProviderEnabled(RegHandle: number | bigint, Level: number, Keyword: number | bigint): number;
   /** advapi32.dll!EventRegister */
-  EventRegister(ProviderId: Win32Pointer, EnableCallback: Win32Callback, CallbackContext: Win32Pointer, RegHandle: Win32Pointer): number;
+  EventRegister(
+    ProviderId: Win32Pointer,
+    EnableCallback: Win32Callback,
+    CallbackContext: Win32Pointer,
+    RegHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!EventSetInformation */
-  EventSetInformation(RegHandle: number | bigint, InformationClass: number, EventInformation: Win32Pointer, InformationLength: number): number;
+  EventSetInformation(
+    RegHandle: number | bigint,
+    InformationClass: number,
+    EventInformation: Win32Pointer,
+    InformationLength: number,
+  ): number;
   /** advapi32.dll!EventUnregister */
   EventUnregister(RegHandle: number | bigint): number;
   /** advapi32.dll!EventWrite */
-  EventWrite(RegHandle: number | bigint, EventDescriptor: Win32Pointer, UserDataCount: number, UserData: Win32Pointer): number;
+  EventWrite(
+    RegHandle: number | bigint,
+    EventDescriptor: Win32Pointer,
+    UserDataCount: number,
+    UserData: Win32Pointer,
+  ): number;
   /** advapi32.dll!EventWriteEx */
-  EventWriteEx(RegHandle: number | bigint, EventDescriptor: Win32Pointer, Filter: number | bigint, Flags: number, ActivityId: Win32Pointer, RelatedActivityId: Win32Pointer, UserDataCount: number, UserData: Win32Pointer): number;
+  EventWriteEx(
+    RegHandle: number | bigint,
+    EventDescriptor: Win32Pointer,
+    Filter: number | bigint,
+    Flags: number,
+    ActivityId: Win32Pointer,
+    RelatedActivityId: Win32Pointer,
+    UserDataCount: number,
+    UserData: Win32Pointer,
+  ): number;
   /** advapi32.dll!EventWriteString */
-  EventWriteString(RegHandle: number | bigint, Level: number, Keyword: number | bigint, String: string | Win32Pointer): number;
+  EventWriteString(
+    RegHandle: number | bigint,
+    Level: number,
+    Keyword: number | bigint,
+    String: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!EventWriteTransfer */
-  EventWriteTransfer(RegHandle: number | bigint, EventDescriptor: Win32Pointer, ActivityId: Win32Pointer, RelatedActivityId: Win32Pointer, UserDataCount: number, UserData: Win32Pointer): number;
+  EventWriteTransfer(
+    RegHandle: number | bigint,
+    EventDescriptor: Win32Pointer,
+    ActivityId: Win32Pointer,
+    RelatedActivityId: Win32Pointer,
+    UserDataCount: number,
+    UserData: Win32Pointer,
+  ): number;
   /** advapi32.dll!FileEncryptionStatusA */
   FileEncryptionStatusA(lpFileName: string | Win32Pointer, lpStatus: Win32Pointer): number;
   /** advapi32.dll!FileEncryptionStatusW */
@@ -591,13 +1757,33 @@ interface Functions {
   /** advapi32.dll!GetAce */
   GetAce(pAcl: Win32Pointer, dwAceIndex: number, pAce: Win32Pointer): number;
   /** advapi32.dll!GetAclInformation */
-  GetAclInformation(pAcl: Win32Pointer, pAclInformation: Win32Pointer, nAclInformationLength: number, dwAclInformationClass: number): number;
+  GetAclInformation(
+    pAcl: Win32Pointer,
+    pAclInformation: Win32Pointer,
+    nAclInformationLength: number,
+    dwAclInformationClass: number,
+  ): number;
   /** advapi32.dll!GetAuditedPermissionsFromAclA */
-  GetAuditedPermissionsFromAclA(pacl: Win32Pointer, pTrustee: Win32Pointer, pSuccessfulAuditedRights: Win32Pointer, pFailedAuditRights: Win32Pointer): number;
+  GetAuditedPermissionsFromAclA(
+    pacl: Win32Pointer,
+    pTrustee: Win32Pointer,
+    pSuccessfulAuditedRights: Win32Pointer,
+    pFailedAuditRights: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetAuditedPermissionsFromAclW */
-  GetAuditedPermissionsFromAclW(pacl: Win32Pointer, pTrustee: Win32Pointer, pSuccessfulAuditedRights: Win32Pointer, pFailedAuditRights: Win32Pointer): number;
+  GetAuditedPermissionsFromAclW(
+    pacl: Win32Pointer,
+    pTrustee: Win32Pointer,
+    pSuccessfulAuditedRights: Win32Pointer,
+    pFailedAuditRights: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetAuditedPermissionsFromAclW */
-  GetAuditedPermissionsFromAcl(pacl: Win32Pointer, pTrustee: Win32Pointer, pSuccessfulAuditedRights: Win32Pointer, pFailedAuditRights: Win32Pointer): number;
+  GetAuditedPermissionsFromAcl(
+    pacl: Win32Pointer,
+    pTrustee: Win32Pointer,
+    pSuccessfulAuditedRights: Win32Pointer,
+    pFailedAuditRights: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetCurrentHwProfileA */
   GetCurrentHwProfileA(lpHwProfileInfo: Win32Pointer): number;
   /** advapi32.dll!GetCurrentHwProfileW */
@@ -605,7 +1791,11 @@ interface Functions {
   /** advapi32.dll!GetCurrentHwProfileW */
   GetCurrentHwProfile(lpHwProfileInfo: Win32Pointer): number;
   /** advapi32.dll!GetDynamicTimeZoneInformationEffectiveYears */
-  GetDynamicTimeZoneInformationEffectiveYears(lpTimeZoneInformation: Win32Pointer, FirstYear: Win32Pointer, LastYear: Win32Pointer): number;
+  GetDynamicTimeZoneInformationEffectiveYears(
+    lpTimeZoneInformation: Win32Pointer,
+    FirstYear: Win32Pointer,
+    LastYear: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetEffectiveRightsFromAclA */
   GetEffectiveRightsFromAclA(pacl: Win32Pointer, pTrustee: Win32Pointer, pAccessRights: Win32Pointer): number;
   /** advapi32.dll!GetEffectiveRightsFromAclW */
@@ -613,39 +1803,128 @@ interface Functions {
   /** advapi32.dll!GetEffectiveRightsFromAclW */
   GetEffectiveRightsFromAcl(pacl: Win32Pointer, pTrustee: Win32Pointer, pAccessRights: Win32Pointer): number;
   /** advapi32.dll!GetEncryptedFileMetadata */
-  GetEncryptedFileMetadata(lpFileName: string | Win32Pointer, pcbMetadata: Win32Pointer, ppbMetadata: Win32Pointer): number;
+  GetEncryptedFileMetadata(
+    lpFileName: string | Win32Pointer,
+    pcbMetadata: Win32Pointer,
+    ppbMetadata: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetEventLogInformation */
-  GetEventLogInformation(hEventLog: Win32Pointer, dwInfoLevel: number, lpBuffer: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer): number;
+  GetEventLogInformation(
+    hEventLog: Win32Pointer,
+    dwInfoLevel: number,
+    lpBuffer: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetExplicitEntriesFromAclA */
-  GetExplicitEntriesFromAclA(pacl: Win32Pointer, pcCountOfExplicitEntries: Win32Pointer, pListOfExplicitEntries: Win32Pointer): number;
+  GetExplicitEntriesFromAclA(
+    pacl: Win32Pointer,
+    pcCountOfExplicitEntries: Win32Pointer,
+    pListOfExplicitEntries: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetExplicitEntriesFromAclW */
-  GetExplicitEntriesFromAclW(pacl: Win32Pointer, pcCountOfExplicitEntries: Win32Pointer, pListOfExplicitEntries: Win32Pointer): number;
+  GetExplicitEntriesFromAclW(
+    pacl: Win32Pointer,
+    pcCountOfExplicitEntries: Win32Pointer,
+    pListOfExplicitEntries: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetExplicitEntriesFromAclW */
-  GetExplicitEntriesFromAcl(pacl: Win32Pointer, pcCountOfExplicitEntries: Win32Pointer, pListOfExplicitEntries: Win32Pointer): number;
+  GetExplicitEntriesFromAcl(
+    pacl: Win32Pointer,
+    pcCountOfExplicitEntries: Win32Pointer,
+    pListOfExplicitEntries: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetFileSecurityA */
-  GetFileSecurityA(lpFileName: string | Win32Pointer, RequestedInformation: number, pSecurityDescriptor: Win32Pointer, nLength: number, lpnLengthNeeded: Win32Pointer): number;
+  GetFileSecurityA(
+    lpFileName: string | Win32Pointer,
+    RequestedInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+    nLength: number,
+    lpnLengthNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetFileSecurityW */
-  GetFileSecurityW(lpFileName: string | Win32Pointer, RequestedInformation: number, pSecurityDescriptor: Win32Pointer, nLength: number, lpnLengthNeeded: Win32Pointer): number;
+  GetFileSecurityW(
+    lpFileName: string | Win32Pointer,
+    RequestedInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+    nLength: number,
+    lpnLengthNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetFileSecurityW */
-  GetFileSecurity(lpFileName: string | Win32Pointer, RequestedInformation: number, pSecurityDescriptor: Win32Pointer, nLength: number, lpnLengthNeeded: Win32Pointer): number;
+  GetFileSecurity(
+    lpFileName: string | Win32Pointer,
+    RequestedInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+    nLength: number,
+    lpnLengthNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetInheritanceSourceA */
-  GetInheritanceSourceA(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, Container: number, pObjectClassGuids: Win32Pointer, GuidCount: number, pAcl: Win32Pointer, pfnArray: Win32Pointer, pGenericMapping: Win32Pointer, pInheritArray: Win32Pointer): number;
+  GetInheritanceSourceA(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    Container: number,
+    pObjectClassGuids: Win32Pointer,
+    GuidCount: number,
+    pAcl: Win32Pointer,
+    pfnArray: Win32Pointer,
+    pGenericMapping: Win32Pointer,
+    pInheritArray: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetInheritanceSourceW */
-  GetInheritanceSourceW(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, Container: number, pObjectClassGuids: Win32Pointer, GuidCount: number, pAcl: Win32Pointer, pfnArray: Win32Pointer, pGenericMapping: Win32Pointer, pInheritArray: Win32Pointer): number;
+  GetInheritanceSourceW(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    Container: number,
+    pObjectClassGuids: Win32Pointer,
+    GuidCount: number,
+    pAcl: Win32Pointer,
+    pfnArray: Win32Pointer,
+    pGenericMapping: Win32Pointer,
+    pInheritArray: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetInheritanceSourceW */
-  GetInheritanceSource(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, Container: number, pObjectClassGuids: Win32Pointer, GuidCount: number, pAcl: Win32Pointer, pfnArray: Win32Pointer, pGenericMapping: Win32Pointer, pInheritArray: Win32Pointer): number;
+  GetInheritanceSource(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    Container: number,
+    pObjectClassGuids: Win32Pointer,
+    GuidCount: number,
+    pAcl: Win32Pointer,
+    pfnArray: Win32Pointer,
+    pGenericMapping: Win32Pointer,
+    pInheritArray: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetKernelObjectSecurity */
-  GetKernelObjectSecurity(Handle: Win32Pointer, RequestedInformation: number, pSecurityDescriptor: Win32Pointer, nLength: number, lpnLengthNeeded: Win32Pointer): number;
+  GetKernelObjectSecurity(
+    Handle: Win32Pointer,
+    RequestedInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+    nLength: number,
+    lpnLengthNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetLengthSid */
   GetLengthSid(pSid: Win32Pointer): number;
   /** advapi32.dll!GetLocalManagedApplicationData */
-  GetLocalManagedApplicationData(ProductCode: string | Win32Pointer, DisplayName: Win32Pointer, SupportUrl: Win32Pointer): void;
+  GetLocalManagedApplicationData(
+    ProductCode: string | Win32Pointer,
+    DisplayName: Win32Pointer,
+    SupportUrl: Win32Pointer,
+  ): void;
   /** advapi32.dll!GetLocalManagedApplications */
   GetLocalManagedApplications(bUserApps: number, pdwApps: Win32Pointer, prgLocalApps: Win32Pointer): number;
   /** advapi32.dll!GetManagedApplicationCategories */
   GetManagedApplicationCategories(dwReserved: number, pAppCategory: Win32Pointer): number;
   /** advapi32.dll!GetManagedApplications */
-  GetManagedApplications(pCategory: Win32Pointer, dwQueryFlags: number, dwInfoLevel: number, pdwApps: Win32Pointer, prgManagedApps: Win32Pointer): number;
+  GetManagedApplications(
+    pCategory: Win32Pointer,
+    dwQueryFlags: number,
+    dwInfoLevel: number,
+    pdwApps: Win32Pointer,
+    prgManagedApps: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetMultipleTrusteeA */
   GetMultipleTrusteeA(pTrustee: Win32Pointer): number | null;
   /** advapi32.dll!GetMultipleTrusteeOperationA */
@@ -659,45 +1938,139 @@ interface Functions {
   /** advapi32.dll!GetMultipleTrusteeW */
   GetMultipleTrustee(pTrustee: Win32Pointer): number | null;
   /** advapi32.dll!GetNamedSecurityInfoA */
-  GetNamedSecurityInfoA(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, ppsidOwner: Win32Pointer, ppsidGroup: Win32Pointer, ppDacl: Win32Pointer, ppSacl: Win32Pointer, ppSecurityDescriptor: Win32Pointer): number;
+  GetNamedSecurityInfoA(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    ppsidOwner: Win32Pointer,
+    ppsidGroup: Win32Pointer,
+    ppDacl: Win32Pointer,
+    ppSacl: Win32Pointer,
+    ppSecurityDescriptor: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetNamedSecurityInfoW */
-  GetNamedSecurityInfoW(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, ppsidOwner: Win32Pointer, ppsidGroup: Win32Pointer, ppDacl: Win32Pointer, ppSacl: Win32Pointer, ppSecurityDescriptor: Win32Pointer): number;
+  GetNamedSecurityInfoW(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    ppsidOwner: Win32Pointer,
+    ppsidGroup: Win32Pointer,
+    ppDacl: Win32Pointer,
+    ppSacl: Win32Pointer,
+    ppSecurityDescriptor: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetNamedSecurityInfoW */
-  GetNamedSecurityInfo(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, ppsidOwner: Win32Pointer, ppsidGroup: Win32Pointer, ppDacl: Win32Pointer, ppSacl: Win32Pointer, ppSecurityDescriptor: Win32Pointer): number;
+  GetNamedSecurityInfo(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    ppsidOwner: Win32Pointer,
+    ppsidGroup: Win32Pointer,
+    ppDacl: Win32Pointer,
+    ppSacl: Win32Pointer,
+    ppSecurityDescriptor: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetNumberOfEventLogRecords */
   GetNumberOfEventLogRecords(hEventLog: Win32Pointer, NumberOfRecords: Win32Pointer): number;
   /** advapi32.dll!GetOldestEventLogRecord */
   GetOldestEventLogRecord(hEventLog: Win32Pointer, OldestRecord: Win32Pointer): number;
   /** advapi32.dll!GetPrivateObjectSecurity */
-  GetPrivateObjectSecurity(ObjectDescriptor: Win32Pointer, SecurityInformation: number, ResultantDescriptor: Win32Pointer, DescriptorLength: number, ReturnLength: Win32Pointer): number;
+  GetPrivateObjectSecurity(
+    ObjectDescriptor: Win32Pointer,
+    SecurityInformation: number,
+    ResultantDescriptor: Win32Pointer,
+    DescriptorLength: number,
+    ReturnLength: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetSecurityDescriptorControl */
-  GetSecurityDescriptorControl(pSecurityDescriptor: Win32Pointer, pControl: Win32Pointer, lpdwRevision: Win32Pointer): number;
+  GetSecurityDescriptorControl(
+    pSecurityDescriptor: Win32Pointer,
+    pControl: Win32Pointer,
+    lpdwRevision: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetSecurityDescriptorDacl */
-  GetSecurityDescriptorDacl(pSecurityDescriptor: Win32Pointer, lpbDaclPresent: Win32Pointer, pDacl: Win32Pointer, lpbDaclDefaulted: Win32Pointer): number;
+  GetSecurityDescriptorDacl(
+    pSecurityDescriptor: Win32Pointer,
+    lpbDaclPresent: Win32Pointer,
+    pDacl: Win32Pointer,
+    lpbDaclDefaulted: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetSecurityDescriptorGroup */
-  GetSecurityDescriptorGroup(pSecurityDescriptor: Win32Pointer, pGroup: Win32Pointer, lpbGroupDefaulted: Win32Pointer): number;
+  GetSecurityDescriptorGroup(
+    pSecurityDescriptor: Win32Pointer,
+    pGroup: Win32Pointer,
+    lpbGroupDefaulted: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetSecurityDescriptorLength */
   GetSecurityDescriptorLength(pSecurityDescriptor: Win32Pointer): number;
   /** advapi32.dll!GetSecurityDescriptorOwner */
-  GetSecurityDescriptorOwner(pSecurityDescriptor: Win32Pointer, pOwner: Win32Pointer, lpbOwnerDefaulted: Win32Pointer): number;
+  GetSecurityDescriptorOwner(
+    pSecurityDescriptor: Win32Pointer,
+    pOwner: Win32Pointer,
+    lpbOwnerDefaulted: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetSecurityDescriptorRMControl */
   GetSecurityDescriptorRMControl(SecurityDescriptor: Win32Pointer, RMControl: Win32Pointer): number;
   /** advapi32.dll!GetSecurityDescriptorSacl */
-  GetSecurityDescriptorSacl(pSecurityDescriptor: Win32Pointer, lpbSaclPresent: Win32Pointer, pSacl: Win32Pointer, lpbSaclDefaulted: Win32Pointer): number;
+  GetSecurityDescriptorSacl(
+    pSecurityDescriptor: Win32Pointer,
+    lpbSaclPresent: Win32Pointer,
+    pSacl: Win32Pointer,
+    lpbSaclDefaulted: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetSecurityInfo */
-  GetSecurityInfo(handle: Win32Pointer, ObjectType: number, SecurityInfo: number, ppsidOwner: Win32Pointer, ppsidGroup: Win32Pointer, ppDacl: Win32Pointer, ppSacl: Win32Pointer, ppSecurityDescriptor: Win32Pointer): number;
+  GetSecurityInfo(
+    handle: Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    ppsidOwner: Win32Pointer,
+    ppsidGroup: Win32Pointer,
+    ppDacl: Win32Pointer,
+    ppSacl: Win32Pointer,
+    ppSecurityDescriptor: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetServiceDisplayNameA */
-  GetServiceDisplayNameA(hSCManager: Win32Pointer, lpServiceName: string | Win32Pointer, lpDisplayName: string | Win32Pointer, lpcchBuffer: Win32Pointer): number;
+  GetServiceDisplayNameA(
+    hSCManager: Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+    lpcchBuffer: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetServiceDisplayNameW */
-  GetServiceDisplayNameW(hSCManager: Win32Pointer, lpServiceName: string | Win32Pointer, lpDisplayName: string | Win32Pointer, lpcchBuffer: Win32Pointer): number;
+  GetServiceDisplayNameW(
+    hSCManager: Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+    lpcchBuffer: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetServiceDisplayNameW */
-  GetServiceDisplayName(hSCManager: Win32Pointer, lpServiceName: string | Win32Pointer, lpDisplayName: string | Win32Pointer, lpcchBuffer: Win32Pointer): number;
+  GetServiceDisplayName(
+    hSCManager: Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+    lpcchBuffer: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetServiceKeyNameA */
-  GetServiceKeyNameA(hSCManager: Win32Pointer, lpDisplayName: string | Win32Pointer, lpServiceName: string | Win32Pointer, lpcchBuffer: Win32Pointer): number;
+  GetServiceKeyNameA(
+    hSCManager: Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    lpcchBuffer: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetServiceKeyNameW */
-  GetServiceKeyNameW(hSCManager: Win32Pointer, lpDisplayName: string | Win32Pointer, lpServiceName: string | Win32Pointer, lpcchBuffer: Win32Pointer): number;
+  GetServiceKeyNameW(
+    hSCManager: Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    lpcchBuffer: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetServiceKeyNameW */
-  GetServiceKeyName(hSCManager: Win32Pointer, lpDisplayName: string | Win32Pointer, lpServiceName: string | Win32Pointer, lpcchBuffer: Win32Pointer): number;
+  GetServiceKeyName(
+    hSCManager: Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+    lpServiceName: string | Win32Pointer,
+    lpcchBuffer: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetSidIdentifierAuthority */
   GetSidIdentifierAuthority(pSid: Win32Pointer): number | null;
   /** advapi32.dll!GetSidLengthRequired */
@@ -707,9 +2080,23 @@ interface Functions {
   /** advapi32.dll!GetSidSubAuthorityCount */
   GetSidSubAuthorityCount(pSid: Win32Pointer): number | null;
   /** advapi32.dll!GetThreadWaitChain */
-  GetThreadWaitChain(WctHandle: Win32Pointer, Context: number | bigint, Flags: number, ThreadId: number, NodeCount: Win32Pointer, NodeInfoArray: Win32Pointer, IsCycle: Win32Pointer): number;
+  GetThreadWaitChain(
+    WctHandle: Win32Pointer,
+    Context: number | bigint,
+    Flags: number,
+    ThreadId: number,
+    NodeCount: Win32Pointer,
+    NodeInfoArray: Win32Pointer,
+    IsCycle: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetTokenInformation */
-  GetTokenInformation(TokenHandle: Win32Pointer, TokenInformationClass: number, TokenInformation: Win32Pointer, TokenInformationLength: number, ReturnLength: Win32Pointer): number;
+  GetTokenInformation(
+    TokenHandle: Win32Pointer,
+    TokenInformationClass: number,
+    TokenInformation: Win32Pointer,
+    TokenInformationLength: number,
+    ReturnLength: Win32Pointer,
+  ): number;
   /** advapi32.dll!GetTraceEnableFlags */
   GetTraceEnableFlags(TraceHandle: number | bigint): number;
   /** advapi32.dll!GetTraceEnableLevel */
@@ -757,23 +2144,80 @@ interface Functions {
   /** advapi32.dll!InitializeSid */
   InitializeSid(Sid: Win32Pointer, pIdentifierAuthority: Win32Pointer, nSubAuthorityCount: number): number;
   /** advapi32.dll!InitiateShutdownA */
-  InitiateShutdownA(lpMachineName: string | Win32Pointer, lpMessage: string | Win32Pointer, dwGracePeriod: number, dwShutdownFlags: number, dwReason: number): number;
+  InitiateShutdownA(
+    lpMachineName: string | Win32Pointer,
+    lpMessage: string | Win32Pointer,
+    dwGracePeriod: number,
+    dwShutdownFlags: number,
+    dwReason: number,
+  ): number;
   /** advapi32.dll!InitiateShutdownW */
-  InitiateShutdownW(lpMachineName: string | Win32Pointer, lpMessage: string | Win32Pointer, dwGracePeriod: number, dwShutdownFlags: number, dwReason: number): number;
+  InitiateShutdownW(
+    lpMachineName: string | Win32Pointer,
+    lpMessage: string | Win32Pointer,
+    dwGracePeriod: number,
+    dwShutdownFlags: number,
+    dwReason: number,
+  ): number;
   /** advapi32.dll!InitiateShutdownW */
-  InitiateShutdown(lpMachineName: string | Win32Pointer, lpMessage: string | Win32Pointer, dwGracePeriod: number, dwShutdownFlags: number, dwReason: number): number;
+  InitiateShutdown(
+    lpMachineName: string | Win32Pointer,
+    lpMessage: string | Win32Pointer,
+    dwGracePeriod: number,
+    dwShutdownFlags: number,
+    dwReason: number,
+  ): number;
   /** advapi32.dll!InitiateSystemShutdownA */
-  InitiateSystemShutdownA(lpMachineName: string | Win32Pointer, lpMessage: string | Win32Pointer, dwTimeout: number, bForceAppsClosed: number, bRebootAfterShutdown: number): number;
+  InitiateSystemShutdownA(
+    lpMachineName: string | Win32Pointer,
+    lpMessage: string | Win32Pointer,
+    dwTimeout: number,
+    bForceAppsClosed: number,
+    bRebootAfterShutdown: number,
+  ): number;
   /** advapi32.dll!InitiateSystemShutdownExA */
-  InitiateSystemShutdownExA(lpMachineName: string | Win32Pointer, lpMessage: string | Win32Pointer, dwTimeout: number, bForceAppsClosed: number, bRebootAfterShutdown: number, dwReason: number): number;
+  InitiateSystemShutdownExA(
+    lpMachineName: string | Win32Pointer,
+    lpMessage: string | Win32Pointer,
+    dwTimeout: number,
+    bForceAppsClosed: number,
+    bRebootAfterShutdown: number,
+    dwReason: number,
+  ): number;
   /** advapi32.dll!InitiateSystemShutdownExW */
-  InitiateSystemShutdownExW(lpMachineName: string | Win32Pointer, lpMessage: string | Win32Pointer, dwTimeout: number, bForceAppsClosed: number, bRebootAfterShutdown: number, dwReason: number): number;
+  InitiateSystemShutdownExW(
+    lpMachineName: string | Win32Pointer,
+    lpMessage: string | Win32Pointer,
+    dwTimeout: number,
+    bForceAppsClosed: number,
+    bRebootAfterShutdown: number,
+    dwReason: number,
+  ): number;
   /** advapi32.dll!InitiateSystemShutdownExW */
-  InitiateSystemShutdownEx(lpMachineName: string | Win32Pointer, lpMessage: string | Win32Pointer, dwTimeout: number, bForceAppsClosed: number, bRebootAfterShutdown: number, dwReason: number): number;
+  InitiateSystemShutdownEx(
+    lpMachineName: string | Win32Pointer,
+    lpMessage: string | Win32Pointer,
+    dwTimeout: number,
+    bForceAppsClosed: number,
+    bRebootAfterShutdown: number,
+    dwReason: number,
+  ): number;
   /** advapi32.dll!InitiateSystemShutdownW */
-  InitiateSystemShutdownW(lpMachineName: string | Win32Pointer, lpMessage: string | Win32Pointer, dwTimeout: number, bForceAppsClosed: number, bRebootAfterShutdown: number): number;
+  InitiateSystemShutdownW(
+    lpMachineName: string | Win32Pointer,
+    lpMessage: string | Win32Pointer,
+    dwTimeout: number,
+    bForceAppsClosed: number,
+    bRebootAfterShutdown: number,
+  ): number;
   /** advapi32.dll!InitiateSystemShutdownW */
-  InitiateSystemShutdown(lpMachineName: string | Win32Pointer, lpMessage: string | Win32Pointer, dwTimeout: number, bForceAppsClosed: number, bRebootAfterShutdown: number): number;
+  InitiateSystemShutdown(
+    lpMachineName: string | Win32Pointer,
+    lpMessage: string | Win32Pointer,
+    dwTimeout: number,
+    bForceAppsClosed: number,
+    bRebootAfterShutdown: number,
+  ): number;
   /** advapi32.dll!InstallApplication */
   InstallApplication(pInstallInfo: Win32Pointer): number;
   /** advapi32.dll!IsTextUnicode */
@@ -793,103 +2237,372 @@ interface Functions {
   /** advapi32.dll!LockServiceDatabase */
   LockServiceDatabase(hSCManager: Win32Pointer): number | null;
   /** advapi32.dll!LogonUserA */
-  LogonUserA(lpszUsername: string | Win32Pointer, lpszDomain: string | Win32Pointer, lpszPassword: string | Win32Pointer, dwLogonType: number, dwLogonProvider: number, phToken: Win32Pointer): number;
+  LogonUserA(
+    lpszUsername: string | Win32Pointer,
+    lpszDomain: string | Win32Pointer,
+    lpszPassword: string | Win32Pointer,
+    dwLogonType: number,
+    dwLogonProvider: number,
+    phToken: Win32Pointer,
+  ): number;
   /** advapi32.dll!LogonUserExA */
-  LogonUserExA(lpszUsername: string | Win32Pointer, lpszDomain: string | Win32Pointer, lpszPassword: string | Win32Pointer, dwLogonType: number, dwLogonProvider: number, phToken: Win32Pointer, ppLogonSid: Win32Pointer, ppProfileBuffer: Win32Pointer, pdwProfileLength: Win32Pointer, pQuotaLimits: Win32Pointer): number;
+  LogonUserExA(
+    lpszUsername: string | Win32Pointer,
+    lpszDomain: string | Win32Pointer,
+    lpszPassword: string | Win32Pointer,
+    dwLogonType: number,
+    dwLogonProvider: number,
+    phToken: Win32Pointer,
+    ppLogonSid: Win32Pointer,
+    ppProfileBuffer: Win32Pointer,
+    pdwProfileLength: Win32Pointer,
+    pQuotaLimits: Win32Pointer,
+  ): number;
   /** advapi32.dll!LogonUserExW */
-  LogonUserExW(lpszUsername: string | Win32Pointer, lpszDomain: string | Win32Pointer, lpszPassword: string | Win32Pointer, dwLogonType: number, dwLogonProvider: number, phToken: Win32Pointer, ppLogonSid: Win32Pointer, ppProfileBuffer: Win32Pointer, pdwProfileLength: Win32Pointer, pQuotaLimits: Win32Pointer): number;
+  LogonUserExW(
+    lpszUsername: string | Win32Pointer,
+    lpszDomain: string | Win32Pointer,
+    lpszPassword: string | Win32Pointer,
+    dwLogonType: number,
+    dwLogonProvider: number,
+    phToken: Win32Pointer,
+    ppLogonSid: Win32Pointer,
+    ppProfileBuffer: Win32Pointer,
+    pdwProfileLength: Win32Pointer,
+    pQuotaLimits: Win32Pointer,
+  ): number;
   /** advapi32.dll!LogonUserExW */
-  LogonUserEx(lpszUsername: string | Win32Pointer, lpszDomain: string | Win32Pointer, lpszPassword: string | Win32Pointer, dwLogonType: number, dwLogonProvider: number, phToken: Win32Pointer, ppLogonSid: Win32Pointer, ppProfileBuffer: Win32Pointer, pdwProfileLength: Win32Pointer, pQuotaLimits: Win32Pointer): number;
+  LogonUserEx(
+    lpszUsername: string | Win32Pointer,
+    lpszDomain: string | Win32Pointer,
+    lpszPassword: string | Win32Pointer,
+    dwLogonType: number,
+    dwLogonProvider: number,
+    phToken: Win32Pointer,
+    ppLogonSid: Win32Pointer,
+    ppProfileBuffer: Win32Pointer,
+    pdwProfileLength: Win32Pointer,
+    pQuotaLimits: Win32Pointer,
+  ): number;
   /** advapi32.dll!LogonUserW */
-  LogonUserW(lpszUsername: string | Win32Pointer, lpszDomain: string | Win32Pointer, lpszPassword: string | Win32Pointer, dwLogonType: number, dwLogonProvider: number, phToken: Win32Pointer): number;
+  LogonUserW(
+    lpszUsername: string | Win32Pointer,
+    lpszDomain: string | Win32Pointer,
+    lpszPassword: string | Win32Pointer,
+    dwLogonType: number,
+    dwLogonProvider: number,
+    phToken: Win32Pointer,
+  ): number;
   /** advapi32.dll!LogonUserW */
-  LogonUser(lpszUsername: string | Win32Pointer, lpszDomain: string | Win32Pointer, lpszPassword: string | Win32Pointer, dwLogonType: number, dwLogonProvider: number, phToken: Win32Pointer): number;
+  LogonUser(
+    lpszUsername: string | Win32Pointer,
+    lpszDomain: string | Win32Pointer,
+    lpszPassword: string | Win32Pointer,
+    dwLogonType: number,
+    dwLogonProvider: number,
+    phToken: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupAccountNameA */
-  LookupAccountNameA(lpSystemName: string | Win32Pointer, lpAccountName: string | Win32Pointer, Sid: Win32Pointer, cbSid: Win32Pointer, ReferencedDomainName: string | Win32Pointer, cchReferencedDomainName: Win32Pointer, peUse: Win32Pointer): number;
+  LookupAccountNameA(
+    lpSystemName: string | Win32Pointer,
+    lpAccountName: string | Win32Pointer,
+    Sid: Win32Pointer,
+    cbSid: Win32Pointer,
+    ReferencedDomainName: string | Win32Pointer,
+    cchReferencedDomainName: Win32Pointer,
+    peUse: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupAccountNameW */
-  LookupAccountNameW(lpSystemName: string | Win32Pointer, lpAccountName: string | Win32Pointer, Sid: Win32Pointer, cbSid: Win32Pointer, ReferencedDomainName: string | Win32Pointer, cchReferencedDomainName: Win32Pointer, peUse: Win32Pointer): number;
+  LookupAccountNameW(
+    lpSystemName: string | Win32Pointer,
+    lpAccountName: string | Win32Pointer,
+    Sid: Win32Pointer,
+    cbSid: Win32Pointer,
+    ReferencedDomainName: string | Win32Pointer,
+    cchReferencedDomainName: Win32Pointer,
+    peUse: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupAccountNameW */
-  LookupAccountName(lpSystemName: string | Win32Pointer, lpAccountName: string | Win32Pointer, Sid: Win32Pointer, cbSid: Win32Pointer, ReferencedDomainName: string | Win32Pointer, cchReferencedDomainName: Win32Pointer, peUse: Win32Pointer): number;
+  LookupAccountName(
+    lpSystemName: string | Win32Pointer,
+    lpAccountName: string | Win32Pointer,
+    Sid: Win32Pointer,
+    cbSid: Win32Pointer,
+    ReferencedDomainName: string | Win32Pointer,
+    cchReferencedDomainName: Win32Pointer,
+    peUse: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupAccountSidA */
-  LookupAccountSidA(lpSystemName: string | Win32Pointer, Sid: Win32Pointer, Name: string | Win32Pointer, cchName: Win32Pointer, ReferencedDomainName: string | Win32Pointer, cchReferencedDomainName: Win32Pointer, peUse: Win32Pointer): number;
+  LookupAccountSidA(
+    lpSystemName: string | Win32Pointer,
+    Sid: Win32Pointer,
+    Name: string | Win32Pointer,
+    cchName: Win32Pointer,
+    ReferencedDomainName: string | Win32Pointer,
+    cchReferencedDomainName: Win32Pointer,
+    peUse: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupAccountSidW */
-  LookupAccountSidW(lpSystemName: string | Win32Pointer, Sid: Win32Pointer, Name: string | Win32Pointer, cchName: Win32Pointer, ReferencedDomainName: string | Win32Pointer, cchReferencedDomainName: Win32Pointer, peUse: Win32Pointer): number;
+  LookupAccountSidW(
+    lpSystemName: string | Win32Pointer,
+    Sid: Win32Pointer,
+    Name: string | Win32Pointer,
+    cchName: Win32Pointer,
+    ReferencedDomainName: string | Win32Pointer,
+    cchReferencedDomainName: Win32Pointer,
+    peUse: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupAccountSidW */
-  LookupAccountSid(lpSystemName: string | Win32Pointer, Sid: Win32Pointer, Name: string | Win32Pointer, cchName: Win32Pointer, ReferencedDomainName: string | Win32Pointer, cchReferencedDomainName: Win32Pointer, peUse: Win32Pointer): number;
+  LookupAccountSid(
+    lpSystemName: string | Win32Pointer,
+    Sid: Win32Pointer,
+    Name: string | Win32Pointer,
+    cchName: Win32Pointer,
+    ReferencedDomainName: string | Win32Pointer,
+    cchReferencedDomainName: Win32Pointer,
+    peUse: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupPrivilegeDisplayNameA */
-  LookupPrivilegeDisplayNameA(lpSystemName: string | Win32Pointer, lpName: string | Win32Pointer, lpDisplayName: string | Win32Pointer, cchDisplayName: Win32Pointer, lpLanguageId: Win32Pointer): number;
+  LookupPrivilegeDisplayNameA(
+    lpSystemName: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+    cchDisplayName: Win32Pointer,
+    lpLanguageId: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupPrivilegeDisplayNameW */
-  LookupPrivilegeDisplayNameW(lpSystemName: string | Win32Pointer, lpName: string | Win32Pointer, lpDisplayName: string | Win32Pointer, cchDisplayName: Win32Pointer, lpLanguageId: Win32Pointer): number;
+  LookupPrivilegeDisplayNameW(
+    lpSystemName: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+    cchDisplayName: Win32Pointer,
+    lpLanguageId: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupPrivilegeDisplayNameW */
-  LookupPrivilegeDisplayName(lpSystemName: string | Win32Pointer, lpName: string | Win32Pointer, lpDisplayName: string | Win32Pointer, cchDisplayName: Win32Pointer, lpLanguageId: Win32Pointer): number;
+  LookupPrivilegeDisplayName(
+    lpSystemName: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpDisplayName: string | Win32Pointer,
+    cchDisplayName: Win32Pointer,
+    lpLanguageId: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupPrivilegeNameA */
-  LookupPrivilegeNameA(lpSystemName: string | Win32Pointer, lpLuid: Win32Pointer, lpName: string | Win32Pointer, cchName: Win32Pointer): number;
+  LookupPrivilegeNameA(
+    lpSystemName: string | Win32Pointer,
+    lpLuid: Win32Pointer,
+    lpName: string | Win32Pointer,
+    cchName: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupPrivilegeNameW */
-  LookupPrivilegeNameW(lpSystemName: string | Win32Pointer, lpLuid: Win32Pointer, lpName: string | Win32Pointer, cchName: Win32Pointer): number;
+  LookupPrivilegeNameW(
+    lpSystemName: string | Win32Pointer,
+    lpLuid: Win32Pointer,
+    lpName: string | Win32Pointer,
+    cchName: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupPrivilegeNameW */
-  LookupPrivilegeName(lpSystemName: string | Win32Pointer, lpLuid: Win32Pointer, lpName: string | Win32Pointer, cchName: Win32Pointer): number;
+  LookupPrivilegeName(
+    lpSystemName: string | Win32Pointer,
+    lpLuid: Win32Pointer,
+    lpName: string | Win32Pointer,
+    cchName: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupPrivilegeValueA */
-  LookupPrivilegeValueA(lpSystemName: string | Win32Pointer, lpName: string | Win32Pointer, lpLuid: Win32Pointer): number;
+  LookupPrivilegeValueA(
+    lpSystemName: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpLuid: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupPrivilegeValueW */
-  LookupPrivilegeValueW(lpSystemName: string | Win32Pointer, lpName: string | Win32Pointer, lpLuid: Win32Pointer): number;
+  LookupPrivilegeValueW(
+    lpSystemName: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpLuid: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupPrivilegeValueW */
-  LookupPrivilegeValue(lpSystemName: string | Win32Pointer, lpName: string | Win32Pointer, lpLuid: Win32Pointer): number;
+  LookupPrivilegeValue(
+    lpSystemName: string | Win32Pointer,
+    lpName: string | Win32Pointer,
+    lpLuid: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupSecurityDescriptorPartsA */
-  LookupSecurityDescriptorPartsA(ppOwner: Win32Pointer, ppGroup: Win32Pointer, pcCountOfAccessEntries: Win32Pointer, ppListOfAccessEntries: Win32Pointer, pcCountOfAuditEntries: Win32Pointer, ppListOfAuditEntries: Win32Pointer, pSD: Win32Pointer): number;
+  LookupSecurityDescriptorPartsA(
+    ppOwner: Win32Pointer,
+    ppGroup: Win32Pointer,
+    pcCountOfAccessEntries: Win32Pointer,
+    ppListOfAccessEntries: Win32Pointer,
+    pcCountOfAuditEntries: Win32Pointer,
+    ppListOfAuditEntries: Win32Pointer,
+    pSD: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupSecurityDescriptorPartsW */
-  LookupSecurityDescriptorPartsW(ppOwner: Win32Pointer, ppGroup: Win32Pointer, pcCountOfAccessEntries: Win32Pointer, ppListOfAccessEntries: Win32Pointer, pcCountOfAuditEntries: Win32Pointer, ppListOfAuditEntries: Win32Pointer, pSD: Win32Pointer): number;
+  LookupSecurityDescriptorPartsW(
+    ppOwner: Win32Pointer,
+    ppGroup: Win32Pointer,
+    pcCountOfAccessEntries: Win32Pointer,
+    ppListOfAccessEntries: Win32Pointer,
+    pcCountOfAuditEntries: Win32Pointer,
+    ppListOfAuditEntries: Win32Pointer,
+    pSD: Win32Pointer,
+  ): number;
   /** advapi32.dll!LookupSecurityDescriptorPartsW */
-  LookupSecurityDescriptorParts(ppOwner: Win32Pointer, ppGroup: Win32Pointer, pcCountOfAccessEntries: Win32Pointer, ppListOfAccessEntries: Win32Pointer, pcCountOfAuditEntries: Win32Pointer, ppListOfAuditEntries: Win32Pointer, pSD: Win32Pointer): number;
+  LookupSecurityDescriptorParts(
+    ppOwner: Win32Pointer,
+    ppGroup: Win32Pointer,
+    pcCountOfAccessEntries: Win32Pointer,
+    ppListOfAccessEntries: Win32Pointer,
+    pcCountOfAuditEntries: Win32Pointer,
+    ppListOfAuditEntries: Win32Pointer,
+    pSD: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaAddAccountRights */
-  LsaAddAccountRights(PolicyHandle: number | bigint, AccountSid: Win32Pointer, UserRights: Win32Pointer, CountOfRights: number): number;
+  LsaAddAccountRights(
+    PolicyHandle: number | bigint,
+    AccountSid: Win32Pointer,
+    UserRights: Win32Pointer,
+    CountOfRights: number,
+  ): number;
   /** advapi32.dll!LsaClose */
   LsaClose(ObjectHandle: number | bigint): number;
   /** advapi32.dll!LsaCreateTrustedDomainEx */
-  LsaCreateTrustedDomainEx(PolicyHandle: number | bigint, TrustedDomainInformation: Win32Pointer, AuthenticationInformation: Win32Pointer, DesiredAccess: number, TrustedDomainHandle: Win32Pointer): number;
+  LsaCreateTrustedDomainEx(
+    PolicyHandle: number | bigint,
+    TrustedDomainInformation: Win32Pointer,
+    AuthenticationInformation: Win32Pointer,
+    DesiredAccess: number,
+    TrustedDomainHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaDeleteTrustedDomain */
   LsaDeleteTrustedDomain(PolicyHandle: number | bigint, TrustedDomainSid: Win32Pointer): number;
   /** advapi32.dll!LsaEnumerateAccountRights */
-  LsaEnumerateAccountRights(PolicyHandle: number | bigint, AccountSid: Win32Pointer, UserRights: Win32Pointer, CountOfRights: Win32Pointer): number;
+  LsaEnumerateAccountRights(
+    PolicyHandle: number | bigint,
+    AccountSid: Win32Pointer,
+    UserRights: Win32Pointer,
+    CountOfRights: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaEnumerateAccountsWithUserRight */
-  LsaEnumerateAccountsWithUserRight(PolicyHandle: number | bigint, UserRight: Win32Pointer, Buffer: Win32Pointer, CountReturned: Win32Pointer): number;
+  LsaEnumerateAccountsWithUserRight(
+    PolicyHandle: number | bigint,
+    UserRight: Win32Pointer,
+    Buffer: Win32Pointer,
+    CountReturned: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaEnumerateTrustedDomains */
-  LsaEnumerateTrustedDomains(PolicyHandle: number | bigint, EnumerationContext: Win32Pointer, Buffer: Win32Pointer, PreferedMaximumLength: number, CountReturned: Win32Pointer): number;
+  LsaEnumerateTrustedDomains(
+    PolicyHandle: number | bigint,
+    EnumerationContext: Win32Pointer,
+    Buffer: Win32Pointer,
+    PreferedMaximumLength: number,
+    CountReturned: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaEnumerateTrustedDomainsEx */
-  LsaEnumerateTrustedDomainsEx(PolicyHandle: number | bigint, EnumerationContext: Win32Pointer, Buffer: Win32Pointer, PreferedMaximumLength: number, CountReturned: Win32Pointer): number;
+  LsaEnumerateTrustedDomainsEx(
+    PolicyHandle: number | bigint,
+    EnumerationContext: Win32Pointer,
+    Buffer: Win32Pointer,
+    PreferedMaximumLength: number,
+    CountReturned: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaFreeMemory */
   LsaFreeMemory(Buffer: Win32Pointer): number;
   /** advapi32.dll!LsaGetAppliedCAPIDs */
   LsaGetAppliedCAPIDs(SystemName: Win32Pointer, CAPIDs: Win32Pointer, CAPIDCount: Win32Pointer): number;
   /** advapi32.dll!LsaLookupNames */
-  LsaLookupNames(PolicyHandle: number | bigint, Count: number, Names: Win32Pointer, ReferencedDomains: Win32Pointer, Sids: Win32Pointer): number;
+  LsaLookupNames(
+    PolicyHandle: number | bigint,
+    Count: number,
+    Names: Win32Pointer,
+    ReferencedDomains: Win32Pointer,
+    Sids: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaLookupNames2 */
-  LsaLookupNames2(PolicyHandle: number | bigint, Flags: number, Count: number, Names: Win32Pointer, ReferencedDomains: Win32Pointer, Sids: Win32Pointer): number;
+  LsaLookupNames2(
+    PolicyHandle: number | bigint,
+    Flags: number,
+    Count: number,
+    Names: Win32Pointer,
+    ReferencedDomains: Win32Pointer,
+    Sids: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaLookupSids */
-  LsaLookupSids(PolicyHandle: number | bigint, Count: number, Sids: Win32Pointer, ReferencedDomains: Win32Pointer, Names: Win32Pointer): number;
+  LsaLookupSids(
+    PolicyHandle: number | bigint,
+    Count: number,
+    Sids: Win32Pointer,
+    ReferencedDomains: Win32Pointer,
+    Names: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaLookupSids2 */
-  LsaLookupSids2(PolicyHandle: number | bigint, LookupOptions: number, Count: number, Sids: Win32Pointer, ReferencedDomains: Win32Pointer, Names: Win32Pointer): number;
+  LsaLookupSids2(
+    PolicyHandle: number | bigint,
+    LookupOptions: number,
+    Count: number,
+    Sids: Win32Pointer,
+    ReferencedDomains: Win32Pointer,
+    Names: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaNtStatusToWinError */
   LsaNtStatusToWinError(Status: number): number;
   /** advapi32.dll!LsaOpenPolicy */
-  LsaOpenPolicy(SystemName: Win32Pointer, ObjectAttributes: Win32Pointer, DesiredAccess: number, PolicyHandle: Win32Pointer): number;
+  LsaOpenPolicy(
+    SystemName: Win32Pointer,
+    ObjectAttributes: Win32Pointer,
+    DesiredAccess: number,
+    PolicyHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaOpenTrustedDomainByName */
-  LsaOpenTrustedDomainByName(PolicyHandle: number | bigint, TrustedDomainName: Win32Pointer, DesiredAccess: number, TrustedDomainHandle: Win32Pointer): number;
+  LsaOpenTrustedDomainByName(
+    PolicyHandle: number | bigint,
+    TrustedDomainName: Win32Pointer,
+    DesiredAccess: number,
+    TrustedDomainHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaQueryCAPs */
   LsaQueryCAPs(CAPIDs: Win32Pointer, CAPIDCount: number, CAPs: Win32Pointer, CAPCount: Win32Pointer): number;
   /** advapi32.dll!LsaQueryDomainInformationPolicy */
-  LsaQueryDomainInformationPolicy(PolicyHandle: number | bigint, InformationClass: number, Buffer: Win32Pointer): number;
+  LsaQueryDomainInformationPolicy(
+    PolicyHandle: number | bigint,
+    InformationClass: number,
+    Buffer: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaQueryForestTrustInformation */
-  LsaQueryForestTrustInformation(PolicyHandle: number | bigint, TrustedDomainName: Win32Pointer, ForestTrustInfo: Win32Pointer): number;
+  LsaQueryForestTrustInformation(
+    PolicyHandle: number | bigint,
+    TrustedDomainName: Win32Pointer,
+    ForestTrustInfo: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaQueryForestTrustInformation2 */
-  LsaQueryForestTrustInformation2(PolicyHandle: number | bigint, TrustedDomainName: Win32Pointer, HighestRecordType: number, ForestTrustInfo: Win32Pointer): number;
+  LsaQueryForestTrustInformation2(
+    PolicyHandle: number | bigint,
+    TrustedDomainName: Win32Pointer,
+    HighestRecordType: number,
+    ForestTrustInfo: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaQueryInformationPolicy */
   LsaQueryInformationPolicy(PolicyHandle: number | bigint, InformationClass: number, Buffer: Win32Pointer): number;
   /** advapi32.dll!LsaQueryTrustedDomainInfo */
-  LsaQueryTrustedDomainInfo(PolicyHandle: number | bigint, TrustedDomainSid: Win32Pointer, InformationClass: number, Buffer: Win32Pointer): number;
+  LsaQueryTrustedDomainInfo(
+    PolicyHandle: number | bigint,
+    TrustedDomainSid: Win32Pointer,
+    InformationClass: number,
+    Buffer: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaQueryTrustedDomainInfoByName */
-  LsaQueryTrustedDomainInfoByName(PolicyHandle: number | bigint, TrustedDomainName: Win32Pointer, InformationClass: number, Buffer: Win32Pointer): number;
+  LsaQueryTrustedDomainInfoByName(
+    PolicyHandle: number | bigint,
+    TrustedDomainName: Win32Pointer,
+    InformationClass: number,
+    Buffer: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaRemoveAccountRights */
-  LsaRemoveAccountRights(PolicyHandle: number | bigint, AccountSid: Win32Pointer, AllRights: number, UserRights: Win32Pointer, CountOfRights: number): number;
+  LsaRemoveAccountRights(
+    PolicyHandle: number | bigint,
+    AccountSid: Win32Pointer,
+    AllRights: number,
+    UserRights: Win32Pointer,
+    CountOfRights: number,
+  ): number;
   /** advapi32.dll!LsaRetrievePrivateData */
   LsaRetrievePrivateData(PolicyHandle: number | bigint, KeyName: Win32Pointer, PrivateData: Win32Pointer): number;
   /** advapi32.dll!LsaSetCAPs */
@@ -897,25 +2610,80 @@ interface Functions {
   /** advapi32.dll!LsaSetDomainInformationPolicy */
   LsaSetDomainInformationPolicy(PolicyHandle: number | bigint, InformationClass: number, Buffer: Win32Pointer): number;
   /** advapi32.dll!LsaSetForestTrustInformation */
-  LsaSetForestTrustInformation(PolicyHandle: number | bigint, TrustedDomainName: Win32Pointer, ForestTrustInfo: Win32Pointer, CheckOnly: number, CollisionInfo: Win32Pointer): number;
+  LsaSetForestTrustInformation(
+    PolicyHandle: number | bigint,
+    TrustedDomainName: Win32Pointer,
+    ForestTrustInfo: Win32Pointer,
+    CheckOnly: number,
+    CollisionInfo: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaSetForestTrustInformation2 */
-  LsaSetForestTrustInformation2(PolicyHandle: number | bigint, TrustedDomainName: Win32Pointer, HighestRecordType: number, ForestTrustInfo: Win32Pointer, CheckOnly: number, CollisionInfo: Win32Pointer): number;
+  LsaSetForestTrustInformation2(
+    PolicyHandle: number | bigint,
+    TrustedDomainName: Win32Pointer,
+    HighestRecordType: number,
+    ForestTrustInfo: Win32Pointer,
+    CheckOnly: number,
+    CollisionInfo: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaSetInformationPolicy */
   LsaSetInformationPolicy(PolicyHandle: number | bigint, InformationClass: number, Buffer: Win32Pointer): number;
   /** advapi32.dll!LsaSetTrustedDomainInfoByName */
-  LsaSetTrustedDomainInfoByName(PolicyHandle: number | bigint, TrustedDomainName: Win32Pointer, InformationClass: number, Buffer: Win32Pointer): number;
+  LsaSetTrustedDomainInfoByName(
+    PolicyHandle: number | bigint,
+    TrustedDomainName: Win32Pointer,
+    InformationClass: number,
+    Buffer: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaSetTrustedDomainInformation */
-  LsaSetTrustedDomainInformation(PolicyHandle: number | bigint, TrustedDomainSid: Win32Pointer, InformationClass: number, Buffer: Win32Pointer): number;
+  LsaSetTrustedDomainInformation(
+    PolicyHandle: number | bigint,
+    TrustedDomainSid: Win32Pointer,
+    InformationClass: number,
+    Buffer: Win32Pointer,
+  ): number;
   /** advapi32.dll!LsaStorePrivateData */
   LsaStorePrivateData(PolicyHandle: number | bigint, KeyName: Win32Pointer, PrivateData: Win32Pointer): number;
   /** advapi32.dll!MSChapSrvChangePassword */
-  MSChapSrvChangePassword(ServerName: string | Win32Pointer, UserName: string | Win32Pointer, LmOldPresent: number, LmOldOwfPassword: Win32Pointer, LmNewOwfPassword: Win32Pointer, NtOldOwfPassword: Win32Pointer, NtNewOwfPassword: Win32Pointer): number;
+  MSChapSrvChangePassword(
+    ServerName: string | Win32Pointer,
+    UserName: string | Win32Pointer,
+    LmOldPresent: number,
+    LmOldOwfPassword: Win32Pointer,
+    LmNewOwfPassword: Win32Pointer,
+    NtOldOwfPassword: Win32Pointer,
+    NtNewOwfPassword: Win32Pointer,
+  ): number;
   /** advapi32.dll!MSChapSrvChangePassword2 */
-  MSChapSrvChangePassword2(ServerName: string | Win32Pointer, UserName: string | Win32Pointer, NewPasswordEncryptedWithOldNt: Win32Pointer, OldNtOwfPasswordEncryptedWithNewNt: Win32Pointer, LmPresent: number, NewPasswordEncryptedWithOldLm: Win32Pointer, OldLmOwfPasswordEncryptedWithNewLmOrNt: Win32Pointer): number;
+  MSChapSrvChangePassword2(
+    ServerName: string | Win32Pointer,
+    UserName: string | Win32Pointer,
+    NewPasswordEncryptedWithOldNt: Win32Pointer,
+    OldNtOwfPasswordEncryptedWithNewNt: Win32Pointer,
+    LmPresent: number,
+    NewPasswordEncryptedWithOldLm: Win32Pointer,
+    OldLmOwfPasswordEncryptedWithNewLmOrNt: Win32Pointer,
+  ): number;
   /** advapi32.dll!MakeAbsoluteSD */
-  MakeAbsoluteSD(pSelfRelativeSecurityDescriptor: Win32Pointer, pAbsoluteSecurityDescriptor: Win32Pointer, lpdwAbsoluteSecurityDescriptorSize: Win32Pointer, pDacl: Win32Pointer, lpdwDaclSize: Win32Pointer, pSacl: Win32Pointer, lpdwSaclSize: Win32Pointer, pOwner: Win32Pointer, lpdwOwnerSize: Win32Pointer, pPrimaryGroup: Win32Pointer, lpdwPrimaryGroupSize: Win32Pointer): number;
+  MakeAbsoluteSD(
+    pSelfRelativeSecurityDescriptor: Win32Pointer,
+    pAbsoluteSecurityDescriptor: Win32Pointer,
+    lpdwAbsoluteSecurityDescriptorSize: Win32Pointer,
+    pDacl: Win32Pointer,
+    lpdwDaclSize: Win32Pointer,
+    pSacl: Win32Pointer,
+    lpdwSaclSize: Win32Pointer,
+    pOwner: Win32Pointer,
+    lpdwOwnerSize: Win32Pointer,
+    pPrimaryGroup: Win32Pointer,
+    lpdwPrimaryGroupSize: Win32Pointer,
+  ): number;
   /** advapi32.dll!MakeSelfRelativeSD */
-  MakeSelfRelativeSD(pAbsoluteSecurityDescriptor: Win32Pointer, pSelfRelativeSecurityDescriptor: Win32Pointer, lpdwBufferLength: Win32Pointer): number;
+  MakeSelfRelativeSD(
+    pAbsoluteSecurityDescriptor: Win32Pointer,
+    pSelfRelativeSecurityDescriptor: Win32Pointer,
+    lpdwBufferLength: Win32Pointer,
+  ): number;
   /** advapi32.dll!MapGenericMask */
   MapGenericMask(AccessMask: Win32Pointer, GenericMapping: Win32Pointer): void;
   /** advapi32.dll!NotifyBootConfigStatus */
@@ -935,23 +2703,91 @@ interface Functions {
   /** advapi32.dll!ObjectCloseAuditAlarmW */
   ObjectCloseAuditAlarm(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, GenerateOnClose: number): number;
   /** advapi32.dll!ObjectDeleteAuditAlarmA */
-  ObjectDeleteAuditAlarmA(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, GenerateOnClose: number): number;
+  ObjectDeleteAuditAlarmA(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    GenerateOnClose: number,
+  ): number;
   /** advapi32.dll!ObjectDeleteAuditAlarmW */
-  ObjectDeleteAuditAlarmW(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, GenerateOnClose: number): number;
+  ObjectDeleteAuditAlarmW(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    GenerateOnClose: number,
+  ): number;
   /** advapi32.dll!ObjectDeleteAuditAlarmW */
   ObjectDeleteAuditAlarm(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, GenerateOnClose: number): number;
   /** advapi32.dll!ObjectOpenAuditAlarmA */
-  ObjectOpenAuditAlarmA(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, pSecurityDescriptor: Win32Pointer, ClientToken: Win32Pointer, DesiredAccess: number, GrantedAccess: number, Privileges: Win32Pointer, ObjectCreation: number, AccessGranted: number, GenerateOnClose: Win32Pointer): number;
+  ObjectOpenAuditAlarmA(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    pSecurityDescriptor: Win32Pointer,
+    ClientToken: Win32Pointer,
+    DesiredAccess: number,
+    GrantedAccess: number,
+    Privileges: Win32Pointer,
+    ObjectCreation: number,
+    AccessGranted: number,
+    GenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!ObjectOpenAuditAlarmW */
-  ObjectOpenAuditAlarmW(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, pSecurityDescriptor: Win32Pointer, ClientToken: Win32Pointer, DesiredAccess: number, GrantedAccess: number, Privileges: Win32Pointer, ObjectCreation: number, AccessGranted: number, GenerateOnClose: Win32Pointer): number;
+  ObjectOpenAuditAlarmW(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    pSecurityDescriptor: Win32Pointer,
+    ClientToken: Win32Pointer,
+    DesiredAccess: number,
+    GrantedAccess: number,
+    Privileges: Win32Pointer,
+    ObjectCreation: number,
+    AccessGranted: number,
+    GenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!ObjectOpenAuditAlarmW */
-  ObjectOpenAuditAlarm(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ObjectTypeName: string | Win32Pointer, ObjectName: string | Win32Pointer, pSecurityDescriptor: Win32Pointer, ClientToken: Win32Pointer, DesiredAccess: number, GrantedAccess: number, Privileges: Win32Pointer, ObjectCreation: number, AccessGranted: number, GenerateOnClose: Win32Pointer): number;
+  ObjectOpenAuditAlarm(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ObjectTypeName: string | Win32Pointer,
+    ObjectName: string | Win32Pointer,
+    pSecurityDescriptor: Win32Pointer,
+    ClientToken: Win32Pointer,
+    DesiredAccess: number,
+    GrantedAccess: number,
+    Privileges: Win32Pointer,
+    ObjectCreation: number,
+    AccessGranted: number,
+    GenerateOnClose: Win32Pointer,
+  ): number;
   /** advapi32.dll!ObjectPrivilegeAuditAlarmA */
-  ObjectPrivilegeAuditAlarmA(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ClientToken: Win32Pointer, DesiredAccess: number, Privileges: Win32Pointer, AccessGranted: number): number;
+  ObjectPrivilegeAuditAlarmA(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ClientToken: Win32Pointer,
+    DesiredAccess: number,
+    Privileges: Win32Pointer,
+    AccessGranted: number,
+  ): number;
   /** advapi32.dll!ObjectPrivilegeAuditAlarmW */
-  ObjectPrivilegeAuditAlarmW(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ClientToken: Win32Pointer, DesiredAccess: number, Privileges: Win32Pointer, AccessGranted: number): number;
+  ObjectPrivilegeAuditAlarmW(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ClientToken: Win32Pointer,
+    DesiredAccess: number,
+    Privileges: Win32Pointer,
+    AccessGranted: number,
+  ): number;
   /** advapi32.dll!ObjectPrivilegeAuditAlarmW */
-  ObjectPrivilegeAuditAlarm(SubsystemName: string | Win32Pointer, HandleId: Win32Pointer, ClientToken: Win32Pointer, DesiredAccess: number, Privileges: Win32Pointer, AccessGranted: number): number;
+  ObjectPrivilegeAuditAlarm(
+    SubsystemName: string | Win32Pointer,
+    HandleId: Win32Pointer,
+    ClientToken: Win32Pointer,
+    DesiredAccess: number,
+    Privileges: Win32Pointer,
+    AccessGranted: number,
+  ): number;
   /** advapi32.dll!OpenBackupEventLogA */
   OpenBackupEventLogA(lpUNCServerName: string | Win32Pointer, lpFileName: string | Win32Pointer): number | null;
   /** advapi32.dll!OpenBackupEventLogW */
@@ -973,11 +2809,23 @@ interface Functions {
   /** advapi32.dll!OpenProcessToken */
   OpenProcessToken(ProcessHandle: Win32Pointer, DesiredAccess: number, TokenHandle: Win32Pointer): number;
   /** advapi32.dll!OpenSCManagerA */
-  OpenSCManagerA(lpMachineName: string | Win32Pointer, lpDatabaseName: string | Win32Pointer, dwDesiredAccess: number): number | null;
+  OpenSCManagerA(
+    lpMachineName: string | Win32Pointer,
+    lpDatabaseName: string | Win32Pointer,
+    dwDesiredAccess: number,
+  ): number | null;
   /** advapi32.dll!OpenSCManagerW */
-  OpenSCManagerW(lpMachineName: string | Win32Pointer, lpDatabaseName: string | Win32Pointer, dwDesiredAccess: number): number | null;
+  OpenSCManagerW(
+    lpMachineName: string | Win32Pointer,
+    lpDatabaseName: string | Win32Pointer,
+    dwDesiredAccess: number,
+  ): number | null;
   /** advapi32.dll!OpenSCManagerW */
-  OpenSCManager(lpMachineName: string | Win32Pointer, lpDatabaseName: string | Win32Pointer, dwDesiredAccess: number): number | null;
+  OpenSCManager(
+    lpMachineName: string | Win32Pointer,
+    lpDatabaseName: string | Win32Pointer,
+    dwDesiredAccess: number,
+  ): number | null;
   /** advapi32.dll!OpenServiceA */
   OpenServiceA(hSCManager: Win32Pointer, lpServiceName: string | Win32Pointer, dwDesiredAccess: number): number | null;
   /** advapi32.dll!OpenServiceW */
@@ -985,19 +2833,42 @@ interface Functions {
   /** advapi32.dll!OpenServiceW */
   OpenService(hSCManager: Win32Pointer, lpServiceName: string | Win32Pointer, dwDesiredAccess: number): number | null;
   /** advapi32.dll!OpenThreadToken */
-  OpenThreadToken(ThreadHandle: Win32Pointer, DesiredAccess: number, OpenAsSelf: number, TokenHandle: Win32Pointer): number;
+  OpenThreadToken(
+    ThreadHandle: Win32Pointer,
+    DesiredAccess: number,
+    OpenAsSelf: number,
+    TokenHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!OpenThreadWaitChainSession */
   OpenThreadWaitChainSession(Flags: number, callback: Win32Callback): number | null;
   /** advapi32.dll!OpenTraceA */
   OpenTraceA(Logfile: Win32Pointer): Win32Struct;
   /** advapi32.dll!OpenTraceFromBufferStream */
-  OpenTraceFromBufferStream(Options: Win32Pointer, BufferCompletionCallback: Win32Callback, BufferCompletionContext: Win32Pointer): Win32Struct;
+  OpenTraceFromBufferStream(
+    Options: Win32Pointer,
+    BufferCompletionCallback: Win32Callback,
+    BufferCompletionContext: Win32Pointer,
+  ): Win32Struct;
   /** advapi32.dll!OpenTraceFromFile */
-  OpenTraceFromFile(LogFileName: string | Win32Pointer, Options: Win32Pointer, LogFileHeader: Win32Pointer): Win32Struct;
+  OpenTraceFromFile(
+    LogFileName: string | Win32Pointer,
+    Options: Win32Pointer,
+    LogFileHeader: Win32Pointer,
+  ): Win32Struct;
   /** advapi32.dll!OpenTraceFromRealTimeLogger */
-  OpenTraceFromRealTimeLogger(LoggerName: string | Win32Pointer, Options: Win32Pointer, LogFileHeader: Win32Pointer): Win32Struct;
+  OpenTraceFromRealTimeLogger(
+    LoggerName: string | Win32Pointer,
+    Options: Win32Pointer,
+    LogFileHeader: Win32Pointer,
+  ): Win32Struct;
   /** advapi32.dll!OpenTraceFromRealTimeLoggerWithAllocationOptions */
-  OpenTraceFromRealTimeLoggerWithAllocationOptions(LoggerName: string | Win32Pointer, Options: Win32Pointer, AllocationSize: number | bigint, MemoryPartitionHandle: Win32Pointer, LogFileHeader: Win32Pointer): Win32Struct;
+  OpenTraceFromRealTimeLoggerWithAllocationOptions(
+    LoggerName: string | Win32Pointer,
+    Options: Win32Pointer,
+    AllocationSize: number | bigint,
+    MemoryPartitionHandle: Win32Pointer,
+    LogFileHeader: Win32Pointer,
+  ): Win32Struct;
   /** advapi32.dll!OpenTraceW */
   OpenTraceW(Logfile: Win32Pointer): Win32Struct;
   /** advapi32.dll!OpenTraceW */
@@ -1011,41 +2882,110 @@ interface Functions {
   /** advapi32.dll!PerfCloseQueryHandle */
   PerfCloseQueryHandle(hQuery: Win32Pointer): number;
   /** advapi32.dll!PerfCreateInstance */
-  PerfCreateInstance(ProviderHandle: Win32Pointer, CounterSetGuid: Win32Pointer, Name: string | Win32Pointer, Id: number): number | null;
+  PerfCreateInstance(
+    ProviderHandle: Win32Pointer,
+    CounterSetGuid: Win32Pointer,
+    Name: string | Win32Pointer,
+    Id: number,
+  ): number | null;
   /** advapi32.dll!PerfDecrementULongCounterValue */
-  PerfDecrementULongCounterValue(Provider: Win32Pointer, Instance: Win32Pointer, CounterId: number, Value: number): number;
+  PerfDecrementULongCounterValue(
+    Provider: Win32Pointer,
+    Instance: Win32Pointer,
+    CounterId: number,
+    Value: number,
+  ): number;
   /** advapi32.dll!PerfDecrementULongLongCounterValue */
-  PerfDecrementULongLongCounterValue(Provider: Win32Pointer, Instance: Win32Pointer, CounterId: number, Value: number | bigint): number;
+  PerfDecrementULongLongCounterValue(
+    Provider: Win32Pointer,
+    Instance: Win32Pointer,
+    CounterId: number,
+    Value: number | bigint,
+  ): number;
   /** advapi32.dll!PerfDeleteCounters */
   PerfDeleteCounters(hQuery: Win32Pointer, pCounters: Win32Pointer, cbCounters: number): number;
   /** advapi32.dll!PerfDeleteInstance */
   PerfDeleteInstance(Provider: Win32Pointer, InstanceBlock: Win32Pointer): number;
   /** advapi32.dll!PerfEnumerateCounterSet */
-  PerfEnumerateCounterSet(szMachine: string | Win32Pointer, pCounterSetIds: Win32Pointer, cCounterSetIds: number, pcCounterSetIdsActual: Win32Pointer): number;
+  PerfEnumerateCounterSet(
+    szMachine: string | Win32Pointer,
+    pCounterSetIds: Win32Pointer,
+    cCounterSetIds: number,
+    pcCounterSetIdsActual: Win32Pointer,
+  ): number;
   /** advapi32.dll!PerfEnumerateCounterSetInstances */
-  PerfEnumerateCounterSetInstances(szMachine: string | Win32Pointer, pCounterSetId: Win32Pointer, pInstances: Win32Pointer, cbInstances: number, pcbInstancesActual: Win32Pointer): number;
+  PerfEnumerateCounterSetInstances(
+    szMachine: string | Win32Pointer,
+    pCounterSetId: Win32Pointer,
+    pInstances: Win32Pointer,
+    cbInstances: number,
+    pcbInstancesActual: Win32Pointer,
+  ): number;
   /** advapi32.dll!PerfIncrementULongCounterValue */
-  PerfIncrementULongCounterValue(Provider: Win32Pointer, Instance: Win32Pointer, CounterId: number, Value: number): number;
+  PerfIncrementULongCounterValue(
+    Provider: Win32Pointer,
+    Instance: Win32Pointer,
+    CounterId: number,
+    Value: number,
+  ): number;
   /** advapi32.dll!PerfIncrementULongLongCounterValue */
-  PerfIncrementULongLongCounterValue(Provider: Win32Pointer, Instance: Win32Pointer, CounterId: number, Value: number | bigint): number;
+  PerfIncrementULongLongCounterValue(
+    Provider: Win32Pointer,
+    Instance: Win32Pointer,
+    CounterId: number,
+    Value: number | bigint,
+  ): number;
   /** advapi32.dll!PerfOpenQueryHandle */
   PerfOpenQueryHandle(szMachine: string | Win32Pointer, phQuery: Win32Pointer): number;
   /** advapi32.dll!PerfQueryCounterData */
-  PerfQueryCounterData(hQuery: Win32Pointer, pCounterBlock: Win32Pointer, cbCounterBlock: number, pcbCounterBlockActual: Win32Pointer): number;
+  PerfQueryCounterData(
+    hQuery: Win32Pointer,
+    pCounterBlock: Win32Pointer,
+    cbCounterBlock: number,
+    pcbCounterBlockActual: Win32Pointer,
+  ): number;
   /** advapi32.dll!PerfQueryCounterInfo */
-  PerfQueryCounterInfo(hQuery: Win32Pointer, pCounters: Win32Pointer, cbCounters: number, pcbCountersActual: Win32Pointer): number;
+  PerfQueryCounterInfo(
+    hQuery: Win32Pointer,
+    pCounters: Win32Pointer,
+    cbCounters: number,
+    pcbCountersActual: Win32Pointer,
+  ): number;
   /** advapi32.dll!PerfQueryCounterSetRegistrationInfo */
-  PerfQueryCounterSetRegistrationInfo(szMachine: string | Win32Pointer, pCounterSetId: Win32Pointer, requestCode: number, requestLangId: number, pbRegInfo: Win32Pointer, cbRegInfo: number, pcbRegInfoActual: Win32Pointer): number;
+  PerfQueryCounterSetRegistrationInfo(
+    szMachine: string | Win32Pointer,
+    pCounterSetId: Win32Pointer,
+    requestCode: number,
+    requestLangId: number,
+    pbRegInfo: Win32Pointer,
+    cbRegInfo: number,
+    pcbRegInfoActual: Win32Pointer,
+  ): number;
   /** advapi32.dll!PerfQueryInstance */
-  PerfQueryInstance(ProviderHandle: Win32Pointer, CounterSetGuid: Win32Pointer, Name: string | Win32Pointer, Id: number): number | null;
+  PerfQueryInstance(
+    ProviderHandle: Win32Pointer,
+    CounterSetGuid: Win32Pointer,
+    Name: string | Win32Pointer,
+    Id: number,
+  ): number | null;
   /** advapi32.dll!PerfSetCounterRefValue */
-  PerfSetCounterRefValue(Provider: Win32Pointer, Instance: Win32Pointer, CounterId: number, Address: Win32Pointer): number;
+  PerfSetCounterRefValue(
+    Provider: Win32Pointer,
+    Instance: Win32Pointer,
+    CounterId: number,
+    Address: Win32Pointer,
+  ): number;
   /** advapi32.dll!PerfSetCounterSetInfo */
   PerfSetCounterSetInfo(ProviderHandle: Win32Pointer, Template: Win32Pointer, TemplateSize: number): number;
   /** advapi32.dll!PerfSetULongCounterValue */
   PerfSetULongCounterValue(Provider: Win32Pointer, Instance: Win32Pointer, CounterId: number, Value: number): number;
   /** advapi32.dll!PerfSetULongLongCounterValue */
-  PerfSetULongLongCounterValue(Provider: Win32Pointer, Instance: Win32Pointer, CounterId: number, Value: number | bigint): number;
+  PerfSetULongLongCounterValue(
+    Provider: Win32Pointer,
+    Instance: Win32Pointer,
+    CounterId: number,
+    Value: number | bigint,
+  ): number;
   /** advapi32.dll!PerfStartProvider */
   PerfStartProvider(ProviderGuid: Win32Pointer, ControlCallback: Win32Callback, phProvider: Win32Pointer): number;
   /** advapi32.dll!PerfStartProviderEx */
@@ -1055,11 +2995,29 @@ interface Functions {
   /** advapi32.dll!PrivilegeCheck */
   PrivilegeCheck(ClientToken: Win32Pointer, RequiredPrivileges: Win32Pointer, pfResult: Win32Pointer): number;
   /** advapi32.dll!PrivilegedServiceAuditAlarmA */
-  PrivilegedServiceAuditAlarmA(SubsystemName: string | Win32Pointer, ServiceName: string | Win32Pointer, ClientToken: Win32Pointer, Privileges: Win32Pointer, AccessGranted: number): number;
+  PrivilegedServiceAuditAlarmA(
+    SubsystemName: string | Win32Pointer,
+    ServiceName: string | Win32Pointer,
+    ClientToken: Win32Pointer,
+    Privileges: Win32Pointer,
+    AccessGranted: number,
+  ): number;
   /** advapi32.dll!PrivilegedServiceAuditAlarmW */
-  PrivilegedServiceAuditAlarmW(SubsystemName: string | Win32Pointer, ServiceName: string | Win32Pointer, ClientToken: Win32Pointer, Privileges: Win32Pointer, AccessGranted: number): number;
+  PrivilegedServiceAuditAlarmW(
+    SubsystemName: string | Win32Pointer,
+    ServiceName: string | Win32Pointer,
+    ClientToken: Win32Pointer,
+    Privileges: Win32Pointer,
+    AccessGranted: number,
+  ): number;
   /** advapi32.dll!PrivilegedServiceAuditAlarmW */
-  PrivilegedServiceAuditAlarm(SubsystemName: string | Win32Pointer, ServiceName: string | Win32Pointer, ClientToken: Win32Pointer, Privileges: Win32Pointer, AccessGranted: number): number;
+  PrivilegedServiceAuditAlarm(
+    SubsystemName: string | Win32Pointer,
+    ServiceName: string | Win32Pointer,
+    ClientToken: Win32Pointer,
+    Privileges: Win32Pointer,
+    AccessGranted: number,
+  ): number;
   /** advapi32.dll!ProcessTrace */
   ProcessTrace(HandleArray: Win32Pointer, HandleCount: number, StartTime: Win32Pointer, EndTime: Win32Pointer): number;
   /** advapi32.dll!ProcessTraceAddBufferToBufferStream */
@@ -1079,35 +3037,107 @@ interface Functions {
   /** advapi32.dll!QuerySecurityAccessMask */
   QuerySecurityAccessMask(SecurityInformation: number, DesiredAccess: Win32Pointer): void;
   /** advapi32.dll!QueryServiceConfig2A */
-  QueryServiceConfig2A(hService: Win32Pointer, dwInfoLevel: number, lpBuffer: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer): number;
+  QueryServiceConfig2A(
+    hService: Win32Pointer,
+    dwInfoLevel: number,
+    lpBuffer: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryServiceConfig2W */
-  QueryServiceConfig2W(hService: Win32Pointer, dwInfoLevel: number, lpBuffer: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer): number;
+  QueryServiceConfig2W(
+    hService: Win32Pointer,
+    dwInfoLevel: number,
+    lpBuffer: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryServiceConfig2W */
-  QueryServiceConfig2(hService: Win32Pointer, dwInfoLevel: number, lpBuffer: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer): number;
+  QueryServiceConfig2(
+    hService: Win32Pointer,
+    dwInfoLevel: number,
+    lpBuffer: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryServiceConfigA */
-  QueryServiceConfigA(hService: Win32Pointer, lpServiceConfig: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer): number;
+  QueryServiceConfigA(
+    hService: Win32Pointer,
+    lpServiceConfig: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryServiceConfigW */
-  QueryServiceConfigW(hService: Win32Pointer, lpServiceConfig: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer): number;
+  QueryServiceConfigW(
+    hService: Win32Pointer,
+    lpServiceConfig: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryServiceConfigW */
-  QueryServiceConfig(hService: Win32Pointer, lpServiceConfig: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer): number;
+  QueryServiceConfig(
+    hService: Win32Pointer,
+    lpServiceConfig: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryServiceDynamicInformation */
-  QueryServiceDynamicInformation(hServiceStatus: Win32Pointer, dwInfoLevel: number, ppDynamicInfo: Win32Pointer): number;
+  QueryServiceDynamicInformation(
+    hServiceStatus: Win32Pointer,
+    dwInfoLevel: number,
+    ppDynamicInfo: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryServiceLockStatusA */
-  QueryServiceLockStatusA(hSCManager: Win32Pointer, lpLockStatus: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer): number;
+  QueryServiceLockStatusA(
+    hSCManager: Win32Pointer,
+    lpLockStatus: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryServiceLockStatusW */
-  QueryServiceLockStatusW(hSCManager: Win32Pointer, lpLockStatus: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer): number;
+  QueryServiceLockStatusW(
+    hSCManager: Win32Pointer,
+    lpLockStatus: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryServiceLockStatusW */
-  QueryServiceLockStatus(hSCManager: Win32Pointer, lpLockStatus: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer): number;
+  QueryServiceLockStatus(
+    hSCManager: Win32Pointer,
+    lpLockStatus: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryServiceObjectSecurity */
-  QueryServiceObjectSecurity(hService: Win32Pointer, dwSecurityInformation: number, lpSecurityDescriptor: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer): number;
+  QueryServiceObjectSecurity(
+    hService: Win32Pointer,
+    dwSecurityInformation: number,
+    lpSecurityDescriptor: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryServiceStatus */
   QueryServiceStatus(hService: Win32Pointer, lpServiceStatus: Win32Pointer): number;
   /** advapi32.dll!QueryServiceStatusEx */
-  QueryServiceStatusEx(hService: Win32Pointer, InfoLevel: number, lpBuffer: Win32Pointer, cbBufSize: number, pcbBytesNeeded: Win32Pointer): number;
+  QueryServiceStatusEx(
+    hService: Win32Pointer,
+    InfoLevel: number,
+    lpBuffer: Win32Pointer,
+    cbBufSize: number,
+    pcbBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryTraceA */
   QueryTraceA(TraceId: number | bigint, InstanceName: string | Win32Pointer, Properties: Win32Pointer): number;
   /** advapi32.dll!QueryTraceProcessingHandle */
-  QueryTraceProcessingHandle(ProcessingHandle: Win32StructInit, InformationClass: number, InBuffer: Win32Pointer, InBufferSize: number, OutBuffer: Win32Pointer, OutBufferSize: number, ReturnLength: Win32Pointer): number;
+  QueryTraceProcessingHandle(
+    ProcessingHandle: Win32StructInit,
+    InformationClass: number,
+    InBuffer: Win32Pointer,
+    InBufferSize: number,
+    OutBuffer: Win32Pointer,
+    OutBufferSize: number,
+    ReturnLength: Win32Pointer,
+  ): number;
   /** advapi32.dll!QueryTraceW */
   QueryTraceW(TraceId: number | bigint, InstanceName: string | Win32Pointer, Properties: Win32Pointer): number;
   /** advapi32.dll!QueryTraceW */
@@ -1115,23 +3145,66 @@ interface Functions {
   /** advapi32.dll!QueryUsersOnEncryptedFile */
   QueryUsersOnEncryptedFile(lpFileName: string | Win32Pointer, pUsers: Win32Pointer): number;
   /** advapi32.dll!ReadEncryptedFileRaw */
-  ReadEncryptedFileRaw(pfExportCallback: Win32Callback, pvCallbackContext: Win32Pointer, pvContext: Win32Pointer): number;
+  ReadEncryptedFileRaw(
+    pfExportCallback: Win32Callback,
+    pvCallbackContext: Win32Pointer,
+    pvContext: Win32Pointer,
+  ): number;
   /** advapi32.dll!ReadEventLogA */
-  ReadEventLogA(hEventLog: Win32Pointer, dwReadFlags: number, dwRecordOffset: number, lpBuffer: Win32Pointer, nNumberOfBytesToRead: number, pnBytesRead: Win32Pointer, pnMinNumberOfBytesNeeded: Win32Pointer): number;
+  ReadEventLogA(
+    hEventLog: Win32Pointer,
+    dwReadFlags: number,
+    dwRecordOffset: number,
+    lpBuffer: Win32Pointer,
+    nNumberOfBytesToRead: number,
+    pnBytesRead: Win32Pointer,
+    pnMinNumberOfBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!ReadEventLogW */
-  ReadEventLogW(hEventLog: Win32Pointer, dwReadFlags: number, dwRecordOffset: number, lpBuffer: Win32Pointer, nNumberOfBytesToRead: number, pnBytesRead: Win32Pointer, pnMinNumberOfBytesNeeded: Win32Pointer): number;
+  ReadEventLogW(
+    hEventLog: Win32Pointer,
+    dwReadFlags: number,
+    dwRecordOffset: number,
+    lpBuffer: Win32Pointer,
+    nNumberOfBytesToRead: number,
+    pnBytesRead: Win32Pointer,
+    pnMinNumberOfBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!ReadEventLogW */
-  ReadEventLog(hEventLog: Win32Pointer, dwReadFlags: number, dwRecordOffset: number, lpBuffer: Win32Pointer, nNumberOfBytesToRead: number, pnBytesRead: Win32Pointer, pnMinNumberOfBytesNeeded: Win32Pointer): number;
+  ReadEventLog(
+    hEventLog: Win32Pointer,
+    dwReadFlags: number,
+    dwRecordOffset: number,
+    lpBuffer: Win32Pointer,
+    nNumberOfBytesToRead: number,
+    pnBytesRead: Win32Pointer,
+    pnMinNumberOfBytesNeeded: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegCloseKey */
   RegCloseKey(hKey: Win32Pointer): number;
   /** advapi32.dll!RegConnectRegistryA */
   RegConnectRegistryA(lpMachineName: string | Win32Pointer, hKey: Win32Pointer, phkResult: Win32Pointer): number;
   /** advapi32.dll!RegConnectRegistryExA */
-  RegConnectRegistryExA(lpMachineName: string | Win32Pointer, hKey: Win32Pointer, Flags: number, phkResult: Win32Pointer): number;
+  RegConnectRegistryExA(
+    lpMachineName: string | Win32Pointer,
+    hKey: Win32Pointer,
+    Flags: number,
+    phkResult: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegConnectRegistryExW */
-  RegConnectRegistryExW(lpMachineName: string | Win32Pointer, hKey: Win32Pointer, Flags: number, phkResult: Win32Pointer): number;
+  RegConnectRegistryExW(
+    lpMachineName: string | Win32Pointer,
+    hKey: Win32Pointer,
+    Flags: number,
+    phkResult: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegConnectRegistryExW */
-  RegConnectRegistryEx(lpMachineName: string | Win32Pointer, hKey: Win32Pointer, Flags: number, phkResult: Win32Pointer): number;
+  RegConnectRegistryEx(
+    lpMachineName: string | Win32Pointer,
+    hKey: Win32Pointer,
+    Flags: number,
+    phkResult: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegConnectRegistryW */
   RegConnectRegistryW(lpMachineName: string | Win32Pointer, hKey: Win32Pointer, phkResult: Win32Pointer): number;
   /** advapi32.dll!RegConnectRegistryW */
@@ -1145,17 +3218,83 @@ interface Functions {
   /** advapi32.dll!RegCreateKeyA */
   RegCreateKeyA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, phkResult: Win32Pointer): number;
   /** advapi32.dll!RegCreateKeyExA */
-  RegCreateKeyExA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, Reserved: number, lpClass: string | Win32Pointer, dwOptions: number, samDesired: number, lpSecurityAttributes: Win32Pointer, phkResult: Win32Pointer, lpdwDisposition: Win32Pointer): number;
+  RegCreateKeyExA(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    Reserved: number,
+    lpClass: string | Win32Pointer,
+    dwOptions: number,
+    samDesired: number,
+    lpSecurityAttributes: Win32Pointer,
+    phkResult: Win32Pointer,
+    lpdwDisposition: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegCreateKeyExW */
-  RegCreateKeyExW(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, Reserved: number, lpClass: string | Win32Pointer, dwOptions: number, samDesired: number, lpSecurityAttributes: Win32Pointer, phkResult: Win32Pointer, lpdwDisposition: Win32Pointer): number;
+  RegCreateKeyExW(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    Reserved: number,
+    lpClass: string | Win32Pointer,
+    dwOptions: number,
+    samDesired: number,
+    lpSecurityAttributes: Win32Pointer,
+    phkResult: Win32Pointer,
+    lpdwDisposition: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegCreateKeyExW */
-  RegCreateKeyEx(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, Reserved: number, lpClass: string | Win32Pointer, dwOptions: number, samDesired: number, lpSecurityAttributes: Win32Pointer, phkResult: Win32Pointer, lpdwDisposition: Win32Pointer): number;
+  RegCreateKeyEx(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    Reserved: number,
+    lpClass: string | Win32Pointer,
+    dwOptions: number,
+    samDesired: number,
+    lpSecurityAttributes: Win32Pointer,
+    phkResult: Win32Pointer,
+    lpdwDisposition: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegCreateKeyTransactedA */
-  RegCreateKeyTransactedA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, Reserved: number, lpClass: string | Win32Pointer, dwOptions: number, samDesired: number, lpSecurityAttributes: Win32Pointer, phkResult: Win32Pointer, lpdwDisposition: Win32Pointer, hTransaction: Win32Pointer, pExtendedParemeter: Win32Pointer): number;
+  RegCreateKeyTransactedA(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    Reserved: number,
+    lpClass: string | Win32Pointer,
+    dwOptions: number,
+    samDesired: number,
+    lpSecurityAttributes: Win32Pointer,
+    phkResult: Win32Pointer,
+    lpdwDisposition: Win32Pointer,
+    hTransaction: Win32Pointer,
+    pExtendedParemeter: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegCreateKeyTransactedW */
-  RegCreateKeyTransactedW(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, Reserved: number, lpClass: string | Win32Pointer, dwOptions: number, samDesired: number, lpSecurityAttributes: Win32Pointer, phkResult: Win32Pointer, lpdwDisposition: Win32Pointer, hTransaction: Win32Pointer, pExtendedParemeter: Win32Pointer): number;
+  RegCreateKeyTransactedW(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    Reserved: number,
+    lpClass: string | Win32Pointer,
+    dwOptions: number,
+    samDesired: number,
+    lpSecurityAttributes: Win32Pointer,
+    phkResult: Win32Pointer,
+    lpdwDisposition: Win32Pointer,
+    hTransaction: Win32Pointer,
+    pExtendedParemeter: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegCreateKeyTransactedW */
-  RegCreateKeyTransacted(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, Reserved: number, lpClass: string | Win32Pointer, dwOptions: number, samDesired: number, lpSecurityAttributes: Win32Pointer, phkResult: Win32Pointer, lpdwDisposition: Win32Pointer, hTransaction: Win32Pointer, pExtendedParemeter: Win32Pointer): number;
+  RegCreateKeyTransacted(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    Reserved: number,
+    lpClass: string | Win32Pointer,
+    dwOptions: number,
+    samDesired: number,
+    lpSecurityAttributes: Win32Pointer,
+    phkResult: Win32Pointer,
+    lpdwDisposition: Win32Pointer,
+    hTransaction: Win32Pointer,
+    pExtendedParemeter: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegCreateKeyW */
   RegCreateKeyW(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, phkResult: Win32Pointer): number;
   /** advapi32.dll!RegCreateKeyW */
@@ -1169,11 +3308,32 @@ interface Functions {
   /** advapi32.dll!RegDeleteKeyExW */
   RegDeleteKeyEx(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, samDesired: number, Reserved: number): number;
   /** advapi32.dll!RegDeleteKeyTransactedA */
-  RegDeleteKeyTransactedA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, samDesired: number, Reserved: number, hTransaction: Win32Pointer, pExtendedParameter: Win32Pointer): number;
+  RegDeleteKeyTransactedA(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    samDesired: number,
+    Reserved: number,
+    hTransaction: Win32Pointer,
+    pExtendedParameter: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegDeleteKeyTransactedW */
-  RegDeleteKeyTransactedW(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, samDesired: number, Reserved: number, hTransaction: Win32Pointer, pExtendedParameter: Win32Pointer): number;
+  RegDeleteKeyTransactedW(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    samDesired: number,
+    Reserved: number,
+    hTransaction: Win32Pointer,
+    pExtendedParameter: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegDeleteKeyTransactedW */
-  RegDeleteKeyTransacted(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, samDesired: number, Reserved: number, hTransaction: Win32Pointer, pExtendedParameter: Win32Pointer): number;
+  RegDeleteKeyTransacted(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    samDesired: number,
+    Reserved: number,
+    hTransaction: Win32Pointer,
+    pExtendedParameter: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegDeleteKeyValueA */
   RegDeleteKeyValueA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, lpValueName: string | Win32Pointer): number;
   /** advapi32.dll!RegDeleteKeyValueW */
@@ -1207,37 +3367,138 @@ interface Functions {
   /** advapi32.dll!RegEnumKeyA */
   RegEnumKeyA(hKey: Win32Pointer, dwIndex: number, lpName: string | Win32Pointer, cchName: number): number;
   /** advapi32.dll!RegEnumKeyExA */
-  RegEnumKeyExA(hKey: Win32Pointer, dwIndex: number, lpName: string | Win32Pointer, lpcchName: Win32Pointer, lpReserved: Win32Pointer, lpClass: string | Win32Pointer, lpcchClass: Win32Pointer, lpftLastWriteTime: Win32Pointer): number;
+  RegEnumKeyExA(
+    hKey: Win32Pointer,
+    dwIndex: number,
+    lpName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+    lpReserved: Win32Pointer,
+    lpClass: string | Win32Pointer,
+    lpcchClass: Win32Pointer,
+    lpftLastWriteTime: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegEnumKeyExW */
-  RegEnumKeyExW(hKey: Win32Pointer, dwIndex: number, lpName: string | Win32Pointer, lpcchName: Win32Pointer, lpReserved: Win32Pointer, lpClass: string | Win32Pointer, lpcchClass: Win32Pointer, lpftLastWriteTime: Win32Pointer): number;
+  RegEnumKeyExW(
+    hKey: Win32Pointer,
+    dwIndex: number,
+    lpName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+    lpReserved: Win32Pointer,
+    lpClass: string | Win32Pointer,
+    lpcchClass: Win32Pointer,
+    lpftLastWriteTime: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegEnumKeyExW */
-  RegEnumKeyEx(hKey: Win32Pointer, dwIndex: number, lpName: string | Win32Pointer, lpcchName: Win32Pointer, lpReserved: Win32Pointer, lpClass: string | Win32Pointer, lpcchClass: Win32Pointer, lpftLastWriteTime: Win32Pointer): number;
+  RegEnumKeyEx(
+    hKey: Win32Pointer,
+    dwIndex: number,
+    lpName: string | Win32Pointer,
+    lpcchName: Win32Pointer,
+    lpReserved: Win32Pointer,
+    lpClass: string | Win32Pointer,
+    lpcchClass: Win32Pointer,
+    lpftLastWriteTime: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegEnumKeyW */
   RegEnumKeyW(hKey: Win32Pointer, dwIndex: number, lpName: string | Win32Pointer, cchName: number): number;
   /** advapi32.dll!RegEnumKeyW */
   RegEnumKey(hKey: Win32Pointer, dwIndex: number, lpName: string | Win32Pointer, cchName: number): number;
   /** advapi32.dll!RegEnumValueA */
-  RegEnumValueA(hKey: Win32Pointer, dwIndex: number, lpValueName: string | Win32Pointer, lpcchValueName: Win32Pointer, lpReserved: Win32Pointer, lpType: Win32Pointer, lpData: Win32Pointer, lpcbData: Win32Pointer): number;
+  RegEnumValueA(
+    hKey: Win32Pointer,
+    dwIndex: number,
+    lpValueName: string | Win32Pointer,
+    lpcchValueName: Win32Pointer,
+    lpReserved: Win32Pointer,
+    lpType: Win32Pointer,
+    lpData: Win32Pointer,
+    lpcbData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegEnumValueW */
-  RegEnumValueW(hKey: Win32Pointer, dwIndex: number, lpValueName: string | Win32Pointer, lpcchValueName: Win32Pointer, lpReserved: Win32Pointer, lpType: Win32Pointer, lpData: Win32Pointer, lpcbData: Win32Pointer): number;
+  RegEnumValueW(
+    hKey: Win32Pointer,
+    dwIndex: number,
+    lpValueName: string | Win32Pointer,
+    lpcchValueName: Win32Pointer,
+    lpReserved: Win32Pointer,
+    lpType: Win32Pointer,
+    lpData: Win32Pointer,
+    lpcbData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegEnumValueW */
-  RegEnumValue(hKey: Win32Pointer, dwIndex: number, lpValueName: string | Win32Pointer, lpcchValueName: Win32Pointer, lpReserved: Win32Pointer, lpType: Win32Pointer, lpData: Win32Pointer, lpcbData: Win32Pointer): number;
+  RegEnumValue(
+    hKey: Win32Pointer,
+    dwIndex: number,
+    lpValueName: string | Win32Pointer,
+    lpcchValueName: Win32Pointer,
+    lpReserved: Win32Pointer,
+    lpType: Win32Pointer,
+    lpData: Win32Pointer,
+    lpcbData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegFlushKey */
   RegFlushKey(hKey: Win32Pointer): number;
   /** advapi32.dll!RegGetKeySecurity */
-  RegGetKeySecurity(hKey: Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer, lpcbSecurityDescriptor: Win32Pointer): number;
+  RegGetKeySecurity(
+    hKey: Win32Pointer,
+    SecurityInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+    lpcbSecurityDescriptor: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegGetValueA */
-  RegGetValueA(hkey: Win32Pointer, lpSubKey: string | Win32Pointer, lpValue: string | Win32Pointer, dwFlags: number, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  RegGetValueA(
+    hkey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    lpValue: string | Win32Pointer,
+    dwFlags: number,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegGetValueW */
-  RegGetValueW(hkey: Win32Pointer, lpSubKey: string | Win32Pointer, lpValue: string | Win32Pointer, dwFlags: number, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  RegGetValueW(
+    hkey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    lpValue: string | Win32Pointer,
+    dwFlags: number,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegGetValueW */
-  RegGetValue(hkey: Win32Pointer, lpSubKey: string | Win32Pointer, lpValue: string | Win32Pointer, dwFlags: number, pdwType: Win32Pointer, pvData: Win32Pointer, pcbData: Win32Pointer): number;
+  RegGetValue(
+    hkey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    lpValue: string | Win32Pointer,
+    dwFlags: number,
+    pdwType: Win32Pointer,
+    pvData: Win32Pointer,
+    pcbData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegLoadAppKeyA */
-  RegLoadAppKeyA(lpFile: string | Win32Pointer, phkResult: Win32Pointer, samDesired: number, dwOptions: number, Reserved: number): number;
+  RegLoadAppKeyA(
+    lpFile: string | Win32Pointer,
+    phkResult: Win32Pointer,
+    samDesired: number,
+    dwOptions: number,
+    Reserved: number,
+  ): number;
   /** advapi32.dll!RegLoadAppKeyW */
-  RegLoadAppKeyW(lpFile: string | Win32Pointer, phkResult: Win32Pointer, samDesired: number, dwOptions: number, Reserved: number): number;
+  RegLoadAppKeyW(
+    lpFile: string | Win32Pointer,
+    phkResult: Win32Pointer,
+    samDesired: number,
+    dwOptions: number,
+    Reserved: number,
+  ): number;
   /** advapi32.dll!RegLoadAppKeyW */
-  RegLoadAppKey(lpFile: string | Win32Pointer, phkResult: Win32Pointer, samDesired: number, dwOptions: number, Reserved: number): number;
+  RegLoadAppKey(
+    lpFile: string | Win32Pointer,
+    phkResult: Win32Pointer,
+    samDesired: number,
+    dwOptions: number,
+    Reserved: number,
+  ): number;
   /** advapi32.dll!RegLoadKeyA */
   RegLoadKeyA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, lpFile: string | Win32Pointer): number;
   /** advapi32.dll!RegLoadKeyW */
@@ -1245,29 +3506,101 @@ interface Functions {
   /** advapi32.dll!RegLoadKeyW */
   RegLoadKey(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, lpFile: string | Win32Pointer): number;
   /** advapi32.dll!RegLoadMUIStringA */
-  RegLoadMUIStringA(hKey: Win32Pointer, pszValue: string | Win32Pointer, pszOutBuf: string | Win32Pointer, cbOutBuf: number, pcbData: Win32Pointer, Flags: number, pszDirectory: string | Win32Pointer): number;
+  RegLoadMUIStringA(
+    hKey: Win32Pointer,
+    pszValue: string | Win32Pointer,
+    pszOutBuf: string | Win32Pointer,
+    cbOutBuf: number,
+    pcbData: Win32Pointer,
+    Flags: number,
+    pszDirectory: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!RegLoadMUIStringW */
-  RegLoadMUIStringW(hKey: Win32Pointer, pszValue: string | Win32Pointer, pszOutBuf: string | Win32Pointer, cbOutBuf: number, pcbData: Win32Pointer, Flags: number, pszDirectory: string | Win32Pointer): number;
+  RegLoadMUIStringW(
+    hKey: Win32Pointer,
+    pszValue: string | Win32Pointer,
+    pszOutBuf: string | Win32Pointer,
+    cbOutBuf: number,
+    pcbData: Win32Pointer,
+    Flags: number,
+    pszDirectory: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!RegLoadMUIStringW */
-  RegLoadMUIString(hKey: Win32Pointer, pszValue: string | Win32Pointer, pszOutBuf: string | Win32Pointer, cbOutBuf: number, pcbData: Win32Pointer, Flags: number, pszDirectory: string | Win32Pointer): number;
+  RegLoadMUIString(
+    hKey: Win32Pointer,
+    pszValue: string | Win32Pointer,
+    pszOutBuf: string | Win32Pointer,
+    cbOutBuf: number,
+    pcbData: Win32Pointer,
+    Flags: number,
+    pszDirectory: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!RegNotifyChangeKeyValue */
-  RegNotifyChangeKeyValue(hKey: Win32Pointer, bWatchSubtree: number, dwNotifyFilter: number, hEvent: Win32Pointer, fAsynchronous: number): number;
+  RegNotifyChangeKeyValue(
+    hKey: Win32Pointer,
+    bWatchSubtree: number,
+    dwNotifyFilter: number,
+    hEvent: Win32Pointer,
+    fAsynchronous: number,
+  ): number;
   /** advapi32.dll!RegOpenCurrentUser */
   RegOpenCurrentUser(samDesired: number, phkResult: Win32Pointer): number;
   /** advapi32.dll!RegOpenKeyA */
   RegOpenKeyA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, phkResult: Win32Pointer): number;
   /** advapi32.dll!RegOpenKeyExA */
-  RegOpenKeyExA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, ulOptions: number, samDesired: number, phkResult: Win32Pointer): number;
+  RegOpenKeyExA(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    ulOptions: number,
+    samDesired: number,
+    phkResult: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegOpenKeyExW */
-  RegOpenKeyExW(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, ulOptions: number, samDesired: number, phkResult: Win32Pointer): number;
+  RegOpenKeyExW(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    ulOptions: number,
+    samDesired: number,
+    phkResult: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegOpenKeyExW */
-  RegOpenKeyEx(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, ulOptions: number, samDesired: number, phkResult: Win32Pointer): number;
+  RegOpenKeyEx(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    ulOptions: number,
+    samDesired: number,
+    phkResult: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegOpenKeyTransactedA */
-  RegOpenKeyTransactedA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, ulOptions: number, samDesired: number, phkResult: Win32Pointer, hTransaction: Win32Pointer, pExtendedParemeter: Win32Pointer): number;
+  RegOpenKeyTransactedA(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    ulOptions: number,
+    samDesired: number,
+    phkResult: Win32Pointer,
+    hTransaction: Win32Pointer,
+    pExtendedParemeter: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegOpenKeyTransactedW */
-  RegOpenKeyTransactedW(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, ulOptions: number, samDesired: number, phkResult: Win32Pointer, hTransaction: Win32Pointer, pExtendedParemeter: Win32Pointer): number;
+  RegOpenKeyTransactedW(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    ulOptions: number,
+    samDesired: number,
+    phkResult: Win32Pointer,
+    hTransaction: Win32Pointer,
+    pExtendedParemeter: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegOpenKeyTransactedW */
-  RegOpenKeyTransacted(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, ulOptions: number, samDesired: number, phkResult: Win32Pointer, hTransaction: Win32Pointer, pExtendedParemeter: Win32Pointer): number;
+  RegOpenKeyTransacted(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    ulOptions: number,
+    samDesired: number,
+    phkResult: Win32Pointer,
+    hTransaction: Win32Pointer,
+    pExtendedParemeter: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegOpenKeyW */
   RegOpenKeyW(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, phkResult: Win32Pointer): number;
   /** advapi32.dll!RegOpenKeyW */
@@ -1277,39 +3610,147 @@ interface Functions {
   /** advapi32.dll!RegOverridePredefKey */
   RegOverridePredefKey(hKey: Win32Pointer, hNewHKey: Win32Pointer): number;
   /** advapi32.dll!RegQueryInfoKeyA */
-  RegQueryInfoKeyA(hKey: Win32Pointer, lpClass: string | Win32Pointer, lpcchClass: Win32Pointer, lpReserved: Win32Pointer, lpcSubKeys: Win32Pointer, lpcbMaxSubKeyLen: Win32Pointer, lpcbMaxClassLen: Win32Pointer, lpcValues: Win32Pointer, lpcbMaxValueNameLen: Win32Pointer, lpcbMaxValueLen: Win32Pointer, lpcbSecurityDescriptor: Win32Pointer, lpftLastWriteTime: Win32Pointer): number;
+  RegQueryInfoKeyA(
+    hKey: Win32Pointer,
+    lpClass: string | Win32Pointer,
+    lpcchClass: Win32Pointer,
+    lpReserved: Win32Pointer,
+    lpcSubKeys: Win32Pointer,
+    lpcbMaxSubKeyLen: Win32Pointer,
+    lpcbMaxClassLen: Win32Pointer,
+    lpcValues: Win32Pointer,
+    lpcbMaxValueNameLen: Win32Pointer,
+    lpcbMaxValueLen: Win32Pointer,
+    lpcbSecurityDescriptor: Win32Pointer,
+    lpftLastWriteTime: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegQueryInfoKeyW */
-  RegQueryInfoKeyW(hKey: Win32Pointer, lpClass: string | Win32Pointer, lpcchClass: Win32Pointer, lpReserved: Win32Pointer, lpcSubKeys: Win32Pointer, lpcbMaxSubKeyLen: Win32Pointer, lpcbMaxClassLen: Win32Pointer, lpcValues: Win32Pointer, lpcbMaxValueNameLen: Win32Pointer, lpcbMaxValueLen: Win32Pointer, lpcbSecurityDescriptor: Win32Pointer, lpftLastWriteTime: Win32Pointer): number;
+  RegQueryInfoKeyW(
+    hKey: Win32Pointer,
+    lpClass: string | Win32Pointer,
+    lpcchClass: Win32Pointer,
+    lpReserved: Win32Pointer,
+    lpcSubKeys: Win32Pointer,
+    lpcbMaxSubKeyLen: Win32Pointer,
+    lpcbMaxClassLen: Win32Pointer,
+    lpcValues: Win32Pointer,
+    lpcbMaxValueNameLen: Win32Pointer,
+    lpcbMaxValueLen: Win32Pointer,
+    lpcbSecurityDescriptor: Win32Pointer,
+    lpftLastWriteTime: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegQueryInfoKeyW */
-  RegQueryInfoKey(hKey: Win32Pointer, lpClass: string | Win32Pointer, lpcchClass: Win32Pointer, lpReserved: Win32Pointer, lpcSubKeys: Win32Pointer, lpcbMaxSubKeyLen: Win32Pointer, lpcbMaxClassLen: Win32Pointer, lpcValues: Win32Pointer, lpcbMaxValueNameLen: Win32Pointer, lpcbMaxValueLen: Win32Pointer, lpcbSecurityDescriptor: Win32Pointer, lpftLastWriteTime: Win32Pointer): number;
+  RegQueryInfoKey(
+    hKey: Win32Pointer,
+    lpClass: string | Win32Pointer,
+    lpcchClass: Win32Pointer,
+    lpReserved: Win32Pointer,
+    lpcSubKeys: Win32Pointer,
+    lpcbMaxSubKeyLen: Win32Pointer,
+    lpcbMaxClassLen: Win32Pointer,
+    lpcValues: Win32Pointer,
+    lpcbMaxValueNameLen: Win32Pointer,
+    lpcbMaxValueLen: Win32Pointer,
+    lpcbSecurityDescriptor: Win32Pointer,
+    lpftLastWriteTime: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegQueryMultipleValuesA */
-  RegQueryMultipleValuesA(hKey: Win32Pointer, val_list: Win32Pointer, num_vals: number, lpValueBuf: string | Win32Pointer, ldwTotsize: Win32Pointer): number;
+  RegQueryMultipleValuesA(
+    hKey: Win32Pointer,
+    val_list: Win32Pointer,
+    num_vals: number,
+    lpValueBuf: string | Win32Pointer,
+    ldwTotsize: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegQueryMultipleValuesW */
-  RegQueryMultipleValuesW(hKey: Win32Pointer, val_list: Win32Pointer, num_vals: number, lpValueBuf: string | Win32Pointer, ldwTotsize: Win32Pointer): number;
+  RegQueryMultipleValuesW(
+    hKey: Win32Pointer,
+    val_list: Win32Pointer,
+    num_vals: number,
+    lpValueBuf: string | Win32Pointer,
+    ldwTotsize: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegQueryMultipleValuesW */
-  RegQueryMultipleValues(hKey: Win32Pointer, val_list: Win32Pointer, num_vals: number, lpValueBuf: string | Win32Pointer, ldwTotsize: Win32Pointer): number;
+  RegQueryMultipleValues(
+    hKey: Win32Pointer,
+    val_list: Win32Pointer,
+    num_vals: number,
+    lpValueBuf: string | Win32Pointer,
+    ldwTotsize: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegQueryReflectionKey */
   RegQueryReflectionKey(hBase: Win32Pointer, bIsReflectionDisabled: Win32Pointer): number;
   /** advapi32.dll!RegQueryValueA */
-  RegQueryValueA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, lpData: string | Win32Pointer, lpcbData: Win32Pointer): number;
+  RegQueryValueA(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    lpData: string | Win32Pointer,
+    lpcbData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegQueryValueExA */
-  RegQueryValueExA(hKey: Win32Pointer, lpValueName: string | Win32Pointer, lpReserved: Win32Pointer, lpType: Win32Pointer, lpData: Win32Pointer, lpcbData: Win32Pointer): number;
+  RegQueryValueExA(
+    hKey: Win32Pointer,
+    lpValueName: string | Win32Pointer,
+    lpReserved: Win32Pointer,
+    lpType: Win32Pointer,
+    lpData: Win32Pointer,
+    lpcbData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegQueryValueExW */
-  RegQueryValueExW(hKey: Win32Pointer, lpValueName: string | Win32Pointer, lpReserved: Win32Pointer, lpType: Win32Pointer, lpData: Win32Pointer, lpcbData: Win32Pointer): number;
+  RegQueryValueExW(
+    hKey: Win32Pointer,
+    lpValueName: string | Win32Pointer,
+    lpReserved: Win32Pointer,
+    lpType: Win32Pointer,
+    lpData: Win32Pointer,
+    lpcbData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegQueryValueExW */
-  RegQueryValueEx(hKey: Win32Pointer, lpValueName: string | Win32Pointer, lpReserved: Win32Pointer, lpType: Win32Pointer, lpData: Win32Pointer, lpcbData: Win32Pointer): number;
+  RegQueryValueEx(
+    hKey: Win32Pointer,
+    lpValueName: string | Win32Pointer,
+    lpReserved: Win32Pointer,
+    lpType: Win32Pointer,
+    lpData: Win32Pointer,
+    lpcbData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegQueryValueW */
-  RegQueryValueW(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, lpData: string | Win32Pointer, lpcbData: Win32Pointer): number;
+  RegQueryValueW(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    lpData: string | Win32Pointer,
+    lpcbData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegQueryValueW */
-  RegQueryValue(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, lpData: string | Win32Pointer, lpcbData: Win32Pointer): number;
+  RegQueryValue(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    lpData: string | Win32Pointer,
+    lpcbData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegRenameKey */
   RegRenameKey(hKey: Win32Pointer, lpSubKeyName: string | Win32Pointer, lpNewKeyName: string | Win32Pointer): number;
   /** advapi32.dll!RegReplaceKeyA */
-  RegReplaceKeyA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, lpNewFile: string | Win32Pointer, lpOldFile: string | Win32Pointer): number;
+  RegReplaceKeyA(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    lpNewFile: string | Win32Pointer,
+    lpOldFile: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!RegReplaceKeyW */
-  RegReplaceKeyW(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, lpNewFile: string | Win32Pointer, lpOldFile: string | Win32Pointer): number;
+  RegReplaceKeyW(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    lpNewFile: string | Win32Pointer,
+    lpOldFile: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!RegReplaceKeyW */
-  RegReplaceKey(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, lpNewFile: string | Win32Pointer, lpOldFile: string | Win32Pointer): number;
+  RegReplaceKey(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    lpNewFile: string | Win32Pointer,
+    lpOldFile: string | Win32Pointer,
+  ): number;
   /** advapi32.dll!RegRestoreKeyA */
   RegRestoreKeyA(hKey: Win32Pointer, lpFile: string | Win32Pointer, dwFlags: number): number;
   /** advapi32.dll!RegRestoreKeyW */
@@ -1319,11 +3760,26 @@ interface Functions {
   /** advapi32.dll!RegSaveKeyA */
   RegSaveKeyA(hKey: Win32Pointer, lpFile: string | Win32Pointer, lpSecurityAttributes: Win32Pointer): number;
   /** advapi32.dll!RegSaveKeyExA */
-  RegSaveKeyExA(hKey: Win32Pointer, lpFile: string | Win32Pointer, lpSecurityAttributes: Win32Pointer, Flags: number): number;
+  RegSaveKeyExA(
+    hKey: Win32Pointer,
+    lpFile: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+    Flags: number,
+  ): number;
   /** advapi32.dll!RegSaveKeyExW */
-  RegSaveKeyExW(hKey: Win32Pointer, lpFile: string | Win32Pointer, lpSecurityAttributes: Win32Pointer, Flags: number): number;
+  RegSaveKeyExW(
+    hKey: Win32Pointer,
+    lpFile: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+    Flags: number,
+  ): number;
   /** advapi32.dll!RegSaveKeyExW */
-  RegSaveKeyEx(hKey: Win32Pointer, lpFile: string | Win32Pointer, lpSecurityAttributes: Win32Pointer, Flags: number): number;
+  RegSaveKeyEx(
+    hKey: Win32Pointer,
+    lpFile: string | Win32Pointer,
+    lpSecurityAttributes: Win32Pointer,
+    Flags: number,
+  ): number;
   /** advapi32.dll!RegSaveKeyW */
   RegSaveKeyW(hKey: Win32Pointer, lpFile: string | Win32Pointer, lpSecurityAttributes: Win32Pointer): number;
   /** advapi32.dll!RegSaveKeyW */
@@ -1331,23 +3787,83 @@ interface Functions {
   /** advapi32.dll!RegSetKeySecurity */
   RegSetKeySecurity(hKey: Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer): number;
   /** advapi32.dll!RegSetKeyValueA */
-  RegSetKeyValueA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, lpValueName: string | Win32Pointer, dwType: number, lpData: Win32Pointer, cbData: number): number;
+  RegSetKeyValueA(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    lpValueName: string | Win32Pointer,
+    dwType: number,
+    lpData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** advapi32.dll!RegSetKeyValueW */
-  RegSetKeyValueW(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, lpValueName: string | Win32Pointer, dwType: number, lpData: Win32Pointer, cbData: number): number;
+  RegSetKeyValueW(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    lpValueName: string | Win32Pointer,
+    dwType: number,
+    lpData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** advapi32.dll!RegSetKeyValueW */
-  RegSetKeyValue(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, lpValueName: string | Win32Pointer, dwType: number, lpData: Win32Pointer, cbData: number): number;
+  RegSetKeyValue(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    lpValueName: string | Win32Pointer,
+    dwType: number,
+    lpData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** advapi32.dll!RegSetValueA */
-  RegSetValueA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, dwType: number, lpData: string | Win32Pointer, cbData: number): number;
+  RegSetValueA(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    dwType: number,
+    lpData: string | Win32Pointer,
+    cbData: number,
+  ): number;
   /** advapi32.dll!RegSetValueExA */
-  RegSetValueExA(hKey: Win32Pointer, lpValueName: string | Win32Pointer, Reserved: number, dwType: number, lpData: Win32Pointer, cbData: number): number;
+  RegSetValueExA(
+    hKey: Win32Pointer,
+    lpValueName: string | Win32Pointer,
+    Reserved: number,
+    dwType: number,
+    lpData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** advapi32.dll!RegSetValueExW */
-  RegSetValueExW(hKey: Win32Pointer, lpValueName: string | Win32Pointer, Reserved: number, dwType: number, lpData: Win32Pointer, cbData: number): number;
+  RegSetValueExW(
+    hKey: Win32Pointer,
+    lpValueName: string | Win32Pointer,
+    Reserved: number,
+    dwType: number,
+    lpData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** advapi32.dll!RegSetValueExW */
-  RegSetValueEx(hKey: Win32Pointer, lpValueName: string | Win32Pointer, Reserved: number, dwType: number, lpData: Win32Pointer, cbData: number): number;
+  RegSetValueEx(
+    hKey: Win32Pointer,
+    lpValueName: string | Win32Pointer,
+    Reserved: number,
+    dwType: number,
+    lpData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** advapi32.dll!RegSetValueW */
-  RegSetValueW(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, dwType: number, lpData: string | Win32Pointer, cbData: number): number;
+  RegSetValueW(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    dwType: number,
+    lpData: string | Win32Pointer,
+    cbData: number,
+  ): number;
   /** advapi32.dll!RegSetValueW */
-  RegSetValue(hKey: Win32Pointer, lpSubKey: string | Win32Pointer, dwType: number, lpData: string | Win32Pointer, cbData: number): number;
+  RegSetValue(
+    hKey: Win32Pointer,
+    lpSubKey: string | Win32Pointer,
+    dwType: number,
+    lpData: string | Win32Pointer,
+    cbData: number,
+  ): number;
   /** advapi32.dll!RegUnLoadKeyA */
   RegUnLoadKeyA(hKey: Win32Pointer, lpSubKey: string | Win32Pointer): number;
   /** advapi32.dll!RegUnLoadKeyW */
@@ -1363,21 +3879,60 @@ interface Functions {
   /** advapi32.dll!RegisterServiceCtrlHandlerA */
   RegisterServiceCtrlHandlerA(lpServiceName: string | Win32Pointer, lpHandlerProc: Win32Callback): number | null;
   /** advapi32.dll!RegisterServiceCtrlHandlerExA */
-  RegisterServiceCtrlHandlerExA(lpServiceName: string | Win32Pointer, lpHandlerProc: Win32Callback, lpContext: Win32Pointer): number | null;
+  RegisterServiceCtrlHandlerExA(
+    lpServiceName: string | Win32Pointer,
+    lpHandlerProc: Win32Callback,
+    lpContext: Win32Pointer,
+  ): number | null;
   /** advapi32.dll!RegisterServiceCtrlHandlerExW */
-  RegisterServiceCtrlHandlerExW(lpServiceName: string | Win32Pointer, lpHandlerProc: Win32Callback, lpContext: Win32Pointer): number | null;
+  RegisterServiceCtrlHandlerExW(
+    lpServiceName: string | Win32Pointer,
+    lpHandlerProc: Win32Callback,
+    lpContext: Win32Pointer,
+  ): number | null;
   /** advapi32.dll!RegisterServiceCtrlHandlerExW */
-  RegisterServiceCtrlHandlerEx(lpServiceName: string | Win32Pointer, lpHandlerProc: Win32Callback, lpContext: Win32Pointer): number | null;
+  RegisterServiceCtrlHandlerEx(
+    lpServiceName: string | Win32Pointer,
+    lpHandlerProc: Win32Callback,
+    lpContext: Win32Pointer,
+  ): number | null;
   /** advapi32.dll!RegisterServiceCtrlHandlerW */
   RegisterServiceCtrlHandlerW(lpServiceName: string | Win32Pointer, lpHandlerProc: Win32Callback): number | null;
   /** advapi32.dll!RegisterServiceCtrlHandlerW */
   RegisterServiceCtrlHandler(lpServiceName: string | Win32Pointer, lpHandlerProc: Win32Callback): number | null;
   /** advapi32.dll!RegisterTraceGuidsA */
-  RegisterTraceGuidsA(RequestAddress: Win32Callback, RequestContext: Win32Pointer, ControlGuid: Win32Pointer, GuidCount: number, TraceGuidReg: Win32Pointer, MofImagePath: string | Win32Pointer, MofResourceName: string | Win32Pointer, RegistrationHandle: Win32Pointer): number;
+  RegisterTraceGuidsA(
+    RequestAddress: Win32Callback,
+    RequestContext: Win32Pointer,
+    ControlGuid: Win32Pointer,
+    GuidCount: number,
+    TraceGuidReg: Win32Pointer,
+    MofImagePath: string | Win32Pointer,
+    MofResourceName: string | Win32Pointer,
+    RegistrationHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegisterTraceGuidsW */
-  RegisterTraceGuidsW(RequestAddress: Win32Callback, RequestContext: Win32Pointer, ControlGuid: Win32Pointer, GuidCount: number, TraceGuidReg: Win32Pointer, MofImagePath: string | Win32Pointer, MofResourceName: string | Win32Pointer, RegistrationHandle: Win32Pointer): number;
+  RegisterTraceGuidsW(
+    RequestAddress: Win32Callback,
+    RequestContext: Win32Pointer,
+    ControlGuid: Win32Pointer,
+    GuidCount: number,
+    TraceGuidReg: Win32Pointer,
+    MofImagePath: string | Win32Pointer,
+    MofResourceName: string | Win32Pointer,
+    RegistrationHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegisterTraceGuidsW */
-  RegisterTraceGuids(RequestAddress: Win32Callback, RequestContext: Win32Pointer, ControlGuid: Win32Pointer, GuidCount: number, TraceGuidReg: Win32Pointer, MofImagePath: string | Win32Pointer, MofResourceName: string | Win32Pointer, RegistrationHandle: Win32Pointer): number;
+  RegisterTraceGuids(
+    RequestAddress: Win32Callback,
+    RequestContext: Win32Pointer,
+    ControlGuid: Win32Pointer,
+    GuidCount: number,
+    TraceGuidReg: Win32Pointer,
+    MofImagePath: string | Win32Pointer,
+    MofResourceName: string | Win32Pointer,
+    RegistrationHandle: Win32Pointer,
+  ): number;
   /** advapi32.dll!RegisterWaitChainCOMCallback */
   RegisterWaitChainCOMCallback(CallStateCallback: Win32Callback, ActivationStateCallback: Win32Callback): void;
   /** advapi32.dll!RemoveTraceCallback */
@@ -1385,11 +3940,41 @@ interface Functions {
   /** advapi32.dll!RemoveUsersFromEncryptedFile */
   RemoveUsersFromEncryptedFile(lpFileName: string | Win32Pointer, pHashes: Win32Pointer): number;
   /** advapi32.dll!ReportEventA */
-  ReportEventA(hEventLog: Win32Pointer, wType: number, wCategory: number, dwEventID: number, lpUserSid: Win32Pointer, wNumStrings: number, dwDataSize: number, lpStrings: Win32Pointer, lpRawData: Win32Pointer): number;
+  ReportEventA(
+    hEventLog: Win32Pointer,
+    wType: number,
+    wCategory: number,
+    dwEventID: number,
+    lpUserSid: Win32Pointer,
+    wNumStrings: number,
+    dwDataSize: number,
+    lpStrings: Win32Pointer,
+    lpRawData: Win32Pointer,
+  ): number;
   /** advapi32.dll!ReportEventW */
-  ReportEventW(hEventLog: Win32Pointer, wType: number, wCategory: number, dwEventID: number, lpUserSid: Win32Pointer, wNumStrings: number, dwDataSize: number, lpStrings: Win32Pointer, lpRawData: Win32Pointer): number;
+  ReportEventW(
+    hEventLog: Win32Pointer,
+    wType: number,
+    wCategory: number,
+    dwEventID: number,
+    lpUserSid: Win32Pointer,
+    wNumStrings: number,
+    dwDataSize: number,
+    lpStrings: Win32Pointer,
+    lpRawData: Win32Pointer,
+  ): number;
   /** advapi32.dll!ReportEventW */
-  ReportEvent(hEventLog: Win32Pointer, wType: number, wCategory: number, dwEventID: number, lpUserSid: Win32Pointer, wNumStrings: number, dwDataSize: number, lpStrings: Win32Pointer, lpRawData: Win32Pointer): number;
+  ReportEvent(
+    hEventLog: Win32Pointer,
+    wType: number,
+    wCategory: number,
+    dwEventID: number,
+    lpUserSid: Win32Pointer,
+    wNumStrings: number,
+    dwDataSize: number,
+    lpStrings: Win32Pointer,
+    lpRawData: Win32Pointer,
+  ): number;
   /** advapi32.dll!RevertToSelf */
   RevertToSelf(): number;
   /** advapi32.dll!RtlDecryptMemory */
@@ -1401,57 +3986,183 @@ interface Functions {
   /** advapi32.dll!SaferCloseLevel */
   SaferCloseLevel(hLevelHandle: Win32Pointer): number;
   /** advapi32.dll!SaferComputeTokenFromLevel */
-  SaferComputeTokenFromLevel(LevelHandle: Win32Pointer, InAccessToken: Win32Pointer, OutAccessToken: Win32Pointer, dwFlags: number, lpReserved: Win32Pointer): number;
+  SaferComputeTokenFromLevel(
+    LevelHandle: Win32Pointer,
+    InAccessToken: Win32Pointer,
+    OutAccessToken: Win32Pointer,
+    dwFlags: number,
+    lpReserved: Win32Pointer,
+  ): number;
   /** advapi32.dll!SaferCreateLevel */
-  SaferCreateLevel(dwScopeId: number, dwLevelId: number, OpenFlags: number, pLevelHandle: Win32Pointer, lpReserved: Win32Pointer): number;
+  SaferCreateLevel(
+    dwScopeId: number,
+    dwLevelId: number,
+    OpenFlags: number,
+    pLevelHandle: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** advapi32.dll!SaferGetLevelInformation */
-  SaferGetLevelInformation(LevelHandle: Win32Pointer, dwInfoType: number, lpQueryBuffer: Win32Pointer, dwInBufferSize: number, lpdwOutBufferSize: Win32Pointer): number;
+  SaferGetLevelInformation(
+    LevelHandle: Win32Pointer,
+    dwInfoType: number,
+    lpQueryBuffer: Win32Pointer,
+    dwInBufferSize: number,
+    lpdwOutBufferSize: Win32Pointer,
+  ): number;
   /** advapi32.dll!SaferGetPolicyInformation */
-  SaferGetPolicyInformation(dwScopeId: number, SaferPolicyInfoClass: number, InfoBufferSize: number, InfoBuffer: Win32Pointer, InfoBufferRetSize: Win32Pointer, lpReserved: Win32Pointer): number;
+  SaferGetPolicyInformation(
+    dwScopeId: number,
+    SaferPolicyInfoClass: number,
+    InfoBufferSize: number,
+    InfoBuffer: Win32Pointer,
+    InfoBufferRetSize: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** advapi32.dll!SaferIdentifyLevel */
-  SaferIdentifyLevel(dwNumProperties: number, pCodeProperties: Win32Pointer, pLevelHandle: Win32Pointer, lpReserved: Win32Pointer): number;
+  SaferIdentifyLevel(
+    dwNumProperties: number,
+    pCodeProperties: Win32Pointer,
+    pLevelHandle: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** advapi32.dll!SaferRecordEventLogEntry */
   SaferRecordEventLogEntry(hLevel: Win32Pointer, szTargetPath: string | Win32Pointer, lpReserved: Win32Pointer): number;
   /** advapi32.dll!SaferSetLevelInformation */
-  SaferSetLevelInformation(LevelHandle: Win32Pointer, dwInfoType: number, lpQueryBuffer: Win32Pointer, dwInBufferSize: number): number;
+  SaferSetLevelInformation(
+    LevelHandle: Win32Pointer,
+    dwInfoType: number,
+    lpQueryBuffer: Win32Pointer,
+    dwInBufferSize: number,
+  ): number;
   /** advapi32.dll!SaferSetPolicyInformation */
-  SaferSetPolicyInformation(dwScopeId: number, SaferPolicyInfoClass: number, InfoBufferSize: number, InfoBuffer: Win32Pointer, lpReserved: Win32Pointer): number;
+  SaferSetPolicyInformation(
+    dwScopeId: number,
+    SaferPolicyInfoClass: number,
+    InfoBufferSize: number,
+    InfoBuffer: Win32Pointer,
+    lpReserved: Win32Pointer,
+  ): number;
   /** advapi32.dll!SaferiIsExecutableFileType */
   SaferiIsExecutableFileType(szFullPathname: string | Win32Pointer, bFromShellExecute: number): number;
   /** advapi32.dll!SetAclInformation */
-  SetAclInformation(pAcl: Win32Pointer, pAclInformation: Win32Pointer, nAclInformationLength: number, dwAclInformationClass: number): number;
+  SetAclInformation(
+    pAcl: Win32Pointer,
+    pAclInformation: Win32Pointer,
+    nAclInformationLength: number,
+    dwAclInformationClass: number,
+  ): number;
   /** advapi32.dll!SetEncryptedFileMetadata */
-  SetEncryptedFileMetadata(lpFileName: string | Win32Pointer, pbOldMetadata: Win32Pointer, pbNewMetadata: Win32Pointer, pOwnerHash: Win32Pointer, dwOperation: number, pCertificatesAdded: Win32Pointer): number;
+  SetEncryptedFileMetadata(
+    lpFileName: string | Win32Pointer,
+    pbOldMetadata: Win32Pointer,
+    pbNewMetadata: Win32Pointer,
+    pOwnerHash: Win32Pointer,
+    dwOperation: number,
+    pCertificatesAdded: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetEntriesInAclA */
-  SetEntriesInAclA(cCountOfExplicitEntries: number, pListOfExplicitEntries: Win32Pointer, OldAcl: Win32Pointer, NewAcl: Win32Pointer): number;
+  SetEntriesInAclA(
+    cCountOfExplicitEntries: number,
+    pListOfExplicitEntries: Win32Pointer,
+    OldAcl: Win32Pointer,
+    NewAcl: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetEntriesInAclW */
-  SetEntriesInAclW(cCountOfExplicitEntries: number, pListOfExplicitEntries: Win32Pointer, OldAcl: Win32Pointer, NewAcl: Win32Pointer): number;
+  SetEntriesInAclW(
+    cCountOfExplicitEntries: number,
+    pListOfExplicitEntries: Win32Pointer,
+    OldAcl: Win32Pointer,
+    NewAcl: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetEntriesInAclW */
-  SetEntriesInAcl(cCountOfExplicitEntries: number, pListOfExplicitEntries: Win32Pointer, OldAcl: Win32Pointer, NewAcl: Win32Pointer): number;
+  SetEntriesInAcl(
+    cCountOfExplicitEntries: number,
+    pListOfExplicitEntries: Win32Pointer,
+    OldAcl: Win32Pointer,
+    NewAcl: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetFileSecurityA */
-  SetFileSecurityA(lpFileName: string | Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer): number;
+  SetFileSecurityA(
+    lpFileName: string | Win32Pointer,
+    SecurityInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetFileSecurityW */
-  SetFileSecurityW(lpFileName: string | Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer): number;
+  SetFileSecurityW(
+    lpFileName: string | Win32Pointer,
+    SecurityInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetFileSecurityW */
-  SetFileSecurity(lpFileName: string | Win32Pointer, SecurityInformation: number, pSecurityDescriptor: Win32Pointer): number;
+  SetFileSecurity(
+    lpFileName: string | Win32Pointer,
+    SecurityInformation: number,
+    pSecurityDescriptor: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetKernelObjectSecurity */
   SetKernelObjectSecurity(Handle: Win32Pointer, SecurityInformation: number, SecurityDescriptor: Win32Pointer): number;
   /** advapi32.dll!SetNamedSecurityInfoA */
-  SetNamedSecurityInfoA(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, psidOwner: Win32Pointer, psidGroup: Win32Pointer, pDacl: Win32Pointer, pSacl: Win32Pointer): number;
+  SetNamedSecurityInfoA(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    psidOwner: Win32Pointer,
+    psidGroup: Win32Pointer,
+    pDacl: Win32Pointer,
+    pSacl: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetNamedSecurityInfoW */
-  SetNamedSecurityInfoW(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, psidOwner: Win32Pointer, psidGroup: Win32Pointer, pDacl: Win32Pointer, pSacl: Win32Pointer): number;
+  SetNamedSecurityInfoW(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    psidOwner: Win32Pointer,
+    psidGroup: Win32Pointer,
+    pDacl: Win32Pointer,
+    pSacl: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetNamedSecurityInfoW */
-  SetNamedSecurityInfo(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, psidOwner: Win32Pointer, psidGroup: Win32Pointer, pDacl: Win32Pointer, pSacl: Win32Pointer): number;
+  SetNamedSecurityInfo(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    psidOwner: Win32Pointer,
+    psidGroup: Win32Pointer,
+    pDacl: Win32Pointer,
+    pSacl: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetPrivateObjectSecurity */
-  SetPrivateObjectSecurity(SecurityInformation: number, ModificationDescriptor: Win32Pointer, ObjectsSecurityDescriptor: Win32Pointer, GenericMapping: Win32Pointer, Token: Win32Pointer): number;
+  SetPrivateObjectSecurity(
+    SecurityInformation: number,
+    ModificationDescriptor: Win32Pointer,
+    ObjectsSecurityDescriptor: Win32Pointer,
+    GenericMapping: Win32Pointer,
+    Token: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetPrivateObjectSecurityEx */
-  SetPrivateObjectSecurityEx(SecurityInformation: number, ModificationDescriptor: Win32Pointer, ObjectsSecurityDescriptor: Win32Pointer, AutoInheritFlags: number, GenericMapping: Win32Pointer, Token: Win32Pointer): number;
+  SetPrivateObjectSecurityEx(
+    SecurityInformation: number,
+    ModificationDescriptor: Win32Pointer,
+    ObjectsSecurityDescriptor: Win32Pointer,
+    AutoInheritFlags: number,
+    GenericMapping: Win32Pointer,
+    Token: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetSecurityAccessMask */
   SetSecurityAccessMask(SecurityInformation: number, DesiredAccess: Win32Pointer): void;
   /** advapi32.dll!SetSecurityDescriptorControl */
-  SetSecurityDescriptorControl(pSecurityDescriptor: Win32Pointer, ControlBitsOfInterest: number, ControlBitsToSet: number): number;
+  SetSecurityDescriptorControl(
+    pSecurityDescriptor: Win32Pointer,
+    ControlBitsOfInterest: number,
+    ControlBitsToSet: number,
+  ): number;
   /** advapi32.dll!SetSecurityDescriptorDacl */
-  SetSecurityDescriptorDacl(pSecurityDescriptor: Win32Pointer, bDaclPresent: number, pDacl: Win32Pointer, bDaclDefaulted: number): number;
+  SetSecurityDescriptorDacl(
+    pSecurityDescriptor: Win32Pointer,
+    bDaclPresent: number,
+    pDacl: Win32Pointer,
+    bDaclDefaulted: number,
+  ): number;
   /** advapi32.dll!SetSecurityDescriptorGroup */
   SetSecurityDescriptorGroup(pSecurityDescriptor: Win32Pointer, pGroup: Win32Pointer, bGroupDefaulted: number): number;
   /** advapi32.dll!SetSecurityDescriptorOwner */
@@ -1459,25 +4170,57 @@ interface Functions {
   /** advapi32.dll!SetSecurityDescriptorRMControl */
   SetSecurityDescriptorRMControl(SecurityDescriptor: Win32Pointer, RMControl: Win32Pointer): number;
   /** advapi32.dll!SetSecurityDescriptorSacl */
-  SetSecurityDescriptorSacl(pSecurityDescriptor: Win32Pointer, bSaclPresent: number, pSacl: Win32Pointer, bSaclDefaulted: number): number;
+  SetSecurityDescriptorSacl(
+    pSecurityDescriptor: Win32Pointer,
+    bSaclPresent: number,
+    pSacl: Win32Pointer,
+    bSaclDefaulted: number,
+  ): number;
   /** advapi32.dll!SetSecurityInfo */
-  SetSecurityInfo(handle: Win32Pointer, ObjectType: number, SecurityInfo: number, psidOwner: Win32Pointer, psidGroup: Win32Pointer, pDacl: Win32Pointer, pSacl: Win32Pointer): number;
+  SetSecurityInfo(
+    handle: Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    psidOwner: Win32Pointer,
+    psidGroup: Win32Pointer,
+    pDacl: Win32Pointer,
+    pSacl: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetServiceBits */
-  SetServiceBits(hServiceStatus: Win32Pointer, dwServiceBits: number, bSetBitsOn: number, bUpdateImmediately: number): number;
+  SetServiceBits(
+    hServiceStatus: Win32Pointer,
+    dwServiceBits: number,
+    bSetBitsOn: number,
+    bUpdateImmediately: number,
+  ): number;
   /** advapi32.dll!SetServiceObjectSecurity */
-  SetServiceObjectSecurity(hService: Win32Pointer, dwSecurityInformation: number, lpSecurityDescriptor: Win32Pointer): number;
+  SetServiceObjectSecurity(
+    hService: Win32Pointer,
+    dwSecurityInformation: number,
+    lpSecurityDescriptor: Win32Pointer,
+  ): number;
   /** advapi32.dll!SetServiceStatus */
   SetServiceStatus(hServiceStatus: Win32Pointer, lpServiceStatus: Win32Pointer): number;
   /** advapi32.dll!SetThreadToken */
   SetThreadToken(Thread: Win32Pointer, Token: Win32Pointer): number;
   /** advapi32.dll!SetTokenInformation */
-  SetTokenInformation(TokenHandle: Win32Pointer, TokenInformationClass: number, TokenInformation: Win32Pointer, TokenInformationLength: number): number;
+  SetTokenInformation(
+    TokenHandle: Win32Pointer,
+    TokenInformationClass: number,
+    TokenInformation: Win32Pointer,
+    TokenInformationLength: number,
+  ): number;
   /** advapi32.dll!SetTraceCallback */
   SetTraceCallback(pGuid: Win32Pointer, EventCallback: Win32Callback): number;
   /** advapi32.dll!SetUserFileEncryptionKey */
   SetUserFileEncryptionKey(pEncryptionCertificate: Win32Pointer): number;
   /** advapi32.dll!SetUserFileEncryptionKeyEx */
-  SetUserFileEncryptionKeyEx(pEncryptionCertificate: Win32Pointer, dwCapabilities: number, dwFlags: number, pvReserved: Win32Pointer): number;
+  SetUserFileEncryptionKeyEx(
+    pEncryptionCertificate: Win32Pointer,
+    dwCapabilities: number,
+    dwFlags: number,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advapi32.dll!StartServiceA */
   StartServiceA(hService: Win32Pointer, dwNumServiceArgs: number, lpServiceArgVectors: Win32Pointer): number;
   /** advapi32.dll!StartServiceCtrlDispatcherA */
@@ -1503,31 +4246,135 @@ interface Functions {
   /** advapi32.dll!StopTraceW */
   StopTrace(TraceId: number | bigint, InstanceName: string | Win32Pointer, Properties: Win32Pointer): number;
   /** advapi32.dll!TraceConfigureLastBranchRecord */
-  TraceConfigureLastBranchRecord(TraceId: number | bigint, LbrConfiguration: number, Events: Win32Pointer, EventCount: number): number;
+  TraceConfigureLastBranchRecord(
+    TraceId: number | bigint,
+    LbrConfiguration: number,
+    Events: Win32Pointer,
+    EventCount: number,
+  ): number;
   /** advapi32.dll!TraceEvent */
   TraceEvent(TraceHandle: number | bigint, EventTrace: Win32Pointer): number;
   /** advapi32.dll!TraceEventInstance */
-  TraceEventInstance(TraceHandle: number | bigint, EventTrace: Win32Pointer, InstInfo: Win32Pointer, ParentInstInfo: Win32Pointer): number;
+  TraceEventInstance(
+    TraceHandle: number | bigint,
+    EventTrace: Win32Pointer,
+    InstInfo: Win32Pointer,
+    ParentInstInfo: Win32Pointer,
+  ): number;
   /** advapi32.dll!TraceMessage */
-  TraceMessage(LoggerHandle: number | bigint, MessageFlags: number, MessageGuid: Win32Pointer, MessageNumber: number): number;
+  TraceMessage(
+    LoggerHandle: number | bigint,
+    MessageFlags: number,
+    MessageGuid: Win32Pointer,
+    MessageNumber: number,
+  ): number;
   /** advapi32.dll!TraceMessageVa */
-  TraceMessageVa(LoggerHandle: number | bigint, MessageFlags: number, MessageGuid: Win32Pointer, MessageNumber: number, MessageArgList: Win32Pointer): number;
+  TraceMessageVa(
+    LoggerHandle: number | bigint,
+    MessageFlags: number,
+    MessageGuid: Win32Pointer,
+    MessageNumber: number,
+    MessageArgList: Win32Pointer,
+  ): number;
   /** advapi32.dll!TraceQueryInformation */
-  TraceQueryInformation(TraceId: number | bigint, InformationClass: number, TraceInformation: Win32Pointer, InformationLength: number, ReturnLength: Win32Pointer): number;
+  TraceQueryInformation(
+    TraceId: number | bigint,
+    InformationClass: number,
+    TraceInformation: Win32Pointer,
+    InformationLength: number,
+    ReturnLength: Win32Pointer,
+  ): number;
   /** advapi32.dll!TraceSetInformation */
-  TraceSetInformation(TraceId: number | bigint, InformationClass: number, TraceInformation: Win32Pointer, InformationLength: number): number;
+  TraceSetInformation(
+    TraceId: number | bigint,
+    InformationClass: number,
+    TraceInformation: Win32Pointer,
+    InformationLength: number,
+  ): number;
   /** advapi32.dll!TreeResetNamedSecurityInfoA */
-  TreeResetNamedSecurityInfoA(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, pOwner: Win32Pointer, pGroup: Win32Pointer, pDacl: Win32Pointer, pSacl: Win32Pointer, KeepExplicit: number, fnProgress: Win32Callback, ProgressInvokeSetting: number, Args: Win32Pointer): number;
+  TreeResetNamedSecurityInfoA(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    pOwner: Win32Pointer,
+    pGroup: Win32Pointer,
+    pDacl: Win32Pointer,
+    pSacl: Win32Pointer,
+    KeepExplicit: number,
+    fnProgress: Win32Callback,
+    ProgressInvokeSetting: number,
+    Args: Win32Pointer,
+  ): number;
   /** advapi32.dll!TreeResetNamedSecurityInfoW */
-  TreeResetNamedSecurityInfoW(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, pOwner: Win32Pointer, pGroup: Win32Pointer, pDacl: Win32Pointer, pSacl: Win32Pointer, KeepExplicit: number, fnProgress: Win32Callback, ProgressInvokeSetting: number, Args: Win32Pointer): number;
+  TreeResetNamedSecurityInfoW(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    pOwner: Win32Pointer,
+    pGroup: Win32Pointer,
+    pDacl: Win32Pointer,
+    pSacl: Win32Pointer,
+    KeepExplicit: number,
+    fnProgress: Win32Callback,
+    ProgressInvokeSetting: number,
+    Args: Win32Pointer,
+  ): number;
   /** advapi32.dll!TreeResetNamedSecurityInfoW */
-  TreeResetNamedSecurityInfo(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, pOwner: Win32Pointer, pGroup: Win32Pointer, pDacl: Win32Pointer, pSacl: Win32Pointer, KeepExplicit: number, fnProgress: Win32Callback, ProgressInvokeSetting: number, Args: Win32Pointer): number;
+  TreeResetNamedSecurityInfo(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    pOwner: Win32Pointer,
+    pGroup: Win32Pointer,
+    pDacl: Win32Pointer,
+    pSacl: Win32Pointer,
+    KeepExplicit: number,
+    fnProgress: Win32Callback,
+    ProgressInvokeSetting: number,
+    Args: Win32Pointer,
+  ): number;
   /** advapi32.dll!TreeSetNamedSecurityInfoA */
-  TreeSetNamedSecurityInfoA(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, pOwner: Win32Pointer, pGroup: Win32Pointer, pDacl: Win32Pointer, pSacl: Win32Pointer, dwAction: number, fnProgress: Win32Callback, ProgressInvokeSetting: number, Args: Win32Pointer): number;
+  TreeSetNamedSecurityInfoA(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    pOwner: Win32Pointer,
+    pGroup: Win32Pointer,
+    pDacl: Win32Pointer,
+    pSacl: Win32Pointer,
+    dwAction: number,
+    fnProgress: Win32Callback,
+    ProgressInvokeSetting: number,
+    Args: Win32Pointer,
+  ): number;
   /** advapi32.dll!TreeSetNamedSecurityInfoW */
-  TreeSetNamedSecurityInfoW(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, pOwner: Win32Pointer, pGroup: Win32Pointer, pDacl: Win32Pointer, pSacl: Win32Pointer, dwAction: number, fnProgress: Win32Callback, ProgressInvokeSetting: number, Args: Win32Pointer): number;
+  TreeSetNamedSecurityInfoW(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    pOwner: Win32Pointer,
+    pGroup: Win32Pointer,
+    pDacl: Win32Pointer,
+    pSacl: Win32Pointer,
+    dwAction: number,
+    fnProgress: Win32Callback,
+    ProgressInvokeSetting: number,
+    Args: Win32Pointer,
+  ): number;
   /** advapi32.dll!TreeSetNamedSecurityInfoW */
-  TreeSetNamedSecurityInfo(pObjectName: string | Win32Pointer, ObjectType: number, SecurityInfo: number, pOwner: Win32Pointer, pGroup: Win32Pointer, pDacl: Win32Pointer, pSacl: Win32Pointer, dwAction: number, fnProgress: Win32Callback, ProgressInvokeSetting: number, Args: Win32Pointer): number;
+  TreeSetNamedSecurityInfo(
+    pObjectName: string | Win32Pointer,
+    ObjectType: number,
+    SecurityInfo: number,
+    pOwner: Win32Pointer,
+    pGroup: Win32Pointer,
+    pDacl: Win32Pointer,
+    pSacl: Win32Pointer,
+    dwAction: number,
+    fnProgress: Win32Callback,
+    ProgressInvokeSetting: number,
+    Args: Win32Pointer,
+  ): number;
   /** advapi32.dll!UninstallApplication */
   UninstallApplication(ProductCode: string | Win32Pointer, dwStatus: number): number;
   /** advapi32.dll!UnlockServiceDatabase */
@@ -1543,7 +4390,11 @@ interface Functions {
   /** advapi32.dll!WaitServiceState */
   WaitServiceState(hService: Win32Pointer, dwNotify: number, dwTimeout: number, hCancelEvent: Win32Pointer): number;
   /** advapi32.dll!WriteEncryptedFileRaw */
-  WriteEncryptedFileRaw(pfImportCallback: Win32Callback, pvCallbackContext: Win32Pointer, pvContext: Win32Pointer): number;
+  WriteEncryptedFileRaw(
+    pfImportCallback: Win32Callback,
+    pvCallbackContext: Win32Pointer,
+    pvContext: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

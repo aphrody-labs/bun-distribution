@@ -12,13 +12,7 @@
  */
 import { diskDecision, diskProbeCommand, resolveMinFree } from "../fleet/space";
 import { parsePolicy } from "../fleet/safety";
-import {
-  existsSync,
-  mkdirSync,
-  openSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, posix, resolve } from "node:path";
 
@@ -29,27 +23,17 @@ const PASSTHROUGH: Readonly<Record<string, readonly string[]>> = {
   ssh: ["aphrody-infra", "ssh"],
 };
 
-export const APHRODY_COMMANDS = [
-  ...Object.keys(PASSTHROUGH),
-  "ship",
-  "hooks",
-] as const;
+export const APHRODY_COMMANDS = [...Object.keys(PASSTHROUGH), "ship", "hooks"] as const;
 
 export function aphrodyRoot(): string {
-  return resolve(
-    process.env["YOLO_APHRODY_ROOT"] ?? join(homedir(), "src", "aphrody"),
-  );
+  return resolve(process.env["YOLO_APHRODY_ROOT"] ?? join(homedir(), "src", "aphrody"));
 }
 
 export function onPath(bin: string): boolean {
   return Boolean(Bun.which(bin));
 }
 
-function run(
-  cmd: readonly string[],
-  cwd: string,
-  env: NodeJS.ProcessEnv = {},
-): number {
+function run(cmd: readonly string[], cwd: string, env: NodeJS.ProcessEnv = {}): number {
   const result = Bun.spawnSync([...cmd], {
     windowsHide: true,
     cwd,
@@ -68,8 +52,7 @@ interface Factory {
   readonly executionOnlyTargets?: readonly string[];
 }
 
-const shellQuote = (value: string): string =>
-  `'${value.replaceAll("'", "'\\''")}'`;
+const shellQuote = (value: string): string => `'${value.replaceAll("'", "'\\''")}'`;
 
 function factoryDirectoryCommand(path: string): string {
   const quoted = shellQuote(path);
@@ -78,15 +61,12 @@ function factoryDirectoryCommand(path: string): string {
 
 function loadFactory(): Factory {
   const customConfig = process.env["YOLO_BUILD_FACTORY_CONFIG"];
-  const file =
-    customConfig ?? join(aphrodyRoot(), "tools/config/build-factory.json");
-  if (!existsSync(file))
-    throw new Error(`Build factory config not found: ${file}`);
+  const file = customConfig ?? join(aphrodyRoot(), "tools/config/build-factory.json");
+  if (!existsSync(file)) throw new Error(`Build factory config not found: ${file}`);
   const raw = JSON.parse(readFileSync(file, "utf8")) as Factory & {
     enabled?: boolean;
   };
-  if (raw.enabled === false)
-    throw new Error("The Aphrody build factory is disabled");
+  if (raw.enabled === false) throw new Error("The Aphrody build factory is disabled");
   return raw;
 }
 
@@ -111,10 +91,7 @@ const git = (cwd: string, ...args: string[]): string =>
 
 export function remotePaths(factory: Factory, sha: string) {
   // sibling of the other first-party workspaces: <workspaces>/yolo
-  const workspace = posix.join(
-    posix.dirname(posix.normalize(factory.workspaceRoot)),
-    "yolo",
-  );
+  const workspace = posix.join(posix.dirname(posix.normalize(factory.workspaceRoot)), "yolo");
   const artifacts = `${factory.artifactRoot}/yolo/${sha}`;
   return { workspace, artifacts, lock: factory.lockPath };
 }
@@ -130,11 +107,7 @@ export function sessionName(sha: string): string {
  * while bash reads it. The unit script takes the heavy lock, checks the commit out and runs the build as a transient
  * systemd unit with the cgroup ceilings lifted. A build already running for this commit is left alone unless forced.
  */
-export function remoteCommand(
-  factory: Factory,
-  sha: string,
-  force = false,
-): string {
+export function remoteCommand(factory: Factory, sha: string, force = false): string {
   const p = remotePaths(factory, sha);
   const name = sessionName(sha);
   const start = [
@@ -169,9 +142,7 @@ export function waitCommand(factory: Factory, sha: string): string {
 /** HTTPS form of the origin remote (the build host authenticates with `gh`, not with this machine's ssh aliases). */
 export function originUrl(cwd: string): string {
   const raw = git(cwd, "remote", "get-url", "origin");
-  return raw
-    .replace(/^git@[^:]+:/, "https://github.com/")
-    .replace(/^ssh:\/\/git@[^/]+\//, "https://github.com/");
+  return raw.replace(/^git@[^:]+:/, "https://github.com/").replace(/^ssh:\/\/git@[^/]+\//, "https://github.com/");
 }
 
 /**
@@ -180,11 +151,7 @@ export function originUrl(cwd: string): string {
  * a while. The working tree is not touched here: the checkout happens under the heavy lock (`ship_unit.sh`), so a
  * build in progress never sees its sources change.
  */
-export function remoteSyncCommand(
-  factory: Factory,
-  sha: string,
-  url: string,
-): string {
+export function remoteSyncCommand(factory: Factory, sha: string, url: string): string {
   const p = remotePaths(factory, sha);
   const ws = `'${p.workspace}'`;
   return [
@@ -203,8 +170,7 @@ export function remoteSyncCommand(
 
 /** Prepare a pinned factory workspace under its heavy lock, without starting a build. */
 export function remotePrepareCommand(factory: Factory, sha: string): string {
-  if (!/^[a-f0-9]{40}$/.test(sha))
-    throw new Error("Factory preparation requires a full Git SHA");
+  if (!/^[a-f0-9]{40}$/.test(sha)) throw new Error("Factory preparation requires a full Git SHA");
   const paths = remotePaths(factory, sha);
   const body = [
     "set -euo pipefail",
@@ -226,13 +192,9 @@ export function remotePrepareCommand(factory: Factory, sha: string): string {
 }
 
 function ssh(host: string, command: string, timeoutSecs = 120): number {
-  return run(
-    ["aphrody-infra", "ssh", "exec", "--host", host, "--cmd", command],
-    aphrodyRoot(),
-    {
-      APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(timeoutSecs),
-    },
-  );
+  return run(["aphrody-infra", "ssh", "exec", "--host", host, "--cmd", command], aphrodyRoot(), {
+    APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(timeoutSecs),
+  });
 }
 
 export interface Captured {
@@ -261,10 +223,7 @@ export function splitExitSentinel(stdout: string): {
   return { stdout: stdout.slice(0, i), code: Number.isNaN(code) ? null : code };
 }
 
-async function captureAphrody(
-  argv: readonly string[],
-  timeoutSecs: number,
-): Promise<Captured> {
+async function captureAphrody(argv: readonly string[], timeoutSecs: number): Promise<Captured> {
   const root = aphrodyRoot();
   const proc = Bun.spawn([...argv], {
     windowsHide: true,
@@ -286,26 +245,12 @@ async function captureAphrody(
 }
 
 /** Run a command on an `aphrody-infra` host through `ssh exec --json` and return its real output. */
-export async function sshCapture(
-  host: string,
-  command: string,
-  timeoutSecs = 120,
-): Promise<Captured> {
+export async function sshCapture(host: string, command: string, timeoutSecs = 120): Promise<Captured> {
   const r = await captureAphrody(
-    [
-      "aphrody-infra",
-      "ssh",
-      "exec",
-      "--host",
-      host,
-      "--json",
-      "--cmd",
-      withExitSentinel(command),
-    ],
+    ["aphrody-infra", "ssh", "exec", "--host", host, "--json", "--cmd", withExitSentinel(command)],
     timeoutSecs,
   );
-  if (r.code !== 0)
-    return { code: 255, stdout: "", stderr: (r.stderr || r.stdout).trim() };
+  if (r.code !== 0) return { code: 255, stdout: "", stderr: (r.stderr || r.stdout).trim() };
   try {
     const j = JSON.parse(r.stdout) as { stdout?: string; stderr?: string };
     const split = splitExitSentinel(j.stdout ?? "");
@@ -324,49 +269,19 @@ export async function sshCapture(
 }
 
 /** Query or mutate one systemd unit through the owner (`stop`/`disable` carry --confirm). */
-export function sshServiceArgs(
-  host: string,
-  unit: string,
-  action: string,
-): string[] {
-  const confirm =
-    action === "stop" || action === "disable" ? ["--confirm"] : [];
-  return [
-    "aphrody-infra",
-    "ssh",
-    "service",
-    "--host",
-    host,
-    "--action",
-    action,
-    ...confirm,
-    unit,
-  ];
+export function sshServiceArgs(host: string, unit: string, action: string): string[] {
+  const confirm = action === "stop" || action === "disable" ? ["--confirm"] : [];
+  return ["aphrody-infra", "ssh", "service", "--host", host, "--action", action, ...confirm, unit];
 }
 
-export async function sshService(
-  host: string,
-  unit: string,
-  action: string,
-): Promise<Captured> {
+export async function sshService(host: string, unit: string, action: string): Promise<Captured> {
   const r = await captureAphrody(sshServiceArgs(host, unit, action), 60);
   return r;
 }
 
 /** Owner tuning report/application (`aphrody-infra ssh tune`), JSON. */
 export async function sshTune(host: string, apply: boolean): Promise<Captured> {
-  return captureAphrody(
-    [
-      "aphrody-infra",
-      "ssh",
-      "tune",
-      "--host",
-      host,
-      "--json",
-      ...(apply ? ["--apply"] : []),
-    ],
-    120,
-  );
+  return captureAphrody(["aphrody-infra", "ssh", "tune", "--host", host, "--json", ...(apply ? ["--apply"] : [])], 120);
 }
 
 /**
@@ -377,18 +292,10 @@ export async function sshTune(host: string, apply: boolean): Promise<Captured> {
  * never fails the ship itself.
  */
 export function shipClaimPath(sha: string): string {
-  return join(
-    aphrodyRoot(),
-    ".coord/claims",
-    `yolo-ship-${sha.slice(0, 12)}.json`,
-  );
+  return join(aphrodyRoot(), ".coord/claims", `yolo-ship-${sha.slice(0, 12)}.json`);
 }
 
-export function writeShipClaim(
-  host: string,
-  factory: Factory,
-  sha: string,
-): void {
+export function writeShipClaim(host: string, factory: Factory, sha: string): void {
   const sha12 = sha.slice(0, 12);
   try {
     mkdirSync(dirname(shipClaimPath(sha)), { recursive: true });
@@ -415,38 +322,22 @@ export function releaseShipClaim(sha: string, state: string): void {
   const path = shipClaimPath(sha);
   try {
     if (!existsSync(path)) return;
-    const claim = JSON.parse(readFileSync(path, "utf8")) as Record<
-      string,
-      unknown
-    >;
-    writeFileSync(
-      path,
-      `${JSON.stringify({ ...claim, state, endedAt: new Date().toISOString() }, null, 2)}\n`,
-    );
+    const claim = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    writeFileSync(path, `${JSON.stringify({ ...claim, state, endedAt: new Date().toISOString() }, null, 2)}\n`);
   } catch {
     // best effort, see writeShipClaim
   }
 }
 
-async function waitFor(
-  host: string,
-  factory: Factory,
-  sha: string,
-): Promise<number> {
+async function waitFor(host: string, factory: Factory, sha: string): Promise<number> {
   const r = await sshCapture(host, waitCommand(factory, sha), 86_400);
   process.stdout.write(r.stdout);
   if (r.stderr.trim() !== "") process.stderr.write(`${r.stderr.trim()}\n`);
-  releaseShipClaim(
-    sha,
-    r.code === 0 ? "complete: ok" : "complete: failed or stopped",
-  );
+  releaseShipClaim(sha, r.code === 0 ? "complete: ok" : "complete: failed or stopped");
   return r.code;
 }
 
-async function runShip(
-  args: readonly string[],
-  yoloRoot: string,
-): Promise<number> {
+async function runShip(args: readonly string[], yoloRoot: string): Promise<number> {
   const flag = (name: string): string | undefined => {
     const i = args.indexOf(name);
     return i >= 0 ? args[i + 1] : undefined;
@@ -469,28 +360,18 @@ async function runShip(
   }
   if (sub === "wait") return waitFor(host, factory, sha);
   if (sub === "attach") {
-    return run(
-      ["ssh", "-t", host, "tmux", "attach", "-t", sessionName(sha)],
-      yoloRoot,
-    );
+    return run(["ssh", "-t", host, "tmux", "attach", "-t", sessionName(sha)], yoloRoot);
   }
   if (sub === "status" || sub === "log") {
     const file = sub === "status" ? "STATUS" : "ship.log";
-    return ssh(
-      host,
-      `tail -n 60 '${p.artifacts}/${file}' 2>&1 || echo no-build-for-${sha}`,
-    );
+    return ssh(host, `tail -n 60 '${p.artifacts}/${file}' 2>&1 || echo no-build-for-${sha}`);
   }
   if (factory.executionOnlyTargets?.includes(host)) {
-    console.error(
-      `yolo ship refused: ${host} is execution-only in the factory configuration`,
-    );
+    console.error(`yolo ship refused: ${host} is execution-only in the factory configuration`);
     return 2;
   }
   if (prepare && (detach || wait || force)) {
-    console.error(
-      "yolo ship --prepare cannot be combined with --detach, --wait or --force",
-    );
+    console.error("yolo ship --prepare cannot be combined with --detach, --wait or --force");
     return 2;
   }
   if (prepare && !/^[a-f0-9]{40}$/.test(sha)) {
@@ -503,13 +384,7 @@ async function runShip(
     mkdirSync(logDir, { recursive: true });
     const fd = openSync(join(logDir, `${sha.slice(0, 12)}.log`), "a");
     const child = Bun.spawn(
-      [
-        process.execPath,
-        ...process.argv.slice(1).filter((a) => a !== "--detach"),
-        "--apply",
-        "--sha",
-        sha,
-      ],
+      [process.execPath, ...process.argv.slice(1).filter(a => a !== "--detach"), "--apply", "--sha", sha],
       {
         windowsHide: true,
         cwd: yoloRoot,
@@ -520,18 +395,12 @@ async function runShip(
       },
     );
     child.unref();
-    console.log(
-      `yolo ship ${sha.slice(0, 12)} started in the background (var/ship)`,
-    );
+    console.log(`yolo ship ${sha.slice(0, 12)} started in the background (var/ship)`);
     return 0;
   }
 
-  console.log(
-    `\x1b[1myolo ship\x1b[0m ${sha.slice(0, 12)} -> ${host}:${p.workspace}`,
-  );
-  console.log(
-    `  1. git (gh auth) on ${host}  fetch ${sha.slice(0, 12)} and tags -> ${p.workspace}`,
-  );
+  console.log(`\x1b[1myolo ship\x1b[0m ${sha.slice(0, 12)} -> ${host}:${p.workspace}`);
+  console.log(`  1. git (gh auth) on ${host}  fetch ${sha.slice(0, 12)} and tags -> ${p.workspace}`);
   console.log(
     prepare
       ? `  2. heavy lock -> clean pinned checkout + submodules (preparation only)`
@@ -545,16 +414,9 @@ async function runShip(
     );
     return 0;
   }
-  const probe = await sshCapture(
-    host,
-    diskProbeCommand(factory.workspaceRoot),
-    60,
-  );
+  const probe = await sshCapture(host, diskProbeCommand(factory.workspaceRoot), 60);
   const policyFile = join(yoloRoot, "host-policy.toml");
-  const policy = parsePolicy(
-    existsSync(policyFile) ? readFileSync(policyFile, "utf8") : null,
-    host,
-  );
+  const policy = parsePolicy(existsSync(policyFile) ? readFileSync(policyFile, "utf8") : null, host);
   let minFree: number;
   try {
     minFree = resolveMinFree({
@@ -575,23 +437,15 @@ async function runShip(
   }
   console.log(`  disk: ${host} ${disk.message}`);
   if (git(yoloRoot, "status", "--porcelain") !== "")
-    console.log(
-      "  note: uncommitted changes are not shipped; the remote checks out the pushed commit",
-    );
-  let code = ssh(
-    host,
-    remoteSyncCommand(factory, sha, originUrl(yoloRoot)),
-    3600,
-  );
+    console.log("  note: uncommitted changes are not shipped; the remote checks out the pushed commit");
+  let code = ssh(host, remoteSyncCommand(factory, sha, originUrl(yoloRoot)), 3600);
   if (code !== 0) return code;
   if (prepare) return ssh(host, remotePrepareCommand(factory, sha), 3600);
   code = ssh(host, remoteCommand(factory, sha, force));
   if (code !== 0) return code;
   writeShipClaim(host, factory, sha);
   if (wait) return waitFor(host, factory, sha);
-  console.log(
-    `  follow: yolo ship status|log|wait|attach|stop --sha ${sha.slice(0, 12)}`,
-  );
+  console.log(`  follow: yolo ship status|log|wait|attach|stop --sha ${sha.slice(0, 12)}`);
   return 0;
 }
 
@@ -607,14 +461,8 @@ function runHooks(args: readonly string[], yoloRoot: string): number {
       `#!/bin/sh\n${HOOK_MARK}\n# Starts the full yolo build on the build factory for pushes to main/dev (non-blocking).\nwhile read -r _ local_sha _ remote_ref; do\n  case "$remote_ref" in\n    refs/heads/main|refs/heads/dev)\n      [ "$local_sha" = "0000000000000000000000000000000000000000" ] && continue\n      (cd "$(git rev-parse --show-toplevel)" && bun run cli ship --detach --sha "$local_sha" >/dev/null 2>&1 || true)\n      ;;\n  esac\ndone\nexit 0\n`,
       { mode: 0o755 },
     );
-    const code = run(
-      ["git", "config", "core.hooksPath", ".githooks"],
-      yoloRoot,
-    );
-    if (code === 0)
-      console.log(
-        "Installed .githooks/pre-push: pushes to main/dev start `yolo ship`.",
-      );
+    const code = run(["git", "config", "core.hooksPath", ".githooks"], yoloRoot);
+    if (code === 0) console.log("Installed .githooks/pre-push: pushes to main/dev start `yolo ship`.");
     return code;
   }
   if (args[0] === "uninstall") {
@@ -634,9 +482,7 @@ export async function runAphrodyCommand(
   const base = PASSTHROUGH[command];
   if (base === undefined) throw new Error(`Unknown Aphrody command ${command}`);
   if (!onPath(base[0] as string)) {
-    console.error(
-      `\`${base[0]}\` is not on PATH (Aphrody install: ${aphrodyRoot()})`,
-    );
+    console.error(`\`${base[0]}\` is not on PATH (Aphrody install: ${aphrodyRoot()})`);
     return 127;
   }
   const root = aphrodyRoot();
@@ -648,7 +494,7 @@ export async function runAphrodyCommand(
 
 /** For `yolo doctor`: which Aphrody owners are reachable. */
 export function aphrodyTools(): { name: string; found: boolean }[] {
-  return ["aphrody-infra"].map((name) => ({
+  return ["aphrody-infra"].map(name => ({
     name,
     found: onPath(name),
   }));

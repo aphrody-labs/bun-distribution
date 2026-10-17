@@ -7,24 +7,11 @@
  * and the kit; creator: creator-kit).
  */
 import { existsSync, readFileSync } from "node:fs";
-import {
-  copyFile,
-  mkdir,
-  mkdtemp,
-  rename,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
 import { formatBytes } from "../shared/format.ts";
-import {
-  compareVersions,
-  downloadVerified,
-  extractTarGz,
-  isCompiled,
-  type ReleaseArtifact,
-} from "../shared/update.ts";
+import { compareVersions, downloadVerified, extractTarGz, isCompiled, type ReleaseArtifact } from "../shared/update.ts";
 import { desktopCandidates } from "../shared/desktop-launch.ts";
 import type { Context } from "../admin/lib/context.ts";
 import {
@@ -74,9 +61,7 @@ export function setupDirs(ctx: Context) {
 
 /** The installed desktop app, if any. */
 export function desktopApp(ctx: Context): string | undefined {
-  return desktopCandidates(ctx.sys.env, ctx.sys.platform).find((path) =>
-    existsSync(path),
-  );
+  return desktopCandidates(ctx.sys.env, ctx.sys.platform).find(path => existsSync(path));
 }
 
 type Verified = { artifact: ManifestArtifact; base: string } | StepResult;
@@ -106,8 +91,7 @@ async function verifiedArtifact(
     return {
       state: "attente",
       detail: `${label} n'est pas encore publié pour Windows sur le site de téléchargement`,
-      action:
-        "Rien à faire de ton côté : relance ce programme quand il sera publié.",
+      action: "Rien à faire de ton côté : relance ce programme quand il sera publié.",
     };
   try {
     checkArtifact(base, artifact, sums);
@@ -135,19 +119,15 @@ const asRelease = (artifact: ManifestArtifact): ReleaseArtifact => ({
 });
 
 const windowsOnly = (ctx: Context): StepResult | undefined =>
-  ctx.sys.platform === "win32"
-    ? undefined
-    : { state: "ignore", detail: "installation Windows seulement" };
+  ctx.sys.platform === "win32" ? undefined : { state: "ignore", detail: "installation Windows seulement" };
 
 export const stepSetup: Step = {
   id: "setup",
   titre: "Ce programme d'installation",
   async run(ctx, mode) {
-    if (!isCompiled(ctx.exePath))
-      return { state: "ignore", detail: "lancé depuis les sources" };
+    if (!isCompiled(ctx.exePath)) return { state: "ignore", detail: "lancé depuis les sources" };
     const dir = setupDirs(ctx).setup;
-    if (dirname(ctx.exePath) === dir)
-      return { state: "deja", detail: `installé dans ${dir}` };
+    if (dirname(ctx.exePath) === dir) return { state: "deja", detail: `installé dans ${dir}` };
     if (mode === "simuler")
       return {
         state: "a-faire",
@@ -165,22 +145,13 @@ export const stepDesktop: Step = {
   async run(ctx, mode) {
     const skip = windowsOnly(ctx);
     if (skip) return skip;
-    const found = await verifiedArtifact(
-      ctx,
-      ARTIFACTS.desktop,
-      ".exe",
-      "L'application Aphrody",
-    );
+    const found = await verifiedArtifact(ctx, ARTIFACTS.desktop, ".exe", "L'application Aphrody");
     const installed = desktopApp(ctx);
     if (isResult(found))
-      return installed && found.state === "attente"
-        ? { state: "deja", detail: `installée (${installed})` }
-        : found;
+      return installed && found.state === "attente" ? { state: "deja", detail: `installée (${installed})` } : found;
     const { artifact } = found;
     const stamp = join(setupDirs(ctx).setup, "aphrody-app.version");
-    const current = existsSync(stamp)
-      ? readFileSync(stamp, "utf8").trim()
-      : undefined;
+    const current = existsSync(stamp) ? readFileSync(stamp, "utf8").trim() : undefined;
     if (installed && current && compareVersions(current, artifact.version) >= 0)
       return { state: "deja", detail: `version ${current}` };
     if (mode === "simuler")
@@ -188,10 +159,7 @@ export const stepDesktop: Step = {
         state: "a-faire",
         detail: `installer l'application ${artifact.version} (${formatBytes(artifact.size)}, empreinte SHA-256 vérifiée)`,
       };
-    const file = join(
-      setupDirs(ctx).tmp,
-      artifact.file ?? basename(artifact.url),
-    );
+    const file = join(setupDirs(ctx).tmp, artifact.file ?? basename(artifact.url));
     await downloadVerified(asRelease(artifact), file, ctx.fetchImpl);
     ctx.ui.say(
       `  Installation de l'application ${artifact.version} (une fenêtre peut demander l'autorisation : clique « Oui »)...`,
@@ -216,16 +184,13 @@ export const stepDesktop: Step = {
 };
 
 /** marketplace.json of the local Claude Code marketplace holding the downloaded plugins. */
-export function marketplaceJson(
-  plugins: { name: string; dir: string }[],
-): string {
+export function marketplaceJson(plugins: { name: string; dir: string }[]): string {
   return `${JSON.stringify(
     {
       name: MARKETPLACE,
       owner: { name: "aphrody-dev", email: "contact@aphrody.com" },
-      description:
-        "Aphrody plugins installed by Aphrody-Setup from downloads.aphrody.com",
-      plugins: plugins.map((plugin) => ({
+      description: "Aphrody plugins installed by Aphrody-Setup from downloads.aphrody.com",
+      plugins: plugins.map(plugin => ({
         name: plugin.name,
         source: `./${plugin.dir}`,
       })),
@@ -260,7 +225,7 @@ export const stepPlugins: Step = {
     if (mode === "simuler")
       return {
         state: "a-faire",
-        detail: `installer ${found.map((entry) => entry.id).join(", ")} et les déclarer dans Claude Code`,
+        detail: `installer ${found.map(entry => entry.id).join(", ")} et les déclarer dans Claude Code`,
       };
     for (const { id, artifact } of found) {
       const archive = join(setupDirs(ctx).tmp, artifact.file ?? `${id}.tar.gz`);
@@ -307,35 +272,21 @@ export const stepPlugins: Step = {
       name: id.replace(/^plugin-/, ""),
       dir: id,
     }));
-    await writeFile(
-      join(root, ".claude-plugin", "marketplace.json"),
-      marketplaceJson(plugins),
-    );
+    await writeFile(join(root, ".claude-plugin", "marketplace.json"), marketplaceJson(plugins));
     const claude = findTool(ctx.sys, ctx.paths, "claude");
     if (!claude)
       return {
         state: "attente",
         detail: `plugins copiés dans ${root} ; Claude Code n'est pas installé`,
-        action:
-          "Installe Claude Code puis relance ce programme pour les activer.",
+        action: "Installe Claude Code puis relance ce programme pour les activer.",
       };
-    await ctx.sys.run(
-      [claude, "plugin", "marketplace", "add", root, "--scope", "user"],
-      {
-        timeoutMs: 120_000,
-      },
-    );
+    await ctx.sys.run([claude, "plugin", "marketplace", "add", root, "--scope", "user"], {
+      timeoutMs: 120_000,
+    });
     const failed: string[] = [];
     for (const plugin of plugins) {
       const result = await ctx.sys.run(
-        [
-          claude,
-          "plugin",
-          "install",
-          `${plugin.name}@${MARKETPLACE}`,
-          "--scope",
-          "user",
-        ],
+        [claude, "plugin", "install", `${plugin.name}@${MARKETPLACE}`, "--scope", "user"],
         { timeoutMs: 300_000 },
       );
       if (result.code !== 0) failed.push(plugin.name);
@@ -343,7 +294,7 @@ export const stepPlugins: Step = {
     return failed.length === 0
       ? {
           state: "fait",
-          detail: `${plugins.map((p) => p.name).join(", ")} installés dans Claude Code`,
+          detail: `${plugins.map(p => p.name).join(", ")} installés dans Claude Code`,
         }
       : {
           state: "echec",
@@ -360,12 +311,10 @@ export const stepShortcut: Step = {
     const skip = windowsOnly(ctx);
     if (skip) return skip;
     // The desktop app's installer makes its own shortcuts; without the app, the shortcut reopens this installer.
-    if (desktopApp(ctx))
-      return { state: "deja", detail: "créé par l'application Aphrody" };
+    if (desktopApp(ctx)) return { state: "deja", detail: "créé par l'application Aphrody" };
     const target = join(setupDirs(ctx).setup, SETUP_EXE);
     const lnk = join(ctx.paths.desktopDir, "Aphrody.lnk");
-    if (existsSync(lnk))
-      return { state: "deja", detail: "« Aphrody » est sur le Bureau" };
+    if (existsSync(lnk)) return { state: "deja", detail: "« Aphrody » est sur le Bureau" };
     if (!isCompiled(ctx.exePath))
       return {
         state: "ignore",
@@ -381,12 +330,7 @@ export const stepShortcut: Step = {
         state: "echec",
         detail: `${target} manque : la copie de ce programme a échoué`,
       };
-    return (await createShortcut(
-      ctx,
-      lnk,
-      target,
-      "Aphrody - installation et réparation",
-    ))
+    return (await createShortcut(ctx, lnk, target, "Aphrody - installation et réparation"))
       ? { state: "fait", detail: "raccourci « Aphrody » sur le Bureau" }
       : { state: "echec", detail: "Windows a refusé de créer le raccourci" };
   },
@@ -423,9 +367,7 @@ export function stepsFor(roles: ReadonlySet<Role>): Step[] {
     stepPlugins,
     stepMcp,
     stepShortcut,
-    ...(roles.has("admin")
-      ? [stepPrerequis, stepCles, stepAcces, stepDepot, stepOmarKit]
-      : []),
+    ...(roles.has("admin") ? [stepPrerequis, stepCles, stepAcces, stepDepot, stepOmarKit] : []),
     ...(roles.has("createur") ? [stepCreatorKit] : []),
   ];
 }

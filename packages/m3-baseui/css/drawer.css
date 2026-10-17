@@ -5,8 +5,7 @@
     position: fixed;
     inset: 0;
     background: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
-    transition: opacity var(--md-sys-motion-duration-medium2)
-      var(--md-sys-motion-easing-standard);
+    transition: opacity var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
   }
   .m3-bui-drawer__backdrop[data-starting-style],
   .m3-bui-drawer__backdrop[data-ending-style] {
@@ -32,8 +31,7 @@
     box-shadow: var(--md-sys-elevation-level1);
     outline: none;
     transform: translateY(var(--drawer-swipe-movement-y, 0px));
-    transition: transform var(--md-sys-motion-duration-medium4)
-      var(--md-sys-motion-easing-emphasized);
+    transition: transform var(--md-sys-motion-duration-medium4) var(--md-sys-motion-easing-emphasized);
   }
   .m3-bui-drawer__popup::before {
     content: "";
@@ -42,11 +40,7 @@
     block-size: 4px;
     margin: 0 auto 16px;
     border-radius: var(--md-sys-shape-corner-full);
-    background: color-mix(
-      in srgb,
-      var(--md-sys-color-on-surface-variant) 40%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 40%, transparent);
   }
   .m3-bui-drawer__popup[data-starting-style],
   .m3-bui-drawer__popup[data-ending-style] {

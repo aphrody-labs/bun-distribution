@@ -12,7 +12,7 @@ export function cn(...inputs: ClassValue[]) {
  * Sleep for a given number of milliseconds
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
@@ -92,11 +92,7 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
  * Format a number as currency
  * Note: uses replace for NBSP normalization to match tests if needed
  */
-export function formatCurrency(
-  amount: number,
-  currency = "EUR",
-  locale = "fr-FR",
-): string {
+export function formatCurrency(amount: number, currency = "EUR", locale = "fr-FR"): string {
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
@@ -114,8 +110,7 @@ export function formatPrice(amount: number): string {
  * Generate a random ID
  */
 export function generateId(length = 16): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));

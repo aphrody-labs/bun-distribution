@@ -13,7 +13,13 @@ interface Functions {
   /** uiautomationcore.dll!InvokePattern_Invoke */
   InvokePattern_Invoke(hobj: Win32Pointer): number;
   /** uiautomationcore.dll!ItemContainerPattern_FindItemByProperty */
-  ItemContainerPattern_FindItemByProperty(hobj: Win32Pointer, hnodeStartAfter: Win32Pointer, propertyId: number, value: Win32StructInit, pFound: Win32Pointer): number;
+  ItemContainerPattern_FindItemByProperty(
+    hobj: Win32Pointer,
+    hnodeStartAfter: Win32Pointer,
+    propertyId: number,
+    value: Win32StructInit,
+    pFound: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!LegacyIAccessiblePattern_DoDefaultAction */
   LegacyIAccessiblePattern_DoDefaultAction(hobj: Win32Pointer): number;
   /** uiautomationcore.dll!LegacyIAccessiblePattern_GetIAccessible */
@@ -63,13 +69,31 @@ interface Functions {
   /** uiautomationcore.dll!TextRange_Compare */
   TextRange_Compare(hobj: Win32Pointer, range: Win32Pointer, pRetVal: Win32Pointer): number;
   /** uiautomationcore.dll!TextRange_CompareEndpoints */
-  TextRange_CompareEndpoints(hobj: Win32Pointer, endpoint: number, targetRange: Win32Pointer, targetEndpoint: number, pRetVal: Win32Pointer): number;
+  TextRange_CompareEndpoints(
+    hobj: Win32Pointer,
+    endpoint: number,
+    targetRange: Win32Pointer,
+    targetEndpoint: number,
+    pRetVal: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!TextRange_ExpandToEnclosingUnit */
   TextRange_ExpandToEnclosingUnit(hobj: Win32Pointer, unit: number): number;
   /** uiautomationcore.dll!TextRange_FindAttribute */
-  TextRange_FindAttribute(hobj: Win32Pointer, attributeId: number, val: Win32StructInit, backward: number, pRetVal: Win32Pointer): number;
+  TextRange_FindAttribute(
+    hobj: Win32Pointer,
+    attributeId: number,
+    val: Win32StructInit,
+    backward: number,
+    pRetVal: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!TextRange_FindText */
-  TextRange_FindText(hobj: Win32Pointer, text: string | Win32Pointer, backward: number, ignoreCase: number, pRetVal: Win32Pointer): number;
+  TextRange_FindText(
+    hobj: Win32Pointer,
+    text: string | Win32Pointer,
+    backward: number,
+    ignoreCase: number,
+    pRetVal: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!TextRange_GetAttributeValue */
   TextRange_GetAttributeValue(hobj: Win32Pointer, attributeId: number, pRetVal: Win32Pointer): number;
   /** uiautomationcore.dll!TextRange_GetBoundingRectangles */
@@ -83,9 +107,20 @@ interface Functions {
   /** uiautomationcore.dll!TextRange_Move */
   TextRange_Move(hobj: Win32Pointer, unit: number, count: number, pRetVal: Win32Pointer): number;
   /** uiautomationcore.dll!TextRange_MoveEndpointByRange */
-  TextRange_MoveEndpointByRange(hobj: Win32Pointer, endpoint: number, targetRange: Win32Pointer, targetEndpoint: number): number;
+  TextRange_MoveEndpointByRange(
+    hobj: Win32Pointer,
+    endpoint: number,
+    targetRange: Win32Pointer,
+    targetEndpoint: number,
+  ): number;
   /** uiautomationcore.dll!TextRange_MoveEndpointByUnit */
-  TextRange_MoveEndpointByUnit(hobj: Win32Pointer, endpoint: number, unit: number, count: number, pRetVal: Win32Pointer): number;
+  TextRange_MoveEndpointByUnit(
+    hobj: Win32Pointer,
+    endpoint: number,
+    unit: number,
+    count: number,
+    pRetVal: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!TextRange_RemoveFromSelection */
   TextRange_RemoveFromSelection(hobj: Win32Pointer): number;
   /** uiautomationcore.dll!TextRange_ScrollIntoView */
@@ -101,7 +136,16 @@ interface Functions {
   /** uiautomationcore.dll!TransformPattern_Rotate */
   TransformPattern_Rotate(hobj: Win32Pointer, degrees: number): number;
   /** uiautomationcore.dll!UiaAddEvent */
-  UiaAddEvent(hnode: Win32Pointer, eventId: number, pCallback: Win32Pointer, scope: number, pProperties: Win32Pointer, cProperties: number, pRequest: Win32Pointer, phEvent: Win32Pointer): number;
+  UiaAddEvent(
+    hnode: Win32Pointer,
+    eventId: number,
+    pCallback: Win32Pointer,
+    scope: number,
+    pProperties: Win32Pointer,
+    cProperties: number,
+    pRequest: Win32Pointer,
+    phEvent: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!UiaClientsAreListening */
   UiaClientsAreListening(): number;
   /** uiautomationcore.dll!UiaDisconnectAllProviders */
@@ -113,7 +157,14 @@ interface Functions {
   /** uiautomationcore.dll!UiaEventRemoveWindow */
   UiaEventRemoveWindow(hEvent: Win32Pointer, hwnd: Win32Pointer): number;
   /** uiautomationcore.dll!UiaFind */
-  UiaFind(hnode: Win32Pointer, pParams: Win32Pointer, pRequest: Win32Pointer, ppRequestedData: Win32Pointer, ppOffsets: Win32Pointer, ppTreeStructures: Win32Pointer): number;
+  UiaFind(
+    hnode: Win32Pointer,
+    pParams: Win32Pointer,
+    pRequest: Win32Pointer,
+    ppRequestedData: Win32Pointer,
+    ppOffsets: Win32Pointer,
+    ppTreeStructures: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!UiaGetErrorDescription */
   UiaGetErrorDescription(pDescription: Win32Pointer): number;
   /** uiautomationcore.dll!UiaGetPatternProvider */
@@ -129,7 +180,14 @@ interface Functions {
   /** uiautomationcore.dll!UiaGetRuntimeId */
   UiaGetRuntimeId(hnode: Win32Pointer, pruntimeId: Win32Pointer): number;
   /** uiautomationcore.dll!UiaGetUpdatedCache */
-  UiaGetUpdatedCache(hnode: Win32Pointer, pRequest: Win32Pointer, normalizeState: number, pNormalizeCondition: Win32Pointer, ppRequestedData: Win32Pointer, ppTreeStructure: Win32Pointer): number;
+  UiaGetUpdatedCache(
+    hnode: Win32Pointer,
+    pRequest: Win32Pointer,
+    normalizeState: number,
+    pNormalizeCondition: Win32Pointer,
+    ppRequestedData: Win32Pointer,
+    ppTreeStructure: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!UiaHPatternObjectFromVariant */
   UiaHPatternObjectFromVariant(pvar: Win32Pointer, phobj: Win32Pointer): number;
   /** uiautomationcore.dll!UiaHTextRangeFromVariant */
@@ -141,17 +199,35 @@ interface Functions {
   /** uiautomationcore.dll!UiaHostProviderFromHwnd */
   UiaHostProviderFromHwnd(hwnd: Win32Pointer, ppProvider: Win32Pointer): number;
   /** uiautomationcore.dll!UiaIAccessibleFromProvider */
-  UiaIAccessibleFromProvider(pProvider: Win32Pointer, dwFlags: number, ppAccessible: Win32Pointer, pvarChild: Win32Pointer): number;
+  UiaIAccessibleFromProvider(
+    pProvider: Win32Pointer,
+    dwFlags: number,
+    ppAccessible: Win32Pointer,
+    pvarChild: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!UiaLookupId */
   UiaLookupId(type: number, pGuid: Win32Pointer): number;
   /** uiautomationcore.dll!UiaNavigate */
-  UiaNavigate(hnode: Win32Pointer, direction: number, pCondition: Win32Pointer, pRequest: Win32Pointer, ppRequestedData: Win32Pointer, ppTreeStructure: Win32Pointer): number;
+  UiaNavigate(
+    hnode: Win32Pointer,
+    direction: number,
+    pCondition: Win32Pointer,
+    pRequest: Win32Pointer,
+    ppRequestedData: Win32Pointer,
+    ppTreeStructure: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!UiaNodeFromFocus */
   UiaNodeFromFocus(pRequest: Win32Pointer, ppRequestedData: Win32Pointer, ppTreeStructure: Win32Pointer): number;
   /** uiautomationcore.dll!UiaNodeFromHandle */
   UiaNodeFromHandle(hwnd: Win32Pointer, phnode: Win32Pointer): number;
   /** uiautomationcore.dll!UiaNodeFromPoint */
-  UiaNodeFromPoint(x: number, y: number, pRequest: Win32Pointer, ppRequestedData: Win32Pointer, ppTreeStructure: Win32Pointer): number;
+  UiaNodeFromPoint(
+    x: number,
+    y: number,
+    pRequest: Win32Pointer,
+    ppRequestedData: Win32Pointer,
+    ppTreeStructure: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!UiaNodeFromProvider */
   UiaNodeFromProvider(pProvider: Win32Pointer, phnode: Win32Pointer): number;
   /** uiautomationcore.dll!UiaNodeRelease */
@@ -161,29 +237,63 @@ interface Functions {
   /** uiautomationcore.dll!UiaProviderForNonClient */
   UiaProviderForNonClient(hwnd: Win32Pointer, idObject: number, idChild: number, ppProvider: Win32Pointer): number;
   /** uiautomationcore.dll!UiaProviderFromIAccessible */
-  UiaProviderFromIAccessible(pAccessible: Win32Pointer, idChild: number, dwFlags: number, ppProvider: Win32Pointer): number;
+  UiaProviderFromIAccessible(
+    pAccessible: Win32Pointer,
+    idChild: number,
+    dwFlags: number,
+    ppProvider: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!UiaRaiseActiveTextPositionChangedEvent */
   UiaRaiseActiveTextPositionChangedEvent(provider: Win32Pointer, textRange: Win32Pointer): number;
   /** uiautomationcore.dll!UiaRaiseAsyncContentLoadedEvent */
-  UiaRaiseAsyncContentLoadedEvent(pProvider: Win32Pointer, asyncContentLoadedState: number, percentComplete: number): number;
+  UiaRaiseAsyncContentLoadedEvent(
+    pProvider: Win32Pointer,
+    asyncContentLoadedState: number,
+    percentComplete: number,
+  ): number;
   /** uiautomationcore.dll!UiaRaiseAutomationEvent */
   UiaRaiseAutomationEvent(pProvider: Win32Pointer, id: number): number;
   /** uiautomationcore.dll!UiaRaiseAutomationPropertyChangedEvent */
-  UiaRaiseAutomationPropertyChangedEvent(pProvider: Win32Pointer, id: number, oldValue: Win32StructInit, newValue: Win32StructInit): number;
+  UiaRaiseAutomationPropertyChangedEvent(
+    pProvider: Win32Pointer,
+    id: number,
+    oldValue: Win32StructInit,
+    newValue: Win32StructInit,
+  ): number;
   /** uiautomationcore.dll!UiaRaiseChangesEvent */
   UiaRaiseChangesEvent(pProvider: Win32Pointer, eventIdCount: number, pUiaChanges: Win32Pointer): number;
   /** uiautomationcore.dll!UiaRaiseNotificationEvent */
-  UiaRaiseNotificationEvent(provider: Win32Pointer, notificationKind: number, notificationProcessing: number, displayString: string | Win32Pointer, activityId: string | Win32Pointer): number;
+  UiaRaiseNotificationEvent(
+    provider: Win32Pointer,
+    notificationKind: number,
+    notificationProcessing: number,
+    displayString: string | Win32Pointer,
+    activityId: string | Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!UiaRaiseStructureChangedEvent */
-  UiaRaiseStructureChangedEvent(pProvider: Win32Pointer, structureChangeType: number, pRuntimeId: Win32Pointer, cRuntimeIdLen: number): number;
+  UiaRaiseStructureChangedEvent(
+    pProvider: Win32Pointer,
+    structureChangeType: number,
+    pRuntimeId: Win32Pointer,
+    cRuntimeIdLen: number,
+  ): number;
   /** uiautomationcore.dll!UiaRaiseTextEditTextChangedEvent */
-  UiaRaiseTextEditTextChangedEvent(pProvider: Win32Pointer, textEditChangeType: number, pChangedData: Win32Pointer): number;
+  UiaRaiseTextEditTextChangedEvent(
+    pProvider: Win32Pointer,
+    textEditChangeType: number,
+    pChangedData: Win32Pointer,
+  ): number;
   /** uiautomationcore.dll!UiaRegisterProviderCallback */
   UiaRegisterProviderCallback(pCallback: Win32Pointer): void;
   /** uiautomationcore.dll!UiaRemoveEvent */
   UiaRemoveEvent(hEvent: Win32Pointer): number;
   /** uiautomationcore.dll!UiaReturnRawElementProvider */
-  UiaReturnRawElementProvider(hwnd: Win32Pointer, wParam: number | bigint, lParam: number | bigint, el: Win32Pointer): number | bigint;
+  UiaReturnRawElementProvider(
+    hwnd: Win32Pointer,
+    wParam: number | bigint,
+    lParam: number | bigint,
+    el: Win32Pointer,
+  ): number | bigint;
   /** uiautomationcore.dll!UiaSetFocus */
   UiaSetFocus(hnode: Win32Pointer): number;
   /** uiautomationcore.dll!UiaTextRangeRelease */

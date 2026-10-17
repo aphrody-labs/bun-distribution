@@ -19,17 +19,8 @@ interface GalleryFolderChipProps {
 /** A folder thumbnail that removes itself on error so a fallback can show. */
 const ChipImg = ({ src, className }: { src: string; className: string }) => {
   const [failed, setFailed] = useState(false);
-  if (failed)
-    return <div className={twMerge(className, "bg-ui-controls/30")} />;
-  return (
-    <img
-      src={src}
-      alt=""
-      draggable={false}
-      className={className}
-      onError={() => setFailed(true)}
-    />
-  );
+  if (failed) return <div className={twMerge(className, "bg-ui-controls/30")} />;
+  return <img src={src} alt="" draggable={false} className={className} onError={() => setFailed(true)} />;
 };
 
 /**
@@ -38,12 +29,7 @@ const ChipImg = ({ src, className }: { src: string; className: string }) => {
  * recent media, or a folder icon. Carries `data-folder-id` so pointer drag-drop
  * can drop media onto it; the ellipsis / right-click opens the shared menu.
  */
-export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
-  folder,
-  childCount,
-  onOpen,
-  onContextMenu,
-}) => {
+export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({ folder, childCount, onOpen, onContextMenu }) => {
   const { colorCode, hasStar, name } = folder;
   const coverUrl = folder.coverUrl;
   const collageUrls = folder.collageUrls ?? [];
@@ -61,7 +47,7 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
       type="button"
       data-folder-id={folder.id}
       onClick={() => onOpen(folder.id)}
-      onContextMenu={(e) => {
+      onContextMenu={e => {
         e.preventDefault();
         onContextMenu?.(folder.id, e.clientX, e.clientY);
       }}
@@ -76,24 +62,14 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
     >
       {/* ── Background art ── */}
       {hasCover ? (
-        <ChipImg
-          src={coverUrl!}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <ChipImg src={coverUrl!} className="absolute inset-0 h-full w-full object-cover" />
       ) : hasCollage && collageUrls.length === 1 ? (
-        <ChipImg
-          src={collageUrls[0]}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <ChipImg src={collageUrls[0]} className="absolute inset-0 h-full w-full object-cover" />
       ) : hasCollage ? (
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-px bg-black/20">
           {Array.from({ length: 4 }).map((_, i) =>
             collageUrls[i] ? (
-              <ChipImg
-                key={i}
-                src={collageUrls[i]}
-                className="h-full w-full object-cover"
-              />
+              <ChipImg key={i} src={collageUrls[i]} className="h-full w-full object-cover" />
             ) : (
               <div key={i} className="bg-ui-controls/30" />
             ),
@@ -135,21 +111,14 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
           <span
             className={twMerge(
               "line-clamp-2 break-words text-left text-sm font-medium",
-              hasArt
-                ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]"
-                : "text-base-fg/90",
+              hasArt ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]" : "text-base-fg/90",
             )}
           >
             {name}
           </span>
         </div>
         {childCount > 0 && (
-          <span
-            className={twMerge(
-              "text-left text-[10px]",
-              hasArt ? "text-white/70" : "text-base-fg/40",
-            )}
-          >
+          <span className={twMerge("text-left text-[10px]", hasArt ? "text-white/70" : "text-base-fg/40")}>
             {childCount} folder{childCount === 1 ? "" : "s"}
           </span>
         )}
@@ -161,8 +130,8 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
           role="button"
           tabIndex={-1}
           aria-label="Folder options"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => {
             e.stopPropagation();
             openMenuAt(e.currentTarget as HTMLElement);
           }}

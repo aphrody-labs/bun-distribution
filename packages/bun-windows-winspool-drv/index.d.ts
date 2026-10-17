@@ -11,9 +11,21 @@ interface Functions {
   /** winspool.drv!AddFormW */
   AddForm(hPrinter: Win32StructInit, Level: number, pForm: Win32Pointer): number;
   /** winspool.drv!AddJobA */
-  AddJobA(hPrinter: Win32StructInit, Level: number, pData: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  AddJobA(
+    hPrinter: Win32StructInit,
+    Level: number,
+    pData: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!AddJobW */
-  AddJobW(hPrinter: Win32StructInit, Level: number, pData: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  AddJobW(
+    hPrinter: Win32StructInit,
+    Level: number,
+    pData: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!AddJobW */
   AddJob(hPrinter: Win32StructInit, Level: number, pData: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
   /** winspool.drv!AddMonitorA */
@@ -29,11 +41,26 @@ interface Functions {
   /** winspool.drv!AddPortW */
   AddPort(pName: string | Win32Pointer, hWnd: Win32Pointer, pMonitorName: string | Win32Pointer): number;
   /** winspool.drv!AddPrintProcessorA */
-  AddPrintProcessorA(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pPathName: string | Win32Pointer, pPrintProcessorName: string | Win32Pointer): number;
+  AddPrintProcessorA(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pPathName: string | Win32Pointer,
+    pPrintProcessorName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!AddPrintProcessorW */
-  AddPrintProcessorW(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pPathName: string | Win32Pointer, pPrintProcessorName: string | Win32Pointer): number;
+  AddPrintProcessorW(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pPathName: string | Win32Pointer,
+    pPrintProcessorName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!AddPrintProcessorW */
-  AddPrintProcessor(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pPathName: string | Win32Pointer, pPrintProcessorName: string | Win32Pointer): number;
+  AddPrintProcessor(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pPathName: string | Win32Pointer,
+    pPrintProcessorName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!AddPrintProvidorA */
   AddPrintProvidorA(pName: string | Win32Pointer, Level: number, pProvidorInfo: Win32Pointer): number;
   /** winspool.drv!AddPrintProvidorW */
@@ -43,11 +70,26 @@ interface Functions {
   /** winspool.drv!AddPrinterA */
   AddPrinterA(pName: string | Win32Pointer, Level: number, pPrinter: Win32Pointer): Win32Struct;
   /** winspool.drv!AddPrinterConnection2A */
-  AddPrinterConnection2A(hWnd: Win32Pointer, pszName: string | Win32Pointer, dwLevel: number, pConnectionInfo: Win32Pointer): number;
+  AddPrinterConnection2A(
+    hWnd: Win32Pointer,
+    pszName: string | Win32Pointer,
+    dwLevel: number,
+    pConnectionInfo: Win32Pointer,
+  ): number;
   /** winspool.drv!AddPrinterConnection2W */
-  AddPrinterConnection2W(hWnd: Win32Pointer, pszName: string | Win32Pointer, dwLevel: number, pConnectionInfo: Win32Pointer): number;
+  AddPrinterConnection2W(
+    hWnd: Win32Pointer,
+    pszName: string | Win32Pointer,
+    dwLevel: number,
+    pConnectionInfo: Win32Pointer,
+  ): number;
   /** winspool.drv!AddPrinterConnection2W */
-  AddPrinterConnection2(hWnd: Win32Pointer, pszName: string | Win32Pointer, dwLevel: number, pConnectionInfo: Win32Pointer): number;
+  AddPrinterConnection2(
+    hWnd: Win32Pointer,
+    pszName: string | Win32Pointer,
+    dwLevel: number,
+    pConnectionInfo: Win32Pointer,
+  ): number;
   /** winspool.drv!AddPrinterConnectionA */
   AddPrinterConnectionA(pName: string | Win32Pointer): number;
   /** winspool.drv!AddPrinterConnectionW */
@@ -57,11 +99,26 @@ interface Functions {
   /** winspool.drv!AddPrinterDriverA */
   AddPrinterDriverA(pName: string | Win32Pointer, Level: number, pDriverInfo: Win32Pointer): number;
   /** winspool.drv!AddPrinterDriverExA */
-  AddPrinterDriverExA(pName: string | Win32Pointer, Level: number, lpbDriverInfo: Win32Pointer, dwFileCopyFlags: number): number;
+  AddPrinterDriverExA(
+    pName: string | Win32Pointer,
+    Level: number,
+    lpbDriverInfo: Win32Pointer,
+    dwFileCopyFlags: number,
+  ): number;
   /** winspool.drv!AddPrinterDriverExW */
-  AddPrinterDriverExW(pName: string | Win32Pointer, Level: number, lpbDriverInfo: Win32Pointer, dwFileCopyFlags: number): number;
+  AddPrinterDriverExW(
+    pName: string | Win32Pointer,
+    Level: number,
+    lpbDriverInfo: Win32Pointer,
+    dwFileCopyFlags: number,
+  ): number;
   /** winspool.drv!AddPrinterDriverExW */
-  AddPrinterDriverEx(pName: string | Win32Pointer, Level: number, lpbDriverInfo: Win32Pointer, dwFileCopyFlags: number): number;
+  AddPrinterDriverEx(
+    pName: string | Win32Pointer,
+    Level: number,
+    lpbDriverInfo: Win32Pointer,
+    dwFileCopyFlags: number,
+  ): number;
   /** winspool.drv!AddPrinterDriverW */
   AddPrinterDriverW(pName: string | Win32Pointer, Level: number, pDriverInfo: Win32Pointer): number;
   /** winspool.drv!AddPrinterDriverW */
@@ -71,11 +128,29 @@ interface Functions {
   /** winspool.drv!AddPrinterW */
   AddPrinter(pName: string | Win32Pointer, Level: number, pPrinter: Win32Pointer): Win32Struct;
   /** winspool.drv!AdvancedDocumentPropertiesA */
-  AdvancedDocumentPropertiesA(hWnd: Win32Pointer, hPrinter: Win32StructInit, pDeviceName: string | Win32Pointer, pDevModeOutput: Win32Pointer, pDevModeInput: Win32Pointer): number;
+  AdvancedDocumentPropertiesA(
+    hWnd: Win32Pointer,
+    hPrinter: Win32StructInit,
+    pDeviceName: string | Win32Pointer,
+    pDevModeOutput: Win32Pointer,
+    pDevModeInput: Win32Pointer,
+  ): number;
   /** winspool.drv!AdvancedDocumentPropertiesW */
-  AdvancedDocumentPropertiesW(hWnd: Win32Pointer, hPrinter: Win32StructInit, pDeviceName: string | Win32Pointer, pDevModeOutput: Win32Pointer, pDevModeInput: Win32Pointer): number;
+  AdvancedDocumentPropertiesW(
+    hWnd: Win32Pointer,
+    hPrinter: Win32StructInit,
+    pDeviceName: string | Win32Pointer,
+    pDevModeOutput: Win32Pointer,
+    pDevModeInput: Win32Pointer,
+  ): number;
   /** winspool.drv!AdvancedDocumentPropertiesW */
-  AdvancedDocumentProperties(hWnd: Win32Pointer, hPrinter: Win32StructInit, pDeviceName: string | Win32Pointer, pDevModeOutput: Win32Pointer, pDevModeInput: Win32Pointer): number;
+  AdvancedDocumentProperties(
+    hWnd: Win32Pointer,
+    hPrinter: Win32StructInit,
+    pDeviceName: string | Win32Pointer,
+    pDevModeOutput: Win32Pointer,
+    pDevModeInput: Win32Pointer,
+  ): number;
   /** winspool.drv!ClosePrinter */
   ClosePrinter(hPrinter: Win32StructInit): number;
   /** winspool.drv!CloseSpoolFileHandle */
@@ -91,13 +166,41 @@ interface Functions {
   /** winspool.drv!ConnectToPrinterDlg */
   ConnectToPrinterDlg(hwnd: Win32Pointer, Flags: number): number | null;
   /** winspool.drv!CorePrinterDriverInstalledA */
-  CorePrinterDriverInstalledA(pszServer: string | Win32Pointer, pszEnvironment: string | Win32Pointer, CoreDriverGUID: Win32StructInit, ftDriverDate: Win32StructInit, dwlDriverVersion: number | bigint, pbDriverInstalled: Win32Pointer): number;
+  CorePrinterDriverInstalledA(
+    pszServer: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    CoreDriverGUID: Win32StructInit,
+    ftDriverDate: Win32StructInit,
+    dwlDriverVersion: number | bigint,
+    pbDriverInstalled: Win32Pointer,
+  ): number;
   /** winspool.drv!CorePrinterDriverInstalledW */
-  CorePrinterDriverInstalledW(pszServer: string | Win32Pointer, pszEnvironment: string | Win32Pointer, CoreDriverGUID: Win32StructInit, ftDriverDate: Win32StructInit, dwlDriverVersion: number | bigint, pbDriverInstalled: Win32Pointer): number;
+  CorePrinterDriverInstalledW(
+    pszServer: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    CoreDriverGUID: Win32StructInit,
+    ftDriverDate: Win32StructInit,
+    dwlDriverVersion: number | bigint,
+    pbDriverInstalled: Win32Pointer,
+  ): number;
   /** winspool.drv!CorePrinterDriverInstalledW */
-  CorePrinterDriverInstalled(pszServer: string | Win32Pointer, pszEnvironment: string | Win32Pointer, CoreDriverGUID: Win32StructInit, ftDriverDate: Win32StructInit, dwlDriverVersion: number | bigint, pbDriverInstalled: Win32Pointer): number;
+  CorePrinterDriverInstalled(
+    pszServer: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    CoreDriverGUID: Win32StructInit,
+    ftDriverDate: Win32StructInit,
+    dwlDriverVersion: number | bigint,
+    pbDriverInstalled: Win32Pointer,
+  ): number;
   /** winspool.drv!CreatePrintAsyncNotifyChannel */
-  CreatePrintAsyncNotifyChannel(pszName: string | Win32Pointer, pNotificationType: Win32Pointer, eUserFilter: number, eConversationStyle: number, pCallback: Win32Pointer, ppIAsynchNotification: Win32Pointer): number;
+  CreatePrintAsyncNotifyChannel(
+    pszName: string | Win32Pointer,
+    pNotificationType: Win32Pointer,
+    eUserFilter: number,
+    eConversationStyle: number,
+    pCallback: Win32Pointer,
+    ppIAsynchNotification: Win32Pointer,
+  ): number;
   /** winspool.drv!CreatePrinterIC */
   CreatePrinterIC(hPrinter: Win32StructInit, pDevMode: Win32Pointer): number | null;
   /** winspool.drv!DeleteFormA */
@@ -109,11 +212,23 @@ interface Functions {
   /** winspool.drv!DeleteJobNamedProperty */
   DeleteJobNamedProperty(hPrinter: Win32StructInit, JobId: number, pszName: string | Win32Pointer): number;
   /** winspool.drv!DeleteMonitorA */
-  DeleteMonitorA(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pMonitorName: string | Win32Pointer): number;
+  DeleteMonitorA(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pMonitorName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeleteMonitorW */
-  DeleteMonitorW(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pMonitorName: string | Win32Pointer): number;
+  DeleteMonitorW(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pMonitorName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeleteMonitorW */
-  DeleteMonitor(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pMonitorName: string | Win32Pointer): number;
+  DeleteMonitor(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pMonitorName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePortA */
   DeletePortA(pName: string | Win32Pointer, hWnd: Win32Pointer, pPortName: string | Win32Pointer): number;
   /** winspool.drv!DeletePortW */
@@ -121,17 +236,41 @@ interface Functions {
   /** winspool.drv!DeletePortW */
   DeletePort(pName: string | Win32Pointer, hWnd: Win32Pointer, pPortName: string | Win32Pointer): number;
   /** winspool.drv!DeletePrintProcessorA */
-  DeletePrintProcessorA(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pPrintProcessorName: string | Win32Pointer): number;
+  DeletePrintProcessorA(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pPrintProcessorName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrintProcessorW */
-  DeletePrintProcessorW(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pPrintProcessorName: string | Win32Pointer): number;
+  DeletePrintProcessorW(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pPrintProcessorName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrintProcessorW */
-  DeletePrintProcessor(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pPrintProcessorName: string | Win32Pointer): number;
+  DeletePrintProcessor(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pPrintProcessorName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrintProvidorA */
-  DeletePrintProvidorA(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pPrintProvidorName: string | Win32Pointer): number;
+  DeletePrintProvidorA(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pPrintProvidorName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrintProvidorW */
-  DeletePrintProvidorW(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pPrintProvidorName: string | Win32Pointer): number;
+  DeletePrintProvidorW(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pPrintProvidorName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrintProvidorW */
-  DeletePrintProvidor(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pPrintProvidorName: string | Win32Pointer): number;
+  DeletePrintProvidor(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pPrintProvidorName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrinter */
   DeletePrinter(hPrinter: Win32StructInit): number;
   /** winspool.drv!DeletePrinterConnectionA */
@@ -143,33 +282,87 @@ interface Functions {
   /** winspool.drv!DeletePrinterDataA */
   DeletePrinterDataA(hPrinter: Win32StructInit, pValueName: string | Win32Pointer): number;
   /** winspool.drv!DeletePrinterDataExA */
-  DeletePrinterDataExA(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pValueName: string | Win32Pointer): number;
+  DeletePrinterDataExA(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pValueName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrinterDataExW */
-  DeletePrinterDataExW(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pValueName: string | Win32Pointer): number;
+  DeletePrinterDataExW(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pValueName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrinterDataExW */
-  DeletePrinterDataEx(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pValueName: string | Win32Pointer): number;
+  DeletePrinterDataEx(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pValueName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrinterDataW */
   DeletePrinterDataW(hPrinter: Win32StructInit, pValueName: string | Win32Pointer): number;
   /** winspool.drv!DeletePrinterDataW */
   DeletePrinterData(hPrinter: Win32StructInit, pValueName: string | Win32Pointer): number;
   /** winspool.drv!DeletePrinterDriverA */
-  DeletePrinterDriverA(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pDriverName: string | Win32Pointer): number;
+  DeletePrinterDriverA(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pDriverName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrinterDriverExA */
-  DeletePrinterDriverExA(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pDriverName: string | Win32Pointer, dwDeleteFlag: number, dwVersionFlag: number): number;
+  DeletePrinterDriverExA(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pDriverName: string | Win32Pointer,
+    dwDeleteFlag: number,
+    dwVersionFlag: number,
+  ): number;
   /** winspool.drv!DeletePrinterDriverExW */
-  DeletePrinterDriverExW(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pDriverName: string | Win32Pointer, dwDeleteFlag: number, dwVersionFlag: number): number;
+  DeletePrinterDriverExW(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pDriverName: string | Win32Pointer,
+    dwDeleteFlag: number,
+    dwVersionFlag: number,
+  ): number;
   /** winspool.drv!DeletePrinterDriverExW */
-  DeletePrinterDriverEx(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pDriverName: string | Win32Pointer, dwDeleteFlag: number, dwVersionFlag: number): number;
+  DeletePrinterDriverEx(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pDriverName: string | Win32Pointer,
+    dwDeleteFlag: number,
+    dwVersionFlag: number,
+  ): number;
   /** winspool.drv!DeletePrinterDriverPackageA */
-  DeletePrinterDriverPackageA(pszServer: string | Win32Pointer, pszInfPath: string | Win32Pointer, pszEnvironment: string | Win32Pointer): number;
+  DeletePrinterDriverPackageA(
+    pszServer: string | Win32Pointer,
+    pszInfPath: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrinterDriverPackageW */
-  DeletePrinterDriverPackageW(pszServer: string | Win32Pointer, pszInfPath: string | Win32Pointer, pszEnvironment: string | Win32Pointer): number;
+  DeletePrinterDriverPackageW(
+    pszServer: string | Win32Pointer,
+    pszInfPath: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrinterDriverPackageW */
-  DeletePrinterDriverPackage(pszServer: string | Win32Pointer, pszInfPath: string | Win32Pointer, pszEnvironment: string | Win32Pointer): number;
+  DeletePrinterDriverPackage(
+    pszServer: string | Win32Pointer,
+    pszInfPath: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrinterDriverW */
-  DeletePrinterDriverW(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pDriverName: string | Win32Pointer): number;
+  DeletePrinterDriverW(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pDriverName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrinterDriverW */
-  DeletePrinterDriver(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, pDriverName: string | Win32Pointer): number;
+  DeletePrinterDriver(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    pDriverName: string | Win32Pointer,
+  ): number;
   /** winspool.drv!DeletePrinterIC */
   DeletePrinterIC(hPrinterIC: Win32Pointer): number;
   /** winspool.drv!DeletePrinterKeyA */
@@ -183,99 +376,423 @@ interface Functions {
   /** winspool.drv!DevQueryPrintEx */
   DevQueryPrintEx(pDQPInfo: Win32Pointer): number;
   /** winspool.drv!DeviceCapabilitiesA */
-  DeviceCapabilitiesA(pDevice: string | Win32Pointer, pPort: string | Win32Pointer, fwCapability: number, pOutput: string | Win32Pointer, pDevMode: Win32Pointer): number;
+  DeviceCapabilitiesA(
+    pDevice: string | Win32Pointer,
+    pPort: string | Win32Pointer,
+    fwCapability: number,
+    pOutput: string | Win32Pointer,
+    pDevMode: Win32Pointer,
+  ): number;
   /** winspool.drv!DeviceCapabilitiesW */
-  DeviceCapabilitiesW(pDevice: string | Win32Pointer, pPort: string | Win32Pointer, fwCapability: number, pOutput: string | Win32Pointer, pDevMode: Win32Pointer): number;
+  DeviceCapabilitiesW(
+    pDevice: string | Win32Pointer,
+    pPort: string | Win32Pointer,
+    fwCapability: number,
+    pOutput: string | Win32Pointer,
+    pDevMode: Win32Pointer,
+  ): number;
   /** winspool.drv!DeviceCapabilitiesW */
-  DeviceCapabilities(pDevice: string | Win32Pointer, pPort: string | Win32Pointer, fwCapability: number, pOutput: string | Win32Pointer, pDevMode: Win32Pointer): number;
+  DeviceCapabilities(
+    pDevice: string | Win32Pointer,
+    pPort: string | Win32Pointer,
+    fwCapability: number,
+    pOutput: string | Win32Pointer,
+    pDevMode: Win32Pointer,
+  ): number;
   /** winspool.drv!DocumentPropertiesA */
-  DocumentPropertiesA(hWnd: Win32Pointer, hPrinter: Win32StructInit, pDeviceName: string | Win32Pointer, pDevModeOutput: Win32Pointer, pDevModeInput: Win32Pointer, fMode: number): number;
+  DocumentPropertiesA(
+    hWnd: Win32Pointer,
+    hPrinter: Win32StructInit,
+    pDeviceName: string | Win32Pointer,
+    pDevModeOutput: Win32Pointer,
+    pDevModeInput: Win32Pointer,
+    fMode: number,
+  ): number;
   /** winspool.drv!DocumentPropertiesW */
-  DocumentPropertiesW(hWnd: Win32Pointer, hPrinter: Win32StructInit, pDeviceName: string | Win32Pointer, pDevModeOutput: Win32Pointer, pDevModeInput: Win32Pointer, fMode: number): number;
+  DocumentPropertiesW(
+    hWnd: Win32Pointer,
+    hPrinter: Win32StructInit,
+    pDeviceName: string | Win32Pointer,
+    pDevModeOutput: Win32Pointer,
+    pDevModeInput: Win32Pointer,
+    fMode: number,
+  ): number;
   /** winspool.drv!DocumentPropertiesW */
-  DocumentProperties(hWnd: Win32Pointer, hPrinter: Win32StructInit, pDeviceName: string | Win32Pointer, pDevModeOutput: Win32Pointer, pDevModeInput: Win32Pointer, fMode: number): number;
+  DocumentProperties(
+    hWnd: Win32Pointer,
+    hPrinter: Win32StructInit,
+    pDeviceName: string | Win32Pointer,
+    pDevModeOutput: Win32Pointer,
+    pDevModeInput: Win32Pointer,
+    fMode: number,
+  ): number;
   /** winspool.drv!EndDocPrinter */
   EndDocPrinter(hPrinter: Win32StructInit): number;
   /** winspool.drv!EndPagePrinter */
   EndPagePrinter(hPrinter: Win32StructInit): number;
   /** winspool.drv!EnumFormsA */
-  EnumFormsA(hPrinter: Win32StructInit, Level: number, pForm: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumFormsA(
+    hPrinter: Win32StructInit,
+    Level: number,
+    pForm: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumFormsW */
-  EnumFormsW(hPrinter: Win32StructInit, Level: number, pForm: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumFormsW(
+    hPrinter: Win32StructInit,
+    Level: number,
+    pForm: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumFormsW */
-  EnumForms(hPrinter: Win32StructInit, Level: number, pForm: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumForms(
+    hPrinter: Win32StructInit,
+    Level: number,
+    pForm: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumJobNamedProperties */
-  EnumJobNamedProperties(hPrinter: Win32StructInit, JobId: number, pcProperties: Win32Pointer, ppProperties: Win32Pointer): number;
+  EnumJobNamedProperties(
+    hPrinter: Win32StructInit,
+    JobId: number,
+    pcProperties: Win32Pointer,
+    ppProperties: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumJobsA */
-  EnumJobsA(hPrinter: Win32StructInit, FirstJob: number, NoJobs: number, Level: number, pJob: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumJobsA(
+    hPrinter: Win32StructInit,
+    FirstJob: number,
+    NoJobs: number,
+    Level: number,
+    pJob: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumJobsW */
-  EnumJobsW(hPrinter: Win32StructInit, FirstJob: number, NoJobs: number, Level: number, pJob: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumJobsW(
+    hPrinter: Win32StructInit,
+    FirstJob: number,
+    NoJobs: number,
+    Level: number,
+    pJob: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumJobsW */
-  EnumJobs(hPrinter: Win32StructInit, FirstJob: number, NoJobs: number, Level: number, pJob: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumJobs(
+    hPrinter: Win32StructInit,
+    FirstJob: number,
+    NoJobs: number,
+    Level: number,
+    pJob: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumMonitorsA */
-  EnumMonitorsA(pName: string | Win32Pointer, Level: number, pMonitor: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumMonitorsA(
+    pName: string | Win32Pointer,
+    Level: number,
+    pMonitor: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumMonitorsW */
-  EnumMonitorsW(pName: string | Win32Pointer, Level: number, pMonitor: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumMonitorsW(
+    pName: string | Win32Pointer,
+    Level: number,
+    pMonitor: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumMonitorsW */
-  EnumMonitors(pName: string | Win32Pointer, Level: number, pMonitor: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumMonitors(
+    pName: string | Win32Pointer,
+    Level: number,
+    pMonitor: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPortsA */
-  EnumPortsA(pName: string | Win32Pointer, Level: number, pPort: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPortsA(
+    pName: string | Win32Pointer,
+    Level: number,
+    pPort: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPortsW */
-  EnumPortsW(pName: string | Win32Pointer, Level: number, pPort: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPortsW(
+    pName: string | Win32Pointer,
+    Level: number,
+    pPort: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPortsW */
-  EnumPorts(pName: string | Win32Pointer, Level: number, pPort: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPorts(
+    pName: string | Win32Pointer,
+    Level: number,
+    pPort: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrintProcessorDatatypesA */
-  EnumPrintProcessorDatatypesA(pName: string | Win32Pointer, pPrintProcessorName: string | Win32Pointer, Level: number, pDatatypes: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPrintProcessorDatatypesA(
+    pName: string | Win32Pointer,
+    pPrintProcessorName: string | Win32Pointer,
+    Level: number,
+    pDatatypes: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrintProcessorDatatypesW */
-  EnumPrintProcessorDatatypesW(pName: string | Win32Pointer, pPrintProcessorName: string | Win32Pointer, Level: number, pDatatypes: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPrintProcessorDatatypesW(
+    pName: string | Win32Pointer,
+    pPrintProcessorName: string | Win32Pointer,
+    Level: number,
+    pDatatypes: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrintProcessorDatatypesW */
-  EnumPrintProcessorDatatypes(pName: string | Win32Pointer, pPrintProcessorName: string | Win32Pointer, Level: number, pDatatypes: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPrintProcessorDatatypes(
+    pName: string | Win32Pointer,
+    pPrintProcessorName: string | Win32Pointer,
+    Level: number,
+    pDatatypes: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrintProcessorsA */
-  EnumPrintProcessorsA(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, Level: number, pPrintProcessorInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPrintProcessorsA(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pPrintProcessorInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrintProcessorsW */
-  EnumPrintProcessorsW(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, Level: number, pPrintProcessorInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPrintProcessorsW(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pPrintProcessorInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrintProcessorsW */
-  EnumPrintProcessors(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, Level: number, pPrintProcessorInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPrintProcessors(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pPrintProcessorInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrinterDataA */
-  EnumPrinterDataA(hPrinter: Win32StructInit, dwIndex: number, pValueName: string | Win32Pointer, cbValueName: number, pcbValueName: Win32Pointer, pType: Win32Pointer, pData: Win32Pointer, cbData: number, pcbData: Win32Pointer): number;
+  EnumPrinterDataA(
+    hPrinter: Win32StructInit,
+    dwIndex: number,
+    pValueName: string | Win32Pointer,
+    cbValueName: number,
+    pcbValueName: Win32Pointer,
+    pType: Win32Pointer,
+    pData: Win32Pointer,
+    cbData: number,
+    pcbData: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrinterDataExA */
-  EnumPrinterDataExA(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pEnumValues: Win32Pointer, cbEnumValues: number, pcbEnumValues: Win32Pointer, pnEnumValues: Win32Pointer): number;
+  EnumPrinterDataExA(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pEnumValues: Win32Pointer,
+    cbEnumValues: number,
+    pcbEnumValues: Win32Pointer,
+    pnEnumValues: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrinterDataExW */
-  EnumPrinterDataExW(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pEnumValues: Win32Pointer, cbEnumValues: number, pcbEnumValues: Win32Pointer, pnEnumValues: Win32Pointer): number;
+  EnumPrinterDataExW(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pEnumValues: Win32Pointer,
+    cbEnumValues: number,
+    pcbEnumValues: Win32Pointer,
+    pnEnumValues: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrinterDataExW */
-  EnumPrinterDataEx(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pEnumValues: Win32Pointer, cbEnumValues: number, pcbEnumValues: Win32Pointer, pnEnumValues: Win32Pointer): number;
+  EnumPrinterDataEx(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pEnumValues: Win32Pointer,
+    cbEnumValues: number,
+    pcbEnumValues: Win32Pointer,
+    pnEnumValues: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrinterDataW */
-  EnumPrinterDataW(hPrinter: Win32StructInit, dwIndex: number, pValueName: string | Win32Pointer, cbValueName: number, pcbValueName: Win32Pointer, pType: Win32Pointer, pData: Win32Pointer, cbData: number, pcbData: Win32Pointer): number;
+  EnumPrinterDataW(
+    hPrinter: Win32StructInit,
+    dwIndex: number,
+    pValueName: string | Win32Pointer,
+    cbValueName: number,
+    pcbValueName: Win32Pointer,
+    pType: Win32Pointer,
+    pData: Win32Pointer,
+    cbData: number,
+    pcbData: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrinterDataW */
-  EnumPrinterData(hPrinter: Win32StructInit, dwIndex: number, pValueName: string | Win32Pointer, cbValueName: number, pcbValueName: Win32Pointer, pType: Win32Pointer, pData: Win32Pointer, cbData: number, pcbData: Win32Pointer): number;
+  EnumPrinterData(
+    hPrinter: Win32StructInit,
+    dwIndex: number,
+    pValueName: string | Win32Pointer,
+    cbValueName: number,
+    pcbValueName: Win32Pointer,
+    pType: Win32Pointer,
+    pData: Win32Pointer,
+    cbData: number,
+    pcbData: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrinterDriversA */
-  EnumPrinterDriversA(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, Level: number, pDriverInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPrinterDriversA(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pDriverInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrinterDriversW */
-  EnumPrinterDriversW(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, Level: number, pDriverInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPrinterDriversW(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pDriverInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrinterDriversW */
-  EnumPrinterDrivers(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, Level: number, pDriverInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPrinterDrivers(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pDriverInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrinterKeyA */
-  EnumPrinterKeyA(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pSubkey: string | Win32Pointer, cbSubkey: number, pcbSubkey: Win32Pointer): number;
+  EnumPrinterKeyA(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pSubkey: string | Win32Pointer,
+    cbSubkey: number,
+    pcbSubkey: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrinterKeyW */
-  EnumPrinterKeyW(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pSubkey: string | Win32Pointer, cbSubkey: number, pcbSubkey: Win32Pointer): number;
+  EnumPrinterKeyW(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pSubkey: string | Win32Pointer,
+    cbSubkey: number,
+    pcbSubkey: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrinterKeyW */
-  EnumPrinterKey(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pSubkey: string | Win32Pointer, cbSubkey: number, pcbSubkey: Win32Pointer): number;
+  EnumPrinterKey(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pSubkey: string | Win32Pointer,
+    cbSubkey: number,
+    pcbSubkey: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrintersA */
-  EnumPrintersA(Flags: number, Name: string | Win32Pointer, Level: number, pPrinterEnum: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPrintersA(
+    Flags: number,
+    Name: string | Win32Pointer,
+    Level: number,
+    pPrinterEnum: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrintersW */
-  EnumPrintersW(Flags: number, Name: string | Win32Pointer, Level: number, pPrinterEnum: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPrintersW(
+    Flags: number,
+    Name: string | Win32Pointer,
+    Level: number,
+    pPrinterEnum: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!EnumPrintersW */
-  EnumPrinters(Flags: number, Name: string | Win32Pointer, Level: number, pPrinterEnum: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer, pcReturned: Win32Pointer): number;
+  EnumPrinters(
+    Flags: number,
+    Name: string | Win32Pointer,
+    Level: number,
+    pPrinterEnum: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+    pcReturned: Win32Pointer,
+  ): number;
   /** winspool.drv!ExtDeviceMode */
-  ExtDeviceMode(hWnd: Win32Pointer, hInst: Win32Pointer, pDevModeOutput: Win32Pointer, pDeviceName: string | Win32Pointer, pPort: string | Win32Pointer, pDevModeInput: Win32Pointer, pProfile: string | Win32Pointer, fMode: number): number;
+  ExtDeviceMode(
+    hWnd: Win32Pointer,
+    hInst: Win32Pointer,
+    pDevModeOutput: Win32Pointer,
+    pDeviceName: string | Win32Pointer,
+    pPort: string | Win32Pointer,
+    pDevModeInput: Win32Pointer,
+    pProfile: string | Win32Pointer,
+    fMode: number,
+  ): number;
   /** winspool.drv!FindClosePrinterChangeNotification */
   FindClosePrinterChangeNotification(hChange: Win32StructInit): number;
   /** winspool.drv!FindFirstPrinterChangeNotification */
-  FindFirstPrinterChangeNotification(hPrinter: Win32StructInit, fdwFilter: number, fdwOptions: number, pPrinterNotifyOptions: Win32Pointer): Win32Struct;
+  FindFirstPrinterChangeNotification(
+    hPrinter: Win32StructInit,
+    fdwFilter: number,
+    fdwOptions: number,
+    pPrinterNotifyOptions: Win32Pointer,
+  ): Win32Struct;
   /** winspool.drv!FindNextPrinterChangeNotification */
-  FindNextPrinterChangeNotification(hChange: Win32StructInit, pdwChange: Win32Pointer, pvReserved: Win32Pointer, ppPrinterNotifyInfo: Win32Pointer): number;
+  FindNextPrinterChangeNotification(
+    hChange: Win32StructInit,
+    pdwChange: Win32Pointer,
+    pvReserved: Win32Pointer,
+    ppPrinterNotifyInfo: Win32Pointer,
+  ): number;
   /** winspool.drv!FlushPrinter */
-  FlushPrinter(hPrinter: Win32StructInit, pBuf: Win32Pointer, cbBuf: number, pcWritten: Win32Pointer, cSleep: number): number;
+  FlushPrinter(
+    hPrinter: Win32StructInit,
+    pBuf: Win32Pointer,
+    cbBuf: number,
+    pcWritten: Win32Pointer,
+    cSleep: number,
+  ): number;
   /** winspool.drv!FreePrintNamedPropertyArray */
   FreePrintNamedPropertyArray(cProperties: number, ppProperties: Win32Pointer): void;
   /** winspool.drv!FreePrintPropertyValue */
@@ -283,11 +800,29 @@ interface Functions {
   /** winspool.drv!FreePrinterNotifyInfo */
   FreePrinterNotifyInfo(pPrinterNotifyInfo: Win32Pointer): number;
   /** winspool.drv!GetCorePrinterDriversA */
-  GetCorePrinterDriversA(pszServer: string | Win32Pointer, pszEnvironment: string | Win32Pointer, pszzCoreDriverDependencies: string | Win32Pointer, cCorePrinterDrivers: number, pCorePrinterDrivers: Win32Pointer): number;
+  GetCorePrinterDriversA(
+    pszServer: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    pszzCoreDriverDependencies: string | Win32Pointer,
+    cCorePrinterDrivers: number,
+    pCorePrinterDrivers: Win32Pointer,
+  ): number;
   /** winspool.drv!GetCorePrinterDriversW */
-  GetCorePrinterDriversW(pszServer: string | Win32Pointer, pszEnvironment: string | Win32Pointer, pszzCoreDriverDependencies: string | Win32Pointer, cCorePrinterDrivers: number, pCorePrinterDrivers: Win32Pointer): number;
+  GetCorePrinterDriversW(
+    pszServer: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    pszzCoreDriverDependencies: string | Win32Pointer,
+    cCorePrinterDrivers: number,
+    pCorePrinterDrivers: Win32Pointer,
+  ): number;
   /** winspool.drv!GetCorePrinterDriversW */
-  GetCorePrinterDrivers(pszServer: string | Win32Pointer, pszEnvironment: string | Win32Pointer, pszzCoreDriverDependencies: string | Win32Pointer, cCorePrinterDrivers: number, pCorePrinterDrivers: Win32Pointer): number;
+  GetCorePrinterDrivers(
+    pszServer: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    pszzCoreDriverDependencies: string | Win32Pointer,
+    cCorePrinterDrivers: number,
+    pCorePrinterDrivers: Win32Pointer,
+  ): number;
   /** winspool.drv!GetDefaultPrinterA */
   GetDefaultPrinterA(pszBuffer: string | Win32Pointer, pcchBuffer: Win32Pointer): number;
   /** winspool.drv!GetDefaultPrinterW */
@@ -295,79 +830,323 @@ interface Functions {
   /** winspool.drv!GetDefaultPrinterW */
   GetDefaultPrinter(pszBuffer: string | Win32Pointer, pcchBuffer: Win32Pointer): number;
   /** winspool.drv!GetFormA */
-  GetFormA(hPrinter: Win32StructInit, pFormName: string | Win32Pointer, Level: number, pForm: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetFormA(
+    hPrinter: Win32StructInit,
+    pFormName: string | Win32Pointer,
+    Level: number,
+    pForm: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetFormW */
-  GetFormW(hPrinter: Win32StructInit, pFormName: string | Win32Pointer, Level: number, pForm: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetFormW(
+    hPrinter: Win32StructInit,
+    pFormName: string | Win32Pointer,
+    Level: number,
+    pForm: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetFormW */
-  GetForm(hPrinter: Win32StructInit, pFormName: string | Win32Pointer, Level: number, pForm: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetForm(
+    hPrinter: Win32StructInit,
+    pFormName: string | Win32Pointer,
+    Level: number,
+    pForm: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetJobA */
-  GetJobA(hPrinter: Win32StructInit, JobId: number, Level: number, pJob: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetJobA(
+    hPrinter: Win32StructInit,
+    JobId: number,
+    Level: number,
+    pJob: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetJobNamedPropertyValue */
-  GetJobNamedPropertyValue(hPrinter: Win32StructInit, JobId: number, pszName: string | Win32Pointer, pValue: Win32Pointer): number;
+  GetJobNamedPropertyValue(
+    hPrinter: Win32StructInit,
+    JobId: number,
+    pszName: string | Win32Pointer,
+    pValue: Win32Pointer,
+  ): number;
   /** winspool.drv!GetJobW */
-  GetJobW(hPrinter: Win32StructInit, JobId: number, Level: number, pJob: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetJobW(
+    hPrinter: Win32StructInit,
+    JobId: number,
+    Level: number,
+    pJob: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetJobW */
-  GetJob(hPrinter: Win32StructInit, JobId: number, Level: number, pJob: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetJob(
+    hPrinter: Win32StructInit,
+    JobId: number,
+    Level: number,
+    pJob: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrintExecutionData */
   GetPrintExecutionData(pData: Win32Pointer): number;
   /** winspool.drv!GetPrintOutputInfo */
-  GetPrintOutputInfo(hWnd: Win32Pointer, pszPrinter: string | Win32Pointer, phFile: Win32Pointer, ppszOutputFile: Win32Pointer): number;
+  GetPrintOutputInfo(
+    hWnd: Win32Pointer,
+    pszPrinter: string | Win32Pointer,
+    phFile: Win32Pointer,
+    ppszOutputFile: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrintProcessorDirectoryA */
-  GetPrintProcessorDirectoryA(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, Level: number, pPrintProcessorInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrintProcessorDirectoryA(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pPrintProcessorInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrintProcessorDirectoryW */
-  GetPrintProcessorDirectoryW(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, Level: number, pPrintProcessorInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrintProcessorDirectoryW(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pPrintProcessorInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrintProcessorDirectoryW */
-  GetPrintProcessorDirectory(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, Level: number, pPrintProcessorInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrintProcessorDirectory(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pPrintProcessorInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterA */
-  GetPrinterA(hPrinter: Win32StructInit, Level: number, pPrinter: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterA(
+    hPrinter: Win32StructInit,
+    Level: number,
+    pPrinter: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDataA */
-  GetPrinterDataA(hPrinter: Win32StructInit, pValueName: string | Win32Pointer, pType: Win32Pointer, pData: Win32Pointer, nSize: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDataA(
+    hPrinter: Win32StructInit,
+    pValueName: string | Win32Pointer,
+    pType: Win32Pointer,
+    pData: Win32Pointer,
+    nSize: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDataExA */
-  GetPrinterDataExA(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pValueName: string | Win32Pointer, pType: Win32Pointer, pData: Win32Pointer, nSize: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDataExA(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pValueName: string | Win32Pointer,
+    pType: Win32Pointer,
+    pData: Win32Pointer,
+    nSize: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDataExW */
-  GetPrinterDataExW(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pValueName: string | Win32Pointer, pType: Win32Pointer, pData: Win32Pointer, nSize: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDataExW(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pValueName: string | Win32Pointer,
+    pType: Win32Pointer,
+    pData: Win32Pointer,
+    nSize: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDataExW */
-  GetPrinterDataEx(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pValueName: string | Win32Pointer, pType: Win32Pointer, pData: Win32Pointer, nSize: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDataEx(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pValueName: string | Win32Pointer,
+    pType: Win32Pointer,
+    pData: Win32Pointer,
+    nSize: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDataW */
-  GetPrinterDataW(hPrinter: Win32StructInit, pValueName: string | Win32Pointer, pType: Win32Pointer, pData: Win32Pointer, nSize: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDataW(
+    hPrinter: Win32StructInit,
+    pValueName: string | Win32Pointer,
+    pType: Win32Pointer,
+    pData: Win32Pointer,
+    nSize: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDataW */
-  GetPrinterData(hPrinter: Win32StructInit, pValueName: string | Win32Pointer, pType: Win32Pointer, pData: Win32Pointer, nSize: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterData(
+    hPrinter: Win32StructInit,
+    pValueName: string | Win32Pointer,
+    pType: Win32Pointer,
+    pData: Win32Pointer,
+    nSize: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDriver2A */
-  GetPrinterDriver2A(hWnd: Win32Pointer, hPrinter: Win32StructInit, pEnvironment: string | Win32Pointer, Level: number, pDriverInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDriver2A(
+    hWnd: Win32Pointer,
+    hPrinter: Win32StructInit,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pDriverInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDriver2W */
-  GetPrinterDriver2W(hWnd: Win32Pointer, hPrinter: Win32StructInit, pEnvironment: string | Win32Pointer, Level: number, pDriverInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDriver2W(
+    hWnd: Win32Pointer,
+    hPrinter: Win32StructInit,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pDriverInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDriver2W */
-  GetPrinterDriver2(hWnd: Win32Pointer, hPrinter: Win32StructInit, pEnvironment: string | Win32Pointer, Level: number, pDriverInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDriver2(
+    hWnd: Win32Pointer,
+    hPrinter: Win32StructInit,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pDriverInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDriverA */
-  GetPrinterDriverA(hPrinter: Win32StructInit, pEnvironment: string | Win32Pointer, Level: number, pDriverInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDriverA(
+    hPrinter: Win32StructInit,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pDriverInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDriverDirectoryA */
-  GetPrinterDriverDirectoryA(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, Level: number, pDriverDirectory: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDriverDirectoryA(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pDriverDirectory: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDriverDirectoryW */
-  GetPrinterDriverDirectoryW(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, Level: number, pDriverDirectory: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDriverDirectoryW(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pDriverDirectory: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDriverDirectoryW */
-  GetPrinterDriverDirectory(pName: string | Win32Pointer, pEnvironment: string | Win32Pointer, Level: number, pDriverDirectory: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDriverDirectory(
+    pName: string | Win32Pointer,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pDriverDirectory: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDriverPackagePathA */
-  GetPrinterDriverPackagePathA(pszServer: string | Win32Pointer, pszEnvironment: string | Win32Pointer, pszLanguage: string | Win32Pointer, pszPackageID: string | Win32Pointer, pszDriverPackageCab: string | Win32Pointer, cchDriverPackageCab: number, pcchRequiredSize: Win32Pointer): number;
+  GetPrinterDriverPackagePathA(
+    pszServer: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    pszLanguage: string | Win32Pointer,
+    pszPackageID: string | Win32Pointer,
+    pszDriverPackageCab: string | Win32Pointer,
+    cchDriverPackageCab: number,
+    pcchRequiredSize: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDriverPackagePathW */
-  GetPrinterDriverPackagePathW(pszServer: string | Win32Pointer, pszEnvironment: string | Win32Pointer, pszLanguage: string | Win32Pointer, pszPackageID: string | Win32Pointer, pszDriverPackageCab: string | Win32Pointer, cchDriverPackageCab: number, pcchRequiredSize: Win32Pointer): number;
+  GetPrinterDriverPackagePathW(
+    pszServer: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    pszLanguage: string | Win32Pointer,
+    pszPackageID: string | Win32Pointer,
+    pszDriverPackageCab: string | Win32Pointer,
+    cchDriverPackageCab: number,
+    pcchRequiredSize: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDriverPackagePathW */
-  GetPrinterDriverPackagePath(pszServer: string | Win32Pointer, pszEnvironment: string | Win32Pointer, pszLanguage: string | Win32Pointer, pszPackageID: string | Win32Pointer, pszDriverPackageCab: string | Win32Pointer, cchDriverPackageCab: number, pcchRequiredSize: Win32Pointer): number;
+  GetPrinterDriverPackagePath(
+    pszServer: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    pszLanguage: string | Win32Pointer,
+    pszPackageID: string | Win32Pointer,
+    pszDriverPackageCab: string | Win32Pointer,
+    cchDriverPackageCab: number,
+    pcchRequiredSize: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDriverW */
-  GetPrinterDriverW(hPrinter: Win32StructInit, pEnvironment: string | Win32Pointer, Level: number, pDriverInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDriverW(
+    hPrinter: Win32StructInit,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pDriverInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterDriverW */
-  GetPrinterDriver(hPrinter: Win32StructInit, pEnvironment: string | Win32Pointer, Level: number, pDriverInfo: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterDriver(
+    hPrinter: Win32StructInit,
+    pEnvironment: string | Win32Pointer,
+    Level: number,
+    pDriverInfo: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterW */
-  GetPrinterW(hPrinter: Win32StructInit, Level: number, pPrinter: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrinterW(
+    hPrinter: Win32StructInit,
+    Level: number,
+    pPrinter: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetPrinterW */
-  GetPrinter(hPrinter: Win32StructInit, Level: number, pPrinter: Win32Pointer, cbBuf: number, pcbNeeded: Win32Pointer): number;
+  GetPrinter(
+    hPrinter: Win32StructInit,
+    Level: number,
+    pPrinter: Win32Pointer,
+    cbBuf: number,
+    pcbNeeded: Win32Pointer,
+  ): number;
   /** winspool.drv!GetSpoolFileHandle */
   GetSpoolFileHandle(hPrinter: Win32StructInit): number | null;
   /** winspool.drv!InstallPrinterDriverFromPackageA */
-  InstallPrinterDriverFromPackageA(pszServer: string | Win32Pointer, pszInfPath: string | Win32Pointer, pszDriverName: string | Win32Pointer, pszEnvironment: string | Win32Pointer, dwFlags: number): number;
+  InstallPrinterDriverFromPackageA(
+    pszServer: string | Win32Pointer,
+    pszInfPath: string | Win32Pointer,
+    pszDriverName: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** winspool.drv!InstallPrinterDriverFromPackageW */
-  InstallPrinterDriverFromPackageW(pszServer: string | Win32Pointer, pszInfPath: string | Win32Pointer, pszDriverName: string | Win32Pointer, pszEnvironment: string | Win32Pointer, dwFlags: number): number;
+  InstallPrinterDriverFromPackageW(
+    pszServer: string | Win32Pointer,
+    pszInfPath: string | Win32Pointer,
+    pszDriverName: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** winspool.drv!InstallPrinterDriverFromPackageW */
-  InstallPrinterDriverFromPackage(pszServer: string | Win32Pointer, pszInfPath: string | Win32Pointer, pszDriverName: string | Win32Pointer, pszEnvironment: string | Win32Pointer, dwFlags: number): number;
+  InstallPrinterDriverFromPackage(
+    pszServer: string | Win32Pointer,
+    pszInfPath: string | Win32Pointer,
+    pszDriverName: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** winspool.drv!IsValidDevmodeA */
   IsValidDevmodeA(pDevmode: Win32Pointer, DevmodeSize: number | bigint): number;
   /** winspool.drv!IsValidDevmodeW */
@@ -375,11 +1154,26 @@ interface Functions {
   /** winspool.drv!IsValidDevmodeW */
   IsValidDevmode(pDevmode: Win32Pointer, DevmodeSize: number | bigint): number;
   /** winspool.drv!OpenPrinter2A */
-  OpenPrinter2A(pPrinterName: string | Win32Pointer, phPrinter: Win32Pointer, pDefault: Win32Pointer, pOptions: Win32Pointer): number;
+  OpenPrinter2A(
+    pPrinterName: string | Win32Pointer,
+    phPrinter: Win32Pointer,
+    pDefault: Win32Pointer,
+    pOptions: Win32Pointer,
+  ): number;
   /** winspool.drv!OpenPrinter2W */
-  OpenPrinter2W(pPrinterName: string | Win32Pointer, phPrinter: Win32Pointer, pDefault: Win32Pointer, pOptions: Win32Pointer): number;
+  OpenPrinter2W(
+    pPrinterName: string | Win32Pointer,
+    phPrinter: Win32Pointer,
+    pDefault: Win32Pointer,
+    pOptions: Win32Pointer,
+  ): number;
   /** winspool.drv!OpenPrinter2W */
-  OpenPrinter2(pPrinterName: string | Win32Pointer, phPrinter: Win32Pointer, pDefault: Win32Pointer, pOptions: Win32Pointer): number;
+  OpenPrinter2(
+    pPrinterName: string | Win32Pointer,
+    phPrinter: Win32Pointer,
+    pDefault: Win32Pointer,
+    pOptions: Win32Pointer,
+  ): number;
   /** winspool.drv!OpenPrinterA */
   OpenPrinterA(pPrinterName: string | Win32Pointer, phPrinter: Win32Pointer, pDefault: Win32Pointer): number;
   /** winspool.drv!OpenPrinterW */
@@ -387,21 +1181,61 @@ interface Functions {
   /** winspool.drv!OpenPrinterW */
   OpenPrinter(pPrinterName: string | Win32Pointer, phPrinter: Win32Pointer, pDefault: Win32Pointer): number;
   /** winspool.drv!PlayGdiScriptOnPrinterIC */
-  PlayGdiScriptOnPrinterIC(hPrinterIC: Win32Pointer, pIn: Win32Pointer, cIn: number, pOut: Win32Pointer, cOut: number, ul: number): number;
+  PlayGdiScriptOnPrinterIC(
+    hPrinterIC: Win32Pointer,
+    pIn: Win32Pointer,
+    cIn: number,
+    pOut: Win32Pointer,
+    cOut: number,
+    ul: number,
+  ): number;
   /** winspool.drv!PrinterMessageBoxA */
-  PrinterMessageBoxA(hPrinter: Win32StructInit, Error: number, hWnd: Win32Pointer, pText: string | Win32Pointer, pCaption: string | Win32Pointer, dwType: number): number;
+  PrinterMessageBoxA(
+    hPrinter: Win32StructInit,
+    Error: number,
+    hWnd: Win32Pointer,
+    pText: string | Win32Pointer,
+    pCaption: string | Win32Pointer,
+    dwType: number,
+  ): number;
   /** winspool.drv!PrinterMessageBoxW */
-  PrinterMessageBoxW(hPrinter: Win32StructInit, Error: number, hWnd: Win32Pointer, pText: string | Win32Pointer, pCaption: string | Win32Pointer, dwType: number): number;
+  PrinterMessageBoxW(
+    hPrinter: Win32StructInit,
+    Error: number,
+    hWnd: Win32Pointer,
+    pText: string | Win32Pointer,
+    pCaption: string | Win32Pointer,
+    dwType: number,
+  ): number;
   /** winspool.drv!PrinterMessageBoxW */
-  PrinterMessageBox(hPrinter: Win32StructInit, Error: number, hWnd: Win32Pointer, pText: string | Win32Pointer, pCaption: string | Win32Pointer, dwType: number): number;
+  PrinterMessageBox(
+    hPrinter: Win32StructInit,
+    Error: number,
+    hWnd: Win32Pointer,
+    pText: string | Win32Pointer,
+    pCaption: string | Win32Pointer,
+    dwType: number,
+  ): number;
   /** winspool.drv!PrinterProperties */
   PrinterProperties(hWnd: Win32Pointer, hPrinter: Win32StructInit): number;
   /** winspool.drv!ReadPrinter */
   ReadPrinter(hPrinter: Win32StructInit, pBuf: Win32Pointer, cbBuf: number, pNoBytesRead: Win32Pointer): number;
   /** winspool.drv!RegisterForPrintAsyncNotifications */
-  RegisterForPrintAsyncNotifications(pszName: string | Win32Pointer, pNotificationType: Win32Pointer, eUserFilter: number, eConversationStyle: number, pCallback: Win32Pointer, phNotify: Win32Pointer): number;
+  RegisterForPrintAsyncNotifications(
+    pszName: string | Win32Pointer,
+    pNotificationType: Win32Pointer,
+    eUserFilter: number,
+    eConversationStyle: number,
+    pCallback: Win32Pointer,
+    phNotify: Win32Pointer,
+  ): number;
   /** winspool.drv!ReportJobProcessingProgress */
-  ReportJobProcessingProgress(printerHandle: Win32Pointer, jobId: number, jobOperation: number, jobProgress: number): number;
+  ReportJobProcessingProgress(
+    printerHandle: Win32Pointer,
+    jobId: number,
+    jobOperation: number,
+    jobProgress: number,
+  ): number;
   /** winspool.drv!ResetPrinterA */
   ResetPrinterA(hPrinter: Win32StructInit, pDefault: Win32Pointer): number;
   /** winspool.drv!ResetPrinterW */
@@ -433,25 +1267,79 @@ interface Functions {
   /** winspool.drv!SetJobW */
   SetJob(hPrinter: Win32StructInit, JobId: number, Level: number, pJob: Win32Pointer, Command: number): number;
   /** winspool.drv!SetPortA */
-  SetPortA(pName: string | Win32Pointer, pPortName: string | Win32Pointer, dwLevel: number, pPortInfo: Win32Pointer): number;
+  SetPortA(
+    pName: string | Win32Pointer,
+    pPortName: string | Win32Pointer,
+    dwLevel: number,
+    pPortInfo: Win32Pointer,
+  ): number;
   /** winspool.drv!SetPortW */
-  SetPortW(pName: string | Win32Pointer, pPortName: string | Win32Pointer, dwLevel: number, pPortInfo: Win32Pointer): number;
+  SetPortW(
+    pName: string | Win32Pointer,
+    pPortName: string | Win32Pointer,
+    dwLevel: number,
+    pPortInfo: Win32Pointer,
+  ): number;
   /** winspool.drv!SetPortW */
-  SetPort(pName: string | Win32Pointer, pPortName: string | Win32Pointer, dwLevel: number, pPortInfo: Win32Pointer): number;
+  SetPort(
+    pName: string | Win32Pointer,
+    pPortName: string | Win32Pointer,
+    dwLevel: number,
+    pPortInfo: Win32Pointer,
+  ): number;
   /** winspool.drv!SetPrinterA */
   SetPrinterA(hPrinter: Win32StructInit, Level: number, pPrinter: Win32Pointer, Command: number): number;
   /** winspool.drv!SetPrinterDataA */
-  SetPrinterDataA(hPrinter: Win32StructInit, pValueName: string | Win32Pointer, Type: number, pData: Win32Pointer, cbData: number): number;
+  SetPrinterDataA(
+    hPrinter: Win32StructInit,
+    pValueName: string | Win32Pointer,
+    Type: number,
+    pData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** winspool.drv!SetPrinterDataExA */
-  SetPrinterDataExA(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pValueName: string | Win32Pointer, Type: number, pData: Win32Pointer, cbData: number): number;
+  SetPrinterDataExA(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pValueName: string | Win32Pointer,
+    Type: number,
+    pData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** winspool.drv!SetPrinterDataExW */
-  SetPrinterDataExW(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pValueName: string | Win32Pointer, Type: number, pData: Win32Pointer, cbData: number): number;
+  SetPrinterDataExW(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pValueName: string | Win32Pointer,
+    Type: number,
+    pData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** winspool.drv!SetPrinterDataExW */
-  SetPrinterDataEx(hPrinter: Win32StructInit, pKeyName: string | Win32Pointer, pValueName: string | Win32Pointer, Type: number, pData: Win32Pointer, cbData: number): number;
+  SetPrinterDataEx(
+    hPrinter: Win32StructInit,
+    pKeyName: string | Win32Pointer,
+    pValueName: string | Win32Pointer,
+    Type: number,
+    pData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** winspool.drv!SetPrinterDataW */
-  SetPrinterDataW(hPrinter: Win32StructInit, pValueName: string | Win32Pointer, Type: number, pData: Win32Pointer, cbData: number): number;
+  SetPrinterDataW(
+    hPrinter: Win32StructInit,
+    pValueName: string | Win32Pointer,
+    Type: number,
+    pData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** winspool.drv!SetPrinterDataW */
-  SetPrinterData(hPrinter: Win32StructInit, pValueName: string | Win32Pointer, Type: number, pData: Win32Pointer, cbData: number): number;
+  SetPrinterData(
+    hPrinter: Win32StructInit,
+    pValueName: string | Win32Pointer,
+    Type: number,
+    pData: Win32Pointer,
+    cbData: number,
+  ): number;
   /** winspool.drv!SetPrinterW */
   SetPrinterW(hPrinter: Win32StructInit, Level: number, pPrinter: Win32Pointer, Command: number): number;
   /** winspool.drv!SetPrinterW */
@@ -467,17 +1355,50 @@ interface Functions {
   /** winspool.drv!UnRegisterForPrintAsyncNotifications */
   UnRegisterForPrintAsyncNotifications(param0: Win32Pointer): number;
   /** winspool.drv!UploadPrinterDriverPackageA */
-  UploadPrinterDriverPackageA(pszServer: string | Win32Pointer, pszInfPath: string | Win32Pointer, pszEnvironment: string | Win32Pointer, dwFlags: number, hwnd: Win32Pointer, pszDestInfPath: string | Win32Pointer, pcchDestInfPath: Win32Pointer): number;
+  UploadPrinterDriverPackageA(
+    pszServer: string | Win32Pointer,
+    pszInfPath: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    dwFlags: number,
+    hwnd: Win32Pointer,
+    pszDestInfPath: string | Win32Pointer,
+    pcchDestInfPath: Win32Pointer,
+  ): number;
   /** winspool.drv!UploadPrinterDriverPackageW */
-  UploadPrinterDriverPackageW(pszServer: string | Win32Pointer, pszInfPath: string | Win32Pointer, pszEnvironment: string | Win32Pointer, dwFlags: number, hwnd: Win32Pointer, pszDestInfPath: string | Win32Pointer, pcchDestInfPath: Win32Pointer): number;
+  UploadPrinterDriverPackageW(
+    pszServer: string | Win32Pointer,
+    pszInfPath: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    dwFlags: number,
+    hwnd: Win32Pointer,
+    pszDestInfPath: string | Win32Pointer,
+    pcchDestInfPath: Win32Pointer,
+  ): number;
   /** winspool.drv!UploadPrinterDriverPackageW */
-  UploadPrinterDriverPackage(pszServer: string | Win32Pointer, pszInfPath: string | Win32Pointer, pszEnvironment: string | Win32Pointer, dwFlags: number, hwnd: Win32Pointer, pszDestInfPath: string | Win32Pointer, pcchDestInfPath: Win32Pointer): number;
+  UploadPrinterDriverPackage(
+    pszServer: string | Win32Pointer,
+    pszInfPath: string | Win32Pointer,
+    pszEnvironment: string | Win32Pointer,
+    dwFlags: number,
+    hwnd: Win32Pointer,
+    pszDestInfPath: string | Win32Pointer,
+    pcchDestInfPath: Win32Pointer,
+  ): number;
   /** winspool.drv!WaitForPrinterChange */
   WaitForPrinterChange(hPrinter: Win32StructInit, Flags: number): number;
   /** winspool.drv!WritePrinter */
   WritePrinter(hPrinter: Win32StructInit, pBuf: Win32Pointer, cbBuf: number, pcWritten: Win32Pointer): number;
   /** winspool.drv!XcvDataW */
-  XcvDataW(hXcv: Win32Pointer, pszDataName: string | Win32Pointer, pInputData: Win32Pointer, cbInputData: number, pOutputData: Win32Pointer, cbOutputData: number, pcbOutputNeeded: Win32Pointer, pdwStatus: Win32Pointer): number;
+  XcvDataW(
+    hXcv: Win32Pointer,
+    pszDataName: string | Win32Pointer,
+    pInputData: Win32Pointer,
+    cbInputData: number,
+    pOutputData: Win32Pointer,
+    cbOutputData: number,
+    pcbOutputNeeded: Win32Pointer,
+    pdwStatus: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

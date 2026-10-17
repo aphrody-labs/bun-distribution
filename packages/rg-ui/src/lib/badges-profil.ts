@@ -104,13 +104,9 @@ export const MAX_BADGES = MAX_BADGES_PROFIL;
  * identifiants que la validation accepte. Une entrée manquante ici ferait
  * disparaître un badge de l'interface sans que rien ne le signale.
  */
-const IDENTIFIANTS_COUVERTS = new Set(
-  AVAILABLE_BADGES.map((badge) => badge.id),
-);
+const IDENTIFIANTS_COUVERTS = new Set(AVAILABLE_BADGES.map(badge => badge.id));
 for (const identifiant of BADGES_PROFIL) {
   if (!IDENTIFIANTS_COUVERTS.has(identifiant)) {
-    console.warn(
-      `[badges] « ${identifiant} » est accepté en base mais n'a pas de description.`,
-    );
+    console.warn(`[badges] « ${identifiant} » est accepté en base mais n'a pas de description.`);
   }
 }

@@ -19,24 +19,15 @@ export interface M3MarkdownPage {
 const FRONT_MATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 
 const escapeHtml = (value: string): string =>
-  value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
+  value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
 /** The page of a Markdown source. */
-export function renderMarkdown(
-  source: string,
-  options: M3MarkdownOptions = {},
-): M3MarkdownPage {
+export function renderMarkdown(source: string, options: M3MarkdownOptions = {}): M3MarkdownPage {
   const { stylesheet, lang = "en", ...markdown } = options;
   const match = FRONT_MATTER.exec(source);
   const parsed = match ? Bun.YAML.parse(match[1]!) : undefined;
   const data =
-    parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)
-      ? (parsed as Record<string, unknown>)
-      : {};
+    parsed !== null && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
   const body = match ? source.slice(match[0].length) : source;
   const content = Bun.markdown.html(body, {
     tagFilter: true,
@@ -44,20 +35,11 @@ export function renderMarkdown(
     ...markdown,
     headings: markdown.headings ?? { ids: true },
   });
-  const heading = /<h1[^>]*>([\s\S]*?)<\/h1>/i
-    .exec(content)?.[1]
-    ?.replace(/<[^>]+>/g, "");
-  const title =
-    typeof data.title === "string"
-      ? escapeHtml(data.title)
-      : (heading ?? "Document");
+  const heading = /<h1[^>]*>([\s\S]*?)<\/h1>/i.exec(content)?.[1]?.replace(/<[^>]+>/g, "");
+  const title = typeof data.title === "string" ? escapeHtml(data.title) : (heading ?? "Document");
   const description =
-    typeof data.description === "string"
-      ? `<meta name="description" content="${escapeHtml(data.description)}">`
-      : "";
-  const link = stylesheet
-    ? `<link rel="stylesheet" href="${escapeHtml(stylesheet)}">`
-    : "";
+    typeof data.description === "string" ? `<meta name="description" content="${escapeHtml(data.description)}">` : "";
+  const link = stylesheet ? `<link rel="stylesheet" href="${escapeHtml(stylesheet)}">` : "";
   const language = escapeHtml(typeof data.lang === "string" ? data.lang : lang);
   return {
     data,

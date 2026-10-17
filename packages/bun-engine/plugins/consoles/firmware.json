@@ -368,15 +368,7 @@
         {
           "id": "snes-coprocessor-hle",
           "name": "High-level DSP-1/2/3/4, ST010/011, CX4 implementations (snes9x, older bsnes)",
-          "replaces": [
-            "dsp1*.rom",
-            "dsp2*.rom",
-            "dsp3*.rom",
-            "dsp4*.rom",
-            "st010*.rom",
-            "st011*.rom",
-            "cx4.data.rom"
-          ],
+          "replaces": ["dsp1*.rom", "dsp2*.rom", "dsp3*.rom", "dsp4*.rom", "st010*.rom", "st011*.rom", "cx4.data.rom"],
           "kind": "hle",
           "license": "snes9x non-commercial license / GPL-3.0 (bsnes historic) - check per implementation",
           "source": "https://github.com/snes9xgit/snes9x",
@@ -458,12 +450,7 @@
         {
           "id": "sameboy-bootroms",
           "name": "SameBoy boot ROMs (dmg, mgb, cgb, cgb0, cgb_fast, agb, sgb, sgb2)",
-          "replaces": [
-            "dmg_boot.bin",
-            "cgb_boot.bin",
-            "sgb_boot.bin",
-            "sgb2_boot.bin"
-          ],
+          "replaces": ["dmg_boot.bin", "cgb_boot.bin", "sgb_boot.bin", "sgb2_boot.bin"],
           "kind": "open-rom",
           "license": "MIT (Expat, SameBoy LICENSE)",
           "source": "https://github.com/LIJI32/SameBoy/tree/master/BootROMs",
@@ -824,10 +811,7 @@
         {
           "id": "citra-open-source-archives",
           "name": "citra_system_archives (open shared font + NG bad-word list)",
-          "replaces": [
-            "shared_font.bin / shared font system archive",
-            "NG bad word list archive"
-          ],
+          "replaces": ["shared_font.bin / shared font system archive", "NG bad word list archive"],
           "kind": "open-system-archive",
           "license": "GPL-3.0 (Azahar tree); generator https://github.com/B3n30/citra_system_archives",
           "source": "https://github.com/azahar-emu/azahar/tree/master/externals/open_source_archives",
@@ -1004,10 +988,7 @@
           "role": "GameCube IPL (BS1/BS2 boot menu, ROM fonts, 2 MiB, scrambled)",
           "need": "optional",
           "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
-          "aliases": [
-            "dolphin-emu/Sys/GC/JAP/IPL.bin",
-            "dolphin-emu/Sys/GC/USA/IPL.bin"
-          ]
+          "aliases": ["dolphin-emu/Sys/GC/JAP/IPL.bin", "dolphin-emu/Sys/GC/USA/IPL.bin"]
         },
         {
           "file": "gc-pal-10.bin",
@@ -1224,13 +1205,7 @@
         {
           "id": "ruzu-system-archive",
           "name": "ruzu/yuzu synthesized system archives",
-          "replaces": [
-            "shared font titles",
-            "Mii model",
-            "NG word list",
-            "time zone binary",
-            "system version"
-          ],
+          "replaces": ["shared font titles", "Mii model", "NG word list", "time zone binary", "system version"],
           "kind": "open-system-archive",
           "license": "GPL-2.0-or-later / GPL-3.0-or-later (per-file SPDX)",
           "source": "crates/ruzu-core/src/file_sys/system_archive (ported from yuzu core/file_sys/system_archive)",
@@ -2333,9 +2308,7 @@
           }
         }
       ],
-      "notes": [
-        "PCSX2 GameIndex.yaml in System.dat is a compatibility database, not firmware."
-      ]
+      "notes": ["PCSX2 GameIndex.yaml in System.dat is a compatibility database, not firmware."]
     },
     {
       "id": "sony-playstation-3",
@@ -2441,9 +2414,7 @@
         }
       ],
       "freeReplacements": [],
-      "notes": [
-        "Vita3K HLE covers part of the libraries; no free firmware replacement."
-      ]
+      "notes": ["Vita3K HLE covers part of the libraries; no free firmware replacement."]
     },
     {
       "id": "sony-playstation-4",

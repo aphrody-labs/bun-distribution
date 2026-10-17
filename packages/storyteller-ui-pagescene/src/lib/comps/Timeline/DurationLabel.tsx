@@ -9,7 +9,7 @@ import { formatTimecode } from "./timelineUtils";
 // (clamped to [1,60], covers the required 5–30s range).
 export const DurationLabel = ({ className = "" }: { className?: string }) => {
   const editor = useContext(EngineContext);
-  const duration = usePageSceneStore((s) => s.timelineDuration);
+  const duration = usePageSceneStore(s => s.timelineDuration);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -33,14 +33,14 @@ export const DurationLabel = ({ className = "" }: { className?: string }) => {
         max={60}
         step={1}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={e => setValue(e.target.value)}
         onBlur={commit}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (e.key === "Enter") commit();
           if (e.key === "Escape") setEditing(false);
         }}
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
+        onMouseDown={e => e.stopPropagation()}
         className={`w-12 rounded bg-white/10 px-1 text-center tabular-nums text-base-fg outline-none ${className}`}
       />
     );
@@ -50,7 +50,7 @@ export const DurationLabel = ({ className = "" }: { className?: string }) => {
     <button
       type="button"
       title="Set timeline duration (seconds)"
-      onClick={(e) => {
+      onClick={e => {
         e.stopPropagation();
         setValue(String(Math.round(duration)));
         setEditing(true);

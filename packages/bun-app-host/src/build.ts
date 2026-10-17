@@ -53,16 +53,12 @@ export async function productCatalog(root: string): Promise<ProductCatalog> {
       boundary < 1 ||
       !match ||
       !value ||
-      [...value].some(
-        (character) =>
-          character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127,
-      )
+      [...value].some(character => character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127)
     )
       throw new Error("Invalid committed submodule declaration.");
     const owner = submodules.get(match[1]!) ?? {};
     const field = match[2] as "path" | "url";
-    if (owner[field] !== undefined)
-      throw new Error("Duplicate committed submodule declaration.");
+    if (owner[field] !== undefined) throw new Error("Duplicate committed submodule declaration.");
     owner[field] = value;
     submodules.set(match[1]!, owner);
   }
@@ -72,42 +68,17 @@ export async function productCatalog(root: string): Promise<ProductCatalog> {
     paths.set(owner.path, owner.url);
   }
   const workspaceSources: ProductCatalog["sources"] = [];
-  const tree = await command(
-    [
-      "git",
-      "ls-tree",
-      "-r",
-      "-z",
-      sourceRevision,
-      "--",
-      "crates/",
-      "packages/",
-    ],
-    root,
-  );
+  const tree = await command(["git", "ls-tree", "-r", "-z", sourceRevision, "--", "crates/", "packages/"], root);
   for (const entry of tree.split("\0").filter(Boolean)) {
     const match = /^(\d{6}) (\w+) ([a-f0-9]{40})\t(.+)$/.exec(entry);
     if (!match) throw new Error("Invalid committed workspace tree entry.");
     if (match[1] !== "160000") continue;
-    if (match[2] !== "commit")
-      throw new Error(
-        "Committed workspace gitlink has an invalid object type.",
-      );
+    if (match[2] !== "commit") throw new Error("Committed workspace gitlink has an invalid object type.");
     const path = match[4]!;
-    const ownerPath = /^(crates|packages)\/([a-zA-Z0-9][a-zA-Z0-9_.-]*)$/.exec(
-      path,
-    );
+    const ownerPath = /^(crates|packages)\/([a-zA-Z0-9][a-zA-Z0-9_.-]*)$/.exec(path);
     const repository = paths.get(path);
-    if (
-      !ownerPath ||
-      !repository ||
-      !/^((https?|ssh):\/\/|([a-zA-Z0-9_.-]+@)?[a-zA-Z0-9_.-]+:)/.test(
-        repository,
-      )
-    )
-      throw new Error(
-        "Committed workspace gitlink lacks its declared source owner.",
-      );
+    if (!ownerPath || !repository || !/^((https?|ssh):\/\/|([a-zA-Z0-9_.-]+@)?[a-zA-Z0-9_.-]+:)/.test(repository))
+      throw new Error("Committed workspace gitlink lacks its declared source owner.");
     if (repository.includes("://")) {
       const url = new URL(repository);
       if (url.password || (url.username && url.username !== "git"))
@@ -123,9 +94,7 @@ export async function productCatalog(root: string): Promise<ProductCatalog> {
   }
   const config = await loadConfig(root);
   const metadata = await Bun.file(join(root, "package.json")).json();
-  const sourceLock = (await Bun.file(
-    join(root, "sources.lock.json"),
-  ).json()) as {
+  const sourceLock = (await Bun.file(join(root, "sources.lock.json")).json()) as {
     repositories: {
       id: string;
       mount: string;
@@ -141,9 +110,7 @@ export async function productCatalog(root: string): Promise<ProductCatalog> {
       qualification: Record<string, boolean>;
     }[];
   };
-  const capabilities = new Map(
-    appCapabilities(config).map((app) => [app.libraryId, app]),
-  );
+  const capabilities = new Map(appCapabilities(config).map(app => [app.libraryId, app]));
   if ((await command(["git", "rev-parse", "HEAD"], root)) !== sourceRevision)
     throw new Error("Product revision changed during catalog inspection.");
   return {
@@ -152,18 +119,16 @@ export async function productCatalog(root: string): Promise<ProductCatalog> {
     version: metadata.version,
     observedAt: new Date().toISOString(),
     sourceRevision,
-    sourcePortal: validateSnapshot(
-      await Bun.file(join(root, "infra/source-portal.json")).json(),
-    ),
+    sourcePortal: validateSnapshot(await Bun.file(join(root, "infra/source-portal.json")).json()),
     sources: [
-      ...config.modules.map((module) => ({
+      ...config.modules.map(module => ({
         id: module.id,
         path: module.path,
         repository: module.fork,
         revision: module.revision,
         license: module.license,
       })),
-      ...sourceLock.repositories.map((source) => ({
+      ...sourceLock.repositories.map(source => ({
         id: "source:" + source.id,
         path: source.mount,
         repository: source.repository,
@@ -172,12 +137,10 @@ export async function productCatalog(root: string): Promise<ProductCatalog> {
       })),
       ...workspaceSources,
     ],
-    apps: inventory.apps.map((app) => ({
+    apps: inventory.apps.map(app => ({
       id: app.id,
       kind: app.kind,
-      hostname: capabilities.has(app.id)
-        ? appHostname(capabilities.get(app.id)!.id, config)
-        : (app.hostname ?? null),
+      hostname: capabilities.has(app.id) ? appHostname(capabilities.get(app.id)!.id, config) : (app.hostname ?? null),
       qualification: { ...app.qualification },
     })),
   };
@@ -191,31 +154,15 @@ async function build(root: string, output: string): Promise<void> {
   const proveInput = async (input: string): Promise<void> => {
     input = await realpath(input);
     const local = relative(root, input);
-    if (
-      !local ||
-      local === ".." ||
-      local.startsWith(`..${sep}`) ||
-      resolve(root, local) !== input
-    )
+    if (!local || local === ".." || local.startsWith(`..${sep}`) || resolve(root, local) !== input)
       throw new Error("Product compiler input leaves its source owner.");
     const gitPath = local.replaceAll("\\", "/");
-    const blob = await command(
-      ["git", "rev-parse", `${revision}:${gitPath}`],
-      root,
-    );
-    const actual = await command(
-      ["git", "hash-object", `--path=${gitPath}`, input],
-      root,
-    );
-    if (actual !== blob)
-      throw new Error(
-        "Product compiler input differs from its committed Git blob: " +
-          gitPath,
-      );
+    const blob = await command(["git", "rev-parse", `${revision}:${gitPath}`], root);
+    const actual = await command(["git", "hash-object", `--path=${gitPath}`, input], root);
+    if (actual !== blob) throw new Error("Product compiler input differs from its committed Git blob: " + gitPath);
     const digest = await hashFile(input);
     const previous = inputProofs.get(input);
-    if (previous && previous !== digest)
-      throw new Error("Product compiler input changed during qualification.");
+    if (previous && previous !== digest) throw new Error("Product compiler input changed during qualification.");
     inputProofs.set(input, digest);
     blobProofs.set(input, blob);
   };
@@ -248,14 +195,10 @@ async function build(root: string, output: string): Promise<void> {
     "-" +
     process.arch) as RuntimeTarget;
   assertRuntimeFacts(runtimePinFor(config, target), currentRuntimeFacts());
-  if (
-    (await Bun.file(output).exists()) ||
-    (await Bun.file(output + ".json").exists())
-  )
+  if ((await Bun.file(output).exists()) || (await Bun.file(output + ".json").exists()))
     throw new Error("Select a fresh standalone output and receipt.");
   const catalog = await productCatalog(root);
-  if (catalog.sourceRevision !== revision)
-    throw new Error("Product revision changed before compilation.");
+  if (catalog.sourceRevision !== revision) throw new Error("Product revision changed before compilation.");
   const stage = join(root, "build/staging/product-server", crypto.randomUUID());
   await mkdir(stage, { recursive: true });
   await mkdir(dirname(output), { recursive: true });
@@ -271,11 +214,7 @@ else { const server = startProduct(catalog); console.log("Aphrody / Bun server: 
   );
   inputProofs.set(entry, await hashFile(entry));
   const targetName = ("bun-" +
-    (process.platform === "darwin"
-      ? "darwin"
-      : process.platform === "win32"
-        ? "windows"
-        : process.platform) +
+    (process.platform === "darwin" ? "darwin" : process.platform === "win32" ? "windows" : process.platform) +
     "-" +
     process.arch) as Bun.Build.CompileTarget;
   const compiled = await compileStandaloneApp({
@@ -283,27 +222,19 @@ else { const server = startProduct(catalog); console.log("Aphrody / Bun server: 
     target: targetName,
     executablePath: process.execPath,
     outfile: output,
-    onInput: async (path) => {
+    onInput: async path => {
       if (resolve(path) === entry) {
-        if ((await hashFile(entry)) !== inputProofs.get(entry))
-          throw new Error("Generated product entry changed.");
+        if ((await hashFile(entry)) !== inputProofs.get(entry)) throw new Error("Generated product entry changed.");
       } else await proveInput(path);
     },
   });
   for (const path of Object.keys(compiled.metafile!.inputs)) {
-    if (
-      path.startsWith("<") ||
-      path.startsWith("bun:") ||
-      path === "bun" ||
-      isBuiltin(path)
-    )
-      continue;
+    if (path.startsWith("<") || path.startsWith("bun:") || path === "bun" || isBuiltin(path)) continue;
     if (!inputProofs.has(await realpath(resolve(root, path))))
       throw new Error("Compiled source lacks a Git input proof.");
   }
   for (const [path, digest] of inputProofs)
-    if ((await hashFile(path)) !== digest)
-      throw new Error("Product compiler input changed.");
+    if ((await hashFile(path)) !== digest) throw new Error("Product compiler input changed.");
   for (const path of blobProofs.keys()) await proveInput(path);
   if ((await command(["git", "rev-parse", "HEAD"], root)) !== revision)
     throw new Error("Product sources changed during compilation.");
@@ -333,39 +264,26 @@ else { const server = startProduct(catalog); console.log("Aphrody / Bun server: 
 }
 
 if (import.meta.main) {
-  const [action = "help", rootValue = repositoryRoot, outputValue] =
-    Bun.argv.slice(2);
+  const [action = "help", rootValue = repositoryRoot, outputValue] = Bun.argv.slice(2);
   const root = resolve(rootValue);
   const output = resolve(
-    outputValue ??
-      join(
-        root,
-        "build/apps/bun-os-server" +
-          (process.platform === "win32" ? ".exe" : ""),
-      ),
+    outputValue ?? join(root, "build/apps/bun-os-server" + (process.platform === "win32" ? ".exe" : "")),
   );
-  if (action === "help")
-    console.log("build.ts build [ROOT] [FRESH_OUTPUT] | catalog [ROOT]");
-  else if (action === "catalog")
-    console.log(JSON.stringify(await productCatalog(root), null, 2));
+  if (action === "help") console.log("build.ts build [ROOT] [FRESH_OUTPUT] | catalog [ROOT]");
+  else if (action === "catalog") console.log(JSON.stringify(await productCatalog(root), null, 2));
   else if (action === "compile-worker") await build(root, output);
   else if (action === "build") {
     const startedAt = Date.now();
-    const result = await runProcess(
-      [process.execPath, import.meta.path, "compile-worker", root, output],
-      root,
-      {
-        timeoutMs: 30000,
-        maxOutputBytes: 1048576,
-        stdout: "inherit",
-        stderr: "inherit",
-      },
-    );
+    const result = await runProcess([process.execPath, import.meta.path, "compile-worker", root, output], root, {
+      timeoutMs: 30000,
+      maxOutputBytes: 1048576,
+      stdout: "inherit",
+      stderr: "inherit",
+    });
     process.exitCode = result.code;
     if (result.code === 0) {
       const remaining = 30000 - (Date.now() - startedAt);
-      if (remaining < 1)
-        throw new Error("Product build qualification deadline exceeded.");
+      if (remaining < 1) throw new Error("Product build qualification deadline exceeded.");
       console.log(
         JSON.stringify(
           await verifyProduct(output, output + ".json", {

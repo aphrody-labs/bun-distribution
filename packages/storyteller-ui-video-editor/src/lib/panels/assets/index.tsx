@@ -13,9 +13,7 @@ import { EffectsView } from "../../effects/components/assets-view";
 // Captions tab renders a placeholder; depends on the transcription
 // subsystem which is deferred per port scope.
 function ComingSoon({ label }: { label: string }) {
-  return (
-    <div className="text-muted-foreground p-4">{label} view coming soon...</div>
-  );
+  return <div className="text-muted-foreground p-4">{label} view coming soon...</div>;
 }
 
 export function AssetsPanel() {

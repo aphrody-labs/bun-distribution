@@ -75,9 +75,7 @@ function getFileColorClass(file: File): string {
   }
 
   // Code - app-input
-  if (
-    ["js", "ts", "jsx", "tsx", "py", "rs", "go", "java", "cpp"].includes(ext)
-  ) {
+  if (["js", "ts", "jsx", "tsx", "py", "rs", "go", "java", "cpp"].includes(ext)) {
     return "bg-surface-container-highest";
   }
 
@@ -120,16 +118,8 @@ interface ThumbOverlayProps {
   setContextMenuFile: (file: File) => void;
   clickTimeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
   svgRef: React.RefObject<SVGSVGElement | null>;
-  zoomBehaviorRef: React.MutableRefObject<d3.ZoomBehavior<
-    SVGSVGElement,
-    unknown
-  > | null>;
-  gRef: React.MutableRefObject<d3.Selection<
-    SVGGElement,
-    unknown,
-    null,
-    undefined
-  > | null>;
+  zoomBehaviorRef: React.MutableRefObject<d3.ZoomBehavior<SVGSVGElement, unknown> | null>;
+  gRef: React.MutableRefObject<d3.Selection<SVGGElement, unknown, null, undefined> | null>;
 }
 
 function ThumbOverlay({
@@ -145,12 +135,11 @@ function ThumbOverlay({
   zoomBehaviorRef,
   gRef,
 }: ThumbOverlayProps) {
-  const selected = selectedFiles.some((f) => f.id === overlay.file.id);
+  const selected = selectedFiles.some(f => f.id === overlay.file.id);
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggableFile({
     file: overlay.file,
-    selectedFiles:
-      selected && selectedFiles.length > 0 ? selectedFiles : undefined,
+    selectedFiles: selected && selectedFiles.length > 0 ? selectedFiles : undefined,
     // Pass the actual thumb size as gridSize so DragOverlay renders it at the right size
     // DragOverlay multiplies by 0.6, so we reverse it
     gridSize: overlay.size / 0.6,
@@ -165,7 +154,7 @@ function ThumbOverlay({
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- un <button> natif changerait le rendu des thumbs ; role et tabIndex identiques à ceux de attributes dnd-kit
       role="button"
       tabIndex={0}
-      onKeyDown={(event) => {
+      onKeyDown={event => {
         // Enter/Space activent le même clic que la souris (sélection et zoom)
         if (event.key !== "Enter" && event.key !== " ") return;
         event.preventDefault();
@@ -181,14 +170,14 @@ function ThumbOverlay({
         height: overlay.size,
         opacity: isDragging ? 0.4 : 1,
       }}
-      onWheel={(event) => {
+      onWheel={event => {
         // Forward wheel events to the SVG to allow pinch-to-zoom over thumbnails
         if (svgRef.current) {
           const wheelEvent = new WheelEvent(event.type, event.nativeEvent);
           svgRef.current.dispatchEvent(wheelEvent);
         }
       }}
-      onClick={(event) => {
+      onClick={event => {
         event.stopPropagation();
 
         // In size view, treat shift as multi-select (not range)
@@ -227,20 +216,14 @@ function ThumbOverlay({
               const bubbleSize = d.r * 2;
               const targetScale = targetBubbleScreenSize / bubbleSize;
 
-              const newTransform = d3.zoomIdentity
-                .translate(centerX, centerY)
-                .scale(targetScale)
-                .translate(-d.x, -d.y);
+              const newTransform = d3.zoomIdentity.translate(centerX, centerY).scale(targetScale).translate(-d.x, -d.y);
 
-              d3.select(svgElement)
-                .transition()
-                .duration(400)
-                .call(zoomBehaviorRef.current!.transform, newTransform);
+              d3.select(svgElement).transition().duration(400).call(zoomBehaviorRef.current!.transform, newTransform);
             }, 200);
           }
         }
       }}
-      onDoubleClick={(event) => {
+      onDoubleClick={event => {
         event.stopPropagation();
 
         // Clear single click timeout
@@ -254,12 +237,12 @@ function ThumbOverlay({
           navigateToPathRef.current(overlay.file.sd_path);
         }
       }}
-      onContextMenu={async (event) => {
+      onContextMenu={async event => {
         event.preventDefault();
         event.stopPropagation();
 
         // Select the file if not already selected
-        const isSelected = selectedFiles.some((f) => f.id === overlay.file.id);
+        const isSelected = selectedFiles.some(f => f.id === overlay.file.id);
         if (!isSelected) {
           selectFileRef.current(overlay.file, filesRef.current, false, false);
         }
@@ -271,9 +254,7 @@ function ThumbOverlay({
         setTimeout(async () => {
           // show() only reads preventDefault/stopPropagation/clientX/clientY, which the
           // native pointer event carries, so it stands in for the React synthetic event.
-          await contextMenuRef.current.show(
-            event as unknown as ReactMouseEvent,
-          );
+          await contextMenuRef.current.show(event as unknown as ReactMouseEvent);
         }, 0);
       }}
     >
@@ -317,8 +298,7 @@ export function SizeView() {
   const { files: searchFiles } = useExplorerFiles();
   const isSearchMode = mode.type === "search";
 
-  const { selectedFiles, selectFile, restoreSelectionFromFiles } =
-    useSelection();
+  const { selectedFiles, selectFile, restoreSelectionFromFiles } = useSelection();
 
   // Calculate sidebar and inspector widths
   const sidebarWidth = sidebarVisible ? 220 : 0;
@@ -379,14 +359,7 @@ export function SizeView() {
     }
 
     return directoryQuery.data.files;
-  }, [
-    isSearchMode,
-    searchFiles,
-    directoryQuery.data,
-    activeTabId,
-    currentPath,
-    dataSource,
-  ]);
+  }, [isSearchMode, searchFiles, directoryQuery.data, activeTabId, currentPath, dataSource]);
 
   // Update explorer context with raw file count (not filtered)
   useEffect(() => {
@@ -399,17 +372,10 @@ export function SizeView() {
   }, [files, restoreSelectionFromFiles]);
 
   const svgRef = useRef<SVGSVGElement>(null);
-  const zoomBehaviorRef = useRef<d3.ZoomBehavior<
-    SVGSVGElement,
-    unknown
-  > | null>(null);
+  const zoomBehaviorRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastContextRef = useRef<{ tabId: string; path: SdPath | null } | null>(
-    null,
-  );
-  const lastAppliedZoomRef = useRef<{ tabId: string; zoom: number } | null>(
-    null,
-  );
+  const lastContextRef = useRef<{ tabId: string; path: SdPath | null } | null>(null);
+  const lastAppliedZoomRef = useRef<{ tabId: string; zoom: number } | null>(null);
   // Track which tab we just switched to (allows one path update from TabNavigationSync)
   const justSwitchedToTabRef = useRef<string | null>(null);
   const [contextMenuFile, setContextMenuFile] = useState<File | null>(null);
@@ -427,9 +393,7 @@ export function SizeView() {
   const contextMenu = useFileContextMenu({
     file: contextMenuFile || files[0],
     selectedFiles,
-    selected: contextMenuFile
-      ? selectedFiles.some((f) => f.id === contextMenuFile.id)
-      : false,
+    selected: contextMenuFile ? selectedFiles.some(f => f.id === contextMenuFile.id) : false,
   });
 
   // Use refs for stable function references
@@ -438,12 +402,7 @@ export function SizeView() {
   const filesRef = useRef(files);
   const selectedFilesRef = useRef(selectedFiles);
   const setSizeViewTransformRef = useRef(setSizeViewTransform);
-  const gRef = useRef<d3.Selection<
-    SVGGElement,
-    unknown,
-    null,
-    undefined
-  > | null>(null);
+  const gRef = useRef<d3.Selection<SVGGElement, unknown, null, undefined> | null>(null);
   const contextMenuRef = useRef(contextMenu);
 
   useEffect(() => {
@@ -453,14 +412,7 @@ export function SizeView() {
     selectedFilesRef.current = selectedFiles;
     setSizeViewTransformRef.current = setSizeViewTransform;
     contextMenuRef.current = contextMenu;
-  }, [
-    selectFile,
-    navigateToPath,
-    files,
-    selectedFiles,
-    setSizeViewTransform,
-    contextMenu,
-  ]);
+  }, [selectFile, navigateToPath, files, selectedFiles, setSizeViewTransform, contextMenu]);
 
   // Function to update thumb overlay positions based on current transform
   const updateThumbOverlays = useCallback((transform: d3.ZoomTransform) => {
@@ -476,9 +428,7 @@ export function SizeView() {
       size: number;
     }> = [];
 
-    gRef.current.selectAll<SVGGElement, any>("g.bubble-node").each(function (
-      d: any,
-    ) {
+    gRef.current.selectAll<SVGGElement, any>("g.bubble-node").each(function (d: any) {
       const screenRadius = d.r * transform.k;
 
       // Show thumbnails when effective screen radius > 40px
@@ -523,20 +473,11 @@ export function SizeView() {
         .attr("r", "70%");
 
       // Highlight at top-left for 3D effect
-      gradient
-        .append("stop")
-        .attr("offset", "0%")
-        .attr("stop-color", accentColors.faint);
+      gradient.append("stop").attr("offset", "0%").attr("stop-color", accentColors.faint);
 
-      gradient
-        .append("stop")
-        .attr("offset", "50%")
-        .attr("stop-color", accentColors.base);
+      gradient.append("stop").attr("offset", "50%").attr("stop-color", accentColors.base);
 
-      gradient
-        .append("stop")
-        .attr("offset", "100%")
-        .attr("stop-color", accentColors.deep);
+      gradient.append("stop").attr("offset", "100%").attr("stop-color", accentColors.deep);
 
       g = svg.append("g");
       gRef.current = g;
@@ -544,10 +485,7 @@ export function SizeView() {
 
     const updateTextOnZoom = (scale: number) => {
       // Update text transform for constant size
-      g.selectAll<SVGTextElement, any>("text").attr(
-        "transform",
-        `scale(${1 / scale})`,
-      );
+      g.selectAll<SVGTextElement, any>("text").attr("transform", `scale(${1 / scale})`);
 
       // Update text content based on effective radius
       g.selectAll<SVGGElement, any>("g.bubble-node").each(function (d: any) {
@@ -561,16 +499,9 @@ export function SizeView() {
 
         // For large circles with Thumb, position text at bottom
         const hasThumb = effectiveRadius > 40;
-        const baseY = hasThumb
-          ? effectiveRadius * 0.55
-          : effectiveRadius > 40
-            ? -10
-            : 0;
+        const baseY = hasThumb ? effectiveRadius * 0.55 : effectiveRadius > 40 ? -10 : 0;
 
-        const nameTspan = textElement
-          .append("tspan")
-          .attr("x", 0)
-          .attr("y", baseY);
+        const nameTspan = textElement.append("tspan").attr("x", 0).attr("y", baseY);
 
         if (effectiveRadius > 80) {
           nameTspan.attr("font-size", "11px");
@@ -581,11 +512,7 @@ export function SizeView() {
         }
 
         const maxLength = Math.floor(effectiveRadius / 5);
-        nameTspan.text(
-          d.data.name.length > maxLength
-            ? d.data.name.slice(0, maxLength) + "..."
-            : d.data.name,
-        );
+        nameTspan.text(d.data.name.length > maxLength ? d.data.name.slice(0, maxLength) + "..." : d.data.name);
 
         if (effectiveRadius > 40) {
           textElement
@@ -603,23 +530,21 @@ export function SizeView() {
       // Only adjust stroke width for zoom, don't change selection state
       const baseStrokeWidth = 4;
 
-      svg
-        .selectAll<SVGCircleElement, any>("circle[data-file-id]")
-        .each(function () {
-          const circle = d3.select(this);
-          const currentStroke = circle.attr("stroke");
+      svg.selectAll<SVGCircleElement, any>("circle[data-file-id]").each(function () {
+        const circle = d3.select(this);
+        const currentStroke = circle.attr("stroke");
 
-          // If this circle has a stroke (is selected), update its width
-          if (currentStroke && currentStroke !== "transparent") {
-            circle.attr("stroke-width", baseStrokeWidth / scale);
-          }
-        });
+        // If this circle has a stroke (is selected), update its width
+        if (currentStroke && currentStroke !== "transparent") {
+          circle.attr("stroke-width", baseStrokeWidth / scale);
+        }
+      });
     };
 
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 100])
-      .on("zoom", (event) => {
+      .on("zoom", event => {
         g.attr("transform", event.transform);
         setSizeViewTransformRef.current({
           k: event.transform.k,
@@ -661,8 +586,7 @@ export function SizeView() {
     const currentContext = { tabId: activeTabId, path: currentPath };
 
     // Detect tab switch or initial mount
-    const tabIdChanged =
-      lastContext && lastContext.tabId !== currentContext.tabId;
+    const tabIdChanged = lastContext && lastContext.tabId !== currentContext.tabId;
     const justMounted = !lastContext;
 
     // When we switch tabs or mount, mark this tab as "expecting path sync"
@@ -671,13 +595,10 @@ export function SizeView() {
     }
 
     // Check if path changed
-    const pathChanged =
-      lastContext &&
-      JSON.stringify(lastContext.path) !== JSON.stringify(currentContext.path);
+    const pathChanged = lastContext && JSON.stringify(lastContext.path) !== JSON.stringify(currentContext.path);
 
     // If we're still in the tab we just switched to, this is TabNavigationSync catching up
-    const isPathSyncingAfterTabSwitch =
-      justSwitchedToTabRef.current === currentContext.tabId;
+    const isPathSyncingAfterTabSwitch = justSwitchedToTabRef.current === currentContext.tabId;
 
     // Reset zoom if path changed AND we're not syncing after tab switch
     if (pathChanged && !isPathSyncingAfterTabSwitch) {
@@ -698,25 +619,15 @@ export function SizeView() {
   }, [currentPath, activeTabId, setSizeViewTransform]);
 
   const bubbleData = useMemo(() => {
-    const itemLimit = Math.min(
-      viewSettings.sizeViewItemLimit || 500,
-      files.length,
-    );
+    const itemLimit = Math.min(viewSettings.sizeViewItemLimit || 500, files.length);
 
     // Separate folders and files
     const folders = files.filter((f: File) => f.kind === "Directory");
-    const regularFiles = files.filter(
-      (f: File) => f.kind !== "Directory" && f.size > 0,
-    );
+    const regularFiles = files.filter((f: File) => f.kind !== "Directory" && f.size > 0);
 
     // Always include all folders, then fill with largest files
-    const sortedFiles = regularFiles.toSorted(
-      (a: File, b: File) => b.size - a.size,
-    );
-    const topFiles = sortedFiles.slice(
-      0,
-      Math.max(0, itemLimit - folders.length),
-    );
+    const sortedFiles = regularFiles.toSorted((a: File, b: File) => b.size - a.size);
+    const topFiles = sortedFiles.slice(0, Math.max(0, itemLimit - folders.length));
 
     const combined = [...folders, ...topFiles];
 
@@ -724,21 +635,15 @@ export function SizeView() {
 
     // Calculate average size of files to give folders a reasonable minimum
     const averageFileSize =
-      topFiles.length > 0
-        ? topFiles.reduce((sum: number, f: File) => sum + f.size, 0) /
-          topFiles.length
-        : 1000000; // 1MB default
+      topFiles.length > 0 ? topFiles.reduce((sum: number, f: File) => sum + f.size, 0) / topFiles.length : 1000000; // 1MB default
 
     // Give folders a minimum size of 2.5% of average file size (so they're visible)
     const minFolderSize = averageFileSize * 0.025;
 
-    const mapped = combined.map((file) => ({
+    const mapped = combined.map(file => ({
       id: file.id,
       name: file.name,
-      value:
-        file.kind === "Directory"
-          ? Math.max(file.size, minFolderSize)
-          : file.size,
+      value: file.kind === "Directory" ? Math.max(file.size, minFolderSize) : file.size,
       file,
       color: getFileColor(file),
       type: getFileType(file),
@@ -764,43 +669,34 @@ export function SizeView() {
 
     const pack = d3.pack<TreeNode>().size([width, height]).padding(3);
 
-    const root = pack(
-      d3
-        .hierarchy<TreeNode>({ children: bubbleData } as TreeNode)
-        .sum((d: TreeNode) => d.value),
-    );
+    const root = pack(d3.hierarchy<TreeNode>({ children: bubbleData } as TreeNode).sum((d: TreeNode) => d.value));
 
     // Update nodes with data join (preserves existing nodes when possible)
     const nodes = g
-      .selectAll<SVGGElement, d3.HierarchyCircularNode<TreeNode>>(
-        "g.bubble-node",
-      )
-      .data(
-        root.leaves(),
-        (d: d3.HierarchyCircularNode<TreeNode>) => d.data.id ?? "",
-      )
+      .selectAll<SVGGElement, d3.HierarchyCircularNode<TreeNode>>("g.bubble-node")
+      .data(root.leaves(), (d: d3.HierarchyCircularNode<TreeNode>) => d.data.id ?? "")
       .join(
-        (enter) =>
+        enter =>
           enter
             .append("g")
             .attr("class", "bubble-node")
-            .attr("transform", (d) => `translate(${d.x},${d.y})`)
+            .attr("transform", d => `translate(${d.x},${d.y})`)
             .style("cursor", "pointer"),
-        (update) => update.attr("transform", (d) => `translate(${d.x},${d.y})`),
-        (exit) => exit.remove(),
+        update => update.attr("transform", d => `translate(${d.x},${d.y})`),
+        exit => exit.remove(),
       );
 
     // Update or create circles (background for Thumb or standalone for small circles)
     nodes
       .selectAll<SVGCircleElement, d3.HierarchyCircularNode<TreeNode>>("circle")
-      .data((d) => [d])
+      .data(d => [d])
       .join("circle")
-      .attr("r", (d) => d.r)
-      .attr("fill", (d) => d.data.color)
+      .attr("r", d => d.r)
+      .attr("fill", d => d.data.color)
       .attr("fill-opacity", 0.4)
       .attr("stroke", "transparent")
       .attr("stroke-width", 0)
-      .attr("data-file-id", (d) => d.data.id ?? "")
+      .attr("data-file-id", d => d.data.id ?? "")
       .on("click", (event, d) => {
         event.stopPropagation();
 
@@ -830,20 +726,13 @@ export function SizeView() {
             const centerY = viewportHeight / 2;
 
             // Target: make the bubble appear at a consistent size on screen
-            const targetBubbleScreenSize =
-              Math.min(viewportWidth, viewportHeight) * 0.4;
+            const targetBubbleScreenSize = Math.min(viewportWidth, viewportHeight) * 0.4;
             const bubbleSize = d.r * 2;
             const targetScale = targetBubbleScreenSize / bubbleSize;
 
-            const newTransform = d3.zoomIdentity
-              .translate(centerX, centerY)
-              .scale(targetScale)
-              .translate(-d.x, -d.y);
+            const newTransform = d3.zoomIdentity.translate(centerX, centerY).scale(targetScale).translate(-d.x, -d.y);
 
-            d3.select(svgElement)
-              .transition()
-              .duration(400)
-              .call(zoomBehaviorRef.current!.transform, newTransform);
+            d3.select(svgElement).transition().duration(400).call(zoomBehaviorRef.current!.transform, newTransform);
           }, 200);
         }
       })
@@ -866,9 +755,7 @@ export function SizeView() {
         event.stopPropagation();
 
         // Select the file if not already selected
-        const isSelected = selectedFilesRef.current.some(
-          (f) => f.id === d.data.file!.id,
-        );
+        const isSelected = selectedFilesRef.current.some(f => f.id === d.data.file!.id);
         if (!isSelected) {
           selectFileRef.current(d.data.file!, filesRef.current, false, false);
         }
@@ -880,33 +767,23 @@ export function SizeView() {
         setTimeout(async () => {
           // show() only reads preventDefault/stopPropagation/clientX/clientY, which the
           // native pointer event carries, so it stands in for the React synthetic event.
-          await contextMenuRef.current.show(
-            event as unknown as ReactMouseEvent,
-          );
+          await contextMenuRef.current.show(event as unknown as ReactMouseEvent);
         }, 0);
       })
       // Hover state: fade the bubble slightly (M3 short4, standard easing)
       .on("mouseenter", function () {
-        d3.select(this)
-          .transition()
-          .duration(200)
-          .ease(d3.easeCubicOut)
-          .attr("opacity", 0.84);
+        d3.select(this).transition().duration(200).ease(d3.easeCubicOut).attr("opacity", 0.84);
       })
       .on("mouseleave", function () {
-        d3.select(this)
-          .transition()
-          .duration(200)
-          .ease(d3.easeCubicOut)
-          .attr("opacity", null);
+        d3.select(this).transition().duration(200).ease(d3.easeCubicOut).attr("opacity", null);
       });
 
     // Update or create titles
     nodes
       .selectAll<SVGTitleElement, d3.HierarchyCircularNode<TreeNode>>("title")
-      .data((d) => [d])
+      .data(d => [d])
       .join("title")
-      .text((d) => `${d.data.name}\n${formatBytes(d.data.value)}`);
+      .text(d => `${d.data.name}\n${formatBytes(d.data.value)}`);
 
     // Update thumb overlays after bubbles are rendered
     if (svgRef.current) {
@@ -917,14 +794,10 @@ export function SizeView() {
     // Update or create text elements
     nodes
       .selectAll<SVGTextElement, d3.HierarchyCircularNode<TreeNode>>("text")
-      .data((d) => [d])
+      .data(d => [d])
       .join("text")
       .attr("text-anchor", "middle")
-      .attr("fill", (d) =>
-        getTailwindColor(
-          d.data.file?.kind === "Directory" ? "bg-on-primary" : "bg-on-surface",
-        ),
-      )
+      .attr("fill", d => getTailwindColor(d.data.file?.kind === "Directory" ? "bg-on-primary" : "bg-on-surface"))
       .attr("font-weight", "600")
       .style("pointer-events", "none");
 
@@ -934,10 +807,7 @@ export function SizeView() {
       const scale = currentTransform.k;
 
       // Update text transform and content
-      g.selectAll<SVGTextElement, any>("text").attr(
-        "transform",
-        `scale(${1 / scale})`,
-      );
+      g.selectAll<SVGTextElement, any>("text").attr("transform", `scale(${1 / scale})`);
 
       nodes.each(function (d) {
         const node = d3.select(this);
@@ -950,16 +820,9 @@ export function SizeView() {
 
         // For large circles with Thumb, position text at bottom
         const hasThumb = effectiveRadius > 40;
-        const baseY = hasThumb
-          ? effectiveRadius * 0.55
-          : effectiveRadius > 40
-            ? -10
-            : 0;
+        const baseY = hasThumb ? effectiveRadius * 0.55 : effectiveRadius > 40 ? -10 : 0;
 
-        const nameTspan = textElement
-          .append("tspan")
-          .attr("x", 0)
-          .attr("y", baseY);
+        const nameTspan = textElement.append("tspan").attr("x", 0).attr("y", baseY);
 
         if (effectiveRadius > 80) {
           nameTspan.attr("font-size", "11px");
@@ -970,11 +833,7 @@ export function SizeView() {
         }
 
         const maxLength = Math.floor(effectiveRadius / 5);
-        nameTspan.text(
-          d.data.name.length > maxLength
-            ? d.data.name.slice(0, maxLength) + "..."
-            : d.data.name,
-        );
+        nameTspan.text(d.data.name.length > maxLength ? d.data.name.slice(0, maxLength) + "..." : d.data.name);
 
         if (effectiveRadius > 40) {
           textElement
@@ -991,17 +850,14 @@ export function SizeView() {
 
   // Apply stored transform when tab changes or bubbles first render
   useEffect(() => {
-    if (!svgRef.current || !zoomBehaviorRef.current || bubbleData.length === 0)
-      return;
+    if (!svgRef.current || !zoomBehaviorRef.current || bubbleData.length === 0) return;
 
     // Check if we've already applied transform for this tab
     if (lastAppliedZoomRef.current?.tabId === activeTabId) {
       return;
     }
     const svg = d3.select(svgRef.current);
-    const transform = d3.zoomIdentity
-      .translate(sizeViewTransform.x, sizeViewTransform.y)
-      .scale(sizeViewTransform.k);
+    const transform = d3.zoomIdentity.translate(sizeViewTransform.x, sizeViewTransform.y).scale(sizeViewTransform.k);
     svg.call(zoomBehaviorRef.current.transform, transform);
 
     // Mark this tab as having transform applied
@@ -1023,15 +879,13 @@ export function SizeView() {
 
     // Update both stroke color and width based on selection and current zoom
     svg
-      .selectAll<SVGCircleElement, d3.HierarchyCircularNode<TreeNode>>(
-        "circle[data-file-id]",
-      )
-      .attr("stroke", (d) => {
-        const isSelected = selectedFiles.some((f) => f.id === d.data.id);
+      .selectAll<SVGCircleElement, d3.HierarchyCircularNode<TreeNode>>("circle[data-file-id]")
+      .attr("stroke", d => {
+        const isSelected = selectedFiles.some(f => f.id === d.data.id);
         return isSelected ? accentColor : "transparent";
       })
-      .attr("stroke-width", (d) => {
-        const isSelected = selectedFiles.some((f) => f.id === d.data.id);
+      .attr("stroke-width", d => {
+        const isSelected = selectedFiles.some(f => f.id === d.data.id);
         return isSelected ? baseStrokeWidth / scale : 0;
       });
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bubbleData est une dépendance volontaire : les cercles sont recréés par l'effet de rendu des bulles, la sélection doit être réappliquée après chaque rendu
@@ -1065,13 +919,7 @@ export function SizeView() {
   const handleFitToView = () => {
     if (!svgRef.current || !zoomBehaviorRef.current) return;
     const svg = d3.select(svgRef.current);
-    svg
-      .transition()
-      .duration(500)
-      .call(
-        zoomBehaviorRef.current.transform,
-        d3.zoomIdentity.translate(0, 0).scale(1),
-      );
+    svg.transition().duration(500).call(zoomBehaviorRef.current.transform, d3.zoomIdentity.translate(0, 0).scale(1));
   };
 
   const content = (
@@ -1093,7 +941,7 @@ export function SizeView() {
         />
 
         {/* Thumb overlays positioned absolutely */}
-        {thumbOverlays.map((overlay) => (
+        {thumbOverlays.map(overlay => (
           <ThumbOverlay
             key={overlay.id}
             overlay={overlay}
@@ -1113,9 +961,7 @@ export function SizeView() {
         {/* Empty state message - only show after data has loaded */}
         {bubbleData.length === 0 && !directoryQuery.isLoading && dataSource && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <p className="text-on-surface-variant">
-              No files with size data to display
-            </p>
+            <p className="text-on-surface-variant">No files with size data to display</p>
           </div>
         )}
 
@@ -1131,23 +977,10 @@ export function SizeView() {
               title="Zoom out"
               disabled={sizeViewTransform.k <= 0.1}
             />
-            <CircleButton
-              icon="add"
-              onClick={handleZoomIn}
-              title="Zoom in"
-              disabled={sizeViewTransform.k >= 100}
-            />
+            <CircleButton icon="add" onClick={handleZoomIn} title="Zoom in" disabled={sizeViewTransform.k >= 100} />
           </CircleButtonGroup>
-          <CircleButton
-            icon="fit_screen"
-            onClick={handleFitToView}
-            title="Fit to view"
-          />
-          <CircleButton
-            icon="restart_alt"
-            onClick={handleResetZoom}
-            title="Reset zoom"
-          />
+          <CircleButton icon="fit_screen" onClick={handleFitToView} title="Fit to view" />
+          <CircleButton icon="restart_alt" onClick={handleResetZoom} title="Reset zoom" />
           <div className="text-on-surface-variant px-2 text-label-large tabular-nums">
             {sizeViewTransform.k.toFixed(1)}x
           </div>

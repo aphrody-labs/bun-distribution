@@ -1,10 +1,6 @@
 import type { FrameRate } from "opencut-wasm";
 import type { EditorCore } from "../index";
-import type {
-  TProject,
-  TProjectSettings,
-  TTimelineViewState,
-} from "../../project/types";
+import type { TProject, TProjectSettings, TTimelineViewState } from "../../project/types";
 import type { MediaAsset } from "../../media/types";
 import type { ProjectMeta } from "../../adapters/types";
 import type { ExportOptions, ExportResult } from "../../export";
@@ -104,11 +100,8 @@ export class ProjectManager {
     this.isLoading = true;
     this.notify();
     try {
-      const envelope =
-        await this.editor.adapters.projectStorage.loadProject(id);
-      const document = envelope
-        ? deserializeProjectDocument(envelope.data)
-        : null;
+      const envelope = await this.editor.adapters.projectStorage.loadProject(id);
+      const document = envelope ? deserializeProjectDocument(envelope.data) : null;
       this.active = document?.project ?? null;
       this.notify();
       return this.active;
@@ -133,11 +126,8 @@ export class ProjectManager {
     this.isLoading = true;
     this.notify();
     try {
-      const envelope =
-        await this.editor.adapters.projectStorage.loadProject(id);
-      const document = envelope
-        ? deserializeProjectDocument(envelope.data)
-        : null;
+      const envelope = await this.editor.adapters.projectStorage.loadProject(id);
+      const document = envelope ? deserializeProjectDocument(envelope.data) : null;
       if (!document) {
         return null;
       }
@@ -186,11 +176,7 @@ export class ProjectManager {
     }
   }
 
-  setTimelineViewState({
-    timelineViewState,
-  }: {
-    timelineViewState: TTimelineViewState;
-  }): void {
+  setTimelineViewState({ timelineViewState }: { timelineViewState: TTimelineViewState }): void {
     if (!this.active) return;
     this.active = {
       ...this.active,
@@ -207,11 +193,7 @@ export class ProjectManager {
   // was created at a lower rate. Returns the new FrameRate if a bump
   // happened (so the caller can record it for undo) or null if the
   // existing rate already covers the imported media.
-  ratchetFpsForImportedMedia({
-    importedAssets,
-  }: {
-    importedAssets: MediaAsset[];
-  }): FrameRate | null {
+  ratchetFpsForImportedMedia({ importedAssets }: { importedAssets: MediaAsset[] }): FrameRate | null {
     if (!this.active) return null;
     const raised = getRaisedProjectFpsForImportedMedia({
       currentFps: this.active.settings.fps,
@@ -246,13 +228,7 @@ export class ProjectManager {
     return this.editor.adapters.projectStorage.listProjects();
   }
 
-  async renameProject({
-    id,
-    name,
-  }: {
-    id: string;
-    name: string;
-  }): Promise<void> {
+  async renameProject({ id, name }: { id: string; name: string }): Promise<void> {
     // Active project: the in-memory state is authoritative (the stored
     // row can lag behind the autosave debounce, and may not exist at all
     // before the first save) — rename in place and persist.
@@ -268,9 +244,7 @@ export class ProjectManager {
 
     // Background project: rewrite its stored document.
     const envelope = await this.editor.adapters.projectStorage.loadProject(id);
-    const document = envelope
-      ? deserializeProjectDocument(envelope.data)
-      : null;
+    const document = envelope ? deserializeProjectDocument(envelope.data) : null;
     if (!document) return;
 
     const renamed: TProject = {
@@ -293,9 +267,7 @@ export class ProjectManager {
   }
 
   async deleteProjects({ ids }: { ids: string[] }): Promise<void> {
-    await Promise.all(
-      ids.map((id) => this.editor.adapters.projectStorage.deleteProject(id)),
-    );
+    await Promise.all(ids.map(id => this.editor.adapters.projectStorage.deleteProject(id)));
     if (this.active && ids.includes(this.active.metadata.id)) {
       this.clearActive();
     }
@@ -353,8 +325,7 @@ export class ProjectManager {
       this.notify();
       return result;
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unknown export error";
+      const message = error instanceof Error ? error.message : "Unknown export error";
       const failure: ExportResult = { success: false, error: message };
       this.exportState = {
         isExporting: false,
@@ -374,7 +345,7 @@ export class ProjectManager {
   }
 
   private notify(): void {
-    this.listeners.forEach((fn) => {
+    this.listeners.forEach(fn => {
       fn();
     });
   }

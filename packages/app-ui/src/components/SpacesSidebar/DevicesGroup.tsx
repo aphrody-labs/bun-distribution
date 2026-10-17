@@ -1,9 +1,5 @@
 import { WifiHigh, WifiSlashIcon, Trash } from "@phosphor-icons/react";
-import {
-  useNormalizedQuery,
-  getDeviceIcon,
-  useCoreMutation,
-} from "../../contexts/SpacedriveContext";
+import { useNormalizedQuery, getDeviceIcon, useCoreMutation } from "../../contexts/SpacedriveContext";
 import { useExplorer } from "../../routes/explorer/context";
 import { SpaceItem } from "./SpaceItem";
 import { GroupHeader } from "./GroupHeader";
@@ -16,19 +12,11 @@ interface DevicesGroupProps {
   sortableListeners?: any;
 }
 
-export function DevicesGroup({
-  isCollapsed,
-  onToggle,
-  sortableAttributes,
-  sortableListeners,
-}: DevicesGroupProps) {
+export function DevicesGroup({ isCollapsed, onToggle, sortableAttributes, sortableListeners }: DevicesGroupProps) {
   const { navigateToView, loadPreferencesForSpaceItem } = useExplorer();
 
   // Use normalized query for automatic updates when device events are emitted
-  const { data: devices, isLoading } = useNormalizedQuery<
-    ListLibraryDevicesInput,
-    Device[]
-  >({
+  const { data: devices, isLoading } = useNormalizedQuery<ListLibraryDevicesInput, Device[]>({
     query: "devices.list",
     input: {
       include_offline: true,
@@ -42,51 +30,50 @@ export function DevicesGroup({
   const revokeDevice = useCoreMutation("network.device.revoke");
 
   // Handler for device context menu
-  const handleDeviceContextMenu =
-    (device: Device) => async (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+  const handleDeviceContextMenu = (device: Device) => async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-      // Only show context menu for non-current devices
-      if (device.is_current) return;
+    // Only show context menu for non-current devices
+    if (device.is_current) return;
 
-      // Create context menu items for this device
-      const items = [
-        {
-          icon: Trash,
-          label: "Unpair device",
-          onClick: async () => {
-            await revokeDevice.mutateAsync({
-              device_id: device.id,
-              remove_from_library: false, // Keep device in library
-            });
-          },
-          variant: "default" as const,
+    // Create context menu items for this device
+    const items = [
+      {
+        icon: Trash,
+        label: "Unpair device",
+        onClick: async () => {
+          await revokeDevice.mutateAsync({
+            device_id: device.id,
+            remove_from_library: false, // Keep device in library
+          });
         },
-        {
-          icon: Trash,
-          label: "Remove device completely",
-          onClick: async () => {
-            await revokeDevice.mutateAsync({
-              device_id: device.id,
-              remove_from_library: true, // Remove from library too
-            });
-          },
-          variant: "danger" as const,
+        variant: "default" as const,
+      },
+      {
+        icon: Trash,
+        label: "Remove device completely",
+        onClick: async () => {
+          await revokeDevice.mutateAsync({
+            device_id: device.id,
+            remove_from_library: true, // Remove from library too
+          });
         },
-      ];
+        variant: "danger" as const,
+      },
+    ];
 
-      // Show platform-appropriate context menu
-      if ((window as any).__SPACEDRIVE__?.showContextMenu) {
-        // Tauri native menu
-        await (window as any).__SPACEDRIVE__.showContextMenu(items, {
-          x: e.clientX,
-          y: e.clientY,
-        });
-      }
-      // For web, we'd need a Base UI context menu surface
-      // but for now, just call the action directly or show an alert
-    };
+    // Show platform-appropriate context menu
+    if ((window as any).__SPACEDRIVE__?.showContextMenu) {
+      // Tauri native menu
+      await (window as any).__SPACEDRIVE__.showContextMenu(items, {
+        x: e.clientX,
+        y: e.clientY,
+      });
+    }
+    // For web, we'd need a Base UI context menu surface
+    // but for now, just call the action directly or show an alert
+  };
 
   return (
     <div>
@@ -102,13 +89,9 @@ export function DevicesGroup({
       {!isCollapsed && (
         <div className="space-y-0.5">
           {isLoading ? (
-            <div className="px-2 py-1 text-body-small text-outline">
-              Loading...
-            </div>
+            <div className="px-2 py-1 text-body-small text-outline">Loading...</div>
           ) : !devices || devices.length === 0 ? (
-            <div className="px-2 py-1 text-body-small text-outline">
-              No devices
-            </div>
+            <div className="px-2 py-1 text-body-small text-outline">No devices</div>
           ) : (
             devices.map((device, index) => {
               // Create a minimal SpaceItem structure for the device
@@ -134,18 +117,10 @@ export function DevicesGroup({
                   rightComponent={
                     <div className="flex items-center gap-1">
                       {!device.is_current && !device.is_connected && (
-                        <WifiSlashIcon
-                          size={12}
-                          weight="bold"
-                          className="text-on-surface-variant"
-                        />
+                        <WifiSlashIcon size={12} weight="bold" className="text-on-surface-variant" />
                       )}
                       {!device.is_current && device.is_connected && (
-                        <WifiHigh
-                          size={12}
-                          weight="bold"
-                          className="text-primary"
-                        />
+                        <WifiHigh size={12} weight="bold" className="text-primary" />
                       )}
                     </div>
                   }

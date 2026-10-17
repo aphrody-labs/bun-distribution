@@ -15,12 +15,7 @@ import {
   useContext,
 } from "react";
 
-import {
-  Icon,
-  type IconComponentProps,
-  type IconSource,
-  renderIcon,
-} from "./Icon";
+import { Icon, type IconComponentProps, type IconSource, renderIcon } from "./Icon";
 
 interface ContextMenuProps extends Omit<CM.Popup.Props, "className"> {
   trigger: React.ReactNode;
@@ -50,13 +45,10 @@ export const contextMenuClassNames = clsx(
 
 const ContextMenuContext = createContext<boolean | null>(null);
 
-export const useContextMenuContext = <T extends boolean>({
-  suspense,
-}: { suspense?: T } = {}) => {
+export const useContextMenuContext = <T extends boolean>({ suspense }: { suspense?: T } = {}) => {
   const ctx = useContext(ContextMenuContext);
 
-  if (suspense && ctx === null)
-    throw new Error("ContextMenuContext.Provider not found!");
+  if (suspense && ctx === null) throw new Error("ContextMenuContext.Provider not found!");
 
   return ctx as T extends true
     ? NonNullable<ContextType<typeof ContextMenuContext>>
@@ -67,31 +59,15 @@ export const useContextMenuContext = <T extends boolean>({
  * Base UI context menu: opens at the pointer on right-click (and long-press on touch), with
  * typeahead, roving focus and submenus. `trigger` is the area that owns the menu.
  */
-const Root = ({
-  trigger,
-  children,
-  className,
-  onOpenChange,
-  disabled,
-  ...props
-}: ContextMenuProps) => {
-  const area = isValidElement(trigger) ? (
-    (trigger as ReactElement)
-  ) : (
-    <div>{trigger}</div>
-  );
+const Root = ({ trigger, children, className, onOpenChange, disabled, ...props }: ContextMenuProps) => {
+  const area = isValidElement(trigger) ? (trigger as ReactElement) : <div>{trigger}</div>;
   return (
-    <CM.Root disabled={disabled} onOpenChange={(open) => onOpenChange?.(open)}>
+    <CM.Root disabled={disabled} onOpenChange={open => onOpenChange?.(open)}>
       <CM.Trigger render={area} />
       <CM.Portal>
         <CM.Positioner className="z-50 outline-none">
-          <CM.Popup
-            className={clsx(contextMenuClassNames, menuMotion, className)}
-            {...props}
-          >
-            <ContextMenuContext.Provider value={true}>
-              {children}
-            </ContextMenuContext.Provider>
+          <CM.Popup className={clsx(contextMenuClassNames, menuMotion, className)} {...props}>
+            <ContextMenuContext.Provider value={true}>{children}</ContextMenuContext.Provider>
           </CM.Popup>
         </CM.Positioner>
       </CM.Portal>
@@ -102,17 +78,10 @@ const Root = ({
 export const contextMenuSeparatorClassNames = "my-2 h-px bg-outline-variant";
 
 const Separator = (props: { className?: string }) => (
-  <CM.Separator
-    className={clsx(contextMenuSeparatorClassNames, props.className)}
-  />
+  <CM.Separator className={clsx(contextMenuSeparatorClassNames, props.className)} />
 );
 
-const SubMenu = ({
-  label,
-  icon,
-  className,
-  ...props
-}: Omit<CM.Popup.Props, "className"> & ContextMenuItemProps) => {
+const SubMenu = ({ label, icon, className, ...props }: Omit<CM.Popup.Props, "className"> & ContextMenuItemProps) => {
   return (
     <CM.SubmenuRoot>
       <CM.SubmenuTrigger className={contextMenuItemClassNames} label={label}>
@@ -121,10 +90,7 @@ const SubMenu = ({
       <CM.Portal>
         <Suspense fallback={null}>
           <CM.Positioner className="z-50 outline-none" alignOffset={-8}>
-            <CM.Popup
-              className={clsx(contextMenuClassNames, menuMotion, className)}
-              {...(props as CM.Popup.Props)}
-            />
+            <CM.Popup className={clsx(contextMenuClassNames, menuMotion, className)} {...(props as CM.Popup.Props)} />
           </CM.Positioner>
         </Suspense>
       </CM.Portal>
@@ -146,10 +112,7 @@ const contextMenuItemStyles = cva(
       variant: {
         default: "text-on-surface",
         dull: "text-on-surface-variant",
-        danger: [
-          "text-error",
-          "group-data-[highlighted]:bg-error/8 group-active:bg-error/10",
-        ],
+        danger: ["text-error", "group-data-[highlighted]:bg-error/8 group-active:bg-error/10"],
       },
     },
     defaultVariants: {
@@ -162,36 +125,22 @@ export interface ContextMenuItemProps
   extends
     Omit<CM.Item.Props, "className" | "label">,
     VariantProps<typeof contextMenuItemStyles>,
-    Pick<
-      ContextMenuInnerItemProps,
-      "label" | "keybind" | "icon" | "iconProps"
-    > {
+    Pick<ContextMenuInnerItemProps, "label" | "keybind" | "icon" | "iconProps"> {
   className?: string;
 }
 
 /** Classes of the Base UI item element; the visible row is {@link ContextMenuDivItem}. */
 export const contextMenuItemClassNames = "group outline-none";
 
-const Item = ({
-  icon,
-  label,
-  children,
-  keybind,
-  variant,
-  iconProps,
-  onClick,
-  ...props
-}: ContextMenuItemProps) => {
+const Item = ({ icon, label, children, keybind, variant, iconProps, onClick, ...props }: ContextMenuItemProps) => {
   return (
     <CM.Item
       {...props}
       label={label}
       className={clsx(contextMenuItemClassNames, props.className)}
-      onClick={(e) => !props.disabled && onClick?.(e)}
+      onClick={e => !props.disabled && onClick?.(e)}
     >
-      <ContextMenuDivItem
-        {...{ icon, iconProps, label, keybind, variant, children }}
-      />
+      <ContextMenuDivItem {...{ icon, iconProps, label, keybind, variant, children }} />
     </CM.Item>
   );
 };
@@ -204,20 +153,9 @@ export interface ContextMenuCheckboxItemProps
   className?: string;
 }
 
-const CheckboxItem = ({
-  variant,
-  className,
-  label,
-  keybind,
-  children,
-  ...props
-}: ContextMenuCheckboxItemProps) => {
+const CheckboxItem = ({ variant, className, label, keybind, children, ...props }: ContextMenuCheckboxItemProps) => {
   return (
-    <CM.CheckboxItem
-      className={contextMenuItemClassNames}
-      label={label}
-      {...props}
-    >
+    <CM.CheckboxItem className={contextMenuItemClassNames} label={label} {...props}>
       <ContextMenuDivItem variant={variant} className={className}>
         <span className="flex size-5 items-center justify-center">
           <CM.CheckboxItemIndicator className="flex">
@@ -269,11 +207,7 @@ const ItemInternals = ({
   iconProps,
   variant,
 }: ContextMenuInnerItemProps & VariantProps<typeof contextMenuItemStyles>) => {
-  const {
-    weight,
-    className: iconClassName,
-    ...restIconProps
-  } = iconProps ?? {};
+  const { weight, className: iconClassName, ...restIconProps } = iconProps ?? {};
 
   return (
     <>
@@ -290,18 +224,8 @@ const ItemInternals = ({
         })}
       {label && <span className="flex-1 truncate">{label}</span>}
 
-      {keybind && (
-        <span className="text-label-large text-on-surface-variant">
-          {keybind}
-        </span>
-      )}
-      {rightArrow && (
-        <Icon
-          name="chevron_right"
-          size={20}
-          className="ml-auto text-on-surface-variant"
-        />
-      )}
+      {keybind && <span className="text-label-large text-on-surface-variant">{keybind}</span>}
+      {rightArrow && <Icon name="chevron_right" size={20} className="ml-auto text-on-surface-variant" />}
     </>
   );
 };

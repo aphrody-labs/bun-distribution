@@ -19,10 +19,7 @@ import type { ViewMode } from "./boards/boardTypes";
 import type { MoodboardAdapter } from "./adapter";
 import { Moodboard } from "./canvas/Moodboard";
 import { BoardPicker } from "./BoardPicker";
-import {
-  useMoodboardSync,
-  type MoodboardSaveStatus,
-} from "./persistence/moodboardSync";
+import { useMoodboardSync, type MoodboardSaveStatus } from "./persistence/moodboardSync";
 
 interface Props {
   adapter: MoodboardAdapter;
@@ -38,8 +35,8 @@ interface Props {
 // overlay. Fills its parent; the host app sizes the container. Platform seams
 // (upload, library picker, send-to-generation) arrive via the adapter.
 export const MoodboardWorkspace = ({ adapter, topBarEndSlot }: Props) => {
-  const viewMode = useBoardLibraryStore((s) => s.viewMode);
-  const setViewMode = useBoardLibraryStore((s) => s.setViewMode);
+  const viewMode = useBoardLibraryStore(s => s.viewMode);
+  const setViewMode = useBoardLibraryStore(s => s.setViewMode);
   const board = useActiveBoard();
   // Remote board sync (no-op unless the adapter provides persistence and
   // the user is signed in).
@@ -50,9 +47,7 @@ export const MoodboardWorkspace = ({ adapter, topBarEndSlot }: Props) => {
   // Hold-Ctrl / pinned cheatsheet, listing whichever view is active.
   const cheatsheetVisible = useCheatsheetVisibility();
 
-  const presentItems = board
-    ? board.itemOrder.map((id) => board.items[id]).filter((it) => Boolean(it))
-    : [];
+  const presentItems = board ? board.itemOrder.map(id => board.items[id]).filter(it => Boolean(it)) : [];
 
   return (
     <div
@@ -63,11 +58,7 @@ export const MoodboardWorkspace = ({ adapter, topBarEndSlot }: Props) => {
       // its own --background token (0 0% 9% / #171717), matching the rest of the app.
       style={{ background: "var(--st-bg, hsl(0 0% 9%))" }}
     >
-      {viewMode === "grid" ? (
-        <BoardGridView active={!presenting} adapter={adapter} />
-      ) : (
-        <Moodboard adapter={adapter} />
-      )}
+      {viewMode === "grid" ? <BoardGridView active={!presenting} adapter={adapter} /> : <Moodboard adapter={adapter} />}
       <TopLeftCluster mode={viewMode} onChange={setViewMode} />
       <TopRightCluster
         onPresent={() => setPresenting(true)}
@@ -75,16 +66,8 @@ export const MoodboardWorkspace = ({ adapter, topBarEndSlot }: Props) => {
         onSave={syncEnabled ? saveNow : undefined}
         endSlot={topBarEndSlot}
       />
-      <Cheatsheet
-        surface={viewMode === "grid" ? "moodboard-grid" : "moodboard"}
-        visible={cheatsheetVisible}
-      />
-      {presenting && (
-        <PresentationView
-          items={presentItems}
-          onClose={() => setPresenting(false)}
-        />
-      )}
+      <Cheatsheet surface={viewMode === "grid" ? "moodboard-grid" : "moodboard"} visible={cheatsheetVisible} />
+      {presenting && <PresentationView items={presentItems} onClose={() => setPresenting(false)} />}
     </div>
   );
 };
@@ -96,17 +79,11 @@ const OPTIONS: Array<{ mode: ViewMode; label: string; icon: LucideIcon }> = [
 
 // Top-left chrome: the board picker plus the Grid/Canvas view switch, sharing
 // one glass island.
-const TopLeftCluster = ({
-  mode,
-  onChange,
-}: {
-  mode: ViewMode;
-  onChange: (m: ViewMode) => void;
-}) => (
+const TopLeftCluster = ({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode) => void }) => (
   <div className="glass absolute left-3 top-3 z-40 flex items-center gap-0.5 rounded-2xl border border-ui-divider p-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
     <BoardPicker />
     <div className="mx-0.5 h-5 w-px bg-ui-divider" />
-    {OPTIONS.map((opt) => {
+    {OPTIONS.map(opt => {
       const active = opt.mode === mode;
       return (
         <button
@@ -116,9 +93,7 @@ const TopLeftCluster = ({
           className={[
             "flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-sm font-medium",
             "transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-            active
-              ? "bg-base-fg/15 text-base-fg"
-              : "text-base-fg/55 hover:text-base-fg",
+            active ? "bg-base-fg/15 text-base-fg" : "text-base-fg/55 hover:text-base-fg",
           ].join(" ")}
         >
           <DynamicIcon icon={opt.icon} className="h-3.5 w-3.5" />
@@ -131,13 +106,7 @@ const TopLeftCluster = ({
 
 // Manual save trigger + live sync state. Only rendered when remote
 // persistence is active (adapter.persistence present + signed in).
-const SaveButton = ({
-  status,
-  onSave,
-}: {
-  status: MoodboardSaveStatus;
-  onSave: () => void;
-}) => {
+const SaveButton = ({ status, onSave }: { status: MoodboardSaveStatus; onSave: () => void }) => {
   const icon =
     status === "saving"
       ? LoaderCircleIcon
@@ -147,13 +116,7 @@ const SaveButton = ({
           ? TriangleAlertIcon
           : CloudUploadIcon;
   const label =
-    status === "saving"
-      ? "Saving..."
-      : status === "saved"
-        ? "Saved"
-        : status === "error"
-          ? "Retry save"
-          : "Save";
+    status === "saving" ? "Saving..." : status === "saved" ? "Saved" : status === "error" ? "Retry save" : "Save";
 
   return (
     <button
@@ -165,18 +128,10 @@ const SaveButton = ({
       className={[
         "flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-sm font-medium transition-colors duration-150",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-        status === "error"
-          ? "text-red-400 hover:text-red-300"
-          : "text-base-fg/55 hover:text-base-fg",
+        status === "error" ? "text-red-400 hover:text-red-300" : "text-base-fg/55 hover:text-base-fg",
       ].join(" ")}
     >
-      <DynamicIcon
-        icon={icon}
-        className={[
-          "h-3.5 w-3.5",
-          status === "saving" ? "animate-spin" : "",
-        ].join(" ")}
-      />
+      <DynamicIcon icon={icon} className={["h-3.5 w-3.5", status === "saving" ? "animate-spin" : ""].join(" ")} />
       {label}
     </button>
   );
@@ -199,9 +154,7 @@ const TopRightCluster = ({
 }) => (
   <div className="pointer-events-none absolute right-3 top-3 z-40 flex items-center gap-2">
     <div className="glass pointer-events-auto flex items-center rounded-xl border border-ui-divider p-0.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
-      {saveStatus !== null && onSave && (
-        <SaveButton status={saveStatus} onSave={onSave} />
-      )}
+      {saveStatus !== null && onSave && <SaveButton status={saveStatus} onSave={onSave} />}
       <button
         type="button"
         onClick={onPresent}

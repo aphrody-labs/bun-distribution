@@ -1,11 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import {
-  browseAll,
-  browseCategory,
-  searchAll,
-  searchStickers as searchStickersFromProviders,
-} from ".";
+import { browseAll, browseCategory, searchAll, searchStickers as searchStickersFromProviders } from ".";
 import type { StickerBrowseResult, StickerSearchResult } from ".";
 import { STICKER_CATEGORIES } from "./categories";
 import type { StickerCategory } from "./types";
@@ -29,11 +24,7 @@ function isValidStickerId(value: unknown): value is string {
   }
 }
 
-function sanitizeRecentStickers({
-  recentStickers,
-}: {
-  recentStickers: unknown;
-}): string[] {
+function sanitizeRecentStickers({ recentStickers }: { recentStickers: unknown }): string[] {
   registerDefaultStickerProviders({});
 
   if (!Array.isArray(recentStickers)) {
@@ -117,8 +108,7 @@ export const useStickersStore = create<StickersStore>()(
         }
 
         const category = get().selectedCategory;
-        const selectedCategory =
-          category in STICKER_CATEGORIES ? category : "all";
+        const selectedCategory = category in STICKER_CATEGORIES ? category : "all";
 
         set({ isSearching: true, viewMode: "search" });
         try {
@@ -144,8 +134,7 @@ export const useStickersStore = create<StickersStore>()(
       browseStickers: async () => {
         const version = ++browseRequestVersion;
         const category = get().selectedCategory;
-        const selectedCategory =
-          category in STICKER_CATEGORIES ? category : "all";
+        const selectedCategory = category in STICKER_CATEGORIES ? category : "all";
 
         set({ isBrowsing: true, viewMode: "browse" });
         try {
@@ -179,11 +168,8 @@ export const useStickersStore = create<StickersStore>()(
           return;
         }
 
-        set((state) => {
-          const recent = [
-            sanitizedStickerIds[0],
-            ...state.recentStickers.filter((s) => s !== sanitizedStickerIds[0]),
-          ];
+        set(state => {
+          const recent = [sanitizedStickerIds[0], ...state.recentStickers.filter(s => s !== sanitizedStickerIds[0])];
           return {
             recentStickers: recent.slice(0, MAX_RECENT_STICKERS),
           };
@@ -205,12 +191,8 @@ export const useStickersStore = create<StickersStore>()(
     {
       name: "stickers-settings",
       version: 1,
-      migrate: (persistedState) => {
-        if (
-          typeof persistedState === "object" &&
-          persistedState !== null &&
-          "selectedCategory" in persistedState
-        ) {
+      migrate: persistedState => {
+        if (typeof persistedState === "object" && persistedState !== null && "selectedCategory" in persistedState) {
           const typedState = persistedState as {
             selectedCategory?: string;
             recentStickers?: string[];
@@ -218,10 +200,7 @@ export const useStickersStore = create<StickersStore>()(
           const category = typedState.selectedCategory ?? "all";
           return {
             ...typedState,
-            selectedCategory:
-              category in STICKER_CATEGORIES
-                ? (category as StickerCategory)
-                : "all",
+            selectedCategory: category in STICKER_CATEGORIES ? (category as StickerCategory) : "all",
             recentStickers: sanitizeRecentStickers({
               recentStickers: typedState.recentStickers ?? [],
             }),
@@ -229,7 +208,7 @@ export const useStickersStore = create<StickersStore>()(
         }
         return persistedState;
       },
-      partialize: (state) => ({
+      partialize: state => ({
         selectedCategory: state.selectedCategory,
         recentStickers: state.recentStickers,
       }),

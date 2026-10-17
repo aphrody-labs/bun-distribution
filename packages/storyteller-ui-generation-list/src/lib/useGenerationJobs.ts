@@ -1,23 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { JobsApi, JobStatus, MediaFilesApi } from "@storyteller/api";
 import type { Job, Prompts } from "@storyteller/api";
-import {
-  getMediaStillThumbnail,
-  getMediaThumbnail,
-  THUMBNAIL_SIZES,
-} from "@storyteller/common";
-import {
-  getModelDisplayName,
-  getProviderDisplayName,
-  ALL_MODELS_LIST,
-} from "@storyteller/model-list";
+import { getMediaStillThumbnail, getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
+import { getModelDisplayName, getProviderDisplayName, ALL_MODELS_LIST } from "@storyteller/model-list";
 import { getCachedPrompt, usePrompts } from "./prompts-cache";
-import type {
-  FailedJob,
-  GalleryItem,
-  GenerationMediaClass,
-  InProgressJob,
-} from "./types";
+import type { FailedJob, GalleryItem, GenerationMediaClass, InProgressJob } from "./types";
 import { is3DMediaClass } from "./types";
 
 // Maps JobsApi's recent-jobs stream into the canonical feed shapes
@@ -104,18 +91,13 @@ function get3DCoverThumbnail(source: any): string | null {
 
 function getModelLabel(job: Job, promptsMap?: Map<string, Prompts>): string {
   const promptToken = job.request.maybe_prompt_token;
-  const cachedPrompt = promptToken
-    ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
-    : undefined;
+  const cachedPrompt = promptToken ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken)) : undefined;
 
-  const modelType =
-    cachedPrompt?.maybe_model_type ?? job.request.maybe_model_type ?? "";
+  const modelType = cachedPrompt?.maybe_model_type ?? job.request.maybe_model_type ?? "";
   const providerKey = cachedPrompt?.maybe_generation_provider ?? modelType;
 
   const modelDisplay = modelType ? getModelDisplayName(modelType) : undefined;
-  const provider = providerKey
-    ? getProviderDisplayName(providerKey.toLowerCase())
-    : undefined;
+  const provider = providerKey ? getProviderDisplayName(providerKey.toLowerCase()) : undefined;
 
   if (modelDisplay && provider) return `${modelDisplay} · ${provider}`;
   return modelDisplay || provider || "Unknown model";
@@ -123,26 +105,17 @@ function getModelLabel(job: Job, promptsMap?: Map<string, Prompts>): string {
 
 function getPrompt(job: Job, promptsMap?: Map<string, Prompts>): string {
   const promptToken = job.request.maybe_prompt_token;
-  const cached = promptToken
-    ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
-    : undefined;
-  return (
-    cached?.maybe_positive_prompt || job.request.maybe_raw_inference_text || ""
-  );
+  const cached = promptToken ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken)) : undefined;
+  return cached?.maybe_positive_prompt || job.request.maybe_raw_inference_text || "";
 }
 
 function getModelId(job: Job, promptsMap?: Map<string, Prompts>): string {
   const promptToken = job.request.maybe_prompt_token;
-  const cachedPrompt = promptToken
-    ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
-    : undefined;
+  const cachedPrompt = promptToken ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken)) : undefined;
   return cachedPrompt?.maybe_model_type ?? job.request.maybe_model_type ?? "";
 }
 
-function jobToInProgress(
-  job: Job,
-  promptsMap: Map<string, Prompts>,
-): InProgressJob {
+function jobToInProgress(job: Job, promptsMap: Map<string, Prompts>): InProgressJob {
   const now = Date.now();
   const createdMs = new Date(job.created_at).getTime();
   const modelType = job.request.maybe_model_type;
@@ -150,11 +123,7 @@ function jobToInProgress(
 
   let duration = taskDurationCache.get(job.job_token);
   if (!duration) {
-    const model = modelType
-      ? ALL_MODELS_LIST.find(
-          (m) => m.tauriId === modelType || m.id === modelType,
-        )
-      : undefined;
+    const model = modelType ? ALL_MODELS_LIST.find(m => m.tauriId === modelType || m.id === modelType) : undefined;
     duration = model?.progressBarTime ?? DEFAULT_DURATION_MS[mediaClass];
     taskDurationCache.set(job.job_token, duration);
   }
@@ -177,17 +146,12 @@ function jobToInProgress(
 }
 
 function jobToFailed(job: Job, promptsMap: Map<string, Prompts>): FailedJob {
-  const failureCategory =
-    job.status.maybe_failure_category_updated ||
-    job.status.maybe_failure_category;
-  const rawMessage =
-    job.status.maybe_failure_message ||
-    job.status.maybe_extra_status_description;
+  const failureCategory = job.status.maybe_failure_category_updated || job.status.maybe_failure_category;
+  const rawMessage = job.status.maybe_failure_message || job.status.maybe_extra_status_description;
   const failureReason = failureCategory
     ? FAILURE_REASON_LABEL[failureCategory] || rawMessage || undefined
     : rawMessage || undefined;
-  const failureMessage =
-    rawMessage && failureCategory !== "unknown" ? rawMessage : undefined;
+  const failureMessage = rawMessage && failureCategory !== "unknown" ? rawMessage : undefined;
 
   const promptToken = job.request.maybe_prompt_token ?? undefined;
   const promptData = promptToken ? promptsMap.get(promptToken) : undefined;
@@ -213,9 +177,7 @@ function jobToFailed(job: Job, promptsMap: Map<string, Prompts>): FailedJob {
 // reference to display.
 const NON_IMAGE_REF_SEMANTICS = new Set(["vid_ref", "audioref"]);
 
-function pickFirstRefImageUrl(
-  promptData: Prompts | undefined,
-): string | undefined {
+function pickFirstRefImageUrl(promptData: Prompts | undefined): string | undefined {
   const refs = promptData?.maybe_context_images;
   if (!refs?.length) return undefined;
   for (const ref of refs) {
@@ -226,10 +188,7 @@ function pickFirstRefImageUrl(
   return undefined;
 }
 
-function jobToGalleryItem(
-  job: Job,
-  promptsMap?: Map<string, Prompts>,
-): GalleryItem | null {
+function jobToGalleryItem(job: Job, promptsMap?: Map<string, Prompts>): GalleryItem | null {
   const result = job.maybe_result;
   if (!result?.entity_token) return null;
 
@@ -265,10 +224,7 @@ function jobToGalleryItem(
 }
 
 /** Expand a single GalleryItem into its batch siblings (if any). */
-async function expandBatchItems(
-  item: GalleryItem,
-  mediaFilesApi: MediaFilesApi,
-): Promise<GalleryItem[]> {
+async function expandBatchItems(item: GalleryItem, mediaFilesApi: MediaFilesApi): Promise<GalleryItem[]> {
   try {
     const mediaResponse = await mediaFilesApi.GetMediaFileByToken({
       mediaFileToken: item.id,
@@ -319,10 +275,7 @@ async function expandBatchItems(
 
 // ── Hook ───────────────────────────────────────────────────────────────────
 
-export function useGenerationJobs(options: {
-  mediaType: JobMediaFilter;
-  enabled?: boolean;
-}) {
+export function useGenerationJobs(options: { mediaType: JobMediaFilter; enabled?: boolean }) {
   const { mediaType, enabled = true } = options;
   const apiRef = useRef(new JobsApi());
   const mediaApiRef = useRef(new MediaFilesApi());
@@ -338,12 +291,10 @@ export function useGenerationJobs(options: {
   const promptTokens = useMemo(() => {
     const tokens: string[] = [];
     for (const j of inProgressJobs) {
-      if (j.request.maybe_prompt_token)
-        tokens.push(j.request.maybe_prompt_token);
+      if (j.request.maybe_prompt_token) tokens.push(j.request.maybe_prompt_token);
     }
     for (const j of failedJobsRaw) {
-      if (j.request.maybe_prompt_token)
-        tokens.push(j.request.maybe_prompt_token);
+      if (j.request.maybe_prompt_token) tokens.push(j.request.maybe_prompt_token);
     }
     return tokens;
   }, [inProgressJobs, failedJobsRaw]);
@@ -353,11 +304,8 @@ export function useGenerationJobs(options: {
     () =>
       inProgressJobs
         .slice()
-        .sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        )
-        .map((j) => jobToInProgress(j, promptsMap)),
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .map(j => jobToInProgress(j, promptsMap)),
     [inProgressJobs, promptsMap],
   );
 
@@ -365,11 +313,8 @@ export function useGenerationJobs(options: {
     () =>
       failedJobsRaw
         .slice()
-        .sort(
-          (a, b) =>
-            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-        )
-        .map((j) => jobToFailed(j, promptsMap)),
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+        .map(j => jobToFailed(j, promptsMap)),
     [failedJobsRaw, promptsMap],
   );
 
@@ -381,24 +326,17 @@ export function useGenerationJobs(options: {
       const jobs: Job[] = response.data;
 
       // Filter by media type
-      const filtered = jobs.filter((j) => getJobMediaType(j) === mediaType);
+      const filtered = jobs.filter(j => getJobMediaType(j) === mediaType);
 
-      const newInProgress = filtered.filter((j) =>
-        IN_PROGRESS_STATUSES.has(j.status.status),
-      );
-      const newFailed = filtered.filter((j) =>
-        FAILED_STATUSES.has(j.status.status),
-      );
+      const newInProgress = filtered.filter(j => IN_PROGRESS_STATUSES.has(j.status.status));
+      const newFailed = filtered.filter(j => FAILED_STATUSES.has(j.status.status));
 
       // A newly-observed failure may have triggered a server-side refund, so
       // nudge the credits display — once now, and again after the refund has
       // had a moment to settle in the database. (Skip on first load: those
       // failures happened in a previous session.)
-      const failedIdSet = new Set(newFailed.map((j) => j.job_token));
-      if (
-        initialLoadDoneRef.current &&
-        newFailed.some((j) => !prevFailedIdsRef.current.has(j.job_token))
-      ) {
+      const failedIdSet = new Set(newFailed.map(j => j.job_token));
+      if (initialLoadDoneRef.current && newFailed.some(j => !prevFailedIdsRef.current.has(j.job_token))) {
         window.dispatchEvent(new Event("credits-change"));
         setTimeout(() => {
           window.dispatchEvent(new Event("credits-change"));
@@ -407,27 +345,19 @@ export function useGenerationJobs(options: {
       prevFailedIdsRef.current = failedIdSet;
 
       // Completed
-      const completedJobs = filtered.filter((j) =>
-        COMPLETED_STATUSES.has(j.status.status),
-      );
-      const completedIdSet = new Set(completedJobs.map((j) => j.job_token));
+      const completedJobs = filtered.filter(j => COMPLETED_STATUSES.has(j.status.status));
+      const completedIdSet = new Set(completedJobs.map(j => j.job_token));
 
       // Detect newly completed (skip on first load to avoid flooding)
       let expandedNewItems: GalleryItem[] = [];
       if (initialLoadDoneRef.current) {
-        const newOnes = completedJobs.filter(
-          (j) => !prevCompletedIdsRef.current.has(j.job_token),
-        );
+        const newOnes = completedJobs.filter(j => !prevCompletedIdsRef.current.has(j.job_token));
         if (newOnes.length > 0) {
-          const items = newOnes
-            .map((j) => jobToGalleryItem(j))
-            .filter((item): item is GalleryItem => item !== null);
+          const items = newOnes.map(j => jobToGalleryItem(j)).filter((item): item is GalleryItem => item !== null);
           if (items.length > 0) {
             // Await expansion so the pending card and its completed replacement
             // commit in the same React render — no "remove then add" gap.
-            const expanded = await Promise.all(
-              items.map((item) => expandBatchItems(item, mediaApiRef.current)),
-            );
+            const expanded = await Promise.all(items.map(item => expandBatchItems(item, mediaApiRef.current)));
             expandedNewItems = expanded.flat();
           }
         }
@@ -436,15 +366,15 @@ export function useGenerationJobs(options: {
       prevCompletedIdsRef.current = completedIdSet;
 
       // Prune duration cache
-      const activeIds = new Set(newInProgress.map((j) => j.job_token));
+      const activeIds = new Set(newInProgress.map(j => j.job_token));
       for (const id of taskDurationCache.keys()) {
         if (!activeIds.has(id)) taskDurationCache.delete(id);
       }
 
       if (expandedNewItems.length > 0) {
-        setNewlyCompleted((prev) => {
-          const existingIds = new Set(prev.map((i) => i.id));
-          const fresh = expandedNewItems.filter((i) => !existingIds.has(i.id));
+        setNewlyCompleted(prev => {
+          const existingIds = new Set(prev.map(i => i.id));
+          const fresh = expandedNewItems.filter(i => !existingIds.has(i.id));
           return [...fresh, ...prev];
         });
       }
@@ -476,7 +406,7 @@ export function useGenerationJobs(options: {
   const dismissFailed = useCallback(async (jobToken: string) => {
     try {
       await apiRef.current.DeleteJobByToken(jobToken);
-      setFailedJobsRaw((prev) => prev.filter((f) => f.job_token !== jobToken));
+      setFailedJobsRaw(prev => prev.filter(f => f.job_token !== jobToken));
     } catch {
       // ignore
     }

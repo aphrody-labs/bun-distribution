@@ -10,15 +10,10 @@ const FORBIDDEN: Array<[string, RegExp]> = [
   ["process.env", /process\.env/],
 ];
 
-const srcDir = new URL("../src/", import.meta.url).pathname.replace(
-  /^\/([A-Za-z]:)/,
-  "$1",
-);
+const srcDir = new URL("../src/", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 
 describe("purity of packages/shenron-ui/src", async () => {
-  const files = await Array.fromAsync(
-    new Glob("**/*.{ts,tsx}").scan({ cwd: srcDir }),
-  );
+  const files = await Array.fromAsync(new Glob("**/*.{ts,tsx}").scan({ cwd: srcDir }));
 
   test("scans source files", () => {
     expect(files.length).toBeGreaterThan(0);
@@ -28,8 +23,7 @@ describe("purity of packages/shenron-ui/src", async () => {
     const hits: string[] = [];
     for (const f of files) {
       const text = await Bun.file(`${srcDir}${f}`).text();
-      for (const [label, re] of FORBIDDEN)
-        if (re.test(text)) hits.push(`${f}: ${label}`);
+      for (const [label, re] of FORBIDDEN) if (re.test(text)) hits.push(`${f}: ${label}`);
     }
     expect(hits).toEqual([]);
   });

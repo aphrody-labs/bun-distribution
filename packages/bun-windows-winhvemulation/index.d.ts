@@ -7,9 +7,21 @@ interface Functions {
   /** winhvemulation.dll!WHvEmulatorDestroyEmulator */
   WHvEmulatorDestroyEmulator(Emulator: Win32Pointer): number;
   /** winhvemulation.dll!WHvEmulatorTryIoEmulation */
-  WHvEmulatorTryIoEmulation(Emulator: Win32Pointer, Context: Win32Pointer, VpContext: Win32Pointer, IoInstructionContext: Win32Pointer, EmulatorReturnStatus: Win32Pointer): number;
+  WHvEmulatorTryIoEmulation(
+    Emulator: Win32Pointer,
+    Context: Win32Pointer,
+    VpContext: Win32Pointer,
+    IoInstructionContext: Win32Pointer,
+    EmulatorReturnStatus: Win32Pointer,
+  ): number;
   /** winhvemulation.dll!WHvEmulatorTryMmioEmulation */
-  WHvEmulatorTryMmioEmulation(Emulator: Win32Pointer, Context: Win32Pointer, VpContext: Win32Pointer, MmioInstructionContext: Win32Pointer, EmulatorReturnStatus: Win32Pointer): number;
+  WHvEmulatorTryMmioEmulation(
+    Emulator: Win32Pointer,
+    Context: Win32Pointer,
+    VpContext: Win32Pointer,
+    MmioInstructionContext: Win32Pointer,
+    EmulatorReturnStatus: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -61,10 +61,7 @@ export interface KeyframeDragConfig {
   selectedKeyframes: SelectedKeyframeRef[];
   isKeyframeSelected: (args: { keyframe: SelectedKeyframeRef }) => boolean;
   setKeyframeSelection: (args: { keyframes: SelectedKeyframeRef[] }) => void;
-  toggleKeyframeSelection: (args: {
-    keyframes: SelectedKeyframeRef[];
-    isMultiKey: boolean;
-  }) => void;
+  toggleKeyframeSelection: (args: { keyframes: SelectedKeyframeRef[]; isMultiKey: boolean }) => void;
   selectKeyframeRange: (args: {
     orderedKeyframes: SelectedKeyframeRef[];
     targetKeyframes: SelectedKeyframeRef[];
@@ -109,9 +106,7 @@ export class KeyframeDragController {
     if (this.session.kind !== "active") return IDLE_DRAG_STATE;
     return {
       isDragging: true,
-      draggingKeyframeIds: new Set(
-        this.session.keyframeRefs.map((kf) => kf.keyframeId),
-      ),
+      draggingKeyframeIds: new Set(this.session.keyframeRefs.map(kf => kf.keyframeId)),
       deltaTicks: this.session.deltaTicks,
     };
   }
@@ -131,21 +126,13 @@ export class KeyframeDragController {
     this.subscribers.clear();
   }
 
-  onKeyframeMouseDown({
-    event,
-    keyframes,
-  }: {
-    event: ReactMouseEvent;
-    keyframes: SelectedKeyframeRef[];
-  }): void {
+  onKeyframeMouseDown({ event, keyframes }: { event: ReactMouseEvent; keyframes: SelectedKeyframeRef[] }): void {
     event.preventDefault();
     event.stopPropagation();
 
     this.mouseDownX = event.clientX;
 
-    const anySelected = keyframes.some((kf) =>
-      this.config.isKeyframeSelected({ keyframe: kf }),
-    );
+    const anySelected = keyframes.some(kf => this.config.isKeyframeSelected({ keyframe: kf }));
     const isModifierKey = event.shiftKey || event.metaKey || event.ctrlKey;
 
     if (!anySelected && !isModifierKey) {
@@ -174,9 +161,7 @@ export class KeyframeDragController {
   }): void {
     event.stopPropagation();
 
-    const wasDrag =
-      this.mouseDownX !== null &&
-      Math.abs(event.clientX - this.mouseDownX) > TIMELINE_DRAG_THRESHOLD_PX;
+    const wasDrag = this.mouseDownX !== null && Math.abs(event.clientX - this.mouseDownX) > TIMELINE_DRAG_THRESHOLD_PX;
     this.mouseDownX = null;
 
     if (wasDrag) return;
@@ -225,8 +210,7 @@ export class KeyframeDragController {
     displayedStartTime: MediaTime;
     elementLeft: number;
   }): number {
-    if (!isBeingDragged || this.session.kind !== "active")
-      return indicatorOffsetPx;
+    if (!isBeingDragged || this.session.kind !== "active") return indicatorOffsetPx;
     const deltaTime = mediaTime({ ticks: this.session.deltaTicks });
     const clampedTime = clampMediaTime({
       time: addMediaTime({ a: indicatorTime, b: deltaTime }),
@@ -261,15 +245,9 @@ export class KeyframeDragController {
     this.notify();
   }
 
-  private commitDrag({
-    keyframeRefs,
-    deltaTicks,
-  }: {
-    keyframeRefs: SelectedKeyframeRef[];
-    deltaTicks: number;
-  }): void {
+  private commitDrag({ keyframeRefs, deltaTicks }: { keyframeRefs: SelectedKeyframeRef[]; deltaTicks: number }): void {
     const { element } = this.config;
-    const commands: Command[] = keyframeRefs.flatMap((ref) => {
+    const commands: Command[] = keyframeRefs.flatMap(ref => {
       const keyframe = getKeyframeById({
         animations: element.animations,
         propertyPath: ref.propertyPath,
@@ -323,12 +301,8 @@ export class KeyframeDragController {
     const fps = this.config.getFps();
     if (!fps) return;
 
-    const pixelsPerSecond =
-      BASE_TIMELINE_PIXELS_PER_SECOND * this.config.zoomLevel;
-    const rawDeltaTicks = Math.round(
-      ((clientX - this.session.startMouseX) / pixelsPerSecond) *
-        TICKS_PER_SECOND,
-    );
+    const pixelsPerSecond = BASE_TIMELINE_PIXELS_PER_SECOND * this.config.zoomLevel;
+    const rawDeltaTicks = Math.round(((clientX - this.session.startMouseX) / pixelsPerSecond) * TICKS_PER_SECOND);
     this.session.deltaTicks = roundFrameTicks({ ticks: rawDeltaTicks, fps });
     this.notify();
   }
@@ -343,10 +317,8 @@ export class KeyframeDragController {
 
     const { selectedKeyframes, element } = this.config;
     const { keyframeRefs, deltaTicks } = this.session;
-    const draggingIds = new Set(keyframeRefs.map((r) => r.keyframeId));
-    const draggingRefs = selectedKeyframes.filter(
-      (kf) => kf.elementId === element.id && draggingIds.has(kf.keyframeId),
-    );
+    const draggingIds = new Set(keyframeRefs.map(r => r.keyframeId));
+    const draggingRefs = selectedKeyframes.filter(kf => kf.elementId === element.id && draggingIds.has(kf.keyframeId));
 
     if (draggingRefs.length > 0 && deltaTicks !== 0) {
       this.commitDrag({ keyframeRefs: draggingRefs, deltaTicks });

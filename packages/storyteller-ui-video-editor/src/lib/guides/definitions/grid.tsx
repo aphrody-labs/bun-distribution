@@ -11,39 +11,17 @@ import { cn } from "../../utils/ui";
 import type { GuideDefinition } from "../types";
 import { Input } from "../../components/ui/input";
 
-function GridLines({
-  rows,
-  cols,
-  color,
-}: {
-  rows: number;
-  cols: number;
-  color: string;
-}) {
-  const verticals = Array.from(
-    { length: cols - 1 },
-    (_, i) => ((i + 1) / cols) * 100,
-  );
-  const horizontals = Array.from(
-    { length: rows - 1 },
-    (_, i) => ((i + 1) / rows) * 100,
-  );
+function GridLines({ rows, cols, color }: { rows: number; cols: number; color: string }) {
+  const verticals = Array.from({ length: cols - 1 }, (_, i) => ((i + 1) / cols) * 100);
+  const horizontals = Array.from({ length: rows - 1 }, (_, i) => ((i + 1) / rows) * 100);
 
   return (
     <>
-      {verticals.map((pct) => (
-        <div
-          key={`v-${pct}`}
-          className={cn("absolute top-0 bottom-0 w-px", color)}
-          style={{ left: `${pct}%` }}
-        />
+      {verticals.map(pct => (
+        <div key={`v-${pct}`} className={cn("absolute top-0 bottom-0 w-px", color)} style={{ left: `${pct}%` }} />
       ))}
-      {horizontals.map((pct) => (
-        <div
-          key={`h-${pct}`}
-          className={cn("absolute left-0 right-0 h-px", color)}
-          style={{ top: `${pct}%` }}
-        />
+      {horizontals.map(pct => (
+        <div key={`h-${pct}`} className={cn("absolute left-0 right-0 h-px", color)} style={{ top: `${pct}%` }} />
       ))}
     </>
   );
@@ -58,7 +36,7 @@ function GridGuidePreview() {
 }
 
 function GridGuideOverlay() {
-  const { rows, cols } = usePreviewStore((s) => s.gridConfig);
+  const { rows, cols } = usePreviewStore(s => s.gridConfig);
 
   return (
     <div className="absolute inset-0">
@@ -72,12 +50,11 @@ function GridGuideOverlay() {
 // Until that lands, fall back to plain number inputs labelled with the
 // same row/column icons so the guide is still configurable.
 function GridGuideOptions() {
-  const rows = usePreviewStore((s) => s.gridConfig.rows);
-  const cols = usePreviewStore((s) => s.gridConfig.cols);
-  const setGridConfig = usePreviewStore((s) => s.setGridConfig);
+  const rows = usePreviewStore(s => s.gridConfig.rows);
+  const cols = usePreviewStore(s => s.gridConfig.cols);
+  const setGridConfig = usePreviewStore(s => s.setGridConfig);
 
-  const clampGridValue = (value: number) =>
-    clampRound({ value, min: GRID_MIN, max: GRID_MAX });
+  const clampGridValue = (value: number) => clampRound({ value, min: GRID_MIN, max: GRID_MAX });
 
   return (
     <div className="flex gap-2">
@@ -88,10 +65,9 @@ function GridGuideOptions() {
           min={GRID_MIN}
           max={GRID_MAX}
           value={rows}
-          onChange={(event) => {
+          onChange={event => {
             const parsed = Number.parseInt(event.target.value, 10);
-            if (!Number.isNaN(parsed))
-              setGridConfig({ rows: clampGridValue(parsed) });
+            if (!Number.isNaN(parsed)) setGridConfig({ rows: clampGridValue(parsed) });
           }}
         />
       </label>
@@ -102,10 +78,9 @@ function GridGuideOptions() {
           min={GRID_MIN}
           max={GRID_MAX}
           value={cols}
-          onChange={(event) => {
+          onChange={event => {
             const parsed = Number.parseInt(event.target.value, 10);
-            if (!Number.isNaN(parsed))
-              setGridConfig({ cols: clampGridValue(parsed) });
+            if (!Number.isNaN(parsed)) setGridConfig({ cols: clampGridValue(parsed) });
           }}
         />
       </label>

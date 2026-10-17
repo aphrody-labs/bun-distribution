@@ -12,9 +12,7 @@ interface ConvertRequest {
   buffer: ArrayBuffer;
 }
 
-type ConvertResponse =
-  | { id: number; ok: true; glb: ArrayBuffer }
-  | { id: number; ok: false; error: string };
+type ConvertResponse = { id: number; ok: true; glb: ArrayBuffer } | { id: number; ok: false; error: string };
 
 // Typed shim over the worker global — avoids needing the "webworker" TS lib
 // in a config that otherwise targets the DOM.
@@ -23,21 +21,21 @@ const scope = self as unknown as {
   postMessage: (message: ConvertResponse, transfer?: Transferable[]) => void;
 };
 
-scope.onmessage = async (event) => {
+scope.onmessage = async event => {
   const { id, buffer } = event.data;
   try {
     const group = new FBXLoader().parse(buffer, "");
     const glb = await new Promise<ArrayBuffer>((resolve, reject) => {
       new GLTFExporter().parse(
         group,
-        (result) => {
+        result => {
           if (result instanceof ArrayBuffer) {
             resolve(result);
           } else {
             reject(new Error("GLTF export did not produce binary output."));
           }
         },
-        (error) => reject(error),
+        error => reject(error),
         { binary: true, animations: group.animations ?? [] },
       );
     });

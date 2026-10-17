@@ -3,19 +3,54 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** sspicli.dll!QueryContextAttributesExA */
-  QueryContextAttributesExA(phContext: Win32Pointer, ulAttribute: number, pBuffer: Win32Pointer, cbBuffer: number): number;
+  QueryContextAttributesExA(
+    phContext: Win32Pointer,
+    ulAttribute: number,
+    pBuffer: Win32Pointer,
+    cbBuffer: number,
+  ): number;
   /** sspicli.dll!QueryContextAttributesExW */
-  QueryContextAttributesExW(phContext: Win32Pointer, ulAttribute: number, pBuffer: Win32Pointer, cbBuffer: number): number;
+  QueryContextAttributesExW(
+    phContext: Win32Pointer,
+    ulAttribute: number,
+    pBuffer: Win32Pointer,
+    cbBuffer: number,
+  ): number;
   /** sspicli.dll!QueryContextAttributesExW */
-  QueryContextAttributesEx(phContext: Win32Pointer, ulAttribute: number, pBuffer: Win32Pointer, cbBuffer: number): number;
+  QueryContextAttributesEx(
+    phContext: Win32Pointer,
+    ulAttribute: number,
+    pBuffer: Win32Pointer,
+    cbBuffer: number,
+  ): number;
   /** sspicli.dll!QueryCredentialsAttributesExA */
-  QueryCredentialsAttributesExA(phCredential: Win32Pointer, ulAttribute: number, pBuffer: Win32Pointer, cbBuffer: number): number;
+  QueryCredentialsAttributesExA(
+    phCredential: Win32Pointer,
+    ulAttribute: number,
+    pBuffer: Win32Pointer,
+    cbBuffer: number,
+  ): number;
   /** sspicli.dll!QueryCredentialsAttributesExW */
-  QueryCredentialsAttributesExW(phCredential: Win32Pointer, ulAttribute: number, pBuffer: Win32Pointer, cbBuffer: number): number;
+  QueryCredentialsAttributesExW(
+    phCredential: Win32Pointer,
+    ulAttribute: number,
+    pBuffer: Win32Pointer,
+    cbBuffer: number,
+  ): number;
   /** sspicli.dll!QueryCredentialsAttributesExW */
-  QueryCredentialsAttributesEx(phCredential: Win32Pointer, ulAttribute: number, pBuffer: Win32Pointer, cbBuffer: number): number;
+  QueryCredentialsAttributesEx(
+    phCredential: Win32Pointer,
+    ulAttribute: number,
+    pBuffer: Win32Pointer,
+    cbBuffer: number,
+  ): number;
   /** sspicli.dll!SecAllocateAndSetCallTarget */
-  SecAllocateAndSetCallTarget(lpIpAddress: Win32Pointer, cchIpAddress: number, TargetName: string | Win32Pointer, FreeCallContext: Win32Pointer): number;
+  SecAllocateAndSetCallTarget(
+    lpIpAddress: Win32Pointer,
+    cchIpAddress: number,
+    TargetName: string | Win32Pointer,
+    FreeCallContext: Win32Pointer,
+  ): number;
   /** sspicli.dll!SecAllocateAndSetIPAddress */
   SecAllocateAndSetIPAddress(lpIpAddress: Win32Pointer, cchIpAddress: number, FreeCallContext: Win32Pointer): number;
   /** sspicli.dll!SecFreeCallContext */

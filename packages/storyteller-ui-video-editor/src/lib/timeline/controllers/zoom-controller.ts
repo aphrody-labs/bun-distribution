@@ -19,24 +19,14 @@ export interface ZoomConfig {
   getRulerScrollEl: () => HTMLDivElement | null;
   getCurrentPlayheadTime: () => MediaTime;
   seek: (time: MediaTime) => void;
-  setTimelineViewState: (viewState: {
-    zoomLevel: number;
-    scrollLeft: number;
-    playheadTime: MediaTime;
-  }) => void;
+  setTimelineViewState: (viewState: { zoomLevel: number; scrollLeft: number; playheadTime: MediaTime }) => void;
 }
 
 export interface ZoomConfigRef {
   readonly current: ZoomConfig;
 }
 
-function clampZoom({
-  zoomLevel,
-  minZoom,
-}: {
-  zoomLevel: number;
-  minZoom: number;
-}): number {
+function clampZoom({ zoomLevel, minZoom }: { zoomLevel: number; minZoom: number }): number {
   return Math.max(minZoom, Math.min(TIMELINE_ZOOM_MAX, zoomLevel));
 }
 
@@ -59,9 +49,7 @@ export class ZoomController {
 
     const minZoom = this.config.minZoom;
     this.zoomLevelValue =
-      deps.initialZoom !== undefined
-        ? clampZoom({ zoomLevel: deps.initialZoom, minZoom })
-        : minZoom;
+      deps.initialZoom !== undefined ? clampZoom({ zoomLevel: deps.initialZoom, minZoom }) : minZoom;
     this.previousZoom = this.zoomLevelValue;
     this.hasInitialized = deps.initialZoom !== undefined;
 
@@ -97,9 +85,7 @@ export class ZoomController {
     }
 
     const nextZoomRaw =
-      typeof zoomLevelOrUpdater === "function"
-        ? zoomLevelOrUpdater(this.zoomLevelValue)
-        : zoomLevelOrUpdater;
+      typeof zoomLevelOrUpdater === "function" ? zoomLevelOrUpdater(this.zoomLevelValue) : zoomLevelOrUpdater;
     const nextZoom = clampZoom({
       zoomLevel: nextZoomRaw,
       minZoom: this.config.minZoom,
@@ -112,30 +98,21 @@ export class ZoomController {
 
   handleWheel(event: ReactWheelEvent): void {
     const isZoomGesture = event.ctrlKey || event.metaKey;
-    const isHorizontalScrollGesture =
-      event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY);
+    const isHorizontalScrollGesture = event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY);
 
     if (isHorizontalScrollGesture) {
       return;
     }
 
     if (isZoomGesture) {
-      const normalizedDelta =
-        event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
-      const cappedDelta =
-        Math.sign(normalizedDelta) * Math.min(Math.abs(normalizedDelta), 30);
+      const normalizedDelta = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
+      const cappedDelta = Math.sign(normalizedDelta) * Math.min(Math.abs(normalizedDelta), 30);
       const zoomFactor = Math.exp(-cappedDelta / 300);
-      this.setZoomLevel((prev) => prev * zoomFactor);
+      this.setZoomLevel(prev => prev * zoomFactor);
     }
   }
 
-  reconcileInitialAndMinZoom({
-    minZoom,
-    initialZoom,
-  }: {
-    minZoom: number;
-    initialZoom?: number;
-  }): void {
+  reconcileInitialAndMinZoom({ minZoom, initialZoom }: { minZoom: number; initialZoom?: number }): void {
     if (initialZoom !== undefined && !this.hasInitialized) {
       this.hasInitialized = true;
       this.setZoomLevel(clampZoom({ zoomLevel: initialZoom, minZoom }));
@@ -183,8 +160,7 @@ export class ZoomController {
     };
 
     const clampScrollLeft = (scrollLeft: number) => {
-      const maxScrollLeft =
-        scrollElement.scrollWidth - scrollElement.clientWidth;
+      const maxScrollLeft = scrollElement.scrollWidth - scrollElement.clientWidth;
       return Math.max(0, Math.min(maxScrollLeft, scrollLeft));
     };
 
@@ -236,9 +212,7 @@ export class ZoomController {
     }, 300);
   }
 
-  restoreInitialScrollIfNeeded(
-    initialScrollLeft?: number,
-  ): (() => void) | undefined {
+  restoreInitialScrollIfNeeded(initialScrollLeft?: number): (() => void) | undefined {
     if (initialScrollLeft === undefined) return;
     if (this.hasRestoredScroll) return;
 

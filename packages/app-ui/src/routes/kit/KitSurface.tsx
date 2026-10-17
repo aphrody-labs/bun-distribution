@@ -1,14 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // One kit as an M3 surface: the kit's groups are tabs, its actions are cards, a run shows its
 // log and every question of the kit (typed « OUI » confirmations included) is an M3 dialog.
-import {
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
+import { useCallback, useEffect, useReducer, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   answered,
@@ -29,8 +22,7 @@ import {
 } from "../../kit-bridge";
 import { Icon } from "@aphrody/m3-primitives";
 
-type RunAction =
-  { type: "event"; event: KitEvent } | { type: "answered" } | { type: "reset" };
+type RunAction = { type: "event"; event: KitEvent } | { type: "answered" } | { type: "reset" };
 
 function runReducer(state: RunState, action: RunAction): RunState {
   if (action.type === "reset") return { ...idleRun, status: "running" };
@@ -48,13 +40,7 @@ interface KitDialogProps {
 }
 
 /** M3 basic dialog on the native modal `<dialog>` (focus trap, Escape cancels). */
-export function KitDialog({
-  title,
-  message,
-  input,
-  confirmLabel,
-  onClose,
-}: KitDialogProps) {
+export function KitDialog({ title, message, input, confirmLabel, onClose }: KitDialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const [value, setValue] = useState("");
   useEffect(() => {
@@ -70,7 +56,7 @@ export function KitDialog({
     <dialog
       ref={ref}
       aria-labelledby="kit-dialog-title"
-      onCancel={(event) => {
+      onCancel={event => {
         event.preventDefault();
         onClose(null);
       }}
@@ -80,16 +66,14 @@ export function KitDialog({
         <h2 id="kit-dialog-title" className="text-headline-small">
           {title}
         </h2>
-        <p className="whitespace-pre-wrap text-body-large text-on-surface-variant">
-          {message}
-        </p>
+        <p className="whitespace-pre-wrap text-body-large text-on-surface-variant">{message}</p>
         {input && (
           <label className="flex flex-col gap-2 text-label-large">
             {input.label}
             <input
               autoFocus
               value={value}
-              onChange={(event) => setValue(event.target.value)}
+              onChange={event => setValue(event.target.value)}
               aria-invalid={!valid}
               className="h-14 rounded-extra-small border border-outline bg-transparent px-4 text-body-large text-on-surface focus:border-primary focus:outline-none"
             />
@@ -130,15 +114,12 @@ function FieldInput({
   const id = `kit-field-${field.name}`;
   if (field.kind === "boolean")
     return (
-      <label
-        htmlFor={id}
-        className="flex min-h-12 items-center gap-3 text-body-large"
-      >
+      <label htmlFor={id} className="flex min-h-12 items-center gap-3 text-body-large">
         <input
           id={id}
           type="checkbox"
           checked={value === true}
-          onChange={(event) => onChange(event.target.checked)}
+          onChange={event => onChange(event.target.checked)}
           className="size-5 accent-primary"
         />
         {field.label}
@@ -156,11 +137,11 @@ function FieldInput({
         <select
           id={id}
           value={typeof value === "string" ? value : ""}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={event => onChange(event.target.value)}
           className={common}
         >
           <option value="">Par défaut</option>
-          {field.options?.map((option) => (
+          {field.options?.map(option => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -174,15 +155,11 @@ function FieldInput({
           type={field.kind === "url" ? "url" : "text"}
           placeholder={field.placeholder}
           value={typeof value === "string" ? value : ""}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={event => onChange(event.target.value)}
           className={common}
         />
       )}
-      {field.help && (
-        <span className="text-body-medium text-on-surface-variant">
-          {field.help}
-        </span>
-      )}
+      {field.help && <span className="text-body-medium text-on-surface-variant">{field.help}</span>}
     </label>
   );
 }
@@ -215,10 +192,8 @@ function ActionPanel({ kit, action }: { kit: KitName; action: KitAction }) {
     setStartError(null);
     dispatch({ type: "reset" });
     try {
-      run.current = await startKit(
-        kit,
-        ["run", action.id, JSON.stringify(input)],
-        (event) => dispatch({ type: "event", event }),
+      run.current = await startKit(kit, ["run", action.id, JSON.stringify(input)], event =>
+        dispatch({ type: "event", event }),
       );
     } catch (error) {
       dispatch({ type: "event", event: { type: "exit", session: 0, code: 1 } });
@@ -241,28 +216,22 @@ function ActionPanel({ kit, action }: { kit: KitName; action: KitAction }) {
         <h2 id={`kit-action-${action.id}`} className="text-title-large">
           {action.title}
         </h2>
-        {action.description && (
-          <p className="text-body-medium text-on-surface-variant">
-            {action.description}
-          </p>
-        )}
+        {action.description && <p className="text-body-medium text-on-surface-variant">{action.description}</p>}
       </header>
       <form
         className="grid gap-4 md:grid-cols-2"
-        onSubmit={(event) => {
+        onSubmit={event => {
           event.preventDefault();
           if (action.confirm) setConfirming(true);
           else void start();
         }}
       >
-        {action.fields?.map((field) => (
+        {action.fields?.map(field => (
           <FieldInput
             key={field.name}
             field={field}
             value={input[field.name]}
-            onChange={(value) =>
-              setInput((current) => ({ ...current, [field.name]: value }))
-            }
+            onChange={value => setInput(current => ({ ...current, [field.name]: value }))}
           />
         ))}
         <div className="flex flex-wrap items-center gap-3 md:col-span-2">
@@ -271,10 +240,7 @@ function ActionPanel({ kit, action }: { kit: KitName; action: KitAction }) {
             disabled={busy}
             className="flex min-h-12 items-center gap-2 rounded-full bg-primary px-6 text-label-large text-on-primary disabled:opacity-40"
           >
-            <span
-              className="material-symbol text-title-medium"
-              aria-hidden="true"
-            >
+            <span className="material-symbol text-title-medium" aria-hidden="true">
               play_arrow
             </span>
             Lancer
@@ -285,25 +251,17 @@ function ActionPanel({ kit, action }: { kit: KitName; action: KitAction }) {
               onClick={() => void run.current?.cancel()}
               className="flex min-h-12 items-center gap-2 rounded-full border border-outline px-6 text-label-large text-primary hover:bg-primary/10"
             >
-              <span
-                className="material-symbol text-title-medium"
-                aria-hidden="true"
-              >
+              <span className="material-symbol text-title-medium" aria-hidden="true">
                 stop
               </span>
               {action.longRunning ? "Arrêter" : "Annuler"}
             </button>
           )}
-          <output className="text-body-medium text-on-surface-variant">
-            {statusLabel[state.status]}
-          </output>
+          <output className="text-body-medium text-on-surface-variant">{statusLabel[state.status]}</output>
         </div>
       </form>
       {startError && (
-        <p
-          role="alert"
-          className="rounded-medium bg-error-container p-4 text-body-medium text-on-error-container"
-        >
+        <p role="alert" className="rounded-medium bg-error-container p-4 text-body-medium text-on-error-container">
           {startError}
         </p>
       )}
@@ -313,11 +271,8 @@ function ActionPanel({ kit, action }: { kit: KitName; action: KitAction }) {
           aria-live="polite"
           className="max-h-[420px] overflow-auto whitespace-pre-wrap rounded-medium bg-surface-container-highest p-4 font-mono text-body-medium text-on-surface"
         >
-          {state.lines.map((line) => (
-            <span
-              key={line.id}
-              className={line.stream === "err" ? "text-error" : undefined}
-            >
+          {state.lines.map(line => (
+            <span key={line.id} className={line.stream === "err" ? "text-error" : undefined}>
               {line.text}
               {"\n"}
             </span>
@@ -337,7 +292,7 @@ function ActionPanel({ kit, action }: { kit: KitName; action: KitAction }) {
               : undefined
           }
           confirmLabel="Continuer"
-          onClose={(value) => {
+          onClose={value => {
             setConfirming(false);
             if (value !== null) void start();
           }}
@@ -359,15 +314,7 @@ function ActionPanel({ kit, action }: { kit: KitName; action: KitAction }) {
                 : { label: "Ta réponse" }
           }
           confirmLabel={question.kind === "text" ? "Valider" : "Confirmer"}
-          onClose={(value) =>
-            reply(
-              question.kind === "confirm"
-                ? value === null
-                  ? "non"
-                  : "oui"
-                : value,
-            )
-          }
+          onClose={value => reply(question.kind === "confirm" ? (value === null ? "non" : "oui") : value)}
         />
       )}
     </section>
@@ -389,7 +336,7 @@ export function KitSurface({ kit, title, intro }: KitSurfaceProps) {
   useEffect(() => {
     let active = true;
     kitCatalog(kit, revision > 0)
-      .then((result) => {
+      .then(result => {
         if (active) {
           setError(null);
           setCatalog(result);
@@ -397,28 +344,20 @@ export function KitSurface({ kit, title, intro }: KitSurfaceProps) {
         return undefined;
       })
       .catch((reason: unknown) => {
-        if (active)
-          setError(reason instanceof Error ? reason.message : String(reason));
+        if (active) setError(reason instanceof Error ? reason.message : String(reason));
       });
     return () => {
       active = false;
     };
   }, [kit, revision]);
 
-  const groups =
-    catalog?.groups.filter(
-      (group) => visibleActions(catalog, group.id).length > 0,
-    ) ?? [];
-  const groupId = groups.some((group) => group.id === params.get("section"))
-    ? params.get("section")!
-    : groups[0]?.id;
+  const groups = catalog?.groups.filter(group => visibleActions(catalog, group.id).length > 0) ?? [];
+  const groupId = groups.some(group => group.id === params.get("section")) ? params.get("section")! : groups[0]?.id;
   const actions = catalog && groupId ? visibleActions(catalog, groupId) : [];
-  const actionId = actions.some((action) => action.id === params.get("action"))
-    ? params.get("action")!
-    : actions[0]?.id;
-  const action = actions.find((entry) => entry.id === actionId);
+  const actionId = actions.some(action => action.id === params.get("action")) ? params.get("action")! : actions[0]?.id;
+  const action = actions.find(entry => entry.id === actionId);
   const select = (key: "section" | "action", value: string) =>
-    setParams((current) => {
+    setParams(current => {
       const next = new URLSearchParams(current);
       next.set(key, value);
       if (key === "section") next.delete("action");
@@ -426,15 +365,10 @@ export function KitSurface({ kit, title, intro }: KitSurfaceProps) {
     });
 
   return (
-    <div
-      className="flex h-full flex-col gap-6 overflow-auto p-6"
-      aria-busy={!catalog && !error}
-    >
+    <div className="flex h-full flex-col gap-6 overflow-auto p-6" aria-busy={!catalog && !error}>
       <header className="flex flex-col gap-2">
         <h1 className="text-headline-medium">{title}</h1>
-        <p className="max-w-prose text-body-large text-on-surface-variant">
-          {intro}
-        </p>
+        <p className="max-w-prose text-body-large text-on-surface-variant">{intro}</p>
         {catalog && (
           <p className="text-body-medium text-on-surface-variant">
             {catalog.title} · version {catalog.version}
@@ -442,10 +376,7 @@ export function KitSurface({ kit, title, intro }: KitSurfaceProps) {
         )}
       </header>
       {error && (
-        <div
-          role="alert"
-          className="flex flex-col gap-3 rounded-large bg-error-container p-6 text-on-error-container"
-        >
+        <div role="alert" className="flex flex-col gap-3 rounded-large bg-error-container p-6 text-on-error-container">
           <p className="text-body-large">{error}</p>
           <button
             aria-label="Réessayer"
@@ -453,7 +384,7 @@ export function KitSurface({ kit, title, intro }: KitSurfaceProps) {
             type="button"
             onClick={() => {
               setError(null);
-              setRevision((value) => value + 1);
+              setRevision(value => value + 1);
             }}
             className="min-h-12 self-start rounded-full bg-primary px-6 text-label-large text-on-primary"
           >
@@ -463,12 +394,8 @@ export function KitSurface({ kit, title, intro }: KitSurfaceProps) {
       )}
       {catalog && groupId && (
         <>
-          <div
-            role="tablist"
-            aria-label={`Sections de ${title}`}
-            className="flex flex-wrap gap-2"
-          >
-            {groups.map((group) => (
+          <div role="tablist" aria-label={`Sections de ${title}`} className="flex flex-wrap gap-2">
+            {groups.map(group => (
               <button
                 key={group.id}
                 type="button"
@@ -481,22 +408,16 @@ export function KitSurface({ kit, title, intro }: KitSurfaceProps) {
                     : "flex min-h-12 items-center gap-2 rounded-full px-4 text-label-large text-on-surface-variant hover:bg-secondary-container/20"
                 }
               >
-                <span
-                  className="material-symbol text-title-medium"
-                  aria-hidden="true"
-                >
+                <span className="material-symbol text-title-medium" aria-hidden="true">
                   {group.icon}
                 </span>
                 {group.title}
               </button>
             ))}
           </div>
-          <div
-            role="tabpanel"
-            className="grid gap-6 lg:grid-cols-[minmax(240px,320px)_1fr]"
-          >
+          <div role="tabpanel" className="grid gap-6 lg:grid-cols-[minmax(240px,320px)_1fr]">
             <ul aria-label="Actions" className="flex flex-col gap-1">
-              {actions.map((entry) => (
+              {actions.map(entry => (
                 <li key={entry.id}>
                   <button
                     type="button"
@@ -513,9 +434,7 @@ export function KitSurface({ kit, title, intro }: KitSurfaceProps) {
                 </li>
               ))}
             </ul>
-            {action && (
-              <ActionPanel key={action.id} kit={kit} action={action} />
-            )}
+            {action && <ActionPanel key={action.id} kit={kit} action={action} />}
           </div>
         </>
       )}

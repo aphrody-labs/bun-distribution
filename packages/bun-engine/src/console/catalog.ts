@@ -96,7 +96,8 @@ export async function validateConsoleCatalog(
         const [mode, sha] = pinned.split(/\s+/);
         if (mode !== "160000") errors.push(`${sourceAt}.path is not a pinned submodule: ${source.path}`);
         else if (sha !== component.sourceRev) errors.push(`${sourceAt}.revision does not match sourceRev`);
-      } else if (!(await sourceExists(source.path, root))) errors.push(`${sourceAt}.path does not exist: ${source.path}`);
+      } else if (!(await sourceExists(source.path, root)))
+        errors.push(`${sourceAt}.path does not exist: ${source.path}`);
     }
   }
   return errors;

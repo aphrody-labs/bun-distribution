@@ -3,10 +3,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import {
-  GeneralSettings,
-  type GeneralSettingsBackend,
-} from "./GeneralSettings";
+import { GeneralSettings, type GeneralSettingsBackend } from "./GeneralSettings";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -17,9 +14,7 @@ function deferred<T>() {
   });
   return { promise, resolve, reject };
 }
-const services = (
-  changes: Partial<GeneralSettingsBackend> = {},
-): GeneralSettingsBackend => ({
+const services = (changes: Partial<GeneralSettingsBackend> = {}): GeneralSettingsBackend => ({
   isDesktop: () => true,
   readAutostart: async () => false,
   writeAutostart: async () => {},
@@ -30,10 +25,7 @@ const services = (
 let root: Root | undefined;
 let container: HTMLDivElement | undefined;
 const hasDom = typeof document !== "undefined";
-if (hasDom)
-  (
-    globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-  ).IS_REACT_ACT_ENVIRONMENT = true;
+if (hasDom) (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 afterEach(async () => {
   if (root) await act(async () => root!.unmount());
   root = undefined;
@@ -46,12 +38,9 @@ async function mount(backend: GeneralSettingsBackend) {
   root = createRoot(container);
   await act(async () =>
     root!.render(
-      createElement<NonNullable<Parameters<typeof GeneralSettings>[0]>>(
-        GeneralSettings,
-        {
-          services: backend,
-        },
-      ),
+      createElement<NonNullable<Parameters<typeof GeneralSettings>[0]>>(GeneralSettings, {
+        services: backend,
+      }),
     ),
   );
 }
@@ -60,20 +49,16 @@ async function ready(predicate: () => boolean) {
   while (!predicate() && performance.now() < deadline)
     // oxlint-disable-next-line no-await-in-loop -- observe dependent React commits.
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1));
+      await new Promise(resolve => setTimeout(resolve, 1));
     });
   expect(predicate()).toBe(true);
 }
-const switchControl = () =>
-  container!.querySelector<HTMLButtonElement>('[role="switch"]');
+const switchControl = () => container!.querySelector<HTMLButtonElement>('[role="switch"]');
 test("browser settings expose no native-only or unsupported controls", () => {
   const html = renderToStaticMarkup(
-    createElement<NonNullable<Parameters<typeof GeneralSettings>[0]>>(
-      GeneralSettings,
-      {
-        services: services({ isDesktop: () => false }),
-      },
-    ),
+    createElement<NonNullable<Parameters<typeof GeneralSettings>[0]>>(GeneralSettings, {
+      services: services({ isDesktop: () => false }),
+    }),
   );
   expect(html).toContain("application de bureau");
   expect(html).not.toContain('role="switch"');
@@ -103,7 +88,7 @@ describe.skipIf(!hasDom)("General settings native acknowledgements", () => {
           calls.push("read");
           return ++reads === 1 ? Promise.resolve(false) : verified.promise;
         },
-        writeAutostart: (enabled) => {
+        writeAutostart: enabled => {
           calls.push("write:" + enabled);
           return write.promise;
         },
@@ -127,15 +112,11 @@ describe.skipIf(!hasDom)("General settings native acknowledgements", () => {
     await mount(services({ writeAutostart: () => write.promise }));
     await ready(() => switchControl() !== null);
     await act(async () => switchControl()!.click());
-    await act(async () =>
-      write.reject(new Error("autorisation système refusée")),
-    );
+    await act(async () => write.reject(new Error("autorisation système refusée")));
     await ready(() => Boolean(container!.querySelector('[role="alert"]')));
     expect(switchControl()!.getAttribute("aria-checked")).toBe("false");
     expect(switchControl()!.disabled).toBe(false);
-    expect(container!.querySelector('[role="alert"]')!.textContent).toContain(
-      "autorisation système refusée",
-    );
+    expect(container!.querySelector('[role="alert"]')!.textContent).toContain("autorisation système refusée");
     expect(container!.textContent).not.toContain("automatique activé.");
   });
   test("an unverified successful write becomes unknown and can retry the native probe", async () => {
@@ -154,7 +135,7 @@ describe.skipIf(!hasDom)("General settings native acknowledgements", () => {
     expect(switchControl()).toBeNull();
     expect(container!.textContent).not.toContain("automatique activé.");
     const retry = Array.from(container!.querySelectorAll("button")).find(
-      (button) => button.getAttribute("aria-label") === "Réessayer",
+      button => button.getAttribute("aria-label") === "Réessayer",
     )!;
     await act(async () => retry.click());
     await ready(() => switchControl() !== null);
@@ -164,16 +145,14 @@ describe.skipIf(!hasDom)("General settings native acknowledgements", () => {
   test("update failure never reports an up-to-date application", async () => {
     const check = deferred<null>();
     await mount(services({ checkUpdate: () => check.promise }));
-    const button = Array.from(container!.querySelectorAll("button")).find(
-      (item) => item.textContent!.includes("Vérifier les mises"),
+    const button = Array.from(container!.querySelectorAll("button")).find(item =>
+      item.textContent!.includes("Vérifier les mises"),
     )!;
     await act(async () => button.click());
     expect(button.disabled).toBe(true);
     expect(container!.textContent).not.toContain("application est à jour");
     await act(async () => check.reject(new Error("release feed unavailable")));
-    await ready(() =>
-      container!.textContent!.includes("Vérification impossible"),
-    );
+    await ready(() => container!.textContent!.includes("Vérification impossible"));
     expect(button.disabled).toBe(false);
     expect(container!.textContent).not.toContain("application est à jour");
   });

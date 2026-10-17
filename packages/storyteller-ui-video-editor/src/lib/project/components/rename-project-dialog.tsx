@@ -1,12 +1,5 @@
 import { Button } from "../../components/ui/button";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { useState } from "react";
 import { Label } from "../../components/ui/label";
@@ -42,8 +35,8 @@ export function RenameProjectDialog({
           <Label>New name</Label>
           <Input
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => {
               if (e.key === "Enter") {
                 e.preventDefault();
                 onConfirm(name);
@@ -56,7 +49,7 @@ export function RenameProjectDialog({
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               e.stopPropagation();
               onOpenChange(false);

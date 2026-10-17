@@ -17,6 +17,9 @@
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
+  "scripts": {
+    "typecheck": "bun check -p tsconfig.json --noEmit"
+  },
   "peerDependencies": {
     "@rosegriffon/inagle": "workspace:*"
   },
@@ -27,8 +30,5 @@
   },
   "engines": {
     "bun": "=1.4.4"
-  },
-  "scripts": {
-    "typecheck": "bun check -p tsconfig.json --noEmit"
   }
 }

@@ -13,13 +13,7 @@ interface JobListProps {
   getSpeedHistory: (jobId: string) => SpeedSample[];
 }
 
-export function JobList({
-  jobs,
-  onPause,
-  onResume,
-  onCancel,
-  getSpeedHistory,
-}: JobListProps) {
+export function JobList({ jobs, onPause, onResume, onCancel, getSpeedHistory }: JobListProps) {
   if (jobs.length === 0) {
     return <EmptyState />;
   }
@@ -27,7 +21,7 @@ export function JobList({
   return (
     <div className="flex flex-col gap-2 p-2">
       <AnimatePresence mode="popLayout">
-        {jobs.map((job) => (
+        {jobs.map(job => (
           <motion.div
             key={job.id}
             initial={{ opacity: 0, y: -10 }}

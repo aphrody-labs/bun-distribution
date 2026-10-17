@@ -2,11 +2,7 @@ import { useMemo } from "react";
 import type { KeybindId } from "../util/keybinds/registry";
 import { getKeybind } from "../util/keybinds/registry";
 import type { KeyCombo, KeybindScope } from "../util/keybinds/types";
-import {
-  getComboForPlatform,
-  getCurrentPlatform,
-  toDisplayString,
-} from "../util/keybinds/platform";
+import { getComboForPlatform, getCurrentPlatform, toDisplayString } from "../util/keybinds/platform";
 
 export interface KeybindMeta {
   /** The keybind ID */

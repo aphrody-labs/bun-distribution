@@ -34,11 +34,7 @@ export type BlendMode =
   | "color"
   | "luminosity";
 
-export function buildTransformFromParams({
-  params,
-}: {
-  params: ParamValues;
-}): Transform {
+export function buildTransformFromParams({ params }: { params: ParamValues }): Transform {
   return {
     scaleX: readNumberParam({ params, key: "transform.scaleX", fallback: 1 }),
     scaleY: readNumberParam({ params, key: "transform.scaleY", fallback: 1 }),
@@ -50,32 +46,16 @@ export function buildTransformFromParams({
   };
 }
 
-export function readOpacityFromParams({
-  params,
-}: {
-  params: ParamValues;
-}): number {
+export function readOpacityFromParams({ params }: { params: ParamValues }): number {
   return readNumberParam({ params, key: "opacity", fallback: 1 });
 }
 
-export function readBlendModeFromParams({
-  params,
-}: {
-  params: ParamValues;
-}): BlendMode {
+export function readBlendModeFromParams({ params }: { params: ParamValues }): BlendMode {
   const value = params.blendMode;
   return typeof value === "string" && isBlendMode(value) ? value : "normal";
 }
 
-function readNumberParam({
-  params,
-  key,
-  fallback,
-}: {
-  params: ParamValues;
-  key: string;
-  fallback: number;
-}): number {
+function readNumberParam({ params, key, fallback }: { params: ParamValues; key: string; fallback: number }): number {
   const value = params[key];
   return typeof value === "number" ? value : fallback;
 }

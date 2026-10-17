@@ -79,7 +79,11 @@ pub fn start<R: Runtime>(
     app: &AppHandle<R>,
     sidecar: &Sidecar,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    let port = if sidecar.port == 0 { free_port()? } else { sidecar.port };
+    let port = if sidecar.port == 0 {
+        free_port()?
+    } else {
+        sidecar.port
+    };
     let mut command = Command::new(executable(&sidecar.program));
     command
         .args(&sidecar.args)
@@ -142,7 +146,9 @@ mod tests {
             let (mut stream, _) = listener.accept().unwrap();
             let mut buffer = [0_u8; 256];
             let _ = stream.read(&mut buffer);
-            stream.write_all(b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n").unwrap();
+            stream
+                .write_all(b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n")
+                .unwrap();
         });
         assert!(answers(port, "/ready"));
         server.join().unwrap();

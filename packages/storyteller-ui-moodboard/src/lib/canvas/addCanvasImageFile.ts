@@ -23,19 +23,17 @@ export async function addCanvasImageFromFile({
   } catch (err) {
     console.error("[Moodboard] paste measure failed", err);
   }
-  const nodeId = useMoodboardStore
-    .getState()
-    .addImage(blobUrl, position, dims.w, dims.h, null);
+  const nodeId = useMoodboardStore.getState().addImage(blobUrl, position, dims.w, dims.h, null);
 
   if (adapter.uploadImage) {
     adapter.uploadImage(file).then(
-      (token) => {
+      token => {
         if (!token) return;
         const store = useMoodboardStore.getState();
         // The node may have been deleted while the upload was in flight.
         if (store.nodes[nodeId]) store.updateNode(nodeId, { mediaId: token });
       },
-      (err) => {
+      err => {
         console.error("[Moodboard] background upload failed", err);
       },
     );

@@ -48,7 +48,7 @@ export default function Reader({ adaptive }: PageProps) {
     >
       <Section title="Reader mode">
         <div className="flex gap-3">
-          {(["manga", "notes"] as const).map((value) => (
+          {(["manga", "notes"] as const).map(value => (
             <button
               key={value}
               type="button"
@@ -83,20 +83,12 @@ export default function Reader({ adaptive }: PageProps) {
                   onPageChange={setPage}
                 />
               ) : (
-                <CaptionedReader
-                  key={chapter.id}
-                  pages={NOTES}
-                  title={chapter.label}
-                />
+                <CaptionedReader key={chapter.id} pages={NOTES} title={chapter.label} />
               )
             }
           />
         </Card>
-        {kind === "manga" ? (
-          <output className="block text-body-medium">
-            Illustration page: {page}
-          </output>
-        ) : null}
+        {kind === "manga" ? <output className="block text-body-medium">Illustration page: {page}</output> : null}
       </Section>
     </Page>
   );

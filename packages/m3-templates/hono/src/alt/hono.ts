@@ -3,10 +3,8 @@ import { Hono } from "hono";
 import { system } from "runtime:system";
 
 export const app = new Hono()
-  .get("/health", (c) => c.json({ ok: true }))
-  .get("/api/stats", (c) =>
-    c.json({ runtime: system.info(), stats: system.stats() }),
-  );
+  .get("/health", c => c.json({ ok: true }))
+  .get("/api/stats", c => c.json({ runtime: system.info(), stats: system.stats() }));
 
 if (import.meta.main) {
   const server = Bun.serve({

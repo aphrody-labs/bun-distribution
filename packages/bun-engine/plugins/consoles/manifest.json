@@ -5,9 +5,7 @@
     {
       "id": "switch-aarch64",
       "console": "nintendo-switch",
-      "cpu": [
-        "aarch64"
-      ],
+      "cpu": ["aarch64"],
       "runtime": "dynamic-recompiler",
       "firmwarePolicy": "not-required",
       "license": "GPL-3.0-or-later",
@@ -25,9 +23,7 @@
     {
       "id": "switch-texture",
       "console": "nintendo-switch",
-      "cpu": [
-        "tegra-gpu"
-      ],
+      "cpu": ["tegra-gpu"],
       "runtime": "texture-primitives",
       "firmwarePolicy": "not-required",
       "license": "GPL-2.0-or-later",
@@ -45,10 +41,7 @@
     {
       "id": "wii-cpu-runtime",
       "console": "nintendo-wii-gamecube",
-      "cpu": [
-        "powerpc-broadway",
-        "powerpc-gekko"
-      ],
+      "cpu": ["powerpc-broadway", "powerpc-gekko"],
       "runtime": "branch-and-dol-runtime",
       "firmwarePolicy": "not-required",
       "license": "GPL-3.0-only",
@@ -84,10 +77,7 @@
     {
       "id": "devkitpro-libnds",
       "console": "nintendo-ds",
-      "cpu": [
-        "arm7",
-        "arm9"
-      ],
+      "cpu": ["arm7", "arm9"],
       "runtime": "homebrew-sdk-library",
       "firmwarePolicy": "not-required",
       "license": "Zlib",
@@ -105,10 +95,7 @@
     {
       "id": "devkitpro-libogc",
       "console": "nintendo-wii-gamecube",
-      "cpu": [
-        "powerpc-broadway",
-        "powerpc-gekko"
-      ],
+      "cpu": ["powerpc-broadway", "powerpc-gekko"],
       "runtime": "homebrew-sdk-library",
       "firmwarePolicy": "not-required",
       "license": "Zlib",
@@ -126,10 +113,7 @@
     {
       "id": "devkitpro-calico",
       "console": "nintendo-ds-dsi",
-      "cpu": [
-        "arm7",
-        "arm9"
-      ],
+      "cpu": ["arm7", "arm9"],
       "runtime": "system-runtime-library",
       "firmwarePolicy": "not-required",
       "license": "ZPL-2.1",
@@ -147,10 +131,7 @@
     {
       "id": "devkitpro-libctru",
       "console": "nintendo-3ds",
-      "cpu": [
-        "arm11",
-        "arm9"
-      ],
+      "cpu": ["arm11", "arm9"],
       "runtime": "homebrew-sdk-library",
       "firmwarePolicy": "not-required",
       "license": "Zlib",
@@ -168,10 +149,7 @@
     {
       "id": "devkitpro-citro3d",
       "console": "nintendo-3ds",
-      "cpu": [
-        "arm11",
-        "pica200"
-      ],
+      "cpu": ["arm11", "pica200"],
       "runtime": "graphics-library",
       "firmwarePolicy": "not-required",
       "license": "Zlib",
@@ -189,10 +167,7 @@
     {
       "id": "devkitpro-citro2d",
       "console": "nintendo-3ds",
-      "cpu": [
-        "arm11",
-        "pica200"
-      ],
+      "cpu": ["arm11", "pica200"],
       "runtime": "graphics-library",
       "firmwarePolicy": "not-required",
       "license": "Zlib",
@@ -210,9 +185,7 @@
     {
       "id": "rust3ds-ctru-rs",
       "console": "nintendo-3ds",
-      "cpu": [
-        "arm11"
-      ],
+      "cpu": ["arm11"],
       "runtime": "rust-homebrew-sdk",
       "firmwarePolicy": "not-required",
       "license": "Zlib",
@@ -230,9 +203,7 @@
     {
       "id": "open-agb-firm",
       "console": "nintendo-3ds-gba",
-      "cpu": [
-        "arm9"
-      ],
+      "cpu": ["arm9"],
       "runtime": "free-firmware-source",
       "firmwarePolicy": "redistributable-only",
       "license": "GPL-3.0-or-later",
@@ -250,9 +221,7 @@
     {
       "id": "ares",
       "console": "multi-system",
-      "cpu": [
-        "multi-architecture"
-      ],
+      "cpu": ["multi-architecture"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "ISC",
@@ -270,9 +239,7 @@
     {
       "id": "mame",
       "console": "multi-system",
-      "cpu": [
-        "multi-architecture"
-      ],
+      "cpu": ["multi-architecture"],
       "runtime": "device-reference",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-2.0-or-later",
@@ -290,9 +257,7 @@
     {
       "id": "retroarch",
       "console": "multi-system",
-      "cpu": [
-        "multi-architecture"
-      ],
+      "cpu": ["multi-architecture"],
       "runtime": "frontend",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-only",
@@ -310,9 +275,7 @@
     {
       "id": "tetanes",
       "console": "nintendo-nes",
-      "cpu": [
-        "mos-6502"
-      ],
+      "cpu": ["mos-6502"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "MIT-OR-Apache-2.0",
@@ -330,9 +293,7 @@
     {
       "id": "retroboy",
       "console": "nintendo-game-boy",
-      "cpu": [
-        "sharp-lr35902"
-      ],
+      "cpu": ["sharp-lr35902"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "Apache-2.0",
@@ -350,9 +311,7 @@
     {
       "id": "rustboyadvance-ng",
       "console": "nintendo-game-boy-advance",
-      "cpu": [
-        "arm7tdmi"
-      ],
+      "cpu": ["arm7tdmi"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "MIT",
@@ -370,10 +329,7 @@
     {
       "id": "dust",
       "console": "nintendo-ds",
-      "cpu": [
-        "arm7",
-        "arm9"
-      ],
+      "cpu": ["arm7", "arm9"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-only",
@@ -391,9 +347,7 @@
     {
       "id": "gopher64",
       "console": "nintendo-64",
-      "cpu": [
-        "mips-r4300i"
-      ],
+      "cpu": ["mips-r4300i"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-only",
@@ -411,9 +365,7 @@
     {
       "id": "jgenesis",
       "console": "multi-system",
-      "cpu": [
-        "multi-architecture"
-      ],
+      "cpu": ["multi-architecture"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-only",
@@ -431,9 +383,7 @@
     {
       "id": "starpsx",
       "console": "sony-playstation",
-      "cpu": [
-        "mips-r3000a"
-      ],
+      "cpu": ["mips-r3000a"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-only",
@@ -451,10 +401,7 @@
     {
       "id": "zakuro",
       "console": "nintendo-3ds",
-      "cpu": [
-        "arm11",
-        "arm9"
-      ],
+      "cpu": ["arm11", "arm9"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "MIT",
@@ -472,10 +419,7 @@
     {
       "id": "melonds",
       "console": "nintendo-ds-dsi",
-      "cpu": [
-        "arm7",
-        "arm9"
-      ],
+      "cpu": ["arm7", "arm9"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-or-later",
@@ -493,9 +437,7 @@
     {
       "id": "azahar",
       "console": "nintendo-3ds",
-      "cpu": [
-        "arm11"
-      ],
+      "cpu": ["arm11"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-2.0-or-later",
@@ -513,10 +455,7 @@
     {
       "id": "dolphin",
       "console": "nintendo-wii-gamecube",
-      "cpu": [
-        "powerpc-gekko",
-        "powerpc-broadway"
-      ],
+      "cpu": ["powerpc-gekko", "powerpc-broadway"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-2.0-or-later",
@@ -534,9 +473,7 @@
     {
       "id": "pcsx2",
       "console": "sony-playstation-2",
-      "cpu": [
-        "mips-r5900"
-      ],
+      "cpu": ["mips-r5900"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-or-later",
@@ -554,10 +491,7 @@
     {
       "id": "gecko",
       "console": "nintendo-wii-gamecube",
-      "cpu": [
-        "powerpc-gekko",
-        "powerpc-broadway"
-      ],
+      "cpu": ["powerpc-gekko", "powerpc-broadway"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "see-upstream-LICENSE",
@@ -575,9 +509,7 @@
     {
       "id": "oboromi",
       "console": "nintendo-switch",
-      "cpu": [
-        "aarch64"
-      ],
+      "cpu": ["aarch64"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "see-upstream-LICENSE",
@@ -595,9 +527,7 @@
     {
       "id": "nexium",
       "console": "nintendo-switch",
-      "cpu": [
-        "aarch64"
-      ],
+      "cpu": ["aarch64"],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "see-upstream-LICENSE",

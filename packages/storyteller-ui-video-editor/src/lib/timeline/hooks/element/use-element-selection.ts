@@ -4,14 +4,11 @@ import type { ElementRef } from "../../types";
 
 export function useElementSelection() {
   const editor = useEditor();
-  const selectedElements = useEditor((e) => e.selection.getSelectedElements());
+  const selectedElements = useEditor(e => e.selection.getSelectedElements());
 
   const isElementSelected = useCallback(
     ({ trackId, elementId }: ElementRef) =>
-      selectedElements.some(
-        (element) =>
-          element.trackId === trackId && element.elementId === elementId,
-      ),
+      selectedElements.some(element => element.trackId === trackId && element.elementId === elementId),
     [selectedElements],
   );
 
@@ -27,8 +24,7 @@ export function useElementSelection() {
   const addElementToSelection = useCallback(
     ({ trackId, elementId }: ElementRef) => {
       const alreadySelected = selectedElements.some(
-        (element) =>
-          element.trackId === trackId && element.elementId === elementId,
+        element => element.trackId === trackId && element.elementId === elementId,
       );
       if (alreadySelected) return;
 
@@ -42,10 +38,7 @@ export function useElementSelection() {
   const removeElementFromSelection = useCallback(
     ({ trackId, elementId }: ElementRef) => {
       editor.selection.setSelectedElements({
-        elements: selectedElements.filter(
-          (element) =>
-            !(element.trackId === trackId && element.elementId === elementId),
-        ),
+        elements: selectedElements.filter(element => !(element.trackId === trackId && element.elementId === elementId)),
       });
     },
     [selectedElements, editor],
@@ -54,8 +47,7 @@ export function useElementSelection() {
   const toggleElementSelection = useCallback(
     ({ trackId, elementId }: ElementRef) => {
       const alreadySelected = selectedElements.some(
-        (element) =>
-          element.trackId === trackId && element.elementId === elementId,
+        element => element.trackId === trackId && element.elementId === elementId,
       );
 
       if (alreadySelected) {
@@ -86,11 +78,9 @@ export function useElementSelection() {
     ({ elements }: { elements: ElementRef[] }) => {
       const merged = [
         ...selectedElements.filter(
-          (selectedElement) =>
+          selectedElement =>
             !elements.some(
-              (element) =>
-                element.trackId === selectedElement.trackId &&
-                element.elementId === selectedElement.elementId,
+              element => element.trackId === selectedElement.trackId && element.elementId === selectedElement.elementId,
             ),
         ),
         ...elements,
@@ -106,11 +96,7 @@ export function useElementSelection() {
    * - Multi-key click (Ctrl/Cmd): toggle this element in selection
    */
   const handleElementClick = useCallback(
-    ({
-      trackId,
-      elementId,
-      isMultiKey,
-    }: ElementRef & { isMultiKey: boolean }) => {
+    ({ trackId, elementId, isMultiKey }: ElementRef & { isMultiKey: boolean }) => {
       if (isMultiKey) {
         toggleElementSelection({ trackId, elementId });
       } else {

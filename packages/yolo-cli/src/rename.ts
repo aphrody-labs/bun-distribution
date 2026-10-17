@@ -15,22 +15,11 @@ export const PRESETS: Record<string, readonly RenameRule[]> = {
   aphrody: [{ from: "@tauri-apps/", to: "@aphrody/" }],
 };
 
-export const APHRODY_EXCLUDES: readonly string[] = [
-  "**/audits/**",
-  "**/.changes/*.md",
-];
+export const APHRODY_EXCLUDES: readonly string[] = ["**/audits/**", "**/.changes/*.md"];
 export const DEFAULT_TARGET = "crates/tauri";
 export const JOURNAL_DIR = ".cache/rename";
 
-const VALUE_FLAGS = new Set([
-  "--from",
-  "--to",
-  "--include",
-  "--exclude",
-  "--rules",
-  "--journal-dir",
-  "--restore",
-]);
+const VALUE_FLAGS = new Set(["--from", "--to", "--include", "--exclude", "--rules", "--journal-dir", "--restore"]);
 
 /** The `bun rename` arguments for `yolo rename <args>`, run from the repository root. */
 export function bunRenameArgs(args: readonly string[]): string[] {
@@ -51,10 +40,7 @@ export function bunRenameArgs(args: readonly string[]): string[] {
     if (arg === "--preset") {
       const name = args[++i];
       const preset = name === undefined ? undefined : PRESETS[name];
-      if (!preset)
-        throw new Error(
-          `Unknown preset "${name ?? ""}" (available: ${Object.keys(PRESETS).join(", ")})`,
-        );
+      if (!preset) throw new Error(`Unknown preset "${name ?? ""}" (available: ${Object.keys(PRESETS).join(", ")})`);
       for (const rule of preset) out.push("--from", rule.from, "--to", rule.to);
       rules = true;
       continue;
@@ -64,37 +50,27 @@ export function bunRenameArgs(args: readonly string[]): string[] {
     else if (arg === "--journal-dir") journal = true;
     else if (!arg.startsWith("-")) targets = true;
     out.push(arg);
-    if (VALUE_FLAGS.has(arg) && i + 1 < args.length)
-      out.push(args[++i] as string);
+    if (VALUE_FLAGS.has(arg) && i + 1 < args.length) out.push(args[++i] as string);
   }
   if (restore) return [...out, ...tail];
-  if (!rules)
-    for (const rule of PRESETS.aphrody!)
-      out.unshift("--from", rule.from, "--to", rule.to);
+  if (!rules) for (const rule of PRESETS.aphrody!) out.unshift("--from", rule.from, "--to", rule.to);
   if (!journal) out.push("--journal-dir", JOURNAL_DIR);
   for (const glob of APHRODY_EXCLUDES) out.push("--exclude", glob);
   if (!targets) out.push(DEFAULT_TARGET);
   return [...out, ...tail];
 }
 
-export async function runRenameCommand(
-  args: readonly string[],
-  rootDir: string,
-): Promise<number> {
+export async function runRenameCommand(args: readonly string[], rootDir: string): Promise<number> {
   let bunArgs: string[];
   try {
     bunArgs = bunRenameArgs(args);
   } catch (error) {
-    console.error(
-      `\x1b[31mError:\x1b[0m ${error instanceof Error ? error.message : String(error)}`,
-    );
+    console.error(`\x1b[31mError:\x1b[0m ${error instanceof Error ? error.message : String(error)}`);
     return 1;
   }
   return runBunTool("rename", bunArgs, rootDir);
 }
 
 if (import.meta.main) {
-  void runRenameCommand(process.argv.slice(2), process.cwd()).then(
-    (code) => (process.exitCode = code),
-  );
+  void runRenameCommand(process.argv.slice(2), process.cwd()).then(code => (process.exitCode = code));
 }

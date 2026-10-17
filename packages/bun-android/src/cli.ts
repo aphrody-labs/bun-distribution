@@ -2,17 +2,7 @@
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import {
-  ABIS,
-  build,
-  devices,
-  ensureNdk,
-  exec,
-  install,
-  launch,
-  logcat,
-  resolveToolchain,
-} from "./index.ts";
+import { ABIS, build, devices, ensureNdk, exec, install, launch, logcat, resolveToolchain } from "./index.ts";
 import { docsCommand } from "./docs/index.ts";
 import { parseManifest } from "./plugin.ts";
 import type { AndroidAbi, BuildVariant } from "./types.ts";
@@ -34,8 +24,7 @@ const usage = `bun android <command> [options]
 function workspaceRoot(): string {
   let directory = process.cwd();
   while (true) {
-    if (existsSync(join(directory, "apps", "bun-android", "settings.gradle")))
-      return directory;
+    if (existsSync(join(directory, "apps", "bun-android", "settings.gradle"))) return directory;
     const parent = dirname(directory);
     if (parent === directory) return resolve(import.meta.dir, "..", "..", "..");
     directory = parent;
@@ -61,44 +50,26 @@ const { values, positionals } = parseArgs({
 
 const [command, ...rest] = positionals;
 const workspace = workspaceRoot();
-const project = resolve(
-  typeof values.project === "string"
-    ? values.project
-    : join(workspace, "apps", "bun-android"),
-);
+const project = resolve(typeof values.project === "string" ? values.project : join(workspace, "apps", "bun-android"));
 const variant: BuildVariant = values.release ? "release" : "debug";
 const serial = typeof values.serial === "string" ? values.serial : undefined;
-const abis = (values.abi as string[] | undefined)?.map((abi) => {
-  if (!ABIS.includes(abi as AndroidAbi))
-    throw new Error(`Unsupported ABI ${abi}`);
+const abis = (values.abi as string[] | undefined)?.map(abi => {
+  if (!ABIS.includes(abi as AndroidAbi)) throw new Error(`Unsupported ABI ${abi}`);
   return abi as AndroidAbi;
 });
 const libbun = Object.fromEntries(
-  ((values.libbun as string[] | undefined) ?? []).map((entry) => {
+  ((values.libbun as string[] | undefined) ?? []).map(entry => {
     const [abi, path] = entry.split("=", 2);
     return [abi, resolve(path ?? "")];
   }),
 );
-const apkPath = () =>
-  join(
-    project,
-    "app",
-    "build",
-    "outputs",
-    "apk",
-    variant,
-    `app-${variant}.apk`,
-  );
+const apkPath = () => join(project, "app", "build", "outputs", "apk", variant, `app-${variant}.apk`);
 
 async function packageName(): Promise<string> {
   const gradle = await Bun.file(join(project, "app", "build.gradle")).text();
   const id = /applicationId\s*=?\s*['"]([^'"]+)['"]/.exec(gradle)?.[1];
   if (id) return id;
-  const manifest = parseManifest(
-    await Bun.file(
-      join(project, "app", "src", "main", "AndroidManifest.xml"),
-    ).text(),
-  );
+  const manifest = parseManifest(await Bun.file(join(project, "app", "src", "main", "AndroidManifest.xml")).text());
   if (!manifest.package) throw new Error("applicationId not found");
   return manifest.package;
 }
@@ -118,16 +89,11 @@ switch (command) {
     console.log(await doBuild());
     break;
   case "install":
-    process.exitCode = await install(
-      rest[0] ? resolve(rest[0]) : apkPath(),
-      serial,
-    );
+    process.exitCode = await install(rest[0] ? resolve(rest[0]) : apkPath(), serial);
     break;
   case "run": {
     const apk = await doBuild();
-    process.exitCode =
-      (await install(apk, serial)) ||
-      (await launch(await packageName(), serial));
+    process.exitCode = (await install(apk, serial)) || (await launch(await packageName(), serial));
     break;
   }
   case "exec":

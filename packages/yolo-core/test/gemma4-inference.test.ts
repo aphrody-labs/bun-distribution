@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Local HTTP fixtures qualify transport, never model weights or inference quality. */
 import { afterEach, describe, expect, it } from "bun:test";
-import {
-  InferenceError,
-  UnifiedInferenceEngine,
-} from "../../core/src/gemma4/index";
+import { InferenceError, UnifiedInferenceEngine } from "../../core/src/gemma4/index";
 
 const servers: Array<{ stop(closeActiveConnections?: boolean): void }> = [];
 afterEach(() => {
@@ -15,17 +12,14 @@ function listen(handler: (request: Request) => Response | Promise<Response>) {
   servers.push(server);
   return new URL("v1", server.url).href;
 }
-const json = (content: unknown, status = 200) =>
-  Response.json(content, { status });
+const json = (content: unknown, status = 200) => Response.json(content, { status });
 const reply = (content = "real provider fixture") => ({
   model: "provider-revision",
   choices: [{ message: { content } }],
   usage: { prompt_tokens: 12, completion_tokens: 3, total_tokens: 15 },
 });
-const event = (content: string) =>
-  `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
-const terminal =
-  'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n';
+const event = (content: string) => `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
+const terminal = 'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n';
 const sse = (body: BodyInit) =>
   new Response(body, {
     headers: { "content-type": "text/event-stream; charset=utf-8" },
@@ -37,7 +31,7 @@ async function collect(iterator: AsyncIterable<string>) {
 }
 function deferred() {
   let resolve!: () => void;
-  const promise = new Promise<void>((done) => {
+  const promise = new Promise<void>(done => {
     resolve = done;
   });
   return { promise, resolve };
@@ -47,17 +41,11 @@ describe("Real configured inference HTTP transport", () => {
   for (const backend of ["local", "jan", "openai"] as const) {
     it(`sends ${backend} messages to the actual configured provider without simulation`, async () => {
       const requests: Record<string, unknown>[] = [];
-      const endpointUrl = listen(async (request) => {
+      const endpointUrl = listen(async request => {
         expect(new URL(request.url).pathname).toBe("/v1/chat/completions");
-        expect(request.headers.get("authorization")).toBe(
-          "Bearer public-test-fixture",
-        );
+        expect(request.headers.get("authorization")).toBe("Bearer public-test-fixture");
         requests.push((await request.json()) as Record<string, unknown>);
-        return json(
-          reply(
-            "<thought>provider trace</thought>\nactual answer<end_of_turn>",
-          ),
-        );
+        return json(reply("<thought>provider trace</thought>\nactual answer<end_of_turn>"));
       });
       const engine = new UnifiedInferenceEngine("native-model-id", {
         endpointUrl,
@@ -141,25 +129,15 @@ describe("Real configured inference HTTP transport", () => {
         { thought: "prefill" },
         { history: [{ role: "user" as const, content: "Q", imageCount: 1 }] },
         {
-          history: [
-            { role: "assistant" as const, content: "A", thought: "prefill" },
-          ],
+          history: [{ role: "assistant" as const, content: "A", thought: "prefill" }],
         },
         { timeoutMs: 0 },
         { maxResponseBytes: 0 },
-      ].map((patch) =>
-        expect(engine.infer({ prompt: "Q", ...patch })).rejects.toThrow(),
-      ),
+      ].map(patch => expect(engine.infer({ prompt: "Q", ...patch })).rejects.toThrow()),
     );
     await Promise.all(
-      [
-        "invalid URL",
-        "file:///tmp/model",
-        "http://user:password@127.0.0.1/v1",
-      ].map((url) =>
-        expect(
-          engine.infer({ prompt: "Q", endpointUrl: url }),
-        ).rejects.toThrow(),
+      ["invalid URL", "file:///tmp/model", "http://user:password@127.0.0.1/v1"].map(url =>
+        expect(engine.infer({ prompt: "Q", endpointUrl: url })).rejects.toThrow(),
       ),
     );
     expect(requests).toBe(0);
@@ -167,7 +145,7 @@ describe("Real configured inference HTTP transport", () => {
 
   it("propagates HTTP errors instead of fabricating a successful local response", async () => {
     await Promise.all(
-      [400, 404, 500].map(async (status) => {
+      [400, 404, 500].map(async status => {
         const engine = new UnifiedInferenceEngine("fixture", {
           endpointUrl: listen(() => json({ error: "fixture failure" }, status)),
         });
@@ -194,12 +172,8 @@ describe("Real configured inference HTTP transport", () => {
       },
     ];
     await Promise.all(
-      malformed.map((response) => {
-        const endpointUrl = listen(() =>
-          typeof response === "string"
-            ? new Response(response)
-            : json(response),
-        );
+      malformed.map(response => {
+        const endpointUrl = listen(() => (typeof response === "string" ? new Response(response) : json(response)));
         return expect(
           new UnifiedInferenceEngine("fixture", { endpointUrl }).infer({
             prompt: "Q",
@@ -228,11 +202,7 @@ describe("Real configured inference HTTP transport", () => {
             controller.enqueue(encoder.encode(event("  Hel")));
             void release.promise.then(() => {
               const rest = encoder.encode(
-                event("lo <th") +
-                  event("ought>hidden</th") +
-                  event("ought>🌍<end_of_") +
-                  event("turn>  ") +
-                  terminal,
+                event("lo <th") + event("ought>hidden</th") + event("ought>🌍<end_of_") + event("turn>  ") + terminal,
               );
               for (let offset = 0; offset < rest.length; offset += 3)
                 controller.enqueue(rest.slice(offset, offset + 3));
@@ -307,7 +277,7 @@ describe("Real configured inference HTTP transport", () => {
         "data: invalid\n\n",
         'data: {"error":{"message":"fixture"}}\n\n',
         'data: {"choices":[{"delta":{"content":3}}]}\n\n',
-      ].map((body) => {
+      ].map(body => {
         const endpointUrl = listen(() => sse(body));
         return expect(
           collect(
@@ -414,7 +384,7 @@ describe("Real configured inference HTTP transport", () => {
   });
 
   it("uses real provider embeddings with requested dimensions and model identity", async () => {
-    const endpointUrl = listen(async (request) => {
+    const endpointUrl = listen(async request => {
       expect(new URL(request.url).pathname).toBe("/v1/embeddings");
       expect(await request.json()).toEqual({
         model: "actual-embedding-model",
@@ -433,16 +403,12 @@ describe("Real configured inference HTTP transport", () => {
 
   it("reports unsupported or invalid embeddings without a synthetic fallback", async () => {
     const unsupported = listen(() => json({ error: "unsupported" }, 404));
-    await expect(
-      new UnifiedInferenceEngine("fixture", { endpointUrl: unsupported }).embed(
-        "text",
-      ),
-    ).rejects.toThrow("HTTP 404");
+    await expect(new UnifiedInferenceEngine("fixture", { endpointUrl: unsupported }).embed("text")).rejects.toThrow(
+      "HTTP 404",
+    );
     await Promise.all(
-      [[], [null, 0, 0], [1e99, 0, 0], [1, 2]].map((vector) => {
-        const endpointUrl = listen(() =>
-          json({ data: [{ embedding: vector }] }),
-        );
+      [[], [null, 0, 0], [1e99, 0, 0], [1, 2]].map(vector => {
+        const endpointUrl = listen(() => json({ data: [{ embedding: vector }] }));
         return expect(
           new UnifiedInferenceEngine("fixture", { endpointUrl }).embed("text", {
             dimensions: 3,

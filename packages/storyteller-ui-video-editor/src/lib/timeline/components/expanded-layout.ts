@@ -14,12 +14,12 @@ interface PropertyGroupDefinition {
 
 const PROPERTY_GROUPS: PropertyGroupDefinition[] = [
   {
-    matchesPath: (path) => path.startsWith("transform.") || path === "opacity",
+    matchesPath: path => path.startsWith("transform.") || path === "opacity",
   },
-  { matchesPath: (path) => path === "volume" || path === "color" },
-  { matchesPath: (path) => path.startsWith("background.") },
-  { matchesPath: (path) => path.startsWith("params.") },
-  { matchesPath: (path) => path.startsWith("effects.") },
+  { matchesPath: path => path === "volume" || path === "color" },
+  { matchesPath: path => path.startsWith("background.") },
+  { matchesPath: path => path.startsWith("params.") },
+  { matchesPath: path => path.startsWith("effects.") },
 ];
 
 const PROPERTY_LABELS: Partial<Record<string, string>> = {
@@ -49,19 +49,15 @@ export function getPropertyLabel(path: AnimationPath): string {
   return path;
 }
 
-export function getExpandedRows({
-  animations,
-}: {
-  animations: ElementAnimations | undefined;
-}): ExpandedRow[] {
+export function getExpandedRows({ animations }: { animations: ElementAnimations | undefined }): ExpandedRow[] {
   const keyframes = getElementKeyframes({ animations });
-  const propertyPaths = [...new Set(keyframes.map((kf) => kf.propertyPath))];
+  const propertyPaths = [...new Set(keyframes.map(kf => kf.propertyPath))];
   if (propertyPaths.length === 0) return [];
 
   const rows: ExpandedRow[] = [];
 
   for (const group of PROPERTY_GROUPS) {
-    const groupPaths = propertyPaths.filter((path) => group.matchesPath(path));
+    const groupPaths = propertyPaths.filter(path => group.matchesPath(path));
     for (const path of groupPaths) {
       rows.push({ propertyPath: path, label: getPropertyLabel(path) });
     }

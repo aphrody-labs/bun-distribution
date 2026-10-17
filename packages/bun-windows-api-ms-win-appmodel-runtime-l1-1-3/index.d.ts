@@ -3,15 +3,38 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-appmodel-runtime-l1-1-3.dll!GetCurrentPackageInfo2 */
-  GetCurrentPackageInfo2(flags: number, packagePathType: number, bufferLength: Win32Pointer, buffer: Win32Pointer, count: Win32Pointer): number;
+  GetCurrentPackageInfo2(
+    flags: number,
+    packagePathType: number,
+    bufferLength: Win32Pointer,
+    buffer: Win32Pointer,
+    count: Win32Pointer,
+  ): number;
   /** api-ms-win-appmodel-runtime-l1-1-3.dll!GetCurrentPackagePath2 */
   GetCurrentPackagePath2(packagePathType: number, pathLength: Win32Pointer, path: string | Win32Pointer): number;
   /** api-ms-win-appmodel-runtime-l1-1-3.dll!GetPackageInfo2 */
-  GetPackageInfo2(packageInfoReference: Win32Pointer, flags: number, packagePathType: number, bufferLength: Win32Pointer, buffer: Win32Pointer, count: Win32Pointer): number;
+  GetPackageInfo2(
+    packageInfoReference: Win32Pointer,
+    flags: number,
+    packagePathType: number,
+    bufferLength: Win32Pointer,
+    buffer: Win32Pointer,
+    count: Win32Pointer,
+  ): number;
   /** api-ms-win-appmodel-runtime-l1-1-3.dll!GetPackagePathByFullName2 */
-  GetPackagePathByFullName2(packageFullName: string | Win32Pointer, packagePathType: number, pathLength: Win32Pointer, path: string | Win32Pointer): number;
+  GetPackagePathByFullName2(
+    packageFullName: string | Win32Pointer,
+    packagePathType: number,
+    pathLength: Win32Pointer,
+    path: string | Win32Pointer,
+  ): number;
   /** api-ms-win-appmodel-runtime-l1-1-3.dll!GetStagedPackagePathByFullName2 */
-  GetStagedPackagePathByFullName2(packageFullName: string | Win32Pointer, packagePathType: number, pathLength: Win32Pointer, path: string | Win32Pointer): number;
+  GetStagedPackagePathByFullName2(
+    packageFullName: string | Win32Pointer,
+    packagePathType: number,
+    pathLength: Win32Pointer,
+    path: string | Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

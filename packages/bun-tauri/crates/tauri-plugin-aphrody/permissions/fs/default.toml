@@ -28,8 +28,4 @@ of the Tauri application by default.
 - On Windows the access to webview data folder `$APPLOCALDATA/EBWebView` is denied.
 - On Linux the access to webview data paths inside `$APPLOCALDATA` are denied.
 """
-permissions = [
-  "create-app-specific-dirs",
-  "read-app-specific-dirs-recursive",
-  "deny-default",
-]
+permissions = ["create-app-specific-dirs", "read-app-specific-dirs-recursive", "deny-default"]

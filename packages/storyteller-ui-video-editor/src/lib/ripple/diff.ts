@@ -28,24 +28,10 @@ export function computeRippleAdjustments({
   beforeTracks: SceneTracks;
   afterTracks: SceneTracks;
 }): RippleAdjustment[] {
-  const beforeTrackList = [
-    ...beforeTracks.overlay,
-    beforeTracks.main,
-    ...beforeTracks.audio,
-  ];
-  const afterTrackList = [
-    ...afterTracks.overlay,
-    afterTracks.main,
-    ...afterTracks.audio,
-  ];
-  const afterTracksById = new Map(
-    afterTrackList.map((track) => [track.id, track]),
-  );
-  const allAfterElementIds = new Set(
-    afterTrackList.flatMap((track) =>
-      track.elements.map((element) => element.id),
-    ),
-  );
+  const beforeTrackList = [...beforeTracks.overlay, beforeTracks.main, ...beforeTracks.audio];
+  const afterTrackList = [...afterTracks.overlay, afterTracks.main, ...afterTracks.audio];
+  const afterTracksById = new Map(afterTrackList.map(track => [track.id, track]));
+  const allAfterElementIds = new Set(afterTrackList.flatMap(track => track.elements.map(element => element.id)));
 
   return beforeTrackList.flatMap((beforeTrack): RippleAdjustment[] =>
     computeTrackRippleAdjustments({
@@ -83,13 +69,9 @@ function computeTrackRippleAdjustments({
   return buildAdjustments({ trackId, intervals: freedIntervals });
 }
 
-function buildElementSpanMap({
-  elements,
-}: {
-  elements: TimelineElement[];
-}): Map<string, ElementSpan> {
+function buildElementSpanMap({ elements }: { elements: TimelineElement[] }): Map<string, ElementSpan> {
   return new Map(
-    elements.map((element) => [
+    elements.map(element => [
       element.id,
       {
         id: element.id,
@@ -156,13 +138,7 @@ function collectTrackIntervals({
   };
 }
 
-function buildAdjustments({
-  trackId,
-  intervals,
-}: {
-  trackId: string;
-  intervals: Interval[];
-}): RippleAdjustment[] {
+function buildAdjustments({ trackId, intervals }: { trackId: string; intervals: Interval[] }): RippleAdjustment[] {
   return intervals.flatMap((interval): RippleAdjustment[] => {
     const shiftAmount = interval.endTime - interval.startTime;
     if (shiftAmount <= 0) {
@@ -193,7 +169,7 @@ function subtractIntervalSets({
     intervals: overlappingIntervals,
   });
 
-  return normalizedSourceIntervals.flatMap((sourceInterval) =>
+  return normalizedSourceIntervals.flatMap(sourceInterval =>
     subtractSingleInterval({
       sourceInterval,
       overlappingIntervals: normalizedOverlappingIntervals,
@@ -201,11 +177,7 @@ function subtractIntervalSets({
   );
 }
 
-function normalizeIntervals({
-  intervals,
-}: {
-  intervals: Interval[];
-}): Interval[] {
+function normalizeIntervals({ intervals }: { intervals: Interval[] }): Interval[] {
   const validIntervals: Interval[] = [];
   for (const interval of intervals) {
     pushInterval({
@@ -216,8 +188,7 @@ function normalizeIntervals({
   }
 
   const sortedIntervals = validIntervals.sort(
-    (leftInterval, rightInterval) =>
-      leftInterval.startTime - rightInterval.startTime,
+    (leftInterval, rightInterval) => leftInterval.startTime - rightInterval.startTime,
   );
 
   if (sortedIntervals.length === 0) {
@@ -228,10 +199,7 @@ function normalizeIntervals({
   for (const interval of sortedIntervals.slice(1)) {
     const previousInterval = mergedIntervals[mergedIntervals.length - 1];
     if (interval.startTime <= previousInterval.endTime) {
-      previousInterval.endTime = Math.max(
-        previousInterval.endTime,
-        interval.endTime,
-      );
+      previousInterval.endTime = Math.max(previousInterval.endTime, interval.endTime);
       continue;
     }
 
@@ -251,7 +219,7 @@ function subtractSingleInterval({
   let remainingIntervals: Interval[] = [{ ...sourceInterval }];
 
   for (const overlappingInterval of overlappingIntervals) {
-    remainingIntervals = remainingIntervals.flatMap((remainingInterval) => {
+    remainingIntervals = remainingIntervals.flatMap(remainingInterval => {
       if (
         overlappingInterval.endTime <= remainingInterval.startTime ||
         overlappingInterval.startTime >= remainingInterval.endTime

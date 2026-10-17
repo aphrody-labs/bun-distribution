@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  CheckIcon,
-  CircleAlertIcon,
-  CopyIcon,
-  LoaderCircleIcon,
-  WandSparklesIcon,
-  XIcon,
-} from "lucide-react";
+import { CheckIcon, CircleAlertIcon, CopyIcon, LoaderCircleIcon, WandSparklesIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { twMerge } from "tailwind-merge";
 
@@ -53,12 +46,7 @@ export const VFXResultCard = ({
     >
       <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black ring-1 ring-white/10">
         {data.status === "complete" && data.outputUrl ? (
-          <video
-            src={data.outputUrl}
-            controls
-            playsInline
-            className="h-full w-full object-contain"
-          />
+          <video src={data.outputUrl} controls playsInline className="h-full w-full object-contain" />
         ) : data.status === "pending" ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-white/70">
             <LoaderCircleIcon className="h-8 w-8 animate-spin" />
@@ -67,9 +55,7 @@ export const VFXResultCard = ({
         ) : data.status === "failed" ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-4 text-center text-red-300">
             <CircleAlertIcon className="h-8 w-8" />
-            <span className="text-sm">
-              {data.failureReason || "Generation failed"}
-            </span>
+            <span className="text-sm">{data.failureReason || "Generation failed"}</span>
             {onDismiss && (
               <button
                 onClick={onDismiss}
@@ -89,13 +75,9 @@ export const VFXResultCard = ({
       </div>
 
       <aside className="flex min-w-0 flex-col gap-2">
-        {data.source && (
-          <SidePanelMedia label="Source" url={data.source.url} isVideo />
-        )}
+        {data.source && <SidePanelMedia label="Source" url={data.source.url} isVideo />}
         {data.mask && <SidePanelMedia label="Alpha" url={data.mask.url} />}
-        {data.reference && (
-          <SidePanelMedia label="Reference" url={data.reference.url} />
-        )}
+        {data.reference && <SidePanelMedia label="Reference" url={data.reference.url} />}
         {data.prompt && data.prompt.trim().length > 0 && (
           <div
             className={twMerge(
@@ -156,10 +138,7 @@ const CopyPromptButton = ({ text }: CopyPromptButtonProps) => {
       onClick={handleCopy}
       className="flex items-center gap-1 text-[10px] font-medium normal-case tracking-normal text-white/60 transition-colors hover:text-white"
     >
-      <DynamicIcon
-        icon={copied ? CheckIcon : CopyIcon}
-        className="h-2.5 w-2.5"
-      />
+      <DynamicIcon icon={copied ? CheckIcon : CopyIcon} className="h-2.5 w-2.5" />
       <span>{copied ? "Copied!" : "Copy"}</span>
     </button>
   );
@@ -174,14 +153,7 @@ interface SidePanelMediaProps {
 const SidePanelMedia = ({ label, url, isVideo }: SidePanelMediaProps) => (
   <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black/40 ring-1 ring-white/10">
     {isVideo ? (
-      <video
-        src={url}
-        muted
-        loop
-        autoPlay
-        playsInline
-        className="h-full w-full object-cover"
-      />
+      <video src={url} muted loop autoPlay playsInline className="h-full w-full object-cover" />
     ) : (
       <img src={url} alt={label} className="h-full w-full object-cover" />
     )}

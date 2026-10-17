@@ -51,34 +51,24 @@ export const FolderNameDialog: React.FC<FolderNameDialogProps> = ({
       className="w-80 max-w-[90vw] [&_h2]:font-sans [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:tracking-normal [&_h2]:[font-stretch:normal]"
     >
       <div className="space-y-3">
-        {subtitle && (
-          <p className="-mt-2 text-xs text-base-fg/40">{subtitle}</p>
-        )}
+        {subtitle && <p className="-mt-2 text-xs text-base-fg/40">{subtitle}</p>}
         <input
           ref={inputRef}
           type="text"
           aria-label="Folder name"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
+          onChange={e => setValue(e.target.value)}
+          onKeyDown={e => {
             if (e.key === "Enter") submit();
           }}
           className="w-full rounded-[3px] border border-ui-panel-border bg-ui-controls/40 px-3 py-1.5 text-sm text-base-fg outline-none focus:ring-1 focus:ring-primary/50"
           autoFocus
         />
         <div className="flex justify-end gap-2">
-          <Button
-            variant="action"
-            onClick={onClose}
-            className="px-3 py-1.5 text-[11px]"
-          >
+          <Button variant="action" onClick={onClose} className="px-3 py-1.5 text-[11px]">
             Cancel
           </Button>
-          <Button
-            onClick={submit}
-            disabled={!value.trim()}
-            className="px-3 py-1.5 text-[11px]"
-          >
+          <Button onClick={submit} disabled={!value.trim()} className="px-3 py-1.5 text-[11px]">
             {confirmLabel}
           </Button>
         </div>

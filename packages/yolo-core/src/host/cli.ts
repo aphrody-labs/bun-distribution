@@ -8,13 +8,7 @@
 //   net-env [--member M] [--probe] [--facts] [--write] [--ssh-config] [--push HOST] [--file F]          network map block of <aphrody home>/private/network.env
 //   wg-client <peer> [--hub-public-key K] [--format sections|paste|conf] [--private-key-file F|--private-key-stdin] [--out F]
 import { readFileSync } from "node:fs";
-import {
-  checkCatalog,
-  composeNginx,
-  composeUnit,
-  hostRoot,
-  loadCatalog,
-} from "./index.ts";
+import { checkCatalog, composeNginx, composeUnit, hostRoot, loadCatalog } from "./index.ts";
 import { applyPlan, hostPlan, observePlan, renderPlan } from "./plan.ts";
 import { netEnvMain } from "./net-env.ts";
 import { relink, retiredLinks } from "./layout.ts";
@@ -29,15 +23,10 @@ const value = (name: string) => {
 };
 const names = () =>
   rest.filter(
-    (a, i) =>
-      !a.startsWith("--") &&
-      !rest[i - 1]?.match(
-        /^--(target|expect-tools|binary-from|binary-sha256)$/,
-      ),
+    (a, i) => !a.startsWith("--") && !rest[i - 1]?.match(/^--(target|expect-tools|binary-from|binary-sha256)$/),
   );
 if (cmd === "compose-unit" && arg) process.stdout.write(composeUnit(arg));
-else if (cmd === "compose-nginx" && arg)
-  process.stdout.write(composeNginx(readFileSync(arg, "utf8")));
+else if (cmd === "compose-nginx" && arg) process.stdout.write(composeNginx(readFileSync(arg, "utf8")));
 else if (cmd === "host-plan" || cmd === "host-apply") {
   const expect = value("expect-tools");
   try {
@@ -46,8 +35,7 @@ else if (cmd === "host-plan" || cmd === "host-apply") {
       throw new Error("--apply needs an explicit --target");
     const from = value("binary-from");
     const sha256 = value("binary-sha256");
-    if (Boolean(from) !== Boolean(sha256))
-      throw new Error("--binary-from and --binary-sha256 go together");
+    if (Boolean(from) !== Boolean(sha256)) throw new Error("--binary-from and --binary-sha256 go together");
     const plan = hostPlan(names(), {
       target: value("target"),
       expectTools: expect === undefined ? undefined : Number(expect),
@@ -61,11 +49,7 @@ else if (cmd === "host-plan" || cmd === "host-apply") {
     const observed = flag("observe") ? await observePlan(plan) : undefined;
     console.log(
       flag("json")
-        ? JSON.stringify(
-            { ...plan, observed: observed && Object.fromEntries(observed) },
-            null,
-            2,
-          )
+        ? JSON.stringify({ ...plan, observed: observed && Object.fromEntries(observed) }, null, 2)
         : renderPlan(plan, observed),
     );
     if (!flag("json"))
@@ -81,7 +65,7 @@ else if (cmd === "host-plan" || cmd === "host-apply") {
     await wgMain(cmd, rest, {
       root: hostRoot(),
       catalog: loadCatalog(),
-      compose: (unit) => composeUnit(unit),
+      compose: unit => composeUnit(unit),
     });
   } catch (error) {
     console.error(`host: ${error instanceof Error ? error.message : error}`);
@@ -95,17 +79,11 @@ else if (cmd === "host-plan" || cmd === "host-apply") {
     process.exit(1);
   }
 } else if (cmd === "relink" && arg) {
-  const links = retiredLinks(
-    process.argv.slice(3).filter((a) => !a.startsWith("--")),
-  );
-  for (const l of links)
-    console.log(`${l.path}: ${l.target} -> ${l.replacement}`);
+  const links = retiredLinks(process.argv.slice(3).filter(a => !a.startsWith("--")));
+  for (const l of links) console.log(`${l.path}: ${l.target} -> ${l.replacement}`);
   if (flag("apply")) relink(links);
-  console.log(
-    `${links.length} link(s) ${flag("apply") ? "rewritten" : "to rewrite (pass --apply)"}`,
-  );
-} else if (cmd === "list")
-  for (const u of loadCatalog().units) console.log(u.unit, u.targetHost);
+  console.log(`${links.length} link(s) ${flag("apply") ? "rewritten" : "to rewrite (pass --apply)"}`);
+} else if (cmd === "list") for (const u of loadCatalog().units) console.log(u.unit, u.targetHost);
 else if (cmd === "check") {
   const problems = checkCatalog();
   for (const p of problems) console.error(p);

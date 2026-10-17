@@ -24,21 +24,12 @@ const metadata = (value: object): Exports => ({
 const LOADERS: [RegExp, (path: string) => Promise<Exports>][] = [
   [/\.cs$/i, csharpExports],
   [/\.ps1$/i, powershellExports],
-  [
-    /\.(dll|exe|sys|efi|ocx|cpl|scr|drv|mui)$/i,
-    async (path) => metadata(parsePe(await Bun.file(path).bytes(), path)),
-  ],
-  [
-    /\.(apk|apks|aab)$/i,
-    async (path) => metadata(parseApk(await Bun.file(path).bytes(), path)),
-  ],
-  [
-    /\.(gltf|glb|obj|fbx|dae|abc|usd[acz]?|ply|stl|x3d|3ds|blend)$/i,
-    async (path) => metadata(await inspectScene(path)),
-  ],
+  [/\.(dll|exe|sys|efi|ocx|cpl|scr|drv|mui)$/i, async path => metadata(parsePe(await Bun.file(path).bytes(), path))],
+  [/\.(apk|apks|aab)$/i, async path => metadata(parseApk(await Bun.file(path).bytes(), path))],
+  [/\.(gltf|glb|obj|fbx|dae|abc|usd[acz]?|ply|stl|x3d|3ds|blend)$/i, async path => metadata(await inspectScene(path))],
   [
     /\.(png|jpe?g|webp|gif|avif|bmp|tiff?|heic|heif|ico|mp4|m4v|mkv|webm|mov|avi|wmv|flv)$/i,
-    async (path) => metadata(await inspectMedia(path)),
+    async path => metadata(await inspectMedia(path)),
   ],
 ];
 

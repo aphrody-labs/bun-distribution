@@ -1,12 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult } from "../../common/CommandStatus";
-import {
-  TaskStatus,
-  TaskType,
-  TaskModelType,
-  TaskMediaFileClass,
-  GenerationProvider,
-} from "@storyteller/api-enums";
+import { TaskStatus, TaskType, TaskModelType, TaskMediaFileClass, GenerationProvider } from "@storyteller/api-enums";
 
 interface GetTaskQueueResponse {
   tasks: TaskQueueItem[];
@@ -49,20 +43,16 @@ interface GetTaskQueueSuccess extends CommandResult {
 }
 
 export const GetTaskQueue = async (): Promise<GetTaskQueueResponse> => {
-  const result = (await invoke(
-    "get_task_queue_command",
-  )) as GetTaskQueueSuccess;
+  const result = (await invoke("get_task_queue_command")) as GetTaskQueueSuccess;
 
   const tasks = result?.payload?.tasks || [];
 
   // Convert timestamps to Date objects
-  const newTasks: TaskQueueItem[] = tasks.map((task) => {
+  const newTasks: TaskQueueItem[] = tasks.map(task => {
     const completed_item = task.completed_item;
 
     if (completed_item) {
-      completed_item.primary_media_file.created_at = new Date(
-        completed_item.primary_media_file.created_at,
-      );
+      completed_item.primary_media_file.created_at = new Date(completed_item.primary_media_file.created_at);
     }
 
     return {

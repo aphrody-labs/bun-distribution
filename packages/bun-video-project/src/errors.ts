@@ -20,12 +20,7 @@ export class VideoLibraryError extends Error {
   readonly exitCode?: number;
   readonly result?: NativeJSON;
 
-  constructor(
-    code: VideoErrorCode,
-    message: string,
-    exitCode?: number,
-    result?: NativeJSON,
-  ) {
+  constructor(code: VideoErrorCode, message: string, exitCode?: number, result?: NativeJSON) {
     super(message);
     this.name = "VideoLibraryError";
     this.code = code;

@@ -26,14 +26,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { InfoRow, Section, Divider, Tabs, TabContent } from "../Inspector";
 import { clsx } from "clsx";
 import type { Location } from "@aphrody/drive-client";
-import {
-  Button,
-  Dialog,
-  dialogManager,
-  useDialog,
-  CircleButton,
-  type UseDialogProps,
-} from "@aphrody/m3-primitives";
+import { Button, Dialog, dialogManager, useDialog, CircleButton, type UseDialogProps } from "@aphrody/m3-primitives";
 import { useLibraryMutation } from "../../../contexts/SpacedriveContext";
 import { useContextMenu } from "../../../hooks/useContextMenu";
 import LocationIcon from "@aphrody/assets/icons/Location.png";
@@ -160,9 +153,7 @@ function OverviewTab({ location }: { location: Location }) {
         <h4 className="text-label-large font-semibold text-on-surface truncate">
           {location.name || "Unnamed Location"}
         </h4>
-        <p className="text-body-small text-on-surface-variant mt-0.5">
-          Local storage
-        </p>
+        <p className="text-body-small text-on-surface-variant mt-0.5">Local storage</p>
       </div>
 
       <Divider />
@@ -173,9 +164,7 @@ function OverviewTab({ location }: { location: Location }) {
           <CircleButton
             icon={FolderOpen}
             onClick={() => {
-              const encodedPath = encodeURIComponent(
-                JSON.stringify(location.sd_path),
-              );
+              const encodedPath = encodeURIComponent(JSON.stringify(location.sd_path));
               navigate(`/explorer?path=${encodedPath}`);
             }}
             className="flex-1"
@@ -184,11 +173,7 @@ function OverviewTab({ location }: { location: Location }) {
           </CircleButton>
         )}
 
-        <CircleButton
-          icon={ArrowsClockwise}
-          onClick={reindexMenu.show}
-          title="Reindex location"
-        />
+        <CircleButton icon={ArrowsClockwise} onClick={reindexMenu.show} title="Reindex location" />
       </div>
 
       {/* Details */}
@@ -205,33 +190,16 @@ function OverviewTab({ location }: { location: Location }) {
           mono
         />
         {location.file_count != null && (
-          <InfoRow
-            label="Total files"
-            value={location.file_count?.toLocaleString() ?? "0"}
-          />
+          <InfoRow label="Total files" value={location.file_count?.toLocaleString() ?? "0"} />
         )}
         <InfoRow label="Total size" value={formatBytes(location.total_size)} />
-        <InfoRow
-          label="Scan state"
-          value={formatScanState(location.scan_state)}
-        />
-        {location.last_scan_at && (
-          <InfoRow
-            label="Last scan"
-            value={formatDate(location.last_scan_at)}
-          />
-        )}
+        <InfoRow label="Scan state" value={formatScanState(location.scan_state)} />
+        {location.last_scan_at && <InfoRow label="Last scan" value={formatDate(location.last_scan_at)} />}
       </Section>
 
       {/* Index Mode */}
       <Section title="Index mode" icon={Gear}>
-        <InfoRow
-          label="Mode"
-          value={
-            location.index_mode.charAt(0).toUpperCase() +
-            location.index_mode.slice(1)
-          }
-        />
+        <InfoRow label="Mode" value={location.index_mode.charAt(0).toUpperCase() + location.index_mode.slice(1)} />
       </Section>
     </div>
   );
@@ -241,19 +209,12 @@ function IndexingTab({ location }: { location: Location }) {
   const [indexMode, setIndexMode] = useState<"shallow" | "content" | "deep">(
     location.index_mode as "shallow" | "content" | "deep",
   );
-  const [ignoreRules, setIgnoreRules] = useState([
-    ".git",
-    "node_modules",
-    "*.tmp",
-    ".DS_Store",
-  ]);
+  const [ignoreRules, setIgnoreRules] = useState([".git", "node_modules", "*.tmp", ".DS_Store"]);
 
   return (
     <div className="no-scrollbar mask-fade-out flex flex-col space-y-5 overflow-x-hidden overflow-y-scroll pb-10 px-2 pt-2">
       <Section title="Index mode" icon={Gear}>
-        <p className="text-body-small text-on-surface-variant mb-3">
-          Controls how deeply this location is indexed
-        </p>
+        <p className="text-body-small text-on-surface-variant mb-3">Controls how deeply this location is indexed</p>
 
         <div className="space-y-2">
           <RadioOption
@@ -286,12 +247,12 @@ function IndexingTab({ location }: { location: Location }) {
         </p>
 
         <div className="space-y-1">
-          {ignoreRules.map((pattern) => (
+          {ignoreRules.map(pattern => (
             <IgnoreRule
               key={pattern}
               pattern={pattern}
               onRemove={() => {
-                setIgnoreRules(ignoreRules.filter((rule) => rule !== pattern));
+                setIgnoreRules(ignoreRules.filter(rule => rule !== pattern));
               }}
             />
           ))}
@@ -309,9 +270,7 @@ function JobsTab({ location }: { location: Location }) {
   const updateLocation = useLibraryMutation("locations.update");
   const triggerJob = useLibraryMutation("locations.triggerJob");
 
-  const updatePolicy = async (
-    updates: Partial<typeof location.job_policies>,
-  ) => {
+  const updatePolicy = async (updates: Partial<typeof location.job_policies>) => {
     await updateLocation.mutateAsync({
       id: location.id,
       name: null,
@@ -340,7 +299,7 @@ function JobsTab({ location }: { location: Location }) {
             label="Generate thumbnails"
             description="Create preview thumbnails for images and videos"
             enabled={thumbnails}
-            onToggle={(enabled) =>
+            onToggle={enabled =>
               updatePolicy({
                 thumbnail: {
                   sizes: [],
@@ -364,7 +323,7 @@ function JobsTab({ location }: { location: Location }) {
             label="Generate thumbstrips"
             description="Create video storyboard grids (5×5 grid of frames)"
             enabled={thumbstrips}
-            onToggle={(enabled) =>
+            onToggle={enabled =>
               updatePolicy({
                 thumbstrip: {
                   regenerate: false,
@@ -387,7 +346,7 @@ function JobsTab({ location }: { location: Location }) {
             label="Generate proxies"
             description="Create scrubbing proxies for videos (180p @ 15fps)"
             enabled={proxies}
-            onToggle={(enabled) =>
+            onToggle={enabled =>
               updatePolicy({
                 proxy: {
                   regenerate: false,
@@ -415,7 +374,7 @@ function JobsTab({ location }: { location: Location }) {
             label="Extract Text (OCR)"
             description="Scan images for text content"
             enabled={ocr}
-            onToggle={(enabled) =>
+            onToggle={enabled =>
               updatePolicy({
                 ocr: {
                   languages: ["eng"],
@@ -439,7 +398,7 @@ function JobsTab({ location }: { location: Location }) {
             label="Speech to text"
             description="Transcribe audio and video files"
             enabled={speech}
-            onToggle={(enabled) =>
+            onToggle={enabled =>
               updatePolicy({
                 speech_to_text: {
                   language: null,
@@ -476,24 +435,17 @@ function ActivityTab({ location: _location }: { location: Location }) {
 
   return (
     <div className="no-scrollbar mask-fade-out flex flex-col space-y-4 overflow-x-hidden overflow-y-scroll pb-10 px-2 pt-2">
-      <p className="text-body-small text-on-surface-variant">
-        Recent indexing activity and job history
-      </p>
+      <p className="text-body-small text-on-surface-variant">Recent indexing activity and job history</p>
 
       <div className="space-y-0.5">
-        {activity.map((item) => (
+        {activity.map(item => (
           <div
             key={item.action}
             className="flex items-start gap-3 p-2 hover:bg-surface-container/40 rounded-small transition-colors"
           >
-            <ClockCounterClockwise
-              className="size-4 text-on-surface-variant shrink-0 mt-0.5"
-              weight="bold"
-            />
+            <ClockCounterClockwise className="size-4 text-on-surface-variant shrink-0 mt-0.5" weight="bold" />
             <div className="flex-1 min-w-0">
-              <div className="text-body-small text-on-surface">
-                {item.action}
-              </div>
+              <div className="text-body-small text-on-surface">{item.action}</div>
               <div className="text-[11px] text-on-surface-variant mt-0.5">
                 {item.time}
                 {item.files > 0 && ` · ${item.files.toLocaleString()} files`}
@@ -527,12 +479,10 @@ function DevicesTab({ location: _location }: { location: Location }) {
 
   return (
     <div className="no-scrollbar mask-fade-out flex flex-col space-y-4 overflow-x-hidden overflow-y-scroll pb-10 px-2 pt-2">
-      <p className="text-body-small text-on-surface-variant">
-        Devices that have access to this location
-      </p>
+      <p className="text-body-small text-on-surface-variant">Devices that have access to this location</p>
 
       <div className="space-y-2">
-        {devices.map((device) => (
+        {devices.map(device => (
           <div
             key={device.name}
             className="p-2.5 bg-surface-container/40 rounded-small border border-outline-variant/50"
@@ -540,21 +490,16 @@ function DevicesTab({ location: _location }: { location: Location }) {
             <div className="flex items-center gap-2">
               <HardDrive className="size-4 text-primary" weight="bold" />
               <div className="flex-1 min-w-0">
-                <div className="text-label-medium font-medium text-on-surface">
-                  {device.name}
-                </div>
+                <div className="text-label-medium font-medium text-on-surface">{device.name}</div>
                 <div className="text-[11px] text-on-surface-variant flex items-center gap-1">
                   <div
                     className={clsx(
                       "size-1.5 rounded-full",
-                      device.status === "online"
-                        ? "bg-success"
-                        : "bg-on-surface-variant",
+                      device.status === "online" ? "bg-success" : "bg-on-surface-variant",
                     )}
                   />
                   <span>
-                    {device.status === "online" ? "Online" : "Offline"} ·{" "}
-                    {device.lastSeen}
+                    {device.status === "online" ? "Online" : "Offline"} · {device.lastSeen}
                   </span>
                 </div>
               </div>
@@ -574,19 +519,11 @@ interface DeleteLocationDialogProps extends UseDialogProps {
 function useDeleteLocationDialog() {
   return (locationId: string, locationName: string) =>
     dialogManager.create((props: UseDialogProps) => (
-      <DeleteLocationDialog
-        {...props}
-        locationId={locationId}
-        locationName={locationName}
-      />
+      <DeleteLocationDialog {...props} locationId={locationId} locationName={locationName} />
     ));
 }
 
-function DeleteLocationDialog({
-  locationId,
-  locationName,
-  ...props
-}: DeleteLocationDialogProps) {
+function DeleteLocationDialog({ locationId, locationName, ...props }: DeleteLocationDialogProps) {
   const dialog = useDialog(props);
   const form = useForm();
   const queryClient = useQueryClient();
@@ -595,7 +532,7 @@ function DeleteLocationDialog({
       // Manually invalidate the locations query until the backend emits ResourceDeleted events
       // This forces a refetch so the location disappears from the sidebar immediately
       queryClient.invalidateQueries({
-        predicate: (query) => {
+        predicate: query => {
           const key = query.queryKey;
           return Array.isArray(key) && key[0] === "query:locations.list";
         },
@@ -639,20 +576,9 @@ function MoreTab({ location }: { location: Location }) {
   return (
     <div className="no-scrollbar mask-fade-out flex flex-col space-y-5 overflow-x-hidden overflow-y-scroll pb-10 px-2 pt-2">
       <Section title="Advanced" icon={Gear}>
-        <InfoRow
-          label="Location ID"
-          value={String(location.id).slice(0, 8) + "..."}
-          mono
-        />
-        {location.created_at && (
-          <InfoRow label="Created" value={formatDate(location.created_at)} />
-        )}
-        {location.last_scan_at && (
-          <InfoRow
-            label="Last scan"
-            value={formatDate(location.last_scan_at)}
-          />
-        )}
+        <InfoRow label="Location ID" value={String(location.id).slice(0, 8) + "..."} mono />
+        {location.created_at && <InfoRow label="Created" value={formatDate(location.created_at)} />}
+        {location.last_scan_at && <InfoRow label="Last scan" value={formatDate(location.last_scan_at)} />}
       </Section>
 
       <Section title="Danger zone" icon={Trash}>
@@ -683,13 +609,7 @@ interface RadioOptionProps {
   onChange: () => void;
 }
 
-function RadioOption({
-  value: _value,
-  label,
-  description,
-  checked,
-  onChange,
-}: RadioOptionProps) {
+function RadioOption({ value: _value, label, description, checked, onChange }: RadioOptionProps) {
   return (
     <button
       aria-label={label}
@@ -711,12 +631,8 @@ function RadioOption({
           {checked && <div className="size-2 rounded-full bg-primary" />}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-label-medium font-medium text-on-surface">
-            {label}
-          </div>
-          <div className="text-[11px] text-on-surface-variant mt-0.5">
-            {description}
-          </div>
+          <div className="text-label-medium font-medium text-on-surface">{label}</div>
+          <div className="text-[11px] text-on-surface-variant mt-0.5">{description}</div>
         </div>
       </div>
     </button>
@@ -731,9 +647,7 @@ interface IgnoreRuleProps {
 function IgnoreRule({ pattern, onRemove }: IgnoreRuleProps) {
   return (
     <div className="flex items-center gap-2 p-2 bg-surface-container/40 rounded-small border border-outline-variant/50 group">
-      <code className="flex-1 text-body-small text-on-surface font-mono">
-        {pattern}
-      </code>
+      <code className="flex-1 text-body-small text-on-surface font-mono">{pattern}</code>
       <button
         onClick={onRemove}
         className="size-5 rounded-extra-small flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-error/20 transition-all"
@@ -768,15 +682,9 @@ function JobConfigRow({
     <div className="w-full p-3 bg-surface-container/40 rounded-small border border-outline-variant/50">
       {/* Header with toggle and icon */}
       <div className="space-y-1.5">
-        <button
-          onClick={() => onToggle(!enabled)}
-          className="flex items-center gap-2.5 w-full text-left group"
-        >
+        <button onClick={() => onToggle(!enabled)} className="flex items-center gap-2.5 w-full text-left group">
           {enabled ? (
-            <ToggleRight
-              className="size-5 text-primary shrink-0"
-              weight="fill"
-            />
+            <ToggleRight className="size-5 text-primary shrink-0" weight="fill" />
           ) : (
             <ToggleLeft
               className="size-5 text-on-surface-variant shrink-0 group-hover:text-on-surface transition-colors"
@@ -784,24 +692,15 @@ function JobConfigRow({
             />
           )}
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            {Icon && (
-              <Icon
-                className="size-4 text-on-surface-variant shrink-0"
-                weight="bold"
-              />
-            )}
+            {Icon && <Icon className="size-4 text-on-surface-variant shrink-0" weight="bold" />}
             <div className="flex-1 min-w-0">
-              <div className="text-label-medium font-medium text-on-surface">
-                {label}
-              </div>
+              <div className="text-label-medium font-medium text-on-surface">{label}</div>
             </div>
           </div>
         </button>
 
         {/* Description */}
-        <p className="text-[11px] text-on-surface-variant leading-relaxed pl-7">
-          {description}
-        </p>
+        <p className="text-[11px] text-on-surface-variant leading-relaxed pl-7">{description}</p>
       </div>
 
       {/* Run button */}

@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** iphlpapi.dll!AddIPAddress */
-  AddIPAddress(Address: number, IpMask: number, IfIndex: number, NTEContext: Win32Pointer, NTEInstance: Win32Pointer): number;
+  AddIPAddress(
+    Address: number,
+    IpMask: number,
+    IfIndex: number,
+    NTEContext: Win32Pointer,
+    NTEInstance: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!CancelIPChangeNotify */
   CancelIPChangeNotify(notifyOverlapped: Win32Pointer): number;
   /** iphlpapi.dll!CancelIfTimestampConfigChange */
@@ -23,17 +29,33 @@ interface Functions {
   /** iphlpapi.dll!ConvertInterfaceIndexToLuid */
   ConvertInterfaceIndexToLuid(InterfaceIndex: number, InterfaceLuid: Win32Pointer): number;
   /** iphlpapi.dll!ConvertInterfaceLuidToAlias */
-  ConvertInterfaceLuidToAlias(InterfaceLuid: Win32Pointer, InterfaceAlias: string | Win32Pointer, Length: number | bigint): number;
+  ConvertInterfaceLuidToAlias(
+    InterfaceLuid: Win32Pointer,
+    InterfaceAlias: string | Win32Pointer,
+    Length: number | bigint,
+  ): number;
   /** iphlpapi.dll!ConvertInterfaceLuidToGuid */
   ConvertInterfaceLuidToGuid(InterfaceLuid: Win32Pointer, InterfaceGuid: Win32Pointer): number;
   /** iphlpapi.dll!ConvertInterfaceLuidToIndex */
   ConvertInterfaceLuidToIndex(InterfaceLuid: Win32Pointer, InterfaceIndex: Win32Pointer): number;
   /** iphlpapi.dll!ConvertInterfaceLuidToNameA */
-  ConvertInterfaceLuidToNameA(InterfaceLuid: Win32Pointer, InterfaceName: string | Win32Pointer, Length: number | bigint): number;
+  ConvertInterfaceLuidToNameA(
+    InterfaceLuid: Win32Pointer,
+    InterfaceName: string | Win32Pointer,
+    Length: number | bigint,
+  ): number;
   /** iphlpapi.dll!ConvertInterfaceLuidToNameW */
-  ConvertInterfaceLuidToNameW(InterfaceLuid: Win32Pointer, InterfaceName: string | Win32Pointer, Length: number | bigint): number;
+  ConvertInterfaceLuidToNameW(
+    InterfaceLuid: Win32Pointer,
+    InterfaceName: string | Win32Pointer,
+    Length: number | bigint,
+  ): number;
   /** iphlpapi.dll!ConvertInterfaceLuidToNameW */
-  ConvertInterfaceLuidToName(InterfaceLuid: Win32Pointer, InterfaceName: string | Win32Pointer, Length: number | bigint): number;
+  ConvertInterfaceLuidToName(
+    InterfaceLuid: Win32Pointer,
+    InterfaceName: string | Win32Pointer,
+    Length: number | bigint,
+  ): number;
   /** iphlpapi.dll!ConvertInterfaceNameToLuidA */
   ConvertInterfaceNameToLuidA(InterfaceName: string | Win32Pointer, InterfaceLuid: Win32Pointer): number;
   /** iphlpapi.dll!ConvertInterfaceNameToLuidW */
@@ -63,7 +85,15 @@ interface Functions {
   /** iphlpapi.dll!CreateProxyArpEntry */
   CreateProxyArpEntry(dwAddress: number, dwMask: number, dwIfIndex: number): number;
   /** iphlpapi.dll!CreateSortedAddressPairs */
-  CreateSortedAddressPairs(SourceAddressList: Win32Pointer, SourceAddressCount: number, DestinationAddressList: Win32Pointer, DestinationAddressCount: number, AddressSortOptions: number, SortedAddressPairList: Win32Pointer, SortedAddressPairCount: Win32Pointer): number;
+  CreateSortedAddressPairs(
+    SourceAddressList: Win32Pointer,
+    SourceAddressCount: number,
+    DestinationAddressList: Win32Pointer,
+    DestinationAddressCount: number,
+    AddressSortOptions: number,
+    SortedAddressPairList: Win32Pointer,
+    SortedAddressPairCount: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!CreateUnicastIpAddressEntry */
   CreateUnicastIpAddressEntry(Row: Win32Pointer): number;
   /** iphlpapi.dll!DeleteAnycastIpAddressEntry */
@@ -109,7 +139,13 @@ interface Functions {
   /** iphlpapi.dll!GetAdapterOrderMap */
   GetAdapterOrderMap(): number | null;
   /** iphlpapi.dll!GetAdaptersAddresses */
-  GetAdaptersAddresses(Family: number, Flags: number, Reserved: Win32Pointer, AdapterAddresses: Win32Pointer, SizePointer: Win32Pointer): number;
+  GetAdaptersAddresses(
+    Family: number,
+    Flags: number,
+    Reserved: Win32Pointer,
+    AdapterAddresses: Win32Pointer,
+    SizePointer: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!GetAdaptersInfo */
   GetAdaptersInfo(AdapterInfo: Win32Pointer, SizePointer: Win32Pointer): number;
   /** iphlpapi.dll!GetAnycastIpAddressEntry */
@@ -123,7 +159,15 @@ interface Functions {
   /** iphlpapi.dll!GetBestRoute */
   GetBestRoute(dwDestAddr: number, dwSourceAddr: number, pBestRoute: Win32Pointer): number;
   /** iphlpapi.dll!GetBestRoute2 */
-  GetBestRoute2(InterfaceLuid: Win32Pointer, InterfaceIndex: number, SourceAddress: Win32Pointer, DestinationAddress: Win32Pointer, AddressSortOptions: number, BestRoute: Win32Pointer, BestSourceAddress: Win32Pointer): number;
+  GetBestRoute2(
+    InterfaceLuid: Win32Pointer,
+    InterfaceIndex: number,
+    SourceAddress: Win32Pointer,
+    DestinationAddress: Win32Pointer,
+    AddressSortOptions: number,
+    BestRoute: Win32Pointer,
+    BestSourceAddress: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!GetCurrentThreadCompartmentId */
   GetCurrentThreadCompartmentId(): number;
   /** iphlpapi.dll!GetCurrentThreadCompartmentScope */
@@ -133,9 +177,23 @@ interface Functions {
   /** iphlpapi.dll!GetDnsSettings */
   GetDnsSettings(Settings: Win32Pointer): number;
   /** iphlpapi.dll!GetExtendedTcpTable */
-  GetExtendedTcpTable(pTcpTable: Win32Pointer, pdwSize: Win32Pointer, bOrder: number, ulAf: number, TableClass: number, Reserved: number): number;
+  GetExtendedTcpTable(
+    pTcpTable: Win32Pointer,
+    pdwSize: Win32Pointer,
+    bOrder: number,
+    ulAf: number,
+    TableClass: number,
+    Reserved: number,
+  ): number;
   /** iphlpapi.dll!GetExtendedUdpTable */
-  GetExtendedUdpTable(pUdpTable: Win32Pointer, pdwSize: Win32Pointer, bOrder: number, ulAf: number, TableClass: number, Reserved: number): number;
+  GetExtendedUdpTable(
+    pUdpTable: Win32Pointer,
+    pdwSize: Win32Pointer,
+    bOrder: number,
+    ulAf: number,
+    TableClass: number,
+    Reserved: number,
+  ): number;
   /** iphlpapi.dll!GetFlVirtualInterface */
   GetFlVirtualInterface(Row: Win32Pointer): number;
   /** iphlpapi.dll!GetFlVirtualInterfaceTable */
@@ -195,7 +253,11 @@ interface Functions {
   /** iphlpapi.dll!GetIpNetTable2 */
   GetIpNetTable2(Family: number, Table: Win32Pointer): number;
   /** iphlpapi.dll!GetIpNetworkConnectionBandwidthEstimates */
-  GetIpNetworkConnectionBandwidthEstimates(InterfaceIndex: number, AddressFamily: number, BandwidthEstimates: Win32Pointer): number;
+  GetIpNetworkConnectionBandwidthEstimates(
+    InterfaceIndex: number,
+    AddressFamily: number,
+    BandwidthEstimates: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!GetIpPathEntry */
   GetIpPathEntry(Row: Win32Pointer): number;
   /** iphlpapi.dll!GetIpPathTable */
@@ -215,27 +277,83 @@ interface Functions {
   /** iphlpapi.dll!GetNetworkConnectivityHintForInterface */
   GetNetworkConnectivityHintForInterface(InterfaceIndex: number, ConnectivityHint: Win32Pointer): number;
   /** iphlpapi.dll!GetNetworkInformation */
-  GetNetworkInformation(NetworkGuid: Win32Pointer, CompartmentId: Win32Pointer, SiteId: Win32Pointer, NetworkName: string | Win32Pointer, Length: number): number;
+  GetNetworkInformation(
+    NetworkGuid: Win32Pointer,
+    CompartmentId: Win32Pointer,
+    SiteId: Win32Pointer,
+    NetworkName: string | Win32Pointer,
+    Length: number,
+  ): number;
   /** iphlpapi.dll!GetNetworkParams */
   GetNetworkParams(pFixedInfo: Win32Pointer, pOutBufLen: Win32Pointer): number;
   /** iphlpapi.dll!GetNumberOfInterfaces */
   GetNumberOfInterfaces(pdwNumIf: Win32Pointer): number;
   /** iphlpapi.dll!GetOwnerModuleFromPidAndInfo */
-  GetOwnerModuleFromPidAndInfo(ulPid: number, pInfo: Win32Pointer, Class: number, pBuffer: Win32Pointer, pdwSize: Win32Pointer): number;
+  GetOwnerModuleFromPidAndInfo(
+    ulPid: number,
+    pInfo: Win32Pointer,
+    Class: number,
+    pBuffer: Win32Pointer,
+    pdwSize: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!GetOwnerModuleFromTcp6Entry */
-  GetOwnerModuleFromTcp6Entry(pTcpEntry: Win32Pointer, Class: number, pBuffer: Win32Pointer, pdwSize: Win32Pointer): number;
+  GetOwnerModuleFromTcp6Entry(
+    pTcpEntry: Win32Pointer,
+    Class: number,
+    pBuffer: Win32Pointer,
+    pdwSize: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!GetOwnerModuleFromTcpEntry */
-  GetOwnerModuleFromTcpEntry(pTcpEntry: Win32Pointer, Class: number, pBuffer: Win32Pointer, pdwSize: Win32Pointer): number;
+  GetOwnerModuleFromTcpEntry(
+    pTcpEntry: Win32Pointer,
+    Class: number,
+    pBuffer: Win32Pointer,
+    pdwSize: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!GetOwnerModuleFromUdp6Entry */
-  GetOwnerModuleFromUdp6Entry(pUdpEntry: Win32Pointer, Class: number, pBuffer: Win32Pointer, pdwSize: Win32Pointer): number;
+  GetOwnerModuleFromUdp6Entry(
+    pUdpEntry: Win32Pointer,
+    Class: number,
+    pBuffer: Win32Pointer,
+    pdwSize: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!GetOwnerModuleFromUdpEntry */
-  GetOwnerModuleFromUdpEntry(pUdpEntry: Win32Pointer, Class: number, pBuffer: Win32Pointer, pdwSize: Win32Pointer): number;
+  GetOwnerModuleFromUdpEntry(
+    pUdpEntry: Win32Pointer,
+    Class: number,
+    pBuffer: Win32Pointer,
+    pdwSize: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!GetPerAdapterInfo */
   GetPerAdapterInfo(IfIndex: number, pPerAdapterInfo: Win32Pointer, pOutBufLen: Win32Pointer): number;
   /** iphlpapi.dll!GetPerTcp6ConnectionEStats */
-  GetPerTcp6ConnectionEStats(Row: Win32Pointer, EstatsType: number, Rw: Win32Pointer, RwVersion: number, RwSize: number, Ros: Win32Pointer, RosVersion: number, RosSize: number, Rod: Win32Pointer, RodVersion: number, RodSize: number): number;
+  GetPerTcp6ConnectionEStats(
+    Row: Win32Pointer,
+    EstatsType: number,
+    Rw: Win32Pointer,
+    RwVersion: number,
+    RwSize: number,
+    Ros: Win32Pointer,
+    RosVersion: number,
+    RosSize: number,
+    Rod: Win32Pointer,
+    RodVersion: number,
+    RodSize: number,
+  ): number;
   /** iphlpapi.dll!GetPerTcpConnectionEStats */
-  GetPerTcpConnectionEStats(Row: Win32Pointer, EstatsType: number, Rw: Win32Pointer, RwVersion: number, RwSize: number, Ros: Win32Pointer, RosVersion: number, RosSize: number, Rod: Win32Pointer, RodVersion: number, RodSize: number): number;
+  GetPerTcpConnectionEStats(
+    Row: Win32Pointer,
+    EstatsType: number,
+    Rw: Win32Pointer,
+    RwVersion: number,
+    RwSize: number,
+    Ros: Win32Pointer,
+    RosVersion: number,
+    RosSize: number,
+    Rod: Win32Pointer,
+    RodVersion: number,
+    RodSize: number,
+  ): number;
   /** iphlpapi.dll!GetRTTAndHopCount */
   GetRTTAndHopCount(DestIpAddress: number, HopCount: Win32Pointer, MaxHops: number, RTT: Win32Pointer): number;
   /** iphlpapi.dll!GetSessionCompartmentId */
@@ -277,7 +395,20 @@ interface Functions {
   /** iphlpapi.dll!Icmp6ParseReplies */
   Icmp6ParseReplies(ReplyBuffer: Win32Pointer, ReplySize: number): number;
   /** iphlpapi.dll!Icmp6SendEcho2 */
-  Icmp6SendEcho2(IcmpHandle: Win32Pointer, Event: Win32Pointer, ApcRoutine: Win32Callback, ApcContext: Win32Pointer, SourceAddress: Win32Pointer, DestinationAddress: Win32Pointer, RequestData: Win32Pointer, RequestSize: number, RequestOptions: Win32Pointer, ReplyBuffer: Win32Pointer, ReplySize: number, Timeout: number): number;
+  Icmp6SendEcho2(
+    IcmpHandle: Win32Pointer,
+    Event: Win32Pointer,
+    ApcRoutine: Win32Callback,
+    ApcContext: Win32Pointer,
+    SourceAddress: Win32Pointer,
+    DestinationAddress: Win32Pointer,
+    RequestData: Win32Pointer,
+    RequestSize: number,
+    RequestOptions: Win32Pointer,
+    ReplyBuffer: Win32Pointer,
+    ReplySize: number,
+    Timeout: number,
+  ): number;
   /** iphlpapi.dll!IcmpCloseHandle */
   IcmpCloseHandle(IcmpHandle: Win32Pointer): number;
   /** iphlpapi.dll!IcmpCreateFile */
@@ -285,11 +416,45 @@ interface Functions {
   /** iphlpapi.dll!IcmpParseReplies */
   IcmpParseReplies(ReplyBuffer: Win32Pointer, ReplySize: number): number;
   /** iphlpapi.dll!IcmpSendEcho */
-  IcmpSendEcho(IcmpHandle: Win32Pointer, DestinationAddress: number, RequestData: Win32Pointer, RequestSize: number, RequestOptions: Win32Pointer, ReplyBuffer: Win32Pointer, ReplySize: number, Timeout: number): number;
+  IcmpSendEcho(
+    IcmpHandle: Win32Pointer,
+    DestinationAddress: number,
+    RequestData: Win32Pointer,
+    RequestSize: number,
+    RequestOptions: Win32Pointer,
+    ReplyBuffer: Win32Pointer,
+    ReplySize: number,
+    Timeout: number,
+  ): number;
   /** iphlpapi.dll!IcmpSendEcho2 */
-  IcmpSendEcho2(IcmpHandle: Win32Pointer, Event: Win32Pointer, ApcRoutine: Win32Callback, ApcContext: Win32Pointer, DestinationAddress: number, RequestData: Win32Pointer, RequestSize: number, RequestOptions: Win32Pointer, ReplyBuffer: Win32Pointer, ReplySize: number, Timeout: number): number;
+  IcmpSendEcho2(
+    IcmpHandle: Win32Pointer,
+    Event: Win32Pointer,
+    ApcRoutine: Win32Callback,
+    ApcContext: Win32Pointer,
+    DestinationAddress: number,
+    RequestData: Win32Pointer,
+    RequestSize: number,
+    RequestOptions: Win32Pointer,
+    ReplyBuffer: Win32Pointer,
+    ReplySize: number,
+    Timeout: number,
+  ): number;
   /** iphlpapi.dll!IcmpSendEcho2Ex */
-  IcmpSendEcho2Ex(IcmpHandle: Win32Pointer, Event: Win32Pointer, ApcRoutine: Win32Callback, ApcContext: Win32Pointer, SourceAddress: number, DestinationAddress: number, RequestData: Win32Pointer, RequestSize: number, RequestOptions: Win32Pointer, ReplyBuffer: Win32Pointer, ReplySize: number, Timeout: number): number;
+  IcmpSendEcho2Ex(
+    IcmpHandle: Win32Pointer,
+    Event: Win32Pointer,
+    ApcRoutine: Win32Callback,
+    ApcContext: Win32Pointer,
+    SourceAddress: number,
+    DestinationAddress: number,
+    RequestData: Win32Pointer,
+    RequestSize: number,
+    RequestOptions: Win32Pointer,
+    ReplyBuffer: Win32Pointer,
+    ReplySize: number,
+    Timeout: number,
+  ): number;
   /** iphlpapi.dll!InitializeFlVirtualInterfaceEntry */
   InitializeFlVirtualInterfaceEntry(Row: Win32Pointer): void;
   /** iphlpapi.dll!InitializeIpForwardEntry */
@@ -307,43 +472,117 @@ interface Functions {
   /** iphlpapi.dll!LookupPersistentUdpPortReservation */
   LookupPersistentUdpPortReservation(StartPort: number, NumberOfPorts: number, Token: Win32Pointer): number;
   /** iphlpapi.dll!NhpAllocateAndGetInterfaceInfoFromStack */
-  NhpAllocateAndGetInterfaceInfoFromStack(ppTable: Win32Pointer, pdwCount: Win32Pointer, bOrder: number, hHeap: Win32Pointer, dwFlags: number): number;
+  NhpAllocateAndGetInterfaceInfoFromStack(
+    ppTable: Win32Pointer,
+    pdwCount: Win32Pointer,
+    bOrder: number,
+    hHeap: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** iphlpapi.dll!NotifyAddrChange */
   NotifyAddrChange(Handle: Win32Pointer, overlapped: Win32Pointer): number;
   /** iphlpapi.dll!NotifyIfTimestampConfigChange */
-  NotifyIfTimestampConfigChange(CallerContext: Win32Pointer, Callback: Win32Callback, NotificationHandle: Win32Pointer): number;
+  NotifyIfTimestampConfigChange(
+    CallerContext: Win32Pointer,
+    Callback: Win32Callback,
+    NotificationHandle: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!NotifyIpInterfaceChange */
-  NotifyIpInterfaceChange(Family: number, Callback: Win32Callback, CallerContext: Win32Pointer, InitialNotification: number, NotificationHandle: Win32Pointer): number;
+  NotifyIpInterfaceChange(
+    Family: number,
+    Callback: Win32Callback,
+    CallerContext: Win32Pointer,
+    InitialNotification: number,
+    NotificationHandle: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!NotifyNetworkConnectivityHintChange */
-  NotifyNetworkConnectivityHintChange(Callback: Win32Callback, CallerContext: Win32Pointer, InitialNotification: number, NotificationHandle: Win32Pointer): number;
+  NotifyNetworkConnectivityHintChange(
+    Callback: Win32Callback,
+    CallerContext: Win32Pointer,
+    InitialNotification: number,
+    NotificationHandle: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!NotifyRouteChange */
   NotifyRouteChange(Handle: Win32Pointer, overlapped: Win32Pointer): number;
   /** iphlpapi.dll!NotifyRouteChange2 */
-  NotifyRouteChange2(AddressFamily: number, Callback: Win32Callback, CallerContext: Win32Pointer, InitialNotification: number, NotificationHandle: Win32Pointer): number;
+  NotifyRouteChange2(
+    AddressFamily: number,
+    Callback: Win32Callback,
+    CallerContext: Win32Pointer,
+    InitialNotification: number,
+    NotificationHandle: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!NotifyStableUnicastIpAddressTable */
-  NotifyStableUnicastIpAddressTable(Family: number, Table: Win32Pointer, CallerCallback: Win32Callback, CallerContext: Win32Pointer, NotificationHandle: Win32Pointer): number;
+  NotifyStableUnicastIpAddressTable(
+    Family: number,
+    Table: Win32Pointer,
+    CallerCallback: Win32Callback,
+    CallerContext: Win32Pointer,
+    NotificationHandle: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!NotifyTeredoPortChange */
-  NotifyTeredoPortChange(Callback: Win32Callback, CallerContext: Win32Pointer, InitialNotification: number, NotificationHandle: Win32Pointer): number;
+  NotifyTeredoPortChange(
+    Callback: Win32Callback,
+    CallerContext: Win32Pointer,
+    InitialNotification: number,
+    NotificationHandle: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!NotifyUnicastIpAddressChange */
-  NotifyUnicastIpAddressChange(Family: number, Callback: Win32Callback, CallerContext: Win32Pointer, InitialNotification: number, NotificationHandle: Win32Pointer): number;
+  NotifyUnicastIpAddressChange(
+    Family: number,
+    Callback: Win32Callback,
+    CallerContext: Win32Pointer,
+    InitialNotification: number,
+    NotificationHandle: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!ParseNetworkString */
-  ParseNetworkString(NetworkString: string | Win32Pointer, Types: number, AddressInfo: Win32Pointer, PortNumber: Win32Pointer, PrefixLength: Win32Pointer): number;
+  ParseNetworkString(
+    NetworkString: string | Win32Pointer,
+    Types: number,
+    AddressInfo: Win32Pointer,
+    PortNumber: Win32Pointer,
+    PrefixLength: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!PfAddFiltersToInterface */
-  PfAddFiltersToInterface(ih: Win32Pointer, cInFilters: number, pfiltIn: Win32Pointer, cOutFilters: number, pfiltOut: Win32Pointer, pfHandle: Win32Pointer): number;
+  PfAddFiltersToInterface(
+    ih: Win32Pointer,
+    cInFilters: number,
+    pfiltIn: Win32Pointer,
+    cOutFilters: number,
+    pfiltOut: Win32Pointer,
+    pfHandle: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!PfAddGlobalFilterToInterface */
   PfAddGlobalFilterToInterface(pInterface: Win32Pointer, gfFilter: number): number;
   /** iphlpapi.dll!PfBindInterfaceToIPAddress */
   PfBindInterfaceToIPAddress(pInterface: Win32Pointer, pfatType: number, IPAddress: Win32Pointer): number;
   /** iphlpapi.dll!PfBindInterfaceToIndex */
-  PfBindInterfaceToIndex(pInterface: Win32Pointer, dwIndex: number, pfatLinkType: number, LinkIPAddress: Win32Pointer): number;
+  PfBindInterfaceToIndex(
+    pInterface: Win32Pointer,
+    dwIndex: number,
+    pfatLinkType: number,
+    LinkIPAddress: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!PfCreateInterface */
-  PfCreateInterface(dwName: number, inAction: number, outAction: number, bUseLog: number, bMustBeUnique: number, ppInterface: Win32Pointer): number;
+  PfCreateInterface(
+    dwName: number,
+    inAction: number,
+    outAction: number,
+    bUseLog: number,
+    bMustBeUnique: number,
+    ppInterface: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!PfDeleteInterface */
   PfDeleteInterface(pInterface: Win32Pointer): number;
   /** iphlpapi.dll!PfDeleteLog */
   PfDeleteLog(): number;
   /** iphlpapi.dll!PfGetInterfaceStatistics */
-  PfGetInterfaceStatistics(pInterface: Win32Pointer, ppfStats: Win32Pointer, pdwBufferSize: Win32Pointer, fResetCounters: number): number;
+  PfGetInterfaceStatistics(
+    pInterface: Win32Pointer,
+    ppfStats: Win32Pointer,
+    pdwBufferSize: Win32Pointer,
+    fResetCounters: number,
+  ): number;
   /** iphlpapi.dll!PfMakeLog */
   PfMakeLog(hEvent: Win32Pointer): number;
   /** iphlpapi.dll!PfRebindFilters */
@@ -351,21 +590,49 @@ interface Functions {
   /** iphlpapi.dll!PfRemoveFilterHandles */
   PfRemoveFilterHandles(pInterface: Win32Pointer, cFilters: number, pvHandles: Win32Pointer): number;
   /** iphlpapi.dll!PfRemoveFiltersFromInterface */
-  PfRemoveFiltersFromInterface(ih: Win32Pointer, cInFilters: number, pfiltIn: Win32Pointer, cOutFilters: number, pfiltOut: Win32Pointer): number;
+  PfRemoveFiltersFromInterface(
+    ih: Win32Pointer,
+    cInFilters: number,
+    pfiltIn: Win32Pointer,
+    cOutFilters: number,
+    pfiltOut: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!PfRemoveGlobalFilterFromInterface */
   PfRemoveGlobalFilterFromInterface(pInterface: Win32Pointer, gfFilter: number): number;
   /** iphlpapi.dll!PfSetLogBuffer */
-  PfSetLogBuffer(pbBuffer: Win32Pointer, dwSize: number, dwThreshold: number, dwEntries: number, pdwLoggedEntries: Win32Pointer, pdwLostEntries: Win32Pointer, pdwSizeUsed: Win32Pointer): number;
+  PfSetLogBuffer(
+    pbBuffer: Win32Pointer,
+    dwSize: number,
+    dwThreshold: number,
+    dwEntries: number,
+    pdwLoggedEntries: Win32Pointer,
+    pdwLostEntries: Win32Pointer,
+    pdwSizeUsed: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!PfTestPacket */
-  PfTestPacket(pInInterface: Win32Pointer, pOutInterface: Win32Pointer, cBytes: number, pbPacket: Win32Pointer, ppAction: Win32Pointer): number;
+  PfTestPacket(
+    pInInterface: Win32Pointer,
+    pOutInterface: Win32Pointer,
+    cBytes: number,
+    pbPacket: Win32Pointer,
+    ppAction: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!PfUnBindInterface */
   PfUnBindInterface(pInterface: Win32Pointer): number;
   /** iphlpapi.dll!RegisterInterfaceTimestampConfigChange */
-  RegisterInterfaceTimestampConfigChange(Callback: Win32Callback, CallerContext: Win32Pointer, NotificationHandle: Win32Pointer): number;
+  RegisterInterfaceTimestampConfigChange(
+    Callback: Win32Callback,
+    CallerContext: Win32Pointer,
+    NotificationHandle: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!ResolveIpNetEntry2 */
   ResolveIpNetEntry2(Row: Win32Pointer, SourceAddress: Win32Pointer): number;
   /** iphlpapi.dll!ResolveNeighbor */
-  ResolveNeighbor(NetworkAddress: Win32Pointer, PhysicalAddress: Win32Pointer, PhysicalAddressLength: Win32Pointer): number;
+  ResolveNeighbor(
+    NetworkAddress: Win32Pointer,
+    PhysicalAddress: Win32Pointer,
+    PhysicalAddressLength: Win32Pointer,
+  ): number;
   /** iphlpapi.dll!RestoreMediaSense */
   RestoreMediaSense(pOverlapped: Win32Pointer, lpdwEnableCount: Win32Pointer): number;
   /** iphlpapi.dll!SendARP */
@@ -403,9 +670,23 @@ interface Functions {
   /** iphlpapi.dll!SetNetworkInformation */
   SetNetworkInformation(NetworkGuid: Win32Pointer, CompartmentId: number, NetworkName: string | Win32Pointer): number;
   /** iphlpapi.dll!SetPerTcp6ConnectionEStats */
-  SetPerTcp6ConnectionEStats(Row: Win32Pointer, EstatsType: number, Rw: Win32Pointer, RwVersion: number, RwSize: number, Offset: number): number;
+  SetPerTcp6ConnectionEStats(
+    Row: Win32Pointer,
+    EstatsType: number,
+    Rw: Win32Pointer,
+    RwVersion: number,
+    RwSize: number,
+    Offset: number,
+  ): number;
   /** iphlpapi.dll!SetPerTcpConnectionEStats */
-  SetPerTcpConnectionEStats(Row: Win32Pointer, EstatsType: number, Rw: Win32Pointer, RwVersion: number, RwSize: number, Offset: number): number;
+  SetPerTcpConnectionEStats(
+    Row: Win32Pointer,
+    EstatsType: number,
+    Rw: Win32Pointer,
+    RwVersion: number,
+    RwSize: number,
+    Offset: number,
+  ): number;
   /** iphlpapi.dll!SetSessionCompartmentId */
   SetSessionCompartmentId(SessionId: number, CompartmentId: number): number;
   /** iphlpapi.dll!SetTcpEntry */

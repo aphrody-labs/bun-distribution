@@ -11,13 +11,27 @@ interface Functions {
   /** certadm.dll!CertSrvBackupGetBackupLogsW */
   CertSrvBackupGetBackupLogsW(hbc: Win32Pointer, ppwszzBackupLogFiles: Win32Pointer, pcbSize: Win32Pointer): number;
   /** certadm.dll!CertSrvBackupGetDatabaseNamesW */
-  CertSrvBackupGetDatabaseNamesW(hbc: Win32Pointer, ppwszzAttachmentInformation: Win32Pointer, pcbSize: Win32Pointer): number;
+  CertSrvBackupGetDatabaseNamesW(
+    hbc: Win32Pointer,
+    ppwszzAttachmentInformation: Win32Pointer,
+    pcbSize: Win32Pointer,
+  ): number;
   /** certadm.dll!CertSrvBackupGetDynamicFileListW */
   CertSrvBackupGetDynamicFileListW(hbc: Win32Pointer, ppwszzFileList: Win32Pointer, pcbSize: Win32Pointer): number;
   /** certadm.dll!CertSrvBackupOpenFileW */
-  CertSrvBackupOpenFileW(hbc: Win32Pointer, pwszAttachmentName: string | Win32Pointer, cbReadHintSize: number, pliFileSize: Win32Pointer): number;
+  CertSrvBackupOpenFileW(
+    hbc: Win32Pointer,
+    pwszAttachmentName: string | Win32Pointer,
+    cbReadHintSize: number,
+    pliFileSize: Win32Pointer,
+  ): number;
   /** certadm.dll!CertSrvBackupPrepareW */
-  CertSrvBackupPrepareW(pwszServerName: string | Win32Pointer, grbitJet: number, dwBackupFlags: number, phbc: Win32Pointer): number;
+  CertSrvBackupPrepareW(
+    pwszServerName: string | Win32Pointer,
+    grbitJet: number,
+    dwBackupFlags: number,
+    phbc: Win32Pointer,
+  ): number;
   /** certadm.dll!CertSrvBackupRead */
   CertSrvBackupRead(hbc: Win32Pointer, pvBuffer: Win32Pointer, cbBuffer: number, pcbRead: Win32Pointer): number;
   /** certadm.dll!CertSrvBackupTruncateLogs */
@@ -27,17 +41,44 @@ interface Functions {
   /** certadm.dll!CertSrvRestoreEnd */
   CertSrvRestoreEnd(hbc: Win32Pointer): number;
   /** certadm.dll!CertSrvRestoreGetDatabaseLocationsW */
-  CertSrvRestoreGetDatabaseLocationsW(hbc: Win32Pointer, ppwszzDatabaseLocationList: Win32Pointer, pcbSize: Win32Pointer): number;
+  CertSrvRestoreGetDatabaseLocationsW(
+    hbc: Win32Pointer,
+    ppwszzDatabaseLocationList: Win32Pointer,
+    pcbSize: Win32Pointer,
+  ): number;
   /** certadm.dll!CertSrvRestorePrepareW */
   CertSrvRestorePrepareW(pwszServerName: string | Win32Pointer, dwRestoreFlags: number, phbc: Win32Pointer): number;
   /** certadm.dll!CertSrvRestoreRegisterComplete */
   CertSrvRestoreRegisterComplete(hbc: Win32Pointer, hrRestoreState: number): number;
   /** certadm.dll!CertSrvRestoreRegisterThroughFile */
-  CertSrvRestoreRegisterThroughFile(hbc: Win32Pointer, pwszCheckPointFilePath: string | Win32Pointer, pwszLogPath: string | Win32Pointer, rgrstmap: Win32Pointer, crstmap: number, pwszBackupLogPath: string | Win32Pointer, genLow: number, genHigh: number): number;
+  CertSrvRestoreRegisterThroughFile(
+    hbc: Win32Pointer,
+    pwszCheckPointFilePath: string | Win32Pointer,
+    pwszLogPath: string | Win32Pointer,
+    rgrstmap: Win32Pointer,
+    crstmap: number,
+    pwszBackupLogPath: string | Win32Pointer,
+    genLow: number,
+    genHigh: number,
+  ): number;
   /** certadm.dll!CertSrvRestoreRegisterW */
-  CertSrvRestoreRegisterW(hbc: Win32Pointer, pwszCheckPointFilePath: string | Win32Pointer, pwszLogPath: string | Win32Pointer, rgrstmap: Win32Pointer, crstmap: number, pwszBackupLogPath: string | Win32Pointer, genLow: number, genHigh: number): number;
+  CertSrvRestoreRegisterW(
+    hbc: Win32Pointer,
+    pwszCheckPointFilePath: string | Win32Pointer,
+    pwszLogPath: string | Win32Pointer,
+    rgrstmap: Win32Pointer,
+    crstmap: number,
+    pwszBackupLogPath: string | Win32Pointer,
+    genLow: number,
+    genHigh: number,
+  ): number;
   /** certadm.dll!CertSrvServerControlW */
-  CertSrvServerControlW(pwszServerName: string | Win32Pointer, dwControlFlags: number, pcbOut: Win32Pointer, ppbOut: Win32Pointer): number;
+  CertSrvServerControlW(
+    pwszServerName: string | Win32Pointer,
+    dwControlFlags: number,
+    pcbOut: Win32Pointer,
+    ppbOut: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

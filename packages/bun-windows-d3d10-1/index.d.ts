@@ -3,9 +3,27 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** d3d10_1.dll!D3D10CreateDevice1 */
-  D3D10CreateDevice1(pAdapter: Win32Pointer, DriverType: number, Software: Win32Pointer, Flags: number, HardwareLevel: number, SDKVersion: number, ppDevice: Win32Pointer): number;
+  D3D10CreateDevice1(
+    pAdapter: Win32Pointer,
+    DriverType: number,
+    Software: Win32Pointer,
+    Flags: number,
+    HardwareLevel: number,
+    SDKVersion: number,
+    ppDevice: Win32Pointer,
+  ): number;
   /** d3d10_1.dll!D3D10CreateDeviceAndSwapChain1 */
-  D3D10CreateDeviceAndSwapChain1(pAdapter: Win32Pointer, DriverType: number, Software: Win32Pointer, Flags: number, HardwareLevel: number, SDKVersion: number, pSwapChainDesc: Win32Pointer, ppSwapChain: Win32Pointer, ppDevice: Win32Pointer): number;
+  D3D10CreateDeviceAndSwapChain1(
+    pAdapter: Win32Pointer,
+    DriverType: number,
+    Software: Win32Pointer,
+    Flags: number,
+    HardwareLevel: number,
+    SDKVersion: number,
+    pSwapChainDesc: Win32Pointer,
+    ppSwapChain: Win32Pointer,
+    ppDevice: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

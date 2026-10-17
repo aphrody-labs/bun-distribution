@@ -26,11 +26,17 @@ pub fn computer_ocr(arguments: &Value) -> Result<Value, String> {
 
 #[cfg(windows)]
 fn computer_ocr_windows(arguments: &Value) -> Result<Value, String> {
-    let format = arguments.get("format").and_then(Value::as_str).unwrap_or("json");
+    let format = arguments
+        .get("format")
+        .and_then(Value::as_str)
+        .unwrap_or("json");
     if !format.eq_ignore_ascii_case("json") && !format.eq_ignore_ascii_case("markdown") {
         return Err("format must be json or markdown.".into());
     }
-    let hwnd = arguments.get("windowHandle").and_then(Value::as_i64).unwrap_or(0);
+    let hwnd = arguments
+        .get("windowHandle")
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
     if hwnd < 0 {
         return Err("windowHandle must be a non-negative HWND".into());
     }
@@ -75,10 +81,18 @@ fn computer_ocr_windows(arguments: &Value) -> Result<Value, String> {
     let cropped = source.crop_imm(x, y, width, height);
     let mut encoded = Vec::new();
     cropped
-        .write_to(&mut std::io::Cursor::new(&mut encoded), image::ImageFormat::Png)
+        .write_to(
+            &mut std::io::Cursor::new(&mut encoded),
+            image::ImageFormat::Png,
+        )
         .map_err(|e| e.to_string())?;
-    let (language, lines) =
-        recognize(&encoded, arguments.get("language").and_then(Value::as_str), x, y, full)?;
+    let (language, lines) = recognize(
+        &encoded,
+        arguments.get("language").and_then(Value::as_str),
+        x,
+        y,
+        full,
+    )?;
     let text = lines
         .iter()
         .map(|line| line["text"].as_str().unwrap_or_default())
@@ -86,7 +100,12 @@ fn computer_ocr_windows(arguments: &Value) -> Result<Value, String> {
         .join("\r\n");
     let mut audio_path = Value::Null;
     let mut voice_error = Value::Null;
-    if arguments.get("speak").and_then(Value::as_bool).unwrap_or(false) && !text.is_empty() {
+    if arguments
+        .get("speak")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+        && !text.is_empty()
+    {
         match crate::speech::computer_speak(
             &text,
             arguments.get("audioPath").and_then(Value::as_str),
@@ -102,8 +121,10 @@ fn computer_ocr_windows(arguments: &Value) -> Result<Value, String> {
         "Region":region, "Lines":lines, "Text":text, "SavedPath":Value::Null,
         "AudioPath":audio_path, "VoiceError":voice_error
     });
-    if let Some(path) =
-        arguments.get("outputPath").and_then(Value::as_str).filter(|p| !p.trim().is_empty())
+    if let Some(path) = arguments
+        .get("outputPath")
+        .and_then(Value::as_str)
+        .filter(|p| !p.trim().is_empty())
     {
         let path = PathBuf::from(path);
         if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
@@ -117,7 +138,11 @@ fn computer_ocr_windows(arguments: &Value) -> Result<Value, String> {
         fs::write(&path, output).map_err(|e| e.to_string())?;
         document["SavedPath"] = Value::String(path.to_string_lossy().into_owned());
     }
-    if format.eq_ignore_ascii_case("markdown") { Ok(Value::String(text)) } else { Ok(document) }
+    if format.eq_ignore_ascii_case("markdown") {
+        Ok(Value::String(text))
+    } else {
+        Ok(document)
+    }
 }
 
 #[cfg(windows)]
@@ -125,7 +150,13 @@ fn nonnegative_i32(args: &Value, name: &str) -> Result<i32, String> {
     let n = args.get(name).and_then(Value::as_i64).unwrap_or(0);
     i32::try_from(n)
         .map_err(|_| format!("{name} must be a non-negative 32-bit integer"))
-        .and_then(|n| if n >= 0 { Ok(n) } else { Err(format!("{name} must be non-negative")) })
+        .and_then(|n| {
+            if n >= 0 {
+                Ok(n)
+            } else {
+                Err(format!("{name} must be non-negative"))
+            }
+        })
 }
 
 #[cfg(windows)]
@@ -171,9 +202,12 @@ fn recognize(
         let decoder =
             pollster::block_on(BitmapDecoder::CreateAsync(&stream).map_err(|e| e.to_string())?)
                 .map_err(|e| e.to_string())?;
-        let bitmap =
-            pollster::block_on(decoder.GetSoftwareBitmapAsync().map_err(|e| e.to_string())?)
-                .map_err(|e| e.to_string())?;
+        let bitmap = pollster::block_on(
+            decoder
+                .GetSoftwareBitmapAsync()
+                .map_err(|e| e.to_string())?,
+        )
+        .map_err(|e| e.to_string())?;
         let engine = match requested.filter(|v| !v.trim().is_empty()) {
             Some(tag) => OcrEngine::TryCreateFromLanguage(
                 &Language::CreateLanguage(&HSTRING::from(tag.trim())).map_err(|e| e.to_string())?,
@@ -207,8 +241,16 @@ fn recognize(
                 .map(|v| v["Text"].as_str().unwrap_or_default())
                 .collect::<Vec<_>>()
                 .join(" ");
-            let min_x = words.iter().map(|v| v["X"].as_i64().unwrap_or(0)).min().unwrap_or(0);
-            let min_y = words.iter().map(|v| v["Y"].as_i64().unwrap_or(0)).min().unwrap_or(0);
+            let min_x = words
+                .iter()
+                .map(|v| v["X"].as_i64().unwrap_or(0))
+                .min()
+                .unwrap_or(0);
+            let min_y = words
+                .iter()
+                .map(|v| v["Y"].as_i64().unwrap_or(0))
+                .min()
+                .unwrap_or(0);
             let max_x = words
                 .iter()
                 .map(|v| v["X"].as_i64().unwrap_or(0) + v["Width"].as_i64().unwrap_or(1))

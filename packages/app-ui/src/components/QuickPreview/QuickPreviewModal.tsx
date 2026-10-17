@@ -83,7 +83,7 @@ export function QuickPreviewModal({
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
             className="fixed inset-8 z-[9999] flex flex-col overflow-hidden rounded-2xl border border-app-line bg-app shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             {isLoading || !file ? (
               <div className="flex h-full items-center justify-center text-ink">
@@ -92,9 +92,7 @@ export function QuickPreviewModal({
             ) : error ? (
               <div className="flex h-full items-center justify-center text-red-400">
                 <div>
-                  <div className="mb-2 text-lg font-medium">
-                    Error loading file
-                  </div>
+                  <div className="mb-2 text-lg font-medium">Error loading file</div>
                   <div className="text-sm">{error.message}</div>
                 </div>
               </div>
@@ -123,9 +121,7 @@ export function QuickPreviewModal({
 
                     <div className="h-4 w-px bg-app-line" />
 
-                    <div className="truncate text-sm font-medium">
-                      {file.name}
-                    </div>
+                    <div className="truncate text-sm font-medium">{file.name}</div>
                   </div>
 
                   <button
@@ -152,13 +148,11 @@ export function QuickPreviewModal({
                 {/* Footer with keyboard hints */}
                 <div className="border-t border-app-line bg-app-box/30 px-4 py-2">
                   <div className="text-center text-xs text-ink-dull">
-                    <span className="text-ink">ESC</span> or{" "}
-                    <span className="text-ink">Space</span> to close
+                    <span className="text-ink">ESC</span> or <span className="text-ink">Space</span> to close
                     {(hasPrevious || hasNext) && (
                       <>
                         {" • "}
-                        <span className="text-ink">←</span> /{" "}
-                        <span className="text-on-surface">→</span> to navigate
+                        <span className="text-ink">←</span> / <span className="text-on-surface">→</span> to navigate
                       </>
                     )}
                   </div>

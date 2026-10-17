@@ -7,12 +7,7 @@ import {
 import { getTrackTypeForElementType } from "./compatibility";
 import { enforceMainTrackStart } from "./main-track";
 import { canPlaceTimeSpansOnTrack } from "./overlap";
-import type {
-  PlacementResult,
-  PlacementStrategy,
-  PlacementSubject,
-  PlacementTimeSpan,
-} from "./types";
+import type { PlacementResult, PlacementStrategy, PlacementSubject, PlacementTimeSpan } from "./types";
 import { ZERO_MEDIA_TIME } from "../../wasm";
 
 // Strategy-dispatching placement resolver. Each strategy:
@@ -85,7 +80,7 @@ function findFirstAvailableTrackIndex({
   trackType: TrackType;
   timeSpans: PlacementTimeSpan[];
 }): number {
-  return tracks.findIndex((track) => {
+  return tracks.findIndex(track => {
     return (
       track.type === trackType &&
       canPlaceTimeSpansOnTrack({
@@ -141,10 +136,7 @@ function getInsertDirection({
   return hoverDirection;
 }
 
-export function resolveTrackPlacement({
-  tracks,
-  ...placement
-}: ResolveTrackPlacementParams): PlacementResult | null {
+export function resolveTrackPlacement({ tracks, ...placement }: ResolveTrackPlacementParams): PlacementResult | null {
   const orderedTracks = [...tracks.overlay, tracks.main, ...tracks.audio];
   const trackType =
     "trackType" in placement
@@ -155,9 +147,7 @@ export function resolveTrackPlacement({
   const { timeSpans, strategy } = placement;
 
   if (strategy.type === "explicit") {
-    const trackIndex = orderedTracks.findIndex(
-      (track) => track.id === strategy.trackId,
-    );
+    const trackIndex = orderedTracks.findIndex(track => track.id === strategy.trackId);
     if (trackIndex < 0) {
       return null;
     }
@@ -199,8 +189,7 @@ export function resolveTrackPlacement({
 
   if (strategy.type === "preferIndex") {
     const preferredTrack = orderedTracks[strategy.trackIndex];
-    const isPreferredTrackCompatible =
-      !!preferredTrack && preferredTrack.type === trackType;
+    const isPreferredTrackCompatible = !!preferredTrack && preferredTrack.type === trackType;
     const canUseExistingTrack =
       !strategy.createNewTrackOnly &&
       isPreferredTrackCompatible &&
@@ -223,9 +212,7 @@ export function resolveTrackPlacement({
       preferredIndex: strategy.trackIndex,
       direction: getInsertDirection({
         hoverDirection: strategy.hoverDirection,
-        verticalDragDirection: !isPreferredTrackCompatible
-          ? strategy.verticalDragDirection
-          : null,
+        verticalDragDirection: !isPreferredTrackCompatible ? strategy.verticalDragDirection : null,
       }),
     });
     return buildNewTrackResult({

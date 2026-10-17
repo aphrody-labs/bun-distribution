@@ -8,8 +8,7 @@ interface SortableFolder {
 
 /** Sort order for folder lists: starred first, then alphabetical (case-insensitive). */
 export const compareFolders = (a: SortableFolder, b: SortableFolder): number =>
-  Number(!!b.hasStar) - Number(!!a.hasStar) ||
-  a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+  Number(!!b.hasStar) - Number(!!a.hasStar) || a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
 
 /** Preset folder colors shown in the color picker (shared by both context menus). */
 export const FOLDER_COLOR_PRESETS: string[] = [
@@ -35,10 +34,7 @@ interface FolderThumbLike {
  * otherwise the raw cdn url — except for video, whose `cdn_url` is the video file
  * itself (unrenderable in an `<img>`), so we return null rather than a broken tile.
  */
-export const resolveFolderThumb = (
-  thumb: FolderThumbLike | null | undefined,
-  width: number,
-): string | null => {
+export const resolveFolderThumb = (thumb: FolderThumbLike | null | undefined, width: number): string | null => {
   if (!thumb) return null;
   const fromTemplate = getThumbnailUrl(thumb.maybe_thumbnail_template, {
     width,

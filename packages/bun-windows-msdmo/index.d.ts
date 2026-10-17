@@ -3,13 +3,38 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** msdmo.dll!DMOEnum */
-  DMOEnum(guidCategory: Win32Pointer, dwFlags: number, cInTypes: number, pInTypes: Win32Pointer, cOutTypes: number, pOutTypes: Win32Pointer, ppEnum: Win32Pointer): number;
+  DMOEnum(
+    guidCategory: Win32Pointer,
+    dwFlags: number,
+    cInTypes: number,
+    pInTypes: Win32Pointer,
+    cOutTypes: number,
+    pOutTypes: Win32Pointer,
+    ppEnum: Win32Pointer,
+  ): number;
   /** msdmo.dll!DMOGetName */
   DMOGetName(clsidDMO: Win32Pointer, szName: string | Win32Pointer): number;
   /** msdmo.dll!DMOGetTypes */
-  DMOGetTypes(clsidDMO: Win32Pointer, ulInputTypesRequested: number, pulInputTypesSupplied: Win32Pointer, pInputTypes: Win32Pointer, ulOutputTypesRequested: number, pulOutputTypesSupplied: Win32Pointer, pOutputTypes: Win32Pointer): number;
+  DMOGetTypes(
+    clsidDMO: Win32Pointer,
+    ulInputTypesRequested: number,
+    pulInputTypesSupplied: Win32Pointer,
+    pInputTypes: Win32Pointer,
+    ulOutputTypesRequested: number,
+    pulOutputTypesSupplied: Win32Pointer,
+    pOutputTypes: Win32Pointer,
+  ): number;
   /** msdmo.dll!DMORegister */
-  DMORegister(szName: string | Win32Pointer, clsidDMO: Win32Pointer, guidCategory: Win32Pointer, dwFlags: number, cInTypes: number, pInTypes: Win32Pointer, cOutTypes: number, pOutTypes: Win32Pointer): number;
+  DMORegister(
+    szName: string | Win32Pointer,
+    clsidDMO: Win32Pointer,
+    guidCategory: Win32Pointer,
+    dwFlags: number,
+    cInTypes: number,
+    pInTypes: Win32Pointer,
+    cOutTypes: number,
+    pOutTypes: Win32Pointer,
+  ): number;
   /** msdmo.dll!DMOUnregister */
   DMOUnregister(clsidDMO: Win32Pointer, guidCategory: Win32Pointer): number;
   /** msdmo.dll!MoCopyMediaType */

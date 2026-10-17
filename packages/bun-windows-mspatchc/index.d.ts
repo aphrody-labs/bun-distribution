@@ -3,21 +3,81 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mspatchc.dll!CreatePatchFileA */
-  CreatePatchFileA(OldFileName: string | Win32Pointer, NewFileName: string | Win32Pointer, PatchFileName: string | Win32Pointer, OptionFlags: number, OptionData: Win32Pointer): number;
+  CreatePatchFileA(
+    OldFileName: string | Win32Pointer,
+    NewFileName: string | Win32Pointer,
+    PatchFileName: string | Win32Pointer,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+  ): number;
   /** mspatchc.dll!CreatePatchFileByHandles */
-  CreatePatchFileByHandles(OldFileHandle: Win32Pointer, NewFileHandle: Win32Pointer, PatchFileHandle: Win32Pointer, OptionFlags: number, OptionData: Win32Pointer): number;
+  CreatePatchFileByHandles(
+    OldFileHandle: Win32Pointer,
+    NewFileHandle: Win32Pointer,
+    PatchFileHandle: Win32Pointer,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+  ): number;
   /** mspatchc.dll!CreatePatchFileByHandlesEx */
-  CreatePatchFileByHandlesEx(OldFileCount: number, OldFileInfoArray: Win32Pointer, NewFileHandle: Win32Pointer, PatchFileHandle: Win32Pointer, OptionFlags: number, OptionData: Win32Pointer, ProgressCallback: Win32Callback, CallbackContext: Win32Pointer): number;
+  CreatePatchFileByHandlesEx(
+    OldFileCount: number,
+    OldFileInfoArray: Win32Pointer,
+    NewFileHandle: Win32Pointer,
+    PatchFileHandle: Win32Pointer,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+    ProgressCallback: Win32Callback,
+    CallbackContext: Win32Pointer,
+  ): number;
   /** mspatchc.dll!CreatePatchFileExA */
-  CreatePatchFileExA(OldFileCount: number, OldFileInfoArray: Win32Pointer, NewFileName: string | Win32Pointer, PatchFileName: string | Win32Pointer, OptionFlags: number, OptionData: Win32Pointer, ProgressCallback: Win32Callback, CallbackContext: Win32Pointer): number;
+  CreatePatchFileExA(
+    OldFileCount: number,
+    OldFileInfoArray: Win32Pointer,
+    NewFileName: string | Win32Pointer,
+    PatchFileName: string | Win32Pointer,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+    ProgressCallback: Win32Callback,
+    CallbackContext: Win32Pointer,
+  ): number;
   /** mspatchc.dll!CreatePatchFileExW */
-  CreatePatchFileExW(OldFileCount: number, OldFileInfoArray: Win32Pointer, NewFileName: string | Win32Pointer, PatchFileName: string | Win32Pointer, OptionFlags: number, OptionData: Win32Pointer, ProgressCallback: Win32Callback, CallbackContext: Win32Pointer): number;
+  CreatePatchFileExW(
+    OldFileCount: number,
+    OldFileInfoArray: Win32Pointer,
+    NewFileName: string | Win32Pointer,
+    PatchFileName: string | Win32Pointer,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+    ProgressCallback: Win32Callback,
+    CallbackContext: Win32Pointer,
+  ): number;
   /** mspatchc.dll!CreatePatchFileExW */
-  CreatePatchFileEx(OldFileCount: number, OldFileInfoArray: Win32Pointer, NewFileName: string | Win32Pointer, PatchFileName: string | Win32Pointer, OptionFlags: number, OptionData: Win32Pointer, ProgressCallback: Win32Callback, CallbackContext: Win32Pointer): number;
+  CreatePatchFileEx(
+    OldFileCount: number,
+    OldFileInfoArray: Win32Pointer,
+    NewFileName: string | Win32Pointer,
+    PatchFileName: string | Win32Pointer,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+    ProgressCallback: Win32Callback,
+    CallbackContext: Win32Pointer,
+  ): number;
   /** mspatchc.dll!CreatePatchFileW */
-  CreatePatchFileW(OldFileName: string | Win32Pointer, NewFileName: string | Win32Pointer, PatchFileName: string | Win32Pointer, OptionFlags: number, OptionData: Win32Pointer): number;
+  CreatePatchFileW(
+    OldFileName: string | Win32Pointer,
+    NewFileName: string | Win32Pointer,
+    PatchFileName: string | Win32Pointer,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+  ): number;
   /** mspatchc.dll!CreatePatchFileW */
-  CreatePatchFile(OldFileName: string | Win32Pointer, NewFileName: string | Win32Pointer, PatchFileName: string | Win32Pointer, OptionFlags: number, OptionData: Win32Pointer): number;
+  CreatePatchFile(
+    OldFileName: string | Win32Pointer,
+    NewFileName: string | Win32Pointer,
+    PatchFileName: string | Win32Pointer,
+    OptionFlags: number,
+    OptionData: Win32Pointer,
+  ): number;
   /** mspatchc.dll!ExtractPatchHeaderToFileA */
   ExtractPatchHeaderToFileA(PatchFileName: string | Win32Pointer, PatchHeaderFileName: string | Win32Pointer): number;
   /** mspatchc.dll!ExtractPatchHeaderToFileByHandles */

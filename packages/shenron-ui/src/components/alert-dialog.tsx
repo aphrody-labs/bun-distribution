@@ -10,10 +10,7 @@ const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
 const AlertDialogPortal = AlertDialogPrimitive.Portal;
 const AlertDialogClose = AlertDialogPrimitive.Close;
 
-function AlertDialogBackdrop({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Backdrop>) {
+function AlertDialogBackdrop({ className, ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Backdrop>) {
   return (
     <AlertDialogPrimitive.Backdrop
       className={cn(
@@ -34,12 +31,9 @@ function AlertDialogPopup({
   variant?: "shenron" | "danger" | "saiyan";
 }) {
   const variants = {
-    shenron:
-      "border-3 border-black bg-[#0d0d14] shadow-[8px_8px_0px_#000] text-gray-100",
-    danger:
-      "border-3 border-red-600/90 bg-[#140608] shadow-[0_0_30px_rgba(220,38,38,0.4)] text-red-200",
-    saiyan:
-      "border-3 border-dbz-orange bg-[#120a04] shadow-[0_0_30px_rgba(255,107,0,0.4)] text-amber-100",
+    shenron: "border-3 border-black bg-[#0d0d14] shadow-[8px_8px_0px_#000] text-gray-100",
+    danger: "border-3 border-red-600/90 bg-[#140608] shadow-[0_0_30px_rgba(220,38,38,0.4)] text-red-200",
+    saiyan: "border-3 border-dbz-orange bg-[#120a04] shadow-[0_0_30px_rgba(255,107,0,0.4)] text-amber-100",
   };
 
   return (
@@ -68,25 +62,11 @@ function AlertDialogPopup({
   );
 }
 
-function AlertDialogHeader({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn(
-        "flex flex-col space-y-2 text-center sm:text-left mb-6",
-        className,
-      )}
-      {...props}
-    />
-  );
+function AlertDialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return <div className={cn("flex flex-col space-y-2 text-center sm:text-left mb-6", className)} {...props} />;
 }
 
-function AlertDialogFooter({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+function AlertDialogFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       className={cn(
@@ -98,10 +78,7 @@ function AlertDialogFooter({
   );
 }
 
-function AlertDialogTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+function AlertDialogTitle({ className, ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
   return (
     <AlertDialogPrimitive.Title
       className={cn(
@@ -119,10 +96,7 @@ function AlertDialogDescription({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
   return (
     <AlertDialogPrimitive.Description
-      className={cn(
-        "text-sm text-gray-300 leading-relaxed font-sans",
-        className,
-      )}
+      className={cn("text-sm text-gray-300 leading-relaxed font-sans", className)}
       {...props}
     />
   );

@@ -48,20 +48,16 @@ name = "tauri"
 [dependencies]
 serde_json = { workspace = true, features = ["raw_value"] }
 serde = { workspace = true, features = ["derive", "rc"] }
-tokio = { version = "1", features = [
-  "rt",
-  "rt-multi-thread",
-  "sync",
-  "fs",
-  "io-util",
-] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "fs", "io-util"] }
 uuid = { workspace = true, optional = true, features = ["v4"] }
 url = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 tauri-runtime = { version = "~1.4.4", path = "../aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
 tauri-macros = { version = "~1.4.4", path = "../aphrody-tauri-macros", package = "aphrody-tauri-macros" }
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["resources"] }
+tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+  "resources",
+] }
 getrandom = "0.3"
 serde_repr = "0.1"
 http = { workspace = true }
@@ -88,20 +84,13 @@ cookie = { workspace = true }
 
 # dev server proxy
 bytes = { workspace = true, features = ["serde"] }
-reqwest = { version = "0.13", default-features = false, features = [
-  "json",
-  "stream",
-] }
-rustls = { version = "0.23", default-features = false, features = [
-  "ring",
-], optional = true }
+reqwest = { version = "0.13", default-features = false, features = ["json", "stream"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"], optional = true }
 
 # desktop
 [target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "windows", target_os = "macos"))'.dependencies]
 muda = { version = "0.20", default-features = false, features = ["serde"] }
-tray-icon = { version = "0.25", default-features = false, features = [
-  "serde",
-], optional = true }
+tray-icon = { version = "0.25", default-features = false, features = ["serde"], optional = true }
 
 # linux
 [target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))'.dependencies]
@@ -158,17 +147,15 @@ jni = "0.21"
 [target.'cfg(all(target_vendor = "apple", not(target_os = "macos")))'.dependencies]
 libc = { workspace = true }
 swift-rs = { workspace = true }
-objc2-ui-kit = { version = "0.3.2", default-features = false, features = [
-  "UIApplication",
-  "UIResponder",
-  "UIView",
-] }
+objc2-ui-kit = { version = "0.3.2", default-features = false, features = ["UIApplication", "UIResponder", "UIView"] }
 
 [build-dependencies]
 glob = { workspace = true }
 heck = "0.5"
 tauri-build = { version = "1.4.4", path = "../aphrody-tauri-build", package = "aphrody-tauri-build", default-features = false }
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2"] }
+tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+  "build-2",
+] }
 
 [dev-dependencies]
 proptest = { workspace = true }
@@ -184,10 +171,7 @@ http-range = "0.1.5"
 [features]
 default = ["compression", "common-controls-v6", "dynamic-acl"]
 unstable = []
-common-controls-v6 = [
-  "tray-icon?/muda-common-controls-v6",
-  "muda/common-controls-v6",
-]
+common-controls-v6 = ["tray-icon?/muda-common-controls-v6", "muda/common-controls-v6"]
 # the Linux tray backend is ksni (pure D-Bus StatusNotifierItem), which does not require a GTK version
 # to be selected; libappindicator (GTK3) is not offered.
 tray-icon = ["dep:tray-icon", "tray-icon?/ksni"]
@@ -204,9 +188,7 @@ native-tls-vendored = ["reqwest/native-tls-vendored"]
 rustls-tls = ["reqwest/rustls-no-provider", "dep:rustls"]
 # the runtime crate (e.g. `tauri-runtime-cef`) must also enable its `devtools` feature
 devtools = ["tauri-runtime/devtools"]
-process-relaunch-dangerous-allow-symlink-macos = [
-  "tauri-utils/process-relaunch-dangerous-allow-symlink-macos",
-]
+process-relaunch-dangerous-allow-symlink-macos = ["tauri-utils/process-relaunch-dangerous-allow-symlink-macos"]
 webview-data-url = ["data-url", "tauri-utils/html-manipulation-2"]
 protocol-asset = ["http-range"]
 config-json5 = ["tauri-macros/config-json5"]

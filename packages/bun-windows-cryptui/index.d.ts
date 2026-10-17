@@ -7,7 +7,15 @@ interface Functions {
   /** cryptui.dll!CryptUIDlgCertMgr */
   CryptUIDlgCertMgr(pCryptUICertMgr: Win32Pointer): number;
   /** cryptui.dll!CryptUIDlgSelectCertificateFromStore */
-  CryptUIDlgSelectCertificateFromStore(hCertStore: Win32Pointer, hwnd: Win32Pointer, pwszTitle: string | Win32Pointer, pwszDisplayString: string | Win32Pointer, dwDontUseColumn: number, dwFlags: number, pvReserved: Win32Pointer): number | null;
+  CryptUIDlgSelectCertificateFromStore(
+    hCertStore: Win32Pointer,
+    hwnd: Win32Pointer,
+    pwszTitle: string | Win32Pointer,
+    pwszDisplayString: string | Win32Pointer,
+    dwDontUseColumn: number,
+    dwFlags: number,
+    pvReserved: Win32Pointer,
+  ): number | null;
   /** cryptui.dll!CryptUIDlgViewCertificateA */
   CryptUIDlgViewCertificateA(pCertViewInfo: Win32Pointer, pfPropertiesChanged: Win32Pointer): number;
   /** cryptui.dll!CryptUIDlgViewCertificateW */
@@ -15,15 +23,40 @@ interface Functions {
   /** cryptui.dll!CryptUIDlgViewCertificateW */
   CryptUIDlgViewCertificate(pCertViewInfo: Win32Pointer, pfPropertiesChanged: Win32Pointer): number;
   /** cryptui.dll!CryptUIDlgViewContext */
-  CryptUIDlgViewContext(dwContextType: number, pvContext: Win32Pointer, hwnd: Win32Pointer, pwszTitle: string | Win32Pointer, dwFlags: number, pvReserved: Win32Pointer): number;
+  CryptUIDlgViewContext(
+    dwContextType: number,
+    pvContext: Win32Pointer,
+    hwnd: Win32Pointer,
+    pwszTitle: string | Win32Pointer,
+    dwFlags: number,
+    pvReserved: Win32Pointer,
+  ): number;
   /** cryptui.dll!CryptUIWizDigitalSign */
-  CryptUIWizDigitalSign(dwFlags: number, hwndParent: Win32Pointer, pwszWizardTitle: string | Win32Pointer, pDigitalSignInfo: Win32Pointer, ppSignContext: Win32Pointer): number;
+  CryptUIWizDigitalSign(
+    dwFlags: number,
+    hwndParent: Win32Pointer,
+    pwszWizardTitle: string | Win32Pointer,
+    pDigitalSignInfo: Win32Pointer,
+    ppSignContext: Win32Pointer,
+  ): number;
   /** cryptui.dll!CryptUIWizExport */
-  CryptUIWizExport(dwFlags: number, hwndParent: Win32Pointer, pwszWizardTitle: string | Win32Pointer, pExportInfo: Win32Pointer, pvoid: Win32Pointer): number;
+  CryptUIWizExport(
+    dwFlags: number,
+    hwndParent: Win32Pointer,
+    pwszWizardTitle: string | Win32Pointer,
+    pExportInfo: Win32Pointer,
+    pvoid: Win32Pointer,
+  ): number;
   /** cryptui.dll!CryptUIWizFreeDigitalSignContext */
   CryptUIWizFreeDigitalSignContext(pSignContext: Win32Pointer): number;
   /** cryptui.dll!CryptUIWizImport */
-  CryptUIWizImport(dwFlags: number, hwndParent: Win32Pointer, pwszWizardTitle: string | Win32Pointer, pImportSrc: Win32Pointer, hDestCertStore: Win32Pointer): number;
+  CryptUIWizImport(
+    dwFlags: number,
+    hwndParent: Win32Pointer,
+    pwszWizardTitle: string | Win32Pointer,
+    pImportSrc: Win32Pointer,
+    hDestCertStore: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

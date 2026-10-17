@@ -51,19 +51,10 @@ export function CircularIndicator({
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- M3 circular indeterminate indicator is an animated SVG arc; a native <progress> cannot render it.
       role="progressbar"
       aria-label={label}
-      className={clsx(
-        "m3-circular-indicator inline-flex shrink-0 text-primary",
-        className,
-      )}
+      className={clsx("m3-circular-indicator inline-flex shrink-0 text-primary", className)}
       style={{ width: size, height: size }}
     >
-      <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        className="animate-spin"
-        aria-hidden="true"
-      >
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="animate-spin" aria-hidden="true">
         <circle
           cx={size / 2}
           cy={size / 2}

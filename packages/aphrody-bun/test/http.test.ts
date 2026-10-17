@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, describe, expect, test } from "bun:test";
-import {
-  JsonTransportError,
-  parseRetryAfter,
-  requestJson,
-} from "../src/http.ts";
+import { JsonTransportError, parseRetryAfter, requestJson } from "../src/http.ts";
 const servers: ReturnType<typeof Bun.serve>[] = [];
-function serve(
-  fetch: (request: Request) => Response | Promise<Response>,
-): string {
+function serve(fetch: (request: Request) => Response | Promise<Response>): string {
   const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch });
   servers.push(server);
   return `http://127.0.0.1:${server.port}`;
@@ -18,7 +12,7 @@ afterEach(() => {
 });
 describe("shared service JSON transport", () => {
   test("real HTTP preserves URL, headers, method, body, status and ETag", async () => {
-    const origin = serve(async (request) => {
+    const origin = serve(async request => {
       expect(request.method).toBe("POST");
       expect(new URL(request.url).searchParams.get("q")).toBe("悟空");
       expect(request.headers.get("authorization")).toBe("Bearer isolated-test");
@@ -51,11 +45,7 @@ describe("shared service JSON transport", () => {
     });
     const origin = serve(() => Response.redirect(destination + "/private"));
     await expect(
-      requestJson(
-        origin,
-        { headers: { authorization: "Bearer isolated-test" } },
-        { timeoutMs: 1000 },
-      ),
+      requestJson(origin, { headers: { authorization: "Bearer isolated-test" } }, { timeoutMs: 1000 }),
     ).rejects.toMatchObject({ name: "JsonTransportError", stage: "request" });
     expect(forwarded).toBe(0);
   });
@@ -72,9 +62,7 @@ describe("shared service JSON transport", () => {
         { headers: { "content-type": "application/json" } },
       );
     });
-    await expect(
-      requestJson(origin, {}, { timeoutMs: 35 }),
-    ).rejects.toMatchObject({
+    await expect(requestJson(origin, {}, { timeoutMs: 35 })).rejects.toMatchObject({
       stage: "body",
       timedOut: true,
     });
@@ -84,13 +72,14 @@ describe("shared service JSON transport", () => {
     const controller = new AbortController();
     controller.abort();
     const origin = serve(() => Response.json({ ok: true }));
-    await expect(
-      requestJson(origin, { signal: controller.signal }, { timeoutMs: 1000 }),
-    ).rejects.toMatchObject({ stage: "request", timedOut: false });
+    await expect(requestJson(origin, { signal: controller.signal }, { timeoutMs: 1000 })).rejects.toMatchObject({
+      stage: "request",
+      timedOut: false,
+    });
   });
   test("discarded errors and absent documents cancel their bodies", async () => {
     await Promise.all(
-      [404, 503].map(async (status) => {
+      [404, 503].map(async status => {
         let cancelled = false;
         const fetcher = (async () =>
           new Response(
@@ -117,22 +106,14 @@ describe("shared service JSON transport", () => {
     );
   });
   test("optional domain error envelope is read; invalid error JSON retains its HTTP status", async () => {
-    const origin = serve((request) =>
+    const origin = serve(request =>
       new URL(request.url).pathname === "/json"
         ? Response.json({ error: "denied" }, { status: 403 })
         : new Response("not JSON", { status: 503 }),
     );
-    const json = await requestJson(
-      origin + "/json",
-      {},
-      { timeoutMs: 1000, readErrorBody: true },
-    );
+    const json = await requestJson(origin + "/json", {}, { timeoutMs: 1000, readErrorBody: true });
     expect(json.value).toEqual({ error: "denied" });
-    const text = await requestJson(
-      origin,
-      {},
-      { timeoutMs: 1000, readErrorBody: true },
-    );
+    const text = await requestJson(origin, {}, { timeoutMs: 1000, readErrorBody: true });
     expect(text.response.status).toBe(503);
     expect(text.value).toBeUndefined();
   });
@@ -150,18 +131,12 @@ describe("shared service JSON transport", () => {
   test("global fetch is resolved per request", async () => {
     const original = globalThis.fetch;
     try {
-      globalThis.fetch = (async () =>
-        Response.json({ generation: 1 })) as unknown as typeof fetch;
-      expect(
-        (await requestJson("http://127.0.0.1/", {}, { timeoutMs: 1000 })).value,
-      ).toEqual({
+      globalThis.fetch = (async () => Response.json({ generation: 1 })) as unknown as typeof fetch;
+      expect((await requestJson("http://127.0.0.1/", {}, { timeoutMs: 1000 })).value).toEqual({
         generation: 1,
       });
-      globalThis.fetch = (async () =>
-        Response.json({ generation: 2 })) as unknown as typeof fetch;
-      expect(
-        (await requestJson("http://127.0.0.1/", {}, { timeoutMs: 1000 })).value,
-      ).toEqual({
+      globalThis.fetch = (async () => Response.json({ generation: 2 })) as unknown as typeof fetch;
+      expect((await requestJson("http://127.0.0.1/", {}, { timeoutMs: 1000 })).value).toEqual({
         generation: 2,
       });
     } finally {

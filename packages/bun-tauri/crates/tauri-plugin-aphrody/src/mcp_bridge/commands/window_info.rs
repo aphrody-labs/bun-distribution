@@ -1,7 +1,7 @@
 //! Window information retrieval.
 
 use serde_json::Value;
-use tauri::{command, Runtime, WebviewWindow};
+use tauri::{Runtime, WebviewWindow, command};
 
 /// Retrieves detailed information about the current window.
 ///

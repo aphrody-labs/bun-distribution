@@ -11,30 +11,16 @@ import { tokens } from "../src/tokens";
 
 describe("tokens.ts drift", () => {
   test("committed tokens.ts equals the module generated from styles.css", async () => {
-    const committed = (await Bun.file(TOKENS_PATH).text()).replace(
-      /\r\n/g,
-      "\n",
-    );
-    expect(committed).toBe(
-      (await expectedTokensModule()).replace(/\r\n/g, "\n"),
-    );
+    const committed = (await Bun.file(TOKENS_PATH).text()).replace(/\r\n/g, "\n");
+    expect(committed).toBe((await expectedTokensModule()).replace(/\r\n/g, "\n"));
   });
 
   test("a changed styles.css without regeneration is detected", async () => {
     const css = await Bun.file(STYLES_PATH).text();
-    const mutated = css.replace(
-      /var\(--dbz-bg,\s*#[0-9a-fA-F]+\)/g,
-      "var(--dbz-bg, #123456)",
-    );
+    const mutated = css.replace(/var\(--dbz-bg,\s*#[0-9a-fA-F]+\)/g, "var(--dbz-bg, #123456)");
     expect(mutated).not.toBe(css);
-    const committed = (await Bun.file(TOKENS_PATH).text()).replace(
-      /\r\n/g,
-      "\n",
-    );
-    const regenerated = renderTokensModule(extractTokens(mutated)).replace(
-      /\r\n/g,
-      "\n",
-    );
+    const committed = (await Bun.file(TOKENS_PATH).text()).replace(/\r\n/g, "\n");
+    const regenerated = renderTokensModule(extractTokens(mutated)).replace(/\r\n/g, "\n");
     expect(regenerated).not.toBe(committed);
     expect(extractTokens(mutated).color.bg).toBe("#123456");
   });

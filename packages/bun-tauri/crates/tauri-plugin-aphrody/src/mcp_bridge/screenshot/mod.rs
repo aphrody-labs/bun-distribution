@@ -1,8 +1,8 @@
 use std::env;
 use std::io::Cursor;
 
-use image::imageops::FilterType;
 use image::ImageFormat;
+use image::imageops::FilterType;
 use tauri::{Runtime, WebviewWindow};
 
 // The one desktop runtime is CEF: every platform captures through the DevTools protocol.

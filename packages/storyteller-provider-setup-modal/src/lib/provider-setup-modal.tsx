@@ -10,16 +10,11 @@ interface ProviderSetupModalProps {}
 
 export function ProviderSetupModal(_props: ProviderSetupModalProps) {
   const [showModal, setShowModal] = useState(false);
-  const [provider, setProvider] = useState<GenerationProvider>(
-    GenerationProvider.Artcraft,
-  );
+  const [provider, setProvider] = useState<GenerationProvider>(GenerationProvider.Artcraft);
 
-  useShowProviderLoginModalEvent(async (event) => {
+  useShowProviderLoginModalEvent(async event => {
     // Retained native handlers can still emit these events for old tasks.
-    if (
-      event.provider === GenerationProvider.Sora ||
-      event.provider === GenerationProvider.WorldLabs
-    ) {
+    if (event.provider === GenerationProvider.Sora || event.provider === GenerationProvider.WorldLabs) {
       return;
     }
     console.log("Show provider login modal event received from Tauri:", event);
@@ -76,15 +71,9 @@ export function ProviderSetupModal(_props: ProviderSetupModalProps) {
             <WandSparklesIcon aria-hidden className="h-3.5 w-3.5" />
             Connect account
           </p>
-          <h1 className="font-display text-3xl font-medium leading-[1.05] tracking-[-0.03em]">
-            {modalTitle}
-          </h1>
-          <p className="text-base font-medium text-base-fg/80">
-            {modalSubTitle}
-          </p>
-          <p className="text-sm leading-relaxed text-base-fg/60">
-            {modalDescription}
-          </p>
+          <h1 className="font-display text-3xl font-medium leading-[1.05] tracking-[-0.03em]">{modalTitle}</h1>
+          <p className="text-base font-medium text-base-fg/80">{modalSubTitle}</p>
+          <p className="text-sm leading-relaxed text-base-fg/60">{modalDescription}</p>
         </div>
 
         <Button

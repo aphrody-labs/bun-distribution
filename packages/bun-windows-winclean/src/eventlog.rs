@@ -16,15 +16,24 @@ pub fn query_event_log(
     xpath_filter: Option<&str>,
 ) -> io::Result<Value> {
     if channel.trim().is_empty() || channel.chars().any(|c| c.is_control() || c == '"') {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid event log channel"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "invalid event log channel",
+        ));
     }
     let max_events = max_events.clamp(1, 1000);
     if let Some(filter) = xpath_filter
         && filter.chars().any(|c| c.is_control() || c == '"')
     {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid event log XPath"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "invalid event log XPath",
+        ));
     }
-    let query = xpath_filter.map(str::trim).filter(|value| !value.is_empty()).unwrap_or("*");
+    let query = xpath_filter
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("*");
     let entries = imp::query(channel.trim(), query, max_events as usize)?;
     Ok(serde_json::json!({
         "Channel": channel,
@@ -211,7 +220,7 @@ mod imp {
                 // Missing insertion strings still produce the rest of the message.
                 Err(error) if win32_code(&error) == Some(ERROR_EVT_UNRESOLVED_VALUE_INSERT) => {
                     from_wide(&buffer).trim_end().to_owned()
-                },
+                }
                 Err(_) => String::new(),
             }
         }
@@ -221,8 +230,11 @@ mod imp {
         let values = SystemValues::render(context, event)?;
         let provider = values.string(EvtSystemProviderName.0).unwrap_or_default();
         let level = values.u64(EvtSystemLevel.0, EvtVarTypeByte.0);
-        let message =
-            if provider.is_empty() { String::new() } else { publishers.message(&provider, event) };
+        let message = if provider.is_empty() {
+            String::new()
+        } else {
+            publishers.message(&provider, event)
+        };
         Ok(json!({
             "RecordId": values.u64(EvtSystemEventRecordId.0, EvtVarTypeUInt64.0),
             "TimeCreatedUtc": values
@@ -263,15 +275,23 @@ mod imp {
             let mut returned = 0u32;
             // SAFETY: `batch` receives up to `wanted` event handles.
             match unsafe {
-                EvtNext(results.0, &mut batch[..wanted], NEXT_TIMEOUT_MS, 0, &mut returned)
+                EvtNext(
+                    results.0,
+                    &mut batch[..wanted],
+                    NEXT_TIMEOUT_MS,
+                    0,
+                    &mut returned,
+                )
             } {
-                Ok(()) => {},
+                Ok(()) => {}
                 Err(error) if win32_code(&error) == Some(ERROR_NO_MORE_ITEMS) => break,
                 Err(error) => return Err(hresult_error(&error, "EvtNext")),
             }
             // Take ownership of every returned handle first so all of them are closed.
-            let events: Vec<Handle> =
-                batch[..returned as usize].iter().map(|&raw| Handle(EVT_HANDLE(raw))).collect();
+            let events: Vec<Handle> = batch[..returned as usize]
+                .iter()
+                .map(|&raw| Handle(EVT_HANDLE(raw)))
+                .collect();
             for event in &events {
                 entries.push(entry(&context, event, &mut publishers)?);
             }
@@ -290,7 +310,10 @@ mod imp {
     use serde_json::Value;
 
     pub(super) fn query(_channel: &str, _xpath: &str, _max: usize) -> io::Result<Vec<Value>> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "event log is Windows-only"))
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "event log is Windows-only",
+        ))
     }
 }
 
@@ -307,7 +330,9 @@ mod tests {
             );
         }
         assert_eq!(
-            query_event_log("System", 1, Some("*[System[Level=\"2\"]]")).expect_err("quote").kind(),
+            query_event_log("System", 1, Some("*[System[Level=\"2\"]]"))
+                .expect_err("quote")
+                .kind(),
             std::io::ErrorKind::InvalidInput
         );
     }
@@ -328,12 +353,25 @@ mod tests {
         assert_eq!(result["Count"], 1);
         assert_eq!(result["Truncated"], true);
         let entry = &result["Entries"][0];
-        assert!(entry["RecordId"].as_u64().is_some_and(|id| id > 0), "{entry}");
+        assert!(
+            entry["RecordId"].as_u64().is_some_and(|id| id > 0),
+            "{entry}"
+        );
         assert!(entry["EventId"].as_u64().is_some(), "{entry}");
         assert!(entry["Level"].as_u64().is_some(), "{entry}");
-        assert!(entry["LevelName"].as_str().is_some_and(|name| !name.is_empty()), "{entry}");
+        assert!(
+            entry["LevelName"]
+                .as_str()
+                .is_some_and(|name| !name.is_empty()),
+            "{entry}"
+        );
         assert_eq!(entry["Channel"], "System");
-        assert!(entry["ProviderName"].as_str().is_some_and(|name| !name.is_empty()), "{entry}");
+        assert!(
+            entry["ProviderName"]
+                .as_str()
+                .is_some_and(|name| !name.is_empty()),
+            "{entry}"
+        );
         let created = entry["TimeCreatedUtc"].as_str().expect("TimeCreatedUtc");
         assert!(created.len() == 28 && created.ends_with('Z'), "{created}");
     }
@@ -353,7 +391,10 @@ mod tests {
             .iter()
             .filter_map(|entry| entry["RecordId"].as_u64())
             .collect();
-        assert!(ids.windows(2).all(|pair| pair[0] > pair[1]), "newest first: {ids:?}");
+        assert!(
+            ids.windows(2).all(|pair| pair[0] > pair[1]),
+            "newest first: {ids:?}"
+        );
         let error = query_event_log("Aphrody-No-Such-Channel/Operational", 1, None)
             .expect_err("missing channel");
         assert_eq!(error.kind(), std::io::ErrorKind::NotFound);

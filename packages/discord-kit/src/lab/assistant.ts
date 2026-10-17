@@ -1,12 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import {
-  loadCredentials,
-  makeApi,
-  saveState,
-  type LabApi,
-  type LabPolicy,
-  type LabState,
-} from "./ai-lab.ts";
+import { loadCredentials, makeApi, saveState, type LabApi, type LabPolicy, type LabState } from "./ai-lab.ts";
 import { localAI, type NativeLocalAI } from "./local-ai.ts";
 
 export interface LabMessage {
@@ -26,8 +19,7 @@ export function eligiblePrompt(
     message.channel_id !== channelId ||
     message.author.bot ||
     message.webhook_id ||
-    (!message.mentions?.some((user) => user.id === state.botId) &&
-      !/^aphrody(?:[\s,:]|$)/i.test(message.content))
+    (!message.mentions?.some(user => user.id === state.botId) && !/^aphrody(?:[\s,:]|$)/i.test(message.content))
   )
     return;
   return (
@@ -53,14 +45,10 @@ export async function askModel(
   });
   return answer.text.trim();
 }
-export const MODEL_UNAVAILABLE_REPLY =
-  "Modèle local indisponible : la demande n'a pas été traitée.";
+export const MODEL_UNAVAILABLE_REPLY = "Modèle local indisponible : la demande n'a pas été traitée.";
 // Logs keep the cause actionable without echoing credentials or unbounded payloads.
 export function errorSummary(error: unknown): string {
-  const text =
-    error instanceof Error
-      ? `${error.name}: ${error.message}`
-      : String(error ?? "unknown");
+  const text = error instanceof Error ? `${error.name}: ${error.message}` : String(error ?? "unknown");
   return text
     .replace(/\b(Bot|Bearer)\s+\S+/gi, "$1 [masqué]")
     .replace(/[\w-]{20,}\.[\w-]{6,}\.[\w-]{20,}/g, "[masqué]")
@@ -74,20 +62,12 @@ export async function processMessage(
   api: LabApi,
   infer = askModel,
 ): Promise<boolean> {
-  const prompt = eligiblePrompt(
-    message,
-    state,
-    policy.assistant.channelId ?? state.channels.assistant,
-  );
+  const prompt = eligiblePrompt(message, state, policy.assistant.channelId ?? state.channels.assistant);
   if (!prompt) return false;
-  const member = await api<{ roles: string[] }>(
-    `/guilds/${state.guildId}/members/${message.author.id}`,
-  );
+  const member = await api<{ roles: string[] }>(`/guilds/${state.guildId}/members/${message.author.id}`);
   if (
     message.author.id !== policy.ownerId &&
-    !member.roles.some(
-      (role) => role === adminRoleId || role === state.researcherRoleId,
-    )
+    !member.roles.some(role => role === adminRoleId || role === state.researcherRoleId)
   )
     return false;
   let answer: string;
@@ -122,38 +102,24 @@ if (import.meta.main) {
   const policy = (await Bun.file(flag("--policy")!).json()) as LabPolicy;
   const state = (await Bun.file(flag("--state")!).json()) as LabState;
   const env = await loadCredentials(flag("--env-file")!);
-  if (
-    state.guildId !== policy.guildId ||
-    env.DISCORD_GUILD_ID !== policy.guildId ||
-    !env.DISCORD_BOT_TOKEN
-  )
+  if (state.guildId !== policy.guildId || env.DISCORD_GUILD_ID !== policy.guildId || !env.DISCORD_BOT_TOKEN)
     throw new Error("Lab identity mismatch");
   const api = makeApi(env.DISCORD_BOT_TOKEN);
   const self = await api<{ id: string }>("/users/@me");
   if (self.id !== state.botId) throw new Error("Bot identity mismatch");
-  const roles = await api<{ id: string; name: string; permissions: string }[]>(
-    `/guilds/${policy.guildId}/roles`,
-  );
-  const admin = roles.find(
-    (role) => role.name === policy.adminRole && BigInt(role.permissions) & 8n,
-  );
+  const roles = await api<{ id: string; name: string; permissions: string }[]>(`/guilds/${policy.guildId}/roles`);
+  const admin = roles.find(role => role.name === policy.adminRole && BigInt(role.permissions) & 8n);
   if (!admin) throw new Error("Admin role absent");
   const channelId = policy.assistant.channelId ?? state.channels.assistant;
-  const channel = await api<{ guild_id: string; type: number }>(
-    `/channels/${channelId}`,
-  );
+  const channel = await api<{ guild_id: string; type: number }>(`/channels/${channelId}`);
   if (channel.guild_id !== policy.guildId || channel.type !== 0)
     throw new Error("Conversation channel identity mismatch");
   if (process.argv.includes("--smoke")) {
     const answer = await askModel(policy, "Réponds exactement LAB_OK.");
-    const posted = await api<{ id: string }>(
-      `/channels/${state.channels["lab-status"]}/messages`,
-      "POST",
-      {
-        content: `Assistant IA local vérifié : ${policy.assistant.model}. Réponse de contrôle : ${answer.slice(0, 100)}.\nDans <#${channelId}>, mentionnez <@${state.botId}> avec votre question.`,
-        allowed_mentions: { parse: [] },
-      },
-    );
+    const posted = await api<{ id: string }>(`/channels/${state.channels["lab-status"]}/messages`, "POST", {
+      content: `Assistant IA local vérifié : ${policy.assistant.model}. Réponse de contrôle : ${answer.slice(0, 100)}.\nDans <#${channelId}>, mentionnez <@${state.botId}> avec votre question.`,
+      allowed_mentions: { parse: [] },
+    });
     console.log(
       JSON.stringify({
         smoke: true,
@@ -168,9 +134,7 @@ if (import.meta.main) {
     ? ((await Bun.file(cursorPath).json()) as { after: string }).after
     : undefined;
   if (!cursor) {
-    const latest = await api<LabMessage[]>(
-      `/channels/${channelId}/messages?limit=1`,
-    );
+    const latest = await api<LabMessage[]>(`/channels/${channelId}/messages?limit=1`);
     cursor = latest[0]?.id ?? String(BigInt(Date.now() - 1420070400000) << 22n);
     await saveState(cursorPath, { after: cursor });
   }
@@ -195,9 +159,7 @@ if (import.meta.main) {
       const messages: LabMessage[] = await api<LabMessage[]>(
         `/channels/${channelId}/messages?after=${cursor}&limit=100`,
       );
-      for (const message of messages.toSorted((a, b) =>
-        BigInt(a.id) < BigInt(b.id) ? -1 : 1,
-      )) {
+      for (const message of messages.toSorted((a, b) => (BigInt(a.id) < BigInt(b.id) ? -1 : 1))) {
         if (stopping) break;
         await processMessage(message, state, policy, admin.id, api);
         cursor = message.id;

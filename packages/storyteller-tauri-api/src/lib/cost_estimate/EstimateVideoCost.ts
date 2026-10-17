@@ -49,18 +49,13 @@ export interface EstimateVideoCostErrorResult extends CommandResult {
   error_details?: EstimateVideoCostErrorPayload;
 }
 
-export type EstimateVideoCostResult =
-  EstimateVideoCostSuccess | EstimateVideoCostErrorResult;
+export type EstimateVideoCostResult = EstimateVideoCostSuccess | EstimateVideoCostErrorResult;
 
-export const EstimateVideoCost = async (
-  request: EstimateVideoCostRequest,
-): Promise<EstimateVideoCostResult> => {
+export const EstimateVideoCost = async (request: EstimateVideoCostRequest): Promise<EstimateVideoCostResult> => {
   const result = await invoke("estimate_video_cost_command", { request });
   return result as EstimateVideoCostResult;
 };
 
-export function isEstimateVideoCostSuccess(
-  r: EstimateVideoCostResult,
-): r is EstimateVideoCostSuccess {
+export function isEstimateVideoCostSuccess(r: EstimateVideoCostResult): r is EstimateVideoCostSuccess {
   return r.status === CommandSuccessStatus.Success;
 }

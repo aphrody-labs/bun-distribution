@@ -53,7 +53,7 @@ export class ReorderClipEffectsCommand extends Command {
       trackId: this.trackId,
       elementId: this.elementId,
       elementPredicate: isVisualElement,
-      update: (element) => {
+      update: element => {
         return reorderEffectsOnElement({
           element: element as VisualElement,
           fromIndex: this.fromIndex,

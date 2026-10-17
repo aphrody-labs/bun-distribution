@@ -22,7 +22,7 @@ import { MdOutlinedTextField } from "../wrappers/textfield.js";
 let root: Root | undefined;
 let host: HTMLElement | undefined;
 
-const tick = () => new Promise((r) => setTimeout(r, 0));
+const tick = () => new Promise(r => setTimeout(r, 0));
 
 async function mount(node: React.ReactNode, tag: string): Promise<HTMLElement> {
   host = document.createElement("div");
@@ -45,10 +45,7 @@ afterEach(() => {
 
 describe("generated wrappers render their custom element", () => {
   test("MdFilledButton mounts an upgraded <md-filled-button> with a shadow root", async () => {
-    const el = await mount(
-      <MdFilledButton>Click</MdFilledButton>,
-      "md-filled-button",
-    );
+    const el = await mount(<MdFilledButton>Click</MdFilledButton>, "md-filled-button");
     expect(customElements.get("md-filled-button")).toBeDefined();
     expect(el.shadowRoot).toBeTruthy();
     expect(el.shadowRoot!.childNodes.length).toBeGreaterThan(0);
@@ -68,9 +65,6 @@ describe("generated wrappers render their custom element", () => {
 
   test("MdCard and MdOutlinedTextField mount their elements", async () => {
     expect((await mount(<MdCard />, "md-card")).shadowRoot).toBeTruthy();
-    expect(
-      (await mount(<MdOutlinedTextField />, "md-outlined-text-field"))
-        .shadowRoot,
-    ).toBeTruthy();
+    expect((await mount(<MdOutlinedTextField />, "md-outlined-text-field")).shadowRoot).toBeTruthy();
   });
 });

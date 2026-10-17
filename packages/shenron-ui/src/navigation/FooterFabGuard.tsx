@@ -24,10 +24,7 @@ export function FooterFabGuard() {
     if (!el || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver(
       ([entree]) => {
-        document.documentElement.toggleAttribute(
-          "data-footer-visible",
-          !!entree?.isIntersecting,
-        );
+        document.documentElement.toggleAttribute("data-footer-visible", !!entree?.isIntersecting);
       },
       // Une marge basse généreuse : les boutons doivent s'être effacés AVANT
       // que le pied de page n'arrive sous eux, pas au moment où il y est.

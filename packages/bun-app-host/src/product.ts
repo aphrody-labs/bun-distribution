@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: MIT
-import {
-  authenticateRequest,
-  jsonReply,
-  validatePublicOrigin,
-} from "./transport.ts";
+import { authenticateRequest, jsonReply, validatePublicOrigin } from "./transport.ts";
 import { validateSnapshot, type PortalSnapshot } from "./source-portal.ts";
 
 export interface ProductCatalog {
@@ -42,13 +38,10 @@ export function productHandler(
   token: string,
   options: { publicOrigin?: string } = {},
 ): (request: Request) => Response {
-  if (token.length < 32)
-    throw new Error("Inject the application token from its protected store.");
+  if (token.length < 32) throw new Error("Inject the application token from its protected store.");
   const publicOrigin = validatePublicOrigin(options.publicOrigin);
-  const sourcePortal = catalog.sourcePortal
-    ? validateSnapshot(catalog.sourcePortal)
-    : undefined;
-  return (request) => {
+  const sourcePortal = catalog.sourcePortal ? validateSnapshot(catalog.sourcePortal) : undefined;
+  return request => {
     const path = new URL(request.url).pathname;
     if (request.method === "GET" && path === "/healthz")
       return jsonReply({
@@ -57,13 +50,10 @@ export function productHandler(
         version: catalog.version,
       });
     if (request.method === "GET" && path === "/api/v1/public-sources")
-      return sourcePortal
-        ? jsonReply(sourcePortal)
-        : jsonReply({ error: "Public source snapshot unavailable." }, 503);
+      return sourcePortal ? jsonReply(sourcePortal) : jsonReply({ error: "Public source snapshot unavailable." }, 503);
     const denied = authenticateRequest(request, token, { publicOrigin });
     if (denied) return denied;
-    if (request.method !== "GET")
-      return jsonReply({ error: "Method not allowed." }, 405);
+    if (request.method !== "GET") return jsonReply({ error: "Method not allowed." }, 405);
     switch (path) {
       case "/api/v1/sources":
         return jsonReply({
@@ -113,13 +103,10 @@ export function startProduct(
 ) {
   const port = options.port ?? Number(Bun.env.PORT ?? 3000);
   const hostname = options.hostname ?? Bun.env.HOST ?? "127.0.0.1";
-  if (!Number.isSafeInteger(port) || port < 0 || port > 65535)
-    throw new Error("Invalid product port.");
-  if (!["127.0.0.1", "::1", "0.0.0.0"].includes(hostname))
-    throw new Error("Invalid product bind address.");
+  if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new Error("Invalid product port.");
+  if (!["127.0.0.1", "::1", "0.0.0.0"].includes(hostname)) throw new Error("Invalid product bind address.");
   const token = options.token ?? Bun.env.APHRODY_APP_TOKEN;
-  if (!token)
-    throw new Error("Inject the application token from its protected store.");
+  if (!token) throw new Error("Inject the application token from its protected store.");
   return Bun.serve({
     port,
     hostname,

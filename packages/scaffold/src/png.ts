@@ -14,8 +14,7 @@ function crc32(bytes: Uint8Array): number {
     return Bun.hash.crc32(bytes);
   }
   let crc = 0xffffffff;
-  for (const byte of bytes)
-    crc = (CRC_TABLE[(crc ^ byte) & 0xff] as number) ^ (crc >>> 8);
+  for (const byte of bytes) crc = (CRC_TABLE[(crc ^ byte) & 0xff] as number) ^ (crc >>> 8);
   return (crc ^ 0xffffffff) >>> 0;
 }
 
@@ -69,10 +68,7 @@ export const DEFAULT_ICON_COLOR: Rgba = [0x67, 0x50, 0xa4, 0xff];
  * this keeps a fresh project buildable until the app runs `tauri icon` with its own artwork.
  * 256 px is the smallest size `isUsableAppIcon` accepts.
  */
-export function solidIconPng(
-  size = 256,
-  rgba: Rgba = DEFAULT_ICON_COLOR,
-): Uint8Array {
+export function solidIconPng(size = 256, rgba: Rgba = DEFAULT_ICON_COLOR): Uint8Array {
   const header = new Uint8Array(13);
   const view = new DataView(header.buffer);
   view.setUint32(0, size);
@@ -88,9 +84,7 @@ export function solidIconPng(
     pngChunk("IDAT", zlibStored(raw)),
     pngChunk("IEND", new Uint8Array(0)),
   ];
-  const png = new Uint8Array(
-    parts.reduce((total, part) => total + part.length, 0),
-  );
+  const png = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
   let offset = 0;
   for (const part of parts) {
     png.set(part, offset);
@@ -108,11 +102,7 @@ export interface PngInfo {
 
 /** Reads the IHDR of a PNG; `null` when the bytes are not a PNG. */
 export function pngInfo(bytes: Uint8Array): PngInfo | null {
-  if (
-    bytes.length < 33 ||
-    SIGNATURE.some((value, index) => bytes[index] !== value)
-  )
-    return null;
+  if (bytes.length < 33 || SIGNATURE.some((value, index) => bytes[index] !== value)) return null;
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (view.getUint32(12) !== 0x49484452) return null;
   return {
@@ -127,26 +117,22 @@ export function pngInfo(bytes: Uint8Array): PngInfo | null {
 export function isUsableAppIcon(bytes: Uint8Array): boolean {
   const info = pngInfo(bytes);
   return (
-    info !== null &&
-    info.colorType === 6 &&
-    info.bitDepth === 8 &&
-    info.width === info.height &&
-    info.width >= 256
+    info !== null && info.colorType === 6 && info.bitDepth === 8 && info.width === info.height && info.width >= 256
   );
 }
 
 /** `#rgb`, `#rgba`, `#rrggbb` or `#rrggbbaa` to RGBA; `null` for anything else (named colours, functions). */
-export function parseHexColor(
-  text: string | null | undefined,
-): [number, number, number, number] | null {
+export function parseHexColor(text: string | null | undefined): [number, number, number, number] | null {
   const match = /^#([0-9a-f]{3,8})$/i.exec((text ?? "").trim());
   if (!match) return null;
   let hex = match[1]!;
-  if (hex.length === 3 || hex.length === 4)
-    hex = [...hex].map((ch) => ch + ch).join("");
+  if (hex.length === 3 || hex.length === 4) hex = [...hex].map(ch => ch + ch).join("");
   if (hex.length === 6) hex += "ff";
   if (hex.length !== 8) return null;
-  return [0, 2, 4, 6].map((index) =>
-    Number.parseInt(hex.slice(index, index + 2), 16),
-  ) as [number, number, number, number];
+  return [0, 2, 4, 6].map(index => Number.parseInt(hex.slice(index, index + 2), 16)) as [
+    number,
+    number,
+    number,
+    number,
+  ];
 }

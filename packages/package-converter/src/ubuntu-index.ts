@@ -25,9 +25,9 @@ export async function hostSeries(): Promise<string | undefined> {
   const fields = Object.fromEntries(
     (await file.text())
       .split("\n")
-      .map((line) => /^([A-Z_]+)=(.*)$/.exec(line))
+      .map(line => /^([A-Z_]+)=(.*)$/.exec(line))
       .filter((match): match is RegExpExecArray => !!match)
-      .map((match) => [match[1]!, match[2]!.replace(/^"|"$/g, "")]),
+      .map(match => [match[1]!, match[2]!.replace(/^"|"$/g, "")]),
   );
   return fields.ID === "ubuntu" ? fields.VERSION_CODENAME : undefined;
 }
@@ -35,13 +35,10 @@ export async function hostSeries(): Promise<string | undefined> {
 /** Fold the merged-/usr aliases so /bin/x and /usr/bin/x are one path. */
 export function usrMerged(path: string): string {
   const clean = path.replace(/^\.?\//, "");
-  return /^(bin|sbin|lib|lib32|lib64|libx32)(\/|$)/.test(clean)
-    ? `usr/${clean}`
-    : clean;
+  return /^(bin|sbin|lib|lib32|lib64|libx32)(\/|$)/.test(clean) ? `usr/${clean}` : clean;
 }
 
-const LIBRARY =
-  /^(?:usr\/)?(lib\/x86_64-linux-gnu|lib\/i386-linux-gnu|lib64|lib32|lib)\/([^/]+\.so(?:\.[0-9][^/]*)?)$/;
+const LIBRARY = /^(?:usr\/)?(lib\/x86_64-linux-gnu|lib\/i386-linux-gnu|lib64|lib32|lib)\/([^/]+\.so(?:\.[0-9][^/]*)?)$/;
 
 interface IndexDigest {
   algorithm: "sha512" | "sha256";
@@ -59,10 +56,7 @@ function releaseHashes(text: string): Map<string, IndexDigest> {
   ] as const)
     for (const line of (stanza?.[algorithm]?.[0] ?? "").split("\n")) {
       const parts = line.trim().split(/\s+/);
-      if (
-        parts.length === 3 &&
-        new RegExp(`^[a-f0-9]{${digits}}$`).test(parts[0]!)
-      )
+      if (parts.length === 3 && new RegExp(`^[a-f0-9]{${digits}}$`).test(parts[0]!))
         hashes.set(parts[2]!, {
           algorithm,
           digest: parts[0]!,
@@ -77,7 +71,7 @@ const packageNames = (location: string) =>
     ...new Set(
       location
         .split(",")
-        .map((item) => item.slice(item.lastIndexOf("/") + 1).trim())
+        .map(item => item.slice(item.lastIndexOf("/") + 1).trim())
         .filter(Boolean),
     ),
   ].join(",");
@@ -115,24 +109,17 @@ export async function syncUbuntu(
   const insertLibrary = db.prepare(`INSERT INTO ubuntu_lib VALUES (?,?,?,?,?)`);
   for (const suite of source.suites) {
     const release = join(directory, `${suite}_InRelease`);
-    const fetched = await download(
-      [`${source.mirror}/dists/${suite}/InRelease`],
-      release,
-      { maxBytes: 64 << 20, timeoutMs: 120_000 },
-    );
+    const fetched = await download([`${source.mirror}/dists/${suite}/InRelease`], release, {
+      maxBytes: 64 << 20,
+      timeoutMs: 120_000,
+    });
     let signature = "unverified";
-    if (
-      process.platform === "linux" &&
-      Bun.which("gpgv") &&
-      (await Bun.file(UBUNTU_KEYRING).exists())
-    ) {
-      const result = await runProcess(
-        ["gpgv", "--keyring", UBUNTU_KEYRING, release],
-        directory,
-        { timeoutMs: 60_000, maxOutputBytes: 1 << 20 },
-      );
-      if (result.code !== 0)
-        throw new Error(`${suite}/InRelease signature verification failed`);
+    if (process.platform === "linux" && Bun.which("gpgv") && (await Bun.file(UBUNTU_KEYRING).exists())) {
+      const result = await runProcess(["gpgv", "--keyring", UBUNTU_KEYRING, release], directory, {
+        timeoutMs: 60_000,
+        maxOutputBytes: 1 << 20,
+      });
+      if (result.code !== 0) throw new Error(`${suite}/InRelease signature verification failed`);
       signature = "gpgv:ubuntu-archive-keyring";
     }
     const hashes = releaseHashes(await Bun.file(release).text());
@@ -150,9 +137,8 @@ export async function syncUbuntu(
       if (
         (await Bun.file(local).exists()) &&
         Bun.file(local).size === expected.size &&
-        new Bun.CryptoHasher(expected.algorithm)
-          .update(await Bun.file(local).arrayBuffer())
-          .digest("hex") === expected.digest
+        new Bun.CryptoHasher(expected.algorithm).update(await Bun.file(local).arrayBuffer()).digest("hex") ===
+          expected.digest
       )
         return local;
       await download([`${source.mirror}/dists/${suite}/${path}`], local, {
@@ -165,9 +151,7 @@ export async function syncUbuntu(
     };
     for (const architecture of source.architectures)
       for (const component of source.components) {
-        const local = await fetchIndex(
-          `${component}/binary-${architecture}/Packages.gz`,
-        );
+        const local = await fetchIndex(`${component}/binary-${architecture}/Packages.gz`);
         if (!local) continue;
         let stanza: Record<string, string> = Object.create(null);
         let last = "";
@@ -187,22 +171,14 @@ export async function syncUbuntu(
             summary.packages++;
             for (const provide of (stanza.provides ?? "").split(",")) {
               const virtual = provide.trim().split(/[\s(:]/, 1)[0];
-              if (virtual)
-                insertProvide.run(
-                  virtual,
-                  name,
-                  stanza.architecture ?? architecture,
-                );
+              if (virtual) insertProvide.run(virtual, name, stanza.architecture ?? architecture);
             }
           }
           stanza = Object.create(null);
         };
         db.exec("BEGIN");
         try {
-          for await (const line of lines(
-            await decodedFile(local),
-            2 * 2 ** 30,
-          )) {
+          for await (const line of lines(await decodedFile(local), 2 * 2 ** 30)) {
             if (!line) flush();
             else if (/^\s/.test(line)) {
               if (last === "provides") stanza.provides += line;
@@ -225,10 +201,7 @@ export async function syncUbuntu(
       if (!local) continue;
       db.exec("BEGIN");
       try {
-        for await (const line of lines(
-          await decodedFile(local),
-          16 * 2 ** 30,
-        )) {
+        for await (const line of lines(await decodedFile(local), 16 * 2 ** 30)) {
           const match = /^(.*?)\s+(\S+)$/.exec(line);
           if (!match) continue;
           const path = usrMerged(match[1]!);
@@ -237,20 +210,11 @@ export async function syncUbuntu(
             insertFile.run(path, owners);
             summary.files++;
           }
-          const library = path.startsWith("usr/")
-            ? LIBRARY.exec(path.slice(4))
-            : null;
+          const library = path.startsWith("usr/") ? LIBRARY.exec(path.slice(4)) : null;
           if (!library) continue;
           const dir =
-            library[1] === "lib/x86_64-linux-gnu" ||
-            library[1] === "lib/i386-linux-gnu"
-              ? "multiarch"
-              : library[1]!;
-          if (
-            (architecture === "i386") !==
-            (library[1] === "lib/i386-linux-gnu")
-          )
-            continue;
+            library[1] === "lib/x86_64-linux-gnu" || library[1] === "lib/i386-linux-gnu" ? "multiarch" : library[1]!;
+          if ((architecture === "i386") !== (library[1] === "lib/i386-linux-gnu")) continue;
           insertLibrary.run(library[2]!, architecture, dir, path, owners);
           summary.libraries++;
         }
@@ -288,7 +252,7 @@ export class UbuntuIndex {
       this.db.prepare(`SELECT suite FROM ubuntu_release`).all() as Array<{
         suite: string;
       }>
-    ).map((row) => row.suite);
+    ).map(row => row.suite);
   }
 
   /** Real package for amd64/all (or i386 with a :i386 suffix). */
@@ -302,9 +266,7 @@ export class UbuntuIndex {
 
   version(name: string): string | undefined {
     const row = this.db
-      .prepare(
-        `SELECT version FROM ubuntu_pkg WHERE name = ? AND arch IN ('amd64','all')`,
-      )
+      .prepare(`SELECT version FROM ubuntu_pkg WHERE name = ? AND arch IN ('amd64','all')`)
       .get(name) as { version: string } | null;
     return row?.version;
   }
@@ -312,25 +274,21 @@ export class UbuntuIndex {
   virtualProviders(name: string): string[] {
     return (
       this.db
-        .prepare(
-          `SELECT DISTINCT name FROM ubuntu_provide WHERE provide = ? AND arch IN ('amd64','all') ORDER BY name`,
-        )
+        .prepare(`SELECT DISTINCT name FROM ubuntu_provide WHERE provide = ? AND arch IN ('amd64','all') ORDER BY name`)
         .all(name) as Array<{ name: string }>
-    ).map((row) => row.name);
+    ).map(row => row.name);
   }
 
   owners(path: string): string[] {
-    const row = this.db
-      .prepare(`SELECT packages FROM ubuntu_file WHERE path = ?`)
-      .get(usrMerged(path)) as { packages: string } | null;
+    const row = this.db.prepare(`SELECT packages FROM ubuntu_file WHERE path = ?`).get(usrMerged(path)) as {
+      packages: string;
+    } | null;
     return row ? [...new Set(row.packages.split(","))] : [];
   }
 
   libraryOwners(soname: string, bits: 32 | 64): LibraryOwner[] {
     const rows = this.db
-      .prepare(
-        `SELECT arch, dir, path, packages FROM ubuntu_lib WHERE soname = ?`,
-      )
+      .prepare(`SELECT arch, dir, path, packages FROM ubuntu_lib WHERE soname = ?`)
       .all(soname) as Array<{
       arch: string;
       dir: string;
@@ -352,12 +310,11 @@ export class UbuntuIndex {
             ? 1
             : undefined;
     for (const row of rows
-      .filter((row) => rank(row.dir, row.arch) !== undefined)
+      .filter(row => rank(row.dir, row.arch) !== undefined)
       .sort((a, b) => rank(a.dir, a.arch)! - rank(b.dir, b.arch)!))
       for (const name of row.packages.split(",")) {
         const atom = row.arch === "i386" ? `${name}:i386` : name;
-        if (!owners.some((owner) => owner.package === atom))
-          owners.push({ package: atom, path: row.path, dir: row.dir });
+        if (!owners.some(owner => owner.package === atom)) owners.push({ package: atom, path: row.path, dir: row.dir });
       }
     return owners;
   }

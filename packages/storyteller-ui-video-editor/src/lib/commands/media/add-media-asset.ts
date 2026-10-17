@@ -22,8 +22,7 @@ export class AddMediaAssetCommand extends Command {
     editor.media.setAssets({
       assets: [...this.savedAssets, this.asset],
     });
-    this.previousProjectFps =
-      editor.project.getActiveOrNull()?.settings.fps ?? null;
+    this.previousProjectFps = editor.project.getActiveOrNull()?.settings.fps ?? null;
     this.appliedProjectFps = editor.project.ratchetFpsForImportedMedia({
       importedAssets: [this.asset],
     });

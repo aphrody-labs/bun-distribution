@@ -80,7 +80,7 @@ export function TagPill({
         <button
           type="button"
           aria-label="Remove"
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             onRemove(e);
           }}

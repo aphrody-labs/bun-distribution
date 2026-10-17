@@ -4,11 +4,7 @@ import { type UploadMediaFn } from "@storyteller/api";
 import { downloadFileFromUrl } from "@storyteller/tauri-api";
 import { toast } from "@storyteller/ui-toaster";
 import { UploaderStates } from "@storyteller/common";
-import {
-  AUDIO_FILE_ACCEPT,
-  AUDIO_FILE_TYPE_ERROR,
-  isAudioFile,
-} from "../common/audioFiles";
+import { AUDIO_FILE_ACCEPT, AUDIO_FILE_TYPE_ERROR, isAudioFile } from "../common/audioFiles";
 import { createImagePreviewUrl, revokeIfBlobUrl } from "../common/imagePreview";
 
 /** Minimal structural shapes so both apps' ref types fit. */
@@ -72,11 +68,10 @@ const videoLimitMessage = (maxVideos: number, maxTotalSec: number) =>
     ? `Max ${maxVideos} videos / ${maxTotalSec}s total`
     : `Max ${maxVideos} video${maxVideos === 1 ? "" : "s"}`;
 
-const randomTitle = (prefix: string) =>
-  `${prefix}-${Math.random().toString(36).substring(2, 15)}`;
+const randomTitle = (prefix: string) => `${prefix}-${Math.random().toString(36).substring(2, 15)}`;
 
 const getVideoDurationFromSrc = (src: string): Promise<number> =>
-  new Promise((resolve) => {
+  new Promise(resolve => {
     const video = document.createElement("video");
     video.preload = "metadata";
     video.onloadedmetadata = () => resolve(Math.round(video.duration));
@@ -90,7 +85,7 @@ const getVideoDuration = (file: File): Promise<number> => {
 };
 
 const getAudioDurationFromSrc = (src: string): Promise<number> =>
-  new Promise((resolve) => {
+  new Promise(resolve => {
     const audio = document.createElement("audio");
     audio.preload = "metadata";
     audio.onloadedmetadata = () => resolve(Math.round(audio.duration));
@@ -99,7 +94,7 @@ const getAudioDurationFromSrc = (src: string): Promise<number> =>
   });
 
 const getAudioDuration = (file: File): Promise<number> =>
-  new Promise((resolve) => {
+  new Promise(resolve => {
     const audio = document.createElement("audio");
     audio.preload = "metadata";
     audio.onloadedmetadata = () => {
@@ -148,23 +143,13 @@ export function useDeckMedia<
   const imageTargetRef = useRef<"start" | "end">("start");
 
   const [uploadingImages, setUploadingImages] = useState<DeckUploadEntry[]>([]);
-  const [uploadingEnd, setUploadingEnd] = useState<DeckUploadEntry | null>(
-    null,
-  );
-  const [uploadingVideo, setUploadingVideo] = useState<DeckUploadEntry | null>(
-    null,
-  );
-  const [uploadingAudio, setUploadingAudio] = useState<DeckUploadEntry | null>(
-    null,
-  );
+  const [uploadingEnd, setUploadingEnd] = useState<DeckUploadEntry | null>(null);
+  const [uploadingVideo, setUploadingVideo] = useState<DeckUploadEntry | null>(null);
+  const [uploadingAudio, setUploadingAudio] = useState<DeckUploadEntry | null>(null);
 
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
-  const [galleryTarget, setGalleryTarget] = useState<
-    "start" | "end" | "video" | "audio"
-  >("start");
-  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
-    [],
-  );
+  const [galleryTarget, setGalleryTarget] = useState<"start" | "end" | "video" | "audio">("start");
+  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>([]);
   const [isProcessingGallery, setIsProcessingGallery] = useState(false);
 
   // Async upload completions must append to the freshest committed arrays,
@@ -185,45 +170,23 @@ export function useDeckMedia<
   // hiding entries whose id is already committed removes that flicker (and
   // the deck's keyed card morphs from spinner to thumbnail in place).
   const visibleUploadingImages = useMemo(
-    () =>
-      uploadingImages.filter(
-        (entry) => !referenceImages.some((img) => img.id === entry.id),
-      ),
+    () => uploadingImages.filter(entry => !referenceImages.some(img => img.id === entry.id)),
     [uploadingImages, referenceImages],
   );
   const visibleUploadingVideo =
-    uploadingVideo && referenceVideos.some((v) => v.id === uploadingVideo.id)
-      ? null
-      : uploadingVideo;
+    uploadingVideo && referenceVideos.some(v => v.id === uploadingVideo.id) ? null : uploadingVideo;
   const visibleUploadingAudio =
-    uploadingAudio && referenceAudios.some((a) => a.id === uploadingAudio.id)
-      ? null
-      : uploadingAudio;
+    uploadingAudio && referenceAudios.some(a => a.id === uploadingAudio.id) ? null : uploadingAudio;
 
   // The hook only ever commits `{ id, url, file, mediaToken, duration? }`,
   // which is structurally assignable to both apps' ref types (desktop
   // promptStore refs match exactly; the webapp's extra fields are optional).
-  const asImage = (img: {
-    id: string;
-    url: string;
-    fullUrl?: string;
-    file: File;
-    mediaToken: string;
-  }) => img as unknown as TImage;
-  const asVideo = (video: {
-    id: string;
-    url: string;
-    file: File;
-    mediaToken: string;
-    duration: number;
-  }) => video as unknown as TVideo;
-  const asAudio = (audio: {
-    id: string;
-    url: string;
-    file: File;
-    mediaToken: string;
-    duration: number;
-  }) => audio as unknown as TAudio;
+  const asImage = (img: { id: string; url: string; fullUrl?: string; file: File; mediaToken: string }) =>
+    img as unknown as TImage;
+  const asVideo = (video: { id: string; url: string; file: File; mediaToken: string; duration: number }) =>
+    video as unknown as TVideo;
+  const asAudio = (audio: { id: string; url: string; file: File; mediaToken: string; duration: number }) =>
+    audio as unknown as TAudio;
 
   const makeEntry = (file: File): DeckUploadEntry => ({
     id: randomId(),
@@ -257,21 +220,15 @@ export function useDeckMedia<
       return;
     }
 
-    const filesToProcess =
-      uploadTarget === "end"
-        ? files.slice(0, 1)
-        : files.slice(0, availableSlots);
+    const filesToProcess = uploadTarget === "end" ? files.slice(0, 1) : files.slice(0, availableSlots);
 
-    filesToProcess.forEach(async (file) => {
+    filesToProcess.forEach(async file => {
       // Register the slot synchronously (spinner card + slot accounting)…
       const entryId = randomId();
       if (uploadTarget === "end") {
         setUploadingEnd({ id: entryId, file, previewUrl: "" });
       } else {
-        setUploadingImages((prev) => [
-          ...prev,
-          { id: entryId, file, previewUrl: "" },
-        ]);
+        setUploadingImages(prev => [...prev, { id: entryId, file, previewUrl: "" }]);
       }
 
       // …then fill in the thumbnail once the downscale finishes. Full-res
@@ -279,20 +236,16 @@ export function useDeckMedia<
       // original pixels here.
       const previewUrl = await createImagePreviewUrl(file);
       if (uploadTarget === "end") {
-        setUploadingEnd((prev) =>
-          prev && prev.id === entryId ? { ...prev, previewUrl } : prev,
-        );
+        setUploadingEnd(prev => (prev && prev.id === entryId ? { ...prev, previewUrl } : prev));
       } else {
-        setUploadingImages((prev) =>
-          prev.map((e) => (e.id === entryId ? { ...e, previewUrl } : e)),
-        );
+        setUploadingImages(prev => prev.map(e => (e.id === entryId ? { ...e, previewUrl } : e)));
       }
 
       const removeEntry = () => {
         if (uploadTarget === "end") {
           setUploadingEnd(null);
         } else {
-          setUploadingImages((prev) => prev.filter((e) => e.id !== entryId));
+          setUploadingImages(prev => prev.filter(e => e.id !== entryId));
         }
       };
 
@@ -324,7 +277,7 @@ export function useDeckMedia<
         await uploadImage({
           title: randomTitle("reference-image"),
           assetFile: file,
-          progressCallback: (newState) => {
+          progressCallback: newState => {
             if (newState.status === UploaderStates.success && newState.data) {
               commit(newState.data);
             } else if (
@@ -397,7 +350,7 @@ export function useDeckMedia<
         await uploadVideo({
           title: randomTitle("reference-video"),
           assetFile: file,
-          progressCallback: (newState) => {
+          progressCallback: newState => {
             if (newState.status === UploaderStates.success && newState.data) {
               commit(newState.data);
             } else if (
@@ -416,9 +369,7 @@ export function useDeckMedia<
     }
   };
 
-  const handleVideoFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleVideoFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (videoFileInputRef.current) videoFileInputRef.current.value = "";
     if (files.length === 0) return;
@@ -441,10 +392,7 @@ export function useDeckMedia<
 
     for (const file of filesToProcess) {
       const duration = await getAudioDuration(file);
-      const currentTotal = referenceAudiosRef.current.reduce(
-        (sum, a) => sum + a.duration,
-        0,
-      );
+      const currentTotal = referenceAudiosRef.current.reduce((sum, a) => sum + a.duration, 0);
 
       if (currentTotal + duration > maxAudioTotalSec) {
         toast.error(`Total audio duration cannot exceed ${maxAudioTotalSec}s`);
@@ -470,7 +418,7 @@ export function useDeckMedia<
         await uploadAudio({
           title: randomTitle("reference-audio"),
           assetFile: file,
-          progressCallback: (newState) => {
+          progressCallback: newState => {
             if (newState.status === UploaderStates.success && newState.data) {
               commit(newState.data);
             } else if (
@@ -488,9 +436,7 @@ export function useDeckMedia<
     }
   };
 
-  const handleAudioFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleAudioFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (audioFileInputRef.current) audioFileInputRef.current.value = "";
     if (files.length === 0) return;
@@ -504,13 +450,11 @@ export function useDeckMedia<
     if (anyFileInputRef.current) anyFileInputRef.current.value = "";
     if (files.length === 0) return;
 
-    const images = files.filter((f) => f.type.startsWith("image/"));
+    const images = files.filter(f => f.type.startsWith("image/"));
     // isAudioFile also claims .m4a files that platforms report as video/mp4,
     // so exclude them from the video bucket.
     const audios = files.filter(isAudioFile);
-    const videos = files.filter(
-      (f) => f.type.startsWith("video/") && !isAudioFile(f),
-    );
+    const videos = files.filter(f => f.type.startsWith("video/") && !isAudioFile(f));
 
     if (images.length > 0) processImageFiles(images, "start");
     if (videos.length > 0 && setReferenceVideos) processVideoFiles(videos);
@@ -530,8 +474,8 @@ export function useDeckMedia<
   };
 
   const handleImageSelect = (id: string) => {
-    setSelectedGalleryImages((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
+    setSelectedGalleryImages(prev => {
+      if (prev.includes(id)) return prev.filter(x => x !== id);
       const maxSelections =
         galleryTarget === "video"
           ? Math.max(1, maxVideos - referenceVideos.length)
@@ -562,17 +506,13 @@ export function useDeckMedia<
       }
       const itemsToProcess = selectedItems
         .slice(0, availableSlots)
-        .filter((item): item is GalleryItem & { fullImage: string } =>
-          Boolean(item.fullImage),
-        );
+        .filter((item): item is GalleryItem & { fullImage: string } => Boolean(item.fullImage));
 
       setIsProcessingGallery(true);
       try {
         // Parallelize duration probes — sequential metadata loads was the
         // source of the perceived lag on the "Use selected" click.
-        const durations = await Promise.all(
-          itemsToProcess.map((item) => getVideoDurationFromSrc(item.fullImage)),
-        );
+        const durations = await Promise.all(itemsToProcess.map(item => getVideoDurationFromSrc(item.fullImage)));
 
         const newVideos: TVideo[] = [];
         let currentTotal = baseVideos.reduce((sum, v) => sum + v.duration, 0);
@@ -596,10 +536,7 @@ export function useDeckMedia<
           );
         }
         if (exceeded) {
-          toast.error(
-            `Total video duration cannot exceed ${maxVideoTotalSec}s`,
-            { id: "video-ref-limit" },
-          );
+          toast.error(`Total video duration cannot exceed ${maxVideoTotalSec}s`, { id: "video-ref-limit" });
         }
         if (newVideos.length > 0) {
           setReferenceVideos?.([...baseVideos, ...newVideos]);
@@ -614,27 +551,22 @@ export function useDeckMedia<
       const baseAudios = [...referenceAudios];
       const availableSlots = Math.max(0, maxAudios - baseAudios.length);
       if (availableSlots <= 0) {
-        toast.error(
-          `Max ${maxAudios} audio tracks / ${maxAudioTotalSec}s total`,
-          {
-            id: "audio-ref-limit",
-          },
-        );
+        toast.error(`Max ${maxAudios} audio tracks / ${maxAudioTotalSec}s total`, {
+          id: "audio-ref-limit",
+        });
         handleGalleryClose();
         return;
       }
       const itemsToProcess = selectedItems
         .slice(0, availableSlots)
-        .filter((item): item is GalleryItem & { fullImage: string } =>
-          Boolean(item.fullImage),
-        );
+        .filter((item): item is GalleryItem & { fullImage: string } => Boolean(item.fullImage));
 
       setIsProcessingGallery(true);
       try {
         // Use the duration the list endpoint already knows; probe the file's
         // metadata only when it doesn't.
         const durations = await Promise.all(
-          itemsToProcess.map((item) =>
+          itemsToProcess.map(item =>
             item.durationMillis != null
               ? Promise.resolve(Math.round(item.durationMillis / 1000))
               : getAudioDurationFromSrc(item.fullImage),
@@ -663,10 +595,7 @@ export function useDeckMedia<
           );
         }
         if (exceeded) {
-          toast.error(
-            `Total audio duration cannot exceed ${maxAudioTotalSec}s`,
-            { id: "audio-ref-limit" },
-          );
+          toast.error(`Total audio duration cannot exceed ${maxAudioTotalSec}s`, { id: "audio-ref-limit" });
         }
         if (newAudios.length > 0) {
           setReferenceAudios?.([...baseAudios, ...newAudios]);
@@ -699,7 +628,7 @@ export function useDeckMedia<
     }
 
     const newRefs = [...referenceImages];
-    selectedItems.slice(0, availableSlots).forEach((item) => {
+    selectedItems.slice(0, availableSlots).forEach(item => {
       if (!item.fullImage) return;
       newRefs.push(
         asImage({
@@ -714,10 +643,7 @@ export function useDeckMedia<
     handleGalleryClose();
   };
 
-  const availableImageSlots = Math.max(
-    0,
-    maxImages - referenceImages.length - visibleUploadingImages.length,
-  );
+  const availableImageSlots = Math.max(0, maxImages - referenceImages.length - visibleUploadingImages.length);
 
   const fileInputs: ReactNode = (
     <>
@@ -765,38 +691,20 @@ export function useDeckMedia<
   // an image across slots (e.g. start AND end frame) stays allowed.
   const disabledGalleryIds = useMemo(() => {
     if (galleryTarget === "video") {
-      return referenceVideos
-        .map((video) => video.mediaToken)
-        .filter((t): t is string => !!t);
+      return referenceVideos.map(video => video.mediaToken).filter((t): t is string => !!t);
     }
     if (galleryTarget === "audio") {
-      return referenceAudios
-        .map((audio) => audio.mediaToken)
-        .filter((t): t is string => !!t);
+      return referenceAudios.map(audio => audio.mediaToken).filter((t): t is string => !!t);
     }
     if (galleryTarget === "end") {
       return endFrameImage?.mediaToken ? [endFrameImage.mediaToken] : [];
     }
-    return referenceImages
-      .map((img) => img.mediaToken)
-      .filter((t): t is string => !!t);
-  }, [
-    galleryTarget,
-    referenceImages,
-    referenceVideos,
-    referenceAudios,
-    endFrameImage,
-  ]);
+    return referenceImages.map(img => img.mediaToken).filter((t): t is string => !!t);
+  }, [galleryTarget, referenceImages, referenceVideos, referenceAudios, endFrameImage]);
 
   const galleryModal: ReactNode = ownGalleryModal ? (
     <GalleryModal
-      key={
-        galleryTarget === "video"
-          ? "video"
-          : galleryTarget === "audio"
-            ? "audio"
-            : "image"
-      }
+      key={galleryTarget === "video" ? "video" : galleryTarget === "audio" ? "audio" : "image"}
       isOpen={!!isGalleryModalOpen}
       onClose={handleGalleryClose}
       mode="select"
@@ -815,13 +723,7 @@ export function useDeckMedia<
       onUseSelected={handleGalleryImages}
       onDownloadClicked={downloadFileFromUrl}
       useSelectedLoading={isProcessingGallery}
-      forceFilter={
-        galleryTarget === "video"
-          ? "video"
-          : galleryTarget === "audio"
-            ? "audio"
-            : "image"
-      }
+      forceFilter={galleryTarget === "video" ? "video" : galleryTarget === "audio" ? "audio" : "image"}
     />
   ) : null;
 

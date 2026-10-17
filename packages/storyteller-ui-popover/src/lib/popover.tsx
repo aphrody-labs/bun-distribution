@@ -1,27 +1,9 @@
-import {
-  ReactNode,
-  useRef,
-  useEffect,
-  useLayoutEffect,
-  useState,
-  useCallback,
-} from "react";
+import { ReactNode, useRef, useEffect, useLayoutEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
-import {
-  Popover,
-  Transition,
-  PopoverButton,
-  PopoverPanel,
-} from "@headlessui/react";
+import { Popover, Transition, PopoverButton, PopoverPanel } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
 import { Button, NEUTRAL_BUTTON_HOVER_CLASSES } from "@storyteller/ui-button";
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  ChevronUpIcon,
-  InfoIcon,
-} from "lucide-react";
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, InfoIcon } from "lucide-react";
 import { Model, ModelInfo } from "@storyteller/model-list";
 import { Tooltip } from "@storyteller/ui-tooltip";
 
@@ -34,14 +16,7 @@ interface PortalTooltipProps {
   portalRef?: (element: HTMLDivElement | null) => void;
 }
 
-function PortalTooltip({
-  children,
-  content,
-  delay = 300,
-  className,
-  onOpenChange,
-  portalRef,
-}: PortalTooltipProps) {
+function PortalTooltip({ children, content, delay = 300, className, onOpenChange, portalRef }: PortalTooltipProps) {
   const [isShowing, setIsShowing] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -58,9 +33,7 @@ function PortalTooltip({
     const scrollParent = triggerRef.current.closest("[data-scroll-container]");
     if (scrollParent) {
       const parentRect = scrollParent.getBoundingClientRect();
-      const isInView =
-        rect.top >= parentRect.top - 10 &&
-        rect.bottom <= parentRect.bottom + 10;
+      const isInView = rect.top >= parentRect.top - 10 && rect.bottom <= parentRect.bottom + 10;
       setIsVisible(isInView);
       if (!isInView) return;
     }
@@ -87,12 +60,7 @@ function PortalTooltip({
       if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
       if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
     };
-  }, [
-    isHoveringTrigger,
-    isHoveringTooltip,
-    delay,
-    checkVisibilityAndUpdatePosition,
-  ]);
+  }, [isHoveringTrigger, isHoveringTooltip, delay, checkVisibilityAndUpdatePosition]);
 
   useEffect(() => {
     onOpenChange?.(isShowing && isVisible);
@@ -220,7 +188,7 @@ function InfoHint({ content }: { content: ReactNode }) {
         type="button"
         aria-label="More info"
         className="ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center text-base-fg/40 transition-colors hover:text-base-fg/80"
-        onClick={(e) => {
+        onClick={e => {
           // Don't let the click select the row.
           e.stopPropagation();
           e.preventDefault();
@@ -261,7 +229,7 @@ function InfoHint({ content }: { content: ReactNode }) {
               zIndex: 10000,
             }}
             className="pointer-events-auto rounded-[3px] border border-ui-panel-border bg-ui-controls px-3 py-1.5 text-center text-xs leading-relaxed text-base-fg"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             onMouseEnter={() => {
               if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
             }}
@@ -343,12 +311,7 @@ interface RichListRowProps {
 // One rich-list row (icon tile, name, description, badges). Shared between the
 // main richList panel and the submenu flyout so group children render
 // identically to top-level rows.
-function RichListRow({
-  item,
-  onClick,
-  active = false,
-  rightNode,
-}: RichListRowProps) {
+function RichListRow({ item, onClick, active = false, rightNode }: RichListRowProps) {
   return (
     <div
       data-selected={item.selected ? "true" : undefined}
@@ -365,58 +328,39 @@ function RichListRow({
       <span
         className={twMerge(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-none border text-base-fg/80 transition-colors",
-          item.selected
-            ? "border-white bg-white/10"
-            : "border-ui-controls-border bg-white/5",
+          item.selected ? "border-white bg-white/10" : "border-ui-controls-border bg-white/5",
         )}
       >
         {item.icon}
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex min-w-0 items-center gap-1">
-          <span
-            className={twMerge(
-              "truncate font-semibold",
-              item.selected ? "text-base-fg" : "text-base-fg/90",
-            )}
-          >
+          <span className={twMerge("truncate font-semibold", item.selected ? "text-base-fg" : "text-base-fg/90")}>
             {item.label}
           </span>
           {item.info ? <InfoHint content={item.info} /> : null}
         </div>
-        {item.description && (
-          <span className="truncate text-xs text-base-fg/55">
-            {item.description}
-          </span>
+        {item.description && <span className="truncate text-xs text-base-fg/55">{item.description}</span>}
+        {item.badges && Array.isArray(item.badges) && item.badges.length > 0 && (
+          <div className="mt-1 flex flex-row flex-wrap gap-1">
+            {item.badges.map((badge, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1 rounded-none bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg"
+              >
+                {badge?.icon && <span>{badge.icon}</span>}
+                {badge?.label || ""}
+              </span>
+            ))}
+          </div>
         )}
-        {item.badges &&
-          Array.isArray(item.badges) &&
-          item.badges.length > 0 && (
-            <div className="mt-1 flex flex-row flex-wrap gap-1">
-              {item.badges.map((badge, i) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center gap-1 rounded-none bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg"
-                >
-                  {badge?.icon && <span>{badge.icon}</span>}
-                  {badge?.label || ""}
-                </span>
-              ))}
-            </div>
-          )}
       </div>
-      {item.trailing && (
-        <div className="ml-1 flex shrink-0 items-center">{item.trailing}</div>
-      )}
+      {item.trailing && <div className="ml-1 flex shrink-0 items-center">{item.trailing}</div>}
       {rightNode ??
         (item.selected &&
           (item.selectedRight ?? (
             <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center">
-              <CheckIcon
-                aria-hidden="true"
-                className="h-4 w-4 text-white"
-                strokeWidth={2.5}
-              />
+              <CheckIcon aria-hidden="true" className="h-4 w-4 text-white" strokeWidth={2.5} />
             </span>
           )))}
     </div>
@@ -436,13 +380,7 @@ interface SubmenuFlyoutProps {
 // Right-side flyout submenu for grouped model rows. Portal-rendered so it
 // escapes the panel bounds, opens on hover or click (the click path doubles as
 // the touch fallback), and hides when its row scrolls out of the list.
-function SubmenuFlyout({
-  children,
-  item,
-  onSelectChild,
-  popoverClose,
-  onOpenChange,
-}: SubmenuFlyoutProps) {
+function SubmenuFlyout({ children, item, onSelectChild, popoverClose, onOpenChange }: SubmenuFlyoutProps) {
   const [isShowing, setIsShowingRaw] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [activeChildIdx, setActiveChildIdx] = useState<number | null>(null);
@@ -480,9 +418,7 @@ function SubmenuFlyout({
     const scrollParent = trigger.closest("[data-scroll-container]");
     if (scrollParent) {
       const parentRect = scrollParent.getBoundingClientRect();
-      const inView =
-        rect.top >= parentRect.top - 10 &&
-        rect.bottom <= parentRect.bottom + 10;
+      const inView = rect.top >= parentRect.top - 10 && rect.bottom <= parentRect.bottom + 10;
       if (!inView) return false;
     }
     setPosition({ top: rect.top + rect.height / 2, left: rect.right + 10 });
@@ -518,18 +454,12 @@ function SubmenuFlyout({
     if (!isShowing) return;
     const container = scrollRef.current;
     if (!container) return;
-    const selected = container.querySelector(
-      "[data-selected='true']",
-    ) as HTMLElement | null;
+    const selected = container.querySelector("[data-selected='true']") as HTMLElement | null;
     if (selected) {
       const containerRect = container.getBoundingClientRect();
       const elementRect = selected.getBoundingClientRect();
-      const relativeTop =
-        elementRect.top - containerRect.top + container.scrollTop;
-      container.scrollTop = Math.max(
-        0,
-        relativeTop - containerRect.height / 2 + elementRect.height / 2,
-      );
+      const relativeTop = elementRect.top - containerRect.top + container.scrollTop;
+      container.scrollTop = Math.max(0, relativeTop - containerRect.height / 2 + elementRect.height / 2);
     }
     updateScrollIndicators();
   }, [isShowing, updateScrollIndicators]);
@@ -636,8 +566,8 @@ function SubmenuFlyout({
             // any wheel/touch event that bubbles to document from outside the
             // dialog — and this body-portaled panel counts as outside. Stop
             // propagation so the list's native scrolling keeps working.
-            onWheel={(e) => e.stopPropagation()}
-            onTouchMove={(e) => e.stopPropagation()}
+            onWheel={e => e.stopPropagation()}
+            onTouchMove={e => e.stopPropagation()}
             style={{
               position: "fixed",
               top: position.top,
@@ -647,9 +577,7 @@ function SubmenuFlyout({
             }}
             className="pointer-events-auto w-[340px] rounded-[3px] border border-ui-panel-border bg-ui-controls p-1.5 text-base-fg"
           >
-            <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">
-              {item.label}
-            </div>
+            <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">{item.label}</div>
             <div className="relative">
               {/* Top fade — appears only when there's content above, with a
                   slow bouncing arrow hinting to scroll up. */}
@@ -679,15 +607,13 @@ function SubmenuFlyout({
                   }
                   const childTooltip =
                     typeof child.hoverTooltip === "function"
-                      ? (
-                          child.hoverTooltip as (close: () => void) => ReactNode
-                        )(popoverClose)
+                      ? (child.hoverTooltip as (close: () => void) => ReactNode)(popoverClose)
                       : child.hoverTooltip;
                   return (
                     <div key={childIdx}>
                       <PortalTooltip
                         content={childTooltip}
-                        portalRef={(element) => {
+                        portalRef={element => {
                           if (element) {
                             childTooltipRefs.current.set(childIdx, element);
                           } else {
@@ -696,10 +622,8 @@ function SubmenuFlyout({
                         }}
                         delay={child.tooltipDelayMs ?? 300}
                         className="min-w-48"
-                        onOpenChange={(open) =>
-                          setActiveChildIdx((prev) =>
-                            open ? childIdx : prev === childIdx ? null : prev,
-                          )
+                        onOpenChange={open =>
+                          setActiveChildIdx(prev => (open ? childIdx : prev === childIdx ? null : prev))
                         }
                       >
                         {childRow}
@@ -726,11 +650,7 @@ function SubmenuFlyout({
   );
 }
 
-const ViewportClamp = ({
-  targetRef,
-}: {
-  targetRef: React.RefObject<HTMLDivElement | null>;
-}) => {
+const ViewportClamp = ({ targetRef }: { targetRef: React.RefObject<HTMLDivElement | null> }) => {
   useLayoutEffect(() => {
     const el = targetRef.current;
     if (!el) return;
@@ -822,9 +742,7 @@ export const PopoverMenu = ({
 }: PopoverMenuProps) => {
   // Search leaves so a grouped list resolves to the selected model, not its
   // (also-selected) family group row.
-  const selectedItem = items
-    .flatMap((item) => item.subItems ?? [item])
-    .find((item) => item.selected);
+  const selectedItem = items.flatMap(item => item.subItems ?? [item]).find(item => item.selected);
   const [openTooltipIdx, setOpenTooltipIdx] = useState<number | null>(null);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -848,10 +766,8 @@ export const PopoverMenu = ({
     if (selectedElement) {
       const containerRect = container.getBoundingClientRect();
       const elementRect = selectedElement.getBoundingClientRect();
-      const relativeTop =
-        elementRect.top - containerRect.top + container.scrollTop;
-      const scrollTo =
-        relativeTop - containerRect.height / 2 + elementRect.height / 2;
+      const relativeTop = elementRect.top - containerRect.top + container.scrollTop;
+      const scrollTo = relativeTop - containerRect.height / 2 + elementRect.height / 2;
       container.scrollTop = Math.max(0, scrollTo);
     }
     updateScrollIndicators();
@@ -969,13 +885,8 @@ export const PopoverMenu = ({
                     scrollToSelectedItem();
                     const container = scrollContainerRef.current;
                     if (container) {
-                      container.addEventListener(
-                        "scroll",
-                        updateScrollIndicators,
-                      );
-                      resizeObserver = new ResizeObserver(
-                        updateScrollIndicators,
-                      );
+                      container.addEventListener("scroll", updateScrollIndicators);
+                      resizeObserver = new ResizeObserver(updateScrollIndicators);
                       resizeObserver.observe(container);
                     }
                   }, 20);
@@ -989,26 +900,17 @@ export const PopoverMenu = ({
                     close();
                   }
                 };
-                window.addEventListener(
-                  ST_POPOVER_OPEN_EVENT,
-                  handler as EventListener,
-                );
+                window.addEventListener(ST_POPOVER_OPEN_EVENT, handler as EventListener);
                 return () => {
                   if (scrollTimeoutId) clearTimeout(scrollTimeoutId);
                   const container = scrollContainerRef.current;
                   if (container) {
-                    container.removeEventListener(
-                      "scroll",
-                      updateScrollIndicators,
-                    );
+                    container.removeEventListener("scroll", updateScrollIndicators);
                   }
                   if (resizeObserver) {
                     resizeObserver.disconnect();
                   }
-                  window.removeEventListener(
-                    ST_POPOVER_OPEN_EVENT,
-                    handler as EventListener,
-                  );
+                  window.removeEventListener(ST_POPOVER_OPEN_EVENT, handler as EventListener);
                 };
               }, [open]);
               return null;
@@ -1028,13 +930,9 @@ export const PopoverMenu = ({
                   clearTimeout(openTimeoutRef.current);
                   openTimeoutRef.current = null;
                 }
-                if (closeTimeoutRef.current)
-                  clearTimeout(closeTimeoutRef.current);
+                if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
                 // Use global close so moving to another hover popover cancels this
-                scheduleGlobalClose(
-                  () => close(),
-                  mode === "hoverSelect" ? 200 : 120,
-                );
+                scheduleGlobalClose(() => close(), mode === "hoverSelect" ? 200 : 120);
               }}
             >
               <PopoverButton
@@ -1047,7 +945,7 @@ export const PopoverMenu = ({
                   })
                 }
                 onMouseLeave={handleButtonMouseLeave}
-                onClick={(e) => {
+                onClick={e => {
                   if (mode === "hoverSelect" && open) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -1060,12 +958,8 @@ export const PopoverMenu = ({
                 ) : (
                   <>
                     {triggerIcon}
-                    {mode === "toggle" && selectedItem ? (
-                      <span className="truncate">{selectedItem.label}</span>
-                    ) : null}
-                    {mode === "default" && triggerLabel ? (
-                      <span className="truncate">{triggerLabel}</span>
-                    ) : null}
+                    {mode === "toggle" && selectedItem ? <span className="truncate">{selectedItem.label}</span> : null}
+                    {mode === "default" && triggerLabel ? <span className="truncate">{triggerLabel}</span> : null}
                     {mode === "hoverSelect" && selectedItem ? (
                       <div className="flex items-center gap-1.5">
                         <span className="opacity-70">{triggerLabel}</span>
@@ -1082,19 +976,11 @@ export const PopoverMenu = ({
               <Transition
                 show={open}
                 enter="transition duration-75 ease-out"
-                enterFrom={
-                  position === "bottom"
-                    ? "translate-y-1 opacity-0"
-                    : "-translate-y-1 opacity-0"
-                }
+                enterFrom={position === "bottom" ? "translate-y-1 opacity-0" : "-translate-y-1 opacity-0"}
                 enterTo="translate-y-0 opacity-100"
                 leave="transition duration-75 ease-in"
                 leaveFrom="translate-y-0 opacity-100"
-                leaveTo={
-                  position === "bottom"
-                    ? "translate-y-1 opacity-0"
-                    : "-translate-y-1 opacity-0"
-                }
+                leaveTo={position === "bottom" ? "translate-y-1 opacity-0" : "-translate-y-1 opacity-0"}
               >
                 <PopoverPanel
                   static
@@ -1134,9 +1020,7 @@ export const PopoverMenu = ({
                     )}
                     {mode === "default" && children ? (
                       <div className="text-sm text-base-fg">
-                        {typeof children === "function"
-                          ? children(close)
-                          : children}
+                        {typeof children === "function" ? children(close) : children}
                       </div>
                     ) : richList ? (
                       <div className="relative">
@@ -1163,41 +1047,25 @@ export const PopoverMenu = ({
                                   <SubmenuFlyout
                                     item={item}
                                     popoverClose={close}
-                                    onSelectChild={(child) =>
-                                      handleItemClick(child, close)
-                                    }
-                                    onOpenChange={(open) =>
-                                      setOpenTooltipIdx((prev) =>
-                                        open
-                                          ? index
-                                          : prev === index
-                                            ? null
-                                            : prev,
-                                      )
+                                    onSelectChild={child => handleItemClick(child, close)}
+                                    onOpenChange={open =>
+                                      setOpenTooltipIdx(prev => (open ? index : prev === index ? null : prev))
                                     }
                                   >
                                     <RichListRow
                                       item={item}
                                       active={openTooltipIdx === index}
-                                      rightNode={
-                                        <ChevronRightIcon className="ml-1 shrink-0 text-xs text-base-fg/50" />
-                                      }
+                                      rightNode={<ChevronRightIcon className="ml-1 shrink-0 text-xs text-base-fg/50" />}
                                     />
                                   </SubmenuFlyout>
-                                  {item.divider && (
-                                    <div className="my-1 border-t border-white/10" />
-                                  )}
+                                  {item.divider && <div className="my-1 border-t border-white/10" />}
                                 </div>
                               );
                             }
 
                             const tooltipContent =
                               typeof item.hoverTooltip === "function"
-                                ? (
-                                    item.hoverTooltip as (
-                                      close: () => void,
-                                    ) => ReactNode
-                                  )(close)
+                                ? (item.hoverTooltip as (close: () => void) => ReactNode)(close)
                                 : item.hoverTooltip;
 
                             const itemRow = (
@@ -1215,14 +1083,8 @@ export const PopoverMenu = ({
                                     content={tooltipContent}
                                     delay={item.tooltipDelayMs ?? 300}
                                     className="min-w-48"
-                                    onOpenChange={(open) =>
-                                      setOpenTooltipIdx((prev) =>
-                                        open
-                                          ? index
-                                          : prev === index
-                                            ? null
-                                            : prev,
-                                      )
+                                    onOpenChange={open =>
+                                      setOpenTooltipIdx(prev => (open ? index : prev === index ? null : prev))
                                     }
                                   >
                                     {itemRow}
@@ -1230,9 +1092,7 @@ export const PopoverMenu = ({
                                 ) : (
                                   itemRow
                                 )}
-                                {item.divider && (
-                                  <div className="my-1 border-t border-white/10" />
-                                )}
+                                {item.divider && <div className="my-1 border-t border-white/10" />}
                               </div>
                             );
                           })}
@@ -1272,18 +1132,12 @@ export const PopoverMenu = ({
                           {items.map((item, index) => {
                             const tooltipContent =
                               typeof item.hoverTooltip === "function"
-                                ? (
-                                    item.hoverTooltip as (
-                                      close: () => void,
-                                    ) => ReactNode
-                                  )(close)
+                                ? (item.hoverTooltip as (close: () => void) => ReactNode)(close)
                                 : item.hoverTooltip;
 
                             const itemRow = (
                               <div
-                                data-selected={
-                                  item.selected ? "true" : undefined
-                                }
+                                data-selected={item.selected ? "true" : undefined}
                                 onClick={() => {
                                   if (!item.disabled) {
                                     handleItemClick(item, close);
@@ -1291,15 +1145,9 @@ export const PopoverMenu = ({
                                 }}
                                 className={twMerge(
                                   "group flex cursor-pointer items-start gap-2 rounded-[3px] px-2 py-2 transition-all",
-                                  item.selected
-                                    ? "bg-white/10 border-l-2 border-white"
-                                    : "hover:bg-white/5",
-                                  !item.selected && openTooltipIdx === index
-                                    ? "bg-white/5"
-                                    : "",
-                                  item.disabled
-                                    ? "!cursor-not-allowed opacity-50"
-                                    : "",
+                                  item.selected ? "bg-white/10 border-l-2 border-white" : "hover:bg-white/5",
+                                  !item.selected && openTooltipIdx === index ? "bg-white/5" : "",
+                                  item.disabled ? "!cursor-not-allowed opacity-50" : "",
                                 )}
                                 style={{ minHeight: 48 }}
                               >
@@ -1327,14 +1175,9 @@ export const PopoverMenu = ({
                                         {item.badges &&
                                           Array.isArray(item.badges) &&
                                           item.badges.map((badge, i) => (
-                                            <div
-                                              key={i}
-                                              className="flex items-center gap-1 min-w-0"
-                                            >
+                                            <div key={i} className="flex items-center gap-1 min-w-0">
                                               <span className="inline-flex items-center rounded-none bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg gap-1">
-                                                {badge?.icon && (
-                                                  <span>{badge.icon}</span>
-                                                )}
+                                                {badge?.icon && <span>{badge.icon}</span>}
                                                 {badge?.label || ""}
                                               </span>
                                             </div>
@@ -1343,20 +1186,12 @@ export const PopoverMenu = ({
                                     </div>
                                   </div>
 
-                                  {item.trailing && (
-                                    <div className="ml-2 mr-1 flex items-center">
-                                      {item.trailing}
-                                    </div>
-                                  )}
+                                  {item.trailing && <div className="ml-2 mr-1 flex items-center">{item.trailing}</div>}
 
                                   {item.selected &&
                                     (item.selectedRight ?? (
                                       <span className="text-white text-xl flex items-center justify-center mr-1">
-                                        <CheckIcon
-                                          aria-hidden="true"
-                                          className="h-4 w-4 shrink-0"
-                                          strokeWidth={2.5}
-                                        />
+                                        <CheckIcon aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={2.5} />
                                       </span>
                                     ))}
                                 </div>
@@ -1371,14 +1206,8 @@ export const PopoverMenu = ({
                                       content={tooltipContent}
                                       delay={item.tooltipDelayMs ?? 300}
                                       className="min-w-48"
-                                      onOpenChange={(open) =>
-                                        setOpenTooltipIdx((prev) =>
-                                          open
-                                            ? index
-                                            : prev === index
-                                              ? null
-                                              : prev,
-                                        )
+                                      onOpenChange={open =>
+                                        setOpenTooltipIdx(prev => (open ? index : prev === index ? null : prev))
                                       }
                                     >
                                       {itemRow}
@@ -1390,14 +1219,8 @@ export const PopoverMenu = ({
                                       delay={item.tooltipDelayMs ?? 300}
                                       interactive
                                       className="!pointer-events-auto z-50 min-w-48 rounded-[3px] bg-ui-controls p-1.5 border border-ui-panel-border"
-                                      onOpenChange={(open) =>
-                                        setOpenTooltipIdx((prev) =>
-                                          open
-                                            ? index
-                                            : prev === index
-                                              ? null
-                                              : prev,
-                                        )
+                                      onOpenChange={open =>
+                                        setOpenTooltipIdx(prev => (open ? index : prev === index ? null : prev))
                                       }
                                     >
                                       {itemRow}
@@ -1406,9 +1229,7 @@ export const PopoverMenu = ({
                                 ) : (
                                   itemRow
                                 )}
-                                {item.divider && (
-                                  <div className="my-1 border-t border-white/10" />
-                                )}
+                                {item.divider && <div className="my-1 border-t border-white/10" />}
                               </div>
                             );
                           })}
@@ -1442,21 +1263,15 @@ export const PopoverMenu = ({
                               <Tooltip
                                 content={
                                   typeof item.hoverTooltip === "function"
-                                    ? (
-                                        item.hoverTooltip as (
-                                          close: () => void,
-                                        ) => ReactNode
-                                      )(close)
+                                    ? (item.hoverTooltip as (close: () => void) => ReactNode)(close)
                                     : item.hoverTooltip
                                 }
                                 position="right"
                                 delay={item.tooltipDelayMs ?? 1000}
                                 interactive
                                 className="!pointer-events-auto z-50 min-w-48 rounded-[3px] bg-ui-controls p-1.5 border border-ui-panel-border"
-                                onOpenChange={(open) =>
-                                  setOpenTooltipIdx((prev) =>
-                                    open ? index : prev === index ? null : prev,
-                                  )
+                                onOpenChange={open =>
+                                  setOpenTooltipIdx(prev => (open ? index : prev === index ? null : prev))
                                 }
                               >
                                 <Button
@@ -1464,21 +1279,12 @@ export const PopoverMenu = ({
                                     "flex w-full items-center shadow-none justify-between px-1.5",
                                     "font-sans text-sm font-medium normal-case tracking-normal",
                                     "bg-transparent hover:bg-white/5",
-                                    openTooltipIdx === index
-                                      ? "bg-white/5"
-                                      : "",
-                                    mode === "toggle" && item.selected
-                                      ? "hover:bg-ui-controls/80"
-                                      : "",
-                                    item.disabled
-                                      ? "!cursor-not-allowed opacity-50"
-                                      : "",
+                                    openTooltipIdx === index ? "bg-white/5" : "",
+                                    mode === "toggle" && item.selected ? "hover:bg-ui-controls/80" : "",
+                                    item.disabled ? "!cursor-not-allowed opacity-50" : "",
                                     "border-0",
                                   )}
-                                  onClick={() =>
-                                    !item.disabled &&
-                                    handleItemClick(item, close)
-                                  }
+                                  onClick={() => !item.disabled && handleItemClick(item, close)}
                                   variant="secondary"
                                   disabled={item.disabled}
                                 >
@@ -1488,31 +1294,19 @@ export const PopoverMenu = ({
                                       <span
                                         className={twMerge(
                                           "truncate",
-                                          item.selected
-                                            ? "text-base-fg"
-                                            : "text-base-fg/70",
+                                          item.selected ? "text-base-fg" : "text-base-fg/70",
                                         )}
                                       >
                                         {item.label}
                                       </span>
                                     ) : (
-                                      <span className="truncate">
-                                        {item.label}
-                                      </span>
+                                      <span className="truncate">{item.label}</span>
                                     )}
                                   </div>
                                   {/* Optional trailing content on the right */}
-                                  {item.trailing && (
-                                    <div className="ml-2 flex items-center">
-                                      {item.trailing}
-                                    </div>
-                                  )}
+                                  {item.trailing && <div className="ml-2 flex items-center">{item.trailing}</div>}
                                   {/* Optional trailing content on the right */}
-                                  {item.trailing && (
-                                    <div className="ml-2 flex items-center">
-                                      {item.trailing}
-                                    </div>
-                                  )}
+                                  {item.trailing && <div className="ml-2 flex items-center">{item.trailing}</div>}
 
                                   {mode === "toggle" && (
                                     <span className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center">
@@ -1533,17 +1327,11 @@ export const PopoverMenu = ({
                                   "flex w-full items-center shadow-none justify-between px-1.5",
                                   "font-sans text-sm font-medium normal-case tracking-normal",
                                   "bg-transparent hover:bg-white/5",
-                                  mode === "toggle" && item.selected
-                                    ? "hover:bg-ui-controls/80"
-                                    : "",
-                                  item.disabled
-                                    ? "!cursor-not-allowed opacity-50"
-                                    : "",
+                                  mode === "toggle" && item.selected ? "hover:bg-ui-controls/80" : "",
+                                  item.disabled ? "!cursor-not-allowed opacity-50" : "",
                                   "border-0",
                                 )}
-                                onClick={() =>
-                                  !item.disabled && handleItemClick(item, close)
-                                }
+                                onClick={() => !item.disabled && handleItemClick(item, close)}
                                 variant="secondary"
                                 disabled={item.disabled}
                               >
@@ -1553,42 +1341,28 @@ export const PopoverMenu = ({
                                     <span
                                       className={twMerge(
                                         "truncate",
-                                        item.selected
-                                          ? "text-base-fg"
-                                          : "text-base-fg/70",
+                                        item.selected ? "text-base-fg" : "text-base-fg/70",
                                       )}
                                     >
                                       {item.label}
                                     </span>
                                   ) : (
-                                    <span className="truncate">
-                                      {item.label}
-                                    </span>
+                                    <span className="truncate">{item.label}</span>
                                   )}
                                 </div>
                                 {/* Optional trailing content on the right */}
-                                {item.trailing && (
-                                  <div className="ml-2 flex items-center">
-                                    {item.trailing}
-                                  </div>
-                                )}
+                                {item.trailing && <div className="ml-2 flex items-center">{item.trailing}</div>}
 
                                 {mode === "toggle" && (
                                   <span className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center">
                                     {item.selected && (
-                                      <CheckIcon
-                                        aria-hidden="true"
-                                        className="h-4 w-4 text-white"
-                                        strokeWidth={2.5}
-                                      />
+                                      <CheckIcon aria-hidden="true" className="h-4 w-4 text-white" strokeWidth={2.5} />
                                     )}
                                   </span>
                                 )}
                               </Button>
                             )}
-                            {item.divider && (
-                              <div className="my-1 border-t border-white/10" />
-                            )}
+                            {item.divider && <div className="my-1 border-t border-white/10" />}
                           </div>
                         ))}
                         {showAddButton && onAdd && (
@@ -1596,9 +1370,7 @@ export const PopoverMenu = ({
                             variant="secondary"
                             className={twMerge(
                               "w-full mb-0.5 mt-2 py-1 border-0",
-                              disableAddButton
-                                ? "cursor-not-allowed opacity-50"
-                                : "",
+                              disableAddButton ? "cursor-not-allowed opacity-50" : "",
                             )}
                             onClick={onAdd}
                             disabled={disableAddButton}

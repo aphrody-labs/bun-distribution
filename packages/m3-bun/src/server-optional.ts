@@ -5,23 +5,15 @@
 const loaded = new Map<string, Promise<unknown>>();
 
 /** `import(specifier)` once; a failure names the feature and the package. */
-export function loadOptional<T>(
-  specifier: string,
-  feature: string,
-): Promise<T> {
+export function loadOptional<T>(specifier: string, feature: string): Promise<T> {
   let pending = loaded.get(specifier);
   if (!pending) {
     pending = import(specifier).catch((error: unknown) => {
       loaded.delete(specifier);
-      const name = specifier.startsWith("@")
-        ? specifier.split("/").slice(0, 2).join("/")
-        : specifier.split("/")[0];
-      throw new Error(
-        `m3-bun ${feature}: cannot load ${specifier}; add ${name} to the app's dependencies`,
-        {
-          cause: error,
-        },
-      );
+      const name = specifier.startsWith("@") ? specifier.split("/").slice(0, 2).join("/") : specifier.split("/")[0];
+      throw new Error(`m3-bun ${feature}: cannot load ${specifier}; add ${name} to the app's dependencies`, {
+        cause: error,
+      });
     });
     loaded.set(specifier, pending);
   }
@@ -29,22 +21,12 @@ export function loadOptional<T>(
 }
 
 /** Directory of an installed package (through its exported `package.json`), or an explicit error. */
-export function packageDir(
-  name: string,
-  feature: string,
-  from: string = import.meta.dir,
-): string {
+export function packageDir(name: string, feature: string, from: string = import.meta.dir): string {
   try {
-    return Bun.resolveSync(`${name}/package.json`, from).replace(
-      /[\\/]package\.json$/,
-      "",
-    );
+    return Bun.resolveSync(`${name}/package.json`, from).replace(/[\\/]package\.json$/, "");
   } catch (error) {
-    throw new Error(
-      `m3-bun ${feature}: ${name} is not installed; add it to the app's dependencies`,
-      {
-        cause: error,
-      },
-    );
+    throw new Error(`m3-bun ${feature}: ${name} is not installed; add it to the app's dependencies`, {
+      cause: error,
+    });
   }
 }

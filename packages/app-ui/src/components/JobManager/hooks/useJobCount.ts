@@ -1,8 +1,5 @@
 import { useEffect, useRef } from "react";
-import {
-  useLibraryQuery,
-  useSpacedriveClient,
-} from "../../../contexts/SpacedriveContext";
+import { useLibraryQuery, useSpacedriveClient } from "../../../contexts/SpacedriveContext";
 
 /**
  * Lightweight hook for job count indicator.
@@ -31,20 +28,12 @@ export function useJobCount() {
     let isCancelled = false;
 
     const filter = {
-      event_types: [
-        "JobQueued",
-        "JobStarted",
-        "JobCompleted",
-        "JobFailed",
-        "JobCancelled",
-        "JobPaused",
-        "JobResumed",
-      ],
+      event_types: ["JobQueued", "JobStarted", "JobCompleted", "JobFailed", "JobCancelled", "JobPaused", "JobResumed"],
     };
 
     client
       .subscribeFiltered(filter, () => refetchRef.current())
-      .then((unsub) => {
+      .then(unsub => {
         if (isCancelled) {
           unsub();
           return;
@@ -60,8 +49,8 @@ export function useJobCount() {
   }, [client]);
 
   const jobs = data?.jobs ?? [];
-  const runningCount = jobs.filter((j) => j.status === "running").length;
-  const pausedCount = jobs.filter((j) => j.status === "paused").length;
+  const runningCount = jobs.filter(j => j.status === "running").length;
+  const pausedCount = jobs.filter(j => j.status === "paused").length;
 
   return {
     activeJobCount: runningCount + pausedCount,

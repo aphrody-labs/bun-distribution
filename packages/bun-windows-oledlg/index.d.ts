@@ -3,11 +3,41 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** oledlg.dll!OleUIAddVerbMenuA */
-  OleUIAddVerbMenuA(lpOleObj: Win32Pointer, lpszShortType: string | Win32Pointer, hMenu: Win32Pointer, uPos: number, uIDVerbMin: number, uIDVerbMax: number, bAddConvert: number, idConvert: number, lphMenu: Win32Pointer): number;
+  OleUIAddVerbMenuA(
+    lpOleObj: Win32Pointer,
+    lpszShortType: string | Win32Pointer,
+    hMenu: Win32Pointer,
+    uPos: number,
+    uIDVerbMin: number,
+    uIDVerbMax: number,
+    bAddConvert: number,
+    idConvert: number,
+    lphMenu: Win32Pointer,
+  ): number;
   /** oledlg.dll!OleUIAddVerbMenuW */
-  OleUIAddVerbMenuW(lpOleObj: Win32Pointer, lpszShortType: string | Win32Pointer, hMenu: Win32Pointer, uPos: number, uIDVerbMin: number, uIDVerbMax: number, bAddConvert: number, idConvert: number, lphMenu: Win32Pointer): number;
+  OleUIAddVerbMenuW(
+    lpOleObj: Win32Pointer,
+    lpszShortType: string | Win32Pointer,
+    hMenu: Win32Pointer,
+    uPos: number,
+    uIDVerbMin: number,
+    uIDVerbMax: number,
+    bAddConvert: number,
+    idConvert: number,
+    lphMenu: Win32Pointer,
+  ): number;
   /** oledlg.dll!OleUIAddVerbMenuW */
-  OleUIAddVerbMenu(lpOleObj: Win32Pointer, lpszShortType: string | Win32Pointer, hMenu: Win32Pointer, uPos: number, uIDVerbMin: number, uIDVerbMax: number, bAddConvert: number, idConvert: number, lphMenu: Win32Pointer): number;
+  OleUIAddVerbMenu(
+    lpOleObj: Win32Pointer,
+    lpszShortType: string | Win32Pointer,
+    hMenu: Win32Pointer,
+    uPos: number,
+    uIDVerbMin: number,
+    uIDVerbMax: number,
+    bAddConvert: number,
+    idConvert: number,
+    lphMenu: Win32Pointer,
+  ): number;
   /** oledlg.dll!OleUIBusyA */
   OleUIBusyA(param0: Win32Pointer): number;
   /** oledlg.dll!OleUIBusyW */
@@ -65,11 +95,26 @@ interface Functions {
   /** oledlg.dll!OleUIPromptUserW */
   OleUIPromptUser(nTemplate: number, hwndParent: Win32Pointer): number;
   /** oledlg.dll!OleUIUpdateLinksA */
-  OleUIUpdateLinksA(lpOleUILinkCntr: Win32Pointer, hwndParent: Win32Pointer, lpszTitle: string | Win32Pointer, cLinks: number): number;
+  OleUIUpdateLinksA(
+    lpOleUILinkCntr: Win32Pointer,
+    hwndParent: Win32Pointer,
+    lpszTitle: string | Win32Pointer,
+    cLinks: number,
+  ): number;
   /** oledlg.dll!OleUIUpdateLinksW */
-  OleUIUpdateLinksW(lpOleUILinkCntr: Win32Pointer, hwndParent: Win32Pointer, lpszTitle: string | Win32Pointer, cLinks: number): number;
+  OleUIUpdateLinksW(
+    lpOleUILinkCntr: Win32Pointer,
+    hwndParent: Win32Pointer,
+    lpszTitle: string | Win32Pointer,
+    cLinks: number,
+  ): number;
   /** oledlg.dll!OleUIUpdateLinksW */
-  OleUIUpdateLinks(lpOleUILinkCntr: Win32Pointer, hwndParent: Win32Pointer, lpszTitle: string | Win32Pointer, cLinks: number): number;
+  OleUIUpdateLinks(
+    lpOleUILinkCntr: Win32Pointer,
+    hwndParent: Win32Pointer,
+    lpszTitle: string | Win32Pointer,
+    cLinks: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

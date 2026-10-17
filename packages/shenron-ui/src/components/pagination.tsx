@@ -44,10 +44,7 @@ export const DEFAULT_PAGINATION_LABELS: PaginationLabels = {
 };
 
 function formatRange(template: string, values: Record<string, string>): string {
-  return template.replace(
-    /\{(start|end|total|unit)\}/g,
-    (_, k: string) => values[k] ?? "",
-  );
+  return template.replace(/\{(start|end|total|unit)\}/g, (_, k: string) => values[k] ?? "");
 }
 
 export function Pagination({
@@ -95,8 +92,7 @@ export function Pagination({
     if (!rendreLeFocus.current) return;
     rendreLeFocus.current = false;
     const actif = document.activeElement;
-    if (actif && actif !== document.body && navRef.current?.contains(actif))
-      return;
+    if (actif && actif !== document.body && navRef.current?.contains(actif)) return;
     boutonCourantRef.current?.focus({ preventScroll: true });
   }, [page]);
 
@@ -107,9 +103,7 @@ export function Pagination({
       rendreLeFocus.current = rendreFocus;
       onPageChange(cible);
       // Défilement INSTANTANÉ sous `prefers-reduced-motion` (WCAG 2.3.3).
-      const moinsDAnimation = window.matchMedia?.(
-        "(prefers-reduced-motion: reduce)",
-      ).matches;
+      const moinsDAnimation = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       window.scrollTo({
         top: 0,
         behavior: moinsDAnimation ? "auto" : "smooth",
@@ -136,11 +130,7 @@ export function Pagination({
       </p>
 
       {pages > 1 && (
-        <nav
-          ref={navRef}
-          aria-label={l.nav}
-          className="flex max-w-full flex-wrap items-center justify-center gap-1"
-        >
+        <nav ref={navRef} aria-label={l.nav} className="flex max-w-full flex-wrap items-center justify-center gap-1">
           <button
             type="button"
             onClick={() => aller(page - 1, true)}
@@ -153,11 +143,7 @@ export function Pagination({
 
           {numeros.map((n, i) =>
             n === null ? (
-              <span
-                key={`gap-${i}`}
-                aria-hidden
-                className="grid h-11 w-5 place-items-center text-white/30"
-              >
+              <span key={`gap-${i}`} aria-hidden className="grid h-11 w-5 place-items-center text-white/30">
                 …
               </span>
             ) : (
@@ -169,9 +155,7 @@ export function Pagination({
                 aria-current={n === page ? "page" : undefined}
                 aria-label={`Page ${n}`}
                 className={`${btn} tabular-nums ${
-                  n === page
-                    ? "bg-dbz-orange text-black"
-                    : "text-white/70 hover:bg-white/[0.06] hover:text-white"
+                  n === page ? "bg-dbz-orange text-black" : "text-white/70 hover:bg-white/[0.06] hover:text-white"
                 }`}
               >
                 {n}

@@ -41,26 +41,20 @@ export function useAutoGrowEditorHeight(
 ): AutoGrowEditorHeight {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const computeExpandedMaxPx = (): number =>
-    Math.max(120, Math.min(window.innerHeight - 700, HARD_MAX_PX));
+  const computeExpandedMaxPx = (): number => Math.max(120, Math.min(window.innerHeight - 700, HARD_MAX_PX));
 
   const computeCollapsedMaxPx = (el: HTMLElement): number => {
     const topFromViewport = el.getBoundingClientRect().top;
     return Math.max(
       COLLAPSED_MAX_PX,
-      Math.min(
-        HARD_MAX_PX,
-        Math.floor(window.innerHeight - topFromViewport - BOTTOM_SAFE_AREA_PX),
-      ),
+      Math.min(HARD_MAX_PX, Math.floor(window.innerHeight - topFromViewport - BOTTOM_SAFE_AREA_PX)),
     );
   };
 
   const applyHeights = useCallback(() => {
     const el = editorRef.current;
     if (!el) return;
-    const maxH = isExpanded
-      ? computeExpandedMaxPx()
-      : computeCollapsedMaxPx(el);
+    const maxH = isExpanded ? computeExpandedMaxPx() : computeCollapsedMaxPx(el);
     el.style.maxHeight = `${maxH}px`;
     el.style.minHeight = "0";
     if (!isExpanded) {
@@ -70,7 +64,7 @@ export function useAutoGrowEditorHeight(
   }, [editorRef, isExpanded]);
 
   const toggleExpand = useCallback(() => {
-    setIsExpanded((prev) => {
+    setIsExpanded(prev => {
       const next = !prev;
       const el = editorRef.current;
       if (el) {

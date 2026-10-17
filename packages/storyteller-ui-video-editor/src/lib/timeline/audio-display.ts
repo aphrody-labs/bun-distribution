@@ -20,10 +20,7 @@ function getNormalizedGainFromDb({ db }: { db: number }): number {
  * the bottom of the clip.
  */
 export function getLinePosFromDb({ db }: { db: number }): number {
-  const normalizedGain = Math.max(
-    0,
-    Math.min(1, getNormalizedGainFromDb({ db })),
-  );
+  const normalizedGain = Math.max(0, Math.min(1, getNormalizedGainFromDb({ db })));
   const progress = normalizedGain ** (1 / SLIDER_CURVE_EXPONENT);
   return (1 - progress) * 100;
 }
@@ -49,16 +46,9 @@ export function getDbFromLinePos({ percent }: { percent: number }): number {
  * The log scale keeps quiet content visible while reserving the top of the
  * element for amplitudes that approach 0 dBFS.
  */
-export function getBarFractionFromOutputAmplitude({
-  outputAmplitude,
-}: {
-  outputAmplitude: number;
-}): number {
+export function getBarFractionFromOutputAmplitude({ outputAmplitude }: { outputAmplitude: number }): number {
   if (outputAmplitude <= 0) return 0;
   const db = 20 * Math.log10(outputAmplitude);
   if (db <= MIN_DISPLAY_DB) return 0;
-  return Math.min(
-    1,
-    ((db - MIN_DISPLAY_DB) / -MIN_DISPLAY_DB) ** WAVEFORM_BAR_EXPONENT,
-  );
+  return Math.min(1, ((db - MIN_DISPLAY_DB) / -MIN_DISPLAY_DB) ** WAVEFORM_BAR_EXPONENT);
 }

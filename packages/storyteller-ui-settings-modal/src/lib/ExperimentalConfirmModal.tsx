@@ -23,13 +23,7 @@ export const ExperimentalConfirmModal = ({
   confirmVariant = "destructive",
 }: Props) => {
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      className="max-w-md"
-      showClose={false}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={title} className="max-w-md" showClose={false}>
       <div className="text-sm text-base-fg">{text}</div>
       <div className="mt-6 flex justify-end gap-2">
         <Button variant="secondary" onClick={onClose}>

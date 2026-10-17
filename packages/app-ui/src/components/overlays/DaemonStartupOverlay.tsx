@@ -9,8 +9,7 @@ export function DaemonStartupOverlay({ show }: { show: boolean }) {
   const platform = usePlatform();
   const [version, setVersion] = useState<string>("2.0.0");
   // Vite/Bun inject `import.meta.env`; read it through a typed view (see routes/explorer/ViewModeMenu.tsx).
-  const isDev =
-    (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
+  const isDev = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
 
   // Get version from platform abstraction
   useEffect(() => {
@@ -62,13 +61,7 @@ export function DaemonStartupOverlay({ show }: { show: boolean }) {
             </div>
             {/* Orb animation - inset to make it smaller */}
             <div className="absolute inset-[15%] z-10">
-              <Orb
-                palette="blue"
-                hue={0}
-                hoverIntensity={0}
-                rotateOnHover={false}
-                forceHoverState={true}
-              />
+              <Orb palette="blue" hue={0} hoverIntensity={0} rotateOnHover={false} forceHoverState={true} />
             </div>
           </motion.div>
 
@@ -80,14 +73,9 @@ export function DaemonStartupOverlay({ show }: { show: boolean }) {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="fixed bottom-6 right-6 flex items-center gap-3"
           >
-            <CircleNotch
-              className="size-5 animate-spin text-white"
-              weight="bold"
-            />
+            <CircleNotch className="size-5 animate-spin text-white" weight="bold" />
             <div className="flex flex-col">
-              <p className="text-title-medium font-bold text-white">
-                Starting Spacedrive
-              </p>
+              <p className="text-title-medium font-bold text-white">Starting Spacedrive</p>
               <p className="text-body-medium text-white/50">v{versionText}</p>
             </div>
           </motion.div>

@@ -361,7 +361,9 @@ mod imp {
                 Command::new("update-desktop-database")
                     .arg(target)
                     .status()
-                    .map_err(|error| crate::deep_link::Error::Execute("update-desktop-database", error))?;
+                    .map_err(|error| {
+                        crate::deep_link::Error::Execute("update-desktop-database", error)
+                    })?;
 
                 Command::new("xdg-mime")
                     .args(["default", &file_name, mime_type.as_str()])
@@ -572,7 +574,7 @@ impl<R: Runtime> DeepLink<R> {
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R, Option<config::Config>> {
     Builder::new("deep-link")
-        .invoke_handler(tauri::generate_handler![#![plugin(deep_link)] 
+        .invoke_handler(tauri::generate_handler![#![plugin(deep_link)]
             commands::get_current,
             commands::register,
             commands::unregister,

@@ -1,15 +1,7 @@
 import type { EditorCore } from "../index";
 import type { Bookmark, SceneTracks, TScene } from "../../timeline/types";
-import {
-  getMainScene,
-  ensureMainScene,
-  canDeleteScene,
-} from "../../timeline/scenes";
-import {
-  getBookmarkAtTime,
-  getFrameTime,
-  isBookmarkAtTime,
-} from "../../timeline/bookmarks";
+import { getMainScene, ensureMainScene, canDeleteScene } from "../../timeline/scenes";
+import { getBookmarkAtTime, getFrameTime, isBookmarkAtTime } from "../../timeline/bookmarks";
 import {
   CreateSceneCommand,
   DeleteSceneCommand,
@@ -28,13 +20,7 @@ export class ScenesManager {
 
   constructor(private editor: EditorCore) {}
 
-  async createScene({
-    name,
-    isMain = false,
-  }: {
-    name: string;
-    isMain: boolean;
-  }): Promise<string> {
+  async createScene({ name, isMain = false }: { name: string; isMain: boolean }): Promise<string> {
     if (!this.editor.project.getActive()) {
       throw new Error("No active project");
     }
@@ -45,7 +31,7 @@ export class ScenesManager {
   }
 
   async deleteScene({ sceneId }: { sceneId: string }): Promise<void> {
-    const sceneToDelete = this.list.find((s) => s.id === sceneId);
+    const sceneToDelete = this.list.find(s => s.id === sceneId);
 
     if (!sceneToDelete) {
       throw new Error("Scene not found");
@@ -64,13 +50,7 @@ export class ScenesManager {
     this.editor.command.execute({ command });
   }
 
-  async renameScene({
-    sceneId,
-    name,
-  }: {
-    sceneId: string;
-    name: string;
-  }): Promise<void> {
+  async renameScene({ sceneId, name }: { sceneId: string; name: string }): Promise<void> {
     if (!this.editor.project.getActive()) {
       throw new Error("No active project");
     }
@@ -83,7 +63,7 @@ export class ScenesManager {
   }
 
   async switchToScene({ sceneId }: { sceneId: string }): Promise<void> {
-    const targetScene = this.list.find((s) => s.id === sceneId);
+    const targetScene = this.list.find(s => s.id === sceneId);
 
     if (!targetScene) {
       throw new Error("Scene not found");
@@ -143,13 +123,7 @@ export class ScenesManager {
     this.editor.command.execute({ command });
   }
 
-  async moveBookmark({
-    fromTime,
-    toTime,
-  }: {
-    fromTime: MediaTime;
-    toTime: MediaTime;
-  }): Promise<void> {
+  async moveBookmark({ fromTime, toTime }: { fromTime: MediaTime; toTime: MediaTime }): Promise<void> {
     const command = new MoveBookmarkCommand({ fromTime, toTime });
     this.editor.command.execute({ command });
   }
@@ -171,17 +145,9 @@ export class ScenesManager {
     });
   }
 
-  initializeScenes({
-    scenes,
-    currentSceneId,
-  }: {
-    scenes: TScene[];
-    currentSceneId?: string;
-  }): void {
+  initializeScenes({ scenes, currentSceneId }: { scenes: TScene[]; currentSceneId?: string }): void {
     const ensuredScenes = ensureMainScene({ scenes });
-    const currentScene = currentSceneId
-      ? ensuredScenes.find((s) => s.id === currentSceneId)
-      : null;
+    const currentScene = currentSceneId ? ensuredScenes.find(s => s.id === currentSceneId) : null;
 
     const fallbackScene = getMainScene({ scenes: ensuredScenes });
 
@@ -230,18 +196,10 @@ export class ScenesManager {
     return this.list;
   }
 
-  setScenes({
-    scenes,
-    activeSceneId,
-  }: {
-    scenes: TScene[];
-    activeSceneId?: string;
-  }): void {
+  setScenes({ scenes, activeSceneId }: { scenes: TScene[]; activeSceneId?: string }): void {
     this.list = scenes;
     const nextActiveSceneId = activeSceneId ?? this.active?.id ?? null;
-    this.active = nextActiveSceneId
-      ? (scenes.find((scene) => scene.id === nextActiveSceneId) ?? null)
-      : null;
+    this.active = nextActiveSceneId ? (scenes.find(scene => scene.id === nextActiveSceneId) ?? null) : null;
     this.notify();
 
     const activeProject = this.editor.project.getActive();
@@ -272,9 +230,7 @@ export class ScenesManager {
       updatedAt: new Date(),
     };
 
-    this.list = this.list.map((s) =>
-      s.id === this.active?.id ? updatedScene : s,
-    );
+    this.list = this.list.map(s => (s.id === this.active?.id ? updatedScene : s));
     this.active = updatedScene;
     this.notify();
 
@@ -293,7 +249,7 @@ export class ScenesManager {
   }
 
   private notify(): void {
-    this.listeners.forEach((fn) => {
+    this.listeners.forEach(fn => {
       fn();
     });
   }

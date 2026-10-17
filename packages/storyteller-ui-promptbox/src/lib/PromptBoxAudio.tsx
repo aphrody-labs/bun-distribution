@@ -4,13 +4,7 @@ import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateIconButton, ToggleButton } from "@storyteller/ui-button";
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  MicIcon,
-  MicOffIcon,
-  RepeatIcon,
-} from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, MicIcon, MicOffIcon, RepeatIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import type {
   OmniGenAudioModelDetails,
@@ -24,34 +18,16 @@ import {
   OMNI_GENERATE_OUTAGE_MESSAGE,
   type AudioGenerationSettings,
 } from "@storyteller/omni-gen";
-import {
-  getCreatorIconPathForModelId,
-  getModelDescription,
-  getModelInfo,
-} from "@storyteller/model-list";
-import {
-  usePromptAudioStore,
-  useEnterToGenerateStore,
-  type RefAudio,
-} from "./promptStore";
+import { getCreatorIconPathForModelId, getModelDescription, getModelInfo } from "@storyteller/model-list";
+import { usePromptAudioStore, useEnterToGenerateStore, type RefAudio } from "./promptStore";
 import { useAutoGrowEditorHeight } from "./useAutoGrowEditorHeight";
-import {
-  PromptFullscreenModal,
-  useFullscreenPrompt,
-} from "./PromptFullscreenModal";
+import { PromptFullscreenModal, useFullscreenPrompt } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { twMerge } from "tailwind-merge";
-import {
-  AudioReferenceRow,
-  type AudioReferenceRowHandle,
-} from "./common/AudioReferenceRow";
-import {
-  PromptBoxDropOverlay,
-  usePromptBoxDrop,
-  type DroppedFiles,
-} from "./deck/usePromptBoxDrop";
+import { AudioReferenceRow, type AudioReferenceRowHandle } from "./common/AudioReferenceRow";
+import { PromptBoxDropOverlay, usePromptBoxDrop, type DroppedFiles } from "./deck/usePromptBoxDrop";
 import { AudioTuningPopover } from "./common/AudioTuningPopover";
 import { SoundsSettingsPopover } from "./common/SoundsSettingsPopover";
 import { StylePromptRow } from "./common/StylePromptRow";
@@ -65,7 +41,7 @@ const supports = (flag: boolean | null | undefined): boolean => flag === true;
 
 // Resolves 0 when metadata can't be loaded.
 const getAudioDurationFromSrc = (src: string): Promise<number> =>
-  new Promise((resolve) => {
+  new Promise(resolve => {
     const audio = document.createElement("audio");
     audio.preload = "metadata";
     audio.onloadedmetadata = () => resolve(Math.round(audio.duration));
@@ -77,9 +53,7 @@ interface PromptBoxAudioProps {
   // Audio models from GET /v1/omni_gen/models/audio (useOmniGenAudioModels).
   models: OmniGenAudioModelDetails[];
   uploadAudio?: UploadMediaFn;
-  generateAudio?: (
-    request: OmniGenAudioRequest,
-  ) => Promise<OmniGenAudioGenerateResponse>;
+  generateAudio?: (request: OmniGenAudioRequest) => Promise<OmniGenAudioGenerateResponse>;
   uploadImage?: UploadMediaFn;
   // Fired after a successful enqueue with every created job token (one
   // request can create several Suno clips).
@@ -95,69 +69,60 @@ export const PromptBoxAudio = ({
   onEnqueuePressed,
   credits,
 }: PromptBoxAudioProps) => {
-  const prompt = usePromptAudioStore((s) => s.prompt);
-  const setPrompt = usePromptAudioStore((s) => s.setPrompt);
-  const stylePrompt = usePromptAudioStore((s) => s.stylePrompt);
-  const setStylePrompt = usePromptAudioStore((s) => s.setStylePrompt);
-  const selectedModelId = usePromptAudioStore((s) => s.selectedModelId);
-  const setSelectedModelId = usePromptAudioStore((s) => s.setSelectedModelId);
-  const isInstrumental = usePromptAudioStore((s) => s.isInstrumental);
-  const setIsInstrumental = usePromptAudioStore((s) => s.setIsInstrumental);
-  const keepLyrics = usePromptAudioStore((s) => s.keepLyrics);
-  const setKeepLyrics = usePromptAudioStore((s) => s.setKeepLyrics);
-  const isLoopable = usePromptAudioStore((s) => s.isLoopable);
-  const setIsLoopable = usePromptAudioStore((s) => s.setIsLoopable);
-  const bpm = usePromptAudioStore((s) => s.bpm);
-  const setBpm = usePromptAudioStore((s) => s.setBpm);
-  const musicalKey = usePromptAudioStore((s) => s.musicalKey);
-  const setMusicalKey = usePromptAudioStore((s) => s.setMusicalKey);
-  const sampleRateHz = usePromptAudioStore((s) => s.sampleRateHz);
-  const setSampleRateHz = usePromptAudioStore((s) => s.setSampleRateHz);
-  const speed = usePromptAudioStore((s) => s.speed);
-  const setSpeed = usePromptAudioStore((s) => s.setSpeed);
-  const volume = usePromptAudioStore((s) => s.volume);
-  const setVolume = usePromptAudioStore((s) => s.setVolume);
-  const pitch = usePromptAudioStore((s) => s.pitch);
-  const setPitch = usePromptAudioStore((s) => s.setPitch);
-  const referenceAudios = usePromptAudioStore((s) => s.referenceAudios);
-  const setReferenceAudios = usePromptAudioStore((s) => s.setReferenceAudios);
-  const referenceImages = usePromptAudioStore((s) => s.referenceImages);
-  const setReferenceImages = usePromptAudioStore((s) => s.setReferenceImages);
+  const prompt = usePromptAudioStore(s => s.prompt);
+  const setPrompt = usePromptAudioStore(s => s.setPrompt);
+  const stylePrompt = usePromptAudioStore(s => s.stylePrompt);
+  const setStylePrompt = usePromptAudioStore(s => s.setStylePrompt);
+  const selectedModelId = usePromptAudioStore(s => s.selectedModelId);
+  const setSelectedModelId = usePromptAudioStore(s => s.setSelectedModelId);
+  const isInstrumental = usePromptAudioStore(s => s.isInstrumental);
+  const setIsInstrumental = usePromptAudioStore(s => s.setIsInstrumental);
+  const keepLyrics = usePromptAudioStore(s => s.keepLyrics);
+  const setKeepLyrics = usePromptAudioStore(s => s.setKeepLyrics);
+  const isLoopable = usePromptAudioStore(s => s.isLoopable);
+  const setIsLoopable = usePromptAudioStore(s => s.setIsLoopable);
+  const bpm = usePromptAudioStore(s => s.bpm);
+  const setBpm = usePromptAudioStore(s => s.setBpm);
+  const musicalKey = usePromptAudioStore(s => s.musicalKey);
+  const setMusicalKey = usePromptAudioStore(s => s.setMusicalKey);
+  const sampleRateHz = usePromptAudioStore(s => s.sampleRateHz);
+  const setSampleRateHz = usePromptAudioStore(s => s.setSampleRateHz);
+  const speed = usePromptAudioStore(s => s.speed);
+  const setSpeed = usePromptAudioStore(s => s.setSpeed);
+  const volume = usePromptAudioStore(s => s.volume);
+  const setVolume = usePromptAudioStore(s => s.setVolume);
+  const pitch = usePromptAudioStore(s => s.pitch);
+  const setPitch = usePromptAudioStore(s => s.setPitch);
+  const referenceAudios = usePromptAudioStore(s => s.referenceAudios);
+  const setReferenceAudios = usePromptAudioStore(s => s.setReferenceAudios);
+  const referenceImages = usePromptAudioStore(s => s.referenceImages);
+  const setReferenceImages = usePromptAudioStore(s => s.setReferenceImages);
 
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
+  const enterToGenerate = useEnterToGenerateStore(s => s.enabled);
 
   // Audio library picker (the "From library" button in the reference row).
   const [isAudioLibraryOpen, setIsAudioLibraryOpen] = useState(false);
-  const [audioLibrarySelectedIds, setAudioLibrarySelectedIds] = useState<
-    string[]
-  >([]);
-  const [isAudioLibraryProcessing, setIsAudioLibraryProcessing] =
-    useState(false);
+  const [audioLibrarySelectedIds, setAudioLibrarySelectedIds] = useState<string[]>([]);
+  const [isAudioLibraryProcessing, setIsAudioLibraryProcessing] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { isExpanded, toggleExpand } = useAutoGrowEditorHeight(
-    textareaRef,
-    prompt,
-  );
-  const { isFullscreen, openFullscreen, closeFullscreen } =
-    useFullscreenPrompt();
+  const { isExpanded, toggleExpand } = useAutoGrowEditorHeight(textareaRef, prompt);
+  const { isFullscreen, openFullscreen, closeFullscreen } = useFullscreenPrompt();
 
   const selectedModel = useMemo((): OmniGenAudioModelDetails | undefined => {
     if (!models.length) return undefined;
     if (selectedModelId) {
-      const chosen = models.find((m) => m.model === selectedModelId);
+      const chosen = models.find(m => m.model === selectedModelId);
       if (chosen) return chosen;
     }
-    return models.find((m) => m.model === DEFAULT_AUDIO_MODEL_ID) ?? models[0];
+    return models.find(m => m.model === DEFAULT_AUDIO_MODEL_ID) ?? models[0];
   }, [models, selectedModelId]);
 
   // Capability gating
   const styleSupported = supports(selectedModel?.style_prompt_supported);
-  const hasInstrumental = supports(
-    selectedModel?.instrumental_toggle_supported,
-  );
+  const hasInstrumental = supports(selectedModel?.instrumental_toggle_supported);
   const hasKeepLyrics = supports(selectedModel?.keep_lyrics_supported);
   const hasLoopable = supports(selectedModel?.loopable_toggle_supported);
   const hasBpm = supports(selectedModel?.bpm_supported);
@@ -166,31 +131,21 @@ export const PromptBoxAudio = ({
   const hasSpeed = supports(selectedModel?.speed_supported);
   const hasVolume = supports(selectedModel?.volume_supported);
   const hasPitch = supports(selectedModel?.pitch_supported);
-  const hasTuning =
-    !!sampleRateOptions?.length || hasSpeed || hasVolume || hasPitch;
-  const audioRefsSupported = supports(
-    selectedModel?.audio_references_supported,
-  );
+  const hasTuning = !!sampleRateOptions?.length || hasSpeed || hasVolume || hasPitch;
+  const audioRefsSupported = supports(selectedModel?.audio_references_supported);
   const maxAudioRefs = selectedModel?.audio_references_max ?? 1;
-  const imageRefsSupported = supports(
-    selectedModel?.image_references_supported,
-  );
-  const requiresAudioRef = AUDIO_MODELS_REQUIRING_AUDIO_REF.has(
-    selectedModel?.model ?? "",
-  );
-  const missingRequiredAudioRef =
-    requiresAudioRef && referenceAudios.length !== 1;
+  const imageRefsSupported = supports(selectedModel?.image_references_supported);
+  const requiresAudioRef = AUDIO_MODELS_REQUIRING_AUDIO_REF.has(selectedModel?.model ?? "");
+  const missingRequiredAudioRef = requiresAudioRef && referenceAudios.length !== 1;
 
   const effectiveSampleRate =
     sampleRateHz != null && sampleRateOptions?.includes(sampleRateHz)
       ? sampleRateHz
-      : (selectedModel?.sample_rate_hz_default ??
-        sampleRateOptions?.[0] ??
-        null);
+      : (selectedModel?.sample_rate_hz_default ?? sampleRateOptions?.[0] ?? null);
 
   const modelItems = useMemo(
     (): PopoverItem[] =>
-      models.map((model) => ({
+      models.map(model => ({
         label: model.full_name || model.model,
         selected: model.model === selectedModel?.model,
         description: getModelDescription(model.model, model.extra_info_short),
@@ -217,25 +172,19 @@ export const PromptBoxAudio = ({
     setReferenceAudios(audios);
   };
 
-  const maxAudioLibrarySelections = Math.max(
-    1,
-    maxAudioRefs - referenceAudios.length,
-  );
+  const maxAudioLibrarySelections = Math.max(1, maxAudioRefs - referenceAudios.length);
 
   // Audio refs already in the deck, greyed out in the library picker so one
   // media file can't be added twice — the backend rejects a generation request
   // when the same token appears in it twice.
   const addedAudioTokens = useMemo(
-    () =>
-      referenceAudios
-        .map((audio) => audio.mediaToken)
-        .filter((t): t is string => !!t),
+    () => referenceAudios.map(audio => audio.mediaToken).filter((t): t is string => !!t),
     [referenceAudios],
   );
 
   const handleAudioLibrarySelectToggle = (id: string) => {
-    setAudioLibrarySelectedIds((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
+    setAudioLibrarySelectedIds(prev => {
+      if (prev.includes(id)) return prev.filter(x => x !== id);
       if (prev.length >= maxAudioLibrarySelections) {
         return maxAudioLibrarySelections === 1 ? [id] : prev;
       }
@@ -252,16 +201,14 @@ export const PromptBoxAudio = ({
     const availableSlots = Math.max(0, maxAudioRefs - referenceAudios.length);
     const picked = items
       .slice(0, availableSlots)
-      .filter((item): item is GalleryItem & { fullImage: string } =>
-        Boolean(item.fullImage),
-      );
+      .filter((item): item is GalleryItem & { fullImage: string } => Boolean(item.fullImage));
 
     setIsAudioLibraryProcessing(true);
     try {
       // Use the duration the list endpoint already knows; probe the file's
       // metadata only when it doesn't.
       const durations = await Promise.all(
-        picked.map((item) =>
+        picked.map(item =>
           item.durationMillis != null
             ? Promise.resolve(Math.round(item.durationMillis / 1000))
             : getAudioDurationFromSrc(item.fullImage),
@@ -274,9 +221,7 @@ export const PromptBoxAudio = ({
         const item = picked[i]!;
         const duration = durations[i]!;
         if (total + duration > AUDIO_REF_MAX_DURATION_SECONDS) {
-          toast.error(
-            `Total audio duration cannot exceed ${AUDIO_REF_MAX_DURATION_SECONDS}s`,
-          );
+          toast.error(`Total audio duration cannot exceed ${AUDIO_REF_MAX_DURATION_SECONDS}s`);
           break;
         }
         total += duration;
@@ -300,9 +245,7 @@ export const PromptBoxAudio = ({
   const handleReferenceImagesChange = (images: typeof referenceImages) => {
     if (images.length > 0 && referenceAudios.length > 0) {
       setReferenceAudios([]);
-      toast.error(
-        "Removed audio reference — it can't be combined with an image",
-      );
+      toast.error("Removed audio reference — it can't be combined with an image");
     }
     setReferenceImages(images);
   };
@@ -349,8 +292,7 @@ export const PromptBoxAudio = ({
     const pastedText = e.clipboardData.getData("text");
     const target = e.currentTarget;
     const { selectionStart, selectionEnd, value } = target;
-    const next =
-      value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
+    const next = value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
     setPrompt(next);
     requestAnimationFrame(() => {
       const pos = Math.min(selectionStart + pastedText.length, next.length);
@@ -366,10 +308,8 @@ export const PromptBoxAudio = ({
     }
   };
 
-  const hasAttachedRefs =
-    referenceAudios.length > 0 || referenceImages.length > 0;
-  const hasClearableContent =
-    prompt.length > 0 || stylePrompt.length > 0 || hasAttachedRefs;
+  const hasAttachedRefs = referenceAudios.length > 0 || referenceImages.length > 0;
+  const hasClearableContent = prompt.length > 0 || stylePrompt.length > 0 || hasAttachedRefs;
 
   const handleClearAll = () => {
     setPrompt("");
@@ -382,9 +322,7 @@ export const PromptBoxAudio = ({
     if (!prompt.trim() || !selectedModel || isEnqueueing) return;
 
     if (missingRequiredAudioRef) {
-      toast.error(
-        `${selectedModel.full_name ?? "This model"} needs an audio track to work from — add one first`,
-      );
+      toast.error(`${selectedModel.full_name ?? "This model"} needs an audio track to work from — add one first`);
       return;
     }
 
@@ -395,12 +333,8 @@ export const PromptBoxAudio = ({
       const settings: AudioGenerationSettings = {
         prompt,
         stylePrompt,
-        audioMediaTokens: referenceAudios
-          .map((audio) => audio.mediaToken)
-          .filter((token) => token.length > 0),
-        imageMediaTokens: referenceImages
-          .map((image) => image.mediaToken)
-          .filter((token) => token.length > 0),
+        audioMediaTokens: referenceAudios.map(audio => audio.mediaToken).filter(token => token.length > 0),
+        imageMediaTokens: referenceImages.map(image => image.mediaToken).filter(token => token.length > 0),
         isInstrumental,
         keepLyrics,
         isLoopable,
@@ -412,11 +346,7 @@ export const PromptBoxAudio = ({
         pitch,
       };
 
-      const result = await enqueueAudioGeneration(
-        selectedModel,
-        settings,
-        generateAudio,
-      );
+      const result = await enqueueAudioGeneration(selectedModel, settings, generateAudio);
 
       if (!result.success) {
         if (result.errorCode === 402) {
@@ -442,7 +372,7 @@ export const PromptBoxAudio = ({
     <Tooltip content="Model" position="top" className="z-50" closeOnClick>
       <PopoverMenu
         items={modelItems}
-        onSelect={(item) => {
+        onSelect={item => {
           if (item.action) setSelectedModelId(item.action);
         }}
         mode="toggle"
@@ -496,12 +426,7 @@ export const PromptBoxAudio = ({
         </Tooltip>
       )}
       {hasLoopable && (
-        <Tooltip
-          content={isLoopable ? "Loop: ON" : "Loop: OFF"}
-          position="top"
-          className="z-50"
-          delay={200}
-        >
+        <Tooltip content={isLoopable ? "Loop: ON" : "Loop: OFF"} position="top" className="z-50" delay={200}>
           <ToggleButton
             isActive={isLoopable}
             icon={RepeatIcon}
@@ -554,9 +479,7 @@ export const PromptBoxAudio = ({
         maxAudioCount={audioRefsSupported ? maxAudioRefs : 0}
         maxAudioRefDuration={AUDIO_REF_MAX_DURATION_SECONDS}
         uploadAudio={uploadAudio}
-        onPickAudioFromLibrary={
-          audioRefsSupported ? () => setIsAudioLibraryOpen(true) : undefined
-        }
+        onPickAudioFromLibrary={audioRefsSupported ? () => setIsAudioLibraryOpen(true) : undefined}
         audioRequired={requiresAudioRef}
         imageSupported={imageRefsSupported}
         referenceImages={referenceImages}
@@ -569,10 +492,7 @@ export const PromptBoxAudio = ({
     <>
       <div className="relative z-20 flex flex-col">
         <div
-          className={twMerge(
-            "glass relative w-full p-4 !transition-all duration-200",
-            isFocused && "border-primary",
-          )}
+          className={twMerge("glass relative w-full p-4 !transition-all duration-200", isFocused && "border-primary")}
           {...drop.dropZoneProps}
         >
           {dropOverlay}
@@ -596,9 +516,7 @@ export const PromptBoxAudio = ({
             </div>
           </div>
 
-          {styleSupported && (
-            <StylePromptRow value={stylePrompt} onChange={setStylePrompt} />
-          )}
+          {styleSupported && <StylePromptRow value={stylePrompt} onChange={setStylePrompt} />}
 
           <div className="mt-3.5 flex items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -627,20 +545,13 @@ export const PromptBoxAudio = ({
           </div>
 
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-            <Tooltip
-              content={isExpanded ? "Collapse" : "Expand"}
-              position="top"
-              className="-mb-2"
-            >
+            <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="top" className="-mb-2">
               <button
                 type="button"
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <DynamicIcon
-                  icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
-                  className="text-xs"
-                />
+                <DynamicIcon icon={isExpanded ? ChevronUpIcon : ChevronDownIcon} className="text-xs" />
               </button>
             </Tooltip>
           </div>

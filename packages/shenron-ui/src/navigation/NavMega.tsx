@@ -12,14 +12,7 @@
  * Le contenu vient du registre (`lib/wiki-launch`), déjà filtré sur l'accès
  * réel côté serveur : rien à maintenir ici quand une rubrique s'ouvre.
  */
-import {
-  ChevronBas,
-  DragonRadar,
-  Tv,
-  PlancheManga,
-  Kame,
-  Manga,
-} from "../icones";
+import { ChevronBas, DragonRadar, Tv, PlancheManga, Kame, Manga } from "../icones";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { UiLinkComponent } from "./link";
 
@@ -86,9 +79,7 @@ export function NavMega({
    */
   const focusDansLePanneau = () => {
     const actif = document.activeElement;
-    return (
-      !!actif && actif !== boutonRef.current && !!ref.current?.contains(actif)
-    );
+    return !!actif && actif !== boutonRef.current && !!ref.current?.contains(actif);
   };
 
   const ouvrir = () => {
@@ -123,16 +114,14 @@ export function NavMega({
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setOpen(false);
       // Échap referme : le focus doit revenir sur le déclencheur, jamais
       // disparaître avec le panneau qu'on vient de démonter.
-      if (ref.current?.contains(document.activeElement))
-        boutonRef.current?.focus();
+      if (ref.current?.contains(document.activeElement)) boutonRef.current?.focus();
     };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
@@ -142,27 +131,18 @@ export function NavMega({
     };
   }, [open]);
 
-  useEffect(
-    () => () => void (timer.current && clearTimeout(timer.current)),
-    [],
-  );
+  useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
   if (items.length === 0) return null;
 
   const estLarge = items.length > 4;
 
   return (
-    <div
-      ref={ref}
-      className="relative"
-      onPointerEnter={ouvrir}
-      onPointerLeave={fermerBientot}
-      onBlur={auFocusSortant}
-    >
+    <div ref={ref} className="relative" onPointerEnter={ouvrir} onPointerLeave={fermerBientot} onBlur={auFocusSortant}>
       <button
         ref={boutonRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(v => !v)}
         aria-expanded={open}
         aria-controls={panelId}
         // Pas d'`aria-haspopup` : le panneau est une LISTE DE LIENS, pas un
@@ -204,10 +184,8 @@ export function NavMega({
           {/* Trait d'encre supérieur stylisé Dragon Ball */}
           <div className="absolute -top-0.5 left-4 right-4 h-[2px] bg-gradient-to-r from-transparent via-dbz-orange to-transparent" />
 
-          <ul
-            className={`grid gap-1 ${estLarge ? "sm:grid-cols-2" : "grid-cols-1"}`}
-          >
-            {items.map((it) => {
+          <ul className={`grid gap-1 ${estLarge ? "sm:grid-cols-2" : "grid-cols-1"}`}>
+            {items.map(it => {
               return (
                 <li key={it.href}>
                   <Link

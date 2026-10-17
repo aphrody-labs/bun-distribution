@@ -38,13 +38,21 @@ fn invalid(message: &str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, message)
 }
 fn absolute(path: PathBuf) -> io::Result<PathBuf> {
-    if path.is_absolute() { Ok(path) } else { Err(invalid("browser paths must be absolute")) }
+    if path.is_absolute() {
+        Ok(path)
+    } else {
+        Err(invalid("browser paths must be absolute"))
+    }
 }
 fn flag(args: &[String], name: &str) -> Option<String> {
     args.iter().enumerate().find_map(|(index, arg)| {
         arg.strip_prefix(&format!("{name}="))
             .map(str::to_owned)
-            .or_else(|| (arg == name).then(|| args.get(index + 1).cloned()).flatten())
+            .or_else(|| {
+                (arg == name)
+                    .then(|| args.get(index + 1).cloned())
+                    .flatten()
+            })
     })
 }
 fn push_unique(paths: &mut Vec<PathBuf>, path: PathBuf) {
@@ -109,7 +117,11 @@ pub fn discover(binary: Option<PathBuf>, user_data: Option<PathBuf>) -> io::Resu
         let Some(exe) = process.exe() else {
             continue;
         };
-        let name = exe.file_name().unwrap_or_default().to_string_lossy().to_ascii_lowercase();
+        let name = exe
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_ascii_lowercase();
         if !matches!(
             name.as_str(),
             "chrome.exe" | "chrome" | "chromium" | "chromium-browser" | "google chrome"
@@ -117,7 +129,11 @@ pub fn discover(binary: Option<PathBuf>, user_data: Option<PathBuf>) -> io::Resu
             continue;
         }
         push_unique(&mut binaries, exe.to_path_buf());
-        let args: Vec<_> = process.cmd().iter().map(|s| s.to_string_lossy().into_owned()).collect();
+        let args: Vec<_> = process
+            .cmd()
+            .iter()
+            .map(|s| s.to_string_lossy().into_owned())
+            .collect();
         let root = flag(&args, "--user-data-dir").map(PathBuf::from);
         if let Some(root) = &root {
             push_unique(&mut roots, root.clone());
@@ -232,7 +248,9 @@ fn endpoint(root: &Path) -> io::Result<Value> {
         .as_str()
         .ok_or_else(|| invalid("Chrome did not return a CDP websocket"))?;
     if !ws.starts_with(&format!("ws://127.0.0.1:{port}/devtools/browser/")) {
-        return Err(invalid("Chrome CDP endpoint is not the selected loopback port"));
+        return Err(invalid(
+            "Chrome CDP endpoint is not the selected loopback port",
+        ));
     }
     Ok(
         json!({"http":format!("http://127.0.0.1:{port}"),"websocket":ws,"browser":version["Browser"],"protocol":version["Protocol-Version"]}),
@@ -254,7 +272,10 @@ pub fn setup(map: &BrowserMap) -> io::Result<Value> {
         }
     }
     fs::create_dir_all(&map.automation_root)?;
-    let running = map.processes.iter().any(|p| p.user_data.as_ref() == Some(&map.automation_root));
+    let running = map
+        .processes
+        .iter()
+        .any(|p| p.user_data.as_ref() == Some(&map.automation_root));
     if running {
         return Ok(
             json!({"reused":true,"profile":map.automation_root,"cdp":endpoint(&map.automation_root)?}),
@@ -265,7 +286,8 @@ pub fn setup(map: &BrowserMap) -> io::Result<Value> {
     if port_file.is_file() {
         fs::remove_file(port_file)?;
     }
-    let mut child = Command::new(binary).no_window()
+    let mut child = Command::new(binary)
+        .no_window()
         .arg(format!("--user-data-dir={}", map.automation_root.display()))
         .args([
             "--remote-debugging-address=127.0.0.1",
@@ -291,7 +313,10 @@ pub fn setup(map: &BrowserMap) -> io::Result<Value> {
             )));
         }
         if started.elapsed() > Duration::from_secs(15) {
-            return Err(io::Error::new(io::ErrorKind::TimedOut, "Chrome CDP readiness timed out"));
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "Chrome CDP readiness timed out",
+            ));
         }
         std::thread::sleep(Duration::from_millis(150));
     }
@@ -307,7 +332,10 @@ mod tests {
             "Profile 2".into(),
             "--password=secret".into(),
         ];
-        assert_eq!(flag(&args, "--user-data-dir"), Some("C:/Browser Data".into()));
+        assert_eq!(
+            flag(&args, "--user-data-dir"),
+            Some("C:/Browser Data".into())
+        );
         assert_eq!(flag(&args, "--profile-directory"), Some("Profile 2".into()));
     }
     #[test]
@@ -317,7 +345,10 @@ mod tests {
         fs::create_dir(&custom).unwrap();
         fs::write(custom.join("Preferences"), "not JSON and never parsed").unwrap();
         fs::create_dir(root.path().join("Cache")).unwrap();
-        assert_eq!(inspect_root(root.path().into()).unwrap().profiles, vec![custom]);
+        assert_eq!(
+            inspect_root(root.path().into()).unwrap().profiles,
+            vec![custom]
+        );
     }
     #[test]
     fn rejects_zero_port() {

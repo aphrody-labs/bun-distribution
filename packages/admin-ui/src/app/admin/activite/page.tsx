@@ -18,11 +18,7 @@ import {
   FileText,
 } from "lucide-react";
 import { fmtNum } from "@aphrody/admin-ui/format";
-import type {
-  AnalyticsOverview,
-  AnalyticsPoint,
-  AnalyticsRange,
-} from "@/lib/analytics";
+import type { AnalyticsOverview, AnalyticsPoint, AnalyticsRange } from "@/lib/analytics";
 
 // `@/lib/analytics` est server-only (driver `postgres`) → on n'en importe que les
 // TYPES (`import type`, effacés à la compilation). Les constantes d'affichage sont
@@ -49,9 +45,7 @@ const ENTITY_LABELS: Record<string, string> = {
 
 type AnalyticsResponse = { ok: true } & AnalyticsOverview;
 
-async function fetchAnalytics(
-  range: AnalyticsRange,
-): Promise<AnalyticsResponse> {
+async function fetchAnalytics(range: AnalyticsRange): Promise<AnalyticsResponse> {
   const res = await fetch(`/api/analytics?range=${range}`, {
     credentials: "same-origin",
   });
@@ -73,7 +67,7 @@ export default function ActivitePage() {
     queryKey: ["analytics", range],
     queryFn: () => fetchAnalytics(range),
     refetchInterval: 30_000,
-    placeholderData: (prev) => prev,
+    placeholderData: prev => prev,
   });
 
   const d = q.data;
@@ -89,8 +83,8 @@ export default function ActivitePage() {
               Activité du site
             </h1>
             <p className="mt-2 text-white/60 text-sm leading-relaxed max-w-xl">
-              Audience web (télémétrie first-party, anonymisée & RGPD). Distinct
-              des stats du bot. Compteur public non-sensible sur{" "}
+              Audience web (télémétrie first-party, anonymisée & RGPD). Distinct des stats du bot. Compteur public
+              non-sensible sur{" "}
               <Link href="/stats" className="text-dbz-orange hover:underline">
                 /stats
               </Link>
@@ -100,7 +94,7 @@ export default function ActivitePage() {
           <div className="flex items-center gap-3 shrink-0">
             <LiveBadge live={d?.live} />
             <div className="flex rounded-lg border border-dbz-border overflow-hidden">
-              {RANGES.map((r) => (
+              {RANGES.map(r => (
                 <button
                   key={r.id}
                   type="button"
@@ -121,9 +115,7 @@ export default function ActivitePage() {
 
       {q.isError && (
         <div className="card border-dbz-red/40">
-          <p className="text-dbz-red text-sm">
-            Impossible de charger l'activité. Réessayez dans un instant.
-          </p>
+          <p className="text-dbz-red text-sm">Impossible de charger l'activité. Réessayez dans un instant.</p>
         </div>
       )}
 
@@ -162,58 +154,37 @@ export default function ActivitePage() {
       <div className="card">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-white/70 uppercase tracking-widest text-[11px]">
-            Évolution — {RANGES.find((r) => r.id === range)?.label}
+            Évolution — {RANGES.find(r => r.id === range)?.label}
           </h2>
           <Legend />
         </div>
-        <TrendChart
-          points={d?.timeseries ?? []}
-          range={range}
-          loading={q.isLoading}
-        />
+        <TrendChart points={d?.timeseries ?? []} range={range} loading={q.isLoading} />
       </div>
 
       {/* Top pages + Sources */}
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="dbz-panel overflow-hidden">
-          <PanelHeader
-            icon={<FileText className="h-4 w-4" />}
-            title="Pages les plus vues"
-          />
+          <PanelHeader icon={<FileText className="h-4 w-4" />} title="Pages les plus vues" />
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-dbz-border/40 text-[10px] uppercase tracking-widest text-dbz-blue-light">
                 <tr>
                   <th className="p-2 text-left font-semibold">Page</th>
                   <th className="p-2 text-right font-semibold w-20">Vues</th>
-                  <th className="p-2 text-right font-semibold w-20">
-                    Visiteurs
-                  </th>
+                  <th className="p-2 text-right font-semibold w-20">Visiteurs</th>
                 </tr>
               </thead>
               <tbody>
-                {(d?.topPages ?? []).map((p) => (
-                  <tr
-                    key={p.path}
-                    className="border-b border-dbz-border/60 hover:bg-dbz-orange/5"
-                  >
+                {(d?.topPages ?? []).map(p => (
+                  <tr key={p.path} className="border-b border-dbz-border/60 hover:bg-dbz-orange/5">
                     <td className="p-2 align-top">
-                      <Link
-                        href={p.path}
-                        className="text-white hover:text-dbz-orange"
-                      >
+                      <Link href={p.path} className="text-white hover:text-dbz-orange">
                         {prettyPath(p.path)}
                       </Link>
-                      <div className="text-[10px] text-white/50 font-mono truncate max-w-[240px]">
-                        {p.path}
-                      </div>
+                      <div className="text-[10px] text-white/50 font-mono truncate max-w-[240px]">{p.path}</div>
                     </td>
-                    <td className="p-2 text-right font-mono text-dbz-orange align-top">
-                      {fmtNum(p.views)}
-                    </td>
-                    <td className="p-2 text-right font-mono text-white/60 align-top">
-                      {fmtNum(p.visitors)}
-                    </td>
+                    <td className="p-2 text-right font-mono text-dbz-orange align-top">{fmtNum(p.views)}</td>
+                    <td className="p-2 text-right font-mono text-white/60 align-top">{fmtNum(p.visitors)}</td>
                   </tr>
                 ))}
                 {d && d.topPages.length === 0 && <EmptyRow colSpan={3} />}
@@ -223,21 +194,16 @@ export default function ActivitePage() {
         </div>
 
         <div className="dbz-panel overflow-hidden">
-          <PanelHeader
-            icon={<ExternalLink className="h-4 w-4" />}
-            title="Sources de trafic"
-          />
+          <PanelHeader icon={<ExternalLink className="h-4 w-4" />} title="Sources de trafic" />
           <div className="p-4 space-y-2">
-            {(d?.sources ?? []).map((s) => {
+            {(d?.sources ?? []).map(s => {
               const total = d?.sources.reduce((a, x) => a + x.count, 0) || 1;
               const p = Math.round((s.count / total) * 100);
               return (
                 <div key={s.source}>
                   <div className="flex items-center justify-between text-xs mb-1">
                     <span className="text-white/80 truncate max-w-[220px]">
-                      {s.source === "(direct)"
-                        ? "Accès direct / inconnu"
-                        : s.source}
+                      {s.source === "(direct)" ? "Accès direct / inconnu" : s.source}
                     </span>
                     <span className="font-mono text-white/50 shrink-0">
                       {fmtNum(s.count)} · {p}%
@@ -253,9 +219,7 @@ export default function ActivitePage() {
               );
             })}
             {d && d.sources.length === 0 && (
-              <p className="text-white/50 text-sm py-4 text-center">
-                Aucune source sur la période.
-              </p>
+              <p className="text-white/50 text-sm py-4 text-center">Aucune source sur la période.</p>
             )}
           </div>
         </div>
@@ -264,103 +228,68 @@ export default function ActivitePage() {
       {/* Entités + Recherches + Types */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="dbz-panel overflow-hidden">
-          <PanelHeader
-            icon={<Eye className="h-4 w-4" />}
-            title="Fiches wiki populaires"
-          />
+          <PanelHeader icon={<Eye className="h-4 w-4" />} title="Fiches wiki populaires" />
           <ul className="p-3 space-y-1.5">
-            {(d?.topEntities ?? []).map((e) => (
-              <li
-                key={`${e.entityType}:${e.entityId}`}
-                className="flex items-center justify-between gap-2 text-sm"
-              >
+            {(d?.topEntities ?? []).map(e => (
+              <li key={`${e.entityType}:${e.entityId}`} className="flex items-center justify-between gap-2 text-sm">
                 <span className="truncate">
                   <span className="text-[10px] uppercase tracking-wide text-dbz-blue-light/70 mr-1.5">
                     {ENTITY_LABELS[e.entityType] ?? e.entityType}
                   </span>
-                  <span className="text-white/85">
-                    {e.name ?? `#${e.entityId}`}
-                  </span>
+                  <span className="text-white/85">{e.name ?? `#${e.entityId}`}</span>
                 </span>
-                <span className="font-mono text-dbz-orange shrink-0">
-                  {fmtNum(e.views)}
-                </span>
+                <span className="font-mono text-dbz-orange shrink-0">{fmtNum(e.views)}</span>
               </li>
             ))}
             {d && d.topEntities.length === 0 && (
-              <li className="text-white/50 text-sm py-3 text-center">
-                Aucune vue de fiche.
-              </li>
+              <li className="text-white/50 text-sm py-3 text-center">Aucune vue de fiche.</li>
             )}
           </ul>
         </div>
 
         <div className="dbz-panel overflow-hidden">
-          <PanelHeader
-            icon={<Search className="h-4 w-4" />}
-            title="Recherches populaires"
-          />
+          <PanelHeader icon={<Search className="h-4 w-4" />} title="Recherches populaires" />
           <ul className="p-3 space-y-1.5">
-            {(d?.topSearches ?? []).map((s) => (
-              <li
-                key={s.query}
-                className="flex items-center justify-between gap-2 text-sm"
-              >
+            {(d?.topSearches ?? []).map(s => (
+              <li key={s.query} className="flex items-center justify-between gap-2 text-sm">
                 <span className="text-white/85 truncate">{s.query}</span>
-                <span className="font-mono text-dbz-orange shrink-0">
-                  {fmtNum(s.count)}
-                </span>
+                <span className="font-mono text-dbz-orange shrink-0">{fmtNum(s.count)}</span>
               </li>
             ))}
             {d && d.topSearches.length === 0 && (
-              <li className="text-white/50 text-sm py-3 text-center">
-                Aucune recherche.
-              </li>
+              <li className="text-white/50 text-sm py-3 text-center">Aucune recherche.</li>
             )}
           </ul>
         </div>
 
         <div className="dbz-panel overflow-hidden">
-          <PanelHeader
-            icon={<Activity className="h-4 w-4" />}
-            title="Types d'événements"
-          />
+          <PanelHeader icon={<Activity className="h-4 w-4" />} title="Types d'événements" />
           <div className="p-4 space-y-2">
-            {(d?.eventTypes ?? []).map((t) => {
+            {(d?.eventTypes ?? []).map(t => {
               const total = d?.eventTypes.reduce((a, x) => a + x.count, 0) || 1;
               const p = Math.round((t.count / total) * 100);
               return (
                 <div key={t.type}>
                   <div className="flex items-center justify-between text-xs mb-1">
                     <span className="text-white/80 font-mono">{t.type}</span>
-                    <span className="font-mono text-white/50">
-                      {fmtNum(t.count)}
-                    </span>
+                    <span className="font-mono text-white/50">{fmtNum(t.count)}</span>
                   </div>
                   <div className="h-1.5 rounded-full bg-dbz-bg overflow-hidden">
-                    <div
-                      className="h-full bg-dbz-blue-light/70 rounded-full"
-                      style={{ width: `${p}%` }}
-                    />
+                    <div className="h-full bg-dbz-blue-light/70 rounded-full" style={{ width: `${p}%` }} />
                   </div>
                 </div>
               );
             })}
             {d && d.eventTypes.length === 0 && (
-              <p className="text-white/50 text-sm py-4 text-center">
-                Aucun événement.
-              </p>
+              <p className="text-white/50 text-sm py-4 text-center">Aucun événement.</p>
             )}
           </div>
         </div>
       </div>
 
       <p className="text-[11px] text-white/50 text-center">
-        Données anonymisées (jamais d'IP brute) · visiteurs comptés par
-        pseudonyme stable · rafraîchi automatiquement toutes les 30 s
-        {d
-          ? ` · dernière mesure ${new Date(d.generatedAt).toLocaleTimeString("fr-FR")}`
-          : ""}
+        Données anonymisées (jamais d'IP brute) · visiteurs comptés par pseudonyme stable · rafraîchi automatiquement
+        toutes les 30 s{d ? ` · dernière mesure ${new Date(d.generatedAt).toLocaleTimeString("fr-FR")}` : ""}
       </p>
     </div>
   );
@@ -392,9 +321,7 @@ function KpiCard({
         </div>
         {delta !== undefined && <DeltaBadge delta={delta} />}
       </div>
-      <p className="text-3xl font-bold text-brand-400">
-        {value === undefined ? "—" : fmtNum(value)}
-      </p>
+      <p className="text-3xl font-bold text-brand-400">{value === undefined ? "—" : fmtNum(value)}</p>
       <p className="mt-2 text-xs text-zinc-500">{hint}</p>
     </div>
   );
@@ -414,11 +341,7 @@ function DeltaBadge({ delta }: { delta: number | null | undefined }) {
       className={`inline-flex items-center gap-0.5 text-[11px] font-mono ${up ? "text-namek" : "text-dbz-red"}`}
       title="Variation vs période précédente"
     >
-      {up ? (
-        <TrendingUp className="h-3 w-3" />
-      ) : (
-        <TrendingDown className="h-3 w-3" />
-      )}
+      {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
       {up ? "+" : ""}
       {delta}%
     </span>
@@ -432,9 +355,7 @@ function LiveBadge({ live }: { live?: AnalyticsOverview["live"] }) {
       className="inline-flex items-center gap-2 rounded-full border border-namek/40 bg-namek/10 px-3 py-1.5"
       title="Visiteurs actifs sur les 5 dernières minutes"
     >
-      <Radio
-        className={`h-3.5 w-3.5 text-namek ${n > 0 ? "animate-pulse" : "opacity-50"}`}
-      />
+      <Radio className={`h-3.5 w-3.5 text-namek ${n > 0 ? "animate-pulse" : "opacity-50"}`} />
       <span className="text-xs text-white/80">
         <span className="font-bold text-namek">{fmtNum(n)}</span> en direct
       </span>
@@ -442,19 +363,11 @@ function LiveBadge({ live }: { live?: AnalyticsOverview["live"] }) {
   );
 }
 
-function PanelHeader({
-  icon,
-  title,
-}: {
-  icon: React.ReactNode;
-  title: string;
-}) {
+function PanelHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
     <div className="flex items-center gap-2 px-4 py-3 border-b border-dbz-border bg-dbz-bg/30">
       <span className="text-dbz-orange">{icon}</span>
-      <h3 className="text-sm font-display font-semibold text-white/85">
-        {title}
-      </h3>
+      <h3 className="text-sm font-display font-semibold text-white/85">{title}</h3>
     </div>
   );
 }
@@ -476,8 +389,7 @@ function EmptyRow({ colSpan }: { colSpan: number }) {
   return (
     <tr>
       <td colSpan={colSpan} className="p-6 text-center text-white/50 text-sm">
-        Aucune donnée sur la période. Les visites se peuplent au fil de la
-        navigation (avec consentement analytics).
+        Aucune donnée sur la période. Les visites se peuplent au fil de la navigation (avec consentement analytics).
       </td>
     </tr>
   );
@@ -492,15 +404,7 @@ function fmtBucket(b: string, range: AnalyticsRange): string {
   return parts.length === 3 ? `${parts[2]}/${parts[1]}` : (datePart ?? b);
 }
 
-function TrendChart({
-  points,
-  range,
-  loading,
-}: {
-  points: AnalyticsPoint[];
-  range: AnalyticsRange;
-  loading: boolean;
-}) {
+function TrendChart({ points, range, loading }: { points: AnalyticsPoint[]; range: AnalyticsRange; loading: boolean }) {
   const [hover, setHover] = useState<number | null>(null);
   const W = 760;
   const H = 220;
@@ -511,10 +415,7 @@ function TrendChart({
   const innerW = W - padL - padR;
   const innerH = H - padT - padB;
 
-  const max = useMemo(
-    () => Math.max(1, ...points.map((p) => Math.max(p.pageviews, p.visitors))),
-    [points],
-  );
+  const max = useMemo(() => Math.max(1, ...points.map(p => Math.max(p.pageviews, p.visitors))), [points]);
   const n = points.length;
 
   if (n === 0) {
@@ -525,8 +426,7 @@ function TrendChart({
     );
   }
 
-  const x = (i: number) =>
-    padL + (n === 1 ? innerW / 2 : (i / (n - 1)) * innerW);
+  const x = (i: number) => padL + (n === 1 ? innerW / 2 : (i / (n - 1)) * innerW);
   const y = (v: number) => padT + innerH - (v / max) * innerH;
 
   const areaTop = points.map((p, i) => `${x(i)},${y(p.pageviews)}`).join(" ");
@@ -545,7 +445,7 @@ function TrendChart({
         role="img"
         aria-label="Évolution des visites et visiteurs"
         onMouseLeave={() => setHover(null)}
-        onMouseMove={(e) => {
+        onMouseMove={e => {
           const rect = e.currentTarget.getBoundingClientRect();
           const ratio = (e.clientX - rect.left) / rect.width;
           const idx = Math.round(ratio * (n - 1));
@@ -554,21 +454,13 @@ function TrendChart({
       >
         <defs>
           <linearGradient id="activite-area" x1="0" y1="0" x2="0" y2="1">
-            <stop
-              offset="0%"
-              stopColor="var(--color-dbz-orange)"
-              stopOpacity="0.45"
-            />
-            <stop
-              offset="100%"
-              stopColor="var(--color-dbz-orange)"
-              stopOpacity="0.02"
-            />
+            <stop offset="0%" stopColor="var(--color-dbz-orange)" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="var(--color-dbz-orange)" stopOpacity="0.02" />
           </linearGradient>
         </defs>
 
         {/* Grille horizontale */}
-        {[0.25, 0.5, 0.75].map((f) => (
+        {[0.25, 0.5, 0.75].map(f => (
           <line
             key={f}
             x1={padL}
@@ -610,32 +502,15 @@ function TrendChart({
               stroke="rgba(255,255,255,0.25)"
               strokeWidth={1}
             />
-            <circle
-              cx={x(hover)}
-              cy={y(points[hover].pageviews)}
-              r={3.5}
-              fill="var(--color-dbz-orange)"
-            />
-            <circle
-              cx={x(hover)}
-              cy={y(points[hover].visitors)}
-              r={3}
-              fill="var(--color-dbz-blue-light, #5aa9ff)"
-            />
+            <circle cx={x(hover)} cy={y(points[hover].pageviews)} r={3.5} fill="var(--color-dbz-orange)" />
+            <circle cx={x(hover)} cy={y(points[hover].visitors)} r={3} fill="var(--color-dbz-blue-light, #5aa9ff)" />
           </>
         )}
 
         {/* Étiquettes d'axe X */}
         {points.map((p, i) =>
           i % tickEvery === 0 || i === n - 1 ? (
-            <text
-              key={p.bucket}
-              x={x(i)}
-              y={H - 8}
-              textAnchor="middle"
-              fontSize={10}
-              fill="rgba(255,255,255,0.35)"
-            >
+            <text key={p.bucket} x={x(i)} y={H - 8} textAnchor="middle" fontSize={10} fill="rgba(255,255,255,0.35)">
               {fmtBucket(p.bucket, range)}
             </text>
           ) : null,
@@ -651,9 +526,7 @@ function TrendChart({
             transform: `translateX(${x(hover) > W / 2 ? "-105%" : "5%"})`,
           }}
         >
-          <div className="font-mono text-white/60 mb-1">
-            {fmtBucket(points[hover].bucket, range)}
-          </div>
+          <div className="font-mono text-white/60 mb-1">{fmtBucket(points[hover].bucket, range)}</div>
           <div className="text-dbz-orange">
             {fmtNum(points[hover].pageviews)} visite
             {points[hover].pageviews > 1 ? "s" : ""}

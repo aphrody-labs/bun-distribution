@@ -65,7 +65,11 @@ fn build() -> Vec<ToolRegistration> {
     let ledger: Ledger = serde_json::from_str(include_str!("../tool-migration.json"))
         .expect("tool migration ledger must be valid JSON");
     let source = catalog();
-    assert_eq!(ledger.tools.len(), source.len(), "tool migration ledger count drift");
+    assert_eq!(
+        ledger.tools.len(),
+        source.len(),
+        "tool migration ledger count drift"
+    );
 
     ledger
         .tools
@@ -89,7 +93,11 @@ fn build() -> Vec<ToolRegistration> {
                 .then_some(DispatchMode::Rust)
                 .or_else(|| ledger.dispatch_overrides.get(&name).copied())
                 .unwrap_or(ledger.dispatch);
-            ToolRegistration { tool, owner, dispatch }
+            ToolRegistration {
+                tool,
+                owner,
+                dispatch,
+            }
         })
         .collect()
 }
@@ -180,7 +188,11 @@ pub fn parse_path(path: &str) -> std::io::Result<RegistryPath> {
         return Err(invalid("invalid registry path"));
     }
     let (hive_name, rest) = trimmed.split_once('\\').unwrap_or((trimmed, ""));
-    let hive = match hive_name.trim_end_matches(':').to_ascii_uppercase().as_str() {
+    let hive = match hive_name
+        .trim_end_matches(':')
+        .to_ascii_uppercase()
+        .as_str()
+    {
         "HKCU" | "HKEY_CURRENT_USER" => Hive::CurrentUser,
         "HKLM" | "HKEY_LOCAL_MACHINE" => Hive::LocalMachine,
         "HKCR" | "HKEY_CLASSES_ROOT" => Hive::ClassesRoot,
@@ -192,7 +204,10 @@ pub fn parse_path(path: &str) -> std::io::Result<RegistryPath> {
     if subkey.split('\\').any(str::is_empty) && !subkey.is_empty() {
         return Err(invalid("registry path contains an empty key name"));
     }
-    Ok(RegistryPath { hive, subkey: subkey.to_owned() })
+    Ok(RegistryPath {
+        hive,
+        subkey: subkey.to_owned(),
+    })
 }
 
 fn validate_value_name(name: &str) -> std::io::Result<()> {
@@ -205,7 +220,11 @@ fn validate_value_name(name: &str) -> std::io::Result<()> {
 /// The API name of a value: `(default)` addresses the unnamed default value.
 #[cfg(any(windows, test))]
 fn api_value_name(name: &str) -> &str {
-    if name.eq_ignore_ascii_case("(default)") { "" } else { name }
+    if name.eq_ignore_ascii_case("(default)") {
+        ""
+    } else {
+        name
+    }
 }
 
 /// A registry value decoded from its raw `(type, bytes)` form.
@@ -239,7 +258,11 @@ fn type_name(code: u32) -> String {
 }
 
 fn utf16_units(data: &[u8]) -> Vec<u16> {
-    data.as_chunks::<2>().0.iter().map(|pair| u16::from_le_bytes([pair[0], pair[1]])).collect()
+    data.as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
+        .collect()
 }
 
 fn hex_upper(data: &[u8]) -> String {
@@ -252,15 +275,26 @@ pub fn decode_value(code: u32, data: &[u8]) -> DecodedValue {
     let type_name = type_name(code);
     let binary = |type_name: String| {
         let hex = hex_upper(data);
-        DecodedValue { type_name, data: hex.clone(), value: Value::String(hex) }
+        DecodedValue {
+            type_name,
+            data: hex.clone(),
+            value: Value::String(hex),
+        }
     };
     match code {
         kind::SZ | kind::EXPAND_SZ | kind::LINK => {
             let units = utf16_units(data);
-            let end = units.iter().position(|&unit| unit == 0).unwrap_or(units.len());
+            let end = units
+                .iter()
+                .position(|&unit| unit == 0)
+                .unwrap_or(units.len());
             let text = String::from_utf16_lossy(&units[..end]);
-            DecodedValue { type_name, data: text.clone(), value: Value::String(text) }
-        },
+            DecodedValue {
+                type_name,
+                data: text.clone(),
+                value: Value::String(text),
+            }
+        }
         kind::MULTI_SZ => {
             let units = utf16_units(data);
             let items: Vec<String> = units
@@ -273,7 +307,7 @@ pub fn decode_value(code: u32, data: &[u8]) -> DecodedValue {
                 data: items.join("\\0"),
                 value: Value::Array(items.into_iter().map(Value::String).collect()),
             }
-        },
+        }
         kind::DWORD | kind::DWORD_BIG_ENDIAN if data.len() >= 4 => {
             let bytes = [data[0], data[1], data[2], data[3]];
             let number = if code == kind::DWORD {
@@ -281,21 +315,32 @@ pub fn decode_value(code: u32, data: &[u8]) -> DecodedValue {
             } else {
                 u32::from_be_bytes(bytes)
             };
-            DecodedValue { type_name, data: format!("0x{number:x}"), value: Value::from(number) }
-        },
+            DecodedValue {
+                type_name,
+                data: format!("0x{number:x}"),
+                value: Value::from(number),
+            }
+        }
         kind::QWORD if data.len() >= 8 => {
             let mut bytes = [0u8; 8];
             bytes.copy_from_slice(&data[..8]);
             let number = u64::from_le_bytes(bytes);
-            DecodedValue { type_name, data: format!("0x{number:x}"), value: Value::from(number) }
-        },
+            DecodedValue {
+                type_name,
+                data: format!("0x{number:x}"),
+                value: Value::from(number),
+            }
+        }
         _ => binary(type_name),
     }
 }
 
 fn parse_integer(value: &str) -> Option<u64> {
     let value = value.trim();
-    match value.strip_prefix("0x").or_else(|| value.strip_prefix("0X")) {
+    match value
+        .strip_prefix("0x")
+        .or_else(|| value.strip_prefix("0X"))
+    {
         Some(hex) => u64::from_str_radix(hex, 16).ok(),
         None => value.parse().ok(),
     }
@@ -320,9 +365,13 @@ pub fn encode_value(value: &str, value_type: &str) -> std::io::Result<(u32, Vec<
     }
     match lowered.as_str() {
         "string" | "expandstring" => {
-            let code = if lowered == "string" { kind::SZ } else { kind::EXPAND_SZ };
+            let code = if lowered == "string" {
+                kind::SZ
+            } else {
+                kind::EXPAND_SZ
+            };
             Ok((code, utf16_bytes([value])))
-        },
+        }
         "dword" => parse_integer(value)
             .and_then(|number| u32::try_from(number).ok())
             .map(|number| (kind::DWORD, number.to_le_bytes().to_vec()))
@@ -336,7 +385,9 @@ pub fn encode_value(value: &str, value_type: &str) -> std::io::Result<(u32, Vec<
             let items: Vec<&str> = if body.is_empty() {
                 Vec::new()
             } else {
-                body.split('\n').map(|line| line.strip_suffix('\r').unwrap_or(line)).collect()
+                body.split('\n')
+                    .map(|line| line.strip_suffix('\r').unwrap_or(line))
+                    .collect()
             };
             if items.iter().any(|item| item.is_empty()) {
                 return Err(invalid("MultiString lines must be non-empty"));
@@ -344,7 +395,7 @@ pub fn encode_value(value: &str, value_type: &str) -> std::io::Result<(u32, Vec<
             let mut bytes = utf16_bytes(items);
             bytes.extend_from_slice(&0u16.to_le_bytes());
             Ok((kind::MULTI_SZ, bytes))
-        },
+        }
         _ => Err(invalid("unsupported registry value type")),
     }
 }
@@ -353,7 +404,11 @@ pub fn encode_value(value: &str, value_type: &str) -> std::io::Result<(u32, Vec<
 fn registry_value(raw: crate::winreg::RawValue) -> RegistryValue {
     let decoded = decode_value(raw.kind, &raw.data);
     RegistryValue {
-        name: if raw.name.is_empty() { "(default)".to_owned() } else { raw.name },
+        name: if raw.name.is_empty() {
+            "(default)".to_owned()
+        } else {
+            raw.name
+        },
         value_type: decoded.type_name,
         data: decoded.data,
         value: decoded.value,
@@ -381,8 +436,10 @@ pub fn list_key(path: &str) -> std::io::Result<Value> {
             .into_iter()
             .map(|name| format!("{base}\\{name}"))
             .collect();
-        let values: Vec<RegistryValue> =
-            crate::winreg::values(&key)?.into_iter().map(registry_value).collect();
+        let values: Vec<RegistryValue> = crate::winreg::values(&key)?
+            .into_iter()
+            .map(registry_value)
+            .collect();
         Ok(json!({"Path": path, "SubKeys": subkeys, "Values": values}))
     }
 }
@@ -415,14 +472,16 @@ pub fn get_hags_mode() -> std::io::Result<Value> {
     let path = r"HKLM:\System\CurrentControlSet\Control\GraphicsDrivers";
     match get_value(path, "HwSchMode") {
         Ok(value) => {
-            let mode = value["Value"].as_u64().and_then(|raw| u32::try_from(raw).ok());
+            let mode = value["Value"]
+                .as_u64()
+                .and_then(|raw| u32::try_from(raw).ok());
             Ok(
                 json!({"Mode": mode, "Description": match mode { Some(0) => "CPU scheduling", Some(1) => "OS-managed default", Some(2) => "Hardware-Accelerated GPU Scheduling", _ => "unset/unknown" }}),
             )
-        },
+        }
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             Ok(json!({"Mode": null, "Description": "unset/unknown"}))
-        },
+        }
         Err(error) => Err(error),
     }
 }
@@ -439,7 +498,9 @@ pub fn set_hags_mode(mode: u32) -> std::io::Result<Value> {
         ));
     }
     let path = r"HKLM:\System\CurrentControlSet\Control\GraphicsDrivers";
-    let previous = get_value(path, "HwSchMode").ok().and_then(|value| value.get("Data").cloned());
+    let previous = get_value(path, "HwSchMode")
+        .ok()
+        .and_then(|value| value.get("Data").cloned());
     set_value(path, "HwSchMode", &mode.to_string(), "DWord")?;
     Ok(json!({"Previous": previous, "NewValue": mode}))
 }
@@ -464,10 +525,12 @@ pub fn set_gpu_preference(exe_path: &str, preference: &str) -> std::io::Result<V
                 std::io::ErrorKind::InvalidInput,
                 "preference must be SystemDefault, PowerSaving, or HighPerformance",
             ));
-        },
+        }
     };
     let key = r"HKCU:\SOFTWARE\Microsoft\DirectX\UserGpuPreferences";
-    let previous = get_value(key, exe_path).ok().and_then(|value| value.get("Data").cloned());
+    let previous = get_value(key, exe_path)
+        .ok()
+        .and_then(|value| value.get("Data").cloned());
     set_value(key, exe_path, &format!("GpuPreference={mode};"), "String")?;
     Ok(
         json!({"ExePath": exe_path, "Previous": previous, "NewValue": format!("GpuPreference={mode};")}),
@@ -534,7 +597,11 @@ mod tests {
         let entries = registrations();
         assert_eq!(entries.len(), crate::TOOL_NAMES.len());
         assert!(entries.iter().all(|entry| !entry.owner.is_empty()));
-        assert!(entries.iter().all(|entry| entry.dispatch == DispatchMode::Rust));
+        assert!(
+            entries
+                .iter()
+                .all(|entry| entry.dispatch == DispatchMode::Rust)
+        );
         assert_eq!(
             lookup("binary_entropy_map").map(|entry| entry.dispatch),
             Some(DispatchMode::Rust)
@@ -555,9 +622,12 @@ mod tests {
             lookup("computer_capture_screen").map(|entry| entry.dispatch),
             Some(DispatchMode::Rust)
         );
-        for name in
-            ["winml_get_version", "winml_inspect_onnx", "winml_list_providers", "winml_run_float32"]
-        {
+        for name in [
+            "winml_get_version",
+            "winml_inspect_onnx",
+            "winml_list_providers",
+            "winml_run_float32",
+        ] {
             assert_eq!(
                 lookup(name).map(|entry| entry.dispatch),
                 Some(DispatchMode::Rust),
@@ -572,14 +642,29 @@ mod tests {
         let short = parse_path(r"HKCU:\Software\Aphrody\").expect("PowerShell spelling");
         assert_eq!(short.hive, Hive::CurrentUser);
         assert_eq!(short.subkey, r"Software\Aphrody");
-        assert_eq!(parse_path(r"hklm\SYSTEM").expect("reg.exe spelling").hive, Hive::LocalMachine);
         assert_eq!(
-            parse_path(r"HKEY_CLASSES_ROOT\.txt").expect("long spelling").hive,
+            parse_path(r"hklm\SYSTEM").expect("reg.exe spelling").hive,
+            Hive::LocalMachine
+        );
+        assert_eq!(
+            parse_path(r"HKEY_CLASSES_ROOT\.txt")
+                .expect("long spelling")
+                .hive,
             Hive::ClassesRoot
         );
         assert_eq!(parse_path("HKU").expect("hive root").subkey, "");
-        assert_eq!(parse_path(r"HKCC:\").expect("hive root").hive, Hive::CurrentConfig);
-        for bad in [r"bad\path", "", r"HKCU:\a\..\b", "HKCU:\\a\"b", "HKCU:\\a\\\\b", "HKCU\u{1}"] {
+        assert_eq!(
+            parse_path(r"HKCC:\").expect("hive root").hive,
+            Hive::CurrentConfig
+        );
+        for bad in [
+            r"bad\path",
+            "",
+            r"HKCU:\a\..\b",
+            "HKCU:\\a\"b",
+            "HKCU:\\a\\\\b",
+            "HKCU\u{1}",
+        ] {
             assert_eq!(
                 parse_path(bad).expect_err(bad).kind(),
                 std::io::ErrorKind::InvalidInput,
@@ -626,9 +711,15 @@ mod tests {
         assert_eq!(decoded.data, "one\\0two");
 
         let decoded = decode_value(kind::BINARY, &[0x01, 0xab, 0xff]);
-        assert_eq!((decoded.type_name.as_str(), decoded.data.as_str()), ("REG_BINARY", "01ABFF"));
+        assert_eq!(
+            (decoded.type_name.as_str(), decoded.data.as_str()),
+            ("REG_BINARY", "01ABFF")
+        );
         assert_eq!(decoded.value, json!("01ABFF"));
-        assert_eq!(decode_value(kind::DWORD_BIG_ENDIAN, &[0, 0, 1, 0]).value, json!(256));
+        assert_eq!(
+            decode_value(kind::DWORD_BIG_ENDIAN, &[0, 0, 1, 0]).value,
+            json!(256)
+        );
         // Truncated integers never panic: they fall back to hex.
         assert_eq!(decode_value(kind::DWORD, &[1, 2]).data, "0102");
         assert_eq!(decode_value(0x55, &[]).type_name, "REG_0x55");
@@ -655,7 +746,9 @@ mod tests {
     #[test]
     fn hive_roots_are_never_deleted() {
         assert_eq!(
-            super::delete_entry(r"HKCU:\", None).expect_err("hive root").kind(),
+            super::delete_entry(r"HKCU:\", None)
+                .expect_err("hive root")
+                .kind(),
             std::io::ErrorKind::InvalidInput
         );
     }
@@ -680,7 +773,10 @@ mod tests {
                     .map(|elapsed| elapsed.as_nanos())
                     .unwrap_or_default();
                 let subkey = format!(r"Software\AphrodyTest\{tag}-{}-{nanos}", std::process::id());
-                Self { path: format!(r"HKCU:\{subkey}"), subkey }
+                Self {
+                    path: format!(r"HKCU:\{subkey}"),
+                    subkey,
+                }
             }
         }
 
@@ -720,29 +816,54 @@ mod tests {
             assert_eq!(text["Type"], "REG_SZ");
             assert_eq!(text["Data"], "hello é");
             assert_eq!(text["Value"], "hello é");
-            assert_eq!(get_value(path, "Expand").expect("read")["Value"], "%TEMP%\\aphrody");
+            assert_eq!(
+                get_value(path, "Expand").expect("read")["Value"],
+                "%TEMP%\\aphrody"
+            );
             let count = get_value(path, "Count").expect("read REG_DWORD");
             assert_eq!(
                 (count["Type"].as_str(), count["Data"].as_str()),
                 (Some("REG_DWORD"), Some("0xffffffff"))
             );
             assert_eq!(count["Value"], json!(u32::MAX));
-            assert_eq!(get_value(path, "Big").expect("read REG_QWORD")["Value"], json!(1u64 << 32));
+            assert_eq!(
+                get_value(path, "Big").expect("read REG_QWORD")["Value"],
+                json!(1u64 << 32)
+            );
             assert_eq!(
                 get_value(path, "Lines").expect("read REG_MULTI_SZ")["Value"],
                 json!(["a", "b"])
             );
-            assert_eq!(get_value(path, "Blob").expect("read REG_BINARY")["Data"], "DEAD");
-            assert_eq!(get_value(path, "(default)").expect("read default")["Value"], "root");
+            assert_eq!(
+                get_value(path, "Blob").expect("read REG_BINARY")["Data"],
+                "DEAD"
+            );
+            assert_eq!(
+                get_value(path, "(default)").expect("read default")["Value"],
+                "root"
+            );
 
             let listing = list_key(path).expect("list key");
             assert_eq!(listing["SubKeys"], json!([format!(r"{path}\Child")]));
             let values = listing["Values"].as_array().expect("values");
             assert_eq!(values.len(), 7);
-            let names: Vec<&str> =
-                values.iter().filter_map(|value| value["name"].as_str()).collect();
-            for expected in ["Text", "Expand", "Count", "Big", "Lines", "Blob", "(default)"] {
-                assert!(names.contains(&expected), "{expected} missing from {names:?}");
+            let names: Vec<&str> = values
+                .iter()
+                .filter_map(|value| value["name"].as_str())
+                .collect();
+            for expected in [
+                "Text",
+                "Expand",
+                "Count",
+                "Big",
+                "Lines",
+                "Blob",
+                "(default)",
+            ] {
+                assert!(
+                    names.contains(&expected),
+                    "{expected} missing from {names:?}"
+                );
             }
 
             let deleted = delete_entry(path, Some("Text")).expect("delete value");
@@ -752,7 +873,10 @@ mod tests {
                 std::io::ErrorKind::NotFound
             );
             delete_entry(path, None).expect("delete key tree");
-            assert_eq!(list_key(path).expect_err("key gone").kind(), std::io::ErrorKind::NotFound);
+            assert_eq!(
+                list_key(path).expect_err("key gone").kind(),
+                std::io::ErrorKind::NotFound
+            );
         }
 
         #[test]
@@ -764,7 +888,9 @@ mod tests {
             );
             set_value(&key.path, "Present", "1", "DWord").expect("create key");
             assert_eq!(
-                get_value(&key.path, "Absent").expect_err("absent value").kind(),
+                get_value(&key.path, "Absent")
+                    .expect_err("absent value")
+                    .kind(),
                 std::io::ErrorKind::NotFound
             );
         }

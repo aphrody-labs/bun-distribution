@@ -3,7 +3,15 @@
   "note": "Seed index of every endpoint, CDN and mirror bep downloads from. `bep mirrors index` adds the dynamic lists (Arch, CachyOS, Libreboot) and `bep mirrors probe` measures them; downloads try the fastest healthy mirror first.",
   "services": {
     "github-api": { "kind": "api", "urls": ["https://api.github.com"] },
-    "github-releases": { "kind": "cdn", "urls": ["https://github.com", "https://objects.githubusercontent.com", "https://release-assets.githubusercontent.com", "https://codeload.github.com"] },
+    "github-releases": {
+      "kind": "cdn",
+      "urls": [
+        "https://github.com",
+        "https://objects.githubusercontent.com",
+        "https://release-assets.githubusercontent.com",
+        "https://codeload.github.com"
+      ]
+    },
     "gitlab-api": { "kind": "api", "urls": ["https://gitlab.com/api/v4"] },
     "libretro-buildbot": {
       "kind": "cdn",
@@ -37,7 +45,12 @@
       ],
       "list": "https://libreboot.org/download.html"
     },
-    "archlinux": { "kind": "mirror", "path": "/{repo}/os/{arch}", "urls": ["https://geo.mirror.pkgbuild.com"], "list": "https://archlinux.org/mirrors/status/json/" },
+    "archlinux": {
+      "kind": "mirror",
+      "path": "/{repo}/os/{arch}",
+      "urls": ["https://geo.mirror.pkgbuild.com"],
+      "list": "https://archlinux.org/mirrors/status/json/"
+    },
     "archlinux-archive": { "kind": "mirror", "urls": ["https://archive.archlinux.org"] },
     "aur": { "kind": "api", "urls": ["https://aur.archlinux.org"] },
     "cachyos": {
@@ -49,8 +62,14 @@
     "flathub": { "kind": "cdn", "urls": ["https://dl.flathub.org", "https://flathub.org/api/v2"] },
     "dolphin": { "kind": "api", "urls": ["https://dolphin-emu.org/update/latest/beta", "https://dl.dolphin-emu.org"] },
     "ppsspp": { "kind": "cdn", "urls": ["https://www.ppsspp.org/files", "https://builds.ppsspp.org"] },
-    "recalbox": { "kind": "cdn", "urls": ["https://download.recalbox.com", "https://upgrade.recalbox.com", "https://gitlab.com/recalbox/recalbox"] },
-    "kernel": { "kind": "api", "urls": ["https://www.kernel.org/releases.json", "https://cdn.kernel.org/pub/linux/kernel"] },
+    "recalbox": {
+      "kind": "cdn",
+      "urls": ["https://download.recalbox.com", "https://upgrade.recalbox.com", "https://gitlab.com/recalbox/recalbox"]
+    },
+    "kernel": {
+      "kind": "api",
+      "urls": ["https://www.kernel.org/releases.json", "https://cdn.kernel.org/pub/linux/kernel"]
+    },
     "firecracker-ci": { "kind": "cdn", "urls": ["https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci"] }
   }
 }

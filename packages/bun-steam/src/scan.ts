@@ -9,11 +9,7 @@
  * carries `sensitive = 1`. `localconfig.vdf` is parsed only for per-app playtime keys.
  */
 import type { Database } from "bun:sqlite";
-import {
-  pe as winPe,
-  processes as winProcesses,
-  registry as winRegistry,
-} from "bun:windows";
+import { pe as winPe, processes as winProcesses, registry as winRegistry } from "bun:windows";
 import { readFileSync, statSync } from "node:fs";
 import { hostname } from "node:os";
 import { basename, dirname, extname, join, resolve } from "node:path";
@@ -22,13 +18,7 @@ import { clearScanTables } from "./db.js";
 import { detectFileType, type FileType } from "./filetype.js";
 import { type KvObject, kvInt, kvObj, kvStr, parseTextKv } from "./vdf.js";
 import { FILE_FLAG_DIRECTORY, parseDepotManifest } from "./manifest.js";
-import {
-  defaultAppDataRoot,
-  HKCU_STEAM,
-  isDir,
-  norm,
-  resolveSteamRoot,
-} from "./paths.js";
+import { defaultAppDataRoot, HKCU_STEAM, isDir, norm, resolveSteamRoot } from "./paths.js";
 
 export interface ScanOptions {
   db: Database;
@@ -77,12 +67,7 @@ const HKCU_WHITELIST = new Set([
   "StartupModeTmpIsValid",
   "Rate",
 ]);
-const HKLM_WHITELIST = new Set([
-  "InstallPath",
-  "SteamPID",
-  "SteamExe",
-  "SteamPath",
-]);
+const HKLM_WHITELIST = new Set(["InstallPath", "SteamPID", "SteamExe", "SteamPath"]);
 
 interface SecretRule {
   category: string;
@@ -94,59 +79,57 @@ const SECRET_RULES: SecretRule[] = [
   {
     category: "auth",
     note: "client config (ConnectCache, auth material)",
-    test: (r) => r === "config/config.vdf",
+    test: r => r === "config/config.vdf",
   },
   {
     category: "auth",
     note: "login users (account names, tokens)",
-    test: (r) => r === "config/loginusers.vdf",
+    test: r => r === "config/loginusers.vdf",
   },
   {
     category: "auth",
     note: "local client state (auth material)",
-    test: (r) => r === "local.vdf" || r.endsWith("/local.vdf"),
+    test: r => r === "local.vdf" || r.endsWith("/local.vdf"),
   },
   {
     category: "auth",
     note: "Steam Guard sentry file",
-    test: (r) => /(^|\/)ssfn[^/]*$/.test(r),
+    test: r => /(^|\/)ssfn[^/]*$/.test(r),
   },
   {
     category: "personal",
     note: "avatar cache (account identifiers)",
-    test: (r) => r.startsWith("config/avatarcache/"),
+    test: r => r.startsWith("config/avatarcache/"),
   },
   {
     category: "personal",
     note: "per-user client config",
-    test: (r) => /^userdata\/\d+\/config\/localconfig\.vdf$/.test(r),
+    test: r => /^userdata\/\d+\/config\/localconfig\.vdf$/.test(r),
   },
   {
     category: "personal",
     note: "friends / chat state",
-    test: (r) =>
-      /^userdata\/\d+\/config\/(friends|chat)/.test(r) ||
-      /^userdata\/\d+\/friends\//.test(r),
+    test: r => /^userdata\/\d+\/config\/(friends|chat)/.test(r) || /^userdata\/\d+\/friends\//.test(r),
   },
   {
     category: "browser",
     note: "CEF cache (cookies, storage, sessions)",
-    test: (r) => r.startsWith("htmlcache/") || r.includes("/htmlcache/"),
+    test: r => r.startsWith("htmlcache/") || r.includes("/htmlcache/"),
   },
   {
     category: "auth",
     note: "licence cache (account)",
-    test: (r) => /^userdata\/\d+\/config\/licensecache$/.test(r),
+    test: r => /^userdata\/\d+\/config\/licensecache$/.test(r),
   },
   {
     category: "personal",
     note: "shared per-user config",
-    test: (r) => /^userdata\/\d+\/7\/remote\/sharedconfig\.vdf$/.test(r),
+    test: r => /^userdata\/\d+\/7\/remote\/sharedconfig\.vdf$/.test(r),
   },
   {
     category: "personal",
     note: "crash minidump (may embed memory)",
-    test: (r) => r.startsWith("dumps/") && r.endsWith(".dmp"),
+    test: r => r.startsWith("dumps/") && r.endsWith(".dmp"),
   },
 ];
 
@@ -183,9 +166,7 @@ export async function scanSteam(opts: ScanOptions): Promise<ScanSummary> {
   const scanId = Number(
     (
       db
-        .query(
-          "INSERT INTO scan(started_at, host, steam_root) VALUES (?, ?, ?) RETURNING id",
-        )
+        .query("INSERT INTO scan(started_at, host, steam_root) VALUES (?, ?, ?) RETURNING id")
         .get(now(), hostname(), steamRoot) as {
         id: number;
       }
@@ -193,9 +174,7 @@ export async function scanSteam(opts: ScanOptions): Promise<ScanSummary> {
   );
   db.run("COMMIT");
 
-  const insRoot = db.query(
-    "INSERT INTO root(kind, path, exists_) VALUES (?, ?, ?) RETURNING id",
-  );
+  const insRoot = db.query("INSERT INTO root(kind, path, exists_) VALUES (?, ?, ?) RETURNING id");
   const addRoot = (kind: string, path: string): RootRow => {
     const exists = isDir(path) ? 1 : 0;
     const { id } = insRoot.get(kind, path, exists) as { id: number };
@@ -209,9 +188,7 @@ export async function scanSteam(opts: ScanOptions): Promise<ScanSummary> {
 
   const owner = buildOwnerResolver(steamRoot, apps);
   const roots: RootRow[] = [addRoot("install", steamRoot)];
-  for (const lib of libraries)
-    if (norm(lib.path) !== steamRoot)
-      roots.push(addRoot("library", norm(lib.path)));
+  for (const lib of libraries) if (norm(lib.path) !== steamRoot) roots.push(addRoot("library", norm(lib.path)));
   roots.push(addRoot("appdata", appData));
 
   let files = 0;
@@ -231,15 +208,9 @@ export async function scanSteam(opts: ScanOptions): Promise<ScanSummary> {
     bytes += r.bytes;
     secrets += r.secrets;
     peCandidates.push(...r.pe);
-    db.run("UPDATE root SET file_count = ?, byte_total = ? WHERE id = ?", [
-      r.files,
-      r.bytes,
-      root.id,
-    ]);
+    db.run("UPDATE root SET file_count = ?, byte_total = ? WHERE id = ?", [r.files, r.bytes, root.id]);
   }
-  log(
-    `files ${files} (${(bytes / 1e9).toFixed(2)} GB), secret artifacts ${secrets}`,
-  );
+  log(`files ${files} (${(bytes / 1e9).toFixed(2)} GB), secret artifacts ${secrets}`);
 
   db.run("BEGIN");
   for (const c of peCandidates) if (recordPe(db, c.fileId, c.path)) peFiles++;
@@ -259,10 +230,7 @@ export async function scanSteam(opts: ScanOptions): Promise<ScanSummary> {
   readProcesses(db);
   log(`log events ${logEvents}, users ${users}`);
 
-  db.run(
-    "UPDATE scan SET finished_at = ?, file_count = ?, byte_total = ? WHERE id = ?",
-    [now(), files, bytes, scanId],
-  );
+  db.run("UPDATE scan SET finished_at = ?, file_count = ?, byte_total = ? WHERE id = ?", [now(), files, bytes, scanId]);
   return {
     scanId,
     steamRoot,
@@ -294,11 +262,7 @@ interface InstalledApp {
   installPath: string | null;
 }
 
-function readLibraryFolders(
-  db: Database,
-  steamRoot: string,
-  extra: string[],
-): Library[] {
+function readLibraryFolders(db: Database, steamRoot: string, extra: string[]): Library[] {
   const libs: Library[] = [];
   const ins = db.query(
     "INSERT OR REPLACE INTO library(idx, path, label, contentid, total_size, update_clean_bytes_tally, time_last_update_verified, app_count) VALUES (?,?,?,?,?,?,?,?)",
@@ -330,10 +294,10 @@ function readLibraryFolders(
     ins.run(0, steamRoot, null, null, null, null, null, null);
     libs.push({ idx: 0, path: steamRoot });
   }
-  let next = Math.max(...libs.map((l) => l.idx)) + 1;
+  let next = Math.max(...libs.map(l => l.idx)) + 1;
   for (const p of extra) {
     const path = norm(resolve(p));
-    if (libs.some((l) => l.path.toLowerCase() === path.toLowerCase())) continue;
+    if (libs.some(l => l.path.toLowerCase() === path.toLowerCase())) continue;
     ins.run(next, path, "extra", null, null, null, null, null);
     libs.push({ idx: next++, path });
   }
@@ -363,13 +327,9 @@ function readAppManifests(db: Database, libs: Library[]): InstalledApp[] {
       if (!st) continue;
       const appid = kvInt(st, "appid") ?? Number(name.match(/\d+/)?.[0] ?? 0);
       const installdir = kvStr(st, "installdir");
-      const installPath = installdir
-        ? norm(join(steamapps, "common", installdir))
-        : null;
+      const installPath = installdir ? norm(join(steamapps, "common", installdir)) : null;
       const downloading = norm(join(steamapps, "downloading", String(appid)));
-      const downloadingBytes = isDir(downloading)
-        ? dirBytes(downloading)
-        : null;
+      const downloadingBytes = isDir(downloading) ? dirBytes(downloading) : null;
       insApp.run(
         appid,
         lib.idx,
@@ -391,8 +351,7 @@ function readAppManifests(db: Database, libs: Library[]): InstalledApp[] {
         kvInt(st, "AutoUpdateBehavior"),
         kvInt(st, "ScheduledAutoUpdate"),
         kvStr(st, "UserConfig", "language"),
-        kvStr(st, "UserConfig", "betakey") ??
-          kvStr(st, "MountedConfig", "betakey"),
+        kvStr(st, "UserConfig", "betakey") ?? kvStr(st, "MountedConfig", "betakey"),
         norm(path),
         downloadingBytes,
       );
@@ -410,18 +369,8 @@ function readAppManifests(db: Database, libs: Library[]): InstalledApp[] {
           );
         }
       }
-      for (const [depotid, ownerApp] of Object.entries(
-        kvObj(st, "SharedDepots") ?? {},
-      )) {
-        insDepot.run(
-          appid,
-          Number(depotid),
-          "shared",
-          null,
-          null,
-          null,
-          toInt(ownerApp),
-        );
+      for (const [depotid, ownerApp] of Object.entries(kvObj(st, "SharedDepots") ?? {})) {
+        insDepot.run(appid, Number(depotid), "shared", null, null, null, toInt(ownerApp));
       }
       out.push({ appid, libraryIdx: lib.idx, installdir, installPath });
     }
@@ -430,21 +379,16 @@ function readAppManifests(db: Database, libs: Library[]): InstalledApp[] {
 }
 
 /** Fills `app.exe_path` from the first Windows launch entry whose executable exists on disk. */
-function fillAppExecutables(
-  db: Database,
-  apps: InstalledApp[],
-  steamRoot: string,
-): void {
+function fillAppExecutables(db: Database, apps: InstalledApp[], steamRoot: string): void {
   const q = db.query(
     "SELECT executable, oslist FROM app_info_launch WHERE appid = ? ORDER BY CASE WHEN oslist IS NULL OR oslist LIKE '%windows%' THEN 0 ELSE 1 END, idx",
   );
   const upd = db.query("UPDATE app SET exe_path = ? WHERE appid = ?");
   for (const app of apps) {
     // An unfinished install keeps its files under steamapps/downloading/<appid>.
-    const bases = [
-      app.installPath,
-      norm(join(steamRoot, "steamapps", "downloading", String(app.appid))),
-    ].filter(Boolean) as string[];
+    const bases = [app.installPath, norm(join(steamRoot, "steamapps", "downloading", String(app.appid)))].filter(
+      Boolean,
+    ) as string[];
     const rows = q.all(app.appid) as { executable: string | null }[];
     search: for (const base of bases) {
       for (const row of rows) {
@@ -468,20 +412,14 @@ function fillAppExecutables(
 
 type OwnerResolver = (rel: string) => number | null;
 
-function buildOwnerResolver(
-  steamRoot: string,
-  apps: InstalledApp[],
-): OwnerResolver {
+function buildOwnerResolver(steamRoot: string, apps: InstalledApp[]): OwnerResolver {
   const byInstallDir = new Map<string, number>();
-  for (const a of apps)
-    if (a.installdir) byInstallDir.set(a.installdir.toLowerCase(), a.appid);
-  return (rel) => {
+  for (const a of apps) if (a.installdir) byInstallDir.set(a.installdir.toLowerCase(), a.appid);
+  return rel => {
     const lower = rel.toLowerCase();
     let m = lower.match(/^steamapps\/common\/([^/]+)\//);
     if (m) return byInstallDir.get(m[1]!) ?? null;
-    m = lower.match(
-      /^steamapps\/(?:downloading|temp|shadercache|workshop\/content|compatdata)\/(\d+)\//,
-    );
+    m = lower.match(/^steamapps\/(?:downloading|temp|shadercache|workshop\/content|compatdata)\/(\d+)\//);
     if (m) return Number(m[1]);
     m = lower.match(/^steamapps\/appmanifest_(\d+)\.acf$/);
     if (m) return Number(m[1]);
@@ -544,9 +482,7 @@ async function walkRoot(
     const size = st.size;
     const mtime = Math.floor(st.mtimeMs);
     const ext = extname(relPath).slice(1).toLowerCase();
-    const top = relPath.includes("/")
-      ? relPath.slice(0, relPath.indexOf("/"))
-      : "";
+    const top = relPath.includes("/") ? relPath.slice(0, relPath.indexOf("/")) : "";
     const rule =
       root.kind === "appdata"
         ? (secretRule(relPath) ?? {
@@ -560,14 +496,11 @@ async function walkRoot(
     let sha: string | null = null;
     if (sensitive || o.contentFree) {
       type = detectFileType(new Uint8Array(0), ext, size);
-      if (type.kind === "empty" && size > 0)
-        type = { kind: ext ? ext : "binary", mime: "application/octet-stream" };
+      if (type.kind === "empty" && size > 0) type = { kind: ext ? ext : "binary", mime: "application/octet-stream" };
     } else {
       try {
         const f = Bun.file(abs);
-        const prefix = new Uint8Array(
-          await f.slice(0, Math.min(size, 4096)).arrayBuffer(),
-        );
+        const prefix = new Uint8Array(await f.slice(0, Math.min(size, 4096)).arrayBuffer());
         type = detectFileType(prefix, ext, size);
         if (o.hashMax > 0 && size <= o.hashMax) {
           const hasher = new Bun.CryptoHasher("sha256");
@@ -597,8 +530,7 @@ async function walkRoot(
       insSecret.run(root.id, relPath, rule.category, size, mtime, rule.note);
       result.secrets++;
     }
-    if (type.kind.startsWith("pe") && !sensitive && !o.contentFree)
-      result.pe.push({ fileId: id, path: abs });
+    if (type.kind.startsWith("pe") && !sensitive && !o.contentFree) result.pe.push({ fileId: id, path: abs });
     result.files++;
     result.bytes += size;
     let dir = dirname(relPath);
@@ -646,18 +578,13 @@ function recordPe(db: Database, fileId: number, path: string): boolean {
   let info: Record<string, unknown>;
   try {
     if (statSync(path).size > 256 * 1024 * 1024) return false;
-    const parsed = winPe.parse(readFileSync(path)) as unknown as Record<
-      string,
-      unknown
-    > | null;
+    const parsed = winPe.parse(readFileSync(path)) as unknown as Record<string, unknown> | null;
     if (!parsed) return false;
     info = parsed;
   } catch {
     return false;
   }
-  const imports =
-    (info.imports as { module: string; functions?: string[] }[] | undefined) ??
-    [];
+  const imports = (info.imports as { module: string; functions?: string[] }[] | undefined) ?? [];
   const exportsList = (info.exports as unknown[] | undefined) ?? [];
   const version =
     (info.version as {
@@ -672,13 +599,8 @@ function recordPe(db: Database, fileId: number, path: string): boolean {
       issuer?: string;
       certificates?: number;
     } | null) ?? null;
-  const importCount = imports.reduce(
-    (n, m) => n + (m.functions?.length ?? 0),
-    0,
-  );
-  const importsJson = JSON.stringify(
-    imports.map((m) => ({ module: m.module, count: m.functions?.length ?? 0 })),
-  );
+  const importCount = imports.reduce((n, m) => n + (m.functions?.length ?? 0), 0);
+  const importsJson = JSON.stringify(imports.map(m => ({ module: m.module, count: m.functions?.length ?? 0 })));
   db.query(
     `INSERT OR REPLACE INTO pe_file(file_id, kind, machine, bits, subsystem, timestamp, image_size, entry_rva, is_dotnet,
     file_version, product_version, company, product, description, original_filename, signer, issuer, certificates,
@@ -704,9 +626,7 @@ function recordPe(db: Database, fileId: number, path: string): boolean {
     auth?.certificates ?? null,
     importCount,
     exportsList.length,
-    imports.some((m) => /steam_api|steamclient|steam_api64/i.test(m.module))
-      ? 1
-      : 0,
+    imports.some(m => /steam_api|steamclient|steam_api64/i.test(m.module)) ? 1 : 0,
     importsJson,
     JSON.stringify((info.warnings as unknown[] | undefined) ?? []),
   );
@@ -718,10 +638,7 @@ const str = (v: unknown): string | null => (typeof v === "string" ? v : null);
 // PICS caches
 
 /** Indexes `appcache/appinfo.vdf` (PICS app info, depots, branches, launch entries). */
-export async function readAppInfo(
-  db: Database,
-  steamRoot: string,
-): Promise<number> {
+export async function readAppInfo(db: Database, steamRoot: string): Promise<number> {
   const path = join(steamRoot, "appcache", "appinfo.vdf");
   const f = Bun.file(path);
   if (!(await f.exists())) return 0;
@@ -752,7 +669,7 @@ export async function readAppInfo(
     const depots = kvObj(root, "depots") ?? {};
     const branches = kvObj(depots, "branches") ?? {};
     const launch = kvObj(config, "launch") ?? {};
-    const depotIds = Object.keys(depots).filter((k) => /^\d+$/.test(k));
+    const depotIds = Object.keys(depots).filter(k => /^\d+$/.test(k));
     ins.run(
       a.appid,
       a.infoState,
@@ -790,8 +707,7 @@ export async function readAppInfo(
         kvInt(d, "dlcappid"),
         kvInt(d, "depotfromapp"),
         kvInt(d, "sharedinstall"),
-        kvStr(d, "manifests", "public", "gid") ??
-          kvStr(d, "manifests", "public"),
+        kvStr(d, "manifests", "public", "gid") ?? kvStr(d, "manifests", "public"),
         kvInt(d, "manifests", "public", "size"),
         kvInt(d, "manifests", "public", "download"),
         kvInt(d, "maxsize"),
@@ -831,16 +747,12 @@ function firstAssoc(common: KvObject | null, role: string): string | null {
   const direct = kvStr(common, role);
   if (direct) return direct;
   const assoc = kvObj(common, "associations") ?? {};
-  for (const v of Object.values(assoc))
-    if (kvStr(v, "type") === role) return kvStr(v, "name");
+  for (const v of Object.values(assoc)) if (kvStr(v, "type") === role) return kvStr(v, "name");
   return null;
 }
 
 /** Indexes `appcache/packageinfo.vdf` (PICS packages and their apps/depots). */
-export async function readPackageInfo(
-  db: Database,
-  steamRoot: string,
-): Promise<number> {
+export async function readPackageInfo(db: Database, steamRoot: string): Promise<number> {
   const f = Bun.file(join(steamRoot, "appcache", "packageinfo.vdf"));
   if (!(await f.exists())) return 0;
   let parsed;
@@ -852,12 +764,8 @@ export async function readPackageInfo(
   const ins =
     db.query(`INSERT OR REPLACE INTO package(packageid, sha1, change_number, token, billingtype, licensetype, status, app_count, depot_count, kv_json)
     VALUES (?,?,?,?,?,?,?,?,?,?)`);
-  const insApp = db.query(
-    "INSERT OR REPLACE INTO package_app(packageid, appid) VALUES (?,?)",
-  );
-  const insDepot = db.query(
-    "INSERT OR REPLACE INTO package_depot(packageid, depotid) VALUES (?,?)",
-  );
+  const insApp = db.query("INSERT OR REPLACE INTO package_app(packageid, appid) VALUES (?,?)");
+  const insDepot = db.query("INSERT OR REPLACE INTO package_depot(packageid, depotid) VALUES (?,?)");
   db.run("BEGIN");
   for (const p of parsed.packages) {
     const root = kvObj(p.kv, String(p.packageid)) ?? p.kv;
@@ -886,10 +794,7 @@ export async function readPackageInfo(
   return parsed.packages.length;
 }
 
-async function readDepotManifests(
-  db: Database,
-  steamRoot: string,
-): Promise<number> {
+async function readDepotManifests(db: Database, steamRoot: string): Promise<number> {
   const dir = join(steamRoot, "depotcache");
   if (!isDir(dir)) return 0;
   const insM =
@@ -959,9 +864,7 @@ const MAX_LOG_LINES = 400_000;
 async function readLogs(db: Database, steamRoot: string): Promise<number> {
   const dir = join(steamRoot, "logs");
   if (!isDir(dir)) return 0;
-  const ins = db.query(
-    "INSERT INTO log_event(log, ts, line, message) VALUES (?,?,?,?)",
-  );
+  const ins = db.query("INSERT INTO log_event(log, ts, line, message) VALUES (?,?,?,?)");
   let total = 0;
   db.run("BEGIN");
   for (const name of new Bun.Glob("*.txt").scanSync({ cwd: dir })) {
@@ -1022,15 +925,7 @@ async function readUserData(db: Database, steamRoot: string): Promise<number> {
     let appCount = 0;
     const lcText = readTextSync(localconfig);
     if (lcText) {
-      const apps =
-        kvObj(
-          parseTextKv(lcText),
-          "UserLocalConfigStore",
-          "Software",
-          "Valve",
-          "Steam",
-          "apps",
-        ) ?? {};
+      const apps = kvObj(parseTextKv(lcText), "UserLocalConfigStore", "Software", "Valve", "Steam", "apps") ?? {};
       for (const [appid, a] of Object.entries(apps)) {
         if (!/^\d+$/.test(appid)) continue;
         insAppUser.run(
@@ -1039,11 +934,7 @@ async function readUserData(db: Database, steamRoot: string): Promise<number> {
           kvInt(a, "LastPlayed"),
           kvInt(a, "Playtime"),
           kvInt(a, "PlaytimeDisconnected"),
-          kvObj(a, "cloud")
-            ? kvInt(a, "cloud", "last_sync_state") !== null
-              ? 1
-              : null
-            : null,
+          kvObj(a, "cloud") ? (kvInt(a, "cloud", "last_sync_state") !== null ? 1 : null) : null,
         );
         appCount++;
       }
@@ -1086,31 +977,18 @@ async function readUserData(db: Database, steamRoot: string): Promise<number> {
         fileCount++;
         bytes += size ?? 0;
       }
-      insCloudApp.run(
-        steamid3,
-        appid,
-        kvStr(kv, "ChangeNumber"),
-        kvInt(kv, "OSType"),
-        fileCount,
-        bytes,
-      );
+      insCloudApp.run(steamid3, appid, kvStr(kv, "ChangeNumber"), kvInt(kv, "OSType"), fileCount, bytes);
       cloudApps++;
     }
     const cloudDir = join(userDir, "config", "cloudstorage");
     if (isDir(cloudDir)) {
-      for (const name of new Bun.Glob(
-        "cloud-storage-namespace-*.json",
-      ).scanSync({ cwd: cloudDir })) {
+      for (const name of new Bun.Glob("cloud-storage-namespace-*.json").scanSync({ cwd: cloudDir })) {
         const ns = name.match(/namespace-(\d+)(\.modified)?\.json$/);
         if (!ns) continue;
         const path = join(cloudDir, name);
         try {
           const data = (await Bun.file(path).json()) as unknown;
-          const keys = Array.isArray(data)
-            ? data
-                .map((e) => (Array.isArray(e) ? String(e[0]) : ""))
-                .filter(Boolean)
-            : [];
+          const keys = Array.isArray(data) ? data.map(e => (Array.isArray(e) ? String(e[0]) : "")).filter(Boolean) : [];
           insCache.run(
             steamid3,
             0,
@@ -1132,31 +1010,15 @@ async function readUserData(db: Database, steamRoot: string): Promise<number> {
         try {
           const data = (await Bun.file(path).json()) as unknown;
           const keys = Array.isArray(data)
-            ? data
-                .map((e) => (Array.isArray(e) ? String(e[0]) : ""))
-                .filter(Boolean)
+            ? data.map(e => (Array.isArray(e) ? String(e[0]) : "")).filter(Boolean)
             : Object.keys(data as object);
-          insCache.run(
-            steamid3,
-            appid,
-            "user-librarycache",
-            JSON.stringify(keys),
-            statSync(path).size,
-          );
+          insCache.run(steamid3, appid, "user-librarycache", JSON.stringify(keys), statSync(path).size);
         } catch {
           /* malformed */
         }
       }
     }
-    insUser.run(
-      steamid3,
-      steamid64,
-      norm(userDir),
-      lcText ? 1 : 0,
-      appCount,
-      cloudApps,
-      dirBytes(userDir),
-    );
+    insUser.run(steamid3, steamid64, norm(userDir), lcText ? 1 : 0, appCount, cloudApps, dirBytes(userDir));
     users++;
   }
   db.run("COMMIT");
@@ -1166,9 +1028,7 @@ async function readUserData(db: Database, steamRoot: string): Promise<number> {
 function readLibraryCache(db: Database, steamRoot: string): void {
   const dir = join(steamRoot, "appcache", "librarycache");
   if (!isDir(dir)) return;
-  const ins = db.query(
-    "INSERT OR REPLACE INTO librarycache(steamid3, appid, source, keys, bytes) VALUES (?,?,?,?,?)",
-  );
+  const ins = db.query("INSERT OR REPLACE INTO librarycache(steamid3, appid, source, keys, bytes) VALUES (?,?,?,?,?)");
   db.run("BEGIN");
   for (const name of new Bun.Glob("*").scanSync({
     cwd: dir,
@@ -1196,12 +1056,8 @@ function readLibraryCache(db: Database, steamRoot: string): void {
 // Registry and processes (bun:windows)
 
 function readRegistry(db: Database): void {
-  const insV = db.query(
-    "INSERT OR REPLACE INTO reg_value(hive, key, name, type, value) VALUES (?,?,?,?,?)",
-  );
-  const insA = db.query(
-    "INSERT OR REPLACE INTO reg_app(appid, name, installed, updating, running) VALUES (?,?,?,?,?)",
-  );
+  const insV = db.query("INSERT OR REPLACE INTO reg_value(hive, key, name, type, value) VALUES (?,?,?,?,?)");
+  const insA = db.query("INSERT OR REPLACE INTO reg_app(appid, name, installed, updating, running) VALUES (?,?,?,?,?)");
   const record = (hive: string, key: string, whitelist: Set<string>) => {
     let listing: {
       keys?: string[];
@@ -1214,13 +1070,7 @@ function readRegistry(db: Database): void {
     }
     for (const v of listing.values ?? []) {
       if (!whitelist.has(v.name)) continue;
-      insV.run(
-        hive,
-        key,
-        v.name,
-        v.type,
-        typeof v.value === "object" ? JSON.stringify(v.value) : String(v.value),
-      );
+      insV.run(hive, key, v.name, v.type, typeof v.value === "object" ? JSON.stringify(v.value) : String(v.value));
     }
     return listing;
   };
@@ -1240,14 +1090,8 @@ function readRegistry(db: Database): void {
       const l = winRegistry.list(`${HKCU_STEAM}\\Apps\\${id}`) as {
         values?: { name: string; value: unknown }[];
       };
-      const get = (n: string) => l.values?.find((v) => v.name === n)?.value;
-      insA.run(
-        Number(id),
-        str(get("Name")),
-        toInt(get("Installed")),
-        toInt(get("Updating")),
-        toInt(get("Running")),
-      );
+      const get = (n: string) => l.values?.find(v => v.name === n)?.value;
+      insA.run(Number(id), str(get("Name")), toInt(get("Installed")), toInt(get("Updating")), toInt(get("Running")));
     } catch {
       /* key vanished */
     }
@@ -1262,16 +1106,10 @@ function readProcesses(db: Database): void {
   } catch {
     return;
   }
-  const ins = db.query(
-    "INSERT OR REPLACE INTO process(pid, ppid, name, path) VALUES (?,?,?,?)",
-  );
+  const ins = db.query("INSERT OR REPLACE INTO process(pid, ppid, name, path) VALUES (?,?,?,?)");
   db.run("BEGIN");
   for (const p of list) {
-    if (
-      !p.name ||
-      !/steam|gameoverlayui|easyanticheat|dbxv2|xenoverse/i.test(p.name)
-    )
-      continue;
+    if (!p.name || !/steam|gameoverlayui|easyanticheat|dbxv2|xenoverse/i.test(p.name)) continue;
     ins.run(p.pid, p.ppid ?? null, p.name, p.path ?? null);
   }
   db.run("COMMIT");

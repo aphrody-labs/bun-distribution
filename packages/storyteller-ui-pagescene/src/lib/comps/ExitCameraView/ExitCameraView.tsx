@@ -11,8 +11,8 @@ import { EditorStates } from "../../enums";
 // docks it next to the timeline bar via `className`.
 export const ExitCameraView = ({ className }: { className?: string }) => {
   const editor = useContext(EngineContext);
-  const editorState = usePageSceneStore((s) => s.editorState);
-  const sceneMode = usePageSceneStore((s) => s.sceneMode);
+  const editorState = usePageSceneStore(s => s.editorState);
+  const sceneMode = usePageSceneStore(s => s.sceneMode);
 
   // In record mode the viewport is also CAMERA_VIEW, but the mode pill
   // handles leaving — don't show the manual exit button there.

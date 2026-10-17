@@ -22,11 +22,7 @@ import { DeckPreviewModal } from "./deck/DeckCard";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
 import { Label } from "@storyteller/ui-label";
-import {
-  showActionReminder,
-  isActionReminderOpen,
-  actionReminderProps,
-} from "@storyteller/ui-action-reminder-modal";
+import { showActionReminder, isActionReminderOpen, actionReminderProps } from "@storyteller/ui-action-reminder-modal";
 
 interface CharactersModalProps {
   isOpen: boolean;
@@ -50,21 +46,12 @@ interface PendingCharacter {
 
 const POLL_INTERVAL_MS = 5000;
 const PENDING_STALE_MS = 3 * 60 * 1000;
-const FIELD_LABEL_CLASSES =
-  "mb-0 text-[11px] tracking-[0.12em] text-base-fg/70";
+const FIELD_LABEL_CLASSES = "mb-0 text-[11px] tracking-[0.12em] text-base-fg/70";
 
-export const CharactersModal = ({
-  isOpen,
-  onClose,
-  onSelectCharacter,
-}: CharactersModalProps) => {
+export const CharactersModal = ({ isOpen, onClose, onSelectCharacter }: CharactersModalProps) => {
   const [view, setView] = useState<ModalView>("list");
-  const [editingCharacter, setEditingCharacter] = useState<Character | null>(
-    null,
-  );
-  const [pendingCharacters, setPendingCharacters] = useState<
-    PendingCharacter[]
-  >([]);
+  const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
+  const [pendingCharacters, setPendingCharacters] = useState<PendingCharacter[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleClose = () => {
@@ -81,20 +68,17 @@ export const CharactersModal = ({
   const handleEditDone = () => {
     setEditingCharacter(null);
     setView("list");
-    setRefreshKey((k) => k + 1);
+    setRefreshKey(k => k + 1);
   };
 
   const handleCreated = (pending: { name: string; previewUrl?: string }) => {
-    setPendingCharacters((prev) => [
-      { ...pending, createdAt: Date.now() },
-      ...prev,
-    ]);
+    setPendingCharacters(prev => [{ ...pending, createdAt: Date.now() }, ...prev]);
     setView("list");
-    setRefreshKey((k) => k + 1);
+    setRefreshKey(k => k + 1);
   };
 
   const removePending = useCallback((name: string) => {
-    setPendingCharacters((prev) => prev.filter((p) => p.name !== name));
+    setPendingCharacters(prev => prev.filter(p => p.name !== name));
   }, []);
 
   // Poll the server while any creation is pending (even with the modal
@@ -111,10 +95,10 @@ export const CharactersModal = ({
         const res = await api.ListAllCharacters();
         if (!res.success || !res.data) return;
 
-        const serverNames = new Set(res.data.map((c) => c.name));
+        const serverNames = new Set(res.data.map(c => c.name));
         let resolved = false;
-        setPendingCharacters((prev) =>
-          prev.filter((p) => {
+        setPendingCharacters(prev =>
+          prev.filter(p => {
             if (serverNames.has(p.name)) {
               resolved = true;
               return false;
@@ -125,14 +109,14 @@ export const CharactersModal = ({
         if (resolved) {
           const store = useCharactersStore.getState();
           store.setCharacters(
-            res.data.map((c) => ({
+            res.data.map(c => ({
               character_token: c.token,
               name: c.name,
               avatar_image_url: c.maybe_avatar?.cdn_url,
             })),
           );
           store.setLoaded(true);
-          setRefreshKey((k) => k + 1);
+          setRefreshKey(k => k + 1);
         }
       } catch {
         // retry next tick
@@ -146,13 +130,13 @@ export const CharactersModal = ({
   useEffect(() => {
     if (pendingCharacters.length === 0) return;
 
-    const timers = pendingCharacters.map((pending) =>
+    const timers = pendingCharacters.map(pending =>
       setTimeout(
         () => {
-          setPendingCharacters((prev) => {
-            if (!prev.some((p) => p.name === pending.name)) return prev;
+          setPendingCharacters(prev => {
+            if (!prev.some(p => p.name === pending.name)) return prev;
             toast.error(`Character "${pending.name}" failed to create`);
-            return prev.filter((p) => p.name !== pending.name);
+            return prev.filter(p => p.name !== pending.name);
           });
         },
         Math.max(0, PENDING_STALE_MS - (Date.now() - pending.createdAt)),
@@ -188,10 +172,7 @@ export const CharactersModal = ({
             onPendingResolved={removePending}
           />
         ) : view === "create" ? (
-          <NewCharacterView
-            onBack={() => setView("list")}
-            onCreated={handleCreated}
-          />
+          <NewCharacterView onBack={() => setView("list")} onCreated={handleCreated} />
         ) : editingCharacter ? (
           <EditCharacterView
             character={editingCharacter}
@@ -226,18 +207,16 @@ const CharacterListView = ({
 }) => {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
-  const [previewCharacter, setPreviewCharacter] = useState<Character | null>(
-    null,
-  );
+  const [previewCharacter, setPreviewCharacter] = useState<Character | null>(null);
 
-  const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
-  const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
-  const storeRemoveCharacter = useCharactersStore((s) => s.removeCharacter);
+  const storeSetCharacters = useCharactersStore(s => s.setCharacters);
+  const storeSetLoaded = useCharactersStore(s => s.setLoaded);
+  const storeRemoveCharacter = useCharactersStore(s => s.removeCharacter);
 
   const syncToStore = useCallback(
     (chars: Character[]) => {
       storeSetCharacters(
-        chars.map((c) => ({
+        chars.map(c => ({
           character_token: c.token,
           name: c.name,
           avatar_image_url: c.maybe_avatar?.cdn_url,
@@ -270,7 +249,7 @@ const CharacterListView = ({
   // Drop pendings already represented in the fetched list (no duplicate cards)
   useEffect(() => {
     if (pendingCharacters.length === 0) return;
-    const names = new Set(characters.map((c) => c.name));
+    const names = new Set(characters.map(c => c.name));
     for (const pending of pendingCharacters) {
       if (names.has(pending.name)) onPendingResolved(pending.name);
     }
@@ -282,8 +261,7 @@ const CharacterListView = ({
       title: "Delete character?",
       message: (
         <p className="text-sm text-white/70">
-          This will permanently delete <strong>{character.name}</strong>. This
-          action cannot be undone.
+          This will permanently delete <strong>{character.name}</strong>. This action cannot be undone.
         </p>
       ),
       primaryActionText: "Delete",
@@ -304,9 +282,7 @@ const CharacterListView = ({
           });
 
           if (res.success) {
-            setCharacters((prev) =>
-              prev.filter((c) => c.token !== character.token),
-            );
+            setCharacters(prev => prev.filter(c => c.token !== character.token));
             storeRemoveCharacter(character.token);
             toast.success(`Character "${character.name}" deleted`);
           } else {
@@ -326,10 +302,7 @@ const CharacterListView = ({
       {loading && characters.length === 0 ? (
         <div className="grid grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex flex-col overflow-hidden border border-transparent bg-base-fg/[0.05]"
-            >
+            <div key={i} className="flex flex-col overflow-hidden border border-transparent bg-base-fg/[0.05]">
               <div className="aspect-square w-full overflow-hidden">
                 <div
                   className="h-full w-full bg-base-fg/[0.06]"
@@ -369,7 +342,7 @@ const CharacterListView = ({
           </button>
 
           {/* Pending (creating) characters */}
-          {pendingCharacters.map((pending) => (
+          {pendingCharacters.map(pending => (
             <div
               key={`pending-${pending.name}`}
               className="relative flex flex-col overflow-hidden border border-transparent bg-base-fg/[0.05]"
@@ -388,20 +361,16 @@ const CharacterListView = ({
                 )}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
                   <LoaderCircleIcon className="text-lg text-white/80 animate-spin" />
-                  <span className="text-xs font-medium text-white/80">
-                    Creating...
-                  </span>
+                  <span className="text-xs font-medium text-white/80">Creating...</span>
                 </div>
               </div>
               <div className="px-2 py-1.5 text-center">
-                <p className="truncate text-xs font-medium text-base-fg/50">
-                  {pending.name}
-                </p>
+                <p className="truncate text-xs font-medium text-base-fg/50">{pending.name}</p>
               </div>
             </div>
           ))}
 
-          {characters.map((character) => {
+          {characters.map(character => {
             const isUserCreated = character.is_user_created !== false;
 
             return (
@@ -409,10 +378,7 @@ const CharacterListView = ({
                 key={character.token}
                 className="group relative flex flex-col overflow-hidden border border-transparent bg-base-fg/[0.05] transition-colors hover:border-base-fg/30 hover:bg-base-fg/10"
               >
-                <button
-                  onClick={() => onSelectCharacter?.(character)}
-                  className="flex flex-1 flex-col"
-                >
+                <button onClick={() => onSelectCharacter?.(character)} className="flex flex-1 flex-col">
                   <div className="aspect-square w-full overflow-hidden bg-base-fg/[0.05]">
                     {character.maybe_avatar?.cdn_url ? (
                       <img
@@ -428,9 +394,7 @@ const CharacterListView = ({
                     )}
                   </div>
                   <div className="px-2 py-1.5">
-                    <p className="truncate text-xs font-medium text-base-fg/80">
-                      {character.name}
-                    </p>
+                    <p className="truncate text-xs font-medium text-base-fg/80">{character.name}</p>
                   </div>
                 </button>
 
@@ -440,7 +404,7 @@ const CharacterListView = ({
                   <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100">
                     {character.maybe_avatar?.cdn_url && (
                       <button
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
                           setPreviewCharacter(character);
                         }}
@@ -453,7 +417,7 @@ const CharacterListView = ({
                     {isUserCreated && (
                       <>
                         <button
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             onEditCharacter(character);
                           }}
@@ -462,7 +426,7 @@ const CharacterListView = ({
                           <PenIcon className="text-[10px]" />
                         </button>
                         <button
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             handleDelete(character);
                           }}
@@ -510,16 +474,13 @@ const EditCharacterView = ({
   onBack: () => void;
   onSaved: () => void;
 }) => {
-  const updateCharacterInStore = useCharactersStore((s) => s.updateCharacter);
+  const updateCharacterInStore = useCharactersStore(s => s.updateCharacter);
   const [name, setName] = useState(character.name);
-  const [description, setDescription] = useState(
-    character.maybe_description ?? "",
-  );
+  const [description, setDescription] = useState(character.maybe_description ?? "");
   const [saving, setSaving] = useState(false);
 
   const hasChanges =
-    name.trim() !== character.name ||
-    (description.trim() || "") !== (character.maybe_description ?? "");
+    name.trim() !== character.name || (description.trim() || "") !== (character.maybe_description ?? "");
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -534,9 +495,7 @@ const EditCharacterView = ({
         token: character.token,
         updated_name: name.trim() !== character.name ? name.trim() : undefined,
         updated_description:
-          (description.trim() || "") !== (character.maybe_description ?? "")
-            ? description.trim() || null
-            : undefined,
+          (description.trim() || "") !== (character.maybe_description ?? "") ? description.trim() || null : undefined,
       });
 
       if (res.success) {
@@ -587,7 +546,7 @@ const EditCharacterView = ({
           <Input
             id="edit-character-name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={e => setName(e.target.value)}
             placeholder="Character name"
             autoComplete="off"
             inputClassName="bg-ui-controls text-sm"
@@ -596,17 +555,13 @@ const EditCharacterView = ({
 
         {/* Description input */}
         <div className="flex flex-col gap-1.5">
-          <Label
-            htmlFor="edit-character-description"
-            className={FIELD_LABEL_CLASSES}
-          >
-            Description{" "}
-            <span className="font-normal text-base-fg/40">(optional)</span>
+          <Label htmlFor="edit-character-description" className={FIELD_LABEL_CLASSES}>
+            Description <span className="font-normal text-base-fg/40">(optional)</span>
           </Label>
           <textarea
             id="edit-character-description"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={e => setDescription(e.target.value)}
             placeholder="Description..."
             rows={3}
             autoComplete="off"
@@ -653,15 +608,11 @@ const NewCharacterView = ({
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
-    [],
-  );
+  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>([]);
 
   const processFiles = useCallback(
     async (files: FileList | File[]) => {
-      const imageFiles = Array.from(files).filter((f) =>
-        f.type.startsWith("image/"),
-      );
+      const imageFiles = Array.from(files).filter(f => f.type.startsWith("image/"));
       if (imageFiles.length === 0) {
         toast.error("Please upload image files");
         return;
@@ -669,13 +620,11 @@ const NewCharacterView = ({
 
       // Only keep the first file (single image)
       const file = imageFiles[0]!;
-      const newImages: UploadedImage[] = [
-        { file, url: URL.createObjectURL(file) },
-      ];
+      const newImages: UploadedImage[] = [{ file, url: URL.createObjectURL(file) }];
 
       // Replace any existing image
-      setImages((prev) => {
-        prev.forEach((img) => URL.revokeObjectURL(img.url));
+      setImages(prev => {
+        prev.forEach(img => URL.revokeObjectURL(img.url));
         return newImages;
       });
 
@@ -705,9 +654,9 @@ const NewCharacterView = ({
         }
       }
 
-      setImages((prev) =>
-        prev.map((existing) => {
-          const updated = updatedImages.find((u) => u.url === existing.url);
+      setImages(prev =>
+        prev.map(existing => {
+          const updated = updatedImages.find(u => u.url === existing.url);
           return updated || existing;
         }),
       );
@@ -761,7 +710,7 @@ const NewCharacterView = ({
   };
 
   const removeImage = (index: number) => {
-    setImages((prev) => {
+    setImages(prev => {
       const removed = prev[index];
       if (removed) URL.revokeObjectURL(removed.url);
       return prev.filter((_, i) => i !== index);
@@ -774,7 +723,7 @@ const NewCharacterView = ({
       return;
     }
 
-    const uploadedImages = images.filter((img) => img.mediaToken);
+    const uploadedImages = images.filter(img => img.mediaToken);
     if (uploadedImages.length < 1) {
       toast.error("Please upload a reference image");
       return;
@@ -811,7 +760,7 @@ const NewCharacterView = ({
   // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
-      images.forEach((img) => URL.revokeObjectURL(img.url));
+      images.forEach(img => URL.revokeObjectURL(img.url));
     };
   }, []);
 
@@ -846,20 +795,16 @@ const NewCharacterView = ({
           {images.length > 0 ? (
             <div
               className="group relative flex h-full w-full items-center justify-center"
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
             >
-              <img
-                src={images[0]!.url}
-                alt="Reference"
-                className="max-h-full max-w-full object-contain"
-              />
+              <img src={images[0]!.url} alt="Reference" className="max-h-full max-w-full object-contain" />
               {!images[0]!.mediaToken && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                   <LoaderCircleIcon className="text-white animate-spin" />
                 </div>
               )}
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   removeImage(0);
                 }}
@@ -872,13 +817,8 @@ const NewCharacterView = ({
             <div className="flex h-full w-full flex-col items-center justify-center text-base-fg/60">
               <UploadIcon className="mb-2 text-xl text-base-fg/40" />
               <p className="text-sm">Upload reference image</p>
-              <p className="mb-3 text-xs text-base-fg/40">
-                Click or drag an image here
-              </p>
-              <div
-                className="flex items-center gap-3"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <p className="mb-3 text-xs text-base-fg/40">Click or drag an image here</p>
+              <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
                 <button
                   onClick={() => setIsGalleryOpen(true)}
                   className="flex items-center gap-2 rounded-[3px] border border-base-fg/15 bg-transparent px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:border-base-fg/25 hover:bg-base-fg/[0.07] hover:text-base-fg"
@@ -898,13 +838,7 @@ const NewCharacterView = ({
           )}
         </div>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
 
         {/* Name input */}
         <div className="flex flex-col gap-1.5">
@@ -914,7 +848,7 @@ const NewCharacterView = ({
           <Input
             id="character-name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={e => setName(e.target.value)}
             placeholder="Character name"
             autoComplete="off"
             inputClassName="bg-ui-controls text-sm"
@@ -923,17 +857,13 @@ const NewCharacterView = ({
 
         {/* Description input */}
         <div className="flex flex-col gap-1.5">
-          <Label
-            htmlFor="character-description"
-            className={FIELD_LABEL_CLASSES}
-          >
-            Description{" "}
-            <span className="font-normal text-base-fg/40">(optional)</span>
+          <Label htmlFor="character-description" className={FIELD_LABEL_CLASSES}>
+            Description <span className="font-normal text-base-fg/40">(optional)</span>
           </Label>
           <textarea
             id="character-description"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={e => setDescription(e.target.value)}
             placeholder="Description..."
             rows={3}
             autoComplete="off"
@@ -951,12 +881,7 @@ const NewCharacterView = ({
           variant="primary"
           onClick={handleCreate}
           loading={creating}
-          disabled={
-            creating ||
-            uploading ||
-            !name.trim() ||
-            images.filter((i) => i.mediaToken).length < 1
-          }
+          disabled={creating || uploading || !name.trim() || images.filter(i => i.mediaToken).length < 1}
         >
           Create
         </Button>
@@ -970,15 +895,15 @@ const NewCharacterView = ({
         }}
         mode="select"
         selectedItemIds={selectedGalleryImages}
-        onSelectItem={(id) => {
-          setSelectedGalleryImages((prev) => (prev.includes(id) ? [] : [id]));
+        onSelectItem={id => {
+          setSelectedGalleryImages(prev => (prev.includes(id) ? [] : [id]));
         }}
         maxSelections={1}
         onUseSelected={(selectedItems: GalleryItem[]) => {
           const item = selectedItems[0];
           if (item && item.fullImage) {
             // Clean up previous image
-            images.forEach((img) => URL.revokeObjectURL(img.url));
+            images.forEach(img => URL.revokeObjectURL(img.url));
             setImages([
               {
                 file: new File([], "library-image"),

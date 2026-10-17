@@ -27,7 +27,7 @@ test("JSX is only recognised in expression position, not in strings, comments or
     "const id = <T,>(x: T) => x;",
     'export const A = () => <p>Don\'t <Button variant="text">go</Button> now</p>;',
   ].join("\n");
-  const names = scanTsx(src).nodes.map((n) => n.rawName);
+  const names = scanTsx(src).nodes.map(n => n.rawName);
   expect(names).toEqual(["p", "Button"]);
   const out = transformSource(src).source;
   expect(out).toContain("<p>Don't <MdTextButton>go</MdTextButton> now</p>");
@@ -35,9 +35,5 @@ test("JSX is only recognised in expression position, not in strings, comments or
 });
 
 test("invalid TSX is rejected instead of being rewritten", () => {
-  expect(() =>
-    transformSource(
-      'import { Button } from "@mui/material"; const x = <Button>;',
-    ),
-  ).toThrow("TSX invalide");
+  expect(() => transformSource('import { Button } from "@mui/material"; const x = <Button>;')).toThrow("TSX invalide");
 });

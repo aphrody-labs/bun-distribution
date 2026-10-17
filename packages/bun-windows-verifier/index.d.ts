@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** verifier.dll!VerifierEnumerateResource */
-  VerifierEnumerateResource(Process: Win32Pointer, Flags: number, ResourceType: number, ResourceCallback: Win32Callback, EnumerationContext: Win32Pointer): number;
+  VerifierEnumerateResource(
+    Process: Win32Pointer,
+    Flags: number,
+    ResourceType: number,
+    ResourceCallback: Win32Callback,
+    EnumerationContext: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

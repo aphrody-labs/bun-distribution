@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-slapi-l1-1-0.dll!SLQueryLicenseValueFromApp */
-  SLQueryLicenseValueFromApp(valueName: string | Win32Pointer, valueType: Win32Pointer, dataBuffer: Win32Pointer, dataSize: number, resultDataSize: Win32Pointer): number;
+  SLQueryLicenseValueFromApp(
+    valueName: string | Win32Pointer,
+    valueType: Win32Pointer,
+    dataBuffer: Win32Pointer,
+    dataSize: number,
+    resultDataSize: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

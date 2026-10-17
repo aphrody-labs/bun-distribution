@@ -18,7 +18,7 @@ export class CreditsApi extends ApiManager {
       banked_credits: number;
       sum_total_credits: number;
     }>({ endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: {
           freeCredits: response.free_credits,
@@ -27,7 +27,7 @@ export class CreditsApi extends ApiManager {
           sumTotalCredits: response.sum_total_credits,
         },
       }))
-      .catch((err) => ({
+      .catch(err => ({
         success: false,
         errorMessage: err.message,
       }));

@@ -3,29 +3,116 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** msdelta.dll!ApplyDeltaA */
-  ApplyDeltaA(ApplyFlags: number | bigint, lpSourceName: string | Win32Pointer, lpDeltaName: string | Win32Pointer, lpTargetName: string | Win32Pointer): number;
+  ApplyDeltaA(
+    ApplyFlags: number | bigint,
+    lpSourceName: string | Win32Pointer,
+    lpDeltaName: string | Win32Pointer,
+    lpTargetName: string | Win32Pointer,
+  ): number;
   /** msdelta.dll!ApplyDeltaB */
-  ApplyDeltaB(ApplyFlags: number | bigint, Source: Win32StructInit, Delta: Win32StructInit, lpTarget: Win32Pointer): number;
+  ApplyDeltaB(
+    ApplyFlags: number | bigint,
+    Source: Win32StructInit,
+    Delta: Win32StructInit,
+    lpTarget: Win32Pointer,
+  ): number;
   /** msdelta.dll!ApplyDeltaGetReverseB */
-  ApplyDeltaGetReverseB(ApplyFlags: number | bigint, Source: Win32StructInit, Delta: Win32StructInit, lpReverseFileTime: Win32Pointer, lpTarget: Win32Pointer, lpTargetReverse: Win32Pointer): number;
+  ApplyDeltaGetReverseB(
+    ApplyFlags: number | bigint,
+    Source: Win32StructInit,
+    Delta: Win32StructInit,
+    lpReverseFileTime: Win32Pointer,
+    lpTarget: Win32Pointer,
+    lpTargetReverse: Win32Pointer,
+  ): number;
   /** msdelta.dll!ApplyDeltaProvidedB */
-  ApplyDeltaProvidedB(ApplyFlags: number | bigint, Source: Win32StructInit, Delta: Win32StructInit, lpTarget: Win32Pointer, uTargetSize: number | bigint): number;
+  ApplyDeltaProvidedB(
+    ApplyFlags: number | bigint,
+    Source: Win32StructInit,
+    Delta: Win32StructInit,
+    lpTarget: Win32Pointer,
+    uTargetSize: number | bigint,
+  ): number;
   /** msdelta.dll!ApplyDeltaW */
-  ApplyDeltaW(ApplyFlags: number | bigint, lpSourceName: string | Win32Pointer, lpDeltaName: string | Win32Pointer, lpTargetName: string | Win32Pointer): number;
+  ApplyDeltaW(
+    ApplyFlags: number | bigint,
+    lpSourceName: string | Win32Pointer,
+    lpDeltaName: string | Win32Pointer,
+    lpTargetName: string | Win32Pointer,
+  ): number;
   /** msdelta.dll!ApplyDeltaW */
-  ApplyDelta(ApplyFlags: number | bigint, lpSourceName: string | Win32Pointer, lpDeltaName: string | Win32Pointer, lpTargetName: string | Win32Pointer): number;
+  ApplyDelta(
+    ApplyFlags: number | bigint,
+    lpSourceName: string | Win32Pointer,
+    lpDeltaName: string | Win32Pointer,
+    lpTargetName: string | Win32Pointer,
+  ): number;
   /** msdelta.dll!CreateDeltaA */
-  CreateDeltaA(FileTypeSet: number | bigint, SetFlags: number | bigint, ResetFlags: number | bigint, lpSourceName: string | Win32Pointer, lpTargetName: string | Win32Pointer, lpSourceOptionsName: string | Win32Pointer, lpTargetOptionsName: string | Win32Pointer, GlobalOptions: Win32StructInit, lpTargetFileTime: Win32Pointer, HashAlgId: number, lpDeltaName: string | Win32Pointer): number;
+  CreateDeltaA(
+    FileTypeSet: number | bigint,
+    SetFlags: number | bigint,
+    ResetFlags: number | bigint,
+    lpSourceName: string | Win32Pointer,
+    lpTargetName: string | Win32Pointer,
+    lpSourceOptionsName: string | Win32Pointer,
+    lpTargetOptionsName: string | Win32Pointer,
+    GlobalOptions: Win32StructInit,
+    lpTargetFileTime: Win32Pointer,
+    HashAlgId: number,
+    lpDeltaName: string | Win32Pointer,
+  ): number;
   /** msdelta.dll!CreateDeltaB */
-  CreateDeltaB(FileTypeSet: number | bigint, SetFlags: number | bigint, ResetFlags: number | bigint, Source: Win32StructInit, Target: Win32StructInit, SourceOptions: Win32StructInit, TargetOptions: Win32StructInit, GlobalOptions: Win32StructInit, lpTargetFileTime: Win32Pointer, HashAlgId: number, lpDelta: Win32Pointer): number;
+  CreateDeltaB(
+    FileTypeSet: number | bigint,
+    SetFlags: number | bigint,
+    ResetFlags: number | bigint,
+    Source: Win32StructInit,
+    Target: Win32StructInit,
+    SourceOptions: Win32StructInit,
+    TargetOptions: Win32StructInit,
+    GlobalOptions: Win32StructInit,
+    lpTargetFileTime: Win32Pointer,
+    HashAlgId: number,
+    lpDelta: Win32Pointer,
+  ): number;
   /** msdelta.dll!CreateDeltaW */
-  CreateDeltaW(FileTypeSet: number | bigint, SetFlags: number | bigint, ResetFlags: number | bigint, lpSourceName: string | Win32Pointer, lpTargetName: string | Win32Pointer, lpSourceOptionsName: string | Win32Pointer, lpTargetOptionsName: string | Win32Pointer, GlobalOptions: Win32StructInit, lpTargetFileTime: Win32Pointer, HashAlgId: number, lpDeltaName: string | Win32Pointer): number;
+  CreateDeltaW(
+    FileTypeSet: number | bigint,
+    SetFlags: number | bigint,
+    ResetFlags: number | bigint,
+    lpSourceName: string | Win32Pointer,
+    lpTargetName: string | Win32Pointer,
+    lpSourceOptionsName: string | Win32Pointer,
+    lpTargetOptionsName: string | Win32Pointer,
+    GlobalOptions: Win32StructInit,
+    lpTargetFileTime: Win32Pointer,
+    HashAlgId: number,
+    lpDeltaName: string | Win32Pointer,
+  ): number;
   /** msdelta.dll!CreateDeltaW */
-  CreateDelta(FileTypeSet: number | bigint, SetFlags: number | bigint, ResetFlags: number | bigint, lpSourceName: string | Win32Pointer, lpTargetName: string | Win32Pointer, lpSourceOptionsName: string | Win32Pointer, lpTargetOptionsName: string | Win32Pointer, GlobalOptions: Win32StructInit, lpTargetFileTime: Win32Pointer, HashAlgId: number, lpDeltaName: string | Win32Pointer): number;
+  CreateDelta(
+    FileTypeSet: number | bigint,
+    SetFlags: number | bigint,
+    ResetFlags: number | bigint,
+    lpSourceName: string | Win32Pointer,
+    lpTargetName: string | Win32Pointer,
+    lpSourceOptionsName: string | Win32Pointer,
+    lpTargetOptionsName: string | Win32Pointer,
+    GlobalOptions: Win32StructInit,
+    lpTargetFileTime: Win32Pointer,
+    HashAlgId: number,
+    lpDeltaName: string | Win32Pointer,
+  ): number;
   /** msdelta.dll!DeltaFree */
   DeltaFree(lpMemory: Win32Pointer): number;
   /** msdelta.dll!DeltaNormalizeProvidedB */
-  DeltaNormalizeProvidedB(FileTypeSet: number | bigint, NormalizeFlags: number | bigint, NormalizeOptions: Win32StructInit, lpSource: Win32Pointer, uSourceSize: number | bigint): number;
+  DeltaNormalizeProvidedB(
+    FileTypeSet: number | bigint,
+    NormalizeFlags: number | bigint,
+    NormalizeOptions: Win32StructInit,
+    lpSource: Win32Pointer,
+    uSourceSize: number | bigint,
+  ): number;
   /** msdelta.dll!GetDeltaInfoA */
   GetDeltaInfoA(lpDeltaName: string | Win32Pointer, lpHeaderInfo: Win32Pointer): number;
   /** msdelta.dll!GetDeltaInfoB */
@@ -35,13 +122,33 @@ interface Functions {
   /** msdelta.dll!GetDeltaInfoW */
   GetDeltaInfo(lpDeltaName: string | Win32Pointer, lpHeaderInfo: Win32Pointer): number;
   /** msdelta.dll!GetDeltaSignatureA */
-  GetDeltaSignatureA(FileTypeSet: number | bigint, HashAlgId: number, lpSourceName: string | Win32Pointer, lpHash: Win32Pointer): number;
+  GetDeltaSignatureA(
+    FileTypeSet: number | bigint,
+    HashAlgId: number,
+    lpSourceName: string | Win32Pointer,
+    lpHash: Win32Pointer,
+  ): number;
   /** msdelta.dll!GetDeltaSignatureB */
-  GetDeltaSignatureB(FileTypeSet: number | bigint, HashAlgId: number, Source: Win32StructInit, lpHash: Win32Pointer): number;
+  GetDeltaSignatureB(
+    FileTypeSet: number | bigint,
+    HashAlgId: number,
+    Source: Win32StructInit,
+    lpHash: Win32Pointer,
+  ): number;
   /** msdelta.dll!GetDeltaSignatureW */
-  GetDeltaSignatureW(FileTypeSet: number | bigint, HashAlgId: number, lpSourceName: string | Win32Pointer, lpHash: Win32Pointer): number;
+  GetDeltaSignatureW(
+    FileTypeSet: number | bigint,
+    HashAlgId: number,
+    lpSourceName: string | Win32Pointer,
+    lpHash: Win32Pointer,
+  ): number;
   /** msdelta.dll!GetDeltaSignatureW */
-  GetDeltaSignature(FileTypeSet: number | bigint, HashAlgId: number, lpSourceName: string | Win32Pointer, lpHash: Win32Pointer): number;
+  GetDeltaSignature(
+    FileTypeSet: number | bigint,
+    HashAlgId: number,
+    lpSourceName: string | Win32Pointer,
+    lpHash: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

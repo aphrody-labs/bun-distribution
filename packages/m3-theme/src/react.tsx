@@ -3,21 +3,8 @@
 // provider only sets the mode until the seed, variant or contrast changes; a change installs the
 // Rust `scheme` sheet returned by `sheet`. No colour is computed here and no colour role is inline.
 
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-} from "react";
-import {
-  applyDynamicFusionTheme,
-  applyM3Mode,
-  clearM3Scheme,
-  type M3SchemeSheet,
-  type SchemeVariant,
-} from "./index";
+import React, { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { applyDynamicFusionTheme, applyM3Mode, clearM3Scheme, type M3SchemeSheet, type SchemeVariant } from "./index";
 
 export type { M3SchemeRequest, M3SchemeSheet, SchemeVariant } from "./index";
 
@@ -77,12 +64,8 @@ function missingSheet(): Error {
 }
 
 /** A setter that refuses anything but the compiled value when no Rust sheet source exists. */
-function guard<T>(
-  sheet: M3SchemeSheet | undefined,
-  set: (value: T) => void,
-  compiled: T,
-): (value: T) => void {
-  return (value) => {
+function guard<T>(sheet: M3SchemeSheet | undefined, set: (value: T) => void, compiled: T): (value: T) => void {
+  return value => {
     if (!sheet && value !== compiled) throw missingSheet();
     set(value);
   };
@@ -103,25 +86,14 @@ export function M3ThemeProvider({
   const [variant, setVariantState] = useState<SchemeVariant>(defaultVariant);
   const [failure, setFailure] = useState<{ key: string; error: Error }>();
 
-  const systemDark = useSyncExternalStore(
-    subscribeToColorScheme,
-    prefersDark,
-    () => false,
-  );
-  const resolvedTheme: "light" | "dark" =
-    themeMode === "system" ? (systemDark ? "dark" : "light") : themeMode;
+  const systemDark = useSyncExternalStore(subscribeToColorScheme, prefersDark, () => false);
+  const resolvedTheme: "light" | "dark" = themeMode === "system" ? (systemDark ? "dark" : "light") : themeMode;
   const compiled =
     seedColor.toLowerCase() === defaultSeedColor.toLowerCase() &&
     variant === defaultVariant &&
     contrastLevel === defaultContrastLevel;
-  const schemeKey = JSON.stringify([
-    seedColor,
-    variant,
-    contrastLevel,
-    resolvedTheme,
-  ]);
-  const schemeError =
-    !compiled && failure?.key === schemeKey ? failure.error : undefined;
+  const schemeKey = JSON.stringify([seedColor, variant, contrastLevel, resolvedTheme]);
+  const schemeError = !compiled && failure?.key === schemeKey ? failure.error : undefined;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -148,29 +120,14 @@ export function M3ThemeProvider({
     return () => {
       current = false;
     };
-  }, [
-    compiled,
-    schemeKey,
-    seedColor,
-    resolvedTheme,
-    target,
-    contrastLevel,
-    variant,
-    sheet,
-  ]);
+  }, [compiled, schemeKey, seedColor, resolvedTheme, target, contrastLevel, variant, sheet]);
 
-  const setSeedColor = useMemo(
-    () => guard(sheet, setSeed, defaultSeedColor),
-    [sheet, defaultSeedColor],
-  );
+  const setSeedColor = useMemo(() => guard(sheet, setSeed, defaultSeedColor), [sheet, defaultSeedColor]);
   const setContrastLevel = useMemo(
     () => guard(sheet, setContrast, defaultContrastLevel),
     [sheet, defaultContrastLevel],
   );
-  const setVariant = useMemo(
-    () => guard(sheet, setVariantState, defaultVariant),
-    [sheet, defaultVariant],
-  );
+  const setVariant = useMemo(() => guard(sheet, setVariantState, defaultVariant), [sheet, defaultVariant]);
 
   const value = useMemo<M3ThemeContextType>(
     () => ({
@@ -200,9 +157,7 @@ export function M3ThemeProvider({
     ],
   );
 
-  return (
-    <M3ThemeContext.Provider value={value}>{children}</M3ThemeContext.Provider>
-  );
+  return <M3ThemeContext.Provider value={value}>{children}</M3ThemeContext.Provider>;
 }
 
 export function useM3Theme(): M3ThemeContextType {

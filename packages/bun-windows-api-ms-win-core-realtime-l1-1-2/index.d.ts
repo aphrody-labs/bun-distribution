@@ -3,9 +3,17 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-realtime-l1-1-2.dll!ConvertAuxiliaryCounterToPerformanceCounter */
-  ConvertAuxiliaryCounterToPerformanceCounter(ullAuxiliaryCounterValue: number | bigint, lpPerformanceCounterValue: Win32Pointer, lpConversionError: Win32Pointer): number;
+  ConvertAuxiliaryCounterToPerformanceCounter(
+    ullAuxiliaryCounterValue: number | bigint,
+    lpPerformanceCounterValue: Win32Pointer,
+    lpConversionError: Win32Pointer,
+  ): number;
   /** api-ms-win-core-realtime-l1-1-2.dll!ConvertPerformanceCounterToAuxiliaryCounter */
-  ConvertPerformanceCounterToAuxiliaryCounter(ullPerformanceCounterValue: number | bigint, lpAuxiliaryCounterValue: Win32Pointer, lpConversionError: Win32Pointer): number;
+  ConvertPerformanceCounterToAuxiliaryCounter(
+    ullPerformanceCounterValue: number | bigint,
+    lpAuxiliaryCounterValue: Win32Pointer,
+    lpConversionError: Win32Pointer,
+  ): number;
   /** api-ms-win-core-realtime-l1-1-2.dll!QueryAuxiliaryCounterFrequency */
   QueryAuxiliaryCounterFrequency(lpAuxiliaryCounterFrequency: Win32Pointer): number;
 }

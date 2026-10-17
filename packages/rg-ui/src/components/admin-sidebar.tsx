@@ -7,14 +7,7 @@ import { ChevronDown, Menu, Shield, Home } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "../lib/utils";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "./drawer";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from "./drawer";
 
 export interface NavItem {
   title: string;
@@ -56,22 +49,17 @@ export function AdminSidebar({
   const [openSubmenu, setOpenSubmenu] = React.useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 
-  const navItems = items.filter(
-    (item) => !item.creatorOnly || showCreatorItems,
-  );
+  const navItems = items.filter(item => !item.creatorOnly || showCreatorItems);
 
   const toggleSubmenu = (title: string) => {
     setOpenSubmenu(openSubmenu === title ? null : title);
   };
 
-  const isActive = (href: string, exact?: boolean) =>
-    exact ? pathname === href : (pathname || "").startsWith(href);
+  const isActive = (href: string, exact?: boolean) => (exact ? pathname === href : (pathname || "").startsWith(href));
 
   const NavContent = ({ mobile = false }: { mobile?: boolean }) => (
-    <nav
-      className={cn("flex-1 space-y-1 overflow-y-auto p-3", mobile && "px-0")}
-    >
-      {navItems.map((item) => {
+    <nav className={cn("flex-1 space-y-1 overflow-y-auto p-3", mobile && "px-0")}>
+      {navItems.map(item => {
         const Icon = item.icon;
         const active = isActive(item.href, item.exact);
         const hasSubmenu = item.submenu && item.submenu.length > 0;
@@ -93,12 +81,7 @@ export function AdminSidebar({
                   <Icon className="size-4 shrink-0" />
                   <span>{item.title}</span>
                 </div>
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 transition-transform",
-                    submenuOpen && "rotate-180",
-                  )}
-                />
+                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", submenuOpen && "rotate-180")} />
               </button>
             ) : (
               <Link
@@ -123,7 +106,7 @@ export function AdminSidebar({
 
             {hasSubmenu && submenuOpen && (
               <div className="ml-3 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
-                {item.submenu?.map((subitem) => (
+                {item.submenu?.map(subitem => (
                   <Link
                     key={subitem.href}
                     href={subitem.href}
@@ -168,21 +151,15 @@ export function AdminSidebar({
               </div>
             )}
             <div className="min-w-0">
-              <h2 className="truncate font-semibold text-sidebar-foreground">
-                {title}
-              </h2>
-              <p className="truncate text-xs text-sidebar-foreground/80">
-                {subtitle}
-              </p>
+              <h2 className="truncate font-semibold text-sidebar-foreground">{title}</h2>
+              <p className="truncate text-xs text-sidebar-foreground/80">{subtitle}</p>
             </div>
           </Link>
         </div>
 
         <NavContent />
 
-        {footer && (
-          <div className="border-t border-sidebar-border p-3">{footer}</div>
-        )}
+        {footer && <div className="border-t border-sidebar-border p-3">{footer}</div>}
       </aside>
 
       {/* Mobile Bottom Navigation (optional, app can use its own) */}
@@ -191,9 +168,7 @@ export function AdminSidebar({
           href={baseHref}
           className={cn(
             "flex flex-col items-center gap-1 rounded-lg p-2 transition-colors",
-            pathname === baseHref
-              ? "text-sidebar-foreground"
-              : "text-sidebar-foreground/80",
+            pathname === baseHref ? "text-sidebar-foreground" : "text-sidebar-foreground/80",
           )}
         >
           <Home className="size-5" />
@@ -215,9 +190,7 @@ export function AdminSidebar({
             </DrawerHeader>
             <div className="overflow-y-auto px-4 pb-8">
               <NavContent mobile={true} />
-              {footer && (
-                <div className="mt-2 border-t border-border p-3">{footer}</div>
-              )}
+              {footer && <div className="mt-2 border-t border-border p-3">{footer}</div>}
             </div>
           </DrawerContent>
         </Drawer>

@@ -44,43 +44,25 @@ export interface ScanOptions {
   readonly maxFiles?: number | undefined;
 }
 
-const DEFAULT_EXCLUDES = [
-  ".git",
-  "node_modules",
-  "target",
-  "dist",
-  ".cache",
-  ".cargo",
-  "var",
-];
+const DEFAULT_EXCLUDES = [".git", "node_modules", "target", "dist", ".cache", ".cargo", "var"];
 
 /**
  * Recursively scans a directory in parallel, computing line counts, byte sizes,
  * per-extension metrics, and a composite tree wyhash fingerprint.
  */
-export async function scanDirectory(
-  targetDir: string,
-  options: ScanOptions = {},
-): Promise<ScanReport> {
+export async function scanDirectory(targetDir: string, options: ScanOptions = {}): Promise<ScanReport> {
   const t0 = Bun.nanoseconds();
   const absTarget = resolve(targetDir);
   if (!existsSync(absTarget)) {
     throw new Error(`Target path does not exist: ${absTarget}`);
   }
-  if (!statSync(absTarget).isDirectory())
-    throw new Error(`Target is not a directory: ${absTarget}`);
+  if (!statSync(absTarget).isDirectory()) throw new Error(`Target is not a directory: ${absTarget}`);
   const parallel = options.parallel ?? 16;
-  if (!Number.isSafeInteger(parallel) || parallel < 1)
-    throw new Error("parallel must be a positive integer");
-  if (
-    options.maxFiles !== undefined &&
-    (!Number.isSafeInteger(options.maxFiles) || options.maxFiles < 1)
-  )
+  if (!Number.isSafeInteger(parallel) || parallel < 1) throw new Error("parallel must be a positive integer");
+  if (options.maxFiles !== undefined && (!Number.isSafeInteger(options.maxFiles) || options.maxFiles < 1))
     throw new Error("maxFiles must be a positive integer");
 
-  const extsFilter = options.exts?.map((e) =>
-    (e.startsWith(".") ? e : `.${e}`).toLowerCase(),
-  );
+  const extsFilter = options.exts?.map(e => (e.startsWith(".") ? e : `.${e}`).toLowerCase());
   const excludes = new Set(options.exclude ?? DEFAULT_EXCLUDES);
   const limit = limiter(parallel);
 
@@ -93,7 +75,7 @@ export async function scanDirectory(
     dot: false,
   })) {
     const parts = relPath.split(/[/\\]/);
-    if (parts.some((p) => excludes.has(p))) continue;
+    if (parts.some(p => excludes.has(p))) continue;
 
     if (extsFilter && extsFilter.length > 0) {
       const ext = extname(relPath).toLowerCase();
@@ -106,14 +88,10 @@ export async function scanDirectory(
 
   // Sort candidates for deterministic tree fingerprint
   candidates.sort();
-  if (options.maxFiles !== undefined)
-    candidates.length = Math.min(candidates.length, options.maxFiles);
+  if (options.maxFiles !== undefined) candidates.length = Math.min(candidates.length, options.maxFiles);
 
   const entries: FileEntry[] = [];
-  const extMap = new Map<
-    string,
-    { count: number; bytes: number; lines: number }
-  >();
+  const extMap = new Map<string, { count: number; bytes: number; lines: number }>();
 
   const scanFile = async (relPath: string): Promise<FileEntry | null> => {
     try {
@@ -131,7 +109,7 @@ export async function scanDirectory(
     }
   };
 
-  const tasks = candidates.map((relPath) =>
+  const tasks = candidates.map(relPath =>
     limit(async () => {
       const res = await scanFile(relPath);
       if (res) {
@@ -147,8 +125,7 @@ export async function scanDirectory(
   );
 
   await Promise.all(tasks);
-  const comparePaths = (a: FileEntry, b: FileEntry): number =>
-    a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
+  const comparePaths = (a: FileEntry, b: FileEntry): number => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
   entries.sort(comparePaths);
 
   // Compute composite tree fingerprint using wyhash over sorted file hashes
@@ -170,14 +147,9 @@ export async function scanDirectory(
       bytes: stat.bytes,
       lines: stat.lines,
     }))
-    .toSorted(
-      (a, b) =>
-        b.bytes - a.bytes || (a.ext < b.ext ? -1 : a.ext > b.ext ? 1 : 0),
-    );
+    .toSorted((a, b) => b.bytes - a.bytes || (a.ext < b.ext ? -1 : a.ext > b.ext ? 1 : 0));
 
-  const largestFiles = [...entries]
-    .toSorted((a, b) => b.bytes - a.bytes || comparePaths(a, b))
-    .slice(0, 10);
+  const largestFiles = [...entries].toSorted((a, b) => b.bytes - a.bytes || comparePaths(a, b)).slice(0, 10);
   const elapsedMs = Math.round((Bun.nanoseconds() - t0) / 1_000_000);
 
   return {
@@ -197,8 +169,7 @@ export async function scanDirectory(
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024)
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
@@ -220,38 +191,23 @@ export function renderScanMarkdown(report: ScanReport): string {
   ];
 
   for (const s of report.byExtension) {
-    const pct =
-      report.totalBytes > 0
-        ? ((s.bytes / report.totalBytes) * 100).toFixed(1)
-        : "0.0";
+    const pct = report.totalBytes > 0 ? ((s.bytes / report.totalBytes) * 100).toFixed(1) : "0.0";
     lines.push(
       `| \`${s.ext}\` | ${s.count.toLocaleString()} | ${s.lines.toLocaleString()} | ${formatBytes(s.bytes)} | ${pct}% |`,
     );
   }
 
-  lines.push(
-    "",
-    `## Top 10 Largest Files`,
-    "",
-    `| File Path | Size | Lines | Hash |`,
-    `| :--- | :--- | :--- | :--- |`,
-  );
+  lines.push("", `## Top 10 Largest Files`, "", `| File Path | Size | Lines | Hash |`, `| :--- | :--- | :--- | :--- |`);
 
   for (const f of report.largestFiles) {
-    const rel = relative(
-      report.target,
-      resolve(report.target, f.path),
-    ).replaceAll("\\", "/");
-    lines.push(
-      `| \`${rel}\` | ${formatBytes(f.bytes)} | ${f.lines.toLocaleString()} | \`${f.hash}\` |`,
-    );
+    const rel = relative(report.target, resolve(report.target, f.path)).replaceAll("\\", "/");
+    lines.push(`| \`${rel}\` | ${formatBytes(f.bytes)} | ${f.lines.toLocaleString()} | \`${f.hash}\` |`);
   }
 
   return lines.join("\n");
 }
 
-const mb = (bytes: number): string =>
-  (bytes / (1024 * 1024)).toFixed(2) + " MB";
+const mb = (bytes: number): string => (bytes / (1024 * 1024)).toFixed(2) + " MB";
 const kb = (bytes: number): string => (bytes / 1024).toFixed(1) + " KB";
 
 export function renderScanTerminal(report: ScanReport): string {

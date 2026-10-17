@@ -3,11 +3,26 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-ro-typeresolution-l1-1-0.dll!RoGetMetaDataFile */
-  RoGetMetaDataFile(name: Win32Pointer, metaDataDispenser: Win32Pointer, metaDataFilePath: Win32Pointer, metaDataImport: Win32Pointer, typeDefToken: Win32Pointer): number;
+  RoGetMetaDataFile(
+    name: Win32Pointer,
+    metaDataDispenser: Win32Pointer,
+    metaDataFilePath: Win32Pointer,
+    metaDataImport: Win32Pointer,
+    typeDefToken: Win32Pointer,
+  ): number;
   /** api-ms-win-ro-typeresolution-l1-1-0.dll!RoParseTypeName */
   RoParseTypeName(typeName: Win32Pointer, partsCount: Win32Pointer, typeNameParts: Win32Pointer): number;
   /** api-ms-win-ro-typeresolution-l1-1-0.dll!RoResolveNamespace */
-  RoResolveNamespace(name: Win32Pointer, windowsMetaDataDir: Win32Pointer, packageGraphDirsCount: number, packageGraphDirs: Win32Pointer, metaDataFilePathsCount: Win32Pointer, metaDataFilePaths: Win32Pointer, subNamespacesCount: Win32Pointer, subNamespaces: Win32Pointer): number;
+  RoResolveNamespace(
+    name: Win32Pointer,
+    windowsMetaDataDir: Win32Pointer,
+    packageGraphDirsCount: number,
+    packageGraphDirs: Win32Pointer,
+    metaDataFilePathsCount: Win32Pointer,
+    metaDataFilePaths: Win32Pointer,
+    subNamespacesCount: Win32Pointer,
+    subNamespaces: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -13,12 +13,7 @@ import {
   useContext,
 } from "react";
 
-import {
-  type AsChildProp,
-  asChildProps,
-  createPortalScope,
-  withClassName,
-} from "./base-ui";
+import { type AsChildProp, asChildProps, createPortalScope, withClassName } from "./base-ui";
 import { Icon } from "./Icon";
 
 /**
@@ -51,50 +46,34 @@ export const menuItemClassNames = clsx(
 export type DropdownMenuRootProps = MenuPrimitive.Root.Props;
 
 /** Base UI menu root (`modal` by default, like Radix). */
-const Root = (props: DropdownMenuRootProps) => (
-  <MenuPrimitive.Root {...props} />
-);
+const Root = (props: DropdownMenuRootProps) => <MenuPrimitive.Root {...props} />;
 Root.displayName = "DropdownMenuRoot";
 
-export interface DropdownMenuTriggerProps
-  extends MenuPrimitive.Trigger.Props, AsChildProp {}
+export interface DropdownMenuTriggerProps extends MenuPrimitive.Trigger.Props, AsChildProp {}
 
-const Trigger = forwardRef<HTMLButtonElement, DropdownMenuTriggerProps>(
-  ({ asChild, children, ...props }, ref) => (
-    <MenuPrimitive.Trigger
-      ref={ref}
-      {...asChildProps(asChild, children)}
-      {...props}
-    />
-  ),
-);
+const Trigger = forwardRef<HTMLButtonElement, DropdownMenuTriggerProps>(({ asChild, children, ...props }, ref) => (
+  <MenuPrimitive.Trigger ref={ref} {...asChildProps(asChild, children)} {...props} />
+));
 Trigger.displayName = "DropdownMenuTrigger";
 
 /** Whether the enclosing element is a Base UI menu group (group labels require one). */
 const InGroup = createContext(false);
 
-const Group = forwardRef<HTMLDivElement, MenuPrimitive.Group.Props>(
-  (props, ref) => (
-    <InGroup.Provider value={true}>
-      <MenuPrimitive.Group ref={ref} {...props} />
-    </InGroup.Provider>
-  ),
-);
+const Group = forwardRef<HTMLDivElement, MenuPrimitive.Group.Props>((props, ref) => (
+  <InGroup.Provider value={true}>
+    <MenuPrimitive.Group ref={ref} {...props} />
+  </InGroup.Provider>
+));
 Group.displayName = "DropdownMenuGroup";
 
-const RadioGroup = forwardRef<HTMLDivElement, MenuPrimitive.RadioGroup.Props>(
-  (props, ref) => (
-    <InGroup.Provider value={true}>
-      <MenuPrimitive.RadioGroup ref={ref} {...props} />
-    </InGroup.Provider>
-  ),
-);
+const RadioGroup = forwardRef<HTMLDivElement, MenuPrimitive.RadioGroup.Props>((props, ref) => (
+  <InGroup.Provider value={true}>
+    <MenuPrimitive.RadioGroup ref={ref} {...props} />
+  </InGroup.Provider>
+));
 RadioGroup.displayName = "DropdownMenuRadioGroup";
 
-const { Portal, EnsurePortal } = createPortalScope(
-  MenuPrimitive.Portal,
-  "DropdownMenuPortal",
-);
+const { Portal, EnsurePortal } = createPortalScope(MenuPrimitive.Portal, "DropdownMenuPortal");
 
 type PositionerProps = Pick<
   MenuPrimitive.Positioner.Props,
@@ -109,8 +88,7 @@ type PositionerProps = Pick<
   | "positionMethod"
 >;
 
-export interface DropdownMenuContentProps
-  extends PositionerProps, MenuPrimitive.Popup.Props {
+export interface DropdownMenuContentProps extends PositionerProps, MenuPrimitive.Popup.Props {
   /** Radix name for the portal's `keepMounted`. */
   forceMount?: boolean;
 }
@@ -149,10 +127,7 @@ function menuContent(defaultSideOffset: number, displayName: string) {
         >
           <MenuPrimitive.Popup
             ref={ref}
-            className={withClassName(
-              clsx(menuSurfaceClassNames, menuMotion),
-              className,
-            )}
+            className={withClassName(clsx(menuSurfaceClassNames, menuMotion), className)}
             {...props}
           />
         </MenuPrimitive.Positioner>
@@ -165,10 +140,7 @@ function menuContent(defaultSideOffset: number, displayName: string) {
 
 const Content = menuContent(4, "DropdownMenuContent");
 
-export interface DropdownMenuItemProps extends Omit<
-  MenuPrimitive.Item.Props,
-  "onSelect"
-> {
+export interface DropdownMenuItemProps extends Omit<MenuPrimitive.Item.Props, "onSelect"> {
   inset?: boolean;
   /** Radix name: called when the item is chosen (Base UI `onClick`). */
   onSelect?: (event: Event) => void;
@@ -178,13 +150,10 @@ const Item = forwardRef<HTMLDivElement, DropdownMenuItemProps>(
   ({ className, inset, onSelect, onClick, ...props }, ref) => (
     <MenuPrimitive.Item
       ref={ref}
-      className={withClassName(
-        clsx(menuItemClassNames, inset && "pl-11"),
-        className,
-      )}
+      className={withClassName(clsx(menuItemClassNames, inset && "pl-11"), className)}
       onClick={
         onSelect
-          ? (event) => {
+          ? event => {
               onClick?.(event);
               onSelect(event.nativeEvent);
             }
@@ -196,29 +165,25 @@ const Item = forwardRef<HTMLDivElement, DropdownMenuItemProps>(
 );
 Item.displayName = "DropdownMenuItem";
 
-const CheckboxItem = forwardRef<
-  HTMLDivElement,
-  MenuPrimitive.CheckboxItem.Props
->(({ className, children, ...props }, ref) => (
-  <MenuPrimitive.CheckboxItem
-    ref={ref}
-    className={withClassName(
-      clsx(
-        menuItemClassNames,
-        "pl-11 data-checked:bg-secondary-container data-checked:text-on-secondary-container",
-      ),
-      className,
-    )}
-    {...props}
-  >
-    <span className="absolute left-3 flex size-5 items-center justify-center">
-      <MenuPrimitive.CheckboxItemIndicator className="flex">
-        <Icon name="check" size={20} />
-      </MenuPrimitive.CheckboxItemIndicator>
-    </span>
-    {children}
-  </MenuPrimitive.CheckboxItem>
-));
+const CheckboxItem = forwardRef<HTMLDivElement, MenuPrimitive.CheckboxItem.Props>(
+  ({ className, children, ...props }, ref) => (
+    <MenuPrimitive.CheckboxItem
+      ref={ref}
+      className={withClassName(
+        clsx(menuItemClassNames, "pl-11 data-checked:bg-secondary-container data-checked:text-on-secondary-container"),
+        className,
+      )}
+      {...props}
+    >
+      <span className="absolute left-3 flex size-5 items-center justify-center">
+        <MenuPrimitive.CheckboxItemIndicator className="flex">
+          <Icon name="check" size={20} />
+        </MenuPrimitive.CheckboxItemIndicator>
+      </span>
+      {children}
+    </MenuPrimitive.CheckboxItem>
+  ),
+);
 CheckboxItem.displayName = "DropdownMenuCheckboxItem";
 
 const RadioItem = forwardRef<HTMLDivElement, MenuPrimitive.RadioItem.Props>(
@@ -226,10 +191,7 @@ const RadioItem = forwardRef<HTMLDivElement, MenuPrimitive.RadioItem.Props>(
     <MenuPrimitive.RadioItem
       ref={ref}
       className={withClassName(
-        clsx(
-          menuItemClassNames,
-          "pl-11 data-checked:bg-secondary-container data-checked:text-on-secondary-container",
-        ),
+        clsx(menuItemClassNames, "pl-11 data-checked:bg-secondary-container data-checked:text-on-secondary-container"),
         className,
       )}
       {...props}
@@ -268,23 +230,16 @@ const Label = forwardRef<
 });
 Label.displayName = "DropdownMenuLabel";
 
-const Separator: ForwardRefExoticComponent<
-  MenuPrimitive.Separator.Props & RefAttributes<HTMLDivElement>
-> = forwardRef<HTMLDivElement, MenuPrimitive.Separator.Props>(
-  ({ className, ...props }, ref) => (
-    <MenuPrimitive.Separator
-      ref={ref}
-      className={withClassName("my-2 h-px bg-outline-variant", className)}
-      {...props}
-    />
-  ),
-);
+const Separator: ForwardRefExoticComponent<MenuPrimitive.Separator.Props & RefAttributes<HTMLDivElement>> = forwardRef<
+  HTMLDivElement,
+  MenuPrimitive.Separator.Props
+>(({ className, ...props }, ref) => (
+  <MenuPrimitive.Separator ref={ref} className={withClassName("my-2 h-px bg-outline-variant", className)} {...props} />
+));
 Separator.displayName = "DropdownMenuSeparator";
 
 /** Base UI submenu root. */
-const Sub = (props: MenuPrimitive.SubmenuRoot.Props) => (
-  <MenuPrimitive.SubmenuRoot {...props} />
-);
+const Sub = (props: MenuPrimitive.SubmenuRoot.Props) => <MenuPrimitive.SubmenuRoot {...props} />;
 Sub.displayName = "DropdownMenuSub";
 
 const SubTrigger = forwardRef<
@@ -306,11 +261,7 @@ const SubTrigger = forwardRef<
     {...props}
   >
     {children}
-    <Icon
-      name="chevron_right"
-      size={20}
-      className="ml-auto text-on-surface-variant"
-    />
+    <Icon name="chevron_right" size={20} className="ml-auto text-on-surface-variant" />
   </MenuPrimitive.SubmenuTrigger>
 ));
 SubTrigger.displayName = "DropdownMenuSubTrigger";

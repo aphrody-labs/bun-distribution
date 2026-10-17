@@ -1,32 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
-import {
-  windowClassFor,
-  type WindowClassState,
-} from "@aphrody/m3-front/window-class";
+import { windowClassFor, type WindowClassState } from "@aphrody/m3-front/window-class";
 import { useSyncExternalStore } from "react";
 
 export type LayoutMode = "mobile" | "desktop" | "tv";
 export const LAYOUT_MODES: readonly LayoutMode[] = ["mobile", "desktop", "tv"];
 export const TV_USER_AGENT =
   /SMART-TV|SmartTV|Tizen|Web0S|WebOS|NetCast|HbbTV|BRAVIA|AFTM|AFTB|AFTT|AFTS|Android TV|GoogleTV|CrKey|Viera|Roku|AppleTV|PlayStation|Xbox/i;
-export function layoutModeFor(
-  width: WindowClassState["width"],
-  tv: boolean,
-): LayoutMode {
+export function layoutModeFor(width: WindowClassState["width"], tv: boolean): LayoutMode {
   return tv ? "tv" : width === "compact" ? "mobile" : "desktop";
 }
 export interface LayoutOverride {
   mode: LayoutMode | null;
 }
-export function parseOverride(
-  search: string,
-  stored: string | null,
-): LayoutMode | null {
+export function parseOverride(search: string, stored: string | null): LayoutMode | null {
   const params = new URLSearchParams(search);
   const value = params.get("layout") ?? (params.has("tv") ? "tv" : stored);
-  return (LAYOUT_MODES as readonly string[]).includes(value ?? "")
-    ? (value as LayoutMode)
-    : null;
+  return (LAYOUT_MODES as readonly string[]).includes(value ?? "") ? (value as LayoutMode) : null;
 }
 export interface AdaptiveState extends WindowClassState {
   widthPx: number;
@@ -83,14 +72,10 @@ function read(): AdaptiveState {
     width: window.innerWidth,
     height: window.innerHeight,
     userAgent: navigator.userAgent,
-    override:
-      sessionOverride === undefined
-        ? parseOverride(location.search, stored)
-        : sessionOverride,
+    override: sessionOverride === undefined ? parseOverride(location.search, stored) : sessionOverride,
     touch: window.matchMedia?.("(pointer: coarse)").matches ?? false,
   });
-  if (snapshot && JSON.stringify(snapshot) === JSON.stringify(next))
-    return snapshot;
+  if (snapshot && JSON.stringify(snapshot) === JSON.stringify(next)) return snapshot;
   snapshot = next;
   const data = document.documentElement.dataset;
   data["layout"] = next.mode;
@@ -110,8 +95,7 @@ function onStorage(event: StorageEvent): void {
 }
 /** Set a live preference; persistence is best effort. Clearing returns to the viewport/TV detection. */
 export function setLayoutOverride(mode: LayoutMode | null): void {
-  if (mode !== null && !LAYOUT_MODES.includes(mode))
-    throw new TypeError("Unknown layout mode");
+  if (mode !== null && !LAYOUT_MODES.includes(mode)) throw new TypeError("Unknown layout mode");
   sessionOverride = mode;
   try {
     if (mode) localStorage.setItem(STORAGE_KEY, mode);

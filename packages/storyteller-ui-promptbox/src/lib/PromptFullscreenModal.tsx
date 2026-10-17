@@ -68,10 +68,7 @@ export const PromptFullscreenModal = ({
   // Focus the editor and drop the caret at the end once the overlay opens.
   useEffect(() => {
     if (!isOpen) return;
-    const id = window.setTimeout(
-      () => focusEditorAtEnd(contentRef.current),
-      60,
-    );
+    const id = window.setTimeout(() => focusEditorAtEnd(contentRef.current), 60);
     return () => window.clearTimeout(id);
   }, [isOpen]);
 
@@ -88,29 +85,18 @@ export const PromptFullscreenModal = ({
           is reliably bounded across the modal's nested wrappers — that's what
           lets the editor's textarea scroll instead of stretching the panel.
           min-h-0 on the flex children lets them shrink below content size. */}
-      <div
-        {...dropZoneProps}
-        className="relative flex min-h-0 flex-col gap-2"
-        style={{ height: "70vh" }}
-      >
+      <div {...dropZoneProps} className="relative flex min-h-0 flex-col gap-2" style={{ height: "70vh" }}>
         {dropOverlay}
         <h2 className="shrink-0 text-lg font-bold text-base-fg">Prompt</h2>
         {/* flex-1 so the editor takes only the space left after the (shrink-0)
             image row + footer — that's what keeps it from overflowing when the
             window is shorter. min-h-0 + overflow-hidden bound the editor area so
             its own textarea scrolls instead of pushing the layout. */}
-        <div
-          ref={contentRef}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden"
-        >
+        <div ref={contentRef} className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {children}
         </div>
         <div className="flex shrink-0 items-center justify-end">
-          <span
-            className={`text-[11px] tabular-nums ${
-              overLimit ? "text-red-500" : "text-base-fg/40"
-            }`}
-          >
+          <span className={`text-[11px] tabular-nums ${overLimit ? "text-red-500" : "text-base-fg/40"}`}>
             {promptLength} / {isFinite(maxLength) ? maxLength : "∞"}
           </span>
         </div>

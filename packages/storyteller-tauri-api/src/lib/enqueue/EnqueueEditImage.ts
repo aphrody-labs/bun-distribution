@@ -123,12 +123,9 @@ export interface EnqueueEditImageSuccess extends CommandResult {
   payload: EnqueueEditImagePayload;
 }
 
-export type EnqueueEditImageResult =
-  EnqueueEditImageSuccess | EnqueueEditImageError;
+export type EnqueueEditImageResult = EnqueueEditImageSuccess | EnqueueEditImageError;
 
-export const EnqueueEditImage = async (
-  request: EnqueueEditImageRequest,
-): Promise<EnqueueEditImageResult> => {
+export const EnqueueEditImage = async (request: EnqueueEditImageRequest): Promise<EnqueueEditImageResult> => {
   let modelName = undefined;
 
   if (request.model) {
@@ -141,9 +138,7 @@ export const EnqueueEditImage = async (
   }
 
   if (!modelName) {
-    throw new Error(
-      "No model specified in request: " + JSON.stringify(request),
-    );
+    throw new Error("No model specified in request: " + JSON.stringify(request));
   }
 
   let mutableRequest: RawEnqueueEditImageRequest = {

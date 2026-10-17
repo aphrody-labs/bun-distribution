@@ -18,14 +18,10 @@ export interface SelectionActionBarProps {
 // the library/moodboard multiselect bars. Selection state comes from
 // useGallerySelectionStore; the actions themselves are host-injected since
 // download/share flows differ between the webapp and the desktop app.
-export function SelectionActionBar({
-  children,
-  className,
-  style,
-}: SelectionActionBarProps) {
-  const active = useGallerySelectionStore((s) => s.active);
-  const count = useGallerySelectionStore((s) => s.ids.size);
-  const setActive = useGallerySelectionStore((s) => s.setActive);
+export function SelectionActionBar({ children, className, style }: SelectionActionBarProps) {
+  const active = useGallerySelectionStore(s => s.active);
+  const count = useGallerySelectionStore(s => s.ids.size);
+  const setActive = useGallerySelectionStore(s => s.setActive);
 
   if (!active) return null;
 
@@ -35,9 +31,7 @@ export function SelectionActionBar({
       style={style}
     >
       <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-ui-panel-border bg-ui-panel/95 px-2.5 py-2 shadow-xl backdrop-blur">
-        <span className="px-1 text-sm font-medium text-white/80">
-          {count} selected
-        </span>
+        <span className="px-1 text-sm font-medium text-white/80">{count} selected</span>
         {children}
         <button
           type="button"

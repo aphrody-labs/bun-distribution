@@ -19,17 +19,7 @@ import { createM3Project } from "./new.js";
 import { serveM3 } from "./server.js";
 import { m3Tokens, SHEETS, writeTokenBundle } from "./tokens.js";
 
-export const COMMANDS = [
-  "dev",
-  "build",
-  "tokens",
-  "check",
-  "new",
-  "compile",
-  "desktop",
-  "help",
-  "version",
-] as const;
+export const COMMANDS = ["dev", "build", "tokens", "check", "new", "compile", "desktop", "help", "version"] as const;
 export type M3Command = (typeof COMMANDS)[number];
 
 export type FlagValue = string | boolean;
@@ -41,14 +31,7 @@ export interface ParsedArgs {
 }
 
 /** Flags that never take a value. */
-const BOOLEAN_FLAGS = new Set([
-  "dark",
-  "dev",
-  "hmr",
-  "help",
-  "version",
-  "build",
-]);
+const BOOLEAN_FLAGS = new Set(["dark", "dev", "hmr", "help", "version", "build"]);
 /** Flags whose value is optional (`--tauri` alone uses `tauri.uiDist` of the config). */
 const OPTIONAL_VALUE_FLAGS = new Set(["tauri"]);
 const SHORT: Record<string, string> = {
@@ -115,8 +98,7 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
       continue;
     }
     if (command === undefined) {
-      if (!(COMMANDS as readonly string[]).includes(arg))
-        throw new Error(`unknown command ${arg}\n\n${USAGE}`);
+      if (!(COMMANDS as readonly string[]).includes(arg)) throw new Error(`unknown command ${arg}\n\n${USAGE}`);
       command = arg as M3Command;
     } else {
       positionals.push(arg);
@@ -127,41 +109,33 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
   return { command: command ?? "help", flags, positionals };
 }
 
-function stringFlag(
-  flags: Record<string, FlagValue>,
-  name: string,
-): string | undefined {
+function stringFlag(flags: Record<string, FlagValue>, name: string): string | undefined {
   const value = flags[name];
   if (value === undefined || value === false) return undefined;
   if (value === true) throw new Error(`--${name} needs a value`);
   return value;
 }
 
-function numberFlag(
-  flags: Record<string, FlagValue>,
-  name: string,
-): number | undefined {
+function numberFlag(flags: Record<string, FlagValue>, name: string): number | undefined {
   const value = stringFlag(flags, name);
   if (value === undefined) return undefined;
   const parsed = Number(value);
-  if (!Number.isFinite(parsed))
-    throw new Error(`--${name} must be a number, got ${value}`);
+  if (!Number.isFinite(parsed)) throw new Error(`--${name} must be a number, got ${value}`);
   return parsed;
 }
 
 /** `--sheet`, validated. */
 export function sheetFlag(flags: Record<string, FlagValue>): M3Sheet {
   const sheet = stringFlag(flags, "sheet") ?? "tokens";
-  if (!(SHEETS as readonly string[]).includes(sheet))
-    throw new Error(`--sheet must be one of ${SHEETS.join(", ")}`);
+  if (!(SHEETS as readonly string[]).includes(sheet)) throw new Error(`--sheet must be one of ${SHEETS.join(", ")}`);
   return sheet as M3Sheet;
 }
 
 /** The package version. */
 export async function version(): Promise<string> {
-  const manifest = JSON.parse(
-    await Bun.file(join(import.meta.dir, "..", "package.json")).text(),
-  ) as { version: string };
+  const manifest = JSON.parse(await Bun.file(join(import.meta.dir, "..", "package.json")).text()) as {
+    version: string;
+  };
   return manifest.version;
 }
 
@@ -240,10 +214,7 @@ async function loadM3Bun(): Promise<M3BunCompiler> {
 }
 
 /** Run the CLI; resolves to the process exit code (long-running `dev` resolves once listening). */
-export async function runCli(
-  argv: readonly string[],
-  cwd: string = process.cwd(),
-): Promise<number> {
+export async function runCli(argv: readonly string[], cwd: string = process.cwd()): Promise<number> {
   const { command, flags, positionals } = parseArgs(argv);
   switch (command) {
     case "help":
@@ -264,30 +235,21 @@ export async function runCli(
         routes: config.routes,
         pagesDir: config.pagesDir,
         proxy: config.proxy,
-        port:
-          numberFlag(flags, "port") ?? (Bun.env.PORT ? undefined : config.port),
+        port: numberFlag(flags, "port") ?? (Bun.env.PORT ? undefined : config.port),
         hmr: flags.hmr === false ? false : (config.hmr ?? true),
         cwd: config.dir,
       });
-      const proxied = Object.entries(config.proxy).map(
-        ([prefix, target]) => `${prefix} -> ${target}`,
-      );
-      console.log(
-        `m3 dev: ${server.url}${proxied.length ? ` (proxy ${proxied.join(", ")})` : ""}`,
-      );
+      const proxied = Object.entries(config.proxy).map(([prefix, target]) => `${prefix} -> ${target}`);
+      console.log(`m3 dev: ${server.url}${proxied.length ? ` (proxy ${proxied.join(", ")})` : ""}`);
       return 0;
     }
     case "build": {
       const config = await loadM3Config(cwd, stringFlag(flags, "config"));
       const tauriFlag = flags.tauri;
       let tauri: { uiDist: string } | undefined;
-      if (typeof tauriFlag === "string")
-        tauri = { uiDist: resolve(cwd, tauriFlag) };
+      if (typeof tauriFlag === "string") tauri = { uiDist: resolve(cwd, tauriFlag) };
       else if (tauriFlag === true) {
-        if (!config.tauri)
-          throw new Error(
-            "m3 build --tauri: give a directory or set `tauri.uiDist` in m3.config.ts",
-          );
+        if (!config.tauri) throw new Error("m3 build --tauri: give a directory or set `tauri.uiDist` in m3.config.ts");
         tauri = config.tauri;
       }
       const outdir = stringFlag(flags, "outdir");
@@ -309,8 +271,7 @@ export async function runCli(
         cwd: config.dir,
       });
       const bytes = result.outputs.reduce((sum, o) => sum + o.bytes, 0);
-      for (const output of result.outputs)
-        console.log(`  ${output.path}  ${output.bytes} B`);
+      for (const output of result.outputs) console.log(`  ${output.path}  ${output.bytes} B`);
       console.log(
         `m3 build: ${result.outputs.length} files, ${bytes} B into ${result.outdir} in ${Math.round(performance.now() - started)} ms`,
       );
@@ -352,21 +313,16 @@ export async function runCli(
       const root = findWorkspaceRoot(cwd);
       const script = root && workspaceCheckScript(root);
       if (!root || !script)
-        throw new Error(
-          "m3 check: no aphrody-m3 check or host bun:check script above the working directory",
-        );
+        throw new Error("m3 check: no aphrody-m3 check or host bun:check script above the working directory");
       const contract = await run(["bun", "run", script], root);
       const tests = await run(
-        script === "check" && resolve(cwd) === root
-          ? ["bun", "run", "test"]
-          : ["bun", "test"],
+        script === "check" && resolve(cwd) === root ? ["bun", "run", "test"] : ["bun", "test"],
         cwd,
       );
       return contract !== 0 ? contract : tests;
     }
     case "new": {
-      if (positionals.length !== 1)
-        throw new Error("m3 new: expected one project directory");
+      if (positionals.length !== 1) throw new Error("m3 new: expected one project directory");
       const target = await createM3Project(resolve(cwd, positionals[0]!));
       console.log(`m3 new: created ${target}`);
       return 0;
@@ -388,8 +344,7 @@ export async function runCli(
       console.log(
         `m3 compile: ${report.outfile} (${report.bytes} B, ${report.files} embedded files, target ${report.target}) in ${report.ms} ms`,
       );
-      for (const warning of report.warnings)
-        console.warn(`m3 compile: ${warning}`);
+      for (const warning of report.warnings) console.warn(`m3 compile: ${warning}`);
       return 0;
     }
     case "desktop": {

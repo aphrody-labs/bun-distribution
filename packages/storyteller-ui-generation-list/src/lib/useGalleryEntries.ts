@@ -63,21 +63,12 @@ export function useMergedGalleryEntries({
 
     entries.sort((a, b) => b.createdAt - a.createdAt);
     return entries;
-  }, [
-    inProgressJobs,
-    failedJobs,
-    newlyCompletedItems,
-    galleryItems,
-    newlyCompletedTokens,
-  ]);
+  }, [inProgressJobs, failedJobs, newlyCompletedItems, galleryItems, newlyCompletedTokens]);
 }
 
 // Returns a ref to attach to a sentinel element near the end of the feed;
 // `onLoadMore` fires when it scrolls into view (with a 400px lookahead).
-export function useInfiniteScrollSentinel(
-  hasMore: boolean,
-  onLoadMore: () => void,
-) {
+export function useInfiniteScrollSentinel(hasMore: boolean, onLoadMore: () => void) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

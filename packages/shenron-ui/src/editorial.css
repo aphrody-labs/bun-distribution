@@ -35,12 +35,7 @@
   --ed-ink: #f4f2ed; /* blanc chaud, jamais #fff pur */
   --ed-ink-soft: rgba(244, 242, 237, 0.82);
   --ed-ink-muted: rgba(244, 242, 237, 0.55);
-  --ed-rule: rgba(
-    255,
-    255,
-    255,
-    0.12
-  ); /* filets — l'essentiel de la structure */
+  --ed-rule: rgba(255, 255, 255, 0.12); /* filets — l'essentiel de la structure */
   --ed-rule-strong: rgba(255, 255, 255, 0.26);
 
   /* --- Accent unique -----------------------------------------------------
@@ -56,8 +51,7 @@
 
   background: var(--ed-paper);
   color: var(--ed-ink);
-  font-family:
-    var(--font-editorial), "Iowan Old Style", Charter, Georgia, serif;
+  font-family: var(--font-editorial), "Iowan Old Style", Charter, Georgia, serif;
   font-optical-sizing: auto;
   /* Le site force `color-scheme: dark` sur <html> : on le SUIT désormais, au
 	   lieu de le contredire (les champs et ascenseurs natifs restaient clairs). */

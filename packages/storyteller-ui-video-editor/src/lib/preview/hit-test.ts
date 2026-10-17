@@ -35,9 +35,7 @@ function pointInRotatedRect({
   const localY = dx * sin + dy * cos;
   const halfW = Math.abs(width) / 2;
   const halfH = Math.abs(height) / 2;
-  return (
-    localX >= -halfW && localX <= halfW && localY >= -halfH && localY <= halfH
-  );
+  return localX >= -halfW && localX <= halfW && localY >= -halfH && localY <= halfH;
 }
 
 export function getHitElements({
@@ -99,11 +97,9 @@ export function resolvePreferredHit({
   if (preferredElements.length === 0) return null;
 
   return (
-    hits.find((hit) =>
+    hits.find(hit =>
       preferredElements.some(
-        (preferredElement) =>
-          preferredElement.trackId === hit.trackId &&
-          preferredElement.elementId === hit.elementId,
+        preferredElement => preferredElement.trackId === hit.trackId && preferredElement.elementId === hit.elementId,
       ),
     ) ?? null
   );

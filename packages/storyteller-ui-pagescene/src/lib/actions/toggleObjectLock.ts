@@ -12,7 +12,5 @@ export function toggleObjectLock(editor: Editor, uuid: string): void {
   const before = editor.selection.isObjectLocked(uuid);
   editor.bus.emit(new OutlinerItemLockToggledEvent(uuid));
   editor.selection.lockUnlockObject(uuid);
-  editor.history.record(
-    new LockAction(editor.selection, uuid, before, !before),
-  );
+  editor.history.record(new LockAction(editor.selection, uuid, before, !before));
 }

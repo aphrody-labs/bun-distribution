@@ -1,8 +1,4 @@
-import {
-  applyEffectPasses,
-  applyMaskFeather as applyMaskFeatherWasm,
-  initializeGpu,
-} from "opencut-wasm";
+import { applyEffectPasses, applyMaskFeather as applyMaskFeatherWasm, initializeGpu } from "opencut-wasm";
 import type { EffectPass, EffectUniformValue } from "../../effects/types";
 
 let gpuAvailable = false;
@@ -76,7 +72,7 @@ export const gpuRenderer = {
 };
 
 function serializeEffectPasses(passes: EffectPass[]) {
-  return passes.map((pass) => ({
+  return passes.map(pass => ({
     shader: pass.shader,
     uniforms: Object.entries(pass.uniforms).map(([name, value]) => ({
       name,

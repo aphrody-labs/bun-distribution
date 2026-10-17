@@ -58,26 +58,28 @@
 
 - [`1e5ba7b53`](https://www.github.com/tauri-apps/tauri/commit/1e5ba7b53dfb3da97f372b646f15853e5ba0e1a8) ([#15985](https://www.github.com/tauri-apps/tauri/pull/15985)) `WebviewDispatch::open_devtools`, `close_devtools` and `is_devtools_open` are now required regardless of the `devtools` feature, so the type-erased runtime can forward them. Runtimes should keep their implementation behind the feature and no-op without it.
 - [`c8c75b1f7`](https://www.github.com/tauri-apps/tauri/commit/c8c75b1f7f43e7cb1e7d773ed2f6f96fad2fe975) ([#15787](https://www.github.com/tauri-apps/tauri/pull/15787)) The GTK types crossing the runtime boundary are now version-agnostic raw pointers, so a runtime can use a GTK version different from the one the `tauri` crate was built with:
-    
-    - `WindowDispatch::gtk_window` and `WindowDispatch::default_vbox` return `*mut c_void` (`GtkApplicationWindow*` / `GtkBox*`) instead of `gtk::ApplicationWindow` / `gtk::Box`. Both are *transfer full*: the implementation hands out a strong reference (glib's `to_glib_full`) and the caller releases it (`from_glib_full`).
-    - `WindowBuilder::transient_for` takes the parent as `*mut c_void` (`GtkWindow*`), also *transfer full*: the implementation must release the reference, including when it does not support transient windows.
-    - `RawWindow::gtk_window` and `RawWindow::default_vbox` are `*mut c_void` as well, but *transfer none*: they are borrowed for the duration of the callback and must be wrapped with `from_glib_none`.
-    - `tauri_runtime_wry::GtkWindow` and `tauri_runtime_wry::GtkBox` are newtypes over `*mut c_void`.
-    
-    `tauri-runtime` no longer depends on the `gtk` crate.
-    
-    The new `tauri_runtime::gtk` module carries the GTK version a runtime binds to: runtimes call `gtk::declare_version` before creating windows so `tauri`, which picks its bindings at compile time, can detect a mismatch instead of reinterpreting a GTK object of the other version.
+
+  - `WindowDispatch::gtk_window` and `WindowDispatch::default_vbox` return `*mut c_void` (`GtkApplicationWindow*` / `GtkBox*`) instead of `gtk::ApplicationWindow` / `gtk::Box`. Both are _transfer full_: the implementation hands out a strong reference (glib's `to_glib_full`) and the caller releases it (`from_glib_full`).
+  - `WindowBuilder::transient_for` takes the parent as `*mut c_void` (`GtkWindow*`), also _transfer full_: the implementation must release the reference, including when it does not support transient windows.
+  - `RawWindow::gtk_window` and `RawWindow::default_vbox` are `*mut c_void` as well, but _transfer none_: they are borrowed for the duration of the callback and must be wrapped with `from_glib_none`.
+  - `tauri_runtime_wry::GtkWindow` and `tauri_runtime_wry::GtkBox` are newtypes over `*mut c_void`.
+
+  `tauri-runtime` no longer depends on the `gtk` crate.
+
+  The new `tauri_runtime::gtk` module carries the GTK version a runtime binds to: runtimes call `gtk::declare_version` before creating windows so `tauri`, which picks its bindings at compile time, can detect a mismatch instead of reinterpreting a GTK object of the other version.
+
 - [`1e5ba7b53`](https://www.github.com/tauri-apps/tauri/commit/1e5ba7b53dfb3da97f372b646f15853e5ba0e1a8) ([#15985](https://www.github.com/tauri-apps/tauri/pull/15985)) The custom scheme URL format (`tauri://localhost` or `http://tauri.localhost`) is now defined by the runtime instead of the platform: `Runtime::custom_scheme_url` moved to `RuntimeHandle::custom_scheme_url(&self, scheme, https)`, and the `convertFileSrc` JavaScript API takes the format from the runtime.
-    
-    `tauri::test::MockRuntime` uses `tauri://localhost` on every platform, so tests that sent IPC requests from `http://tauri.localhost` on Windows and Android must use `tauri://localhost` instead.
+
+  `tauri::test::MockRuntime` uses `tauri://localhost` on every platform, so tests that sent IPC requests from `http://tauri.localhost` on Windows and Android must use `tauri://localhost` instead.
+
 - [`1e5ba7b53`](https://www.github.com/tauri-apps/tauri/commit/1e5ba7b53dfb3da97f372b646f15853e5ba0e1a8) ([#15985](https://www.github.com/tauri-apps/tauri/pull/15985)) Added the required `RuntimeHandle::webview_version` method, exposed as `App::webview_version` and `AppHandle::webview_version`. The `tauri::webview_version` function was removed since the version depends on the runtime in use.
 - [`1e5ba7b53`](https://www.github.com/tauri-apps/tauri/commit/1e5ba7b53dfb3da97f372b646f15853e5ba0e1a8) ([#15985](https://www.github.com/tauri-apps/tauri/pull/15985)) Added the required `WebviewDispatch::with_ios_webview` method on iOS, which gives access to the platform webview, plugin manager and view controller pointers through the new `webview::IosWebviewHandle`, so `tauri` no longer downcasts to the wry webview.
 - [`1e5ba7b53`](https://www.github.com/tauri-apps/tauri/commit/1e5ba7b53dfb3da97f372b646f15853e5ba0e1a8) ([#15985](https://www.github.com/tauri-apps/tauri/pull/15985)) `RuntimeSpecificInitAttrs` was renamed to `RuntimeInitAttrs` and now selects the runtime it belongs to:
-    
-    - The trait is generic over the user event type and has a `type Runtime: Runtime<T, RuntimeInitAttrs = Self>` associated type, so the attributes alone identify the runtime.
-    - The implementation for `()` was removed, every runtime must define its own attributes type.
-    - Runtime crates must implement `From<Self>` for `dynamic::DynRuntimeInitAttrs` so their attributes can be passed to the type-erased builder.
-    - `Runtime::WindowOpener` and `window::WindowBuilderBase` now require `'static`, so they can be type-erased.
+
+  - The trait is generic over the user event type and has a `type Runtime: Runtime<T, RuntimeInitAttrs = Self>` associated type, so the attributes alone identify the runtime.
+  - The implementation for `()` was removed, every runtime must define its own attributes type.
+  - Runtime crates must implement `From<Self>` for `dynamic::DynRuntimeInitAttrs` so their attributes can be passed to the type-erased builder.
+  - `Runtime::WindowOpener` and `window::WindowBuilderBase` now require `'static`, so they can be type-erased.
 
 ## [2.12.1]
 
@@ -97,8 +99,8 @@
 - [`21ec647cf`](https://www.github.com/tauri-apps/tauri/commit/21ec647cf945284716696ce2388b5ae381ae5e14) ([#15223](https://www.github.com/tauri-apps/tauri/pull/15223)) Add `Builder::activate_ignoring_other_apps` on macOS to control whether the app activates at launch when another app is already active.
 - [`29265557c`](https://www.github.com/tauri-apps/tauri/commit/29265557c7a42ef6a1f982e0ef738208df1f6dd3) ([#15410](https://www.github.com/tauri-apps/tauri/pull/15410)) Added `WindowBuilder/WebviewWindowBuilder::no_redirection_bitmap` method to disable the window redirection bitmap on Windows.
 - [`382dd6ccc`](https://www.github.com/tauri-apps/tauri/commit/382dd6ccc022277d5620fde90a39b4c5e896310e) ([#14865](https://www.github.com/tauri-apps/tauri/pull/14865)) Expose the `wry` permission handler API through Tauri.
-    This includes support for permission types such as `DisplayCapture`, `Midi`, `Sensors`, `MediaKeySystemAccess`, `LocalFonts`, `WindowManagement`, `PointerLock`, `AutomaticDownloads`, `FileSystemAccess`, and `Autoplay`.
-    Added `PermissionResponse::{Allow, Deny, Default}` for runtime permission decisions.
+  This includes support for permission types such as `DisplayCapture`, `Midi`, `Sensors`, `MediaKeySystemAccess`, `LocalFonts`, `WindowManagement`, `PointerLock`, `AutomaticDownloads`, `FileSystemAccess`, and `Autoplay`.
+  Added `PermissionResponse::{Allow, Deny, Default}` for runtime permission decisions.
 - [`6edc2f4d4`](https://www.github.com/tauri-apps/tauri/commit/6edc2f4d49d2477649bf170aa2867276c25573da) ([#14926](https://www.github.com/tauri-apps/tauri/pull/14926)) Added `Window::set_fullscreen_on_monitor`, `WebviewWindow::set_fullscreen_on_monitor` and the `setFullscreenOnMonitor` JavaScript API to make a window fullscreen on the monitor containing a given physical position, along with the `core:window:allow-set-fullscreen-on-monitor` permission.
 
 ### What's Changed
@@ -224,15 +226,16 @@
 ### New Features
 
 - [`dd4f13ce4`](https://www.github.com/tauri-apps/tauri/commit/dd4f13ce4b3cd89cde2fa3f18a063c272f215621) ([#13185](https://www.github.com/tauri-apps/tauri/pull/13185)) MacOS: Add `set_dock_visibility` method to support setting the visibility of the application in the dock.
-- [`8cf662e34`](https://www.github.com/tauri-apps/tauri/commit/8cf662e34bf738a0d16bb7b9aeb35667e2e4984b) ([#13076](https://www.github.com/tauri-apps/tauri/pull/13076)) -   add API to run initialization scripts on all frames
-  \-   `WebviewBuilder::initialization_script_on_all_frames`
-  \-   `WebviewWindowBuilder::initialization_script_on_all_frames`
-  \-   `WebviewAttributes::initialization_script_on_all_frames`
+- [`8cf662e34`](https://www.github.com/tauri-apps/tauri/commit/8cf662e34bf738a0d16bb7b9aeb35667e2e4984b) ([#13076](https://www.github.com/tauri-apps/tauri/pull/13076)) - add API to run initialization scripts on all frames
+  \- `WebviewBuilder::initialization_script_on_all_frames`
+  \- `WebviewWindowBuilder::initialization_script_on_all_frames`
+  \- `WebviewAttributes::initialization_script_on_all_frames`
 - [`ea36294cb`](https://www.github.com/tauri-apps/tauri/commit/ea36294cbca98f7725c91d1464fd92e77c89698a) ([#13208](https://www.github.com/tauri-apps/tauri/pull/13208)) Added `WebviewAttributes::input_accessory_view_builder` on iOS.
 - [`c1cd0a2dd`](https://www.github.com/tauri-apps/tauri/commit/c1cd0a2ddb5bc3e99451cbe399b5fc9f0035f571) ([#13090](https://www.github.com/tauri-apps/tauri/pull/13090)) macOS/iOS: add option to disable or enable link previews when building a webview (the webkit api has it enabled by default)
 
   - `WebViewBuilder.allow_link_preview(allow_link_preview: bool)`
   - `WebviewWindowBuilder.allow_link_preview(allow_link_preview: bool)`
+
 - [`b072e2b29`](https://www.github.com/tauri-apps/tauri/commit/b072e2b2967640ae4fa1af466ae878c156551edd) ([#9687](https://www.github.com/tauri-apps/tauri/pull/9687)) Add `preventOverflow` config option to prevent the window from overflowing the monitor size on creation
 
 ### Dependencies
@@ -254,6 +257,7 @@
 - [`658e5f5d1`](https://www.github.com/tauri-apps/tauri/commit/658e5f5d1dc1bd970ae572a42447448d064a7fee) ([#12668](https://www.github.com/tauri-apps/tauri/pull/12668) by [@thomaseizinger](https://www.github.com/tauri-apps/tauri/../../thomaseizinger)) Add `App::run_return` function. Contrary to `App::run`, this will **not** exit the process but instead return the requested exit-code. This allows the host app to perform further cleanup after Tauri has exited. `App::run_return` is not available on iOS and fallbacks to the regular `App::run` functionality.
 
   The `App::run_iteration` function is deprecated as part of this because calling it in a loop - as suggested by the name - will cause a busy-loop.
+
 - [`30f5a1553`](https://www.github.com/tauri-apps/tauri/commit/30f5a1553d3c0ce460c9006764200a9210915a44) ([#12366](https://www.github.com/tauri-apps/tauri/pull/12366) by [@FabianLars](https://www.github.com/tauri-apps/tauri/../../FabianLars)) Added `trafficLightPosition` window configuration to set the traffic light buttons position on macOS.
 - [`30f5a1553`](https://www.github.com/tauri-apps/tauri/commit/30f5a1553d3c0ce460c9006764200a9210915a44) ([#12366](https://www.github.com/tauri-apps/tauri/pull/12366) by [@FabianLars](https://www.github.com/tauri-apps/tauri/../../FabianLars)) Added `traffic_light_position` window builder method to set the traffic light buttons position on macOS.
 - [`cedb24d49`](https://www.github.com/tauri-apps/tauri/commit/cedb24d494b84111daa3206c05196c8b89f1e994) ([#12665](https://www.github.com/tauri-apps/tauri/pull/12665) by [@charrondev](https://www.github.com/tauri-apps/tauri/../../charrondev)) Added `WebviewDispatch::cookies()` and `WebviewDispatch::cookies_for_url()`.
@@ -770,7 +774,7 @@
 ## \[0.13.0-alpha.3]
 
 - Pull changes from Tauri 1.3 release.
-  - [](https://www.github.com/tauri-apps/tauri/commit/undefined)  on undefined
+  - [](https://www.github.com/tauri-apps/tauri/commit/undefined) on undefined
 
 ## \[0.13.0-alpha.2]
 
@@ -970,11 +974,11 @@
 
 - The `AboutMetadata` string setters now take `impl Into<String>`.
   - [b14aa896](https://www.github.com/tauri-apps/tauri/commit/b14aa89673c3563522e5c04baf9630fa1c4739b0) feat(core): improve `AboutMetadata` setters on 2022-03-29
-- \**Breaking change::* Added the `clipboard` Cargo feature.
+- \*_Breaking change::_ Added the `clipboard` Cargo feature.
   - [24e4ff20](https://www.github.com/tauri-apps/tauri/commit/24e4ff208ee0fe1a4cc5b10667ea0922ac63dfb5) refactor(core): add clipboard Cargo feature, enhancing binary size ([#3957](https://www.github.com/tauri-apps/tauri/pull/3957)) on 2022-04-24
 - Expose Window cursor APIs `set_cursor_grab`, `set_cursor_visible`, `set_cursor_icon` and `set_cursor_position`.
   - [c54ddfe9](https://www.github.com/tauri-apps/tauri/commit/c54ddfe9338e7eb90b4d5b02dfde687d432d5bc1) feat: expose window cursor APIs, closes [#3888](https://www.github.com/tauri-apps/tauri/pull/3888) [#3890](https://www.github.com/tauri-apps/tauri/pull/3890) ([#3935](https://www.github.com/tauri-apps/tauri/pull/3935)) on 2022-04-21
-- \**Breaking change::* Added the `global-shortcut` Cargo feature.
+- \*_Breaking change::_ Added the `global-shortcut` Cargo feature.
   - [e11878bc](https://www.github.com/tauri-apps/tauri/commit/e11878bcf7174b261a1fa146fc7d564d12e6312a) refactor(core): add global-shortcut Cargo feature, enhancing binary size ([#3956](https://www.github.com/tauri-apps/tauri/pull/3956)) on 2022-04-24
 - Added `WindowEvent::ThemeChanged(theme)`.
   - [4cebcf6d](https://www.github.com/tauri-apps/tauri/commit/4cebcf6da7cad1953e0f01b426afac3b5ef1f81e) feat: expose theme APIs, closes [#3903](https://www.github.com/tauri-apps/tauri/pull/3903) ([#3937](https://www.github.com/tauri-apps/tauri/pull/3937)) on 2022-04-21
@@ -1118,7 +1122,7 @@
 - See `Params` note
 - If you were using `Params` inside a function parameter or definition, all references to it have been replaced with a
   simple runtime that defaults to `Wry`. If you are not using a custom runtime, just remove `Params` from the definition
-  of functions/items that previously took it. If you are using a custom runtime, you *may* need to pass the runtime type
+  of functions/items that previously took it. If you are using a custom runtime, you _may_ need to pass the runtime type
   to these functions.
 - If you were using custom types for `Params` (uncommon and if you don't understand you probably were not using it), all
   methods that were previously taking the custom type now takes an `Into<String>` or a `&str`. The types were already

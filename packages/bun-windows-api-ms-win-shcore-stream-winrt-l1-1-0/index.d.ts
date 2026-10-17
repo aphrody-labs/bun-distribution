@@ -3,9 +3,19 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-shcore-stream-winrt-l1-1-0.dll!CreateRandomAccessStreamOnFile */
-  CreateRandomAccessStreamOnFile(filePath: string | Win32Pointer, accessMode: number, riid: Win32Pointer, ppv: Win32Pointer): number;
+  CreateRandomAccessStreamOnFile(
+    filePath: string | Win32Pointer,
+    accessMode: number,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** api-ms-win-shcore-stream-winrt-l1-1-0.dll!CreateRandomAccessStreamOverStream */
-  CreateRandomAccessStreamOverStream(stream: Win32Pointer, options: number, riid: Win32Pointer, ppv: Win32Pointer): number;
+  CreateRandomAccessStreamOverStream(
+    stream: Win32Pointer,
+    options: number,
+    riid: Win32Pointer,
+    ppv: Win32Pointer,
+  ): number;
   /** api-ms-win-shcore-stream-winrt-l1-1-0.dll!CreateStreamOverRandomAccessStream */
   CreateStreamOverRandomAccessStream(randomAccessStream: Win32Pointer, riid: Win32Pointer, ppv: Win32Pointer): number;
 }

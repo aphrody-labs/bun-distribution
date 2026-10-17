@@ -24,15 +24,7 @@ type BezierHandle = "c1" | "c2";
 
 export const BEZIER_GRAPH_MIN_HEIGHT = SVG_HEIGHT;
 
-function snap({
-  value,
-  targets,
-  isEnabled,
-}: {
-  value: number;
-  targets: number[];
-  isEnabled: boolean;
-}) {
+function snap({ value, targets, isEnabled }: { value: number; targets: number[]; isEnabled: boolean }) {
   if (!isEnabled) return value;
   for (const target of targets) {
     if (Math.abs(value - target) < SNAP_THRESHOLD) return target;
@@ -53,10 +45,7 @@ function fromSvgX({ svgX }: { svgX: number }) {
 }
 
 function fromSvgY({ svgY }: { svgY: number }) {
-  return Math.max(
-    Y_CLAMP_MIN,
-    Math.min(Y_CLAMP_MAX, 1 - (svgY - GRAPH_PADDING) / GRAPH_HEIGHT),
-  );
+  return Math.max(Y_CLAMP_MIN, Math.min(Y_CLAMP_MAX, 1 - (svgY - GRAPH_PADDING) / GRAPH_HEIGHT));
 }
 
 function curvePath({ curve }: { curve: NormalizedCubicBezier }) {
@@ -175,7 +164,7 @@ export function BezierGraph({
       ref={svgRef}
       viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
       className="bg-foreground/3 w-full cursor-crosshair select-none"
-      onPointerMove={(event) => onPointerMove({ event })}
+      onPointerMove={event => onPointerMove({ event })}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
     >
@@ -189,59 +178,23 @@ export function BezierGraph({
         strokeWidth={1}
         strokeDasharray="3 3"
       />
-      <line
-        x1={p0.x}
-        y1={p0.y}
-        x2={c1Clamped.x}
-        y2={c1Clamped.y}
-        className="stroke-primary/30"
-        strokeWidth={1}
-      />
-      <line
-        x1={p1.x}
-        y1={p1.y}
-        x2={c2Clamped.x}
-        y2={c2Clamped.y}
-        className="stroke-primary/30"
-        strokeWidth={1}
-      />
-      <path
-        d={path}
-        fill="none"
-        className="stroke-primary"
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-      <circle
-        cx={p0.x}
-        cy={p0.y}
-        r={ENDPOINT_RADIUS}
-        className="fill-foreground/20"
-      />
-      <circle
-        cx={p1.x}
-        cy={p1.y}
-        r={ENDPOINT_RADIUS}
-        className="fill-foreground/20"
-      />
+      <line x1={p0.x} y1={p0.y} x2={c1Clamped.x} y2={c1Clamped.y} className="stroke-primary/30" strokeWidth={1} />
+      <line x1={p1.x} y1={p1.y} x2={c2Clamped.x} y2={c2Clamped.y} className="stroke-primary/30" strokeWidth={1} />
+      <path d={path} fill="none" className="stroke-primary" strokeWidth={2} strokeLinecap="round" />
+      <circle cx={p0.x} cy={p0.y} r={ENDPOINT_RADIUS} className="fill-foreground/20" />
+      <circle cx={p1.x} cy={p1.y} r={ENDPOINT_RADIUS} className="fill-foreground/20" />
       <circle
         cx={c1Clamped.x}
         cy={c1Clamped.y}
         r={HANDLE_RADIUS}
-        className={cn(
-          "fill-primary cursor-grab",
-          activeHandle === "c1" && "cursor-grabbing",
-        )}
+        className={cn("fill-primary cursor-grab", activeHandle === "c1" && "cursor-grabbing")}
         onPointerDown={onHandlePointerDown({ handle: "c1" })}
       />
       <circle
         cx={c2Clamped.x}
         cy={c2Clamped.y}
         r={HANDLE_RADIUS}
-        className={cn(
-          "fill-primary cursor-grab",
-          activeHandle === "c2" && "cursor-grabbing",
-        )}
+        className={cn("fill-primary cursor-grab", activeHandle === "c2" && "cursor-grabbing")}
         onPointerDown={onHandlePointerDown({ handle: "c2" })}
       />
     </svg>

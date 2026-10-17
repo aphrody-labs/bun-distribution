@@ -16,23 +16,21 @@ interface TutorialModalState {
   getProgress: (id: string) => number;
 }
 
-export const useTutorialModalStore = create<TutorialModalState>()(
-  (set, get) => ({
-    isOpen: false,
-    view: "grid",
-    selected: null,
-    progress: {},
+export const useTutorialModalStore = create<TutorialModalState>()((set, get) => ({
+  isOpen: false,
+  view: "grid",
+  selected: null,
+  progress: {},
 
-    setOpen: (isOpen) => set({ isOpen }),
-    setGrid: () => set({ view: "grid", selected: null }),
-    setNews: () => set({ view: "news", selected: null }),
-    viewTutorial: (item) => set({ view: "video", selected: item }),
+  setOpen: isOpen => set({ isOpen }),
+  setGrid: () => set({ view: "grid", selected: null }),
+  setNews: () => set({ view: "news", selected: null }),
+  viewTutorial: item => set({ view: "video", selected: item }),
 
-    setProgress: (id, seconds) =>
-      set((state) => ({
-        progress: { ...state.progress, [id]: seconds },
-      })),
+  setProgress: (id, seconds) =>
+    set(state => ({
+      progress: { ...state.progress, [id]: seconds },
+    })),
 
-    getProgress: (id) => get().progress[id] || 0,
-  }),
-);
+  getProgress: id => get().progress[id] || 0,
+}));

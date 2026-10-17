@@ -24,7 +24,7 @@ export function SnapGuides({ lines }: { lines: SnapLine[] }) {
 
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden>
-      {lines.map((line) => {
+      {lines.map(line => {
         if (line.type === "vertical") {
           return (
             <div

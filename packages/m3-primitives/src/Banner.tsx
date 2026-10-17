@@ -11,23 +11,20 @@ import { type IconSource, renderIcon } from "./Icon";
  * Inline status banner: an M3 filled card (`rounded-medium`) on the variant's container role,
  * content in its `on-…-container` pair.
  */
-const bannerVariants = cva(
-  "relative flex w-full items-center gap-3 rounded-medium px-4 py-3 text-body-medium",
-  {
-    variants: {
-      variant: {
-        default: "bg-surface-container-high text-on-surface",
-        info: "bg-primary-container text-on-primary-container",
-        success: "bg-success-container text-on-success-container",
-        warning: "bg-warning-container text-on-warning-container",
-        error: "bg-error-container text-on-error-container",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
+const bannerVariants = cva("relative flex w-full items-center gap-3 rounded-medium px-4 py-3 text-body-medium", {
+  variants: {
+    variant: {
+      default: "bg-surface-container-high text-on-surface",
+      info: "bg-primary-container text-on-primary-container",
+      success: "bg-success-container text-on-success-container",
+      warning: "bg-warning-container text-on-warning-container",
+      error: "bg-error-container text-on-error-container",
     },
   },
-);
+  defaultVariants: {
+    variant: "default",
+  },
+});
 
 const dotVariants = cva("size-2 shrink-0 rounded-full", {
   variants: {
@@ -52,10 +49,7 @@ const bannerIcons = {
   error: "cancel",
 } as const;
 
-export interface BannerProps
-  extends
-    React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof bannerVariants> {
+export interface BannerProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof bannerVariants> {
   showDot?: boolean;
   /** Override the variant's icon (Material Symbols name, element or component); `null` hides it. */
   icon?: IconSource | React.ElementType;
@@ -74,13 +68,10 @@ const Banner = forwardRef<HTMLDivElement, BannerProps>(
         {...props}
       >
         {showDot && <span className={clsx(dotVariants({ variant }))} />}
-        {renderIcon(
-          (icon === undefined ? bannerIcons[key] : icon) as IconSource,
-          {
-            size: 20,
-            className: clsx("shrink-0", key === "default" && "text-primary"),
-          },
-        )}
+        {renderIcon((icon === undefined ? bannerIcons[key] : icon) as IconSource, {
+          size: 20,
+          className: clsx("shrink-0", key === "default" && "text-primary"),
+        })}
         <div className="flex-1">{children}</div>
       </div>
     );

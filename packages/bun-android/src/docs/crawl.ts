@@ -78,28 +78,21 @@ async function robots(origin: string): Promise<string[]> {
     const [key, ...rest] = line.split(":");
     const value = rest.join(":").trim();
     if (/^user-agent$/i.test(key ?? "")) applies = value === "*";
-    else if (applies && /^disallow$/i.test(key ?? "") && value)
-      disallow.push(value);
+    else if (applies && /^disallow$/i.test(key ?? "") && value) disallow.push(value);
   }
   return disallow;
 }
 
-async function sitemapUrls(
-  url: string,
-  out: Map<string, string | null>,
-): Promise<void> {
+async function sitemapUrls(url: string, out: Map<string, string | null>): Promise<void> {
   const response = await fetch(url, { headers: { "user-agent": USER_AGENT } });
   if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
   const xml = await response.text();
   const nested: string[] = [];
   const isIndex = xml.includes("<sitemapindex");
-  for (const block of xml.matchAll(
-    /<(?:url|sitemap)>([\s\S]*?)<\/(?:url|sitemap)>/g,
-  )) {
+  for (const block of xml.matchAll(/<(?:url|sitemap)>([\s\S]*?)<\/(?:url|sitemap)>/g)) {
     const loc = block[1]!.match(/<loc>\s*([^<]+?)\s*<\/loc>/)?.[1];
     if (!loc) continue;
-    const lastmod =
-      block[1]!.match(/<lastmod>\s*([^<]+?)\s*<\/lastmod>/)?.[1] ?? null;
+    const lastmod = block[1]!.match(/<lastmod>\s*([^<]+?)\s*<\/lastmod>/)?.[1] ?? null;
     if (isIndex) nested.push(loc.replaceAll("&amp;", "&"));
     else out.set(loc.replaceAll("&amp;", "&"), lastmod);
   }
@@ -108,11 +101,8 @@ async function sitemapUrls(
 
 function keep(url: URL, source: DocSource, disallow: string[]): boolean {
   if (url.origin !== source.origin || url.search) return false;
-  if (disallow.some((path) => url.pathname.startsWith(path))) return false;
-  return (
-    source.prefixes.length === 0 ||
-    source.prefixes.some((prefix) => url.pathname.startsWith(prefix))
-  );
+  if (disallow.some(path => url.pathname.startsWith(path))) return false;
+  return source.prefixes.length === 0 || source.prefixes.some(prefix => url.pathname.startsWith(prefix));
 }
 
 function pagePath(home: string, url: URL): string {
@@ -131,12 +121,9 @@ export interface CrawlOptions {
 
 export async function crawl(options: CrawlOptions = {}): Promise<void> {
   const store = new DocsStore();
-  const log = options.log ?? ((line) => console.error(line));
+  const log = options.log ?? (line => console.error(line));
   const concurrency = options.concurrency ?? 8;
-  const selected = SOURCES.filter(
-    (source) =>
-      !options.sources?.length || options.sources.includes(source.name),
-  );
+  const selected = SOURCES.filter(source => !options.sources?.length || options.sources.includes(source.name));
   store.retryFailed();
   try {
     for (const source of selected) {
@@ -201,19 +188,13 @@ async function fetchPage(
       continue;
     }
     if (response.status === 429 || response.status >= 500) {
-      await Bun.sleep(
-        Number(response.headers.get("retry-after") ?? 0) * 1000 ||
-          2000 * 2 ** attempt,
-      );
+      await Bun.sleep(Number(response.headers.get("retry-after") ?? 0) * 1000 || 2000 * 2 ** attempt);
       continue;
     }
-    if (response.status === 304)
-      return store.save(href, source.name, 200, etag);
-    if (!response.ok)
-      return store.save(href, source.name, response.status, null);
+    if (response.status === 304) return store.save(href, source.name, 200, etag);
+    if (!response.ok) return store.save(href, source.name, response.status, null);
     const finalUrl = new URL(response.url || href);
-    if (finalUrl.origin !== source.origin)
-      return store.save(href, source.name, 301, null);
+    if (finalUrl.origin !== source.origin) return store.save(href, source.name, 301, null);
     let html: string;
     try {
       html = await response.text();
@@ -225,10 +206,7 @@ async function fetchPage(
     const body = page.markdown;
     const file = pagePath(store.home, new URL(href));
     mkdirSync(dirname(file), { recursive: true });
-    await Bun.write(
-      file,
-      `---\ntitle: ${JSON.stringify(page.title)}\nurl: ${href}\n---\n\n${body}\n`,
-    );
+    await Bun.write(file, `---\ntitle: ${JSON.stringify(page.title)}\nurl: ${href}\n---\n\n${body}\n`);
     const found = new Set<string>();
     for (const link of page.links) {
       try {
@@ -237,22 +215,13 @@ async function fetchPage(
       } catch {}
     }
     store.discover(found, source.name);
-    return store.save(
-      href,
-      source.name,
-      200,
-      response.headers.get("etag"),
-      page.title,
-      body,
-    );
+    return store.save(href, source.name, 200, response.headers.get("etag"), page.title, body);
   }
   store.save(href, source.name, -1, null);
 }
 
 /** Shallow-clone or update the documentation repositories and index their Markdown. */
-export async function syncRepos(
-  log: (line: string) => void = (line) => console.error(line),
-): Promise<void> {
+export async function syncRepos(log: (line: string) => void = line => console.error(line)): Promise<void> {
   const store = new DocsStore();
   try {
     for (const repo of DOC_REPOS) {
@@ -276,8 +245,7 @@ export async function syncRepos(
         const path = relative(dir, join(dir, file)).replaceAll("\\", "/");
         const url = `${remote}/+/HEAD/${path}`;
         const text = await Bun.file(join(dir, file)).text();
-        const title =
-          text.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? `${repo}/${path}`;
+        const title = text.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? `${repo}/${path}`;
         store.enqueue(url, "aosp-git", null);
         store.save(url, "aosp-git", 200, null, title, text);
         count++;

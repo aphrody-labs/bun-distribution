@@ -19,17 +19,12 @@ describe("M3 breakpoints", () => {
     [840, "expanded"],
     [1200, "large"],
     [1600, "extra-large"],
-  ] as const)("classifyWidth(%i) === %s", (w, c) =>
-    expect(classifyWidth(w)).toBe(c),
-  );
+  ] as const)("classifyWidth(%i) === %s", (w, c) => expect(classifyWidth(w)).toBe(c));
 
   test("canonical lower bounds", () =>
-    expect([
-      BREAKPOINTS.medium,
-      BREAKPOINTS.expanded,
-      BREAKPOINTS.large,
-      BREAKPOINTS["extra-large"],
-    ]).toEqual([600, 840, 1200, 1600]));
+    expect([BREAKPOINTS.medium, BREAKPOINTS.expanded, BREAKPOINTS.large, BREAKPOINTS["extra-large"]]).toEqual([
+      600, 840, 1200, 1600,
+    ]));
 
   test("margins 16/24", () => {
     expect(marginFor("compact")).toBe(16);
@@ -43,11 +38,9 @@ describe("M3 breakpoints", () => {
   });
 
   test("pane counts 1/1/2/2/3", () =>
-    expect(
-      ["compact", "medium", "expanded", "large", "extra-large"].map((c) =>
-        panesFor(c as never),
-      ),
-    ).toEqual([1, 1, 2, 2, 3]));
+    expect(["compact", "medium", "expanded", "large", "extra-large"].map(c => panesFor(c as never))).toEqual([
+      1, 1, 2, 2, 3,
+    ]));
 
   test("mediaQuery + breakpointsCss", () => {
     expect(mediaQuery("expanded")).toBe("(min-width: 840px)");
@@ -63,9 +56,7 @@ describe("M3 window height classes", () => {
     [480, "medium"],
     [899, "medium"],
     [900, "expanded"],
-  ] as const)("classifyHeight(%i) === %s", (h, c) =>
-    expect(classifyHeight(h)).toBe(c),
-  );
+  ] as const)("classifyHeight(%i) === %s", (h, c) => expect(classifyHeight(h)).toBe(c));
 
   test("css carries the height breakpoints", async () => {
     expect(HEIGHT_BREAKPOINTS).toEqual({
@@ -75,24 +66,18 @@ describe("M3 window height classes", () => {
     });
     expect(heightMediaQuery("medium")).toBe("(min-height: 480px)");
     const css = breakpointsCss();
-    expect(css).toContain(
-      "@custom-media --md-height-expanded (min-height: 900px)",
-    );
+    expect(css).toContain("@custom-media --md-height-expanded (min-height: 900px)");
     expect(css).toContain("--md-breakpoint-height-medium: 480px");
-    const file = await Bun.file(
-      new URL("../src/breakpoints.css", import.meta.url),
-    ).text();
-    expect(file).toContain(
-      "@custom-media --md-height-medium (min-height: 480px)",
-    );
+    const file = await Bun.file(new URL("../src/breakpoints.css", import.meta.url)).text();
+    expect(file).toContain("@custom-media --md-height-medium (min-height: 480px)");
     expect(file).toContain("--md-breakpoint-height-expanded: 900px");
   });
 
   test("navigation kinds match adaptive.rs", () => {
-    expect([
-      navigationFor("compact"),
-      navigationFor("expanded"),
-      navigationFor("large"),
-    ]).toEqual(["bar", "rail-collapsed", "rail-expanded"]);
+    expect([navigationFor("compact"), navigationFor("expanded"), navigationFor("large")]).toEqual([
+      "bar",
+      "rail-collapsed",
+      "rail-expanded",
+    ]);
   });
 });

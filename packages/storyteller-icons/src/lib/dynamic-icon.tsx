@@ -11,8 +11,9 @@ export interface DynamicIconProps extends Omit<LucideProps, "ref"> {
   icon: LucideIcon;
 }
 
-export const DynamicIcon = forwardRef<SVGSVGElement, DynamicIconProps>(
-  function DynamicIcon({ icon: IconComponent, ...props }, ref) {
-    return <IconComponent ref={ref} {...props} />;
-  },
-);
+export const DynamicIcon = forwardRef<SVGSVGElement, DynamicIconProps>(function DynamicIcon(
+  { icon: IconComponent, ...props },
+  ref,
+) {
+  return <IconComponent ref={ref} {...props} />;
+});

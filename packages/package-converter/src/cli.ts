@@ -15,9 +15,7 @@ Windows: --windows-artifact FILE.exe [--winget-id Publisher.Package --windows-ve
 Runtime imports: --runtime DLL=Publisher.Package or DLL=bun:package@VERSION (repeatable)
 Compression: --decoder NATIVE_7ZIP_EXECUTABLE for xz or bzip2 members`;
 
-export async function runPackageCLI(
-  args: string[] = Bun.argv.slice(2),
-): Promise<void> {
+export async function runPackageCLI(args: string[] = Bun.argv.slice(2)): Promise<void> {
   args = [...args];
   if (args[0] === "pacman2apt") return runPacman2AptCLI(args.slice(1));
   if (!args.length || args.includes("--help")) {
@@ -26,8 +24,7 @@ export async function runPackageCLI(
   }
   const command = args.shift();
   const input = args.shift();
-  if (!input || !["inspect", "convert"].includes(command ?? ""))
-    throw new Error(USAGE);
+  if (!input || !["inspect", "convert"].includes(command ?? "")) throw new Error(USAGE);
   const values: Record<string, string> = Object.create(null);
   const runtimeDependencies: Record<string, string> = Object.create(null);
   let extractSources = false;
@@ -55,51 +52,22 @@ export async function runPackageCLI(
     }
     const key = flag.startsWith("--") ? flag.slice(2) : "";
     const value = args.shift();
-    if (
-      !value ||
-      value.startsWith("--") ||
-      (!allowed.has(key) && key !== "runtime")
-    )
+    if (!value || value.startsWith("--") || (!allowed.has(key) && key !== "runtime"))
       throw new Error(`Invalid option ${flag}`);
     if (key === "runtime") {
       const equal = value.indexOf("=");
       const dll = value.slice(0, equal).toLowerCase();
-      if (
-        equal < 1 ||
-        !/^[a-z0-9_.+-]+\.dll$/.test(dll) ||
-        runtimeDependencies[dll]
-      )
-        throw new Error(
-          "Runtime mapping must be DLL=Publisher.Package once per DLL",
-        );
+      if (equal < 1 || !/^[a-z0-9_.+-]+\.dll$/.test(dll) || runtimeDependencies[dll])
+        throw new Error("Runtime mapping must be DLL=Publisher.Package once per DLL");
       runtimeDependencies[dll] = value.slice(equal + 1);
     } else {
       if (values[key]) throw new Error(`Duplicate option ${flag}`);
       values[key] = value;
     }
   }
-  const formats: InputFormat[] = [
-    "deb",
-    "deb822",
-    "pkginfo",
-    "srcinfo",
-    "cygwin",
-    "alpm-archive",
-    "source-archive",
-  ];
-  const ecosystems: Ecosystem[] = [
-    "debian",
-    "ubuntu",
-    "cosmic",
-    "alpm",
-    "msys2",
-    "mingw",
-    "cygwin",
-  ];
-  if (
-    !formats.includes(values.format as InputFormat) ||
-    !ecosystems.includes(values.ecosystem as Ecosystem)
-  )
+  const formats: InputFormat[] = ["deb", "deb822", "pkginfo", "srcinfo", "cygwin", "alpm-archive", "source-archive"];
+  const ecosystems: Ecosystem[] = ["debian", "ubuntu", "cosmic", "alpm", "msys2", "mingw", "cygwin"];
+  if (!formats.includes(values.format as InputFormat) || !ecosystems.includes(values.ecosystem as Ecosystem))
     throw new Error(USAGE);
   const options: ConversionOptions = {
     format: values.format as InputFormat,
@@ -119,19 +87,15 @@ export async function runPackageCLI(
     metadataFile: values.metadata,
     metadataFormat: values["metadata-format"] as InputFormat | undefined,
   };
-  if (command === "inspect")
-    console.log(
-      JSON.stringify((await inspect(input, options)).inspection, null, 2),
-    );
+  if (command === "inspect") console.log(JSON.stringify((await inspect(input, options)).inspection, null, 2));
   else {
-    if (!options.out || !options.package)
-      throw new Error("Conversion requires --out and --package");
+    if (!options.out || !options.package) throw new Error("Conversion requires --out and --package");
     console.log(await convert(input, options));
   }
 }
 
 if (import.meta.main)
-  runPackageCLI().catch((error) => {
+  runPackageCLI().catch(error => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });

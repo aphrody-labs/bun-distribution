@@ -57,8 +57,7 @@ export type CardNode = BaseNode & {
   backgroundColor: string;
 };
 
-export type MoodboardNode =
-  ImageNode | VideoNode | TextNode | GroupNode | CardNode;
+export type MoodboardNode = ImageNode | VideoNode | TextNode | GroupNode | CardNode;
 
 export interface MoodboardSnapshot {
   nodes: Record<string, MoodboardNode>;

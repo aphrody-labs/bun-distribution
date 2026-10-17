@@ -33,9 +33,7 @@ export function snapGroupEdges({
   snappedAnchorStartTime: MediaTime;
   snapPoint: SnapPoint | null;
 } {
-  const excludeElementIds = new Set(
-    group.members.map((member) => member.elementId),
-  );
+  const excludeElementIds = new Set(group.members.map(member => member.elementId));
   const snapPoints = buildTimelineSnapPoints({
     sources: [
       () => getElementEdgeSnapPoints({ tracks, excludeElementIds }),
@@ -63,10 +61,7 @@ export function snapGroupEdges({
       snapPoints,
       maxSnapDistance,
     });
-    if (
-      memberStartSnap.snapPoint &&
-      memberStartSnap.snapDistance < closestSnapDistance
-    ) {
+    if (memberStartSnap.snapPoint && memberStartSnap.snapDistance < closestSnapDistance) {
       closestSnapDistance = memberStartSnap.snapDistance;
       snappedAnchorStartTime = subMediaTime({
         a: memberStartSnap.snappedTime,
@@ -83,10 +78,7 @@ export function snapGroupEdges({
       snapPoints,
       maxSnapDistance,
     });
-    if (
-      memberEndSnap.snapPoint &&
-      memberEndSnap.snapDistance < closestSnapDistance
-    ) {
+    if (memberEndSnap.snapPoint && memberEndSnap.snapDistance < closestSnapDistance) {
       closestSnapDistance = memberEndSnap.snapDistance;
       snappedAnchorStartTime = subMediaTime({
         a: subMediaTime({

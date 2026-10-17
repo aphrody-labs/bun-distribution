@@ -21,34 +21,33 @@ interface Props {
 
 type MouseOrTouchEvent = MouseEvent | TouchEvent;
 
-const isMouseEvent = (event: MouseOrTouchEvent): event is MouseEvent =>
-  "button" in event;
+const isMouseEvent = (event: MouseOrTouchEvent): event is MouseEvent => "button" in event;
 
 export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
   const transformerRef = useTransformer(stageRef);
 
-  const nodes = useMoodboardStore((s) => s.nodes);
-  const rootOrder = useMoodboardStore((s) => s.rootOrder);
-  const selectedIds = useMoodboardStore((s) => s.selectedIds);
-  const tool = useMoodboardStore((s) => s.tool);
-  const gridSpacing = useMoodboardStore((s) => s.gridSpacing);
+  const nodes = useMoodboardStore(s => s.nodes);
+  const rootOrder = useMoodboardStore(s => s.rootOrder);
+  const selectedIds = useMoodboardStore(s => s.selectedIds);
+  const tool = useMoodboardStore(s => s.tool);
+  const gridSpacing = useMoodboardStore(s => s.gridSpacing);
   // Only subscribe to the transient fields this component actually renders
   // (marquee + lasso). Skips re-renders on `editingTextId` and `isPanning`
   // toggles, which don't affect Stage JSX.
   const { marquee, lassoPath, guides } = useMoodboardStore(
-    useShallow((s) => ({
+    useShallow(s => ({
       marquee: s.transient.marquee,
       lassoPath: s.transient.lassoPath,
       guides: s.transient.guides,
     })),
   );
-  const viewport = useMoodboardStore((s) => s.viewport);
-  const canvasSize = useMoodboardStore((s) => s.canvasSize);
-  const setLastDropPoint = useMoodboardStore((s) => s.setLastDropPoint);
-  const setCanvasSize = useMoodboardStore((s) => s.setCanvasSize);
-  const toggleInSelection = useMoodboardStore((s) => s.toggleInSelection);
-  const setEditingText = useMoodboardStore((s) => s.setEditingText);
-  const addText = useMoodboardStore((s) => s.addText);
+  const viewport = useMoodboardStore(s => s.viewport);
+  const canvasSize = useMoodboardStore(s => s.canvasSize);
+  const setLastDropPoint = useMoodboardStore(s => s.setLastDropPoint);
+  const setCanvasSize = useMoodboardStore(s => s.setCanvasSize);
+  const toggleInSelection = useMoodboardStore(s => s.toggleInSelection);
+  const setEditingText = useMoodboardStore(s => s.setEditingText);
+  const addText = useMoodboardStore(s => s.addText);
 
   const zoom = viewport.zoom;
   const pan = viewport.pan;
@@ -129,7 +128,7 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
 
   return (
     <Stage
-      ref={(s) => {
+      ref={s => {
         stageRef.current = s;
       }}
       width={canvasSize.width}
@@ -151,58 +150,31 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
         />
       </Layer>
       <Layer>
-        {rootOrder.map((id) => {
+        {rootOrder.map(id => {
           const n = nodes[id];
           if (!n) return null;
           const selected = selectedIds.has(id);
           const draggable = tool === "select";
           if (n.kind === "image") {
             return (
-              <ImageNode
-                key={id}
-                node={n}
-                draggable={draggable}
-                selected={selected}
-                onSelect={handleNodeSelect}
-              />
+              <ImageNode key={id} node={n} draggable={draggable} selected={selected} onSelect={handleNodeSelect} />
             );
           }
           if (n.kind === "video") {
             return (
-              <VideoNode
-                key={id}
-                node={n}
-                draggable={draggable}
-                selected={selected}
-                onSelect={handleNodeSelect}
-              />
+              <VideoNode key={id} node={n} draggable={draggable} selected={selected} onSelect={handleNodeSelect} />
             );
           }
           if (n.kind === "text") {
-            return (
-              <TextNode
-                key={id}
-                node={n}
-                draggable={draggable}
-                selected={selected}
-                onSelect={handleNodeSelect}
-              />
-            );
+            return <TextNode key={id} node={n} draggable={draggable} selected={selected} onSelect={handleNodeSelect} />;
           }
           if (n.kind === "group") {
-            return (
-              <GroupNode
-                key={id}
-                node={n}
-                selected={selected}
-                onSelect={handleNodeSelect}
-              />
-            );
+            return <GroupNode key={id} node={n} selected={selected} onSelect={handleNodeSelect} />;
           }
           return null;
         })}
         <Transformer
-          ref={(t) => {
+          ref={t => {
             transformerRef.current = t;
           }}
           rotateEnabled
@@ -210,7 +182,7 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
         />
       </Layer>
       <Layer listening={false}>
-        {Array.from(selectedIds).map((id) => {
+        {Array.from(selectedIds).map(id => {
           const n = nodes[id];
           if (!n || n.parentId !== null) return null;
           if (n.kind === "group") {
@@ -230,13 +202,7 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
             }
             if (!Number.isFinite(minX)) return null;
             return (
-              <Group
-                key={`outline-${id}`}
-                x={n.x}
-                y={n.y}
-                rotation={n.rotation}
-                listening={false}
-              >
+              <Group key={`outline-${id}`} x={n.x} y={n.y} rotation={n.rotation} listening={false}>
                 <Rect
                   x={minX}
                   y={minY}
@@ -279,7 +245,7 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
         )}
         {lassoPath && lassoPath.length >= 2 && (
           <Line
-            points={lassoPath.flatMap((p) => [p.x, p.y])}
+            points={lassoPath.flatMap(p => [p.x, p.y])}
             stroke="#3b82f6"
             strokeWidth={1 / zoom}
             dash={[4 / zoom, 4 / zoom]}
@@ -289,11 +255,7 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
         {guides.map((g, i) => (
           <Line
             key={`guide-${i}`}
-            points={
-              g.axis === "x"
-                ? [g.pos, g.from, g.pos, g.to]
-                : [g.from, g.pos, g.to, g.pos]
-            }
+            points={g.axis === "x" ? [g.pos, g.from, g.pos, g.to] : [g.from, g.pos, g.to, g.pos]}
             stroke="#f43f5e"
             strokeWidth={1 / zoom}
             listening={false}

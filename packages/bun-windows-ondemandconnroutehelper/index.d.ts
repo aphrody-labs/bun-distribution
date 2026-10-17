@@ -5,11 +5,22 @@ interface Functions {
   /** ondemandconnroutehelper.dll!FreeInterfaceContextTable */
   FreeInterfaceContextTable(InterfaceContextTable: Win32Pointer): void;
   /** ondemandconnroutehelper.dll!GetInterfaceContextTableForHostName */
-  GetInterfaceContextTableForHostName(HostName: string | Win32Pointer, ProxyName: string | Win32Pointer, Flags: number, ConnectionProfileFilterRawData: Win32Pointer, ConnectionProfileFilterRawDataSize: number, InterfaceContextTable: Win32Pointer): number;
+  GetInterfaceContextTableForHostName(
+    HostName: string | Win32Pointer,
+    ProxyName: string | Win32Pointer,
+    Flags: number,
+    ConnectionProfileFilterRawData: Win32Pointer,
+    ConnectionProfileFilterRawDataSize: number,
+    InterfaceContextTable: Win32Pointer,
+  ): number;
   /** ondemandconnroutehelper.dll!OnDemandGetRoutingHint */
   OnDemandGetRoutingHint(destinationHostName: string | Win32Pointer, interfaceIndex: Win32Pointer): number;
   /** ondemandconnroutehelper.dll!OnDemandRegisterNotification */
-  OnDemandRegisterNotification(callback: Win32Callback, callbackContext: Win32Pointer, registrationHandle: Win32Pointer): number;
+  OnDemandRegisterNotification(
+    callback: Win32Callback,
+    callbackContext: Win32Pointer,
+    registrationHandle: Win32Pointer,
+  ): number;
   /** ondemandconnroutehelper.dll!OnDemandUnRegisterNotification */
   OnDemandUnRegisterNotification(registrationHandle: Win32Pointer): number;
 }

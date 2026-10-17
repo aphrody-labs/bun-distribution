@@ -6,10 +6,7 @@
 import type { SVGProps } from "react";
 import { scouterBrackets } from "../toriyama-svg";
 
-export interface ScouterHudOverlayProps extends Omit<
-  SVGProps<SVGSVGElement>,
-  "size"
-> {
+export interface ScouterHudOverlayProps extends Omit<SVGProps<SVGSVGElement>, "size"> {
   powerLevel?: number | string;
   color?: "green" | "red" | "blue";
   size?: number | string;
@@ -70,51 +67,13 @@ export function ScouterHudOverlay({
       <rect x="0" y="0" width="100" height="100" rx="6" fill={c.lens} />
 
       {/* Scanlines */}
-      <line
-        x1="0"
-        y1="20"
-        x2="100"
-        y2="20"
-        stroke={c.hud}
-        strokeWidth="0.4"
-        opacity="0.3"
-      />
-      <line
-        x1="0"
-        y1="40"
-        x2="100"
-        y2="40"
-        stroke={c.hud}
-        strokeWidth="0.4"
-        opacity="0.3"
-      />
-      <line
-        x1="0"
-        y1="60"
-        x2="100"
-        y2="60"
-        stroke={c.hud}
-        strokeWidth="0.4"
-        opacity="0.3"
-      />
-      <line
-        x1="0"
-        y1="80"
-        x2="100"
-        y2="80"
-        stroke={c.hud}
-        strokeWidth="0.4"
-        opacity="0.3"
-      />
+      <line x1="0" y1="20" x2="100" y2="20" stroke={c.hud} strokeWidth="0.4" opacity="0.3" />
+      <line x1="0" y1="40" x2="100" y2="40" stroke={c.hud} strokeWidth="0.4" opacity="0.3" />
+      <line x1="0" y1="60" x2="100" y2="60" stroke={c.hud} strokeWidth="0.4" opacity="0.3" />
+      <line x1="0" y1="80" x2="100" y2="80" stroke={c.hud} strokeWidth="0.4" opacity="0.3" />
 
       {/* Lock-on corner brackets */}
-      <path
-        d={brackets}
-        fill="none"
-        stroke={c.hud}
-        strokeWidth="2.5"
-        strokeLinecap="square"
-      />
+      <path d={brackets} fill="none" stroke={c.hud} strokeWidth="2.5" strokeLinecap="square" />
 
       {/* Center crosshair */}
       <line x1="42" y1="50" x2="47" y2="50" stroke={c.hud} strokeWidth="1.5" />
@@ -139,24 +98,10 @@ export function ScouterHudOverlay({
 
       {/* Power Level Readout Display */}
       <g transform="translate(14, 28)">
-        <text
-          x="0"
-          y="0"
-          fill={c.hud}
-          fontSize="6"
-          fontWeight="bold"
-          letterSpacing="1"
-        >
+        <text x="0" y="0" fill={c.hud} fontSize="6" fontWeight="bold" letterSpacing="1">
           BATTLE POWER
         </text>
-        <text
-          x="0"
-          y="12"
-          fill={c.hud}
-          fontSize="13"
-          fontWeight="900"
-          letterSpacing="1.5"
-        >
+        <text x="0" y="12" fill={c.hud} fontSize="13" fontWeight="900" letterSpacing="1.5">
           {powerLevel}
         </text>
       </g>

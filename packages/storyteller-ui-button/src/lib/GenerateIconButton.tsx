@@ -4,10 +4,7 @@ import { ButtonHTMLAttributes } from "react";
 import { twMerge } from "tailwind-merge";
 import { Tooltip } from "@storyteller/ui-tooltip";
 
-interface GenerateIconButtonProps extends Omit<
-  ButtonHTMLAttributes<HTMLButtonElement>,
-  "children"
-> {
+interface GenerateIconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
   credits?: number | null;
   loading?: boolean;
 }
@@ -17,23 +14,13 @@ interface GenerateIconButtonProps extends Omit<
  * arrow-up button. Desktop promptboxes use this; the mobile form keeps the
  * labeled `GenerateButton` pill.
  */
-export const GenerateIconButton = ({
-  credits,
-  loading,
-  className,
-  disabled,
-  ...rest
-}: GenerateIconButtonProps) => {
+export const GenerateIconButton = ({ credits, loading, className, disabled, ...rest }: GenerateIconButtonProps) => {
   const isDisabled = disabled || loading;
 
   return (
     <div className={twMerge("flex shrink-0 items-center gap-2.5", className)}>
       {credits != null && (
-        <Tooltip
-          content={`${credits} credit${credits !== 1 ? "s" : ""} cost`}
-          position="top"
-          className="z-50"
-        >
+        <Tooltip content={`${credits} credit${credits !== 1 ? "s" : ""} cost`} position="top" className="z-50">
           <span
             className={twMerge(
               "flex items-center gap-1.5 ms-1.5 text-[13px] font-semibold tabular-nums text-base-fg/80 transition-opacity",
@@ -52,10 +39,7 @@ export const GenerateIconButton = ({
         disabled={isDisabled}
         {...rest}
       >
-        <DynamicIcon
-          icon={loading ? LoaderCircleIcon : ArrowUpIcon}
-          className={loading ? "animate-spin" : undefined}
-        />
+        <DynamicIcon icon={loading ? LoaderCircleIcon : ArrowUpIcon} className={loading ? "animate-spin" : undefined} />
       </button>
     </div>
   );

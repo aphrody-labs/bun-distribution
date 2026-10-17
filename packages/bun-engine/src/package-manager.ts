@@ -74,7 +74,8 @@ export async function runEnginePackageManager(args: string[]): Promise<number> {
     console.log(JSON.stringify(await listFirmware(args[1]), null, 2));
     return 0;
   }
-  if (args[0] === "run" && args[2]) return runNative(["run", args[1]!, await pm.resolveImage(args[2]), ...args.slice(3)]);
+  if (args[0] === "run" && args[2])
+    return runNative(["run", args[1]!, await pm.resolveImage(args[2]), ...args.slice(3)]);
   if (args[0] === "firmware:index") {
     console.log(JSON.stringify(await fetchFirmwareCatalog(), null, 2));
     return 0;
@@ -102,10 +103,13 @@ export async function runEnginePackageManager(args: string[]): Promise<number> {
       return print({ manifest: await pm.init() });
     case "install":
     case "i":
-      return print(await pm.install({ frozen: rest.includes("--frozen-lockfile"), sources: rest.includes("--sources") }));
+      return print(
+        await pm.install({ frozen: rest.includes("--frozen-lockfile"), sources: rest.includes("--sources") }),
+      );
     case "add":
     case "a":
-      if (!rest.length) throw new Error(`usage:
+      if (!rest.length)
+        throw new Error(`usage:
   ${usage}`);
       await pm.add(rest);
       return print(await pm.list());
@@ -129,7 +133,16 @@ export async function runEnginePackageManager(args: string[]): Promise<number> {
     case "mirrors": {
       const [action, service] = rest;
       if (action === "index") return print(await indexMirrors());
-      if (action === "probe") return print((await probeMirrors(service)).map(({ service: s, url, ok, status, latencyMs }) => ({ service: s, url, ok, status, latencyMs })));
+      if (action === "probe")
+        return print(
+          (await probeMirrors(service)).map(({ service: s, url, ok, status, latencyMs }) => ({
+            service: s,
+            url,
+            ok,
+            status,
+            latencyMs,
+          })),
+        );
       return print(listMirrors(action));
     }
     case "bios":

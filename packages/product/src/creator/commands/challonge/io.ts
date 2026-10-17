@@ -20,7 +20,7 @@ export function defaultIo(): Io {
     fetch: (input, init) => fetch(input, init),
     sleep: realSleep,
     random: Math.random,
-    out: (line) => console.log(line),
-    err: (line) => console.error(line),
+    out: line => console.log(line),
+    err: line => console.error(line),
   };
 }

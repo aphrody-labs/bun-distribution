@@ -3,11 +3,33 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** vmdevicehost.dll!HdvCreateDeviceInstance */
-  HdvCreateDeviceInstance(deviceHostHandle: Win32Pointer, deviceType: number, deviceClassId: Win32Pointer, deviceInstanceId: Win32Pointer, deviceInterface: Win32Pointer, deviceContext: Win32Pointer, deviceHandle: Win32Pointer): number;
+  HdvCreateDeviceInstance(
+    deviceHostHandle: Win32Pointer,
+    deviceType: number,
+    deviceClassId: Win32Pointer,
+    deviceInstanceId: Win32Pointer,
+    deviceInterface: Win32Pointer,
+    deviceContext: Win32Pointer,
+    deviceHandle: Win32Pointer,
+  ): number;
   /** vmdevicehost.dll!HdvCreateGuestMemoryAperture */
-  HdvCreateGuestMemoryAperture(requestor: Win32Pointer, guestPhysicalAddress: number | bigint, byteCount: number, writeProtected: number, mappedAddress: Win32Pointer): number;
+  HdvCreateGuestMemoryAperture(
+    requestor: Win32Pointer,
+    guestPhysicalAddress: number | bigint,
+    byteCount: number,
+    writeProtected: number,
+    mappedAddress: Win32Pointer,
+  ): number;
   /** vmdevicehost.dll!HdvCreateSectionBackedMmioRange */
-  HdvCreateSectionBackedMmioRange(requestor: Win32Pointer, barIndex: number, offsetInPages: number | bigint, lengthInPages: number | bigint, MappingFlags: number, sectionHandle: Win32Pointer, sectionOffsetInPages: number | bigint): number;
+  HdvCreateSectionBackedMmioRange(
+    requestor: Win32Pointer,
+    barIndex: number,
+    offsetInPages: number | bigint,
+    lengthInPages: number | bigint,
+    MappingFlags: number,
+    sectionHandle: Win32Pointer,
+    sectionOffsetInPages: number | bigint,
+  ): number;
   /** vmdevicehost.dll!HdvDeliverGuestInterrupt */
   HdvDeliverGuestInterrupt(requestor: Win32Pointer, msiAddress: number | bigint, msiData: number): number;
   /** vmdevicehost.dll!HdvDestroyGuestMemoryAperture */
@@ -19,15 +41,38 @@ interface Functions {
   /** vmdevicehost.dll!HdvInitializeDeviceHostEx */
   HdvInitializeDeviceHostEx(computeSystem: Win32Pointer, flags: number, deviceHostHandle: Win32Pointer): number;
   /** vmdevicehost.dll!HdvReadGuestMemory */
-  HdvReadGuestMemory(requestor: Win32Pointer, guestPhysicalAddress: number | bigint, byteCount: number, buffer: Win32Pointer): number;
+  HdvReadGuestMemory(
+    requestor: Win32Pointer,
+    guestPhysicalAddress: number | bigint,
+    byteCount: number,
+    buffer: Win32Pointer,
+  ): number;
   /** vmdevicehost.dll!HdvRegisterDoorbell */
-  HdvRegisterDoorbell(requestor: Win32Pointer, BarIndex: number, BarOffset: number | bigint, TriggerValue: number | bigint, Flags: number | bigint, DoorbellEvent: Win32Pointer): number;
+  HdvRegisterDoorbell(
+    requestor: Win32Pointer,
+    BarIndex: number,
+    BarOffset: number | bigint,
+    TriggerValue: number | bigint,
+    Flags: number | bigint,
+    DoorbellEvent: Win32Pointer,
+  ): number;
   /** vmdevicehost.dll!HdvTeardownDeviceHost */
   HdvTeardownDeviceHost(deviceHostHandle: Win32Pointer): number;
   /** vmdevicehost.dll!HdvUnregisterDoorbell */
-  HdvUnregisterDoorbell(requestor: Win32Pointer, BarIndex: number, BarOffset: number | bigint, TriggerValue: number | bigint, Flags: number | bigint): number;
+  HdvUnregisterDoorbell(
+    requestor: Win32Pointer,
+    BarIndex: number,
+    BarOffset: number | bigint,
+    TriggerValue: number | bigint,
+    Flags: number | bigint,
+  ): number;
   /** vmdevicehost.dll!HdvWriteGuestMemory */
-  HdvWriteGuestMemory(requestor: Win32Pointer, guestPhysicalAddress: number | bigint, byteCount: number, buffer: Win32Pointer): number;
+  HdvWriteGuestMemory(
+    requestor: Win32Pointer,
+    guestPhysicalAddress: number | bigint,
+    byteCount: number,
+    buffer: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

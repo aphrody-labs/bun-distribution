@@ -8,30 +8,13 @@
 import { Channel, invoke } from "@aphrody/tauri/api/core";
 import { AphrodyAvatar } from "@aphrody/identity";
 import { Icon, Kbd, Tooltip } from "@aphrody/m3-primitives";
-import {
-  type FormEvent,
-  type KeyboardEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ThreadSummary } from "./history";
 import { HistoryPanel, listAllThreads } from "./history-panel";
 import { Onboarding } from "./onboarding";
-import {
-  hydratePreferences,
-  loadPreferences,
-  type Preferences,
-  savePreferences,
-} from "./preferences";
+import { hydratePreferences, loadPreferences, type Preferences, savePreferences } from "./preferences";
 import { type Attachment, buildInput, imageDataUrl } from "./quickbar-input";
-import {
-  CANONICAL_COMMANDS,
-  suggest,
-  type Suggestion,
-} from "./quickbar-suggest";
+import { CANONICAL_COMMANDS, suggest, type Suggestion } from "./quickbar-suggest";
 import { emitTo } from "@aphrody/tauri/api/event";
 import { MENU_EVENTS } from "./menu-commands";
 
@@ -53,13 +36,9 @@ type RpcResponse = {
 let requestId = 0;
 
 async function rpc(method: string, params: Record<string, unknown> = {}) {
-  const request =
-    method === "initialized"
-      ? { method, params }
-      : { id: ++requestId, method, params };
+  const request = method === "initialized" ? { method, params } : { id: ++requestId, method, params };
   const response = await invoke<RpcResponse>("aphrody_rpc", { request });
-  if (response.error)
-    throw new Error(response.error.message ?? "Aphrody RPC failure");
+  if (response.error) throw new Error(response.error.message ?? "Aphrody RPC failure");
   return response.result ?? {};
 }
 
@@ -69,17 +48,12 @@ async function handshake() {
       clientInfo: { name: "aphrody-quickbar", version: "1.0.0" },
     });
   } catch (error) {
-    if (
-      !(error instanceof Error) ||
-      !/already initialized/i.test(error.message)
-    )
-      throw error;
+    if (!(error instanceof Error) || !/already initialized/i.test(error.message)) throw error;
   }
   await rpc("initialized");
 }
 
-const quickbar = (action: Record<string, unknown>) =>
-  invoke<void>("aphrody_quickbar", { action });
+const quickbar = (action: Record<string, unknown>) => invoke<void>("aphrody_quickbar", { action });
 
 function IconAction({
   icon,
@@ -147,17 +121,14 @@ export function QuickBar() {
   }, [connect]);
 
   // Stable identity: HistoryPanel reloads whenever its `rpc` prop changes.
-  const historyRpc = useCallback(
-    async (method: string, params?: Record<string, unknown>) => {
-      ready.current ??= handshake().catch((e: unknown) => {
-        ready.current = null;
-        throw e;
-      });
-      await ready.current;
-      return rpc(method, params);
-    },
-    [],
-  );
+  const historyRpc = useCallback(async (method: string, params?: Record<string, unknown>) => {
+    ready.current ??= handshake().catch((e: unknown) => {
+      ready.current = null;
+      throw e;
+    });
+    await ready.current;
+    return rpc(method, params);
+  }, []);
 
   const suggestions = useMemo(
     () =>
@@ -167,10 +138,7 @@ export function QuickBar() {
             navigationTargets: [],
             files: [],
             commands: CANONICAL_COMMANDS.filter(
-              (item) =>
-                item.menu ||
-                item.command === "clear" ||
-                item.command === "theme",
+              item => item.menu || item.command === "clear" || item.command === "theme",
             ),
           }),
     [draft, threads, prefs.sources, busy, showHistory],
@@ -181,7 +149,7 @@ export function QuickBar() {
     document.body.style.background = "transparent";
     const focus = () => {
       void hydratePreferences()
-        .then((stored) => {
+        .then(stored => {
           setPrefs(stored);
           setPrefsLoaded(true);
           return stored;
@@ -197,9 +165,7 @@ export function QuickBar() {
 
   const persist = (next: Preferences) => {
     setPrefs(next);
-    void savePreferences(next).catch((e: unknown) =>
-      setError(`Preferences: ${String(e)}`),
-    );
+    void savePreferences(next).catch((e: unknown) => setError(`Preferences: ${String(e)}`));
   };
 
   const finishOnboarding = () => {
@@ -207,8 +173,7 @@ export function QuickBar() {
     inputRef.current?.focus();
   };
 
-  const chooseModelsDir = (modelsDir: string | null) =>
-    persist({ ...prefs, modelsDir });
+  const chooseModelsDir = (modelsDir: string | null) => persist({ ...prefs, modelsDir });
 
   const openThread = (thread: ThreadSummary) => {
     setActiveThread(thread);
@@ -250,9 +215,7 @@ export function QuickBar() {
         await savePreferences(next);
         setPrefs(next);
       } else {
-        throw new Error(
-          "Cette action n'est pas disponible dans la barre rapide.",
-        );
+        throw new Error("Cette action n'est pas disponible dans la barre rapide.");
       }
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : String(failure));
@@ -273,10 +236,7 @@ export function QuickBar() {
     return () => observer.disconnect();
   }, []);
 
-  const hide = () =>
-    void quickbar({ action: "hide" }).catch((e: unknown) =>
-      setError(String(e)),
-    );
+  const hide = () => void quickbar({ action: "hide" }).catch((e: unknown) => setError(String(e)));
 
   const attachFile = async () => {
     try {
@@ -287,10 +247,7 @@ export function QuickBar() {
         directory: false,
       });
       const paths = Array.isArray(picked) ? picked : picked ? [picked] : [];
-      setAttachments((items) => [
-        ...items,
-        ...paths.map((path) => ({ kind: "file" as const, path })),
-      ]);
+      setAttachments(items => [...items, ...paths.map(path => ({ kind: "file" as const, path }))]);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -303,10 +260,7 @@ export function QuickBar() {
       const result = await invoke<unknown>("aphrody_capture_primary");
       const url = imageDataUrl(result);
       if (!url) throw new Error("La capture n'a renvoye aucune image.");
-      setAttachments((items) => [
-        ...items,
-        { kind: "image", label: "Capture d'ecran", url },
-      ]);
+      setAttachments(items => [...items, { kind: "image", label: "Capture d'ecran", url }]);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -345,13 +299,10 @@ export function QuickBar() {
       }
       const channel = new Channel<Notification>();
       // oxlint-disable-next-line unicorn/prefer-add-event-listener -- Channel from the Tauri API exposes a single onmessage slot with ordered delivery; it is not an EventTarget
-      channel.onmessage = (message) => {
+      channel.onmessage = message => {
         if (message.method === "item/agentMessage/delta") {
-          setAnswer((text) => text + (message.params?.delta ?? ""));
-        } else if (
-          message.method === "item/completed" &&
-          message.params?.item?.type === "agentMessage"
-        ) {
+          setAnswer(text => text + (message.params?.delta ?? ""));
+        } else if (message.method === "item/completed" && message.params?.item?.type === "agentMessage") {
           setAnswer(message.params.item.text ?? "");
         } else if (message.method === "turn/completed") {
           setBusy(false);
@@ -382,15 +333,12 @@ export function QuickBar() {
       if (highlight >= 0) setHighlight(-1);
       else if (showHistory) setShowHistory(false);
       else hide();
-    } else if (
-      suggestions.length > 0 &&
-      (event.key === "ArrowDown" || event.key === "ArrowUp")
-    ) {
+    } else if (suggestions.length > 0 && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
       event.preventDefault();
       // Cycle through -1 (the input itself) and every suggestion.
       const span = suggestions.length + 1;
       const step = event.key === "ArrowDown" ? 1 : -1;
-      setHighlight((index) => ((index + 1 + step + span) % span) - 1);
+      setHighlight(index => ((index + 1 + step + span) % span) - 1);
     } else if (event.key === "Enter" && highlight >= 0) {
       const item = suggestions[highlight];
       if (item) {
@@ -402,22 +350,19 @@ export function QuickBar() {
 
   return (
     // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- the card is a layout wrapper whose key handler sees shortcuts from every field inside it
-    <div
-      className="flex min-h-screen items-start justify-center p-2"
-      onKeyDown={onKeyDown}
-    >
+    <div className="flex min-h-screen items-start justify-center p-2" onKeyDown={onKeyDown}>
       <form
         ref={cardRef}
-        onSubmit={(event) => void submit(event)}
+        onSubmit={event => void submit(event)}
         className="w-full rounded-[28px] bg-surface-container-high p-3 text-on-surface shadow-lg"
       >
         {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- the header is a mouse-only window drag handle; keyboard users move the window through the window manager */}
         <header
           className="flex items-center gap-2 pb-2"
-          onMouseDown={(event) => {
+          onMouseDown={event => {
             if (event.button === 0 && event.target === event.currentTarget) {
-              void import("@aphrody/tauri/api/window").then(
-                ({ getCurrentWindow }) => getCurrentWindow().startDragging(),
+              void import("@aphrody/tauri/api/window").then(({ getCurrentWindow }) =>
+                getCurrentWindow().startDragging(),
               );
             }
           }}
@@ -425,12 +370,8 @@ export function QuickBar() {
           <IconAction
             icon="history"
             label={showHistory ? "Masquer l'historique" : "Historique"}
-            onClick={() => setShowHistory((open) => !open)}
-            className={
-              showHistory
-                ? "bg-secondary-container text-on-secondary-container"
-                : ""
-            }
+            onClick={() => setShowHistory(open => !open)}
+            className={showHistory ? "bg-secondary-container text-on-secondary-container" : ""}
           />
           <div className="pointer-events-none flex flex-1 items-center justify-center gap-2">
             <Icon name="auto_awesome" size={20} className="text-primary" />
@@ -445,11 +386,7 @@ export function QuickBar() {
         </header>
 
         {prefsLoaded && !prefs.onboarded && (
-          <Onboarding
-            modelsDir={prefs.modelsDir}
-            onModelsDir={chooseModelsDir}
-            onDone={finishOnboarding}
-          />
+          <Onboarding modelsDir={prefs.modelsDir} onModelsDir={chooseModelsDir} onDone={finishOnboarding} />
         )}
 
         {activeThread && (
@@ -474,11 +411,9 @@ export function QuickBar() {
           role="combobox"
           aria-expanded={suggestions.length > 0}
           aria-controls="quickbar-suggestions"
-          aria-activedescendant={
-            highlight >= 0 ? `quickbar-suggestion-${highlight}` : undefined
-          }
+          aria-activedescendant={highlight >= 0 ? `quickbar-suggestion-${highlight}` : undefined}
           aria-autocomplete="list"
-          onChange={(event) => {
+          onChange={event => {
             setDraft(event.target.value);
             setHighlight(-1);
           }}
@@ -516,8 +451,7 @@ export function QuickBar() {
                       ? item.icon
                       : item.kind === "command"
                         ? item.icon
-                        : (item.icon ??
-                          (item.isDir ? "folder" : "description"));
+                        : (item.icon ?? (item.isDir ? "folder" : "description"));
               const kindBadge =
                 item.kind === "navigation"
                   ? "Navigation"
@@ -535,26 +469,18 @@ export function QuickBar() {
                   // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/prefer-tag-over-role -- each suggestion is an option of the combobox listbox above; a native element cannot be an option outside a select
                   role="option"
                   aria-selected={index === highlight}
-                  onMouseDown={(event) => {
+                  onMouseDown={event => {
                     event.preventDefault();
                     void pick(item);
                   }}
                   className={`flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-full px-4 text-body-large ${index === highlight ? "bg-secondary-container text-on-secondary-container" : "hover:bg-on-surface/8"}`}
                 >
                   <div className="flex items-center gap-3 truncate">
-                    <Icon
-                      name={iconName}
-                      size={20}
-                      className="shrink-0 text-on-surface-variant"
-                    />
+                    <Icon name={iconName} size={20} className="shrink-0 text-on-surface-variant" />
                     {item.kind === "calculator" ? (
                       <span>
-                        <span className="text-on-surface-variant">
-                          {item.expression} ={" "}
-                        </span>
-                        <strong className="text-title-medium">
-                          {item.value}
-                        </strong>
+                        <span className="text-on-surface-variant">{item.expression} = </span>
+                        <strong className="text-title-medium">{item.value}</strong>
                       </span>
                     ) : item.kind === "thread" ? (
                       <span className="truncate">{item.thread.title}</span>
@@ -595,24 +521,13 @@ export function QuickBar() {
                 key={`${item.kind}-${index}`}
                 className="flex items-center gap-1 rounded-sm bg-secondary-container py-1 pr-1 pl-3 text-label-medium text-on-secondary-container"
               >
-                <Icon
-                  name={
-                    item.kind === "image" ? "screenshot_monitor" : "description"
-                  }
-                  size={16}
-                />
-                <span className="max-w-60 truncate">
-                  {item.kind === "image" ? item.label : item.path}
-                </span>
+                <Icon name={item.kind === "image" ? "screenshot_monitor" : "description"} size={16} />
+                <span className="max-w-60 truncate">{item.kind === "image" ? item.label : item.path}</span>
                 <button
                   type="button"
                   aria-label="Retirer"
                   className="inline-flex size-6 items-center justify-center rounded-full hover:bg-on-secondary-container/8"
-                  onClick={() =>
-                    setAttachments((items) =>
-                      items.filter((_, i) => i !== index),
-                    )
-                  }
+                  onClick={() => setAttachments(items => items.filter((_, i) => i !== index))}
                 >
                   <Icon name="close" size={14} />
                 </button>
@@ -622,12 +537,7 @@ export function QuickBar() {
         )}
 
         <div className="mt-2 flex items-center gap-1">
-          <IconAction
-            icon="add"
-            label="Joindre un fichier"
-            onClick={() => void attachFile()}
-            disabled={busy}
-          />
+          <IconAction icon="add" label="Joindre un fichier" onClick={() => void attachFile()} disabled={busy} />
           <div className="flex-1" />
           <IconAction
             icon="present_to_all"
@@ -652,9 +562,7 @@ export function QuickBar() {
                 {error}
               </span>
             ) : (
-              answer || (
-                <span className="text-on-surface-variant">Reflexion...</span>
-              )
+              answer || <span className="text-on-surface-variant">Reflexion...</span>
             )}
           </div>
         )}

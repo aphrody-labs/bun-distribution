@@ -1,19 +1,10 @@
 import { useCallback, useRef, useMemo } from "react";
 import { useBoxSelect } from "../../../selection/hooks/use-box-select";
-import {
-  useKeyframeSelection,
-  getSelectedKeyframeId,
-} from "./use-keyframe-selection";
-import type {
-  SelectedKeyframeRef,
-  ElementKeyframe,
-} from "../../../animation/types";
+import { useKeyframeSelection, getSelectedKeyframeId } from "./use-keyframe-selection";
+import type { SelectedKeyframeRef, ElementKeyframe } from "../../../animation/types";
 import type { ExpandedRow } from "../../components/expanded-layout";
 import { timelineTimeToSnappedPixels } from "../../pixel-utils";
-import {
-  KEYFRAME_LANE_HEIGHT_PX,
-  KEYFRAME_DIAMOND_SIZE_PX,
-} from "../../components/layout";
+import { KEYFRAME_LANE_HEIGHT_PX, KEYFRAME_DIAMOND_SIZE_PX } from "../../components/layout";
 
 export function useKeyframeBoxSelect({
   trackId,
@@ -32,12 +23,8 @@ export function useKeyframeBoxSelect({
   zoomLevel: number;
   elementLeft: number;
 }) {
-  const {
-    selectedKeyframes,
-    keyframeSelectionAnchor,
-    setKeyframeSelection,
-    clearKeyframeSelection,
-  } = useKeyframeSelection();
+  const { selectedKeyframes, keyframeSelectionAnchor, setKeyframeSelection, clearKeyframeSelection } =
+    useKeyframeSelection();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const initialKeyframesRef = useRef<SelectedKeyframeRef[]>([]);
@@ -51,9 +38,7 @@ export function useKeyframeBoxSelect({
     }> = [];
 
     for (const kf of keyframes) {
-      const rowIndex = rows.findIndex(
-        (r) => r.propertyPath === kf.propertyPath,
-      );
+      const rowIndex = rows.findIndex(r => r.propertyPath === kf.propertyPath);
       if (rowIndex === -1) continue;
 
       const ref: SelectedKeyframeRef = {
@@ -77,15 +62,7 @@ export function useKeyframeBoxSelect({
     }
 
     return entries;
-  }, [
-    keyframes,
-    rows,
-    trackId,
-    elementId,
-    displayedStartTime,
-    zoomLevel,
-    elementLeft,
-  ]);
+  }, [keyframes, rows, trackId, elementId, displayedStartTime, zoomLevel, elementLeft]);
 
   const idToRefMap = useMemo(() => {
     const map = new Map<string, SelectedKeyframeRef>();
@@ -96,27 +73,17 @@ export function useKeyframeBoxSelect({
   }, [keyframeEntries]);
 
   const selectedIds = useMemo(
-    () =>
-      selectedKeyframes.map((keyframe) => getSelectedKeyframeId({ keyframe })),
+    () => selectedKeyframes.map(keyframe => getSelectedKeyframeId({ keyframe })),
     [selectedKeyframes],
   );
 
   const anchorId = useMemo(
-    () =>
-      keyframeSelectionAnchor
-        ? getSelectedKeyframeId({ keyframe: keyframeSelectionAnchor })
-        : null,
+    () => (keyframeSelectionAnchor ? getSelectedKeyframeId({ keyframe: keyframeSelectionAnchor }) : null),
     [keyframeSelectionAnchor],
   );
 
   const resolveIntersections = useCallback(
-    ({
-      startPos,
-      currentPos,
-    }: {
-      startPos: { x: number; y: number };
-      currentPos: { x: number; y: number };
-    }) => {
+    ({ startPos, currentPos }: { startPos: { x: number; y: number }; currentPos: { x: number; y: number } }) => {
       const container = containerRef.current;
       if (!container) return [];
 
@@ -135,11 +102,9 @@ export function useKeyframeBoxSelect({
       const halfHit = KEYFRAME_DIAMOND_SIZE_PX / 2;
 
       return keyframeEntries
-        .filter((entry) => {
+        .filter(entry => {
           const kfX = entry.offsetPx;
-          const kfY =
-            entry.rowIndex * KEYFRAME_LANE_HEIGHT_PX +
-            KEYFRAME_LANE_HEIGHT_PX / 2;
+          const kfY = entry.rowIndex * KEYFRAME_LANE_HEIGHT_PX + KEYFRAME_LANE_HEIGHT_PX / 2;
 
           return !(
             kfX + halfHit < selLeft ||
@@ -148,7 +113,7 @@ export function useKeyframeBoxSelect({
             kfY - halfHit > selBottom
           );
         })
-        .map((entry) => entry.id);
+        .map(entry => entry.id);
     },
     [keyframeEntries],
   );
@@ -164,7 +129,7 @@ export function useKeyframeBoxSelect({
       isAdditive: boolean;
     }) => {
       const intersectedRefs = intersectedIds
-        .map((id) => idToRefMap.get(id))
+        .map(id => idToRefMap.get(id))
         .filter((ref): ref is SelectedKeyframeRef => ref != null);
 
       if (isAdditive) {

@@ -31,17 +31,11 @@ describe("env names (D9)", () => {
         pooled: true,
         fallbacks: ["DATABASE_URL"],
       }),
-    ).toEqual([
-      "APHRODY_TRAINING_DATABASE_URL_POOLED",
-      "APHRODY_TRAINING_DATABASE_URL",
-      "DATABASE_URL",
-    ]);
+    ).toEqual(["APHRODY_TRAINING_DATABASE_URL_POOLED", "APHRODY_TRAINING_DATABASE_URL", "DATABASE_URL"]);
   });
 
   test("direct lookup never uses the pooled name", () => {
-    expect(
-      databaseUrlNames({ prefix: "rg", fallbacks: ["RG_DATABASE_URL"] }),
-    ).toEqual(["RG_DATABASE_URL"]);
+    expect(databaseUrlNames({ prefix: "rg", fallbacks: ["RG_DATABASE_URL"] })).toEqual(["RG_DATABASE_URL"]);
   });
 
   test("resolution order and source reporting", () => {
@@ -50,9 +44,7 @@ describe("env names (D9)", () => {
       APHRODY_TRAINING_DATABASE_URL_POOLED: POOLED,
       DATABASE_URL: "postgres://legacy@127.0.0.1/x",
     };
-    expect(
-      resolveDatabaseUrl({ env, prefix: "APHRODY_TRAINING", pooled: true }),
-    ).toEqual({
+    expect(resolveDatabaseUrl({ env, prefix: "APHRODY_TRAINING", pooled: true })).toEqual({
       url: POOLED,
       name: "APHRODY_TRAINING_DATABASE_URL_POOLED",
       pooled: true,
@@ -116,12 +108,10 @@ describe("pool size", () => {
 
 describe("URL helpers", () => {
   test("redactUrl hides passwords and secret parameters", () => {
-    expect(
-      redactUrl("postgres://user:s3cret@db.example:5432/app?sslmode=require"),
-    ).toBe("postgres://user:***@db.example:5432/app?sslmode=require");
-    expect(redactUrl("redis://:pw@127.0.0.1:6379")).toBe(
-      "redis://:***@127.0.0.1:6379",
+    expect(redactUrl("postgres://user:s3cret@db.example:5432/app?sslmode=require")).toBe(
+      "postgres://user:***@db.example:5432/app?sslmode=require",
     );
+    expect(redactUrl("redis://:pw@127.0.0.1:6379")).toBe("redis://:***@127.0.0.1:6379");
     expect(redactUrl("postgres://db/app?password=x&sslpassword=y")).toBe(
       "postgres://db/app?password=***&sslpassword=***",
     );

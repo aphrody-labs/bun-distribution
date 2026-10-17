@@ -10,9 +10,7 @@ export interface ShortcutRow {
   section: "Tools" | "Selection" | "Editing" | "Viewport" | "History";
 }
 
-const isMac =
-  typeof navigator !== "undefined" &&
-  /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
 
 export const MOD = isMac ? "⌘" : "Ctrl";
 
@@ -20,7 +18,7 @@ export const MOD = isMac ? "⌘" : "Ctrl";
 // (⌘⇧Z); other platforms use "+" separators (Ctrl+Shift+Z). Pass keys in
 // order, e.g. [MOD, "Shift", "Z"].
 export const fmtShortcut = (keys: string[]): string =>
-  isMac ? keys.map((k) => (k === "Shift" ? "⇧" : k)).join("") : keys.join("+");
+  isMac ? keys.map(k => (k === "Shift" ? "⇧" : k)).join("") : keys.join("+");
 
 export const SHORTCUTS: ShortcutRow[] = [
   // Tools

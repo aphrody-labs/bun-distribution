@@ -11,13 +11,7 @@ export interface SenzuBeanProps extends Omit<SVGProps<SVGSVGElement>, "size"> {
   decorative?: boolean;
 }
 
-export function SenzuBean({
-  size = 40,
-  className = "",
-  title,
-  decorative = false,
-  ...props
-}: SenzuBeanProps) {
+export function SenzuBean({ size = 40, className = "", title, decorative = false, ...props }: SenzuBeanProps) {
   const a11y = decorative
     ? { "aria-hidden": true as const }
     : {
@@ -44,21 +38,9 @@ export function SenzuBean({
         strokeLinejoin="round"
       />
       {/* Highlight curvature */}
-      <path
-        d="M 34 32 C 54 22 76 30 80 48"
-        fill="none"
-        stroke="#b5e48c"
-        strokeWidth="3.5"
-        strokeLinecap="round"
-      />
+      <path d="M 34 32 C 54 22 76 30 80 48" fill="none" stroke="#b5e48c" strokeWidth="3.5" strokeLinecap="round" />
       {/* Center seam groove */}
-      <path
-        d="M 44 45 C 52 56 46 68 50 78"
-        fill="none"
-        stroke="#38b000"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
+      <path d="M 44 45 C 52 56 46 68 50 78" fill="none" stroke="#38b000" strokeWidth="3" strokeLinecap="round" />
     </svg>
   );
 }

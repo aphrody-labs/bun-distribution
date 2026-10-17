@@ -18,11 +18,7 @@ import {
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import {
-  FloatingToolbar,
-  FloatingToolbarButton,
-  FloatingToolbarDivider,
-} from "./FloatingToolbar";
+import { FloatingToolbar, FloatingToolbarButton, FloatingToolbarDivider } from "./FloatingToolbar";
 import { useMoodboardStore } from "./MoodboardStore";
 import { Tool } from "./types";
 import { MOD, fmtShortcut } from "./overlays/shortcuts";
@@ -47,35 +43,33 @@ interface Props {
 }
 
 export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
-  const tool = useMoodboardStore((s) => s.tool);
-  const setTool = useMoodboardStore((s) => s.setTool);
-  const group = useMoodboardStore((s) => s.group);
-  const groupClusters = useMoodboardStore((s) => s.groupClusters);
-  const ungroup = useMoodboardStore((s) => s.ungroup);
-  const deleteSelected = useMoodboardStore((s) => s.deleteSelected);
-  const undo = useMoodboardStore((s) => s.undo);
-  const redo = useMoodboardStore((s) => s.redo);
-  const applyLayoutPatches = useMoodboardStore((s) => s.applyLayoutPatches);
-  const selectedIds = useMoodboardStore((s) => s.selectedIds);
-  const nodes = useMoodboardStore((s) => s.nodes);
-  const rootOrder = useMoodboardStore((s) => s.rootOrder);
-  const gridSpacing = useMoodboardStore((s) => s.gridSpacing);
-  const snapEnabled = useMoodboardStore((s) => s.snapEnabled);
-  const toggleSnap = useMoodboardStore((s) => s.toggleSnap);
+  const tool = useMoodboardStore(s => s.tool);
+  const setTool = useMoodboardStore(s => s.setTool);
+  const group = useMoodboardStore(s => s.group);
+  const groupClusters = useMoodboardStore(s => s.groupClusters);
+  const ungroup = useMoodboardStore(s => s.ungroup);
+  const deleteSelected = useMoodboardStore(s => s.deleteSelected);
+  const undo = useMoodboardStore(s => s.undo);
+  const redo = useMoodboardStore(s => s.redo);
+  const applyLayoutPatches = useMoodboardStore(s => s.applyLayoutPatches);
+  const selectedIds = useMoodboardStore(s => s.selectedIds);
+  const nodes = useMoodboardStore(s => s.nodes);
+  const rootOrder = useMoodboardStore(s => s.rootOrder);
+  const gridSpacing = useMoodboardStore(s => s.gridSpacing);
+  const snapEnabled = useMoodboardStore(s => s.snapEnabled);
+  const toggleSnap = useMoodboardStore(s => s.toggleSnap);
 
   const handleFitToGrid = () => {
     if (selectedIds.size === 0) return;
     const targetNodes = Array.from(selectedIds)
-      .map((id) => nodes[id])
+      .map(id => nodes[id])
       .filter(Boolean);
     applyLayoutPatches(computeFitToGridPatches(targetNodes, gridSpacing));
   };
 
   const handlePackCollage = () => {
     const ids = selectedIds.size > 0 ? Array.from(selectedIds) : rootOrder;
-    const targetNodes = ids
-      .map((id) => nodes[id])
-      .filter((n) => n && n.parentId === null);
+    const targetNodes = ids.map(id => nodes[id]).filter(n => n && n.parentId === null);
     if (targetNodes.length < 2) return;
     const aabb = computeAABB(targetNodes);
     if (!aabb) return;
@@ -84,12 +78,10 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
 
   const handleAutoGroup = () => {
     const ids = selectedIds.size > 0 ? Array.from(selectedIds) : rootOrder;
-    const targetNodes = ids
-      .map((id) => nodes[id])
-      .filter((n) => n && n.parentId === null);
+    const targetNodes = ids.map(id => nodes[id]).filter(n => n && n.parentId === null);
     if (targetNodes.length < 2) return;
     const clusters = clusterByProximity(targetNodes);
-    const clusterIds = clusters.map((c) => c.map((n) => n.id));
+    const clusterIds = clusters.map(c => c.map(n => n.id));
     groupClusters(clusterIds);
   };
 
@@ -100,12 +92,7 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
 
   return (
     <FloatingToolbar>
-      <Tooltip
-        content="Add an image"
-        position="bottom"
-        delay={300}
-        closeOnClick
-      >
+      <Tooltip content="Add an image" position="bottom" delay={300} closeOnClick>
         <PopoverMenu
           mode="button"
           position="bottom"
@@ -133,11 +120,7 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
 
       <FloatingToolbarDivider />
 
-      <ButtonIconSelect
-        options={MODES}
-        onOptionChange={(value) => setTool(value as Tool)}
-        selectedOption={tool}
-      />
+      <ButtonIconSelect options={MODES} onOptionChange={value => setTool(value as Tool)} selectedOption={tool} />
 
       <FloatingToolbarDivider />
 

@@ -37,12 +37,9 @@ export function groupModelItems(
 
   const orderedFamilies = [...families.keys()].sort(compareFamilies);
 
-  return orderedFamilies.map((family) => {
-    const children = families
-      .get(family)!
-      .slice()
-      .sort(compareModelLabelsNewestFirst);
-    const selectedChild = children.find((child) => child.selected);
+  return orderedFamilies.map(family => {
+    const children = families.get(family)!.slice().sort(compareModelLabelsNewestFirst);
+    const selectedChild = children.find(child => child.selected);
     return {
       label: family,
       selected: selectedChild !== undefined,

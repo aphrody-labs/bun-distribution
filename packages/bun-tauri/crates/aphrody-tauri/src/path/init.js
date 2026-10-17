@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
-Object.defineProperty(window.__TAURI_INTERNALS__.plugins, 'path', {
+Object.defineProperty(window.__TAURI_INTERNALS__.plugins, "path", {
   value: {
     sep: __TEMPLATE_sep__,
-    delimiter: __TEMPLATE_delimiter__
-  }
-})
+    delimiter: __TEMPLATE_delimiter__,
+  },
+});

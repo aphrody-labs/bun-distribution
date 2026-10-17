@@ -1,8 +1,4 @@
-import type {
-  MaskDefaultContext,
-  MaskDefinition,
-  RectangleMaskParams,
-} from "../../types";
+import type { MaskDefaultContext, MaskDefinition, RectangleMaskParams } from "../../types";
 import {
   BOX_LIKE_MASK_PARAMS,
   buildBoxMaskInteraction,
@@ -18,15 +14,10 @@ import {
 // sizeMode hides the width handle from the user — width auto-scales to
 // always span the canvas.
 
-function getDefaultCinematicBarsMaskParams({
-  elementSize,
-}: MaskDefaultContext): RectangleMaskParams {
+function getDefaultCinematicBarsMaskParams({ elementSize }: MaskDefaultContext): RectangleMaskParams {
   const absWidth = Math.abs(elementSize?.width ?? 0);
   const absHeight = Math.abs(elementSize?.height ?? 0);
-  const diagonal =
-    absWidth > 0 && absHeight > 0
-      ? Math.sqrt(absWidth ** 2 + absHeight ** 2)
-      : 0;
+  const diagonal = absWidth > 0 && absHeight > 0 ? Math.sqrt(absWidth ** 2 + absHeight ** 2) : 0;
   const fullSpanWidth = absWidth > 0 ? diagonal / absWidth : Math.SQRT2;
 
   return {
@@ -58,7 +49,7 @@ function buildBandPath({
     { x: centerX + halfWidth, y: centerY - halfHeight },
     { x: centerX + halfWidth, y: centerY + halfHeight },
     { x: centerX - halfWidth, y: centerY + halfHeight },
-  ].map((point) =>
+  ].map(point =>
     rotatePoint({
       ...point,
       centerX,
@@ -133,14 +124,8 @@ export const cinematicBarsMaskDefinition: MaskDefinition<"cinematic-bars"> = {
         return buildBandPath({
           centerX,
           centerY,
-          halfWidth: Math.max(
-            Math.max(params.width * width, width) / 2 + offset,
-            1,
-          ),
-          halfHeight: Math.max(
-            (Math.max(params.height, 0.01) * height) / 2 + offset,
-            1,
-          ),
+          halfWidth: Math.max(Math.max(params.width * width, width) / 2 + offset, 1),
+          halfHeight: Math.max((Math.max(params.height, 0.01) * height) / 2 + offset, 1),
           rotationRad,
         });
       },

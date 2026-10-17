@@ -57,19 +57,13 @@ function script(url) {
 
 export default async function init({ module_or_path } = {}) {
   if (!globalThis.crossOriginIsolated) {
-    throw new Error(
-      "melonDS needs SharedArrayBuffer: serve the page with COOP same-origin and COEP",
-    );
+    throw new Error("melonDS needs SharedArrayBuffer: serve the page with COOP same-origin and COEP");
   }
   const wasm = module_or_path ?? new URL("melonDS.wasm", base);
   const [module] = await Promise.all([
-    wasm instanceof WebAssembly.Module
-      ? wasm
-      : WebAssembly.compileStreaming(fetch(wasm)),
+    wasm instanceof WebAssembly.Module ? wasm : WebAssembly.compileStreaming(fetch(wasm)),
     globalThis.qtLoad ? null : script(new URL("qtloader.js", base)),
-    globalThis.melonDS_entry || globalThis.createQtAppInstance
-      ? null
-      : script(new URL("melonDS.js", base)),
+    globalThis.melonDS_entry || globalThis.createQtAppInstance ? null : script(new URL("melonDS.js", base)),
   ]);
   compiled = module;
 }
@@ -97,8 +91,7 @@ function mkdirs(fs, path) {
 function fnv1a(data) {
   let h = 0xcbf29ce484222325n;
   for (let i = 0; i < data.length; i += 4) {
-    for (let c = 0; c < 3; c++)
-      h = BigInt.asUintN(64, (h ^ BigInt(data[i + c])) * 0x100000001b3n);
+    for (let c = 0; c < 3; c++) h = BigInt.asUintN(64, (h ^ BigInt(data[i + c])) * 0x100000001b3n);
   }
   return h.toString(16).padStart(16, "0");
 }
@@ -135,10 +128,9 @@ class Handle {
   /** Every element under the container, descending into Qt's (nested) shadow roots. */
   #all(selector) {
     const found = [];
-    const visit = (root) => {
+    const visit = root => {
       found.push(...root.querySelectorAll(selector));
-      for (const el of root.querySelectorAll("*"))
-        if (el.shadowRoot) visit(el.shadowRoot);
+      for (const el of root.querySelectorAll("*")) if (el.shadowRoot) visit(el.shadowRoot);
     };
     visit(this.container);
     if (this.container.shadowRoot) visit(this.container.shadowRoot);
@@ -148,25 +140,18 @@ class Handle {
   /** The canvas Qt draws the main window into (largest canvas of the container). */
   get canvas() {
     const all = this.#all("canvas");
-    return (
-      all.sort((a, b) => b.width * b.height - a.width * a.height)[0] ??
-      this.container
-    );
+    return all.sort((a, b) => b.width * b.height - a.width * a.height)[0] ?? this.container;
   }
 
   #target() {
-    return (
-      this.#all("[contenteditable], input, .qt-window-input-element")[0] ??
-      this.canvas
-    );
+    return this.#all("[contenteditable], input, .qt-window-input-element")[0] ?? this.canvas;
   }
 
   #pad() {
     let bits = 0;
     for (const pad of navigator.getGamepads?.() ?? []) {
       if (!pad) continue;
-      for (const [index, bit] of PAD)
-        if (pad.buttons[index]?.pressed) bits |= bit;
+      for (const [index, bit] of PAD) if (pad.buttons[index]?.pressed) bits |= bit;
       const [x = 0, y = 0] = pad.axes;
       if (x < -0.5) bits |= 32;
       else if (x > 0.5) bits |= 16;
@@ -219,11 +204,7 @@ class Handle {
       pointerType: "mouse",
       isPrimary: true,
     };
-    const type = down
-      ? this.touching
-        ? "pointermove"
-        : "pointerdown"
-      : "pointerup";
+    const type = down ? (this.touching ? "pointermove" : "pointerdown") : "pointerup";
     if (!down && !this.touching) return;
     canvas.dispatchEvent(new PointerEvent(type, init));
     this.touching = down;
@@ -251,8 +232,7 @@ class Handle {
   get lit() {
     const data = this.#pixels();
     if (!data) return false;
-    for (let i = 0; i < data.length; i += 4)
-      if (data[i] > 16 || data[i + 1] > 16 || data[i + 2] > 16) return true;
+    for (let i = 0; i < data.length; i += 4) if (data[i] > 16 || data[i + 1] > 16 || data[i + 2] > 16) return true;
     return false;
   }
 
@@ -281,8 +261,7 @@ class Handle {
  * @param {{ system?: string }} [options]
  */
 export async function start(canvas, rom, { system = "nds" } = {}) {
-  if (system !== "nds" && system !== "nintendo-ds")
-    throw new Error(`melonDS boots nds images, not ${system}`);
+  if (system !== "nds" && system !== "nintendo-ds") throw new Error(`melonDS boots nds images, not ${system}`);
   if (!compiled) await init();
   const container = document.createElement("div");
   const box = canvas.getBoundingClientRect();
@@ -301,11 +280,10 @@ export async function start(canvas, rom, { system = "nds" } = {}) {
       module: compiled,
       entryFunction: entry,
       containerElements: [container],
-      onExit: (status) =>
-        console.warn(`melonDS exited (${status?.code ?? status?.text ?? ""})`),
+      onExit: status => console.warn(`melonDS exited (${status?.code ?? status?.text ?? ""})`),
     },
     preRun: [
-      (module) => {
+      module => {
         const fs = module.FS;
         mkdirs(fs, "/rom");
         fs.writeFile("/rom/game.nds", rom);

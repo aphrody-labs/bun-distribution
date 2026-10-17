@@ -3,17 +3,56 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** advpack.dll!AddDelBackupEntryA */
-  AddDelBackupEntryA(lpcszFileList: string | Win32Pointer, lpcszBackupDir: string | Win32Pointer, lpcszBaseName: string | Win32Pointer, dwFlags: number): number;
+  AddDelBackupEntryA(
+    lpcszFileList: string | Win32Pointer,
+    lpcszBackupDir: string | Win32Pointer,
+    lpcszBaseName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!AddDelBackupEntryW */
-  AddDelBackupEntryW(lpcszFileList: string | Win32Pointer, lpcszBackupDir: string | Win32Pointer, lpcszBaseName: string | Win32Pointer, dwFlags: number): number;
+  AddDelBackupEntryW(
+    lpcszFileList: string | Win32Pointer,
+    lpcszBackupDir: string | Win32Pointer,
+    lpcszBaseName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!AddDelBackupEntryW */
-  AddDelBackupEntry(lpcszFileList: string | Win32Pointer, lpcszBackupDir: string | Win32Pointer, lpcszBaseName: string | Win32Pointer, dwFlags: number): number;
+  AddDelBackupEntry(
+    lpcszFileList: string | Win32Pointer,
+    lpcszBackupDir: string | Win32Pointer,
+    lpcszBaseName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!AdvInstallFileA */
-  AdvInstallFileA(hwnd: Win32Pointer, lpszSourceDir: string | Win32Pointer, lpszSourceFile: string | Win32Pointer, lpszDestDir: string | Win32Pointer, lpszDestFile: string | Win32Pointer, dwFlags: number, dwReserved: number): number;
+  AdvInstallFileA(
+    hwnd: Win32Pointer,
+    lpszSourceDir: string | Win32Pointer,
+    lpszSourceFile: string | Win32Pointer,
+    lpszDestDir: string | Win32Pointer,
+    lpszDestFile: string | Win32Pointer,
+    dwFlags: number,
+    dwReserved: number,
+  ): number;
   /** advpack.dll!AdvInstallFileW */
-  AdvInstallFileW(hwnd: Win32Pointer, lpszSourceDir: string | Win32Pointer, lpszSourceFile: string | Win32Pointer, lpszDestDir: string | Win32Pointer, lpszDestFile: string | Win32Pointer, dwFlags: number, dwReserved: number): number;
+  AdvInstallFileW(
+    hwnd: Win32Pointer,
+    lpszSourceDir: string | Win32Pointer,
+    lpszSourceFile: string | Win32Pointer,
+    lpszDestDir: string | Win32Pointer,
+    lpszDestFile: string | Win32Pointer,
+    dwFlags: number,
+    dwReserved: number,
+  ): number;
   /** advpack.dll!AdvInstallFileW */
-  AdvInstallFile(hwnd: Win32Pointer, lpszSourceDir: string | Win32Pointer, lpszSourceFile: string | Win32Pointer, lpszDestDir: string | Win32Pointer, lpszDestFile: string | Win32Pointer, dwFlags: number, dwReserved: number): number;
+  AdvInstallFile(
+    hwnd: Win32Pointer,
+    lpszSourceDir: string | Win32Pointer,
+    lpszSourceFile: string | Win32Pointer,
+    lpszDestDir: string | Win32Pointer,
+    lpszDestFile: string | Win32Pointer,
+    dwFlags: number,
+    dwReserved: number,
+  ): number;
   /** advpack.dll!CloseINFEngine */
   CloseINFEngine(hInf: Win32Pointer): number;
   /** advpack.dll!DelNodeA */
@@ -31,59 +70,195 @@ interface Functions {
   /** advpack.dll!ExecuteCabW */
   ExecuteCab(hwnd: Win32Pointer, pCab: Win32Pointer, pReserved: Win32Pointer): number;
   /** advpack.dll!ExtractFilesA */
-  ExtractFilesA(pszCabName: string | Win32Pointer, pszExpandDir: string | Win32Pointer, dwFlags: number, pszFileList: string | Win32Pointer, lpReserved: Win32Pointer, dwReserved: number): number;
+  ExtractFilesA(
+    pszCabName: string | Win32Pointer,
+    pszExpandDir: string | Win32Pointer,
+    dwFlags: number,
+    pszFileList: string | Win32Pointer,
+    lpReserved: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** advpack.dll!ExtractFilesW */
-  ExtractFilesW(pszCabName: string | Win32Pointer, pszExpandDir: string | Win32Pointer, dwFlags: number, pszFileList: string | Win32Pointer, lpReserved: Win32Pointer, dwReserved: number): number;
+  ExtractFilesW(
+    pszCabName: string | Win32Pointer,
+    pszExpandDir: string | Win32Pointer,
+    dwFlags: number,
+    pszFileList: string | Win32Pointer,
+    lpReserved: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** advpack.dll!ExtractFilesW */
-  ExtractFiles(pszCabName: string | Win32Pointer, pszExpandDir: string | Win32Pointer, dwFlags: number, pszFileList: string | Win32Pointer, lpReserved: Win32Pointer, dwReserved: number): number;
+  ExtractFiles(
+    pszCabName: string | Win32Pointer,
+    pszExpandDir: string | Win32Pointer,
+    dwFlags: number,
+    pszFileList: string | Win32Pointer,
+    lpReserved: Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** advpack.dll!FileSaveMarkNotExistA */
-  FileSaveMarkNotExistA(lpFileList: string | Win32Pointer, lpDir: string | Win32Pointer, lpBaseName: string | Win32Pointer): number;
+  FileSaveMarkNotExistA(
+    lpFileList: string | Win32Pointer,
+    lpDir: string | Win32Pointer,
+    lpBaseName: string | Win32Pointer,
+  ): number;
   /** advpack.dll!FileSaveMarkNotExistW */
-  FileSaveMarkNotExistW(lpFileList: string | Win32Pointer, lpDir: string | Win32Pointer, lpBaseName: string | Win32Pointer): number;
+  FileSaveMarkNotExistW(
+    lpFileList: string | Win32Pointer,
+    lpDir: string | Win32Pointer,
+    lpBaseName: string | Win32Pointer,
+  ): number;
   /** advpack.dll!FileSaveMarkNotExistW */
-  FileSaveMarkNotExist(lpFileList: string | Win32Pointer, lpDir: string | Win32Pointer, lpBaseName: string | Win32Pointer): number;
+  FileSaveMarkNotExist(
+    lpFileList: string | Win32Pointer,
+    lpDir: string | Win32Pointer,
+    lpBaseName: string | Win32Pointer,
+  ): number;
   /** advpack.dll!FileSaveRestoreOnINFA */
-  FileSaveRestoreOnINFA(hWnd: Win32Pointer, pszTitle: string | Win32Pointer, pszINF: string | Win32Pointer, pszSection: string | Win32Pointer, pszBackupDir: string | Win32Pointer, pszBaseBackupFile: string | Win32Pointer, dwFlags: number): number;
+  FileSaveRestoreOnINFA(
+    hWnd: Win32Pointer,
+    pszTitle: string | Win32Pointer,
+    pszINF: string | Win32Pointer,
+    pszSection: string | Win32Pointer,
+    pszBackupDir: string | Win32Pointer,
+    pszBaseBackupFile: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!FileSaveRestoreOnINFW */
-  FileSaveRestoreOnINFW(hWnd: Win32Pointer, pszTitle: string | Win32Pointer, pszINF: string | Win32Pointer, pszSection: string | Win32Pointer, pszBackupDir: string | Win32Pointer, pszBaseBackupFile: string | Win32Pointer, dwFlags: number): number;
+  FileSaveRestoreOnINFW(
+    hWnd: Win32Pointer,
+    pszTitle: string | Win32Pointer,
+    pszINF: string | Win32Pointer,
+    pszSection: string | Win32Pointer,
+    pszBackupDir: string | Win32Pointer,
+    pszBaseBackupFile: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!FileSaveRestoreOnINFW */
-  FileSaveRestoreOnINF(hWnd: Win32Pointer, pszTitle: string | Win32Pointer, pszINF: string | Win32Pointer, pszSection: string | Win32Pointer, pszBackupDir: string | Win32Pointer, pszBaseBackupFile: string | Win32Pointer, dwFlags: number): number;
+  FileSaveRestoreOnINF(
+    hWnd: Win32Pointer,
+    pszTitle: string | Win32Pointer,
+    pszINF: string | Win32Pointer,
+    pszSection: string | Win32Pointer,
+    pszBackupDir: string | Win32Pointer,
+    pszBaseBackupFile: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!FileSaveRestoreW */
-  FileSaveRestoreW(hDlg: Win32Pointer, lpFileList: string | Win32Pointer, lpDir: string | Win32Pointer, lpBaseName: string | Win32Pointer, dwFlags: number): number;
+  FileSaveRestoreW(
+    hDlg: Win32Pointer,
+    lpFileList: string | Win32Pointer,
+    lpDir: string | Win32Pointer,
+    lpBaseName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!GetVersionFromFileA */
-  GetVersionFromFileA(lpszFilename: string | Win32Pointer, pdwMSVer: Win32Pointer, pdwLSVer: Win32Pointer, bVersion: number): number;
+  GetVersionFromFileA(
+    lpszFilename: string | Win32Pointer,
+    pdwMSVer: Win32Pointer,
+    pdwLSVer: Win32Pointer,
+    bVersion: number,
+  ): number;
   /** advpack.dll!GetVersionFromFileExA */
-  GetVersionFromFileExA(lpszFilename: string | Win32Pointer, pdwMSVer: Win32Pointer, pdwLSVer: Win32Pointer, bVersion: number): number;
+  GetVersionFromFileExA(
+    lpszFilename: string | Win32Pointer,
+    pdwMSVer: Win32Pointer,
+    pdwLSVer: Win32Pointer,
+    bVersion: number,
+  ): number;
   /** advpack.dll!GetVersionFromFileExW */
-  GetVersionFromFileExW(lpszFilename: string | Win32Pointer, pdwMSVer: Win32Pointer, pdwLSVer: Win32Pointer, bVersion: number): number;
+  GetVersionFromFileExW(
+    lpszFilename: string | Win32Pointer,
+    pdwMSVer: Win32Pointer,
+    pdwLSVer: Win32Pointer,
+    bVersion: number,
+  ): number;
   /** advpack.dll!GetVersionFromFileExW */
-  GetVersionFromFileEx(lpszFilename: string | Win32Pointer, pdwMSVer: Win32Pointer, pdwLSVer: Win32Pointer, bVersion: number): number;
+  GetVersionFromFileEx(
+    lpszFilename: string | Win32Pointer,
+    pdwMSVer: Win32Pointer,
+    pdwLSVer: Win32Pointer,
+    bVersion: number,
+  ): number;
   /** advpack.dll!GetVersionFromFileW */
-  GetVersionFromFileW(lpszFilename: string | Win32Pointer, pdwMSVer: Win32Pointer, pdwLSVer: Win32Pointer, bVersion: number): number;
+  GetVersionFromFileW(
+    lpszFilename: string | Win32Pointer,
+    pdwMSVer: Win32Pointer,
+    pdwLSVer: Win32Pointer,
+    bVersion: number,
+  ): number;
   /** advpack.dll!GetVersionFromFileW */
-  GetVersionFromFile(lpszFilename: string | Win32Pointer, pdwMSVer: Win32Pointer, pdwLSVer: Win32Pointer, bVersion: number): number;
+  GetVersionFromFile(
+    lpszFilename: string | Win32Pointer,
+    pdwMSVer: Win32Pointer,
+    pdwLSVer: Win32Pointer,
+    bVersion: number,
+  ): number;
   /** advpack.dll!IsNTAdmin */
   IsNTAdmin(dwReserved: number, lpdwReserved: Win32Pointer): number;
   /** advpack.dll!LaunchINFSectionExW */
-  LaunchINFSectionExW(hwnd: Win32Pointer, hInstance: Win32Pointer, pszParms: string | Win32Pointer, nShow: number): number;
+  LaunchINFSectionExW(
+    hwnd: Win32Pointer,
+    hInstance: Win32Pointer,
+    pszParms: string | Win32Pointer,
+    nShow: number,
+  ): number;
   /** advpack.dll!LaunchINFSectionW */
-  LaunchINFSectionW(hwndOwner: Win32Pointer, hInstance: Win32Pointer, pszParams: string | Win32Pointer, nShow: number): number;
+  LaunchINFSectionW(
+    hwndOwner: Win32Pointer,
+    hInstance: Win32Pointer,
+    pszParams: string | Win32Pointer,
+    nShow: number,
+  ): number;
   /** advpack.dll!NeedReboot */
   NeedReboot(dwRebootCheck: number): number;
   /** advpack.dll!NeedRebootInit */
   NeedRebootInit(): number;
   /** advpack.dll!OpenINFEngineA */
-  OpenINFEngineA(pszInfFilename: string | Win32Pointer, pszInstallSection: string | Win32Pointer, dwFlags: number, phInf: Win32Pointer, pvReserved: Win32Pointer): number;
+  OpenINFEngineA(
+    pszInfFilename: string | Win32Pointer,
+    pszInstallSection: string | Win32Pointer,
+    dwFlags: number,
+    phInf: Win32Pointer,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advpack.dll!OpenINFEngineW */
-  OpenINFEngineW(pszInfFilename: string | Win32Pointer, pszInstallSection: string | Win32Pointer, dwFlags: number, phInf: Win32Pointer, pvReserved: Win32Pointer): number;
+  OpenINFEngineW(
+    pszInfFilename: string | Win32Pointer,
+    pszInstallSection: string | Win32Pointer,
+    dwFlags: number,
+    phInf: Win32Pointer,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advpack.dll!OpenINFEngineW */
-  OpenINFEngine(pszInfFilename: string | Win32Pointer, pszInstallSection: string | Win32Pointer, dwFlags: number, phInf: Win32Pointer, pvReserved: Win32Pointer): number;
+  OpenINFEngine(
+    pszInfFilename: string | Win32Pointer,
+    pszInstallSection: string | Win32Pointer,
+    dwFlags: number,
+    phInf: Win32Pointer,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advpack.dll!RebootCheckOnInstallA */
-  RebootCheckOnInstallA(hwnd: Win32Pointer, pszINF: string | Win32Pointer, pszSec: string | Win32Pointer, dwReserved: number): number;
+  RebootCheckOnInstallA(
+    hwnd: Win32Pointer,
+    pszINF: string | Win32Pointer,
+    pszSec: string | Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** advpack.dll!RebootCheckOnInstallW */
-  RebootCheckOnInstallW(hwnd: Win32Pointer, pszINF: string | Win32Pointer, pszSec: string | Win32Pointer, dwReserved: number): number;
+  RebootCheckOnInstallW(
+    hwnd: Win32Pointer,
+    pszINF: string | Win32Pointer,
+    pszSec: string | Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** advpack.dll!RebootCheckOnInstallW */
-  RebootCheckOnInstall(hwnd: Win32Pointer, pszINF: string | Win32Pointer, pszSec: string | Win32Pointer, dwReserved: number): number;
+  RebootCheckOnInstall(
+    hwnd: Win32Pointer,
+    pszINF: string | Win32Pointer,
+    pszSec: string | Win32Pointer,
+    dwReserved: number,
+  ): number;
   /** advpack.dll!RegInstallA */
   RegInstallA(hmod: Win32Pointer, pszSection: string | Win32Pointer, pstTable: Win32Pointer): number;
   /** advpack.dll!RegInstallW */
@@ -97,23 +272,98 @@ interface Functions {
   /** advpack.dll!RegRestoreAllW */
   RegRestoreAll(hWnd: Win32Pointer, pszTitleString: string | Win32Pointer, hkBckupKey: Win32Pointer): number;
   /** advpack.dll!RegSaveRestoreA */
-  RegSaveRestoreA(hWnd: Win32Pointer, pszTitleString: string | Win32Pointer, hkBckupKey: Win32Pointer, pcszRootKey: string | Win32Pointer, pcszSubKey: string | Win32Pointer, pcszValueName: string | Win32Pointer, dwFlags: number): number;
+  RegSaveRestoreA(
+    hWnd: Win32Pointer,
+    pszTitleString: string | Win32Pointer,
+    hkBckupKey: Win32Pointer,
+    pcszRootKey: string | Win32Pointer,
+    pcszSubKey: string | Win32Pointer,
+    pcszValueName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!RegSaveRestoreOnINFA */
-  RegSaveRestoreOnINFA(hWnd: Win32Pointer, pszTitle: string | Win32Pointer, pszINF: string | Win32Pointer, pszSection: string | Win32Pointer, hHKLMBackKey: Win32Pointer, hHKCUBackKey: Win32Pointer, dwFlags: number): number;
+  RegSaveRestoreOnINFA(
+    hWnd: Win32Pointer,
+    pszTitle: string | Win32Pointer,
+    pszINF: string | Win32Pointer,
+    pszSection: string | Win32Pointer,
+    hHKLMBackKey: Win32Pointer,
+    hHKCUBackKey: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!RegSaveRestoreOnINFW */
-  RegSaveRestoreOnINFW(hWnd: Win32Pointer, pszTitle: string | Win32Pointer, pszINF: string | Win32Pointer, pszSection: string | Win32Pointer, hHKLMBackKey: Win32Pointer, hHKCUBackKey: Win32Pointer, dwFlags: number): number;
+  RegSaveRestoreOnINFW(
+    hWnd: Win32Pointer,
+    pszTitle: string | Win32Pointer,
+    pszINF: string | Win32Pointer,
+    pszSection: string | Win32Pointer,
+    hHKLMBackKey: Win32Pointer,
+    hHKCUBackKey: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!RegSaveRestoreOnINFW */
-  RegSaveRestoreOnINF(hWnd: Win32Pointer, pszTitle: string | Win32Pointer, pszINF: string | Win32Pointer, pszSection: string | Win32Pointer, hHKLMBackKey: Win32Pointer, hHKCUBackKey: Win32Pointer, dwFlags: number): number;
+  RegSaveRestoreOnINF(
+    hWnd: Win32Pointer,
+    pszTitle: string | Win32Pointer,
+    pszINF: string | Win32Pointer,
+    pszSection: string | Win32Pointer,
+    hHKLMBackKey: Win32Pointer,
+    hHKCUBackKey: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!RegSaveRestoreW */
-  RegSaveRestoreW(hWnd: Win32Pointer, pszTitleString: string | Win32Pointer, hkBckupKey: Win32Pointer, pcszRootKey: string | Win32Pointer, pcszSubKey: string | Win32Pointer, pcszValueName: string | Win32Pointer, dwFlags: number): number;
+  RegSaveRestoreW(
+    hWnd: Win32Pointer,
+    pszTitleString: string | Win32Pointer,
+    hkBckupKey: Win32Pointer,
+    pcszRootKey: string | Win32Pointer,
+    pcszSubKey: string | Win32Pointer,
+    pcszValueName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!RegSaveRestoreW */
-  RegSaveRestore(hWnd: Win32Pointer, pszTitleString: string | Win32Pointer, hkBckupKey: Win32Pointer, pcszRootKey: string | Win32Pointer, pcszSubKey: string | Win32Pointer, pcszValueName: string | Win32Pointer, dwFlags: number): number;
+  RegSaveRestore(
+    hWnd: Win32Pointer,
+    pszTitleString: string | Win32Pointer,
+    hkBckupKey: Win32Pointer,
+    pcszRootKey: string | Win32Pointer,
+    pcszSubKey: string | Win32Pointer,
+    pcszValueName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** advpack.dll!RunSetupCommandA */
-  RunSetupCommandA(hWnd: Win32Pointer, szCmdName: string | Win32Pointer, szInfSection: string | Win32Pointer, szDir: string | Win32Pointer, lpszTitle: string | Win32Pointer, phEXE: Win32Pointer, dwFlags: number, pvReserved: Win32Pointer): number;
+  RunSetupCommandA(
+    hWnd: Win32Pointer,
+    szCmdName: string | Win32Pointer,
+    szInfSection: string | Win32Pointer,
+    szDir: string | Win32Pointer,
+    lpszTitle: string | Win32Pointer,
+    phEXE: Win32Pointer,
+    dwFlags: number,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advpack.dll!RunSetupCommandW */
-  RunSetupCommandW(hWnd: Win32Pointer, szCmdName: string | Win32Pointer, szInfSection: string | Win32Pointer, szDir: string | Win32Pointer, lpszTitle: string | Win32Pointer, phEXE: Win32Pointer, dwFlags: number, pvReserved: Win32Pointer): number;
+  RunSetupCommandW(
+    hWnd: Win32Pointer,
+    szCmdName: string | Win32Pointer,
+    szInfSection: string | Win32Pointer,
+    szDir: string | Win32Pointer,
+    lpszTitle: string | Win32Pointer,
+    phEXE: Win32Pointer,
+    dwFlags: number,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advpack.dll!RunSetupCommandW */
-  RunSetupCommand(hWnd: Win32Pointer, szCmdName: string | Win32Pointer, szInfSection: string | Win32Pointer, szDir: string | Win32Pointer, lpszTitle: string | Win32Pointer, phEXE: Win32Pointer, dwFlags: number, pvReserved: Win32Pointer): number;
+  RunSetupCommand(
+    hWnd: Win32Pointer,
+    szCmdName: string | Win32Pointer,
+    szInfSection: string | Win32Pointer,
+    szDir: string | Win32Pointer,
+    lpszTitle: string | Win32Pointer,
+    phEXE: Win32Pointer,
+    dwFlags: number,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advpack.dll!SetPerUserSecValuesA */
   SetPerUserSecValuesA(pPerUser: Win32Pointer): number;
   /** advpack.dll!SetPerUserSecValuesW */
@@ -121,29 +371,113 @@ interface Functions {
   /** advpack.dll!SetPerUserSecValuesW */
   SetPerUserSecValues(pPerUser: Win32Pointer): number;
   /** advpack.dll!TranslateInfStringA */
-  TranslateInfStringA(pszInfFilename: string | Win32Pointer, pszInstallSection: string | Win32Pointer, pszTranslateSection: string | Win32Pointer, pszTranslateKey: string | Win32Pointer, pszBuffer: string | Win32Pointer, cchBuffer: number, pdwRequiredSize: Win32Pointer, pvReserved: Win32Pointer): number;
+  TranslateInfStringA(
+    pszInfFilename: string | Win32Pointer,
+    pszInstallSection: string | Win32Pointer,
+    pszTranslateSection: string | Win32Pointer,
+    pszTranslateKey: string | Win32Pointer,
+    pszBuffer: string | Win32Pointer,
+    cchBuffer: number,
+    pdwRequiredSize: Win32Pointer,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advpack.dll!TranslateInfStringExA */
-  TranslateInfStringExA(hInf: Win32Pointer, pszInfFilename: string | Win32Pointer, pszTranslateSection: string | Win32Pointer, pszTranslateKey: string | Win32Pointer, pszBuffer: string | Win32Pointer, dwBufferSize: number, pdwRequiredSize: Win32Pointer, pvReserved: Win32Pointer): number;
+  TranslateInfStringExA(
+    hInf: Win32Pointer,
+    pszInfFilename: string | Win32Pointer,
+    pszTranslateSection: string | Win32Pointer,
+    pszTranslateKey: string | Win32Pointer,
+    pszBuffer: string | Win32Pointer,
+    dwBufferSize: number,
+    pdwRequiredSize: Win32Pointer,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advpack.dll!TranslateInfStringExW */
-  TranslateInfStringExW(hInf: Win32Pointer, pszInfFilename: string | Win32Pointer, pszTranslateSection: string | Win32Pointer, pszTranslateKey: string | Win32Pointer, pszBuffer: string | Win32Pointer, dwBufferSize: number, pdwRequiredSize: Win32Pointer, pvReserved: Win32Pointer): number;
+  TranslateInfStringExW(
+    hInf: Win32Pointer,
+    pszInfFilename: string | Win32Pointer,
+    pszTranslateSection: string | Win32Pointer,
+    pszTranslateKey: string | Win32Pointer,
+    pszBuffer: string | Win32Pointer,
+    dwBufferSize: number,
+    pdwRequiredSize: Win32Pointer,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advpack.dll!TranslateInfStringExW */
-  TranslateInfStringEx(hInf: Win32Pointer, pszInfFilename: string | Win32Pointer, pszTranslateSection: string | Win32Pointer, pszTranslateKey: string | Win32Pointer, pszBuffer: string | Win32Pointer, dwBufferSize: number, pdwRequiredSize: Win32Pointer, pvReserved: Win32Pointer): number;
+  TranslateInfStringEx(
+    hInf: Win32Pointer,
+    pszInfFilename: string | Win32Pointer,
+    pszTranslateSection: string | Win32Pointer,
+    pszTranslateKey: string | Win32Pointer,
+    pszBuffer: string | Win32Pointer,
+    dwBufferSize: number,
+    pdwRequiredSize: Win32Pointer,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advpack.dll!TranslateInfStringW */
-  TranslateInfStringW(pszInfFilename: string | Win32Pointer, pszInstallSection: string | Win32Pointer, pszTranslateSection: string | Win32Pointer, pszTranslateKey: string | Win32Pointer, pszBuffer: string | Win32Pointer, cchBuffer: number, pdwRequiredSize: Win32Pointer, pvReserved: Win32Pointer): number;
+  TranslateInfStringW(
+    pszInfFilename: string | Win32Pointer,
+    pszInstallSection: string | Win32Pointer,
+    pszTranslateSection: string | Win32Pointer,
+    pszTranslateKey: string | Win32Pointer,
+    pszBuffer: string | Win32Pointer,
+    cchBuffer: number,
+    pdwRequiredSize: Win32Pointer,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advpack.dll!TranslateInfStringW */
-  TranslateInfString(pszInfFilename: string | Win32Pointer, pszInstallSection: string | Win32Pointer, pszTranslateSection: string | Win32Pointer, pszTranslateKey: string | Win32Pointer, pszBuffer: string | Win32Pointer, cchBuffer: number, pdwRequiredSize: Win32Pointer, pvReserved: Win32Pointer): number;
+  TranslateInfString(
+    pszInfFilename: string | Win32Pointer,
+    pszInstallSection: string | Win32Pointer,
+    pszTranslateSection: string | Win32Pointer,
+    pszTranslateKey: string | Win32Pointer,
+    pszBuffer: string | Win32Pointer,
+    cchBuffer: number,
+    pdwRequiredSize: Win32Pointer,
+    pvReserved: Win32Pointer,
+  ): number;
   /** advpack.dll!UserInstStubWrapperA */
-  UserInstStubWrapperA(hwnd: Win32Pointer, hInstance: Win32Pointer, pszParms: string | Win32Pointer, nShow: number): number;
+  UserInstStubWrapperA(
+    hwnd: Win32Pointer,
+    hInstance: Win32Pointer,
+    pszParms: string | Win32Pointer,
+    nShow: number,
+  ): number;
   /** advpack.dll!UserInstStubWrapperW */
-  UserInstStubWrapperW(hwnd: Win32Pointer, hInstance: Win32Pointer, pszParms: string | Win32Pointer, nShow: number): number;
+  UserInstStubWrapperW(
+    hwnd: Win32Pointer,
+    hInstance: Win32Pointer,
+    pszParms: string | Win32Pointer,
+    nShow: number,
+  ): number;
   /** advpack.dll!UserInstStubWrapperW */
-  UserInstStubWrapper(hwnd: Win32Pointer, hInstance: Win32Pointer, pszParms: string | Win32Pointer, nShow: number): number;
+  UserInstStubWrapper(
+    hwnd: Win32Pointer,
+    hInstance: Win32Pointer,
+    pszParms: string | Win32Pointer,
+    nShow: number,
+  ): number;
   /** advpack.dll!UserUnInstStubWrapperA */
-  UserUnInstStubWrapperA(hwnd: Win32Pointer, hInstance: Win32Pointer, pszParms: string | Win32Pointer, nShow: number): number;
+  UserUnInstStubWrapperA(
+    hwnd: Win32Pointer,
+    hInstance: Win32Pointer,
+    pszParms: string | Win32Pointer,
+    nShow: number,
+  ): number;
   /** advpack.dll!UserUnInstStubWrapperW */
-  UserUnInstStubWrapperW(hwnd: Win32Pointer, hInstance: Win32Pointer, pszParms: string | Win32Pointer, nShow: number): number;
+  UserUnInstStubWrapperW(
+    hwnd: Win32Pointer,
+    hInstance: Win32Pointer,
+    pszParms: string | Win32Pointer,
+    nShow: number,
+  ): number;
   /** advpack.dll!UserUnInstStubWrapperW */
-  UserUnInstStubWrapper(hwnd: Win32Pointer, hInstance: Win32Pointer, pszParms: string | Win32Pointer, nShow: number): number;
+  UserUnInstStubWrapper(
+    hwnd: Win32Pointer,
+    hInstance: Win32Pointer,
+    pszParms: string | Win32Pointer,
+    nShow: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

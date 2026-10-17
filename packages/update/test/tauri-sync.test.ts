@@ -45,13 +45,7 @@ test("semver precedence follows SemVer 2.0 for pre-releases", () => {
 });
 
 test("pickLatest stays on the requested major line", () => {
-  const versions = [
-    "2.12.1",
-    "3.0.0-alpha.2",
-    "3.0.0-alpha.3",
-    "bogus",
-    "2.99.0",
-  ];
+  const versions = ["2.12.1", "3.0.0-alpha.2", "3.0.0-alpha.3", "bogus", "2.99.0"];
   expect(pickLatest(versions, 3)).toBe("3.0.0-alpha.3");
   expect(pickLatest(versions, 2)).toBe("2.99.0");
   expect(pickLatest(versions, 4)).toBeNull();
@@ -72,13 +66,7 @@ test("pickEligible honours the minimum release age", () => {
 });
 
 test("workspace dependency parsing and rewriting keep the surrounding fields", () => {
-  const deps = parseWorkspaceDeps(cargo, [
-    "tauri",
-    "tauri-build",
-    "tauri-plugin",
-    "tauri-specta",
-    "missing",
-  ]);
+  const deps = parseWorkspaceDeps(cargo, ["tauri", "tauri-build", "tauri-plugin", "tauri-specta", "missing"]);
   expect(deps).toEqual([
     { name: "tauri", version: "3.0.0-alpha.3", source: "crates.io" },
     { name: "tauri-build", version: "3.0.0-alpha.2", source: "crates.io" },
@@ -101,9 +89,7 @@ test("workspace dependency parsing and rewriting keep the surrounding fields", (
 
 test("a workspace.dependencies table at the end of the file is handled", () => {
   const tail = '[workspace.dependencies]\ntauri-build = "=3.0.0-alpha.2"';
-  expect(parseWorkspaceDeps(tail, ["tauri-build"])[0]?.version).toBe(
-    "3.0.0-alpha.2",
-  );
+  expect(parseWorkspaceDeps(tail, ["tauri-build"])[0]?.version).toBe("3.0.0-alpha.2");
   expect(rewriteWorkspaceDep(tail, "tauri-build", "3.0.0-alpha.3")).toBe(
     '[workspace.dependencies]\ntauri-build = "=3.0.0-alpha.3"',
   );
@@ -117,29 +103,14 @@ test("catalog parsing and rewriting preserve formatting", () => {
   const next = rewriteCatalogEntry(json, "@tauri-apps/api", "3.0.0-alpha.3");
   expect(next).toContain('"@tauri-apps/api": "3.0.0-alpha.3"');
   expect(next).toContain('"zustand": "^5.0.14"');
-  expect(() =>
-    rewriteCatalogEntry(json, "@tauri-apps/missing", "1.0.0"),
-  ).toThrow();
+  expect(() => rewriteCatalogEntry(json, "@tauri-apps/missing", "1.0.0")).toThrow();
 });
 
 test("classify distinguishes behind, held, too-fresh and ok", () => {
-  expect(
-    classify("3.0.0-alpha.3", "3.0.0-alpha.3", "3.0.0-alpha.3").status,
-  ).toBe("ok");
-  expect(
-    classify("3.0.0-alpha.2", "3.0.0-alpha.3", "3.0.0-alpha.3").status,
-  ).toBe("behind");
-  expect(
-    classify(
-      "3.0.0-alpha.2",
-      "3.0.0-alpha.3",
-      "3.0.0-alpha.3",
-      "held by patch x",
-    ).status,
-  ).toBe("held");
-  expect(
-    classify("3.0.0-alpha.1", "3.0.0-alpha.2", "3.0.0-alpha.1").status,
-  ).toBe("too-fresh");
+  expect(classify("3.0.0-alpha.3", "3.0.0-alpha.3", "3.0.0-alpha.3").status).toBe("ok");
+  expect(classify("3.0.0-alpha.2", "3.0.0-alpha.3", "3.0.0-alpha.3").status).toBe("behind");
+  expect(classify("3.0.0-alpha.2", "3.0.0-alpha.3", "3.0.0-alpha.3", "held by patch x").status).toBe("held");
+  expect(classify("3.0.0-alpha.1", "3.0.0-alpha.2", "3.0.0-alpha.1").status).toBe("too-fresh");
   expect(classify(null, "1.0.0", "1.0.0").status).toBe("unknown");
 });
 
@@ -163,21 +134,11 @@ test("patch evaluation flags missing, unapplied, upstream-contains and newer-bas
   };
   expect(evaluatePatch(ok).state).toBe("applied");
   expect(evaluatePatch({ ...ok, fileText: null }).state).toBe("missing");
-  expect(
-    evaluatePatch({ ...ok, fileText: "use tauri::AppHandle;" }).state,
-  ).toBe("unapplied");
-  expect(evaluatePatch({ ...ok, cargoPatchPresent: false }).state).toBe(
-    "unapplied",
-  );
-  expect(evaluatePatch({ ...ok, upstreamContainsFix: true }).state).toBe(
-    "upstream-contains",
-  );
-  expect(evaluatePatch({ ...ok, latestPublished: "3.0.0-alpha.3" }).state).toBe(
-    "newer-base",
-  );
-  expect(evaluatePatch({ ...ok, upstreamContainsFix: null }).state).toBe(
-    "unchecked",
-  );
+  expect(evaluatePatch({ ...ok, fileText: "use tauri::AppHandle;" }).state).toBe("unapplied");
+  expect(evaluatePatch({ ...ok, cargoPatchPresent: false }).state).toBe("unapplied");
+  expect(evaluatePatch({ ...ok, upstreamContainsFix: true }).state).toBe("upstream-contains");
+  expect(evaluatePatch({ ...ok, latestPublished: "3.0.0-alpha.3" }).state).toBe("newer-base");
+  expect(evaluatePatch({ ...ok, upstreamContainsFix: null }).state).toBe("unchecked");
 });
 
 test("report summary, rendering and exit codes", () => {
@@ -214,9 +175,7 @@ test("report summary, rendering and exit codes", () => {
 });
 
 test("argument parsing", () => {
-  expect(parseArgs(["--check", "--json", "--root", tempPath("x")]).root).toBe(
-    tempPath("x"),
-  );
+  expect(parseArgs(["--check", "--json", "--root", tempPath("x")]).root).toBe(tempPath("x"));
   expect(parseArgs(["--apply"], "/repo").apply).toBe(true);
   expect(() => parseArgs(["--apply", "--offline"])).toThrow();
   expect(() => parseArgs(["--apply", "--check"])).toThrow();
@@ -224,19 +183,12 @@ test("argument parsing", () => {
 });
 
 test("the committed config parses and lists every tracked crate", async () => {
-  const text = await Bun.file(
-    new URL(
-      "../../../tools/aphrody/config/tauri-upstream.json",
-      import.meta.url,
-    ),
-  ).text();
+  const text = await Bun.file(new URL("../../../tools/aphrody/config/tauri-upstream.json", import.meta.url)).text();
   const config = parseConfig(text);
   expect(config.line).toBe(3);
   expect(config.rust.crates).toContain("tauri-runtime-cef");
   expect(config.rust.crates).not.toContain("tauri-runtime-wry");
-  expect(config.patches.map((patch) => patch.id)).toContain(
-    "tauri-runtime-cef-glib-work-source",
-  );
+  expect(config.patches.map(patch => patch.id)).toContain("tauri-runtime-cef-glib-work-source");
   expect(() => parseConfig('{"schemaVersion":2}')).toThrow();
 });
 
@@ -273,12 +225,7 @@ test("mirror drift detection and rewriting", () => {
 });
 
 test("mirror drift fails the exit code even without --check", () => {
-  const report = summarize(
-    [],
-    [],
-    [],
-    [{ file: "f", key: "k", name: "n", mirror: null, expected: "1.0.0" }],
-  );
+  const report = summarize([], [], [], [{ file: "f", key: "k", name: "n", mirror: null, expected: "1.0.0" }]);
   expect(exitCode(report, { check: false })).toBe(1);
   expect(renderReport(report)).toContain("mirror drift");
 });

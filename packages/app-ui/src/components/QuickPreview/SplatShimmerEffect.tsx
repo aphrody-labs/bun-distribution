@@ -6,10 +6,7 @@ interface SplatShimmerEffectProps {
   maskImage?: string; // Optional image URL to use as mask
 }
 
-export function SplatShimmerEffect({
-  children,
-  maskImage,
-}: SplatShimmerEffectProps) {
+export function SplatShimmerEffect({ children, maskImage }: SplatShimmerEffectProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 

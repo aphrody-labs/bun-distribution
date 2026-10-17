@@ -8,7 +8,6 @@
 //!
 //! - **windows7-compat**: Deprecated and does nothing, since Tauri no longer supports Windows 7.
 
-
 use serde::Serialize;
 #[cfg(desktop)]
 use tauri::AppHandle;
@@ -240,7 +239,7 @@ impl<R: Runtime, T: Manager<R>> crate::notification::NotificationExt<R> for T {
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("notification")
-        .invoke_handler(tauri::generate_handler![#![plugin(notification)] 
+        .invoke_handler(tauri::generate_handler![#![plugin(notification)]
             commands::notify,
             commands::request_permission,
             commands::is_permission_granted

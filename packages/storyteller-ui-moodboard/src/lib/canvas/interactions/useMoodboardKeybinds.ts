@@ -1,8 +1,5 @@
 import { useEffect } from "react";
-import {
-  isEventFromEditableElement,
-  useResolvedKeybinds,
-} from "@storyteller/keybinds";
+import { isEventFromEditableElement, useResolvedKeybinds } from "@storyteller/keybinds";
 import { useMoodboardStore } from "../MoodboardStore";
 
 // Unified moodboard keyboard handling, resolved from the shared keybinds store
@@ -11,16 +8,16 @@ import { useMoodboardStore } from "../MoodboardStore";
 // handler in Moodboard.tsx). Pan/zoom remain mouse/space gestures in
 // useViewportControls; clipboard paste stays in usePasteHandler.
 export const useMoodboardKeybinds = (active: boolean) => {
-  const setTool = useMoodboardStore((s) => s.setTool);
-  const selectAll = useMoodboardStore((s) => s.selectAll);
-  const setSelection = useMoodboardStore((s) => s.setSelection);
-  const group = useMoodboardStore((s) => s.group);
-  const ungroup = useMoodboardStore((s) => s.ungroup);
-  const fitToContent = useMoodboardStore((s) => s.fitToContent);
-  const resetViewport = useMoodboardStore((s) => s.resetViewport);
-  const deleteSelected = useMoodboardStore((s) => s.deleteSelected);
-  const undo = useMoodboardStore((s) => s.undo);
-  const redo = useMoodboardStore((s) => s.redo);
+  const setTool = useMoodboardStore(s => s.setTool);
+  const selectAll = useMoodboardStore(s => s.selectAll);
+  const setSelection = useMoodboardStore(s => s.setSelection);
+  const group = useMoodboardStore(s => s.group);
+  const ungroup = useMoodboardStore(s => s.ungroup);
+  const fitToContent = useMoodboardStore(s => s.fitToContent);
+  const resetViewport = useMoodboardStore(s => s.resetViewport);
+  const deleteSelected = useMoodboardStore(s => s.deleteSelected);
+  const undo = useMoodboardStore(s => s.undo);
+  const redo = useMoodboardStore(s => s.redo);
 
   const { matchAction } = useResolvedKeybinds();
 

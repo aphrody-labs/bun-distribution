@@ -3,16 +3,16 @@
 Builds the emulators play.aphrody.app runs in the browser and publishes them in one fixed
 layout. The site only integrates these artifacts; it does not build them.
 
-| Path | Role |
-| --- | --- |
-| `build.ts` | Rust cores (`rust`), Qt cores through Docker (`qt`), index and firmware (`index`) |
-| `qt/Containerfile` | Pinned Emscripten 5.0.5 + Qt 6.12.0 for WebAssembly (single- and multi-threaded kits) + third-party libraries |
-| `qt/build-melonds.sh`, `qt/patches/melonds/` | melonDS Qt 6 front end for WebAssembly |
-| `qt/build-azahar.sh` | Azahar (3DS) Qt 6 front end attempt; `build.ts qt azahar` records where it stops |
-| `runtime/` | Browser helpers shipped with the cores: `firmware.js` (open-source firmware fetch, OPFS/IndexedDB cache, local user files), `touch.js` (pointer to bottom-screen mapping), `melonds.js` (ES module wrapper of the Qt build with the common API) |
-| `serve.ts` | Local cross-origin-isolated server (COOP same-origin, COEP credentialless) |
-| `smoke.ts`, `smoke.html` | Headless Chrome smoke test per core over the DevTools protocol |
-| `web-emulation.lock.json` | Every pinned input: toolchain, tool archives (sha256), image digests, Ubuntu snapshot, Qt, source commits, test content |
+| Path                                         | Role                                                                                                                                                                                                                                            |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build.ts`                                   | Rust cores (`rust`), Qt cores through Docker (`qt`), index and firmware (`index`)                                                                                                                                                               |
+| `qt/Containerfile`                           | Pinned Emscripten 5.0.5 + Qt 6.12.0 for WebAssembly (single- and multi-threaded kits) + third-party libraries                                                                                                                                   |
+| `qt/build-melonds.sh`, `qt/patches/melonds/` | melonDS Qt 6 front end for WebAssembly                                                                                                                                                                                                          |
+| `qt/build-azahar.sh`                         | Azahar (3DS) Qt 6 front end attempt; `build.ts qt azahar` records where it stops                                                                                                                                                                |
+| `runtime/`                                   | Browser helpers shipped with the cores: `firmware.js` (open-source firmware fetch, OPFS/IndexedDB cache, local user files), `touch.js` (pointer to bottom-screen mapping), `melonds.js` (ES module wrapper of the Qt build with the common API) |
+| `serve.ts`                                   | Local cross-origin-isolated server (COOP same-origin, COEP credentialless)                                                                                                                                                                      |
+| `smoke.ts`, `smoke.html`                     | Headless Chrome smoke test per core over the DevTools protocol                                                                                                                                                                                  |
+| `web-emulation.lock.json`                    | Every pinned input: toolchain, tool archives (sha256), image digests, Ubuntu snapshot, Qt, source commits, test content                                                                                                                         |
 
 Builds run on the build host (the VPS, Linux x86_64), not on the workstation. `build.ts` picks
 the pinned wasm-bindgen/Binaryen archive for the host (`linux-x64` or `win32-x64`), runs cargo
@@ -54,36 +54,41 @@ republished. `application/wasm` for `.wasm`; the page sends COOP `same-origin` a
 
 ## Manifest schema (`<core>/manifest.json`, `schemaVersion` 1)
 
-| Field | Type | Meaning |
-| --- | --- | --- |
-| `id` | string | Directory name under `/emulation/` |
-| `name` | string | Display name |
-| `kind` | `"rust"` \| `"qt-emscripten"` | Build path |
-| `systems` | string[] | bun-engine system ids the core boots (`nds`, `3ds`, `ctr`, `nes`, `gba`, `psx`) |
-| `extensions` | string[] | Accepted image extensions |
-| `module` | string | ES module, relative to the core directory |
-| `wasm` | string | WebAssembly binary, relative to the core directory |
-| `start` | string | Export that boots a game (default `start`) |
-| `threads` | boolean | Whether `module`/`wasm` need SharedArrayBuffer (cross-origin isolation) |
-| `renderer` | string | `webgpu` (Rust cores: Bevy on wgpu 30) or `qt-raster` (Qt software raster in a canvas) |
-| `engine` | string? | `bevy` for the Rust cores |
-| `touch` | boolean | `handle.set_touch(x, y, down)` is meaningful (bottom-screen pixels) |
-| `audio` | string | `bevy_audio` (Rust) or `sdl2-webaudio` (Qt/SDL) |
-| `firmware` | string[] | Open-source components from `firmware/firmware.json` the core can use |
-| `license` | string | SPDX expression of the core |
-| `version` | string | Crate version or pinned source commit |
-| `sha256` | object | Digests of `module` and `wasm` |
-| `variants.threads` | object? | `{ module, wasm, threads: true, sha256 }`: the shared-memory build |
+| Field              | Type                          | Meaning                                                                                |
+| ------------------ | ----------------------------- | -------------------------------------------------------------------------------------- |
+| `id`               | string                        | Directory name under `/emulation/`                                                     |
+| `name`             | string                        | Display name                                                                           |
+| `kind`             | `"rust"` \| `"qt-emscripten"` | Build path                                                                             |
+| `systems`          | string[]                      | bun-engine system ids the core boots (`nds`, `3ds`, `ctr`, `nes`, `gba`, `psx`)        |
+| `extensions`       | string[]                      | Accepted image extensions                                                              |
+| `module`           | string                        | ES module, relative to the core directory                                              |
+| `wasm`             | string                        | WebAssembly binary, relative to the core directory                                     |
+| `start`            | string                        | Export that boots a game (default `start`)                                             |
+| `threads`          | boolean                       | Whether `module`/`wasm` need SharedArrayBuffer (cross-origin isolation)                |
+| `renderer`         | string                        | `webgpu` (Rust cores: Bevy on wgpu 30) or `qt-raster` (Qt software raster in a canvas) |
+| `engine`           | string?                       | `bevy` for the Rust cores                                                              |
+| `touch`            | boolean                       | `handle.set_touch(x, y, down)` is meaningful (bottom-screen pixels)                    |
+| `audio`            | string                        | `bevy_audio` (Rust) or `sdl2-webaudio` (Qt/SDL)                                        |
+| `firmware`         | string[]                      | Open-source components from `firmware/firmware.json` the core can use                  |
+| `license`          | string                        | SPDX expression of the core                                                            |
+| `version`          | string                        | Crate version or pinned source commit                                                  |
+| `sha256`           | object                        | Digests of `module` and `wasm`                                                         |
+| `variants.threads` | object?                       | `{ module, wasm, threads: true, sha256 }`: the shared-memory build                     |
 
 ## JavaScript API (every core)
 
 ```js
 const mod = await import(`/emulation/${core}/${manifest.module}`);
 await mod.default({ module_or_path: `/emulation/${core}/${manifest.wasm}` });
-const handle = await mod[manifest.start ?? "start"](canvas, rom, { system, bios, firmware });
-handle.set_input(keys);           // A=1 B=2 SELECT=4 START=8 RIGHT=16 LEFT=32 UP=64 DOWN=128 R=256 L=512 X=1024 Y=2048
-handle.set_touch(x, y, down);     // bottom screen: DS 256x192, 3DS 320x240 (manifest.touch)
-handle.stop(); handle.free?.();
+const handle = await mod[manifest.start ?? "start"](canvas, rom, {
+  system,
+  bios,
+  firmware,
+});
+handle.set_input(keys); // A=1 B=2 SELECT=4 START=8 RIGHT=16 LEFT=32 UP=64 DOWN=128 R=256 L=512 X=1024 Y=2048
+handle.set_touch(x, y, down); // bottom screen: DS 256x192, 3DS 320x240 (manifest.touch)
+handle.stop();
+handle.free?.();
 // diagnostics: handle.frames, handle.frame_hash, handle.lit, handle.first_frame_ms,
 // handle.renderer, handle.audio, handle.stopped
 ```
@@ -141,13 +146,13 @@ secondary threads), so melonDS falls back to its software renderer and QPainter 
 
 ## Cores and limits
 
-| Core | Path | State |
-| --- | --- | --- |
-| `dust-nds` | Rust, Bevy on WebGPU | builds; smoke: GodMode9i, 120 frames, non-black, no console errors |
-| `melonds` | Qt 6 + Emscripten (pthreads) | builds; boots GodMode9i at full speed; keyboard injection verified (F11 fullscreen) |
-| `zakuro-3ds` | Rust, Bevy on WebGPU | Zakuro ported to wasm32 (in-memory images, no Vulkan/Cranelift/libloading, browser clock); build pending |
-| `azahar` | Qt 6 + Emscripten | recipe written (interpreter CPU, software renderer, no key blob); not yet run |
-| `tetanes-nes`, `rustboyadvance-gba`, `starpsx-psx` | Rust, Bevy | recipes in `build.ts`; after DS/3DS |
+| Core                                               | Path                         | State                                                                                                    |
+| -------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `dust-nds`                                         | Rust, Bevy on WebGPU         | builds; smoke: GodMode9i, 120 frames, non-black, no console errors                                       |
+| `melonds`                                          | Qt 6 + Emscripten (pthreads) | builds; boots GodMode9i at full speed; keyboard injection verified (F11 fullscreen)                      |
+| `zakuro-3ds`                                       | Rust, Bevy on WebGPU         | Zakuro ported to wasm32 (in-memory images, no Vulkan/Cranelift/libloading, browser clock); build pending |
+| `azahar`                                           | Qt 6 + Emscripten            | recipe written (interpreter CPU, software renderer, no key blob); not yet run                            |
+| `tetanes-nes`, `rustboyadvance-gba`, `starpsx-psx` | Rust, Bevy                   | recipes in `build.ts`; after DS/3DS                                                                      |
 
 - DS cores need no firmware: Dust has an HLE BIOS and boots plaintext homebrew without the ARM7
   BIOS; melonDS uses its built-in FreeBIOS. Commercial cartridges with an encrypted secure area

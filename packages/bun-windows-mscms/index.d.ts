@@ -3,45 +3,152 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mscms.dll!AssociateColorProfileWithDeviceA */
-  AssociateColorProfileWithDeviceA(pMachineName: string | Win32Pointer, pProfileName: string | Win32Pointer, pDeviceName: string | Win32Pointer): number;
+  AssociateColorProfileWithDeviceA(
+    pMachineName: string | Win32Pointer,
+    pProfileName: string | Win32Pointer,
+    pDeviceName: string | Win32Pointer,
+  ): number;
   /** mscms.dll!AssociateColorProfileWithDeviceW */
-  AssociateColorProfileWithDeviceW(pMachineName: string | Win32Pointer, pProfileName: string | Win32Pointer, pDeviceName: string | Win32Pointer): number;
+  AssociateColorProfileWithDeviceW(
+    pMachineName: string | Win32Pointer,
+    pProfileName: string | Win32Pointer,
+    pDeviceName: string | Win32Pointer,
+  ): number;
   /** mscms.dll!AssociateColorProfileWithDeviceW */
-  AssociateColorProfileWithDevice(pMachineName: string | Win32Pointer, pProfileName: string | Win32Pointer, pDeviceName: string | Win32Pointer): number;
+  AssociateColorProfileWithDevice(
+    pMachineName: string | Win32Pointer,
+    pProfileName: string | Win32Pointer,
+    pDeviceName: string | Win32Pointer,
+  ): number;
   /** mscms.dll!CheckBitmapBits */
-  CheckBitmapBits(hColorTransform: number | bigint, pSrcBits: Win32Pointer, bmInput: number, dwWidth: number, dwHeight: number, dwStride: number, paResult: Win32Pointer, pfnCallback: Win32Callback, lpCallbackData: number | bigint): number;
+  CheckBitmapBits(
+    hColorTransform: number | bigint,
+    pSrcBits: Win32Pointer,
+    bmInput: number,
+    dwWidth: number,
+    dwHeight: number,
+    dwStride: number,
+    paResult: Win32Pointer,
+    pfnCallback: Win32Callback,
+    lpCallbackData: number | bigint,
+  ): number;
   /** mscms.dll!CheckColors */
-  CheckColors(hColorTransform: number | bigint, paInputColors: Win32Pointer, nColors: number, ctInput: number, paResult: Win32Pointer): number;
+  CheckColors(
+    hColorTransform: number | bigint,
+    paInputColors: Win32Pointer,
+    nColors: number,
+    ctInput: number,
+    paResult: Win32Pointer,
+  ): number;
   /** mscms.dll!CloseColorProfile */
   CloseColorProfile(hProfile: number | bigint): number;
   /** mscms.dll!ColorProfileAddDisplayAssociation */
-  ColorProfileAddDisplayAssociation(scope: number, profileName: string | Win32Pointer, targetAdapterID: Win32StructInit, sourceID: number, setAsDefault: number, associateAsAdvancedColor: number): number;
+  ColorProfileAddDisplayAssociation(
+    scope: number,
+    profileName: string | Win32Pointer,
+    targetAdapterID: Win32StructInit,
+    sourceID: number,
+    setAsDefault: number,
+    associateAsAdvancedColor: number,
+  ): number;
   /** mscms.dll!ColorProfileGetDeviceCapabilities */
-  ColorProfileGetDeviceCapabilities(scope: number, targetAdapterID: Win32StructInit, sourceID: number, capsType: number, outputCapabilities: Win32Pointer): number;
+  ColorProfileGetDeviceCapabilities(
+    scope: number,
+    targetAdapterID: Win32StructInit,
+    sourceID: number,
+    capsType: number,
+    outputCapabilities: Win32Pointer,
+  ): number;
   /** mscms.dll!ColorProfileGetDisplayDefault */
-  ColorProfileGetDisplayDefault(scope: number, targetAdapterID: Win32StructInit, sourceID: number, profileType: number, profileSubType: number, profileName: Win32Pointer): number;
+  ColorProfileGetDisplayDefault(
+    scope: number,
+    targetAdapterID: Win32StructInit,
+    sourceID: number,
+    profileType: number,
+    profileSubType: number,
+    profileName: Win32Pointer,
+  ): number;
   /** mscms.dll!ColorProfileGetDisplayList */
-  ColorProfileGetDisplayList(scope: number, targetAdapterID: Win32StructInit, sourceID: number, profileList: Win32Pointer, profileCount: Win32Pointer): number;
+  ColorProfileGetDisplayList(
+    scope: number,
+    targetAdapterID: Win32StructInit,
+    sourceID: number,
+    profileList: Win32Pointer,
+    profileCount: Win32Pointer,
+  ): number;
   /** mscms.dll!ColorProfileGetDisplayUserScope */
   ColorProfileGetDisplayUserScope(targetAdapterID: Win32StructInit, sourceID: number, scope: Win32Pointer): number;
   /** mscms.dll!ColorProfileRemoveDisplayAssociation */
-  ColorProfileRemoveDisplayAssociation(scope: number, profileName: string | Win32Pointer, targetAdapterID: Win32StructInit, sourceID: number, dissociateAdvancedColor: number): number;
+  ColorProfileRemoveDisplayAssociation(
+    scope: number,
+    profileName: string | Win32Pointer,
+    targetAdapterID: Win32StructInit,
+    sourceID: number,
+    dissociateAdvancedColor: number,
+  ): number;
   /** mscms.dll!ColorProfileSetDisplayDefaultAssociation */
-  ColorProfileSetDisplayDefaultAssociation(scope: number, profileName: string | Win32Pointer, profileType: number, profileSubType: number, targetAdapterID: Win32StructInit, sourceID: number): number;
+  ColorProfileSetDisplayDefaultAssociation(
+    scope: number,
+    profileName: string | Win32Pointer,
+    profileType: number,
+    profileSubType: number,
+    targetAdapterID: Win32StructInit,
+    sourceID: number,
+  ): number;
   /** mscms.dll!ConvertColorNameToIndex */
-  ConvertColorNameToIndex(hProfile: number | bigint, paColorName: Win32Pointer, paIndex: Win32Pointer, dwCount: number): number;
+  ConvertColorNameToIndex(
+    hProfile: number | bigint,
+    paColorName: Win32Pointer,
+    paIndex: Win32Pointer,
+    dwCount: number,
+  ): number;
   /** mscms.dll!ConvertIndexToColorName */
-  ConvertIndexToColorName(hProfile: number | bigint, paIndex: Win32Pointer, paColorName: Win32Pointer, dwCount: number): number;
+  ConvertIndexToColorName(
+    hProfile: number | bigint,
+    paIndex: Win32Pointer,
+    paColorName: Win32Pointer,
+    dwCount: number,
+  ): number;
   /** mscms.dll!CreateColorTransformA */
-  CreateColorTransformA(pLogColorSpace: Win32Pointer, hDestProfile: number | bigint, hTargetProfile: number | bigint, dwFlags: number): number | bigint;
+  CreateColorTransformA(
+    pLogColorSpace: Win32Pointer,
+    hDestProfile: number | bigint,
+    hTargetProfile: number | bigint,
+    dwFlags: number,
+  ): number | bigint;
   /** mscms.dll!CreateColorTransformW */
-  CreateColorTransformW(pLogColorSpace: Win32Pointer, hDestProfile: number | bigint, hTargetProfile: number | bigint, dwFlags: number): number | bigint;
+  CreateColorTransformW(
+    pLogColorSpace: Win32Pointer,
+    hDestProfile: number | bigint,
+    hTargetProfile: number | bigint,
+    dwFlags: number,
+  ): number | bigint;
   /** mscms.dll!CreateColorTransformW */
-  CreateColorTransform(pLogColorSpace: Win32Pointer, hDestProfile: number | bigint, hTargetProfile: number | bigint, dwFlags: number): number | bigint;
+  CreateColorTransform(
+    pLogColorSpace: Win32Pointer,
+    hDestProfile: number | bigint,
+    hTargetProfile: number | bigint,
+    dwFlags: number,
+  ): number | bigint;
   /** mscms.dll!CreateDeviceLinkProfile */
-  CreateDeviceLinkProfile(hProfile: Win32Pointer, nProfiles: number, padwIntent: Win32Pointer, nIntents: number, dwFlags: number, pProfileData: Win32Pointer, indexPreferredCMM: number): number;
+  CreateDeviceLinkProfile(
+    hProfile: Win32Pointer,
+    nProfiles: number,
+    padwIntent: Win32Pointer,
+    nIntents: number,
+    dwFlags: number,
+    pProfileData: Win32Pointer,
+    indexPreferredCMM: number,
+  ): number;
   /** mscms.dll!CreateMultiProfileTransform */
-  CreateMultiProfileTransform(pahProfiles: Win32Pointer, nProfiles: number, padwIntent: Win32Pointer, nIntents: number, dwFlags: number, indexPreferredCMM: number): number | bigint;
+  CreateMultiProfileTransform(
+    pahProfiles: Win32Pointer,
+    nProfiles: number,
+    padwIntent: Win32Pointer,
+    nIntents: number,
+    dwFlags: number,
+    indexPreferredCMM: number,
+  ): number | bigint;
   /** mscms.dll!CreateProfileFromLogColorSpaceA */
   CreateProfileFromLogColorSpaceA(pLogColorSpace: Win32Pointer, pProfile: Win32Pointer): number;
   /** mscms.dll!CreateProfileFromLogColorSpaceW */
@@ -51,29 +158,84 @@ interface Functions {
   /** mscms.dll!DeleteColorTransform */
   DeleteColorTransform(hxform: number | bigint): number;
   /** mscms.dll!DisassociateColorProfileFromDeviceA */
-  DisassociateColorProfileFromDeviceA(pMachineName: string | Win32Pointer, pProfileName: string | Win32Pointer, pDeviceName: string | Win32Pointer): number;
+  DisassociateColorProfileFromDeviceA(
+    pMachineName: string | Win32Pointer,
+    pProfileName: string | Win32Pointer,
+    pDeviceName: string | Win32Pointer,
+  ): number;
   /** mscms.dll!DisassociateColorProfileFromDeviceW */
-  DisassociateColorProfileFromDeviceW(pMachineName: string | Win32Pointer, pProfileName: string | Win32Pointer, pDeviceName: string | Win32Pointer): number;
+  DisassociateColorProfileFromDeviceW(
+    pMachineName: string | Win32Pointer,
+    pProfileName: string | Win32Pointer,
+    pDeviceName: string | Win32Pointer,
+  ): number;
   /** mscms.dll!DisassociateColorProfileFromDeviceW */
-  DisassociateColorProfileFromDevice(pMachineName: string | Win32Pointer, pProfileName: string | Win32Pointer, pDeviceName: string | Win32Pointer): number;
+  DisassociateColorProfileFromDevice(
+    pMachineName: string | Win32Pointer,
+    pProfileName: string | Win32Pointer,
+    pDeviceName: string | Win32Pointer,
+  ): number;
   /** mscms.dll!EnumColorProfilesA */
-  EnumColorProfilesA(pMachineName: string | Win32Pointer, pEnumRecord: Win32Pointer, pEnumerationBuffer: Win32Pointer, pdwSizeOfEnumerationBuffer: Win32Pointer, pnProfiles: Win32Pointer): number;
+  EnumColorProfilesA(
+    pMachineName: string | Win32Pointer,
+    pEnumRecord: Win32Pointer,
+    pEnumerationBuffer: Win32Pointer,
+    pdwSizeOfEnumerationBuffer: Win32Pointer,
+    pnProfiles: Win32Pointer,
+  ): number;
   /** mscms.dll!EnumColorProfilesW */
-  EnumColorProfilesW(pMachineName: string | Win32Pointer, pEnumRecord: Win32Pointer, pEnumerationBuffer: Win32Pointer, pdwSizeOfEnumerationBuffer: Win32Pointer, pnProfiles: Win32Pointer): number;
+  EnumColorProfilesW(
+    pMachineName: string | Win32Pointer,
+    pEnumRecord: Win32Pointer,
+    pEnumerationBuffer: Win32Pointer,
+    pdwSizeOfEnumerationBuffer: Win32Pointer,
+    pnProfiles: Win32Pointer,
+  ): number;
   /** mscms.dll!EnumColorProfilesW */
-  EnumColorProfiles(pMachineName: string | Win32Pointer, pEnumRecord: Win32Pointer, pEnumerationBuffer: Win32Pointer, pdwSizeOfEnumerationBuffer: Win32Pointer, pnProfiles: Win32Pointer): number;
+  EnumColorProfiles(
+    pMachineName: string | Win32Pointer,
+    pEnumRecord: Win32Pointer,
+    pEnumerationBuffer: Win32Pointer,
+    pdwSizeOfEnumerationBuffer: Win32Pointer,
+    pnProfiles: Win32Pointer,
+  ): number;
   /** mscms.dll!GenerateCopyFilePaths */
-  GenerateCopyFilePaths(pszPrinterName: string | Win32Pointer, pszDirectory: string | Win32Pointer, pSplClientInfo: Win32Pointer, dwLevel: number, pszSourceDir: string | Win32Pointer, pcchSourceDirSize: Win32Pointer, pszTargetDir: string | Win32Pointer, pcchTargetDirSize: Win32Pointer, dwFlags: number): number;
+  GenerateCopyFilePaths(
+    pszPrinterName: string | Win32Pointer,
+    pszDirectory: string | Win32Pointer,
+    pSplClientInfo: Win32Pointer,
+    dwLevel: number,
+    pszSourceDir: string | Win32Pointer,
+    pcchSourceDirSize: Win32Pointer,
+    pszTargetDir: string | Win32Pointer,
+    pcchTargetDirSize: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** mscms.dll!GetCMMInfo */
   GetCMMInfo(hColorTransform: number | bigint, param1: number): number;
   /** mscms.dll!GetColorDirectoryA */
-  GetColorDirectoryA(pMachineName: string | Win32Pointer, pBuffer: string | Win32Pointer, pdwSize: Win32Pointer): number;
+  GetColorDirectoryA(
+    pMachineName: string | Win32Pointer,
+    pBuffer: string | Win32Pointer,
+    pdwSize: Win32Pointer,
+  ): number;
   /** mscms.dll!GetColorDirectoryW */
-  GetColorDirectoryW(pMachineName: string | Win32Pointer, pBuffer: string | Win32Pointer, pdwSize: Win32Pointer): number;
+  GetColorDirectoryW(
+    pMachineName: string | Win32Pointer,
+    pBuffer: string | Win32Pointer,
+    pdwSize: Win32Pointer,
+  ): number;
   /** mscms.dll!GetColorDirectoryW */
   GetColorDirectory(pMachineName: string | Win32Pointer, pBuffer: string | Win32Pointer, pdwSize: Win32Pointer): number;
   /** mscms.dll!GetColorProfileElement */
-  GetColorProfileElement(hProfile: number | bigint, tag: number, dwOffset: number, pcbElement: Win32Pointer, pElement: Win32Pointer, pbReference: Win32Pointer): number;
+  GetColorProfileElement(
+    hProfile: number | bigint,
+    tag: number,
+    dwOffset: number,
+    pcbElement: Win32Pointer,
+    pElement: Win32Pointer,
+    pbReference: Win32Pointer,
+  ): number;
   /** mscms.dll!GetColorProfileElementTag */
   GetColorProfileElementTag(hProfile: number | bigint, dwIndex: number, pTag: Win32Pointer): number;
   /** mscms.dll!GetColorProfileFromHandle */
@@ -85,17 +247,50 @@ interface Functions {
   /** mscms.dll!GetNamedProfileInfo */
   GetNamedProfileInfo(hProfile: number | bigint, pNamedProfileInfo: Win32Pointer): number;
   /** mscms.dll!GetPS2ColorRenderingDictionary */
-  GetPS2ColorRenderingDictionary(hProfile: number | bigint, dwIntent: number, pPS2ColorRenderingDictionary: Win32Pointer, pcbPS2ColorRenderingDictionary: Win32Pointer, pbBinary: Win32Pointer): number;
+  GetPS2ColorRenderingDictionary(
+    hProfile: number | bigint,
+    dwIntent: number,
+    pPS2ColorRenderingDictionary: Win32Pointer,
+    pcbPS2ColorRenderingDictionary: Win32Pointer,
+    pbBinary: Win32Pointer,
+  ): number;
   /** mscms.dll!GetPS2ColorRenderingIntent */
-  GetPS2ColorRenderingIntent(hProfile: number | bigint, dwIntent: number, pBuffer: Win32Pointer, pcbPS2ColorRenderingIntent: Win32Pointer): number;
+  GetPS2ColorRenderingIntent(
+    hProfile: number | bigint,
+    dwIntent: number,
+    pBuffer: Win32Pointer,
+    pcbPS2ColorRenderingIntent: Win32Pointer,
+  ): number;
   /** mscms.dll!GetPS2ColorSpaceArray */
-  GetPS2ColorSpaceArray(hProfile: number | bigint, dwIntent: number, dwCSAType: number, pPS2ColorSpaceArray: Win32Pointer, pcbPS2ColorSpaceArray: Win32Pointer, pbBinary: Win32Pointer): number;
+  GetPS2ColorSpaceArray(
+    hProfile: number | bigint,
+    dwIntent: number,
+    dwCSAType: number,
+    pPS2ColorSpaceArray: Win32Pointer,
+    pcbPS2ColorSpaceArray: Win32Pointer,
+    pbBinary: Win32Pointer,
+  ): number;
   /** mscms.dll!GetStandardColorSpaceProfileA */
-  GetStandardColorSpaceProfileA(pMachineName: string | Win32Pointer, dwSCS: number, pBuffer: string | Win32Pointer, pcbSize: Win32Pointer): number;
+  GetStandardColorSpaceProfileA(
+    pMachineName: string | Win32Pointer,
+    dwSCS: number,
+    pBuffer: string | Win32Pointer,
+    pcbSize: Win32Pointer,
+  ): number;
   /** mscms.dll!GetStandardColorSpaceProfileW */
-  GetStandardColorSpaceProfileW(pMachineName: string | Win32Pointer, dwSCS: number, pBuffer: string | Win32Pointer, pcbSize: Win32Pointer): number;
+  GetStandardColorSpaceProfileW(
+    pMachineName: string | Win32Pointer,
+    dwSCS: number,
+    pBuffer: string | Win32Pointer,
+    pcbSize: Win32Pointer,
+  ): number;
   /** mscms.dll!GetStandardColorSpaceProfileW */
-  GetStandardColorSpaceProfile(pMachineName: string | Win32Pointer, dwSCS: number, pBuffer: string | Win32Pointer, pcbSize: Win32Pointer): number;
+  GetStandardColorSpaceProfile(
+    pMachineName: string | Win32Pointer,
+    dwSCS: number,
+    pBuffer: string | Win32Pointer,
+    pcbSize: Win32Pointer,
+  ): number;
   /** mscms.dll!InstallColorProfileA */
   InstallColorProfileA(pMachineName: string | Win32Pointer, pProfileName: string | Win32Pointer): number;
   /** mscms.dll!InstallColorProfileW */
@@ -107,11 +302,26 @@ interface Functions {
   /** mscms.dll!IsColorProfileValid */
   IsColorProfileValid(hProfile: number | bigint, pbValid: Win32Pointer): number;
   /** mscms.dll!OpenColorProfileA */
-  OpenColorProfileA(pProfile: Win32Pointer, dwDesiredAccess: number, dwShareMode: number, dwCreationMode: number): number | bigint;
+  OpenColorProfileA(
+    pProfile: Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    dwCreationMode: number,
+  ): number | bigint;
   /** mscms.dll!OpenColorProfileW */
-  OpenColorProfileW(pProfile: Win32Pointer, dwDesiredAccess: number, dwShareMode: number, dwCreationMode: number): number | bigint;
+  OpenColorProfileW(
+    pProfile: Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    dwCreationMode: number,
+  ): number | bigint;
   /** mscms.dll!OpenColorProfileW */
-  OpenColorProfile(pProfile: Win32Pointer, dwDesiredAccess: number, dwShareMode: number, dwCreationMode: number): number | bigint;
+  OpenColorProfile(
+    pProfile: Win32Pointer,
+    dwDesiredAccess: number,
+    dwShareMode: number,
+    dwCreationMode: number,
+  ): number | bigint;
   /** mscms.dll!RegisterCMMA */
   RegisterCMMA(pMachineName: string | Win32Pointer, cmmID: number, pCMMdll: string | Win32Pointer): number;
   /** mscms.dll!RegisterCMMW */
@@ -121,7 +331,13 @@ interface Functions {
   /** mscms.dll!SelectCMM */
   SelectCMM(dwCMMType: number): number;
   /** mscms.dll!SetColorProfileElement */
-  SetColorProfileElement(hProfile: number | bigint, tag: number, dwOffset: number, pcbElement: Win32Pointer, pElement: Win32Pointer): number;
+  SetColorProfileElement(
+    hProfile: number | bigint,
+    tag: number,
+    dwOffset: number,
+    pcbElement: Win32Pointer,
+    pElement: Win32Pointer,
+  ): number;
   /** mscms.dll!SetColorProfileElementReference */
   SetColorProfileElementReference(hProfile: number | bigint, newTag: number, refTag: number): number;
   /** mscms.dll!SetColorProfileElementSize */
@@ -129,23 +345,70 @@ interface Functions {
   /** mscms.dll!SetColorProfileHeader */
   SetColorProfileHeader(hProfile: number | bigint, pHeader: Win32Pointer): number;
   /** mscms.dll!SetStandardColorSpaceProfileA */
-  SetStandardColorSpaceProfileA(pMachineName: string | Win32Pointer, dwProfileID: number, pProfilename: string | Win32Pointer): number;
+  SetStandardColorSpaceProfileA(
+    pMachineName: string | Win32Pointer,
+    dwProfileID: number,
+    pProfilename: string | Win32Pointer,
+  ): number;
   /** mscms.dll!SetStandardColorSpaceProfileW */
-  SetStandardColorSpaceProfileW(pMachineName: string | Win32Pointer, dwProfileID: number, pProfileName: string | Win32Pointer): number;
+  SetStandardColorSpaceProfileW(
+    pMachineName: string | Win32Pointer,
+    dwProfileID: number,
+    pProfileName: string | Win32Pointer,
+  ): number;
   /** mscms.dll!SetStandardColorSpaceProfileW */
-  SetStandardColorSpaceProfile(pMachineName: string | Win32Pointer, dwProfileID: number, pProfileName: string | Win32Pointer): number;
+  SetStandardColorSpaceProfile(
+    pMachineName: string | Win32Pointer,
+    dwProfileID: number,
+    pProfileName: string | Win32Pointer,
+  ): number;
   /** mscms.dll!SpoolerCopyFileEvent */
-  SpoolerCopyFileEvent(pszPrinterName: string | Win32Pointer, pszKey: string | Win32Pointer, dwCopyFileEvent: number): number;
+  SpoolerCopyFileEvent(
+    pszPrinterName: string | Win32Pointer,
+    pszKey: string | Win32Pointer,
+    dwCopyFileEvent: number,
+  ): number;
   /** mscms.dll!TranslateBitmapBits */
-  TranslateBitmapBits(hColorTransform: number | bigint, pSrcBits: Win32Pointer, bmInput: number, dwWidth: number, dwHeight: number, dwInputStride: number, pDestBits: Win32Pointer, bmOutput: number, dwOutputStride: number, pfnCallBack: Win32Callback, ulCallbackData: number | bigint): number;
+  TranslateBitmapBits(
+    hColorTransform: number | bigint,
+    pSrcBits: Win32Pointer,
+    bmInput: number,
+    dwWidth: number,
+    dwHeight: number,
+    dwInputStride: number,
+    pDestBits: Win32Pointer,
+    bmOutput: number,
+    dwOutputStride: number,
+    pfnCallBack: Win32Callback,
+    ulCallbackData: number | bigint,
+  ): number;
   /** mscms.dll!TranslateColors */
-  TranslateColors(hColorTransform: number | bigint, paInputColors: Win32Pointer, nColors: number, ctInput: number, paOutputColors: Win32Pointer, ctOutput: number): number;
+  TranslateColors(
+    hColorTransform: number | bigint,
+    paInputColors: Win32Pointer,
+    nColors: number,
+    ctInput: number,
+    paOutputColors: Win32Pointer,
+    ctOutput: number,
+  ): number;
   /** mscms.dll!UninstallColorProfileA */
-  UninstallColorProfileA(pMachineName: string | Win32Pointer, pProfileName: string | Win32Pointer, bDelete: number): number;
+  UninstallColorProfileA(
+    pMachineName: string | Win32Pointer,
+    pProfileName: string | Win32Pointer,
+    bDelete: number,
+  ): number;
   /** mscms.dll!UninstallColorProfileW */
-  UninstallColorProfileW(pMachineName: string | Win32Pointer, pProfileName: string | Win32Pointer, bDelete: number): number;
+  UninstallColorProfileW(
+    pMachineName: string | Win32Pointer,
+    pProfileName: string | Win32Pointer,
+    bDelete: number,
+  ): number;
   /** mscms.dll!UninstallColorProfileW */
-  UninstallColorProfile(pMachineName: string | Win32Pointer, pProfileName: string | Win32Pointer, bDelete: number): number;
+  UninstallColorProfile(
+    pMachineName: string | Win32Pointer,
+    pProfileName: string | Win32Pointer,
+    bDelete: number,
+  ): number;
   /** mscms.dll!UnregisterCMMA */
   UnregisterCMMA(pMachineName: string | Win32Pointer, cmmID: number): number;
   /** mscms.dll!UnregisterCMMW */
@@ -153,43 +416,130 @@ interface Functions {
   /** mscms.dll!UnregisterCMMW */
   UnregisterCMM(pMachineName: string | Win32Pointer, cmmID: number): number;
   /** mscms.dll!WcsAssociateColorProfileWithDevice */
-  WcsAssociateColorProfileWithDevice(scope: number, pProfileName: string | Win32Pointer, pDeviceName: string | Win32Pointer): number;
+  WcsAssociateColorProfileWithDevice(
+    scope: number,
+    pProfileName: string | Win32Pointer,
+    pDeviceName: string | Win32Pointer,
+  ): number;
   /** mscms.dll!WcsCheckColors */
-  WcsCheckColors(hColorTransform: number | bigint, nColors: number, nInputChannels: number, cdtInput: number, cbInput: number, pInputData: Win32Pointer, paResult: Win32Pointer): number;
+  WcsCheckColors(
+    hColorTransform: number | bigint,
+    nColors: number,
+    nInputChannels: number,
+    cdtInput: number,
+    cbInput: number,
+    pInputData: Win32Pointer,
+    paResult: Win32Pointer,
+  ): number;
   /** mscms.dll!WcsCreateIccProfile */
   WcsCreateIccProfile(hWcsProfile: number | bigint, dwOptions: number): number | bigint;
   /** mscms.dll!WcsDisassociateColorProfileFromDevice */
-  WcsDisassociateColorProfileFromDevice(scope: number, pProfileName: string | Win32Pointer, pDeviceName: string | Win32Pointer): number;
+  WcsDisassociateColorProfileFromDevice(
+    scope: number,
+    pProfileName: string | Win32Pointer,
+    pDeviceName: string | Win32Pointer,
+  ): number;
   /** mscms.dll!WcsEnumColorProfiles */
-  WcsEnumColorProfiles(scope: number, pEnumRecord: Win32Pointer, pBuffer: Win32Pointer, dwSize: number, pnProfiles: Win32Pointer): number;
+  WcsEnumColorProfiles(
+    scope: number,
+    pEnumRecord: Win32Pointer,
+    pBuffer: Win32Pointer,
+    dwSize: number,
+    pnProfiles: Win32Pointer,
+  ): number;
   /** mscms.dll!WcsEnumColorProfilesSize */
   WcsEnumColorProfilesSize(scope: number, pEnumRecord: Win32Pointer, pdwSize: Win32Pointer): number;
   /** mscms.dll!WcsGetCalibrationManagementState */
   WcsGetCalibrationManagementState(pbIsEnabled: Win32Pointer): number;
   /** mscms.dll!WcsGetDefaultColorProfile */
-  WcsGetDefaultColorProfile(scope: number, pDeviceName: string | Win32Pointer, cptColorProfileType: number, cpstColorProfileSubType: number, dwProfileID: number, cbProfileName: number, pProfileName: string | Win32Pointer): number;
+  WcsGetDefaultColorProfile(
+    scope: number,
+    pDeviceName: string | Win32Pointer,
+    cptColorProfileType: number,
+    cpstColorProfileSubType: number,
+    dwProfileID: number,
+    cbProfileName: number,
+    pProfileName: string | Win32Pointer,
+  ): number;
   /** mscms.dll!WcsGetDefaultColorProfileSize */
-  WcsGetDefaultColorProfileSize(scope: number, pDeviceName: string | Win32Pointer, cptColorProfileType: number, cpstColorProfileSubType: number, dwProfileID: number, pcbProfileName: Win32Pointer): number;
+  WcsGetDefaultColorProfileSize(
+    scope: number,
+    pDeviceName: string | Win32Pointer,
+    cptColorProfileType: number,
+    cpstColorProfileSubType: number,
+    dwProfileID: number,
+    pcbProfileName: Win32Pointer,
+  ): number;
   /** mscms.dll!WcsGetDefaultRenderingIntent */
   WcsGetDefaultRenderingIntent(scope: number, pdwRenderingIntent: Win32Pointer): number;
   /** mscms.dll!WcsGetUsePerUserProfiles */
-  WcsGetUsePerUserProfiles(pDeviceName: string | Win32Pointer, dwDeviceClass: number, pUsePerUserProfiles: Win32Pointer): number;
+  WcsGetUsePerUserProfiles(
+    pDeviceName: string | Win32Pointer,
+    dwDeviceClass: number,
+    pUsePerUserProfiles: Win32Pointer,
+  ): number;
   /** mscms.dll!WcsOpenColorProfileA */
-  WcsOpenColorProfileA(pCDMPProfile: Win32Pointer, pCAMPProfile: Win32Pointer, pGMMPProfile: Win32Pointer, dwDesireAccess: number, dwShareMode: number, dwCreationMode: number, dwFlags: number): number | bigint;
+  WcsOpenColorProfileA(
+    pCDMPProfile: Win32Pointer,
+    pCAMPProfile: Win32Pointer,
+    pGMMPProfile: Win32Pointer,
+    dwDesireAccess: number,
+    dwShareMode: number,
+    dwCreationMode: number,
+    dwFlags: number,
+  ): number | bigint;
   /** mscms.dll!WcsOpenColorProfileW */
-  WcsOpenColorProfileW(pCDMPProfile: Win32Pointer, pCAMPProfile: Win32Pointer, pGMMPProfile: Win32Pointer, dwDesireAccess: number, dwShareMode: number, dwCreationMode: number, dwFlags: number): number | bigint;
+  WcsOpenColorProfileW(
+    pCDMPProfile: Win32Pointer,
+    pCAMPProfile: Win32Pointer,
+    pGMMPProfile: Win32Pointer,
+    dwDesireAccess: number,
+    dwShareMode: number,
+    dwCreationMode: number,
+    dwFlags: number,
+  ): number | bigint;
   /** mscms.dll!WcsOpenColorProfileW */
-  WcsOpenColorProfile(pCDMPProfile: Win32Pointer, pCAMPProfile: Win32Pointer, pGMMPProfile: Win32Pointer, dwDesireAccess: number, dwShareMode: number, dwCreationMode: number, dwFlags: number): number | bigint;
+  WcsOpenColorProfile(
+    pCDMPProfile: Win32Pointer,
+    pCAMPProfile: Win32Pointer,
+    pGMMPProfile: Win32Pointer,
+    dwDesireAccess: number,
+    dwShareMode: number,
+    dwCreationMode: number,
+    dwFlags: number,
+  ): number | bigint;
   /** mscms.dll!WcsSetCalibrationManagementState */
   WcsSetCalibrationManagementState(bIsEnabled: number): number;
   /** mscms.dll!WcsSetDefaultColorProfile */
-  WcsSetDefaultColorProfile(scope: number, pDeviceName: string | Win32Pointer, cptColorProfileType: number, cpstColorProfileSubType: number, dwProfileID: number, pProfileName: string | Win32Pointer): number;
+  WcsSetDefaultColorProfile(
+    scope: number,
+    pDeviceName: string | Win32Pointer,
+    cptColorProfileType: number,
+    cpstColorProfileSubType: number,
+    dwProfileID: number,
+    pProfileName: string | Win32Pointer,
+  ): number;
   /** mscms.dll!WcsSetDefaultRenderingIntent */
   WcsSetDefaultRenderingIntent(scope: number, dwRenderingIntent: number): number;
   /** mscms.dll!WcsSetUsePerUserProfiles */
-  WcsSetUsePerUserProfiles(pDeviceName: string | Win32Pointer, dwDeviceClass: number, usePerUserProfiles: number): number;
+  WcsSetUsePerUserProfiles(
+    pDeviceName: string | Win32Pointer,
+    dwDeviceClass: number,
+    usePerUserProfiles: number,
+  ): number;
   /** mscms.dll!WcsTranslateColors */
-  WcsTranslateColors(hColorTransform: number | bigint, nColors: number, nInputChannels: number, cdtInput: number, cbInput: number, pInputData: Win32Pointer, nOutputChannels: number, cdtOutput: number, cbOutput: number, pOutputData: Win32Pointer): number;
+  WcsTranslateColors(
+    hColorTransform: number | bigint,
+    nColors: number,
+    nInputChannels: number,
+    cdtInput: number,
+    cbInput: number,
+    pInputData: Win32Pointer,
+    nOutputChannels: number,
+    cdtOutput: number,
+    cbOutput: number,
+    pOutputData: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

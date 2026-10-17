@@ -9,9 +9,17 @@ interface Functions {
   /** vssapi.dll!CreateVssExpressWriterInternal */
   CreateVssExpressWriterInternal(ppWriter: Win32Pointer): number;
   /** vssapi.dll!GetProviderMgmtInterfaceInternal */
-  GetProviderMgmtInterfaceInternal(ProviderId: Win32StructInit, InterfaceId: Win32StructInit, ppItf: Win32Pointer): number;
+  GetProviderMgmtInterfaceInternal(
+    ProviderId: Win32StructInit,
+    InterfaceId: Win32StructInit,
+    ppItf: Win32Pointer,
+  ): number;
   /** vssapi.dll!IsVolumeSnapshottedInternal */
-  IsVolumeSnapshottedInternal(pwszVolumeName: Win32Pointer, pbSnapshotsPresent: Win32Pointer, plSnapshotCapability: Win32Pointer): number;
+  IsVolumeSnapshottedInternal(
+    pwszVolumeName: Win32Pointer,
+    pbSnapshotsPresent: Win32Pointer,
+    plSnapshotCapability: Win32Pointer,
+  ): number;
   /** vssapi.dll!ShouldBlockRevertInternal */
   ShouldBlockRevertInternal(wszVolumeName: string | Win32Pointer, pbBlock: Win32Pointer): number;
   /** vssapi.dll!VssFreeSnapshotPropertiesInternal */

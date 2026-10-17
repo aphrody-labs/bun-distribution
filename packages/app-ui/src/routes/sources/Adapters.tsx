@@ -1,17 +1,8 @@
 import { useState, useCallback, useId, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  useLibraryQuery,
-  useLibraryMutation,
-} from "../../contexts/SpacedriveContext";
+import { useLibraryQuery, useLibraryMutation } from "../../contexts/SpacedriveContext";
 import { TopBarPortal, TopBarItem } from "../../TopBar";
-import {
-  Icon,
-  Button,
-  CircleButton,
-  m3FocusRing,
-  m3StateLayer,
-} from "@aphrody/m3-primitives";
+import { Icon, Button, CircleButton, m3FocusRing, m3StateLayer } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 
 /** M3 outlined text field, dense (desktop density step). */
@@ -31,13 +22,13 @@ export function AdaptersScreen() {
   const adapters = adaptersRaw as any[] | undefined;
 
   const [selectedAdapter, setSelectedAdapter] = useState<string | null>(null);
-  const selected = adapters?.find((a) => a.id === selectedAdapter);
+  const selected = adapters?.find(a => a.id === selectedAdapter);
 
   const filteredAdapters = useMemo(() => {
     if (!adapters || !searchValue.trim()) return adapters;
     const q = searchValue.toLowerCase();
     return adapters.filter(
-      (a) =>
+      a =>
         a.name.toLowerCase().includes(q) ||
         a.description.toLowerCase().includes(q) ||
         a.data_type.toLowerCase().includes(q),
@@ -50,16 +41,10 @@ export function AdaptersScreen() {
         left={
           <>
             <TopBarItem id="navigation" label="Navigation" priority="high">
-              <CircleButton
-                icon="arrow_back"
-                onClick={() => navigate(-1)}
-                title="Back"
-              />
+              <CircleButton icon="arrow_back" onClick={() => navigate(-1)} title="Back" />
             </TopBarItem>
             <TopBarItem id="title" label="Title" priority="high">
-              <span className="text-on-surface whitespace-nowrap text-title-small">
-                Data adapters
-              </span>
+              <span className="text-on-surface whitespace-nowrap text-title-small">Data adapters</span>
             </TopBarItem>
           </>
         }
@@ -85,9 +70,7 @@ export function AdaptersScreen() {
 
         {adapters && adapters.length === 0 && !searchValue && (
           <div className="flex flex-col items-center justify-center py-20">
-            <p className="text-on-surface-variant text-body-medium">
-              No adapters installed
-            </p>
+            <p className="text-on-surface-variant text-body-medium">No adapters installed</p>
             <p className="text-outline mt-1 text-body-small">
               Adapters are loaded from the adapters directory on startup
             </p>
@@ -96,15 +79,13 @@ export function AdaptersScreen() {
 
         {filteredAdapters && filteredAdapters.length === 0 && searchValue && (
           <div className="flex items-center justify-center py-20">
-            <p className="text-outline text-body-medium">
-              No matching adapters
-            </p>
+            <p className="text-outline text-body-medium">No matching adapters</p>
           </div>
         )}
 
         {filteredAdapters && filteredAdapters.length > 0 && (
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-            {filteredAdapters.map((adapter) => (
+            {filteredAdapters.map(adapter => (
               <button
                 key={adapter.id}
                 onClick={() => setSelectedAdapter(adapter.id)}
@@ -114,16 +95,10 @@ export function AdaptersScreen() {
                   m3FocusRing,
                 )}
               >
-                <SourceTypeIcon
-                  type={adapter.data_type}
-                  svg={adapter.icon_svg}
-                  size="md"
-                />
+                <SourceTypeIcon type={adapter.data_type} svg={adapter.icon_svg} size="md" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-on-surface truncate text-label-large">
-                      {adapter.name}
-                    </span>
+                    <span className="text-on-surface truncate text-label-large">{adapter.name}</span>
                     <span className="bg-surface-container-highest text-on-surface-variant shrink-0 rounded-extra-small px-1.5 py-0.5 text-label-small">
                       v{adapter.version}
                     </span>
@@ -136,11 +111,7 @@ export function AdaptersScreen() {
                   <div className="text-on-surface-variant mt-0.5 truncate text-body-small">
                     {adapter.description || adapter.data_type}
                   </div>
-                  {adapter.author && (
-                    <div className="text-outline mt-0.5 text-label-small">
-                      by {adapter.author}
-                    </div>
-                  )}
+                  {adapter.author && <div className="text-outline mt-0.5 text-label-small">by {adapter.author}</div>}
                 </div>
               </button>
             ))}
@@ -152,14 +123,8 @@ export function AdaptersScreen() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/32">
             <div className="bg-surface-container-high w-full max-w-md rounded-extra-large p-6 shadow-md3-3">
               <div className="mb-4 flex items-center gap-3">
-                <SourceTypeIcon
-                  type={selected.data_type}
-                  svg={selected.icon_svg}
-                  size="sm"
-                />
-                <h3 className="text-on-surface text-headline-small">
-                  {selected.name}
-                </h3>
+                <SourceTypeIcon type={selected.data_type} svg={selected.icon_svg} size="sm" />
+                <h3 className="text-on-surface text-headline-small">{selected.name}</h3>
               </div>
               <ConfigureForm
                 adapterId={selected.id}
@@ -204,7 +169,7 @@ function ConfigureForm({
   const [result, setResult] = useState<string | null>(null);
 
   const handleFieldChange = useCallback((key: string, value: string) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
+    setValues(prev => ({ ...prev, [key]: value }));
   }, []);
 
   const handleSubmit = async () => {
@@ -243,20 +208,14 @@ function ConfigureForm({
         source_id: source.id,
       });
 
-      setResult(
-        "Source created. Sync is running in the background — check the job manager for progress.",
-      );
+      setResult("Source created. Sync is running in the background — check the job manager for progress.");
     } catch (e) {
       setError(String(e));
     }
   };
 
   if (isLoading) {
-    return (
-      <div className="text-outline py-8 text-center text-body-medium">
-        Loading...
-      </div>
-    );
+    return <div className="text-outline py-8 text-center text-body-medium">Loading...</div>;
   }
 
   if (queryError) {
@@ -271,9 +230,7 @@ function ConfigureForm({
     const isError = result.startsWith("Sync failed");
     return (
       <div className="flex flex-col items-center py-6">
-        <p
-          className={`text-body-medium ${isError ? "text-error" : "text-on-surface"}`}
-        >
+        <p className={`text-body-medium ${isError ? "text-error" : "text-on-surface"}`}>
           {isError ? "Something went wrong" : "Source added"}
         </p>
         <p className="text-outline mt-1 text-body-small">{result}</p>
@@ -297,66 +254,44 @@ function ConfigureForm({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <label
-          htmlFor={nameId}
-          className="text-on-surface-variant mb-1 block text-label-medium"
-        >
+        <label htmlFor={nameId} className="text-on-surface-variant mb-1 block text-label-medium">
           Source name
         </label>
         <input
           id={nameId}
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={e => setName(e.target.value)}
           placeholder={`e.g., My ${adapterName}`}
           className={fieldClassName}
         />
       </div>
 
-      {fields?.map((field) => (
+      {fields?.map(field => (
         <div key={field.key}>
           <label className="text-on-surface-variant mb-1 block text-label-medium">
             {field.name}
             {field.required && <span className="ml-1 text-error">*</span>}
           </label>
-          {field.description && (
-            <p className="text-on-surface-variant mb-1 text-body-small">
-              {field.description}
-            </p>
-          )}
+          {field.description && <p className="text-on-surface-variant mb-1 text-body-small">{field.description}</p>}
           <input
             type={field.secret ? "password" : "text"}
             value={values[field.key] ?? ""}
-            onChange={(e) => handleFieldChange(field.key, e.target.value)}
-            placeholder={
-              field.default ? `Default: ${field.default}` : undefined
-            }
+            onChange={e => handleFieldChange(field.key, e.target.value)}
+            placeholder={field.default ? `Default: ${field.default}` : undefined}
             className={fieldClassName}
           />
         </div>
       ))}
 
       {error && (
-        <div className="rounded-small bg-error-container p-2 text-body-small text-on-error-container">
-          {error}
-        </div>
+        <div className="rounded-small bg-error-container p-2 text-body-small text-on-error-container">{error}</div>
       )}
 
       <div className="mt-1 flex justify-end gap-2">
-        <Button
-          aria-label="Cancel"
-          title="Cancel"
-          variant="text"
-          size="lg"
-          onClick={onDone}
-        >
+        <Button aria-label="Cancel" title="Cancel" variant="text" size="lg" onClick={onDone}>
           <Icon name="close" size={18} />
         </Button>
-        <Button
-          variant="filled"
-          size="lg"
-          onClick={handleSubmit}
-          disabled={createSource.isPending}
-        >
+        <Button variant="filled" size="lg" onClick={handleSubmit} disabled={createSource.isPending}>
           Add & sync
         </Button>
       </div>

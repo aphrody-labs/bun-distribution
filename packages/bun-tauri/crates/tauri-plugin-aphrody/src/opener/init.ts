@@ -13,58 +13,56 @@
  * @module
  */
 
-import { invoke } from '../../../../js/api/core'
+import { invoke } from "../../../../js/api/core";
 
 // open <a href="..."> links with the API
-window.addEventListener('click', function (evt) {
+window.addEventListener("click", function (evt) {
   // return early if
   if (
     // event was prevented
-    evt.defaultPrevented
+    evt.defaultPrevented ||
     // or not a left click
-    || evt.button !== 0
+    evt.button !== 0 ||
     // or meta key pressed
-    || evt.metaKey
+    evt.metaKey ||
     // or al key pressed
-    || evt.altKey
+    evt.altKey
   )
-    return
+    return;
 
-  const a = evt
-    .composedPath()
-    .find((el) => el instanceof Node && el.nodeName.toUpperCase() === 'A') as
+  const a = evt.composedPath().find(el => el instanceof Node && el.nodeName.toUpperCase() === "A") as
     | HTMLAnchorElement
-    | undefined
+    | undefined;
 
   // return early if
   if (
     // not tirggered from <a> element
-    !a
+    !a ||
     // or doesn't have a href
-    || !a.href
+    !a.href ||
     // or not supposed to be open in a new tab
-    || !(
-      a.target === '_blank'
+    !(
+      a.target === "_blank" ||
       // or ctrl key pressed
-      || evt.ctrlKey
+      evt.ctrlKey ||
       // or shift key pressed
-      || evt.shiftKey
+      evt.shiftKey
     )
   )
-    return
+    return;
 
-  const url = new URL(a.href)
+  const url = new URL(a.href);
 
   // return early if
   if (
     // not default protocols
-    ['http:', 'https:', 'mailto:', 'tel:'].every((p) => url.protocol !== p)
+    ["http:", "https:", "mailto:", "tel:"].every(p => url.protocol !== p)
   )
-    return
+    return;
 
-  evt.preventDefault()
+  evt.preventDefault();
 
-  void invoke('plugin:opener|open_url', {
-    url
-  })
-})
+  void invoke("plugin:opener|open_url", {
+    url,
+  });
+});

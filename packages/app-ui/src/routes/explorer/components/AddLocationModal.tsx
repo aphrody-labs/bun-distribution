@@ -16,10 +16,7 @@ import {
   TabsContent,
 } from "@aphrody/m3-primitives";
 import type { IndexMode, LocationAddInput } from "@aphrody/drive-client";
-import {
-  useLibraryMutation,
-  useLibraryQuery,
-} from "../../../contexts/SpacedriveContext";
+import { useLibraryMutation, useLibraryQuery } from "../../../contexts/SpacedriveContext";
 import { usePlatform } from "../../../contexts/PlatformContext";
 import { NewLocation } from "@aphrody/assets/icons";
 
@@ -100,18 +97,11 @@ const jobOptions: JobOption[] = [
   },
 ];
 
-export function useAddLocationDialog(
-  onLocationAdded?: (locationId: string) => void,
-) {
-  return dialogManager.create((props) => (
-    <AddLocationDialog {...props} onLocationAdded={onLocationAdded} />
-  ));
+export function useAddLocationDialog(onLocationAdded?: (locationId: string) => void) {
+  return dialogManager.create(props => <AddLocationDialog {...props} onLocationAdded={onLocationAdded} />);
 }
 
-function AddLocationDialog(props: {
-  id: number;
-  onLocationAdded?: (locationId: string) => void;
-}) {
+function AddLocationDialog(props: { id: number; onLocationAdded?: (locationId: string) => void }) {
   const dialog = useDialog(props);
   const platform = usePlatform();
   const [step, setStep] = useState<ModalStep>("picker");
@@ -134,17 +124,15 @@ function AddLocationDialog(props: {
   // Update selected jobs when preset mode changes
   const currentMode = form.watch("mode");
   const [selectedJobs, setSelectedJobs] = useState<Set<string>>(
-    new Set(
-      jobOptions.filter((j) => j.presets.includes("Deep")).map((j) => j.id),
-    ),
+    new Set(jobOptions.filter(j => j.presets.includes("Deep")).map(j => j.id)),
   );
 
   // Sync selected jobs with preset when mode changes
   const handleModeChange = (mode: IndexMode) => {
     form.setValue("mode", mode);
     // Update selected jobs based on preset
-    const presetJobs = jobOptions.filter((j) => j.presets.includes(mode));
-    setSelectedJobs(new Set(presetJobs.map((j) => j.id)));
+    const presetJobs = jobOptions.filter(j => j.presets.includes(mode));
+    setSelectedJobs(new Set(presetJobs.map(j => j.id)));
   };
 
   const handleSelectSuggested = (path: string, name: string) => {
@@ -192,7 +180,7 @@ function AddLocationDialog(props: {
   };
 
   const toggleJob = (jobId: string) => {
-    setSelectedJobs((prev) => {
+    setSelectedJobs(prev => {
       const next = new Set(prev);
       if (next.has(jobId)) {
         next.delete(jobId);
@@ -203,11 +191,11 @@ function AddLocationDialog(props: {
     });
   };
 
-  const onSubmit = form.handleSubmit(async (data) => {
+  const onSubmit = form.handleSubmit(async data => {
     // Build job policies from selected jobs
     const job_policies: any = {};
 
-    selectedJobs.forEach((jobId) => {
+    selectedJobs.forEach(jobId => {
       job_policies[jobId] = { enabled: true };
     });
 
@@ -235,8 +223,7 @@ function AddLocationDialog(props: {
       console.error("Failed to add location:", error);
       form.setError("root", {
         type: "manual",
-        message:
-          error instanceof Error ? error.message : "Failed to add location",
+        message: error instanceof Error ? error.message : "Failed to add location",
       });
     }
   });
@@ -259,7 +246,7 @@ function AddLocationDialog(props: {
             <div className="relative">
               <Input
                 value={form.watch("path") || ""}
-                onChange={(e) => form.setValue("path", e.target.value)}
+                onChange={e => form.setValue("path", e.target.value)}
                 onKeyDown={handlePickerKeyDown}
                 placeholder="Select a custom folder"
                 size="lg"
@@ -278,24 +265,17 @@ function AddLocationDialog(props: {
             <div className="space-y-2">
               <Label>Suggested locations</Label>
               <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1">
-                {suggestedLocations.locations.map((loc) => (
+                {suggestedLocations.locations.map(loc => (
                   <button
                     key={loc.path}
                     type="button"
                     onClick={() => handleSelectSuggested(loc.path, loc.name)}
                     className="flex items-center gap-3 rounded-small border border-outline-variant bg-surface-container p-3 text-left transition-all hover:bg-on-surface/8 hover:border-primary/50 h-fit"
                   >
-                    <Folder
-                      className="size-5 shrink-0 text-primary"
-                      weight="fill"
-                    />
+                    <Folder className="size-5 shrink-0 text-primary" weight="fill" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-label-large font-medium text-on-surface truncate">
-                        {loc.name}
-                      </div>
-                      <div className="text-body-small text-outline truncate">
-                        {loc.path}
-                      </div>
+                      <div className="text-label-large font-medium text-on-surface truncate">{loc.name}</div>
+                      <div className="text-body-small text-outline truncate">{loc.path}</div>
                     </div>
                   </button>
                 ))}
@@ -320,13 +300,7 @@ function AddLocationDialog(props: {
       loading={addLocation.isPending}
       className="w-[520px]"
       buttonsSideContent={
-        <Button
-          aria-label="Back"
-          title="Back"
-          variant="gray"
-          size="sm"
-          onClick={handleCancel}
-        >
+        <Button aria-label="Back" title="Back" variant="gray" size="sm" onClick={handleCancel}>
           <Icon name="arrow_back" size={18} />
         </Button>
       }
@@ -344,19 +318,17 @@ function AddLocationDialog(props: {
         </div>
 
         {/* Tabs */}
-        <TabsRoot value={tab} onValueChange={(v) => setTab(v as SettingsTab)}>
+        <TabsRoot value={tab} onValueChange={v => setTab(v as SettingsTab)}>
           <TabsList>
             <TabsTrigger value="preset">Preset</TabsTrigger>
-            <TabsTrigger value="jobs">
-              Jobs {selectedJobs.size > 0 && `(${selectedJobs.size})`}
-            </TabsTrigger>
+            <TabsTrigger value="jobs">Jobs {selectedJobs.size > 0 && `(${selectedJobs.size})`}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="preset" className="pt-3">
             <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
               <Label>Indexing mode</Label>
               <div className="grid grid-cols-3 gap-2">
-                {indexModes.map((mode) => {
+                {indexModes.map(mode => {
                   const isSelected = currentMode === mode.value;
                   return (
                     <button
@@ -372,12 +344,8 @@ function AddLocationDialog(props: {
                           }
                         `}
                     >
-                      <div className="text-label-medium font-medium text-on-surface">
-                        {mode.label}
-                      </div>
-                      <div className="mt-1 text-[11px] leading-tight text-outline">
-                        {mode.description}
-                      </div>
+                      <div className="text-label-medium font-medium text-on-surface">{mode.label}</div>
+                      <div className="mt-1 text-[11px] leading-tight text-outline">{mode.description}</div>
                     </button>
                   );
                 })}
@@ -388,11 +356,10 @@ function AddLocationDialog(props: {
           <TabsContent value="jobs" className="pt-3">
             <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
               <p className="text-body-small text-outline">
-                Select which jobs to run after indexing. Extensions can add more
-                jobs.
+                Select which jobs to run after indexing. Extensions can add more jobs.
               </p>
               <div className="grid grid-cols-2 gap-2">
-                {jobOptions.map((job) => {
+                {jobOptions.map(job => {
                   const isSelected = selectedJobs.has(job.id);
                   return (
                     <button
@@ -410,12 +377,8 @@ function AddLocationDialog(props: {
                         `}
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="text-label-medium font-medium text-on-surface">
-                          {job.label}
-                        </div>
-                        <div className="text-[11px] text-outline mt-1 leading-tight">
-                          {job.description}
-                        </div>
+                        <div className="text-label-medium font-medium text-on-surface">{job.label}</div>
+                        <div className="text-[11px] text-outline mt-1 leading-tight">{job.description}</div>
                       </div>
                     </button>
                   );
@@ -427,9 +390,7 @@ function AddLocationDialog(props: {
 
         {/* Error Display */}
         {form.formState.errors.root && (
-          <p className="text-body-small text-error">
-            {form.formState.errors.root.message}
-          </p>
+          <p className="text-body-small text-error">{form.formState.errors.root.message}</p>
         )}
       </div>
     </Dialog>

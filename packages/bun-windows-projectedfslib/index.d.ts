@@ -7,9 +7,19 @@ interface Functions {
   /** projectedfslib.dll!PrjClearNegativePathCache */
   PrjClearNegativePathCache(namespaceVirtualizationContext: Win32Pointer, totalEntryNumber: Win32Pointer): number;
   /** projectedfslib.dll!PrjCompleteCommand */
-  PrjCompleteCommand(namespaceVirtualizationContext: Win32Pointer, commandId: number, completionResult: number, extendedParameters: Win32Pointer): number;
+  PrjCompleteCommand(
+    namespaceVirtualizationContext: Win32Pointer,
+    commandId: number,
+    completionResult: number,
+    extendedParameters: Win32Pointer,
+  ): number;
   /** projectedfslib.dll!PrjDeleteFile */
-  PrjDeleteFile(namespaceVirtualizationContext: Win32Pointer, destinationFileName: string | Win32Pointer, updateFlags: number, failureReason: Win32Pointer): number;
+  PrjDeleteFile(
+    namespaceVirtualizationContext: Win32Pointer,
+    destinationFileName: string | Win32Pointer,
+    updateFlags: number,
+    failureReason: Win32Pointer,
+  ): number;
   /** projectedfslib.dll!PrjDoesNameContainWildCards */
   PrjDoesNameContainWildCards(fileName: string | Win32Pointer): number;
   /** projectedfslib.dll!PrjFileNameCompare */
@@ -17,29 +27,76 @@ interface Functions {
   /** projectedfslib.dll!PrjFileNameMatch */
   PrjFileNameMatch(fileNameToCheck: string | Win32Pointer, pattern: string | Win32Pointer): number;
   /** projectedfslib.dll!PrjFillDirEntryBuffer */
-  PrjFillDirEntryBuffer(fileName: string | Win32Pointer, fileBasicInfo: Win32Pointer, dirEntryBufferHandle: Win32Pointer): number;
+  PrjFillDirEntryBuffer(
+    fileName: string | Win32Pointer,
+    fileBasicInfo: Win32Pointer,
+    dirEntryBufferHandle: Win32Pointer,
+  ): number;
   /** projectedfslib.dll!PrjFillDirEntryBuffer2 */
-  PrjFillDirEntryBuffer2(dirEntryBufferHandle: Win32Pointer, fileName: string | Win32Pointer, fileBasicInfo: Win32Pointer, extendedInfo: Win32Pointer): number;
+  PrjFillDirEntryBuffer2(
+    dirEntryBufferHandle: Win32Pointer,
+    fileName: string | Win32Pointer,
+    fileBasicInfo: Win32Pointer,
+    extendedInfo: Win32Pointer,
+  ): number;
   /** projectedfslib.dll!PrjFreeAlignedBuffer */
   PrjFreeAlignedBuffer(buffer: Win32Pointer): void;
   /** projectedfslib.dll!PrjGetOnDiskFileState */
   PrjGetOnDiskFileState(destinationFileName: string | Win32Pointer, fileState: Win32Pointer): number;
   /** projectedfslib.dll!PrjGetVirtualizationInstanceInfo */
-  PrjGetVirtualizationInstanceInfo(namespaceVirtualizationContext: Win32Pointer, virtualizationInstanceInfo: Win32Pointer): number;
+  PrjGetVirtualizationInstanceInfo(
+    namespaceVirtualizationContext: Win32Pointer,
+    virtualizationInstanceInfo: Win32Pointer,
+  ): number;
   /** projectedfslib.dll!PrjMarkDirectoryAsPlaceholder */
-  PrjMarkDirectoryAsPlaceholder(rootPathName: string | Win32Pointer, targetPathName: string | Win32Pointer, versionInfo: Win32Pointer, virtualizationInstanceID: Win32Pointer): number;
+  PrjMarkDirectoryAsPlaceholder(
+    rootPathName: string | Win32Pointer,
+    targetPathName: string | Win32Pointer,
+    versionInfo: Win32Pointer,
+    virtualizationInstanceID: Win32Pointer,
+  ): number;
   /** projectedfslib.dll!PrjStartVirtualizing */
-  PrjStartVirtualizing(virtualizationRootPath: string | Win32Pointer, callbacks: Win32Pointer, instanceContext: Win32Pointer, options: Win32Pointer, namespaceVirtualizationContext: Win32Pointer): number;
+  PrjStartVirtualizing(
+    virtualizationRootPath: string | Win32Pointer,
+    callbacks: Win32Pointer,
+    instanceContext: Win32Pointer,
+    options: Win32Pointer,
+    namespaceVirtualizationContext: Win32Pointer,
+  ): number;
   /** projectedfslib.dll!PrjStopVirtualizing */
   PrjStopVirtualizing(namespaceVirtualizationContext: Win32Pointer): void;
   /** projectedfslib.dll!PrjUpdateFileIfNeeded */
-  PrjUpdateFileIfNeeded(namespaceVirtualizationContext: Win32Pointer, destinationFileName: string | Win32Pointer, placeholderInfo: Win32Pointer, placeholderInfoSize: number, updateFlags: number, failureReason: Win32Pointer): number;
+  PrjUpdateFileIfNeeded(
+    namespaceVirtualizationContext: Win32Pointer,
+    destinationFileName: string | Win32Pointer,
+    placeholderInfo: Win32Pointer,
+    placeholderInfoSize: number,
+    updateFlags: number,
+    failureReason: Win32Pointer,
+  ): number;
   /** projectedfslib.dll!PrjWriteFileData */
-  PrjWriteFileData(namespaceVirtualizationContext: Win32Pointer, dataStreamId: Win32Pointer, buffer: Win32Pointer, byteOffset: number | bigint, length: number): number;
+  PrjWriteFileData(
+    namespaceVirtualizationContext: Win32Pointer,
+    dataStreamId: Win32Pointer,
+    buffer: Win32Pointer,
+    byteOffset: number | bigint,
+    length: number,
+  ): number;
   /** projectedfslib.dll!PrjWritePlaceholderInfo */
-  PrjWritePlaceholderInfo(namespaceVirtualizationContext: Win32Pointer, destinationFileName: string | Win32Pointer, placeholderInfo: Win32Pointer, placeholderInfoSize: number): number;
+  PrjWritePlaceholderInfo(
+    namespaceVirtualizationContext: Win32Pointer,
+    destinationFileName: string | Win32Pointer,
+    placeholderInfo: Win32Pointer,
+    placeholderInfoSize: number,
+  ): number;
   /** projectedfslib.dll!PrjWritePlaceholderInfo2 */
-  PrjWritePlaceholderInfo2(namespaceVirtualizationContext: Win32Pointer, destinationFileName: string | Win32Pointer, placeholderInfo: Win32Pointer, placeholderInfoSize: number, ExtendedInfo: Win32Pointer): number;
+  PrjWritePlaceholderInfo2(
+    namespaceVirtualizationContext: Win32Pointer,
+    destinationFileName: string | Win32Pointer,
+    placeholderInfo: Win32Pointer,
+    placeholderInfoSize: number,
+    ExtendedInfo: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -8,14 +8,7 @@
  * EasyAntiCheat Runtime 1826330, Proton BattlEye Runtime 1161040, or the same runtimes from the
  * Lutris index that Heroic and umu use). Nothing here patches or bypasses anti-cheat.
  */
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import { basename, join } from "node:path";
 import { parseAppInfo } from "./appinfo.js";
 import { readVdf } from "./config.js";
@@ -55,22 +48,13 @@ export const VALVE_PROTON: Record<string, number> = {
 };
 
 /** Valve Proton builds and Steam Linux Runtimes known to this client (name -> app id). */
-export function valveProtonCatalog(
-  steamRoot = resolveSteamRoot(),
-): Record<string, number> {
+export function valveProtonCatalog(steamRoot = resolveSteamRoot()): Record<string, number> {
   try {
-    const info = parseAppInfo(
-      readFileSync(join(steamRoot, "appcache", "appinfo.vdf")),
-    );
+    const info = parseAppInfo(readFileSync(join(steamRoot, "appcache", "appinfo.vdf")));
     const out: Record<string, number> = {};
     for (const app of info.apps) {
       const name = kvStr(app.kv, "appinfo", "common", "name") ?? "";
-      if (
-        /^(Proton (\d|Experimental|Hotfix|Next)|Steam Linux Runtime)/.test(
-          name,
-        ) &&
-        !/ARM64|Arm64/.test(name)
-      )
+      if (/^(Proton (\d|Experimental|Hotfix|Next)|Steam Linux Runtime)/.test(name) && !/ARM64|Arm64/.test(name))
         out[name] = app.appid;
     }
     return Object.keys(out).length ? out : VALVE_PROTON;
@@ -95,9 +79,7 @@ export function libraryRoots(steamRoot = resolveSteamRoot()): string[] {
       readVdf(join(steamRoot, "steamapps", "libraryfolders.vdf")),
     "libraryfolders",
   );
-  const paths = Object.values(kv ?? {}).flatMap((v) =>
-    typeof v === "string" ? [] : [norm(kvStr(v, "path") ?? "")],
-  );
+  const paths = Object.values(kv ?? {}).flatMap(v => (typeof v === "string" ? [] : [norm(kvStr(v, "path") ?? "")]));
   return [...new Set([norm(steamRoot), ...paths.filter(Boolean)])];
 }
 
@@ -108,11 +90,7 @@ export function listCompatTools(steamRoot = resolveSteamRoot()): CompatTool[] {
     if (!isDir(dir)) continue;
     for (const entry of readdirSync(dir)) {
       const path = join(dir, entry);
-      const vdf = kvObj(
-        readVdf(join(path, "compatibilitytool.vdf")),
-        "compatibilitytools",
-        "compat_tools",
-      );
+      const vdf = kvObj(readVdf(join(path, "compatibilitytool.vdf")), "compatibilitytools", "compat_tools");
       if (!vdf) continue;
       for (const [internalName, v] of Object.entries(vdf)) {
         if (typeof v === "string") continue;
@@ -130,11 +108,7 @@ export function listCompatTools(steamRoot = resolveSteamRoot()): CompatTool[] {
     const common = join(lib, "steamapps", "common");
     if (!isDir(common)) continue;
     for (const entry of readdirSync(common)) {
-      if (
-        !entry.startsWith("Proton") ||
-        !existsSync(join(common, entry, "proton"))
-      )
-        continue;
+      if (!entry.startsWith("Proton") || !existsSync(join(common, entry, "proton"))) continue;
       tools.push({
         internalName: valveInternalName(entry),
         displayName: entry,
@@ -161,10 +135,7 @@ export const valveInternalName = (dir: string): string =>
 
 function readVersion(dir: string): string | null {
   try {
-    return (
-      readFileSync(join(dir, "version"), "utf8").trim().split(/\s+/).pop() ??
-      null
-    );
+    return readFileSync(join(dir, "version"), "utf8").trim().split(/\s+/).pop() ?? null;
   } catch {
     return null;
   }
@@ -174,13 +145,9 @@ function readVersion(dir: string): string | null {
 export function supportsX86_64V3(): boolean {
   if (process.arch !== "x64") return false;
   try {
-    const flags =
-      readFileSync("/proc/cpuinfo", "utf8").match(/^flags\s*:(.*)$/m)?.[1] ??
-      "";
+    const flags = readFileSync("/proc/cpuinfo", "utf8").match(/^flags\s*:(.*)$/m)?.[1] ?? "";
     const set = new Set(flags.trim().split(/\s+/));
-    return ["avx2", "bmi1", "bmi2", "fma", "movbe", "f16c", "abm"].every((f) =>
-      set.has(f),
-    );
+    return ["avx2", "bmi1", "bmi2", "fma", "movbe", "f16c", "abm"].every(f => set.has(f));
   } catch {
     // No /proc/cpuinfo (Windows preparing a Linux install): portable x86-64; pass --arch x86_64_v3.
     return false;
@@ -222,22 +189,16 @@ export async function protonRelease(
   };
   const arch =
     opts.arch ??
-    (process.arch === "arm64"
-      ? "arm64"
-      : flavor === "cachyos" && supportsX86_64V3()
-        ? "x86_64_v3"
-        : "x86_64");
+    (process.arch === "arm64" ? "arm64" : flavor === "cachyos" && supportsX86_64V3() ? "x86_64_v3" : "x86_64");
   const wanted = (name: string) =>
     flavor === "ge"
-      ? name.endsWith(
-          arch === "arm64" ? "-aarch64.tar.gz" : "-x86_64.tar.gz",
-        ) ||
+      ? name.endsWith(arch === "arm64" ? "-aarch64.tar.gz" : "-x86_64.tar.gz") ||
         (name === `${rel.tag_name}.tar.gz` && arch !== "arm64")
       : name.endsWith(`-${arch}.tar.xz`);
-  const asset = rel.assets.find((a) => wanted(a.name));
+  const asset = rel.assets.find(a => wanted(a.name));
   if (!asset) throw new Error(`${flavor} ${rel.tag_name}: no ${arch} archive`);
   const stem = asset.name.replace(/\.tar\.(gz|xz)$/, "");
-  const sum = rel.assets.find((a) => a.name === `${stem}.sha512sum`);
+  const sum = rel.assets.find(a => a.name === `${stem}.sha512sum`);
   return {
     flavor,
     tag: rel.tag_name,
@@ -253,14 +214,9 @@ export const toolDirName = (rel: ProtonRelease): string =>
   rel.flavor === "ge" ? rel.tag : rel.asset.replace(/\.tar\.(gz|xz)$/, "");
 
 /** First custom compatibility tool directory (`STEAM_EXTRA_COMPAT_TOOLS_PATHS`, then the client's). */
-export const defaultCompatDir = (steamRoot = resolveSteamRoot()): string =>
-  compatToolDirs(steamRoot)[0]!;
+export const defaultCompatDir = (steamRoot = resolveSteamRoot()): string => compatToolDirs(steamRoot)[0]!;
 
-async function download(
-  url: string,
-  file: string,
-  checksumUrl: string | null,
-): Promise<void> {
+async function download(url: string, file: string, checksumUrl: string | null): Promise<void> {
   const res = await fetch(url, { headers: { "user-agent": "bun-steam" } });
   if (!res.ok || !res.body) throw new Error(`${url}: HTTP ${res.status}`);
   const hasher = new Bun.CryptoHasher("sha512");
@@ -271,28 +227,18 @@ async function download(
   }
   await writer.end();
   if (!checksumUrl) return;
-  const sum = (
-    await (
-      await fetch(checksumUrl, { headers: { "user-agent": "bun-steam" } })
-    ).text()
-  )
+  const sum = (await (await fetch(checksumUrl, { headers: { "user-agent": "bun-steam" } })).text())
     .trim()
     .split(/\s+/)[0];
-  if (sum && sum.toLowerCase() !== hasher.digest("hex"))
-    throw new Error(`${basename(file)}: SHA-512 mismatch`);
+  if (sum && sum.toLowerCase() !== hasher.digest("hex")) throw new Error(`${basename(file)}: SHA-512 mismatch`);
 }
 
-async function extract(
-  archive: string,
-  into: string,
-  strip = 0,
-): Promise<void> {
+async function extract(archive: string, into: string, strip = 0): Promise<void> {
   mkdirSync(into, { recursive: true });
   const args = ["tar", "-xf", archive, "-C", into];
   if (strip) args.push(`--strip-components=${strip}`);
   const proc = Bun.spawn(args, { stdout: "ignore", stderr: "pipe" });
-  if ((await proc.exited) !== 0)
-    throw new Error(`tar: ${(await new Response(proc.stderr).text()).trim()}`);
+  if ((await proc.exited) !== 0) throw new Error(`tar: ${(await new Response(proc.stderr).text()).trim()}`);
 }
 
 export interface InstallResult {
@@ -328,9 +274,7 @@ export async function installProton(
     const staging = join(dir, `.bun-steam-${process.pid}`);
     const archive = join(dir, `.bun-steam-${process.pid}-${rel.asset}`);
     try {
-      opts.log?.(
-        `downloading ${rel.asset} (${(rel.size / 2 ** 20).toFixed(0)} MiB)`,
-      );
+      opts.log?.(`downloading ${rel.asset} (${(rel.size / 2 ** 20).toFixed(0)} MiB)`);
       await download(rel.url, archive, rel.checksumUrl);
       opts.log?.(`extracting into ${target}`);
       await extract(archive, staging);
@@ -354,11 +298,7 @@ export async function installProton(
       }
     }
   }
-  const internal = kvObj(
-    readVdf(join(target, "compatibilitytool.vdf")),
-    "compatibilitytools",
-    "compat_tools",
-  );
+  const internal = kvObj(readVdf(join(target, "compatibilitytool.vdf")), "compatibilitytools", "compat_tools");
   return {
     flavor,
     tag: rel.tag,
@@ -376,20 +316,13 @@ export function installValveTool(
 ) {
   const steamRoot = opts.steamRoot ?? resolveSteamRoot();
   const catalog = valveProtonCatalog(steamRoot);
-  const appId =
-    catalog[name] ?? (/^\d+$/.test(name) ? Number(name) : undefined);
-  if (!appId)
-    throw new Error(
-      `unknown Valve tool ${name}; known: ${Object.keys(catalog).join(", ")}`,
-    );
-  const dirName =
-    Object.entries(catalog).find(([, id]) => id === appId)?.[0] ??
-    String(appId);
+  const appId = catalog[name] ?? (/^\d+$/.test(name) ? Number(name) : undefined);
+  if (!appId) throw new Error(`unknown Valve tool ${name}; known: ${Object.keys(catalog).join(", ")}`);
+  const dirName = Object.entries(catalog).find(([, id]) => id === appId)?.[0] ?? String(appId);
   return appUpdate(appId, {
     ...opts,
     platform: opts.platform ?? "linux",
-    installDir:
-      opts.installDir ?? join(steamRoot, "steamapps", "common", dirName),
+    installDir: opts.installDir ?? join(steamRoot, "steamapps", "common", dirName),
   });
 }
 
@@ -432,14 +365,10 @@ export async function installAntiCheatRuntimes(
         installDir: path,
       });
       if (run.exitCode !== 0)
-        throw new Error(
-          `${rt.name}: steamcmd exit ${run.exitCode}${run.needsLogin ? " (no cached session)" : ""}`,
-        );
+        throw new Error(`${rt.name}: steamcmd exit ${run.exitCode}${run.needsLogin ? " (no cached session)" : ""}`);
     } else {
-      index ??= (await (
-        await fetch("https://lutris.net/api/runtimes")
-      ).json()) as { name: string; url: string }[];
-      const entry = index.find((r) => r.name === rt.lutris);
+      index ??= (await (await fetch("https://lutris.net/api/runtimes")).json()) as { name: string; url: string }[];
+      const entry = index.find(r => r.name === rt.lutris);
       if (!entry) throw new Error(`Lutris runtime index has no ${rt.lutris}`);
       const archive = `${path}.bun-steam-${process.pid}.tar.xz`;
       mkdirSync(dir, { recursive: true });

@@ -202,7 +202,9 @@ impl Builder {
     /// [`ManagerExt::autolaunch`] can be used from anywhere in the application.
     pub fn build<R: Runtime>(self) -> TauriPlugin<R> {
         PluginBuilder::new("autostart")
-            .invoke_handler(tauri::generate_handler![#![plugin(autostart)] enable, disable, is_enabled])
+            .invoke_handler(
+                tauri::generate_handler![#![plugin(autostart)] enable, disable, is_enabled],
+            )
             .setup(move |app, _api| {
                 let mut builder = AutoLaunchBuilder::new();
 

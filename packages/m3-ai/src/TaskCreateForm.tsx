@@ -1,13 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 AND MIT
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/ai/src/TaskCreateForm.tsx), MIT, rebuilt on Material Design 3.
 
-import {
-  Button,
-  Input,
-  Select,
-  SelectOption,
-  TextArea,
-} from "@aphrody/m3-primitives";
+import { Button, Input, Select, SelectOption, TextArea } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
@@ -68,12 +62,7 @@ export function TaskCreateForm({
   }, [canSubmit, onSubmit, title, description, priority, defaultPriority]);
 
   return (
-    <div
-      className={clsx(
-        "flex flex-col gap-3 rounded-medium bg-surface-container-low p-4 text-on-surface",
-        className,
-      )}
-    >
+    <div className={clsx("flex flex-col gap-3 rounded-medium bg-surface-container-low p-4 text-on-surface", className)}>
       <div className="flex items-center gap-2">
         <label htmlFor={titleInputId} className="sr-only">
           Task Title
@@ -84,8 +73,8 @@ export function TaskCreateForm({
           type="text"
           size="lg"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
+          onChange={e => setTitle(e.target.value)}
+          onKeyDown={e => {
             if (e.key === "Enter") handleSubmit();
             if (e.key === "Escape") onCancel?.();
           }}
@@ -96,10 +85,10 @@ export function TaskCreateForm({
         <Select
           value={priority}
           size="lg"
-          onChange={(value) => setPriority(value as TaskPriority)}
+          onChange={value => setPriority(value as TaskPriority)}
           disabled={isSubmitting}
         >
-          {PRIORITIES.map((p) => (
+          {PRIORITIES.map(p => (
             <SelectOption key={p} value={p}>
               {TASK_PRIORITY_LABEL[p]}
             </SelectOption>
@@ -112,7 +101,7 @@ export function TaskCreateForm({
       <TextArea
         id={descriptionInputId}
         value={description}
-        onChange={(e) => setDescription(e.target.value)}
+        onChange={e => setDescription(e.target.value)}
         placeholder="Description (optional)"
         rows={2}
         className="w-full resize-none"
@@ -120,21 +109,11 @@ export function TaskCreateForm({
       />
       <div className="flex items-center justify-end gap-2">
         {onCancel && (
-          <Button
-            variant="text"
-            size="lg"
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
+          <Button variant="text" size="lg" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>
         )}
-        <Button
-          variant="filled"
-          size="lg"
-          disabled={!canSubmit}
-          onClick={handleSubmit}
-        >
+        <Button variant="filled" size="lg" disabled={!canSubmit} onClick={handleSubmit}>
           Create
         </Button>
       </div>

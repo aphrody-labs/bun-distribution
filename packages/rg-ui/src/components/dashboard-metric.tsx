@@ -90,11 +90,7 @@ export function DashboardMetric({
             </span>
           )}
         </div>
-        {description && (
-          <p className="text-xs text-muted-foreground/70 mt-0.5">
-            {description}
-          </p>
-        )}
+        {description && <p className="text-xs text-muted-foreground/70 mt-0.5">{description}</p>}
       </div>
       {href && (
         <ArrowRight className="size-5 text-muted-foreground/50 group-hover:text-foreground transition-colors shrink-0" />

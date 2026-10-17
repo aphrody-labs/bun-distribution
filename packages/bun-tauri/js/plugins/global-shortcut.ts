@@ -8,22 +8,22 @@
  * @module
  */
 
-import { invoke, Channel } from '../api/core'
+import { invoke, Channel } from "../api/core";
 
 /**
  * Payload sent to a shortcut handler when a registered shortcut is pressed or released.
  */
 export interface ShortcutEvent {
   /** The shortcut definition that triggered this event, e.g. `CommandOrControl+Shift+C`. */
-  shortcut: string
+  shortcut: string;
   /** Numeric identifier derived from the shortcut's modifiers and key. */
-  id: number
+  id: number;
   /** Whether the shortcut's key combination was pressed down or released. */
-  state: 'Released' | 'Pressed'
+  state: "Released" | "Pressed";
 }
 
 /** Callback invoked with a {@link ShortcutEvent} whenever a registered shortcut changes state. */
-export type ShortcutHandler = (event: ShortcutEvent) => void
+export type ShortcutHandler = (event: ShortcutEvent) => void;
 
 /**
  * Register a global shortcut or a list of shortcuts.
@@ -55,17 +55,14 @@ export type ShortcutHandler = (event: ShortcutEvent) => void
  *
  * @since 2.0.0
  */
-async function register(
-  shortcuts: string | string[],
-  handler: ShortcutHandler
-): Promise<void> {
-  const h = new Channel<ShortcutEvent>()
-  h.onmessage = handler
+async function register(shortcuts: string | string[], handler: ShortcutHandler): Promise<void> {
+  const h = new Channel<ShortcutEvent>();
+  h.onmessage = handler;
 
-  return await invoke('plugin:global-shortcut|register', {
+  return await invoke("plugin:global-shortcut|register", {
     shortcuts: Array.isArray(shortcuts) ? shortcuts : [shortcuts],
-    handler: h
-  })
+    handler: h,
+  });
 }
 
 /**
@@ -87,9 +84,9 @@ async function register(
  * @since 2.0.0
  */
 async function unregister(shortcuts: string | string[]): Promise<void> {
-  return await invoke('plugin:global-shortcut|unregister', {
-    shortcuts: Array.isArray(shortcuts) ? shortcuts : [shortcuts]
-  })
+  return await invoke("plugin:global-shortcut|unregister", {
+    shortcuts: Array.isArray(shortcuts) ? shortcuts : [shortcuts],
+  });
 }
 
 /**
@@ -103,7 +100,7 @@ async function unregister(shortcuts: string | string[]): Promise<void> {
  * @since 2.0.0
  */
 async function unregisterAll(): Promise<void> {
-  return await invoke('plugin:global-shortcut|unregister_all', {})
+  return await invoke("plugin:global-shortcut|unregister_all", {});
 }
 
 /**
@@ -123,9 +120,9 @@ async function unregisterAll(): Promise<void> {
  * @since 2.0.0
  */
 async function isRegistered(shortcut: string): Promise<boolean> {
-  return await invoke('plugin:global-shortcut|is_registered', {
-    shortcut
-  })
+  return await invoke("plugin:global-shortcut|is_registered", {
+    shortcut,
+  });
 }
 
-export { register, unregister, unregisterAll, isRegistered }
+export { register, unregister, unregisterAll, isRegistered };

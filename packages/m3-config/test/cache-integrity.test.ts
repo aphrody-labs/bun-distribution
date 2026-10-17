@@ -5,28 +5,15 @@ import { M3UiCache } from "../cache-db.ts";
 test("cache preserves JSON-looking strings as strings", () => {
   const cache = new M3UiCache();
   try {
-    for (const value of [
-      "null",
-      "true",
-      "false",
-      "123",
-      '"quoted"',
-      '{"a":1}',
-      "[1,2]",
-      "",
-    ]) {
+    for (const value of ["null", "true", "false", "123", '"quoted"', '{"a":1}', "[1,2]", ""]) {
       cache.set("values", value, value);
       expect(cache.get<string>("values", value)).toBe(value);
     }
     cache.set("values", "object", { a: [1, null, true] });
-    expect(
-      cache.get<{ a: (number | boolean | null)[] }>("values", "object"),
-    ).toEqual({
+    expect(cache.get<{ a: (number | boolean | null)[] }>("values", "object")).toEqual({
       a: [1, null, true],
     });
-    expect(() => cache.set("values", "undefined", undefined)).toThrow(
-      "JSON serializable",
-    );
+    expect(() => cache.set("values", "undefined", undefined)).toThrow("JSON serializable");
     expect(cache.get("values", "undefined")).toBeNull();
   } finally {
     cache.close();

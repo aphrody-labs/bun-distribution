@@ -1,8 +1,4 @@
-import {
-  masksRegistry,
-  type MaskDefinitionForRegistration,
-  type MaskIconProps,
-} from "../../registry";
+import { masksRegistry, type MaskDefinitionForRegistration, type MaskIconProps } from "../../registry";
 import { cinematicBarsMaskDefinition } from "./cinematic-bars";
 import { diamondMaskDefinition } from "./diamond";
 import { ellipseMaskDefinition } from "./ellipse";
@@ -18,13 +14,7 @@ import { textMaskDefinition } from "./text";
 // and the freeform pen-tool mask. Host code passes whatever icon
 // component it likes via the loose MaskIconProps contract.
 
-function registerDefaultMask({
-  definition,
-  icon,
-}: {
-  definition: MaskDefinitionForRegistration;
-  icon: MaskIconProps;
-}) {
+function registerDefaultMask({ definition, icon }: { definition: MaskDefinitionForRegistration; icon: MaskIconProps }) {
   if (masksRegistry.has(definition.type)) {
     return;
   }

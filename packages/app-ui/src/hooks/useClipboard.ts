@@ -8,11 +8,7 @@ export interface ClipboardState {
 }
 
 interface ClipboardStore extends ClipboardState {
-  setClipboard: (
-    operation: "copy" | "cut",
-    files: SdPath[],
-    sourcePath: SdPath | null,
-  ) => void;
+  setClipboard: (operation: "copy" | "cut", files: SdPath[], sourcePath: SdPath | null) => void;
   clearClipboard: () => void;
   hasClipboard: () => boolean;
 }
@@ -38,9 +34,7 @@ export const useClipboardStore = create<ClipboardStore>((set, get) => ({
 
   clearClipboard: () => {
     const state = get();
-    console.log(
-      `[Clipboard] Cleared (had ${state.files.length} file${state.files.length === 1 ? "" : "s"})`,
-    );
+    console.log(`[Clipboard] Cleared (had ${state.files.length} file${state.files.length === 1 ? "" : "s"})`);
     set({ operation: null, files: [], sourcePath: null });
   },
 

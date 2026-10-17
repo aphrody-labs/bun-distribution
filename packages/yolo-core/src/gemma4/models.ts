@@ -79,13 +79,7 @@ export const GEMMA4_E2B_CONFIG: Gemma4Config = {
   globalRopeFrequency: 1000000,
   localRopeProportion: 1.0,
   globalRopeProportion: 0.25,
-  attentionPattern: [
-    "local_sliding",
-    "local_sliding",
-    "local_sliding",
-    "local_sliding",
-    "global",
-  ],
+  attentionPattern: ["local_sliding", "local_sliding", "local_sliding", "local_sliding", "global"],
   enableMoe: false,
   numExperts: 0,
   topKExperts: 0,
@@ -126,13 +120,7 @@ export const GEMMA4_E4B_CONFIG: Gemma4Config = {
   globalRopeFrequency: 1000000,
   localRopeProportion: 1.0,
   globalRopeProportion: 0.25,
-  attentionPattern: [
-    "local_sliding",
-    "local_sliding",
-    "local_sliding",
-    "local_sliding",
-    "global",
-  ],
+  attentionPattern: ["local_sliding", "local_sliding", "local_sliding", "local_sliding", "global"],
   enableMoe: false,
   numExperts: 0,
   topKExperts: 0,
@@ -157,13 +145,7 @@ export const GEMMA4_26B_A4B_MOE_CONFIG: Gemma4Config = {
   globalRopeFrequency: 1000000,
   localRopeProportion: 1.0,
   globalRopeProportion: 0.25,
-  attentionPattern: [
-    "local_sliding",
-    "local_sliding",
-    "local_sliding",
-    "local_sliding",
-    "global",
-  ],
+  attentionPattern: ["local_sliding", "local_sliding", "local_sliding", "local_sliding", "global"],
   enableMoe: true,
   numExperts: 128,
   topKExperts: 8,
@@ -188,13 +170,7 @@ export const GEMMA4_31B_CONFIG: Gemma4Config = {
   globalRopeFrequency: 1000000,
   localRopeProportion: 1.0,
   globalRopeProportion: 0.25,
-  attentionPattern: [
-    "local_sliding",
-    "local_sliding",
-    "local_sliding",
-    "local_sliding",
-    "global",
-  ],
+  attentionPattern: ["local_sliding", "local_sliding", "local_sliding", "local_sliding", "global"],
   enableMoe: false,
   numExperts: 0,
   topKExperts: 0,
@@ -210,20 +186,16 @@ export const GEMMA4_MODELS: Readonly<Record<string, Gemma4Config>> = {
 };
 
 /** Retrieve a known estimate profile; unknown names must not silently alias another model. */
-export function getGemma4Config(
-  modelName: string = "gemma4-e2b",
-): Gemma4Config {
+export function getGemma4Config(modelName: string = "gemma4-e2b"): Gemma4Config {
   if (typeof modelName !== "string") throw new Error("Model name must be text");
   const norm = modelName.toLowerCase().replace(/_/g, "-");
-  if (!Object.hasOwn(GEMMA4_MODELS, norm))
-    throw new Error(`Unknown model profile: ${modelName}`);
+  if (!Object.hasOwn(GEMMA4_MODELS, norm)) throw new Error(`Unknown model profile: ${modelName}`);
   return GEMMA4_MODELS[norm]!;
 }
 
 /** Validate arithmetic inputs, without asserting upstream provenance or model compatibility. */
 export function validateGemma4Config(config: Gemma4Config): void {
-  if (!config || typeof config.name !== "string" || !config.name.trim())
-    throw new Error("Invalid model profile name");
+  if (!config || typeof config.name !== "string" || !config.name.trim()) throw new Error("Invalid model profile name");
   for (const key of [
     "vocabSize",
     "embedDim",
@@ -239,46 +211,28 @@ export function validateGemma4Config(config: Gemma4Config): void {
     if (!Number.isSafeInteger(config[key]) || config[key] < 1)
       throw new Error(`${key} must be a positive safe integer`);
   }
-  if (
-    config.numKvHeads > config.numHeads ||
-    config.numHeads % config.numKvHeads !== 0
-  )
+  if (config.numKvHeads > config.numHeads || config.numHeads % config.numKvHeads !== 0)
     throw new Error("Invalid KV head grouping");
   if (
     !Array.isArray(config.attentionPattern) ||
     !config.attentionPattern.length ||
     config.attentionPattern.length > 10_000 ||
-    config.attentionPattern.some(
-      (entry) => entry !== "global" && entry !== "local_sliding",
-    )
+    config.attentionPattern.some(entry => entry !== "global" && entry !== "local_sliding")
   )
     throw new Error("Invalid attention pattern");
-  if (!Number.isFinite(config.rmsNormEps) || config.rmsNormEps <= 0)
-    throw new Error("Invalid normalization epsilon");
-  if (
-    !Number.isFinite(config.finalLogitSoftcap) ||
-    config.finalLogitSoftcap < 0
-  )
+  if (!Number.isFinite(config.rmsNormEps) || config.rmsNormEps <= 0) throw new Error("Invalid normalization epsilon");
+  if (!Number.isFinite(config.finalLogitSoftcap) || config.finalLogitSoftcap < 0)
     throw new Error("Invalid logit softcap");
-  for (const proportion of [
-    config.localRopeProportion,
-    config.globalRopeProportion,
-  ]) {
-    if (!Number.isFinite(proportion) || proportion < 0 || proportion > 1)
-      throw new Error("Invalid RoPE proportion");
+  for (const proportion of [config.localRopeProportion, config.globalRopeProportion]) {
+    if (!Number.isFinite(proportion) || proportion < 0 || proportion > 1) throw new Error("Invalid RoPE proportion");
   }
-  if (
-    typeof config.qkNormWithScale !== "boolean" ||
-    typeof config.enableMoe !== "boolean"
-  )
+  if (typeof config.qkNormWithScale !== "boolean" || typeof config.enableMoe !== "boolean")
     throw new Error("Invalid model profile flags");
   if (
     !Number.isSafeInteger(config.numExperts) ||
     !Number.isSafeInteger(config.topKExperts) ||
     (config.enableMoe
-      ? config.numExperts < 1 ||
-        config.topKExperts < 1 ||
-        config.topKExperts > config.numExperts
+      ? config.numExperts < 1 || config.topKExperts < 1 || config.topKExperts > config.numExperts
       : config.numExperts !== 0 || config.topKExperts !== 0)
   )
     throw new Error("Invalid expert routing counts");
@@ -287,12 +241,7 @@ export function validateGemma4Config(config: Gemma4Config): void {
       if (
         !encoder ||
         typeof encoder !== "object" ||
-        !Object.values(encoder).every(
-          (value) =>
-            typeof value === "number" &&
-            Number.isSafeInteger(value) &&
-            value > 0,
-        )
+        !Object.values(encoder).every(value => typeof value === "number" && Number.isSafeInteger(value) && value > 0)
       )
         throw new Error("Invalid encoder profile");
     }
@@ -305,8 +254,7 @@ export function estimateGemma4Memory(
   bytesPerParam: 1 | 2 | 4 = 2, // 1 = 8-bit, 2 = 16-bit (bf16/fp16), 4 = fp32
 ): { paramCount: number; memoryBytes: number; memoryMb: number } {
   validateGemma4Config(config);
-  if (![1, 2, 4].includes(bytesPerParam))
-    throw new Error("bytesPerParam must be 1, 2 or 4");
+  if (![1, 2, 4].includes(bytesPerParam)) throw new Error("bytesPerParam must be 1, 2 or 4");
   let paramCount = 0;
   if (config.name === "gemma4-e2b") {
     paramCount = 2_000_000_000;
@@ -320,8 +268,7 @@ export function estimateGemma4Memory(
     paramCount = config.embedDim * config.hiddenDim * config.numLayers;
   }
   const memoryBytes = paramCount * bytesPerParam;
-  if (!Number.isSafeInteger(memoryBytes))
-    throw new Error("Model memory estimate exceeds safe integer range");
+  if (!Number.isSafeInteger(memoryBytes)) throw new Error("Model memory estimate exceeds safe integer range");
   return {
     paramCount,
     memoryBytes,

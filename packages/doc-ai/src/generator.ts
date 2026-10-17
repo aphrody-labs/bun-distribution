@@ -43,8 +43,7 @@ export function extractMetadata(code: string): ComponentMetadata {
   }
 
   // Find properties: @property(...) name = val;
-  const propRegex =
-    /@property\(([\s\S]*?)\)\s*(?:@\w+\s*)*(\w+)(?:\??\s*:\s*([^=;]+))?(?:\s*=\s*([^;]+))?/g;
+  const propRegex = /@property\(([\s\S]*?)\)\s*(?:@\w+\s*)*(\w+)(?:\??\s*:\s*([^=;]+))?(?:\s*=\s*([^;]+))?/g;
   let match;
   while ((match = propRegex.exec(code)) !== null) {
     const [, options, name, type, defaultVal] = match;
@@ -59,11 +58,10 @@ export function extractMetadata(code: string): ComponentMetadata {
   }
 
   // Find custom events: new CustomEvent('event-name', ...)
-  const eventRegex =
-    /this\.dispatchEvent\(\s*new\s*(?:CustomEvent|Event)\(\s*(['"])(.*?)\1/g;
+  const eventRegex = /this\.dispatchEvent\(\s*new\s*(?:CustomEvent|Event)\(\s*(['"])(.*?)\1/g;
   while ((match = eventRegex.exec(code)) !== null) {
     const name = match[2];
-    if (!meta.events.some((e) => e.name === name)) {
+    if (!meta.events.some(e => e.name === name)) {
       meta.events.push({ name, description: "Dispatched component event" });
     }
   }
@@ -75,10 +73,7 @@ export function extractMetadata(code: string): ComponentMetadata {
  * Offline fallback generator using static component analysis. Pure and
  * deterministic: identical input always yields identical output.
  */
-export function generateDocsOffline(
-  meta: ComponentMetadata,
-  fileName: string,
-): string {
+export function generateDocsOffline(meta: ComponentMetadata, fileName: string): string {
   const tagName = meta.tagName || `md-${path.basename(fileName, ".ts")}`;
   const className = meta.className || `Md${path.basename(fileName, ".ts")}`;
 
@@ -164,27 +159,16 @@ export async function generateDocsFromCode(
   options: GenerateOptions = {},
 ): Promise<string> {
   const warn = options.warn ?? ((m, d) => console.warn(m, d));
-  const client =
-    options.client !== undefined
-      ? options.client
-      : resolveClient(options.env ?? process.env);
+  const client = options.client !== undefined ? options.client : resolveClient(options.env ?? process.env);
 
   if (client) {
     const prompt = buildDocPrompt(code, fileName);
     try {
-      const text = await withRetry(
-        () => client.complete({ prompt }),
-        options.retry ?? {},
-      );
+      const text = await withRetry(() => client.complete({ prompt }), options.retry ?? {});
       if (text && text.trim()) return text;
-      warn(
-        "LLM returned empty documentation, falling back to static offline template.",
-      );
+      warn("LLM returned empty documentation, falling back to static offline template.");
     } catch (err) {
-      warn(
-        "LLM doc generation failed, falling back to static offline template.",
-        toMessage(err),
-      );
+      warn("LLM doc generation failed, falling back to static offline template.", toMessage(err));
     }
   }
 
@@ -197,20 +181,14 @@ export async function generateDocsFromCode(
  * {@link generateDocsFromCode}. Signature is unchanged for backward
  * compatibility; an optional `options` argument enables dependency injection.
  */
-export async function generateDocumentation(
-  filePath: string,
-  options: GenerateOptions = {},
-): Promise<string> {
+export async function generateDocumentation(filePath: string, options: GenerateOptions = {}): Promise<string> {
   let code: string;
   try {
     code = await fs.readFile(filePath, "utf-8");
   } catch (err) {
-    throw new IoError(
-      `Failed to read source file ${filePath}: ${toMessage(err)}`,
-      {
-        cause: err,
-      },
-    );
+    throw new IoError(`Failed to read source file ${filePath}: ${toMessage(err)}`, {
+      cause: err,
+    });
   }
   const fileName = path.basename(filePath);
   return generateDocsFromCode(code, fileName, options);

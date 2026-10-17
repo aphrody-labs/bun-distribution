@@ -46,7 +46,6 @@
     "showcase:test:dom": "cd showcase && bun test --preload @aphrody/m3-config/test/dom ./test-dom"
   },
   "dependencies": {
-    "@aphrody/tauri": "catalog:",
     "@aphrody/assets": "workspace:*",
     "@aphrody/bun-m3": "1.4.4",
     "@aphrody/bun-webview-page": "0.1.1-aphrody.2",
@@ -79,6 +78,7 @@
     "@aphrody/material-design-icons": "workspace:*",
     "@aphrody/qr": "workspace:*",
     "@aphrody/scaffold": "workspace:*",
+    "@aphrody/tauri": "catalog:",
     "@aphrody/webos-wasm": "workspace:*",
     "@dnd-kit/core": "catalog:",
     "@dnd-kit/sortable": "catalog:",

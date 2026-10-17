@@ -2,10 +2,7 @@ import { Command, type CommandResult } from "../../base-command";
 import type { SceneTracks, TrackType } from "../../../timeline/types";
 import { generateUUID } from "../../../utils/id";
 import { EditorCore } from "../../../core";
-import {
-  buildEmptyTrack,
-  getDefaultInsertIndexForTrack,
-} from "../../../timeline/placement";
+import { buildEmptyTrack, getDefaultInsertIndexForTrack } from "../../../timeline/placement";
 
 export class AddTrackCommand extends Command {
   private trackId: string;
@@ -78,11 +75,7 @@ function buildAudioTrackState({
   });
   return {
     ...tracks,
-    audio: [
-      ...tracks.audio.slice(0, audioInsertIndex),
-      newTrack,
-      ...tracks.audio.slice(audioInsertIndex),
-    ],
+    audio: [...tracks.audio.slice(0, audioInsertIndex), newTrack, ...tracks.audio.slice(audioInsertIndex)],
   };
 }
 
@@ -108,10 +101,6 @@ function buildOverlayTrackState({
           : buildEmptyTrack({ id: trackId, type: "effect" });
   return {
     ...tracks,
-    overlay: [
-      ...tracks.overlay.slice(0, overlayInsertIndex),
-      newTrack,
-      ...tracks.overlay.slice(overlayInsertIndex),
-    ],
+    overlay: [...tracks.overlay.slice(0, overlayInsertIndex), newTrack, ...tracks.overlay.slice(overlayInsertIndex)],
   };
 }

@@ -9,9 +9,7 @@ import { scaffoldTargetProject, TAURI_3 } from "../src/index";
 describe("scaffoldTargetProject", () => {
   const dirs: string[] = [];
   afterAll(async () => {
-    await Promise.all(
-      dirs.map((dir) => rm(dir, { recursive: true, force: true })),
-    );
+    await Promise.all(dirs.map(dir => rm(dir, { recursive: true, force: true })));
   });
 
   it("re-exports the pins of the single scaffolder", () => {
@@ -19,11 +17,7 @@ describe("scaffoldTargetProject", () => {
   });
 
   it("writes a native Bun app in the private owner and preserves an existing consumer", async () => {
-    const outDir = join(
-      PRIVATE_OWNER_ROOT,
-      "apps",
-      "m3-migrate-contract-delegation-" + crypto.randomUUID(),
-    );
+    const outDir = join(PRIVATE_OWNER_ROOT, "apps", "m3-migrate-contract-delegation-" + crypto.randomUUID());
     dirs.push(outDir);
     await scaffoldTargetProject({
       outDir,
@@ -37,9 +31,7 @@ describe("scaffoldTargetProject", () => {
         target: "vite",
       }),
     ).rejects.toThrow();
-    expect(
-      JSON.parse(await Bun.file(join(outDir, "package.json")).text()).name,
-    ).toBe("demo");
+    expect(JSON.parse(await Bun.file(join(outDir, "package.json")).text()).name).toBe("demo");
     expect(await Bun.file(join(outDir, "m3.config.ts")).exists()).toBe(true);
   });
 });

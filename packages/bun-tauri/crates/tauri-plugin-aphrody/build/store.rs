@@ -21,6 +21,5 @@ const COMMANDS: &[&str] = &[
 
 /// Build description of the `store` plugin.
 pub fn builder() -> tauri_plugin::Builder<'static> {
-    tauri_plugin::Builder::new(COMMANDS)
-        .global_api_script_path("iife/store.js")
+    tauri_plugin::Builder::new(COMMANDS).global_api_script_path("iife/store.js")
 }

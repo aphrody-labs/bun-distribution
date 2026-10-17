@@ -20,11 +20,7 @@ const FALLBACK_LABELS: Record<string, string> = {
   session: "term",
 };
 
-export function SourceTypeIcon({
-  type: typeName,
-  svg,
-  size = "md",
-}: SourceTypeIconProps) {
+export function SourceTypeIcon({ type: typeName, svg, size = "md" }: SourceTypeIconProps) {
   if (svg) {
     return (
       <div

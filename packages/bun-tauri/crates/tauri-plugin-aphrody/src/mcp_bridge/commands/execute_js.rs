@@ -10,7 +10,7 @@ use super::script_executor::ScriptExecutor;
 use serde_json::Value;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tauri::{command, Runtime, State, WebviewWindow};
+use tauri::{Runtime, State, WebviewWindow, command};
 use tokio::sync::oneshot;
 use uuid::Uuid;
 
@@ -36,7 +36,11 @@ async fn eval_json<R: Runtime>(window: &WebviewWindow<R>, js: String) -> Result<
     let tx = Arc::new(Mutex::new(Some(tx)));
     window
         .eval_with_callback(js, move |value| {
-            if let Some(tx) = tx.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take() {
+            if let Some(tx) = tx
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .take()
+            {
                 let _ = tx.send(value);
             }
         })
@@ -82,7 +86,10 @@ fn probe_script(exec_id: &str) -> String {
     )
 }
 
-async fn eval_and_poll<R: Runtime>(window: &WebviewWindow<R>, script: &str) -> Result<Value, String> {
+async fn eval_and_poll<R: Runtime>(
+    window: &WebviewWindow<R>,
+    script: &str,
+) -> Result<Value, String> {
     let exec_id = Uuid::new_v4().simple().to_string();
     let wrapped = wrap_script(&exec_id, &prepare_script(script));
     if let Err(e) = window.eval(&wrapped) {

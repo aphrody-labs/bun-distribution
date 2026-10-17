@@ -1,13 +1,5 @@
 // Types
-export type {
-  Platform,
-  Modifier,
-  Key,
-  KeyCombo,
-  PlatformKeyCombo,
-  KeybindScope,
-  KeybindDefinition,
-} from "./types";
+export type { Platform, Modifier, Key, KeyCombo, PlatformKeyCombo, KeybindScope, KeybindDefinition } from "./types";
 
 export { defineKeybind, isPlatformKeyCombo } from "./types";
 

@@ -14,10 +14,7 @@ const DialogPortal = DialogPrimitive.Portal;
 
 const DialogClose = DialogPrimitive.Close;
 
-function DialogBackdrop({
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Backdrop>) {
+function DialogBackdrop({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Backdrop>) {
   return (
     <DialogPrimitive.Backdrop
       className={cn(
@@ -41,8 +38,7 @@ function DialogPopup({
   closeLabel?: string;
 }) {
   const variantStyles = {
-    toriyama:
-      "border-3 border-black bg-[#0d0d12] shadow-[6px_6px_0px_#000] text-gray-100",
+    toriyama: "border-3 border-black bg-[#0d0d12] shadow-[6px_6px_0px_#000] text-gray-100",
     capsule:
       "border-2 border-dbz-blue-light/60 bg-[#080d1a] shadow-[0_0_25px_rgba(0,180,255,0.25)] text-white rounded-3xl",
     scouter:
@@ -80,15 +76,7 @@ function DialogPopup({
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn(
-        "flex flex-col space-y-2 text-center sm:text-left mb-6",
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <div className={cn("flex flex-col space-y-2 text-center sm:text-left mb-6", className)} {...props} />;
 }
 
 function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
@@ -103,10 +91,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function DialogTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Title>) {
+function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
       className={cn(
@@ -118,16 +103,10 @@ function DialogTitle({
   );
 }
 
-function DialogDescription({
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+function DialogDescription({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Description>) {
   return (
     <DialogPrimitive.Description
-      className={cn(
-        "text-sm text-gray-300 leading-relaxed font-sans",
-        className,
-      )}
+      className={cn("text-sm text-gray-300 leading-relaxed font-sans", className)}
       {...props}
     />
   );

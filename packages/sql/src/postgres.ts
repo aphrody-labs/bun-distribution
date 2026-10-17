@@ -59,17 +59,13 @@ export function autoTls(url: string): SqlTls | undefined {
 }
 
 /** Bun.SQL constructor options for `url` (pure, opens nothing). Undefined keys are omitted. */
-export function sqlOptions(
-  url: string,
-  options: CreateSqlOptions = {},
-): BunSqlOptions {
+export function sqlOptions(url: string, options: CreateSqlOptions = {}): BunSqlOptions {
   const out: BunSqlOptions = {
     url,
     max: options.max ?? DEFAULT_SQL_POOL.max,
     idleTimeout: options.idleTimeout ?? DEFAULT_SQL_POOL.idleTimeout,
     maxLifetime: options.maxLifetime ?? DEFAULT_SQL_POOL.maxLifetime,
-    connectionTimeout:
-      options.connectionTimeout ?? DEFAULT_SQL_POOL.connectionTimeout,
+    connectionTimeout: options.connectionTimeout ?? DEFAULT_SQL_POOL.connectionTimeout,
   };
 
   const tls = options.tls ?? "auto";
@@ -87,14 +83,9 @@ export function sqlOptions(
     out.prepare = prepare;
   }
 
-  if (
-    options.applicationName !== undefined ||
-    options.connection !== undefined
-  ) {
+  if (options.applicationName !== undefined || options.connection !== undefined) {
     out.connection = {
-      ...(options.applicationName !== undefined
-        ? { application_name: options.applicationName }
-        : {}),
+      ...(options.applicationName !== undefined ? { application_name: options.applicationName } : {}),
       ...options.connection,
     };
   }
@@ -126,18 +117,14 @@ export interface TransactionOptions {
 export function transactionMode(options: TransactionOptions = {}): string {
   const parts: string[] = [];
   if (options.isolation) parts.push(`isolation level ${options.isolation}`);
-  if (options.readOnly !== undefined)
-    parts.push(options.readOnly ? "read only" : "read write");
-  if (options.deferrable !== undefined)
-    parts.push(options.deferrable ? "deferrable" : "not deferrable");
+  if (options.readOnly !== undefined) parts.push(options.readOnly ? "read only" : "read write");
+  if (options.deferrable !== undefined) parts.push(options.deferrable ? "deferrable" : "not deferrable");
   return parts.join(" ");
 }
 
 function timeoutMs(name: string, value: number): string {
   if (!Number.isInteger(value) || value < 0) {
-    throw new RangeError(
-      `${name} must be a non-negative integer (got ${value}).`,
-    );
+    throw new RangeError(`${name} must be a non-negative integer (got ${value}).`);
   }
   return String(value);
 }

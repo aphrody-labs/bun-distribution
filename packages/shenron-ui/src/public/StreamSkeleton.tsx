@@ -29,24 +29,14 @@ export function BillboardSkeleton() {
   );
 }
 
-export function RailSkeleton({
-  variant = "poster",
-}: {
-  variant?: "poster" | "episode";
-}) {
-  const card =
-    variant === "poster"
-      ? "aspect-[2/3] w-[142px] sm:w-[160px]"
-      : "aspect-video w-[260px] sm:w-[300px]";
+export function RailSkeleton({ variant = "poster" }: { variant?: "poster" | "episode" }) {
+  const card = variant === "poster" ? "aspect-[2/3] w-[142px] sm:w-[160px]" : "aspect-video w-[260px] sm:w-[300px]";
   return (
     <div className="mb-9 lg:mb-12">
       <div className="mb-3 h-6 w-52 animate-pulse rounded bg-white/10" />
       <div className="flex gap-3 overflow-hidden">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div
-            key={i}
-            className={`shrink-0 animate-pulse rounded-lg bg-dbz-card ring-1 ring-white/[0.06] ${card}`}
-          />
+          <div key={i} className={`shrink-0 animate-pulse rounded-lg bg-dbz-card ring-1 ring-white/[0.06] ${card}`} />
         ))}
       </div>
     </div>

@@ -29,11 +29,7 @@ const command: Command = {
     }
     if (action === "cles") {
       const made = await makeKeys(ctx);
-      ctx.ui.say(
-        made.created
-          ? "Clés créées sur ce PC."
-          : "Tes clés existent déjà (rien n'a été changé).",
-      );
+      ctx.ui.say(made.created ? "Clés créées sur ce PC." : "Tes clés existent déjà (rien n'a été changé).");
       ctx.ui.say(
         `Fichier à envoyer à l'équipe : ${made.file}${made.copied ? " (aussi dans le presse-papiers : colle-le dans un message)" : ""}`,
       );

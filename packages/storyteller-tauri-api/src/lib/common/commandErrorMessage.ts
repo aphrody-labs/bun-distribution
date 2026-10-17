@@ -5,12 +5,7 @@ export function commandErrorMessage(error: unknown, fallback: string): string {
       error_details?: { error_message?: string };
       message?: string;
     };
-    return (
-      command.error_message ??
-      command.error_details?.error_message ??
-      command.message ??
-      fallback
-    );
+    return command.error_message ?? command.error_details?.error_message ?? command.message ?? fallback;
   }
   return typeof error === "string" ? error : fallback;
 }

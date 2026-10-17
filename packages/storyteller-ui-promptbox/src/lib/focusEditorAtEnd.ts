@@ -13,9 +13,7 @@ export function focusEditorAtEnd(container: HTMLElement | null): void {
     return;
   }
 
-  const editable = container.querySelector<HTMLElement>(
-    '[contenteditable="true"]',
-  );
+  const editable = container.querySelector<HTMLElement>('[contenteditable="true"]');
   if (editable) {
     editable.focus();
     const selection = window.getSelection();

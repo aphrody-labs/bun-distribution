@@ -11,8 +11,7 @@ import { Visibility } from "./enums/Visibility.js";
  * `scene3d` / `editor2d` forms). `workflow` exists server-side but has no
  * save endpoint yet.
  */
-export type ProjectType =
-  "scene_3d" | "mood_board" | "editor_2d" | "video_timeline";
+export type ProjectType = "scene_3d" | "mood_board" | "editor_2d" | "video_timeline";
 
 /** One project row from `GET /v1/media_files/project/list`. */
 export interface ProjectMediaFileInfo {
@@ -142,12 +141,12 @@ export class ProjectsApi extends ApiManager {
       results: ProjectMediaFileInfo[];
       pagination?: PaginationInfinite;
     }>({ endpoint, query: { ...query } })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: response.results ?? [],
         pagination: response.pagination,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -184,12 +183,12 @@ export class ProjectsApi extends ApiManager {
       media_file_token?: string;
       BadInput?: string;
     }>({ endpoint, formRecord, blob, blobFileName: fileName, uuid })
-      .then((response) => ({
+      .then(response => ({
         success: Boolean(response.success ?? false),
         data: response.media_file_token,
         errorMessage: response.BadInput,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,

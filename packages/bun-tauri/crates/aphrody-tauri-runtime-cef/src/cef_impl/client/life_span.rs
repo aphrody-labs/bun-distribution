@@ -6,43 +6,43 @@ use std::sync::{Arc, Weak, mpsc::Sender};
 
 use cef::*;
 use tauri_runtime::{
-  UserEvent,
-  dpi::{LogicalPosition, LogicalSize},
-  window::WindowId,
+    UserEvent,
+    dpi::{LogicalPosition, LogicalSize},
+    window::WindowId,
 };
 
 use crate::{
-  macros::wrap_with_args,
-  runtime::{CefRuntime, Message, NewWindowOpener, RuntimeContext},
+    macros::wrap_with_args,
+    runtime::{CefRuntime, Message, NewWindowOpener, RuntimeContext},
 };
 
 pub(super) type PopupClientFactory =
-  dyn Fn(crate::popup::PopupRequest, crate::FrameNavigationState) -> Client;
+    dyn Fn(crate::popup::PopupRequest, crate::FrameNavigationState) -> Client;
 
 #[cfg(test)]
 mod tests {
-  use super::*;
-  use tauri_runtime::webview::NewWindowFeatures;
+    use super::*;
+    use tauri_runtime::webview::NewWindowFeatures;
 
-  #[test]
-  fn popup_source_observation_is_available_without_dispatch_and_redacted_from_debug() {
-    let features =
-      NewWindowFeatures::<(), CefRuntime<()>>::new(None, None, NewWindowOpener::new(None));
-    assert!(features.opener().source_url().is_none());
-    assert!(format!("{features:?}").contains("source_url_observed: false"));
+    #[test]
+    fn popup_source_observation_is_available_without_dispatch_and_redacted_from_debug() {
+        let features =
+            NewWindowFeatures::<(), CefRuntime<()>>::new(None, None, NewWindowOpener::new(None));
+        assert!(features.opener().source_url().is_none());
+        assert!(format!("{features:?}").contains("source_url_observed: false"));
 
-    let source = url::Url::parse("https://example.com/private?token=fixture-secret").unwrap();
-    let features = NewWindowFeatures::<(), CefRuntime<()>>::new(
-      None,
-      None,
-      NewWindowOpener::new(Some(source.clone())),
-    );
-    assert_eq!(features.opener().source_url(), Some(&source));
-    let debug = format!("{features:?}");
-    assert!(debug.contains("source_url_observed: true"));
-    assert!(!debug.contains("private"));
-    assert!(!debug.contains("fixture-secret"));
-  }
+        let source = url::Url::parse("https://example.com/private?token=fixture-secret").unwrap();
+        let features = NewWindowFeatures::<(), CefRuntime<()>>::new(
+            None,
+            None,
+            NewWindowOpener::new(Some(source.clone())),
+        );
+        assert_eq!(features.opener().source_url(), Some(&source));
+        let debug = format!("{features:?}");
+        assert!(debug.contains("source_url_observed: true"));
+        assert!(!debug.contains("private"));
+        assert!(!debug.contains("fixture-secret"));
+    }
 }
 
 // There is some race condition on CEF that causes the app loading to fail
@@ -50,31 +50,31 @@ mod tests {
 // "[85296:47750637:0127/131203.017395:ERROR:content/browser/network_service_instance_impl.cc:610] Network service crashed or was terminated, restarting service."
 // We check the app URL for a while until it actually loads the initial URL.
 fn check_and_reload_if_blank(browser: cef::Browser, initial_url: String) {
-  if initial_url == "about:blank" {
-    return;
-  }
-
-  std::thread::spawn(move || {
-    std::thread::sleep(std::time::Duration::from_secs(1));
-
-    let start_time = std::time::Instant::now();
-    let timeout = std::time::Duration::from_secs(5);
-    let check_interval = std::time::Duration::from_millis(100);
-
-    while start_time.elapsed() < timeout {
-      if let Some(frame) = browser.main_frame() {
-        let url = frame.url();
-        let current_url = cef::CefString::from(&url).to_string();
-        if current_url.is_empty() || current_url == "about:blank" {
-          frame.load_url(Some(&cef::CefString::from(initial_url.as_str())));
-          // Continue checking in case it loads about:blank again.
-        } else {
-          return;
-        }
-      }
-      std::thread::sleep(check_interval);
+    if initial_url == "about:blank" {
+        return;
     }
-  });
+
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        let start_time = std::time::Instant::now();
+        let timeout = std::time::Duration::from_secs(5);
+        let check_interval = std::time::Duration::from_millis(100);
+
+        while start_time.elapsed() < timeout {
+            if let Some(frame) = browser.main_frame() {
+                let url = frame.url();
+                let current_url = cef::CefString::from(&url).to_string();
+                if current_url.is_empty() || current_url == "about:blank" {
+                    frame.load_url(Some(&cef::CefString::from(initial_url.as_str())));
+                    // Continue checking in case it loads about:blank again.
+                } else {
+                    return;
+                }
+            }
+            std::thread::sleep(check_interval);
+        }
+    });
 }
 
 wrap_with_args! {

@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, it } from "bun:test";
-import {
-  OAUTH2_TOKEN_URLS,
-  OvhClient,
-  selectAuthMode,
-  sha1,
-  v2BaseUrl,
-} from "../src/client.js";
+import { OAUTH2_TOKEN_URLS, OvhClient, selectAuthMode, sha1, v2BaseUrl } from "../src/client.js";
 
 describe("OvhClient pure Bun cryptographic signing", () => {
   it("computes accurate SHA-1 hex digest", () => {
@@ -29,8 +23,7 @@ describe("OvhClient pure Bun cryptographic signing", () => {
     const timestamp = 1700000000;
 
     // raw = "test_as+test_ck+GET+https://eu.api.ovh.com/1.0/domain/zone++1700000000"
-    const raw =
-      "test_as+test_ck+GET+https://eu.api.ovh.com/1.0/domain/zone++1700000000";
+    const raw = "test_as+test_ck+GET+https://eu.api.ovh.com/1.0/domain/zone++1700000000";
     const expectedSig = `$1$${sha1(raw)}`;
 
     const actualSig = client.sign(method, url, bodyStr, timestamp);
@@ -77,8 +70,7 @@ it("dispatches bodyless signed GET and signed JSON POST to the actual HTTP bound
     port: 0,
     hostname: "127.0.0.1",
     async fetch(request) {
-      if (new URL(request.url).pathname === "/auth/time")
-        return new Response(String(Math.floor(Date.now() / 1000)));
+      if (new URL(request.url).pathname === "/auth/time") return new Response(String(Math.floor(Date.now() / 1000)));
       requests.push({
         method: request.method,
         body: await request.text(),
@@ -96,9 +88,7 @@ it("dispatches bodyless signed GET and signed JSON POST to the actual HTTP bound
       consumerKey: "fixture",
       endpoint: server.url.toString().replace(/\/$/, ""),
     });
-    await expect(
-      client.request("GET", "/zone", { invalid: true }),
-    ).rejects.toThrow("cannot have a body");
+    await expect(client.request("GET", "/zone", { invalid: true })).rejects.toThrow("cannot have a body");
     expect(requests).toHaveLength(0);
     await client.get("/zone", { search: "a & b" });
     await client.post("/zone", { fieldType: "A" });
@@ -106,14 +96,7 @@ it("dispatches bodyless signed GET and signed JSON POST to the actual HTTP bound
     expect(new URL(requests[0]!.url).searchParams.get("search")).toBe("a & b");
     expect(requests[1]!.body).toBe('{"fieldType":"A"}');
     for (const request of requests)
-      expect(request.signature).toBe(
-        client.sign(
-          request.method,
-          request.url,
-          request.body,
-          Number(request.timestamp),
-        ),
-      );
+      expect(request.signature).toBe(client.sign(request.method, request.url, request.body, Number(request.timestamp)));
   } finally {
     server.stop(true);
   }
@@ -122,9 +105,7 @@ it("dispatches bodyless signed GET and signed JSON POST to the actual HTTP bound
 describe("OvhClient OAuth2 service account", () => {
   const TOKEN_PATH = "/auth/oauth2/token";
 
-  function oauthServer(
-    options: { expiresIn?: number; rejectFirstApiCall?: boolean } = {},
-  ) {
+  function oauthServer(options: { expiresIn?: number; rejectFirstApiCall?: boolean } = {}) {
     const state = {
       tokens: 0,
       tokenForms: [] as string[],
@@ -179,24 +160,14 @@ describe("OvhClient OAuth2 service account", () => {
       }),
     ).toBe("application_key");
     expect(selectAuthMode({ clientId: "only-half" })).toBeNull();
-    expect(() => new OvhClient({ clientId: "only-half" })).toThrow(
-      "missing credentials",
-    );
+    expect(() => new OvhClient({ clientId: "only-half" })).toThrow("missing credentials");
   });
 
   it("knows the official OAuth2 token URLs and derives the v2 base", () => {
-    expect(OAUTH2_TOKEN_URLS["ovh-eu"]).toBe(
-      "https://www.ovh.com/auth/oauth2/token",
-    );
-    expect(OAUTH2_TOKEN_URLS["ovh-ca"]).toBe(
-      "https://ca.ovh.com/auth/oauth2/token",
-    );
-    expect(OAUTH2_TOKEN_URLS["ovh-us"]).toBe(
-      "https://us.ovhcloud.com/auth/oauth2/token",
-    );
-    expect(v2BaseUrl("https://eu.api.ovh.com/1.0")).toBe(
-      "https://eu.api.ovh.com/v2",
-    );
+    expect(OAUTH2_TOKEN_URLS["ovh-eu"]).toBe("https://www.ovh.com/auth/oauth2/token");
+    expect(OAUTH2_TOKEN_URLS["ovh-ca"]).toBe("https://ca.ovh.com/auth/oauth2/token");
+    expect(OAUTH2_TOKEN_URLS["ovh-us"]).toBe("https://us.ovhcloud.com/auth/oauth2/token");
+    expect(v2BaseUrl("https://eu.api.ovh.com/1.0")).toBe("https://eu.api.ovh.com/v2");
     const client = new OvhClient({
       clientId: "i",
       clientSecret: "s",
@@ -313,8 +284,7 @@ describe("OvhClient OAuth2 service account", () => {
         message = String(error instanceof Error ? error.message : error);
       }
       expect(message).toContain("invalid_client");
-      for (const secret of ["sentinel-secret", "echo-sentinel-secret"])
-        expect(message).not.toContain(secret);
+      for (const secret of ["sentinel-secret", "echo-sentinel-secret"]) expect(message).not.toContain(secret);
       const serialised = JSON.stringify(client);
       expect(serialised).not.toContain("sentinel");
       expect(client.baseUrlV2).toBe(`${base}/v2`);

@@ -39,7 +39,7 @@ function buildInMemoryAdapters(): VideoEditorAdapters {
         storage.delete(id);
       },
       async listProjects(): Promise<ProjectMeta[]> {
-        return Array.from(storage.values()).map((project) => ({
+        return Array.from(storage.values()).map(project => ({
           id: project.id,
           name: project.name,
           updatedAt: project.updatedAt,
@@ -189,9 +189,7 @@ describe("EditorCore smoke", () => {
         selectedElements: [{ trackId: "t1", elementId: "e1" }],
       },
     });
-    expect(editor.selection.getSelectedElements()).toEqual([
-      { trackId: "t1", elementId: "e1" },
-    ]);
+    expect(editor.selection.getSelectedElements()).toEqual([{ trackId: "t1", elementId: "e1" }]);
 
     editor.selection.restoreSnapshot({ snapshot });
     expect(editor.selection.getSelectedElements()).toEqual([]);
@@ -205,7 +203,7 @@ describe("EditorCore smoke", () => {
     await editor.project.saveCurrentProject();
 
     const listed = await editor.adapters.projectStorage.listProjects();
-    expect(listed.map((p) => p.id)).toContain(SAMPLE_PROJECT_ID);
+    expect(listed.map(p => p.id)).toContain(SAMPLE_PROJECT_ID);
   });
 
   test("EditorCore.reset clears the singleton", () => {

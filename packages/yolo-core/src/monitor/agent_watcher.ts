@@ -15,8 +15,7 @@ import type { NativeRedisClient } from "../redis/client";
 
 const positive = (value: number | undefined, fallback: number) => {
   const result = value ?? fallback;
-  if (!Number.isSafeInteger(result) || result < 1)
-    throw new RangeError("Watcher limits must be positive integers");
+  if (!Number.isSafeInteger(result) || result < 1) throw new RangeError("Watcher limits must be positive integers");
   return result;
 };
 
@@ -52,10 +51,7 @@ export class AgentWatcher {
   #db: Database | null = null;
   #watchers: FSWatcher[] = [];
   #pollTimer: Timer | null = null;
-  #activeSessions = new Map<
-    string,
-    { agent: string; sessionId: string; lastSeen: string; path: string }
-  >();
+  #activeSessions = new Map<string, { agent: string; sessionId: string; lastSeen: string; path: string }>();
 
   readonly monitoredDirs: string[];
   #running = false;
@@ -83,9 +79,7 @@ export class AgentWatcher {
     this.#timeoutMs = positive(options.endpointTimeoutMs, 1500);
     this.#maxSessions = positive(options.maxSessions, 1024);
     this.#retentionMs = positive(options.sessionRetentionMs, 86400000);
-    this.endpoints = (options.endpoints ?? AgentWatcher.defaultEndpoints).map(
-      (endpoint) => Object.assign({}, endpoint),
-    );
+    this.endpoints = (options.endpoints ?? AgentWatcher.defaultEndpoints).map(endpoint => Object.assign({}, endpoint));
     const home = homedir();
     this.monitoredDirs = options.customDirs ?? [
       join(home, ".gemini", "antigravity-cli", "brain"),
@@ -106,14 +100,10 @@ export class AgentWatcher {
       if (!existsSync(dir)) continue;
 
       try {
-        const watcher = watch(
-          dir,
-          { recursive: true },
-          (eventType, filename) => {
-            if (!this.#running || !filename) return;
-            this.#handleFsEvent(dir, filename.toString(), eventType);
-          },
-        );
+        const watcher = watch(dir, { recursive: true }, (eventType, filename) => {
+          if (!this.#running || !filename) return;
+          this.#handleFsEvent(dir, filename.toString(), eventType);
+        });
         this.#watchers.push(watcher);
       } catch {
         // Fall back if recursive watch is restricted
@@ -133,9 +123,7 @@ export class AgentWatcher {
 
     // Extract session ID
     let sessionId = "unknown";
-    const uuidMatch = fullPath.match(
-      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
-    );
+    const uuidMatch = fullPath.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
     if (uuidMatch) {
       sessionId = uuidMatch[0];
     } else {
@@ -166,9 +154,7 @@ export class AgentWatcher {
 
     // Stream to Redis
     if (this.#redis?.isConnected) {
-      this.#track(
-        this.#redis.publish("yolo:agents:events", JSON.stringify(event)),
-      );
+      this.#track(this.#redis.publish("yolo:agents:events", JSON.stringify(event)));
       this.#track(
         this.#redis.hset(
           "yolo:agents:active_sessions",
@@ -200,9 +186,7 @@ export class AgentWatcher {
   }
 
   #track(request: Promise<unknown>): void {
-    const pending = request
-      .catch(() => {})
-      .finally(() => this.#pending.delete(pending));
+    const pending = request.catch(() => {}).finally(() => this.#pending.delete(pending));
     this.#pending.add(pending);
   }
 
@@ -219,10 +203,7 @@ export class AgentWatcher {
           try {
             // oxlint-disable-next-line no-await-in-loop -- sondes séquentielles bornées par endpoint : charge locale minimale et arrêt propre via abort
             const response = await fetch(endpoint.url, {
-              signal: AbortSignal.any([
-                abort.signal,
-                AbortSignal.timeout(this.#timeoutMs),
-              ]),
+              signal: AbortSignal.any([abort.signal, AbortSignal.timeout(this.#timeoutMs)]),
             });
             online = response.ok;
             // oxlint-disable-next-line no-await-in-loop -- libère la connexion de la sonde avant la suivante (séquentiel)
@@ -241,11 +222,7 @@ export class AgentWatcher {
           if (this.#redis?.isConnected) {
             try {
               // oxlint-disable-next-line no-await-in-loop -- écritures d'état séquentielles dans l'ordre des endpoints du cycle de sondage
-              await this.#redis.hset(
-                "yolo:agents:endpoints",
-                endpoint.name,
-                JSON.stringify(status),
-              );
+              await this.#redis.hset("yolo:agents:endpoints", endpoint.name, JSON.stringify(status));
             } catch {
               /* The status remains available through getEndpointStatuses. */
             }
@@ -268,9 +245,7 @@ export class AgentWatcher {
   }
 
   getEndpointStatuses(): EndpointStatus[] {
-    return Array.from(this.#statuses.values(), (status) =>
-      Object.assign({}, status),
-    );
+    return Array.from(this.#statuses.values(), status => Object.assign({}, status));
   }
 
   getActiveSessions(): Array<{
@@ -280,7 +255,7 @@ export class AgentWatcher {
     path: string;
   }> {
     this.#expireSessions();
-    return Array.from(this.#activeSessions.values(), (session) => ({
+    return Array.from(this.#activeSessions.values(), session => ({
       ...session,
     }));
   }

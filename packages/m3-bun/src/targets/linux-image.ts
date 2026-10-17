@@ -12,11 +12,7 @@
 import { GENERATED_NOTE, type GeneratedFile } from "../util.ts";
 import type { Target, TargetContext } from "./types.ts";
 
-export const INITRAMFS_SCRIPTS = [
-  "initramfs.ts",
-  "initramfs-init.ts",
-  "initramfs-net.ts",
-] as const;
+export const INITRAMFS_SCRIPTS = ["initramfs.ts", "initramfs-init.ts", "initramfs-net.ts"] as const;
 
 export const buildScript = (c: TargetContext): string => `#!/usr/bin/env bash
 # ${GENERATED_NOTE}
@@ -89,9 +85,7 @@ exec qemu-system-x86_64 -m 512 -nographic -no-reboot "\${CPU[@]}" \\
   -nic user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:\${HOST_PORT:-8080}-:${c.port}
 `;
 
-export const readme = (
-  c: TargetContext,
-): string => `# ${c.name}: minimal Linux image
+export const readme = (c: TargetContext): string => `# ${c.name}: minimal Linux image
 
 ${GENERATED_NOTE}
 

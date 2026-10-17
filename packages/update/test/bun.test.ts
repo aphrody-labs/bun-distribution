@@ -37,8 +37,7 @@ import {
 
 const DAY = 86_400;
 const NOW = Date.parse("2026-10-02T00:00:00Z");
-const iso = (daysAgo: number) =>
-  new Date(NOW - daysAgo * DAY * 1000).toISOString();
+const iso = (daysAgo: number) => new Date(NOW - daysAgo * DAY * 1000).toISOString();
 const age = { seconds: 3 * DAY, excludes: ["next"] };
 
 describe("specs", () => {
@@ -140,15 +139,12 @@ describe("manifests", () => {
 
   test("collectDirect merges catalog entries and literal ranges and dedups by name and spec", () => {
     const d = collectDirect(root, manifests);
-    const zod = d.filter((x) => x.name === "zod");
+    const zod = d.filter(x => x.name === "zod");
     expect(zod).toHaveLength(1);
-    expect(zod[0]!.where).toEqual([
-      "packages/a/package.json",
-      "packages/b/package.json",
-    ]);
-    expect(d.find((x) => x.name === "react")!.where).toEqual(["catalog"]);
-    expect(d.find((x) => x.name === "sharp")!.spec).toBe("~0.35.0");
-    expect(d.map((x) => x.name)).toEqual(d.map((x) => x.name).toSorted());
+    expect(zod[0]!.where).toEqual(["packages/a/package.json", "packages/b/package.json"]);
+    expect(d.find(x => x.name === "react")!.where).toEqual(["catalog"]);
+    expect(d.find(x => x.name === "sharp")!.spec).toBe("~0.35.0");
+    expect(d.map(x => x.name)).toEqual(d.map(x => x.name).toSorted());
   });
 
   test("touchedManifests propagates a catalog edit to its users", () => {
@@ -161,9 +157,7 @@ describe("manifests", () => {
       },
       manifests,
     };
-    expect(touchedManifests({ root, manifests }, after)).toEqual([
-      "packages/a/package.json",
-    ]);
+    expect(touchedManifests({ root, manifests }, after)).toEqual(["packages/a/package.json"]);
     const literal = {
       root,
       manifests: {
@@ -174,12 +168,8 @@ describe("manifests", () => {
         },
       },
     };
-    expect(touchedManifests({ root, manifests }, literal)).toEqual([
-      "packages/b/package.json",
-    ]);
-    expect(touchedManifests({ root, manifests }, { root, manifests })).toEqual(
-      [],
-    );
+    expect(touchedManifests({ root, manifests }, literal)).toEqual(["packages/b/package.json"]);
+    expect(touchedManifests({ root, manifests }, { root, manifests })).toEqual([]);
   });
 });
 
@@ -198,9 +188,7 @@ describe("config", () => {
   });
 
   test("holdFor refuses releases above maxMajor only", () => {
-    const holds = parseHolds(
-      '{"holds":[{"name":"graphql","maxMajor":16,"reason":"yoga"}]}',
-    ).holds;
+    const holds = parseHolds('{"holds":[{"name":"graphql","maxMajor":16,"reason":"yoga"}]}').holds;
     expect(holdFor(holds, "graphql", "17.0.2")?.reason).toBe("yoga");
     expect(holdFor(holds, "graphql", "16.14.3")).toBeUndefined();
     expect(holdFor(holds, "zod", "99.0.0")).toBeUndefined();
@@ -212,9 +200,7 @@ describe("config", () => {
         reason: "types/node nests 8.9.0",
       },
     ];
-    expect(holdFor(pin, "undici-types", "8.11.2")?.reason).toBe(
-      "types/node nests 8.9.0",
-    );
+    expect(holdFor(pin, "undici-types", "8.11.2")?.reason).toBe("types/node nests 8.9.0");
     expect(holdFor(pin, "undici-types", "8.9.0")).toBeUndefined();
   });
 
@@ -238,21 +224,11 @@ describe("release age", () => {
   };
 
   test("eligible is the newest release old enough, inside the latest's major", () => {
-    expect(
-      eligibleVersion(
-        times,
-        "1.2.0",
-        { seconds: 3 * DAY, excludes: [] },
-        "x",
-        NOW,
-      ),
-    ).toEqual({
+    expect(eligibleVersion(times, "1.2.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW)).toEqual({
       eligible: "1.1.0",
       ageGated: true,
     });
-    expect(
-      eligibleVersion(times, "1.2.0", { seconds: 0, excludes: [] }, "x", NOW),
-    ).toEqual({
+    expect(eligibleVersion(times, "1.2.0", { seconds: 0, excludes: [] }, "x", NOW)).toEqual({
       eligible: "1.2.0",
       ageGated: false,
     });
@@ -263,23 +239,15 @@ describe("release age", () => {
       eligible: "1.2.0",
       ageGated: false,
     });
-    expect(
-      eligibleVersion(
-        undefined,
-        "1.2.0",
-        { seconds: 3 * DAY, excludes: [] },
-        "x",
-        NOW,
-      ),
-    ).toEqual({ eligible: "1.2.0", ageGated: false });
+    expect(eligibleVersion(undefined, "1.2.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW)).toEqual({
+      eligible: "1.2.0",
+      ageGated: false,
+    });
   });
 
   test("a prerelease is never the answer for a stable latest", () => {
     const t = { "9.0.0": iso(40), "10.0.0-rc.3": iso(20), "10.0.0": iso(1) };
-    expect(
-      eligibleVersion(t, "10.0.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW)
-        .eligible,
-    ).toBeUndefined();
+    expect(eligibleVersion(t, "10.0.0", { seconds: 3 * DAY, excludes: [] }, "x", NOW).eligible).toBeUndefined();
   });
 });
 
@@ -309,26 +277,26 @@ describe("rows and plan", () => {
   const times = new Map([["waiting", old]]);
   const holds = [{ name: "held", maxMajor: 16, reason: "yoga is on 16" }];
   const rows = buildRows({ directs, latest, holds, age, times, now: NOW });
-  const by = (n: string) => rows.find((r) => r.name === n)!;
+  const by = (n: string) => rows.find(r => r.name === n)!;
 
   test("only registry versions become rows, owners are tagged", () => {
-    expect(rows.map((r) => r.name)).not.toContain("tarball");
+    expect(rows.map(r => r.name)).not.toContain("tarball");
     expect(by("@tauri-apps/api").owner).toBe("tauri");
     expect(by("typescript").owner).toBe("pins");
     expect(
       behind(rows)
-        .map((r) => r.name)
+        .map(r => r.name)
         .toSorted(),
     ).toEqual(["held", "inrange", "major", "pinned", "waiting"]);
   });
 
   test("planRows buckets: in-range, pinned, major, held, waiting", () => {
     const p = planRows(rows);
-    expect(p.inRange.map((r) => r.name)).toEqual(["inrange"]);
-    expect(p.pinned.map((r) => r.name)).toEqual(["pinned"]);
-    expect(p.majors.map((r) => r.name)).toEqual(["major"]);
-    expect(p.held.map((r) => r.name)).toEqual(["held"]);
-    expect(p.waiting.map((r) => r.name)).toEqual(["waiting"]);
+    expect(p.inRange.map(r => r.name)).toEqual(["inrange"]);
+    expect(p.pinned.map(r => r.name)).toEqual(["pinned"]);
+    expect(p.majors.map(r => r.name)).toEqual(["major"]);
+    expect(p.held.map(r => r.name)).toEqual(["held"]);
+    expect(p.waiting.map(r => r.name)).toEqual(["waiting"]);
   });
 
   test("an exact pin behind inside its major is `pinned`, not a major", () => {
@@ -337,13 +305,9 @@ describe("rows and plan", () => {
   });
 
   test("targetOf is the installable release, and nothing while a whole major is too young", () => {
-    expect(
-      targetOf({ ...by("waiting"), eligible: "1.0.5", ageGated: true } as Row),
-    ).toBe("1.0.5");
+    expect(targetOf({ ...by("waiting"), eligible: "1.0.5", ageGated: true } as Row)).toBe("1.0.5");
     expect(targetOf(by("major"))).toBe("9.1.0");
-    expect(
-      targetOf({ ...by("major"), eligible: undefined, ageGated: true } as Row),
-    ).toBeUndefined();
+    expect(targetOf({ ...by("major"), eligible: undefined, ageGated: true } as Row)).toBeUndefined();
   });
 
   test("a major whose every release is younger than the window waits instead of being offered", () => {
@@ -358,7 +322,7 @@ describe("rows and plan", () => {
     expect(fresh[0]!.ageGated).toBe(true);
     expect(fresh[0]!.eligible).toBeUndefined();
     const p = planRows(fresh);
-    expect(p.waiting.map((r) => r.name)).toEqual(["stripe"]);
+    expect(p.waiting.map(r => r.name)).toEqual(["stripe"]);
     expect(p.majors).toEqual([]);
   });
 
@@ -395,11 +359,7 @@ describe("families", () => {
       makeRow("@types/react-dom", "patch"),
       makeRow("zod"),
     ];
-    expect(expandMajors(["react"], rows)).toEqual([
-      "@types/react",
-      "react",
-      "react-dom",
-    ]);
+    expect(expandMajors(["react"], rows)).toEqual(["@types/react", "react", "react-dom"]);
     expect(expandMajors(["zod"], rows)).toEqual(["zod"]);
   });
 });
@@ -457,10 +417,8 @@ describe("spec edits", () => {
         base: "1.0.0",
       },
     ];
-    const { edits, errors } = specEdits(
-      rows,
-      ["a", "b", "h", "w", "ghost"],
-      (r) => (r.name === "w" ? undefined : (r.eligible ?? r.latest)),
+    const { edits, errors } = specEdits(rows, ["a", "b", "h", "w", "ghost"], r =>
+      r.name === "w" ? undefined : (r.eligible ?? r.latest),
     );
     expect(edits).toEqual([
       { file: "package.json", name: "a", from: "^1.0.0", to: "^2.1.0" },
@@ -485,11 +443,8 @@ describe("spec edits", () => {
   });
 });
 
-const jsonResponse = (
-  status: number,
-  body: unknown = {},
-  headers: Record<string, string> = {},
-) => new Response(JSON.stringify(body), { status, headers });
+const jsonResponse = (status: number, body: unknown = {}, headers: Record<string, string> = {}) =>
+  new Response(JSON.stringify(body), { status, headers });
 
 const advisoryQuery = async () =>
   new Map([
@@ -510,11 +465,7 @@ describe("registry access", () => {
 
   test("fetchWithBackoff retries 429 and 5xx with exponential delays and honours Retry-After", async () => {
     sleeps.length = 0;
-    const seq = [
-      jsonResponse(429, {}, { "retry-after": "7" }),
-      jsonResponse(503),
-      jsonResponse(200, { ok: true }),
-    ];
+    const seq = [jsonResponse(429, {}, { "retry-after": "7" }), jsonResponse(503), jsonResponse(200, { ok: true })];
     let i = 0;
     const r = await fetchWithBackoff("https://x", {
       fetcher: async () => seq[i++]!,
@@ -556,7 +507,7 @@ describe("registry access", () => {
   test("npmLatest reads version and deprecation, and survives a 404", async () => {
     const urls: string[] = [];
     const ok = await npmLatest("@scope/pkg", {
-      fetcher: async (u) => {
+      fetcher: async u => {
         urls.push(u);
         return jsonResponse(200, { version: "2.0.0", deprecated: "use y" });
       },
@@ -578,13 +529,12 @@ describe("registry access", () => {
       { ecosystem: "npm" as const, name: "left-pad", version: "1.0.0" },
       { ecosystem: "npm" as const, name: "dead", version: "1.0.0" },
     ];
-    const r = await openAdvisories(
-      lock,
-      [{ ecosystem: "npm", name: "vite", reason: "dev server only" }],
-      { query: advisoryQuery, fetchLatest: latestStub },
-    );
-    expect(r.held.map((a) => a.name)).toEqual(["vite"]);
-    expect(r.open.map((a) => [a.name, a.fixable])).toEqual([
+    const r = await openAdvisories(lock, [{ ecosystem: "npm", name: "vite", reason: "dev server only" }], {
+      query: advisoryQuery,
+      fetchLatest: latestStub,
+    });
+    expect(r.held.map(a => a.name)).toEqual(["vite"]);
+    expect(r.open.map(a => [a.name, a.fixable])).toEqual([
       ["left-pad", true],
       ["dead", false],
     ]);
@@ -616,10 +566,7 @@ describe("overrides", () => {
 describe("arguments", () => {
   test("parseArgs", () => {
     expect(
-      parseArgs(
-        ["apply", "--majors", "react,react-dom", "--majors=vite", "--offline"],
-        resolve("/r"),
-      ),
+      parseArgs(["apply", "--majors", "react,react-dom", "--majors=vite", "--offline"], resolve("/r")),
     ).toMatchObject({
       sub: "apply",
       majors: ["react", "react-dom", "vite"],
@@ -627,9 +574,7 @@ describe("arguments", () => {
       root: resolve("/r"),
     });
     expect(parseArgs([], "/r").sub).toBe("status");
-    expect(
-      parseArgs(["verify", "--skip-tests", "--root", "/x/y"], "/r"),
-    ).toMatchObject({
+    expect(parseArgs(["verify", "--skip-tests", "--root", "/x/y"], "/r")).toMatchObject({
       sub: "verify",
       skipTests: true,
       root: resolve("/x/y"),

@@ -25,10 +25,10 @@ function getStoredTheme(): AppTheme {
 function applyTheme(theme: AppTheme) {
   const root = document.documentElement;
   const toRemove: string[] = [];
-  root.classList.forEach((c) => {
+  root.classList.forEach(c => {
     if (c.startsWith("theme-")) toRemove.push(c);
   });
-  toRemove.forEach((c) => root.classList.remove(c));
+  toRemove.forEach(c => root.classList.remove(c));
   root.classList.add(`theme-${theme}`);
   localStorage.setItem(THEME_STORAGE_KEY, theme);
 }
@@ -79,12 +79,10 @@ export const AppearanceSettingsPane = () => {
     <div className="space-y-4 pt-3 text-base-fg">
       <div className="flex flex-col gap-0.5">
         <Label>Themes</Label>
-        <p className="text-xs opacity-70">
-          Choose your preferred look. Applies instantly.
-        </p>
+        <p className="text-xs opacity-70">Choose your preferred look. Applies instantly.</p>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        {themes.map((t) => {
+        {themes.map(t => {
           const isSelected = selected === t.id;
           return (
             <button
@@ -99,12 +97,8 @@ export const AppearanceSettingsPane = () => {
               aria-pressed={isSelected}
             >
               {t.swatch}
-              <span className="flex-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
-                {t.label}
-              </span>
-              {isSelected && (
-                <CheckIcon aria-hidden className="mr-1 h-3.5 w-3.5" />
-              )}
+              <span className="flex-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">{t.label}</span>
+              {isSelected && <CheckIcon aria-hidden className="mr-1 h-3.5 w-3.5" />}
             </button>
           );
         })}
@@ -114,8 +108,5 @@ export const AppearanceSettingsPane = () => {
 };
 
 const Swatch = ({ background }: { background: string }) => (
-  <div
-    className="h-8 w-8 shrink-0 border border-base-fg/20"
-    style={{ background }}
-  />
+  <div className="h-8 w-8 shrink-0 border border-base-fg/20" style={{ background }} />
 );

@@ -28,10 +28,10 @@ pub use execute_command::execute_command;
 pub use execute_js::execute_js;
 pub use ipc_monitor::{get_ipc_events, report_ipc_event, start_ipc_monitor, stop_ipc_monitor};
 pub use list_windows::{
-    list_windows, resolve_window, resolve_window_with_context, ResolvedWindow, WindowContext,
-    WindowInfo,
+    ResolvedWindow, WindowContext, WindowInfo, list_windows, resolve_window,
+    resolve_window_with_context,
 };
-pub use resize_window::{resize_window, ResizeWindowParams, ResizeWindowResult};
+pub use resize_window::{ResizeWindowParams, ResizeWindowResult, resize_window};
 pub use screenshot::capture_native_screenshot;
 pub use script_executor::script_result;
 pub use script_injection::request_script_injection;

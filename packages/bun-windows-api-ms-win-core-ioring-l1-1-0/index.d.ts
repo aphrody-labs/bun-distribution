@@ -3,17 +3,46 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-ioring-l1-1-0.dll!BuildIoRingCancelRequest */
-  BuildIoRingCancelRequest(ioRing: Win32Pointer, file: Win32StructInit, opToCancel: number | bigint, userData: number | bigint): number;
+  BuildIoRingCancelRequest(
+    ioRing: Win32Pointer,
+    file: Win32StructInit,
+    opToCancel: number | bigint,
+    userData: number | bigint,
+  ): number;
   /** api-ms-win-core-ioring-l1-1-0.dll!BuildIoRingReadFile */
-  BuildIoRingReadFile(ioRing: Win32Pointer, fileRef: Win32StructInit, dataRef: Win32StructInit, numberOfBytesToRead: number, fileOffset: number | bigint, userData: number | bigint, sqeFlags: number): number;
+  BuildIoRingReadFile(
+    ioRing: Win32Pointer,
+    fileRef: Win32StructInit,
+    dataRef: Win32StructInit,
+    numberOfBytesToRead: number,
+    fileOffset: number | bigint,
+    userData: number | bigint,
+    sqeFlags: number,
+  ): number;
   /** api-ms-win-core-ioring-l1-1-0.dll!BuildIoRingRegisterBuffers */
-  BuildIoRingRegisterBuffers(ioRing: Win32Pointer, count: number, buffers: Win32Pointer, userData: number | bigint): number;
+  BuildIoRingRegisterBuffers(
+    ioRing: Win32Pointer,
+    count: number,
+    buffers: Win32Pointer,
+    userData: number | bigint,
+  ): number;
   /** api-ms-win-core-ioring-l1-1-0.dll!BuildIoRingRegisterFileHandles */
-  BuildIoRingRegisterFileHandles(ioRing: Win32Pointer, count: number, handles: Win32Pointer, userData: number | bigint): number;
+  BuildIoRingRegisterFileHandles(
+    ioRing: Win32Pointer,
+    count: number,
+    handles: Win32Pointer,
+    userData: number | bigint,
+  ): number;
   /** api-ms-win-core-ioring-l1-1-0.dll!CloseIoRing */
   CloseIoRing(ioRing: Win32Pointer): number;
   /** api-ms-win-core-ioring-l1-1-0.dll!CreateIoRing */
-  CreateIoRing(ioringVersion: number, flags: Win32StructInit, submissionQueueSize: number, completionQueueSize: number, h: Win32Pointer): number;
+  CreateIoRing(
+    ioringVersion: number,
+    flags: Win32StructInit,
+    submissionQueueSize: number,
+    completionQueueSize: number,
+    h: Win32Pointer,
+  ): number;
   /** api-ms-win-core-ioring-l1-1-0.dll!GetIoRingInfo */
   GetIoRingInfo(ioRing: Win32Pointer, info: Win32Pointer): number;
   /** api-ms-win-core-ioring-l1-1-0.dll!IsIoRingOpSupported */
@@ -25,7 +54,12 @@ interface Functions {
   /** api-ms-win-core-ioring-l1-1-0.dll!SetIoRingCompletionEvent */
   SetIoRingCompletionEvent(ioRing: Win32Pointer, hEvent: Win32Pointer): number;
   /** api-ms-win-core-ioring-l1-1-0.dll!SubmitIoRing */
-  SubmitIoRing(ioRing: Win32Pointer, waitOperations: number, milliseconds: number, submittedEntries: Win32Pointer): number;
+  SubmitIoRing(
+    ioRing: Win32Pointer,
+    waitOperations: number,
+    milliseconds: number,
+    submittedEntries: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

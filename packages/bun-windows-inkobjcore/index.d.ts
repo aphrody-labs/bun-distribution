@@ -3,7 +3,13 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** inkobjcore.dll!AddStroke */
-  AddStroke(hrc: Win32Pointer, pPacketDesc: Win32Pointer, cbPacket: number, pPacket: Win32Pointer, pXForm: Win32Pointer): number;
+  AddStroke(
+    hrc: Win32Pointer,
+    pPacketDesc: Win32Pointer,
+    cbPacket: number,
+    pPacket: Win32Pointer,
+    pXForm: Win32Pointer,
+  ): number;
   /** inkobjcore.dll!AddWordsToWordList */
   AddWordsToWordList(hwl: Win32Pointer, pwcWords: string | Win32Pointer): number;
   /** inkobjcore.dll!AdviseInkChange */
@@ -33,7 +39,12 @@ interface Functions {
   /** inkobjcore.dll!GetContextPropertyList */
   GetContextPropertyList(hrc: Win32Pointer, pcProperties: Win32Pointer, pPropertyGUIDS: Win32Pointer): number;
   /** inkobjcore.dll!GetContextPropertyValue */
-  GetContextPropertyValue(hrc: Win32Pointer, pGuid: Win32Pointer, pcbSize: Win32Pointer, pProperty: Win32Pointer): number;
+  GetContextPropertyValue(
+    hrc: Win32Pointer,
+    pGuid: Win32Pointer,
+    pcbSize: Win32Pointer,
+    pProperty: Win32Pointer,
+  ): number;
   /** inkobjcore.dll!GetEnabledUnicodeRanges */
   GetEnabledUnicodeRanges(hrc: Win32Pointer, pcRanges: Win32Pointer, pcr: Win32Pointer): number;
   /** inkobjcore.dll!GetGuide */
@@ -75,7 +86,13 @@ interface Functions {
   /** inkobjcore.dll!SetGuide */
   SetGuide(hrc: Win32Pointer, pGuide: Win32Pointer, iIndex: number): number;
   /** inkobjcore.dll!SetTextContext */
-  SetTextContext(hrc: Win32Pointer, cwcBefore: number, pwcBefore: string | Win32Pointer, cwcAfter: number, pwcAfter: string | Win32Pointer): number;
+  SetTextContext(
+    hrc: Win32Pointer,
+    cwcBefore: number,
+    pwcBefore: string | Win32Pointer,
+    cwcAfter: number,
+    pwcAfter: string | Win32Pointer,
+  ): number;
   /** inkobjcore.dll!SetWordList */
   SetWordList(hrc: Win32Pointer, hwl: Win32Pointer): number;
 }

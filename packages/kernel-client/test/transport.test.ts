@@ -9,26 +9,21 @@ import { KernelClient } from "../src/index.ts";
 async function endpoint(reply: boolean) {
   const root = await mkdtemp(join(tmpdir(), "aphrody-transport-"));
   const path =
-    process.platform === "win32"
-      ? `\\\\.\\pipe\\aphrody-transport-${crypto.randomUUID()}`
-      : join(root, "kernel.sock");
+    process.platform === "win32" ? `\\\\.\\pipe\\aphrody-transport-${crypto.randomUUID()}` : join(root, "kernel.sock");
   const sockets = new Set<Socket>();
-  const server = createServer((socket) => {
+  const server = createServer(socket => {
     sockets.add(socket);
     socket.on("close", () => sockets.delete(socket));
     socket.on("error", () => {});
     let buffer = "";
-    socket.on("data", (data) => {
+    socket.on("data", data => {
       buffer += data.toString();
       const lines = buffer.split("\n");
       buffer = lines.pop()!;
       for (const line of lines) {
         const request = JSON.parse(line);
         if (reply && request.method === "initialize")
-          socket.write(
-            JSON.stringify({ jsonrpc: "2.0", id: request.id, result: {} }) +
-              "\n",
-          );
+          socket.write(JSON.stringify({ jsonrpc: "2.0", id: request.id, result: {} }) + "\n");
       }
     });
   });
@@ -40,7 +35,7 @@ async function endpoint(reply: boolean) {
     path,
     async dispose() {
       for (const socket of sockets) socket.destroy();
-      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await new Promise<void>(resolve => server.close(() => resolve()));
       await rm(root, { recursive: true, force: true });
     },
   };
@@ -49,9 +44,7 @@ async function endpoint(reply: boolean) {
 test("a stalled MCP handshake times out and closes its connection", async () => {
   const server = await endpoint(false);
   try {
-    await expect(KernelClient.connect(server.path, "test", 30)).rejects.toThrow(
-      "timed out",
-    );
+    await expect(KernelClient.connect(server.path, "test", 30)).rejects.toThrow("timed out");
   } finally {
     await server.dispose();
   }
@@ -61,9 +54,7 @@ test("request deadlines and shutdown reject waits, including calls made after cl
   const server = await endpoint(true);
   const client = await KernelClient.connect(server.path);
   try {
-    await expect(client.call("stalled-tool", {}, 30)).rejects.toThrow(
-      "timed out",
-    );
+    await expect(client.call("stalled-tool", {}, 30)).rejects.toThrow("timed out");
     const pending = client.request("tools/list");
     client.close();
     await expect(pending).rejects.toThrow("closed");
@@ -76,7 +67,5 @@ test("request deadlines and shutdown reject waits, including calls made after cl
 });
 
 test("invalid deadlines are refused before starting a connection", async () => {
-  await expect(KernelClient.connect("/missing", "test", 0)).rejects.toThrow(
-    "positive",
-  );
+  await expect(KernelClient.connect("/missing", "test", 0)).rejects.toThrow("positive");
 });

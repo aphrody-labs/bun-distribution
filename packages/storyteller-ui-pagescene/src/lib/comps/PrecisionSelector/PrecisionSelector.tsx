@@ -1,9 +1,9 @@
 import { usePageSceneStore } from "../../PageSceneStore";
 
 export const PrecisionSelector = () => {
-  const showing = usePageSceneStore((s) => s.precisionSelectorShowing);
-  const coords = usePageSceneStore((s) => s.precisionSelectorCoords);
-  const values = usePageSceneStore((s) => s.precisionSelectorValues);
+  const showing = usePageSceneStore(s => s.precisionSelectorShowing);
+  const coords = usePageSceneStore(s => s.precisionSelectorCoords);
+  const values = usePageSceneStore(s => s.precisionSelectorValues);
 
   const handleMouseLeave = () => {
     usePageSceneStore.getState().hidePrecisionSelector();

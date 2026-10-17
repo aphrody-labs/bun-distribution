@@ -1,9 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { OmniGenAudioModelDetails } from "@storyteller/api";
-import {
-  buildAudioRequest,
-  type AudioGenerationSettings,
-} from "./omni-gen-audio";
+import { buildAudioRequest, type AudioGenerationSettings } from "./omni-gen-audio";
 
 // Per-model capability fixtures mirroring the backend's audio_models config.
 const SUNO_MUSIC: OmniGenAudioModelDetails = {

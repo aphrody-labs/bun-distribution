@@ -44,38 +44,22 @@ export function getDeviceIcon(device: LibraryDeviceInfo): DeviceIcon {
     }
 
     // Tablets (iPad, Surface, etc.)
-    if (
-      model.includes("ipad") ||
-      model.includes("tablet") ||
-      model.includes("surface")
-    ) {
+    if (model.includes("ipad") || model.includes("tablet") || model.includes("surface")) {
       return Tablet;
     }
 
     // Mobile devices (iPhone, etc.)
-    if (
-      model.includes("iphone") ||
-      model.includes("mobile") ||
-      model.includes("phone")
-    ) {
+    if (model.includes("iphone") || model.includes("mobile") || model.includes("phone")) {
       return device.os.toLowerCase() === "android" ? MobileAndroid : Mobile;
     }
 
     // Laptops
-    if (
-      model.includes("macbook") ||
-      model.includes("laptop") ||
-      model.includes("notebook")
-    ) {
+    if (model.includes("macbook") || model.includes("laptop") || model.includes("notebook")) {
       return Laptop;
     }
 
     // Desktop PCs
-    if (
-      model.includes("imac") ||
-      model.includes("desktop") ||
-      model.includes("pc")
-    ) {
+    if (model.includes("imac") || model.includes("desktop") || model.includes("pc")) {
       return PC;
     }
   }
@@ -118,10 +102,7 @@ export function getDeviceIcon(device: LibraryDeviceInfo): DeviceIcon {
 /**
  * Get device icon from device slug using the devices map.
  */
-export function getDeviceIconBySlug(
-  deviceSlug: string,
-  devices: Map<string, LibraryDeviceInfo>,
-): DeviceIcon {
+export function getDeviceIconBySlug(deviceSlug: string, devices: Map<string, LibraryDeviceInfo>): DeviceIcon {
   const device = devices.get(deviceSlug);
   return device ? getDeviceIcon(device) : Laptop; // Default to Laptop if device not found
 }

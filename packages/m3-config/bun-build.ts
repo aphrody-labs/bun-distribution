@@ -69,8 +69,7 @@ export interface M3BunBuildOptions extends M3PackageConfig {
   /** Sourcemap mode. Defaults to `"external"`. */
   sourcemap?: "external" | "inline" | "none";
   /** Minification. Defaults to false. */
-  minify?:
-    boolean | { whitespace?: boolean; syntax?: boolean; identifiers?: boolean };
+  minify?: boolean | { whitespace?: boolean; syntax?: boolean; identifiers?: boolean };
   /** Additional Bun plugins. */
   plugins?: BunPlugin[];
   /** Compile-time constant defines. */
@@ -90,23 +89,15 @@ export interface M3BunBuildResult {
  * The packages a build leaves unbundled: {@link M3_EXTERNAL}, `node:*`, the `dependencies` and `peerDependencies` of the
  * package at `cwd` (consumers install them) and `extra`. Anything else a package imports is bundled in.
  */
-export function externals(
-  cwd: string,
-  extra: readonly string[] = [],
-): string[] {
+export function externals(cwd: string, extra: readonly string[] = []): string[] {
   const manifest = join(cwd, "package.json");
   const names = new Set<string>();
   if (existsSync(manifest)) {
-    const { dependencies, peerDependencies } = JSON.parse(
-      readFileSync(manifest, "utf8"),
-    ) as {
+    const { dependencies, peerDependencies } = JSON.parse(readFileSync(manifest, "utf8")) as {
       dependencies?: Record<string, string>;
       peerDependencies?: Record<string, string>;
     };
-    for (const name of [
-      ...Object.keys(dependencies ?? {}),
-      ...Object.keys(peerDependencies ?? {}),
-    ]) {
+    for (const name of [...Object.keys(dependencies ?? {}), ...Object.keys(peerDependencies ?? {})]) {
       names.add(name);
       names.add(`${name}/*`);
     }
@@ -116,20 +107,14 @@ export function externals(
 }
 
 /** Expand glob entries (`wrappers/*.ts`) against `cwd`; plain paths pass through. */
-export function expandEntries(
-  entries: string | readonly string[],
-  cwd: string,
-): string[] {
+export function expandEntries(entries: string | readonly string[], cwd: string): string[] {
   const out: string[] = [];
   for (const entry of typeof entries === "string" ? [entries] : entries) {
     if (/[*?{]/.test(entry)) {
       // eslint-disable-next-line unicorn/no-array-sort -- Sorting a fresh array keeps the shared ES2022 type contract.
-      const matches = [
-        ...new Glob(entry).scanSync({ cwd, onlyFiles: true }),
-      ].sort();
-      if (matches.length === 0)
-        throw new Error(`m3-config: entry glob matches nothing: ${entry}`);
-      out.push(...matches.map((m) => resolve(cwd, m)));
+      const matches = [...new Glob(entry).scanSync({ cwd, onlyFiles: true })].sort();
+      if (matches.length === 0) throw new Error(`m3-config: entry glob matches nothing: ${entry}`);
+      out.push(...matches.map(m => resolve(cwd, m)));
     } else out.push(resolve(cwd, entry));
   }
   return out;
@@ -137,9 +122,7 @@ export function expandEntries(
 
 /** Deepest directory that contains every entry: the base of the output layout (`src/a.ts` -> `dist/a.js`). */
 export function commonDir(files: readonly string[]): string {
-  const [first, ...rest] = files.map((f) =>
-    dirname(f).replaceAll("\\", "/").split("/"),
-  );
+  const [first, ...rest] = files.map(f => dirname(f).replaceAll("\\", "/").split("/"));
   let common = first ?? [];
   for (const parts of rest) {
     let i = 0;
@@ -153,25 +136,17 @@ export function commonDir(files: readonly string[]): string {
  * Prepend the React client directive to emitted `.js` files using Bun's native Glob and I/O.
  * Returns the number of files changed; a second run changes none.
  */
-export async function prependUseClient(
-  dir: string,
-  only?: readonly string[],
-): Promise<number> {
+export async function prependUseClient(dir: string, only?: readonly string[]): Promise<number> {
   const files: string[] = [];
   for await (const found of new Glob("**/*.js").scan({
     cwd: dir,
     onlyFiles: true,
   })) {
     const path = found.replaceAll("\\", "/");
-    if (
-      !only ||
-      only.includes(path.split("/").pop() ?? path) ||
-      only.includes(path)
-    )
-      files.push(path);
+    if (!only || only.includes(path.split("/").pop() ?? path) || only.includes(path)) files.push(path);
   }
   const changed = await Promise.all(
-    files.map(async (path) => {
+    files.map(async path => {
       const file = join(dir, path);
       const content = await Bun.file(file).text();
       if (content.startsWith(USE_CLIENT)) return 0;
@@ -183,9 +158,7 @@ export async function prependUseClient(
 }
 
 /** Executes a native Bun build for an M3 package. */
-export async function m3BunBuild(
-  options: M3BunBuildOptions = {},
-): Promise<M3BunBuildResult> {
+export async function m3BunBuild(options: M3BunBuildOptions = {}): Promise<M3BunBuildResult> {
   const cwd = options.cwd ?? process.cwd();
   const entrypoints = expandEntries(options.entry ?? ["src/index.ts"], cwd);
   const outdir = resolve(cwd, options.outDir ?? "dist");
@@ -203,9 +176,7 @@ export async function m3BunBuild(
     external: externals(cwd, options.external),
     plugins: options.plugins ?? [],
     define: {
-      "process.env.NODE_ENV": JSON.stringify(
-        process.env.NODE_ENV ?? "production",
-      ),
+      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "production"),
       ...options.define,
     },
     throw: false,
@@ -216,14 +187,11 @@ export async function m3BunBuild(
       success: false,
       outDir: outdir,
       outputs: result.outputs,
-      logs: result.logs.map((log) => String(log)),
+      logs: result.logs.map(log => String(log)),
     };
   }
   if (useClient !== false)
-    await prependUseClient(
-      outdir,
-      Array.isArray(useClient) ? (useClient as readonly string[]) : undefined,
-    );
+    await prependUseClient(outdir, Array.isArray(useClient) ? (useClient as readonly string[]) : undefined);
   return { success: true, outDir: outdir, outputs: result.outputs, logs: [] };
 }
 
@@ -235,8 +203,7 @@ if (import.meta.main) {
     const arg = args[i];
     if (arg === "--entry" || arg === "-e") options.entry = args[++i]!;
     else if (arg === "--outdir" || arg === "-o") options.outDir = args[++i]!;
-    else if (arg === "--target" || arg === "-t")
-      options.target = args[++i] as M3Target;
+    else if (arg === "--target" || arg === "-t") options.target = args[++i] as M3Target;
     else if (arg === "--minify" || arg === "-m") options.minify = true;
   }
   const res = await m3BunBuild(options);
@@ -244,7 +211,5 @@ if (import.meta.main) {
     console.error("[m3-bun-build] Failed to build:", res.logs.join("\n"));
     process.exit(1);
   }
-  console.log(
-    `[m3-bun-build] Successfully built ${res.outputs.length} artifact(s) to ${res.outDir}`,
-  );
+  console.log(`[m3-bun-build] Successfully built ${res.outputs.length} artifact(s) to ${res.outDir}`);
 }

@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import {
-  defineM3Config,
-  findM3Config,
-  loadM3Config,
-  resolveM3Config,
-} from "../src/config.ts";
+import { defineM3Config, findM3Config, loadM3Config, resolveM3Config } from "../src/config.ts";
 import { FIXTURE, tempDir } from "./helpers.ts";
 
 describe("m3.config.ts", () => {
@@ -46,30 +41,15 @@ describe("m3.config.ts", () => {
     await using tmp = await tempDir();
     expect(findM3Config(tmp.dir)).toBeUndefined();
     await expect(loadM3Config(tmp.dir)).rejects.toThrow("no m3.config.ts");
-    await Bun.write(
-      join(tmp.dir, "m3.config.mjs"),
-      'export default { entry: "a.html" };\n',
-    );
-    await Bun.write(
-      join(tmp.dir, "m3.config.ts"),
-      'export default { entry: "b.html" };\n',
-    );
+    await Bun.write(join(tmp.dir, "m3.config.mjs"), 'export default { entry: "a.html" };\n');
+    await Bun.write(join(tmp.dir, "m3.config.ts"), 'export default { entry: "b.html" };\n');
     expect(findM3Config(tmp.dir)).toBe(join(tmp.dir, "m3.config.ts"));
   });
 
   test("validation: entry, proxy prefix and target", () => {
-    expect(() => resolveM3Config({} as never, "/x")).toThrow(
-      "`entry` must be a non-empty string",
-    );
-    expect(() =>
-      resolveM3Config({ entry: "a.html", proxy: { rpc: "http://h" } }, "/x"),
-    ).toThrow('must start with "/"');
-    expect(() =>
-      resolveM3Config(
-        { entry: "a.html", proxy: { "/rpc": "not a url" } },
-        "/x",
-      ),
-    ).toThrow("is not a URL");
+    expect(() => resolveM3Config({} as never, "/x")).toThrow("`entry` must be a non-empty string");
+    expect(() => resolveM3Config({ entry: "a.html", proxy: { rpc: "http://h" } }, "/x")).toThrow('must start with "/"');
+    expect(() => resolveM3Config({ entry: "a.html", proxy: { "/rpc": "not a url" } }, "/x")).toThrow("is not a URL");
     expect(defineM3Config({ entry: "a.html" })).toEqual({ entry: "a.html" });
   });
 });

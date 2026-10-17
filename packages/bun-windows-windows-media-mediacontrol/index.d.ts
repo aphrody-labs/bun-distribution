@@ -7,17 +7,33 @@ interface Functions {
   /** windows.media.mediacontrol.dll!CreateCaptureAudioStateMonitorForCategory */
   CreateCaptureAudioStateMonitorForCategory(category: number, audioStateMonitor: Win32Pointer): number;
   /** windows.media.mediacontrol.dll!CreateCaptureAudioStateMonitorForCategoryAndDeviceId */
-  CreateCaptureAudioStateMonitorForCategoryAndDeviceId(category: number, deviceId: string | Win32Pointer, audioStateMonitor: Win32Pointer): number;
+  CreateCaptureAudioStateMonitorForCategoryAndDeviceId(
+    category: number,
+    deviceId: string | Win32Pointer,
+    audioStateMonitor: Win32Pointer,
+  ): number;
   /** windows.media.mediacontrol.dll!CreateCaptureAudioStateMonitorForCategoryAndDeviceRole */
-  CreateCaptureAudioStateMonitorForCategoryAndDeviceRole(category: number, role: number, audioStateMonitor: Win32Pointer): number;
+  CreateCaptureAudioStateMonitorForCategoryAndDeviceRole(
+    category: number,
+    role: number,
+    audioStateMonitor: Win32Pointer,
+  ): number;
   /** windows.media.mediacontrol.dll!CreateRenderAudioStateMonitor */
   CreateRenderAudioStateMonitor(audioStateMonitor: Win32Pointer): number;
   /** windows.media.mediacontrol.dll!CreateRenderAudioStateMonitorForCategory */
   CreateRenderAudioStateMonitorForCategory(category: number, audioStateMonitor: Win32Pointer): number;
   /** windows.media.mediacontrol.dll!CreateRenderAudioStateMonitorForCategoryAndDeviceId */
-  CreateRenderAudioStateMonitorForCategoryAndDeviceId(category: number, deviceId: string | Win32Pointer, audioStateMonitor: Win32Pointer): number;
+  CreateRenderAudioStateMonitorForCategoryAndDeviceId(
+    category: number,
+    deviceId: string | Win32Pointer,
+    audioStateMonitor: Win32Pointer,
+  ): number;
   /** windows.media.mediacontrol.dll!CreateRenderAudioStateMonitorForCategoryAndDeviceRole */
-  CreateRenderAudioStateMonitorForCategoryAndDeviceRole(category: number, role: number, audioStateMonitor: Win32Pointer): number;
+  CreateRenderAudioStateMonitorForCategoryAndDeviceRole(
+    category: number,
+    role: number,
+    audioStateMonitor: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -77,21 +77,21 @@ Afterwards all the plugin's APIs are available through the JavaScript guest bind
 import {
   isPermissionGranted,
   requestPermission,
-  sendNotification
-} from '@aphrody/plugin-notification'
+  sendNotification,
+} from "@aphrody/plugin-notification";
 
 async function checkPermission() {
   if (!(await isPermissionGranted())) {
-    return (await requestPermission()) === 'granted'
+    return (await requestPermission()) === "granted";
   }
-  return true
+  return true;
 }
 
 export async function enqueueNotification(title, body) {
   if (!(await checkPermission())) {
-    return
+    return;
   }
-  sendNotification({ title, body })
+  sendNotification({ title, body });
 }
 ```
 
@@ -100,37 +100,37 @@ export async function enqueueNotification(title, body) {
 You can add sound to your notifications on all platforms (desktop and mobile):
 
 ```javascript
-import { sendNotification } from '@aphrody/plugin-notification'
-import { platform } from '@aphrody/api/os'
+import { sendNotification } from "@aphrody/plugin-notification";
+import { platform } from "@aphrody/api/os";
 
 // Basic notification with sound
 sendNotification({
-  title: 'New Message',
-  body: 'You have a new message',
-  sound: 'notification.wav' // Path to sound file
-})
+  title: "New Message",
+  body: "You have a new message",
+  sound: "notification.wav", // Path to sound file
+});
 
 // Platform-specific sounds
 async function sendPlatformSpecificNotification() {
-  const platformName = platform()
+  const platformName = platform();
 
-  let soundPath
-  if (platformName === 'darwin') {
+  let soundPath;
+  if (platformName === "darwin") {
     // On macOS: use system sounds or sound files in the app bundle
-    soundPath = 'Ping' // macOS system sound
-  } else if (platformName === 'linux') {
+    soundPath = "Ping"; // macOS system sound
+  } else if (platformName === "linux") {
     // On Linux: use XDG theme sounds or file paths
-    soundPath = 'message-new-instant' // XDG theme sound
+    soundPath = "message-new-instant"; // XDG theme sound
   } else {
     // On Windows: use file paths
-    soundPath = 'notification.wav'
+    soundPath = "notification.wav";
   }
 
   sendNotification({
-    title: 'Platform-specific Notification',
-    body: 'This notification uses platform-specific sound',
-    sound: soundPath
-  })
+    title: "Platform-specific Notification",
+    body: "This notification uses platform-specific sound",
+    sound: soundPath,
+  });
 }
 ```
 

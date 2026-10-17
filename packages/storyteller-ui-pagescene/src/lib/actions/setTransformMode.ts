@@ -1,9 +1,6 @@
 import type Editor from "../engine/editor";
 import type { TransformMode } from "../PageSceneStore";
-import {
-  SelectedModeChangedEvent,
-  TransformModeChangedEvent,
-} from "../engine/events/EngineEvent";
+import { SelectedModeChangedEvent, TransformModeChangedEvent } from "../engine/events/EngineEvent";
 
 const ENGINE_MODE: Record<TransformMode, "translate" | "rotate" | "scale"> = {
   move: "translate",

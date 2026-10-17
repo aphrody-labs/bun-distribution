@@ -1,18 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { isAbsolute } from "node:path";
-import type {
-  McpInvocation,
-  WebPipelineOptions,
-} from "@aphrody/bun/web/pipeline";
+import type { McpInvocation, WebPipelineOptions } from "@aphrody/bun/web/pipeline";
 
 export interface NativeRagSelection {
   config: string;
   server: string;
 }
-export type NativeRagTransport = (
-  request: McpInvocation,
-  options: WebPipelineOptions,
-) => Promise<{ result: unknown }>;
+export type NativeRagTransport = (request: McpInvocation, options: WebPipelineOptions) => Promise<{ result: unknown }>;
 
 async function nativeMcp(request: McpInvocation, options: WebPipelineOptions) {
   const { mcpTool } = await import("@aphrody/bun/web/pipeline");
@@ -22,8 +16,7 @@ async function nativeMcp(request: McpInvocation, options: WebPipelineOptions) {
 export function ragPayload(result: unknown): {
   results: Record<string, unknown>[];
 } {
-  if (!result || typeof result !== "object")
-    throw new Error("Invalid native RAG envelope");
+  if (!result || typeof result !== "object") throw new Error("Invalid native RAG envelope");
   const call = result as {
     isError?: boolean;
     structuredContent?: unknown;
@@ -35,10 +28,8 @@ export function ragPayload(result: unknown): {
     try {
       payload = JSON.parse(
         (call.content ?? [])
-          .filter(
-            (item) => item.type === "text" && typeof item.text === "string",
-          )
-          .map((item) => item.text)
+          .filter(item => item.type === "text" && typeof item.text === "string")
+          .map(item => item.text)
           .join("\n"),
       );
     } catch {
@@ -51,10 +42,7 @@ export function ragPayload(result: unknown): {
     "error" in payload ||
     !("results" in payload) ||
     !Array.isArray(payload.results) ||
-    payload.results.some(
-      (item: unknown) =>
-        !item || typeof item !== "object" || Array.isArray(item),
-    )
+    payload.results.some((item: unknown) => !item || typeof item !== "object" || Array.isArray(item))
   )
     throw new Error("Native RAG payload unavailable");
   return payload as { results: Record<string, unknown>[] };
@@ -68,13 +56,7 @@ export async function searchLocalRag(
 ): Promise<{ results: Record<string, unknown>[] }> {
   if (!isAbsolute(selection.config) || selection.server !== "shenron-rag")
     throw new Error("Protected Shenron native MCP configuration required");
-  if (
-    !query.trim() ||
-    Buffer.byteLength(query) > 512 ||
-    !Number.isInteger(limit) ||
-    limit < 1 ||
-    limit > 8
-  )
+  if (!query.trim() || Buffer.byteLength(query) > 512 || !Number.isInteger(limit) || limit < 1 || limit > 8)
     throw new Error("Native RAG requires a bounded query and limit");
   const result = await transport(
     {

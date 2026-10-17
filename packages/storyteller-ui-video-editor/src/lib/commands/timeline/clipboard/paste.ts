@@ -1,25 +1,11 @@
-import {
-  Command,
-  createElementSelectionResult,
-  type CommandResult,
-} from "../../base-command";
+import { Command, createElementSelectionResult, type CommandResult } from "../../base-command";
 import { EditorCore } from "../../../core";
 import type { SceneTracks, TimelineElement } from "../../../timeline/types";
 import type { ElementClipboardItem } from "../../../clipboard/types";
 import { generateUUID } from "../../../utils/id";
-import {
-  applyPlacement,
-  resolveTrackPlacement,
-  enforceMainTrackStart,
-} from "../../../timeline/placement";
+import { applyPlacement, resolveTrackPlacement, enforceMainTrackStart } from "../../../timeline/placement";
 import { cloneAnimations } from "../../../animation";
-import {
-  addMediaTime,
-  type MediaTime,
-  maxMediaTime,
-  subMediaTime,
-  ZERO_MEDIA_TIME,
-} from "../../../wasm";
+import { addMediaTime, type MediaTime, maxMediaTime, subMediaTime, ZERO_MEDIA_TIME } from "../../../wasm";
 
 export class PasteCommand extends Command {
   private savedState: SceneTracks | null = null;
@@ -27,13 +13,7 @@ export class PasteCommand extends Command {
   private readonly time: MediaTime;
   private readonly clipboardItems: ElementClipboardItem[];
 
-  constructor({
-    time,
-    clipboardItems,
-  }: {
-    time: MediaTime;
-    clipboardItems: ElementClipboardItem[];
-  }) {
+  constructor({ time, clipboardItems }: { time: MediaTime; clipboardItems: ElementClipboardItem[] }) {
     super();
     this.time = time;
     this.clipboardItems = clipboardItems;
@@ -48,9 +28,7 @@ export class PasteCommand extends Command {
 
     const minStart = this.clipboardItems.reduce(
       (earliestStartTime, item) =>
-        item.element.startTime < earliestStartTime
-          ? item.element.startTime
-          : earliestStartTime,
+        item.element.startTime < earliestStartTime ? item.element.startTime : earliestStartTime,
       this.clipboardItems[0].element.startTime,
     );
 
@@ -71,15 +49,13 @@ export class PasteCommand extends Command {
       }
 
       const trackType = items[0].trackType;
-      const sourceTrackIndex = [
-        ...updatedTracks.overlay,
-        updatedTracks.main,
-        ...updatedTracks.audio,
-      ].findIndex((track) => track.id === trackId);
+      const sourceTrackIndex = [...updatedTracks.overlay, updatedTracks.main, ...updatedTracks.audio].findIndex(
+        track => track.id === trackId,
+      );
       const placementResult = resolveTrackPlacement({
         tracks: updatedTracks,
         trackType,
-        timeSpans: elementsToAdd.map((element) => ({
+        timeSpans: elementsToAdd.map(element => ({
           startTime: element.startTime,
           duration: element.duration,
         })),
@@ -96,9 +72,7 @@ export class PasteCommand extends Command {
             ? updatedTracks.overlay[placementResult.trackIndex]
             : placementResult.trackIndex === updatedTracks.overlay.length
               ? updatedTracks.main
-              : updatedTracks.audio[
-                  placementResult.trackIndex - updatedTracks.overlay.length - 1
-                ];
+              : updatedTracks.audio[placementResult.trackIndex - updatedTracks.overlay.length - 1];
         if (targetTrack?.id === updatedTracks.main.id) {
           const earliestElement = elementsToAdd.reduce((earliest, element) =>
             element.startTime < earliest.startTime ? element : earliest,
@@ -114,7 +88,7 @@ export class PasteCommand extends Command {
           });
 
           if (delta !== ZERO_MEDIA_TIME) {
-            elementsForPlacement = elementsToAdd.map((element) => ({
+            elementsForPlacement = elementsToAdd.map(element => ({
               ...element,
               startTime: maxMediaTime({
                 a: ZERO_MEDIA_TIME,

@@ -89,12 +89,9 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
     );
 
     it("should perform parallel recursive directory scan", async () => {
-      const report = await scanDirectory(
-        resolve(rootDir, "packages/engine/core/src/sys"),
-        {
-          exts: ["ts"],
-        },
-      );
+      const report = await scanDirectory(resolve(rootDir, "packages/engine/core/src/sys"), {
+        exts: ["ts"],
+      });
       expect(report.schema).toBe("yolo.scan/1");
       expect(report.totalFiles).toBeGreaterThan(0);
       expect(report.totalLines).toBeGreaterThan(0);
@@ -102,9 +99,7 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
     });
 
     it("should audit environment portability and verify zero hardcoded paths", async () => {
-      const report = await vfs.auditPortability(
-        resolve(rootDir, "packages/engine/core"),
-      );
+      const report = await vfs.auditPortability(resolve(rootDir, "packages/engine/core"));
       expect(report.schema).toBe("yolo.portability/1");
       expect(report.auditedFiles).toBeGreaterThan(10);
       expect(report.ok).toBe(true);
@@ -160,7 +155,7 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
   describe("verify module (Quality Gate Graph Scheduler)", () => {
     it("should declare canonical repository quality gates", () => {
       expect(GATES.length).toBe(11);
-      const gateIds = GATES.map((g) => g.id);
+      const gateIds = GATES.map(g => g.id);
       expect(gateIds).toContain("whitespace");
       expect(gateIds).toContain("typecheck");
       expect(gateIds).toContain("lint");
@@ -180,7 +175,7 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
 
     it("should list heavy gates that are run separately via yolo ship", () => {
       expect(verify.NOT_RUN_HEAVY.length).toBeGreaterThan(0);
-      const heavyIds = verify.NOT_RUN_HEAVY.map((g) => g.id);
+      const heavyIds = verify.NOT_RUN_HEAVY.map(g => g.id);
       expect(heavyIds).toContain("clippy");
       expect(heavyIds).toContain("test-crates");
       expect(heavyIds).toContain("check-workspace");
@@ -217,7 +212,7 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
   describe("mcp module (Model Context Protocol 2024-11-05)", () => {
     it("should register core agent tools", () => {
       expect(TOOLS.length).toBeGreaterThanOrEqual(3);
-      const toolNames = TOOLS.map((t) => t.name);
+      const toolNames = TOOLS.map(t => t.name);
       expect(toolNames).toContain("yolo_status");
       expect(toolNames).toContain("yolo_scan");
       expect(toolNames).toContain("yolo_bench");
@@ -273,9 +268,7 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
 `;
       const sections = curation.parseAwesome(sampleMarkdown);
       expect(sections.length).toBeGreaterThan(0);
-      const fwSection = sections.find((s) =>
-        s.title.includes("Web Frameworks"),
-      );
+      const fwSection = sections.find(s => s.title.includes("Web Frameworks"));
       expect(fwSection).toBeDefined();
       expect(fwSection?.entries.length).toBe(2);
       expect(fwSection?.entries[0]?.name).toBe("Hono");
@@ -290,7 +283,7 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
 
       const tools = coord.aphrodyTools();
       expect(Array.isArray(tools)).toBe(true);
-      expect(tools.map((t) => t.name)).toEqual(["aphrody-infra"]);
+      expect(tools.map(t => t.name)).toEqual(["aphrody-infra"]);
     });
   });
 

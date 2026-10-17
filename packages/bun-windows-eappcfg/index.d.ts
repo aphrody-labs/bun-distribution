@@ -3,33 +3,133 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** eappcfg.dll!EapHostPeerConfigBlob2Xml */
-  EapHostPeerConfigBlob2Xml(dwFlags: number, eapMethodType: Win32StructInit, dwSizeOfConfigIn: number, pConfigIn: Win32Pointer, ppConfigDoc: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerConfigBlob2Xml(
+    dwFlags: number,
+    eapMethodType: Win32StructInit,
+    dwSizeOfConfigIn: number,
+    pConfigIn: Win32Pointer,
+    ppConfigDoc: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappcfg.dll!EapHostPeerConfigXml2Blob */
-  EapHostPeerConfigXml2Blob(dwFlags: number, pConfigDoc: Win32Pointer, pdwSizeOfConfigOut: Win32Pointer, ppConfigOut: Win32Pointer, pEapMethodType: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerConfigXml2Blob(
+    dwFlags: number,
+    pConfigDoc: Win32Pointer,
+    pdwSizeOfConfigOut: Win32Pointer,
+    ppConfigOut: Win32Pointer,
+    pEapMethodType: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappcfg.dll!EapHostPeerCredentialsXml2Blob */
-  EapHostPeerCredentialsXml2Blob(dwFlags: number, pCredentialsDoc: Win32Pointer, dwSizeOfConfigIn: number, pConfigIn: Win32Pointer, pdwSizeOfCredentialsOut: Win32Pointer, ppCredentialsOut: Win32Pointer, pEapMethodType: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerCredentialsXml2Blob(
+    dwFlags: number,
+    pCredentialsDoc: Win32Pointer,
+    dwSizeOfConfigIn: number,
+    pConfigIn: Win32Pointer,
+    pdwSizeOfCredentialsOut: Win32Pointer,
+    ppCredentialsOut: Win32Pointer,
+    pEapMethodType: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappcfg.dll!EapHostPeerFreeErrorMemory */
   EapHostPeerFreeErrorMemory(pEapError: Win32Pointer): void;
   /** eappcfg.dll!EapHostPeerFreeMemory */
   EapHostPeerFreeMemory(pData: Win32Pointer): void;
   /** eappcfg.dll!EapHostPeerGetMethodProperties */
-  EapHostPeerGetMethodProperties(dwVersion: number, dwFlags: number, eapMethodType: Win32StructInit, hUserImpersonationToken: Win32Pointer, dwEapConnDataSize: number, pbEapConnData: Win32Pointer, dwUserDataSize: number, pbUserData: Win32Pointer, pMethodPropertyArray: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerGetMethodProperties(
+    dwVersion: number,
+    dwFlags: number,
+    eapMethodType: Win32StructInit,
+    hUserImpersonationToken: Win32Pointer,
+    dwEapConnDataSize: number,
+    pbEapConnData: Win32Pointer,
+    dwUserDataSize: number,
+    pbUserData: Win32Pointer,
+    pMethodPropertyArray: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappcfg.dll!EapHostPeerGetMethods */
   EapHostPeerGetMethods(pEapMethodInfoArray: Win32Pointer, ppEapError: Win32Pointer): number;
   /** eappcfg.dll!EapHostPeerInvokeConfigUI */
-  EapHostPeerInvokeConfigUI(hwndParent: Win32Pointer, dwFlags: number, eapMethodType: Win32StructInit, dwSizeOfConfigIn: number, pConfigIn: Win32Pointer, pdwSizeOfConfigOut: Win32Pointer, ppConfigOut: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerInvokeConfigUI(
+    hwndParent: Win32Pointer,
+    dwFlags: number,
+    eapMethodType: Win32StructInit,
+    dwSizeOfConfigIn: number,
+    pConfigIn: Win32Pointer,
+    pdwSizeOfConfigOut: Win32Pointer,
+    ppConfigOut: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappcfg.dll!EapHostPeerInvokeIdentityUI */
-  EapHostPeerInvokeIdentityUI(dwVersion: number, eapMethodType: Win32StructInit, dwFlags: number, hwndParent: Win32Pointer, dwSizeofConnectionData: number, pConnectionData: Win32Pointer, dwSizeofUserData: number, pUserData: Win32Pointer, pdwSizeOfUserDataOut: Win32Pointer, ppUserDataOut: Win32Pointer, ppwszIdentity: Win32Pointer, ppEapError: Win32Pointer, ppvReserved: Win32Pointer): number;
+  EapHostPeerInvokeIdentityUI(
+    dwVersion: number,
+    eapMethodType: Win32StructInit,
+    dwFlags: number,
+    hwndParent: Win32Pointer,
+    dwSizeofConnectionData: number,
+    pConnectionData: Win32Pointer,
+    dwSizeofUserData: number,
+    pUserData: Win32Pointer,
+    pdwSizeOfUserDataOut: Win32Pointer,
+    ppUserDataOut: Win32Pointer,
+    ppwszIdentity: Win32Pointer,
+    ppEapError: Win32Pointer,
+    ppvReserved: Win32Pointer,
+  ): number;
   /** eappcfg.dll!EapHostPeerInvokeInteractiveUI */
-  EapHostPeerInvokeInteractiveUI(hwndParent: Win32Pointer, dwSizeofUIContextData: number, pUIContextData: Win32Pointer, pdwSizeOfDataFromInteractiveUI: Win32Pointer, ppDataFromInteractiveUI: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerInvokeInteractiveUI(
+    hwndParent: Win32Pointer,
+    dwSizeofUIContextData: number,
+    pUIContextData: Win32Pointer,
+    pdwSizeOfDataFromInteractiveUI: Win32Pointer,
+    ppDataFromInteractiveUI: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappcfg.dll!EapHostPeerQueryCredentialInputFields */
-  EapHostPeerQueryCredentialInputFields(hUserImpersonationToken: Win32Pointer, eapMethodType: Win32StructInit, dwFlags: number, dwEapConnDataSize: number, pbEapConnData: Win32Pointer, pEapConfigInputFieldArray: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerQueryCredentialInputFields(
+    hUserImpersonationToken: Win32Pointer,
+    eapMethodType: Win32StructInit,
+    dwFlags: number,
+    dwEapConnDataSize: number,
+    pbEapConnData: Win32Pointer,
+    pEapConfigInputFieldArray: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
   /** eappcfg.dll!EapHostPeerQueryInteractiveUIInputFields */
-  EapHostPeerQueryInteractiveUIInputFields(dwVersion: number, dwFlags: number, dwSizeofUIContextData: number, pUIContextData: Win32Pointer, pEapInteractiveUIData: Win32Pointer, ppEapError: Win32Pointer, ppvReserved: Win32Pointer): number;
+  EapHostPeerQueryInteractiveUIInputFields(
+    dwVersion: number,
+    dwFlags: number,
+    dwSizeofUIContextData: number,
+    pUIContextData: Win32Pointer,
+    pEapInteractiveUIData: Win32Pointer,
+    ppEapError: Win32Pointer,
+    ppvReserved: Win32Pointer,
+  ): number;
   /** eappcfg.dll!EapHostPeerQueryUIBlobFromInteractiveUIInputFields */
-  EapHostPeerQueryUIBlobFromInteractiveUIInputFields(dwVersion: number, dwFlags: number, dwSizeofUIContextData: number, pUIContextData: Win32Pointer, pEapInteractiveUIData: Win32Pointer, pdwSizeOfDataFromInteractiveUI: Win32Pointer, ppDataFromInteractiveUI: Win32Pointer, ppEapError: Win32Pointer, ppvReserved: Win32Pointer): number;
+  EapHostPeerQueryUIBlobFromInteractiveUIInputFields(
+    dwVersion: number,
+    dwFlags: number,
+    dwSizeofUIContextData: number,
+    pUIContextData: Win32Pointer,
+    pEapInteractiveUIData: Win32Pointer,
+    pdwSizeOfDataFromInteractiveUI: Win32Pointer,
+    ppDataFromInteractiveUI: Win32Pointer,
+    ppEapError: Win32Pointer,
+    ppvReserved: Win32Pointer,
+  ): number;
   /** eappcfg.dll!EapHostPeerQueryUserBlobFromCredentialInputFields */
-  EapHostPeerQueryUserBlobFromCredentialInputFields(hUserImpersonationToken: Win32Pointer, eapMethodType: Win32StructInit, dwFlags: number, dwEapConnDataSize: number, pbEapConnData: Win32Pointer, pEapConfigInputFieldArray: Win32Pointer, pdwUserBlobSize: Win32Pointer, ppbUserBlob: Win32Pointer, ppEapError: Win32Pointer): number;
+  EapHostPeerQueryUserBlobFromCredentialInputFields(
+    hUserImpersonationToken: Win32Pointer,
+    eapMethodType: Win32StructInit,
+    dwFlags: number,
+    dwEapConnDataSize: number,
+    pbEapConnData: Win32Pointer,
+    pEapConfigInputFieldArray: Win32Pointer,
+    pdwUserBlobSize: Win32Pointer,
+    ppbUserBlob: Win32Pointer,
+    ppEapError: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

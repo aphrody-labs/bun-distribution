@@ -6,17 +6,9 @@ import { resolve } from "node:path";
 
 console.log("=== Sass Compiler Benchmark (Dart Sass vs Rust FFI Grass) ===\n");
 
-const PKG = resolve(
-  import.meta
-    .resolve("@aphrody/material-web/package.json")
-    .replace("file://", ""),
-  "..",
-);
+const PKG = resolve(import.meta.resolve("@aphrody/material-web/package.json").replace("file://", ""), "..");
 const targetFile = resolve(PKG, "button/internal/elevated-styles.scss");
-const loadPaths = [
-  resolve(PKG, "node_modules"),
-  resolve(PKG, "../../node_modules"),
-];
+const loadPaths = [resolve(PKG, "node_modules"), resolve(PKG, "../../node_modules")];
 
 // Warmup and compilation verification
 console.log(`Target file: ${targetFile}\n`);
@@ -25,9 +17,7 @@ console.log(`Target file: ${targetFile}\n`);
 const t0_grass = performance.now();
 const cssGrass = compileSassFile(targetFile, loadPaths, "compressed", true);
 const d_grass = performance.now() - t0_grass;
-console.log(
-  `[Grass FFI] Compiled in ${d_grass.toFixed(2)}ms (${cssGrass.length} chars)`,
-);
+console.log(`[Grass FFI] Compiled in ${d_grass.toFixed(2)}ms (${cssGrass.length} chars)`);
 
 // 2. Compile with Dart Sass (sass-embedded)
 const compiler = await initAsyncCompiler();
@@ -37,14 +27,10 @@ const resultDart = await compiler.compileAsync(targetFile, {
   loadPaths,
 });
 const d_dart = performance.now() - t0_dart;
-console.log(
-  `[Dart Sass FFI] Compiled in ${d_dart.toFixed(2)}ms (${resultDart.css.length} chars)`,
-);
+console.log(`[Dart Sass FFI] Compiled in ${d_dart.toFixed(2)}ms (${resultDart.css.length} chars)`);
 await compiler.dispose();
 
-console.log(
-  `\nRatio (Dart Sass / Grass): ${(d_dart / d_grass).toFixed(1)}x faster\n`,
-);
+console.log(`\nRatio (Dart Sass / Grass): ${(d_dart / d_grass).toFixed(1)}x faster\n`);
 
 // Running iteration benchmark
 const ITERATIONS = 100;
@@ -56,9 +42,7 @@ for (let i = 0; i < ITERATIONS; i++) {
   compileSassFile(targetFile, loadPaths, "compressed", true);
 }
 const durationGrass = performance.now() - tStartGrass;
-console.log(
-  `-> Rust FFI Grass: ${durationGrass.toFixed(2)}ms (${(durationGrass / ITERATIONS).toFixed(2)}ms/compile)`,
-);
+console.log(`-> Rust FFI Grass: ${durationGrass.toFixed(2)}ms (${(durationGrass / ITERATIONS).toFixed(2)}ms/compile)`);
 
 // Dart Sass Benchmark
 const compilerBench = await initAsyncCompiler();
@@ -72,10 +56,6 @@ for (let i = 0; i < ITERATIONS; i++) {
 }
 const durationDart = performance.now() - tStartDart;
 await compilerBench.dispose();
-console.log(
-  `-> Dart Sass: ${durationDart.toFixed(2)}ms (${(durationDart / ITERATIONS).toFixed(2)}ms/compile)`,
-);
+console.log(`-> Dart Sass: ${durationDart.toFixed(2)}ms (${(durationDart / ITERATIONS).toFixed(2)}ms/compile)`);
 
-console.log(
-  `\n=== Benchmark Completed! Speedup: ${(durationDart / durationGrass).toFixed(1)}x ===`,
-);
+console.log(`\n=== Benchmark Completed! Speedup: ${(durationDart / durationGrass).toFixed(1)}x ===`);

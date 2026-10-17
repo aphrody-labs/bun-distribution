@@ -72,7 +72,7 @@ or unchanged name cancels.
 <RenameInput
   name="report"
   extension="pdf"
-  onSave={async (next) => rename(next)}
+  onSave={async next => rename(next)}
   onCancel={stop}
 />
 ```

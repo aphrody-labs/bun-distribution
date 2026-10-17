@@ -24,14 +24,7 @@ import { webApiKey } from "./webapi.js";
 const OP_ENDPOINT = "https://steamcommunity.com/openid/login";
 const OPENID_NS = "http://specs.openid.net/auth/2.0";
 const CLAIMED_ID = /^https:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/;
-const REQUIRED_SIGNED = [
-  "op_endpoint",
-  "claimed_id",
-  "identity",
-  "return_to",
-  "response_nonce",
-  "assoc_handle",
-];
+const REQUIRED_SIGNED = ["op_endpoint", "claimed_id", "identity", "return_to", "response_nonce", "assoc_handle"];
 const NONCE_SKEW_MS = 5 * 60_000;
 const STATE_TTL_MS = 10 * 60_000;
 const PROFILE_TTL_MS = 10 * 60_000;
@@ -107,10 +100,7 @@ export interface SteamSignInOptions {
 
 export interface SteamSignIn {
   /** Route table for `Bun.serve({ routes: { ...signIn.routes } })`. */
-  routes: Record<
-    string,
-    Record<string, (request: Request) => Response | Promise<Response>>
-  >;
+  routes: Record<string, Record<string, (request: Request) => Response | Promise<Response>>>;
   /** The verified session of a request, or null. */
   session(request: Request): SteamSession | null;
   /** A CSRF token bound to the session. */
@@ -137,10 +127,7 @@ export function memoryNonceStore(): NonceStore {
   };
 }
 
-async function storedSecret(
-  service: string,
-  name: string,
-): Promise<string | undefined> {
+async function storedSecret(service: string, name: string): Promise<string | undefined> {
   try {
     return (await Bun.secrets.get({ service, name })) ?? undefined;
   } catch {
@@ -150,22 +137,16 @@ async function storedSecret(
 
 /** The session key from the credential store, created (32 random bytes) on first use. */
 async function ensureSessionKey(service: string): Promise<string> {
-  const existing =
-    Bun.env.STEAM_SIGNIN_SESSION_KEY ||
-    (await storedSecret(service, "session-key"));
+  const existing = Bun.env.STEAM_SIGNIN_SESSION_KEY || (await storedSecret(service, "session-key"));
   if (existing) return existing;
-  const value = Buffer.from(
-    crypto.getRandomValues(new Uint8Array(32)),
-  ).toString("base64url");
+  const value = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("base64url");
   await Bun.secrets.set({ service, name: "session-key", value });
   return value;
 }
 
 const b64 = (value: string) => Buffer.from(value).toString("base64url");
-const unb64 = (value: string) =>
-  Buffer.from(value, "base64url").toString("utf8");
-const randomId = () =>
-  Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString("base64url");
+const unb64 = (value: string) => Buffer.from(value, "base64url").toString("utf8");
+const randomId = () => Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString("base64url");
 
 function safeEqual(a: string, b: string): boolean {
   const x = Buffer.from(a);
@@ -198,29 +179,22 @@ export function checkAssertion(
 ): { steamId: string } | { error: string } {
   if (query.get("openid.ns") !== OPENID_NS) return { error: "namespace" };
   if (query.get("openid.mode") !== "id_res") return { error: "mode" };
-  if (query.get("openid.op_endpoint") !== OP_ENDPOINT)
-    return { error: "op_endpoint" };
-  if (query.get("openid.return_to") !== expectedReturnTo)
-    return { error: "return_to" };
+  if (query.get("openid.op_endpoint") !== OP_ENDPOINT) return { error: "op_endpoint" };
+  if (query.get("openid.return_to") !== expectedReturnTo) return { error: "return_to" };
   const claimed = query.get("openid.claimed_id") ?? "";
   if (claimed !== query.get("openid.identity")) return { error: "identity" };
   const steamId = CLAIMED_ID.exec(claimed)?.[1];
   if (!steamId) return { error: "claimed_id" };
   const signed = new Set((query.get("openid.signed") ?? "").split(","));
-  if (!REQUIRED_SIGNED.every((field) => signed.has(field)))
-    return { error: "signed fields" };
+  if (!REQUIRED_SIGNED.every(field => signed.has(field))) return { error: "signed fields" };
   const issued = nonceTime(query.get("openid.response_nonce") ?? "");
-  if (issued === null || Math.abs(now - issued) > NONCE_SKEW_MS)
-    return { error: "nonce" };
+  if (issued === null || Math.abs(now - issued) > NONCE_SKEW_MS) return { error: "nonce" };
   return { steamId };
 }
 
 async function getJson(url: string): Promise<any> {
   const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
-  if (!res.ok)
-    throw new Error(
-      `${res.status} ${res.statusText} ${url.replace(/key=[^&]+/, "key=***")}`,
-    );
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText} ${url.replace(/key=[^&]+/, "key=***")}`);
   return res.json();
 }
 
@@ -230,22 +204,14 @@ const VISIBILITY: Record<number, SteamProfile["visibility"]> = {
   3: "public",
 };
 
-async function profileFromWebApi(
-  key: string,
-  steamId: string,
-): Promise<SteamProfile> {
-  const q = (extra: string) =>
-    `?key=${encodeURIComponent(key)}&steamid=${steamId}${extra}`;
+async function profileFromWebApi(key: string, steamId: string): Promise<SteamProfile> {
+  const q = (extra: string) => `?key=${encodeURIComponent(key)}&steamid=${steamId}${extra}`;
   const [summary, owned, recent] = await Promise.all([
-    getJson(
-      `${API}/ISteamUser/GetPlayerSummaries/v2/?key=${encodeURIComponent(key)}&steamids=${steamId}`,
+    getJson(`${API}/ISteamUser/GetPlayerSummaries/v2/?key=${encodeURIComponent(key)}&steamids=${steamId}`),
+    getJson(`${API}/IPlayerService/GetOwnedGames/v1/${q("&include_appinfo=1&include_played_free_games=1")}`).catch(
+      () => null,
     ),
-    getJson(
-      `${API}/IPlayerService/GetOwnedGames/v1/${q("&include_appinfo=1&include_played_free_games=1")}`,
-    ).catch(() => null),
-    getJson(
-      `${API}/IPlayerService/GetRecentlyPlayedGames/v1/${q("&count=10")}`,
-    ).catch(() => null),
+    getJson(`${API}/IPlayerService/GetRecentlyPlayedGames/v1/${q("&count=10")}`).catch(() => null),
   ]);
   const player = summary?.response?.players?.[0];
   if (!player) throw new Error(`no Steam profile for ${steamId}`);
@@ -267,9 +233,7 @@ async function profileFromWebApi(
     visibility: VISIBILITY[player.communityvisibilitystate] ?? "unknown",
     personaState: player.personastate,
     countryCode: player.loccountrycode,
-    memberSince: player.timecreated
-      ? new Date(player.timecreated * 1000).toISOString()
-      : undefined,
+    memberSince: player.timecreated ? new Date(player.timecreated * 1000).toISOString() : undefined,
     ownedGames: ownedList ? ownedList.map(game) : null,
     gameCount: owned?.response?.game_count ?? null,
     recentlyPlayed: (recent?.response?.games ?? []).map(game),
@@ -280,38 +244,26 @@ async function profileFromWebApi(
 }
 
 const xmlTag = (xml: string, tag: string): string | undefined => {
-  const match = new RegExp(
-    `<${tag}>(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))</${tag}>`,
-  ).exec(xml);
+  const match = new RegExp(`<${tag}>(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))</${tag}>`).exec(xml);
   return match ? (match[1] ?? match[2] ?? "").trim() : undefined;
 };
 
 /** Public community profile (`?xml=1`): no key needed, no owned-games list. */
-async function profileFromCommunity(
-  steamId: string,
-  reason: string,
-): Promise<SteamProfile> {
-  const res = await fetch(
-    `https://steamcommunity.com/profiles/${steamId}/?xml=1`,
-    { signal: AbortSignal.timeout(15_000) },
-  );
+async function profileFromCommunity(steamId: string, reason: string): Promise<SteamProfile> {
+  const res = await fetch(`https://steamcommunity.com/profiles/${steamId}/?xml=1`, {
+    signal: AbortSignal.timeout(15_000),
+  });
   if (!res.ok) throw new Error(`${res.status} community profile ${steamId}`);
   const xml = await res.text();
   const recentlyPlayed: SteamGame[] = [];
-  for (const block of xml.matchAll(
-    /<mostPlayedGame>([\s\S]*?)<\/mostPlayedGame>/g,
-  )) {
+  for (const block of xml.matchAll(/<mostPlayedGame>([\s\S]*?)<\/mostPlayedGame>/g)) {
     const body = block[1]!;
     const link = xmlTag(body, "gameLink") ?? "";
     recentlyPlayed.push({
       appId: Number(/\/app\/(\d+)/.exec(link)?.[1] ?? 0),
       name: xmlTag(body, "gameName") ?? "",
-      playtimeMinutes: Math.round(
-        Number(xmlTag(body, "hoursOnRecord")?.replace(/,/g, "") ?? 0) * 60,
-      ),
-      playtime2WeeksMinutes: Math.round(
-        Number(xmlTag(body, "hoursPlayed") ?? 0) * 60,
-      ),
+      playtimeMinutes: Math.round(Number(xmlTag(body, "hoursOnRecord")?.replace(/,/g, "") ?? 0) * 60),
+      playtime2WeeksMinutes: Math.round(Number(xmlTag(body, "hoursPlayed") ?? 0) * 60),
       iconUrl: xmlTag(body, "gameIcon"),
     });
   }
@@ -321,10 +273,7 @@ async function profileFromCommunity(
     personaName: xmlTag(xml, "steamID") ?? steamId,
     profileUrl: `https://steamcommunity.com/profiles/${steamId}/`,
     avatar: xmlTag(xml, "avatarFull") ?? null,
-    visibility:
-      privacy === "public" || privacy === "private" || privacy === "friendsonly"
-        ? privacy
-        : "unknown",
+    visibility: privacy === "public" || privacy === "private" || privacy === "friendsonly" ? privacy : "unknown",
     memberSince: xmlTag(xml, "memberSince"),
     ownedGames: null,
     gameCount: null,
@@ -337,9 +286,7 @@ async function profileFromCommunity(
 }
 
 /** Creates the Steam sign-in surface. Resolves secrets once at startup. */
-export async function createSteamSignIn(
-  options: SteamSignInOptions,
-): Promise<SteamSignIn> {
+export async function createSteamSignIn(options: SteamSignInOptions): Promise<SteamSignIn> {
   const origin = new URL(options.publicOrigin).origin;
   const base = (options.basePath ?? "/auth/steam").replace(/\/$/, "");
   const cookie = options.cookieName ?? "__Host-steam";
@@ -347,16 +294,12 @@ export async function createSteamSignIn(
   const ttl = (options.sessionTtlSeconds ?? 7 * 86_400) * 1000;
   const service = options.secretService ?? SECRET_SERVICE;
   const key = options.sessionKey ?? (await ensureSessionKey(service));
-  const apiKey =
-    options.webApiKey ??
-    (await storedSecret(service, "web-api-key")) ??
-    webApiKey();
+  const apiKey = options.webApiKey ?? (await storedSecret(service, "web-api-key")) ?? webApiKey();
   const nonces = options.nonces ?? memoryNonceStore();
   const callbackUrl = `${origin}${base}/callback`;
   const profiles = new Map<string, { at: number; value: SteamProfile }>();
 
-  const sign = (payload: string) =>
-    new Bun.CryptoHasher("sha256", key).update(payload).digest("base64url");
+  const sign = (payload: string) => new Bun.CryptoHasher("sha256", key).update(payload).digest("base64url");
   const seal = (value: unknown) => {
     const payload = b64(JSON.stringify(value));
     return `${payload}.${sign(payload)}`;
@@ -373,19 +316,15 @@ export async function createSteamSignIn(
       return null;
     }
   };
-  const cookies = (request: Request) =>
-    new Bun.CookieMap(request.headers.get("cookie") ?? "");
+  const cookies = (request: Request) => new Bun.CookieMap(request.headers.get("cookie") ?? "");
   const setCookie = (name: string, value: string, maxAgeMs: number) =>
     `${name}=${value}; Path=/; Max-Age=${Math.max(0, Math.floor(maxAgeMs / 1000))}; HttpOnly; Secure; SameSite=Lax`;
 
   const session = (request: Request): SteamSession | null => {
     const value = open<SteamSession>(cookies(request).get(cookie));
-    return value && value.exp > Date.now() && /^\d{17}$/.test(value.steamId)
-      ? value
-      : null;
+    return value && value.exp > Date.now() && /^\d{17}$/.test(value.steamId) ? value : null;
   };
-  const csrfToken = (s: SteamSession) =>
-    Bun.CSRF.generate(key, { sessionId: s.sid, expiresIn: 2 * 3_600_000 });
+  const csrfToken = (s: SteamSession) => Bun.CSRF.generate(key, { sessionId: s.sid, expiresIn: 2 * 3_600_000 });
   const verifyCsrf = (request: Request, token?: string | null) => {
     const s = session(request);
     const value = token ?? request.headers.get("x-csrf-token");
@@ -404,11 +343,8 @@ export async function createSteamSignIn(
     const cached = profiles.get(steamId);
     if (cached && Date.now() - cached.at < PROFILE_TTL_MS) return cached.value;
     const value = apiKey
-      ? await profileFromWebApi(apiKey, steamId).catch((error) =>
-          profileFromCommunity(
-            steamId,
-            `Web API failed: ${(error as Error).message}`,
-          ),
+      ? await profileFromWebApi(apiKey, steamId).catch(error =>
+          profileFromCommunity(steamId, `Web API failed: ${(error as Error).message}`),
         )
       : await profileFromCommunity(
           steamId,
@@ -424,50 +360,31 @@ export async function createSteamSignIn(
         const state = randomId();
         const returnTo = `${callbackUrl}?state=${state}`;
         return redirect(openIdLoginUrl(returnTo, origin), [
-          setCookie(
-            stateCookie,
-            seal({ state, exp: Date.now() + STATE_TTL_MS }),
-            STATE_TTL_MS,
-          ),
+          setCookie(stateCookie, seal({ state, exp: Date.now() + STATE_TTL_MS }), STATE_TTL_MS),
         ]);
       },
     },
     [`${base}/callback`]: {
-      GET: async (request) => {
+      GET: async request => {
         const url = new URL(request.url);
         const query = url.searchParams;
         const clearState = setCookie(stateCookie, "", 0);
         const denied = (reason: string) =>
-          redirect(
-            `${options.afterLogin ?? "/"}?auth=denied&reason=${encodeURIComponent(reason)}`,
-            [clearState],
-          );
-        const stored = open<{ state: string; exp: number }>(
-          cookies(request).get(stateCookie),
-        );
+          redirect(`${options.afterLogin ?? "/"}?auth=denied&reason=${encodeURIComponent(reason)}`, [clearState]);
+        const stored = open<{ state: string; exp: number }>(cookies(request).get(stateCookie));
         const state = query.get("state") ?? "";
-        if (
-          !stored ||
-          stored.exp < Date.now() ||
-          !safeEqual(stored.state, state)
-        )
-          return denied("state");
+        if (!stored || stored.exp < Date.now() || !safeEqual(stored.state, state)) return denied("state");
         // The assertion must name this exact callback, and this request must be that callback.
         const expected = `${callbackUrl}?state=${state}`;
         if (`${origin}${url.pathname}` !== callbackUrl) return denied("origin");
         const checked = checkAssertion(query, expected);
         if ("error" in checked) return denied(checked.error);
         const nonce = query.get("openid.response_nonce")!;
-        if (!(await nonces.claim(nonce, Date.now() + 2 * NONCE_SKEW_MS)))
-          return denied("replay");
-        const assertion = new URLSearchParams(
-          [...query].filter(([name]) => name.startsWith("openid.")),
-        );
+        if (!(await nonces.claim(nonce, Date.now() + 2 * NONCE_SKEW_MS))) return denied("replay");
+        const assertion = new URLSearchParams([...query].filter(([name]) => name.startsWith("openid.")));
         const verified = await openIdVerify(assertion).catch(() => null);
-        if (!verified || verified !== checked.steamId)
-          return denied("check_authentication");
-        if (options.allow && !(await options.allow(verified)))
-          return denied("not allowed");
+        if (!verified || verified !== checked.steamId) return denied("check_authentication");
+        if (options.allow && !(await options.allow(verified))) return denied("not allowed");
         const now = Date.now();
         const s: SteamSession = {
           steamId: verified,
@@ -476,14 +393,11 @@ export async function createSteamSignIn(
           exp: now + ttl,
         };
         await options.onSignIn?.(s);
-        return redirect(options.afterLogin ?? "/", [
-          clearState,
-          setCookie(cookie, seal(s), ttl),
-        ]);
+        return redirect(options.afterLogin ?? "/", [clearState, setCookie(cookie, seal(s), ttl)]);
       },
     },
     [`${base}/session`]: {
-      GET: (request) => {
+      GET: request => {
         const s = session(request);
         return Response.json(
           s
@@ -500,32 +414,21 @@ export async function createSteamSignIn(
       },
     },
     [`${base}/profile`]: {
-      GET: async (request) => {
+      GET: async request => {
         const s = session(request);
-        if (!s)
-          return Response.json(
-            { error: "authentication required" },
-            { status: 401 },
-          );
+        if (!s) return Response.json({ error: "authentication required" }, { status: 401 });
         try {
           return Response.json(await profile(s.steamId), {
             headers: { "cache-control": "private, max-age=60" },
           });
         } catch (error) {
-          return Response.json(
-            { error: (error as Error).message },
-            { status: 502 },
-          );
+          return Response.json({ error: (error as Error).message }, { status: 502 });
         }
       },
     },
     [`${base}/logout`]: {
-      POST: (request) => {
-        if (!verifyCsrf(request))
-          return Response.json(
-            { error: "invalid CSRF token" },
-            { status: 403 },
-          );
+      POST: request => {
+        if (!verifyCsrf(request)) return Response.json({ error: "invalid CSRF token" }, { status: 403 });
         return new Response(null, {
           status: 204,
           headers: { "set-cookie": setCookie(cookie, "", 0) },

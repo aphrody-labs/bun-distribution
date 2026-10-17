@@ -15,10 +15,8 @@
     background: var(--md-sys-color-surface-container-highest);
     cursor: pointer;
     transition:
-      background-color var(--md-sys-motion-duration-short4)
-        var(--md-sys-motion-easing-standard),
-      border-color var(--md-sys-motion-duration-short4)
-        var(--md-sys-motion-easing-standard);
+      background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+      border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
   }
   .m3-bui-switch:focus-visible {
     outline: 3px solid var(--md-sys-color-secondary);
@@ -47,14 +45,10 @@
     background: var(--md-sys-color-outline);
     transform: translateX(var(--_thumb-x));
     transition:
-      transform var(--md-sys-motion-duration-short4)
-        var(--md-sys-motion-easing-emphasized),
-      inline-size var(--md-sys-motion-duration-short3)
-        var(--md-sys-motion-easing-emphasized),
-      block-size var(--md-sys-motion-duration-short3)
-        var(--md-sys-motion-easing-emphasized),
-      background-color var(--md-sys-motion-duration-short4)
-        var(--md-sys-motion-easing-standard);
+      transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized),
+      inline-size var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized),
+      block-size var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized),
+      background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
   }
   /* The thumb is always centred on its state layer: a 40dp circle around it. */
   .m3-bui-switch__thumb::after {
@@ -69,8 +63,7 @@
     translate: -50% -50%;
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--md-sys-motion-duration-short2)
-      var(--md-sys-motion-easing-standard);
+    transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
   }
   .m3-bui-switch[data-checked] .m3-bui-switch__thumb {
     background: var(--md-sys-color-on-primary);
@@ -94,34 +87,17 @@
     border-color: var(--md-sys-color-error);
   }
   .m3-bui-switch:is(:disabled, [data-disabled]) {
-    border-color: color-mix(
-      in srgb,
-      var(--md-sys-color-on-surface) 12%,
-      transparent
-    );
-    background: color-mix(
-      in srgb,
-      var(--md-sys-color-surface-container-highest) 12%,
-      transparent
-    );
+    border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+    background: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 12%, transparent);
     cursor: default;
   }
   .m3-bui-switch[data-checked]:is(:disabled, [data-disabled]) {
-    background: color-mix(
-      in srgb,
-      var(--md-sys-color-on-surface) 12%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
   }
   .m3-bui-switch:is(:disabled, [data-disabled]) .m3-bui-switch__thumb {
-    background: color-mix(
-      in srgb,
-      var(--md-sys-color-on-surface) 38%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
   }
-  .m3-bui-switch[data-checked]:is(:disabled, [data-disabled])
-    .m3-bui-switch__thumb {
+  .m3-bui-switch[data-checked]:is(:disabled, [data-disabled]) .m3-bui-switch__thumb {
     background: var(--md-sys-color-surface);
   }
   .m3-bui-switch:is(:disabled, [data-disabled]) .m3-bui-switch__thumb::after {

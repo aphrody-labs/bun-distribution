@@ -9,7 +9,7 @@ import { usePageSceneStore } from "../../PageSceneStore";
 // user clicks those buttons; this chip just sets expectations up front.
 export const AnonHintChip = () => {
   const editor = useContext(EngineContext);
-  const currentUserToken = usePageSceneStore((s) => s.currentUserToken);
+  const currentUserToken = usePageSceneStore(s => s.currentUserToken);
 
   if (currentUserToken) return null;
 

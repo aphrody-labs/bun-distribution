@@ -2,11 +2,7 @@ import { clsx } from "clsx";
 import { useRef } from "react";
 import type { File } from "@aphrody/drive-client";
 import { formatBytes } from "../../utils";
-import {
-  setDragData,
-  clearDragData,
-  type SidebarDragData,
-} from "../../../../components/SpacesSidebar/dnd";
+import { setDragData, clearDragData, type SidebarDragData } from "../../../../components/SpacesSidebar/dnd";
 import { usePlatform } from "../../../../contexts/PlatformContext";
 
 interface SizeCircleProps {
@@ -54,9 +50,7 @@ function getFileColor(file: File): string {
   }
 
   // Code
-  if (
-    ["js", "ts", "jsx", "tsx", "py", "rs", "go", "java", "cpp"].includes(ext)
-  ) {
+  if (["js", "ts", "jsx", "tsx", "py", "rs", "go", "java", "cpp"].includes(ext)) {
     return "bg-success text-on-success";
   }
 
@@ -68,12 +62,7 @@ function getFileColor(file: File): string {
   return "bg-primary text-on-primary";
 }
 
-export function SizeCircle({
-  file,
-  diameter,
-  selected,
-  onSelect,
-}: SizeCircleProps) {
+export function SizeCircle({ file, diameter, selected, onSelect }: SizeCircleProps) {
   const platform = usePlatform();
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
@@ -118,9 +107,7 @@ export function SizeCircle({
           items: [
             {
               id: file.id,
-              kind: filePath
-                ? { type: "file", path: filePath }
-                : { type: "text", content: file.name },
+              kind: filePath ? { type: "file", path: filePath } : { type: "text", content: file.name },
             },
           ],
           allowedOperations: ["copy", "move"],
@@ -165,9 +152,7 @@ export function SizeCircle({
           "rounded-full flex flex-col items-center justify-center transition-all duration-200 ease-standard",
           "shadow-md3-3 hover:shadow-md3-4",
           color,
-          selected
-            ? "ring-4 ring-primary scale-105"
-            : "ring-2 ring-transparent hover:scale-105",
+          selected ? "ring-4 ring-primary scale-105" : "ring-2 ring-transparent hover:scale-105",
         )}
         style={{
           width: `${diameter}px`,
@@ -178,8 +163,7 @@ export function SizeCircle({
           <div
             className="truncate max-w-full"
             style={{
-              fontSize:
-                diameter > 200 ? "16px" : diameter > 120 ? "14px" : "12px",
+              fontSize: diameter > 200 ? "16px" : diameter > 120 ? "14px" : "12px",
             }}
           >
             {file.name}
@@ -187,8 +171,7 @@ export function SizeCircle({
           <div
             className="opacity-80 mt-1"
             style={{
-              fontSize:
-                diameter > 200 ? "14px" : diameter > 120 ? "12px" : "10px",
+              fontSize: diameter > 200 ? "14px" : diameter > 120 ? "12px" : "10px",
             }}
           >
             {type}
@@ -196,8 +179,7 @@ export function SizeCircle({
           <div
             className="font-semibold mt-2"
             style={{
-              fontSize:
-                diameter > 200 ? "18px" : diameter > 120 ? "16px" : "14px",
+              fontSize: diameter > 200 ? "18px" : diameter > 120 ? "16px" : "14px",
             }}
           >
             {formatBytes(file.size)}

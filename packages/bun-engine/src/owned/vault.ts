@@ -29,7 +29,8 @@ export const defaultTarget = "r2:private/owned";
 const encoder = new TextEncoder();
 /** Web Crypto wants ArrayBuffer-backed views; Bun's byte APIs never return shared buffers. */
 const view = (bytes: Uint8Array) => bytes as Uint8Array<ArrayBuffer>;
-const hex = (bytes: ArrayBuffer | Uint8Array) => Buffer.from(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)).toString("hex");
+const hex = (bytes: ArrayBuffer | Uint8Array) =>
+  Buffer.from(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)).toString("hex");
 
 interface Keys {
   seal: CryptoKey;
@@ -77,13 +78,19 @@ async function sealPart(bytes: Uint8Array, sha256: string, index: number, aad: s
   const keys = await vaultKeys();
   const iv = view((await hmac(keys.ivs, `${sha256}:${index}`)).subarray(0, 12));
   const packed = await Bun.zstdCompress(bytes, { level: 3 });
-  return new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: encoder.encode(aad) }, keys.seal, view(packed)));
+  return new Uint8Array(
+    await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: encoder.encode(aad) }, keys.seal, view(packed)),
+  );
 }
 
 async function openPart(sealed: Uint8Array, sha256: string, index: number, aad: string): Promise<Uint8Array> {
   const keys = await vaultKeys();
   const iv = view((await hmac(keys.ivs, `${sha256}:${index}`)).subarray(0, 12));
-  const packed = await crypto.subtle.decrypt({ name: "AES-GCM", iv, additionalData: encoder.encode(aad) }, keys.seal, view(sealed));
+  const packed = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv, additionalData: encoder.encode(aad) },
+    keys.seal,
+    view(sealed),
+  );
   return Bun.zstdDecompress(new Uint8Array(packed));
 }
 
@@ -91,7 +98,11 @@ async function openPart(sealed: Uint8Array, sha256: string, index: number, aad: 
 async function sealManifest(value: unknown, aad: string): Promise<Uint8Array> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const body = new Uint8Array(
-    await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: encoder.encode(aad) }, (await vaultKeys()).seal, encoder.encode(JSON.stringify(value))),
+    await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv, additionalData: encoder.encode(aad) },
+      (await vaultKeys()).seal,
+      encoder.encode(JSON.stringify(value)),
+    ),
   );
   const out = new Uint8Array(12 + body.length);
   out.set(iv);
@@ -110,7 +121,7 @@ async function openManifest<T>(sealed: Uint8Array, aad: string): Promise<T> {
 
 // ---- targets ----------------------------------------------------------------------------------
 
-const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
+const sleep = (ms: number) => new Promise(done => setTimeout(done, ms));
 
 /** Local directory target for tests, throttled like the bucket. */
 function fileTarget(root: string, bandwidth = 0): ObjectTarget {
@@ -232,14 +243,31 @@ export async function pushDump(dump: OwnedDump, target: ObjectTarget, options: P
       continue;
     }
     if (options.stopAfterParts !== undefined && uploaded >= options.stopAfterParts) {
-      return { sha256: dump.sha256, target: target.id, object, parts: count, uploaded, skipped, bytes, complete: false };
+      return {
+        sha256: dump.sha256,
+        target: target.id,
+        object,
+        parts: count,
+        uploaded,
+        skipped,
+        bytes,
+        complete: false,
+      };
     }
     await target.put(key, sealed);
     if (!sameObject(await target.stat(key), sealed.length, md5))
       throw new Error(`part ${index} of ${dump.sha256.slice(0, 12)} failed its integrity check after upload`);
     uploaded++;
     bytes += sealed.length;
-    record.run({ sha256: dump.sha256, target: target.id, state: "partial", parts: partBytes, done: index + 1, bytes, updatedAt: new Date().toISOString() });
+    record.run({
+      sha256: dump.sha256,
+      target: target.id,
+      state: "partial",
+      parts: partBytes,
+      done: index + 1,
+      bytes,
+      updatedAt: new Date().toISOString(),
+    });
   }
   const manifest: SealedManifest = {
     v: 1,
@@ -253,14 +281,29 @@ export async function pushDump(dump: OwnedDump, target: ObjectTarget, options: P
     parts,
   };
   await target.put(`${object}/manifest`, await sealManifest(manifest, `bep-owned-v1:${object}:manifest`));
-  record.run({ sha256: dump.sha256, target: target.id, state: "done", parts: partBytes, done: count, bytes, updatedAt: new Date().toISOString() });
+  record.run({
+    sha256: dump.sha256,
+    target: target.id,
+    state: "done",
+    parts: partBytes,
+    done: count,
+    bytes,
+    updatedAt: new Date().toISOString(),
+  });
   return { sha256: dump.sha256, target: target.id, object, parts: count, uploaded, skipped, bytes, complete: true };
 }
 
 /** Downloads, verifies and decrypts one dump into `destination` (a file path). */
-export async function pullDump(sha256: string, target: ObjectTarget, destination: string): Promise<{ sha256: string; bytes: number; file: string }> {
+export async function pullDump(
+  sha256: string,
+  target: ObjectTarget,
+  destination: string,
+): Promise<{ sha256: string; bytes: number; file: string }> {
   const object = await objectId(sha256);
-  const manifest = await openManifest<SealedManifest>(await target.get(`${object}/manifest`), `bep-owned-v1:${object}:manifest`);
+  const manifest = await openManifest<SealedManifest>(
+    await target.get(`${object}/manifest`),
+    `bep-owned-v1:${object}:manifest`,
+  );
   if (manifest.sha256 !== sha256) throw new Error("manifest does not belong to this dump");
   await mkdir(dirname(resolve(destination)), { recursive: true });
   const partial = `${destination}.part`;
@@ -295,7 +338,9 @@ export async function pullDump(sha256: string, target: ObjectTarget, destination
 export async function deleteRemote(sha256: string, target: ObjectTarget): Promise<number> {
   const object = await objectId(sha256);
   const state = ownedDb()
-    .query<{ partBytes: number }, [string, string]>("SELECT parts AS partBytes FROM owned_sync WHERE sha256 = ? AND target = ?")
+    .query<{ partBytes: number }, [string, string]>(
+      "SELECT parts AS partBytes FROM owned_sync WHERE sha256 = ? AND target = ?",
+    )
     .get(sha256, target.id);
   const dump = ownedBySha(sha256);
   const count = dump && state ? Math.max(1, Math.ceil(dump.size / state.partBytes)) : 0;

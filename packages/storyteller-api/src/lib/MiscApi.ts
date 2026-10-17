@@ -9,14 +9,14 @@ export class MiscApi extends ApiManager {
       maybe_alert?: Omit<StatusAlert, "refresh_interval_millis">;
       refresh_interval_millis: number;
     }>({ endpoint: endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: {
           ...response.maybe_alert,
           refresh_interval_millis: response.refresh_interval_millis,
         },
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.mesasge,

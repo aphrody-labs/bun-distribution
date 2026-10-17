@@ -12,11 +12,7 @@ interface UseDraggableFileProps {
  * Wrapper around useDraggable that filters out right-clicks (including Ctrl+Click on macOS)
  * to prevent drag from starting when opening context menus
  */
-export function useDraggableFile({
-  file,
-  selectedFiles,
-  gridSize,
-}: UseDraggableFileProps) {
+export function useDraggableFile({ file, selectedFiles, gridSize }: UseDraggableFileProps) {
   // Disable dragging for virtual files (they're display-only, not real filesystem entries)
   const isVirtual = isVirtualFile(file);
 

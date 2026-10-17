@@ -76,7 +76,8 @@ export function baseStorage(): string {
 
 /** Résultat d'un téléchargement : les octets, ou le motif de l'échec. */
 export type TelechargementDiscord =
-  { ok: true; octets: ArrayBuffer; typeMime: string; urlUtilisee: string } | { ok: false; motif: string };
+  | { ok: true; octets: ArrayBuffer; typeMime: string; urlUtilisee: string }
+  | { ok: false; motif: string };
 
 /**
  * Télécharge une pièce jointe Discord, en re-signant son URL si elle a expiré.

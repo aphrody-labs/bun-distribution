@@ -33,12 +33,8 @@ export function screenToCanvas({
   const overlayY = clientY - viewportRect.top;
 
   return {
-    x:
-      geometry.centerX +
-      (overlayX - geometry.viewportWidth / 2) / geometry.scale,
-    y:
-      geometry.centerY +
-      (overlayY - geometry.viewportHeight / 2) / geometry.scale,
+    x: geometry.centerX + (overlayX - geometry.viewportWidth / 2) / geometry.scale,
+    y: geometry.centerY + (overlayY - geometry.viewportHeight / 2) / geometry.scale,
   };
 }
 
@@ -75,11 +71,7 @@ export function positionToOverlay({
   });
 }
 
-export function getDisplayScale({
-  geometry,
-}: {
-  geometry: PreviewViewportGeometry;
-}): { x: number; y: number } {
+export function getDisplayScale({ geometry }: { geometry: PreviewViewportGeometry }): { x: number; y: number } {
   return {
     x: geometry.scale,
     y: geometry.scale,

@@ -1,18 +1,6 @@
-import {
-  ChangeEvent,
-  useContext,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from "react";
+import { ChangeEvent, useContext, useEffect, useId, useRef, useState } from "react";
 import { Transition } from "@headlessui/react";
-import {
-  BoxIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  TrashIcon,
-} from "lucide-react";
+import { BoxIcon, ChevronDownIcon, ChevronUpIcon, TrashIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 
 import { EngineContext } from "../../contexts/EngineContext";
@@ -26,10 +14,7 @@ import { XYZ } from "../../datastructures/common";
 import { useViewportSize } from "../../hooks/useViewportSize";
 import { DraggablePrecisionMutator } from "./DraggablePrecisionMutator";
 import { beginColorSession, ColorSession } from "../../actions/setObjectColor";
-import {
-  beginTransformSession,
-  TransformSession,
-} from "../../actions/transformObject";
+import { beginTransformSession, TransformSession } from "../../actions/transformObject";
 
 // TODO this will be useful later to fix the bug on leading zeros
 // const formatNumber = (input: string): number => {
@@ -47,10 +32,10 @@ const defaultAxises: Record<string, string> = {
 };
 
 export const ControlPanelSceneObject = () => {
-  const disableHotkeyInput = usePageSceneStore((s) => s.disableHotkeyInput);
-  const enableHotkeyInput = usePageSceneStore((s) => s.enableHotkeyInput);
-  const isShowing = usePageSceneStore((s) => s.objectPanelShowing);
-  const currentSceneObject = usePageSceneStore((s) => s.objectPanelCurrent);
+  const disableHotkeyInput = usePageSceneStore(s => s.disableHotkeyInput);
+  const enableHotkeyInput = usePageSceneStore(s => s.enableHotkeyInput);
+  const isShowing = usePageSceneStore(s => s.objectPanelShowing);
+  const currentSceneObject = usePageSceneStore(s => s.objectPanelCurrent);
 
   const editorEngine = useContext(EngineContext);
 
@@ -81,10 +66,7 @@ export const ControlPanelSceneObject = () => {
   const beginPanelTransform = () => {
     if (transformSessionRef.current) return;
     if (!editorEngine || !currentSceneObject) return;
-    transformSessionRef.current = beginTransformSession(
-      editorEngine,
-      currentSceneObject.object_uuid,
-    );
+    transformSessionRef.current = beginTransformSession(editorEngine, currentSceneObject.object_uuid);
   };
 
   const commitPanelTransform = () => {
@@ -161,10 +143,7 @@ export const ControlPanelSceneObject = () => {
     // the *same* uuid but new vectors. Only an actual selection change
     // (different uuid) is a real session boundary — commit the pending
     // session for the previous uuid before we resync local state.
-    if (
-      lastUuidRef.current !== null &&
-      lastUuidRef.current !== currentSceneObject.object_uuid
-    ) {
+    if (lastUuidRef.current !== null && lastUuidRef.current !== currentSceneObject.object_uuid) {
       commitPanelTransform();
     }
     lastUuidRef.current = currentSceneObject.object_uuid;
@@ -179,9 +158,7 @@ export const ControlPanelSceneObject = () => {
     setLocked(editorEngine.selection.isObjectLocked(selectedUuid || ""));
     // Read the swatch from the panel's actual object (same uuid the
     // write path uses), not editorEngine.selected which can be stale.
-    const selectedObj = selectedUuid
-      ? editorEngine.activeScene?.get_object_by_uuid(selectedUuid)
-      : undefined;
+    const selectedObj = selectedUuid ? editorEngine.activeScene?.get_object_by_uuid(selectedUuid) : undefined;
     setColor((selectedObj?.userData?.color as string) ?? "#ffffff");
     // No cleanup function — uuid-change commit lives in the body
     // above. Unmount commit is handled by the separate effect below.
@@ -217,10 +194,7 @@ export const ControlPanelSceneObject = () => {
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter") flush();
-      if (
-        (e.ctrlKey || e.metaKey) &&
-        (e.code === "KeyZ" || e.code === "KeyY")
-      ) {
+      if ((e.ctrlKey || e.metaKey) && (e.code === "KeyZ" || e.code === "KeyY")) {
         flush();
       }
     };
@@ -246,7 +220,7 @@ export const ControlPanelSceneObject = () => {
   }
 
   const isInvalid = (xyz: Record<string, string>) =>
-    Object.values(xyz).some((value) => {
+    Object.values(xyz).some(value => {
       if (value === "" || value === "-" || value === ".") {
         return true;
       }
@@ -324,8 +298,7 @@ export const ControlPanelSceneObject = () => {
         <div className="flex items-center gap-2">
           <BoxIcon />
           <p className="max-w-36 truncate font-semibold">
-            {currentSceneObject.object_name.charAt(0).toUpperCase() +
-              currentSceneObject.object_name.slice(1)}
+            {currentSceneObject.object_name.charAt(0).toUpperCase() + currentSceneObject.object_name.slice(1)}
           </p>
         </div>
         <DynamicIcon
@@ -347,9 +320,7 @@ export const ControlPanelSceneObject = () => {
         className={"flex flex-col gap-2 overflow-y-auto"}
       >
         <div className="flex flex-col gap-1">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">
-            Color
-          </p>
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">Color</p>
           {/* Native <input type="color"> is nested INSIDE the Button's
               <label> so Safari opens the picker reliably. Safari refuses
               to open a color picker triggered via label[htmlFor]→input
@@ -392,9 +363,7 @@ export const ControlPanelSceneObject = () => {
           </Button>
         </div>
         <div className="flex flex-col gap-2">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">
-            Location
-          </p>
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">Location</p>
           <InputVector
             x={localPosition.x.toString()}
             y={localPosition.y.toString()}
@@ -407,9 +376,7 @@ export const ControlPanelSceneObject = () => {
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">
-            Rotation
-          </p>
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">Rotation</p>
           <InputVector
             x={localRotation.x.toString()}
             y={localRotation.y.toString()}
@@ -424,9 +391,7 @@ export const ControlPanelSceneObject = () => {
 
         <div className="mb-1 flex flex-col gap-2">
           <DraggablePrecisionMutator onChange={handleUniformScaleChange}>
-            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">
-              Scale
-            </p>
+            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/60">Scale</p>
           </DraggablePrecisionMutator>
           <InputVector
             x={localScale.x.toString()}
@@ -444,12 +409,7 @@ export const ControlPanelSceneObject = () => {
         {/* <Button variant="action" className="grow" onClick={handleOnAddKeyFrame}>
           Add Keyframe (K)
         </Button> */}
-        <Button
-          variant="secondary"
-          icon={TrashIcon}
-          onClick={handleDeleteObject}
-          className="w-full"
-        >
+        <Button variant="secondary" icon={TrashIcon} onClick={handleDeleteObject} className="w-full">
           Delete
         </Button>
       </div>

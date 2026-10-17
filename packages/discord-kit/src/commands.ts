@@ -16,16 +16,11 @@ export interface CommandInitOptions {
  * "Invalid Form Body", outputting the exact field path (e.g. `3.options.1.description`)
  * to speed up diagnosis.
  */
-export async function initApplicationCommandsSafe(
-  client: Client,
-  options: CommandInitOptions = {},
-): Promise<boolean> {
+export async function initApplicationCommandsSafe(client: Client, options: CommandInitOptions = {}): Promise<boolean> {
   const logger = options.logger ?? console;
   try {
     await client.initApplicationCommands();
-    logger.info?.(
-      "[discord-kit] Application commands initialized successfully",
-    );
+    logger.info?.("[discord-kit] Application commands initialized successfully");
     return true;
   } catch (err) {
     const raw = (err as { rawError?: unknown }).rawError;
@@ -48,7 +43,7 @@ export async function clearGuildCommandsSafe(
   options: CommandInitOptions = {},
 ): Promise<number> {
   const logger = options.logger ?? console;
-  const joinedGuilds = guildIds.filter((id) => client.guilds.cache.has(id));
+  const joinedGuilds = guildIds.filter(id => client.guilds.cache.has(id));
 
   if (joinedGuilds.length === 0) {
     return 0;

@@ -7,13 +7,7 @@ import { getDbFromLinePos, getLinePosFromDb } from "../audio-display";
 import { VOLUME_DB_MAX, VOLUME_DB_MIN } from "../audio-constants";
 import { getElementVolume, hasAnimatedVolume } from "../audio-state";
 import type { AudioElement } from "../types";
-import {
-  clamp,
-  formatNumberForDisplay,
-  getFractionDigitsForStep,
-  isNearlyEqual,
-  snapToStep,
-} from "../../utils/math";
+import { clamp, formatNumberForDisplay, getFractionDigitsForStep, isNearlyEqual, snapToStep } from "../../utils/math";
 import { cn } from "../../utils/ui";
 
 const HIT_AREA_HEIGHT_PX = 14;
@@ -29,30 +23,17 @@ function clampVolume({ value }: { value: number }): number {
   });
 }
 
-function getVolumeFromPointer({
-  clientY,
-  rect,
-}: {
-  clientY: number;
-  rect: DOMRect;
-}): number {
+function getVolumeFromPointer({ clientY, rect }: { clientY: number; rect: DOMRect }): number {
   const clampedOffset = clamp({
     value: clientY - rect.top,
     min: 0,
     max: rect.height,
   });
-  const progressPercent =
-    rect.height <= 0 ? 0 : (clampedOffset / rect.height) * 100;
+  const progressPercent = rect.height <= 0 ? 0 : (clampedOffset / rect.height) * 100;
   return clampVolume({ value: getDbFromLinePos({ percent: progressPercent }) });
 }
 
-export function AudioVolumeLine({
-  element,
-  trackId,
-}: {
-  element: AudioElement;
-  trackId: string;
-}) {
+export function AudioVolumeLine({ element, trackId }: { element: AudioElement; trackId: string }) {
   const editor = useEditor();
   const surfaceRef = useRef<HTMLDivElement>(null);
   const activePointerIdRef = useRef<number | null>(null);
@@ -230,9 +211,7 @@ export function AudioVolumeLine({
         <div
           className={cn(
             "pointer-events-none absolute inset-x-0 -translate-y-1/2 border-t transition-colors",
-            isDragging
-              ? "border-white"
-              : "border-white/50 group-hover/audio:border-white/80",
+            isDragging ? "border-white" : "border-white/50 group-hover/audio:border-white/80",
           )}
           style={{ top: lineTop }}
         />

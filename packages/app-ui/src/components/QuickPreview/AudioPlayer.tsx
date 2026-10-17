@@ -32,39 +32,30 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
 
   // Load SRT transcripts if available
   useEffect(() => {
-    const srtSidecar = file.sidecars?.find(
-      (s) => s.kind === "transcript" && s.variant === "srt",
-    );
+    const srtSidecar = file.sidecars?.find(s => s.kind === "transcript" && s.variant === "srt");
 
     if (!srtSidecar || !file.content_identity?.uuid) {
       return;
     }
 
     const extension = srtSidecar.format === "text" ? "txt" : srtSidecar.format;
-    const srtUrl = buildSidecarUrl(
-      file.content_identity.uuid,
-      srtSidecar.kind,
-      srtSidecar.variant,
-      extension,
-    );
+    const srtUrl = buildSidecarUrl(file.content_identity.uuid, srtSidecar.kind, srtSidecar.variant, extension);
 
     if (!srtUrl) return;
 
     fetch(srtUrl)
-      .then(async (res) => {
+      .then(async res => {
         if (!res.ok) return null;
         return res.text();
       })
-      .then((srtContent) => {
+      .then(srtContent => {
         if (!srtContent) return;
         const parsed = parseSRT(srtContent);
         console.log("[AudioPlayer] Loaded", parsed.length, "lyric lines");
         setCues(parsed);
         return;
       })
-      .catch((err) =>
-        console.log("[AudioPlayer] Lyrics not available:", err.message),
-      );
+      .catch(err => console.log("[AudioPlayer] Lyrics not available:", err.message));
   }, [file, buildSidecarUrl]);
 
   // Sync lyrics with audio playback
@@ -74,18 +65,14 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
 
     const updateLyrics = () => {
       const time = audioRef.current!.currentTime;
-      const index = cues.findIndex(
-        (cue) => time >= cue.startTime && time <= cue.endTime,
-      );
+      const index = cues.findIndex(cue => time >= cue.startTime && time <= cue.endTime);
 
       if (index !== currentCueIndex) {
         setCurrentCueIndex(index);
 
         // Auto-scroll to active lyric
         if (index >= 0 && lyricsContainerRef.current) {
-          const activeElement = lyricsContainerRef.current.children[
-            index
-          ] as HTMLElement;
+          const activeElement = lyricsContainerRef.current.children[index] as HTMLElement;
           if (activeElement) {
             activeElement.scrollIntoView({
               behavior: "smooth",
@@ -136,29 +123,23 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
           break;
         case "ArrowLeft":
           e.preventDefault();
-          audioRef.current.currentTime = Math.max(
-            0,
-            audioRef.current.currentTime - 10,
-          );
+          audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10);
           break;
         case "ArrowRight":
           e.preventDefault();
-          audioRef.current.currentTime = Math.min(
-            duration,
-            audioRef.current.currentTime + 10,
-          );
+          audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 10);
           break;
         case "ArrowUp":
           e.preventDefault();
-          setVolume((v) => Math.min(1, v + 0.1));
+          setVolume(v => Math.min(1, v + 0.1));
           break;
         case "ArrowDown":
           e.preventDefault();
-          setVolume((v) => Math.max(0, v - 0.1));
+          setVolume(v => Math.max(0, v - 0.1));
           break;
         case "KeyM":
           e.preventDefault();
-          setMuted((m) => !m);
+          setMuted(m => !m);
           break;
       }
     };
@@ -176,18 +157,12 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
 
   const skipBack = () => {
     if (!audioRef.current) return;
-    audioRef.current.currentTime = Math.max(
-      0,
-      audioRef.current.currentTime - 10,
-    );
+    audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10);
   };
 
   const skipForward = () => {
     if (!audioRef.current) return;
-    audioRef.current.currentTime = Math.min(
-      duration,
-      audioRef.current.currentTime + 10,
-    );
+    audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 10);
   };
 
   return (
@@ -200,11 +175,9 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
         autoPlay
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
-        onTimeUpdate={(e) =>
-          !seeking && setCurrentTime(e.currentTarget.currentTime)
-        }
-        onDurationChange={(e) => setDuration(e.currentTarget.duration)}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+        onTimeUpdate={e => !seeking && setCurrentTime(e.currentTarget.currentTime)}
+        onDurationChange={e => setDuration(e.currentTarget.duration)}
+        onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
       />
 
       {/* Main content area - Lyrics only */}
@@ -259,12 +232,8 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
               </div>
             ) : (
               <div className="text-center">
-                <div className="mb-4 text-display-medium font-bold text-outline">
-                  ♪
-                </div>
-                <p className="text-body-large text-on-surface-variant">
-                  No lyrics available
-                </p>
+                <div className="mb-4 text-display-medium font-bold text-outline">♪</div>
+                <p className="text-body-large text-on-surface-variant">No lyrics available</p>
               </div>
             )}
           </div>
@@ -277,11 +246,11 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
         {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- pointer seek bar: keyboard seeking is provided by the window ArrowLeft/ArrowRight shortcuts above */}
         <div
           className="group mb-4 cursor-pointer"
-          onMouseDown={(e) => {
+          onMouseDown={e => {
             setSeeking(true);
             handleSeek(e);
           }}
-          onMouseMove={(e) => seeking && handleSeek(e)}
+          onMouseMove={e => seeking && handleSeek(e)}
           onMouseUp={() => setSeeking(false)}
           onMouseLeave={() => setSeeking(false)}
         >
@@ -311,9 +280,7 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
           {/* Left side - Fixed width */}
           <div className="flex w-[200px] items-center gap-3">
             {/* Time */}
-            <div className="text-label-large text-on-surface-variant tabular-nums">
-              {formatTime(currentTime)}
-            </div>
+            <div className="text-label-large text-on-surface-variant tabular-nums">{formatTime(currentTime)}</div>
           </div>
 
           {/* Center - Playback Controls */}
@@ -332,12 +299,7 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
               className={`relative rounded-full bg-primary p-3 text-on-primary shadow-md3-1 transition-shadow ease-standard before:absolute before:inset-0 before:rounded-[inherit] before:bg-on-primary before:opacity-0 before:transition-opacity hover:shadow-md3-2 hover:before:opacity-8 active:before:opacity-10 ${m3FocusRing}`}
               aria-label={playing ? "Pause" : "Play"}
             >
-              <Icon
-                name={playing ? "pause" : "play_arrow"}
-                size={28}
-                filled
-                className="relative"
-              />
+              <Icon name={playing ? "pause" : "play_arrow"} size={28} filled className="relative" />
             </button>
 
             <button
@@ -364,11 +326,7 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
                 className={`rounded-full p-2 text-on-surface-variant transition-colors ease-standard hover:bg-on-surface-variant/8 hover:text-on-surface active:bg-on-surface-variant/10 ${m3FocusRing}`}
                 aria-label={muted || volume === 0 ? "Unmute" : "Mute"}
               >
-                <Icon
-                  name={muted || volume === 0 ? "volume_off" : "volume_up"}
-                  size={20}
-                  filled
-                />
+                <Icon name={muted || volume === 0 ? "volume_off" : "volume_up"} size={20} filled />
               </button>
 
               {/* Volume Slider */}
@@ -379,7 +337,7 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
                   max="1"
                   step="0.01"
                   value={volume}
-                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                  onChange={e => setVolume(parseFloat(e.target.value))}
                   aria-label="Volume"
                   className={`h-1 w-full cursor-pointer appearance-none rounded-full bg-secondary-container accent-primary [&::-webkit-slider-thumb]:size-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md3-1 [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110 ${m3FocusRing}`}
                 />

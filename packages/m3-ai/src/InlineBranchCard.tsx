@@ -6,12 +6,7 @@ import { clsx } from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import { Icon } from "@aphrody/m3-primitives";
 import { Markdown } from "./Markdown";
-import {
-  CircularIndicator,
-  StatusChip,
-  expandMotion,
-  focusRing,
-} from "./internal";
+import { CircularIndicator, StatusChip, expandMotion, focusRing } from "./internal";
 
 interface InlineBranchCardProps {
   description: string;
@@ -40,7 +35,7 @@ function InlineBranchCard({
       <div className="min-w-0 max-w-full overflow-hidden rounded-medium bg-surface-container text-on-surface">
         <button
           type="button"
-          onClick={() => canExpand && setExpanded((v) => !v)}
+          onClick={() => canExpand && setExpanded(v => !v)}
           aria-expanded={canExpand ? expanded : undefined}
           aria-controls={canExpand ? contentId : undefined}
           className={clsx(
@@ -60,12 +55,8 @@ function InlineBranchCard({
           </div>
           <div className="min-w-0 flex-1 self-center">
             <div className="flex items-center gap-2">
-              <div className="line-clamp-2 min-w-0 flex-1 text-title-small text-on-surface">
-                {description}
-              </div>
-              <StatusChip tone={isRunning ? "primary" : "success"}>
-                {isRunning ? "thinking" : "done"}
-              </StatusChip>
+              <div className="line-clamp-2 min-w-0 flex-1 text-title-small text-on-surface">{description}</div>
+              <StatusChip tone={isRunning ? "primary" : "success"}>{isRunning ? "thinking" : "done"}</StatusChip>
             </div>
           </div>
           {canExpand && (
@@ -81,18 +72,9 @@ function InlineBranchCard({
         </button>
         <AnimatePresence initial={false}>
           {expanded && conclusion ? (
-            <motion.div
-              id={contentId}
-              key="conclusion"
-              {...expandMotion}
-              className="overflow-hidden"
-            >
+            <motion.div id={contentId} key="conclusion" {...expandMotion} className="overflow-hidden">
               <div className="border-t border-outline-variant px-4 py-3">
-                <Markdown
-                  content={conclusion}
-                  size="small"
-                  className="text-on-surface-variant"
-                />
+                <Markdown content={conclusion} size="small" className="text-on-surface-variant" />
               </div>
             </motion.div>
           ) : null}

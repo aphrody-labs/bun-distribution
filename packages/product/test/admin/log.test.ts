@@ -15,19 +15,10 @@ test("redact masks keys, tokens and credentials in URLs", () => {
     "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXk\n-----END OPENSSH PRIVATE KEY-----",
   ].join("\n");
   const clean = redact(text);
-  for (const secret of [
-    "cNDOxEMQ7rC2",
-    "ghp_abcdef",
-    "github_pat_11",
-    "abc.def.ghi",
-    "secret@",
-    "b3BlbnNzaC1rZXk",
-  ])
+  for (const secret of ["cNDOxEMQ7rC2", "ghp_abcdef", "github_pat_11", "abc.def.ghi", "secret@", "b3BlbnNzaC1rZXk"])
     expect(clean).not.toContain(secret);
   expect(clean).toContain("[MASQUE]");
-  expect(redact("public key ssh-ed25519 AAAA is fine")).toBe(
-    "public key ssh-ed25519 AAAA is fine",
-  );
+  expect(redact("public key ssh-ed25519 AAAA is fine")).toBe("public key ssh-ed25519 AAAA is fine");
 });
 
 test("the logger redacts, timestamps and never throws", () => {

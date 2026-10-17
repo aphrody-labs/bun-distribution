@@ -76,8 +76,7 @@ export interface GraphEditorReadyState extends GraphEditorBaseSelectionState {
   cubicBezier: NormalizedCubicBezier;
 }
 
-export type GraphEditorSelectionState =
-  GraphEditorUnavailableState | GraphEditorReadyState;
+export type GraphEditorSelectionState = GraphEditorUnavailableState | GraphEditorReadyState;
 
 export interface GraphEditorCurvePatch {
   keyframeId: string;
@@ -116,9 +115,7 @@ function findElementByKeyframe({
       continue;
     }
 
-    const element = track.elements.find(
-      (trackElement) => trackElement.id === keyframe.elementId,
-    );
+    const element = track.elements.find(trackElement => trackElement.id === keyframe.elementId);
     if (!element) {
       return null;
     }
@@ -145,18 +142,14 @@ function findKeyframeTime({
   const data = animations[propertyPath];
   for (const channel of getChannelsFromData({ data })) {
     if (!channel || !isScalarChannel(channel)) continue;
-    const key = channel.keys.find((k) => k.id === keyframeId);
+    const key = channel.keys.find(k => k.id === keyframeId);
     if (key !== undefined) return key.time;
   }
 
   return null;
 }
 
-function groupSelectedKeyframesByProperty({
-  selectedKeyframes,
-}: {
-  selectedKeyframes: SelectedKeyframeRef[];
-}) {
+function groupSelectedKeyframesByProperty({ selectedKeyframes }: { selectedKeyframes: SelectedKeyframeRef[] }) {
   const groups = new Map<
     string,
     {
@@ -200,16 +193,10 @@ function getComponentLabel({ componentKey }: { componentKey: string }): string {
  * used as the Y-axis scale when editing a flat segment in the graph editor.
  * Falls back to 1.0 if all surrounding segments are also flat.
  */
-function getReferenceSpanValue({
-  context,
-}: {
-  context: ScalarGraphKeyframeContext;
-}): number {
+function getReferenceSpanValue({ context }: { context: ScalarGraphKeyframeContext }): number {
   const sorted = [...context.channel.keys].sort((a, b) => a.time - b.time);
-  const leftIndex = sorted.findIndex((k) => k.id === context.keyframe.id);
-  const rightIndex = context.nextKey
-    ? sorted.findIndex((k) => k.id === context.nextKey?.id)
-    : -1;
+  const leftIndex = sorted.findIndex(k => k.id === context.keyframe.id);
+  const rightIndex = context.nextKey ? sorted.findIndex(k => k.id === context.nextKey?.id) : -1;
 
   for (let i = leftIndex - 1; i >= 0; i--) {
     const span = Math.abs(sorted[i + 1].value - sorted[i].value);
@@ -238,9 +225,7 @@ function resolvePropertySelection({
   propertyKeyframes,
 }: {
   element: TimelineElement;
-  propertyKeyframes: ReturnType<
-    typeof groupSelectedKeyframesByProperty
-  >[number];
+  propertyKeyframes: ReturnType<typeof groupSelectedKeyframesByProperty>[number];
 }):
   | GraphEditorPropertySelection
   | {
@@ -274,10 +259,7 @@ function resolvePropertySelection({
 
   const primaryKeyframe = propertyKeyframes.keyframes[0];
   let resolvedKeyframeId = primaryKeyframe.keyframeId;
-  let secondaryKeyframeId =
-    propertyKeyframes.keyframes.length === 2
-      ? propertyKeyframes.keyframes[1].keyframeId
-      : null;
+  let secondaryKeyframeId = propertyKeyframes.keyframes.length === 2 ? propertyKeyframes.keyframes[1].keyframeId : null;
 
   if (secondaryKeyframeId !== null) {
     const time1 = findKeyframeTime({
@@ -297,7 +279,7 @@ function resolvePropertySelection({
   }
 
   const { easingMode, channels: scalarChannels } = scalarResult;
-  const contexts = scalarChannels.flatMap((channel) => {
+  const contexts = scalarChannels.flatMap(channel => {
     const context = getScalarKeyframeContext({
       animations: element.animations,
       propertyPath: propertyKeyframes.propertyPath,
@@ -354,11 +336,7 @@ function resolvePropertySelection({
   };
 }
 
-function isLinearCurve({
-  cubicBezier,
-}: {
-  cubicBezier: NormalizedCubicBezier;
-}): boolean {
+function isLinearCurve({ cubicBezier }: { cubicBezier: NormalizedCubicBezier }): boolean {
   return (
     Math.abs(cubicBezier[0]) <= LINEAR_CURVE_EPSILON &&
     Math.abs(cubicBezier[1]) <= LINEAR_CURVE_EPSILON &&
@@ -381,9 +359,7 @@ function resolveSegmentForOption({
       reason: GraphEditorUnavailableReason;
       message: string;
     } {
-  const option = propertySelection.options.find(
-    (propertyOption) => propertyOption.key === componentKey,
-  );
+  const option = propertySelection.options.find(propertyOption => propertyOption.key === componentKey);
   if (!option) {
     return {
       reason: "selected-properties-have-no-shared-component",
@@ -427,8 +403,7 @@ function resolveSegmentForOption({
   if (!cubicBezier) {
     return {
       reason: "selected-segment-is-flat",
-      message:
-        "Cannot edit a segment where both keyframes are at the same time.",
+      message: "Cannot edit a segment where both keyframes are at the same time.",
     };
   }
 
@@ -483,7 +458,7 @@ export function resolveGraphEditorSelectionState({
   }
 
   const spansMultipleElements = propertyKeyframes.some(
-    (propertySelection) =>
+    propertySelection =>
       propertySelection.trackId !== selectedElement.trackId ||
       propertySelection.elementId !== selectedElement.elementId,
   );
@@ -494,19 +469,14 @@ export function resolveGraphEditorSelectionState({
     });
   }
 
-  const propertySelections = propertyKeyframes.map((propertySelection) =>
+  const propertySelections = propertyKeyframes.map(propertySelection =>
     resolvePropertySelection({
       element: selectedElement.element,
       propertyKeyframes: propertySelection,
     }),
   );
-  const unavailablePropertySelection = propertySelections.find(
-    (propertySelection) => "reason" in propertySelection,
-  );
-  if (
-    unavailablePropertySelection &&
-    "reason" in unavailablePropertySelection
-  ) {
+  const unavailablePropertySelection = propertySelections.find(propertySelection => "reason" in propertySelection);
+  if (unavailablePropertySelection && "reason" in unavailablePropertySelection) {
     return createUnavailableState({
       reason: unavailablePropertySelection.reason,
       message: unavailablePropertySelection.message,
@@ -514,15 +484,12 @@ export function resolveGraphEditorSelectionState({
   }
 
   const resolvedPropertySelections = propertySelections.filter(
-    (propertySelection): propertySelection is GraphEditorPropertySelection =>
-      !("reason" in propertySelection),
+    (propertySelection): propertySelection is GraphEditorPropertySelection => !("reason" in propertySelection),
   );
   const sharedComponentOptions =
-    resolvedPropertySelections[0]?.options.filter((componentOption) =>
-      resolvedPropertySelections.every((propertySelection) =>
-        propertySelection.options.some(
-          (option) => option.key === componentOption.key,
-        ),
+    resolvedPropertySelections[0]?.options.filter(componentOption =>
+      resolvedPropertySelections.every(propertySelection =>
+        propertySelection.options.some(option => option.key === componentOption.key),
       ),
     ) ?? [];
   const componentOptions = sharedComponentOptions.map(({ key, label }) => ({
@@ -540,20 +507,17 @@ export function resolveGraphEditorSelectionState({
   // and stop at the first key where every property resolves to a valid segment.
   // This single pass both selects the active key and produces the segment list.
   const candidateKeys = [
-    ...(preferredComponentKey &&
-    componentOptions.some((option) => option.key === preferredComponentKey)
+    ...(preferredComponentKey && componentOptions.some(option => option.key === preferredComponentKey)
       ? [preferredComponentKey]
       : []),
-    ...componentOptions
-      .filter((option) => option.key !== preferredComponentKey)
-      .map((option) => option.key),
+    ...componentOptions.filter(option => option.key !== preferredComponentKey).map(option => option.key),
   ];
 
   let activeComponentKey = componentOptions[0].key;
   let segmentResults: ReturnType<typeof resolveSegmentForOption>[] = [];
 
   for (const candidateKey of candidateKeys) {
-    const results = resolvedPropertySelections.map((propertySelection) =>
+    const results = resolvedPropertySelections.map(propertySelection =>
       resolveSegmentForOption({
         propertySelection,
         componentKey: candidateKey,
@@ -561,14 +525,12 @@ export function resolveGraphEditorSelectionState({
     );
     activeComponentKey = candidateKey;
     segmentResults = results;
-    if (results.every((result) => "segment" in result)) {
+    if (results.every(result => "segment" in result)) {
       break;
     }
   }
 
-  const unavailableSegment = segmentResults.find(
-    (result) => !("segment" in result),
-  );
+  const unavailableSegment = segmentResults.find(result => !("segment" in result));
   if (unavailableSegment && !("segment" in unavailableSegment)) {
     return createUnavailableState({
       reason: unavailableSegment.reason,
@@ -578,9 +540,7 @@ export function resolveGraphEditorSelectionState({
     });
   }
 
-  const segments = segmentResults.flatMap((result) =>
-    "segment" in result ? [result.segment] : [],
-  );
+  const segments = segmentResults.flatMap(result => ("segment" in result ? [result.segment] : []));
   const primarySegment = segments[0];
   if (!primarySegment) {
     return createUnavailableState({
@@ -593,10 +553,7 @@ export function resolveGraphEditorSelectionState({
 
   return {
     status: "ready",
-    message:
-      segments.length === 1
-        ? "Edit graph"
-        : `Edit graph for ${segments.length} properties`,
+    message: segments.length === 1 ? "Edit graph" : `Edit graph for ${segments.length} properties`,
     componentOptions,
     activeComponentKey,
     trackId: selectedElement.trackId,

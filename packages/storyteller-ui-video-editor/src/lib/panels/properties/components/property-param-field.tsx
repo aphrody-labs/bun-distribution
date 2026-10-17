@@ -1,26 +1,12 @@
 "use client";
 
-import type {
-  ParamDefinition,
-  NumberParamDefinition,
-  ParamValue,
-} from "../../../params";
-import {
-  formatNumberForDisplay,
-  getFractionDigitsForStep,
-  snapToStep,
-} from "../../../utils/math";
+import type { ParamDefinition, NumberParamDefinition, ParamValue } from "../../../params";
+import { formatNumberForDisplay, getFractionDigitsForStep, snapToStep } from "../../../utils/math";
 import { SectionField } from "../../../components/section";
 import { NumberField } from "../../../components/ui/number-field";
 import { Switch } from "../../../components/ui/switch";
 import { ColorPicker } from "../../../components/ui/color-picker";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
 import { usePropertyDraft } from "../hooks/use-property-draft";
 import { KeyframeToggle } from "./keyframe-toggle";
 import { Textarea } from "../../../components/ui/textarea";
@@ -56,12 +42,7 @@ export function PropertyParamField({
         ) : undefined
       }
     >
-      <ParamInput
-        param={param}
-        value={value}
-        onPreview={onPreview}
-        onCommit={onCommit}
-      />
+      <ParamInput param={param} value={value} onPreview={onPreview} onCommit={onCommit} />
     </SectionField>
   );
 }
@@ -92,7 +73,7 @@ function ParamInput({
     return (
       <Switch
         checked={Boolean(value)}
-        onCheckedChange={(checked) => {
+        onCheckedChange={checked => {
           onPreview(checked);
           onCommit();
         }}
@@ -104,7 +85,7 @@ function ParamInput({
     return (
       <Select
         value={String(value)}
-        onValueChange={(selected) => {
+        onValueChange={selected => {
           onPreview(selected);
           onCommit();
         }}
@@ -113,7 +94,7 @@ function ParamInput({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {param.options.map((option) => (
+          {param.options.map(option => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
             </SelectItem>
@@ -127,8 +108,8 @@ function ParamInput({
     return (
       <ColorPicker
         value={String(value).replace(/^#/, "").toUpperCase()}
-        onChange={(color) => onPreview(`#${color}`)}
-        onChangeEnd={(color) => {
+        onChange={color => onPreview(`#${color}`)}
+        onChangeEnd={color => {
           onPreview(`#${color}`);
           onCommit();
         }}
@@ -138,11 +119,7 @@ function ParamInput({
 
   if (param.type === "text") {
     return (
-      <Textarea
-        value={String(value)}
-        onChange={(event) => onPreview(event.currentTarget.value)}
-        onBlur={onCommit}
-      />
+      <Textarea value={String(value)} onChange={event => onPreview(event.currentTarget.value)} onBlur={onCommit} />
     );
   }
 
@@ -151,7 +128,7 @@ function ParamInput({
       <input
         className="border-input bg-accent h-9 w-full rounded-md border px-3 text-sm outline-none"
         value={String(value)}
-        onChange={(event) => onPreview(event.currentTarget.value)}
+        onChange={event => onPreview(event.currentTarget.value)}
         onBlur={onCommit}
       />
     );
@@ -174,10 +151,7 @@ function NumberParamField({
   const { min, max, step, displayMultiplier = 1 } = param;
   const displayValue = value * displayMultiplier;
   const clampDisplayValue = (nextDisplayValue: number) =>
-    Math.max(
-      min,
-      max !== undefined ? Math.min(max, nextDisplayValue) : nextDisplayValue,
-    );
+    Math.max(min, max !== undefined ? Math.min(max, nextDisplayValue) : nextDisplayValue);
 
   const previewFromDisplay = (displayVal: number) => {
     const clamped = clampDisplayValue(snapToStep({ value: displayVal, step }));
@@ -191,7 +165,7 @@ function NumberParamField({
       value: displayValue,
       maxFractionDigits,
     }),
-    parse: (input) => {
+    parse: input => {
       const parsed = parseFloat(input);
       if (Number.isNaN(parsed)) return null;
       return clampDisplayValue(snapToStep({ value: parsed, step }));

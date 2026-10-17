@@ -3,11 +3,26 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** rasdlg.dll!RasDialDlgA */
-  RasDialDlgA(lpszPhonebook: string | Win32Pointer, lpszEntry: string | Win32Pointer, lpszPhoneNumber: string | Win32Pointer, lpInfo: Win32Pointer): number;
+  RasDialDlgA(
+    lpszPhonebook: string | Win32Pointer,
+    lpszEntry: string | Win32Pointer,
+    lpszPhoneNumber: string | Win32Pointer,
+    lpInfo: Win32Pointer,
+  ): number;
   /** rasdlg.dll!RasDialDlgW */
-  RasDialDlgW(lpszPhonebook: string | Win32Pointer, lpszEntry: string | Win32Pointer, lpszPhoneNumber: string | Win32Pointer, lpInfo: Win32Pointer): number;
+  RasDialDlgW(
+    lpszPhonebook: string | Win32Pointer,
+    lpszEntry: string | Win32Pointer,
+    lpszPhoneNumber: string | Win32Pointer,
+    lpInfo: Win32Pointer,
+  ): number;
   /** rasdlg.dll!RasDialDlgW */
-  RasDialDlg(lpszPhonebook: string | Win32Pointer, lpszEntry: string | Win32Pointer, lpszPhoneNumber: string | Win32Pointer, lpInfo: Win32Pointer): number;
+  RasDialDlg(
+    lpszPhonebook: string | Win32Pointer,
+    lpszEntry: string | Win32Pointer,
+    lpszPhoneNumber: string | Win32Pointer,
+    lpInfo: Win32Pointer,
+  ): number;
   /** rasdlg.dll!RasEntryDlgA */
   RasEntryDlgA(lpszPhonebook: string | Win32Pointer, lpszEntry: string | Win32Pointer, lpInfo: Win32Pointer): number;
   /** rasdlg.dll!RasEntryDlgW */
@@ -15,9 +30,17 @@ interface Functions {
   /** rasdlg.dll!RasEntryDlgW */
   RasEntryDlg(lpszPhonebook: string | Win32Pointer, lpszEntry: string | Win32Pointer, lpInfo: Win32Pointer): number;
   /** rasdlg.dll!RasPhonebookDlgA */
-  RasPhonebookDlgA(lpszPhonebook: string | Win32Pointer, lpszEntry: string | Win32Pointer, lpInfo: Win32Pointer): number;
+  RasPhonebookDlgA(
+    lpszPhonebook: string | Win32Pointer,
+    lpszEntry: string | Win32Pointer,
+    lpInfo: Win32Pointer,
+  ): number;
   /** rasdlg.dll!RasPhonebookDlgW */
-  RasPhonebookDlgW(lpszPhonebook: string | Win32Pointer, lpszEntry: string | Win32Pointer, lpInfo: Win32Pointer): number;
+  RasPhonebookDlgW(
+    lpszPhonebook: string | Win32Pointer,
+    lpszEntry: string | Win32Pointer,
+    lpInfo: Win32Pointer,
+  ): number;
   /** rasdlg.dll!RasPhonebookDlgW */
   RasPhonebookDlg(lpszPhonebook: string | Win32Pointer, lpszEntry: string | Win32Pointer, lpInfo: Win32Pointer): number;
 }

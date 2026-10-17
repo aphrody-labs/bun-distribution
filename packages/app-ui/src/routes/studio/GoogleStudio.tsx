@@ -6,12 +6,9 @@ import { useI18n } from "../../i18n";
 import { nativeGoogleMessages } from "../product/product-search-messages";
 
 export function GoogleStudio() {
-  const language = useI18n((state) => state.language);
+  const language = useI18n(state => state.language);
   return isTauri() ? (
-    <NativeGoogleStudio
-      language={language}
-      messages={nativeGoogleMessages[language]}
-    />
+    <NativeGoogleStudio language={language} messages={nativeGoogleMessages[language]} />
   ) : (
     <ProductSearchHome />
   );

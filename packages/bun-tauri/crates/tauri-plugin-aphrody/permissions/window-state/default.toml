@@ -10,8 +10,4 @@ operations are available from the window state plugin.
 All operations are enabled by default.
 
 """
-permissions = [
-  "allow-filename",
-  "allow-restore-state",
-  "allow-save-window-state",
-]
+permissions = ["allow-filename", "allow-restore-state", "allow-save-window-state"]

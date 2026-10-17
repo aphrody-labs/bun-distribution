@@ -16,8 +16,7 @@
     "./wasm-glue": "./pkg/aphrody_shell_web.js",
     "./pkg/*": "./pkg/*"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "engines": {
     "bun": "=1.4.4"
   }

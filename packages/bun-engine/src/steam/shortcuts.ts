@@ -120,8 +120,7 @@ export function shortcutAppId(exe: string, name: string): number {
 }
 
 /** `steam://rungameid/<id>` of a shortcut. */
-export const shortcutGameId = (appId: number): bigint =>
-  (BigInt(appId) << 32n) | 0x02000000n;
+export const shortcutGameId = (appId: number): bigint => (BigInt(appId) << 32n) | 0x02000000n;
 
 const quote = (path: string) => `"${path}"`;
 const str = (value: string) => ({ type: "string" as const, value });
@@ -166,33 +165,26 @@ const leaf = (o: BinKvObject, key: string) => {
 
 const ours = (o: BinKvObject) => {
   const tags = o.tags as BinKvObject | undefined;
-  return (
-    !!tags &&
-    Object.values(tags).some((t) => (t as { value?: unknown }).value === TAG)
-  );
+  return !!tags && Object.values(tags).some(t => (t as { value?: unknown }).value === TAG);
 };
 
 function accountDir(steamRoot: string, user?: string): string {
   const dirs = userDataDirs(steamRoot);
   if (user) {
-    const dir = dirs.find((d) => basename(d) === user);
+    const dir = dirs.find(d => basename(d) === user);
     if (!dir) throw new Error(`no userdata/${user}`);
     return dir;
   }
-  const recent = loginUsers(steamRoot).find((u) => u.mostRecent);
-  const account = recent
-    ? String(BigInt(recent.steamId) - STEAMID64_BASE)
-    : undefined;
-  const dir = dirs.find((d) => basename(d) === account) ?? dirs[0];
+  const recent = loginUsers(steamRoot).find(u => u.mostRecent);
+  const account = recent ? String(BigInt(recent.steamId) - STEAMID64_BASE) : undefined;
+  const dir = dirs.find(d => basename(d) === account) ?? dirs[0];
   if (!dir) throw new Error("no Steam userdata account directory");
   return dir;
 }
 
 async function plan(options: Options): Promise<Planned[]> {
   if (!options.engine || !existsSync(options.engine))
-    throw new Error(
-      "--engine must name the bun-engine binary (built with --features steam)",
-    );
+    throw new Error("--engine must name the bun-engine binary (built with --features steam)");
   const planned: Planned[] = [];
   if (options.hub) {
     const bun = process.execPath;
@@ -211,17 +203,15 @@ async function plan(options: Options): Promise<Planned[]> {
   if (options.system || options.favorites) {
     games.push(
       ...gamesFor(options.system)
-        .filter((g) => !options.favorites || g.favorite)
+        .filter(g => !options.favorites || g.favorite)
         .slice(0, options.limit),
     );
   }
-  games = games.filter((g, i) => games.findIndex((o) => o.id === g.id) === i);
+  games = games.filter((g, i) => games.findIndex(o => o.id === g.id) === i);
   for (const game of games) {
     const system = await systemById(game.system);
     if (!system.native) {
-      console.error(
-        `skip ${game.name}: ${system.name} has no native Bun Engine machine`,
-      );
+      console.error(`skip ${game.name}: ${system.name} has no native Bun Engine machine`);
       continue;
     }
     const route = {
@@ -237,7 +227,7 @@ async function plan(options: Options): Promise<Planned[]> {
       name,
       exe,
       startDir: quote(dirname(options.engine)),
-      launch: args.map((a) => (/[\s"]/.test(a) ? quote(a) : a)).join(" "),
+      launch: args.map(a => (/[\s"]/.test(a) ? quote(a) : a)).join(" "),
       appId: shortcutAppId(exe, name),
       art: await libretroArt(game, options.thumbnails),
     });
@@ -246,23 +236,13 @@ async function plan(options: Options): Promise<Planned[]> {
 }
 
 const sameBytes = (a: Uint8Array, b: Uint8Array) =>
-  Buffer.from(a.buffer, a.byteOffset, a.byteLength).equals(
-    Buffer.from(b.buffer, b.byteOffset, b.byteLength),
-  );
+  Buffer.from(a.buffer, a.byteOffset, a.byteLength).equals(Buffer.from(b.buffer, b.byteOffset, b.byteLength));
 
 /** The AppID Steam reports as running (Windows registry), 0 when idle. */
 function runningAppId(): number {
   if (process.platform !== "win32") return 0;
-  const out = Bun.spawnSync([
-    "reg",
-    "query",
-    String.raw`HKCU\Software\Valve\Steam`,
-    "/v",
-    "RunningAppID",
-  ]);
-  const hex = /RunningAppID\s+REG_DWORD\s+0x([0-9a-f]+)/i.exec(
-    out.stdout.toString(),
-  )?.[1];
+  const out = Bun.spawnSync(["reg", "query", String.raw`HKCU\Software\Valve\Steam`, "/v", "RunningAppID"]);
+  const hex = /RunningAppID\s+REG_DWORD\s+0x([0-9a-f]+)/i.exec(out.stdout.toString())?.[1];
   return hex ? Number.parseInt(hex, 16) : 0;
 }
 
@@ -306,20 +286,16 @@ async function main(argv: string[]): Promise<number> {
   const config = join(account, "config");
   const file = join(config, "shortcuts.vdf");
   const gridDir = join(config, "grid");
-  const original = existsSync(file)
-    ? new Uint8Array(await Bun.file(file).arrayBuffer())
-    : null;
+  const original = existsSync(file) ? new Uint8Array(await Bun.file(file).arrayBuffer()) : null;
   const current = original ? parseShortcuts(original) : {};
   if (original && !sameBytes(writeShortcuts(current), original))
-    throw new Error(
-      `${file} does not round-trip through the binary KeyValues writer; refusing to modify it`,
-    );
+    throw new Error(`${file} does not round-trip through the binary KeyValues writer; refusing to modify it`);
   const existing = Object.values(current) as BinKvObject[];
 
   if (options.command === "list") {
     console.log(
       JSON.stringify(
-        existing.map((e) => ({
+        existing.map(e => ({
           appId: Number(leaf(e, "appid") ?? 0) >>> 0,
           name: leaf(e, "AppName") ?? leaf(e, "appname"),
           exe: leaf(e, "Exe") ?? leaf(e, "exe"),
@@ -336,14 +312,14 @@ async function main(argv: string[]): Promise<number> {
     throw new Error(`unknown command ${options.command}`);
 
   const planned = options.command === "install" ? await plan(options) : [];
-  const kept = existing.filter((e) => !ours(e));
+  const kept = existing.filter(e => !ours(e));
   const removed = existing.filter(ours);
   const report = {
     file,
     account: basename(account),
     keep: kept.length,
-    replace: removed.map((e) => leaf(e, "AppName")),
-    add: planned.map((p) => ({
+    replace: removed.map(e => leaf(e, "AppName")),
+    add: planned.map(p => ({
       name: p.name,
       appId: p.appId,
       gameId: shortcutGameId(p.appId).toString(),
@@ -356,21 +332,13 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  const steamExe = join(
-    steamRoot,
-    process.platform === "win32" ? "steam.exe" : "steam.sh",
-  );
+  const steamExe = join(steamRoot, process.platform === "win32" ? "steam.exe" : "steam.sh");
   let closed = false;
   if (isSteamRunning()) {
     if (!options.closeSteam)
-      throw new Error(
-        "Steam is running; it rewrites shortcuts.vdf on exit. Close it or pass --close-steam",
-      );
+      throw new Error("Steam is running; it rewrites shortcuts.vdf on exit. Close it or pass --close-steam");
     const running = runningAppId();
-    if (running)
-      throw new Error(
-        `Steam is running AppID ${running}; not closing it during a game`,
-      );
+    if (running) throw new Error(`Steam is running AppID ${running}; not closing it during a game`);
     Bun.spawnSync([steamExe, "-shutdown"]);
     if (!(await waitFor(() => !isSteamRunning(), 90_000)))
       throw new Error("Steam did not exit within 90 s; nothing was written");
@@ -385,7 +353,7 @@ async function main(argv: string[]): Promise<number> {
     const icon = await writeArt(gridDir, p);
     next[String(index++)] = entry(p, icon);
   }
-  const plannedIds = new Set(planned.map((p) => p.appId));
+  const plannedIds = new Set(planned.map(p => p.appId));
   for (const e of removed) {
     const id = Number(leaf(e, "appid") ?? 0) >>> 0;
     if (id && !plannedIds.has(id)) removeArt(gridDir, id);

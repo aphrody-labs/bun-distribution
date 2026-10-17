@@ -12,10 +12,7 @@ interface TabViewProps {
 
 export function TabView({ isActive, children }: TabViewProps) {
   return (
-    <div
-      style={{ display: isActive ? "flex" : "none" }}
-      className="flex-1 overflow-hidden"
-    >
+    <div style={{ display: isActive ? "flex" : "none" }} className="flex-1 overflow-hidden">
       {children}
     </div>
   );

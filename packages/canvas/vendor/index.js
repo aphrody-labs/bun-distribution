@@ -50,9 +50,7 @@ if (!("families" in GlobalFonts)) {
 if (!("has" in GlobalFonts)) {
   Object.defineProperty(GlobalFonts, "has", {
     value: function has(name) {
-      return !!JSON.parse(GlobalFonts.getFamilies().toString()).find(
-        ({ family }) => family === name,
-      );
+      return !!JSON.parse(GlobalFonts.getFamilies().toString()).find(({ family }) => family === name);
     },
     configurable: false,
     enumerable: false,
@@ -63,11 +61,7 @@ if (!("has" in GlobalFonts)) {
 const _toBlob = CanvasElement.prototype.toBlob;
 const _convertToBlob = CanvasElement.prototype.convertToBlob;
 if ("Blob" in globalThis) {
-  CanvasElement.prototype.toBlob = function toBlob(
-    callback,
-    mimeType,
-    quality,
-  ) {
+  CanvasElement.prototype.toBlob = function toBlob(callback, mimeType, quality) {
     _toBlob.call(
       this,
       function (/** @type {Uint8Array} */ imageBuffer) {
@@ -79,29 +73,21 @@ if ("Blob" in globalThis) {
     );
   };
   CanvasElement.prototype.convertToBlob = function convertToBlob(options) {
-    return _convertToBlob
-      .call(this, options)
-      .then((/** @type {Uint8Array} */ imageBuffer) => {
-        const blob = new Blob([imageBuffer.buffer], {
-          type: options?.mime || "image/png",
-        });
-        return blob;
+    return _convertToBlob.call(this, options).then((/** @type {Uint8Array} */ imageBuffer) => {
+      const blob = new Blob([imageBuffer.buffer], {
+        type: options?.mime || "image/png",
       });
+      return blob;
+    });
   };
 } else {
   // oxlint-disable-next-line no-unused-vars
-  CanvasElement.prototype.toBlob = function toBlob(
-    callback,
-    mimeType,
-    quality,
-  ) {
+  CanvasElement.prototype.toBlob = function toBlob(callback, mimeType, quality) {
     callback(null);
   };
   // oxlint-disable-next-line no-unused-vars
   CanvasElement.prototype.convertToBlob = function convertToBlob(options) {
-    return Promise.reject(
-      new Error("Blob is not supported in this environment"),
-    );
+    return Promise.reject(new Error("Blob is not supported in this environment"));
   };
 }
 
@@ -122,31 +108,18 @@ CanvasRenderingContext2D.prototype.getTransform = function getTransform() {
 const _drawImage = CanvasRenderingContext2D.prototype.drawImage;
 
 // Override drawImage to ensure proper type recognition in bundled environments
-CanvasRenderingContext2D.prototype.drawImage = function drawImage(
-  image,
-  ...args
-) {
+CanvasRenderingContext2D.prototype.drawImage = function drawImage(image, ...args) {
   // If the image is a Canvas-like object but not recognized due to bundling,
   // we need to ensure it's properly identified
   if (image && typeof image === "object") {
     // First check if it's a wrapped canvas object
-    if (
-      image.canvas instanceof CanvasElement ||
-      image.canvas instanceof SVGCanvas
-    ) {
+    if (image.canvas instanceof CanvasElement || image.canvas instanceof SVGCanvas) {
       image = image.canvas;
-    } else if (
-      image._canvas instanceof CanvasElement ||
-      image._canvas instanceof SVGCanvas
-    ) {
+    } else if (image._canvas instanceof CanvasElement || image._canvas instanceof SVGCanvas) {
       image = image._canvas;
     }
     // Then check if it's a Canvas-like object by checking for getContext method
-    else if (
-      typeof image.getContext === "function" &&
-      image.width &&
-      image.height
-    ) {
+    else if (typeof image.getContext === "function" && image.width && image.height) {
       // If it has canvas properties but isn't recognized as CanvasElement or SVGCanvas,
       // try to correct the prototype chain
       if (!(image instanceof CanvasElement) && !(image instanceof SVGCanvas)) {
@@ -163,9 +136,7 @@ CanvasRenderingContext2D.prototype.drawImage = function drawImage(
 
 function createCanvas(width, height, flag) {
   const isSvgBackend = typeof flag !== "undefined";
-  return isSvgBackend
-    ? new SVGCanvas(width, height, flag)
-    : new CanvasElement(width, height);
+  return isSvgBackend ? new SVGCanvas(width, height, flag) : new CanvasElement(width, height);
 }
 
 class Canvas {
@@ -184,9 +155,7 @@ if (!process.env.DISABLE_SYSTEM_FONTS_LOAD) {
   const homedirPath = homedir();
   switch (platformName) {
     case "win32":
-      GlobalFonts.loadFontsFromDir(
-        join(homedirPath, "AppData", "Local", "Microsoft", "Windows", "Fonts"),
-      );
+      GlobalFonts.loadFontsFromDir(join(homedirPath, "AppData", "Local", "Microsoft", "Windows", "Fonts"));
       break;
     case "darwin":
       GlobalFonts.loadFontsFromDir(join(homedirPath, "Library", "Fonts"));

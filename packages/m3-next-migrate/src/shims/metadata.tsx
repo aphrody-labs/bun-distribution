@@ -14,9 +14,7 @@ export interface MetadataOpenGraph {
   description?: string;
   url?: string;
   siteName?: string;
-  images?: Array<
-    { url: string; width?: number; height?: number; alt?: string } | string
-  >;
+  images?: Array<{ url: string; width?: number; height?: number; alt?: string } | string>;
 }
 
 export interface Metadata {
@@ -43,10 +41,7 @@ export interface Metadata {
 export type ResolvingMetadata = Promise<Metadata>;
 
 /** Resolve title string given a title definition or template */
-export function resolveTitle(
-  title: string | MetadataTitle | null | undefined,
-  parentTitle?: string,
-): string {
+export function resolveTitle(title: string | MetadataTitle | null | undefined, parentTitle?: string): string {
   if (!title) return parentTitle || "";
   if (typeof title === "string") return title;
   if (title.absolute) return title.absolute;
@@ -96,10 +91,8 @@ export async function setWindowTitle(title: string): Promise<void> {
  * Update or create a <meta> tag in document.head
  */
 export function setMetaTag(nameOrProperty: string, content: string): void {
-  if (typeof document === "undefined" || !nameOrProperty || content == null)
-    return;
-  const isProperty =
-    nameOrProperty.startsWith("og:") || nameOrProperty.startsWith("twitter:");
+  if (typeof document === "undefined" || !nameOrProperty || content == null) return;
+  const isProperty = nameOrProperty.startsWith("og:") || nameOrProperty.startsWith("twitter:");
   const attribute = isProperty ? "property" : "name";
   let meta = document.querySelector(`meta[${attribute}="${nameOrProperty}"]`);
   if (!meta) {
@@ -136,19 +129,15 @@ export async function syncMetadata(meta: Metadata): Promise<void> {
 
   // Keywords
   if (meta.keywords) {
-    const kw = Array.isArray(meta.keywords)
-      ? meta.keywords.join(", ")
-      : meta.keywords;
+    const kw = Array.isArray(meta.keywords) ? meta.keywords.join(", ") : meta.keywords;
     setMetaTag("keywords", kw);
   }
 
   // Open Graph
   if (meta.openGraph) {
     if (meta.openGraph.title) setMetaTag("og:title", meta.openGraph.title);
-    if (meta.openGraph.description)
-      setMetaTag("og:description", meta.openGraph.description);
-    if (meta.openGraph.siteName)
-      setMetaTag("og:site_name", meta.openGraph.siteName);
+    if (meta.openGraph.description) setMetaTag("og:description", meta.openGraph.description);
+    if (meta.openGraph.siteName) setMetaTag("og:site_name", meta.openGraph.siteName);
   }
 
   // Other metadata
@@ -162,18 +151,12 @@ export async function syncMetadata(meta: Metadata): Promise<void> {
 /**
  * React Hook to synchronize metadata (static or computed) to document.title & Tauri window
  */
-export function useMetadata(
-  metadataOrFn: Metadata | (() => Metadata | Promise<Metadata>),
-  deps: any[] = [],
-): void {
+export function useMetadata(metadataOrFn: Metadata | (() => Metadata | Promise<Metadata>), deps: any[] = []): void {
   useEffect(() => {
     let cancelled = false;
     async function apply() {
       try {
-        const meta =
-          typeof metadataOrFn === "function"
-            ? await metadataOrFn()
-            : metadataOrFn;
+        const meta = typeof metadataOrFn === "function" ? await metadataOrFn() : metadataOrFn;
         if (!cancelled && meta) {
           await syncMetadata(meta);
         }

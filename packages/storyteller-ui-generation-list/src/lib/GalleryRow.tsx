@@ -1,17 +1,6 @@
 import { memo, useCallback, type ReactNode } from "react";
-import {
-  BoxIcon,
-  CheckIcon,
-  EyeIcon,
-  ImageIcon,
-  MusicIcon,
-  PlayIcon,
-  VideoIcon,
-} from "lucide-react";
-import {
-  getCreatorIconPathForModelId,
-  getModelDisplayName,
-} from "@storyteller/model-list";
+import { BoxIcon, CheckIcon, EyeIcon, ImageIcon, MusicIcon, PlayIcon, VideoIcon } from "lucide-react";
+import { getCreatorIconPathForModelId, getModelDisplayName } from "@storyteller/model-list";
 import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import { GalleryThumbnail } from "./GalleryThumbnail";
 import { CopyPromptButton } from "./CopyPromptButton";
@@ -55,28 +44,12 @@ export const GalleryRow = memo(function GalleryRow({
   const isVideo = item.mediaClass === "video";
   const is3D = is3DMediaClass(item.mediaClass);
   const isAudio = item.mediaClass === "audio";
-  const mediaIcon = isVideo
-    ? VideoIcon
-    : is3D
-      ? BoxIcon
-      : isAudio
-        ? MusicIcon
-        : ImageIcon;
-  const mediaLabel = isVideo
-    ? "Video"
-    : is3D
-      ? "3D"
-      : isAudio
-        ? "Audio"
-        : "Image";
+  const mediaIcon = isVideo ? VideoIcon : is3D ? BoxIcon : isAudio ? MusicIcon : ImageIcon;
+  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : isAudio ? "Audio" : "Image";
 
   const effectiveModelId = modelId ?? item.modelId;
-  const modelDisplayName = effectiveModelId
-    ? getModelDisplayName(effectiveModelId)
-    : null;
-  const modelIconPath = effectiveModelId
-    ? getCreatorIconPathForModelId(effectiveModelId)
-    : null;
+  const modelDisplayName = effectiveModelId ? getModelDisplayName(effectiveModelId) : null;
+  const modelIconPath = effectiveModelId ? getCreatorIconPathForModelId(effectiveModelId) : null;
 
   const handleRowClick = useCallback(() => {
     if (selectMode) {
@@ -110,9 +83,7 @@ export const GalleryRow = memo(function GalleryRow({
       {selectMode && (
         <div
           className={`pointer-events-none flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] border transition-colors ${
-            selected
-              ? "border-primary-400 bg-primary-400 text-white"
-              : "border-white/60 bg-black/40 text-transparent"
+            selected ? "border-primary-400 bg-primary-400 text-white" : "border-white/60 bg-black/40 text-transparent"
           } ${item.fullImage ? "" : "invisible"}`}
         >
           <CheckIcon className="text-[10px]" />
@@ -157,37 +128,18 @@ export const GalleryRow = memo(function GalleryRow({
           </div>
         ) : (
           <div className="flex items-start gap-2">
-            <p className="line-clamp-3 min-w-0 flex-1 text-sm leading-snug text-white/90">
-              {title || item.label}
-            </p>
-            {title && (
-              <CopyPromptButton
-                text={title}
-                onCopyResult={onCopyPromptResult}
-              />
-            )}
+            <p className="line-clamp-3 min-w-0 flex-1 text-sm leading-snug text-white/90">{title || item.label}</p>
+            {title && <CopyPromptButton text={title} onCopyResult={onCopyPromptResult} />}
           </div>
         )}
         {isAudio && item.fullImage && (
           <div className="mt-1.5 max-w-md bg-white/[0.04]">
-            <WaveformAudioPlayer
-              src={item.fullImage}
-              durationMillis={item.durationMillis}
-              compact
-            />
+            <WaveformAudioPlayer src={item.fullImage} durationMillis={item.durationMillis} compact />
           </div>
         )}
         <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-white/45">
-          {modelIconPath && (
-            <img
-              src={modelIconPath}
-              alt=""
-              className="h-3 w-3 shrink-0 icon-auto-contrast"
-            />
-          )}
-          <span className="max-w-[40vw] truncate sm:max-w-none">
-            {modelDisplayName ?? mediaLabel}
-          </span>
+          {modelIconPath && <img src={modelIconPath} alt="" className="h-3 w-3 shrink-0 icon-auto-contrast" />}
+          <span className="max-w-[40vw] truncate sm:max-w-none">{modelDisplayName ?? mediaLabel}</span>
           {modelDisplayName && (
             <>
               <span className="text-white/25">·</span>
@@ -203,9 +155,7 @@ export const GalleryRow = memo(function GalleryRow({
               {actionsSlot}
             </div>
           )}
-          <span className="ml-auto shrink-0 whitespace-nowrap text-white/40">
-            {timeAgo}
-          </span>
+          <span className="ml-auto shrink-0 whitespace-nowrap text-white/40">{timeAgo}</span>
         </div>
       </div>
     </div>

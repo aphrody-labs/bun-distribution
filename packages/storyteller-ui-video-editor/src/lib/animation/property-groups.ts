@@ -1,8 +1,4 @@
-import type {
-  AnimationPropertyGroup,
-  AnimationPropertyPath,
-  ElementAnimations,
-} from "./types";
+import type { AnimationPropertyGroup, AnimationPropertyPath, ElementAnimations } from "./types";
 import { ANIMATION_PROPERTY_GROUPS } from "./types";
 import { getKeyframeAtTime } from "./keyframe-query";
 
@@ -25,7 +21,7 @@ export function getGroupKeyframesAtTime({
   group: AnimationPropertyGroup;
   time: number;
 }): GroupKeyframeRef[] {
-  return ANIMATION_PROPERTY_GROUPS[group].flatMap((propertyPath) => {
+  return ANIMATION_PROPERTY_GROUPS[group].flatMap(propertyPath => {
     const keyframe = getKeyframeAtTime({ animations, propertyPath, time });
     return keyframe ? [{ propertyPath, keyframeId: keyframe.id }] : [];
   });

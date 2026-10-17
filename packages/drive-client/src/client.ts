@@ -20,7 +20,7 @@ class SimpleEventEmitter {
   emit(event: string, ...args: any[]) {
     const listeners = this.listeners.get(event);
     if (listeners) {
-      listeners.forEach((listener) => listener(...args));
+      listeners.forEach(listener => listener(...args));
     }
   }
 
@@ -65,10 +65,7 @@ export class SpacedriveClient extends SimpleEventEmitter {
    */
   static fromTauri(
     invoke: (cmd: string, args?: any) => Promise<any>,
-    listen: (
-      event: string,
-      handler: (event: any) => void,
-    ) => Promise<() => void>,
+    listen: (event: string, handler: (event: any) => void) => Promise<() => void>,
   ): SpacedriveClient {
     const client = new SpacedriveClient(new TauriTransport(invoke, listen));
     client.setupEventLogging();
@@ -145,9 +142,7 @@ export class SpacedriveClient extends SimpleEventEmitter {
   requireCurrentLibrary(): string {
     const libraryId = this.getCurrentLibraryId();
     if (!libraryId) {
-      throw new Error(
-        "This operation requires an active library. Use switchToLibrary() first.",
-      );
+      throw new Error("This operation requires an active library. Use switchToLibrary() first.");
     }
     return libraryId;
   }
@@ -158,11 +153,7 @@ export class SpacedriveClient extends SimpleEventEmitter {
    * Execute a wire method with the given input
    * This is the low-level method used by TanStack Query hooks
    */
-  async execute<I, O>(
-    wireMethod: string,
-    input: I,
-    options: { libraryContext?: boolean } = {},
-  ): Promise<O> {
+  async execute<I, O>(wireMethod: string, input: I, options: { libraryContext?: boolean } = {}): Promise<O> {
     // Determine if this is a query or action based on wire method prefix
     const isQuery = wireMethod.startsWith("query:");
     const isAction = wireMethod.startsWith("action:");
@@ -175,16 +166,14 @@ export class SpacedriveClient extends SimpleEventEmitter {
       ? {
           Query: {
             method: wireMethod,
-            library_id:
-              options.libraryContext === false ? null : this.currentLibraryId,
+            library_id: options.libraryContext === false ? null : this.currentLibraryId,
             payload: input,
           },
         }
       : {
           Action: {
             method: wireMethod,
-            library_id:
-              options.libraryContext === false ? null : this.currentLibraryId,
+            library_id: options.libraryContext === false ? null : this.currentLibraryId,
             payload: input,
           },
         };
@@ -199,9 +188,7 @@ export class SpacedriveClient extends SimpleEventEmitter {
       return response.json;
     } else if ("Error" in response || "error" in response) {
       const error = response.Error || response.error;
-      throw new Error(
-        `${isQuery ? "Query" : "Action"} failed: ${JSON.stringify(error)}`,
-      );
+      throw new Error(`${isQuery ? "Query" : "Action"} failed: ${JSON.stringify(error)}`);
     } else {
       throw new Error(`Unexpected response: ${JSON.stringify(response)}`);
     }
@@ -211,7 +198,7 @@ export class SpacedriveClient extends SimpleEventEmitter {
    * Subscribe to events from the daemon
    */
   async subscribe(callback?: (event: Event) => void): Promise<() => void> {
-    const unlisten = await this.transport.subscribe((event) => {
+    const unlisten = await this.transport.subscribe(event => {
       if (callback) {
         callback(event);
       }

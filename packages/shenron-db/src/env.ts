@@ -18,7 +18,8 @@ export { lastAssignment };
 export type DatabaseUrlSource = { kind: "env"; name: string } | { kind: "file"; path: string; varName: string };
 
 export type LoadDatabaseUrlResult =
-  { ok: true; url: string; source: DatabaseUrlSource } | { ok: false; reason: string };
+  | { ok: true; url: string; source: DatabaseUrlSource }
+  | { ok: false; reason: string };
 
 export interface LoadDatabaseUrlOptions {
   env?: EnvSource;

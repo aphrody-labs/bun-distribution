@@ -1,16 +1,6 @@
-import {
-  appCapabilityFor,
-  hashContent,
-  isObject,
-  runtimeFromFacts,
-} from "@aphrody/bun-workspace";
+import { appCapabilityFor, hashContent, isObject, runtimeFromFacts } from "@aphrody/bun-workspace";
 import { validateAssetReference } from "@aphrody/bun-workspace/assets";
-import {
-  ArtifactError,
-  type AppManifest,
-  type ArtifactTarget,
-  type NativeFile,
-} from "./types.ts";
+import { ArtifactError, type AppManifest, type ArtifactTarget, type NativeFile } from "./types.ts";
 
 export const maxNativeFiles = 64;
 export const maxFileBytes = 1024 * 1024 * 1024;
@@ -19,10 +9,7 @@ const sha256Pattern = /^[0-9a-f]{64}$/;
 const revisionPattern = /^[0-9a-f]{40}$/;
 
 function invalid(): never {
-  throw new ArtifactError(
-    "INVALID_MANIFEST",
-    "The application artifact manifest is invalid.",
-  );
+  throw new ArtifactError("INVALID_MANIFEST", "The application artifact manifest is invalid.");
 }
 
 export { isObject } from "@aphrody/bun-workspace";
@@ -38,7 +25,7 @@ export function validPayloadPath(value: unknown): value is string {
   return (
     parts.length <= 16 &&
     parts.every(
-      (part) =>
+      part =>
         /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(part) &&
         !part.endsWith(".") &&
         !/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(part),
@@ -47,15 +34,8 @@ export function validPayloadPath(value: unknown): value is string {
 }
 
 export function parseArtifactTarget(value: string): ArtifactTarget {
-  if (
-    !/^bun-(?:(?:windows|darwin)-(?:x64|arm64)|linux-(?:x64|arm64)(?:-musl)?)$/.test(
-      value,
-    )
-  ) {
-    throw new ArtifactError(
-      "INVALID_OPTIONS",
-      "Select a supported Bun application target.",
-    );
+  if (!/^bun-(?:(?:windows|darwin)-(?:x64|arm64)|linux-(?:x64|arm64)(?:-musl)?)$/.test(value)) {
+    throw new ArtifactError("INVALID_OPTIONS", "Select a supported Bun application target.");
   }
   return value as ArtifactTarget;
 }
@@ -74,26 +54,15 @@ export function hostMatchesTarget(target: ArtifactTarget): boolean {
 
 /** Structural validation delegates identity and runtime provenance to their existing owners. */
 export function validateAppManifest(value: unknown): AppManifest {
-  if (
-    !isObject(value) ||
-    value.schemaVersion !== 1 ||
-    value.identity !== "Aphrody / Bun"
-  )
-    invalid();
+  if (!isObject(value) || value.schemaVersion !== 1 || value.identity !== "Aphrody / Bun") invalid();
   if (!isObject(value.app) || typeof value.app.id !== "string") invalid();
   const app = value.app;
   const capability = appCapabilityFor(app.id as string);
-  if (
-    !capability ||
-    Object.entries(capability).some(([key, entry]) => app[key] !== entry)
-  )
-    invalid();
+  if (!capability || Object.entries(capability).some(([key, entry]) => app[key] !== entry)) invalid();
   if (
     typeof value.hostname !== "string" ||
     value.hostname.length > 253 ||
-    !value.hostname
-      .split(".")
-      .every((part) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(part))
+    !value.hostname.split(".").every(part => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(part))
   )
     invalid();
   if (typeof value.target !== "string") invalid();
@@ -144,17 +113,10 @@ export function validateAppManifest(value: unknown): AppManifest {
     typeof value.engine.version !== "string" ||
     !/^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$/.test(value.engine.version) ||
     value.engine.version.length > 64 ||
-    !["cli", "cli-json", "jsonl", "mcp-stdio"].includes(
-      String(value.engine.protocol),
-    )
+    !["cli", "cli-json", "jsonl", "mcp-stdio"].includes(String(value.engine.protocol))
   )
     invalid();
-  if (
-    !Array.isArray(value.native) ||
-    value.native.length < 1 ||
-    value.native.length > maxNativeFiles
-  )
-    invalid();
+  if (!Array.isArray(value.native) || value.native.length < 1 || value.native.length > maxNativeFiles) invalid();
   const paths = new Set<string>();
   let bytes = 0;
   let engines = 0;
@@ -224,9 +186,7 @@ export function validateAppManifest(value: unknown): AppManifest {
       size,
       kind,
     })),
-    ...(manifest.sharedAssets
-      ? { sharedAssets: validateAssetReference(manifest.sharedAssets) }
-      : {}),
+    ...(manifest.sharedAssets ? { sharedAssets: validateAssetReference(manifest.sharedAssets) } : {}),
   };
 }
 

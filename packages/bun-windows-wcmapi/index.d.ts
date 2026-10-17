@@ -7,11 +7,30 @@ interface Functions {
   /** wcmapi.dll!WcmGetProfileList */
   WcmGetProfileList(pReserved: Win32Pointer, ppProfileList: Win32Pointer): number;
   /** wcmapi.dll!WcmQueryProperty */
-  WcmQueryProperty(pInterface: Win32Pointer, strProfileName: string | Win32Pointer, Property: number, pReserved: Win32Pointer, pdwDataSize: Win32Pointer, ppData: Win32Pointer): number;
+  WcmQueryProperty(
+    pInterface: Win32Pointer,
+    strProfileName: string | Win32Pointer,
+    Property: number,
+    pReserved: Win32Pointer,
+    pdwDataSize: Win32Pointer,
+    ppData: Win32Pointer,
+  ): number;
   /** wcmapi.dll!WcmSetProfileList */
-  WcmSetProfileList(pProfileList: Win32Pointer, dwPosition: number, fIgnoreUnknownProfiles: number, pReserved: Win32Pointer): number;
+  WcmSetProfileList(
+    pProfileList: Win32Pointer,
+    dwPosition: number,
+    fIgnoreUnknownProfiles: number,
+    pReserved: Win32Pointer,
+  ): number;
   /** wcmapi.dll!WcmSetProperty */
-  WcmSetProperty(pInterface: Win32Pointer, strProfileName: string | Win32Pointer, Property: number, pReserved: Win32Pointer, dwDataSize: number, pbData: Win32Pointer): number;
+  WcmSetProperty(
+    pInterface: Win32Pointer,
+    strProfileName: string | Win32Pointer,
+    Property: number,
+    pReserved: Win32Pointer,
+    dwDataSize: number,
+    pbData: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

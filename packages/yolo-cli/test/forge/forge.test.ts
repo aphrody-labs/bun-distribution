@@ -84,12 +84,8 @@ describe("arguments", () => {
 
   test("invalid input is refused", () => {
     expect(() => parseArgs(["deploy"], {})).toThrow(ForgeError);
-    expect(() => parseArgs(["build", "--rev", "abc"], {})).toThrow(
-      "full 40-character",
-    );
-    expect(() => parseArgs(["build", "--scratch", "ram"], {})).toThrow(
-      "--scratch",
-    );
+    expect(() => parseArgs(["build", "--rev", "abc"], {})).toThrow("full 40-character");
+    expect(() => parseArgs(["build", "--scratch", "ram"], {})).toThrow("--scratch");
     expect(() => parseArgs(["build", "--jobs", "0"], {})).toThrow("--jobs");
     expect(() => parseArgs(["build", "--nope"], {})).toThrow("unknown option");
     expect(() => parseArgs(["toString"], {})).toThrow("unknown command");
@@ -114,9 +110,7 @@ describe("versions and toolchain", () => {
     expect(compareVersions("3.30.5", "3.24.0")).toBeGreaterThan(0);
     expect(compareVersions("3.24", "3.24.0")).toBe(0);
     expect(versionIn("cmake version 3.28.3\n")).toBe("3.28.3");
-    expect(versionIn("Ubuntu clang version 23.1.1 (++20260901)")).toBe(
-      "23.1.1",
-    );
+    expect(versionIn("Ubuntu clang version 23.1.1 (++20260901)")).toBe("23.1.1");
   });
 
   test("LLVM range matches scripts/build/tools.ts", () => {
@@ -132,20 +126,16 @@ describe("versions and toolchain", () => {
     expect(toolUrl(tc.llvm.url, "23.1.1", "llvm", "x64")).toBe(
       "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.1/LLVM-23.1.1-Linux-X64.tar.xz",
     );
-    expect(toolUrl(tc.cmake.url, "3.30.5", "cmake", "arm64")).toEndWith(
-      "cmake-3.30.5-linux-aarch64.tar.gz",
-    );
+    expect(toolUrl(tc.cmake.url, "3.30.5", "cmake", "arm64")).toEndWith("cmake-3.30.5-linux-aarch64.tar.gz");
     expect(toolUrl(tc.rustup.url, "1.28.2", "rustup", "x64")).toBe(
       "https://static.rust-lang.org/rustup/archive/1.28.2/x86_64-unknown-linux-gnu/rustup-init",
     );
   });
 
   test("rust channel comes from the checkout", () => {
-    expect(
-      rustChannel(
-        '[toolchain]\nchannel = "nightly-2026-09-15"\ncomponents = ["rust-src"]\n',
-      ),
-    ).toBe("nightly-2026-09-15");
+    expect(rustChannel('[toolchain]\nchannel = "nightly-2026-09-15"\ncomponents = ["rust-src"]\n')).toBe(
+      "nightly-2026-09-15",
+    );
     expect(() => rustChannel("[toolchain]\n")).toThrow("channel");
   });
 });
@@ -155,32 +145,16 @@ describe("scratch space", () => {
 
   test("auto picks a loop partition when root and disk allow it, a directory otherwise", () => {
     expect(scratchPlan("auto", "96G", "/s", A, host).mode).toBe("loop");
-    expect(
-      scratchPlan("auto", "96G", "/s", A, { ...host, root: false }).mode,
-    ).toBe("dir");
-    expect(
-      scratchPlan("auto", "96G", "/s", A, { ...host, freeBytes: 50 * 2 ** 30 })
-        .mode,
-    ).toBe("dir");
+    expect(scratchPlan("auto", "96G", "/s", A, { ...host, root: false }).mode).toBe("dir");
+    expect(scratchPlan("auto", "96G", "/s", A, { ...host, freeBytes: 50 * 2 ** 30 }).mode).toBe("dir");
   });
 
   test("loop partition setup and teardown", () => {
     const plan = scratchPlan("loop", "1G", "/s", A, host);
     expect(plan.dir).toBe("/s/aaaaaaaaaaaa");
     expect(plan.image).toBe("/s/aaaaaaaaaaaa.img");
-    expect(plan.setup.map((c) => c[0])).toEqual([
-      "mkdir",
-      "fallocate",
-      "mkfs.ext4",
-      "mount",
-      "chown",
-    ]);
-    expect(plan.setup[1]).toEqual([
-      "fallocate",
-      "-l",
-      String(2 ** 30),
-      "/s/aaaaaaaaaaaa.img",
-    ]);
+    expect(plan.setup.map(c => c[0])).toEqual(["mkdir", "fallocate", "mkfs.ext4", "mount", "chown"]);
+    expect(plan.setup[1]).toEqual(["fallocate", "-l", String(2 ** 30), "/s/aaaaaaaaaaaa.img"]);
     expect(plan.teardown).toEqual([
       ["umount", "/s/aaaaaaaaaaaa"],
       ["rm", "-f", "/s/aaaaaaaaaaaa.img"],
@@ -190,23 +164,17 @@ describe("scratch space", () => {
 
   test("tmpfs is owned by the building user; privileged modes need root", () => {
     const plan = scratchPlan("tmpfs", "8G", "/s", A, host);
-    expect(plan.setup[1]).toContain(
-      `size=${8 * 2 ** 30},mode=0755,uid=1000,gid=1000`,
-    );
-    expect(() =>
-      scratchPlan("loop", "8G", "/s", A, { ...host, root: false }),
-    ).toThrow("needs root");
-    expect(
-      scratchPlan("dir", "8G", "/s", A, { ...host, root: false }).teardown,
-    ).toEqual([["rm", "-rf", "/s/aaaaaaaaaaaa"]]);
+    expect(plan.setup[1]).toContain(`size=${8 * 2 ** 30},mode=0755,uid=1000,gid=1000`);
+    expect(() => scratchPlan("loop", "8G", "/s", A, { ...host, root: false })).toThrow("needs root");
+    expect(scratchPlan("dir", "8G", "/s", A, { ...host, root: false }).teardown).toEqual([
+      ["rm", "-rf", "/s/aaaaaaaaaaaa"],
+    ]);
   });
 });
 
 describe("commit queue", () => {
   test("ls-remote parsing", () => {
-    expect(
-      remoteHead(`${A}\trefs/heads/main\n${B}\trefs/heads/yolo\n`, "yolo"),
-    ).toBe(B);
+    expect(remoteHead(`${A}\trefs/heads/main\n${B}\trefs/heads/yolo\n`, "yolo")).toBe(B);
     expect(remoteHead(`${A}\trefs/heads/main-old\n`, "main")).toBeUndefined();
   });
 
@@ -226,7 +194,7 @@ describe("commit queue", () => {
     state = recordBuild(state, { revision: B, ok: false, finishedAt: "t2" }, 2);
     state = recordBuild(state, { revision: C, ok: true, finishedAt: "t3" }, 2);
     expect(state.last).toBe(C);
-    expect(state.builds.map((b) => b.revision)).toEqual([B, C]);
+    expect(state.builds.map(b => b.revision)).toEqual([B, C]);
   });
 });
 
@@ -253,17 +221,11 @@ describe("build environment", () => {
       CARGO_HOME: "/f/toolchains/cargo",
     });
     expect(env.BUN_BE_BUN).toBeUndefined();
-    expect(
-      buildEnv({ paths: p, baseEnv: {}, rustChannel: "n" }).BUN_TOOLCHAIN_LLVM,
-    ).toBeUndefined();
+    expect(buildEnv({ paths: p, baseEnv: {}, rustChannel: "n" }).BUN_TOOLCHAIN_LLVM).toBeUndefined();
   });
 
   test("build command follows the profile and LTO switch", () => {
-    expect(buildCommand(DEFAULT_CONFIG)).toEqual([
-      "bun",
-      "scripts/build.ts",
-      "--profile=release",
-    ]);
+    expect(buildCommand(DEFAULT_CONFIG)).toEqual(["bun", "scripts/build.ts", "--profile=release"]);
     expect(buildCommand({ ...DEFAULT_CONFIG, lto: false }, 12)).toEqual([
       "bun",
       "scripts/build.ts",
@@ -274,18 +236,11 @@ describe("build environment", () => {
   });
 
   test("absorbed specifiers match tools/config/bun-absorb.json fork entries", async () => {
-    const absorb = await Bun.file(
-      new URL(
-        "../../../../tools/aphrody/config/bun-absorb.json",
-        import.meta.url,
-      ),
-    ).json();
+    const absorb = await Bun.file(new URL("../../../../tools/aphrody/config/bun-absorb.json", import.meta.url)).json();
     const fork = absorb.packages
       .filter((entry: { status: string }) => entry.status === "fork")
       .map((entry: { name: string }) => entry.name);
-    expect(ABSORBED.filter((s) => s !== "dotenv/config").toSorted()).toEqual(
-      fork.toSorted(),
-    );
+    expect(ABSORBED.filter(s => s !== "dotenv/config").toSorted()).toEqual(fork.toSorted());
   });
 
   test("the fork build is one product: binary yolo, aliases bun and vu", () => {
@@ -300,15 +255,7 @@ describe("build environment", () => {
   });
 
   test("compile command puts the CLI on the engine that runs it", () => {
-    expect(
-      compileCommand(
-        "/art/bun",
-        "/art/yolo",
-        "0.1.0",
-        ["--bytecode"],
-        "/lib/libaphrody_ffi.so",
-      ),
-    ).toEqual([
+    expect(compileCommand("/art/bun", "/art/yolo", "0.1.0", ["--bytecode"], "/lib/libaphrody_ffi.so")).toEqual([
       "/art/bun",
       "build",
       "--compile",
@@ -321,21 +268,14 @@ describe("build environment", () => {
       "--outfile",
       "/art/yolo",
     ]);
-    expect(compileCommand("/art/bun", "/art/yolo", "0.1.0", [])).not.toContain(
-      "--asset",
-    );
+    expect(compileCommand("/art/bun", "/art/yolo", "0.1.0", [])).not.toContain("--asset");
   });
 
   test("--yolo-root and --yolo-asset select the compiled artifact", () => {
-    const options = parseArgs(
-      ["build", "--yolo-root", "/repo", "--yolo-asset=/lib/x.so"],
-      {},
-    );
+    const options = parseArgs(["build", "--yolo-root", "/repo", "--yolo-asset=/lib/x.so"], {});
     expect(options.yoloRoot).toBe("/repo");
     expect(options.yoloAsset).toBe("/lib/x.so");
-    expect(parseArgs(["build"], { BUN_FORGE_YOLO_ROOT: "/env" }).yoloRoot).toBe(
-      "/env",
-    );
+    expect(parseArgs(["build"], { BUN_FORGE_YOLO_ROOT: "/env" }).yoloRoot).toBe("/env");
     expect(parseArgs(["build"], {}).yoloRoot).toBeUndefined();
   });
 
@@ -343,22 +283,14 @@ describe("build environment", () => {
     const dir = mkdtempSync(join(tmpdir(), "yolo-argv0-"));
     try {
       symlinkSync(process.execPath, join(dir, BINARY.name));
-      for (const alias of BINARY.aliases)
-        symlinkSync(BINARY.name, join(dir, alias));
+      for (const alias of BINARY.aliases) symlinkSync(BINARY.name, join(dir, alias));
       for (const name of [BINARY.name, ...BINARY.aliases]) {
-        const r = Bun.spawnSync(
-          [
-            join(dir, name),
-            "-e",
-            'console.log(process.argv0.split("/").pop(), Bun.version)',
-          ],
-          {
-            windowsHide: true,
-            // Probe engine aliases even when the host embeds the Yolo product dispatcher.
-            // Product yolo/bun/vu dispatch is qualified separately on the shipped artifact.
-            env: { ...process.env, BUN_BE_BUN: "1" },
-          },
-        );
+        const r = Bun.spawnSync([join(dir, name), "-e", 'console.log(process.argv0.split("/").pop(), Bun.version)'], {
+          windowsHide: true,
+          // Probe engine aliases even when the host embeds the Yolo product dispatcher.
+          // Product yolo/bun/vu dispatch is qualified separately on the shipped artifact.
+          env: { ...process.env, BUN_BE_BUN: "1" },
+        });
         expect(r.exitCode).toBe(0);
         expect(r.stdout.toString().trim()).toBe(`${name} ${Bun.version}`);
       }
@@ -372,15 +304,9 @@ describe("build environment", () => {
   });
 
   test("systemd unit runs watch with the forge home", () => {
-    const unit = systemdUnit(
-      "/usr/local/bin/yolo forge",
-      "/home/ubuntu/apps/forge",
-      "builder",
-    );
+    const unit = systemdUnit("/usr/local/bin/yolo forge", "/home/ubuntu/apps/forge", "builder");
     expect(unit).toContain("ExecStart=/usr/local/bin/yolo forge watch");
-    expect(unit).toContain(
-      "Environment=BUN_FORGE_HOME=/home/ubuntu/apps/forge",
-    );
+    expect(unit).toContain("Environment=BUN_FORGE_HOME=/home/ubuntu/apps/forge");
     expect(unit).toContain("User=builder");
   });
 });

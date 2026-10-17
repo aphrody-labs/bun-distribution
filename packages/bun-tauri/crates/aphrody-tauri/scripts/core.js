@@ -2,91 +2,91 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
-;(function () {
+(function () {
   function uid() {
-    return window.crypto.getRandomValues(new Uint32Array(1))[0]
+    return window.crypto.getRandomValues(new Uint32Array(1))[0];
   }
 
   // the custom scheme URL format of the runtime, e.g. `{protocol}://localhost` or `http://{protocol}.localhost`
-  const customSchemeUrlTemplate = __TEMPLATE_custom_scheme_url_template__
+  const customSchemeUrlTemplate = __TEMPLATE_custom_scheme_url_template__;
 
-  Object.defineProperty(window.__TAURI_INTERNALS__, 'convertFileSrc', {
-    value: function (filePath, protocol = 'asset') {
-      const path = encodeURIComponent(filePath)
-      return `${customSchemeUrlTemplate.replace('{protocol}', protocol)}/${path}`
-    }
-  })
+  Object.defineProperty(window.__TAURI_INTERNALS__, "convertFileSrc", {
+    value: function (filePath, protocol = "asset") {
+      const path = encodeURIComponent(filePath);
+      return `${customSchemeUrlTemplate.replace("{protocol}", protocol)}/${path}`;
+    },
+  });
 
-  const callbacks = new Map()
+  const callbacks = new Map();
 
   function registerCallback(callback, once) {
-    const identifier = uid()
-    callbacks.set(identifier, (data) => {
+    const identifier = uid();
+    callbacks.set(identifier, data => {
       if (once) {
-        unregisterCallback(identifier)
+        unregisterCallback(identifier);
       }
-      return callback && callback(data)
-    })
-    return identifier
+      return callback && callback(data);
+    });
+    return identifier;
   }
 
   function unregisterCallback(id) {
-    callbacks.delete(id)
+    callbacks.delete(id);
   }
 
   function runCallback(id, data) {
-    const callback = callbacks.get(id)
+    const callback = callbacks.get(id);
     if (callback) {
-      callback(data)
+      callback(data);
     } else {
       console.warn(
-        `[TAURI] Couldn't find callback id ${id}. This might happen when the app is reloaded while Rust is running an asynchronous operation.`
-      )
+        `[TAURI] Couldn't find callback id ${id}. This might happen when the app is reloaded while Rust is running an asynchronous operation.`,
+      );
     }
   }
 
   // Maybe let's rename it to `registerCallback`?
-  Object.defineProperty(window.__TAURI_INTERNALS__, 'transformCallback', {
-    value: registerCallback
-  })
+  Object.defineProperty(window.__TAURI_INTERNALS__, "transformCallback", {
+    value: registerCallback,
+  });
 
-  Object.defineProperty(window.__TAURI_INTERNALS__, 'unregisterCallback', {
-    value: unregisterCallback
-  })
+  Object.defineProperty(window.__TAURI_INTERNALS__, "unregisterCallback", {
+    value: unregisterCallback,
+  });
 
-  Object.defineProperty(window.__TAURI_INTERNALS__, 'runCallback', {
-    value: runCallback
-  })
+  Object.defineProperty(window.__TAURI_INTERNALS__, "runCallback", {
+    value: runCallback,
+  });
 
   // This is just for the debugging purposes
-  Object.defineProperty(window.__TAURI_INTERNALS__, 'callbacks', {
-    value: callbacks
-  })
+  Object.defineProperty(window.__TAURI_INTERNALS__, "callbacks", {
+    value: callbacks,
+  });
 
-  const ipcQueue = []
-  let isWaitingForIpc = false
+  const ipcQueue = [];
+  let isWaitingForIpc = false;
 
   function waitForIpc() {
-    if ('ipc' in window.__TAURI_INTERNALS__) {
+    if ("ipc" in window.__TAURI_INTERNALS__) {
       for (const action of ipcQueue) {
-        action()
+        action();
       }
     } else {
-      setTimeout(waitForIpc, 50)
+      setTimeout(waitForIpc, 50);
     }
   }
 
-  Object.defineProperty(window.__TAURI_INTERNALS__, 'invoke', {
+  Object.defineProperty(window.__TAURI_INTERNALS__, "invoke", {
     value: function (cmd, payload = {}, options) {
       return new Promise(function (resolve, reject) {
-        const callback = registerCallback((r) => {
-          resolve(r)
-          unregisterCallback(error)
-        }, true)
-        const error = registerCallback((e) => {
-          reject(e)
-          unregisterCallback(callback)
-        }, true)
+        const callback = registerCallback(r => {
+          resolve(r);
+          unregisterCallback(error);
+        }, true);
+        const error = registerCallback(e => {
+          reject(e);
+          unregisterCallback(callback);
+        }, true);
 
         const action = () => {
           window.__TAURI_INTERNALS__.ipc({
@@ -94,19 +94,19 @@
             callback,
             error,
             payload,
-            options
-          })
-        }
-        if ('ipc' in window.__TAURI_INTERNALS__) {
-          action()
+            options,
+          });
+        };
+        if ("ipc" in window.__TAURI_INTERNALS__) {
+          action();
         } else {
-          ipcQueue.push(action)
+          ipcQueue.push(action);
           if (!isWaitingForIpc) {
-            waitForIpc()
-            isWaitingForIpc = true
+            waitForIpc();
+            isWaitingForIpc = true;
           }
         }
-      })
-    }
-  })
-})()
+      });
+    },
+  });
+})();

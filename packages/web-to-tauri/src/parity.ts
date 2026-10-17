@@ -119,8 +119,7 @@ function shingles(text: string): Set<string> {
   if (words.length === 0) return new Set();
   if (words.length < 3) return new Set([words.join(" ")]);
   const out = new Set<string>();
-  for (let index = 0; index + 3 <= words.length; index += 1)
-    out.add(words.slice(index, index + 3).join(" "));
+  for (let index = 0; index + 3 <= words.length; index += 1) out.add(words.slice(index, index + 3).join(" "));
   return out;
 }
 
@@ -150,8 +149,7 @@ function stripVolatile(url: string): string {
     // Cache busters and timestamps differ run to run, not between the two sides.
     const volatile: string[] = [];
     parsed.searchParams.forEach((_value, key) => {
-      if (/^(?:_|t|ts|v|cb|cachebust|nonce|rnd|random)$/i.test(key))
-        volatile.push(key);
+      if (/^(?:_|t|ts|v|cb|cachebust|nonce|rnd|random)$/i.test(key)) volatile.push(key);
     });
     for (const key of volatile) parsed.searchParams.delete(key);
     return `${parsed.origin}${parsed.pathname}${parsed.search}`;
@@ -166,18 +164,13 @@ function countBy<T>(items: T[], key: (item: T) => string): Map<string, number> {
   return out;
 }
 
-function missing(
-  reference: Map<string, number>,
-  wrapped: Map<string, number>,
-): string[] {
+function missing(reference: Map<string, number>, wrapped: Map<string, number>): string[] {
   const out: string[] = [];
-  for (const [key, count] of reference)
-    if ((wrapped.get(key) ?? 0) < count) out.push(key);
+  for (const [key, count] of reference) if ((wrapped.get(key) ?? 0) < count) out.push(key);
   return out;
 }
 
-const treeKey = (entry: TreeEntry) =>
-  `${entry.role ?? entry.tag}|${entry.name}|${entry.disabled ? "disabled" : ""}`;
+const treeKey = (entry: TreeEntry) => `${entry.role ?? entry.tag}|${entry.name}|${entry.disabled ? "disabled" : ""}`;
 
 /** Compares one path. `reference` is what the browser rendered, `wrapped` what the app rendered. */
 export function compareSnapshots(
@@ -189,15 +182,10 @@ export function compareSnapshots(
   const findings: Finding[] = [];
   const originMap = options.originMap ?? {};
   const api = new Set(options.apiInitiators ?? DEFAULT_API_INITIATORS);
-  const add = (severity: Severity, check: string, message: string) =>
-    findings.push({ severity, check, message });
+  const add = (severity: Severity, check: string, message: string) => findings.push({ severity, check, message });
 
   if (reference.title !== wrapped.title)
-    add(
-      "regression",
-      "title",
-      `title differs: "${reference.title}" vs "${wrapped.title}"`,
-    );
+    add("regression", "title", `title differs: "${reference.title}" vs "${wrapped.title}"`);
   if ((reference.lang ?? "") !== (wrapped.lang ?? ""))
     add("info", "lang", `lang differs: ${reference.lang} vs ${wrapped.lang}`);
 
@@ -215,30 +203,21 @@ export function compareSnapshots(
       return wrapped.url;
     }
   })();
-  if (refPath !== wrapPath)
-    add("regression", "route", `final path differs: ${refPath} vs ${wrapPath}`);
+  if (refPath !== wrapPath) add("regression", "route", `final path differs: ${refPath} vs ${wrapPath}`);
 
   const min = options.minTextSimilarity ?? 0.98;
   const similarity = textSimilarity(
     normalizeText(reference.text, options.ignoreText),
     normalizeText(wrapped.text, options.ignoreText),
   );
-  if (similarity < min)
-    add(
-      "regression",
-      "text",
-      `visible text similarity ${similarity.toFixed(3)} is below ${min}`,
-    );
+  if (similarity < min) add("regression", "text", `visible text similarity ${similarity.toFixed(3)} is below ${min}`);
 
   const refTree = countBy(reference.tree, treeKey);
   const wrapTree = countBy(wrapped.tree, treeKey);
-  for (const key of missing(refTree, wrapTree).slice(0, 20))
-    add("regression", "tree", `missing in the app: ${key}`);
-  for (const key of missing(wrapTree, refTree).slice(0, 10))
-    add("info", "tree", `only in the app: ${key}`);
+  for (const key of missing(refTree, wrapTree).slice(0, 20)) add("regression", "tree", `missing in the app: ${key}`);
+  for (const key of missing(wrapTree, refTree).slice(0, 10)) add("info", "tree", `only in the app: ${key}`);
 
-  const resourceKey = (entry: ResourceEntry) =>
-    `${entry.initiator}|${stripVolatile(mapOrigin(entry.name, originMap))}`;
+  const resourceKey = (entry: ResourceEntry) => `${entry.initiator}|${stripVolatile(mapOrigin(entry.name, originMap))}`;
   const refRes = countBy(reference.resources, resourceKey);
   const wrapRes = countBy(wrapped.resources, resourceKey);
   for (const key of missing(refRes, wrapRes).slice(0, 30)) {
@@ -254,9 +233,7 @@ export function compareSnapshots(
 
   return {
     path,
-    status: findings.some((finding) => finding.severity === "regression")
-      ? "fail"
-      : "pass",
+    status: findings.some(finding => finding.severity === "regression") ? "fail" : "pass",
     textSimilarity: similarity,
     findings,
   };
@@ -267,12 +244,7 @@ export function verifyPolicy(plan: ConversionPlan): Finding[] {
   const findings: Finding[] = [];
   const { config, probe } = plan;
   const extra = config.mode === "remote" ? [] : ["http://127.0.0.1:*"];
-  const check = (
-    url: string,
-    kind: "navigation" | "new-window",
-    why: string,
-    severity: Severity = "regression",
-  ) => {
+  const check = (url: string, kind: "navigation" | "new-window", why: string, severity: Severity = "regression") => {
     const decision = decide(config.origins, url, kind, extra);
     if (decision !== "allow")
       findings.push({
@@ -282,27 +254,19 @@ export function verifyPolicy(plan: ConversionPlan): Finding[] {
       });
   };
   if (probe.kind !== "site") {
-    for (const backend of probe.backends.slice(0, 1))
-      check(`${backend}/`, "navigation", "backend origin", "info");
+    for (const backend of probe.backends.slice(0, 1)) check(`${backend}/`, "navigation", "backend origin", "info");
     return findings;
   }
   check(config.start, "navigation", "start page");
   for (const hop of probe.redirects) {
     check(hop.url, "navigation", "redirect hop");
-    if (hop.location)
-      check(
-        new URL(hop.location, hop.url).href,
-        "navigation",
-        "redirect target",
-      );
+    if (hop.location) check(new URL(hop.location, hop.url).href, "navigation", "redirect target");
   }
   const base = new URL(probe.finalUrl);
-  for (const path of probe.links)
-    check(new URL(path, base).href, "navigation", "same-origin link");
-  for (const origin of probe.formOrigins)
-    check(`${origin}/`, "navigation", "form action");
+  for (const path of probe.links) check(new URL(path, base).href, "navigation", "same-origin link");
+  for (const origin of probe.formOrigins) check(`${origin}/`, "navigation", "form action");
   for (const idp of probe.idps) {
-    const rule = IDP_RULES.find((entry) => entry.id === idp.id);
+    const rule = IDP_RULES.find(entry => entry.id === idp.id);
     for (const pattern of rule?.patterns ?? []) {
       // A sample URL under the pattern: the provider's own pages must open in the app.
       const sample = pattern
@@ -316,15 +280,10 @@ export function verifyPolicy(plan: ConversionPlan): Finding[] {
 }
 
 /** Assembles the report; `incomplete` when no path was captured on both sides. */
-export function buildReport(
-  paths: PathReport[],
-  policy: Finding[],
-  skipped: string[],
-): ParityReport {
-  const compared = paths.filter((entry) => entry.status !== "skipped");
+export function buildReport(paths: PathReport[], policy: Finding[], skipped: string[]): ParityReport {
+  const compared = paths.filter(entry => entry.status !== "skipped");
   const failed =
-    paths.some((entry) => entry.status === "fail") ||
-    policy.some((finding) => finding.severity === "regression");
+    paths.some(entry => entry.status === "fail") || policy.some(finding => finding.severity === "regression");
   return {
     schema: "aphrody-web-to-tauri.parity/1",
     verdict: failed ? "fail" : compared.length === 0 ? "incomplete" : "pass",

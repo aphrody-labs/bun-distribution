@@ -3,11 +3,27 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** netsh.dll!MatchEnumTag */
-  MatchEnumTag(hModule: Win32Pointer, pwcArg: string | Win32Pointer, dwNumArg: number, pEnumTable: Win32Pointer, pdwValue: Win32Pointer): number;
+  MatchEnumTag(
+    hModule: Win32Pointer,
+    pwcArg: string | Win32Pointer,
+    dwNumArg: number,
+    pEnumTable: Win32Pointer,
+    pdwValue: Win32Pointer,
+  ): number;
   /** netsh.dll!MatchToken */
   MatchToken(pwszUserToken: string | Win32Pointer, pwszCmdToken: string | Win32Pointer): number;
   /** netsh.dll!PreprocessCommand */
-  PreprocessCommand(hModule: Win32Pointer, ppwcArguments: Win32Pointer, dwCurrentIndex: number, dwArgCount: number, pttTags: Win32Pointer, dwTagCount: number, dwMinArgs: number, dwMaxArgs: number, pdwTagType: Win32Pointer): number;
+  PreprocessCommand(
+    hModule: Win32Pointer,
+    ppwcArguments: Win32Pointer,
+    dwCurrentIndex: number,
+    dwArgCount: number,
+    pttTags: Win32Pointer,
+    dwTagCount: number,
+    dwMinArgs: number,
+    dwMaxArgs: number,
+    pdwTagType: Win32Pointer,
+  ): number;
   /** netsh.dll!PrintError */
   PrintError(hModule: Win32Pointer, dwErrId: number): number;
   /** netsh.dll!PrintMessage */

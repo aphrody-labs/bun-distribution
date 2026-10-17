@@ -12,14 +12,7 @@ export const EditorCanvas = () => {
     usePageSceneStore.getState().setEditorCanvasEl(node);
   }, []);
 
-  return (
-    <canvas
-      ref={canvasCallbackRef}
-      id="video-scene"
-      width="1280px"
-      height="720px"
-    />
-  );
+  return <canvas ref={canvasCallbackRef} id="video-scene" width="1280px" height="720px" />;
 };
 
 export const CameraViewCanvas = ({ className }: { className?: string }) => {
@@ -27,7 +20,5 @@ export const CameraViewCanvas = ({ className }: { className?: string }) => {
     usePageSceneStore.getState().setCamViewCanvasEl(node);
   }, []);
 
-  return (
-    <canvas className={className} ref={canvasCallbackRef} id="camera-view" />
-  );
+  return <canvas className={className} ref={canvasCallbackRef} id="camera-view" />;
 };

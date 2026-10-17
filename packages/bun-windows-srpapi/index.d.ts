@@ -13,7 +13,12 @@ interface Functions {
   /** srpapi.dll!SrpEnablePermissiveModeFileEncryption */
   SrpEnablePermissiveModeFileEncryption(enterpriseId: string | Win32Pointer): number;
   /** srpapi.dll!SrpGetEnterpriseIds */
-  SrpGetEnterpriseIds(tokenHandle: Win32Pointer, numberOfBytes: Win32Pointer, enterpriseIds: Win32Pointer, enterpriseIdCount: Win32Pointer): number;
+  SrpGetEnterpriseIds(
+    tokenHandle: Win32Pointer,
+    numberOfBytes: Win32Pointer,
+    enterpriseIds: Win32Pointer,
+    enterpriseIdCount: Win32Pointer,
+  ): number;
   /** srpapi.dll!SrpGetEnterprisePolicy */
   SrpGetEnterprisePolicy(tokenHandle: Win32Pointer, policyFlags: Win32Pointer): number;
   /** srpapi.dll!SrpHostingInitialize */

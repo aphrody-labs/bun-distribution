@@ -23,8 +23,7 @@ export interface TextBlockMeasurement {
   maxWidth: number;
 }
 
-export type TextCanvasContext =
-  CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+export type TextCanvasContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
 const TEXT_DECORATION_THICKNESS_RATIO = 0.07;
 const STRIKETHROUGH_VERTICAL_RATIO = 0.35;
@@ -37,9 +36,7 @@ export function setCanvasLetterSpacing({
   letterSpacingPx: number;
 }): void {
   if ("letterSpacing" in ctx) {
-    (
-      ctx as CanvasRenderingContext2D & { letterSpacing: string }
-    ).letterSpacing = `${letterSpacingPx}px`;
+    (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${letterSpacingPx}px`;
   }
 }
 
@@ -83,13 +80,7 @@ export function measureTextBlock({
   return { visualCenterOffset, height, maxWidth };
 }
 
-function getTextRect({
-  textAlign,
-  block,
-}: {
-  textAlign: TextAlign;
-  block: TextBlockMeasurement;
-}): TextRect {
+function getTextRect({ textAlign, block }: { textAlign: TextAlign; block: TextBlockMeasurement }): TextRect {
   const textAlignToLeft: Record<typeof textAlign, number> = {
     left: 0,
     right: -block.maxWidth,
@@ -105,16 +96,8 @@ function getTextRect({
   };
 }
 
-function isTextBackgroundVisible({
-  background,
-}: {
-  background: TextBackground;
-}): boolean {
-  return (
-    background.enabled &&
-    Boolean(background.color) &&
-    background.color !== "transparent"
-  );
+function isTextBackgroundVisible({ background }: { background: TextBackground }): boolean {
+  return background.enabled && Boolean(background.color) && background.color !== "transparent";
 }
 
 export function getTextBackgroundRect({
@@ -133,10 +116,8 @@ export function getTextBackgroundRect({
   }
 
   const textRect = getTextRect({ textAlign, block });
-  const paddingX =
-    (background.paddingX ?? DEFAULTS.text.background.paddingX) * fontSizeRatio;
-  const paddingY =
-    (background.paddingY ?? DEFAULTS.text.background.paddingY) * fontSizeRatio;
+  const paddingX = (background.paddingX ?? DEFAULTS.text.background.paddingX) * fontSizeRatio;
+  const paddingY = (background.paddingY ?? DEFAULTS.text.background.paddingY) * fontSizeRatio;
   const offsetX = background.offsetX ?? DEFAULTS.text.background.offsetX;
   const offsetY = background.offsetY ?? DEFAULTS.text.background.offsetY;
 
@@ -173,14 +154,8 @@ export function getTextVisualRect({
 
   const left = Math.min(textRect.left, backgroundRect.left);
   const top = Math.min(textRect.top, backgroundRect.top);
-  const right = Math.max(
-    textRect.left + textRect.width,
-    backgroundRect.left + backgroundRect.width,
-  );
-  const bottom = Math.max(
-    textRect.top + textRect.height,
-    backgroundRect.top + backgroundRect.height,
-  );
+  const right = Math.max(textRect.left + textRect.width, backgroundRect.left + backgroundRect.width);
+  const bottom = Math.max(textRect.top + textRect.height, backgroundRect.top + backgroundRect.height);
 
   return {
     left,
@@ -209,10 +184,7 @@ export function drawTextDecoration({
 }): void {
   if (textDecoration === "none" || !textDecoration) return;
 
-  const thickness = Math.max(
-    1,
-    scaledFontSize * TEXT_DECORATION_THICKNESS_RATIO,
-  );
+  const thickness = Math.max(1, scaledFontSize * TEXT_DECORATION_THICKNESS_RATIO);
   const ascent = getMetricAscent({ metrics, fallbackFontSize: scaledFontSize });
   const descent = getMetricDescent({
     metrics,

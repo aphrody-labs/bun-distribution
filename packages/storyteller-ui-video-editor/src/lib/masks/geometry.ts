@@ -20,17 +20,11 @@ type SnapGeometryParams = CenterMaskParams & {
   scale?: number;
 };
 
-export function hasCenterParams(
-  params: Partial<CenterMaskParams>,
-): params is CenterMaskParams {
-  return (
-    typeof params.centerX === "number" && typeof params.centerY === "number"
-  );
+export function hasCenterParams(params: Partial<CenterMaskParams>): params is CenterMaskParams {
+  return typeof params.centerX === "number" && typeof params.centerY === "number";
 }
 
-export function isRectangleMaskParams(
-  params: SnapGeometryParams,
-): params is RectangleMaskParams {
+export function isRectangleMaskParams(params: SnapGeometryParams): params is RectangleMaskParams {
   return (
     hasCenterParams(params) &&
     typeof params.width === "number" &&
@@ -55,26 +49,17 @@ export function getMaskLocalCenter({
   };
 }
 
-export function setMaskLocalCenter({
-  center,
-  bounds,
-}: {
-  center: { x: number; y: number };
-  bounds: ElementBounds;
-}): { centerX: number; centerY: number } {
+export function setMaskLocalCenter({ center, bounds }: { center: { x: number; y: number }; bounds: ElementBounds }): {
+  centerX: number;
+  centerY: number;
+} {
   return {
     centerX: bounds.width === 0 ? 0 : center.x / bounds.width,
     centerY: bounds.height === 0 ? 0 : center.y / bounds.height,
   };
 }
 
-export function getMaskSnapGeometry({
-  params,
-  bounds,
-}: {
-  params: SnapGeometryParams;
-  bounds: ElementBounds;
-}): {
+export function getMaskSnapGeometry({ params, bounds }: { params: SnapGeometryParams; bounds: ElementBounds }): {
   position: { x: number; y: number };
   size: { width: number; height: number };
   rotation: number;
@@ -112,7 +97,7 @@ export function toGlobalMaskSnapLines({
   const centerX = bounds.cx - canvasSize.width / 2;
   const centerY = bounds.cy - canvasSize.height / 2;
 
-  return lines.map((line) =>
+  return lines.map(line =>
     line.type === "vertical"
       ? {
           type: "vertical" as const,

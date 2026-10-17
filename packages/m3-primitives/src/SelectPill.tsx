@@ -25,10 +25,8 @@ const selectPillStyles = cva(
   {
     variants: {
       variant: {
-        default:
-          "border-outline-variant bg-surface-container-high text-on-surface",
-        sidebar:
-          "border-outline-variant bg-surface-container-low text-on-surface-variant",
+        default: "border-outline-variant bg-surface-container-high text-on-surface",
+        sidebar: "border-outline-variant bg-surface-container-low text-on-surface-variant",
         ghost: "border-transparent bg-transparent text-on-surface-variant",
       },
       // M3 button height is 40 dp (`lg`); `md` and `sm` are density steps.
@@ -51,32 +49,22 @@ const selectPillStyles = cva(
 );
 
 export interface SelectPillProps
-  extends
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof selectPillStyles> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof selectPillStyles> {
   /** Hide the caret icon */
   hideCaret?: boolean;
 }
 
 export const SelectPill = forwardRef<HTMLButtonElement, SelectPillProps>(
-  (
-    { className, variant, size, selected, hideCaret, children, ...props },
-    ref,
-  ) => (
+  ({ className, variant, size, selected, hideCaret, children, ...props }, ref) => (
     <button
       ref={ref}
       type="button"
       data-selected={selected ? "" : undefined}
-      className={clsx(
-        selectPillStyles({ variant, size, selected: !!selected }),
-        className,
-      )}
+      className={clsx(selectPillStyles({ variant, size, selected: !!selected }), className)}
       {...props}
     >
       {selected && <Icon name="check" size={18} />}
-      <span className="flex flex-1 items-center gap-1.5 truncate text-left">
-        {children}
-      </span>
+      <span className="flex flex-1 items-center gap-1.5 truncate text-left">{children}</span>
       {!hideCaret && <Icon name="expand_more" size={18} />}
     </button>
   ),

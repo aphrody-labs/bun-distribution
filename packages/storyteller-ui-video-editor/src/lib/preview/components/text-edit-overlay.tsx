@@ -9,10 +9,7 @@ import { getElementLocalTime } from "../../animation";
 import { resolveTransformAtTime } from "../../rendering/animation-values";
 import { buildTransformFromParams } from "../../rendering";
 import { resolveTextLayout } from "../../text/primitives";
-import {
-  buildTextBackgroundFromElement,
-  buildTextLayoutParamsFromElement,
-} from "../../text/measure-element";
+import { buildTextBackgroundFromElement, buildTextLayoutParamsFromElement } from "../../text/measure-element";
 
 export function TextEditOverlay({
   trackId,
@@ -94,15 +91,10 @@ export function TextEditOverlay({
   const lineHeightPx = resolvedTextLayout.lineHeightPx;
 
   const bg = buildTextBackgroundFromElement({ element });
-  const shouldShowBackground =
-    bg.enabled && bg.color && bg.color !== "transparent";
+  const shouldShowBackground = bg.enabled && bg.color && bg.color !== "transparent";
   const fontSizeRatio = resolvedTextLayout.fontSizeRatio;
-  const canvasPaddingX = shouldShowBackground
-    ? (bg.paddingX ?? DEFAULTS.text.background.paddingX) * fontSizeRatio
-    : 0;
-  const canvasPaddingY = shouldShowBackground
-    ? (bg.paddingY ?? DEFAULTS.text.background.paddingY) * fontSizeRatio
-    : 0;
+  const canvasPaddingX = shouldShowBackground ? (bg.paddingX ?? DEFAULTS.text.background.paddingX) * fontSizeRatio : 0;
+  const canvasPaddingY = shouldShowBackground ? (bg.paddingY ?? DEFAULTS.text.background.paddingY) * fontSizeRatio : 0;
 
   return (
     <div
@@ -131,21 +123,16 @@ export function TextEditOverlay({
           letterSpacing: `${canvasLetterSpacing}px`,
           lineHeight,
           color: "transparent",
-          caretColor:
-            typeof element.params.color === "string"
-              ? element.params.color
-              : "#ffffff",
+          caretColor: typeof element.params.color === "string" ? element.params.color : "#ffffff",
           backgroundColor: shouldShowBackground ? bg.color : "transparent",
           minHeight: lineHeightPx,
           textDecoration: textParams.textDecoration ?? "none",
-          padding: shouldShowBackground
-            ? `${canvasPaddingY}px ${canvasPaddingX}px`
-            : 0,
+          padding: shouldShowBackground ? `${canvasPaddingY}px ${canvasPaddingX}px` : 0,
           minWidth: 1,
         }}
         onInput={handleInput}
         onBlur={onCommit}
-        onKeyDown={(event) => handleKeyDown({ event })}
+        onKeyDown={event => handleKeyDown({ event })}
       >
         {textParams.content}
       </div>

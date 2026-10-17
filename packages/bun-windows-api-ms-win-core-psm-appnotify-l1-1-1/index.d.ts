@@ -3,7 +3,11 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-psm-appnotify-l1-1-1.dll!RegisterAppConstrainedChangeNotification */
-  RegisterAppConstrainedChangeNotification(Routine: Win32Callback, Context: Win32Pointer, Registration: Win32Pointer): number;
+  RegisterAppConstrainedChangeNotification(
+    Routine: Win32Callback,
+    Context: Win32Pointer,
+    Registration: Win32Pointer,
+  ): number;
   /** api-ms-win-core-psm-appnotify-l1-1-1.dll!UnregisterAppConstrainedChangeNotification */
   UnregisterAppConstrainedChangeNotification(Registration: number | bigint): void;
 }

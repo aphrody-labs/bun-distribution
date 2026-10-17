@@ -16,13 +16,7 @@ interface JobCardProps {
   getSpeedHistory?: (jobId: string) => SpeedSample[];
 }
 
-export function JobCard({
-  job,
-  onPause,
-  onResume,
-  onCancel,
-  getSpeedHistory,
-}: JobCardProps) {
+export function JobCard({ job, onPause, onResume, onCancel, getSpeedHistory }: JobCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -33,8 +27,7 @@ export function JobCard({
   const showActionButton = job.status === "running" || job.status === "paused";
   const canPause = job.status === "running" && !!onPause;
   const canResume = job.status === "paused" && !!onResume;
-  const canCancel =
-    (job.status === "running" || job.status === "paused") && !!onCancel;
+  const canCancel = (job.status === "running" || job.status === "paused") && !!onCancel;
 
   const handleAction = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -74,12 +67,9 @@ export function JobCard({
         tabIndex={0}
         aria-expanded={isExpanded}
         onClick={toggleExpanded}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           // Only the card itself: keys pressed on the nested action buttons must not toggle it.
-          if (
-            e.target === e.currentTarget &&
-            (e.key === "Enter" || e.key === " ")
-          ) {
+          if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
             e.preventDefault();
             toggleExpanded();
           }
@@ -137,10 +127,7 @@ export function JobCard({
             className="overflow-hidden"
           >
             <div className="border-t border-outline-variant">
-              <renderer.DetailsPanel
-                job={job}
-                speedHistory={getSpeedHistory(job.id)}
-              />
+              <renderer.DetailsPanel job={job} speedHistory={getSpeedHistory(job.id)} />
             </div>
           </motion.div>
         )}

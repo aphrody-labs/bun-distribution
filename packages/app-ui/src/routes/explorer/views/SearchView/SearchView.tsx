@@ -33,9 +33,7 @@ export function SearchView() {
   if (mode.query.length < 2) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-        <p className="text-on-surface-variant text-body-medium">
-          Type at least 2 characters to search
-        </p>
+        <p className="text-on-surface-variant text-body-medium">Type at least 2 characters to search</p>
       </div>
     );
   }

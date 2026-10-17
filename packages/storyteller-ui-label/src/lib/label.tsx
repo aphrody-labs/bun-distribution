@@ -7,12 +7,7 @@ interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
   required?: boolean;
 }
 
-export const Label = ({
-  className,
-  children,
-  required,
-  ...rest
-}: LabelProps) => (
+export const Label = ({ className, children, required, ...rest }: LabelProps) => (
   <label
     className={twMerge(
       "text-base-fg/60 mb-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.25em]",

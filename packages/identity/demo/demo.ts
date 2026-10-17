@@ -8,9 +8,7 @@ const status = document.querySelector("#status");
 if (!pet || !status) throw new Error("demo markup");
 
 const show = () => (status.textContent = `état : ${pet.state ?? "aucun"}`);
-for (const b of document.querySelectorAll<HTMLButtonElement>(
-  "#states button",
-)) {
+for (const b of document.querySelectorAll<HTMLButtonElement>("#states button")) {
   b.addEventListener("click", () => {
     const s = b.dataset.state;
     if (s) pet.setState(s);

@@ -14,19 +14,9 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-const LOCALES = [
-  "en-US.pak",
-  "en-US_FEMININE.pak",
-  "en-US_MASCULINE.pak",
-  "en-US_NEUTER.pak",
-];
+const LOCALES = ["en-US.pak", "en-US_FEMININE.pak", "en-US_MASCULINE.pak", "en-US_NEUTER.pak"];
 /** Shipped only when the CEF distribution has them. */
-const OPTIONAL_LOCALES = [
-  "fr.pak",
-  "fr_FEMININE.pak",
-  "fr_MASCULINE.pak",
-  "fr_NEUTER.pak",
-];
+const OPTIONAL_LOCALES = ["fr.pak", "fr_FEMININE.pak", "fr_MASCULINE.pak", "fr_NEUTER.pak"];
 
 const LINUX = [
   // required
@@ -74,32 +64,19 @@ export function strippedInArtifact(target: string, name: string): boolean {
 }
 
 /** Artifact path to source file for the CEF payload of `target`, from a CEF distribution directory. */
-export function cefPayload(
-  target: string,
-  cefDir: string,
-): Record<string, string> {
-  const files = target.includes("windows")
-    ? WINDOWS
-    : target.includes("linux")
-      ? LINUX
-      : undefined;
+export function cefPayload(target: string, cefDir: string): Record<string, string> {
+  const files = target.includes("windows") ? WINDOWS : target.includes("linux") ? LINUX : undefined;
   if (files === undefined) {
-    throw new Error(
-      `No CEF desktop artifact for ${target}: macOS ships the .app bundle of \`aphrody tauri build\``,
-    );
+    throw new Error(`No CEF desktop artifact for ${target}: macOS ships the .app bundle of \`aphrody tauri build\``);
   }
   const payload: Record<string, string> = {};
   for (const name of files) payload[name] = join(cefDir, name);
-  for (const name of LOCALES)
-    payload[`locales/${name}`] = join(cefDir, "locales", name);
-  const optional = OPTIONAL_LOCALES.filter((name) =>
-    existsSync(join(cefDir, "locales", name)),
-  );
+  for (const name of LOCALES) payload[`locales/${name}`] = join(cefDir, "locales", name);
+  const optional = OPTIONAL_LOCALES.filter(name => existsSync(join(cefDir, "locales", name)));
   const missing = Object.entries(payload)
     .filter(([, source]) => !existsSync(source))
     .map(([name]) => name);
-  for (const name of optional)
-    payload[`locales/${name}`] = join(cefDir, "locales", name);
+  for (const name of optional) payload[`locales/${name}`] = join(cefDir, "locales", name);
   if (missing.length > 0) {
     throw new Error(
       `CEF distribution ${cefDir} lacks ${missing.join(", ")}: build aphrody-app first (cef-dll-sys copies the distribution next to the executable) or pass --cef-dir`,
@@ -112,9 +89,7 @@ export function cefPayload(
 export function cefNotice(cefDir: string): Record<string, string> {
   const credits = join(cefDir, "CREDITS.html");
   if (!existsSync(credits)) {
-    throw new Error(
-      `CEF distribution ${cefDir} lacks CREDITS.html (Chromium third-party notices)`,
-    );
+    throw new Error(`CEF distribution ${cefDir} lacks CREDITS.html (Chromium third-party notices)`);
   }
   return { "LICENSE-chromium-credits.html": credits };
 }

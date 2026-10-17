@@ -23,11 +23,21 @@ interface Functions {
   /** rpcrt4.dll!I_RpcBindingCopy */
   I_RpcBindingCopy(SourceBinding: Win32Pointer, DestinationBinding: Win32Pointer): number;
   /** rpcrt4.dll!I_RpcBindingCreateNP */
-  I_RpcBindingCreateNP(ServerName: string | Win32Pointer, ServiceName: string | Win32Pointer, NetworkOptions: string | Win32Pointer, Binding: Win32Pointer): number;
+  I_RpcBindingCreateNP(
+    ServerName: string | Win32Pointer,
+    ServiceName: string | Win32Pointer,
+    NetworkOptions: string | Win32Pointer,
+    Binding: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcBindingHandleToAsyncHandle */
   I_RpcBindingHandleToAsyncHandle(Binding: Win32Pointer, AsyncHandle: Win32Pointer): number;
   /** rpcrt4.dll!I_RpcBindingInqClientTokenAttributes */
-  I_RpcBindingInqClientTokenAttributes(Binding: Win32Pointer, TokenId: Win32Pointer, AuthenticationId: Win32Pointer, ModifiedId: Win32Pointer): number;
+  I_RpcBindingInqClientTokenAttributes(
+    Binding: Win32Pointer,
+    TokenId: Win32Pointer,
+    AuthenticationId: Win32Pointer,
+    ModifiedId: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcBindingInqDynamicEndpointA */
   I_RpcBindingInqDynamicEndpointA(Binding: Win32Pointer, DynamicEndpoint: Win32Pointer): number;
   /** rpcrt4.dll!I_RpcBindingInqDynamicEndpointW */
@@ -37,7 +47,11 @@ interface Functions {
   /** rpcrt4.dll!I_RpcBindingInqLocalClientPID */
   I_RpcBindingInqLocalClientPID(Binding: Win32Pointer, Pid: Win32Pointer): number;
   /** rpcrt4.dll!I_RpcBindingInqMarshalledTargetInfo */
-  I_RpcBindingInqMarshalledTargetInfo(Binding: Win32Pointer, MarshalledTargetInfoSize: Win32Pointer, MarshalledTargetInfo: Win32Pointer): number;
+  I_RpcBindingInqMarshalledTargetInfo(
+    Binding: Win32Pointer,
+    MarshalledTargetInfoSize: Win32Pointer,
+    MarshalledTargetInfo: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcBindingInqSecurityContext */
   I_RpcBindingInqSecurityContext(Binding: Win32Pointer, SecurityContextHandle: Win32Pointer): number;
   /** rpcrt4.dll!I_RpcBindingInqSecurityContextKeyInfo */
@@ -77,7 +91,12 @@ interface Functions {
   /** rpcrt4.dll!I_RpcGetExtendedError */
   I_RpcGetExtendedError(): number;
   /** rpcrt4.dll!I_RpcIfInqTransferSyntaxes */
-  I_RpcIfInqTransferSyntaxes(RpcIfHandle: Win32Pointer, TransferSyntaxes: Win32Pointer, TransferSyntaxSize: number, TransferSyntaxCount: Win32Pointer): number;
+  I_RpcIfInqTransferSyntaxes(
+    RpcIfHandle: Win32Pointer,
+    TransferSyntaxes: Win32Pointer,
+    TransferSyntaxSize: number,
+    TransferSyntaxCount: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcMapWin32Status */
   I_RpcMapWin32Status(Status: number): number;
   /** rpcrt4.dll!I_RpcMgmtEnableDedicatedThreadPool */
@@ -91,9 +110,17 @@ interface Functions {
   /** rpcrt4.dll!I_RpcNsBindingSetEntryNameW */
   I_RpcNsBindingSetEntryName(Binding: Win32Pointer, EntryNameSyntax: number, EntryName: string | Win32Pointer): number;
   /** rpcrt4.dll!I_RpcNsInterfaceExported */
-  I_RpcNsInterfaceExported(EntryNameSyntax: number, EntryName: Win32Pointer, RpcInterfaceInformation: Win32Pointer): number;
+  I_RpcNsInterfaceExported(
+    EntryNameSyntax: number,
+    EntryName: Win32Pointer,
+    RpcInterfaceInformation: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcNsInterfaceUnexported */
-  I_RpcNsInterfaceUnexported(EntryNameSyntax: number, EntryName: Win32Pointer, RpcInterfaceInformation: Win32Pointer): number;
+  I_RpcNsInterfaceUnexported(
+    EntryNameSyntax: number,
+    EntryName: Win32Pointer,
+    RpcInterfaceInformation: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcOpenClientProcess */
   I_RpcOpenClientProcess(Binding: Win32Pointer, DesiredAccess: number, ClientProcess: Win32Pointer): number;
   /** rpcrt4.dll!I_RpcPauseExecution */
@@ -119,9 +146,19 @@ interface Functions {
   /** rpcrt4.dll!I_RpcServerInqAddressChangeFn */
   I_RpcServerInqAddressChangeFn(): number | null;
   /** rpcrt4.dll!I_RpcServerInqLocalConnAddress */
-  I_RpcServerInqLocalConnAddress(Binding: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer, AddressFormat: Win32Pointer): number;
+  I_RpcServerInqLocalConnAddress(
+    Binding: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+    AddressFormat: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcServerInqRemoteConnAddress */
-  I_RpcServerInqRemoteConnAddress(Binding: Win32Pointer, Buffer: Win32Pointer, BufferSize: Win32Pointer, AddressFormat: Win32Pointer): number;
+  I_RpcServerInqRemoteConnAddress(
+    Binding: Win32Pointer,
+    Buffer: Win32Pointer,
+    BufferSize: Win32Pointer,
+    AddressFormat: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcServerInqTransportType */
   I_RpcServerInqTransportType(Type: Win32Pointer): number;
   /** rpcrt4.dll!I_RpcServerRegisterForwardFunction */
@@ -129,37 +166,96 @@ interface Functions {
   /** rpcrt4.dll!I_RpcServerSetAddressChangeFn */
   I_RpcServerSetAddressChangeFn(pAddressChangeFn: Win32Pointer): number;
   /** rpcrt4.dll!I_RpcServerStartService */
-  I_RpcServerStartService(Protseq: string | Win32Pointer, Endpoint: string | Win32Pointer, IfSpec: Win32Pointer): number;
+  I_RpcServerStartService(
+    Protseq: string | Win32Pointer,
+    Endpoint: string | Win32Pointer,
+    IfSpec: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcServerSubscribeForDisconnectNotification */
   I_RpcServerSubscribeForDisconnectNotification(Binding: Win32Pointer, hEvent: Win32Pointer): number;
   /** rpcrt4.dll!I_RpcServerSubscribeForDisconnectNotification2 */
-  I_RpcServerSubscribeForDisconnectNotification2(Binding: Win32Pointer, hEvent: Win32Pointer, SubscriptionId: Win32Pointer): number;
+  I_RpcServerSubscribeForDisconnectNotification2(
+    Binding: Win32Pointer,
+    hEvent: Win32Pointer,
+    SubscriptionId: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcServerUnsubscribeForDisconnectNotification */
   I_RpcServerUnsubscribeForDisconnectNotification(Binding: Win32Pointer, SubscriptionId: Win32StructInit): number;
   /** rpcrt4.dll!I_RpcServerUseProtseq2A */
-  I_RpcServerUseProtseq2A(NetworkAddress: string | Win32Pointer, Protseq: string | Win32Pointer, MaxCalls: number, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  I_RpcServerUseProtseq2A(
+    NetworkAddress: string | Win32Pointer,
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcServerUseProtseq2W */
-  I_RpcServerUseProtseq2W(NetworkAddress: string | Win32Pointer, Protseq: string | Win32Pointer, MaxCalls: number, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  I_RpcServerUseProtseq2W(
+    NetworkAddress: string | Win32Pointer,
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcServerUseProtseq2W */
-  I_RpcServerUseProtseq2(NetworkAddress: string | Win32Pointer, Protseq: string | Win32Pointer, MaxCalls: number, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  I_RpcServerUseProtseq2(
+    NetworkAddress: string | Win32Pointer,
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcServerUseProtseqEp2A */
-  I_RpcServerUseProtseqEp2A(NetworkAddress: string | Win32Pointer, Protseq: string | Win32Pointer, MaxCalls: number, Endpoint: string | Win32Pointer, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  I_RpcServerUseProtseqEp2A(
+    NetworkAddress: string | Win32Pointer,
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    Endpoint: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcServerUseProtseqEp2W */
-  I_RpcServerUseProtseqEp2W(NetworkAddress: string | Win32Pointer, Protseq: string | Win32Pointer, MaxCalls: number, Endpoint: string | Win32Pointer, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  I_RpcServerUseProtseqEp2W(
+    NetworkAddress: string | Win32Pointer,
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    Endpoint: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcServerUseProtseqEp2W */
-  I_RpcServerUseProtseqEp2(NetworkAddress: string | Win32Pointer, Protseq: string | Win32Pointer, MaxCalls: number, Endpoint: string | Win32Pointer, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  I_RpcServerUseProtseqEp2(
+    NetworkAddress: string | Win32Pointer,
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    Endpoint: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!I_RpcSessionStrictContextHandle */
   I_RpcSessionStrictContextHandle(): void;
   /** rpcrt4.dll!I_RpcSsDontSerializeContext */
   I_RpcSsDontSerializeContext(): void;
   /** rpcrt4.dll!I_RpcSystemHandleTypeSpecificWork */
-  I_RpcSystemHandleTypeSpecificWork(Handle: Win32Pointer, ActualType: number, IdlType: number, MarshalDirection: number): number;
+  I_RpcSystemHandleTypeSpecificWork(
+    Handle: Win32Pointer,
+    ActualType: number,
+    IdlType: number,
+    MarshalDirection: number,
+  ): number;
   /** rpcrt4.dll!I_RpcTurnOnEEInfoPropagation */
   I_RpcTurnOnEEInfoPropagation(): number;
   /** rpcrt4.dll!I_UuidCreate */
   I_UuidCreate(Uuid: Win32Pointer): number;
   /** rpcrt4.dll!MesBufferHandleReset */
-  MesBufferHandleReset(Handle: Win32Pointer, HandleStyle: number, Operation: number, pBuffer: Win32Pointer, BufferSize: number, pEncodedSize: Win32Pointer): number;
+  MesBufferHandleReset(
+    Handle: Win32Pointer,
+    HandleStyle: number,
+    Operation: number,
+    pBuffer: Win32Pointer,
+    BufferSize: number,
+    pEncodedSize: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!MesDecodeBufferHandleCreate */
   MesDecodeBufferHandleCreate(Buffer: string | Win32Pointer, BufferSize: number, pHandle: Win32Pointer): number;
   /** rpcrt4.dll!MesDecodeIncrementalHandleCreate */
@@ -167,13 +263,30 @@ interface Functions {
   /** rpcrt4.dll!MesEncodeDynBufferHandleCreate */
   MesEncodeDynBufferHandleCreate(pBuffer: Win32Pointer, pEncodedSize: Win32Pointer, pHandle: Win32Pointer): number;
   /** rpcrt4.dll!MesEncodeFixedBufferHandleCreate */
-  MesEncodeFixedBufferHandleCreate(pBuffer: string | Win32Pointer, BufferSize: number, pEncodedSize: Win32Pointer, pHandle: Win32Pointer): number;
+  MesEncodeFixedBufferHandleCreate(
+    pBuffer: string | Win32Pointer,
+    BufferSize: number,
+    pEncodedSize: Win32Pointer,
+    pHandle: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!MesEncodeIncrementalHandleCreate */
-  MesEncodeIncrementalHandleCreate(UserState: Win32Pointer, AllocFn: Win32Callback, WriteFn: Win32Callback, pHandle: Win32Pointer): number;
+  MesEncodeIncrementalHandleCreate(
+    UserState: Win32Pointer,
+    AllocFn: Win32Callback,
+    WriteFn: Win32Callback,
+    pHandle: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!MesHandleFree */
   MesHandleFree(Handle: Win32Pointer): number;
   /** rpcrt4.dll!MesIncrementalHandleReset */
-  MesIncrementalHandleReset(Handle: Win32Pointer, UserState: Win32Pointer, AllocFn: Win32Callback, WriteFn: Win32Callback, ReadFn: Win32Callback, Operation: number): number;
+  MesIncrementalHandleReset(
+    Handle: Win32Pointer,
+    UserState: Win32Pointer,
+    AllocFn: Win32Callback,
+    WriteFn: Win32Callback,
+    ReadFn: Win32Callback,
+    Operation: number,
+  ): number;
   /** rpcrt4.dll!MesInqProcEncodingId */
   MesInqProcEncodingId(Handle: Win32Pointer, pInterfaceId: Win32Pointer, pProcNum: Win32Pointer): number;
   /** rpcrt4.dll!NDRCContextBinding */
@@ -181,17 +294,40 @@ interface Functions {
   /** rpcrt4.dll!NDRCContextMarshall */
   NDRCContextMarshall(CContext: number | bigint, pBuff: Win32Pointer): void;
   /** rpcrt4.dll!NDRCContextUnmarshall */
-  NDRCContextUnmarshall(pCContext: Win32Pointer, hBinding: Win32Pointer, pBuff: Win32Pointer, DataRepresentation: number): void;
+  NDRCContextUnmarshall(
+    pCContext: Win32Pointer,
+    hBinding: Win32Pointer,
+    pBuff: Win32Pointer,
+    DataRepresentation: number,
+  ): void;
   /** rpcrt4.dll!NDRSContextMarshall */
   NDRSContextMarshall(CContext: Win32Pointer, pBuff: Win32Pointer, userRunDownIn: Win32Callback): void;
   /** rpcrt4.dll!NDRSContextMarshall2 */
-  NDRSContextMarshall2(BindingHandle: Win32Pointer, CContext: Win32Pointer, pBuff: Win32Pointer, userRunDownIn: Win32Callback, CtxGuard: Win32Pointer, Flags: number): void;
+  NDRSContextMarshall2(
+    BindingHandle: Win32Pointer,
+    CContext: Win32Pointer,
+    pBuff: Win32Pointer,
+    userRunDownIn: Win32Callback,
+    CtxGuard: Win32Pointer,
+    Flags: number,
+  ): void;
   /** rpcrt4.dll!NDRSContextMarshallEx */
-  NDRSContextMarshallEx(BindingHandle: Win32Pointer, CContext: Win32Pointer, pBuff: Win32Pointer, userRunDownIn: Win32Callback): void;
+  NDRSContextMarshallEx(
+    BindingHandle: Win32Pointer,
+    CContext: Win32Pointer,
+    pBuff: Win32Pointer,
+    userRunDownIn: Win32Callback,
+  ): void;
   /** rpcrt4.dll!NDRSContextUnmarshall */
   NDRSContextUnmarshall(pBuff: Win32Pointer, DataRepresentation: number): number | null;
   /** rpcrt4.dll!NDRSContextUnmarshall2 */
-  NDRSContextUnmarshall2(BindingHandle: Win32Pointer, pBuff: Win32Pointer, DataRepresentation: number, CtxGuard: Win32Pointer, Flags: number): number | null;
+  NDRSContextUnmarshall2(
+    BindingHandle: Win32Pointer,
+    pBuff: Win32Pointer,
+    DataRepresentation: number,
+    CtxGuard: Win32Pointer,
+    Flags: number,
+  ): number | null;
   /** rpcrt4.dll!NDRSContextUnmarshallEx */
   NDRSContextUnmarshallEx(BindingHandle: Win32Pointer, pBuff: Win32Pointer, DataRepresentation: number): number | null;
   /** rpcrt4.dll!Ndr64AsyncClientCall */
@@ -203,7 +339,12 @@ interface Functions {
   /** rpcrt4.dll!Ndr64DcomAsyncClientCall */
   Ndr64DcomAsyncClientCall(pProxyInfo: Win32Pointer, nProcNum: number, pReturnValue: Win32Pointer): Win32Struct;
   /** rpcrt4.dll!Ndr64DcomAsyncStubCall */
-  Ndr64DcomAsyncStubCall(pThis: Win32Pointer, pChannel: Win32Pointer, pRpcMsg: Win32Pointer, pdwStubPhase: Win32Pointer): number;
+  Ndr64DcomAsyncStubCall(
+    pThis: Win32Pointer,
+    pChannel: Win32Pointer,
+    pRpcMsg: Win32Pointer,
+    pdwStubPhase: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!NdrAllocate */
   NdrAllocate(pStubMsg: Win32Pointer, Len: number | bigint): number | null;
   /** rpcrt4.dll!NdrAsyncClientCall */
@@ -217,7 +358,12 @@ interface Functions {
   /** rpcrt4.dll!NdrByteCountPointerMarshall */
   NdrByteCountPointerMarshall(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): number | null;
   /** rpcrt4.dll!NdrByteCountPointerUnmarshall */
-  NdrByteCountPointerUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrByteCountPointerUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrClearOutParameters */
   NdrClearOutParameters(pStubMsg: Win32Pointer, pFormat: Win32Pointer, ArgAddr: Win32Pointer): void;
   /** rpcrt4.dll!NdrClientCall2 */
@@ -229,9 +375,19 @@ interface Functions {
   /** rpcrt4.dll!NdrClientContextUnmarshall */
   NdrClientContextUnmarshall(pStubMsg: Win32Pointer, pContextHandle: Win32Pointer, BindHandle: Win32Pointer): void;
   /** rpcrt4.dll!NdrClientInitialize */
-  NdrClientInitialize(pRpcMsg: Win32Pointer, pStubMsg: Win32Pointer, pStubDescriptor: Win32Pointer, ProcNum: number): void;
+  NdrClientInitialize(
+    pRpcMsg: Win32Pointer,
+    pStubMsg: Win32Pointer,
+    pStubDescriptor: Win32Pointer,
+    ProcNum: number,
+  ): void;
   /** rpcrt4.dll!NdrClientInitializeNew */
-  NdrClientInitializeNew(pRpcMsg: Win32Pointer, pStubMsg: Win32Pointer, pStubDescriptor: Win32Pointer, ProcNum: number): void;
+  NdrClientInitializeNew(
+    pRpcMsg: Win32Pointer,
+    pStubMsg: Win32Pointer,
+    pStubDescriptor: Win32Pointer,
+    ProcNum: number,
+  ): void;
   /** rpcrt4.dll!NdrComplexArrayBufferSize */
   NdrComplexArrayBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrComplexArrayFree */
@@ -241,7 +397,12 @@ interface Functions {
   /** rpcrt4.dll!NdrComplexArrayMemorySize */
   NdrComplexArrayMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrComplexArrayUnmarshall */
-  NdrComplexArrayUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrComplexArrayUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrComplexStructBufferSize */
   NdrComplexStructBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrComplexStructFree */
@@ -251,7 +412,12 @@ interface Functions {
   /** rpcrt4.dll!NdrComplexStructMemorySize */
   NdrComplexStructMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrComplexStructUnmarshall */
-  NdrComplexStructUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrComplexStructUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrConformantArrayBufferSize */
   NdrConformantArrayBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrConformantArrayFree */
@@ -261,7 +427,12 @@ interface Functions {
   /** rpcrt4.dll!NdrConformantArrayMemorySize */
   NdrConformantArrayMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrConformantArrayUnmarshall */
-  NdrConformantArrayUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrConformantArrayUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrConformantStringBufferSize */
   NdrConformantStringBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrConformantStringMarshall */
@@ -269,7 +440,12 @@ interface Functions {
   /** rpcrt4.dll!NdrConformantStringMemorySize */
   NdrConformantStringMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrConformantStringUnmarshall */
-  NdrConformantStringUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrConformantStringUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrConformantStructBufferSize */
   NdrConformantStructBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrConformantStructFree */
@@ -279,27 +455,50 @@ interface Functions {
   /** rpcrt4.dll!NdrConformantStructMemorySize */
   NdrConformantStructMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrConformantStructUnmarshall */
-  NdrConformantStructUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrConformantStructUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrConformantVaryingArrayBufferSize */
   NdrConformantVaryingArrayBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrConformantVaryingArrayFree */
   NdrConformantVaryingArrayFree(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrConformantVaryingArrayMarshall */
-  NdrConformantVaryingArrayMarshall(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): number | null;
+  NdrConformantVaryingArrayMarshall(
+    pStubMsg: Win32Pointer,
+    pMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+  ): number | null;
   /** rpcrt4.dll!NdrConformantVaryingArrayMemorySize */
   NdrConformantVaryingArrayMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrConformantVaryingArrayUnmarshall */
-  NdrConformantVaryingArrayUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrConformantVaryingArrayUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrConformantVaryingStructBufferSize */
   NdrConformantVaryingStructBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrConformantVaryingStructFree */
   NdrConformantVaryingStructFree(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrConformantVaryingStructMarshall */
-  NdrConformantVaryingStructMarshall(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): number | null;
+  NdrConformantVaryingStructMarshall(
+    pStubMsg: Win32Pointer,
+    pMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+  ): number | null;
   /** rpcrt4.dll!NdrConformantVaryingStructMemorySize */
   NdrConformantVaryingStructMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrConformantVaryingStructUnmarshall */
-  NdrConformantVaryingStructUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrConformantVaryingStructUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrContextHandleInitialize */
   NdrContextHandleInitialize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number | null;
   /** rpcrt4.dll!NdrContextHandleSize */
@@ -319,7 +518,12 @@ interface Functions {
   /** rpcrt4.dll!NdrDcomAsyncClientCall */
   NdrDcomAsyncClientCall(pStubDescriptor: Win32Pointer, pFormat: Win32Pointer): Win32Struct;
   /** rpcrt4.dll!NdrDcomAsyncStubCall */
-  NdrDcomAsyncStubCall(pThis: Win32Pointer, pChannel: Win32Pointer, pRpcMsg: Win32Pointer, pdwStubPhase: Win32Pointer): number;
+  NdrDcomAsyncStubCall(
+    pThis: Win32Pointer,
+    pChannel: Win32Pointer,
+    pRpcMsg: Win32Pointer,
+    pdwStubPhase: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!NdrEncapsulatedUnionBufferSize */
   NdrEncapsulatedUnionBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrEncapsulatedUnionFree */
@@ -329,7 +533,12 @@ interface Functions {
   /** rpcrt4.dll!NdrEncapsulatedUnionMemorySize */
   NdrEncapsulatedUnionMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrEncapsulatedUnionUnmarshall */
-  NdrEncapsulatedUnionUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrEncapsulatedUnionUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrFixedArrayBufferSize */
   NdrFixedArrayBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrFixedArrayFree */
@@ -339,7 +548,12 @@ interface Functions {
   /** rpcrt4.dll!NdrFixedArrayMemorySize */
   NdrFixedArrayMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrFixedArrayUnmarshall */
-  NdrFixedArrayUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrFixedArrayUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrFreeBuffer */
   NdrFreeBuffer(pStubMsg: Win32Pointer): void;
   /** rpcrt4.dll!NdrFullPointerXlatFree */
@@ -361,15 +575,30 @@ interface Functions {
   /** rpcrt4.dll!NdrInterfacePointerMemorySize */
   NdrInterfacePointerMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrInterfacePointerUnmarshall */
-  NdrInterfacePointerUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrInterfacePointerUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrMapCommAndFaultStatus */
-  NdrMapCommAndFaultStatus(pStubMsg: Win32Pointer, pCommStatus: Win32Pointer, pFaultStatus: Win32Pointer, Status: number): number;
+  NdrMapCommAndFaultStatus(
+    pStubMsg: Win32Pointer,
+    pCommStatus: Win32Pointer,
+    pFaultStatus: Win32Pointer,
+    Status: number,
+  ): number;
   /** rpcrt4.dll!NdrMesProcEncodeDecode */
   NdrMesProcEncodeDecode(Handle: Win32Pointer, pStubDesc: Win32Pointer, pFormatString: Win32Pointer): void;
   /** rpcrt4.dll!NdrMesProcEncodeDecode2 */
   NdrMesProcEncodeDecode2(Handle: Win32Pointer, pStubDesc: Win32Pointer, pFormatString: Win32Pointer): Win32Struct;
   /** rpcrt4.dll!NdrMesProcEncodeDecode3 */
-  NdrMesProcEncodeDecode3(Handle: Win32Pointer, pProxyInfo: Win32Pointer, nProcNum: number, pReturnValue: Win32Pointer): Win32Struct;
+  NdrMesProcEncodeDecode3(
+    Handle: Win32Pointer,
+    pProxyInfo: Win32Pointer,
+    nProcNum: number,
+    pReturnValue: Win32Pointer,
+  ): Win32Struct;
   /** rpcrt4.dll!NdrMesSimpleTypeAlignSize */
   NdrMesSimpleTypeAlignSize(param0: Win32Pointer): number | bigint;
   /** rpcrt4.dll!NdrMesSimpleTypeAlignSizeAll */
@@ -383,27 +612,94 @@ interface Functions {
   /** rpcrt4.dll!NdrMesSimpleTypeEncodeAll */
   NdrMesSimpleTypeEncodeAll(Handle: Win32Pointer, pProxyInfo: Win32Pointer, pObject: Win32Pointer, Size: number): void;
   /** rpcrt4.dll!NdrMesTypeAlignSize */
-  NdrMesTypeAlignSize(Handle: Win32Pointer, pStubDesc: Win32Pointer, pFormatString: Win32Pointer, pObject: Win32Pointer): number | bigint;
+  NdrMesTypeAlignSize(
+    Handle: Win32Pointer,
+    pStubDesc: Win32Pointer,
+    pFormatString: Win32Pointer,
+    pObject: Win32Pointer,
+  ): number | bigint;
   /** rpcrt4.dll!NdrMesTypeAlignSize2 */
-  NdrMesTypeAlignSize2(Handle: Win32Pointer, pPicklingInfo: Win32Pointer, pStubDesc: Win32Pointer, pFormatString: Win32Pointer, pObject: Win32Pointer): number | bigint;
+  NdrMesTypeAlignSize2(
+    Handle: Win32Pointer,
+    pPicklingInfo: Win32Pointer,
+    pStubDesc: Win32Pointer,
+    pFormatString: Win32Pointer,
+    pObject: Win32Pointer,
+  ): number | bigint;
   /** rpcrt4.dll!NdrMesTypeAlignSize3 */
-  NdrMesTypeAlignSize3(Handle: Win32Pointer, pPicklingInfo: Win32Pointer, pProxyInfo: Win32Pointer, ArrTypeOffset: Win32Pointer, nTypeIndex: number, pObject: Win32Pointer): number | bigint;
+  NdrMesTypeAlignSize3(
+    Handle: Win32Pointer,
+    pPicklingInfo: Win32Pointer,
+    pProxyInfo: Win32Pointer,
+    ArrTypeOffset: Win32Pointer,
+    nTypeIndex: number,
+    pObject: Win32Pointer,
+  ): number | bigint;
   /** rpcrt4.dll!NdrMesTypeDecode */
-  NdrMesTypeDecode(Handle: Win32Pointer, pStubDesc: Win32Pointer, pFormatString: Win32Pointer, pObject: Win32Pointer): void;
+  NdrMesTypeDecode(
+    Handle: Win32Pointer,
+    pStubDesc: Win32Pointer,
+    pFormatString: Win32Pointer,
+    pObject: Win32Pointer,
+  ): void;
   /** rpcrt4.dll!NdrMesTypeDecode2 */
-  NdrMesTypeDecode2(Handle: Win32Pointer, pPicklingInfo: Win32Pointer, pStubDesc: Win32Pointer, pFormatString: Win32Pointer, pObject: Win32Pointer): void;
+  NdrMesTypeDecode2(
+    Handle: Win32Pointer,
+    pPicklingInfo: Win32Pointer,
+    pStubDesc: Win32Pointer,
+    pFormatString: Win32Pointer,
+    pObject: Win32Pointer,
+  ): void;
   /** rpcrt4.dll!NdrMesTypeDecode3 */
-  NdrMesTypeDecode3(Handle: Win32Pointer, pPicklingInfo: Win32Pointer, pProxyInfo: Win32Pointer, ArrTypeOffset: Win32Pointer, nTypeIndex: number, pObject: Win32Pointer): void;
+  NdrMesTypeDecode3(
+    Handle: Win32Pointer,
+    pPicklingInfo: Win32Pointer,
+    pProxyInfo: Win32Pointer,
+    ArrTypeOffset: Win32Pointer,
+    nTypeIndex: number,
+    pObject: Win32Pointer,
+  ): void;
   /** rpcrt4.dll!NdrMesTypeEncode */
-  NdrMesTypeEncode(Handle: Win32Pointer, pStubDesc: Win32Pointer, pFormatString: Win32Pointer, pObject: Win32Pointer): void;
+  NdrMesTypeEncode(
+    Handle: Win32Pointer,
+    pStubDesc: Win32Pointer,
+    pFormatString: Win32Pointer,
+    pObject: Win32Pointer,
+  ): void;
   /** rpcrt4.dll!NdrMesTypeEncode2 */
-  NdrMesTypeEncode2(Handle: Win32Pointer, pPicklingInfo: Win32Pointer, pStubDesc: Win32Pointer, pFormatString: Win32Pointer, pObject: Win32Pointer): void;
+  NdrMesTypeEncode2(
+    Handle: Win32Pointer,
+    pPicklingInfo: Win32Pointer,
+    pStubDesc: Win32Pointer,
+    pFormatString: Win32Pointer,
+    pObject: Win32Pointer,
+  ): void;
   /** rpcrt4.dll!NdrMesTypeEncode3 */
-  NdrMesTypeEncode3(Handle: Win32Pointer, pPicklingInfo: Win32Pointer, pProxyInfo: Win32Pointer, ArrTypeOffset: Win32Pointer, nTypeIndex: number, pObject: Win32Pointer): void;
+  NdrMesTypeEncode3(
+    Handle: Win32Pointer,
+    pPicklingInfo: Win32Pointer,
+    pProxyInfo: Win32Pointer,
+    ArrTypeOffset: Win32Pointer,
+    nTypeIndex: number,
+    pObject: Win32Pointer,
+  ): void;
   /** rpcrt4.dll!NdrMesTypeFree2 */
-  NdrMesTypeFree2(Handle: Win32Pointer, pPicklingInfo: Win32Pointer, pStubDesc: Win32Pointer, pFormatString: Win32Pointer, pObject: Win32Pointer): void;
+  NdrMesTypeFree2(
+    Handle: Win32Pointer,
+    pPicklingInfo: Win32Pointer,
+    pStubDesc: Win32Pointer,
+    pFormatString: Win32Pointer,
+    pObject: Win32Pointer,
+  ): void;
   /** rpcrt4.dll!NdrMesTypeFree3 */
-  NdrMesTypeFree3(Handle: Win32Pointer, pPicklingInfo: Win32Pointer, pProxyInfo: Win32Pointer, ArrTypeOffset: Win32Pointer, nTypeIndex: number, pObject: Win32Pointer): void;
+  NdrMesTypeFree3(
+    Handle: Win32Pointer,
+    pPicklingInfo: Win32Pointer,
+    pProxyInfo: Win32Pointer,
+    ArrTypeOffset: Win32Pointer,
+    nTypeIndex: number,
+    pObject: Win32Pointer,
+  ): void;
   /** rpcrt4.dll!NdrNonConformantStringBufferSize */
   NdrNonConformantStringBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrNonConformantStringMarshall */
@@ -411,7 +707,12 @@ interface Functions {
   /** rpcrt4.dll!NdrNonConformantStringMemorySize */
   NdrNonConformantStringMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrNonConformantStringUnmarshall */
-  NdrNonConformantStringUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrNonConformantStringUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrNonEncapsulatedUnionBufferSize */
   NdrNonEncapsulatedUnionBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrNonEncapsulatedUnionFree */
@@ -421,7 +722,12 @@ interface Functions {
   /** rpcrt4.dll!NdrNonEncapsulatedUnionMemorySize */
   NdrNonEncapsulatedUnionMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrNonEncapsulatedUnionUnmarshall */
-  NdrNonEncapsulatedUnionUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrNonEncapsulatedUnionUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrNsGetBuffer */
   NdrNsGetBuffer(pStubMsg: Win32Pointer, BufferLength: number, Handle: Win32Pointer): number | null;
   /** rpcrt4.dll!NdrNsSendReceive */
@@ -447,9 +753,19 @@ interface Functions {
   /** rpcrt4.dll!NdrPointerMemorySize */
   NdrPointerMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrPointerUnmarshall */
-  NdrPointerUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrPointerUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrRangeUnmarshall */
-  NdrRangeUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrRangeUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrRpcSmClientAllocate */
   NdrRpcSmClientAllocate(Size: number | bigint): number | null;
   /** rpcrt4.dll!NdrRpcSmClientFree */
@@ -475,7 +791,12 @@ interface Functions {
   /** rpcrt4.dll!NdrServerContextMarshall */
   NdrServerContextMarshall(pStubMsg: Win32Pointer, ContextHandle: Win32Pointer, RundownRoutine: Win32Callback): void;
   /** rpcrt4.dll!NdrServerContextNewMarshall */
-  NdrServerContextNewMarshall(pStubMsg: Win32Pointer, ContextHandle: Win32Pointer, RundownRoutine: Win32Callback, pFormat: Win32Pointer): void;
+  NdrServerContextNewMarshall(
+    pStubMsg: Win32Pointer,
+    ContextHandle: Win32Pointer,
+    RundownRoutine: Win32Callback,
+    pFormat: Win32Pointer,
+  ): void;
   /** rpcrt4.dll!NdrServerContextNewUnmarshall */
   NdrServerContextNewUnmarshall(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number | null;
   /** rpcrt4.dll!NdrServerContextUnmarshall */
@@ -487,9 +808,18 @@ interface Functions {
   /** rpcrt4.dll!NdrServerInitializeNew */
   NdrServerInitializeNew(pRpcMsg: Win32Pointer, pStubMsg: Win32Pointer, pStubDescriptor: Win32Pointer): number | null;
   /** rpcrt4.dll!NdrServerInitializePartial */
-  NdrServerInitializePartial(pRpcMsg: Win32Pointer, pStubMsg: Win32Pointer, pStubDescriptor: Win32Pointer, RequestedBufferSize: number): void;
+  NdrServerInitializePartial(
+    pRpcMsg: Win32Pointer,
+    pStubMsg: Win32Pointer,
+    pStubDescriptor: Win32Pointer,
+    RequestedBufferSize: number,
+  ): void;
   /** rpcrt4.dll!NdrServerInitializeUnmarshall */
-  NdrServerInitializeUnmarshall(pStubMsg: Win32Pointer, pStubDescriptor: Win32Pointer, pRpcMsg: Win32Pointer): number | null;
+  NdrServerInitializeUnmarshall(
+    pStubMsg: Win32Pointer,
+    pStubDescriptor: Win32Pointer,
+    pRpcMsg: Win32Pointer,
+  ): number | null;
   /** rpcrt4.dll!NdrSimpleStructBufferSize */
   NdrSimpleStructBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrSimpleStructFree */
@@ -499,7 +829,12 @@ interface Functions {
   /** rpcrt4.dll!NdrSimpleStructMemorySize */
   NdrSimpleStructMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrSimpleStructUnmarshall */
-  NdrSimpleStructUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrSimpleStructUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrSimpleTypeMarshall */
   NdrSimpleTypeMarshall(pStubMsg: Win32Pointer, pMemory: Win32Pointer, FormatChar: number): void;
   /** rpcrt4.dll!NdrSimpleTypeUnmarshall */
@@ -519,7 +854,12 @@ interface Functions {
   /** rpcrt4.dll!NdrUserMarshalSimpleTypeConvert */
   NdrUserMarshalSimpleTypeConvert(pFlags: Win32Pointer, pBuffer: Win32Pointer, FormatChar: number): number | null;
   /** rpcrt4.dll!NdrUserMarshalUnmarshall */
-  NdrUserMarshalUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrUserMarshalUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrVaryingArrayBufferSize */
   NdrVaryingArrayBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrVaryingArrayFree */
@@ -529,7 +869,12 @@ interface Functions {
   /** rpcrt4.dll!NdrVaryingArrayMemorySize */
   NdrVaryingArrayMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrVaryingArrayUnmarshall */
-  NdrVaryingArrayUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrVaryingArrayUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!NdrXmitOrRepAsBufferSize */
   NdrXmitOrRepAsBufferSize(pStubMsg: Win32Pointer, pMemory: Win32Pointer, pFormat: Win32Pointer): void;
   /** rpcrt4.dll!NdrXmitOrRepAsFree */
@@ -539,7 +884,12 @@ interface Functions {
   /** rpcrt4.dll!NdrXmitOrRepAsMemorySize */
   NdrXmitOrRepAsMemorySize(pStubMsg: Win32Pointer, pFormat: Win32Pointer): number;
   /** rpcrt4.dll!NdrXmitOrRepAsUnmarshall */
-  NdrXmitOrRepAsUnmarshall(pStubMsg: Win32Pointer, ppMemory: Win32Pointer, pFormat: Win32Pointer, fMustAlloc: number): number | null;
+  NdrXmitOrRepAsUnmarshall(
+    pStubMsg: Win32Pointer,
+    ppMemory: Win32Pointer,
+    pFormat: Win32Pointer,
+    fMustAlloc: number,
+  ): number | null;
   /** rpcrt4.dll!RpcAsyncAbortCall */
   RpcAsyncAbortCall(pAsync: Win32Pointer, ExceptionCode: number): number;
   /** rpcrt4.dll!RpcAsyncCancelCall */
@@ -557,11 +907,26 @@ interface Functions {
   /** rpcrt4.dll!RpcBindingCopy */
   RpcBindingCopy(SourceBinding: Win32Pointer, DestinationBinding: Win32Pointer): number;
   /** rpcrt4.dll!RpcBindingCreateA */
-  RpcBindingCreateA(Template: Win32Pointer, Security: Win32Pointer, Options: Win32Pointer, Binding: Win32Pointer): number;
+  RpcBindingCreateA(
+    Template: Win32Pointer,
+    Security: Win32Pointer,
+    Options: Win32Pointer,
+    Binding: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingCreateW */
-  RpcBindingCreateW(Template: Win32Pointer, Security: Win32Pointer, Options: Win32Pointer, Binding: Win32Pointer): number;
+  RpcBindingCreateW(
+    Template: Win32Pointer,
+    Security: Win32Pointer,
+    Options: Win32Pointer,
+    Binding: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingCreateW */
-  RpcBindingCreate(Template: Win32Pointer, Security: Win32Pointer, Options: Win32Pointer, Binding: Win32Pointer): number;
+  RpcBindingCreate(
+    Template: Win32Pointer,
+    Security: Win32Pointer,
+    Options: Win32Pointer,
+    Binding: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingFree */
   RpcBindingFree(Binding: Win32Pointer): number;
   /** rpcrt4.dll!RpcBindingFromStringBindingA */
@@ -571,29 +936,122 @@ interface Functions {
   /** rpcrt4.dll!RpcBindingFromStringBindingW */
   RpcBindingFromStringBinding(StringBinding: string | Win32Pointer, Binding: Win32Pointer): number;
   /** rpcrt4.dll!RpcBindingInqAuthClientA */
-  RpcBindingInqAuthClientA(ClientBinding: Win32Pointer, Privs: Win32Pointer, ServerPrincName: Win32Pointer, AuthnLevel: Win32Pointer, AuthnSvc: Win32Pointer, AuthzSvc: Win32Pointer): number;
+  RpcBindingInqAuthClientA(
+    ClientBinding: Win32Pointer,
+    Privs: Win32Pointer,
+    ServerPrincName: Win32Pointer,
+    AuthnLevel: Win32Pointer,
+    AuthnSvc: Win32Pointer,
+    AuthzSvc: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingInqAuthClientExA */
-  RpcBindingInqAuthClientExA(ClientBinding: Win32Pointer, Privs: Win32Pointer, ServerPrincName: Win32Pointer, AuthnLevel: Win32Pointer, AuthnSvc: Win32Pointer, AuthzSvc: Win32Pointer, Flags: number): number;
+  RpcBindingInqAuthClientExA(
+    ClientBinding: Win32Pointer,
+    Privs: Win32Pointer,
+    ServerPrincName: Win32Pointer,
+    AuthnLevel: Win32Pointer,
+    AuthnSvc: Win32Pointer,
+    AuthzSvc: Win32Pointer,
+    Flags: number,
+  ): number;
   /** rpcrt4.dll!RpcBindingInqAuthClientExW */
-  RpcBindingInqAuthClientExW(ClientBinding: Win32Pointer, Privs: Win32Pointer, ServerPrincName: Win32Pointer, AuthnLevel: Win32Pointer, AuthnSvc: Win32Pointer, AuthzSvc: Win32Pointer, Flags: number): number;
+  RpcBindingInqAuthClientExW(
+    ClientBinding: Win32Pointer,
+    Privs: Win32Pointer,
+    ServerPrincName: Win32Pointer,
+    AuthnLevel: Win32Pointer,
+    AuthnSvc: Win32Pointer,
+    AuthzSvc: Win32Pointer,
+    Flags: number,
+  ): number;
   /** rpcrt4.dll!RpcBindingInqAuthClientExW */
-  RpcBindingInqAuthClientEx(ClientBinding: Win32Pointer, Privs: Win32Pointer, ServerPrincName: Win32Pointer, AuthnLevel: Win32Pointer, AuthnSvc: Win32Pointer, AuthzSvc: Win32Pointer, Flags: number): number;
+  RpcBindingInqAuthClientEx(
+    ClientBinding: Win32Pointer,
+    Privs: Win32Pointer,
+    ServerPrincName: Win32Pointer,
+    AuthnLevel: Win32Pointer,
+    AuthnSvc: Win32Pointer,
+    AuthzSvc: Win32Pointer,
+    Flags: number,
+  ): number;
   /** rpcrt4.dll!RpcBindingInqAuthClientW */
-  RpcBindingInqAuthClientW(ClientBinding: Win32Pointer, Privs: Win32Pointer, ServerPrincName: Win32Pointer, AuthnLevel: Win32Pointer, AuthnSvc: Win32Pointer, AuthzSvc: Win32Pointer): number;
+  RpcBindingInqAuthClientW(
+    ClientBinding: Win32Pointer,
+    Privs: Win32Pointer,
+    ServerPrincName: Win32Pointer,
+    AuthnLevel: Win32Pointer,
+    AuthnSvc: Win32Pointer,
+    AuthzSvc: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingInqAuthClientW */
-  RpcBindingInqAuthClient(ClientBinding: Win32Pointer, Privs: Win32Pointer, ServerPrincName: Win32Pointer, AuthnLevel: Win32Pointer, AuthnSvc: Win32Pointer, AuthzSvc: Win32Pointer): number;
+  RpcBindingInqAuthClient(
+    ClientBinding: Win32Pointer,
+    Privs: Win32Pointer,
+    ServerPrincName: Win32Pointer,
+    AuthnLevel: Win32Pointer,
+    AuthnSvc: Win32Pointer,
+    AuthzSvc: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingInqAuthInfoA */
-  RpcBindingInqAuthInfoA(Binding: Win32Pointer, ServerPrincName: Win32Pointer, AuthnLevel: Win32Pointer, AuthnSvc: Win32Pointer, AuthIdentity: Win32Pointer, AuthzSvc: Win32Pointer): number;
+  RpcBindingInqAuthInfoA(
+    Binding: Win32Pointer,
+    ServerPrincName: Win32Pointer,
+    AuthnLevel: Win32Pointer,
+    AuthnSvc: Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    AuthzSvc: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingInqAuthInfoExA */
-  RpcBindingInqAuthInfoExA(Binding: Win32Pointer, ServerPrincName: Win32Pointer, AuthnLevel: Win32Pointer, AuthnSvc: Win32Pointer, AuthIdentity: Win32Pointer, AuthzSvc: Win32Pointer, RpcQosVersion: number, SecurityQOS: Win32Pointer): number;
+  RpcBindingInqAuthInfoExA(
+    Binding: Win32Pointer,
+    ServerPrincName: Win32Pointer,
+    AuthnLevel: Win32Pointer,
+    AuthnSvc: Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    AuthzSvc: Win32Pointer,
+    RpcQosVersion: number,
+    SecurityQOS: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingInqAuthInfoExW */
-  RpcBindingInqAuthInfoExW(Binding: Win32Pointer, ServerPrincName: Win32Pointer, AuthnLevel: Win32Pointer, AuthnSvc: Win32Pointer, AuthIdentity: Win32Pointer, AuthzSvc: Win32Pointer, RpcQosVersion: number, SecurityQOS: Win32Pointer): number;
+  RpcBindingInqAuthInfoExW(
+    Binding: Win32Pointer,
+    ServerPrincName: Win32Pointer,
+    AuthnLevel: Win32Pointer,
+    AuthnSvc: Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    AuthzSvc: Win32Pointer,
+    RpcQosVersion: number,
+    SecurityQOS: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingInqAuthInfoExW */
-  RpcBindingInqAuthInfoEx(Binding: Win32Pointer, ServerPrincName: Win32Pointer, AuthnLevel: Win32Pointer, AuthnSvc: Win32Pointer, AuthIdentity: Win32Pointer, AuthzSvc: Win32Pointer, RpcQosVersion: number, SecurityQOS: Win32Pointer): number;
+  RpcBindingInqAuthInfoEx(
+    Binding: Win32Pointer,
+    ServerPrincName: Win32Pointer,
+    AuthnLevel: Win32Pointer,
+    AuthnSvc: Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    AuthzSvc: Win32Pointer,
+    RpcQosVersion: number,
+    SecurityQOS: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingInqAuthInfoW */
-  RpcBindingInqAuthInfoW(Binding: Win32Pointer, ServerPrincName: Win32Pointer, AuthnLevel: Win32Pointer, AuthnSvc: Win32Pointer, AuthIdentity: Win32Pointer, AuthzSvc: Win32Pointer): number;
+  RpcBindingInqAuthInfoW(
+    Binding: Win32Pointer,
+    ServerPrincName: Win32Pointer,
+    AuthnLevel: Win32Pointer,
+    AuthnSvc: Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    AuthzSvc: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingInqAuthInfoW */
-  RpcBindingInqAuthInfo(Binding: Win32Pointer, ServerPrincName: Win32Pointer, AuthnLevel: Win32Pointer, AuthnSvc: Win32Pointer, AuthIdentity: Win32Pointer, AuthzSvc: Win32Pointer): number;
+  RpcBindingInqAuthInfo(
+    Binding: Win32Pointer,
+    ServerPrincName: Win32Pointer,
+    AuthnLevel: Win32Pointer,
+    AuthnSvc: Win32Pointer,
+    AuthIdentity: Win32Pointer,
+    AuthzSvc: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingInqMaxCalls */
   RpcBindingInqMaxCalls(Binding: Win32Pointer, MaxCalls: Win32Pointer): number;
   /** rpcrt4.dll!RpcBindingInqObject */
@@ -605,17 +1063,62 @@ interface Functions {
   /** rpcrt4.dll!RpcBindingServerFromClient */
   RpcBindingServerFromClient(ClientBinding: Win32Pointer, ServerBinding: Win32Pointer): number;
   /** rpcrt4.dll!RpcBindingSetAuthInfoA */
-  RpcBindingSetAuthInfoA(Binding: Win32Pointer, ServerPrincName: string | Win32Pointer, AuthnLevel: number, AuthnSvc: number, AuthIdentity: Win32Pointer, AuthzSvc: number): number;
+  RpcBindingSetAuthInfoA(
+    Binding: Win32Pointer,
+    ServerPrincName: string | Win32Pointer,
+    AuthnLevel: number,
+    AuthnSvc: number,
+    AuthIdentity: Win32Pointer,
+    AuthzSvc: number,
+  ): number;
   /** rpcrt4.dll!RpcBindingSetAuthInfoExA */
-  RpcBindingSetAuthInfoExA(Binding: Win32Pointer, ServerPrincName: string | Win32Pointer, AuthnLevel: number, AuthnSvc: number, AuthIdentity: Win32Pointer, AuthzSvc: number, SecurityQos: Win32Pointer): number;
+  RpcBindingSetAuthInfoExA(
+    Binding: Win32Pointer,
+    ServerPrincName: string | Win32Pointer,
+    AuthnLevel: number,
+    AuthnSvc: number,
+    AuthIdentity: Win32Pointer,
+    AuthzSvc: number,
+    SecurityQos: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingSetAuthInfoExW */
-  RpcBindingSetAuthInfoExW(Binding: Win32Pointer, ServerPrincName: string | Win32Pointer, AuthnLevel: number, AuthnSvc: number, AuthIdentity: Win32Pointer, AuthzSvc: number, SecurityQOS: Win32Pointer): number;
+  RpcBindingSetAuthInfoExW(
+    Binding: Win32Pointer,
+    ServerPrincName: string | Win32Pointer,
+    AuthnLevel: number,
+    AuthnSvc: number,
+    AuthIdentity: Win32Pointer,
+    AuthzSvc: number,
+    SecurityQOS: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingSetAuthInfoExW */
-  RpcBindingSetAuthInfoEx(Binding: Win32Pointer, ServerPrincName: string | Win32Pointer, AuthnLevel: number, AuthnSvc: number, AuthIdentity: Win32Pointer, AuthzSvc: number, SecurityQOS: Win32Pointer): number;
+  RpcBindingSetAuthInfoEx(
+    Binding: Win32Pointer,
+    ServerPrincName: string | Win32Pointer,
+    AuthnLevel: number,
+    AuthnSvc: number,
+    AuthIdentity: Win32Pointer,
+    AuthzSvc: number,
+    SecurityQOS: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcBindingSetAuthInfoW */
-  RpcBindingSetAuthInfoW(Binding: Win32Pointer, ServerPrincName: string | Win32Pointer, AuthnLevel: number, AuthnSvc: number, AuthIdentity: Win32Pointer, AuthzSvc: number): number;
+  RpcBindingSetAuthInfoW(
+    Binding: Win32Pointer,
+    ServerPrincName: string | Win32Pointer,
+    AuthnLevel: number,
+    AuthnSvc: number,
+    AuthIdentity: Win32Pointer,
+    AuthzSvc: number,
+  ): number;
   /** rpcrt4.dll!RpcBindingSetAuthInfoW */
-  RpcBindingSetAuthInfo(Binding: Win32Pointer, ServerPrincName: string | Win32Pointer, AuthnLevel: number, AuthnSvc: number, AuthIdentity: Win32Pointer, AuthzSvc: number): number;
+  RpcBindingSetAuthInfo(
+    Binding: Win32Pointer,
+    ServerPrincName: string | Win32Pointer,
+    AuthnLevel: number,
+    AuthnSvc: number,
+    AuthIdentity: Win32Pointer,
+    AuthzSvc: number,
+  ): number;
   /** rpcrt4.dll!RpcBindingSetObject */
   RpcBindingSetObject(Binding: Win32Pointer, ObjectUuid: Win32Pointer): number;
   /** rpcrt4.dll!RpcBindingSetOption */
@@ -641,17 +1144,47 @@ interface Functions {
   /** rpcrt4.dll!RpcCertGeneratePrincipalNameW */
   RpcCertGeneratePrincipalName(Context: Win32Pointer, Flags: number, pBuffer: Win32Pointer): number;
   /** rpcrt4.dll!RpcEpRegisterA */
-  RpcEpRegisterA(IfSpec: Win32Pointer, BindingVector: Win32Pointer, UuidVector: Win32Pointer, Annotation: string | Win32Pointer): number;
+  RpcEpRegisterA(
+    IfSpec: Win32Pointer,
+    BindingVector: Win32Pointer,
+    UuidVector: Win32Pointer,
+    Annotation: string | Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcEpRegisterNoReplaceA */
-  RpcEpRegisterNoReplaceA(IfSpec: Win32Pointer, BindingVector: Win32Pointer, UuidVector: Win32Pointer, Annotation: string | Win32Pointer): number;
+  RpcEpRegisterNoReplaceA(
+    IfSpec: Win32Pointer,
+    BindingVector: Win32Pointer,
+    UuidVector: Win32Pointer,
+    Annotation: string | Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcEpRegisterNoReplaceW */
-  RpcEpRegisterNoReplaceW(IfSpec: Win32Pointer, BindingVector: Win32Pointer, UuidVector: Win32Pointer, Annotation: string | Win32Pointer): number;
+  RpcEpRegisterNoReplaceW(
+    IfSpec: Win32Pointer,
+    BindingVector: Win32Pointer,
+    UuidVector: Win32Pointer,
+    Annotation: string | Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcEpRegisterNoReplaceW */
-  RpcEpRegisterNoReplace(IfSpec: Win32Pointer, BindingVector: Win32Pointer, UuidVector: Win32Pointer, Annotation: string | Win32Pointer): number;
+  RpcEpRegisterNoReplace(
+    IfSpec: Win32Pointer,
+    BindingVector: Win32Pointer,
+    UuidVector: Win32Pointer,
+    Annotation: string | Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcEpRegisterW */
-  RpcEpRegisterW(IfSpec: Win32Pointer, BindingVector: Win32Pointer, UuidVector: Win32Pointer, Annotation: string | Win32Pointer): number;
+  RpcEpRegisterW(
+    IfSpec: Win32Pointer,
+    BindingVector: Win32Pointer,
+    UuidVector: Win32Pointer,
+    Annotation: string | Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcEpRegisterW */
-  RpcEpRegister(IfSpec: Win32Pointer, BindingVector: Win32Pointer, UuidVector: Win32Pointer, Annotation: string | Win32Pointer): number;
+  RpcEpRegister(
+    IfSpec: Win32Pointer,
+    BindingVector: Win32Pointer,
+    UuidVector: Win32Pointer,
+    Annotation: string | Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcEpResolveBinding */
   RpcEpResolveBinding(Binding: Win32Pointer, IfSpec: Win32Pointer): number;
   /** rpcrt4.dll!RpcEpUnregister */
@@ -679,7 +1212,16 @@ interface Functions {
   /** rpcrt4.dll!RpcFreeAuthorizationContext */
   RpcFreeAuthorizationContext(pAuthzClientContext: Win32Pointer): number;
   /** rpcrt4.dll!RpcGetAuthorizationContextForClient */
-  RpcGetAuthorizationContextForClient(ClientBinding: Win32Pointer, ImpersonateOnReturn: number, Reserved1: Win32Pointer, pExpirationTime: Win32Pointer, Reserved2: Win32StructInit, Reserved3: number, Reserved4: Win32Pointer, pAuthzClientContext: Win32Pointer): number;
+  RpcGetAuthorizationContextForClient(
+    ClientBinding: Win32Pointer,
+    ImpersonateOnReturn: number,
+    Reserved1: Win32Pointer,
+    pExpirationTime: Win32Pointer,
+    Reserved2: Win32StructInit,
+    Reserved3: number,
+    Reserved4: Win32Pointer,
+    pAuthzClientContext: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcIfInqId */
   RpcIfInqId(RpcIfHandle: Win32Pointer, RpcIfId: Win32Pointer): number;
   /** rpcrt4.dll!RpcImpersonateClient */
@@ -691,17 +1233,47 @@ interface Functions {
   /** rpcrt4.dll!RpcMgmtEnableIdleCleanup */
   RpcMgmtEnableIdleCleanup(): number;
   /** rpcrt4.dll!RpcMgmtEpEltInqBegin */
-  RpcMgmtEpEltInqBegin(EpBinding: Win32Pointer, InquiryType: number, IfId: Win32Pointer, VersOption: number, ObjectUuid: Win32Pointer, InquiryContext: Win32Pointer): number;
+  RpcMgmtEpEltInqBegin(
+    EpBinding: Win32Pointer,
+    InquiryType: number,
+    IfId: Win32Pointer,
+    VersOption: number,
+    ObjectUuid: Win32Pointer,
+    InquiryContext: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcMgmtEpEltInqDone */
   RpcMgmtEpEltInqDone(InquiryContext: Win32Pointer): number;
   /** rpcrt4.dll!RpcMgmtEpEltInqNextA */
-  RpcMgmtEpEltInqNextA(InquiryContext: Win32Pointer, IfId: Win32Pointer, Binding: Win32Pointer, ObjectUuid: Win32Pointer, Annotation: Win32Pointer): number;
+  RpcMgmtEpEltInqNextA(
+    InquiryContext: Win32Pointer,
+    IfId: Win32Pointer,
+    Binding: Win32Pointer,
+    ObjectUuid: Win32Pointer,
+    Annotation: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcMgmtEpEltInqNextW */
-  RpcMgmtEpEltInqNextW(InquiryContext: Win32Pointer, IfId: Win32Pointer, Binding: Win32Pointer, ObjectUuid: Win32Pointer, Annotation: Win32Pointer): number;
+  RpcMgmtEpEltInqNextW(
+    InquiryContext: Win32Pointer,
+    IfId: Win32Pointer,
+    Binding: Win32Pointer,
+    ObjectUuid: Win32Pointer,
+    Annotation: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcMgmtEpEltInqNextW */
-  RpcMgmtEpEltInqNext(InquiryContext: Win32Pointer, IfId: Win32Pointer, Binding: Win32Pointer, ObjectUuid: Win32Pointer, Annotation: Win32Pointer): number;
+  RpcMgmtEpEltInqNext(
+    InquiryContext: Win32Pointer,
+    IfId: Win32Pointer,
+    Binding: Win32Pointer,
+    ObjectUuid: Win32Pointer,
+    Annotation: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcMgmtEpUnregister */
-  RpcMgmtEpUnregister(EpBinding: Win32Pointer, IfId: Win32Pointer, Binding: Win32Pointer, ObjectUuid: Win32Pointer): number;
+  RpcMgmtEpUnregister(
+    EpBinding: Win32Pointer,
+    IfId: Win32Pointer,
+    Binding: Win32Pointer,
+    ObjectUuid: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcMgmtInqComTimeout */
   RpcMgmtInqComTimeout(Binding: Win32Pointer, Timeout: Win32Pointer): number;
   /** rpcrt4.dll!RpcMgmtInqDefaultProtectLevel */
@@ -797,11 +1369,38 @@ interface Functions {
   /** rpcrt4.dll!RpcServerInterfaceGroupClose */
   RpcServerInterfaceGroupClose(IfGroup: Win32Pointer): number;
   /** rpcrt4.dll!RpcServerInterfaceGroupCreateA */
-  RpcServerInterfaceGroupCreateA(Interfaces: Win32Pointer, NumIfs: number, Endpoints: Win32Pointer, NumEndpoints: number, IdlePeriod: number, IdleCallbackFn: Win32Callback, IdleCallbackContext: Win32Pointer, IfGroup: Win32Pointer): number;
+  RpcServerInterfaceGroupCreateA(
+    Interfaces: Win32Pointer,
+    NumIfs: number,
+    Endpoints: Win32Pointer,
+    NumEndpoints: number,
+    IdlePeriod: number,
+    IdleCallbackFn: Win32Callback,
+    IdleCallbackContext: Win32Pointer,
+    IfGroup: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerInterfaceGroupCreateW */
-  RpcServerInterfaceGroupCreateW(Interfaces: Win32Pointer, NumIfs: number, Endpoints: Win32Pointer, NumEndpoints: number, IdlePeriod: number, IdleCallbackFn: Win32Callback, IdleCallbackContext: Win32Pointer, IfGroup: Win32Pointer): number;
+  RpcServerInterfaceGroupCreateW(
+    Interfaces: Win32Pointer,
+    NumIfs: number,
+    Endpoints: Win32Pointer,
+    NumEndpoints: number,
+    IdlePeriod: number,
+    IdleCallbackFn: Win32Callback,
+    IdleCallbackContext: Win32Pointer,
+    IfGroup: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerInterfaceGroupCreateW */
-  RpcServerInterfaceGroupCreate(Interfaces: Win32Pointer, NumIfs: number, Endpoints: Win32Pointer, NumEndpoints: number, IdlePeriod: number, IdleCallbackFn: Win32Callback, IdleCallbackContext: Win32Pointer, IfGroup: Win32Pointer): number;
+  RpcServerInterfaceGroupCreate(
+    Interfaces: Win32Pointer,
+    NumIfs: number,
+    Endpoints: Win32Pointer,
+    NumEndpoints: number,
+    IdlePeriod: number,
+    IdleCallbackFn: Win32Callback,
+    IdleCallbackContext: Win32Pointer,
+    IfGroup: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerInterfaceGroupDeactivate */
   RpcServerInterfaceGroupDeactivate(IfGroup: Win32Pointer, ForceDeactivation: number): number;
   /** rpcrt4.dll!RpcServerInterfaceGroupInqBindings */
@@ -809,21 +1408,65 @@ interface Functions {
   /** rpcrt4.dll!RpcServerListen */
   RpcServerListen(MinimumCallThreads: number, MaxCalls: number, DontWait: number): number;
   /** rpcrt4.dll!RpcServerRegisterAuthInfoA */
-  RpcServerRegisterAuthInfoA(ServerPrincName: string | Win32Pointer, AuthnSvc: number, GetKeyFn: Win32Callback, Arg: Win32Pointer): number;
+  RpcServerRegisterAuthInfoA(
+    ServerPrincName: string | Win32Pointer,
+    AuthnSvc: number,
+    GetKeyFn: Win32Callback,
+    Arg: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerRegisterAuthInfoW */
-  RpcServerRegisterAuthInfoW(ServerPrincName: string | Win32Pointer, AuthnSvc: number, GetKeyFn: Win32Callback, Arg: Win32Pointer): number;
+  RpcServerRegisterAuthInfoW(
+    ServerPrincName: string | Win32Pointer,
+    AuthnSvc: number,
+    GetKeyFn: Win32Callback,
+    Arg: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerRegisterAuthInfoW */
-  RpcServerRegisterAuthInfo(ServerPrincName: string | Win32Pointer, AuthnSvc: number, GetKeyFn: Win32Callback, Arg: Win32Pointer): number;
+  RpcServerRegisterAuthInfo(
+    ServerPrincName: string | Win32Pointer,
+    AuthnSvc: number,
+    GetKeyFn: Win32Callback,
+    Arg: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerRegisterIf */
   RpcServerRegisterIf(IfSpec: Win32Pointer, MgrTypeUuid: Win32Pointer, MgrEpv: Win32Pointer): number;
   /** rpcrt4.dll!RpcServerRegisterIf2 */
-  RpcServerRegisterIf2(IfSpec: Win32Pointer, MgrTypeUuid: Win32Pointer, MgrEpv: Win32Pointer, Flags: number, MaxCalls: number, MaxRpcSize: number, IfCallbackFn: Win32Callback): number;
+  RpcServerRegisterIf2(
+    IfSpec: Win32Pointer,
+    MgrTypeUuid: Win32Pointer,
+    MgrEpv: Win32Pointer,
+    Flags: number,
+    MaxCalls: number,
+    MaxRpcSize: number,
+    IfCallbackFn: Win32Callback,
+  ): number;
   /** rpcrt4.dll!RpcServerRegisterIf3 */
-  RpcServerRegisterIf3(IfSpec: Win32Pointer, MgrTypeUuid: Win32Pointer, MgrEpv: Win32Pointer, Flags: number, MaxCalls: number, MaxRpcSize: number, IfCallback: Win32Callback, SecurityDescriptor: Win32Pointer): number;
+  RpcServerRegisterIf3(
+    IfSpec: Win32Pointer,
+    MgrTypeUuid: Win32Pointer,
+    MgrEpv: Win32Pointer,
+    Flags: number,
+    MaxCalls: number,
+    MaxRpcSize: number,
+    IfCallback: Win32Callback,
+    SecurityDescriptor: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerRegisterIfEx */
-  RpcServerRegisterIfEx(IfSpec: Win32Pointer, MgrTypeUuid: Win32Pointer, MgrEpv: Win32Pointer, Flags: number, MaxCalls: number, IfCallback: Win32Callback): number;
+  RpcServerRegisterIfEx(
+    IfSpec: Win32Pointer,
+    MgrTypeUuid: Win32Pointer,
+    MgrEpv: Win32Pointer,
+    Flags: number,
+    MaxCalls: number,
+    IfCallback: Win32Callback,
+  ): number;
   /** rpcrt4.dll!RpcServerSubscribeForNotification */
-  RpcServerSubscribeForNotification(Binding: Win32Pointer, Notification: number, NotificationType: number, NotificationInfo: Win32Pointer): number;
+  RpcServerSubscribeForNotification(
+    Binding: Win32Pointer,
+    Notification: number,
+    NotificationType: number,
+    NotificationInfo: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerTestCancel */
   RpcServerTestCancel(BindingHandle: Win32Pointer): number;
   /** rpcrt4.dll!RpcServerUnregisterIf */
@@ -831,7 +1474,11 @@ interface Functions {
   /** rpcrt4.dll!RpcServerUnregisterIfEx */
   RpcServerUnregisterIfEx(IfSpec: Win32Pointer, MgrTypeUuid: Win32Pointer, RundownContextHandles: number): number;
   /** rpcrt4.dll!RpcServerUnsubscribeForNotification */
-  RpcServerUnsubscribeForNotification(Binding: Win32Pointer, Notification: number, NotificationsQueued: Win32Pointer): number;
+  RpcServerUnsubscribeForNotification(
+    Binding: Win32Pointer,
+    Notification: number,
+    NotificationsQueued: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseAllProtseqs */
   RpcServerUseAllProtseqs(MaxCalls: number, SecurityDescriptor: Win32Pointer): number;
   /** rpcrt4.dll!RpcServerUseAllProtseqsEx */
@@ -839,39 +1486,125 @@ interface Functions {
   /** rpcrt4.dll!RpcServerUseAllProtseqsIf */
   RpcServerUseAllProtseqsIf(MaxCalls: number, IfSpec: Win32Pointer, SecurityDescriptor: Win32Pointer): number;
   /** rpcrt4.dll!RpcServerUseAllProtseqsIfEx */
-  RpcServerUseAllProtseqsIfEx(MaxCalls: number, IfSpec: Win32Pointer, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  RpcServerUseAllProtseqsIfEx(
+    MaxCalls: number,
+    IfSpec: Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqA */
   RpcServerUseProtseqA(Protseq: string | Win32Pointer, MaxCalls: number, SecurityDescriptor: Win32Pointer): number;
   /** rpcrt4.dll!RpcServerUseProtseqEpA */
-  RpcServerUseProtseqEpA(Protseq: string | Win32Pointer, MaxCalls: number, Endpoint: string | Win32Pointer, SecurityDescriptor: Win32Pointer): number;
+  RpcServerUseProtseqEpA(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    Endpoint: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqEpExA */
-  RpcServerUseProtseqEpExA(Protseq: string | Win32Pointer, MaxCalls: number, Endpoint: string | Win32Pointer, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  RpcServerUseProtseqEpExA(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    Endpoint: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqEpExW */
-  RpcServerUseProtseqEpExW(Protseq: string | Win32Pointer, MaxCalls: number, Endpoint: string | Win32Pointer, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  RpcServerUseProtseqEpExW(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    Endpoint: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqEpExW */
-  RpcServerUseProtseqEpEx(Protseq: string | Win32Pointer, MaxCalls: number, Endpoint: string | Win32Pointer, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  RpcServerUseProtseqEpEx(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    Endpoint: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqEpW */
-  RpcServerUseProtseqEpW(Protseq: string | Win32Pointer, MaxCalls: number, Endpoint: string | Win32Pointer, SecurityDescriptor: Win32Pointer): number;
+  RpcServerUseProtseqEpW(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    Endpoint: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqEpW */
-  RpcServerUseProtseqEp(Protseq: string | Win32Pointer, MaxCalls: number, Endpoint: string | Win32Pointer, SecurityDescriptor: Win32Pointer): number;
+  RpcServerUseProtseqEp(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    Endpoint: string | Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqExA */
-  RpcServerUseProtseqExA(Protseq: string | Win32Pointer, MaxCalls: number, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  RpcServerUseProtseqExA(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqExW */
-  RpcServerUseProtseqExW(Protseq: string | Win32Pointer, MaxCalls: number, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  RpcServerUseProtseqExW(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqExW */
-  RpcServerUseProtseqEx(Protseq: string | Win32Pointer, MaxCalls: number, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  RpcServerUseProtseqEx(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqIfA */
-  RpcServerUseProtseqIfA(Protseq: string | Win32Pointer, MaxCalls: number, IfSpec: Win32Pointer, SecurityDescriptor: Win32Pointer): number;
+  RpcServerUseProtseqIfA(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    IfSpec: Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqIfExA */
-  RpcServerUseProtseqIfExA(Protseq: string | Win32Pointer, MaxCalls: number, IfSpec: Win32Pointer, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  RpcServerUseProtseqIfExA(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    IfSpec: Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqIfExW */
-  RpcServerUseProtseqIfExW(Protseq: string | Win32Pointer, MaxCalls: number, IfSpec: Win32Pointer, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  RpcServerUseProtseqIfExW(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    IfSpec: Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqIfExW */
-  RpcServerUseProtseqIfEx(Protseq: string | Win32Pointer, MaxCalls: number, IfSpec: Win32Pointer, SecurityDescriptor: Win32Pointer, Policy: Win32Pointer): number;
+  RpcServerUseProtseqIfEx(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    IfSpec: Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+    Policy: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqIfW */
-  RpcServerUseProtseqIfW(Protseq: string | Win32Pointer, MaxCalls: number, IfSpec: Win32Pointer, SecurityDescriptor: Win32Pointer): number;
+  RpcServerUseProtseqIfW(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    IfSpec: Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqIfW */
-  RpcServerUseProtseqIf(Protseq: string | Win32Pointer, MaxCalls: number, IfSpec: Win32Pointer, SecurityDescriptor: Win32Pointer): number;
+  RpcServerUseProtseqIf(
+    Protseq: string | Win32Pointer,
+    MaxCalls: number,
+    IfSpec: Win32Pointer,
+    SecurityDescriptor: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcServerUseProtseqW */
   RpcServerUseProtseqW(Protseq: string | Win32Pointer, MaxCalls: number, SecurityDescriptor: Win32Pointer): number;
   /** rpcrt4.dll!RpcServerUseProtseqW */
@@ -897,7 +1630,12 @@ interface Functions {
   /** rpcrt4.dll!RpcSmSetThreadHandle */
   RpcSmSetThreadHandle(Id: Win32Pointer): number;
   /** rpcrt4.dll!RpcSmSwapClientAllocFree */
-  RpcSmSwapClientAllocFree(ClientAlloc: Win32Callback, ClientFree: Win32Callback, OldClientAlloc: Win32Pointer, OldClientFree: Win32Pointer): number;
+  RpcSmSwapClientAllocFree(
+    ClientAlloc: Win32Callback,
+    ClientFree: Win32Callback,
+    OldClientAlloc: Win32Pointer,
+    OldClientFree: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcSsAllocate */
   RpcSsAllocate(Size: number | bigint): number | null;
   /** rpcrt4.dll!RpcSsContextLockExclusive */
@@ -923,19 +1661,66 @@ interface Functions {
   /** rpcrt4.dll!RpcSsSetThreadHandle */
   RpcSsSetThreadHandle(Id: Win32Pointer): void;
   /** rpcrt4.dll!RpcSsSwapClientAllocFree */
-  RpcSsSwapClientAllocFree(ClientAlloc: Win32Callback, ClientFree: Win32Callback, OldClientAlloc: Win32Pointer, OldClientFree: Win32Pointer): void;
+  RpcSsSwapClientAllocFree(
+    ClientAlloc: Win32Callback,
+    ClientFree: Win32Callback,
+    OldClientAlloc: Win32Pointer,
+    OldClientFree: Win32Pointer,
+  ): void;
   /** rpcrt4.dll!RpcStringBindingComposeA */
-  RpcStringBindingComposeA(ObjUuid: string | Win32Pointer, ProtSeq: string | Win32Pointer, NetworkAddr: string | Win32Pointer, Endpoint: string | Win32Pointer, Options: string | Win32Pointer, StringBinding: Win32Pointer): number;
+  RpcStringBindingComposeA(
+    ObjUuid: string | Win32Pointer,
+    ProtSeq: string | Win32Pointer,
+    NetworkAddr: string | Win32Pointer,
+    Endpoint: string | Win32Pointer,
+    Options: string | Win32Pointer,
+    StringBinding: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcStringBindingComposeW */
-  RpcStringBindingComposeW(ObjUuid: string | Win32Pointer, ProtSeq: string | Win32Pointer, NetworkAddr: string | Win32Pointer, Endpoint: string | Win32Pointer, Options: string | Win32Pointer, StringBinding: Win32Pointer): number;
+  RpcStringBindingComposeW(
+    ObjUuid: string | Win32Pointer,
+    ProtSeq: string | Win32Pointer,
+    NetworkAddr: string | Win32Pointer,
+    Endpoint: string | Win32Pointer,
+    Options: string | Win32Pointer,
+    StringBinding: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcStringBindingComposeW */
-  RpcStringBindingCompose(ObjUuid: string | Win32Pointer, ProtSeq: string | Win32Pointer, NetworkAddr: string | Win32Pointer, Endpoint: string | Win32Pointer, Options: string | Win32Pointer, StringBinding: Win32Pointer): number;
+  RpcStringBindingCompose(
+    ObjUuid: string | Win32Pointer,
+    ProtSeq: string | Win32Pointer,
+    NetworkAddr: string | Win32Pointer,
+    Endpoint: string | Win32Pointer,
+    Options: string | Win32Pointer,
+    StringBinding: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcStringBindingParseA */
-  RpcStringBindingParseA(StringBinding: string | Win32Pointer, ObjUuid: Win32Pointer, Protseq: Win32Pointer, NetworkAddr: Win32Pointer, Endpoint: Win32Pointer, NetworkOptions: Win32Pointer): number;
+  RpcStringBindingParseA(
+    StringBinding: string | Win32Pointer,
+    ObjUuid: Win32Pointer,
+    Protseq: Win32Pointer,
+    NetworkAddr: Win32Pointer,
+    Endpoint: Win32Pointer,
+    NetworkOptions: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcStringBindingParseW */
-  RpcStringBindingParseW(StringBinding: string | Win32Pointer, ObjUuid: Win32Pointer, Protseq: Win32Pointer, NetworkAddr: Win32Pointer, Endpoint: Win32Pointer, NetworkOptions: Win32Pointer): number;
+  RpcStringBindingParseW(
+    StringBinding: string | Win32Pointer,
+    ObjUuid: Win32Pointer,
+    Protseq: Win32Pointer,
+    NetworkAddr: Win32Pointer,
+    Endpoint: Win32Pointer,
+    NetworkOptions: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcStringBindingParseW */
-  RpcStringBindingParse(StringBinding: string | Win32Pointer, ObjUuid: Win32Pointer, Protseq: Win32Pointer, NetworkAddr: Win32Pointer, Endpoint: Win32Pointer, NetworkOptions: Win32Pointer): number;
+  RpcStringBindingParse(
+    StringBinding: string | Win32Pointer,
+    ObjUuid: Win32Pointer,
+    Protseq: Win32Pointer,
+    NetworkAddr: Win32Pointer,
+    Endpoint: Win32Pointer,
+    NetworkOptions: Win32Pointer,
+  ): number;
   /** rpcrt4.dll!RpcStringFreeA */
   RpcStringFreeA(String: Win32Pointer): number;
   /** rpcrt4.dll!RpcStringFreeW */

@@ -3,13 +3,39 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mapi32.dll!BuildDisplayTable */
-  BuildDisplayTable(lpAllocateBuffer: Win32Callback, lpAllocateMore: Win32Callback, lpFreeBuffer: Win32Callback, lpMalloc: Win32Pointer, hInstance: Win32Pointer, cPages: number, lpPage: Win32Pointer, ulFlags: number, lppTable: Win32Pointer, lppTblData: Win32Pointer): number;
+  BuildDisplayTable(
+    lpAllocateBuffer: Win32Callback,
+    lpAllocateMore: Win32Callback,
+    lpFreeBuffer: Win32Callback,
+    lpMalloc: Win32Pointer,
+    hInstance: Win32Pointer,
+    cPages: number,
+    lpPage: Win32Pointer,
+    ulFlags: number,
+    lppTable: Win32Pointer,
+    lppTblData: Win32Pointer,
+  ): number;
   /** mapi32.dll!ChangeIdleRoutine */
-  ChangeIdleRoutine(ftg: Win32Pointer, lpfnIdle: Win32Callback, lpvIdleParam: Win32Pointer, priIdle: number, csecIdle: number, iroIdle: number, ircIdle: number): void;
+  ChangeIdleRoutine(
+    ftg: Win32Pointer,
+    lpfnIdle: Win32Callback,
+    lpvIdleParam: Win32Pointer,
+    priIdle: number,
+    csecIdle: number,
+    iroIdle: number,
+    ircIdle: number,
+  ): void;
   /** mapi32.dll!CloseIMsgSession */
   CloseIMsgSession(lpMsgSess: number | bigint): void;
   /** mapi32.dll!CreateIProp */
-  CreateIProp(lpInterface: Win32Pointer, lpAllocateBuffer: Win32Callback, lpAllocateMore: Win32Callback, lpFreeBuffer: Win32Callback, lpvReserved: Win32Pointer, lppPropData: Win32Pointer): number;
+  CreateIProp(
+    lpInterface: Win32Pointer,
+    lpAllocateBuffer: Win32Callback,
+    lpAllocateMore: Win32Callback,
+    lpFreeBuffer: Win32Callback,
+    lpvReserved: Win32Pointer,
+    lppPropData: Win32Pointer,
+  ): number;
   /** mapi32.dll!DeinitMapiUtil */
   DeinitMapiUtil(): void;
   /** mapi32.dll!DeregisterIdleRoutine */
@@ -39,15 +65,32 @@ interface Functions {
   /** mapi32.dll!FtSubFt */
   FtSubFt(ftMinuend: Win32StructInit, ftSubtrahend: Win32StructInit): Win32Struct;
   /** mapi32.dll!FtgRegisterIdleRoutine */
-  FtgRegisterIdleRoutine(lpfnIdle: Win32Callback, lpvIdleParam: Win32Pointer, priIdle: number, csecIdle: number, iroIdle: number): number | null;
+  FtgRegisterIdleRoutine(
+    lpfnIdle: Win32Callback,
+    lpvIdleParam: Win32Pointer,
+    priIdle: number,
+    csecIdle: number,
+    iroIdle: number,
+  ): number | null;
   /** mapi32.dll!GetAttribIMsgOnIStg */
   GetAttribIMsgOnIStg(lpObject: Win32Pointer, lpPropTagArray: Win32Pointer, lppPropAttrArray: Win32Pointer): number;
   /** mapi32.dll!GetTnefStreamCodepage */
   GetTnefStreamCodepage(lpStream: Win32Pointer, lpulCodepage: Win32Pointer, lpulSubCodepage: Win32Pointer): number;
   /** mapi32.dll!HrAddColumns */
-  HrAddColumns(lptbl: Win32Pointer, lpproptagColumnsNew: Win32Pointer, lpAllocateBuffer: Win32Callback, lpFreeBuffer: Win32Callback): number;
+  HrAddColumns(
+    lptbl: Win32Pointer,
+    lpproptagColumnsNew: Win32Pointer,
+    lpAllocateBuffer: Win32Callback,
+    lpFreeBuffer: Win32Callback,
+  ): number;
   /** mapi32.dll!HrAddColumnsEx */
-  HrAddColumnsEx(lptbl: Win32Pointer, lpproptagColumnsNew: Win32Pointer, lpAllocateBuffer: Win32Callback, lpFreeBuffer: Win32Callback, lpfnFilterColumns: number | bigint): number;
+  HrAddColumnsEx(
+    lptbl: Win32Pointer,
+    lpproptagColumnsNew: Win32Pointer,
+    lpAllocateBuffer: Win32Callback,
+    lpFreeBuffer: Win32Callback,
+    lpfnFilterColumns: number | bigint,
+  ): number;
   /** mapi32.dll!HrAllocAdviseSink */
   HrAllocAdviseSink(lpfnCallback: Win32Callback, lpvContext: Win32Pointer, lppAdviseSink: Win32Pointer): number;
   /** mapi32.dll!HrDispatchNotifications */
@@ -55,9 +98,21 @@ interface Functions {
   /** mapi32.dll!HrGetOneProp */
   HrGetOneProp(lpMapiProp: Win32Pointer, ulPropTag: number, lppProp: Win32Pointer): number;
   /** mapi32.dll!HrIStorageFromStream */
-  HrIStorageFromStream(lpUnkIn: Win32Pointer, lpInterface: Win32Pointer, ulFlags: number, lppStorageOut: Win32Pointer): number;
+  HrIStorageFromStream(
+    lpUnkIn: Win32Pointer,
+    lpInterface: Win32Pointer,
+    ulFlags: number,
+    lppStorageOut: Win32Pointer,
+  ): number;
   /** mapi32.dll!HrQueryAllRows */
-  HrQueryAllRows(lpTable: Win32Pointer, lpPropTags: Win32Pointer, lpRestriction: Win32Pointer, lpSortOrderSet: Win32Pointer, crowsMax: number, lppRows: Win32Pointer): number;
+  HrQueryAllRows(
+    lpTable: Win32Pointer,
+    lpPropTags: Win32Pointer,
+    lpRestriction: Win32Pointer,
+    lpSortOrderSet: Win32Pointer,
+    crowsMax: number,
+    lppRows: Win32Pointer,
+  ): number;
   /** mapi32.dll!HrSetOneProp */
   HrSetOneProp(lpMapiProp: Win32Pointer, lpProp: Win32Pointer): number;
   /** mapi32.dll!HrThisThreadAdviseSink */
@@ -77,23 +132,69 @@ interface Functions {
   /** mapi32.dll!MapStorageSCode */
   MapStorageSCode(StgSCode: number): number;
   /** mapi32.dll!OpenIMsgOnIStg */
-  OpenIMsgOnIStg(lpMsgSess: number | bigint, lpAllocateBuffer: Win32Callback, lpAllocateMore: Win32Callback, lpFreeBuffer: Win32Callback, lpMalloc: Win32Pointer, lpMapiSup: Win32Pointer, lpStg: Win32Pointer, lpfMsgCallRelease: Win32Pointer, ulCallerData: number, ulFlags: number, lppMsg: Win32Pointer): number;
+  OpenIMsgOnIStg(
+    lpMsgSess: number | bigint,
+    lpAllocateBuffer: Win32Callback,
+    lpAllocateMore: Win32Callback,
+    lpFreeBuffer: Win32Callback,
+    lpMalloc: Win32Pointer,
+    lpMapiSup: Win32Pointer,
+    lpStg: Win32Pointer,
+    lpfMsgCallRelease: Win32Pointer,
+    ulCallerData: number,
+    ulFlags: number,
+    lppMsg: Win32Pointer,
+  ): number;
   /** mapi32.dll!OpenIMsgSession */
   OpenIMsgSession(lpMalloc: Win32Pointer, ulFlags: number, lppMsgSess: Win32Pointer): number;
   /** mapi32.dll!OpenStreamOnFile */
-  OpenStreamOnFile(lpAllocateBuffer: Win32Callback, lpFreeBuffer: Win32Callback, ulFlags: number, lpszFileName: Win32Pointer, lpszPrefix: Win32Pointer, lppStream: Win32Pointer): number;
+  OpenStreamOnFile(
+    lpAllocateBuffer: Win32Callback,
+    lpFreeBuffer: Win32Callback,
+    ulFlags: number,
+    lpszFileName: Win32Pointer,
+    lpszPrefix: Win32Pointer,
+    lppStream: Win32Pointer,
+  ): number;
   /** mapi32.dll!OpenTnefStream */
-  OpenTnefStream(lpvSupport: Win32Pointer, lpStream: Win32Pointer, lpszStreamName: Win32Pointer, ulFlags: number, lpMessage: Win32Pointer, wKeyVal: number, lppTNEF: Win32Pointer): number;
+  OpenTnefStream(
+    lpvSupport: Win32Pointer,
+    lpStream: Win32Pointer,
+    lpszStreamName: Win32Pointer,
+    ulFlags: number,
+    lpMessage: Win32Pointer,
+    wKeyVal: number,
+    lppTNEF: Win32Pointer,
+  ): number;
   /** mapi32.dll!OpenTnefStreamEx */
-  OpenTnefStreamEx(lpvSupport: Win32Pointer, lpStream: Win32Pointer, lpszStreamName: Win32Pointer, ulFlags: number, lpMessage: Win32Pointer, wKeyVal: number, lpAdressBook: Win32Pointer, lppTNEF: Win32Pointer): number;
+  OpenTnefStreamEx(
+    lpvSupport: Win32Pointer,
+    lpStream: Win32Pointer,
+    lpszStreamName: Win32Pointer,
+    ulFlags: number,
+    lpMessage: Win32Pointer,
+    wKeyVal: number,
+    lpAdressBook: Win32Pointer,
+    lppTNEF: Win32Pointer,
+  ): number;
   /** mapi32.dll!PpropFindProp */
   PpropFindProp(lpPropArray: Win32Pointer, cValues: number, ulPropTag: number): number | null;
   /** mapi32.dll!PropCopyMore */
-  PropCopyMore(lpSPropValueDest: Win32Pointer, lpSPropValueSrc: Win32Pointer, lpfAllocMore: Win32Callback, lpvObject: Win32Pointer): number;
+  PropCopyMore(
+    lpSPropValueDest: Win32Pointer,
+    lpSPropValueSrc: Win32Pointer,
+    lpfAllocMore: Win32Callback,
+    lpvObject: Win32Pointer,
+  ): number;
   /** mapi32.dll!RTFSync */
   RTFSync(lpMessage: Win32Pointer, ulFlags: number, lpfMessageUpdated: Win32Pointer): number;
   /** mapi32.dll!ScCopyNotifications */
-  ScCopyNotifications(cNotification: number, lpNotifications: Win32Pointer, lpvDst: Win32Pointer, lpcb: Win32Pointer): number;
+  ScCopyNotifications(
+    cNotification: number,
+    lpNotifications: Win32Pointer,
+    lpvDst: Win32Pointer,
+    lpcb: Win32Pointer,
+  ): number;
   /** mapi32.dll!ScCopyProps */
   ScCopyProps(cValues: number, lpPropArray: Win32Pointer, lpvDst: Win32Pointer, lpcb: Win32Pointer): number;
   /** mapi32.dll!ScCountNotifications */
@@ -101,21 +202,48 @@ interface Functions {
   /** mapi32.dll!ScCountProps */
   ScCountProps(cValues: number, lpPropArray: Win32Pointer, lpcb: Win32Pointer): number;
   /** mapi32.dll!ScCreateConversationIndex */
-  ScCreateConversationIndex(cbParent: number, lpbParent: Win32Pointer, lpcbConvIndex: Win32Pointer, lppbConvIndex: Win32Pointer): number;
+  ScCreateConversationIndex(
+    cbParent: number,
+    lpbParent: Win32Pointer,
+    lpcbConvIndex: Win32Pointer,
+    lppbConvIndex: Win32Pointer,
+  ): number;
   /** mapi32.dll!ScDupPropset */
-  ScDupPropset(cValues: number, lpPropArray: Win32Pointer, lpAllocateBuffer: Win32Callback, lppPropArray: Win32Pointer): number;
+  ScDupPropset(
+    cValues: number,
+    lpPropArray: Win32Pointer,
+    lpAllocateBuffer: Win32Callback,
+    lppPropArray: Win32Pointer,
+  ): number;
   /** mapi32.dll!ScInitMapiUtil */
   ScInitMapiUtil(ulFlags: number): number;
   /** mapi32.dll!ScLocalPathFromUNC */
   ScLocalPathFromUNC(lpszUNC: string | Win32Pointer, lpszLocal: string | Win32Pointer, cchLocal: number): number;
   /** mapi32.dll!ScRelocNotifications */
-  ScRelocNotifications(cNotification: number, lpNotifications: Win32Pointer, lpvBaseOld: Win32Pointer, lpvBaseNew: Win32Pointer, lpcb: Win32Pointer): number;
+  ScRelocNotifications(
+    cNotification: number,
+    lpNotifications: Win32Pointer,
+    lpvBaseOld: Win32Pointer,
+    lpvBaseNew: Win32Pointer,
+    lpcb: Win32Pointer,
+  ): number;
   /** mapi32.dll!ScRelocProps */
-  ScRelocProps(cValues: number, lpPropArray: Win32Pointer, lpvBaseOld: Win32Pointer, lpvBaseNew: Win32Pointer, lpcb: Win32Pointer): number;
+  ScRelocProps(
+    cValues: number,
+    lpPropArray: Win32Pointer,
+    lpvBaseOld: Win32Pointer,
+    lpvBaseNew: Win32Pointer,
+    lpcb: Win32Pointer,
+  ): number;
   /** mapi32.dll!ScUNCFromLocalPath */
   ScUNCFromLocalPath(lpszLocal: string | Win32Pointer, lpszUNC: string | Win32Pointer, cchUNC: number): number;
   /** mapi32.dll!SetAttribIMsgOnIStg */
-  SetAttribIMsgOnIStg(lpObject: Win32Pointer, lpPropTags: Win32Pointer, lpPropAttrs: Win32Pointer, lppPropProblems: Win32Pointer): number;
+  SetAttribIMsgOnIStg(
+    lpObject: Win32Pointer,
+    lpPropTags: Win32Pointer,
+    lpPropAttrs: Win32Pointer,
+    lppPropProblems: Win32Pointer,
+  ): number;
   /** mapi32.dll!SzFindCh */
   SzFindCh(lpsz: Win32Pointer, ch: number): number | null;
   /** mapi32.dll!SzFindLastCh */
@@ -131,9 +259,20 @@ interface Functions {
   /** mapi32.dll!UlRelease */
   UlRelease(lpunk: Win32Pointer): number;
   /** mapi32.dll!WrapCompressedRTFStream */
-  WrapCompressedRTFStream(lpCompressedRTFStream: Win32Pointer, ulFlags: number, lpUncompressedRTFStream: Win32Pointer): number;
+  WrapCompressedRTFStream(
+    lpCompressedRTFStream: Win32Pointer,
+    ulFlags: number,
+    lpUncompressedRTFStream: Win32Pointer,
+  ): number;
   /** mapi32.dll!WrapStoreEntryID */
-  WrapStoreEntryID(ulFlags: number, lpszDLLName: Win32Pointer, cbOrigEntry: number, lpOrigEntry: Win32Pointer, lpcbWrappedEntry: Win32Pointer, lppWrappedEntry: Win32Pointer): number;
+  WrapStoreEntryID(
+    ulFlags: number,
+    lpszDLLName: Win32Pointer,
+    cbOrigEntry: number,
+    lpOrigEntry: Win32Pointer,
+    lpcbWrappedEntry: Win32Pointer,
+    lppWrappedEntry: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

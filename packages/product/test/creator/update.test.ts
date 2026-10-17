@@ -4,12 +4,7 @@ import { mkdir, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
-import {
-  compareVersions,
-  isCompiled,
-  updateNow,
-  type Release,
-} from "../../src/shared/update.ts";
+import { compareVersions, isCompiled, updateNow, type Release } from "../../src/shared/update.ts";
 
 let server: ReturnType<typeof Bun.serve>;
 let base = "";
@@ -22,13 +17,10 @@ beforeAll(async () => {
   await mkdir(join(src, "web"));
   await writeFile(join(src, "web", "page.html"), "new-page");
   const tar = join(src, "..", `pack-${Date.now()}.tar.gz`);
-  Bun.spawnSync(
-    ["tar", "-czf", basename(tar), "-C", basename(src), "creator-kit", "web"],
-    {
-      windowsHide: true,
-      cwd: dirname(src),
-    },
-  );
+  Bun.spawnSync(["tar", "-czf", basename(tar), "-C", basename(src), "creator-kit", "web"], {
+    windowsHide: true,
+    cwd: dirname(src),
+  });
   archive = new Uint8Array(await Bun.file(tar).arrayBuffer());
   sha = createHash("sha256").update(archive).digest("hex");
   server = Bun.serve({
@@ -56,8 +48,7 @@ beforeAll(async () => {
         };
         return Response.json(release);
       }
-      if (url.pathname === "/files/u.tar.gz")
-        return new Response(archive as unknown as BodyInit);
+      if (url.pathname === "/files/u.tar.gz") return new Response(archive as unknown as BodyInit);
       return new Response("nope", { status: 404 });
     },
   });
@@ -93,13 +84,9 @@ test("updateNow swaps the binary, keeps the old one aside and replaces other ent
   });
   expect(result).toEqual({ status: "updated", latest: "0.3.0" });
   expect(await readFile(join(dir, "creator-kit"), "utf8")).toBe("NEW-BINARY");
-  expect(await readFile(join(dir, "creator-kit.old"), "utf8")).toBe(
-    "OLD-BINARY",
-  );
+  expect(await readFile(join(dir, "creator-kit.old"), "utf8")).toBe("OLD-BINARY");
   expect(await readdir(join(dir, "web"))).toEqual(["page.html"]);
-  expect((await readdir(dir)).filter((n) => n.startsWith(".update"))).toEqual(
-    [],
-  );
+  expect((await readdir(dir)).filter(n => n.startsWith(".update"))).toEqual([]);
   expect(JSON.parse(await readFile(statePath, "utf8")).latest).toBe("0.3.0");
 });
 
@@ -184,22 +171,13 @@ test("archive preflight rejects unsafe paths, links, corrupt headers and truncat
   const { existsSync } = await import("node:fs");
   const raw = Bun.gunzipSync(new Uint8Array(archive));
   const cases: Uint8Array[] = [];
-  for (const name of [
-    "../escape",
-    "C:/escape",
-    "a\\escape",
-    "NUL.exe",
-    "file:stream",
-  ]) {
+  for (const name of ["../escape", "C:/escape", "a\\escape", "NUL.exe", "file:stream"]) {
     const candidate = new Uint8Array(raw);
     candidate.fill(0, 0, 100);
     candidate.set(new TextEncoder().encode(name));
     candidate.fill(32, 148, 156);
     const sum = candidate.subarray(0, 512).reduce((a, b) => a + b, 0);
-    candidate.set(
-      new TextEncoder().encode(`${sum.toString(8).padStart(6, "0")}\0 `),
-      148,
-    );
+    candidate.set(new TextEncoder().encode(`${sum.toString(8).padStart(6, "0")}\0 `), 148);
     cases.push(candidate);
   }
   const link = new Uint8Array(raw);
@@ -240,10 +218,7 @@ test("failed activation restores all previous files after an earlier promotion",
   await expect(
     applyPack(tar, dir, "creator-kit", {
       rename: async (from, to) => {
-        if (
-          String(from).includes(".update-") &&
-          String(to) === join(dir, "web")
-        )
+        if (String(from).includes(".update-") && String(to) === join(dir, "web"))
           throw new Error("injected activation failure");
         return rename(from, to);
       },
@@ -262,8 +237,6 @@ test("a pre-existing symlink destination cannot redirect archive extraction", as
   await symlink(outside, join(dir, "dest"), "dir");
   const tar = join(dir, "pack.tar.gz");
   await writeFile(tar, archive);
-  await expect(extractTarGz(tar, join(dir, "dest"))).rejects.toThrow(
-    "lien refusé",
-  );
+  await expect(extractTarGz(tar, join(dir, "dest"))).rejects.toThrow("lien refusé");
   expect(await readdir(outside)).toEqual([]);
 });

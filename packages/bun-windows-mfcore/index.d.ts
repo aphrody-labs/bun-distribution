@@ -3,7 +3,10 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mfcore.dll!MFCreateExtendedCameraIntrinsicModel */
-  MFCreateExtendedCameraIntrinsicModel(distortionModelType: number, ppExtendedCameraIntrinsicModel: Win32Pointer): number;
+  MFCreateExtendedCameraIntrinsicModel(
+    distortionModelType: number,
+    ppExtendedCameraIntrinsicModel: Win32Pointer,
+  ): number;
   /** mfcore.dll!MFCreateExtendedCameraIntrinsics */
   MFCreateExtendedCameraIntrinsics(ppExtendedCameraIntrinsics: Win32Pointer): number;
 }

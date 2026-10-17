@@ -211,11 +211,7 @@ export default function Orb({
       uniforms: {
         iTime: { value: 0 },
         iResolution: {
-          value: new Vec3(
-            gl.canvas.width,
-            gl.canvas.height,
-            gl.canvas.width / gl.canvas.height,
-          ),
+          value: new Vec3(gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height),
         },
         hue: { value: hue },
         baseColor1: { value: new Vec3(...paletteColors.baseColor1) },
@@ -237,11 +233,7 @@ export default function Orb({
       renderer.setSize(width * dpr, height * dpr);
       gl.canvas.style.width = width + "px";
       gl.canvas.style.height = height + "px";
-      program.uniforms.iResolution.value.set(
-        gl.canvas.width,
-        gl.canvas.height,
-        gl.canvas.width / gl.canvas.height,
-      );
+      program.uniforms.iResolution.value.set(gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height);
     }
     window.addEventListener("resize", resize);
     resize();
@@ -287,8 +279,7 @@ export default function Orb({
       program.uniforms.hoverIntensity.value = hoverIntensity;
 
       const effectiveHover = forceHoverState ? 1 : targetHover;
-      program.uniforms.hover.value +=
-        (effectiveHover - program.uniforms.hover.value) * 0.1;
+      program.uniforms.hover.value += (effectiveHover - program.uniforms.hover.value) * 0.1;
 
       if (rotateOnHover && effectiveHover > 0.5) {
         currentRot += dt * rotationSpeed;
@@ -309,11 +300,5 @@ export default function Orb({
     };
   }, [hue, palette, hoverIntensity, rotateOnHover, forceHoverState]);
 
-  return (
-    <div
-      ref={ctnDom}
-      className="absolute inset-0"
-      style={{ width: "100%", height: "100%" }}
-    />
-  );
+  return <div ref={ctnDom} className="absolute inset-0" style={{ width: "100%", height: "100%" }} />;
 }

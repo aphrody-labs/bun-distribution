@@ -6,6 +6,5 @@ const COMMANDS: &[&str] = &["enable", "disable", "is_enabled"];
 
 /// Build description of the `autostart` plugin.
 pub fn builder() -> tauri_plugin::Builder<'static> {
-    tauri_plugin::Builder::new(COMMANDS)
-        .global_api_script_path("iife/autostart.js")
+    tauri_plugin::Builder::new(COMMANDS).global_api_script_path("iife/autostart.js")
 }

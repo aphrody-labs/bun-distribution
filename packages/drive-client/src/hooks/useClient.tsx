@@ -3,9 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { SpacedriveClient } from "../client";
 
 // Export context so platforms can provide their own wrappers
-export const SpacedriveClientContext = createContext<SpacedriveClient | null>(
-  null,
-);
+export const SpacedriveClientContext = createContext<SpacedriveClient | null>(null);
 
 // Create a singleton query client
 export const queryClient = new QueryClient({
@@ -29,15 +27,10 @@ export interface SpacedriveProviderProps {
  * Provider for SpacedriveClient + TanStack Query
  * Wrap your app with this to make the client available via hooks
  */
-export function SpacedriveProvider({
-  client,
-  children,
-}: SpacedriveProviderProps) {
+export function SpacedriveProvider({ client, children }: SpacedriveProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <SpacedriveClientContext.Provider value={client}>
-        {children}
-      </SpacedriveClientContext.Provider>
+      <SpacedriveClientContext.Provider value={client}>{children}</SpacedriveClientContext.Provider>
     </QueryClientProvider>
   );
 }
@@ -50,9 +43,7 @@ export function useSpacedriveClient(): SpacedriveClient {
   const client = useContext(SpacedriveClientContext);
 
   if (!client) {
-    throw new Error(
-      "useSpacedriveClient must be used within SpacedriveProvider",
-    );
+    throw new Error("useSpacedriveClient must be used within SpacedriveProvider");
   }
 
   return client;

@@ -26,7 +26,4 @@ export interface ResolvedBlurBackgroundNodeState {
   passes: EffectPass[];
 }
 
-export class BlurBackgroundNode extends BaseNode<
-  BlurBackgroundNodeParams,
-  ResolvedBlurBackgroundNodeState
-> {}
+export class BlurBackgroundNode extends BaseNode<BlurBackgroundNodeParams, ResolvedBlurBackgroundNodeState> {}

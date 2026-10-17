@@ -10,8 +10,7 @@ export interface ToriyamaBadgeProps {
   children?: ReactNode;
   emblem?: EmblemName | "dragonBall";
   stars?: 1 | 2 | 3 | 4 | 5 | 6 | 7;
-  variant?:
-    "kame" | "capsule" | "saiyan" | "majin" | "scouter" | "ink" | "gold";
+  variant?: "kame" | "capsule" | "saiyan" | "majin" | "scouter" | "ink" | "gold";
   size?: "sm" | "md" | "lg";
   className?: string;
 }
@@ -22,8 +21,7 @@ const BADGE_STYLES = {
     "bg-[var(--color-toriyama-capsule)] text-white border-[var(--color-toriyama-ink)] shadow-[2px_2px_0px_var(--color-toriyama-ink)]",
   saiyan:
     "bg-[var(--color-toriyama-blue)] text-white border-[var(--color-toriyama-ink)] shadow-[2px_2px_0px_var(--color-toriyama-ink)]",
-  majin:
-    "bg-[#5a189a] text-white border-[var(--color-toriyama-ink)] shadow-[2px_2px_0px_var(--color-toriyama-ink)]",
+  majin: "bg-[#5a189a] text-white border-[var(--color-toriyama-ink)] shadow-[2px_2px_0px_var(--color-toriyama-ink)]",
   scouter:
     "bg-[#0b2528] text-[var(--color-toriyama-scouter-green)] border-[var(--color-toriyama-scouter-green)] shadow-[0_0_8px_rgba(0,255,102,0.4)] font-mono",
   ink: "bg-[var(--color-toriyama-ink)] text-white border-[var(--color-toriyama-ink)] shadow-[2px_2px_0px_rgba(255,255,255,0.2)]",
@@ -61,12 +59,7 @@ export function ToriyamaBadge({
       {emblem === "dragonBall" ? (
         <DragonBallSphere stars={stars} size={emblemSize} decorative />
       ) : emblem ? (
-        <ToriyamaEmblem
-          name={emblem}
-          size={emblemSize}
-          variant="flat"
-          decorative
-        />
+        <ToriyamaEmblem name={emblem} size={emblemSize} variant="flat" decorative />
       ) : null}
       {children && <span>{children}</span>}
     </span>

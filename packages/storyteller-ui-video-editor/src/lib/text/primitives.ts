@@ -2,12 +2,7 @@ import type { TextCanvasContext, TextBlockMeasurement } from "./layout";
 import { DEFAULTS } from "../timeline/defaults";
 import { clamp } from "../utils/math";
 import { CORNER_RADIUS_MAX, CORNER_RADIUS_MIN } from "./background";
-import {
-  drawTextDecoration,
-  getTextBackgroundRect,
-  measureTextBlock,
-  setCanvasLetterSpacing,
-} from "./layout";
+import { drawTextDecoration, getTextBackgroundRect, measureTextBlock, setCanvasLetterSpacing } from "./layout";
 import { FONT_SIZE_SCALE_REFERENCE } from "./typography";
 
 // Full text-layout pipeline used by both the renderer (canvas draw)
@@ -58,11 +53,7 @@ export interface ResolvedTextBackgroundLike {
   cornerRadius: number;
 }
 
-export function quoteFontFamily({
-  fontFamily,
-}: {
-  fontFamily: string;
-}): string {
+export function quoteFontFamily({ fontFamily }: { fontFamily: string }): string {
   return `"${fontFamily.replace(/"/g, '\\"')}"`;
 }
 
@@ -87,13 +78,11 @@ export function resolveTextLayout({
   text: TextLayoutParams;
   canvasHeight: number;
 }): ResolvedTextLayout {
-  const scaledFontSize =
-    text.fontSize * (canvasHeight / FONT_SIZE_SCALE_REFERENCE);
+  const scaledFontSize = text.fontSize * (canvasHeight / FONT_SIZE_SCALE_REFERENCE);
   const fontWeight = text.fontWeight === "bold" ? "bold" : "normal";
   const fontStyle = text.fontStyle === "italic" ? "italic" : "normal";
   const letterSpacing = text.letterSpacing ?? DEFAULTS.text.letterSpacing;
-  const lineHeightPx =
-    scaledFontSize * (text.lineHeight ?? DEFAULTS.text.lineHeight);
+  const lineHeightPx = scaledFontSize * (text.lineHeight ?? DEFAULTS.text.lineHeight);
   const fontSizeRatio = text.fontSize / 15;
 
   return {
@@ -131,7 +120,7 @@ export function measureTextLayout({
     ctx,
     letterSpacingPx: resolvedLayout.letterSpacing,
   });
-  const lineMetrics = lines.map((line) => ctx.measureText(line));
+  const lineMetrics = lines.map(line => ctx.measureText(line));
   ctx.restore();
 
   const block = measureTextBlock({
@@ -168,12 +157,7 @@ export function drawMeasuredTextLayout({
   ctx.fillStyle = textColor;
   setCanvasLetterSpacing({ ctx, letterSpacingPx: layout.letterSpacing });
 
-  if (
-    background?.enabled &&
-    backgroundColor &&
-    backgroundColor !== "transparent" &&
-    layout.lines.length > 0
-  ) {
+  if (background?.enabled && backgroundColor && backgroundColor !== "transparent" && layout.lines.length > 0) {
     const backgroundRect = getTextBackgroundRect({
       textAlign: layout.textAlign,
       block: layout.block,
@@ -190,17 +174,10 @@ export function drawMeasuredTextLayout({
           min: CORNER_RADIUS_MIN,
           max: CORNER_RADIUS_MAX,
         }) / 100;
-      const radius =
-        (Math.min(backgroundRect.width, backgroundRect.height) / 2) * p;
+      const radius = (Math.min(backgroundRect.width, backgroundRect.height) / 2) * p;
       ctx.fillStyle = backgroundColor;
       ctx.beginPath();
-      ctx.roundRect(
-        backgroundRect.left,
-        backgroundRect.top,
-        backgroundRect.width,
-        backgroundRect.height,
-        radius,
-      );
+      ctx.roundRect(backgroundRect.left, backgroundRect.top, backgroundRect.width, backgroundRect.height, radius);
       ctx.fill();
       ctx.fillStyle = textColor;
     }

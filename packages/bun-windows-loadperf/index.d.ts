@@ -5,11 +5,23 @@ interface Functions {
   /** loadperf.dll!BackupPerfRegistryToFileW */
   BackupPerfRegistryToFileW(szFileName: string | Win32Pointer, szCommentString: string | Win32Pointer): number;
   /** loadperf.dll!InstallPerfDllA */
-  InstallPerfDllA(szComputerName: string | Win32Pointer, lpIniFile: string | Win32Pointer, dwFlags: number | bigint): number;
+  InstallPerfDllA(
+    szComputerName: string | Win32Pointer,
+    lpIniFile: string | Win32Pointer,
+    dwFlags: number | bigint,
+  ): number;
   /** loadperf.dll!InstallPerfDllW */
-  InstallPerfDllW(szComputerName: string | Win32Pointer, lpIniFile: string | Win32Pointer, dwFlags: number | bigint): number;
+  InstallPerfDllW(
+    szComputerName: string | Win32Pointer,
+    lpIniFile: string | Win32Pointer,
+    dwFlags: number | bigint,
+  ): number;
   /** loadperf.dll!InstallPerfDllW */
-  InstallPerfDll(szComputerName: string | Win32Pointer, lpIniFile: string | Win32Pointer, dwFlags: number | bigint): number;
+  InstallPerfDll(
+    szComputerName: string | Win32Pointer,
+    lpIniFile: string | Win32Pointer,
+    dwFlags: number | bigint,
+  ): number;
   /** loadperf.dll!LoadPerfCounterTextStringsA */
   LoadPerfCounterTextStringsA(lpCommandLine: string | Win32Pointer, bQuietModeArg: number): number;
   /** loadperf.dll!LoadPerfCounterTextStringsW */
@@ -31,11 +43,26 @@ interface Functions {
   /** loadperf.dll!UnloadPerfCounterTextStringsW */
   UnloadPerfCounterTextStrings(lpCommandLine: string | Win32Pointer, bQuietModeArg: number): number;
   /** loadperf.dll!UpdatePerfNameFilesA */
-  UpdatePerfNameFilesA(szNewCtrFilePath: string | Win32Pointer, szNewHlpFilePath: string | Win32Pointer, szLanguageID: string | Win32Pointer, dwModes: number | bigint): number;
+  UpdatePerfNameFilesA(
+    szNewCtrFilePath: string | Win32Pointer,
+    szNewHlpFilePath: string | Win32Pointer,
+    szLanguageID: string | Win32Pointer,
+    dwModes: number | bigint,
+  ): number;
   /** loadperf.dll!UpdatePerfNameFilesW */
-  UpdatePerfNameFilesW(szNewCtrFilePath: string | Win32Pointer, szNewHlpFilePath: string | Win32Pointer, szLanguageID: string | Win32Pointer, dwModes: number | bigint): number;
+  UpdatePerfNameFilesW(
+    szNewCtrFilePath: string | Win32Pointer,
+    szNewHlpFilePath: string | Win32Pointer,
+    szLanguageID: string | Win32Pointer,
+    dwModes: number | bigint,
+  ): number;
   /** loadperf.dll!UpdatePerfNameFilesW */
-  UpdatePerfNameFiles(szNewCtrFilePath: string | Win32Pointer, szNewHlpFilePath: string | Win32Pointer, szLanguageID: string | Win32Pointer, dwModes: number | bigint): number;
+  UpdatePerfNameFiles(
+    szNewCtrFilePath: string | Win32Pointer,
+    szNewHlpFilePath: string | Win32Pointer,
+    szLanguageID: string | Win32Pointer,
+    dwModes: number | bigint,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

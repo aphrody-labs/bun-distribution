@@ -19,7 +19,12 @@ interface Functions {
   /** rtutils.dll!MprSetupProtocolFree */
   MprSetupProtocolFree(lpBuffer: Win32Pointer): number;
   /** rtutils.dll!RouterAssert */
-  RouterAssert(pszFailedAssertion: string | Win32Pointer, pszFileName: string | Win32Pointer, dwLineNumber: number, pszMessage: string | Win32Pointer): void;
+  RouterAssert(
+    pszFailedAssertion: string | Win32Pointer,
+    pszFileName: string | Win32Pointer,
+    dwLineNumber: number,
+    pszMessage: string | Win32Pointer,
+  ): void;
   /** rtutils.dll!RouterGetErrorStringA */
   RouterGetErrorStringA(dwErrorCode: number, lplpszErrorString: Win32Pointer): number;
   /** rtutils.dll!RouterGetErrorStringW */
@@ -33,35 +38,143 @@ interface Functions {
   /** rtutils.dll!RouterLogDeregisterW */
   RouterLogDeregister(hLogHandle: Win32Pointer): void;
   /** rtutils.dll!RouterLogEventA */
-  RouterLogEventA(hLogHandle: Win32Pointer, dwEventType: number, dwMessageId: number, dwSubStringCount: number, plpszSubStringArray: Win32Pointer, dwErrorCode: number): void;
+  RouterLogEventA(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwMessageId: number,
+    dwSubStringCount: number,
+    plpszSubStringArray: Win32Pointer,
+    dwErrorCode: number,
+  ): void;
   /** rtutils.dll!RouterLogEventDataA */
-  RouterLogEventDataA(hLogHandle: Win32Pointer, dwEventType: number, dwMessageId: number, dwSubStringCount: number, plpszSubStringArray: Win32Pointer, dwDataBytes: number, lpDataBytes: Win32Pointer): void;
+  RouterLogEventDataA(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwMessageId: number,
+    dwSubStringCount: number,
+    plpszSubStringArray: Win32Pointer,
+    dwDataBytes: number,
+    lpDataBytes: Win32Pointer,
+  ): void;
   /** rtutils.dll!RouterLogEventDataW */
-  RouterLogEventDataW(hLogHandle: Win32Pointer, dwEventType: number, dwMessageId: number, dwSubStringCount: number, plpszSubStringArray: Win32Pointer, dwDataBytes: number, lpDataBytes: Win32Pointer): void;
+  RouterLogEventDataW(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwMessageId: number,
+    dwSubStringCount: number,
+    plpszSubStringArray: Win32Pointer,
+    dwDataBytes: number,
+    lpDataBytes: Win32Pointer,
+  ): void;
   /** rtutils.dll!RouterLogEventDataW */
-  RouterLogEventData(hLogHandle: Win32Pointer, dwEventType: number, dwMessageId: number, dwSubStringCount: number, plpszSubStringArray: Win32Pointer, dwDataBytes: number, lpDataBytes: Win32Pointer): void;
+  RouterLogEventData(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwMessageId: number,
+    dwSubStringCount: number,
+    plpszSubStringArray: Win32Pointer,
+    dwDataBytes: number,
+    lpDataBytes: Win32Pointer,
+  ): void;
   /** rtutils.dll!RouterLogEventExA */
-  RouterLogEventExA(hLogHandle: Win32Pointer, dwEventType: number, dwErrorCode: number, dwMessageId: number, ptszFormat: string | Win32Pointer): void;
+  RouterLogEventExA(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwErrorCode: number,
+    dwMessageId: number,
+    ptszFormat: string | Win32Pointer,
+  ): void;
   /** rtutils.dll!RouterLogEventExW */
-  RouterLogEventExW(hLogHandle: Win32Pointer, dwEventType: number, dwErrorCode: number, dwMessageId: number, ptszFormat: string | Win32Pointer): void;
+  RouterLogEventExW(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwErrorCode: number,
+    dwMessageId: number,
+    ptszFormat: string | Win32Pointer,
+  ): void;
   /** rtutils.dll!RouterLogEventExW */
-  RouterLogEventEx(hLogHandle: Win32Pointer, dwEventType: number, dwErrorCode: number, dwMessageId: number, ptszFormat: string | Win32Pointer): void;
+  RouterLogEventEx(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwErrorCode: number,
+    dwMessageId: number,
+    ptszFormat: string | Win32Pointer,
+  ): void;
   /** rtutils.dll!RouterLogEventStringA */
-  RouterLogEventStringA(hLogHandle: Win32Pointer, dwEventType: number, dwMessageId: number, dwSubStringCount: number, plpszSubStringArray: Win32Pointer, dwErrorCode: number, dwErrorIndex: number): void;
+  RouterLogEventStringA(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwMessageId: number,
+    dwSubStringCount: number,
+    plpszSubStringArray: Win32Pointer,
+    dwErrorCode: number,
+    dwErrorIndex: number,
+  ): void;
   /** rtutils.dll!RouterLogEventStringW */
-  RouterLogEventStringW(hLogHandle: Win32Pointer, dwEventType: number, dwMessageId: number, dwSubStringCount: number, plpszSubStringArray: Win32Pointer, dwErrorCode: number, dwErrorIndex: number): void;
+  RouterLogEventStringW(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwMessageId: number,
+    dwSubStringCount: number,
+    plpszSubStringArray: Win32Pointer,
+    dwErrorCode: number,
+    dwErrorIndex: number,
+  ): void;
   /** rtutils.dll!RouterLogEventStringW */
-  RouterLogEventString(hLogHandle: Win32Pointer, dwEventType: number, dwMessageId: number, dwSubStringCount: number, plpszSubStringArray: Win32Pointer, dwErrorCode: number, dwErrorIndex: number): void;
+  RouterLogEventString(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwMessageId: number,
+    dwSubStringCount: number,
+    plpszSubStringArray: Win32Pointer,
+    dwErrorCode: number,
+    dwErrorIndex: number,
+  ): void;
   /** rtutils.dll!RouterLogEventValistExA */
-  RouterLogEventValistExA(hLogHandle: Win32Pointer, dwEventType: number, dwErrorCode: number, dwMessageId: number, ptszFormat: string | Win32Pointer, arglist: Win32Pointer): void;
+  RouterLogEventValistExA(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwErrorCode: number,
+    dwMessageId: number,
+    ptszFormat: string | Win32Pointer,
+    arglist: Win32Pointer,
+  ): void;
   /** rtutils.dll!RouterLogEventValistExW */
-  RouterLogEventValistExW(hLogHandle: Win32Pointer, dwEventType: number, dwErrorCode: number, dwMessageId: number, ptszFormat: string | Win32Pointer, arglist: Win32Pointer): void;
+  RouterLogEventValistExW(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwErrorCode: number,
+    dwMessageId: number,
+    ptszFormat: string | Win32Pointer,
+    arglist: Win32Pointer,
+  ): void;
   /** rtutils.dll!RouterLogEventValistExW */
-  RouterLogEventValistEx(hLogHandle: Win32Pointer, dwEventType: number, dwErrorCode: number, dwMessageId: number, ptszFormat: string | Win32Pointer, arglist: Win32Pointer): void;
+  RouterLogEventValistEx(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwErrorCode: number,
+    dwMessageId: number,
+    ptszFormat: string | Win32Pointer,
+    arglist: Win32Pointer,
+  ): void;
   /** rtutils.dll!RouterLogEventW */
-  RouterLogEventW(hLogHandle: Win32Pointer, dwEventType: number, dwMessageId: number, dwSubStringCount: number, plpszSubStringArray: Win32Pointer, dwErrorCode: number): void;
+  RouterLogEventW(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwMessageId: number,
+    dwSubStringCount: number,
+    plpszSubStringArray: Win32Pointer,
+    dwErrorCode: number,
+  ): void;
   /** rtutils.dll!RouterLogEventW */
-  RouterLogEvent(hLogHandle: Win32Pointer, dwEventType: number, dwMessageId: number, dwSubStringCount: number, plpszSubStringArray: Win32Pointer, dwErrorCode: number): void;
+  RouterLogEvent(
+    hLogHandle: Win32Pointer,
+    dwEventType: number,
+    dwMessageId: number,
+    dwSubStringCount: number,
+    plpszSubStringArray: Win32Pointer,
+    dwErrorCode: number,
+  ): void;
   /** rtutils.dll!RouterLogRegisterA */
   RouterLogRegisterA(lpszSource: string | Win32Pointer): number | null;
   /** rtutils.dll!RouterLogRegisterW */
@@ -81,11 +194,35 @@ interface Functions {
   /** rtutils.dll!TraceDeregisterW */
   TraceDeregister(dwTraceID: number): number;
   /** rtutils.dll!TraceDumpExA */
-  TraceDumpExA(dwTraceID: number, dwFlags: number, lpbBytes: Win32Pointer, dwByteCount: number, dwGroupSize: number, bAddressPrefix: number, lpszPrefix: string | Win32Pointer): number;
+  TraceDumpExA(
+    dwTraceID: number,
+    dwFlags: number,
+    lpbBytes: Win32Pointer,
+    dwByteCount: number,
+    dwGroupSize: number,
+    bAddressPrefix: number,
+    lpszPrefix: string | Win32Pointer,
+  ): number;
   /** rtutils.dll!TraceDumpExW */
-  TraceDumpExW(dwTraceID: number, dwFlags: number, lpbBytes: Win32Pointer, dwByteCount: number, dwGroupSize: number, bAddressPrefix: number, lpszPrefix: string | Win32Pointer): number;
+  TraceDumpExW(
+    dwTraceID: number,
+    dwFlags: number,
+    lpbBytes: Win32Pointer,
+    dwByteCount: number,
+    dwGroupSize: number,
+    bAddressPrefix: number,
+    lpszPrefix: string | Win32Pointer,
+  ): number;
   /** rtutils.dll!TraceDumpExW */
-  TraceDumpEx(dwTraceID: number, dwFlags: number, lpbBytes: Win32Pointer, dwByteCount: number, dwGroupSize: number, bAddressPrefix: number, lpszPrefix: string | Win32Pointer): number;
+  TraceDumpEx(
+    dwTraceID: number,
+    dwFlags: number,
+    lpbBytes: Win32Pointer,
+    dwByteCount: number,
+    dwGroupSize: number,
+    bAddressPrefix: number,
+    lpszPrefix: string | Win32Pointer,
+  ): number;
   /** rtutils.dll!TraceGetConsoleA */
   TraceGetConsoleA(dwTraceID: number, lphConsole: Win32Pointer): number;
   /** rtutils.dll!TraceGetConsoleW */

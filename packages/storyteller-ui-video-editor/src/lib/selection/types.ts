@@ -15,9 +15,7 @@ export interface SelectionBoxBounds {
   height: number;
 }
 
-export interface BoxSelectionChange<
-  TId = string,
-> extends BoxSelectionSnapshot<TId> {
+export interface BoxSelectionChange<TId = string> extends BoxSelectionSnapshot<TId> {
   intersectedIds: TId[];
   isAdditive: boolean;
 }

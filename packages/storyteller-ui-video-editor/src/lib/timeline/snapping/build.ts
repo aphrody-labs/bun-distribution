@@ -1,10 +1,6 @@
 import type { SnapPoint, TimelineSnapPointSource } from "./types";
 
-export function buildTimelineSnapPoints({
-  sources,
-}: {
-  sources: TimelineSnapPointSource[];
-}): SnapPoint[] {
+export function buildTimelineSnapPoints({ sources }: { sources: TimelineSnapPointSource[] }): SnapPoint[] {
   const snapPoints: SnapPoint[] = [];
 
   for (const source of sources) {

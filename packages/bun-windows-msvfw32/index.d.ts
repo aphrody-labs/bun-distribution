@@ -3,13 +3,36 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** msvfw32.dll!DrawDibBegin */
-  DrawDibBegin(hdd: number | bigint, hdc: Win32Pointer, dxDst: number, dyDst: number, lpbi: Win32Pointer, dxSrc: number, dySrc: number, wFlags: number): number;
+  DrawDibBegin(
+    hdd: number | bigint,
+    hdc: Win32Pointer,
+    dxDst: number,
+    dyDst: number,
+    lpbi: Win32Pointer,
+    dxSrc: number,
+    dySrc: number,
+    wFlags: number,
+  ): number;
   /** msvfw32.dll!DrawDibChangePalette */
   DrawDibChangePalette(hdd: number | bigint, iStart: number, iLen: number, lppe: Win32Pointer): number;
   /** msvfw32.dll!DrawDibClose */
   DrawDibClose(hdd: number | bigint): number;
   /** msvfw32.dll!DrawDibDraw */
-  DrawDibDraw(hdd: number | bigint, hdc: Win32Pointer, xDst: number, yDst: number, dxDst: number, dyDst: number, lpbi: Win32Pointer, lpBits: Win32Pointer, xSrc: number, ySrc: number, dxSrc: number, dySrc: number, wFlags: number): number;
+  DrawDibDraw(
+    hdd: number | bigint,
+    hdc: Win32Pointer,
+    xDst: number,
+    yDst: number,
+    dxDst: number,
+    dyDst: number,
+    lpbi: Win32Pointer,
+    lpBits: Win32Pointer,
+    xSrc: number,
+    ySrc: number,
+    dxSrc: number,
+    dySrc: number,
+    wFlags: number,
+  ): number;
   /** msvfw32.dll!DrawDibEnd */
   DrawDibEnd(hdd: number | bigint): number;
   /** msvfw32.dll!DrawDibGetBuffer */
@@ -45,31 +68,116 @@ interface Functions {
   /** msvfw32.dll!ICClose */
   ICClose(hic: Win32Pointer): number | bigint;
   /** msvfw32.dll!ICCompress */
-  ICCompress(hic: Win32Pointer, dwFlags: number, lpbiOutput: Win32Pointer, lpData: Win32Pointer, lpbiInput: Win32Pointer, lpBits: Win32Pointer, lpckid: Win32Pointer, lpdwFlags: Win32Pointer, lFrameNum: number, dwFrameSize: number, dwQuality: number, lpbiPrev: Win32Pointer, lpPrev: Win32Pointer): number;
+  ICCompress(
+    hic: Win32Pointer,
+    dwFlags: number,
+    lpbiOutput: Win32Pointer,
+    lpData: Win32Pointer,
+    lpbiInput: Win32Pointer,
+    lpBits: Win32Pointer,
+    lpckid: Win32Pointer,
+    lpdwFlags: Win32Pointer,
+    lFrameNum: number,
+    dwFrameSize: number,
+    dwQuality: number,
+    lpbiPrev: Win32Pointer,
+    lpPrev: Win32Pointer,
+  ): number;
   /** msvfw32.dll!ICCompressorChoose */
-  ICCompressorChoose(hwnd: Win32Pointer, uiFlags: number, pvIn: Win32Pointer, lpData: Win32Pointer, pc: Win32Pointer, lpszTitle: string | Win32Pointer): number;
+  ICCompressorChoose(
+    hwnd: Win32Pointer,
+    uiFlags: number,
+    pvIn: Win32Pointer,
+    lpData: Win32Pointer,
+    pc: Win32Pointer,
+    lpszTitle: string | Win32Pointer,
+  ): number;
   /** msvfw32.dll!ICCompressorFree */
   ICCompressorFree(pc: Win32Pointer): void;
   /** msvfw32.dll!ICDecompress */
-  ICDecompress(hic: Win32Pointer, dwFlags: number, lpbiFormat: Win32Pointer, lpData: Win32Pointer, lpbi: Win32Pointer, lpBits: Win32Pointer): number;
+  ICDecompress(
+    hic: Win32Pointer,
+    dwFlags: number,
+    lpbiFormat: Win32Pointer,
+    lpData: Win32Pointer,
+    lpbi: Win32Pointer,
+    lpBits: Win32Pointer,
+  ): number;
   /** msvfw32.dll!ICDraw */
-  ICDraw(hic: Win32Pointer, dwFlags: number, lpFormat: Win32Pointer, lpData: Win32Pointer, cbData: number, lTime: number): number;
+  ICDraw(
+    hic: Win32Pointer,
+    dwFlags: number,
+    lpFormat: Win32Pointer,
+    lpData: Win32Pointer,
+    cbData: number,
+    lTime: number,
+  ): number;
   /** msvfw32.dll!ICDrawBegin */
-  ICDrawBegin(hic: Win32Pointer, dwFlags: number, hpal: Win32Pointer, hwnd: Win32Pointer, hdc: Win32Pointer, xDst: number, yDst: number, dxDst: number, dyDst: number, lpbi: Win32Pointer, xSrc: number, ySrc: number, dxSrc: number, dySrc: number, dwRate: number, dwScale: number): number;
+  ICDrawBegin(
+    hic: Win32Pointer,
+    dwFlags: number,
+    hpal: Win32Pointer,
+    hwnd: Win32Pointer,
+    hdc: Win32Pointer,
+    xDst: number,
+    yDst: number,
+    dxDst: number,
+    dyDst: number,
+    lpbi: Win32Pointer,
+    xSrc: number,
+    ySrc: number,
+    dxSrc: number,
+    dySrc: number,
+    dwRate: number,
+    dwScale: number,
+  ): number;
   /** msvfw32.dll!ICGetDisplayFormat */
-  ICGetDisplayFormat(hic: Win32Pointer, lpbiIn: Win32Pointer, lpbiOut: Win32Pointer, BitDepth: number, dx: number, dy: number): number | null;
+  ICGetDisplayFormat(
+    hic: Win32Pointer,
+    lpbiIn: Win32Pointer,
+    lpbiOut: Win32Pointer,
+    BitDepth: number,
+    dx: number,
+    dy: number,
+  ): number | null;
   /** msvfw32.dll!ICGetInfo */
   ICGetInfo(hic: Win32Pointer, picinfo: Win32Pointer, cb: number): number | bigint;
   /** msvfw32.dll!ICImageCompress */
-  ICImageCompress(hic: Win32Pointer, uiFlags: number, lpbiIn: Win32Pointer, lpBits: Win32Pointer, lpbiOut: Win32Pointer, lQuality: number, plSize: Win32Pointer): number | null;
+  ICImageCompress(
+    hic: Win32Pointer,
+    uiFlags: number,
+    lpbiIn: Win32Pointer,
+    lpBits: Win32Pointer,
+    lpbiOut: Win32Pointer,
+    lQuality: number,
+    plSize: Win32Pointer,
+  ): number | null;
   /** msvfw32.dll!ICImageDecompress */
-  ICImageDecompress(hic: Win32Pointer, uiFlags: number, lpbiIn: Win32Pointer, lpBits: Win32Pointer, lpbiOut: Win32Pointer): number | null;
+  ICImageDecompress(
+    hic: Win32Pointer,
+    uiFlags: number,
+    lpbiIn: Win32Pointer,
+    lpBits: Win32Pointer,
+    lpbiOut: Win32Pointer,
+  ): number | null;
   /** msvfw32.dll!ICInfo */
   ICInfo(fccType: number, fccHandler: number, lpicinfo: Win32Pointer): number;
   /** msvfw32.dll!ICInstall */
-  ICInstall(fccType: number, fccHandler: number, lParam: number | bigint, szDesc: string | Win32Pointer, wFlags: number): number;
+  ICInstall(
+    fccType: number,
+    fccHandler: number,
+    lParam: number | bigint,
+    szDesc: string | Win32Pointer,
+    wFlags: number,
+  ): number;
   /** msvfw32.dll!ICLocate */
-  ICLocate(fccType: number, fccHandler: number, lpbiIn: Win32Pointer, lpbiOut: Win32Pointer, wFlags: number): number | null;
+  ICLocate(
+    fccType: number,
+    fccHandler: number,
+    lpbiIn: Win32Pointer,
+    lpbiOut: Win32Pointer,
+    wFlags: number,
+  ): number | null;
   /** msvfw32.dll!ICOpen */
   ICOpen(fccType: number, fccHandler: number, wMode: number): number | null;
   /** msvfw32.dll!ICOpenFunction */
@@ -79,17 +187,38 @@ interface Functions {
   /** msvfw32.dll!ICSendMessage */
   ICSendMessage(hic: Win32Pointer, msg: number, dw1: number | bigint, dw2: number | bigint): number | bigint;
   /** msvfw32.dll!ICSeqCompressFrame */
-  ICSeqCompressFrame(pc: Win32Pointer, uiFlags: number, lpBits: Win32Pointer, pfKey: Win32Pointer, plSize: Win32Pointer): number | null;
+  ICSeqCompressFrame(
+    pc: Win32Pointer,
+    uiFlags: number,
+    lpBits: Win32Pointer,
+    pfKey: Win32Pointer,
+    plSize: Win32Pointer,
+  ): number | null;
   /** msvfw32.dll!ICSeqCompressFrameEnd */
   ICSeqCompressFrameEnd(pc: Win32Pointer): void;
   /** msvfw32.dll!ICSeqCompressFrameStart */
   ICSeqCompressFrameStart(pc: Win32Pointer, lpbiIn: Win32Pointer): number;
   /** msvfw32.dll!MCIWndCreateA */
-  MCIWndCreateA(hwndParent: Win32Pointer, hInstance: Win32Pointer, dwStyle: number, szFile: string | Win32Pointer): number | null;
+  MCIWndCreateA(
+    hwndParent: Win32Pointer,
+    hInstance: Win32Pointer,
+    dwStyle: number,
+    szFile: string | Win32Pointer,
+  ): number | null;
   /** msvfw32.dll!MCIWndCreateW */
-  MCIWndCreateW(hwndParent: Win32Pointer, hInstance: Win32Pointer, dwStyle: number, szFile: string | Win32Pointer): number | null;
+  MCIWndCreateW(
+    hwndParent: Win32Pointer,
+    hInstance: Win32Pointer,
+    dwStyle: number,
+    szFile: string | Win32Pointer,
+  ): number | null;
   /** msvfw32.dll!MCIWndCreateW */
-  MCIWndCreate(hwndParent: Win32Pointer, hInstance: Win32Pointer, dwStyle: number, szFile: string | Win32Pointer): number | null;
+  MCIWndCreate(
+    hwndParent: Win32Pointer,
+    hInstance: Win32Pointer,
+    dwStyle: number,
+    szFile: string | Win32Pointer,
+  ): number | null;
   /** msvfw32.dll!MCIWndRegisterClass */
   MCIWndRegisterClass(): number;
   /** msvfw32.dll!VideoForWindowsVersion */

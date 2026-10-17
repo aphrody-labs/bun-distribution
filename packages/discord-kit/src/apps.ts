@@ -10,13 +10,10 @@ export interface DiscordAppBuild {
 }
 
 /** Compile a Bun-compatible Discord application. No login or application code is executed. */
-export async function compileDiscordApp(
-  options: DiscordAppBuild,
-): Promise<string> {
+export async function compileDiscordApp(options: DiscordAppBuild): Promise<string> {
   const entrypoint = resolve(options.entrypoint);
   const outfile = resolve(options.outfile);
-  if (entrypoint === outfile)
-    throw new Error("Output must differ from the source entrypoint");
+  if (entrypoint === outfile) throw new Error("Output must differ from the source entrypoint");
   const { runtimeBundlerPlugin } = await import("@aphrody/runtime-sdk/bundler");
   const result = await Bun.build({
     entrypoints: [entrypoint],
@@ -26,14 +23,8 @@ export async function compileDiscordApp(
     sourcemap: options.sourcemap ? "linked" : "none",
     plugins: [runtimeBundlerPlugin],
   });
-  if (!result.success)
-    throw new AggregateError(
-      result.logs,
-      "Discord application compilation failed",
-    );
-  const executable = result.outputs.find(
-    (output) => output.kind === "entry-point",
-  );
+  if (!result.success) throw new AggregateError(result.logs, "Discord application compilation failed");
+  const executable = result.outputs.find(output => output.kind === "entry-point");
   if (!executable || !(await Bun.file(executable.path).exists()))
     throw new Error("Discord application compilation produced no executable");
   return resolve(executable.path);
@@ -55,16 +46,11 @@ export interface DiscordAppStart {
  * Stop is graceful on Unix; Windows terminates the owned Job Object and its descendants.
  * The caller owns the returned handle (`using` or `release()`), including on startup failure.
  */
-export async function startDiscordApp(
-  options: DiscordAppStart,
-): Promise<ManagedProcess> {
+export async function startDiscordApp(options: DiscordAppStart): Promise<ManagedProcess> {
   if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(options.profile))
-    throw new Error(
-      "A Discord application requires an explicit named Agent Home profile",
-    );
+    throw new Error("A Discord application requires an explicit named Agent Home profile");
   const binary = resolve(options.binary);
-  if (!(await Bun.file(binary).exists()))
-    throw new Error(`Discord executable does not exist: ${binary}`);
+  if (!(await Bun.file(binary).exists())) throw new Error(`Discord executable does not exist: ${binary}`);
   const { processes } = await import("@aphrody/runtime-sdk/modules");
   return processes.spawn({
     program: binary,

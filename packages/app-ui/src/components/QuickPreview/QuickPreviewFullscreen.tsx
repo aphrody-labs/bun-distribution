@@ -4,11 +4,7 @@ import { CircleButton } from "@aphrody/m3-primitives";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
 import { useEffect, useState, useMemo } from "react";
 import { ContentRenderer } from "./ContentRenderer";
-import {
-  VideoControls,
-  type VideoControlsState,
-  type VideoControlsCallbacks,
-} from "./VideoControls";
+import { VideoControls, type VideoControlsState, type VideoControlsCallbacks } from "./VideoControls";
 import { TopBarPortal, TopBarItem } from "../../TopBar";
 import { getContentKind } from "@aphrody/drive-client";
 import { useExplorer } from "../../routes/explorer/context";
@@ -40,11 +36,9 @@ export function QuickPreviewFullscreen({
 }: QuickPreviewFullscreenProps) {
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
-  const [videoControlsState, setVideoControlsState] =
-    useState<VideoControlsState | null>(null);
+  const [videoControlsState, setVideoControlsState] = useState<VideoControlsState | null>(null);
   const [showVideoControls, setShowVideoControls] = useState(false);
-  const [videoCallbacks, setVideoCallbacks] =
-    useState<VideoControlsCallbacks | null>(null);
+  const [videoCallbacks, setVideoCallbacks] = useState<VideoControlsCallbacks | null>(null);
   const { currentFiles } = useExplorer();
 
   // Reset zoom when file changes (adjusted during render, no effect)
@@ -55,10 +49,7 @@ export function QuickPreviewFullscreen({
   }
 
   // Get file directly from currentFiles - instant, no network request
-  const file = useMemo(
-    () => currentFiles.find((f) => f.id === fileId) ?? null,
-    [currentFiles, fileId],
-  );
+  const file = useMemo(() => currentFiles.find(f => f.id === fileId) ?? null, [currentFiles, fileId]);
 
   // No query needed - files are already loaded by the explorer views
   const isLoading = false;
@@ -137,25 +128,14 @@ export function QuickPreviewFullscreen({
   );
 
   const filenameDisplay = useMemo(
-    () => (
-      <div className="dark truncate text-title-small text-on-surface">
-        {file?.name}
-      </div>
-    ),
+    () => <div className="dark truncate text-title-small text-on-surface">{file?.name}</div>,
     [file?.name],
   );
 
   const closeButton = useMemo(
     () => (
       <div className="dark">
-        <CircleButton
-          variant="standard"
-          size="sm"
-          icon="close"
-          onClick={onClose}
-          title="Close"
-          aria-label="Close"
-        />
+        <CircleButton variant="standard" size="sm" icon="close" onClick={onClose} title="Close" aria-label="Close" />
       </div>
     ),
     [onClose],
@@ -207,32 +187,19 @@ export function QuickPreviewFullscreen({
                 left={
                   <>
                     {(hasPrevious || hasNext) && (
-                      <TopBarItem
-                        id="preview-navigation"
-                        label="Navigation"
-                        priority="high"
-                      >
+                      <TopBarItem id="preview-navigation" label="Navigation" priority="high">
                         {navigationButtons}
                       </TopBarItem>
                     )}
                   </>
                 }
                 center={
-                  <TopBarItem
-                    id="preview-filename"
-                    label="File name"
-                    priority="high"
-                  >
+                  <TopBarItem id="preview-filename" label="File name" priority="high">
                     {filenameDisplay}
                   </TopBarItem>
                 }
                 right={
-                  <TopBarItem
-                    id="preview-close"
-                    label="Close"
-                    priority="high"
-                    onClick={onClose}
-                  >
+                  <TopBarItem id="preview-close" label="Close" priority="high" onClick={onClose}>
                     {closeButton}
                   </TopBarItem>
                 }
@@ -257,40 +224,36 @@ export function QuickPreviewFullscreen({
               </div>
 
               {/* Video Controls Overlay - fixed position, always uses sidebar/inspector padding */}
-              {videoControlsState &&
-                videoCallbacks &&
-                getContentKind(file) === "video" && (
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      paddingTop: "56px", // TopBar height
-                      paddingBottom: "40px", // Footer height
-                      pointerEvents: "none", // Let clicks through except on controls themselves
-                    }}
-                  >
-                    <VideoControls
-                      file={file}
-                      state={videoControlsState}
-                      callbacks={videoCallbacks}
-                      showControls={showVideoControls}
-                      sidebarWidth={sidebarWidth}
-                      inspectorWidth={inspectorWidth}
-                    />
-                  </div>
-                )}
+              {videoControlsState && videoCallbacks && getContentKind(file) === "video" && (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    paddingTop: "56px", // TopBar height
+                    paddingBottom: "40px", // Footer height
+                    pointerEvents: "none", // Let clicks through except on controls themselves
+                  }}
+                >
+                  <VideoControls
+                    file={file}
+                    state={videoControlsState}
+                    callbacks={videoCallbacks}
+                    showControls={showVideoControls}
+                    sidebarWidth={sidebarWidth}
+                    inspectorWidth={inspectorWidth}
+                  />
+                </div>
+              )}
 
               {/* Footer with keyboard hints */}
               <div className="absolute bottom-0 left-0 right-0 z-10 px-6 py-3">
                 <div className="text-center text-body-small text-on-surface-variant/70">
                   <span className="text-on-surface-variant">ESC</span> or{" "}
-                  <span className="text-on-surface-variant">Space</span> to
-                  close
+                  <span className="text-on-surface-variant">Space</span> to close
                   {(hasPrevious || hasNext) && (
                     <>
                       {" · "}
                       <span className="text-on-surface-variant">←</span> /{" "}
-                      <span className="text-on-surface-variant">→</span> to
-                      navigate
+                      <span className="text-on-surface-variant">→</span> to navigate
                     </>
                   )}
                 </div>

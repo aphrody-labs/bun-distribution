@@ -27,9 +27,7 @@ export class WebGpuPresenter {
     public sharpness: number,
   ) {
     const info = adapter.info;
-    this.adapterInfo = [info.vendor, info.architecture, info.description]
-      .filter(Boolean)
-      .join(" ");
+    this.adapterInfo = [info.vendor, info.architecture, info.description].filter(Boolean).join(" ");
     this.params = device.createBuffer({
       size: 16,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -40,11 +38,7 @@ export class WebGpuPresenter {
     });
   }
 
-  static async create(
-    canvas: HTMLCanvasElement,
-    mode: UpscaleMode,
-    sharpness: number,
-  ): Promise<WebGpuPresenter> {
+  static async create(canvas: HTMLCanvasElement, mode: UpscaleMode, sharpness: number): Promise<WebGpuPresenter> {
     if (!("gpu" in navigator)) throw new Error("WebGPU unavailable");
     const adapter = await navigator.gpu.requestAdapter({
       powerPreference: "high-performance",
@@ -79,14 +73,12 @@ export class WebGpuPresenter {
 
   private ensureIntermediate(width: number, height: number): GPUTexture {
     const current = this.intermediate;
-    if (current && current.width === width && current.height === height)
-      return current;
+    if (current && current.width === width && current.height === height) return current;
     current?.destroy();
     const texture = this.device.createTexture({
       size: { width, height },
       format: "rgba8unorm",
-      usage:
-        GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
     });
     this.intermediate = texture;
     this.rcasGroup = this.device.createBindGroup({

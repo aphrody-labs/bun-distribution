@@ -139,8 +139,7 @@ async function objetDejaPresent(
   const trouve = lignes.find(ligne => motif.test(ligne.name));
   if (!trouve) return null;
   const ext = trouve.name.split(".").pop() ?? "jpg";
-  const mime =
-    trouve.metadata?.mimetype ?? Object.entries(MIMES_IMAGE).find(([, e]) => e === ext)?.[0] ?? "image/jpeg";
+  const mime = trouve.metadata?.mimetype ?? Object.entries(MIMES_IMAGE).find(([, e]) => e === ext)?.[0] ?? "image/jpeg";
   return { chemin: trouve.name, octets: Number(trouve.metadata?.size ?? 0), mime };
 }
 

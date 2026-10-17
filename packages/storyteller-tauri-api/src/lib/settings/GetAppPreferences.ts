@@ -25,8 +25,7 @@ export interface AppPreferencesPayload {
 
 export type PreferredDownloadDirectory = SystemDirectory | CustomDirectory;
 
-export type PreferredDownloadFilename =
-  "artcraft_convention" | CustomFilenameFormat;
+export type PreferredDownloadFilename = "artcraft_convention" | CustomFilenameFormat;
 
 export interface CustomFilenameFormat {
   custom_format: string;

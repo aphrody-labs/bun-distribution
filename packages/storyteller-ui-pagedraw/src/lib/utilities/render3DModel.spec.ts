@@ -1,9 +1,6 @@
 import { vi, beforeEach, describe, it, expect } from "bun:test";
 import * as THREE from "three";
-import {
-  DEFAULT_MODEL3D_PARAMS,
-  render3DModelToDataUrl,
-} from "./render3DModel";
+import { DEFAULT_MODEL3D_PARAMS, render3DModelToDataUrl } from "./render3DModel";
 
 const { renderers, gltfOutcome } = (() => ({
   renderers: [] as FakeRenderer[],
@@ -59,10 +56,7 @@ describe("render3DModelToDataUrl", () => {
     geometry.addEventListener("dispose", onDispose);
     gltfOutcome.scene = new THREE.Mesh(geometry);
 
-    const dataUrl = await render3DModelToDataUrl(
-      "model.glb",
-      DEFAULT_MODEL3D_PARAMS,
-    );
+    const dataUrl = await render3DModelToDataUrl("model.glb", DEFAULT_MODEL3D_PARAMS);
 
     expect(dataUrl).toMatch(/^data:image\/png/);
     expect(onDispose).toHaveBeenCalledTimes(1);
@@ -73,9 +67,7 @@ describe("render3DModelToDataUrl", () => {
   it("frees the renderer's context when the model fails to load", async () => {
     gltfOutcome.error = new Error("404");
 
-    await expect(
-      render3DModelToDataUrl("missing.glb", DEFAULT_MODEL3D_PARAMS),
-    ).rejects.toThrow("404");
+    await expect(render3DModelToDataUrl("missing.glb", DEFAULT_MODEL3D_PARAMS)).rejects.toThrow("404");
 
     expect(renderers[0].dispose).toHaveBeenCalledTimes(1);
     expect(renderers[0].forceContextLoss).toHaveBeenCalledTimes(1);

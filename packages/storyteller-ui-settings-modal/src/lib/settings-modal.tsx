@@ -55,11 +55,10 @@ export const SettingsModal = ({
   onStoryboardPageDisable,
   initialSection = "general",
 }: SettingsModalProps) => {
-  const [selectedSection, setSelectedSection] =
-    useState<SettingsSection>(initialSection);
+  const [selectedSection, setSelectedSection] = useState<SettingsSection>(initialSection);
 
-  const experimentalEnabled = useExperimentalStore((s) => s.enabled);
-  const disableExperimental = useExperimentalStore((s) => s.disable);
+  const experimentalEnabled = useExperimentalStore(s => s.enabled);
+  const disableExperimental = useExperimentalStore(s => s.disable);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   // Sync the selected section with incoming prop when modal opens or prop changes
@@ -118,11 +117,7 @@ export const SettingsModal = ({
       case "downloads":
         return <DownloadsSettingsPane />;
       case "accounts":
-        return (
-          <AccountSettingsPane
-            globalAccountLogoutCallback={globalAccountLogoutCallback}
-          />
-        );
+        return <AccountSettingsPane globalAccountLogoutCallback={globalAccountLogoutCallback} />;
       case "about":
         return <AboutSettingsPane />;
       case "provider_priority":
@@ -130,11 +125,7 @@ export const SettingsModal = ({
       case "billing":
         return <BillingSettingsPane />;
       case "experimental":
-        return (
-          <ExperimentalSettingsPane
-            onStoryboardPageDisable={onStoryboardPageDisable}
-          />
-        );
+        return <ExperimentalSettingsPane onStoryboardPageDisable={onStoryboardPageDisable} />;
     }
   };
 
@@ -146,12 +137,7 @@ export const SettingsModal = ({
 
   return (
     <>
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        className="max-w-4xl"
-        childPadding={false}
-      >
+      <Modal isOpen={isOpen} onClose={onClose} className="max-w-4xl" childPadding={false}>
         <div className="h-[600px]">
           <div className="grid h-full grid-cols-12 gap-3">
             <div className="relative col-span-4 p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-ui-panel-border">
@@ -162,7 +148,7 @@ export const SettingsModal = ({
               </div>
               <hr className="my-2 w-full border-ui-panel-border" />
               <div className="space-y-1">
-                {sections.map((section) => (
+                {sections.map(section => (
                   <button
                     key={section.id}
                     className={twMerge(
@@ -189,7 +175,7 @@ export const SettingsModal = ({
             <div className="col-span-8 flex h-full flex-col overflow-y-auto relative">
               <div className="w-full border-b border-ui-panel-border py-2.5 ps-0">
                 <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/80">
-                  {sections.find((s) => s.id === selectedSection)?.label}
+                  {sections.find(s => s.id === selectedSection)?.label}
                 </h2>
               </div>
               {experimentalEnabled && selectedSection === "experimental" && (

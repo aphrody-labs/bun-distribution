@@ -9,7 +9,11 @@ interface Functions {
   /** api-ms-win-core-featurestaging-l1-1-0.dll!RecordFeatureUsage */
   RecordFeatureUsage(featureId: number, kind: number, addend: number, originName: string | Win32Pointer): void;
   /** api-ms-win-core-featurestaging-l1-1-0.dll!SubscribeFeatureStateChangeNotification */
-  SubscribeFeatureStateChangeNotification(subscription: Win32Pointer, callback: Win32Callback, context: Win32Pointer): void;
+  SubscribeFeatureStateChangeNotification(
+    subscription: Win32Pointer,
+    callback: Win32Callback,
+    context: Win32Pointer,
+  ): void;
   /** api-ms-win-core-featurestaging-l1-1-0.dll!UnsubscribeFeatureStateChangeNotification */
   UnsubscribeFeatureStateChangeNotification(subscription: Win32Pointer): void;
 }

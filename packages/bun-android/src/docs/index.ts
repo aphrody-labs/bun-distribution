@@ -34,9 +34,7 @@ export async function docsCommand(args: string[]): Promise<number> {
     case "fetch":
       await crawl({
         sources: values.source as string[] | undefined,
-        concurrency: values.concurrency
-          ? Number(values.concurrency)
-          : undefined,
+        concurrency: values.concurrency ? Number(values.concurrency) : undefined,
         limit: values.limit ? Number(values.limit) : undefined,
         refreshSitemaps: !values["no-sitemap"],
       });
@@ -58,11 +56,7 @@ export async function docsCommand(args: string[]): Promise<number> {
       );
       store.close();
       if (values.json) console.log(JSON.stringify(hits, null, 2));
-      else
-        for (const hit of hits)
-          console.log(
-            `${hit.title}\n  ${hit.url}\n  ${hit.snippet.replace(/\s+/g, " ")}\n`,
-          );
+      else for (const hit of hits) console.log(`${hit.title}\n  ${hit.url}\n  ${hit.snippet.replace(/\s+/g, " ")}\n`);
       return hits.length ? 0 : 1;
     }
     case "stats": {

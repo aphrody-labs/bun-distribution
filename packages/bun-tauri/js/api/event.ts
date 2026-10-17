@@ -15,13 +15,13 @@
  * @module
  */
 
-import { invoke, transformCallback } from './core'
+import { invoke, transformCallback } from "./core";
 
 declare global {
   interface Window {
     __TAURI_EVENT_PLUGIN_INTERNALS__: {
-      unregisterListener: (event: string, eventId: number) => void
-    }
+      unregisterListener: (event: string, eventId: number) => void;
+    };
   }
 }
 
@@ -37,28 +37,28 @@ declare global {
  * @since 2.0.0
  */
 type EventTarget =
-  | { kind: 'Any' }
-  | { kind: 'AnyLabel'; label: string }
-  | { kind: 'App' }
-  | { kind: 'Window'; label: string }
-  | { kind: 'Webview'; label: string }
-  | { kind: 'WebviewWindow'; label: string }
+  | { kind: "Any" }
+  | { kind: "AnyLabel"; label: string }
+  | { kind: "App" }
+  | { kind: "Window"; label: string }
+  | { kind: "Webview"; label: string }
+  | { kind: "WebviewWindow"; label: string };
 
 interface Event<T> {
   /** Event name */
-  event: EventName
+  event: EventName;
   /** Event identifier used to unlisten */
-  id: number
+  id: number;
   /** Event payload */
-  payload: T
+  payload: T;
 }
 
-type EventCallback<T> = (event: Event<T>) => void
+type EventCallback<T> = (event: Event<T>) => void;
 
 // TODO(v3): mark this as Promise<void>
-type UnlistenFn = () => void
+type UnlistenFn = () => void;
 
-type EventName = `${TauriEvent}` | (string & Record<never, never>)
+type EventName = `${TauriEvent}` | (string & Record<never, never>);
 
 interface Options {
   /**
@@ -67,7 +67,7 @@ interface Options {
    * If a string is provided, it is used as the label of an `AnyLabel` target,
    * i.e. `{ kind: 'AnyLabel', label: <the string> }`.
    */
-  target?: string | EventTarget
+  target?: string | EventTarget;
 }
 
 /**
@@ -90,29 +90,29 @@ interface Options {
  */
 enum TauriEvent {
   /** A window was resized. Payload: the new inner size, in physical pixels. See `Window.onResized`. */
-  WINDOW_RESIZED = 'tauri://resize',
+  WINDOW_RESIZED = "tauri://resize",
   /** A window was moved. Payload: the new outer position, in physical pixels. See `Window.onMoved`. */
-  WINDOW_MOVED = 'tauri://move',
+  WINDOW_MOVED = "tauri://move",
   /**
    * The user requested a window to be closed (e.g. clicked the close button).
    * See `Window.onCloseRequested`, which also handles preventing the close.
    */
-  WINDOW_CLOSE_REQUESTED = 'tauri://close-requested',
+  WINDOW_CLOSE_REQUESTED = "tauri://close-requested",
   /** A window was destroyed, i.e. it is gone and its label can be reused. */
-  WINDOW_DESTROYED = 'tauri://destroyed',
+  WINDOW_DESTROYED = "tauri://destroyed",
   /** A window gained focus. See `Window.onFocusChanged`. */
-  WINDOW_FOCUS = 'tauri://focus',
+  WINDOW_FOCUS = "tauri://focus",
   /** A window lost focus. See `Window.onFocusChanged`. */
-  WINDOW_BLUR = 'tauri://blur',
+  WINDOW_BLUR = "tauri://blur",
   /**
    * The scale factor of the monitor a window is on changed, or the window moved to
    * a monitor with a different scale factor. See `Window.onScaleChanged`.
    */
-  WINDOW_SCALE_FACTOR_CHANGED = 'tauri://scale-change',
+  WINDOW_SCALE_FACTOR_CHANGED = "tauri://scale-change",
   /** The system or window theme changed. See `Window.onThemeChanged`. */
-  WINDOW_THEME_CHANGED = 'tauri://theme-changed',
+  WINDOW_THEME_CHANGED = "tauri://theme-changed",
   /** A new window was created. */
-  WINDOW_CREATED = 'tauri://window-created',
+  WINDOW_CREATED = "tauri://window-created",
   /**
    * The window's event loop was suspended.
    *
@@ -121,7 +121,7 @@ enum TauriEvent {
    * - **Android:** emitted when the activity is paused.
    * - **Other platforms:** never emitted.
    */
-  WINDOW_SUSPENDED = 'tauri://suspended',
+  WINDOW_SUSPENDED = "tauri://suspended",
   /**
    * The window's event loop was resumed after being suspended.
    *
@@ -130,17 +130,17 @@ enum TauriEvent {
    * - **Android:** emitted when the activity is resumed.
    * - **Other platforms:** never emitted.
    */
-  WINDOW_RESUMED = 'tauri://resumed',
+  WINDOW_RESUMED = "tauri://resumed",
   /** A new webview was created. */
-  WEBVIEW_CREATED = 'tauri://webview-created',
+  WEBVIEW_CREATED = "tauri://webview-created",
   /** The user dragged files onto a webview. See `Webview.onDragDropEvent`. */
-  DRAG_ENTER = 'tauri://drag-enter',
+  DRAG_ENTER = "tauri://drag-enter",
   /** The user is moving dragged files over a webview. See `Webview.onDragDropEvent`. */
-  DRAG_OVER = 'tauri://drag-over',
+  DRAG_OVER = "tauri://drag-over",
   /** The user dropped files onto a webview. See `Webview.onDragDropEvent`. */
-  DRAG_DROP = 'tauri://drag-drop',
+  DRAG_DROP = "tauri://drag-drop",
   /** The drag operation left the webview or was cancelled. See `Webview.onDragDropEvent`. */
-  DRAG_LEAVE = 'tauri://drag-leave'
+  DRAG_LEAVE = "tauri://drag-leave",
 }
 
 /**
@@ -152,11 +152,11 @@ enum TauriEvent {
  * @returns
  */
 async function _unlisten(event: string, eventId: number): Promise<void> {
-  window.__TAURI_EVENT_PLUGIN_INTERNALS__.unregisterListener(event, eventId)
-  await invoke('plugin:event|unlisten', {
+  window.__TAURI_EVENT_PLUGIN_INTERNALS__.unregisterListener(event, eventId);
+  await invoke("plugin:event|unlisten", {
     event,
-    eventId
-  })
+    eventId,
+  });
 }
 
 /**
@@ -187,22 +187,18 @@ async function _unlisten(event: string, eventId: number): Promise<void> {
  *
  * @since 1.0.0
  */
-async function listen<T>(
-  event: EventName,
-  handler: EventCallback<T>,
-  options?: Options
-): Promise<UnlistenFn> {
+async function listen<T>(event: EventName, handler: EventCallback<T>, options?: Options): Promise<UnlistenFn> {
   const target: EventTarget =
-    typeof options?.target === 'string'
-      ? { kind: 'AnyLabel', label: options.target }
-      : (options?.target ?? { kind: 'Any' })
-  return invoke<number>('plugin:event|listen', {
+    typeof options?.target === "string"
+      ? { kind: "AnyLabel", label: options.target }
+      : (options?.target ?? { kind: "Any" });
+  return invoke<number>("plugin:event|listen", {
     event,
     target,
-    handler: transformCallback(handler)
-  }).then((eventId) => {
-    return async () => _unlisten(event, eventId)
-  })
+    handler: transformCallback(handler),
+  }).then(eventId => {
+    return async () => _unlisten(event, eventId);
+  });
 }
 
 /**
@@ -235,19 +231,15 @@ async function listen<T>(
  *
  * @since 1.0.0
  */
-async function once<T>(
-  event: EventName,
-  handler: EventCallback<T>,
-  options?: Options
-): Promise<UnlistenFn> {
+async function once<T>(event: EventName, handler: EventCallback<T>, options?: Options): Promise<UnlistenFn> {
   return listen<T>(
     event,
-    (eventData) => {
-      void _unlisten(event, eventData.id)
-      handler(eventData)
+    eventData => {
+      void _unlisten(event, eventData.id);
+      handler(eventData);
     },
-    options
-  )
+    options,
+  );
 }
 
 /**
@@ -265,10 +257,10 @@ async function once<T>(
  * @since 1.0.0
  */
 async function emit<T>(event: string, payload?: T): Promise<void> {
-  await invoke('plugin:event|emit', {
+  await invoke("plugin:event|emit", {
     event,
-    payload
-  })
+    payload,
+  });
 }
 
 /**
@@ -286,27 +278,15 @@ async function emit<T>(event: string, payload?: T): Promise<void> {
  *
  * @since 2.0.0
  */
-async function emitTo<T>(
-  target: EventTarget | string,
-  event: string,
-  payload?: T
-): Promise<void> {
-  const eventTarget: EventTarget =
-    typeof target === 'string' ? { kind: 'AnyLabel', label: target } : target
-  await invoke('plugin:event|emit_to', {
+async function emitTo<T>(target: EventTarget | string, event: string, payload?: T): Promise<void> {
+  const eventTarget: EventTarget = typeof target === "string" ? { kind: "AnyLabel", label: target } : target;
+  await invoke("plugin:event|emit_to", {
     target: eventTarget,
     event,
-    payload
-  })
+    payload,
+  });
 }
 
-export type {
-  Event,
-  EventTarget,
-  EventCallback,
-  UnlistenFn,
-  EventName,
-  Options
-}
+export type { Event, EventTarget, EventCallback, UnlistenFn, EventName, Options };
 
-export { listen, once, emit, emitTo, TauriEvent }
+export { listen, once, emit, emitTo, TauriEvent };

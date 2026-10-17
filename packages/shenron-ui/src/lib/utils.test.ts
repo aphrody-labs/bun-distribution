@@ -14,9 +14,7 @@ describe("cn", () => {
   });
 
   test("drops falsy inputs", () => {
-    expect(cn("text-white", undefined, null, false, 0, "", "font-bold")).toBe(
-      "text-white font-bold",
-    );
+    expect(cn("text-white", undefined, null, false, 0, "", "font-bold")).toBe("text-white font-bold");
     expect(cn()).toBe("");
   });
 
@@ -36,7 +34,6 @@ describe("cn", () => {
       ["h-11 min-w-11", "h-10", "min-w-10"],
       ["", null, false, 0, "border-2 border-black", "border-white/20"],
     ];
-    for (const inputs of cases)
-      expect(cn(...inputs)).toBe(twMerge(clsx(inputs)));
+    for (const inputs of cases) expect(cn(...inputs)).toBe(twMerge(clsx(inputs)));
   });
 });

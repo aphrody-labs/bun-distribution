@@ -20,10 +20,7 @@ export function PreviewContextMenu({
   onToggleFullscreen: () => void;
   container: HTMLElement | null;
   overlayControls: PreviewOverlayControl[];
-  onOverlayVisibilityChange: (params: {
-    overlayId: string;
-    isVisible: boolean;
-  }) => void;
+  onOverlayVisibilityChange: (params: { overlayId: string; isVisible: boolean }) => void;
 }) {
   const editor = useEditor();
   const viewport = usePreviewViewport();
@@ -67,11 +64,11 @@ export function PreviewContextMenu({
         Copy snapshot
       </ContextMenuItem>
       {overlayControls.length > 0 ? <ContextMenuSeparator /> : null}
-      {overlayControls.map((overlayControl) => (
+      {overlayControls.map(overlayControl => (
         <ContextMenuCheckboxItem
           key={overlayControl.id}
           checked={overlayControl.isVisible}
-          onCheckedChange={(checked) =>
+          onCheckedChange={checked =>
             onOverlayVisibilityChange({
               overlayId: overlayControl.id,
               isVisible: !!checked,

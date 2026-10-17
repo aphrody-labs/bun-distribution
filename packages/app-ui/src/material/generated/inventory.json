@@ -85,9 +85,7 @@
     "workspace": true,
     "private": true,
     "exports": 3,
-    "bin": [
-      "bun-android"
-    ]
+    "bin": ["bun-android"]
   },
   {
     "name": "@aphrody/bun-app-host",
@@ -98,9 +96,7 @@
     "workspace": true,
     "private": true,
     "exports": 4,
-    "bin": [
-      "aphrody-server"
-    ]
+    "bin": ["aphrody-server"]
   },
   {
     "name": "@aphrody/bun-arch-mcp",
@@ -111,10 +107,7 @@
     "workspace": true,
     "private": true,
     "exports": 2,
-    "bin": [
-      "bun-arch-mcp",
-      "bun-arch-docs"
-    ]
+    "bin": ["bun-arch-mcp", "bun-arch-docs"]
   },
   {
     "name": "@aphrody/bun-artifacts",
@@ -125,9 +118,7 @@
     "workspace": true,
     "private": true,
     "exports": 4,
-    "bin": [
-      "aphrody-artifacts"
-    ]
+    "bin": ["aphrody-artifacts"]
   },
   {
     "name": "@aphrody/bun-blender",
@@ -138,10 +129,7 @@
     "workspace": true,
     "private": true,
     "exports": 4,
-    "bin": [
-      "bun-blender",
-      "bun-blender-mcp"
-    ]
+    "bin": ["bun-blender", "bun-blender-mcp"]
   },
   {
     "name": "@aphrody/bun-desktop",
@@ -163,10 +151,7 @@
     "workspace": true,
     "private": true,
     "exports": 0,
-    "bin": [
-      "bep",
-      "bun-engine"
-    ]
+    "bin": ["bep", "bun-engine"]
   },
   {
     "name": "@aphrody/bun-engine-android",
@@ -199,9 +184,7 @@
     "workspace": true,
     "private": true,
     "exports": 3,
-    "bin": [
-      "aphrody-video"
-    ]
+    "bin": ["aphrody-video"]
   },
   {
     "name": "@aphrody/bun-windows-aclui",
@@ -4337,9 +4320,7 @@
     "workspace": true,
     "private": true,
     "exports": 10,
-    "bin": [
-      "aphrody-bun"
-    ]
+    "bin": ["aphrody-bun"]
   },
   {
     "name": "@aphrody/canvas",
@@ -4471,9 +4452,7 @@
     "workspace": true,
     "private": true,
     "exports": 10,
-    "bin": [
-      "m3"
-    ]
+    "bin": ["m3"]
   },
   {
     "name": "@aphrody/m3-ai",
@@ -4506,9 +4485,7 @@
     "workspace": true,
     "private": false,
     "exports": 26,
-    "bin": [
-      "m3-bun"
-    ]
+    "bin": ["m3-bun"]
   },
   {
     "name": "@aphrody/m3-codemods",
@@ -4629,9 +4606,7 @@
     "workspace": true,
     "private": false,
     "exports": 7,
-    "bin": [
-      "m3-next"
-    ]
+    "bin": ["m3-next"]
   },
   {
     "name": "@aphrody/m3-next-example",
@@ -4653,10 +4628,7 @@
     "workspace": true,
     "private": false,
     "exports": 17,
-    "bin": [
-      "m3-next-migrate",
-      "next-migrate"
-    ]
+    "bin": ["m3-next-migrate", "next-migrate"]
   },
   {
     "name": "@aphrody/m3-next-tauri-example",
@@ -4678,9 +4650,7 @@
     "workspace": true,
     "private": false,
     "exports": 4,
-    "bin": [
-      "m3-os-themes"
-    ]
+    "bin": ["m3-os-themes"]
   },
   {
     "name": "@aphrody/m3-primitives",
@@ -4779,9 +4749,7 @@
     "workspace": true,
     "private": false,
     "exports": 1,
-    "bin": [
-      "m3-svg-to-ico"
-    ]
+    "bin": ["m3-svg-to-ico"]
   },
   {
     "name": "@aphrody/nie-ui",
@@ -4847,12 +4815,7 @@
     "workspace": true,
     "private": false,
     "exports": 17,
-    "bin": [
-      "aphrody-omar",
-      "aphrody-product",
-      "aphrody-setup",
-      "creator-kit"
-    ]
+    "bin": ["aphrody-omar", "aphrody-product", "aphrody-setup", "creator-kit"]
   },
   {
     "name": "@aphrody/rag-core",
@@ -4885,9 +4848,7 @@
     "workspace": true,
     "private": false,
     "exports": 7,
-    "bin": [
-      "aphrody-scaffold"
-    ]
+    "bin": ["aphrody-scaffold"]
   },
   {
     "name": "@aphrody/shell-web",
@@ -4942,9 +4903,7 @@
     "workspace": true,
     "private": false,
     "exports": 8,
-    "bin": [
-      "web-to-tauri"
-    ]
+    "bin": ["web-to-tauri"]
   },
   {
     "name": "@aphrody/winclean",
@@ -4966,9 +4925,7 @@
     "workspace": true,
     "private": false,
     "exports": 8,
-    "bin": [
-      "yolo"
-    ]
+    "bin": ["yolo"]
   },
   {
     "name": "@aphrody/yolo-core",
@@ -4990,9 +4947,7 @@
     "workspace": true,
     "private": true,
     "exports": 2,
-    "bin": [
-      "package-converter"
-    ]
+    "bin": ["package-converter"]
   },
   {
     "name": "@bun-os/re",
@@ -5003,12 +4958,7 @@
     "workspace": true,
     "private": true,
     "exports": 2,
-    "bin": [
-      "rea",
-      "rea-agents",
-      "re-pipeline",
-      "re-steam"
-    ]
+    "bin": ["rea", "rea-agents", "re-pipeline", "re-steam"]
   },
   {
     "name": "@frontend/source",
@@ -5107,9 +5057,7 @@
     "workspace": true,
     "private": false,
     "exports": 28,
-    "bin": [
-      "azalee"
-    ]
+    "bin": ["azalee"]
   },
   {
     "name": "@rosegriffon/azalee-web",
@@ -5208,9 +5156,7 @@
     "workspace": true,
     "private": false,
     "exports": 27,
-    "bin": [
-      "inagle"
-    ]
+    "bin": ["inagle"]
   },
   {
     "name": "@rosegriffon/inagle-cross",
@@ -6013,9 +5959,7 @@
     "workspace": true,
     "private": false,
     "exports": 0,
-    "bin": [
-      "iecode-homebrew"
-    ]
+    "bin": ["iecode-homebrew"]
   },
   {
     "name": "ieverse",

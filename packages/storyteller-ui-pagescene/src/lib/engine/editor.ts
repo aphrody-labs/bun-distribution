@@ -2,11 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import Scene from "./scene";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
-import {
-  CameraAspectRatio,
-  ClipGroup,
-  DEFAULT_CAMERA_ASPECT_RATIO,
-} from "../enums";
+import { CameraAspectRatio, ClipGroup, DEFAULT_CAMERA_ASPECT_RATIO } from "../enums";
 import { SceneUtils } from "./helper";
 import { MouseControls } from "./keybinds_controls";
 import { SaveManager } from "./save_manager";
@@ -119,9 +115,7 @@ class Editor {
   private poseModeSubscription: () => void;
 
   // Persistent per-object skeleton overlays (outliner bone icon).
-  readonly skeletonHelpers = new SkeletonHelperController(
-    () => this.activeScene.scene,
-  );
+  readonly skeletonHelpers = new SkeletonHelperController(() => this.activeScene.scene);
 
   // Holds the in-flight transform action between gizmo dragstart and
   // dragend. Null whenever no drag is in progress.
@@ -129,8 +123,7 @@ class Editor {
 
   // Blender-style modal grab/move (keyboard axis-lock). Created up front; reads
   // camera/renderer/selection at begin() time.
-  readonly modalTransform: ModalTransformController =
-    new ModalTransformController(this);
+  readonly modalTransform: ModalTransformController = new ModalTransformController(this);
 
   public beginModalTransform(mode: "translate") {
     this.modalTransform.begin(mode);
@@ -181,9 +174,7 @@ class Editor {
   }
 
   constructor(adapter: PageSceneAdapter) {
-    console.log(
-      "If you see this message twice! then it rendered twice, if you see it once it's all good.",
-    );
+    console.log("If you see this message twice! then it rendered twice, if you see it once it's all good.");
     this.adapter = adapter;
     this.can_initialize = true;
     this.stats = new Stats();
@@ -206,15 +197,14 @@ class Editor {
     // strictly one-way: UI toggles emit GridVisibleChangedEvent on the
     // bus → bridge updates the store + this subscriber updates the
     // THREE.js gridHelper. No "store→engine" subscription anywhere.
-    this.gridSubscription = this.bus.subscribe(GridVisibleChangedEvent, (e) =>
+    this.gridSubscription = this.bus.subscribe(GridVisibleChangedEvent, e =>
       this.activeScene?.applyGridVisibility(e.visible),
     );
 
     // Look-through toggle. The double-click intercept and the outliner/exit
     // buttons emit this; the controller owns the enter/exit transition.
-    this.cameraViewSubscription = this.bus.subscribe(
-      CameraViewToggleRequestedEvent,
-      () => this.cameraController.switchCameraView(),
+    this.cameraViewSubscription = this.bus.subscribe(CameraViewToggleRequestedEvent, () =>
+      this.cameraController.switchCameraView(),
     );
 
     // Skeleton overlays and animation runtimes reconcile on every outliner
@@ -222,50 +212,39 @@ class Editor {
     // bespoke lifecycle hooks. The runtime revalidation matters for objects
     // recreated under the same uuid (delete→undo, in-session scene reloads),
     // whose mixers would otherwise stay bound to the detached old instance.
-    this.skeletonSyncSubscription = this.bus.subscribe(
-      OutlinerRefreshedEvent,
-      () => {
-        this.skeletonHelpers.sync();
-        this.characterAnimationManager.revalidate();
-      },
-    );
+    this.skeletonSyncSubscription = this.bus.subscribe(OutlinerRefreshedEvent, () => {
+      this.skeletonHelpers.sync();
+      this.characterAnimationManager.revalidate();
+    });
     // FK/pose mode draws its own rig overlay for the posed character —
     // suppress our persistent helper for it so bones aren't double-drawn,
     // and restore when pose mode exits.
-    this.poseModeSubscription = this.bus.subscribe(
-      PoseModeChangedEvent,
-      (e) => {
-        if (e.mode === "pose") {
-          this.skeletonHelpers.suppress(
-            this.mouse_controls?.selected?.[0]?.uuid ?? null,
-          );
-        } else {
-          this.skeletonHelpers.suppress(null);
-        }
-      },
-    );
+    this.poseModeSubscription = this.bus.subscribe(PoseModeChangedEvent, e => {
+      if (e.mode === "pose") {
+        this.skeletonHelpers.suppress(this.mouse_controls?.selected?.[0]?.uuid ?? null);
+      } else {
+        this.skeletonHelpers.suppress(null);
+      }
+    });
 
     // PostProcessingPipeline must exist before Scene because Scene's
     // load paths invoke updateSurfaceIdAttributeToMesh as a callback.
     this.postProcessing = new PostProcessingPipeline();
     this.gizmo = new GizmoController({
       getTransformSpace: () => usePageSceneStore.getState().transformSpace,
-      setTransformSpace: (space) =>
-        this.bus.emit(new TransformSpaceChangedEvent(space)),
+      setTransformSpace: space => this.bus.emit(new TransformSpaceChangedEvent(space)),
     });
     this.cameraController = new CameraController({
       getThreeScene: () => this.activeScene.scene,
       getHotItems: () => this.activeScene.hot_items ?? null,
       removeTransformControls: () => this.utils.removeTransformControls(),
-      setSelected: (obj) => {
+      setSelected: obj => {
         this.selection.selected = obj ?? undefined;
         this.selection.publishSelect();
         this.selection.updateSelectedUI();
       },
-      setEditorState: (state) =>
-        this.bus.emit(new EditorStateChangedEvent(state)),
-      hideObjectPanel: () =>
-        this.bus.emit(new InspectorPanelChangedEvent(null)),
+      setEditorState: state => this.bus.emit(new EditorStateChangedEvent(state)),
+      hideObjectPanel: () => this.bus.emit(new InspectorPanelChangedEvent(null)),
       getCameras: () => usePageSceneStore.getState().cameras,
       getSelectedCameraId: () => usePageSceneStore.getState().selectedCameraId,
       bus: this.bus,
@@ -274,10 +253,9 @@ class Editor {
       getSceneManager: () => this.sceneManager,
       cameraName: this.cameraController.camera_name,
       version: this.version,
-      toggleObjectLocked: (uuid) => this.utils.toggleObjectLocked(uuid),
-      setObjectLocked: (uuid, locked) =>
-        this.utils.setObjectLocked(uuid, locked),
-      isObjectLocked: (uuid) => this.utils.isObjectLocked(uuid),
+      toggleObjectLocked: uuid => this.utils.toggleObjectLocked(uuid),
+      setObjectLocked: (uuid, locked) => this.utils.setObjectLocked(uuid, locked),
+      isObjectLocked: uuid => this.utils.isObjectLocked(uuid),
       removeTransformControls: () => this.utils.removeTransformControls(false),
       attachGizmoToCurrentSelection: () => {
         this.gizmo.addToScene(this.activeScene.scene);
@@ -291,24 +269,21 @@ class Editor {
         for (const c of characters) result[c.id] = ClipGroup.CHARACTER;
         return result;
       },
-      isCharacterUuid: (uuid) =>
-        usePageSceneStore.getState().characters.some((c) => c.id === uuid),
+      isCharacterUuid: uuid => usePageSceneStore.getState().characters.some(c => c.id === uuid),
     });
 
     this.activeScene = new Scene(
       "" + this.version,
       this.cameraController.camera_name,
-      (scene: THREE.Scene) =>
-        this.postProcessing.updateSurfaceIdAttributeToMesh(scene),
+      (scene: THREE.Scene) => this.postProcessing.updateSurfaceIdAttributeToMesh(scene),
       this.version,
       {
         getCameras: () => usePageSceneStore.getState().cameras,
-        getSelectedCameraId: () =>
-          usePageSceneStore.getState().selectedCameraId,
+        getSelectedCameraId: () => usePageSceneStore.getState().selectedCameraId,
         fetchAsset: (url, init) => this.adapter.fetchAsset(url, init),
-        getMediaUrlByToken: (token) => this.adapter.getMediaUrlByToken(token),
+        getMediaUrlByToken: token => this.adapter.getMediaUrlByToken(token),
         getMediaUrlsByTokens: this.adapter.getMediaUrlsByTokens
-          ? (tokens) => this.adapter.getMediaUrlsByTokens!(tokens)
+          ? tokens => this.adapter.getMediaUrlsByTokens!(tokens)
           : undefined,
         onGlbLoaded: () => this.selection.refreshOutliner(),
       },
@@ -326,8 +301,7 @@ class Editor {
     this.utils = new SceneUtils(this.activeScene, {
       getGizmoControl: () => this.gizmo.control,
       detachGizmo: () => this.gizmo.detach(),
-      removeGizmoFromScene: () =>
-        this.gizmo.removeFromScene(this.activeScene.scene),
+      removeGizmoFromScene: () => this.gizmo.removeFromScene(this.activeScene.scene),
       getSelectionPass: () => this.postProcessing.selectionPass,
       publishSelect: () => this.selection.publishSelect(),
       clearSelected: () => {
@@ -340,27 +314,24 @@ class Editor {
     });
     this.save_manager = new SaveManager({
       getVersion: () => this.version,
-      setVersion: (v) => {
+      setVersion: v => {
         this.version = v;
       },
       getActiveScene: () => this.activeScene,
       getRenderer: () => this.renderer,
       removeTransformControls: () => this.utils.removeTransformControls(),
       getCamera: () => this.cameraController.camera,
-      refreshCamObj: () =>
-        this.cameraController.refreshCamObj(this.activeScene.scene),
-      changeRenderCameraAspectRatio: (ratio) =>
-        this.cameraController.changeRenderCameraAspectRatio(ratio),
-      setPositivePrompt: (prompt) => {
+      refreshCamObj: () => this.cameraController.refreshCamObj(this.activeScene.scene),
+      changeRenderCameraAspectRatio: ratio => this.cameraController.changeRenderCameraAspectRatio(ratio),
+      setPositivePrompt: prompt => {
         this.positive_prompt = prompt;
       },
-      saveSceneState: (args) => this.adapter.saveScene(args),
-      loadSceneState: (token) => this.adapter.loadScene(token),
+      saveSceneState: args => this.adapter.saveScene(args),
+      loadSceneState: token => this.adapter.loadScene(token),
       getCameras: () => usePageSceneStore.getState().cameras,
       getSelectedCameraId: () => usePageSceneStore.getState().selectedCameraId,
       getTimeline: () => this.timelineController.getTimeline(),
-      loadTimeline: (timeline) =>
-        this.timelineController.loadTimeline(timeline),
+      loadTimeline: timeline => this.timelineController.loadTimeline(timeline),
       resetTimeline: () => this.timelineController.reset(),
       getRenderCameraTransform: () => {
         const cam = this.cameraController.cam_obj;
@@ -377,8 +348,7 @@ class Editor {
       getCamera: () => this.cameraController.camera,
       getRenderCamera: () => this.cameraController.render_camera,
       getRenderer: () => this.renderer,
-      getRenderAspectRatio: () =>
-        this.cameraController.getRenderDimensions().aspectRatio,
+      getRenderAspectRatio: () => this.cameraController.getRenderDimensions().aspectRatio,
       resizePostProcessing: (w, h) => this.postProcessing.resize(w, h),
       renderScene: () => {
         // Fire-and-forget: renderScene is async only for optional
@@ -446,9 +416,7 @@ class Editor {
     const height = Math.max(1, this.viewport.container.offsetHeight);
 
     // Sets up camera and base position using camera configurations from the store.
-    const mainCameraConfig = usePageSceneStore
-      .getState()
-      .cameras.find((cam) => cam.id === "main");
+    const mainCameraConfig = usePageSceneStore.getState().cameras.find(cam => cam.id === "main");
     if (mainCameraConfig) {
       const mainCamera = new THREE.PerspectiveCamera(
         this.cameraController.focalLengthToFov(mainCameraConfig.focalLength),
@@ -456,24 +424,14 @@ class Editor {
         0.1,
         2000,
       );
-      mainCamera.position.set(
-        mainCameraConfig.position.x,
-        mainCameraConfig.position.y,
-        mainCameraConfig.position.z,
-      );
-      mainCamera.lookAt(
-        mainCameraConfig.lookAt.x,
-        mainCameraConfig.lookAt.y,
-        mainCameraConfig.lookAt.z,
-      );
+      mainCamera.position.set(mainCameraConfig.position.x, mainCameraConfig.position.y, mainCameraConfig.position.z);
+      mainCamera.lookAt(mainCameraConfig.lookAt.x, mainCameraConfig.lookAt.y, mainCameraConfig.lookAt.z);
       mainCamera.layers.enable(0);
       mainCamera.layers.enable(1);
       this.cameraController.camera = mainCamera;
     }
 
-    const otherCameras = usePageSceneStore
-      .getState()
-      .cameras.filter((cam) => cam.id !== "main");
+    const otherCameras = usePageSceneStore.getState().cameras.filter(cam => cam.id !== "main");
     if (otherCameras.length > 0) {
       const renderCameraConfig = otherCameras[0];
       const renderCamera = new THREE.PerspectiveCamera(
@@ -487,11 +445,7 @@ class Editor {
         renderCameraConfig.position.y,
         renderCameraConfig.position.z,
       );
-      renderCamera.lookAt(
-        renderCameraConfig.lookAt.x,
-        renderCameraConfig.lookAt.y,
-        renderCameraConfig.lookAt.z,
-      );
+      renderCamera.lookAt(renderCameraConfig.lookAt.x, renderCameraConfig.lookAt.y, renderCameraConfig.lookAt.z);
       renderCamera.layers.disable(1); // This camera does not see this layer
       this.cameraController.render_camera = renderCamera;
     }
@@ -559,40 +513,33 @@ class Editor {
     // editor reads `cameraController.freeCamState` (set by that hook) on
     // every render.
 
-    this.gizmo.configure(
-      this.cameraController.camera,
-      this.renderer.domElement,
-      this.activeScene.scene,
-      {
-        onChange: () => this.renderScene(),
-        onDraggingChanged: (dragging) => {
-          this.selection.updateSelectedUI();
-          this.cameraController.camera_last_pos.copy(
-            new THREE.Vector3(-99999, -99999, -99999),
-          );
-          this.focused = !dragging;
-          // Gizmo drag boundary → TransformAction. Begin captures the
-          // pre-drag transform in the constructor; end commits the diff
-          // (or drops a no-op move).
-          if (dragging) {
-            const target = this.sceneManager?.selected_objects?.[0];
-            if (target) {
-              this.activeTransform = new TransformAction(this, target.uuid);
-            }
-          } else if (this.activeTransform) {
-            if (this.activeTransform.commit()) {
-              this.history.record(this.activeTransform);
-              // Auto-key: if the dragged object is already keyframed, record
-              // its new transform at the playhead (replaces the keyframe there
-              // or creates one at the current scrub point).
-              const uuid = this.sceneManager?.selected_objects?.[0]?.uuid;
-              if (uuid) this.timelineController.autoKeyIfTracked(uuid);
-            }
-            this.activeTransform = null;
+    this.gizmo.configure(this.cameraController.camera, this.renderer.domElement, this.activeScene.scene, {
+      onChange: () => this.renderScene(),
+      onDraggingChanged: dragging => {
+        this.selection.updateSelectedUI();
+        this.cameraController.camera_last_pos.copy(new THREE.Vector3(-99999, -99999, -99999));
+        this.focused = !dragging;
+        // Gizmo drag boundary → TransformAction. Begin captures the
+        // pre-drag transform in the constructor; end commits the diff
+        // (or drops a no-op move).
+        if (dragging) {
+          const target = this.sceneManager?.selected_objects?.[0];
+          if (target) {
+            this.activeTransform = new TransformAction(this, target.uuid);
           }
-        },
+        } else if (this.activeTransform) {
+          if (this.activeTransform.commit()) {
+            this.history.record(this.activeTransform);
+            // Auto-key: if the dragged object is already keyframed, record
+            // its new transform at the playhead (replaces the keyframe there
+            // or creates one at the current scrub point).
+            const uuid = this.sceneManager?.selected_objects?.[0]?.uuid;
+            if (uuid) this.timelineController.autoKeyIfTracked(uuid);
+          }
+          this.activeTransform = null;
+        }
       },
-    );
+    });
 
     this.raycaster = new THREE.Raycaster();
     // Configure raycaster to check both layers
@@ -609,9 +556,7 @@ class Editor {
 
     this.mouse_controls = new MouseControls({
       camera: this.cameraController.camera,
-      camera_person_mode: this.cameraController.getCameraPersonMode.bind(
-        this.cameraController,
-      ) as unknown as boolean,
+      camera_person_mode: this.cameraController.getCameraPersonMode.bind(this.cameraController) as unknown as boolean,
       cameraViewControls: this.cameraController.freeCamState,
       lockControls: this.cameraController.lockControls,
       camera_last_pos: this.cameraController.camera_last_pos,
@@ -633,18 +578,12 @@ class Editor {
       toggle_stats: this.toggle_stats.bind(this),
       bus: this.bus,
       getPoseMode: () => usePageSceneStore.getState().poseMode,
-      isHotkeyDisabled: () =>
-        usePageSceneStore.getState().hotkeyStatus.disabled,
+      isHotkeyDisabled: () => usePageSceneStore.getState().hotkeyStatus.disabled,
       getTransformSpace: () => usePageSceneStore.getState().transformSpace,
       isViewportLocked: () => this.cameraController.locked,
     });
 
-    this.sceneManager = new SceneManager(
-      this.version,
-      this.mouse_controls,
-      this.activeScene,
-      this.bus,
-    );
+    this.sceneManager = new SceneManager(this.version, this.mouse_controls, this.activeScene, this.bus);
     this.mouse_controls.sceneManager = this.sceneManager;
 
     // Add spark renderer as a child of the camera
@@ -784,8 +723,7 @@ class Editor {
     const originalHeight = sizeVector.y;
     const originalPixelRatio = this.renderer.getPixelRatio();
     const originalCameraAspect = camera.aspect;
-    const originalRenderCameraAspect =
-      renderCamera?.aspect || originalCameraAspect;
+    const originalRenderCameraAspect = renderCamera?.aspect || originalCameraAspect;
 
     // The camera-view framing offset maps the render frame into an inset
     // rect of the viewport canvas — it must not leak into the snapshot,
@@ -880,21 +818,12 @@ class Editor {
     // A fresh scene starts with a fresh timeline — the previous scene's
     // tracks and clip strips must not carry over.
     this.timelineController.reset();
-    this.cameraController.cam_obj = this.activeScene.get_object_by_name(
-      this.cameraController.camera_name,
-    );
+    this.cameraController.cam_obj = this.activeScene.get_object_by_name(this.cameraController.camera_name);
     // Fresh scenes always start at the default aspect ratio — don't
     // inherit whatever the previously loaded scene used.
-    this.cameraController.changeRenderCameraAspectRatio(
-      DEFAULT_CAMERA_ASPECT_RATIO,
-    );
-    this.bus.emit(
-      new CameraAspectRatioChangedEvent(DEFAULT_CAMERA_ASPECT_RATIO),
-    );
-    const sceneTitle =
-      sceneTitleInput && sceneTitleInput !== ""
-        ? sceneTitleInput
-        : "Untitled New Scene";
+    this.cameraController.changeRenderCameraAspectRatio(DEFAULT_CAMERA_ASPECT_RATIO);
+    this.bus.emit(new CameraAspectRatioChangedEvent(DEFAULT_CAMERA_ASPECT_RATIO));
+    const sceneTitle = sceneTitleInput && sceneTitleInput !== "" ? sceneTitleInput : "Untitled New Scene";
     this.adapter.onSceneTitleChange?.({
       title: sceneTitle,
       token: undefined,
@@ -910,9 +839,7 @@ class Editor {
     return await this.save_manager.loadCache(cacheJson);
   }
 
-  public async loadScene(
-    scene_media_token: string,
-  ): Promise<{ applied: boolean }> {
+  public async loadScene(scene_media_token: string): Promise<{ applied: boolean }> {
     const result = await this.save_manager.loadScene(scene_media_token);
     if (result.applied) this.selection.refreshOutliner();
     return result;
@@ -951,7 +878,7 @@ class Editor {
   // animated GLB import). Used to auto-expand the timeline on load.
   sceneHasAnimation(): boolean {
     let found = false;
-    this.activeScene.scene.traverse((o) => {
+    this.activeScene.scene.traverse(o => {
       const clips = (o as unknown as { animations?: unknown[] }).animations;
       if (clips && clips.length > 0) found = true;
     });
@@ -991,13 +918,8 @@ class Editor {
 
   // Render the scene to the camera, this is called in the update.
   async renderScene() {
-    const { render_camera, render_width, render_height } =
-      this.cameraController;
-    if (
-      this.postProcessing.composer != null &&
-      this.rawRenderer &&
-      this.postProcessing.render_composer
-    ) {
+    const { render_camera, render_width, render_height } = this.cameraController;
+    if (this.postProcessing.composer != null && this.rawRenderer && this.postProcessing.render_composer) {
       this.postProcessing.composer.render();
     } else if (this.renderer && render_camera) {
       this.renderer.setSize(render_width, render_height);
@@ -1011,15 +933,9 @@ class Editor {
     this.viewport.containerMayReset();
 
     if (this.viewport.container) {
-      if (
-        this.viewport.container.clientWidth +
-          this.viewport.container.clientHeight !==
-        this.viewport.lastCanvasSize
-      ) {
+      if (this.viewport.container.clientWidth + this.viewport.container.clientHeight !== this.viewport.lastCanvasSize) {
         this.viewport.onWindowResize();
-        this.viewport.lastCanvasSize =
-          this.viewport.container.clientWidth +
-          this.viewport.container.clientHeight;
+        this.viewport.lastCanvasSize = this.viewport.container.clientWidth + this.viewport.container.clientHeight;
       }
     }
 
@@ -1038,7 +954,7 @@ class Editor {
     // playing or right after a seek).
     this.timelineController.tick(delta_time);
 
-    this.activeScene.shader_objects.forEach((shader) => {
+    this.activeScene.shader_objects.forEach(shader => {
       shader.material.uniforms["time"].value += 0.5 * delta_time;
     });
 

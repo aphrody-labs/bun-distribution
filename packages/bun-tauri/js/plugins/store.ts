@@ -11,16 +11,16 @@
  * @module
  */
 
-import { listen, type UnlistenFn } from '../api/event'
+import { listen, type UnlistenFn } from "../api/event";
 
-import { invoke, Resource } from '../api/core'
+import { invoke, Resource } from "../api/core";
 
 interface ChangePayload<T> {
-  path: string
-  resourceId?: number
-  key: string
-  value: T
-  exists: boolean
+  path: string;
+  resourceId?: number;
+  key: string;
+  value: T;
+  exists: boolean;
 }
 
 /**
@@ -30,28 +30,28 @@ export type StoreOptions = {
   /**
    * Default value of the store
    */
-  defaults?: { [key: string]: unknown }
+  defaults?: { [key: string]: unknown };
   /**
    * Auto save on modification with debounce duration in milliseconds, it's 100ms by default, pass in `false` to disable it
    */
-  autoSave?: boolean | number
+  autoSave?: boolean | number;
   /**
    * Name of a serialize function registered in the rust side plugin builder
    */
-  serializeFnName?: string
+  serializeFnName?: string;
   /**
    * Name of a deserialize function registered in the rust side plugin builder
    */
-  deserializeFnName?: string
+  deserializeFnName?: string;
   /**
    * Force create a new store with default values even if it already exists.
    */
-  createNew?: boolean
+  createNew?: boolean;
   /**
    * When creating the store, override the store with the on-disk state if it exists, ignoring defaults
    */
-  overrideDefaults?: boolean
-}
+  overrideDefaults?: boolean;
+};
 
 /**
  * Create a new Store or load the existing store with the path.
@@ -71,11 +71,8 @@ export type StoreOptions = {
  *
  * @since 2.1.0
  */
-export async function load(
-  path: string,
-  options?: StoreOptions
-): Promise<Store> {
-  return await Store.load(path, options)
+export async function load(path: string, options?: StoreOptions): Promise<Store> {
+  return await Store.load(path, options);
 }
 
 /**
@@ -98,7 +95,7 @@ export async function load(
  * @since 2.1.0
  */
 export async function getStore(path: string): Promise<Store | null> {
-  return await Store.get(path)
+  return await Store.get(path);
 }
 
 /**
@@ -110,13 +107,13 @@ export async function getStore(path: string): Promise<Store | null> {
  * @since 2.1.0
  */
 export class LazyStore implements IStore {
-  private _store?: Promise<Store>
+  private _store?: Promise<Store>;
 
   private get store(): Promise<Store> {
     if (!this._store) {
-      this._store = load(this.path, this.options)
+      this._store = load(this.path, this.options);
     }
-    return this._store
+    return this._store;
   }
 
   /**
@@ -135,7 +132,7 @@ export class LazyStore implements IStore {
    */
   constructor(
     private readonly path: string,
-    private readonly options?: StoreOptions
+    private readonly options?: StoreOptions,
   ) {}
 
   /**
@@ -149,7 +146,7 @@ export class LazyStore implements IStore {
    * ```
    */
   async init(): Promise<void> {
-    await this.store
+    await this.store;
   }
 
   /**
@@ -168,7 +165,7 @@ export class LazyStore implements IStore {
    * @param value The value to store, which must be serializable to JSON.
    */
   async set(key: string, value: unknown): Promise<void> {
-    return (await this.store).set(key, value)
+    return (await this.store).set(key, value);
   }
 
   /**
@@ -187,7 +184,7 @@ export class LazyStore implements IStore {
    * @returns A promise resolving to the stored value, or `undefined` if the key does not exist.
    */
   async get<T>(key: string): Promise<T | undefined> {
-    return (await this.store).get<T>(key)
+    return (await this.store).get<T>(key);
   }
 
   /**
@@ -206,7 +203,7 @@ export class LazyStore implements IStore {
    * @returns A promise resolving to `true` if the key exists in the store.
    */
   async has(key: string): Promise<boolean> {
-    return (await this.store).has(key)
+    return (await this.store).has(key);
   }
 
   /**
@@ -225,7 +222,7 @@ export class LazyStore implements IStore {
    * @returns A promise resolving to `true` if the key existed and was removed.
    */
   async delete(key: string): Promise<boolean> {
-    return (await this.store).delete(key)
+    return (await this.store).delete(key);
   }
 
   /**
@@ -242,7 +239,7 @@ export class LazyStore implements IStore {
    * ```
    */
   async clear(): Promise<void> {
-    await (await this.store).clear()
+    await (await this.store).clear();
   }
 
   /**
@@ -259,7 +256,7 @@ export class LazyStore implements IStore {
    * ```
    */
   async reset(): Promise<void> {
-    await (await this.store).reset()
+    await (await this.store).reset();
   }
 
   /**
@@ -277,7 +274,7 @@ export class LazyStore implements IStore {
    * @returns A promise resolving to the list of keys, in arbitrary order.
    */
   async keys(): Promise<string[]> {
-    return (await this.store).keys()
+    return (await this.store).keys();
   }
 
   /**
@@ -295,7 +292,7 @@ export class LazyStore implements IStore {
    * @returns A promise resolving to the list of values, in arbitrary order.
    */
   async values<T>(): Promise<T[]> {
-    return (await this.store).values<T>()
+    return (await this.store).values<T>();
   }
 
   /**
@@ -313,7 +310,7 @@ export class LazyStore implements IStore {
    * @returns A promise resolving to the list of key-value pairs, in arbitrary order.
    */
   async entries<T>(): Promise<Array<[key: string, value: T]>> {
-    return (await this.store).entries<T>()
+    return (await this.store).entries<T>();
   }
 
   /**
@@ -331,7 +328,7 @@ export class LazyStore implements IStore {
    * @returns A promise resolving to the number of key-value pairs in the store.
    */
   async length(): Promise<number> {
-    return (await this.store).length()
+    return (await this.store).length();
   }
 
   /**
@@ -349,7 +346,7 @@ export class LazyStore implements IStore {
    * @param options Options to change how the on-disk state is merged into the store.
    */
   async reload(options?: ReloadOptions): Promise<void> {
-    await (await this.store).reload(options)
+    await (await this.store).reload(options);
   }
 
   /**
@@ -365,7 +362,7 @@ export class LazyStore implements IStore {
    * ```
    */
   async save(): Promise<void> {
-    await (await this.store).save()
+    await (await this.store).save();
   }
 
   /**
@@ -386,11 +383,8 @@ export class LazyStore implements IStore {
    * @param cb Callback invoked with the new value, or `undefined` when the key was removed.
    * @returns A promise resolving to a function to unlisten to the event.
    */
-  async onKeyChange<T>(
-    key: string,
-    cb: (value: T | undefined) => void
-  ): Promise<UnlistenFn> {
-    return (await this.store).onKeyChange<T>(key, cb)
+  async onKeyChange<T>(key: string, cb: (value: T | undefined) => void): Promise<UnlistenFn> {
+    return (await this.store).onKeyChange<T>(key, cb);
   }
 
   /**
@@ -410,10 +404,8 @@ export class LazyStore implements IStore {
    * @param cb Callback invoked with the changed key and its new value, which is `undefined` when the key was removed.
    * @returns A promise resolving to a function to unlisten to the event.
    */
-  async onChange<T>(
-    cb: (key: string, value: T | undefined) => void
-  ): Promise<UnlistenFn> {
-    return (await this.store).onChange<T>(cb)
+  async onChange<T>(cb: (key: string, value: T | undefined) => void): Promise<UnlistenFn> {
+    return (await this.store).onChange<T>(cb);
   }
 
   /**
@@ -432,7 +424,7 @@ export class LazyStore implements IStore {
    */
   async close(): Promise<void> {
     if (this._store) {
-      await (await this._store).close()
+      await (await this._store).close();
     }
   }
 }
@@ -448,7 +440,7 @@ export class LazyStore implements IStore {
  */
 export class Store extends Resource implements IStore {
   private constructor(rid: number) {
-    super(rid)
+    super(rid);
   }
 
   /**
@@ -468,11 +460,11 @@ export class Store extends Resource implements IStore {
    * @returns A promise resolving to the loaded store.
    */
   static async load(path: string, options?: StoreOptions): Promise<Store> {
-    const rid = await invoke<number>('plugin:store|load', {
+    const rid = await invoke<number>("plugin:store|load", {
       path,
-      options
-    })
-    return new Store(rid)
+      options,
+    });
+    return new Store(rid);
   }
 
   /**
@@ -496,9 +488,7 @@ export class Store extends Resource implements IStore {
    * @returns A promise resolving to the store instance, or `null` if it is not loaded.
    */
   static async get(path: string): Promise<Store | null> {
-    return await invoke<number | null>('plugin:store|get_store', { path }).then(
-      (rid) => (rid ? new Store(rid) : null)
-    )
+    return await invoke<number | null>("plugin:store|get_store", { path }).then(rid => (rid ? new Store(rid) : null));
   }
 
   /**
@@ -518,11 +508,11 @@ export class Store extends Resource implements IStore {
    * @param value The value to store, which must be serializable to JSON.
    */
   async set(key: string, value: unknown): Promise<void> {
-    await invoke('plugin:store|set', {
+    await invoke("plugin:store|set", {
       rid: this.rid,
       key,
-      value
-    })
+      value,
+    });
   }
 
   /**
@@ -539,11 +529,11 @@ export class Store extends Resource implements IStore {
    * @returns A promise resolving to the stored value, or `undefined` if the key does not exist.
    */
   async get<T>(key: string): Promise<T | undefined> {
-    const [value, exists] = await invoke<[T, boolean]>('plugin:store|get', {
+    const [value, exists] = await invoke<[T, boolean]>("plugin:store|get", {
       rid: this.rid,
-      key
-    })
-    return exists ? value : undefined
+      key,
+    });
+    return exists ? value : undefined;
   }
 
   /**
@@ -560,10 +550,10 @@ export class Store extends Resource implements IStore {
    * @returns A promise resolving to `true` if the key exists in the store.
    */
   async has(key: string): Promise<boolean> {
-    return await invoke('plugin:store|has', {
+    return await invoke("plugin:store|has", {
       rid: this.rid,
-      key
-    })
+      key,
+    });
   }
 
   /**
@@ -583,10 +573,10 @@ export class Store extends Resource implements IStore {
    * @returns A promise resolving to `true` if the key existed and was removed.
    */
   async delete(key: string): Promise<boolean> {
-    return await invoke('plugin:store|delete', {
+    return await invoke("plugin:store|delete", {
       rid: this.rid,
-      key
-    })
+      key,
+    });
   }
 
   /**
@@ -603,7 +593,7 @@ export class Store extends Resource implements IStore {
    * ```
    */
   async clear(): Promise<void> {
-    await invoke('plugin:store|clear', { rid: this.rid })
+    await invoke("plugin:store|clear", { rid: this.rid });
   }
 
   /**
@@ -620,7 +610,7 @@ export class Store extends Resource implements IStore {
    * ```
    */
   async reset(): Promise<void> {
-    await invoke('plugin:store|reset', { rid: this.rid })
+    await invoke("plugin:store|reset", { rid: this.rid });
   }
 
   /**
@@ -636,7 +626,7 @@ export class Store extends Resource implements IStore {
    * @returns A promise resolving to the list of keys, in arbitrary order.
    */
   async keys(): Promise<string[]> {
-    return await invoke('plugin:store|keys', { rid: this.rid })
+    return await invoke("plugin:store|keys", { rid: this.rid });
   }
 
   /**
@@ -652,7 +642,7 @@ export class Store extends Resource implements IStore {
    * @returns A promise resolving to the list of values, in arbitrary order.
    */
   async values<T>(): Promise<T[]> {
-    return await invoke('plugin:store|values', { rid: this.rid })
+    return await invoke("plugin:store|values", { rid: this.rid });
   }
 
   /**
@@ -668,7 +658,7 @@ export class Store extends Resource implements IStore {
    * @returns A promise resolving to the list of key-value pairs, in arbitrary order.
    */
   async entries<T>(): Promise<Array<[key: string, value: T]>> {
-    return await invoke('plugin:store|entries', { rid: this.rid })
+    return await invoke("plugin:store|entries", { rid: this.rid });
   }
 
   /**
@@ -684,7 +674,7 @@ export class Store extends Resource implements IStore {
    * @returns A promise resolving to the number of key-value pairs in the store.
    */
   async length(): Promise<number> {
-    return await invoke('plugin:store|length', { rid: this.rid })
+    return await invoke("plugin:store|length", { rid: this.rid });
   }
 
   /**
@@ -708,7 +698,7 @@ export class Store extends Resource implements IStore {
    * @param options Options to change how the on-disk state is merged into the store.
    */
   async reload(options?: ReloadOptions): Promise<void> {
-    await invoke('plugin:store|reload', { rid: this.rid, ...options })
+    await invoke("plugin:store|reload", { rid: this.rid, ...options });
   }
 
   /**
@@ -725,7 +715,7 @@ export class Store extends Resource implements IStore {
    * ```
    */
   async save(): Promise<void> {
-    await invoke('plugin:store|save', { rid: this.rid })
+    await invoke("plugin:store|save", { rid: this.rid });
   }
 
   /**
@@ -748,15 +738,12 @@ export class Store extends Resource implements IStore {
    *
    * @since 2.0.0
    */
-  async onKeyChange<T>(
-    key: string,
-    cb: (value: T | undefined) => void
-  ): Promise<UnlistenFn> {
-    return await listen<ChangePayload<T>>('store://change', (event) => {
+  async onKeyChange<T>(key: string, cb: (value: T | undefined) => void): Promise<UnlistenFn> {
+    return await listen<ChangePayload<T>>("store://change", event => {
       if (event.payload.resourceId === this.rid && event.payload.key === key) {
-        cb(event.payload.exists ? event.payload.value : undefined)
+        cb(event.payload.exists ? event.payload.value : undefined);
       }
-    })
+    });
   }
 
   /**
@@ -778,17 +765,12 @@ export class Store extends Resource implements IStore {
    *
    * @since 2.0.0
    */
-  async onChange<T>(
-    cb: (key: string, value: T | undefined) => void
-  ): Promise<UnlistenFn> {
-    return await listen<ChangePayload<T>>('store://change', (event) => {
+  async onChange<T>(cb: (key: string, value: T | undefined) => void): Promise<UnlistenFn> {
+    return await listen<ChangePayload<T>>("store://change", event => {
       if (event.payload.resourceId === this.rid) {
-        cb(
-          event.payload.key,
-          event.payload.exists ? event.payload.value : undefined
-        )
+        cb(event.payload.key, event.payload.exists ? event.payload.value : undefined);
       }
-    })
+    });
   }
 }
 
@@ -800,7 +782,7 @@ interface IStore {
    * @param value
    * @returns
    */
-  set(key: string, value: unknown): Promise<void>
+  set(key: string, value: unknown): Promise<void>;
 
   /**
    * Returns the value for the given `key` or `undefined` if the key does not exist.
@@ -808,7 +790,7 @@ interface IStore {
    * @param key
    * @returns
    */
-  get<T>(key: string): Promise<T | undefined>
+  get<T>(key: string): Promise<T | undefined>;
 
   /**
    * Returns `true` if the given `key` exists in the store.
@@ -816,7 +798,7 @@ interface IStore {
    * @param key
    * @returns
    */
-  has(key: string): Promise<boolean>
+  has(key: string): Promise<boolean>;
 
   /**
    * Removes a key-value pair from the store.
@@ -824,7 +806,7 @@ interface IStore {
    * @param key
    * @returns
    */
-  delete(key: string): Promise<boolean>
+  delete(key: string): Promise<boolean>;
 
   /**
    * Clears the store, removing all key-value pairs.
@@ -832,7 +814,7 @@ interface IStore {
    * Note: To clear the storage and reset it to its `default` value, use {@linkcode reset} instead.
    * @returns
    */
-  clear(): Promise<void>
+  clear(): Promise<void>;
 
   /**
    * Resets the store to its `default` value.
@@ -840,35 +822,35 @@ interface IStore {
    * If no default value has been set, this method behaves identical to {@linkcode clear}.
    * @returns
    */
-  reset(): Promise<void>
+  reset(): Promise<void>;
 
   /**
    * Returns a list of all keys in the store.
    *
    * @returns
    */
-  keys(): Promise<string[]>
+  keys(): Promise<string[]>;
 
   /**
    * Returns a list of all values in the store.
    *
    * @returns
    */
-  values<T>(): Promise<T[]>
+  values<T>(): Promise<T[]>;
 
   /**
    * Returns a list of all entries in the store.
    *
    * @returns
    */
-  entries<T>(): Promise<Array<[key: string, value: T]>>
+  entries<T>(): Promise<Array<[key: string, value: T]>>;
 
   /**
    * Returns the number of key-value pairs in the store.
    *
    * @returns
    */
-  length(): Promise<number>
+  length(): Promise<number>;
 
   /**
    * Attempts to load the on-disk state at the store's `path` into memory.
@@ -883,13 +865,13 @@ interface IStore {
    *
    * @returns
    */
-  reload(options?: ReloadOptions): Promise<void>
+  reload(options?: ReloadOptions): Promise<void>;
 
   /**
    * Saves the store to disk at the store's `path`.
    * @returns
    */
-  save(): Promise<void>
+  save(): Promise<void>;
 
   /**
    * Listen to changes on a store key.
@@ -899,10 +881,7 @@ interface IStore {
    *
    * @since 2.0.0
    */
-  onKeyChange<T>(
-    key: string,
-    cb: (value: T | undefined) => void
-  ): Promise<UnlistenFn>
+  onKeyChange<T>(key: string, cb: (value: T | undefined) => void): Promise<UnlistenFn>;
 
   /**
    * Listen to changes on the store.
@@ -911,15 +890,13 @@ interface IStore {
    *
    * @since 2.0.0
    */
-  onChange<T>(
-    cb: (key: string, value: T | undefined) => void
-  ): Promise<UnlistenFn>
+  onChange<T>(cb: (key: string, value: T | undefined) => void): Promise<UnlistenFn>;
 
   /**
    * Close the store and cleans up this resource from memory.
    * **You should not call any method on this object anymore and should drop any reference to it.**
    */
-  close(): Promise<void>
+  close(): Promise<void>;
 }
 
 /**
@@ -929,5 +906,5 @@ export type ReloadOptions = {
   /**
    * To fully match the store with the on-disk state, ignoring defaults
    */
-  ignoreDefaults?: boolean
-}
+  ignoreDefaults?: boolean;
+};

@@ -7,11 +7,7 @@ import {
   resizeCompositor,
   uploadTexture,
 } from "opencut-wasm";
-import {
-  incrementCounter,
-  isRenderPerfEnabled,
-  recordWasmFrameProfile,
-} from "../../../diagnostics/render-perf";
+import { incrementCounter, isRenderPerfEnabled, recordWasmFrameProfile } from "../../../diagnostics/render-perf";
 import type {
   ExternalTextureDescriptor,
   FrameDescriptor,
@@ -52,11 +48,7 @@ class WasmCompositor {
       return;
     }
 
-    if (
-      !this.initializedSize ||
-      this.initializedSize.width !== width ||
-      this.initializedSize.height !== height
-    ) {
+    if (!this.initializedSize || this.initializedSize.width !== width || this.initializedSize.height !== height) {
       resizeCompositor(width, height);
       this.initializedSize = { width, height };
     }
@@ -70,7 +62,7 @@ class WasmCompositor {
   }
 
   syncTextures(textures: TextureUploadDescriptor[]) {
-    const nextIds = new Set(textures.map((texture) => texture.id));
+    const nextIds = new Set(textures.map(texture => texture.id));
     for (const previousId of this.cache.keys()) {
       if (!nextIds.has(previousId)) {
         releaseTexture(previousId);
@@ -90,9 +82,7 @@ class WasmCompositor {
   render(frame: FrameDescriptor) {
     renderFrame(frame);
     if (isRenderPerfEnabled()) {
-      recordWasmFrameProfile(
-        getLastFrameProfile() as Array<{ name: string; durationMs: number }>,
-      );
+      recordWasmFrameProfile(getLastFrameProfile() as Array<{ name: string; durationMs: number }>);
     }
   }
 
@@ -145,9 +135,7 @@ class WasmCompositor {
     }
 
     const canvas =
-      previous?.kind === "rendered" &&
-      previous.width === texture.width &&
-      previous.height === texture.height
+      previous?.kind === "rendered" && previous.width === texture.width && previous.height === texture.height
         ? previous.canvas
         : createBackingCanvas({
             width: texture.width,
@@ -184,13 +172,7 @@ class WasmCompositor {
 
 export const wasmCompositor = new WasmCompositor();
 
-function createBackingCanvas({
-  width,
-  height,
-}: {
-  width: number;
-  height: number;
-}): OffscreenCanvas {
+function createBackingCanvas({ width, height }: { width: number; height: number }): OffscreenCanvas {
   if (typeof OffscreenCanvas === "undefined") {
     throw new Error("OffscreenCanvas is not supported in this environment");
   }

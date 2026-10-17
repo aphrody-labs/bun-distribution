@@ -14,10 +14,10 @@ interface CheatsheetPinState {
   togglePinned: () => void;
 }
 
-export const useCheatsheetPin = create<CheatsheetPinState>((set) => ({
+export const useCheatsheetPin = create<CheatsheetPinState>(set => ({
   pinned: false,
-  setPinned: (pinned) => set({ pinned }),
-  togglePinned: () => set((s) => ({ pinned: !s.pinned })),
+  setPinned: pinned => set({ pinned }),
+  togglePinned: () => set(s => ({ pinned: !s.pinned })),
 }));
 
 // Elements that opt out of the pinned overlay's click-outside dismissal:
@@ -36,7 +36,7 @@ const DISMISS_EXEMPT = "[data-keybinds-cheatsheet], [data-cheatsheet-toggle]";
 //    useShortcutCheatsheet so every editor surface shares one implementation.
 export const useCheatsheetVisibility = (): boolean => {
   const [held, setHeld] = useState(false);
-  const pinned = useCheatsheetPin((s) => s.pinned);
+  const pinned = useCheatsheetPin(s => s.pinned);
 
   // Hold-to-peek.
   useEffect(() => {
@@ -52,7 +52,7 @@ export const useCheatsheetVisibility = (): boolean => {
       }
     };
 
-    const hide = () => setHeld((v) => (v ? false : v));
+    const hide = () => setHeld(v => (v ? false : v));
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === modKey) {
@@ -76,7 +76,7 @@ export const useCheatsheetVisibility = (): boolean => {
         clearTimer();
         // Sticky preference: releasing the modifier hands the peek over to
         // the pin instead of hiding, so it stays until Esc / click outside.
-        setHeld((v) => {
+        setHeld(v => {
           if (v && useKeybindsStore.getState().cheatsheetSticky) {
             useCheatsheetPin.getState().setPinned(true);
           }

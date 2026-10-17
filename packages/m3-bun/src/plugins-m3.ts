@@ -10,19 +10,8 @@
 //   m3:assets/<path>[?url]                      @aphrody/assets files; `?url` follows @aphrody/m3's `?url` rules
 import type { BunPlugin, OnLoadArgs, OnLoadResult, OnResolveArgs } from "bun";
 import { dirname, resolve } from "node:path";
-import {
-  loadIcon,
-  parseIconSpecifier,
-  readIcon,
-  type IconRequest,
-} from "./icons.ts";
-import {
-  lazyPlugin,
-  recordPlugin,
-  resolveDirs,
-  resolveFrom,
-  type RecordedPlugin,
-} from "./plugins.ts";
+import { loadIcon, parseIconSpecifier, readIcon, type IconRequest } from "./icons.ts";
+import { lazyPlugin, recordPlugin, resolveDirs, resolveFrom, type RecordedPlugin } from "./plugins.ts";
 
 const ICONS_NAMESPACE = "m3-icons";
 const ASSET_URL_NAMESPACE = "m3-bun-asset-url";
@@ -41,18 +30,8 @@ export interface M3PackagePluginOptions {
 }
 
 interface SymbolCatalogue {
-  hasSymbol(
-    name: string,
-    style: IconRequest["style"],
-    weight: number,
-    filled: boolean,
-  ): boolean;
-  readSymbolSvg(
-    name: string,
-    style: IconRequest["style"],
-    weight: number,
-    filled: boolean,
-  ): string;
+  hasSymbol(name: string, style: IconRequest["style"], weight: number, filled: boolean): boolean;
+  readSymbolSvg(name: string, style: IconRequest["style"], weight: number, filled: boolean): string;
 }
 
 const svgModule = (svg: string): OnLoadResult => ({
@@ -66,15 +45,9 @@ function nativeIcons(dirs: readonly string[]): () => Promise<BunPlugin> {
   return () =>
     (loaded ??= (async () => {
       const path = resolveFrom("@aphrody/m3-icons/plugin", dirs);
-      if (!path)
-        throw new Error(
-          "m3-bun: native Material Symbols need @aphrody/m3-icons (bun add @aphrody/m3-icons)",
-        );
+      if (!path) throw new Error("m3-bun: native Material Symbols need @aphrody/m3-icons (bun add @aphrody/m3-icons)");
       const ffi = await import(Bun.resolveSync("@aphrody/bun", dirname(path)));
-      if (
-        typeof ffi.isAphrodyFfiAvailable === "function" &&
-        !ffi.isAphrodyFfiAvailable()
-      )
+      if (typeof ffi.isAphrodyFfiAvailable === "function" && !ffi.isAphrodyFfiAvailable())
         throw new Error(
           "m3-bun: @aphrody/m3-icons renders through the @aphrody/bun native library, which is not available here",
         );
@@ -82,37 +55,29 @@ function nativeIcons(dirs: readonly string[]): () => Promise<BunPlugin> {
     })());
 }
 
-async function renderNative(
-  plugin: RecordedPlugin,
-  specifier: string,
-): Promise<OnLoadResult> {
+async function renderNative(plugin: RecordedPlugin, specifier: string): Promise<OnLoadResult> {
   const resolved = await plugin.resolve({
     path: specifier,
     importer: "",
     namespace: "file",
     kind: "import-statement",
   } as OnResolveArgs);
-  if (!resolved?.path)
-    throw new Error(`m3-bun: @aphrody/m3-icons does not resolve ${specifier}`);
+  if (!resolved?.path) throw new Error(`m3-bun: @aphrody/m3-icons does not resolve ${specifier}`);
   const result = await plugin.load({
     path: resolved.path,
     namespace: resolved.namespace ?? "file",
     loader: "js",
   } as OnLoadArgs);
-  if (!result)
-    throw new Error(`m3-bun: @aphrody/m3-icons does not load ${specifier}`);
+  if (!result) throw new Error(`m3-bun: @aphrody/m3-icons does not load ${specifier}`);
   return result;
 }
 
 /** Material Symbols (`m3:icons/`, `m3:icon/`) and the m3 package files (`m3:theme/`, `m3:assets/`). */
-export function m3PackagesPlugin(
-  options: M3PackagePluginOptions = {},
-): BunPlugin {
+export function m3PackagesPlugin(options: M3PackagePluginOptions = {}): BunPlugin {
   const dirs = resolveDirs(options.configDir);
   const native = nativeIcons(dirs);
   let recorded: Promise<RecordedPlugin> | undefined;
-  const getRecorded = () =>
-    (recorded ??= native().then((plugin) => recordPlugin(plugin)));
+  const getRecorded = () => (recorded ??= native().then(plugin => recordPlugin(plugin)));
   let catalogue: Promise<SymbolCatalogue | null> | undefined;
   const getCatalogue = () =>
     (catalogue ??= (async () => {
@@ -129,11 +94,7 @@ export function m3PackagesPlugin(
     if (symbols?.hasSymbol(name, style, weight, fill))
       return svgModule(symbols.readSymbolSvg(name, style, weight, fill).trim());
     const rendered = await getRecorded().then(
-      (plugin) =>
-        renderNative(
-          plugin,
-          `m3:icon/${style}/${name}?fill=${fill ? 1 : 0}&wght=${weight}`,
-        ),
+      plugin => renderNative(plugin, `m3:icon/${style}/${name}?fill=${fill ? 1 : 0}&wght=${weight}`),
       () => undefined,
     );
     return rendered ?? svgModule(await loadIcon(request, null));
@@ -143,12 +104,9 @@ export function m3PackagesPlugin(
     name: "m3-bun:m3-icons",
     load: () =>
       native().catch((error: Error) => {
-        throw new Error(
-          `${error.message}; m3:icons/[style/]name serves the SVG catalogue without it`,
-          {
-            cause: error,
-          },
-        );
+        throw new Error(`${error.message}; m3:icons/[style/]name serves the SVG catalogue without it`, {
+          cause: error,
+        });
       }),
     onResolve: [{ filter: /^m3:icon\// }],
     onLoad: [{ filter: /.*/, namespace: "m3-icon" }],
@@ -157,46 +115,36 @@ export function m3PackagesPlugin(
   return {
     name: "@aphrody/m3-bun:packages",
     setup(build) {
-      build.onResolve({ filter: /^m3:icons\// }, (args) => ({
+      build.onResolve({ filter: /^m3:icons\// }, args => ({
         path: args.path.slice("m3:icons/".length),
         namespace: ICONS_NAMESPACE,
       }));
-      build.onLoad({ filter: /.*/, namespace: ICONS_NAMESPACE }, (args) =>
-        symbol(args.path),
-      );
+      build.onLoad({ filter: /.*/, namespace: ICONS_NAMESPACE }, args => symbol(args.path));
       void packageIcons.setup(build);
 
-      build.onResolve({ filter: /^m3:(?:theme|assets)\// }, async (args) => {
+      build.onResolve({ filter: /^m3:(?:theme|assets)\// }, async args => {
         const [specifier = "", query] = args.path.split("?", 2);
         const alias = specifier.slice("m3:".length, specifier.indexOf("/"));
         const pkg = M3_PACKAGE_MODULES[alias]!;
         const target = `${pkg}${specifier.slice(specifier.indexOf("/"))}`;
         const path = resolveFrom(target, dirs);
-        if (!path)
-          throw new Error(
-            `m3-bun: ${args.path} needs ${target}, which does not resolve (bun add ${pkg})`,
-          );
+        if (!path) throw new Error(`m3-bun: ${args.path} needs ${target}, which does not resolve (bun add ${pkg})`);
         if (query === undefined) return { path };
         if (query !== "url" || alias !== "assets")
-          throw new Error(
-            `m3-bun: ${args.path}: only m3:assets/ takes a query, and only ?url`,
-          );
+          throw new Error(`m3-bun: ${args.path}: only m3:assets/ takes a query, and only ?url`);
         const { urlImportForm } = await import("@aphrody/m3");
         if (urlImportForm(path) === "file") return { path };
         // The suffix keeps this module apart from a plain import of the same file (Bun deduplicates by path).
         return { path: `${path}?url`, namespace: ASSET_URL_NAMESPACE };
       });
-      build.onLoad(
-        { filter: /.*/, namespace: ASSET_URL_NAMESPACE },
-        async (args) => {
-          const { dataUrlFor } = await import("@aphrody/m3");
-          const url = await dataUrlFor(args.path.slice(0, -"?url".length));
-          return {
-            contents: `export default ${JSON.stringify(url)};\n`,
-            loader: "js",
-          };
-        },
-      );
+      build.onLoad({ filter: /.*/, namespace: ASSET_URL_NAMESPACE }, async args => {
+        const { dataUrlFor } = await import("@aphrody/m3");
+        const url = await dataUrlFor(args.path.slice(0, -"?url".length));
+        return {
+          contents: `export default ${JSON.stringify(url)};\n`,
+          loader: "js",
+        };
+      });
     },
   };
 }

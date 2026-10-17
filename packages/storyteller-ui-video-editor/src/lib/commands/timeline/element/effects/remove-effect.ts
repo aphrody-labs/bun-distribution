@@ -4,15 +4,9 @@ import { isVisualElement } from "../../../../timeline/element-utils";
 import { updateElementInSceneTracks } from "../../../../timeline/track-element-update";
 import type { SceneTracks, VisualElement } from "../../../../timeline/types";
 
-function removeEffectFromElement({
-  element,
-  effectId,
-}: {
-  element: VisualElement;
-  effectId: string;
-}): VisualElement {
+function removeEffectFromElement({ element, effectId }: { element: VisualElement; effectId: string }): VisualElement {
   const currentEffects = element.effects ?? [];
-  const filtered = currentEffects.filter((effect) => effect.id !== effectId);
+  const filtered = currentEffects.filter(effect => effect.id !== effectId);
   return { ...element, effects: filtered };
 }
 
@@ -22,15 +16,7 @@ export class RemoveClipEffectCommand extends Command {
   private readonly elementId: string;
   private readonly effectId: string;
 
-  constructor({
-    trackId,
-    elementId,
-    effectId,
-  }: {
-    trackId: string;
-    elementId: string;
-    effectId: string;
-  }) {
+  constructor({ trackId, elementId, effectId }: { trackId: string; elementId: string; effectId: string }) {
     super();
     this.trackId = trackId;
     this.elementId = elementId;
@@ -46,7 +32,7 @@ export class RemoveClipEffectCommand extends Command {
       trackId: this.trackId,
       elementId: this.elementId,
       elementPredicate: isVisualElement,
-      update: (element) => {
+      update: element => {
         return removeEffectFromElement({
           element: element as VisualElement,
           effectId: this.effectId,

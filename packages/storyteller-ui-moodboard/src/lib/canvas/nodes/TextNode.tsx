@@ -9,23 +9,17 @@ interface Props {
   node: TextNodeData;
   draggable: boolean;
   selected: boolean;
-  onSelect: (
-    id: string,
-    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
-  ) => void;
+  onSelect: (id: string, e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void;
 }
 
 const TextNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
   const drag = useNodeDrag(node.id);
-  const setEditingText = useMoodboardStore((s) => s.setEditingText);
+  const setEditingText = useMoodboardStore(s => s.setEditingText);
   // Selector compares a single id — only the TextNode whose isEditing
   // actually flips will re-render when someone enters/exits text edit.
-  const isEditing = useMoodboardStore(
-    (s) => s.transient.editingTextId === node.id,
-  );
+  const isEditing = useMoodboardStore(s => s.transient.editingTextId === node.id);
 
-  const handleSelect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) =>
-    onSelect(node.id, e);
+  const handleSelect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => onSelect(node.id, e);
 
   return (
     <KonvaText

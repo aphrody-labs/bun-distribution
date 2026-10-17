@@ -102,8 +102,7 @@ export const chatLabelsEn: ChatLabels = {
   citation: "Source {n}",
   openSource: "Open source",
   refusalTitle: "Not established in the sources",
-  refusalBody:
-    "The available sources do not support an answer to this question.",
+  refusalBody: "The available sources do not support an answer to this question.",
   memory: "Memory",
   memoryEmpty: "No memories saved",
   memoryLoading: "Loading memories",
@@ -153,15 +152,13 @@ export const chatLabelsFr: ChatLabels = {
   citation: "Source {n}",
   openSource: "Ouvrir la source",
   refusalTitle: "Non établi dans les sources",
-  refusalBody:
-    "Les sources disponibles ne permettent pas de répondre à cette question.",
+  refusalBody: "Les sources disponibles ne permettent pas de répondre à cette question.",
   memory: "Mémoire",
   memoryEmpty: "Aucun souvenir enregistré",
   memoryLoading: "Chargement des souvenirs",
   deleteMemory: "Supprimer ce souvenir",
   clearMemory: "Effacer tous les souvenirs",
-  clearMemoryConfirm:
-    "Supprimer tous les souvenirs enregistrés ? Cette action est définitive.",
+  clearMemoryConfirm: "Supprimer tous les souvenirs enregistrés ? Cette action est définitive.",
   confirm: "Confirmer",
   cancel: "Annuler",
   loading: "Chargement",
@@ -211,8 +208,7 @@ export const chatLabelsJa: ChatLabels = {
   memoryLoading: "メモリーを読み込み中",
   deleteMemory: "メモリーを削除",
   clearMemory: "すべてのメモリーを消去",
-  clearMemoryConfirm:
-    "保存されたすべてのメモリーを削除しますか？この操作は元に戻せません。",
+  clearMemoryConfirm: "保存されたすべてのメモリーを削除しますか？この操作は元に戻せません。",
   confirm: "確認",
   cancel: "キャンセル",
   loading: "読み込み中",
@@ -230,10 +226,7 @@ export const chatLabelsByLang = {
 } as const;
 
 /** Complete a partial dictionary with the defaults; empty strings fall back too. */
-export function resolveChatLabels(
-  partial?: Partial<ChatLabels>,
-  base: ChatLabels = defaultChatLabels,
-): ChatLabels {
+export function resolveChatLabels(partial?: Partial<ChatLabels>, base: ChatLabels = defaultChatLabels): ChatLabels {
   if (!partial) return base;
   const out = { ...base };
   for (const key of Object.keys(partial) as (keyof ChatLabels)[]) {
@@ -244,11 +237,6 @@ export function resolveChatLabels(
 }
 
 /** Replace `{name}` placeholders of a label. Unknown placeholders stay as written. */
-export function formatLabel(
-  template: string,
-  values: Record<string, string | number>,
-): string {
-  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in values ? String(values[name]) : match,
-  );
+export function formatLabel(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (match, name: string) => (name in values ? String(values[name]) : match));
 }

@@ -26,7 +26,7 @@ function playSound(oggSrc: string, mp3Src: string, volume = 0.5) {
   }
 
   audio.volume = volume;
-  audio.play().catch((err) => {
+  audio.play().catch(err => {
     console.warn("Failed to play sound:", err);
   });
 }

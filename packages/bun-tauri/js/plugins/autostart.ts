@@ -8,7 +8,7 @@
  * @module
  */
 
-import { invoke } from '../api/core'
+import { invoke } from "../api/core";
 
 /**
  * Checks whether autostart is enabled for the application.
@@ -22,7 +22,7 @@ import { invoke } from '../api/core'
  * @since 2.0.0
  */
 export async function isEnabled(): Promise<boolean> {
-  return await invoke('plugin:autostart|is_enabled')
+  return await invoke("plugin:autostart|is_enabled");
 }
 
 /**
@@ -36,7 +36,7 @@ export async function isEnabled(): Promise<boolean> {
  * @since 2.0.0
  */
 export async function enable(): Promise<void> {
-  await invoke('plugin:autostart|enable')
+  await invoke("plugin:autostart|enable");
 }
 
 /**
@@ -50,5 +50,5 @@ export async function enable(): Promise<void> {
  * @since 2.0.0
  */
 export async function disable(): Promise<void> {
-  await invoke('plugin:autostart|disable')
+  await invoke("plugin:autostart|disable");
 }

@@ -59,14 +59,14 @@ use tauri_runtime::webview::{PermissionKind, PermissionResponse};
 /// `tauri_runtime::webview` declares the same alias but keeps it private, so it is
 /// redeclared here; both name one and the same type.
 pub(crate) type PermissionRequestHandler =
-  dyn Fn(PermissionKind) -> PermissionResponse + Send + Sync;
+    dyn Fn(PermissionKind) -> PermissionResponse + Send + Sync;
 
 const AUDIO_CAPTURE: u32 = MediaPermissionType::CEF_MEDIA_PERMISSION_DEVICE_AUDIO_CAPTURE as u32;
 const VIDEO_CAPTURE: u32 = MediaPermissionType::CEF_MEDIA_PERMISSION_DEVICE_VIDEO_CAPTURE as u32;
 const DESKTOP_AUDIO_CAPTURE: u32 =
-  MediaPermissionType::CEF_MEDIA_PERMISSION_DESKTOP_AUDIO_CAPTURE as u32;
+    MediaPermissionType::CEF_MEDIA_PERMISSION_DESKTOP_AUDIO_CAPTURE as u32;
 const DESKTOP_VIDEO_CAPTURE: u32 =
-  MediaPermissionType::CEF_MEDIA_PERMISSION_DESKTOP_VIDEO_CAPTURE as u32;
+    MediaPermissionType::CEF_MEDIA_PERMISSION_DESKTOP_VIDEO_CAPTURE as u32;
 
 /// The bits a `getDisplayMedia()` request sets. Never granted from here; see
 /// [`grants_desktop_capture`].
@@ -88,66 +88,66 @@ const ALLOY_MEDIA_PERMISSIONS: u32 = AUDIO_CAPTURE | VIDEO_CAPTURE;
 /// media engagement policy rather than through a permission request, so no CEF
 /// request carries it.
 const PERMISSION_KINDS: &[(u32, PermissionKind)] = &[
-  (
-    PermissionType::CEF_PERMISSION_TYPE_CAMERA_PAN_TILT_ZOOM as u32,
-    PermissionKind::Camera,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_CAMERA_STREAM as u32,
-    PermissionKind::Camera,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_MIC_STREAM as u32,
-    PermissionKind::Microphone,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_CAPTURED_SURFACE_CONTROL as u32,
-    PermissionKind::DisplayCapture,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_GEOLOCATION as u32,
-    PermissionKind::Geolocation,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_NOTIFICATIONS as u32,
-    PermissionKind::Notifications,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_CLIPBOARD as u32,
-    PermissionKind::ClipboardRead,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_MIDI_SYSEX as u32,
-    PermissionKind::Midi,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_SENSORS as u32,
-    PermissionKind::Sensors,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_LOCAL_FONTS as u32,
-    PermissionKind::LocalFonts,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_WINDOW_MANAGEMENT as u32,
-    PermissionKind::WindowManagement,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_POINTER_LOCK as u32,
-    PermissionKind::PointerLock,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_MULTIPLE_DOWNLOADS as u32,
-    PermissionKind::AutomaticDownloads,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_FILE_SYSTEM_ACCESS as u32,
-    PermissionKind::FileSystemAccess,
-  ),
-  (
-    PermissionType::CEF_PERMISSION_TYPE_PROTECTED_MEDIA_IDENTIFIER as u32,
-    PermissionKind::MediaKeySystemAccess,
-  ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_CAMERA_PAN_TILT_ZOOM as u32,
+        PermissionKind::Camera,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_CAMERA_STREAM as u32,
+        PermissionKind::Camera,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_MIC_STREAM as u32,
+        PermissionKind::Microphone,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_CAPTURED_SURFACE_CONTROL as u32,
+        PermissionKind::DisplayCapture,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_GEOLOCATION as u32,
+        PermissionKind::Geolocation,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_NOTIFICATIONS as u32,
+        PermissionKind::Notifications,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_CLIPBOARD as u32,
+        PermissionKind::ClipboardRead,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_MIDI_SYSEX as u32,
+        PermissionKind::Midi,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_SENSORS as u32,
+        PermissionKind::Sensors,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_LOCAL_FONTS as u32,
+        PermissionKind::LocalFonts,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_WINDOW_MANAGEMENT as u32,
+        PermissionKind::WindowManagement,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_POINTER_LOCK as u32,
+        PermissionKind::PointerLock,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_MULTIPLE_DOWNLOADS as u32,
+        PermissionKind::AutomaticDownloads,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_FILE_SYSTEM_ACCESS as u32,
+        PermissionKind::FileSystemAccess,
+    ),
+    (
+        PermissionType::CEF_PERMISSION_TYPE_PROTECTED_MEDIA_IDENTIFIER as u32,
+        PermissionKind::MediaKeySystemAccess,
+    ),
 ];
 
 /// The [`PermissionKind`] the application is asked about for each media access type.
@@ -155,10 +155,10 @@ const PERMISSION_KINDS: &[(u32, PermissionKind)] = &[
 /// Both desktop capture types are one kind: `getDisplayMedia` is a single Tauri
 /// permission whether the page asks for the screen's video, its audio, or both.
 const MEDIA_PERMISSION_KINDS: &[(u32, PermissionKind)] = &[
-  (AUDIO_CAPTURE, PermissionKind::Microphone),
-  (VIDEO_CAPTURE, PermissionKind::Camera),
-  (DESKTOP_AUDIO_CAPTURE, PermissionKind::DisplayCapture),
-  (DESKTOP_VIDEO_CAPTURE, PermissionKind::DisplayCapture),
+    (AUDIO_CAPTURE, PermissionKind::Microphone),
+    (VIDEO_CAPTURE, PermissionKind::Camera),
+    (DESKTOP_AUDIO_CAPTURE, PermissionKind::DisplayCapture),
+    (DESKTOP_VIDEO_CAPTURE, PermissionKind::DisplayCapture),
 ];
 
 /// How the application answered a whole CEF permission request.
@@ -170,13 +170,13 @@ const MEDIA_PERMISSION_KINDS: &[(u32, PermissionKind)] = &[
 /// else leaves part of the request unanswered, and the platform default runs for it
 /// unchanged.
 enum AppDecision {
-  /// The application denied at least one of the requested permissions.
-  Denied,
-  /// The application allowed every requested permission.
-  Allowed,
-  /// The application left at least one requested permission to the platform, and
-  /// denied none. Also the answer when the webview has no permission handler.
-  NoOpinion,
+    /// The application denied at least one of the requested permissions.
+    Denied,
+    /// The application allowed every requested permission.
+    Allowed,
+    /// The application left at least one requested permission to the platform, and
+    /// denied none. Also the answer when the webview has no permission handler.
+    NoOpinion,
 }
 
 wrap_permission_handler! {
@@ -316,37 +316,37 @@ wrap_permission_handler! {
 }
 
 impl TauriCefPermissionHandler {
-  /// Asks the application about every type set in `requested` and combines the
-  /// answers, as [`AppDecision`] describes.
-  ///
-  /// `kind` names the [`PermissionKind`] of one request type; the two CEF request
-  /// bitmasks number their types differently, so each entry point passes its own.
-  fn decide(&self, requested: u32, kind: fn(u32) -> PermissionKind) -> AppDecision {
-    let Some(handler) = &self.permission_request_handler else {
-      return AppDecision::NoOpinion;
-    };
+    /// Asks the application about every type set in `requested` and combines the
+    /// answers, as [`AppDecision`] describes.
+    ///
+    /// `kind` names the [`PermissionKind`] of one request type; the two CEF request
+    /// bitmasks number their types differently, so each entry point passes its own.
+    fn decide(&self, requested: u32, kind: fn(u32) -> PermissionKind) -> AppDecision {
+        let Some(handler) = &self.permission_request_handler else {
+            return AppDecision::NoOpinion;
+        };
 
-    // A refusal short-circuits: nothing after it could weaken it, so the types past
-    // it are not asked about. A handler that logs or keeps state therefore sees
-    // only a prefix of a denied request. That is deliberate — the handler is a
-    // policy predicate, not an event feed.
-    let mut asked = false;
-    let mut allowed_all = true;
-    for permission in requested_permissions(requested) {
-      asked = true;
-      match handler(kind(permission)) {
-        PermissionResponse::Deny => return AppDecision::Denied,
-        PermissionResponse::Allow => {}
-        PermissionResponse::Default => allowed_all = false,
-      }
-    }
+        // A refusal short-circuits: nothing after it could weaken it, so the types past
+        // it are not asked about. A handler that logs or keeps state therefore sees
+        // only a prefix of a denied request. That is deliberate — the handler is a
+        // policy predicate, not an event feed.
+        let mut asked = false;
+        let mut allowed_all = true;
+        for permission in requested_permissions(requested) {
+            asked = true;
+            match handler(kind(permission)) {
+                PermissionResponse::Deny => return AppDecision::Denied,
+                PermissionResponse::Allow => {}
+                PermissionResponse::Default => allowed_all = false,
+            }
+        }
 
-    if asked && allowed_all {
-      AppDecision::Allowed
-    } else {
-      AppDecision::NoOpinion
+        if asked && allowed_all {
+            AppDecision::Allowed
+        } else {
+            AppDecision::NoOpinion
+        }
     }
-  }
 }
 
 /// Whether answering `requested` through [`MediaAccessCallback::cont`] would hand
@@ -369,32 +369,32 @@ impl TauriCefPermissionHandler {
 /// A `Deny` is unaffected: `cont(0)` refuses every bit in the request, desktop
 /// capture included.
 fn grants_desktop_capture(requested: u32) -> bool {
-  requested & DESKTOP_CAPTURE != 0
+    requested & DESKTOP_CAPTURE != 0
 }
 
 /// The individual permission types set in a CEF request bitmask.
 fn requested_permissions(requested: u32) -> impl Iterator<Item = u32> {
-  (0..u32::BITS)
-    .map(move |bit| requested & (1 << bit))
-    .filter(|permission| *permission != 0)
+    (0..u32::BITS)
+        .map(move |bit| requested & (1 << bit))
+        .filter(|permission| *permission != 0)
 }
 
 /// The [`PermissionKind`] of one `cef_permission_request_types_t` value.
 fn permission_kind(permission: u32) -> PermissionKind {
-  lookup_permission_kind(PERMISSION_KINDS, permission)
+    lookup_permission_kind(PERMISSION_KINDS, permission)
 }
 
 /// The [`PermissionKind`] of one `cef_media_access_permission_types_t` value.
 fn media_permission_kind(permission: u32) -> PermissionKind {
-  lookup_permission_kind(MEDIA_PERMISSION_KINDS, permission)
+    lookup_permission_kind(MEDIA_PERMISSION_KINDS, permission)
 }
 
 fn lookup_permission_kind(table: &[(u32, PermissionKind)], permission: u32) -> PermissionKind {
-  table
-    .iter()
-    .find(|(candidate, _)| *candidate == permission)
-    .map(|(_, kind)| *kind)
-    .unwrap_or(PermissionKind::Other)
+    table
+        .iter()
+        .find(|(candidate, _)| *candidate == permission)
+        .map(|(_, kind)| *kind)
+        .unwrap_or(PermissionKind::Other)
 }
 
 /// The content settings recording granted media capture.
@@ -402,19 +402,19 @@ fn lookup_permission_kind(table: &[(u32, PermissionKind)], permission: u32) -> P
 /// Desktop capture has none: `getDisplayMedia` is gated by Chromium's source
 /// picker rather than by a content setting, so there is nothing to record for it.
 fn media_content_settings(granted: u32) -> Vec<ContentSettingTypes> {
-  let mut settings = Vec::with_capacity(2);
-  if granted & AUDIO_CAPTURE != 0 {
-    settings.push(ContentSettingTypes::MEDIASTREAM_MIC);
-  }
-  if granted & VIDEO_CAPTURE != 0 {
-    settings.push(ContentSettingTypes::MEDIASTREAM_CAMERA);
-  }
-  settings
+    let mut settings = Vec::with_capacity(2);
+    if granted & AUDIO_CAPTURE != 0 {
+        settings.push(ContentSettingTypes::MEDIASTREAM_MIC);
+    }
+    if granted & VIDEO_CAPTURE != 0 {
+        settings.push(ContentSettingTypes::MEDIASTREAM_CAMERA);
+    }
+    settings
 }
 
 /// The host of `browser`, when CEF hands one out.
 fn browser_host(browser: Option<&mut Browser>) -> Option<BrowserHost> {
-  browser.and_then(|browser| browser.host())
+    browser.and_then(|browser| browser.host())
 }
 
 /// Whether `host` uses the Alloy runtime style, which provides no permission UI.
@@ -423,7 +423,7 @@ fn browser_host(browser: Option<&mut Browser>) -> Option<BrowserHost> {
 /// handling is deferred to CEF, which is correct for the Chrome style Tauri
 /// webviews use by default.
 fn is_alloy_style(host: Option<&BrowserHost>) -> bool {
-  host.is_some_and(|host| host.runtime_style() == RuntimeStyle::ALLOY)
+    host.is_some_and(|host| host.runtime_style() == RuntimeStyle::ALLOY)
 }
 
 /// Records granted media capture as content settings for `requesting_origin`.
@@ -452,24 +452,24 @@ fn is_alloy_style(host: Option<&BrowserHost>) -> bool {
 /// changes the default for every origin rather than for this one, and nothing when CEF
 /// handed out no host, because the request context is reached through it.
 fn allow_content_settings(
-  host: Option<&BrowserHost>,
-  requesting_origin: Option<&CefString>,
-  settings: &[ContentSettingTypes],
+    host: Option<&BrowserHost>,
+    requesting_origin: Option<&CefString>,
+    settings: &[ContentSettingTypes],
 ) {
-  if requesting_origin.is_none() || settings.is_empty() {
-    return;
-  }
+    if requesting_origin.is_none() || settings.is_empty() {
+        return;
+    }
 
-  let Some(context) = host.and_then(|host| host.request_context()) else {
-    return;
-  };
+    let Some(context) = host.and_then(|host| host.request_context()) else {
+        return;
+    };
 
-  for setting in settings {
-    context.set_content_setting(
-      requesting_origin,
-      None,
-      *setting,
-      ContentSettingValues::ALLOW,
-    );
-  }
+    for setting in settings {
+        context.set_content_setting(
+            requesting_origin,
+            None,
+            *setting,
+            ContentSettingValues::ALLOW,
+        );
+    }
 }

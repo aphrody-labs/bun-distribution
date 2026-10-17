@@ -11,8 +11,7 @@
 
 import type { ReactNode } from "react";
 
-export type CinematicAuraForm =
-  "ssj" | "kaioken" | "god" | "blue" | "ui" | "beast";
+export type CinematicAuraForm = "ssj" | "kaioken" | "god" | "blue" | "ui" | "beast";
 export type AuraContainerForm = CinematicAuraForm;
 export type AuraIntensity = "subtle" | "active" | "burst";
 
@@ -34,10 +33,7 @@ const FORM_CLASSES: Record<CinematicAuraForm, string> = {
   beast: "ki-aura-beast",
 };
 
-const INTENSITY_STYLES: Record<
-  AuraIntensity,
-  { filter: string; scale: string }
-> = {
+const INTENSITY_STYLES: Record<AuraIntensity, { filter: string; scale: string }> = {
   subtle: { filter: "brightness(1.05)", scale: "scale-100" },
   active: {
     filter: "brightness(1.15) drop-shadow(0 0 16px rgba(255,255,255,0.2))",
@@ -87,9 +83,7 @@ export function AuraContainer({
             strokeLinecap="round"
             strokeLinejoin="round"
             fill="none"
-            className={
-              pulse ? "animate-[spark-flicker_1.4s_infinite]" : "opacity-80"
-            }
+            className={pulse ? "animate-[spark-flicker_1.4s_infinite]" : "opacity-80"}
           >
             {/* Top Right Bolt */}
             <path d="M 85% 15% L 92% 24% L 88% 30% L 96% 40%" />

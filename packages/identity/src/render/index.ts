@@ -4,12 +4,7 @@ import { PET_ATLAS_URL } from "../atlas";
 import { PET, type PetData } from "../pet";
 import { createCanvas2dDrawer } from "./canvas2d";
 import { acquireWebGpu, createWebGpuDrawer } from "./webgpu";
-import {
-  PetTimeline,
-  swayYaw,
-  type DrawOptions,
-  type PetDrawer,
-} from "./frames";
+import { PetTimeline, swayYaw, type DrawOptions, type PetDrawer } from "./frames";
 
 export type PetRenderMode = "2d" | "3d";
 export type PetRenderBackend = "auto" | "webgpu" | "canvas2d";
@@ -47,8 +42,7 @@ export interface PetRenderer {
 
 async function loadAtlas(url: string): Promise<ImageBitmap> {
   const response = await fetch(url);
-  if (!response.ok)
-    throw new Error(`pet atlas ${url}: HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`pet atlas ${url}: HTTP ${response.status}`);
   return createImageBitmap(await response.blob());
 }
 
@@ -60,8 +54,7 @@ async function makeDrawer(
   if (backend !== "canvas2d") {
     const env = await acquireWebGpu(canvas);
     if (env) return createWebGpuDrawer(env, atlas);
-    if (backend === "webgpu")
-      throw new Error("WebGPU indisponible sur cette plateforme");
+    if (backend === "webgpu") throw new Error("WebGPU indisponible sur cette plateforme");
   }
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D indisponible");

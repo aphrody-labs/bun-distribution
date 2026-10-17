@@ -9,8 +9,7 @@ const WEEK = DAY * 7;
 const MONTH = DAY * 30;
 const YEAR = DAY * 365;
 
-const pluralize = (value: number, unit: string): string =>
-  `${value} ${unit}${value === 1 ? "" : "s"} ago`;
+const pluralize = (value: number, unit: string): string => `${value} ${unit}${value === 1 ? "" : "s"} ago`;
 
 export function formatTimeAgo(input: string | number | Date): string {
   const date = input instanceof Date ? input : new Date(input);

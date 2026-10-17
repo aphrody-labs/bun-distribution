@@ -13,21 +13,18 @@ import { ActionDef, ActionId, KeybindContext, Surface } from "./types";
 // toggles that merely change what the viewport shows (camera view, grid,
 // stats) stay live in record — the encode always renders through the render
 // camera regardless of the viewport view.
-const inBuild = (ctx: KeybindContext) =>
-  ctx.sceneMode !== "record" && !ctx.encoding;
+const inBuild = (ctx: KeybindContext) => ctx.sceneMode !== "record" && !ctx.encoding;
 
 // Camera-look arrows yield to the timeline while it's open (arrows mean
 // frame stepping / keyframe nudging there); camera MOVE keys stay live so
 // shots can still be framed with the timeline expanded. useFreeCam enforces
 // these same rules imperatively — keep the two in sync.
 const cameraMove = inBuild;
-const cameraLook = (ctx: KeybindContext) =>
-  inBuild(ctx) && !ctx.timelineExpanded;
+const cameraLook = (ctx: KeybindContext) => inBuild(ctx) && !ctx.timelineExpanded;
 
 // Timeline transport is live wherever playback exists: the expanded editor
 // in build mode, and all of record mode (read-only playback bar).
-const inPlayback = (ctx: KeybindContext) =>
-  !ctx.encoding && (!!ctx.timelineExpanded || ctx.sceneMode === "record");
+const inPlayback = (ctx: KeybindContext) => !ctx.encoding && (!!ctx.timelineExpanded || ctx.sceneMode === "record");
 
 const defs: ActionDef[] = [
   // ── Global (app-wide) ─────────────────────────────────────────────────────
@@ -96,7 +93,7 @@ const defs: ActionDef[] = [
     // Space belongs to timeline playback whenever playback UI is up (the
     // expanded editor, or all of record mode) — the camera toggle takes the
     // complement. In record mode, view peeking is double-click only.
-    when: (ctx) => !inPlayback(ctx) && !ctx.encoding,
+    when: ctx => !inPlayback(ctx) && !ctx.encoding,
   }),
   act("pagescene.view.toggleStats", "Toggle perf stats", "View"),
 
@@ -104,15 +101,10 @@ const defs: ActionDef[] = [
   // Build-only: its first branch leaves camera view, which in record mode
   // would break the render-cam lock (record forces camera view). Mid-encode
   // Escape belongs to record.cancelEncode instead.
-  act(
-    "pagescene.selection.clearOrExit",
-    "Clear selection / exit pose",
-    "Selection",
-    {
-      important: true,
-      when: inBuild,
-    },
-  ),
+  act("pagescene.selection.clearOrExit", "Clear selection / exit pose", "Selection", {
+    important: true,
+    when: inBuild,
+  }),
   act("pagescene.selection.deselectAll", "Deselect all", "Selection", {
     when: inBuild,
   }),
@@ -124,8 +116,7 @@ const defs: ActionDef[] = [
   // order is decided here, not by listener phase or registration order.
   act("pagescene.edit.delete", "Delete selected", "Edit", {
     important: true,
-    when: (ctx) =>
-      inBuild(ctx) && !(ctx.timelineExpanded && ctx.timelineSelection),
+    when: ctx => inBuild(ctx) && !(ctx.timelineExpanded && ctx.timelineSelection),
   }),
   act("pagescene.edit.duplicate", "Duplicate selected", "Edit", {
     important: true,
@@ -166,21 +157,19 @@ const defs: ActionDef[] = [
   }),
   act("pagescene.timeline.stepBack", "Step one frame back", "Timeline", {
     preventDefault: true,
-    when: (ctx) => inPlayback(ctx) && !ctx.timelineSelection,
+    when: ctx => inPlayback(ctx) && !ctx.timelineSelection,
   }),
   act("pagescene.timeline.stepForward", "Step one frame forward", "Timeline", {
     preventDefault: true,
-    when: (ctx) => inPlayback(ctx) && !ctx.timelineSelection,
+    when: ctx => inPlayback(ctx) && !ctx.timelineSelection,
   }),
   act("pagescene.timeline.nudgeLeft", "Nudge selection back", "Timeline", {
     preventDefault: true,
-    when: (ctx) =>
-      inBuild(ctx) && !!ctx.timelineExpanded && !!ctx.timelineSelection,
+    when: ctx => inBuild(ctx) && !!ctx.timelineExpanded && !!ctx.timelineSelection,
   }),
   act("pagescene.timeline.nudgeRight", "Nudge selection forward", "Timeline", {
     preventDefault: true,
-    when: (ctx) =>
-      inBuild(ctx) && !!ctx.timelineExpanded && !!ctx.timelineSelection,
+    when: ctx => inBuild(ctx) && !!ctx.timelineExpanded && !!ctx.timelineSelection,
   }),
   act("pagescene.timeline.goToStart", "Go to start", "Timeline", {
     preventDefault: true,
@@ -190,52 +179,36 @@ const defs: ActionDef[] = [
     preventDefault: true,
     when: inPlayback,
   }),
-  act(
-    "pagescene.timeline.addKeyframe",
-    "Add keyframe (selected object)",
-    "Timeline",
-    {
-      important: true,
-      when: (ctx) => inBuild(ctx) && !!ctx.timelineExpanded,
-    },
-  ),
+  act("pagescene.timeline.addKeyframe", "Add keyframe (selected object)", "Timeline", {
+    important: true,
+    when: ctx => inBuild(ctx) && !!ctx.timelineExpanded,
+  }),
   // Exact complement of pagescene.edit.delete (see its note above).
-  act(
-    "pagescene.timeline.deleteSelected",
-    "Delete keyframe / clip",
-    "Timeline",
-    {
-      preventDefault: true,
-      when: (ctx) =>
-        inBuild(ctx) && !!ctx.timelineExpanded && !!ctx.timelineSelection,
-    },
-  ),
-  act(
-    "pagescene.timeline.toggleExpanded",
-    "Expand / collapse timeline",
-    "Timeline",
-    {
-      when: inBuild,
-    },
-  ),
+  act("pagescene.timeline.deleteSelected", "Delete keyframe / clip", "Timeline", {
+    preventDefault: true,
+    when: ctx => inBuild(ctx) && !!ctx.timelineExpanded && !!ctx.timelineSelection,
+  }),
+  act("pagescene.timeline.toggleExpanded", "Expand / collapse timeline", "Timeline", {
+    when: inBuild,
+  }),
 
   // ── PageScene: record ─────────────────────────────────────────────────────
   act("pagescene.record.toggleMode", "Toggle build / record mode", "Record", {
     important: true,
     preventDefault: true,
-    when: (ctx) => !ctx.encoding,
+    when: ctx => !ctx.encoding,
   }),
   act("pagescene.record.captureStill", "Capture still", "Record", {
     preventDefault: true,
-    when: (ctx) => ctx.sceneMode === "record" && !ctx.encoding,
+    when: ctx => ctx.sceneMode === "record" && !ctx.encoding,
   }),
   act("pagescene.record.recordVideo", "Record timeline to video", "Record", {
     preventDefault: true,
-    when: (ctx) => ctx.sceneMode === "record" && !ctx.encoding,
+    when: ctx => ctx.sceneMode === "record" && !ctx.encoding,
   }),
   // Live ONLY mid-encode — the one action allowed through while rendering.
   act("pagescene.record.cancelEncode", "Cancel render", "Record", {
-    when: (ctx) => !!ctx.encoding,
+    when: ctx => !!ctx.encoding,
   }),
 
   // ── PageDraw (2D editor) ──────────────────────────────────────────────────
@@ -318,14 +291,9 @@ const defs: ActionDef[] = [
   // contextual action: clear the grid selection, or close whichever viewer
   // is open. The grid's own arrow-key roving focus is a11y navigation, not a
   // shortcut — nav.prev/next are ignored (not consumed) when no viewer is up.
-  act(
-    "moodboard-grid.selection.clearOrClose",
-    "Clear selection / close viewer",
-    "Selection",
-    {
-      important: true,
-    },
-  ),
+  act("moodboard-grid.selection.clearOrClose", "Clear selection / close viewer", "Selection", {
+    important: true,
+  }),
   act("moodboard-grid.edit.delete", "Delete selected items", "Edit", {
     important: true,
   }),
@@ -340,34 +308,22 @@ const defs: ActionDef[] = [
   act("moodboard-grid.rate.3", "Rate 3", "Rating"),
   act("moodboard-grid.rate.4", "Rate 4", "Rating"),
   act("moodboard-grid.rate.5", "Rate 5", "Rating", { important: true }),
-  act(
-    "moodboard-grid.nav.prev",
-    "Previous item (viewer / presentation)",
-    "Navigation",
-    {
-      important: true,
-    },
-  ),
-  act(
-    "moodboard-grid.nav.next",
-    "Next item (viewer / presentation)",
-    "Navigation",
-    {
-      important: true,
-    },
-  ),
+  act("moodboard-grid.nav.prev", "Previous item (viewer / presentation)", "Navigation", {
+    important: true,
+  }),
+  act("moodboard-grid.nav.next", "Next item (viewer / presentation)", "Navigation", {
+    important: true,
+  }),
 ];
 
-export const ACTIONS: Record<ActionId, ActionDef> = Object.fromEntries(
-  defs.map((d) => [d.id, d]),
-);
+export const ACTIONS: Record<ActionId, ActionDef> = Object.fromEntries(defs.map(d => [d.id, d]));
 
 export const ACTIONS_BY_SURFACE: Record<Surface, ActionDef[]> = {
-  global: defs.filter((d) => d.surface === "global"),
-  pagescene: defs.filter((d) => d.surface === "pagescene"),
-  pagedraw: defs.filter((d) => d.surface === "pagedraw"),
-  moodboard: defs.filter((d) => d.surface === "moodboard"),
-  "moodboard-grid": defs.filter((d) => d.surface === "moodboard-grid"),
+  global: defs.filter(d => d.surface === "global"),
+  pagescene: defs.filter(d => d.surface === "pagescene"),
+  pagedraw: defs.filter(d => d.surface === "pagedraw"),
+  moodboard: defs.filter(d => d.surface === "moodboard"),
+  "moodboard-grid": defs.filter(d => d.surface === "moodboard-grid"),
 };
 
 export function getAction(id: ActionId): ActionDef | undefined {
@@ -385,12 +341,10 @@ export function actionAvailable(def: ActionDef, ctx: KeybindContext): boolean {
 // Representative context grid for co-availability checks. Covers every field
 // the registry's `when` gates read — extend it when a new KeybindContext
 // field gains a gate, or exclusivity checks will silently miss it.
-const SAMPLE_CONTEXTS: KeybindContext[] = (
-  ["build", "record"] as const
-).flatMap((sceneMode) =>
-  [false, true].flatMap((encoding) =>
-    [false, true].flatMap((timelineExpanded) =>
-      [false, true].map((timelineSelection) => ({
+const SAMPLE_CONTEXTS: KeybindContext[] = (["build", "record"] as const).flatMap(sceneMode =>
+  [false, true].flatMap(encoding =>
+    [false, true].flatMap(timelineExpanded =>
+      [false, true].map(timelineSelection => ({
         sceneMode,
         encoding,
         timelineExpanded,
@@ -404,27 +358,16 @@ const SAMPLE_CONTEXTS: KeybindContext[] = (
  *  context-exclusive (e.g. cancel-render vs clear-selection, both Escape) may
  *  deliberately share a binding — the dispatcher picks whichever is available. */
 export function actionsCoAvailable(a: ActionDef, b: ActionDef): boolean {
-  return SAMPLE_CONTEXTS.some(
-    (ctx) => actionAvailable(a, ctx) && actionAvailable(b, ctx),
-  );
+  return SAMPLE_CONTEXTS.some(ctx => actionAvailable(a, ctx) && actionAvailable(b, ctx));
 }
 
 // ── builders ─────────────────────────────────────────────────────────────────
 
-function act(
-  id: ActionId,
-  label: string,
-  group: ActionDef["group"],
-  extra: Partial<ActionDef> = {},
-): ActionDef {
+function act(id: ActionId, label: string, group: ActionDef["group"], extra: Partial<ActionDef> = {}): ActionDef {
   return { id, label, group, surface: surfaceOf(id), ...extra };
 }
 
-function cam(
-  id: ActionId,
-  label: string,
-  when?: (ctx: KeybindContext) => boolean,
-): ActionDef {
+function cam(id: ActionId, label: string, when?: (ctx: KeybindContext) => boolean): ActionDef {
   return {
     id,
     label,

@@ -3,7 +3,12 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** computecore.dll!HcsAddResourceToOperation */
-  HcsAddResourceToOperation(operation: Win32Pointer, type: number, uri: string | Win32Pointer, handle: Win32Pointer): number;
+  HcsAddResourceToOperation(
+    operation: Win32Pointer,
+    type: number,
+    uri: string | Win32Pointer,
+    handle: Win32Pointer,
+  ): number;
   /** computecore.dll!HcsCancelOperation */
   HcsCancelOperation(operation: Win32Pointer): number;
   /** computecore.dll!HcsCloseComputeSystem */
@@ -15,9 +20,22 @@ interface Functions {
   /** computecore.dll!HcsCrashComputeSystem */
   HcsCrashComputeSystem(computeSystem: Win32Pointer, operation: Win32Pointer, options: string | Win32Pointer): number;
   /** computecore.dll!HcsCreateComputeSystem */
-  HcsCreateComputeSystem(id: string | Win32Pointer, configuration: string | Win32Pointer, operation: Win32Pointer, securityDescriptor: Win32Pointer, computeSystem: Win32Pointer): number;
+  HcsCreateComputeSystem(
+    id: string | Win32Pointer,
+    configuration: string | Win32Pointer,
+    operation: Win32Pointer,
+    securityDescriptor: Win32Pointer,
+    computeSystem: Win32Pointer,
+  ): number;
   /** computecore.dll!HcsCreateComputeSystemInNamespace */
-  HcsCreateComputeSystemInNamespace(idNamespace: string | Win32Pointer, id: string | Win32Pointer, configuration: string | Win32Pointer, operation: Win32Pointer, options: Win32Pointer, computeSystem: Win32Pointer): number;
+  HcsCreateComputeSystemInNamespace(
+    idNamespace: string | Win32Pointer,
+    id: string | Win32Pointer,
+    configuration: string | Win32Pointer,
+    operation: Win32Pointer,
+    options: Win32Pointer,
+    computeSystem: Win32Pointer,
+  ): number;
   /** computecore.dll!HcsCreateEmptyGuestStateFile */
   HcsCreateEmptyGuestStateFile(guestStateFilePath: string | Win32Pointer): number;
   /** computecore.dll!HcsCreateEmptyRuntimeStateFile */
@@ -25,29 +43,59 @@ interface Functions {
   /** computecore.dll!HcsCreateOperation */
   HcsCreateOperation(context: Win32Pointer, callback: Win32Callback): number | null;
   /** computecore.dll!HcsCreateOperationWithNotifications */
-  HcsCreateOperationWithNotifications(eventTypes: number, context: Win32Pointer, callback: Win32Callback): number | null;
+  HcsCreateOperationWithNotifications(
+    eventTypes: number,
+    context: Win32Pointer,
+    callback: Win32Callback,
+  ): number | null;
   /** computecore.dll!HcsCreateProcess */
-  HcsCreateProcess(computeSystem: Win32Pointer, processParameters: string | Win32Pointer, operation: Win32Pointer, securityDescriptor: Win32Pointer, process: Win32Pointer): number;
+  HcsCreateProcess(
+    computeSystem: Win32Pointer,
+    processParameters: string | Win32Pointer,
+    operation: Win32Pointer,
+    securityDescriptor: Win32Pointer,
+    process: Win32Pointer,
+  ): number;
   /** computecore.dll!HcsEnumerateComputeSystems */
   HcsEnumerateComputeSystems(query: string | Win32Pointer, operation: Win32Pointer): number;
   /** computecore.dll!HcsEnumerateComputeSystemsInNamespace */
-  HcsEnumerateComputeSystemsInNamespace(idNamespace: string | Win32Pointer, query: string | Win32Pointer, operation: Win32Pointer): number;
+  HcsEnumerateComputeSystemsInNamespace(
+    idNamespace: string | Win32Pointer,
+    query: string | Win32Pointer,
+    operation: Win32Pointer,
+  ): number;
   /** computecore.dll!HcsFinalizeLiveMigration */
-  HcsFinalizeLiveMigration(computeSystem: Win32Pointer, operation: Win32Pointer, options: string | Win32Pointer): number;
+  HcsFinalizeLiveMigration(
+    computeSystem: Win32Pointer,
+    operation: Win32Pointer,
+    options: string | Win32Pointer,
+  ): number;
   /** computecore.dll!HcsGetComputeSystemFromOperation */
   HcsGetComputeSystemFromOperation(operation: Win32Pointer): number | null;
   /** computecore.dll!HcsGetComputeSystemProperties */
-  HcsGetComputeSystemProperties(computeSystem: Win32Pointer, operation: Win32Pointer, propertyQuery: string | Win32Pointer): number;
+  HcsGetComputeSystemProperties(
+    computeSystem: Win32Pointer,
+    operation: Win32Pointer,
+    propertyQuery: string | Win32Pointer,
+  ): number;
   /** computecore.dll!HcsGetOperationContext */
   HcsGetOperationContext(operation: Win32Pointer): number | null;
   /** computecore.dll!HcsGetOperationId */
   HcsGetOperationId(operation: Win32Pointer): bigint;
   /** computecore.dll!HcsGetOperationProperties */
-  HcsGetOperationProperties(operation: Win32Pointer, options: string | Win32Pointer, resultDocument: Win32Pointer): number;
+  HcsGetOperationProperties(
+    operation: Win32Pointer,
+    options: string | Win32Pointer,
+    resultDocument: Win32Pointer,
+  ): number;
   /** computecore.dll!HcsGetOperationResult */
   HcsGetOperationResult(operation: Win32Pointer, resultDocument: Win32Pointer): number;
   /** computecore.dll!HcsGetOperationResultAndProcessInfo */
-  HcsGetOperationResultAndProcessInfo(operation: Win32Pointer, processInformation: Win32Pointer, resultDocument: Win32Pointer): number;
+  HcsGetOperationResultAndProcessInfo(
+    operation: Win32Pointer,
+    processInformation: Win32Pointer,
+    resultDocument: Win32Pointer,
+  ): number;
   /** computecore.dll!HcsGetOperationType */
   HcsGetOperationType(operation: Win32Pointer): number;
   /** computecore.dll!HcsGetProcessFromOperation */
@@ -57,7 +105,10 @@ interface Functions {
   /** computecore.dll!HcsGetProcessProperties */
   HcsGetProcessProperties(process: Win32Pointer, operation: Win32Pointer, propertyQuery: string | Win32Pointer): number;
   /** computecore.dll!HcsGetProcessorCompatibilityFromSavedState */
-  HcsGetProcessorCompatibilityFromSavedState(RuntimeFileName: string | Win32Pointer, ProcessorFeaturesString: Win32Pointer): number;
+  HcsGetProcessorCompatibilityFromSavedState(
+    RuntimeFileName: string | Win32Pointer,
+    ProcessorFeaturesString: Win32Pointer,
+  ): number;
   /** computecore.dll!HcsGetServiceProperties */
   HcsGetServiceProperties(propertyQuery: string | Win32Pointer, result: Win32Pointer): number;
   /** computecore.dll!HcsGrantVmAccess */
@@ -65,9 +116,18 @@ interface Functions {
   /** computecore.dll!HcsGrantVmGroupAccess */
   HcsGrantVmGroupAccess(filePath: string | Win32Pointer): number;
   /** computecore.dll!HcsInitializeLiveMigrationOnSource */
-  HcsInitializeLiveMigrationOnSource(computeSystem: Win32Pointer, operation: Win32Pointer, options: string | Win32Pointer): number;
+  HcsInitializeLiveMigrationOnSource(
+    computeSystem: Win32Pointer,
+    operation: Win32Pointer,
+    options: string | Win32Pointer,
+  ): number;
   /** computecore.dll!HcsModifyComputeSystem */
-  HcsModifyComputeSystem(computeSystem: Win32Pointer, operation: Win32Pointer, configuration: string | Win32Pointer, identity: Win32Pointer): number;
+  HcsModifyComputeSystem(
+    computeSystem: Win32Pointer,
+    operation: Win32Pointer,
+    configuration: string | Win32Pointer,
+    identity: Win32Pointer,
+  ): number;
   /** computecore.dll!HcsModifyProcess */
   HcsModifyProcess(process: Win32Pointer, operation: Win32Pointer, settings: string | Win32Pointer): number;
   /** computecore.dll!HcsModifyServiceSettings */
@@ -75,9 +135,19 @@ interface Functions {
   /** computecore.dll!HcsOpenComputeSystem */
   HcsOpenComputeSystem(id: string | Win32Pointer, requestedAccess: number, computeSystem: Win32Pointer): number;
   /** computecore.dll!HcsOpenComputeSystemInNamespace */
-  HcsOpenComputeSystemInNamespace(idNamespace: string | Win32Pointer, id: string | Win32Pointer, requestedAccess: number, computeSystem: Win32Pointer): number;
+  HcsOpenComputeSystemInNamespace(
+    idNamespace: string | Win32Pointer,
+    id: string | Win32Pointer,
+    requestedAccess: number,
+    computeSystem: Win32Pointer,
+  ): number;
   /** computecore.dll!HcsOpenProcess */
-  HcsOpenProcess(computeSystem: Win32Pointer, processId: number, requestedAccess: number, process: Win32Pointer): number;
+  HcsOpenProcess(
+    computeSystem: Win32Pointer,
+    processId: number,
+    requestedAccess: number,
+    process: Win32Pointer,
+  ): number;
   /** computecore.dll!HcsPauseComputeSystem */
   HcsPauseComputeSystem(computeSystem: Win32Pointer, operation: Win32Pointer, options: string | Win32Pointer): number;
   /** computecore.dll!HcsResumeComputeSystem */
@@ -89,27 +159,53 @@ interface Functions {
   /** computecore.dll!HcsSaveComputeSystem */
   HcsSaveComputeSystem(computeSystem: Win32Pointer, operation: Win32Pointer, options: string | Win32Pointer): number;
   /** computecore.dll!HcsSetComputeSystemCallback */
-  HcsSetComputeSystemCallback(computeSystem: Win32Pointer, callbackOptions: number, context: Win32Pointer, callback: Win32Callback): number;
+  HcsSetComputeSystemCallback(
+    computeSystem: Win32Pointer,
+    callbackOptions: number,
+    context: Win32Pointer,
+    callback: Win32Callback,
+  ): number;
   /** computecore.dll!HcsSetOperationCallback */
   HcsSetOperationCallback(operation: Win32Pointer, context: Win32Pointer, callback: Win32Callback): number;
   /** computecore.dll!HcsSetOperationContext */
   HcsSetOperationContext(operation: Win32Pointer, context: Win32Pointer): number;
   /** computecore.dll!HcsSetProcessCallback */
-  HcsSetProcessCallback(process: Win32Pointer, callbackOptions: number, context: Win32Pointer, callback: Win32Callback): number;
+  HcsSetProcessCallback(
+    process: Win32Pointer,
+    callbackOptions: number,
+    context: Win32Pointer,
+    callback: Win32Callback,
+  ): number;
   /** computecore.dll!HcsShutDownComputeSystem */
-  HcsShutDownComputeSystem(computeSystem: Win32Pointer, operation: Win32Pointer, options: string | Win32Pointer): number;
+  HcsShutDownComputeSystem(
+    computeSystem: Win32Pointer,
+    operation: Win32Pointer,
+    options: string | Win32Pointer,
+  ): number;
   /** computecore.dll!HcsSignalProcess */
   HcsSignalProcess(process: Win32Pointer, operation: Win32Pointer, options: string | Win32Pointer): number;
   /** computecore.dll!HcsStartComputeSystem */
   HcsStartComputeSystem(computeSystem: Win32Pointer, operation: Win32Pointer, options: string | Win32Pointer): number;
   /** computecore.dll!HcsStartLiveMigrationOnSource */
-  HcsStartLiveMigrationOnSource(computeSystem: Win32Pointer, operation: Win32Pointer, options: string | Win32Pointer): number;
+  HcsStartLiveMigrationOnSource(
+    computeSystem: Win32Pointer,
+    operation: Win32Pointer,
+    options: string | Win32Pointer,
+  ): number;
   /** computecore.dll!HcsStartLiveMigrationTransfer */
-  HcsStartLiveMigrationTransfer(computeSystem: Win32Pointer, operation: Win32Pointer, options: string | Win32Pointer): number;
+  HcsStartLiveMigrationTransfer(
+    computeSystem: Win32Pointer,
+    operation: Win32Pointer,
+    options: string | Win32Pointer,
+  ): number;
   /** computecore.dll!HcsSubmitWerReport */
   HcsSubmitWerReport(settings: string | Win32Pointer): number;
   /** computecore.dll!HcsTerminateComputeSystem */
-  HcsTerminateComputeSystem(computeSystem: Win32Pointer, operation: Win32Pointer, options: string | Win32Pointer): number;
+  HcsTerminateComputeSystem(
+    computeSystem: Win32Pointer,
+    operation: Win32Pointer,
+    options: string | Win32Pointer,
+  ): number;
   /** computecore.dll!HcsTerminateProcess */
   HcsTerminateProcess(process: Win32Pointer, operation: Win32Pointer, options: string | Win32Pointer): number;
   /** computecore.dll!HcsWaitForComputeSystemExit */
@@ -117,7 +213,12 @@ interface Functions {
   /** computecore.dll!HcsWaitForOperationResult */
   HcsWaitForOperationResult(operation: Win32Pointer, timeoutMs: number, resultDocument: Win32Pointer): number;
   /** computecore.dll!HcsWaitForOperationResultAndProcessInfo */
-  HcsWaitForOperationResultAndProcessInfo(operation: Win32Pointer, timeoutMs: number, processInformation: Win32Pointer, resultDocument: Win32Pointer): number;
+  HcsWaitForOperationResultAndProcessInfo(
+    operation: Win32Pointer,
+    timeoutMs: number,
+    processInformation: Win32Pointer,
+    resultDocument: Win32Pointer,
+  ): number;
   /** computecore.dll!HcsWaitForProcessExit */
   HcsWaitForProcessExit(computeSystem: Win32Pointer, timeoutMs: number, result: Win32Pointer): number;
 }

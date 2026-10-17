@@ -1,26 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
-import {
-  Books,
-  FolderOpen,
-  CircleNotch,
-  CheckCircle,
-  Warning,
-} from "@phosphor-icons/react";
-import {
-  Button,
-  Input,
-  Label,
-  Dialog,
-  dialogManager,
-  useDialog,
-} from "@aphrody/m3-primitives";
+import { Books, FolderOpen, CircleNotch, CheckCircle, Warning } from "@phosphor-icons/react";
+import { Button, Input, Label, Dialog, dialogManager, useDialog } from "@aphrody/m3-primitives";
 import { queryClient } from "@aphrody/drive-client/hooks";
 import type { Event } from "@aphrody/drive-client";
-import {
-  useCoreMutation,
-  useSpacedriveClient,
-} from "../../contexts/SpacedriveContext";
+import { useCoreMutation, useSpacedriveClient } from "../../contexts/SpacedriveContext";
 import { usePlatform } from "../../contexts/PlatformContext";
 
 interface CreateLibraryDialogProps {
@@ -47,9 +31,7 @@ type DialogStep = "form" | "creating" | "success" | "error";
  * };
  * ```
  */
-export function useCreateLibraryDialog(
-  onLibraryCreated?: (libraryId: string) => void,
-) {
+export function useCreateLibraryDialog(onLibraryCreated?: (libraryId: string) => void) {
   return dialogManager.create((props: CreateLibraryDialogProps) => (
     <CreateLibraryDialog {...props} onLibraryCreated={onLibraryCreated} />
   ));
@@ -69,9 +51,7 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const pendingLibraryIdRef = useRef<string | null>(null);
   // Buffer to store events received before we know the library ID
-  const receivedEventsRef = useRef<
-    Array<{ id: string; name: string; path: string }>
-  >([]);
+  const receivedEventsRef = useRef<Array<{ id: string; name: string; path: string }>>([]);
 
   const form = useForm<CreateLibraryFormData>({
     defaultValues: {
@@ -106,7 +86,7 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
     }
   };
 
-  const onSubmit = form.handleSubmit(async (data) => {
+  const onSubmit = form.handleSubmit(async data => {
     if (!data.name.trim()) {
       form.setError("name", {
         type: "manual",
@@ -154,9 +134,7 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
       pendingLibraryIdRef.current = result.library_id;
 
       // Check if we already received the event (race condition handling)
-      const alreadyReceived = receivedEventsRef.current.some(
-        (e) => e.id === result.library_id,
-      );
+      const alreadyReceived = receivedEventsRef.current.some(e => e.id === result.library_id);
 
       // Invalidate the libraries list query to refresh UI
       // Query key format is [query.type, query.input], so we match on the type prefix
@@ -192,9 +170,7 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
       }
     } catch (error) {
       console.error("Failed to create library:", error);
-      setErrorMessage(
-        error instanceof Error ? error.message : "Failed to create library",
-      );
+      setErrorMessage(error instanceof Error ? error.message : "Failed to create library");
       setStep("error");
 
       // Clean up subscription on error
@@ -208,25 +184,12 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
   // Creating state
   if (step === "creating") {
     return (
-      <Dialog
-        dialog={dialog}
-        form={form}
-        title="Creating library"
-        icon={<Books size={20} weight="fill" />}
-        hideButtons
-      >
+      <Dialog dialog={dialog} form={form} title="Creating library" icon={<Books size={20} weight="fill" />} hideButtons>
         <div className="flex flex-col items-center justify-center py-8 gap-4">
-          <CircleNotch
-            className="size-12 text-primary animate-spin"
-            weight="bold"
-          />
+          <CircleNotch className="size-12 text-primary animate-spin" weight="bold" />
           <div className="text-center">
-            <p className="text-label-large font-medium text-on-surface">
-              Creating your library...
-            </p>
-            <p className="text-body-small text-on-surface-variant mt-1">
-              This may take a moment
-            </p>
+            <p className="text-label-large font-medium text-on-surface">Creating your library...</p>
+            <p className="text-body-small text-on-surface-variant mt-1">This may take a moment</p>
           </div>
         </div>
       </Dialog>
@@ -236,22 +199,12 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
   // Success state - waiting for LibraryCreated event
   if (step === "success") {
     return (
-      <Dialog
-        dialog={dialog}
-        form={form}
-        title="Library created"
-        icon={<Books size={20} weight="fill" />}
-        hideButtons
-      >
+      <Dialog dialog={dialog} form={form} title="Library created" icon={<Books size={20} weight="fill" />} hideButtons>
         <div className="flex flex-col items-center justify-center py-8 gap-4">
           <CheckCircle className="size-12 text-success" weight="fill" />
           <div className="text-center">
-            <p className="text-label-large font-medium text-on-surface">
-              Library created successfully!
-            </p>
-            <p className="text-body-small text-on-surface-variant mt-1">
-              Initializing...
-            </p>
+            <p className="text-label-large font-medium text-on-surface">Library created successfully!</p>
+            <p className="text-body-small text-on-surface-variant mt-1">Initializing...</p>
           </div>
         </div>
       </Dialog>
@@ -276,9 +229,7 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
         <div className="flex flex-col items-center justify-center py-6 gap-4">
           <Warning className="size-12 text-error" weight="fill" />
           <div className="text-center">
-            <p className="text-label-large font-medium text-on-surface">
-              Failed to create library
-            </p>
+            <p className="text-label-large font-medium text-on-surface">Failed to create library</p>
             <p className="text-body-small text-error mt-1">{errorMessage}</p>
           </div>
         </div>
@@ -310,22 +261,19 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
             className="bg-surface-container-highest"
           />
           {form.formState.errors.name && (
-            <p className="text-body-small text-error">
-              {form.formState.errors.name.message}
-            </p>
+            <p className="text-body-small text-error">{form.formState.errors.name.message}</p>
           )}
         </div>
 
         <div className="space-y-2">
           <Label>
-            Location{" "}
-            <span className="text-outline font-normal">(optional)</span>
+            Location <span className="text-outline font-normal">(optional)</span>
           </Label>
           <div className="relative">
             <Input
               // oxlint-disable-next-line react/incompatible-library -- react-hook-form watch() is the form value source here; the compiler cannot memoize it, so the modal keeps the direct call as before
               value={form.watch("path") || ""}
-              onChange={(e) => form.setValue("path", e.target.value || null)}
+              onChange={e => form.setValue("path", e.target.value || null)}
               size="md"
               placeholder="Default location"
               className="pr-12 bg-surface-container-highest"
@@ -342,9 +290,7 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
               </Button>
             )}
           </div>
-          <p className="text-body-small text-outline">
-            Leave empty to use the default location
-          </p>
+          <p className="text-body-small text-outline">Leave empty to use the default location</p>
         </div>
       </div>
     </Dialog>

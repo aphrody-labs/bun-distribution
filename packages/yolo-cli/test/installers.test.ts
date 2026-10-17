@@ -89,9 +89,7 @@ if (process.platform !== "win32" && Bun.which("sh"))
     target: hostTarget(),
     executable: "yolo",
   });
-const powershell = Bun.which(
-  process.platform === "win32" ? "pwsh.exe" : "pwsh",
-);
+const powershell = Bun.which(process.platform === "win32" ? "pwsh.exe" : "pwsh");
 if (powershell && process.arch === "x64")
   installers.push({
     script: "install.ps1",
@@ -106,26 +104,14 @@ function fixture(installer: Installer, externalRuntime = false) {
   const release = join(dir, "release");
   const main = join(dir, "main");
   const temp = join(dir, "temp");
-  const runtime = externalRuntime
-    ? join(dir, "external-runtime")
-    : join(home, "runtime");
-  for (const path of [
-    home,
-    release,
-    temp,
-    join(main, "bin"),
-    join(main, "packages/engine/runtime"),
-  ])
+  const runtime = externalRuntime ? join(dir, "external-runtime") : join(home, "runtime");
+  for (const path of [home, release, temp, join(main, "bin"), join(main, "packages/engine/runtime")])
     mkdirSync(path, { recursive: true });
   cpSync(binary, join(main, "bin", installer.executable));
   writeFileSync(join(main, "VERSION"), "2.0.0\n");
-  writeFileSync(
-    join(main, "packages/engine/runtime/package.json"),
-    '{"name":"@aphrody/runtime-sdk"}\n',
-  );
+  writeFileSync(join(main, "packages/engine/runtime/package.json"), '{"name":"@aphrody/runtime-sdk"}\n');
   writeFileSync(join(home, "VERSION"), "1.0.0\n");
-  for (const part of ["bin", "packages", "templates", "crates", "sdk", "stack"])
-    mkdirSync(join(home, part));
+  for (const part of ["bin", "packages", "templates", "crates", "sdk", "stack"]) mkdirSync(join(home, part));
   writeFileSync(join(home, "bin", installer.executable), "old executable\n");
   writeFileSync(join(home, "packages/old-sdk"), "old SDK\n");
   writeFileSync(join(home, "crates/old-crate"), "old crate\n");
@@ -135,10 +121,7 @@ function fixture(installer: Installer, externalRuntime = false) {
       recursive: true,
       dereference: true,
     });
-  writeFileSync(
-    join(runtime, hostTarget(), "old-artifact/sentinel"),
-    "old runtime\n",
-  );
+  writeFileSync(join(runtime, hostTarget(), "old-artifact/sentinel"), "old runtime\n");
   symlinkSync("old-artifact", join(runtime, hostTarget(), "current"), "dir");
   symlinkSync("old-artifact", join(runtime, hostTarget(), "previous"), "dir");
   if (nativeAvailable)
@@ -154,19 +137,11 @@ function fixture(installer: Installer, externalRuntime = false) {
 }
 
 type Fixture = ReturnType<typeof fixture>;
-const hash = (data: string | Buffer) =>
-  new Bun.CryptoHasher("sha256").update(data).digest("hex");
+const hash = (data: string | Buffer) => new Bun.CryptoHasher("sha256").update(data).digest("hex");
 
-function pack(
-  entry: Fixture,
-  installer: Installer,
-  crates: "invalid" | "missing" | "valid" | undefined = undefined,
-) {
+function pack(entry: Fixture, installer: Installer, crates: "invalid" | "missing" | "valid" | undefined = undefined) {
   const name = `yolo-2.0.0-${installer.target}.tar.gz`;
-  checked(
-    ["tar", "-czf", join(entry.release, name), "-C", entry.main, "."],
-    root,
-  );
+  checked(["tar", "-czf", join(entry.release, name), "-C", entry.main, "."], root);
   let sums = `${hash(readFileSync(join(entry.release, name)))}  ${name}\n`;
   if (crates) {
     const cratesName = "yolo-2.0.0-crates.tar.gz";
@@ -178,8 +153,7 @@ function pack(
       if (crates === "valid") {
         mkdirSync(join(source, "crates"));
         writeFileSync(join(source, "crates/new-crate"), "new crate\n");
-      } else
-        writeFileSync(join(source, "unexpected"), "missing crates directory\n");
+      } else writeFileSync(join(source, "unexpected"), "missing crates directory\n");
       checked(["tar", "-czf", archive, "-C", source, "."], root);
     }
     sums += `${hash(readFileSync(archive))}  ${cratesName}\n`;
@@ -189,23 +163,14 @@ function pack(
 
 function run(entry: Fixture, installer: Installer) {
   const args = installer.script.endsWith(".ps1")
-    ? [
-        installer.shell,
-        "-NoProfile",
-        "-NonInteractive",
-        "-File",
-        join(root, "packages/engine/yolo", installer.script),
-      ]
+    ? [installer.shell, "-NoProfile", "-NonInteractive", "-File", join(root, "packages/engine/yolo", installer.script)]
     : [installer.shell, join(root, "packages/engine/yolo", installer.script)];
   return Bun.spawnSync(args, {
     windowsHide: true,
     cwd: entry.dir,
     env: {
-      PATH:
-        process.platform === "win32" ? process.env["PATH"] : "/usr/bin:/bin",
-      ...(process.platform === "win32"
-        ? { SystemRoot: process.env["SystemRoot"] }
-        : {}),
+      PATH: process.platform === "win32" ? process.env["PATH"] : "/usr/bin:/bin",
+      ...(process.platform === "win32" ? { SystemRoot: process.env["SystemRoot"] } : {}),
       HOME: entry.dir,
       USERPROFILE: entry.dir,
       TMPDIR: entry.temp,
@@ -229,7 +194,7 @@ function snapshot(path: string): unknown {
     return Object.fromEntries(
       readdirSync(path)
         .toSorted()
-        .map((name) => [name, snapshot(join(path, name))]),
+        .map(name => [name, snapshot(join(path, name))]),
     );
   return hash(readFileSync(path));
 }
@@ -246,9 +211,7 @@ function rejects(installer: Installer, entry: Fixture) {
     runtime: snapshot(entry.runtime),
   }).toEqual(before);
   const tempFiles = readdirSync(entry.temp).filter(
-    (name) =>
-      !name.startsWith("clr-debug-pipe-") &&
-      !name.startsWith("dotnet-diagnostic-"),
+    name => !name.startsWith("clr-debug-pipe-") && !name.startsWith("dotnet-diagnostic-"),
   );
   expect(tempFiles).toEqual([]);
   return result;
@@ -256,9 +219,7 @@ function rejects(installer: Installer, entry: Fixture) {
 
 function checkTempEmpty(tempDir: string) {
   const tempFiles = readdirSync(tempDir).filter(
-    (name) =>
-      !name.startsWith("clr-debug-pipe-") &&
-      !name.startsWith("dotnet-diagnostic-"),
+    name => !name.startsWith("clr-debug-pipe-") && !name.startsWith("dotnet-diagnostic-"),
   );
   expect(tempFiles).toEqual([]);
 }
@@ -274,9 +235,7 @@ for (const installer of installers) {
     it("rejects a crate archive without its required directory before replacing code", () => {
       const entry = fixture(installer);
       pack(entry, installer, "missing");
-      expect(rejects(installer, entry).stderr.toString()).toContain(
-        "missing crates directory",
-      );
+      expect(rejects(installer, entry).stderr.toString()).toContain("missing crates directory");
     }, 20_000);
 
     it("rejects a missing or unexecutable candidate without replacing code", () => {
@@ -307,9 +266,7 @@ for (const installer of installers) {
         cpSync(embeddedBinary, join(entry.main, "bin", installer.executable));
         const manifestPath = join(entry.main, "artifact/manifest.json");
         const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-        const library = Object.keys(manifest.files).find((name) =>
-          /\.(so|dylib|dll)$/.test(name),
-        )!;
+        const library = Object.keys(manifest.files).find(name => /\.(so|dylib|dll)$/.test(name))!;
         const invalid = "this file is not a native library\n";
         writeFileSync(join(entry.main, "artifact", library), invalid);
         manifest.files[library] = {
@@ -332,24 +289,11 @@ for (const installer of installers) {
         const result = run(entry, installer);
         expect(result.stderr.toString()).toBe("");
         expect(result.exitCode).toBe(0);
-        expect(readFileSync(join(entry.home, "VERSION"), "utf8")).toBe(
-          "2.0.0\n",
-        );
-        expect(readFileSync(join(entry.home, "crates/new-crate"), "utf8")).toBe(
-          "new crate\n",
-        );
-        expect(
-          readFileSync(
-            join(entry.runtime, hostTarget(), "old-artifact/sentinel"),
-            "utf8",
-          ),
-        ).toBe("old runtime\n");
-        expect(
-          readlinkSync(join(entry.runtime, hostTarget(), "previous")),
-        ).toBe("old-artifact");
-        expect(
-          readlinkSync(join(entry.runtime, hostTarget(), "current")),
-        ).not.toBe("old-artifact");
+        expect(readFileSync(join(entry.home, "VERSION"), "utf8")).toBe("2.0.0\n");
+        expect(readFileSync(join(entry.home, "crates/new-crate"), "utf8")).toBe("new crate\n");
+        expect(readFileSync(join(entry.runtime, hostTarget(), "old-artifact/sentinel"), "utf8")).toBe("old runtime\n");
+        expect(readlinkSync(join(entry.runtime, hostTarget(), "previous"))).toBe("old-artifact");
+        expect(readlinkSync(join(entry.runtime, hostTarget(), "current"))).not.toBe("old-artifact");
         expect(existsSync(join(entry.home, "runtime"))).toBe(false);
         expect(existsSync(join(entry.home, "sdk"))).toBe(false);
         expect(existsSync(join(entry.home, "stack"))).toBe(false);
@@ -365,9 +309,7 @@ for (const installer of installers) {
           env,
         });
         expect(rollback.exitCode).toBe(0);
-        expect(readlinkSync(join(entry.runtime, hostTarget(), "current"))).toBe(
-          "old-artifact",
-        );
+        expect(readlinkSync(join(entry.runtime, hostTarget(), "current"))).toBe("old-artifact");
         expect(
           Bun.spawnSync([installed, "runtime", "info", "--installed"], {
             windowsHide: true,
@@ -387,15 +329,9 @@ for (const installer of installers) {
         const result = run(entry, installer);
         expect(result.stderr.toString()).toBe("");
         expect(result.exitCode).toBe(0);
-        expect(readFileSync(join(entry.home, "VERSION"), "utf8")).toBe(
-          "2.0.0\n",
-        );
-        expect(existsSync(join(entry.runtime, hostTarget(), "current"))).toBe(
-          true,
-        );
-        expect(existsSync(join(entry.runtime, hostTarget(), "previous"))).toBe(
-          false,
-        );
+        expect(readFileSync(join(entry.home, "VERSION"), "utf8")).toBe("2.0.0\n");
+        expect(existsSync(join(entry.runtime, hostTarget(), "current"))).toBe(true);
+        expect(existsSync(join(entry.runtime, hostTarget(), "previous"))).toBe(false);
         checkTempEmpty(entry.temp);
       },
       20_000,

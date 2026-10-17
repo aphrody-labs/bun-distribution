@@ -21,11 +21,7 @@ export {
 export type { SpacedriveClient } from "@aphrody/drive-client";
 
 // Export commonly used types for convenience
-export type {
-  Location,
-  LocationsListOutput,
-  LibraryInfo,
-} from "@aphrody/drive-client";
+export type { Location, LocationsListOutput, LibraryInfo } from "@aphrody/drive-client";
 
 // Export icon utilities
 export { getDeviceIcon, getVolumeIcon } from "@aphrody/drive-client";

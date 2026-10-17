@@ -32,11 +32,7 @@ export function KenBurns({
   style?: CSSProperties;
 }) {
   const kb =
-    variant === "slow"
-      ? "ken-burns ken-burns-slow"
-      : variant === "rev"
-        ? "ken-burns ken-burns-rev"
-        : "ken-burns";
+    variant === "slow" ? "ken-burns ken-burns-slow" : variant === "rev" ? "ken-burns ken-burns-rev" : "ken-burns";
 
   const overlayClass =
     overlay === "full"
@@ -71,10 +67,7 @@ export function KenBurns({
  */
 export function Aurora({ className = "" }: { className?: string }) {
   return (
-    <div
-      aria-hidden
-      className={`absolute inset-0 -z-0 overflow-hidden pointer-events-none ${className}`}
-    >
+    <div aria-hidden className={`absolute inset-0 -z-0 overflow-hidden pointer-events-none ${className}`}>
       <div className="aurora absolute inset-[-20%]" />
     </div>
   );

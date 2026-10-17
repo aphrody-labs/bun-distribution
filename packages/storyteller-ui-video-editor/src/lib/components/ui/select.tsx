@@ -9,22 +9,12 @@ import { cn } from "../../utils/ui";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useOverlayOpenChange } from "./use-overlay-open-change";
 
-function Select({
-  open,
-  onOpenChange,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Root>) {
+function Select({ open, onOpenChange, ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
   const handleOpenChange = useOverlayOpenChange({
     open,
     onOpenChange,
   });
-  return (
-    <SelectPrimitive.Root
-      open={open}
-      onOpenChange={handleOpenChange}
-      {...props}
-    />
-  );
+  return <SelectPrimitive.Root open={open} onOpenChange={handleOpenChange} {...props} />;
 }
 
 const SelectGroup = SelectPrimitive.Group;
@@ -37,8 +27,7 @@ const selectItemVariants = cva(
     variants: {
       variant: {
         default: "",
-        destructive:
-          "text-destructive data-[highlighted]:bg-destructive/5 data-[highlighted]:text-destructive",
+        destructive: "text-destructive data-[highlighted]:bg-destructive/5 data-[highlighted]:text-destructive",
       },
     },
     defaultVariants: {
@@ -74,17 +63,9 @@ const SelectTrigger = React.forwardRef<
       icon?: React.ReactNode;
     }
 >(({ className, children, icon, variant, size, ...props }, ref) => (
-  <SelectPrimitive.Trigger
-    ref={ref}
-    className={cn(selectTriggerVariants({ variant, size }), className)}
-    {...props}
-  >
+  <SelectPrimitive.Trigger ref={ref} className={cn(selectTriggerVariants({ variant, size }), className)} {...props}>
     <div className="flex items-center gap-1.5">
-      {icon && (
-        <span className="text-muted-foreground [&_svg]:size-3.5 shrink-0">
-          {icon}
-        </span>
-      )}
+      {icon && <span className="text-muted-foreground [&_svg]:size-3.5 shrink-0">{icon}</span>}
       {children}
     </div>
     <SelectPrimitive.Icon asChild>
@@ -100,10 +81,7 @@ const SelectScrollUpButton = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.ScrollUpButton
     ref={ref}
-    className={cn(
-      "flex cursor-default items-center justify-center py-1",
-      className,
-    )}
+    className={cn("flex cursor-default items-center justify-center py-1", className)}
     {...props}
   >
     <HugeiconsIcon icon={ArrowUpIcon} className="size-4" />
@@ -117,17 +95,13 @@ const SelectScrollDownButton = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.ScrollDownButton
     ref={ref}
-    className={cn(
-      "flex cursor-default items-center justify-center py-1",
-      className,
-    )}
+    className={cn("flex cursor-default items-center justify-center py-1", className)}
     {...props}
   >
     <HugeiconsIcon icon={ArrowDownIcon} className="size-4" />
   </SelectPrimitive.ScrollDownButton>
 ));
-SelectScrollDownButton.displayName =
-  SelectPrimitive.ScrollDownButton.displayName;
+SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayName;
 
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
@@ -141,7 +115,7 @@ const SelectContent = React.forwardRef<
         className,
       )}
       position={position}
-      onCloseAutoFocus={(e) => {
+      onCloseAutoFocus={e => {
         e.preventDefault();
         e.stopPropagation();
       }}
@@ -150,8 +124,7 @@ const SelectContent = React.forwardRef<
       <SelectScrollUpButton />
       <SelectPrimitive.Viewport
         className={cn(
-          position === "popper" &&
-            "h-(--radix-select-trigger-height) w-full min-w-(--radix-select-trigger-width)",
+          position === "popper" && "h-(--radix-select-trigger-height) w-full min-w-(--radix-select-trigger-width)",
         )}
       >
         {children}
@@ -168,10 +141,7 @@ const SelectLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn(
-      "px-2 pb-1 pt-0.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground",
-      className,
-    )}
+    className={cn("px-2 pb-1 pt-0.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground", className)}
     {...props}
   />
 ));
@@ -183,11 +153,7 @@ const SelectItem = React.forwardRef<
     variant?: VariantProps<typeof selectItemVariants>["variant"];
   }
 >(({ className, children, variant = "default", ...props }, ref) => (
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(selectItemVariants({ variant }), "pl-6 pr-2", className)}
-    {...props}
-  >
+  <SelectPrimitive.Item ref={ref} className={cn(selectItemVariants({ variant }), "pl-6 pr-2", className)} {...props}>
     <span className="absolute left-1.5 flex size-3.5 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
         <Check className="size-3.5" />
@@ -202,11 +168,7 @@ const SelectSeparator = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Separator>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
 >(({ className, ...props }, ref) => (
-  <SelectPrimitive.Separator
-    ref={ref}
-    className={cn("bg-border mx-1 my-1 h-px", className)}
-    {...props}
-  />
+  <SelectPrimitive.Separator ref={ref} className={cn("bg-border mx-1 my-1 h-px", className)} {...props} />
 ));
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
 

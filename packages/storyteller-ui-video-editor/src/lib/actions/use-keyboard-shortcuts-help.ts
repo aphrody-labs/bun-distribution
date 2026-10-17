@@ -3,10 +3,7 @@
 import { useMemo } from "react";
 import { useKeybindingsStore } from "./keybindings-store";
 import { ACTIONS, type TActionWithOptionalArgs } from ".";
-import {
-  getPlatformAlternateKey,
-  getPlatformSpecialKey,
-} from "../utils/platform";
+import { getPlatformAlternateKey, getPlatformSpecialKey } from "../utils/platform";
 
 export interface KeyboardShortcut {
   id: string;

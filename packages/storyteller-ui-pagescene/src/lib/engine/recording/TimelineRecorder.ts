@@ -3,14 +3,7 @@
 // pattern as video-editor's SceneExporter. Avoids realtime MediaRecorder
 // (whose webm duration header is unreliable).
 
-import {
-  Output,
-  Mp4OutputFormat,
-  WebMOutputFormat,
-  BufferTarget,
-  CanvasSource,
-  QUALITY_HIGH,
-} from "mediabunny";
+import { Output, Mp4OutputFormat, WebMOutputFormat, BufferTarget, CanvasSource, QUALITY_HIGH } from "mediabunny";
 import * as THREE from "three";
 import type Editor from "../editor";
 import { GridVisibleChangedEvent } from "../events/EngineEvent";
@@ -31,10 +24,7 @@ export interface RecordOptions {
   signal?: { cancelled: boolean };
 }
 
-export async function recordTimeline(
-  editor: Editor,
-  opts: RecordOptions = {},
-): Promise<RecordResult | null> {
+export async function recordTimeline(editor: Editor, opts: RecordOptions = {}): Promise<RecordResult | null> {
   const format = opts.format ?? "mp4";
   const timeline = editor.timelineController.getTimeline();
   const renderer = editor.renderer;
@@ -53,11 +43,7 @@ export async function recordTimeline(
   // camera-view framing offset, hide the grid, and render at the render
   // camera's target dimensions/aspect for the duration of the encode.
   // Everything is restored in the finally block.
-  const {
-    width: targetWidth,
-    height: targetHeight,
-    aspectRatio,
-  } = editor.cameraController.getRenderDimensions();
+  const { width: targetWidth, height: targetHeight, aspectRatio } = editor.cameraController.getRenderDimensions();
   const sizeVector = new THREE.Vector2();
   renderer.getSize(sizeVector);
   const originalWidth = sizeVector.x;
@@ -76,8 +62,7 @@ export async function recordTimeline(
 
   try {
     const output = new Output({
-      format:
-        format === "webm" ? new WebMOutputFormat() : new Mp4OutputFormat(),
+      format: format === "webm" ? new WebMOutputFormat() : new Mp4OutputFormat(),
       target: new BufferTarget(),
     });
     const videoSource = new CanvasSource(canvas, {

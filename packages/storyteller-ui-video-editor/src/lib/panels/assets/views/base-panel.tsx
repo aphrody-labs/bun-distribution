@@ -26,31 +26,19 @@ export function PanelView({
   ...rest
 }: PanelViewProps) {
   return (
-    <div
-      className={cn("relative flex h-full flex-col", className)}
-      ref={ref}
-      {...rest}
-    >
+    <div className={cn("relative flex h-full flex-col", className)} ref={ref} {...rest}>
       {!hideHeader && (
         <div className="bg-background h-11 shrink-0 pl-3 pr-2 flex items-center justify-between border-b border-ui-panel-border">
-          {title && (
-            <span className="text-muted-foreground text-sm">{title}</span>
-          )}
+          {title && <span className="text-muted-foreground text-sm">{title}</span>}
           {actions}
         </div>
       )}
       <div
-        className={cn(
-          "scrollbar-hidden size-full overflow-y-auto",
-          hideHeader ? "pt-4" : "pt-2",
-          scrollClassName,
-        )}
+        className={cn("scrollbar-hidden size-full overflow-y-auto", hideHeader ? "pt-4" : "pt-2", scrollClassName)}
         ref={scrollRef}
         onScroll={onScroll}
       >
-        <div className={cn("w-full flex-1 px-2 pt-0", contentClassName)}>
-          {children}
-        </div>
+        <div className={cn("w-full flex-1 px-2 pt-0", contentClassName)}>{children}</div>
       </div>
     </div>
   );

@@ -52,28 +52,20 @@ export function RecentListCard({
           <p className="text-sm text-muted-foreground">{emptyText}</p>
         ) : (
           <ul className="divide-y divide-border">
-            {items.map((item) => (
+            {items.map(item => (
               <li key={item.id} className="py-3 first:pt-0 last:pb-0">
                 <div className="flex items-start gap-3">
                   <div
-                    className={cn(
-                      "flex size-9 shrink-0 items-center justify-center rounded-lg",
-                      accent,
-                    )}
+                    className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", accent)}
                     aria-hidden="true"
                   >
                     <Icon className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="line-clamp-1 text-sm font-medium text-foreground">
-                        {item.title}
-                      </p>
+                      <p className="line-clamp-1 text-sm font-medium text-foreground">{item.title}</p>
                       {item.status && (
-                        <Badge
-                          variant="outline"
-                          className="shrink-0 text-[10px] uppercase"
-                        >
+                        <Badge variant="outline" className="shrink-0 text-[10px] uppercase">
                           {item.status}
                         </Badge>
                       )}
@@ -86,9 +78,7 @@ export function RecentListCard({
                           })}
                         </span>
                       )}
-                      {item.subtitle && (
-                        <span className="truncate">{item.subtitle}</span>
-                      )}
+                      {item.subtitle && <span className="truncate">{item.subtitle}</span>}
                       {item.meta}
                     </div>
                   </div>

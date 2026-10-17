@@ -23,15 +23,24 @@ struct Guid {
     data4: [u8; 8],
 }
 
-const IID_NULL: Guid = Guid { data1: 0, data2: 0, data3: 0, data4: [0; 8] };
+const IID_NULL: Guid = Guid {
+    data1: 0,
+    data2: 0,
+    data3: 0,
+    data4: [0; 8],
+};
 const CLSID_ADODB_CONNECTION: Guid = Guid {
     data1: 0x00000514,
     data2: 0,
     data3: 0x0010,
     data4: [0x80, 0, 0, 0xaa, 0, 0x6d, 0x2e, 0xa4],
 };
-const IID_IDISPATCH: Guid =
-    Guid { data1: 0x00020400, data2: 0, data3: 0, data4: [0xc0, 0, 0, 0, 0, 0, 0, 0x46] };
+const IID_IDISPATCH: Guid = Guid {
+    data1: 0x00020400,
+    data2: 0,
+    data3: 0,
+    data4: [0xc0, 0, 0, 0, 0, 0, 0, 0x46],
+};
 
 const CLSCTX_INPROC_SERVER: u32 = 1;
 const COINIT_APARTMENTTHREADED: u32 = 2;
@@ -81,7 +90,9 @@ impl Variant {
             reserved1: 0,
             reserved2: 0,
             reserved3: 0,
-            data: VariantData { i32: DISP_E_PARAMNOTFOUND },
+            data: VariantData {
+                i32: DISP_E_PARAMNOTFOUND,
+            },
             reserved: 0,
         }
     }
@@ -188,7 +199,11 @@ impl ComApartment {
         // SAFETY: Initializes COM for the current worker thread.  The dispatch
         // call is synchronous and the guard uninitializes the same apartment.
         let hr = unsafe { CoInitializeEx(ptr::null_mut(), COINIT_APARTMENTTHREADED) };
-        if hr < 0 { Err(format!("CoInitializeEx failed: 0x{hr:08x}")) } else { Ok(Self) }
+        if hr < 0 {
+            Err(format!("CoInitializeEx failed: 0x{hr:08x}"))
+        } else {
+            Ok(Self)
+        }
     }
 }
 
@@ -227,7 +242,11 @@ fn dispid(object: *mut IDispatch, name: &str) -> Result<i32, String> {
     let hr = unsafe {
         ((*(*object).vtbl).get_ids_of_names)(object, &IID_NULL, &mut name_ptr, 1, 1033, &mut id)
     };
-    if hr < 0 { Err(failed(hr, name)) } else { Ok(id) }
+    if hr < 0 {
+        Err(failed(hr, name))
+    } else {
+        Ok(id)
+    }
 }
 
 fn invoke(
@@ -238,7 +257,11 @@ fn invoke(
 ) -> Result<Variant, String> {
     let id = dispid(object, name)?;
     let mut params = DispParams {
-        args: if args.is_empty() { ptr::null_mut() } else { args.as_mut_ptr() },
+        args: if args.is_empty() {
+            ptr::null_mut()
+        } else {
+            args.as_mut_ptr()
+        },
         named_args: ptr::null_mut(),
         arg_count: args.len() as u32,
         named_arg_count: 0,
@@ -292,7 +315,9 @@ fn value_string(value: &mut Variant) -> Option<String> {
         while *ptr.add(len) != 0 {
             len += 1;
         }
-        Some(String::from_utf16_lossy(std::slice::from_raw_parts(ptr, len)))
+        Some(String::from_utf16_lossy(std::slice::from_raw_parts(
+            ptr, len,
+        )))
     }
 }
 
@@ -374,7 +399,12 @@ fn search(query: &str) -> Result<Value, String> {
         let mut fields = invoke(recordset, "Fields", DISPATCH_PROPERTYGET, Vec::new())?;
         let fields_object = dispatch_value(&mut fields)?;
         unsafe { clear_variant(&mut fields) };
-        let mut field = invoke(fields_object, "Item", DISPATCH_PROPERTYGET, vec![Variant::i4(0)])?;
+        let mut field = invoke(
+            fields_object,
+            "Item",
+            DISPATCH_PROPERTYGET,
+            vec![Variant::i4(0)],
+        )?;
         unsafe {
             release(fields_object);
         }

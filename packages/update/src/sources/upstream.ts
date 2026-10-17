@@ -19,12 +19,7 @@ import { spawnSync } from "../process.ts";
 import { Ctx } from "../context.ts";
 import { refHead } from "./drift.ts";
 import { lsRemote } from "../deps/inventory.ts";
-import {
-  parseManifest,
-  resolveSourceRoot,
-  type Manifest,
-  type Reference,
-} from "./restore.ts";
+import { parseManifest, resolveSourceRoot, type Manifest, type Reference } from "./restore.ts";
 
 const MANIFEST = "tools/config/upstream-sources.json";
 export const DOC = "docs/reference/infra/UPSTREAMS.md";
@@ -38,22 +33,15 @@ const git = (args: string[], cwd?: string) =>
   });
 
 export function cacheRoot(): string {
-  return join(
-    process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"),
-    "aphrody",
-    "upstream",
-  );
+  return join(process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"), "aphrody", "upstream");
 }
 
 export function loadManifest(c: Ctx): Manifest {
   return parseManifest(c.read(MANIFEST));
 }
 
-export function findReference(
-  manifest: Manifest,
-  id: string,
-): Reference | undefined {
-  return (manifest.reference ?? []).find((r) => r.id === id);
+export function findReference(manifest: Manifest, id: string): Reference | undefined {
+  return (manifest.reference ?? []).find(r => r.id === id);
 }
 
 /** `owner/name` of a GitHub URL, when it is one. */
@@ -63,33 +51,25 @@ export function githubSlug(url: string): string | undefined {
 
 /** Clean means: no changed paths and no commit that the remote does not have. */
 function isClean(dir: string): { clean: boolean; why?: string } {
-  if (!existsSync(join(dir, ".git")))
-    return { clean: false, why: "not a git checkout" };
+  if (!existsSync(join(dir, ".git"))) return { clean: false, why: "not a git checkout" };
   const status = git(["status", "--porcelain"], dir);
   if (status.stdout.trim())
     return {
       clean: false,
       why: `${status.stdout.trim().split("\n").length} changed paths`,
     };
-  const ahead = git(
-    ["log", "--oneline", "--branches", "--not", "--remotes"],
-    dir,
-  );
-  if (ahead.status === 0 && ahead.stdout.trim())
-    return { clean: false, why: "unpushed commits" };
+  const ahead = git(["log", "--oneline", "--branches", "--not", "--remotes"], dir);
+  if (ahead.status === 0 && ahead.stdout.trim()) return { clean: false, why: "unpushed commits" };
   return { clean: true };
 }
 
 /** Directories of the source root that are neither vital sources nor a `*.pre-bump-*` leftover handled by `sources prune`. */
 export function nonVital(root: string, manifest: Manifest): string[] {
   if (!existsSync(root)) return [];
-  const vital = new Set(manifest.sources.map((s) => s.id));
+  const vital = new Set(manifest.sources.map(s => s.id));
   return readdirSync(root, { withFileTypes: true })
-    .filter(
-      (e) =>
-        e.isDirectory() && !vital.has(e.name) && !e.name.includes(".pre-bump-"),
-    )
-    .map((e) => e.name)
+    .filter(e => e.isDirectory() && !vital.has(e.name) && !e.name.includes(".pre-bump-"))
+    .map(e => e.name)
     .toSorted();
 }
 
@@ -100,27 +80,19 @@ export type ForkEntry = {
   keep?: string;
 };
 
-export function renderDocs(
-  manifest: Manifest,
-  forks: ForkEntry[] = [],
-): string {
+export function renderDocs(manifest: Manifest, forks: ForkEntry[] = []): string {
   const rows = (tier: string) =>
     (manifest.reference ?? [])
-      .filter((r) => r.tier === tier)
-      .map((r) => {
+      .filter(r => r.tier === tier)
+      .map(r => {
         const slug = githubSlug(r.url);
         const link = slug ? `[${slug}](${r.url.replace(/\.git$/, "")})` : r.url;
         return `| \`${r.id}\` | ${link} | \`${r.ref ?? "HEAD"}\` | ${r.observedCommit?.slice(0, 10) ?? "-"} | ${r.purpose}${r.note ? ` ${r.note}` : ""} | ${r.consumers} |`;
       });
-  const vital = manifest.sources.map((s) => {
-    const origin =
-      s.kind === "crate"
-        ? `crates.io \`${s.crate}\` ${s.version}`
-        : `${s.url} \`${s.ref ?? "HEAD"}\``;
-    const why =
-      s.cargoPathDep !== undefined ? "Cargo path dependency" : "build input";
-    const patches =
-      (s.patches ?? []).map((p) => `\`${p.file}\``).join(", ") || "-";
+  const vital = manifest.sources.map(s => {
+    const origin = s.kind === "crate" ? `crates.io \`${s.crate}\` ${s.version}` : `${s.url} \`${s.ref ?? "HEAD"}\``;
+    const why = s.cargoPathDep !== undefined ? "Cargo path dependency" : "build input";
+    const patches = (s.patches ?? []).map(p => `\`${p.file}\``).join(", ") || "-";
     return `| \`${s.id}\` | ${origin} | ${why}${s.hold ? ` (held: ${s.hold})` : ""} | ${patches} |`;
   });
   return `<!-- SPDX-License-Identifier: Apache-2.0 -->
@@ -136,7 +108,7 @@ Source, tests and licences are tracked in the monorepo; Cargo needs no sibling c
 
 | Package | Version | Owner path | Preserved patches |
 | --- | --- | --- | --- |
-${(manifest.integrated ?? []).map((s) => `| \`${s.crate}\` | ${s.version} | \`${s.integratedPath}\` | ${(s.patches ?? []).map((p) => `\`${p.file}\``).join(", ")} |`).join("\n")}
+${(manifest.integrated ?? []).map(s => `| \`${s.crate}\` | ${s.version} | \`${s.integratedPath}\` | ${(s.patches ?? []).map(p => `\`${p.file}\``).join(", ")} |`).join("\n")}
 
 ## Vital checkouts (${manifest.sources.length})
 
@@ -146,13 +118,13 @@ Restored by \`bun run sources:sync\` (or \`aphrody git source sync --apply\`); e
 | --- | --- | --- | --- |
 ${vital.join("\n")}
 
-## Reference upstreams (${(manifest.reference ?? []).filter((r) => r.tier === "reference").length}, never cloned by default)
+## Reference upstreams (${(manifest.reference ?? []).filter(r => r.tier === "reference").length}, never cloned by default)
 
 | Id | Repository | Ref | Observed | What it is for | Used by |
 | --- | --- | --- | --- | --- | --- |
 ${rows("reference").join("\n")}
 
-## Build-on-demand upstreams (${(manifest.reference ?? []).filter((r) => r.tier === "build").length})
+## Build-on-demand upstreams (${(manifest.reference ?? []).filter(r => r.tier === "build").length})
 
 Inputs of the WSL build (\`tools/config/os/wsl-build.json\`, \`crates/infra/aphrody-command/src/wsl\`). Restore one with
 \`yolo update sources sync --only <id> --apply\` before a WSL build; remove it afterwards with
@@ -168,7 +140,7 @@ Every fork needs a reason to exist; \`yolo update sources forks\` compares each 
 
 | Fork | Parent | Role | Why it stays |
 | --- | --- | --- | --- |
-${forks.map((f) => `| \`${f.repo}\` | ${f.parent ?? "-"} | ${f.role ?? "-"} | ${f.keep ?? "undocumented"} |`).join("\n")}
+${forks.map(f => `| \`${f.repo}\` | ${f.parent ?? "-"} | ${f.role ?? "-"} | ${f.keep ?? "undocumented"} |`).join("\n")}
 
 ## Access
 
@@ -197,7 +169,7 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
     case "list": {
       const ti = rest.indexOf("--tier");
       const tier = ti >= 0 ? rest[ti + 1] : undefined;
-      for (const r of refs.filter((x) => !tier || x.tier === tier)) {
+      for (const r of refs.filter(x => !tier || x.tier === tier)) {
         const local = existsSync(join(root, r.id)) ? "local" : "remote";
         console.log(
           `${r.tier.padEnd(9)} ${local.padEnd(6)} ${r.id.padEnd(24)} ${r.url
@@ -207,10 +179,7 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
         );
       }
       const extra = nonVital(root, manifest);
-      if (extra.length)
-        console.log(
-          `not vital on disk: ${extra.join(", ")}  (yolo update upstream prune --apply)`,
-        );
+      if (extra.length) console.log(`not vital on disk: ${extra.join(", ")}  (yolo update upstream prune --apply)`);
       return 0;
     }
     case "drift": {
@@ -218,8 +187,7 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
       for (const r of refs) {
         const head = refHead(r.url, r.ref ?? "HEAD");
         const tag = lsRemote(r.url).latestTag;
-        const behind =
-          !!head && !!r.observedCommit && head !== r.observedCommit;
+        const behind = !!head && !!r.observedCommit && head !== r.observedCommit;
         moved += behind ? 1 : 0;
         console.log(
           `${behind ? "moved" : head ? "same " : "?    "} ${r.id.padEnd(24)} ${(r.observedCommit ?? "-").slice(0, 10)} -> ${(head ?? "unreachable").slice(0, 10)}${tag ? `  tag ${tag}` : ""}`,
@@ -241,33 +209,21 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
           changed++;
         }
       }
-      if (c.apply && changed)
-        c.write(MANIFEST, `${JSON.stringify(next, null, 2)}\n`);
+      if (c.apply && changed) c.write(MANIFEST, `${JSON.stringify(next, null, 2)}\n`);
       if (!changed) console.log("refresh  observed commits already current");
       return 0;
     }
     case "fetch": {
       const id = rest[0];
       const r = id ? findReference(manifest, id) : undefined;
-      if (!r)
-        return (
-          console.error(
-            `usage: upstream fetch <id>; ids: ${refs.map((x) => x.id).join(", ")}`,
-          ),
-          2
-        );
+      if (!r) return (console.error(`usage: upstream fetch <id>; ids: ${refs.map(x => x.id).join(", ")}`), 2);
       const paths: string[] = [];
-      for (let i = 1; i < rest.length; i++)
-        if (rest[i] === "--path" && rest[i + 1]) paths.push(rest[++i]!);
+      for (let i = 1; i < rest.length; i++) if (rest[i] === "--path" && rest[i + 1]) paths.push(rest[++i]!);
       const sparse = paths.length ? paths : (r.sparse ?? []);
       const dir = join(cacheRoot(), r.id);
       if (existsSync(dir)) {
-        const pulled = git(
-          ["fetch", "--depth", "1", "--quiet", "origin", r.ref ?? "HEAD"],
-          dir,
-        );
-        if (pulled.status !== 0)
-          return (console.error(`fetch failed: ${pulled.stderr.trim()}`), 1);
+        const pulled = git(["fetch", "--depth", "1", "--quiet", "origin", r.ref ?? "HEAD"], dir);
+        if (pulled.status !== 0) return (console.error(`fetch failed: ${pulled.stderr.trim()}`), 1);
         git(["checkout", "--quiet", "--detach", "FETCH_HEAD"], dir);
       } else {
         const clone = git([
@@ -281,11 +237,9 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
           r.url,
           dir,
         ]);
-        if (clone.status !== 0)
-          return (console.error(`clone failed: ${clone.stderr.trim()}`), 1);
+        if (clone.status !== 0) return (console.error(`clone failed: ${clone.stderr.trim()}`), 1);
       }
-      if (sparse.length)
-        git(["sparse-checkout", "set", "--cone", ...sparse], dir);
+      if (sparse.length) git(["sparse-checkout", "set", "--cone", ...sparse], dir);
       console.log(dir);
       return 0;
     }
@@ -326,15 +280,11 @@ export async function runUpstream(c: Ctx, args: string[]): Promise<number> {
         console.log(`docs   ${DOC} current`);
         return 0;
       }
-      console.log(
-        `docs   ${DOC} is stale; run \`yolo update upstream docs --apply\``,
-      );
+      console.log(`docs   ${DOC} is stale; run \`yolo update upstream docs --apply\``);
       return 1;
     }
     default:
-      console.error(
-        "usage: upstream [list|drift|refresh|fetch <id>|prune [--cache]|docs] [--apply]",
-      );
+      console.error("usage: upstream [list|drift|refresh|fetch <id>|prune [--cache]|docs] [--apply]");
       return 2;
   }
 }

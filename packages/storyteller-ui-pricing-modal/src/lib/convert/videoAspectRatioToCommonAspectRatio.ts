@@ -7,7 +7,7 @@ export function videoAspectRatioToCommonAspectRatio(
   sizeOptions: SizeOption[] | undefined,
 ): string | null {
   if (!textLabel || !sizeOptions) return null;
-  const option = sizeOptions.find((o) => o.textLabel === textLabel);
+  const option = sizeOptions.find(o => o.textLabel === textLabel);
   if (!option) return null;
   return option.tauriValue;
 }

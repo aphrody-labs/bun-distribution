@@ -1962,8 +1962,7 @@ export default {
   EventStoryAreaMaster: {
     file: "LGAマスター - イベントストーリーエリア.tsv",
     fullName: "Soccer.Shared.EventStoryAreaMaster",
-    extends:
-      "StoryBoardAreaMaster<EventStoryAreaMaster, EventStoryStageMaster, EventStoryChapterMaster>",
+    extends: "StoryBoardAreaMaster<EventStoryAreaMaster, EventStoryStageMaster, EventStoryChapterMaster>",
     columns: [
       {
         name: "Code",
@@ -4586,11 +4585,7 @@ export default {
         ref: "EquipmentCraftingMaster",
       },
     ],
-    relatedFiles: [
-      "LGAマスター - アイテム - 装備.tsv",
-      "LGAマスター - 装備分解.tsv",
-      "LGAマスター - 装備制作.tsv",
-    ],
+    relatedFiles: ["LGAマスター - アイテム - 装備.tsv", "LGAマスター - 装備分解.tsv", "LGAマスター - 装備制作.tsv"],
   },
   FocusedTrainingTicketItemMaster: {
     file: "LGAマスター - アイテム - 集中部活券.tsv",
@@ -4681,10 +4676,7 @@ export default {
         ref: "PassiveMaster",
       },
     ],
-    relatedFiles: [
-      "LGAマスター - フォーメーション.tsv",
-      "LGAマスター - フォーメーションスロット.tsv",
-    ],
+    relatedFiles: ["LGAマスター - フォーメーション.tsv", "LGAマスター - フォーメーションスロット.tsv"],
   },
   GachaTicketItemMaster: {
     file: "LGAマスター - アイテム - ガチャチケット.tsv",
@@ -5879,8 +5871,7 @@ export default {
   MainStoryAreaMaster: {
     file: "LGAマスター - メインストーリーエリア.tsv",
     fullName: "Soccer.Shared.MainStoryAreaMaster",
-    extends:
-      "StoryBoardAreaMaster<MainStoryAreaMaster, MainStoryStageMaster, MainStoryChapterMaster>",
+    extends: "StoryBoardAreaMaster<MainStoryAreaMaster, MainStoryStageMaster, MainStoryChapterMaster>",
     columns: [
       {
         name: "Code",

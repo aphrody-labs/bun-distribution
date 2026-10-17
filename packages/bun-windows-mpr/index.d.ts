@@ -9,29 +9,98 @@ interface Functions {
   /** mpr.dll!MultinetGetConnectionPerformanceW */
   MultinetGetConnectionPerformance(lpNetResource: Win32Pointer, lpNetConnectInfoStruct: Win32Pointer): number;
   /** mpr.dll!WNetAddConnection2A */
-  WNetAddConnection2A(lpNetResource: Win32Pointer, lpPassword: string | Win32Pointer, lpUserName: string | Win32Pointer, dwFlags: number): number;
+  WNetAddConnection2A(
+    lpNetResource: Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpUserName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** mpr.dll!WNetAddConnection2W */
-  WNetAddConnection2W(lpNetResource: Win32Pointer, lpPassword: string | Win32Pointer, lpUserName: string | Win32Pointer, dwFlags: number): number;
+  WNetAddConnection2W(
+    lpNetResource: Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpUserName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** mpr.dll!WNetAddConnection2W */
-  WNetAddConnection2(lpNetResource: Win32Pointer, lpPassword: string | Win32Pointer, lpUserName: string | Win32Pointer, dwFlags: number): number;
+  WNetAddConnection2(
+    lpNetResource: Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpUserName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** mpr.dll!WNetAddConnection3A */
-  WNetAddConnection3A(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, lpPassword: string | Win32Pointer, lpUserName: string | Win32Pointer, dwFlags: number): number;
+  WNetAddConnection3A(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpUserName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** mpr.dll!WNetAddConnection3W */
-  WNetAddConnection3W(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, lpPassword: string | Win32Pointer, lpUserName: string | Win32Pointer, dwFlags: number): number;
+  WNetAddConnection3W(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpUserName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** mpr.dll!WNetAddConnection3W */
-  WNetAddConnection3(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, lpPassword: string | Win32Pointer, lpUserName: string | Win32Pointer, dwFlags: number): number;
+  WNetAddConnection3(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpUserName: string | Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** mpr.dll!WNetAddConnection4A */
-  WNetAddConnection4A(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, pAuthBuffer: Win32Pointer, cbAuthBuffer: number, dwFlags: number, lpUseOptions: Win32Pointer, cbUseOptions: number): number;
+  WNetAddConnection4A(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    pAuthBuffer: Win32Pointer,
+    cbAuthBuffer: number,
+    dwFlags: number,
+    lpUseOptions: Win32Pointer,
+    cbUseOptions: number,
+  ): number;
   /** mpr.dll!WNetAddConnection4W */
-  WNetAddConnection4W(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, pAuthBuffer: Win32Pointer, cbAuthBuffer: number, dwFlags: number, lpUseOptions: Win32Pointer, cbUseOptions: number): number;
+  WNetAddConnection4W(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    pAuthBuffer: Win32Pointer,
+    cbAuthBuffer: number,
+    dwFlags: number,
+    lpUseOptions: Win32Pointer,
+    cbUseOptions: number,
+  ): number;
   /** mpr.dll!WNetAddConnection4W */
-  WNetAddConnection4(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, pAuthBuffer: Win32Pointer, cbAuthBuffer: number, dwFlags: number, lpUseOptions: Win32Pointer, cbUseOptions: number): number;
+  WNetAddConnection4(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    pAuthBuffer: Win32Pointer,
+    cbAuthBuffer: number,
+    dwFlags: number,
+    lpUseOptions: Win32Pointer,
+    cbUseOptions: number,
+  ): number;
   /** mpr.dll!WNetAddConnectionA */
-  WNetAddConnectionA(lpRemoteName: string | Win32Pointer, lpPassword: string | Win32Pointer, lpLocalName: string | Win32Pointer): number;
+  WNetAddConnectionA(
+    lpRemoteName: string | Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpLocalName: string | Win32Pointer,
+  ): number;
   /** mpr.dll!WNetAddConnectionW */
-  WNetAddConnectionW(lpRemoteName: string | Win32Pointer, lpPassword: string | Win32Pointer, lpLocalName: string | Win32Pointer): number;
+  WNetAddConnectionW(
+    lpRemoteName: string | Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpLocalName: string | Win32Pointer,
+  ): number;
   /** mpr.dll!WNetAddConnectionW */
-  WNetAddConnection(lpRemoteName: string | Win32Pointer, lpPassword: string | Win32Pointer, lpLocalName: string | Win32Pointer): number;
+  WNetAddConnection(
+    lpRemoteName: string | Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpLocalName: string | Win32Pointer,
+  ): number;
   /** mpr.dll!WNetCancelConnection2A */
   WNetCancelConnection2A(lpName: string | Win32Pointer, dwFlags: number, fForce: number): number;
   /** mpr.dll!WNetCancelConnection2W */
@@ -63,23 +132,68 @@ interface Functions {
   /** mpr.dll!WNetDisconnectDialog1W */
   WNetDisconnectDialog1(lpConnDlgStruct: Win32Pointer): number;
   /** mpr.dll!WNetEnumResourceA */
-  WNetEnumResourceA(hEnum: Win32Pointer, lpcCount: Win32Pointer, lpBuffer: Win32Pointer, lpBufferSize: Win32Pointer): number;
+  WNetEnumResourceA(
+    hEnum: Win32Pointer,
+    lpcCount: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    lpBufferSize: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetEnumResourceW */
-  WNetEnumResourceW(hEnum: Win32Pointer, lpcCount: Win32Pointer, lpBuffer: Win32Pointer, lpBufferSize: Win32Pointer): number;
+  WNetEnumResourceW(
+    hEnum: Win32Pointer,
+    lpcCount: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    lpBufferSize: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetEnumResourceW */
-  WNetEnumResource(hEnum: Win32Pointer, lpcCount: Win32Pointer, lpBuffer: Win32Pointer, lpBufferSize: Win32Pointer): number;
+  WNetEnumResource(
+    hEnum: Win32Pointer,
+    lpcCount: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    lpBufferSize: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetGetConnectionA */
-  WNetGetConnectionA(lpLocalName: string | Win32Pointer, lpRemoteName: string | Win32Pointer, lpnLength: Win32Pointer): number;
+  WNetGetConnectionA(
+    lpLocalName: string | Win32Pointer,
+    lpRemoteName: string | Win32Pointer,
+    lpnLength: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetGetConnectionW */
-  WNetGetConnectionW(lpLocalName: string | Win32Pointer, lpRemoteName: string | Win32Pointer, lpnLength: Win32Pointer): number;
+  WNetGetConnectionW(
+    lpLocalName: string | Win32Pointer,
+    lpRemoteName: string | Win32Pointer,
+    lpnLength: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetGetConnectionW */
-  WNetGetConnection(lpLocalName: string | Win32Pointer, lpRemoteName: string | Win32Pointer, lpnLength: Win32Pointer): number;
+  WNetGetConnection(
+    lpLocalName: string | Win32Pointer,
+    lpRemoteName: string | Win32Pointer,
+    lpnLength: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetGetLastErrorA */
-  WNetGetLastErrorA(lpError: Win32Pointer, lpErrorBuf: string | Win32Pointer, nErrorBufSize: number, lpNameBuf: string | Win32Pointer, nNameBufSize: number): number;
+  WNetGetLastErrorA(
+    lpError: Win32Pointer,
+    lpErrorBuf: string | Win32Pointer,
+    nErrorBufSize: number,
+    lpNameBuf: string | Win32Pointer,
+    nNameBufSize: number,
+  ): number;
   /** mpr.dll!WNetGetLastErrorW */
-  WNetGetLastErrorW(lpError: Win32Pointer, lpErrorBuf: string | Win32Pointer, nErrorBufSize: number, lpNameBuf: string | Win32Pointer, nNameBufSize: number): number;
+  WNetGetLastErrorW(
+    lpError: Win32Pointer,
+    lpErrorBuf: string | Win32Pointer,
+    nErrorBufSize: number,
+    lpNameBuf: string | Win32Pointer,
+    nNameBufSize: number,
+  ): number;
   /** mpr.dll!WNetGetLastErrorW */
-  WNetGetLastError(lpError: Win32Pointer, lpErrorBuf: string | Win32Pointer, nErrorBufSize: number, lpNameBuf: string | Win32Pointer, nNameBufSize: number): number;
+  WNetGetLastError(
+    lpError: Win32Pointer,
+    lpErrorBuf: string | Win32Pointer,
+    nErrorBufSize: number,
+    lpNameBuf: string | Win32Pointer,
+    nNameBufSize: number,
+  ): number;
   /** mpr.dll!WNetGetNetworkInformationA */
   WNetGetNetworkInformationA(lpProvider: string | Win32Pointer, lpNetInfoStruct: Win32Pointer): number;
   /** mpr.dll!WNetGetNetworkInformationW */
@@ -93,11 +207,26 @@ interface Functions {
   /** mpr.dll!WNetGetProviderNameW */
   WNetGetProviderName(dwNetType: number, lpProviderName: string | Win32Pointer, lpBufferSize: Win32Pointer): number;
   /** mpr.dll!WNetGetResourceInformationA */
-  WNetGetResourceInformationA(lpNetResource: Win32Pointer, lpBuffer: Win32Pointer, lpcbBuffer: Win32Pointer, lplpSystem: Win32Pointer): number;
+  WNetGetResourceInformationA(
+    lpNetResource: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    lpcbBuffer: Win32Pointer,
+    lplpSystem: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetGetResourceInformationW */
-  WNetGetResourceInformationW(lpNetResource: Win32Pointer, lpBuffer: Win32Pointer, lpcbBuffer: Win32Pointer, lplpSystem: Win32Pointer): number;
+  WNetGetResourceInformationW(
+    lpNetResource: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    lpcbBuffer: Win32Pointer,
+    lplpSystem: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetGetResourceInformationW */
-  WNetGetResourceInformation(lpNetResource: Win32Pointer, lpBuffer: Win32Pointer, lpcbBuffer: Win32Pointer, lplpSystem: Win32Pointer): number;
+  WNetGetResourceInformation(
+    lpNetResource: Win32Pointer,
+    lpBuffer: Win32Pointer,
+    lpcbBuffer: Win32Pointer,
+    lplpSystem: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetGetResourceParentA */
   WNetGetResourceParentA(lpNetResource: Win32Pointer, lpBuffer: Win32Pointer, lpcbBuffer: Win32Pointer): number;
   /** mpr.dll!WNetGetResourceParentW */
@@ -105,11 +234,26 @@ interface Functions {
   /** mpr.dll!WNetGetResourceParentW */
   WNetGetResourceParent(lpNetResource: Win32Pointer, lpBuffer: Win32Pointer, lpcbBuffer: Win32Pointer): number;
   /** mpr.dll!WNetGetUniversalNameA */
-  WNetGetUniversalNameA(lpLocalPath: string | Win32Pointer, dwInfoLevel: number, lpBuffer: Win32Pointer, lpBufferSize: Win32Pointer): number;
+  WNetGetUniversalNameA(
+    lpLocalPath: string | Win32Pointer,
+    dwInfoLevel: number,
+    lpBuffer: Win32Pointer,
+    lpBufferSize: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetGetUniversalNameW */
-  WNetGetUniversalNameW(lpLocalPath: string | Win32Pointer, dwInfoLevel: number, lpBuffer: Win32Pointer, lpBufferSize: Win32Pointer): number;
+  WNetGetUniversalNameW(
+    lpLocalPath: string | Win32Pointer,
+    dwInfoLevel: number,
+    lpBuffer: Win32Pointer,
+    lpBufferSize: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetGetUniversalNameW */
-  WNetGetUniversalName(lpLocalPath: string | Win32Pointer, dwInfoLevel: number, lpBuffer: Win32Pointer, lpBufferSize: Win32Pointer): number;
+  WNetGetUniversalName(
+    lpLocalPath: string | Win32Pointer,
+    dwInfoLevel: number,
+    lpBuffer: Win32Pointer,
+    lpBufferSize: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetGetUserA */
   WNetGetUserA(lpName: string | Win32Pointer, lpUserName: string | Win32Pointer, lpnLength: Win32Pointer): number;
   /** mpr.dll!WNetGetUserW */
@@ -117,11 +261,29 @@ interface Functions {
   /** mpr.dll!WNetGetUserW */
   WNetGetUser(lpName: string | Win32Pointer, lpUserName: string | Win32Pointer, lpnLength: Win32Pointer): number;
   /** mpr.dll!WNetOpenEnumA */
-  WNetOpenEnumA(dwScope: number, dwType: number, dwUsage: number, lpNetResource: Win32Pointer, lphEnum: Win32Pointer): number;
+  WNetOpenEnumA(
+    dwScope: number,
+    dwType: number,
+    dwUsage: number,
+    lpNetResource: Win32Pointer,
+    lphEnum: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetOpenEnumW */
-  WNetOpenEnumW(dwScope: number, dwType: number, dwUsage: number, lpNetResource: Win32Pointer, lphEnum: Win32Pointer): number;
+  WNetOpenEnumW(
+    dwScope: number,
+    dwType: number,
+    dwUsage: number,
+    lpNetResource: Win32Pointer,
+    lphEnum: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetOpenEnumW */
-  WNetOpenEnum(dwScope: number, dwType: number, dwUsage: number, lpNetResource: Win32Pointer, lphEnum: Win32Pointer): number;
+  WNetOpenEnum(
+    dwScope: number,
+    dwType: number,
+    dwUsage: number,
+    lpNetResource: Win32Pointer,
+    lphEnum: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetSetLastErrorA */
   WNetSetLastErrorA(err: number, lpError: string | Win32Pointer, lpProviders: string | Win32Pointer): void;
   /** mpr.dll!WNetSetLastErrorW */
@@ -129,17 +291,77 @@ interface Functions {
   /** mpr.dll!WNetSetLastErrorW */
   WNetSetLastError(err: number, lpError: string | Win32Pointer, lpProviders: string | Win32Pointer): void;
   /** mpr.dll!WNetUseConnection4A */
-  WNetUseConnection4A(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, pAuthBuffer: Win32Pointer, cbAuthBuffer: number, dwFlags: number, lpUseOptions: Win32Pointer, cbUseOptions: number, lpAccessName: string | Win32Pointer, lpBufferSize: Win32Pointer, lpResult: Win32Pointer): number;
+  WNetUseConnection4A(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    pAuthBuffer: Win32Pointer,
+    cbAuthBuffer: number,
+    dwFlags: number,
+    lpUseOptions: Win32Pointer,
+    cbUseOptions: number,
+    lpAccessName: string | Win32Pointer,
+    lpBufferSize: Win32Pointer,
+    lpResult: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetUseConnection4W */
-  WNetUseConnection4W(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, pAuthBuffer: Win32Pointer, cbAuthBuffer: number, dwFlags: number, lpUseOptions: Win32Pointer, cbUseOptions: number, lpAccessName: string | Win32Pointer, lpBufferSize: Win32Pointer, lpResult: Win32Pointer): number;
+  WNetUseConnection4W(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    pAuthBuffer: Win32Pointer,
+    cbAuthBuffer: number,
+    dwFlags: number,
+    lpUseOptions: Win32Pointer,
+    cbUseOptions: number,
+    lpAccessName: string | Win32Pointer,
+    lpBufferSize: Win32Pointer,
+    lpResult: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetUseConnection4W */
-  WNetUseConnection4(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, pAuthBuffer: Win32Pointer, cbAuthBuffer: number, dwFlags: number, lpUseOptions: Win32Pointer, cbUseOptions: number, lpAccessName: string | Win32Pointer, lpBufferSize: Win32Pointer, lpResult: Win32Pointer): number;
+  WNetUseConnection4(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    pAuthBuffer: Win32Pointer,
+    cbAuthBuffer: number,
+    dwFlags: number,
+    lpUseOptions: Win32Pointer,
+    cbUseOptions: number,
+    lpAccessName: string | Win32Pointer,
+    lpBufferSize: Win32Pointer,
+    lpResult: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetUseConnectionA */
-  WNetUseConnectionA(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, lpPassword: string | Win32Pointer, lpUserId: string | Win32Pointer, dwFlags: number, lpAccessName: string | Win32Pointer, lpBufferSize: Win32Pointer, lpResult: Win32Pointer): number;
+  WNetUseConnectionA(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpUserId: string | Win32Pointer,
+    dwFlags: number,
+    lpAccessName: string | Win32Pointer,
+    lpBufferSize: Win32Pointer,
+    lpResult: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetUseConnectionW */
-  WNetUseConnectionW(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, lpPassword: string | Win32Pointer, lpUserId: string | Win32Pointer, dwFlags: number, lpAccessName: string | Win32Pointer, lpBufferSize: Win32Pointer, lpResult: Win32Pointer): number;
+  WNetUseConnectionW(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpUserId: string | Win32Pointer,
+    dwFlags: number,
+    lpAccessName: string | Win32Pointer,
+    lpBufferSize: Win32Pointer,
+    lpResult: Win32Pointer,
+  ): number;
   /** mpr.dll!WNetUseConnectionW */
-  WNetUseConnection(hwndOwner: Win32Pointer, lpNetResource: Win32Pointer, lpPassword: string | Win32Pointer, lpUserId: string | Win32Pointer, dwFlags: number, lpAccessName: string | Win32Pointer, lpBufferSize: Win32Pointer, lpResult: Win32Pointer): number;
+  WNetUseConnection(
+    hwndOwner: Win32Pointer,
+    lpNetResource: Win32Pointer,
+    lpPassword: string | Win32Pointer,
+    lpUserId: string | Win32Pointer,
+    dwFlags: number,
+    lpAccessName: string | Win32Pointer,
+    lpBufferSize: Win32Pointer,
+    lpResult: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

@@ -31,7 +31,7 @@ export function applyRippleAdjustments({
   }
 
   return {
-    overlay: tracks.overlay.map((track) =>
+    overlay: tracks.overlay.map(track =>
       applyTrackRippleAdjustments({
         track,
         adjustments: adjustmentsByTrack.get(track.id) ?? [],
@@ -41,7 +41,7 @@ export function applyRippleAdjustments({
       track: tracks.main,
       adjustments: adjustmentsByTrack.get(tracks.main.id) ?? [],
     }),
-    audio: tracks.audio.map((track) =>
+    audio: tracks.audio.map(track =>
       applyTrackRippleAdjustments({
         track,
         adjustments: adjustmentsByTrack.get(track.id) ?? [],
@@ -53,20 +53,13 @@ export function applyRippleAdjustments({
 function applyTrackRippleAdjustments<
   TElement extends TimelineTrack["elements"][number],
   TTrack extends TimelineTrack & { elements: TElement[] },
->({
-  track,
-  adjustments,
-}: {
-  track: TTrack;
-  adjustments: RippleAdjustment[];
-}): TTrack {
+>({ track, adjustments }: { track: TTrack; adjustments: RippleAdjustment[] }): TTrack {
   if (adjustments.length === 0) {
     return track;
   }
 
   const sortedAdjustments = [...adjustments].sort(
-    (firstAdjustment, secondAdjustment) =>
-      secondAdjustment.afterTime - firstAdjustment.afterTime,
+    (firstAdjustment, secondAdjustment) => secondAdjustment.afterTime - firstAdjustment.afterTime,
   );
 
   let elements: TElement[] = track.elements;

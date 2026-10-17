@@ -9,10 +9,7 @@
 
 import { invoke as tauriInvoke } from "@aphrody/tauri/api/core";
 
-export type Invoke = <T>(
-  command: string,
-  args?: Record<string, unknown>,
-) => Promise<T>;
+export type Invoke = <T>(command: string, args?: Record<string, unknown>) => Promise<T>;
 
 export interface PetState {
   nom: string;

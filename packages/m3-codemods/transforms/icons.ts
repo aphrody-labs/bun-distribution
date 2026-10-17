@@ -27,12 +27,7 @@
 import { assertTsx, Edits } from "../lib/edits";
 import type { FileInfo, Options } from "../lib/engine";
 import { resolveMuiIcon } from "../lib/icon-names";
-import {
-  filterSpecifiers,
-  insertImports,
-  MD_ICON_IMPORT,
-  MD_ICON_SIDE_EFFECT,
-} from "../lib/imports";
+import { filterSpecifiers, insertImports, MD_ICON_IMPORT, MD_ICON_SIDE_EFFECT } from "../lib/imports";
 import { JsxChildren, jsxName, MigrationTodos } from "../lib/jsx-helpers";
 import { scanTsx, type ImportDecl } from "../lib/tsx-scan";
 
@@ -40,11 +35,7 @@ const MUI_ICONS_PKG = "@mui/icons-material";
 
 export const parser = "tsx";
 
-export default function transformer(
-  file: FileInfo,
-  _api?: unknown,
-  _options?: Options,
-): string {
+export default function transformer(file: FileInfo, _api?: unknown, _options?: Options): string {
   const src = file.source;
   assertTsx(src, file.path ?? "source");
   const scan = scanTsx(src);
@@ -62,9 +53,7 @@ export default function transformer(
       importsToClean.push(decl);
     } else if (decl.source.startsWith(MUI_ICONS_PKG + "/")) {
       // import CloseIcon from '@mui/icons-material/Close'
-      const iconName = decl.source
-        .slice(MUI_ICONS_PKG.length + 1)
-        .split("/")[0]!;
+      const iconName = decl.source.slice(MUI_ICONS_PKG.length + 1).split("/")[0]!;
       for (const spec of decl.specifiers) {
         if (spec.kind === "default") bindings.set(spec.local, iconName);
       }
@@ -123,19 +112,12 @@ export default function transformer(
   // 3) Nettoyage des imports : retirer les specifiers d'icônes effectivement
   //    converties (symbol) ; conserver ceux gardés (brand/unknown) ou inutilisés.
   for (const decl of importsToClean) {
-    filterSpecifiers(
-      edits,
-      decl,
-      (spec) => !usedLocals.has(spec.local) || keptLocals.has(spec.local),
-    );
+    filterSpecifiers(edits, decl, spec => !usedLocals.has(spec.local) || keptLocals.has(spec.local));
   }
 
   // 4) Import d'effet de bord md-icon (après le prologue de directives).
-  const alreadyImported = scan.imports.some(
-    (d) => d.source === MD_ICON_SIDE_EFFECT,
-  );
-  if (needSideEffect && !alreadyImported)
-    insertImports(edits, scan, [MD_ICON_IMPORT]);
+  const alreadyImported = scan.imports.some(d => d.source === MD_ICON_SIDE_EFFECT);
+  if (needSideEffect && !alreadyImported) insertImports(edits, scan, [MD_ICON_IMPORT]);
 
   return edits.render();
 }

@@ -8,8 +8,8 @@
  * @module
  */
 
-import { invoke } from '../api/core'
-import { type WindowLabel, getCurrentWindow } from '../api/window'
+import { invoke } from "../api/core";
+import { type WindowLabel, getCurrentWindow } from "../api/window";
 
 /**
  * Flags controlling which parts of a window's state are saved and restored.
@@ -29,7 +29,7 @@ export enum StateFlags {
   /** Save and restore whether the window is fullscreen. */
   FULLSCREEN = 1 << 5,
   /** Save and restore every flag above. */
-  ALL = SIZE | POSITION | MAXIMIZED | VISIBLE | DECORATIONS | FULLSCREEN
+  ALL = SIZE | POSITION | MAXIMIZED | VISIBLE | DECORATIONS | FULLSCREEN,
 }
 
 /**
@@ -46,7 +46,7 @@ export enum StateFlags {
  * @since 2.0.0
  */
 async function saveWindowState(flags?: StateFlags): Promise<void> {
-  await invoke('plugin:window-state|save_window_state', { flags })
+  await invoke("plugin:window-state|save_window_state", { flags });
 }
 
 /**
@@ -63,11 +63,8 @@ async function saveWindowState(flags?: StateFlags): Promise<void> {
  * @param flags Which parts of the state to restore. Defaults to the flags passed to the plugin `Builder` (all flags if none were set).
  * @since 2.0.0
  */
-async function restoreState(
-  label: WindowLabel,
-  flags?: StateFlags
-): Promise<void> {
-  await invoke('plugin:window-state|restore_state', { label, flags })
+async function restoreState(label: WindowLabel, flags?: StateFlags): Promise<void> {
+  await invoke("plugin:window-state|restore_state", { label, flags });
 }
 
 /**
@@ -84,7 +81,7 @@ async function restoreState(
  * @since 2.0.0
  */
 async function restoreStateCurrent(flags?: StateFlags): Promise<void> {
-  await restoreState(getCurrentWindow().label, flags)
+  await restoreState(getCurrentWindow().label, flags);
 }
 /**
  *  Get the name of the file used to store window state.
@@ -100,7 +97,7 @@ async function restoreStateCurrent(flags?: StateFlags): Promise<void> {
  * @since 2.0.0
  */
 async function filename(): Promise<string> {
-  return await invoke('plugin:window-state|filename')
+  return await invoke("plugin:window-state|filename");
 }
 
-export { restoreState, restoreStateCurrent, saveWindowState, filename }
+export { restoreState, restoreStateCurrent, saveWindowState, filename };

@@ -7,8 +7,7 @@ import type { Command } from "./types.ts";
 
 const command: Command = {
   name: "video-translate",
-  summary:
-    "Transcrire et traduire une vidéo vers l'anglais (sous-titres idiomatiques)",
+  summary: "Transcrire et traduire une vidéo vers l'anglais (sous-titres idiomatiques)",
   async run(argv) {
     const { config, help } = parseConfig(argv);
     if (help || !config) {
@@ -19,8 +18,8 @@ const command: Command = {
       return await runPipeline(config, {
         env: process.env,
         io: {
-          log: (line) => console.error(line),
-          out: (line) => console.log(line),
+          log: line => console.error(line),
+          out: line => console.log(line),
         },
       });
     } catch (error) {

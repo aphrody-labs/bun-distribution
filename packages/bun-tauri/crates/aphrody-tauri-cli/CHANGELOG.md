@@ -5,10 +5,10 @@
 ### New Features
 
 - [`49dc7cc39`](https://www.github.com/tauri-apps/tauri/commit/49dc7cc39017f63b81adb09303d9b82d5b71207a) `tauri migrate` now migrates Tauri v2 apps to v3 (v1 and v2 beta apps continue to v3 after their existing migration):
-    
-    - The Tauri crates and official plugins are updated to v3 in `Cargo.toml` and `package.json`, and the app depends on `tauri-runtime-wry`, which receives the `devtools`, `unstable`, `tracing`, `x11`, `dbus` and `macos-proxy` features (including the ones enabled through the app's own `[features]`). The removed `wry`, `macos-private-api` and `objc-exception` features are dropped.
-    - The `app > macOSPrivateApi` option is removed and the NSIS `install-icon` key is renamed to `installer-icon` in the main and platform-specific configuration files, keeping their formatting and comments.
-    - The Rust sources select the runtime with `.runtime(tauri_runtime_wry::Wry::default())` on `tauri::Builder::default()`, use `tauri::DynRuntime` instead of `tauri::Wry`, and pick up the renamed `with_inner_blocking`, `initialization_script`, `run_invoke_handler`, `tauri_runtime_wry::{tao, wry, android_binding, webview_version}` APIs.
+
+  - The Tauri crates and official plugins are updated to v3 in `Cargo.toml` and `package.json`, and the app depends on `tauri-runtime-wry`, which receives the `devtools`, `unstable`, `tracing`, `x11`, `dbus` and `macos-proxy` features (including the ones enabled through the app's own `[features]`). The removed `wry`, `macos-private-api` and `objc-exception` features are dropped.
+  - The `app > macOSPrivateApi` option is removed and the NSIS `install-icon` key is renamed to `installer-icon` in the main and platform-specific configuration files, keeping their formatting and comments.
+  - The Rust sources select the runtime with `.runtime(tauri_runtime_wry::Wry::default())` on `tauri::Builder::default()`, use `tauri::DynRuntime` instead of `tauri::Wry`, and pick up the renamed `with_inner_blocking`, `initialization_script`, `run_invoke_handler`, `tauri_runtime_wry::{tao, wry, android_binding, webview_version}` APIs.
 
 ### Dependencies
 
@@ -82,11 +82,11 @@
 ### Breaking Changes
 
 - [`1e5ba7b53`](https://www.github.com/tauri-apps/tauri/commit/1e5ba7b53dfb3da97f372b646f15853e5ba0e1a8) ([#15985](https://www.github.com/tauri-apps/tauri/pull/15985)) The CLI detects the webview runtime (wry, CEF or other) from the `tauri-runtime-wry` and `tauri-runtime-cef` dependencies of the app manifest instead of the removed `cef` feature of `tauri`:
-    
-    - The webkit2gtk package dependencies of the Debian and RPM packages and the WebView2 installation step of the Windows installers are only added when the app uses wry.
-    - The CEF files, code signing entitlements and macOS dev flow are only used when the app uses CEF.
-    - Nothing runtime-specific is done for other runtimes.
-    - The app and plugin templates add the `tauri-runtime-wry` dependency and select it with `tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default())`.
+
+  - The webkit2gtk package dependencies of the Debian and RPM packages and the WebView2 installation step of the Windows installers are only added when the app uses wry.
+  - The CEF files, code signing entitlements and macOS dev flow are only used when the app uses CEF.
+  - Nothing runtime-specific is done for other runtimes.
+  - The app and plugin templates add the `tauri-runtime-wry` dependency and select it with `tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default())`.
 
 ## [2.12.1]
 
@@ -109,17 +109,18 @@
 - [`0646cc162`](https://www.github.com/tauri-apps/tauri/commit/0646cc1623608dfdaec8d1adbc08d0159b9c2369) ([#15620](https://www.github.com/tauri-apps/tauri/pull/15620)) Add a `--fit` option to `tauri icon` to accept non-square source images. `--fit cover` center-crops the source to a square (clipping the longer side) and `--fit contain` pads the shorter side with transparency. Non-square sources without `--fit` keep erroring, now with a hint pointing to the flag.
 - [`f6c1eb253`](https://www.github.com/tauri-apps/tauri/commit/f6c1eb2533a0445e081c334931d67fee3e354c6f) ([#15401](https://www.github.com/tauri-apps/tauri/pull/15401)) Added `build.windows.staticVCRuntime` to control MSVC static runtime linking. The `STATIC_VCRUNTIME` environment variable is now deprecated and emits a migration warning when used.
 - [`f45ec0dcf`](https://www.github.com/tauri-apps/tauri/commit/f45ec0dcf83c139c8fdde5e61923a0e82836f756) Record the app version in the trusted comment of updater signatures, so a signed artifact is bound to the version it was released as.
-    
-    An update endpoint response is not signed, and the signature only covers the downloaded artifact, so the announced `version` on its own does not prove which release the `url` and `signature` point at. minisign covers the trusted comment with its global signature, which lets the updater plugin compare the two and reject a response that pairs a version number with a different release. Enable `requireSignedVersion` in the updater plugin configuration to enforce this.
-    
-    `tauri build` fills the version in automatically, and `tauri plugin add updater` now enables `requireSignedVersion` for the project it is adding the plugin to. `tauri signer sign` gains an `--app-version` flag for signing updater artifacts by hand, and warns when it is omitted.
+
+  An update endpoint response is not signed, and the signature only covers the downloaded artifact, so the announced `version` on its own does not prove which release the `url` and `signature` point at. minisign covers the trusted comment with its global signature, which lets the updater plugin compare the two and reject a response that pairs a version number with a different release. Enable `requireSignedVersion` in the updater plugin configuration to enforce this.
+
+  `tauri build` fills the version in automatically, and `tauri plugin add updater` now enables `requireSignedVersion` for the project it is adding the plugin to. `tauri signer sign` gains an `--app-version` flag for signing updater artifacts by hand, and warns when it is omitted.
 
 ### Enhancements
 
 - [`e19121427`](https://www.github.com/tauri-apps/tauri/commit/e19121427332c8a14165999251cce415707a62fc) ([#15993](https://www.github.com/tauri-apps/tauri/pull/15993)) Don't always rewrite `Cargo.toml` file from CRLF line endings to LF
 - [`aebf38c84`](https://www.github.com/tauri-apps/tauri/commit/aebf38c845b57bc5653eca677e2e2e044528ea73) ([#15694](https://www.github.com/tauri-apps/tauri/pull/15694)) Migrate the Android Gradle scripts from the deprecated `kotlinOptions` DSL to `compilerOptions`, which is accepted by both Kotlin Gradle Plugin 1.9.x and 2.x. This lets projects move to Kotlin 2.x without hitting the hard error that 2.3+ raises on the old DSL.
-    
-    This increased the minimum supported Gradle version to 8.13, if your `gradle` is on an earlier version, delete `src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties` and re-run `tauri android init` to update it.
+
+  This increased the minimum supported Gradle version to 8.13, if your `gradle` is on an earlier version, delete `src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties` and re-run `tauri android init` to update it.
+
 - [`d89d8fa62`](https://www.github.com/tauri-apps/tauri/commit/d89d8fa62302bd3553b66fd47ecfa046b2fc84ef) ([#15780](https://www.github.com/tauri-apps/tauri/pull/15780)) Warn during Android commands (`init`/`dev`/`build`) when the active Java version is too new for the Gradle version the project uses (e.g. Java 27 against the Gradle 9.6.1 the template ships, or Java 25 against a project still on Gradle 8.14), instead of letting the build fail later with a cryptic error. The warning points to the Gradle/Java compatibility matrix and suggests a supported JDK.
 - [`c3d21bd60`](https://www.github.com/tauri-apps/tauri/commit/c3d21bd60c3355b284b23dee1a181c3423231182) ([#15730](https://www.github.com/tauri-apps/tauri/pull/15730)) Use `Theme.Material3.DayNight.NoActionBar` instead of `Theme.MaterialComponents.DayNight.NoActionBar` when running `tauri android init`
 - [`f654f470c`](https://www.github.com/tauri-apps/tauri/commit/f654f470c122e925e425424cea733f13d3306412) ([#15862](https://www.github.com/tauri-apps/tauri/pull/15862)) Update template to use `targetSdk = 37`
@@ -192,22 +193,23 @@
 - Upgraded to `tauri-bundler@2.10.0`
 - Upgraded to `tauri-macos-sign@2.4.0`
 - [`e2e585ad1`](https://www.github.com/tauri-apps/tauri/commit/e2e585ad1196c9572f86ef39aae01ef4c3b1a762) ([#15828](https://www.github.com/tauri-apps/tauri/pull/15828)) On Android, fix missing `consumer-rules.pro` file in the template.
-    
-    **IMPORTANT**: For plugin authors, update your `build.gradle.kts` file to remove the
-    
-    ```kotlin
-        buildTypes {
-            release {
-                isMinifyEnabled = false
-                proguardFiles(
-                    getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro"
-                )
-            }
-        }
-    ```
-    
-    section and rename your `proguard-rules.pro` to `consumer-rules.pro` to match the `consumerProguardFiles("consumer-rules.pro")` in the template.
+
+  **IMPORTANT**: For plugin authors, update your `build.gradle.kts` file to remove the
+
+  ```kotlin
+      buildTypes {
+          release {
+              isMinifyEnabled = false
+              proguardFiles(
+                  getDefaultProguardFile("proguard-android-optimize.txt"),
+                  "proguard-rules.pro"
+              )
+          }
+      }
+  ```
+
+  section and rename your `proguard-rules.pro` to `consumer-rules.pro` to match the `consumerProguardFiles("consumer-rules.pro")` in the template.
+
 - [`e2e585ad1`](https://www.github.com/tauri-apps/tauri/commit/e2e585ad1196c9572f86ef39aae01ef4c3b1a762) ([#15828](https://www.github.com/tauri-apps/tauri/pull/15828)) On Android, updated the template to use Gradle v9.6.1 (`com.android.tools.build:gradle` v9.3.1) and Kotlin v2.2. Use `tauri android init` to apply the change.
 - [`9e9a54dea`](https://www.github.com/tauri-apps/tauri/commit/9e9a54dea26ae66de63800cabbccf980902a1cd3) ([#15890](https://www.github.com/tauri-apps/tauri/pull/15890)) Update the generated iOS Xcode project to build with Xcode 27. The scenes lifecycle is **not** enabled by default: to opt in, add the `UIApplicationSceneManifest` key to your `src-tauri/Info.ios.plist`.
 - [`b6660a041`](https://www.github.com/tauri-apps/tauri/commit/b6660a041db44729893dae7991a9be61cf8c2ed5) ([#15954](https://www.github.com/tauri-apps/tauri/pull/15954)) Update typescript to v7 in `tauri plugin init` template. Also fixes the default `rootDir` in the template `tsconfig.json`
@@ -265,6 +267,7 @@
 
   - For `tauri-bundler` lib users, the `NsisSettings` now has 2 new fields `uninstaller_icon` and `uninstaller_header_image` which can be a breaking change
   - When bundling with NSIS, users can add `uninstallerIcon` and `uninstallerHeaderImage` under `bundle > windows > nsis` to configure them.
+
 - [`cc5c97602`](https://www.github.com/tauri-apps/tauri/commit/cc5c976027b0ab2431c13ec5b2e201d4414a8a6e) ([#14486](https://www.github.com/tauri-apps/tauri/pull/14486)) Implement file association for Android and iOS.
 - [`4ef5797f0`](https://www.github.com/tauri-apps/tauri/commit/4ef5797f0fb27fa2df3f39f4a54e48ef319560ec) ([#15061](https://www.github.com/tauri-apps/tauri/pull/15061)) Add `--no-sign` and `--archive-only` flags to `tauri ios build`.
 - [`764b9139a`](https://www.github.com/tauri-apps/tauri/commit/764b9139a32de149d8a914a6b5ec6cd1937c64eb) ([#14313](https://www.github.com/tauri-apps/tauri/pull/14313)) Prompt to restart the Android emulator if it is not connected to adb.
@@ -339,6 +342,7 @@
 - [`7fca58230`](https://www.github.com/tauri-apps/tauri/commit/7fca58230f97c3e6834134419514a0c7dbbe784b) ([#14830](https://www.github.com/tauri-apps/tauri/pull/14830) by [@Legend-Master](https://www.github.com/tauri-apps/tauri/../../Legend-Master)) Updated `nsis_tauri_utils` to 0.5.3:
 
   - Use an alternative method `CreateProcessWithTokenW` to run programs as user, this fixed a problem that the program launched with the previous method can't query its own handle
+
 - [`53611c4d7`](https://www.github.com/tauri-apps/tauri/commit/53611c4d7bdaf89b9a5d7c46a9c4bf4e34216148) ([#14747](https://www.github.com/tauri-apps/tauri/pull/14747) by [@Legend-Master](https://www.github.com/tauri-apps/tauri/../../Legend-Master)) Only watch dependent workspace members when running `tauri dev` instead of watching on all members
 - [`1b0e335d3`](https://www.github.com/tauri-apps/tauri/commit/1b0e335d3f3445948d6590f7e074275d97cd9859) ([#14713](https://www.github.com/tauri-apps/tauri/pull/14713) by [@wasuaje](https://www.github.com/tauri-apps/tauri/../../wasuaje)) `tauri signer sign` doesn't work for files without an extension
 
@@ -447,7 +451,7 @@
 - [`19fb6f7cb`](https://www.github.com/tauri-apps/tauri/commit/19fb6f7cb0d702cb2f25f6f2d1e11014d9dada5d) ([#14146](https://www.github.com/tauri-apps/tauri/pull/14146)) Strip Windows-only extensions from the binary path so an Android project initialized on Windows can be used on UNIX systems.
 - [`19fb6f7cb`](https://www.github.com/tauri-apps/tauri/commit/19fb6f7cb0d702cb2f25f6f2d1e11014d9dada5d) ([#14146](https://www.github.com/tauri-apps/tauri/pull/14146)) Enhance Android build script usage on Windows by attempting to run cmd, bat and exe formats.
 - [`28a2f9bc5`](https://www.github.com/tauri-apps/tauri/commit/28a2f9bc55f658eb71ef1a970ff9f791346f7682) ([#14101](https://www.github.com/tauri-apps/tauri/pull/14101)) Fix iOS CLI usage after modifying the package name.
-- [`d2938486e`](https://www.github.com/tauri-apps/tauri/commit/d2938486e9d974debd90c15d7160b8a17bf4d763) ([#14261](https://www.github.com/tauri-apps/tauri/pull/14261)) Replaced the non-standard nerd font character with `  ⱼₛ ` in `tarui info`
+- [`d2938486e`](https://www.github.com/tauri-apps/tauri/commit/d2938486e9d974debd90c15d7160b8a17bf4d763) ([#14261](https://www.github.com/tauri-apps/tauri/pull/14261)) Replaced the non-standard nerd font character with ` ⱼₛ` in `tarui info`
 - [`25e920e16`](https://www.github.com/tauri-apps/tauri/commit/25e920e169db900ca4f07c2bb9eb290e9f9f2c7d) ([#14298](https://www.github.com/tauri-apps/tauri/pull/14298)) Wait for dev server to exit before exiting the CLI when the app is closed on `tauri dev --no-watch`.
 - [`b0012424c`](https://www.github.com/tauri-apps/tauri/commit/b0012424c5f432debfa42ba145e2672966d5f6d5) ([#14115](https://www.github.com/tauri-apps/tauri/pull/14115)) Resolve local IP address when `tauri.conf.json > build > devUrl` host is `0.0.0.0`.
 - [`abf7e8850`](https://www.github.com/tauri-apps/tauri/commit/abf7e8850ba41e7173e9e9a3fdd6dfb8f357d72d) ([#14118](https://www.github.com/tauri-apps/tauri/pull/14118)) Fixes mobile project initialization when using `pnpx` or `pnpm dlx`.
@@ -491,7 +495,7 @@
 
 - [`91508c0b8`](https://www.github.com/tauri-apps/tauri/commit/91508c0b8d16ec61c7706e93b711c5a85aaffb4a) ([#13881](https://www.github.com/tauri-apps/tauri/pull/13881) by [@pepperoni505](https://www.github.com/tauri-apps/tauri/../../pepperoni505)) Introduces a new configuration option that allows you to specify custom folders to watch for changes when running `tauri dev`.
 - [`bc4afe7dd`](https://www.github.com/tauri-apps/tauri/commit/bc4afe7dd4780f02c2d4b1f07d97185fbc5d2bba) ([#13993](https://www.github.com/tauri-apps/tauri/pull/13993) by [@lucasfernog](https://www.github.com/tauri-apps/tauri/../../lucasfernog)) Check installed plugin NPM/crate versions for incompatible releases.
-- [`a9ec12843`](https://www.github.com/tauri-apps/tauri/commit/a9ec12843aa7d0eb774bd3a53e2e63da12cfa77b) ([#13521](https://www.github.com/tauri-apps/tauri/pull/13521) by [@FabianLars](https://www.github.com/tauri-apps/tauri/../../FabianLars)) Added a `--skip-stapling` option to make `tauri build|bundle` *not* wait for notarization to finish on macOS.
+- [`a9ec12843`](https://www.github.com/tauri-apps/tauri/commit/a9ec12843aa7d0eb774bd3a53e2e63da12cfa77b) ([#13521](https://www.github.com/tauri-apps/tauri/pull/13521) by [@FabianLars](https://www.github.com/tauri-apps/tauri/../../FabianLars)) Added a `--skip-stapling` option to make `tauri build|bundle` _not_ wait for notarization to finish on macOS.
 - [`0c402bfb6`](https://www.github.com/tauri-apps/tauri/commit/0c402bfb6bd0bec24d928fcabe2ffef1f5cff19a) ([#13997](https://www.github.com/tauri-apps/tauri/pull/13997) by [@lucasfernog](https://www.github.com/tauri-apps/tauri/../../lucasfernog)) Increase default iOS deployment target iOS to 14.0.
 - [`d6d5f3707`](https://www.github.com/tauri-apps/tauri/commit/d6d5f3707768a094ff7e961ae75ba0398d772655) ([#13358](https://www.github.com/tauri-apps/tauri/pull/13358) by [@lucasfernog](https://www.github.com/tauri-apps/tauri/../../lucasfernog)) Added `--root-certificate-path` option to `android dev` and `ios dev` to be able to connect to HTTPS dev servers.
 
@@ -1205,14 +1209,14 @@
 - [`c01e87ad4`](https://www.github.com/tauri-apps/tauri/commit/c01e87ad46e2a5b3fb8d018739e724ef932008d7) ([#10198](https://www.github.com/tauri-apps/tauri/pull/10198) by [@amrbashir](https://www.github.com/tauri-apps/tauri/../../amrbashir)) Enhance `tauri migrate` to also migrate variables like `appWindow`:
 
   ```ts
-  import { appWindow } from '@tauri-apps/api/window'
+  import { appWindow } from "@tauri-apps/api/window";
   ```
 
   will become:
 
   ```ts
-  import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-  const appWindow = getCurrentWebviewWindow()
+  import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+  const appWindow = getCurrentWebviewWindow();
   ```
 
 ### Bug Fixes
@@ -1688,6 +1692,7 @@
   - `TAURI_DEV_WATCHER_IGNORE_FILE` -> `TAURI_CLI_WATCHER_IGNORE_FILENAME`
   - `TAURI_TRAY` -> `TAURI_LINUX_AYATANA_APPINDICATOR`
   - `TAURI_APPLE_DEVELOPMENT_TEAM` -> `APPLE_DEVELOPMENT_TEAM`
+
 - [`4caa1cca`](https://www.github.com/tauri-apps/tauri/commit/4caa1cca990806f2c2ef32d5dabaf56e82f349e6)([#7990](https://www.github.com/tauri-apps/tauri/pull/7990)) The `tauri plugin` subcommand is receving a couple of consitency and quality of life improvements:
 
   - Renamed `tauri plugin android/ios add` command to `tauri plugin android/ios init` to match the `tauri plugin init` command.
@@ -1695,6 +1700,7 @@
   - Added `tauri plugin new` to create a plugin in a new directory.
   - Changed `tauri plugin init` to initalize a plugin in an existing directory (defaults to current directory) instead of creating a new one.
   - Changed `tauri plugin init` to NOT generate mobile projects by default, you can opt-in to generate them using `--android` and `--ios` flags or `--mobile` flag or initalize them later using `tauri plugin android/ios init`.
+
 - [`8b166e9b`](https://www.github.com/tauri-apps/tauri/commit/8b166e9bf82e69ddb3200a3a825614980bd8d433)([#7949](https://www.github.com/tauri-apps/tauri/pull/7949)) Removed checking for a new version of the CLI.
 - [`ebcc21e4`](https://www.github.com/tauri-apps/tauri/commit/ebcc21e4b95f4e8c27639fb1bca545b432f52d5e)([#8057](https://www.github.com/tauri-apps/tauri/pull/8057)) Renamed the beforeDevCommand, beforeBuildCommand and beforeBundleCommand hooks environment variables from `TAURI_PLATFORM, TAURI_ARCH, TAURI_FAMILY, TAURI_PLATFORM_VERSION, TAURI_PLATFORM_TYPE and TAURI_DEBUG` to `TAURI_ENV_PLATFORM, TAURI_ENV_ARCH, TAURI_ENV_FAMILY, TAURI_ENV_PLATFORM_VERSION, TAURI_ENV_PLATFORM_TYPE and TAURI_ENV_DEBUG` to differentiate the prefix with other CLI environment variables.
 
@@ -2238,7 +2244,7 @@
 ## \[1.0.2]
 
 - Fixes a crash on the `signer sign` command.
-  - [8e808fec](https://www.github.com/tauri-apps/tauri/commit/8e808fece95f2e506acf2c446d37b9913fd67d50) fix(cli.rs): conflicts_with arg doesn't exist closes  ([#4538](https://www.github.com/tauri-apps/tauri/pull/4538)) on 2022-06-30
+  - [8e808fec](https://www.github.com/tauri-apps/tauri/commit/8e808fece95f2e506acf2c446d37b9913fd67d50) fix(cli.rs): conflicts_with arg doesn't exist closes ([#4538](https://www.github.com/tauri-apps/tauri/pull/4538)) on 2022-06-30
 
 ## \[1.0.1]
 
@@ -2364,7 +2370,7 @@
 - Kill the `beforeDevCommand` and app processes if the dev command returns an error.
   - [485c9743](https://www.github.com/tauri-apps/tauri/commit/485c97438ac956d86bcf3794ceaa626bef968a4e) fix(cli): kill beforeDevCommand if dev code returns an error ([#3907](https://www.github.com/tauri-apps/tauri/pull/3907)) on 2022-04-19
 - Fix `info` command showing outdated text for latest versions.
-  - [73a4b74a](https://www.github.com/tauri-apps/tauri/commit/73a4b74aea8544e6fda51c1f6697630b0768072c) fix(cli.rs/info):  don't show outdated text for latest versions ([#3829](https://www.github.com/tauri-apps/tauri/pull/3829)) on 2022-04-02
+  - [73a4b74a](https://www.github.com/tauri-apps/tauri/commit/73a4b74aea8544e6fda51c1f6697630b0768072c) fix(cli.rs/info): don't show outdated text for latest versions ([#3829](https://www.github.com/tauri-apps/tauri/pull/3829)) on 2022-04-02
 - **Breaking change:** Enable default Cargo features except `tauri/custom-protocol` on the dev command.
   - [f2a30d8b](https://www.github.com/tauri-apps/tauri/commit/f2a30d8bc54fc3ba49e16f69a413eca5f61a9b1f) refactor(core): use ayatana appindicator by default, keep option to use gtk ([#3916](https://www.github.com/tauri-apps/tauri/pull/3916)) on 2022-04-19
 - Kill the `beforeDevCommand` process recursively on Unix.

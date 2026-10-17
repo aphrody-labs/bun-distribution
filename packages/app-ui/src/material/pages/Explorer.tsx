@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useMemo, useState } from "react";
-import {
-  GoogleDriveListView,
-  TagPill,
-  type DriveItem,
-} from "@aphrody/m3-explorer";
+import { GoogleDriveListView, TagPill, type DriveItem } from "@aphrody/m3-explorer";
 import { Card, Page, Section } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
 
@@ -50,12 +46,10 @@ export default function Explorer({ adaptive }: PageProps) {
   const [view, setView] = useState<"list" | "grid">("list");
   const [selected, setSelected] = useState<string>();
   const [filter, setFilter] = useState("all");
-  const [notice, setNotice] = useState(
-    "Local sample files; no remote Drive connection.",
-  );
+  const [notice, setNotice] = useState("Local sample files; no remote Drive connection.");
   const visible = useMemo(
     () =>
-      files.filter((item) =>
+      files.filter(item =>
         filter === "people"
           ? item.shared
           : filter === "modified"
@@ -82,11 +76,11 @@ export default function Explorer({ adaptive }: PageProps) {
             title="Sample files"
             items={visible}
             selectedId={selected}
-            onSelect={(item) => {
+            onSelect={item => {
               setSelected(item.id);
               setNotice(`Selected ${item.name}`);
             }}
-            onOpen={(item) => {
+            onOpen={item => {
               setSelected(item.id);
               setNotice(`Opened local preview: ${item.name}`);
             }}
@@ -94,22 +88,15 @@ export default function Explorer({ adaptive }: PageProps) {
             onViewModeChange={setView}
             activeFilter={filter}
             onFilterChange={setFilter}
-            onToggleStar={(item) =>
-              setFiles((current) =>
-                current.map((entry) =>
-                  entry.id === item.id
-                    ? { ...entry, starred: !entry.starred }
-                    : entry,
-                ),
+            onToggleStar={item =>
+              setFiles(current =>
+                current.map(entry => (entry.id === item.id ? { ...entry, starred: !entry.starred } : entry)),
               )
             }
-            onRowAction={(item) => {
-              const blob = new Blob(
-                [`Local demonstration file: ${item.name}\n`],
-                {
-                  type: "text/plain",
-                },
-              );
+            onRowAction={item => {
+              const blob = new Blob([`Local demonstration file: ${item.name}\n`], {
+                type: "text/plain",
+              });
               const url = URL.createObjectURL(blob);
               const link = document.createElement("a");
               link.href = url;
@@ -126,9 +113,7 @@ export default function Explorer({ adaptive }: PageProps) {
         <div className="flex flex-wrap gap-3">
           <TagPill color="#6750a4">Local sample</TagPill>
           <TagPill color="#00658f">{visible.length} files</TagPill>
-          <TagPill color="#3a6a1e">
-            {view === "grid" ? "Grid view" : "List view"}
-          </TagPill>
+          <TagPill color="#3a6a1e">{view === "grid" ? "Grid view" : "List view"}</TagPill>
         </div>
       </Section>
     </Page>

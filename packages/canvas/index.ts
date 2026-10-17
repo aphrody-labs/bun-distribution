@@ -1,14 +1,5 @@
-import type {
-  Render3dPolicy,
-  Scene as M3Scene,
-  Scene3d as M3Scene3d,
-} from "./scene-types.js";
-import type {
-  Canvas,
-  Image,
-  SvgCanvas,
-  SvgExportFlag,
-} from "./vendor/index.js";
+import type { Render3dPolicy, Scene as M3Scene, Scene3d as M3Scene3d } from "./scene-types.js";
+import type { Canvas, Image, SvgCanvas, SvgExportFlag } from "./vendor/index.js";
 
 // The browser-safe contract has a single implementation, shared with `@aphrody/canvas/site`.
 export {
@@ -20,12 +11,7 @@ export {
   isBrowserCanvasAvailable,
   selectCanvasBackend,
 } from "./site.js";
-export type {
-  AphrodyCanvasOptions,
-  CanvasBackend,
-  CanvasSize,
-  M3CanvasSurface,
-} from "./site.js";
+export type { AphrodyCanvasOptions, CanvasBackend, CanvasSize, M3CanvasSurface } from "./site.js";
 
 export function isNativeCanvasAvailable(): boolean {
   const runtime = globalThis as typeof globalThis & {
@@ -40,36 +26,22 @@ export function isNativeCanvasAvailable(): boolean {
  * `@napi-rs/canvas-<platform>` optional dependency.
  */
 export async function loadNativeCanvas() {
-  if (!isNativeCanvasAvailable())
-    throw new Error(
-      "@aphrody/canvas: native Skia requires Bun and its native addon",
-    );
+  if (!isNativeCanvasAvailable()) throw new Error("@aphrody/canvas: native Skia requires Bun and its native addon");
   return import("./vendor/index.js");
 }
 
-export async function createNativeCanvas(
-  width: number,
-  height: number,
-): Promise<Canvas>;
-export async function createNativeCanvas(
-  width: number,
-  height: number,
-  flag: SvgExportFlag,
-): Promise<SvgCanvas>;
+export async function createNativeCanvas(width: number, height: number): Promise<Canvas>;
+export async function createNativeCanvas(width: number, height: number, flag: SvgExportFlag): Promise<SvgCanvas>;
 export async function createNativeCanvas(
   width: number,
   height: number,
   flag?: SvgExportFlag,
 ): Promise<Canvas | SvgCanvas> {
   const { createCanvas } = await loadNativeCanvas();
-  return flag === undefined
-    ? createCanvas(width, height)
-    : createCanvas(width, height, flag);
+  return flag === undefined ? createCanvas(width, height) : createCanvas(width, height, flag);
 }
 
-export async function loadNativeImage(
-  source: string | Uint8Array,
-): Promise<Image> {
+export async function loadNativeImage(source: string | Uint8Array): Promise<Image> {
   const { loadImage } = await loadNativeCanvas();
   return loadImage(source);
 }
@@ -123,15 +95,8 @@ async function loadAphrodyBun(caller: string): Promise<AphrodyBunRenderer> {
   }
 }
 
-async function blitPng(
-  png: Uint8Array,
-  width: number,
-  height: number,
-): Promise<Canvas> {
-  const [canvas, image] = await Promise.all([
-    createNativeCanvas(width, height),
-    loadNativeImage(png),
-  ]);
+async function blitPng(png: Uint8Array, width: number, height: number): Promise<Canvas> {
+  const [canvas, image] = await Promise.all([createNativeCanvas(width, height), loadNativeImage(png)]);
   canvas.getContext("2d").drawImage(image, 0, 0, width, height);
   return canvas;
 }
@@ -150,9 +115,7 @@ async function blitPng(
  */
 export async function drawM3Scene(scene: M3Scene): Promise<Canvas> {
   if (!isNativeCanvasAvailable()) {
-    throw new Error(
-      "@aphrody/canvas: drawM3Scene requires Bun's native canvas addon",
-    );
+    throw new Error("@aphrody/canvas: drawM3Scene requires Bun's native canvas addon");
   }
   const bun = await loadAphrodyBun("drawM3Scene");
   return blitPng(bun.m3Render(scene), scene.width, scene.height);
@@ -168,14 +131,9 @@ export async function drawM3Scene(scene: M3Scene): Promise<Canvas> {
  * `policy: "auto"` — and blitted by the native canvas addon, exactly like
  * {@link drawM3Scene} does for 2D scenes. Requires the optional peer `@aphrody/bun`.
  */
-export async function drawM3Scene3d(
-  scene: M3Scene3d,
-  policy: M3Render3dPolicy = "cpu",
-): Promise<Canvas> {
+export async function drawM3Scene3d(scene: M3Scene3d, policy: M3Render3dPolicy = "cpu"): Promise<Canvas> {
   if (!isNativeCanvasAvailable()) {
-    throw new Error(
-      "@aphrody/canvas: drawM3Scene3d requires Bun's native canvas addon",
-    );
+    throw new Error("@aphrody/canvas: drawM3Scene3d requires Bun's native canvas addon");
   }
   const bun = await loadAphrodyBun("drawM3Scene3d");
   return blitPng(bun.m3Render3d(scene, policy), scene.width, scene.height);

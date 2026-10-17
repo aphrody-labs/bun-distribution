@@ -34,9 +34,7 @@ export function getSignedSession(): string | null {
 }
 
 /** Build headers with session fallback for mobile browsers. */
-export function buildSessionHeaders(
-  base: Record<string, string>,
-): Record<string, string> {
+export function buildSessionHeaders(base: Record<string, string>): Record<string, string> {
   const session = getSignedSession();
   if (session) {
     return { ...base, session };
@@ -66,11 +64,7 @@ export class HttpApiError extends Error {
   readonly serverMessage?: string;
 
   constructor(status: number, serverMessage?: string) {
-    super(
-      serverMessage
-        ? `HTTP error! status: ${status} - ${serverMessage}`
-        : `HTTP error! status: ${status}`,
-    );
+    super(serverMessage ? `HTTP error! status: ${status} - ${serverMessage}` : `HTTP error! status: ${status}`);
     this.name = "HttpApiError";
     this.status = status;
     this.serverMessage = serverMessage;
@@ -118,9 +112,7 @@ export class ApiManager {
         {} as Record<string, string>,
       );
 
-    const endpointWithQueries = queryInString
-      ? endpoint + "?" + new URLSearchParams(queryInString)
-      : endpoint;
+    const endpointWithQueries = queryInString ? endpoint + "?" + new URLSearchParams(queryInString) : endpoint;
 
     const bodyInString = JSON.stringify(body);
 
@@ -138,11 +130,7 @@ export class ApiManager {
       let serverMessage: string | undefined;
       try {
         const errorBody = await response.json();
-        if (
-          errorBody &&
-          typeof errorBody.message === "string" &&
-          errorBody.message.length > 0
-        ) {
+        if (errorBody && typeof errorBody.message === "string" && errorBody.message.length > 0) {
           serverMessage = errorBody.message;
         }
       } catch {
@@ -317,9 +305,7 @@ export class ApiManager {
     );
   }
 
-  protected parseBodyValues<T extends object, B extends object>(
-    params: NonNullableObject<T>,
-  ): B {
+  protected parseBodyValues<T extends object, B extends object>(params: NonNullableObject<T>): B {
     return Object.entries(params).reduce((allParams, [key, value]) => {
       if (!value) {
         return allParams;

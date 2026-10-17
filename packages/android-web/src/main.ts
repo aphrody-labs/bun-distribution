@@ -7,7 +7,7 @@ if (isTauri()) {
     .then(([name, version]) => {
       status.textContent = `${name} ${version} — WebView Tauri Android`;
     })
-    .catch((error) => {
+    .catch(error => {
       status.textContent = String(error);
     });
 } else {

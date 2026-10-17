@@ -12,8 +12,7 @@
  */
 @font-face {
   font-family: "Google Sans Flex";
-  src: url("../../../m3-fonts/fonts/web/GoogleSansFlex-latin.woff2")
-    format("woff2");
+  src: url("../../../m3-fonts/fonts/web/GoogleSansFlex-latin.woff2") format("woff2");
   font-weight: 1 1000;
   font-stretch: 25% 151%;
   font-style: oblique -10deg 0deg;

@@ -52,10 +52,7 @@ type VFXState = {
    * item — used after session sync to upgrade local blob: URLs (which die
    * on refresh) to the CDN URLs the server has.
    */
-  updateMediaForResult: (
-    id: string,
-    media: { source?: VFXMediaRef; reference?: VFXMediaRef; prompt?: string },
-  ) => void;
+  updateMediaForResult: (id: string, media: { source?: VFXMediaRef; reference?: VFXMediaRef; prompt?: string }) => void;
   reset: () => void;
 };
 
@@ -69,16 +66,16 @@ export const useVFXStore = create<VFXState>()(
       resolution: DEFAULT_RESOLUTION,
       history: [],
 
-      setSubTab: (tab) => set({ subTab: tab }),
-      setSelectedShowcaseId: (id) => set({ selectedShowcaseId: id }),
-      setSelectedModelId: (id) => set({ selectedModelId: id }),
-      setSource: (ref) => set({ source: ref }),
-      setMask: (ref) => set({ mask: ref }),
-      setReference: (ref) => set({ reference: ref }),
-      setPrompt: (prompt) => set({ prompt }),
-      setResolution: (resolution) => set({ resolution }),
+      setSubTab: tab => set({ subTab: tab }),
+      setSelectedShowcaseId: id => set({ selectedShowcaseId: id }),
+      setSelectedModelId: id => set({ selectedModelId: id }),
+      setSource: ref => set({ source: ref }),
+      setMask: ref => set({ mask: ref }),
+      setReference: ref => set({ reference: ref }),
+      setPrompt: prompt => set({ prompt }),
+      setResolution: resolution => set({ resolution }),
 
-      loadFromShowcase: (showcase) => {
+      loadFromShowcase: showcase => {
         set({
           prompt: showcase.prompt,
           resolution: showcase.resolution,
@@ -104,46 +101,35 @@ export const useVFXStore = create<VFXState>()(
           reference,
           createdAt: Date.now(),
         };
-        set((s) => ({ history: [result, ...s.history], subTab: "history" }));
+        set(s => ({ history: [result, ...s.history], subTab: "history" }));
         return id;
       },
 
       attachJobToken: (id, token) => {
-        set((s) => ({
-          history: s.history.map((r) =>
-            r.id === id ? { ...r, inferenceJobToken: token } : r,
-          ),
+        set(s => ({
+          history: s.history.map(r => (r.id === id ? { ...r, inferenceJobToken: token } : r)),
         }));
       },
 
       completeResult: (id, outputUrl) => {
-        set((s) => ({
-          history: s.history.map((r) =>
-            r.id === id ? { ...r, status: "complete", outputUrl } : r,
-          ),
+        set(s => ({
+          history: s.history.map(r => (r.id === id ? { ...r, status: "complete", outputUrl } : r)),
         }));
       },
 
       failResult: (id, reason) => {
-        set((s) => ({
-          history: s.history.map((r) =>
-            r.id === id ? { ...r, status: "failed", failureReason: reason } : r,
-          ),
+        set(s => ({
+          history: s.history.map(r => (r.id === id ? { ...r, status: "failed", failureReason: reason } : r)),
         }));
       },
 
-      dismissResult: (id) => {
-        set((s) => ({ history: s.history.filter((r) => r.id !== id) }));
+      dismissResult: id => {
+        set(s => ({ history: s.history.filter(r => r.id !== id) }));
       },
 
-      seedFromSession: (item) => {
-        set((s) => {
-          if (
-            item.inferenceJobToken &&
-            s.history.some(
-              (r) => r.inferenceJobToken === item.inferenceJobToken,
-            )
-          ) {
+      seedFromSession: item => {
+        set(s => {
+          if (item.inferenceJobToken && s.history.some(r => r.inferenceJobToken === item.inferenceJobToken)) {
             return s;
           }
           return { history: [item, ...s.history] };
@@ -151,8 +137,8 @@ export const useVFXStore = create<VFXState>()(
       },
 
       updateMediaForResult: (id, media) => {
-        set((s) => ({
-          history: s.history.map((r) => {
+        set(s => ({
+          history: s.history.map(r => {
             if (r.id !== id) return r;
             const next: VFXResult = { ...r };
             // Only overwrite when the existing url looks like a dead blob:
@@ -164,11 +150,7 @@ export const useVFXStore = create<VFXState>()(
             if (media.reference && (!r.reference || isBlob(r.reference.url))) {
               next.reference = media.reference;
             }
-            if (
-              typeof media.prompt === "string" &&
-              media.prompt.length > 0 &&
-              (!r.prompt || r.prompt.length === 0)
-            ) {
+            if (typeof media.prompt === "string" && media.prompt.length > 0 && (!r.prompt || r.prompt.length === 0)) {
               next.prompt = media.prompt;
             }
             return next;
@@ -194,7 +176,7 @@ export const useVFXStore = create<VFXState>()(
       // Persist the history (pending + complete + failed) and the user's
       // text prompt across reloads. Source/mask/reference are skipped — their
       // preview URLs are blob: URLs that don't survive a refresh.
-      partialize: (state) => ({
+      partialize: state => ({
         history: state.history,
         prompt: state.prompt,
         resolution: state.resolution,

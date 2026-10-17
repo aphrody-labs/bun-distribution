@@ -4,12 +4,8 @@ interface ArtcraftBillingBlockProps {
   isVideoPage?: boolean;
 }
 
-export function ArtcraftBillingBlock({
-  isVideoPage = false,
-}: ArtcraftBillingBlockProps) {
-  const title = isVideoPage
-    ? "Video Generation is Resource Intensive"
-    : "Subscribe for Credits to Generate";
+export function ArtcraftBillingBlock({ isVideoPage = false }: ArtcraftBillingBlockProps) {
+  const title = isVideoPage ? "Video Generation is Resource Intensive" : "Subscribe for Credits to Generate";
 
   const subtitle = isVideoPage
     ? `Creating high-quality videos requires significant computing power. 

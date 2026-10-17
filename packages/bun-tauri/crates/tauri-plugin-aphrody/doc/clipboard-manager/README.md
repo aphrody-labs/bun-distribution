@@ -63,10 +63,10 @@ import {
   writeText,
   readText,
   writeHtml,
-  clear
-} from '@aphrody/plugin-clipboard-manager'
-await writeText('Tauri is awesome!')
-assert(await readText(), 'Tauri is awesome!')
+  clear,
+} from "@aphrody/plugin-clipboard-manager";
+await writeText("Tauri is awesome!");
+assert(await readText(), "Tauri is awesome!");
 ```
 
 ## Contributing

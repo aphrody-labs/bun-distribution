@@ -2,12 +2,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  createM3App,
-  DEFAULT_CSP,
-  dirSource,
-  startM3Server,
-} from "../src/server.ts";
+import { createM3App, DEFAULT_CSP, dirSource, startM3Server } from "../src/server.ts";
 import { pagePath } from "../src/server-crawl.ts";
 import { cspWithNonce } from "../src/server-html.ts";
 import { m3ServerRoutes } from "../src/server-m3.ts";
@@ -33,10 +28,7 @@ beforeAll(() => {
     join(dir, "index.html"),
     '<!doctype html><html class="m3"><head><title>home</title></head><body><script src="/app.js"></script><script>boot()</script></body></html>',
   );
-  writeFileSync(
-    join(dir, "about.html"),
-    "<!doctype html><html><head></head><body>about</body></html>",
-  );
+  writeFileSync(join(dir, "about.html"), "<!doctype html><html><head></head><body>about</body></html>");
   writeFileSync(
     join(dir, "docs", "guide.md"),
     "---\ntitle: The guide\ndescription: How to\n---\n# Heading\n\nSee https://example.com <script>alert(1)</script>\n",
@@ -45,36 +37,25 @@ beforeAll(() => {
 });
 afterAll(cleanup);
 
-const get = (
-  app: ReturnType<typeof createM3App>,
-  path: string,
-  headers: Record<string, string> = {},
-) => app.fetch(new Request(`http://m3.test${path}`, { headers }));
+const get = (app: ReturnType<typeof createM3App>, path: string, headers: Record<string, string> = {}) =>
+  app.fetch(new Request(`http://m3.test${path}`, { headers }));
 
-const themedApp = () =>
-  createM3App({ files: dirSource(dir), theme: true, nonce: true });
+const themedApp = () => createM3App({ files: dirSource(dir), theme: true, nonce: true });
 
-const open = (
-  url: string,
-): Promise<{ socket: WebSocket; next(): Promise<unknown> }> => {
+const open = (url: string): Promise<{ socket: WebSocket; next(): Promise<unknown> }> => {
   const socket = new WebSocket(url);
   const queue: unknown[] = [];
   const waiting: ((value: unknown) => void)[] = [];
-  socket.addEventListener("message", (event) => {
+  socket.addEventListener("message", event => {
     const data = JSON.parse(String(event.data));
     const resolve = waiting.shift();
     if (resolve) resolve(data);
     else queue.push(data);
   });
-  const next = () =>
-    queue.length
-      ? Promise.resolve(queue.shift())
-      : new Promise((resolve) => waiting.push(resolve));
+  const next = () => (queue.length ? Promise.resolve(queue.shift()) : new Promise(resolve => waiting.push(resolve)));
   return new Promise((resolve, reject) => {
     socket.addEventListener("open", () => resolve({ socket, next }));
-    socket.addEventListener("error", () =>
-      reject(new Error(`cannot open ${url}`)),
-    );
+    socket.addEventListener("error", () => reject(new Error(`cannot open ${url}`)));
   });
 };
 
@@ -92,19 +73,13 @@ describe("CSP nonce (HTMLRewriter)", () => {
     const app = createM3App({ files: dirSource(dir), nonce: true });
     const first = await get(app, "/");
     const html = await first.text();
-    const nonces = [...html.matchAll(/<script[^>]* nonce="([^"]+)"/g)].map(
-      (match) => match[1],
-    );
+    const nonces = [...html.matchAll(/<script[^>]* nonce="([^"]+)"/g)].map(match => match[1]);
     expect(nonces).toHaveLength(2);
     expect(new Set(nonces).size).toBe(1);
-    expect(first.headers.get("content-security-policy")).toBe(
-      cspWithNonce(DEFAULT_CSP, nonces[0]!),
-    );
+    expect(first.headers.get("content-security-policy")).toBe(cspWithNonce(DEFAULT_CSP, nonces[0]!));
     const second = await (await get(app, "/")).text();
     expect(second).not.toContain(nonces[0]!);
-    expect(
-      (await get(app, "/app.js")).headers.get("content-security-policy"),
-    ).toBe(DEFAULT_CSP);
+    expect((await get(app, "/app.js")).headers.get("content-security-policy")).toBe(DEFAULT_CSP);
   });
 });
 
@@ -115,9 +90,7 @@ describe.skipIf(!hasM3Next)("theme (@aphrody/m3-next)", () => {
     expect(html).toContain('<html class="m3 dark"');
     expect(html).toContain('data-m3-theme="dark"');
     expect(html).toContain('style="color-scheme:dark"');
-    expect(
-      html.match(/<meta name="theme-color" content="#[0-9a-f]{6}">/gi),
-    ).toHaveLength(1);
+    expect(html.match(/<meta name="theme-color" content="#[0-9a-f]{6}">/gi)).toHaveLength(1);
     expect(res.headers.get("vary")).toBe("Cookie");
     expect(res.headers.getSetCookie()).toEqual([]);
   });
@@ -125,9 +98,7 @@ describe.skipIf(!hasM3Next)("theme (@aphrody/m3-next)", () => {
   test("without a cookie: system mode, the pre-paint script with the nonce, both metas, and the cookie set", async () => {
     const res = await get(themedApp(), "/about.html");
     const html = await res.text();
-    const nonce = /'nonce-([^']+)'/.exec(
-      res.headers.get("content-security-policy")!,
-    )![1];
+    const nonce = /'nonce-([^']+)'/.exec(res.headers.get("content-security-policy")!)![1];
     expect(html).toContain(`<head><script nonce="${nonce}">`);
     expect(html).toContain('data-m3-theme="system"');
     expect(html.match(/<meta name="theme-color" media=/g)).toHaveLength(2);
@@ -137,9 +108,7 @@ describe.skipIf(!hasM3Next)("theme (@aphrody/m3-next)", () => {
 
 describe("Markdown pages (Bun.markdown, Bun.YAML)", () => {
   test("renderMarkdown: front matter title, heading ids, GFM tag filter, autolinks", () => {
-    const page = renderMarkdown(
-      "---\ntitle: T & co\nlang: fr\n---\n# Hi\n\nwww.bun.sh <style>x</style>\n",
-    );
+    const page = renderMarkdown("---\ntitle: T & co\nlang: fr\n---\n# Hi\n\nwww.bun.sh <style>x</style>\n");
     expect(page.data).toEqual({ title: "T & co", lang: "fr" });
     expect(page.title).toBe("T &amp; co");
     expect(page.html).toContain('<html lang="fr">');
@@ -161,50 +130,43 @@ describe("Markdown pages (Bun.markdown, Bun.YAML)", () => {
     expect(html).toContain('<meta name="description" content="How to">');
     expect(html).toContain('<link rel="stylesheet" href="/md.css">');
     expect(html).not.toContain("<script>alert");
-    expect(await (await get(app, "/docs/guide")).text()).toContain(
-      '<main class="m3-markdown">',
-    );
-    expect(await (await get(app, "/docs/guide.md")).text()).toStartWith(
-      "---\ntitle: The guide",
-    );
+    expect(await (await get(app, "/docs/guide")).text()).toContain('<main class="m3-markdown">');
+    expect(await (await get(app, "/docs/guide.md")).text()).toStartWith("---\ntitle: The guide");
   });
 });
 
 describe("crawler files", () => {
   test("pagePath maps the build's files to public URLs", () => {
-    expect(
-      ["/index.html", "/a/index.html", "/b.html", "/c.md", "/d.js"].map(
-        pagePath,
-      ),
-    ).toEqual(["/", "/a/", "/b", "/c.md", undefined]);
+    expect(["/index.html", "/a/index.html", "/b.html", "/c.md", "/d.js"].map(pagePath)).toEqual([
+      "/",
+      "/a/",
+      "/b",
+      "/c.md",
+      undefined,
+    ]);
   });
 
-  test.skipIf(!hasM3Next)(
-    "sitemap.xml, robots.txt and llms.txt from the file list",
-    async () => {
-      const app = createM3App({
-        name: "site",
-        files: dirSource(dir),
-        crawl: {
-          origin: "https://m3.example",
-          summary: "A site.",
-          disallow: ["/about"],
-        },
-      });
-      const sitemap = await (await get(app, "/sitemap.xml")).text();
-      expect(sitemap).toContain("<loc>https://m3.example/</loc>");
-      expect(sitemap).toContain("<loc>https://m3.example/docs/guide.md</loc>");
-      expect(sitemap).not.toContain("/about");
-      const robots = await (await get(app, "/robots.txt")).text();
-      expect(robots).toContain("Disallow: /about");
-      expect(robots).toContain("Sitemap: https://m3.example/sitemap.xml");
-      const llms = await (await get(app, "/llms.txt")).text();
-      expect(llms).toStartWith("# site\n\n> A site.");
-      expect(llms).toContain(
-        "## Docs\n\n- [/docs/guide.md](https://m3.example/docs/guide.md)",
-      );
-    },
-  );
+  test.skipIf(!hasM3Next)("sitemap.xml, robots.txt and llms.txt from the file list", async () => {
+    const app = createM3App({
+      name: "site",
+      files: dirSource(dir),
+      crawl: {
+        origin: "https://m3.example",
+        summary: "A site.",
+        disallow: ["/about"],
+      },
+    });
+    const sitemap = await (await get(app, "/sitemap.xml")).text();
+    expect(sitemap).toContain("<loc>https://m3.example/</loc>");
+    expect(sitemap).toContain("<loc>https://m3.example/docs/guide.md</loc>");
+    expect(sitemap).not.toContain("/about");
+    const robots = await (await get(app, "/robots.txt")).text();
+    expect(robots).toContain("Disallow: /about");
+    expect(robots).toContain("Sitemap: https://m3.example/sitemap.xml");
+    const llms = await (await get(app, "/llms.txt")).text();
+    expect(llms).toStartWith("# site\n\n> A site.");
+    expect(llms).toContain("## Docs\n\n- [/docs/guide.md](https://m3.example/docs/guide.md)");
+  });
 });
 
 describe("realtime (Bun WebSocket, server.publish)", () => {
@@ -231,9 +193,7 @@ describe("realtime (Bun WebSocket, server.publish)", () => {
       const http = `http://127.0.0.1:${server.port}/api/m3/ws`;
       expect((await fetch(`${http}?topic=a%20b`)).status).toBe(400);
       expect((await fetch(`${http}?topic=ok`)).status).toBe(426);
-      expect((await fetch(`http://127.0.0.1:${server.port}/`)).status).toBe(
-        200,
-      );
+      expect((await fetch(`http://127.0.0.1:${server.port}/`)).status).toBe(200);
     } finally {
       await server.stop(true);
     }
@@ -246,10 +206,7 @@ describe("realtime (Bun WebSocket, server.publish)", () => {
       realtime: { topics: () => undefined },
     });
     try {
-      expect(
-        (await fetch(`http://127.0.0.1:${server.port}/api/m3/ws?topic=x`))
-          .status,
-      ).toBe(403);
+      expect((await fetch(`http://127.0.0.1:${server.port}/api/m3/ws?topic=x`)).status).toBe(403);
     } finally {
       await server.stop(true);
     }
@@ -261,8 +218,7 @@ describe("Bun.serve routes from @aphrody/m3/server", () => {
     const upstream = Bun.serve({
       port: 0,
       hostname: "127.0.0.1",
-      fetch: (request) =>
-        new Response(`upstream ${new URL(request.url).pathname}`),
+      fetch: request => new Response(`upstream ${new URL(request.url).pathname}`),
     });
     const routes = await m3ServerRoutes({
       cwd: dir,
@@ -277,15 +233,9 @@ describe("Bun.serve routes from @aphrody/m3/server", () => {
     });
     try {
       const base = `http://127.0.0.1:${server.port}`;
-      expect(await (await fetch(`${base}/about-page`)).text()).toContain(
-        "about",
-      );
-      expect(await (await fetch(`${base}/rpc/x?y=1`)).text()).toBe(
-        "upstream /rpc/x",
-      );
-      expect(await (await fetch(`${base}/`)).text()).toContain(
-        "<title>home</title>",
-      );
+      expect(await (await fetch(`${base}/about-page`)).text()).toContain("about");
+      expect(await (await fetch(`${base}/rpc/x?y=1`)).text()).toBe("upstream /rpc/x");
+      expect(await (await fetch(`${base}/`)).text()).toContain("<title>home</title>");
     } finally {
       await server.stop(true);
       await upstream.stop(true);

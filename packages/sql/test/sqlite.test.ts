@@ -3,22 +3,13 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  SQLITE_BUSY_TIMEOUT_MS,
-  closeSqlite,
-  openSqlite,
-  sqliteVecVersion,
-  vacuumInto,
-} from "../src/sqlite";
+import { SQLITE_BUSY_TIMEOUT_MS, closeSqlite, openSqlite, sqliteVecVersion, vacuumInto } from "../src/sqlite";
 
 const dir = mkdtempSync(join(tmpdir(), "aphrody-sql-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 function pragma(db: ReturnType<typeof openSqlite>, name: string): unknown {
-  const row = db.query(`PRAGMA ${name}`).get() as Record<
-    string,
-    unknown
-  > | null;
+  const row = db.query(`PRAGMA ${name}`).get() as Record<string, unknown> | null;
   return row ? Object.values(row)[0] : undefined;
 }
 
@@ -59,15 +50,11 @@ describe("openSqlite", () => {
   });
 
   test("invalid busy timeout is rejected", () => {
-    expect(() => openSqlite(":memory:", { busyTimeoutMs: -1 })).toThrow(
-      RangeError,
-    );
+    expect(() => openSqlite(":memory:", { busyTimeoutMs: -1 })).toThrow(RangeError);
   });
 
   test("missing file without create fails", () => {
-    expect(() =>
-      openSqlite(join(dir, "absent.db"), { create: false }),
-    ).toThrow();
+    expect(() => openSqlite(join(dir, "absent.db"), { create: false })).toThrow();
   });
 });
 
@@ -79,9 +66,9 @@ describe("sqlite-vec", () => {
     const insert = db.prepare("INSERT INTO v(rowid, embedding) VALUES (?, ?)");
     insert.run(1, new Float32Array([0, 1]));
     insert.run(2, new Float32Array([1, 0]));
-    const row = db
-      .query("SELECT rowid FROM v WHERE embedding MATCH ? AND k = 1")
-      .get(new Float32Array([0.9, 0.1])) as { rowid: number };
+    const row = db.query("SELECT rowid FROM v WHERE embedding MATCH ? AND k = 1").get(new Float32Array([0.9, 0.1])) as {
+      rowid: number;
+    };
     expect(row.rowid).toBe(2);
     closeSqlite(db);
   });

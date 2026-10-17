@@ -13,11 +13,11 @@ export const useSortPreferencesStore = create<SortPreferencesStore>()(
   persist(
     (set, get) => ({
       preferences: {},
-      getPreferences: (pathKey) => {
+      getPreferences: pathKey => {
         return get().preferences[pathKey];
       },
       setPreferences: (pathKey, sortBy) =>
-        set((state) => ({
+        set(state => ({
           preferences: {
             ...state.preferences,
             [pathKey]: sortBy,

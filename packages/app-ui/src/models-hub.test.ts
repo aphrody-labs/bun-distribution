@@ -19,10 +19,7 @@ import {
 } from "./models-hub-state";
 import type { HardwareTelemetry } from "./tauri-bridge";
 
-const hardware = (
-  gpus: HardwareTelemetry["gpus"],
-  cudaVramTotalMb: number | null = null,
-): HardwareTelemetry => ({
+const hardware = (gpus: HardwareTelemetry["gpus"], cudaVramTotalMb: number | null = null): HardwareTelemetry => ({
   cpuThreads: 8,
   memoryTotalMb: 16384,
   memoryAvailableMb: 8192,
@@ -54,19 +51,11 @@ describe("models hub state", () => {
 
   test("progress sums roles and measures throughput from real samples", () => {
     let state = startDownload(1000, 0);
-    state = applyProgress(
-      state,
-      { id: "m", role: "weights", downloaded: 200, total: 800 },
-      1000,
-    );
+    state = applyProgress(state, { id: "m", role: "weights", downloaded: 200, total: 800 }, 1000);
     expect(state.downloaded).toBe(200);
     expect(state.speedBps).toBe(200);
     expect(state.etaSeconds).toBe(4);
-    state = applyProgress(
-      state,
-      { id: "m", role: "tokenizer", downloaded: 100, total: 200 },
-      2000,
-    );
+    state = applyProgress(state, { id: "m", role: "tokenizer", downloaded: 100, total: 200 }, 2000);
     expect(state.downloaded).toBe(300);
     expect(state.speedBps).toBeCloseTo(170);
   });
@@ -104,15 +93,9 @@ describe("models hub state", () => {
 
   test("VRAM fit is unknown when the GPU probe failed, never assumed", () => {
     expect(fitsVram({ vram_min_bytes: 0 }, null)).toBe(true);
-    expect(
-      fitsVram({ vram_min_bytes: 4 * 1024 ** 3 }, hardware(null)),
-    ).toBeNull();
-    expect(fitsVram({ vram_min_bytes: 4 * 1024 ** 3 }, hardware([]))).toBe(
-      false,
-    );
-    expect(
-      fitsVram({ vram_min_bytes: 4 * 1024 ** 3 }, hardware([], 8192)),
-    ).toBe(true);
+    expect(fitsVram({ vram_min_bytes: 4 * 1024 ** 3 }, hardware(null))).toBeNull();
+    expect(fitsVram({ vram_min_bytes: 4 * 1024 ** 3 }, hardware([]))).toBe(false);
+    expect(fitsVram({ vram_min_bytes: 4 * 1024 ** 3 }, hardware([], 8192))).toBe(true);
   });
 
   test("unprobed memory reads inconnu", () => {
@@ -121,18 +104,16 @@ describe("models hub state", () => {
   });
 
   test("STANDARD_EXTERNAL_MODEL_DIRS declares Ollama, LM Studio and HuggingFace with exact subpaths", () => {
-    const ids = STANDARD_EXTERNAL_MODEL_DIRS.map((d) => d.id);
+    const ids = STANDARD_EXTERNAL_MODEL_DIRS.map(d => d.id);
     expect(ids).toEqual(["ollama", "lm-studio", "huggingface"]);
 
-    const ollama = STANDARD_EXTERNAL_MODEL_DIRS.find((d) => d.id === "ollama");
+    const ollama = STANDARD_EXTERNAL_MODEL_DIRS.find(d => d.id === "ollama");
     expect(ollama?.defaultSubpath).toBe(".ollama/models");
 
-    const lmStudio = STANDARD_EXTERNAL_MODEL_DIRS.find(
-      (d) => d.id === "lm-studio",
-    );
+    const lmStudio = STANDARD_EXTERNAL_MODEL_DIRS.find(d => d.id === "lm-studio");
     expect(lmStudio?.defaultSubpath).toBe(".cache/lm-studio/models");
 
-    const hf = STANDARD_EXTERNAL_MODEL_DIRS.find((d) => d.id === "huggingface");
+    const hf = STANDARD_EXTERNAL_MODEL_DIRS.find(d => d.id === "huggingface");
     expect(hf?.defaultSubpath).toBe(".cache/huggingface/hub");
   });
 
@@ -140,19 +121,13 @@ describe("models hub state", () => {
     const posix = resolveExternalModelPath("/home/user", ".ollama/models");
     expect(posix).toBe("/home/user/.ollama/models");
 
-    const posixTrailing = resolveExternalModelPath(
-      "/home/user/",
-      ".cache/huggingface/hub",
-    );
+    const posixTrailing = resolveExternalModelPath("/home/user/", ".cache/huggingface/hub");
     expect(posixTrailing).toBe("/home/user/.cache/huggingface/hub");
 
     const win = resolveExternalModelPath("C:\\Users\\test", ".ollama/models");
     expect(win).toBe("C:\\Users\\test\\.ollama\\models");
 
-    const winTrailing = resolveExternalModelPath(
-      "C:\\Users\\test\\",
-      ".cache/lm-studio/models",
-    );
+    const winTrailing = resolveExternalModelPath("C:\\Users\\test\\", ".cache/lm-studio/models");
     expect(winTrailing).toBe("C:\\Users\\test\\.cache\\lm-studio\\models");
   });
 
@@ -165,18 +140,10 @@ describe("models hub state", () => {
   });
 
   test("inferHomeFromPath extracts user home from Windows, Linux, and macOS paths", () => {
-    expect(inferHomeFromPath("C:\\Users\\test\\src\\aphrody")).toBe(
-      "C:\\Users\\test",
-    );
-    expect(inferHomeFromPath("D:\\Users\\developer\\.cache")).toBe(
-      "D:\\Users\\developer",
-    );
-    expect(inferHomeFromPath("/home/ubuntu/projects/aphrody")).toBe(
-      "/home/ubuntu",
-    );
-    expect(inferHomeFromPath("/Users/alice/Library/Application Support")).toBe(
-      "/Users/alice",
-    );
+    expect(inferHomeFromPath("C:\\Users\\test\\src\\aphrody")).toBe("C:\\Users\\test");
+    expect(inferHomeFromPath("D:\\Users\\developer\\.cache")).toBe("D:\\Users\\developer");
+    expect(inferHomeFromPath("/home/ubuntu/projects/aphrody")).toBe("/home/ubuntu");
+    expect(inferHomeFromPath("/Users/alice/Library/Application Support")).toBe("/Users/alice");
     expect(inferHomeFromPath("/var/log/syslog")).toBeNull();
   });
 
@@ -188,33 +155,28 @@ describe("models hub state", () => {
       "/home/tester/.cache/huggingface/hub": { exists: true, modelCount: 12 },
     });
 
-    expect(evaluated.find((s) => s.id === "ollama")?.exists).toBe(true);
-    expect(evaluated.find((s) => s.id === "ollama")?.modelCount).toBe(4);
+    expect(evaluated.find(s => s.id === "ollama")?.exists).toBe(true);
+    expect(evaluated.find(s => s.id === "ollama")?.modelCount).toBe(4);
 
-    expect(evaluated.find((s) => s.id === "lm-studio")?.exists).toBe(false);
-    expect(
-      evaluated.find((s) => s.id === "lm-studio")?.modelCount,
-    ).toBeUndefined();
+    expect(evaluated.find(s => s.id === "lm-studio")?.exists).toBe(false);
+    expect(evaluated.find(s => s.id === "lm-studio")?.modelCount).toBeUndefined();
 
-    expect(evaluated.find((s) => s.id === "huggingface")?.exists).toBe(true);
-    expect(evaluated.find((s) => s.id === "huggingface")?.modelCount).toBe(12);
+    expect(evaluated.find(s => s.id === "huggingface")?.exists).toBe(true);
+    expect(evaluated.find(s => s.id === "huggingface")?.modelCount).toBe(12);
   });
 
   test("scanExternalModelDirectories invokes custom probe and gathers results", async () => {
-    const stores = await scanExternalModelDirectories(
-      "/home/tester",
-      async (path) => {
-        if (path.includes("ollama")) return { exists: true, modelCount: 3 };
-        if (path.includes("huggingface")) return true;
-        return false;
-      },
-    );
+    const stores = await scanExternalModelDirectories("/home/tester", async path => {
+      if (path.includes("ollama")) return { exists: true, modelCount: 3 };
+      if (path.includes("huggingface")) return true;
+      return false;
+    });
 
     expect(stores.length).toBe(3);
-    expect(stores.find((s) => s.id === "ollama")?.exists).toBe(true);
-    expect(stores.find((s) => s.id === "ollama")?.modelCount).toBe(3);
-    expect(stores.find((s) => s.id === "lm-studio")?.exists).toBe(false);
-    expect(stores.find((s) => s.id === "huggingface")?.exists).toBe(true);
+    expect(stores.find(s => s.id === "ollama")?.exists).toBe(true);
+    expect(stores.find(s => s.id === "ollama")?.modelCount).toBe(3);
+    expect(stores.find(s => s.id === "lm-studio")?.exists).toBe(false);
+    expect(stores.find(s => s.id === "huggingface")?.exists).toBe(true);
   });
 
   test("normalizeModelKind categorizes tasks and model names into chat, embedding, OCR, speech", () => {
@@ -254,21 +216,10 @@ const entry = (id: string, ref = `hf:org/${id}/${id}-Q4.gguf@revision`) => ({
 // Adapted Jan hub cases: exact identifiers, quant variants, URL queries and stable ranking.
 describe("Jan model search absorbed into the existing catalog", () => {
   test("a pasted HF URL resolves its exact repository before nearby names", () => {
-    const models = [
-      entry("gemma-nearby"),
-      entry("gemma-target"),
-      entry("another-gemma"),
-    ];
-    const result = searchModelCatalog(
-      models,
-      "https://huggingface.co/org/gemma-target",
-    );
+    const models = [entry("gemma-nearby"), entry("gemma-target"), entry("another-gemma")];
+    const result = searchModelCatalog(models, "https://huggingface.co/org/gemma-target");
     expect(result[0]).toBe(models[1]);
-    expect(models.map((model) => model.id)).toEqual([
-      "gemma-nearby",
-      "gemma-target",
-      "another-gemma",
-    ]);
+    expect(models.map(model => model.id)).toEqual(["gemma-nearby", "gemma-target", "another-gemma"]);
   });
 
   test("exact variant filenames rank before fuzzy neighbors", () => {
@@ -276,19 +227,13 @@ describe("Jan model search absorbed into the existing catalog", () => {
       entry("neighbor", "hf:org/neighbor/exact-quont-Q4.gguf@revision"),
       entry("target", "hf:org/target/exact-quant-Q4.gguf@revision"),
     ];
-    expect(searchModelCatalog(models, "exact-quant-Q4.gguf")[0]).toBe(
-      models[1],
-    );
+    expect(searchModelCatalog(models, "exact-quant-Q4.gguf")[0]).toBe(models[1]);
   });
 
   test("matching ignores case, leading URL whitespace and host casing", () => {
     const model = entry("target");
-    expect(cleanModelSearchQuery(" HTTPS://huggingface.co/ORG/target ")).toBe(
-      "ORG/target",
-    );
-    expect(
-      searchModelCatalog([model], " HTTPS://huggingface.co/ORG/target "),
-    ).toEqual([model]);
+    expect(cleanModelSearchQuery(" HTTPS://huggingface.co/ORG/target ")).toBe("ORG/target");
+    expect(searchModelCatalog([model], " HTTPS://huggingface.co/ORG/target ")).toEqual([model]);
   });
 
   test("complete Fuse library handles typos and unknown searches", () => {

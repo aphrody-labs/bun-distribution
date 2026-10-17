@@ -8,12 +8,7 @@
  */
 import type { ServerWebSocket, Subprocess } from "bun";
 import page from "./client/index.html";
-import type {
-  ClientMessage,
-  SenderInfo,
-  SenderMessage,
-  ServerMessage,
-} from "./protocol.ts";
+import type { ClientMessage, SenderInfo, SenderMessage, ServerMessage } from "./protocol.ts";
 
 const hostname = Bun.env.GAMESTREAM_HOST ?? "127.0.0.1";
 const port = Number(Bun.env.GAMESTREAM_PORT ?? 8797);
@@ -41,9 +36,7 @@ function onSenderMessage(message: SenderMessage): void {
   if (message.type === "ready") {
     const { type: _type, ...info } = message;
     senderInfo = info;
-    console.log(
-      `[gamestream] sender ready ${info.width}x${info.height}@${info.fps} ${info.codec}`,
-    );
+    console.log(`[gamestream] sender ready ${info.width}x${info.height}@${info.fps} ${info.codec}`);
     return;
   }
   if ("id" in message && message.id !== viewer?.data.id) return;
@@ -64,9 +57,7 @@ async function readSender(stdout: ReadableStream<Uint8Array>): Promise<void> {
         try {
           onSenderMessage(JSON.parse(line) as SenderMessage);
         } catch {
-          console.error(
-            `[gamestream] invalid sender line: ${line.slice(0, 200)}`,
-          );
+          console.error(`[gamestream] invalid sender line: ${line.slice(0, 200)}`);
         }
       }
       newline = pending.indexOf("\n");
@@ -83,7 +74,7 @@ function spawnSender(): void {
   });
   sender = child;
   void readSender(child.stdout);
-  void child.exited.then((code) => {
+  void child.exited.then(code => {
     console.error(`[gamestream] sender exited (${code}); restarting`);
     sender = null;
     senderInfo = null;
@@ -98,8 +89,7 @@ const server = Bun.serve({
   development: Bun.env.NODE_ENV !== "production",
   routes: {
     "/": page,
-    "/healthz": () =>
-      Response.json({ ok: true, sender: senderInfo, viewer: viewer !== null }),
+    "/healthz": () => Response.json({ ok: true, sender: senderInfo, viewer: viewer !== null }),
     "/ws": (req, srv) =>
       srv.upgrade(req, { data: { id: crypto.randomUUID() } })
         ? undefined
@@ -139,6 +129,4 @@ const server = Bun.serve({
 });
 
 spawnSender();
-console.log(
-  `[gamestream] ${server.url} (sender: ${senderCommand.join(" ") || "none"})`,
-);
+console.log(`[gamestream] ${server.url} (sender: ${senderCommand.join(" ") || "none"})`);

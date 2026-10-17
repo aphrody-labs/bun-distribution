@@ -17,9 +17,6 @@ export interface ActiveSubscriptionInfo {
   subscription_end_at?: string;
 }
 
-export const ArtcraftGetSubscription =
-  async (): Promise<ArtcraftGetSubscriptionSuccess> => {
-    return (await invoke(
-      "storyteller_get_subscription_command",
-    )) as ArtcraftGetSubscriptionSuccess;
-  };
+export const ArtcraftGetSubscription = async (): Promise<ArtcraftGetSubscriptionSuccess> => {
+  return (await invoke("storyteller_get_subscription_command")) as ArtcraftGetSubscriptionSuccess;
+};

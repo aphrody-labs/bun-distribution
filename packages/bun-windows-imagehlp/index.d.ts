@@ -3,11 +3,26 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** imagehlp.dll!BindImage */
-  BindImage(ImageName: string | Win32Pointer, DllPath: string | Win32Pointer, SymbolPath: string | Win32Pointer): number;
+  BindImage(
+    ImageName: string | Win32Pointer,
+    DllPath: string | Win32Pointer,
+    SymbolPath: string | Win32Pointer,
+  ): number;
   /** imagehlp.dll!BindImageEx */
-  BindImageEx(Flags: number, ImageName: string | Win32Pointer, DllPath: string | Win32Pointer, SymbolPath: string | Win32Pointer, StatusRoutine: Win32Callback): number;
+  BindImageEx(
+    Flags: number,
+    ImageName: string | Win32Pointer,
+    DllPath: string | Win32Pointer,
+    SymbolPath: string | Win32Pointer,
+    StatusRoutine: Win32Callback,
+  ): number;
   /** imagehlp.dll!CheckSumMappedFile */
-  CheckSumMappedFile(BaseAddress: Win32Pointer, FileLength: number, HeaderSum: Win32Pointer, CheckSum: Win32Pointer): number | null;
+  CheckSumMappedFile(
+    BaseAddress: Win32Pointer,
+    FileLength: number,
+    HeaderSum: Win32Pointer,
+    CheckSum: Win32Pointer,
+  ): number | null;
   /** imagehlp.dll!GetImageConfigInformation */
   GetImageConfigInformation(LoadedImage: Win32Pointer, ImageConfigInformation: Win32Pointer): number;
   /** imagehlp.dll!GetImageUnusedHeaderBytes */
@@ -15,13 +30,33 @@ interface Functions {
   /** imagehlp.dll!ImageAddCertificate */
   ImageAddCertificate(FileHandle: Win32Pointer, Certificate: Win32Pointer, Index: Win32Pointer): number;
   /** imagehlp.dll!ImageEnumerateCertificates */
-  ImageEnumerateCertificates(FileHandle: Win32Pointer, TypeFilter: number, CertificateCount: Win32Pointer, Indices: Win32Pointer, IndexCount: number): number;
+  ImageEnumerateCertificates(
+    FileHandle: Win32Pointer,
+    TypeFilter: number,
+    CertificateCount: Win32Pointer,
+    Indices: Win32Pointer,
+    IndexCount: number,
+  ): number;
   /** imagehlp.dll!ImageGetCertificateData */
-  ImageGetCertificateData(FileHandle: Win32Pointer, CertificateIndex: number, Certificate: Win32Pointer, RequiredLength: Win32Pointer): number;
+  ImageGetCertificateData(
+    FileHandle: Win32Pointer,
+    CertificateIndex: number,
+    Certificate: Win32Pointer,
+    RequiredLength: Win32Pointer,
+  ): number;
   /** imagehlp.dll!ImageGetCertificateHeader */
-  ImageGetCertificateHeader(FileHandle: Win32Pointer, CertificateIndex: number, Certificateheader: Win32Pointer): number;
+  ImageGetCertificateHeader(
+    FileHandle: Win32Pointer,
+    CertificateIndex: number,
+    Certificateheader: Win32Pointer,
+  ): number;
   /** imagehlp.dll!ImageGetDigestStream */
-  ImageGetDigestStream(FileHandle: Win32Pointer, DigestLevel: number, DigestFunction: Win32Callback, DigestHandle: Win32Pointer): number;
+  ImageGetDigestStream(
+    FileHandle: Win32Pointer,
+    DigestLevel: number,
+    DigestFunction: Win32Callback,
+    DigestHandle: Win32Pointer,
+  ): number;
   /** imagehlp.dll!ImageLoad */
   ImageLoad(DllName: string | Win32Pointer, DllPath: string | Win32Pointer): number | null;
   /** imagehlp.dll!ImageRemoveCertificate */
@@ -29,7 +64,13 @@ interface Functions {
   /** imagehlp.dll!ImageUnload */
   ImageUnload(LoadedImage: Win32Pointer): number;
   /** imagehlp.dll!MapAndLoad */
-  MapAndLoad(ImageName: string | Win32Pointer, DllPath: string | Win32Pointer, LoadedImage: Win32Pointer, DotDll: number, ReadOnly: number): number;
+  MapAndLoad(
+    ImageName: string | Win32Pointer,
+    DllPath: string | Win32Pointer,
+    LoadedImage: Win32Pointer,
+    DotDll: number,
+    ReadOnly: number,
+  ): number;
   /** imagehlp.dll!MapFileAndCheckSumA */
   MapFileAndCheckSumA(Filename: string | Win32Pointer, HeaderSum: Win32Pointer, CheckSum: Win32Pointer): number;
   /** imagehlp.dll!MapFileAndCheckSumW */
@@ -37,9 +78,33 @@ interface Functions {
   /** imagehlp.dll!MapFileAndCheckSumW */
   MapFileAndCheckSum(Filename: string | Win32Pointer, HeaderSum: Win32Pointer, CheckSum: Win32Pointer): number;
   /** imagehlp.dll!ReBaseImage */
-  ReBaseImage(CurrentImageName: string | Win32Pointer, SymbolPath: string | Win32Pointer, fReBase: number, fRebaseSysfileOk: number, fGoingDown: number, CheckImageSize: number, OldImageSize: Win32Pointer, OldImageBase: Win32Pointer, NewImageSize: Win32Pointer, NewImageBase: Win32Pointer, TimeStamp: number): number;
+  ReBaseImage(
+    CurrentImageName: string | Win32Pointer,
+    SymbolPath: string | Win32Pointer,
+    fReBase: number,
+    fRebaseSysfileOk: number,
+    fGoingDown: number,
+    CheckImageSize: number,
+    OldImageSize: Win32Pointer,
+    OldImageBase: Win32Pointer,
+    NewImageSize: Win32Pointer,
+    NewImageBase: Win32Pointer,
+    TimeStamp: number,
+  ): number;
   /** imagehlp.dll!ReBaseImage64 */
-  ReBaseImage64(CurrentImageName: string | Win32Pointer, SymbolPath: string | Win32Pointer, fReBase: number, fRebaseSysfileOk: number, fGoingDown: number, CheckImageSize: number, OldImageSize: Win32Pointer, OldImageBase: Win32Pointer, NewImageSize: Win32Pointer, NewImageBase: Win32Pointer, TimeStamp: number): number;
+  ReBaseImage64(
+    CurrentImageName: string | Win32Pointer,
+    SymbolPath: string | Win32Pointer,
+    fReBase: number,
+    fRebaseSysfileOk: number,
+    fGoingDown: number,
+    CheckImageSize: number,
+    OldImageSize: Win32Pointer,
+    OldImageBase: Win32Pointer,
+    NewImageSize: Win32Pointer,
+    NewImageBase: Win32Pointer,
+    TimeStamp: number,
+  ): number;
   /** imagehlp.dll!SetImageConfigInformation */
   SetImageConfigInformation(LoadedImage: Win32Pointer, ImageConfigInformation: Win32Pointer): number;
   /** imagehlp.dll!TouchFileTimes */
@@ -47,9 +112,20 @@ interface Functions {
   /** imagehlp.dll!UnMapAndLoad */
   UnMapAndLoad(LoadedImage: Win32Pointer): number;
   /** imagehlp.dll!UpdateDebugInfoFile */
-  UpdateDebugInfoFile(ImageFileName: string | Win32Pointer, SymbolPath: string | Win32Pointer, DebugFilePath: string | Win32Pointer, NtHeaders: Win32Pointer): number;
+  UpdateDebugInfoFile(
+    ImageFileName: string | Win32Pointer,
+    SymbolPath: string | Win32Pointer,
+    DebugFilePath: string | Win32Pointer,
+    NtHeaders: Win32Pointer,
+  ): number;
   /** imagehlp.dll!UpdateDebugInfoFileEx */
-  UpdateDebugInfoFileEx(ImageFileName: string | Win32Pointer, SymbolPath: string | Win32Pointer, DebugFilePath: string | Win32Pointer, NtHeaders: Win32Pointer, OldCheckSum: number): number;
+  UpdateDebugInfoFileEx(
+    ImageFileName: string | Win32Pointer,
+    SymbolPath: string | Win32Pointer,
+    DebugFilePath: string | Win32Pointer,
+    NtHeaders: Win32Pointer,
+    OldCheckSum: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

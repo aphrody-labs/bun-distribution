@@ -20,11 +20,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // Vérifie que l'utilisateur est bien admin — redirige sinon
   await requireAdmin();
 

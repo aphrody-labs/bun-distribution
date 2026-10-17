@@ -93,5 +93,4 @@ export const DEFAULT_TRANSITION_GAP = 0.3;
 export const DEFAULT_TIMELINE_DURATION = 10; // seconds
 export const DEFAULT_TIMELINE_FPS = 30;
 
-export const cloneTimeline = (t: TimelineData): TimelineData =>
-  JSON.parse(JSON.stringify(t));
+export const cloneTimeline = (t: TimelineData): TimelineData => JSON.parse(JSON.stringify(t));

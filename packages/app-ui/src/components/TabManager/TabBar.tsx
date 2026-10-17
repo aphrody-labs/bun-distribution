@@ -1,8 +1,4 @@
-import {
-  horizontalListSortingStrategy,
-  SortableContext,
-  useSortable,
-} from "@dnd-kit/sortable";
+import { horizontalListSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Plus, X } from "@phosphor-icons/react";
 import { TabBar as TabBarPrimitive, TabBarItem } from "@aphrody/m3-primitives";
@@ -19,14 +15,7 @@ interface SortableTabProps {
 }
 
 function SortableTab({ tab, isActive, onSwitch, onClose }: SortableTabProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: tab.id,
     data: {
       type: "tab",
@@ -61,7 +50,7 @@ export function TabBar() {
   // Ensure activeTabId exists in tabs array, fallback to first tab
   // Memoize to prevent unnecessary rerenders during rapid state updates
   const safeActiveTabId = useMemo(() => {
-    return tabs.find((t) => t.id === activeTabId)?.id ?? tabs[0]?.id;
+    return tabs.find(t => t.id === activeTabId)?.id ?? tabs[0]?.id;
   }, [tabs, activeTabId]);
 
   // Don't show tab bar if only one tab
@@ -81,11 +70,8 @@ export function TabBar() {
         </button>
       }
     >
-      <SortableContext
-        items={tabs.map((tab) => tab.id)}
-        strategy={horizontalListSortingStrategy}
-      >
-        {tabs.map((tab) => (
+      <SortableContext items={tabs.map(tab => tab.id)} strategy={horizontalListSortingStrategy}>
+        {tabs.map(tab => (
           <SortableTab
             key={tab.id}
             tab={tab}

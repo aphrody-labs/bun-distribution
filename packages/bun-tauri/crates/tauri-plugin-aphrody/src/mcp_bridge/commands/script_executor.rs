@@ -3,8 +3,8 @@
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tauri::{command, AppHandle, Manager, Runtime};
-use tokio::sync::{oneshot, Mutex};
+use tauri::{AppHandle, Manager, Runtime, command};
+use tokio::sync::{Mutex, oneshot};
 
 /// Store for pending script execution results
 pub type PendingResults = Arc<Mutex<HashMap<String, oneshot::Sender<Value>>>>;

@@ -28,7 +28,7 @@ const ensureWorker = (): Worker => {
       pending.reject(new Error(res.error));
     }
   });
-  worker.addEventListener("error", (event) => {
+  worker.addEventListener("error", event => {
     const err = new Error(event.message || "Generate pipeline worker error");
     for (const pending of pendingRequests.values()) {
       pending.reject(err);
@@ -69,7 +69,7 @@ export const compositeInWorker = (params: {
   if (params.baseBitmap) transfer.push(params.baseBitmap);
   return new Promise<Blob>((resolve, reject) => {
     pendingRequests.set(id, {
-      resolve: (res) => {
+      resolve: res => {
         if (res.type !== "composite") {
           reject(new Error("Unexpected response type for composite"));
           return;
@@ -78,13 +78,7 @@ export const compositeInWorker = (params: {
       },
       reject,
     });
-    postOrReject(
-      worker,
-      id,
-      { id, type: "composite", ...params },
-      transfer,
-      reject,
-    );
+    postOrReject(worker, id, { id, type: "composite", ...params }, transfer, reject);
   });
 };
 
@@ -97,7 +91,7 @@ export const maskInWorker = (params: {
   const id = nextId++;
   return new Promise<Uint8Array>((resolve, reject) => {
     pendingRequests.set(id, {
-      resolve: (res) => {
+      resolve: res => {
         if (res.type !== "mask") {
           reject(new Error("Unexpected response type for mask"));
           return;
@@ -106,12 +100,6 @@ export const maskInWorker = (params: {
       },
       reject,
     });
-    postOrReject(
-      worker,
-      id,
-      { id, type: "mask", ...params },
-      [params.markerBitmap],
-      reject,
-    );
+    postOrReject(worker, id, { id, type: "mask", ...params }, [params.markerBitmap], reject);
   });
 };

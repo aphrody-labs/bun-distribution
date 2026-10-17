@@ -1,12 +1,6 @@
 import { useState } from "react";
 import { clsx } from "clsx";
-import {
-  Input,
-  Label,
-  dialogManager,
-  useDialog,
-  Dialog,
-} from "@aphrody/m3-primitives";
+import { Input, Label, dialogManager, useDialog, Dialog } from "@aphrody/m3-primitives";
 import { useLibraryMutation } from "@aphrody/drive-client";
 import { useForm } from "react-hook-form";
 
@@ -25,20 +19,10 @@ const PRESET_COLORS = [
   "#6366F1", // Indigo
 ];
 
-const PRESET_ICONS = [
-  "Planet",
-  "Folder",
-  "Briefcase",
-  "House",
-  "Camera",
-  "MusicNotes",
-  "GameController",
-  "Code",
-];
+const PRESET_ICONS = ["Planet", "Folder", "Briefcase", "House", "Camera", "MusicNotes", "GameController", "Code"];
 
 export function useCreateSpaceDialog() {
-  return () =>
-    dialogManager.create((props) => <CreateSpaceDialog {...props} />);
+  return () => dialogManager.create(props => <CreateSpaceDialog {...props} />);
 }
 
 function CreateSpaceDialog(props: { id: number }) {
@@ -52,7 +36,7 @@ function CreateSpaceDialog(props: { id: number }) {
 
   const createSpace = useLibraryMutation("spaces.create");
 
-  const onSubmit = form.handleSubmit(async (data) => {
+  const onSubmit = form.handleSubmit(async data => {
     if (!data.name?.trim()) return;
 
     await createSpace.mutateAsync({
@@ -67,26 +51,17 @@ function CreateSpaceDialog(props: { id: number }) {
   });
 
   return (
-    <Dialog
-      form={form}
-      dialog={dialog}
-      title="Create space"
-      onSubmit={onSubmit}
-      ctaLabel="Create"
-    >
+    <Dialog form={form} dialog={dialog} title="Create space" onSubmit={onSubmit} ctaLabel="Create">
       <div className="space-y-4">
         <div>
           <Label>Space name</Label>
-          <Input
-            {...form.register("name", { required: true })}
-            placeholder="e.g., Work Files, Personal Photos"
-          />
+          <Input {...form.register("name", { required: true })} placeholder="e.g., Work Files, Personal Photos" />
         </div>
 
         <div>
           <Label>Color</Label>
           <div className="flex flex-wrap gap-2">
-            {PRESET_COLORS.map((color) => (
+            {PRESET_COLORS.map(color => (
               <button
                 key={color}
                 type="button"
@@ -94,9 +69,7 @@ function CreateSpaceDialog(props: { id: number }) {
                 onClick={() => setSelectedColor(color)}
                 className={clsx(
                   "h-8 w-8 rounded-full border-2 transition-all",
-                  selectedColor === color
-                    ? "scale-110 border-white"
-                    : "border-transparent",
+                  selectedColor === color ? "scale-110 border-white" : "border-transparent",
                 )}
                 style={{ backgroundColor: color }}
               />
@@ -107,7 +80,7 @@ function CreateSpaceDialog(props: { id: number }) {
         <div>
           <Label>Icon</Label>
           <div className="flex flex-wrap gap-2">
-            {PRESET_ICONS.map((icon) => (
+            {PRESET_ICONS.map(icon => (
               <button
                 key={icon}
                 type="button"

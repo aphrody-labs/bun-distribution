@@ -24,12 +24,7 @@ interface PromptClearAllButtonProps {
   className?: string;
 }
 
-export const PromptClearAllButton = ({
-  onClick,
-  disabled,
-  confirmClear,
-  className,
-}: PromptClearAllButtonProps) => {
+export const PromptClearAllButton = ({ onClick, disabled, confirmClear, className }: PromptClearAllButtonProps) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const handleClick = () => {
@@ -72,9 +67,7 @@ export const PromptClearAllButton = ({
         className="max-w-md"
         showClose={false}
       >
-        <div className="text-sm text-base-fg">
-          This clears the prompt and also removes the attached references.
-        </div>
+        <div className="text-sm text-base-fg">This clears the prompt and also removes the attached references.</div>
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setIsConfirmOpen(false)}>
             Cancel

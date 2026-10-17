@@ -5,11 +5,7 @@
     {
       "name": "system browser for other sites",
       "origins": {
-        "app": [
-          "https://example.com",
-          "https://*.example.com",
-          "http://127.0.0.1:*"
-        ],
+        "app": ["https://example.com", "https://*.example.com", "http://127.0.0.1:*"],
         "auth": ["https://accounts.google.com", "https://github.com/login/*"],
         "external": "system",
         "embeds": []
@@ -153,11 +149,7 @@
       "origins": {
         "app": ["https://example.com"],
         "auth": [],
-        "embeds": [
-          "https://www.youtube.com",
-          "https://www.google.com/maps/*",
-          "https://*.typeform.com"
-        ],
+        "embeds": ["https://www.youtube.com", "https://www.google.com/maps/*", "https://*.typeform.com"],
         "external": "system"
       },
       "extraAllowed": [],
@@ -311,10 +303,7 @@
       "name": "star segment in a path pattern",
       "origins": {
         "app": [],
-        "auth": [
-          "https://www.facebook.com/*/dialog/*",
-          "https://*.slack.com/openid/*"
-        ],
+        "auth": ["https://www.facebook.com/*/dialog/*", "https://*.slack.com/openid/*"],
         "embeds": [],
         "external": "system"
       },

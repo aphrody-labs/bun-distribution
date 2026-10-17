@@ -9,11 +9,37 @@ interface Functions {
   /** d2d1.dll!D2D1CreateDevice */
   D2D1CreateDevice(dxgiDevice: Win32Pointer, creationProperties: Win32Pointer, d2dDevice: Win32Pointer): number;
   /** d2d1.dll!D2D1CreateDeviceContext */
-  D2D1CreateDeviceContext(dxgiSurface: Win32Pointer, creationProperties: Win32Pointer, d2dDeviceContext: Win32Pointer): number;
+  D2D1CreateDeviceContext(
+    dxgiSurface: Win32Pointer,
+    creationProperties: Win32Pointer,
+    d2dDeviceContext: Win32Pointer,
+  ): number;
   /** d2d1.dll!D2D1CreateFactory */
-  D2D1CreateFactory(factoryType: number, riid: Win32Pointer, pFactoryOptions: Win32Pointer, ppIFactory: Win32Pointer): number;
+  D2D1CreateFactory(
+    factoryType: number,
+    riid: Win32Pointer,
+    pFactoryOptions: Win32Pointer,
+    ppIFactory: Win32Pointer,
+  ): number;
   /** d2d1.dll!D2D1GetGradientMeshInteriorPointsFromCoonsPatch */
-  D2D1GetGradientMeshInteriorPointsFromCoonsPatch(pPoint0: Win32Pointer, pPoint1: Win32Pointer, pPoint2: Win32Pointer, pPoint3: Win32Pointer, pPoint4: Win32Pointer, pPoint5: Win32Pointer, pPoint6: Win32Pointer, pPoint7: Win32Pointer, pPoint8: Win32Pointer, pPoint9: Win32Pointer, pPoint10: Win32Pointer, pPoint11: Win32Pointer, pTensorPoint11: Win32Pointer, pTensorPoint12: Win32Pointer, pTensorPoint21: Win32Pointer, pTensorPoint22: Win32Pointer): void;
+  D2D1GetGradientMeshInteriorPointsFromCoonsPatch(
+    pPoint0: Win32Pointer,
+    pPoint1: Win32Pointer,
+    pPoint2: Win32Pointer,
+    pPoint3: Win32Pointer,
+    pPoint4: Win32Pointer,
+    pPoint5: Win32Pointer,
+    pPoint6: Win32Pointer,
+    pPoint7: Win32Pointer,
+    pPoint8: Win32Pointer,
+    pPoint9: Win32Pointer,
+    pPoint10: Win32Pointer,
+    pPoint11: Win32Pointer,
+    pTensorPoint11: Win32Pointer,
+    pTensorPoint12: Win32Pointer,
+    pTensorPoint21: Win32Pointer,
+    pTensorPoint22: Win32Pointer,
+  ): void;
   /** d2d1.dll!D2D1InvertMatrix */
   D2D1InvertMatrix(matrix: Win32Pointer): number;
   /** d2d1.dll!D2D1IsMatrixInvertible */

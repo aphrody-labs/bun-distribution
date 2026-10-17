@@ -44,17 +44,13 @@ export function parseLink(link: string): OpenIntent | null {
   }
   if (url.protocol.toLowerCase() !== "aphrody:") return null;
   // `aphrody://ask?q=x`: WHATWG puts `ask` in host for special-less schemes only when `//` is present.
-  const segments = [url.hostname, ...url.pathname.split("/")]
-    .map((s) => decodeURIComponent(s))
-    .filter(Boolean);
+  const segments = [url.hostname, ...url.pathname.split("/")].map(s => decodeURIComponent(s)).filter(Boolean);
   const [head, ...rest] = segments;
   if (!head) return null;
   const name = head.toLowerCase();
   if (name === "ask") {
     const prompt = url.searchParams.get("q")?.trim();
-    return prompt
-      ? { kind: "ask", prompt }
-      : { kind: "navigate", destination: "agent" };
+    return prompt ? { kind: "ask", prompt } : { kind: "navigate", destination: "agent" };
   }
   if (name === "thread") {
     const id = rest[0]?.trim();
@@ -73,8 +69,7 @@ export function intentsOf(requests: OpenRequest[]): OpenIntent[] {
       const intent = parseLink(link);
       if (intent) intents.push(intent);
     }
-    if (request.files.length > 0)
-      intents.push({ kind: "files", paths: [...request.files] });
+    if (request.files.length > 0) intents.push({ kind: "files", paths: [...request.files] });
   }
   return intents;
 }
@@ -82,5 +77,5 @@ export function intentsOf(requests: OpenRequest[]): OpenIntent[] {
 /** Composer text for files opened with Aphrody: the agent reads them from their paths. */
 export function filesPrompt(paths: string[]): string {
   if (paths.length === 1) return `Open and summarize the file ${paths[0]}`;
-  return `Open and summarize these files:\n${paths.map((path) => `- ${path}`).join("\n")}`;
+  return `Open and summarize these files:\n${paths.map(path => `- ${path}`).join("\n")}`;
 }

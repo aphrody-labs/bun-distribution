@@ -13,8 +13,7 @@ export interface PlacementTimeSpan {
   excludeElementId?: string;
 }
 
-export type PlacementSubject =
-  { elementType: ElementType } | { trackType: TrackType };
+export type PlacementSubject = { elementType: ElementType } | { trackType: TrackType };
 
 export type PlacementStrategy =
   | { type: "explicit"; trackId: string }

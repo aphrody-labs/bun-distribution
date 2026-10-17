@@ -1,8 +1,5 @@
 import { EditorCore } from "../../../../core";
-import {
-  hasKeyframesForPath,
-  removeElementKeyframe,
-} from "../../../../animation";
+import { hasKeyframesForPath, removeElementKeyframe } from "../../../../animation";
 import { Command, type CommandResult } from "../../../base-command";
 import { updateElementInSceneTracks } from "../../../../timeline/track-element-update";
 import type { AnimationPath } from "../../../../animation/types";
@@ -40,9 +37,7 @@ function removeKeyframeAndPersist({
   // When clearing all keyframes, preserve the value at the playhead (what the user was seeing)
   const shouldPersistToBase = isChannelNowEmpty && valueAtPlayhead !== null;
 
-  const baseElement = shouldPersistToBase
-    ? target.setBaseValue({ value: valueAtPlayhead })
-    : element;
+  const baseElement = shouldPersistToBase ? target.setBaseValue({ value: valueAtPlayhead }) : element;
 
   return { ...baseElement, animations: nextAnimations };
 }
@@ -84,7 +79,7 @@ export class RemoveKeyframeCommand extends Command {
       tracks: this.savedState,
       trackId: this.trackId,
       elementId: this.elementId,
-      update: (element) =>
+      update: element =>
         removeKeyframeAndPersist({
           element,
           propertyPath: this.propertyPath,

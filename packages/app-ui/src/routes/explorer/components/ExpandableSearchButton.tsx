@@ -30,12 +30,7 @@ export function ExpandableSearchButton({
   // Collapse when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node) &&
-        isExpanded &&
-        !value
-      ) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node) && isExpanded && !value) {
         setIsExpanded(false);
       }
     };
@@ -75,9 +70,7 @@ export function ExpandableSearchButton({
         }}
         transition={{
           duration: m3Durations.medium2,
-          ease: isExpanded
-            ? m3Easings.emphasizedDecelerate
-            : m3Easings.emphasizedAccelerate,
+          ease: isExpanded ? m3Easings.emphasizedDecelerate : m3Easings.emphasizedAccelerate,
         }}
         className="overflow-hidden"
         onAnimationComplete={handleAnimationComplete}
@@ -94,11 +87,7 @@ export function ExpandableSearchButton({
                 ease: m3Easings.standard,
               }}
             >
-              <CircleButton
-                icon="search"
-                title="Search"
-                onClick={handleButtonClick}
-              />
+              <CircleButton icon="search" title="Search" onClick={handleButtonClick} />
             </motion.div>
           ) : (
             <motion.div

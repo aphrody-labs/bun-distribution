@@ -79,7 +79,7 @@ export const MorphingCard = () => {
           <h2>Detailed View</h2>
           <p>This is the expanded content showing the full detail surface.</p>
           <button
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
               setIsExpanded(false);
             }}
@@ -193,10 +193,10 @@ export const StepWizard = () => {
         {step === 2 && <div>Step 3: Confirm purchase</div>}
       </M3SharedAxis>
 
-      <button onClick={() => setStep((prev) => Math.max(0, prev - 1))}>
+      <button onClick={() => setStep(prev => Math.max(0, prev - 1))}>
         Back
       </button>
-      <button onClick={() => setStep((prev) => Math.min(2, prev + 1))}>
+      <button onClick={() => setStep(prev => Math.min(2, prev + 1))}>
         Next
       </button>
     </div>

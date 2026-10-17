@@ -41,15 +41,10 @@ export const dataTableFeatures = tableFeatures({
   paginatedRowModel: createPaginatedRowModel(),
 });
 export type DataTableFeatures = typeof dataTableFeatures;
-export type DataColumn<TData extends RowData = any> = ColumnDef<
-  DataTableFeatures,
-  TData,
-  any
->;
+export type DataColumn<TData extends RowData = any> = ColumnDef<DataTableFeatures, TData, any>;
 
 /** Column helper typed for DataTable: `const col = dataColumns<Person>(); col.accessor("name", { header: "Name" })`. */
-export const dataColumns = <TData extends RowData = any>() =>
-  createColumnHelper<DataTableFeatures, TData>();
+export const dataColumns = <TData extends RowData = any>() => createColumnHelper<DataTableFeatures, TData>();
 
 export interface DataTableProps<TData extends RowData = any> {
   data: TData[];
@@ -147,9 +142,7 @@ const s = {
 
 const SORT_MARK = { asc: " ▲", desc: " ▼" } as const;
 
-export function DataTable<TData extends RowData = any>(
-  props: DataTableProps<TData>,
-) {
+export function DataTable<TData extends RowData = any>(props: DataTableProps<TData>) {
   const {
     data,
     columns,
@@ -188,17 +181,15 @@ export function DataTable<TData extends RowData = any>(
     count: virtual ? rows.length : 0,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => rowHeight,
-    getItemKey: (index) => rows[index]?.id ?? index,
+    getItemKey: index => rows[index]?.id ?? index,
     overscan: virtual?.overscan ?? 8,
     initialRect: virtual ? { width: 0, height: virtual.height } : undefined,
   });
 
   const items = virtual ? virtualizer.getVirtualItems() : undefined;
-  const visible = items ? items.map((item) => rows[item.index]!) : rows;
+  const visible = items ? items.map(item => rows[item.index]!) : rows;
   const padTop = items?.[0]?.start ?? 0;
-  const padBottom = items?.length
-    ? virtualizer.getTotalSize() - items[items.length - 1]!.end
-    : 0;
+  const padBottom = items?.length ? virtualizer.getTotalSize() - items[items.length - 1]!.end : 0;
 
   return (
     <div className={className} style={s.root} data-m3-data-table="">
@@ -210,49 +201,28 @@ export function DataTable<TData extends RowData = any>(
           placeholder={searchLabel}
           style={s.search}
           value={String(table.store.state.globalFilter ?? "")}
-          onChange={(event) => table.setGlobalFilter(event.currentTarget.value)}
+          onChange={event => table.setGlobalFilter(event.currentTarget.value)}
         />
       )}
-      <div
-        ref={scrollRef}
-        style={
-          virtual ? { ...s.container, height: virtual.height } : s.container
-        }
-        data-m3-scroll=""
-      >
-        <table
-          style={s.table}
-          aria-rowcount={virtual ? rows.length + 1 : undefined}
-        >
+      <div ref={scrollRef} style={virtual ? { ...s.container, height: virtual.height } : s.container} data-m3-scroll="">
+        <table style={s.table} aria-rowcount={virtual ? rows.length + 1 : undefined}>
           {caption && <caption style={s.caption}>{caption}</caption>}
           <thead>
-            {table.getHeaderGroups().map((group) => (
+            {table.getHeaderGroups().map(group => (
               <tr key={group.id}>
-                {group.headers.map((header) => {
+                {group.headers.map(header => {
                   const sorted = header.column.getIsSorted();
-                  const label = header.isPlaceholder ? null : (
-                    <table.FlexRender header={header} />
-                  );
+                  const label = header.isPlaceholder ? null : <table.FlexRender header={header} />;
                   return (
                     <th
                       key={header.id}
                       scope="col"
                       colSpan={header.colSpan}
                       style={s.th}
-                      aria-sort={
-                        sorted === "asc"
-                          ? "ascending"
-                          : sorted === "desc"
-                            ? "descending"
-                            : undefined
-                      }
+                      aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : undefined}
                     >
                       {header.column.getCanSort() ? (
-                        <button
-                          type="button"
-                          style={s.sort}
-                          onClick={header.column.getToggleSortingHandler()}
-                        >
+                        <button type="button" style={s.sort} onClick={header.column.getToggleSortingHandler()}>
                           {label}
                           {sorted ? SORT_MARK[sorted] : null}
                         </button>
@@ -269,24 +239,17 @@ export function DataTable<TData extends RowData = any>(
             {padTop > 0 && (
               <tr aria-hidden="true">
                 {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label -- cellule de remplissage de virtualisation (ligne aria-hidden, sans contenu ni contrôle) */}
-                <td
-                  colSpan={columnCount}
-                  style={{ height: padTop, padding: 0 }}
-                />
+                <td colSpan={columnCount} style={{ height: padTop, padding: 0 }} />
               </tr>
             )}
-            {visible.map((row) => (
+            {visible.map(row => (
               <tr
                 key={row.id}
                 data-row-id={row.id}
-                onClick={
-                  onRowClick
-                    ? () => onRowClick(row.original as TData)
-                    : undefined
-                }
+                onClick={onRowClick ? () => onRowClick(row.original as TData) : undefined}
                 style={onRowClick ? { cursor: "pointer" } : undefined}
               >
-                {row.getAllCells().map((cell) => (
+                {row.getAllCells().map(cell => (
                   // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- cellule de données (td), pas un contrôle : son contenu est rendu par FlexRender
                   <td key={cell.id} style={s.td}>
                     <table.FlexRender cell={cell} />
@@ -297,18 +260,12 @@ export function DataTable<TData extends RowData = any>(
             {padBottom > 0 && (
               <tr aria-hidden="true">
                 {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label -- cellule de remplissage de virtualisation (ligne aria-hidden, sans contenu ni contrôle) */}
-                <td
-                  colSpan={columnCount}
-                  style={{ height: padBottom, padding: 0 }}
-                />
+                <td colSpan={columnCount} style={{ height: padBottom, padding: 0 }} />
               </tr>
             )}
             {rows.length === 0 && (
               <tr>
-                <td
-                  colSpan={columnCount}
-                  style={{ ...s.td, textAlign: "center" }}
-                >
+                <td colSpan={columnCount} style={{ ...s.td, textAlign: "center" }}>
                   {emptyLabel}
                 </td>
               </tr>
@@ -327,15 +284,9 @@ export function DataTable<TData extends RowData = any>(
             Previous
           </button>
           <span>
-            {table.store.state.pagination.pageIndex + 1} /{" "}
-            {table.getPageCount()}
+            {table.store.state.pagination.pageIndex + 1} / {table.getPageCount()}
           </span>
-          <button
-            type="button"
-            style={s.button}
-            disabled={!table.getCanNextPage()}
-            onClick={() => table.nextPage()}
-          >
+          <button type="button" style={s.button} disabled={!table.getCanNextPage()} onClick={() => table.nextPage()}>
             Next
           </button>
         </nav>

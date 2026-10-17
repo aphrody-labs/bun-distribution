@@ -3,6 +3,7 @@
   "version": "1.4.4",
   "private": true,
   "description": "DBXV2 reverse engineering for Shenron: typed bun:ffi and WebAssembly loaders over the bun-re DBXV2 surface (identify, CPK list/extract, EMB/EMD/ESK/gameplay JSON, ACB/AWB to WAV)",
+  "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -17,6 +18,5 @@
   },
   "devDependencies": {
     "@aphrody/bun-types": "catalog:"
-  },
-  "license": "Apache-2.0"
+  }
 }

@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import {
-  A2AClient,
-  A2A_METHODS,
-  TASK_STATE_VALUES,
-  type StreamResponse,
-} from "../src/index.ts";
+import { A2AClient, A2A_METHODS, TASK_STATE_VALUES, type StreamResponse } from "../src/index.ts";
 import {
   A2A_03_PROFILE,
   LEGACY_METHODS,
@@ -29,10 +24,7 @@ import { startFakeAgent, type FakeAgent } from "./fake-agent.ts";
 describe("method table", () => {
   test("every legacy method maps to a method of the 1.0 service", () => {
     for (const target of Object.values(LEGACY_METHODS)) {
-      expect(
-        target === "agent/card" ||
-          (A2A_METHODS as readonly string[]).includes(target),
-      ).toBe(true);
+      expect(target === "agent/card" || (A2A_METHODS as readonly string[]).includes(target)).toBe(true);
     }
     expect(LEGACY_METHODS["message/send"]).toBe("SendMessage");
     expect(LEGACY_METHODS["message/stream"]).toBe("SendStreamingMessage");
@@ -45,22 +37,14 @@ describe("task states", () => {
   test("legacy spellings and 1.0 names map both ways", () => {
     for (const state of TASK_STATE_VALUES) {
       for (const style of ["kebab", "snake"] as const) {
-        expect(legacyStateToTaskState(taskStateToLegacy(state, style))).toBe(
-          state,
-        );
+        expect(legacyStateToTaskState(taskStateToLegacy(state, style))).toBe(state);
       }
     }
-    expect(taskStateToLegacy("TASK_STATE_INPUT_REQUIRED", "kebab")).toBe(
-      "input-required",
-    );
-    expect(taskStateToLegacy("TASK_STATE_INPUT_REQUIRED", "snake")).toBe(
-      "input_required",
-    );
+    expect(taskStateToLegacy("TASK_STATE_INPUT_REQUIRED", "kebab")).toBe("input-required");
+    expect(taskStateToLegacy("TASK_STATE_INPUT_REQUIRED", "snake")).toBe("input_required");
     expect(taskStateToLegacy("TASK_STATE_UNSPECIFIED")).toBe("unknown");
     expect(legacyStateToTaskState("cancelled")).toBe("TASK_STATE_CANCELED");
-    expect(legacyStateToTaskState("TASK_STATE_WORKING")).toBe(
-      "TASK_STATE_WORKING",
-    );
+    expect(legacyStateToTaskState("TASK_STATE_WORKING")).toBe("TASK_STATE_WORKING");
     expect(legacyStateToTaskState("bogus")).toBe("TASK_STATE_UNSPECIFIED");
     expect(legacyStateToTaskState(undefined)).toBe("TASK_STATE_UNSPECIFIED");
   });
@@ -69,9 +53,7 @@ describe("task states", () => {
 describe("parts and messages", () => {
   test("kind and type discriminators both upgrade", () => {
     expect(upgradePart({ kind: "text", text: "a" })).toEqual({ text: "a" });
-    expect(
-      upgradePart({ type: "text", text: "b", metadata: { m: 1 } }),
-    ).toEqual({
+    expect(upgradePart({ type: "text", text: "b", metadata: { m: 1 } })).toEqual({
       text: "b",
       metadata: { m: 1 },
     });
@@ -105,12 +87,8 @@ describe("parts and messages", () => {
 
   test("malformed parts are rejected", () => {
     expect(() => upgradePart("text")).toThrow(TypeError);
-    expect(() => upgradePart({ kind: "video" })).toThrow(
-      /unsupported part kind/,
-    );
-    expect(() => upgradePart({ kind: "file", file: {} })).toThrow(
-      /bytes or a uri/,
-    );
+    expect(() => upgradePart({ kind: "video" })).toThrow(/unsupported part kind/);
+    expect(() => upgradePart({ kind: "file", file: {} })).toThrow(/bytes or a uri/);
     expect(() => upgradePart({ text: "a", url: "b" })).toThrow(/exactly one/);
   });
 
@@ -143,9 +121,7 @@ describe("parts and messages", () => {
       role: "ROLE_USER",
       metadata: { legacyRole: "system" },
     });
-    expect(() => upgradeMessage({ role: "user", parts: [] })).toThrow(
-      /must not be empty/,
-    );
+    expect(() => upgradeMessage({ role: "user", parts: [] })).toThrow(/must not be empty/);
   });
 
   test("push configs: schemes[] becomes a single scheme", () => {
@@ -217,17 +193,14 @@ describe("request upgrade", () => {
       },
       {
         newMessageId: () => "id",
-        peerForTarget: (t) => (t === "codex" ? "codex" : undefined),
+        peerForTarget: t => (t === "codex" ? "codex" : undefined),
       },
     );
     expect(call.params).toEqual({
       message: {
         messageId: "id",
         role: "ROLE_USER",
-        parts: [
-          { text: "run it" },
-          { data: { a: 1 }, mediaType: "application/json" },
-        ],
+        parts: [{ text: "run it" }, { data: { a: 1 }, mediaType: "application/json" }],
       },
       metadata: {
         target: "codex",
@@ -236,13 +209,10 @@ describe("request upgrade", () => {
         aphrody_peer: "codex",
       },
     });
-    expect(
-      upgradeRequest("message/send", { target: "rag", instruction: "x" })
-        .params,
-    ).not.toHaveProperty("metadata.aphrody_peer");
-    expect(() => upgradeRequest("message/send", {})).toThrow(
-      /instruction is required/,
+    expect(upgradeRequest("message/send", { target: "rag", instruction: "x" }).params).not.toHaveProperty(
+      "metadata.aphrody_peer",
     );
+    expect(() => upgradeRequest("message/send", {})).toThrow(/instruction is required/);
   });
 
   test("hub message metadata (targetAgent, sourceAgent, yolo) is lifted to the request", () => {
@@ -313,15 +283,11 @@ describe("request upgrade", () => {
         },
       },
     });
-    expect(() =>
-      upgradeRequest("tasks/update", { status: "completed" }),
-    ).toThrow(/Missing taskId/);
+    expect(() => upgradeRequest("tasks/update", { status: "completed" })).toThrow(/Missing taskId/);
   });
 
   test("task methods upgrade their identifiers and filters", () => {
-    expect(
-      upgradeRequest("tasks/get", { taskId: "a", historyLength: 2 }).params,
-    ).toEqual({
+    expect(upgradeRequest("tasks/get", { taskId: "a", historyLength: 2 }).params).toEqual({
       id: "a",
       historyLength: 2,
     });
@@ -335,9 +301,7 @@ describe("request upgrade", () => {
     expect(upgradeRequest("tasks/resubscribe", { id: "a" })).toMatchObject({
       method: "SubscribeToTask",
     });
-    expect(
-      upgradeRequest("tasks/list", { status: "working", pageSize: 5 }).params,
-    ).toEqual({
+    expect(upgradeRequest("tasks/list", { status: "working", pageSize: 5 }).params).toEqual({
       status: "TASK_STATE_WORKING",
       pageSize: 5,
     });
@@ -367,9 +331,7 @@ describe("request upgrade", () => {
         id: "c",
       }).params,
     ).toEqual({ taskId: "t", id: "c" });
-    expect(
-      upgradeRequest("tasks/pushNotificationConfig/list", { id: "t" }).params,
-    ).toEqual({
+    expect(upgradeRequest("tasks/pushNotificationConfig/list", { id: "t" }).params).toEqual({
       taskId: "t",
     });
   });
@@ -494,16 +456,12 @@ describe("response downgrade", () => {
       append: true,
       lastChunk: true,
     });
-    expect(() => downgradeStreamResponse({} as StreamResponse)).toThrow(
-      TypeError,
-    );
+    expect(() => downgradeStreamResponse({} as StreamResponse)).toThrow(TypeError);
   });
 
   test("send results: the task itself (0.3) or the hub's { taskId, status, response }", () => {
     const response = { task: task as never };
-    expect((downgradeSendResponse(response, A2A_03_PROFILE) as any).kind).toBe(
-      "task",
-    );
+    expect((downgradeSendResponse(response, A2A_03_PROFILE) as any).kind).toBe("task");
     const hub = downgradeSendResponse(response, SHENRON_HUB_PROFILE) as any;
     expect(hub).toMatchObject({
       taskId: "t1",
@@ -533,13 +491,11 @@ const request = (method: string, params: unknown, id: string | number = 1) => ({
   params,
 });
 const ok = (response: LegacyRpcResponse): any => {
-  if (!("result" in response))
-    throw new Error(`expected a result, got ${JSON.stringify(response)}`);
+  if (!("result" in response)) throw new Error(`expected a result, got ${JSON.stringify(response)}`);
   return response.result;
 };
 const failure = (response: LegacyRpcResponse) => {
-  if (!("error" in response))
-    throw new Error(`expected an error, got ${JSON.stringify(response)}`);
+  if (!("error" in response)) throw new Error(`expected an error, got ${JSON.stringify(response)}`);
   return response.error;
 };
 
@@ -558,11 +514,7 @@ describe("LegacyBridge over a 1.0 agent", () => {
   test("message/send is served by SendMessage and answered with a 0.3 task", async () => {
     const before = agent.requests.length;
     const reply = await bridge.handle(
-      request(
-        "message/send",
-        { message: { role: "user", parts: [{ kind: "text", text: "hello" }] } },
-        "abc",
-      ),
+      request("message/send", { message: { role: "user", parts: [{ kind: "text", text: "hello" }] } }, "abc"),
     );
     expect(reply.id).toBe("abc");
     const task = ok(reply);
@@ -575,7 +527,7 @@ describe("LegacyBridge over a 1.0 agent", () => {
       text: "echo: hello",
       mediaType: undefined,
     });
-    const sent = agent.requests.slice(before).find((r) => r.method === "POST")!;
+    const sent = agent.requests.slice(before).find(r => r.method === "POST")!;
     expect((sent.body as any).method).toBe("SendMessage");
     expect((sent.body as any).params.message.role).toBe("ROLE_USER");
     expect(sent.headers.get("a2a-version")).toBe("1.0");
@@ -625,41 +577,21 @@ describe("LegacyBridge over a 1.0 agent", () => {
       ),
     );
     expect(created.status.state).toBe("working");
-    expect(
-      ok(await bridge.handle(request("tasks/get", { id: created.id }))).id,
-    ).toBe(created.id);
-    const listed = ok(
-      await bridge.handle(request("tasks/list", { status: "working" })),
-    );
-    expect(listed.tasks.some((t: { id: string }) => t.id === created.id)).toBe(
-      true,
-    );
+    expect(ok(await bridge.handle(request("tasks/get", { id: created.id }))).id).toBe(created.id);
+    const listed = ok(await bridge.handle(request("tasks/list", { status: "working" })));
+    expect(listed.tasks.some((t: { id: string }) => t.id === created.id)).toBe(true);
     expect(listed.total).toBe(listed.tasks.length);
-    expect(
-      ok(await bridge.handle(request("tasks/cancel", { id: created.id })))
-        .status.state,
-    ).toBe("canceled");
-    expect(
-      failure(await bridge.handle(request("tasks/cancel", { id: created.id })))
-        .code,
-    ).toBe(-32002);
-    expect(listed.tasks.every((t: { kind: string }) => t.kind === "task")).toBe(
-      true,
-    );
+    expect(ok(await bridge.handle(request("tasks/cancel", { id: created.id }))).status.state).toBe("canceled");
+    expect(failure(await bridge.handle(request("tasks/cancel", { id: created.id }))).code).toBe(-32002);
+    expect(listed.tasks.every((t: { kind: string }) => t.kind === "task")).toBe(true);
   });
 
   test("tasks/list with a target keeps the tasks the executor tagged with it", async () => {
-    await bridge.handle(
-      request("message/send", { target: "ocr", instruction: "tagged" }),
-    );
+    await bridge.handle(request("message/send", { target: "ocr", instruction: "tagged" }));
     const all = ok(await bridge.handle(request("tasks/list", {})));
-    const tagged = ok(
-      await bridge.handle(request("tasks/list", { target: "ocr" })),
-    );
+    const tagged = ok(await bridge.handle(request("tasks/list", { target: "ocr" })));
     expect(tagged.total).toBeLessThan(all.total);
-    expect(tagged.tasks.every((t: any) => t.metadata?.target === "ocr")).toBe(
-      true,
-    );
+    expect(tagged.tasks.every((t: any) => t.metadata?.target === "ocr")).toBe(true);
     expect(tagged.total).toBeGreaterThanOrEqual(1);
   });
 
@@ -686,7 +618,7 @@ describe("LegacyBridge over a 1.0 agent", () => {
       ),
     );
     expect(updated.taskId).toBe(created.id);
-    const sent = agent.requests.slice(before).find((r) => r.method === "POST")!;
+    const sent = agent.requests.slice(before).find(r => r.method === "POST")!;
     expect((sent.body as any).params.message).toMatchObject({
       role: "ROLE_AGENT",
       taskId: created.id,
@@ -703,22 +635,12 @@ describe("LegacyBridge over a 1.0 agent", () => {
   test("message/stream and tasks/resubscribe stream legacy events as JSON-RPC responses", async () => {
     const events: LegacyRpcResponse[] = [];
     for await (const event of bridge.handleStream(
-      request(
-        "message/stream",
-        { message: { role: "user", parts: [{ kind: "text", text: "s" }] } },
-        7,
-      ),
+      request("message/stream", { message: { role: "user", parts: [{ kind: "text", text: "s" }] } }, 7),
     ))
       events.push(event);
-    expect(events.every((e) => e.id === 7 && "result" in e)).toBe(true);
-    const kinds = events.map((e) => (ok(e) as { kind: string }).kind);
-    expect(kinds).toEqual([
-      "task",
-      "status-update",
-      "artifact-update",
-      "artifact-update",
-      "status-update",
-    ]);
+    expect(events.every(e => e.id === 7 && "result" in e)).toBe(true);
+    const kinds = events.map(e => (ok(e) as { kind: string }).kind);
+    expect(kinds).toEqual(["task", "status-update", "artifact-update", "artifact-update", "status-update"]);
     expect(ok(events.at(-1)!)).toMatchObject({
       final: true,
       status: { state: "completed" },
@@ -733,14 +655,8 @@ describe("LegacyBridge over a 1.0 agent", () => {
       ),
     );
     const resub: LegacyRpcResponse[] = [];
-    for await (const event of bridge.handleStream(
-      request("tasks/resubscribe", { id: created.id }),
-    ))
-      resub.push(event);
-    expect(resub.map((e) => (ok(e) as { kind: string }).kind)).toEqual([
-      "task",
-      "status-update",
-    ]);
+    for await (const event of bridge.handleStream(request("tasks/resubscribe", { id: created.id }))) resub.push(event);
+    expect(resub.map(e => (ok(e) as { kind: string }).kind)).toEqual(["task", "status-update"]);
   });
 
   test("push notification config methods round-trip in the legacy shape", async () => {
@@ -782,13 +698,7 @@ describe("LegacyBridge over a 1.0 agent", () => {
         ),
       ).pushNotificationConfig.id,
     ).toBe(configId);
-    expect(
-      ok(
-        await bridge.handle(
-          request("tasks/pushNotificationConfig/list", { id: created.id }),
-        ),
-      ),
-    ).toHaveLength(1);
+    expect(ok(await bridge.handle(request("tasks/pushNotificationConfig/list", { id: created.id })))).toHaveLength(1);
     expect(
       ok(
         await bridge.handle(
@@ -799,13 +709,7 @@ describe("LegacyBridge over a 1.0 agent", () => {
         ),
       ),
     ).toEqual({});
-    expect(
-      ok(
-        await bridge.handle(
-          request("tasks/pushNotificationConfig/list", { id: created.id }),
-        ),
-      ),
-    ).toEqual([]);
+    expect(ok(await bridge.handle(request("tasks/pushNotificationConfig/list", { id: created.id })))).toEqual([]);
   });
 
   test("agent/card and the authenticated extended card keep the pre-1.0 transport members", async () => {
@@ -816,20 +720,13 @@ describe("LegacyBridge over a 1.0 agent", () => {
       preferredTransport: "JSONRPC",
       protocolVersion: "1.0",
     });
-    expect(card.additionalInterfaces).toEqual([
-      { url: `${agent.url}/rest`, transport: "HTTP+JSON" },
-    ]);
+    expect(card.additionalInterfaces).toEqual([{ url: `${agent.url}/rest`, transport: "HTTP+JSON" }]);
     expect(card.supportsAuthenticatedExtendedCard).toBe(true);
-    expect(
-      ok(await bridge.handle(request("agent/getAuthenticatedExtendedCard", {})))
-        .description,
-    ).toBe("extended");
+    expect(ok(await bridge.handle(request("agent/getAuthenticatedExtendedCard", {}))).description).toBe("extended");
   });
 
   test("errors keep their A2A codes; protocol faults use JSON-RPC codes", async () => {
-    const missing = failure(
-      await bridge.handle(request("tasks/get", { id: "ghost" })),
-    );
+    const missing = failure(await bridge.handle(request("tasks/get", { id: "ghost" })));
     expect(missing.code).toBe(-32001);
     expect(missing.message).toContain("ghost");
     expect(Array.isArray(missing.data)).toBe(true);
@@ -839,48 +736,27 @@ describe("LegacyBridge over a 1.0 agent", () => {
           request("message/send", {
             message: {
               role: "user",
-              parts: [
-                { kind: "text", text: "fail:CONTENT_TYPE_NOT_SUPPORTED" },
-              ],
+              parts: [{ kind: "text", text: "fail:CONTENT_TYPE_NOT_SUPPORTED" }],
             },
           }),
         ),
       ).code,
     ).toBe(-32005);
-    expect(failure(await bridge.handle(request("tasks/nope", {}))).code).toBe(
-      -32601,
-    );
-    expect(failure(await bridge.handle(request("tasks/get", {}))).code).toBe(
+    expect(failure(await bridge.handle(request("tasks/nope", {}))).code).toBe(-32601);
+    expect(failure(await bridge.handle(request("tasks/get", {}))).code).toBe(-32602);
+    expect(failure(await bridge.handle(request("message/send", { message: { role: "user", parts: [] } }))).code).toBe(
       -32602,
     );
-    expect(
-      failure(
-        await bridge.handle(
-          request("message/send", { message: { role: "user", parts: [] } }),
-        ),
-      ).code,
-    ).toBe(-32602);
     expect(failure(await bridge.handle(null)).code).toBe(-32600);
-    expect(
-      failure(
-        await bridge.handle({ jsonrpc: "1.0", id: 1, method: "tasks/get" }),
-      ).code,
-    ).toBe(-32600);
-    expect(
-      failure(await bridge.handle(request("message/stream", {}))).code,
-    ).toBe(-32600);
+    expect(failure(await bridge.handle({ jsonrpc: "1.0", id: 1, method: "tasks/get" })).code).toBe(-32600);
+    expect(failure(await bridge.handle(request("message/stream", {}))).code).toBe(-32600);
     const wrongMode: LegacyRpcResponse[] = [];
-    for await (const event of bridge.handleStream(
-      request("tasks/get", { id: "x" }),
-    ))
-      wrongMode.push(event);
+    for await (const event of bridge.handleStream(request("tasks/get", { id: "x" }))) wrongMode.push(event);
     expect(failure(wrongMode[0]!).code).toBe(-32600);
   });
 
   test("an unreachable upstream is an internal error, never a throw", async () => {
-    const dead = new LegacyBridge(
-      new A2AClient({ url: "http://127.0.0.1:1/rpc", timeoutMs: 2000 }),
-    );
+    const dead = new LegacyBridge(new A2AClient({ url: "http://127.0.0.1:1/rpc", timeoutMs: 2000 }));
     const reply = await dead.handle(request("tasks/get", { id: "x" }));
     expect(failure(reply).code).toBe(-32603);
     expect(failure(reply).message).toContain("Internal error");

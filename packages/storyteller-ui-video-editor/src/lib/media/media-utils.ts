@@ -6,20 +6,12 @@ import type { MediaAsset, MediaType } from "./types";
 
 export const SUPPORTS_AUDIO: readonly MediaType[] = ["audio", "video"];
 
-export function mediaSupportsAudio({
-  media,
-}: {
-  media: MediaAsset | null | undefined;
-}): boolean {
+export function mediaSupportsAudio({ media }: { media: MediaAsset | null | undefined }): boolean {
   if (!media) return false;
   return SUPPORTS_AUDIO.includes(media.type);
 }
 
-export const getMediaTypeFromFile = ({
-  file,
-}: {
-  file: File;
-}): MediaType | null => {
+export const getMediaTypeFromFile = ({ file }: { file: File }): MediaType | null => {
   const { type } = file;
 
   if (type.startsWith("image/")) {

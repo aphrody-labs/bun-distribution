@@ -12,9 +12,7 @@ import {
 describe("redis", () => {
   test("URL resolution order and fallback", () => {
     expect(resolveRedisUrl({ env: {} })).toBe(DEFAULT_REDIS_URL);
-    expect(resolveRedisUrl({ env: { VALKEY_URL: "redis://v:6379" } })).toBe(
-      "redis://v:6379",
-    );
+    expect(resolveRedisUrl({ env: { VALKEY_URL: "redis://v:6379" } })).toBe("redis://v:6379");
     expect(
       resolveRedisUrl({
         env: { REDIS_URL: "redis://r:6379", VALKEY_URL: "redis://v:6379" },

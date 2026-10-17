@@ -55,12 +55,13 @@ async function discovered(service: string, entry: Service): Promise<string[]> {
     const json = JSON.parse(body) as { urls: Array<{ url: string; protocol: string; active: boolean }> };
     return json.urls.filter(m => m.protocol === "https" && m.active).map(m => m.url.replace(/\/$/, ""));
   }
-  if (service === "cachyos")
-    return [...body.matchAll(/^#?\s*Server\s*=\s*(https:\/\/\S+?)\/repo\//gm)].map(m => m[1]!);
+  if (service === "cachyos") return [...body.matchAll(/^#?\s*Server\s*=\s*(https:\/\/\S+?)\/repo\//gm)].map(m => m[1]!);
   if (service === "libreboot")
-    return [...new Set([...body.matchAll(/https:\/\/[A-Za-z0-9.-]+\/[^"<\s]*libreboot\/?/g)].map(m => m[0].replace(/\/$/, "")))].filter(
-      url => !url.includes("codeberg.org") && !url.includes("spi-inc.org"),
-    );
+    return [
+      ...new Set(
+        [...body.matchAll(/https:\/\/[A-Za-z0-9.-]+\/[^"<\s]*libreboot\/?/g)].map(m => m[0].replace(/\/$/, "")),
+      ),
+    ].filter(url => !url.includes("codeberg.org") && !url.includes("spi-inc.org"));
   return [];
 }
 
@@ -108,8 +109,20 @@ export async function probeMirrors(service?: string, concurrency = 16): Promise<
         status = 0;
       }
       const ok = status > 0 && status < 500 ? 1 : 0;
-      Object.assign(row, { ok, status, latencyMs: Math.round(performance.now() - started), checkedAt: new Date().toISOString() });
-      update.run({ ok, status, latencyMs: row.latencyMs, checkedAt: row.checkedAt, service: row.service, url: row.url });
+      Object.assign(row, {
+        ok,
+        status,
+        latencyMs: Math.round(performance.now() - started),
+        checkedAt: new Date().toISOString(),
+      });
+      update.run({
+        ok,
+        status,
+        latencyMs: row.latencyMs,
+        checkedAt: row.checkedAt,
+        service: row.service,
+        url: row.url,
+      });
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, rows.length) }, worker));
@@ -119,14 +132,18 @@ export async function probeMirrors(service?: string, concurrency = 16): Promise<
 /** Healthy endpoints of a service, fastest first (seed order when never probed). */
 export function bestMirrors(service: string): string[] {
   const rows = db()
-    .query<Endpoint, [string]>("SELECT * FROM endpoints WHERE service = ? ORDER BY ok DESC, latencyMs IS NULL, latencyMs")
+    .query<Endpoint, [string]>(
+      "SELECT * FROM endpoints WHERE service = ? ORDER BY ok DESC, latencyMs IS NULL, latencyMs",
+    )
     .all(service);
   return rows.filter(row => row.ok !== 0).map(row => row.url);
 }
 
 export function listMirrors(service?: string): Endpoint[] {
   return db()
-    .query<Endpoint, [string, string]>("SELECT * FROM endpoints WHERE (?1 = '' OR service = ?2) ORDER BY service, ok DESC, latencyMs")
+    .query<Endpoint, [string, string]>(
+      "SELECT * FROM endpoints WHERE (?1 = '' OR service = ?2) ORDER BY service, ok DESC, latencyMs",
+    )
     .all(service ?? "", service ?? "");
 }
 
@@ -134,7 +151,7 @@ export function listMirrors(service?: string): Endpoint[] {
 export async function fetchFromMirrors(service: string, path: string): Promise<Response> {
   const mirrors = bestMirrors(service);
   const errors: string[] = [];
-  for (const base of mirrors.length ? mirrors : (await seed())[service]?.urls ?? []) {
+  for (const base of mirrors.length ? mirrors : ((await seed())[service]?.urls ?? [])) {
     try {
       const response = await fetch(`${base}${path}`, { headers: { "user-agent": "bep" } });
       if (response.ok) return response;

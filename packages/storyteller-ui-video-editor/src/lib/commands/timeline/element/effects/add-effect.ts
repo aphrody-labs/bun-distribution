@@ -5,13 +5,7 @@ import { updateElementInSceneTracks } from "../../../../timeline/track-element-u
 import type { SceneTracks, VisualElement } from "../../../../timeline/types";
 import { buildDefaultEffectInstance } from "../../../../effects";
 
-function addEffectToElement({
-  element,
-  effectType,
-}: {
-  element: VisualElement;
-  effectType: string;
-}): VisualElement {
+function addEffectToElement({ element, effectType }: { element: VisualElement; effectType: string }): VisualElement {
   const instance = buildDefaultEffectInstance({ effectType });
   const currentEffects = element.effects ?? [];
   return { ...element, effects: [...currentEffects, instance] };
@@ -24,15 +18,7 @@ export class AddClipEffectCommand extends Command {
   private readonly elementId: string;
   private readonly effectType: string;
 
-  constructor({
-    trackId,
-    elementId,
-    effectType,
-  }: {
-    trackId: string;
-    elementId: string;
-    effectType: string;
-  }) {
+  constructor({ trackId, elementId, effectType }: { trackId: string; elementId: string; effectType: string }) {
     super();
     this.trackId = trackId;
     this.elementId = elementId;
@@ -48,7 +34,7 @@ export class AddClipEffectCommand extends Command {
       trackId: this.trackId,
       elementId: this.elementId,
       elementPredicate: isVisualElement,
-      update: (element) => {
+      update: element => {
         const updated = addEffectToElement({
           element: element as VisualElement,
           effectType: this.effectType,

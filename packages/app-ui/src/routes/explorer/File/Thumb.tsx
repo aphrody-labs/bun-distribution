@@ -6,11 +6,7 @@ import { beardedIconUrls } from "@aphrody/assets/svgs/ext/Extras/urls";
 import type { File } from "@aphrody/drive-client";
 import { FileThumb } from "@aphrody/m3-explorer";
 import { ThumbstripScrubber } from "./ThumbstripScrubber";
-import {
-  getFileKindForIcon,
-  getVirtualMetadata,
-  getContentKind,
-} from "@aphrody/drive-client";
+import { getFileKindForIcon, getVirtualMetadata, getContentKind } from "@aphrody/drive-client";
 import { useServer } from "../../../contexts/ServerContext";
 
 interface ThumbProps {
@@ -37,12 +33,8 @@ export const Thumb = memo(function Thumb({
   const cacheKey = `${file.id}-${size}`;
   const { buildSidecarUrl } = useServer();
 
-  const [thumbLoaded, setThumbLoaded] = useState(
-    () => thumbLoadedCache.get(cacheKey) || false,
-  );
-  const [thumbError, setThumbError] = useState(
-    () => thumbErrorCache.get(cacheKey) || false,
-  );
+  const [thumbLoaded, setThumbLoaded] = useState(() => thumbLoadedCache.get(cacheKey) || false);
+  const [thumbError, setThumbError] = useState(() => thumbErrorCache.get(cacheKey) || false);
 
   // Update cache when state changes
   useEffect(() => {
@@ -59,7 +51,7 @@ export const Thumb = memo(function Thumb({
 
   // Check if this is a video with thumbstrip sidecar
   const isVideo = getContentKind(file) === "video";
-  const hasThumbstrip = file.sidecars?.some((s) => s.kind === "thumbstrip");
+  const hasThumbstrip = file.sidecars?.some(s => s.kind === "thumbstrip");
 
   // Get appropriate thumbnail URL from sidecars based on size
   const getThumbnailUrl = (targetSize: number) => {
@@ -69,7 +61,7 @@ export const Thumb = memo(function Thumb({
     }
 
     // Find thumbnail sidecar closest to requested size
-    const thumbnails = file.sidecars.filter((s) => s.kind === "thumb");
+    const thumbnails = file.sidecars.filter(s => s.kind === "thumb");
 
     if (thumbnails.length === 0) {
       return null;
@@ -81,12 +73,8 @@ export const Thumb = memo(function Thumb({
 
     const thumbnail = thumbnails.toSorted((a, b) => {
       // Parse variant (e.g., "grid@1x", "detail@1x") to get size and scale
-      const aSize = parseInt(
-        a.variant.split("x")[0]?.replace(/\D/g, "") || "0",
-      );
-      const bSize = parseInt(
-        b.variant.split("x")[0]?.replace(/\D/g, "") || "0",
-      );
+      const aSize = parseInt(a.variant.split("x")[0]?.replace(/\D/g, "") || "0");
+      const bSize = parseInt(b.variant.split("x")[0]?.replace(/\D/g, "") || "0");
 
       // Extract scale factor (1x, 2x, 3x) from variants like "grid@1x" or "detail@2x"
       const aScaleMatch = a.variant.match(/@(\d+)x/);
@@ -99,19 +87,10 @@ export const Thumb = memo(function Thumb({
       const bPenalty = (bScale - 1) * 100;
 
       // Find closest match to preferred size, with scale penalty
-      return (
-        Math.abs(aSize - preferredSize) +
-        aPenalty -
-        (Math.abs(bSize - preferredSize) + bPenalty)
-      );
+      return Math.abs(aSize - preferredSize) + aPenalty - (Math.abs(bSize - preferredSize) + bPenalty);
     })[0];
 
-    return buildSidecarUrl(
-      file.content_identity.uuid,
-      thumbnail.kind,
-      thumbnail.variant,
-      thumbnail.format,
-    );
+    return buildSidecarUrl(file.content_identity.uuid, thumbnail.kind, thumbnail.variant, thumbnail.format);
   };
 
   const thumbnailSrc = getThumbnailUrl(size);
@@ -136,26 +115,17 @@ export const Thumb = memo(function Thumb({
 
   // Get bearded icon for extension overlay
   const beardedIconName = getBeardedIcon(file.extension, file.name);
-  const beardedIconUrl = beardedIconName
-    ? beardedIconUrls[beardedIconName]
-    : null;
+  const beardedIconUrl = beardedIconName ? beardedIconUrls[beardedIconName] : null;
 
   // Only show bearded badge if using generic Document icon (not Spacedrive variants)
   const showBeardedBadge =
     beardedIconUrl &&
     file.kind === "File" &&
     isUsingGenericIcon &&
-    (contentKind === "code" ||
-      contentKind === "document" ||
-      contentKind === "config");
+    (contentKind === "code" || contentKind === "document" || contentKind === "config");
 
   return (
-    <div
-      className={clsx(
-        "relative pointer-events-none flex shrink-0 grow-0 items-center justify-center",
-        className,
-      )}
-    >
+    <div className={clsx("relative pointer-events-none flex shrink-0 grow-0 items-center justify-center", className)}>
       <FileThumb
         iconSrc={icon}
         thumbnailSrc={thumbnailSrc}
@@ -176,15 +146,7 @@ export const Thumb = memo(function Thumb({
   );
 });
 
-export function Icon({
-  file,
-  size = 24,
-  className,
-}: {
-  file: File;
-  size?: number;
-  className?: string;
-}) {
+export function Icon({ file, size = 24, className }: { file: File; size?: number; className?: string }) {
   // Check for virtual file icon override
   const virtualMetadata = getVirtualMetadata(file);
   const iconOverride = virtualMetadata?.iconUrl;
@@ -202,12 +164,5 @@ export function Icon({
       file.kind === "Directory",
     );
 
-  return (
-    <img
-      src={icon}
-      alt=""
-      className={className}
-      style={{ width: size, height: size }}
-    />
-  );
+  return <img src={icon} alt="" className={className} style={{ width: size, height: size }} />;
 }

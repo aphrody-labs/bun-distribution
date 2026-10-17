@@ -33,11 +33,32 @@ interface Functions {
   /** imm32.dll!ImmEnumInputContext */
   ImmEnumInputContext(idThread: number, lpfn: Win32Callback, lParam: number | bigint): number;
   /** imm32.dll!ImmEnumRegisterWordA */
-  ImmEnumRegisterWordA(param0: Win32Pointer, param1: Win32Callback, lpszReading: string | Win32Pointer, param3: number, lpszRegister: string | Win32Pointer, param5: Win32Pointer): number;
+  ImmEnumRegisterWordA(
+    param0: Win32Pointer,
+    param1: Win32Callback,
+    lpszReading: string | Win32Pointer,
+    param3: number,
+    lpszRegister: string | Win32Pointer,
+    param5: Win32Pointer,
+  ): number;
   /** imm32.dll!ImmEnumRegisterWordW */
-  ImmEnumRegisterWordW(param0: Win32Pointer, param1: Win32Callback, lpszReading: string | Win32Pointer, param3: number, lpszRegister: string | Win32Pointer, param5: Win32Pointer): number;
+  ImmEnumRegisterWordW(
+    param0: Win32Pointer,
+    param1: Win32Callback,
+    lpszReading: string | Win32Pointer,
+    param3: number,
+    lpszRegister: string | Win32Pointer,
+    param5: Win32Pointer,
+  ): number;
   /** imm32.dll!ImmEnumRegisterWordW */
-  ImmEnumRegisterWord(param0: Win32Pointer, param1: Win32Callback, lpszReading: string | Win32Pointer, param3: number, lpszRegister: string | Win32Pointer, param5: Win32Pointer): number;
+  ImmEnumRegisterWord(
+    param0: Win32Pointer,
+    param1: Win32Callback,
+    lpszReading: string | Win32Pointer,
+    param3: number,
+    lpszRegister: string | Win32Pointer,
+    param5: Win32Pointer,
+  ): number;
   /** imm32.dll!ImmEscapeA */
   ImmEscapeA(param0: Win32Pointer, param1: Win32Pointer, param2: number, param3: Win32Pointer): number | bigint;
   /** imm32.dll!ImmEscapeW */
@@ -77,11 +98,32 @@ interface Functions {
   /** imm32.dll!ImmGetContext */
   ImmGetContext(param0: Win32Pointer): number | null;
   /** imm32.dll!ImmGetConversionListA */
-  ImmGetConversionListA(param0: Win32Pointer, param1: Win32Pointer, lpSrc: string | Win32Pointer, lpDst: Win32Pointer, dwBufLen: number, uFlag: number): number;
+  ImmGetConversionListA(
+    param0: Win32Pointer,
+    param1: Win32Pointer,
+    lpSrc: string | Win32Pointer,
+    lpDst: Win32Pointer,
+    dwBufLen: number,
+    uFlag: number,
+  ): number;
   /** imm32.dll!ImmGetConversionListW */
-  ImmGetConversionListW(param0: Win32Pointer, param1: Win32Pointer, lpSrc: string | Win32Pointer, lpDst: Win32Pointer, dwBufLen: number, uFlag: number): number;
+  ImmGetConversionListW(
+    param0: Win32Pointer,
+    param1: Win32Pointer,
+    lpSrc: string | Win32Pointer,
+    lpDst: Win32Pointer,
+    dwBufLen: number,
+    uFlag: number,
+  ): number;
   /** imm32.dll!ImmGetConversionListW */
-  ImmGetConversionList(param0: Win32Pointer, param1: Win32Pointer, lpSrc: string | Win32Pointer, lpDst: Win32Pointer, dwBufLen: number, uFlag: number): number;
+  ImmGetConversionList(
+    param0: Win32Pointer,
+    param1: Win32Pointer,
+    lpSrc: string | Win32Pointer,
+    lpDst: Win32Pointer,
+    dwBufLen: number,
+    uFlag: number,
+  ): number;
   /** imm32.dll!ImmGetConversionStatus */
   ImmGetConversionStatus(param0: Win32Pointer, lpfdwConversion: Win32Pointer, lpfdwSentence: Win32Pointer): number;
   /** imm32.dll!ImmGetDefaultIMEWnd */
@@ -113,11 +155,32 @@ interface Functions {
   /** imm32.dll!ImmGetIMEFileNameW */
   ImmGetIMEFileName(param0: Win32Pointer, lpszFileName: string | Win32Pointer, uBufLen: number): number;
   /** imm32.dll!ImmGetImeMenuItemsA */
-  ImmGetImeMenuItemsA(param0: Win32Pointer, param1: number, param2: number, lpImeParentMenu: Win32Pointer, lpImeMenu: Win32Pointer, dwSize: number): number;
+  ImmGetImeMenuItemsA(
+    param0: Win32Pointer,
+    param1: number,
+    param2: number,
+    lpImeParentMenu: Win32Pointer,
+    lpImeMenu: Win32Pointer,
+    dwSize: number,
+  ): number;
   /** imm32.dll!ImmGetImeMenuItemsW */
-  ImmGetImeMenuItemsW(param0: Win32Pointer, param1: number, param2: number, lpImeParentMenu: Win32Pointer, lpImeMenu: Win32Pointer, dwSize: number): number;
+  ImmGetImeMenuItemsW(
+    param0: Win32Pointer,
+    param1: number,
+    param2: number,
+    lpImeParentMenu: Win32Pointer,
+    lpImeMenu: Win32Pointer,
+    dwSize: number,
+  ): number;
   /** imm32.dll!ImmGetImeMenuItemsW */
-  ImmGetImeMenuItems(param0: Win32Pointer, param1: number, param2: number, lpImeParentMenu: Win32Pointer, lpImeMenu: Win32Pointer, dwSize: number): number;
+  ImmGetImeMenuItems(
+    param0: Win32Pointer,
+    param1: number,
+    param2: number,
+    lpImeParentMenu: Win32Pointer,
+    lpImeMenu: Win32Pointer,
+    dwSize: number,
+  ): number;
   /** imm32.dll!ImmGetOpenStatus */
   ImmGetOpenStatus(param0: Win32Pointer): number;
   /** imm32.dll!ImmGetProperty */
@@ -155,11 +218,26 @@ interface Functions {
   /** imm32.dll!ImmReSizeIMCC */
   ImmReSizeIMCC(param0: Win32Pointer, param1: number): number | null;
   /** imm32.dll!ImmRegisterWordA */
-  ImmRegisterWordA(param0: Win32Pointer, lpszReading: string | Win32Pointer, param2: number, lpszRegister: string | Win32Pointer): number;
+  ImmRegisterWordA(
+    param0: Win32Pointer,
+    lpszReading: string | Win32Pointer,
+    param2: number,
+    lpszRegister: string | Win32Pointer,
+  ): number;
   /** imm32.dll!ImmRegisterWordW */
-  ImmRegisterWordW(param0: Win32Pointer, lpszReading: string | Win32Pointer, param2: number, lpszRegister: string | Win32Pointer): number;
+  ImmRegisterWordW(
+    param0: Win32Pointer,
+    lpszReading: string | Win32Pointer,
+    param2: number,
+    lpszRegister: string | Win32Pointer,
+  ): number;
   /** imm32.dll!ImmRegisterWordW */
-  ImmRegisterWord(param0: Win32Pointer, lpszReading: string | Win32Pointer, param2: number, lpszRegister: string | Win32Pointer): number;
+  ImmRegisterWord(
+    param0: Win32Pointer,
+    lpszReading: string | Win32Pointer,
+    param2: number,
+    lpszRegister: string | Win32Pointer,
+  ): number;
   /** imm32.dll!ImmReleaseContext */
   ImmReleaseContext(param0: Win32Pointer, param1: Win32Pointer): number;
   /** imm32.dll!ImmRequestMessageA */
@@ -177,11 +255,32 @@ interface Functions {
   /** imm32.dll!ImmSetCompositionFontW */
   ImmSetCompositionFont(param0: Win32Pointer, lplf: Win32Pointer): number;
   /** imm32.dll!ImmSetCompositionStringA */
-  ImmSetCompositionStringA(param0: Win32Pointer, dwIndex: number, lpComp: Win32Pointer, dwCompLen: number, lpRead: Win32Pointer, dwReadLen: number): number;
+  ImmSetCompositionStringA(
+    param0: Win32Pointer,
+    dwIndex: number,
+    lpComp: Win32Pointer,
+    dwCompLen: number,
+    lpRead: Win32Pointer,
+    dwReadLen: number,
+  ): number;
   /** imm32.dll!ImmSetCompositionStringW */
-  ImmSetCompositionStringW(param0: Win32Pointer, dwIndex: number, lpComp: Win32Pointer, dwCompLen: number, lpRead: Win32Pointer, dwReadLen: number): number;
+  ImmSetCompositionStringW(
+    param0: Win32Pointer,
+    dwIndex: number,
+    lpComp: Win32Pointer,
+    dwCompLen: number,
+    lpRead: Win32Pointer,
+    dwReadLen: number,
+  ): number;
   /** imm32.dll!ImmSetCompositionStringW */
-  ImmSetCompositionString(param0: Win32Pointer, dwIndex: number, lpComp: Win32Pointer, dwCompLen: number, lpRead: Win32Pointer, dwReadLen: number): number;
+  ImmSetCompositionString(
+    param0: Win32Pointer,
+    dwIndex: number,
+    lpComp: Win32Pointer,
+    dwCompLen: number,
+    lpRead: Win32Pointer,
+    dwReadLen: number,
+  ): number;
   /** imm32.dll!ImmSetCompositionWindow */
   ImmSetCompositionWindow(param0: Win32Pointer, lpCompForm: Win32Pointer): number;
   /** imm32.dll!ImmSetConversionStatus */
@@ -201,11 +300,26 @@ interface Functions {
   /** imm32.dll!ImmUnlockIMCC */
   ImmUnlockIMCC(param0: Win32Pointer): number;
   /** imm32.dll!ImmUnregisterWordA */
-  ImmUnregisterWordA(param0: Win32Pointer, lpszReading: string | Win32Pointer, param2: number, lpszUnregister: string | Win32Pointer): number;
+  ImmUnregisterWordA(
+    param0: Win32Pointer,
+    lpszReading: string | Win32Pointer,
+    param2: number,
+    lpszUnregister: string | Win32Pointer,
+  ): number;
   /** imm32.dll!ImmUnregisterWordW */
-  ImmUnregisterWordW(param0: Win32Pointer, lpszReading: string | Win32Pointer, param2: number, lpszUnregister: string | Win32Pointer): number;
+  ImmUnregisterWordW(
+    param0: Win32Pointer,
+    lpszReading: string | Win32Pointer,
+    param2: number,
+    lpszUnregister: string | Win32Pointer,
+  ): number;
   /** imm32.dll!ImmUnregisterWordW */
-  ImmUnregisterWord(param0: Win32Pointer, lpszReading: string | Win32Pointer, param2: number, lpszUnregister: string | Win32Pointer): number;
+  ImmUnregisterWord(
+    param0: Win32Pointer,
+    lpszReading: string | Win32Pointer,
+    param2: number,
+    lpszUnregister: string | Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

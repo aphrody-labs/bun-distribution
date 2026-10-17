@@ -9,10 +9,7 @@ const scratch = mkdtempSync(join(tmpdir(), "m3-token-catalog-"));
 let fixtures = 0;
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 
-function fixture(
-  exports: Record<string, unknown>,
-  files: Record<string, string>,
-): string {
+function fixture(exports: Record<string, unknown>, files: Record<string, string>): string {
   const root = join(scratch, String(fixtures++));
   const pkg = join(root, "packages/m3-tokens");
   mkdirSync(pkg, { recursive: true });
@@ -38,13 +35,11 @@ describe("the repository token catalogue", () => {
       expect(tokens[0]?.source).toBe("packages/m3-tokens/src/expressive.css");
     }
     expect(lookupTokens(names[1]!)[0]?.value).toBe("0.6");
-    const input = names.map((name) => `var(${name})`).join(" ");
+    const input = names.map(name => `var(${name})`).join(" ");
     expect(validateTokens(input)).toEqual({ checked: names, unknown: [] });
-    expect(
-      validateTokens(
-        `${input} var(--md-sys-motion-spring-expressive-fast-spatial-dampng)`,
-      ).unknown,
-    ).toEqual(["--md-sys-motion-spring-expressive-fast-spatial-dampng"]);
+    expect(validateTokens(`${input} var(--md-sys-motion-spring-expressive-fast-spatial-dampng)`).unknown).toEqual([
+      "--md-sys-motion-spring-expressive-fast-spatial-dampng",
+    ]);
   });
 
   test("base tokens, breakpoints and dynamic colour roles remain available without duplicates", () => {
@@ -54,7 +49,7 @@ describe("the repository token catalogue", () => {
       "packages/m3-tokens/src/dynamic-color.ts",
     );
     const tokens = loadTokens();
-    expect(new Set(tokens.map((token) => token.name)).size).toBe(tokens.length);
+    expect(new Set(tokens.map(token => token.name)).size).toBe(tokens.length);
   });
 });
 
@@ -102,22 +97,11 @@ describe("exported token sources", () => {
       },
     ]);
     expect(
-      validateTokens(
-        "var(--md-sys-shape-corner-large-start) var(--md-sys-color-surface-bright)",
-        root,
-      ).unknown,
+      validateTokens("var(--md-sys-shape-corner-large-start) var(--md-sys-color-surface-bright)", root).unknown,
     ).toEqual([]);
     expect(
-      validateTokens(
-        "--md-unexported --md-commented-out --md-not-css --md-sys-color-hidden-role",
-        root,
-      ).unknown,
-    ).toEqual([
-      "--md-unexported",
-      "--md-commented-out",
-      "--md-not-css",
-      "--md-sys-color-hidden-role",
-    ]);
+      validateTokens("--md-unexported --md-commented-out --md-not-css --md-sys-color-hidden-role", root).unknown,
+    ).toEqual(["--md-unexported", "--md-commented-out", "--md-not-css", "--md-sys-color-hidden-role"]);
   });
 
   test("missing exported sheets do not hide present sheets or dynamic roles", () => {
@@ -132,21 +116,9 @@ describe("exported token sources", () => {
         "src/dynamic-color.ts": 'export const ROLES = ["onPrimaryContainer"];',
       },
     );
-    expect(loadTokens(root).map((token) => token.name)).toEqual([
-      "--md-present",
-      "--md-sys-color-on-primary-container",
-    ]);
-    expect(
-      validateTokens(
-        "--md-present --md-sys-color-on-primary-container --md-missing",
-        root,
-      ),
-    ).toEqual({
-      checked: [
-        "--md-present",
-        "--md-sys-color-on-primary-container",
-        "--md-missing",
-      ],
+    expect(loadTokens(root).map(token => token.name)).toEqual(["--md-present", "--md-sys-color-on-primary-container"]);
+    expect(validateTokens("--md-present --md-sys-color-on-primary-container --md-missing", root)).toEqual({
+      checked: ["--md-present", "--md-sys-color-on-primary-container", "--md-missing"],
       unknown: ["--md-missing"],
     });
   });

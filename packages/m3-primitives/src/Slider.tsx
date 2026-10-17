@@ -13,23 +13,16 @@ export interface SliderProps extends Omit<
 > {
   className?: StateClassName<SliderPrimitive.Root.State>;
   /** Called on every change with one value per handle (Radix shape). */
-  onValueChange?: (
-    value: number[],
-    eventDetails: SliderPrimitive.Root.ChangeEventDetails,
-  ) => void;
+  onValueChange?: (value: number[], eventDetails: SliderPrimitive.Root.ChangeEventDetails) => void;
   /** Base UI name for the end-of-interaction callback. */
-  onValueCommitted?: (
-    value: number[],
-    eventDetails: SliderPrimitive.Root.CommitEventDetails,
-  ) => void;
+  onValueCommitted?: (value: number[], eventDetails: SliderPrimitive.Root.CommitEventDetails) => void;
   /** Radix name for {@link SliderProps.onValueCommitted}. */
   onValueCommit?: (value: number[]) => void;
   /** Accessible name of each handle (Base UI `getAriaLabel`). */
   getAriaLabel?: (index: number) => string;
 }
 
-const asArray = (value: number | readonly number[]) =>
-  (typeof value === "number" ? [value] : [...value]) as number[];
+const asArray = (value: number | readonly number[]) => (typeof value === "number" ? [value] : [...value]) as number[];
 
 /**
  * M3 slider (baseline) on Base UI: 4dp track, `primary` active track, `secondary-container`
@@ -51,10 +44,7 @@ export const Slider = ({
     <SliderPrimitive.Root
       data-m3-component="Slider"
       {...props}
-      onValueChange={
-        onValueChange &&
-        ((value, details) => onValueChange(asArray(value), details))
-      }
+      onValueChange={onValueChange && ((value, details) => onValueChange(asArray(value), details))}
       onValueCommitted={
         onValueCommitted || onValueCommit
           ? (value, details) => {
@@ -73,10 +63,7 @@ export const Slider = ({
       )}
     >
       <SliderPrimitive.Control
-        className={clsx(
-          "flex h-full w-full grow items-center",
-          "data-[orientation=vertical]:flex-col",
-        )}
+        className={clsx("flex h-full w-full grow items-center", "data-[orientation=vertical]:flex-col")}
       >
         <SliderPrimitive.Track
           className={clsx(

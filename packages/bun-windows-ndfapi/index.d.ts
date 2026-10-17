@@ -11,23 +11,60 @@ interface Functions {
   /** ndfapi.dll!NdfCreateDNSIncident */
   NdfCreateDNSIncident(hostname: string | Win32Pointer, queryType: number, handle: Win32Pointer): number;
   /** ndfapi.dll!NdfCreateGroupingIncident */
-  NdfCreateGroupingIncident(CloudName: string | Win32Pointer, GroupName: string | Win32Pointer, Identity: string | Win32Pointer, Invitation: string | Win32Pointer, Addresses: Win32Pointer, appId: string | Win32Pointer, handle: Win32Pointer): number;
+  NdfCreateGroupingIncident(
+    CloudName: string | Win32Pointer,
+    GroupName: string | Win32Pointer,
+    Identity: string | Win32Pointer,
+    Invitation: string | Win32Pointer,
+    Addresses: Win32Pointer,
+    appId: string | Win32Pointer,
+    handle: Win32Pointer,
+  ): number;
   /** ndfapi.dll!NdfCreateIncident */
-  NdfCreateIncident(helperClassName: string | Win32Pointer, celt: number, attributes: Win32Pointer, handle: Win32Pointer): number;
+  NdfCreateIncident(
+    helperClassName: string | Win32Pointer,
+    celt: number,
+    attributes: Win32Pointer,
+    handle: Win32Pointer,
+  ): number;
   /** ndfapi.dll!NdfCreateNetConnectionIncident */
   NdfCreateNetConnectionIncident(handle: Win32Pointer, id: Win32StructInit): number;
   /** ndfapi.dll!NdfCreatePnrpIncident */
-  NdfCreatePnrpIncident(cloudname: string | Win32Pointer, peername: string | Win32Pointer, diagnosePublish: number, appId: string | Win32Pointer, handle: Win32Pointer): number;
+  NdfCreatePnrpIncident(
+    cloudname: string | Win32Pointer,
+    peername: string | Win32Pointer,
+    diagnosePublish: number,
+    appId: string | Win32Pointer,
+    handle: Win32Pointer,
+  ): number;
   /** ndfapi.dll!NdfCreateSharingIncident */
   NdfCreateSharingIncident(UNCPath: string | Win32Pointer, handle: Win32Pointer): number;
   /** ndfapi.dll!NdfCreateWebIncident */
   NdfCreateWebIncident(url: string | Win32Pointer, handle: Win32Pointer): number;
   /** ndfapi.dll!NdfCreateWebIncidentEx */
-  NdfCreateWebIncidentEx(url: string | Win32Pointer, useWinHTTP: number, moduleName: string | Win32Pointer, handle: Win32Pointer): number;
+  NdfCreateWebIncidentEx(
+    url: string | Win32Pointer,
+    useWinHTTP: number,
+    moduleName: string | Win32Pointer,
+    handle: Win32Pointer,
+  ): number;
   /** ndfapi.dll!NdfCreateWinSockIncident */
-  NdfCreateWinSockIncident(sock: number | bigint, host: string | Win32Pointer, port: number, appId: string | Win32Pointer, userId: Win32Pointer, handle: Win32Pointer): number;
+  NdfCreateWinSockIncident(
+    sock: number | bigint,
+    host: string | Win32Pointer,
+    port: number,
+    appId: string | Win32Pointer,
+    userId: Win32Pointer,
+    handle: Win32Pointer,
+  ): number;
   /** ndfapi.dll!NdfDiagnoseIncident */
-  NdfDiagnoseIncident(Handle: Win32Pointer, RootCauseCount: Win32Pointer, RootCauses: Win32Pointer, dwWait: number, dwFlags: number): number;
+  NdfDiagnoseIncident(
+    Handle: Win32Pointer,
+    RootCauseCount: Win32Pointer,
+    RootCauses: Win32Pointer,
+    dwWait: number,
+    dwFlags: number,
+  ): number;
   /** ndfapi.dll!NdfExecuteDiagnosis */
   NdfExecuteDiagnosis(handle: Win32Pointer, hwnd: Win32Pointer): number;
   /** ndfapi.dll!NdfGetTraceFile */

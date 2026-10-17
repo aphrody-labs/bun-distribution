@@ -28,12 +28,8 @@ async function fixture() {
 describe("migrated Bun host boundary", () => {
   test("serves assets and navigation without turning missing assets into HTML", async () => {
     server = createNextBunServer({ port: 0, staticDir: await fixture() });
-    expect(await (await fetch(new URL("/app.js", server.url))).text()).toBe(
-      "export default 1;",
-    );
-    expect(await (await fetch(new URL("/dashboard", server.url))).text()).toBe(
-      "<main>SPA</main>",
-    );
+    expect(await (await fetch(new URL("/app.js", server.url))).text()).toBe("export default 1;");
+    expect(await (await fetch(new URL("/dashboard", server.url))).text()).toBe("<main>SPA</main>");
     expect((await fetch(new URL("/missing.js", server.url))).status).toBe(404);
     const head = await fetch(new URL("/app.js", server.url), {
       method: "HEAD",
@@ -51,13 +47,11 @@ describe("migrated Bun host boundary", () => {
     await symlink(join(directory!, "private.txt"), join(assets, "leak.txt"));
     server = createNextBunServer({ port: 0, staticDir: assets });
     await Promise.all(
-      ["/%2e%2e%2fprivate.txt", "/..%5cprivate.txt", "/leak.txt"].map(
-        async (path) => {
-          const response = await fetch(new URL(path, server!.url));
-          expect(response.status).toBe(403);
-          expect(await response.text()).not.toContain("private fixture");
-        },
-      ),
+      ["/%2e%2e%2fprivate.txt", "/..%5cprivate.txt", "/leak.txt"].map(async path => {
+        const response = await fetch(new URL(path, server!.url));
+        expect(response.status).toBe(403);
+        expect(await response.text()).not.toContain("private fixture");
+      }),
     );
     expect((await fetch(new URL("/%E0%A4", server.url))).status).toBe(400);
   });

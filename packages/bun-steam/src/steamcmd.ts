@@ -36,19 +36,12 @@ export interface SteamcmdStatus {
 export function steamcmdStatus(explicit?: string): SteamcmdStatus {
   const loc = findSteamcmd(explicit);
   if (!loc) return { found: false, exe: null, home: null, accounts: [] };
-  const store = kvObj(
-    readVdf(join(loc.home, "config", "config.vdf")),
-    ...STORE,
-  );
-  const cache = new Set(
-    Object.keys(kvObj(store, "ConnectCache") ?? {}).map((k) => k.toLowerCase()),
-  );
-  const accounts = Object.keys(kvObj(store, "Accounts") ?? {}).map(
-    (account) => ({
-      account,
-      cachedSession: cache.has(connectCacheKey(account)),
-    }),
-  );
+  const store = kvObj(readVdf(join(loc.home, "config", "config.vdf")), ...STORE);
+  const cache = new Set(Object.keys(kvObj(store, "ConnectCache") ?? {}).map(k => k.toLowerCase()));
+  const accounts = Object.keys(kvObj(store, "Accounts") ?? {}).map(account => ({
+    account,
+    cachedSession: cache.has(connectCacheKey(account)),
+  }));
   return { found: true, exe: loc.exe, home: loc.home, accounts };
 }
 
@@ -60,29 +53,25 @@ export function pickAccount(status: SteamcmdStatus, explicit?: string): string {
   const wanted = explicit ?? process.env.STEAM_ACCOUNT;
   if (wanted === "anonymous") return wanted;
   if (wanted) {
-    const hit = status.accounts.find(
-      (a) => a.account.toLowerCase() === wanted.toLowerCase(),
-    );
+    const hit = status.accounts.find(a => a.account.toLowerCase() === wanted.toLowerCase());
     if (!hit?.cachedSession)
       throw new Error(
         `steamcmd has no cached session for ${wanted}; sign in once interactively with steamcmd (the owner types the login)`,
       );
     return hit.account;
   }
-  const cached = status.accounts.filter((a) => a.cachedSession);
+  const cached = status.accounts.filter(a => a.cachedSession);
   if (cached.length === 1) return cached[0]!.account;
   throw new Error(
     cached.length === 0
       ? "steamcmd has no cached session; sign in once interactively with steamcmd (the owner types the login)"
-      : `several cached steamcmd sessions (${cached.map((a) => a.account).join(", ")}); pass --account`,
+      : `several cached steamcmd sessions (${cached.map(a => a.account).join(", ")}); pass --account`,
   );
 }
 
 /** Output lines that could carry authentication material are replaced before anyone sees them. */
-const SENSITIVE =
-  /password|token|auth ?code|guard|secret|two-factor|2fa|credential/i;
-export const redactLine = (line: string): string =>
-  SENSITIVE.test(line) ? "[bun-steam: line redacted]" : line;
+const SENSITIVE = /password|token|auth ?code|guard|secret|two-factor|2fa|credential/i;
+export const redactLine = (line: string): string => (SENSITIVE.test(line) ? "[bun-steam: line redacted]" : line);
 
 export interface SteamcmdRun {
   exitCode: number;
@@ -108,15 +97,10 @@ export interface SteamcmdOptions {
  * Runs steamcmd with the cached session and the given `+command arg...` groups, then `+quit`.
  * Example: `runSteamcmd([["app_update", "1493710", "validate"]])`.
  */
-export async function runSteamcmd(
-  commands: string[][],
-  opts: SteamcmdOptions = {},
-): Promise<SteamcmdRun> {
+export async function runSteamcmd(commands: string[][], opts: SteamcmdOptions = {}): Promise<SteamcmdRun> {
   const status = steamcmdStatus(opts.steamcmd);
   if (!status.found || !status.exe)
-    throw new Error(
-      "steamcmd not found (C:\\steamcmd\\steamcmd.exe, /usr/games/steamcmd, STEAMCMD or PATH)",
-    );
+    throw new Error("steamcmd not found (C:\\steamcmd\\steamcmd.exe, /usr/games/steamcmd, STEAMCMD or PATH)");
   const account = pickAccount(status, opts.account);
   const args = [
     "+@ShutdownOnFailedCommand",
@@ -146,15 +130,9 @@ export async function runSteamcmd(
       let nl: number;
       while ((nl = buf.search(/\r?\n|\r/)) >= 0) {
         const raw = buf.slice(0, nl).trimEnd();
-        buf = buf.slice(
-          nl + (buf[nl] === "\r" && buf[nl + 1] === "\n" ? 2 : 1),
-        );
+        buf = buf.slice(nl + (buf[nl] === "\r" && buf[nl + 1] === "\n" ? 2 : 1));
         if (!raw) continue;
-        if (
-          /cached credentials not found|password:|Steam Guard code|Invalid Password/i.test(
-            raw,
-          )
-        ) {
+        if (/cached credentials not found|password:|Steam Guard code|Invalid Password/i.test(raw)) {
           needsLogin = true;
           proc.kill();
         }
@@ -170,7 +148,7 @@ export async function runSteamcmd(
     return {
       exitCode: needsLogin ? 5 : exitCode,
       account,
-      args: args.map((a) => (a === account ? "<account>" : a)),
+      args: args.map(a => (a === account ? "<account>" : a)),
       lines: lines.slice(-200),
       needsLogin,
     };

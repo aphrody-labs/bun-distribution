@@ -12,7 +12,10 @@ fn embedded_catalog_matches_generated_bindings() {
     embedded.sort_unstable();
     let mut generated = TOOL_NAMES.to_vec();
     generated.sort_unstable();
-    assert_eq!(embedded, generated, "regenerate the checked-in Rust catalog");
+    assert_eq!(
+        embedded, generated,
+        "regenerate the checked-in Rust catalog"
+    );
     assert!(catalog().iter().any(|t| t.name == "computer_observe"));
 }
 
@@ -50,8 +53,15 @@ fn migration_ledger_is_complete_and_has_unambiguous_owners() {
 
     let ledger_names: BTreeSet<_> = ledger.tools.iter().map(String::as_str).collect();
     let catalog_names: BTreeSet<_> = TOOL_NAMES.into_iter().collect();
-    assert_eq!(ledger.tools.len(), ledger_names.len(), "ledger has duplicate tool names");
-    assert_eq!(ledger_names, catalog_names, "ledger and frozen catalog differ");
+    assert_eq!(
+        ledger.tools.len(),
+        ledger_names.len(),
+        "ledger has duplicate tool names"
+    );
+    assert_eq!(
+        ledger_names, catalog_names,
+        "ledger and frozen catalog differ"
+    );
 
     for tool in TOOL_NAMES {
         let matching: Vec<_> = ledger
@@ -79,21 +89,42 @@ mod live {
     #[test]
     fn rust_catalog_matches_vendored_bindings() {
         let wc = Winclean::load().unwrap();
-        let mut live: Vec<String> = wc.list_tools().unwrap().into_iter().map(|t| t.name).collect();
+        let mut live: Vec<String> = wc
+            .list_tools()
+            .unwrap()
+            .into_iter()
+            .map(|t| t.name)
+            .collect();
         live.sort();
         let mut generated = TOOL_NAMES.to_vec();
         generated.sort_unstable();
-        assert_eq!(live, generated, "Rust catalog and vendored bindings diverge");
+        assert_eq!(
+            live, generated,
+            "Rust catalog and vendored bindings diverge"
+        );
     }
 
     #[tokio::test]
     async fn sync_and_async_calls() {
         let wc = Winclean::load().unwrap();
-        let os: serde_json::Value =
-            wc.get_os_info(&GetOsInfoArgs::default()).unwrap().json().unwrap();
+        let os: serde_json::Value = wc
+            .get_os_info(&GetOsInfoArgs::default())
+            .unwrap()
+            .json()
+            .unwrap();
         assert!(os["BuildNumber"].is_string());
-        assert!(!wc.get_os_info_async(&GetOsInfoArgs::default()).await.unwrap().is_error);
-        assert!(wc.call("does_not_exist", &serde_json::json!({})).unwrap().ok().is_err());
+        assert!(
+            !wc.get_os_info_async(&GetOsInfoArgs::default())
+                .await
+                .unwrap()
+                .is_error
+        );
+        assert!(
+            wc.call("does_not_exist", &serde_json::json!({}))
+                .unwrap()
+                .ok()
+                .is_err()
+        );
     }
 }
 

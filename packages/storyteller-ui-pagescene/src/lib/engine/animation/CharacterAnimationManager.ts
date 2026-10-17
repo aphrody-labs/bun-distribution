@@ -72,7 +72,7 @@ export class CharacterAnimationManager {
   // Reconcile the live runtime to `clipLanes`: dispose lanes that vanished,
   // load lanes that appeared. Idempotent — called on every timeline change.
   sync(clipLanes: ClipLane[]): void {
-    const wanted = new Set(clipLanes.map((l) => l.id));
+    const wanted = new Set(clipLanes.map(l => l.id));
     for (const laneId of Array.from(this.lanes.keys())) {
       if (!wanted.has(laneId)) this.disposeLane(laneId);
     }
@@ -140,10 +140,7 @@ export class CharacterAnimationManager {
           const span = next.startTime - prevEnd;
           if (span > 1e-6) {
             const progress = (playhead - prevEnd) / span;
-            blendWeight = Math.max(
-              0,
-              Math.min(1, cubicBezierYForX(prev.transitionEasing, progress)),
-            );
+            blendWeight = Math.max(0, Math.min(1, cubicBezierYForX(prev.transitionEasing, progress)));
             blendPrev = prev;
             blendNext = next;
           }
@@ -169,16 +166,11 @@ export class CharacterAnimationManager {
           // included, matching what its own end displays), the next strip
           // its ENTRY frame.
           const dur = rt.clipDuration;
-          const exit =
-            rt.loop && dur > 0
-              ? rt.stripDuration % dur
-              : Math.min(rt.stripDuration, dur);
+          const exit = rt.loop && dur > 0 ? rt.stripDuration % dur : Math.min(rt.stripDuration, dur);
           action.enabled = true;
           action.paused = true;
           action.time = rt === blendPrev ? exit : 0;
-          action.setEffectiveWeight(
-            rt === blendPrev ? 1 - blendWeight : blendWeight,
-          );
+          action.setEffectiveWeight(rt === blendPrev ? 1 - blendWeight : blendWeight);
           posed.add(uuid);
         } else {
           action.enabled = false;
@@ -235,8 +227,7 @@ export class CharacterAnimationManager {
   }
 
   clear(): void {
-    for (const laneId of Array.from(this.lanes.keys()))
-      this.disposeLane(laneId);
+    for (const laneId of Array.from(this.lanes.keys())) this.disposeLane(laneId);
     for (const uuid of this.mixers.keys()) this.resetToRestPose(uuid);
     for (const mixer of this.mixers.values()) mixer.stopAllAction();
     this.mixers.clear();
@@ -301,11 +292,8 @@ export class CharacterAnimationManager {
       // warn, no fetch, no retry — until revalidate() sees the root
       // instance change.
       let hasRig = false;
-      character.traverse((node) => {
-        if (
-          (node as THREE.Bone).isBone ||
-          (node as THREE.SkinnedMesh).isSkinnedMesh
-        ) {
+      character.traverse(node => {
+        if ((node as THREE.Bone).isBone || (node as THREE.SkinnedMesh).isSkinnedMesh) {
           hasRig = true;
         }
       });
@@ -315,19 +303,14 @@ export class CharacterAnimationManager {
         );
         return;
       }
-      const glb = await this.editor.activeScene.loadRawGlb(
-        lane.strip.sourceMediaId,
-      );
+      const glb = await this.editor.activeScene.loadRawGlb(lane.strip.sourceMediaId);
       // Bail if this lane was removed/replaced while the clip was loading.
       if (this.loadTokens.get(lane.id) !== token || !this.lanes.has(lane.id)) {
         return;
       }
       clip = glb?.animations?.[0];
       if (!clip) {
-        console.warn(
-          "Animation clip has no animations track:",
-          lane.strip.sourceMediaId,
-        );
+        console.warn("Animation clip has no animations track:", lane.strip.sourceMediaId);
         return;
       }
     }
@@ -346,10 +329,7 @@ export class CharacterAnimationManager {
     // clip's tracks resolve to a node on the character, the character won't
     // move — that's the signal to wire SkeletonUtils.retargetClip. (A baked
     // clip trivially binds to its own model; the check is skipped.)
-    if (
-      lane.strip.bakedClipIndex === undefined &&
-      !this.clipBindsToCharacter(clip, character)
-    ) {
+    if (lane.strip.bakedClipIndex === undefined && !this.clipBindsToCharacter(clip, character)) {
       console.warn(
         `Animation clip "${clip.name}" bound 0 tracks on character ${lane.objectUuid} — likely a rig/bone-name mismatch (retarget needed).`,
       );
@@ -385,7 +365,7 @@ export class CharacterAnimationManager {
   // restored to its rest pose first so removing the last strip doesn't
   // leave it frozen mid-animation.
   private pruneMixers(): void {
-    const live = new Set([...this.lanes.values()].map((l) => l.characterUuid));
+    const live = new Set([...this.lanes.values()].map(l => l.characterUuid));
     for (const uuid of Array.from(this.mixers.keys())) {
       if (!live.has(uuid)) {
         this.resetToRestPose(uuid);
@@ -413,7 +393,7 @@ export class CharacterAnimationManager {
   private captureRestPose(root: THREE.Object3D): RestTransform[] {
     const rest: RestTransform[] = [];
     for (const child of root.children) {
-      child.traverse((node) => {
+      child.traverse(node => {
         rest.push({
           node,
           position: node.position.clone(),
@@ -440,11 +420,8 @@ export class CharacterAnimationManager {
   // True if at least one of the clip's tracks names a node that exists under
   // `character`. Mixamo clips address bones as "mixamorig:Hips.position"; we
   // strip the ".property" suffix and look the node up by name.
-  private clipBindsToCharacter(
-    clip: THREE.AnimationClip,
-    character: THREE.Object3D,
-  ): boolean {
-    return clip.tracks.some((track) => {
+  private clipBindsToCharacter(clip: THREE.AnimationClip, character: THREE.Object3D): boolean {
+    return clip.tracks.some(track => {
       const nodeName = track.name.split(".")[0];
       if (!nodeName) return false;
       return character.getObjectByName(nodeName) !== undefined;
@@ -454,8 +431,6 @@ export class CharacterAnimationManager {
   // Lane targets are always top-level scene roots (drops, clicks and baked
   // adds all attach to outliner-level objects) — no deep traverse needed.
   private findObject(uuid: string): THREE.Object3D | undefined {
-    return this.editor.activeScene.scene.children.find(
-      (child) => child.uuid === uuid,
-    );
+    return this.editor.activeScene.scene.children.find(child => child.uuid === uuid);
   }
 }

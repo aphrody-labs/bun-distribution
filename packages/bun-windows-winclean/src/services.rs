@@ -17,10 +17,14 @@ pub fn list_services(
     name_filter: Option<&str>,
     status_filter: Option<&str>,
 ) -> io::Result<ServiceListResponse> {
-    let name_needle =
-        name_filter.map(str::trim).filter(|value| !value.is_empty()).map(str::to_ascii_lowercase);
-    let status_needle =
-        status_filter.map(str::trim).filter(|value| !value.is_empty()).map(str::to_ascii_lowercase);
+    let name_needle = name_filter
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_ascii_lowercase);
+    let status_needle = status_filter
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_ascii_lowercase);
     let services: Vec<ServiceInfo> = imp::enumerate()?
         .into_iter()
         .filter(|service| {
@@ -36,7 +40,10 @@ pub fn list_services(
             service
         })
         .collect();
-    Ok(ServiceListResponse { count: services.len(), services })
+    Ok(ServiceListResponse {
+        count: services.len(),
+        services,
+    })
 }
 
 /// `start`, `stop` or `restart` one service and wait for the resulting state.
@@ -47,15 +54,21 @@ pub fn control_service(action: &str, name: &str) -> io::Result<String> {
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.' | b'$'))
     {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid service name"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "invalid service name",
+        ));
     }
     let verb = match action {
         "start" => "Started",
         "stop" => "Stopped",
         "restart" => "Restarted",
         _ => {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "unsupported service action"));
-        },
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "unsupported service action",
+            ));
+        }
     };
     imp::control(action, service, STATE_TIMEOUT)?;
     Ok(format!("{verb} service '{service}'."))
@@ -276,8 +289,8 @@ mod imp {
     fn start(service: &Handle, name: &str, timeout: Duration) -> io::Result<()> {
         // SAFETY: `service` was opened with SERVICE_START; no service arguments.
         match unsafe { StartServiceW(service.0, None) } {
-            Ok(()) => {},
-            Err(error) if win32_code(&error) == Some(ERROR_SERVICE_ALREADY_RUNNING) => {},
+            Ok(()) => {}
+            Err(error) if win32_code(&error) == Some(ERROR_SERVICE_ALREADY_RUNNING) => {}
             Err(error) => return Err(hresult_error(&error, &format!("start service '{name}'"))),
         }
         wait_for(service, name, SERVICE_RUNNING.0, timeout)
@@ -287,8 +300,8 @@ mod imp {
         let mut status = SERVICE_STATUS::default();
         // SAFETY: `service` was opened with SERVICE_STOP; `status` receives the last status.
         match unsafe { ControlService(service.0, SERVICE_CONTROL_STOP, &mut status) } {
-            Ok(()) => {},
-            Err(error) if win32_code(&error) == Some(ERROR_SERVICE_NOT_ACTIVE) => {},
+            Ok(()) => {}
+            Err(error) if win32_code(&error) == Some(ERROR_SERVICE_NOT_ACTIVE) => {}
             Err(error) => return Err(hresult_error(&error, &format!("stop service '{name}'"))),
         }
         wait_for(service, name, SERVICE_STOPPED.0, timeout)
@@ -302,7 +315,7 @@ mod imp {
             _ => {
                 stop(&service, name, timeout)?;
                 start(&service, name, timeout)
-            },
+            }
         }
     }
 }
@@ -353,7 +366,9 @@ mod tests {
             );
         }
         assert_eq!(
-            control_service("pause", "EventLog").expect_err("pause").kind(),
+            control_service("pause", "EventLog")
+                .expect_err("pause")
+                .kind(),
             std::io::ErrorKind::InvalidInput
         );
     }
@@ -370,11 +385,19 @@ mod tests {
         assert_eq!(service.status, "Running");
         assert_eq!(service.start_type, "Automatic");
         assert!(!service.display_name.is_empty());
-        assert_eq!(super::service_status("EventLog").expect("query EventLog"), "Running");
+        assert_eq!(
+            super::service_status("EventLog").expect("query EventLog"),
+            "Running"
+        );
 
         let running = super::list_services(None, Some("running")).expect("filter by status");
         assert!(running.count > 0);
-        assert!(running.services.iter().all(|service| service.status == "Running"));
+        assert!(
+            running
+                .services
+                .iter()
+                .all(|service| service.status == "Running")
+        );
         let all = super::list_services(None, None).expect("all services");
         assert!(all.count > running.count);
     }

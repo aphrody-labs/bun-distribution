@@ -50,10 +50,7 @@ const lerpVec3 = (a: Vec3, b: Vec3, t: number): Vec3 => ({
 // Sample a track's transform at the given time. Assumes keyframes are
 // sorted ascending by time. Clamps to the first/last keyframe outside the
 // keyed range. Returns null when the track has no keyframes.
-export const sampleTrackAt = (
-  track: TimelineTrack,
-  time: number,
-): TransformSnap | null => {
+export const sampleTrackAt = (track: TimelineTrack, time: number): TransformSnap | null => {
   const kfs = track.keyframes;
   if (kfs.length === 0) return null;
   if (kfs.length === 1 || time <= kfs[0].time) return kfs[0].transform;

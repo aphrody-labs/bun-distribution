@@ -38,14 +38,10 @@ async function freePort(): Promise<number> {
   return port;
 }
 
-async function waitReady(
-  url: string,
-  process: { exitCode: number | null },
-): Promise<void> {
+async function waitReady(url: string, process: { exitCode: number | null }): Promise<void> {
   const deadline = Date.now() + 20_000;
   while (Date.now() < deadline) {
-    if (process.exitCode !== null)
-      throw new Error(`aphrody a2a serve exited with ${process.exitCode}`);
+    if (process.exitCode !== null) throw new Error(`aphrody a2a serve exited with ${process.exitCode}`);
     try {
       if ((await fetch(`${url}/ping`)).ok) return;
     } catch {
@@ -66,20 +62,17 @@ describe.skipIf(!binary)("Rust A2A server (aphrody a2a serve, dry run)", () => {
     copyFileSync(join(repoRoot, "ai.json"), join(dir, "ai.json"));
     const port = await freePort();
     url = `http://127.0.0.1:${port}`;
-    server = Bun.spawn(
-      [binary as string, "a2a", "serve", "--bind", `127.0.0.1:${port}`],
-      {
-        windowsHide: true,
-        cwd: dir,
-        env: {
-          ...process.env,
-          APHRODY_A2A_DRY_RUN: "1",
-          COORD_DIR: join(dir, ".coord"),
-        },
-        stdout: "ignore",
-        stderr: "ignore",
+    server = Bun.spawn([binary as string, "a2a", "serve", "--bind", `127.0.0.1:${port}`], {
+      windowsHide: true,
+      cwd: dir,
+      env: {
+        ...process.env,
+        APHRODY_A2A_DRY_RUN: "1",
+        COORD_DIR: join(dir, ".coord"),
       },
-    );
+      stdout: "ignore",
+      stderr: "ignore",
+    });
     await waitReady(url, server);
   }, 30_000);
 
@@ -98,105 +91,86 @@ describe.skipIf(!binary)("Rust A2A server (aphrody a2a serve, dry run)", () => {
     expect(client.card?.skills.length).toBeGreaterThan(0);
   });
 
-  describe.each<SupportedBinding>(["JSONRPC", "HTTP+JSON"])(
-    "%s binding",
-    (binding) => {
-      // The REST routes are served at the root, next to the JSON-RPC endpoint: build the client by URL.
-      const make = () => new A2AClient({ url, binding });
+  describe.each<SupportedBinding>(["JSONRPC", "HTTP+JSON"])("%s binding", binding => {
+    // The REST routes are served at the root, next to the JSON-RPC endpoint: build the client by URL.
+    const make = () => new A2AClient({ url, binding });
 
-      test("sendMessage routes by the @peer prefix and returns a completed task", async () => {
-        const response = await make().sendMessage(
-          "@claude: hello from the TypeScript client",
-        );
-        expect(response.task?.status.state).toBe("TASK_STATE_COMPLETED");
-        expect(response.task?.metadata?.aphrody_peer).toBe("claude");
-        expect(responseText(response)).toContain(
-          "[dry-run] would invoke claude",
-        );
-        expect(response.task?.history?.[0]?.parts[0]?.text).toBe(
-          "@claude: hello from the TypeScript client",
-        );
-      });
+    test("sendMessage routes by the @peer prefix and returns a completed task", async () => {
+      const response = await make().sendMessage("@claude: hello from the TypeScript client");
+      expect(response.task?.status.state).toBe("TASK_STATE_COMPLETED");
+      expect(response.task?.metadata?.aphrody_peer).toBe("claude");
+      expect(responseText(response)).toContain("[dry-run] would invoke claude");
+      expect(response.task?.history?.[0]?.parts[0]?.text).toBe("@claude: hello from the TypeScript client");
+    });
 
-      test("getTask and listTasks see the task; an unknown id is TASK_NOT_FOUND", async () => {
-        const client = make();
-        const { task } = await client.sendMessage("@claude: list me");
-        expect((await client.getTask(task!.id)).id).toBe(task!.id);
-        const page = await client.listTasks({
-          pageSize: 100,
-          status: "TASK_STATE_COMPLETED",
-        });
-        expect(page.tasks.some((t) => t.id === task!.id)).toBe(true);
-        expect(page.totalSize).toBeGreaterThanOrEqual(1);
-        const missing = (await client
-          .getTask("no-such-task")
-          .catch((e: unknown) => e)) as A2AError;
-        expect(missing).toBeInstanceOf(A2AError);
-        expect(missing.reason).toBe("TASK_NOT_FOUND");
-        expect(missing.domain).toBe("a2a-protocol.org");
+    test("getTask and listTasks see the task; an unknown id is TASK_NOT_FOUND", async () => {
+      const client = make();
+      const { task } = await client.sendMessage("@claude: list me");
+      expect((await client.getTask(task!.id)).id).toBe(task!.id);
+      const page = await client.listTasks({
+        pageSize: 100,
+        status: "TASK_STATE_COMPLETED",
       });
+      expect(page.tasks.some(t => t.id === task!.id)).toBe(true);
+      expect(page.totalSize).toBeGreaterThanOrEqual(1);
+      const missing = (await client.getTask("no-such-task").catch((e: unknown) => e)) as A2AError;
+      expect(missing).toBeInstanceOf(A2AError);
+      expect(missing.reason).toBe("TASK_NOT_FOUND");
+      expect(missing.domain).toBe("a2a-protocol.org");
+    });
 
-      test("cancelTask on a finished task is TASK_NOT_CANCELABLE", async () => {
-        const client = make();
-        const { task } = await client.sendMessage("@claude: cancel me");
-        const error = (await client
-          .cancelTask(task!.id)
-          .catch((e: unknown) => e)) as A2AError;
-        expect(error.reason).toBe("TASK_NOT_CANCELABLE");
-        expect(error.code).toBe(-32002);
-      });
+    test("cancelTask on a finished task is TASK_NOT_CANCELABLE", async () => {
+      const client = make();
+      const { task } = await client.sendMessage("@claude: cancel me");
+      const error = (await client.cancelTask(task!.id).catch((e: unknown) => e)) as A2AError;
+      expect(error.reason).toBe("TASK_NOT_CANCELABLE");
+      expect(error.code).toBe(-32002);
+    });
 
-      test("sendStreamingMessage ends on the completed task", async () => {
-        const final = await collectStream(
-          make().sendStreamingMessage("@claude: stream"),
-        );
-        expect(final?.task?.status.state).toBe("TASK_STATE_COMPLETED");
-        expect(responseText(final!)).toContain("[dry-run]");
-      });
+    test("sendStreamingMessage ends on the completed task", async () => {
+      const final = await collectStream(make().sendStreamingMessage("@claude: stream"));
+      expect(final?.task?.status.state).toBe("TASK_STATE_COMPLETED");
+      expect(responseText(final!)).toContain("[dry-run]");
+    });
 
-      test("subscribeToTask on a finished task is refused", async () => {
-        const client = make();
-        const { task } = await client.sendMessage("@claude: subscribe");
-        const refused = (await (async () => {
-          for await (const _ of client.subscribeToTask(task!.id));
-        })().catch((e: unknown) => e)) as A2AError;
-        expect(refused).toBeInstanceOf(A2AError);
-        // DIVERGENCE (installed binary): the spec requires UNSUPPORTED_OPERATION for a terminal
-        // task; binaries built before the fix answer TASK_NOT_FOUND.
-        expect(["UNSUPPORTED_OPERATION", "TASK_NOT_FOUND"]).toContain(
-          refused.reason as string,
-        );
-      });
+    test("subscribeToTask on a finished task is refused", async () => {
+      const client = make();
+      const { task } = await client.sendMessage("@claude: subscribe");
+      const refused = (await (async () => {
+        for await (const _ of client.subscribeToTask(task!.id));
+      })().catch((e: unknown) => e)) as A2AError;
+      expect(refused).toBeInstanceOf(A2AError);
+      // DIVERGENCE (installed binary): the spec requires UNSUPPORTED_OPERATION for a terminal
+      // task; binaries built before the fix answer TASK_NOT_FOUND.
+      expect(["UNSUPPORTED_OPERATION", "TASK_NOT_FOUND"]).toContain(refused.reason as string);
+    });
 
-      test("push notifications are declared unsupported", async () => {
-        const client = make();
-        const { task } = await client.sendMessage("@claude: push");
-        const error = (await client
-          .createPushNotificationConfig({
-            taskId: task!.id,
-            url: "https://hooks.example/a2a",
-          })
-          .catch((e: unknown) => e)) as A2AError;
-        expect(error.reason).toBe("PUSH_NOTIFICATION_NOT_SUPPORTED");
-      });
+    test("push notifications are declared unsupported", async () => {
+      const client = make();
+      const { task } = await client.sendMessage("@claude: push");
+      const error = (await client
+        .createPushNotificationConfig({
+          taskId: task!.id,
+          url: "https://hooks.example/a2a",
+        })
+        .catch((e: unknown) => e)) as A2AError;
+      expect(error.reason).toBe("PUSH_NOTIFICATION_NOT_SUPPORTED");
+    });
 
-      test("the extended card is not configured", async () => {
-        const error = (await make()
-          .getExtendedAgentCard()
-          .catch((e: unknown) => e)) as A2AError;
-        expect(error).toBeInstanceOf(A2AError);
-        // DIVERGENCE (installed binary): the spec code is -32007 EXTENDED_AGENT_CARD_NOT_CONFIGURED;
-        // binaries built before the fix send -32004 UNSUPPORTED_OPERATION.
-        expect([-32007, -32004]).toContain(error.code);
-      });
-    },
-  );
+    test("the extended card is not configured", async () => {
+      const error = (await make()
+        .getExtendedAgentCard()
+        .catch((e: unknown) => e)) as A2AError;
+      expect(error).toBeInstanceOf(A2AError);
+      // DIVERGENCE (installed binary): the spec code is -32007 EXTENDED_AGENT_CARD_NOT_CONFIGURED;
+      // binaries built before the fix send -32004 UNSUPPORTED_OPERATION.
+      expect([-32007, -32004]).toContain(error.code);
+    });
+  });
 
   test("an unknown or pre-1.0 JSON-RPC method is METHOD_NOT_FOUND", async () => {
     const transport = new JsonRpcTransport({ url });
-    const error = (await transport
-      .call("message/send" as never, {} as never)
-      .catch((e: unknown) => e)) as A2AError;
+    const error = (await transport.call("message/send" as never, {} as never).catch((e: unknown) => e)) as A2AError;
     expect(error.code).toBe(-32601);
     expect(error.reason).toBe("METHOD_NOT_FOUND");
   });
@@ -214,8 +188,7 @@ describe.skipIf(!binary)("Rust A2A server (aphrody a2a serve, dry run)", () => {
         },
       },
     });
-    if (!("result" in reply))
-      throw new Error(`unexpected error: ${JSON.stringify(reply)}`);
+    if (!("result" in reply)) throw new Error(`unexpected error: ${JSON.stringify(reply)}`);
     const task = reply.result as {
       kind: string;
       id: string;
@@ -233,9 +206,7 @@ describe.skipIf(!binary)("Rust A2A server (aphrody a2a serve, dry run)", () => {
       method: "tasks/get",
       params: { id: task.id },
     });
-    expect("result" in fetched && (fetched.result as { id: string }).id).toBe(
-      task.id,
-    );
+    expect("result" in fetched && (fetched.result as { id: string }).id).toBe(task.id);
     const missing = await bridge.handle({
       jsonrpc: "2.0",
       id: 3,
@@ -259,7 +230,7 @@ describe.skipIf(!binary)("Rust A2A server (aphrody a2a serve, dry run)", () => {
       events.push(event);
     }
     expect(events.length).toBeGreaterThan(0);
-    expect(events.every((e) => "result" in e)).toBe(true);
+    expect(events.every(e => "result" in e)).toBe(true);
   });
 
   test("sendMessageRequest options reach the executor as request metadata", async () => {

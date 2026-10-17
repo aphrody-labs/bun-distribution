@@ -32,8 +32,7 @@ export interface RenderOptions {
   output?: string;
   frame?: number;
   animation?: boolean;
-  engine?:
-    "CYCLES" | "BLENDER_EEVEE_NEXT" | "BLENDER_WORKBENCH" | (string & {});
+  engine?: "CYCLES" | "BLENDER_EEVEE_NEXT" | "BLENDER_WORKBENCH" | (string & {});
   format?: string;
 }
 

@@ -11,12 +11,10 @@ const UNLOCK_WINDOW_MS = 5000;
 interface AboutSettingsPaneProps {}
 
 export const AboutSettingsPane = (_args: AboutSettingsPaneProps) => {
-  const [appInfo, setAppInfo] = useState<GetAppInfoPayload | undefined>(
-    undefined,
-  );
+  const [appInfo, setAppInfo] = useState<GetAppInfoPayload | undefined>(undefined);
 
-  const enabled = useExperimentalStore((s) => s.enabled);
-  const enable = useExperimentalStore((s) => s.enable);
+  const enabled = useExperimentalStore(s => s.enabled);
+  const enable = useExperimentalStore(s => s.enable);
   const clickTimes = useRef<number[]>([]);
 
   useEffect(() => {
@@ -30,7 +28,7 @@ export const AboutSettingsPane = (_args: AboutSettingsPaneProps) => {
   const handleVersionClick = () => {
     if (enabled) return;
     const now = performance.now();
-    const recent = clickTimes.current.filter((t) => now - t < UNLOCK_WINDOW_MS);
+    const recent = clickTimes.current.filter(t => now - t < UNLOCK_WINDOW_MS);
     recent.push(now);
     clickTimes.current = recent;
     if (recent.length >= UNLOCK_CLICK_COUNT) {
@@ -57,9 +55,7 @@ export const AboutSettingsPane = (_args: AboutSettingsPaneProps) => {
 
         <div className="space-y-1">
           <Label>Artcraft Host</Label>
-          <div className="break-all text-sm font-medium">
-            {appInfo?.storyteller_host}
-          </div>
+          <div className="break-all text-sm font-medium">{appInfo?.storyteller_host}</div>
         </div>
 
         <div className="space-y-1">
@@ -71,16 +67,12 @@ export const AboutSettingsPane = (_args: AboutSettingsPaneProps) => {
 
         <div className="space-y-1">
           <Label>Git Commit Timestamp</Label>
-          <div className="break-all text-sm font-medium">
-            {appInfo?.git_commit_timestamp}
-          </div>
+          <div className="break-all text-sm font-medium">{appInfo?.git_commit_timestamp}</div>
         </div>
 
         <div className="space-y-1">
           <Label>Build Timestamp</Label>
-          <div className="break-all text-sm font-medium">
-            {appInfo?.build_timestamp}
-          </div>
+          <div className="break-all text-sm font-medium">{appInfo?.build_timestamp}</div>
         </div>
 
         <div className="space-y-1">
@@ -92,16 +84,12 @@ export const AboutSettingsPane = (_args: AboutSettingsPaneProps) => {
 
         <div className="space-y-1">
           <Label>Artcraft Data Directory</Label>
-          <div className="break-all text-sm font-medium">
-            {appInfo?.artcraft_root_directory}
-          </div>
+          <div className="break-all text-sm font-medium">{appInfo?.artcraft_root_directory}</div>
         </div>
 
         <div className="space-y-1">
           <Label>Downloads Directory</Label>
-          <div className="break-all text-sm font-medium">
-            {appInfo?.download_directory}
-          </div>
+          <div className="break-all text-sm font-medium">{appInfo?.download_directory}</div>
         </div>
       </div>
     </>

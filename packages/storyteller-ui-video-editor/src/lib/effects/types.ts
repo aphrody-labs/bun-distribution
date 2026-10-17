@@ -16,20 +16,12 @@ export interface EffectPass {
 
 export interface EffectPassTemplate {
   shader: string;
-  uniforms(params: {
-    effectParams: ParamValues;
-    width: number;
-    height: number;
-  }): Record<string, EffectUniformValue>;
+  uniforms(params: { effectParams: ParamValues; width: number; height: number }): Record<string, EffectUniformValue>;
 }
 
 export interface EffectRendererConfig {
   passes: EffectPassTemplate[];
-  buildPasses?: (params: {
-    effectParams: ParamValues;
-    width: number;
-    height: number;
-  }) => EffectPass[];
+  buildPasses?: (params: { effectParams: ParamValues; width: number; height: number }) => EffectPass[];
 }
 
 export interface EffectDefinition {

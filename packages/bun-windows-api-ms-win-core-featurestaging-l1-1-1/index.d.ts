@@ -3,7 +3,12 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-featurestaging-l1-1-1.dll!GetFeatureVariant */
-  GetFeatureVariant(featureId: number, changeTime: number, payloadId: Win32Pointer, hasNotification: Win32Pointer): number;
+  GetFeatureVariant(
+    featureId: number,
+    changeTime: number,
+    payloadId: Win32Pointer,
+    hasNotification: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

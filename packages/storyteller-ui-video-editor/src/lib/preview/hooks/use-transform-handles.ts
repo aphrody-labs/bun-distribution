@@ -6,28 +6,17 @@ import { useEditor } from "../../editor/use-editor";
 import { useCommittedRef } from "../../hooks/use-committed-ref";
 import { useShiftKey } from "../../hooks/use-shift-key";
 import { registerCanceller } from "../../editor/cancel-interaction";
-import {
-  TransformHandleController,
-  type TransformHandleDeps,
-} from "../controllers/transform-handle-controller";
+import { TransformHandleController, type TransformHandleDeps } from "../controllers/transform-handle-controller";
 
-export function useTransformHandles({
-  onSnapLinesChange,
-}: {
-  onSnapLinesChange?: OnSnapLinesChange;
-}) {
+export function useTransformHandles({ onSnapLinesChange }: { onSnapLinesChange?: OnSnapLinesChange }) {
   const viewport = usePreviewViewport();
   const editor = useEditor();
   const isShiftHeldRef = useShiftKey();
-  const selectedElements = useEditor((e) => e.selection.getSelectedElements());
-  const tracks = useEditor(
-    (e) => e.timeline.getPreviewTracks() ?? e.scenes.getActiveScene().tracks,
-  );
-  const currentTime = useEditor((e) => e.playback.getCurrentTime());
-  const mediaAssets = useEditor((e) => e.media.getAssets());
-  const canvasSize = useEditor(
-    (e) => e.project.getActive()?.settings.canvasSize ?? DEFAULT_CANVAS_SIZE,
-  );
+  const selectedElements = useEditor(e => e.selection.getSelectedElements());
+  const tracks = useEditor(e => e.timeline.getPreviewTracks() ?? e.scenes.getActiveScene().tracks);
+  const currentTime = useEditor(e => e.playback.getCurrentTime());
+  const mediaAssets = useEditor(e => e.media.getAssets());
+  const canvasSize = useEditor(e => e.project.getActive()?.settings.canvasSize ?? DEFAULT_CANVAS_SIZE);
   const deps: TransformHandleDeps = {
     viewport,
     input: {
@@ -41,8 +30,7 @@ export function useTransformHandles({
       getCanvasSize: () => canvasSize,
     },
     timeline: {
-      previewElements: (updates) =>
-        editor.timeline.previewElements({ updates }),
+      previewElements: updates => editor.timeline.previewElements({ updates }),
       commitPreview: () => editor.timeline.commitPreview(),
       discardPreview: () => editor.timeline.discardPreview(),
     },
@@ -51,9 +39,7 @@ export function useTransformHandles({
     },
   };
   const depsRef = useCommittedRef(deps);
-  const [controller] = useState(
-    () => new TransformHandleController({ depsRef }),
-  );
+  const [controller] = useState(() => new TransformHandleController({ depsRef }));
 
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   useEffect(() => controller.subscribe(rerender), [controller]);

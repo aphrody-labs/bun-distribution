@@ -43,19 +43,12 @@ interface InfoBannerProps extends VariantProps<typeof infoBannerStyles> {
   className?: string;
 }
 
-export function InfoBanner({
-  icon,
-  children,
-  variant,
-  className,
-}: InfoBannerProps) {
+export function InfoBanner({ icon, children, variant, className }: InfoBannerProps) {
   return (
     <div role="note" className={clsx(infoBannerStyles({ variant }), className)}>
       <div className="p-4">
         <div className="flex items-start gap-3">
-          <div className={infoBannerIconStyles({ variant })}>
-            {renderIcon(icon as IconSource, { size: 20 })}
-          </div>
+          <div className={infoBannerIconStyles({ variant })}>{renderIcon(icon as IconSource, { size: 20 })}</div>
           <div>{children}</div>
         </div>
       </div>

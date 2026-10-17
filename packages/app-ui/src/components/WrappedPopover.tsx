@@ -28,21 +28,13 @@ interface WrappedPopoverProps {
   alignOffset?: number;
 }
 
-export function WrappedPopover({
-  popover,
-  trigger,
-  disabled,
-  children,
-  className,
-  ...props
-}: WrappedPopoverProps) {
+export function WrappedPopover({ popover, trigger, disabled, children, className, ...props }: WrappedPopoverProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const { setOpen } = popover;
 
   useEffect(() => {
     const onResize = () => {
-      if (triggerRef.current && triggerRef.current.offsetWidth === 0)
-        setOpen(false);
+      if (triggerRef.current && triggerRef.current.offsetWidth === 0) setOpen(false);
     };
 
     window.addEventListener("resize", onResize);

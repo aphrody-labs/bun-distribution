@@ -2,13 +2,7 @@
 // Minimal MCP (JSON-RPC 2.0 over stdio, newline-delimited) server exposing Blender.
 import { liveAvailable, sendLive } from "./bridge.ts";
 import { findBlender } from "./discover.ts";
-import {
-  evalPython,
-  info,
-  jsonPython,
-  render,
-  serveHeadless,
-} from "./headless.ts";
+import { evalPython, info, jsonPython, render, serveHeadless } from "./headless.ts";
 
 let session: Bun.Subprocess | undefined;
 
@@ -21,9 +15,7 @@ async function ensureLive(blend?: string): Promise<void> {
     await Bun.sleep(500);
     if (await liveAvailable()) return;
   }
-  throw new Error(
-    "headless Blender bridge did not start (blender_mcp add-on missing? set BLENDER_MCP_ADDON)",
-  );
+  throw new Error("headless Blender bridge did not start (blender_mcp add-on missing? set BLENDER_MCP_ADDON)");
 }
 
 process.on("exit", () => session?.kill());
@@ -35,14 +27,12 @@ const str = (description: string) => ({ type: "string", description });
 const tools = [
   {
     name: "blender_where",
-    description:
-      "Discovered Blender install (executable, version, python runtime).",
+    description: "Discovered Blender install (executable, version, python runtime).",
     inputSchema: { type: "object", properties: {} },
   },
   {
     name: "blender_info",
-    description:
-      "Scenes, objects, meshes, materials and collections of a .blend (factory scene when omitted).",
+    description: "Scenes, objects, meshes, materials and collections of a .blend (factory scene when omitted).",
     inputSchema: {
       type: "object",
       properties: { blend: str("Path to a .blend file") },
@@ -93,8 +83,7 @@ const tools = [
   },
   {
     name: "blender_export",
-    description:
-      "Export a .blend to glb/gltf/fbx/obj/stl/ply/usd/abc (format from the output extension).",
+    description: "Export a .blend to glb/gltf/fbx/obj/stl/ply/usd/abc (format from the output extension).",
     inputSchema: {
       type: "object",
       properties: {
@@ -113,10 +102,7 @@ const obj = (properties: Json = {}, required: string[] = []) => ({
   properties,
   required,
 });
-const LIVE: Record<
-  string,
-  { command: string; description: string; inputSchema: Json }
-> = {
+const LIVE: Record<string, { command: string; description: string; inputSchema: Json }> = {
   blender_live_ping: {
     command: "ping",
     description: "Check the live Blender add-on connection.",
@@ -134,14 +120,12 @@ const LIVE: Record<
   },
   blender_live_list: {
     command: "list_scene_items",
-    description:
-      "Live session: search objects, materials and other datablocks.",
+    description: "Live session: search objects, materials and other datablocks.",
     inputSchema: obj({ query: str("Name filter"), limit: { type: "integer" } }),
   },
   blender_live_execute: {
     command: "execute_code",
-    description:
-      "Live session: run Python (bpy) in the open Blender, returns captured stdout.",
+    description: "Live session: run Python (bpy) in the open Blender, returns captured stdout.",
     inputSchema: obj({ code: str("Python source") }, ["code"]),
   },
   blender_live_screenshot: {
@@ -158,8 +142,7 @@ const LIVE: Record<
   },
   blender_live_export: {
     command: "export_scene",
-    description:
-      "Live session: export the scene or named objects (glb, gltf, fbx, obj, usd, stl, ply).",
+    description: "Live session: export the scene or named objects (glb, gltf, fbx, obj, usd, stl, ply).",
     inputSchema: obj(
       {
         filepath: str("Output path"),
@@ -173,44 +156,29 @@ const LIVE: Record<
   blender_live_node_type: {
     command: "describe_node_type",
     description: "Live session: describe a node type's sockets and properties.",
-    inputSchema: obj(
-      { bl_idname: str("Node bl_idname, e.g. ShaderNodeBsdfPrincipled") },
-      ["bl_idname"],
-    ),
+    inputSchema: obj({ bl_idname: str("Node bl_idname, e.g. ShaderNodeBsdfPrincipled") }, ["bl_idname"]),
   },
   blender_live_api: {
     command: "bpy_api_lookup",
-    description:
-      "Live session: look up bpy API (types, operators, properties).",
-    inputSchema: obj({ query: str("e.g. bpy.types.Object.location") }, [
-      "query",
-    ]),
+    description: "Live session: look up bpy API (types, operators, properties).",
+    inputSchema: obj({ query: str("e.g. bpy.types.Object.location") }, ["query"]),
   },
   blender_live_command: {
     command: "",
-    description:
-      "Live session: send any blender_mcp add-on command (type + params).",
-    inputSchema: obj(
-      { type: str("Add-on command type"), params: { type: "object" } },
-      ["type"],
-    ),
+    description: "Live session: send any blender_mcp add-on command (type + params).",
+    inputSchema: obj({ type: str("Add-on command type"), params: { type: "object" } }, ["type"]),
   },
 };
 // Asset and generation integrations of the add-on; `flag` is the scene toggle that exposes the handlers.
 // Keys come from the add-on preferences or BLENDERMCP_SKETCHFAB_API_KEY, BLENDERMCP_HYPER3D_API_KEY,
 // BLENDERMCP_HUNYUAN3D_SECRET_ID / _SECRET_KEY in the environment.
 const integer = { type: "integer" };
-const ASSETS: Record<
-  string,
-  { command: string; flag: string; description: string; inputSchema: Json }
-> = {
+const ASSETS: Record<string, { command: string; flag: string; description: string; inputSchema: Json }> = {
   blender_polyhaven_categories: {
     command: "get_polyhaven_categories",
     flag: "blendermcp_use_polyhaven",
     description: "Poly Haven categories for hdris, textures or models.",
-    inputSchema: obj({ asset_type: str("hdris, textures, models or all") }, [
-      "asset_type",
-    ]),
+    inputSchema: obj({ asset_type: str("hdris, textures, models or all") }, ["asset_type"]),
   },
   blender_polyhaven_search: {
     command: "search_polyhaven_assets",
@@ -226,8 +194,7 @@ const ASSETS: Record<
   blender_polyhaven_download: {
     command: "download_polyhaven_asset",
     flag: "blendermcp_use_polyhaven",
-    description:
-      "Download and import a Poly Haven asset (HDRI as world, texture as material, model into the scene).",
+    description: "Download and import a Poly Haven asset (HDRI as world, texture as material, model into the scene).",
     inputSchema: obj(
       {
         asset_id: str("Poly Haven id"),
@@ -242,10 +209,10 @@ const ASSETS: Record<
     command: "set_texture",
     flag: "blendermcp_use_polyhaven",
     description: "Apply a downloaded Poly Haven texture to an object.",
-    inputSchema: obj(
-      { object_name: str("Object"), texture_id: str("Poly Haven texture id") },
-      ["object_name", "texture_id"],
-    ),
+    inputSchema: obj({ object_name: str("Object"), texture_id: str("Poly Haven texture id") }, [
+      "object_name",
+      "texture_id",
+    ]),
   },
   blender_sketchfab_search: {
     command: "search_sketchfab_models",
@@ -277,8 +244,7 @@ const ASSETS: Record<
   blender_hyper3d_create: {
     command: "create_rodin_job",
     flag: "blendermcp_use_hyper3d",
-    description:
-      "Start a Hyper3D Rodin generation from a text prompt or images.",
+    description: "Start a Hyper3D Rodin generation from a text prompt or images.",
     inputSchema: obj({
       text_prompt: str("Prompt"),
       images: {
@@ -296,8 +262,7 @@ const ASSETS: Record<
   blender_hyper3d_poll: {
     command: "poll_rodin_job_status",
     flag: "blendermcp_use_hyper3d",
-    description:
-      "Poll a Hyper3D job (subscription_key on MAIN_SITE, request_id on FAL_AI).",
+    description: "Poll a Hyper3D job (subscription_key on MAIN_SITE, request_id on FAL_AI).",
     inputSchema: obj({
       subscription_key: str("MAIN_SITE key"),
       request_id: str("FAL_AI id"),
@@ -336,10 +301,7 @@ const ASSETS: Record<
     command: "import_generated_asset_hunyuan",
     flag: "blendermcp_use_hunyuan3d",
     description: "Import a finished Hunyuan3D asset.",
-    inputSchema: obj(
-      { name: str("Object name"), zip_file_url: str("Result URL") },
-      ["name", "zip_file_url"],
-    ),
+    inputSchema: obj({ name: str("Object name"), zip_file_url: str("Result URL") }, ["name", "zip_file_url"]),
   },
 };
 Object.assign(LIVE, ASSETS);
@@ -385,9 +347,7 @@ async function call(name: string, a: Json): Promise<unknown> {
         format: a.format as string | undefined,
       });
       if (res.exitCode !== 0) throw new Error(res.stderr || res.stdout);
-      return res.stdout
-        .split(/\r?\n/)
-        .filter((l) => l.startsWith("Saved:") || l.includes("Time:"));
+      return res.stdout.split(/\r?\n/).filter(l => l.startsWith("Saved:") || l.includes("Time:"));
     }
     case "blender_import": {
       const code = `${PY_IO}
@@ -407,8 +367,7 @@ ${jsonPython(`{"exported": ${py(a.output)}}`)}`;
       const live = LIVE[name];
       if (!live) throw new Error(`unknown tool ${name}`);
       await ensureLive(blend);
-      if (name === "blender_live_command")
-        return sendLive(a.type as string, (a.params ?? {}) as Json);
+      if (name === "blender_live_command") return sendLive(a.type as string, (a.params ?? {}) as Json);
       const flag = ASSETS[name]?.flag;
       if (flag)
         await sendLive("execute_code", {
@@ -417,18 +376,12 @@ ${jsonPython(`{"exported": ${py(a.output)}}`)}`;
       const { blend: _blend, mode, free_trial, ...params } = a;
       const setup: string[] = [];
       if (mode && flag === "blendermcp_use_hyper3d")
-        setup.push(
-          `bpy.context.scene.blendermcp_hyper3d_mode = ${JSON.stringify(mode)}`,
-        );
+        setup.push(`bpy.context.scene.blendermcp_hyper3d_mode = ${JSON.stringify(mode)}`);
       if (mode && flag === "blendermcp_use_hunyuan3d")
-        setup.push(
-          `bpy.context.scene.blendermcp_hunyuan3d_mode = ${JSON.stringify(mode)}`,
-        );
+        setup.push(`bpy.context.scene.blendermcp_hunyuan3d_mode = ${JSON.stringify(mode)}`);
       // Hyper3D's shared free-trial key, as offered by the add-on's "Set Free Trial API Key" button.
       if (free_trial && flag === "blendermcp_use_hyper3d")
-        setup.push(
-          `bpy.context.scene.blendermcp_hyper3d_api_key = "vibecoding"`,
-        );
+        setup.push(`bpy.context.scene.blendermcp_hyper3d_api_key = "vibecoding"`);
       if (setup.length)
         await sendLive("execute_code", {
           code: `import bpy\n${setup.join("\n")}`,
@@ -453,18 +406,13 @@ async function handle(msg: Json): Promise<Json | null> {
       return ok({ tools });
     case "tools/call":
       try {
-        const out = await call(
-          params.name as string,
-          (params.arguments ?? {}) as Json,
-        );
+        const out = await call(params.name as string, (params.arguments ?? {}) as Json);
         return ok({
           content: [{ type: "text", text: JSON.stringify(out, null, 2) }],
         });
       } catch (err) {
         return ok({
-          content: [
-            { type: "text", text: String((err as Error).message ?? err) },
-          ],
+          content: [{ type: "text", text: String((err as Error).message ?? err) }],
           isError: true,
         });
       }
@@ -489,7 +437,7 @@ for await (const chunk of Bun.stdin.stream()) {
     const line = buffer.slice(0, nl).trim();
     buffer = buffer.slice(nl + 1);
     if (!line) continue;
-    void handle(JSON.parse(line) as Json).then((reply) => {
+    void handle(JSON.parse(line) as Json).then(reply => {
       if (reply) void Bun.write(Bun.stdout, `${JSON.stringify(reply)}\n`);
     });
   }

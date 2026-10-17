@@ -46,7 +46,7 @@ function makeClient(requestTimeoutMs = 3000) {
   return client;
 }
 afterEach(async () => {
-  await Promise.all(clients.splice(0).map((client) => client.close()));
+  await Promise.all(clients.splice(0).map(client => client.close()));
 });
 
 test("preserves early Unicode events and completion", async () => {
@@ -57,29 +57,22 @@ test("preserves early Unicode events and completion", async () => {
   const events = await Array.fromAsync(turn.events());
   expect(events[0]?.params?.delta).toBe("été 日本語");
   expect(events.at(-1)?.method).toBe("turn/completed");
-  expect(
-    (await Array.fromAsync((await client.startTurn(thread, "again")).events()))
-      .length,
-  ).toBe(2);
+  expect((await Array.fromAsync((await client.startTurn(thread, "again")).events())).length).toBe(2);
 });
 
 test("interrupt does not compete with streaming notifications", async () => {
   const client = makeClient();
   const turn = await client.startTurn("thread-a", "wait");
   await turn.interrupt();
-  expect(
-    (await Array.fromAsync(turn.events())).at(-1)?.params?.turn.status,
-  ).toBe("interrupted");
+  expect((await Array.fromAsync(turn.events())).at(-1)?.params?.turn.status).toBe("interrupted");
 });
 
 test("routes concurrent replies arriving in reverse order", async () => {
   const client = makeClient();
-  expect(
-    await Promise.all([
-      client.request("pair", { value: 1 }),
-      client.request("pair", { value: 2 }),
-    ]),
-  ).toEqual([{ value: 1 }, { value: 2 }]);
+  expect(await Promise.all([client.request("pair", { value: 1 }), client.request("pair", { value: 2 })])).toEqual([
+    { value: 1 },
+    { value: 2 },
+  ]);
 });
 
 test("structured errors and server approvals preserve connection", async () => {

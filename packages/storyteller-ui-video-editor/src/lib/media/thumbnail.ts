@@ -1,13 +1,7 @@
 const THUMBNAIL_MAX_WIDTH = 1280;
 const THUMBNAIL_MAX_HEIGHT = 720;
 
-export function thumbnailSize({
-  width,
-  height,
-}: {
-  width: number;
-  height: number;
-}): { width: number; height: number } {
+export function thumbnailSize({ width, height }: { width: number; height: number }): { width: number; height: number } {
   const aspectRatio = width / height;
   let targetWidth = width;
   let targetHeight = height;
@@ -31,15 +25,7 @@ export function renderThumbnailDataUrl({
 }: {
   width: number;
   height: number;
-  draw: ({
-    context,
-    width,
-    height,
-  }: {
-    context: CanvasRenderingContext2D;
-    width: number;
-    height: number;
-  }) => void;
+  draw: ({ context, width, height }: { context: CanvasRenderingContext2D; width: number; height: number }) => void;
 }): string {
   const size = thumbnailSize({ width, height });
   const canvas = document.createElement("canvas");

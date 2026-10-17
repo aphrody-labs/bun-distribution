@@ -38,7 +38,7 @@ export function DomainBarView({
           {adminCta}
         </Link>
       )}
-      {actions.map((action) => (
+      {actions.map(action => (
         <Link
           key={action.href}
           href={action.href}

@@ -9,40 +9,32 @@ interface ClassyModelSelectorState {
     [page in ModelPage]?: { [modelId: string]: GenerationProvider };
   };
   setSelectedModel: (page: ModelPage, model: Model) => void;
-  setSelectedProvider: (
-    page: ModelPage,
-    modelId: string,
-    provider: GenerationProvider,
-  ) => void;
+  setSelectedProvider: (page: ModelPage, modelId: string, provider: GenerationProvider) => void;
 }
 
-export const useClassyModelSelectorStore = create<ClassyModelSelectorState>(
-  (set) => ({
-    selectedModels: {},
-    selectedProviders: {},
-    setSelectedModel: (page, model) =>
-      set((state) => ({
-        selectedModels: {
-          ...state.selectedModels,
-          [page]: model,
+export const useClassyModelSelectorStore = create<ClassyModelSelectorState>(set => ({
+  selectedModels: {},
+  selectedProviders: {},
+  setSelectedModel: (page, model) =>
+    set(state => ({
+      selectedModels: {
+        ...state.selectedModels,
+        [page]: model,
+      },
+    })),
+  setSelectedProvider: (page, modelId, provider) =>
+    set(state => ({
+      selectedProviders: {
+        ...state.selectedProviders,
+        [page]: {
+          ...state.selectedProviders[page],
+          [modelId]: resolveSelectedProvider(provider)!,
         },
-      })),
-    setSelectedProvider: (page, modelId, provider) =>
-      set((state) => ({
-        selectedProviders: {
-          ...state.selectedProviders,
-          [page]: {
-            ...state.selectedProviders[page],
-            [modelId]: resolveSelectedProvider(provider)!,
-          },
-        },
-      })),
-  }),
-);
+      },
+    })),
+}));
 
-export const getSelectedImageModel = (
-  page: ModelPage,
-): ImageModel | undefined => {
+export const getSelectedImageModel = (page: ModelPage): ImageModel | undefined => {
   const { selectedModels } = useClassyModelSelectorStore.getState();
   const maybeModel = selectedModels[page];
   if (!maybeModel) {
@@ -56,9 +48,7 @@ export const getSelectedImageModel = (
   return undefined;
 };
 
-export const getSelectedVideoModel = (
-  page: ModelPage,
-): VideoModel | undefined => {
+export const getSelectedVideoModel = (page: ModelPage): VideoModel | undefined => {
   const { selectedModels } = useClassyModelSelectorStore.getState();
   const maybeModel = selectedModels[page];
   if (!maybeModel) {
@@ -72,10 +62,7 @@ export const getSelectedVideoModel = (
   return maybeModel as VideoModel;
 };
 
-export const getSelectedProviderForModel = (
-  page: ModelPage,
-  modelId: string,
-): GenerationProvider | undefined => {
+export const getSelectedProviderForModel = (page: ModelPage, modelId: string): GenerationProvider | undefined => {
   const { selectedProviders } = useClassyModelSelectorStore.getState();
   const byPage = selectedProviders[page];
   if (!byPage) return undefined;
@@ -84,26 +71,18 @@ export const getSelectedProviderForModel = (
 
 // Reactive hooks for UI subscriptions
 export const useSelectedModel = (page: ModelPage): Model | undefined =>
-  useClassyModelSelectorStore((s) => s.selectedModels[page]);
+  useClassyModelSelectorStore(s => s.selectedModels[page]);
 
-export const useSelectedImageModel = (
-  page: ModelPage,
-): ImageModel | undefined => {
+export const useSelectedImageModel = (page: ModelPage): ImageModel | undefined => {
   const maybeModel = useSelectedModel(page);
   if (!maybeModel) return undefined;
-  return maybeModel.kind === "image_model"
-    ? (maybeModel as ImageModel)
-    : undefined;
+  return maybeModel.kind === "image_model" ? (maybeModel as ImageModel) : undefined;
 };
 
-export const useSelectedVideoModel = (
-  page: ModelPage,
-): VideoModel | undefined => {
+export const useSelectedVideoModel = (page: ModelPage): VideoModel | undefined => {
   const maybeModel = useSelectedModel(page);
   if (!maybeModel) return undefined;
-  return maybeModel.kind === "video_model"
-    ? (maybeModel as VideoModel)
-    : undefined;
+  return maybeModel.kind === "video_model" ? (maybeModel as VideoModel) : undefined;
 };
 
 // TODO: This shouldn't be on a per-page basis.
@@ -111,21 +90,14 @@ export const useSelectedProviderForModel = (
   page: ModelPage,
   modelId: string | undefined,
 ): GenerationProvider | undefined =>
-  useClassyModelSelectorStore((s) =>
-    modelId
-      ? resolveSelectedProvider(s.selectedProviders[page]?.[modelId])
-      : undefined,
+  useClassyModelSelectorStore(s =>
+    modelId ? resolveSelectedProvider(s.selectedProviders[page]?.[modelId]) : undefined,
   );
 
-function resolveSelectedProvider(
-  provider: GenerationProvider | undefined,
-): GenerationProvider | undefined {
+function resolveSelectedProvider(provider: GenerationProvider | undefined): GenerationProvider | undefined {
   // Retired direct accounts must not reach generation or pricing requests,
   // including when an older selection is still in state.
-  if (
-    provider === GenerationProvider.Sora ||
-    provider === GenerationProvider.WorldLabs
-  ) {
+  if (provider === GenerationProvider.Sora || provider === GenerationProvider.WorldLabs) {
     return GenerationProvider.Artcraft;
   }
   return provider;

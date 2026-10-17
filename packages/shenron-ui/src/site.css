@@ -202,9 +202,7 @@ main:focus {
 	   Tailwind (`text-sm`, `text-xs`) ont une spécificité égale et gagneraient à
 	   l'ordre de cascade. */
   @media (max-width: 767px) {
-    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
-        [type="color"]
-      ),
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
     textarea,
     select {
       font-size: 16px !important;
@@ -245,11 +243,7 @@ main:focus {
       transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .dbz-panel:hover {
-    border-color: color-mix(
-      in srgb,
-      var(--color-dbz-orange) 80%,
-      var(--color-dbz-border)
-    );
+    border-color: color-mix(in srgb, var(--color-dbz-orange) 80%, var(--color-dbz-border));
     box-shadow:
       4px 4px 0px rgba(0, 0, 0, 0.95),
       0 0 20px color-mix(in srgb, var(--color-dbz-orange) 15%, transparent),
@@ -370,8 +364,7 @@ main:focus {
 	   n'en demandent aucune gardent le jaune par défaut. */
   .scouter-text {
     @apply font-scouter text-dbz-yellow tracking-widest uppercase;
-    text-shadow: 0 0 8px
-      color-mix(in srgb, var(--color-dbz-amber) 60%, transparent);
+    text-shadow: 0 0 8px color-mix(in srgb, var(--color-dbz-amber) 60%, transparent);
   }
 
   /** Scouter HUD frame with corner brackets */
@@ -585,15 +578,8 @@ main:focus {
   }
   .hud-grid {
     background-image:
-      linear-gradient(
-        color-mix(in srgb, var(--color-dbz-ember) 7%, transparent) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--color-dbz-ember) 7%, transparent) 1px,
-        transparent 1px
-      );
+      linear-gradient(color-mix(in srgb, var(--color-dbz-ember) 7%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--color-dbz-ember) 7%, transparent) 1px, transparent 1px);
     background-size: 24px 24px;
   }
   .hud-frame {
@@ -668,48 +654,28 @@ main:focus {
     background-size: 4px 4px;
   }
   .halftone-orange {
-    background-image: radial-gradient(
-      color-mix(in srgb, var(--color-dbz-ki) 25%, transparent) 1px,
-      transparent 1.6px
-    );
+    background-image: radial-gradient(color-mix(in srgb, var(--color-dbz-ki) 25%, transparent) 1px, transparent 1.6px);
     background-size: 5px 5px;
   }
   /** Pure Toriyama Manga Dots / Ben-Day Halftone Grid */
   .toriyama-dots {
-    background-image: radial-gradient(
-      var(--color-dbz-orange) 1px,
-      transparent 1.2px
-    );
+    background-image: radial-gradient(var(--color-dbz-orange) 1px, transparent 1.2px);
     background-size: 6px 6px;
   }
   .toriyama-dots-dark {
-    background-image: radial-gradient(
-      rgba(0, 0, 0, 0.5) 1.2px,
-      transparent 1.2px
-    );
+    background-image: radial-gradient(rgba(0, 0, 0, 0.5) 1.2px, transparent 1.2px);
     background-size: 5px 5px;
   }
   /** Toriyama Speed Impact Burst */
   .toriyama-impact {
     background:
-      radial-gradient(
-        circle at center,
-        transparent 35%,
-        rgba(0, 0, 0, 0.85) 100%
-      ),
-      repeating-conic-gradient(
-        from 0deg,
-        transparent 0deg 3deg,
-        rgba(231, 130, 32, 0.15) 3deg 5deg
-      );
+      radial-gradient(circle at center, transparent 35%, rgba(0, 0, 0, 0.85) 100%),
+      repeating-conic-gradient(from 0deg, transparent 0deg 3deg, rgba(231, 130, 32, 0.15) 3deg 5deg);
   }
   /* Screentone neutre (trame benday de gris) — ombrage façon planche manga
 	   Toriyama, plus discret que `.halftone` (teinté orange). */
   .screentone {
-    background-image: radial-gradient(
-      rgba(255, 255, 255, 0.05) 0.9px,
-      transparent 1.1px
-    );
+    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 0.9px, transparent 1.1px);
     background-size: 3px 3px;
   }
   .speed-lines {
@@ -720,11 +686,7 @@ main:focus {
       color-mix(in srgb, var(--color-dbz-ember) 30%, transparent) 4deg,
       color-mix(in srgb, var(--color-dbz-ember) 30%, transparent) 4.4deg
     );
-    -webkit-mask-image: radial-gradient(
-      circle at center,
-      transparent 28%,
-      black 70%
-    );
+    -webkit-mask-image: radial-gradient(circle at center, transparent 28%, black 70%);
     mask-image: radial-gradient(circle at center, transparent 28%, black 70%);
   }
   .sunburst {
@@ -740,23 +702,16 @@ main:focus {
 	   (`drop-shadow-[0_0_20px_rgba(75,168,255,0.2)]`), littéral en dur qui échappait
 	   à /admin/design ; adossés aux tokens, ils suivent désormais le thème. */
   .halo-ki-sm {
-    filter: drop-shadow(
-      0 0 15px color-mix(in srgb, var(--color-dbz-ki) 20%, transparent)
-    );
+    filter: drop-shadow(0 0 15px color-mix(in srgb, var(--color-dbz-ki) 20%, transparent));
   }
   .halo-ki {
-    filter: drop-shadow(
-      0 0 20px color-mix(in srgb, var(--color-dbz-ki) 20%, transparent)
-    );
+    filter: drop-shadow(0 0 20px color-mix(in srgb, var(--color-dbz-ki) 20%, transparent));
   }
   .halo-ki-lg {
-    filter: drop-shadow(
-      0 0 30px color-mix(in srgb, var(--color-dbz-ki) 30%, transparent)
-    );
+    filter: drop-shadow(0 0 30px color-mix(in srgb, var(--color-dbz-ki) 30%, transparent));
   }
   .halo-ember-bar {
-    box-shadow: 0 0 12px
-      color-mix(in srgb, var(--color-dbz-ember) 60%, transparent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--color-dbz-ember) 60%, transparent);
   }
   .ink-edge {
     clip-path: polygon(0 0, 100% 0, 99% 100%, 0 98%, 0 4%);
@@ -767,9 +722,7 @@ main:focus {
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
-    filter: drop-shadow(
-        0 0 16px color-mix(in srgb, var(--color-dbz-ember) 50%, transparent)
-      )
+    filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-dbz-ember) 50%, transparent))
       drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8));
     letter-spacing: 0.04em;
   }
@@ -952,10 +905,7 @@ main:focus {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background-image: radial-gradient(
-      rgba(255, 255, 255, 0.045) 0.9px,
-      transparent 1.1px
-    );
+    background-image: radial-gradient(rgba(255, 255, 255, 0.045) 0.9px, transparent 1.1px);
     background-size: 3px 3px;
   }
   .case:hover,
@@ -1069,19 +1019,8 @@ main:focus {
     height: 3px;
     border: 0;
     background:
-      linear-gradient(
-        90deg,
-        transparent 0%,
-        var(--color-os) 6%,
-        var(--color-os) 94%,
-        transparent 100%
-      ),
-      linear-gradient(
-        90deg,
-        transparent 12%,
-        rgba(255, 255, 255, 0.35) 30%,
-        transparent 46%
-      );
+      linear-gradient(90deg, transparent 0%, var(--color-os) 6%, var(--color-os) 94%, transparent 100%),
+      linear-gradient(90deg, transparent 12%, rgba(255, 255, 255, 0.35) 30%, transparent 46%);
     opacity: 0.75;
   }
 
@@ -1169,48 +1108,16 @@ main:focus {
   /* === Starfield === */
   .starfield {
     background-image:
-      radial-gradient(
-        1px 1px at 25% 12%,
-        rgba(255, 255, 255, 0.9),
-        transparent
-      ),
-      radial-gradient(
-        1px 1px at 70% 28%,
-        color-mix(in srgb, var(--color-dbz-ember) 80%, transparent),
-        transparent
-      ),
-      radial-gradient(
-        1px 1px at 15% 45%,
-        rgba(255, 255, 255, 0.7),
-        transparent
-      ),
-      radial-gradient(
-        2px 2px at 88% 60%,
-        color-mix(in srgb, var(--color-dbz-ki) 90%, transparent),
-        transparent
-      ),
-      radial-gradient(
-        1px 1px at 40% 75%,
-        rgba(255, 255, 255, 0.6),
-        transparent
-      ),
-      radial-gradient(
-        1px 1px at 60% 92%,
-        color-mix(in srgb, var(--color-dbz-amber) 80%, transparent),
-        transparent
-      ),
-      radial-gradient(
-        1px 1px at 92% 18%,
-        rgba(255, 255, 255, 0.5),
-        transparent
-      ),
+      radial-gradient(1px 1px at 25% 12%, rgba(255, 255, 255, 0.9), transparent),
+      radial-gradient(1px 1px at 70% 28%, color-mix(in srgb, var(--color-dbz-ember) 80%, transparent), transparent),
+      radial-gradient(1px 1px at 15% 45%, rgba(255, 255, 255, 0.7), transparent),
+      radial-gradient(2px 2px at 88% 60%, color-mix(in srgb, var(--color-dbz-ki) 90%, transparent), transparent),
+      radial-gradient(1px 1px at 40% 75%, rgba(255, 255, 255, 0.6), transparent),
+      radial-gradient(1px 1px at 60% 92%, color-mix(in srgb, var(--color-dbz-amber) 80%, transparent), transparent),
+      radial-gradient(1px 1px at 92% 18%, rgba(255, 255, 255, 0.5), transparent),
       radial-gradient(1px 1px at 5% 70%, rgba(217, 33, 33, 0.7), transparent),
       radial-gradient(1px 1px at 50% 5%, rgba(255, 255, 255, 0.4), transparent),
-      radial-gradient(
-        1px 1px at 33% 33%,
-        color-mix(in srgb, var(--color-dbz-ember) 50%, transparent),
-        transparent
-      );
+      radial-gradient(1px 1px at 33% 33%, color-mix(in srgb, var(--color-dbz-ember) 50%, transparent), transparent);
     background-size: 600px 600px;
     background-repeat: repeat;
   }
@@ -1285,21 +1192,9 @@ main:focus {
   }
   .aurora {
     background:
-      radial-gradient(
-        40% 50% at 25% 30%,
-        rgba(255, 178, 0, 0.22),
-        transparent 70%
-      ),
-      radial-gradient(
-        45% 55% at 78% 65%,
-        rgba(255, 62, 0, 0.16),
-        transparent 70%
-      ),
-      radial-gradient(
-        35% 45% at 60% 18%,
-        color-mix(in srgb, var(--color-dbz-ki) 12%, transparent),
-        transparent 70%
-      );
+      radial-gradient(40% 50% at 25% 30%, rgba(255, 178, 0, 0.22), transparent 70%),
+      radial-gradient(45% 55% at 78% 65%, rgba(255, 62, 0, 0.16), transparent 70%),
+      radial-gradient(35% 45% at 60% 18%, color-mix(in srgb, var(--color-dbz-ki) 12%, transparent), transparent 70%);
     filter: blur(60px);
     animation: aurora-drift 24s ease-in-out infinite;
     will-change: transform;
@@ -1344,11 +1239,7 @@ main:focus {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(
-      120% 120% at 50% 40%,
-      transparent 55%,
-      rgba(0, 0, 0, 0.55) 100%
-    );
+    background: radial-gradient(120% 120% at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
   }
 
   /* === Float lent (parallax léger des silhouettes / orbes décoratifs) === */
@@ -1456,11 +1347,7 @@ main:focus {
     top: 0;
     left: 0;
     height: 3px;
-    background: linear-gradient(
-      90deg,
-      var(--color-dbz-orange),
-      var(--color-dbz-red)
-    );
+    background: linear-gradient(90deg, var(--color-dbz-orange), var(--color-dbz-red));
     transform-origin: 0 50%;
     animation: scroll-progress linear;
     animation-timeline: scroll(root);
@@ -1631,11 +1518,7 @@ main:focus {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 0.18em;
-  text-decoration-color: color-mix(
-    in srgb,
-    var(--color-dbz-orange, #e78220) 40%,
-    transparent
-  );
+  text-decoration-color: color-mix(in srgb, var(--color-dbz-orange, #e78220) 40%, transparent);
   transition: text-decoration-color 150ms ease;
 }
 .wiki-content a:hover {
@@ -2057,8 +1940,7 @@ main:focus {
   height: auto;
   object-fit: contain;
   border-radius: 0.5rem;
-  border: 1px solid
-    color-mix(in oklab, var(--color-dbz-orange, #e78220) 45%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-dbz-orange, #e78220) 45%, transparent);
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.7);
 }
 .wiki-lightbox__close {
@@ -2250,9 +2132,7 @@ main:focus {
 	   à z 0 et le débordement caché suffit à le contenir. */
   /* Bord gauche = celui de `.page-shell` : le deck et les blocs du bas
 	   partagent désormais exactement la même colonne (cf. --shell-max). */
-  --home-edge: calc(
-    (100% - min(100%, var(--shell-max))) / 2 + var(--shell-pad)
-  );
+  --home-edge: calc((100% - min(100%, var(--shell-max))) / 2 + var(--shell-pad));
   padding: clamp(4.5rem, 9vh, 7rem) var(--home-edge) clamp(3rem, 7vh, 5rem);
   padding-right: max(var(--home-edge), var(--home-rail));
 }
@@ -2276,16 +2156,8 @@ main:focus {
 }
 .scene-grade {
   background:
-    radial-gradient(
-      120% 90% at 70% 25%,
-      color-mix(in oklab, var(--accent) 24%, transparent),
-      transparent 62%
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--accent) 7%, transparent),
-      transparent 35%
-    ),
+    radial-gradient(120% 90% at 70% 25%, color-mix(in oklab, var(--accent) 24%, transparent), transparent 62%),
+    linear-gradient(180deg, color-mix(in oklab, var(--accent) 7%, transparent), transparent 35%),
     color-mix(in oklab, #0a0a0a 26%, transparent);
   mix-blend-mode: soft-light;
 }
@@ -2535,8 +2407,7 @@ main:focus {
   isolation: isolate;
   min-height: clamp(25rem, 72vw, 33rem);
   overflow: hidden;
-  border: 2px solid
-    color-mix(in oklab, var(--panel-accent) 40%, rgba(255, 255, 255, 0.15));
+  border: 2px solid color-mix(in oklab, var(--panel-accent) 40%, rgba(255, 255, 255, 0.15));
   border-radius: clamp(1rem, 1.5vw, 1.25rem);
   background: #0d0d0c;
   box-shadow:
@@ -2607,11 +2478,7 @@ main:focus {
   inset: 0;
   background:
     linear-gradient(180deg, rgba(5, 5, 5, 0.08) 15%, rgba(5, 5, 5, 0.93) 90%),
-    linear-gradient(
-      110deg,
-      color-mix(in oklab, var(--panel-accent) 21%, transparent),
-      transparent 58%
-    );
+    linear-gradient(110deg, color-mix(in oklab, var(--panel-accent) 21%, transparent), transparent 58%);
 }
 
 .home-menu-card__kanji {
@@ -2624,8 +2491,7 @@ main:focus {
   font-weight: 900;
   line-height: 0.8;
   color: transparent;
-  -webkit-text-stroke: 1px
-    color-mix(in oklab, var(--panel-accent) 72%, white 12%);
+  -webkit-text-stroke: 1px color-mix(in oklab, var(--panel-accent) 72%, white 12%);
   opacity: 0.32;
   transform: rotate(3deg);
 }
@@ -2803,8 +2669,7 @@ main:focus {
   overflow: hidden;
   opacity: 0;
   transform: translateX(-25vw) scale(var(--s, 1));
-  border: 1px solid
-    color-mix(in oklab, var(--accent) 45%, rgba(255, 255, 255, 0.2));
+  border: 1px solid color-mix(in oklab, var(--accent) 45%, rgba(255, 255, 255, 0.2));
   box-shadow:
     0 14px 46px rgba(0, 0, 0, 0.55),
     0 0 30px color-mix(in oklab, var(--accent) 30%, transparent);
@@ -2907,8 +2772,8 @@ main:focus {
   /* L'échelle est le troisième terme de la trajectoire : le nuage entre par la
 	   gauche loin derrière la scène et passe au premier plan en la traversant.
 	   Sans elle, il glisse à plat sur la vidéo comme un autocollant. */
-  transform: translate3d(var(--kt-x, -12vw), var(--kt-y, 0), 0)
-    rotate(var(--kt-inclinaison, 0deg)) scale(var(--kt-echelle, 1));
+  transform: translate3d(var(--kt-x, -12vw), var(--kt-y, 0), 0) rotate(var(--kt-inclinaison, 0deg))
+    scale(var(--kt-echelle, 1));
   will-change: transform, opacity;
   transition: opacity 180ms ease-out;
 }
@@ -2960,12 +2825,9 @@ main:focus {
   opacity: 0;
   transition: opacity 0.25s ease;
   background:
-    linear-gradient(90deg, transparent, var(--color-kinto-lumiere)) no-repeat 0
-      20% / 100% 2px,
-    linear-gradient(90deg, transparent, var(--color-kinto-lumiere)) no-repeat 0
-      55% / 74% 2px,
-    linear-gradient(90deg, transparent, var(--color-kinto-lumiere)) no-repeat 0
-      85% / 88% 2px;
+    linear-gradient(90deg, transparent, var(--color-kinto-lumiere)) no-repeat 0 20% / 100% 2px,
+    linear-gradient(90deg, transparent, var(--color-kinto-lumiere)) no-repeat 0 55% / 74% 2px,
+    linear-gradient(90deg, transparent, var(--color-kinto-lumiere)) no-repeat 0 85% / 88% 2px;
 }
 .kt-volant[data-survol] .kt-volant__vitesse {
   opacity: 0.7;
@@ -2978,8 +2840,7 @@ main:focus {
   /* Deux ombres pour poser le nuage DANS la vidéo : une ombre portée sombre qui
 	   lui donne du poids, et le halo chaud de sa propre lumière — c'est ce couple
 	   qui l'empêche de flotter en découpe au-dessus de l'image. */
-  filter: drop-shadow(0 0.55rem 1.3rem rgba(0, 0, 0, 0.55))
-    drop-shadow(0 0 1.4rem rgba(248, 235, 126, 0.3));
+  filter: drop-shadow(0 0.55rem 1.3rem rgba(0, 0, 0, 0.55)) drop-shadow(0 0 1.4rem rgba(248, 235, 126, 0.3));
 }
 .kt-volant__nuage[data-figure="boucle"] {
   animation: kt-boucle 1.5s cubic-bezier(0.5, 0, 0.5, 1);
@@ -3959,9 +3820,7 @@ main:focus {
   }
   50% {
     filter: drop-shadow(0.035em 0.05em 0 rgba(0, 0, 0, 0.6))
-      drop-shadow(
-        0 0 24px color-mix(in oklab, var(--accent, #e78220) 40%, transparent)
-      );
+      drop-shadow(0 0 24px color-mix(in oklab, var(--accent, #e78220) 40%, transparent));
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -4156,8 +4015,7 @@ main:focus {
   aspect-ratio: 3 / 4;
   border-radius: 0.9rem;
   overflow: hidden;
-  border: 1px solid
-    color-mix(in oklab, var(--accent) 45%, rgba(255, 255, 255, 0.15));
+  border: 1px solid color-mix(in oklab, var(--accent) 45%, rgba(255, 255, 255, 0.15));
   box-shadow:
     0 18px 50px rgba(0, 0, 0, 0.55),
     0 0 34px color-mix(in oklab, var(--accent) 25%, transparent);
@@ -4360,8 +4218,7 @@ main:focus {
   text-transform: uppercase;
   color: #fff;
   background: rgba(6, 6, 6, 0.6);
-  border: 1px solid
-    color-mix(in oklab, var(--accent) 45%, rgba(255, 255, 255, 0.15));
+  border: 1px solid color-mix(in oklab, var(--accent) 45%, rgba(255, 255, 255, 0.15));
   border-radius: 3px;
   padding: 0.16rem 0.45rem;
   backdrop-filter: blur(4px);
@@ -4483,20 +4340,12 @@ main:focus {
   padding: clamp(0.85rem, 1.8vw, 1.25rem);
   border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.09);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.03) 0%,
-    rgba(0, 0, 0, 0.32) 100%
-  );
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(0, 0, 0, 0.32) 100%);
   backdrop-filter: blur(8px);
   transition: border-color 0.3s ease;
 }
 .bestof-category-section:hover {
-  border-color: color-mix(
-    in oklab,
-    var(--accent) 40%,
-    rgba(255, 255, 255, 0.18)
-  );
+  border-color: color-mix(in oklab, var(--accent) 40%, rgba(255, 255, 255, 0.18));
 }
 .bestof-category-header {
   display: flex;
@@ -4639,10 +4488,7 @@ html[data-consent-open] .home-hero__caption {
    au-dessus du bandeau. */
 @media (max-width: 767px) {
   html[data-consent-open] .home-hero {
-    padding-bottom: calc(
-      clamp(3rem, 7vh, 5rem) + var(--consent-h, 0px) +
-        var(--barre-nav-total, 0px)
-    );
+    padding-bottom: calc(clamp(3rem, 7vh, 5rem) + var(--consent-h, 0px) + var(--barre-nav-total, 0px));
   }
 }
 /* La carte n'entre dans le rail que si la fenêtre est plus courte que la somme

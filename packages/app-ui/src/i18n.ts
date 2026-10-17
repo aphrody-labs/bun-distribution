@@ -31,8 +31,7 @@ const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     "common.failure": "Échec",
     "terminal.eyebrow": "APHRODY OS · OUTILS",
     "terminal.title": "Terminal",
-    "terminal.description":
-      "Shell Rust dans WebAssembly, avec accès au système de fichiers du navigateur.",
+    "terminal.description": "Shell Rust dans WebAssembly, avec accès au système de fichiers du navigateur.",
     "terminal.help": "Aide",
     "terminal.clear": "Effacer",
     "terminal.copy": "Copier",
@@ -49,8 +48,7 @@ const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
       "Entrée pour exécuter · ↑/↓ pour l’historique · Ctrl+L pour effacer · Ctrl+Maj+C pour copier",
     "terminal.copied": "Écran copié",
     "terminal.clipboardUnavailable": "Copie indisponible dans ce navigateur",
-    "terminal.temporaryNotice":
-      "Les fichiers de cette session ne seront pas conservés après fermeture.",
+    "terminal.temporaryNotice": "Les fichiers de cette session ne seront pas conservés après fermeture.",
     "groups.devices": "Appareils",
     "groups.locations": "Emplacements",
     "groups.volumes": "Volumes",
@@ -81,8 +79,7 @@ const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     "common.failure": "Failure",
     "terminal.eyebrow": "APHRODY OS · TOOLS",
     "terminal.title": "Terminal",
-    "terminal.description":
-      "Rust shell in WebAssembly, with access to the browser filesystem.",
+    "terminal.description": "Rust shell in WebAssembly, with access to the browser filesystem.",
     "terminal.help": "Help",
     "terminal.clear": "Clear",
     "terminal.copy": "Copy",
@@ -95,12 +92,10 @@ const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     "terminal.temporary": "Temporary storage",
     "terminal.startError": "The terminal did not start.",
     "terminal.loading": "Loading shell…",
-    "terminal.keyboardHelp":
-      "Enter to run · ↑/↓ for history · Ctrl+L to clear · Ctrl+Shift+C to copy",
+    "terminal.keyboardHelp": "Enter to run · ↑/↓ for history · Ctrl+L to clear · Ctrl+Shift+C to copy",
     "terminal.copied": "Screen copied",
     "terminal.clipboardUnavailable": "Clipboard is unavailable in this browser",
-    "terminal.temporaryNotice":
-      "Files in this session will not be kept after closing.",
+    "terminal.temporaryNotice": "Files in this session will not be kept after closing.",
     "groups.devices": "Devices",
     "groups.locations": "Locations",
     "groups.volumes": "Volumes",
@@ -128,7 +123,7 @@ function getInitialLanguage(): SupportedLanguage {
 
 export const useI18n = create<I18nStoreState>((set, get) => ({
   language: getInitialLanguage(),
-  setLanguage: (lang) => {
+  setLanguage: lang => {
     try {
       localStorage.setItem(STORAGE_KEY, lang);
     } catch {}

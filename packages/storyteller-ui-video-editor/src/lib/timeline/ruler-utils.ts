@@ -15,9 +15,7 @@ const LABEL_FRAME_INTERVALS = [2, 3, 5, 10, 15] as const;
 const TICK_FRAME_INTERVALS = [1, 2, 3, 5, 10, 15] as const;
 
 // Second multipliers used when zoomed out past frame-level detail.
-const SECOND_MULTIPLIERS = [
-  1, 2, 3, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600,
-] as const;
+const SECOND_MULTIPLIERS = [1, 2, 3, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600] as const;
 
 const MIN_LABEL_SPACING_PX = 120;
 const MIN_TICK_SPACING_PX = 18;
@@ -33,13 +31,7 @@ export interface RulerConfig {
 // Labels and ticks scale independently because they have different
 // minimum-spacing budgets. After choosing each, ensureTickDividesLabel
 // reconciles them so labels always land on tick positions.
-export function getRulerConfig({
-  zoomLevel,
-  fps,
-}: {
-  zoomLevel: number;
-  fps: FrameRate;
-}): RulerConfig {
+export function getRulerConfig({ zoomLevel, fps }: { zoomLevel: number; fps: FrameRate }): RulerConfig {
   const fpsFloat = frameRateToFloat(fps);
   const pixelsPerSecond = BASE_TIMELINE_PIXELS_PER_SECOND * zoomLevel;
   const pixelsPerFrame = pixelsPerSecond / fpsFloat;
@@ -161,13 +153,7 @@ export function shouldShowLabel({
 // Formats a ruler tick label:
 //   - on second boundaries: "MM:SS" (or "H:MM:SS" past 1 hour)
 //   - between seconds:     "Xf"    (frames within the current second)
-export function formatRulerLabel({
-  timeInSeconds,
-  fps,
-}: {
-  timeInSeconds: number;
-  fps: FrameRate;
-}): string {
+export function formatRulerLabel({ timeInSeconds, fps }: { timeInSeconds: number; fps: FrameRate }): string {
   if (isSecondBoundary({ timeInSeconds })) {
     return formatTimestamp({ timeInSeconds });
   }
@@ -179,23 +165,13 @@ export function formatRulerLabel({
   return `${frameWithinSecond}f`;
 }
 
-function isSecondBoundary({
-  timeInSeconds,
-}: {
-  timeInSeconds: number;
-}): boolean {
+function isSecondBoundary({ timeInSeconds }: { timeInSeconds: number }): boolean {
   const epsilon = 0.0001;
   const remainder = timeInSeconds % 1;
   return remainder < epsilon || remainder > 1 - epsilon;
 }
 
-function getFrameWithinSecond({
-  timeInSeconds,
-  fps,
-}: {
-  timeInSeconds: number;
-  fps: number;
-}): number {
+function getFrameWithinSecond({ timeInSeconds, fps }: { timeInSeconds: number; fps: number }): number {
   const fractionalPart = timeInSeconds % 1;
   return Math.round(fractionalPart * fps);
 }

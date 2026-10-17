@@ -15,5 +15,5 @@ permissions = [
   "allow-request-script-injection",
   "allow-script-result",
   "allow-start-ipc-monitor",
-  "allow-stop-ipc-monitor"
+  "allow-stop-ipc-monitor",
 ]

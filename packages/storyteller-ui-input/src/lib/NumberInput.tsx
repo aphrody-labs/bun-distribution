@@ -8,10 +8,7 @@ interface NumberInputProps {
   onChange: (value: number) => void;
 }
 
-export const NumberInput: React.FC<NumberInputProps> = ({
-  value,
-  onChange,
-}) => {
+export const NumberInput: React.FC<NumberInputProps> = ({ value, onChange }) => {
   const [inputValue, setInputValue] = useState<string>(value.toString());
 
   useEffect(() => {
@@ -20,10 +17,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = event.target.value;
-    if (
-      newValue === "" ||
-      (!isNaN(Number(newValue)) && Number(newValue) <= 100)
-    ) {
+    if (newValue === "" || (!isNaN(Number(newValue)) && Number(newValue) <= 100)) {
       setInputValue(newValue);
       const numericValue = parseFloat(newValue);
       if (newValue !== "") {
@@ -65,18 +59,12 @@ export const NumberInput: React.FC<NumberInputProps> = ({
 
       <div className="absolute right-0 top-0 flex h-[30px] flex-col rounded-r-[3px] border-l border-white/15 bg-ui-controls">
         <button
-          className={twMerge(
-            incrementButtonStyle,
-            "rounded-tr-[3px] border-b border-white/15",
-          )}
+          className={twMerge(incrementButtonStyle, "rounded-tr-[3px] border-b border-white/15")}
           onClick={handleIncrement}
         >
           <ChevronUpIcon />
         </button>
-        <button
-          className={twMerge(incrementButtonStyle, "rounded-br-[3px]")}
-          onClick={handleDecrement}
-        >
+        <button className={twMerge(incrementButtonStyle, "rounded-br-[3px]")} onClick={handleDecrement}>
           <ChevronDownIcon />
         </button>
       </div>

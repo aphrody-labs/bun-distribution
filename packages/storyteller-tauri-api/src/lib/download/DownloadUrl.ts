@@ -16,13 +16,9 @@ export interface DownloadOptions {
 export const GetDownloadPath = (
   url: string,
   options: DownloadOptions = {},
-): Promise<{ filename: string; path: string }> =>
-  invoke("get_download_path_command", { request: { url, ...options } });
+): Promise<{ filename: string; path: string }> => invoke("get_download_path_command", { request: { url, ...options } });
 
-export const DownloadUrl = async (
-  url: string,
-  options: DownloadOptions = {},
-): Promise<DownloadUrlSuccess> => {
+export const DownloadUrl = async (url: string, options: DownloadOptions = {}): Promise<DownloadUrlSuccess> => {
   return (await invoke("download_url_command", {
     request: {
       url,

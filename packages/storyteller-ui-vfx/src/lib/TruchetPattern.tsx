@@ -13,10 +13,7 @@ interface TruchetPatternProps {
   intensity?: number;
 }
 
-export const TruchetPattern = ({
-  className,
-  intensity = 1,
-}: TruchetPatternProps) => {
+export const TruchetPattern = ({ className, intensity = 1 }: TruchetPatternProps) => {
   const fillA = `rgba(255,255,255,${0.036 * intensity})`;
   const fillB = `rgba(255,255,255,${0.0095 * intensity})`;
   const diagStroke = `rgba(255,255,255,${0.16 * intensity})`;
@@ -40,44 +37,21 @@ export const TruchetPattern = ({
           const triB = isSlash
             ? `${x + 200},${y} ${x + 200},${y + 200} ${x},${y + 200}`
             : `${x},${y} ${x + 200},${y + 200} ${x},${y + 200}`;
-          const diag = isSlash
-            ? `M${x},${y + 200}L${x + 200},${y}`
-            : `M${x},${y}L${x + 200},${y + 200}`;
+          const diag = isSlash ? `M${x},${y + 200}L${x + 200},${y}` : `M${x},${y}L${x + 200},${y + 200}`;
           return (
             <g key={`${ri}-${ci}`}>
               <polygon points={triA} fill={fillA} />
               <polygon points={triB} fill={fillB} />
-              <path
-                d={diag}
-                stroke={diagStroke}
-                strokeWidth="0.6"
-                fill="none"
-              />
+              <path d={diag} stroke={diagStroke} strokeWidth="0.6" fill="none" />
             </g>
           );
         }),
       )}
-      {[1, 2, 3].map((i) => (
-        <line
-          key={`h${i}`}
-          x1="0"
-          y1={i * 200}
-          x2="1200"
-          y2={i * 200}
-          stroke={gridStroke}
-          strokeWidth="0.5"
-        />
+      {[1, 2, 3].map(i => (
+        <line key={`h${i}`} x1="0" y1={i * 200} x2="1200" y2={i * 200} stroke={gridStroke} strokeWidth="0.5" />
       ))}
-      {[1, 2, 3, 4, 5].map((i) => (
-        <line
-          key={`v${i}`}
-          x1={i * 200}
-          y1="0"
-          x2={i * 200}
-          y2="800"
-          stroke={gridStroke}
-          strokeWidth="0.5"
-        />
+      {[1, 2, 3, 4, 5].map(i => (
+        <line key={`v${i}`} x1={i * 200} y1="0" x2={i * 200} y2="800" stroke={gridStroke} strokeWidth="0.5" />
       ))}
     </svg>
   );

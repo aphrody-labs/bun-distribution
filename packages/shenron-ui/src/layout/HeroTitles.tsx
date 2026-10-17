@@ -55,29 +55,18 @@ export function HeroTitles({
       {(titleJa || titleRomaji) && (
         <div className="flex items-center flex-wrap gap-2.5 mb-3 text-white/70">
           {titleJa && (
-            <span
-              lang="ja"
-              className="font-jp text-sm md:text-base font-semibold tracking-wider text-dbz-orange"
-            >
+            <span lang="ja" className="font-jp text-sm md:text-base font-semibold tracking-wider text-dbz-orange">
               {titleJa}
             </span>
           )}
-          {titleJa && titleRomaji && (
-            <span className="text-white/30 text-xs select-none">·</span>
-          )}
+          {titleJa && titleRomaji && <span className="text-white/30 text-xs select-none">·</span>}
           {titleRomaji && (
-            <span className="font-scouter text-[11px] uppercase tracking-[0.16em] text-white/60">
-              {titleRomaji}
-            </span>
+            <span className="font-scouter text-[11px] uppercase tracking-[0.16em] text-white/60">{titleRomaji}</span>
           )}
         </div>
       )}
       {lead && (
-        <p
-          className={`leading-relaxed text-white/85 max-w-xl ${
-            regime === "compact" ? "text-[15px]" : "text-[17px]"
-          }`}
-        >
+        <p className={`leading-relaxed text-white/85 max-w-xl ${regime === "compact" ? "text-[15px]" : "text-[17px]"}`}>
           {lead}
         </p>
       )}

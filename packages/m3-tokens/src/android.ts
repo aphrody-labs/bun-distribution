@@ -61,14 +61,11 @@ export type AndroidColorRole = keyof typeof ANDROID_COLOR_ROLES;
 export type AndroidColorScheme = Record<AndroidColorRole, string>;
 
 /** Convert one CSS role map to the Android Compose naming convention. */
-export function toAndroidColorScheme(
-  roles: Record<string, string>,
-): AndroidColorScheme {
+export function toAndroidColorScheme(roles: Record<string, string>): AndroidColorScheme {
   const result = {} as AndroidColorScheme;
   for (const [androidName, cssName] of Object.entries(ANDROID_COLOR_ROLES)) {
     const value = roles[cssName] ?? roles[`--md-sys-color-${cssName}`];
-    if (!value)
-      throw new TypeError(`Missing Material 3 color role: ${cssName}`);
+    if (!value) throw new TypeError(`Missing Material 3 color role: ${cssName}`);
     result[androidName as AndroidColorRole] = value;
   }
   return result;

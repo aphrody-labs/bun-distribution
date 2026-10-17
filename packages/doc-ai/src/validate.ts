@@ -3,12 +3,7 @@
  */
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import {
-  InvalidLanguageError,
-  InvalidPathError,
-  IoError,
-  toMessage,
-} from "./errors.js";
+import { InvalidLanguageError, InvalidPathError, IoError, toMessage } from "./errors.js";
 
 /** Languages the translator can target. */
 export const SUPPORTED_LANGUAGES = ["en", "fr"] as const;
@@ -29,10 +24,7 @@ export type PathKind = "file" | "directory";
  * Resolve `target` to an absolute path and confirm it exists with the expected
  * kind. Throws {@link InvalidPathError} for missing/mistyped paths.
  */
-export async function assertPath(
-  target: string,
-  expected: PathKind | "any" = "any",
-): Promise<string> {
+export async function assertPath(target: string, expected: PathKind | "any" = "any"): Promise<string> {
   if (!target || !target.trim()) {
     throw new InvalidPathError("A non-empty path is required.");
   }
@@ -52,19 +44,13 @@ export async function assertPath(
     });
   }
   if (expected === "file" && !stat.isFile()) {
-    throw new InvalidPathError(
-      `Expected a file but found a directory: ${absolute}`,
-    );
+    throw new InvalidPathError(`Expected a file but found a directory: ${absolute}`);
   }
   if (expected === "directory" && !stat.isDirectory()) {
-    throw new InvalidPathError(
-      `Expected a directory but found a file: ${absolute}`,
-    );
+    throw new InvalidPathError(`Expected a directory but found a file: ${absolute}`);
   }
   if (expected === "any" && !stat.isFile() && !stat.isDirectory()) {
-    throw new InvalidPathError(
-      `Path is neither a file nor a directory: ${absolute}`,
-    );
+    throw new InvalidPathError(`Path is neither a file nor a directory: ${absolute}`);
   }
   return absolute;
 }

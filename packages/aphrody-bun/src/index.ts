@@ -119,11 +119,7 @@ function pub_fn_hctTones(h: number, c: number, t: number): Uint32Array {
 export { pub_fn_hctTones as hctTones };
 
 /** Derive all 49 M3 color roles from HCT seed. */
-function pub_fn_deriveScheme(
-  h: number,
-  c: number,
-  isDark: boolean,
-): ColorRoleMap {
+function pub_fn_deriveScheme(h: number, c: number, isDark: boolean): ColorRoleMap {
   const colors = new Uint32Array(49);
   lib.bun_rs_derive_scheme(h, c, isDark, colors);
 
@@ -152,15 +148,7 @@ function pub_fn_compileSass(
   const loadPathsBuf = Buffer.from(loadPathsStr);
   const styleVal = style === "compressed" ? 1 : 0;
   const err = new Uint8Array(1);
-  const ptr = lib.bun_rs_compile_sass(
-    buf,
-    buf.length,
-    loadPathsBuf,
-    loadPathsBuf.length,
-    styleVal,
-    quiet,
-    err,
-  );
+  const ptr = lib.bun_rs_compile_sass(buf, buf.length, loadPathsBuf, loadPathsBuf.length, styleVal, quiet, err);
   if (!ptr) {
     throw new Error("Sass compilation returned a null pointer");
   }
@@ -189,15 +177,7 @@ function pub_fn_compileSassFile(
   const loadPathsBuf = Buffer.from(loadPathsStr);
   const styleVal = style === "compressed" ? 1 : 0;
   const err = new Uint8Array(1);
-  const ptr = lib.bun_rs_compile_sass_file(
-    buf,
-    buf.length,
-    loadPathsBuf,
-    loadPathsBuf.length,
-    styleVal,
-    quiet,
-    err,
-  );
+  const ptr = lib.bun_rs_compile_sass_file(buf, buf.length, loadPathsBuf, loadPathsBuf.length, styleVal, quiet, err);
   if (!ptr) {
     throw new Error("Sass compilation returned a null pointer");
   }
@@ -243,10 +223,7 @@ function pub_fn_validateSpec(code: string): ValidationResult {
 export { pub_fn_validateSpec as validateSpec };
 
 function escapeForTemplate(css: string): string {
-  return css
-    .replace(/\\/g, "\\\\")
-    .replace(/`/g, "\\`")
-    .replace(/\$\{/g, "\\${");
+  return css.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
 }
 
 export interface SassPluginOptions {
@@ -263,18 +240,11 @@ export function sassRustPlugin(options: SassPluginOptions = {}) {
       build.onLoad({ filter: /\.scss$/ }, async (args: any) => {
         try {
           const quietVal = options.quiet ?? true;
-          const css = pub_fn_compileSassFile(
-            args.path,
-            options.loadPaths,
-            options.style,
-            quietVal,
-          );
+          const css = pub_fn_compileSassFile(args.path, options.loadPaths, options.style, quietVal);
           const styles = escapeForTemplate(css);
           return {
             contents:
-              `import { css } from "lit";\n` +
-              `export const styles = css\`${styles}\`;\n` +
-              `export default styles;\n`,
+              `import { css } from "lit";\n` + `export const styles = css\`${styles}\`;\n` + `export default styles;\n`,
             loader: "js",
           };
         } catch (e: any) {
@@ -310,8 +280,7 @@ export function m3Css(request: M3CssRequest): string {
     lib.bun_rs_free_string(ptr);
   }
   if (!envelope.ok) throw new Error(`m3Css: ${envelope.error}`);
-  if (typeof envelope.css !== "string")
-    throw new Error("m3Css: native response omitted CSS");
+  if (typeof envelope.css !== "string") throw new Error("m3Css: native response omitted CSS");
   return envelope.css;
 }
 

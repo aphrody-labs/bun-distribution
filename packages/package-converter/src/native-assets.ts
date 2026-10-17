@@ -7,16 +7,11 @@ const PRERELEASE = "(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)";
 const VERSION = new RegExp(
   `^${NUMBER}\\.${NUMBER}\\.${NUMBER}(?:-${PRERELEASE}(?:\\.${PRERELEASE})*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$`,
 );
-export const bunVersion = (value: string) =>
-  VERSION.test(value) ? value : "0.0.0";
-const WINGET_ID =
-  /^[A-Za-z0-9][A-Za-z0-9+_-]*(?:\.[A-Za-z0-9][A-Za-z0-9+_-]*)+$/;
-const BUN_OWNER =
-  /^bun:((?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*)@(.+)$/;
+export const bunVersion = (value: string) => (VERSION.test(value) ? value : "0.0.0");
+const WINGET_ID = /^[A-Za-z0-9][A-Za-z0-9+_-]*(?:\.[A-Za-z0-9][A-Za-z0-9+_-]*)+$/;
+const BUN_OWNER = /^bun:((?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*)@(.+)$/;
 
-export type RuntimeOwner =
-  | { kind: "winget"; id: string }
-  | { kind: "bun"; name: string; version: string };
+export type RuntimeOwner = { kind: "winget"; id: string } | { kind: "bun"; name: string; version: string };
 export type ImportResolution =
   | { dll: string; kind: "system" }
   | { dll: string; kind: "bundled"; paths: string[] }
@@ -36,15 +31,11 @@ export interface RuntimeDependencies {
 function runtimeOwner(value: string): RuntimeOwner {
   const bun = BUN_OWNER.exec(value);
   if (bun) {
-    if (!VERSION.test(bun[2]!))
-      throw new Error("Bun runtime dependency needs an exact semantic version");
+    if (!VERSION.test(bun[2]!)) throw new Error("Bun runtime dependency needs an exact semantic version");
     return { kind: "bun", name: bun[1]!, version: bun[2]! };
   }
   const id = value.startsWith("winget:") ? value.slice(7) : value;
-  if (!WINGET_ID.test(id))
-    throw new Error(
-      "Runtime owner must be Publisher.Package or bun:package@VERSION",
-    );
+  if (!WINGET_ID.test(id)) throw new Error("Runtime owner must be Publisher.Package or bun:package@VERSION");
   return { kind: "winget", id };
 }
 
@@ -70,20 +61,16 @@ export function runtimeDependencies(
     }
     const files = bundled.get(dll);
     if (files?.length) {
-      if (new Set(files.map((file) => file.sha256)).size !== 1)
-        throw new Error(`Ambiguous bundled DLL ${dll}`);
+      if (new Set(files.map(file => file.sha256)).size !== 1) throw new Error(`Ambiguous bundled DLL ${dll}`);
       resolutions.push({
         dll,
         kind: "bundled",
-        paths: files.map((file) => file.path),
+        paths: files.map(file => file.path),
       });
       continue;
     }
     const owner = owners.get(dll);
-    if (!owner)
-      throw new Error(
-        `Native PE imports ${dll}; configure its runtime package owner explicitly`,
-      );
+    if (!owner) throw new Error(`Native PE imports ${dll}; configure its runtime package owner explicitly`);
     resolutions.push({ dll, kind: "external", owner });
     if (owner.kind === "winget") winget.add(owner.id);
     else {
@@ -95,30 +82,14 @@ export function runtimeDependencies(
   return { imports: resolutions, bun, winget: [...winget] };
 }
 
-export function nativeAssets(
-  inspection: Inspection,
-  pkg: PackageRecord,
-  mappings?: Record<string, string>,
-) {
-  if (
-    pkg.kind !== "binary" ||
-    inspection.payload.some((file) => file.abi?.format === "elf")
-  )
-    return undefined;
-  const images = inspection.payload.filter(
-    (file) => file.kind === "file" && file.abi?.format === "pe",
-  );
+export function nativeAssets(inspection: Inspection, pkg: PackageRecord, mappings?: Record<string, string>) {
+  if (pkg.kind !== "binary" || inspection.payload.some(file => file.abi?.format === "elf")) return undefined;
+  const images = inspection.payload.filter(file => file.kind === "file" && file.abi?.format === "pe");
   if (!images.length) return undefined;
-  const architectures = new Set(images.map((file) => file.abi!.architecture));
+  const architectures = new Set(images.map(file => file.abi!.architecture));
   const architecture = images[0]!.abi!.architecture;
-  if (
-    architectures.size !== 1 ||
-    !architecture ||
-    !["x86", "x64", "arm", "arm64"].includes(architecture)
-  )
-    throw new Error(
-      "Native payload needs one supported, consistent PE architecture",
-    );
+  if (architectures.size !== 1 || !architecture || !["x86", "x64", "arm", "arm64"].includes(architecture))
+    throw new Error("Native payload needs one supported, consistent PE architecture");
   const bundled = new Map<string, BundledLibrary[]>();
   for (const image of images) {
     if (!image.abi!.library && !image.abi!.executable)
@@ -130,7 +101,7 @@ export function nativeAssets(
       bundled.set(name, files);
     }
   }
-  const files = images.map((image) => ({
+  const files = images.map(image => ({
     path: `payload/${image.path}`,
     sha256: image.sha256!,
     abi: image.abi!,
@@ -145,23 +116,18 @@ export function nativeAssets(
     }
   return {
     schema: 1,
-    packageKind: images.every((image) => image.abi!.library)
-      ? "native-library"
-      : "native-assets",
+    packageKind: images.every(image => image.abi!.library) ? "native-library" : "native-assets",
     architecture,
-    runtime: [...new Set(images.map((image) => image.abi!.runtime))],
-    libraries: files.filter((file) => file.abi.library),
+    runtime: [...new Set(images.map(image => image.abi!.runtime))],
+    libraries: files.filter(file => file.abi.library),
     images: files,
-    payload: inspection.payload.map((file) => ({
+    payload: inspection.payload.map(file => ({
       ...file,
       path: `payload/${file.path}`,
     })),
     dependencies,
     systemDependencies: Object.fromEntries(
-      [...new Set(files.flatMap((file) => file.winget))].map((id) => [
-        `winget:${id}`,
-        "*",
-      ]),
+      [...new Set(files.flatMap(file => file.winget))].map(id => [`winget:${id}`, "*"]),
     ),
     upstreamDependencies: pkg.dependencies,
     inputArchiveSha256: inspection.input.sha256,

@@ -16,19 +16,13 @@ const INFO_EXPR = `{
   "collections": [c.name for c in bpy.data.collections],
 }`;
 
-export async function runBlender(
-  args: string[],
-  timeoutMs = 600_000,
-): Promise<RunResult> {
+export async function runBlender(args: string[], timeoutMs = 600_000): Promise<RunResult> {
   const { executable } = await requireBlender();
-  const proc = Bun.spawn(
-    [executable, "--background", "--factory-startup", ...args],
-    {
-      stdout: "pipe",
-      stderr: "pipe",
-      timeout: timeoutMs,
-    },
-  );
+  const proc = Bun.spawn([executable, "--background", "--factory-startup", ...args], {
+    stdout: "pipe",
+    stderr: "pipe",
+    timeout: timeoutMs,
+  });
   const [stdout, stderr, exitCode] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -42,22 +36,10 @@ export function jsonPython(expr: string): string {
   return `import bpy, json\nprint(${JSON.stringify(MARK)} + json.dumps(${expr}))`;
 }
 
-export async function evalPython<T = unknown>(
-  code: string,
-  blend?: string,
-): Promise<T> {
-  const res = await runBlender([
-    ...(blend ? [blend] : []),
-    "--python-exit-code",
-    "1",
-    "--python-expr",
-    code,
-  ]);
-  const line = res.stdout.split(/\r?\n/).find((l) => l.startsWith(MARK));
-  if (res.exitCode !== 0 || !line)
-    throw new Error(
-      `blender failed (${res.exitCode}): ${res.stderr || res.stdout}`,
-    );
+export async function evalPython<T = unknown>(code: string, blend?: string): Promise<T> {
+  const res = await runBlender([...(blend ? [blend] : []), "--python-exit-code", "1", "--python-expr", code]);
+  const line = res.stdout.split(/\r?\n/).find(l => l.startsWith(MARK));
+  if (res.exitCode !== 0 || !line) throw new Error(`blender failed (${res.exitCode}): ${res.stderr || res.stdout}`);
   return JSON.parse(line.slice(MARK.length)) as T;
 }
 
@@ -65,26 +47,11 @@ export function info(blend?: string): Promise<BlendScene> {
   return evalPython<BlendScene>(jsonPython(INFO_EXPR), blend);
 }
 
-export function runScript(
-  script: string,
-  blend?: string,
-  extra: string[] = [],
-): Promise<RunResult> {
-  return runBlender([
-    ...(blend ? [blend] : []),
-    "--python-exit-code",
-    "1",
-    "--python",
-    script,
-    "--",
-    ...extra,
-  ]);
+export function runScript(script: string, blend?: string, extra: string[] = []): Promise<RunResult> {
+  return runBlender([...(blend ? [blend] : []), "--python-exit-code", "1", "--python", script, "--", ...extra]);
 }
 
-export function render(
-  blend: string,
-  opts: RenderOptions = {},
-): Promise<RunResult> {
+export function render(blend: string, opts: RenderOptions = {}): Promise<RunResult> {
   const args = [blend];
   if (opts.engine) args.push("--engine", opts.engine);
   if (opts.output) args.push("--render-output", opts.output);
@@ -114,14 +81,7 @@ except ValueError:
     pass
 mod.BlenderMCPServer(port=${port}).serve_forever()`;
   return Bun.spawn(
-    [
-      executable,
-      "--background",
-      "--factory-startup",
-      ...(blend ? [blend] : []),
-      "--python-expr",
-      code,
-    ],
+    [executable, "--background", "--factory-startup", ...(blend ? [blend] : []), "--python-expr", code],
     {
       // stdout stays off the MCP stdio channel unless asked (CLI serve).
       stdout: verbose ? "inherit" : "ignore",

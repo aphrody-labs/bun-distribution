@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  Input,
-  Label,
-  dialogManager,
-  useDialog,
-  Dialog,
-} from "@aphrody/m3-primitives";
+import { Input, Label, dialogManager, useDialog, Dialog } from "@aphrody/m3-primitives";
 import { useLibraryMutation } from "@aphrody/drive-client";
 import { useForm } from "react-hook-form";
 import type { GroupType } from "@aphrody/drive-client";
@@ -15,9 +9,7 @@ interface FormData {
 }
 
 export function openAddGroupDialog(spaceId: string) {
-  return dialogManager.create((props) => (
-    <AddGroupDialog {...props} spaceId={spaceId} />
-  ));
+  return dialogManager.create(props => <AddGroupDialog {...props} spaceId={spaceId} />);
 }
 
 function AddGroupDialog(props: { id: number; spaceId: string }) {
@@ -30,7 +22,7 @@ function AddGroupDialog(props: { id: number; spaceId: string }) {
 
   const addGroup = useLibraryMutation("spaces.add_group");
 
-  const onSubmit = form.handleSubmit(async (data) => {
+  const onSubmit = form.handleSubmit(async data => {
     await addGroup.mutateAsync({
       space_id: props.spaceId,
       name: data.groupName || getDefaultName(groupType),
@@ -42,19 +34,13 @@ function AddGroupDialog(props: { id: number; spaceId: string }) {
   });
 
   return (
-    <Dialog
-      form={form}
-      dialog={dialog}
-      title="Add group"
-      onSubmit={onSubmit}
-      ctaLabel="Create"
-    >
+    <Dialog form={form} dialog={dialog} title="Add group" onSubmit={onSubmit} ctaLabel="Create">
       <div className="space-y-4">
         <div>
           <Label>Group type</Label>
           <select
             value={typeof groupType === "string" ? groupType : "Custom"}
-            onChange={(e) => setGroupType(e.target.value as GroupType)}
+            onChange={e => setGroupType(e.target.value as GroupType)}
             className="w-full rounded-small border border-outline-variant bg-surface-container-highest px-3 py-2 text-body-medium text-on-surface"
           >
             <option value="Devices">All devices</option>
@@ -68,10 +54,7 @@ function AddGroupDialog(props: { id: number; spaceId: string }) {
         {groupType === "Custom" && (
           <div>
             <Label>Group name</Label>
-            <Input
-              {...form.register("groupName")}
-              placeholder="Enter group name"
-            />
+            <Input {...form.register("groupName")} placeholder="Enter group name" />
           </div>
         )}
       </div>

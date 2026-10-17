@@ -30,9 +30,15 @@ pub fn capture(arguments: &Value) -> Result<Value, SubsystemError> {
 
 #[cfg(windows)]
 fn capture_windows(arguments: &Value) -> Result<Value, SubsystemError> {
-    let max_elements =
-        arguments.get("maxElements").and_then(Value::as_i64).unwrap_or(200).clamp(1, 1000) as usize;
-    let requested = arguments.get("windowHandle").and_then(Value::as_i64).unwrap_or(0);
+    let max_elements = arguments
+        .get("maxElements")
+        .and_then(Value::as_i64)
+        .unwrap_or(200)
+        .clamp(1, 1000) as usize;
+    let requested = arguments
+        .get("windowHandle")
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
     if requested < 0 {
         return Err(SubsystemError::InvalidArguments(
             "snapshot windowHandle must be a non-negative HWND".into(),
@@ -76,7 +82,9 @@ pub fn click_element(arguments: &Value) -> Result<Value, SubsystemError> {
     #[cfg(not(windows))]
     {
         let _ = arguments;
-        Err(SubsystemError::Failed("computer_click_element is Windows-only".into()))
+        Err(SubsystemError::Failed(
+            "computer_click_element is Windows-only".into(),
+        ))
     }
 }
 
@@ -92,7 +100,9 @@ pub fn multi_select(arguments: &Value) -> Result<Value, SubsystemError> {
     #[cfg(not(windows))]
     {
         let _ = arguments;
-        Err(SubsystemError::Failed("multi_select is Windows-only".into()))
+        Err(SubsystemError::Failed(
+            "multi_select is Windows-only".into(),
+        ))
     }
 }
 
@@ -123,7 +133,9 @@ fn multi_labels(arguments: &Value, tool: &str) -> Result<Vec<String>, SubsystemE
         .map(str::to_owned)
         .collect::<Vec<_>>();
     if labels.is_empty() {
-        return Err(SubsystemError::InvalidArguments("labels list is empty".into()));
+        return Err(SubsystemError::InvalidArguments(
+            "labels list is empty".into(),
+        ));
     }
     Ok(labels)
 }
@@ -134,7 +146,9 @@ fn foreground_elements() -> Result<Vec<Value>, SubsystemError> {
 
     let hwnd = unsafe { GetForegroundWindow() };
     if hwnd.0.is_null() {
-        return Err(SubsystemError::Failed("No foreground window is available.".into()));
+        return Err(SubsystemError::Failed(
+            "No foreground window is available.".into(),
+        ));
     }
     walk_uia(hwnd, 1000).map_err(failed)
 }
@@ -156,9 +170,21 @@ fn resolve_multi_labels(
         if let Some(element) = hit {
             let x = element.get("x").and_then(Value::as_i64).unwrap_or_default();
             let y = element.get("y").and_then(Value::as_i64).unwrap_or_default();
-            let width = element.get("width").and_then(Value::as_i64).unwrap_or_default().max(1);
-            let height = element.get("height").and_then(Value::as_i64).unwrap_or_default().max(1);
-            resolved.push((label.clone(), (x + width / 2) as i32, (y + height / 2) as i32));
+            let width = element
+                .get("width")
+                .and_then(Value::as_i64)
+                .unwrap_or_default()
+                .max(1);
+            let height = element
+                .get("height")
+                .and_then(Value::as_i64)
+                .unwrap_or_default()
+                .max(1);
+            resolved.push((
+                label.clone(),
+                (x + width / 2) as i32,
+                (y + height / 2) as i32,
+            ));
         } else {
             not_found.push(label.clone());
         }
@@ -189,7 +215,9 @@ fn multi_edit_windows(arguments: &Value) -> Result<Value, SubsystemError> {
         .and_then(Value::as_str)
         .ok_or_else(|| SubsystemError::InvalidArguments("multi_edit requires text".into()))?;
     if text.chars().count() > 4096 {
-        return Err(SubsystemError::InvalidArguments("text exceeds 4096 chars per call".into()));
+        return Err(SubsystemError::InvalidArguments(
+            "text exceeds 4096 chars per call".into(),
+        ));
     }
     let elements = foreground_elements()?;
     let (resolved, not_found) = resolve_multi_labels(&labels, &elements);
@@ -210,22 +238,33 @@ fn multi_edit_windows(arguments: &Value) -> Result<Value, SubsystemError> {
 fn click_element_windows(arguments: &Value) -> Result<Value, SubsystemError> {
     let selectors = ["automationId", "name", "className", "controlType"];
     if !selectors.iter().any(|key| {
-        arguments.get(*key).and_then(Value::as_str).is_some_and(|value| !value.trim().is_empty())
+        arguments
+            .get(*key)
+            .and_then(Value::as_str)
+            .is_some_and(|value| !value.trim().is_empty())
     }) {
         return Err(SubsystemError::InvalidArguments(
             "Provide automationId, name, className or controlType.".into(),
         ));
     }
 
-    let requested = arguments.get("windowHandle").and_then(Value::as_i64).unwrap_or(0);
+    let requested = arguments
+        .get("windowHandle")
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
     if requested < 0 {
         return Err(SubsystemError::InvalidArguments(
             "computer_click_element windowHandle must be a non-negative HWND".into(),
         ));
     }
-    let occurrence = arguments.get("occurrence").and_then(Value::as_i64).unwrap_or(-1);
+    let occurrence = arguments
+        .get("occurrence")
+        .and_then(Value::as_i64)
+        .unwrap_or(-1);
     if occurrence < -1 || occurrence > i32::MAX as i64 {
-        return Ok(error_json("occurrence must be -1 or a non-negative match index."));
+        return Ok(error_json(
+            "occurrence must be -1 or a non-negative match index.",
+        ));
     }
 
     use windows::Win32::{
@@ -241,7 +280,9 @@ fn click_element_windows(arguments: &Value) -> Result<Value, SubsystemError> {
         return Ok(error_json("No foreground window is available."));
     }
     if !unsafe { IsWindow(Some(hwnd)).as_bool() } {
-        return Ok(error_json(&format!("HWND {requested} is not a valid window.")));
+        return Ok(error_json(&format!(
+            "HWND {requested} is not a valid window."
+        )));
     }
 
     let elements = walk_uia_elements(hwnd, 1000).map_err(failed)?;
@@ -257,7 +298,10 @@ fn click_element_windows(arguments: &Value) -> Result<Value, SubsystemError> {
         return Ok(error_json("No UI Automation element matched the selector."));
     }
     if occurrence >= matches.len() as i64 {
-        return Ok(error_json(&format!("occurrence must be -1 or in [0,{}].", matches.len() - 1)));
+        return Ok(error_json(&format!(
+            "occurrence must be -1 or in [0,{}].",
+            matches.len() - 1
+        )));
     }
     if matches.len() > 1 && occurrence < 0 {
         let candidates = matches
@@ -282,10 +326,20 @@ fn click_element_windows(arguments: &Value) -> Result<Value, SubsystemError> {
         }));
     }
 
-    let index = if occurrence < 0 { 0 } else { occurrence as usize };
+    let index = if occurrence < 0 {
+        0
+    } else {
+        occurrence as usize
+    };
     let (_element, value) = &matches[index];
-    let enabled = value.get("isEnabled").and_then(Value::as_bool).unwrap_or(false);
-    let offscreen = value.get("isOffscreen").and_then(Value::as_bool).unwrap_or(false);
+    let enabled = value
+        .get("isEnabled")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let offscreen = value
+        .get("isOffscreen")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     if !enabled {
         return Ok(error_json("The matching element is disabled."));
     }
@@ -293,14 +347,26 @@ fn click_element_windows(arguments: &Value) -> Result<Value, SubsystemError> {
         return Ok(error_json("The matching element is off-screen."));
     }
 
-    if arguments.get("activate").and_then(Value::as_bool).unwrap_or(true) {
+    if arguments
+        .get("activate")
+        .and_then(Value::as_bool)
+        .unwrap_or(true)
+    {
         aphrody_capture::switch_to_window(hwnd.0 as usize).map_err(failed)?;
         std::thread::sleep(std::time::Duration::from_millis(40));
     }
     let x = value.get("x").and_then(Value::as_i64).unwrap_or_default();
     let y = value.get("y").and_then(Value::as_i64).unwrap_or_default();
-    let width = value.get("width").and_then(Value::as_i64).unwrap_or_default().max(1);
-    let height = value.get("height").and_then(Value::as_i64).unwrap_or_default().max(1);
+    let width = value
+        .get("width")
+        .and_then(Value::as_i64)
+        .unwrap_or_default()
+        .max(1);
+    let height = value
+        .get("height")
+        .and_then(Value::as_i64)
+        .unwrap_or_default()
+        .max(1);
     let click_x = x + width / 2;
     let click_y = y + height / 2;
     aphrody_capture::mouse_move(click_x as i32, click_y as i32).map_err(failed)?;
@@ -320,15 +386,17 @@ fn error_json(message: &str) -> Value {
 
 #[cfg(windows)]
 fn matches_selector(value: &Value, arguments: &Value) -> bool {
-    ["automationId", "name", "className", "controlType"].iter().all(|key| {
-        let Some(expected) = arguments.get(*key).and_then(Value::as_str) else {
-            return true;
-        };
-        let Some(actual) = value.get(*key).and_then(Value::as_str) else {
-            return false;
-        };
-        expected.trim().is_empty() || actual.eq_ignore_ascii_case(expected.trim())
-    })
+    ["automationId", "name", "className", "controlType"]
+        .iter()
+        .all(|key| {
+            let Some(expected) = arguments.get(*key).and_then(Value::as_str) else {
+                return true;
+            };
+            let Some(actual) = value.get(*key).and_then(Value::as_str) else {
+                return false;
+            };
+            expected.trim().is_empty() || actual.eq_ignore_ascii_case(expected.trim())
+        })
 }
 
 #[cfg(windows)]

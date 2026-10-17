@@ -62,7 +62,18 @@ function parseInfo(id: string, text: string): LibretroCore {
 
 export async function libretroCatalog(): Promise<LibretroCore[]> {
   if (!existsSync(join(infoDir, ".git")))
-    Bun.spawnSync(["git", "-C", repoRoot, "submodule", "update", "--init", "--depth", "1", "--", "vendor/libretro-core-info"]);
+    Bun.spawnSync([
+      "git",
+      "-C",
+      repoRoot,
+      "submodule",
+      "update",
+      "--init",
+      "--depth",
+      "1",
+      "--",
+      "vendor/libretro-core-info",
+    ]);
   const cores: LibretroCore[] = [];
   for await (const file of new Bun.Glob("*_libretro.info").scan({ cwd: infoDir })) {
     cores.push(parseInfo(file.replace(/_libretro\.info$/, ""), await Bun.file(join(infoDir, file)).text()));
@@ -71,7 +82,12 @@ export async function libretroCatalog(): Promise<LibretroCore[]> {
 }
 
 function coreUrl(id: string): string {
-  const [os, ext] = process.platform === "win32" ? ["windows", "dll"] : process.platform === "darwin" ? ["apple/osx", "dylib"] : ["linux", "so"];
+  const [os, ext] =
+    process.platform === "win32"
+      ? ["windows", "dll"]
+      : process.platform === "darwin"
+        ? ["apple/osx", "dylib"]
+        : ["linux", "so"];
   const arch = process.arch === "arm64" ? "arm64" : "x86_64";
   return `https://buildbot.libretro.com/nightly/${os}/${arch}/latest/${id}_libretro.${ext}.zip`;
 }
@@ -81,14 +97,19 @@ export function libretroDir(): string {
 }
 
 /** Downloads one buildbot core into usr/lib/libretro and returns its digest. */
-export async function installCore(id: string, expectedSha256?: string): Promise<{ url: string; sha256: string; file: string }> {
+export async function installCore(
+  id: string,
+  expectedSha256?: string,
+): Promise<{ url: string; sha256: string; file: string }> {
   const url = coreUrl(id);
   const response = await fetch(url, { headers: { "user-agent": "bep" } });
   if (!response.ok) throw new Error(`libretro core ${id}: ${url} returned ${response.status}`);
   const bytes = new Uint8Array(await response.arrayBuffer());
   const sha256 = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
   if (expectedSha256 && expectedSha256 !== sha256)
-    throw new Error(`libretro core ${id}: sha256 ${sha256} differs from bep.lock (nightly moved; run bep update ${id})`);
+    throw new Error(
+      `libretro core ${id}: sha256 ${sha256} differs from bep.lock (nightly moved; run bep update ${id})`,
+    );
   await mkdir(libretroDir(), { recursive: true });
   await new Bun.Archive(bytes).extract(libretroDir());
   const file = (await new Bun.Archive(bytes).files()).keys().next().value ?? "";
@@ -101,7 +122,14 @@ export async function removeCore(id: string): Promise<void> {
 
 /** BIOS report for cores: each firmware file with its MD5 and whether the store holds a match. */
 export async function biosReport(ids: string[]): Promise<
-  Array<{ core: string; file: string; desc: string; optional: boolean; md5?: string; status: "present" | "missing" | "unverifiable" }>
+  Array<{
+    core: string;
+    file: string;
+    desc: string;
+    optional: boolean;
+    md5?: string;
+    status: "present" | "missing" | "unverifiable";
+  }>
 > {
   const catalog = new Map((await libretroCatalog()).map(core => [core.id, core]));
   const storeMd5 = new Set<string>();

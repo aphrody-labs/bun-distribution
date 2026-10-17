@@ -73,9 +73,7 @@ function handleOpenResult(result: OpenResult) {
       // Silent success
       break;
     case "file_not_found":
-      toast.error(
-        `File not found: ${result.path}. Check that it was not moved or deleted.`,
-      );
+      toast.error(`File not found: ${result.path}. Check that it was not moved or deleted.`);
       break;
     case "app_not_found":
       toast.error(`Application not found: ${result.app_id}. Pick another app.`);

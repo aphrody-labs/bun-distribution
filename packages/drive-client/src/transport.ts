@@ -22,10 +22,7 @@ export interface SubscriptionOptions {
 
 export interface Transport {
   sendRequest(request: any): Promise<any>;
-  subscribe(
-    callback: (event: any) => void,
-    options?: SubscriptionOptions,
-  ): Promise<() => void>;
+  subscribe(callback: (event: any) => void, options?: SubscriptionOptions): Promise<() => void>;
   destroy?(): void;
 }
 
@@ -35,17 +32,11 @@ export interface Transport {
  */
 export class TauriTransport implements Transport {
   private invoke: (cmd: string, args?: any) => Promise<any>;
-  private listen: (
-    event: string,
-    handler: (event: any) => void,
-  ) => Promise<() => void>;
+  private listen: (event: string, handler: (event: any) => void) => Promise<() => void>;
 
   constructor(
     invoke: (cmd: string, args?: any) => Promise<any>,
-    listen: (
-      event: string,
-      handler: (event: any) => void,
-    ) => Promise<() => void>,
+    listen: (event: string, handler: (event: any) => void) => Promise<() => void>,
     private eventName = "core-event",
     private scopedEvents = false,
   ) {
@@ -58,10 +49,7 @@ export class TauriTransport implements Transport {
     return response;
   }
 
-  async subscribe(
-    callback: (event: any) => void,
-    options?: SubscriptionOptions,
-  ): Promise<() => void> {
+  async subscribe(callback: (event: any) => void, options?: SubscriptionOptions): Promise<() => void> {
     const args = {
       eventTypes: options?.event_types ?? DEFAULT_EVENT_SUBSCRIPTION,
       filter: options?.filter ?? null,
@@ -89,8 +77,7 @@ export class TauriTransport implements Transport {
       subscriptionId = await this.invoke("subscribe_to_events", args);
       if (this.scopedEvents) {
         for (const payload of buffered) {
-          if (payload?.subscription_id === subscriptionId)
-            callback(payload.event);
+          if (payload?.subscription_id === subscriptionId) callback(payload.event);
         }
         buffered.length = 0;
       }
@@ -145,18 +132,13 @@ export class HttpTransport implements Transport {
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
-      throw new Error(
-        `RPC ${response.status} ${response.statusText}${text ? `: ${text}` : ""}`,
-      );
+      throw new Error(`RPC ${response.status} ${response.statusText}${text ? `: ${text}` : ""}`);
     }
 
     return await response.json();
   }
 
-  async subscribe(
-    callback: (event: any) => void,
-    _options?: SubscriptionOptions,
-  ): Promise<() => void> {
+  async subscribe(callback: (event: any) => void, _options?: SubscriptionOptions): Promise<() => void> {
     this.sharedCallbacks.add(callback);
     this.ensureSharedSource();
 
@@ -172,12 +154,10 @@ export class HttpTransport implements Transport {
   private ensureSharedSource() {
     if (this.sharedSource) return;
 
-    const EventSourceConstructor = globalThis.EventSource as unknown as new (
-      url: string,
-    ) => EventSource;
+    const EventSourceConstructor = globalThis.EventSource as unknown as new (url: string) => EventSource;
     const source = new EventSourceConstructor(`${this.baseUrl}/events`);
 
-    source.addEventListener("message", (e) => {
+    source.addEventListener("message", e => {
       let parsed: any;
       try {
         parsed = JSON.parse(e.data);
@@ -209,7 +189,7 @@ export class HttpTransport implements Transport {
       }
     });
 
-    source.addEventListener("error", (e) => {
+    source.addEventListener("error", e => {
       // EventSource auto-reconnects on transient failures. We log once
       // and let the browser retry — there's nothing useful to do at
       // this layer beyond surfacing it.

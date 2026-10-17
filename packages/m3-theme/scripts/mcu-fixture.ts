@@ -25,18 +25,12 @@ import {
 } from "@material/material-color-utilities";
 import { join } from "node:path";
 
-const OUT = join(
-  import.meta.dir,
-  "../../../../crates/ui/m3-tokens/tests/fixtures/mcu.json",
-);
+const OUT = join(import.meta.dir, "../../../../crates/ui/m3-tokens/tests/fixtures/mcu.json");
 
 /** Deterministic colours: xorshift32 plus the usual suspects. */
 function sampleColors(count: number): number[] {
   let state = 0x9e3779b9;
-  const out = [
-    0xff000000, 0xffffffff, 0xff808080, 0xffff0000, 0xff00ff00, 0xff0000ff,
-    0xff6750a4, 0xff1a73e8,
-  ];
+  const out = [0xff000000, 0xffffffff, 0xff808080, 0xffff0000, 0xff00ff00, 0xff0000ff, 0xff6750a4, 0xff1a73e8];
   while (out.length < count) {
     state ^= state << 13;
     state ^= state >>> 17;
@@ -46,10 +40,7 @@ function sampleColors(count: number): number[] {
   return out;
 }
 
-const SEEDS = [
-  0xff6750a4, 0xff1a73e8, 0xff2499ff, 0xffce422b, 0xff16a34a, 0xfff59e0b,
-  0xffe91e63, 0xff795548,
-];
+const SEEDS = [0xff6750a4, 0xff1a73e8, 0xff2499ff, 0xffce422b, 0xff16a34a, 0xfff59e0b, 0xffe91e63, 0xff795548];
 const ROLES = [
   "primary",
   "onPrimary",
@@ -107,13 +98,9 @@ const ROLES = [
   "neutralVariantPaletteKeyColor",
 ] as const;
 const colors = MaterialDynamicColors as unknown as Record<string, DynamicColor>;
-const roles = (scheme: DynamicScheme) =>
-  Object.fromEntries(ROLES.map((r) => [r, colors[r]!.getArgb(scheme)]));
+const roles = (scheme: DynamicScheme) => Object.fromEntries(ROLES.map(r => [r, colors[r]!.getArgb(scheme)]));
 
-const VARIANTS: [
-  string,
-  new (h: Hct, dark: boolean, level: number) => DynamicScheme,
-][] = [
+const VARIANTS: [string, new (h: Hct, dark: boolean, level: number) => DynamicScheme][] = [
   ["monochrome", SchemeMonochrome],
   ["neutral", SchemeNeutral],
   ["tonal-spot", SchemeTonalSpot],
@@ -166,10 +153,7 @@ const spaceui = SPACEUI.map(([accentArgb, neutralArgb, dark]) => {
     secondaryPalette: base.secondaryPalette,
     tertiaryPalette: base.tertiaryPalette,
     neutralPalette: TonalPalette.fromHueAndChroma(neutral.hue, neutralChroma),
-    neutralVariantPalette: TonalPalette.fromHueAndChroma(
-      neutral.hue,
-      neutralChroma === 0 ? 0 : neutralChroma + 4,
-    ),
+    neutralVariantPalette: TonalPalette.fromHueAndChroma(neutral.hue, neutralChroma === 0 ? 0 : neutralChroma + 4),
     errorPalette: base.errorPalette,
   });
   return {
@@ -183,9 +167,7 @@ const spaceui = SPACEUI.map(([accentArgb, neutralArgb, dark]) => {
 const solve = [];
 for (let hue = 0; hue < 360; hue += 37) {
   for (const chroma of [0, 8, 16, 24, 36, 48, 84, 120, 200]) {
-    for (const tone of [
-      0, 1, 5, 10, 25, 40, 49.6, 50, 60, 80, 90, 95, 98, 99, 100,
-    ]) {
+    for (const tone of [0, 1, 5, 10, 25, 40, 49.6, 50, 60, 80, 90, 95, 98, 99, 100]) {
       solve.push([hue, chroma, tone, Hct.from(hue, chroma, tone).toInt()]);
     }
   }
@@ -208,27 +190,17 @@ const palettes = [
   };
 });
 
-const custom = SEEDS.flatMap((source) =>
-  [0xff16a34a, 0xfff59e0b].flatMap((value) =>
-    [true, false].map((blend) => {
+const custom = SEEDS.flatMap(source =>
+  [0xff16a34a, 0xfff59e0b].flatMap(value =>
+    [true, false].map(blend => {
       const group = customColor(source, { name: "x", value, blend });
       return {
         source,
         value,
         blend,
         harmonized: group.value,
-        light: [
-          group.light.color,
-          group.light.onColor,
-          group.light.colorContainer,
-          group.light.onColorContainer,
-        ],
-        dark: [
-          group.dark.color,
-          group.dark.onColor,
-          group.dark.colorContainer,
-          group.dark.onColorContainer,
-        ],
+        light: [group.light.color, group.light.onColor, group.light.colorContainer, group.light.onColorContainer],
+        dark: [group.dark.color, group.dark.onColor, group.dark.colorContainer, group.dark.onColorContainer],
       };
     }),
   ),
@@ -247,7 +219,7 @@ const fixture = {
     z: vc.z,
     rgb_d: vc.rgbD,
   },
-  hct: sampleColors(256).map((argb) => {
+  hct: sampleColors(256).map(argb => {
     const hct = Hct.fromInt(argb);
     return [argb, hct.hue, hct.chroma, hct.tone];
   }),
@@ -259,6 +231,4 @@ const fixture = {
 };
 
 await Bun.write(OUT, `${JSON.stringify(fixture)}\n`);
-console.log(
-  `wrote ${OUT}: ${schemes.length} schemes, ${solve.length} solver points, ${fixture.hct.length} colours`,
-);
+console.log(`wrote ${OUT}: ${schemes.length} schemes, ${solve.length} solver points, ${fixture.hct.length} colours`);

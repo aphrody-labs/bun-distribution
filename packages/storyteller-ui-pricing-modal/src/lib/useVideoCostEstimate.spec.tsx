@@ -34,8 +34,7 @@ vi.mock("@storyteller/tauri-api", () => ({
   isEstimateVideoCostSuccess: (result: any) => result.status === "success",
 }));
 vi.mock("./cost-breakdown-modal-store", () => ({
-  useCostBreakdownModalStore: (select: any) =>
-    select({ setEstimatedCreditsForPage: mocks.setCredits }),
+  useCostBreakdownModalStore: (select: any) => select({ setEstimatedCreditsForPage: mocks.setCredits }),
 }));
 
 beforeEach(() => {
@@ -49,15 +48,8 @@ beforeEach(() => {
 });
 
 it("quotes a future model with the chosen bitrate and reference durations in milliseconds", async () => {
-  renderHook(() =>
-    useVideoCostEstimate(ModelPage.ImageToVideo, model, "artcraft"),
-  );
-  await waitFor(() =>
-    expect(mocks.setCredits).toHaveBeenLastCalledWith(
-      ModelPage.ImageToVideo,
-      42,
-    ),
-  );
+  renderHook(() => useVideoCostEstimate(ModelPage.ImageToVideo, model, "artcraft"));
+  await waitFor(() => expect(mocks.setCredits).toHaveBeenLastCalledWith(ModelPage.ImageToVideo, 42));
   expect(mocks.estimate).toHaveBeenCalledWith(
     expect.objectContaining({
       model: "future_video",
@@ -77,15 +69,8 @@ it("quotes a future model with the chosen bitrate and reference durations in mil
 
 it("prices all selected generations for any model with API batch options", async () => {
   mocks.state.generationCount = 3;
-  renderHook(() =>
-    useVideoCostEstimate(ModelPage.ImageToVideo, model, "artcraft"),
-  );
-  await waitFor(() =>
-    expect(mocks.setCredits).toHaveBeenLastCalledWith(
-      ModelPage.ImageToVideo,
-      126,
-    ),
-  );
+  renderHook(() => useVideoCostEstimate(ModelPage.ImageToVideo, model, "artcraft"));
+  await waitFor(() => expect(mocks.setCredits).toHaveBeenLastCalledWith(ModelPage.ImageToVideo, 126));
 });
 
 it("clears format options and clamps stale batch counts for unsupported models", async () => {
@@ -95,45 +80,27 @@ it("clears format options and clamps stale batch counts for unsupported models",
     generationCountOptions: [1],
     outputFormatOptions: undefined,
   } as VideoModel;
-  renderHook(() =>
-    useVideoCostEstimate(ModelPage.ImageToVideo, single, "artcraft"),
-  );
-  await waitFor(() =>
-    expect(mocks.setCredits).toHaveBeenLastCalledWith(
-      ModelPage.ImageToVideo,
-      42,
-    ),
-  );
-  expect(mocks.estimate).toHaveBeenCalledWith(
-    expect.objectContaining({ output_format: undefined }),
-  );
+  renderHook(() => useVideoCostEstimate(ModelPage.ImageToVideo, single, "artcraft"));
+  await waitFor(() => expect(mocks.setCredits).toHaveBeenLastCalledWith(ModelPage.ImageToVideo, 42));
+  expect(mocks.estimate).toHaveBeenCalledWith(expect.objectContaining({ output_format: undefined }));
 });
 
 it("does not overwrite a newer model's quote with a slow earlier response", async () => {
   let finishOld: (result: unknown) => void = () => {};
   mocks.estimate.mockImplementationOnce(
     () =>
-      new Promise((resolve) => {
+      new Promise(resolve => {
         finishOld = resolve;
       }),
   );
-  const hook = renderHook(
-    ({ selected }) =>
-      useVideoCostEstimate(ModelPage.ImageToVideo, selected, "artcraft"),
-    { initialProps: { selected: model } },
-  );
+  const hook = renderHook(({ selected }) => useVideoCostEstimate(ModelPage.ImageToVideo, selected, "artcraft"), {
+    initialProps: { selected: model },
+  });
   hook.rerender({
     selected: { ...model, id: "new_model", tauriId: "new_model" } as VideoModel,
   });
-  await waitFor(() =>
-    expect(mocks.setCredits).toHaveBeenLastCalledWith(
-      ModelPage.ImageToVideo,
-      42,
-    ),
-  );
-  await act(async () =>
-    finishOld({ status: "success", payload: { cost_in_credits: 999 } }),
-  );
+  await waitFor(() => expect(mocks.setCredits).toHaveBeenLastCalledWith(ModelPage.ImageToVideo, 42));
+  await act(async () => finishOld({ status: "success", payload: { cost_in_credits: 999 } }));
   expect(mocks.setCredits).toHaveBeenLastCalledWith(ModelPage.ImageToVideo, 42);
 });
 

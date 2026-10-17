@@ -5,17 +5,52 @@ interface Functions {
   /** mgmtapi.dll!SnmpMgrClose */
   SnmpMgrClose(session: Win32Pointer): number;
   /** mgmtapi.dll!SnmpMgrCtl */
-  SnmpMgrCtl(session: Win32Pointer, dwCtlCode: number, lpvInBuffer: Win32Pointer, cbInBuffer: number, lpvOUTBuffer: Win32Pointer, cbOUTBuffer: number, lpcbBytesReturned: Win32Pointer): number;
+  SnmpMgrCtl(
+    session: Win32Pointer,
+    dwCtlCode: number,
+    lpvInBuffer: Win32Pointer,
+    cbInBuffer: number,
+    lpvOUTBuffer: Win32Pointer,
+    cbOUTBuffer: number,
+    lpcbBytesReturned: Win32Pointer,
+  ): number;
   /** mgmtapi.dll!SnmpMgrGetTrap */
-  SnmpMgrGetTrap(enterprise: Win32Pointer, IPAddress: Win32Pointer, genericTrap: Win32Pointer, specificTrap: Win32Pointer, timeStamp: Win32Pointer, variableBindings: Win32Pointer): number;
+  SnmpMgrGetTrap(
+    enterprise: Win32Pointer,
+    IPAddress: Win32Pointer,
+    genericTrap: Win32Pointer,
+    specificTrap: Win32Pointer,
+    timeStamp: Win32Pointer,
+    variableBindings: Win32Pointer,
+  ): number;
   /** mgmtapi.dll!SnmpMgrGetTrapEx */
-  SnmpMgrGetTrapEx(enterprise: Win32Pointer, agentAddress: Win32Pointer, sourceAddress: Win32Pointer, genericTrap: Win32Pointer, specificTrap: Win32Pointer, community: Win32Pointer, timeStamp: Win32Pointer, variableBindings: Win32Pointer): number;
+  SnmpMgrGetTrapEx(
+    enterprise: Win32Pointer,
+    agentAddress: Win32Pointer,
+    sourceAddress: Win32Pointer,
+    genericTrap: Win32Pointer,
+    specificTrap: Win32Pointer,
+    community: Win32Pointer,
+    timeStamp: Win32Pointer,
+    variableBindings: Win32Pointer,
+  ): number;
   /** mgmtapi.dll!SnmpMgrOidToStr */
   SnmpMgrOidToStr(oid: Win32Pointer, string: Win32Pointer): number;
   /** mgmtapi.dll!SnmpMgrOpen */
-  SnmpMgrOpen(lpAgentAddress: string | Win32Pointer, lpAgentCommunity: string | Win32Pointer, nTimeOut: number, nRetries: number): number | null;
+  SnmpMgrOpen(
+    lpAgentAddress: string | Win32Pointer,
+    lpAgentCommunity: string | Win32Pointer,
+    nTimeOut: number,
+    nRetries: number,
+  ): number | null;
   /** mgmtapi.dll!SnmpMgrRequest */
-  SnmpMgrRequest(session: Win32Pointer, requestType: number, variableBindings: Win32Pointer, errorStatus: Win32Pointer, errorIndex: Win32Pointer): number;
+  SnmpMgrRequest(
+    session: Win32Pointer,
+    requestType: number,
+    variableBindings: Win32Pointer,
+    errorStatus: Win32Pointer,
+    errorIndex: Win32Pointer,
+  ): number;
   /** mgmtapi.dll!SnmpMgrStrToOid */
   SnmpMgrStrToOid(string: string | Win32Pointer, oid: Win32Pointer): number;
   /** mgmtapi.dll!SnmpMgrTrapListen */

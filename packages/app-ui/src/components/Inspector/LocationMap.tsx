@@ -10,9 +10,7 @@ interface LocationMapProps {
 
 // Convert HSL string to hex color
 function hslToHex(hslString: string): string {
-  const [h, s, l] = hslString
-    .split(",")
-    .map((v) => parseFloat(v.replace(/[^\d.]/g, "")));
+  const [h, s, l] = hslString.split(",").map(v => parseFloat(v.replace(/[^\d.]/g, "")));
 
   const lightness = l / 100;
   const saturation = s / 100;
@@ -60,14 +58,11 @@ function getMapStyle() {
     sources: {
       protomaps: {
         type: "vector",
-        tiles: [
-          "https://api.protomaps.com/tiles/v3/{z}/{x}/{y}.mvt?key=41392fb7515533a5",
-        ],
+        tiles: ["https://api.protomaps.com/tiles/v3/{z}/{x}/{y}.mvt?key=41392fb7515533a5"],
         maxzoom: 15,
       },
     },
-    glyphs:
-      "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+    glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
     layers: [
       // Background
       {
@@ -264,11 +259,7 @@ function getMapStyle() {
   };
 }
 
-export function LocationMap({
-  latitude,
-  longitude,
-  className,
-}: LocationMapProps) {
+export function LocationMap({ latitude, longitude, className }: LocationMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
@@ -376,11 +367,8 @@ export function LocationMap({
         tabIndex={0}
         aria-label="Expand map"
         onClick={() => setIsExpanded(true)}
-        onKeyDown={(e) => {
-          if (
-            e.target === e.currentTarget &&
-            (e.key === "Enter" || e.key === " ")
-          ) {
+        onKeyDown={e => {
+          if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
             e.preventDefault();
             setIsExpanded(true);
           }
@@ -405,12 +393,9 @@ export function LocationMap({
         </button>
         <button
           type="button"
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
-            window.open(
-              `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
-              "_blank",
-            );
+            window.open(`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`, "_blank");
           }}
           className="text-label-medium font-medium text-primary opacity-60 transition-opacity hover:opacity-100"
         >

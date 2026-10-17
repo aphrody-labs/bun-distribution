@@ -36,26 +36,22 @@ export function usePreviewInteraction({
       getTracks: () => editor.scenes.getActiveScene().tracks,
       getCurrentTime: () => editor.playback.getCurrentTime(),
       getMediaAssets: () => editor.media.getAssets(),
-      getCanvasSize: () =>
-        editor.project.getActive()?.settings.canvasSize ?? DEFAULT_CANVAS_SIZE,
+      getCanvasSize: () => editor.project.getActive()?.settings.canvasSize ?? DEFAULT_CANVAS_SIZE,
     },
     selection: {
       getSelected: () => editor.selection.getSelectedElements(),
-      setSelected: (elements) =>
-        editor.selection.setSelectedElements({ elements: [...elements] }),
+      setSelected: elements => editor.selection.setSelectedElements({ elements: [...elements] }),
       clearSelection: () => editor.selection.clearSelection(),
     },
     timeline: {
-      getElementsWithTracks: ({ elements }) =>
-        editor.timeline.getElementsWithTracks({ elements: [...elements] }),
-      previewElements: (updates) =>
-        editor.timeline.previewElements({ updates: [...updates] }),
+      getElementsWithTracks: ({ elements }) => editor.timeline.getElementsWithTracks({ elements: [...elements] }),
+      previewElements: updates => editor.timeline.previewElements({ updates: [...updates] }),
       commitPreview: () => editor.timeline.commitPreview(),
       discardPreview: () => editor.timeline.discardPreview(),
     },
     playback: {
       getIsPlaying: () => editor.playback.getIsPlaying(),
-      subscribe: (listener) => editor.playback.subscribe(listener),
+      subscribe: listener => editor.playback.subscribe(listener),
     },
     preview: {
       isMaskMode: () => isMaskMode,
@@ -63,9 +59,7 @@ export function usePreviewInteraction({
     },
   };
   const depsRef = useCommittedRef(deps) as PreviewInteractionDepsRef;
-  const [controller] = useState(
-    () => new PreviewInteractionController({ depsRef }),
-  );
+  const [controller] = useState(() => new PreviewInteractionController({ depsRef }));
 
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   useEffect(() => controller.subscribe({ listener: rerender }), [controller]);

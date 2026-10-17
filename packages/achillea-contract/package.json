@@ -3,6 +3,14 @@
   "version": "1.4.4",
   "private": false,
   "description": "Contrat Achilléa exporté en JSON Schema et en types natifs (Rust, Swift, Kotlin) — la brique qui rend le domaine portable hors TypeScript",
+  "license": "Apache-2.0",
+  "files": [
+    "README.md",
+    "generated",
+    "src",
+    "tests",
+    "tsconfig.json"
+  ],
   "type": "module",
   "sideEffects": false,
   "main": "./src/index.ts",
@@ -10,6 +18,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./generated/achillea.schema.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "scripts": {
     "generate": "bun src/cli.ts",
@@ -29,17 +41,5 @@
   },
   "engines": {
     "bun": "=1.4.4"
-  },
-  "license": "Apache-2.0",
-  "files": [
-    "README.md",
-    "generated",
-    "src",
-    "tests",
-    "tsconfig.json"
-  ],
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   }
 }

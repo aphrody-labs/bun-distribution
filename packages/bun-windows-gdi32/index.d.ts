@@ -7,7 +7,12 @@ interface Functions {
   /** gdi32.dll!AbortPath */
   AbortPath(hdc: Win32Pointer): number;
   /** gdi32.dll!AddFontMemResourceEx */
-  AddFontMemResourceEx(pFileView: Win32Pointer, cjSize: number, pvResrved: Win32Pointer, pNumFonts: Win32Pointer): number | null;
+  AddFontMemResourceEx(
+    pFileView: Win32Pointer,
+    cjSize: number,
+    pvResrved: Win32Pointer,
+    pNumFonts: Win32Pointer,
+  ): number | null;
   /** gdi32.dll!AddFontResourceA */
   AddFontResourceA(param0: string | Win32Pointer): number;
   /** gdi32.dll!AddFontResourceExA */
@@ -25,9 +30,29 @@ interface Functions {
   /** gdi32.dll!AnimatePalette */
   AnimatePalette(hPal: Win32Pointer, iStartIndex: number, cEntries: number, ppe: Win32Pointer): number;
   /** gdi32.dll!Arc */
-  Arc(hdc: Win32Pointer, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number): number;
+  Arc(
+    hdc: Win32Pointer,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    x3: number,
+    y3: number,
+    x4: number,
+    y4: number,
+  ): number;
   /** gdi32.dll!ArcTo */
-  ArcTo(hdc: Win32Pointer, left: number, top: number, right: number, bottom: number, xr1: number, yr1: number, xr2: number, yr2: number): number;
+  ArcTo(
+    hdc: Win32Pointer,
+    left: number,
+    top: number,
+    right: number,
+    bottom: number,
+    xr1: number,
+    yr1: number,
+    xr2: number,
+    yr2: number,
+  ): number;
   /** gdi32.dll!BRUSHOBJ_hGetColorTransform */
   BRUSHOBJ_hGetColorTransform(pbo: Win32Pointer): number | null;
   /** gdi32.dll!BRUSHOBJ_pvAllocRbrush */
@@ -39,7 +64,17 @@ interface Functions {
   /** gdi32.dll!BeginPath */
   BeginPath(hdc: Win32Pointer): number;
   /** gdi32.dll!BitBlt */
-  BitBlt(hdc: Win32Pointer, x: number, y: number, cx: number, cy: number, hdcSrc: Win32Pointer, x1: number, y1: number, rop: number): number;
+  BitBlt(
+    hdc: Win32Pointer,
+    x: number,
+    y: number,
+    cx: number,
+    cy: number,
+    hdcSrc: Win32Pointer,
+    x1: number,
+    y1: number,
+    rop: number,
+  ): number;
   /** gdi32.dll!CLIPOBJ_bEnum */
   CLIPOBJ_bEnum(pco: Win32Pointer, cj: number, pul: Win32Pointer): number;
   /** gdi32.dll!CLIPOBJ_cEnumStart */
@@ -53,7 +88,17 @@ interface Functions {
   /** gdi32.dll!ChoosePixelFormat */
   ChoosePixelFormat(hdc: Win32Pointer, ppfd: Win32Pointer): number;
   /** gdi32.dll!Chord */
-  Chord(hdc: Win32Pointer, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number): number;
+  Chord(
+    hdc: Win32Pointer,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    x3: number,
+    y3: number,
+    x4: number,
+    y4: number,
+  ): number;
   /** gdi32.dll!CloseEnhMetaFile */
   CloseEnhMetaFile(hdc: Win32Pointer): number | null;
   /** gdi32.dll!CloseFigure */
@@ -81,7 +126,13 @@ interface Functions {
   /** gdi32.dll!CopyMetaFileW */
   CopyMetaFile(param0: Win32Pointer, param1: string | Win32Pointer): number | null;
   /** gdi32.dll!CreateBitmap */
-  CreateBitmap(nWidth: number, nHeight: number, nPlanes: number, nBitCount: number, lpBits: Win32Pointer): number | null;
+  CreateBitmap(
+    nWidth: number,
+    nHeight: number,
+    nPlanes: number,
+    nBitCount: number,
+    lpBits: Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateBitmapIndirect */
   CreateBitmapIndirect(pbm: Win32Pointer): number | null;
   /** gdi32.dll!CreateBrushIndirect */
@@ -97,19 +148,48 @@ interface Functions {
   /** gdi32.dll!CreateCompatibleDC */
   CreateCompatibleDC(hdc: Win32Pointer): number | null;
   /** gdi32.dll!CreateDCA */
-  CreateDCA(pwszDriver: string | Win32Pointer, pwszDevice: string | Win32Pointer, pszPort: string | Win32Pointer, pdm: Win32Pointer): number | null;
+  CreateDCA(
+    pwszDriver: string | Win32Pointer,
+    pwszDevice: string | Win32Pointer,
+    pszPort: string | Win32Pointer,
+    pdm: Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateDCW */
-  CreateDCW(pwszDriver: string | Win32Pointer, pwszDevice: string | Win32Pointer, pszPort: string | Win32Pointer, pdm: Win32Pointer): number | null;
+  CreateDCW(
+    pwszDriver: string | Win32Pointer,
+    pwszDevice: string | Win32Pointer,
+    pszPort: string | Win32Pointer,
+    pdm: Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateDCW */
-  CreateDC(pwszDriver: string | Win32Pointer, pwszDevice: string | Win32Pointer, pszPort: string | Win32Pointer, pdm: Win32Pointer): number | null;
+  CreateDC(
+    pwszDriver: string | Win32Pointer,
+    pwszDevice: string | Win32Pointer,
+    pszPort: string | Win32Pointer,
+    pdm: Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateDIBPatternBrush */
   CreateDIBPatternBrush(h: Win32Pointer, iUsage: number): number | null;
   /** gdi32.dll!CreateDIBPatternBrushPt */
   CreateDIBPatternBrushPt(lpPackedDIB: Win32Pointer, iUsage: number): number | null;
   /** gdi32.dll!CreateDIBSection */
-  CreateDIBSection(hdc: Win32Pointer, pbmi: Win32Pointer, usage: number, ppvBits: Win32Pointer, hSection: Win32Pointer, offset: number): number | null;
+  CreateDIBSection(
+    hdc: Win32Pointer,
+    pbmi: Win32Pointer,
+    usage: number,
+    ppvBits: Win32Pointer,
+    hSection: Win32Pointer,
+    offset: number,
+  ): number | null;
   /** gdi32.dll!CreateDIBitmap */
-  CreateDIBitmap(hdc: Win32Pointer, pbmih: Win32Pointer, flInit: number, pjBits: Win32Pointer, pbmi: Win32Pointer, iUsage: number): number | null;
+  CreateDIBitmap(
+    hdc: Win32Pointer,
+    pbmih: Win32Pointer,
+    flInit: number,
+    pjBits: Win32Pointer,
+    pbmi: Win32Pointer,
+    iUsage: number,
+  ): number | null;
   /** gdi32.dll!CreateDiscardableBitmap */
   CreateDiscardableBitmap(hdc: Win32Pointer, cx: number, cy: number): number | null;
   /** gdi32.dll!CreateEllipticRgn */
@@ -117,13 +197,43 @@ interface Functions {
   /** gdi32.dll!CreateEllipticRgnIndirect */
   CreateEllipticRgnIndirect(lprect: Win32Pointer): number | null;
   /** gdi32.dll!CreateEnhMetaFileA */
-  CreateEnhMetaFileA(hdc: Win32Pointer, lpFilename: string | Win32Pointer, lprc: Win32Pointer, lpDesc: string | Win32Pointer): number | null;
+  CreateEnhMetaFileA(
+    hdc: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    lprc: Win32Pointer,
+    lpDesc: string | Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateEnhMetaFileW */
-  CreateEnhMetaFileW(hdc: Win32Pointer, lpFilename: string | Win32Pointer, lprc: Win32Pointer, lpDesc: string | Win32Pointer): number | null;
+  CreateEnhMetaFileW(
+    hdc: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    lprc: Win32Pointer,
+    lpDesc: string | Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateEnhMetaFileW */
-  CreateEnhMetaFile(hdc: Win32Pointer, lpFilename: string | Win32Pointer, lprc: Win32Pointer, lpDesc: string | Win32Pointer): number | null;
+  CreateEnhMetaFile(
+    hdc: Win32Pointer,
+    lpFilename: string | Win32Pointer,
+    lprc: Win32Pointer,
+    lpDesc: string | Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateFontA */
-  CreateFontA(cHeight: number, cWidth: number, cEscapement: number, cOrientation: number, cWeight: number, bItalic: number, bUnderline: number, bStrikeOut: number, iCharSet: number, iOutPrecision: number, iClipPrecision: number, iQuality: number, iPitchAndFamily: number, pszFaceName: string | Win32Pointer): number | null;
+  CreateFontA(
+    cHeight: number,
+    cWidth: number,
+    cEscapement: number,
+    cOrientation: number,
+    cWeight: number,
+    bItalic: number,
+    bUnderline: number,
+    bStrikeOut: number,
+    iCharSet: number,
+    iOutPrecision: number,
+    iClipPrecision: number,
+    iQuality: number,
+    iPitchAndFamily: number,
+    pszFaceName: string | Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateFontIndirectA */
   CreateFontIndirectA(lplf: Win32Pointer): number | null;
   /** gdi32.dll!CreateFontIndirectExA */
@@ -137,19 +247,64 @@ interface Functions {
   /** gdi32.dll!CreateFontIndirectW */
   CreateFontIndirect(lplf: Win32Pointer): number | null;
   /** gdi32.dll!CreateFontW */
-  CreateFontW(cHeight: number, cWidth: number, cEscapement: number, cOrientation: number, cWeight: number, bItalic: number, bUnderline: number, bStrikeOut: number, iCharSet: number, iOutPrecision: number, iClipPrecision: number, iQuality: number, iPitchAndFamily: number, pszFaceName: string | Win32Pointer): number | null;
+  CreateFontW(
+    cHeight: number,
+    cWidth: number,
+    cEscapement: number,
+    cOrientation: number,
+    cWeight: number,
+    bItalic: number,
+    bUnderline: number,
+    bStrikeOut: number,
+    iCharSet: number,
+    iOutPrecision: number,
+    iClipPrecision: number,
+    iQuality: number,
+    iPitchAndFamily: number,
+    pszFaceName: string | Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateFontW */
-  CreateFont(cHeight: number, cWidth: number, cEscapement: number, cOrientation: number, cWeight: number, bItalic: number, bUnderline: number, bStrikeOut: number, iCharSet: number, iOutPrecision: number, iClipPrecision: number, iQuality: number, iPitchAndFamily: number, pszFaceName: string | Win32Pointer): number | null;
+  CreateFont(
+    cHeight: number,
+    cWidth: number,
+    cEscapement: number,
+    cOrientation: number,
+    cWeight: number,
+    bItalic: number,
+    bUnderline: number,
+    bStrikeOut: number,
+    iCharSet: number,
+    iOutPrecision: number,
+    iClipPrecision: number,
+    iQuality: number,
+    iPitchAndFamily: number,
+    pszFaceName: string | Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateHalftonePalette */
   CreateHalftonePalette(hdc: Win32Pointer): number | null;
   /** gdi32.dll!CreateHatchBrush */
   CreateHatchBrush(iHatch: number, color: number): number | null;
   /** gdi32.dll!CreateICA */
-  CreateICA(pszDriver: string | Win32Pointer, pszDevice: string | Win32Pointer, pszPort: string | Win32Pointer, pdm: Win32Pointer): number | null;
+  CreateICA(
+    pszDriver: string | Win32Pointer,
+    pszDevice: string | Win32Pointer,
+    pszPort: string | Win32Pointer,
+    pdm: Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateICW */
-  CreateICW(pszDriver: string | Win32Pointer, pszDevice: string | Win32Pointer, pszPort: string | Win32Pointer, pdm: Win32Pointer): number | null;
+  CreateICW(
+    pszDriver: string | Win32Pointer,
+    pszDevice: string | Win32Pointer,
+    pszPort: string | Win32Pointer,
+    pdm: Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateICW */
-  CreateIC(pszDriver: string | Win32Pointer, pszDevice: string | Win32Pointer, pszPort: string | Win32Pointer, pdm: Win32Pointer): number | null;
+  CreateIC(
+    pszDriver: string | Win32Pointer,
+    pszDevice: string | Win32Pointer,
+    pszPort: string | Win32Pointer,
+    pdm: Win32Pointer,
+  ): number | null;
   /** gdi32.dll!CreateMetaFileA */
   CreateMetaFileA(pszFile: string | Win32Pointer): number | null;
   /** gdi32.dll!CreateMetaFileW */
@@ -175,11 +330,26 @@ interface Functions {
   /** gdi32.dll!CreateRoundRectRgn */
   CreateRoundRectRgn(x1: number, y1: number, x2: number, y2: number, w: number, h: number): number | null;
   /** gdi32.dll!CreateScalableFontResourceA */
-  CreateScalableFontResourceA(fdwHidden: number, lpszFont: string | Win32Pointer, lpszFile: string | Win32Pointer, lpszPath: string | Win32Pointer): number;
+  CreateScalableFontResourceA(
+    fdwHidden: number,
+    lpszFont: string | Win32Pointer,
+    lpszFile: string | Win32Pointer,
+    lpszPath: string | Win32Pointer,
+  ): number;
   /** gdi32.dll!CreateScalableFontResourceW */
-  CreateScalableFontResourceW(fdwHidden: number, lpszFont: string | Win32Pointer, lpszFile: string | Win32Pointer, lpszPath: string | Win32Pointer): number;
+  CreateScalableFontResourceW(
+    fdwHidden: number,
+    lpszFont: string | Win32Pointer,
+    lpszFile: string | Win32Pointer,
+    lpszPath: string | Win32Pointer,
+  ): number;
   /** gdi32.dll!CreateScalableFontResourceW */
-  CreateScalableFontResource(fdwHidden: number, lpszFont: string | Win32Pointer, lpszFile: string | Win32Pointer, lpszPath: string | Win32Pointer): number;
+  CreateScalableFontResource(
+    fdwHidden: number,
+    lpszFont: string | Win32Pointer,
+    lpszFile: string | Win32Pointer,
+    lpszPath: string | Win32Pointer,
+  ): number;
   /** gdi32.dll!CreateSolidBrush */
   CreateSolidBrush(color: number): number | null;
   /** gdi32.dll!DPtoLP */
@@ -209,19 +379,52 @@ interface Functions {
   /** gdi32.dll!EngAcquireSemaphore */
   EngAcquireSemaphore(hsem: Win32Pointer): void;
   /** gdi32.dll!EngAlphaBlend */
-  EngAlphaBlend(psoDest: Win32Pointer, psoSrc: Win32Pointer, pco: Win32Pointer, pxlo: Win32Pointer, prclDest: Win32Pointer, prclSrc: Win32Pointer, pBlendObj: Win32Pointer): number;
+  EngAlphaBlend(
+    psoDest: Win32Pointer,
+    psoSrc: Win32Pointer,
+    pco: Win32Pointer,
+    pxlo: Win32Pointer,
+    prclDest: Win32Pointer,
+    prclSrc: Win32Pointer,
+    pBlendObj: Win32Pointer,
+  ): number;
   /** gdi32.dll!EngAssociateSurface */
   EngAssociateSurface(hsurf: Win32Pointer, hdev: Win32Pointer, flHooks: number): number;
   /** gdi32.dll!EngBitBlt */
-  EngBitBlt(psoTrg: Win32Pointer, psoSrc: Win32Pointer, psoMask: Win32Pointer, pco: Win32Pointer, pxlo: Win32Pointer, prclTrg: Win32Pointer, pptlSrc: Win32Pointer, pptlMask: Win32Pointer, pbo: Win32Pointer, pptlBrush: Win32Pointer, rop4: number): number;
+  EngBitBlt(
+    psoTrg: Win32Pointer,
+    psoSrc: Win32Pointer,
+    psoMask: Win32Pointer,
+    pco: Win32Pointer,
+    pxlo: Win32Pointer,
+    prclTrg: Win32Pointer,
+    pptlSrc: Win32Pointer,
+    pptlMask: Win32Pointer,
+    pbo: Win32Pointer,
+    pptlBrush: Win32Pointer,
+    rop4: number,
+  ): number;
   /** gdi32.dll!EngCheckAbort */
   EngCheckAbort(pso: Win32Pointer): number;
   /** gdi32.dll!EngComputeGlyphSet */
   EngComputeGlyphSet(nCodePage: number, nFirstChar: number, cChars: number): number | null;
   /** gdi32.dll!EngCopyBits */
-  EngCopyBits(psoDest: Win32Pointer, psoSrc: Win32Pointer, pco: Win32Pointer, pxlo: Win32Pointer, prclDest: Win32Pointer, pptlSrc: Win32Pointer): number;
+  EngCopyBits(
+    psoDest: Win32Pointer,
+    psoSrc: Win32Pointer,
+    pco: Win32Pointer,
+    pxlo: Win32Pointer,
+    prclDest: Win32Pointer,
+    pptlSrc: Win32Pointer,
+  ): number;
   /** gdi32.dll!EngCreateBitmap */
-  EngCreateBitmap(sizl: Win32StructInit, lWidth: number, iFormat: number, fl: number, pvBits: Win32Pointer): number | null;
+  EngCreateBitmap(
+    sizl: Win32StructInit,
+    lWidth: number,
+    iFormat: number,
+    fl: number,
+    pvBits: Win32Pointer,
+  ): number | null;
   /** gdi32.dll!EngCreateClip */
   EngCreateClip(): number | null;
   /** gdi32.dll!EngCreateDeviceBitmap */
@@ -229,7 +432,14 @@ interface Functions {
   /** gdi32.dll!EngCreateDeviceSurface */
   EngCreateDeviceSurface(dhsurf: Win32Pointer, sizl: Win32StructInit, iFormatCompat: number): number | null;
   /** gdi32.dll!EngCreatePalette */
-  EngCreatePalette(iMode: number, cColors: number, pulColors: Win32Pointer, flRed: number, flGreen: number, flBlue: number): number | null;
+  EngCreatePalette(
+    iMode: number,
+    cColors: number,
+    pulColors: Win32Pointer,
+    flRed: number,
+    flGreen: number,
+    flBlue: number,
+  ): number | null;
   /** gdi32.dll!EngCreateSemaphore */
   EngCreateSemaphore(): number | null;
   /** gdi32.dll!EngDeleteClip */
@@ -245,7 +455,15 @@ interface Functions {
   /** gdi32.dll!EngEraseSurface */
   EngEraseSurface(pso: Win32Pointer, prcl: Win32Pointer, iColor: number): number;
   /** gdi32.dll!EngFillPath */
-  EngFillPath(pso: Win32Pointer, ppo: Win32Pointer, pco: Win32Pointer, pbo: Win32Pointer, pptlBrushOrg: Win32Pointer, mix: number, flOptions: number): number;
+  EngFillPath(
+    pso: Win32Pointer,
+    ppo: Win32Pointer,
+    pco: Win32Pointer,
+    pbo: Win32Pointer,
+    pptlBrushOrg: Win32Pointer,
+    mix: number,
+    flOptions: number,
+  ): number;
   /** gdi32.dll!EngFindResource */
   EngFindResource(h: Win32Pointer, iName: number, iType: number, pulSize: Win32Pointer): number | null;
   /** gdi32.dll!EngFreeModule */
@@ -257,9 +475,30 @@ interface Functions {
   /** gdi32.dll!EngGetPrinterDataFileName */
   EngGetPrinterDataFileName(hdev: Win32Pointer): number | null;
   /** gdi32.dll!EngGradientFill */
-  EngGradientFill(psoDest: Win32Pointer, pco: Win32Pointer, pxlo: Win32Pointer, pVertex: Win32Pointer, nVertex: number, pMesh: Win32Pointer, nMesh: number, prclExtents: Win32Pointer, pptlDitherOrg: Win32Pointer, ulMode: number): number;
+  EngGradientFill(
+    psoDest: Win32Pointer,
+    pco: Win32Pointer,
+    pxlo: Win32Pointer,
+    pVertex: Win32Pointer,
+    nVertex: number,
+    pMesh: Win32Pointer,
+    nMesh: number,
+    prclExtents: Win32Pointer,
+    pptlDitherOrg: Win32Pointer,
+    ulMode: number,
+  ): number;
   /** gdi32.dll!EngLineTo */
-  EngLineTo(pso: Win32Pointer, pco: Win32Pointer, pbo: Win32Pointer, x1: number, y1: number, x2: number, y2: number, prclBounds: Win32Pointer, mix: number): number;
+  EngLineTo(
+    pso: Win32Pointer,
+    pco: Win32Pointer,
+    pbo: Win32Pointer,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    prclBounds: Win32Pointer,
+    mix: number,
+  ): number;
   /** gdi32.dll!EngLoadModule */
   EngLoadModule(pwsz: string | Win32Pointer): number | null;
   /** gdi32.dll!EngLockSurface */
@@ -267,13 +506,37 @@ interface Functions {
   /** gdi32.dll!EngMarkBandingSurface */
   EngMarkBandingSurface(hsurf: Win32Pointer): number;
   /** gdi32.dll!EngMultiByteToUnicodeN */
-  EngMultiByteToUnicodeN(UnicodeString: string | Win32Pointer, MaxBytesInUnicodeString: number, BytesInUnicodeString: Win32Pointer, MultiByteString: string | Win32Pointer, BytesInMultiByteString: number): void;
+  EngMultiByteToUnicodeN(
+    UnicodeString: string | Win32Pointer,
+    MaxBytesInUnicodeString: number,
+    BytesInUnicodeString: Win32Pointer,
+    MultiByteString: string | Win32Pointer,
+    BytesInMultiByteString: number,
+  ): void;
   /** gdi32.dll!EngMultiByteToWideChar */
-  EngMultiByteToWideChar(CodePage: number, WideCharString: string | Win32Pointer, BytesInWideCharString: number, MultiByteString: string | Win32Pointer, BytesInMultiByteString: number): number;
+  EngMultiByteToWideChar(
+    CodePage: number,
+    WideCharString: string | Win32Pointer,
+    BytesInWideCharString: number,
+    MultiByteString: string | Win32Pointer,
+    BytesInMultiByteString: number,
+  ): number;
   /** gdi32.dll!EngPaint */
   EngPaint(pso: Win32Pointer, pco: Win32Pointer, pbo: Win32Pointer, pptlBrushOrg: Win32Pointer, mix: number): number;
   /** gdi32.dll!EngPlgBlt */
-  EngPlgBlt(psoTrg: Win32Pointer, psoSrc: Win32Pointer, psoMsk: Win32Pointer, pco: Win32Pointer, pxlo: Win32Pointer, pca: Win32Pointer, pptlBrushOrg: Win32Pointer, pptfx: Win32Pointer, prcl: Win32Pointer, pptl: Win32Pointer, iMode: number): number;
+  EngPlgBlt(
+    psoTrg: Win32Pointer,
+    psoSrc: Win32Pointer,
+    psoMsk: Win32Pointer,
+    pco: Win32Pointer,
+    pxlo: Win32Pointer,
+    pca: Win32Pointer,
+    pptlBrushOrg: Win32Pointer,
+    pptfx: Win32Pointer,
+    prcl: Win32Pointer,
+    pptl: Win32Pointer,
+    iMode: number,
+  ): number;
   /** gdi32.dll!EngQueryEMFInfo */
   EngQueryEMFInfo(hdev: Win32Pointer, pEMFInfo: Win32Pointer): number;
   /** gdi32.dll!EngQueryLocalTime */
@@ -281,43 +544,175 @@ interface Functions {
   /** gdi32.dll!EngReleaseSemaphore */
   EngReleaseSemaphore(hsem: Win32Pointer): void;
   /** gdi32.dll!EngStretchBlt */
-  EngStretchBlt(psoDest: Win32Pointer, psoSrc: Win32Pointer, psoMask: Win32Pointer, pco: Win32Pointer, pxlo: Win32Pointer, pca: Win32Pointer, pptlHTOrg: Win32Pointer, prclDest: Win32Pointer, prclSrc: Win32Pointer, pptlMask: Win32Pointer, iMode: number): number;
+  EngStretchBlt(
+    psoDest: Win32Pointer,
+    psoSrc: Win32Pointer,
+    psoMask: Win32Pointer,
+    pco: Win32Pointer,
+    pxlo: Win32Pointer,
+    pca: Win32Pointer,
+    pptlHTOrg: Win32Pointer,
+    prclDest: Win32Pointer,
+    prclSrc: Win32Pointer,
+    pptlMask: Win32Pointer,
+    iMode: number,
+  ): number;
   /** gdi32.dll!EngStretchBltROP */
-  EngStretchBltROP(psoDest: Win32Pointer, psoSrc: Win32Pointer, psoMask: Win32Pointer, pco: Win32Pointer, pxlo: Win32Pointer, pca: Win32Pointer, pptlHTOrg: Win32Pointer, prclDest: Win32Pointer, prclSrc: Win32Pointer, pptlMask: Win32Pointer, iMode: number, pbo: Win32Pointer, rop4: number): number;
+  EngStretchBltROP(
+    psoDest: Win32Pointer,
+    psoSrc: Win32Pointer,
+    psoMask: Win32Pointer,
+    pco: Win32Pointer,
+    pxlo: Win32Pointer,
+    pca: Win32Pointer,
+    pptlHTOrg: Win32Pointer,
+    prclDest: Win32Pointer,
+    prclSrc: Win32Pointer,
+    pptlMask: Win32Pointer,
+    iMode: number,
+    pbo: Win32Pointer,
+    rop4: number,
+  ): number;
   /** gdi32.dll!EngStrokeAndFillPath */
-  EngStrokeAndFillPath(pso: Win32Pointer, ppo: Win32Pointer, pco: Win32Pointer, pxo: Win32Pointer, pboStroke: Win32Pointer, plineattrs: Win32Pointer, pboFill: Win32Pointer, pptlBrushOrg: Win32Pointer, mixFill: number, flOptions: number): number;
+  EngStrokeAndFillPath(
+    pso: Win32Pointer,
+    ppo: Win32Pointer,
+    pco: Win32Pointer,
+    pxo: Win32Pointer,
+    pboStroke: Win32Pointer,
+    plineattrs: Win32Pointer,
+    pboFill: Win32Pointer,
+    pptlBrushOrg: Win32Pointer,
+    mixFill: number,
+    flOptions: number,
+  ): number;
   /** gdi32.dll!EngStrokePath */
-  EngStrokePath(pso: Win32Pointer, ppo: Win32Pointer, pco: Win32Pointer, pxo: Win32Pointer, pbo: Win32Pointer, pptlBrushOrg: Win32Pointer, plineattrs: Win32Pointer, mix: number): number;
+  EngStrokePath(
+    pso: Win32Pointer,
+    ppo: Win32Pointer,
+    pco: Win32Pointer,
+    pxo: Win32Pointer,
+    pbo: Win32Pointer,
+    pptlBrushOrg: Win32Pointer,
+    plineattrs: Win32Pointer,
+    mix: number,
+  ): number;
   /** gdi32.dll!EngTextOut */
-  EngTextOut(pso: Win32Pointer, pstro: Win32Pointer, pfo: Win32Pointer, pco: Win32Pointer, prclExtra: Win32Pointer, prclOpaque: Win32Pointer, pboFore: Win32Pointer, pboOpaque: Win32Pointer, pptlOrg: Win32Pointer, mix: number): number;
+  EngTextOut(
+    pso: Win32Pointer,
+    pstro: Win32Pointer,
+    pfo: Win32Pointer,
+    pco: Win32Pointer,
+    prclExtra: Win32Pointer,
+    prclOpaque: Win32Pointer,
+    pboFore: Win32Pointer,
+    pboOpaque: Win32Pointer,
+    pptlOrg: Win32Pointer,
+    mix: number,
+  ): number;
   /** gdi32.dll!EngTransparentBlt */
-  EngTransparentBlt(psoDst: Win32Pointer, psoSrc: Win32Pointer, pco: Win32Pointer, pxlo: Win32Pointer, prclDst: Win32Pointer, prclSrc: Win32Pointer, TransColor: number, bCalledFromBitBlt: number): number;
+  EngTransparentBlt(
+    psoDst: Win32Pointer,
+    psoSrc: Win32Pointer,
+    pco: Win32Pointer,
+    pxlo: Win32Pointer,
+    prclDst: Win32Pointer,
+    prclSrc: Win32Pointer,
+    TransColor: number,
+    bCalledFromBitBlt: number,
+  ): number;
   /** gdi32.dll!EngUnicodeToMultiByteN */
-  EngUnicodeToMultiByteN(MultiByteString: string | Win32Pointer, MaxBytesInMultiByteString: number, BytesInMultiByteString: Win32Pointer, UnicodeString: string | Win32Pointer, BytesInUnicodeString: number): void;
+  EngUnicodeToMultiByteN(
+    MultiByteString: string | Win32Pointer,
+    MaxBytesInMultiByteString: number,
+    BytesInMultiByteString: Win32Pointer,
+    UnicodeString: string | Win32Pointer,
+    BytesInUnicodeString: number,
+  ): void;
   /** gdi32.dll!EngUnlockSurface */
   EngUnlockSurface(pso: Win32Pointer): void;
   /** gdi32.dll!EngWideCharToMultiByte */
-  EngWideCharToMultiByte(CodePage: number, WideCharString: string | Win32Pointer, BytesInWideCharString: number, MultiByteString: string | Win32Pointer, BytesInMultiByteString: number): number;
+  EngWideCharToMultiByte(
+    CodePage: number,
+    WideCharString: string | Win32Pointer,
+    BytesInWideCharString: number,
+    MultiByteString: string | Win32Pointer,
+    BytesInMultiByteString: number,
+  ): number;
   /** gdi32.dll!EnumEnhMetaFile */
-  EnumEnhMetaFile(hdc: Win32Pointer, hmf: Win32Pointer, proc: Win32Callback, param3: Win32Pointer, lpRect: Win32Pointer): number;
+  EnumEnhMetaFile(
+    hdc: Win32Pointer,
+    hmf: Win32Pointer,
+    proc: Win32Callback,
+    param3: Win32Pointer,
+    lpRect: Win32Pointer,
+  ): number;
   /** gdi32.dll!EnumFontFamiliesA */
-  EnumFontFamiliesA(hdc: Win32Pointer, lpLogfont: string | Win32Pointer, lpProc: Win32Callback, lParam: number | bigint): number;
+  EnumFontFamiliesA(
+    hdc: Win32Pointer,
+    lpLogfont: string | Win32Pointer,
+    lpProc: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** gdi32.dll!EnumFontFamiliesExA */
-  EnumFontFamiliesExA(hdc: Win32Pointer, lpLogfont: Win32Pointer, lpProc: Win32Callback, lParam: number | bigint, dwFlags: number): number;
+  EnumFontFamiliesExA(
+    hdc: Win32Pointer,
+    lpLogfont: Win32Pointer,
+    lpProc: Win32Callback,
+    lParam: number | bigint,
+    dwFlags: number,
+  ): number;
   /** gdi32.dll!EnumFontFamiliesExW */
-  EnumFontFamiliesExW(hdc: Win32Pointer, lpLogfont: Win32Pointer, lpProc: Win32Callback, lParam: number | bigint, dwFlags: number): number;
+  EnumFontFamiliesExW(
+    hdc: Win32Pointer,
+    lpLogfont: Win32Pointer,
+    lpProc: Win32Callback,
+    lParam: number | bigint,
+    dwFlags: number,
+  ): number;
   /** gdi32.dll!EnumFontFamiliesExW */
-  EnumFontFamiliesEx(hdc: Win32Pointer, lpLogfont: Win32Pointer, lpProc: Win32Callback, lParam: number | bigint, dwFlags: number): number;
+  EnumFontFamiliesEx(
+    hdc: Win32Pointer,
+    lpLogfont: Win32Pointer,
+    lpProc: Win32Callback,
+    lParam: number | bigint,
+    dwFlags: number,
+  ): number;
   /** gdi32.dll!EnumFontFamiliesW */
-  EnumFontFamiliesW(hdc: Win32Pointer, lpLogfont: string | Win32Pointer, lpProc: Win32Callback, lParam: number | bigint): number;
+  EnumFontFamiliesW(
+    hdc: Win32Pointer,
+    lpLogfont: string | Win32Pointer,
+    lpProc: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** gdi32.dll!EnumFontFamiliesW */
-  EnumFontFamilies(hdc: Win32Pointer, lpLogfont: string | Win32Pointer, lpProc: Win32Callback, lParam: number | bigint): number;
+  EnumFontFamilies(
+    hdc: Win32Pointer,
+    lpLogfont: string | Win32Pointer,
+    lpProc: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** gdi32.dll!EnumFontsA */
-  EnumFontsA(hdc: Win32Pointer, lpLogfont: string | Win32Pointer, lpProc: Win32Callback, lParam: number | bigint): number;
+  EnumFontsA(
+    hdc: Win32Pointer,
+    lpLogfont: string | Win32Pointer,
+    lpProc: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** gdi32.dll!EnumFontsW */
-  EnumFontsW(hdc: Win32Pointer, lpLogfont: string | Win32Pointer, lpProc: Win32Callback, lParam: number | bigint): number;
+  EnumFontsW(
+    hdc: Win32Pointer,
+    lpLogfont: string | Win32Pointer,
+    lpProc: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** gdi32.dll!EnumFontsW */
-  EnumFonts(hdc: Win32Pointer, lpLogfont: string | Win32Pointer, lpProc: Win32Callback, lParam: number | bigint): number;
+  EnumFonts(
+    hdc: Win32Pointer,
+    lpLogfont: string | Win32Pointer,
+    lpProc: Win32Callback,
+    lParam: number | bigint,
+  ): number;
   /** gdi32.dll!EnumICMProfilesA */
   EnumICMProfilesA(hdc: Win32Pointer, proc: Win32Callback, param2: number | bigint): number;
   /** gdi32.dll!EnumICMProfilesW */
@@ -335,25 +730,71 @@ interface Functions {
   /** gdi32.dll!ExcludeClipRect */
   ExcludeClipRect(hdc: Win32Pointer, left: number, top: number, right: number, bottom: number): number;
   /** gdi32.dll!ExtCreatePen */
-  ExtCreatePen(iPenStyle: number, cWidth: number, plbrush: Win32Pointer, cStyle: number, pstyle: Win32Pointer): number | null;
+  ExtCreatePen(
+    iPenStyle: number,
+    cWidth: number,
+    plbrush: Win32Pointer,
+    cStyle: number,
+    pstyle: Win32Pointer,
+  ): number | null;
   /** gdi32.dll!ExtCreateRegion */
   ExtCreateRegion(lpx: Win32Pointer, nCount: number, lpData: Win32Pointer): number | null;
   /** gdi32.dll!ExtEscape */
-  ExtEscape(hdc: Win32Pointer, iEscape: number, cjInput: number, lpInData: string | Win32Pointer, cjOutput: number, lpOutData: string | Win32Pointer): number;
+  ExtEscape(
+    hdc: Win32Pointer,
+    iEscape: number,
+    cjInput: number,
+    lpInData: string | Win32Pointer,
+    cjOutput: number,
+    lpOutData: string | Win32Pointer,
+  ): number;
   /** gdi32.dll!ExtFloodFill */
   ExtFloodFill(hdc: Win32Pointer, x: number, y: number, color: number, type: number): number;
   /** gdi32.dll!ExtSelectClipRgn */
   ExtSelectClipRgn(hdc: Win32Pointer, hrgn: Win32Pointer, mode: number): number;
   /** gdi32.dll!ExtTextOutA */
-  ExtTextOutA(hdc: Win32Pointer, x: number, y: number, options: number, lprect: Win32Pointer, lpString: string | Win32Pointer, c: number, lpDx: Win32Pointer): number;
+  ExtTextOutA(
+    hdc: Win32Pointer,
+    x: number,
+    y: number,
+    options: number,
+    lprect: Win32Pointer,
+    lpString: string | Win32Pointer,
+    c: number,
+    lpDx: Win32Pointer,
+  ): number;
   /** gdi32.dll!ExtTextOutW */
-  ExtTextOutW(hdc: Win32Pointer, x: number, y: number, options: number, lprect: Win32Pointer, lpString: string | Win32Pointer, c: number, lpDx: Win32Pointer): number;
+  ExtTextOutW(
+    hdc: Win32Pointer,
+    x: number,
+    y: number,
+    options: number,
+    lprect: Win32Pointer,
+    lpString: string | Win32Pointer,
+    c: number,
+    lpDx: Win32Pointer,
+  ): number;
   /** gdi32.dll!ExtTextOutW */
-  ExtTextOut(hdc: Win32Pointer, x: number, y: number, options: number, lprect: Win32Pointer, lpString: string | Win32Pointer, c: number, lpDx: Win32Pointer): number;
+  ExtTextOut(
+    hdc: Win32Pointer,
+    x: number,
+    y: number,
+    options: number,
+    lprect: Win32Pointer,
+    lpString: string | Win32Pointer,
+    c: number,
+    lpDx: Win32Pointer,
+  ): number;
   /** gdi32.dll!FONTOBJ_cGetAllGlyphHandles */
   FONTOBJ_cGetAllGlyphHandles(pfo: Win32Pointer, phg: Win32Pointer): number;
   /** gdi32.dll!FONTOBJ_cGetGlyphs */
-  FONTOBJ_cGetGlyphs(pfo: Win32Pointer, iMode: number, cGlyph: number, phg: Win32Pointer, ppvGlyph: Win32Pointer): number;
+  FONTOBJ_cGetGlyphs(
+    pfo: Win32Pointer,
+    iMode: number,
+    cGlyph: number,
+    phg: Win32Pointer,
+    ppvGlyph: Win32Pointer,
+  ): number;
   /** gdi32.dll!FONTOBJ_pQueryGlyphAttrs */
   FONTOBJ_pQueryGlyphAttrs(pfo: Win32Pointer, iMode: number): number | null;
   /** gdi32.dll!FONTOBJ_pfdg */
@@ -379,7 +820,19 @@ interface Functions {
   /** gdi32.dll!FrameRgn */
   FrameRgn(hdc: Win32Pointer, hrgn: Win32Pointer, hbr: Win32Pointer, w: number, h: number): number;
   /** gdi32.dll!GdiAlphaBlend */
-  GdiAlphaBlend(hdcDest: Win32Pointer, xoriginDest: number, yoriginDest: number, wDest: number, hDest: number, hdcSrc: Win32Pointer, xoriginSrc: number, yoriginSrc: number, wSrc: number, hSrc: number, ftn: Win32StructInit): number;
+  GdiAlphaBlend(
+    hdcDest: Win32Pointer,
+    xoriginDest: number,
+    yoriginDest: number,
+    wDest: number,
+    hDest: number,
+    hdcSrc: Win32Pointer,
+    xoriginSrc: number,
+    yoriginSrc: number,
+    wSrc: number,
+    hSrc: number,
+    ftn: Win32StructInit,
+  ): number;
   /** gdi32.dll!GdiComment */
   GdiComment(hdc: Win32Pointer, nSize: number, lpData: Win32Pointer): number;
   /** gdi32.dll!GdiDeleteSpoolFileHandle */
@@ -395,17 +848,39 @@ interface Functions {
   /** gdi32.dll!GdiGetDC */
   GdiGetDC(SpoolFileHandle: Win32Pointer): number | null;
   /** gdi32.dll!GdiGetDevmodeForPage */
-  GdiGetDevmodeForPage(SpoolFileHandle: Win32Pointer, dwPageNumber: number, pCurrDM: Win32Pointer, pLastDM: Win32Pointer): number;
+  GdiGetDevmodeForPage(
+    SpoolFileHandle: Win32Pointer,
+    dwPageNumber: number,
+    pCurrDM: Win32Pointer,
+    pLastDM: Win32Pointer,
+  ): number;
   /** gdi32.dll!GdiGetPageCount */
   GdiGetPageCount(SpoolFileHandle: Win32Pointer): number;
   /** gdi32.dll!GdiGetPageHandle */
   GdiGetPageHandle(SpoolFileHandle: Win32Pointer, Page: number, pdwPageType: Win32Pointer): number | null;
   /** gdi32.dll!GdiGetSpoolFileHandle */
-  GdiGetSpoolFileHandle(pwszPrinterName: string | Win32Pointer, pDevmode: Win32Pointer, pwszDocName: string | Win32Pointer): number | null;
+  GdiGetSpoolFileHandle(
+    pwszPrinterName: string | Win32Pointer,
+    pDevmode: Win32Pointer,
+    pwszDocName: string | Win32Pointer,
+  ): number | null;
   /** gdi32.dll!GdiGradientFill */
-  GdiGradientFill(hdc: Win32Pointer, pVertex: Win32Pointer, nVertex: number, pMesh: Win32Pointer, nCount: number, ulMode: number): number;
+  GdiGradientFill(
+    hdc: Win32Pointer,
+    pVertex: Win32Pointer,
+    nVertex: number,
+    pMesh: Win32Pointer,
+    nCount: number,
+    ulMode: number,
+  ): number;
   /** gdi32.dll!GdiPlayPageEMF */
-  GdiPlayPageEMF(SpoolFileHandle: Win32Pointer, hemf: Win32Pointer, prectDocument: Win32Pointer, prectBorder: Win32Pointer, prectClip: Win32Pointer): number;
+  GdiPlayPageEMF(
+    SpoolFileHandle: Win32Pointer,
+    hemf: Win32Pointer,
+    prectDocument: Win32Pointer,
+    prectBorder: Win32Pointer,
+    prectClip: Win32Pointer,
+  ): number;
   /** gdi32.dll!GdiResetDCEMF */
   GdiResetDCEMF(SpoolFileHandle: Win32Pointer, pCurrDM: Win32Pointer): number;
   /** gdi32.dll!GdiSetBatchLimit */
@@ -415,7 +890,19 @@ interface Functions {
   /** gdi32.dll!GdiStartPageEMF */
   GdiStartPageEMF(SpoolFileHandle: Win32Pointer): number;
   /** gdi32.dll!GdiTransparentBlt */
-  GdiTransparentBlt(hdcDest: Win32Pointer, xoriginDest: number, yoriginDest: number, wDest: number, hDest: number, hdcSrc: Win32Pointer, xoriginSrc: number, yoriginSrc: number, wSrc: number, hSrc: number, crTransparent: number): number;
+  GdiTransparentBlt(
+    hdcDest: Win32Pointer,
+    xoriginDest: number,
+    yoriginDest: number,
+    wDest: number,
+    hDest: number,
+    hdcSrc: Win32Pointer,
+    xoriginSrc: number,
+    yoriginSrc: number,
+    wSrc: number,
+    hSrc: number,
+    crTransparent: number,
+  ): number;
   /** gdi32.dll!GetArcDirection */
   GetArcDirection(hdc: Win32Pointer): number;
   /** gdi32.dll!GetAspectRatioFilterEx */
@@ -467,11 +954,32 @@ interface Functions {
   /** gdi32.dll!GetCharWidthW */
   GetCharWidth(hdc: Win32Pointer, iFirst: number, iLast: number, lpBuffer: Win32Pointer): number;
   /** gdi32.dll!GetCharacterPlacementA */
-  GetCharacterPlacementA(hdc: Win32Pointer, lpString: string | Win32Pointer, nCount: number, nMexExtent: number, lpResults: Win32Pointer, dwFlags: number): number;
+  GetCharacterPlacementA(
+    hdc: Win32Pointer,
+    lpString: string | Win32Pointer,
+    nCount: number,
+    nMexExtent: number,
+    lpResults: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** gdi32.dll!GetCharacterPlacementW */
-  GetCharacterPlacementW(hdc: Win32Pointer, lpString: string | Win32Pointer, nCount: number, nMexExtent: number, lpResults: Win32Pointer, dwFlags: number): number;
+  GetCharacterPlacementW(
+    hdc: Win32Pointer,
+    lpString: string | Win32Pointer,
+    nCount: number,
+    nMexExtent: number,
+    lpResults: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** gdi32.dll!GetCharacterPlacementW */
-  GetCharacterPlacement(hdc: Win32Pointer, lpString: string | Win32Pointer, nCount: number, nMexExtent: number, lpResults: Win32Pointer, dwFlags: number): number;
+  GetCharacterPlacement(
+    hdc: Win32Pointer,
+    lpString: string | Win32Pointer,
+    nCount: number,
+    nMexExtent: number,
+    lpResults: Win32Pointer,
+    dwFlags: number,
+  ): number;
   /** gdi32.dll!GetClipBox */
   GetClipBox(hdc: Win32Pointer, lprect: Win32Pointer): number;
   /** gdi32.dll!GetClipRgn */
@@ -493,7 +1001,15 @@ interface Functions {
   /** gdi32.dll!GetDIBColorTable */
   GetDIBColorTable(hdc: Win32Pointer, iStart: number, cEntries: number, prgbq: Win32Pointer): number;
   /** gdi32.dll!GetDIBits */
-  GetDIBits(hdc: Win32Pointer, hbm: Win32Pointer, start: number, cLines: number, lpvBits: Win32Pointer, lpbmi: Win32Pointer, usage: number): number;
+  GetDIBits(
+    hdc: Win32Pointer,
+    hbm: Win32Pointer,
+    start: number,
+    cLines: number,
+    lpvBits: Win32Pointer,
+    lpbmi: Win32Pointer,
+    usage: number,
+  ): number;
   /** gdi32.dll!GetDeviceCaps */
   GetDeviceCaps(hdc: Win32Pointer, index: number): number;
   /** gdi32.dll!GetDeviceGammaRamp */
@@ -531,11 +1047,35 @@ interface Functions {
   /** gdi32.dll!GetGlyphIndicesW */
   GetGlyphIndices(hdc: Win32Pointer, lpstr: string | Win32Pointer, c: number, pgi: Win32Pointer, fl: number): number;
   /** gdi32.dll!GetGlyphOutlineA */
-  GetGlyphOutlineA(hdc: Win32Pointer, uChar: number, fuFormat: number, lpgm: Win32Pointer, cjBuffer: number, pvBuffer: Win32Pointer, lpmat2: Win32Pointer): number;
+  GetGlyphOutlineA(
+    hdc: Win32Pointer,
+    uChar: number,
+    fuFormat: number,
+    lpgm: Win32Pointer,
+    cjBuffer: number,
+    pvBuffer: Win32Pointer,
+    lpmat2: Win32Pointer,
+  ): number;
   /** gdi32.dll!GetGlyphOutlineW */
-  GetGlyphOutlineW(hdc: Win32Pointer, uChar: number, fuFormat: number, lpgm: Win32Pointer, cjBuffer: number, pvBuffer: Win32Pointer, lpmat2: Win32Pointer): number;
+  GetGlyphOutlineW(
+    hdc: Win32Pointer,
+    uChar: number,
+    fuFormat: number,
+    lpgm: Win32Pointer,
+    cjBuffer: number,
+    pvBuffer: Win32Pointer,
+    lpmat2: Win32Pointer,
+  ): number;
   /** gdi32.dll!GetGlyphOutlineW */
-  GetGlyphOutline(hdc: Win32Pointer, uChar: number, fuFormat: number, lpgm: Win32Pointer, cjBuffer: number, pvBuffer: Win32Pointer, lpmat2: Win32Pointer): number;
+  GetGlyphOutline(
+    hdc: Win32Pointer,
+    uChar: number,
+    fuFormat: number,
+    lpgm: Win32Pointer,
+    cjBuffer: number,
+    pvBuffer: Win32Pointer,
+    lpmat2: Win32Pointer,
+  ): number;
   /** gdi32.dll!GetGraphicsMode */
   GetGraphicsMode(hdc: Win32Pointer): number;
   /** gdi32.dll!GetICMProfileA */
@@ -629,13 +1169,45 @@ interface Functions {
   /** gdi32.dll!GetTextColor */
   GetTextColor(hdc: Win32Pointer): number;
   /** gdi32.dll!GetTextExtentExPointA */
-  GetTextExtentExPointA(hdc: Win32Pointer, lpszString: string | Win32Pointer, cchString: number, nMaxExtent: number, lpnFit: Win32Pointer, lpnDx: Win32Pointer, lpSize: Win32Pointer): number;
+  GetTextExtentExPointA(
+    hdc: Win32Pointer,
+    lpszString: string | Win32Pointer,
+    cchString: number,
+    nMaxExtent: number,
+    lpnFit: Win32Pointer,
+    lpnDx: Win32Pointer,
+    lpSize: Win32Pointer,
+  ): number;
   /** gdi32.dll!GetTextExtentExPointI */
-  GetTextExtentExPointI(hdc: Win32Pointer, lpwszString: Win32Pointer, cwchString: number, nMaxExtent: number, lpnFit: Win32Pointer, lpnDx: Win32Pointer, lpSize: Win32Pointer): number;
+  GetTextExtentExPointI(
+    hdc: Win32Pointer,
+    lpwszString: Win32Pointer,
+    cwchString: number,
+    nMaxExtent: number,
+    lpnFit: Win32Pointer,
+    lpnDx: Win32Pointer,
+    lpSize: Win32Pointer,
+  ): number;
   /** gdi32.dll!GetTextExtentExPointW */
-  GetTextExtentExPointW(hdc: Win32Pointer, lpszString: string | Win32Pointer, cchString: number, nMaxExtent: number, lpnFit: Win32Pointer, lpnDx: Win32Pointer, lpSize: Win32Pointer): number;
+  GetTextExtentExPointW(
+    hdc: Win32Pointer,
+    lpszString: string | Win32Pointer,
+    cchString: number,
+    nMaxExtent: number,
+    lpnFit: Win32Pointer,
+    lpnDx: Win32Pointer,
+    lpSize: Win32Pointer,
+  ): number;
   /** gdi32.dll!GetTextExtentExPointW */
-  GetTextExtentExPoint(hdc: Win32Pointer, lpszString: string | Win32Pointer, cchString: number, nMaxExtent: number, lpnFit: Win32Pointer, lpnDx: Win32Pointer, lpSize: Win32Pointer): number;
+  GetTextExtentExPoint(
+    hdc: Win32Pointer,
+    lpszString: string | Win32Pointer,
+    cchString: number,
+    nMaxExtent: number,
+    lpnFit: Win32Pointer,
+    lpnDx: Win32Pointer,
+    lpSize: Win32Pointer,
+  ): number;
   /** gdi32.dll!GetTextExtentPoint32A */
   GetTextExtentPoint32A(hdc: Win32Pointer, lpString: string | Win32Pointer, c: number, psizl: Win32Pointer): number;
   /** gdi32.dll!GetTextExtentPoint32W */
@@ -667,7 +1239,13 @@ interface Functions {
   /** gdi32.dll!GetViewportOrgEx */
   GetViewportOrgEx(hdc: Win32Pointer, lppoint: Win32Pointer): number;
   /** gdi32.dll!GetWinMetaFileBits */
-  GetWinMetaFileBits(hemf: Win32Pointer, cbData16: number, pData16: Win32Pointer, iMapMode: number, hdcRef: Win32Pointer): number;
+  GetWinMetaFileBits(
+    hemf: Win32Pointer,
+    cbData16: number,
+    pData16: Win32Pointer,
+    iMapMode: number,
+    hdcRef: Win32Pointer,
+  ): number;
   /** gdi32.dll!GetWindowExtEx */
   GetWindowExtEx(hdc: Win32Pointer, lpsize: Win32Pointer): number;
   /** gdi32.dll!GetWindowOrgEx */
@@ -677,7 +1255,14 @@ interface Functions {
   /** gdi32.dll!HT_Get8BPPFormatPalette */
   HT_Get8BPPFormatPalette(pPaletteEntry: Win32Pointer, RedGamma: number, GreenGamma: number, BlueGamma: number): number;
   /** gdi32.dll!HT_Get8BPPMaskPalette */
-  HT_Get8BPPMaskPalette(pPaletteEntry: Win32Pointer, Use8BPPMaskPal: number, CMYMask: number, RedGamma: number, GreenGamma: number, BlueGamma: number): number;
+  HT_Get8BPPMaskPalette(
+    pPaletteEntry: Win32Pointer,
+    Use8BPPMaskPal: number,
+    CMYMask: number,
+    RedGamma: number,
+    GreenGamma: number,
+    BlueGamma: number,
+  ): number;
   /** gdi32.dll!IntersectClipRect */
   IntersectClipRect(hdc: Win32Pointer, left: number, top: number, right: number, bottom: number): number;
   /** gdi32.dll!InvertRgn */
@@ -685,11 +1270,31 @@ interface Functions {
   /** gdi32.dll!LPtoDP */
   LPtoDP(hdc: Win32Pointer, lppt: Win32Pointer, c: number): number;
   /** gdi32.dll!LineDDA */
-  LineDDA(xStart: number, yStart: number, xEnd: number, yEnd: number, lpProc: Win32Callback, data: number | bigint): number;
+  LineDDA(
+    xStart: number,
+    yStart: number,
+    xEnd: number,
+    yEnd: number,
+    lpProc: Win32Callback,
+    data: number | bigint,
+  ): number;
   /** gdi32.dll!LineTo */
   LineTo(hdc: Win32Pointer, x: number, y: number): number;
   /** gdi32.dll!MaskBlt */
-  MaskBlt(hdcDest: Win32Pointer, xDest: number, yDest: number, width: number, height: number, hdcSrc: Win32Pointer, xSrc: number, ySrc: number, hbmMask: Win32Pointer, xMask: number, yMask: number, rop: number): number;
+  MaskBlt(
+    hdcDest: Win32Pointer,
+    xDest: number,
+    yDest: number,
+    width: number,
+    height: number,
+    hdcSrc: Win32Pointer,
+    xSrc: number,
+    ySrc: number,
+    hbmMask: Win32Pointer,
+    xMask: number,
+    yMask: number,
+    rop: number,
+  ): number;
   /** gdi32.dll!ModifyWorldTransform */
   ModifyWorldTransform(hdc: Win32Pointer, lpxf: Win32Pointer, mode: number): number;
   /** gdi32.dll!MoveToEx */
@@ -719,7 +1324,17 @@ interface Functions {
   /** gdi32.dll!PathToRegion */
   PathToRegion(hdc: Win32Pointer): number | null;
   /** gdi32.dll!Pie */
-  Pie(hdc: Win32Pointer, left: number, top: number, right: number, bottom: number, xr1: number, yr1: number, xr2: number, yr2: number): number;
+  Pie(
+    hdc: Win32Pointer,
+    left: number,
+    top: number,
+    right: number,
+    bottom: number,
+    xr1: number,
+    yr1: number,
+    xr2: number,
+    yr2: number,
+  ): number;
   /** gdi32.dll!PlayEnhMetaFile */
   PlayEnhMetaFile(hdc: Win32Pointer, hmf: Win32Pointer, lprect: Win32Pointer): number;
   /** gdi32.dll!PlayEnhMetaFileRecord */
@@ -729,7 +1344,18 @@ interface Functions {
   /** gdi32.dll!PlayMetaFileRecord */
   PlayMetaFileRecord(hdc: Win32Pointer, lpHandleTable: Win32Pointer, lpMR: Win32Pointer, noObjs: number): number;
   /** gdi32.dll!PlgBlt */
-  PlgBlt(hdcDest: Win32Pointer, lpPoint: Win32Pointer, hdcSrc: Win32Pointer, xSrc: number, ySrc: number, width: number, height: number, hbmMask: Win32Pointer, xMask: number, yMask: number): number;
+  PlgBlt(
+    hdcDest: Win32Pointer,
+    lpPoint: Win32Pointer,
+    hdcSrc: Win32Pointer,
+    xSrc: number,
+    ySrc: number,
+    width: number,
+    height: number,
+    hbmMask: Win32Pointer,
+    xMask: number,
+    yMask: number,
+  ): number;
   /** gdi32.dll!PolyBezier */
   PolyBezier(hdc: Win32Pointer, apt: Win32Pointer, cpt: number): number;
   /** gdi32.dll!PolyBezierTo */
@@ -789,7 +1415,15 @@ interface Functions {
   /** gdi32.dll!RestoreDC */
   RestoreDC(hdc: Win32Pointer, nSavedDC: number): number;
   /** gdi32.dll!RoundRect */
-  RoundRect(hdc: Win32Pointer, left: number, top: number, right: number, bottom: number, width: number, height: number): number;
+  RoundRect(
+    hdc: Win32Pointer,
+    left: number,
+    top: number,
+    right: number,
+    bottom: number,
+    width: number,
+    height: number,
+  ): number;
   /** gdi32.dll!STROBJ_bEnum */
   STROBJ_bEnum(pstro: Win32Pointer, pc: Win32Pointer, ppgpos: Win32Pointer): number;
   /** gdi32.dll!STROBJ_bEnumPositionsOnly */
@@ -841,9 +1475,30 @@ interface Functions {
   /** gdi32.dll!SetDIBColorTable */
   SetDIBColorTable(hdc: Win32Pointer, iStart: number, cEntries: number, prgbq: Win32Pointer): number;
   /** gdi32.dll!SetDIBits */
-  SetDIBits(hdc: Win32Pointer, hbm: Win32Pointer, start: number, cLines: number, lpBits: Win32Pointer, lpbmi: Win32Pointer, ColorUse: number): number;
+  SetDIBits(
+    hdc: Win32Pointer,
+    hbm: Win32Pointer,
+    start: number,
+    cLines: number,
+    lpBits: Win32Pointer,
+    lpbmi: Win32Pointer,
+    ColorUse: number,
+  ): number;
   /** gdi32.dll!SetDIBitsToDevice */
-  SetDIBitsToDevice(hdc: Win32Pointer, xDest: number, yDest: number, w: number, h: number, xSrc: number, ySrc: number, StartScan: number, cLines: number, lpvBits: Win32Pointer, lpbmi: Win32Pointer, ColorUse: number): number;
+  SetDIBitsToDevice(
+    hdc: Win32Pointer,
+    xDest: number,
+    yDest: number,
+    w: number,
+    h: number,
+    xSrc: number,
+    ySrc: number,
+    StartScan: number,
+    cLines: number,
+    lpvBits: Win32Pointer,
+    lpbmi: Win32Pointer,
+    ColorUse: number,
+  ): number;
   /** gdi32.dll!SetDeviceGammaRamp */
   SetDeviceGammaRamp(hdc: Win32Pointer, lpRamp: Win32Pointer): number;
   /** gdi32.dll!SetEnhMetaFileBits */
@@ -901,7 +1556,12 @@ interface Functions {
   /** gdi32.dll!SetViewportOrgEx */
   SetViewportOrgEx(hdc: Win32Pointer, x: number, y: number, lppt: Win32Pointer): number;
   /** gdi32.dll!SetWinMetaFileBits */
-  SetWinMetaFileBits(nSize: number, lpMeta16Data: Win32Pointer, hdcRef: Win32Pointer, lpMFP: Win32Pointer): number | null;
+  SetWinMetaFileBits(
+    nSize: number,
+    lpMeta16Data: Win32Pointer,
+    hdcRef: Win32Pointer,
+    lpMFP: Win32Pointer,
+  ): number | null;
   /** gdi32.dll!SetWindowExtEx */
   SetWindowExtEx(hdc: Win32Pointer, x: number, y: number, lpsz: Win32Pointer): number;
   /** gdi32.dll!SetWindowOrgEx */
@@ -917,9 +1577,35 @@ interface Functions {
   /** gdi32.dll!StartPage */
   StartPage(hdc: Win32Pointer): number;
   /** gdi32.dll!StretchBlt */
-  StretchBlt(hdcDest: Win32Pointer, xDest: number, yDest: number, wDest: number, hDest: number, hdcSrc: Win32Pointer, xSrc: number, ySrc: number, wSrc: number, hSrc: number, rop: number): number;
+  StretchBlt(
+    hdcDest: Win32Pointer,
+    xDest: number,
+    yDest: number,
+    wDest: number,
+    hDest: number,
+    hdcSrc: Win32Pointer,
+    xSrc: number,
+    ySrc: number,
+    wSrc: number,
+    hSrc: number,
+    rop: number,
+  ): number;
   /** gdi32.dll!StretchDIBits */
-  StretchDIBits(hdc: Win32Pointer, xDest: number, yDest: number, DestWidth: number, DestHeight: number, xSrc: number, ySrc: number, SrcWidth: number, SrcHeight: number, lpBits: Win32Pointer, lpbmi: Win32Pointer, iUsage: number, rop: number): number;
+  StretchDIBits(
+    hdc: Win32Pointer,
+    xDest: number,
+    yDest: number,
+    DestWidth: number,
+    DestHeight: number,
+    xSrc: number,
+    ySrc: number,
+    SrcWidth: number,
+    SrcHeight: number,
+    lpBits: Win32Pointer,
+    lpbmi: Win32Pointer,
+    iUsage: number,
+    rop: number,
+  ): number;
   /** gdi32.dll!StrokeAndFillPath */
   StrokeAndFillPath(hdc: Win32Pointer): number;
   /** gdi32.dll!StrokePath */
@@ -939,15 +1625,36 @@ interface Functions {
   /** gdi32.dll!UpdateColors */
   UpdateColors(hdc: Win32Pointer): number;
   /** gdi32.dll!UpdateICMRegKeyA */
-  UpdateICMRegKeyA(reserved: number, lpszCMID: string | Win32Pointer, lpszFileName: string | Win32Pointer, command: number): number;
+  UpdateICMRegKeyA(
+    reserved: number,
+    lpszCMID: string | Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    command: number,
+  ): number;
   /** gdi32.dll!UpdateICMRegKeyW */
-  UpdateICMRegKeyW(reserved: number, lpszCMID: string | Win32Pointer, lpszFileName: string | Win32Pointer, command: number): number;
+  UpdateICMRegKeyW(
+    reserved: number,
+    lpszCMID: string | Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    command: number,
+  ): number;
   /** gdi32.dll!UpdateICMRegKeyW */
-  UpdateICMRegKey(reserved: number, lpszCMID: string | Win32Pointer, lpszFileName: string | Win32Pointer, command: number): number;
+  UpdateICMRegKey(
+    reserved: number,
+    lpszCMID: string | Win32Pointer,
+    lpszFileName: string | Win32Pointer,
+    command: number,
+  ): number;
   /** gdi32.dll!WidenPath */
   WidenPath(hdc: Win32Pointer): number;
   /** gdi32.dll!XFORMOBJ_bApplyXform */
-  XFORMOBJ_bApplyXform(pxo: Win32Pointer, iMode: number, cPoints: number, pvIn: Win32Pointer, pvOut: Win32Pointer): number;
+  XFORMOBJ_bApplyXform(
+    pxo: Win32Pointer,
+    iMode: number,
+    cPoints: number,
+    pvIn: Win32Pointer,
+    pvOut: Win32Pointer,
+  ): number;
   /** gdi32.dll!XFORMOBJ_iGetXform */
   XFORMOBJ_iGetXform(pxo: Win32Pointer, pxform: Win32Pointer): number;
   /** gdi32.dll!XLATEOBJ_cGetPalette */

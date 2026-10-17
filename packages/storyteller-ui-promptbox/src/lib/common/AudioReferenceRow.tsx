@@ -1,29 +1,11 @@
-import {
-  forwardRef,
-  useCallback,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
-import {
-  FolderOpenIcon,
-  ImageIcon,
-  MusicIcon,
-  PlayIcon,
-  PlusIcon,
-  SquareIcon,
-  XIcon,
-} from "lucide-react";
+import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from "react";
+import { FolderOpenIcon, ImageIcon, MusicIcon, PlayIcon, PlusIcon, SquareIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { toast } from "@storyteller/ui-toaster";
 import { UploaderStates } from "@storyteller/common";
 import type { UploadMediaFn } from "@storyteller/api";
 import type { RefAudio, RefImage } from "../promptStore";
-import {
-  AUDIO_FILE_ACCEPT,
-  AUDIO_FILE_TYPE_ERROR,
-  isAudioFile,
-} from "./audioFiles";
+import { AUDIO_FILE_ACCEPT, AUDIO_FILE_TYPE_ERROR, isAudioFile } from "./audioFiles";
 
 /** Lets the prompt box push dropped/pasted files through the same upload
  *  path the row's own file inputs use. */
@@ -54,10 +36,7 @@ export interface AudioReferenceRowProps {
 // remix/sample source or Seed Audio refs), plus an optional image reference
 // for models that support one. Rendered inside the glass card, above the
 // prompt textarea.
-export const AudioReferenceRow = forwardRef<
-  AudioReferenceRowHandle,
-  AudioReferenceRowProps
->(function AudioReferenceRow(
+export const AudioReferenceRow = forwardRef<AudioReferenceRowHandle, AudioReferenceRowProps>(function AudioReferenceRow(
   {
     referenceAudios,
     onReferenceAudiosChange,
@@ -98,14 +77,9 @@ export const AudioReferenceRow = forwardRef<
 
     for (const file of filesToProcess) {
       const duration = await getAudioFileDuration(file);
-      const currentTotal = referenceAudiosRef.current.reduce(
-        (sum, audio) => sum + audio.duration,
-        0,
-      );
+      const currentTotal = referenceAudiosRef.current.reduce((sum, audio) => sum + audio.duration, 0);
       if (currentTotal + duration > maxAudioRefDuration) {
-        toast.error(
-          `Total audio duration cannot exceed ${maxAudioRefDuration}s`,
-        );
+        toast.error(`Total audio duration cannot exceed ${maxAudioRefDuration}s`);
         break;
       }
 
@@ -114,7 +88,7 @@ export const AudioReferenceRow = forwardRef<
         await uploadAudio({
           title: `reference-audio-${Math.random().toString(36).substring(2, 15)}`,
           assetFile: file,
-          progressCallback: (newState) => {
+          progressCallback: newState => {
             if (newState.status === UploaderStates.success && newState.data) {
               const refAudio: RefAudio = {
                 id: Math.random().toString(36).substring(7),
@@ -124,10 +98,7 @@ export const AudioReferenceRow = forwardRef<
                 duration,
               };
               setIsUploadingAudio(false);
-              onReferenceAudiosChange([
-                ...referenceAudiosRef.current,
-                refAudio,
-              ]);
+              onReferenceAudiosChange([...referenceAudiosRef.current, refAudio]);
             } else if (
               newState.status === UploaderStates.assetError ||
               newState.status === UploaderStates.imageCreateError
@@ -141,9 +112,7 @@ export const AudioReferenceRow = forwardRef<
     }
   };
 
-  const handleAudioFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleAudioFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     await processAudioFiles(Array.from(event.target.files || []));
     if (audioInputRef.current) audioInputRef.current.value = "";
   };
@@ -155,7 +124,7 @@ export const AudioReferenceRow = forwardRef<
     await uploadImage({
       title: `reference-image-${Math.random().toString(36).substring(2, 15)}`,
       assetFile: file,
-      progressCallback: (newState) => {
+      progressCallback: newState => {
         if (newState.status === UploaderStates.success && newState.data) {
           const refImage: RefImage = {
             id: Math.random().toString(36).substring(7),
@@ -176,9 +145,7 @@ export const AudioReferenceRow = forwardRef<
     });
   };
 
-  const handleImageFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleImageFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = (event.target.files || [])[0];
     if (file) await processImageFile(file);
     if (imageInputRef.current) imageInputRef.current.value = "";
@@ -195,7 +162,7 @@ export const AudioReferenceRow = forwardRef<
   );
 
   const removeAudio = (id: string) => {
-    onReferenceAudiosChange(referenceAudios.filter((a) => a.id !== id));
+    onReferenceAudiosChange(referenceAudios.filter(a => a.id !== id));
     if (audioInputRef.current) audioInputRef.current.value = "";
   };
 
@@ -210,13 +177,7 @@ export const AudioReferenceRow = forwardRef<
         onChange={handleAudioFileUpload}
       />
       {imageSupported && (
-        <input
-          ref={imageInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleImageFileUpload}
-        />
+        <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageFileUpload} />
       )}
 
       <div className="flex flex-wrap items-center gap-2">
@@ -228,20 +189,13 @@ export const AudioReferenceRow = forwardRef<
               ({referenceAudios.length}/{maxAudioCount})
             </span>
             {audioRequired && referenceAudios.length === 0 && (
-              <span className="ml-1.5 text-xs font-medium text-red-500">
-                required
-              </span>
+              <span className="ml-1.5 text-xs font-medium text-red-500">required</span>
             )}
           </span>
         </div>
 
         {referenceAudios.map((audio, index) => (
-          <AudioRefTile
-            key={audio.id}
-            audio={audio}
-            index={index}
-            onRemove={removeAudio}
-          />
+          <AudioRefTile key={audio.id} audio={audio} index={index} onRemove={removeAudio} />
         ))}
 
         {referenceAudios.length < maxAudioCount && (
@@ -275,16 +229,12 @@ export const AudioReferenceRow = forwardRef<
               <ImageIcon className="h-3.5 w-3.5" />
               <span className="text-sm font-medium">Image</span>
             </div>
-            {referenceImages.map((image) => (
+            {referenceImages.map(image => (
               <div
                 key={image.id}
                 className="group relative h-9 w-9 overflow-hidden rounded-[3px] border border-ui-controls-border"
               >
-                <img
-                  src={image.url}
-                  alt="Reference"
-                  className="h-full w-full object-cover"
-                />
+                <img src={image.url} alt="Reference" className="h-full w-full object-cover" />
                 <button
                   type="button"
                   aria-label="Remove image"
@@ -313,15 +263,7 @@ export const AudioReferenceRow = forwardRef<
   );
 });
 
-function AudioRefTile({
-  audio,
-  index,
-  onRemove,
-}: {
-  audio: RefAudio;
-  index: number;
-  onRemove: (id: string) => void;
-}) {
+function AudioRefTile({ audio, index, onRemove }: { audio: RefAudio; index: number; onRemove: (id: string) => void }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -350,10 +292,7 @@ function AudioRefTile({
         onClick={togglePlay}
         className="flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-black transition-transform hover:scale-105"
       >
-        <DynamicIcon
-          icon={isPlaying ? SquareIcon : PlayIcon}
-          className={`h-2 w-2 ${isPlaying ? "" : "ml-px"}`}
-        />
+        <DynamicIcon icon={isPlaying ? SquareIcon : PlayIcon} className={`h-2 w-2 ${isPlaying ? "" : "ml-px"}`} />
       </button>
       <span className="text-xs font-medium text-base-fg/80">
         Audio {index + 1} · {audio.duration}s
@@ -371,7 +310,7 @@ function AudioRefTile({
 }
 
 function getAudioFileDuration(file: File): Promise<number> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const audio = document.createElement("audio");
     audio.preload = "metadata";
     audio.onloadedmetadata = () => {

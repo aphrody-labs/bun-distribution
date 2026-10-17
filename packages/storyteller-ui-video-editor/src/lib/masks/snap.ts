@@ -7,18 +7,8 @@ import {
   snapScaleAxes,
   type ScaleEdgePreference,
 } from "../preview/preview-snap";
-import type {
-  MaskHandleId,
-  MaskSnapArgs,
-  MaskSnapResult,
-  RectangleMaskParams,
-  SplitMaskParams,
-} from "./types";
-import {
-  getMaskSnapGeometry,
-  setMaskLocalCenter,
-  toGlobalMaskSnapLines,
-} from "./geometry";
+import type { MaskHandleId, MaskSnapArgs, MaskSnapResult, RectangleMaskParams, SplitMaskParams } from "./types";
+import { getMaskSnapGeometry, setMaskLocalCenter, toGlobalMaskSnapLines } from "./geometry";
 
 // Mask gesture snap pipeline. Each mask handle dispatches to one of:
 //   - snapMaskPosition: position gesture → element-local snap, then
@@ -30,23 +20,11 @@ import {
 // All sizes are stored normalized (0..1 of element bounds), so the
 // math converts to pixel-space, runs the snap, then converts back.
 
-function getClampedRatio({
-  next,
-  base,
-}: {
-  next: number;
-  base: number;
-}): number {
-  return (
-    Math.max(next, MIN_MASK_DIMENSION) / Math.max(base, MIN_MASK_DIMENSION)
-  );
+function getClampedRatio({ next, base }: { next: number; base: number }): number {
+  return Math.max(next, MIN_MASK_DIMENSION) / Math.max(base, MIN_MASK_DIMENSION);
 }
 
-function getPreferredEdges({
-  handleId,
-}: {
-  handleId: MaskHandleId;
-}): ScaleEdgePreference | undefined {
+function getPreferredEdges({ handleId }: { handleId: MaskHandleId }): ScaleEdgePreference | undefined {
   if (handleId.kind === "edge") {
     return {
       left: handleId.side === "left",
@@ -138,11 +116,7 @@ function snapMaskRotation({
 }: {
   proposedParams: RectangleMaskParams;
 }): MaskSnapResult<RectangleMaskParams>;
-function snapMaskRotation({
-  proposedParams,
-}: {
-  proposedParams: SplitMaskParams;
-}): MaskSnapResult<SplitMaskParams>;
+function snapMaskRotation({ proposedParams }: { proposedParams: SplitMaskParams }): MaskSnapResult<SplitMaskParams>;
 function snapMaskRotation({
   proposedParams,
 }: {
@@ -185,16 +159,11 @@ function snapBoxMaskSize({
   }
 
   const localCanvasSize = bounds;
-  const baseWidth =
-    Math.max(startParams.width, MIN_MASK_DIMENSION) * bounds.width;
-  const baseHeight =
-    Math.max(startParams.height, MIN_MASK_DIMENSION) * bounds.height;
+  const baseWidth = Math.max(startParams.width, MIN_MASK_DIMENSION) * bounds.width;
+  const baseHeight = Math.max(startParams.height, MIN_MASK_DIMENSION) * bounds.height;
   const preferredEdges = getPreferredEdges({ handleId });
 
-  if (
-    handleId.kind === "edge" &&
-    (handleId.side === "right" || handleId.side === "left")
-  ) {
+  if (handleId.kind === "edge" && (handleId.side === "right" || handleId.side === "left")) {
     const proposedScaleX = getClampedRatio({
       next: proposedParams.width,
       base: startParams.width,
@@ -224,10 +193,7 @@ function snapBoxMaskSize({
     };
   }
 
-  if (
-    handleId.kind === "edge" &&
-    (handleId.side === "top" || handleId.side === "bottom")
-  ) {
+  if (handleId.kind === "edge" && (handleId.side === "top" || handleId.side === "bottom")) {
     const proposedScaleY = getClampedRatio({
       next: proposedParams.height,
       base: startParams.height,
@@ -247,10 +213,7 @@ function snapBoxMaskSize({
     return {
       params: {
         ...proposedParams,
-        height: Math.max(
-          MIN_MASK_DIMENSION,
-          startParams.height * y.snappedScale,
-        ),
+        height: Math.max(MIN_MASK_DIMENSION, startParams.height * y.snappedScale),
       },
       activeLines: toGlobalMaskSnapLines({
         lines: y.activeLines,

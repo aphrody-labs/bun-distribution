@@ -1,8 +1,5 @@
 import type { UndoableAction } from "../HistoryManager";
-import type {
-  TimelineController,
-  TimelineUndoSnapshot,
-} from "../TimelineController";
+import type { TimelineController, TimelineUndoSnapshot } from "../TimelineController";
 
 // One timeline edit as an undo step. Every mutation of the timeline —
 // keyframe add/move/delete, clip placement, easing, duration, even Save and

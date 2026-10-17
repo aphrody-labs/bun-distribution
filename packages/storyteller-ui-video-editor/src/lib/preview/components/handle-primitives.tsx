@@ -41,10 +41,7 @@ export function HandleButton({
   return (
     <button
       type="button"
-      className={cn(
-        "absolute flex items-center justify-center outline-none",
-        className,
-      )}
+      className={cn("absolute flex items-center justify-center outline-none", className)}
       style={{
         left: screen.x - hitAreaSize / 2,
         top: screen.y - hitAreaSize / 2,
@@ -57,8 +54,8 @@ export function HandleButton({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerUp}
-      onKeyDown={(event) => event.key === "Enter" && event.preventDefault()}
-      onKeyUp={(event) => event.key === "Enter" && event.preventDefault()}
+      onKeyDown={event => event.key === "Enter" && event.preventDefault()}
+      onKeyUp={event => event.key === "Enter" && event.preventDefault()}
     >
       {children}
     </button>
@@ -87,10 +84,7 @@ export function CornerHandle({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
-      <div
-        className="rounded-sm bg-white"
-        style={{ width: HANDLE_SIZE, height: HANDLE_SIZE }}
-      />
+      <div className="rounded-sm bg-white" style={{ width: HANDLE_SIZE, height: HANDLE_SIZE }} />
     </HandleButton>
   );
 }
@@ -145,12 +139,8 @@ export function EdgeHandle({
   onPointerUp: (event: React.PointerEvent) => void;
 }) {
   const isHorizontalEdge = edge === "right" || edge === "left";
-  const width = isHorizontalEdge
-    ? EDGE_HANDLE_THIN_SIZE
-    : EDGE_HANDLE_THICK_SIZE;
-  const height = isHorizontalEdge
-    ? EDGE_HANDLE_THICK_SIZE
-    : EDGE_HANDLE_THIN_SIZE;
+  const width = isHorizontalEdge ? EDGE_HANDLE_THIN_SIZE : EDGE_HANDLE_THICK_SIZE;
+  const height = isHorizontalEdge ? EDGE_HANDLE_THICK_SIZE : EDGE_HANDLE_THIN_SIZE;
   const cursor = getResizeCursor({
     angleDeg: isHorizontalEdge ? rotation : rotation + 90,
   });
@@ -164,10 +154,7 @@ export function EdgeHandle({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
-      <div
-        className="rounded-sm bg-white"
-        style={{ width, height, transform: `rotate(${rotation}deg)` }}
-      />
+      <div className="rounded-sm bg-white" style={{ width, height, transform: `rotate(${rotation}deg)` }} />
     </HandleButton>
   );
 }
@@ -348,9 +335,7 @@ export function CanvasPathOutline({
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerUp}
     >
-      <g
-        transform={`translate(${translateX} ${translateY}) scale(${scaleX} ${scaleY})`}
-      >
+      <g transform={`translate(${translateX} ${translateY}) scale(${scaleX} ${scaleY})`}>
         <path
           d={pathData}
           fill="transparent"

@@ -7,13 +7,35 @@ interface Functions {
   /** tokenbinding.dll!TokenBindingDeleteBinding */
   TokenBindingDeleteBinding(targetURL: string | Win32Pointer): number;
   /** tokenbinding.dll!TokenBindingGenerateBinding */
-  TokenBindingGenerateBinding(keyType: number, targetURL: string | Win32Pointer, bindingType: number, tlsEKM: Win32Pointer, tlsEKMSize: number, extensionFormat: number, extensionData: Win32Pointer, tokenBinding: Win32Pointer, tokenBindingSize: Win32Pointer, resultData: Win32Pointer): number;
+  TokenBindingGenerateBinding(
+    keyType: number,
+    targetURL: string | Win32Pointer,
+    bindingType: number,
+    tlsEKM: Win32Pointer,
+    tlsEKMSize: number,
+    extensionFormat: number,
+    extensionData: Win32Pointer,
+    tokenBinding: Win32Pointer,
+    tokenBindingSize: Win32Pointer,
+    resultData: Win32Pointer,
+  ): number;
   /** tokenbinding.dll!TokenBindingGenerateID */
-  TokenBindingGenerateID(keyType: number, publicKey: Win32Pointer, publicKeySize: number, resultData: Win32Pointer): number;
+  TokenBindingGenerateID(
+    keyType: number,
+    publicKey: Win32Pointer,
+    publicKeySize: number,
+    resultData: Win32Pointer,
+  ): number;
   /** tokenbinding.dll!TokenBindingGenerateIDForUri */
   TokenBindingGenerateIDForUri(keyType: number, targetUri: string | Win32Pointer, resultData: Win32Pointer): number;
   /** tokenbinding.dll!TokenBindingGenerateMessage */
-  TokenBindingGenerateMessage(tokenBindings: Win32Pointer, tokenBindingsSize: Win32Pointer, tokenBindingsCount: number, tokenBindingMessage: Win32Pointer, tokenBindingMessageSize: Win32Pointer): number;
+  TokenBindingGenerateMessage(
+    tokenBindings: Win32Pointer,
+    tokenBindingsSize: Win32Pointer,
+    tokenBindingsCount: number,
+    tokenBindingMessage: Win32Pointer,
+    tokenBindingMessageSize: Win32Pointer,
+  ): number;
   /** tokenbinding.dll!TokenBindingGetHighestSupportedVersion */
   TokenBindingGetHighestSupportedVersion(majorVersion: Win32Pointer, minorVersion: Win32Pointer): number;
   /** tokenbinding.dll!TokenBindingGetKeyTypesClient */
@@ -21,7 +43,14 @@ interface Functions {
   /** tokenbinding.dll!TokenBindingGetKeyTypesServer */
   TokenBindingGetKeyTypesServer(keyTypes: Win32Pointer): number;
   /** tokenbinding.dll!TokenBindingVerifyMessage */
-  TokenBindingVerifyMessage(tokenBindingMessage: Win32Pointer, tokenBindingMessageSize: number, keyType: number, tlsEKM: Win32Pointer, tlsEKMSize: number, resultList: Win32Pointer): number;
+  TokenBindingVerifyMessage(
+    tokenBindingMessage: Win32Pointer,
+    tokenBindingMessageSize: number,
+    keyType: number,
+    tlsEKM: Win32Pointer,
+    tlsEKMSize: number,
+    resultList: Win32Pointer,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

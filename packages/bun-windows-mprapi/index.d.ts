@@ -7,73 +7,226 @@ interface Functions {
   /** mprapi.dll!MprAdminConnectionClearStats */
   MprAdminConnectionClearStats(hRasServer: number | bigint, hRasConnection: Win32Pointer): number;
   /** mprapi.dll!MprAdminConnectionEnum */
-  MprAdminConnectionEnum(hRasServer: number | bigint, dwLevel: number, lplpbBuffer: Win32Pointer, dwPrefMaxLen: number, lpdwEntriesRead: Win32Pointer, lpdwTotalEntries: Win32Pointer, lpdwResumeHandle: Win32Pointer): number;
+  MprAdminConnectionEnum(
+    hRasServer: number | bigint,
+    dwLevel: number,
+    lplpbBuffer: Win32Pointer,
+    dwPrefMaxLen: number,
+    lpdwEntriesRead: Win32Pointer,
+    lpdwTotalEntries: Win32Pointer,
+    lpdwResumeHandle: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminConnectionEnumEx */
-  MprAdminConnectionEnumEx(hRasServer: number | bigint, pObjectHeader: Win32Pointer, dwPreferedMaxLen: number, lpdwEntriesRead: Win32Pointer, lpdwTotalEntries: Win32Pointer, ppRasConn: Win32Pointer, lpdwResumeHandle: Win32Pointer): number;
+  MprAdminConnectionEnumEx(
+    hRasServer: number | bigint,
+    pObjectHeader: Win32Pointer,
+    dwPreferedMaxLen: number,
+    lpdwEntriesRead: Win32Pointer,
+    lpdwTotalEntries: Win32Pointer,
+    ppRasConn: Win32Pointer,
+    lpdwResumeHandle: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminConnectionGetInfo */
-  MprAdminConnectionGetInfo(hRasServer: number | bigint, dwLevel: number, hRasConnection: Win32Pointer, lplpbBuffer: Win32Pointer): number;
+  MprAdminConnectionGetInfo(
+    hRasServer: number | bigint,
+    dwLevel: number,
+    hRasConnection: Win32Pointer,
+    lplpbBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminConnectionGetInfoEx */
-  MprAdminConnectionGetInfoEx(hRasServer: number | bigint, hRasConnection: Win32Pointer, pRasConnection: Win32Pointer): number;
+  MprAdminConnectionGetInfoEx(
+    hRasServer: number | bigint,
+    hRasConnection: Win32Pointer,
+    pRasConnection: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminConnectionRemoveQuarantine */
-  MprAdminConnectionRemoveQuarantine(hRasServer: Win32Pointer, hRasConnection: Win32Pointer, fIsIpAddress: number): number;
+  MprAdminConnectionRemoveQuarantine(
+    hRasServer: Win32Pointer,
+    hRasConnection: Win32Pointer,
+    fIsIpAddress: number,
+  ): number;
   /** mprapi.dll!MprAdminDeregisterConnectionNotification */
   MprAdminDeregisterConnectionNotification(hMprServer: number | bigint, hEventNotification: Win32Pointer): number;
   /** mprapi.dll!MprAdminDeviceEnum */
-  MprAdminDeviceEnum(hMprServer: number | bigint, dwLevel: number, lplpbBuffer: Win32Pointer, lpdwTotalEntries: Win32Pointer): number;
+  MprAdminDeviceEnum(
+    hMprServer: number | bigint,
+    dwLevel: number,
+    lplpbBuffer: Win32Pointer,
+    lpdwTotalEntries: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminEstablishDomainRasServer */
-  MprAdminEstablishDomainRasServer(pszDomain: string | Win32Pointer, pszMachine: string | Win32Pointer, bEnable: number): number;
+  MprAdminEstablishDomainRasServer(
+    pszDomain: string | Win32Pointer,
+    pszMachine: string | Win32Pointer,
+    bEnable: number,
+  ): number;
   /** mprapi.dll!MprAdminGetErrorString */
   MprAdminGetErrorString(dwError: number, lplpwsErrorString: Win32Pointer): number;
   /** mprapi.dll!MprAdminGetPDCServer */
-  MprAdminGetPDCServer(lpszDomain: string | Win32Pointer, lpszServer: string | Win32Pointer, lpszPDCServer: string | Win32Pointer): number;
+  MprAdminGetPDCServer(
+    lpszDomain: string | Win32Pointer,
+    lpszServer: string | Win32Pointer,
+    lpszPDCServer: string | Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceConnect */
-  MprAdminInterfaceConnect(hMprServer: number | bigint, hInterface: Win32Pointer, hEvent: Win32Pointer, fSynchronous: number): number;
+  MprAdminInterfaceConnect(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    hEvent: Win32Pointer,
+    fSynchronous: number,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceCreate */
-  MprAdminInterfaceCreate(hMprServer: number | bigint, dwLevel: number, lpbBuffer: Win32Pointer, phInterface: Win32Pointer): number;
+  MprAdminInterfaceCreate(
+    hMprServer: number | bigint,
+    dwLevel: number,
+    lpbBuffer: Win32Pointer,
+    phInterface: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceDelete */
   MprAdminInterfaceDelete(hMprServer: number | bigint, hInterface: Win32Pointer): number;
   /** mprapi.dll!MprAdminInterfaceDeviceGetInfo */
-  MprAdminInterfaceDeviceGetInfo(hMprServer: number | bigint, hInterface: Win32Pointer, dwIndex: number, dwLevel: number, lplpBuffer: Win32Pointer): number;
+  MprAdminInterfaceDeviceGetInfo(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    dwIndex: number,
+    dwLevel: number,
+    lplpBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceDeviceSetInfo */
-  MprAdminInterfaceDeviceSetInfo(hMprServer: number | bigint, hInterface: Win32Pointer, dwIndex: number, dwLevel: number, lpbBuffer: Win32Pointer): number;
+  MprAdminInterfaceDeviceSetInfo(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    dwIndex: number,
+    dwLevel: number,
+    lpbBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceDisconnect */
   MprAdminInterfaceDisconnect(hMprServer: number | bigint, hInterface: Win32Pointer): number;
   /** mprapi.dll!MprAdminInterfaceEnum */
-  MprAdminInterfaceEnum(hMprServer: number | bigint, dwLevel: number, lplpbBuffer: Win32Pointer, dwPrefMaxLen: number, lpdwEntriesRead: Win32Pointer, lpdwTotalEntries: Win32Pointer, lpdwResumeHandle: Win32Pointer): number;
+  MprAdminInterfaceEnum(
+    hMprServer: number | bigint,
+    dwLevel: number,
+    lplpbBuffer: Win32Pointer,
+    dwPrefMaxLen: number,
+    lpdwEntriesRead: Win32Pointer,
+    lpdwTotalEntries: Win32Pointer,
+    lpdwResumeHandle: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceGetCredentials */
-  MprAdminInterfaceGetCredentials(lpwsServer: string | Win32Pointer, lpwsInterfaceName: string | Win32Pointer, lpwsUserName: string | Win32Pointer, lpwsPassword: string | Win32Pointer, lpwsDomainName: string | Win32Pointer): number;
+  MprAdminInterfaceGetCredentials(
+    lpwsServer: string | Win32Pointer,
+    lpwsInterfaceName: string | Win32Pointer,
+    lpwsUserName: string | Win32Pointer,
+    lpwsPassword: string | Win32Pointer,
+    lpwsDomainName: string | Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceGetCredentialsEx */
-  MprAdminInterfaceGetCredentialsEx(hMprServer: number | bigint, hInterface: Win32Pointer, dwLevel: number, lplpbBuffer: Win32Pointer): number;
+  MprAdminInterfaceGetCredentialsEx(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    dwLevel: number,
+    lplpbBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceGetCustomInfoEx */
-  MprAdminInterfaceGetCustomInfoEx(hMprServer: number | bigint, hInterface: Win32Pointer, pCustomInfo: Win32Pointer): number;
+  MprAdminInterfaceGetCustomInfoEx(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    pCustomInfo: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceGetHandle */
-  MprAdminInterfaceGetHandle(hMprServer: number | bigint, lpwsInterfaceName: string | Win32Pointer, phInterface: Win32Pointer, fIncludeClientInterfaces: number): number;
+  MprAdminInterfaceGetHandle(
+    hMprServer: number | bigint,
+    lpwsInterfaceName: string | Win32Pointer,
+    phInterface: Win32Pointer,
+    fIncludeClientInterfaces: number,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceGetInfo */
-  MprAdminInterfaceGetInfo(hMprServer: number | bigint, hInterface: Win32Pointer, dwLevel: number, lplpbBuffer: Win32Pointer): number;
+  MprAdminInterfaceGetInfo(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    dwLevel: number,
+    lplpbBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceQueryUpdateResult */
-  MprAdminInterfaceQueryUpdateResult(hMprServer: number | bigint, hInterface: Win32Pointer, dwProtocolId: number, lpdwUpdateResult: Win32Pointer): number;
+  MprAdminInterfaceQueryUpdateResult(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    dwProtocolId: number,
+    lpdwUpdateResult: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceSetCredentials */
-  MprAdminInterfaceSetCredentials(lpwsServer: string | Win32Pointer, lpwsInterfaceName: string | Win32Pointer, lpwsUserName: string | Win32Pointer, lpwsDomainName: string | Win32Pointer, lpwsPassword: string | Win32Pointer): number;
+  MprAdminInterfaceSetCredentials(
+    lpwsServer: string | Win32Pointer,
+    lpwsInterfaceName: string | Win32Pointer,
+    lpwsUserName: string | Win32Pointer,
+    lpwsDomainName: string | Win32Pointer,
+    lpwsPassword: string | Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceSetCredentialsEx */
-  MprAdminInterfaceSetCredentialsEx(hMprServer: number | bigint, hInterface: Win32Pointer, dwLevel: number, lpbBuffer: Win32Pointer): number;
+  MprAdminInterfaceSetCredentialsEx(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    dwLevel: number,
+    lpbBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceSetCustomInfoEx */
-  MprAdminInterfaceSetCustomInfoEx(hMprServer: number | bigint, hInterface: Win32Pointer, pCustomInfo: Win32Pointer): number;
+  MprAdminInterfaceSetCustomInfoEx(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    pCustomInfo: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceSetInfo */
-  MprAdminInterfaceSetInfo(hMprServer: number | bigint, hInterface: Win32Pointer, dwLevel: number, lpbBuffer: Win32Pointer): number;
+  MprAdminInterfaceSetInfo(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    dwLevel: number,
+    lpbBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceTransportAdd */
-  MprAdminInterfaceTransportAdd(hMprServer: number | bigint, hInterface: Win32Pointer, dwTransportId: number, pInterfaceInfo: Win32Pointer, dwInterfaceInfoSize: number): number;
+  MprAdminInterfaceTransportAdd(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    dwTransportId: number,
+    pInterfaceInfo: Win32Pointer,
+    dwInterfaceInfoSize: number,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceTransportGetInfo */
-  MprAdminInterfaceTransportGetInfo(hMprServer: number | bigint, hInterface: Win32Pointer, dwTransportId: number, ppInterfaceInfo: Win32Pointer, lpdwInterfaceInfoSize: Win32Pointer): number;
+  MprAdminInterfaceTransportGetInfo(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    dwTransportId: number,
+    ppInterfaceInfo: Win32Pointer,
+    lpdwInterfaceInfoSize: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceTransportRemove */
-  MprAdminInterfaceTransportRemove(hMprServer: number | bigint, hInterface: Win32Pointer, dwTransportId: number): number;
+  MprAdminInterfaceTransportRemove(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    dwTransportId: number,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceTransportSetInfo */
-  MprAdminInterfaceTransportSetInfo(hMprServer: number | bigint, hInterface: Win32Pointer, dwTransportId: number, pInterfaceInfo: Win32Pointer, dwInterfaceInfoSize: number): number;
+  MprAdminInterfaceTransportSetInfo(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    dwTransportId: number,
+    pInterfaceInfo: Win32Pointer,
+    dwInterfaceInfoSize: number,
+  ): number;
   /** mprapi.dll!MprAdminInterfaceUpdatePhonebookInfo */
   MprAdminInterfaceUpdatePhonebookInfo(hMprServer: number | bigint, hInterface: Win32Pointer): number;
   /** mprapi.dll!MprAdminInterfaceUpdateRoutes */
-  MprAdminInterfaceUpdateRoutes(hMprServer: number | bigint, hInterface: Win32Pointer, dwProtocolId: number, hEvent: Win32Pointer): number;
+  MprAdminInterfaceUpdateRoutes(
+    hMprServer: number | bigint,
+    hInterface: Win32Pointer,
+    dwProtocolId: number,
+    hEvent: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminIsDomainRasServer */
-  MprAdminIsDomainRasServer(pszDomain: string | Win32Pointer, pszMachine: string | Win32Pointer, pbIsRasServer: Win32Pointer): number;
+  MprAdminIsDomainRasServer(
+    pszDomain: string | Win32Pointer,
+    pszMachine: string | Win32Pointer,
+    pbIsRasServer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminIsServiceInitialized */
   MprAdminIsServiceInitialized(lpwsServerName: string | Win32Pointer, fIsServiceInitialized: Win32Pointer): number;
   /** mprapi.dll!MprAdminIsServiceRunning */
@@ -81,17 +234,59 @@ interface Functions {
   /** mprapi.dll!MprAdminMIBBufferFree */
   MprAdminMIBBufferFree(pBuffer: Win32Pointer): number;
   /** mprapi.dll!MprAdminMIBEntryCreate */
-  MprAdminMIBEntryCreate(hMibServer: number | bigint, dwPid: number, dwRoutingPid: number, lpEntry: Win32Pointer, dwEntrySize: number): number;
+  MprAdminMIBEntryCreate(
+    hMibServer: number | bigint,
+    dwPid: number,
+    dwRoutingPid: number,
+    lpEntry: Win32Pointer,
+    dwEntrySize: number,
+  ): number;
   /** mprapi.dll!MprAdminMIBEntryDelete */
-  MprAdminMIBEntryDelete(hMibServer: number | bigint, dwProtocolId: number, dwRoutingPid: number, lpEntry: Win32Pointer, dwEntrySize: number): number;
+  MprAdminMIBEntryDelete(
+    hMibServer: number | bigint,
+    dwProtocolId: number,
+    dwRoutingPid: number,
+    lpEntry: Win32Pointer,
+    dwEntrySize: number,
+  ): number;
   /** mprapi.dll!MprAdminMIBEntryGet */
-  MprAdminMIBEntryGet(hMibServer: number | bigint, dwProtocolId: number, dwRoutingPid: number, lpInEntry: Win32Pointer, dwInEntrySize: number, lplpOutEntry: Win32Pointer, lpOutEntrySize: Win32Pointer): number;
+  MprAdminMIBEntryGet(
+    hMibServer: number | bigint,
+    dwProtocolId: number,
+    dwRoutingPid: number,
+    lpInEntry: Win32Pointer,
+    dwInEntrySize: number,
+    lplpOutEntry: Win32Pointer,
+    lpOutEntrySize: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminMIBEntryGetFirst */
-  MprAdminMIBEntryGetFirst(hMibServer: number | bigint, dwProtocolId: number, dwRoutingPid: number, lpInEntry: Win32Pointer, dwInEntrySize: number, lplpOutEntry: Win32Pointer, lpOutEntrySize: Win32Pointer): number;
+  MprAdminMIBEntryGetFirst(
+    hMibServer: number | bigint,
+    dwProtocolId: number,
+    dwRoutingPid: number,
+    lpInEntry: Win32Pointer,
+    dwInEntrySize: number,
+    lplpOutEntry: Win32Pointer,
+    lpOutEntrySize: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminMIBEntryGetNext */
-  MprAdminMIBEntryGetNext(hMibServer: number | bigint, dwProtocolId: number, dwRoutingPid: number, lpInEntry: Win32Pointer, dwInEntrySize: number, lplpOutEntry: Win32Pointer, lpOutEntrySize: Win32Pointer): number;
+  MprAdminMIBEntryGetNext(
+    hMibServer: number | bigint,
+    dwProtocolId: number,
+    dwRoutingPid: number,
+    lpInEntry: Win32Pointer,
+    dwInEntrySize: number,
+    lplpOutEntry: Win32Pointer,
+    lpOutEntrySize: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminMIBEntrySet */
-  MprAdminMIBEntrySet(hMibServer: number | bigint, dwProtocolId: number, dwRoutingPid: number, lpEntry: Win32Pointer, dwEntrySize: number): number;
+  MprAdminMIBEntrySet(
+    hMibServer: number | bigint,
+    dwProtocolId: number,
+    dwRoutingPid: number,
+    lpEntry: Win32Pointer,
+    dwEntrySize: number,
+  ): number;
   /** mprapi.dll!MprAdminMIBServerConnect */
   MprAdminMIBServerConnect(lpwsServerName: string | Win32Pointer, phMibServer: Win32Pointer): number;
   /** mprapi.dll!MprAdminMIBServerDisconnect */
@@ -101,15 +296,33 @@ interface Functions {
   /** mprapi.dll!MprAdminPortDisconnect */
   MprAdminPortDisconnect(hRasServer: number | bigint, hPort: Win32Pointer): number;
   /** mprapi.dll!MprAdminPortEnum */
-  MprAdminPortEnum(hRasServer: number | bigint, dwLevel: number, hRasConnection: Win32Pointer, lplpbBuffer: Win32Pointer, dwPrefMaxLen: number, lpdwEntriesRead: Win32Pointer, lpdwTotalEntries: Win32Pointer, lpdwResumeHandle: Win32Pointer): number;
+  MprAdminPortEnum(
+    hRasServer: number | bigint,
+    dwLevel: number,
+    hRasConnection: Win32Pointer,
+    lplpbBuffer: Win32Pointer,
+    dwPrefMaxLen: number,
+    lpdwEntriesRead: Win32Pointer,
+    lpdwTotalEntries: Win32Pointer,
+    lpdwResumeHandle: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminPortGetInfo */
-  MprAdminPortGetInfo(hRasServer: number | bigint, dwLevel: number, hPort: Win32Pointer, lplpbBuffer: Win32Pointer): number;
+  MprAdminPortGetInfo(
+    hRasServer: number | bigint,
+    dwLevel: number,
+    hPort: Win32Pointer,
+    lplpbBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminPortReset */
   MprAdminPortReset(hRasServer: number | bigint, hPort: Win32Pointer): number;
   /** mprapi.dll!MprAdminRegisterConnectionNotification */
   MprAdminRegisterConnectionNotification(hMprServer: number | bigint, hEventNotification: Win32Pointer): number;
   /** mprapi.dll!MprAdminSendUserMessage */
-  MprAdminSendUserMessage(hMprServer: number | bigint, hConnection: Win32Pointer, lpwszMessage: string | Win32Pointer): number;
+  MprAdminSendUserMessage(
+    hMprServer: number | bigint,
+    hConnection: Win32Pointer,
+    lpwszMessage: string | Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminServerConnect */
   MprAdminServerConnect(lpwsServerName: string | Win32Pointer, phMprServer: Win32Pointer): number;
   /** mprapi.dll!MprAdminServerDisconnect */
@@ -127,55 +340,186 @@ interface Functions {
   /** mprapi.dll!MprAdminServerSetInfoEx */
   MprAdminServerSetInfoEx(hMprServer: number | bigint, pServerInfo: Win32Pointer): number;
   /** mprapi.dll!MprAdminTransportCreate */
-  MprAdminTransportCreate(hMprServer: number | bigint, dwTransportId: number, lpwsTransportName: string | Win32Pointer, pGlobalInfo: Win32Pointer, dwGlobalInfoSize: number, pClientInterfaceInfo: Win32Pointer, dwClientInterfaceInfoSize: number, lpwsDLLPath: string | Win32Pointer): number;
+  MprAdminTransportCreate(
+    hMprServer: number | bigint,
+    dwTransportId: number,
+    lpwsTransportName: string | Win32Pointer,
+    pGlobalInfo: Win32Pointer,
+    dwGlobalInfoSize: number,
+    pClientInterfaceInfo: Win32Pointer,
+    dwClientInterfaceInfoSize: number,
+    lpwsDLLPath: string | Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminTransportGetInfo */
-  MprAdminTransportGetInfo(hMprServer: number | bigint, dwTransportId: number, ppGlobalInfo: Win32Pointer, lpdwGlobalInfoSize: Win32Pointer, ppClientInterfaceInfo: Win32Pointer, lpdwClientInterfaceInfoSize: Win32Pointer): number;
+  MprAdminTransportGetInfo(
+    hMprServer: number | bigint,
+    dwTransportId: number,
+    ppGlobalInfo: Win32Pointer,
+    lpdwGlobalInfoSize: Win32Pointer,
+    ppClientInterfaceInfo: Win32Pointer,
+    lpdwClientInterfaceInfoSize: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminTransportSetInfo */
-  MprAdminTransportSetInfo(hMprServer: number | bigint, dwTransportId: number, pGlobalInfo: Win32Pointer, dwGlobalInfoSize: number, pClientInterfaceInfo: Win32Pointer, dwClientInterfaceInfoSize: number): number;
+  MprAdminTransportSetInfo(
+    hMprServer: number | bigint,
+    dwTransportId: number,
+    pGlobalInfo: Win32Pointer,
+    dwGlobalInfoSize: number,
+    pClientInterfaceInfo: Win32Pointer,
+    dwClientInterfaceInfoSize: number,
+  ): number;
   /** mprapi.dll!MprAdminUpdateConnection */
-  MprAdminUpdateConnection(hRasServer: number | bigint, hRasConnection: Win32Pointer, pRasUpdateConnection: Win32Pointer): number;
+  MprAdminUpdateConnection(
+    hRasServer: number | bigint,
+    hRasConnection: Win32Pointer,
+    pRasUpdateConnection: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminUserGetInfo */
-  MprAdminUserGetInfo(lpszServer: string | Win32Pointer, lpszUser: string | Win32Pointer, dwLevel: number, lpbBuffer: Win32Pointer): number;
+  MprAdminUserGetInfo(
+    lpszServer: string | Win32Pointer,
+    lpszUser: string | Win32Pointer,
+    dwLevel: number,
+    lpbBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprAdminUserSetInfo */
-  MprAdminUserSetInfo(lpszServer: string | Win32Pointer, lpszUser: string | Win32Pointer, dwLevel: number, lpbBuffer: Win32Pointer): number;
+  MprAdminUserSetInfo(
+    lpszServer: string | Win32Pointer,
+    lpszUser: string | Win32Pointer,
+    dwLevel: number,
+    lpbBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigBufferFree */
   MprConfigBufferFree(pBuffer: Win32Pointer): number;
   /** mprapi.dll!MprConfigFilterGetInfo */
-  MprConfigFilterGetInfo(hMprConfig: Win32Pointer, dwLevel: number, dwTransportId: number, lpBuffer: Win32Pointer): number;
+  MprConfigFilterGetInfo(
+    hMprConfig: Win32Pointer,
+    dwLevel: number,
+    dwTransportId: number,
+    lpBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigFilterSetInfo */
-  MprConfigFilterSetInfo(hMprConfig: Win32Pointer, dwLevel: number, dwTransportId: number, lpBuffer: Win32Pointer): number;
+  MprConfigFilterSetInfo(
+    hMprConfig: Win32Pointer,
+    dwLevel: number,
+    dwTransportId: number,
+    lpBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigGetFriendlyName */
-  MprConfigGetFriendlyName(hMprConfig: Win32Pointer, pszGuidName: string | Win32Pointer, pszBuffer: string | Win32Pointer, dwBufferSize: number): number;
+  MprConfigGetFriendlyName(
+    hMprConfig: Win32Pointer,
+    pszGuidName: string | Win32Pointer,
+    pszBuffer: string | Win32Pointer,
+    dwBufferSize: number,
+  ): number;
   /** mprapi.dll!MprConfigGetGuidName */
-  MprConfigGetGuidName(hMprConfig: Win32Pointer, pszFriendlyName: string | Win32Pointer, pszBuffer: string | Win32Pointer, dwBufferSize: number): number;
+  MprConfigGetGuidName(
+    hMprConfig: Win32Pointer,
+    pszFriendlyName: string | Win32Pointer,
+    pszBuffer: string | Win32Pointer,
+    dwBufferSize: number,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceCreate */
-  MprConfigInterfaceCreate(hMprConfig: Win32Pointer, dwLevel: number, lpbBuffer: Win32Pointer, phRouterInterface: Win32Pointer): number;
+  MprConfigInterfaceCreate(
+    hMprConfig: Win32Pointer,
+    dwLevel: number,
+    lpbBuffer: Win32Pointer,
+    phRouterInterface: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceDelete */
   MprConfigInterfaceDelete(hMprConfig: Win32Pointer, hRouterInterface: Win32Pointer): number;
   /** mprapi.dll!MprConfigInterfaceEnum */
-  MprConfigInterfaceEnum(hMprConfig: Win32Pointer, dwLevel: number, lplpBuffer: Win32Pointer, dwPrefMaxLen: number, lpdwEntriesRead: Win32Pointer, lpdwTotalEntries: Win32Pointer, lpdwResumeHandle: Win32Pointer): number;
+  MprConfigInterfaceEnum(
+    hMprConfig: Win32Pointer,
+    dwLevel: number,
+    lplpBuffer: Win32Pointer,
+    dwPrefMaxLen: number,
+    lpdwEntriesRead: Win32Pointer,
+    lpdwTotalEntries: Win32Pointer,
+    lpdwResumeHandle: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceGetCustomInfoEx */
-  MprConfigInterfaceGetCustomInfoEx(hMprConfig: Win32Pointer, hRouterInterface: Win32Pointer, pCustomInfo: Win32Pointer): number;
+  MprConfigInterfaceGetCustomInfoEx(
+    hMprConfig: Win32Pointer,
+    hRouterInterface: Win32Pointer,
+    pCustomInfo: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceGetHandle */
-  MprConfigInterfaceGetHandle(hMprConfig: Win32Pointer, lpwsInterfaceName: string | Win32Pointer, phRouterInterface: Win32Pointer): number;
+  MprConfigInterfaceGetHandle(
+    hMprConfig: Win32Pointer,
+    lpwsInterfaceName: string | Win32Pointer,
+    phRouterInterface: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceGetInfo */
-  MprConfigInterfaceGetInfo(hMprConfig: Win32Pointer, hRouterInterface: Win32Pointer, dwLevel: number, lplpBuffer: Win32Pointer, lpdwBufferSize: Win32Pointer): number;
+  MprConfigInterfaceGetInfo(
+    hMprConfig: Win32Pointer,
+    hRouterInterface: Win32Pointer,
+    dwLevel: number,
+    lplpBuffer: Win32Pointer,
+    lpdwBufferSize: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceSetCustomInfoEx */
-  MprConfigInterfaceSetCustomInfoEx(hMprConfig: Win32Pointer, hRouterInterface: Win32Pointer, pCustomInfo: Win32Pointer): number;
+  MprConfigInterfaceSetCustomInfoEx(
+    hMprConfig: Win32Pointer,
+    hRouterInterface: Win32Pointer,
+    pCustomInfo: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceSetInfo */
-  MprConfigInterfaceSetInfo(hMprConfig: Win32Pointer, hRouterInterface: Win32Pointer, dwLevel: number, lpbBuffer: Win32Pointer): number;
+  MprConfigInterfaceSetInfo(
+    hMprConfig: Win32Pointer,
+    hRouterInterface: Win32Pointer,
+    dwLevel: number,
+    lpbBuffer: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceTransportAdd */
-  MprConfigInterfaceTransportAdd(hMprConfig: Win32Pointer, hRouterInterface: Win32Pointer, dwTransportId: number, lpwsTransportName: string | Win32Pointer, pInterfaceInfo: Win32Pointer, dwInterfaceInfoSize: number, phRouterIfTransport: Win32Pointer): number;
+  MprConfigInterfaceTransportAdd(
+    hMprConfig: Win32Pointer,
+    hRouterInterface: Win32Pointer,
+    dwTransportId: number,
+    lpwsTransportName: string | Win32Pointer,
+    pInterfaceInfo: Win32Pointer,
+    dwInterfaceInfoSize: number,
+    phRouterIfTransport: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceTransportEnum */
-  MprConfigInterfaceTransportEnum(hMprConfig: Win32Pointer, hRouterInterface: Win32Pointer, dwLevel: number, lplpBuffer: Win32Pointer, dwPrefMaxLen: number, lpdwEntriesRead: Win32Pointer, lpdwTotalEntries: Win32Pointer, lpdwResumeHandle: Win32Pointer): number;
+  MprConfigInterfaceTransportEnum(
+    hMprConfig: Win32Pointer,
+    hRouterInterface: Win32Pointer,
+    dwLevel: number,
+    lplpBuffer: Win32Pointer,
+    dwPrefMaxLen: number,
+    lpdwEntriesRead: Win32Pointer,
+    lpdwTotalEntries: Win32Pointer,
+    lpdwResumeHandle: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceTransportGetHandle */
-  MprConfigInterfaceTransportGetHandle(hMprConfig: Win32Pointer, hRouterInterface: Win32Pointer, dwTransportId: number, phRouterIfTransport: Win32Pointer): number;
+  MprConfigInterfaceTransportGetHandle(
+    hMprConfig: Win32Pointer,
+    hRouterInterface: Win32Pointer,
+    dwTransportId: number,
+    phRouterIfTransport: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceTransportGetInfo */
-  MprConfigInterfaceTransportGetInfo(hMprConfig: Win32Pointer, hRouterInterface: Win32Pointer, hRouterIfTransport: Win32Pointer, ppInterfaceInfo: Win32Pointer, lpdwInterfaceInfoSize: Win32Pointer): number;
+  MprConfigInterfaceTransportGetInfo(
+    hMprConfig: Win32Pointer,
+    hRouterInterface: Win32Pointer,
+    hRouterIfTransport: Win32Pointer,
+    ppInterfaceInfo: Win32Pointer,
+    lpdwInterfaceInfoSize: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceTransportRemove */
-  MprConfigInterfaceTransportRemove(hMprConfig: Win32Pointer, hRouterInterface: Win32Pointer, hRouterIfTransport: Win32Pointer): number;
+  MprConfigInterfaceTransportRemove(
+    hMprConfig: Win32Pointer,
+    hRouterInterface: Win32Pointer,
+    hRouterIfTransport: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigInterfaceTransportSetInfo */
-  MprConfigInterfaceTransportSetInfo(hMprConfig: Win32Pointer, hRouterInterface: Win32Pointer, hRouterIfTransport: Win32Pointer, pInterfaceInfo: Win32Pointer, dwInterfaceInfoSize: number): number;
+  MprConfigInterfaceTransportSetInfo(
+    hMprConfig: Win32Pointer,
+    hRouterInterface: Win32Pointer,
+    hRouterIfTransport: Win32Pointer,
+    pInterfaceInfo: Win32Pointer,
+    dwInterfaceInfoSize: number,
+  ): number;
   /** mprapi.dll!MprConfigServerBackup */
   MprConfigServerBackup(hMprConfig: Win32Pointer, lpwsPath: string | Win32Pointer): number;
   /** mprapi.dll!MprConfigServerConnect */
@@ -197,27 +541,81 @@ interface Functions {
   /** mprapi.dll!MprConfigServerSetInfoEx */
   MprConfigServerSetInfoEx(hMprConfig: Win32Pointer, pSetServerConfig: Win32Pointer): number;
   /** mprapi.dll!MprConfigTransportCreate */
-  MprConfigTransportCreate(hMprConfig: Win32Pointer, dwTransportId: number, lpwsTransportName: string | Win32Pointer, pGlobalInfo: Win32Pointer, dwGlobalInfoSize: number, pClientInterfaceInfo: Win32Pointer, dwClientInterfaceInfoSize: number, lpwsDLLPath: string | Win32Pointer, phRouterTransport: Win32Pointer): number;
+  MprConfigTransportCreate(
+    hMprConfig: Win32Pointer,
+    dwTransportId: number,
+    lpwsTransportName: string | Win32Pointer,
+    pGlobalInfo: Win32Pointer,
+    dwGlobalInfoSize: number,
+    pClientInterfaceInfo: Win32Pointer,
+    dwClientInterfaceInfoSize: number,
+    lpwsDLLPath: string | Win32Pointer,
+    phRouterTransport: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigTransportDelete */
   MprConfigTransportDelete(hMprConfig: Win32Pointer, hRouterTransport: Win32Pointer): number;
   /** mprapi.dll!MprConfigTransportEnum */
-  MprConfigTransportEnum(hMprConfig: Win32Pointer, dwLevel: number, lplpBuffer: Win32Pointer, dwPrefMaxLen: number, lpdwEntriesRead: Win32Pointer, lpdwTotalEntries: Win32Pointer, lpdwResumeHandle: Win32Pointer): number;
+  MprConfigTransportEnum(
+    hMprConfig: Win32Pointer,
+    dwLevel: number,
+    lplpBuffer: Win32Pointer,
+    dwPrefMaxLen: number,
+    lpdwEntriesRead: Win32Pointer,
+    lpdwTotalEntries: Win32Pointer,
+    lpdwResumeHandle: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigTransportGetHandle */
   MprConfigTransportGetHandle(hMprConfig: Win32Pointer, dwTransportId: number, phRouterTransport: Win32Pointer): number;
   /** mprapi.dll!MprConfigTransportGetInfo */
-  MprConfigTransportGetInfo(hMprConfig: Win32Pointer, hRouterTransport: Win32Pointer, ppGlobalInfo: Win32Pointer, lpdwGlobalInfoSize: Win32Pointer, ppClientInterfaceInfo: Win32Pointer, lpdwClientInterfaceInfoSize: Win32Pointer, lplpwsDLLPath: Win32Pointer): number;
+  MprConfigTransportGetInfo(
+    hMprConfig: Win32Pointer,
+    hRouterTransport: Win32Pointer,
+    ppGlobalInfo: Win32Pointer,
+    lpdwGlobalInfoSize: Win32Pointer,
+    ppClientInterfaceInfo: Win32Pointer,
+    lpdwClientInterfaceInfoSize: Win32Pointer,
+    lplpwsDLLPath: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprConfigTransportSetInfo */
-  MprConfigTransportSetInfo(hMprConfig: Win32Pointer, hRouterTransport: Win32Pointer, pGlobalInfo: Win32Pointer, dwGlobalInfoSize: number, pClientInterfaceInfo: Win32Pointer, dwClientInterfaceInfoSize: number, lpwsDLLPath: string | Win32Pointer): number;
+  MprConfigTransportSetInfo(
+    hMprConfig: Win32Pointer,
+    hRouterTransport: Win32Pointer,
+    pGlobalInfo: Win32Pointer,
+    dwGlobalInfoSize: number,
+    pClientInterfaceInfo: Win32Pointer,
+    dwClientInterfaceInfoSize: number,
+    lpwsDLLPath: string | Win32Pointer,
+  ): number;
   /** mprapi.dll!MprInfoBlockAdd */
-  MprInfoBlockAdd(lpHeader: Win32Pointer, dwInfoType: number, dwItemSize: number, dwItemCount: number, lpItemData: Win32Pointer, lplpNewHeader: Win32Pointer): number;
+  MprInfoBlockAdd(
+    lpHeader: Win32Pointer,
+    dwInfoType: number,
+    dwItemSize: number,
+    dwItemCount: number,
+    lpItemData: Win32Pointer,
+    lplpNewHeader: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprInfoBlockFind */
-  MprInfoBlockFind(lpHeader: Win32Pointer, dwInfoType: number, lpdwItemSize: Win32Pointer, lpdwItemCount: Win32Pointer, lplpItemData: Win32Pointer): number;
+  MprInfoBlockFind(
+    lpHeader: Win32Pointer,
+    dwInfoType: number,
+    lpdwItemSize: Win32Pointer,
+    lpdwItemCount: Win32Pointer,
+    lplpItemData: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprInfoBlockQuerySize */
   MprInfoBlockQuerySize(lpHeader: Win32Pointer): number;
   /** mprapi.dll!MprInfoBlockRemove */
   MprInfoBlockRemove(lpHeader: Win32Pointer, dwInfoType: number, lplpNewHeader: Win32Pointer): number;
   /** mprapi.dll!MprInfoBlockSet */
-  MprInfoBlockSet(lpHeader: Win32Pointer, dwInfoType: number, dwItemSize: number, dwItemCount: number, lpItemData: Win32Pointer, lplpNewHeader: Win32Pointer): number;
+  MprInfoBlockSet(
+    lpHeader: Win32Pointer,
+    dwInfoType: number,
+    dwItemSize: number,
+    dwItemCount: number,
+    lpItemData: Win32Pointer,
+    lplpNewHeader: Win32Pointer,
+  ): number;
   /** mprapi.dll!MprInfoCreate */
   MprInfoCreate(dwVersion: number, lplpNewHeader: Win32Pointer): number;
   /** mprapi.dll!MprInfoDelete */

@@ -5,7 +5,11 @@ interface Functions {
   /** dsprop.dll!ADsPropCheckIfWritable */
   ADsPropCheckIfWritable(pwzAttr: string | Win32Pointer, pWritableAttrs: Win32Pointer): number;
   /** dsprop.dll!ADsPropCreateNotifyObj */
-  ADsPropCreateNotifyObj(pAppThdDataObj: Win32Pointer, pwzADsObjName: string | Win32Pointer, phNotifyObj: Win32Pointer): number;
+  ADsPropCreateNotifyObj(
+    pAppThdDataObj: Win32Pointer,
+    pwzADsObjName: string | Win32Pointer,
+    phNotifyObj: Win32Pointer,
+  ): number;
   /** dsprop.dll!ADsPropGetInitInfo */
   ADsPropGetInitInfo(hNotifyObj: Win32Pointer, pInitParams: Win32Pointer): number;
   /** dsprop.dll!ADsPropSendErrorMessage */

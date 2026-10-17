@@ -36,12 +36,7 @@ export function listThemes(): Map<string, ThemeFile> {
   for (const dir of themeDirs()) {
     if (!existsSync(dir)) continue;
     for (const f of readdirSync(dir).sort()) {
-      if (
-        !/\.(json|toml|css)$/.test(f) ||
-        f === "m3-tables.json" ||
-        f.endsWith(".schema.json")
-      )
-        continue;
+      if (!/\.(json|toml|css)$/.test(f) || f === "m3-tables.json" || f.endsWith(".schema.json")) continue;
       try {
         const file = readThemeFile(join(dir, f));
         out.set(file.id ?? f.replace(/\.[^.]+$/, ""), file);
@@ -51,23 +46,15 @@ export function listThemes(): Map<string, ThemeFile> {
     }
   }
   // Themes of trusted plugins (`themes` permission), without running plugin code.
-  const { trustedPluginDirsSync } =
-    require("../plugins") as typeof import("../plugins");
+  const { trustedPluginDirsSync } = require("../plugins") as typeof import("../plugins");
   for (const { dir, manifest } of trustedPluginDirsSync()) {
-    if (
-      !manifest.permissions.includes("themes") ||
-      !existsSync(join(dir, "themes"))
-    )
-      continue;
+    if (!manifest.permissions.includes("themes") || !existsSync(join(dir, "themes"))) continue;
     for (const f of readdirSync(join(dir, "themes"))
       .sort()
-      .filter((f) => /\.(json|toml|css)$/.test(f))) {
+      .filter(f => /\.(json|toml|css)$/.test(f))) {
       try {
         const file = readThemeFile(join(dir, "themes", f));
-        out.set(
-          file.id ?? `${manifest.name}/${f.replace(/\.[^.]+$/, "")}`,
-          file,
-        );
+        out.set(file.id ?? `${manifest.name}/${f.replace(/\.[^.]+$/, "")}`, file);
       } catch {
         /* reported by `bun-os-platform check` */
       }

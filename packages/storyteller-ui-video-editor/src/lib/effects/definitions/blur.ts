@@ -12,24 +12,13 @@ const MAX_STEP = 4;
 const MAX_EFFECTIVE_SIGMA = MAX_SINGLE_PASS_SIGMA * MAX_STEP;
 const MAX_ITERATIONS = 8;
 
-export function buildGaussianBlurPasses({
-  sigmaX,
-  sigmaY,
-}: {
-  sigmaX: number;
-  sigmaY: number;
-}): EffectPass[] {
+export function buildGaussianBlurPasses({ sigmaX, sigmaY }: { sigmaX: number; sigmaY: number }): EffectPass[] {
   const maxSigma = Math.max(sigmaX, sigmaY);
   if (maxSigma < 0.001) return [];
 
   const iterations = Math.min(
     MAX_ITERATIONS,
-    Math.max(
-      1,
-      Math.ceil(
-        (maxSigma * maxSigma) / (MAX_EFFECTIVE_SIGMA * MAX_EFFECTIVE_SIGMA),
-      ),
-    ),
+    Math.max(1, Math.ceil((maxSigma * maxSigma) / (MAX_EFFECTIVE_SIGMA * MAX_EFFECTIVE_SIGMA))),
   );
   const perPassSigmaX = sigmaX / Math.sqrt(iterations);
   const perPassSigmaY = sigmaY / Math.sqrt(iterations);

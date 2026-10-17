@@ -6,10 +6,7 @@
 import type { SVGProps } from "react";
 import { arcs, volute, type Point } from "../toriyama-svg";
 
-export interface KintoUnCloudProps extends Omit<
-  SVGProps<SVGSVGElement>,
-  "size"
-> {
+export interface KintoUnCloudProps extends Omit<SVGProps<SVGSVGElement>, "size"> {
   width?: number | string;
   height?: number | string;
   animated?: boolean;
@@ -68,59 +65,20 @@ export function KintoUnCloud({
       <path d={contour} fill="#e4be05" />
 
       {/* Main sunlight yellow upper body */}
-      <path
-        d={`${contour}`}
-        fill="#fcf03a"
-        style={{ clipPath: "polygon(0 0, 100% 0, 100% 70%, 0 85%)" }}
-      />
+      <path d={`${contour}`} fill="#fcf03a" style={{ clipPath: "polygon(0 0, 100% 0, 100% 70%, 0 85%)" }} />
 
       {/* Outer black ink contour */}
-      <path
-        d={contour}
-        fill="none"
-        stroke="#121417"
-        strokeWidth="3.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d={contour} fill="none" stroke="#121417" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
 
       {/* Volutes */}
-      <path
-        d={volute1}
-        fill="none"
-        stroke="#121417"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-      />
-      <path
-        d={volute2}
-        fill="none"
-        stroke="#121417"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-      />
+      <path d={volute1} fill="none" stroke="#121417" strokeWidth="2.4" strokeLinecap="round" />
+      <path d={volute2} fill="none" stroke="#121417" strokeWidth="2.4" strokeLinecap="round" />
 
       {/* Speedlines behind cloud */}
       {animated && (
         <g opacity="0.6">
-          <line
-            x1="2"
-            y1="35"
-            x2="14"
-            y2="35"
-            stroke="#ffb703"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <line
-            x1="0"
-            y1="52"
-            x2="10"
-            y2="52"
-            stroke="#ffb703"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
+          <line x1="2" y1="35" x2="14" y2="35" stroke="#ffb703" strokeWidth="2" strokeLinecap="round" />
+          <line x1="0" y1="52" x2="10" y2="52" stroke="#ffb703" strokeWidth="2" strokeLinecap="round" />
         </g>
       )}
     </svg>

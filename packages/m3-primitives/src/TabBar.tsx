@@ -28,11 +28,7 @@ function handleTabKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
   const current = target.closest<HTMLButtonElement>('button[role="tab"]');
   if (!current || !event.currentTarget.contains(current)) return;
 
-  const tabs = Array.from(
-    event.currentTarget.querySelectorAll<HTMLButtonElement>(
-      'button[role="tab"]:not(:disabled)',
-    ),
-  );
+  const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button[role="tab"]:not(:disabled)'));
   const index = tabs.indexOf(current);
   if (index < 0) return;
 
@@ -66,10 +62,7 @@ export const TabBar = forwardRef<HTMLDivElement, TabBarProps>(
     <div
       ref={ref}
       data-m3-component="TabBar"
-      className={clsx(
-        "flex h-10 shrink-0 items-stretch gap-1 border-b border-outline-variant bg-surface",
-        className,
-      )}
+      className={clsx("flex h-10 shrink-0 items-stretch gap-1 border-b border-outline-variant bg-surface", className)}
       {...props}
     >
       <LayoutGroup id={layoutId}>
@@ -92,10 +85,7 @@ TabBar.displayName = "TabBar";
 
 // ─── TabBarItem ──────────────────────────────────────────────────────────────
 
-export interface TabBarItemProps extends Omit<
-  React.ButtonHTMLAttributes<HTMLButtonElement>,
-  "children"
-> {
+export interface TabBarItemProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
   /** Whether this tab is currently active */
   active?: boolean;
   /** Tab label */
@@ -113,20 +103,12 @@ export interface TabBarItemProps extends Omit<
  * `primary` active indicator with rounded top corners that slides between tabs.
  */
 export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
-  (
-    { active, label, onClose, closable, closeIcon, className, ...props },
-    ref,
-  ) => {
+  ({ active, label, onClose, closable, closeIcon, className, ...props }, ref) => {
     const reduced = useM3ReducedMotion();
     const showClose = closable ?? !!onClose;
 
     return (
-      <div
-        className={clsx(
-          "group relative flex min-w-0 flex-1 items-stretch justify-center",
-          className,
-        )}
-      >
+      <div className={clsx("group relative flex min-w-0 flex-1 items-stretch justify-center", className)}>
         <button
           ref={ref}
           type="button"
@@ -138,9 +120,7 @@ export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
             "transition-colors duration-200 ease-standard",
             m3StateLayer,
             m3FocusRing,
-            active
-              ? "text-primary"
-              : "text-on-surface-variant hover:text-on-surface",
+            active ? "text-primary" : "text-on-surface-variant hover:text-on-surface",
           )}
           {...props}
         >
@@ -161,7 +141,7 @@ export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
           <button
             type="button"
             aria-label="Close tab"
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
               onClose?.();
             }}

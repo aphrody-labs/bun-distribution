@@ -13,10 +13,7 @@ class MockEmailVpsClient extends OvhClient {
     });
   }
 
-  public override async request<T = unknown>(
-    method: "GET" | "POST" | "PUT" | "DELETE",
-    path: string,
-  ): Promise<T> {
+  public override async request<T = unknown>(method: "GET" | "POST" | "PUT" | "DELETE", path: string): Promise<T> {
     if (path === "/vps") {
       return ["vps-203bea89.vps.ovh.net"] as T;
     }

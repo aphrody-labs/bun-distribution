@@ -14,21 +14,18 @@ import { TOOLBAR_BUTTON_CLASS_NAME } from "../toolbarStyles";
 // toggles camera view. Hidden in record mode (that mode is self-evident).
 export const CameraStatusPill = () => {
   const editor = useContext(EngineContext);
-  const editorState = usePageSceneStore((s) => s.editorState);
-  const sceneMode = usePageSceneStore((s) => s.sceneMode);
-  const cameras = usePageSceneStore((s) => s.cameras);
+  const editorState = usePageSceneStore(s => s.editorState);
+  const sceneMode = usePageSceneStore(s => s.sceneMode);
+  const cameras = usePageSceneStore(s => s.cameras);
 
   if (sceneMode === "record") return null;
 
   const inCameraView = editorState === EditorStates.CAMERA_VIEW;
-  const renderCameraLabel =
-    cameras.find((c) => c.id !== "main")?.label ?? "Camera";
+  const renderCameraLabel = cameras.find(c => c.id !== "main")?.label ?? "Camera";
 
   return (
     <Tooltip
-      content={
-        inCameraView ? "Looking through render camera" : "Free viewport camera"
-      }
+      content={inCameraView ? "Looking through render camera" : "Free viewport camera"}
       position="bottom"
       delay={300}
     >
@@ -38,10 +35,7 @@ export const CameraStatusPill = () => {
         icon={inCameraView ? VideoIcon : MoveIcon}
         aria-pressed={inCameraView}
         onClick={() => editor && toggleCameraView(editor)}
-        className={twMerge(
-          TOOLBAR_BUTTON_CLASS_NAME,
-          inCameraView && "border-white/30 bg-white/10",
-        )}
+        className={twMerge(TOOLBAR_BUTTON_CLASS_NAME, inCameraView && "border-white/30 bg-white/10")}
       >
         {inCameraView ? renderCameraLabel : "Viewport"}
       </Button>

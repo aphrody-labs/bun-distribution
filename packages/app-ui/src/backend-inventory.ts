@@ -21,23 +21,17 @@ function record(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-export function parseAgentInventory(
-  toolResponse: unknown,
-  serverResponse: unknown,
-): AgentInventory {
+export function parseAgentInventory(toolResponse: unknown, serverResponse: unknown): AgentInventory {
   const tools = record(toolResponse).data;
   const servers = record(serverResponse).servers;
-  if (!Array.isArray(tools) || !Array.isArray(servers))
-    throw new Error("Inventaire du service incomplet.");
+  if (!Array.isArray(tools) || !Array.isArray(servers)) throw new Error("Inventaire du service incomplet.");
   return {
     tools: tools.map((entry: unknown) => {
       const tool = record(entry);
-      if (typeof tool.name !== "string" || !tool.name.trim())
-        throw new Error("Outil sans nom.");
+      if (typeof tool.name !== "string" || !tool.name.trim()) throw new Error("Outil sans nom.");
       return {
         name: tool.name,
-        description:
-          typeof tool.description === "string" ? tool.description : "",
+        description: typeof tool.description === "string" ? tool.description : "",
       };
     }),
     servers: servers.map((entry: unknown) => {
@@ -51,9 +45,6 @@ export function parseAgentInventory(
 
 export async function loadAgentInventory(): Promise<AgentInventory> {
   await ensureAphrodyInitialized();
-  const [tools, servers] = await Promise.all([
-    aphrodyRpc("tools/list"),
-    aphrodyRpc("mcpServerStatus/list"),
-  ]);
+  const [tools, servers] = await Promise.all([aphrodyRpc("tools/list"), aphrodyRpc("mcpServerStatus/list")]);
   return parseAgentInventory(tools, servers);
 }

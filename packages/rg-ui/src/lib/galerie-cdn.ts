@@ -129,10 +129,7 @@ export function lireReponseGalerie(charge: unknown): PageGalerie {
 }
 
 function nombre(valeur: unknown, defaut: number): number {
-  const n =
-    typeof valeur === "number"
-      ? valeur
-      : Number.parseInt(String(valeur ?? ""), 10);
+  const n = typeof valeur === "number" ? valeur : Number.parseInt(String(valeur ?? ""), 10);
   return Number.isFinite(n) && n > 0 ? n : defaut;
 }
 
@@ -147,9 +144,7 @@ function nombre(valeur: unknown, defaut: number): number {
  * moment du rendu : une URL déjà recadrée est renvoyée telle quelle, une URL
  * étrangère au CDN n'est pas touchée.
  */
-export function urlBanniereAffichable(
-  url: string | null | undefined,
-): string | null {
+export function urlBanniereAffichable(url: string | null | undefined): string | null {
   if (!url) {
     return null;
   }

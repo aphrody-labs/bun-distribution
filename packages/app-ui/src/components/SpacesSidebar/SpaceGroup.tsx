@@ -1,7 +1,4 @@
-import type {
-  SpaceGroup as SpaceGroupType,
-  SpaceItem as SpaceItemType,
-} from "@aphrody/drive-client";
+import type { SpaceGroup as SpaceGroupType, SpaceItem as SpaceItemType } from "@aphrody/drive-client";
 import { useSidebarStore, useLibraryMutation } from "@aphrody/drive-client";
 import { SpaceItem } from "./SpaceItem";
 import { DevicesGroup } from "./DevicesGroup";
@@ -20,13 +17,7 @@ interface SpaceGroupProps {
   sortableListeners?: any;
 }
 
-export function SpaceGroup({
-  group,
-  items,
-  spaceId,
-  sortableAttributes,
-  sortableListeners,
-}: SpaceGroupProps) {
+export function SpaceGroup({ group, items, spaceId, sortableAttributes, sortableListeners }: SpaceGroupProps) {
   const { collapsedGroups, toggleGroup: toggleGroupLocal } = useSidebarStore();
   const { active } = useDndContext();
   const updateGroup = useLibraryMutation("spaces.update_group");
@@ -58,8 +49,7 @@ export function SpaceGroup({
 
   // System groups (Locations, Volumes, etc.) are dynamic - don't allow insertion/reordering
   // Custom/QuickAccess groups allow insertion
-  const allowInsertion =
-    group.group_type === "QuickAccess" || group.group_type === "Custom";
+  const allowInsertion = group.group_type === "QuickAccess" || group.group_type === "Custom";
 
   // Empty drop zone for groups with no items (hook called before any early return)
   const { setNodeRef: setEmptyRef, isOver: isOverEmpty } = useDroppable({

@@ -1,10 +1,4 @@
-import {
-  Input,
-  ALL_FORMATS,
-  BlobSource,
-  VideoSampleSink,
-  type VideoCodec,
-} from "mediabunny";
+import { Input, ALL_FORMATS, BlobSource, VideoSampleSink, type VideoCodec } from "mediabunny";
 import { createTimelineAudioBuffer } from "./audio";
 import type { SceneTracks } from "../timeline/types";
 import type { MediaAsset } from "./types";
@@ -22,11 +16,7 @@ export type VideoFileData = {
   thumbnailUrl: string | null;
 };
 
-export async function readVideoFile({
-  file,
-}: {
-  file: File;
-}): Promise<VideoFileData> {
+export async function readVideoFile({ file }: { file: File }): Promise<VideoFileData> {
   const input = new Input({
     source: new BlobSource(file),
     formats: ALL_FORMATS,
@@ -96,9 +86,7 @@ export const extractTimelineAudio = async ({
 }): Promise<Blob> => {
   if (totalDuration === 0) {
     return createWavBlob({
-      samples: new Float32Array(
-        SAMPLE_RATE * EMPTY_TIMELINE_SILENT_DURATION_SECONDS,
-      ),
+      samples: new Float32Array(SAMPLE_RATE * EMPTY_TIMELINE_SILENT_DURATION_SECONDS),
     });
   }
 
@@ -112,13 +100,8 @@ export const extractTimelineAudio = async ({
   });
 
   if (!audioBuffer) {
-    const silentDurationSeconds = Math.max(
-      MIN_SILENT_DURATION_SECONDS,
-      totalDuration / TICKS_PER_SECOND,
-    );
-    const silentSamples = new Float32Array(
-      Math.ceil(silentDurationSeconds * SAMPLE_RATE) * NUM_CHANNELS,
-    );
+    const silentDurationSeconds = Math.max(MIN_SILENT_DURATION_SECONDS, totalDuration / TICKS_PER_SECOND);
+    const silentSamples = new Float32Array(Math.ceil(silentDurationSeconds * SAMPLE_RATE) * NUM_CHANNELS);
     return createWavBlob({ samples: silentSamples });
   }
 
@@ -130,15 +113,9 @@ export const extractTimelineAudio = async ({
   return createWavBlob({ samples: interleavedSamples });
 };
 
-function interleaveAudioBuffer({
-  audioBuffer,
-}: {
-  audioBuffer: AudioBuffer;
-}): Float32Array {
+function interleaveAudioBuffer({ audioBuffer }: { audioBuffer: AudioBuffer }): Float32Array {
   const numChannels = Math.min(NUM_CHANNELS, audioBuffer.numberOfChannels);
-  const interleavedSamples = new Float32Array(
-    audioBuffer.length * NUM_CHANNELS,
-  );
+  const interleavedSamples = new Float32Array(audioBuffer.length * NUM_CHANNELS);
 
   for (let sampleIndex = 0; sampleIndex < audioBuffer.length; sampleIndex++) {
     for (let channel = 0; channel < NUM_CHANNELS; channel++) {
@@ -187,15 +164,7 @@ function createWavBlob({ samples }: { samples: Float32Array }): Blob {
   return new Blob([buffer], { type: "audio/wav" });
 }
 
-function writeString({
-  view,
-  offset,
-  str,
-}: {
-  view: DataView;
-  offset: number;
-  str: string;
-}): void {
+function writeString({ view, offset, str }: { view: DataView; offset: number; str: string }): void {
   for (let i = 0; i < str.length; i++) {
     view.setUint8(offset + i, str.charCodeAt(i));
   }

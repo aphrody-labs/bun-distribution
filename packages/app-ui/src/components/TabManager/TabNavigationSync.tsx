@@ -17,7 +17,7 @@ export function TabNavigationSync() {
   const navigate = useNavigate();
   const { activeTabId, tabs, updateTabPath, updateTabTitle } = useTabManager();
 
-  const activeTab = tabs.find((t) => t.id === activeTabId);
+  const activeTab = tabs.find(t => t.id === activeTabId);
   const currentPath = location.pathname + location.search;
 
   // Track previous activeTabId to detect tab switches
@@ -46,9 +46,7 @@ export function TabNavigationSync() {
       document.title = browserDocumentTitle(
         location.pathname,
         newTitle ?? activeTab?.title ?? null,
-        document
-          .querySelector('meta[name="aphrody-rpc"]')
-          ?.getAttribute("content") === "unavailable",
+        document.querySelector('meta[name="aphrody-rpc"]')?.getAttribute("content") === "unavailable",
       );
     }
   }, [

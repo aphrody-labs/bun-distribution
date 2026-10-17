@@ -14,17 +14,17 @@ use std::process::Command;
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct VsInstanceInfo {
-  display_name: String,
+    display_name: String,
 }
 
 #[cfg(windows)]
 fn build_tools_version() -> crate::Result<Vec<String>> {
-  let vswhere =
-    tauri_bundler::bundle::vswhere_path().context("failed to find or prepare vswhere.exe")?;
+    let vswhere =
+        tauri_bundler::bundle::vswhere_path().context("failed to find or prepare vswhere.exe")?;
 
-  // Check if there are Visual Studio installations that have the "MSVC - C++ Buildtools" and "Windows SDK" components.
-  // Both the Windows 10 and Windows 11 SDKs work so we need to query it twice.
-  let output_sdk10 = Command::new(&*vswhere)
+    // Check if there are Visual Studio installations that have the "MSVC - C++ Buildtools" and "Windows SDK" components.
+    // Both the Windows 10 and Windows 11 SDKs work so we need to query it twice.
+    let output_sdk10 = Command::new(&*vswhere)
     .args([
       "-prerelease",
       "-products",
@@ -43,7 +43,7 @@ fn build_tools_version() -> crate::Result<Vec<String>> {
       error,
     })?;
 
-  let output_sdk11 = Command::new(&*vswhere)
+    let output_sdk11 = Command::new(&*vswhere)
     .args([
       "-prerelease",
       "-products",
@@ -62,41 +62,41 @@ fn build_tools_version() -> crate::Result<Vec<String>> {
       error,
     })?;
 
-  let mut instances: Vec<VsInstanceInfo> = Vec::new();
+    let mut instances: Vec<VsInstanceInfo> = Vec::new();
 
-  if output_sdk10.status.success() {
-    let stdout = String::from_utf8_lossy(&output_sdk10.stdout);
-    let found: Vec<VsInstanceInfo> =
-      serde_json::from_str(&stdout).context("failed to parse vswhere output")?;
-    instances.extend(found);
-  }
+    if output_sdk10.status.success() {
+        let stdout = String::from_utf8_lossy(&output_sdk10.stdout);
+        let found: Vec<VsInstanceInfo> =
+            serde_json::from_str(&stdout).context("failed to parse vswhere output")?;
+        instances.extend(found);
+    }
 
-  if output_sdk11.status.success() {
-    let stdout = String::from_utf8_lossy(&output_sdk11.stdout);
-    let found: Vec<VsInstanceInfo> =
-      serde_json::from_str(&stdout).context("failed to parse vswhere output")?;
-    instances.extend(found);
-  }
+    if output_sdk11.status.success() {
+        let stdout = String::from_utf8_lossy(&output_sdk11.stdout);
+        let found: Vec<VsInstanceInfo> =
+            serde_json::from_str(&stdout).context("failed to parse vswhere output")?;
+        instances.extend(found);
+    }
 
-  let mut instances: Vec<String> = instances
-    .iter()
-    .map(|i| i.display_name.clone())
-    .collect::<Vec<String>>();
+    let mut instances: Vec<String> = instances
+        .iter()
+        .map(|i| i.display_name.clone())
+        .collect::<Vec<String>>();
 
-  instances.sort_unstable();
-  instances.dedup();
+    instances.sort_unstable();
+    instances.dedup();
 
-  Ok(instances)
+    Ok(instances)
 }
 
 #[cfg(windows)]
 fn webview2_version() -> crate::Result<Option<String>> {
-  let powershell_path = std::env::var("SYSTEMROOT").map_or_else(
-    |_| "powershell.exe".to_string(),
-    |p| format!("{p}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"),
-  );
-  // check 64bit machine-wide installation
-  let output = Command::new(&powershell_path)
+    let powershell_path = std::env::var("SYSTEMROOT").map_or_else(
+        |_| "powershell.exe".to_string(),
+        |p| format!("{p}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"),
+    );
+    // check 64bit machine-wide installation
+    let output = Command::new(&powershell_path)
       .args(["-NoProfile", "-Command"])
       .arg("Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' | ForEach-Object {$_.pv}")
       .output()
@@ -104,13 +104,13 @@ fn webview2_version() -> crate::Result<Option<String>> {
         command: "Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' | ForEach-Object {$_.pv}".to_string(),
         error,
       })?;
-  if output.status.success() {
-    return Ok(Some(
-      String::from_utf8_lossy(&output.stdout).replace('\n', ""),
-    ));
-  }
-  // check 32bit machine-wide installation
-  let output = Command::new(&powershell_path)
+    if output.status.success() {
+        return Ok(Some(
+            String::from_utf8_lossy(&output.stdout).replace('\n', ""),
+        ));
+    }
+    // check 32bit machine-wide installation
+    let output = Command::new(&powershell_path)
         .args(["-NoProfile", "-Command"])
         .arg("Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' | ForEach-Object {$_.pv}")
         .output()
@@ -118,13 +118,13 @@ fn webview2_version() -> crate::Result<Option<String>> {
           command: "Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' | ForEach-Object {$_.pv}".to_string(),
           error,
         })?;
-  if output.status.success() {
-    return Ok(Some(
-      String::from_utf8_lossy(&output.stdout).replace('\n', ""),
-    ));
-  }
-  // check user-wide installation
-  let output = Command::new(&powershell_path)
+    if output.status.success() {
+        return Ok(Some(
+            String::from_utf8_lossy(&output.stdout).replace('\n', ""),
+        ));
+    }
+    // check user-wide installation
+    let output = Command::new(&powershell_path)
       .args(["-NoProfile", "-Command"])
       .arg("Get-ItemProperty -Path 'HKCU:\\SOFTWARE\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' | ForEach-Object {$_.pv}")
       .output()
@@ -132,109 +132,109 @@ fn webview2_version() -> crate::Result<Option<String>> {
         command: "Get-ItemProperty -Path 'HKCU:\\SOFTWARE\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' | ForEach-Object {$_.pv}".to_string(),
         error,
       })?;
-  if output.status.success() {
-    return Ok(Some(
-      String::from_utf8_lossy(&output.stdout).replace('\n', ""),
-    ));
-  }
+    if output.status.success() {
+        return Ok(Some(
+            String::from_utf8_lossy(&output.stdout).replace('\n', ""),
+        ));
+    }
 
-  Ok(None)
+    Ok(None)
 }
 
 #[cfg(any(
-  target_os = "linux",
-  target_os = "dragonfly",
-  target_os = "freebsd",
-  target_os = "openbsd",
-  target_os = "netbsd"
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd"
 ))]
 fn pkg_conf_version(package: &str) -> Option<String> {
-  Command::new("pkg-config")
-    .args([package, "--print-provides"])
-    .output()
-    .map(|o| {
-      String::from_utf8_lossy(&o.stdout)
-        .split('=')
-        .nth(1)
-        .map(|s| s.trim().to_string())
-    })
-    .unwrap_or(None)
+    Command::new("pkg-config")
+        .args([package, "--print-provides"])
+        .output()
+        .map(|o| {
+            String::from_utf8_lossy(&o.stdout)
+                .split('=')
+                .nth(1)
+                .map(|s| s.trim().to_string())
+        })
+        .unwrap_or(None)
 }
 #[cfg(any(
-  target_os = "linux",
-  target_os = "dragonfly",
-  target_os = "freebsd",
-  target_os = "openbsd",
-  target_os = "netbsd"
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd"
 ))]
 fn gtk4_ver() -> Option<String> {
-  pkg_conf_version("gtk4")
+    pkg_conf_version("gtk4")
 }
 #[cfg(any(
-  target_os = "linux",
-  target_os = "dragonfly",
-  target_os = "freebsd",
-  target_os = "openbsd",
-  target_os = "netbsd"
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd"
 ))]
 fn rsvg2_ver() -> Option<String> {
-  pkg_conf_version("librsvg-2.0")
+    pkg_conf_version("librsvg-2.0")
 }
 
 #[cfg(target_os = "macos")]
 fn is_xcode_command_line_tools_installed() -> bool {
-  Command::new("xcode-select")
-    .arg("-p")
-    .output()
-    .map(|o| o.status.success())
-    .unwrap_or(false)
+    Command::new("xcode-select")
+        .arg("-p")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
 }
 
 #[cfg(target_os = "macos")]
 pub fn xcode_version() -> Option<String> {
-  Command::new("xcodebuild")
-    .arg("-version")
-    .output()
-    .ok()
-    .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
-    .and_then(|s| {
-      s.split('\n')
-        .filter_map(|line| line.strip_prefix("Xcode "))
-        .next()
-        .map(ToString::to_string)
-    })
+    Command::new("xcodebuild")
+        .arg("-version")
+        .output()
+        .ok()
+        .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
+        .and_then(|s| {
+            s.split('\n')
+                .filter_map(|line| line.strip_prefix("Xcode "))
+                .next()
+                .map(ToString::to_string)
+        })
 }
 
 fn de_and_session() -> String {
-  #[cfg(any(
-    target_os = "linux",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "openbsd",
-    target_os = "netbsd"
-  ))]
-  return {
-    let de = std::env::var("XDG_SESSION_DESKTOP");
-    let session = std::env::var("XDG_SESSION_TYPE");
-    format!(
-      " ({} on {})",
-      de.as_deref().unwrap_or("Unknown DE"),
-      session.as_deref().unwrap_or("Unknown Session")
-    )
-  };
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd"
+    ))]
+    return {
+        let de = std::env::var("XDG_SESSION_DESKTOP");
+        let session = std::env::var("XDG_SESSION_TYPE");
+        format!(
+            " ({} on {})",
+            de.as_deref().unwrap_or("Unknown DE"),
+            session.as_deref().unwrap_or("Unknown Session")
+        )
+    };
 
-  #[cfg(not(any(
-    target_os = "linux",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "openbsd",
-    target_os = "netbsd"
-  )))]
-  String::new()
+    #[cfg(not(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd"
+    )))]
+    String::new()
 }
 
 pub fn items() -> Vec<SectionItem> {
-  vec![
+    vec![
     SectionItem::new().action(|| {
       let os_info = os_info::get();
       format!(

@@ -55,13 +55,11 @@ export function MarkdownField({
       minHeight={minHeight}
       maxHeight="60vh"
       ariaLabel="Contenu markdown"
-      renderPreview={(source) =>
+      renderPreview={source =>
         source.trim() ? (
           <WikiMarkdown body={source} />
         ) : (
-          <p className="italic text-white/45">
-            L&apos;aperçu s&apos;affiche ici…
-          </p>
+          <p className="italic text-white/45">L&apos;aperçu s&apos;affiche ici…</p>
         )
       }
     />

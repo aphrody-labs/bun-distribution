@@ -49,13 +49,13 @@ export function startJob(title: string, work: () => Promise<unknown>): Job {
   jobs.unshift(job);
   jobs.splice(50);
   void work().then(
-    (result) =>
+    result =>
       Object.assign(job, {
         status: "done",
         result,
         endedAt: new Date().toISOString(),
       }),
-    (error) =>
+    error =>
       Object.assign(job, {
         status: "failed",
         error: error instanceof Error ? error.message : String(error),
@@ -69,7 +69,7 @@ export async function systemsOverview(): Promise<unknown[]> {
   const counts = systemCounts();
   const { systems } = await loadSystems();
   return Promise.all(
-    systems.map(async (system) => {
+    systems.map(async system => {
       const routes = await routesFor(system.id);
       return {
         id: system.id,
@@ -89,19 +89,9 @@ export async function systemsOverview(): Promise<unknown[]> {
 export async function biosOverview(): Promise<unknown> {
   const { systems } = await loadSystems();
   const { firmware: free } = (await Bun.file(
-    join(
-      import.meta.dir,
-      "..",
-      "..",
-      "plugins",
-      "consoles",
-      "free-firmware.json",
-    ),
+    join(import.meta.dir, "..", "..", "plugins", "consoles", "free-firmware.json"),
   ).json()) as {
-    firmware: Record<
-      string,
-      { console: string; file: string; license: string }
-    >;
+    firmware: Record<string, { console: string; file: string; license: string }>;
   };
   const native = [];
   for (const system of systems) {
@@ -115,16 +105,12 @@ export async function biosOverview(): Promise<unknown> {
       required: bios.required,
       freeFirmware: bios.freeFirmware,
       license: free[bios.freeFirmware]?.license,
-      images: images.map((image) => ({
+      images: images.map(image => ({
         sha256: image.sha256,
         bytes: image.bytes,
         file: image.file,
       })),
-      status: images.length
-        ? "present"
-        : bios.required
-          ? "missing"
-          : "optional",
+      status: images.length ? "present" : bios.required ? "missing" : "optional",
     });
   }
   const installedCores = new Set(
@@ -134,10 +120,10 @@ export async function biosOverview(): Promise<unknown> {
           cwd: join(pm.cacheDirectories().usr, "lib", "libretro"),
         }),
       )
-    ).map((file) => file.replace(/_libretro\..+$/, "")),
+    ).map(file => file.replace(/_libretro\..+$/, "")),
   );
-  const wanted = new Set(systems.flatMap((system) => system.libretro));
-  const ids = [...wanted].filter((id) => installedCores.has(id));
+  const wanted = new Set(systems.flatMap(system => system.libretro));
+  const ids = [...wanted].filter(id => installedCores.has(id));
   const libretro = ids.length ? await biosReport(ids) : [];
   return {
     native,
@@ -154,13 +140,11 @@ export async function installerOverview(): Promise<unknown> {
     libretroCatalog(),
     loadSystems(),
   ]);
-  const byId = new Map(installed.map((row) => [row.id, row]));
+  const byId = new Map(installed.map(row => [row.id, row]));
   const usedBy = (predicate: (system: (typeof systems)[number]) => boolean) =>
-    systems.filter(predicate).map((system) => system.id);
+    systems.filter(predicate).map(system => system.id);
   const libretroDir = join(pm.cacheDirectories().usr, "lib", "libretro");
-  const wanted = [
-    ...new Set(systems.flatMap((system) => system.libretro)),
-  ].sort();
+  const wanted = [...new Set(systems.flatMap(system => system.libretro))].sort();
   const mirrors = listMirrors();
   const services = new Map<
     string,
@@ -192,25 +176,18 @@ export async function installerOverview(): Promise<unknown> {
       id,
       console: pkg.console,
       repo: pkg.repo,
-      systems: usedBy(
-        (system) =>
-          system.binaries.includes(id) ||
-          (id === "retroarch" && system.libretro.length > 0),
-      ),
+      systems: usedBy(system => system.binaries.includes(id) || (id === "retroarch" && system.libretro.length > 0)),
       installed: byId.get(id) ?? null,
     })),
-    libretro: wanted.map((id) => {
-      const core = cores.find((item) => item.id === id);
+    libretro: wanted.map(id => {
+      const core = cores.find(item => item.id === id);
       return {
         id,
         name: core?.name ?? id,
         system: core?.system ?? "",
         license: core?.license ?? "",
-        systems: usedBy((system) => system.libretro.includes(id)),
-        installed: ["dll", "so", "dylib"].some(
-          (ext) =>
-            Bun.file(join(libretroDir, `${id}_libretro.${ext}`)).size > 0,
-        ),
+        systems: usedBy(system => system.libretro.includes(id)),
+        installed: ["dll", "so", "dylib"].some(ext => Bun.file(join(libretroDir, `${id}_libretro.${ext}`)).size > 0),
       };
     }),
     mirrors: [...services.values()],
@@ -225,20 +202,12 @@ async function body<T>(request: Request): Promise<T> {
   return (await request.json().catch(() => ({}))) as T;
 }
 
-function guard(
-  handler: (
-    request: Bun.BunRequest,
-    server: Bun.Server<undefined>,
-  ) => Promise<Response> | Response,
-) {
+function guard(handler: (request: Bun.BunRequest, server: Bun.Server<undefined>) => Promise<Response> | Response) {
   return async (request: Bun.BunRequest, server: Bun.Server<undefined>) => {
     try {
       return await handler(request, server);
     } catch (error) {
-      return json(
-        { error: error instanceof Error ? error.message : String(error) },
-        400,
-      );
+      return json({ error: error instanceof Error ? error.message : String(error) }, 400);
     }
   };
 }
@@ -248,17 +217,13 @@ export function frontendRoutes() {
   return {
     "/api/systems": { GET: guard(async () => json(await systemsOverview())) },
     "/api/systems/:id/games": {
-      GET: guard((request) =>
-        json(gamesFor((request.params as { id: string }).id)),
-      ),
+      GET: guard(request => json(gamesFor((request.params as { id: string }).id))),
     },
     "/api/systems/:id/routes": {
-      GET: guard(async (request) =>
-        json(await routesFor((request.params as { id: string }).id)),
-      ),
+      GET: guard(async request => json(await routesFor((request.params as { id: string }).id))),
     },
     "/api/systems/:id/default": {
-      PUT: guard(async (request) => {
+      PUT: guard(async request => {
         const { id } = request.params as { id: string };
         await systemById(id);
         const { route } = await body<{ route: string | null }>(request);
@@ -267,7 +232,7 @@ export function frontendRoutes() {
       }),
     },
     "/api/games/:id": {
-      GET: guard(async (request) => {
+      GET: guard(async request => {
         const game = gameById(Number((request.params as { id: string }).id));
         return json({
           ...game,
@@ -289,7 +254,7 @@ export function frontendRoutes() {
       }),
     },
     "/api/games/:id/favorite": {
-      POST: guard(async (request) => {
+      POST: guard(async request => {
         const { id } = request.params as { id: string };
         const { favorite } = await body<{ favorite: boolean }>(request);
         setFavorite(Number(id), favorite);
@@ -297,7 +262,7 @@ export function frontendRoutes() {
       }),
     },
     "/api/games/:id/route": {
-      PUT: guard(async (request) => {
+      PUT: guard(async request => {
         const { id } = request.params as { id: string };
         const { route } = await body<{ route: string | null }>(request);
         setGameRoute(Number(id), route);
@@ -316,15 +281,13 @@ export function frontendRoutes() {
     },
     "/api/library/sources": {
       GET: () => json(listSources()),
-      POST: guard(async (request) => {
-        const { path, system } = await body<{ path: string; system?: string }>(
-          request,
-        );
+      POST: guard(async request => {
+        const { path, system } = await body<{ path: string; system?: string }>(request);
         return json(await addFolder(path, system || undefined));
       }),
     },
     "/api/library/sources/:id": {
-      DELETE: guard((request) => {
+      DELETE: guard(request => {
         removeSource(Number((request.params as { id: string }).id));
         return json({ removed: true });
       }),
@@ -334,54 +297,32 @@ export function frontendRoutes() {
       GET: guard(async () => json(await installerOverview())),
     },
     "/api/installer/:action": {
-      POST: guard(async (request) => {
+      POST: guard(async request => {
         const { action } = request.params as { action: string };
-        const { id, service } = await body<{ id?: string; service?: string }>(
-          request,
-        );
+        const { id, service } = await body<{ id?: string; service?: string }>(request);
         const ids = id ? id.split(/[\s,]+/).filter(Boolean) : [];
         const work: Record<string, [string, () => Promise<unknown>]> = {
-          bin: [
-            `bep add bin ${id}`,
-            () =>
-              inProject(() => pm.add(["bin", ...ids]).then(() => pm.list())),
-          ],
+          bin: [`bep add bin ${id}`, () => inProject(() => pm.add(["bin", ...ids]).then(() => pm.list()))],
           libretro: [
             `bep add libretro ${id}`,
-            () =>
-              inProject(() =>
-                pm.add(["libretro", ...ids]).then(() => pm.list()),
-              ),
+            () => inProject(() => pm.add(["libretro", ...ids]).then(() => pm.list())),
           ],
           "free-firmware": [
             `bep add free-firmware ${id}`,
-            () =>
-              inProject(() =>
-                pm.add(["free-firmware", ...ids]).then(() => pm.list()),
-              ),
+            () => inProject(() => pm.add(["free-firmware", ...ids]).then(() => pm.list())),
           ],
-          remove: [
-            `bep remove ${id}`,
-            () => inProject(() => pm.remove(ids).then(() => pm.list())),
-          ],
-          update: [
-            `bep update ${id ?? ""}`.trim(),
-            () => inProject(() => pm.update(ids)),
-          ],
+          remove: [`bep remove ${id}`, () => inProject(() => pm.remove(ids).then(() => pm.list()))],
+          update: [`bep update ${id ?? ""}`.trim(), () => inProject(() => pm.update(ids))],
           install: ["bep install", () => inProject(() => pm.install())],
           "mirrors-index": ["bep mirrors index", indexMirrors],
           "mirrors-probe": [
             `bep mirrors probe ${service ?? ""}`.trim(),
-            async () =>
-              (await probeMirrors(service)).filter((row) => row.ok).length,
+            async () => (await probeMirrors(service)).filter(row => row.ok).length,
           ],
         };
         const entry = work[action];
         if (!entry) throw new Error(`unknown installer action ${action}`);
-        if (
-          ["bin", "libretro", "free-firmware", "remove"].includes(action) &&
-          !ids.length
-        )
+        if (["bin", "libretro", "free-firmware", "remove"].includes(action) && !ids.length)
           throw new Error(`${action} needs an id`);
         return json(startJob(...entry));
       }),

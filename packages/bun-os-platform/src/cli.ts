@@ -38,11 +38,8 @@ const VALUE_FLAGS = new Set([
   "--seed",
   "--out",
 ]);
-const positional = argv.filter(
-  (a, i) => !a.startsWith("--") && !VALUE_FLAGS.has(argv[i - 1] ?? ""),
-);
-const print = (v: unknown) =>
-  console.log(typeof v === "string" ? v : JSON.stringify(v, null, 2));
+const positional = argv.filter((a, i) => !a.startsWith("--") && !VALUE_FLAGS.has(argv[i - 1] ?? ""));
+const print = (v: unknown) => console.log(typeof v === "string" ? v : JSON.stringify(v, null, 2));
 
 switch (positional[0]) {
   case "check":
@@ -68,8 +65,7 @@ switch (positional[0]) {
   case "theme": {
     const id = positional[2];
     if (positional[1] === "list") print([...listThemes().keys()]);
-    else if (positional[1] === "css")
-      print(themeCss(loadTheme(id), { seed: flag("--seed") }));
+    else if (positional[1] === "css") print(themeCss(loadTheme(id), { seed: flag("--seed") }));
     else
       print(
         resolveTheme(loadTheme(id), {
@@ -88,31 +84,21 @@ switch (positional[0]) {
     }
     const registry = await plugins();
     if (positional[1] === "menu") {
-      print(
-        registry.menuFor(
-          localizer(negotiate({ override: positional[2], os: true }).chain, [
-            "common",
-            "shell",
-          ]),
-        ),
-      );
+      print(registry.menuFor(localizer(negotiate({ override: positional[2], os: true }).chain, ["common", "shell"])));
       break;
     }
     print({
       loaded: registry.plugins.map(
-        (p) =>
-          `${p.manifest.name}@${p.manifest.version} (${p.trust}) [${p.manifest.permissions.join(", ")}]`,
+        p => `${p.manifest.name}@${p.manifest.version} (${p.trust}) [${p.manifest.permissions.join(", ")}]`,
       ),
       blocked: registry.blocked,
-      detectors: registry.detectors.map((d) => d.plugin),
-      previewers: registry.previewers.map(
-        (p) => `${p.plugin}:${p.kind ?? "*"}/${p.format ?? "*"}`,
-      ),
+      detectors: registry.detectors.map(d => d.plugin),
+      previewers: registry.previewers.map(p => `${p.plugin}:${p.kind ?? "*"}/${p.format ?? "*"}`),
       machines: registry.machines.length,
-      sources: registry.sources.map((s) => `${s.plugin}:${s.id}`),
-      providers: registry.providers.map((p) => `${p.plugin}:${p.id}`),
-      themes: registry.themes.map((t) => t.id),
-      menu: registry.menu.map((m) => `${m.plugin}:${m.id} @${m.location}`),
+      sources: registry.sources.map(s => `${s.plugin}:${s.id}`),
+      providers: registry.providers.map(p => `${p.plugin}:${p.id}`),
+      themes: registry.themes.map(t => t.id),
+      menu: registry.menu.map(m => `${m.plugin}:${m.id} @${m.location}`),
     });
     break;
   }
@@ -123,13 +109,9 @@ switch (positional[0]) {
       if (out && p.thumbnail) await Bun.write(out, p.thumbnail);
       print({
         ...p,
-        thumbnail: p.thumbnail
-          ? `${p.thumbnail.length} bytes${out ? ` -> ${out}` : ""}`
-          : null,
+        thumbnail: p.thumbnail ? `${p.thumbnail.length} bytes${out ? ` -> ${out}` : ""}` : null,
       });
-    } else
-      for (const path of positional.slice(2))
-        print(await detectFile(path, { magika: has("--magika") }));
+    } else for (const path of positional.slice(2)) print(await detectFile(path, { magika: has("--magika") }));
     break;
   }
   case "transfer": {
@@ -156,9 +138,7 @@ switch (positional[0]) {
       service.resume(positional[2] ?? "");
       print(await service.wait(positional[2] ?? ""));
     } else if (positional[1] === "get") {
-      const mirrors = argv.flatMap((a, i) =>
-        a === "--mirror" && argv[i + 1] ? [argv[i + 1] as string] : [],
-      );
+      const mirrors = argv.flatMap((a, i) => (a === "--mirror" && argv[i + 1] ? [argv[i + 1] as string] : []));
       const r = service.enqueue({
         url: positional[2] ?? "",
         dest: flag("--dest"),
@@ -167,12 +147,9 @@ switch (positional[0]) {
         mirrors,
         bandwidth: Number(flag("--bandwidth") ?? 0),
       });
-      service.addEventListener("progress", (e) => {
+      service.addEventListener("progress", e => {
         const d = (e as CustomEvent).detail;
-        if (d.id === r.id)
-          console.error(
-            `${d.state} ${d.received}/${d.size ?? "?"} ${d.rate} B/s via ${d.via ?? "-"}`,
-          );
+        if (d.id === r.id) console.error(`${d.state} ${d.received}/${d.size ?? "?"} ${d.rate} B/s via ${d.via ?? "-"}`);
       });
       print(await service.wait(r.id));
     }

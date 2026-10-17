@@ -28,10 +28,7 @@ function getCoverThumbnail(item: any): string | null {
  * as their own entries, and mesh vs splat feeds can't see each other.
  * Returns the same surface as `useGalleryData`.
  */
-export function useSessionMediaByClass(options: {
-  mediaClass: "mesh" | "splat";
-  enabled: boolean;
-}) {
+export function useSessionMediaByClass(options: { mediaClass: "mesh" | "splat"; enabled: boolean }) {
   const { mediaClass, enabled } = options;
 
   const [items, setItems] = useState<GalleryItem[]>([]);
@@ -46,8 +43,7 @@ export function useSessionMediaByClass(options: {
   const mapApiItem = useCallback(
     (item: any): GalleryItem => ({
       id: item.token,
-      label:
-        item.maybe_title ?? (mediaClass === "splat" ? "3D World" : "3D Mesh"),
+      label: item.maybe_title ?? (mediaClass === "splat" ? "3D World" : "3D Mesh"),
       thumbnail: getCoverThumbnail(item),
       fullImage: item.media_links?.cdn_url || null,
       createdAt: item.created_at,
@@ -83,15 +79,13 @@ export function useSessionMediaByClass(options: {
           if (reset) {
             setItems(newItems);
           } else {
-            setItems((prev) => [...prev, ...newItems]);
+            setItems(prev => [...prev, ...newItems]);
           }
 
           // Keyset pagination: a full page implies there may be more; the
           // next cursor continues where this page ended.
           cursorRef.current = response.pagination?.maybe_next ?? undefined;
-          setHasMore(
-            newItems.length >= PAGE_SIZE && !!response.pagination?.maybe_next,
-          );
+          setHasMore(newItems.length >= PAGE_SIZE && !!response.pagination?.maybe_next);
         }
       } catch {
         // ignore
@@ -136,7 +130,7 @@ export function useSessionMediaByClass(options: {
   }, [loadItems]);
 
   const removeItem = useCallback((id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    setItems(prev => prev.filter(item => item.id !== id));
   }, []);
 
   return {

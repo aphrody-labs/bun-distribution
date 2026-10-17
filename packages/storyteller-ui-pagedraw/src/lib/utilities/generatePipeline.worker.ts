@@ -29,10 +29,7 @@ const ctxOf = (canvas: OffscreenCanvas): OffscreenCanvasRenderingContext2D => {
 };
 
 const post = (response: WorkerResponse, transfer: Transferable[] = []) => {
-  (self as unknown as DedicatedWorkerGlobalScope).postMessage(
-    response,
-    transfer,
-  );
+  (self as unknown as DedicatedWorkerGlobalScope).postMessage(response, transfer);
 };
 
 self.addEventListener("message", async (event: MessageEvent<WorkerRequest>) => {

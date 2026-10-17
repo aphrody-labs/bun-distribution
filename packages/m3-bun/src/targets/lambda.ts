@@ -10,9 +10,7 @@ import type { Target, TargetContext, TargetFile } from "./types.ts";
 
 /** The app directory seen from the target directory (`../..` for the default `deploy/lambda`). */
 export const appFromTarget = (c: TargetContext): string =>
-  c.appDir && c.targetDir
-    ? relative(c.targetDir, c.appDir).replaceAll("\\", "/") || "."
-    : "../..";
+  c.appDir && c.targetDir ? relative(c.targetDir, c.appDir).replaceAll("\\", "/") || "." : "../..";
 
 export const handlerSource = (c: TargetContext): string => `// ${GENERATED_NOTE}
 // The Lambda handler of ${c.name}: \`_HANDLER=handler.fetch\` for the Bun runtime layer (packages/bun-lambda).
@@ -54,12 +52,8 @@ console.log(\`function.zip written by \${archiver}\`);
 
 export const layerScript = (c: TargetContext): string => {
   const tag = forkTag(c.bunVersion);
-  const url = tag
-    ? `https://github.com/aphrody-labs/bun/releases/download/${tag}/bun-linux-aarch64.zip`
-    : undefined;
-  const source = url
-    ? `--url "\${BUN_LAYER_URL:-${url}}"`
-    : `--release "bun-v${c.bunVersion}"`;
+  const url = tag ? `https://github.com/aphrody-labs/bun/releases/download/${tag}/bun-linux-aarch64.zip` : undefined;
+  const source = url ? `--url "\${BUN_LAYER_URL:-${url}}"` : `--release "bun-v${c.bunVersion}"`;
   return `#!/bin/sh
 # ${GENERATED_NOTE}
 # Build the Bun runtime layer with the build-layer command of packages/bun-lambda in a Bun fork checkout

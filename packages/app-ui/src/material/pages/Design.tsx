@@ -31,18 +31,14 @@ export default function Design({ adaptive }: PageProps) {
         signal: controller.signal,
       });
       const payload = await response.json();
-      if (!response.ok)
-        throw new Error(payload.error ?? "The brief could not be compiled.");
+      if (!response.ok) throw new Error(payload.error ?? "The brief could not be compiled.");
       if (!controller.signal.aborted) {
         setResult(payload as GenerationResult);
         setFile("src/theme.css");
         setNotice("Design generated locally.");
       }
     } catch (error) {
-      if (!controller.signal.aborted)
-        setNotice(
-          error instanceof Error ? error.message : "Generation failed.",
-        );
+      if (!controller.signal.aborted) setNotice(error instanceof Error ? error.message : "Generation failed.");
     } finally {
       if (active.current === controller) {
         active.current = null;
@@ -65,10 +61,7 @@ export default function Design({ adaptive }: PageProps) {
         ) : undefined
       }
     >
-      <Section
-        title="Design brief"
-        description={"The current theme seed is " + theme.seedColor + "."}
-      >
+      <Section title="Design brief" description={"The current theme seed is " + theme.seedColor + "."}>
         <Card className="flex flex-col gap-3">
           <label className="text-label-large" htmlFor="design-brief">
             Describe the interface
@@ -78,7 +71,7 @@ export default function Design({ adaptive }: PageProps) {
             maxLength={2000}
             className="min-h-32 rounded-medium border border-outline bg-surface p-3 text-body-large"
             value={brief}
-            onChange={(event) => setBrief(event.target.value)}
+            onChange={event => setBrief(event.target.value)}
           />
           <Button
             onClick={() => {
@@ -88,29 +81,25 @@ export default function Design({ adaptive }: PageProps) {
           >
             {busy ? "Generating…" : "Generate design"}
           </Button>
-          <output className="block text-body-medium text-on-surface-variant">
-            {notice}
-          </output>
+          <output className="block text-body-medium text-on-surface-variant">{notice}</output>
         </Card>
       </Section>
       {result ? (
         <>
           <Section title="Primary tonal palette">
             <div className="grid grid-cols-3 gap-3 expanded:grid-cols-6">
-              {Object.entries(result.theme.palettes.primary.tones).map(
-                ([tone, value]) => (
-                  <Swatch
-                    key={tone}
-                    name={"Tone " + tone}
-                    value={value}
-                    on={
-                      Number(tone) > 50
-                        ? result.theme.palettes.neutral.tones[10]
-                        : result.theme.palettes.neutral.tones[99]
-                    }
-                  />
-                ),
-              )}
+              {Object.entries(result.theme.palettes.primary.tones).map(([tone, value]) => (
+                <Swatch
+                  key={tone}
+                  name={"Tone " + tone}
+                  value={value}
+                  on={
+                    Number(tone) > 50
+                      ? result.theme.palettes.neutral.tones[10]
+                      : result.theme.palettes.neutral.tones[99]
+                  }
+                />
+              ))}
             </div>
           </Section>
           <Section
@@ -123,22 +112,18 @@ export default function Design({ adaptive }: PageProps) {
                 <select
                   className="h-12 rounded-small border border-outline bg-surface px-3"
                   value={file}
-                  onChange={(event) => setFile(event.target.value)}
+                  onChange={event => setFile(event.target.value)}
                 >
-                  {result.files.map((item) => (
+                  {result.files.map(item => (
                     <option key={item.path}>{item.path}</option>
                   ))}
                 </select>
               </label>
-              <Code>
-                {result.files.find((item) => item.path === file)?.content}
-              </Code>
+              <Code>{result.files.find(item => item.path === file)?.content}</Code>
               <Button
                 variant="outlined"
                 onClick={() => {
-                  const content =
-                    result.files.find((item) => item.path === file)?.content ??
-                    "";
+                  const content = result.files.find(item => item.path === file)?.content ?? "";
                   if (!navigator.clipboard) {
                     setNotice("Clipboard access is unavailable.");
                     return;

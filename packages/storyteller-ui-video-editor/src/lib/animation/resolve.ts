@@ -101,10 +101,7 @@ export function resolveAnimationPathValueAtTime({
         fallbackValue,
       });
     }
-    if (
-      typeof fallbackValue === "string" ||
-      typeof fallbackValue === "boolean"
-    ) {
+    if (typeof fallbackValue === "string" || typeof fallbackValue === "boolean") {
       return getChannelValueAtTime({
         channel: !isScalarChannel(data) ? data : undefined,
         time: localTime,
@@ -117,13 +114,7 @@ export function resolveAnimationPathValueAtTime({
     return fallbackValue;
   }
 
-  if (
-    typeof fallbackValue !== "string" ||
-    !("r" in data) ||
-    !("g" in data) ||
-    !("b" in data) ||
-    !("a" in data)
-  ) {
+  if (typeof fallbackValue !== "string" || !("r" in data) || !("g" in data) || !("b" in data) || !("a" in data)) {
     return fallbackValue;
   }
 

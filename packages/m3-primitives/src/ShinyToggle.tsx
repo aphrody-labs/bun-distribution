@@ -37,9 +37,7 @@ export function ShinyToggle<T extends string>({
 }: ShinyToggleProps<T>) {
   const groupId = useId();
   const reduced = useM3ReducedMotion();
-  const focusValue = options.some((option) => option.value === value)
-    ? value
-    : options[0]?.value;
+  const focusValue = options.some(option => option.value === value) ? value : options[0]?.value;
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.defaultPrevented) return;
@@ -49,11 +47,7 @@ export function ShinyToggle<T extends string>({
     const current = target.closest<HTMLButtonElement>('button[role="radio"]');
     if (!current || !event.currentTarget.contains(current)) return;
 
-    const radios = Array.from(
-      event.currentTarget.querySelectorAll<HTMLButtonElement>(
-        'button[role="radio"]',
-      ),
-    );
+    const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button[role="radio"]'));
     const index = radios.indexOf(current);
     if (index < 0) return;
 
@@ -94,7 +88,7 @@ export function ShinyToggle<T extends string>({
           className,
         )}
       >
-        {options.map((option) => {
+        {options.map(option => {
           const selected = value === option.value;
           return (
             <button
@@ -107,9 +101,7 @@ export function ShinyToggle<T extends string>({
               onClick={() => onChange(option.value)}
               className={clsx(
                 "h-8 rounded-full px-3 text-label-large transition-colors duration-200 ease-standard",
-                selected
-                  ? "relative text-on-primary"
-                  : ["text-on-surface-variant", m3StateLayer],
+                selected ? "relative text-on-primary" : ["text-on-surface-variant", m3StateLayer],
                 m3FocusRing,
               )}
             >

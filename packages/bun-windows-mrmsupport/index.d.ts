@@ -3,57 +3,167 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** mrmsupport.dll!CreateResourceIndexer */
-  CreateResourceIndexer(projectRoot: string | Win32Pointer, extensionDllPath: string | Win32Pointer, ppResourceIndexer: Win32Pointer): number;
+  CreateResourceIndexer(
+    projectRoot: string | Win32Pointer,
+    extensionDllPath: string | Win32Pointer,
+    ppResourceIndexer: Win32Pointer,
+  ): number;
   /** mrmsupport.dll!DestroyIndexedResults */
   DestroyIndexedResults(resourceUri: string | Win32Pointer, qualifierCount: number, qualifiers: Win32Pointer): void;
   /** mrmsupport.dll!DestroyResourceIndexer */
   DestroyResourceIndexer(resourceIndexer: Win32Pointer): void;
   /** mrmsupport.dll!IndexFilePath */
-  IndexFilePath(resourceIndexer: Win32Pointer, filePath: string | Win32Pointer, ppResourceUri: Win32Pointer, pQualifierCount: Win32Pointer, ppQualifiers: Win32Pointer): number;
+  IndexFilePath(
+    resourceIndexer: Win32Pointer,
+    filePath: string | Win32Pointer,
+    ppResourceUri: Win32Pointer,
+    pQualifierCount: Win32Pointer,
+    ppQualifiers: Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmCreateConfig */
-  MrmCreateConfig(platformVersion: number, defaultQualifiers: string | Win32Pointer, outputXmlFile: string | Win32Pointer): number;
+  MrmCreateConfig(
+    platformVersion: number,
+    defaultQualifiers: string | Win32Pointer,
+    outputXmlFile: string | Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmCreateConfigInMemory */
-  MrmCreateConfigInMemory(platformVersion: number, defaultQualifiers: string | Win32Pointer, outputXmlData: Win32Pointer, outputXmlSize: Win32Pointer): number;
+  MrmCreateConfigInMemory(
+    platformVersion: number,
+    defaultQualifiers: string | Win32Pointer,
+    outputXmlData: Win32Pointer,
+    outputXmlSize: Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmCreateResourceFile */
-  MrmCreateResourceFile(indexer: Win32StructInit, packagingMode: number, packagingOptions: number, outputDirectory: string | Win32Pointer): number;
+  MrmCreateResourceFile(
+    indexer: Win32StructInit,
+    packagingMode: number,
+    packagingOptions: number,
+    outputDirectory: string | Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmCreateResourceFileInMemory */
-  MrmCreateResourceFileInMemory(indexer: Win32StructInit, packagingMode: number, packagingOptions: number, outputPriData: Win32Pointer, outputPriSize: Win32Pointer): number;
+  MrmCreateResourceFileInMemory(
+    indexer: Win32StructInit,
+    packagingMode: number,
+    packagingOptions: number,
+    outputPriData: Win32Pointer,
+    outputPriSize: Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmCreateResourceFileWithChecksum */
-  MrmCreateResourceFileWithChecksum(indexer: Win32StructInit, packagingMode: number, packagingOptions: number, checksum: number, outputDirectory: string | Win32Pointer): number;
+  MrmCreateResourceFileWithChecksum(
+    indexer: Win32StructInit,
+    packagingMode: number,
+    packagingOptions: number,
+    checksum: number,
+    outputDirectory: string | Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmCreateResourceIndexer */
-  MrmCreateResourceIndexer(packageFamilyName: string | Win32Pointer, projectRoot: string | Win32Pointer, platformVersion: number, defaultQualifiers: string | Win32Pointer, indexer: Win32Pointer): number;
+  MrmCreateResourceIndexer(
+    packageFamilyName: string | Win32Pointer,
+    projectRoot: string | Win32Pointer,
+    platformVersion: number,
+    defaultQualifiers: string | Win32Pointer,
+    indexer: Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmCreateResourceIndexerFromPreviousPriData */
-  MrmCreateResourceIndexerFromPreviousPriData(projectRoot: string | Win32Pointer, platformVersion: number, defaultQualifiers: string | Win32Pointer, priData: Win32Pointer, priSize: number, indexer: Win32Pointer): number;
+  MrmCreateResourceIndexerFromPreviousPriData(
+    projectRoot: string | Win32Pointer,
+    platformVersion: number,
+    defaultQualifiers: string | Win32Pointer,
+    priData: Win32Pointer,
+    priSize: number,
+    indexer: Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmCreateResourceIndexerFromPreviousPriFile */
-  MrmCreateResourceIndexerFromPreviousPriFile(projectRoot: string | Win32Pointer, platformVersion: number, defaultQualifiers: string | Win32Pointer, priFile: string | Win32Pointer, indexer: Win32Pointer): number;
+  MrmCreateResourceIndexerFromPreviousPriFile(
+    projectRoot: string | Win32Pointer,
+    platformVersion: number,
+    defaultQualifiers: string | Win32Pointer,
+    priFile: string | Win32Pointer,
+    indexer: Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmCreateResourceIndexerFromPreviousSchemaData */
-  MrmCreateResourceIndexerFromPreviousSchemaData(projectRoot: string | Win32Pointer, platformVersion: number, defaultQualifiers: string | Win32Pointer, schemaXmlData: Win32Pointer, schemaXmlSize: number, indexer: Win32Pointer): number;
+  MrmCreateResourceIndexerFromPreviousSchemaData(
+    projectRoot: string | Win32Pointer,
+    platformVersion: number,
+    defaultQualifiers: string | Win32Pointer,
+    schemaXmlData: Win32Pointer,
+    schemaXmlSize: number,
+    indexer: Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmCreateResourceIndexerFromPreviousSchemaFile */
-  MrmCreateResourceIndexerFromPreviousSchemaFile(projectRoot: string | Win32Pointer, platformVersion: number, defaultQualifiers: string | Win32Pointer, schemaFile: string | Win32Pointer, indexer: Win32Pointer): number;
+  MrmCreateResourceIndexerFromPreviousSchemaFile(
+    projectRoot: string | Win32Pointer,
+    platformVersion: number,
+    defaultQualifiers: string | Win32Pointer,
+    schemaFile: string | Win32Pointer,
+    indexer: Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmCreateResourceIndexerWithFlags */
-  MrmCreateResourceIndexerWithFlags(packageFamilyName: string | Win32Pointer, projectRoot: string | Win32Pointer, platformVersion: number, defaultQualifiers: string | Win32Pointer, flags: number, indexer: Win32Pointer): number;
+  MrmCreateResourceIndexerWithFlags(
+    packageFamilyName: string | Win32Pointer,
+    projectRoot: string | Win32Pointer,
+    platformVersion: number,
+    defaultQualifiers: string | Win32Pointer,
+    flags: number,
+    indexer: Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmDestroyIndexerAndMessages */
   MrmDestroyIndexerAndMessages(indexer: Win32StructInit): number;
   /** mrmsupport.dll!MrmDumpPriDataInMemory */
-  MrmDumpPriDataInMemory(inputPriData: Win32Pointer, inputPriSize: number, schemaPriData: Win32Pointer, schemaPriSize: number, dumpType: number, outputXmlData: Win32Pointer, outputXmlSize: Win32Pointer): number;
+  MrmDumpPriDataInMemory(
+    inputPriData: Win32Pointer,
+    inputPriSize: number,
+    schemaPriData: Win32Pointer,
+    schemaPriSize: number,
+    dumpType: number,
+    outputXmlData: Win32Pointer,
+    outputXmlSize: Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmDumpPriFile */
-  MrmDumpPriFile(indexFileName: string | Win32Pointer, schemaPriFile: string | Win32Pointer, dumpType: number, outputXmlFile: string | Win32Pointer): number;
+  MrmDumpPriFile(
+    indexFileName: string | Win32Pointer,
+    schemaPriFile: string | Win32Pointer,
+    dumpType: number,
+    outputXmlFile: string | Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmDumpPriFileInMemory */
-  MrmDumpPriFileInMemory(indexFileName: string | Win32Pointer, schemaPriFile: string | Win32Pointer, dumpType: number, outputXmlData: Win32Pointer, outputXmlSize: Win32Pointer): number;
+  MrmDumpPriFileInMemory(
+    indexFileName: string | Win32Pointer,
+    schemaPriFile: string | Win32Pointer,
+    dumpType: number,
+    outputXmlData: Win32Pointer,
+    outputXmlSize: Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmFreeMemory */
   MrmFreeMemory(data: Win32Pointer): number;
   /** mrmsupport.dll!MrmGetPriFileContentChecksum */
   MrmGetPriFileContentChecksum(priFile: string | Win32Pointer, checksum: Win32Pointer): number;
   /** mrmsupport.dll!MrmIndexEmbeddedData */
-  MrmIndexEmbeddedData(indexer: Win32StructInit, resourceUri: string | Win32Pointer, embeddedData: Win32Pointer, embeddedDataSize: number, qualifiers: string | Win32Pointer): number;
+  MrmIndexEmbeddedData(
+    indexer: Win32StructInit,
+    resourceUri: string | Win32Pointer,
+    embeddedData: Win32Pointer,
+    embeddedDataSize: number,
+    qualifiers: string | Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmIndexFile */
-  MrmIndexFile(indexer: Win32StructInit, resourceUri: string | Win32Pointer, filePath: string | Win32Pointer, qualifiers: string | Win32Pointer): number;
+  MrmIndexFile(
+    indexer: Win32StructInit,
+    resourceUri: string | Win32Pointer,
+    filePath: string | Win32Pointer,
+    qualifiers: string | Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmIndexFileAutoQualifiers */
   MrmIndexFileAutoQualifiers(indexer: Win32StructInit, filePath: string | Win32Pointer): number;
   /** mrmsupport.dll!MrmIndexResourceContainerAutoQualifiers */
   MrmIndexResourceContainerAutoQualifiers(indexer: Win32StructInit, containerPath: string | Win32Pointer): number;
   /** mrmsupport.dll!MrmIndexString */
-  MrmIndexString(indexer: Win32StructInit, resourceUri: string | Win32Pointer, resourceString: string | Win32Pointer, qualifiers: string | Win32Pointer): number;
+  MrmIndexString(
+    indexer: Win32StructInit,
+    resourceUri: string | Win32Pointer,
+    resourceString: string | Win32Pointer,
+    qualifiers: string | Win32Pointer,
+  ): number;
   /** mrmsupport.dll!MrmPeekResourceIndexerMessages */
   MrmPeekResourceIndexerMessages(handle: Win32StructInit, messages: Win32Pointer, numMsgs: Win32Pointer): number;
 }

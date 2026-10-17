@@ -8,12 +8,12 @@
     "bun-engine": "./src/cli.ts",
     "bun-engine-formats": "./src/formats/main.ts"
   },
+  "type": "module",
   "exports": {
     ".": "./src/plugins/index.ts",
     "./formats": "./src/formats/index.ts",
     "./usr": "./src/usr.ts"
   },
-  "type": "module",
   "scripts": {
     "build": "bun run ./src/cli.ts build",
     "compile": "bun run ./src/cli.ts compile",

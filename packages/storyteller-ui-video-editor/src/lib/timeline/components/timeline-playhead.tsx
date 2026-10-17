@@ -2,21 +2,10 @@
 
 import { useRef } from "react";
 import { useContainerSize } from "../../hooks/use-container-size";
-import {
-  getCenteredLineLeft,
-  TIMELINE_INDICATOR_LINE_WIDTH_PX,
-  timelineTimeToSnappedPixels,
-} from "../pixel-utils";
+import { getCenteredLineLeft, TIMELINE_INDICATOR_LINE_WIDTH_PX, timelineTimeToSnappedPixels } from "../pixel-utils";
 import { useScrollPosition } from "../hooks/use-scroll-position";
 import { useTimelinePlayhead } from "../hooks/use-timeline-playhead";
-import {
-  addMediaTime,
-  maxMediaTime,
-  mediaTime,
-  subMediaTime,
-  TICKS_PER_SECOND,
-  ZERO_MEDIA_TIME,
-} from "../../wasm";
+import { addMediaTime, maxMediaTime, mediaTime, subMediaTime, TICKS_PER_SECOND, ZERO_MEDIA_TIME } from "../../wasm";
 import { useEditor } from "../../editor/use-editor";
 import { TIMELINE_SCROLLBAR_SIZE_PX } from "./layout";
 import { TIMELINE_LAYERS } from "./layers";
@@ -65,8 +54,7 @@ export function TimelinePlayhead({
   const timelineContainerHeight = timelineHeight || tracksHeight || 400;
   const totalHeight = Math.max(
     0,
-    timelineContainerHeight -
-      (hasHorizontalScrollbar ? TIMELINE_SCROLLBAR_SIZE_PX - 5 : 0),
+    timelineContainerHeight - (hasHorizontalScrollbar ? TIMELINE_SCROLLBAR_SIZE_PX - 5 : 0),
   );
 
   const currentTime = editor.playback.getCurrentTime();
@@ -74,12 +62,9 @@ export function TimelinePlayhead({
     time: currentTime,
     zoomLevel,
   });
-  const leftPosition =
-    getCenteredLineLeft({ centerPixel: centerPosition }) - scrollLeft;
+  const leftPosition = getCenteredLineLeft({ centerPixel: centerPosition }) - scrollLeft;
 
-  const handlePlayheadKeyDown = (
-    event: React.KeyboardEvent<HTMLDivElement>,
-  ) => {
+  const handlePlayheadKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
 
     event.preventDefault();
@@ -92,9 +77,7 @@ export function TimelinePlayhead({
     const direction = event.key === "ArrowRight" ? 1 : -1;
     const now = editor.playback.getCurrentTime();
     const nextTime =
-      direction > 0
-        ? addMediaTime({ a: now, b: ticksPerFrame })
-        : subMediaTime({ a: now, b: ticksPerFrame });
+      direction > 0 ? addMediaTime({ a: now, b: ticksPerFrame }) : subMediaTime({ a: now, b: ticksPerFrame });
 
     editor.playback.seek({
       time: maxMediaTime({

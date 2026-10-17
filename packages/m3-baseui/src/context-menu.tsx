@@ -8,14 +8,8 @@ import { part } from "./part";
 
 export const Arrow = B.Arrow;
 export const Backdrop = B.Backdrop;
-export const CheckboxItem = part(
-  B.CheckboxItem,
-  "m3-bui-menu__item m3-bui-item",
-);
-export const CheckboxItemIndicator = part(
-  B.CheckboxItemIndicator,
-  "m3-bui-menu__indicator",
-);
+export const CheckboxItem = part(B.CheckboxItem, "m3-bui-menu__item m3-bui-item");
+export const CheckboxItemIndicator = part(B.CheckboxItemIndicator, "m3-bui-menu__indicator");
 export const Group = part(B.Group, "m3-bui-menu__group");
 export const GroupLabel = part(B.GroupLabel, "m3-bui-menu__group-label");
 export const Item = part(B.Item, "m3-bui-menu__item m3-bui-item");
@@ -25,15 +19,9 @@ export const Portal = B.Portal;
 export const Positioner = part(B.Positioner, "m3-bui-positioner");
 export const RadioGroup = part(B.RadioGroup, "m3-bui-menu__group");
 export const RadioItem = part(B.RadioItem, "m3-bui-menu__item m3-bui-item");
-export const RadioItemIndicator = part(
-  B.RadioItemIndicator,
-  "m3-bui-menu__indicator",
-);
+export const RadioItemIndicator = part(B.RadioItemIndicator, "m3-bui-menu__indicator");
 export const Root = B.Root;
 export const Separator = part(B.Separator, "m3-bui-menu__separator");
 export const SubmenuRoot = B.SubmenuRoot;
-export const SubmenuTrigger = part(
-  B.SubmenuTrigger,
-  "m3-bui-menu__item m3-bui-menu__submenu-trigger m3-bui-item",
-);
+export const SubmenuTrigger = part(B.SubmenuTrigger, "m3-bui-menu__item m3-bui-menu__submenu-trigger m3-bui-item");
 export const Trigger = B.Trigger;

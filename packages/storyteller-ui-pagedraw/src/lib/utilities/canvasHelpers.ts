@@ -1,8 +1,4 @@
-export const normalizeCanvas = (
-  canvas: HTMLCanvasElement,
-  width: number,
-  height: number,
-): OffscreenCanvas => {
+export const normalizeCanvas = (canvas: HTMLCanvasElement, width: number, height: number): OffscreenCanvas => {
   const newCanvas = new OffscreenCanvas(width, height);
   newCanvas.width = width;
   newCanvas.height = height;
@@ -17,11 +13,7 @@ export const normalizeCanvas = (
   return newCanvas;
 };
 
-export const drawAlphaMask = (
-  canvas: OffscreenCanvas,
-  width: number,
-  height: number,
-) => {
+export const drawAlphaMask = (canvas: OffscreenCanvas, width: number, height: number) => {
   const ctx = canvas.getContext("2d");
   if (!ctx) {
     throw new Error("Failed to get canvas context");

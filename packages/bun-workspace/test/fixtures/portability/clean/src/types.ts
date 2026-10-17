@@ -1,3 +1,3 @@
 export interface Stat {
-	size: number;
+  size: number;
 }

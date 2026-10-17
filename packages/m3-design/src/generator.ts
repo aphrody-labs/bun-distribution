@@ -36,11 +36,7 @@ export class DesignCompiler {
    * Runs the automated HCT theme generator, resolves prompt guidelines,
    * and outputs React components + CSS sheets.
    */
-  public compile(
-    rawBrief: string,
-    seedColor?: string,
-    designSystemId?: string,
-  ): GenerationResult {
+  public compile(rawBrief: string, seedColor?: string, designSystemId?: string): GenerationResult {
     // 1. Zero-Click semantic extraction
     const brief = parseBrief(rawBrief, seedColor);
     if (designSystemId) {
@@ -56,14 +52,8 @@ export class DesignCompiler {
         // Ignore loader failures, fall back to standard M3 colors
       }
       // If no seedColor was specified, fall back to the design system's accent color
-      if (
-        systemCss &&
-        !seedColor &&
-        !rawBrief.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/)
-      ) {
-        const accentMatch = systemCss.match(
-          /--accent:\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})/,
-        );
+      if (systemCss && !seedColor && !rawBrief.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/)) {
+        const accentMatch = systemCss.match(/--accent:\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})/);
         if (accentMatch) {
           brief.seedColor = accentMatch[1];
         }
@@ -219,10 +209,7 @@ export class DesignCompiler {
 }`,
       );
     }
-    code = code.replace(
-      "// GENERATED INTERACTION HELPERS",
-      inlineHelpers.join("\n\n"),
-    );
+    code = code.replace("// GENERATED INTERACTION HELPERS", inlineHelpers.join("\n\n"));
     const consumerProps = ["onAction"];
     if (brief.hasStreaming) consumerProps.unshift("stream");
     if (brief.hasThinkingIndicator) consumerProps.push("thinking");
@@ -232,12 +219,8 @@ export class DesignCompiler {
     );
 
     // Apply specific title
-    const titleMatch =
-      brief.rawBrief.match(/pour ([\w\s-]+)/i) ||
-      brief.rawBrief.match(/for ([\w\s-]+)/i);
-    const parsedTitle = titleMatch
-      ? titleMatch[1].trim()
-      : "Automated M3 Design";
+    const titleMatch = brief.rawBrief.match(/pour ([\w\s-]+)/i) || brief.rawBrief.match(/for ([\w\s-]+)/i);
+    const parsedTitle = titleMatch ? titleMatch[1].trim() : "Automated M3 Design";
 
     code = code.replace("Automated M3 Design", parsedTitle);
     code = code.replace(
@@ -324,8 +307,7 @@ export class DesignCompiler {
           </Pane>
         </ListDetail>`;
     } else if (brief.layoutType === "supporting-pane") {
-      layoutState =
-        "const [selectedTask, setSelectedTask] = React.useState<string | null>(null);";
+      layoutState = "const [selectedTask, setSelectedTask] = React.useState<string | null>(null);";
       layoutActions = `'inspect-task': (id) => {
       if (id !== 'task-1') return;
       setSelectedTask(id);
@@ -378,8 +360,7 @@ export class DesignCompiler {
           </Pane>
         </SupportingPane>`;
     } else if (brief.layoutType === "feed") {
-      layoutState =
-        "const [likedPosts, setLikedPosts] = React.useState<Record<string, boolean>>({});";
+      layoutState = "const [likedPosts, setLikedPosts] = React.useState<Record<string, boolean>>({});";
       layoutActions = `'like-post': (id) => {
       if (id !== '1' && id !== '2' && id !== '3') return;
       const liked = !likedPosts[id];
@@ -431,10 +412,7 @@ export class DesignCompiler {
       const endIndex = code.indexOf("        </Scaffold>", startIndex);
       if (startIndex !== -1 && endIndex !== -1) {
         const length = endIndex + "        </Scaffold>".length - startIndex;
-        code =
-          code.substring(0, startIndex) +
-          layoutMarkup +
-          code.substring(startIndex + length);
+        code = code.substring(0, startIndex) + layoutMarkup + code.substring(startIndex + length);
       }
     }
     code = code.replace("// GENERATED ITEM DETAILS", itemDetails);
@@ -467,9 +445,7 @@ export class DesignCompiler {
 
     // 4. Feature toggles: Thinking Indicator
     if (brief.hasThinkingIndicator) {
-      const thinkingCondition = brief.hasStreaming
-        ? "thinking ?? (!!stream && !streamDone)"
-        : "thinking ?? false";
+      const thinkingCondition = brief.hasStreaming ? "thinking ?? (!!stream && !streamDone)" : "thinking ?? false";
       code = code.replace(
         "{/* TOP NAVIGATION BAR */}",
         `{/* THINKING ACTIVITY */}\n      {(${thinkingCondition}) && <ThinkingIndicator label="Reflecting..." />}\n      {/* TOP NAVIGATION BAR */}`,
@@ -515,19 +491,11 @@ export class DesignCompiler {
     const importBlock = code.match(wrapperImport);
     if (importBlock) {
       const componentBody = code.replace(wrapperImport, "");
-      const usedImports = importBlock[1].split(",").filter((entry) => {
+      const usedImports = importBlock[1].split(",").filter(entry => {
         const alias = entry.trim().match(/^\w+ as (\w+)$/)?.[1];
-        return (
-          alias &&
-          new RegExp(`<${alias}(?=[\\s/>])|\\btypeof\\s+${alias}\\b`).test(
-            componentBody,
-          )
-        );
+        return alias && new RegExp(`<${alias}(?=[\\s/>])|\\btypeof\\s+${alias}\\b`).test(componentBody);
       });
-      code = code.replace(
-        wrapperImport,
-        `import {${usedImports.join(",")}\n} from '@aphrody/m3-react';`,
-      );
+      code = code.replace(wrapperImport, `import {${usedImports.join(",")}\n} from '@aphrody/m3-react';`);
     }
 
     return code;
@@ -543,8 +511,8 @@ export class DesignCompiler {
     const hasSpringTiming = code.includes("cubic-bezier");
 
     // Adjust the base scores using the real FFI validation results!
-    const errorsCount = issues.filter((i) => i.level === "error").length;
-    const warningsCount = issues.filter((i) => i.level === "warning").length;
+    const errorsCount = issues.filter(i => i.level === "error").length;
+    const warningsCount = issues.filter(i => i.level === "warning").length;
 
     // Deduct from scores based on violations
     const detailDeduction = warningsCount * 2;
@@ -561,7 +529,7 @@ export class DesignCompiler {
     const issuesSummary = !validation
       ? " Spec validator not configured; M3 specification check skipped."
       : issues.length > 0
-        ? ` Detected ${issues.length} design system specification issue(s): ${issues.map((i) => `[Line ${i.line}: ${i.rule}] ${i.message}`).join("; ")}.`
+        ? ` Detected ${issues.length} design system specification issue(s): ${issues.map(i => `[Line ${i.line}: ${i.rule}] ${i.message}`).join("; ")}.`
         : " Zero M3 design system spec violations detected.";
 
     const rationale = `M3 design compiler successfully mapped the brief for "${brief.audience}". Enforced touch targets at 48dp. Spring dynamics are configured with a ${hasSpringTiming ? "spatial bounce curve" : "fallback curve"}. Event delegation is handled in a single listener for high interaction performance. Spec Check Score: ${validation ? `${validation.score}/100` : "n/a"}.${issuesSummary}`;

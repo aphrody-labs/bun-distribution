@@ -1,10 +1,4 @@
-import {
-  Listbox,
-  ListboxButton,
-  ListboxOptions,
-  ListboxOption,
-  Transition,
-} from "@headlessui/react";
+import { Listbox, ListboxButton, ListboxOptions, ListboxOption, Transition } from "@headlessui/react";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 export type SelectValue = string | number;
@@ -19,17 +13,11 @@ interface ListDropdownProps {
   className?: string;
 }
 
-export const Select = ({
-  onChange,
-  options,
-  placeholder,
-  value,
-  id,
-  className,
-}: ListDropdownProps) => {
-  const selectedOption = options.find(
-    (option: SelectOption) => option.value === value,
-  ) || { label: placeholder || "", value: "" };
+export const Select = ({ onChange, options, placeholder, value, id, className }: ListDropdownProps) => {
+  const selectedOption = options.find((option: SelectOption) => option.value === value) || {
+    label: placeholder || "",
+    value: "",
+  };
 
   return (
     <div className={twMerge("relative", className)}>
@@ -40,11 +28,7 @@ export const Select = ({
               id={id}
               className="relative h-10 w-full cursor-pointer rounded-[3px] bg-ui-controls text-base-fg border border-ui-controls-border py-2 pl-3 pr-10 text-left outline-none outline-offset-0 transition-colors duration-150 ease-in-out sm:text-sm focus:!outline-none hover:border-white/40"
             >
-              <span
-                className={twMerge("block truncate", !value && "opacity-50")}
-              >
-                {selectedOption.label}
-              </span>
+              <span className={twMerge("block truncate", !value && "opacity-50")}>{selectedOption.label}</span>
               <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
                 <ChevronDownIcon aria-hidden="true" />
               </span>
@@ -73,11 +57,7 @@ export const Select = ({
                   >
                     {({ selected }) => (
                       <>
-                        <span
-                          className={`block truncate ${
-                            selected ? "font-medium" : "font-normal"
-                          }`}
-                        >
+                        <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>
                           {option.label}
                         </span>
                         {selected ? (

@@ -76,13 +76,13 @@ Monitor all Tauri IPC calls in real-time with timing and argument capture:
 
 ```typescript
 // Start monitoring
-await invoke('plugin:mcp-bridge|start_ipc_monitor');
+await invoke("plugin:mcp-bridge|start_ipc_monitor");
 
 // Execute some commands to generate IPC traffic
-await invoke('greet', { name: 'World' });
+await invoke("greet", { name: "World" });
 
 // Get captured events
-const events = await invoke('plugin:mcp-bridge|get_ipc_events');
+const events = await invoke("plugin:mcp-bridge|get_ipc_events");
 ```
 
 ### 2. Window Information
@@ -90,7 +90,7 @@ const events = await invoke('plugin:mcp-bridge|get_ipc_events');
 Get detailed window state:
 
 ```typescript
-const windowInfo = await invoke('plugin:mcp-bridge|get_window_info');
+const windowInfo = await invoke("plugin:mcp-bridge|get_window_info");
 // Returns: { width, height, x, y, title, focused, visible }
 ```
 
@@ -99,7 +99,7 @@ const windowInfo = await invoke('plugin:mcp-bridge|get_window_info');
 Inspect application backend state:
 
 ```typescript
-const state = await invoke('plugin:mcp-bridge|get_backend_state');
+const state = await invoke("plugin:mcp-bridge|get_backend_state");
 // Returns: { app: { name, identifier, version }, tauri: { version },
 //            environment: { debug, os, arch, family }, windows: [...], timestamp }
 ```
@@ -109,9 +109,9 @@ const state = await invoke('plugin:mcp-bridge|get_backend_state');
 Trigger custom events for testing:
 
 ```typescript
-await invoke('plugin:mcp-bridge|emit_event', {
-  eventName: 'custom-event',
-  payload: { data: 'test' }
+await invoke("plugin:mcp-bridge|emit_event", {
+  eventName: "custom-event",
+  payload: { data: "test" },
 });
 ```
 
@@ -184,7 +184,7 @@ The MCP server supports connecting to remote Tauri apps via the `driver_session`
 
 ```typescript
 // Connect to a Tauri app on a remote device
-driver_session({ action: 'start', host: '192.168.1.100' })
+driver_session({ action: "start", host: "192.168.1.100" });
 
 // Or use environment variables:
 // MCP_BRIDGE_HOST=192.168.1.100 npx mcp-server-tauri
@@ -194,6 +194,7 @@ driver_session({ action: 'start', host: '192.168.1.100' })
 #### Connection Strategy
 
 The MCP server uses a fallback strategy:
+
 1. Try `localhost:{port}` first (most reliable for simulators/emulators/desktop)
 2. If localhost fails and a remote host is configured, try `{host}:{port}`
 3. Auto-discover apps on localhost if specific connection fails
@@ -244,9 +245,7 @@ Add the plugin's default permission to your Tauri capabilities file (`src-tauri/
 
 ```json
 {
-  "permissions": [
-    "mcp-bridge:default"
-  ]
+  "permissions": ["mcp-bridge:default"]
 }
 ```
 

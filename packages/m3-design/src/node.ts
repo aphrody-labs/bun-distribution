@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 import type { DesignSystemLoader } from "./types.ts";
 
 /** Resolves `design-systems/<id>/tokens.css` shipped with the package. */
-export const loadDesignSystemFromDisk: DesignSystemLoader = (id) => {
+export const loadDesignSystemFromDisk: DesignSystemLoader = id => {
   // Reject path traversal: ids are directory names, never paths.
   if (!/^[\w.-]+$/.test(id) || id.startsWith(".")) return undefined;
   const path = new URL(`../design-systems/${id}/tokens.css`, import.meta.url);

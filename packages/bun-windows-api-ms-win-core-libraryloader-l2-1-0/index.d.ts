@@ -3,7 +3,12 @@ import type { Win32Callback, Win32Family, Win32Pointer, Win32Struct, Win32Struct
 
 interface Functions {
   /** api-ms-win-core-libraryloader-l2-1-0.dll!QueryOptionalDelayLoadedAPI */
-  QueryOptionalDelayLoadedAPI(hParentModule: Win32Pointer, lpDllName: string | Win32Pointer, lpProcName: string | Win32Pointer, Reserved: number): number;
+  QueryOptionalDelayLoadedAPI(
+    hParentModule: Win32Pointer,
+    lpDllName: string | Win32Pointer,
+    lpProcName: string | Win32Pointer,
+    Reserved: number,
+  ): number;
 }
 
 declare const family: Win32Family & Functions;

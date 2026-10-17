@@ -13,7 +13,11 @@ interface Functions {
   /** drt.dll!DrtGetEventDataSize */
   DrtGetEventDataSize(hDrt: Win32Pointer, pulEventDataLen: Win32Pointer): number;
   /** drt.dll!DrtGetInstanceName */
-  DrtGetInstanceName(hDrt: Win32Pointer, ulcbInstanceNameSize: number, pwzDrtInstanceName: string | Win32Pointer): number;
+  DrtGetInstanceName(
+    hDrt: Win32Pointer,
+    ulcbInstanceNameSize: number,
+    pwzDrtInstanceName: string | Win32Pointer,
+  ): number;
   /** drt.dll!DrtGetInstanceNameSize */
   DrtGetInstanceNameSize(hDrt: Win32Pointer, pulcbInstanceNameSize: Win32Pointer): number;
   /** drt.dll!DrtGetSearchPath */
@@ -27,9 +31,22 @@ interface Functions {
   /** drt.dll!DrtOpen */
   DrtOpen(pSettings: Win32Pointer, hEvent: Win32Pointer, pvContext: Win32Pointer, phDrt: Win32Pointer): number;
   /** drt.dll!DrtRegisterKey */
-  DrtRegisterKey(hDrt: Win32Pointer, pRegistration: Win32Pointer, pvKeyContext: Win32Pointer, phKeyRegistration: Win32Pointer): number;
+  DrtRegisterKey(
+    hDrt: Win32Pointer,
+    pRegistration: Win32Pointer,
+    pvKeyContext: Win32Pointer,
+    phKeyRegistration: Win32Pointer,
+  ): number;
   /** drt.dll!DrtStartSearch */
-  DrtStartSearch(hDrt: Win32Pointer, pKey: Win32Pointer, pInfo: Win32Pointer, timeout: number, hEvent: Win32Pointer, pvContext: Win32Pointer, hSearchContext: Win32Pointer): number;
+  DrtStartSearch(
+    hDrt: Win32Pointer,
+    pKey: Win32Pointer,
+    pInfo: Win32Pointer,
+    timeout: number,
+    hEvent: Win32Pointer,
+    pvContext: Win32Pointer,
+    hSearchContext: Win32Pointer,
+  ): number;
   /** drt.dll!DrtUnregisterKey */
   DrtUnregisterKey(hKeyRegistration: Win32Pointer): void;
   /** drt.dll!DrtUpdateKey */
